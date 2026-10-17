@@ -1,31 +1,47 @@
-# API and Neon integration prerequisites
+# API and Neon integration status
 
-## Current state
+## Current boundary
 
-- The API runs on Hono for Cloudflare Workers.
-- `apps/api/src/config.ts` validates the shape of a PostgreSQL connection URL without opening a connection or returning/logging credentials.
-- The validator is deliberately not wired to a route: configuration validity is not proof that Neon is reachable or that a schema is installed.
-- No database connection is opened by tests, and no data is written to Neon.
-- The initial migration remains versioned in `apps/api/migrations/0001_initial.sql` and has not been applied to the primary `main` branch.
+The API is a Hono/Cloudflare Workers scaffold. The Neon client and transaction helpers are available in `src/database.ts`, but no commercial route uses them yet. This is intentional: authentication, tenant isolation, schema version checks and transaction-level integration tests must be in place before sale or inventory endpoints are exposed.
 
-## Runtime configuration
+## Driver choice
 
-When database integration is implemented, configure `DATABASE_URL` as a Cloudflare Worker secret in the target environment. Never commit it to Git, place it in `wrangler.toml`, expose it to the frontend, or print it in logs. Use the dedicated Micro app Neon project only.
+The API uses `@neondatabase/serverless` with a request-scoped `Client`. Neon documents that the HTTP `neon()` function is suitable for one-shot queries and fixed batches, while `Client` supports sessions and interactive transactions over WebSockets. Interactive transactions are necessary for operations such as creating a sale, recording payments, decrementing stock and writing the inventory ledger atomically.
 
-The validator accepts `postgres:` or `postgresql:` URLs with a hostname, username, password, and no URL fragment. It does not verify credentials, TLS negotiation, database availability, permissions, or schema compatibility.
+Official references:
+- [Neon serverless driver: sessions and transactions](https://github.com/neondatabase/serverless#sessions-transactions-and-node-postgres-compatibility)
+- [Cloudflare Workers database integrations](https://developers.cloudflare.com/workers/databases/third-party-integrations/neon/)
 
-## Integration gate
+Cloudflare's Hyperdrive is another supported option and is recommended by Cloudflare for pooled PostgreSQL access. It requires a separately configured Hyperdrive binding, so this implementation does not assume that one exists.
 
-Before enabling database-backed routes:
+## Connection safety
 
-1. Choose and document a Neon serverless driver approach compatible with Cloudflare Workers and the transaction semantics required by sales and inventory.
-2. Add a separate, isolated Neon branch for integration tests; do not test against the primary branch.
-3. Implement a server-only database adapter that reads `DATABASE_URL` from Worker bindings and never exposes it to responses or logs.
-4. Test connectivity and schema version against the isolated branch, including failure paths and timeouts.
-5. Test sale creation, payment recording, stock updates, and inventory movement ledger writes within a single transaction, including idempotent retries and rollback cases.
-6. Add authenticated session handling and role checks before exposing any commercial data or mutation endpoints.
-7. Review the migration and integration results. Applying a migration to Neon primary requires separate, explicit authorization.
+- Supply `DATABASE_URL` only as a server-side Cloudflare Worker secret.
+- Never put the URL in `wrangler.toml`, frontend code, committed environment files, logs or API responses.
+- Create, connect, use and close a Neon `Client` within one request operation; do not retain it across Worker requests.
+- `isDatabaseUrlConfigured` validates URL shape only. It does not prove the host is reachable, credentials work, permissions are correct or the schema is installed.
+- The API health route remains a scaffold status endpoint and does not claim that Neon is connected.
 
-## Security boundary
+## Transaction helper
 
-The public `/health` endpoint is only a process-level health check. Do not make it reveal connection strings, database errors, user data, or secret configuration. Until authentication and transaction tests exist, do not expose catalog, inventory, sales, payments, user, or audit-log endpoints.
+`withDatabaseTransaction` issues `BEGIN`, runs the supplied operation, and issues `COMMIT`; it attempts `ROLLBACK` when the operation or commit fails. All queries in the operation must use the same client. Do not use this helper for parallel statements or use the HTTP-only query function for interactive transaction workflows.
+
+The helper is not yet called by commercial endpoints. Before enabling it for sales/inventory, add integration tests on a separate Neon branch covering:
+1. A successful sale with multiple items and mixed USD/VES payments using a rate snapshot.
+2. Rollback when any payment, stock update or ledger insert fails.
+3. Concurrent sales against limited stock.
+4. Idempotency-key retries without duplicate sales or stock movements.
+5. Schema version mismatch, missing credentials and database timeouts.
+
+## Migration gate
+
+`apps/api/migrations/0001_initial.sql` remains a versioned migration file only. It has not been applied to Neon primary `main`. Do not apply it there without explicit user authorization. Use a temporary or dedicated test branch to validate migrations and transaction behavior first.
+
+## Remaining requirements before commercial API routes
+
+- Real authentication and server-side role checks.
+- Tenant/store scoping for every query.
+- Database schema version and connectivity checks that do not expose secrets.
+- Request validation, rate limiting where appropriate, idempotency semantics and safe error mapping.
+- PostgreSQL integration tests, including atomic sale/inventory behavior.
+- A deliberate deployment and secret-configuration review.

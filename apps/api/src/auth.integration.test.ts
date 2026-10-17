@@ -25,6 +25,12 @@ const password = "integration-test-password-2026";
 const email = `auth-integration-${crypto.randomUUID()}@example.test`;
 const organizationName = `Integration Shop ${crypto.randomUUID()}`;
 const databaseAvailable = Boolean(databaseUrl);
+const isCi = Boolean((globalThis as typeof globalThis & {
+  process?: { env?: Record<string, string | undefined> };
+}).process?.env?.CI);
+if (isCi && !databaseAvailable) {
+  throw new Error("DATABASE_URL is required in CI; refusing to silently skip PostgreSQL auth integration tests.");
+}
 
 const suite = describe.skipIf(!databaseAvailable)("authentication routes against PostgreSQL", () => {
   let cleanupClient: Client;

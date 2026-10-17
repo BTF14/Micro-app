@@ -15,6 +15,19 @@ Gestionar productos, códigos de barras, existencias, compras, ventas, pagos, ca
 - **Tasa:** guardar fuente, fecha efectiva, hora de consulta y estado; si falla la actualización, conservar la última tasa válida y advertir que está desactualizada.
 - **Calidad:** no marcar funcionalidades como terminadas hasta que estén implementadas y verificadas con pruebas.
 
+## Stack elegido para mantener el costo en $0
+
+- **Frontend:** React + Vite + TypeScript; archivos estáticos servidos por Cloudflare Pages.
+- **API:** Cloudflare Workers + Hono + TypeScript, en un servicio separado del frontend.
+- **Base de datos:** PostgreSQL independiente en Neon Free, con Drizzle ORM y migraciones versionadas.
+- **Pruebas:** Vitest y Playwright; automatización de CI con GitHub Actions dentro de las cuotas gratuitas.
+- **Diseño:** CSS propio y dependencias open source; sin componentes premium.
+- **Dominio:** usar el subdominio gratuito del proveedor al principio; un dominio personalizado normalmente cuesta dinero.
+
+La arquitectura evita depender de funciones propietarias de un único hosting: React/Vite se puede servir en otros hostings estáticos, la API usa estándares web y PostgreSQL es portable. Los planes gratuitos tienen límites y pueden cambiar; no se promete capacidad ilimitada ni disponibilidad comercial garantizada. No se habilitará facturación automática ni se añadirá un servicio de pago para sortear límites.
+
+No se usará Vercel Hobby como alojamiento objetivo de la operación: sus términos reservan ese plan al uso personal/no comercial. Si el uso de Micro app llega a requerir recursos de pago, se priorizará reducir/optimizar el uso o migrar a infraestructura gratuita que el usuario pueda operar, nunca generar cargos sin autorización.
+
 ## Plan de trabajo
 
 1. Fundamentos del repositorio, documentación, controles de seguridad y CI.
@@ -38,7 +51,8 @@ Gestionar productos, códigos de barras, existencias, compras, ventas, pagos, ca
 - [x] Repositorio privado independiente creado.
 - [x] Alcance y reglas iniciales documentados.
 - [ ] Diseño visual final seleccionado.
-- [ ] Arquitectura y migraciones implementadas.
+- [x] Decisión inicial de arquitectura gratuita documentada.
+- [ ] Arquitectura ejecutable y migraciones implementadas.
 - [ ] Aplicación, pruebas y preview desplegados.
 
 El estado se actualizará a partir de trabajo verificable, no de estimaciones optimistas.

@@ -48,6 +48,41 @@ async function sha256Hex(value: string): Promise<string> {
   return Array.from(new Uint8Array(digest), (byte) => byte.toString(16).padStart(2, "0")).join("");
 }
 
+async function consumeRateLimit(client: DatabaseClient, scope: string, limit: number): Promise<boolean> {
+  const keyHash = await sha256Hex(scope);
+  const result = await client.query<{ attempts: number }>(
+    `INSERT INTO auth_rate_limits (key_hash, window_started_at, attempts, updated_at)
+     VALUES ($1, now(), 1, now())
+     ON CONFLICT (key_hash) DO UPDATE SET
+       attempts = CASE
+         WHEN auth_rate_limits.window_started_at < now() - interval '1 minute' THEN 1
+         ELSE auth_rate_limits.attempts + 1
+       END,
+       window_started_at = CASE
+         WHEN auth_rate_limits.window_started_at < now() - interval '1 minute' THEN now()
+         ELSE auth_rate_limits.window_started_at
+       END,
+       updated_at = now()
+     RETURNING attempts`,
+    [keyHash],
+  );
+  return Number(result.rows[0]?.attempts ?? limit + 1) <= limit;
+}
+
+async function checkRateLimits(
+  databaseUrl: string | undefined,
+  route: string,
+  ip: string,
+  email: string | undefined,
+): Promise<boolean> {
+  return withDatabaseClient(databaseUrl, async (client) => {
+    const ipAllowed = await consumeRateLimit(client, `${route}:ip:${ip}`, route === "register" ? 5 : 15);
+    if (!ipAllowed) return false;
+    if (!email) return true;
+    return consumeRateLimit(client, `${route}:email:${email}`, route === "register" ? 5 : 5);
+  });
+}
+
 async function hashPassword(password: string): Promise<string> {
   const salt = crypto.getRandomValues(new Uint8Array(16));
   const key = await crypto.subtle.importKey(
@@ -205,6 +240,20 @@ export function registerAuthRoutes(app: Hono<{ Bindings: Bindings }>): void {
       }, 400);
     }
 
+    try {
+      const allowed = await checkRateLimits(
+        c.env.DATABASE_URL,
+        "register",
+        c.req.header("CF-Connecting-IP") ?? "unknown",
+        email,
+      );
+      if (!allowed) {
+        return c.json({ error: "RATE_LIMITED", message: "Demasiados intentos. Espera un minuto e inténtalo de nuevo." }, 429);
+      }
+    } catch {
+      return c.json({ error: "AUTH_UNAVAILABLE", message: "El servicio de registro no está disponible." }, 503);
+    }
+
     const passwordHash = await hashPassword(password);
     const slugBase = organizationName.normalize("NFKD")
       .replace(/[\u0300-\u036f]/g, "")
@@ -279,6 +328,16 @@ export function registerAuthRoutes(app: Hono<{ Bindings: Bindings }>): void {
     }
 
     try {
+      const allowed = await checkRateLimits(
+        c.env.DATABASE_URL,
+        "login",
+        c.req.header("CF-Connecting-IP") ?? "unknown",
+        email,
+      );
+      if (!allowed) {
+        return c.json({ error: "RATE_LIMITED", message: "Demasiados intentos. Espera un minuto e inténtalo de nuevo." }, 429);
+      }
+
       const result = await withDatabaseClient(c.env.DATABASE_URL, async (client) => {
         const userResult = await client.query<UserRow>(
           "SELECT id, email, display_name, password_hash, is_active FROM app_users WHERE lower(email) = $1 LIMIT 1",

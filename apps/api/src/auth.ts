@@ -83,7 +83,7 @@ async function checkRateLimits(
   });
 }
 
-async function hashPassword(password: string): Promise<string> {
+export async function hashPassword(password: string): Promise<string> {
   const salt = crypto.getRandomValues(new Uint8Array(16));
   const key = await crypto.subtle.importKey(
     "raw",
@@ -100,7 +100,7 @@ async function hashPassword(password: string): Promise<string> {
   return `pbkdf2-sha256${PBKDF2_ITERATIONS}${encodeBase64Url(salt)}${encodeBase64Url(new Uint8Array(bits))}`;
 }
 
-async function verifyPassword(password: string, encoded: string | null): Promise<boolean> {
+export async function verifyPassword(password: string, encoded: string | null): Promise<boolean> {
   const candidate = encoded ?? DUMMY_PASSWORD_HASH;
   const [algorithm, iterationText, saltText, expectedText] = candidate.split("$");
   const iterations = Number(iterationText);
@@ -144,7 +144,7 @@ async function verifyPassword(password: string, encoded: string | null): Promise
   return difference === 0 && encoded !== null;
 }
 
-function isTrustedOrigin(origin: string | undefined, configuredOrigin: string | undefined): boolean {
+export function isTrustedOrigin(origin: string | undefined, configuredOrigin: string | undefined): boolean {
   if (!origin || !configuredOrigin) return false;
   try {
     const parsed = new URL(configuredOrigin);
@@ -323,7 +323,6 @@ export function registerAuthRoutes(app: Hono<{ Bindings: Bindings }>): void {
     const email = typeof body?.email === "string" ? body.email.trim().toLowerCase() : "";
     const password = typeof body?.password === "string" ? body.password : "";
     if (email.length > 254 || !email || password.length > 128 || !password) {
-      await verifyPassword(password || "invalid-password", null);
       return c.json({ error: "INVALID_CREDENTIALS", message: "Correo o contraseña incorrectos." }, 401);
     }
 

@@ -54,7 +54,7 @@ Trabajar en una rama de desarrollo y un entorno de pruebas. No aplicar migracion
 
 ### Fase 3 — Escaneo automatizado (P1)
 - Elegir CodeQL o Semgrep primero, según permisos, cobertura y falsos positivos.
-- Workflow inicial Trivy filesystem ya añadido en esta rama como no bloqueante para dependencias/configuración; comprobar ejecución y cobertura (incluida la necesidad de lockfile) antes de hacerlo bloqueante. Añadir análisis de secretos y evaluar SBOM.
+- Workflow inicial Trivy filesystem ya añadido en esta rama como no bloqueante para dependencias, configuración y secretos; comprobar ejecución y cobertura (incluida la necesidad de lockfile) antes de hacerlo bloqueante. Evaluar generación de SBOM.
 - Bloquear secretos filtrados y hallazgos críticos confirmados; documentar falsos positivos.
 - Revisar licencias y condiciones actuales antes de adoptar herramientas.
 

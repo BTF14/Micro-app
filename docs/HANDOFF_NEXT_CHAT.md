@@ -11,7 +11,7 @@
 - Rama de trabajo actual: `feat/auth-session-foundation`.
 - PR #4: [Add initial authentication and revocable sessions](https://github.com/BTF14/Micro-app/pull/4). Está **abierto, en borrador y sin fusionar**.
 - Último commit revisado en la rama del PR: `b11eb2c4c93a073c63433ece11c3bda8e0357dcc` (`fix(db): rebuild auth migration from validated tenant schema`).
-- La documentación de este traspaso se está incorporando a la rama del PR #4; si cambia el commit, GitHub volverá a ejecutar las comprobaciones.
+- La documentación de este traspaso se incorporó a la rama del PR #4 en el commit documental `ef9a603260cf96cbf1e5160c23b1ef17d07aac55`. Tras ese commit, la consulta de Actions mostró el escaneo de seguridad en cola para ese SHA; CI y validación de migración aprobados corresponden al SHA de código anterior. Comprueba las ejecuciones más recientes y no atribuyas checks antiguos al nuevo SHA. Como el cambio documental no modifica código, si CI/migración no se ejecutan, indícalo como tal.
 
 ### Comprobaciones confirmadas en el último commit revisado
 

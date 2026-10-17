@@ -84,4 +84,93 @@ describe("Micro app API scaffold", () => {
       "https://untrusted.example",
     );
   });
+
+  it("rejects authentication mutations from an untrusted Origin before touching the database", async () => {
+    const response = await app.request(
+      "/auth/register",
+      {
+        method: "POST",
+        headers: {
+          Origin: "https://attacker.example",
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          email: "user@example.com",
+          displayName: "Example User",
+          password: "a-long-test-password",
+          organizationName: "Example Shop",
+        }),
+      },
+      {
+        FRONTEND_ORIGIN: "https://micro-app.example",
+      },
+    );
+
+    expect(response.status).toBe(403);
+    await expect(response.json()).resolves.toMatchObject({
+      error: "ORIGIN_NOT_ALLOWED",
+    });
+  });
+
+  it("validates registration input before accessing the database", async () => {
+    const response = await app.request(
+      "/auth/register",
+      {
+        method: "POST",
+        headers: {
+          Origin: "https://micro-app.example",
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          email: "not-an-email",
+          displayName: "A",
+          password: "short",
+          organizationName: "",
+        }),
+      },
+      {
+        FRONTEND_ORIGIN: "https://micro-app.example",
+      },
+    );
+
+    expect(response.status).toBe(400);
+    await expect(response.json()).resolves.toMatchObject({
+      error: "INVALID_REGISTRATION",
+    });
+  });
+
+  it("rejects incomplete login input without a database connection", async () => {
+    const response = await app.request(
+      "/auth/login",
+      {
+        method: "POST",
+        headers: {
+          Origin: "https://micro-app.example",
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ email: "", password: "" }),
+      },
+      {
+        FRONTEND_ORIGIN: "https://micro-app.example",
+      },
+    );
+
+    expect(response.status).toBe(401);
+    await expect(response.json()).resolves.toMatchObject({
+      error: "INVALID_CREDENTIALS",
+    });
+  });
+
+  it("enables credentialed CORS only for the configured origin", async () => {
+    const allowed = await app.request(
+      "/health",
+      { headers: { Origin: "https://micro-app.example" } },
+      { FRONTEND_ORIGIN: "https://micro-app.example" },
+    );
+
+    expect(allowed.headers.get("access-control-allow-origin")).toBe(
+      "https://micro-app.example",
+    );
+    expect(allowed.headers.get("access-control-allow-credentials")).toBe("true");
+  });
 });

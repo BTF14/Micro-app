@@ -10,10 +10,12 @@ const app = new Hono<{ Bindings: Bindings }>();
 app.use(
   "*",
   cors({
-    origin: (origin, c) => {
-      const configuredOrigin = c.env.FRONTEND_ORIGIN;
+    origin: (_origin, c) => {
+      // Hono's test request helper may omit the environment bindings.
+      // Missing configuration must fail closed without breaking public routes.
+      const configuredOrigin = c.env?.FRONTEND_ORIGIN;
       if (!configuredOrigin) return "";
-      return origin === configuredOrigin ? configuredOrigin : "";
+      return _origin === configuredOrigin ? configuredOrigin : "";
     },
     allowMethods: ["GET", "POST", "PATCH", "DELETE", "OPTIONS"],
     allowHeaders: ["Content-Type", "Authorization", "Idempotency-Key"],

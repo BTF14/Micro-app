@@ -1,9 +1,7 @@
 import { Hono } from "hono";
 import { cors } from "hono/cors";
-
-type Bindings = {
-  FRONTEND_ORIGIN?: string;
-};
+import { registerAuthRoutes } from "./auth";
+import type { Bindings } from "./bindings";
 
 const app = new Hono<{ Bindings: Bindings }>();
 
@@ -38,9 +36,12 @@ app.use(
     },
     allowMethods: ["GET", "POST", "PATCH", "DELETE", "OPTIONS"],
     allowHeaders: ["Content-Type", "Authorization", "Idempotency-Key"],
+    credentials: true,
     maxAge: 600,
   }),
 );
+
+registerAuthRoutes(app);
 
 app.get("/health", (c) =>
   c.json({

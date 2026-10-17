@@ -1,5 +1,77 @@
 # Micro app — handoff for the next ChatGPT chat
 
+## Estado actualizado para continuar en otro chat — 2026-10-17
+
+**Esta sección es la referencia vigente y reemplaza cualquier estado anterior contradictorio más abajo en este documento.** El resto conserva el contexto histórico y las decisiones del proyecto.
+
+### Estado real al cambiar de chat
+
+- Repositorio privado: [BTF14/Micro-app](https://github.com/BTF14/Micro-app).
+- Rama principal: `main`.
+- Rama de trabajo actual: `feat/auth-session-foundation`.
+- PR #4: [Add initial authentication and revocable sessions](https://github.com/BTF14/Micro-app/pull/4). Está **abierto, en borrador y sin fusionar**.
+- Último commit revisado en la rama del PR: `b11eb2c4c93a073c63433ece11c3bda8e0357dcc` (`fix(db): rebuild auth migration from validated tenant schema`).
+- La documentación de este traspaso se incorporó a la rama del PR #4 en el commit documental `ef9a603260cf96cbf1e5160c23b1ef17d07aac55`. Tras ese commit, la consulta de Actions mostró el escaneo de seguridad en cola para ese SHA; CI y validación de migración aprobados corresponden al SHA de código anterior. Comprueba las ejecuciones más recientes y no atribuyas checks antiguos al nuevo SHA. Como el cambio documental no modifica código, si CI/migración no se ejecutan, indícalo como tal.
+
+### Comprobaciones confirmadas en el último commit revisado
+
+Para el SHA `b11eb2c4c93a073c63433ece11c3bda8e0357dcc`:
+- [CI run 39023727575](https://github.com/BTF14/Micro-app/actions/runs/39023727575): **aprobado**. El job `verify` completó instalación, compilación/typecheck y pruebas unitarias.
+- [Validación de migración 39023727565](https://github.com/BTF14/Micro-app/actions/runs/39023727565): **aprobada** en PostgreSQL temporal.
+- [Escaneo de seguridad 39023727600](https://github.com/BTF14/Micro-app/actions/runs/39023727600): **aprobado**.
+- La validación temporal comprobó la migración y restricciones multiempresa; no significa que la migración esté aplicada a Neon principal.
+
+**Importante:** estas comprobaciones corresponden al SHA indicado. Al añadir esta documentación, comprueba las nuevas ejecuciones de Actions antes de fusionar. No afirmes que el CI de un commit posterior está aprobado hasta verificarlo.
+
+### Cambios incluidos en el PR #4
+
+- Nuevas rutas de API: `POST /auth/register`, `POST /auth/login`, `GET /auth/me` y `POST /auth/logout`.
+- Hash de contraseñas PBKDF2-SHA-256, tokens de sesión aleatorios guardados en la base de datos como hashes SHA-256, cookie HttpOnly, expiración y revocación de sesiones.
+- Comprobación del encabezado Origin contra un origen configurado exactamente y CORS con credenciales.
+- Límites de intentos por IP/correo usando tablas de base de datos.
+- Migración inicial actualizada con `auth_sessions` y `auth_rate_limits`.
+- Pruebas de validación de entrada, rechazo de origen no permitido, CORS y funciones de hash.
+
+### Revisión pendiente antes de fusionar PR #4
+
+Aunque los tres checks del SHA anterior pasaron, revisar y resolver o documentar explícitamente estos puntos antes de considerar el login listo para producción:
+1. **Logout:** actualmente se limpia la cookie antes de confirmar la revocación en la base de datos; mejorar el orden para no ocultar un fallo de revocación.
+2. Añadir pruebas de integración con PostgreSQL temporal para registro, login, sesión, logout/revocación, usuarios inactivos y membresías.
+3. Revisar los límites de tasa, el almacenamiento/retención de `auth_rate_limits` y la limpieza de sesiones expiradas.
+4. Confirmar que los hashes almacenados malformados siempre producen credenciales inválidas sin respuestas 500 ni filtración de información.
+5. Revisar cookies Secure/SameSite según los dominios finales de frontend/API y la configuración de producción.
+6. No conectar todavía la interfaz ni habilitar rutas comerciales hasta asegurar autorización por organización en cada consulta.
+
+No fusionar PR #4 automáticamente solo porque el CI esté verde: realizar esta revisión y confirmar el nuevo CI del commit documental. El PR está todavía en borrador.
+
+### Neon: estado protegido
+
+- Organización: **Micro app DEVBTF**.
+- Proyecto: `micro-app-db`, ID `restless-fire-99110035`, PostgreSQL 18, región AWS us-east-1, plan Free.
+- Rama principal `main`, ID `br-summer-math-b7297a60`.
+- En la última inspección, la rama principal no tenía tablas de aplicación. El esquema/migración se ha probado en PostgreSQL desechable, pero **no se ha aplicado a Neon main**.
+- El usuario no autorizó aplicar la migración a la rama principal. Esa restricción sigue vigente: solo inspección de lectura en Neon principal hasta una autorización específica posterior.
+- Evitar crear endpoints/compute o recursos con coste sin verificar el impacto; objetivo de coste es **$0**.
+
+### Próximos pasos exactos
+
+1. Actualizar este documento en GitHub y comprobar que el commit quedó en la rama del PR #4.
+2. Revisar las nuevas ejecuciones de Actions del commit documental; verificar CI, migración y seguridad.
+3. Corregir los puntos de seguridad de autenticación y añadir pruebas de integración con PostgreSQL temporal. No usar Neon principal para pruebas.
+4. Tras revisión y checks verdes, sacar PR #4 de borrador y fusionarlo de forma segura; verificar el SHA resultante en `main`.
+5. Crear un nuevo branch para integrar el frontend con las rutas de autenticación, incluyendo `credentials: "include"`, estados de error/carga y pruebas.
+6. Después implementar productos/inventario y movimientos de stock; luego tasa BCV con fuente y fecha, ventas atómicas/idempotentes, pagos/recibos, devoluciones, reportes y auditoría.
+7. Mantener consultas y operaciones estrictamente limitadas a la organización autenticada. No publicar el producto hasta que flujos de negocio, autorización, pruebas y configuración estén completos.
+8. No desplegar todavía: la interfaz sigue siendo una base incompleta y faltan módulos comerciales. Evaluar despliegue de preview solo cuando haya un flujo funcional y seguro. Preferencia de infraestructura: Cloudflare Pages/Workers + Neon Free; no usar Vercel Hobby para este POS comercial salvo decisión informada del usuario.
+
+### Mensaje para iniciar el próximo chat
+
+Pega este texto en el chat nuevo:
+
+> Continúa el proyecto Micro app desde el estado documentado en [docs/HANDOFF_NEXT_CHAT.md](https://github.com/BTF14/Micro-app/blob/feat/auth-session-foundation/docs/HANDOFF_NEXT_CHAT.md). Primero lee ese documento y verifica en GitHub el branch, PR #4 y los checks del último SHA; no asumas que el estado no cambió. Sigue trabajando directamente en el repositorio, con cambios reales y comprobables. Prioriza revisar y endurecer la autenticación del PR #4, añadir pruebas de integración usando PostgreSQL desechable y confirmar Actions antes de fusionar. No apliques migraciones a Neon main: no tengo autorizada esa acción. Mantén el coste en $0, no despliegues producción todavía y no me pidas repetir conexiones/permisos si no has identificado un bloqueo concreto. Documenta avances en el repositorio.
+
+---
+
 **Last reviewed:** 2026-10-17  
 **Repository:** https://github.com/BTF14/Micro-app  
 **Default branch:** `main`  
@@ -148,3 +220,63 @@ The current UI is a placeholder. No visual direction has been selected. Do not a
 ## What to tell the user if a decision is needed
 
 Keep questions limited to decisions that block safe progress. The user has already authorized continuing code work and pushing commits when safe; do not repeatedly ask for permission to do ordinary reversible development. The user has **not** authorized the Neon primary migration. Do not ask them to redo connections they already completed unless a concrete missing permission or configuration is demonstrated.
+
+## Actual continuation — 2026-10-17 (follow-up)
+
+### Verified live state during this session
+
+- PR #4 remains open, draft, not merged; GitHub reports head branch `feat/auth-session-foundation`, current head SHA at initial inspection `3a6a278d5825bee2eb52ba7a273154fb6e0d1862`, base `main`.
+- Live PR Actions for that inspected SHA: CI run [39024131468](https://github.com/BTF14/Micro-app/actions/runs/39024131468), database migration validation [39024131467](https://github.com/BTF14/Micro-app/actions/runs/39024131467), and security scan [39024131489](https://github.com/BTF14/Micro-app/actions/runs/39024131489) all completed successfully. These results do **not** validate commits pushed later in this session.
+- PR is still draft and should not be merged until the required PostgreSQL-backed authentication integration coverage and follow-up checks are complete.
+
+### Changes pushed in this continuation
+
+- Commit `a7426aaf21eab91e1c38b6f8223600009b2b515e`: password-hash verification now catches malformed Base64/crypto input and fails closed as invalid credentials rather than allowing malformed stored values to throw; salt and derived-hash lengths and canonical Base64URL encoding are validated.
+- Commit `22bf188d6f2e008ca0195b849de80fc00f430e85`: tests now cover malformed Base64URL values and incorrect salt length.
+- Logout now clears the browser cookie only after database revocation succeeds. If revocation fails, it returns a generic 500 and leaves the cookie intact so the client can retry; no false success is reported.
+- The newest commits still require Actions verification. A workflow lookup for the first security-fix commit returned no PR-triggered runs at that moment; this is not proof that checks passed or that all workflows were evaluated.
+
+### Still blocking PR #4
+
+- PostgreSQL integration tests must exercise register/login/session/logout, revocation, inactive users and membership behavior against a disposable PostgreSQL instance. Do not use Neon primary.
+- Inspect the newest Actions runs/checks against the current branch head before treating validation as complete.
+- Review and test rate-limit row retention/cleanup and session expiration cleanup.
+- Reassess cookie `Secure`/`SameSite` behavior once frontend/API deployment origins are selected.
+- Do not merge or deploy production while these remain unresolved.
+## Continuation checkpoint — 2026-10-17 (live recheck)
+
+### Latest verified GitHub state
+
+- Re-queried PR #4: open, draft, not merged; head `feat/auth-session-foundation`, SHA `b46384d21ad757b640882cd73b908b3dbc7025fe`, base `main`.
+- The latest SHA now has all three PR-triggered workflows completed successfully:
+  - [CI #49 / run 39059407741](https://github.com/BTF14/Micro-app/actions/runs/39059407741): install, build/typecheck and unit tests passed.
+  - [Database migration validation #14 / run 39059407765](https://github.com/BTF14/Micro-app/actions/runs/39059407765): disposable PostgreSQL service started, initial schema applied, cross-tenant constraint assertions passed, service stopped.
+  - [Security scan #56 / run 39059407735](https://github.com/BTF14/Micro-app/actions/runs/39059407735): Trivy filesystem/configuration scan passed.
+- These checks validate the current SHA. The PostgreSQL workflow still validates schema/migration and tenant constraints only; it does **not** exercise the HTTP authentication flows end-to-end.
+
+### Current integration-test gap / next task
+
+- `apps/api/package.json` currently uses Vitest and `@neondatabase/serverless`; the API database helper instantiates the Neon serverless client directly. The existing disposable PostgreSQL workflow does not yet run authentication route tests against PostgreSQL.
+- Next engineering task: introduce a clean, test-only database-client injection seam and use a Node-compatible PostgreSQL driver in dev/test dependencies (with lockfile updated via pnpm), then create a Vitest integration suite that runs against a disposable PostgreSQL service in GitHub Actions. Do not point this suite at Neon or any developer/production database. Keep production Workers using the existing Neon client.
+- Exercise registration atomicity, duplicate-email conflict, login success/failure, `/auth/me`, inactive user / inactive membership handling, logout revocation and database-error behavior. Add cleanup in workflow teardown and ensure the test database is ephemeral.
+- Keep PR #4 in draft until this suite passes and its scope/reliability are reviewed. Do not merge solely because the three existing workflows are green.
+- No migration has been applied to Neon main and no production deployment was performed.
+
+
+## Continuation checkpoint — 2026-10-17 (PostgreSQL auth route integration)
+
+- User confirmed the only hard constraint is **total cost $0** and authorized autonomous repository/code/workflow changes as needed. Prefer free disposable CI infrastructure; do not create paid resources or actions that can incur charges.
+- PR #4 remains open/draft and must not be merged until the newly added integration workflow is verified.
+- Added `apps/api/src/auth.integration.test.ts`: uses a real PostgreSQL client via Vitest's mock of the Neon client module, while production code remains on `@neondatabase/serverless`. The route-level flow exercises registration, atomic user/organization/membership/session creation, duplicate email, wrong and correct password, `/auth/me`, inactive user, inactive membership, logout and session revocation.
+- Updated `.github/workflows/ci.yml` to start a fresh PostgreSQL 18 service, apply `apps/api/migrations/0001_initial.sql`, install the PostgreSQL test driver into a temporary CI-only prefix (not added to production dependencies), and run the existing build/tests. This is intended to keep Neon and all non-CI databases untouched.
+- New commits in this continuation: `fd078c4f8c3659cd757c945bfa73de8688279a2e` (integration test initial), `f886244e71dfff78fc402a2e97e81bf9a09cc144` (fixture isolation), `a289a7df024cc806ac0bf8fe15f82cdc6f188cce` (CI workflow), `3b1e9c0dc7c85b09190b187aee70b20b287b63a9` (inactive user/membership coverage).
+- **Not yet verified:** this environment has not executed the repository's test commands locally. A workflow lookup by the workflow-file commit SHA returned no PR-triggered runs, so do not infer CI success. Verify the current PR head, inspect actual GitHub Actions runs/checks, and fix any workflow, TypeScript, or test failures before merging.
+- Known implementation tradeoff to review: the test-only `pg` / `@types/pg` packages are installed temporarily by CI rather than tracked in the pnpm lockfile. If CI confirms this is reliable, consider moving them into devDependencies with a properly regenerated lockfile in an environment that can run pnpm. Never hand-edit a fabricated lockfile.
+- Cleanup only deletes records belonging to the uniquely generated integration email / organization; rate-limit rows remain only in the ephemeral PostgreSQL service, which is destroyed after the CI job.
+- No paid service, Neon migration, or production deployment was performed as part of this work.
+
+
+### Follow-up to integration test wiring
+
+- The API unit-test script now excludes `*.integration.test.ts`, and `apps/api/tsconfig.json` excludes that test file from the regular typecheck because its driver is installed only in the CI job. The CI workflow runs the PostgreSQL integration test explicitly after build/unit tests.
+- The latest branch head at this checkpoint is `a94d75250397635dd0bce256eb450cdf648253ca`. CI run [39060063158](https://github.com/BTF14/Micro-app/actions/runs/39060063158), migration validation [39060063145](https://github.com/BTF14/Micro-app/actions/runs/39060063145), and security scan [39060063157](https://github.com/BTF14/Micro-app/actions/runs/39060063157) were observed in progress/queued at last check; none should be described as passing yet. Re-query them against the final current head.

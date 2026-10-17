@@ -33,6 +33,29 @@ CREATE TABLE organization_members (
 );
 CREATE INDEX organization_members_user_idx ON organization_members (user_id, is_active);
 
+CREATE TABLE auth_sessions (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id uuid NOT NULL REFERENCES app_users(id) ON DELETE RESTRICT,
+  token_hash char(64) NOT NULL UNIQUE CHECK (token_hash ~ '^[a-f0-9]{64}$'),
+  expires_at timestamptz NOT NULL,
+  revoked_at timestamptz,
+  created_at timestamptz NOT NULL DEFAULT now(),
+  last_seen_at timestamptz NOT NULL DEFAULT now(),
+  CHECK (expires_at > created_at)
+);
+CREATE INDEX auth_sessions_user_active_idx ON auth_sessions (user_id, expires_at DESC)
+  WHERE revoked_at IS NULL;
+CREATE INDEX auth_sessions_expiry_idx ON auth_sessions (expires_at);
+
+-- Store only hashes of rate-limit keys, never raw IP addresses or email addresses.
+CREATE TABLE auth_rate_limits (
+  key_hash char(64) PRIMARY KEY CHECK (key_hash ~ '^[a-f0-9]{64}$'),
+  window_started_at timestamptz NOT NULL DEFAULT now(),
+  attempts integer NOT NULL DEFAULT 0 CHECK (attempts >= 0),
+  updated_at timestamptz NOT NULL DEFAULT now()
+);
+CREATE INDEX auth_rate_limits_updated_idx ON auth_rate_limits (updated_at);
+
 CREATE TABLE suppliers (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   organization_id uuid NOT NULL REFERENCES organizations(id) ON DELETE RESTRICT,

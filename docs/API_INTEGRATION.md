@@ -4,6 +4,8 @@
 
 The API is a Hono/Cloudflare Workers scaffold. The Neon client and transaction helpers are available in `src/database.ts`, but no commercial route uses them yet. This is intentional: authentication, tenant isolation, schema version checks and transaction-level integration tests must be in place before sale or inventory endpoints are exposed.
 
+The proposed initial schema now includes `organizations` and `organization_members`. Business records carry `organization_id`; composite foreign keys prevent products, sales, memberships and inventory movements from linking across organizations. BCV exchange-rate source data is shared globally, while each sale stores its own rate snapshot. A disposable PostgreSQL 18 GitHub Actions job validates migration syntax and key cross-tenant constraints. This does not replace API authorization: every query must still scope by the authenticated organization.
+
 ## Driver choice
 
 The API uses `@neondatabase/serverless` with a request-scoped `Client`. Neon documents that the HTTP `neon()` function is suitable for one-shot queries and fixed batches, while `Client` supports sessions and interactive transactions over WebSockets. Interactive transactions are necessary for operations such as creating a sale, recording payments, decrementing stock and writing the inventory ledger atomically.

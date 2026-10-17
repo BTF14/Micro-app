@@ -1,0 +1,40 @@
+name: Database migration validation
+
+on:
+  push:
+    branches: [main, feat/tenant-safe-schema]
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: micro-app-migration-check-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  postgres-migration:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    services:
+      postgres:
+        image: postgres:18
+        env:
+          POSTGRES_DB: microapp_test
+          POSTGRES_USER: microapp
+          POSTGRES_PASSWORD: microapp-test-only
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U microapp -d microapp_test"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Apply initial schema to disposable PostgreSQL
+        run: docker exec "${{ job.services.postgres.id }}" psql -v ON_ERROR_STOP=1 -U microapp -d microapp_test -f /dev/stdin < apps/api/migrations/0001_initial.sql
+      - name: Verify cross-tenant constraints reject invalid references
+        run: docker exec "${{ job.services.postgres.id }}" psql -v ON_ERROR_STOP=1 -U microapp -d microapp_test -f /dev/stdin < apps/api/migrations/0001_initial.assertions.sql

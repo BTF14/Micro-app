@@ -22,7 +22,7 @@ La migración versionada `apps/api/migrations/0001_initial.sql` establece el esq
 4. Bloquear las filas de productos y validar las cantidades dentro de la transacción; una venta no puede dejar stock negativo.
 5. Calcular los importes en el servidor y usar `NUMERIC`/decimales, nunca `float` de JavaScript para dinero.
 6. Guardar snapshots de precio, costo y tasa; los cambios futuros de catálogo o tasa no reescriben ventas anteriores.
-7. No borrar movimientos de inventario para corregirlos: añadir un ajuste o reverso con motivo y usuario.
+7. No borrar movimientos de inventario ni ventas con líneas asociadas para corregirlos: añadir un ajuste, reverso o devolución con motivo y usuario.
 8. Aplicar autorización en cada endpoint. La columna `role` por sí sola no implementa seguridad.
 9. Marcar la tasa como desactualizada en la lógica de servicio sin sustituir la última tasa válida por respuestas inválidas.
 

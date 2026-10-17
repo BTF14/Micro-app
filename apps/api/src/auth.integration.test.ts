@@ -16,6 +16,7 @@ const databaseUrl = (globalThis as typeof globalThis & {
 const frontendOrigin = "https://micro-app.example";
 const password = "integration-test-password-2026";
 const email = `auth-integration-${crypto.randomUUID()}@example.test`;
+const organizationName = `Integration Shop ${crypto.randomUUID()}`;
 const databaseAvailable = Boolean(databaseUrl);
 
 const suite = describe.skipIf(!databaseAvailable)("authentication routes against PostgreSQL", () => {
@@ -28,10 +29,9 @@ const suite = describe.skipIf(!databaseAvailable)("authentication routes against
 
   afterAll(async () => {
     if (cleanupClient) {
-      await cleanupClient.query("DELETE FROM auth_rate_limits WHERE key_hash IN (SELECT key_hash FROM auth_rate_limits)");
       await cleanupClient.query("DELETE FROM auth_sessions WHERE user_id IN (SELECT id FROM app_users WHERE email = $1)", [email]);
       await cleanupClient.query("DELETE FROM organization_members WHERE user_id IN (SELECT id FROM app_users WHERE email = $1)", [email]);
-      await cleanupClient.query("DELETE FROM organizations WHERE slug IN (SELECT o.slug FROM organizations o JOIN organization_members m ON m.organization_id = o.id JOIN app_users u ON u.id = m.user_id WHERE u.email = $1)", [email]);
+      await cleanupClient.query("DELETE FROM organizations WHERE name = $1", [organizationName]);
       await cleanupClient.query("DELETE FROM app_users WHERE email = $1", [email]);
       await cleanupClient.end();
     }
@@ -46,7 +46,7 @@ const suite = describe.skipIf(!databaseAvailable)("authentication routes against
       email,
       displayName: "Integration User",
       password,
-      organizationName: "Integration Shop",
+      organizationName,
     };
 
     const registerResponse = await app.fetch(new Request("https://api.example/auth/register", {

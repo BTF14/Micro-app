@@ -2,10 +2,17 @@ import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
 import { Client } from "pg";
 
 // In integration tests, exercise the real PostgreSQL protocol while keeping
-// production Workers on @neondatabase/serverless.
+// production Workers on @neondatabase/serverless. Adapt Neon’s string
+// constructor to node-postgres’ connection config constructor.
 vi.mock("@neondatabase/serverless", async () => {
   const postgres = await import("pg");
-  return { Client: postgres.Client };
+  return {
+    Client: class extends postgres.Client {
+      constructor(connectionString: string) {
+        super({ connectionString });
+      }
+    },
+  };
 });
 
 const appModule = await import("./index");

@@ -73,6 +73,8 @@ const suite = describe.skipIf(!databaseAvailable)("authentication routes against
     const registrationCookie = registerResponse.headers.get("set-cookie");
     expect(registrationCookie).toContain("microapp_session=");
     expect(registrationCookie).toContain("HttpOnly");
+    expect(registrationCookie).toContain("Secure");
+    expect(registrationCookie).toContain("SameSite=None");
 
     const counts = await cleanupClient.query<{ users: string; orgs: string; members: string; sessions: string }>(
       `SELECT
@@ -98,11 +100,19 @@ const suite = describe.skipIf(!databaseAvailable)("authentication routes against
     }), { DATABASE_URL: databaseUrl, FRONTEND_ORIGIN: frontendOrigin });
     expect(badLogin.status).toBe(401);
 
+    const staleRateLimitHash = "a".repeat(64);
+    await cleanupClient.query(
+      "INSERT INTO auth_rate_limits (key_hash, window_started_at, attempts, updated_at) VALUES ($1, now() - interval '2 days', 1, now() - interval '2 days') ON CONFLICT (key_hash) DO UPDATE SET updated_at = now() - interval '2 days'",
+      [staleRateLimitHash],
+    );
+
     const loginResponse = await app.fetch(new Request("https://api.example/auth/login", {
       method: "POST",
       headers: { ...originHeaders, "CF-Connecting-IP": crypto.randomUUID() },
       body: JSON.stringify({ email, password }),
     }), { DATABASE_URL: databaseUrl, FRONTEND_ORIGIN: frontendOrigin });
+    const staleRateLimit = await cleanupClient.query("SELECT 1 FROM auth_rate_limits WHERE key_hash = $1", [staleRateLimitHash]);
+    expect(staleRateLimit.rows).toHaveLength(0);
     expect(loginResponse.status).toBe(200);
     const loginCookie = loginResponse.headers.get("set-cookie");
     expect(loginCookie).toContain("microapp_session=");
@@ -124,6 +134,12 @@ const suite = describe.skipIf(!databaseAvailable)("authentication routes against
     await cleanupClient.query("UPDATE app_users SET is_active = true WHERE email = $1", [email]);
 
     await cleanupClient.query("UPDATE organization_members SET is_active = false WHERE user_id = (SELECT id FROM app_users WHERE email = $1)", [email]);
+    const noMembershipSession = await app.fetch(new Request("https://api.example/auth/me", {
+      headers: { Cookie: cookiePair },
+    }), { DATABASE_URL: databaseUrl, FRONTEND_ORIGIN: frontendOrigin });
+    expect(noMembershipSession.status).toBe(401);
+    expect(noMembershipSession.headers.get("set-cookie")).toContain("microapp_session=");
+
     const inactiveMembershipLogin = await app.fetch(new Request("https://api.example/auth/login", {
       method: "POST",
       headers: { ...originHeaders, "CF-Connecting-IP": crypto.randomUUID() },

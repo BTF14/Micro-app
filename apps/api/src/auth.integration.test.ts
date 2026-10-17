@@ -81,6 +81,8 @@ const suite = describe.skipIf(!databaseAvailable)("authentication routes against
     expect(registrationCookie).toContain("HttpOnly");
     expect(registrationCookie).toContain("Secure");
     expect(registrationCookie).toContain("SameSite=None");
+    expect(registrationCookie).toContain("Path=/");
+    expect(registrationCookie).toContain("Max-Age=604800");
 
     const counts = await cleanupClient.query<{ users: string; orgs: string; members: string; sessions: string }>(
       `SELECT
@@ -164,6 +166,25 @@ const suite = describe.skipIf(!databaseAvailable)("authentication routes against
       headers: { Cookie: cookiePair },
     }), { DATABASE_URL: databaseUrl, FRONTEND_ORIGIN: frontendOrigin });
     expect(revokedSessionResponse.status).toBe(401);
+
+    const secondLogin = await app.fetch(new Request("https://api.example/auth/login", {
+      method: "POST",
+      headers: { ...originHeaders, "CF-Connecting-IP": crypto.randomUUID() },
+      body: JSON.stringify({ email, password }),
+    }), { DATABASE_URL: databaseUrl, FRONTEND_ORIGIN: frontendOrigin });
+    expect(secondLogin.status).toBe(200);
+    const secondCookie = secondLogin.headers.get("set-cookie")!.split(";")[0]!;
+    const secondToken = secondCookie.slice("microapp_session=".length);
+    const tokenDigest = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(secondToken));
+    const tokenHash = Array.from(new Uint8Array(tokenDigest), (byte) => byte.toString(16).padStart(2, "0")).join("");
+    await cleanupClient.query(
+      "UPDATE auth_sessions SET created_at = now() - interval '2 days', expires_at = now() - interval '1 day' WHERE token_hash = $1",
+      [tokenHash],
+    );
+    const expiredSessionResponse = await app.fetch(new Request("https://api.example/auth/me", {
+      headers: { Cookie: secondCookie },
+    }), { DATABASE_URL: databaseUrl, FRONTEND_ORIGIN: frontendOrigin });
+    expect(expiredSessionResponse.status).toBe(401);
   });
 });
 

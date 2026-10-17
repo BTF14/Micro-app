@@ -33,7 +33,7 @@ app.notFound((c) =>
   c.json({ error: "NOT_FOUND", message: "Ruta no encontrada." }, 404),
 );
 
-app.onError((error, c) => {
+app.onError((_error, c) => {
   // Avoid leaking stack traces or secrets in client responses.
   // Keep internal exception details out of logs until a redacted logger is in place.
   console.error("Unhandled API error");

@@ -37,7 +37,6 @@ CREATE TABLE auth_sessions (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id uuid NOT NULL REFERENCES app_users(id) ON DELETE RESTRICT,
   token_hash char(64) NOT NULL UNIQUE CHECK (token_hash ~ '^[a-f0-9]{64}
-CREATE TABLE suppliers (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   organization_id uuid NOT NULL REFERENCES organizations(id) ON DELETE RESTRICT,
   name text NOT NULL CHECK (length(trim(name)) > 0),
@@ -211,7 +210,6 @@ CREATE INDEX auth_sessions_expiry_idx ON auth_sessions (expires_at);
 -- Store only hashes of rate-limit keys, never raw IP addresses or email addresses.
 CREATE TABLE auth_rate_limits (
   key_hash char(64) PRIMARY KEY CHECK (key_hash ~ '^[a-f0-9]{64}
-CREATE TABLE suppliers (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   organization_id uuid NOT NULL REFERENCES organizations(id) ON DELETE RESTRICT,
   name text NOT NULL CHECK (length(trim(name)) > 0),

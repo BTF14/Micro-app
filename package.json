@@ -1,0 +1,15 @@
+{
+  "name": "micro-app",
+  "private": true,
+  "version": "0.1.0",
+  "description": "Punto de venta e inventario independiente",
+  "scripts": {
+    "dev:web": "pnpm --filter @micro-app/web dev",
+    "dev:api": "pnpm --filter @micro-app/api dev",
+    "build": "pnpm --filter @micro-app/web build && pnpm --filter @micro-app/api typecheck",
+    "test": "pnpm --filter @micro-app/web test && pnpm --filter @micro-app/api typecheck"
+  },
+  "devDependencies": {
+    "typescript": "^5.9.3"
+  }
+}

@@ -158,6 +158,14 @@ export function isTrustedOrigin(origin: string | undefined, configuredOrigin: st
   if (!origin || !configuredOrigin) return false;
   try {
     const parsed = new URL(configuredOrigin);
+    const isLocalHttp =
+      parsed.protocol === "http:" &&
+      ["localhost", "127.0.0.1", "[::1]"].includes(parsed.hostname);
+
+    // Match the CORS policy: HTTPS everywhere except local development hosts.
+    if (parsed.protocol !== "https:" && !isLocalHttp) return false;
+    if (parsed.username || parsed.password) return false;
+    if (parsed.pathname !== "/" || parsed.search || parsed.hash) return false;
     return parsed.origin === configuredOrigin && origin === configuredOrigin;
   } catch {
     return false;

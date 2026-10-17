@@ -261,3 +261,16 @@ Keep questions limited to decisions that block safe progress. The user has alrea
 - Exercise registration atomicity, duplicate-email conflict, login success/failure, `/auth/me`, inactive user / inactive membership handling, logout revocation and database-error behavior. Add cleanup in workflow teardown and ensure the test database is ephemeral.
 - Keep PR #4 in draft until this suite passes and its scope/reliability are reviewed. Do not merge solely because the three existing workflows are green.
 - No migration has been applied to Neon main and no production deployment was performed.
+
+
+## Continuation checkpoint — 2026-10-17 (PostgreSQL auth route integration)
+
+- User confirmed the only hard constraint is **total cost $0** and authorized autonomous repository/code/workflow changes as needed. Prefer free disposable CI infrastructure; do not create paid resources or actions that can incur charges.
+- PR #4 remains open/draft and must not be merged until the newly added integration workflow is verified.
+- Added `apps/api/src/auth.integration.test.ts`: uses a real PostgreSQL client via Vitest's mock of the Neon client module, while production code remains on `@neondatabase/serverless`. The route-level flow exercises registration, atomic user/organization/membership/session creation, duplicate email, wrong and correct password, `/auth/me`, inactive user, inactive membership, logout and session revocation.
+- Updated `.github/workflows/ci.yml` to start a fresh PostgreSQL 18 service, apply `apps/api/migrations/0001_initial.sql`, install the PostgreSQL test driver into a temporary CI-only prefix (not added to production dependencies), and run the existing build/tests. This is intended to keep Neon and all non-CI databases untouched.
+- New commits in this continuation: `fd078c4f8c3659cd757c945bfa73de8688279a2e` (integration test initial), `f886244e71dfff78fc402a2e97e81bf9a09cc144` (fixture isolation), `a289a7df024cc806ac0bf8fe15f82cdc6f188cce` (CI workflow), `3b1e9c0dc7c85b09190b187aee70b20b287b63a9` (inactive user/membership coverage).
+- **Not yet verified:** this environment has not executed the repository's test commands locally. A workflow lookup by the workflow-file commit SHA returned no PR-triggered runs, so do not infer CI success. Verify the current PR head, inspect actual GitHub Actions runs/checks, and fix any workflow, TypeScript, or test failures before merging.
+- Known implementation tradeoff to review: the test-only `pg` / `@types/pg` packages are installed temporarily by CI rather than tracked in the pnpm lockfile. If CI confirms this is reliable, consider moving them into devDependencies with a properly regenerated lockfile in an environment that can run pnpm. Never hand-edit a fabricated lockfile.
+- Cleanup only deletes records belonging to the uniquely generated integration email / organization; rate-limit rows remain only in the ephemeral PostgreSQL service, which is destroyed after the CI job.
+- No paid service, Neon migration, or production deployment was performed as part of this work.

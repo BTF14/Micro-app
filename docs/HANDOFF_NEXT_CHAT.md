@@ -274,3 +274,9 @@ Keep questions limited to decisions that block safe progress. The user has alrea
 - Known implementation tradeoff to review: the test-only `pg` / `@types/pg` packages are installed temporarily by CI rather than tracked in the pnpm lockfile. If CI confirms this is reliable, consider moving them into devDependencies with a properly regenerated lockfile in an environment that can run pnpm. Never hand-edit a fabricated lockfile.
 - Cleanup only deletes records belonging to the uniquely generated integration email / organization; rate-limit rows remain only in the ephemeral PostgreSQL service, which is destroyed after the CI job.
 - No paid service, Neon migration, or production deployment was performed as part of this work.
+
+
+### Follow-up to integration test wiring
+
+- The API unit-test script now excludes `*.integration.test.ts`, and `apps/api/tsconfig.json` excludes that test file from the regular typecheck because its driver is installed only in the CI job. The CI workflow runs the PostgreSQL integration test explicitly after build/unit tests.
+- The latest branch head at this checkpoint is `a94d75250397635dd0bce256eb450cdf648253ca`. CI run [39060063158](https://github.com/BTF14/Micro-app/actions/runs/39060063158), migration validation [39060063145](https://github.com/BTF14/Micro-app/actions/runs/39060063145), and security scan [39060063157](https://github.com/BTF14/Micro-app/actions/runs/39060063157) were observed in progress/queued at last check; none should be described as passing yet. Re-query them against the final current head.

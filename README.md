@@ -52,7 +52,9 @@ No se usará Vercel Hobby como alojamiento objetivo de la operación: sus térmi
 - [x] Alcance y reglas iniciales documentados.
 - [ ] Diseño visual final seleccionado.
 - [x] Decisión inicial de arquitectura gratuita documentada.
-- [ ] Arquitectura ejecutable y migraciones implementadas.
-- [ ] Aplicación, pruebas y preview desplegados.
+- [x] Esqueleto inicial de frontend React/Vite y API Hono/Workers.
+- [x] CI inicial: compilación, revisión de tipos y prueba de pantalla pasan en GitHub Actions.
+- [ ] Proyecto PostgreSQL independiente creado; la conexión actual de Neon bloquea crear proyectos desde esta integración.
+- [ ] Migraciones, autenticación, funciones de negocio y preview desplegados.
 
 El estado se actualizará a partir de trabajo verificable, no de estimaciones optimistas.

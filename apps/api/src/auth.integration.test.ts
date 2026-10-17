@@ -109,6 +109,22 @@ const suite = describe.skipIf(!databaseAvailable)("authentication routes against
     expect(me.user.email).toBe(email);
     expect(me.organizations).toHaveLength(1);
 
+    await cleanupClient.query("UPDATE app_users SET is_active = false WHERE email = $1", [email]);
+    const inactiveUserSession = await app.fetch(new Request("https://api.example/auth/me", {
+      headers: { Cookie: cookiePair },
+    }), { DATABASE_URL: databaseUrl, FRONTEND_ORIGIN: frontendOrigin });
+    expect(inactiveUserSession.status).toBe(401);
+    await cleanupClient.query("UPDATE app_users SET is_active = true WHERE email = $1", [email]);
+
+    await cleanupClient.query("UPDATE organization_members SET is_active = false WHERE user_id = (SELECT id FROM app_users WHERE email = $1)", [email]);
+    const inactiveMembershipLogin = await app.fetch(new Request("https://api.example/auth/login", {
+      method: "POST",
+      headers: { ...originHeaders, "CF-Connecting-IP": crypto.randomUUID() },
+      body: JSON.stringify({ email, password }),
+    }), { DATABASE_URL: databaseUrl, FRONTEND_ORIGIN: frontendOrigin });
+    expect(inactiveMembershipLogin.status).toBe(401);
+    await cleanupClient.query("UPDATE organization_members SET is_active = true WHERE user_id = (SELECT id FROM app_users WHERE email = $1)", [email]);
+
     const logoutResponse = await app.fetch(new Request("https://api.example/auth/logout", {
       method: "POST",
       headers: { Origin: frontendOrigin, Cookie: cookiePair },

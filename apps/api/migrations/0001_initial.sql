@@ -81,7 +81,7 @@ CREATE INDEX sales_status_idx ON sales (status, created_at DESC);
 
 CREATE TABLE sale_items (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-  sale_id uuid NOT NULL REFERENCES sales(id) ON DELETE CASCADE,
+  sale_id uuid NOT NULL REFERENCES sales(id) ON DELETE RESTRICT,
   product_id uuid REFERENCES products(id) ON DELETE RESTRICT,
   product_name_snapshot text NOT NULL CHECK (length(trim(product_name_snapshot)) > 0),
   sku_snapshot text NOT NULL,

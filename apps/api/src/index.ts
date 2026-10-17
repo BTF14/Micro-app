@@ -35,7 +35,8 @@ app.notFound((c) =>
 
 app.onError((error, c) => {
   // Avoid leaking stack traces or secrets in client responses.
-  console.error("Unhandled API error", error.message);
+  // Keep internal exception details out of logs until a redacted logger is in place.
+  console.error("Unhandled API error");
   return c.json(
     { error: "INTERNAL_ERROR", message: "Ocurrió un error inesperado." },
     500,

@@ -28,11 +28,16 @@ export async function withDatabaseClient<Result>(
   operation: (client: DatabaseClient) => Promise<Result>,
   createClient: DatabaseClientFactory = createNeonClient,
 ): Promise<Result> {
-  if (!isDatabaseUrlConfigured(databaseUrl)) {
+  const validatedDatabaseUrl =
+    typeof databaseUrl === "string" && isDatabaseUrlConfigured(databaseUrl)
+      ? databaseUrl
+      : undefined;
+
+  if (!validatedDatabaseUrl) {
     throw new Error("Database configuration is missing or invalid.");
   }
 
-  const client = createClient(databaseUrl);
+  const client = createClient(validatedDatabaseUrl);
   let operationFailed = false;
 
   try {

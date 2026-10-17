@@ -220,3 +220,27 @@ The current UI is a placeholder. No visual direction has been selected. Do not a
 ## What to tell the user if a decision is needed
 
 Keep questions limited to decisions that block safe progress. The user has already authorized continuing code work and pushing commits when safe; do not repeatedly ask for permission to do ordinary reversible development. The user has **not** authorized the Neon primary migration. Do not ask them to redo connections they already completed unless a concrete missing permission or configuration is demonstrated.
+
+## Actual continuation — 2026-10-17 (follow-up)
+
+### Verified live state during this session
+
+- PR #4 remains open, draft, not merged; GitHub reports head branch `feat/auth-session-foundation`, current head SHA at initial inspection `3a6a278d5825bee2eb52ba7a273154fb6e0d1862`, base `main`.
+- Live PR Actions for that inspected SHA: CI run [39024131468](https://github.com/BTF14/Micro-app/actions/runs/39024131468), database migration validation [39024131467](https://github.com/BTF14/Micro-app/actions/runs/39024131467), and security scan [39024131489](https://github.com/BTF14/Micro-app/actions/runs/39024131489) all completed successfully. These results do **not** validate commits pushed later in this session.
+- PR is still draft and should not be merged until the required PostgreSQL-backed authentication integration coverage and follow-up checks are complete.
+
+### Changes pushed in this continuation
+
+- Commit `a7426aaf21eab91e1c38b6f8223600009b2b515e`: password-hash verification now catches malformed Base64/crypto input and fails closed as invalid credentials rather than allowing malformed stored values to throw; salt and derived-hash lengths and canonical Base64URL encoding are validated.
+- Commit `22bf188d6f2e008ca0195b849de80fc00f430e85`: tests now cover malformed Base64URL values and incorrect salt length.
+- Logout now clears the browser cookie only after database revocation succeeds. If revocation fails, it returns a generic 500 and leaves the cookie intact so the client can retry; no false success is reported.
+- The newest commits still require Actions verification. A workflow lookup for the first security-fix commit returned no PR-triggered runs at that moment; this is not proof that checks passed or that all workflows were evaluated.
+
+### Still blocking PR #4
+
+- PostgreSQL integration tests must exercise register/login/session/logout, revocation, inactive users and membership behavior against a disposable PostgreSQL instance. Do not use Neon primary.
+- Inspect the newest Actions runs/checks against the current branch head before treating validation as complete.
+- Review and test rate-limit row retention/cleanup and session expiration cleanup.
+- Reassess cookie `Secure`/`SameSite` behavior once frontend/API deployment origins are selected.
+- Do not merge or deploy production while these remain unresolved.
+

@@ -30,6 +30,41 @@ describe("Micro app API scaffold", () => {
     );
   });
 
+  it("rejects a configured URL that contains a path", async () => {
+    const response = await app.request(
+      "/health",
+      { headers: { Origin: "https://micro-app.pages.dev" } },
+      { FRONTEND_ORIGIN: "https://micro-app.pages.dev/dashboard" },
+    );
+    expect(response.status).toBe(200);
+    expect(response.headers.get("access-control-allow-origin")).not.toBe(
+      "https://micro-app.pages.dev",
+    );
+  });
+
+  it("rejects insecure non-local frontend origins", async () => {
+    const response = await app.request(
+      "/health",
+      { headers: { Origin: "http://micro-app.example" } },
+      { FRONTEND_ORIGIN: "http://micro-app.example" },
+    );
+    expect(response.status).toBe(200);
+    expect(response.headers.get("access-control-allow-origin")).not.toBe(
+      "http://micro-app.example",
+    );
+  });
+
+  it("allows local HTTP origins for development", async () => {
+    const response = await app.request(
+      "/health",
+      { headers: { Origin: "http://localhost:5173" } },
+      { FRONTEND_ORIGIN: "http://localhost:5173" },
+    );
+    expect(response.headers.get("access-control-allow-origin")).toBe(
+      "http://localhost:5173",
+    );
+  });
+
   it("allows CORS only for the configured frontend origin", async () => {
     const allowed = await app.request(
       "/health",

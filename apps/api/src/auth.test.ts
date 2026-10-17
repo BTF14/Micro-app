@@ -37,5 +37,10 @@ describe("trusted frontend origin", () => {
     expect(isTrustedOrigin(undefined, "https://micro-app.pages.dev")).toBe(false);
     expect(isTrustedOrigin("https://micro-app.pages.dev", undefined)).toBe(false);
     expect(isTrustedOrigin("https://micro-app.pages.dev/path", "https://micro-app.pages.dev")).toBe(false);
+    expect(isTrustedOrigin("http://attacker.example", "http://attacker.example")).toBe(false);
+    expect(isTrustedOrigin("http://localhost:3000", "http://localhost:3000")).toBe(true);
+    expect(isTrustedOrigin("http://127.0.0.1:5173", "http://127.0.0.1:5173")).toBe(true);
+    expect(isTrustedOrigin("http://[::1]:5173", "http://[::1]:5173")).toBe(true);
+    expect(isTrustedOrigin("https://micro-app.pages.dev", "https://user:pass@micro-app.pages.dev")).toBe(false);
   });
 });

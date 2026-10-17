@@ -9,6 +9,7 @@
     "test": "vitest run"
   },
   "dependencies": {
+    "@neondatabase/serverless": "^1.2.0",
     "hono": "^4.9.8"
   },
   "devDependencies": {

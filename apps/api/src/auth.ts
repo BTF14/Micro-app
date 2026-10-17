@@ -1,7 +1,9 @@
 import { deleteCookie, getCookie, setCookie } from "hono/cookie";
-import type { Hono } from "hono";
+import type { Context, Hono } from "hono";
 import { withDatabaseClient, withDatabaseTransaction, type DatabaseClient } from "./database";
 import type { Bindings } from "./bindings";
+
+type AppContext = Context<{ Bindings: Bindings }>;
 
 const SESSION_COOKIE = "microapp_session";
 const SESSION_TTL_SECONDS = 7 * 24 * 60 * 60;
@@ -121,7 +123,7 @@ function createSessionToken(): string {
   return encodeBase64Url(crypto.getRandomValues(new Uint8Array(32)));
 }
 
-function setSessionCookie(c: Parameters<Parameters<Hono<{ Bindings: Bindings }>["post"]>[1]>[0], token: string): void {
+function setSessionCookie(c: AppContext, token: string): void {
   const isHttps = new URL(c.req.url).protocol === "https:";
   setCookie(c, SESSION_COOKIE, token, {
     httpOnly: true,
@@ -132,7 +134,7 @@ function setSessionCookie(c: Parameters<Parameters<Hono<{ Bindings: Bindings }>[
   });
 }
 
-function clearSessionCookie(c: Parameters<Parameters<Hono<{ Bindings: Bindings }>["post"]>[1]>[0]): void {
+function clearSessionCookie(c: AppContext): void {
   const isHttps = new URL(c.req.url).protocol === "https:";
   deleteCookie(c, SESSION_COOKIE, {
     path: "/",

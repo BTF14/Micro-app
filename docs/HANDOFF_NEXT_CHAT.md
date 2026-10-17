@@ -243,4 +243,21 @@ Keep questions limited to decisions that block safe progress. The user has alrea
 - Review and test rate-limit row retention/cleanup and session expiration cleanup.
 - Reassess cookie `Secure`/`SameSite` behavior once frontend/API deployment origins are selected.
 - Do not merge or deploy production while these remain unresolved.
+## Continuation checkpoint — 2026-10-17 (live recheck)
 
+### Latest verified GitHub state
+
+- Re-queried PR #4: open, draft, not merged; head `feat/auth-session-foundation`, SHA `b46384d21ad757b640882cd73b908b3dbc7025fe`, base `main`.
+- The latest SHA now has all three PR-triggered workflows completed successfully:
+  - [CI #49 / run 39059407741](https://github.com/BTF14/Micro-app/actions/runs/39059407741): install, build/typecheck and unit tests passed.
+  - [Database migration validation #14 / run 39059407765](https://github.com/BTF14/Micro-app/actions/runs/39059407765): disposable PostgreSQL service started, initial schema applied, cross-tenant constraint assertions passed, service stopped.
+  - [Security scan #56 / run 39059407735](https://github.com/BTF14/Micro-app/actions/runs/39059407735): Trivy filesystem/configuration scan passed.
+- These checks validate the current SHA. The PostgreSQL workflow still validates schema/migration and tenant constraints only; it does **not** exercise the HTTP authentication flows end-to-end.
+
+### Current integration-test gap / next task
+
+- `apps/api/package.json` currently uses Vitest and `@neondatabase/serverless`; the API database helper instantiates the Neon serverless client directly. The existing disposable PostgreSQL workflow does not yet run authentication route tests against PostgreSQL.
+- Next engineering task: introduce a clean, test-only database-client injection seam and use a Node-compatible PostgreSQL driver in dev/test dependencies (with lockfile updated via pnpm), then create a Vitest integration suite that runs against a disposable PostgreSQL service in GitHub Actions. Do not point this suite at Neon or any developer/production database. Keep production Workers using the existing Neon client.
+- Exercise registration atomicity, duplicate-email conflict, login success/failure, `/auth/me`, inactive user / inactive membership handling, logout revocation and database-error behavior. Add cleanup in workflow teardown and ensure the test database is ephemeral.
+- Keep PR #4 in draft until this suite passes and its scope/reliability are reviewed. Do not merge solely because the three existing workflows are green.
+- No migration has been applied to Neon main and no production deployment was performed.

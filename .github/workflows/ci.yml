@@ -56,5 +56,7 @@ jobs:
         run: docker exec "${{ job.services.postgres.id }}" psql -v ON_ERROR_STOP=1 -U microapp -d microapp_test -f /dev/stdin < apps/api/migrations/0001_initial.sql
       - name: Build and typecheck
         run: pnpm build
-      - name: Unit and integration tests
+      - name: Unit tests
         run: pnpm test
+      - name: PostgreSQL auth integration tests
+        run: pnpm --filter @micro-app/api exec vitest run src/auth.integration.test.ts

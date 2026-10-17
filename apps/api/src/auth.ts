@@ -117,31 +117,39 @@ export async function verifyPassword(password: string, encoded: string | null): 
     return false;
   }
 
-  const key = await crypto.subtle.importKey(
-    "raw",
-    new TextEncoder().encode(password),
-    "PBKDF2",
-    false,
-    ["deriveBits"],
-  );
-  const actual = new Uint8Array(await crypto.subtle.deriveBits(
-    {
-      name: "PBKDF2",
-      salt: decodeBase64Url(saltText),
-      iterations,
-      hash: "SHA-256",
-    },
-    key,
-    256,
-  ));
-  const expected = decodeBase64Url(expectedText);
-  if (actual.length !== expected.length) return false;
+  try {
+    const salt = decodeBase64Url(saltText);
+    const expected = decodeBase64Url(expectedText);
+    // Reject non-canonical or malformed encodings before deriving a key.
+    if (salt.length !== 16 || expected.length !== 32 ||
+        encodeBase64Url(salt) !== saltText || encodeBase64Url(expected) !== expectedText) {
+      await hashPassword(password);
+      return false;
+    }
 
-  let difference = 0;
-  for (let index = 0; index < actual.length; index += 1) {
-    difference |= actual[index] ^ expected[index];
+    const key = await crypto.subtle.importKey(
+      "raw",
+      new TextEncoder().encode(password),
+      "PBKDF2",
+      false,
+      ["deriveBits"],
+    );
+    const actual = new Uint8Array(await crypto.subtle.deriveBits(
+      { name: "PBKDF2", salt, iterations, hash: "SHA-256" },
+      key,
+      256,
+    ));
+
+    let difference = 0;
+    for (let index = 0; index < actual.length; index += 1) {
+      difference |= actual[index] ^ expected[index];
+    }
+    return difference === 0 && encoded !== null;
+  } catch {
+    // A corrupt stored hash is invalid credentials, never an uncaught 500.
+    await hashPassword(password);
+    return false;
   }
-  return difference === 0 && encoded !== null;
 }
 
 export function isTrustedOrigin(origin: string | undefined, configuredOrigin: string | undefined): boolean {
@@ -406,8 +414,10 @@ export function registerAuthRoutes(app: Hono<{ Bindings: Bindings }>): void {
     }
 
     const token = getCookie(c, SESSION_COOKIE);
-    clearSessionCookie(c);
-    if (!token || token.length > 128) return c.body(null, 204);
+    if (!token || token.length > 128) {
+      clearSessionCookie(c);
+      return c.body(null, 204);
+    }
 
     try {
       const tokenHash = await sha256Hex(token);
@@ -417,8 +427,11 @@ export function registerAuthRoutes(app: Hono<{ Bindings: Bindings }>): void {
           [tokenHash],
         );
       });
+      // Only clear the client cookie after the server confirms revocation.
+      clearSessionCookie(c);
       return c.body(null, 204);
     } catch {
+      // Keep the cookie so the client can retry; do not disguise a failed revocation.
       return c.json({ error: "LOGOUT_FAILED", message: "No se pudo cerrar la sesión de forma segura." }, 500);
     }
   });

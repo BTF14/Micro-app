@@ -7,13 +7,32 @@ type Bindings = {
 
 const app = new Hono<{ Bindings: Bindings }>();
 
+function getConfiguredFrontendOrigin(value: string | undefined): string | undefined {
+  if (!value) return undefined;
+
+  try {
+    const url = new URL(value);
+    const isLocalHttp =
+      url.protocol === "http:" &&
+      ["localhost", "127.0.0.1", "[::1]"].includes(url.hostname);
+
+    if (url.protocol !== "https:" && !isLocalHttp) return undefined;
+    if (url.username || url.password) return undefined;
+    if (url.pathname !== "/" || url.search || url.hash) return undefined;
+    if (url.origin !== value) return undefined;
+
+    return url.origin;
+  } catch {
+    return undefined;
+  }
+}
+
 app.use(
   "*",
   cors({
     origin: (_origin, c) => {
-      // Hono's test request helper may omit the environment bindings.
-      // Missing configuration must fail closed without breaking public routes.
-      const configuredOrigin = c.env?.FRONTEND_ORIGIN;
+      // Missing or malformed configuration must fail closed without breaking public routes.
+      const configuredOrigin = getConfiguredFrontendOrigin(c.env?.FRONTEND_ORIGIN);
       if (!configuredOrigin) return "";
       return _origin === configuredOrigin ? configuredOrigin : "";
     },

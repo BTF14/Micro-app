@@ -54,7 +54,9 @@ No se usará Vercel Hobby como alojamiento objetivo de la operación: sus térmi
 - [x] Decisión inicial de arquitectura gratuita documentada.
 - [x] Esqueleto inicial de frontend React/Vite y API Hono/Workers.
 - [x] CI inicial: compilación, revisión de tipos y prueba de pantalla pasan en GitHub Actions.
-- [ ] Proyecto PostgreSQL independiente creado; la conexión actual de Neon bloquea crear proyectos desde esta integración.
+- [x] Proyecto PostgreSQL independiente `micro-app-db` creado en la organización Neon propia de Micro app.
+- [x] Esquema SQL inicial versionado y probado en una rama temporal aislada; su aplicación a la rama principal queda pendiente de revisión y autorización.
+- [ ] Conexión de API a Neon y ejecución automatizada de migraciones.
 - [ ] Migraciones, autenticación, funciones de negocio y preview desplegados.
 
 El estado se actualizará a partir de trabajo verificable, no de estimaciones optimistas.

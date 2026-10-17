@@ -17,13 +17,14 @@ La migración versionada `apps/api/migrations/0001_initial.sql` establece el esq
 ## Invariantes que la API debe cumplir
 
 1. Crear la venta, insertar sus líneas y pagos, descontar existencias, registrar movimientos y completar la venta dentro de una única transacción.
-2. Usar `idempotency_key` para que reintentos no generen ventas duplicadas.
-3. Bloquear las filas de productos y validar las cantidades dentro de la transacción; una venta no puede dejar stock negativo.
-4. Calcular los importes en el servidor y usar `NUMERIC`/decimales, nunca `float` de JavaScript para dinero.
-5. Guardar snapshots de precio, costo y tasa; los cambios futuros de catálogo o tasa no reescriben ventas anteriores.
-6. No borrar movimientos de inventario para corregirlos: añadir un ajuste o reverso con motivo y usuario.
-7. Aplicar autorización en cada endpoint. La columna `role` por sí sola no implementa seguridad.
-8. Marcar la tasa como desactualizada en la lógica de servicio sin sustituir la última tasa válida por respuestas inválidas.
+2. La base de datos verifica que `total_usd = subtotal_usd - discount_usd`; una venta completada requiere fecha de finalización y una tasa identificada y capturada.
+3. Usar `idempotency_key` para que reintentos no generen ventas duplicadas.
+4. Bloquear las filas de productos y validar las cantidades dentro de la transacción; una venta no puede dejar stock negativo.
+5. Calcular los importes en el servidor y usar `NUMERIC`/decimales, nunca `float` de JavaScript para dinero.
+6. Guardar snapshots de precio, costo y tasa; los cambios futuros de catálogo o tasa no reescriben ventas anteriores.
+7. No borrar movimientos de inventario para corregirlos: añadir un ajuste o reverso con motivo y usuario.
+8. Aplicar autorización en cada endpoint. La columna `role` por sí sola no implementa seguridad.
+9. Marcar la tasa como desactualizada en la lógica de servicio sin sustituir la última tasa válida por respuestas inválidas.
 
 ## Migraciones y conexión
 

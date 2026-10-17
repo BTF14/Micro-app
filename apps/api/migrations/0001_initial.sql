@@ -73,7 +73,8 @@ CREATE TABLE sales (
   created_at timestamptz NOT NULL DEFAULT now(),
   completed_at timestamptz,
   CHECK (discount_usd <= subtotal_usd),
-  CHECK (status <> 'completed' OR (completed_at IS NOT NULL AND exchange_rate_snapshot IS NOT NULL AND total_ves_snapshot IS NOT NULL))
+  CHECK (total_usd = subtotal_usd - discount_usd),
+  CHECK (status <> 'completed' OR (completed_at IS NOT NULL AND exchange_rate_id IS NOT NULL AND exchange_rate_snapshot IS NOT NULL AND total_ves_snapshot IS NOT NULL))
 );
 CREATE INDEX sales_created_at_idx ON sales (created_at DESC);
 CREATE INDEX sales_status_idx ON sales (status, created_at DESC);

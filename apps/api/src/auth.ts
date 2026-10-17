@@ -97,7 +97,7 @@ export async function hashPassword(password: string): Promise<string> {
     key,
     256,
   );
-  return `pbkdf2-sha256${PBKDF2_ITERATIONS}${encodeBase64Url(salt)}${encodeBase64Url(new Uint8Array(bits))}`;
+  return ["pbkdf2-sha256", String(PBKDF2_ITERATIONS), encodeBase64Url(salt), encodeBase64Url(new Uint8Array(bits))].join("$");
 }
 
 export async function verifyPassword(password: string, encoded: string | null): Promise<boolean> {

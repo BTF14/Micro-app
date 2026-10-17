@@ -1,0 +1,7 @@
+name = "micro-app-api"
+main = "src/index.ts"
+compatibility_date = "2026-10-17"
+
+[vars]
+# Set FRONTEND_ORIGIN in the deployment environment; never use wildcard CORS in production.
+# FRONTEND_ORIGIN = "https://your-free-pages-subdomain.pages.dev"

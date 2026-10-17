@@ -2,30 +2,19 @@ import { describe, expect, it } from "vitest";
 import { renderToStaticMarkup } from "react-dom/server";
 import App from "./App";
 
-describe("Micro app dashboard shell", () => {
-  it("identifies the product and its main planned modules", () => {
+describe("Micro app authentication screen", () => {
+  it("shows the sign-in form and a way to create an account", () => {
     const html = renderToStaticMarkup(<App />);
-
-    expect(html).toContain("micro app");
-    expect(html).toContain("Caja y ventas");
-    expect(html).toContain("Inventario");
-    expect(html).toContain("Productos");
-    expect(html).toContain("Tasa BCV");
+    expect(html).toContain("Inicia sesión");
+    expect(html).toContain('id="email"');
+    expect(html).toContain('id="password"');
+    expect(html).toContain("Crear cuenta");
   });
 
-  it("clearly states that real commercial data is not connected yet", () => {
+  it("does not present demo credentials or pretend a session exists", () => {
     const html = renderToStaticMarkup(<App />);
-
-    expect(html).toContain("Sin datos comerciales conectados");
-    expect(html).toContain("Aún no se guardan ventas ni productos reales.");
-    expect(html).toContain('aria-disabled="true"');
-  });
-
-  it("labels the screen as a development environment", () => {
-    const html = renderToStaticMarkup(<App />);
-
-    expect(html).toContain("Entorno de desarrollo");
-    expect(html).toContain("Pendiente de implementación");
-    expect(html).toContain("Pendiente de integración");
+    expect(html).toContain("No se crean cuentas de demostración");
+    expect(html).toContain("El acceso necesita que la API esté configurada");
+    expect(html).not.toContain("Sesión activa");
   });
 });

@@ -76,6 +76,8 @@ async function checkRateLimits(
   email: string | undefined,
 ): Promise<boolean> {
   return withDatabaseClient(databaseUrl, async (client) => {
+    // Opportunistic retention: keep the table bounded without a separate scheduler.
+    await client.query("DELETE FROM auth_rate_limits WHERE updated_at < now() - interval '24 hours'");
     const ipAllowed = await consumeRateLimit(client, `${route}:ip:${ip}`, route === "register" ? 5 : 15);
     if (!ipAllowed) return false;
     if (!email) return true;
@@ -396,6 +398,7 @@ export function registerAuthRoutes(app: Hono<{ Bindings: Bindings }>): void {
             ORDER BY o.name`,
           [user.id],
         );
+        if (memberships.rows.length === 0) return null;
         return { user, organizations: memberships.rows };
       });
       if (!result) {

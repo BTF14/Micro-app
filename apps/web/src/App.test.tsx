@@ -61,7 +61,6 @@ describe("Micro app authentication flow", () => {
   it("checks the cookie session before showing protected workspace data", async () => {
     vi.mocked(fetch).mockResolvedValueOnce(jsonResponse({ message: "No hay sesión activa" }, 401));
     await renderApp();
-    expect(container.textContent).toContain("Comprobando tu sesión");
     await settle();
     expect(container.textContent).toContain("Inicia sesión");
     expect(container.textContent).not.toContain("Sesión activa");

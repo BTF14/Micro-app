@@ -22,13 +22,14 @@ jobs:
         uses: actions/checkout@v4
 
       # Initial baseline is non-blocking while findings and lockfile coverage
-      # are reviewed. Do not scan container images: this app targets Workers.
+      # are reviewed. Includes secret detection. Do not scan container images:
+      # this app targets Workers.
       - name: Scan repository with Trivy
         uses: aquasecurity/trivy-action@v0.36.0
         with:
           scan-type: fs
           scan-ref: .
-          scanners: vuln,misconfig
+          scanners: vuln,misconfig,secret
           severity: HIGH,CRITICAL
           format: table
           exit-code: '0'

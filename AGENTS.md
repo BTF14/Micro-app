@@ -3,7 +3,8 @@
 ## Required startup sequence
 
 Before planning or editing:
-1. Read `docs/HANDOFF_NEXT_CHAT.md` for the latest verified checkpoint and copyable continuation prompt.
+1. Read `docs/CURRENT_STATE.md` first; it is the authoritative concise live-state checkpoint and supersedes stale SHA/status snapshots in historical documents. Re-verify GitHub live before acting.
+2. Read `docs/HANDOFF_NEXT_CHAT.md` for the continuation protocol and copyable prompt.
 2. Read `docs/PROJECT_PLAN.md`, `docs/STATE_JOURNAL.md`, `docs/RESOURCE_REGISTRY.md`, and `docs/GENTLEMAN_PROGRAMMING_EVALUATION.md`.
 3. Read the domain-specific documents relevant to the change (architecture, database schema/review, API integration, security plan, compliance, inspiration).
 4. Verify live GitHub state: current `main` SHA, branch heads, pull requests, and GitHub Actions for the exact SHA. Historical documentation is a lead, not proof of current state.

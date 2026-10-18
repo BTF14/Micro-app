@@ -1,7 +1,7 @@
 # Spec: Google Sign-In y allowlist
 
 - Estado: propuesta
-- Issue/PR: pendiente de crear
+- Issue/PR: PR #12 (propuesta documental)
 - Responsable/revisor: coordinador; revisión independiente de seguridad pendiente
 - Fecha: 2026-10-18
 - Riesgo: alto

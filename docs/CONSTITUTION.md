@@ -29,8 +29,12 @@ Micro app es un POS e inventario web para PC, tablet y móvil: catálogo/código
 
 ## 3. Seguridad y autoridad
 
-- Neon `main`: **solo lectura**. No ejecutar SQL mutante ni migraciones allí; usar PostgreSQL efímero o rama aislada.
-- No desplegar producción ni hacer cambios irreversibles sin aceptación explícita.
+- Neon `main` es una base sensible de producción, no una zona permanentemente de solo lectura. La IA puede modificarla cuando el cambio sea realmente necesario para corregir un defecto, aplicar una evolución aprobada o mantener la integridad/seguridad del producto, y solo después de superar el gate de cambio en producción definido abajo.
+- Antes de mutar Neon `main`: (1) confirmar la identidad del proyecto, base y rama destino sin exponer credenciales; (2) documentar necesidad, alcance e impacto; (3) probar la migración/SQL en PostgreSQL efímero o rama aislada siempre que sea viable; (4) revisar SQL, dependencias, locks, compatibilidad y estrategia de despliegue; (5) comprobar que existe una recuperación realista y verificar la copia de seguridad/restauración cuando sea viable; (6) preferir cambios aditivos, compatibles y reversibles; (7) registrar aprobación/autoridad, plan, ejecución y resultado en el diario.
+- La IA puede ejecutar autónomamente cambios aditivos, compatibles y de bajo riesgo solo si el objetivo está inequívocamente identificado, la necesidad está demostrada, las pruebas previas pasan y existe recuperación comprobada. No ejecutar si hay duda sobre el destino, los datos afectados, el respaldo o el impacto.
+- Requieren aprobación explícita previa del usuario: borrar o sobrescribir datos, migraciones destructivas, cambios irreversibles o de difícil reversión, modificaciones masivas de datos financieros/inventario/usuarios, cambios de permisos/credenciales, acciones con riesgo material de indisponibilidad, o cualquier cambio cuyo impacto no pueda determinarse con confianza.
+- Después de cada mutación autorizada: validar esquema/datos/constraints y salud de la aplicación, registrar SHA, migración/SQL, destino (sin secretos), pruebas y resultado; detener nuevas mutaciones si aparece una anomalía y activar el plan de recuperación.
+- No desplegar producción ni hacer otros cambios irreversibles sin aceptación explícita. La autorización para mantener el proyecto no equivale a autorización ilimitada para destruir o alterar datos.
 - No publicar secretos, tokens, contraseñas, cadenas de conexión, datos de clientes ni datos de negocio.
 - No enviar correos sin autorización expresa.
 - No force-push ni fusionar ramas sin revisar el diff completo, conflictos, pruebas y procedencia.

@@ -184,3 +184,13 @@ Este diario es append-only en cuanto a historia: no borrar hitos antiguos; añad
 - El backup diario externo cifrado, la alerta de fallos y la restauración aislada siguen pendientes. No considerar la política documental como evidencia de ejecución.
 - Revisión de continuidad: `feat/neon-transaction-adapter` tiene 14 commits por delante y 31 detrás de `main`; `apps/api/src/database.ts` ya está presente en `main` y coincide con la versión revisada en esa rama. No fusionar rama divergida; inspeccionar/rescatar solo cambios exclusivos que sigan siendo necesarios.
 - Próxima prioridad: requisito P0 Google Sign-In + allowlist. PR #12 es diseño solamente y decisiones D1–D8 siguen abiertas; no implementar OAuth ni inventar reglas de acceso antes de resolverlas.
+
+
+## 2026-10-18 — PR #16 fusionada; revisión de autenticación documentada
+
+- PR [#16](https://github.com/BTF14/Micro-app/pull/16) fusionada por squash; merge SHA `8f3a0316519dd39aded179bb234de316c83bb8ee`.
+- Se añadió `docs/reviews/AUTHENTICATION_AUTHORIZATION_GAP_REVIEW_2026-10-18.md`, revisión estática de controles actuales, brechas y secuencia de aceptación. No se cambió código de autenticación, base de datos, secretos ni despliegue.
+- Checks del HEAD exacto `e52033d15c4f37ac862d44a5f06097642a95d75d`: CI, Playwright E2E, validación de migraciones, Semgrep, Security scan y dashboard, todos `success`. CI: https://github.com/BTF14/Micro-app/actions/runs/39110161670 ; E2E: https://github.com/BTF14/Micro-app/actions/runs/39110161665 ; migraciones: https://github.com/BTF14/Micro-app/actions/runs/39110161643 ; Semgrep: https://github.com/BTF14/Micro-app/actions/runs/39110161698 ; seguridad: https://github.com/BTF14/Micro-app/actions/runs/39110161635 ; dashboard: https://github.com/BTF14/Micro-app/actions/runs/39110161660.
+- P0: el registro crea una organización y asigna rol `owner` sin allowlist; no se encontró Google OAuth/allowlist en `apps/api/src/auth.ts`. Es revisión estática, no prueba dinámica ni pentest.
+- PR #12 está fusionada como diseño SDD, SHA `a28bbc686c7b1cb9cbe615ef5bcb9c7ece45ede3`; D1–D8 siguen pendientes. No implementar OAuth ni reglas de acceso por suposición.
+- Sin cambios en Neon, credenciales, datos reales o producción. Backup externo automático y restauración real siguen sin estar configurados/verificados.

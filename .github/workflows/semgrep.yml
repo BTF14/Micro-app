@@ -1,0 +1,40 @@
+name: Semgrep SAST
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: micro-app-semgrep-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  semgrep:
+    name: JavaScript and TypeScript static analysis
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install Semgrep Community CLI
+        run: python -m pip install --disable-pip-version-check semgrep
+      - name: Scan source and write SARIF report
+        run: semgrep scan --config p/javascript --config p/typescript --sarif --output semgrep.sarif .
+      - name: Upload SARIF report as an artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: semgrep-sarif-${{ github.run_id }}
+          path: semgrep.sarif
+          if-no-files-found: ignore
+          retention-days: 7

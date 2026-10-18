@@ -349,3 +349,14 @@ PR [#9](https://github.com/BTF14/Micro-app/pull/9) está fusionado en `main` med
 - Empezar con laboratorio o entorno efímero autorizado y datos sintéticos. No apuntar a producción, Neon main ni sistemas de terceros.
 - Requiere Docker y un proveedor de modelo de lenguaje. Verificar coste total de $0, aislamiento y manejo de informes antes de ejecutarlo; no habilitar facturación ni añadirlo a CI hasta una evaluación separada.
 - Estado: documentado para evaluación, aún no instalado ni ejecutado. Resolver primero el bloqueo P0 de autenticación/allowlist y preparar pruebas con PostgreSQL efímero.
+
+
+## Continuidad verificada — PR #19/#20 y handoff (2026-10-18)
+
+- HEAD de `main` consultado: `1228a43cb4bc5e1ef8aabb548b034a0af97ec253`.
+- PR [#19](https://github.com/BTF14/Micro-app/pull/19) se fusionó por squash en ese SHA; registra opciones D1–D8 para Google Sign-In/allowlist, explícitamente propuestas pendientes de aprobación.
+- PR [#20](https://github.com/BTF14/Micro-app/pull/20) se fusionó previamente en `c87361685ef1ce36e4cf6025124b09e70ffa0846`; incorpora el plan de evaluación controlada de Strix.
+- En el HEAD actual indicado, CI, Playwright E2E, validación de migraciones, Semgrep, Security scan y panel de progreso finalizaron en `success`: [CI](https://github.com/BTF14/Micro-app/actions/runs/39129579632), [E2E](https://github.com/BTF14/Micro-app/actions/runs/39129579599), [migraciones](https://github.com/BTF14/Micro-app/actions/runs/39129579656), [Semgrep](https://github.com/BTF14/Micro-app/actions/runs/39129579602), [Security](https://github.com/BTF14/Micro-app/actions/runs/39129579595), [dashboard](https://github.com/BTF14/Micro-app/actions/runs/39129579631). Los tests E2E actuales usan API simulada; no acreditan integración real API+DB ni producción.
+- Strix está documentado para que futuras IA sepan cuándo y cómo usarlo, pero no está instalado/ejecutado y no se ha escaneado Micro app. Mantenerlo fuera de CI activa hasta validar aislamiento y coste $0.
+- Siguiente prioridad: revalidar en vivo la autenticación actual y resolver D1–D8 sin inventar políticas; preparar PostgreSQL efímero y pruebas de autorización multiempresa. Backup/restore independiente sigue sin automatización ni restauración real verificada.
+- Ver también [handoff](HANDOFF_NEXT_CHAT.md) para el prompt de continuidad y guardrails. No se modificó Neon ni se desplegó producción.

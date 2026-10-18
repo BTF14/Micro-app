@@ -165,3 +165,12 @@ Este diario es append-only en cuanto a historia: no borrar hitos antiguos; añad
 - Estado real: política documental solamente. No se configuró backup, no se descargaron datos, no se modificó Neon y no se probó restauración. El destino independiente gratuito, la automatización y los secretos aún deben diseñarse y verificarse antes de activar.
 - Se actualizan instrucciones de agentes, constitución, cumplimiento, handoff y checklist de producción para que las IA no asuman ni inventen que los backups están activos.
 - PR #13 fue fusionada en `3d8b571f1d6ed3478bf3cf6182c412d3282db586`; siete workflows terminaron en success para el HEAD del PR `e03d224f8aded9534db375068f3ae5cac0db8a60`. No se afirma aquí que los checks del merge SHA estén verificados.
+
+
+## 2026-10-18 — PR #14 fusionada y evaluación de Google Drive
+
+- PR #14 fusionada en `main`: `9480f84d8b7d28e830d0fd57212d29a75e44afbb`.
+- Los siete workflows consultados para el HEAD exacto de PR #14 `b421e74631db3c21addd032f2bfbd780b935585d` concluyeron en `success`. No inferir de ello que se probaron backups ni restauración.
+- Evaluación externa documentada en `docs/GOOGLE_DRIVE_BACKUP_EVALUATION.md`: Drive personal puede funcionar condicionado a espacio disponible, OAuth duradero, secreto seguro, coste $0 y pruebas de recuperación. Los 15 GB se comparten entre Gmail, Drive y Photos; cuentas de servicio no pueden poseer archivos de My Drive y no tienen cuota de almacenamiento propia. Fuente oficial: https://developers.google.com/workspace/drive/api/guides/about-sdk, https://developers.google.com/identity/protocols/oauth2, https://support.google.com/drive/answer/9312312?hl=en-en.
+- Estado sin cambios en servicios reales: no backup activo, no restore probado, no acceso ni espacio Drive verificado, no credenciales creadas, no datos reales descargados, no SQL/migración y no despliegue.
+- Decisión: no implementar aún el workflow con datos reales. Próximo paso seguro es prototipo de backup/restore con PostgreSQL desechable y datos sintéticos; confirmar límites/coste sin activar billing.

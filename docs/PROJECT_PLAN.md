@@ -1,3 +1,55 @@
+# Índice principal de documentación y checkpoint vigente
+
+> Documento rector: [Constitución del proyecto](CONSTITUTION.md). Sus reglas de coste, seguridad, identidad, integridad de datos y evidencia prevalecen sobre atajos.
+
+## Checkpoint documental — 2026-10-18
+
+- Repositorio: https://github.com/BTF14/Micro-app
+- Rama de este cambio: `docs/constitution-and-plan-index`
+- HEAD de `main` observado en la búsqueda de commits: `7863973ed6e3869f525c6c89fc16412e92158fc2`.
+- La consulta de status checks para ese SHA devolvió una lista vacía; el estado actual de Actions queda **no verificado**. Consultar ejecuciones actuales antes de declarar éxito.
+- No se desplegó producción ni se modificó Neon `main` en esta tarea.
+
+## Índice maestro de documentos
+
+### Constitución, planificación y continuidad
+- [Constitución](CONSTITUTION.md) — reglas no negociables.
+- [Plan maestro](PROJECT_PLAN.md) — fases, prioridades, criterios de aceptación e índice.
+- [Handoff siguiente chat](HANDOFF_NEXT_CHAT.md) — protocolo y prompt copiable.
+- [Diario de estado](STATE_JOURNAL.md) — historial append-only.
+- [Instrucciones de agentes](../AGENTS.md) — inicio y guardrails.
+- [Modelo operativo de agentes](AGENT_OPERATING_MODEL.md) — roles, entregables y límites.
+- [Protocolo continuidad IA/chat](AI_CONTINUITY_PROTOCOL.md).
+
+### Producto, arquitectura y datos
+- [Arquitectura y coste cero](ARCHITECTURE_AND_ZERO_COST.md)
+- [Integración API](API_INTEGRATION.md)
+- [Esquema de base de datos](DATABASE_SCHEMA.md)
+- [Revisión del esquema](SCHEMA_REVIEW.md)
+- [Inspiración POS](INSPIRATION.md)
+- [Matriz de aceptación POS](POS_REFERENCE_MATRIX.md)
+
+### Seguridad, fiscalidad y herramientas
+- [Plan de seguridad 2026](SECURITY_PLAN_2026.md)
+- [Checklist OWASP ASVS](OWASP_ASVS_CHECKLIST.md)
+- [Requisitos de cumplimiento](COMPLIANCE_REQUIREMENTS.md)
+- [Registro de herramientas y fuentes](RESOURCE_REGISTRY.md)
+- [Evaluación Gentleman-Programming](GENTLEMAN_PROGRAMMING_EVALUATION.md)
+- [Implementación Gentleman-Programming](GENTLEMAN_IMPLEMENTATION.md)
+
+### Código, pruebas y automatización
+- [CI](../.github/workflows/ci.yml)
+- [Validación de migraciones](../.github/workflows/database-migration-validation.yml)
+- [Escaneo de seguridad](../.github/workflows/security-scan.yml)
+- [Semgrep](../.github/workflows/semgrep.yml)
+- [Playwright E2E](../.github/workflows/playwright-e2e.yml)
+- [Pruebas E2E frontend](../apps/web/e2e/auth.spec.ts)
+- [Perfiles reutilizables de revisión](../.github/agents/)
+
+Los enlaces indican documentación/código versionados, no que cada herramienta esté activa o cada control satisfecho. Los estados de ejecución se comprueban en vivo.
+
+---
+
 ## Checkpoint actual — Gentleman-Programming (2026-10-18)
 
 Se comenzó la implementación real en el commit `ae0c189487b37d910184b0b5cfa058ddbb6919d4`: `.gga` preparado para revisión local mediante Ollama, guía de implementación y enlace en README. **Aún no están instalados/ejecutándose GGA, Ollama, Engram ni Gentle-AI desde este entorno.** Verifica las tres Actions enlazadas en el handoff para el SHA exacto antes de declarar estado CI.

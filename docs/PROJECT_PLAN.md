@@ -1,0 +1,187 @@
+# Micro app — plan maestro y estado de continuidad
+
+**Última actualización:** 2026-10-18  
+**Repositorio:** https://github.com/BTF14/Micro-app  
+**Rama base de referencia:** `main`  
+**Propósito:** documento operativo para que cualquier nuevo chat o colaborador pueda continuar el trabajo sin depender del historial de conversación.
+
+> Este documento es la fuente de verdad del plan y del estado conocido. Antes de actuar, comprobar el SHA actual de `main`, las ramas/PR abiertos y GitHub Actions. Si el repositorio ha cambiado desde esta actualización, corregir el estado aquí mediante un commit.
+
+## 1. Objetivo del producto
+
+Crear un punto de venta (POS) y sistema de inventario profesional para PC, tablet y teléfono, con:
+
+- Catálogo de productos, códigos de barras, categorías, proveedores y alertas de bajo inventario.
+- Entradas, salidas, ajustes y trazabilidad del inventario.
+- Caja y ventas, descuentos autorizados, pagos mixtos, cálculo de cambio, recibos, devoluciones y cierres.
+- Informes y auditoría de operaciones.
+- Autenticación, sesiones revocables, roles y aislamiento estricto entre organizaciones/comercios.
+- USD como moneda base y conversión a VES usando una tasa BCV validada, con fuente, fecha efectiva y hora de consulta.
+- Interfaz responsive, accesible y usable por teclado; temas automático (sistema), claro y oscuro, con preferencia manual persistente.
+- Pruebas unitarias, integración con PostgreSQL desechable y E2E en vistas de escritorio/móvil.
+
+No presentar la aplicación como lista para operar un comercio hasta que las funciones, autorización, persistencia, pruebas y configuración de despliegue hayan sido implementadas y verificadas.
+
+## 2. Restricciones no negociables
+
+1. **Neon main no está autorizado para migraciones.** Se permite inspección de solo lectura en la rama principal. Las migraciones y pruebas se preparan y validan en PostgreSQL efímero o en ramas desechables aisladas. No ejecutar cambios sobre Neon main sin autorización explícita y específica posterior.
+2. **Coste total objetivo: $0.** No activar facturación, planes de pago, suscripciones ni cargos automáticos. Antes de crear recursos, comprobar que sean gratuitos y sus límites.
+3. **Independencia total:** no reutilizar repositorios, bases de datos, secretos, despliegues, dominios ni configuración de Cantina-pos u otros proyectos.
+4. No desplegar a producción ni hacer cambios irreversibles sin aceptación del usuario.
+5. No imprimir, registrar, versionar ni compartir secretos, tokens, contraseñas o cadenas de conexión. Usar variables de entorno locales ignoradas y gestores de secretos.
+6. Hacer cambios reales, pequeños y verificables; actualizar el plan en el repositorio. No afirmar que una prueba o workflow pasó sin revisar el resultado real del SHA correspondiente.
+7. No pedir al usuario que repita conexiones/permisos ya configurados, salvo que se haya identificado un bloqueo concreto y comprobable.
+
+## 3. Arquitectura objetivo
+
+- **Frontend:** React + Vite + TypeScript; despliegue estático previsto en Cloudflare Pages.
+- **API:** Hono + TypeScript sobre Cloudflare Workers.
+- **Base de datos:** PostgreSQL independiente en Neon Free; migraciones versionadas y revisadas.
+- **CI:** GitHub Actions; pruebas, compilación/typecheck y escaneos de seguridad.
+- **Pruebas:** Vitest, PostgreSQL temporal para integración, Playwright para E2E.
+- **Dependencias:** open source y sin componentes premium. Mantener la aplicación portable.
+- No usar Vercel Hobby como alojamiento objetivo para un POS comercial. No crear recursos facturables para sortear límites gratuitos.
+
+## 4. Estado del repositorio al preparar este documento
+
+### Referencia comprobada
+
+- La rama `main` se encontraba en el commit `88d30d472905c81a90d9fffc967e3ba1df5084d1`, mensaje `Connect frontend sign-in and registration to auth API`.
+- PR #4 (`Add initial authentication and revocable sessions`) figura como **fusionado** el 2026-10-17, con merge commit `e9e146020e7195c12da5f880a5dbf26b4e96752c`.
+- El commit de integración del frontend declara que CI, escaneo de seguridad y validación de migración pasaron. Reconfirmar los workflows de la punta actual de `main` antes de usar esto como garantía de estado actual.
+- La rama `feat/neon-transaction-adapter` existía y, al compararla con `main`, tenía 14 commits por delante y 5 por detrás. Incluye trabajo adicional de adaptador de base de datos, pruebas y plan de seguridad. **No asumir que esa rama es segura para fusionar**: primero sincronizar/revisar el diff, evitar sobrescribir cambios posteriores de `main` y verificar cada workflow. No mezclarla a ciegas.
+- Ramas observadas: `feat/auth-session-foundation`, `feat/frontend-auth-flow`, `feat/neon-transaction-adapter`, `feat/tenant-safe-schema`, `fix/pnpm-lockfile-bootstrap` y `main`. Reconsultar su estado real al continuar.
+- El documento de transferencia anterior tenía secciones históricas contradictorias. Esta sección y el archivo `docs/HANDOFF_NEXT_CHAT.md` actualizado deben prevalecer sobre anotaciones antiguas.
+
+### Ya presente en el código (revalidar en archivos/CI)
+
+- Base de frontend React/Vite y API Hono/Workers.
+- Rutas de autenticación inicial: registro, login, sesión actual y logout/revocación.
+- Hash de contraseñas PBKDF2-SHA-256 y almacenamiento de hashes de tokens de sesión.
+- Cookie HttpOnly, comprobación de origen configurado y límites de intentos persistidos en base de datos.
+- Integración inicial de pantallas de registro/login del frontend con la API.
+- Esquema/migración SQL versionados y workflows de validación en PostgreSQL temporal.
+- Escaneo de seguridad con Trivy incorporado en una rama de trabajo; confirmar si el workflow y el archivo de plan ya están en `main` antes de darlos por integrados.
+
+### Aún no debe considerarse listo
+
+- No hay POS comercial completo ni flujo de ventas/inventario terminado.
+- No declarar autenticación lista para producción sin pruebas de integración completas, revisión de seguridad, limpieza/retención de sesiones y límites, configuración de cookies/orígenes para los dominios finales y verificación del CI actual.
+- No hay integración BCV terminada.
+- No hay despliegue de producción aprobado.
+- La migración de esquema no debe aplicarse a Neon main sin autorización expresa.
+
+## 5. Plan por fases y criterios de salida
+
+### Fase 0 — Base reproducible, seguridad y CI (P0)
+
+- [ ] Comprobar `main`, PRs, commits y Actions más recientes.
+- [ ] Confirmar instalación reproducible y lockfile real de pnpm; nunca inventar un lockfile.
+- [ ] Revisar `.gitignore`, ejemplos `.env.example`, Wrangler y manejo de secretos.
+- [ ] Revisar workflows y permisos mínimos; escaneo de dependencias/configuración/secretos.
+- [ ] Mantener documentación de arquitectura, amenazas, pruebas y decisiones.
+- **Salida:** CI verde en el SHA actual; sin secretos versionados; instrucciones locales reproducibles.
+
+### Fase 1 — Autenticación, sesiones y aislamiento multiempresa (P0)
+
+- [ ] Completar pruebas de integración HTTP con PostgreSQL efímero: registro, creación atómica de usuario/organización/membresía/sesión, email duplicado, login correcto/incorrecto, `/auth/me`, usuario o membresía inactivos, logout, revocación y fallos de DB.
+- [ ] Verificar que un fallo de revocación no se reporte como logout exitoso.
+- [ ] Probar autorización por organización en cada consulta y operación; evitar BOLA/IDOR y escalada de privilegios.
+- [ ] Revisar rate limiting, retención/limpieza de contadores y limpieza de sesiones expiradas.
+- [ ] Validar expiración de sesión, origen permitido, cookie HttpOnly/Secure/SameSite según despliegue, mensajes de error genéricos y manejo de datos malformados.
+- [ ] Definir recuperación de cuenta/verificación de email/MFA solo con decisión de producto y opciones gratuitas verificadas; no añadir servicios de pago.
+- **Salida:** pruebas de integración fiables y autorización del lado del servidor. No fusionar código no revisado solo porque un workflow esté verde.
+
+### Fase 2 — Datos y adaptador PostgreSQL (P0)
+
+- [ ] Revisar el trabajo de `feat/neon-transaction-adapter` contra el `main` actual, archivo por archivo; sincronizar la rama antes de considerar PR.
+- [ ] Probar adaptador y transacciones contra PostgreSQL temporal, con pruebas de errores y rollback.
+- [ ] Validar migraciones desde cero y restricciones en base efímera.
+- [ ] Confirmar aislamiento multiempresa mediante claves foráneas/consultas y pruebas cruzadas.
+- [ ] Mantener el esquema en revisión; Neon main solo lectura hasta autorización.
+- **Salida:** integración de DB probada sin depender de Neon principal.
+
+### Fase 3 — Catálogo e inventario (P0)
+
+- [ ] CRUD de productos/categorías y códigos de barras con validación de servidor.
+- [ ] Proveedores y recepción de mercancía.
+- [ ] Movimientos de inventario auditables: entradas, salidas, ajustes y motivo/usuario.
+- [ ] Política explícita de stock negativo; controles seguros ante concurrencia.
+- [ ] Alertas de inventario bajo.
+- **Salida:** cada cambio de existencia se explica mediante un movimiento persistido y autorizado.
+
+### Fase 4 — Tasa USD/VES (P0 para conversión)
+
+- [ ] Elegir una fuente verificable y revisar términos, disponibilidad y límites gratuitos.
+- [ ] Guardar fuente, valor, fecha efectiva, fecha/hora de consulta y estado.
+- [ ] Validar tasa positiva y respuesta; conservar última tasa válida ante fallos y avisar de datos desactualizados.
+- [ ] No marcar una tasa obsoleta solo porque sea fin de semana/feriado si sigue vigente.
+- [ ] Evitar afirmar que un tercero es una API oficial del BCV sin evidencia.
+- **Salida:** pruebas de respuestas inválidas, retrasos, fallos y cambios de tasa; historial auditable.
+
+### Fase 5 — Caja, ventas y devoluciones (P0)
+
+- [ ] Carrito, búsqueda/escaneo, descuentos sujetos a permisos y cálculo de totales.
+- [ ] Venta, pagos, cambio, stock, movimientos y auditoría dentro de una transacción atómica.
+- [ ] Idempotencia por organización; misma clave con payload distinto debe rechazarse.
+- [ ] Guardar instantáneas inmutables de descripción/precio/tasa USD/VES usados en cada venta.
+- [ ] Usar precisión decimal en PostgreSQL y aritmética decimal segura; no persistir importes mediante aritmética flotante JS.
+- [ ] Reintentos no duplican ventas; concurrencia no consume stock de más; fallo revierte todo.
+- [ ] Devoluciones/anulaciones mediante operaciones de reverso auditables, nunca borrar silenciosamente ventas finalizadas.
+- [ ] Recibos claramente etiquetados como control interno hasta validar requisitos fiscales aplicables.
+- **Salida:** pruebas de concurrencia, rollback, idempotencia, cálculos y permisos.
+
+### Fase 6 — Interfaz y operación (P1)
+
+- [ ] Elegir una dirección visual antes de pulir la UI; no asumir que una paleta provisional está aprobada.
+- [ ] Completar navegación y flujo de caja, catálogo e inventario para móvil/tablet/escritorio.
+- [ ] Temas automático/claro/oscuro con elección manual persistente.
+- [ ] Accesibilidad: teclado, foco visible, contraste, etiquetas y mensajes de error.
+- [ ] Reportes, cierres de caja, exportación autorizada y auditoría.
+- [ ] Definir respaldos/restauración, privacidad, retención y eliminación de datos.
+- [ ] Playwright E2E en viewports de escritorio y móvil.
+- **Salida:** flujos principales probados de extremo a extremo y documentación operativa.
+
+### Fase 7 — Cumplimiento, preview y lanzamiento (bloqueado hasta aceptación)
+
+- [ ] Confirmar con asesoría competente obligaciones locales aplicables (IVA/IGTF, SENIAT, documentos fiscales y equipos autorizados); no codificar tasas fiscales universales sin revisión.
+- [ ] Preparar política de privacidad, términos, contacto real del responsable y transparencia de terceros.
+- [ ] Revisar seguridad, recuperación ante fallos, respaldos y límites de planes gratuitos.
+- [ ] Solo cuando el usuario acepte y los flujos críticos estén probados, valorar un preview gratuito y aislado.
+- [ ] Producción requiere aceptación explícita y no debe activar costes automáticos.
+- **Salida:** checklist completo y aprobación del usuario. No declarar certificación legal/fiscal.
+
+## 6. Plan de ciberseguridad 2026 y referencias
+
+Estas referencias son guías de revisión; no implican certificación y no se debe copiar código sin revisar licencia/compatibilidad.
+
+| Prioridad | Recurso | Aplicación prevista |
+|---|---|---|
+| P0 | [OWASP Cheat Sheet Series](https://github.com/OWASP/CheatSheetSeries) | Sesiones, autenticación, autorización, secretos, validación y logs. |
+| P0 | [OWASP ASVS](https://github.com/OWASP/ASVS) | Lista de controles y criterios de aceptación. |
+| P0 | [OWASP API Security](https://github.com/OWASP/API-Security) | Pruebas BOLA/IDOR, autenticación, autorización y abuso de recursos. |
+| P1 | [GitHub CodeQL](https://github.com/github/codeql) | SAST para JS/TS si permisos y cobertura están disponibles. |
+| P1 | [Semgrep](https://github.com/semgrep/semgrep) y [reglas](https://github.com/semgrep/semgrep-rules) | SAST; revisar licencia, cobertura y falsos positivos. |
+| P1 | [Trivy](https://github.com/aquasecurity/trivy) | Dependencias, configuración, secretos y SBOM; confirmar cobertura del workflow. |
+| P2 | [OWASP ZAP](https://github.com/zaproxy/zaproxy) | DAST en preview/staging aislado, nunca escaneo activo de producción. |
+| P2 | [OWASP Juice Shop](https://github.com/juice-shop/juice-shop) | Blanco de entrenamiento aislado; no integrar código vulnerable en Micro app. |
+| Condicional | [Apache Casbin Node](https://github.com/apache/casbin-node-casbin) | Revaluar si las políticas de autorización crecen; no instalar sin verificar compatibilidad Workers. |
+
+**Límite importante:** `express-rate-limit` es middleware de Express; no instalarlo directamente en Hono/Workers. El rate limiting debe adaptarse a la plataforma y al modelo distribuido, no depender solo de memoria local.
+
+## 7. Orden inmediato de trabajo
+
+1. Leer este archivo y `docs/HANDOFF_NEXT_CHAT.md`; consultar el SHA actual de `main`, ramas/PRs y Actions.
+2. Actualizar el handoff con la punta real del repositorio y el siguiente paso confirmado.
+3. Revisar la rama `feat/neon-transaction-adapter` contra `main`; comprobar sus cambios y CI sin fusionarla a ciegas.
+4. Confirmar/añadir pruebas de integración de autenticación sobre PostgreSQL efímero y revisar los puntos de seguridad de la Fase 1.
+5. Arreglar lockfile/reproducibilidad y seguridad de CI según evidencia real.
+6. Seguir por catálogo/inventario, tasa, ventas, devoluciones, UX y E2E, en pequeños cambios con pruebas.
+7. Después de cada avance: commit/push, consultar Actions del SHA nuevo, actualizar este plan y anotar lo que realmente pasó.
+8. No desplegar producción ni aplicar migraciones a Neon main.
+
+## 8. Prompt para continuar en otro chat
+
+Copia y pega:
+
+> Continúa Micro app leyendo primero `docs/PROJECT_PLAN.md` y `docs/HANDOFF_NEXT_CHAT.md` en https://github.com/BTF14/Micro-app. Verifica el estado real del repositorio, el SHA de main, las ramas/PR y GitHub Actions; no confíes en estados históricos. Trabaja directamente sobre el código existente, realiza cambios seguros, súbelos a GitHub y documenta el resultado en esos dos archivos. Prioriza revisar la rama feat/neon-transaction-adapter contra main y completar/revisar las pruebas de integración de autenticación con PostgreSQL temporal antes de fusionar nada más. No apliques migraciones a Neon main, no conectes otros proyectos, no despliegues producción y mantén el coste total en $0. Nunca expongas secretos ni me pidas repetir conexiones/permisos sin demostrar un bloqueo concreto. Indica commits, pruebas y checks verificados de verdad.

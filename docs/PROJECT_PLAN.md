@@ -326,3 +326,8 @@ PR [#6](https://github.com/BTF14/Micro-app/pull/6) fusionado con squash en `main
 ## SDD y continuidad entre chats — 2026-10-18
 
 El flujo SDD, sus plantillas y perfiles de roles están en la rama `feat/sdd-agent-workflow` y PR [#9](https://github.com/BTF14/Micro-app/pull/9). Los workflows asociados al HEAD `68659d1c1ec0cb9996293f78f9bd487e95124bbf` se comprobaron en `success` (CI, migraciones, seguridad/Trivy, Semgrep, Playwright E2E y validación SDD; el dashboard también tuvo éxito). El PR debe verificarse como fusionado antes de afirmar que esos archivos están en `main`. Playwright en este proyecto usa mocks para el piloto y no certifica integración real API+DB. No hubo despliegue de producción ni mutación de Neon `main`.
+
+
+## SDD y continuidad entre chats — resultado de integración
+
+PR [#9](https://github.com/BTF14/Micro-app/pull/9) está fusionado en `main` mediante `f1a38f5bc4b101f9d73ae4ca26c2acafb2b208f3`. Para el HEAD del PR `ba1eebbe45b11e6e0b3562795cdb6c26b5c31c63`, CI, validación de migraciones, Security/Trivy, Semgrep, Playwright E2E, dashboard y validación SDD terminaron en `success`. Esta evidencia corresponde al HEAD del PR; comprobar Actions para el commit de merge antes de certificar el estado de `main`. Playwright usa mocks y no acredita integración real API+DB. No hubo despliegue de producción ni mutación de Neon `main`.

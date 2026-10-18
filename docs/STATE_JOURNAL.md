@@ -242,3 +242,11 @@ Este diario es append-only en cuanto a historia: no borrar hitos antiguos; añad
 - Se actualizó `docs/CURRENT_STATE.md` para reflejar el SHA vivo y distinguir workflows verdes de preparación comercial.
 - No se modificó Neon `main`, no se usaron datos reales y no hubo despliegue.
 - Bloqueos sin cambios: Google OAuth + allowlist y decisiones D1–D8 pendientes; backups/restauración independiente no verificados; protección de rama no activa en la última consulta.
+
+
+## 2026-10-18 — PR #24 fusionada y verificación de merge
+
+- Se verificó que PR #24 (`docs: define tenant isolation acceptance matrix`) estaba abierta, mergeable y con los siete workflows en `success` en el head exacto `e7856319321f1aa1047148fd782fcadb77f091c2`.
+- Se fusionó mediante squash con protección de SHA esperado; GitHub confirmó merge commit `69032a333b52ee10099c0347be3443e18f4dc4df`.
+- En la primera consulta posterior al merge, el panel de progreso terminó en `success`; CI, Playwright E2E, Security scan, Semgrep SAST y validación de migraciones seguían `in_progress`. No se afirma que el SHA del merge esté completamente verde hasta volver a consultar.
+- Sin cambios de código de producto, base de datos, Neon ni despliegue. La matriz documenta pruebas futuras, no evidencia de aislamiento en endpoints inexistentes.

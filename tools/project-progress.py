@@ -47,7 +47,7 @@ def collect():
         "production_readiness": summarize(production_names),
         "groups": groups,
         "production_blockers": [item["title"] for group in groups for item in group["items"]
-                                if not item["done"] and ("P0" in group["name"] or group["name"] == "P0 — bloqueantes")],
+                                if not item["done"] and group["name"] == "Preparación para producción (gates)"],
         "note": "Porcentaje de criterios inventariados con evidencia; no es una certificación ni una garantía de producción."
     }
 
@@ -66,8 +66,6 @@ def svg(data):
            f'<text x="520" y="58" class="muted">Preparación producción: {data["production_readiness"]["percent"]}% ({data["production_readiness"]["done"]}/{data["production_readiness"]["total"]})</text>']
     for i, group in enumerate(groups):
         y = top + i * row_h
-        for x, key, label in [(24, "implementation", "Checklist"), (520, "production_readiness", "Checklist")]:
-            pass
         pct = group["percent"]
         fill = "#238636" if pct >= 80 else "#9e6a03" if pct >= 40 else "#6e7681"
         out += [f'<text x="24" y="{y+15}" class="label">{escape(group["name"])}</text>',

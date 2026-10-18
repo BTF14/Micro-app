@@ -40,3 +40,12 @@ Before planning or editing:
 2. Review `feat/neon-transaction-adapter` against current `main`; no blind merge.
 3. Expand auth/session/authorization/tenant isolation integration coverage.
 4. Continue inventory, validated BCV rate, transactional sales, audit, responsive UI, and E2E in the order defined by the master plan.
+
+
+## Gentleman-Programming integrations
+
+- Read `docs/GENTLEMAN_IMPLEMENTATION.md` before enabling GGA, Engram, Gentle-AI, or Gentle Shell.
+- `.gga` is configured for a local Ollama provider to preserve the $0 budget; it does not mean GGA/Ollama are installed or running.
+- Never install or enable a Git hook automatically. First verify GGA + provider manually on a small, non-sensitive diff; document exact evidence and the uninstall path.
+- Engram is supplementary local memory, not the source of truth and not available to all chats automatically. Never store secrets or customer data in it.
+- Do not state any Gentleman tool is active until its installed version and a successful test are recorded.

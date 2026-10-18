@@ -79,3 +79,11 @@ Se inspeccionaron los README públicos actuales; el detalle, límites y decision
 | Playwright | https://github.com/microsoft/playwright · https://playwright.dev/docs/intro | Framework E2E para navegadores; recomendado al llegar a pruebas de UI. No afirmar integrado hasta verificar package/config/tests. |
 
 **Límite de evidencia:** leer un README no equivale a auditar el repositorio, verificar licencia/dependencias/release ni ejecutar el software. Ninguna herramienta de esta tabla debe considerarse instalada o activa sin una prueba registrada.
+
+
+## Gentleman-Programming — estado de implementación (2026-10-18)
+
+- Se añadió el archivo de configuración `.gga` al repositorio para usar Ollama local (`ollama:qwen2.5-coder`) y las reglas de `AGENTS.md`; no se instaló GGA ni Ollama, no se ejecutó una revisión y no se habilitó el hook.
+- Se añadió `docs/GENTLEMAN_IMPLEMENTATION.md` con el procedimiento de instalación/verificación local para GGA, Engram y Gentle-AI, límites de coste y orden de adopción.
+- Engram y Gentle-AI siguen sin instalarse ni conectarse a esta conversación. Para continuar, verificar las guías oficiales enlazadas en el documento y registrar versiones/comandos/resultados observados.
+- Commit de configuración: `ae0c189487b37d910184b0b5cfa058ddbb6919d4`.

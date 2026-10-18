@@ -1,3 +1,11 @@
+## Checkpoint actual — Gentleman-Programming (2026-10-18)
+
+Se comenzó la implementación real en el commit `ae0c189487b37d910184b0b5cfa058ddbb6919d4`: `.gga` preparado para revisión local mediante Ollama, guía de implementación y enlace en README. **Aún no están instalados/ejecutándose GGA, Ollama, Engram ni Gentle-AI desde este entorno.** Verifica las tres Actions enlazadas en el handoff para el SHA exacto antes de declarar estado CI.
+
+Siguiente prioridad de esta línea: probar GGA manualmente en un terminal local sin instalar el hook hasta validar el proveedor; luego Engram y Gentle-AI en un runtime compatible. Coste $0 y guardrails existentes permanecen obligatorios.
+
+---
+
 # Checkpoint vigente — 2026-10-18
 
 > Este checkpoint se añade como referencia más reciente; las secciones históricas inferiores pueden contener snapshots antiguos. Antes de trabajar, verificar HEAD/Actions en vivo y registrar cualquier corrección.

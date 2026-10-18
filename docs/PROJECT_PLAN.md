@@ -331,3 +331,21 @@ El flujo SDD, sus plantillas y perfiles de roles están en la rama `feat/sdd-age
 ## SDD y continuidad entre chats — resultado de integración
 
 PR [#9](https://github.com/BTF14/Micro-app/pull/9) está fusionado en `main` mediante `f1a38f5bc4b101f9d73ae4ca26c2acafb2b208f3`. Para el HEAD del PR `ba1eebbe45b11e6e0b3562795cdb6c26b5c31c63`, CI, validación de migraciones, Security/Trivy, Semgrep, Playwright E2E, dashboard y validación SDD terminaron en `success`. Esta evidencia corresponde al HEAD del PR; comprobar Actions para el commit de merge antes de certificar el estado de `main`. Playwright usa mocks y no acredita integración real API+DB. No hubo despliegue de producción ni mutación de Neon `main`.
+
+
+## Herramienta de pentesting Strix (añadido 2026-10-18)
+
+- Recurso: https://github.com/usestrix/strix. Plan detallado: [STRIX_INTEGRATION.md](STRIX_INTEGRATION.md).
+- Uso previsto: pentesting dinámico autorizado cuando la API y el entorno efímero/staging estén preparados; prioridad a auth/sesiones, aislamiento multiempresa, BOLA/IDOR, validación de entradas y configuración.
+- No ejecutar en producción, Neon main, datos reales ni sistemas de terceros. Empezar con laboratorio aislado y datos sintéticos; revisar manualmente hallazgos y añadir pruebas de regresión.
+- Requisitos/coste: Docker y un proveedor LLM; confirmar que el proveedor local o elegido no cuesta dinero antes de ejecutar. No habilitar billing ni añadir secretos/workflows de CI sin validar el coste y la seguridad.
+- Estado: documentado para evaluación, no instalado ni ejecutado; no se ha escaneado Micro app. Primero resolver el bloqueo P0 de autenticación/allowlist y preparar PostgreSQL efímero.
+
+
+## Herramienta Strix — adopción planificada (2026-10-18)
+
+- Recurso: https://github.com/usestrix/strix. Plan operativo: [STRIX_INTEGRATION.md](STRIX_INTEGRATION.md).
+- Incorporar Strix cuando la API y un entorno de pruebas aislado estén preparados; priorizar autenticación, sesiones, separación entre organizaciones, validación de entradas y configuración.
+- Empezar con laboratorio o entorno efímero autorizado y datos sintéticos. No apuntar a producción, Neon main ni sistemas de terceros.
+- Requiere Docker y un proveedor de modelo de lenguaje. Verificar coste total de $0, aislamiento y manejo de informes antes de ejecutarlo; no habilitar facturación ni añadirlo a CI hasta una evaluación separada.
+- Estado: documentado para evaluación, aún no instalado ni ejecutado. Resolver primero el bloqueo P0 de autenticación/allowlist y preparar pruebas con PostgreSQL efímero.

@@ -102,3 +102,12 @@ Se inspeccionaron los README públicos actuales; el detalle, límites y decision
 | CodeQL / Casbin / express-rate-limit | Se mantienen como opciones evaluadas. | No se activan: revisar coste/permisos y compatibilidad con Hono/Workers antes de adoptarlos. |
 
 Fuentes oficiales: https://playwright.dev/docs/intro · https://github.com/semgrep/semgrep · https://github.com/OWASP/ASVS · https://github.com/zaproxy/zaproxy · https://github.com/juice-shop/juice-shop.
+
+
+## Strix — evaluación de pruebas dinámicas (2026-10-18)
+
+| Recurso | URL | Aplicación y límites |
+|---|---|---|
+| Strix | https://github.com/usestrix/strix | Evaluación dinámica de seguridad de API/aplicaciones. Usar solo en laboratorio local/efímero o staging autorizado, con datos sintéticos. Requiere Docker y proveedor LLM; verificar coste $0 antes de ejecutar. No instalado ni ejecutado. |
+
+Plan de adopción: [STRIX_INTEGRATION.md](STRIX_INTEGRATION.md). Complementa Semgrep, Trivy, Playwright y OWASP ASVS; no reemplaza revisión humana ni pruebas específicas de autorización. No usar en producción ni en sistemas ajenos. La integración en CI queda pendiente de evaluación independiente.

@@ -104,3 +104,12 @@ Los escáneres no sustituyen las pruebas de autorización ni la revisión de ló
 ## Checklist ejecutable y evidencia
 
 Usar [OWASP_ASVS_CHECKLIST.md](OWASP_ASVS_CHECKLIST.md) como lista de verificación de controles. Mantener las casillas sin marcar hasta enlazar pruebas, código o resultados de CI. La rama `feat/security-e2e-tooling` incorpora además [Playwright E2E](../.github/workflows/playwright-e2e.yml) y [Semgrep](../.github/workflows/semgrep.yml); sus resultados deben consultarse por SHA antes de declarar la fase validada.
+
+
+## Strix — evaluación planificada
+
+- Plan operativo: [STRIX_INTEGRATION.md](STRIX_INTEGRATION.md); fuente: https://github.com/usestrix/strix.
+- Usar cuando la API y el entorno aislado estén listos, sobre todo para auth/sesiones, separación multiempresa y validación de entradas. No es necesario para cada PR documental.
+- Requiere Docker y un proveedor LLM. Confirmar coste $0, aislamiento y tratamiento de informes antes de ejecutar. No habilitar facturación ni explotación automática en CI.
+- Solo laboratorio o staging autorizado con datos sintéticos; nunca producción, Neon main ni sistemas de terceros. Revisar manualmente hallazgos y añadir regresiones.
+- Estado: solo documentado; no instalado, ejecutado ni escaneado Micro app.

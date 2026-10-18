@@ -204,3 +204,13 @@ Este diario es append-only en cuanto a historia: no borrar hitos antiguos; añad
 - PR #12 es diseño SDD ya fusionado; decisiones D1–D8 aún no están documentadas como resueltas. Próximo paso seguro: releer el documento fuente de SDD y separar decisiones que ya están respaldadas por requisitos de las que requieren confirmación de producto. No inventar allowlist, administrador, dominios ni política de vinculación.
 - La rama `main` no tiene protección de branch configurada según lectura de GitHub (`protected=false`, checks requeridos vacíos). Es una mejora de gobernanza a evaluar, no se cambió en este trabajo.
 - Backup externo automatizado, destino independiente, alertas y restauración aislada siguen pendientes. No hay despliegue de producción ni cambios en Neon/secretos/datos reales.
+
+
+## 2026-10-18 — PR #19 y #20 fusionadas; traspaso entre chats
+
+- PR [#20](https://github.com/BTF14/Micro-app/pull/20) añade documentación de adopción controlada de Strix; merge SHA `c87361685ef1ce36e4cf6025124b09e70ffa0846`.
+- PR [#19](https://github.com/BTF14/Micro-app/pull/19) añade un registro de opciones para las decisiones D1–D8 de autenticación; merge SHA `1228a43cb4bc5e1ef8aabb548b034a0af97ec253`. Son opciones propuestas, no decisiones de producto aprobadas.
+- HEAD de `main` verificado después de ambas fusiones: `1228a43cb4bc5e1ef8aabb548b034a0af97ec253`.
+- Para ese SHA exacto, CI, Playwright E2E, validación de migraciones, Semgrep SAST, Security scan y dashboard concluyeron en success: [CI](https://github.com/BTF14/Micro-app/actions/runs/39129579632), [E2E](https://github.com/BTF14/Micro-app/actions/runs/39129579599), [migraciones](https://github.com/BTF14/Micro-app/actions/runs/39129579656), [Semgrep](https://github.com/BTF14/Micro-app/actions/runs/39129579602), [Security](https://github.com/BTF14/Micro-app/actions/runs/39129579595), [dashboard](https://github.com/BTF14/Micro-app/actions/runs/39129579631).
+- La documentación de Strix explica propósito, escenarios, requisitos de coste/aislamiento y gates. Strix no está instalado ni ejecutado; no hay escaneo ni informe y no se añadió workflow de Strix.
+- Se actualiza el handoff para el cambio de chat debido al límite de duración de la conversación. Las tareas P0 de autenticación/allowlist, pruebas API+DB reales y backup/restore siguen pendientes. No se mutó Neon ni se desplegó producción.

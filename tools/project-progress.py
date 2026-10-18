@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import json
 import re
-from datetime import datetime, timezone
 from pathlib import Path
 from html import escape
 
@@ -41,7 +40,6 @@ def collect():
         total = sum(g["total"] for g in selected)
         return {"done": done, "total": total, "percent": round(100 * done / total, 1) if total else 0}
     return {
-        "generated_at": datetime.now(timezone.utc).isoformat(timespec="seconds"),
         "source": "docs/PRODUCTION_READINESS.md",
         "implementation": summarize(product_names),
         "production_readiness": summarize(production_names),
@@ -86,7 +84,7 @@ def main():
         rows.append(f'<tr><th>{escape(group["name"])}</th><td>{group["done"]}/{group["total"]}</td><td>{group["percent"]:.1f}%</td></tr>')
     html = """<!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Micro app — progreso</title>
 <style>body{font:16px system-ui,sans-serif;max-width:1000px;margin:auto;padding:1rem;background:#0d1117;color:#f0f6fc}img{width:100%;height:auto}table{border-collapse:collapse;width:100%}td,th{padding:.65rem;border-bottom:1px solid #30363d;text-align:left}small{color:#9da7b3}</style></head><body>
-<h1>Micro app — progreso y preparación para producción</h1><img src="progress.svg" alt="Gráfica de avance por criterios"><p>Los porcentajes cuentan criterios inventariados con evidencia, no estiman fechas ni garantizan producción.</p><table><thead><tr><th>Área</th><th>Completado</th><th>Porcentaje</th></tr></thead><tbody>""" + "".join(rows) + """</tbody></table><h2>Bloqueos</h2><ul>""" + "".join(f"<li>{escape(item)}</li>" for item in data["production_blockers"]) + """</ul><small>Fuente: docs/PRODUCTION_READINESS.md · Generado en """ + escape(data["generated_at"]) + """</small></body></html>"""
+<h1>Micro app — progreso y preparación para producción</h1><img src="progress.svg" alt="Gráfica de avance por criterios"><p>Los porcentajes cuentan criterios inventariados con evidencia, no estiman fechas ni garantizan producción.</p><table><thead><tr><th>Área</th><th>Completado</th><th>Porcentaje</th></tr></thead><tbody>""" + "".join(rows) + """</tbody></table><h2>Bloqueos</h2><ul>""" + "".join(f"<li>{escape(item)}</li>" for item in data["production_blockers"]) + """</ul><small>Fuente: docs/PRODUCTION_READINESS.md · Se genera automáticamente desde el checklist.</small></body></html>"""
     (OUT / "index.html").write_text(html + "\n", encoding="utf-8")
     print(f'implementation={data["implementation"]["percent"]}% production_readiness={data["production_readiness"]["percent"]}% groups={len(data["groups"])}')
 

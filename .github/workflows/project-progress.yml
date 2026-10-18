@@ -14,8 +14,12 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
-      - name: Generate dashboard
-        run: python3 tools/project-progress.py
+      - name: Generate dashboard twice and verify deterministic output
+        run: |
+          python3 tools/project-progress.py
+          sha256sum docs/progress/progress.json docs/progress/progress.svg docs/progress/index.html > /tmp/progress-first.sha256
+          python3 tools/project-progress.py
+          sha256sum -c /tmp/progress-first.sha256
       - name: Upload dashboard
         uses: actions/upload-artifact@v4
         with:

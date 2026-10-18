@@ -225,3 +225,9 @@ Este diario es append-only en cuanto a historia: no borrar hitos antiguos; añad
 - D1–D8 continúan sin aprobar. No elegir de forma autónoma correos, dominios, bootstrap, altas de organizaciones ni vinculación de cuentas. P0 continúa abierto; no declarar producción lista.
 - Strix solo documentado, no instalado/ejecutado. Sin cambios en Neon, producción, credenciales, datos reales, correos ni facturación.
 
+## 2026-10-18 — Fusión de PR #21
+
+- El usuario autorizó fusionar PR #21 tras verificar los checks. GitHub confirmó la fusión por squash con commit `7491b97a2bde52555fe9b8a5d808ad81b829d90e`.
+- Cambios incluidos: únicamente `docs/HANDOFF_NEXT_CHAT.md`, `docs/PROJECT_PLAN.md`, `docs/RESOURCE_REGISTRY.md` y `docs/STATE_JOURNAL.md`.
+- Los 7 workflows de Actions reportados para el HEAD de la PR terminaron en `success`. La revisión Codex quedó fallida por límite de uso y sin hallazgo técnico concreto recuperable; no tratarla como aprobación.
+- Sin despliegue de producción ni cambios en Neon, secretos, datos reales o facturación. Auth/allowlist P0, decisiones D1–D8 y backup/restore verificado continúan pendientes.

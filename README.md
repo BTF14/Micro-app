@@ -10,6 +10,14 @@
 
 Las gráficas separan implementación funcional de preparación para producción. Los porcentajes cuentan criterios explícitos con evidencia; no son una estimación subjetiva ni certifican que el sistema esté listo. El panel se genera con `python3 tools/project-progress.py`.
 
+## Desarrollo asistido por IA
+
+- [Flujo Spec-Driven Development (SDD)](docs/SDD_WORKFLOW.md)
+- [Modelo operativo de agentes](docs/AGENT_OPERATING_MODEL.md)
+- [Plantillas de especificación, plan y tareas](templates/sdd/)
+- [Skill reutilizable para funciones](skills/feature-sdd/SKILL.md)
+- [Reglas principales para agentes](AGENTS.md)
+
 Sistema web de punto de venta e inventario, diseñado para PC y móvil.
 
 ## Objetivo

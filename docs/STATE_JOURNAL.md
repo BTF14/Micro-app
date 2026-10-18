@@ -259,3 +259,13 @@ Este diario es append-only en cuanto a historia: no borrar hitos antiguos; añad
 - Los seis workflows del merge commit `ed0d39f5bc248c9e5d5a1c5008352e8a390a0374` estaban en ejecución en la última consulta; comprobarlos de nuevo antes de informar que el commit de main está verde.
 - Se detectaron snapshots antiguos contradictorios en la documentación de continuidad. Se antepone un checkpoint autoritativo que identifica explícitamente los bloques inferiores como históricos y preserva el historial.
 - Sin cambios de código, base de datos, secretos o despliegue de producción.
+
+
+## 2026-10-18 — Verificación posterior a PR #26
+
+- HEAD de `main` verificado: `a3cc3ae7533510baf2502a3f553030c2c8505a4c`.
+- PR #26 fusionada: https://github.com/BTF14/Micro-app/pull/26. No hay PR abiertas en la consulta de GitHub de este checkpoint.
+- Para el SHA exacto de `main`, los seis workflows terminaron en `success`: CI (https://github.com/BTF14/Micro-app/actions/runs/39133032751), Playwright E2E (https://github.com/BTF14/Micro-app/actions/runs/39133032760), Security scan (https://github.com/BTF14/Micro-app/actions/runs/39133032817), Semgrep SAST (https://github.com/BTF14/Micro-app/actions/runs/39133032755), validación de migraciones (https://github.com/BTF14/Micro-app/actions/runs/39133032686) y panel de progreso (https://github.com/BTF14/Micro-app/actions/runs/39133032670).
+- No se ejecutaron pruebas localmente; esta evidencia corresponde a GitHub Actions para el SHA indicado.
+- Sin cambios de código de producto, base de datos, secretos o despliegue de producción.
+- Estado comercial sigue siendo no listo para producción: faltan endpoints de negocio, OAuth + allowlist con decisiones D1–D8 aprobadas, pruebas completas de aislamiento/autorización y respaldo/restauración independientes verificados.

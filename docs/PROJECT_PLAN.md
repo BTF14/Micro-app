@@ -1,19 +1,20 @@
-# Checkpoint autoritativo — 2026-10-18, después de PR #25
+# Checkpoint autoritativo — 2026-10-18, después de PR #26
 
 > **Esta sección prevalece sobre todos los snapshots históricos más abajo.** Los SHA, estados de PR y enlaces de Actions antiguos que aparezcan en el resto de este archivo no representan el estado vivo actual salvo que coincidan con una verificación nueva de GitHub.
 
 - Repositorio: https://github.com/BTF14/Micro-app
-- `main` verificado: `ed0d39f5bc248c9e5d5a1c5008352e8a390a0374` — https://github.com/BTF14/Micro-app/commit/ed0d39f5bc248c9e5d5a1c5008352e8a390a0374
-- PR #24 (matriz de aislamiento tenant) y PR #25 (refresco documental) están fusionadas.
-- PR #25 head `e5d671ed5087ea18f96d4dead79b76bb933d071d`: los siete workflows consultados terminaron en `success`.
-- Para el merge commit `ed0d39f5bc248c9e5d5a1c5008352e8a390a0374`, los seis workflows consultados estaban `in_progress` en la última lectura. **No afirmar que el merge commit está verde hasta volver a consultar Actions para este SHA exacto.**
-- No se desplegó producción ni se modificó Neon `main`.
+- `main` verificado: `a3cc3ae7533510baf2502a3f553030c2c8505a4c` — https://github.com/BTF14/Micro-app/commit/a3cc3ae7533510baf2502a3f553030c2c8505a4c
+- PR #24 (matriz de aislamiento tenant), PR #25 (refresco documental) y PR #26 (checkpoint documental) están fusionadas.
+- PR #26: https://github.com/BTF14/Micro-app/pull/26; head `a5576ae3db9b606bbb69fa3c7f34006e6585934e`; sus siete workflows consultados terminaron en `success`.
+- Para el SHA exacto de `main` `a3cc3ae7533510baf2502a3f553030c2c8505a4c`, los seis workflows consultados terminaron en `success`: [CI](https://github.com/BTF14/Micro-app/actions/runs/39133032751), [Playwright E2E](https://github.com/BTF14/Micro-app/actions/runs/39133032760), [Security scan](https://github.com/BTF14/Micro-app/actions/runs/39133032817), [Semgrep SAST](https://github.com/BTF14/Micro-app/actions/runs/39133032755), [validación de migraciones](https://github.com/BTF14/Micro-app/actions/runs/39133032686) y [panel de progreso](https://github.com/BTF14/Micro-app/actions/runs/39133032670).
+- No hay PR abiertas en la consulta actual. No se desplegó producción ni se modificó Neon `main`.
 - Estado de producto: **no listo para producción**. `apps/api/src/index.ts` todavía no registra handlers HTTP de negocio para catálogo/productos, proveedores, ventas, pagos o movimientos de inventario; la matriz de tenant define criterios futuros, no evidencia de endpoints ya protegidos.
 - Bloqueos: Google OAuth + allowlist y decisiones D1–D8 pendientes de aprobación; backups/restauración independiente no verificados; protección de rama `main` desactivada en la última verificación; faltan flujos POS/inventario reales y pruebas de autorización completas.
 - Límites: presupuesto $0, no mezclar con Cantina-pos, no secretos ni correos, no migraciones a Neon `main` sin superar el gate de `docs/CONSTITUTION.md`, no despliegue de producción sin aceptación explícita.
-- Próximo trabajo seguro: comprobar Actions para el SHA actual; después, resolver/registrar decisiones de identidad sin inventar políticas, y continuar con pruebas de autorización/tenant y endpoints de negocio en entorno aislado. No implementar OAuth ni habilitar registro público por suposición.
+- Próximo trabajo seguro: abordar identidad solo tras resolver D1–D8; mientras tanto, ampliar cobertura de autorización y preparar endpoints de negocio en entorno aislado, sin inventar políticas de registro ni OAuth.
 
 ---
+
 
 # Índice principal de documentación y checkpoint vigente
 

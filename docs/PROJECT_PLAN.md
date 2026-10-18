@@ -340,3 +340,12 @@ PR [#9](https://github.com/BTF14/Micro-app/pull/9) está fusionado en `main` med
 - No ejecutar en producción, Neon main, datos reales ni sistemas de terceros. Empezar con laboratorio aislado y datos sintéticos; revisar manualmente hallazgos y añadir pruebas de regresión.
 - Requisitos/coste: Docker y un proveedor LLM; confirmar que el proveedor local o elegido no cuesta dinero antes de ejecutar. No habilitar billing ni añadir secretos/workflows de CI sin validar el coste y la seguridad.
 - Estado: documentado para evaluación, no instalado ni ejecutado; no se ha escaneado Micro app. Primero resolver el bloqueo P0 de autenticación/allowlist y preparar PostgreSQL efímero.
+
+
+## Herramienta Strix — adopción planificada (2026-10-18)
+
+- Recurso: https://github.com/usestrix/strix. Plan operativo: [STRIX_INTEGRATION.md](STRIX_INTEGRATION.md).
+- Incorporar Strix cuando la API y un entorno de pruebas aislado estén preparados; priorizar autenticación, sesiones, separación entre organizaciones, validación de entradas y configuración.
+- Empezar con laboratorio o entorno efímero autorizado y datos sintéticos. No apuntar a producción, Neon main ni sistemas de terceros.
+- Requiere Docker y un proveedor de modelo de lenguaje. Verificar coste total de $0, aislamiento y manejo de informes antes de ejecutarlo; no habilitar facturación ni añadirlo a CI hasta una evaluación separada.
+- Estado: documentado para evaluación, aún no instalado ni ejecutado. Resolver primero el bloqueo P0 de autenticación/allowlist y preparar pruebas con PostgreSQL efímero.

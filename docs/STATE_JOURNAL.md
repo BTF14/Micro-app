@@ -146,3 +146,12 @@ Este diario es append-only en cuanto a historia: no borrar hitos antiguos; añad
 - La integración contiene SDD, plantillas, skill, perfiles reutilizables, validador de documentación y actualización de handoff/protocolo para nuevas IA.
 - Próxima verificación pendiente: Actions asociadas al commit de merge y coherencia final del handoff en `main`.
 - Límites: ningún agente local se ha instalado por este merge; no se mutó Neon `main`, no se desplegó producción y el objetivo de coste sigue en $0.
+
+
+## 2026-10-18 — Política de cambios controlados en Neon `main`
+
+- Decisión documental: reemplazar la prohibición absoluta de mutaciones en Neon `main` por una autorización condicionada a necesidad demostrada, identificación inequívoca del destino, revisión de SQL/migración, pruebas aisladas cuando sean viables, recuperación comprobable y validación posterior.
+- Los cambios aditivos, compatibles, de bajo riesgo y recuperables pueden ejecutarse autónomamente tras superar el gate. Cambios destructivos, irreversibles/difíciles de revertir, masivos sobre datos críticos, de permisos/credenciales, con riesgo material de indisponibilidad o impacto incierto requieren aprobación explícita previa del usuario.
+- Si no se puede confirmar destino, impacto o recuperación, detenerse; no improvisar ni continuar con incertidumbre.
+- Cambios aplicados en esta rama documental: `AGENTS.md`, `docs/CONSTITUTION.md` y `docs/HANDOFF_NEXT_CHAT.md`. No se ejecutó SQL, no se aplicaron migraciones y no se modificó ninguna base Neon.
+- Pendiente: revisar diff y validaciones CI en PR antes de integrar. La actualización de la política no demuestra que exista un backup ni que la restauración esté configurada; eso deberá verificarse antes de cualquier mutación real.

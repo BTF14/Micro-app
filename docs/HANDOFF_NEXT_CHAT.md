@@ -1,13 +1,12 @@
 # Checkpoint más reciente — 2026-10-18
 
-## Continuidad verificada después de PR #23
+## Estado vivo después de fusionar PR #24
 
-- `main` base confirmado: `838715d211918f521f5e6401a91dc773236ef3ad`. Los siete workflows posteriores a la fusión terminaron en success; detalle en [CURRENT_STATE.md](CURRENT_STATE.md).
-- PR #24, [matriz de aceptación para aislamiento tenant](https://github.com/BTF14/Micro-app/pull/24), abierta desde `docs/tenant-isolation-test-plan`, head `8b63228f3fb02ca953e842078ea0150514951659`. Al actualizar este handoff, sus workflows seguían ejecutándose salvo el panel de progreso y un escaneo de seguridad que ya terminaron en success. Revalidar el SHA y todos los resultados antes de integrar.
-- Revisión de rutas: actualmente `apps/api/src/index.ts` registra health y rutas de autenticación; aún no existen handlers HTTP de productos, proveedores, ventas, pagos ni movimientos de inventario. La prueba real de aislamiento por recurso queda pendiente hasta que se implementen esos handlers. No inventar endpoints ni afirmar que el aislamiento completo ya está probado.
-- La matriz nueva está en [TENANT_ISOLATION_TEST_PLAN.md](TENANT_ISOLATION_TEST_PLAN.md). Actualizaciones registradas en [STATE_JOURNAL.md](STATE_JOURNAL.md).
-- Bloqueos siguen vigentes: Google OAuth + allowlist y decisiones D1–D8 no aprobadas; backups/restauración independiente no verificados; sin despliegue de producción ni mutaciones en Neon `main`.
-
+- `main` verificado en `69032a333b52ee10099c0347be3443e18f4dc4df`: [commit](https://github.com/BTF14/Micro-app/commit/69032a333b52ee10099c0347be3443e18f4dc4df).
+- PR #24, [matriz de aceptación para aislamiento tenant](https://github.com/BTF14/Micro-app/pull/24), está fusionada. Los siete workflows para su head `e7856319321f1aa1047148fd782fcadb77f091c2` terminaron en `success`; los checks del merge commit son un conjunto separado y seguían parcialmente en ejecución en la última consulta.
+- `apps/api/src/index.ts` registra health y auth; aún no existen handlers HTTP de negocio para productos, proveedores, ventas, pagos ni movimientos de inventario. La matriz no sustituye pruebas reales de aislamiento.
+- Bloqueos vigentes: Google OAuth + allowlist y decisiones D1–D8 no aprobadas; backups/restauración independiente no verificados; protección de `main` desactivada en la última consulta; sin despliegue de producción ni mutaciones en Neon `main`.
+- Antes de continuar, verificar de nuevo HEAD, PRs y Actions en vivo. No afirmar preparación de producción por tener CI verde.
 
 ## Política vigente de cambios en Neon `main`
 

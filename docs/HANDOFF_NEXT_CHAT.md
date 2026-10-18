@@ -13,7 +13,7 @@
 **Última actualización:** 2026-10-18  
 **Repositorio:** https://github.com/BTF14/Micro-app  
 **Rama:** `main`  
-**SHA verificado al escribir este handoff:** `12c0037f3928b2c54c3593d3f48a65bf3318f401`  
+**SHA de referencia de `main` al actualizar este handoff:** `b85305d11b59b138cd2b6a5e4c796d19ef2cff59`. Verificar siempre el HEAD vivo antes de actuar.  
 **Objetivo:** que una nueva IA retome el trabajo con evidencia, sin repetir solicitudes al usuario, perder decisiones ni inventar estados.
 
 ## Lectura obligatoria, en este orden
@@ -29,11 +29,12 @@
 
 No asumir que un archivo está actualizado solo porque exista. Contrastar la sección de estado vigente con el código, GitHub y Actions.
 
-## Estado verificado en GitHub
+## Estado histórico y verificación en vivo
 
-- Rama principal: `main`; SHA verificado en este checkpoint: `d42daeba36d5f8027ab2ea5a417d64a873bc3a20`.
-- Los seis workflows enumerados en el checkpoint superior finalizaron correctamente para ese SHA. Reconsultar Actions antes de tomar decisiones futuras; los estados cambian con cada commit.
-- PR #4 (autenticación inicial y sesiones revocables) y PR #8 (panel de progreso) están fusionadas. PR #9 (SDD, perfiles y continuidad) también está fusionada. Verificar las PRs y ramas en vivo antes de rescatar trabajo.
+- El SHA `d42daeba36d5f8027ab2ea5a417d64a873bc3a20` es histórico, no el HEAD actual de `main`.
+- Referencia observada para `main` tras fusionar PR #10: `b85305d11b59b138cd2b6a5e4c796d19ef2cff59`. En PR #10, los siete workflows pasaron en su HEAD `be146676cfaef09310c270854bf303079b209b81`; los checks del merge SHA deben consultarse por separado.
+- PR #11 (`docs/refresh-handoff-current-state`) está abierta mientras se actualiza este documento. En el HEAD previo `26808cc778489f7ad0867510e800cd2ac2d68bdd`, seis workflows observados finalizaron en `success`; el estado del PR y los checks del nuevo HEAD deben verificarse antes de integrar.
+- PR #4 (autenticación inicial y sesiones revocables), PR #8 (panel), PR #9 (SDD) y PR #10 (reproducibilidad del panel) están fusionadas. Verificar PRs y ramas en vivo antes de rescatar trabajo.
 - Rama `feat/neon-transaction-adapter` observada previamente en `7989a84e39536029819735a5202f3934a8eb12c3`; no fusionar a ciegas. Comparar contra `main`, separar cambios únicos y probar con PostgreSQL efímero.
 - Las ramas listadas en el historial pueden haber avanzado o sido eliminadas; consultar GitHub antes de basarse en sus SHA.
 - El frontend de registro/login se conectó a la API en un commit previo; inspeccionar el código actual antes de modificarlo.

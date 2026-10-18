@@ -250,3 +250,12 @@ Este diario es append-only en cuanto a historia: no borrar hitos antiguos; añad
 - Se fusionó mediante squash con protección de SHA esperado; GitHub confirmó merge commit `69032a333b52ee10099c0347be3443e18f4dc4df`.
 - En la primera consulta posterior al merge, el panel de progreso terminó en `success`; CI, Playwright E2E, Security scan, Semgrep SAST y validación de migraciones seguían `in_progress`. No se afirma que el SHA del merge esté completamente verde hasta volver a consultar.
 - Sin cambios de código de producto, base de datos, Neon ni despliegue. La matriz documenta pruebas futuras, no evidencia de aislamiento en endpoints inexistentes.
+
+
+## 2026-10-18 — PR #25 fusionada y checkpoint corregido
+
+- PR #25: https://github.com/BTF14/Micro-app/pull/25, merge commit `ed0d39f5bc248c9e5d5a1c5008352e8a390a0374`.
+- Head de PR #25 `e5d671ed5087ea18f96d4dead79b76bb933d071d`: siete workflows consultados en `success`.
+- Los seis workflows del merge commit `ed0d39f5bc248c9e5d5a1c5008352e8a390a0374` estaban en ejecución en la última consulta; comprobarlos de nuevo antes de informar que el commit de main está verde.
+- Se detectaron snapshots antiguos contradictorios en la documentación de continuidad. Se antepone un checkpoint autoritativo que identifica explícitamente los bloques inferiores como históricos y preserva el historial.
+- Sin cambios de código, base de datos, secretos o despliegue de producción.

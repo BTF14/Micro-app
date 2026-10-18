@@ -136,3 +136,13 @@ Este diario es append-only en cuanto a historia: no borrar hitos antiguos; añad
 - La validación automatizada verifica estructura documental, no demuestra que existan subagentes autónomos ni que GGA/Engram/Gentle-AI/MCP estén instalados. Playwright actual utiliza mocks y no demuestra integración real con PostgreSQL/Neon.
 - Próximos pasos: verificar mergeability y estado vivo del PR #9; tras integración, comprobar SHA de merge y Actions sobre ese SHA; después resolver la generación/actualización automática de los artefactos del dashboard y continuar con los bloqueos P0 de identidad/autorización y transacciones.
 - Restricciones conservadas: $0, sin mutar Neon `main`, sin despliegue de producción.
+
+
+## 2026-10-18 — PR #9 fusionado y SDD/continuidad versionados en main
+
+- PR #9: https://github.com/BTF14/Micro-app/pull/9 — estado verificado `merged`.
+- Merge commit (squash): `f1a38f5bc4b101f9d73ae4ca26c2acafb2b208f3`.
+- Checks del HEAD del PR `ba1eebbe45b11e6e0b3562795cdb6c26b5c31c63`: CI `39107363677` success; Database migration validation `39107363637` success; Security scan `39107363647` success; Semgrep `39107363624` success; Playwright E2E `39107363688` success; SDD validation `39107363683` success; dashboard `39107363673` success.
+- La integración contiene SDD, plantillas, skill, perfiles reutilizables, validador de documentación y actualización de handoff/protocolo para nuevas IA.
+- Próxima verificación pendiente: Actions asociadas al commit de merge y coherencia final del handoff en `main`.
+- Límites: ningún agente local se ha instalado por este merge; no se mutó Neon `main`, no se desplegó producción y el objetivo de coste sigue en $0.

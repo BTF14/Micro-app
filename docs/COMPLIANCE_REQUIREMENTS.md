@@ -10,7 +10,7 @@ Alcance: POS e inventario para comercios, con foco inicial en Venezuela.
 - Los porcentajes, reglas fiscales y fuentes de tasas deben ser configurables y versionados; no codificar una tasa legal como universal.
 - Toda operación monetaria debe conservar moneda original, tasa aplicada, fecha/hora, fuente y totales calculados.
 - No guardar contraseñas, datos de tarjetas ni datos personales innecesarios.
-- Mantener la migración inicial de Neon sin aplicar a la rama principal hasta recibir autorización explícita.
+- Aplicar el gate de cambios de `docs/CONSTITUTION.md` para Neon `main`; antes de cualquier mutación real, comprobar un camino de recuperación verificable.
 
 ## Matriz priorizada
 
@@ -31,7 +31,7 @@ Alcance: POS e inventario para comercios, con foco inicial en Venezuela.
 | AUD-02 | Integridad de inventario | Alta | Registrar movimientos de inventario vinculados a operaciones; ejecutar venta, pagos, existencias y libro de movimientos en una sola transacción; evitar stock negativo según política. | Pendiente. |
 | FISC-01 | Estado fiscal transparente | Bloqueante antes de emitir documentos | Confirmar requisitos aplicables de SENIAT y equipos/sistemas fiscales. Si no está autorizado/homologado cuando sea exigible, etiquetar claramente documentos como control interno y no presentarlos como facturas fiscales. | Pendiente de validación legal/técnica. |
 | OFF-01 | Operación sin conexión | Media | Definir qué funciones funcionan offline, cómo se encolan operaciones, cómo se resuelven conflictos y qué se pierde ante cierre, fallo eléctrico o limpieza del dispositivo. No prometer sincronización hasta probarla. | Pendiente; no hay modo offline implementado. |
-| DATA-01 | Exportación y respaldo | Alta | Permitir exportar datos autorizados (por ejemplo CSV) y definir copias de seguridad, restauración, retención, control de acceso y pruebas de recuperación. | Pendiente. |
+| DATA-01 | Exportación y respaldo | Alta | Respaldos automáticos diarios a destino independiente privado/cifrado, retención limitada, alerta de fallos y restauración probada en entorno aislado; exportaciones autorizadas con control de acceso. | Pendiente: política documentada en [BACKUP_AND_RECOVERY.md](BACKUP_AND_RECOVERY.md); no hay evidencia de automatización independiente ni restore probado. |
 | DATA-02 | Baja y eliminación | Alta | Definir solicitud de baja, exportación previa, plazos y eliminación; preservar registros que deban conservarse legalmente y explicar excepciones. | Pendiente. |
 | SEC-01 | Autenticación y roles | Bloqueante antes de datos reales | Implementar autenticación, aislamiento por comercio/tenant, autorización en servidor, gestión de sesiones y pruebas de acceso cruzado. | Pendiente; todavía no hay autenticación real. |
 | REL-01 | Pruebas de negocio y recuperación | Alta | Probar transacciones fallidas, concurrencia de ventas/stock, idempotencia, restauración, errores de tasa y límites de permisos con base de pruebas separada. | Pendiente. |
@@ -62,7 +62,7 @@ Las fuentes secundarias pueden ayudar a localizar normas, pero no deben ser la �
 3. Implementar autenticación y aislamiento por comercio antes de almacenar datos reales.
 4. Implementar operaciones POS/inventario con transacciones, auditoría e idempotencia.
 5. Integrar tasa BCV con trazabilidad y política de contingencia.
-6. Implementar exportación, respaldos, restauración y baja.
+6. Implementar exportación, respaldos, restauración y baja siguiendo [BACKUP_AND_RECOVERY.md](BACKUP_AND_RECOVERY.md); no declarar completado hasta demostrar una restauración.
 7. Ejecutar pruebas funcionales, de seguridad, concurrencia y accesibilidad.
 8. Publicar términos y privacidad, y habilitar producción solo después de validar requisitos legales y técnicos.
 
@@ -73,3 +73,8 @@ Las fuentes secundarias pueden ayudar a localizar normas, pero no deben ser la �
 - Existe un esquema SQL versionado, pero la migración inicial no se ha aplicado a la rama principal de Neon.
 - Hay una rama de trabajo para el adaptador de transacciones Neon; aún requiere CI y pruebas de integración.
 - No hay despliegue de producción ni integración real con BCV.
+
+
+## Política operativa de respaldo
+
+Consultar [BACKUP_AND_RECOVERY.md](BACKUP_AND_RECOVERY.md) como requisito obligatorio. La revisión documental no equivale a respaldo activo: debe demostrarse una copia independiente y una restauración. El objetivo es copia diaria automática y revisión cada 15 días, manteniendo el coste en $0.

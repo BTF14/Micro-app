@@ -33,7 +33,7 @@ Este archivo es la fuente de datos para el panel de avance. Un ítem solo puede 
 - [ ] Idempotencia de ventas y pagos verificada con pruebas.
 - [ ] Stock concurrente protegido contra sobreventa.
 - [ ] Instantáneas inmutables de precios, tasa y datos de venta.
-- [ ] Backups y restauración ensayados.
+- [ ] Backups diarios independientes automatizados, alertas, retención y restauración ensayada (ver [BACKUP_AND_RECOVERY.md](BACKUP_AND_RECOVERY.md)).
 
 ### Identidad y moneda
 - [x] Registro/login y sesiones revocables iniciales.
@@ -53,7 +53,7 @@ Este archivo es la fuente de datos para el panel de avance. Un ítem solo puede 
 - [ ] Gestión de errores, rate limiting y protección contra abuso revisadas.
 - [ ] Configuración de secretos/orígenes/cookies validada en entorno de preview.
 - [ ] Requisitos fiscales locales revisados y recibos correctamente clasificados.
-- [ ] Restauración desde backup probada.
+- [ ] Restauración desde backup independiente probada y documentada; Neon PITR por sí solo no satisface el requisito.
 - [ ] Prueba E2E de flujos reales contra API y DB de prueba (no solo mocks).
 - [ ] Checklist de lanzamiento revisado y aprobación explícita del usuario.
 
@@ -73,7 +73,11 @@ Este archivo es la fuente de datos para el panel de avance. Un ítem solo puede 
 - El flujo actual de autenticación no demuestra Google OAuth, allowlist ni verificación de correo.
 - Las pruebas Playwright actuales son smoke tests con API simulada; no prueban el backend real.
 - La aplicación no tiene aún los flujos completos de POS/ventas/inventario.
-- La migración de Neon main y el despliegue a producción siguen bloqueados hasta autorización explícita.
+- Los cambios en Neon main deben superar el gate de `docs/CONSTITUTION.md`; producción sigue bloqueada hasta completar los gates y obtener aceptación explícita.
 - La obligación fiscal no debe declararse resuelta sin fuentes oficiales y revisión competente.
 
 Actualiza este checklist solo junto con evidencia y una entrada en `docs/STATE_JOURNAL.md`.
+
+## Respaldo y recuperación
+
+La política está documentada en `docs/BACKUP_AND_RECOVERY.md`, pero el respaldo independiente automatizado y la restauración real siguen pendientes. No marcar estos controles completos sin evidencia reproducible.

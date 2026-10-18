@@ -127,8 +127,13 @@ Cada checkpoint significativo actualiza plan, diario y handoff. Ante contradicci
 - Producto: [PROJECT_PLAN.md](PROJECT_PLAN.md), [INSPIRATION.md](INSPIRATION.md)
 - API/auth: [API_INTEGRATION.md](API_INTEGRATION.md)
 - Datos: [DATABASE_SCHEMA.md](DATABASE_SCHEMA.md), [SCHEMA_REVIEW.md](SCHEMA_REVIEW.md)
-- Cumplimiento: [COMPLIANCE_REQUIREMENTS.md](COMPLIANCE_REQUIREMENTS.md)
+- Cumplimiento: [COMPLIANCE_REQUIREMENTS.md](COMPLIANCE_REQUIREMENTS.md), [BACKUP_AND_RECOVERY.md](BACKUP_AND_RECOVERY.md)
 - Seguridad: [SECURITY_PLAN_2026.md](SECURITY_PLAN_2026.md), [OWASP_ASVS_CHECKLIST.md](OWASP_ASVS_CHECKLIST.md)
 - POS: [POS_REFERENCE_MATRIX.md](POS_REFERENCE_MATRIX.md)
 - Recursos/herramientas: [RESOURCE_REGISTRY.md](RESOURCE_REGISTRY.md), [GENTLEMAN_PROGRAMMING_EVALUATION.md](GENTLEMAN_PROGRAMMING_EVALUATION.md), [GENTLEMAN_IMPLEMENTATION.md](GENTLEMAN_IMPLEMENTATION.md)
 - Continuidad: [AGENT_OPERATING_MODEL.md](AGENT_OPERATING_MODEL.md), [STATE_JOURNAL.md](STATE_JOURNAL.md), [HANDOFF_NEXT_CHAT.md](HANDOFF_NEXT_CHAT.md), [AGENTS.md](../AGENTS.md)
+
+
+## 14. Backups y recuperación
+
+Toda IA debe seguir [BACKUP_AND_RECOVERY.md](BACKUP_AND_RECOVERY.md). Antes de una mutación real en Neon `main`, confirmar el destino, el impacto y una ruta de recuperación comprobable. El objetivo es backup diario automático independiente y revisión cada 15 días, sin coste; hasta que exista evidencia de ejecución y restauración, se considera pendiente y no debe anunciarse como activo. Nunca guardar dumps o datos comerciales en Git.

@@ -49,3 +49,11 @@ Before planning or editing:
 - Never install or enable a Git hook automatically. First verify GGA + provider manually on a small, non-sensitive diff; document exact evidence and the uninstall path.
 - Engram is supplementary local memory, not the source of truth and not available to all chats automatically. Never store secrets or customer data in it.
 - Do not state any Gentleman tool is active until its installed version and a successful test are recorded.
+
+## Backups and recovery — mandatory
+
+- Read `docs/BACKUP_AND_RECOVERY.md` before any real-data migration, destructive operation, or production-sensitive change.
+- Never claim that automatic backups or restoration are working without current evidence. As of the documented checkpoint, independent automated backups and a successful restore have not been verified.
+- The target policy is daily automated database backups to an independent private encrypted destination, plus a health/restore review every 15 days. This is a design target, not a claim of implementation.
+- Do not commit database dumps, customer data, inventory exports, sales, payment records, credentials, or connection strings. Do not use GitHub artifacts as an improvised permanent backup destination.
+- Before the first real Neon `main` mutation, verify an actual recovery path. Neon Free's short PITR window is an extra recovery layer, not a substitute for independent backups.

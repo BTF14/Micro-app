@@ -155,3 +155,13 @@ Este diario es append-only en cuanto a historia: no borrar hitos antiguos; añad
 - Si no se puede confirmar destino, impacto o recuperación, detenerse; no improvisar ni continuar con incertidumbre.
 - Cambios aplicados en esta rama documental: `AGENTS.md`, `docs/CONSTITUTION.md` y `docs/HANDOFF_NEXT_CHAT.md`. No se ejecutó SQL, no se aplicaron migraciones y no se modificó ninguna base Neon.
 - Pendiente: revisar diff y validaciones CI en PR antes de integrar. La actualización de la política no demuestra que exista un backup ni que la restauración esté configurada; eso deberá verificarse antes de cualquier mutación real.
+
+
+## 2026-10-18 — Política de backup diario y revisión quincenal
+
+- Fuente oficial de Neon consultada: https://neon.com/docs/postgres/backup-restore/history-window y https://neon.com/docs/introduction/plans. La documentación indica que el plan Free tiene hasta 6 horas de historial PITR (máximo 1 GB de historial), una snapshot manual y no ofrece snapshots programadas. Confirmar límites en la consola antes de depender de ellos.
+- Se creó `docs/BACKUP_AND_RECOVERY.md` con requisitos de cobertura, retención, cifrado, control de acceso, restauración aislada, alertas y límites de coste.
+- Objetivo recomendado: backup lógico diario automático a destino independiente privado/cifrado con retención limitada; revisión de salud y recuperación cada 15 días. No generar copias diarias en GitHub ni almacenar dumps con datos reales en el repositorio.
+- Estado real: política documental solamente. No se configuró backup, no se descargaron datos, no se modificó Neon y no se probó restauración. El destino independiente gratuito, la automatización y los secretos aún deben diseñarse y verificarse antes de activar.
+- Se actualizan instrucciones de agentes, constitución, cumplimiento, handoff y checklist de producción para que las IA no asuman ni inventen que los backups están activos.
+- PR #13 fue fusionada en `3d8b571f1d6ed3478bf3cf6182c412d3282db586`; siete workflows terminaron en success para el HEAD del PR `e03d224f8aded9534db375068f3ae5cac0db8a60`. No se afirma aquí que los checks del merge SHA estén verificados.

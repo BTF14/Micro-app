@@ -1,3 +1,16 @@
+## 2026-10-18 — Revisión del adaptador Neon y reconciliación de política
+
+- `main` revisado: `c782625364cacbe94ac6ef7ef2ea091e7d960eb3`; rama comparada: `feat/neon-transaction-adapter`.
+- Comparación en vivo: rama divergida, 14 commits propios y 49 commits detrás de `main`; merge-base `2d2099245f2404b0a8d3689189235a577d5e632c`.
+- Los siete archivos del diff fueron revisados por contenido. `.github/workflows/security-scan.yml`, `apps/api/src/database.ts` y `apps/api/src/database.test.ts` son idénticos al contenido actual de `main`; no aportan código nuevo.
+- `apps/api/package.json` en la rama cambia `test` a `vitest run`, que incluiría los tests de integración que requieren PostgreSQL; la configuración actual separa esos tests y CI ya los ejecuta explícitamente. No copiar el cambio sin reconciliar el entorno local/CI.
+- `docs/API_INTEGRATION.md`, `docs/COMPLIANCE_REQUIREMENTS.md` y `docs/SECURITY_PLAN_2026.md` son versiones antiguas respecto de `main`; no sobrescribir los documentos actuales con ellas.
+- Conclusión: no fusionar la rama completa; no se encontró implementación única que justifique resolver la divergencia de 49 commits. Mantenerla como referencia histórica hasta que aparezca un cambio concreto que pueda rescatarse por separado.
+- Corrección documental: `docs/RESOURCE_REGISTRY.md` decía que Neon `main` era solo lectura, en contradicción con `AGENTS.md` y `docs/CONSTITUTION.md`. La política correcta es producción-sensible con gate de cambio, no prohibición permanente.
+- Sin cambios a Neon, sin secretos, sin pruebas locales ni despliegue.
+
+---
+
 ## 2026-10-18 — Checkpoint después de PR #27
 
 - PR #27 fusionada: https://github.com/BTF14/Micro-app/pull/27

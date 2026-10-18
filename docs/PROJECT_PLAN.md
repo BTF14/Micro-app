@@ -1,3 +1,19 @@
+# Checkpoint operativo — 2026-10-19, después de PR #31
+
+> Confirmar el estado vivo de GitHub y reemplazar los SHA/status de este checkpoint cuando cambien.
+
+- Repositorio: https://github.com/BTF14/Micro-app
+- Último `main` verificado antes de abrir la actualización documental: `31d1a09a9ba9bf41a797fea7c442f5d9e2223c56` — https://github.com/BTF14/Micro-app/commit/31d1a09a9ba9bf41a797fea7c442f5d9e2223c56.
+- PR #30 y #31 fusionadas; PR #32 actualiza continuidad, checkpoint y diario: https://github.com/BTF14/Micro-app/pull/32. No fusionar PR #32 hasta verificar que todos los checks requeridos del head SHA vigente terminaron correctamente.
+- PR #31 añadió pruebas de integración para denegar `/auth/me` y `/auth/login` cuando la organización está inactiva; su head tuvo checks exitosos antes del merge. El estado post-merge se debe verificar por SHA exacto.
+- La API todavía no registra rutas HTTP comerciales para catálogo, proveedores, compras, ventas, pagos o movimientos de inventario. No existe aislamiento de rutas de negocio que se pueda certificar hasta implementar endpoints y pruebas de integración reales.
+- Google OAuth + allowlist y decisiones D1–D8 continúan pendientes; la matriz de roles/permisos también está pendiente de aprobación. No inventar reglas ni exponer rutas comerciales hasta resolver permisos.
+- Backups independientes/restauración probada no verificados. No modificar Neon `main`, desplegar producción, activar billing, enviar correos ni tocar datos reales como parte de este trabajo.
+- Siguiente trabajo: verificar CI/PR #32; después priorizar una revisión concreta de seguridad o prueba aislada que no dependa de decisiones de identidad/roles. Evitar nuevos PR de documentación salvo que mejoren continuidad o corrijan hechos.
+- No se ejecutaron pruebas localmente durante esta revisión; los resultados deben citarse desde GitHub Actions para el SHA exacto.
+
+---
+
 # Checkpoint autoritativo — 2026-10-18, después de PR #27
 
 > **Esta sección prevalece sobre los snapshots históricos más abajo.** Verificar de nuevo GitHub antes de usar este estado en una sesión futura.

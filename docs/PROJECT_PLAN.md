@@ -308,3 +308,14 @@ No se instala CodeQL (coste/permisos de code scanning privado por confirmar), Ca
 ## Fusión verificada — 2026-10-18
 
 PR [#6](https://github.com/BTF14/Micro-app/pull/6) fusionado con squash en `main`, commit `dfe6d3efce5eddc10c25c42642faf5ea8b44eedb`. CI, migración, Trivy, Semgrep y Playwright E2E pasaron para el head de PR `df84d056d3edbc2191ac0fd34a39e18f3632ce03`. GitHub Actions se están ejecutando de nuevo sobre el commit de merge; no declarar el nuevo SHA verde hasta consultar esas ejecuciones.
+
+
+## Sistema de trabajo SDD y agentes
+
+- Proceso: [docs/SDD_WORKFLOW.md](SDD_WORKFLOW.md).
+- Perfiles reutilizables: [`.github/agents/`](../.github/agents/), incluyendo explorador, planificador, implementador, revisor y documentador.
+- Plantillas: [spec](../templates/sdd/spec.md), [plan](../templates/sdd/plan.md), [tasks](../templates/sdd/tasks.md).
+- Skill: [feature-sdd](../skills/feature-sdd/SKILL.md).
+- Memoria durable: GitHub, [diario de estado](STATE_JOURNAL.md), [registro de recursos](RESOURCE_REGISTRY.md) y [handoff](HANDOFF_NEXT_CHAT.md). No guardar secretos ni datos de clientes.
+- Estado de herramientas: los perfiles y el flujo están versionados; esto no significa que GGA, Ollama, Engram, Gentle-AI, MCP ni subagentes estén instalados o conectados a este chat.
+- Próxima mejora: automatizar validación de artefactos SDD y enlazar specs a issues/PRs sin permitir saltarse los controles de Neon main, producción o costes.

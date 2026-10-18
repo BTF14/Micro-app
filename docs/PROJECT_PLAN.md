@@ -232,3 +232,12 @@ Estas referencias son guías de revisión; no implican certificación y no se de
 Copia y pega:
 
 > Continúa Micro app leyendo primero `docs/PROJECT_PLAN.md` y `docs/HANDOFF_NEXT_CHAT.md` en https://github.com/BTF14/Micro-app. Verifica el estado real del repositorio, el SHA de main, las ramas/PR y GitHub Actions; no confíes en estados históricos. Trabaja directamente sobre el código existente, realiza cambios seguros, súbelos a GitHub y documenta el resultado en esos dos archivos. Prioriza revisar la rama feat/neon-transaction-adapter contra main y completar/revisar las pruebas de integración de autenticación con PostgreSQL temporal antes de fusionar nada más. No apliques migraciones a Neon main, no conectes otros proyectos, no despliegues producción y mantén el coste total en $0. Nunca expongas secretos ni me pidas repetir conexiones/permisos sin demostrar un bloqueo concreto. Indica commits, pruebas y checks verificados de verdad.
+
+
+## Checkpoint — herramientas investigadas implementadas en rama de trabajo (2026-10-18)
+
+Rama: `feat/security-e2e-tooling`. Se agregaron una configuración Playwright y dos pruebas de navegador de autenticación con API simulada, un workflow Chromium de CI, un workflow Semgrep JS/TS y el checklist OWASP ASVS y matriz de criterios POS.
+
+**Estado verificado:** los archivos se escribieron en GitHub en esta rama; las Actions todavía deben ejecutarse y revisarse por SHA. Playwright se instala de forma temporal en el workflow (`@playwright/test@1.55.0`) para no modificar el lockfile en esta operación; esto es un piloto y deja pendiente incorporarlo correctamente a `apps/web/package.json` y `pnpm-lock.yaml` cuando pueda ejecutarse pnpm 10 y validarse el lockfile. Las pruebas mockean la API y no demuestran que Google OAuth, allowlist, autorización multiempresa o backend estén completos.
+
+No se instala CodeQL (coste/permisos de code scanning privado por confirmar), Casbin ni middleware Express incompatible; ZAP queda para una preview aislada y Juice Shop solo para laboratorio. Mantener presupuesto $0 y no apuntar herramientas dinámicas a producción.

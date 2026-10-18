@@ -13,7 +13,7 @@ Before planning or editing:
 
 - This repository is the independent Micro app project. Never mix it with Cantina-pos or other projects.
 - Target total cost is **$0**. Do not enable billing, paid plans, cards, subscriptions, or automatic charges.
-- Never run mutating SQL/migrations against Neon primary branch `main`. Use disposable PostgreSQL or an isolated test branch.
+- Neon primary branch `main` is production-sensitive, not permanently read-only. The AI may apply a necessary, justified mutation only after the production-change gate in `docs/CONSTITUTION.md` is satisfied. Prefer disposable PostgreSQL or an isolated Neon branch first. Destructive, data-deleting, hard-to-reverse, high-uncertainty, or business-critical data changes require explicit user approval before execution. Never proceed without a verified recovery path, target identity, reviewed migration/SQL, and post-change validation.
 - Do not deploy production or make irreversible changes without explicit user acceptance.
 - Never commit or disclose secrets, credentials, access tokens, customer data, or database connection strings.
 - Do not send emails; only the user can authorize sending.

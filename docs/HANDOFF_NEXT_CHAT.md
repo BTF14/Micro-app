@@ -1,5 +1,14 @@
 # Checkpoint más reciente — 2026-10-18
 
+## Continuidad verificada después de PR #23
+
+- `main` base confirmado: `838715d211918f521f5e6401a91dc773236ef3ad`. Los siete workflows posteriores a la fusión terminaron en success; detalle en [CURRENT_STATE.md](CURRENT_STATE.md).
+- PR #24, [matriz de aceptación para aislamiento tenant](https://github.com/BTF14/Micro-app/pull/24), abierta desde `docs/tenant-isolation-test-plan`, head `8b63228f3fb02ca953e842078ea0150514951659`. Al actualizar este handoff, sus workflows seguían ejecutándose salvo el panel de progreso y un escaneo de seguridad que ya terminaron en success. Revalidar el SHA y todos los resultados antes de integrar.
+- Revisión de rutas: actualmente `apps/api/src/index.ts` registra health y rutas de autenticación; aún no existen handlers HTTP de productos, proveedores, ventas, pagos ni movimientos de inventario. La prueba real de aislamiento por recurso queda pendiente hasta que se implementen esos handlers. No inventar endpoints ni afirmar que el aislamiento completo ya está probado.
+- La matriz nueva está en [TENANT_ISOLATION_TEST_PLAN.md](TENANT_ISOLATION_TEST_PLAN.md). Actualizaciones registradas en [STATE_JOURNAL.md](STATE_JOURNAL.md).
+- Bloqueos siguen vigentes: Google OAuth + allowlist y decisiones D1–D8 no aprobadas; backups/restauración independiente no verificados; sin despliegue de producción ni mutaciones en Neon `main`.
+
+
 ## Política vigente de cambios en Neon `main`
 
 Neon `main` ya no se considera permanentemente de solo lectura. La IA puede realizar cambios necesarios de bajo riesgo, compatibles y recuperables si confirma inequívocamente el destino, documenta la necesidad, prueba primero en entorno aislado cuando sea viable, revisa el SQL/migración, comprueba un camino de recuperación y valida después. Cambios destructivos, difíciles de revertir, masivos sobre datos financieros/inventario/usuarios, permisos/credenciales, indisponibilidad material o impacto incierto requieren aprobación explícita previa del usuario. Si el destino, respaldo o impacto no están claros, detenerse. Esta política autoriza cambios prudentes necesarios; no autoriza acciones innecesarias ni riesgos ilimitados. Detalles normativos en [Constitución](CONSTITUTION.md) y `AGENTS.md`.

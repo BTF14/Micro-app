@@ -6,6 +6,8 @@
 **SHA verificado al escribir este handoff:** `12c0037f3928b2c54c3593d3f48a65bf3318f401`  
 **Objetivo:** que una nueva IA retome el trabajo con evidencia, sin repetir solicitudes al usuario, perder decisiones ni inventar estados.
 
+> **Nota de frescura:** este documento contiene un snapshot histórico de `main` en `12c0037...`. Para el estado vivo, leer primero `docs/HANDOFF_NEXT_CHAT.md` y comprobar GitHub. El SDD/agent workflow está documentado en PR #9; verificar su merge antes de asumir que forma parte de `main`.
+
 ## Lectura obligatoria, en este orden
 
 1. [Este handoff](HANDOFF_NEXT_CHAT.md).
@@ -76,3 +78,8 @@ Leer [GENTLEMAN_PROGRAMMING_EVALUATION.md](GENTLEMAN_PROGRAMMING_EVALUATION.md).
 
 > Continúa el proyecto Micro app en https://github.com/BTF14/Micro-app. Antes de cambiar código, lee completos `docs/HANDOFF_NEXT_CHAT.md`, `docs/PROJECT_PLAN.md`, `docs/STATE_JOURNAL.md`, `docs/RESOURCE_REGISTRY.md` y `docs/GENTLEMAN_PROGRAMMING_EVALUATION.md`; luego verifica en vivo el HEAD de main, ramas, PR y GitHub Actions. No confíes en snapshots viejos sin verificarlos. El requisito P0 es reconciliar autenticación Google + allowlist con el código actual; la rama feat/neon-transaction-adapter requiere diff completo, no merge ciego. Investiga Gentle-AI, Engram, Gentleman Guardian Angel, Gentle Shell y Playwright según la evaluación, pero no digas que están instalados o que hay subagentes corriendo si no hay evidencia. Haz cambios seguros, pruebas reales y push cuando proceda; actualiza documentación y registra SHA/resultados. Mantén el coste $0, no mezcles Cantina-pos, no migres Neon main, no despliegues producción, no expongas secretos ni envíes correos. No me pidas repetir conexiones/permisos salvo bloqueo demostrado. Distingue hechos, hipótesis y tareas pendientes; no alucines estados.
 
+
+
+## Regla para mantener la continuidad
+
+Cada cierre de sesión debe actualizar el handoff con la rama y SHA actuales, estado del PR, checks exactos y bloqueos; el diario conserva historia, pero los snapshots antiguos deben etiquetarse como históricos. El prompt copiable del handoff es el punto de entrada para una IA nueva. La documentación Git es la memoria canónica; cualquier memoria local o MCP es complementaria.

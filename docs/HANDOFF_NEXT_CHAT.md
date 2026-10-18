@@ -1,3 +1,17 @@
+# Checkpoint más reciente — 2026-10-18
+
+> **Actualización de continuidad:** el PR #9 (`feat/sdd-agent-workflow`) tiene los seis workflows de CI/seguridad/E2E y la validación SDD en `success` para el HEAD `68659d1c1ec0cb9996293f78f9bd487e95124bbf`. PR #9 sigue pendiente de integración en este punto. La sección histórica inferior contiene snapshots anteriores; no usar sus SHA como estado vivo. Última verificación de checks: [Actions para el commit](https://github.com/BTF14/Micro-app/commits/feat/sdd-agent-workflow/).
+
+- PR #8, panel de avance, fusionado: https://github.com/BTF14/Micro-app/pull/8
+- Commit de merge: `449fc328bff4ffafd6b6a46c0e539ac85cbd9ebf`.
+- Rama de trabajo: `feat/sdd-agent-workflow`; objetivo: añadir proceso SDD, plantillas y perfiles de agentes.
+- El SHA `94445d8cdbe37d3bde4eb1fa1c7f878ee75920ee` tuvo seis workflows con conclusión `success`: CI, validación de migraciones, security/Trivy, Semgrep, Playwright E2E y dashboard. Playwright usa mocks para el piloto; no acredita integración real API+DB.
+- Archivos nuevos: `docs/SDD_WORKFLOW.md`, `templates/sdd/{spec,plan,tasks}.md`, `skills/feature-sdd/SKILL.md`, `.github/agents/{explorer,planner,implementer,reviewer,documentation}.agent.md`.
+- Perfiles versionados no equivalen a procesos autónomos activos. GGA/Ollama/Engram/Gentle-AI/MCP siguen sin instalación/conexión verificada desde este chat.
+- No se desplegó producción ni se mutó Neon `main`. Verificar el HEAD y los checks actuales antes de fusionar la nueva PR.
+
+---
+
 # Protocolo de continuidad para IA/chat — Micro app
 
 **Última actualización:** 2026-10-18  
@@ -106,3 +120,8 @@ Este bloque es más reciente que los snapshots históricos de arriba. PR [#6](ht
 - `docs/POS_REFERENCE_MATRIX.md`: traduce investigación de OSPOS/NexoPOS/Lakasir/POSNext en criterios de aceptación.
 
 Después de la fusión, verificar los workflows del commit nuevo de main y actualizar este handoff con sus resultados. Próximo paso técnico: fijar Playwright en el workspace y actualizar `pnpm-lock.yaml` mediante pnpm 10 en un entorno ejecutable; luego ampliar E2E y cubrir auth/allowlist real. Google OAuth + allowlist siguen siendo P0. No migrar Neon main ni desplegar producción.
+
+
+## Prompt de inicio para cualquier IA nueva
+
+> Trabaja exclusivamente en `BTF14/Micro-app`. Antes de tocar código, lee `AGENTS.md`, `docs/CONSTITUTION.md`, `docs/HANDOFF_NEXT_CHAT.md`, `docs/PROJECT_PLAN.md`, `docs/STATE_JOURNAL.md`, `docs/RESOURCE_REGISTRY.md`, `docs/AI_CONTINUITY_PROTOCOL.md` y los documentos de dominio relevantes. Verifica en vivo el SHA de `main`, PRs, ramas y Actions para el SHA exacto. Sigue `docs/SDD_WORKFLOW.md` para cambios significativos y usa `templates/sdd/`. Preserva coste $0; no mezcles Cantina-pos; no expongas secretos; no mutar Neon `main` ni desplegar producción sin autorización específica. Los perfiles `.github/agents/` no prueban que existan subagentes activos. Distingue hechos, inferencias y pendientes. No pidas repetir permisos o contexto ya documentado salvo bloqueo concreto. Al terminar, actualiza plan, diario, handoff y registro de recursos según corresponda, y proporciona enlaces a commits/PR/checks.

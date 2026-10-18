@@ -55,3 +55,10 @@ Evitar que una única pasada generalista omita seguridad, pruebas, avance del re
 - [ ] Riesgos y tareas no completadas visibles.
 - [ ] Plan y handoff sin contradicciones conocidas.
 - [ ] Sin mutaciones de Neon main, despliegue de producción ni gasto no autorizado.
+
+
+## Flujo SDD y nuevos perfiles
+
+El proceso de especificación, planificación, tareas, implementación, revisión y validación está descrito en [SDD_WORKFLOW.md](SDD_WORKFLOW.md). Las plantillas reutilizables están en [templates/sdd/](../templates/sdd/) y la receta de funciones en [feature-sdd skill](../skills/feature-sdd/SKILL.md).
+
+Perfiles adicionales versionados: [explorer](../.github/agents/explorer.agent.md), [planner](../.github/agents/planner.agent.md), [implementer](../.github/agents/implementer.agent.md), [reviewer](../.github/agents/reviewer.agent.md) y [documentation](../.github/agents/documentation.agent.md). Son contratos de rol reutilizables, no procesos activos por sí solos. En ChatGPT se ejecutarán solo las capacidades conectadas; cuando no haya subagentes lanzables, el coordinador hará revisiones separadas y lo declarará.

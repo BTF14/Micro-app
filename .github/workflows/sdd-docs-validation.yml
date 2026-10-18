@@ -1,0 +1,41 @@
+name: SDD and agent documentation validation
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'AGENTS.md'
+      - 'docs/CONSTITUTION.md'
+      - 'docs/SDD_WORKFLOW.md'
+      - 'docs/AGENT_OPERATING_MODEL.md'
+      - 'templates/sdd/**'
+      - 'skills/feature-sdd/**'
+      - '.github/agents/**'
+      - 'tools/validate-agent-docs.py'
+      - '.github/workflows/sdd-docs-validation.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'AGENTS.md'
+      - 'docs/CONSTITUTION.md'
+      - 'docs/SDD_WORKFLOW.md'
+      - 'docs/AGENT_OPERATING_MODEL.md'
+      - 'templates/sdd/**'
+      - 'skills/feature-sdd/**'
+      - '.github/agents/**'
+      - 'tools/validate-agent-docs.py'
+      - '.github/workflows/sdd-docs-validation.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  validate-sdd-docs:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Validate SDD templates and agent profiles
+        run: python3 tools/validate-agent-docs.py

@@ -1,5 +1,7 @@
 # Índice principal de documentación y checkpoint vigente
 
+> **Aviso de frescura:** los SHA y estados que aparecen en checkpoints históricos deben confirmarse en GitHub antes de usarse como estado actual. El checkpoint vigente está en `docs/HANDOFF_NEXT_CHAT.md`; no tratar los SHA de entradas antiguas como HEAD vivo.
+>
 > Documento rector: [Constitución del proyecto](CONSTITUTION.md). Sus reglas de coste, seguridad, identidad, integridad de datos y evidencia prevalecen sobre atajos.
 
 ## Checkpoint documental — 2026-10-18
@@ -319,3 +321,8 @@ PR [#6](https://github.com/BTF14/Micro-app/pull/6) fusionado con squash en `main
 - Memoria durable: GitHub, [diario de estado](STATE_JOURNAL.md), [registro de recursos](RESOURCE_REGISTRY.md) y [handoff](HANDOFF_NEXT_CHAT.md). No guardar secretos ni datos de clientes.
 - Estado de herramientas: los perfiles y el flujo están versionados; esto no significa que GGA, Ollama, Engram, Gentle-AI, MCP ni subagentes estén instalados o conectados a este chat.
 - Próxima mejora: automatizar validación de artefactos SDD y enlazar specs a issues/PRs sin permitir saltarse los controles de Neon main, producción o costes.
+
+
+## SDD y continuidad entre chats — 2026-10-18
+
+El flujo SDD, sus plantillas y perfiles de roles están en la rama `feat/sdd-agent-workflow` y PR [#9](https://github.com/BTF14/Micro-app/pull/9). Los workflows asociados al HEAD `68659d1c1ec0cb9996293f78f9bd487e95124bbf` se comprobaron en `success` (CI, migraciones, seguridad/Trivy, Semgrep, Playwright E2E y validación SDD; el dashboard también tuvo éxito). El PR debe verificarse como fusionado antes de afirmar que esos archivos están en `main`. Playwright en este proyecto usa mocks para el piloto y no certifica integración real API+DB. No hubo despliegue de producción ni mutación de Neon `main`.

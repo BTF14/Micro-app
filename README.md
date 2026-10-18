@@ -66,6 +66,7 @@ El estado se actualizará a partir de trabajo verificable, no de estimaciones op
 
 Antes de continuar trabajo, lee [`AGENTS.md`](AGENTS.md) y el [handoff vigente](docs/HANDOFF_NEXT_CHAT.md). La documentación de continuidad, decisiones, herramientas evaluadas y límites de seguridad está centralizada aquí:
 
+- [Constitución del proyecto (reglas rectoras)](docs/CONSTITUTION.md)
 - [Protocolo de continuidad IA/chat](docs/AI_CONTINUITY_PROTOCOL.md)
 - [Plan maestro](docs/PROJECT_PLAN.md)
 - [Diario de estado y verificaciones](docs/STATE_JOURNAL.md)

@@ -111,3 +111,15 @@ Fuentes oficiales: https://playwright.dev/docs/intro · https://github.com/semgr
 | Strix | https://github.com/usestrix/strix | Evaluación dinámica de seguridad de API/aplicaciones. Usar solo en laboratorio local/efímero o staging autorizado, con datos sintéticos. Requiere Docker y proveedor LLM; verificar coste $0 antes de ejecutar. No instalado ni ejecutado. |
 
 Plan de adopción: [STRIX_INTEGRATION.md](STRIX_INTEGRATION.md). Complementa Semgrep, Trivy, Playwright y OWASP ASVS; no reemplaza revisión humana ni pruebas específicas de autorización. No usar en producción ni en sistemas ajenos. La integración en CI queda pendiente de evaluación independiente.
+
+
+## Continuidad — estado de PR y Strix (2026-10-18)
+
+| Recurso | Estado comprobado | Próximo uso |
+|---|---|---|
+| PR #19 — decisiones de autenticación | Fusionada en `main`, merge/HEAD `1228a43cb4bc5e1ef8aabb548b034a0af97ec253`. D1–D8 siguen siendo opciones propuestas, no política aprobada. | Leer el registro de decisiones antes de diseñar OAuth/allowlist; no inventar reglas. |
+| PR #20 — adopción controlada de Strix | Fusionada previamente, merge SHA `c87361685ef1ce36e4cf6025124b09e70ffa0846`. | Usar `STRIX_INTEGRATION.md` para una futura evaluación aislada. |
+| GitHub Actions en main | CI, Playwright E2E, validación de migraciones, Semgrep, Security scan y dashboard: success para SHA `1228a43cb4bc5e1ef8aabb548b034a0af97ec253`. | Verificar de nuevo el SHA exacto antes de declarar el estado actual. |
+| Strix | Documentado; no instalado ni ejecutado, sin informe ni proveedor LLM conectado. | Solo cuando API y PostgreSQL efímero estén listos; laboratorio autorizado, datos sintéticos y coste $0. |
+
+El handoff incluye el prompt copiable para continuar en un chat nuevo. La documentación no hace que otra IA recuerde automáticamente: debe leer los archivos del repositorio y verificar el estado vivo.

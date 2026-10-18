@@ -1,0 +1,46 @@
+{
+  "generated_at": "2026-10-18",
+  "source": "docs/PRODUCTION_READINESS.md",
+  "implementation": {
+    "done": 5,
+    "total": 23,
+    "percent": 21.7
+  },
+  "production_readiness": {
+    "done": 5,
+    "total": 20,
+    "percent": 25
+  },
+  "groups": [
+    {
+      "name": "Implementación funcional",
+      "done": 5,
+      "total": 23,
+      "percent": 21.7
+    },
+    {
+      "name": "Preparación para producción (gates)",
+      "done": 5,
+      "total": 20,
+      "percent": 25
+    },
+    {
+      "name": "Bloqueos conocidos",
+      "done": 0,
+      "total": 0,
+      "percent": 0
+    }
+  ],
+  "production_blockers": [
+    "Pruebas de integración completas de identidad, sesiones y errores de base de datos",
+    "Autorización multiempresa y aislamiento comprobados en toda la API",
+    "Flujos reales de venta/inventario con transacciones, idempotencia y concurrencia",
+    "Gestión de errores, rate limiting y protección contra abuso revisadas",
+    "Configuración de secretos/orígenes/cookies validada en entorno de preview",
+    "Requisitos fiscales locales revisados y recibos correctamente clasificados",
+    "Restauración desde backup probada",
+    "Prueba E2E de flujos reales contra API y DB de prueba (no solo mocks)",
+    "Checklist de lanzamiento revisado y aprobación explícita del usuario"
+  ],
+  "note": "Porcentaje de criterios inventariados con evidencia; no es una certificación ni una garantía de producción."
+}

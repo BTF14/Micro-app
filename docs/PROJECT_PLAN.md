@@ -10,6 +10,16 @@
 - La consulta de status checks para ese SHA devolvió una lista vacía; el estado actual de Actions queda **no verificado**. Consultar ejecuciones actuales antes de declarar éxito.
 - No se desplegó producción ni se modificó Neon `main` en esta tarea.
 
+## Panel visual de avance y salida a producción
+
+- [Panel HTML](progress/index.html)
+- [Gráfica SVG](progress/progress.svg)
+- [Datos JSON](progress/progress.json)
+- [Fuente de verdad: checklist de preparación](PRODUCTION_READINESS.md)
+- Generador: [tools/project-progress.py](../tools/project-progress.py)
+
+El panel distingue el avance de implementación del porcentaje de preparación para producción. Cada criterio solo se marca completado con evidencia. Los gates P0 pendientes bloquean la declaración de listo para producción, independientemente del porcentaje.
+
 ## Índice maestro de documentos
 
 ### Constitución, planificación y continuidad

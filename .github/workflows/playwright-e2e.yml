@@ -32,14 +32,16 @@ jobs:
           version: 10
       - name: Install locked workspace dependencies
         run: pnpm install --frozen-lockfile
-      - name: Install Playwright test runner without changing tracked manifests
-        working-directory: apps/web
-        run: npm install --no-save --package-lock=false @playwright/test
+      - name: Install pinned Playwright runner in an isolated temporary directory
+        run: npm install --prefix /tmp/micro-app-playwright --no-save --package-lock=false @playwright/test@1.55.0
+      - name: Expose runner to the app without touching pnpm-managed packages
+        run: |
+          mkdir -p apps/web/node_modules/@playwright
+          ln -s /tmp/micro-app-playwright/node_modules/@playwright/test apps/web/node_modules/@playwright/test
       - name: Install Chromium and OS dependencies
-        working-directory: apps/web
-        run: npx playwright install --with-deps chromium
+        run: /tmp/micro-app-playwright/node_modules/.bin/playwright install --with-deps chromium
       - name: Run browser tests
-        run: pnpm --filter @micro-app/web exec playwright test --config playwright.config.ts
+        run: /tmp/micro-app-playwright/node_modules/.bin/playwright test --config apps/web/playwright.config.ts
       - name: Upload Playwright report and traces on failure
         if: failure()
         uses: actions/upload-artifact@v4

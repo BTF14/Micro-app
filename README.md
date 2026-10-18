@@ -79,3 +79,13 @@ Los perfiles en `.github/agents/` son instrucciones reutilizables; no implican q
 ## Gentleman-Programming: implementación
 
 El estado de adopción, configuración local de GGA, instrucciones de Engram y pasos de verificación están en [`docs/GENTLEMAN_IMPLEMENTATION.md`](docs/GENTLEMAN_IMPLEMENTATION.md). El archivo raíz `.gga` está preparado para revisión local con Ollama, pero no activa un hook ni afirma que GGA/Engram/Gentle-AI estén instalados.
+
+## Seguridad y pruebas E2E
+
+- [Checklist de seguridad OWASP ASVS](docs/OWASP_ASVS_CHECKLIST.md): controles pendientes con evidencia requerida.
+- [Matriz de requisitos POS](docs/POS_REFERENCE_MATRIX.md): convierte la investigación de OSPOS, NexoPOS, Lakasir y POSNext en criterios de aceptación.
+- [Playwright E2E](apps/web/playwright.config.ts): pruebas de navegador para login y errores de registro; el workflow de CI usa Chromium y datos simulados, sin servicios ni datos de producción.
+- [Semgrep SAST](.github/workflows/semgrep.yml): análisis estático JS/TS con reporte SARIF como artefacto.
+- [Trivy](.github/workflows/security-scan.yml): escaneo de filesystem/configuración/secretos existente, todavía no bloqueante.
+
+La integración Playwright es un piloto de CI: su runner se instala temporalmente en el job para no alterar el lockfile en este cambio. Para reproducibilidad local completa, el siguiente paso es incorporar la versión de Playwright al workspace y regenerar pnpm-lock.yaml con pnpm 10 en un entorno ejecutable.

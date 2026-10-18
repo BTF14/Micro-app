@@ -83,3 +83,8 @@ Leer [GENTLEMAN_PROGRAMMING_EVALUATION.md](GENTLEMAN_PROGRAMMING_EVALUATION.md).
 ## Regla para mantener la continuidad
 
 Cada cierre de sesión debe actualizar el handoff con la rama y SHA actuales, estado del PR, checks exactos y bloqueos; el diario conserva historia, pero los snapshots antiguos deben etiquetarse como históricos. El prompt copiable del handoff es el punto de entrada para una IA nueva. La documentación Git es la memoria canónica; cualquier memoria local o MCP es complementaria.
+
+
+## Integración SDD — estado
+
+PR #9 quedó fusionado en `main` con commit `f1a38f5bc4b101f9d73ae4ca26c2acafb2b208f3`. El flujo SDD, las plantillas, la skill y los perfiles reutilizables ya forman parte de la rama principal. Los checks del HEAD del PR fueron exitosos; verificar Actions del commit de merge para el estado actual. Los perfiles no equivalen a agentes autónomos activos, y la documentación Git continúa siendo la fuente canónica.

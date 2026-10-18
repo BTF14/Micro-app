@@ -161,6 +161,30 @@ describe("Micro app API scaffold", () => {
     });
   });
 
+  it("rejects login and logout when Origin is missing before accessing the database", async () => {
+    const bindings = { FRONTEND_ORIGIN: "https://micro-app.example" };
+
+    const login = await app.request(
+      "/auth/login",
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: "user@example.com", password: "a-long-test-password" }),
+      },
+      bindings,
+    );
+    expect(login.status).toBe(403);
+    await expect(login.json()).resolves.toMatchObject({ error: "ORIGIN_NOT_ALLOWED" });
+
+    const logout = await app.request(
+      "/auth/logout",
+      { method: "POST" },
+      bindings,
+    );
+    expect(logout.status).toBe(403);
+    await expect(logout.json()).resolves.toMatchObject({ error: "ORIGIN_NOT_ALLOWED" });
+  });
+
   it("enables credentialed CORS only for the configured origin", async () => {
     const allowed = await app.request(
       "/health",

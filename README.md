@@ -1,5 +1,15 @@
 # Micro-app
 
+## Estado del proyecto
+
+![Avance verificable](docs/progress/progress.svg)
+
+- [Panel completo de avance y bloqueos](docs/progress/index.html)
+- [Checklist con evidencia y criterios de salida](docs/PRODUCTION_READINESS.md)
+- [Datos del panel en JSON](docs/progress/progress.json)
+
+Las gráficas separan implementación funcional de preparación para producción. Los porcentajes cuentan criterios explícitos con evidencia; no son una estimación subjetiva ni certifican que el sistema esté listo. El panel se genera con `python3 tools/project-progress.py`.
+
 Sistema web de punto de venta e inventario, diseñado para PC y móvil.
 
 ## Objetivo

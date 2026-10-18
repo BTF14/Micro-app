@@ -60,3 +60,17 @@ No se usará Vercel Hobby como alojamiento objetivo de la operación: sus térmi
 - [ ] Migraciones, autenticación, funciones de negocio y preview desplegados.
 
 El estado se actualizará a partir de trabajo verificable, no de estimaciones optimistas.
+
+
+## Continuidad para agentes y nuevos chats
+
+Antes de continuar trabajo, lee [`AGENTS.md`](AGENTS.md) y el [handoff vigente](docs/HANDOFF_NEXT_CHAT.md). La documentación de continuidad, decisiones, herramientas evaluadas y límites de seguridad está centralizada aquí:
+
+- [Protocolo de continuidad IA/chat](docs/AI_CONTINUITY_PROTOCOL.md)
+- [Plan maestro](docs/PROJECT_PLAN.md)
+- [Diario de estado y verificaciones](docs/STATE_JOURNAL.md)
+- [Registro de herramientas y fuentes](docs/RESOURCE_REGISTRY.md)
+- [Evaluación de Gentleman-Programming](docs/GENTLEMAN_PROGRAMMING_EVALUATION.md)
+- [Modelo operativo de agentes](docs/AGENT_OPERATING_MODEL.md)
+
+Los perfiles en `.github/agents/` son instrucciones reutilizables; no implican que agentes autónomos estén activos. Los estados y pruebas deben verificarse contra el SHA actual de GitHub.

@@ -111,3 +111,27 @@ Fuentes oficiales: https://playwright.dev/docs/intro · https://github.com/semgr
 | Strix | https://github.com/usestrix/strix | Evaluación dinámica de seguridad de API/aplicaciones. Usar solo en laboratorio local/efímero o staging autorizado, con datos sintéticos. Requiere Docker y proveedor LLM; verificar coste $0 antes de ejecutar. No instalado ni ejecutado. |
 
 Plan de adopción: [STRIX_INTEGRATION.md](STRIX_INTEGRATION.md). Complementa Semgrep, Trivy, Playwright y OWASP ASVS; no reemplaza revisión humana ni pruebas específicas de autorización. No usar en producción ni en sistemas ajenos. La integración en CI queda pendiente de evaluación independiente.
+
+
+## Continuidad — estado de PR y Strix (2026-10-18)
+
+| Recurso | Estado comprobado | Próximo uso |
+|---|---|---|
+| PR #19 — decisiones de autenticación | Fusionada en `main`, merge/HEAD `1228a43cb4bc5e1ef8aabb548b034a0af97ec253`. D1–D8 siguen siendo opciones propuestas, no política aprobada. | Leer el registro de decisiones antes de diseñar OAuth/allowlist; no inventar reglas. |
+| PR #20 — adopción controlada de Strix | Fusionada previamente, merge SHA `c87361685ef1ce36e4cf6025124b09e70ffa0846`. | Usar `STRIX_INTEGRATION.md` para una futura evaluación aislada. |
+| GitHub Actions en main | CI, Playwright E2E, validación de migraciones, Semgrep, Security scan y dashboard: success para SHA `1228a43cb4bc5e1ef8aabb548b034a0af97ec253`. | Verificar de nuevo el SHA exacto antes de declarar el estado actual. |
+| Strix | Documentado; no instalado ni ejecutado, sin informe ni proveedor LLM conectado. | Solo cuando API y PostgreSQL efímero estén listos; laboratorio autorizado, datos sintéticos y coste $0. |
+
+El handoff incluye el prompt copiable para continuar en un chat nuevo. La documentación no hace que otra IA recuerde automáticamente: debe leer los archivos del repositorio y verificar el estado vivo.
+
+
+## Consulta viva de repositorio — 2026-10-18
+
+| Recurso | Consulta/evidencia | Conclusión y límite |
+|---|---|---|
+| GitHub `main` | API `GET /repos/BTF14/Micro-app/branches/main`; SHA `1228a43cb4bc5e1ef8aabb548b034a0af97ec253`. | Confirmado en esta sesión; volver a consultar antes de operar. La rama no está protegida y no tiene checks requeridos. |
+| PR #21 | [PR #21](https://github.com/BTF14/Micro-app/pull/21), head `fb9ab271cc8b1c72e92d7874672913698c59bfe7`. | Abierta/no fusionada. CI, E2E, migraciones, Semgrep, Security y dashboard success para ese SHA. Bot Codex reportó revisión fallida/hallazgos, pero sin comentario inline/review formal recuperable; no tratarlo como aprobación. |
+| Auth/API+DB | `apps/api/src/auth.ts` y `apps/api/src/auth.integration.test.ts` en main. | Integración de contraseña/sesión contra PostgreSQL efímero existe en CI; no prueba Google OAuth/allowlist ni matriz completa de tenant. Registro sigue sin allowlist: P0 abierto. |
+| Decisiones de identidad | `docs/sdd/auth-policy-decision-record.md`. | D1–D8 son propuestas no aprobadas; no inventar política ni configurar OAuth por suposición. |
+| Strix | [Repositorio Strix](https://github.com/usestrix/strix), [plan local](STRIX_INTEGRATION.md). | Documentado, no instalado ni ejecutado; no se escaneó Micro app ni se creó workflow Strix. Coste $0/aislamiento aún son gates antes de cualquier prueba. |
+

@@ -204,3 +204,24 @@ Este diario es append-only en cuanto a historia: no borrar hitos antiguos; añad
 - PR #12 es diseño SDD ya fusionado; decisiones D1–D8 aún no están documentadas como resueltas. Próximo paso seguro: releer el documento fuente de SDD y separar decisiones que ya están respaldadas por requisitos de las que requieren confirmación de producto. No inventar allowlist, administrador, dominios ni política de vinculación.
 - La rama `main` no tiene protección de branch configurada según lectura de GitHub (`protected=false`, checks requeridos vacíos). Es una mejora de gobernanza a evaluar, no se cambió en este trabajo.
 - Backup externo automatizado, destino independiente, alertas y restauración aislada siguen pendientes. No hay despliegue de producción ni cambios en Neon/secretos/datos reales.
+
+
+## 2026-10-18 — PR #19 y #20 fusionadas; traspaso entre chats
+
+- PR [#20](https://github.com/BTF14/Micro-app/pull/20) añade documentación de adopción controlada de Strix; merge SHA `c87361685ef1ce36e4cf6025124b09e70ffa0846`.
+- PR [#19](https://github.com/BTF14/Micro-app/pull/19) añade un registro de opciones para las decisiones D1–D8 de autenticación; merge SHA `1228a43cb4bc5e1ef8aabb548b034a0af97ec253`. Son opciones propuestas, no decisiones de producto aprobadas.
+- HEAD de `main` verificado después de ambas fusiones: `1228a43cb4bc5e1ef8aabb548b034a0af97ec253`.
+- Para ese SHA exacto, CI, Playwright E2E, validación de migraciones, Semgrep SAST, Security scan y dashboard concluyeron en success: [CI](https://github.com/BTF14/Micro-app/actions/runs/39129579632), [E2E](https://github.com/BTF14/Micro-app/actions/runs/39129579599), [migraciones](https://github.com/BTF14/Micro-app/actions/runs/39129579656), [Semgrep](https://github.com/BTF14/Micro-app/actions/runs/39129579602), [Security](https://github.com/BTF14/Micro-app/actions/runs/39129579595), [dashboard](https://github.com/BTF14/Micro-app/actions/runs/39129579631).
+- La documentación de Strix explica propósito, escenarios, requisitos de coste/aislamiento y gates. Strix no está instalado ni ejecutado; no hay escaneo ni informe y no se añadió workflow de Strix.
+- Se actualiza el handoff para el cambio de chat debido al límite de duración de la conversación. Las tareas P0 de autenticación/allowlist, pruebas API+DB reales y backup/restore siguen pendientes. No se mutó Neon ni se desplegó producción.
+
+
+## 2026-10-18 — Verificación viva de PR #21 y bloqueo P0
+
+- GitHub API confirma `main` en `1228a43cb4bc5e1ef8aabb548b034a0af97ec253`. Rama sin protección activa ni checks requeridos (`protected=false`).
+- PR [#21](https://github.com/BTF14/Micro-app/pull/21) permanece abierta, `merged=false`, HEAD `fb9ab271cc8b1c72e92d7874672913698c59bfe7`; no fusionada. Checks del SHA exacto: CI run 39129938686, Playwright E2E 39129938460, migraciones 39129938520, Semgrep 39129938702, Security scan 39129938471 y dashboard 39129938467; todos `success`. El status API clásico devolvió cero checks, por lo que se documentan los workflow runs como fuente de evidencia.
+- El bot Codex marcó revisión como fallida/con hallazgos sin resolver, pero la API no devolvió review formal ni comentarios inline y el bot indicó límite de uso. No hay hallazgo técnico concreto reproducible que se pueda corregir; mantener PR sin fusionar hasta revisar el diff y resolver/explicar la señal.
+- La lectura actual de `apps/api/src/auth.ts` (blob SHA `0735dbad34bd5c932852882da0bff6eebbab337a`) confirma que el registro por contraseña crea usuario, organización, membresía `owner` y sesión; no se ve Google OAuth ni allowlist. Test `apps/api/src/auth.integration.test.ts` usa PostgreSQL efímero en CI, pero no prueba el requisito OAuth/allowlist ni aislamiento cross-tenant integral.
+- D1–D8 continúan sin aprobar. No elegir de forma autónoma correos, dominios, bootstrap, altas de organizaciones ni vinculación de cuentas. P0 continúa abierto; no declarar producción lista.
+- Strix solo documentado, no instalado/ejecutado. Sin cambios en Neon, producción, credenciales, datos reales, correos ni facturación.
+

@@ -1,3 +1,17 @@
+# Checkpoint vigente — 2026-10-18
+
+> Este checkpoint se añade como referencia más reciente; las secciones históricas inferiores pueden contener snapshots antiguos. Antes de trabajar, verificar HEAD/Actions en vivo y registrar cualquier corrección.
+
+- `main` verificado: `12c0037f3928b2c54c3593d3f48a65bf3318f401`.
+- CI, validación de migración y escaneo de seguridad terminaron en success para ese SHA: [CI](https://github.com/BTF14/Micro-app/actions/runs/39102740451), [migración](https://github.com/BTF14/Micro-app/actions/runs/39102740448), [seguridad](https://github.com/BTF14/Micro-app/actions/runs/39102740511).
+- Handoff y prompt de continuidad: [docs/HANDOFF_NEXT_CHAT.md](HANDOFF_NEXT_CHAT.md).
+- Evaluación de Gentleman-Programming (documental, sin instalación): [docs/GENTLEMAN_PROGRAMMING_EVALUATION.md](GENTLEMAN_PROGRAMMING_EVALUATION.md).
+- Bloqueo P0 de identidad: revisar Google OAuth + allowlist + verificación de email; la revisión estática de `apps/api/src/auth.ts` no encontró esos componentes.
+- Rama `feat/neon-transaction-adapter` requiere comparación y revisión de diff antes de rescatar cambios.
+- Mantener $0, proyecto separado de Cantina-pos, sin mutaciones en Neon main, sin deploy de producción y sin secretos en Git.
+
+---
+
 ## Estado vivo verificado — 2026-10-18 (prevalece sobre el historial inferior)
 
 - Último SHA de `main` comprobado antes de este checkpoint documental: `995608af8584442a9f174f9cf55ed7861749b872` (`docs: refresh handoff with current repository state`).

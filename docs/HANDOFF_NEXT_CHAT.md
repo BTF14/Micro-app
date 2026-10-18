@@ -1,73 +1,78 @@
-# Micro app — handoff vigente para continuar en otro chat
+# Protocolo de continuidad para IA/chat — Micro app
 
-## Estado vivo verificado — 2026-10-18 (prevalece sobre el historial inferior)
-
-- Último SHA de `main` comprobado antes de este checkpoint documental: `995608af8584442a9f174f9cf55ed7861749b872` (`docs: refresh handoff with current repository state`).
-- En el SHA anterior `8574bef7c5bc38cb85e55007816b6efc8b54a826`, [CI](https://github.com/BTF14/Micro-app/actions/runs/39102311090), [Database migration validation](https://github.com/BTF14/Micro-app/actions/runs/39102311097) y [Security scan](https://github.com/BTF14/Micro-app/actions/runs/39102311100) terminaron en `success`. Para el SHA `995608af8584442a9f174f9cf55ed7861749b872`, las nuevas ejecuciones estaban `pending/queued` al consultarlas: [CI](https://github.com/BTF14/Micro-app/actions/runs/39102649341), [Database migration validation](https://github.com/BTF14/Micro-app/actions/runs/39102649354) y [Security scan](https://github.com/BTF14/Micro-app/actions/runs/39102649347). Reconsultar el SHA más reciente después de este commit documental; no afirmar que esos checks están verdes sin comprobarlos.
-- El CI actual usa `pnpm install --frozen-lockfile`, ejecuta build, pruebas unitarias y `src/auth.integration.test.ts` con PostgreSQL efímero. La migración también se valida contra PostgreSQL desechable; no se ha autorizado migrar Neon main.
-- `pnpm-lock.yaml` existe en main (tamaño 77,520 bytes al consultar el contenido de GitHub). La afirmación histórica de que no había lockfile ya no describe main.
-- El último commit de código anterior a los documentos es `88d30d472905c81a90d9fffc967e3ba1df5084d1`, que conectó el flujo frontend de registro/login con la API. El contenido de `docs/API_INTEGRATION.md` conserva una frase antigua que dice lo contrario; debe corregirse para evitar contradicción.
-- La rama `feat/neon-transaction-adapter` está en `7989a84e39536029819735a5202f3934a8eb12c3`; no se fusionó automáticamente. Debe revisarse su diff completo con respecto a main antes de decidir qué rescatar.
-- Otras ramas que existen al comprobar GitHub: `feat/auth-session-foundation`, `feat/frontend-auth-flow`, `feat/tenant-safe-schema`, `fix/pnpm-lockfile-bootstrap` y `main`. Los SHA de las ramas pueden avanzar; volver a consultarlos antes de trabajar.
-- Ya hay material persistente en `docs/INSPIRATION.md`, `docs/SECURITY_PLAN_2026.md`, `docs/API_INTEGRATION.md`, `docs/ARCHITECTURE_AND_ZERO_COST.md`, `docs/DATABASE_SCHEMA.md`, `docs/SCHEMA_REVIEW.md` y `docs/COMPLIANCE_REQUIREMENTS.md`. La continuidad debe enlazar y reconciliar estos documentos, no sustituirlos por un resumen corto.
-- **Bloqueo de requisitos de identidad detectado en revisión del código:** `apps/api/src/auth.ts` solo expone `POST /auth/register`, `POST /auth/login`, `GET /auth/me` y `POST /auth/logout`; no se encontró implementación de Google OAuth, allowlist ni verificación de email. La prueba de integración `apps/api/src/auth.integration.test.ts` tiene un escenario principal de registro/login/sesión/revocación, no la matriz completa de autorización. Esto contradice el requisito previamente acordado de acceso Google + allowlist y debe tratarse como P0 antes de considerar identidad lista; no declarar producción-ready. No cambiar el modelo de identidad ni enviar correos sin decisión del usuario.
-- Se añaden el modelo operativo de agentes, el registro de recursos y el diario de estado. Los archivos `.github/agents/*.agent.md` definen roles reutilizables en entornos compatibles con agentes; no implican que GitHub Actions ni este chat estén ejecutando agentes autónomos en segundo plano.
-
-## Índice de memoria operativa persistente
-
-- [Plan maestro](PROJECT_PLAN.md)
-- [Modelo operativo de agentes/subagentes](AGENT_OPERATING_MODEL.md)
-- [Registro de herramientas, repositorios y fuentes](RESOURCE_REGISTRY.md)
-- [Diario cronológico de estado y decisiones](STATE_JOURNAL.md)
-- [Inspiración POS](INSPIRATION.md)
-- [Plan de ciberseguridad 2026](SECURITY_PLAN_2026.md)
-- [Integración API/Neon](API_INTEGRATION.md)
-- [Arquitectura y coste cero](ARCHITECTURE_AND_ZERO_COST.md)
-- [Esquema de base de datos](DATABASE_SCHEMA.md) · [Revisión del esquema](SCHEMA_REVIEW.md) · [Cumplimiento](COMPLIANCE_REQUIREMENTS.md)
-
-**Actualizado:** 2026-10-18  
+**Última actualización:** 2026-10-18  
 **Repositorio:** https://github.com/BTF14/Micro-app  
-**Plan maestro obligatorio:** [docs/PROJECT_PLAN.md](https://github.com/BTF14/Micro-app/blob/main/docs/PROJECT_PLAN.md)
+**Rama:** `main`  
+**SHA verificado al escribir este handoff:** `12c0037f3928b2c54c3593d3f48a65bf3318f401`  
+**Objetivo:** que una nueva IA retome el trabajo con evidencia, sin repetir solicitudes al usuario, perder decisiones ni inventar estados.
 
-> Lee primero `docs/PROJECT_PLAN.md` completo. Este archivo complementa el plan con el punto de continuidad. Las secciones antiguas de chats anteriores quedan reemplazadas por este bloque vigente y por el plan maestro cuando haya contradicciones. Antes de empezar a programar, vuelve a comprobar la punta actual de `main`, ramas, PR y Actions.
+## Lectura obligatoria, en este orden
 
-## Estado actual confirmado al preparar este traspaso
+1. [Este handoff](HANDOFF_NEXT_CHAT.md).
+2. [Plan maestro](PROJECT_PLAN.md).
+3. [Diario de estado y decisiones](STATE_JOURNAL.md).
+4. [Registro de recursos, herramientas y fuentes](RESOURCE_REGISTRY.md).
+5. [Evaluación de Gentleman-Programming y adopción](GENTLEMAN_PROGRAMMING_EVALUATION.md).
+6. [Modelo operativo de agentes](AGENT_OPERATING_MODEL.md) y perfiles en [`.github/agents/`](../.github/agents/).
+7. Documentación de dominio: [API integration](API_INTEGRATION.md), [arquitectura/coste cero](ARCHITECTURE_AND_ZERO_COST.md), [esquema DB](DATABASE_SCHEMA.md), [revisión schema](SCHEMA_REVIEW.md), [inspiración](INSPIRATION.md), [seguridad](SECURITY_PLAN_2026.md), [cumplimiento](COMPLIANCE_REQUIREMENTS.md).
 
-- `main` estaba en `88d30d472905c81a90d9fffc967e3ba1df5084d1` antes de añadir `docs/PROJECT_PLAN.md`.
-- PR #4, **Add initial authentication and revocable sessions**, ya está **fusionado**, con merge commit `e9e146020e7195c12da5f880a5dbf26b4e96752c`. No seguir describiéndolo como abierto ni en borrador.
-- El commit `88d30d472905c81a90d9fffc967e3ba1df5084d1` conectó el flujo de inicio de sesión/registro del frontend a la API. Su mensaje informa CI, escaneo de seguridad y validación de migración aprobados; volver a comprobar las ejecuciones reales para el SHA más reciente antes de afirmar que todo está verde.
-- Se creó el plan maestro en `docs/PROJECT_PLAN.md`, commit documental `632ca1ed7600c888db3f38516debe85ac8053723`. Comprobar que el commit quedó en `main` y revisar Actions posteriores.
-- Existe la rama `feat/neon-transaction-adapter`; la comparación observada frente a `main` indicó 14 commits por delante y 5 por detrás, con cambios de adaptador DB, pruebas y documentación de seguridad. **No fusionar a ciegas.** Revisar el diff completo, sincronizar de forma segura y ejecutar CI. Los planes y cambios de esa rama no se consideran integrados en `main` hasta comprobarlo.
-- Otras ramas observadas: `feat/auth-session-foundation`, `feat/frontend-auth-flow`, `feat/tenant-safe-schema`, `fix/pnpm-lockfile-bootstrap` y `main`. La lista puede cambiar; consultarla de nuevo.
-- La interfaz y API siguen siendo un trabajo en curso. No declarar el POS completo ni listo para uso comercial.
+No asumir que un archivo está actualizado solo porque exista. Contrastar la sección de estado vigente con el código, GitHub y Actions.
 
-## Restricciones obligatorias
+## Estado verificado en GitHub
 
-1. **No ejecutar migraciones ni SQL mutante en Neon main.** La rama principal de la base de datos permanece protegida hasta recibir autorización explícita y específica del usuario. Para integración usar PostgreSQL temporal/destruible.
-2. Mantener Micro app independiente de Cantina-pos y otros proyectos.
-3. Coste objetivo $0: no habilitar facturación, servicios de pago, suscripciones ni cargos automáticos.
-4. No desplegar a producción ni hacer cambios irreversibles sin aceptación.
-5. No revelar ni versionar secretos, credenciales, tokens o cadenas de conexión.
-6. El usuario ya autorizó trabajo autónomo y commits/push cuando sea seguro. No pedirle que repita conexiones/permisos sin demostrar un bloqueo real.
-7. Actualizar `docs/PROJECT_PLAN.md` y este archivo con cada checkpoint importante.
+- `main` = `12c0037f3928b2c54c3593d3f48a65bf3318f401` — commit `docs: flag identity requirements gap from code review`.
+- En ese SHA, los tres workflows terminaron en **success**:
+  - [CI](https://github.com/BTF14/Micro-app/actions/runs/39102740451)
+  - [Database migration validation](https://github.com/BTF14/Micro-app/actions/runs/39102740448)
+  - [Security scan](https://github.com/BTF14/Micro-app/actions/runs/39102740511)
+- “Success” significa que pasaron esos workflows en ese SHA; no significa que el producto esté listo para producción ni que no existan vulnerabilidades.
+- Rama `feat/neon-transaction-adapter` observada en `7989a84e39536029819735a5202f3934a8eb12c3`. No está fusionada según la evidencia consultada. Comparar diff completo contra `main`; no fusionar a ciegas.
+- Otras ramas observadas: `feat/auth-session-foundation` (`3ac714ab0c5553c05bb73faa7046c8dead150121`), `feat/frontend-auth-flow` (`78aa6efbc81b072b57cec3ede514f41190fef713`), `feat/tenant-safe-schema` (`d4a6f7ac26ea8a56f0ee5b50bb1df2196a76a233`) y `fix/pnpm-lockfile-bootstrap` (`49c4604b8d760a56598a4089c79d8cd0008b8395`). Volver a consultar antes de usarlas.
+- PR #4 “Add initial authentication and revocable sessions” ya fue fusionado; no repetirlo como tarea pendiente.
+- El frontend de registro/login se conectó a la API en el commit `88d30d472905c81a90d9fffc967e3ba1df5084d1`; leer el código actual antes de hacer más cambios.
 
-## Trabajo inmediato
+## Bloqueos y tareas prioritarias
 
-1. Verificar el commit actual de `main` y los checks/Actions posteriores al commit documental del plan. Informar de resultados por SHA exacto.
-2. Revisar `feat/neon-transaction-adapter` contra `main`: adaptador, transacciones, pruebas, dependencias y plan de seguridad. Resolver los 5 commits de divergencia con cuidado; no sobrescribir los cambios ya fusionados en main.
-3. Completar y ejecutar pruebas HTTP de integración de autenticación usando un PostgreSQL efímero: registro atómico, duplicados, login correcto/incorrecto, sesión actual, usuarios/membresías inactivos, logout/revocación y fallos de DB.
-4. Revisar expiración/limpieza de sesiones, retención de rate limits, validación de hashes malformados y configuración de cookies/orígenes. Mantener autorización de servidor por organización para cada operación.
-5. Confirmar reproducibilidad de dependencias y lockfile pnpm real; no fabricar el lockfile a mano.
-6. Continuar por las fases del plan maestro: DB, productos/inventario, tasa USD/VES, ventas atómicas/idempotentes, pagos/recibos, devoluciones, reportes/auditoría, UI responsive y E2E.
-7. Cada cambio significativo debe tener commit, pruebas reales y revisión de Actions en el SHA nuevo. Actualizar documentación antes de terminar el trabajo.
+### P0 — identidad/autorización incompleta respecto al requisito
 
-## Base de datos Neon — recordatorio
+La revisión estática de `apps/api/src/auth.ts` encontró `POST /auth/register`, `POST /auth/login`, `GET /auth/me`, `POST /auth/logout`; en ese archivo no se encontró Google OAuth, allowlist ni verificación de email. La prueba `apps/api/src/auth.integration.test.ts` no acredita toda la matriz de autorización. Esto es un hallazgo de revisión estática, no una ejecución de prueba adicional.
 
-- Proyecto independiente: `micro-app-db`, ID `restless-fire-99110035`, PostgreSQL 18, región `aws-us-east-1`, plan Free.
-- Rama primaria `main`, ID `br-summer-math-b7297a60`, base `neondb`.
-- La migración se ha preparado/probado en entornos aislados, pero no se debe aplicar a la rama primaria sin aprobación explícita.
-- No usar la organización Neon `Vercel: btfcasheb-8016's projects`; pertenece a otro contexto.
+Próximo paso: estudiar el modelo de identidad y requisitos existentes, proponer una implementación segura de Google + allowlist, documentar opciones y pruebas, sin inventar proveedor/configuración ni enviar correos. No declarar identidad completa hasta que código y tests lo demuestren.
 
-## Prompt para el próximo chat
+### Integración Neon
 
-> Continúa Micro app leyendo primero el plan maestro https://github.com/BTF14/Micro-app/blob/main/docs/PROJECT_PLAN.md y este handoff https://github.com/BTF14/Micro-app/blob/main/docs/HANDOFF_NEXT_CHAT.md. Verifica el estado real de main, ramas/PR y GitHub Actions antes de modificar código. PR #4 ya fue fusionado; no repitas ese trabajo ni supongas que feat/neon-transaction-adapter está integrado. Revisa esa rama contra main y continúa las pruebas de integración de autenticación con PostgreSQL temporal, arreglando cualquier fallo. Haz cambios reales y seguros, súbelos a GitHub y documenta commits y pruebas verificadas. No apliques migraciones a Neon main, no uses otros proyectos, no despliegues producción y mantén coste $0. No expongas secretos ni pidas repetir conexiones/permisos sin una causa demostrada.
+Revisar `feat/neon-transaction-adapter` frente a `main`, identificar commits/archivos únicos y cambios ya superados; separar lo rescatable, probar con PostgreSQL efímero y abrir PR solo después de revisión y CI.
+
+### Herramientas y memoria
+
+Leer [GENTLEMAN_PROGRAMMING_EVALUATION.md](GENTLEMAN_PROGRAMMING_EVALUATION.md). Se inspeccionaron los README de Gentle-AI, Engram, GGA, Gentle Shell y Playwright. **No se han instalado ni integrado las herramientas Gentleman**, y no hay evidencia de subagentes autónomos corriendo en segundo plano. Los perfiles locales son instrucciones reutilizables, no ejecución efectiva.
+
+## Restricciones no negociables
+
+- Proyecto independiente de Cantina-pos y de otros repositorios.
+- Presupuesto total objetivo **$0**. No habilitar billing, tarjetas, suscripciones ni servicios con cobro automático.
+- No ejecutar migraciones ni SQL mutante en Neon `main`; usar PostgreSQL efímero o rama aislada.
+- No desplegar producción ni realizar cambios irreversibles sin aceptación del usuario.
+- No versionar ni exponer secretos, credenciales, tokens ni URLs de conexión.
+- No enviar correos: solo el usuario puede autorizar su envío.
+- No pedir que repita permisos/conexiones si no se ha demostrado un bloqueo concreto.
+- El usuario autorizó cambios/commits/push seguros de forma autónoma; mantener guardrails para acciones de alto riesgo.
+- No declarar tests verdes sin verificar el SHA exacto, el workflow y su conclusión.
+- No afirmar que una herramienta/agente/memoria está activa sin evidencia observable.
+
+## Protocolo obligatorio para cada sesión
+
+1. Consultar HEAD actual de `main`, ramas, PR abiertos y Actions relevantes; este handoff es un snapshot, no una fuente viva.
+2. Leer el código y documentos directamente afectados. No hacer cambios basados únicamente en resúmenes antiguos.
+3. Registrar hipótesis por separado de hechos confirmados. Si falta evidencia, escribir “no verificado”.
+4. Elegir un cambio acotado, con criterio de aceptación y plan de reversión.
+5. Ejecutar tests relevantes. Registrar comando, resultado, SHA y limitaciones; no inventar ejecución local si solo corrió CI.
+6. Revisar seguridad, coste y posibles efectos secundarios.
+7. Hacer commit/push si el cambio es seguro y autorizado; nunca force-push ni cambiar producción por comodidad.
+8. Actualizar diario, plan y handoff antes de cerrar, incluyendo SHA nuevo y enlaces de Actions.
+9. Si se descubre contradicción, resolverla con evidencia y añadir una nota de corrección; no dejar dos instrucciones vigentes en paralelo.
+
+## Prompt copiable para el próximo chat
+
+> Continúa el proyecto Micro app en https://github.com/BTF14/Micro-app. Antes de cambiar código, lee completos `docs/HANDOFF_NEXT_CHAT.md`, `docs/PROJECT_PLAN.md`, `docs/STATE_JOURNAL.md`, `docs/RESOURCE_REGISTRY.md` y `docs/GENTLEMAN_PROGRAMMING_EVALUATION.md`; luego verifica en vivo el HEAD de main, ramas, PR y GitHub Actions. No confíes en snapshots viejos sin verificarlos. El requisito P0 es reconciliar autenticación Google + allowlist con el código actual; la rama feat/neon-transaction-adapter requiere diff completo, no merge ciego. Investiga Gentle-AI, Engram, Gentleman Guardian Angel, Gentle Shell y Playwright según la evaluación, pero no digas que están instalados o que hay subagentes corriendo si no hay evidencia. Haz cambios seguros, pruebas reales y push cuando proceda; actualiza documentación y registra SHA/resultados. Mantén el coste $0, no mezcles Cantina-pos, no migres Neon main, no despliegues producción, no expongas secretos ni envíes correos. No me pidas repetir conexiones/permisos salvo bloqueo demostrado. Distingue hechos, hipótesis y tareas pendientes; no alucines estados.
+

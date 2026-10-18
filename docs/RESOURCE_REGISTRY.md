@@ -64,3 +64,18 @@ Vercel Hobby no es el hosting objetivo para operación comercial. Reconfirmar co
 | 2026-10-17 | Repositorios POS y recursos OWASP enumerados arriba | Definir inspiración y plan inicial de seguridad. | Documentados en `INSPIRATION.md` y `SECURITY_PLAN_2026.md`; la actividad y el estado actual requieren nueva consulta antes de adoptar. |
 | 2026-10-18 | GitHub API: ramas, commits, contenido de docs y Actions del repositorio Micro-app | Corregir la continuidad obsoleta y comprobar el SHA actual. | `main` = `8574bef7c5bc38cb85e55007816b6efc8b54a826`; CI, migración y seguridad reportan success para ese SHA. |
 | 2026-10-18 | `.github/workflows/ci.yml` en main | Verificar lockfile y pruebas reales declaradas. | Usa `pnpm install --frozen-lockfile`, build, unit tests y test de integración de auth con PostgreSQL efímero. |
+
+
+## Gentleman-Programming y pruebas E2E — revisión documental 2026-10-18
+
+Se inspeccionaron los README públicos actuales; el detalle, límites y decisiones está en [GENTLEMAN_PROGRAMMING_EVALUATION.md](GENTLEMAN_PROGRAMMING_EVALUATION.md).
+
+| Recurso | URL | Conclusión verificable |
+|---|---|---|
+| Gentle-AI | https://github.com/Gentleman-Programming/gentle-ai | README lo presenta como entorno determinista de ingeniería para agentes con flujos/memoria/evidencia. Solo evaluado documentalmente; no instalado. |
+| Engram | https://github.com/Gentleman-Programming/engram | README lo presenta como memoria persistente para agentes de programación. Candidato a prueba aislada; no conectado a este chat/repo. |
+| Gentleman Guardian Angel | https://github.com/Gentleman-Programming/gentleman-guardian-angel | README describe revisión de cambios por IA y hook Git. No instalado; probar en entorno temporal antes de habilitar hooks. |
+| Gentle Shell | https://github.com/Gentleman-Programming/gentle-shell | README describe un workspace de agente centrado en Pi. Referencia de diseño; compatibilidad/coste no aprobados. |
+| Playwright | https://github.com/microsoft/playwright · https://playwright.dev/docs/intro | Framework E2E para navegadores; recomendado al llegar a pruebas de UI. No afirmar integrado hasta verificar package/config/tests. |
+
+**Límite de evidencia:** leer un README no equivale a auditar el repositorio, verificar licencia/dependencias/release ni ejecutar el software. Ninguna herramienta de esta tabla debe considerarse instalada o activa sin una prueba registrada.

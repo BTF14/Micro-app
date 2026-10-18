@@ -93,8 +93,8 @@ Se inspeccionaron los README públicos actuales; el detalle, límites y decision
 
 | Recurso | Cambio real en la rama `feat/security-e2e-tooling` | Estado/límite |
 |---|---|---|
-| Playwright | `apps/web/playwright.config.ts`, `apps/web/e2e/auth.spec.ts` y `.github/workflows/playwright-e2e.yml`; Chromium y API simulada. | Piloto de CI, pendiente de ejecución en Actions y de fijar dependencia en `pnpm-lock.yaml`; no prueba la API real ni despliegue. |
-| Semgrep | `.github/workflows/semgrep.yml`, reglas JavaScript/TypeScript y artefacto SARIF. | Workflow agregado; resultado todavía no verificado. No se sube a GitHub Code Scanning ni se bloquean merges por hallazgos aún. |
+| Playwright | `apps/web/playwright.config.ts`, `apps/web/e2e/auth.spec.ts` y `.github/workflows/playwright-e2e.yml`; Chromium y API simulada. | Piloto de CI; Playwright E2E terminó en success para SHA `c0bab00aeaee21a4848d6efd5fcf5c5066a5b582`. Sigue pendiente fijar dependencia en `pnpm-lock.yaml`; no prueba la API real ni despliegue. |
+| Semgrep | `.github/workflows/semgrep.yml`, reglas JavaScript/TypeScript y artefacto SARIF. | Workflow agregado; Semgrep terminó en success para SHA `c0bab00aeaee21a4848d6efd5fcf5c5066a5b582` y el artefacto SARIF se generó. No se sube a GitHub Code Scanning ni se bloquean merges por hallazgos aún. |
 | OWASP ASVS | `docs/OWASP_ASVS_CHECKLIST.md`. | Checklist de controles con casillas sin marcar hasta contar con evidencia; no es certificación. |
 | POS de referencia | `docs/POS_REFERENCE_MATRIX.md`. | Requisitos convertidos en pruebas/criterios; no se copia código ni se importan licencias/dependencias. |
 | Trivy | Workflow preexistente `.github/workflows/security-scan.yml`. | Se mantiene baseline no bloqueante; un workflow verde no demuestra ausencia de vulnerabilidades. |

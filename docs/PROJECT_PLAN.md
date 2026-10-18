@@ -1,3 +1,20 @@
+# Checkpoint autoritativo — 2026-10-18, después de PR #25
+
+> **Esta sección prevalece sobre todos los snapshots históricos más abajo.** Los SHA, estados de PR y enlaces de Actions antiguos que aparezcan en el resto de este archivo no representan el estado vivo actual salvo que coincidan con una verificación nueva de GitHub.
+
+- Repositorio: https://github.com/BTF14/Micro-app
+- `main` verificado: `ed0d39f5bc248c9e5d5a1c5008352e8a390a0374` — https://github.com/BTF14/Micro-app/commit/ed0d39f5bc248c9e5d5a1c5008352e8a390a0374
+- PR #24 (matriz de aislamiento tenant) y PR #25 (refresco documental) están fusionadas.
+- PR #25 head `e5d671ed5087ea18f96d4dead79b76bb933d071d`: los siete workflows consultados terminaron en `success`.
+- Para el merge commit `ed0d39f5bc248c9e5d5a1c5008352e8a390a0374`, los seis workflows consultados estaban `in_progress` en la última lectura. **No afirmar que el merge commit está verde hasta volver a consultar Actions para este SHA exacto.**
+- No se desplegó producción ni se modificó Neon `main`.
+- Estado de producto: **no listo para producción**. `apps/api/src/index.ts` todavía no registra handlers HTTP de negocio para catálogo/productos, proveedores, ventas, pagos o movimientos de inventario; la matriz de tenant define criterios futuros, no evidencia de endpoints ya protegidos.
+- Bloqueos: Google OAuth + allowlist y decisiones D1–D8 pendientes de aprobación; backups/restauración independiente no verificados; protección de rama `main` desactivada en la última verificación; faltan flujos POS/inventario reales y pruebas de autorización completas.
+- Límites: presupuesto $0, no mezclar con Cantina-pos, no secretos ni correos, no migraciones a Neon `main` sin superar el gate de `docs/CONSTITUTION.md`, no despliegue de producción sin aceptación explícita.
+- Próximo trabajo seguro: comprobar Actions para el SHA actual; después, resolver/registrar decisiones de identidad sin inventar políticas, y continuar con pruebas de autorización/tenant y endpoints de negocio en entorno aislado. No implementar OAuth ni habilitar registro público por suposición.
+
+---
+
 # Índice principal de documentación y checkpoint vigente
 
 > **Aviso de frescura:** los SHA y estados que aparecen en checkpoints históricos deben confirmarse en GitHub antes de usarse como estado actual. El checkpoint vigente está en `docs/HANDOFF_NEXT_CHAT.md`; no tratar los SHA de entradas antiguas como HEAD vivo.

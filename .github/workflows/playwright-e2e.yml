@@ -1,0 +1,52 @@
+name: Playwright E2E
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: micro-app-playwright-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  browser-tests:
+    name: Chromium authentication smoke tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10
+      - name: Install locked workspace dependencies
+        run: pnpm install --frozen-lockfile
+      - name: Install Playwright test runner without changing tracked manifests
+        working-directory: apps/web
+        run: npm install --no-save --package-lock=false @playwright/test
+      - name: Install Chromium and OS dependencies
+        working-directory: apps/web
+        run: npx playwright install --with-deps chromium
+      - name: Run browser tests
+        run: pnpm --filter @micro-app/web exec playwright test --config playwright.config.ts
+      - name: Upload Playwright report and traces on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-e2e-failure-${{ github.run_id }}
+          path: |
+            apps/web/playwright-report/
+            apps/web/test-results/
+          if-no-files-found: ignore
+          retention-days: 7

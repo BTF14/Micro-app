@@ -8,6 +8,7 @@
 
 ## Lectura obligatoria, en este orden
 
+0. [Constitución del proyecto](CONSTITUTION.md) — reglas no negociables y jerarquía documental.
 1. [Este handoff](HANDOFF_NEXT_CHAT.md).
 2. [Plan maestro](PROJECT_PLAN.md).
 3. [Diario de estado y decisiones](STATE_JOURNAL.md).
@@ -17,6 +18,13 @@
 7. Documentación de dominio: [API integration](API_INTEGRATION.md), [arquitectura/coste cero](ARCHITECTURE_AND_ZERO_COST.md), [esquema DB](DATABASE_SCHEMA.md), [revisión schema](SCHEMA_REVIEW.md), [inspiración](INSPIRATION.md), [seguridad](SECURITY_PLAN_2026.md), [cumplimiento](COMPLIANCE_REQUIREMENTS.md).
 
 No asumir que un archivo está actualizado solo porque exista. Contrastar la sección de estado vigente con el código, GitHub y Actions.
+
+## Snapshot de continuidad corregido — 2026-10-18
+
+- Último commit observado en la búsqueda de GitHub: `7863973ed6e3869f525c6c89fc16412e92158fc2`.
+- La consulta de status checks para ese SHA no devolvió checks; **Actions no verificado en este checkpoint**. Consultar las ejecuciones actuales antes de declarar éxito.
+- Índice maestro: [PROJECT_PLAN.md](PROJECT_PLAN.md). Reglas rectoras: [CONSTITUTION.md](CONSTITUTION.md).
+- Los snapshots históricos inferiores pueden estar obsoletos; no tratarlos como estado vivo sin verificación.
 
 ## Estado verificado en GitHub
 

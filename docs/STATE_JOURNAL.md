@@ -231,3 +231,14 @@ Este diario es append-only en cuanto a historia: no borrar hitos antiguos; añad
 - Cambios incluidos: únicamente `docs/HANDOFF_NEXT_CHAT.md`, `docs/PROJECT_PLAN.md`, `docs/RESOURCE_REGISTRY.md` y `docs/STATE_JOURNAL.md`.
 - Los 7 workflows de Actions reportados para el HEAD de la PR terminaron en `success`. La revisión Codex quedó fallida por límite de uso y sin hallazgo técnico concreto recuperable; no tratarla como aprobación.
 - Sin despliegue de producción ni cambios en Neon, secretos, datos reales o facturación. Auth/allowlist P0, decisiones D1–D8 y backup/restore verificado continúan pendientes.
+
+
+## 2026-10-18 — Checkpoint posterior a PR #23 y matriz de aislamiento tenant
+
+- HEAD de `main` verificado: `838715d211918f521f5e6401a91dc773236ef3ad`, merge de [PR #23](https://github.com/BTF14/Micro-app/pull/23).
+- Siete workflows sobre ese SHA terminaron en success: CI 39132076336, Playwright E2E 39132076316, Semgrep 39132076300, Security scan 39132076368, validación de migraciones 39132076356, validación SDD/documentación 39132076394 y panel 39132076363.
+- Revisión de `apps/api/src/index.ts` y `apps/api/src/auth.ts`: solo están health y endpoints de autenticación; aún no hay handlers HTTP de productos, proveedores, ventas, pagos o movimientos. No se inventaron rutas para fabricar pruebas de aislamiento.
+- Se creó `docs/TENANT_ISOLATION_TEST_PLAN.md` con escenarios positivos/negativos por recurso, roles, membresía y sesiones, para ejecutar contra PostgreSQL efímero cuando se implementen los handlers.
+- Se actualizó `docs/CURRENT_STATE.md` para reflejar el SHA vivo y distinguir workflows verdes de preparación comercial.
+- No se modificó Neon `main`, no se usaron datos reales y no hubo despliegue.
+- Bloqueos sin cambios: Google OAuth + allowlist y decisiones D1–D8 pendientes; backups/restauración independiente no verificados; protección de rama no activa en la última consulta.

@@ -102,3 +102,12 @@ Playwright no es un producto de Gentleman-Programming; es una herramienta comple
 - Gentle-AI: https://github.com/Gentleman-Programming/gentle-ai
 - Gentle-AI quickstart: https://github.com/Gentleman-Programming/gentle-ai/blob/main/docs/quickstart.md
 - Playwright: https://playwright.dev/docs/intro
+
+
+## 4. Integración con el flujo SDD y agentes del repositorio
+
+El proceso operativo general está en [SDD_WORKFLOW.md](SDD_WORKFLOW.md), con plantillas [spec](../templates/sdd/spec.md), [plan](../templates/sdd/plan.md), [tasks](../templates/sdd/tasks.md) y la [skill feature-sdd](../skills/feature-sdd/SKILL.md). Los perfiles de agentes están en [`.github/agents/`](../.github/agents/).
+
+La memoria durable canónica es GitHub: constitución, plan, diario, registro de recursos y handoff. Engram sería una capa auxiliar local para runtimes compatibles; no se debe depender de ella para recuperar decisiones del proyecto. No guardar secretos, tokens, cadenas de conexión, datos personales o datos de clientes en memoria persistente.
+
+**Estado verificado:** archivos de proceso y roles creados en GitHub; instalación local y ejecución real de GGA/Ollama/Engram/Gentle-AI/MCP no verificadas. El trabajo desde este chat depende de herramientas conectadas y GitHub Actions; no puede instalar software en el teléfono ni afirmar que un MCP local esté conectado.

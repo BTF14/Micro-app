@@ -1,5 +1,16 @@
 # Estado vigente verificado — Micro app
 
+**Checkpoint actualizado:** 2026-10-18.  
+**HEAD de `main` verificado:** `838715d211918f521f5e6401a91dc773236ef3ad` — [commit](https://github.com/BTF14/Micro-app/commit/838715d211918f521f5e6401a91dc773236ef3ad).  
+**Acción posterior al merge:** los siete workflows disparados para ese SHA terminaron en `success`: [CI](https://github.com/BTF14/Micro-app/actions/runs/39132076336), [Playwright E2E](https://github.com/BTF14/Micro-app/actions/runs/39132076316), [Semgrep SAST](https://github.com/BTF14/Micro-app/actions/runs/39132076300), [Security scan](https://github.com/BTF14/Micro-app/actions/runs/39132076368), [validación de migraciones](https://github.com/BTF14/Micro-app/actions/runs/39132076356), [documentación SDD/agentes](https://github.com/BTF14/Micro-app/actions/runs/39132076394) y [panel de progreso](https://github.com/BTF14/Micro-app/actions/runs/39132076363). Estos resultados no certifican preparación para producción.
+
+**Hallazgo actual de autorización:** `apps/api/src/index.ts` registra `GET /health` y las rutas de auth; `apps/api/src/auth.ts` contiene registro/login/me/logout. No hay handlers HTTP de negocio para productos, proveedores, ventas, pagos ni movimientos. Por eso las pruebas de aislamiento cruzado por recurso no pueden completarse de forma significativa todavía. Se añade `docs/TENANT_ISOLATION_TEST_PLAN.md` como matriz de aceptación para usarse cuando existan esos handlers. Las pruebas deben ejecutarse con PostgreSQL efímero, nunca con datos reales.
+
+**Estado operativo:** no se desplegó producción ni se modificó Neon `main`. Sigue pendiente P0 Google OAuth + allowlist y decisiones D1–D8 sin aprobar; no inventar política ni credenciales. Protección de rama `main` continúa desactivada según la última consulta disponible; revisar antes de cambiar configuración.
+
+---
+
+
 **Verificado:** 2026-10-18 (consulta directa a GitHub API y archivos de `main`).  
 **Repositorio:** https://github.com/BTF14/Micro-app  
 **Propósito:** referencia breve de estado vivo. Este archivo prevalece sobre snapshots históricos de `PROJECT_PLAN.md`, `STATE_JOURNAL.md` y `HANDOFF_NEXT_CHAT.md` cuando sus SHA/estados contradigan los datos aquí. Antes de cada cambio, repetir la consulta en vivo.

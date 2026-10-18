@@ -1,0 +1,41 @@
+# Diario persistente de estado, decisiones y verificaciones
+
+Este diario es append-only en cuanto a historia: no borrar hitos antiguos; añadir una nueva entrada por sesión o checkpoint. El estado actual está en la parte superior del plan maestro y del handoff.
+
+## 2026-10-18 — Revisión de continuidad y agentes
+
+### Estado Git verificado
+- Repositorio: https://github.com/BTF14/Micro-app
+- Rama principal: `main`
+- SHA observado: `8574bef7c5bc38cb85e55007816b6efc8b54a826`
+- Últimos commits de documentación: `632ca1ed7600c888db3f38516debe85ac8053723` (plan) y `8574bef7c5bc38cb85e55007816b6efc8b54a826` (handoff).
+- Ramas observadas: `feat/auth-session-foundation`, `feat/frontend-auth-flow`, `feat/neon-transaction-adapter`, `feat/tenant-safe-schema`, `fix/pnpm-lockfile-bootstrap`, `main`.
+- Rama de adaptador: `feat/neon-transaction-adapter` en `7989a84e39536029819735a5202f3934a8eb12c3`; no fusionada automáticamente.
+
+### GitHub Actions comprobadas
+- CI: https://github.com/BTF14/Micro-app/actions/runs/39102311090 — success.
+- Database migration validation: https://github.com/BTF14/Micro-app/actions/runs/39102311097 — success.
+- Security scan: https://github.com/BTF14/Micro-app/actions/runs/39102311100 — success.
+- Estos resultados corresponden al SHA de documentación indicado, no a un test manual local ni a una garantía de seguridad absoluta.
+
+### Código/estado que se observó
+- El commit `88d30d472905c81a90d9fffc967e3ba1df5084d1` conecta registro/login del frontend con la API.
+- `pnpm-lock.yaml` existe en main y el workflow CI usa `--frozen-lockfile`.
+- El workflow CI levanta PostgreSQL 18 efímero, aplica la migración, ejecuta build, unit tests y `src/auth.integration.test.ts`.
+- El workflow de migración prueba la migración y constraints cross-tenant contra PostgreSQL desechable.
+- Los documentos anteriores contenían contradicciones: `API_INTEGRATION.md` dice que el frontend no está conectado; revisar y corregir esa frase en un siguiente commit. La continuidad vieja también referenciaba un SHA anterior a los documentos.
+- No hay evidencia en esta comprobación de que exista un sistema que lance subagentes autónomos en segundo plano. Se agregan perfiles de agentes reutilizables para entornos compatibles y un protocolo para no fingir ejecuciones.
+
+### Decisiones y límites
+- Mantener presupuesto $0, proyecto independiente de Cantina-pos y otros proyectos.
+- No aplicar migraciones ni SQL mutante a Neon `main`; utilizar PostgreSQL efímero o una rama de prueba aislada.
+- No desplegar producción ni hacer cambios irreversibles sin aceptación.
+- No publicar secretos ni cadenas de conexión.
+- No fusionar `feat/neon-transaction-adapter` sin revisar diff, sincronización y pruebas.
+
+### Próximos pasos ordenados
+1. Revisar y actualizar la frase obsoleta en `docs/API_INTEGRATION.md` y reconciliar todos los documentos que afirman que el frontend no está conectado.
+2. Comparar `feat/neon-transaction-adapter` con el SHA actual de main, revisar archivos/diff y separar cambios rescatables de cambios incompatibles; preparar PR solo después de CI y revisión.
+3. Revisar las pruebas de autenticación actuales para cobertura de allowlist, roles, aislamiento tenant, revocación, fallos de DB y rate limits; no confundir test existente con cobertura completa.
+4. Seguir con pruebas de transacciones PostgreSQL e inventario/idempotencia, sin Neon main.
+5. Actualizar este diario, plan y handoff después de cada checkpoint y comprobar Actions por SHA exacto.

@@ -1,4 +1,28 @@
+## Estado vivo verificado — 2026-10-18 (prevalece sobre el historial inferior)
+
+- SHA actual de `main` en esta comprobación: `8574bef7c5bc38cb85e55007816b6efc8b54a826` (`docs: refresh handoff with current repository state`).
+- Los tres workflows del SHA actual terminaron con `success`: [CI](https://github.com/BTF14/Micro-app/actions/runs/39102311090), [Database migration validation](https://github.com/BTF14/Micro-app/actions/runs/39102311097) y [Security scan](https://github.com/BTF14/Micro-app/actions/runs/39102311100). Esto verifica esos workflows en ese SHA; no demuestra que el producto esté listo para producción.
+- El CI actual usa `pnpm install --frozen-lockfile`, ejecuta build, pruebas unitarias y `src/auth.integration.test.ts` con PostgreSQL efímero. La migración también se valida contra PostgreSQL desechable; no se ha autorizado migrar Neon main.
+- `pnpm-lock.yaml` existe en main (tamaño 77,520 bytes al consultar el contenido de GitHub). La afirmación histórica de que no había lockfile ya no describe main.
+- El último commit de código anterior a los documentos es `88d30d472905c81a90d9fffc967e3ba1df5084d1`, que conectó el flujo frontend de registro/login con la API. El contenido de `docs/API_INTEGRATION.md` conserva una frase antigua que dice lo contrario; debe corregirse para evitar contradicción.
+- La rama `feat/neon-transaction-adapter` está en `7989a84e39536029819735a5202f3934a8eb12c3`; no se fusionó automáticamente. Debe revisarse su diff completo con respecto a main antes de decidir qué rescatar.
+- Otras ramas que existen al comprobar GitHub: `feat/auth-session-foundation`, `feat/frontend-auth-flow`, `feat/tenant-safe-schema`, `fix/pnpm-lockfile-bootstrap` y `main`. Los SHA de las ramas pueden avanzar; volver a consultarlos antes de trabajar.
+- Ya hay material persistente en `docs/INSPIRATION.md`, `docs/SECURITY_PLAN_2026.md`, `docs/API_INTEGRATION.md`, `docs/ARCHITECTURE_AND_ZERO_COST.md`, `docs/DATABASE_SCHEMA.md`, `docs/SCHEMA_REVIEW.md` y `docs/COMPLIANCE_REQUIREMENTS.md`. La continuidad debe enlazar y reconciliar estos documentos, no sustituirlos por un resumen corto.
+- Se añaden el modelo operativo de agentes, el registro de recursos y el diario de estado. Los archivos `.github/agents/*.agent.md` definen roles reutilizables en entornos compatibles con agentes; no implican que GitHub Actions ni este chat estén ejecutando agentes autónomos en segundo plano.
+
 # Micro app — plan maestro y estado de continuidad
+
+## Índice de memoria operativa persistente
+
+- [Plan maestro](PROJECT_PLAN.md)
+- [Modelo operativo de agentes/subagentes](AGENT_OPERATING_MODEL.md)
+- [Registro de herramientas, repositorios y fuentes](RESOURCE_REGISTRY.md)
+- [Diario cronológico de estado y decisiones](STATE_JOURNAL.md)
+- [Inspiración POS](INSPIRATION.md)
+- [Plan de ciberseguridad 2026](SECURITY_PLAN_2026.md)
+- [Integración API/Neon](API_INTEGRATION.md)
+- [Arquitectura y coste cero](ARCHITECTURE_AND_ZERO_COST.md)
+- [Esquema de base de datos](DATABASE_SCHEMA.md) · [Revisión del esquema](SCHEMA_REVIEW.md) · [Cumplimiento](COMPLIANCE_REQUIREMENTS.md)
 
 **Última actualización:** 2026-10-18  
 **Repositorio:** https://github.com/BTF14/Micro-app  

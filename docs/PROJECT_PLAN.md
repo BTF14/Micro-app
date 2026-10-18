@@ -371,3 +371,9 @@ PR [#9](https://github.com/BTF14/Micro-app/pull/9) está fusionado en `main` med
 - Siguiente orden: (1) resolver D1–D8; (2) diseñar/implementar fail-closed y Google Sign-In con pruebas negativas; (3) ampliar pruebas de autorización/aislamiento multiempresa con PostgreSQL efímero; (4) comparar rama `feat/neon-transaction-adapter` contra main sin merge ciego; (5) piloto Strix solo después de disponer de API+DB efímera y proveedor local gratuito verificado.
 - No hubo despliegue de producción, mutación de Neon, cambio de secretos ni coste añadido. Rama `main` no está protegida en GitHub (`protected=false`, sin checks requeridos); evaluar protección como tarea de gobernanza separada.
 
+## Checkpoint posterior a PR #21 — 2026-10-18
+
+- PR #21 (`docs: refresh handoff for next chat`) quedó fusionada por squash; merge commit `7491b97a2bde52555fe9b8a5d808ad81b829d90e`.
+- El alcance fue documentación solamente; no cambia el estado de autenticación/allowlist P0 ni aprueba las decisiones D1–D8.
+- CI, E2E, migraciones, Semgrep, seguridad y dashboard habían pasado en el SHA exacto de la PR; la revisión Codex no concluyó por límite de uso y no debe registrarse como aprobación formal.
+- Siguiente prioridad de producto/técnica sigue siendo resolver decisiones D1–D8 sin suposiciones, luego implementar y probar auth fail-closed y aislamiento multi-tenant con PostgreSQL efímero. No desplegar producción.

@@ -135,3 +135,12 @@ El handoff incluye el prompt copiable para continuar en un chat nuevo. La docume
 | Decisiones de identidad | `docs/sdd/auth-policy-decision-record.md`. | D1–D8 son propuestas no aprobadas; no inventar política ni configurar OAuth por suposición. |
 | Strix | [Repositorio Strix](https://github.com/usestrix/strix), [plan local](STRIX_INTEGRATION.md). | Documentado, no instalado ni ejecutado; no se escaneó Micro app ni se creó workflow Strix. Coste $0/aislamiento aún son gates antes de cualquier prueba. |
 
+## Estado posterior a PR #21 — 2026-10-18
+
+| Recurso | Estado comprobado | Nota |
+|---|---|---|
+| PR #21 | Fusionada por squash; commit `7491b97a2bde52555fe9b8a5d808ad81b829d90e`. | Solo documentación. |
+| GitHub Actions para el HEAD de PR #21 | 7 workflows en `success`. | Evidencia del SHA de la PR; no equivale a validación de producción. |
+| Revisión Codex | Fallida/no completada por límite de uso; sin hallazgo técnico concreto recuperable. | No registrar como aprobación formal. |
+| Auth/allowlist P0 | Sigue pendiente. | D1–D8 continúan propuestas sin aprobación; no inventar políticas. |
+| Strix | Documentado, no instalado ni ejecutado. | Solo laboratorio aislado con datos sintéticos y coste $0 verificado. |

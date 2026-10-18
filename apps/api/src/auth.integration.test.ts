@@ -156,6 +156,28 @@ const suite = describe.skipIf(!databaseAvailable)("authentication routes against
     expect(inactiveMembershipLogin.status).toBe(401);
     await cleanupClient.query("UPDATE organization_members SET is_active = true WHERE user_id = (SELECT id FROM app_users WHERE email = $1)", [email]);
 
+    // An active membership must not keep access to an organization that has been disabled.
+    await cleanupClient.query(
+      "UPDATE organizations SET is_active = false WHERE id = (SELECT m.organization_id FROM organization_members m JOIN app_users u ON u.id = m.user_id WHERE u.email = $1)",
+      [email],
+    );
+    const inactiveOrganizationSession = await app.fetch(new Request("https://api.example/auth/me", {
+      headers: { Cookie: cookiePair },
+    }), { DATABASE_URL: databaseUrl, FRONTEND_ORIGIN: frontendOrigin });
+    expect(inactiveOrganizationSession.status).toBe(401);
+
+    const inactiveOrganizationLogin = await app.fetch(new Request("https://api.example/auth/login", {
+      method: "POST",
+      headers: { ...originHeaders, "CF-Connecting-IP": crypto.randomUUID() },
+      body: JSON.stringify({ email, password }),
+    }), { DATABASE_URL: databaseUrl, FRONTEND_ORIGIN: frontendOrigin });
+    expect(inactiveOrganizationLogin.status).toBe(401);
+
+    await cleanupClient.query(
+      "UPDATE organizations SET is_active = true WHERE id = (SELECT m.organization_id FROM organization_members m JOIN app_users u ON u.id = m.user_id WHERE u.email = $1)",
+      [email],
+    );
+
     const logoutResponse = await app.fetch(new Request("https://api.example/auth/logout", {
       method: "POST",
       headers: { Origin: frontendOrigin, Cookie: cookiePair },

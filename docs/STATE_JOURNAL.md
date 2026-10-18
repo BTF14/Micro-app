@@ -1,3 +1,15 @@
+## 2026-10-18 — Checkpoint después de PR #27
+
+- PR #27 fusionada: https://github.com/BTF14/Micro-app/pull/27
+- Merge commit / `main`: `20c0dbda2a5c6b7de95e29efc1fee429de525b00` — https://github.com/BTF14/Micro-app/commit/20c0dbda2a5c6b7de95e29efc1fee429de525b00
+- El head de PR #27 `29f899a52346d342067cf8e1b22850d35aa48a69` y el merge commit de `main` fueron verificados en GitHub Actions; los checks consultados terminaron en `success`.
+- Enlaces de los checks del merge commit: [Pages](https://github.com/BTF14/Micro-app/runs/117814356290), [progreso](https://github.com/BTF14/Micro-app/actions/runs/39174497033), [Chromium auth](https://github.com/BTF14/Micro-app/actions/runs/39174496914), [Trivy](https://github.com/BTF14/Micro-app/actions/runs/39174496816), [verify](https://github.com/BTF14/Micro-app/actions/runs/39174496864), [JS/TS](https://github.com/BTF14/Micro-app/actions/runs/39174496812), [migraciones PostgreSQL](https://github.com/BTF14/Micro-app/actions/runs/39174496820).
+- No se ejecutaron pruebas locales, no se desplegó producción y no se modificó Neon `main`.
+- Bloqueo técnico vigente: todavía no hay handlers HTTP de negocio; no añadirlos hasta definir y probar permisos por rol/organización. D1–D8 de identidad siguen pendientes. Strix solo está documentado.
+- Próximo paso: revisar el adaptador Neon divergido y preparar una matriz de permisos operativa sin asumir decisiones de identidad.
+
+---
+
 # Diario persistente de estado, decisiones y verificaciones
 
 Este diario es append-only en cuanto a historia: no borrar hitos antiguos; añadir una nueva entrada por sesión o checkpoint. El estado actual está en la parte superior del plan maestro y del handoff.

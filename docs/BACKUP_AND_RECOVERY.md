@@ -99,3 +99,8 @@ Definir objetivos iniciales para aprobar antes de producción: RPO (máxima pér
 - [Neon — History window](https://neon.com/docs/postgres/backup-restore/history-window)
 - [Neon — Plans](https://neon.com/docs/introduction/plans)
 - [Neon — Instant restore](https://neon.com/docs/postgres/backup-restore/branch-restore)
+
+
+## Evaluación de Google Drive (2026-10-18)
+
+Ver [evaluación detallada de Google Drive](GOOGLE_DRIVE_BACKUP_EVALUATION.md). Google Drive personal es un candidato viable condicionado, no una copia activa ni un destino ya aprobado. Los 15 GB de una cuenta Google se comparten entre Gmail, Drive y Photos. La automatización requiere OAuth persistente y secretos seguros; las cuentas de servicio no tienen almacenamiento propio para poseer archivos en My Drive. No habilitar billing ni asumir que el OAuth de prueba dura indefinidamente. Antes de usar datos reales, probar cifrado, subida, descarga, checksum y restauración con PostgreSQL desechable y datos sintéticos. Espacio libre, acceso a la cuenta y credenciales siguen sin verificar.

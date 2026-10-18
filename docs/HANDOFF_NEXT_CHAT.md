@@ -1,25 +1,19 @@
 # Checkpoint más reciente — 2026-10-18
 
-> **Estado actual verificado:** PR #9 está fusionado en `main` mediante squash commit `f1a38f5bc4b101f9d73ae4ca26c2acafb2b208f3`. Todos los workflows de PR para su HEAD `ba1eebbe45b11e6e0b3562795cdb6c26b5c31c63` finalizaron en `success`: CI, migraciones, Security/Trivy, Semgrep, Playwright E2E, dashboard y validación SDD. Los checks del commit de merge en `main` aún deben verificarse por separado; no confundirlos con los checks del HEAD del PR.
-
-> **Actualización de continuidad:** el PR #9 (`feat/sdd-agent-workflow`) tiene los seis workflows de CI/seguridad/E2E y la validación SDD en `success` para el HEAD `68659d1c1ec0cb9996293f78f9bd487e95124bbf`. PR #9 sigue pendiente de integración en este punto. La sección histórica inferior contiene snapshots anteriores; no usar sus SHA como estado vivo. Última verificación de checks: [Actions para el commit](https://github.com/BTF14/Micro-app/commits/feat/sdd-agent-workflow/).
-
-- PR #8, panel de avance, fusionado: https://github.com/BTF14/Micro-app/pull/8
-- Commit de merge: `449fc328bff4ffafd6b6a46c0e539ac85cbd9ebf`.
-- Rama de trabajo integrada: `feat/sdd-agent-workflow`; PR #9 añadido a `main` con SDD, plantillas, perfiles y protocolo de continuidad.
-- El SHA `94445d8cdbe37d3bde4eb1fa1c7f878ee75920ee` tuvo seis workflows con conclusión `success`: CI, validación de migraciones, security/Trivy, Semgrep, Playwright E2E y dashboard. Playwright usa mocks para el piloto; no acredita integración real API+DB.
-- Archivos nuevos: `docs/SDD_WORKFLOW.md`, `templates/sdd/{spec,plan,tasks}.md`, `skills/feature-sdd/SKILL.md`, `.github/agents/{explorer,planner,implementer,reviewer,documentation}.agent.md`.
-- Perfiles versionados no equivalen a procesos autónomos activos. GGA/Ollama/Engram/Gentle-AI/MCP siguen sin instalación/conexión verificada desde este chat.
-- No se desplegó producción ni se mutó Neon `main`. Verificar el HEAD y los checks actuales antes de fusionar la nueva PR.
-
----
+> **Estado verificado:** `main` apunta a `b85305d11b59b138cd2b6a5e4c796d19ef2cff59`. En ese SHA terminaron en `success` CI, Playwright E2E, Semgrep SAST, panel de progreso, validación de migraciones y Security/Trivy. Enlaces: [CI](https://github.com/BTF14/Micro-app/actions/runs/39107481317), [Playwright](https://github.com/BTF14/Micro-app/actions/runs/39107481327), [Semgrep](https://github.com/BTF14/Micro-app/actions/runs/39107481311), [panel](https://github.com/BTF14/Micro-app/actions/runs/39107481301), [migraciones](https://github.com/BTF14/Micro-app/actions/runs/39107481282), [seguridad](https://github.com/BTF14/Micro-app/actions/runs/39107481281).
+>
+> PR #9 está fusionada: https://github.com/BTF14/Micro-app/pull/9. Su squash commit es `f1a38f5bc4b101f9d73ae4ca26c2acafb2b208f3`. No usar como estado actual los snapshots históricos de SHA que aparecen en secciones antiguas.
+>
+> **PR #10 fusionada:** panel de progreso reproducible; todos sus siete workflows terminaron en `success` en el HEAD `be146676cfaef09310c270854bf303079b209b81`. Merge commit: `b85305d11b59b138cd2b6a5e4c796d19ef2cff59`. [PR #10](https://github.com/BTF14/Micro-app/pull/10). Los checks del merge commit deben verificarse por separado.
+>
+> **Límites:** los tests Playwright actuales usan API simulada; no prueban la integración real API+DB. No se desplegó producción ni se mutó Neon `main`. Los perfiles `.github/agents/` son instrucciones versionadas, no prueba de subagentes activos. GGA/Ollama/Engram/Gentle-AI no están instalados ni conectados desde este chat.
 
 # Protocolo de continuidad para IA/chat — Micro app
 
 **Última actualización:** 2026-10-18  
 **Repositorio:** https://github.com/BTF14/Micro-app  
 **Rama:** `main`  
-**SHA verificado al escribir este handoff:** `12c0037f3928b2c54c3593d3f48a65bf3318f401`  
+**SHA de referencia de `main` al actualizar este handoff:** `b85305d11b59b138cd2b6a5e4c796d19ef2cff59`. Verificar siempre el HEAD vivo antes de actuar.  
 **Objetivo:** que una nueva IA retome el trabajo con evidencia, sin repetir solicitudes al usuario, perder decisiones ni inventar estados.
 
 ## Lectura obligatoria, en este orden
@@ -35,25 +29,15 @@
 
 No asumir que un archivo está actualizado solo porque exista. Contrastar la sección de estado vigente con el código, GitHub y Actions.
 
-## Snapshot de continuidad corregido — 2026-10-18
+## Estado histórico y verificación en vivo
 
-- Último commit observado en la búsqueda de GitHub: `7863973ed6e3869f525c6c89fc16412e92158fc2`.
-- La consulta de status checks para ese SHA no devolvió checks; **Actions no verificado en este checkpoint**. Consultar las ejecuciones actuales antes de declarar éxito.
-- Índice maestro: [PROJECT_PLAN.md](PROJECT_PLAN.md). Reglas rectoras: [CONSTITUTION.md](CONSTITUTION.md).
-- Los snapshots históricos inferiores pueden estar obsoletos; no tratarlos como estado vivo sin verificación.
-
-## Estado verificado en GitHub
-
-- `main` = `12c0037f3928b2c54c3593d3f48a65bf3318f401` — commit `docs: flag identity requirements gap from code review`.
-- En ese SHA, los tres workflows terminaron en **success**:
-  - [CI](https://github.com/BTF14/Micro-app/actions/runs/39102740451)
-  - [Database migration validation](https://github.com/BTF14/Micro-app/actions/runs/39102740448)
-  - [Security scan](https://github.com/BTF14/Micro-app/actions/runs/39102740511)
-- “Success” significa que pasaron esos workflows en ese SHA; no significa que el producto esté listo para producción ni que no existan vulnerabilidades.
-- Rama `feat/neon-transaction-adapter` observada en `7989a84e39536029819735a5202f3934a8eb12c3`. No está fusionada según la evidencia consultada. Comparar diff completo contra `main`; no fusionar a ciegas.
-- Otras ramas observadas: `feat/auth-session-foundation` (`3ac714ab0c5553c05bb73faa7046c8dead150121`), `feat/frontend-auth-flow` (`78aa6efbc81b072b57cec3ede514f41190fef713`), `feat/tenant-safe-schema` (`d4a6f7ac26ea8a56f0ee5b50bb1df2196a76a233`) y `fix/pnpm-lockfile-bootstrap` (`49c4604b8d760a56598a4089c79d8cd0008b8395`). Volver a consultar antes de usarlas.
-- PR #4 “Add initial authentication and revocable sessions” ya fue fusionado; no repetirlo como tarea pendiente.
-- El frontend de registro/login se conectó a la API en el commit `88d30d472905c81a90d9fffc967e3ba1df5084d1`; leer el código actual antes de hacer más cambios.
+- El SHA `d42daeba36d5f8027ab2ea5a417d64a873bc3a20` es histórico, no el HEAD actual de `main`.
+- Referencia observada para `main` tras fusionar PR #10: `b85305d11b59b138cd2b6a5e4c796d19ef2cff59`. En PR #10, los siete workflows pasaron en su HEAD `be146676cfaef09310c270854bf303079b209b81`; los checks del merge SHA deben consultarse por separado.
+- PR #11 (`docs/refresh-handoff-current-state`) está abierta mientras se actualiza este documento. En el HEAD previo `26808cc778489f7ad0867510e800cd2ac2d68bdd`, seis workflows observados finalizaron en `success`; el estado del PR y los checks del nuevo HEAD deben verificarse antes de integrar.
+- PR #4 (autenticación inicial y sesiones revocables), PR #8 (panel), PR #9 (SDD) y PR #10 (reproducibilidad del panel) están fusionadas. Verificar PRs y ramas en vivo antes de rescatar trabajo.
+- Rama `feat/neon-transaction-adapter` observada previamente en `7989a84e39536029819735a5202f3934a8eb12c3`; no fusionar a ciegas. Comparar contra `main`, separar cambios únicos y probar con PostgreSQL efímero.
+- Las ramas listadas en el historial pueden haber avanzado o sido eliminadas; consultar GitHub antes de basarse en sus SHA.
+- El frontend de registro/login se conectó a la API en un commit previo; inspeccionar el código actual antes de modificarlo.
 
 ## Bloqueos y tareas prioritarias
 

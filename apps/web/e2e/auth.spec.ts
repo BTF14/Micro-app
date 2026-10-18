@@ -18,8 +18,9 @@ test("logs in and displays the authenticated workspace", async ({ page }) => {
   await expect(page.getByRole("heading", { name: "Inicia sesión" })).toBeVisible();
   await page.getByLabel("Correo electrónico").fill("ana@example.com");
   await page.getByLabel("Contraseña").fill("correct-horse-battery");
-  await page.getByRole("button", { name: /iniciar sesión/i }).click();
-  await expect(page.getByText("Mi tienda")).toBeVisible();
+  await page.getByRole("button", { name: /entrar a mi cuenta/i }).click();
+  await expect(page.getByRole("heading", { name: "Hola, Ana." })).toBeVisible();
+  await expect(page.getByText("Mi tienda", { exact: true }).first()).toBeVisible();
   await expect(page.getByRole("button", { name: /cerrar sesión/i })).toBeVisible();
 });
 

@@ -1,3 +1,15 @@
+# Checkpoint más reciente — 2026-10-18
+
+- PR #8, panel de avance, fusionado: https://github.com/BTF14/Micro-app/pull/8
+- Commit de merge: `449fc328bff4ffafd6b6a46c0e539ac85cbd9ebf`.
+- Rama de trabajo: `feat/sdd-agent-workflow`; objetivo: añadir proceso SDD, plantillas y perfiles de agentes.
+- El SHA `94445d8cdbe37d3bde4eb1fa1c7f878ee75920ee` tuvo seis workflows con conclusión `success`: CI, validación de migraciones, security/Trivy, Semgrep, Playwright E2E y dashboard. Playwright usa mocks para el piloto; no acredita integración real API+DB.
+- Archivos nuevos: `docs/SDD_WORKFLOW.md`, `templates/sdd/{spec,plan,tasks}.md`, `skills/feature-sdd/SKILL.md`, `.github/agents/{explorer,planner,implementer,reviewer,documentation}.agent.md`.
+- Perfiles versionados no equivalen a procesos autónomos activos. GGA/Ollama/Engram/Gentle-AI/MCP siguen sin instalación/conexión verificada desde este chat.
+- No se desplegó producción ni se mutó Neon `main`. Verificar el HEAD y los checks actuales antes de fusionar la nueva PR.
+
+---
+
 # Protocolo de continuidad para IA/chat — Micro app
 
 **Última actualización:** 2026-10-18  

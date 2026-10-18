@@ -2,7 +2,7 @@
 
 - Estado: propuesta para decisión del propietario; no aprobada
 - Fecha: 2026-10-18
-- Relacionado: `docs/sdd/google-signin-allowlist-spec.md` (D1–D8)
+- Relacionado: `docs/sdd/google-signin-allowlist-spec.md` (D1–D8); permisos por rol: [`role-permission-decision-matrix.md`](role-permission-decision-matrix.md)
 - Riesgo: alto
 - Propósito: convertir las decisiones bloqueantes en opciones explícitas sin inventar correos, dominios, administradores ni políticas comerciales.
 

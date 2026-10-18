@@ -5,7 +5,7 @@
 - `main` verificado: `31d1a09a9ba9bf41a797fea7c442f5d9e2223c56`.
 - PR #30 y #31 están fusionadas. PR #31 añadió pruebas de integración para negar `/auth/me` y `/auth/login` cuando la organización está inactiva aunque la membresía siga activa.
 - GitHub Actions para el SHA exacto de main: 6 de 8 check-runs visibles terminaron en success; 2 seguían in_progress al momento de la consulta. Verificar de nuevo el SHA y Actions antes de afirmar CI verde. Los enlaces y nombres están en el checkpoint superior de `docs/CURRENT_STATE.md` y `docs/HANDOFF_NEXT_CHAT.md`.
-- No hay PR abiertas según la consulta viva. No se ejecutaron tests localmente.
+- PR #32 está abierta para revisión documental. No se ejecutaron tests localmente.
 - Bloqueos siguen vigentes: handlers comerciales inexistentes, Google OAuth/allowlist y D1–D8 pendientes, matriz de roles sin aprobación, backups/restauración independiente sin verificar, app no lista para producción.
 - No hubo cambios en Neon `main`, datos reales, secretos ni despliegues.
 - Próximo paso: evitar PR de checkpoint repetidas salvo que la continuidad lo necesite; priorizar revisión de seguridad/código y pruebas aisladas que no dependan de inventar decisiones de identidad/roles. Preparar documentación de handoff antes de que se agote el contexto.

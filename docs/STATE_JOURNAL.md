@@ -174,3 +174,13 @@ Este diario es append-only en cuanto a historia: no borrar hitos antiguos; añad
 - Evaluación externa documentada en `docs/GOOGLE_DRIVE_BACKUP_EVALUATION.md`: Drive personal puede funcionar condicionado a espacio disponible, OAuth duradero, secreto seguro, coste $0 y pruebas de recuperación. Los 15 GB se comparten entre Gmail, Drive y Photos; cuentas de servicio no pueden poseer archivos de My Drive y no tienen cuota de almacenamiento propia. Fuente oficial: https://developers.google.com/workspace/drive/api/guides/about-sdk, https://developers.google.com/identity/protocols/oauth2, https://support.google.com/drive/answer/9312312?hl=en-en.
 - Estado sin cambios en servicios reales: no backup activo, no restore probado, no acceso ni espacio Drive verificado, no credenciales creadas, no datos reales descargados, no SQL/migración y no despliegue.
 - Decisión: no implementar aún el workflow con datos reales. Próximo paso seguro es prototipo de backup/restore con PostgreSQL desechable y datos sintéticos; confirmar límites/coste sin activar billing.
+
+
+## 2026-10-18 — Evaluación de destino de respaldo integrada; backup sigue pendiente
+
+- PR [#15](https://github.com/BTF14/Micro-app/pull/15) fusionada con squash en `ed9c5d89f9475a6ab9ec98e991d967319f244ccb`.
+- La evaluación de Google Drive queda documentada como candidata condicional, no como elección ni configuración. No se accedió a cuentas ni secretos, no se descargaron datos reales, no se modificó Neon y no se activó billing.
+- Para el SHA del PR `adc636732c24f74d3d6457a93af665647a00e097`, CI, Security scan, Semgrep, Playwright E2E, validación de migraciones y dashboard dieron success. La última consulta mostró workflows del merge SHA en ejecución; verificar en vivo.
+- El backup diario externo cifrado, la alerta de fallos y la restauración aislada siguen pendientes. No considerar la política documental como evidencia de ejecución.
+- Revisión de continuidad: `feat/neon-transaction-adapter` tiene 14 commits por delante y 31 detrás de `main`; `apps/api/src/database.ts` ya está presente en `main` y coincide con la versión revisada en esa rama. No fusionar rama divergida; inspeccionar/rescatar solo cambios exclusivos que sigan siendo necesarios.
+- Próxima prioridad: requisito P0 Google Sign-In + allowlist. PR #12 es diseño solamente y decisiones D1–D8 siguen abiertas; no implementar OAuth ni inventar reglas de acceso antes de resolverlas.

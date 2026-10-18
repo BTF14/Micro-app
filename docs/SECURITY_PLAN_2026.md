@@ -53,9 +53,10 @@ Trabajar en una rama de desarrollo y un entorno de pruebas. No aplicar migracion
 **Aceptación:** no hay ventas parciales tras un fallo; dos ventas concurrentes no consumen stock de más; reintentos no duplican ventas ni movimientos.
 
 ### Fase 3 — Escaneo automatizado (P1)
-- Elegir CodeQL o Semgrep primero, según permisos, cobertura y falsos positivos.
-- Workflow inicial Trivy filesystem ya añadido en esta rama como no bloqueante para dependencias, configuración y secretos; comprobar ejecución y cobertura antes de hacerlo bloqueante.
-- La revisión de `package.json`, `pnpm-workspace.yaml` y `.github/workflows/ci.yml` confirma que el repositorio usa **pnpm 10** con workspace `apps/*`. El CI actual instala con `pnpm install --no-frozen-lockfile`, pero no se encontraron archivos de bloqueo en las ubicaciones revisadas. Generar y verificar `pnpm-lock.yaml` mediante una instalación real con pnpm 10; no construirlo manualmente ni cambiar las versiones declaradas solo para crear el archivo. Después, ajustar CI a instalación congelada (`pnpm install --frozen-lockfile`) y verificarlo en Actions antes de considerar reproducible la instalación.
+- Se añadió `.github/workflows/semgrep.yml` en la rama de herramientas: análisis JS/TS con reporte SARIF como artefacto. Está en modo informativo y debe evaluarse con resultados reales antes de hacerlo bloqueante.
+- `.github/workflows/security-scan.yml` ejecuta Trivy filesystem para vulnerabilidades, configuración y secretos; el baseline sigue siendo no bloqueante.
+- La revisión en GitHub confirma `pnpm-lock.yaml` versionado y CI con `pnpm install --frozen-lockfile`. No regenerar el lockfile manualmente; cualquier dependencia nueva debe añadirse con pnpm 10 y validar la instalación congelada en Actions.
+- Playwright se encuentra en piloto E2E separado; runner temporal en CI, pendiente de incorporarlo como dependencia del workspace y lockfile.
 - Evaluar generación de SBOM.
 - Bloquear secretos filtrados y hallazgos críticos confirmados; documentar falsos positivos.
 - Revisar licencias y condiciones actuales antes de adoptar herramientas.
@@ -98,3 +99,8 @@ Los escáneres no sustituyen las pruebas de autorización ni la revisión de ló
 - https://github.com/juice-shop/juice-shop
 - https://github.com/apache/casbin-node-casbin
 - https://github.com/express-rate-limit/express-rate-limit
+
+
+## Checklist ejecutable y evidencia
+
+Usar [OWASP_ASVS_CHECKLIST.md](OWASP_ASVS_CHECKLIST.md) como lista de verificación de controles. Mantener las casillas sin marcar hasta enlazar pruebas, código o resultados de CI. La rama `feat/security-e2e-tooling` incorpora además [Playwright E2E](../.github/workflows/playwright-e2e.yml) y [Semgrep](../.github/workflows/semgrep.yml); sus resultados deben consultarse por SHA antes de declarar la fase validada.

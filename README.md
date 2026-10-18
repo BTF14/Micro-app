@@ -74,3 +74,8 @@ Antes de continuar trabajo, lee [`AGENTS.md`](AGENTS.md) y el [handoff vigente](
 - [Modelo operativo de agentes](docs/AGENT_OPERATING_MODEL.md)
 
 Los perfiles en `.github/agents/` son instrucciones reutilizables; no implican que agentes autónomos estén activos. Los estados y pruebas deben verificarse contra el SHA actual de GitHub.
+
+
+## Gentleman-Programming: implementación
+
+El estado de adopción, configuración local de GGA, instrucciones de Engram y pasos de verificación están en [`docs/GENTLEMAN_IMPLEMENTATION.md`](docs/GENTLEMAN_IMPLEMENTATION.md). El archivo raíz `.gga` está preparado para revisión local con Ollama, pero no activa un hook ni afirma que GGA/Engram/Gentle-AI estén instalados.

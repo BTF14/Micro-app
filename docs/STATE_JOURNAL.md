@@ -39,3 +39,10 @@ Este diario es append-only en cuanto a historia: no borrar hitos antiguos; añad
 3. Revisar las pruebas de autenticación actuales para cobertura de allowlist, roles, aislamiento tenant, revocación, fallos de DB y rate limits; no confundir test existente con cobertura completa.
 4. Seguir con pruebas de transacciones PostgreSQL e inventario/idempotencia, sin Neon main.
 5. Actualizar este diario, plan y handoff después de cada checkpoint y comprobar Actions por SHA exacto.
+
+
+## 2026-10-18 — Corrección del snapshot de CI
+- Último SHA consultado antes de esta actualización: `995608af8584442a9f174f9cf55ed7861749b872`.
+- Ejecuciones para ese SHA: CI `39102649341` pending, migración `39102649354` pending, seguridad `39102649347` queued.
+- El SHA anterior `8574bef7c5bc38cb85e55007816b6efc8b54a826` tenía los tres workflows en success.
+- Este commit cambia solo documentación; comprobar las ejecuciones del nuevo HEAD antes de informar de estado final.

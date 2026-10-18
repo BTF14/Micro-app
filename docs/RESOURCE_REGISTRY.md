@@ -11,7 +11,7 @@ Actualizado: 2026-10-18. Este registro no sustituye la verificación en vivo: pl
 | React + Vite + TypeScript | Frontend web responsive. | https://react.dev/ · https://vite.dev/ · https://www.typescriptlang.org/docs/ | Validar formularios y errores; la UI nunca es frontera de autorización. |
 | Cloudflare Pages | Hosting estático objetivo para frontend. | https://pages.cloudflare.com/ | Reconfirmar límites/condiciones y no desplegar producción sin aceptación. |
 | Cloudflare Workers + Hono | API separada con estándares web. | https://developers.cloudflare.com/workers/ · https://hono.dev/ | No asumir compatibilidad de middleware diseñado para Express. |
-| Neon PostgreSQL | Base de datos dedicada `micro-app-db`, plan Free según estado previo documentado. | https://neon.com/docs · https://neon.com/pricing | Neon main solo lectura; pruebas/migraciones en PostgreSQL efímero o rama aislada. No guardar cadenas de conexión. |
+| Neon PostgreSQL | Base de datos dedicada `micro-app-db`, plan Free según estado previo documentado. | https://neon.com/docs · https://neon.com/pricing | `main` es sensible a producción, no permanentemente de solo lectura: cambios solo tras superar el gate de `docs/CONSTITUTION.md`, con destino verificado, prueba aislada y recuperación comprobada. Preferir PostgreSQL efímero/rama aislada. No guardar cadenas de conexión. |
 | Drizzle ORM | Esquema y migraciones versionadas. | https://orm.drizzle.team/docs/overview | Revisar migraciones y constraints en PostgreSQL temporal. |
 | Vitest | Pruebas unitarias e integración. | https://vitest.dev/ | Registrar comando y resultado. |
 | Playwright | Pruebas E2E escritorio/móvil. | https://playwright.dev/docs/intro | Ejecutar contra entorno local/preview aislado. |

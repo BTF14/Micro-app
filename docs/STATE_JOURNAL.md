@@ -294,3 +294,13 @@ Este diario es append-only en cuanto a historia: no borrar hitos antiguos; añad
 - No se ejecutaron pruebas localmente; esta evidencia corresponde a GitHub Actions para el SHA indicado.
 - Sin cambios de código de producto, base de datos, secretos o despliegue de producción.
 - Estado comercial sigue siendo no listo para producción: faltan endpoints de negocio, OAuth + allowlist con decisiones D1–D8 aprobadas, pruebas completas de aislamiento/autorización y respaldo/restauración independientes verificados.
+
+
+## 2026-10-18 — Matriz de permisos por rol preparada para decisión
+
+- PR de documentación en preparación desde `docs/role-permission-decision-matrix`.
+- Añadido `docs/sdd/role-permission-decision-matrix.md` con las áreas de producto, inventario, ventas, caja, reportes, usuarios y auditoría que necesitan una decisión explícita para `owner`, `admin`, `cashier` e `inventory`.
+- Todas las celdas siguen pendientes; no se convirtió una propuesta en política aprobada ni se añadieron handlers comerciales.
+- Se enlazó la matriz desde el registro de decisiones de identidad/acceso. D1–D8 de Google OAuth/allowlist siguen independientes y pendientes.
+- PR #29 fusionada después de que los ocho check-runs del head `bccae77f66ede9670e4887092ae13749daf39b3b` terminaran en success. Merge commit y `main`: `df9d9b90a8f0e4965d20278cc5825006d9e959aa`.
+- Sin pruebas locales, sin cambios de base de datos, sin secretos, sin emails ni despliegue de producción.

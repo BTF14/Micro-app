@@ -194,3 +194,13 @@ Este diario es append-only en cuanto a historia: no borrar hitos antiguos; añad
 - P0: el registro crea una organización y asigna rol `owner` sin allowlist; no se encontró Google OAuth/allowlist en `apps/api/src/auth.ts`. Es revisión estática, no prueba dinámica ni pentest.
 - PR #12 está fusionada como diseño SDD, SHA `a28bbc686c7b1cb9cbe615ef5bcb9c7ece45ede3`; D1–D8 siguen pendientes. No implementar OAuth ni reglas de acceso por suposición.
 - Sin cambios en Neon, credenciales, datos reales o producción. Backup externo automático y restauración real siguen sin estar configurados/verificados.
+
+
+## 2026-10-18 — PR #17 fusionada; continuidad y checks verificados
+
+- PR [#17](https://github.com/BTF14/Micro-app/pull/17) fusionada por squash; merge SHA `f196077b1ad5800e287c9f88890439826bdf3f0f`. HEAD de `main` verificado en ese mismo SHA.
+- Para el HEAD exacto del PR `a27f05e1e5d17bfb395671d230d1c9b6884e85ca`, los workflows CI, Playwright E2E, validación de migraciones, Semgrep, Security scan y dashboard terminaron en `success`; Security scan se ejecutó dos veces y ambas terminaron en `success`. Estos son checks del commit de documentación, no validación de producción.
+- El registro público de la API sigue siendo P0: `POST /auth/register` permite crear una organización y asignar rol `owner` sin allowlist. No habilitar usuarios ni datos comerciales reales hasta cerrar el requisito de acceso.
+- PR #12 es diseño SDD ya fusionado; decisiones D1–D8 aún no están documentadas como resueltas. Próximo paso seguro: releer el documento fuente de SDD y separar decisiones que ya están respaldadas por requisitos de las que requieren confirmación de producto. No inventar allowlist, administrador, dominios ni política de vinculación.
+- La rama `main` no tiene protección de branch configurada según lectura de GitHub (`protected=false`, checks requeridos vacíos). Es una mejora de gobernanza a evaluar, no se cambió en este trabajo.
+- Backup externo automatizado, destino independiente, alertas y restauración aislada siguen pendientes. No hay despliegue de producción ni cambios en Neon/secretos/datos reales.

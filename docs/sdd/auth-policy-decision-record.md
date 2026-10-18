@@ -1,0 +1,49 @@
+# Registro de decisiones pendientes: identidad y acceso
+
+- Estado: propuesta para decisión del propietario; no aprobada
+- Fecha: 2026-10-18
+- Relacionado: `docs/sdd/google-signin-allowlist-spec.md` (D1–D8)
+- Riesgo: alto
+- Propósito: convertir las decisiones bloqueantes en opciones explícitas sin inventar correos, dominios, administradores ni políticas comerciales.
+
+## Límites
+
+Este documento no autoriza ni implementa OAuth, migraciones, cambios de credenciales, despliegues, emails ni cambios en Neon `main`. No contiene una allowlist real. Ninguna opción de esta propuesta se considera aprobada hasta que el propietario la confirme.
+
+## Matriz de decisión
+
+| ID | Decisión requerida | Opción conservadora propuesta para evaluar | Alternativas y consecuencias |
+|---|---|---|---|
+| D1 | Fuente de allowlist | Tabla administrada por operador autenticado, con auditoría, solo si existe un proceso seguro de bootstrap y recuperación | Secret/env es simple pero difícil de administrar y auditar; invitaciones requieren definir emisión, expiración y revocación |
+| D2 | Quién puede entrar | Emails exactos previamente autorizados; denegar si la política está vacía, inválida o no disponible | Dominios amplían el acceso a cualquier cuenta del dominio y requieren decidir si ese riesgo es aceptable |
+| D3 | Alta inicial y organización | Sin autoaprovisionamiento ni rol `owner` implícito; definir un bootstrap administrativo explícito, de un solo uso y auditable | Invitación/preaprovisionamiento requieren un operador y un flujo de recuperación definidos |
+| D4 | Contraseña actual | Mantenerla temporalmente solo si también queda cerrada por la misma política de acceso y se puede probar; si no, bloquear registro público antes de usuarios reales | Retirar contraseñas requiere plan de migración/recuperación; mantenerlas sin control permitiría eludir Google/allowlist |
+| D5 | Email verificado | Exigir identidad Google validada en servidor y claim de email verificado antes de evaluar allowlist por email | Si se usa otro identificador, documentar su estabilidad y cómo se vincula la cuenta |
+| D6 | Biblioteca/proveedor OAuth | Comparar opciones compatibles con Hono/Cloudflare Workers, mantenimiento, coste $0 real y gestión de secretos antes de seleccionar | No adoptar hasta verificar soporte vigente, costes, rotación de secretos y restricciones del plan |
+| D7 | Cuentas existentes | No vincular automáticamente por coincidencia de email; exigir un flujo explícito y autenticado de vinculación/recuperación | Migración administrativa verificada puede ser viable si queda auditada y evita apropiación de cuentas |
+| D8 | Sesiones y orígenes | Cookies seguras por entorno, expiración/revocación definidas, callback y orígenes exactos permitidos; nunca comodines por conveniencia | Duración y dominios concretos dependen de los entornos reales y deben confirmarse antes de configurar |
+
+## Preguntas que requieren confirmación del propietario
+
+1. ¿El producto será inicialmente de acceso privado para un grupo cerrado, o debe permitir que nuevos comercios se registren por invitación?
+2. ¿La allowlist debe contener correos exactos o se necesita permitir dominios completos? No se presupone ningún correo ni dominio.
+3. ¿Quién administrará la allowlist y cómo se recupera el acceso si ese administrador pierde su cuenta?
+4. ¿Debe seguir existiendo el login por contraseña durante la transición? Si sí, ¿aceptas que se cierre el registro público y que el acceso por contraseña respete la misma allowlist?
+5. ¿Un usuario autorizado debe crear su propio comercio o recibir una invitación a una organización existente? No se asignará `owner` automáticamente sin una política definida.
+6. ¿Hay cuentas actuales con datos reales que deban vincularse? Si las hay, la vinculación necesita un procedimiento que evite apropiación de cuentas.
+7. ¿Qué dominios/orígenes se usarán en desarrollo, preview y producción? No inventar URLs ni configurar OAuth antes de confirmarlas.
+
+## Controles mínimos antes de implementación
+
+- La configuración ausente o inválida debe denegar acceso, no abrir el registro.
+- Verificar la identidad en servidor; validar issuer, audience, expiración, state/nonce y redirect URI.
+- No crear usuario, organización, membresía ni sesión antes de aprobar la política; las escrituras relacionadas deben ser transaccionales.
+- Autorizar cada operación protegida en servidor y comprobar pertenencia al tenant.
+- Añadir pruebas de integración con PostgreSQL efímero y pruebas negativas de aislamiento entre tenants.
+- Secretos solo en el almacén de secretos del entorno; no en Git, logs ni mensajes.
+- No ejecutar migraciones sobre Neon `main`, desplegar ni activar servicios con cobro durante la fase de decisión.
+- Revisión de seguridad independiente y CI verde para el SHA exacto antes de integrar.
+
+## Estado actual
+
+D1–D8 continúan sin aprobar. Este registro organiza la decisión; no reemplaza la aprobación del propietario ni la especificación SDD. La revisión estática previa encontró registro por contraseña sin allowlist en `apps/api/src/auth.ts`; no declarar la autenticación lista para usuarios reales hasta corregir y verificar ese bloqueo.

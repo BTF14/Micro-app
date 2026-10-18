@@ -172,3 +172,12 @@ Este bloque es más reciente que los snapshots históricos anteriores; si contra
 - Próximo trabajo: recuperar las decisiones D1–D8 del diseño, convertirlas en opciones explícitas y detectar cuáles se pueden cerrar usando requisitos ya documentados sin preguntar al usuario; mantener sin implementar OAuth/allowlist hasta que las decisiones de producto imprescindibles estén confirmadas.
 - Respaldo: sigue sin existir evidencia de backup externo automatizado ni restauración probada. Mantenerlo como pendiente; coste total objetivo $0, no guardar dumps en Git ni Actions artifacts.
 - No se modificó Neon, no se tocaron secretos ni se desplegó producción.
+
+
+## Continuidad — Strix añadido al plan (2026-10-18)
+
+- Documento: [STRIX_INTEGRATION.md](STRIX_INTEGRATION.md), enlazado también desde el plan maestro, registro de recursos y plan de seguridad.
+- Estado: documentación únicamente. Strix no está instalado ni ejecutado; no hay informe de evaluación.
+- Próximo paso condicionado: cerrar auth/allowlist P0 y disponer de API + PostgreSQL efímero; luego probar en laboratorio aislado con datos sintéticos y coste $0 comprobado. Nunca usar producción, Neon main o sistemas ajenos.
+- Requiere Docker y proveedor LLM; no activar facturación ni integrar ejecución en CI sin revisar coste, permisos y alcance. Mantener informes sin secretos y revisar hallazgos manualmente.
+- PR de Strix separada de PR #19; comprobar el estado de ambas en GitHub antes de integrar.

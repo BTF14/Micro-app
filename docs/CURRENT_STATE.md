@@ -1,3 +1,22 @@
+# Checkpoint autoritativo — 2026-10-19, continuidad de PR #60–#62
+
+- Repositorio canónico: https://github.com/BTF14/Micro-app.
+- `main` base SHA observado en PR #62: `1b8098ff00e0bb7482200b486710a5611f1e109d` (merge reportado de PR #61). Revalidar `main` en GitHub antes de cualquier operación posterior.
+- PR #61 fusionada: https://github.com/BTF14/Micro-app/pull/61. Cambio documental para corregir un `\\n` literal en la checklist; no implica despliegue productivo.
+- PR #60 sigue abierta y tiene conflicto (`mergeable=false`), head observado `af8479000e1e677bd84e0e11bf02cdb6d548315e`. No force-push ni merge. Siete workflows consultados para ese SHA terminaron en success; Codex falló por cuota sobre SHA antiguo y no hay hilos/reviews formales recuperados.
+- PR #62: https://github.com/BTF14/Micro-app/pull/62. Rama `docs/ai-autonomy-governance-rebased` recrea los cambios de gobernanza sobre la base actual para evitar la rama conflictiva. Los checks de su primer head se observaron queued/in_progress; no fusionar hasta confirmar el head más reciente y todos los checks requeridos en success. No se ejecutaron pruebas locales.
+- P0: Google sign-in + allowlist no está implementado; D1–D8 y matriz de permisos por rol están pendientes de aprobación. `POST /auth/register` debe permanecer fail-closed mientras no exista política aprobada, implementación y pruebas.
+- La rama `feat/neon-transaction-adapter` sigue divergida y no debe fusionarse completa a ciegas. Rescatar solo cambios concretos tras comparar con `main` vigente.
+- Aplicación NO lista para producción. Backups/restauración independiente, handlers comerciales, aislamiento tenant completo, permisos aprobados, E2E reales y controles de concurrencia/idempotencia siguen pendientes.
+- Límites: presupuesto $0; no producción, Neon `main` sensible, datos reales, secretos, emails, billing ni mezcla con Cantina-pos. Strix está documentado, no instalado ni ejecutado.
+
+## Próximos pasos
+1. Revalidar PR #62 head, diff y checks requeridos; resolver defectos concretos antes de integrar.
+2. Después de merge, actualizar este checkpoint con el SHA real de `main` y checks verificados para el merge commit.
+3. Continuar análisis y pruebas aisladas de auth/sesión sin inventar D1–D8 ni permisos.
+
+---
+
 # Checkpoint autoritativo — 2026-10-19, después de PR #57
 
 - Repositorio: https://github.com/BTF14/Micro-app

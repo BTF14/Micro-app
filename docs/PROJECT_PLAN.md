@@ -4,7 +4,8 @@
 - **Política fuente:** propuesta incorporada en esta rama a `docs/CONSTITUTION.md` §9A y operacionalizada en `AGENTS.md`; el handoff y diario enlazan el protocolo.
 - **Límites invariables:** presupuesto $0; ninguna autorización implícita para producción, Neon `main`, datos reales, gastos, secretos ni operaciones destructivas/sensibles.
 - **Estado:** cambios preparados en la rama `docs/ai-autonomy-governance`; no considerar fusionado ni integrado en `main` hasta verificar PR, revisión y checks del SHA vigente.
-- **Criterio de aceptación:** revisar diff completo; confirmar que los cinco documentos contienen instrucciones coherentes; comprobar checks requeridos por SHA; abrir PR separada y reportar enlace/estado real.
+- **PR:** https://github.com/BTF14/Micro-app/pull/60, abierta contra `main`; no fusionada.
+- **Criterio de aceptación:** revisar diff completo; confirmar que los cinco documentos contienen instrucciones coherentes; comprobar checks requeridos por el head SHA vigente; resolver fallos o hallazgos antes de integrar.
 
 ---
 

@@ -1,3 +1,9 @@
+## Acción humana pendiente
+
+El propietario quiere una guía paso a paso en el próximo chat para aprobar la política de acceso sin repetir el historial. Consultar [`OWNER_APPROVAL_GUIDE.md`](OWNER_APPROVAL_GUIDE.md), con prompt listo para copiar y decisiones ordenadas. La recomendación base (aún no aprobada hasta confirmación explícita) es beta privada, allowlist de emails exactos, Google validado por servidor con email verificado, sin alta pública, sin autoaprovisionamiento/owner implícito y sin linking automático. No guardar correos ni secretos en el repo. El registro público permanece bloqueado hasta implementar y probar la política aprobada.
+
+---
+
 # Checkpoint autoritativo — 2026-10-19, después de PR #58
 
 - Repositorio: https://github.com/BTF14/Micro-app

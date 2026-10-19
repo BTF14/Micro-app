@@ -1,0 +1,269 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-10-19",
+  "repository": "BTF14/Micro-app",
+  "branch": "chore/curated-agent-skills-audit",
+  "purpose": "Project-specific audit and integrity log for the 19 skills proposed by AutoSkills. This is not AutoSkills' official skills-lock.json.",
+  "autoskills": {
+    "package": "autoskills",
+    "version": "0.4.1",
+    "packageLicense": "CC-BY-NC-4.0",
+    "previewRun": "https://github.com/BTF14/Micro-app/actions/runs/39300536264",
+    "previewRunId": 39300536264,
+    "testedHead": "09f17020f7543439ed822726419de9777d34fa08",
+    "result": "success; dry-run only",
+    "reportedCandidates": 19,
+    "cliInstalledSkills": 0,
+    "officialSkillsLockJson": {
+      "status": "not-generated",
+      "reason": "The successful run used --dry-run. Hand-writing skills-lock.json would falsely imply that AutoSkills' installer generated and verified it. The official registry index.json was not readable through the available connector, so its bundleHash/security-review entries could not be independently checked."
+    },
+    "registrySnapshot": {
+      "repository": "midudev/autoskills",
+      "commit": "b4489cbdc36ba8c9de8f4dd844bab0b6b559579f",
+      "integrity": "Pinned GitHub blob IDs are recorded for all 19 SKILL.md files. This is immutable Git-object evidence, not a claim that AutoSkills' own SHA-256 manifest was verified."
+    }
+  },
+  "installedSkills": [
+    {
+      "name": "accessibility",
+      "path": ".agents/skills/external-accessibility/SKILL.md",
+      "upstream": "https://github.com/addyosmani/web-quality-skills/tree/main/skills/accessibility",
+      "upstreamLicense": "MIT",
+      "licenseEvidence": "Upstream repository metadata identifies MIT; the upstream LICENSE file is included.",
+      "sourceRegistryBlobSha1": "22a244430f890fe44cbd7a50590d5cbf8528c77b",
+      "files": [
+        {
+          "path": ".agents/skills/external-accessibility/SKILL.md",
+          "sourceBlobSha1": "22a244430f890fe44cbd7a50590d5cbf8528c77b",
+          "installedBlobSha1": "22a244430f890fe44cbd7a50590d5cbf8528c77b",
+          "sha256": "267fb2a0707d6142f2871f22688203a42ba21291a2aa200fb740936e41362b5d",
+          "bytes": 14265
+        },
+        {
+          "path": ".agents/skills/external-accessibility/references/A11Y-PATTERNS.md",
+          "sourceBlobSha1": "6d500efb3eb2c714565e8a39be86feecfcda9ad5",
+          "installedBlobSha1": "6d500efb3eb2c714565e8a39be86feecfcda9ad5",
+          "sha256": "f10e238dd4dd3c4f51134c2056bc02d3dd4f8fb6ccc9145c2c1ba7aab4d58140",
+          "bytes": 5996
+        },
+        {
+          "path": ".agents/skills/external-accessibility/references/WCAG.md",
+          "sourceBlobSha1": "a0bd65fa7494eda0147c6d7bf82bd57e7f5e72ce",
+          "installedBlobSha1": "a0bd65fa7494eda0147c6d7bf82bd57e7f5e72ce",
+          "sha256": "16683e025e3833d931c9d880645d98a448827f97e10189b6c8f12c832e7a2361",
+          "bytes": 9075
+        },
+        {
+          "path": ".agents/skills/external-accessibility/LICENSE",
+          "sourceBlobSha1": "90715bb429f374dcc4e05c35535b049d3c077313",
+          "installedBlobSha1": "90715bb429f374dcc4e05c35535b049d3c077313",
+          "sha256": "c122223ac43e86421958e18623979942c21b642951e2e3736dcb63eff13587c3",
+          "bytes": 1068
+        }
+      ],
+      "status": "installed-on-branch",
+      "dependencyChanges": 0,
+      "scriptsExecuted": 0
+    },
+    {
+      "name": "typescript-advanced-types",
+      "path": ".agents/skills/external-typescript-advanced-types/SKILL.md",
+      "upstream": "https://github.com/wshobson/agents",
+      "upstreamLicense": "MIT",
+      "licenseEvidence": "Upstream repository metadata identifies MIT; the upstream LICENSE file is included.",
+      "sourceRegistryBlobSha1": "5057af799047bbae1a066ffead0b6e298f0ef7ff",
+      "files": [
+        {
+          "path": ".agents/skills/external-typescript-advanced-types/SKILL.md",
+          "sourceBlobSha1": "5057af799047bbae1a066ffead0b6e298f0ef7ff",
+          "installedBlobSha1": "5057af799047bbae1a066ffead0b6e298f0ef7ff",
+          "sha256": "c32101c65134d94ef1a3305ef486020b57be6408f97ed952c9c560e3fe04188d",
+          "bytes": 8035
+        },
+        {
+          "path": ".agents/skills/external-typescript-advanced-types/references/details.md",
+          "sourceBlobSha1": "6b1b9a15c1103c8ebbebba1a3cb696ab7ad9dab9",
+          "installedBlobSha1": "6b1b9a15c1103c8ebbebba1a3cb696ab7ad9dab9",
+          "sha256": "036a1dd41283384f086ac0eeb4f63c899b042ad68815a8ce00afebf606b55c44",
+          "bytes": 9025
+        },
+        {
+          "path": ".agents/skills/external-typescript-advanced-types/LICENSE",
+          "sourceBlobSha1": "326f0a55c96e672fedf9d807ca043c00df05ba0e",
+          "installedBlobSha1": "326f0a55c96e672fedf9d807ca043c00df05ba0e",
+          "sha256": "f89abb55d9f073f38f1703e4518f0613c788c6174be7f13b8dfe48a1c076c746",
+          "bytes": 1068
+        }
+      ],
+      "status": "installed-on-branch",
+      "dependencyChanges": 0,
+      "scriptsExecuted": 0
+    }
+  ],
+  "candidates": [
+    {
+      "name": "typescript-advanced-types",
+      "source": "wshobson/agents",
+      "license": "MIT (repository metadata)",
+      "registryBlobSha1": "5057af799047bbae1a066ffead0b6e298f0ef7ff",
+      "decision": "install",
+      "reason": "Relevant to the declared TypeScript stack; complete bundle is only SKILL.md plus one reference; no runtime/development dependency added."
+    },
+    {
+      "name": "nodejs-backend-patterns",
+      "source": "wshobson/agents",
+      "license": "MIT (repository metadata)",
+      "registryBlobSha1": "516bae620afc0afa257fed08e3def7549e6a33fb",
+      "decision": "reject",
+      "reason": "Primarily Express/Fastify; Micro app API uses Hono and already has project-specific stack guidance."
+    },
+    {
+      "name": "nodejs-best-practices",
+      "source": "sickn33/antigravity-awesome-skills",
+      "license": "UNVERIFIED",
+      "registryBlobSha1": "75ab16d6a0abb8d75495ba91dde6cd00e2e3db94",
+      "decision": "reject",
+      "reason": "Registry marks risk: critical and source: community; upstream license could not be verified."
+    },
+    {
+      "name": "neon-postgres",
+      "source": "neondatabase/agent-skills",
+      "license": "Apache-2.0 (repository metadata)",
+      "registryBlobSha1": "069836b4e9d8ce86fd43c215b2e42180c49de6de",
+      "decision": "defer",
+      "reason": "Requires a parent neon skill and includes project/connection-string/database-operation guidance; local PostgreSQL-testing skill already supplies safer project-specific guardrails."
+    },
+    {
+      "name": "cloudflare",
+      "source": "cloudflare/skills",
+      "license": "Apache-2.0 (repository metadata)",
+      "registryBlobSha1": "ffa28589fd53cd52bd8dcfb688a5eeee1d398ed5",
+      "decision": "defer",
+      "reason": "Broad product-discovery guidance overlaps local stack guidance and can direct agents toward a different CLI."
+    },
+    {
+      "name": "wrangler",
+      "source": "cloudflare/skills",
+      "license": "Apache-2.0 (repository metadata)",
+      "registryBlobSha1": "1d2f6ed1c3f55279d1aa9202501d03a6f1af9f6b",
+      "decision": "defer",
+      "reason": "Potentially relevant, but configuration applicability and overlap need focused review; no additional dependency approved."
+    },
+    {
+      "name": "workers-best-practices",
+      "source": "cloudflare/skills",
+      "license": "Apache-2.0 (repository metadata)",
+      "registryBlobSha1": "a669596e421f1945bd6a37d5f4dc012752428919",
+      "decision": "defer",
+      "reason": "Relevant but overlaps local stack guidance; companion references were not copied partially."
+    },
+    {
+      "name": "web-perf",
+      "source": "cloudflare/skills",
+      "license": "Apache-2.0 (repository metadata)",
+      "registryBlobSha1": "b028d9cae41d3af2f59d6a90fcac3c241d6ff437",
+      "decision": "defer",
+      "reason": "Useful for a dedicated performance task but not a current blocker; avoid unused broad guidance."
+    },
+    {
+      "name": "cloudflare-deploy",
+      "source": "openai/skills",
+      "license": "UNVERIFIED",
+      "registryBlobSha1": "e2d73abb7e5a550af3d9e40797a28259bddba97d",
+      "decision": "reject",
+      "reason": "Upstream repository metadata exposes no license; deployment-oriented instructions are not approval to deploy production."
+    },
+    {
+      "name": "hono",
+      "source": "honojs/skills",
+      "license": "MIT (repository metadata)",
+      "registryBlobSha1": "d57ec4fa340202fd6d028da26b5b6152f29c4eb0",
+      "decision": "defer",
+      "reason": "Relevant, but it recommends adding @hono/cli@next when absent; avoid an unnecessary dependency until a specific need is demonstrated."
+    },
+    {
+      "name": "vitest",
+      "source": "antfu/skills",
+      "license": "MIT (repository metadata)",
+      "registryBlobSha1": "642bca616a92ee2c939a0b8c5525ccbef8da3676",
+      "decision": "reject",
+      "reason": "Registry content says it is based on Vitest 5.0.1; Micro app currently uses Vitest 3.2.4."
+    },
+    {
+      "name": "react-best-practices",
+      "source": "vercel-labs/agent-skills",
+      "license": "MIT (declared in skill frontmatter; repository metadata has no license)",
+      "registryBlobSha1": "237988de4a66dd8a71d30a2c24ebe1a86b58d04e",
+      "decision": "defer",
+      "reason": "Relevant React guidance, but the full bundle includes many rule files and Next.js/server-specific advice; do not copy an incomplete subset."
+    },
+    {
+      "name": "composition-patterns",
+      "source": "vercel-labs/agent-skills",
+      "license": "MIT (declared in skill frontmatter; repository metadata has no license)",
+      "registryBlobSha1": "d07025bf943345bc1cf15eb923594f889ff881f0",
+      "decision": "defer",
+      "reason": "React 19 guidance is relevant, but bundle references are separate and the existing project-owned stack skill already covers component architecture."
+    },
+    {
+      "name": "playwright-best-practices",
+      "source": "currents-dev/playwright-best-practices-skill",
+      "license": "MIT (declared in skill frontmatter and repository metadata)",
+      "registryBlobSha1": "0da736253c343081ab8c0cb9802729a707c23196",
+      "decision": "defer",
+      "reason": "Relevant but broad and overlapping current Playwright conventions; full companion bundle should be added only when a test-specific need is prioritized."
+    },
+    {
+      "name": "vite",
+      "source": "antfu/skills",
+      "license": "MIT (repository metadata)",
+      "registryBlobSha1": "fb1127201f9fe29a63ea1ce7c4e8ff27e670c7a4",
+      "decision": "reject",
+      "reason": "Content explicitly targets Vite 8.3.1/Rolldown while the project uses Vite 7.1.7."
+    },
+    {
+      "name": "migrate-to-vinext",
+      "source": "cloudflare/skills",
+      "license": "Apache-2.0 (repository metadata)",
+      "registryBlobSha1": "136025bf489db5511637402ef738f705f91e1c24",
+      "decision": "reject",
+      "reason": "Only applies to Next.js migration; Next.js is absent from manifests and no migration was requested."
+    },
+    {
+      "name": "frontend-design",
+      "source": "anthropics/skills",
+      "license": "UNVERIFIED: SKILL.md refers to LICENSE.txt terms not separately approved",
+      "registryBlobSha1": "a5333457c414d20d625f307df945842c0952ecc3",
+      "decision": "reject",
+      "reason": "Separate license terms were not independently verified; not necessary for the current engineering task."
+    },
+    {
+      "name": "accessibility",
+      "source": "addyosmani/web-quality-skills",
+      "license": "MIT (repository metadata and included LICENSE)",
+      "registryBlobSha1": "22a244430f890fe44cbd7a50590d5cbf8528c77b",
+      "decision": "install",
+      "reason": "Useful for the responsive POS UI; full SKILL.md and both local references copied; no dependency added."
+    },
+    {
+      "name": "seo",
+      "source": "addyosmani/web-quality-skills",
+      "license": "MIT (repository metadata)",
+      "registryBlobSha1": "015c2f589896bcb0b08b5b77e058ca3bedcfe9b7",
+      "decision": "reject",
+      "reason": "Public SEO optimization is not a current need for the authenticated POS application."
+    }
+  ],
+  "validation": {
+    "sourceCommitPinned": true,
+    "installedFilesMatchedPinnedGitBlobSha1": true,
+    "installedFilesSha256Recorded": true,
+    "officialRegistryManifestSha256Verified": false,
+    "skillFilesReviewedForScriptsAndDependencyChanges": true,
+    "dependencyChanges": 0,
+    "localTestsRun": false,
+    "ciIntegrityCheck": "pending in this PR",
+    "notes": "Installed skill files are documentation only. No package manifest or lockfile changed. This custom log must not be called AutoSkills' official skills-lock.json."
+  }
+}

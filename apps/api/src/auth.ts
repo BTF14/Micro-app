@@ -104,11 +104,18 @@ export async function hashPassword(password: string): Promise<string> {
 
 export async function verifyPassword(password: string, encoded: string | null): Promise<boolean> {
   const candidate = encoded ?? DUMMY_PASSWORD_HASH;
-  const [algorithm, iterationText, saltText, expectedText] = candidate.split("$");
+  const parts = candidate.split("$");
+  if (parts.length !== 4) {
+    // Extra fields are not part of the persisted hash format.
+    await hashPassword(password);
+    return false;
+  }
+  const [algorithm, iterationText, saltText, expectedText] = parts;
   const iterations = Number(iterationText);
   if (
     algorithm !== "pbkdf2-sha256" ||
     !Number.isInteger(iterations) ||
+    iterationText !== String(iterations) ||
     iterations < 100_000 ||
     iterations > 1_000_000 ||
     !saltText ||

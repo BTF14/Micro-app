@@ -1,3 +1,15 @@
+# Checkpoint autoritativo — revisión e instalación curada de skills (2026-10-19)
+
+- Rama de trabajo: `chore/curated-agent-skills-audit`; los cambios aún no están fusionados en `main`.
+- AutoSkills 0.4.1 se ejecutó con éxito en GitHub Actions en modo `--dry-run` (run [39300536264](https://github.com/BTF14/Micro-app/actions/runs/39300536264), SHA probado `09f17020f7543439ed822726419de9777d34fa08)); propuso 19 skills, pero el CLI no instaló ninguna.
+- Revisión individual de las 19 propuestas: [`docs/AUTOSKILLS_REVIEW_2026-10-19.md`](AUTOSKILLS_REVIEW_2026-10-19.md). Registro JSON con decisiones, procedencia y hashes: [`skill-install-log.json`](../skill-install-log.json).
+- Dos skills externas MIT instaladas en esta rama: `external-accessibility` y `external-typescript-advanced-types`, con referencias completas, LICENSE upstream y overlays de seguridad/compatibilidad. Sin dependencias nuevas, scripts de terceros, secretos, base de datos ni despliegues.
+- `skill-install-log.json` es el log propio del proyecto; no se creó un `skills-lock.json` oficial falso. El paquete AutoSkills declara CC-BY-NC-4.0 y el manifest oficial no fue legible por el conector, por lo que sus `bundleHash/securityCheck` no se declaran verificados.
+- El nuevo workflow `.github/workflows/skill-integrity.yml` recalcula SHA-256 y Git blob SHA-1 en CI; su resultado queda pendiente hasta ejecutar Actions para esta rama/PR.
+- Límites de producto sin cambios: P0 Google OAuth/allowlist y decisiones D1–D8 siguen pendientes; la app no está lista para producción. Presupuesto $0; no tocar producción ni Neon `main`.
+
+---
+
 # Checkpoint autoritativo — 2026-10-19, después de PR #64
 
 - Repositorio canónico: https://github.com/BTF14/Micro-app.
@@ -5,7 +17,7 @@
 - PR #63 fusionada; sus siete workflows terminaron en success sobre el head exacto `6baffe8fb473128504361c28fd6ac0c0e01519d9`. PR #64 fusionada; seis workflows consultados terminaron en success sobre el head exacto `97088a2d0d599001f145f4e60f72556a66a5f8b4`: CI, Playwright E2E, Security scan, Semgrep SAST, database migration validation y project progress dashboard. No se ejecutaron tests locales; los workflows no certifican readiness de producción.
 - PR #60 está cerrada como supersedida, no fusionada. La comparación confirmó que la política de autonomía/revisión manual quedó integrada por PR #62/#63; no se reintrodujo el handoff histórico obsoleto. No hubo force-push.
 - PR #64 añadió cuatro skills de proyecto bajo `.agents/skills/`: `micro-app-auth-security`, `micro-app-postgres-testing`, `micro-app-stack-guidance` y `micro-app-skill-curation`, además de `docs/AUTOSKILLS_ADOPTION.md`. Son instrucciones locales creadas para Micro app, no bundles externos descargados.
-- AutoSkills: se inspeccionaron la web, el repositorio y entradas del registro curado. El intento de preparar un checkout temporal falló por DNS al resolver `github.com`; la CLI `npx autoskills --dry-run` no llegó a ejecutarse. No afirmar instalación externa ni crear un `skills-lock.json` ficticio. Próximo paso: repetir dry-run en un checkout con red y revisar propuesta/licencia/hash antes de instalar.
+- AutoSkills CLI 0.4.1 sí se ejecutó en GitHub Actions y el dry-run fue success (run 39300536264); no instaló skills. La revisión curada posterior está registrada en `docs/AUTOSKILLS_REVIEW_2026-10-19.md` y `skill-install-log.json`. La instalación externa de dos skills MIT está en una rama de revisión, no en `main`; no hay `skills-lock.json` oficial.
 - P0 de identidad sigue pendiente: Google sign-in + allowlist no está implementado; D1–D8 y matriz de permisos por rol siguen sin aprobación. `POST /auth/register` permanece fail-closed. La ruta de login por contraseña sigue existiendo; no afirmar que una allowlist la protege.
 - No inventar emails/dominios, configuración OAuth, bootstrap admin ni vinculación de cuentas. No tocar producción, Neon `main`, datos reales, secretos, emails, billing ni Cantina-pos. Presupuesto $0.
 - La aplicación NO está lista para producción. Backups/restauración independiente, handlers comerciales, aislamiento tenant completo, permisos aprobados, E2E reales y controles de concurrencia/idempotencia siguen pendientes. Strix sigue documentado, no instalado/ejecutado.

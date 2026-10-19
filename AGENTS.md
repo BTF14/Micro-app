@@ -58,3 +58,11 @@ Before planning or editing:
 - The target policy is daily automated database backups to an independent private encrypted destination, plus a health/restore review every 15 days. This is a design target, not a claim of implementation.
 - Do not commit database dumps, customer data, inventory exports, sales, payment records, credentials, or connection strings. Do not use GitHub artifacts as an improvised permanent backup destination.
 - Before the first real Neon `main` mutation, verify an actual recovery path. Neon Free's short PITR window is an extra recovery layer, not a substitute for independent backups.
+
+
+## Autonomous execution and review fallback
+
+- Follow `docs/CONSTITUTION.md` §9A: inspect live state, make routine reversible technical decisions, implement, test, review, document, and report without repeating already-granted permissions.
+- Keep the total budget at $0. Never deploy production, expose secrets/data, or bypass approval gates for sensitive actions or Neon `main`.
+- Before completion, verify exact branch/head SHA, full diff, relevant tests, security/regression risks, and required CI for that exact SHA. Keep continuity docs current.
+- A quota/rate-limit failure from an AI reviewer is an incomplete review, not approval and not proof of a defect. Do not retry repeatedly or pay to bypass it. Retrieve review threads; if unavailable, manually review the full diff and related callers/tests, record only evidence-based findings, and verify CI/SAST/E2E for the exact SHA.

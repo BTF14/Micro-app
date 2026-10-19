@@ -10,6 +10,18 @@ Before planning or editing:
 4. Verify live GitHub state: current `main` SHA, branch heads, pull requests, and GitHub Actions for the exact SHA. Historical documentation is a lead, not proof of current state.
 5. Separate verified facts, hypotheses, and unknowns. Never fill missing evidence by guessing.
 
+## Progress-first execution (required)
+
+The goal is a working product and verified progress, not an endless sequence of plans or status reports.
+
+- Every work session must aim to leave one concrete artifact: a tested code change, a reproducible experiment, a reviewed diff, a decision backed by evidence, or a precise blocker with the next viable route.
+- Start with the smallest safe action that can prove or disprove the current hypothesis. Prefer inspecting existing code, tests, CI, and repository history before proposing a rewrite.
+- If one tool/path fails, do not repeat the same failing attempt without a new hypothesis. Switch to another authorized route (for example, GitHub read-only inspection, a fresh CI rerun, or an isolated checkout) and report what that route proves.
+- Distinguish **verified**, **attempted**, **pending**, and **unknown**. Never describe a queued rerun as passing, a static review as an executed test, or a proposal as an implemented change.
+- Evaluate mature upstream projects with a bounded, isolated proof of concept when that can reduce risk. Compare real workflows, licensing, dependencies, deployment requirements, and fit with this stack; do not reject cloning by default, and do not replace the current architecture without evidence.
+- Keep momentum visible: update the current-state checkpoint with the exact commit/PR/check result and the next concrete step. Avoid re-stating long plans when a code or experiment artifact can be produced instead.
+- User-authorized work permits safe, reversible changes on feature branches and documentation/rule improvements. It does not authorize production deployment, Neon `main` mutations, secrets exposure, spending money, mixing Cantina-pos, or irreversible security/identity decisions.
+
 ## Project agent skills
 
 - Before work that matches a project skill, read the relevant `.agents/skills/<skill-name>/SKILL.md`: `micro-app-auth-security` for identity/session/authorization, `micro-app-postgres-testing` for DB/migrations/transactions, `micro-app-stack-guidance` for React/Vite + Hono/Workers changes, and `micro-app-skill-curation` for evaluating/installing skills.

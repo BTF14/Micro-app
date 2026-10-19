@@ -1,3 +1,19 @@
+## Checkpoint vigente — 2026-10-19 después de PR #55
+
+Main verificado: `b7117f8aeb868e25c49db86a524405511cd3c9be`. PR #55 fusionada. Ocho check-runs de su head exacto `a4e51ec10bcbc0ac786bb3e518d50de9ec7eee28` en success; no se ejecutaron pruebas locales ni se verificó independientemente el merge SHA. Cloudflare fue solo preview de rama.
+
+Prioridades:
+1. Cerrar el riesgo P0 del registro con política Google sign-in + allowlist aprobada, sin inventar D1–D8.
+2. Obtener aprobación explícita de la matriz de permisos de roles antes de crear handlers comerciales.
+3. Continuar pruebas seguras de auth/sesión y revisar la rama feat/neon-transaction-adapter contra main sin merge ciego.
+4. Implementar endpoints comerciales solo con autorización server-side y pruebas PostgreSQL negativas de acceso cruzado, membresía inactiva y rollback.
+5. Demostrar backup/restauración independiente antes de cualquier operación real.
+6. Mantener coste $0; no producción ni mutaciones de Neon main sin gates y recuperación verificada.
+
+Issue P0 #53 permanece abierto. No hay PR abiertas en la consulta actual. La app no está lista para producción. Ver [CURRENT_STATE.md](CURRENT_STATE.md), [HANDOFF_NEXT_CHAT.md](HANDOFF_NEXT_CHAT.md) y [STATE_JOURNAL.md](STATE_JOURNAL.md).
+
+---
+
 ## Checkpoint vigente — 2026-10-19 después de PR #51
 
 Main verificado: `e18a3ec267f4c4d0e02678a4c0522dabf200ac98`. PR #50 y #51 fusionadas; los seis workflows pasaron en cada head exacto. No se ejecutaron pruebas locales ni se verificaron workflows sobre merge SHA. Ver [CURRENT_STATE.md](CURRENT_STATE.md) y [STATE_JOURNAL.md](STATE_JOURNAL.md).

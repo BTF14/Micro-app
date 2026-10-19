@@ -38,7 +38,7 @@
           "sourceBlobSha1": "22a244430f890fe44cbd7a50590d5cbf8528c77b",
           "installedBlobSha1": "a7858c50921b925d4d69b33a49058953fc22c8f1",
           "sha256": "c938dc947a4c8df8c4bcbf0676d5ee1a5602de9f1fe280290c5bd1f8f52509c9",
-          "bytes": 14757,
+          "bytes": 14850,
           "modification": "Added project safety overlay and replaced a dangling relative link with the upstream best-practices URL."
         },
         {
@@ -46,14 +46,14 @@
           "sourceBlobSha1": "6d500efb3eb2c714565e8a39be86feecfcda9ad5",
           "installedBlobSha1": "6d500efb3eb2c714565e8a39be86feecfcda9ad5",
           "sha256": "f10e238dd4dd3c4f51134c2056bc02d3dd4f8fb6ccc9145c2c1ba7aab4d58140",
-          "bytes": 5996
+          "bytes": 6036
         },
         {
           "path": ".agents/skills/external-accessibility/references/WCAG.md",
           "sourceBlobSha1": "a0bd65fa7494eda0147c6d7bf82bd57e7f5e72ce",
           "installedBlobSha1": "a0bd65fa7494eda0147c6d7bf82bd57e7f5e72ce",
           "sha256": "16683e025e3833d931c9d880645d98a448827f97e10189b6c8f12c832e7a2361",
-          "bytes": 9075
+          "bytes": 9079
         },
         {
           "path": ".agents/skills/external-accessibility/LICENSE",
@@ -92,7 +92,7 @@
           "sourceBlobSha1": "6b1b9a15c1103c8ebbebba1a3cb696ab7ad9dab9",
           "installedBlobSha1": "6b1b9a15c1103c8ebbebba1a3cb696ab7ad9dab9",
           "sha256": "036a1dd41283384f086ac0eeb4f63c899b042ad68815a8ce00afebf606b55c44",
-          "bytes": 9025
+          "bytes": 9027
         },
         {
           "path": ".agents/skills/external-typescript-advanced-types/LICENSE",

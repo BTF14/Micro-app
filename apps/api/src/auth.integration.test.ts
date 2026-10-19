@@ -207,6 +207,7 @@ const suite = describe.skipIf(!databaseAvailable)("authentication routes against
       headers: { Cookie: secondCookie },
     }), { DATABASE_URL: databaseUrl, FRONTEND_ORIGIN: frontendOrigin });
     expect(expiredSessionResponse.status).toBe(401);
+    expect(expiredSessionResponse.headers.get("set-cookie")).toContain("microapp_session=");
   });
 });
 

@@ -1,3 +1,13 @@
+## 2026-10-19 — Revisión individual e instalación curada de skills externas
+
+- Rama: `chore/curated-agent-skills-audit`; no fusionada.
+- Evidencia AutoSkills: run 39300536264 success en dry-run para SHA `09f17020f7543439ed822726419de9777d34fa08`; 19 candidatas, cero instaladas por CLI.
+- Se evaluaron una por una las 19 candidatas en `docs/AUTOSKILLS_REVIEW_2026-10-19.md`. Dos skills MIT instaladas en la rama: `external-accessibility` y `external-typescript-advanced-types`; copias completas de referencias y LICENSE, con overlays de seguridad/compatibilidad.
+- `skill-install-log.json` contiene decisiones, Git blob SHA-1 de fuentes, SHA-256 de archivos instalados y cambios locales documentados. No se creó un `skills-lock.json` oficial falso. La licencia CC-BY-NC-4.0 de AutoSkills CLI se consideró no adecuada como tooling por defecto para el producto comercial.
+- Se añadió `scripts/validate-skill-install-log.mjs` y `.github/workflows/skill-integrity.yml`; CI todavía pendiente en la rama/PR. No se ejecutaron tests locales ni scripts de terceros; no se modificaron dependencias, base de datos, secretos ni despliegues.
+
+---
+
 ## 2026-10-19 — Corrección de formato en checklist de preparación
 
 - Se corrigió en `docs/PRODUCTION_READINESS.md` un `\\n` literal que unía visualmente el criterio ya verificado del bloqueo de registro con el siguiente criterio pendiente de Google sign-in.

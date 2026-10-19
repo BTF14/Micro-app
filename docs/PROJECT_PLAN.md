@@ -1,3 +1,9 @@
+## Siguiente paso con el propietario
+
+Antes de completar identidad, guiar al propietario paso a paso usando [`OWNER_APPROVAL_GUIDE.md`](OWNER_APPROVAL_GUIDE.md). Presentar la propuesta base como recomendación pendiente de confirmación explícita; preguntar detalles de uno en uno. La matriz de roles se aprueba por separado. Mantener registro bloqueado hasta implementar y probar la política aprobada.
+
+---
+
 ## Checkpoint vigente — 2026-10-19 después de PR #58
 
 Main verificado: `0a36f234d7a590905527b9cb9268bba3791215f5`. PR #57 bloquea fail-closed el registro público; PR #58 actualiza documentación de continuidad. El registro seguirá cerrado hasta implementar y aprobar Google sign-in + allowlist. Checks PR #57 en success en el head consultado y merge SHA; no se ejecutaron tests locales.

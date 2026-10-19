@@ -1,3 +1,13 @@
+## 2026-10-19 — Revisión documental después de PR #58
+
+- `main`: `0a36f234d7a590905527b9cb9268bba3791215f5`; PR #58 fusionada.
+- Revisión de `docs/PRODUCTION_READINESS.md` detectó y corrigió una secuencia literal `\\n` en una lista P0; era un error de formato, no un cambio de comportamiento.
+- Registro público permanece bloqueado fail-closed por PR #57. Issue #53 abierto; Google sign-in + allowlist y D1–D8 pendientes.
+- No hay PR abiertas en la última consulta. No se ejecutaron tests locales.
+- La aplicación no está lista para producción. No se tocaron datos reales, secretos, Neon main, billing ni producción.
+
+---
+
 ## 2026-10-19 — Registro público bloqueado fail-closed (PR #57)
 
 - `main`: `cb4b9b09ad3ff0f1bacd34f23ee653a5477cddfe`; PR #57 fusionada.

@@ -155,6 +155,7 @@ const suite = describe.skipIf(!databaseAvailable)("authentication routes against
       body: JSON.stringify({ email, password }),
     }), { DATABASE_URL: databaseUrl, FRONTEND_ORIGIN: frontendOrigin });
     expect(inactiveMembershipLogin.status).toBe(401);
+    expect(inactiveMembershipLogin.headers.get("set-cookie")).toBeNull();
     await cleanupClient.query("UPDATE organization_members SET is_active = true WHERE user_id = (SELECT id FROM app_users WHERE email = $1)", [email]);
 
     // An active membership must not keep access to an organization that has been disabled.
@@ -174,6 +175,7 @@ const suite = describe.skipIf(!databaseAvailable)("authentication routes against
       body: JSON.stringify({ email, password }),
     }), { DATABASE_URL: databaseUrl, FRONTEND_ORIGIN: frontendOrigin });
     expect(inactiveOrganizationLogin.status).toBe(401);
+    expect(inactiveOrganizationLogin.headers.get("set-cookie")).toBeNull();
 
     await cleanupClient.query(
       "UPDATE organizations SET is_active = true WHERE id = (SELECT m.organization_id FROM organization_members m JOIN app_users u ON u.id = m.user_id WHERE u.email = $1)",

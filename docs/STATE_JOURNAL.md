@@ -344,3 +344,13 @@ Este diario es append-only en cuanto a historia: no borrar hitos antiguos; añad
 - Seis workflows `success` en el head de PR `0c55c180846e6286e72d35f51e502278200ee0de`: CI 39244454840, Playwright 39244454807, Security scan 39244454911, Semgrep 39244454934, Project progress dashboard 39244454952, Database migration validation 39244456648.
 - No se ejecutaron tests locales. Los workflows del merge SHA no están confirmados por la consulta disponible.
 - Sin datos reales, secretos, billing, cambios a Neon `main`, despliegue de producción ni mezcla con Cantina-pos. La app sigue sin estar lista para producción.
+
+
+## 2026-10-19 — PR #45 fusionada; continuidad actualizada
+
+- `main` verificado: `1c6ecf6a4586ab1252a43210672e123975f8941f`.
+- PR #45 https://github.com/BTF14/Micro-app/pull/45 fusionada por squash. Head probado: `cdce44a9643c5134311f9603abf1248c07970df3`.
+- Seis workflows de GitHub Actions terminaron en success para ese head: CI 39252317370, Playwright E2E 39252317397, migraciones 39252317371, Security scan 39252317467, Semgrep SAST 39252317386 y dashboard 39252317373.
+- Cambio: una aserción de limpieza de cookie cuando el usuario está inactivo. No se ejecutaron tests locales y los workflows del merge SHA no están verificados aquí.
+- Se refrescaron los documentos de estado, plan y handoff. Sin cambios de producción, Neon, secretos, datos reales, billing ni Cantina-pos.
+- La aplicación no está lista para producción; D1–D8, OAuth/allowlist, matriz de permisos, endpoints de negocio, aislamiento tenant, E2E real y backup/restauración independiente siguen pendientes.

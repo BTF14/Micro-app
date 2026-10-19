@@ -1,3 +1,19 @@
+## Política permanente de ejecución técnica autónoma
+
+- Resolver decisiones rutinarias y reversibles con evidencia; implementar, probar, revisar seguridad/regresiones y documentar de punta a punta.
+- No delegar comprobaciones disponibles en las herramientas ni pedir permisos repetidos. Pedir intervención solo ante una decisión de producto, autorización, acceso o capacidad realmente ausente.
+- Presupuesto $0; sin producción, mutaciones de Neon `main`, datos reales, secretos, gastos ni acciones destructivas fuera de los gates vigentes.
+- Si un revisor IA está limitado por cuota, hacer revisión manual del diff y contexto relacionado; no inventar findings y no fusionar con checks requeridos pendientes.
+- La PR #62 incorporó una versión resumida de esta política. Esta PR conserva los criterios operativos detallados de la propuesta original #60, sin traer checkpoints históricos obsoletos.
+
+## Checkpoint de continuidad — 2026-10-19 después de PR #62
+
+- PR #61 y PR #62 están fusionadas. PR #62 merge SHA: `d107cfb2b80c4165ed39e3071f8256942898ffb7`; siete workflows en success sobre el head final `9f288f68b6012f39b8ec7928b07a140b869e63cb`.
+- PR #60 sigue abierta con conflicto. Comparar sus cambios con el diff integrado de PR #62 antes de decidir si se necesita una PR sustituta; no force-push.
+- La revisión Codex de PR #60 falló por cuota para un SHA antiguo; no inferir hallazgos desconocidos. En PR #62 se atendió la observación P2 sobre checkpoint obsoleto.
+- P0: Google sign-in + allowlist requiere aprobación de D1–D8 y de la matriz de permisos. Mantener el registro fail-closed. El login por contraseña sigue en el código; su convivencia con la política de acceso continúa sin decisión aprobada.
+- Límites: $0, sin producción, sin mutaciones de Neon `main`, sin datos reales/secretos, sin emails y sin mezclar Cantina-pos.
+
 ## Checkpoint de continuidad — 2026-10-19
 
 - PR #61 está fusionada; PR #60 no pudo integrarse directamente por conflicto con `main`. Se re-aplicó el cambio documental en `docs/ai-autonomy-governance-rebased` y se abrió PR #62 sobre `main`, sin force-push; revisar sus checks para el head vigente antes de fusionar.

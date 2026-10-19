@@ -417,3 +417,22 @@ Este diario es append-only en cuanto a historia: no borrar hitos antiguos; añad
 - PR #61 está fusionada con merge SHA reportado `1b8098ff00e0bb7482200b486710a5611f1e109d`. El diario existente contenía una entrada histórica que la describía como abierta; el checkpoint nuevo de handoff corrige el estado vivo.
 - Se creó `docs/ai-autonomy-governance-rebased` desde `main` para re-aplicar cambios documentales sin force-push. Pendiente de revisar diff y CI de la nueva rama/PR.
 - No se ejecutaron pruebas locales. No hubo cambios en runtime, base de datos, secretos, datos reales, Neon ni despliegues productivos. Coste $0.
+
+
+## 2026-10-19 — PR #62 fusionada y continuidad reconciliada
+
+- PR #62 https://github.com/BTF14/Micro-app/pull/62 se fusionó por squash; merge SHA `d107cfb2b80c4165ed39e3071f8256942898ffb7`. Head final `9f288f68b6012f39b8ec7928b07a140b869e63cb`.
+- Siete workflows del head final terminaron en success: CI, Playwright E2E, SDD/agent docs validation, progress dashboard, Security scan, Semgrep SAST y database migration validation.
+- La PR era documental; no se cambiaron runtime, esquema de datos, Neon, secretos, datos reales ni producción. No se ejecutaron tests locales.
+- Se actualizan checkpoint y handoff para reflejar el merge de PR #62 y evitar que el snapshot antiguo de PR #57 prevalezca como estado vivo.
+- PR #60 sigue abierta con conflicto; no forzar ni fusionar. Antes de sustituirla, comparar sus cambios con lo que ya quedó integrado en PR #62.
+- P0 continúa pendiente: Google sign-in, allowlist, D1–D8 y matriz de permisos requieren decisiones aprobadas. El registro sigue bloqueado; el login por contraseña aún existe y no debe asumirse que la política de acceso final ya está aplicada.
+- Coste $0; no despliegues productivos, cambios en Neon `main`, emails, billing ni Cantina-pos.
+
+
+## 2026-10-19 — Reconciliación de la política detallada de autonomía
+
+- Comparé el diff original de PR #60 con lo que quedó integrado en PR #62. PR #62 portó el núcleo de la política, pero no todo el detalle operativo original de `AGENTS.md` y `docs/CONSTITUTION.md`.
+- PR #63 amplía esos criterios sin reintroducir los checkpoints históricos obsoletos del handoff original: decisiones técnicas rutinarias por defecto, pedir solo la acción mínima ante bloqueos reales, verificación del SHA exacto y procedimiento de revisión manual cuando Codex no esté disponible.
+- La PR #60 original permanece abierta y en conflicto; no se hace force-push ni merge directo. La revisión de PR #63 y sus checks siguen pendientes.
+- No se modificó runtime ni autenticación; no se tocó base de datos, Neon, secretos, datos reales, producción o billing. Coste $0.

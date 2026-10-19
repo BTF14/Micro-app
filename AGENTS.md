@@ -102,3 +102,11 @@ Before ending a meaningful work session, update the handoff and relevant state/j
 Every handoff must include or link to a copyable continuation prompt. If a platform cannot automatically load repository instructions, the user or agent must explicitly provide that prompt or open the repository docs. **This repository cannot broadcast its contents automatically to every AI service or chat**; portability comes from versioned files, explicit links, and the continuation prompt.
 
 Acknowledge evidence honestly: distinguish proposed, approved, implemented, and verified. Never claim a file was changed, a test was run, a tool is installed, or a workflow passed without checking. When terminal use is necessary and available, use it; if local network/tooling blocks it, try an authorized alternative such as GitHub Actions and document the exact limitation and result.
+
+
+## Portable continuity across every AI/chat
+
+- Mandatory entry point for any provider/model/IDE/new chat: read [portable AI context](docs/PORTABLE_AI_CONTEXT.md), [current state](docs/CURRENT_STATE.md), [next-chat handoff](docs/HANDOFF_NEXT_CHAT.md), and [continuity protocol](docs/AI_CONTINUITY_PROTOCOL.md), then verify live GitHub SHA/PRs/Actions.
+- The repository is the durable cross-chat source of truth; do not assume chat memory is shared. Update handoff and relevant state/journal docs after meaningful work, including exact evidence and next actions.
+- Use the terminal when necessary and available. If local tooling/network blocks execution, try an authorized alternative and record what actually ran. Never fabricate command/test results.
+- This repository cannot automatically notify or synchronize all external AI services/chats. Every new session must read these files or receive the copyable prompt in `docs/PORTABLE_AI_CONTEXT.md`.

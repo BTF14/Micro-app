@@ -1,11 +1,13 @@
 # Checkpoint autoritativo — revisión e instalación curada de skills (2026-10-19)
 
 - Rama de trabajo: `chore/curated-agent-skills-audit`; los cambios aún no están fusionados en `main`.
-- AutoSkills 0.4.1 se ejecutó con éxito en GitHub Actions en modo `--dry-run` (run [39300536264](https://github.com/BTF14/Micro-app/actions/runs/39300536264), SHA probado `09f17020f7543439ed822726419de9777d34fa08)); propuso 19 skills, pero el CLI no instaló ninguna.
+- AutoSkills 0.4.1 se ejecutó con éxito en GitHub Actions en modo `--dry-run` (run [39300536264](https://github.com/BTF14/Micro-app/actions/runs/39300536264), SHA probado `09f17020f7543439ed822726419de9777d34fa08`; propuso 19 skills, pero el CLI no instaló ninguna.
 - Revisión individual de las 19 propuestas: [`docs/AUTOSKILLS_REVIEW_2026-10-19.md`](AUTOSKILLS_REVIEW_2026-10-19.md). Registro JSON con decisiones, procedencia y hashes: [`skill-install-log.json`](../skill-install-log.json).
 - Dos skills externas MIT instaladas en esta rama: `external-accessibility` y `external-typescript-advanced-types`, con referencias completas, LICENSE upstream y overlays de seguridad/compatibilidad. Sin dependencias nuevas, scripts de terceros, secretos, base de datos ni despliegues.
 - `skill-install-log.json` es el log propio del proyecto; no se creó un `skills-lock.json` oficial falso. El paquete AutoSkills declara CC-BY-NC-4.0 y el manifest oficial no fue legible por el conector, por lo que sus `bundleHash/securityCheck` no se declaran verificados.
-- El workflow `.github/workflows/skill-integrity.yml` pasó en [run 39305182347](https://github.com/BTF14/Micro-app/actions/runs/39305182347) sobre el commit `35b7324c640089888caae41c07b118a0ffa467cf`: validó JSON, 19 candidatas, 2 aprobadas y 7 archivos por tamaño, SHA-256 y Git blob SHA-1. Los cambios posteriores de continuidad son solo documentación y no alteran los archivos hash-verified.
+- PR [#68](https://github.com/BTF14/Micro-app/pull/68) está abierta, no fusionada; HEAD actual de código `b2e66b388097293bdc8a82f0073e70066c2b8f3e`.
+- Última validación de integridad exitosa: [run 39305555253](https://github.com/BTF14/Micro-app/actions/runs/39305555253) sobre commit `86304ffd4d45fbd9902d0344228b9e9f96b9cf1c`, verificó el JSON y los 7 archivos instalados. Después se cambió solo metadata del log y se añadió una aserción de formato de hashes de fuente al validador; las skills no cambiaron.
+- Las ejecuciones posteriores de `Agent skill integrity` (runs [39305676786](https://github.com/BTF14/Micro-app/actions/runs/39305676786) y [39305905625](https://github.com/BTF14/Micro-app/actions/runs/39305905625)) terminaron antes de asignar runner: `runner_id=0`, cero pasos, sin logs. Por eso la versión más reciente del validador todavía no está revalidada; no interpretar estos fallos de arranque como fallo de los asserts. No fusionar hasta obtener una ejecución nueva con runner y resultado success.
 - Límites de producto sin cambios: P0 Google OAuth/allowlist y decisiones D1–D8 siguen pendientes; la app no está lista para producción. Presupuesto $0; no tocar producción ni Neon `main`.
 
 ---

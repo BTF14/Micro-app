@@ -1,3 +1,16 @@
+## Checkpoint vigente — 2026-10-19 después de PR #45
+
+Main verificado: `1c6ecf6a4586ab1252a43210672e123975f8941f`. PR #45 está fusionada; los seis workflows pasaron en el head exacto de la PR. No se ejecutaron pruebas locales ni se verificó el merge SHA con workflows. Ver [CURRENT_STATE.md](CURRENT_STATE.md) y [STATE_JOURNAL.md](STATE_JOURNAL.md).
+
+Prioridades inmediatas:
+1. Continuar pruebas acotadas de autenticación/sesión y límites de autorización.
+2. Obtener decisiones aprobadas D1–D8 de Google OAuth/allowlist y matriz de permisos antes de implementar políticas.
+3. Validar aislamiento tenant y flujos API+PostgreSQL reales cuando existan handlers de negocio.
+4. Preparar backup independiente y demostrar restauración antes de cualquier operación real.
+5. Mantener coste $0; no desplegar producción ni modificar Neon `main` sin los gates definidos.
+
+---
+
 # Checkpoint autoritativo — 2026-10-19, después de PR #41
 
 - Repositorio: https://github.com/BTF14/Micro-app

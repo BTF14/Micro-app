@@ -3,7 +3,7 @@ name: Agent skill integrity
 on:
   pull_request:
     paths:
-      - ".agents/skills/external-**/**"
+      - ".agents/skills/external-*/**"
       - "skill-install-log.json"
       - "scripts/validate-skill-install-log.mjs"
       - ".github/workflows/skill-integrity.yml"

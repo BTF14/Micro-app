@@ -1,3 +1,19 @@
+## Estado vivo — 2026-10-19 después de PR #55
+
+Este bloque prevalece sobre snapshots históricos inferiores. Revalidar GitHub en cada sesión.
+
+- `main`: `b7117f8aeb868e25c49db86a524405511cd3c9be`; PR #55 fusionada.
+- Head exacto probado de PR #55: `a4e51ec10bcbc0ac786bb3e518d50de9ec7eee28`; los 8 check-runs observados terminaron en success. Cloudflare Pages fue preview de rama; no producción. No se ejecutaron pruebas locales ni se verificó independientemente el merge SHA.
+- No hay PR abiertas en la consulta actual.
+- Issue P0 #53 está abierto: el registro público no tiene una política Google + allowlist demostrada y crea usuario, organización, membresía owner y sesión. No afirmar que ya esté bloqueado.
+- D1–D8 de identidad y matriz de permisos pendientes de decisión humana. No inventar reglas.
+- Continuar autónomamente con cambios seguros, pequeños, reversibles y verificables. Revisar AGENTS.md, docs/CONSTITUTION.md, docs/CURRENT_STATE.md, este handoff, docs/PROJECT_PLAN.md, docs/STATE_JOURNAL.md y documentos de dominio.
+- Próximo trabajo: análisis estático y pruebas aisladas de auth/sesión/autorización que no seleccionen políticas pendientes; revisar la rama feat/neon-transaction-adapter contra main sin merge ciego.
+- No producción, no mutar Neon main sin gates, no secretos, emails, billing, datos reales ni Cantina-pos. Strix documentado solamente. Presupuesto objetivo $0. La app no está lista para producción.
+- Para continuar el bloqueado de identidad, el usuario debe aprobar las decisiones D1–D8 y la matriz de roles; pedirlas de forma concreta y con recomendaciones explícitas.
+
+---
+
 ## Estado vivo — 2026-10-19 después de PR #51
 
 Usa este bloque antes que snapshots históricos inferiores y revalida GitHub antes de actuar.

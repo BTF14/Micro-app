@@ -436,3 +436,15 @@ Este diario es append-only en cuanto a historia: no borrar hitos antiguos; añad
 - PR #63 amplía esos criterios sin reintroducir los checkpoints históricos obsoletos del handoff original: decisiones técnicas rutinarias por defecto, pedir solo la acción mínima ante bloqueos reales, verificación del SHA exacto y procedimiento de revisión manual cuando Codex no esté disponible.
 - La PR #60 original permanece abierta y en conflicto; no se hace force-push ni merge directo. La revisión de PR #63 y sus checks siguen pendientes.
 - No se modificó runtime ni autenticación; no se tocó base de datos, Neon, secretos, datos reales, producción o billing. Coste $0.
+
+
+## 2026-10-19 — AutoSkills, skills locales y checkpoint tras PR #64
+
+- PR #63 se fusionó por squash en `b4b417ec5a85b8b0c48b606c718c341745af9055`; sus siete workflows pasaron sobre el head exacto `6baffe8fb473128504361c28fd6ac0c0e01519d9`.
+- PR #64 se fusionó por squash en `f15e3b0da415b8f31641a81ed8a883deb7fcfc5f`; seis workflows consultados terminaron en success sobre el head exacto `97088a2d0d599001f145f4e60f72556a66a5f8b4`. No se ejecutaron tests locales.
+- Se añadieron cuatro skills de proyecto en `.agents/skills/` para auth/security, PostgreSQL, stack actual y curation segura; la guía `docs/AUTOSKILLS_ADOPTION.md` diferencia skills locales de paquetes externos.
+- Se investigó AutoSkills y entradas de React/TypeScript/Vite/Hono, además de referencias de auth-review, secure-code-review y pruebas PostgreSQL. El intento de clonar el repo temporal falló por DNS al resolver `github.com`; la CLI `npx autoskills --dry-run` no se ejecutó. No se declara instalación oficial ni hash/lockfile generado.
+- `docs/RESOURCE_REGISTRY.md` registra fuentes, decisión y limitación. Próximo paso cuando haya red: ejecutar dry-run, inspeccionar tecnologías/skills y revisar licencia, estado de seguridad y hashes antes de instalar.
+- PR #60 se cerró como supersedida tras comparar el diff; no se fusionó ni se hizo force-push. Sus reglas útiles quedaron integradas por #62/#63; los snapshots históricos obsoletos no se reintrodujeron.
+- Sin cambios de runtime/dependencias/DB/secretos ni despliegue productivo. Cloudflare generó automáticamente preview de rama para PR #64. Coste $0.
+- P0 de identidad permanece: Google OAuth + allowlist, D1–D8 y matriz de permisos pendientes de aprobación. Registro fail-closed; login por contraseña existe y no se debe asumir que la allowlist lo protege.

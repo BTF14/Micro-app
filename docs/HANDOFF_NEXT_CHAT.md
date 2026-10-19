@@ -1,3 +1,19 @@
+## Estado vivo — 2026-10-19 después de PR #58
+
+Revalidar GitHub antes de actuar; este bloque prevalece sobre snapshots históricos inferiores.
+
+- `main`: `0a36f234d7a590905527b9cb9268bba3791215f5`; PR #58 fusionada.
+- PR #57 bloquea fail-closed el registro público: valida Origin, luego responde `503 REGISTRATION_DISABLED` sin procesar credenciales ni tocar DB. Tests de PR cubrieron ausencia de escrituras/cookie y login/sesión con fixtures sintéticos.
+- Checks del head exacto de PR #57 y checks consultados del merge SHA en success; no se ejecutaron tests locales.
+- Issue P0 #53 sigue abierto hasta implementar Google sign-in + allowlist y aprobar D1–D8. No reactivar el registro por contraseña.
+- Se corrigió en esta rama una secuencia literal `\\n` en `docs/PRODUCTION_READINESS.md`.
+- `feat/neon-transaction-adapter` divergida (14 ahead / 76 behind en comparación previa); no fusionar completa a ciegas.
+- Matriz de permisos sigue pendiente; no crear endpoints comerciales que dependan de permisos no aprobados.
+- App NO lista para producción. Revisar `AGENTS.md`, `docs/CONSTITUTION.md`, `docs/CURRENT_STATE.md`, este handoff, `docs/PROJECT_PLAN.md`, `docs/STATE_JOURNAL.md` y documentos SDD.
+- Continuar autónomamente con cambios pequeños y reversibles. No secretos, emails, billing, datos reales, Neon main, despliegue productivo ni Cantina-pos. Strix documentado, no instalado/ejecutado. Coste $0.
+
+---
+
 ## Estado vivo — 2026-10-19 después de PR #57
 
 Revalidar GitHub antes de actuar; este bloque prevalece sobre snapshots históricos inferiores.

@@ -364,3 +364,12 @@ Este diario es append-only en cuanto a historia: no borrar hitos antiguos; añad
 - En PR #48, la primera ejecución encontró que el test excedía el límite de login por email; el fixture fue corregido para limpiar únicamente el contador hash del correo sintético antes del caso de cuenta inactiva. El head final pasó los seis workflows.
 - No se ejecutaron tests localmente ni se verificaron workflows en los merge SHA. Sin cambios en producción, Neon, secretos, datos reales, billing ni Cantina-pos.
 - La app sigue sin estar lista para producción. OAuth/allowlist, D1–D8, matriz de permisos, endpoints comerciales, aislamiento tenant, E2E API+PostgreSQL real y backup/restauración independiente continúan pendientes.
+
+
+## 2026-10-19 — PR #50 y #51 fusionadas
+
+- `main` verificado: `e18a3ec267f4c4d0e02678a4c0522dabf200ac98`.
+- PR #50 https://github.com/BTF14/Micro-app/pull/50: aserciones para que login no emita cookie con membresía inactiva u organización desactivada. Head `dcad8d6d1caf6db3aabbc95465e5983ad0014746`; seis workflows success: CI 39255158169, Playwright 39255157709, migraciones 39255158077, Security 39255157712, Semgrep 39255157509, dashboard 39255157611.
+- PR #51 https://github.com/BTF14/Micro-app/pull/51: respuestas seguras ante fallo de DB en login/registro, sin cookie. Head `92ea991d6333bcd1b05943f679fdd36777ab6a8f`; seis workflows success: CI 39255462405, Playwright 39255462498, migraciones 39255462284, Security 39255462264, Semgrep 39255462627, dashboard 39255462281.
+- No se ejecutaron tests localmente ni se verificaron workflows sobre merge SHA. Sin cambios en producción, Neon, secretos, datos reales, billing ni Cantina-pos.
+- La aplicación sigue sin estar lista para producción. OAuth/allowlist, D1–D8, matriz de permisos, endpoints comerciales, aislamiento tenant, E2E API+PostgreSQL real y backup/restauración independiente continúan pendientes.

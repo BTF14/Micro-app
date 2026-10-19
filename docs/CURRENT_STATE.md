@@ -1,3 +1,16 @@
+# Checkpoint autoritativo — 2026-10-19, PR #69 de UX de autenticación
+
+- Repositorio: https://github.com/BTF14/Micro-app. `main` verificado en `832c9d10b19846f89cc5d9e5ef51b7ef6eb5b21e`.
+- PR #68 (skills externas accessibility y TypeScript) sigue abierta/no fusionada; los bundles están en `chore/curated-agent-skills-audit`, no en `main`. No descartar ni reinstalar de nuevo.
+- PR #69: https://github.com/BTF14/Micro-app/pull/69, rama `fix/auth-registration-ui-fail-closed`. Alinea la UI con el bloqueo ya existente de `POST /auth/register` (503 `REGISTRATION_DISABLED`): elimina el formulario público, muestra aviso accesible y añade E2E para asegurar que no se llama al endpoint. No cambia identidad, login, DB ni permisos.
+- En el head de código inicial `b8d670ea517db5405d9d10f85191172d511446ba`, Security scan, CI, migration validation, Semgrep y dashboard estaban queued en los runs 39317306216, 39317306336, 39317306338, 39317306351 y 39317306473. Los commits documentales posteriores, si los hay, requieren consultar el SHA y checks actuales en vivo. No se ejecutaron tests localmente.
+- P0 Google sign-in + allowlist, D1–D8 y matriz de permisos siguen sin aprobación. No inventar configuración OAuth, emails, bootstrap admin ni roles. La app no está lista para producción.
+- Restricciones: $0; no producción, Neon `main`, datos reales, secretos, emails, billing ni Cantina-pos. No fusionar con checks pendientes/no verificados.
+
+## Próximo paso
+Verificar diff completo y checks del SHA final de PR #69; luego continuar con auth/sesión y pruebas aisladas que no requieran decidir D1–D8. Mantener PR #68 sin fusionar hasta tener verificación de CI utilizable.
+---
+
 # Checkpoint autoritativo — 2026-10-19, después de PR #64
 
 - Repositorio canónico: https://github.com/BTF14/Micro-app.

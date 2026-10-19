@@ -271,9 +271,20 @@
     "officialRegistryManifestSha256Verified": false,
     "dependencyChanges": 0,
     "localTestsRun": false,
-    "ciIntegrityCheck": "pending in this PR",
+    "ciIntegrityCheck": "success on commit 0a21af8616f5a4eedb01cb6ece3cd563c63c90f7; run 39305033532. The log metadata update creates a new head and triggers a fresh integrity run.",
     "notes": "Candidate-level source/license/compatibility triage was performed for all 19 SKILL.md proposals. Complete companion bundles were copied and hash-verified only for the two installed skills; rejected/deferred bundles were not fully downloaded or audited file-by-file. No third-party scripts were executed. The AutoSkills registry manifest was not readable, so its official bundleHash/securityCheck metadata is unverified.",
     "selectedBundlesReviewedForScriptsAndDependencySuggestions": true,
-    "all19FullBundlesSecurityReviewed": false
+    "all19FullBundlesSecurityReviewed": false,
+    "lastIntegrityWorkflowRun": {
+      "runId": 39305033532,
+      "runUrl": "https://github.com/BTF14/Micro-app/actions/runs/39305033532",
+      "testedCommit": "0a21af8616f5a4eedb01cb6ece3cd563c63c90f7",
+      "conclusion": "success",
+      "steps": [
+        "Checkout",
+        "Set up Node.js 22",
+        "Validate skill log and hashes"
+      ]
+    }
   }
 }

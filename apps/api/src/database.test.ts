@@ -48,6 +48,27 @@ describe("withDatabaseClient", () => {
     expect(client.end).toHaveBeenCalledOnce();
   });
 
+  it("closes the client after a connection failure and preserves that failure", async () => {
+    const client = makeClient();
+    const failure = new Error("connection failed");
+    vi.mocked(client.connect).mockRejectedValue(failure);
+
+    await expect(
+      withDatabaseClient(databaseUrl, async () => "unreachable", () => client),
+    ).rejects.toBe(failure);
+
+    expect(client.end).toHaveBeenCalledOnce();
+  });
+
+  it("reports cleanup failure after a successful operation without leaking the driver error", async () => {
+    const client = makeClient();
+    vi.mocked(client.end).mockRejectedValue(new Error("driver detail"));
+
+    await expect(
+      withDatabaseClient(databaseUrl, async () => "saved", () => client),
+    ).rejects.toThrow("Database connection cleanup failed.");
+  });
+
   it("rejects invalid configuration without creating a client", async () => {
     const createClient = vi.fn(() => makeClient());
 
@@ -75,6 +96,24 @@ describe("withDatabaseTransaction", () => {
   it("rolls back and preserves the operation error when a statement fails", async () => {
     const client = makeClient();
     const failure = new Error("write failed");
+
+    await expect(
+      withDatabaseTransaction(client, async () => {
+        throw failure;
+      }),
+    ).rejects.toBe(failure);
+
+    expect(client.query).toHaveBeenNthCalledWith(1, "BEGIN");
+    expect(client.query).toHaveBeenNthCalledWith(2, "ROLLBACK");
+  });
+
+  it("preserves the original operation error if rollback also fails", async () => {
+    const client = makeClient();
+    const failure = new Error("write failed");
+    vi.mocked(client.query).mockImplementation(async (statement) => {
+      if (statement === "ROLLBACK") throw new Error("rollback failed");
+      return { rows: [] };
+    });
 
     await expect(
       withDatabaseTransaction(client, async () => {

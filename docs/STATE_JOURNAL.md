@@ -335,3 +335,12 @@ Este diario es append-only en cuanto a historia: no borrar hitos antiguos; añad
 - No se ejecutaron pruebas locales y no se han verificado aquí los workflows sobre el merge SHA de PR #39. No se modificaron bases de datos ni se desplegó producción.
 - La app sigue sin estar lista para producción; continúan bloqueos de identidad/allowlist, permisos, rutas comerciales, E2E real, aislamiento multiempresa y backup/restauración independiente.
 - Siguiente: pruebas acotadas de auth/sesión; inspección completa de `feat/neon-transaction-adapter` antes de cualquier merge; coste $0 y respetar todos los gates de producción.
+
+
+## 2026-10-19 — PR #41 fusionada
+
+- `main`: `3313bf4276563c6cdac52aa7902fa9ea36558014` (https://github.com/BTF14/Micro-app/commit/3313bf4276563c6cdac52aa7902fa9ea36558014).
+- PR #41: https://github.com/BTF14/Micro-app/pull/41 — prueba de regresión para conservar la cookie cuando falla la revocación de logout.
+- Seis workflows `success` en el head de PR `0c55c180846e6286e72d35f51e502278200ee0de`: CI 39244454840, Playwright 39244454807, Security scan 39244454911, Semgrep 39244454934, Project progress dashboard 39244454952, Database migration validation 39244456648.
+- No se ejecutaron tests locales. Los workflows del merge SHA no están confirmados por la consulta disponible.
+- Sin datos reales, secretos, billing, cambios a Neon `main`, despliegue de producción ni mezcla con Cantina-pos. La app sigue sin estar lista para producción.

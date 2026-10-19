@@ -1,3 +1,11 @@
+## Checkpoint de continuidad — 2026-10-19 después de PR #62
+
+- PR #61 y PR #62 están fusionadas. PR #62 merge SHA: `d107cfb2b80c4165ed39e3071f8256942898ffb7`; siete workflows en success sobre el head final `9f288f68b6012f39b8ec7928b07a140b869e63cb`.
+- PR #60 sigue abierta con conflicto. Comparar sus cambios con el diff integrado de PR #62 antes de decidir si se necesita una PR sustituta; no force-push.
+- La revisión Codex de PR #60 falló por cuota para un SHA antiguo; no inferir hallazgos desconocidos. En PR #62 se atendió la observación P2 sobre checkpoint obsoleto.
+- P0: Google sign-in + allowlist requiere aprobación de D1–D8 y de la matriz de permisos. Mantener el registro fail-closed. El login por contraseña sigue en el código; su convivencia con la política de acceso continúa sin decisión aprobada.
+- Límites: $0, sin producción, sin mutaciones de Neon `main`, sin datos reales/secretos, sin emails y sin mezclar Cantina-pos.
+
 ## Checkpoint de continuidad — 2026-10-19
 
 - PR #61 está fusionada; PR #60 no pudo integrarse directamente por conflicto con `main`. Se re-aplicó el cambio documental en `docs/ai-autonomy-governance-rebased` y se abrió PR #62 sobre `main`, sin force-push; revisar sus checks para el head vigente antes de fusionar.

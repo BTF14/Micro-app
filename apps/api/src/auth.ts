@@ -237,106 +237,12 @@ export function registerAuthRoutes(app: Hono<{ Bindings: Bindings }>): void {
       return c.json({ error: "ORIGIN_NOT_ALLOWED", message: "Origen no autorizado." }, 403);
     }
 
-    const body = await c.req.json<{
-      email?: unknown;
-      displayName?: unknown;
-      password?: unknown;
-      organizationName?: unknown;
-    }>().catch(() => null);
-
-    const email = typeof body?.email === "string" ? body.email.trim().toLowerCase() : "";
-    const displayName = typeof body?.displayName === "string" ? body.displayName.trim() : "";
-    const password = typeof body?.password === "string" ? body.password : "";
-    const organizationName = typeof body?.organizationName === "string" ? body.organizationName.trim() : "";
-
-    if (
-      email.length > 254 ||
-      !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) ||
-      displayName.length < 2 ||
-      displayName.length > 100 ||
-      password.length < 12 ||
-      password.length > 128 ||
-      organizationName.length < 2 ||
-      organizationName.length > 120
-    ) {
-      return c.json({
-        error: "INVALID_REGISTRATION",
-        message: "Revisa el correo, el nombre, el negocio y la contraseña (mínimo 12 caracteres).",
-      }, 400);
-    }
-
-    try {
-      const allowed = await checkRateLimits(
-        c.env.DATABASE_URL,
-        "register",
-        c.req.header("CF-Connecting-IP") ?? "unknown",
-        email,
-      );
-      if (!allowed) {
-        return c.json({ error: "RATE_LIMITED", message: "Demasiados intentos. Espera un minuto e inténtalo de nuevo." }, 429);
-      }
-    } catch {
-      return c.json({ error: "AUTH_UNAVAILABLE", message: "El servicio de registro no está disponible." }, 503);
-    }
-
-    const passwordHash = await hashPassword(password);
-    const slugBase = organizationName.normalize("NFKD")
-      .replace(/[\u0300-\u036f]/g, "")
-      .toLowerCase()
-      .replace(/[^a-z0-9]+/g, "-")
-      .replace(/^-|-$/g, "")
-      .slice(0, 40) || "negocio";
-    const organizationSlug = `${slugBase}-${crypto.randomUUID().replace(/-/g, "").slice(0, 6)}`;
-
-    try {
-      const result = await withDatabaseClient(c.env.DATABASE_URL, async (client) => {
-        const token = createSessionToken();
-        const tokenHash = await sha256Hex(token);
-        const expiresAt = new Date(Date.now() + SESSION_TTL_SECONDS * 1000).toISOString();
-
-        const created = await withDatabaseTransaction(client, async (transaction) => {
-          const userResult = await transaction.query<{ id: string; email: string; display_name: string }>(
-            "INSERT INTO app_users (email, display_name, password_hash) VALUES ($1, $2, $3) RETURNING id, email, display_name",
-            [email, displayName, passwordHash],
-          );
-          const user = userResult.rows[0];
-          if (!user) throw new Error("USER_CREATION_FAILED");
-
-          const orgResult = await transaction.query<{ id: string; name: string; slug: string }>(
-            "INSERT INTO organizations (name, slug) VALUES ($1, $2) RETURNING id, name, slug",
-            [organizationName, organizationSlug],
-          );
-          const organization = orgResult.rows[0];
-          if (!organization) throw new Error("ORGANIZATION_CREATION_FAILED");
-
-          await transaction.query(
-            "INSERT INTO organization_members (organization_id, user_id, role) VALUES ($1, $2, 'owner')",
-            [organization.id, user.id],
-          );
-          await transaction.query(
-            "INSERT INTO auth_sessions (user_id, token_hash, expires_at) VALUES ($1, $2, $3)",
-            [user.id, tokenHash, expiresAt],
-          );
-          return { user, organization };
-        });
-
-        return { ...created, token };
-      });
-
-      setSessionCookie(c, result.token);
-      return c.json({
-        user: result.user,
-        organizations: [{ ...result.organization, role: "owner" }],
-      }, 201);
-    } catch (error) {
-      const code = typeof error === "object" && error !== null && "code" in error
-        ? String((error as { code?: unknown }).code)
-        : "";
-      if (code === "23505") {
-        return c.json({ error: "REGISTRATION_CONFLICT", message: "No se pudo crear la cuenta con esos datos." }, 409);
-      }
-      return c.json({ error: "REGISTRATION_FAILED", message: "No se pudo completar el registro." }, 500);
-    }
+    // Fail closed until the approved Google sign-in + allowlist policy is implemented.
+    // Do not parse credentials, hit the database, create identities, or issue sessions here.
+    return c.json({
+      error: "REGISTRATION_DISABLED",
+      message: "El registro está deshabilitado hasta configurar la política de acceso.",
+    }, 503);
   });
 
   app.post("/auth/login", async (c) => {

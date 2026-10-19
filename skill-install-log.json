@@ -269,10 +269,11 @@
     "installedFilesMatchedPinnedGitBlobSha1": "All unchanged bundle/license files match their pinned source blob SHA-1; two SKILL.md files intentionally differ because of documented project-specific safety overlays.",
     "installedFilesSha256Recorded": true,
     "officialRegistryManifestSha256Verified": false,
-    "skillFilesReviewedForScriptsAndDependencyChanges": true,
     "dependencyChanges": 0,
     "localTestsRun": false,
     "ciIntegrityCheck": "pending in this PR",
-    "notes": "Installed skill files are documentation only. No package manifest or lockfile changed. This custom log must not be called AutoSkills' official skills-lock.json."
+    "notes": "Candidate-level source/license/compatibility triage was performed for all 19 SKILL.md proposals. Complete companion bundles were copied and hash-verified only for the two installed skills; rejected/deferred bundles were not fully downloaded or audited file-by-file. No third-party scripts were executed. The AutoSkills registry manifest was not readable, so its official bundleHash/securityCheck metadata is unverified.",
+    "selectedBundlesReviewedForScriptsAndDependencySuggestions": true,
+    "all19FullBundlesSecurityReviewed": false
   }
 }

@@ -144,3 +144,17 @@ El handoff incluye el prompt copiable para continuar en un chat nuevo. La docume
 | Revisión Codex | Fallida/no completada por límite de uso; sin hallazgo técnico concreto recuperable. | No registrar como aprobación formal. |
 | Auth/allowlist P0 | Sigue pendiente. | D1–D8 continúan propuestas sin aprobación; no inventar políticas. |
 | Strix | Documentado, no instalado ni ejecutado. | Solo laboratorio aislado con datos sintéticos y coste $0 verificado. |
+
+
+## AutoSkills y skills de agentes — evaluación 2026-10-19
+
+| Recurso | Uso evaluado | Resultado y límite |
+|---|---|---|
+| AutoSkills | https://www.autoskills.sh/ · https://github.com/midudev/autoskills | Inspeccionados README y modelo de detección/registro curado/verificación SHA-256. La ejecución de `npx autoskills --dry-run` no pudo comenzar porque el shell no resolvió `github.com`; no se declara instalado ni se genera `skills-lock.json`. |
+| React / TypeScript / Vite / Hono en AutoSkills | https://github.com/midudev/autoskills/tree/main/packages/autoskills/skills-registry | Leídas entradas de React best practices, TypeScript advanced types, Vite y Hono. No se copian bundles enteros ni se aplica Vite 8 sin validar compatibilidad con Vite 7 del proyecto. |
+| Secure code review | https://www.skills.sh/unitoneai/securityskills/secure-code-review | Referencia de procedimiento de revisión de seguridad; usada como investigación, no instalada. |
+| Auth review | https://www.skills.sh/descope/skills/auth-review | Referencia para inventario de endpoints y límites de autenticación/autorización; usada como investigación, no instalada. |
+| PostgreSQL development / database testing | https://www.skills.sh/ingpoc/skills/postgresql-skill · https://www.skills.sh/petrkindlmann/qa-skills/database-testing | Referencias para transacciones, migraciones, aislamiento y pruebas de DB; no instaladas. |
+| Skills locales Micro app | `.agents/skills/micro-app-auth-security/SKILL.md`, `micro-app-postgres-testing/SKILL.md`, `micro-app-stack-guidance/SKILL.md`, `micro-app-skill-curation/SKILL.md` | Instrucciones propias, adaptadas al stack y a las políticas del repo. No equivalen a bundles descargados/verificados por AutoSkills; no ejecutan scripts ni añaden dependencias. |
+
+Decisión: en un checkout con red, ejecutar primero `npx autoskills --dry-run`, comparar las propuestas con los manifiestos actuales, seleccionar solo skills relevantes y revisar origen/licencia/estado de seguridad/hash antes de instalar. No usar `-y` por defecto, no instalar skills de Next.js/Supabase/Astro si esas tecnologías no están en uso, y no gastar dinero. Mantener separadas las skills locales propias y las externas verificadas.

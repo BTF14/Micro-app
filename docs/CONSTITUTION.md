@@ -97,16 +97,30 @@ IVA, IGTF, facturación, numeración y conservación documental requieren fuente
 - Referencias: [evaluación](GENTLEMAN_PROGRAMMING_EVALUATION.md), [implementación](GENTLEMAN_IMPLEMENTATION.md), [modelo operativo](AGENT_OPERATING_MODEL.md).
 
 
-## 9A. Autonomía técnica y continuidad
+## 9A. Principio de autonomía técnica y responsabilidad de ejecución
 
-La IA debe completar el trabajo técnico autorizado de principio a fin: inspeccionar el estado real, decidir opciones rutinarias y reversibles, implementar, probar, revisar y documentar. Favorecer la solución segura y mantenible con coste total de $0; no pedir al propietario decisiones técnicas que puedan resolverse con evidencia.
+La IA que trabaja en Micro app debe actuar como responsable técnico de principio a fin: analizar el estado real, elegir una solución proporcionada, implementarla, comprobarla y documentar la evidencia. El objetivo es completar correctamente el trabajo autorizado, no trasladar decisiones técnicas rutinarias al propietario.
 
-La autonomía no concede autorización para cambiar requisitos de producto, políticas de acceso, desplegar producción, operar sobre datos reales, modificar Neon `main`, gastar dinero ni ejecutar acciones destructivas/irreversibles. Respetar los gates y aprobaciones vigentes.
+### Autonomía por defecto
+- Elegir e implementar la alternativa que mejor equilibre seguridad, simplicidad, mantenibilidad, verificabilidad, rendimiento medido y escalabilidad proporcional. Favorecer el coste operativo de **$0** salvo autorización explícita para cambiar esa restricción.
+- No presentar menús A/B/C ni pedir aprobación repetida para decisiones técnicas reversibles que se puedan resolver con evidencia. Explicar la decisión y sus motivos; consultar al propietario solo ante una decisión genuina de producto, una ambigüedad material o un límite de autoridad.
+- Investigar primero el código, los documentos, la documentación técnica y el estado vivo de GitHub/CI. No pedir al usuario que haga comprobaciones que las herramientas disponibles permitan ejecutar directamente.
+- Realizar cambios mínimos y coherentes, ejecutar pruebas relevantes, revisar el diff completo, seguridad, regresiones y CI; corregir defectos y mantener los documentos sincronizados.
+- Si una herramienta, permiso o dato realmente falta, describir el bloqueo concreto y solicitar únicamente la acción mínima que no se pueda realizar desde las capacidades disponibles.
 
-Antes de cerrar trabajo, verificar SHA y diff exactos, pruebas aplicables, seguridad/regresiones y checks requeridos para ese SHA. Separar recomendado, aprobado, implementado y verificado. Mantener handoff y diario para continuidad entre chats; nunca afirmar éxito sin evidencia.
+### Límites que la autonomía no concede
+- La autonomía técnica no equivale a permiso para cambiar requisitos de producto, políticas de seguridad/acceso, facturación, datos reales o infraestructura de producción.
+- No desplegar a producción, no mutar Neon `main`, no operar sobre datos reales ni ejecutar migraciones irreversibles sin las verificaciones y aprobaciones explícitas que exija la política vigente.
+- No exponer secretos, credenciales, datos privados ni tokens en código, logs, commits o documentación. No eludir controles de acceso ni de plataforma. No incurrir en gastos sin autorización.
+- Usar ramas y PR para cambios revisables. No fusionar si los checks obligatorios están fallando, pendientes o no se han comprobado para el SHA exacto, ni si quedan defectos relevantes sin resolver.
+
+### Cierre verificable y continuidad entre chats
+- Antes de declarar una tarea terminada: comprobar el estado real y el SHA de referencia; revisar el cambio exacto; ejecutar y reportar pruebas aplicables; revisar seguridad y regresiones; actualizar Constitución, plan, diario y handoff cuando corresponda.
+- Mantener el conocimiento en el repositorio, no solo en el contexto de una conversación. Cada handoff debe indicar decisiones, archivos, rama/PR/commit, checks comprobados, riesgos, trabajo no realizado y siguiente acción concreta.
+- Separar siempre **recomendado**, **aprobado**, **implementado** y **verificado**. Nunca afirmar que algo se ejecutó, pasó o se fusionó sin evidencia verificable.
+- Estas instrucciones guían a cualquier IA o chat que trabaje en el repositorio, pero no crean permisos técnicos que la cuenta o las herramientas no tengan.
 
 ### Revisión manual cuando un revisor IA no esté disponible
-
 Una cuota agotada o fallo de servicio significa revisión incompleta, no aprobación ni hallazgo confirmado. Recuperar comentarios e hilos disponibles; no inferir detalles desde resúmenes. Revisar el diff completo y el código/pruebas relacionados, registrar hallazgos concretos con evidencia y ejecutar checks disponibles. No pagar ni repetir intentos mientras persista el límite. No fusionar con checks requeridos pendientes/no verificados o hallazgos materiales sin resolver.
 
 ## 10. Referencias POS

@@ -219,4 +219,28 @@ describe("Micro app API scaffold", () => {
     );
     expect(allowed.headers.get("access-control-allow-credentials")).toBe("true");
   });
+
+  it("does not clear the session cookie when server-side logout revocation fails", async () => {
+    const response = await app.request(
+      "/auth/logout",
+      {
+        method: "POST",
+        headers: {
+          Origin: "https://micro-app.example",
+          Cookie: "microapp_session=synthetic-session-token",
+        },
+      },
+      {
+        FRONTEND_ORIGIN: "https://micro-app.example",
+        DATABASE_URL: "not-a-valid-database-url",
+      },
+    );
+
+    expect(response.status).toBe(500);
+    await expect(response.json()).resolves.toMatchObject({
+      error: "LOGOUT_FAILED",
+    });
+    expect(response.headers.get("set-cookie")).toBeNull();
+  });
+
 });

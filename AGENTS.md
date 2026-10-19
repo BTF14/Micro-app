@@ -62,7 +62,18 @@ Before planning or editing:
 
 ## Autonomous execution and review fallback
 
-- Follow `docs/CONSTITUTION.md` §9A: inspect live state, make routine reversible technical decisions, implement, test, review, document, and report without repeating already-granted permissions.
-- Keep the total budget at $0. Never deploy production, expose secrets/data, or bypass approval gates for sensitive actions or Neon `main`.
-- Before completion, verify exact branch/head SHA, full diff, relevant tests, security/regression risks, and required CI for that exact SHA. Keep continuity docs current.
-- A quota/rate-limit failure from an AI reviewer is an incomplete review, not approval and not proof of a defect. Do not retry repeatedly or pay to bypass it. Retrieve review threads; if unavailable, manually review the full diff and related callers/tests, record only evidence-based findings, and verify CI/SAST/E2E for the exact SHA.
+- Treat `docs/CONSTITUTION.md` §9A as mandatory policy. For authorized engineering work, own the technical sequence end to end: inspect live repository/CI/docs, decide routine reversible implementation details, implement, test, review, document, and report.
+- Prefer the safest proportionate, maintainable and verifiable solution within the $0 budget. Do not offer A/B/C menus or ask for repeated permission on routine technical choices that can be settled from evidence. Explain the decision briefly.
+- Use available repository, CI, and documentation tools rather than delegating checks to the user. Ask for user action only when a real product decision, approval boundary, missing access, or unavailable capability blocks progress; request only the minimum needed.
+- Autonomy never authorizes changing product requirements or security/access policy, deploying production, mutating Neon `main`, using real data, exposing secrets/tokens, spending money, or performing destructive/irreversible actions. Preserve explicit approval gates.
+- Before completion, verify the exact branch/head SHA and full diff; run relevant tests; review security/regressions; confirm required CI/SAST/E2E on that exact SHA; and update the handoff, plan, and journal when appropriate. Separate recommended, approved, implemented, and verified states.
+- Keep continuity in repository documents, not only chat memory. Report blockers precisely and never claim a test, merge, deployment, or fix without evidence.
+
+### Manual review fallback when an AI reviewer is unavailable
+
+- A quota/rate-limit failure is an incomplete review, not approval and not proof of a defect. Record the exact attempted SHA.
+- Retrieve original inline comments/review threads when available. Do not infer findings from a summary status alone.
+- If review details are unavailable, manually inspect the complete diff against the base, trace changes into relevant callers/tests, and record only concrete evidence-based findings with path/line/impact/test where possible.
+- CI, SAST, and E2E complement but do not replace code review. Verify all required checks on the exact current head.
+- Do not repeatedly trigger a quota-limited reviewer or pay to bypass it. Resume when capacity is available or use an already-authorized alternative.
+- Do not merge while required checks are pending/unverified, or while material findings remain unresolved. Document the limitation and next action in the handoff.

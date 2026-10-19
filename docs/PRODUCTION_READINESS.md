@@ -36,7 +36,7 @@ Este archivo es la fuente de datos para el panel de avance. Un ítem solo puede 
 - [ ] Backups diarios independientes automatizados, alertas, retención y restauración ensayada (ver [BACKUP_AND_RECOVERY.md](BACKUP_AND_RECOVERY.md)).
 
 ### Identidad y moneda
-- [x] Registro/login y sesiones revocables iniciales.
+- [x] Login y sesiones revocables iniciales; el registro público está bloqueado fail-closed hasta aprobar/implementar la política de identidad (PR #57).
 - [ ] OAuth de Google, allowlist y verificación de correo implementados según el requisito acordado.
 - [ ] Matriz completa de roles/permisos y pruebas negativas.
 - [ ] Integración de tasa BCV validada con fuente, vigencia y fallos.
@@ -47,7 +47,7 @@ Este archivo es la fuente de datos para el panel de avance. Un ítem solo puede 
 ### P0 — bloqueantes
 - [x] CI compila y ejecuta pruebas automatizadas en PostgreSQL desechable para un SHA verificado.
 - [x] Validación de migración en base efímera en el SHA verificado.
-- [ ] Pruebas de integración completas de identidad, sesiones y errores de base de datos.
+- [x] El registro público está bloqueado fail-closed y probado sin escrituras ni cookie (PR #57; SHA merge `cb4b9b09ad3ff0f1bacd34f23ee653a5477cddfe`).\n- [ ] Google sign-in + allowlist, identidad y pruebas completas de sesión/error de base de datos.
 - [ ] Autorización multiempresa y aislamiento comprobados en toda la API.
 - [ ] Flujos reales de venta/inventario con transacciones, idempotencia y concurrencia.
 - [ ] Gestión de errores, rate limiting y protección contra abuso revisadas.
@@ -70,7 +70,7 @@ Este archivo es la fuente de datos para el panel de avance. Un ítem solo puede 
 
 ## Bloqueos conocidos al último análisis documental
 
-- El flujo actual de autenticación no demuestra Google OAuth, allowlist ni verificación de correo.
+- El registro público está temporalmente bloqueado fail-closed; el flujo actual aún no demuestra Google OAuth, allowlist ni verificación de correo. Issue #53 permanece abierto hasta implementar y probar la política aprobada.
 - Las pruebas Playwright actuales son smoke tests con API simulada; no prueban el backend real.
 - La aplicación no tiene aún los flujos completos de POS/ventas/inventario.
 - Los cambios en Neon main deben superar el gate de `docs/CONSTITUTION.md`; producción sigue bloqueada hasta completar los gates y obtener aceptación explícita.

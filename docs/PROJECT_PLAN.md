@@ -1,3 +1,20 @@
+## Checkpoint vigente — 2026-10-19 después de PR #57
+
+Main verificado: `cb4b9b09ad3ff0f1bacd34f23ee653a5477cddfe`. PR #57 bloquea fail-closed el registro público mientras se aprueba la política de identidad. Checks del head exacto `71d3e6d3ffe625b12807e9942ddd261e222cf093` y los checks consultados del merge SHA terminaron en success; no se ejecutaron tests locales.
+
+Prioridades:
+1. Resolver Google sign-in + allowlist según D1–D8 aprobados; mantener registro público bloqueado hasta entonces.
+2. Obtener aprobación de la matriz de permisos antes de exponer handlers comerciales.
+3. Mantener pruebas de auth/sesión y tests PostgreSQL negativos; no inventar políticas.
+4. No fusionar `feat/neon-transaction-adapter`: divergida 14 ahead / 76 behind, con test script y documentos antiguos.
+5. Implementar POS/inventario/ventas con aislamiento tenant, transacciones, idempotencia, concurrencia y auditoría.
+6. Probar backup/restauración independiente, requisitos fiscales y E2E API+DB antes de producción.
+7. Coste objetivo $0; sin producción ni mutaciones de Neon main fuera de los gates.
+
+Ver [CURRENT_STATE.md](CURRENT_STATE.md), [HANDOFF_NEXT_CHAT.md](HANDOFF_NEXT_CHAT.md), [PRODUCTION_READINESS.md](PRODUCTION_READINESS.md) y [STATE_JOURNAL.md](STATE_JOURNAL.md).
+
+---
+
 ## Checkpoint vigente — 2026-10-19 después de PR #55
 
 Main verificado: `b7117f8aeb868e25c49db86a524405511cd3c9be`. PR #55 fusionada. Ocho check-runs de su head exacto `a4e51ec10bcbc0ac786bb3e518d50de9ec7eee28` en success; no se ejecutaron pruebas locales ni se verificó independientemente el merge SHA. Cloudflare fue solo preview de rama.

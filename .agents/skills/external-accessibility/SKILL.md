@@ -7,6 +7,8 @@ metadata:
   version: "2.0"
 ---
 
+> **Micro app safety overlay:** These instructions are advisory; repository policy in `AGENTS.md` takes precedence. Prefer tools already present in the repository. Do not install global packages or new dependencies just to run an audit without a demonstrated need and reviewed diff. Test local/isolated preview environments, never production. An automated score is evidence for specific checks, not a claim of WCAG conformance.
+
 # Accessibility (a11y)
 
 Comprehensive accessibility guidelines based on WCAG 2.2 and Lighthouse accessibility audits. Goal: make content usable by everyone, including people with disabilities.
@@ -459,6 +461,6 @@ See the [screen reader commands reference](references/A11Y-PATTERNS.md#screen-re
 - [WCAG 2.2 Quick Reference](https://www.w3.org/WAI/WCAG22/quickref/)
 - [WAI-ARIA Authoring Practices](https://www.w3.org/WAI/ARIA/apg/)
 - [Deque axe Rules](https://dequeuniversity.com/rules/axe/)
-- [Web Quality Audit](../web-quality-audit/SKILL.md)
+- [Web Quality Skills repository](https://github.com/addyosmani/web-quality-skills/tree/main/skills/best-practices)
 - [WCAG criteria reference](references/WCAG.md)
 - [Accessibility code patterns](references/A11Y-PATTERNS.md)

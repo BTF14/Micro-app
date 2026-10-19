@@ -1,0 +1,33 @@
+name: AutoSkills preview (no install)
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - ".github/workflows/autoskills-preview.yml"
+      - "package.json"
+      - "pnpm-lock.yaml"
+      - "pnpm-workspace.yaml"
+      - "apps/*/package.json"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: autoskills-preview-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  preview:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Preview curated skills without installing into the repository
+        run: npx --yes autoskills@0.4.1 --dry-run --verbose

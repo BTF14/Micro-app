@@ -315,3 +315,14 @@ Este diario es append-only en cuanto a historia: no borrar hitos antiguos; añad
 - Se enlazó la matriz desde el registro de decisiones de identidad/acceso. D1–D8 de Google OAuth/allowlist siguen independientes y pendientes.
 - PR #29 fusionada después de que los ocho check-runs del head `bccae77f66ede9670e4887092ae13749daf39b3b` terminaran en success. Merge commit y `main`: `df9d9b90a8f0e4965d20278cc5825006d9e959aa`.
 - Sin pruebas locales, sin cambios de base de datos, sin secretos, sin emails ni despliegue de producción.
+
+
+## 2026-10-19 — PR #35 y PR #36
+
+- PR #35 fusionada: checkpoint documental tras PR #34; merge SHA `f2fdd532fb67dd98f31eb02b99bbe326945cabb0`.
+- PR #36 fusionada: validación estricta de formato de hash PBKDF2; merge SHA `c15c2364cd19e55ac10b2331300e7a9f4b89813f`; head SHA validado por CI `cf432de6d5e8752181bc1105e9d0e91384d5936c`.
+- Los seis workflows de PR #36 fueron `success` para el head SHA exacto: CI, Playwright E2E, Security scan, Semgrep SAST, Database migration validation y Project progress dashboard.
+- No se ejecutaron pruebas localmente. No se desplegó producción ni se modificó Neon `main`.
+- El estado post-merge de PR #34 requiere confirmación de SHA exacto: los seis jobs consultados dieron `success`, pero la consulta no expuso metadatos suficientes para asociarlos inequívocamente al merge SHA.
+- Bloqueos vigentes: Google OAuth/allowlist y D1–D8 pendientes; matriz de roles pendiente; rutas comerciales completas y E2E API+PostgreSQL no verificadas; backup/restauración independiente sin probar; app no lista para producción.
+- Siguiente paso: confirmar Actions del merge SHA `c15c2364cd19e55ac10b2331300e7a9f4b89813f`; continuar pruebas de seguridad pequeñas y documentar resultados exactos. Coste objetivo $0; sin Cantina-pos, secretos, correos, billing, datos reales ni despliegue.

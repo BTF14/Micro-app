@@ -326,3 +326,12 @@ Este diario es append-only en cuanto a historia: no borrar hitos antiguos; añad
 - El estado post-merge de PR #34 requiere confirmación de SHA exacto: los seis jobs consultados dieron `success`, pero la consulta no expuso metadatos suficientes para asociarlos inequívocamente al merge SHA.
 - Bloqueos vigentes: Google OAuth/allowlist y D1–D8 pendientes; matriz de roles pendiente; rutas comerciales completas y E2E API+PostgreSQL no verificadas; backup/restauración independiente sin probar; app no lista para producción.
 - Siguiente paso: confirmar Actions del merge SHA `c15c2364cd19e55ac10b2331300e7a9f4b89813f`; continuar pruebas de seguridad pequeñas y documentar resultados exactos. Coste objetivo $0; sin Cantina-pos, secretos, correos, billing, datos reales ni despliegue.
+
+
+## 2026-10-19 — PR #38 y PR #39
+
+- PR #38 fusionada: pruebas de limpieza de conexión y fallos de rollback; merge SHA `bdf340a0e7157b6398b498fabedc3a8e2158b9c4`; head probado `527dd7cc62bcceae891add8100875cc395dd5cfa`; seis workflows `success` en ese head.
+- PR #39 fusionada: prueba de preservación del error original cuando fallan tanto la operación como el cierre del cliente; merge SHA `50c530084f8ce402d897962cbc7c4354c512e847`; head probado `134c9e14a5224d83c5f280dc501ae113d374c159`; seis workflows `success` en ese head.
+- No se ejecutaron pruebas locales y no se han verificado aquí los workflows sobre el merge SHA de PR #39. No se modificaron bases de datos ni se desplegó producción.
+- La app sigue sin estar lista para producción; continúan bloqueos de identidad/allowlist, permisos, rutas comerciales, E2E real, aislamiento multiempresa y backup/restauración independiente.
+- Siguiente: pruebas acotadas de auth/sesión; inspección completa de `feat/neon-transaction-adapter` antes de cualquier merge; coste $0 y respetar todos los gates de producción.

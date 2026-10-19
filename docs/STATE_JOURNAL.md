@@ -1,3 +1,13 @@
+## 2026-10-19 — Ajuste de política y verificación independiente de skills (PR #68)
+
+- Head de código antes de actualizar continuidad: `f9515ea9838e44947f30fe602f31b7d5b258fa6a`; `main`: `832c9d10b19846f89cc5d9e5ef51b7ef6eb5b21e`.
+- Se quitó de `.agents/skills/external-accessibility/SKILL.md` la instrucción para instalar `@axe-core/cli` globalmente sin necesidad demostrada. Se actualizó `skill-install-log.json` con los nuevos hashes y tamaño.
+- Se recuperaron directamente de GitHub los siete archivos instalados y se compararon contra el registro: 7/7 tamaños, Git blob SHA-1 y SHA-256 coinciden. No se pudo ejecutar el validador localmente porque el checkout de GitHub falló por DNS.
+- En el head revisado, las ejecuciones recientes de Actions terminaron en failure sin pasos ni logs disponibles, incluida la de integridad. La evidencia no prueba la causa exacta ni un fallo de las aserciones. No reintentar de forma idéntica mientras no haya evidencia de runner disponible.
+- PR #68 sigue abierta y no fusionada. No se tocaron producción, Neon `main`, secretos ni datos reales. Coste $0.
+
+---
+
 ## 2026-10-19 — Incidencia de asignación de runners durante la última validación de skills
 
 - PR [#68](https://github.com/BTF14/Micro-app/pull/68), rama `chore/curated-agent-skills-audit`, permanece abierta y no fusionada.

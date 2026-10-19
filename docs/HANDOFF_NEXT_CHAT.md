@@ -1,10 +1,12 @@
-## Continuidad prioritaria — AutoSkills curado (2026-10-19)
+## Continuidad prioritaria — PR #68 y verificación de skills (2026-10-19)
 
-- La revisión e instalación están en la rama `chore/curated-agent-skills-audit`, aún no fusionada.
-- Run oficial de preview: [39300536264](https://github.com/BTF14/Micro-app/actions/runs/39300536264), success en `--dry-run`; propuesta de 19 skills, cero instalaciones CLI.
-- Dos skills MIT fueron copiadas con sus referencias y licencias y adaptadas a la política del proyecto. No hay cambios de dependencias. El log/hash es `skill-install-log.json`; no equivale al lockfile oficial de AutoSkills.
-- PR [#68](https://github.com/BTF14/Micro-app/pull/68) sigue abierta y no fusionada. Último success de integridad: [run 39305555253](https://github.com/BTF14/Micro-app/actions/runs/39305555253) en commit `86304ffd4d45fbd9902d0344228b9e9f96b9cf1c`. Después se actualizó metadata del log y se añadió una aserción al validador. Los runs posteriores [39305676786](https://github.com/BTF14/Micro-app/actions/runs/39305676786) y [39305905625](https://github.com/BTF14/Micro-app/actions/runs/39305905625) fallaron antes de asignar runner (`runner_id=0`, cero pasos y sin logs); no confundirlos con un resultado de test. Reintentar cuando Actions asigne runner; no fusionar hasta que pase la versión actual.
-- Detalle individual: `docs/AUTOSKILLS_REVIEW_2026-10-19.md`.
+- Repositorio: https://github.com/BTF14/Micro-app. `main` verificado antes de esta actualización: `832c9d10b19846f89cc5d9e5ef51b7ef6eb5b21e`.
+- PR [#68](https://github.com/BTF14/Micro-app/pull/68) sigue abierta y no fusionada. Head de código revisado antes de las actualizaciones de continuidad: `f9515ea9838e44947f30fe602f31b7d5b258fa6a`.
+- Se eliminó de `external-accessibility/SKILL.md` la instrucción de instalar `@axe-core/cli` globalmente sin necesidad justificada; `skill-install-log.json` se actualizó con el nuevo tamaño y hashes.
+- Verificación independiente del contenido actual en GitHub: 7/7 archivos de skills coinciden con tamaños, Git blob SHA-1 y SHA-256 registrados. Es evidencia independiente, no un resultado de GitHub Actions.
+- En el head revisado, las ejecuciones recientes de integridad/CI/seguridad/docs/migraciones/dashboard fallaron sin pasos ni logs de job disponibles; Playwright también reportó job fallido sin pasos/logs. La causa exacta no está demostrada. El intento de clonar para ejecutar Node localmente falló por DNS; no afirmar tests locales ni workflow verde.
+- El finding del validador sobre saltos de línea se publicó en una revisión anclada a un SHA anterior; el script actual muestra saltos de línea reales, pero queda pendiente una ejecución real de Node/CI.
+- Próximo paso: no reintentar idénticamente mientras no se resuelva la asignación de runners; mantener la PR abierta hasta que el workflow de integridad y checks requeridos pasen sobre el head final. No merge, producción ni Neon `main`; $0. P0 Google OAuth/allowlist y D1–D8 siguen pendientes.
 
 ## Estado prioritario de continuidad — 2026-10-19, después de PR #64
 

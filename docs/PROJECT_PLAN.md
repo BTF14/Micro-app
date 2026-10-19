@@ -1,3 +1,11 @@
+## Política permanente de ejecución técnica autónoma
+
+- Resolver decisiones rutinarias y reversibles con evidencia; implementar, probar, revisar seguridad/regresiones y documentar de punta a punta.
+- No delegar comprobaciones disponibles en las herramientas ni pedir permisos repetidos. Pedir intervención solo ante una decisión de producto, autorización, acceso o capacidad realmente ausente.
+- Presupuesto $0; sin producción, mutaciones de Neon `main`, datos reales, secretos, gastos ni acciones destructivas fuera de los gates vigentes.
+- Si un revisor IA está limitado por cuota, hacer revisión manual del diff y contexto relacionado; no inventar findings y no fusionar con checks requeridos pendientes.
+- La PR #62 incorporó una versión resumida de esta política. Esta PR conserva los criterios operativos detallados de la propuesta original #60, sin traer checkpoints históricos obsoletos.
+
 ## Checkpoint de continuidad — 2026-10-19 después de PR #62
 
 - PR #61 y PR #62 están fusionadas. PR #62 merge SHA: `d107cfb2b80c4165ed39e3071f8256942898ffb7`; siete workflows en success sobre el head final `9f288f68b6012f39b8ec7928b07a140b869e63cb`.

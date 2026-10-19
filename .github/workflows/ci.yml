@@ -40,6 +40,9 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 22
+      - name: Temporary AutoSkills dry-run (diagnostic only)
+        if: github.head_ref == 'chore/autoskills-dry-run-ci'
+        run: npx --yes autoskills@0.4.1 --dry-run --verbose
       - name: Setup pnpm
         uses: pnpm/action-setup@v4
         with:

@@ -24,20 +24,18 @@ test("logs in and displays the authenticated workspace", async ({ page }) => {
   await expect(page.getByRole("button", { name: /cerrar sesión/i })).toBeVisible();
 });
 
-test("registration form validates required fields and reports API errors", async ({ page }) => {
+test("keeps public registration unavailable until the access policy is approved", async ({ page }) => {
+  let registrationRequested = false;
   await page.route("**/auth/me", (route) => route.fulfill({ status: 401, contentType: "application/json", body: JSON.stringify({ message: "No hay sesión activa" }) }));
   await page.route("**/auth/register", async (route) => {
-    expect(route.request().method()).toBe("POST");
-    await route.fulfill({ status: 409, contentType: "application/json", body: JSON.stringify({ message: "El correo ya está registrado." }) });
+    registrationRequested = true;
+    await route.fulfill({ status: 503, contentType: "application/json", body: JSON.stringify({ error: "REGISTRATION_DISABLED" }) });
   });
 
   await page.goto("/");
-  await page.getByRole("button", { name: /crear cuenta/i }).first().click();
-  await expect(page.getByRole("heading", { name: "Crea tu cuenta" })).toBeVisible();
-  await page.getByLabel("Tu nombre").fill("Ana Pérez");
-  await page.getByLabel("Nombre del negocio").fill("Mi tienda");
-  await page.getByLabel("Correo electrónico").fill("ana@example.com");
-  await page.getByLabel("Contraseña").fill("a-strong-password-12");
-  await page.getByRole("button", { name: /crear cuenta/i }).last().click();
-  await expect(page.getByRole("alert")).toContainText("El correo ya está registrado.");
+  await expect(page.getByRole("heading", { name: "Inicia sesión" })).toBeVisible();
+  await expect(page.getByRole("status")).toContainText("El registro de nuevas cuentas está temporalmente deshabilitado.");
+  await expect(page.getByRole("button", { name: /crear cuenta/i })).toHaveCount(0);
+  await expect(page.getByLabel("Tu nombre")).toHaveCount(0);
+  expect(registrationRequested).toBe(false);
 });

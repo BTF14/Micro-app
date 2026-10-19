@@ -1,3 +1,13 @@
+## Checkpoint de continuidad — 2026-10-19, PR #69
+
+- `main` verificado: `832c9d10b19846f89cc5d9e5ef51b7ef6eb5b21e`.
+- PR #69 (https://github.com/BTF14/Micro-app/pull/69) corrige la discrepancia entre la UI de registro y el backend fail-closed: elimina el formulario que siempre fallaba, comunica que el registro está deshabilitado y prueba que la UI no llama `/auth/register`.
+- La PR #68 mantiene las skills externas seleccionadas en su propia rama. No se repite la auditoría ni se borra su trabajo.
+- Verificación local no ejecutada. CI del head inicial de código estaba queued; confirmar checks para el head final antes de integrar.
+- Siguiente: revisión del diff/checks de PR #69 y luego pruebas aisladas de auth/sesión. Google OAuth/allowlist y permisos requieren aprobación explícita; no inventar reglas. Coste $0, sin producción ni Neon `main`.
+
+---
+
 ## Checkpoint de continuidad — 2026-10-19 después de PR #64
 
 - PR #64 fusionada por squash; merge SHA `f15e3b0da415b8f31641a81ed8a883deb7fcfc5f`. PR #63 merge SHA `b4b417ec5a85b8b0c48b606c718c341745af9055`.

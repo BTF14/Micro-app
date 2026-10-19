@@ -1,3 +1,19 @@
+## Estado prioritario de continuidad — 2026-10-19, PR #69
+
+- `main` verificado: `832c9d10b19846f89cc5d9e5ef51b7ef6eb5b21e`.
+- PR #68 sigue abierta/no fusionada; las dos skills externas elegidas siguen instaladas en su rama. No repetir el ciclo de auditoría ni eliminarlas.
+- PR #69: https://github.com/BTF14/Micro-app/pull/69. Cambios: la UI ya no ofrece registro público mientras el backend responde `503 REGISTRATION_DISABLED`; aviso accesible y prueba E2E para el comportamiento fail-closed. No modifica política de identidad ni DB.
+- No se ejecutaron tests localmente. Los workflows vistos en el head de código inicial estaban queued; verificar de nuevo el head final y las conclusiones exactas antes de merge.
+- P0 Google sign-in + allowlist y decisiones D1–D8/matriz de roles siguen pendientes de aprobación. No inventar emails, dominios, proveedor OAuth, bootstrap admin ni vinculación de cuentas.
+- Presupuesto $0. No producción, Neon `main`, datos reales, secretos, emails, billing ni Cantina-pos.
+
+### Próximas acciones
+1. Inspeccionar diff completo de PR #69 y checks sobre su head actual; no merge mientras checks estén pendientes o sin evidencia.
+2. Continuar pruebas de auth/sesión y aislamiento con datos sintéticos sin resolver decisiones de producto por inferencia.
+3. Mantener las skills instaladas en PR #68; no repetir instalación/auditoría.
+4. Actualizar este handoff, `CURRENT_STATE.md`, plan y diario tras el próximo hito.
+---
+
 ## Estado prioritario de continuidad — 2026-10-19, después de PR #64
 
 - Repositorio canónico: https://github.com/BTF14/Micro-app.

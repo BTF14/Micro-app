@@ -1,3 +1,13 @@
+## 2026-10-19 — UX de autenticación alineada con registro fail-closed (PR #69)
+
+- Se creó la rama `fix/auth-registration-ui-fail-closed` desde `main` verificado en `832c9d10b19846f89cc5d9e5ef51b7ef6eb5b21e`.
+- Se eliminó del frontend el formulario/acción de registro público, porque el backend ya responde `503 REGISTRATION_DISABLED` hasta aprobar la política de identidad. Se agregó un aviso accesible y se actualizó el test Playwright para comprobar que el formulario no aparece ni llama a `/auth/register`; el test de login se conserva.
+- PR #69: https://github.com/BTF14/Micro-app/pull/69. Cambios limitados a UI y E2E en el primer head de código `b8d670ea517db5405d9d10f85191172d511446ba`.
+- No se ejecutaron tests localmente. Los workflows visibles para ese SHA estaban queued; no afirmar que pasaron. Verificar el head final tras documentación.
+- Sin dependencias nuevas, cambios de DB, Neon `main`, secretos, datos reales, producción ni gasto. D1–D8 y Google OAuth/allowlist siguen sin aprobación.
+
+---
+
 ## 2026-10-19 — Corrección de formato en checklist de preparación
 
 - Se corrigió en `docs/PRODUCTION_READINESS.md` un `\\n` literal que unía visualmente el criterio ya verificado del bloqueo de registro con el siguiente criterio pendiente de Google sign-in.

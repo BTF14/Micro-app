@@ -35,5 +35,8 @@ for (const skill of log.installedSkills) {
   }
 }
 assert.equal(log.validation.dependencyChanges, 0, "skill installation must not add dependencies");
-for (const skill of log.installedSkills) {\n  assert.equal(skill.dependencyChanges, 0, `unexpected dependency change recorded for ${skill.name}`);\n  assert.equal(skill.scriptsExecuted, 0, `unexpected third-party script execution recorded for ${skill.name}`);\n}
+for (const skill of log.installedSkills) {
+  assert.equal(skill.dependencyChanges, 0, `unexpected dependency change recorded for ${skill.name}`);
+  assert.equal(skill.scriptsExecuted, 0, `unexpected third-party script execution recorded for ${skill.name}`);
+}
 console.log(`Skill integrity OK: ${log.candidates.length} candidates reviewed; ${installed.length} skills installed; ${verified} files hash-verified.`);

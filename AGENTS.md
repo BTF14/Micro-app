@@ -44,6 +44,15 @@ Before planning or editing:
 - Before completion, verify the exact branch/commit and diff, run relevant tests, inspect security/regression risks, verify required CI for the exact SHA, and update continuity docs. Do not merge with failed/pending/unverified required checks or unresolved material findings.
 - Keep persistent handoff notes so a different model/chat can resume without asking the user to reconstruct history. Report separately what was recommended, approved, implemented, and verified; never claim unverified success.
 
+## Code-review fallback when an AI reviewer is unavailable
+
+- A quota/rate-limit failure from Codex or another AI reviewer is an **incomplete review**, not an approval and not proof that the code is defective.
+- Preserve the failure summary and identify the exact commit SHA the reviewer attempted. Look for the original inline comments/review threads and prior review report; do not infer findings from a summary flag alone.
+- If findings are unavailable, manually review the complete diff against the base, trace changed behavior into relevant callers/tests, and record any concrete findings with file/line and evidence. Run the relevant repository checks and security tests where available.
+- Treat CI/SAST/E2E as complementary evidence, not a replacement for review. Confirm required checks against the exact current head SHA.
+- Do not repeatedly trigger a quota-limited reviewer or spend money to bypass the limit. Continue independent safe work, then retry only when the provider says capacity is available or the user authorizes a different service.
+- Never mark unresolved material findings as fixed without a verifiable code/test result; never merge solely because the reviewer is unavailable. Document the limitation, commit SHA, checks, findings, and next action in the handoff.
+
 ## Current known priorities (re-verify on each session)
 
 1. P0: design/implement/test Google authentication + allowlist against the existing auth model without sending email or guessing provider configuration.

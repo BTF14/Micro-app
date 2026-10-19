@@ -1,6 +1,6 @@
 ## Checkpoint de continuidad — 2026-10-19
 
-- PR #61 está fusionada; PR #60 no pudo integrarse directamente por conflicto con `main`. Se está rebasando su cambio documental mediante una rama nueva basada en `main`, sin force-push.
+- PR #61 está fusionada; PR #60 no pudo integrarse directamente por conflicto con `main`. Se re-aplicó el cambio documental en `docs/ai-autonomy-governance-rebased` y se abrió PR #62 sobre `main`, sin force-push; revisar sus checks para el head vigente antes de fusionar.
 - La revisión Codex de PR #60 falló por cuota para un SHA antiguo; no se recuperaron hilos inline. La revisión manual debe tratarse como evidencia independiente, no como aprobación automática.
 - P0: Google sign-in + allowlist requiere aprobación de D1–D8 y de la matriz de permisos. Mantener el registro fail-closed mientras la política siga pendiente.
 - Límites: $0, sin producción, sin mutaciones de Neon `main`, sin datos reales/secretos, sin emails y sin mezclar Cantina-pos.

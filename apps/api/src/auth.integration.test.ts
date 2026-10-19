@@ -212,7 +212,15 @@ const suite = describe.skipIf(!databaseAvailable)("authentication routes against
     expect(expiredSessionResponse.status).toBe(401);
     expect(expiredSessionResponse.headers.get("set-cookie")).toContain("microapp_session=");
 
-    // Keep this email-based rate-limit check last so it cannot interfere with later valid logins.
+    // Reset only this synthetic email's login limiter so the assertion tests account state, not accumulated attempts.
+    const inactiveLoginKeyDigest = await crypto.subtle.digest(
+      "SHA-256",
+      new TextEncoder().encode(`login:email:${email}`),
+    );
+    const inactiveLoginKeyHash = Array.from(new Uint8Array(inactiveLoginKeyDigest), (byte) =>
+      byte.toString(16).padStart(2, "0"),
+    ).join("");
+    await cleanupClient.query("DELETE FROM auth_rate_limits WHERE key_hash = $1", [inactiveLoginKeyHash]);
     await cleanupClient.query("UPDATE app_users SET is_active = false WHERE email = $1", [email]);
     const inactiveUserLogin = await app.fetch(new Request("https://api.example/auth/login", {
       method: "POST",

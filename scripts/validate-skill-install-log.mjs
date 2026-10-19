@@ -8,6 +8,11 @@ const log = JSON.parse(readFileSync(join(root, "skill-install-log.json"), "utf8"
 assert.equal(log.schemaVersion, 1, "unsupported skill log schema");
 assert.equal(log.candidates.length, 19, "expected all 19 AutoSkills proposals");
 assert.equal(new Set(log.candidates.map((item) => item.name)).size, 19, "duplicate candidate names");
+assert.match(log.autoskills.registrySnapshot.commit, /^[0-9a-f]{40}$/, "registry snapshot must be pinned to a full commit SHA");
+for (const candidate of log.candidates) {
+  assert.match(candidate.registryBlobSha1, /^[0-9a-f]{40}$/, `missing immutable source blob hash: ${candidate.name}`);
+  assert.ok(["install", "defer", "reject"].includes(candidate.decision), `invalid decision for ${candidate.name}`);
+}
 const approved = log.candidates.filter((item) => item.decision === "install").map((item) => item.name).sort();
 const installed = log.installedSkills.map((item) => item.name).sort();
 assert.deepEqual(installed, approved, "installed skills must equal the explicitly approved candidate set");

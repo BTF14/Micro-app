@@ -4,7 +4,7 @@
 - Evidencia AutoSkills: run 39300536264 success en dry-run para SHA `09f17020f7543439ed822726419de9777d34fa08`; 19 candidatas, cero instaladas por CLI.
 - Se evaluaron una por una las 19 candidatas en `docs/AUTOSKILLS_REVIEW_2026-10-19.md`. Dos skills MIT instaladas en la rama: `external-accessibility` y `external-typescript-advanced-types`; copias completas de referencias y LICENSE, con overlays de seguridad/compatibilidad.
 - `skill-install-log.json` contiene decisiones, Git blob SHA-1 de fuentes, SHA-256 de archivos instalados y cambios locales documentados. No se creó un `skills-lock.json` oficial falso. La licencia CC-BY-NC-4.0 de AutoSkills CLI se consideró no adecuada como tooling por defecto para el producto comercial.
-- Se añadió `scripts/validate-skill-install-log.mjs` y `.github/workflows/skill-integrity.yml`; CI todavía pendiente en la rama/PR. No se ejecutaron tests locales ni scripts de terceros; no se modificaron dependencias, base de datos, secretos ni despliegues.
+- Se añadió `scripts/validate-skill-install-log.mjs` y `.github/workflows/skill-integrity.yml`; El workflow de integridad pasó en [run 39305182347](https://github.com/BTF14/Micro-app/actions/runs/39305182347) para el commit `35b7324c640089888caae41c07b118a0ffa467cf`, verificando SHA-256, Git blob SHA-1 y tamaño de los 7 archivos instalados. Los cambios posteriores son solo documentación. No se ejecutaron tests locales ni scripts de terceros; no se modificaron dependencias, base de datos, secretos ni despliegues.
 
 ---
 

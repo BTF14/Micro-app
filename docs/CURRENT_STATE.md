@@ -1,20 +1,21 @@
-# Checkpoint autoritativo — 2026-10-19, después de PR #62
+# Checkpoint autoritativo — 2026-10-19, después de PR #64
 
 - Repositorio canónico: https://github.com/BTF14/Micro-app.
-- `main` incluye el merge squash de PR #62: `d107cfb2b80c4165ed39e3071f8256942898ffb7`. PR #62 confirma ese merge SHA; revalidar la rama antes de operaciones posteriores.
-- PR #61 fusionada: https://github.com/BTF14/Micro-app/pull/61; merge SHA reportado `1b8098ff00e0bb7482200b486710a5611f1e109d`.
-- PR #62 fusionada: https://github.com/BTF14/Micro-app/pull/62. Head final verificado `9f288f68b6012f39b8ec7928b07a140b869e63cb`; siete workflows terminaron `success`: CI, Playwright E2E, SDD/agent docs, progress dashboard, Security scan, Semgrep SAST y migration validation. Merge solo documental, sin cambios de runtime.
-- PR #60 sigue abierta con conflicto (`mergeable=false`), head observado `af8479000e1e677bd84e0e11bf02cdb6d548315e`. No force-push ni merge. Siete workflows consultados para ese SHA terminaron success, pero la rama tiene conflicto; no integrarla directamente.
-- P0: Google sign-in + allowlist no está implementado; D1–D8 y matriz de permisos por rol siguen pendientes de aprobación. `POST /auth/register` permanece fail-closed. La ruta de login por contraseña sigue existiendo y aún no hay una política de acceso/allowlist aprobada e implementada que cierre el diseño de identidad; no declarar producción lista.
-- La rama `feat/neon-transaction-adapter` sigue divergida y no debe fusionarse completa a ciegas. Rescatar solo cambios concretos tras comparar con `main` vigente.
-- Aplicación NO lista para producción. Backups/restauración independiente, handlers comerciales, aislamiento tenant completo, permisos aprobados, E2E reales y controles de concurrencia/idempotencia siguen pendientes.
-- Límites: presupuesto $0; no producción, Neon `main` sensible, datos reales, secretos, emails, billing ni mezcla con Cantina-pos. Strix está documentado, no instalado ni ejecutado.
-- No se ejecutaron pruebas locales en esta sesión; los workflows de PR no sustituyen validación funcional independiente ni restauración de backups.
+- `main` incluye PR #64 por squash: `f15e3b0da415b8f31641a81ed8a883deb7fcfc5f`. PR #63 merge SHA: `b4b417ec5a85b8b0c48b606c718c341745af9055`; PR #62 merge SHA: `d107cfb2b80c4165ed39e3071f8256942898ffb7`; PR #61 merge SHA: `1b8098ff00e0bb7482200b486710a5611f1e109d`.
+- PR #63 fusionada; sus siete workflows terminaron en success sobre el head exacto `6baffe8fb473128504361c28fd6ac0c0e01519d9`. PR #64 fusionada; seis workflows consultados terminaron en success sobre el head exacto `97088a2d0d599001f145f4e60f72556a66a5f8b4`: CI, Playwright E2E, Security scan, Semgrep SAST, database migration validation y project progress dashboard. No se ejecutaron tests locales; los workflows no certifican readiness de producción.
+- PR #60 está cerrada como supersedida, no fusionada. La comparación confirmó que la política de autonomía/revisión manual quedó integrada por PR #62/#63; no se reintrodujo el handoff histórico obsoleto. No hubo force-push.
+- PR #64 añadió cuatro skills de proyecto bajo `.agents/skills/`: `micro-app-auth-security`, `micro-app-postgres-testing`, `micro-app-stack-guidance` y `micro-app-skill-curation`, además de `docs/AUTOSKILLS_ADOPTION.md`. Son instrucciones locales creadas para Micro app, no bundles externos descargados.
+- AutoSkills: se inspeccionaron la web, el repositorio y entradas del registro curado. El intento de preparar un checkout temporal falló por DNS al resolver `github.com`; la CLI `npx autoskills --dry-run` no llegó a ejecutarse. No afirmar instalación externa ni crear un `skills-lock.json` ficticio. Próximo paso: repetir dry-run en un checkout con red y revisar propuesta/licencia/hash antes de instalar.
+- P0 de identidad sigue pendiente: Google sign-in + allowlist no está implementado; D1–D8 y matriz de permisos por rol siguen sin aprobación. `POST /auth/register` permanece fail-closed. La ruta de login por contraseña sigue existiendo; no afirmar que una allowlist la protege.
+- No inventar emails/dominios, configuración OAuth, bootstrap admin ni vinculación de cuentas. No tocar producción, Neon `main`, datos reales, secretos, emails, billing ni Cantina-pos. Presupuesto $0.
+- La aplicación NO está lista para producción. Backups/restauración independiente, handlers comerciales, aislamiento tenant completo, permisos aprobados, E2E reales y controles de concurrencia/idempotencia siguen pendientes. Strix sigue documentado, no instalado/ejecutado.
+- PR #64 generó una vista previa de rama por la integración automática de Cloudflare; no fue despliegue productivo ni se activó manualmente.
 
 ## Próximos pasos
-1. Crear un reemplazo limpio para PR #60 solo si se confirma que sus cambios documentales pendientes no quedaron incluidos en PR #62; comparar diffs antes de cerrar la rama antigua.
-2. Continuar análisis y pruebas aisladas de auth/sesión sin escoger D1–D8 ni permisos pendientes.
-3. Actualizar este checkpoint después de cada transición significativa con SHA y checks exactos.
+1. En un entorno con red, ejecutar `npx autoskills --dry-run`; seleccionar únicamente skills compatibles con React/Vite, Hono/Workers, TypeScript, Neon y pruebas, verificando licencia y hash. Registrar la salida real.
+2. Continuar revisión estática y pruebas aisladas de auth/sesión/autorización. No implementar decisiones D1–D8 ni permisos hasta su aprobación.
+3. Comparar `feat/neon-transaction-adapter` contra el `main` vivo sin merge ciego.
+4. Mantener handoff, plan y diario actualizados con SHA/checks exactos; no desplegar producción ni mutar Neon `main`.
 
 --- Checkpoint autoritativo — 2026-10-19, después de PR #57
 

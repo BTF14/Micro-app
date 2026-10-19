@@ -112,7 +112,7 @@ describe("Micro app API scaffold", () => {
     });
   });
 
-  it("validates registration input before accessing the database", async () => {
+  it("blocks public registration before parsing input or accessing the database", async () => {
     const response = await app.request(
       "/auth/register",
       {
@@ -133,10 +133,11 @@ describe("Micro app API scaffold", () => {
       },
     );
 
-    expect(response.status).toBe(400);
+    expect(response.status).toBe(503);
     await expect(response.json()).resolves.toMatchObject({
-      error: "INVALID_REGISTRATION",
+      error: "REGISTRATION_DISABLED",
     });
+    expect(response.headers.get("set-cookie")).toBeNull();
   });
 
   it("rejects incomplete login input without a database connection", async () => {
@@ -288,7 +289,7 @@ describe("Micro app API scaffold", () => {
     expect(response.headers.get("set-cookie")).toBeNull();
   });
 
-  it("fails registration closed when the database is unavailable", async () => {
+  it("keeps public registration disabled even when a database URL is configured", async () => {
     const response = await app.request(
       "/auth/register",
       {
@@ -311,7 +312,7 @@ describe("Micro app API scaffold", () => {
     );
 
     expect(response.status).toBe(503);
-    await expect(response.json()).resolves.toMatchObject({ error: "AUTH_UNAVAILABLE" });
+    await expect(response.json()).resolves.toMatchObject({ error: "REGISTRATION_DISABLED" });
     expect(response.headers.get("set-cookie")).toBeNull();
   });
 

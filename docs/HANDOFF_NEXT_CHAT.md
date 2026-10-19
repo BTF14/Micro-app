@@ -1,3 +1,11 @@
+## Continuidad prioritaria — AutoSkills curado (2026-10-19)
+
+- La revisión e instalación están en la rama `chore/curated-agent-skills-audit`, aún no fusionada.
+- Run oficial de preview: [39300536264](https://github.com/BTF14/Micro-app/actions/runs/39300536264), success en `--dry-run`; propuesta de 19 skills, cero instalaciones CLI.
+- Dos skills MIT fueron copiadas con sus referencias y licencias y adaptadas a la política del proyecto. No hay cambios de dependencias. El log/hash es `skill-install-log.json`; no equivale al lockfile oficial de AutoSkills.
+- Validación de hashes automatizada en `.github/workflows/skill-integrity.yml`; confirmar el resultado del PR por SHA exacto.
+- Detalle individual: `docs/AUTOSKILLS_REVIEW_2026-10-19.md`.
+
 ## Estado prioritario de continuidad — 2026-10-19, después de PR #64
 
 - Repositorio canónico: https://github.com/BTF14/Micro-app.
@@ -5,7 +13,7 @@
 - PR #63 tuvo siete workflows success en su head exacto; PR #64 tuvo seis workflows success en su head exacto: CI, Playwright E2E, Security scan, Semgrep SAST, migration validation y progress dashboard. No se ejecutaron tests locales.
 - PR #60 se cerró como supersedida tras comparar el diff: sus reglas útiles de autonomía están en PR #62/#63; el bloque de handoff histórico no se reintrodujo porque sus SHA/estados eran obsoletos. No se hizo force-push ni merge directo.
 - PR #64 añadió skills locales `.agents/skills/micro-app-auth-security/SKILL.md`, `micro-app-postgres-testing/SKILL.md`, `micro-app-stack-guidance/SKILL.md` y `micro-app-skill-curation/SKILL.md`; guía en `docs/AUTOSKILLS_ADOPTION.md`. Son skills propias del proyecto, no paquetes oficiales instalados desde AutoSkills.
-- AutoSkills se investigó, pero la CLI no se ejecutó: el shell no pudo resolver `github.com` al intentar preparar un checkout. No afirmar que la instalación oficial ocurrió ni que existe un lockfile de hashes. Repetir `npx autoskills --dry-run` en un checkout con red y revisar cada skill antes de instalar.
+- AutoSkills 0.4.1 ya se ejecutó en GitHub Actions en modo dry-run y propuso 19 skills; no instaló ninguna. La rama `chore/curated-agent-skills-audit` incorpora dos skills externas MIT (`external-accessibility` y `external-typescript-advanced-types`) con referencias/licencias, overlays y verificación de hashes. Revisar `docs/AUTOSKILLS_REVIEW_2026-10-19.md` y `skill-install-log.json`. El log es propio; no se inventó el `skills-lock.json` oficial. El workflow `skill-integrity.yml` debe pasar en el PR antes de considerar el cambio verificado.
 - P0: Google OAuth + allowlist sigue sin implementar; D1–D8 y matriz de roles pendientes. Registro fail-closed; el login por contraseña aún existe y no debe suponerse protegido por allowlist.
 - Límites: $0; sin producción, Neon `main`, datos reales, secretos, emails, billing ni Cantina-pos. La app no está lista para producción.
 

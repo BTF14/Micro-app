@@ -5,7 +5,7 @@
 - Revisión individual de las 19 propuestas: [`docs/AUTOSKILLS_REVIEW_2026-10-19.md`](AUTOSKILLS_REVIEW_2026-10-19.md). Registro JSON con decisiones, procedencia y hashes: [`skill-install-log.json`](../skill-install-log.json).
 - Dos skills externas MIT instaladas en esta rama: `external-accessibility` y `external-typescript-advanced-types`, con referencias completas, LICENSE upstream y overlays de seguridad/compatibilidad. Sin dependencias nuevas, scripts de terceros, secretos, base de datos ni despliegues.
 - `skill-install-log.json` es el log propio del proyecto; no se creó un `skills-lock.json` oficial falso. El paquete AutoSkills declara CC-BY-NC-4.0 y el manifest oficial no fue legible por el conector, por lo que sus `bundleHash/securityCheck` no se declaran verificados.
-- El nuevo workflow `.github/workflows/skill-integrity.yml` recalcula SHA-256 y Git blob SHA-1 en CI; su resultado queda pendiente hasta ejecutar Actions para esta rama/PR.
+- El workflow `.github/workflows/skill-integrity.yml` pasó en [run 39305182347](https://github.com/BTF14/Micro-app/actions/runs/39305182347) sobre el commit `35b7324c640089888caae41c07b118a0ffa467cf`: validó JSON, 19 candidatas, 2 aprobadas y 7 archivos por tamaño, SHA-256 y Git blob SHA-1. Los cambios posteriores de continuidad son solo documentación y no alteran los archivos hash-verified.
 - Límites de producto sin cambios: P0 Google OAuth/allowlist y decisiones D1–D8 siguen pendientes; la app no está lista para producción. Presupuesto $0; no tocar producción ni Neon `main`.
 
 ---

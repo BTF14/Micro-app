@@ -1,10 +1,10 @@
-## Acción humana guiada en el próximo chat — importante
+## Estado de decisiones de acceso — actualizado 2026-10-19
 
-El propietario pidió que el siguiente chat recuerde la decisión pendiente y explique exactamente qué hacer, paso a paso. **No volver a pedirle que reconstruya el contexto.** Primero leer [`docs/OWNER_APPROVAL_GUIDE.md`](OWNER_APPROVAL_GUIDE.md), que incluye un mensaje listo para copiar y un flujo de aprobación por etapas.
-
-Propuesta base a presentar, todavía no tratar como aprobada hasta confirmación explícita en el chat: beta privada; allowlist de correos exactos; Google validado en servidor con email verificado; denegación por defecto; sin registro público, autoaprovisionamiento, rol `owner` implícito ni vinculación automática de cuentas. Explicar los detalles pendientes una pregunta a la vez. No guardar correos reales ni secretos en GitHub.
-
-El registro sigue fail-closed por PR #57. No reactivarlo hasta que la política aprobada esté implementada y probada. Separar la aprobación de identidad de la matriz de permisos por rol. Sin despliegue productivo, cambios en Neon `main`, costes nuevos, datos reales ni mezcla con Cantina-pos.
+- **D1 aprobada:** beta privada; allowlist de correos exactos en variable de entorno/secreto; denegación por defecto; no guardar correos ni secretos en el repo.
+- **D2 aprobada:** crear el primer administrador mediante un procedimiento administrativo controlado y auditable, sin endpoint público de bootstrap. Esto aprueba la política, no el mecanismo técnico ni el despliegue.
+- Próximo trabajo: documentar diseño técnico de bootstrap y controles anti-duplicación, auditoría sin secretos y pruebas aisladas; mantener cerrada la inscripción pública.
+- Aún pendientes: restantes decisiones de identidad, gestión de allowlist, login por contraseña, cuentas existentes, sesiones/orígenes y matriz de permisos.
+- Restricciones invariables: no producción, no Neon `main`, no datos reales, no secretos, no costes nuevos ni mezcla con Cantina-pos.
 
 ---
 

@@ -1,3 +1,24 @@
+# PORTABLE CONTINUITY NOTICE — READ THIS FIRST
+
+This document is versioned project memory for **all AI providers, models, coding agents, IDE assistants, and new chats** working on Micro app. It does not magically synchronize into every chat: each new agent must open this repository and read these instructions, or the user must paste the continuation prompt below. Never assume another chat knows prior conversations.
+
+**Canonical repository:** https://github.com/BTF14/Micro-app  
+**Startup order:** `AGENTS.md` → `docs/CURRENT_STATE.md` → this file → `docs/HANDOFF_NEXT_CHAT.md` → domain-specific skills/docs.  
+**Freshness rule:** the historical snapshot below is not live evidence. Always verify current `main` SHA, PRs, branch heads, and Actions before acting.
+
+## Copyable prompt for any new AI/chat
+
+> You are continuing work on Micro app in https://github.com/BTF14/Micro-app. Before answering or editing, read AGENTS.md, docs/CURRENT_STATE.md, docs/AI_CONTINUITY_PROTOCOL.md, docs/HANDOFF_NEXT_CHAT.md, and the relevant .agents/skills/*/SKILL.md. Verify the live GitHub state and exact SHA; do not trust stale handoff snapshots. Keep Micro app separate from Cantina-pos, preserve the $0 budget, do not deploy production, expose secrets, use real customer data, or perform destructive/irreversible changes. Do not mutate Neon main unless the repository's production-change gate and explicit approvals are satisfied. Use the terminal whenever useful/necessary and available; if local DNS/network/tools block it, try an authorized alternative such as GitHub Actions. Make safe, scoped changes end to end, run relevant checks, inspect the diff, update the handoff/state journal, and report exact evidence. Never claim an action or test occurred without proof. Separate verified facts, assumptions, pending decisions, and blockers. The repository docs—not chat memory—are the shared continuity source.
+
+## Required cross-session procedure
+
+- At session start, read the live project instructions, current-state checkpoint, handoff, and task-specific skill/docs; then verify GitHub.
+- During work, record meaningful decisions and evidence in the repository so every provider/chat can recover context.
+- Before handoff, update the current checkpoint/handoff and relevant journal/plan/resource registry. Include branch/PR/SHA, tests and outcomes, remaining uncertainty, and the next action.
+- If the platform cannot read GitHub or load repo instructions, say so and ask for the smallest needed action: provide access or paste the prompt/docs. Do not imply that all chats have been automatically notified.
+
+---
+
 # Protocolo de continuidad para IA/chat — Micro app
 
 **Última actualización:** 2026-10-18  

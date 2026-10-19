@@ -265,4 +265,54 @@ describe("Micro app API scaffold", () => {
     expect(response.headers.get("set-cookie")).toBeNull();
   });
 
+
+  it("does not issue a session cookie when login cannot reach the database", async () => {
+    const response = await app.request(
+      "/auth/login",
+      {
+        method: "POST",
+        headers: {
+          Origin: "https://micro-app.example",
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ email: "user@example.test", password: "a-long-test-password" }),
+      },
+      {
+        FRONTEND_ORIGIN: "https://micro-app.example",
+        DATABASE_URL: "not-a-valid-database-url",
+      },
+    );
+
+    expect(response.status).toBe(500);
+    await expect(response.json()).resolves.toMatchObject({ error: "LOGIN_FAILED" });
+    expect(response.headers.get("set-cookie")).toBeNull();
+  });
+
+  it("fails registration closed when the database is unavailable", async () => {
+    const response = await app.request(
+      "/auth/register",
+      {
+        method: "POST",
+        headers: {
+          Origin: "https://micro-app.example",
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          email: "new-user@example.test",
+          displayName: "Example User",
+          password: "a-long-test-password",
+          organizationName: "Example Shop",
+        }),
+      },
+      {
+        FRONTEND_ORIGIN: "https://micro-app.example",
+        DATABASE_URL: "not-a-valid-database-url",
+      },
+    );
+
+    expect(response.status).toBe(503);
+    await expect(response.json()).resolves.toMatchObject({ error: "AUTH_UNAVAILABLE" });
+    expect(response.headers.get("set-cookie")).toBeNull();
+  });
+
 });

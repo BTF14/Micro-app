@@ -60,6 +60,24 @@ describe("withDatabaseClient", () => {
     expect(client.end).toHaveBeenCalledOnce();
   });
 
+  it("preserves the operation error if client cleanup also fails", async () => {
+    const client = makeClient();
+    const operationFailure = new Error("query failed");
+    vi.mocked(client.end).mockRejectedValue(new Error("driver cleanup detail"));
+
+    await expect(
+      withDatabaseClient(
+        databaseUrl,
+        async () => {
+          throw operationFailure;
+        },
+        () => client,
+      ),
+    ).rejects.toBe(operationFailure);
+
+    expect(client.end).toHaveBeenCalledOnce();
+  });
+
   it("reports cleanup failure after a successful operation without leaking the driver error", async () => {
     const client = makeClient();
     vi.mocked(client.end).mockRejectedValue(new Error("driver detail"));

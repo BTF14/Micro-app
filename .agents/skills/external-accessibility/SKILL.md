@@ -414,9 +414,11 @@ Prefer a live Lighthouse audit that returns failing rendered nodes directly to t
 # Lighthouse accessibility audit
 npx lighthouse https://example.com --only-categories=accessibility
 
-# axe-core
-npm install @axe-core/cli -g
+# axe-core (only if already available in the reviewed environment)
 axe https://example.com
+
+# If axe is unavailable, first check the repository's existing audit/test tooling.
+# Do not install a global package just to run this check; propose a dependency change only when justified.
 ```
 
 ### Manual testing

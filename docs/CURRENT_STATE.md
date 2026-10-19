@@ -1,6 +1,10 @@
-## Acción humana pendiente
+## Decisiones de acceso aprobadas y pendientes
 
-El propietario quiere una guía paso a paso en el próximo chat para aprobar la política de acceso sin repetir el historial. Consultar [`OWNER_APPROVAL_GUIDE.md`](OWNER_APPROVAL_GUIDE.md), con prompt listo para copiar y decisiones ordenadas. La recomendación base (aún no aprobada hasta confirmación explícita) es beta privada, allowlist de emails exactos, Google validado por servidor con email verificado, sin alta pública, sin autoaprovisionamiento/owner implícito y sin linking automático. No guardar correos ni secretos en el repo. El registro público permanece bloqueado hasta implementar y probar la política aprobada.
+- **D1 aprobada (2026-10-19):** beta privada con allowlist de correos exactos en variable de entorno/secreto; denegación por defecto; no almacenar correos reales ni secretos en GitHub.
+- **D2 aprobada (2026-10-19):** primer administrador mediante procedimiento administrativo controlado y auditable, sin endpoint público de bootstrap. La aprobación no autoriza todavía implementación runtime, uso de datos reales ni despliegue.
+- Siguen pendientes las demás decisiones de identidad, gestión operativa de la allowlist, tratamiento del login por contraseña, migración/vinculación de cuentas, sesiones/orígenes y matriz de permisos.
+- `POST /auth/register` permanece bloqueado fail-closed por PR #57; no reactivarlo hasta implementar y probar el flujo aprobado.
+- No producción, no Neon `main`, no datos reales, no secretos ni costes nuevos.
 
 ---
 
@@ -11,7 +15,7 @@ El propietario quiere una guía paso a paso en el próximo chat para aprobar la 
 - PR #58 fusionada: https://github.com/BTF14/Micro-app/pull/58; actualizó continuidad y checklist tras el bloqueo fail-closed del registro.
 - PR #57 sigue fusionada: `POST /auth/register` valida Origin y devuelve `503 REGISTRATION_DISABLED` antes de leer credenciales o acceder a DB. El head exacto de PR #57 y los checks consultados del merge SHA terminaron en success; no se ejecutaron tests locales.
 - No hay PR abiertas en la última consulta.
-- Issue P0 #53 sigue abierto: Google sign-in + allowlist y D1–D8 no están implementados/aprobados. Mantener el registro cerrado.
+- Issue P0 #53 sigue abierto: Google sign-in + allowlist aún no están implementados; D1 y D2 ya están aprobadas, pero otras decisiones de identidad y la matriz de permisos siguen pendientes. Mantener el registro cerrado.
 - Se corrigió un error editorial detectado en `docs/PRODUCTION_READINESS.md`: una secuencia literal `\\n` se mostraba en lugar de un salto de línea real. Esta corrección es documental.
 - `feat/neon-transaction-adapter` sigue divergida (14 ahead / 76 behind según comparación previa); no fusionar la rama completa sin rescatar cambios concretos.
 - Matriz de permisos por rol, endpoints comerciales, aislamiento tenant completo, E2E real, idempotencia/concurrencia, requisitos fiscales y backup/restauración independiente siguen pendientes. La app NO está lista para producción.
@@ -19,7 +23,7 @@ El propietario quiere una guía paso a paso en el próximo chat para aprobar la 
 
 ## Siguiente paso
 1. Mantener bloqueado el registro hasta aprobar e implementar Google sign-in + allowlist.
-2. Pedir aprobación humana de D1–D8 y de la matriz de permisos; las propuestas son recomendaciones, no decisiones tomadas.
+2. Continuar con las decisiones de identidad restantes y la matriz de permisos; D1 y D2 ya están aprobadas, pero las aprobaciones no equivalen a implementación ni despliegue.
 3. Continuar trabajo de bajo riesgo con PR pequeñas y checks sobre el SHA exacto.
 4. No declarar producción lista hasta cerrar los gates de `docs/PRODUCTION_READINESS.md`.
 

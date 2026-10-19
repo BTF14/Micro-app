@@ -1,3 +1,14 @@
+# Procedimiento operativo — revisiones de IA limitadas por cuota (2026-10-19)
+
+- **PR #60**: https://github.com/BTF14/Micro-app/pull/60 — head observado antes de esta actualización: `b4b3b31b4a61b82a5b2a290b0633c6d0489cf49a`. Codex reportó límite de uso. Su resumen apunta a una revisión previa del SHA `1b7f576c38aa869ca8c17b749c7c35d473404ef8`, con indicadores de hallazgos no resueltos, pero no se recuperaron comentarios inline ni hilos que expliquen esos hallazgos.
+- **PR #61**: https://github.com/BTF14/Micro-app/pull/61 — head observado antes de esta actualización: `2d745c61476adac600345f166c2d42a18adc42a6`. Codex también falló por límite; el resumen se refiere al SHA previo `f27cff56577af96f24c6b5445e6c426ae3d323e9`. No se recuperaron hilos ni comentarios inline de hallazgos.
+- En ambas PR se observó un comentario de Cloudflare Pages con preview exitosa; esto no es producción ni sustituye CI.
+- Los workflows consultados para los SHA anteriores de ambas PR seguían en `queued`; deben consultarse de nuevo para el head actual. Los estados combinados no mostraron checks individuales.
+- **Regla de actuación:** fallo por cuota = revisión incompleta, nunca aprobación. No inferir defectos concretos desde el resumen ni declarar resueltos hallazgos que no se pueden ver. Revisar el diff manualmente, rastrear comportamiento/tests, registrar evidencia y consultar CI/SAST/E2E para el SHA exacto. No repetir intentos mientras siga el límite ni comprar capacidad sin autorización.
+- **Cambios en curso:** se añadió esta política a `AGENTS.md` en la rama de PR #60; esta actualización del handoff debe confirmarse por SHA después del commit. No fusionar ninguna PR mientras checks obligatorios estén pendientes/no verificados o queden hallazgos materiales sin aclarar.
+
+---
+
 # Regla prioritaria para cualquier IA/chat — autonomía y continuidad (2026-10-19)
 
 **Política normativa:** consultar `docs/CONSTITUTION.md` §9A y `AGENTS.md` antes de actuar. La IA debe aplicar el principio de autonomía técnica y responsabilidad de ejecución: tomar decisiones técnicas rutinarias, implementar y verificar el trabajo autorizado, evitar delegar al usuario tareas realizables con las herramientas disponibles y mantener el conocimiento en el repositorio.

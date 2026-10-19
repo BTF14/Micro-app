@@ -135,13 +135,6 @@ const suite = describe.skipIf(!databaseAvailable)("authentication routes against
     expect(me.organizations).toHaveLength(1);
 
     await cleanupClient.query("UPDATE app_users SET is_active = false WHERE email = $1", [email]);
-    const inactiveUserLogin = await app.fetch(new Request("https://api.example/auth/login", {
-      method: "POST",
-      headers: { ...originHeaders, "CF-Connecting-IP": crypto.randomUUID() },
-      body: JSON.stringify({ email, password }),
-    }), { DATABASE_URL: databaseUrl, FRONTEND_ORIGIN: frontendOrigin });
-    expect(inactiveUserLogin.status).toBe(401);
-    expect(inactiveUserLogin.headers.get("set-cookie")).toBeNull();
     const inactiveUserSession = await app.fetch(new Request("https://api.example/auth/me", {
       headers: { Cookie: cookiePair },
     }), { DATABASE_URL: databaseUrl, FRONTEND_ORIGIN: frontendOrigin });
@@ -218,6 +211,16 @@ const suite = describe.skipIf(!databaseAvailable)("authentication routes against
     }), { DATABASE_URL: databaseUrl, FRONTEND_ORIGIN: frontendOrigin });
     expect(expiredSessionResponse.status).toBe(401);
     expect(expiredSessionResponse.headers.get("set-cookie")).toContain("microapp_session=");
+
+    // Keep this email-based rate-limit check last so it cannot interfere with later valid logins.
+    await cleanupClient.query("UPDATE app_users SET is_active = false WHERE email = $1", [email]);
+    const inactiveUserLogin = await app.fetch(new Request("https://api.example/auth/login", {
+      method: "POST",
+      headers: { ...originHeaders, "CF-Connecting-IP": crypto.randomUUID() },
+      body: JSON.stringify({ email, password }),
+    }), { DATABASE_URL: databaseUrl, FRONTEND_ORIGIN: frontendOrigin });
+    expect(inactiveUserLogin.status).toBe(401);
+    expect(inactiveUserLogin.headers.get("set-cookie")).toBeNull();
   });
 });
 

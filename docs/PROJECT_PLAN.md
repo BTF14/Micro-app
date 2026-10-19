@@ -1,8 +1,17 @@
+## Checkpoint de continuidad — skills externas curadas (2026-10-19)
+
+- Revisión de las 19 candidatas: `docs/AUTOSKILLS_REVIEW_2026-10-19.md`.
+- Dos skills externas MIT instaladas en rama de revisión, sin dependencias nuevas: accesibilidad y TypeScript advanced types.
+- Log de decisiones/hashes: `skill-install-log.json` (registro propio, no `skills-lock.json` oficial). Validación CI en `scripts/validate-skill-install-log.mjs` y `.github/workflows/skill-integrity.yml`; pendiente de resultado para el PR.
+- El preview AutoSkills run 39300536264 fue dry-run únicamente. No se afirma instalación del CLI ni verificación de su manifest SHA-256.
+
+---
+
 ## Checkpoint de continuidad — 2026-10-19 después de PR #64
 
 - PR #64 fusionada por squash; merge SHA `f15e3b0da415b8f31641a81ed8a883deb7fcfc5f`. PR #63 merge SHA `b4b417ec5a85b8b0c48b606c718c341745af9055`.
 - PR #64 integró cuatro skills locales bajo `.agents/skills/` y `docs/AUTOSKILLS_ADOPTION.md`. No son paquetes externos instalados por AutoSkills.
-- AutoSkills CLI no llegó a ejecutarse porque el intento de checkout falló al resolver `github.com`; no hay `skills-lock.json` generado ni hashes externos declarados. Próximo paso: `npx autoskills --dry-run` en un entorno con red, revisar tecnologías detectadas, licencia y hash, y elegir solo skills aplicables.
+- AutoSkills CLI 0.4.1 se ejecutó en GitHub Actions y el dry-run fue success para SHA `09f17020f7543439ed822726419de9777d34fa08`; propuso 19 skills y no instaló ninguna. La revisión individual está en `docs/AUTOSKILLS_REVIEW_2026-10-19.md`; dos skills MIT se instalaron en la rama `chore/curated-agent-skills-audit` y el log/hash propio es `skill-install-log.json`. No se creó un `skills-lock.json` oficial falso; el manifest oficial no se pudo verificar a través del conector. Pendiente: comprobar `skill-integrity.yml` en CI del PR.
 - PR #60 está cerrada como supersedida; la política útil se integró en #62/#63. No force-push.
 - P0 sigue pendiente: Google sign-in + allowlist, D1–D8 y matriz de permisos requieren aprobación. Mantener registro fail-closed y no asumir que el login por contraseña respeta allowlist.
 - No se ejecutaron tests locales. Seis workflows consultados para el head exacto de PR #64 terminaron en success. App no lista para producción; coste $0, sin producción ni Neon `main`.

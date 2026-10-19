@@ -36,9 +36,10 @@
         {
           "path": ".agents/skills/external-accessibility/SKILL.md",
           "sourceBlobSha1": "22a244430f890fe44cbd7a50590d5cbf8528c77b",
-          "installedBlobSha1": "22a244430f890fe44cbd7a50590d5cbf8528c77b",
-          "sha256": "267fb2a0707d6142f2871f22688203a42ba21291a2aa200fb740936e41362b5d",
-          "bytes": 14265
+          "installedBlobSha1": "a7858c50921b925d4d69b33a49058953fc22c8f1",
+          "sha256": "c938dc947a4c8df8c4bcbf0676d5ee1a5602de9f1fe280290c5bd1f8f52509c9",
+          "bytes": 14757,
+          "modification": "Added project safety overlay and replaced a dangling relative link with the upstream best-practices URL."
         },
         {
           "path": ".agents/skills/external-accessibility/references/A11Y-PATTERNS.md",
@@ -64,7 +65,11 @@
       ],
       "status": "installed-on-branch",
       "dependencyChanges": 0,
-      "scriptsExecuted": 0
+      "scriptsExecuted": 0,
+      "modifications": [
+        "Added Micro app safety overlay: prefer existing tools, no unapproved global/new dependencies, and no production audits.",
+        "Replaced an unavailable sibling-skill link with the verified upstream best-practices URL."
+      ]
     },
     {
       "name": "typescript-advanced-types",
@@ -77,9 +82,10 @@
         {
           "path": ".agents/skills/external-typescript-advanced-types/SKILL.md",
           "sourceBlobSha1": "5057af799047bbae1a066ffead0b6e298f0ef7ff",
-          "installedBlobSha1": "5057af799047bbae1a066ffead0b6e298f0ef7ff",
-          "sha256": "c32101c65134d94ef1a3305ef486020b57be6408f97ed952c9c560e3fe04188d",
-          "bytes": 8035
+          "installedBlobSha1": "70ff74a5de45218375b926628edecd320cb20703",
+          "sha256": "9b2d7cca5586673bad18614302d2e4e11153017e84e5e8f873b10179e39ff92f",
+          "bytes": 8339,
+          "modification": "Added project toolchain/dependency safety overlay."
         },
         {
           "path": ".agents/skills/external-typescript-advanced-types/references/details.md",
@@ -98,7 +104,10 @@
       ],
       "status": "installed-on-branch",
       "dependencyChanges": 0,
-      "scriptsExecuted": 0
+      "scriptsExecuted": 0,
+      "modifications": [
+        "Added Micro app compatibility overlay: use the pinned TypeScript toolchain and avoid unnecessary dependencies."
+      ]
     }
   ],
   "candidates": [
@@ -257,7 +266,7 @@
   ],
   "validation": {
     "sourceCommitPinned": true,
-    "installedFilesMatchedPinnedGitBlobSha1": true,
+    "installedFilesMatchedPinnedGitBlobSha1": "All unchanged bundle/license files match their pinned source blob SHA-1; two SKILL.md files intentionally differ because of documented project-specific safety overlays.",
     "installedFilesSha256Recorded": true,
     "officialRegistryManifestSha256Verified": false,
     "skillFilesReviewedForScriptsAndDependencyChanges": true,

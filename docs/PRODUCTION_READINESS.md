@@ -47,7 +47,8 @@ Este archivo es la fuente de datos para el panel de avance. Un ítem solo puede 
 ### P0 — bloqueantes
 - [x] CI compila y ejecuta pruebas automatizadas en PostgreSQL desechable para un SHA verificado.
 - [x] Validación de migración en base efímera en el SHA verificado.
-- [x] El registro público está bloqueado fail-closed y probado sin escrituras ni cookie (PR #57; SHA merge `cb4b9b09ad3ff0f1bacd34f23ee653a5477cddfe`).\n- [ ] Google sign-in + allowlist, identidad y pruebas completas de sesión/error de base de datos.
+- [x] El registro público está bloqueado fail-closed y probado sin escrituras ni cookie (PR #57; SHA merge `cb4b9b09ad3ff0f1bacd34f23ee653a5477cddfe`).
+- [ ] Google sign-in + allowlist, identidad y pruebas completas de sesión/error de base de datos.
 - [ ] Autorización multiempresa y aislamiento comprobados en toda la API.
 - [ ] Flujos reales de venta/inventario con transacciones, idempotencia y concurrencia.
 - [ ] Gestión de errores, rate limiting y protección contra abuso revisadas.

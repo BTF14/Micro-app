@@ -1,3 +1,11 @@
+## 2026-10-19 — Corrección de formato en checklist de preparación
+
+- Se corrigió en `docs/PRODUCTION_READINESS.md` un `\\n` literal que unía visualmente el criterio ya verificado del bloqueo de registro con el siguiente criterio pendiente de Google sign-in.
+- El cambio es solo documental: no altera el estado de los gates ni la preparación para producción.
+- PR: https://github.com/BTF14/Micro-app/pull/61 — abierta, pendiente de checks; no fusionada.
+- Verificación: releída la versión de la rama y confirmado que el separador es un salto de línea real y que el `\\n` literal ya no aparece en ese punto.
+- Sin cambios en runtime, base de datos, secretos, datos reales, Neon ni despliegues.
+
 ## 2026-10-19 — Registro público bloqueado fail-closed (PR #57)
 
 - `main`: `cb4b9b09ad3ff0f1bacd34f23ee653a5477cddfe`; PR #57 fusionada.

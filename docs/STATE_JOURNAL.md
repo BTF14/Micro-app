@@ -428,3 +428,11 @@ Este diario es append-only en cuanto a historia: no borrar hitos antiguos; añad
 - PR #60 sigue abierta con conflicto; no forzar ni fusionar. Antes de sustituirla, comparar sus cambios con lo que ya quedó integrado en PR #62.
 - P0 continúa pendiente: Google sign-in, allowlist, D1–D8 y matriz de permisos requieren decisiones aprobadas. El registro sigue bloqueado; el login por contraseña aún existe y no debe asumirse que la política de acceso final ya está aplicada.
 - Coste $0; no despliegues productivos, cambios en Neon `main`, emails, billing ni Cantina-pos.
+
+
+## 2026-10-19 — Reconciliación de la política detallada de autonomía
+
+- Comparé el diff original de PR #60 con lo que quedó integrado en PR #62. PR #62 portó el núcleo de la política, pero no todo el detalle operativo original de `AGENTS.md` y `docs/CONSTITUTION.md`.
+- PR #63 amplía esos criterios sin reintroducir los checkpoints históricos obsoletos del handoff original: decisiones técnicas rutinarias por defecto, pedir solo la acción mínima ante bloqueos reales, verificación del SHA exacto y procedimiento de revisión manual cuando Codex no esté disponible.
+- La PR #60 original permanece abierta y en conflicto; no se hace force-push ni merge directo. La revisión de PR #63 y sus checks siguen pendientes.
+- No se modificó runtime ni autenticación; no se tocó base de datos, Neon, secretos, datos reales, producción o billing. Coste $0.

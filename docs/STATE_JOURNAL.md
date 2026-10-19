@@ -1,3 +1,12 @@
+## 2026-10-19 — Incidencia de asignación de runners durante la última validación de skills
+
+- PR [#68](https://github.com/BTF14/Micro-app/pull/68), rama `chore/curated-agent-skills-audit`, permanece abierta y no fusionada.
+- Último run de integridad con runner asignado y success: [39305555253](https://github.com/BTF14/Micro-app/actions/runs/39305555253), commit `86304ffd4d45fbd9902d0344228b9e9f96b9cf1c`; verificó el JSON y hashes/tamaños de los siete archivos instalados.
+- Los intentos posteriores [39305676786](https://github.com/BTF14/Micro-app/actions/runs/39305676786) y [39305905625](https://github.com/BTF14/Micro-app/actions/runs/39305905625) terminaron antes de ejecutar pasos: `runner_id=0`, `steps=[]`, sin logs. Esto no da resultado sobre los asserts; la última edición del validador necesita una ejecución nueva con runner asignado.
+- Las skills instaladas y sus archivos no cambiaron. No fusionar hasta que la versión actual del workflow de integridad pase; no afirmar que los últimos checks están verdes.
+
+---
+
 ## 2026-10-19 — Revisión individual e instalación curada de skills externas
 
 - Rama: `chore/curated-agent-skills-audit`; no fusionada.

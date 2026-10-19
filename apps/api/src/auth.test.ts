@@ -27,6 +27,9 @@ describe("password hashing", () => {
     expect(await verifyPassword(password, "pbkdf2-sha256$310000$%%%$AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA")).toBe(false);
     expect(await verifyPassword(password, "pbkdf2-sha256$310000$ZHVtbXktc2FsdC1mb3Itbm90LWEtc2VjcmV0$%%%")).toBe(false);
     expect(await verifyPassword(password, "pbkdf2-sha256$310000$c2hvcnQ$AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA")).toBe(false);
+    const validHash = await hashPassword(password);
+    expect(await verifyPassword(password, `${validHash}$unexpected`)).toBe(false);
+    expect(await verifyPassword(password, validHash.replace("$310000$", "$0310000$"))).toBe(false);
   });
 });
 

@@ -1,6 +1,6 @@
 import { deleteCookie, getCookie, setCookie } from "hono/cookie";
 import type { Context, Hono } from "hono";
-import { withDatabaseClient, withDatabaseTransaction, type DatabaseClient } from "./database";
+import { withDatabaseClient, type DatabaseClient } from "./database";
 import type { Bindings } from "./bindings";
 
 type AppContext = Context<{ Bindings: Bindings }>;

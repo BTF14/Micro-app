@@ -271,14 +271,14 @@
     "officialRegistryManifestSha256Verified": false,
     "dependencyChanges": 0,
     "localTestsRun": false,
-    "ciIntegrityCheck": "success on commit 35b7324c640089888caae41c07b118a0ffa467cf; run 39305182347. This run validated the log and installed file hashes; later changes to continuity documents did not modify the hash-checked skill files.",
+    "ciIntegrityCheck": "success on commit 86304ffd4d45fbd9902d0344228b9e9f96b9cf1c; run 39305555253. This run validated the log and all installed file hashes; later changes to continuity documents do not modify the hash-checked files.",
     "notes": "Candidate-level source/license/compatibility triage was performed for all 19 SKILL.md proposals. Complete companion bundles were copied and hash-verified only for the two installed skills; rejected/deferred bundles were not fully downloaded or audited file-by-file. No third-party scripts were executed. The AutoSkills registry manifest was not readable, so its official bundleHash/securityCheck metadata is unverified.",
     "selectedBundlesReviewedForScriptsAndDependencySuggestions": true,
     "all19FullBundlesSecurityReviewed": false,
     "lastIntegrityWorkflowRun": {
-      "runId": 39305182347,
-      "runUrl": "https://github.com/BTF14/Micro-app/actions/runs/39305182347",
-      "testedCommit": "35b7324c640089888caae41c07b118a0ffa467cf",
+      "runId": 39305555253,
+      "runUrl": "https://github.com/BTF14/Micro-app/actions/runs/39305555253",
+      "testedCommit": "86304ffd4d45fbd9902d0344228b9e9f96b9cf1c",
       "conclusion": "success",
       "steps": [
         "Checkout",

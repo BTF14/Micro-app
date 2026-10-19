@@ -36,10 +36,10 @@
         {
           "path": ".agents/skills/external-accessibility/SKILL.md",
           "sourceBlobSha1": "22a244430f890fe44cbd7a50590d5cbf8528c77b",
-          "installedBlobSha1": "a7858c50921b925d4d69b33a49058953fc22c8f1",
-          "sha256": "c938dc947a4c8df8c4bcbf0676d5ee1a5602de9f1fe280290c5bd1f8f52509c9",
-          "bytes": 14850,
-          "modification": "Added project safety overlay and replaced a dangling relative link with the upstream best-practices URL."
+          "installedBlobSha1": "92d4389a26c8d108ec8a9055e996c777eda11e1a",
+          "sha256": "37b8691fa403bcb8ca604c970ff531fd79a660fda41d9040c80036cf0dd7ab4e",
+          "bytes": 15068,
+          "modification": "Added project safety overlay, replaced a dangling relative link with the upstream best-practices URL, and removed an upstream global-install recommendation that conflicted with project policy."
         },
         {
           "path": ".agents/skills/external-accessibility/references/A11Y-PATTERNS.md",
@@ -68,7 +68,8 @@
       "scriptsExecuted": 0,
       "modifications": [
         "Added Micro app safety overlay: prefer existing tools, no unapproved global/new dependencies, and no production audits.",
-        "Replaced an unavailable sibling-skill link with the verified upstream best-practices URL."
+        "Replaced an unavailable sibling-skill link with the verified upstream best-practices URL.",
+        "Removed the upstream global npm-install instruction; the audit CLI must already be available or receive a separately justified dependency review."
       ]
     },
     {

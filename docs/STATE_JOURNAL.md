@@ -5,7 +5,8 @@
 - **Política:** resolver decisiones técnicas rutinarias sin aprobación repetida; inspeccionar estado real; implementar, probar, revisar seguridad/regresiones, documentar y mantener continuidad. Pedir al propietario solo acciones que requieran su autoridad o una capacidad/acceso realmente ausente.
 - **Límites:** no ampliar permisos de producción, Neon `main`, datos reales, gastos, secretos ni acciones destructivas/sensibles. Mantener los gates existentes y no declarar éxito sin evidencia del SHA exacto.
 - **Verificación de este checkpoint:** se confirmó lectura de los cinco archivos en `main` antes de crear la rama. La actualización documental aún requiere revisión del diff, PR y comprobación de CI; no se declara fusionada ni verificada como integrada.
-- **Siguiente acción:** comprobar los cinco archivos en la rama, abrir una PR documental separada y revisar los checks de su head SHA.
+- **PR creada:** https://github.com/BTF14/Micro-app/pull/60, rama `docs/ai-autonomy-governance` hacia `main`.
+- **Siguiente acción:** revisar los checks del head SHA más reciente, resolver cualquier fallo/hallazgo y no fusionar hasta tener evidencia suficiente.
 
 ## 2026-10-19 — Registro público bloqueado fail-closed (PR #57)
 

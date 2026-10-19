@@ -1,23 +1,22 @@
-# Checkpoint autoritativo — 2026-10-19, continuidad de PR #60–#62
+# Checkpoint autoritativo — 2026-10-19, después de PR #62
 
 - Repositorio canónico: https://github.com/BTF14/Micro-app.
-- `main` base SHA observado en PR #62: `1b8098ff00e0bb7482200b486710a5611f1e109d` (merge reportado de PR #61). Revalidar `main` en GitHub antes de cualquier operación posterior.
-- PR #61 fusionada: https://github.com/BTF14/Micro-app/pull/61. Cambio documental para corregir un `\\n` literal en la checklist; no implica despliegue productivo.
-- PR #60 sigue abierta y tiene conflicto (`mergeable=false`), head observado `af8479000e1e677bd84e0e11bf02cdb6d548315e`. No force-push ni merge. Siete workflows consultados para ese SHA terminaron en success; Codex falló por cuota sobre SHA antiguo y no hay hilos/reviews formales recuperados.
-- PR #62: https://github.com/BTF14/Micro-app/pull/62. Rama `docs/ai-autonomy-governance-rebased` recrea los cambios de gobernanza sobre la base actual para evitar la rama conflictiva. En el head `ff1d6926da478c2ad0c38e2aca7d29b8903fca76`, los siete workflows consultados terminaron `success`: CI, Playwright E2E, SDD/agent docs, progress dashboard, Security scan, Semgrep SAST y migration validation. GitHub reportó `mergeable=true`. No se ejecutaron pruebas locales; los checks deben volver a verificarse si cambia el head.
-- P0: Google sign-in + allowlist no está implementado; D1–D8 y matriz de permisos por rol están pendientes de aprobación. `POST /auth/register` debe permanecer fail-closed mientras no exista política aprobada, implementación y pruebas.
+- `main` incluye el merge squash de PR #62: `d107cfb2b80c4165ed39e3071f8256942898ffb7`. PR #62 confirma ese merge SHA; revalidar la rama antes de operaciones posteriores.
+- PR #61 fusionada: https://github.com/BTF14/Micro-app/pull/61; merge SHA reportado `1b8098ff00e0bb7482200b486710a5611f1e109d`.
+- PR #62 fusionada: https://github.com/BTF14/Micro-app/pull/62. Head final verificado `9f288f68b6012f39b8ec7928b07a140b869e63cb`; siete workflows terminaron `success`: CI, Playwright E2E, SDD/agent docs, progress dashboard, Security scan, Semgrep SAST y migration validation. Merge solo documental, sin cambios de runtime.
+- PR #60 sigue abierta con conflicto (`mergeable=false`), head observado `af8479000e1e677bd84e0e11bf02cdb6d548315e`. No force-push ni merge. Siete workflows consultados para ese SHA terminaron success, pero la rama tiene conflicto; no integrarla directamente.
+- P0: Google sign-in + allowlist no está implementado; D1–D8 y matriz de permisos por rol siguen pendientes de aprobación. `POST /auth/register` permanece fail-closed. La ruta de login por contraseña sigue existiendo y aún no hay una política de acceso/allowlist aprobada e implementada que cierre el diseño de identidad; no declarar producción lista.
 - La rama `feat/neon-transaction-adapter` sigue divergida y no debe fusionarse completa a ciegas. Rescatar solo cambios concretos tras comparar con `main` vigente.
 - Aplicación NO lista para producción. Backups/restauración independiente, handlers comerciales, aislamiento tenant completo, permisos aprobados, E2E reales y controles de concurrencia/idempotencia siguen pendientes.
 - Límites: presupuesto $0; no producción, Neon `main` sensible, datos reales, secretos, emails, billing ni mezcla con Cantina-pos. Strix está documentado, no instalado ni ejecutado.
+- No se ejecutaron pruebas locales en esta sesión; los workflows de PR no sustituyen validación funcional independiente ni restauración de backups.
 
 ## Próximos pasos
-1. Revalidar PR #62 head, diff y checks requeridos; resolver defectos concretos antes de integrar.
-2. Después de merge, actualizar este checkpoint con el SHA real de `main` y checks verificados para el merge commit.
-3. Continuar análisis y pruebas aisladas de auth/sesión sin inventar D1–D8 ni permisos.
+1. Crear un reemplazo limpio para PR #60 solo si se confirma que sus cambios documentales pendientes no quedaron incluidos en PR #62; comparar diffs antes de cerrar la rama antigua.
+2. Continuar análisis y pruebas aisladas de auth/sesión sin escoger D1–D8 ni permisos pendientes.
+3. Actualizar este checkpoint después de cada transición significativa con SHA y checks exactos.
 
----
-
-# Checkpoint autoritativo — 2026-10-19, después de PR #57
+--- Checkpoint autoritativo — 2026-10-19, después de PR #57
 
 - Repositorio: https://github.com/BTF14/Micro-app
 - `main`: `cb4b9b09ad3ff0f1bacd34f23ee653a5477cddfe` — https://github.com/BTF14/Micro-app/commit/cb4b9b09ad3ff0f1bacd34f23ee653a5477cddfe.

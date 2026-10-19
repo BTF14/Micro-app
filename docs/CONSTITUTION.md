@@ -96,6 +96,19 @@ IVA, IGTF, facturación, numeración y conservación documental requieren fuente
 - No almacenar secretos ni datos de clientes en memoria auxiliar.
 - Referencias: [evaluación](GENTLEMAN_PROGRAMMING_EVALUATION.md), [implementación](GENTLEMAN_IMPLEMENTATION.md), [modelo operativo](AGENT_OPERATING_MODEL.md).
 
+
+## 9A. Autonomía técnica y continuidad
+
+La IA debe completar el trabajo técnico autorizado de principio a fin: inspeccionar el estado real, decidir opciones rutinarias y reversibles, implementar, probar, revisar y documentar. Favorecer la solución segura y mantenible con coste total de $0; no pedir al propietario decisiones técnicas que puedan resolverse con evidencia.
+
+La autonomía no concede autorización para cambiar requisitos de producto, políticas de acceso, desplegar producción, operar sobre datos reales, modificar Neon `main`, gastar dinero ni ejecutar acciones destructivas/irreversibles. Respetar los gates y aprobaciones vigentes.
+
+Antes de cerrar trabajo, verificar SHA y diff exactos, pruebas aplicables, seguridad/regresiones y checks requeridos para ese SHA. Separar recomendado, aprobado, implementado y verificado. Mantener handoff y diario para continuidad entre chats; nunca afirmar éxito sin evidencia.
+
+### Revisión manual cuando un revisor IA no esté disponible
+
+Una cuota agotada o fallo de servicio significa revisión incompleta, no aprobación ni hallazgo confirmado. Recuperar comentarios e hilos disponibles; no inferir detalles desde resúmenes. Revisar el diff completo y el código/pruebas relacionados, registrar hallazgos concretos con evidencia y ejecutar checks disponibles. No pagar ni repetir intentos mientras persista el límite. No fusionar con checks requeridos pendientes/no verificados o hallazgos materiales sin resolver.
+
 ## 10. Referencias POS
 
 OSPOS, NexoPOS, Lakasir y POSNext fueron investigados como inspiración funcional para criterios de caja, catálogo, inventario, roles, devoluciones, concurrencia e impresión. No copiar código ni asumir licencias/seguridad aprobadas. Ver [INSPIRATION.md](INSPIRATION.md) y [POS_REFERENCE_MATRIX.md](POS_REFERENCE_MATRIX.md).
@@ -137,16 +150,3 @@ Cada checkpoint significativo actualiza plan, diario y handoff. Ante contradicci
 ## 14. Backups y recuperación
 
 Toda IA debe seguir [BACKUP_AND_RECOVERY.md](BACKUP_AND_RECOVERY.md). Antes de una mutación real en Neon `main`, confirmar el destino, el impacto y una ruta de recuperación comprobable. El objetivo es backup diario automático independiente y revisión cada 15 días, sin coste; hasta que exista evidencia de ejecución y restauración, se considera pendiente y no debe anunciarse como activo. Nunca guardar dumps o datos comerciales en Git.
-
-
-## 9A. Autonomía técnica y continuidad
-
-La IA debe completar el trabajo técnico autorizado de principio a fin: inspeccionar el estado real, decidir opciones rutinarias y reversibles, implementar, probar, revisar y documentar. Favorecer la solución segura y mantenible con coste total de $0; no pedir al propietario decisiones técnicas que puedan resolverse con evidencia.
-
-La autonomía no concede autorización para cambiar requisitos de producto, políticas de acceso, desplegar producción, operar sobre datos reales, modificar Neon `main`, gastar dinero ni ejecutar acciones destructivas/irreversibles. Respetar los gates y aprobaciones vigentes.
-
-Antes de cerrar trabajo, verificar SHA y diff exactos, pruebas aplicables, seguridad/regresiones y checks requeridos para ese SHA. Separar recomendado, aprobado, implementado y verificado. Mantener handoff y diario para continuidad entre chats; nunca afirmar éxito sin evidencia.
-
-### Revisión manual cuando un revisor IA no esté disponible
-
-Una cuota agotada o fallo de servicio significa revisión incompleta, no aprobación ni hallazgo confirmado. Recuperar comentarios e hilos disponibles; no inferir detalles desde resúmenes. Revisar el diff completo y el código/pruebas relacionados, registrar hallazgos concretos con evidencia y ejecutar checks disponibles. No pagar ni repetir intentos mientras persista el límite. No fusionar con checks requeridos pendientes/no verificados o hallazgos materiales sin resolver.

@@ -1,3 +1,10 @@
+## Checkpoint de continuidad — 2026-10-19
+
+- PR #61 está fusionada; PR #60 no pudo integrarse directamente por conflicto con `main`. Se está rebasando su cambio documental mediante una rama nueva basada en `main`, sin force-push.
+- La revisión Codex de PR #60 falló por cuota para un SHA antiguo; no se recuperaron hilos inline. La revisión manual debe tratarse como evidencia independiente, no como aprobación automática.
+- P0: Google sign-in + allowlist requiere aprobación de D1–D8 y de la matriz de permisos. Mantener el registro fail-closed mientras la política siga pendiente.
+- Límites: $0, sin producción, sin mutaciones de Neon `main`, sin datos reales/secretos, sin emails y sin mezclar Cantina-pos.
+
 ## Checkpoint vigente — 2026-10-19 después de PR #57
 
 Main verificado: `cb4b9b09ad3ff0f1bacd34f23ee653a5477cddfe`. PR #57 bloquea fail-closed el registro público mientras se aprueba la política de identidad. Checks del head exacto `71d3e6d3ffe625b12807e9942ddd261e222cf093` y los checks consultados del merge SHA terminaron en success; no se ejecutaron tests locales.

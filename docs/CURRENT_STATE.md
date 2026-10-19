@@ -1,3 +1,24 @@
+# Checkpoint autoritativo — 2026-10-19, después de PR #58
+
+- Repositorio: https://github.com/BTF14/Micro-app
+- `main` verificado: `0a36f234d7a590905527b9cb9268bba3791215f5` — https://github.com/BTF14/Micro-app/commit/0a36f234d7a590905527b9cb9268bba3791215f5.
+- PR #58 fusionada: https://github.com/BTF14/Micro-app/pull/58; actualizó continuidad y checklist tras el bloqueo fail-closed del registro.
+- PR #57 sigue fusionada: `POST /auth/register` valida Origin y devuelve `503 REGISTRATION_DISABLED` antes de leer credenciales o acceder a DB. El head exacto de PR #57 y los checks consultados del merge SHA terminaron en success; no se ejecutaron tests locales.
+- No hay PR abiertas en la última consulta.
+- Issue P0 #53 sigue abierto: Google sign-in + allowlist y D1–D8 no están implementados/aprobados. Mantener el registro cerrado.
+- Se corrigió un error editorial detectado en `docs/PRODUCTION_READINESS.md`: una secuencia literal `\\n` se mostraba en lugar de un salto de línea real. Esta corrección es documental.
+- `feat/neon-transaction-adapter` sigue divergida (14 ahead / 76 behind según comparación previa); no fusionar la rama completa sin rescatar cambios concretos.
+- Matriz de permisos por rol, endpoints comerciales, aislamiento tenant completo, E2E real, idempotencia/concurrencia, requisitos fiscales y backup/restauración independiente siguen pendientes. La app NO está lista para producción.
+- Strix (`https://github.com/usestrix/strix.git`) continúa documentado solamente, no instalado ni ejecutado. Presupuesto objetivo $0; sin secretos, emails, billing, datos reales, mutaciones de Neon `main`, despliegue productivo ni mezcla con Cantina-pos.
+
+## Siguiente paso
+1. Mantener bloqueado el registro hasta aprobar e implementar Google sign-in + allowlist.
+2. Pedir aprobación humana de D1–D8 y de la matriz de permisos; las propuestas son recomendaciones, no decisiones tomadas.
+3. Continuar trabajo de bajo riesgo con PR pequeñas y checks sobre el SHA exacto.
+4. No declarar producción lista hasta cerrar los gates de `docs/PRODUCTION_READINESS.md`.
+
+---
+
 # Checkpoint autoritativo — 2026-10-19, después de PR #57
 
 - Repositorio: https://github.com/BTF14/Micro-app

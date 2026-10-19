@@ -35,6 +35,15 @@ Before planning or editing:
 - If documents conflict, verify the code and live GitHub evidence, resolve the contradiction, and document the correction.
 - Do not install Gentleman-Programming tools merely because they are documented. Follow `docs/GENTLEMAN_PROGRAMMING_EVALUATION.md`, confirm licence, dependencies, provider requirements, security and $0 cost, and test in isolation first.
 
+## Autonomous execution and decision policy
+
+- Treat `docs/CONSTITUTION.md` §9A as mandatory project policy. Work as the technical owner for authorized engineering tasks: inspect, decide, implement, test, review, document, and report.
+- Default to the safest simple maintainable option that fits the requirements and $0 budget. Do not ask the user to choose between routine technical options or repeat permissions already granted. Make the decision and explain it briefly.
+- Use available repository, CI, and documentation tools instead of delegating checks to the user. Ask for user action only when a concrete access, capability, product, or approval boundary prevents progress.
+- Never confuse technical autonomy with authorization for production deployment, Neon `main`, real data, irreversible/destructive actions, security-policy changes, or spending. Respect existing gates and explicit approvals.
+- Before completion, verify the exact branch/commit and diff, run relevant tests, inspect security/regression risks, verify required CI for the exact SHA, and update continuity docs. Do not merge with failed/pending/unverified required checks or unresolved material findings.
+- Keep persistent handoff notes so a different model/chat can resume without asking the user to reconstruct history. Report separately what was recommended, approved, implemented, and verified; never claim unverified success.
+
 ## Current known priorities (re-verify on each session)
 
 1. P0: design/implement/test Google authentication + allowlist against the existing auth model without sending email or guessing provider configuration.

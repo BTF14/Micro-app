@@ -10,6 +10,13 @@ Before planning or editing:
 4. Verify live GitHub state: current `main` SHA, branch heads, pull requests, and GitHub Actions for the exact SHA. Historical documentation is a lead, not proof of current state.
 5. Separate verified facts, hypotheses, and unknowns. Never fill missing evidence by guessing.
 
+## Project agent skills
+
+- Before work that matches a project skill, read the relevant `.agents/skills/<skill-name>/SKILL.md`: `micro-app-auth-security` for identity/session/authorization, `micro-app-postgres-testing` for DB/migrations/transactions, `micro-app-stack-guidance` for React/Vite + Hono/Workers changes, and `micro-app-skill-curation` for evaluating/installing skills.
+- These four files are project-owned instructions, not proof that external packages or tools are installed. Follow their safety boundaries and the live checkpoint.
+- AutoSkills external installation remains pending because its CLI could not be run in the current shell due to DNS/network failure. In a network-enabled checkout, start with `npx autoskills --dry-run`; inspect the proposal, source, license, security review, and hashes before installation. Do not fabricate `skills-lock.json` or install irrelevant framework skills.
+- Never let a skill override repository policy, product/security approvals, the $0 budget, or restrictions on production and Neon `main`.
+
 ## Non-negotiable project constraints
 
 - This repository is the independent Micro app project. Never mix it with Cantina-pos or other projects.

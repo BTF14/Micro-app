@@ -1,3 +1,12 @@
+## Checkpoint de continuidad — 2026-10-19 después de PR #64
+
+- PR #64 fusionada por squash; merge SHA `f15e3b0da415b8f31641a81ed8a883deb7fcfc5f`. PR #63 merge SHA `b4b417ec5a85b8b0c48b606c718c341745af9055`.
+- PR #64 integró cuatro skills locales bajo `.agents/skills/` y `docs/AUTOSKILLS_ADOPTION.md`. No son paquetes externos instalados por AutoSkills.
+- AutoSkills CLI no llegó a ejecutarse porque el intento de checkout falló al resolver `github.com`; no hay `skills-lock.json` generado ni hashes externos declarados. Próximo paso: `npx autoskills --dry-run` en un entorno con red, revisar tecnologías detectadas, licencia y hash, y elegir solo skills aplicables.
+- PR #60 está cerrada como supersedida; la política útil se integró en #62/#63. No force-push.
+- P0 sigue pendiente: Google sign-in + allowlist, D1–D8 y matriz de permisos requieren aprobación. Mantener registro fail-closed y no asumir que el login por contraseña respeta allowlist.
+- No se ejecutaron tests locales. Seis workflows consultados para el head exacto de PR #64 terminaron en success. App no lista para producción; coste $0, sin producción ni Neon `main`.
+
 ## Política permanente de ejecución técnica autónoma
 
 - Resolver decisiones rutinarias y reversibles con evidencia; implementar, probar, revisar seguridad/regresiones y documentar de punta a punta.

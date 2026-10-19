@@ -26,7 +26,23 @@ This is not a Next.js or Supabase project. The project does not currently declar
 - AutoSkills describes local stack detection, a curated skill registry, SHA-256 integrity checks, and a generated `skills-lock.json`. Its registry is preferable to arbitrary unreviewed skill downloads.
 - The upstream project declares CC BY-NC 4.0 for AutoSkills itself. Review the license of each skill separately before redistributing skill content.
 - Read-only source inspection was performed through GitHub's repository connector. Useful registry entries include React performance guidance, TypeScript advanced types, Vite, and Hono. Version-sensitive content must be checked against the versions actually used here; in particular, do not blindly apply Vite 8 guidance to the current Vite 7 dependency.
-- Attempted `git clone https://github.com/BTF14/Micro-app.git` followed by `npx --yes autoskills --dry-run` in the available shell, but the shell could not resolve `github.com` (DNS/network unavailable). The CLI dry-run and installation therefore **were not executed**. No external AutoSkills bundle was installed, and no AutoSkills-generated lockfile/hash is claimed.
+- The available local shell still cannot resolve `github.com`, and `npm view autoskills` timed out. This is a local DNS/network limitation, not a Node/npm version problem.
+
+## Real CLI dry-run — verified 2026-10-19
+
+The official CLI was successfully executed in GitHub Actions, which has working network access:
+
+- Command: `npx --yes autoskills@0.4.1 --dry-run --verbose`
+- Runner: GitHub-hosted Ubuntu 24.04, Node.js 22.23.3, npm 10.9.9
+- Workflow run: https://github.com/BTF14/Micro-app/actions/runs/39300536264
+- Run ID: `39300536264`; job ID: `118224260673`
+- Exact head commit tested: `09f17020f7543439ed822726419de9777d34fa08`
+- Result: **success**. The CLI detected TypeScript, Node.js, Neon Postgres, Cloudflare, Hono, Vitest, React, Playwright, and Vite, plus the Cloudflare + Vite combination.
+- AutoSkills proposed 19 candidates. The list included relevant candidates such as `typescript-advanced-types`, `neon-postgres`, `cloudflare`, `wrangler`, `workers-best-practices`, `hono`, `vitest`, `react-best-practices`, `playwright-best-practices`, and `vite`.
+- The proposal also included items that must **not** be installed blindly, notably `migrate-to-vinext` (Micro app is not adopting Vinext) and `cloudflare-deploy` (deployment guidance is not an approval to deploy). Other candidates may overlap existing project skills or need separate review.
+- The CLI explicitly reported `--dry-run: nothing was installed.` This is verified preview evidence, **not** an installation. No external AutoSkills bundle was installed, and no AutoSkills-generated `skills-lock.json` or bundle hash is claimed.
+
+A reusable, read-only workflow was added at `.github/workflows/autoskills-preview.yml` in PR #66. It runs the pinned CLI version in dry-run mode only, with `contents: read`, no secrets, no database access, and no deployment.
 
 ## Project-local skills added
 
@@ -41,13 +57,13 @@ These are authored for Micro app and stored in `.agents/skills/`; they are not r
 
 The skills were independently authored using repository rules and reviewed upstream documentation as references; they do not copy whole third-party skill files. They do not install packages or execute scripts.
 
-## Recommended discovery procedure
+## Recommended discovery and installation procedure
 
 From a network-enabled checkout of this repository:
 
 1. Confirm Node.js meets AutoSkills' current engine requirement.
 2. Run `npx autoskills --dry-run` and capture its detected stack and proposed skills.
-3. Compare each proposed skill against the manifests and current requirements. Select only relevant skills.
+3. Compare each proposed skill against the manifests and current requirements. Select only relevant skills; reject migration/deployment guidance unless separately approved.
 4. Inspect the curated registry entry, source/license, security review, bundle hash, and all companion files.
 5. Install interactively without `-y`; review the complete diff and generated lockfile.
 6. Run available skill format/lint/security checks, then verify repository CI on the exact commit.

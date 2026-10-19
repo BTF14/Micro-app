@@ -1,3 +1,13 @@
+## Continuidad prioritaria — PR #68 y verificación de skills (2026-10-19)
+
+- Repositorio: https://github.com/BTF14/Micro-app. `main` verificado antes de esta actualización: `832c9d10b19846f89cc5d9e5ef51b7ef6eb5b21e`.
+- PR [#68](https://github.com/BTF14/Micro-app/pull/68) sigue abierta y no fusionada. Head de código revisado antes de las actualizaciones de continuidad: `f9515ea9838e44947f30fe602f31b7d5b258fa6a`.
+- Se eliminó de `external-accessibility/SKILL.md` la instrucción de instalar `@axe-core/cli` globalmente sin necesidad justificada; `skill-install-log.json` se actualizó con el nuevo tamaño y hashes.
+- Verificación independiente del contenido actual en GitHub: 7/7 archivos de skills coinciden con tamaños, Git blob SHA-1 y SHA-256 registrados. Es evidencia independiente, no un resultado de GitHub Actions.
+- En el head revisado, las ejecuciones recientes de integridad/CI/seguridad/docs/migraciones/dashboard fallaron sin pasos ni logs de job disponibles; Playwright también reportó job fallido sin pasos/logs. La causa exacta no está demostrada. El intento de clonar para ejecutar Node localmente falló por DNS; no afirmar tests locales ni workflow verde.
+- El finding del validador sobre saltos de línea se publicó en una revisión anclada a un SHA anterior; el script actual muestra saltos de línea reales, pero queda pendiente una ejecución real de Node/CI.
+- Próximo paso: no reintentar idénticamente mientras no se resuelva la asignación de runners; mantener la PR abierta hasta que el workflow de integridad y checks requeridos pasen sobre el head final. No merge, producción ni Neon `main`; $0. P0 Google OAuth/allowlist y D1–D8 siguen pendientes.
+
 ## Estado prioritario de continuidad — 2026-10-19, después de PR #64
 
 - Repositorio canónico: https://github.com/BTF14/Micro-app.
@@ -5,7 +15,7 @@
 - PR #63 tuvo siete workflows success en su head exacto; PR #64 tuvo seis workflows success en su head exacto: CI, Playwright E2E, Security scan, Semgrep SAST, migration validation y progress dashboard. No se ejecutaron tests locales.
 - PR #60 se cerró como supersedida tras comparar el diff: sus reglas útiles de autonomía están en PR #62/#63; el bloque de handoff histórico no se reintrodujo porque sus SHA/estados eran obsoletos. No se hizo force-push ni merge directo.
 - PR #64 añadió skills locales `.agents/skills/micro-app-auth-security/SKILL.md`, `micro-app-postgres-testing/SKILL.md`, `micro-app-stack-guidance/SKILL.md` y `micro-app-skill-curation/SKILL.md`; guía en `docs/AUTOSKILLS_ADOPTION.md`. Son skills propias del proyecto, no paquetes oficiales instalados desde AutoSkills.
-- AutoSkills se investigó, pero la CLI no se ejecutó: el shell no pudo resolver `github.com` al intentar preparar un checkout. No afirmar que la instalación oficial ocurrió ni que existe un lockfile de hashes. Repetir `npx autoskills --dry-run` en un checkout con red y revisar cada skill antes de instalar.
+- AutoSkills 0.4.1 ya se ejecutó en GitHub Actions en modo dry-run y propuso 19 skills; no instaló ninguna. La rama `chore/curated-agent-skills-audit` incorpora dos skills externas MIT (`external-accessibility` y `external-typescript-advanced-types`) con referencias/licencias, overlays y verificación de hashes. Revisar `docs/AUTOSKILLS_REVIEW_2026-10-19.md` y `skill-install-log.json`. El log es propio; no se inventó el `skills-lock.json` oficial. El workflow `skill-integrity.yml` pasó en [run 39305555253](https://github.com/BTF14/Micro-app/actions/runs/39305555253), commit probado `86304ffd4d45fbd9902d0344228b9e9f96b9cf1c`; validó los hashes de los 7 archivos instalados. Después cambiaron metadata del log y el validador, sin cambios en las skills. Runs más nuevos fallaron antes de asignar runner; reintentar y no fusionar hasta éxito de la versión actual.
 - P0: Google OAuth + allowlist sigue sin implementar; D1–D8 y matriz de roles pendientes. Registro fail-closed; el login por contraseña aún existe y no debe suponerse protegido por allowlist.
 - Límites: $0; sin producción, Neon `main`, datos reales, secretos, emails, billing ni Cantina-pos. La app no está lista para producción.
 

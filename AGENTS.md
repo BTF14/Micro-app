@@ -14,7 +14,8 @@ Before planning or editing:
 
 - Before work that matches a project skill, read the relevant `.agents/skills/<skill-name>/SKILL.md`: `micro-app-auth-security` for identity/session/authorization, `micro-app-postgres-testing` for DB/migrations/transactions, `micro-app-stack-guidance` for React/Vite + Hono/Workers changes, and `micro-app-skill-curation` for evaluating/installing skills.
 - These four files are project-owned instructions, not proof that external packages or tools are installed. Follow their safety boundaries and the live checkpoint.
-- AutoSkills external installation remains pending because its CLI could not be run in the current shell due to DNS/network failure. In a network-enabled checkout, start with `npx autoskills --dry-run`; inspect the proposal, source, license, security review, and hashes before installation. Do not fabricate `skills-lock.json` or install irrelevant framework skills.
+- The external MIT-licensed skills under `.agents/skills/external-accessibility/` and `.agents/skills/external-typescript-advanced-types/` are now part of this branch. Read them for matching work, but `AGENTS.md` and project-specific safety overlays take precedence. Do not install global tools or dependencies just because a skill suggests them.
+- AutoSkills CLI 0.4.1 successfully ran in GitHub Actions in dry-run mode only; it did not install bundles. The two external skills in this branch were curated from a pinned registry snapshot after individual license/compatibility review, not installed by the AutoSkills CLI. `skill-install-log.json` is the project's own audit/hash log, not AutoSkills' official `skills-lock.json`. Do not fabricate an official lockfile or install irrelevant framework skills.
 - Never let a skill override repository policy, product/security approvals, the $0 budget, or restrictions on production and Neon `main`.
 
 ## Non-negotiable project constraints

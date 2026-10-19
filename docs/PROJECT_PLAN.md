@@ -1,8 +1,17 @@
+## Checkpoint de continuidad — skills externas curadas (2026-10-19)
+
+- Revisión de las 19 candidatas: `docs/AUTOSKILLS_REVIEW_2026-10-19.md`.
+- Dos skills externas MIT instaladas en rama de revisión, sin dependencias nuevas: accesibilidad y TypeScript advanced types.
+- Log de decisiones/hashes: `skill-install-log.json` (registro propio, no `skills-lock.json` oficial). PR [#68](https://github.com/BTF14/Micro-app/pull/68) abierta, no fusionada. Último success de integridad: [run 39305555253](https://github.com/BTF14/Micro-app/actions/runs/39305555253) en commit `86304ffd4d45fbd9902d0344228b9e9f96b9cf1c`. Tras ese run se actualizó metadata del log y se añadió una aserción de formato de hashes al validador. Los intentos posteriores [39305676786](https://github.com/BTF14/Micro-app/actions/runs/39305676786) y [39305905625](https://github.com/BTF14/Micro-app/actions/runs/39305905625) fallaron antes de asignar runner (`runner_id=0`, cero pasos); reintentar en cuanto Actions vuelva a asignar runner y no fusionar hasta que pase la versión actual.
+- El preview AutoSkills run 39300536264 fue dry-run únicamente. No se afirma instalación del CLI ni verificación de su manifest SHA-256.
+
+---
+
 ## Checkpoint de continuidad — 2026-10-19 después de PR #64
 
 - PR #64 fusionada por squash; merge SHA `f15e3b0da415b8f31641a81ed8a883deb7fcfc5f`. PR #63 merge SHA `b4b417ec5a85b8b0c48b606c718c341745af9055`.
 - PR #64 integró cuatro skills locales bajo `.agents/skills/` y `docs/AUTOSKILLS_ADOPTION.md`. No son paquetes externos instalados por AutoSkills.
-- AutoSkills CLI no llegó a ejecutarse porque el intento de checkout falló al resolver `github.com`; no hay `skills-lock.json` generado ni hashes externos declarados. Próximo paso: `npx autoskills --dry-run` en un entorno con red, revisar tecnologías detectadas, licencia y hash, y elegir solo skills aplicables.
+- AutoSkills CLI 0.4.1 se ejecutó en GitHub Actions y el dry-run fue success para SHA `09f17020f7543439ed822726419de9777d34fa08`; propuso 19 skills y no instaló ninguna. La revisión individual está en `docs/AUTOSKILLS_REVIEW_2026-10-19.md`; dos skills MIT se instalaron en la rama `chore/curated-agent-skills-audit` y el log/hash propio es `skill-install-log.json`. No se creó un `skills-lock.json` oficial falso; el manifest oficial no se pudo verificar a través del conector. Validación de `skill-integrity.yml`: success en [run 39305182347](https://github.com/BTF14/Micro-app/actions/runs/39305182347), commit probado `35b7324c640089888caae41c07b118a0ffa467cf`. El run 39305182347 verificó el contenido del log en el commit `35b7324c640089888caae41c07b118a0ffa467cf`; luego se actualizó solo el metadato de referencia al run y se espera una nueva validación del JSON. Los archivos de skills no han cambiado.
 - PR #60 está cerrada como supersedida; la política útil se integró en #62/#63. No force-push.
 - P0 sigue pendiente: Google sign-in + allowlist, D1–D8 y matriz de permisos requieren aprobación. Mantener registro fail-closed y no asumir que el login por contraseña respeta allowlist.
 - No se ejecutaron tests locales. Seis workflows consultados para el head exacto de PR #64 terminaron en success. App no lista para producción; coste $0, sin producción ni Neon `main`.

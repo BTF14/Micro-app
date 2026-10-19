@@ -1,3 +1,32 @@
+## 2026-10-19 — Ajuste de política y verificación independiente de skills (PR #68)
+
+- Head de código antes de actualizar continuidad: `f9515ea9838e44947f30fe602f31b7d5b258fa6a`; `main`: `832c9d10b19846f89cc5d9e5ef51b7ef6eb5b21e`.
+- Se quitó de `.agents/skills/external-accessibility/SKILL.md` la instrucción para instalar `@axe-core/cli` globalmente sin necesidad demostrada. Se actualizó `skill-install-log.json` con los nuevos hashes y tamaño.
+- Se recuperaron directamente de GitHub los siete archivos instalados y se compararon contra el registro: 7/7 tamaños, Git blob SHA-1 y SHA-256 coinciden. No se pudo ejecutar el validador localmente porque el checkout de GitHub falló por DNS.
+- En el head revisado, las ejecuciones recientes de Actions terminaron en failure sin pasos ni logs disponibles, incluida la de integridad. La evidencia no prueba la causa exacta ni un fallo de las aserciones. No reintentar de forma idéntica mientras no haya evidencia de runner disponible.
+- PR #68 sigue abierta y no fusionada. No se tocaron producción, Neon `main`, secretos ni datos reales. Coste $0.
+
+---
+
+## 2026-10-19 — Incidencia de asignación de runners durante la última validación de skills
+
+- PR [#68](https://github.com/BTF14/Micro-app/pull/68), rama `chore/curated-agent-skills-audit`, permanece abierta y no fusionada.
+- Último run de integridad con runner asignado y success: [39305555253](https://github.com/BTF14/Micro-app/actions/runs/39305555253), commit `86304ffd4d45fbd9902d0344228b9e9f96b9cf1c`; verificó el JSON y hashes/tamaños de los siete archivos instalados.
+- Los intentos posteriores [39305676786](https://github.com/BTF14/Micro-app/actions/runs/39305676786) y [39305905625](https://github.com/BTF14/Micro-app/actions/runs/39305905625) terminaron antes de ejecutar pasos: `runner_id=0`, `steps=[]`, sin logs. Esto no da resultado sobre los asserts; la última edición del validador necesita una ejecución nueva con runner asignado.
+- Las skills instaladas y sus archivos no cambiaron. No fusionar hasta que la versión actual del workflow de integridad pase; no afirmar que los últimos checks están verdes.
+
+---
+
+## 2026-10-19 — Revisión individual e instalación curada de skills externas
+
+- Rama: `chore/curated-agent-skills-audit`; no fusionada.
+- Evidencia AutoSkills: run 39300536264 success en dry-run para SHA `09f17020f7543439ed822726419de9777d34fa08`; 19 candidatas, cero instaladas por CLI.
+- Se evaluaron una por una las 19 candidatas en `docs/AUTOSKILLS_REVIEW_2026-10-19.md`. Dos skills MIT instaladas en la rama: `external-accessibility` y `external-typescript-advanced-types`; copias completas de referencias y LICENSE, con overlays de seguridad/compatibilidad.
+- `skill-install-log.json` contiene decisiones, Git blob SHA-1 de fuentes, SHA-256 de archivos instalados y cambios locales documentados. No se creó un `skills-lock.json` oficial falso. La licencia CC-BY-NC-4.0 de AutoSkills CLI se consideró no adecuada como tooling por defecto para el producto comercial.
+- Se añadió `scripts/validate-skill-install-log.mjs` y `.github/workflows/skill-integrity.yml`; El workflow de integridad pasó en [run 39305182347](https://github.com/BTF14/Micro-app/actions/runs/39305182347) para el commit `35b7324c640089888caae41c07b118a0ffa467cf`, verificando SHA-256, Git blob SHA-1 y tamaño de los 7 archivos instalados. Los cambios posteriores son solo documentación. No se ejecutaron tests locales ni scripts de terceros; no se modificaron dependencias, base de datos, secretos ni despliegues.
+
+---
+
 ## 2026-10-19 — Corrección de formato en checklist de preparación
 
 - Se corrigió en `docs/PRODUCTION_READINESS.md` un `\\n` literal que unía visualmente el criterio ya verificado del bloqueo de registro con el siguiente criterio pendiente de Google sign-in.

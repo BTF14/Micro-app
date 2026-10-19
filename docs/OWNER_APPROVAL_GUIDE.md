@@ -4,7 +4,8 @@ Este documento está pensado para que el propietario pueda tomar la decisión en
 
 ## Estado actual
 
-- La propuesta de identidad todavía requiere aprobación explícita.
+- **D1 aprobada por el propietario el 2026-10-19:** para la primera beta privada, la allowlist se almacenará en una variable de entorno/secreto con correos exactos autorizados; acceso denegado por defecto. No guardar correos reales ni secretos en el repositorio. Un panel administrativo con auditoría se evaluará más adelante, cuando exista un mecanismo seguro de bootstrap y recuperación.
+- Las demás decisiones de identidad y la matriz de permisos siguen pendientes de aprobación explícita.
 - Por seguridad, `POST /auth/register` está temporalmente bloqueado: devuelve `503 REGISTRATION_DISABLED` antes de procesar credenciales o acceder a la base de datos (PR #57).
 - No reactivar el registro hasta que el flujo aprobado esté implementado y probado.
 - No compartir contraseñas, OAuth client secrets, tokens ni credenciales de Neon. No guardar una lista real de correos en este documento.

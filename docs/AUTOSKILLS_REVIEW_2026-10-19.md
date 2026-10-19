@@ -38,11 +38,12 @@ Fecha de revisión: 2026-10-19. Repositorio: [BTF14/Micro-app](https://github.co
 ## Integridad y límites de verificación
 
 1. Fuente de las propuestas: salida real de AutoSkills CLI en el run enlazado arriba.
-2. Fuente de los archivos instalados: registro de AutoSkills en el commit inmutable `b4489cbdc36ba8c9de8f4dd844bab0b6b559579f`; cada archivo fuente mantiene su Git blob SHA-1 en `skill-install-log.json`.
-3. Licencias: MIT comprobada en los repositorios upstream de las dos skills instaladas; sus archivos LICENSE están versionados junto a cada skill.
-4. Hashes de archivos instalados: SHA-256 y Git blob SHA-1 esperados registrados; el script de CI vuelve a calcularlos desde el checkout. Los overlays locales se reflejan mediante distintos hashes fuente/instalado en el log.
-5. No se ejecutaron comandos de las skills, no se instalaron paquetes npm, no se modificaron manifests/lockfiles de aplicación, no se accedió a Neon y no se desplegó nada.
-6. No se verificó el hash SHA-256 del bundle oficial AutoSkills ni el estado de revisión de seguridad del manifest porque el conector no devolvió el contenido de `skills-registry/index.json`. No afirmar que esa validación oficial ocurrió.
+2. El análisis de las 19 candidatas es una **revisión individual a nivel de SKILL.md, metadatos de licencia/origen y compatibilidad**; no es una auditoría exhaustiva de cada archivo de todos los bundles diferidos/rechazados. Solo se descargaron/copiarion y verificaron íntegramente los dos bundles instalados. No se ejecutaron scripts de terceros.
+3. Fuente de los archivos instalados: registro de AutoSkills en el commit inmutable `b4489cbdc36ba8c9de8f4dd844bab0b6b559579f`; cada archivo fuente mantiene su Git blob SHA-1 en `skill-install-log.json`.
+4. Licencias: MIT comprobada en los repositorios upstream de las dos skills instaladas; sus archivos LICENSE están versionados junto a cada skill.
+5. Hashes de archivos instalados: SHA-256 y Git blob SHA-1 esperados registrados; el script de CI vuelve a calcularlos desde el checkout. Los overlays locales se reflejan mediante distintos hashes fuente/instalado en el log.
+6. No se ejecutaron comandos de las skills, no se instalaron paquetes npm, no se modificaron manifests/lockfiles de aplicación, no se accedió a Neon y no se desplegó nada.
+7. No se verificó el hash SHA-256 del bundle oficial AutoSkills ni el estado de revisión de seguridad del manifest porque el conector no devolvió el contenido de `skills-registry/index.json`. No afirmar que esa validación oficial ocurrió.
 
 ## Archivos y evidencia
 

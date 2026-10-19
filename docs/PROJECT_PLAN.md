@@ -1,3 +1,16 @@
+## Checkpoint vigente — 2026-10-19 después de PR #48
+
+Main verificado: `420a64152103c90d2990d47c72fc19a744786fa6`. PR #47 y #48 fusionadas; los seis workflows pasaron en cada head exacto. No se ejecutaron pruebas locales ni se verificaron workflows sobre los merge SHA. Ver [CURRENT_STATE.md](CURRENT_STATE.md) y [STATE_JOURNAL.md](STATE_JOURNAL.md).
+
+Prioridades:
+1. Revisar autorización server-side y aislamiento tenant antes de crear handlers comerciales.
+2. Obtener decisiones aprobadas D1–D8 de Google OAuth/allowlist y matriz de permisos antes de implementar políticas.
+3. Validar aislamiento tenant y flujos API+PostgreSQL reales cuando existan handlers de negocio.
+4. Preparar backup independiente y demostrar restauración antes de cualquier operación real.
+5. Mantener coste $0; no desplegar producción ni modificar Neon `main` sin los gates definidos.
+
+---
+
 ## Checkpoint vigente — 2026-10-19 después de PR #45
 
 Main verificado: `1c6ecf6a4586ab1252a43210672e123975f8941f`. PR #45 está fusionada; los seis workflows pasaron en el head exacto de la PR. No se ejecutaron pruebas locales ni se verificó el merge SHA con workflows. Ver [CURRENT_STATE.md](CURRENT_STATE.md) y [STATE_JOURNAL.md](STATE_JOURNAL.md).

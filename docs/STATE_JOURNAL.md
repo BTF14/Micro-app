@@ -354,3 +354,13 @@ Este diario es append-only en cuanto a historia: no borrar hitos antiguos; añad
 - Cambio: una aserción de limpieza de cookie cuando el usuario está inactivo. No se ejecutaron tests locales y los workflows del merge SHA no están verificados aquí.
 - Se refrescaron los documentos de estado, plan y handoff. Sin cambios de producción, Neon, secretos, datos reales, billing ni Cantina-pos.
 - La aplicación no está lista para producción; D1–D8, OAuth/allowlist, matriz de permisos, endpoints de negocio, aislamiento tenant, E2E real y backup/restauración independiente siguen pendientes.
+
+
+## 2026-10-19 — PR #47 y #48 fusionadas
+
+- `main` verificado: `420a64152103c90d2990d47c72fc19a744786fa6`.
+- PR #47 https://github.com/BTF14/Micro-app/pull/47: prueba de error de `/auth/me` cuando falla la validación de sesión por DB. Head `7939d11678cfd1a2bb8fac22664096663603c824`; seis workflows success: CI 39253558854, Playwright 39253558793, migraciones 39253558714, Security 39253558727, Semgrep 39253558761, dashboard 39253558724.
+- PR #48 https://github.com/BTF14/Micro-app/pull/48: prueba de que una cuenta inactiva no obtiene una cookie nueva. Head final `6acb78018a47eb39f74dab079b53b51b4cacf11f`; seis workflows success: CI 39254257051, Playwright 39254256939, migraciones 39254257076, Security 39254256854, Semgrep 39254256882, dashboard 39254256826.
+- En PR #48, la primera ejecución encontró que el test excedía el límite de login por email; el fixture fue corregido para limpiar únicamente el contador hash del correo sintético antes del caso de cuenta inactiva. El head final pasó los seis workflows.
+- No se ejecutaron tests localmente ni se verificaron workflows en los merge SHA. Sin cambios en producción, Neon, secretos, datos reales, billing ni Cantina-pos.
+- La app sigue sin estar lista para producción. OAuth/allowlist, D1–D8, matriz de permisos, endpoints comerciales, aislamiento tenant, E2E API+PostgreSQL real y backup/restauración independiente continúan pendientes.

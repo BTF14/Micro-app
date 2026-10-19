@@ -407,3 +407,13 @@ Este diario es append-only en cuanto a historia: no borrar hitos antiguos; añad
 - PR #51 https://github.com/BTF14/Micro-app/pull/51: respuestas seguras ante fallo de DB en login/registro, sin cookie. Head `92ea991d6333bcd1b05943f679fdd36777ab6a8f`; seis workflows success: CI 39255462405, Playwright 39255462498, migraciones 39255462284, Security 39255462264, Semgrep 39255462627, dashboard 39255462281.
 - No se ejecutaron tests localmente ni se verificaron workflows sobre merge SHA. Sin cambios en producción, Neon, secretos, datos reales, billing ni Cantina-pos.
 - La aplicación sigue sin estar lista para producción. OAuth/allowlist, D1–D8, matriz de permisos, endpoints comerciales, aislamiento tenant, E2E API+PostgreSQL real y backup/restauración independiente continúan pendientes.
+
+
+## 2026-10-19 — Revisión manual y rebase seguro de gobernanza
+
+- Revalidación de PR #60: head `af8479000e1e677bd84e0e11bf02cdb6d548315e`, abierta, `mergeable=false`; base SHA mostrado por PR `0a36f234d7a590905527b9cb9268bba3791215f5`. No se forzó ni se fusionó la rama conflictiva.
+- Siete workflows consultados para el head exacto `af8479000e1e677bd84e0e11bf02cdb6d548315e` terminaron en `success` (CI, Security, Playwright E2E, migration validation, progress dashboard, Semgrep SAST y SDD/agent docs validation).
+- El comentario de Codex confirma cuota agotada y revisión fallida para el SHA antiguo `1b7f576c38aa869ca8c17b749c7c35d473404ef8`; no se recuperaron reviews formales ni hilos inline. No se inventan ni se declaran resueltos hallazgos desconocidos.
+- PR #61 está fusionada con merge SHA reportado `1b8098ff00e0bb7482200b486710a5611f1e109d`. El diario existente contenía una entrada histórica que la describía como abierta; el checkpoint nuevo de handoff corrige el estado vivo.
+- Se creó `docs/ai-autonomy-governance-rebased` desde `main` para re-aplicar cambios documentales sin force-push. Pendiente de revisar diff y CI de la nueva rama/PR.
+- No se ejecutaron pruebas locales. No hubo cambios en runtime, base de datos, secretos, datos reales, Neon ni despliegues productivos. Coste $0.

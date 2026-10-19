@@ -1,6 +1,8 @@
 # Regla prioritaria para cualquier IA/chat — autonomía y continuidad (2026-10-19)
 
-**Política normativa:** consultar `docs/CONSTITUTION.md` §9A y `AGENTS.md` antes de actuar. La IA debe tomar decisiones técnicas rutinarias de forma autónoma, implementar y verificar el trabajo autorizado, evitar delegar al usuario tareas realizables con las herramientas disponibles y mantener el conocimiento en el repositorio.
+**Política normativa:** consultar `docs/CONSTITUTION.md` §9A y `AGENTS.md` antes de actuar. La IA debe aplicar el principio de autonomía técnica y responsabilidad de ejecución: tomar decisiones técnicas rutinarias, implementar y verificar el trabajo autorizado, evitar delegar al usuario tareas realizables con las herramientas disponibles y mantener el conocimiento en el repositorio.
+
+**PR de incorporación:** https://github.com/BTF14/Micro-app/pull/60 — abierta, pendiente de revisión y checks del SHA vigente; no fusionada.
 
 **Límites:** esta autonomía no autoriza despliegues de producción, mutaciones de Neon `main`, uso de datos reales, gastos ni acciones destructivas/sensibles fuera de los gates existentes. No declarar una tarea completada, un check verde o un merge sin evidencia del SHA exacto.
 

@@ -1,3 +1,16 @@
+## 2026-10-19 — Registro público bloqueado fail-closed (PR #57)
+
+- `main`: `cb4b9b09ad3ff0f1bacd34f23ee653a5477cddfe`; PR #57 fusionada.
+- `POST /auth/register` valida Origin y luego devuelve `503 REGISTRATION_DISABLED` antes de leer el body, acceder a PostgreSQL, escribir rate limits/usuarios/organizaciones/membresías/sesiones o emitir cookie.
+- La prueba PostgreSQL verifica ausencia de usuarios, organizaciones, membresías, sesiones y hashes de rate-limit en el camino bloqueado. Login/sesión existente se prueba con un usuario/organización sintéticos sembrados directamente en la base efímera.
+- Checks de PR head `71d3e6d3ffe625b12807e9942ddd261e222cf093`: verify, Chromium auth smoke, PostgreSQL migration, JS/TS analysis, Trivy, Cloudflare Pages preview y generate-progress en success. Checks consultados en merge SHA también en success. No se ejecutaron pruebas locales.
+- Issue #53 permanece abierto: Google sign-in + allowlist y D1–D8 no están implementados/aprobados. La medida es temporal y fail-closed.
+- Revisión rama `feat/neon-transaction-adapter` vs main `cb4b9b09ad3ff0f1bacd34f23ee653a5477cddfe`: divergida 14 ahead / 76 behind; merge-base `2d2099245f2404b0a8d3689189235a577d5e632c`. `database.ts` y security workflow son idénticos; test file más viejo, script `vitest run` no respeta exclusión de integración, documentos obsoletos. No merge.
+- No se tocaron Neon main, secretos, datos reales, billing ni emails. No se afirma despliegue productivo.
+- App sigue NO lista para producción; matriz de roles y flujos comerciales aún pendientes.
+
+---
+
 ## 2026-10-19 — Checkpoint tras PR #55
 
 - `main` verificado: `b7117f8aeb868e25c49db86a524405511cd3c9be`; PR #55 fusionada.

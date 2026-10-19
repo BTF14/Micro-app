@@ -243,4 +243,26 @@ describe("Micro app API scaffold", () => {
     expect(response.headers.get("set-cookie")).toBeNull();
   });
 
+
+  it("does not clear the session cookie when session lookup fails", async () => {
+    const response = await app.request(
+      "/auth/me",
+      {
+        headers: {
+          Cookie: "microapp_session=synthetic-session-token",
+        },
+      },
+      {
+        FRONTEND_ORIGIN: "https://micro-app.example",
+        DATABASE_URL: "not-a-valid-database-url",
+      },
+    );
+
+    expect(response.status).toBe(500);
+    await expect(response.json()).resolves.toMatchObject({
+      error: "SESSION_LOOKUP_FAILED",
+    });
+    expect(response.headers.get("set-cookie")).toBeNull();
+  });
+
 });

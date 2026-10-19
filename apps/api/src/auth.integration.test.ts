@@ -1,5 +1,6 @@
 import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
 import { Client } from "pg";
+import { hashPassword } from "./auth";
 
 // In integration tests, exercise the real PostgreSQL protocol while keeping
 // production Workers on @neondatabase/serverless. Adapt Neon’s string
@@ -50,11 +51,12 @@ const suite = describe.skipIf(!databaseAvailable)("authentication routes against
     }
   });
 
-  it("registers atomically, rejects duplicate email, logs in, reads and revokes the session", async () => {
+  it("blocks public registration without writes, while existing authorized accounts can log in", async () => {
     const originHeaders = {
       Origin: frontendOrigin,
       "Content-Type": "application/json",
     };
+    const registrationIp = crypto.randomUUID();
     const registerBody = {
       email,
       displayName: "Integration User",
@@ -64,42 +66,53 @@ const suite = describe.skipIf(!databaseAvailable)("authentication routes against
 
     const registerResponse = await app.fetch(new Request("https://api.example/auth/register", {
       method: "POST",
-      headers: { ...originHeaders, "CF-Connecting-IP": crypto.randomUUID() },
+      headers: { ...originHeaders, "CF-Connecting-IP": registrationIp },
       body: JSON.stringify(registerBody),
     }), { DATABASE_URL: databaseUrl, FRONTEND_ORIGIN: frontendOrigin });
 
-    expect(registerResponse.status).toBe(201);
-    const registered = await registerResponse.json() as {
-      user: { id: string; email: string };
-      organizations: Array<{ id: string; role: string }>;
-    };
-    expect(registered.user.email).toBe(email);
-    expect(registered.organizations).toHaveLength(1);
-    expect(registered.organizations[0]?.role).toBe("owner");
-    const registrationCookie = registerResponse.headers.get("set-cookie");
-    expect(registrationCookie).toContain("microapp_session=");
-    expect(registrationCookie).toContain("HttpOnly");
-    expect(registrationCookie).toContain("Secure");
-    expect(registrationCookie).toContain("SameSite=None");
-    expect(registrationCookie).toContain("Path=/");
-    expect(registrationCookie).toContain("Max-Age=604800");
+    expect(registerResponse.status).toBe(503);
+    await expect(registerResponse.json()).resolves.toMatchObject({ error: "REGISTRATION_DISABLED" });
+    expect(registerResponse.headers.get("set-cookie")).toBeNull();
 
-    const counts = await cleanupClient.query<{ users: string; orgs: string; members: string; sessions: string }>(
+    const deniedWrites = await cleanupClient.query<{ users: string; orgs: string; members: string; sessions: string }>(
       `SELECT
          (SELECT count(*)::text FROM app_users WHERE email = $1) AS users,
-         (SELECT count(*)::text FROM organizations o JOIN organization_members m ON m.organization_id = o.id WHERE m.user_id = (SELECT id FROM app_users WHERE email = $1)) AS orgs,
+         (SELECT count(*)::text FROM organizations WHERE name = $2) AS orgs,
          (SELECT count(*)::text FROM organization_members WHERE user_id = (SELECT id FROM app_users WHERE email = $1)) AS members,
          (SELECT count(*)::text FROM auth_sessions WHERE user_id = (SELECT id FROM app_users WHERE email = $1)) AS sessions`,
-      [email],
+      [email, organizationName],
     );
-    expect(counts.rows[0]).toEqual({ users: "1", orgs: "1", members: "1", sessions: "1" });
+    expect(deniedWrites.rows[0]).toEqual({ users: "0", orgs: "0", members: "0", sessions: "0" });
 
-    const duplicateResponse = await app.fetch(new Request("https://api.example/auth/register", {
-      method: "POST",
-      headers: { ...originHeaders, "CF-Connecting-IP": crypto.randomUUID() },
-      body: JSON.stringify(registerBody),
-    }), { DATABASE_URL: databaseUrl, FRONTEND_ORIGIN: frontendOrigin });
-    expect(duplicateResponse.status).toBe(409);
+    const sha256Hex = async (value: string): Promise<string> => {
+      const digest = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(value));
+      return Array.from(new Uint8Array(digest), (byte) => byte.toString(16).padStart(2, "0")).join("");
+    };
+    const [ipLimitHash, emailLimitHash] = await Promise.all([
+      sha256Hex(`register:ip:${registrationIp}`),
+      sha256Hex(`register:email:${email}`),
+    ]);
+    const deniedRateLimitWrites = await cleanupClient.query(
+      "SELECT key_hash FROM auth_rate_limits WHERE key_hash = ANY($1::char(64)[])",
+      [[ipLimitHash, emailLimitHash]],
+    );
+    expect(deniedRateLimitWrites.rows).toHaveLength(0);
+
+    // Seed a synthetic pre-authorized account directly so existing login/session
+    // integration coverage remains independent of the disabled public signup flow.
+    const passwordHash = await hashPassword(password);
+    const userResult = await cleanupClient.query<{ id: string }>(
+      "INSERT INTO app_users (email, display_name, password_hash) VALUES ($1, $2, $3) RETURNING id",
+      [email, "Integration User", passwordHash],
+    );
+    const organizationResult = await cleanupClient.query<{ id: string }>(
+      "INSERT INTO organizations (name, slug) VALUES ($1, $2) RETURNING id",
+      [organizationName, `integration-${crypto.randomUUID().replace(/-/g, "").slice(0, 12)}`],
+    );
+    await cleanupClient.query(
+      "INSERT INTO organization_members (organization_id, user_id, role) VALUES ($1, $2, 'owner')",
+      [organizationResult.rows[0]!.id, userResult.rows[0]!.id],
+    );
 
     const badLogin = await app.fetch(new Request("https://api.example/auth/login", {
       method: "POST",

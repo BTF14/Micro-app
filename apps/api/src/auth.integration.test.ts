@@ -139,6 +139,7 @@ const suite = describe.skipIf(!databaseAvailable)("authentication routes against
       headers: { Cookie: cookiePair },
     }), { DATABASE_URL: databaseUrl, FRONTEND_ORIGIN: frontendOrigin });
     expect(inactiveUserSession.status).toBe(401);
+    expect(inactiveUserSession.headers.get("set-cookie")).toContain("microapp_session=");
     await cleanupClient.query("UPDATE app_users SET is_active = true WHERE email = $1", [email]);
 
     await cleanupClient.query("UPDATE organization_members SET is_active = false WHERE user_id = (SELECT id FROM app_users WHERE email = $1)", [email]);

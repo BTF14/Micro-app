@@ -185,6 +185,28 @@ describe("Micro app API scaffold", () => {
     await expect(logout.json()).resolves.toMatchObject({ error: "ORIGIN_NOT_ALLOWED" });
   });
 
+  it("rejects registration when Origin is missing before accessing the database", async () => {
+    const response = await app.request(
+      "/auth/register",
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          email: "user@example.com",
+          displayName: "Example User",
+          password: "a-long-test-password",
+          organizationName: "Example Shop",
+        }),
+      },
+      { FRONTEND_ORIGIN: "https://micro-app.example" },
+    );
+
+    expect(response.status).toBe(403);
+    await expect(response.json()).resolves.toMatchObject({
+      error: "ORIGIN_NOT_ALLOWED",
+    });
+  });
+
   it("enables credentialed CORS only for the configured origin", async () => {
     const allowed = await app.request(
       "/health",

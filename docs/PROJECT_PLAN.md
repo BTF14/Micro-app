@@ -9,7 +9,7 @@ Antes de completar identidad, guiar al propietario paso a paso usando [`OWNER_AP
 Main verificado: `0a36f234d7a590905527b9cb9268bba3791215f5`. PR #57 bloquea fail-closed el registro público; PR #58 actualiza documentación de continuidad. El registro seguirá cerrado hasta implementar y aprobar Google sign-in + allowlist. Checks PR #57 en success en el head consultado y merge SHA; no se ejecutaron tests locales.
 
 Prioridades:
-1. Resolver identidad Google + allowlist según D1–D8 aprobados.
+1. Implementar identidad Google + allowlist respetando D1 y D2 ya aprobadas y resolver las decisiones de identidad que aún siguen pendientes.
 2. Aprobar matriz de permisos antes de exponer handlers comerciales.
 3. Mantener pruebas de auth/sesión y pruebas negativas PostgreSQL.
 4. No fusionar `feat/neon-transaction-adapter` completa (14 ahead / 76 behind según comparación previa).

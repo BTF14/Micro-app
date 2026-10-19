@@ -165,6 +165,7 @@ const suite = describe.skipIf(!databaseAvailable)("authentication routes against
       headers: { Cookie: cookiePair },
     }), { DATABASE_URL: databaseUrl, FRONTEND_ORIGIN: frontendOrigin });
     expect(inactiveOrganizationSession.status).toBe(401);
+    expect(inactiveOrganizationSession.headers.get("set-cookie")).toContain("microapp_session=");
 
     const inactiveOrganizationLogin = await app.fetch(new Request("https://api.example/auth/login", {
       method: "POST",
@@ -188,6 +189,7 @@ const suite = describe.skipIf(!databaseAvailable)("authentication routes against
       headers: { Cookie: cookiePair },
     }), { DATABASE_URL: databaseUrl, FRONTEND_ORIGIN: frontendOrigin });
     expect(revokedSessionResponse.status).toBe(401);
+    expect(revokedSessionResponse.headers.get("set-cookie")).toContain("microapp_session=");
 
     const secondLogin = await app.fetch(new Request("https://api.example/auth/login", {
       method: "POST",

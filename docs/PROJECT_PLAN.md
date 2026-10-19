@@ -2,7 +2,7 @@
 
 - Revisión de las 19 candidatas: `docs/AUTOSKILLS_REVIEW_2026-10-19.md`.
 - Dos skills externas MIT instaladas en rama de revisión, sin dependencias nuevas: accesibilidad y TypeScript advanced types.
-- Log de decisiones/hashes: `skill-install-log.json` (registro propio, no `skills-lock.json` oficial). Validación CI en `scripts/validate-skill-install-log.mjs` y `.github/workflows/skill-integrity.yml`; pendiente de resultado para el PR.
+- Log de decisiones/hashes: `skill-install-log.json` (registro propio, no `skills-lock.json` oficial). Validación CI en `scripts/validate-skill-install-log.mjs` y `.github/workflows/skill-integrity.yml`: success en [run 39305182347](https://github.com/BTF14/Micro-app/actions/runs/39305182347), commit probado `35b7324c640089888caae41c07b118a0ffa467cf`. Los cambios posteriores son documentación.
 - El preview AutoSkills run 39300536264 fue dry-run únicamente. No se afirma instalación del CLI ni verificación de su manifest SHA-256.
 
 ---

@@ -1,5 +1,8 @@
 # Registro de decisiones pendientes: identidad y acceso
 
+> **Nota de reconciliación (2026-10-19):** este registro conserva la numeración histórica D1–D8 de la propuesta original del 2026-10-18. Las aprobaciones documentadas en `docs/OWNER_APPROVAL_GUIDE.md` y `docs/CURRENT_STATE.md` usan D1/D2 con otro significado: (D1) beta privada con allowlist de correos exactos almacenada en secreto/variable de entorno; (D2) procedimiento administrativo controlado y auditable para el primer administrador, sin endpoint público de bootstrap. No interpretar los mismos números como si fueran la misma fila de esta tabla. Antes de implementar, actualizar esta matriz para reflejar las aprobaciones por significado y marcar pendientes solo las decisiones realmente no resueltas. Esta nota no autoriza implementación runtime ni despliegue.
+
+
 - Estado: propuesta para decisión del propietario; no aprobada
 - Fecha: 2026-10-18
 - Relacionado: `docs/sdd/google-signin-allowlist-spec.md` (D1–D8); permisos por rol: [`role-permission-decision-matrix.md`](role-permission-decision-matrix.md)

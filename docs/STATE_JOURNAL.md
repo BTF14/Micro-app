@@ -1,3 +1,24 @@
+## 2026-10-19 — Aprobación explícita de D2 (primer administrador)
+
+- El propietario aprobó: crear el primer administrador mediante un procedimiento administrativo controlado y auditable, sin endpoint público de bootstrap.
+- Alcance: aprobación de política únicamente. No se ha aprobado ni implementado todavía el mecanismo técnico concreto; diseñarlo, revisarlo y probarlo en un entorno aislado antes de cualquier uso real.
+- Salvaguardas para el diseño: identidad autenticada y correo verificado en allowlist; evitar una segunda asignación accidental de `owner`; registrar evidencia auditable sin tokens/secretos; sin alta pública ni credenciales administrativas embebidas.
+- D1 también está aprobada: beta privada, allowlist de correos exactos en variable de entorno/secreto, denegación por defecto y sin correos reales ni secretos en GitHub.
+- `POST /auth/register` continúa bloqueado fail-closed por PR #57. No desplegar producción, no modificar Neon `main`, no usar datos reales ni añadir costes.
+- Se actualizaron `docs/OWNER_APPROVAL_GUIDE.md`, `docs/CURRENT_STATE.md`, `docs/HANDOFF_NEXT_CHAT.md` y este diario en la rama documental de PR #59. Los checks del nuevo head y la revisión del diff siguen siendo necesarios; no se fusiona PR #59 en esta operación.
+
+---
+
+## 2026-10-19 — Revisión documental después de PR #58
+
+- `main`: `0a36f234d7a590905527b9cb9268bba3791215f5`; PR #58 fusionada.
+- Revisión de `docs/PRODUCTION_READINESS.md` detectó y corrigió una secuencia literal `\\n` en una lista P0; era un error de formato, no un cambio de comportamiento.
+- Registro público permanece bloqueado fail-closed por PR #57. Issue #53 abierto; Google sign-in + allowlist aún no están implementados. D1 y D2 están aprobadas como políticas; las demás decisiones de identidad siguen pendientes.
+- No hay PR abiertas en la última consulta. No se ejecutaron tests locales.
+- La aplicación no está lista para producción. No se tocaron datos reales, secretos, Neon main, billing ni producción.
+
+---
+
 ## 2026-10-19 — Registro público bloqueado fail-closed (PR #57)
 
 - `main`: `cb4b9b09ad3ff0f1bacd34f23ee653a5477cddfe`; PR #57 fusionada.

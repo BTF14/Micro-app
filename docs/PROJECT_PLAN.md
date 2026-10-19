@@ -1,3 +1,24 @@
+## Siguiente paso con el propietario
+
+Antes de completar identidad, guiar al propietario paso a paso usando [`OWNER_APPROVAL_GUIDE.md`](OWNER_APPROVAL_GUIDE.md). Presentar la propuesta base como recomendación pendiente de confirmación explícita; preguntar detalles de uno en uno. La matriz de roles se aprueba por separado. Mantener registro bloqueado hasta implementar y probar la política aprobada.
+
+---
+
+## Checkpoint vigente — 2026-10-19 después de PR #58
+
+Main verificado: `0a36f234d7a590905527b9cb9268bba3791215f5`. PR #57 bloquea fail-closed el registro público; PR #58 actualiza documentación de continuidad. El registro seguirá cerrado hasta implementar y aprobar Google sign-in + allowlist. Checks PR #57 en success en el head consultado y merge SHA; no se ejecutaron tests locales.
+
+Prioridades:
+1. Implementar identidad Google + allowlist respetando D1 y D2 ya aprobadas y resolver las decisiones de identidad que aún siguen pendientes.
+2. Aprobar matriz de permisos antes de exponer handlers comerciales.
+3. Mantener pruebas de auth/sesión y pruebas negativas PostgreSQL.
+4. No fusionar `feat/neon-transaction-adapter` completa (14 ahead / 76 behind según comparación previa).
+5. Implementar POS/inventario/ventas con aislamiento tenant, transacciones, idempotencia, concurrencia y auditoría.
+6. Probar backup/restauración independiente, fiscalidad y E2E API+DB antes de producción.
+7. Coste objetivo $0; sin producción ni mutaciones de Neon main fuera de los gates.
+
+---
+
 ## Checkpoint vigente — 2026-10-19 después de PR #57
 
 Main verificado: `cb4b9b09ad3ff0f1bacd34f23ee653a5477cddfe`. PR #57 bloquea fail-closed el registro público mientras se aprueba la política de identidad. Checks del head exacto `71d3e6d3ffe625b12807e9942ddd261e222cf093` y los checks consultados del merge SHA terminaron en success; no se ejecutaron tests locales.

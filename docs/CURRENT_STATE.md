@@ -1,21 +1,23 @@
-# Checkpoint autoritativo — 2026-10-19, después de PR #64
+# Checkpoint autoritativo — 2026-10-19, verificado en GitHub
 
 - Repositorio canónico: https://github.com/BTF14/Micro-app.
-- `main` incluye PR #64 por squash: `f15e3b0da415b8f31641a81ed8a883deb7fcfc5f`. PR #63 merge SHA: `b4b417ec5a85b8b0c48b606c718c341745af9055`; PR #62 merge SHA: `d107cfb2b80c4165ed39e3071f8256942898ffb7`; PR #61 merge SHA: `1b8098ff00e0bb7482200b486710a5611f1e109d`.
-- PR #63 fusionada; sus siete workflows terminaron en success sobre el head exacto `6baffe8fb473128504361c28fd6ac0c0e01519d9`. PR #64 fusionada; seis workflows consultados terminaron en success sobre el head exacto `97088a2d0d599001f145f4e60f72556a66a5f8b4`: CI, Playwright E2E, Security scan, Semgrep SAST, database migration validation y project progress dashboard. No se ejecutaron tests locales; los workflows no certifican readiness de producción.
-- PR #60 está cerrada como supersedida, no fusionada. La comparación confirmó que la política de autonomía/revisión manual quedó integrada por PR #62/#63; no se reintrodujo el handoff histórico obsoleto. No hubo force-push.
-- PR #64 añadió cuatro skills de proyecto bajo `.agents/skills/`: `micro-app-auth-security`, `micro-app-postgres-testing`, `micro-app-stack-guidance` y `micro-app-skill-curation`, además de `docs/AUTOSKILLS_ADOPTION.md`. Son instrucciones locales creadas para Micro app, no bundles externos descargados.
-- AutoSkills: se inspeccionaron la web, el repositorio y entradas del registro curado. El intento de preparar un checkout temporal falló por DNS al resolver `github.com`; la CLI `npx autoskills --dry-run` no llegó a ejecutarse. No afirmar instalación externa ni crear un `skills-lock.json` ficticio. Próximo paso: repetir dry-run en un checkout con red y revisar propuesta/licencia/hash antes de instalar.
-- P0 de identidad sigue pendiente: Google sign-in + allowlist no está implementado; D1–D8 y matriz de permisos por rol siguen sin aprobación. `POST /auth/register` permanece fail-closed. La ruta de login por contraseña sigue existiendo; no afirmar que una allowlist la protege.
-- No inventar emails/dominios, configuración OAuth, bootstrap admin ni vinculación de cuentas. No tocar producción, Neon `main`, datos reales, secretos, emails, billing ni Cantina-pos. Presupuesto $0.
-- La aplicación NO está lista para producción. Backups/restauración independiente, handlers comerciales, aislamiento tenant completo, permisos aprobados, E2E reales y controles de concurrencia/idempotencia siguen pendientes. Strix sigue documentado, no instalado/ejecutado.
-- PR #64 generó una vista previa de rama por la integración automática de Cloudflare; no fue despliegue productivo ni se activó manualmente.
+- `main` verificado: `832c9d10b19846f89cc5d9e5ef51b7ef6eb5b21e` — https://github.com/BTF14/Micro-app/commit/832c9d10b19846f89cc5d9e5ef51b7ef6eb5b21e.
+- PR abiertas verificadas:
+  - [#68 — curación/verificación de skills externas](https://github.com/BTF14/Micro-app/pull/68), head `5d3770a23e07855f68b07e6327c83545c76e1c95`, sin fusionar.
+  - [#69 — UI de registro fail-closed](https://github.com/BTF14/Micro-app/pull/69), head `611f5274b5f422abe5421aef95aa77b500be7740`, sin fusionar.
+- Los seis workflows consultados inicialmente para el head de PR #69 terminaron en `failure` (Playwright E2E, migraciones, CI, Security scan, Semgrep y dashboard). GitHub no entregó los logs: los endpoints de logs devolvieron `404 BlobNotFound`, por lo que **la causa raíz sigue desconocida**. Se solicitaron re-ejecuciones de los seis runs; sus resultados todavía deben comprobarse antes de afirmar que pasaron.
+- PR #69 quita el formulario público que la API siempre rechaza con `503 REGISTRATION_DISABLED`; esto corrige la contradicción de UX, pero no implementa Google OAuth ni allowlist. Las decisiones D1–D8 y permisos por rol siguen pendientes de aprobación.
+- No se ejecutaron tests locales en esta sesión. El conector GitHub permitió inspección y cambios documentales, no un checkout local ejecutable.
+- Evaluación POS inicial: el README/LICENSE de [OSPOS](https://github.com/opensourcepos/opensourcepos) confirma POS PHP + CodeIgniter 4, MySQL/MariaDB, inventario, ventas, caja, recibos, proveedores, permisos y reportes. Requiere PHP 8.2–8.4 y configuración de host permitidos para producción. Aunque declara MIT, exige conservar visible en cada página su firma de atribución/footer sin modificar; esto debe respetarse si se reutiliza código. Stack incompatible con Micro app (React/Vite + TypeScript, Hono/Workers, Neon/Postgres), así que no se recomienda sustituir el stack basándose solo en estrellas. **Aún no se ha clonado ni ejecutado OSPOS**; la prueba aislada sigue pendiente.
+- Límites vigentes: presupuesto $0; sin producción/deploy, sin mutaciones en Neon `main`, sin secretos ni datos reales/destructivos y sin mezclar Cantina-pos. La aplicación no está lista para producción.
 
-## Próximos pasos
-1. En un entorno con red, ejecutar `npx autoskills --dry-run`; seleccionar únicamente skills compatibles con React/Vite, Hono/Workers, TypeScript, Neon y pruebas, verificando licencia y hash. Registrar la salida real.
-2. Continuar revisión estática y pruebas aisladas de auth/sesión/autorización. No implementar decisiones D1–D8 ni permisos hasta su aprobación.
-3. Comparar `feat/neon-transaction-adapter` contra el `main` vivo sin merge ciego.
-4. Mantener handoff, plan y diario actualizados con SHA/checks exactos; no desplegar producción ni mutar Neon `main`.
+## Próximos pasos inmediatos
+
+1. Revisar resultados de los seis reruns de PR #69 y corregir solo con logs/evidencia disponibles.
+2. Hacer la prueba aislada de OSPOS (instalación/arranque y flujo básico con datos sintéticos) si el entorno gratuito permite ejecutarla; documentar el resultado real y los bloqueos.
+3. Continuar P0 de identidad sin inventar emails/dominios ni implementar decisiones D1–D8 no aprobadas.
+4. Mantener este checkpoint sincronizado con el SHA vivo y los resultados exactos de CI.
+
 
 --- Checkpoint autoritativo — 2026-10-19, después de PR #57
 

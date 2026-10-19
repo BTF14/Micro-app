@@ -1,3 +1,48 @@
+# TRASPASO PRIORITARIO A OTRA IA — 2026-10-19 (Codex agotó cuota)
+
+Este bloque es la instrucción de inicio para la siguiente IA. Revalidar todo en GitHub antes de actuar: los SHA/checks que aparecen aquí son una instantánea observada y un nuevo commit puede hacer que los checks se vuelvan a ejecutar.
+
+## Instrucción de trabajo
+
+Continúa el proyecto exclusivamente en [BTF14/Micro-app](https://github.com/BTF14/Micro-app). El propietario ha autorizado autonomía para el trabajo técnico rutinario: inspecciona el repositorio y el estado real, toma decisiones técnicas reversibles, implementa, prueba, revisa, documenta y prepara PRs sin pedir permisos repetidos. No afirmes éxito sin evidencia. Lee primero `AGENTS.md`, `docs/CONSTITUTION.md`, `docs/CURRENT_STATE.md`, este archivo, `docs/PROJECT_PLAN.md`, `docs/STATE_JOURNAL.md` y la documentación SDD relevante.
+
+## Por qué se cambia de IA
+
+El bot de Codex publicó en las PR #60 y #61 que se alcanzó el límite de uso de revisiones de código. Panel: https://chatgpt.com/codex/cloud/settings/usage. No compres capacidad ni actives servicios de pago; presupuesto autorizado: **$0**. La nueva IA puede usar Codex cuando la cuota vuelva a estar disponible, si la integración funciona, pero no debe asumir que tiene cuota ahora ni disparar intentos repetidos.
+
+- PR #60: https://github.com/BTF14/Micro-app/pull/60. El resumen de Codex marca una revisión anterior como fallida y con hallazgos no resueltos para el SHA `1b7f576c38aa869ca8c17b749c7c35d473404ef8`; no se recuperaron comentarios inline/hilos con detalles que permitan afirmar cuáles son esos hallazgos.
+- PR #61: https://github.com/BTF14/Micro-app/pull/61. El resumen de Codex indica fallo/hallazgos para el SHA anterior `f27cff56577af96f24c6b5445e6c426ae3d323e9`; tampoco se recuperaron hallazgos concretos. Además, el bot confirmó el límite de uso.
+- **Regla:** la cuota agotada significa revisión incompleta, no aprobación ni evidencia de un defecto concreto. Revisa manualmente el diff completo y los archivos relacionados; documenta findings reproducibles con ruta/línea/impacto/prueba. CI, SAST y E2E son evidencia complementaria, no sustituyen revisión.
+
+## Estado GitHub observado en esta sesión
+
+- PR #60, rama `docs/ai-autonomy-governance`, base `main`, abierta y no fusionada. Head observado antes de este nuevo registro: `25e99a2070b6c392c4c21abf7c2a97c0fdb7f168`. Los siete workflows para ese SHA terminaron en `success`: CI run 39282409831, Security scan 39282409431, Playwright E2E 39282409441, Database migration validation 39282409579, Project progress dashboard 39282409429, Semgrep SAST 39282409630 y SDD/agent documentation validation 39282409505. Este handoff añade un commit, por lo que hay que volver a comprobar los checks del SHA nuevo.
+- PR #61, rama `docs/fix-readiness-checklist-newline`, base `main`, abierta y no fusionada. Head observado: `2d745c61476adac600345f166c2d42a18adc42a6`. Los seis workflows para ese SHA terminaron en `success`: CI run 39282159806, Security scan 39282159832, Playwright E2E 39282159834, Database migration validation 39282159796, Project progress dashboard 39282159804 y Semgrep SAST 39282159956.
+- Cloudflare reportó previews exitosas para ambas ramas; son previews, **no** despliegues de producción.
+- SHA base `main` mostrado en ambas PR al consultarlas: `0a36f234d7a590905527b9cb9268bba3791215f5`. Verificar que siga siendo el HEAD de `main` antes de tomar decisiones.
+- No se ha fusionado ninguna de estas dos PR. No fusionar hasta revisar manualmente ambos diffs, confirmar findings, y comprobar todos los checks requeridos para el SHA vigente.
+
+## Siguiente secuencia concreta
+
+1. Refrescar PR #60 y #61, head actual de `main`, diffs, reviews, comentarios/hilos y checks para los SHA exactos. Confirmar que no hayan aparecido comentarios nuevos ni conflictos.
+2. Revisar manualmente PR #60 completa (cinco archivos documentales: `AGENTS.md`, `docs/CONSTITUTION.md`, `docs/HANDOFF_NEXT_CHAT.md`, `docs/PROJECT_PLAN.md`, `docs/STATE_JOURNAL.md`) y PR #61 (`docs/PRODUCTION_READINESS.md` + `docs/STATE_JOURNAL.md`). Comprobar coherencia y que no se declare un control de producción como completado por error.
+3. No inventar los hallazgos que Codex no expuso. Si no hay hilos ni detalles, anotar esa limitación y el resultado de revisión manual. Corregir cualquier problema concreto en la rama correspondiente y volver a verificar el SHA/checks.
+4. Cuando los gates estén verdes y la revisión manual no encuentre problemas materiales, integrar documentalmente según la política de repo; verificar después el merge y el HEAD/checks de `main`. Si sigue sin poder verificarse, mantener las PR abiertas y documentar el bloqueo.
+5. Después continuar con la prioridad técnica P0 descrita abajo; no dejar que la limitación de Codex detenga trabajo seguro independiente.
+
+## Prioridad del producto y límites invariables
+
+- P0: autenticación Google + allowlist y decisiones D1–D8 en `docs/sdd/auth-policy-decision-record.md`; issue #53: https://github.com/BTF14/Micro-app/issues/53. El registro público debe permanecer fail-closed. No inventar emails permitidos, dominios, proveedor/configuración OAuth, bootstrap de administrador ni política de vinculación de cuentas.
+- La matriz de roles/permisos sigue pendiente de aprobación. No inventar permisos de ventas/inventario ni endpoints que no existan.
+- Revisar `feat/neon-transaction-adapter` como rama divergida; no fusionarla a ciegas. Rescatar solo cambios exclusivos necesarios tras comparar con `main`.
+- Strix está documentado, pero no se ha instalado ni ejecutado. No afirmar que hubo escaneo.
+- La aplicación **no está lista para producción**. Backups/restauración independiente y pruebas completas de autorización/aislamiento tenant siguen pendientes.
+- No producción, no cambios en Neon `main`, no datos reales, no secretos/tokens, no emails, no billing/gastos, no acciones destructivas o sensibles sin sus controles explícitos. No mezclar con Cantina-pos. Objetivo de coste: $0.
+- Mantén el trabajo en ramas/PR, registra evidencia en handoff y diario, y distingue recomendado/aprobado/implementado/verificado.
+
+
+---
+
 # Procedimiento operativo — revisiones de IA limitadas por cuota (2026-10-19)
 
 - **PR #60**: https://github.com/BTF14/Micro-app/pull/60 — head observado antes de esta actualización: `b4b3b31b4a61b82a5b2a290b0633c6d0489cf49a`. Codex reportó límite de uso. Su resumen apunta a una revisión previa del SHA `1b7f576c38aa869ca8c17b749c7c35d473404ef8`, con indicadores de hallazgos no resueltos, pero no se recuperaron comentarios inline ni hilos que expliquen esos hallazgos.

@@ -1,3 +1,13 @@
+# Regla prioritaria para cualquier IA/chat — autonomía y continuidad (2026-10-19)
+
+**Política normativa:** consultar `docs/CONSTITUTION.md` §9A y `AGENTS.md` antes de actuar. La IA debe tomar decisiones técnicas rutinarias de forma autónoma, implementar y verificar el trabajo autorizado, evitar delegar al usuario tareas realizables con las herramientas disponibles y mantener el conocimiento en el repositorio.
+
+**Límites:** esta autonomía no autoriza despliegues de producción, mutaciones de Neon `main`, uso de datos reales, gastos ni acciones destructivas/sensibles fuera de los gates existentes. No declarar una tarea completada, un check verde o un merge sin evidencia del SHA exacto.
+
+**Cambio documental en curso:** rama `docs/ai-autonomy-governance`. Esta anotación se ha añadido para continuidad; confirmar la PR y el estado de CI en GitHub antes de tratar la política como integrada en `main`. Los checkpoints históricos siguientes son evidencia histórica y no sustituyen la verificación del estado vivo.
+
+---
+
 ## Estado vivo — 2026-10-19 después de PR #57
 
 Revalidar GitHub antes de actuar; este bloque prevalece sobre snapshots históricos inferiores.

@@ -5,6 +5,7 @@ Este documento está pensado para que el propietario pueda tomar la decisión en
 ## Estado actual
 
 - **D1 aprobada por el propietario el 2026-10-19:** para la primera beta privada, la allowlist se almacenará en una variable de entorno/secreto con correos exactos autorizados; acceso denegado por defecto. No guardar correos reales ni secretos en el repositorio. Un panel administrativo con auditoría se evaluará más adelante, cuando exista un mecanismo seguro de bootstrap y recuperación.
+- **D2 (primer administrador) sigue pendiente de aprobación explícita.** Recomendación propuesta: procedimiento administrativo controlado, auditable y de un solo uso; sin endpoint público de bootstrap ni cuenta `owner` implícita. Diseñarlo y probarlo en entorno aislado antes de cualquier uso real.
 - Las demás decisiones de identidad y la matriz de permisos siguen pendientes de aprobación explícita.
 - Por seguridad, `POST /auth/register` está temporalmente bloqueado: devuelve `503 REGISTRATION_DISABLED` antes de procesar credenciales o acceder a la base de datos (PR #57).
 - No reactivar el registro hasta que el flujo aprobado esté implementado y probado.
@@ -36,7 +37,7 @@ Aprobar estos principios **no** significa aprobar aún todos los detalles técni
 La IA debe preguntarte, de una en una, lo que todavía no quede decidido. Las decisiones importantes son:
 
 - **Quién administra la allowlist:** recomendamos un operador autorizado con registro de auditoría y un proceso de recuperación seguro. No crear una cuenta administrativa secreta ni dejar credenciales en el código.
-- **Primer administrador:** recomendamos un bootstrap administrativo explícito, de un solo uso, auditable y desactivado después de utilizarse. El mecanismo debe diseñarse y revisarse antes de implementarlo.
+- **Primer administrador (D2, pendiente):** recomendamos un procedimiento administrativo controlado y auditable, sin endpoint público de bootstrap. Debe exigir identidad Google autenticada y correo verificado incluido en la allowlist; impedir una segunda asignación accidental de `owner`; dejar evidencia auditable sin registrar tokens ni secretos; y probarse primero en un entorno aislado. No implementar ni considerar aprobado hasta que el propietario confirme esta política y se diseñe el mecanismo técnico concreto.
 - **Login por contraseña existente (D4):** decidir si se deshabilita por completo cuando se active Google o si se conserva temporalmente detrás de la misma allowlist y verificación. Recomendación: no permitir que contraseña alguna eluda la allowlist; evaluar deshabilitarla para simplificar la beta.
 - **Cuentas existentes:** decidir cómo se migran después de verificar la identidad; no vincularlas automáticamente.
 - **Sesiones y orígenes:** acordar expiración, revocación y orígenes exactos permitidos según los entornos reales.

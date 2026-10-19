@@ -5,7 +5,7 @@ Este documento está pensado para que el propietario pueda tomar la decisión en
 ## Estado actual
 
 - **D1 aprobada por el propietario el 2026-10-19:** para la primera beta privada, la allowlist se almacenará en una variable de entorno/secreto con correos exactos autorizados; acceso denegado por defecto. No guardar correos reales ni secretos en el repositorio. Un panel administrativo con auditoría se evaluará más adelante, cuando exista un mecanismo seguro de bootstrap y recuperación.
-- **D2 (primer administrador) sigue pendiente de aprobación explícita.** Recomendación propuesta: procedimiento administrativo controlado, auditable y de un solo uso; sin endpoint público de bootstrap ni cuenta `owner` implícita. Diseñarlo y probarlo en entorno aislado antes de cualquier uso real.
+- **D2 aprobada explícitamente por el propietario el 2026-10-19:** crear el primer administrador mediante un procedimiento administrativo controlado y auditable, sin endpoint público de bootstrap. Esta aprobación fija la política, no autoriza aún implementación runtime, acceso a datos reales ni despliegue. El mecanismo técnico debe diseñarse, revisarse y probarse primero en un entorno aislado.
 - Las demás decisiones de identidad y la matriz de permisos siguen pendientes de aprobación explícita.
 - Por seguridad, `POST /auth/register` está temporalmente bloqueado: devuelve `503 REGISTRATION_DISABLED` antes de procesar credenciales o acceder a la base de datos (PR #57).
 - No reactivar el registro hasta que el flujo aprobado esté implementado y probado.
@@ -37,7 +37,7 @@ Aprobar estos principios **no** significa aprobar aún todos los detalles técni
 La IA debe preguntarte, de una en una, lo que todavía no quede decidido. Las decisiones importantes son:
 
 - **Quién administra la allowlist:** recomendamos un operador autorizado con registro de auditoría y un proceso de recuperación seguro. No crear una cuenta administrativa secreta ni dejar credenciales en el código.
-- **Primer administrador (D2, pendiente):** recomendamos un procedimiento administrativo controlado y auditable, sin endpoint público de bootstrap. Debe exigir identidad Google autenticada y correo verificado incluido en la allowlist; impedir una segunda asignación accidental de `owner`; dejar evidencia auditable sin registrar tokens ni secretos; y probarse primero en un entorno aislado. No implementar ni considerar aprobado hasta que el propietario confirme esta política y se diseñe el mecanismo técnico concreto.
+- **Primer administrador (D2, aprobada el 2026-10-19):** procedimiento administrativo controlado y auditable, sin endpoint público de bootstrap. Requisitos de diseño recomendados que aún deben detallarse técnicamente: exigir identidad Google autenticada y correo verificado incluido en la allowlist; impedir una segunda asignación accidental de `owner`; dejar evidencia auditable sin registrar tokens ni secretos; y probar en un entorno aislado. La aprobación de política no equivale a aprobar detalles de implementación.
 - **Login por contraseña existente (D4):** decidir si se deshabilita por completo cuando se active Google o si se conserva temporalmente detrás de la misma allowlist y verificación. Recomendación: no permitir que contraseña alguna eluda la allowlist; evaluar deshabilitarla para simplificar la beta.
 - **Cuentas existentes:** decidir cómo se migran después de verificar la identidad; no vincularlas automáticamente.
 - **Sesiones y orígenes:** acordar expiración, revocación y orígenes exactos permitidos según los entornos reales.
@@ -71,4 +71,4 @@ Si estás de acuerdo con la recomendación inicial, responde en el próximo chat
 
 > Apruebo como base la beta privada con allowlist de correos exactos, autenticación Google validada en servidor con email verificado, denegación por defecto, sin alta pública, sin creación automática de organizaciones/usuarios con rol owner y sin vinculación automática de cuentas. Guíame paso a paso para resolver lo que falta, una pregunta a la vez. No despliegues producción ni modifiques Neon main.
 
-Esta respuesta aprueba solo los principios indicados. La administración de la allowlist, el bootstrap inicial, el tratamiento del login por contraseña, las cuentas existentes, las sesiones/orígenes y la matriz de permisos deben quedar documentados antes de implementarse.
+Esta respuesta aprueba solo los principios indicados. D1 (allowlist privada) y D2 (procedimiento controlado y auditable para el primer administrador, sin endpoint público de bootstrap) ya fueron aprobadas el 2026-10-19. La administración operativa de la allowlist, el tratamiento del login por contraseña, las cuentas existentes, las sesiones/orígenes y la matriz de permisos siguen pendientes de decisión/documentación antes de implementarse.

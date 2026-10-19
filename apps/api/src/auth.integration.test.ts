@@ -211,6 +211,24 @@ const suite = describe.skipIf(!databaseAvailable)("authentication routes against
     }), { DATABASE_URL: databaseUrl, FRONTEND_ORIGIN: frontendOrigin });
     expect(expiredSessionResponse.status).toBe(401);
     expect(expiredSessionResponse.headers.get("set-cookie")).toContain("microapp_session=");
+
+    // Reset only this synthetic email's login limiter so the assertion tests account state, not accumulated attempts.
+    const inactiveLoginKeyDigest = await crypto.subtle.digest(
+      "SHA-256",
+      new TextEncoder().encode(`login:email:${email}`),
+    );
+    const inactiveLoginKeyHash = Array.from(new Uint8Array(inactiveLoginKeyDigest), (byte) =>
+      byte.toString(16).padStart(2, "0"),
+    ).join("");
+    await cleanupClient.query("DELETE FROM auth_rate_limits WHERE key_hash = $1", [inactiveLoginKeyHash]);
+    await cleanupClient.query("UPDATE app_users SET is_active = false WHERE email = $1", [email]);
+    const inactiveUserLogin = await app.fetch(new Request("https://api.example/auth/login", {
+      method: "POST",
+      headers: { ...originHeaders, "CF-Connecting-IP": crypto.randomUUID() },
+      body: JSON.stringify({ email, password }),
+    }), { DATABASE_URL: databaseUrl, FRONTEND_ORIGIN: frontendOrigin });
+    expect(inactiveUserLogin.status).toBe(401);
+    expect(inactiveUserLogin.headers.get("set-cookie")).toBeNull();
   });
 });
 

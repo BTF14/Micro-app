@@ -84,3 +84,29 @@ Before planning or editing:
 - CI, SAST, and E2E complement but do not replace code review. Verify all required checks on the exact current head.
 - Do not repeatedly trigger a quota-limited reviewer or pay to bypass it. Resume when capacity is available or use an already-authorized alternative.
 - Do not merge while required checks are pending/unverified, or while material findings remain unresolved. Document the limitation and next action in the handoff.
+
+
+## Portable continuity for every AI agent and new chat — mandatory
+
+The repository is the shared, durable source of truth across AI providers, models, IDEs, and separate chats. Chat memory is not shared reliably between sessions, and no agent may assume another chat has seen this conversation.
+
+At the start of **every** new session, regardless of provider/model:
+1. Read this file and `docs/CURRENT_STATE.md`.
+2. Read `docs/HANDOFF_NEXT_CHAT.md` and `docs/AI_CONTINUITY_PROTOCOL.md`.
+3. Verify the live default branch, current commit SHA, open PRs, branch heads, and relevant Actions before relying on historical notes.
+4. Read the domain-specific project skills/docs required for the task.
+5. Treat GitHub-tracked instructions and evidence as the continuity record; do not rely on chat history, model memory, or an unverified summary alone.
+
+Before ending a meaningful work session, update the handoff and relevant state/journal/resource docs with verified changes, current SHA/PR/run links, exact tests and outcomes, unresolved decisions, blockers, and the next concrete action. Keep historical entries clearly dated; do not present stale SHA values or old status snapshots as live facts.
+
+Every handoff must include or link to a copyable continuation prompt. If a platform cannot automatically load repository instructions, the user or agent must explicitly provide that prompt or open the repository docs. **This repository cannot broadcast its contents automatically to every AI service or chat**; portability comes from versioned files, explicit links, and the continuation prompt.
+
+Acknowledge evidence honestly: distinguish proposed, approved, implemented, and verified. Never claim a file was changed, a test was run, a tool is installed, or a workflow passed without checking. When terminal use is necessary and available, use it; if local network/tooling blocks it, try an authorized alternative such as GitHub Actions and document the exact limitation and result.
+
+
+## Portable continuity across every AI/chat
+
+- Mandatory entry point for any provider/model/IDE/new chat: read [portable AI context](docs/PORTABLE_AI_CONTEXT.md), [current state](docs/CURRENT_STATE.md), [next-chat handoff](docs/HANDOFF_NEXT_CHAT.md), and [continuity protocol](docs/AI_CONTINUITY_PROTOCOL.md), then verify live GitHub SHA/PRs/Actions.
+- The repository is the durable cross-chat source of truth; do not assume chat memory is shared. Update handoff and relevant state/journal docs after meaningful work, including exact evidence and next actions.
+- Use the terminal when necessary and available. If local tooling/network blocks execution, try an authorized alternative and record what actually ran. Never fabricate command/test results.
+- This repository cannot automatically notify or synchronize all external AI services/chats. Every new session must read these files or receive the copyable prompt in `docs/PORTABLE_AI_CONTEXT.md`.

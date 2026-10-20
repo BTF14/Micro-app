@@ -1,3 +1,54 @@
+# Checkpoint de continuidad — 2026-10-20: PR #71 y API Vercel
+
+> Esta sección prevalece sobre snapshots históricos inferiores. Revalidar SHA, PR y checks en vivo antes de actuar.
+
+## Estado GitHub verificado
+
+- Repo: https://github.com/BTF14/Micro-app
+- SHA main de referencia durante la revisión: 832c9d10b19846f89cc5d9e5ef51b7ef6eb5b21e. Revalidar main actual al iniciar.
+- PR #71: https://github.com/BTF14/Micro-app/pull/71 — rama feat/tenant-context-resolver, head observado a4806b69a2d12225234e7a8fc72c1116957d0318, base observada 832c9d10b19846f89cc5d9e5ef51b7ef6eb5b21e. Mantener draft; NO fusionar hasta tener CI verificable.
+- La PR añade apps/api/src/tenant-context.ts y apps/api/src/tenant-context.test.ts. El resolver valida token y UUID de organización, calcula SHA-256 del token, consulta sesión y membresía activa con scope de organización y devuelve userId/organizationId/role. No autoriza operaciones comerciales y no está conectado a rutas HTTP.
+- Seis workflow runs fallidos identificados en GitHub:
+  - Project progress dashboard: https://github.com/BTF14/Micro-app/actions/runs/39413291257
+  - Database migration validation: https://github.com/BTF14/Micro-app/actions/runs/39413291456
+  - CI: https://github.com/BTF14/Micro-app/actions/runs/39413291311
+  - Semgrep SAST: https://github.com/BTF14/Micro-app/actions/runs/39413291252
+  - Security scan: https://github.com/BTF14/Micro-app/actions/runs/39413291137
+  - Playwright E2E: https://github.com/BTF14/Micro-app/actions/runs/39413291129
+- El usuario ve 7 errores en la interfaz de GitHub; la consulta disponible devolvió seis runs. No afirmar cuál es el séptimo sin inspeccionar los checks actuales del SHA/PR.
+- En los reintentos consultados, jobs tenían runner_id 0, runner_name vacío y steps vacíos; terminaban en ~2 s. Descargas de logs daban 404 BlobNotFound y no había artifacts. Las ejecuciones consultadas no alcanzaron los pasos del workflow; la causa raíz de no asignación de runner sigue desconocida. Esto NO demuestra que el código o tests hayan fallado.
+- Smoke harness aislado (no checkout del repo): 3/3 checks de lógica del resolver pasaron; tsc --noEmit --strict --target ES2022 --module NodeNext --moduleResolution NodeNext --lib ES2022,DOM pasó contra interfaz mínima. No reemplaza Vitest, build workspace, integración PostgreSQL ni Playwright del repo.
+- Cloudflare Pages informó preview exitosa para head a4806b6: https://922aa7da.micro-app-63i.pages.dev y https://feat-tenant-context-resolver.micro-app-63i.pages.dev. Es preview, no producción.
+- No se hicieron cambios a Neon main, no se ejecutaron migraciones de producción ni se desplegó producción.
+
+## Hallazgo independiente: API en Vercel no inicia
+
+- Proyecto API Vercel: https://vercel.com/devbtf/micro-app-7lg5 (ID prj_LW6O1VQIhV0EFG3iRwLDQde3vT5V).
+- Deployment observado: dpl_HpAA28eKdVdWgsfMypeVuybsBhhz, alias https://micro-app-7lg5.vercel.app, target mostrado production, commit 832c9d10b19846f89cc5d9e5ef51b7ef6eb5b21e. Vercel muestra READY, pero runtime logs muestran fallos al atender requests.
+- Error exacto: ERR_MODULE_NOT_FOUND: Cannot find module '/var/task/apps/api/src/auth' imported from /var/task/apps/api/src/index.js; el proceso Node.js termina con exit status 1. GET / y favicon también provocan el error.
+- apps/api/src/index.ts importa registerAuthRoutes desde ./auth y Bindings desde ./bindings. apps/api/package.json declara type: module; apps/api/tsconfig.json usa module ESNext, moduleResolution Bundler y noEmit true. El build raíz compila web y hace typecheck de API, pero eso no prueba que API pueda ejecutarse como ESM de Node.
+- El build de Vercel aparece completado en ~11 s desde la raíz con pnpm 10.28; runtime falla después. Esto apunta a incompatibilidad de empaquetado/resolución ESM/entrypoint, pero la corrección exacta aún NO está probada. El proyecto se diseñó para Hono en Cloudflare Workers; no asumir que Vercel sea el destino correcto.
+- La consulta de variables de ambos proyectos devolvió envs: [] y hiddenProductionEnvCount: 0. Es solo el resultado de esa API, no prueba definitiva de ausencia de cada variable. No pedir ni copiar secretos al chat.
+- Web Vercel: https://vercel.com/devbtf/micro-app; alias observado https://micro-app-devbtf.vercel.app. Estado READY no acredita salud del runtime de la API.
+- NO modificar configuración de Vercel, aliases, variables, producción o dominio a ciegas. Inspeccionar build/entrypoint y confirmar si la API debe desplegarse en Workers según arquitectura y política de coste cero.
+
+## Restricciones vigentes
+
+- Presupuesto $0; no activar planes pagos, billing ni cargos automáticos.
+- No tocar Cantina-pos, datos reales, secretos, emails ni Neon main sin gate de producción y recuperación verificada.
+- No desplegar producción sin aceptación explícita.
+- Google sign-in + allowlist y decisiones D1–D8 siguen pendientes; matriz de permisos por rol no aprobada. POST /auth/register debe seguir fail-closed. No describir login por contraseña como protegido por allowlist.
+- No hay endpoints comerciales para catálogo/proveedores/ventas/pagos/movimientos de inventario registrados en apps/api/src/index.ts. Resolver tenant no sustituye autorización por operación.
+
+## Secuencia para el próximo chat
+
+1. Leer AGENTS.md, docs/CONSTITUTION.md, este CURRENT_STATE.md, docs/HANDOFF_NEXT_CHAT.md, docs/STATE_JOURNAL.md y .agents/skills/micro-app-stack-guidance/SKILL.md. Si se toca auth/tenant, leer también .agents/skills/micro-app-auth-security/SKILL.md.
+2. Consultar en vivo SHA de main, PR #71, head exacto y todos los checks actuales. Aclarar el séptimo check que ve el usuario. No repetir reintentos sin evidencia de que el runner puede asignarse.
+3. Mantener PR #71 draft. Si Actions vuelve a fallar antes de steps, registrar metadata/URL y no atribuirlo al código sin logs. Cuando haya runner funcional, ejecutar CI real.
+4. Para Vercel, inspeccionar archivos de configuración/entrypoint y artefacto de build; reproducir ejecución en entorno aislado. Determinar si corregir empaquetado ESM o mantener API en Cloudflare Workers. Preparar cambio en rama/PR; no publicar producción.
+5. Verificar el cambio con tests/build y runtime smoke test reproducible; registrar qué pasó y qué no.
+6. No implementar OAuth, allowlist ni endpoints de negocio hasta resolver decisiones de producto/roles pendientes.
+
 # Checkpoint autoritativo — 2026-10-19, después de PR #64
 
 - Repositorio canónico: https://github.com/BTF14/Micro-app.

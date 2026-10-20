@@ -1,3 +1,14 @@
+## 2026-10-20 — PR #71 y diagnóstico de API Vercel
+
+- PR #71 (feat/tenant-context-resolver) sigue abierta/draft; head revisado a4806b69a2d12225234e7a8fc72c1116957d0318, base observada 832c9d10b19846f89cc5d9e5ef51b7ef6eb5b21e. Revalidar al retomar.
+- Seis workflow runs identificados para ese head terminaron en failure: progress dashboard, migration validation, CI, Semgrep, Security scan y Playwright E2E. En reintentos revisados, jobs no tenían runner ni steps; logs devolvían 404 BlobNotFound. Causa de asignación de runner desconocida; no afirmar fallo del código.
+- Smoke harness aislado de lógica del resolver: 3/3; TypeScript estricto contra interfaz mínima: pasó. No es la suite real del repo.
+- Vercel API deployment dpl_HpAA28eKdVdWgsfMypeVuybsBhhz muestra ERR_MODULE_NOT_FOUND para apps/api/src/auth importado desde apps/api/src/index.js; proceso Node sale con código 1. Build de Vercel figura completado, por lo que el fallo observado es runtime. Causa exacta/corrección aún sin verificar.
+- Usuario reporta 7 checks con error en UI; consulta de workflow runs recuperó seis. Identificar el séptimo en la siguiente sesión antes de actualizar el conteo.
+- Se preparó checkpoint/handoff con evidencia, límites y secuencia. No se tocó Neon main, no se desplegó producción, no se manejaron secretos ni datos reales.
+- Próximo: mantener PR #71 draft; revalidar checks/runner; reproducir y corregir runtime en rama/PR tras inspeccionar configuración/entrypoint y confirmar destino arquitectónico (Workers vs Vercel). Sin merge/deploy de producción.
+
+---
 ## 2026-10-19 — Corrección de formato en checklist de preparación
 
 - Se corrigió en `docs/PRODUCTION_READINESS.md` un `\\n` literal que unía visualmente el criterio ya verificado del bloqueo de registro con el siguiente criterio pendiente de Google sign-in.

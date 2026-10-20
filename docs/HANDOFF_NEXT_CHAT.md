@@ -1,3 +1,23 @@
+## Handoff actualizado — revisión viva 2026-10-20 08:56 EDT / 12:56 UTC
+
+La evidencia detallada y la tabla de workflows están al inicio de `docs/CURRENT_STATE.md`. Se actualizó ese archivo en esta misma rama mediante commit `e2d9812e2406969f2e0bf6b32dbc6040f108b8e1`; el head de la rama ahora habrá avanzado, por lo que vuelve a consultarlo antes de actuar.
+
+- Al comenzar la revisión, `main` seguía en `832c9d10b19846f89cc5d9e5ef51b7ef6eb5b21e`; PR #71 abierta/draft, head `f0f489fc6ac2f5ada84105610ae3eb0e1ff286e2` (ya no `a4806b6...`). PR #68 y #69 siguen abiertas no-draft; PR #70 sigue abierta draft. SHA exactos registrados en CURRENT_STATE.
+- Sobre el head actual consultado, se recuperaron seis workflows fallidos: Project progress dashboard, Database migration validation, CI, Semgrep SAST, Security scan y Playwright E2E. Cada job expuesto reporta `steps: []`; las descargas de logs para los seis job IDs actuales devuelven 404 `BlobNotFound`. La causa de no inicio/asignación del runner no está demostrada. El usuario reporta siete errores, pero el conector no permitió identificar el séptimo; no adivinar. El combined status solo expone dos contextos Vercel en success, no los check-runs de Actions.
+- El comentario de diagnóstico anterior sigue presente en PR #71; no se duplicó. No hacer más reruns sin evidencia nueva. Mantener la PR en draft hasta que los jobs ejecuten steps y exista CI real verificable.
+- Vercel: la API preview del SHA `f0f489f...` está `READY`, pero no se verificó con petición HTTP. El deployment de producción anterior tenía `ERR_MODULE_NOT_FOUND` al importar `/var/task/apps/api/src/auth`; la ventana de logs histórica de 7 días no es accesible en el plan/retención actual. Una consulta reciente no encontró logs de error, lo cual no certifica runtime sano. El listado de envs devolvió vacío pero no prueba ausencia total de variables.
+- Arquitectura canónica en la Constitución y `apps/api/wrangler.toml`: frontend Cloudflare Pages, API Cloudflare Workers + Hono, Neon Free, coste $0. No existe `vercel.json` en raíz ni `apps/api/vercel.json` en refs consultados. Mantener Workers como destino de API; no cambiar configuración Vercel ni desplegar producción a ciegas. La incompatibilidad interna exacta del builder Vercel sigue como hipótesis, no causa raíz probada.
+- No se cambió código de aplicación ni configuración de Vercel; solo se documentó evidencia. No se ejecutaron tests/build locales reales, no se desplegó producción, no se alteró Neon `main`, no se ejecutaron migraciones ni se expusieron secretos.
+
+### Siguiente secuencia
+
+1. Verificar el nuevo head después de las actualizaciones documentales y volver a consultar runs/checks para ese SHA.
+2. Recuperar el séptimo check mediante el listado raw de check-runs de GitHub (no disponible en el conector consultado). Si se comparte una URL/captura, registrar nombre y conclusión sin repetir comentarios innecesarios.
+3. Obtener runner metadata/raw logs cuando estén disponibles; distinguir fallo de infraestructura de tests no ejecutados.
+4. No modificar el resolver, OAuth/allowlist, permisos, Neon ni configuración de Vercel para intentar ocultar checks. Ejecutar la suite real cuando haya un checkout/runner funcional.
+5. Tratar Vercel API como auxiliar/no destino comercial hasta decisión arquitectónica explícita; la arquitectura documentada es Cloudflare Workers + Hono.
+
+---
 ## Handoff urgente — 2026-10-20: PR #71 + fallo runtime Vercel
 
 Leer el checkpoint nuevo al inicio de docs/CURRENT_STATE.md; incluye SHA/URLs, seis workflows identificados, nota del séptimo check que el usuario ve, evidencia de jobs sin runner/steps, smoke harness aislado, fallo exacto de runtime de Vercel y próximos pasos. PR #71 sigue draft; no mergear. No desplegar producción ni cambiar Neon main.

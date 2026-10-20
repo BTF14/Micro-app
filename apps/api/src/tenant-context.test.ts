@@ -1,12 +1,18 @@
 import { describe, expect, it, vi } from "vitest";
 import type { DatabaseClient } from "./database";
-import { resolveTenantContext, type TenantContext } from "./tenant-context";
+import { resolveTenantContext } from "./tenant-context";
 
 const sessionToken = "synthetic-session-token";
 const organizationId = "11111111-2222-4333-8444-555555555555";
 const userId = "aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee";
 
-function makeClient(rows: Partial<TenantContext> & { user_id: string; organization_id: string; role: "owner" | "admin" | "cashier" | "inventory" }[] = []) {
+type TestTenantRow = {
+  user_id: string;
+  organization_id: string;
+  role: "owner" | "admin" | "cashier" | "inventory";
+};
+
+function makeClient(rows: TestTenantRow[] = []) {
   const query = vi.fn(async (_statement: string, _values?: unknown[]) => ({ rows }));
   return {
     client: { connect: vi.fn(), query, end: vi.fn() } as unknown as DatabaseClient,

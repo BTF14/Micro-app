@@ -1,7 +1,7 @@
 import { Hono } from "hono";
 import { cors } from "hono/cors";
-import { registerAuthRoutes } from "./auth";
-import type { Bindings } from "./bindings";
+import { registerAuthRoutes } from "./auth.js";
+import type { Bindings } from "./bindings.js";
 
 const app = new Hono<{ Bindings: Bindings }>();
 

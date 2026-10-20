@@ -1,7 +1,5 @@
 ## Checkpoint de continuidad — 2026-10-20: runtime de API y CI bloqueado
 
-# Checkpoint autoritativo — 2026-10-20: destino runtime API y checks PR #71
-
 - Repositorio: https://github.com/BTF14/Micro-app. Rama de diagnóstico/documentación: `fix/api-runtime-deployment-target`, creada desde `f0f489fc6ac2f5ada84105610ae3eb0e1ff286e2`. No se ha desplegado ni tocado Neon.
 - PR #71 sigue abierta, sin fusionar; head vivo consultado: `f0f489fc6ac2f5ada84105610ae3eb0e1ff286e2`. El head previo documentado `a4806b69...` ya está obsoleto.
 - El endpoint de checks para el head actual devolvió 9 check-runs: Cloudflare Pages y Vercel Preview Comments en success; 7 fallidos. Son seis workflows únicos (CI, Playwright E2E, migration validation, Semgrep, Security scan, progress dashboard) más un check-run duplicado de Trivy. La evidencia de jobs examinados: `runner_id=0`, nombre vacío, `steps=[]`, finalización ~2 s. Por tanto no hay evidencia de que los pasos/tests se ejecutaran. Causa raíz de asignación del runner no identificada; no atribuirlo al código ni repetir reintentos sin nueva evidencia.

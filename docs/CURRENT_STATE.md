@@ -1,3 +1,57 @@
+# Revisión viva — 2026-10-20 08:56 EDT (12:56 UTC)
+
+> Esta revisión añade evidencia viva a los checkpoints históricos. El SHA anotado como head/base es el estado al comenzar esta revisión; las actualizaciones documentales de esta sesión crean commits nuevos y deben volver a verificarse después.
+
+## GitHub / PRs al comenzar la revisión
+
+- `main`: `832c9d10b19846f89cc5d9e5ef51b7ef6eb5b21e` (confirmado con fetch_commit sobre ref `main`).
+- PR #71: abierta, draft=true, base `main`, base SHA `832c9d10b19846f89cc5d9e5ef51b7ef6eb5b21e`; head de PR `f0f489fc6ac2f5ada84105610ae3eb0e1ff286e2`, rama declarada `feat/tenant-context-resolver`. Este SHA reemplaza el snapshot anterior `a4806b69a2d12225234e7a8fc72c1116957d0318`.
+- PR #68 abierta, no draft; head `5d3770a23e07855f68b07e6327c83545c76e1c95`, base SHA `832c9d10b19846f89cc5d9e5ef51b7ef6eb5b21e`.
+- PR #69 abierta, no draft; head `611f5274b5f422abe5421aef95aa77b500be7740`, misma base.
+- PR #70 abierta, draft=true; head `8bdb410bf2755efdeb6db35f22bae7c8b00acf25`, misma base.
+- Comentario de diagnóstico previo en PR #71 sigue presente: https://github.com/BTF14/Micro-app/pull/71#issuecomment-6289785588. No se duplicó. El bot de Cloudflare también reporta preview exitosa para el commit `f0f489f`: https://01bc0d05.micro-app-63i.pages.dev (preview, no producción).
+
+## GitHub Actions: seis workflows actuales recuperados; el séptimo sigue sin identificar
+
+La consulta de workflow runs asociada al head `f0f489fc6ac2f5ada84105610ae3eb0e1ff286e2` devuelve estos seis runs completos en failure. Los jobs expuestos por el conector tienen cero steps; cada descarga de logs probada devuelve HTTP 404 `BlobNotFound`. No es evidencia de tests o código fallidos: los comandos de los workflows no aparecen ejecutados.
+
+| Workflow | Run ID | Job | Job ID | Conclusión |
+|---|---:|---|---:|---|
+| Project progress dashboard | 39424411848 | generate-progress | 118633193726 | failure |
+| Database migration validation | 39424411977 | postgres-migration | 118633195889 | failure |
+| CI | 39424412060 | verify | 118633195741 | failure |
+| Semgrep SAST | 39424411782 | JavaScript and TypeScript static analysis | 118633196350 | failure |
+| Security scan | 39424411907 | Trivy filesystem and configuration scan | 118633194852 | failure |
+| Playwright E2E | 39424412144 | Chromium authentication smoke tests | 118633196016 | failure |
+
+- Intentos: el wrapper de runs no expone `run_attempt` ni los timestamps completos para estos registros; por tanto, no se afirma el número de intento actual. Los jobs listados son los jobs devueltos para cada run consultado.
+- Evidencia de cada job actual: `fetch_workflow_job_steps` devolvió `steps: []`; `fetch_workflow_job_logs` devolvió 404 `BlobNotFound` para los seis job IDs anteriores.
+- Runs anteriores observados en el checkpoint: progress `39413291257`, Playwright `39413291129`, CI `39413291311`, Semgrep `39413291252`, Security `39413291137`, migraciones `39413291456`; también se documentaron job IDs iniciales/reintentados allí. No asumir que esos runs pertenecen al head actual sin metadatos SHA.
+- El endpoint de combined status consultado para el head actual solo devuelve dos contextos Vercel en `success` (`micro-app-7lg5` y `micro-app`); no enumera los check-runs de Actions. La interfaz/usuario reporta siete errores, pero la conexión disponible solo permitió identificar seis workflow runs fallidos. **Séptimo check: no identificado / pendiente**, no inventar nombre ni causa. Hace falta la lista raw de check-runs o captura/URL del séptimo check desde GitHub.
+- El patrón de seis jobs con cero steps y logs no disponibles sugiere fallo anterior a la ejecución de steps o indisponibilidad de almacenamiento de logs; no demuestra la causa raíz de la asignación de runner. No repetir re-runs sin nueva evidencia.
+- No se ejecutaron tests del checkout real en esta sesión. Solo sigue constando la verificación histórica aislada: smoke harness 3/3 y TypeScript estricto contra interfaz mínima; no sustituye Vitest, build workspace, pruebas PostgreSQL ni Playwright.
+
+## Vercel: configuración, runtime y arquitectura
+
+- Proyecto frontend `micro-app`, ID `prj_ZoTwHAy4pwGfnnyCz9BmKUIuaBTy`, framework Vite. Proyecto API `micro-app-7lg5`, ID `prj_LW6O1VQIhV0EFG3iRwLDQde3vT5V`, framework Hono, Node `24.x`, región `iad1`. Vercel reporta `READY`, que no equivale a smoke test exitoso.
+- Deployment previo con error runtime: `dpl_HpAA28eKdVdWgsfMypeVuybsBhhz`, SHA de main `832c9d10b19846f89cc5d9e5ef51b7ef6eb5b21e`; error reportado anteriormente: `ERR_MODULE_NOT_FOUND: Cannot find module '/var/task/apps/api/src/auth' imported from /var/task/apps/api/src/index.js`. No se obtuvo un log histórico nuevo: la API de runtime logs rechaza ventanas de 7 días en Hobby por retención. Para la preview actual, una consulta de los últimos 30 minutos no encontró registros de error; esto no prueba que las peticiones funcionen.
+- Preview API actual inspeccionada: deployment `dpl_8XPehis1a6KTyb9RontJoVeHZT1V`, estado `READY`, commit `f0f489fc6ac2f5ada84105610ae3eb0e1ff286e2`, rama `feat/tenant-context-resolver`, alias `micro-app-7lg5-git-feat-tenant-context-resolver-devbtf.vercel.app`. No se obtuvieron logs de error en ventana reciente; no se realizó una prueba HTTP/runtime end-to-end.
+- `apps/api/src/index.ts` usa imports relativos sin extensión (`./auth`, `./bindings`) y exporta la app Hono. `apps/api/package.json` tiene `type: module`; `apps/api/tsconfig.json` configura `module: ESNext`, `moduleResolution: Bundler`, `noEmit: true`. La compilación raíz es `pnpm --filter @micro-app/web build && pnpm --filter @micro-app/api typecheck`: comprueba frontend y tipos, no produce bundle Node de API. `apps/api/wrangler.toml` declara `main = "src/index.ts"`; el script de desarrollo API es `wrangler dev`.
+- No se encontraron `vercel.json` en la raíz ni `apps/api/vercel.json` en los refs consultados (404). La notificación Vercel de la PR confirma root directory `apps/api` para el proyecto API. La configuración del proyecto Vercel no se modificó.
+- Variables: el endpoint de listado devolvió `envs: []` y `hiddenProductionEnvCount: 0` para ambos proyectos, pero no se puede concluir que no existan variables por todos los mecanismos/targets; no se mostraron ni recuperaron valores secretos.
+- Arquitectura normativa del repo (Constitución §2): frontend estático Cloudflare Pages, API Cloudflare Workers + Hono, PostgreSQL Neon Free, objetivo de coste $0; Vercel Hobby no es el destino para operación comercial. Evidencia concreta: `wrangler.toml` apunta a `src/index.ts`, `dev:api` ejecuta Wrangler, y no hay configuración Vercel versionada para el runtime API.
+- Recomendación segura: mantener Workers como destino de API y Pages como frontend; tratar Vercel API como un deployment auxiliar/no soportado hasta que exista una decisión arquitectónica explícita. El error ESM en Vercel es consistente con que el output runtime intenta resolver `./auth` como módulo separado no presente, pero la causa interna exacta del builder no quedó demostrada. No añadir extensiones, reconfigurar proyectos, aliases, variables ni desplegar producción a ciegas.
+- La preview de Cloudflare en el comentario de PR confirma un despliegue de preview; no demuestra que el runtime API en Vercel o la conexión a Neon estén operativos.
+
+## Cambios y límites de esta revisión
+
+- No se cambió código de aplicación ni configuración de Vercel. Se actualizará documentación existente en esta misma rama para conservar el handoff.
+- No se ejecutó build/test real del repositorio ni smoke HTTP de API en esta sesión; no se tuvo un checkout local funcional. Los logs de Actions no están disponibles.
+- No se desplegó producción, no se alteró Neon `main`, no se ejecutaron migraciones y no se expusieron secretos.
+- Siguiente paso: conseguir el séptimo check vía raw check-runs, recuperar logs/runners cuando GitHub permita hacerlo, y ejecutar una prueba de runtime en un entorno reproducible. Mantener PR #71 draft hasta tener CI ejecutable sobre el SHA final.
+
+---
+
 # Checkpoint de continuidad — 2026-10-20: PR #71 y API Vercel
 
 > Esta sección prevalece sobre snapshots históricos inferiores. Revalidar SHA, PR y checks en vivo antes de actuar.

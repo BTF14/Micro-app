@@ -1,3 +1,18 @@
+## Checkpoint de continuidad — 2026-10-20: runtime de API y CI bloqueado
+
+# Checkpoint autoritativo — 2026-10-20: destino runtime API y checks PR #71
+
+- Repositorio: https://github.com/BTF14/Micro-app. Rama de diagnóstico/documentación: `fix/api-runtime-deployment-target`, creada desde `f0f489fc6ac2f5ada84105610ae3eb0e1ff286e2`. No se ha desplegado ni tocado Neon.
+- PR #71 sigue abierta, sin fusionar; head vivo consultado: `f0f489fc6ac2f5ada84105610ae3eb0e1ff286e2`. El head previo documentado `a4806b69...` ya está obsoleto.
+- El endpoint de checks para el head actual devolvió 9 check-runs: Cloudflare Pages y Vercel Preview Comments en success; 7 fallidos. Son seis workflows únicos (CI, Playwright E2E, migration validation, Semgrep, Security scan, progress dashboard) más un check-run duplicado de Trivy. La evidencia de jobs examinados: `runner_id=0`, nombre vacío, `steps=[]`, finalización ~2 s. Por tanto no hay evidencia de que los pasos/tests se ejecutaran. Causa raíz de asignación del runner no identificada; no atribuirlo al código ni repetir reintentos sin nueva evidencia.
+- **Destino correcto de la API:** Cloudflare Workers con Hono, conforme a `docs/ARCHITECTURE_AND_ZERO_COST.md`, `apps/api/wrangler.toml` (`main = "src/index.ts"`) y el contrato de bindings `c.env`. El script raíz solo compila Vite y hace typecheck de API; `tsconfig` de API usa Bundler y `noEmit`, no produce un bundle Node ejecutable. Vercel ejecuta la fuente como Node ESM y falla resolviendo `./auth`; añadir extensiones a imports sería un arreglo local de síntoma y mantendría el runtime incorrecto.
+- Añadido `docs/API_RUNTIME_DEPLOYMENT.md` con evidencia, causa, destino y pasos de verificación. No se cambió configuración, alias, variables ni deployment de Vercel; el proyecto `micro-app-7lg5` no se considera destino canónico.
+- **Verificación pendiente:** no se dispone de checkout/terminal de repo en el conector actual; no se ejecutaron `pnpm build`, `pnpm test`, Wrangler dry-run ni smoke real de `/health`. La decisión arquitectónica está sustentada por los archivos y configuración leídos; la corrección operativa requiere validación de Workers en preview, no despliegue productivo.
+- Neon `main`, producción, secretos, datos reales y billing sin cambios. PR #71 debe seguir draft hasta que CI pueda ejecutarse en runner y los checks del SHA final estén verificados.
+- Ver detalle: [API_RUNTIME_DEPLOYMENT.md](API_RUNTIME_DEPLOYMENT.md).
+
+---
+
 ## Checkpoint de continuidad — 2026-10-19 después de PR #64
 
 - PR #64 fusionada por squash; merge SHA `f15e3b0da415b8f31641a81ed8a883deb7fcfc5f`. PR #63 merge SHA `b4b417ec5a85b8b0c48b606c718c341745af9055`.

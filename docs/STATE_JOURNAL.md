@@ -1,5 +1,21 @@
 ## 2026-10-20 — PR #71 y diagnóstico de API Vercel
 
+## 2026-10-20 — destino de runtime API y séptimo check
+
+# Checkpoint autoritativo — 2026-10-20: destino runtime API y checks PR #71
+
+- Repositorio: https://github.com/BTF14/Micro-app. Rama de diagnóstico/documentación: `fix/api-runtime-deployment-target`, creada desde `f0f489fc6ac2f5ada84105610ae3eb0e1ff286e2`. No se ha desplegado ni tocado Neon.
+- PR #71 sigue abierta, sin fusionar; head vivo consultado: `f0f489fc6ac2f5ada84105610ae3eb0e1ff286e2`. El head previo documentado `a4806b69...` ya está obsoleto.
+- El endpoint de checks para el head actual devolvió 9 check-runs: Cloudflare Pages y Vercel Preview Comments en success; 7 fallidos. Son seis workflows únicos (CI, Playwright E2E, migration validation, Semgrep, Security scan, progress dashboard) más un check-run duplicado de Trivy. La evidencia de jobs examinados: `runner_id=0`, nombre vacío, `steps=[]`, finalización ~2 s. Por tanto no hay evidencia de que los pasos/tests se ejecutaran. Causa raíz de asignación del runner no identificada; no atribuirlo al código ni repetir reintentos sin nueva evidencia.
+- **Destino correcto de la API:** Cloudflare Workers con Hono, conforme a `docs/ARCHITECTURE_AND_ZERO_COST.md`, `apps/api/wrangler.toml` (`main = "src/index.ts"`) y el contrato de bindings `c.env`. El script raíz solo compila Vite y hace typecheck de API; `tsconfig` de API usa Bundler y `noEmit`, no produce un bundle Node ejecutable. Vercel ejecuta la fuente como Node ESM y falla resolviendo `./auth`; añadir extensiones a imports sería un arreglo local de síntoma y mantendría el runtime incorrecto.
+- Añadido `docs/API_RUNTIME_DEPLOYMENT.md` con evidencia, causa, destino y pasos de verificación. No se cambió configuración, alias, variables ni deployment de Vercel; el proyecto `micro-app-7lg5` no se considera destino canónico.
+- **Verificación pendiente:** no se dispone de checkout/terminal de repo en el conector actual; no se ejecutaron `pnpm build`, `pnpm test`, Wrangler dry-run ni smoke real de `/health`. La decisión arquitectónica está sustentada por los archivos y configuración leídos; la corrección operativa requiere validación de Workers en preview, no despliegue productivo.
+- Neon `main`, producción, secretos, datos reales y billing sin cambios. PR #71 debe seguir draft hasta que CI pueda ejecutarse en runner y los checks del SHA final estén verificados.
+- Ver detalle: [API_RUNTIME_DEPLOYMENT.md](API_RUNTIME_DEPLOYMENT.md).
+
+---
+
+
 - PR #71 (feat/tenant-context-resolver) sigue abierta/draft; head revisado a4806b69a2d12225234e7a8fc72c1116957d0318, base observada 832c9d10b19846f89cc5d9e5ef51b7ef6eb5b21e. Revalidar al retomar.
 - Seis workflow runs identificados para ese head terminaron en failure: progress dashboard, migration validation, CI, Semgrep, Security scan y Playwright E2E. En reintentos revisados, jobs no tenían runner ni steps; logs devolvían 404 BlobNotFound. Causa de asignación de runner desconocida; no afirmar fallo del código.
 - Smoke harness aislado de lógica del resolver: 3/3; TypeScript estricto contra interfaz mínima: pasó. No es la suite real del repo.

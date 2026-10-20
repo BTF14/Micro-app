@@ -1,3 +1,11 @@
+## Handoff urgente — 2026-10-20: PR #71 + fallo runtime Vercel
+
+Leer el checkpoint nuevo al inicio de docs/CURRENT_STATE.md; incluye SHA/URLs, seis workflows identificados, nota del séptimo check que el usuario ve, evidencia de jobs sin runner/steps, smoke harness aislado, fallo exacto de runtime de Vercel y próximos pasos. PR #71 sigue draft; no mergear. No desplegar producción ni cambiar Neon main.
+
+Prompt para continuar:
+> Continúa Micro app desde el checkpoint del 2026-10-20 en docs/CURRENT_STATE.md. Verifica el estado vivo de GitHub/PR #71 y los checks del SHA actual (el usuario reporta siete errores; documenta el séptimo si se identifica). No confundas jobs que fallan antes de steps con tests fallidos. Después investiga la API Vercel: runtime error ERR_MODULE_NOT_FOUND para /var/task/apps/api/src/auth importado desde index.js; revisa entrypoint/build y arquitectura Cloudflare Workers antes de corregir. Trabaja en rama/PR, reproduce el problema y verifica el arreglo. No despliegues producción, no cambies Neon main, no expongas secretos, mantén coste $0 y no inventes políticas OAuth/allowlist/roles pendientes.
+
+---
 ## Estado prioritario de continuidad — 2026-10-19, después de PR #64
 
 - Repositorio canónico: https://github.com/BTF14/Micro-app.

@@ -1,5 +1,5 @@
 import { Client } from "@neondatabase/serverless";
-import { isDatabaseUrlConfigured } from "./config";
+import { isDatabaseUrlConfigured } from "./config.js";
 
 export interface DatabaseQueryResult<Row = unknown> {
   rows: Row[];

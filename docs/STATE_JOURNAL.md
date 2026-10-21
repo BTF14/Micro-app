@@ -459,3 +459,11 @@ Este diario es append-only en cuanto a historia: no borrar hitos antiguos; añad
 - Fuentes oficiales consultadas: https://circleci.com/pricing/ y https://circleci.com/docs/guides/plans-pricing/credits/. Free declara $0, sin tarjeta y límites mensuales; al agotarse los créditos de uso privado los builds se bloquean hasta el refill. El plan y términos deben revisarse en la cuenta antes de conectar.
 - Estado: config propuesta, no ejecutada ni validada. Se requiere que el propietario conecte/autorice el repo en CircleCI; si se pide tarjeta, pago, trial facturable o auto-upgrade, detenerse.
 - Sin producción, Neon `main`, datos reales, secretos, billing, migraciones ni Cantina-pos.
+
+
+## 2026-10-21 — Endurecimiento de configuración CircleCI
+
+- Se actualizó `.circleci/config.yml` en `ci/circleci-free-verification`: commits `3a03cf69b56481baab24f417258f1b9ced82c681`, `5d1b3e65fe70e0a89d76cd55a1202d3c49c0b387` y `06ddbb07c5628f64eda8c48bf955b967fb230a16`.
+- Añadida restauración/guardado de cache por checksum de `pnpm-lock.yaml`; retirado `apt-get`; la espera de PostgreSQL y aplicación de migración se ejecutan con `pg` desde Node, manteniendo DB desechable y sin Neon.
+- Verificación realizada hasta ahora: releer el archivo desde GitHub y comprobar presencia de versión 2.1, cache, lockfile congelado, build, unit tests, integración y ausencia de `apt-get`/deploy. No se ha ejecutado `circleci config validate` ni pipeline CircleCI porque no hay acceso a la CLI/ejecución de CircleCI desde las herramientas conectadas.
+- PR #73 permanece draft. No fusionar ni desplegar producción; presupuesto $0 y no tocar Neon `main`, datos reales ni secretos.

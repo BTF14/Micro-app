@@ -1,5 +1,7 @@
 ## Estado prioritario de continuidad — 2026-10-21: CircleCI como alternativa de CI
 
+- Trabajo automático reciente: se actualizó `.circleci/config.yml` en la rama existente, último commit de config `06ddbb07c5628f64eda8c48bf955b967fb230a16`. Incluye restore/save cache por checksum de `pnpm-lock.yaml`, elimina `apt-get` y sustituye `psql/pg_isready` por comprobaciones Node usando `pg` contra PostgreSQL efímero. Verificar la config completa y ejecutar CircleCI antes de declarar éxito; no hay validación CircleCI confirmada.
+
 - PR #73: https://github.com/BTF14/Micro-app/pull/73, draft, rama `ci/circleci-free-verification`. Añade `.circleci/config.yml` y `docs/CIRCLECI_SETUP.md` para probar CircleCI como alternativa de coste $0.
 - No afirmar que CircleCI está conectado o que la configuración pasa: todavía no se ha ejecutado. El propietario debe conectar/autorizar el repo privado, solo después de verificar que su cuenta está en Free $0 sin tarjeta, cargos recurrentes, trial facturable ni auto-upgrade.
 - El pipeline propuesto corre pnpm install frozen, build/typecheck, pruebas unitarias y autenticación contra PostgreSQL efímero; no despliega ni usa Neon.

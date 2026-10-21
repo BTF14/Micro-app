@@ -1,0 +1,64 @@
+version: 2.1
+
+jobs:
+  verify:
+    docker:
+      - image: cimg/node:22.18
+      - image: cimg/postgres:18.1
+        environment:
+          POSTGRES_DB: microapp_test
+          POSTGRES_USER: microapp
+          POSTGRES_PASSWORD: microapp-test-only
+    working_directory: ~/project
+    environment:
+      CI: "true"
+      DATABASE_URL: postgres://microapp:microapp-test-only@127.0.0.1:5432/microapp_test
+    steps:
+      - checkout
+      - run:
+          name: Install PostgreSQL client
+          command: sudo apt-get update && sudo apt-get install -y postgresql-client
+      - run:
+          name: Enable pinned package manager
+          command: |
+            corepack enable
+            corepack prepare pnpm@10 --activate
+            pnpm --version
+      - run:
+          name: Install dependencies
+          command: pnpm install --frozen-lockfile
+      - run:
+          name: Wait for disposable PostgreSQL
+          command: |
+            for attempt in $(seq 1 30); do
+              if pg_isready -h 127.0.0.1 -p 5432 -U microapp -d microapp_test; then
+                exit 0
+              fi
+              sleep 2
+            done
+            echo "PostgreSQL did not become ready in time" >&2
+            exit 1
+      - run:
+          name: Install ephemeral PostgreSQL test driver
+          command: |
+            npm install --prefix /tmp/micro-app-test-deps --no-save --no-package-lock pg @types/pg
+            mkdir -p node_modules/@types
+            ln -s /tmp/micro-app-test-deps/node_modules/pg node_modules/pg
+            ln -s /tmp/micro-app-test-deps/node_modules/@types/pg node_modules/@types/pg
+      - run:
+          name: Apply schema to disposable PostgreSQL
+          command: psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -f apps/api/migrations/0001_initial.sql
+      - run:
+          name: Build and typecheck
+          command: pnpm build
+      - run:
+          name: Unit tests
+          command: pnpm test
+      - run:
+          name: PostgreSQL auth integration tests
+          command: pnpm --filter @micro-app/api exec vitest run src/auth.integration.test.ts
+
+workflows:
+  verify-on-push-and-pull-request:
+    jobs:
+      - verify

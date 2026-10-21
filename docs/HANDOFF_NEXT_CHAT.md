@@ -1,3 +1,15 @@
+## Estado prioritario de continuidad — 2026-10-21: CircleCI como alternativa de CI
+
+- PR #73: https://github.com/BTF14/Micro-app/pull/73, draft, rama `ci/circleci-free-verification`. Añade `.circleci/config.yml` y `docs/CIRCLECI_SETUP.md` para probar CircleCI como alternativa de coste $0.
+- No afirmar que CircleCI está conectado o que la configuración pasa: todavía no se ha ejecutado. El propietario debe conectar/autorizar el repo privado, solo después de verificar que su cuenta está en Free $0 sin tarjeta, cargos recurrentes, trial facturable ni auto-upgrade.
+- El pipeline propuesto corre pnpm install frozen, build/typecheck, pruebas unitarias y autenticación contra PostgreSQL efímero; no despliega ni usa Neon.
+- Los seis workflows de GitHub Actions asociados al head inicial de PR #73 terminaron en failure sin evidencia de pasos ejecutados; el usuario informó un bloqueo de billing/límite. No pagar ni aumentar límites; no interpretar como fallos de tests reales.
+- Consultar el head vivo de PR #73 antes de cualquier verificación; el SHA inicial documentado es `5b2fef007ef06ad9cc06538feae778c293edcb5e`, pero la rama recibió actualizaciones documentales después.
+- Mantener PR #73 draft hasta verificar el resultado de CircleCI sobre el SHA exacto. No fusionar PR #71/#72 ni desplegar producción por esta razón.
+- Fuente oficial y pasos: [docs/CIRCLECI_SETUP.md](CIRCLECI_SETUP.md). Presupuesto $0; no tocar Neon `main`, datos reales, secretos, producción ni billing.
+
+---
+
 ## Estado prioritario de continuidad — 2026-10-19, después de PR #64
 
 - Repositorio canónico: https://github.com/BTF14/Micro-app.

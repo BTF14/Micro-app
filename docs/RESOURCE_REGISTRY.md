@@ -159,3 +159,13 @@ El handoff incluye el prompt copiable para continuar en un chat nuevo. La docume
 | Skills locales Micro app | `.agents/skills/micro-app-auth-security/SKILL.md`, `micro-app-postgres-testing/SKILL.md`, `micro-app-stack-guidance/SKILL.md`, `micro-app-skill-curation/SKILL.md` | Instrucciones propias, adaptadas al stack y a las políticas del repo. No equivalen a bundles descargados/verificados por AutoSkills; no ejecutan scripts ni añaden dependencias. |
 
 Decisión: en un checkout con red, ejecutar primero `npx autoskills --dry-run`, comparar las propuestas con los manifiestos actuales, seleccionar solo skills relevantes y revisar origen/licencia/estado de seguridad/hash antes de instalar. No usar `-y` por defecto, no instalar skills de Next.js/Supabase/Astro si esas tecnologías no están en uso, y no gastar dinero. Mantener separadas las skills locales propias y las externas verificadas.
+
+
+## CI alternativo — CircleCI (evaluado 2026-10-21)
+
+| Recurso | Evidencia | Decisión/estado |
+|---|---|---|
+| CircleCI Free | https://circleci.com/pricing/ y https://circleci.com/docs/guides/plans-pricing/credits/ | Alternativa recomendada ante el bloqueo de GitHub Actions. La web oficial indica Free $0 sin tarjeta, hasta 6.000 build minutes y 30.000 créditos mensuales para uso privado/personal; los builds privados se bloquean cuando se agotan los créditos hasta el refill. Confirmar plan/términos en la cuenta antes de conectar. |
+| Config de Micro app | PR #73 https://github.com/BTF14/Micro-app/pull/73; `.circleci/config.yml`; [setup](CIRCLECI_SETUP.md) | Preparada, no ejecutada. Verifica build/typecheck, unit tests y auth integration con PostgreSQL efímero; no despliega ni usa Neon. Requiere autorización manual del propietario para conectar el repo privado. Mantener draft hasta tener logs y resultado sobre SHA exacto. |
+
+No se instaló un plugin, no se conectó CircleCI, no se autorizó billing y no se afirma que el pipeline haya pasado.

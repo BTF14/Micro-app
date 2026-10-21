@@ -1,0 +1,94 @@
+version: 2.1
+
+jobs:
+  verify:
+    docker:
+      - image: cimg/node:22.18
+      - image: postgres:18
+        environment:
+          POSTGRES_DB: microapp_test
+          POSTGRES_USER: microapp
+          POSTGRES_PASSWORD: microapp-test-only
+    working_directory: ~/project
+    environment:
+      CI: "true"
+      DATABASE_URL: postgres://microapp:microapp-test-only@127.0.0.1:5432/microapp_test
+    steps:
+      - checkout
+      - restore_cache:
+          keys:
+            - pnpm-v1-{{ checksum "pnpm-lock.yaml" }}
+      - run:
+          name: Enable pinned package manager
+          command: |
+            corepack enable
+            corepack prepare pnpm@10 --activate
+            pnpm --version
+      - run:
+          name: Install dependencies
+          command: pnpm install --frozen-lockfile
+      - save_cache:
+          key: pnpm-v1-{{ checksum "pnpm-lock.yaml" }}
+          paths:
+            - ~/.local/share/pnpm/store
+      - run:
+          name: Install ephemeral PostgreSQL test driver
+          command: |
+            npm install --prefix /tmp/micro-app-test-deps --no-save --no-package-lock pg @types/pg
+            mkdir -p node_modules/@types
+            ln -s /tmp/micro-app-test-deps/node_modules/pg node_modules/pg
+            ln -s /tmp/micro-app-test-deps/node_modules/@types/pg node_modules/@types/pg
+      - run:
+          name: Wait for disposable PostgreSQL
+          command: |
+            node --input-type=module <<'NODE'
+            import pg from "/tmp/micro-app-test-deps/node_modules/pg/lib/index.js";
+            const { Client } = pg;
+
+            const connectionString = process.env.DATABASE_URL;
+            for (let attempt = 1; attempt <= 30; attempt += 1) {
+              const client = new Client({ connectionString });
+              try {
+                await client.connect();
+                await client.end();
+                console.log("Disposable PostgreSQL is ready.");
+                process.exit(0);
+              } catch {
+                try { await client.end(); } catch {}
+                await new Promise((resolve) => setTimeout(resolve, 2000));
+              }
+            }
+            console.error("PostgreSQL did not become ready in time.");
+            process.exit(1);
+            NODE
+      - run:
+          name: Apply schema to disposable PostgreSQL
+          command: |
+            node --input-type=module <<'NODE'
+            import { readFile } from "node:fs/promises";
+            import pg from "/tmp/micro-app-test-deps/node_modules/pg/lib/index.js";
+            const { Client } = pg;
+
+            const client = new Client({ connectionString: process.env.DATABASE_URL });
+            try {
+              await client.connect();
+              const schema = await readFile("apps/api/migrations/0001_initial.sql", "utf8");
+              await client.query(schema);
+            } finally {
+              await client.end();
+            }
+            NODE
+      - run:
+          name: Build and typecheck
+          command: pnpm build
+      - run:
+          name: Unit tests
+          command: pnpm test
+      - run:
+          name: PostgreSQL auth integration tests
+          command: pnpm --filter @micro-app/api exec vitest run src/auth.integration.test.ts
+
+workflows:
+  verify-on-push-and-pull-request:
+    jobs:
+      - verify

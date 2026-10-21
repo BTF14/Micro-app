@@ -1,3 +1,15 @@
+# Checkpoint autoritativo — 2026-10-21: alternativa de CI preparada
+
+- `main` observado: `832c9d10b19846f89cc5d9e5ef51b7ef6eb5b21e`. Revalidar en GitHub antes de actuar; el documento contiene snapshots históricos debajo.
+- PR #73: https://github.com/BTF14/Micro-app/pull/73, draft, rama `ci/circleci-free-verification`. Propone `.circleci/config.yml` para build/typecheck, unit tests y auth integration tests contra PostgreSQL efímero. La configuración no ha sido ejecutada ni validada por CircleCI.
+- Head al abrir la PR: `5b2fef007ef06ad9cc06538feae778c293edcb5e`; después se añadieron documentos de setup/continuidad, así que consultar el head vivo de la PR antes de validar.
+- En GitHub Actions, los seis workflows asociados al head inicial de PR #73 devolvieron failure sin evidencia de que los pasos ejecutaran; consistente con el bloqueo de cuenta/límite reportado por el usuario. No interpretar como aserciones de tests fallidas ni como éxito.
+- CircleCI es la alternativa recomendada porque su página oficial declara Free $0 sin tarjeta y límites mensuales; ver [docs/CIRCLECI_SETUP.md](CIRCLECI_SETUP.md). No conectar hasta verificar en la cuenta el plan Free, sin tarjeta, cargos recurrentes, trial facturable ni auto-upgrade.
+- Acción mínima pendiente del propietario: conectar/autorización de GitHub en CircleCI para el repo privado y ejecutar la PR #73. No compartir credenciales en el chat.
+- Sin despliegues, Neon `main`, datos reales, secretos, cambios OAuth, billing ni Cantina-pos. Mantener PR #73 draft hasta que CircleCI ejecute y se revisen los logs del SHA exacto.
+
+---
+
 # Checkpoint autoritativo — 2026-10-19, después de PR #64
 
 - Repositorio canónico: https://github.com/BTF14/Micro-app.

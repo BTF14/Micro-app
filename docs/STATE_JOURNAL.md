@@ -448,3 +448,14 @@ Este diario es append-only en cuanto a historia: no borrar hitos antiguos; añad
 - PR #60 se cerró como supersedida tras comparar el diff; no se fusionó ni se hizo force-push. Sus reglas útiles quedaron integradas por #62/#63; los snapshots históricos obsoletos no se reintrodujeron.
 - Sin cambios de runtime/dependencias/DB/secretos ni despliegue productivo. Cloudflare generó automáticamente preview de rama para PR #64. Coste $0.
 - P0 de identidad permanece: Google OAuth + allowlist, D1–D8 y matriz de permisos pendientes de aprobación. Registro fail-closed; login por contraseña existe y no se debe asumir que la allowlist lo protege.
+
+
+## 2026-10-21 — Preparación de CircleCI sin gasto ni despliegue
+
+- Se creó la rama `ci/circleci-free-verification` desde el `main` observado `832c9d10b19846f89cc5d9e5ef51b7ef6eb5b21e` y la PR draft #73: https://github.com/BTF14/Micro-app/pull/73.
+- Se añadió `.circleci/config.yml` con instalación congelada, build/typecheck, pruebas unitarias y prueba de autenticación contra PostgreSQL efímero. No se añadieron credenciales reales ni pasos de despliegue.
+- Se añadió `docs/CIRCLECI_SETUP.md` con los pasos de conexión manual y las condiciones para no activar facturación.
+- Los seis workflows de GitHub Actions asociados al head inicial `5b2fef007ef06ad9cc06538feae778c293edcb5e` aparecen como failure, sin evidencia de pasos ejecutados en la información del conector. Esto no prueba fallos de aserciones; no se reintentaron.
+- Fuentes oficiales consultadas: https://circleci.com/pricing/ y https://circleci.com/docs/guides/plans-pricing/credits/. Free declara $0, sin tarjeta y límites mensuales; al agotarse los créditos de uso privado los builds se bloquean hasta el refill. El plan y términos deben revisarse en la cuenta antes de conectar.
+- Estado: config propuesta, no ejecutada ni validada. Se requiere que el propietario conecte/autorice el repo en CircleCI; si se pide tarjeta, pago, trial facturable o auto-upgrade, detenerse.
+- Sin producción, Neon `main`, datos reales, secretos, billing, migraciones ni Cantina-pos.

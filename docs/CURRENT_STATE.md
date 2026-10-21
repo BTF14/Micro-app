@@ -1,5 +1,7 @@
 # Checkpoint autoritativo — 2026-10-21: alternativa de CI preparada
 
+- Actualización posterior: `.circleci/config.yml` se endureció en el head `06ddbb07c5628f64eda8c48bf955b967fb230a16`: añade cache de pnpm basada en `pnpm-lock.yaml`, elimina `apt-get` y usa el driver `pg` para esperar/aplicar el esquema en PostgreSQL efímero. Comprobación estática del contenido confirma build, unit tests e integración presentes, sin deploy. **Sigue sin validación oficial de `circleci config validate` ni ejecución en CircleCI**; no afirmar que pasa hasta obtener logs.
+
 - `main` observado: `832c9d10b19846f89cc5d9e5ef51b7ef6eb5b21e`. Revalidar en GitHub antes de actuar; el documento contiene snapshots históricos debajo.
 - PR #73: https://github.com/BTF14/Micro-app/pull/73, draft, rama `ci/circleci-free-verification`. Propone `.circleci/config.yml` para build/typecheck, unit tests y auth integration tests contra PostgreSQL efímero. La configuración no ha sido ejecutada ni validada por CircleCI.
 - Head al abrir la PR: `5b2fef007ef06ad9cc06538feae778c293edcb5e`; después se añadieron documentos de setup/continuidad, así que consultar el head vivo de la PR antes de validar.

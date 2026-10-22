@@ -1,3 +1,14 @@
+> ## Estado vivo — 2026-10-22
+>
+> **El repositorio ya está público** (estado observado en GitHub durante esta sesión); por tanto, esta revisión ya no es una autorización para hacerlo público. El contenido e historial accesibles deben tratarse como expuestos.
+>
+> - El workflow **Secret history scan** sí se ejecutó en el head `d100a9eb01601b1f1961c156e3f0c42c53c126dc`, intento 2: [run 39702300610](https://github.com/BTF14/Micro-app/actions/runs/39702300610) terminó en `success`; los pasos de checkout de historial completo y Gitleaks finalizaron correctamente. Esto es evidencia útil para ese SHA, no certifica automáticamente un head posterior ni garantiza que todas las ramas/artefactos externos estén libres de secretos.
+> - En el head actual de esta rama aún se debe ejecutar y revisar el scan de historial y CI; el resultado anterior no debe etiquetarse como validación del head final.
+> - La revisión anterior reportó 78 ramas sin protección. La protección de `main`, los checks requeridos y Secret scanning/Push protection siguen pendientes de confirmar/configurar en GitHub Settings.
+> - No se cambiará la visibilidad ni se habilitarán planes o servicios pagos. Si se encuentra una credencial histórica, revocarla/rotarla en el proveedor; borrarla del árbol actual no basta.
+>
+> ---
+>
 # Revisión de seguridad antes de hacer público el repositorio
 
 Este checklist debe completarse antes de cambiar la visibilidad de `BTF14/Micro-app`.

@@ -134,3 +134,13 @@ All 12 check runs for PR head `8bc4c0458ed7bf7d51c320bbaaff1c515767fdd5` complet
 - No deployment, project/domain change, environment-variable mutation, secret read/rotation, or Neon operation was performed.
 
 Disposition remains unchanged: keep PR #77 draft/unmerged until the intended role of the Hono Vercel project and the effective frontend-to-Worker configuration can be established without guessing. No Cloudflare provider connector is available in this session, so the Worker-side production configuration cannot be independently inspected here.
+
+
+## Frontend API URL fallback risk — code and metadata cross-check — 2026-10-22
+
+- `apps/web/src/auth.ts` computes `API_BASE_URL` from `VITE_API_BASE_URL ?? ""`, trims it, and removes trailing slashes. Requests are then made to `${API_BASE_URL}${path}`. If the variable is absent/empty in a production build, auth requests become relative URLs on the frontend origin (for example, `/auth/login`) rather than targeting the separate canonical Cloudflare Worker.
+- `apps/web/.env.example` only supplies `http://localhost:8787` as a local-development example and explicitly says production must use the real HTTPS API URL. It does not identify the production Worker hostname.
+- The read-only Vercel project environment metadata query returned no visible environment variables and `hiddenProductionEnvCount: 0` for both the Vite and Hono projects. This is not proof that no other build configuration or provider-level configuration exists, and does not reveal Cloudflare Pages build settings. Therefore production may be correctly configured elsewhere; the effective built frontend value remains unverified.
+- `apps/api/src/index.ts` deliberately returns an empty CORS origin when `FRONTEND_ORIGIN` is missing/malformed or differs from the request origin. A correct frontend API URL alone is insufficient; the Worker must also have the exact frontend origin configured. The configured origin is not visible in the repository and was not read from a provider.
+
+Risk classification: **deployment configuration gap, not a confirmed production outage**. Do not patch source to guess a hostname and do not set a fake production URL. The next safe check is to inspect the frontend build environment's variable *name and presence* without revealing values, then verify the actual Worker URL and exact allowed origin in the Cloudflare dashboard. No Cloudflare connector is available in this session.

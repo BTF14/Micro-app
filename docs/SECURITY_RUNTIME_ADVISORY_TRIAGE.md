@@ -123,3 +123,14 @@ Assessment: the strongest evidence-backed path is to keep Cloudflare Workers as 
 ## PR validation checkpoint — 2026-10-22
 
 All 12 check runs for PR head `8bc4c0458ed7bf7d51c320bbaaff1c515767fdd5` completed successfully (12 success, 0 failure, 0 pending), including CI/verify, Chromium auth smoke, PostgreSQL migration, Semgrep, Trivy, reachable-history secret scan, progress generation, Cloudflare Pages preview and Vercel preview-feedback. This result applies only to that exact commit. The present documentation addition creates a new head and must receive its own fresh checks before any merge decision.
+
+
+## Current-head and Vercel runtime-error checkpoint — 2026-10-22
+
+- Re-queried GitHub check runs for PR head `885232d64515519c8bc1cf77da9a28dc9d64e8ad`: 12 completed successfully, 0 failures, 0 pending. This is the current verified PR head at the time of this check. See https://github.com/BTF14/Micro-app/commit/885232d64515519c8bc1cf77da9a28dc9d64e8ad/checks.
+- Re-read Vercel project metadata and production-target domain metadata. The Vite project `micro-app` has verified production domain `micro-app-five.vercel.app`; the Hono project `micro-app-7lg5` has verified production domain `micro-app-7lg5.vercel.app`. Both project metadata records still report Node `24.x` and `live: false`, while earlier deployment history contains `target: production` deployments. These fields do not establish current traffic or canonical routing.
+- Read-only grouped runtime-error queries for the previous seven days returned “No runtime errors found” for both Vercel projects. This only means the Vercel runtime-error aggregation reported no clusters in that window; it does not prove that the projects receive traffic, that requests succeed, or that the canonical Cloudflare Worker is healthy.
+- Re-listed environment metadata with decryption disabled; both projects returned no visible variables and `hiddenProductionEnvCount: 0`. No values were requested or read. This still does not establish the effective frontend API URL or the Cloudflare Worker configuration.
+- No deployment, project/domain change, environment-variable mutation, secret read/rotation, or Neon operation was performed.
+
+Disposition remains unchanged: keep PR #77 draft/unmerged until the intended role of the Hono Vercel project and the effective frontend-to-Worker configuration can be established without guessing. No Cloudflare provider connector is available in this session, so the Worker-side production configuration cannot be independently inspected here.

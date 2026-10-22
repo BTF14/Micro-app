@@ -1,3 +1,13 @@
+# Checkpoint vivo — 2026-10-22: solución Playwright validada en PR #75
+
+- El fallo repetido de PR #71 estaba localizado en el paso `Install Chromium and OS dependencies`; los tests de navegador no arrancaban y los logs del job devolvían 404 `BlobNotFound`. La causa interna del instalador original no quedó probada.
+- Se creó PR draft #75 [ci: stabilize Playwright browser setup](https://github.com/BTF14/Micro-app/pull/75), rama `ci/playwright-container-runner`, head `09bc000d07672f731935d2bbc9e8b38f605eeb9d`. Cambia solo `.github/workflows/playwright-e2e.yml`: usa `mcr.microsoft.com/playwright:v1.55.0-noble` con Chromium/dependencias preinstalados y verifica el directorio del browser, evitando la instalación apt/browser que fallaba.
+- Validación real de PR #75 en ese SHA: CI [39859323298](https://github.com/BTF14/Micro-app/actions/runs/39859323298), Playwright E2E [39859323412](https://github.com/BTF14/Micro-app/actions/runs/39859323412), migration [39859323422](https://github.com/BTF14/Micro-app/actions/runs/39859323422), Semgrep [39859323415](https://github.com/BTF14/Micro-app/actions/runs/39859323415), Trivy [39859323621](https://github.com/BTF14/Micro-app/actions/runs/39859323621) y dashboard [39859323191](https://github.com/BTF14/Micro-app/actions/runs/39859323191) terminaron todos en `success`. El browser tests step se ejecutó y pasó.
+- PR #75 permanece draft y sin merge. La PR #71 sigue draft; su workflow E2E original seguirá fallando hasta que la corrección de workflow sea revisada e integrada. No fusionar por ahora sin revisar el PR y el estado vivo.
+- PR #71 en head previo `fda9a20e2e0b0ca1b73f3af3a4577d0a7d6fc12c`: CI, migration, Semgrep, Trivy y progress dashboard pasaron. E2E falló en instalación de browser con el workflow antiguo. La funcionalidad del resolver y las pruebas de CI no se deben confundir con la prueba E2E, que solo pasa en PR #75.
+- Arquitectura canónica sigue Cloudflare Pages + Cloudflare Workers/Hono + Neon Free; Vercel API continúa como auxiliar/no canónico. No hubo deploy de producción, cambios a Neon `main`, gasto ni exposición de secretos.
+
+---
 # Checkpoint vivo — 2026-10-22: GitHub Actions recuperado
 
 - Visibilidad del repo confirmada como pública. GitHub-hosted runners ya ejecutan steps; la causa previa de los jobs sin steps no se atribuye retroactivamente a una causa específica.

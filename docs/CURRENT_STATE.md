@@ -1,3 +1,153 @@
+# Actualización de verificación — 2026-10-22 21:58 UTC
+
+- Resultado final confirmado para PR #71 en SHA `ef86738991fbed58090d191ffbb865e4e8f18588`: los ocho checks de GitHub que se consultaron terminaron en success: CI [39861207434](https://github.com/BTF14/Micro-app/actions/runs/39861207434), Playwright [39861207395](https://github.com/BTF14/Micro-app/actions/runs/39861207395), migraciones [39861207581](https://github.com/BTF14/Micro-app/actions/runs/39861207581), Trivy PR [39861207344](https://github.com/BTF14/Micro-app/actions/runs/39861207344), Semgrep [39861207331](https://github.com/BTF14/Micro-app/actions/runs/39861207331), dashboard [39861207369](https://github.com/BTF14/Micro-app/actions/runs/39861207369), Vercel Preview Comments y Cloudflare Pages preview. Los dos contextos de status Vercel también están success.
+- En particular, Playwright llegó al paso `Run browser tests` y terminó success; no fue solo una comprobación de instalación.
+- La verificación corresponde al SHA indicado. Los cambios documentales que se hagan después producen un nuevo head y deben revisarse por SHA; no confundir el resultado de este head con un head futuro.
+- PR #71 sigue abierta y draft. No se fusionó. Próximo paso: revisión funcional/seguridad del alcance de `resolveTenantContext` y decisión de si la utilidad está lista para uso por rutas, antes de sacarla de draft. No desplegar producción ni tocar Neon `main`.
+
+---
+
+# Checkpoint vivo — 2026-10-22: Playwright fix integrado y PR #71 revalidándose
+
+- PR #75 [ci: stabilize Playwright browser setup](https://github.com/BTF14/Micro-app/pull/75) se revisó y fusionó por squash en `main`. Commit resultante: `3a6d8211d21cc3fbbff2cd476d8fa80adb65cd3f`. Cambio exclusivo de workflow; sin cambios de app, Neon ni deploy de producción.
+- En `main`, todos los seis workflows terminaron en success en ese commit: CI [39860846216](https://github.com/BTF14/Micro-app/actions/runs/39860846216), Playwright E2E [39860846233](https://github.com/BTF14/Micro-app/actions/runs/39860846233), migraciones [39860846364](https://github.com/BTF14/Micro-app/actions/runs/39860846364), Semgrep [39860846524](https://github.com/BTF14/Micro-app/actions/runs/39860846524), security scan [39860846214](https://github.com/BTF14/Micro-app/actions/runs/39860846214) y dashboard [39860846210](https://github.com/BTF14/Micro-app/actions/runs/39860846210). Dos contextos Vercel también aparecen success para ese SHA.
+- Se sincronizó `.github/workflows/playwright-e2e.yml` en la rama de PR #71 (`feat/tenant-context-resolver`) con el workflow validado de `main`; commit de sincronización inicial `a3301896c2936ce6d50698a0d05ad920e656fe7a`. Esto es necesario porque GitHub evalúa el workflow que está en la rama del PR.
+- Revalidación de PR #71 sobre SHA `a3301896c2936ce6d50698a0d05ad920e656fe7a`: CI [39861076234](https://github.com/BTF14/Micro-app/actions/runs/39861076234) success (build/typecheck, unit tests y PostgreSQL auth integration); migration [39861076210](https://github.com/BTF14/Micro-app/actions/runs/39861076210) success; security/Trivy [39861076123](https://github.com/BTF14/Micro-app/actions/runs/39861076123) success; Semgrep [39861076052](https://github.com/BTF14/Micro-app/actions/runs/39861076052) success; dashboard [39861076073](https://github.com/BTF14/Micro-app/actions/runs/39861076073) success; Playwright [39861076113](https://github.com/BTF14/Micro-app/actions/runs/39861076113) ya verificó con éxito que el browser bundled existe, pero al último chequeo seguía en `Run browser tests` (no declarar E2E final hasta que concluya).
+- PR #71 sigue abierta y draft. No fusionar todavía. Esperar el resultado final de Playwright, actualizar el SHA/head después de cualquier commit documental y confirmar todos los checks del head más reciente. La función `resolveTenantContext` es una utilidad aislada nueva; revisar si el alcance de PR pretende solo introducirla o conectarla a rutas antes de sacar el PR de draft. No añadir integración de autorización por intuición: cada operación debe aplicar su política de permisos explícita.
+- No se identificó un séptimo workflow distinto; la consulta actual muestra seis workflows Actions relevantes y dos contextos Vercel. No inventar un séptimo check.
+- Arquitectura canónica: Cloudflare Pages frontend + Cloudflare Workers/Hono API + Neon Free. Vercel API sigue auxiliar/no canónica. Sin deploy de producción, cambios a Neon `main`, billing ni secretos expuestos.
+- Próximo paso: confirmar Playwright E2E de PR #71, luego revisar el diff de resolver y documentar la conclusión con evidencia. Mantener presupuesto $0 y PR #71 draft hasta completar revisión.
+ 
+---
+
+# Checkpoint vivo — 2026-10-22: solución Playwright validada en PR #75
+
+- El fallo repetido de PR #71 estaba localizado en el paso `Install Chromium and OS dependencies`; los tests de navegador no arrancaban y los logs del job devolvían 404 `BlobNotFound`. La causa interna del instalador original no quedó probada.
+- Se creó PR draft #75 [ci: stabilize Playwright browser setup](https://github.com/BTF14/Micro-app/pull/75), rama `ci/playwright-container-runner`, head `09bc000d07672f731935d2bbc9e8b38f605eeb9d`. Cambia solo `.github/workflows/playwright-e2e.yml`: usa `mcr.microsoft.com/playwright:v1.55.0-noble` con Chromium/dependencias preinstalados y verifica el directorio del browser, evitando la instalación apt/browser que fallaba.
+- Validación real de PR #75 en ese SHA: CI [39859323298](https://github.com/BTF14/Micro-app/actions/runs/39859323298), Playwright E2E [39859323412](https://github.com/BTF14/Micro-app/actions/runs/39859323412), migration [39859323422](https://github.com/BTF14/Micro-app/actions/runs/39859323422), Semgrep [39859323415](https://github.com/BTF14/Micro-app/actions/runs/39859323415), Trivy [39859323621](https://github.com/BTF14/Micro-app/actions/runs/39859323621) y dashboard [39859323191](https://github.com/BTF14/Micro-app/actions/runs/39859323191) terminaron todos en `success`. El browser tests step se ejecutó y pasó.
+- PR #75 permanece draft y sin merge. La PR #71 sigue draft; su workflow E2E original seguirá fallando hasta que la corrección de workflow sea revisada e integrada. No fusionar por ahora sin revisar el PR y el estado vivo.
+- PR #71 en head previo `fda9a20e2e0b0ca1b73f3af3a4577d0a7d6fc12c`: CI, migration, Semgrep, Trivy y progress dashboard pasaron. E2E falló en instalación de browser con el workflow antiguo. La funcionalidad del resolver y las pruebas de CI no se deben confundir con la prueba E2E, que solo pasa en PR #75.
+- Arquitectura canónica sigue Cloudflare Pages + Cloudflare Workers/Hono + Neon Free; Vercel API continúa como auxiliar/no canónico. No hubo deploy de producción, cambios a Neon `main`, gasto ni exposición de secretos.
+
+---
+# Checkpoint vivo — 2026-10-22: GitHub Actions recuperado
+
+- Visibilidad del repo confirmada como pública. GitHub-hosted runners ya ejecutan steps; la causa previa de los jobs sin steps no se atribuye retroactivamente a una causa específica.
+- PR #71 sigue abierta/draft, rama `feat/tenant-context-resolver`, head observado antes de este checkpoint: `8d938ab5726d357bd9f9f79385af54bbd42c4f2f`. Al añadir este checkpoint el SHA cambiará; consultar el head vivo después del commit.
+- Reintentos sobre ese head: CI run [39426320145](https://github.com/BTF14/Micro-app/actions/runs/39426320145) success (build/typecheck, unit tests y auth integration contra PostgreSQL efímero); migración run [39426320271](https://github.com/BTF14/Micro-app/actions/runs/39426320271) success; Semgrep [39426320136](https://github.com/BTF14/Micro-app/actions/runs/39426320136) success; Trivy [39426320487](https://github.com/BTF14/Micro-app/actions/runs/39426320487) success; progress dashboard [39426320168](https://github.com/BTF14/Micro-app/actions/runs/39426320168) success.
+- Playwright E2E run [39426320240](https://github.com/BTF14/Micro-app/actions/runs/39426320240), intento 3, falla en el paso `Install Chromium and OS dependencies`; el paso de browser tests queda skipped. Los pasos anteriores, incluidos install de dependencias y setup del runner Playwright, pasan. La descarga de logs del job devuelve 404 `BlobNotFound`, así que la causa interna exacta (descarga de browser, apt/dependencias u otra) no está demostrada. No seguir reintentando en bucle ni afirmar que los tests E2E se ejecutaron. Resolver el paso de instalación con logs disponibles o un entorno de browser reproducible antes de quitar el bloqueo de PR.
+- Existe además un run de Security scan anterior [39426310365](https://github.com/BTF14/Micro-app/actions/runs/39426310365) en failure sobre el mismo SHA por evento anterior; el run PR más reciente [39426320487](https://github.com/BTF14/Micro-app/actions/runs/39426320487) sí pasa. Distinguir runs por evento/intento, no reportar el check duplicado como un nuevo fallo de código.
+- Check runs raw del SHA `8d938ab...` mostró seis workflows Actions relevantes y dos contextos Vercel exitosos; no se identificó un séptimo workflow distinto. El histórico reporte de siete errores no se debe completar con una suposición.
+- La prueba de CI sí es evidencia real ahora que steps se ejecutan. No implica readiness de producción. PR #71 sigue draft hasta resolver Playwright y revisar los checks sobre el head final.
+- Arquitectura aprobada del repo sigue siendo frontend Cloudflare Pages + API Cloudflare Workers/Hono + Neon Free, presupuesto $0. Vercel API es auxiliar/no canónico según los documentos; el error ESM de Vercel no justifica reconfigurar el destino aprobado ni hacer deploy de producción.
+- Sin deploy de producción, sin cambios a Neon `main`, sin migraciones a datos reales, sin billing ni secretos expuestos.
+
+---
+# Revisión viva — 2026-10-20 08:56 EDT (12:56 UTC)
+
+> Esta revisión añade evidencia viva a los checkpoints históricos. El SHA anotado como head/base es el estado al comenzar esta revisión; las actualizaciones documentales de esta sesión crean commits nuevos y deben volver a verificarse después.
+
+## GitHub / PRs al comenzar la revisión
+
+- `main`: `832c9d10b19846f89cc5d9e5ef51b7ef6eb5b21e` (confirmado con fetch_commit sobre ref `main`).
+- PR #71: abierta, draft=true, base `main`, base SHA `832c9d10b19846f89cc5d9e5ef51b7ef6eb5b21e`; head de PR `f0f489fc6ac2f5ada84105610ae3eb0e1ff286e2`, rama declarada `feat/tenant-context-resolver`. Este SHA reemplaza el snapshot anterior `a4806b69a2d12225234e7a8fc72c1116957d0318`.
+- PR #68 abierta, no draft; head `5d3770a23e07855f68b07e6327c83545c76e1c95`, base SHA `832c9d10b19846f89cc5d9e5ef51b7ef6eb5b21e`.
+- PR #69 abierta, no draft; head `611f5274b5f422abe5421aef95aa77b500be7740`, misma base.
+- PR #70 abierta, draft=true; head `8bdb410bf2755efdeb6db35f22bae7c8b00acf25`, misma base.
+- Comentario de diagnóstico previo en PR #71 sigue presente: https://github.com/BTF14/Micro-app/pull/71#issuecomment-6289785588. No se duplicó. El bot de Cloudflare también reporta preview exitosa para el commit `f0f489f`: https://01bc0d05.micro-app-63i.pages.dev (preview, no producción).
+
+## GitHub Actions: seis workflows actuales recuperados; el séptimo sigue sin identificar
+
+La consulta de workflow runs asociada al head `f0f489fc6ac2f5ada84105610ae3eb0e1ff286e2` devuelve estos seis runs completos en failure. Los jobs expuestos por el conector tienen cero steps; cada descarga de logs probada devuelve HTTP 404 `BlobNotFound`. No es evidencia de tests o código fallidos: los comandos de los workflows no aparecen ejecutados.
+
+| Workflow | Run ID | Job | Job ID | Conclusión |
+|---|---:|---|---:|---|
+| Project progress dashboard | 39424411848 | generate-progress | 118633193726 | failure |
+| Database migration validation | 39424411977 | postgres-migration | 118633195889 | failure |
+| CI | 39424412060 | verify | 118633195741 | failure |
+| Semgrep SAST | 39424411782 | JavaScript and TypeScript static analysis | 118633196350 | failure |
+| Security scan | 39424411907 | Trivy filesystem and configuration scan | 118633194852 | failure |
+| Playwright E2E | 39424412144 | Chromium authentication smoke tests | 118633196016 | failure |
+
+- Intentos: el wrapper de runs no expone `run_attempt` ni los timestamps completos para estos registros; por tanto, no se afirma el número de intento actual. Los jobs listados son los jobs devueltos para cada run consultado.
+- Evidencia de cada job actual: `fetch_workflow_job_steps` devolvió `steps: []`; `fetch_workflow_job_logs` devolvió 404 `BlobNotFound` para los seis job IDs anteriores.
+- Runs anteriores observados en el checkpoint: progress `39413291257`, Playwright `39413291129`, CI `39413291311`, Semgrep `39413291252`, Security `39413291137`, migraciones `39413291456`; también se documentaron job IDs iniciales/reintentados allí. No asumir que esos runs pertenecen al head actual sin metadatos SHA.
+- El endpoint de combined status consultado para el head actual solo devuelve dos contextos Vercel en `success` (`micro-app-7lg5` y `micro-app`); no enumera los check-runs de Actions. La interfaz/usuario reporta siete errores, pero la conexión disponible solo permitió identificar seis workflow runs fallidos. **Séptimo check: no identificado / pendiente**, no inventar nombre ni causa. Hace falta la lista raw de check-runs o captura/URL del séptimo check desde GitHub.
+- El patrón de seis jobs con cero steps y logs no disponibles sugiere fallo anterior a la ejecución de steps o indisponibilidad de almacenamiento de logs; no demuestra la causa raíz de la asignación de runner. No repetir re-runs sin nueva evidencia.
+- No se ejecutaron tests del checkout real en esta sesión. Solo sigue constando la verificación histórica aislada: smoke harness 3/3 y TypeScript estricto contra interfaz mínima; no sustituye Vitest, build workspace, pruebas PostgreSQL ni Playwright.
+
+## Vercel: configuración, runtime y arquitectura
+
+- Proyecto frontend `micro-app`, ID `prj_ZoTwHAy4pwGfnnyCz9BmKUIuaBTy`, framework Vite. Proyecto API `micro-app-7lg5`, ID `prj_LW6O1VQIhV0EFG3iRwLDQde3vT5V`, framework Hono, Node `24.x`, región `iad1`. Vercel reporta `READY`, que no equivale a smoke test exitoso.
+- Deployment previo con error runtime: `dpl_HpAA28eKdVdWgsfMypeVuybsBhhz`, SHA de main `832c9d10b19846f89cc5d9e5ef51b7ef6eb5b21e`; error reportado anteriormente: `ERR_MODULE_NOT_FOUND: Cannot find module '/var/task/apps/api/src/auth' imported from /var/task/apps/api/src/index.js`. No se obtuvo un log histórico nuevo: la API de runtime logs rechaza ventanas de 7 días en Hobby por retención. Para la preview actual, una consulta de los últimos 30 minutos no encontró registros de error; esto no prueba que las peticiones funcionen.
+- Preview API actual inspeccionada: deployment `dpl_8XPehis1a6KTyb9RontJoVeHZT1V`, estado `READY`, commit `f0f489fc6ac2f5ada84105610ae3eb0e1ff286e2`, rama `feat/tenant-context-resolver`, alias `micro-app-7lg5-git-feat-tenant-context-resolver-devbtf.vercel.app`. No se obtuvieron logs de error en ventana reciente; no se realizó una prueba HTTP/runtime end-to-end.
+- `apps/api/src/index.ts` usa imports relativos sin extensión (`./auth`, `./bindings`) y exporta la app Hono. `apps/api/package.json` tiene `type: module`; `apps/api/tsconfig.json` configura `module: ESNext`, `moduleResolution: Bundler`, `noEmit: true`. La compilación raíz es `pnpm --filter @micro-app/web build && pnpm --filter @micro-app/api typecheck`: comprueba frontend y tipos, no produce bundle Node de API. `apps/api/wrangler.toml` declara `main = "src/index.ts"`; el script de desarrollo API es `wrangler dev`.
+- No se encontraron `vercel.json` en la raíz ni `apps/api/vercel.json` en los refs consultados (404). La notificación Vercel de la PR confirma root directory `apps/api` para el proyecto API. La configuración del proyecto Vercel no se modificó.
+- Variables: el endpoint de listado devolvió `envs: []` y `hiddenProductionEnvCount: 0` para ambos proyectos, pero no se puede concluir que no existan variables por todos los mecanismos/targets; no se mostraron ni recuperaron valores secretos.
+- Arquitectura normativa del repo (Constitución §2): frontend estático Cloudflare Pages, API Cloudflare Workers + Hono, PostgreSQL Neon Free, objetivo de coste $0; Vercel Hobby no es el destino para operación comercial. Evidencia concreta: `wrangler.toml` apunta a `src/index.ts`, `dev:api` ejecuta Wrangler, y no hay configuración Vercel versionada para el runtime API.
+- Recomendación segura: mantener Workers como destino de API y Pages como frontend; tratar Vercel API como un deployment auxiliar/no soportado hasta que exista una decisión arquitectónica explícita. El error ESM en Vercel es consistente con que el output runtime intenta resolver `./auth` como módulo separado no presente, pero la causa interna exacta del builder no quedó demostrada. No añadir extensiones, reconfigurar proyectos, aliases, variables ni desplegar producción a ciegas.
+- La preview de Cloudflare en el comentario de PR confirma un despliegue de preview; no demuestra que el runtime API en Vercel o la conexión a Neon estén operativos.
+
+## Cambios y límites de esta revisión
+
+- No se cambió código de aplicación ni configuración de Vercel. Se actualizará documentación existente en esta misma rama para conservar el handoff.
+- No se ejecutó build/test real del repositorio ni smoke HTTP de API en esta sesión; no se tuvo un checkout local funcional. Los logs de Actions no están disponibles.
+- No se desplegó producción, no se alteró Neon `main`, no se ejecutaron migraciones y no se expusieron secretos.
+- Siguiente paso: conseguir el séptimo check vía raw check-runs, recuperar logs/runners cuando GitHub permita hacerlo, y ejecutar una prueba de runtime en un entorno reproducible. Mantener PR #71 draft hasta tener CI ejecutable sobre el SHA final.
+
+---
+
+# Checkpoint de continuidad — 2026-10-20: PR #71 y API Vercel
+
+> Esta sección prevalece sobre snapshots históricos inferiores. Revalidar SHA, PR y checks en vivo antes de actuar.
+
+## Estado GitHub verificado
+
+- Repo: https://github.com/BTF14/Micro-app
+- SHA main de referencia durante la revisión: 832c9d10b19846f89cc5d9e5ef51b7ef6eb5b21e. Revalidar main actual al iniciar.
+- PR #71: https://github.com/BTF14/Micro-app/pull/71 — rama feat/tenant-context-resolver, head observado a4806b69a2d12225234e7a8fc72c1116957d0318, base observada 832c9d10b19846f89cc5d9e5ef51b7ef6eb5b21e. Mantener draft; NO fusionar hasta tener CI verificable.
+- La PR añade apps/api/src/tenant-context.ts y apps/api/src/tenant-context.test.ts. El resolver valida token y UUID de organización, calcula SHA-256 del token, consulta sesión y membresía activa con scope de organización y devuelve userId/organizationId/role. No autoriza operaciones comerciales y no está conectado a rutas HTTP.
+- Seis workflow runs fallidos identificados en GitHub:
+  - Project progress dashboard: https://github.com/BTF14/Micro-app/actions/runs/39413291257
+  - Database migration validation: https://github.com/BTF14/Micro-app/actions/runs/39413291456
+  - CI: https://github.com/BTF14/Micro-app/actions/runs/39413291311
+  - Semgrep SAST: https://github.com/BTF14/Micro-app/actions/runs/39413291252
+  - Security scan: https://github.com/BTF14/Micro-app/actions/runs/39413291137
+  - Playwright E2E: https://github.com/BTF14/Micro-app/actions/runs/39413291129
+- El usuario ve 7 errores en la interfaz de GitHub; la consulta disponible devolvió seis runs. No afirmar cuál es el séptimo sin inspeccionar los checks actuales del SHA/PR.
+- En los reintentos consultados, jobs tenían runner_id 0, runner_name vacío y steps vacíos; terminaban en ~2 s. Descargas de logs daban 404 BlobNotFound y no había artifacts. Las ejecuciones consultadas no alcanzaron los pasos del workflow; la causa raíz de no asignación de runner sigue desconocida. Esto NO demuestra que el código o tests hayan fallado.
+- Smoke harness aislado (no checkout del repo): 3/3 checks de lógica del resolver pasaron; tsc --noEmit --strict --target ES2022 --module NodeNext --moduleResolution NodeNext --lib ES2022,DOM pasó contra interfaz mínima. No reemplaza Vitest, build workspace, integración PostgreSQL ni Playwright del repo.
+- Cloudflare Pages informó preview exitosa para head a4806b6: https://922aa7da.micro-app-63i.pages.dev y https://feat-tenant-context-resolver.micro-app-63i.pages.dev. Es preview, no producción.
+- No se hicieron cambios a Neon main, no se ejecutaron migraciones de producción ni se desplegó producción.
+
+## Hallazgo independiente: API en Vercel no inicia
+
+- Proyecto API Vercel: https://vercel.com/devbtf/micro-app-7lg5 (ID prj_LW6O1VQIhV0EFG3iRwLDQde3vT5V).
+- Deployment observado: dpl_HpAA28eKdVdWgsfMypeVuybsBhhz, alias https://micro-app-7lg5.vercel.app, target mostrado production, commit 832c9d10b19846f89cc5d9e5ef51b7ef6eb5b21e. Vercel muestra READY, pero runtime logs muestran fallos al atender requests.
+- Error exacto: ERR_MODULE_NOT_FOUND: Cannot find module '/var/task/apps/api/src/auth' imported from /var/task/apps/api/src/index.js; el proceso Node.js termina con exit status 1. GET / y favicon también provocan el error.
+- apps/api/src/index.ts importa registerAuthRoutes desde ./auth y Bindings desde ./bindings. apps/api/package.json declara type: module; apps/api/tsconfig.json usa module ESNext, moduleResolution Bundler y noEmit true. El build raíz compila web y hace typecheck de API, pero eso no prueba que API pueda ejecutarse como ESM de Node.
+- El build de Vercel aparece completado en ~11 s desde la raíz con pnpm 10.28; runtime falla después. Esto apunta a incompatibilidad de empaquetado/resolución ESM/entrypoint, pero la corrección exacta aún NO está probada. El proyecto se diseñó para Hono en Cloudflare Workers; no asumir que Vercel sea el destino correcto.
+- La consulta de variables de ambos proyectos devolvió envs: [] y hiddenProductionEnvCount: 0. Es solo el resultado de esa API, no prueba definitiva de ausencia de cada variable. No pedir ni copiar secretos al chat.
+- Web Vercel: https://vercel.com/devbtf/micro-app; alias observado https://micro-app-devbtf.vercel.app. Estado READY no acredita salud del runtime de la API.
+- NO modificar configuración de Vercel, aliases, variables, producción o dominio a ciegas. Inspeccionar build/entrypoint y confirmar si la API debe desplegarse en Workers según arquitectura y política de coste cero.
+
+## Restricciones vigentes
+
+- Presupuesto $0; no activar planes pagos, billing ni cargos automáticos.
+- No tocar Cantina-pos, datos reales, secretos, emails ni Neon main sin gate de producción y recuperación verificada.
+- No desplegar producción sin aceptación explícita.
+- Google sign-in + allowlist y decisiones D1–D8 siguen pendientes; matriz de permisos por rol no aprobada. POST /auth/register debe seguir fail-closed. No describir login por contraseña como protegido por allowlist.
+- No hay endpoints comerciales para catálogo/proveedores/ventas/pagos/movimientos de inventario registrados en apps/api/src/index.ts. Resolver tenant no sustituye autorización por operación.
+
+## Secuencia para el próximo chat
+
+1. Leer AGENTS.md, docs/CONSTITUTION.md, este CURRENT_STATE.md, docs/HANDOFF_NEXT_CHAT.md, docs/STATE_JOURNAL.md y .agents/skills/micro-app-stack-guidance/SKILL.md. Si se toca auth/tenant, leer también .agents/skills/micro-app-auth-security/SKILL.md.
+2. Consultar en vivo SHA de main, PR #71, head exacto y todos los checks actuales. Aclarar el séptimo check que ve el usuario. No repetir reintentos sin evidencia de que el runner puede asignarse.
+3. Mantener PR #71 draft. Si Actions vuelve a fallar antes de steps, registrar metadata/URL y no atribuirlo al código sin logs. Cuando haya runner funcional, ejecutar CI real.
+4. Para Vercel, inspeccionar archivos de configuración/entrypoint y artefacto de build; reproducir ejecución en entorno aislado. Determinar si corregir empaquetado ESM o mantener API en Cloudflare Workers. Preparar cambio en rama/PR; no publicar producción.
+5. Verificar el cambio con tests/build y runtime smoke test reproducible; registrar qué pasó y qué no.
+6. No implementar OAuth, allowlist ni endpoints de negocio hasta resolver decisiones de producto/roles pendientes.
+
 # Checkpoint autoritativo — 2026-10-19, después de PR #64
 
 - Repositorio canónico: https://github.com/BTF14/Micro-app.

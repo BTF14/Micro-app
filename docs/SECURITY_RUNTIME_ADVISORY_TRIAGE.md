@@ -93,3 +93,17 @@ Read-only build-event inspection of the two `main` deployments above adds these 
 - Read-only Vercel environment listing returned no visible variables for either project and `hiddenProductionEnvCount: 0`; no variable values were requested. This should not be treated as proof that application runtime needs no secrets, because bindings may be supplied elsewhere or platform configuration can differ.
 
 Disposition: do not change project roots/build settings or approve a Vercel API migration based only on these logs. Confirm the intended Hono project behavior, effective Node version and API binding/routing against the canonical Cloudflare deployment first.
+
+
+## Canonical frontend domain and PR-head validation — 2026-10-22
+
+Further read-only cross-check:
+
+- GitHub repository metadata declares `https://micro-app-five.vercel.app` as the homepage.
+- Vercel's production-domain query returns verified domain `micro-app-five.vercel.app` for the Vite project `micro-app`; this supports identifying it as the currently declared public frontend URL. It does not establish traffic levels or rule out other entrypoints.
+- The Hono project's production-domain query returns verified `micro-app-7lg5.vercel.app`. The project has a READY production-target deployment, but there are no project-level Vercel routing rules in the routes query. This still does not establish that this project is the canonical API or that frontend requests route to it.
+- Both inspected deployment records point to `main` commit `d2fa1407fca9a0c13c8c9dc9b3bed60b53a3d0be`. Project metadata reports `live: false` while these historical deployments are `target: production`; interpret these fields narrowly and do not infer actual traffic or disable either project.
+
+The 12 GitHub check runs for PR head `eb208b7b2af209065df14b3d9ec8ce0ae7ff3ea2` all completed successfully (12 success, 0 failure, 0 pending). This validation applies to that exact head; any subsequent commit requires a fresh check.
+
+Remaining disposition: PR stays draft/unmerged because the API project's intended purpose and exact effective Node patch remain unresolved. No production settings or routing were changed.

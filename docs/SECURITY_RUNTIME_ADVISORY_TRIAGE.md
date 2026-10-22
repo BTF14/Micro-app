@@ -79,3 +79,17 @@ This is stronger evidence than the earlier preview-only observation: both projec
 2. Confirm the intended canonical public URL and whether the Hono Vercel deployment is an intentional auxiliary service, a legacy deployment, or a production API. Reconcile this with the documented Cloudflare Pages + Workers/Hono + Neon architecture before changing routing.
 3. Inspect build configuration and exact effective Node patch levels read-only. The `24.x` setting alone is not proof that builds/functions use the official patched Node 24 release.
 4. Keep this PR draft until the topology/runtime questions are answered. No deployment was initiated and no Vercel/Cloudflare project settings, environment-variable values, or Neon data were changed/read for this cross-check.
+
+
+## Production build-log cross-check — 2026-10-22
+
+Read-only build-event inspection of the two `main` deployments above adds these concrete details:
+
+- Both build logs identify the repository root as the build entrypoint (`.`) and run `vercel build`; both install the workspace from the root `pnpm-lock.yaml` and use pnpm 10.28.0 in the recorded build.
+- The Vite project log explicitly runs `pnpm run build` for package `@micro-app/web` in `/vercel/path0/apps/web`; Vite emits the `dist/` bundle. This aligns with the repo's `apps/web/package.json` build script (`tsc -b && vite build`).
+- The Hono project log confirms the Hono framework project and a root-level Vercel build, but the retrieved build-event excerpt does not show an explicit app/API build command or establish which API entrypoint is emitted. Do not assume it is equivalent to the canonical Cloudflare Worker build merely from the framework label.
+- Neither log exposed a trustworthy exact Node patch version. The project setting remains `24.x`; exact build/runtime patch remains unverified.
+- Both logs include pnpm's warning that install scripts for `esbuild@0.28.2` and `workerd@1.20261012.1` were ignored. This is a reproducibility/build-behavior item to assess, not evidence by itself that the hosted Cloudflare Workers runtime is vulnerable or that the deployment failed.
+- Read-only Vercel environment listing returned no visible variables for either project and `hiddenProductionEnvCount: 0`; no variable values were requested. This should not be treated as proof that application runtime needs no secrets, because bindings may be supplied elsewhere or platform configuration can differ.
+
+Disposition: do not change project roots/build settings or approve a Vercel API migration based only on these logs. Confirm the intended Hono project behavior, effective Node version and API binding/routing against the canonical Cloudflare deployment first.

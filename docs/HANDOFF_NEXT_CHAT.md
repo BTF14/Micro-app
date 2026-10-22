@@ -1,3 +1,25 @@
+## Handoff vigente — diagnóstico de Actions y auditoría de publicación (2026-10-21)
+
+## Checkpoint de seguridad y Actions — 2026-10-21
+
+- PR #74 sigue abierta, draft, sin fusionar: https://github.com/BTF14/Micro-app/pull/74. Head revisado antes de este checkpoint: `2849a96599022e3ea330aacea68a713fdc76a626`. Revalidar SHA después de estos cambios documentales.
+- Se identificaron los siete workflows fallidos sobre ese head: [Security scan](https://github.com/BTF14/Micro-app/actions/runs/39701045262), [CI](https://github.com/BTF14/Micro-app/actions/runs/39701045291), [Semgrep SAST](https://github.com/BTF14/Micro-app/actions/runs/39701045311), [Project progress dashboard](https://github.com/BTF14/Micro-app/actions/runs/39701045339), [Secret history scan](https://github.com/BTF14/Micro-app/actions/runs/39701045297), [Playwright E2E](https://github.com/BTF14/Micro-app/actions/runs/39701045409) y [Database migration validation](https://github.com/BTF14/Micro-app/actions/runs/39701045414).
+- Los siete jobs de esos runs terminaron con `runner_id: 0`, cero steps y logs no disponibles (404 `BlobNotFound`). Duración aproximada: 2–3 segundos. Esto indica que no hay evidencia de que los comandos de CI hayan comenzado; no atribuir los fallos al código y no marcar ningún test ni escaneo como aprobado.
+- Se reintentó solamente el job de Secret history scan (run 39701045297) como prueba diagnóstica. En la última consulta, el intento 2 estaba `queued`, con job ID `119573359675` y sin runner asignado todavía. Revisar su conclusión y steps antes de cualquier afirmación.
+- El endpoint de combined status para el head solo mostró los dos contextos Vercel en éxito; no sustituye a los siete workflows. No se obtuvo la causa de infraestructura/billing/runner, y no se debe asumir que sea cuota agotada sin un mensaje de GitHub que lo confirme.
+- Se releyó `.github/workflows/ci.yml`: el workflow usa `ubuntu-latest`, PostgreSQL 18 efímero y ejecuta install/build/typecheck/unit/integration tests, pero esos pasos no aparecen en los runs fallidos. El workflow de seguridad Trivy también es no bloqueante por diseño (`exit-code: '0'`), de modo que su conclusión por sí sola no certifica ausencia de hallazgos.
+- Auditoría de publicación: 78 ramas inventariadas; todas se reportaron sin protección. La comprobación de nombres de archivos en árboles actuales solo encontró `apps/web/.env.example` entre los patrones buscados, con URL localhost de ejemplo; esto no reemplaza el escaneo completo de historia. No hay resultado Gitleaks válido todavía.
+- Límites: repo privado; no cambiar visibilidad, no fusionar PR #74, no desplegar producción, no tocar Neon `main`, no exponer secretos ni incurrir en costes. El siguiente paso es comprobar el intento 2 de Gitleaks; si sigue sin runner, documentar la evidencia y resolver el bloqueo desde la configuración/uso de GitHub Actions, no mediante cambios de código especulativos.
+
+### Próxima secuencia
+1. Consultar en vivo PR #74 y SHA actual de `security/pre-publication-audit`; los commits documentales cambian el head.
+2. Comprobar run 39701045297, intento 2: confirmar si fue asignado un runner y si Gitleaks ejecutó steps. Si sí, revisar hallazgos sin divulgar valores de secretos; si no, capturar el estado exacto y no seguir reintentando en bucle.
+3. Si Actions continúa sin runner, buscar evidencia específica en los ajustes/estado de Actions y límites de uso del propietario. No afirmar causa por inferencia. No hacer público el repositorio como workaround sin confirmación explícita.
+4. Mantener PR #74 draft y privada hasta que el escaneo real de historia concluya y sus resultados se revisen. Habilitar protección de rama/secret protections desde Settings cuando la interfaz/permiso lo permita.
+5. No fusionar ni desplegar producción; no modificar Neon `main`, credenciales, datos reales ni facturación.
+
+---
+
 ## Estado prioritario de continuidad — 2026-10-19, después de PR #64
 
 - Repositorio canónico: https://github.com/BTF14/Micro-app.

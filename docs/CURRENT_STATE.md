@@ -1,3 +1,16 @@
+# Checkpoint vivo — 2026-10-22: GitHub Actions recuperado
+
+- Visibilidad del repo confirmada como pública. GitHub-hosted runners ya ejecutan steps; la causa previa de los jobs sin steps no se atribuye retroactivamente a una causa específica.
+- PR #71 sigue abierta/draft, rama `feat/tenant-context-resolver`, head observado antes de este checkpoint: `8d938ab5726d357bd9f9f79385af54bbd42c4f2f`. Al añadir este checkpoint el SHA cambiará; consultar el head vivo después del commit.
+- Reintentos sobre ese head: CI run [39426320145](https://github.com/BTF14/Micro-app/actions/runs/39426320145) success (build/typecheck, unit tests y auth integration contra PostgreSQL efímero); migración run [39426320271](https://github.com/BTF14/Micro-app/actions/runs/39426320271) success; Semgrep [39426320136](https://github.com/BTF14/Micro-app/actions/runs/39426320136) success; Trivy [39426320487](https://github.com/BTF14/Micro-app/actions/runs/39426320487) success; progress dashboard [39426320168](https://github.com/BTF14/Micro-app/actions/runs/39426320168) success.
+- Playwright E2E run [39426320240](https://github.com/BTF14/Micro-app/actions/runs/39426320240), intento 3, falla en el paso `Install Chromium and OS dependencies`; el paso de browser tests queda skipped. Los pasos anteriores, incluidos install de dependencias y setup del runner Playwright, pasan. La descarga de logs del job devuelve 404 `BlobNotFound`, así que la causa interna exacta (descarga de browser, apt/dependencias u otra) no está demostrada. No seguir reintentando en bucle ni afirmar que los tests E2E se ejecutaron. Resolver el paso de instalación con logs disponibles o un entorno de browser reproducible antes de quitar el bloqueo de PR.
+- Existe además un run de Security scan anterior [39426310365](https://github.com/BTF14/Micro-app/actions/runs/39426310365) en failure sobre el mismo SHA por evento anterior; el run PR más reciente [39426320487](https://github.com/BTF14/Micro-app/actions/runs/39426320487) sí pasa. Distinguir runs por evento/intento, no reportar el check duplicado como un nuevo fallo de código.
+- Check runs raw del SHA `8d938ab...` mostró seis workflows Actions relevantes y dos contextos Vercel exitosos; no se identificó un séptimo workflow distinto. El histórico reporte de siete errores no se debe completar con una suposición.
+- La prueba de CI sí es evidencia real ahora que steps se ejecutan. No implica readiness de producción. PR #71 sigue draft hasta resolver Playwright y revisar los checks sobre el head final.
+- Arquitectura aprobada del repo sigue siendo frontend Cloudflare Pages + API Cloudflare Workers/Hono + Neon Free, presupuesto $0. Vercel API es auxiliar/no canónico según los documentos; el error ESM de Vercel no justifica reconfigurar el destino aprobado ni hacer deploy de producción.
+- Sin deploy de producción, sin cambios a Neon `main`, sin migraciones a datos reales, sin billing ni secretos expuestos.
+
+---
 # Revisión viva — 2026-10-20 08:56 EDT (12:56 UTC)
 
 > Esta revisión añade evidencia viva a los checkpoints históricos. El SHA anotado como head/base es el estado al comenzar esta revisión; las actualizaciones documentales de esta sesión crean commits nuevos y deben volver a verificarse después.

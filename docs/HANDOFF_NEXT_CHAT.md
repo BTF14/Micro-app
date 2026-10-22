@@ -1,3 +1,16 @@
+## Handoff vivo — 2026-10-22: Playwright fix integrado; PR #71 pendiente de E2E
+
+Leer primero el checkpoint más reciente al inicio de `docs/CURRENT_STATE.md`.
+
+- PR #75 se fusionó en `main` por squash; commit `3a6d8211d21cc3fbbff2cd476d8fa80adb65cd3f`. Los seis workflows pasaron en `main`, incluido Playwright E2E.
+- Se copió el workflow Playwright validado de `main` a `feat/tenant-context-resolver`, commit inicial `a3301896c2936ce6d50698a0d05ad920e656fe7a`, para que PR #71 ejecute la nueva configuración.
+- En ese head, CI, migración, Trivy/security scan, Semgrep y dashboard pasan. Playwright [39861076113](https://github.com/BTF14/Micro-app/actions/runs/39861076113) pasó el paso de verificación de Chromium y seguía ejecutando los browser tests en la última consulta. Confirmar conclusión final antes de marcar E2E como verde.
+- PR #71 sigue open/draft. No fusionar hasta revisar el resultado E2E y el diff final del resolver. La utilidad `resolveTenantContext` no aparece conectada a rutas en `apps/api/src/index.ts`; confirmar que esto concuerda con el alcance previsto y no añadir autorización implícita.
+- No se identificó un séptimo workflow distinto: seis workflows Actions y dos contextos Vercel observados. No inventar un check faltante.
+- Arquitectura canónica: Cloudflare Pages + Cloudflare Workers/Hono + Neon Free. Vercel API es auxiliar/no canónica. No deploy de producción, no tocar Neon `main`, sin billing ni secretos expuestos. Presupuesto $0.
+
+---
+
 ## Handoff vivo — 2026-10-22: Playwright fix passed on PR #75
 
 Leer el checkpoint más reciente al inicio de `docs/CURRENT_STATE.md`.

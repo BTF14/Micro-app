@@ -1,10 +1,18 @@
 ## Bloqueo actual — publicación segura y ejecución de CI (2026-10-21)
 
-- PR #74: https://github.com/BTF14/Micro-app/pull/74, rama `security/pre-publication-audit`, abierta como draft. Mantenerla así hasta un escaneo de secretos válido y revisión de resultados.
-- Siete workflows (CI, Trivy Security scan, Semgrep SAST, Playwright E2E, Database migration validation, Project progress dashboard y Secret history scan) fallaron en el head `2849a96599022e3ea330aacea68a713fdc76a626` antes de ejecutar steps: `runner_id: 0`, steps vacíos y logs 404 `BlobNotFound`. No es evidencia de tests fallidos ni de scan limpio.
-- Se inició un único reintento diagnóstico del job Gitleaks; al último chequeo estaba en cola, sin runner. No asumir causa de billing/capacidad/permisos hasta obtener mensaje verificable.
-- La auditoría inventarió 78 ramas visibles, todas sin protección reportada. El repo permanece privado. No cambiar visibilidad, fusionar ni desplegar como workaround.
-- Criterio de salida: Gitleaks ejecutado sobre el head final y sus hallazgos revisados; CI real ejecutada en el SHA final; protección de ramas y controles de secretos revisados en Settings. Si Actions no asigna runner, resolver el bloqueo externo sin hacer cambios especulativos en los workflows.
+## Checkpoint de seguridad y Actions — 2026-10-21 (actualización viva)
+
+- PR #74 sigue abierta, draft, sin fusionar: https://github.com/BTF14/Micro-app/pull/74. Head consultado antes de este checkpoint documental: `32f0ad73dcf0c77014ed644bd062814bd77aa6f7`.
+- En el head anterior `2849a96599022e3ea330aacea68a713fdc76a626`, los siete workflows fallaron sin ejecución: [Security scan](https://github.com/BTF14/Micro-app/actions/runs/39701045262), [CI](https://github.com/BTF14/Micro-app/actions/runs/39701045291), [Semgrep SAST](https://github.com/BTF14/Micro-app/actions/runs/39701045311), [Project progress dashboard](https://github.com/BTF14/Micro-app/actions/runs/39701045339), [Secret history scan](https://github.com/BTF14/Micro-app/actions/runs/39701045297), [Playwright E2E](https://github.com/BTF14/Micro-app/actions/runs/39701045409) y [Database migration validation](https://github.com/BTF14/Micro-app/actions/runs/39701045414).
+- Se reintentó solo Gitleaks (run 39701045297, intento 2); también terminó en `failure` con `runner_id: 0`, cero steps y log 404 `BlobNotFound`. No se ejecutó el escaneo.
+- Se confirmaron los mismos siete fallos en el head documental `32f0ad73dcf0c77014ed644bd062814bd77aa6f7`: [Project progress dashboard](https://github.com/BTF14/Micro-app/actions/runs/39702154394), [Playwright E2E](https://github.com/BTF14/Micro-app/actions/runs/39702154376), [Security scan](https://github.com/BTF14/Micro-app/actions/runs/39702154366), [Secret history scan](https://github.com/BTF14/Micro-app/actions/runs/39702154437), [Database migration validation](https://github.com/BTF14/Micro-app/actions/runs/39702154399), [Semgrep SAST](https://github.com/BTF14/Micro-app/actions/runs/39702154354) y [CI](https://github.com/BTF14/Micro-app/actions/runs/39702154335). Cada job tuvo `runner_id: 0`, steps vacíos y duración aproximada de 1–2 segundos.
+- Conclusión: fallo persistente anterior a la ejecución de los steps, reproducido tras el reintento y en un nuevo SHA. La causa específica (cuota, facturación, configuración o incidencia de GitHub) sigue sin evidencia. No hacer más reintentos en bucle ni cambiar workflows para adivinar.
+- El endpoint de combined status solo mostró dos contextos Vercel en éxito; no sustituye a los workflows. `.github/workflows/ci.yml` usa `ubuntu-latest` y PostgreSQL 18 efímero; los pasos install/build/typecheck/unit/integration no aparecen ejecutados. Trivy usa `exit-code: '0'` y es no bloqueante por diseño.
+- Auditoría: 78 ramas visibles inventariadas y todas se reportaron sin protección. El chequeo de nombres de archivos de los árboles actuales solo encontró `apps/web/.env.example` entre patrones buscados; su valor es una URL localhost de ejemplo. Esto no equivale a un escaneo de contenidos/historial completo. Gitleaks aún no ha producido resultado.
+- Próximo paso bloqueado fuera del código: revisar la interfaz de Actions del propietario y los avisos de cuota/uso/permisos, o habilitar un runner gratuito autorizado. No cambiar el repo a público como workaround sin autorización explícita.
+- Límites: repo privado, PR #74 draft, no merge, no producción, no Neon `main`, no secretos/datos reales, no billing ni costes. El repositorio no está certificado para publicación.
+
+Criterio de salida: escaneo Gitleaks real y revisado sobre el head final; CI real en el SHA final; y revisión de protección de ramas/secretos en Settings.
 
 ---
 

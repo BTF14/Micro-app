@@ -1,11 +1,18 @@
-## 2026-10-21 — Diagnóstico de los siete workflows en PR #74
+## 2026-10-21 — Diagnóstico de los siete workflows en PR #74 (actualización)
 
-- PR #74 sigue abierta, draft y sin fusionar: https://github.com/BTF14/Micro-app/pull/74.
-- Se recuperaron los siete runs asociados al head `2849a96599022e3ea330aacea68a713fdc76a626`: Security scan 39701045262; CI 39701045291; Semgrep SAST 39701045311; Project progress dashboard 39701045339; Secret history scan 39701045297; Playwright E2E 39701045409; Database migration validation 39701045414.
-- Cada job terminó con `runner_id: 0`, sin steps y sin logs disponibles (404 `BlobNotFound`). Conclusión: los comandos de los workflows no tienen evidencia de haberse ejecutado; no atribuirlo a defectos de código ni afirmar que el escaneo de secretos pasó.
-- Se reintentó solo Gitleaks para obtener una nueva observación; el intento 2 quedó en cola al consultar, job ID `119573359675`, todavía sin runner asignado. Debe revisarse el resultado final antes de actuar.
-- Se confirmó que `.github/workflows/ci.yml` usa runner GitHub-hosted `ubuntu-latest` y PostgreSQL efímero; no hay steps que revisar como causa de los fallos observados. `.github/workflows/security-scan.yml` ejecuta Trivy con `exit-code: '0'`, baseline deliberadamente no bloqueante.
-- La causa exacta de asignación de runner no quedó demostrada. No se alteraron configuraciones de billing, visibilidad, producción, Neon ni secretos. No se ejecutaron tests locales.
+## Checkpoint de seguridad y Actions — 2026-10-21 (actualización viva)
+
+- PR #74 sigue abierta, draft, sin fusionar: https://github.com/BTF14/Micro-app/pull/74. Head consultado antes de este checkpoint documental: `32f0ad73dcf0c77014ed644bd062814bd77aa6f7`.
+- En el head anterior `2849a96599022e3ea330aacea68a713fdc76a626`, los siete workflows fallaron sin ejecución: [Security scan](https://github.com/BTF14/Micro-app/actions/runs/39701045262), [CI](https://github.com/BTF14/Micro-app/actions/runs/39701045291), [Semgrep SAST](https://github.com/BTF14/Micro-app/actions/runs/39701045311), [Project progress dashboard](https://github.com/BTF14/Micro-app/actions/runs/39701045339), [Secret history scan](https://github.com/BTF14/Micro-app/actions/runs/39701045297), [Playwright E2E](https://github.com/BTF14/Micro-app/actions/runs/39701045409) y [Database migration validation](https://github.com/BTF14/Micro-app/actions/runs/39701045414).
+- Se reintentó solo Gitleaks (run 39701045297, intento 2); también terminó en `failure` con `runner_id: 0`, cero steps y log 404 `BlobNotFound`. No se ejecutó el escaneo.
+- Se confirmaron los mismos siete fallos en el head documental `32f0ad73dcf0c77014ed644bd062814bd77aa6f7`: [Project progress dashboard](https://github.com/BTF14/Micro-app/actions/runs/39702154394), [Playwright E2E](https://github.com/BTF14/Micro-app/actions/runs/39702154376), [Security scan](https://github.com/BTF14/Micro-app/actions/runs/39702154366), [Secret history scan](https://github.com/BTF14/Micro-app/actions/runs/39702154437), [Database migration validation](https://github.com/BTF14/Micro-app/actions/runs/39702154399), [Semgrep SAST](https://github.com/BTF14/Micro-app/actions/runs/39702154354) y [CI](https://github.com/BTF14/Micro-app/actions/runs/39702154335). Cada job tuvo `runner_id: 0`, steps vacíos y duración aproximada de 1–2 segundos.
+- Conclusión: fallo persistente anterior a la ejecución de los steps, reproducido tras el reintento y en un nuevo SHA. La causa específica (cuota, facturación, configuración o incidencia de GitHub) sigue sin evidencia. No hacer más reintentos en bucle ni cambiar workflows para adivinar.
+- El endpoint de combined status solo mostró dos contextos Vercel en éxito; no sustituye a los workflows. `.github/workflows/ci.yml` usa `ubuntu-latest` y PostgreSQL 18 efímero; los pasos install/build/typecheck/unit/integration no aparecen ejecutados. Trivy usa `exit-code: '0'` y es no bloqueante por diseño.
+- Auditoría: 78 ramas visibles inventariadas y todas se reportaron sin protección. El chequeo de nombres de archivos de los árboles actuales solo encontró `apps/web/.env.example` entre patrones buscados; su valor es una URL localhost de ejemplo. Esto no equivale a un escaneo de contenidos/historial completo. Gitleaks aún no ha producido resultado.
+- Próximo paso bloqueado fuera del código: revisar la interfaz de Actions del propietario y los avisos de cuota/uso/permisos, o habilitar un runner gratuito autorizado. No cambiar el repo a público como workaround sin autorización explícita.
+- Límites: repo privado, PR #74 draft, no merge, no producción, no Neon `main`, no secretos/datos reales, no billing ni costes. El repositorio no está certificado para publicación.
+
+No se ejecutaron tests locales ni hubo escaneo Gitleaks válido. La conexión disponible no permite ver el mensaje administrativo que explique por qué GitHub no asigna runner; se deja explícitamente como bloqueo externo no resuelto. No se modificaron visibilidad, billing, producción, Neon ni secretos.
 
 ---
 

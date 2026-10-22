@@ -18,6 +18,9 @@ jobs:
   browser-tests:
     name: Chromium authentication smoke tests
     runs-on: ubuntu-latest
+    container:
+      image: mcr.microsoft.com/playwright:v1.55.0-noble
+      options: --ipc=host
     timeout-minutes: 15
     steps:
       - name: Checkout
@@ -38,8 +41,13 @@ jobs:
         run: |
           mkdir -p apps/web/node_modules/@playwright
           ln -s /tmp/micro-app-playwright/node_modules/@playwright/test apps/web/node_modules/@playwright/test
-      - name: Install Chromium and OS dependencies
-        run: /tmp/micro-app-playwright/node_modules/.bin/playwright install --with-deps chromium
+      # The pinned Playwright container includes Chromium and its OS libraries.
+      # Avoid apt/browser bootstrap on each run; this step was repeatedly failing
+      # before the browser tests could start, and GitHub's job log blob was unavailable.
+      - name: Verify bundled browser runtime
+        run: |
+          test -d "${PLAYWRIGHT_BROWSERS_PATH:-/ms-playwright}"
+          test -n "$(find "${PLAYWRIGHT_BROWSERS_PATH:-/ms-playwright}" -maxdepth 1 -type d -name 'chromium-*' -print -quit)"
       - name: Run browser tests
         run: /tmp/micro-app-playwright/node_modules/.bin/playwright test --config apps/web/playwright.config.ts
       - name: Upload Playwright report and traces on failure

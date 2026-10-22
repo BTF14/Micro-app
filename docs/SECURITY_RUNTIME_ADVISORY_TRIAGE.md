@@ -44,3 +44,21 @@ The social-media image is an alert summary, not sufficient evidence to identify 
 - Official references: https://github.com/honojs/hono/security/advisories/GHSA-5r4p-p66f-jhc7 and https://github.com/honojs/hono/security/advisories/GHSA-g6gw-c38x-mqfc.
 - A further scan of all tracked workflows found `.github/workflows/autoskills-preview.yml` also selected generic Node `22` before running `npx autoskills@0.4.1`. That workflow has now been pinned to `22.23.4` with the same runtime assertion. The remaining tracked workflows either do not install/use Node.js directly or use Python/Docker-based tools.
 - The Node.js 22.23.4 CI pins are mitigations for CI/build jobs only. They do not patch a developer workstation or change Cloudflare's hosted runtime, and they do not guarantee that an external provider's build image uses the same Node version.
+
+
+## Vercel live configuration inspection — 2026-10-22
+
+Read-only inspection through the connected Vercel account found two separate Hobby projects linked to the same GitHub repository, `BTF14/Micro-app`:
+
+- `micro-app-7lg5` is configured with framework `hono` and project Node version `24.x`.
+- `micro-app` is configured with framework `vite` and project Node version `24.x`.
+- Both latest deployments observed for branch `security/oct-2026-runtime-advisories`, commit `31faca4ce84219dea4e935a9923fe14d340009ca`, were `READY` with `target: null` and preview branch aliases. These are preview deployments, not evidence of a production deployment.
+- The project metadata reports `live: false` for both projects at inspection time. Do not infer from that field alone that no production traffic exists elsewhere.
+- The projects have different frameworks and overlapping repository linkage. This may be intentional (API preview vs frontend preview), but the repository alone does not prove their root directories, build commands, output directories, or production-domain ownership. Do not delete or relink either project without establishing intended ownership and deployment topology.
+
+### Implications and remaining checks
+
+1. The Vercel project setting `24.x` specifies a major line, not the exact patch release. The official Node.js release for 2026-10-21 lists Node.js `24.22.1` as the patched 24.x release; the project setting alone does not prove that exact patched runtime is used by every build or function. Source: https://nodejs.org/en/blog/vulnerability/october-2026-security-releases
+2. The Node.js `22.23.4` pins in GitHub Actions do not override Vercel's project Node.js setting. Keep these controls separate.
+3. No project settings were changed, no environment-variable values were retrieved or displayed, and no deployment was initiated. Production status, actual function runtime patch level, root/build settings, and custom-domain routing still require read-only verification in Vercel/Cloudflare dashboards.
+4. Canonical production architecture remains Cloudflare Pages + Cloudflare Workers/Hono + Neon. Treat both Vercel projects as auxiliary until their purpose is confirmed; do not migrate canonical API traffic to Vercel based on this inspection.

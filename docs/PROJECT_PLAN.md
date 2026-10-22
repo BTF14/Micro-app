@@ -1,3 +1,13 @@
+## Bloqueo actual — publicación segura y ejecución de CI (2026-10-21)
+
+- PR #74: https://github.com/BTF14/Micro-app/pull/74, rama `security/pre-publication-audit`, abierta como draft. Mantenerla así hasta un escaneo de secretos válido y revisión de resultados.
+- Siete workflows (CI, Trivy Security scan, Semgrep SAST, Playwright E2E, Database migration validation, Project progress dashboard y Secret history scan) fallaron en el head `2849a96599022e3ea330aacea68a713fdc76a626` antes de ejecutar steps: `runner_id: 0`, steps vacíos y logs 404 `BlobNotFound`. No es evidencia de tests fallidos ni de scan limpio.
+- Se inició un único reintento diagnóstico del job Gitleaks; al último chequeo estaba en cola, sin runner. No asumir causa de billing/capacidad/permisos hasta obtener mensaje verificable.
+- La auditoría inventarió 78 ramas visibles, todas sin protección reportada. El repo permanece privado. No cambiar visibilidad, fusionar ni desplegar como workaround.
+- Criterio de salida: Gitleaks ejecutado sobre el head final y sus hallazgos revisados; CI real ejecutada en el SHA final; protección de ramas y controles de secretos revisados en Settings. Si Actions no asigna runner, resolver el bloqueo externo sin hacer cambios especulativos en los workflows.
+
+---
+
 ## Checkpoint de continuidad — 2026-10-19 después de PR #64
 
 - PR #64 fusionada por squash; merge SHA `f15e3b0da415b8f31641a81ed8a883deb7fcfc5f`. PR #63 merge SHA `b4b417ec5a85b8b0c48b606c718c341745af9055`.

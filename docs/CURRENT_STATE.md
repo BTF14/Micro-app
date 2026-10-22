@@ -1,14 +1,22 @@
-# Estado vivo — 2026-10-22: PR #71 integrada y CI verde
+# Estado vivo — 2026-10-22: seguridad y CI actualizados
 
-- PR #75 integró el runner reproducible de Playwright en `main` (commit `3a6d8211d21cc3fbbff2cd476d8fa80adb65cd3f`).
-- PR #71 `feat(api): add tenant context resolver` fue revisada, marcada ready y fusionada por squash en `main`. Merge commit: `ab0e4104eb98d77cae762f5a066340197614128c`. La utilidad comprueba sesión válida, usuario/organización/membresía activos y rol desde PostgreSQL; no autoriza operaciones comerciales por sí sola y aún no está conectada a rutas de negocio.
-- Todos los workflows de GitHub en el merge commit terminaron success: CI [39861578623](https://github.com/BTF14/Micro-app/actions/runs/39861578623), Playwright E2E [39861578474](https://github.com/BTF14/Micro-app/actions/runs/39861578474), migraciones [39861578541](https://github.com/BTF14/Micro-app/actions/runs/39861578541), Semgrep [39861578530](https://github.com/BTF14/Micro-app/actions/runs/39861578530), Trivy [39861578527](https://github.com/BTF14/Micro-app/actions/runs/39861578527) y dashboard [39861578494](https://github.com/BTF14/Micro-app/actions/runs/39861578494). Cloudflare Pages y ambos status Vercel también pasaron para ese SHA.
-- La arquitectura canónica sigue siendo Cloudflare Pages + Cloudflare Workers/Hono + Neon Free. Vercel API no es destino comercial aprobado. No se desplegó producción ni se tocó Neon `main`.
-- PR #74 (auditoría de secretos) sigue draft y sin merge. En su head actual `525e00d6c8fe4a888c517578b4790612cf655fa7`, Gitleaks [39861726942](https://github.com/BTF14/Micro-app/actions/runs/39861726942) y Trivy [39861727020](https://github.com/BTF14/Micro-app/actions/runs/39861727020) pasaron; el check de preview Cloudflare seguía en curso en la última consulta. El scan anterior [39702300610](https://github.com/BTF14/Micro-app/actions/runs/39702300610) también se ejecutó y pasó en un SHA previo. El repositorio está público; el resultado de un SHA no certifica todo el historial/ramas/artefactos. Revisar protecciones de rama y secret scanning en Settings.
-- Próximo paso de producto: antes de implementar handlers comerciales, revisar la matriz aprobada de permisos por rol y el contrato de autorización multiempresa; añadir rutas solo con pruebas negativas contra PostgreSQL efímero. No inferir permisos ni abrir endpoints comerciales sin contrato aprobado.
-- Mantener presupuesto $0, no desplegar producción, no tocar Neon `main`, no exponer secretos.
+- PR #76 integró en `main` el workflow de Gitleaks con checkout completo, reglas adicionales de `.gitignore` y checklist realista de exposición. Merge commit: `5f33e82fc7a6d3e77b6b97d912034f2a2ee7c2b0`.
+- En ese SHA, los ocho checks consultados terminaron en success: Gitleaks [39862510779](https://github.com/BTF14/Micro-app/actions/runs/39862510779), CI [39862510861](https://github.com/BTF14/Micro-app/actions/runs/39862510861), Playwright E2E [39862510771](https://github.com/BTF14/Micro-app/actions/runs/39862510771), migración [39862510667](https://github.com/BTF14/Micro-app/actions/runs/39862510667), Semgrep [39862510847](https://github.com/BTF14/Micro-app/actions/runs/39862510847), Trivy [39862510870](https://github.com/BTF14/Micro-app/actions/runs/39862510870), dashboard [39862510823](https://github.com/BTF14/Micro-app/actions/runs/39862510823) y Cloudflare Pages preview. Vercel statuses también pasaron.
+- El log real de Gitleaks para ese SHA indica **613 commits escaneados, aproximadamente 1.74 MB y “no leaks found”**. Esto aplica al historial alcanzable desde el checkout de `main`; no certifica todas las ramas, artifacts, logs, releases ni sistemas externos.
+- PR #74 se cerró como supersedida porque su rama estaba divergida y no era mergeable. Sus cambios relevantes se rebasaron limpiamente en PR #76; no se integraron sus checkpoints históricos obsoletos.
+- PR #71 sigue integrada: `resolveTenantContext` valida sesión/membresía activa y devuelve el rol, pero no autoriza operaciones comerciales y aún no está conectada a rutas de negocio.
+- **Riesgo P0 pendiente de decisión de identidad:** [issue #53](https://github.com/BTF14/Micro-app/issues/53) ahora registra que `POST /auth/register` está bloqueado, pero `POST /auth/login` sigue aceptando contraseña para cuentas activas sin aplicar la política Google sign-in + allowlist. No sabemos si hay cuentas reales afectadas. No deshabilitar el login sin evaluar el impacto ni inventar la política D1–D8.
+- GitHub reportó `main` sin protección. La conexión usada no permite configurar branch protection/required checks en Settings; requiere acción administrativa allí. No asumir que Gitleaks verde habilita la publicación/operación comercial.
+- Arquitectura canónica: Cloudflare Pages + Cloudflare Workers/Hono + Neon Free. Sin despliegue de producción, sin mutaciones de Neon `main`, sin facturación ni secretos expuestos.
+
+## Próximas prioridades
+1. Resolver las decisiones D1–D8 de identidad en `docs/sdd/auth-policy-decision-record.md` y completar la política de acceso en todos los puntos de entrada.
+2. Obtener aprobación de la matriz de permisos por rol antes de implementar handlers comerciales.
+3. Activar protección de `main`, checks requeridos y las opciones de secret scanning/push protection disponibles desde GitHub Settings.
+4. Mantener pruebas con PostgreSQL efímero; no probar contra Neon `main`.
 
 ---
+
 
 # Actualización de verificación — 2026-10-22 21:58 UTC
 

@@ -1,3 +1,14 @@
+## 2026-10-21 — Diagnóstico de los siete workflows en PR #74
+
+- PR #74 sigue abierta, draft y sin fusionar: https://github.com/BTF14/Micro-app/pull/74.
+- Se recuperaron los siete runs asociados al head `2849a96599022e3ea330aacea68a713fdc76a626`: Security scan 39701045262; CI 39701045291; Semgrep SAST 39701045311; Project progress dashboard 39701045339; Secret history scan 39701045297; Playwright E2E 39701045409; Database migration validation 39701045414.
+- Cada job terminó con `runner_id: 0`, sin steps y sin logs disponibles (404 `BlobNotFound`). Conclusión: los comandos de los workflows no tienen evidencia de haberse ejecutado; no atribuirlo a defectos de código ni afirmar que el escaneo de secretos pasó.
+- Se reintentó solo Gitleaks para obtener una nueva observación; el intento 2 quedó en cola al consultar, job ID `119573359675`, todavía sin runner asignado. Debe revisarse el resultado final antes de actuar.
+- Se confirmó que `.github/workflows/ci.yml` usa runner GitHub-hosted `ubuntu-latest` y PostgreSQL efímero; no hay steps que revisar como causa de los fallos observados. `.github/workflows/security-scan.yml` ejecuta Trivy con `exit-code: '0'`, baseline deliberadamente no bloqueante.
+- La causa exacta de asignación de runner no quedó demostrada. No se alteraron configuraciones de billing, visibilidad, producción, Neon ni secretos. No se ejecutaron tests locales.
+
+---
+
 ## 2026-10-19 — Corrección de formato en checklist de preparación
 
 - Se corrigió en `docs/PRODUCTION_READINESS.md` un `\\n` literal que unía visualmente el criterio ya verificado del bloqueo de registro con el siguiente criterio pendiente de Google sign-in.

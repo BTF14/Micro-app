@@ -62,3 +62,20 @@ Read-only inspection through the connected Vercel account found two separate Hob
 2. The Node.js `22.23.4` pins in GitHub Actions do not override Vercel's project Node.js setting. Keep these controls separate.
 3. No project settings were changed, no environment-variable values were retrieved or displayed, and no deployment was initiated. Production status, actual function runtime patch level, root/build settings, and custom-domain routing still require read-only verification in Vercel/Cloudflare dashboards.
 4. Canonical production architecture remains Cloudflare Pages + Cloudflare Workers/Hono + Neon. Treat both Vercel projects as auxiliary until their purpose is confirmed; do not migrate canonical API traffic to Vercel based on this inspection.
+
+
+## Vercel production-target deployment cross-check — 2026-10-22
+
+A second read-only inspection of the two Vercel projects' deployment lists found successful deployments with `target: production` on `main`, in addition to the PR previews:
+
+- Project `micro-app-7lg5` (framework `hono`): deployment `dpl_AvNPxNL3zQ37jYZYP5mQots19grs`, state `READY`, target `production`, source commit `d2fa1407fca9a0c13c8c9dc9b3bed60b53a3d0be`. Assigned aliases include `micro-app-7lg5.vercel.app` and `micro-app-7lg5-git-main-devbtf.vercel.app`.
+- Project `micro-app` (framework `vite`): deployment `dpl_3wvixKjcsV3yYYPemPRqPgGAVTwU`, state `READY`, target `production`, source commit `d2fa1407fca9a0c13c8c9dc9b3bed60b53a3d0be`. Assigned aliases include `micro-app-five.vercel.app` and `micro-app-git-main-devbtf.vercel.app`.
+
+This is stronger evidence than the earlier preview-only observation: both projects have a production-target deployment recorded by Vercel. It does not, by itself, prove actual request volume, that both are part of the intended production topology, or which domain is the canonical public entry point. The project metadata still reports Node `24.x`, not an exact patch version. Project root directories, build commands/output settings, environment-variable names/targets (without reading values), and the intended ownership of public domains remain unverified.
+
+### Required disposition
+
+1. Do not delete, pause, relink, or change either project/domain as part of this advisory triage; that could disrupt a live site.
+2. Confirm the intended canonical public URL and whether the Hono Vercel deployment is an intentional auxiliary service, a legacy deployment, or a production API. Reconcile this with the documented Cloudflare Pages + Workers/Hono + Neon architecture before changing routing.
+3. Inspect build configuration and exact effective Node patch levels read-only. The `24.x` setting alone is not proof that builds/functions use the official patched Node 24 release.
+4. Keep this PR draft until the topology/runtime questions are answered. No deployment was initiated and no Vercel/Cloudflare project settings, environment-variable values, or Neon data were changed/read for this cross-check.

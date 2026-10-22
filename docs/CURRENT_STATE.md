@@ -1,3 +1,12 @@
+# Actualización de verificación — 2026-10-22 21:58 UTC
+
+- Resultado final confirmado para PR #71 en SHA `ef86738991fbed58090d191ffbb865e4e8f18588`: los ocho checks de GitHub que se consultaron terminaron en success: CI [39861207434](https://github.com/BTF14/Micro-app/actions/runs/39861207434), Playwright [39861207395](https://github.com/BTF14/Micro-app/actions/runs/39861207395), migraciones [39861207581](https://github.com/BTF14/Micro-app/actions/runs/39861207581), Trivy PR [39861207344](https://github.com/BTF14/Micro-app/actions/runs/39861207344), Semgrep [39861207331](https://github.com/BTF14/Micro-app/actions/runs/39861207331), dashboard [39861207369](https://github.com/BTF14/Micro-app/actions/runs/39861207369), Vercel Preview Comments y Cloudflare Pages preview. Los dos contextos de status Vercel también están success.
+- En particular, Playwright llegó al paso `Run browser tests` y terminó success; no fue solo una comprobación de instalación.
+- La verificación corresponde al SHA indicado. Los cambios documentales que se hagan después producen un nuevo head y deben revisarse por SHA; no confundir el resultado de este head con un head futuro.
+- PR #71 sigue abierta y draft. No se fusionó. Próximo paso: revisión funcional/seguridad del alcance de `resolveTenantContext` y decisión de si la utilidad está lista para uso por rutas, antes de sacarla de draft. No desplegar producción ni tocar Neon `main`.
+
+---
+
 # Checkpoint vivo — 2026-10-22: Playwright fix integrado y PR #71 revalidándose
 
 - PR #75 [ci: stabilize Playwright browser setup](https://github.com/BTF14/Micro-app/pull/75) se revisó y fusionó por squash en `main`. Commit resultante: `3a6d8211d21cc3fbbff2cd476d8fa80adb65cd3f`. Cambio exclusivo de workflow; sin cambios de app, Neon ni deploy de producción.

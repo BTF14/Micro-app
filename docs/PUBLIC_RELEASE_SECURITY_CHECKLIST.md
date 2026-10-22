@@ -21,7 +21,8 @@ Hacer público el repositorio expone el contenido actual, las ramas y el histori
 ## Estado de esta auditoría
 
 - Repositorio revisado mediante la conexión GitHub: `BTF14/Micro-app`.
-- El escaneo estático inicial de nombres de archivos en `main` encontró `apps/web/.env.example`, que se debe revisar como plantilla y no tratar automáticamente como secreto.
+- El inventario de las 78 ramas visibles encontró, en los árboles actuales, únicamente `apps/web/.env.example` entre los nombres de archivos que coinciden con patrones de entorno/credenciales/certificados/volcados. Su contenido revisado solo define `VITE_API_BASE_URL=http://localhost:8787` y comentarios; no contiene una credencial. Esta comprobación de nombres no equivale a escanear los contenidos ni el historial completo.
+- GitHub reportó `protected: false` para las 78 ramas enumeradas; no se detectó ninguna rama protegida en ese inventario.
 - `.gitignore` protege los archivos de entorno comunes y ahora incluye reglas adicionales para certificados y volcados locales.
 - Se añadió un workflow de Gitleaks con checkout completo para comprobar secretos en archivos rastreados e historial Git alcanzable desde el ref del workflow.
 - **No declarar el repositorio seguro para publicación hasta que el workflow termine y sus hallazgos sean revisados.** El escaneo por sí solo no reemplaza la revisión manual ni cubre artefactos externos al repositorio.

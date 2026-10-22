@@ -25,3 +25,4 @@ Hacer público el repositorio expone el contenido actual, las ramas y el histori
 - `.gitignore` protege los archivos de entorno comunes y ahora incluye reglas adicionales para certificados y volcados locales.
 - Se añadió un workflow de Gitleaks con checkout completo para comprobar secretos en archivos rastreados e historial Git alcanzable desde el ref del workflow.
 - **No declarar el repositorio seguro para publicación hasta que el workflow termine y sus hallazgos sean revisados.** El escaneo por sí solo no reemplaza la revisión manual ni cubre artefactos externos al repositorio.
+- En el primer intento del 2026-10-22, GitHub marcó Secret history scan, CI, Trivy y Playwright como `failure`, pero las ejecuciones terminaron con `runner_id: 0` y cero pasos. No se asignó un runner y no se produjo resultado de escaneo; no equivale a un escaneo limpio ni demuestra que haya secretos.

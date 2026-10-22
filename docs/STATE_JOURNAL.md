@@ -459,3 +459,12 @@ Este diario es append-only en cuanto a historia: no borrar hitos antiguos; añad
 - PR #60 se cerró como supersedida tras comparar el diff; no se fusionó ni se hizo force-push. Sus reglas útiles quedaron integradas por #62/#63; los snapshots históricos obsoletos no se reintrodujeron.
 - Sin cambios de runtime/dependencias/DB/secretos ni despliegue productivo. Cloudflare generó automáticamente preview de rama para PR #64. Coste $0.
 - P0 de identidad permanece: Google OAuth + allowlist, D1–D8 y matriz de permisos pendientes de aprobación. Registro fail-closed; login por contraseña existe y no se debe asumir que la allowlist lo protege.
+
+
+## 2026-10-22 — Read-only Vercel runtime inspection for PR #77
+
+- Inspected the connected Vercel team and two projects linked to `BTF14/Micro-app`: `micro-app-7lg5` (framework `hono`) and `micro-app` (framework `vite`). Both project metadata records specify Node.js `24.x`; this is a major-line setting, not evidence of the exact patched runtime version.
+- Both latest deployments for PR branch `security/oct-2026-runtime-advisories` and SHA `31faca4ce84219dea4e935a9923fe14d340009ca` were `READY`, `target: null`, and had preview branch aliases. The project records reported `live: false` at inspection time. These facts do not prove there is no production traffic elsewhere.
+- Found two Vercel projects linked to the same repo with different frameworks. Likely roles are not established from metadata alone; do not delete/relink them or assume root/build settings. Verify root directory, build/output commands and domain routing read-only before deciding whether duplicate linkage is intentional.
+- Added detailed evidence and limitations to `docs/SECURITY_RUNTIME_ADVISORY_TRIAGE.md` in commit `ef53d91a464a8b27c00f8a5f53be98fdd9fca3fc`.
+- No project settings, environment variables, production deployments, Cloudflare settings, or Neon data were changed. No secret values were read. Next: inspect Vercel project settings/build logs and Cloudflare Pages/Workers configuration read-only; confirm exact Node patch/runtime and intended project roots. Canonical architecture remains Cloudflare Pages + Workers/Hono + Neon; Vercel is auxiliary.

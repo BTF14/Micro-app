@@ -36,3 +36,11 @@ The social-media image is an alert summary, not sufficient evidence to identify 
 - `migration-check.yml` runs SQL in a disposable PostgreSQL service and does not install Node.js, so no Node pin was added there.
 - `apps/api/wrangler.toml` targets hosted Cloudflare Workers. Do not blindly change its compatibility date as a patch response; that date changes runtime compatibility behavior and should be tested as a separate change.
 - The lockfile resolves local `workerd`/Miniflare to `1.20261012.1` for development/testing. No official advisory tying that exact version to the social post was verified in this triage. Keep it on the dependency-update review list and do not claim the hosted Workers runtime is vulnerable or patched based on this local package version alone.
+
+## Dependency-specific advisory cross-check (2026-10-22)
+
+- The lockfile resolves `hono` to `4.13.13`. Hono's official advisory for `serveStatic` double-decoding (CVE-2026-111757, GHSA-5r4p-p66f-jhc7) marks versions `>=4.12.4, <4.13.11` as affected and `4.13.11` as patched. The resolved version is newer than the patched floor. The inspected API entrypoint imports `Hono` and `cors`, and its auth routes use `c.req.json()`; no `serveStatic` or `parseBody({ dot: true })` usage was found in the inspected API source. This is a version-and-usage triage, not a substitute for a full dependency audit.
+- Hono's `parseBody()` unbounded dot-notation nesting advisory (GHSA-g6gw-c38x-mqfc) affects versions below `4.13.5`; the resolved `4.13.13` is above that patched floor.
+- Official references: https://github.com/honojs/hono/security/advisories/GHSA-5r4p-p66f-jhc7 and https://github.com/honojs/hono/security/advisories/GHSA-g6gw-c38x-mqfc.
+- A further scan of all tracked workflows found `.github/workflows/autoskills-preview.yml` also selected generic Node `22` before running `npx autoskills@0.4.1`. That workflow has now been pinned to `22.23.4` with the same runtime assertion. The remaining tracked workflows either do not install/use Node.js directly or use Python/Docker-based tools.
+- The Node.js 22.23.4 CI pins are mitigations for CI/build jobs only. They do not patch a developer workstation or change Cloudflare's hosted runtime, and they do not guarantee that an external provider's build image uses the same Node version.

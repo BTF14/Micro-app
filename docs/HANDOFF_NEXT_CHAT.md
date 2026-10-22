@@ -1,3 +1,15 @@
+## Handoff vigente — 2026-10-22
+
+1. Leer el checkpoint más reciente al inicio de `docs/CURRENT_STATE.md`.
+2. PR #75 está integrada; la corrección de Playwright usa `mcr.microsoft.com/playwright:v1.55.0-noble` y el browser E2E está pasando.
+3. PR #71 está integrada en main: merge commit `ab0e4104eb98d77cae762f5a066340197614128c`. `resolveTenantContext` es solo una primitiva de sesión/membresía; no autoriza una acción de negocio y todavía no se conecta a rutas comerciales.
+4. En el merge commit #71 todos los workflows de GitHub y los status de preview consultados terminaron success. Runs: CI https://github.com/BTF14/Micro-app/actions/runs/39861578623; E2E https://github.com/BTF14/Micro-app/actions/runs/39861578474; migración https://github.com/BTF14/Micro-app/actions/runs/39861578541; Semgrep https://github.com/BTF14/Micro-app/actions/runs/39861578530; Trivy https://github.com/BTF14/Micro-app/actions/runs/39861578527; dashboard https://github.com/BTF14/Micro-app/actions/runs/39861578494.
+5. PR #74 sigue abierta/draft. Su head `525e00d6c8fe4a888c517578b4790612cf655fa7` tiene Gitleaks [39861726942](https://github.com/BTF14/Micro-app/actions/runs/39861726942) y Trivy [39861727020](https://github.com/BTF14/Micro-app/actions/runs/39861727020) en success. Revisar todos los checks del head vivo, el estado de mergeabilidad y las protecciones de GitHub antes de considerar merge. El repositorio ya es público; no afirmar que sigue privado. Un scan de un SHA no certifica todos los refs ni artefactos.
+6. Próximo trabajo de producto: revisar y obtener decisión explícita sobre matriz de permisos por rol antes de implementar rutas comerciales. Usar PostgreSQL efímero para pruebas tenant A/B, membresía inactiva, sesiones expiradas/revocadas y denegaciones sin efectos laterales.
+7. Arquitectura: Cloudflare Pages + Cloudflare Workers/Hono + Neon Free. Vercel API es auxiliar/no canónica. Sin deploy de producción, sin tocar Neon `main`, sin billing ni exposición de secretos.
+
+---
+
 ## Verificación más reciente — 2026-10-22 21:58 UTC
 
 - En PR #71, head verificado `ef86738991fbed58090d191ffbb865e4e8f18588`: CI, Playwright E2E, migración PostgreSQL, Trivy, Semgrep, dashboard, Cloudflare Pages preview y Vercel Preview Comments terminaron success. Runs: CI https://github.com/BTF14/Micro-app/actions/runs/39861207434; E2E https://github.com/BTF14/Micro-app/actions/runs/39861207395; migration https://github.com/BTF14/Micro-app/actions/runs/39861207581; Trivy https://github.com/BTF14/Micro-app/actions/runs/39861207344; Semgrep https://github.com/BTF14/Micro-app/actions/runs/39861207331; dashboard https://github.com/BTF14/Micro-app/actions/runs/39861207369.

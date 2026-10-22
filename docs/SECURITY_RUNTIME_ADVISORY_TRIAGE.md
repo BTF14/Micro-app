@@ -107,3 +107,19 @@ Further read-only cross-check:
 The 12 GitHub check runs for PR head `eb208b7b2af209065df14b3d9ec8ce0ae7ff3ea2` all completed successfully (12 success, 0 failure, 0 pending). This validation applies to that exact head; any subsequent commit requires a fresh check.
 
 Remaining disposition: PR stays draft/unmerged because the API project's intended purpose and exact effective Node patch remain unresolved. No production settings or routing were changed.
+
+
+## API entrypoint and deployment intent — source cross-check — 2026-10-22
+
+Source-level findings from `main` (same application source is present on this PR branch):
+
+- The canonical API package is `apps/api` (`@micro-app/api`). Its package scripts are `wrangler dev`, `typecheck`, and `test`; it has no package-level `build` or Vercel-specific script. Its `apps/api/wrangler.toml` explicitly declares `main = "src/index.ts"`, service name `micro-app-api`, and compatibility date `2026-10-17`. The source entrypoint exports the Hono app as the default Worker handler and registers auth routes plus `GET /health`.
+- The root build command runs the web build and API typecheck only: `pnpm --filter @micro-app/web build && pnpm --filter @micro-app/api typecheck`. No root `vercel.json` or `apps/api/vercel.json` exists in the inspected Git tree. Vercel's Hono framework label alone therefore does not document an intentional/validated deployment contract for this API; the retrieved production build events did not prove which API handler is served.
+- The frontend client uses `VITE_API_BASE_URL` (empty by default in code), with `apps/web/.env.example` documenting the actual HTTPS Worker URL as the production value and requiring the Worker `FRONTEND_ORIGIN` to match the frontend origin exactly. Vercel's earlier read-only environment listing returned no visible env variables; this means we cannot confirm that the current Vercel frontend has the production API URL configured. No env values were read.
+- The current API code has auth routes and a scaffold health route; it does not yet implement the POS/inventory business API. The register handler remains in source but is guarded by trusted-origin/configuration checks; prior state docs record registration is disabled at runtime. Do not interpret a successful Vercel Hono deployment as proof that all app flows work or that business endpoints exist.
+
+Assessment: the strongest evidence-backed path is to keep Cloudflare Workers as the documented canonical API target, treat Vercel's Hono project as unverified/possibly legacy until a safe endpoint/route check and project intent are established, and avoid modifying routing/settings or deleting either project. A future architecture decision should verify the public Worker URL and current frontend `VITE_API_BASE_URL` configuration using non-secret metadata, not guess or expose values.
+
+## PR validation checkpoint — 2026-10-22
+
+All 12 check runs for PR head `8bc4c0458ed7bf7d51c320bbaaff1c515767fdd5` completed successfully (12 success, 0 failure, 0 pending), including CI/verify, Chromium auth smoke, PostgreSQL migration, Semgrep, Trivy, reachable-history secret scan, progress generation, Cloudflare Pages preview and Vercel preview-feedback. This result applies only to that exact commit. The present documentation addition creates a new head and must receive its own fresh checks before any merge decision.

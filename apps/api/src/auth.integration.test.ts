@@ -185,6 +185,16 @@ const suiteGoogle = describe.skipIf(!databaseAvailable)("Google OAuth routes aga
     await cleanupClient.query("DELETE FROM auth_sessions WHERE user_id IN (SELECT id FROM app_users WHERE email = $1)", [googleEmail]);
     await cleanupClient.query("DELETE FROM organization_members WHERE user_id IN (SELECT id FROM app_users WHERE email = $1)", [googleEmail]);
     await cleanupClient.query("DELETE FROM app_users WHERE email = $1", [googleEmail]);
+    // auth_bootstrap still references the organization this test's bootstrap
+    // run created (ON DELETE RESTRICT by design, so a sealed bootstrap can
+    // never be silently orphaned in production). Reset the singleton sentinel
+    // back to its unconsumed state before the organization can be deleted,
+    // so later re-runs of this suite against a long-lived database exercise
+    // the bootstrap path again instead of immediately finding it sealed.
+    await cleanupClient.query(
+      "UPDATE auth_bootstrap SET consumed_at = NULL, consumed_by_email = NULL, created_organization_id = NULL WHERE id = true AND created_organization_id IN (SELECT id FROM organizations WHERE name = $1)",
+      [bootstrapOrgName],
+    );
     await cleanupClient.query("DELETE FROM organizations WHERE name = $1", [bootstrapOrgName]);
     await cleanupClient.query("DELETE FROM auth_allowlist WHERE lower(email) = lower($1)", [googleEmail]);
     await cleanupClient.end();

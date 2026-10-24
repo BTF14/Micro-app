@@ -1,4 +1,4 @@
-import { deleteCookie, getCookie, setCookie } from "hono/cookie";
+import { deleteCookie, getCookie } from "hono/cookie";
 import type { Context, Hono } from "hono";
 import { withDatabaseClient, type DatabaseClient } from "./database";
 import type { Bindings } from "./bindings";
@@ -6,7 +6,6 @@ import type { Bindings } from "./bindings";
 type AppContext = Context<{ Bindings: Bindings }>;
 
 const SESSION_COOKIE = "microapp_session";
-const SESSION_TTL_SECONDS = 7 * 24 * 60 * 60;
 const PBKDF2_ITERATIONS = 310_000;
 const DUMMY_PASSWORD_HASH = "pbkdf2-sha256$310000$ZHVtbXktc2FsdC1mb3Itbm90LWEtc2VjcmV0$AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA";
 
@@ -134,21 +133,6 @@ export function isTrustedOrigin(origin: string | undefined, configuredOrigin: st
   }
 }
 
-function createSessionToken(): string {
-  return encodeBase64Url(crypto.getRandomValues(new Uint8Array(32)));
-}
-
-function setSessionCookie(c: AppContext, token: string): void {
-  const isHttps = new URL(c.req.url).protocol === "https:";
-  setCookie(c, SESSION_COOKIE, token, {
-    httpOnly: true,
-    secure: isHttps,
-    sameSite: isHttps ? "None" : "Lax",
-    path: "/",
-    maxAge: SESSION_TTL_SECONDS,
-  });
-}
-
 function clearSessionCookie(c: AppContext): void {
   const isHttps = new URL(c.req.url).protocol === "https:";
   deleteCookie(c, SESSION_COOKIE, {
@@ -158,16 +142,8 @@ function clearSessionCookie(c: AppContext): void {
   });
 }
 
-async function createSession(client: DatabaseClient, userId: string): Promise<string> {
-  const token = createSessionToken();
-  const tokenHash = await sha256Hex(token);
-  const expiresAt = new Date(Date.now() + SESSION_TTL_SECONDS * 1000).toISOString();
-  await client.query(
-    "INSERT INTO auth_sessions (user_id, token_hash, expires_at) VALUES ($1, $2, $3)",
-    [userId, tokenHash, expiresAt],
-  );
-  return token;
-}
+// Session creation now lives only in google-auth.ts: password login (D4) no
+// longer issues sessions, so auth.ts only ever reads/revokes existing ones.
 
 async function getSessionUser(client: DatabaseClient, token: string | undefined): Promise<SessionUserRow | null> {
   if (!token || token.length > 128) return null;

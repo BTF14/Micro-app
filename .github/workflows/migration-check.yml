@@ -38,3 +38,7 @@ jobs:
         run: docker exec "${{ job.services.postgres.id }}" psql -v ON_ERROR_STOP=1 -U microapp -d microapp_test -f /dev/stdin < apps/api/migrations/0001_initial.sql
       - name: Verify cross-tenant constraints reject invalid references
         run: docker exec "${{ job.services.postgres.id }}" psql -v ON_ERROR_STOP=1 -U microapp -d microapp_test -f /dev/stdin < apps/api/migrations/0001_initial.assertions.sql
+      - name: Apply Google identity schema to disposable PostgreSQL
+        run: docker exec "${{ job.services.postgres.id }}" psql -v ON_ERROR_STOP=1 -U microapp -d microapp_test -f /dev/stdin < apps/api/migrations/0002_google_identity.sql
+      - name: Verify allowlist/bootstrap constraints reject invalid state
+        run: docker exec "${{ job.services.postgres.id }}" psql -v ON_ERROR_STOP=1 -U microapp -d microapp_test -f /dev/stdin < apps/api/migrations/0002_google_identity.assertions.sql

@@ -59,7 +59,7 @@ El propietario confirmó las ocho decisiones, todas con la opción conservadora 
 | D3 | Sin autoaprovisionamiento ni rol `owner` implícito; bootstrap administrativo explícito, de un solo uso y auditable |
 | D4 | Retirar el login por contraseña: cerrar `POST /auth/login` con el mismo patrón fail-closed que ya aplica a `POST /auth/register` |
 | D5 | Exigir identidad Google validada en servidor y claim `email_verified` antes de evaluar la allowlist |
-| D6 | Librería OAuth: Arctic (helper OAuth 2.0 ligero, sin dependencias pesadas, compatible con Cloudflare Workers, gratis y mantenido) |
+| D6 | Librería OAuth: Arctic aprobado como preferencia, pero el entorno de implementación no tiene acceso de red para instalar paquetes npm nuevos ni regenerar `pnpm-lock.yaml` de forma verificable. Implementación real: cliente OAuth 2.0 + OIDC hecho a mano con `fetch` nativo y Web Crypto (sin dependencias nuevas), siguiendo el mismo flujo que Arctic implementaría (PKCE S256, `state` en cookie httpOnly, intercambio de código, `userinfo` de Google). Revisar la migración a Arctic en una sesión con red disponible si se prefiere reducir código propio |
 | D7 | No hay cuentas ni datos reales existentes que vincular; no se diseña flujo de vinculación por ahora |
 | D8 | Cookies seguras (HttpOnly, Secure, SameSite), expiración y revocación definidas; orígenes/callback exactos ya registrados en Google Cloud Console (`https://micro-app-63i.pages.dev` como origen, `https://micro-app-api.btfcasheb.workers.dev` como base de redirect); sin comodines |
 

@@ -140,7 +140,7 @@ describe("Micro app API scaffold", () => {
     expect(response.headers.get("set-cookie")).toBeNull();
   });
 
-  it("rejects incomplete login input without a database connection", async () => {
+  it("keeps password login disabled regardless of credential input (D4)", async () => {
     const response = await app.request(
       "/auth/login",
       {
@@ -156,10 +156,11 @@ describe("Micro app API scaffold", () => {
       },
     );
 
-    expect(response.status).toBe(401);
+    expect(response.status).toBe(503);
     await expect(response.json()).resolves.toMatchObject({
-      error: "INVALID_CREDENTIALS",
+      error: "PASSWORD_LOGIN_DISABLED",
     });
+    expect(response.headers.get("set-cookie")).toBeNull();
   });
 
   it("rejects login and logout when Origin is missing before accessing the database", async () => {
@@ -267,7 +268,7 @@ describe("Micro app API scaffold", () => {
   });
 
 
-  it("does not issue a session cookie when login cannot reach the database", async () => {
+  it("keeps password login disabled even when a database URL is configured", async () => {
     const response = await app.request(
       "/auth/login",
       {
@@ -284,8 +285,8 @@ describe("Micro app API scaffold", () => {
       },
     );
 
-    expect(response.status).toBe(500);
-    await expect(response.json()).resolves.toMatchObject({ error: "LOGIN_FAILED" });
+    expect(response.status).toBe(503);
+    await expect(response.json()).resolves.toMatchObject({ error: "PASSWORD_LOGIN_DISABLED" });
     expect(response.headers.get("set-cookie")).toBeNull();
   });
 

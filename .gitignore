@@ -7,6 +7,10 @@ test-results/
 .env
 .env.*
 !.env.example
+# Public build-time value (the client-side API base URL), not a secret.
+# Needed because the Cloudflare Pages dashboard does not expose
+# "Variables y secretos" to the Vite build step for this project type.
+!apps/web/.env.production
 .dev.vars
 .dev.vars.*
 !.dev.vars.example

@@ -17,6 +17,7 @@
 .auth-form input:focus { border-color: #507d6a; box-shadow: 0 0 0 3px rgba(80,125,106,.14); }
 .auth-submit { min-height: 3.1rem; margin-top: 1rem; border: 0; border-radius: .7rem; color: #fff; background: var(--petrol); cursor: pointer; font-weight: 650; transition: background 150ms ease, transform 150ms ease; }
 .auth-submit:hover:not(:disabled) { background: #24534a; transform: translateY(-1px); }
+.google-submit { display: flex; align-items: center; justify-content: center; text-align: center; text-decoration: none; }
 .auth-submit:disabled, .logout-button:disabled { cursor: wait; opacity: .65; }
 .field-hint { margin: .1rem 0 .2rem; color: #77817c; font-size: .72rem; line-height: 1.5; }
 .auth-switch { margin: 1.4rem 0 0; color: #69766e; font-size: .8rem; text-align: center; }

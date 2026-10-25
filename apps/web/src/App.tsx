@@ -1,5 +1,5 @@
-import { useEffect, useState, type FormEvent } from "react";
-import { apiRequest, ApiError, type AuthResponse } from "./auth";
+import { useEffect, useState } from "react";
+import { apiRequest, ApiError, googleLoginUrl, type AuthResponse } from "./auth";
 import "./auth.css";
 
 const modules = [
@@ -9,19 +9,36 @@ const modules = [
   { number: "04", title: "Tasa BCV", description: "Conversión a VES con fuente y fecha verificables.", status: "Pendiente de integración" },
 ];
 
-type Mode = "login" | "register";
+// Shown after a failed GET /auth/google/callback redirect (see apps/api/src/google-auth.ts).
+// Keep these in sync with the ?auth_error= values that endpoint can set.
+const AUTH_ERROR_MESSAGES: Record<string, string> = {
+  not_allowlisted: "Tu cuenta de Google no está autorizada todavía. Comunícate con el administrador del sistema para que agregue tu correo a la lista de acceso.",
+  account_inactive: "Tu cuenta existe pero está inactiva o sin un negocio asignado. Comunícate con el administrador del sistema.",
+  identity_mismatch: "Esta cuenta de Google no coincide con la que estaba vinculada a ese correo. Comunícate con el administrador del sistema.",
+  bootstrap_consumed: "El enlace de configuración inicial ya fue usado. Si necesitas acceso, comunícate con el administrador del sistema.",
+  not_provisioned: "No existe una cuenta para este correo todavía. Comunícate con el administrador del sistema.",
+  email_not_verified: "Tu cuenta de Google no tiene el correo verificado, así que no podemos continuar. Verifica tu correo con Google e inténtalo de nuevo.",
+  oauth_failed: "No se pudo completar el inicio de sesión con Google. Inténtalo de nuevo.",
+  server_error: "Ocurrió un problema en el servidor al iniciar sesión. Inténtalo de nuevo en unos minutos.",
+};
+
+function readAuthErrorFromUrl(): string {
+  const params = new URLSearchParams(window.location.search);
+  const code = params.get("auth_error");
+  if (!code) return "";
+  // Remove it from the address bar so a refresh doesn't keep re-showing it.
+  params.delete("auth_error");
+  const query = params.toString();
+  window.history.replaceState({}, "", `${window.location.pathname}${query ? `?${query}` : ""}`);
+  return AUTH_ERROR_MESSAGES[code] ?? "No se pudo iniciar sesión. Comunícate con el administrador del sistema.";
+}
 
 export default function App() {
-  const [mode, setMode] = useState<Mode>("login");
   const [session, setSession] = useState<AuthResponse | null>(null);
   const [checkingSession, setCheckingSession] = useState(true);
   const [busy, setBusy] = useState(false);
-  const [error, setError] = useState("");
+  const [error, setError] = useState(() => readAuthErrorFromUrl());
   const [notice, setNotice] = useState("");
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [displayName, setDisplayName] = useState("");
-  const [organizationName, setOrganizationName] = useState("");
 
   useEffect(() => {
     let active = true;
@@ -37,37 +54,12 @@ export default function App() {
     return () => { active = false; };
   }, []);
 
-  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    setBusy(true);
-    setError("");
-    setNotice("");
-    try {
-      const result = await apiRequest<AuthResponse>(
-        mode === "register" ? "/auth/register" : "/auth/login",
-        {
-          method: "POST",
-          body: JSON.stringify(mode === "register"
-            ? { email, password, displayName, organizationName }
-            : { email, password }),
-        },
-      );
-      setSession(result);
-      setPassword("");
-    } catch (reason) {
-      setError(reason instanceof Error ? reason.message : "No se pudo completar la solicitud.");
-    } finally {
-      setBusy(false);
-    }
-  }
-
   async function handleLogout() {
     setBusy(true);
     setError("");
     try {
       await apiRequest<void>("/auth/logout", { method: "POST" });
       setSession(null);
-      setMode("login");
       setNotice("Has cerrado la sesión de forma segura.");
     } catch (reason) {
       setError(reason instanceof Error ? reason.message : "No se pudo cerrar la sesión.");
@@ -98,35 +90,14 @@ export default function App() {
         <section className="auth-form-panel">
           <div className="auth-form-wrap">
             <div className="auth-mobile-brand"><span className="brand-mark">m</span><strong>micro app</strong></div>
-            <p className="eyebrow auth-eyebrow">{mode === "login" ? "QUÉ BUENO TENERTE DE VUELTA" : "TU NEGOCIO, TU ESPACIO"}</p>
-            <h2>{mode === "login" ? "Inicia sesión" : "Crea tu cuenta"}</h2>
-            <p className="auth-subtitle">{mode === "login" ? "Ingresa tus datos para continuar con tu negocio." : "Configura tu usuario y el espacio de trabajo inicial."}</p>
+            <p className="eyebrow auth-eyebrow">QUÉ BUENO TENERTE DE VUELTA</p>
+            <h2>Inicia sesión</h2>
+            <p className="auth-subtitle">Accede con la cuenta de Google autorizada para tu negocio.</p>
             {error && <div className="form-alert error-alert" role="alert">{error}</div>}
             {notice && <div className="form-alert success-alert" role="status">{notice}</div>}
-            <form className="auth-form" onSubmit={handleSubmit}>
-              {mode === "register" && <>
-                <label htmlFor="displayName">Tu nombre</label>
-                <input id="displayName" name="displayName" autoComplete="name" value={displayName} onChange={(event) => setDisplayName(event.target.value)} minLength={2} maxLength={100} required />
-                <label htmlFor="organizationName">Nombre del negocio</label>
-                <input id="organizationName" name="organizationName" autoComplete="organization" value={organizationName} onChange={(event) => setOrganizationName(event.target.value)} minLength={2} maxLength={120} required />
-              </>}
-              <label htmlFor="email">Correo electrónico</label>
-              <input id="email" name="email" type="email" autoComplete="email" value={email} onChange={(event) => setEmail(event.target.value)} maxLength={254} required />
-              <label htmlFor="password">Contraseña</label>
-              <input id="password" name="password" type="password" autoComplete={mode === "login" ? "current-password" : "new-password"} value={password} onChange={(event) => setPassword(event.target.value)} minLength={mode === "register" ? 12 : undefined} maxLength={128} required />
-              {mode === "register" && <p className="field-hint">Usa al menos 12 caracteres. Evita reutilizar una contraseña de otro servicio.</p>}
-              <button className="auth-submit" type="submit" disabled={busy}>
-                {busy ? "Un momento…" : mode === "login" ? "Entrar a mi cuenta" : "Crear cuenta"}
-              </button>
-            </form>
-            <p className="auth-switch">
-              {mode === "login" ? "¿Todavía no tienes cuenta?" : "¿Ya tienes una cuenta?"}{" "}
-              <button type="button" className="text-button" onClick={() => { setMode(mode === "login" ? "register" : "login"); setError(""); setNotice(""); }}>
-                {mode === "login" ? "Crear cuenta" : "Iniciar sesión"}
-              </button>
-            </p>
-            <p className="auth-security"><span aria-hidden="true">⌑</span> Sesiones protegidas con cookies seguras. No compartas tu contraseña.</p>
-            <p className="auth-setup-note">El acceso necesita que la API esté configurada. No se crean cuentas de demostración ni se guardan datos localmente.</p>
+            <a className="auth-submit google-submit" href={googleLoginUrl()}>Continuar con Google</a>
+            <p className="auth-security"><span aria-hidden="true">⌑</span> Sesiones protegidas con cookies seguras. El acceso solo se concede a correos autorizados por el administrador.</p>
+            <p className="auth-setup-note">¿Tu cuenta no está autorizada? Comunícate con el administrador del sistema para solicitar acceso.</p>
           </div>
         </section>
       </main>

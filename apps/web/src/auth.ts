@@ -12,6 +12,13 @@ export class ApiError extends Error {
   }
 }
 
+// Password login/registration were retired (decision D4): the only working
+// sign-in path is a top-level navigation to this endpoint, which starts the
+// server-side Google OAuth + allowlist flow.
+export function googleLoginUrl(): string {
+  return `${API_BASE_URL}/auth/google`;
+}
+
 export async function apiRequest<T>(path: string, init: RequestInit = {}): Promise<T> {
   const headers = new Headers(init.headers);
   if (init.body !== undefined && !headers.has("Content-Type")) headers.set("Content-Type", "application/json");

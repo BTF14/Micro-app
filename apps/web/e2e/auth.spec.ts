@@ -39,5 +39,7 @@ test("displays the authenticated workspace when a session already exists", async
   await page.goto("/");
   await expect(page.getByRole("heading", { name: "Hola, Ana." })).toBeVisible();
   await expect(page.getByText("Mi tienda", { exact: true }).first()).toBeVisible();
-  await expect(page.getByRole("button", { name: /cerrar sesión/i })).toBeVisible();
+  // Logout is offered in two places (sidebar for desktop, topbar for mobile,
+  // see styles.css); either is fine here, just confirm one is reachable.
+  await expect(page.getByRole("button", { name: /cerrar sesión/i }).first()).toBeVisible();
 });

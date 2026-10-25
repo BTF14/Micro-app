@@ -1,3 +1,9 @@
+## Checkpoint de continuidad — 2026-10-25 (noche): identidad/infraestructura cerrada, listo para negocio
+
+- Dos bugs de producción encontrados y resueltos el mismo día, ambos documentados en detalle en `docs/CURRENT_STATE.md`: (1) `wrangler deploy` borraba en silencio las variables del Worker no declaradas en `apps/api/wrangler.toml`, rompiendo el login dos veces; ahora las tres variables no-secretas están declaradas en el archivo. (2) El botón de cerrar sesión no era alcanzable en pantallas de teléfono; ahora hay uno también en la barra superior. PR #82, merge `f274d32a359dbba8e401897a41294fda1f33cbf8`.
+- El usuario confirmó visualmente, en su teléfono real, que el login funciona de extremo a extremo y carga el panel de "Abasto 7 de Oro".
+- **No queda ningún pendiente conocido de identidad, infraestructura o interfaz básica de acceso.** Toda la energía del siguiente chat debe ir a construir la lógica de negocio real (inventario, productos, tasa BCV, ventas), que sigue sin existir en código.
+
 ## Checkpoint de continuidad — 2026-10-25 (tarde): identidad completa de punta a punta
 
 - **El riesgo P0 de identidad quedó resuelto y verificado en producción, no solo en código.** Existe una organización real ("Abasto 7 de Oro") con un usuario owner real (`btfcasheb@gmail.com`) creado a través del flujo de Google OAuth + bootstrap sellado. Ver `docs/CURRENT_STATE.md` para IDs exactos, el estado de `auth_allowlist`/`auth_bootstrap`, y el patrón SQL para autorizar usuarios adicionales.

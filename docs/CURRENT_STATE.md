@@ -1,3 +1,32 @@
+# Estado vivo — 2026-10-25 (noche): logout móvil + bug de variables que se autoborraban, resuelto
+
+**Login verificado funcionando en el navegador real del dueño (no solo en base de datos): pantalla "Hola, btfcasheb@gmail.com." con la organización "Abasto 7 de Oro" cargando correctamente en `https://micro-app-63i.pages.dev/`.**
+
+## Bug encontrado y resuelto: las variables de Cloudflare se autoborraban en cada deploy
+
+Después de fusionar PR #81 (que solo tocaba el frontend), el login se rompió otra vez con `GOOGLE_NOT_CONFIGURED` y fallos de CORS. Causa raíz: `wrangler deploy` trata la tabla `[vars]` de `apps/api/wrangler.toml` como la fuente de verdad para las variables **no marcadas como "Secreto"**. `FRONTEND_ORIGIN`, `GOOGLE_REDIRECT_URI` y `GOOGLE_CLIENT_ID` solo se habían configurado a mano en el dashboard de Cloudflare como variables planas, nunca declaradas en el archivo — así que cada deploy automático (incluso uno que no tocaba `apps/api` en absoluto) las borraba en silencio. `DATABASE_URL`, `GOOGLE_CLIENT_SECRET` y `BOOTSTRAP_TOKEN` sobrevivieron porque están guardadas como "Secreto", un almacén separado que `wrangler deploy` no toca.
+
+**Resuelto en PR #82** (merge `f274d32a359dbba8e401897a41294fda1f33cbf8`): esas tres variables ahora están declaradas directamente en `apps/api/wrangler.toml` (committeado, es seguro — el client ID de Google es público por diseño, y las otras dos son solo las URLs del propio despliegue). De aquí en adelante, cualquier deploy las vuelve a crear automáticamente en vez de borrarlas. **No volver a repetir este bug**: cualquier variable nueva no-secreta que se agregue en el dashboard de Cloudflare debe agregarse también a `[vars]` en `wrangler.toml` en el mismo cambio, o se perderá en el próximo deploy.
+
+Valores actuales confirmados en Cloudflare, Producción (los tres "Secreto" no se pueden volver a leer una vez guardados, solo reemplazar):
+- `FRONTEND_ORIGIN` = `https://micro-app-63i.pages.dev`
+- `GOOGLE_REDIRECT_URI` = `https://micro-app-api.btfcasheb.workers.dev/auth/google/callback`
+- `GOOGLE_CLIENT_ID` = `1030757133503-huvhkok21n1br10rtfhs4827fo3v106q.apps.googleusercontent.com` (ahora también en `wrangler.toml`, así que este valor ya no depende de memoria/documentación)
+- `DATABASE_URL`, `GOOGLE_CLIENT_SECRET`, `BOOTSTRAP_TOKEN`: Secreto, valores no recuperables, confirmados presentes.
+
+## Bug encontrado y resuelto: sin forma de cerrar sesión en móvil
+
+El dueño reportó que no veía botón de "Cerrar sesión" en su teléfono. Causa: `styles.css` oculta `.sidebar-bottom` (donde vivía el único botón) por debajo de 760px de ancho — exactamente el dispositivo principal desde el que se usa esta app. **Resuelto en el mismo PR #82**: se agregó un segundo botón "Cerrar sesión" en la barra superior (topbar), visible en cualquier ancho de pantalla; en móvil se oculta el texto del chip de cuenta (redundante con el saludo "Hola, &lt;nombre&gt;") para dejar espacio.
+
+## Próximas prioridades para el siguiente chat
+
+1. Con identidad, login y la interfaz básica ya verificados de punta a punta en producción (incluido en el teléfono real del dueño), **no queda ningún pendiente de infraestructura/acceso conocido**. La prioridad pasa de lleno a construir el negocio: inventario, productos con precio en USD, tasa BCV y su conversión a VES, ventas.
+2. Decidir e implementar un flujo real de invitación de usuarios — hoy, agregar a alguien más requiere inserciones manuales en Neon (ver sección de abajo "Cómo agregar un usuario nuevo").
+3. Revisar `feat/neon-transaction-adapter` contra `main` antes de cualquier merge (pendiente desde hace varias sesiones).
+4. Si se agrega cualquier variable de entorno nueva al Worker en el futuro, recordar declararla también en `apps/api/wrangler.toml` si no es secreta — ver el bug documentado arriba.
+
+---
+
 # Estado vivo — 2026-10-25 (tarde): primer login real completado, organización creada
 
 **El login con Google funciona de extremo a extremo en producción y ya existe la primera organización real.** Esto es lo más importante que debe saber el siguiente chat.

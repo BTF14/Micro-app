@@ -1,3 +1,12 @@
+## 2026-10-25 (noche) — Bug de variables autoborradas resuelto; logout móvil arreglado (PR #82)
+
+- Tras fusionar PR #81, el login volvió a romperse (`GOOGLE_NOT_CONFIGURED`, fallos de CORS) pese a no haber tocado `apps/api`. Causa raíz identificada: `wrangler deploy` sincroniza las variables planas (no "Secreto") del Worker contra `[vars]` en `apps/api/wrangler.toml`; cualquier variable puesta solo a mano en el dashboard de Cloudflare y no declarada ahí se borra en el siguiente deploy, sin importar qué cambió. `FRONTEND_ORIGIN`, `GOOGLE_REDIRECT_URI` y `GOOGLE_CLIENT_ID` nunca estuvieron en el archivo.
+- El usuario volvió a agregar las dos primeras a mano en el dashboard (confirmado por capturas) y proporcionó el valor del tercero (client ID, no es secreto). Se declararon los tres en `wrangler.toml` (PR #82, merge `f274d32a359dbba8e401897a41294fda1f33cbf8`) para que ningún deploy futuro los vuelva a borrar.
+- En paralelo se encontró y confirmó por commit ya existente en el working tree (`a2b338f`, hecho en un tramo de esta misma sesión) un fix para que el botón de "Cerrar sesión" sea alcanzable en pantallas de teléfono (antes solo vivía en un panel lateral oculto por CSS debajo de 760px). Se completó la rama agregando el fix de `wrangler.toml`, se abrió/actualizó PR #82, se verificaron los 12 checks en el head final y se fusionó.
+- Verificación visual confirmada por el usuario: el login funciona de extremo a extremo en su teléfono real, mostrando el panel de "Abasto 7 de Oro".
+- Con esto, no queda ningún pendiente conocido de identidad/infraestructura. Detalle completo en el checkpoint vigente de `docs/CURRENT_STATE.md`.
+
+---
 ## 2026-10-25 (tarde) — Primer login real completado; UI de login arreglada (PR #81)
 
 - Se verificó contra Neon `main` que el bootstrap administrativo ya se consumió exitosamente: organización "Abasto 7 de Oro" (`abasto-7-de-oro`) y usuario owner `btfcasheb@gmail.com` existen, con `google_sub` vinculado y `auth_bootstrap.consumed_at` sellado. Detalle completo, IDs exactos y el patrón SQL para agregar más usuarios a `auth_allowlist` están en el checkpoint vigente de `docs/CURRENT_STATE.md`.

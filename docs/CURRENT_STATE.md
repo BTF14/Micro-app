@@ -1,3 +1,42 @@
+# Estado vivo — 2026-10-25 (tarde): primer login real completado, organización creada
+
+**El login con Google funciona de extremo a extremo en producción y ya existe la primera organización real.** Esto es lo más importante que debe saber el siguiente chat.
+
+## Hechos verificados directamente en Neon `main` (proyecto `restless-fire-99110035`, branch `br-summer-math-b7297a60`)
+
+- Tabla `auth_allowlist` tiene exactamente una fila activa: `btfcasheb@gmail.com` (`is_active = true`, `added_by = 'owner-bootstrap-2026-10-25'`, creada 2026-10-25 13:37:54 UTC). Para autorizar a alguien más, insertar otra fila con el mismo patrón — ver "Cómo agregar un usuario nuevo" abajo. No hay ningún otro correo autorizado todavía.
+- Tabla `auth_bootstrap` quedó **sellada**: `consumed_at = 2026-10-25T13:40:13.565Z`, `consumed_by_email = 'btfcasheb@gmail.com'`, `created_organization_id` apunta a la organización creada. El `BOOTSTRAP_TOKEN` configurado en Cloudflare ya no sirve para nada — el endpoint rechaza cualquier intento nuevo de bootstrap aunque el token sea correcto, porque la fila sentinela solo permite un uso. Es seguro dejar la variable en Cloudflare (no hace daño) o borrarla como limpieza; no es urgente.
+- Organización creada: **id `3ce67e70-c245-4b64-9b93-60b06f85e0f1`, nombre "Abasto 7 de Oro", slug `abasto-7-de-oro`**.
+- Usuario creado: **id `36c0f3ec-e1b2-4ea5-9855-45a5ee2c3e92`, email `btfcasheb@gmail.com`**, `google_sub` vinculado, `is_active = true`, rol `owner` en `organization_members` para esa organización.
+
+## Cómo agregar un usuario nuevo a la allowlist (patrón ya probado)
+
+```sql
+INSERT INTO auth_allowlist (email, added_by, note)
+VALUES ('correo@ejemplo.com', 'owner-bootstrap-<fecha>', 'motivo breve')
+ON CONFLICT DO NOTHING
+RETURNING id, email, is_active, created_at;
+```
+Ejecutar contra el proyecto Neon `restless-fire-99110035`, base `neondb`, con `mcp__Neon__run_sql` pasando `project_id` y `database_name` (no `projectId`/`databaseName`, el esquema del tool usa snake_case). Después de agregarlo, la persona solo necesita ir a `https://micro-app-63i.pages.dev/` y tocar "Continuar con Google"; como ya existe su fila en la allowlist pero no un `app_users` con ese correo, el único camino restante sería el bootstrap — **que ya está sellado**. Es decir: **cualquier usuario nuevo después del primero necesita que alguien con acceso a Neon inserte manualmente también su fila en `app_users`/`organization_members`** (o implementar un flujo de invitación — todavía no existe, ver prioridades abajo). No hay todavía una forma de que un segundo usuario se autoprovisione, ni siquiera estando en la allowlist.
+
+## PR #81 fusionada — interfaz de login arreglada
+
+- Problema encontrado: el frontend (`apps/web/src/App.tsx`) seguía mostrando el formulario viejo de usuario/contraseña, y nunca leía el parámetro `?auth_error=` que pone `apps/api/src/google-auth.ts` al redirigir tras un fallo. Resultado: cuando el primer intento de login falló por `not_allowlisted`, el usuario solo vio el formulario de contraseña sin ninguna pista de qué pasó — generó bastante confusión hasta diagnosticarlo leyendo la URL completa a mano.
+- PR #81 (`feat(web): Google sign-in UI, replace dead password form`), squash-merged a `main`. Merge commit **`441bdc463954aba1069cfeae9227bf75a562a53a`**. Todos los 12 checks consultados en el head final (`117cb1c`) terminaron `success`, incluido "Chromium authentication smoke tests" (Playwright) tras reescribir `apps/web/e2e/auth.spec.ts`, que todavía probaba el formulario de contraseña eliminado.
+- Cambios: el formulario de contraseña/registro se reemplazó por un único enlace "Continuar con Google" hacia `GET /auth/google`; se agregó lectura de `?auth_error=` con un mensaje específico y accionable por cada código (`not_allowlisted`, `account_inactive`, `identity_mismatch`, `bootstrap_consumed`, `not_provisioned`, `email_not_verified`, `oauth_failed`, `server_error`), y se limpia el parámetro de la URL con `history.replaceState` para que un refresh no lo vuelva a mostrar.
+- Cloudflare Pages se redesplegó automáticamente al fusionar (igual que el Worker se redeployó al fusionar PR #80). Pendiente de confirmación visual del usuario tras el redeploy.
+- Nota de entorno para la siguiente sesión: en este sandbox, `pnpm install` no pudo resolver `registry.npmjs.org` (DNS falla pese a estar en la lista `no_proxy`), así que no se pudieron correr los tests localmente; se verificó todo vía los checks de GitHub Actions en el SHA exacto antes de fusionar, siguiendo el protocolo de `AGENTS.md`.
+
+## Prioridades inmediatas para el siguiente chat
+
+1. Confirmar con el usuario que `https://micro-app-63i.pages.dev/` ahora muestra el panel autenticado ("Hola, btfcasheb@gmail.com…", organización "Abasto 7 de Oro") sin pasos adicionales.
+2. Si el usuario quiere agregar más personas (empleados, cajeros), seguir el patrón de "Cómo agregar un usuario nuevo" arriba — y decidir/implementar un flujo real de invitación en vez de inserciones manuales en Neon, porque hoy no escala.
+3. Empezar el módulo de negocio real (inventario, productos, tasa BCV, ventas) — sigue sin ningún código de lógica de negocio; todo lo hecho hasta ahora es identidad/infraestructura.
+4. Revisar `feat/neon-transaction-adapter` contra `main` actual antes de cualquier merge (pendiente desde hace varias sesiones, nunca bloqueante pero tampoco resuelto).
+5. Opcional/limpieza: quitar `BOOTSTRAP_TOKEN` de las variables de runtime de Cloudflare ya que el bootstrap está sellado para siempre; no es urgente.
+
+---
+
 # Estado vivo — 2026-10-25: Google OAuth + allowlist fusionado
 
 - PR #80 (`feat(auth): Google OAuth + allowlist sign-in, password login retired (D1-D8)`) se fusionó a `main` por squash. Merge commit: `e6afed5501b24f50d082ce31883ff78ee477f323`.

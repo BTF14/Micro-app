@@ -1,3 +1,10 @@
+## Checkpoint de continuidad — 2026-10-25 (tarde): identidad completa de punta a punta
+
+- **El riesgo P0 de identidad quedó resuelto y verificado en producción, no solo en código.** Existe una organización real ("Abasto 7 de Oro") con un usuario owner real (`btfcasheb@gmail.com`) creado a través del flujo de Google OAuth + bootstrap sellado. Ver `docs/CURRENT_STATE.md` para IDs exactos, el estado de `auth_allowlist`/`auth_bootstrap`, y el patrón SQL para autorizar usuarios adicionales.
+- PR #81 fusionada (merge `441bdc463954aba1069cfeae9227bf75a562a53a`): la interfaz dejó de mostrar el formulario de contraseña retirado y ahora tiene un botón real de Google + mensajes claros para cada tipo de fallo de login.
+- **El trabajo de identidad/infraestructura (auth, allowlist, bootstrap, UI de login, deploy de Worker y Pages) está, en esencia, terminado.** La prioridad ahora cambia a construir la lógica de negocio real: inventario, productos con precio en USD, tasa BCV y su conversión a VES, ventas. Nada de esto existe todavía en código — la app solo tiene una pantalla de bienvenida con módulos marcados "Pendiente de implementación".
+- Sigue pendiente, sin bloquear lo anterior: revisar `feat/neon-transaction-adapter` contra `main` antes de cualquier merge; decidir un flujo real de invitación de usuarios (hoy agregar a alguien requiere inserciones manuales en Neon).
+
 ## Checkpoint de continuidad — 2026-10-19 después de PR #64
 
 - PR #64 fusionada por squash; merge SHA `f15e3b0da415b8f31641a81ed8a883deb7fcfc5f`. PR #63 merge SHA `b4b417ec5a85b8b0c48b606c718c341745af9055`.

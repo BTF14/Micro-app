@@ -1,3 +1,12 @@
+## 2026-10-25 (tarde) — Primer login real completado; UI de login arreglada (PR #81)
+
+- Se verificó contra Neon `main` que el bootstrap administrativo ya se consumió exitosamente: organización "Abasto 7 de Oro" (`abasto-7-de-oro`) y usuario owner `btfcasheb@gmail.com` existen, con `google_sub` vinculado y `auth_bootstrap.consumed_at` sellado. Detalle completo, IDs exactos y el patrón SQL para agregar más usuarios a `auth_allowlist` están en el checkpoint vigente de `docs/CURRENT_STATE.md`.
+- Se diagnosticó por qué el primer intento de login pareció fallar silenciosamente: el frontend nunca leía `?auth_error=` de la redirección de `GET /auth/google/callback` y seguía mostrando el formulario de contraseña ya retirado en el backend (decisión D4). Se encontró un diff ya escrito localmente (no commiteado, de un trabajo previo de esta misma sesión antes de un corte de contexto) que resolvía exactamente esto; se revisó, se completó (el E2E de Playwright todavía probaba el formulario de contraseña eliminado, se reescribió), se abrió PR #81 y se fusionó tras verificar los 12 checks en el head exacto `117cb1c` (incluido el smoke test de Chromium).
+- Merge commit `441bdc463954aba1069cfeae9227bf75a562a53a`. Cloudflare Pages se redeployó automáticamente.
+- No se pudo correr `pnpm test`/`pnpm install` en este sandbox (DNS de `registry.npmjs.org` no resuelve pese a figurar en `no_proxy`); se verificó exclusivamente vía GitHub Actions en el SHA final, documentado explícitamente en el PR y en el checkpoint.
+- Pendiente para la siguiente sesión: confirmación visual del usuario de que el panel autenticado carga correctamente; luego, iniciar el módulo real de negocio (inventario/productos/tasa BCV), ya que todo lo construido hasta ahora es solo identidad e infraestructura.
+
+---
 ## 2026-10-20 — PR #71 y diagnóstico de API Vercel
 
 - PR #71 (feat/tenant-context-resolver) sigue abierta/draft; head revisado a4806b69a2d12225234e7a8fc72c1116957d0318, base observada 832c9d10b19846f89cc5d9e5ef51b7ef6eb5b21e. Revalidar al retomar.

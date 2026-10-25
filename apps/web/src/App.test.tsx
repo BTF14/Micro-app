@@ -67,8 +67,11 @@ describe("Micro app authentication flow", () => {
     await renderApp();
     await settle();
 
-    expect(container.querySelector('[role="alert"]')?.textContent).toContain("Comunícate con el administrador");
+    const alert = container.querySelector('[role="alert"]');
+    expect(alert?.textContent).toContain("Comunícate con el administrador");
     expect(window.location.search).toBe("");
+    const whatsappLink = alert?.querySelector("a");
+    expect(whatsappLink?.getAttribute("href")).toContain("https://wa.me/584243104520");
   });
 
   it("revokes the session on logout and returns to the login screen", async () => {

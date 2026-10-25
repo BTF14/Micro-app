@@ -2,6 +2,9 @@ import { useEffect, useState } from "react";
 import { apiRequest, ApiError, googleLoginUrl, type AuthResponse } from "./auth";
 import "./auth.css";
 
+// WhatsApp number format (no "+", no spaces) per https://faq.whatsapp.com/general/chats/how-to-use-click-to-chat.
+const ADMIN_WHATSAPP_URL = `https://wa.me/584243104520?text=${encodeURIComponent("Hola, necesito acceso a Micro app.")}`;
+
 const modules = [
   { number: "01", title: "Caja y ventas", description: "Flujo de venta, cobro y comprobante.", status: "Pendiente de implementación" },
   { number: "02", title: "Inventario", description: "Existencias, movimientos y alertas de stock.", status: "Pendiente de implementación" },
@@ -93,11 +96,19 @@ export default function App() {
             <p className="eyebrow auth-eyebrow">QUÉ BUENO TENERTE DE VUELTA</p>
             <h2>Inicia sesión</h2>
             <p className="auth-subtitle">Accede con la cuenta de Google autorizada para tu negocio.</p>
-            {error && <div className="form-alert error-alert" role="alert">{error}</div>}
+            {error && (
+              <div className="form-alert error-alert" role="alert">
+                {error}{" "}
+                <a href={ADMIN_WHATSAPP_URL} target="_blank" rel="noopener noreferrer">Escríbele por WhatsApp</a>.
+              </div>
+            )}
             {notice && <div className="form-alert success-alert" role="status">{notice}</div>}
             <a className="auth-submit google-submit" href={googleLoginUrl()}>Continuar con Google</a>
             <p className="auth-security"><span aria-hidden="true">⌑</span> Sesiones protegidas con cookies seguras. El acceso solo se concede a correos autorizados por el administrador.</p>
-            <p className="auth-setup-note">¿Tu cuenta no está autorizada? Comunícate con el administrador del sistema para solicitar acceso.</p>
+            <p className="auth-setup-note">
+              ¿Tu cuenta no está autorizada?{" "}
+              <a href={ADMIN_WHATSAPP_URL} target="_blank" rel="noopener noreferrer">Escríbele al administrador por WhatsApp</a> para solicitar acceso.
+            </p>
           </div>
         </section>
       </main>

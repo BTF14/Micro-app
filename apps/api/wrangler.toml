@@ -3,5 +3,18 @@ main = "src/index.ts"
 compatibility_date = "2026-10-17"
 
 [vars]
-# Set FRONTEND_ORIGIN in the deployment environment; never use wildcard CORS in production.
-# FRONTEND_ORIGIN = "https://your-free-pages-subdomain.pages.dev"
+# These three are plain (non-secret) config, safe to commit: a Google OAuth
+# client ID is designed to be public (it's exposed in the browser redirect
+# URL anyway), and the other two are just this deployment's own URLs.
+#
+# This declaration matters beyond documentation: `wrangler deploy` treats
+# [vars] as authoritative for plain (non-"Secreto") runtime variables. A var
+# set only through the Cloudflare dashboard and never declared here gets
+# silently wiped on the next deploy — that happened on 2026-10-25, breaking
+# login right after it had been verified working end-to-end. GOOGLE_CLIENT_SECRET,
+# DATABASE_URL and BOOTSTRAP_TOKEN are "Secreto" (encrypted) in the dashboard,
+# which is a separate store that `wrangler deploy` does not touch — do not
+# add those here.
+FRONTEND_ORIGIN = "https://micro-app-63i.pages.dev"
+GOOGLE_REDIRECT_URI = "https://micro-app-api.btfcasheb.workers.dev/auth/google/callback"
+GOOGLE_CLIENT_ID = "1030757133503-huvhkok21n1br10rtfhs4827fo3v106q.apps.googleusercontent.com"

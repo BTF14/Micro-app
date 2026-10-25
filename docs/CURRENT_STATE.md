@@ -1,3 +1,11 @@
+# Estado vivo — 2026-10-25 (noche, tarde 2): enlace de WhatsApp para contactar al administrador
+
+PR #83 fusionada (merge `1c65957887cceeccaa059ebd6d12fabdc73f4525`): el texto "comunícate con el administrador del sistema" (en el banner de `?auth_error=` y en la nota fija bajo el botón de Google) ahora es un enlace real a WhatsApp (`https://wa.me/584243104520`, número del dueño, con un mensaje precargado). Antes era solo texto sin ninguna acción posible. Probado por el usuario entrando con un correo no autorizado y confirmando que el mensaje de error se ve correctamente (antes de que se agregara el enlace).
+
+Si el número de WhatsApp de contacto cambia en el futuro, está hardcodeado como constante `ADMIN_WHATSAPP_URL` en `apps/web/src/App.tsx`.
+
+---
+
 # Estado vivo — 2026-10-25 (noche): logout móvil + bug de variables que se autoborraban, resuelto
 
 **Login verificado funcionando en el navegador real del dueño (no solo en base de datos): pantalla "Hola, btfcasheb@gmail.com." con la organización "Abasto 7 de Oro" cargando correctamente en `https://micro-app-63i.pages.dev/`.**

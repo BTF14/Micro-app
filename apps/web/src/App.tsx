@@ -130,7 +130,15 @@ export default function App() {
         </div>
       </aside>
       <section className="main-panel" id="inicio">
-        <header className="topbar"><div className="breadcrumb">{organization?.name ?? "Mi negocio"} <span>/</span> Resumen</div><div className="account-chip"><span>{user.display_name.slice(0, 1).toUpperCase()}</span><div><strong>{user.display_name}</strong><small>{user.email}</small></div></div></header>
+        <header className="topbar">
+          <div className="breadcrumb">{organization?.name ?? "Mi negocio"} <span>/</span> Resumen</div>
+          <div className="topbar-end">
+            <div className="account-chip"><span>{user.display_name.slice(0, 1).toUpperCase()}</span><div><strong>{user.display_name}</strong><small>{user.email}</small></div></div>
+            {/* The sidebar's own logout button (.sidebar-bottom) is hidden on narrow screens
+                (see styles.css), so this is the only way to log out on mobile. */}
+            <button className="topbar-logout" type="button" onClick={handleLogout} disabled={busy}>Cerrar sesión</button>
+          </div>
+        </header>
         <div className="page-content">
           {error && <div className="form-alert error-alert dashboard-alert" role="alert">{error}</div>}
           <section className="welcome"><div><p className="eyebrow">TU NEGOCIO, EN UN SOLO LUGAR</p><h1>Hola, {user.display_name.split(" ")[0]}.</h1><p className="welcome-copy">Tu espacio de trabajo ya está listo. Estamos preparando las herramientas para gestionar tus ventas, controlar el inventario y consultar precios en USD y VES.</p></div><div className="welcome-art" aria-hidden="true"><div className="art-ring ring-one" /><div className="art-ring ring-two" /><div className="art-card"><span className="art-card-label">MICRO APP</span><span className="art-card-line" /><span className="art-card-line short" /><span className="art-card-foot">GESTIÓN · CONTROL · CLARIDAD</span></div></div></section>

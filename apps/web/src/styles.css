@@ -176,6 +176,23 @@ a { color: inherit; text-decoration: none; }
 }
 .environment-badge span { width: 0.42rem; height: 0.42rem; border-radius: 50%; background: #c79644; }
 
+.topbar-end { display: flex; align-items: center; gap: 0.8rem; }
+.topbar-logout {
+  flex: 0 0 auto;
+  padding: 0.55rem 0.85rem;
+  border: 1px solid var(--line);
+  border-radius: 0.6rem;
+  color: #4a564f;
+  background: #fff;
+  cursor: pointer;
+  font-size: 0.72rem;
+  font-weight: 600;
+  white-space: nowrap;
+  transition: background 150ms ease, border-color 150ms ease;
+}
+.topbar-logout:hover:not(:disabled) { border-color: #c7d2c9; background: #f3f6f2; }
+.topbar-logout:disabled { cursor: wait; opacity: 0.6; }
+
 .page-content { width: min(100%, 1320px); margin: 0 auto; padding: 2.7rem clamp(1.5rem, 4vw, 3.8rem) 1.5rem; }
 
 .welcome {
@@ -274,6 +291,10 @@ h1 { margin: 0; font-size: clamp(2.2rem, 4.2vw, 3.6rem); font-weight: 550; lette
   .nav-symbol { width: auto; font-size: 0.9rem; }
   .topbar { min-height: 58px; padding: 0.8rem 1.1rem; }
   .breadcrumb { font-size: 0.68rem; }
+  /* Redundant with the "Hola, <name>" welcome banner below; drop it on mobile
+     so there's room for the logout button without wrapping/overflow. */
+  .account-chip { display: none; }
+  .topbar-logout { padding: 0.5rem 0.7rem; font-size: 0.68rem; }
   .environment-badge { padding: 0.4rem 0.55rem; font-size: 0.61rem; }
   .page-content { padding: 1.2rem 1.1rem 1rem; }
   .welcome { min-height: 0; padding: 1.5rem; }

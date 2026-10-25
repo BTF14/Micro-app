@@ -1,6 +1,7 @@
 import { Hono } from "hono";
 import { cors } from "hono/cors";
 import { registerAuthRoutes } from "./auth";
+import { registerGoogleAuthRoutes } from "./google-auth";
 import type { Bindings } from "./bindings";
 
 const app = new Hono<{ Bindings: Bindings }>();
@@ -42,6 +43,7 @@ app.use(
 );
 
 registerAuthRoutes(app);
+registerGoogleAuthRoutes(app);
 
 app.get("/health", (c) =>
   c.json({

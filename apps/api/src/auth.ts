@@ -1,4 +1,4 @@
-import { deleteCookie, getCookie, setCookie } from "hono/cookie";
+import { deleteCookie, getCookie } from "hono/cookie";
 import type { Context, Hono } from "hono";
 import { withDatabaseClient, type DatabaseClient } from "./database";
 import type { Bindings } from "./bindings";
@@ -6,17 +6,8 @@ import type { Bindings } from "./bindings";
 type AppContext = Context<{ Bindings: Bindings }>;
 
 const SESSION_COOKIE = "microapp_session";
-const SESSION_TTL_SECONDS = 7 * 24 * 60 * 60;
 const PBKDF2_ITERATIONS = 310_000;
 const DUMMY_PASSWORD_HASH = "pbkdf2-sha256$310000$ZHVtbXktc2FsdC1mb3Itbm90LWEtc2VjcmV0$AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA";
-
-type UserRow = {
-  id: string;
-  email: string;
-  display_name: string;
-  password_hash: string | null;
-  is_active: boolean;
-};
 
 type SessionUserRow = {
   id: string;
@@ -46,43 +37,6 @@ function decodeBase64Url(value: string): Uint8Array {
 async function sha256Hex(value: string): Promise<string> {
   const digest = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(value));
   return Array.from(new Uint8Array(digest), (byte) => byte.toString(16).padStart(2, "0")).join("");
-}
-
-async function consumeRateLimit(client: DatabaseClient, scope: string, limit: number): Promise<boolean> {
-  const keyHash = await sha256Hex(scope);
-  const result = await client.query<{ attempts: number }>(
-    `INSERT INTO auth_rate_limits (key_hash, window_started_at, attempts, updated_at)
-     VALUES ($1, now(), 1, now())
-     ON CONFLICT (key_hash) DO UPDATE SET
-       attempts = CASE
-         WHEN auth_rate_limits.window_started_at < now() - interval '1 minute' THEN 1
-         ELSE auth_rate_limits.attempts + 1
-       END,
-       window_started_at = CASE
-         WHEN auth_rate_limits.window_started_at < now() - interval '1 minute' THEN now()
-         ELSE auth_rate_limits.window_started_at
-       END,
-       updated_at = now()
-     RETURNING attempts`,
-    [keyHash],
-  );
-  return Number(result.rows[0]?.attempts ?? limit + 1) <= limit;
-}
-
-async function checkRateLimits(
-  databaseUrl: string | undefined,
-  route: string,
-  ip: string,
-  email: string | undefined,
-): Promise<boolean> {
-  return withDatabaseClient(databaseUrl, async (client) => {
-    // Opportunistic retention: keep the table bounded without a separate scheduler.
-    await client.query("DELETE FROM auth_rate_limits WHERE updated_at < now() - interval '24 hours'");
-    const ipAllowed = await consumeRateLimit(client, `${route}:ip:${ip}`, route === "register" ? 5 : 15);
-    if (!ipAllowed) return false;
-    if (!email) return true;
-    return consumeRateLimit(client, `${route}:email:${email}`, route === "register" ? 5 : 5);
-  });
 }
 
 export async function hashPassword(password: string): Promise<string> {
@@ -179,21 +133,6 @@ export function isTrustedOrigin(origin: string | undefined, configuredOrigin: st
   }
 }
 
-function createSessionToken(): string {
-  return encodeBase64Url(crypto.getRandomValues(new Uint8Array(32)));
-}
-
-function setSessionCookie(c: AppContext, token: string): void {
-  const isHttps = new URL(c.req.url).protocol === "https:";
-  setCookie(c, SESSION_COOKIE, token, {
-    httpOnly: true,
-    secure: isHttps,
-    sameSite: isHttps ? "None" : "Lax",
-    path: "/",
-    maxAge: SESSION_TTL_SECONDS,
-  });
-}
-
 function clearSessionCookie(c: AppContext): void {
   const isHttps = new URL(c.req.url).protocol === "https:";
   deleteCookie(c, SESSION_COOKIE, {
@@ -203,16 +142,8 @@ function clearSessionCookie(c: AppContext): void {
   });
 }
 
-async function createSession(client: DatabaseClient, userId: string): Promise<string> {
-  const token = createSessionToken();
-  const tokenHash = await sha256Hex(token);
-  const expiresAt = new Date(Date.now() + SESSION_TTL_SECONDS * 1000).toISOString();
-  await client.query(
-    "INSERT INTO auth_sessions (user_id, token_hash, expires_at) VALUES ($1, $2, $3)",
-    [userId, tokenHash, expiresAt],
-  );
-  return token;
-}
+// Session creation now lives only in google-auth.ts: password login (D4) no
+// longer issues sessions, so auth.ts only ever reads/revokes existing ones.
 
 async function getSessionUser(client: DatabaseClient, token: string | undefined): Promise<SessionUserRow | null> {
   if (!token || token.length > 128) return null;
@@ -250,59 +181,14 @@ export function registerAuthRoutes(app: Hono<{ Bindings: Bindings }>): void {
       return c.json({ error: "ORIGIN_NOT_ALLOWED", message: "Origen no autorizado." }, 403);
     }
 
-    const body = await c.req.json<{ email?: unknown; password?: unknown }>().catch(() => null);
-    const email = typeof body?.email === "string" ? body.email.trim().toLowerCase() : "";
-    const password = typeof body?.password === "string" ? body.password : "";
-    if (email.length > 254 || !email || password.length > 128 || !password) {
-      return c.json({ error: "INVALID_CREDENTIALS", message: "Correo o contraseña incorrectos." }, 401);
-    }
-
-    try {
-      const allowed = await checkRateLimits(
-        c.env.DATABASE_URL,
-        "login",
-        c.req.header("CF-Connecting-IP") ?? "unknown",
-        email,
-      );
-      if (!allowed) {
-        return c.json({ error: "RATE_LIMITED", message: "Demasiados intentos. Espera un minuto e inténtalo de nuevo." }, 429);
-      }
-
-      const result = await withDatabaseClient(c.env.DATABASE_URL, async (client) => {
-        const userResult = await client.query<UserRow>(
-          "SELECT id, email, display_name, password_hash, is_active FROM app_users WHERE lower(email) = $1 LIMIT 1",
-          [email],
-        );
-        const user = userResult.rows[0];
-        const validPassword = await verifyPassword(password, user?.password_hash ?? null);
-        if (!user || !user.is_active || !validPassword) return null;
-
-        const memberships = await client.query<OrganizationRow>(
-          `SELECT o.id, o.name, o.slug, m.role
-             FROM organization_members m
-             JOIN organizations o ON o.id = m.organization_id
-            WHERE m.user_id = $1 AND m.is_active = true AND o.is_active = true
-            ORDER BY o.name`,
-          [user.id],
-        );
-        if (memberships.rows.length === 0) return null;
-
-        const token = await createSession(client, user.id);
-        return {
-          token,
-          user: { id: user.id, email: user.email, display_name: user.display_name },
-          organizations: memberships.rows,
-        };
-      });
-
-      if (!result) {
-        return c.json({ error: "INVALID_CREDENTIALS", message: "Correo o contraseña incorrectos." }, 401);
-      }
-      setSessionCookie(c, result.token);
-      return c.json({ user: result.user, organizations: result.organizations });
-    } catch {
-      return c.json({ error: "LOGIN_FAILED", message: "No se pudo iniciar sesión." }, 500);
-    }
+    // Password login is retired per decision D4 (docs/sdd/auth-policy-decision-record.md,
+    // approved 2026-10-24). Fail closed the same way /auth/register already does: deny
+    // before parsing credentials, hitting the database, or issuing a cookie. Use
+    // GET /auth/google instead.
+    return c.json({
+      error: "PASSWORD_LOGIN_DISABLED",
+      message: "El inicio de sesión con contraseña está deshabilitado. Usa el acceso con Google.",
+    }, 503);
   });
 
   app.get("/auth/me", async (c) => {

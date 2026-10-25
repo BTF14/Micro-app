@@ -47,3 +47,20 @@ Este documento no autoriza ni implementa OAuth, migraciones, cambios de credenci
 ## Estado actual
 
 D1–D8 continúan sin aprobar. Este registro organiza la decisión; no reemplaza la aprobación del propietario ni la especificación SDD. La revisión estática previa encontró registro por contraseña sin allowlist en `apps/api/src/auth.ts`; no declarar la autenticación lista para usuarios reales hasta corregir y verificar ese bloqueo.
+
+## Aprobación del propietario — 2026-10-24
+
+El propietario confirmó las ocho decisiones, todas con la opción conservadora propuesta en la matriz:
+
+| ID | Decisión aprobada |
+|---|---|
+| D1 | Allowlist en tabla administrada, con auditoría; requiere bootstrap y recuperación seguros antes de activarse |
+| D2 | Solo correos exactos previamente autorizados; denegar si la política está vacía/inválida/no disponible |
+| D3 | Sin autoaprovisionamiento ni rol `owner` implícito; bootstrap administrativo explícito, de un solo uso y auditable |
+| D4 | Retirar el login por contraseña: cerrar `POST /auth/login` con el mismo patrón fail-closed que ya aplica a `POST /auth/register` |
+| D5 | Exigir identidad Google validada en servidor y claim `email_verified` antes de evaluar la allowlist |
+| D6 | Librería OAuth: Arctic aprobado como preferencia, pero el entorno de implementación no tiene acceso de red para instalar paquetes npm nuevos ni regenerar `pnpm-lock.yaml` de forma verificable. Implementación real: cliente OAuth 2.0 + OIDC hecho a mano con `fetch` nativo y Web Crypto (sin dependencias nuevas), siguiendo el mismo flujo que Arctic implementaría (PKCE S256, `state` en cookie httpOnly, intercambio de código, `userinfo` de Google). Revisar la migración a Arctic en una sesión con red disponible si se prefiere reducir código propio |
+| D7 | No hay cuentas ni datos reales existentes que vincular; no se diseña flujo de vinculación por ahora |
+| D8 | Cookies seguras (HttpOnly, Secure, SameSite), expiración y revocación definidas; orígenes/callback exactos ya registrados en Google Cloud Console (`https://micro-app-63i.pages.dev` como origen, `https://micro-app-api.btfcasheb.workers.dev` como base de redirect); sin comodines |
+
+Estas decisiones autorizan el diseño e implementación descritos en este registro. Siguen vigentes los controles mínimos de la sección anterior: no crear usuario/organización/membresía/sesión antes de que el código implemente esta política; probar en PostgreSQL efímero o branch aislado de Neon antes de tocar `main`; no desplegar producción sin verificación.

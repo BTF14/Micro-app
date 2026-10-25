@@ -51,7 +51,7 @@ const suite = describe.skipIf(!databaseAvailable)("authentication routes against
     }
   });
 
-  it("blocks public registration without writes, while existing authorized accounts can log in", async () => {
+  it("blocks public registration and password login without any writes", async () => {
     const originHeaders = {
       Origin: frontendOrigin,
       "Content-Type": "application/json",
@@ -98,8 +98,8 @@ const suite = describe.skipIf(!databaseAvailable)("authentication routes against
     );
     expect(deniedRateLimitWrites.rows).toHaveLength(0);
 
-    // Seed a synthetic pre-authorized account directly so existing login/session
-    // integration coverage remains independent of the disabled public signup flow.
+    // Seed a synthetic pre-authorized account directly so the disabled-login
+    // assertion below exercises a real, otherwise-loginable account.
     const passwordHash = await hashPassword(password);
     const userResult = await cleanupClient.query<{ id: string }>(
       "INSERT INTO app_users (email, display_name, password_hash) VALUES ($1, $2, $3) RETURNING id",
@@ -114,136 +114,242 @@ const suite = describe.skipIf(!databaseAvailable)("authentication routes against
       [organizationResult.rows[0]!.id, userResult.rows[0]!.id],
     );
 
-    const badLogin = await app.fetch(new Request("https://api.example/auth/login", {
+    const passwordLogin = await app.fetch(new Request("https://api.example/auth/login", {
       method: "POST",
       headers: { ...originHeaders, "CF-Connecting-IP": crypto.randomUUID() },
-      body: JSON.stringify({ email, password: "incorrect-password" }),
+      body: JSON.stringify({ email, password }),
     }), { DATABASE_URL: databaseUrl, FRONTEND_ORIGIN: frontendOrigin });
-    expect(badLogin.status).toBe(401);
 
-    const staleRateLimitHash = "a".repeat(64);
+    expect(passwordLogin.status).toBe(503);
+    await expect(passwordLogin.json()).resolves.toMatchObject({ error: "PASSWORD_LOGIN_DISABLED" });
+    expect(passwordLogin.headers.get("set-cookie")).toBeNull();
+
+    const noSessionCreated = await cleanupClient.query(
+      "SELECT count(*)::text AS sessions FROM auth_sessions WHERE user_id = $1",
+      [userResult.rows[0]!.id],
+    );
+    expect(noSessionCreated.rows[0]).toEqual({ sessions: "0" });
+  });
+});
+
+const googleOrigin = "https://micro-app.example";
+const googleEmail = `google-integration-${crypto.randomUUID()}@example.test`;
+const bootstrapOrgName = `Bootstrap Shop ${crypto.randomUUID()}`;
+const bootstrapOrgSlug = `bootstrap-${crypto.randomUUID().replace(/-/g, "").slice(0, 12)}`;
+const bootstrapToken = `test-bootstrap-${crypto.randomUUID()}`;
+
+const googleEnv = {
+  DATABASE_URL: databaseUrl,
+  FRONTEND_ORIGIN: googleOrigin,
+  GOOGLE_CLIENT_ID: "test-client-id",
+  GOOGLE_CLIENT_SECRET: "test-client-secret",
+  GOOGLE_REDIRECT_URI: "https://api.example/auth/google/callback",
+  BOOTSTRAP_TOKEN: bootstrapToken,
+};
+
+function extractCookiePairs(response: Response): Record<string, string> {
+  const pairs: Record<string, string> = {};
+  const headers = response.headers as Headers & { getSetCookie?: () => string[] };
+  const cookies = typeof headers.getSetCookie === "function" ? headers.getSetCookie() : [];
+  for (const cookie of cookies) {
+    const [pair] = cookie.split(";");
+    const [name, value] = pair!.split("=");
+    if (name && value !== undefined) pairs[name] = value;
+  }
+  return pairs;
+}
+
+async function startGoogleFlow(extraQuery = ""): Promise<{ cookieHeader: string; state: string }> {
+  const startResponse = await app.fetch(
+    new Request(`https://api.example/auth/google${extraQuery}`),
+    googleEnv,
+  );
+  expect(startResponse.status).toBe(302);
+  const cookies = extractCookiePairs(startResponse);
+  expect(cookies.microapp_oauth_state).toBeTruthy();
+  expect(cookies.microapp_oauth_verifier).toBeTruthy();
+  const cookieHeader = Object.entries(cookies).map(([name, value]) => `${name}=${value}`).join("; ");
+  return { cookieHeader, state: cookies.microapp_oauth_state! };
+}
+
+const suiteGoogle = describe.skipIf(!databaseAvailable)("Google OAuth routes against PostgreSQL", () => {
+  let cleanupClient: Client;
+  let fetchSpy: ReturnType<typeof vi.spyOn>;
+
+  beforeAll(async () => {
+    cleanupClient = new Client({ connectionString: databaseUrl });
+    await cleanupClient.connect();
+  });
+
+  afterAll(async () => {
+    await cleanupClient.query("DELETE FROM auth_sessions WHERE user_id IN (SELECT id FROM app_users WHERE email = $1)", [googleEmail]);
+    await cleanupClient.query("DELETE FROM organization_members WHERE user_id IN (SELECT id FROM app_users WHERE email = $1)", [googleEmail]);
+    await cleanupClient.query("DELETE FROM app_users WHERE email = $1", [googleEmail]);
+    // auth_bootstrap still references the organization this test's bootstrap
+    // run created (ON DELETE RESTRICT by design, so a sealed bootstrap can
+    // never be silently orphaned in production). Reset the singleton sentinel
+    // back to its unconsumed state before the organization can be deleted,
+    // so later re-runs of this suite against a long-lived database exercise
+    // the bootstrap path again instead of immediately finding it sealed.
     await cleanupClient.query(
-      "INSERT INTO auth_rate_limits (key_hash, window_started_at, attempts, updated_at) VALUES ($1, now() - interval '2 days', 1, now() - interval '2 days') ON CONFLICT (key_hash) DO UPDATE SET updated_at = now() - interval '2 days'",
-      [staleRateLimitHash],
+      "UPDATE auth_bootstrap SET consumed_at = NULL, consumed_by_email = NULL, created_organization_id = NULL WHERE id = true AND created_organization_id IN (SELECT id FROM organizations WHERE name = $1)",
+      [bootstrapOrgName],
     );
+    await cleanupClient.query("DELETE FROM organizations WHERE name = $1", [bootstrapOrgName]);
+    await cleanupClient.query("DELETE FROM auth_allowlist WHERE lower(email) = lower($1)", [googleEmail]);
+    await cleanupClient.end();
+  });
 
-    const loginResponse = await app.fetch(new Request("https://api.example/auth/login", {
-      method: "POST",
-      headers: { ...originHeaders, "CF-Connecting-IP": crypto.randomUUID() },
-      body: JSON.stringify({ email, password }),
-    }), { DATABASE_URL: databaseUrl, FRONTEND_ORIGIN: frontendOrigin });
-    const staleRateLimit = await cleanupClient.query("SELECT 1 FROM auth_rate_limits WHERE key_hash = $1", [staleRateLimitHash]);
-    expect(staleRateLimit.rows).toHaveLength(0);
-    expect(loginResponse.status).toBe(200);
-    const loginCookie = loginResponse.headers.get("set-cookie");
-    expect(loginCookie).toContain("microapp_session=");
-    const cookiePair = loginCookie!.split(";")[0]!;
+  function mockGoogleIdentity(sub: string, emailVerified: boolean): void {
+    fetchSpy = vi.spyOn(globalThis, "fetch").mockImplementation(async (input) => {
+      const url = typeof input === "string" ? input : (input as Request).url ?? String(input);
+      if (url.startsWith("https://oauth2.googleapis.com/token")) {
+        return new Response(JSON.stringify({ access_token: "mock-access-token" }), { status: 200 });
+      }
+      if (url.startsWith("https://openidconnect.googleapis.com/v1/userinfo")) {
+        return new Response(JSON.stringify({ sub, email: googleEmail, email_verified: emailVerified, name: "Google Test User" }), { status: 200 });
+      }
+      throw new Error(`Unexpected fetch in test: ${url}`);
+    });
+  }
 
-    const meResponse = await app.fetch(new Request("https://api.example/auth/me", {
-      headers: { Cookie: cookiePair },
-    }), { DATABASE_URL: databaseUrl, FRONTEND_ORIGIN: frontendOrigin });
-    expect(meResponse.status).toBe(200);
-    const me = await meResponse.json() as { user: { email: string }; organizations: unknown[] };
-    expect(me.user.email).toBe(email);
-    expect(me.organizations).toHaveLength(1);
+  it("denies an email that is not on the allowlist, without creating any identity", async () => {
+    const { cookieHeader, state } = await startGoogleFlow();
+    mockGoogleIdentity("sub-not-allowlisted", true);
 
-    await cleanupClient.query("UPDATE app_users SET is_active = false WHERE email = $1", [email]);
-    const inactiveUserSession = await app.fetch(new Request("https://api.example/auth/me", {
-      headers: { Cookie: cookiePair },
-    }), { DATABASE_URL: databaseUrl, FRONTEND_ORIGIN: frontendOrigin });
-    expect(inactiveUserSession.status).toBe(401);
-    expect(inactiveUserSession.headers.get("set-cookie")).toContain("microapp_session=");
-    await cleanupClient.query("UPDATE app_users SET is_active = true WHERE email = $1", [email]);
+    const callback = await app.fetch(new Request(
+      `https://api.example/auth/google/callback?code=test-code&state=${state}`,
+      { headers: { Cookie: cookieHeader } },
+    ), googleEnv);
 
-    await cleanupClient.query("UPDATE organization_members SET is_active = false WHERE user_id = (SELECT id FROM app_users WHERE email = $1)", [email]);
-    const noMembershipSession = await app.fetch(new Request("https://api.example/auth/me", {
-      headers: { Cookie: cookiePair },
-    }), { DATABASE_URL: databaseUrl, FRONTEND_ORIGIN: frontendOrigin });
-    expect(noMembershipSession.status).toBe(401);
-    expect(noMembershipSession.headers.get("set-cookie")).toContain("microapp_session=");
+    expect(callback.status).toBe(302);
+    expect(callback.headers.get("location")).toContain("auth_error=not_allowlisted");
+    const user = await cleanupClient.query("SELECT 1 FROM app_users WHERE email = $1", [googleEmail]);
+    expect(user.rows).toHaveLength(0);
+    fetchSpy.mockRestore();
+  });
 
-    const inactiveMembershipLogin = await app.fetch(new Request("https://api.example/auth/login", {
-      method: "POST",
-      headers: { ...originHeaders, "CF-Connecting-IP": crypto.randomUUID() },
-      body: JSON.stringify({ email, password }),
-    }), { DATABASE_URL: databaseUrl, FRONTEND_ORIGIN: frontendOrigin });
-    expect(inactiveMembershipLogin.status).toBe(401);
-    expect(inactiveMembershipLogin.headers.get("set-cookie")).toBeNull();
-    await cleanupClient.query("UPDATE organization_members SET is_active = true WHERE user_id = (SELECT id FROM app_users WHERE email = $1)", [email]);
+  it("rejects a callback whose state cookie does not match the query parameter", async () => {
+    const { cookieHeader } = await startGoogleFlow();
+    mockGoogleIdentity("sub-mismatch", true);
 
-    // An active membership must not keep access to an organization that has been disabled.
+    const callback = await app.fetch(new Request(
+      "https://api.example/auth/google/callback?code=test-code&state=not-the-real-state",
+      { headers: { Cookie: cookieHeader } },
+    ), googleEnv);
+
+    expect(callback.status).toBe(302);
+    expect(callback.headers.get("location")).toContain("auth_error=oauth_failed");
+    fetchSpy.mockRestore();
+  });
+
+  it("runs the one-time bootstrap exactly once, then seals it even with the correct token", async () => {
     await cleanupClient.query(
-      "UPDATE organizations SET is_active = false WHERE id = (SELECT m.organization_id FROM organization_members m JOIN app_users u ON u.id = m.user_id WHERE u.email = $1)",
-      [email],
-    );
-    const inactiveOrganizationSession = await app.fetch(new Request("https://api.example/auth/me", {
-      headers: { Cookie: cookiePair },
-    }), { DATABASE_URL: databaseUrl, FRONTEND_ORIGIN: frontendOrigin });
-    expect(inactiveOrganizationSession.status).toBe(401);
-    expect(inactiveOrganizationSession.headers.get("set-cookie")).toContain("microapp_session=");
-
-    const inactiveOrganizationLogin = await app.fetch(new Request("https://api.example/auth/login", {
-      method: "POST",
-      headers: { ...originHeaders, "CF-Connecting-IP": crypto.randomUUID() },
-      body: JSON.stringify({ email, password }),
-    }), { DATABASE_URL: databaseUrl, FRONTEND_ORIGIN: frontendOrigin });
-    expect(inactiveOrganizationLogin.status).toBe(401);
-    expect(inactiveOrganizationLogin.headers.get("set-cookie")).toBeNull();
-
-    await cleanupClient.query(
-      "UPDATE organizations SET is_active = true WHERE id = (SELECT m.organization_id FROM organization_members m JOIN app_users u ON u.id = m.user_id WHERE u.email = $1)",
-      [email],
+      "INSERT INTO auth_allowlist (email, added_by) VALUES ($1, 'integration-test')",
+      [googleEmail],
     );
 
-    const logoutResponse = await app.fetch(new Request("https://api.example/auth/logout", {
-      method: "POST",
-      headers: { Origin: frontendOrigin, Cookie: cookiePair },
-    }), { DATABASE_URL: databaseUrl, FRONTEND_ORIGIN: frontendOrigin });
-    expect(logoutResponse.status).toBe(204);
+    const bootstrapQuery = `?bootstrap_token=${encodeURIComponent(bootstrapToken)}&org_name=${encodeURIComponent(bootstrapOrgName)}&org_slug=${encodeURIComponent(bootstrapOrgSlug)}`;
+    const { cookieHeader, state } = await startGoogleFlow(bootstrapQuery);
+    mockGoogleIdentity("sub-bootstrap-owner", true);
 
-    const revokedSessionResponse = await app.fetch(new Request("https://api.example/auth/me", {
-      headers: { Cookie: cookiePair },
-    }), { DATABASE_URL: databaseUrl, FRONTEND_ORIGIN: frontendOrigin });
-    expect(revokedSessionResponse.status).toBe(401);
-    expect(revokedSessionResponse.headers.get("set-cookie")).toContain("microapp_session=");
+    const callback = await app.fetch(new Request(
+      `https://api.example/auth/google/callback?code=test-code&state=${state}`,
+      { headers: { Cookie: cookieHeader } },
+    ), googleEnv);
 
-    const secondLogin = await app.fetch(new Request("https://api.example/auth/login", {
-      method: "POST",
-      headers: { ...originHeaders, "CF-Connecting-IP": crypto.randomUUID() },
-      body: JSON.stringify({ email, password }),
-    }), { DATABASE_URL: databaseUrl, FRONTEND_ORIGIN: frontendOrigin });
-    expect(secondLogin.status).toBe(200);
-    const secondCookie = secondLogin.headers.get("set-cookie")!.split(";")[0]!;
-    const secondToken = secondCookie.slice("microapp_session=".length);
-    const tokenDigest = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(secondToken));
-    const tokenHash = Array.from(new Uint8Array(tokenDigest), (byte) => byte.toString(16).padStart(2, "0")).join("");
-    await cleanupClient.query(
-      "UPDATE auth_sessions SET created_at = now() - interval '2 days', expires_at = now() - interval '1 day' WHERE token_hash = $1",
-      [tokenHash],
+    expect(callback.status).toBe(302);
+    expect(callback.headers.get("location")).toBe(`${googleOrigin}/`);
+    const sessionCookies = extractCookiePairs(callback);
+    expect(sessionCookies.microapp_session).toBeTruthy();
+    fetchSpy.mockRestore();
+
+    const owner = await cleanupClient.query<{ role: string }>(
+      `SELECT m.role FROM organization_members m
+         JOIN app_users u ON u.id = m.user_id
+         JOIN organizations o ON o.id = m.organization_id
+        WHERE u.email = $1 AND o.name = $2`,
+      [googleEmail, bootstrapOrgName],
     );
-    const expiredSessionResponse = await app.fetch(new Request("https://api.example/auth/me", {
-      headers: { Cookie: secondCookie },
-    }), { DATABASE_URL: databaseUrl, FRONTEND_ORIGIN: frontendOrigin });
-    expect(expiredSessionResponse.status).toBe(401);
-    expect(expiredSessionResponse.headers.get("set-cookie")).toContain("microapp_session=");
+    expect(owner.rows).toEqual([{ role: "owner" }]);
 
-    // Reset only this synthetic email's login limiter so the assertion tests account state, not accumulated attempts.
-    const inactiveLoginKeyDigest = await crypto.subtle.digest(
-      "SHA-256",
-      new TextEncoder().encode(`login:email:${email}`),
+    const bootstrapRow = await cleanupClient.query<{ consumed_at: string | null }>(
+      "SELECT consumed_at FROM auth_bootstrap WHERE id = true",
     );
-    const inactiveLoginKeyHash = Array.from(new Uint8Array(inactiveLoginKeyDigest), (byte) =>
-      byte.toString(16).padStart(2, "0"),
-    ).join("");
-    await cleanupClient.query("DELETE FROM auth_rate_limits WHERE key_hash = $1", [inactiveLoginKeyHash]);
-    await cleanupClient.query("UPDATE app_users SET is_active = false WHERE email = $1", [email]);
-    const inactiveUserLogin = await app.fetch(new Request("https://api.example/auth/login", {
-      method: "POST",
-      headers: { ...originHeaders, "CF-Connecting-IP": crypto.randomUUID() },
-      body: JSON.stringify({ email, password }),
-    }), { DATABASE_URL: databaseUrl, FRONTEND_ORIGIN: frontendOrigin });
-    expect(inactiveUserLogin.status).toBe(401);
-    expect(inactiveUserLogin.headers.get("set-cookie")).toBeNull();
+    expect(bootstrapRow.rows[0]!.consumed_at).not.toBeNull();
+
+    // A second, independent allowlisted identity must not be able to reuse the bootstrap.
+    const secondEmail = `google-second-${crypto.randomUUID()}@example.test`;
+    await cleanupClient.query("INSERT INTO auth_allowlist (email, added_by) VALUES ($1, 'integration-test')", [secondEmail]);
+    const secondOrgName = `Second Shop ${crypto.randomUUID()}`;
+    const secondQuery = `?bootstrap_token=${encodeURIComponent(bootstrapToken)}&org_name=${encodeURIComponent(secondOrgName)}&org_slug=second-${crypto.randomUUID().replace(/-/g, "").slice(0, 10)}`;
+    const second = await startGoogleFlow(secondQuery);
+    fetchSpy = vi.spyOn(globalThis, "fetch").mockImplementation(async (input) => {
+      const url = typeof input === "string" ? input : (input as Request).url ?? String(input);
+      if (url.startsWith("https://oauth2.googleapis.com/token")) return new Response(JSON.stringify({ access_token: "mock-access-token" }), { status: 200 });
+      if (url.startsWith("https://openidconnect.googleapis.com/v1/userinfo")) {
+        return new Response(JSON.stringify({ sub: "sub-second-user", email: secondEmail, email_verified: true, name: "Second User" }), { status: 200 });
+      }
+      throw new Error(`Unexpected fetch in test: ${url}`);
+    });
+    const secondCallback = await app.fetch(new Request(
+      `https://api.example/auth/google/callback?code=test-code&state=${second.state}`,
+      { headers: { Cookie: second.cookieHeader } },
+    ), googleEnv);
+    expect(secondCallback.status).toBe(302);
+    expect(secondCallback.headers.get("location")).toContain("auth_error=bootstrap_consumed");
+    fetchSpy.mockRestore();
+    await cleanupClient.query("DELETE FROM auth_allowlist WHERE lower(email) = lower($1)", [secondEmail]);
+    await cleanupClient.query("DELETE FROM organizations WHERE name = $1", [secondOrgName]);
+  });
+
+  it("logs an existing allowlisted, active member back in without creating a second user row", async () => {
+    const { cookieHeader, state } = await startGoogleFlow();
+    mockGoogleIdentity("sub-bootstrap-owner", true);
+
+    const callback = await app.fetch(new Request(
+      `https://api.example/auth/google/callback?code=test-code&state=${state}`,
+      { headers: { Cookie: cookieHeader } },
+    ), googleEnv);
+
+    expect(callback.status).toBe(302);
+    expect(callback.headers.get("location")).toBe(`${googleOrigin}/`);
+    const sessionCookies = extractCookiePairs(callback);
+    expect(sessionCookies.microapp_session).toBeTruthy();
+    fetchSpy.mockRestore();
+
+    const users = await cleanupClient.query("SELECT count(*)::text AS total FROM app_users WHERE email = $1", [googleEmail]);
+    expect(users.rows[0]).toEqual({ total: "1" });
+  });
+
+  it("denies an existing user whose account has been deactivated", async () => {
+    await cleanupClient.query("UPDATE app_users SET is_active = false WHERE email = $1", [googleEmail]);
+    const { cookieHeader, state } = await startGoogleFlow();
+    mockGoogleIdentity("sub-bootstrap-owner", true);
+
+    const callback = await app.fetch(new Request(
+      `https://api.example/auth/google/callback?code=test-code&state=${state}`,
+      { headers: { Cookie: cookieHeader } },
+    ), googleEnv);
+
+    expect(callback.status).toBe(302);
+    expect(callback.headers.get("location")).toContain("auth_error=account_inactive");
+    fetchSpy.mockRestore();
+    await cleanupClient.query("UPDATE app_users SET is_active = true WHERE email = $1", [googleEmail]);
+  });
+
+  it("denies a Google identity whose email_verified claim is false", async () => {
+    const { cookieHeader, state } = await startGoogleFlow();
+    mockGoogleIdentity("sub-unverified", false);
+
+    const callback = await app.fetch(new Request(
+      `https://api.example/auth/google/callback?code=test-code&state=${state}`,
+      { headers: { Cookie: cookieHeader } },
+    ), googleEnv);
+
+    expect(callback.status).toBe(302);
+    expect(callback.headers.get("location")).toContain("auth_error=email_not_verified");
+    fetchSpy.mockRestore();
   });
 });
 

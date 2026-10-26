@@ -12,6 +12,17 @@ describe("Micro app API scaffold", () => {
     });
   });
 
+  it("sets baseline security headers on every response, and no-store on auth routes", async () => {
+    const health = await app.request("/health");
+    expect(health.headers.get("x-content-type-options")).toBe("nosniff");
+    expect(health.headers.get("referrer-policy")).toBe("no-referrer");
+    expect(health.headers.get("x-frame-options")).toBe("DENY");
+    expect(health.headers.get("cache-control")).not.toBe("no-store");
+
+    const auth = await app.request("/auth/me");
+    expect(auth.headers.get("cache-control")).toBe("no-store");
+  });
+
   it("returns a JSON 404 for unknown routes without environment bindings", async () => {
     const response = await app.request("/unknown");
     expect(response.status).toBe(404);

@@ -42,6 +42,23 @@ app.use(
   }),
 );
 
+// Baseline security headers on every response. This is a JSON API (no HTML
+// rendered here), so there's no CSP to set, but these still matter: nosniff
+// stops a browser from guessing a response is HTML/script from its content,
+// no-referrer avoids leaking full URLs (which can carry tokens in query
+// strings) to any third party, and no-store on auth endpoints stops a shared
+// or misconfigured cache/proxy from serving one user's session response to
+// another.
+app.use("*", async (c, next) => {
+  await next();
+  c.header("X-Content-Type-Options", "nosniff");
+  c.header("Referrer-Policy", "no-referrer");
+  c.header("X-Frame-Options", "DENY");
+  if (c.req.path.startsWith("/auth/")) {
+    c.header("Cache-Control", "no-store");
+  }
+});
+
 registerAuthRoutes(app);
 registerGoogleAuthRoutes(app);
 

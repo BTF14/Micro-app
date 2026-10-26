@@ -3,7 +3,61 @@ import { apiRequest, ApiError, googleLoginUrl, type AuthResponse } from "./auth"
 import "./auth.css";
 
 // WhatsApp number format (no "+", no spaces) per https://faq.whatsapp.com/general/chats/how-to-use-click-to-chat.
-const ADMIN_WHATSAPP_URL = `https://wa.me/584243104520?text=${encodeURIComponent("Hola, necesito acceso a Micro app.")}`;
+function whatsappUrl(message: string): string {
+  return `https://wa.me/584243104520?text=${encodeURIComponent(message)}`;
+}
+const ADMIN_WHATSAPP_URL = whatsappUrl("Hola, necesito acceso a Micro app.");
+const SUPPORT_WHATSAPP_URL = whatsappUrl("Hola, tuve un problema usando Micro app.");
+
+const FAQ_ITEMS: { question: string; answer: string }[] = [
+  {
+    question: "¿Qué es Micro app?",
+    answer: "Es el sistema interno de gestión comercial de tu negocio: inventario, ventas y precios en dólares con conversión a bolívares según la tasa del BCV. Varias partes todavía están en construcción.",
+  },
+  {
+    question: "¿Quién puede entrar?",
+    answer: "Solo las cuentas de Google que el administrador haya autorizado de forma explícita. No existen cuentas de demostración ni registro abierto.",
+  },
+  {
+    question: "¿Por qué no hay usuario y contraseña?",
+    answer: "El acceso es únicamente con tu cuenta de Google autorizada; es más seguro y no tienes que recordar otra contraseña. Si no puedes entrar, contacta al administrador por WhatsApp.",
+  },
+  {
+    question: "Encontré un error o algo no funciona, ¿qué hago?",
+    answer: "Escríbenos por WhatsApp contando qué intentabas hacer y, si puedes, una captura de pantalla. Lo revisamos lo antes posible.",
+  },
+  {
+    question: "¿Mis datos están seguros?",
+    answer: "Revisa el apartado de Privacidad más abajo para ver qué datos se guardan y cómo se usan.",
+  },
+];
+
+const PRIVACY_SECTIONS: { heading: string; body: string }[] = [
+  {
+    heading: "Qué datos guardamos",
+    body: "Tu nombre y correo de la cuenta de Google con la que inicias sesión, y la información del negocio que se registre en el sistema (por ejemplo, inventario y ventas, a medida que esas funciones se habiliten).",
+  },
+  {
+    heading: "Para qué los usamos",
+    body: "Únicamente para darte acceso al sistema y operar la gestión comercial de tu negocio. No se usan con fines publicitarios ni de análisis externo.",
+  },
+  {
+    heading: "Con quién se comparten",
+    body: "Con nadie fuera de las personas que el administrador autorice dentro de tu propio negocio. No se venden ni se comparten con terceros.",
+  },
+  {
+    heading: "Dónde se guardan",
+    body: "En infraestructura administrada (base de datos Neon y Cloudflare), con conexión cifrada. El acceso a la base de datos está restringido al administrador técnico del sistema.",
+  },
+  {
+    heading: "Tus derechos",
+    body: "Puedes pedir que se corrija o elimine tu información escribiendo al administrador por WhatsApp.",
+  },
+  {
+    heading: "Nota",
+    body: "Este es un aviso de privacidad básico para una aplicación interna todavía en desarrollo. Si el negocio empieza a manejar datos de clientes o el sistema se abre al público, conviene una revisión legal formal antes de ese paso.",
+  },
+];
 
 const modules = [
   { number: "01", title: "Caja y ventas", description: "Flujo de venta, cobro y comprobante.", status: "Pendiente de implementación" },
@@ -36,12 +90,64 @@ function readAuthErrorFromUrl(): string {
   return AUTH_ERROR_MESSAGES[code] ?? "No se pudo iniciar sesión. Comunícate con el administrador del sistema.";
 }
 
+type HelpModalKind = "faq" | "privacy";
+
+function HelpLinks({ onOpen }: { onOpen: (kind: HelpModalKind) => void }) {
+  return (
+    <p className="help-links">
+      <a href={SUPPORT_WHATSAPP_URL} target="_blank" rel="noopener noreferrer">Escríbenos por WhatsApp</a>
+      <span aria-hidden="true">·</span>
+      <button type="button" className="text-button" onClick={() => onOpen("faq")}>Preguntas frecuentes</button>
+      <span aria-hidden="true">·</span>
+      <button type="button" className="text-button" onClick={() => onOpen("privacy")}>Privacidad</button>
+    </p>
+  );
+}
+
+function HelpModal({ kind, onClose }: { kind: HelpModalKind; onClose: () => void }) {
+  return (
+    <div className="help-modal-backdrop" role="presentation" onClick={onClose}>
+      <div
+        className="help-modal"
+        role="dialog"
+        aria-modal="true"
+        aria-label={kind === "faq" ? "Preguntas frecuentes" : "Política de privacidad"}
+        onClick={(event) => event.stopPropagation()}
+      >
+        <div className="help-modal-head">
+          <h2>{kind === "faq" ? "Preguntas frecuentes" : "Privacidad"}</h2>
+          <button type="button" className="help-modal-close" onClick={onClose} aria-label="Cerrar">✕</button>
+        </div>
+        <div className="help-modal-body">
+          {kind === "faq"
+            ? FAQ_ITEMS.map((item) => (
+                <details key={item.question}>
+                  <summary>{item.question}</summary>
+                  <p>{item.answer}</p>
+                </details>
+              ))
+            : PRIVACY_SECTIONS.map((section) => (
+                <div className="help-modal-section" key={section.heading}>
+                  <h3>{section.heading}</h3>
+                  <p>{section.body}</p>
+                </div>
+              ))}
+          <p className="help-modal-foot">
+            ¿Más dudas? <a href={SUPPORT_WHATSAPP_URL} target="_blank" rel="noopener noreferrer">Escríbenos por WhatsApp</a>.
+          </p>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function App() {
   const [session, setSession] = useState<AuthResponse | null>(null);
   const [checkingSession, setCheckingSession] = useState(true);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState(() => readAuthErrorFromUrl());
   const [notice, setNotice] = useState("");
+  const [helpModal, setHelpModal] = useState<HelpModalKind | null>(null);
 
   useEffect(() => {
     let active = true;
@@ -77,6 +183,7 @@ export default function App() {
 
   if (!session) {
     return (
+      <>
       <main className="auth-page">
         <section className="auth-brand-panel" aria-label="Micro app">
           <a className="brand auth-brand" href="#inicio">
@@ -109,9 +216,12 @@ export default function App() {
               ¿Tu cuenta no está autorizada?{" "}
               <a href={ADMIN_WHATSAPP_URL} target="_blank" rel="noopener noreferrer">Escríbele al administrador por WhatsApp</a> para solicitar acceso.
             </p>
+            <HelpLinks onOpen={setHelpModal} />
           </div>
         </section>
       </main>
+      {helpModal && <HelpModal kind={helpModal} onClose={() => setHelpModal(null)} />}
+    </>
     );
   }
 
@@ -119,6 +229,7 @@ export default function App() {
   const organization = session.organizations[0];
 
   return (
+    <>
     <main className="app-shell">
       <aside className="sidebar" aria-label="Navegación principal">
         <a className="brand" href="#inicio" aria-label="Micro app, inicio">
@@ -151,13 +262,26 @@ export default function App() {
           </div>
         </header>
         <div className="page-content">
-          {error && <div className="form-alert error-alert dashboard-alert" role="alert">{error}</div>}
+          {error && (
+            <div className="form-alert error-alert dashboard-alert" role="alert">
+              {error}{" "}
+              <a href={SUPPORT_WHATSAPP_URL} target="_blank" rel="noopener noreferrer">Escríbenos por WhatsApp</a>.
+            </div>
+          )}
           <section className="welcome"><div><p className="eyebrow">TU NEGOCIO, EN UN SOLO LUGAR</p><h1>Hola, {user.display_name.split(" ")[0]}.</h1><p className="welcome-copy">Tu espacio de trabajo ya está listo. Estamos preparando las herramientas para gestionar tus ventas, controlar el inventario y consultar precios en USD y VES.</p></div><div className="welcome-art" aria-hidden="true"><div className="art-ring ring-one" /><div className="art-ring ring-two" /><div className="art-card"><span className="art-card-label">MICRO APP</span><span className="art-card-line" /><span className="art-card-line short" /><span className="art-card-foot">GESTIÓN · CONTROL · CLARIDAD</span></div></div></section>
           <section className="setup-banner"><div className="setup-icon" aria-hidden="true">↗</div><div className="setup-text"><h2>Cuenta conectada</h2><p>Tu sesión está activa. Las funciones de ventas e inventario se habilitarán en próximas fases.</p></div><span className="setup-status">Acceso seguro</span></section>
           <section className="modules-section" aria-labelledby="modules-title"><div className="section-heading"><div><p className="eyebrow">MÓDULOS DEL SISTEMA</p><h2>Lo que estamos preparando</h2></div><span className="module-count">04 módulos previstos</span></div><div className="module-grid">{modules.map((module) => <article className="module-card" key={module.number}><div className="module-card-top"><span className="module-number">{module.number}</span><span className="module-indicator" aria-hidden="true">↗</span></div><h3>{module.title}</h3><p>{module.description}</p><div className="module-card-bottom"><span className="module-status-dot" aria-hidden="true" /><span>{module.status}</span></div></article>)}</div></section>
-          <footer className="main-footer"><span>Micro app · Punto de venta e inventario</span><span>Sin servicios de pago obligatorios</span></footer>
+          <footer className="main-footer">
+            <div className="main-footer-row">
+              <span>Micro app · Punto de venta e inventario</span>
+              <span>Sin servicios de pago obligatorios</span>
+            </div>
+            <HelpLinks onOpen={setHelpModal} />
+          </footer>
         </div>
       </section>
     </main>
+    {helpModal && <HelpModal kind={helpModal} onClose={() => setHelpModal(null)} />}
+    </>
   );
 }

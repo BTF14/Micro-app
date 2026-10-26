@@ -1,3 +1,13 @@
+# Estado vivo — 2026-10-26: centro de ayuda (WhatsApp en todo error + FAQ/Privacidad)
+
+PR #84 fusionada (merge `0f83bae341190bf63e50b41fc7402944cda4277f`): el enlace de WhatsApp ya no vive solo en el error de login; también aparece en el banner de error genérico del panel autenticado (por ejemplo, si falla el cierre de sesión), y hay un pie de página permanente (en la pantalla de login y en el panel) con tres enlaces: "Escríbenos por WhatsApp", "Preguntas frecuentes" y "Privacidad". Los dos últimos abren una ventana modal estilo hoja inferior (`.help-modal`) con contenido en `apps/web/src/App.tsx` (constantes `FAQ_ITEMS` y `PRIVACY_SECTIONS`).
+
+El texto de privacidad se escribió explícitamente como un aviso básico honesto para una app interna todavía en desarrollo (qué se guarda, para qué, que no se comparte fuera del negocio, dónde se aloja, cómo pedir corrección/eliminación) — con una nota aclarando que, si el negocio empieza a manejar datos de clientes o el sistema se abre al público, hace falta una revisión legal formal antes de ese paso. No es, ni pretende ser, una política de privacidad legalmente completa.
+
+Con esto, **el trabajo de identidad, acceso y la capa básica de soporte/ayuda del usuario está terminado.** No queda ningún pendiente conocido de esta categoría.
+
+---
+
 # Estado vivo — 2026-10-25 (noche, tarde 2): enlace de WhatsApp para contactar al administrador
 
 PR #83 fusionada (merge `1c65957887cceeccaa059ebd6d12fabdc73f4525`): el texto "comunícate con el administrador del sistema" (en el banner de `?auth_error=` y en la nota fija bajo el botón de Google) ahora es un enlace real a WhatsApp (`https://wa.me/584243104520`, número del dueño, con un mensaje precargado). Antes era solo texto sin ninguna acción posible. Probado por el usuario entrando con un correo no autorizado y confirmando que el mensaje de error se ve correctamente (antes de que se agregara el enlace).

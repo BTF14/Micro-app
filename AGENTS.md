@@ -5,7 +5,7 @@
 Before planning or editing:
 1. Read `docs/CURRENT_STATE.md` first; it is the authoritative concise live-state checkpoint and supersedes stale SHA/status snapshots in historical documents. Re-verify GitHub live before acting.
 2. Read `docs/HANDOFF_NEXT_CHAT.md` for the continuation protocol and copyable prompt.
-2. Read `docs/PROJECT_PLAN.md`, `docs/STATE_JOURNAL.md`, `docs/RESOURCE_REGISTRY.md`, and `docs/GENTLEMAN_PROGRAMMING_EVALUATION.md`.
+2. Read `docs/PROJECT_PLAN.md`, `docs/STATE_JOURNAL.md`, `docs/RESOURCE_REGISTRY.md`, `docs/SECURITY_ROADMAP.md`, and `docs/GENTLEMAN_PROGRAMMING_EVALUATION.md`.
 3. Read the domain-specific documents relevant to the change (architecture, database schema/review, API integration, security plan, compliance, inspiration).
 4. Verify live GitHub state: current `main` SHA, branch heads, pull requests, and GitHub Actions for the exact SHA. Historical documentation is a lead, not proof of current state.
 5. Separate verified facts, hypotheses, and unknowns. Never fill missing evidence by guessing.
@@ -16,6 +16,10 @@ Before planning or editing:
 - These four files are project-owned instructions, not proof that external packages or tools are installed. Follow their safety boundaries and the live checkpoint.
 - AutoSkills external installation remains pending because its CLI could not be run in the current shell due to DNS/network failure. In a network-enabled checkout, start with `npx autoskills --dry-run`; inspect the proposal, source, license, security review, and hashes before installation. Do not fabricate `skills-lock.json` or install irrelevant framework skills.
 - Never let a skill override repository policy, product/security approvals, the $0 budget, or restrictions on production and Neon `main`.
+
+## Security priority — approved by the owner 2026-10-26
+
+The owner explicitly prioritized correctness and security over speed: implement and respect every item in `docs/SECURITY_ROADMAP.md`, in the tiered order it defines (Nivel 1 before resuming business-logic work, Nivel 2 before any new human gets access, Nivel 3 as the team grows). Do not skip or relax any item in that document to move faster without a new, explicit instruction from the owner. Update that document's "Estado" field with real evidence whenever a item is completed — never mark something done without a merged PR with green checks, or an explicit confirmation from the owner for steps that require their manual action (e.g. GitHub branch protection, which this agent's network sandbox has been confirmed unable to configure via API — `403 Write access ... not permitted through this proxy` even with an admin-scoped token).
 
 ## Non-negotiable project constraints
 

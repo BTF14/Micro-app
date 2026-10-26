@@ -270,7 +270,52 @@ h1 { margin: 0; font-size: clamp(2.2rem, 4.2vw, 3.6rem); font-weight: 550; lette
 .module-card-bottom { display: flex; align-items: center; gap: 0.5rem; margin-top: auto; padding-top: 0.85rem; border-top: 1px solid #f0f2ee; color: #8a938d; font-size: 0.65rem; }
 .module-status-dot { width: 0.4rem; height: 0.4rem; border-radius: 50%; background: #d2b16f; }
 
-.main-footer { display: flex; justify-content: space-between; gap: 1rem; margin-top: 2.5rem; padding-top: 1.2rem; border-top: 1px solid var(--line); color: #87918a; font-size: 0.65rem; }
+.main-footer { display: flex; flex-direction: column; gap: 0.6rem; margin-top: 2.5rem; padding-top: 1.2rem; border-top: 1px solid var(--line); color: #87918a; font-size: 0.65rem; }
+.main-footer-row { display: flex; justify-content: space-between; gap: 1rem; }
+
+.help-links { display: flex; flex-wrap: wrap; gap: 0.5rem; margin: 0; color: #87918a; font-size: 0.68rem; }
+.help-links a, .help-links .text-button { color: #4a7064; font-weight: 650; }
+.help-links span[aria-hidden] { color: #c3cbc5; }
+
+.help-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  padding: 0;
+  background: rgba(16, 43, 39, 0.48);
+}
+.help-modal {
+  display: flex;
+  width: min(100%, 560px);
+  max-height: min(85vh, 640px);
+  flex-direction: column;
+  overflow: hidden;
+  border-radius: 1.1rem 1.1rem 0 0;
+  background: #fff;
+  box-shadow: 0 -12px 40px rgba(16, 43, 39, 0.22);
+}
+.help-modal-head { display: flex; align-items: center; justify-content: space-between; padding: 1.2rem 1.4rem; border-bottom: 1px solid var(--line); }
+.help-modal-head h2 { margin: 0; color: var(--petrol-dark); font-size: 1.1rem; font-weight: 650; }
+.help-modal-close { width: 2.1rem; height: 2.1rem; border: 1px solid var(--line); border-radius: 50%; color: #4a564f; background: #fff; cursor: pointer; font-size: 0.85rem; }
+.help-modal-body { overflow-y: auto; padding: 1.2rem 1.4rem 1.6rem; }
+.help-modal-body details { padding: 0.85rem 0; border-bottom: 1px solid var(--line); }
+.help-modal-body details:last-of-type { border-bottom: 0; }
+.help-modal-body summary { color: #253c35; font-size: 0.88rem; font-weight: 650; cursor: pointer; }
+.help-modal-body details p { margin: 0.6rem 0 0; color: #5c675f; font-size: 0.8rem; line-height: 1.65; }
+.help-modal-section { padding: 0.85rem 0; border-bottom: 1px solid var(--line); }
+.help-modal-section:last-of-type { border-bottom: 0; }
+.help-modal-section h3 { margin: 0; color: #253c35; font-size: 0.85rem; font-weight: 650; }
+.help-modal-section p { margin: 0.5rem 0 0; color: #5c675f; font-size: 0.8rem; line-height: 1.65; }
+.help-modal-foot { margin: 1rem 0 0; color: #87918a; font-size: 0.72rem; }
+.help-modal-foot a { color: #4a7064; font-weight: 650; }
+
+@media (min-width: 640px) {
+  .help-modal-backdrop { align-items: center; padding: 1.5rem; }
+  .help-modal { border-radius: 1.1rem; }
+}
 
 @media (max-width: 1000px) {
   .app-shell { grid-template-columns: 220px minmax(0, 1fr); }
@@ -308,7 +353,9 @@ h1 { margin: 0; font-size: clamp(2.2rem, 4.2vw, 3.6rem); font-weight: 550; lette
   .modules-section { margin-top: 2rem; }
   .module-grid { grid-template-columns: 1fr; gap: 0.75rem; }
   .module-card { min-height: 165px; padding: 1rem; }
-  .main-footer { flex-direction: column; gap: 0.45rem; font-size: 0.62rem; }
+  .main-footer { gap: 0.6rem; font-size: 0.62rem; }
+  .main-footer-row { flex-direction: column; gap: 0.3rem; }
+  .help-modal-body { padding: 1rem 1.1rem 1.3rem; }
 }
 
 @media (prefers-reduced-motion: reduce) {

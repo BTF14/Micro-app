@@ -24,6 +24,18 @@ test("shows an admin-contact message for a failed Google callback and clears it 
   await expect(page).toHaveURL((url) => !url.search);
 });
 
+test("opens the FAQ help modal from the login screen", async ({ page }) => {
+  await page.route("**/auth/me", (route) => route.fulfill({ status: 401, contentType: "application/json", body: JSON.stringify({ message: "No hay sesión activa" }) }));
+
+  await page.goto("/");
+  await page.getByRole("button", { name: /preguntas frecuentes/i }).click();
+  const dialog = page.getByRole("dialog");
+  await expect(dialog).toBeVisible();
+  await expect(dialog).toContainText("¿Qué es Micro app?");
+  await dialog.getByRole("button", { name: "Cerrar" }).click();
+  await expect(dialog).toBeHidden();
+});
+
 test("displays the authenticated workspace when a session already exists", async ({ page }) => {
   await page.route("**/auth/me", (route) =>
     route.fulfill({

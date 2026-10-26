@@ -74,6 +74,44 @@ describe("Micro app authentication flow", () => {
     expect(whatsappLink?.getAttribute("href")).toContain("https://wa.me/584243104520");
   });
 
+  it("opens the FAQ and privacy help modals from the login screen and closes them", async () => {
+    vi.mocked(fetch).mockResolvedValueOnce(jsonResponse({ message: "No hay sesión activa" }, 401));
+    await renderApp();
+    await settle();
+
+    const faqButton = [...container.querySelectorAll("button")].find((button) => button.textContent?.includes("Preguntas frecuentes"));
+    if (!faqButton) throw new Error("FAQ button not found");
+    await act(async () => { faqButton.click(); });
+
+    const dialog = container.querySelector('[role="dialog"]');
+    expect(dialog).toBeTruthy();
+    expect(dialog?.textContent).toContain("¿Qué es Micro app?");
+
+    const closeButton = dialog?.querySelector<HTMLButtonElement>(".help-modal-close");
+    if (!closeButton) throw new Error("Close button not found");
+    await act(async () => { closeButton.click(); });
+    expect(container.querySelector('[role="dialog"]')).toBeNull();
+
+    const privacyButton = [...container.querySelectorAll("button")].find((button) => button.textContent?.includes("Privacidad"));
+    if (!privacyButton) throw new Error("Privacy button not found");
+    await act(async () => { privacyButton.click(); });
+    expect(container.querySelector('[role="dialog"]')?.textContent).toContain("Qué datos guardamos");
+  });
+
+  it("shows help links (WhatsApp support, FAQ, privacy) on the authenticated dashboard footer", async () => {
+    vi.mocked(fetch).mockResolvedValueOnce(jsonResponse(authResponse));
+    await renderApp();
+    await settle();
+
+    const supportLink = [...container.querySelectorAll("a")].find((link) => link.textContent?.includes("Escríbenos por WhatsApp"));
+    expect(supportLink?.getAttribute("href")).toContain("https://wa.me/584243104520");
+
+    const faqButton = [...container.querySelectorAll("button")].find((button) => button.textContent?.includes("Preguntas frecuentes"));
+    if (!faqButton) throw new Error("FAQ button not found");
+    await act(async () => { faqButton.click(); });
+    expect(container.querySelector('[role="dialog"]')).toBeTruthy();
+  });
+
   it("revokes the session on logout and returns to the login screen", async () => {
     vi.mocked(fetch)
       .mockResolvedValueOnce(jsonResponse(authResponse))

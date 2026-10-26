@@ -1,3 +1,19 @@
+# Estado vivo — 2026-10-26 (tarde): hoja de ruta de seguridad adoptada
+
+El propietario pidió explícitamente priorizar que todo quede **bien hecho y seguro, no rápido**, pensando en que el proyecto puede escalar a varias personas. Se creó `docs/SECURITY_ROADMAP.md` con un plan en 3 niveles (ver ese documento completo), ahora parte de la secuencia de lectura obligatoria de `AGENTS.md`. PR #85 fusionada (merge `11d29b183490286a02195d7f86b94f44853d3c5c`).
+
+Implementado ya en este PR (Nivel 1, puntos 3 y 4 de la hoja de ruta):
+- `.github/dependabot.yml`: actualizaciones semanales de dependencias npm/pnpm y de GitHub Actions.
+- Cabeceras de seguridad: `apps/web/public/_headers` (CSP, HSTS, X-Content-Type-Options, X-Frame-Options, Referrer-Policy, Permissions-Policy) en el frontend; middleware de cabeceras + `Cache-Control: no-store` en rutas `/auth/*` en la API.
+
+**Pendiente, requiere acción manual del propietario (Nivel 1, punto 1):** protección de la rama `main` en GitHub. Se intentó configurar vía API con un token con permiso `admin` confirmado, pero el proxy de red de este entorno la rechazó (`403 Write access to this GitHub API path is not permitted through this proxy`) — es una restricción técnica de este agente, no de GitHub. Instrucciones paso a paso para que el propietario lo haga manualmente están en `docs/SECURITY_ROADMAP.md`, sección 1.
+
+**Pendiente de implementación (Nivel 1, punto 2):** respaldo automático cifrado de la base de datos a un destino independiente (diseño propuesto con Cloudflare R2 + GitHub Actions programado, detallado en la hoja de ruta) — todavía no se ha creado el bucket ni el workflow.
+
+**Importante para el siguiente chat:** si se activa la protección de `main` (punto 1), el flujo que se ha venido usando en esta sesión — empujar commits de documentación directo a `main` — dejará de funcionar y habrá que usar PR también para esos cambios. Es el comportamiento esperado, no un error.
+
+---
+
 # Estado vivo — 2026-10-26: centro de ayuda (WhatsApp en todo error + FAQ/Privacidad)
 
 PR #84 fusionada (merge `0f83bae341190bf63e50b41fc7402944cda4277f`): el enlace de WhatsApp ya no vive solo en el error de login; también aparece en el banner de error genérico del panel autenticado (por ejemplo, si falla el cierre de sesión), y hay un pie de página permanente (en la pantalla de login y en el panel) con tres enlaces: "Escríbenos por WhatsApp", "Preguntas frecuentes" y "Privacidad". Los dos últimos abren una ventana modal estilo hoja inferior (`.help-modal`) con contenido en `apps/web/src/App.tsx` (constantes `FAQ_ITEMS` y `PRIVACY_SECTIONS`).

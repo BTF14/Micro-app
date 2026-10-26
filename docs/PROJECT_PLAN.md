@@ -1,3 +1,10 @@
+## Checkpoint de continuidad — 2026-10-26 (tarde): prioridad del proyecto cambia a seguridad primero
+
+- El propietario pidió explícitamente priorizar que todo quede bien hecho y seguro sobre avanzar rápido, pensando en escalar a varias personas. Se adoptó `docs/SECURITY_ROADMAP.md`, un plan en 3 niveles, ya referenciado como lectura obligatoria en `AGENTS.md`.
+- Implementado: Dependabot y cabeceras de seguridad (frontend y API). PR #85, merge `11d29b183490286a02195d7f86b94f44853d3c5c`.
+- Pendiente del Nivel 1: protección de `main` en GitHub (requiere al propietario, confirmado que la IA no puede hacerlo desde este entorno) y respaldo automático cifrado de la base de datos (diseño listo, falta implementar).
+- **El plan de construir el módulo de negocio (inventario, productos, tasa BCV, ventas) sigue siendo la prioridad funcional, pero ahora detrás de completar el Nivel 1 de seguridad**, salvo que el propietario autorice explícitamente avanzar en paralelo.
+
 ## Checkpoint de continuidad — 2026-10-25 (noche): identidad/infraestructura cerrada, listo para negocio
 
 - Dos bugs de producción encontrados y resueltos el mismo día, ambos documentados en detalle en `docs/CURRENT_STATE.md`: (1) `wrangler deploy` borraba en silencio las variables del Worker no declaradas en `apps/api/wrangler.toml`, rompiendo el login dos veces; ahora las tres variables no-secretas están declaradas en el archivo. (2) El botón de cerrar sesión no era alcanzable en pantallas de teléfono; ahora hay uno también en la barra superior. PR #82, merge `f274d32a359dbba8e401897a41294fda1f33cbf8`.

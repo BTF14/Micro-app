@@ -1,0 +1,112 @@
+name: Respaldo cifrado de la base de datos
+
+# Nivel 1, punto 2 de docs/SECURITY_ROADMAP.md. Diseño completo y motivos en
+# ese documento y en docs/BACKUP_AND_RECOVERY.md — leer ambos antes de tocar
+# este workflow.
+#
+# Qué hace, en orden:
+# 1. Vuelca (pg_dump) solo las tablas de negocio de Neon, usando un rol de
+#    solo lectura dedicado (backup_readonly). Excluye explícitamente
+#    auth_sessions y auth_rate_limits (datos efímeros de sesión, no hacen
+#    falta para reconstruir el negocio).
+# 2. Cifra el volcado con la llave pública age del proyecto (no es secreta,
+#    por eso vive directo en este archivo) antes de que salga del runner.
+#    El volcado SIN cifrar nunca se sube a ningún lado ni queda en el runner
+#    más tiempo del necesario para cifrarlo.
+# 3. Sube el archivo ya cifrado a BTF14/micro-app-backups (repositorio
+#    privado dedicado solo a esto, nunca al repo de código).
+# 4. Aplica retención: borra del repositorio de respaldos lo que tenga más
+#    de 15 días.
+#
+# Sin la llave privada age (que el propietario guarda fuera de este
+# repositorio) nadie, ni este workflow, puede leer el contenido de un
+# respaldo — ver docs/SECURITY_ROADMAP.md para el procedimiento de
+# restauración.
+
+on:
+  schedule:
+    # 07:00 UTC = 03:00 hora de Venezuela (UTC-4), todos los días.
+    - cron: "0 7 * * *"
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
+
+concurrency:
+  group: db-backup
+  cancel-in-progress: false
+
+jobs:
+  backup:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      AGE_PUBLIC_KEY: age1t04pgcguy87u99r4stlm0gcjsk9dj2s34jsmymw55vlarfteuakse8jmfk
+      BACKUP_REPO: BTF14/micro-app-backups
+      RETENTION_DAYS: 15
+    steps:
+      - name: Instalar pg_dump (versión reciente) y age
+        run: |
+          set -euo pipefail
+          sudo apt-get update
+          sudo apt-get install -y curl ca-certificates gnupg age
+          sudo install -d /usr/share/postgresql-common/pgdg
+          sudo curl -fsSL https://www.postgresql.org/media/keys/ACCC4CF8.asc \
+            -o /usr/share/postgresql-common/pgdg/apt.postgresql.org.asc
+          echo "deb [signed-by=/usr/share/postgresql-common/pgdg/apt.postgresql.org.asc] https://apt.postgresql.org/pub/repos/apt $(. /etc/os-release && echo "$VERSION_CODENAME")-pgdg main" \
+            | sudo tee /etc/apt/sources.list.d/pgdg.list
+          sudo apt-get update
+          sudo apt-get install -y postgresql-client-17
+
+      - name: Verificar que la llave de la base de datos está configurada
+        run: |
+          if [ -z "${DATABASE_URL_BACKUP_RO:-}" ]; then
+            echo "::error::Falta el secreto DATABASE_URL_BACKUP_RO en este repositorio. Ver docs/SECURITY_ROADMAP.md punto 2."
+            exit 1
+          fi
+        env:
+          DATABASE_URL_BACKUP_RO: ${{ secrets.DATABASE_URL_BACKUP_RO }}
+
+      - name: Generar el volcado
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL_BACKUP_RO }}
+        run: |
+          set -euo pipefail
+          STAMP="$(date -u +%Y-%m-%dT%H-%M-%SZ)"
+          echo "STAMP=$STAMP" >> "$GITHUB_ENV"
+          pg_dump "$DATABASE_URL" \
+            --no-owner --no-privileges --format=custom \
+            --exclude-table=auth_sessions \
+            --exclude-table=auth_rate_limits \
+            --file="backup-${STAMP}.dump"
+          test -s "backup-${STAMP}.dump"
+
+      - name: Cifrar el volcado y borrar el original sin cifrar
+        run: |
+          set -euo pipefail
+          age -r "$AGE_PUBLIC_KEY" -o "backup-${STAMP}.dump.age" "backup-${STAMP}.dump"
+          sha256sum "backup-${STAMP}.dump.age" > "backup-${STAMP}.dump.age.sha256"
+          shred -u "backup-${STAMP}.dump" 2>/dev/null || rm -f "backup-${STAMP}.dump"
+          test -s "backup-${STAMP}.dump.age"
+
+      - name: Subir el respaldo cifrado y aplicar retención
+        env:
+          GH_TOKEN: ${{ secrets.BACKUP_REPO_TOKEN }}
+        run: |
+          set -euo pipefail
+          if [ -z "${GH_TOKEN:-}" ]; then
+            echo "::error::Falta el secreto BACKUP_REPO_TOKEN en este repositorio. Ver docs/SECURITY_ROADMAP.md punto 2."
+            exit 1
+          fi
+          git clone --depth 1 "https://x-access-token:${GH_TOKEN}@github.com/${BACKUP_REPO}.git" backups-repo
+          mkdir -p backups-repo/daily
+          mv "backup-${STAMP}.dump.age" "backup-${STAMP}.dump.age.sha256" backups-repo/daily/
+          cd backups-repo
+          git config user.email "backups-bot@micro-app.invalid"
+          git config user.name "Micro app backups bot"
+          git add daily/
+          git commit -m "backup: ${STAMP}"
+          find daily -type f \( -name '*.dump.age' -o -name '*.dump.age.sha256' \) -mtime "+${RETENTION_DAYS}" -print -delete
+          git add -A
+          git diff --cached --quiet || git commit -m "retention: prune backups older than ${RETENTION_DAYS} days"
+          git push origin HEAD:main

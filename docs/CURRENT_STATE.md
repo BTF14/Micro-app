@@ -1,3 +1,14 @@
+# Estado vivo — 2026-10-27: respaldo automático implementado, checklist de cumplimiento evaluado
+
+PR #91 y #92 fusionadas (`facb3dd`, `16a5367`). Cambios desde el checkpoint anterior:
+
+- **Aprobación obligatoria de PR desactivada** por el propietario (lo prefirió así mientras el proyecto lo maneja solo él; GitHub nunca deja que el autor de un PR apruebe el suyo propio, así que con 1 aprobación requerida cada PR mío quedaba bloqueado esperándolo). Ahora cada PR solo necesita los 6 checks en verde para poder fusionarse — esta IA ya puede fusionar sola de nuevo.
+- **Respaldo automático cifrado implementado** (`SECURITY_ROADMAP.md` punto 2): Cloudflare R2 se descartó porque pide tarjeta; destino final es el repositorio privado `BTF14/micro-app-backups`. Workflow `.github/workflows/backup.yml` corre diario, usa el rol de solo lectura `backup_readonly`, cifra con `age` antes de subir, retiene 15 días. **Falta que el propietario agregue el secreto `DATABASE_URL_BACKUP_RO`** en `Settings → Secrets and variables → Actions` de `BTF14/Micro-app` para que el workflow pueda correr de verdad (valor ya entregado por chat). Hasta entonces, no está verificado en producción.
+- **Checklist externo de cumplimiento (legal/privacidad/accesibilidad) evaluado** en `docs/COMPLIANCE_AND_ACCESSIBILITY.md`: varios puntos no aplican todavía (banner de cookies, política de reembolsos, consentimiento parental — no hay cookies de analítica, pagos ni registro público), otros quedan como principio de diseño para módulos futuros, y se adoptó una verificación real de accesibilidad (la interfaz actual ya cubre bien `aria-label`/roles; falta foco atrapado en el modal de ayuda, no bloqueante).
+- **Nuevo gate de CI**: `.github/workflows/dependency-review.yml` falla un PR que introduzca una dependencia con vulnerabilidad `high`/`critical`.
+
+---
+
 # Estado vivo — 2026-10-26 (noche): main protegida, decisión sobre blueprint externo, respaldos en progreso
 
 **Main ya tiene protección de rama activada por el propietario — verificado en vivo, no solo documentado.** `GET /repos/BTF14/Micro-app/branches/main/protection` confirma: PR obligatorio, 6 checks requeridos, `enforce_admins: true`, sin force-push ni deletions. **Cambio de flujo a partir de ahora: ya no se puede empujar nada directo a `main`, ni siquiera checkpoints de documentación — todo pasa por PR.**

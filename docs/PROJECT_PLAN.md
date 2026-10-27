@@ -1,3 +1,9 @@
+## Checkpoint de continuidad — 2026-10-27: respaldo automático implementado, checklist de cumplimiento evaluado
+
+- Aprobación obligatoria de PR desactivada por el propietario (GitHub no deja auto-aprobarse; con 1 requerida, todo quedaba bloqueado esperándolo). La IA puede fusionar sola de nuevo, con PR + 6 checks en verde.
+- Respaldo automático cifrado implementado (`.github/workflows/backup.yml`) hacia el repositorio privado `BTF14/micro-app-backups` (R2 descartado: pide tarjeta). Falta un solo paso del propietario: agregar el secreto `DATABASE_URL_BACKUP_RO`; después, probar y verificar restauración real.
+- Evaluado un checklist externo de 20 puntos de cumplimiento legal/privacidad/accesibilidad (`docs/COMPLIANCE_AND_ACCESSIBILITY.md`): la mayoría no aplica al modelo actual del negocio (sin pagos, sin registro público, sin cookies de analítica); se adoptaron los puntos que sí aplican (gate de dependencias vulnerables, principios de diseño para módulos futuros, un diseño de "derecho al olvido" que no rompe el libro de movimientos).
+
 ## Checkpoint de continuidad — 2026-10-26 (noche): main protegida, blueprint externo resuelto, respaldos bloqueados en la elección de destino
 
 - **`main` tiene branch protection activa, verificada en vivo** (el propietario la configuró). A partir de ahora todo, incluidos los checkpoints de documentación, pasa por PR + aprobación del propietario — ya no hay push directo a `main`. Hay una discrepancia sin resolver sobre el número de aprobaciones requeridas (propietario dice 0, la API en vivo dice 1); ver `docs/SECURITY_ROADMAP.md` punto 1.

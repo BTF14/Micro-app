@@ -1,3 +1,9 @@
+## Checkpoint de continuidad — 2026-10-26 (noche): main protegida, blueprint externo resuelto, respaldos bloqueados en la elección de destino
+
+- **`main` tiene branch protection activa, verificada en vivo** (el propietario la configuró). A partir de ahora todo, incluidos los checkpoints de documentación, pasa por PR + aprobación del propietario — ya no hay push directo a `main`. Hay una discrepancia sin resolver sobre el número de aprobaciones requeridas (propietario dice 0, la API en vivo dice 1); ver `docs/SECURITY_ROADMAP.md` punto 1.
+- Se evaluó un blueprint de arquitectura externo (Gemini, sin contexto del proyecto) que el propietario compartió: se adopta el diseño del cron de tasa BCV y la caché de lectura en Cloudflare KV; **se rechaza explícitamente el modo offline-first de ventas** por romper el invariante transaccional anti-fraude ya existente. Documentado en `docs/PRICING_CACHE_ARCHITECTURE.md`, PR #91 (abierto, CI verde, esperando aprobación del propietario).
+- Respaldo automático (Nivel 1, punto 2): avance parcial (rol Neon de solo lectura `backup_readonly`, par de llaves `age` para cifrar), pero bloqueado porque Cloudflare R2 no está habilitado en la cuenta y activarlo puede requerir tarjeta — en conflicto con la regla de $0 sin tarjetas. Pendiente de que el propietario elija entre R2 (con tarjeta + alerta de presupuesto) o un repositorio privado de GitHub dedicado a los volcados ya cifrados.
+
 ## Checkpoint de continuidad — 2026-10-26 (tarde): prioridad del proyecto cambia a seguridad primero
 
 - El propietario pidió explícitamente priorizar que todo quede bien hecho y seguro sobre avanzar rápido, pensando en escalar a varias personas. Se adoptó `docs/SECURITY_ROADMAP.md`, un plan en 3 niveles, ya referenciado como lectura obligatoria en `AGENTS.md`.

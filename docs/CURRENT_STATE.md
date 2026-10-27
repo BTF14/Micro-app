@@ -1,3 +1,17 @@
+# Estado vivo — 2026-10-26 (noche): main protegida, decisión sobre blueprint externo, respaldos en progreso
+
+**Main ya tiene protección de rama activada por el propietario — verificado en vivo, no solo documentado.** `GET /repos/BTF14/Micro-app/branches/main/protection` confirma: PR obligatorio, 6 checks requeridos, `enforce_admins: true`, sin force-push ni deletions. **Cambio de flujo a partir de ahora: ya no se puede empujar nada directo a `main`, ni siquiera checkpoints de documentación — todo pasa por PR.**
+
+**Discrepancia pendiente de que el propietario la resuelva:** reportó "0 aprobaciones mínimas", pero la API en vivo dice `required_approving_review_count: 1`. Hasta que se corrija (o se confirme que así se quiere dejar), **cada PR, incluido este mismo checkpoint, necesita que el propietario lo apruebe y fusione manualmente en GitHub** — la IA no puede autoaprobarse ni cambiar el ajuste (el mismo bloqueo de proxy que afectó la configuración inicial). Ver recomendación en `docs/SECURITY_ROADMAP.md` punto 1.
+
+**Blueprint externo (Gemini, sin contexto del proyecto) evaluado y resuelto** en `docs/PRICING_CACHE_ARCHITECTURE.md` (PR #91, abierto, CI en verde, esperando aprobación): se adopta como diseño el cron de tasa BCV y la caché de lectura en Cloudflare KV (ninguno implementado todavía); se **rechaza explícitamente el modo offline-first** de ventas (rompe el invariante transaccional anti-fraude existente, duplica superficie de error justo cuando se pidió priorizar seguridad, y resuelve un problema no confirmado); el resto de ideas del blueprint ya estaban resueltas, de forma más estricta.
+
+**Respaldo automático (Nivel 1, punto 2) en progreso, no terminado:**
+- Creado el rol Neon `backup_readonly` (solo `SELECT`, verificado contra `information_schema.role_table_grants`), y un par de llaves `age` para cifrar el volcado (llave pública documentada en `docs/SECURITY_ROADMAP.md`; la privada se le entregó una sola vez al propietario por chat y se borró de este entorno).
+- **Bloqueante nuevo:** Cloudflare R2 no está habilitado en la cuenta y activarlo por primera vez puede exigir vincular una tarjeta — choca con la regla de "$0, sin tarjetas" del proyecto. Se le presentó al propietario una alternativa sin tarjeta (repositorio privado de GitHub solo para los volcados ya cifrados) junto con la opción R2. Pendiente de que el propietario elija destino antes de escribir el workflow de subida.
+
+---
+
 # Estado vivo — 2026-10-26 (tarde): hoja de ruta de seguridad adoptada
 
 El propietario pidió explícitamente priorizar que todo quede **bien hecho y seguro, no rápido**, pensando en que el proyecto puede escalar a varias personas. Se creó `docs/SECURITY_ROADMAP.md` con un plan en 3 niveles (ver ese documento completo), ahora parte de la secuencia de lectura obligatoria de `AGENTS.md`. PR #85 fusionada (merge `11d29b183490286a02195d7f86b94f44853d3c5c`).

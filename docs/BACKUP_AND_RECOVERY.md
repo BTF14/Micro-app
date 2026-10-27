@@ -94,6 +94,12 @@ Definir objetivos iniciales para aprobar antes de producción: RPO (máxima pér
 - La aplicación aún tiene trabajo P0 en autorización multiempresa y flujos reales de venta/inventario; no debe tratarse como sistema de producción.
 - Próximo paso: diseñar un mecanismo de dump cifrado, programado, privado y de coste $0; verificar destino y secretos; probar primero contra PostgreSQL desechable; añadir alerta de fallo y prueba de restauración; solo después habilitarlo para datos reales.
 
+### Avance 2026-10-26 (ver detalle completo en `docs/SECURITY_ROADMAP.md` punto 2)
+
+- Rol Neon de solo lectura `backup_readonly` creado y verificado (solo `SELECT`, con privilegios por defecto para tablas futuras). El `pg_dump` del workflow debe excluir explícitamente `auth_sessions` y `auth_rate_limits` — no son necesarios para reconstruir el negocio.
+- Llave pública `age` generada para cifrar el volcado antes de subirlo: `age1t04pgcguy87u99r4stlm0gcjsk9dj2s34jsmymw55vlarfteuakse8jmfk`. La llave privada correspondiente nunca vivió en el repositorio ni en este entorno de forma persistente; se entregó una sola vez al propietario por chat para que la guarde en un gestor de contraseñas. Sin ella, nadie puede descifrar los respaldos — si se pierde, hay que regenerar el par y los respaldos anteriores a la pérdida quedan irrecuperables.
+- **Bloqueado en la elección de destino**: Cloudflare R2 no está habilitado en la cuenta; habilitarlo por primera vez puede exigir una tarjeta de pago vinculada, lo que requiere decisión explícita del propietario dado que el proyecto exige $0 sin tarjetas. Alternativa evaluada sin tarjeta: repositorio privado de GitHub dedicado solo a los volcados ya cifrados (el cifrado ya ocurre antes de que el archivo salga del runner de GitHub Actions, así que el repositorio no necesita tratarse como almacén secreto, pero sí necesita una política de poda de historial para no crecer indefinidamente).
+
 ## Fuentes
 
 - [Neon — History window](https://neon.com/docs/postgres/backup-restore/history-window)

@@ -1,0 +1,26 @@
+name: Dependency review
+
+# docs/COMPLIANCE_AND_ACCESSIBILITY.md punto 11: Dependabot abre PRs de
+# actualización, pero no impedía que un PR nuevo (de Dependabot o manual)
+# introdujera una dependencia con una vulnerabilidad conocida. Este workflow
+# falla el check si eso pasa, con severidad high o critical.
+
+on:
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  dependency-review:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+      - name: Dependency review
+        uses: actions/dependency-review-action@v4
+        with:
+          fail-on-severity: high
+          comment-summary-in-pr: always

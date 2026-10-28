@@ -33,11 +33,11 @@ Este archivo es la fuente de datos para el panel de avance. Un ítem solo puede 
 - [ ] Idempotencia de ventas y pagos verificada con pruebas.
 - [ ] Stock concurrente protegido contra sobreventa.
 - [ ] Instantáneas inmutables de precios, tasa y datos de venta.
-- [ ] Backups diarios independientes automatizados, alertas, retención y restauración ensayada (ver [BACKUP_AND_RECOVERY.md](BACKUP_AND_RECOVERY.md)).
+- [ ] Ciclo completo de backup/restore: backup cifrado automatizado, retención y subida están verificados (run 40587638159), pero la restauración en PostgreSQL desechable sigue pendiente (ver [BACKUP_AND_RECOVERY.md](BACKUP_AND_RECOVERY.md)).
 
 ### Identidad y moneda
-- [x] Login y sesiones revocables iniciales; el registro público está bloqueado fail-closed hasta aprobar/implementar la política de identidad (PR #57).
-- [ ] OAuth de Google, allowlist y verificación de correo implementados según el requisito acordado.
+- [x] Registro público y login con contraseña bloqueados fail-closed; Google OAuth + allowlist + verificación de email implementados (PR #102).
+- [x] Sesiones persistidas y revocables; pruebas de identidad y límites de sesión ampliadas en PR #111 (mismatch, expiración/revocación, membresía/organización inactiva).
 - [ ] Matriz completa de roles/permisos y pruebas negativas.
 - [ ] Integración de tasa BCV validada con fuente, vigencia y fallos.
 - [ ] Tratamiento de IVA/IGTF/documentos fiscales validado por fuentes oficiales y asesoría competente.
@@ -48,7 +48,8 @@ Este archivo es la fuente de datos para el panel de avance. Un ítem solo puede 
 - [x] CI compila y ejecuta pruebas automatizadas en PostgreSQL desechable para un SHA verificado.
 - [x] Validación de migración en base efímera en el SHA verificado.
 - [x] El registro público está bloqueado fail-closed y probado sin escrituras ni cookie (PR #57; SHA merge `cb4b9b09ad3ff0f1bacd34f23ee653a5477cddfe`).
-- [ ] Google sign-in + allowlist, identidad y pruebas completas de sesión/error de base de datos.
+- [x] Google sign-in + allowlist + verificación de email implementados; las pruebas core de identidad/sesión pasaron en PR #111 (14 tests de integración PostgreSQL en HEAD 233844be10bb102fdac34ad41776d4d14420b243).
+- [ ] Pruebas de rutas de error de base de datos y autorización cross-tenant de futuras rutas comerciales; issue #53 sigue abierto.
 - [ ] Autorización multiempresa y aislamiento comprobados en toda la API.
 - [ ] Flujos reales de venta/inventario con transacciones, idempotencia y concurrencia.
 - [ ] Gestión de errores, rate limiting y protección contra abuso revisadas.
@@ -71,7 +72,7 @@ Este archivo es la fuente de datos para el panel de avance. Un ítem solo puede 
 
 ## Bloqueos conocidos al último análisis documental
 
-- El registro público está temporalmente bloqueado fail-closed; el flujo actual aún no demuestra Google OAuth, allowlist ni verificación de correo. Issue #53 permanece abierto hasta implementar y probar la política aprobada.
+- El registro público y el login con contraseña permanecen bloqueados fail-closed; Google OAuth + allowlist + verificación de email ya están implementados y probados. Issue #53 sigue abierto por aislamiento real de futuras rutas comerciales y cobertura restante.
 - Las pruebas Playwright actuales son smoke tests con API simulada; no prueban el backend real.
 - La aplicación no tiene aún los flujos completos de POS/ventas/inventario.
 - Los cambios en Neon main deben superar el gate de `docs/CONSTITUTION.md`; producción sigue bloqueada hasta completar los gates y obtener aceptación explícita.
@@ -81,4 +82,4 @@ Actualiza este checklist solo junto con evidencia y una entrada en `docs/STATE_J
 
 ## Respaldo y recuperación
 
-La política está documentada en `docs/BACKUP_AND_RECOVERY.md`, pero el respaldo independiente automatizado y la restauración real siguen pendientes. No marcar estos controles completos sin evidencia reproducible.
+La política está documentada en `docs/BACKUP_AND_RECOVERY.md`. El workflow independiente de backup cifrado y subida al repositorio privado tiene una corrida real exitosa (run 40587638159); la restauración en PostgreSQL desechable sigue pendiente, por lo que el control compuesto no está completo.

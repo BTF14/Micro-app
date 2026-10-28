@@ -486,3 +486,11 @@ Este diario es append-only en cuanto a historia: no borrar hitos antiguos; añad
 - PR #60 se cerró como supersedida tras comparar el diff; no se fusionó ni se hizo force-push. Sus reglas útiles quedaron integradas por #62/#63; los snapshots históricos obsoletos no se reintrodujeron.
 - Sin cambios de runtime/dependencias/DB/secretos ni despliegue productivo. Cloudflare generó automáticamente preview de rama para PR #64. Coste $0.
 - P0 de identidad permanece: Google OAuth + allowlist, D1–D8 y matriz de permisos pendientes de aprobación. Registro fail-closed; login por contraseña existe y no se debe asumir que la allowlist lo protege.
+
+## 2026-10-28 — Cobertura de preflight CORS
+
+- Rama: `fix/cors-preflight-coverage-20261028`.
+- Añadidas pruebas unitarias para el preflight `OPTIONS`: origen Pages autorizado con credenciales, método POST, cabeceras permitidas y max-age; y origen externo rechazado.
+- Estas pruebas cubren el comportamiento del middleware Hono con bindings simulados. No equivalen a observar los encabezados HTTP del Worker publicado.
+- No se modificaron variables de Cloudflare, secretos, Neon, datos reales ni producción. No se desplegó manualmente.
+- Pendiente: revisión independiente del diff y mantener separada la verificación HTTP real de CORS frente al Worker publicado. No apuntar Preview a producción sin comprobar aislamiento y origen permitido.

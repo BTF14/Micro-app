@@ -1,3 +1,11 @@
+# Estado vivo — 2026-10-28: restauración de respaldo pendiente de probar; vulnerabilidades de Dependabot resueltas
+
+- **Respaldo verificado con una corrida real** (`run 40587638159`, `conclusion: success`): el archivo cifrado llegó a `BTF14/micro-app-backups/daily/` y su checksum coincide. **Sigue pendiente la prueba de restauración real** (`pg_restore` contra una base desechable) — único punto que falta para dar por completamente cerrado el Nivel 1, punto 2.
+- **Las 15 alertas de Dependabot abiertas (2 críticas, varias altas/moderadas)** eran todas de `vitest`/`tinypool`/`undici`/`@vitest/mocker` — dependencias de pruebas, nunca en el bundle de producción. Se resolvieron subiendo `vitest` de 3.x a 5.x en `apps/api` y `apps/web` (PR #96, regenerando `pnpm-lock.yaml` vía un workflow de un solo uso en GitHub Actions, porque este entorno no puede alcanzar `registry.npmjs.org`). CI completo (build, tests, E2E, dependency-review) pasó en verde antes de fusionar. **Pendiente de confirmación del propietario**: que la lista en `github.com/BTF14/Micro-app/security/dependabot` ya no muestre esas alertas — esta IA no tiene permiso de lectura sobre esa API desde este entorno.
+- El workflow temporal usado para la actualización (`update-vulnerable-dev-deps.yml`) ya se eliminó (PR #97) — no es una herramienta permanente del proyecto.
+
+---
+
 # Estado vivo — 2026-10-27: respaldo automático implementado, checklist de cumplimiento evaluado
 
 PR #91 y #92 fusionadas (`facb3dd`, `16a5367`). Cambios desde el checkpoint anterior:

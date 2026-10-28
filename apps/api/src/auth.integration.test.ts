@@ -423,7 +423,7 @@ const suiteGoogle = describe.skipIf(!databaseAvailable)("Google OAuth routes aga
     const token = await loginGoogleSession();
     const tokenHash = await hashSessionToken(token);
     await cleanupClient.query(
-      "UPDATE auth_sessions SET expires_at = now() - interval '1 minute' WHERE token_hash = $1",
+      "UPDATE auth_sessions SET created_at = now() - interval '2 minutes', expires_at = now() - interval '1 minute' WHERE token_hash = $1",
       [tokenHash],
     );
 

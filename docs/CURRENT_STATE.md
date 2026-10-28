@@ -1,4 +1,22 @@
+## 2026-10-28 — Aislamiento de Cloudflare Pages Preview verificado (PR #106)
+
+- Causa raíz: Preview heredaba la URL de `apps/web/.env.production` y CSP permitía el Worker de producción. No hay API/DB de Preview aisladas verificadas.
+- Solución en PR #106: las ramas de Pages distintas de `main` no incluyen la URL productiva, no consultan sesión ni muestran login de Google, y el postbuild cambia CSP Preview a `connect-src 'self'`. Producción conserva la configuración actual.
+- Evidencia local en sandbox con pnpm 10: build Preview pasó; el origen productivo está ausente del bundle y de `dist/_headers`; test dedicado Preview pasó (1/1); suite web normal pasó (6 tests, el test específico de Preview queda skip fuera de Preview); build de producción pasó y mantiene el origen de API requerido.
+- Evidencia HTTP real en el Preview de Cloudflare Pages: HTTP 200; CSP observada contiene `connect-src 'self'` y no permite `https://micro-app-api.btfcasheb.workers.dev`. El check Cloudflare Pages de HEAD `1d47a474351bb14f9f5e14283beec789356bafe3` pasó.
+- Los checks consultados para ese HEAD terminaron en success. PR #106 fue fusionada por squash el 2026-10-28 en `main` (commit `d5d99b3a5184d6aad36ffd9a44ff34a62346dc94`). Cloudflare Pages confirma el despliegue automático exitoso. No se hizo despliegue manual ni se tocaron secretos, variables/bindings de Cloudflare o Neon. No se tocaron secretos, variables/bindings de Cloudflare ni Neon. La API/DB de Preview no se presenta como aislada; el frontend Preview queda fail-closed.
+
+---
+
 # Estado vivo — 2026-10-28: restauración de respaldo pendiente de probar; vulnerabilidades de Dependabot resueltas
+
+## Política de trabajo entre agentes y PR (actualización 2026-10-28)
+
+- Se propone como política canónica `docs/AI_COLLABORATION_AND_PR_POLICY.md`; `AGENTS.md` la incluye en la secuencia obligatoria de lectura. Hasta que la PR documental se fusione, confirmar en vivo la rama/PR y no asumir que estos cambios ya están en `main`.
+- Regla del propietario: priorizar corrección y seguridad por encima de velocidad aparente; no inundar el repositorio de PR. Una PR por objetivo coherente, reutilizarla para correcciones del mismo alcance y separar objetivos independientes.
+- Claude/Codex son revisores complementarios, no bloqueo para avanzar técnicamente. Si el propietario ordena expresamente mantener una PR abierta hasta disponer de ellos, no fusionarla antes de esa revisión.
+- Los checks deben verificarse en el SHA exacto. CI verde no sustituye pruebas del servicio real ni autoriza despliegues. Mantener separación entre tests simulados, integración/E2E y comportamiento observado en producción.
+
 
 - **Respaldo verificado con una corrida real** (`run 40587638159`, `conclusion: success`): el archivo cifrado llegó a `BTF14/micro-app-backups/daily/` y su checksum coincide. **Sigue pendiente la prueba de restauración real** (`pg_restore` contra una base desechable) — único punto que falta para dar por completamente cerrado el Nivel 1, punto 2.
 - **Las 15 alertas de Dependabot abiertas (2 críticas, varias altas/moderadas)** eran todas de `vitest`/`tinypool`/`undici`/`@vitest/mocker` — dependencias de pruebas, nunca en el bundle de producción. Se resolvieron subiendo `vitest` de 3.x a 5.x en `apps/api` y `apps/web` (PR #96, regenerando `pnpm-lock.yaml` vía un workflow de un solo uso en GitHub Actions, porque este entorno no puede alcanzar `registry.npmjs.org`). CI completo (build, tests, E2E, dependency-review) pasó en verde antes de fusionar. **Pendiente de confirmación del propietario**: que la lista en `github.com/BTF14/Micro-app/security/dependabot` ya no muestre esas alertas — esta IA no tiene permiso de lectura sobre esa API desde este entorno.

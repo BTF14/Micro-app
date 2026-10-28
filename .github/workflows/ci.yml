@@ -35,13 +35,13 @@ jobs:
           --health-retries 10
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
       - name: Setup Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v7
         with:
           node-version: 22
       - name: Setup pnpm
-        uses: pnpm/action-setup@v4
+        uses: pnpm/action-setup@v6
         with:
           version: 10
       - name: Install dependencies
@@ -58,6 +58,18 @@ jobs:
           docker exec -i "${{ job.services.postgres.id }}" psql -v ON_ERROR_STOP=1 -U microapp -d microapp_test -f /dev/stdin < apps/api/migrations/0002_google_identity.sql
       - name: Build and typecheck
         run: pnpm build
+      - name: Verify Cloudflare Pages preview isolation
+        run: |
+          CF_PAGES_BRANCH=preview pnpm --filter @micro-app/web build
+          if grep -F "https://micro-app-api.btfcasheb.workers.dev" apps/web/dist/_headers; then
+            echo "Preview CSP must not allow the production API."
+            exit 1
+          fi
+          if grep -R -F "https://micro-app-api.btfcasheb.workers.dev" apps/web/dist/assets; then
+            echo "Preview bundle must not contain the production API origin."
+            exit 1
+          fi
+          CF_PAGES_BRANCH=preview pnpm --filter @micro-app/web exec vitest run src/Preview.test.tsx
       - name: Unit tests
         run: pnpm test
       - name: PostgreSQL auth integration tests

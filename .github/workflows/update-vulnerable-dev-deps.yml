@@ -1,0 +1,55 @@
+name: One-off — update vulnerable dev dependencies
+
+# Herramienta de un solo uso para resolver las 15 alertas de Dependabot
+# abiertas el 2026-10-27 (vitest / @vitest/mocker / tinypool / undici,
+# todas dependencias de desarrollo/pruebas, ninguna en el bundle de
+# producción). Se dispara manualmente, actualiza el lockfile y empuja el
+# resultado a una rama propia para que un PR normal lo revise con CI.
+# Este archivo se borra una vez fusionado el PR que resuelve las alertas;
+# no es un workflow permanente del proyecto.
+
+on:
+  workflow_dispatch:
+    inputs:
+      packages:
+        description: "Paquetes a actualizar (separados por espacio), vacío = pnpm update -r sin límites"
+        required: false
+        default: "vitest @vitest/mocker tinypool"
+
+permissions:
+  contents: write
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10
+      - name: Update targeted packages across the workspace
+        run: |
+          set -euo pipefail
+          if [ -n "${{ inputs.packages }}" ]; then
+            pnpm update -r --latest ${{ inputs.packages }}
+          else
+            pnpm update -r --latest
+          fi
+      - name: Show what changed
+        run: git diff --stat
+      - name: Commit and push to a dedicated branch
+        run: |
+          set -euo pipefail
+          git config user.email "backups-bot@micro-app.invalid"
+          git config user.name "Micro app deps bot"
+          git checkout -b chore/vulnerable-deps-result
+          git add -A
+          git commit -m "chore(deps): update vitest/tinypool/@vitest/mocker to resolve Dependabot alerts"
+          git push --force origin chore/vulnerable-deps-result

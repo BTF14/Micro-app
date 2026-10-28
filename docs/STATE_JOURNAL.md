@@ -1,3 +1,14 @@
+## Corrección de continuidad — 2026-10-28
+
+- La línea de inventario del checkpoint inmediatamente inferior (“no hay PR abiertas”) describe el instante anterior a abrir la PR #110; ya no describe el estado vivo. La única PR abierta identificada en el inventario reciente es #110, HEAD `c3acfdd79be7ea3b490651eeab3ccf01402309ef`.
+- La PR #104 fusionó `docs/AI_COLLABORATION_AND_PR_POLICY.md`; la política ya no es una propuesta pendiente de merge.
+- La PR #103 fue fusionada en `375226b50b82eb51b795089b813b6d7879c8bd0f`. El handoff anterior decía que debía permanecer abierta hasta revisión Claude/Codex; no se encontró evidencia de una review completada antes del merge en los registros consultados. No presentar ese merge como aprobación independiente. El pendiente de CORS ahora es verificar el comportamiento HTTP real del Worker, no volver a integrar el mismo diff.
+- En la PR #110, Codex indicó que no pudo completar la revisión por límite de uso; el listado de reviews está vacío. Checks verdes no equivalen a esa revisión.
+- La protección de `main` no pudo consultarse desde el conector (403), y la documentación contiene dos afirmaciones incompatibles sobre el número de aprobaciones requeridas. Resolver la discrepancia mediante evidencia autorizada; no saltarse el gate.
+- El respaldo tiene una corrida de cifrado/subida exitosa, pero la restauración real sigue sin probarse. `docs/BACKUP_AND_RECOVERY.md` conserva un estado antiguo contradictorio; corregirlo tras verificar el procedimiento y evidencias de restauración.
+
+---
+
 ## Verificación de continuidad — 2026-10-28 (estado vivo de GitHub)
 
 - HEAD de `main`: `740afcd1ac122dc60fc98477273112ae831f0e46` (commit firmado: `security: move CI and Pages builds to patched Node.js 24 LTS`).

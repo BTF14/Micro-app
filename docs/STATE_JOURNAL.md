@@ -1,3 +1,12 @@
+## 2026-10-28 — Verificación HTTP de Preview y CI de PR #106
+
+- PR #106, HEAD `1d47a474351bb14f9f5e14283beec789356bafe3`: checks consultados todos en success.
+- Build/test local en sandbox con pnpm 10: suite web normal 6/6; build Preview correcto; test dedicado Preview 1/1; CSP y bundle del build Preview sin URL productiva; build de producción correcto y conserva URL productiva.
+- HTTP real de Cloudflare Pages branch Preview: HTTP 200; `Content-Security-Policy` contiene `connect-src 'self'` y no permite el Worker productivo.
+- PR #106 fue fusionada por squash el 2026-10-28 en `main` (commit `d5d99b3a5184d6aad36ffd9a44ff34a62346dc94`) tras autorización explícita. Cloudflare Pages y Workers Builds reportaron éxito; la API pública `/health` respondió `status: ok`. No se tocaron secretos, variables/bindings ni Neon.
+
+---
+
 ## 2026-10-25 (noche) — Bug de variables autoborradas resuelto; logout móvil arreglado (PR #82)
 
 - Tras fusionar PR #81, el login volvió a romperse (`GOOGLE_NOT_CONFIGURED`, fallos de CORS) pese a no haber tocado `apps/api`. Causa raíz identificada: `wrangler deploy` sincroniza las variables planas (no "Secreto") del Worker contra `[vars]` en `apps/api/wrangler.toml`; cualquier variable puesta solo a mano en el dashboard de Cloudflare y no declarada ahí se borra en el siguiente deploy, sin importar qué cambió. `FRONTEND_ORIGIN`, `GOOGLE_REDIRECT_URI` y `GOOGLE_CLIENT_ID` nunca estuvieron en el archivo.
@@ -478,11 +487,10 @@ Este diario es append-only en cuanto a historia: no borrar hitos antiguos; añad
 - Sin cambios de runtime/dependencias/DB/secretos ni despliegue productivo. Cloudflare generó automáticamente preview de rama para PR #64. Coste $0.
 - P0 de identidad permanece: Google OAuth + allowlist, D1–D8 y matriz de permisos pendientes de aprobación. Registro fail-closed; login por contraseña existe y no se debe asumir que la allowlist lo protege.
 
-
 ## 2026-10-28 — Cobertura de preflight CORS
 
 - Rama: `fix/cors-preflight-coverage-20261028`.
 - Añadidas pruebas unitarias para el preflight `OPTIONS`: origen Pages autorizado con credenciales, método POST, cabeceras permitidas y max-age; y origen externo rechazado.
 - Estas pruebas cubren el comportamiento del middleware Hono con bindings simulados. No equivalen a observar los encabezados HTTP del Worker publicado.
 - No se modificaron variables de Cloudflare, secretos, Neon, datos reales ni producción. No se desplegó manualmente.
-- Pendiente: verificar el preflight real contra `https://micro-app-api.btfcasheb.workers.dev` desde un runner con salida de red y decidir por separado la estrategia de API/CORS para Preview. No apuntar Preview a producción sin comprobar aislamiento y origen permitido.
+- Pendiente: revisión independiente del diff y mantener separada la verificación HTTP real de CORS frente al Worker publicado. No apuntar Preview a producción sin comprobar aislamiento y origen permitido.

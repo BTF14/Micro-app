@@ -1,3 +1,11 @@
+## 2026-10-28 — Fail-closed para Preview de Cloudflare Pages
+
+- Diagnóstico HTTP: el frontend Preview permitía por CSP la API de producción y el archivo `apps/web/.env.production` incrustaba esa URL en builds de Preview; no existe una API de Preview aislada verificada.
+- Solución en rama `fix/isolate-pages-preview-from-production-20261028`: el build identifica ramas de Pages distintas de `main`, deja la base de API vacía, deshabilita el chequeo de sesión/login de Google en UI y elimina el Worker de producción de `connect-src` para Preview. CI construye con `CF_PAGES_BRANCH=preview`, comprueba bundle/CSP y ejecuta un test que confirma cero peticiones de red.
+- La rama `main` conserva el origen productivo y su CSP. No se cambió infraestructura, secretos, datos ni producción; no se hizo despliegue manual. Estado final pendiente de checks y HTTP real del Preview generado por la PR.
+
+---
+
 ## 2026-10-25 (noche) — Bug de variables autoborradas resuelto; logout móvil arreglado (PR #82)
 
 - Tras fusionar PR #81, el login volvió a romperse (`GOOGLE_NOT_CONFIGURED`, fallos de CORS) pese a no haber tocado `apps/api`. Causa raíz identificada: `wrangler deploy` sincroniza las variables planas (no "Secreto") del Worker contra `[vars]` en `apps/api/wrangler.toml`; cualquier variable puesta solo a mano en el dashboard de Cloudflare y no declarada ahí se borra en el siguiente deploy, sin importar qué cambió. `FRONTEND_ORIGIN`, `GOOGLE_REDIRECT_URI` y `GOOGLE_CLIENT_ID` nunca estuvieron en el archivo.

@@ -1,3 +1,13 @@
+## Handoff vigente — 2026-10-28: aislamiento seguro de Pages Preview
+
+- Causa raíz observada: el frontend de Preview servía una CSP con `connect-src https://micro-app-api.btfcasheb.workers.dev`, y `apps/web/.env.production` fija esa misma API para cualquier build Vite en modo production. El Worker Preview probado no autoriza el origen de Preview; el origen configurado en `apps/api/wrangler.toml` es el frontend productivo.
+- No hay evidencia de una API/DB de Preview aislada. No se debe “arreglar” añadiendo todos los orígenes de Preview a producción ni conectando Preview a la DB real.
+- Rama de solución: `fix/isolate-pages-preview-from-production-20261028`. El cambio debe desactivar API/login Google en Pages Preview, quitar el origen productivo de la CSP de Preview y probar el build Preview en CI. Producción en `main` debe mantener la configuración existente.
+- No se tocaron ni deben tocarse secretos, bindings, Neon ni variables de Cloudflare; no se hizo deploy manual. Verificar los checks del SHA exacto y hacer pruebas HTTP sobre Preview una vez que la PR tenga deployment.
+- PR #103 sigue separada: solo cobertura de pruebas CORS y queda abierta según la instrucción previa de revisión independiente. PR #105 no se debe fusionar con su override global de `undici >=7.30.1` que resuelve a 8.x.
+
+---
+
 ## Handoff vigente — 2026-10-28: política de PR y continuidad entre agentes
 
 - Documento normativo nuevo: `docs/AI_COLLABORATION_AND_PR_POLICY.md`. Leerlo junto con `AGENTS.md`; define alcance de PR, revisión alternativa cuando Claude/Codex no estén disponibles, verificación por SHA exacto, gates de merge/producción y continuidad entre chats.

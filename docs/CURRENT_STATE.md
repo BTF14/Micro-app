@@ -1,3 +1,9 @@
+## 2026-10-28 — Aislamiento de Cloudflare Pages Preview en implementación
+
+Hallazgo confirmado por HTTP: el build de Preview heredaba `.env.production` y su CSP permitía conectar al Worker de producción. No hay Worker/DB aislados de Preview configurados, así que la solución segura no es ampliar CORS ni apuntar Preview a producción: se está implementando un fail-closed en build y UI para que Pages Preview no tenga URL de API, no emita peticiones de sesión ni muestre login de Google; el CSP de Preview también elimina el origen del Worker productivo. Producción (rama `main`) conserva la configuración existente. Validación y estado de merge se actualizarán con evidencia del HEAD exacto de la PR; no se desplegó manualmente ni se cambiaron secretos/Cloudflare/Neon.
+
+---
+
 # Estado vivo — 2026-10-28: restauración de respaldo pendiente de probar; vulnerabilidades de Dependabot resueltas
 
 ## Política de trabajo entre agentes y PR (actualización 2026-10-28)

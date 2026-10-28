@@ -1,8 +1,9 @@
-## 2026-10-28 — Fail-closed para Preview de Cloudflare Pages
+## 2026-10-28 — Verificación HTTP de Preview y CI de PR #106
 
-- Diagnóstico HTTP: el frontend Preview permitía por CSP la API de producción y el archivo `apps/web/.env.production` incrustaba esa URL en builds de Preview; no existe una API de Preview aislada verificada.
-- Solución en rama `fix/isolate-pages-preview-from-production-20261028`: el build identifica ramas de Pages distintas de `main`, deja la base de API vacía, deshabilita el chequeo de sesión/login de Google en UI y elimina el Worker de producción de `connect-src` para Preview. CI construye con `CF_PAGES_BRANCH=preview`, comprueba bundle/CSP y ejecuta un test que confirma cero peticiones de red.
-- La rama `main` conserva el origen productivo y su CSP. No se cambió infraestructura, secretos, datos ni producción; no se hizo despliegue manual. Estado final pendiente de checks y HTTP real del Preview generado por la PR.
+- PR #106, HEAD `1d47a474351bb14f9f5e14283beec789356bafe3`: checks consultados todos en success.
+- Build/test local en sandbox con pnpm 10: suite web normal 6/6; build Preview correcto; test dedicado Preview 1/1; CSP y bundle del build Preview sin URL productiva; build de producción correcto y conserva URL productiva.
+- HTTP real de Cloudflare Pages branch Preview: HTTP 200; `Content-Security-Policy` contiene `connect-src 'self'` y no permite el Worker productivo.
+- PR #106 sigue abierta para no convertir una verificación de Preview en un despliegue de producción sin autorización explícita. No se tocaron secretos, variables/bindings ni Neon.
 
 ---
 

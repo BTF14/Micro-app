@@ -543,3 +543,11 @@ Este diario es append-only en cuanto a historia: no borrar hitos antiguos; añad
 - Estas pruebas cubren el comportamiento del middleware Hono con bindings simulados. No equivalen a observar los encabezados HTTP del Worker publicado.
 - No se modificaron variables de Cloudflare, secretos, Neon, datos reales ni producción. No se desplegó manualmente.
 - Pendiente: revisión independiente del diff y mantener separada la verificación HTTP real de CORS frente al Worker publicado. No apuntar Preview a producción sin comprobar aislamiento y origen permitido.
+
+
+## 2026-10-28 — PR #113 y auditoría de rama de seguridad
+
+- PR #113 se fusionó por squash en `main`, commit `4242bcef38f33a415f472fc9c04048e1eee3bdde`. La matriz de permisos pasó de vacía a propuesta razonada, pero permanece **no aprobada**; no autoriza rutas comerciales.
+- Workflows de PR exitosos en el HEAD `b93df838095a043e418f5e481ce4422ed014c494`; Codex no completó la revisión por límite de uso. Se revisó manualmente el diff y se dejó comentario sobre descuento del 10 %, alcance de sucursales y serialización concurrente para proteger al último owner. Los estados Vercel del merge commit quedaron pendientes; no afirmar CI post-merge.
+- La rama `security/secret-scan-current-main` está 1 ahead/39 behind. Checklist ya existe en main; el workflow está obsoleto respecto a checkout v7 en main y el `.gitignore` de la rama no incluye la excepción de `apps/web/.env.production`. No se fusionó ni borró.
+- Pendientes: restauración del backup cifrado en PostgreSQL desechable (llave privada age no disponible en la sesión), verificación HTTP de CORS y aislamiento tenant de futuras rutas comerciales. No se tocaron secretos, Neon, datos reales ni producción.

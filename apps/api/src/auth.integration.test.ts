@@ -213,6 +213,29 @@ const suiteGoogle = describe.skipIf(!databaseAvailable)("Google OAuth routes aga
     });
   }
 
+  async function loginGoogleSession(): Promise<string> {
+    const { cookieHeader, state } = await startGoogleFlow();
+    mockGoogleIdentity("sub-bootstrap-owner", true);
+    try {
+      const callback = await app.fetch(new Request(
+        `https://api.example/auth/google/callback?code=test-code&state=${state}`,
+        { headers: { Cookie: cookieHeader } },
+      ), googleEnv);
+      expect(callback.status).toBe(302);
+      expect(callback.headers.get("location")).toBe(`${googleOrigin}/`);
+      const token = extractCookiePairs(callback).microapp_session;
+      expect(token).toBeTruthy();
+      return token!;
+    } finally {
+      fetchSpy.mockRestore();
+    }
+  }
+
+  async function hashSessionToken(token: string): Promise<string> {
+    const digest = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(token));
+    return Array.from(new Uint8Array(digest), (byte) => byte.toString(16).padStart(2, "0")).join("");
+  }
+
   it("denies an email that is not on the allowlist, without creating any identity", async () => {
     const { cookieHeader, state } = await startGoogleFlow();
     mockGoogleIdentity("sub-not-allowlisted", true);
@@ -369,6 +392,148 @@ const suiteGoogle = describe.skipIf(!databaseAvailable)("Google OAuth routes aga
 
     const users = await cleanupClient.query("SELECT count(*)::text AS total FROM app_users WHERE email = $1", [googleEmail]);
     expect(users.rows[0]).toEqual({ total: "1" });
+  });
+
+  it("rejects a Google subject that does not match the subject already linked to the email", async () => {
+    const before = await cleanupClient.query<{ total: string }>(
+      "SELECT count(*)::text AS total FROM auth_sessions WHERE user_id = (SELECT id FROM app_users WHERE lower(email) = lower($1))",
+      [googleEmail],
+    );
+    const { cookieHeader, state } = await startGoogleFlow();
+    mockGoogleIdentity("sub-attacker-different-account", true);
+    try {
+      const callback = await app.fetch(new Request(
+        `https://api.example/auth/google/callback?code=test-code&state=${state}`,
+        { headers: { Cookie: cookieHeader } },
+      ), googleEnv);
+      expect(callback.status).toBe(302);
+      expect(callback.headers.get("location")).toContain("auth_error=identity_mismatch");
+      expect(extractCookiePairs(callback).microapp_session).toBeUndefined();
+    } finally {
+      fetchSpy.mockRestore();
+    }
+    const after = await cleanupClient.query<{ total: string }>(
+      "SELECT count(*)::text AS total FROM auth_sessions WHERE user_id = (SELECT id FROM app_users WHERE lower(email) = lower($1))",
+      [googleEmail],
+    );
+    expect(after.rows).toEqual(before.rows);
+  });
+
+  it("rejects an expired session at /auth/me", async () => {
+    const token = await loginGoogleSession();
+    const tokenHash = await hashSessionToken(token);
+    await cleanupClient.query(
+      "UPDATE auth_sessions SET expires_at = now() - interval '1 minute' WHERE token_hash = $1",
+      [tokenHash],
+    );
+
+    const response = await app.fetch(new Request("https://api.example/auth/me", {
+      headers: { Cookie: `microapp_session=${token}` },
+    }), googleEnv);
+    expect(response.status).toBe(401);
+    await expect(response.json()).resolves.toMatchObject({ error: "UNAUTHENTICATED" });
+  });
+
+  it("rejects a revoked session at /auth/me after logout", async () => {
+    const token = await loginGoogleSession();
+    const tokenHash = await hashSessionToken(token);
+    const logout = await app.fetch(new Request("https://api.example/auth/logout", {
+      method: "POST",
+      headers: { Origin: googleOrigin, Cookie: `microapp_session=${token}` },
+    }), googleEnv);
+    expect(logout.status).toBe(204);
+
+    const persisted = await cleanupClient.query<{ revoked: boolean }>(
+      "SELECT revoked_at IS NOT NULL AS revoked FROM auth_sessions WHERE token_hash = $1",
+      [tokenHash],
+    );
+    expect(persisted.rows).toEqual([{ revoked: true }]);
+
+    const response = await app.fetch(new Request("https://api.example/auth/me", {
+      headers: { Cookie: `microapp_session=${token}` },
+    }), googleEnv);
+    expect(response.status).toBe(401);
+    await expect(response.json()).resolves.toMatchObject({ error: "UNAUTHENTICATED" });
+  });
+
+  it("rejects a session when its only organization membership is inactive", async () => {
+    const token = await loginGoogleSession();
+    await cleanupClient.query(
+      `UPDATE organization_members SET is_active = false
+        WHERE user_id = (SELECT id FROM app_users WHERE lower(email) = lower($1))
+          AND organization_id = (SELECT id FROM organizations WHERE name = $2)`,
+      [googleEmail, bootstrapOrgName],
+    );
+    try {
+      const response = await app.fetch(new Request("https://api.example/auth/me", {
+        headers: { Cookie: `microapp_session=${token}` },
+      }), googleEnv);
+      expect(response.status).toBe(401);
+      await expect(response.json()).resolves.toMatchObject({ error: "UNAUTHENTICATED" });
+    } finally {
+      await cleanupClient.query(
+        `UPDATE organization_members SET is_active = true
+          WHERE user_id = (SELECT id FROM app_users WHERE lower(email) = lower($1))
+            AND organization_id = (SELECT id FROM organizations WHERE name = $2)`,
+        [googleEmail, bootstrapOrgName],
+      );
+    }
+  });
+
+  it("rejects a session when its only organization is inactive", async () => {
+    const token = await loginGoogleSession();
+    await cleanupClient.query("UPDATE organizations SET is_active = false WHERE name = $1", [bootstrapOrgName]);
+    try {
+      const response = await app.fetch(new Request("https://api.example/auth/me", {
+        headers: { Cookie: `microapp_session=${token}` },
+      }), googleEnv);
+      expect(response.status).toBe(401);
+      await expect(response.json()).resolves.toMatchObject({ error: "UNAUTHENTICATED" });
+    } finally {
+      await cleanupClient.query("UPDATE organizations SET is_active = true WHERE name = $1", [bootstrapOrgName]);
+    }
+  });
+
+  it("does not expose a different user's tenant membership in /auth/me", async () => {
+    const token = await loginGoogleSession();
+    const otherEmail = `other-tenant-${crypto.randomUUID()}@example.test`;
+    const otherOrgName = `Other Tenant ${crypto.randomUUID()}`;
+    const otherPasswordHash = await hashPassword(`other-tenant-password-${crypto.randomUUID()}`);
+    let otherUserId: string | undefined;
+    let otherOrganizationId: string | undefined;
+    try {
+      const user = await cleanupClient.query<{ id: string }>(
+        "INSERT INTO app_users (email, display_name, password_hash) VALUES ($1, $2, $3) RETURNING id",
+        [otherEmail, "Other Tenant User", otherPasswordHash],
+      );
+      otherUserId = user.rows[0]!.id;
+      const org = await cleanupClient.query<{ id: string }>(
+        "INSERT INTO organizations (name, slug) VALUES ($1, $2) RETURNING id",
+        [otherOrgName, `other-${crypto.randomUUID().replace(/-/g, "").slice(0, 12)}`],
+      );
+      otherOrganizationId = org.rows[0]!.id;
+      await cleanupClient.query(
+        "INSERT INTO organization_members (organization_id, user_id, role) VALUES ($1, $2, 'owner')",
+        [otherOrganizationId, otherUserId],
+      );
+
+      const response = await app.fetch(new Request("https://api.example/auth/me", {
+        headers: { Cookie: `microapp_session=${token}` },
+      }), googleEnv);
+      expect(response.status).toBe(200);
+      const payload = await response.json() as { organizations: Array<{ name: string }> };
+      expect(payload.organizations.map((organization) => organization.name)).toEqual([bootstrapOrgName]);
+      expect(payload.organizations.some((organization) => organization.name === otherOrgName)).toBe(false);
+    } finally {
+      if (otherUserId) {
+        await cleanupClient.query("DELETE FROM organization_members WHERE user_id = $1", [otherUserId]);
+        await cleanupClient.query("DELETE FROM auth_sessions WHERE user_id = $1", [otherUserId]);
+        await cleanupClient.query("DELETE FROM app_users WHERE id = $1", [otherUserId]);
+      }
+      if (otherOrganizationId) {
+        await cleanupClient.query("DELETE FROM organizations WHERE id = $1", [otherOrganizationId]);
+      }
+    }
   });
 
   it("denies an existing user whose account has been deactivated", async () => {

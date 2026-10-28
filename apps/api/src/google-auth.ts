@@ -262,11 +262,12 @@ export function registerGoogleAuthRoutes(app: Hono<{ Bindings: Bindings }>): voi
           if (!user.is_active) return { kind: "inactive" as const };
 
           if (user.google_sub === null) {
-            await client.query(
-              "UPDATE app_users SET google_sub = $1, email_verified_at = now(), updated_at = now() WHERE id = $2",
-              [sub, user.id],
-            );
-          } else if (user.google_sub !== sub) {
+            // Decision D7: never link a pre-existing account solely because its
+            // email matches. Account linking requires a separate, explicit,
+            // authenticated recovery flow; none is implemented yet.
+            return { kind: "identity_unlinked" as const };
+          }
+          if (user.google_sub !== sub) {
             // The Google account presenting this email no longer matches the
             // one originally linked; do not silently re-link.
             return { kind: "identity_mismatch" as const };
@@ -336,6 +337,7 @@ export function registerGoogleAuthRoutes(app: Hono<{ Bindings: Bindings }>): voi
       if (outcome.kind === "not_allowlisted") return redirectToFrontend(c, "/?auth_error=not_allowlisted");
       if (outcome.kind === "inactive" || outcome.kind === "no_membership") return redirectToFrontend(c, "/?auth_error=account_inactive");
       if (outcome.kind === "identity_mismatch") return redirectToFrontend(c, "/?auth_error=identity_mismatch");
+      if (outcome.kind === "identity_unlinked") return redirectToFrontend(c, "/?auth_error=account_link_required");
       if (outcome.kind === "bootstrap_consumed") return redirectToFrontend(c, "/?auth_error=bootstrap_consumed");
       return redirectToFrontend(c, "/?auth_error=not_provisioned");
     } catch {

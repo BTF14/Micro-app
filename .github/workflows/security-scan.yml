@@ -19,7 +19,7 @@ jobs:
     timeout-minutes: 10
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       # Initial baseline is non-blocking while findings and lockfile coverage
       # are reviewed. Includes secret detection. Do not scan container images:

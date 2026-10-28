@@ -1,3 +1,19 @@
+## Estado vivo verificado — 2026-10-28
+
+- `main` ahora está en merge SHA `3512cac28d6f0752a3699db00843a20788d91376` de PR #111. El HEAD de PR #111 antes de merge fue `233844be10bb102fdac34ad41776d4d14420b243`; en ese SHA pasaron los seis checks obligatorios y los 14 tests de integración PostgreSQL. El conector no devolvió workflows post-merge para el merge SHA, así que no afirmar que hubo una segunda corrida después del merge.
+- PR #111 quedó fusionada; la PR abierta identificada actualmente es #110 (`docs/verified-continuity-20261028`). PR #102/#103/#104/#106/#107/#108 están fusionadas; #105 y #109 cerradas sin merge.
+- **CORS:** PR #103 está fusionada. El código restringe el origen a `FRONTEND_ORIGIN` canónico y falla cerrada ante configuración ausente/inválida; pruebas cubren preflight permitido y origen externo. La comprobación HTTP de `OPTIONS` al Worker productivo no pudo repetirse en esta sesión: el acceso web a los endpoints falló. No declarar headers productivos verificados.
+- **undici/Node:** PR #101 fijó `undici@7.30.1` con override exacto en `package.json` y `pnpm-lock.yaml`; el lockfile confirma esa versión. El advisory upstream fija 7.30.1 como patched para las ramas 7.x afectadas. PR #105, que proponía `>=7.30.1`, está cerrada sin merge y no debe reabrirse para duplicar cambios. PR #108 movió CI/Pages a Node 24.
+- **Dependencias vulnerables:** el conector no permite consultar Dependabot alerts/dependency graph/code scanning; el número actual de alertas es desconocido. Trivy usa `exit-code: '0'`, por lo que un check verde no prueba ausencia de vulnerabilidades.
+- **Backup:** run [40587638159](https://github.com/BTF14/Micro-app/actions/runs/40587638159) terminó en success; el archivo cifrado llegó al repositorio privado y el checksum coincidió. Falta la restauración real a PostgreSQL desechable. `docs/BACKUP_AND_RECOVERY.md` en esta PR se corrigió para reflejar ese estado.
+- **PR #110:** CI de su HEAD anterior pasó, pero la rama se actualizó otra vez para registrar la comparación del adapter y el estado real del backup; deben verificarse los checks del HEAD final. Codex no completó la revisión por límite de uso y no hay reviews registradas. No fusionar sin los gates reales.
+- **Protección de main:** el conector devuelve 403 al consultar la protección y la documentación histórica contradice si se requieren 0 o 1 aprobaciones. No sortear el gate ni asumir que la aprobación es opcional.
+- No se ejecutaron pruebas localmente en esta sesión ni se modificaron secretos, Neon o configuración productiva. No se hizo despliegue manual.
+
+---
+
+
+
 ## 2026-10-28 — Aislamiento de Cloudflare Pages Preview verificado (PR #106)
 
 - Causa raíz: Preview heredaba la URL de `apps/web/.env.production` y CSP permitía el Worker de producción. No hay API/DB de Preview aisladas verificadas.

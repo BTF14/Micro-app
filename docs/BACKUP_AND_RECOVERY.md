@@ -1,6 +1,6 @@
 # Política de respaldo y recuperación — Micro app
 
-**Estado:** diseño operativo obligatorio; la automatización independiente aún no está implementada ni verificada.  
+**Estado:** workflow diario cifrado y destino privado implementados; generación, cifrado y subida verificados con una corrida real el 2026-10-27. La restauración en PostgreSQL desechable sigue pendiente; no declarar la recuperación probada hasta completar la sección 6.  
 **Objetivo de coste:** $0; no activar facturación, servicios pagos ni cargos automáticos.  
 **Alcance:** datos comerciales, inventario y capacidad de recuperar el servicio.
 
@@ -90,17 +90,12 @@ Definir objetivos iniciales para aprobar antes de producción: RPO (máxima pér
 ## 8. Estado actual y próximo trabajo
 
 - Neon Free documentado: PITR hasta 6 horas/1 GB de historial; una snapshot manual; no hay backups programados de Neon Free (ver fuentes arriba; revalidar en consola).
-- No se ha verificado una copia externa automática, un destino de backup independiente ni una restauración de producción.
-- La aplicación aún tiene trabajo P0 en autorización multiempresa y flujos reales de venta/inventario; no debe tratarse como sistema de producción.
-- Próximo paso: diseñar un mecanismo de dump cifrado, programado, privado y de coste $0; verificar destino y secretos; probar primero contra PostgreSQL desechable; añadir alerta de fallo y prueba de restauración; solo después habilitarlo para datos reales.
-
-### Avance 2026-10-26 (ver detalle completo en `docs/SECURITY_ROADMAP.md` punto 2)
-
-- Rol Neon de solo lectura `backup_readonly` creado y verificado (solo `SELECT`, con privilegios por defecto para tablas futuras). El `pg_dump` del workflow debe excluir explícitamente `auth_sessions` y `auth_rate_limits` — no son necesarios para reconstruir el negocio.
-- Llave pública `age` generada para cifrar el volcado antes de subirlo: `age1t04pgcguy87u99r4stlm0gcjsk9dj2s34jsmymw55vlarfteuakse8jmfk`. La llave privada correspondiente nunca vivió en el repositorio ni en este entorno de forma persistente; se entregó una sola vez al propietario por chat para que la guarde en un gestor de contraseñas. Sin ella, nadie puede descifrar los respaldos — si se pierde, hay que regenerar el par y los respaldos anteriores a la pérdida quedan irrecuperables.
-- **Decisión final (2026-10-27): el propietario confirmó que Cloudflare pide tarjeta para R2.** Se descarta R2 y se adopta el repositorio privado dedicado `BTF14/micro-app-backups` (creado manualmente por el propietario) como destino.
-- **Workflow implementado**: `.github/workflows/backup.yml`, diario a las 03:00 hora de Venezuela. Detalle completo en `docs/SECURITY_ROADMAP.md` punto 2. Retención automática de 15 días aplicada dentro del propio workflow (sin depender de reglas de ciclo de vida de un proveedor externo).
-- **Pendiente para que esto cuente como "terminado"**: el propietario debe agregar el secreto `DATABASE_URL_BACKUP_RO` en `BTF14/Micro-app` (valor entregado por chat, nunca commiteado); luego hace falta una corrida de prueba manual (`workflow_dispatch`) y, según los criterios de aceptación de la sección 6 de este documento, una restauración real de prueba en una base desechable antes de confiar en este mecanismo para datos reales.
+- El destino independiente actual es el repositorio privado `BTF14/micro-app-backups`; no se usa Cloudflare R2 porque requiere tarjeta y el proyecto mantiene el objetivo de coste $0.
+- El workflow `.github/workflows/backup.yml` se ejecuta diariamente, usa el rol de solo lectura `backup_readonly`, excluye `auth_sessions` y `auth_rate_limits`, cifra con `age` antes de subir y aplica retención de 15 días.
+- **Ejecución real verificada:** run [40587638159](https://github.com/BTF14/Micro-app/actions/runs/40587638159) terminó en success el 2026-10-27. Se confirmó que el archivo cifrado llegó a `daily/` y que el checksum coincide. No se imprimió ni inspeccionó el contenido descifrado.
+- El propietario agregó `DATABASE_URL_BACKUP_RO`; no está pendiente de agregar para que el workflow corra.
+- **Único pendiente técnico de recuperación:** restaurar una copia cifrada real en una base PostgreSQL desechable y validar esquema, constraints, relaciones/conteos, duración y RPO/RTO conforme a la sección 6. La llave privada `age` está bajo custodia del propietario y no está disponible en el repositorio ni en esta sesión; no intentar acceder a Neon `main` ni modificar datos reales para suplirla.
+- La aplicación aún tiene trabajo P0 de autorización multiempresa y flujos comerciales; el backup verificado no significa que el producto esté listo para producción.
 
 ## Fuentes
 

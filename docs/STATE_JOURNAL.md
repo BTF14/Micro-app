@@ -1,3 +1,40 @@
+## 2026-10-28 — PR #111 fusionada; cobertura de sesión ampliada
+
+- PR #111 (`test/auth-session-tenant-coverage-20261028`) fue fusionada por squash en `main` con SHA `3512cac28d6f0752a3699db00843a20788d91376`; HEAD probado `233844be10bb102fdac34ad41776d4d14420b243`.
+- En el HEAD probado pasaron CI, Chromium authentication smoke tests, postgres-migration, JavaScript/TypeScript static analysis, Trivy filesystem/configuration, scan de historial de secretos y Dependency Review. Los logs de CI confirman 14/14 pruebas PostgreSQL de auth y 48/48 tests unitarios; compilación y typecheck también pasaron.
+- La primera ejecución de PR #111 falló porque la prueba intentó guardar `expires_at` anterior a `created_at`, violando `auth_sessions_check`. Se corrigió el fixture para que ambas fechas fueran pasadas, pero `expires_at > created_at`; la nueva ejecución pasó.
+- Se verificó que PR #103 fue fusionada sin reviews/hilos registrados pese a un handoff anterior que pedía esperar revisión Claude/Codex. Se documenta como discrepancia de proceso, no como revisión completada.
+- La rama `feat/neon-transaction-adapter` se comparó con main: 14 commits ahead, 124 behind; el archivo `database.ts` es idéntico, los tests de main son más completos y la rama usa dependencias/workflow obsoletos. No se fusionó ni borró.
+- La prueba HTTP de CORS productivo no pudo repetirse desde este entorno; el acceso web a los endpoints falló. No se cambiaron variables, secretos, Neon ni producción.
+
+---
+
+## Corrección de continuidad — 2026-10-28
+
+- La línea de inventario del checkpoint inmediatamente inferior (“no hay PR abiertas”) describe el instante anterior a abrir la PR #110; ya no describe el estado vivo. La única PR abierta identificada en el inventario reciente es #110, HEAD `c3acfdd79be7ea3b490651eeab3ccf01402309ef`.
+- La PR #104 fusionó `docs/AI_COLLABORATION_AND_PR_POLICY.md`; la política ya no es una propuesta pendiente de merge.
+- La PR #103 fue fusionada en `375226b50b82eb51b795089b813b6d7879c8bd0f`. El handoff anterior decía que debía permanecer abierta hasta revisión Claude/Codex; no se encontró evidencia de una review completada antes del merge en los registros consultados. No presentar ese merge como aprobación independiente. El pendiente de CORS ahora es verificar el comportamiento HTTP real del Worker, no volver a integrar el mismo diff.
+- En la PR #110, Codex indicó que no pudo completar la revisión por límite de uso; el listado de reviews está vacío. Checks verdes no equivalen a esa revisión.
+- La protección de `main` no pudo consultarse desde el conector (403), y la documentación contiene dos afirmaciones incompatibles sobre el número de aprobaciones requeridas. Resolver la discrepancia mediante evidencia autorizada; no saltarse el gate.
+- El respaldo tiene una corrida de cifrado/subida exitosa, pero la restauración real sigue sin probarse. `docs/BACKUP_AND_RECOVERY.md` conserva un estado antiguo contradictorio; corregirlo tras verificar el procedimiento y evidencias de restauración.
+
+---
+
+## Verificación de continuidad — 2026-10-28 (estado vivo de GitHub)
+
+- HEAD de `main`: `740afcd1ac122dc60fc98477273112ae831f0e46` (commit firmado: `security: move CI and Pages builds to patched Node.js 24 LTS`).
+- PR abiertas: la consulta directa `GET /repos/BTF14/Micro-app/pulls?state=open&per_page=100` devolvió `[]`. No hay PR abiertas en esa consulta.
+- PR #102 está fusionada en `b667dec03ff14d97b8fae571477ab69409e119b1`; PR #103 está fusionada en `375226b50b82eb51b795089b813b6d7879c8bd0f`. PR #105 está cerrada sin fusionar; su rama `chore/lockfile-regen-result` contiene cambios de runtime que ya aparecen en `main`, por lo que no debe reabrirse para volver a integrar código duplicado.
+- En el SHA actual de `main`, los seis checks obligatorios de protección están en `success`: `verify`, `Chromium authentication smoke tests`, `JavaScript and TypeScript static analysis`, `Scan tracked files and reachable Git history`, `Trivy filesystem and configuration scan` y `postgres-migration`. También terminaron en success los checks de Cloudflare Pages y Workers Builds.
+- Dos estados de commit de Vercel (`Vercel – micro-app-7lg5` y `Vercel – micro-app`) están en `failure` con mensaje explícito `Deployment rate limited — retry in 24 hours`. No forman parte de los seis contextos obligatorios leídos en la protección de rama; son fallos de límite de despliegue de Vercel, no fallos de los checks obligatorios.
+- `package.json` declara Node `>=24.22.1 <25`; `.node-version` fija `24.22.1`; CI y Playwright usan Node 24 y pnpm 10. El lockfile v9 fija `undici@7.30.1` por override, y Miniflare lo consume transitivamente. Las entradas del lockfile indican que undici requiere Node `>=20.18.1`, Vitest 5.0.5 acepta Node 24, y Wrangler 4.151.1 / Miniflare 5.20261012.1-beta declaran Node `>=22`. Playwright E2E usa el runner y la imagen de navegador ambos en `1.55.0`. Esto demuestra compatibilidad declarada en metadatos, no sustituye una instalación local reproducible.
+- El check `Chromium authentication smoke tests` del SHA actual pasó; el test de integración PostgreSQL forma parte del workflow `verify`, que también pasó. En el flujo OAuth, las cuentas existentes sin `google_sub` son rechazadas como `identity_unlinked` antes de crear sesión; una identidad enlazada debe coincidir con el `sub` y tener usuario/membresía/organización activos. Solo el bootstrap de un solo uso puede crear el primer usuario y sesión. La prueba de integración comprueba que la cuenta heredada mantiene `google_sub = null`, no se crea cookie ni sesión persistida.
+- La configuración CORS en código limita el origen al `FRONTEND_ORIGIN` canónico y falla cerrada si falta o es inválido; PR #103 añadió preflight autorizado y rechazo de origen externo. No se verificaron aquí las cabeceras HTTP del Worker productivo. Esa verificación no aparece entre los seis gates obligatorios, por lo que no es requisito automático de merge; sí sigue siendo evidencia operativa útil para confirmar el binding real en Cloudflare.
+- **Limitación de evidencia:** el conector GitHub rechaza las rutas de Dependabot alerts/dependency graph/code scanning como endpoints no permitidos, así que el número actual de alertas abiertas no se pudo verificar. No afirmar que Dependabot está limpio basándose solo en el lockfile o en Trivy; el workflow Trivy actual declara `exit-code: '0'`, por lo que sus checks verdes no garantizan ausencia de vulnerabilidades.
+- No se ejecutaron comandos localmente en este entorno. No se modificaron secretos, configuración de producción ni datos de Neon, y no se hizo despliegue manual. No se fusionó ninguna PR durante esta verificación.
+
+---
+
 ## 2026-10-28 — Verificación HTTP de Preview y CI de PR #106
 
 - PR #106, HEAD `1d47a474351bb14f9f5e14283beec789356bafe3`: checks consultados todos en success.

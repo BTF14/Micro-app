@@ -1,3 +1,14 @@
+## 2026-10-28 — PR #111 fusionada; cobertura de sesión ampliada
+
+- PR #111 (`test/auth-session-tenant-coverage-20261028`) fue fusionada por squash en `main` con SHA `3512cac28d6f0752a3699db00843a20788d91376`; HEAD probado `233844be10bb102fdac34ad41776d4d14420b243`.
+- En el HEAD probado pasaron CI, Chromium authentication smoke tests, postgres-migration, JavaScript/TypeScript static analysis, Trivy filesystem/configuration, scan de historial de secretos y Dependency Review. Los logs de CI confirman 14/14 pruebas PostgreSQL de auth y 48/48 tests unitarios; compilación y typecheck también pasaron.
+- La primera ejecución de PR #111 falló porque la prueba intentó guardar `expires_at` anterior a `created_at`, violando `auth_sessions_check`. Se corrigió el fixture para que ambas fechas fueran pasadas, pero `expires_at > created_at`; la nueva ejecución pasó.
+- Se verificó que PR #103 fue fusionada sin reviews/hilos registrados pese a un handoff anterior que pedía esperar revisión Claude/Codex. Se documenta como discrepancia de proceso, no como revisión completada.
+- La rama `feat/neon-transaction-adapter` se comparó con main: 14 commits ahead, 124 behind; el archivo `database.ts` es idéntico, los tests de main son más completos y la rama usa dependencias/workflow obsoletos. No se fusionó ni borró.
+- La prueba HTTP de CORS productivo no pudo repetirse desde este entorno; el acceso web a los endpoints falló. No se cambiaron variables, secretos, Neon ni producción.
+
+---
+
 ## Corrección de continuidad — 2026-10-28
 
 - La línea de inventario del checkpoint inmediatamente inferior (“no hay PR abiertas”) describe el instante anterior a abrir la PR #110; ya no describe el estado vivo. La única PR abierta identificada en el inventario reciente es #110, HEAD `c3acfdd79be7ea3b490651eeab3ccf01402309ef`.

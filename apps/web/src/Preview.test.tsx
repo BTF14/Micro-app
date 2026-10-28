@@ -22,7 +22,9 @@ afterEach(async () => {
 });
 
 describe("Cloudflare Pages preview isolation", () => {
-  const previewTest = __MICRO_APP_IS_PREVIEW__ ? it : it.skip;\n\n  previewTest("does not call the production API and disables Google sign-in", async () => {
+  const previewTest = __MICRO_APP_IS_PREVIEW__ ? it : it.skip;
+
+  previewTest("does not call the production API and disables Google sign-in", async () => {
     await act(async () => { root.render(<App />); });
     expect(container.textContent).toContain("Vista previa aislada");
     expect(container.textContent).toContain("deshabilitados para proteger producción");

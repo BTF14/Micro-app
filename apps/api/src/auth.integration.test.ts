@@ -229,6 +229,55 @@ const suiteGoogle = describe.skipIf(!databaseAvailable)("Google OAuth routes aga
     fetchSpy.mockRestore();
   });
 
+  it("does not implicitly link an existing allowlisted account without a Google subject", async () => {
+    await cleanupClient.query(
+      "INSERT INTO auth_allowlist (email, added_by) VALUES ($1, 'integration-test')",
+      [googleEmail],
+    );
+    const passwordHash = await hashPassword(password);
+    const userResult = await cleanupClient.query<{ id: string }>(
+      "INSERT INTO app_users (email, display_name, password_hash) VALUES ($1, $2, $3) RETURNING id",
+      [googleEmail, "Legacy Account", passwordHash],
+    );
+    const organizationResult = await cleanupClient.query<{ id: string }>(
+      "INSERT INTO organizations (name, slug) VALUES ($1, $2) RETURNING id",
+      [bootstrapOrgName, bootstrapOrgSlug],
+    );
+    await cleanupClient.query(
+      "INSERT INTO organization_members (organization_id, user_id, role) VALUES ($1, $2, 'owner')",
+      [organizationResult.rows[0]!.id, userResult.rows[0]!.id],
+    );
+
+    const { cookieHeader, state } = await startGoogleFlow();
+    mockGoogleIdentity("sub-unlinked-legacy-account", true);
+    const callback = await app.fetch(new Request(
+      `https://api.example/auth/google/callback?code=test-code&state=${state}`,
+      { headers: { Cookie: cookieHeader } },
+    ), googleEnv);
+
+    expect(callback.status).toBe(302);
+    expect(callback.headers.get("location")).toContain("auth_error=account_link_required");
+    expect(extractCookiePairs(callback).microapp_session).toBeUndefined();
+
+    const persistedUser = await cleanupClient.query<{ google_sub: string | null }>(
+      "SELECT google_sub FROM app_users WHERE id = $1",
+      [userResult.rows[0]!.id],
+    );
+    expect(persistedUser.rows).toEqual([{ google_sub: null }]);
+    const sessions = await cleanupClient.query<{ total: string }>(
+      "SELECT count(*)::text AS total FROM auth_sessions WHERE user_id = $1",
+      [userResult.rows[0]!.id],
+    );
+    expect(sessions.rows[0]).toEqual({ total: "0" });
+
+    fetchSpy.mockRestore();
+    await cleanupClient.query("DELETE FROM auth_sessions WHERE user_id = $1", [userResult.rows[0]!.id]);
+    await cleanupClient.query("DELETE FROM organization_members WHERE user_id = $1", [userResult.rows[0]!.id]);
+    await cleanupClient.query("DELETE FROM organizations WHERE id = $1", [organizationResult.rows[0]!.id]);
+    await cleanupClient.query("DELETE FROM app_users WHERE id = $1", [userResult.rows[0]!.id]);
+    await cleanupClient.query("DELETE FROM auth_allowlist WHERE lower(email) = lower($1)", [googleEmail]);
+  });
+
   it("rejects a callback whose state cookie does not match the query parameter", async () => {
     const { cookieHeader } = await startGoogleFlow();
     mockGoogleIdentity("sub-mismatch", true);

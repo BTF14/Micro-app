@@ -118,9 +118,7 @@ describe("Micro app API scaffold", () => {
     );
 
     expect(response.status).toBe(204);
-    expect(response.headers.get("access-control-allow-origin")).not.toBe(
-      "https://attacker.example",
-    );
+    expect(response.headers.get("access-control-allow-origin")).toBeNull();
   });
 
   it("allows CORS only for the configured frontend origin", async () => {

@@ -3,8 +3,7 @@ export type AuthOrganization = { id: string; name: string; slug: string; role: "
 export type AuthResponse = { user: AuthUser; organizations: AuthOrganization[] };
 
 type ApiErrorPayload = { message?: unknown };
-const API_BASE_URL = __MICRO_APP_API_BASE_URL__;
-const IS_PAGES_PREVIEW = __MICRO_APP_IS_PREVIEW__;
+const API_BASE_URL = (import.meta.env.VITE_API_BASE_URL ?? "").trim().replace(/\/+$/, "");
 
 export class ApiError extends Error {
   constructor(message: string, readonly status: number) {
@@ -21,9 +20,6 @@ export function googleLoginUrl(): string {
 }
 
 export async function apiRequest<T>(path: string, init: RequestInit = {}): Promise<T> {
-  if (IS_PAGES_PREVIEW) {
-    throw new Error("La API está deshabilitada en esta vista previa para proteger los datos de producción.");
-  }
   const headers = new Headers(init.headers);
   if (init.body !== undefined && !headers.has("Content-Type")) headers.set("Content-Type", "application/json");
 

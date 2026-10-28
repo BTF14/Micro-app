@@ -151,10 +151,6 @@ export default function App() {
 
   useEffect(() => {
     let active = true;
-    if (__MICRO_APP_IS_PREVIEW__) {
-      setCheckingSession(false);
-      return () => { active = false; };
-    }
     apiRequest<AuthResponse>("/auth/me")
       .then((result) => { if (active) setSession(result); })
       .catch((reason: unknown) => {
@@ -214,13 +210,7 @@ export default function App() {
               </div>
             )}
             {notice && <div className="form-alert success-alert" role="status">{notice}</div>}
-            {__MICRO_APP_IS_PREVIEW__ ? (
-              <div className="form-alert" role="status">
-                Vista previa aislada: el inicio de sesión y el acceso a datos están deshabilitados para proteger producción.
-              </div>
-            ) : (
-              <a className="auth-submit google-submit" href={googleLoginUrl()}>Continuar con Google</a>
-            )}
+            <a className="auth-submit google-submit" href={googleLoginUrl()}>Continuar con Google</a>
             <p className="auth-security"><span aria-hidden="true">⌑</span> Sesiones protegidas con cookies seguras. El acceso solo se concede a correos autorizados por el administrador.</p>
             <p className="auth-setup-note">
               ¿Tu cuenta no está autorizada?{" "}

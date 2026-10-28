@@ -72,6 +72,7 @@ const AUTH_ERROR_MESSAGES: Record<string, string> = {
   not_allowlisted: "Tu cuenta de Google no está autorizada todavía. Comunícate con el administrador del sistema para que agregue tu correo a la lista de acceso.",
   account_inactive: "Tu cuenta existe pero está inactiva o sin un negocio asignado. Comunícate con el administrador del sistema.",
   identity_mismatch: "Esta cuenta de Google no coincide con la que estaba vinculada a ese correo. Comunícate con el administrador del sistema.",
+  account_link_required: "Esta cuenta ya existe, pero no tiene una identidad de Google vinculada. Por seguridad, comunícate con el administrador para revisar el acceso.",
   bootstrap_consumed: "El enlace de configuración inicial ya fue usado. Si necesitas acceso, comunícate con el administrador del sistema.",
   not_provisioned: "No existe una cuenta para este correo todavía. Comunícate con el administrador del sistema.",
   email_not_verified: "Tu cuenta de Google no tiene el correo verificado, así que no podemos continuar. Verifica tu correo con Google e inténtalo de nuevo.",

@@ -76,6 +76,54 @@ describe("Micro app API scaffold", () => {
     );
   });
 
+  it("answers a credentialed CORS preflight for the configured frontend origin", async () => {
+    const response = await app.request(
+      "/auth/me",
+      {
+        method: "OPTIONS",
+        headers: {
+          Origin: "https://micro-app-63i.pages.dev",
+          "Access-Control-Request-Method": "POST",
+          "Access-Control-Request-Headers": "content-type,authorization,idempotency-key",
+        },
+      },
+      { FRONTEND_ORIGIN: "https://micro-app-63i.pages.dev" },
+    );
+
+    expect(response.status).toBe(204);
+    expect(response.headers.get("access-control-allow-origin")).toBe(
+      "https://micro-app-63i.pages.dev",
+    );
+    expect(response.headers.get("access-control-allow-credentials")).toBe("true");
+    expect(response.headers.get("access-control-allow-methods")).toContain("POST");
+    const allowedHeaders = response.headers.get("access-control-allow-headers") ?? "";
+    expect(allowedHeaders.toLowerCase()).toContain("content-type");
+    expect(allowedHeaders.toLowerCase()).toContain("authorization");
+    expect(allowedHeaders.toLowerCase()).toContain("idempotency-key");
+    expect(response.headers.get("access-control-max-age")).toBe("600");
+  });
+
+  it("does not authorize a CORS preflight from an untrusted origin", async () => {
+    const response = await app.request(
+      "/auth/me",
+      {
+        method: "OPTIONS",
+        headers: {
+          Origin: "https://attacker.example",
+          "Access-Control-Request-Method": "POST",
+          "Access-Control-Request-Headers": "content-type",
+        },
+      },
+      { FRONTEND_ORIGIN: "https://micro-app-63i.pages.dev" },
+    );
+
+    expect(response.status).toBe(204);
+    expect(response.headers.get("access-control-allow-origin")).not.toBe(
+      "https://attacker.example",
+    );
+    expect(response.headers.get("access-control-allow-credentials")).not.toBe("true");
+  });
+
   it("allows CORS only for the configured frontend origin", async () => {
     const allowed = await app.request(
       "/health",

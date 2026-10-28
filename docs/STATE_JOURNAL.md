@@ -3,7 +3,7 @@
 - PR #106, HEAD `1d47a474351bb14f9f5e14283beec789356bafe3`: checks consultados todos en success.
 - Build/test local en sandbox con pnpm 10: suite web normal 6/6; build Preview correcto; test dedicado Preview 1/1; CSP y bundle del build Preview sin URL productiva; build de producción correcto y conserva URL productiva.
 - HTTP real de Cloudflare Pages branch Preview: HTTP 200; `Content-Security-Policy` contiene `connect-src 'self'` y no permite el Worker productivo.
-- PR #106 sigue abierta para no convertir una verificación de Preview en un despliegue de producción sin autorización explícita. No se tocaron secretos, variables/bindings ni Neon.
+- PR #106 fue fusionada por squash el 2026-10-28 en `main` (commit `d5d99b3a5184d6aad36ffd9a44ff34a62346dc94`) tras autorización explícita. Cloudflare Pages y Workers Builds reportaron éxito; la API pública `/health` respondió `status: ok`. No se tocaron secretos, variables/bindings ni Neon.
 
 ---
 

@@ -1,16 +1,19 @@
 ## Estado vivo verificado — 2026-10-28
 
-- `main` ahora está en merge SHA `3512cac28d6f0752a3699db00843a20788d91376` de PR #111. El HEAD de PR #111 antes de merge fue `233844be10bb102fdac34ad41776d4d14420b243`; en ese SHA pasaron los seis checks obligatorios y los 14 tests de integración PostgreSQL. El conector no devolvió workflows post-merge para el merge SHA, así que no afirmar que hubo una segunda corrida después del merge.
-- PR #111 quedó fusionada; la PR abierta identificada actualmente es #110 (`docs/verified-continuity-20261028`). PR #102/#103/#104/#106/#107/#108 están fusionadas; #105 y #109 cerradas sin merge.
-- **CORS:** PR #103 está fusionada. El código restringe el origen a `FRONTEND_ORIGIN` canónico y falla cerrada ante configuración ausente/inválida; pruebas cubren preflight permitido y origen externo. La comprobación HTTP de `OPTIONS` al Worker productivo no pudo repetirse en esta sesión: el acceso web a los endpoints falló. No declarar headers productivos verificados.
-- **undici/Node:** PR #101 fijó `undici@7.30.1` con override exacto en `package.json` y `pnpm-lock.yaml`; el lockfile confirma esa versión. El advisory upstream fija 7.30.1 como patched para las ramas 7.x afectadas. PR #105, que proponía `>=7.30.1`, está cerrada sin merge y no debe reabrirse para duplicar cambios. PR #108 movió CI/Pages a Node 24.
+- Último SHA de `main` verificado antes de esta PR de continuidad: `33da237ad7592ac394cc266c6a96c4bd1d387e37` (merge de PR #110). PR #111 se fusionó antes en `3512cac28d6f0752a3699db00843a20788d91376`. Verificar el SHA vivo de `main` antes de cualquier acción futura.
+- Las PR #110 (continuidad documental) y #111 (pruebas de auth) quedaron fusionadas. El inventario reciente no mostró PR abiertas; volver a comprobarlo al iniciar el siguiente trabajo.
+- **PR #111 / auth:** en el HEAD probado `233844be10bb102fdac34ad41776d4d14420b243` pasaron los seis checks obligatorios. CI confirmó 48/48 tests unitarios y 14/14 pruebas PostgreSQL de auth; build/typecheck, Chromium auth smoke, migración, SAST, Trivy, secret-history y Dependency Review también pasaron. No se encontraron workflows post-merge mediante el conector; no afirmar que hubo una segunda corrida después del merge.
+- **CORS:** PR #103 está fusionada. El código restringe el origen a `FRONTEND_ORIGIN` canónico y falla cerrada ante configuración ausente/inválida; las pruebas cubren preflight permitido y origen externo. La comprobación HTTP de `OPTIONS` al Worker productivo no pudo repetirse en esta sesión porque el acceso web a los endpoints falló. No declarar headers productivos verificados.
+- **undici/Node:** PR #101 fijó `undici@7.30.1` con override exacto en `package.json` y `pnpm-lock.yaml`; la versión está parcheada para las ramas 7.x afectadas en el advisory consultado. PR #105, que proponía `>=7.30.1`, está cerrada sin merge y no debe reabrirse para duplicar cambios. PR #108 movió CI/Pages a Node 24.
 - **Dependencias vulnerables:** el conector no permite consultar Dependabot alerts/dependency graph/code scanning; el número actual de alertas es desconocido. Trivy usa `exit-code: '0'`, por lo que un check verde no prueba ausencia de vulnerabilidades.
-- **Backup:** run [40587638159](https://github.com/BTF14/Micro-app/actions/runs/40587638159) terminó en success; el archivo cifrado llegó al repositorio privado y el checksum coincidió. Falta la restauración real a PostgreSQL desechable. `docs/BACKUP_AND_RECOVERY.md` en esta PR se corrigió para reflejar ese estado.
-- **PR #110:** CI de su HEAD anterior pasó, pero la rama se actualizó otra vez para registrar la comparación del adapter y el estado real del backup; deben verificarse los checks del HEAD final. Codex no completó la revisión por límite de uso y no hay reviews registradas. No fusionar sin los gates reales.
-- **Protección de main:** el conector devuelve 403 al consultar la protección y la documentación histórica contradice si se requieren 0 o 1 aprobaciones. No sortear el gate ni asumir que la aprobación es opcional.
-- No se ejecutaron pruebas localmente en esta sesión ni se modificaron secretos, Neon o configuración productiva. No se hizo despliegue manual.
+- **Backup:** run [40587638159](https://github.com/BTF14/Micro-app/actions/runs/40587638159) terminó en success; el archivo cifrado llegó al repositorio privado y el checksum coincidió. Falta restauración real a PostgreSQL desechable; la llave privada `age` está bajo custodia del propietario.
+- **Adapter de Neon:** `feat/neon-transaction-adapter` está 14 commits ahead y 124 behind; `apps/api/src/database.ts` es idéntico al de main, main tiene más pruebas, y la rama usa Vitest/workflow antiguos. No fusionar tal cual ni borrar la rama sin revisar cambios únicos.
+- **Protección de main:** la consulta del endpoint de protección devuelve 403. La documentación histórica contradice si se requieren 0 o 1 aprobaciones; las PR #110/#111 se fusionaron con los checks requeridos en verde y sin reviews registradas, pero eso no determina el número actual de aprobaciones. No sortear el gate.
+- La PR #103 se fusionó sin reviews/hilos registrados pese a un handoff anterior que pedía esperar revisión Claude/Codex; se conserva como discrepancia de proceso, no como revisión completada.
+- No se modificaron secretos, Neon ni configuración productiva. No se hizo despliegue manual.
 
 ---
+
 
 
 

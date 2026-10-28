@@ -1,3 +1,14 @@
+## 2026-10-28 — PR #110 fusionada y continuidad pos-merge
+
+- PR #110 se fusionó por squash en `main` con SHA `33da237ad7592ac394cc266c6a96c4bd1d387e37`; HEAD de PR verificado `65eb5d1cb07199b896a5022d94e739343a7c971b`.
+- En ese HEAD pasaron los seis checks obligatorios: `verify`, Chromium authentication smoke tests, `postgres-migration`, JavaScript/TypeScript static analysis, Trivy filesystem/configuration y scan de historial de secretos. También pasaron Dependency Review y el dashboard del proyecto.
+- La PR #110 actualizó el handoff, estado, diario y `docs/BACKUP_AND_RECOVERY.md` para reflejar los resultados verificados. Codex no pudo completar la revisión por límite de uso; se revisó manualmente el diff documental. No hubo reviews registradas. GitHub aceptó el merge con los checks en verde.
+- La PR #111 se fusionó previamente en `3512cac28d6f0752a3699db00843a20788d91376`; su CI pasó 14/14 tests de integración PostgreSQL de auth y 48/48 tests unitarios.
+- Después del merge de #110, el último SHA visible de main fue `33da237ad7592ac394cc266c6a96c4bd1d387e37`. El conector no devolvió workflows post-merge para ese SHA; no afirmar una segunda corrida.
+- No se verificó HTTP CORS productivo; backup restore sigue pendiente; Dependabot alerts no son legibles desde el conector.
+
+---
+
 ## 2026-10-28 — PR #111 fusionada; cobertura de sesión ampliada
 
 - PR #111 (`test/auth-session-tenant-coverage-20261028`) fue fusionada por squash en `main` con SHA `3512cac28d6f0752a3699db00843a20788d91376`; HEAD probado `233844be10bb102fdac34ad41776d4d14420b243`.

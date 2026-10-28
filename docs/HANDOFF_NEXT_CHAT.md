@@ -1,15 +1,16 @@
 ## Próximos pasos ejecutables — estado verificado 2026-10-28
 
-1. **CORS de producción:** PR #103 está fusionada. Repetir `OPTIONS` al Worker productivo con el origen Pages autorizado y con `https://attacker.example`, guardando código HTTP y headers completos. En esta sesión el acceso web a los endpoints falló; no usar automatización metered ni cambiar variables Cloudflare a ciegas. Si no hay vía de red autorizada, continuar tareas independientes y dejar este control pendiente.
+1. **CORS de producción:** PR #103 está fusionada. Repetir `OPTIONS` al Worker productivo con el origin Pages autorizado y con `https://attacker.example`, guardando código HTTP y headers completos. En esta sesión el acceso web a los endpoints falló; no usar automatización metered ni cambiar variables Cloudflare a ciegas. Si no hay vía de red autorizada, continuar tareas independientes y dejar este control pendiente.
 2. **Backup/restore:** run 40587638159 verificó cifrado, subida y checksum; restaura esa copia en PostgreSQL desechable y valida esquema, constraints, conteos/relaciones, duración y RPO/RTO conforme a la sección 6 de `docs/BACKUP_AND_RECOVERY.md`. La llave privada `age` está bajo custodia del propietario, no en el repositorio ni en esta sesión. No acceder ni escribir Neon `main`.
-3. **Auth/tenant:** PR #111 se fusionó en `3512cac28d6f0752a3699db00843a20788d91376`; en su HEAD exacto pasaron los seis checks obligatorios y 14 pruebas PostgreSQL de auth. El issue #53 sigue abierto: faltan rutas comerciales para poder demostrar aislamiento cross-tenant real y falta aprobación de la matriz de permisos por rol/organización. No declarar todo el issue resuelto.
+3. **Auth/tenant:** PR #111 está fusionada. El issue #53 sigue abierto: faltan rutas comerciales para demostrar aislamiento cross-tenant real y falta aprobación de la matriz de permisos por rol/organización. No declarar todo el issue resuelto.
 4. **Dependabot:** el conector no permite leer alertas actuales. Mantener desconocido el recuento; no afirmar que el panel está limpio solo por el pin `undici@7.30.1` o Trivy.
-5. **Adapter de Neon — comparación realizada, NO fusionar tal cual:** `feat/neon-transaction-adapter` está 14 commits por delante y 124 por detrás de `main`. `apps/api/src/database.ts` tiene el mismo blob SHA; `database.test.ts` en main tiene 10 tests frente a 6 en la rama vieja; la rama usa Vitest 3.2.4 frente a 5.0.5 y `actions/checkout@v4` frente a `@v7` en main. No borrar rama ni PR antiguas sin revisar por separado sus cambios únicos.
-6. **PR #110:** continuar en la misma PR para continuidad documental; comprobar los checks del HEAD final `ca9d51048e023ecb9e0bc93aa4132e50c70c6b58` o el SHA posterior si cambia. Codex no pudo completar la revisión por límite de uso y no hay reviews registradas. No fusionar hasta confirmar todos los gates obligatorios y el requisito real de protección de `main`.
+5. **Adapter de Neon:** no fusionar `feat/neon-transaction-adapter` tal cual. Tiene 14 commits ahead y 124 behind; módulo database igual a main, pero pruebas más débiles y dependencias/workflow obsoletos. No borrar la rama ni PR antiguas hasta revisar si conservan cambios únicos.
+6. **Inventario y protección:** al iniciar, verificar el SHA vivo de `main`, las PR abiertas y los checks de sus HEADs. La API de protección devuelve 403 y las fuentes documentales discrepan sobre el número de aprobaciones; confiar en los gates de GitHub y no sortearlos.
 
 No presentar pruebas unitarias como prueba de producción. No hacer despliegues, cambios de secretos ni escrituras en Neon `main` sin el gate aplicable.
 
 ---
+
 
 
 

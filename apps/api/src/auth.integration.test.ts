@@ -18,6 +18,7 @@ vi.mock("@neondatabase/serverless", async () => {
 
 const appModule = await import("./index");
 const app = appModule.default;
+const { resolveTenantContext } = await import("./tenant-context");
 const databaseUrl = (globalThis as typeof globalThis & {
   process?: { env?: Record<string, string | undefined> };
 }).process?.env?.DATABASE_URL;
@@ -524,6 +525,18 @@ const suiteGoogle = describe.skipIf(!databaseAvailable)("Google OAuth routes aga
       const payload = await response.json() as { organizations: Array<{ name: string }> };
       expect(payload.organizations.map((organization) => organization.name)).toEqual([bootstrapOrgName]);
       expect(payload.organizations.some((organization) => organization.name === otherOrgName)).toBe(false);
+
+      // Exercise the actual PostgreSQL-backed tenant resolver with a valid
+      // session and an organization ID belonging to another user.
+      const ownOrganization = await cleanupClient.query<{ id: string }>(
+        "SELECT id FROM organizations WHERE name = $1",
+        [bootstrapOrgName],
+      );
+      const databaseClient = cleanupClient as unknown as import("./database").DatabaseClient;
+      await expect(resolveTenantContext(databaseClient, token, ownOrganization.rows[0]!.id))
+        .resolves.toMatchObject({ organizationId: ownOrganization.rows[0]!.id });
+      await expect(resolveTenantContext(databaseClient, token, otherOrganizationId))
+        .resolves.toBeNull();
     } finally {
       if (otherUserId) {
         await cleanupClient.query("DELETE FROM organization_members WHERE user_id = $1", [otherUserId]);

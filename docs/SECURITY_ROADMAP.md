@@ -1,3 +1,14 @@
+## ESTADO VIVO — restauración real verificada y bloqueos de seguridad vigentes (2026-10-29 UTC)
+
+- La restauración técnica de la copia remota exacta `daily/backup-2026-10-29T17-29-48Z.dump.age` quedó verificada en [run 40955935124](https://github.com/BTF14/Micro-app/actions/runs/40955935124): checksum independiente, descifrado y restauración en PostgreSQL 18 efímero.
+- Esto supera las notas históricas que decían que la restauración de la copia real estaba pendiente. No demuestra conteos/relaciones de datos comerciales poblados, RPO/RTO, alerta de fallo ni coste total $0; esos puntos siguen abiertos.
+- La PR [#151](https://github.com/BTF14/Micro-app/pull/151) está fusionada y documenta guardrails de capacidad. El límite de organizaciones/sucursales sigue sin medir.
+- **Bloqueo de negocio:** `docs/sdd/role-permission-decision-matrix.md` sigue explícitamente sin aprobación del propietario. No implementar permisos comerciales basados solo en la propuesta de IA.
+- La API de la base auditada aún no tiene handlers comerciales HTTP; no hay pruebas cross-tenant reales para ventas/inventario porque esos endpoints no existen.
+- No tocar Neon `main`, secretos ni producción. Conservar las notas históricas inferiores como historial, pero no usarlas como estado vivo cuando contradigan esta sección.
+
+---
+
 ## Monitorización diaria de dependencias — corrección del informe en curso (2026-10-29)
 
 - Workflow: `.github/workflows/daily-dependency-watch.yml`; cron diario 08:15 UTC, ejecución manual, permisos `contents: read`, instalación congelada y auditoría de vulnerabilidades.

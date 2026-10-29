@@ -138,19 +138,19 @@ jobs:
         run: |
           set -euo pipefail
           psql "$DB_URL" -X -v ON_ERROR_STOP=1 -c "
-            SELECT 'organizations' AS tabla, count(*) AS filas FROM organizations
-            UNION ALL SELECT 'app_users', count(*) FROM app_users
-            UNION ALL SELECT 'organization_members', count(*) FROM organization_members
-            UNION ALL SELECT 'suppliers', count(*) FROM suppliers
-            UNION ALL SELECT 'products', count(*) FROM products
-            UNION ALL SELECT 'exchange_rates', count(*) FROM exchange_rates
-            UNION ALL SELECT 'sales', count(*) FROM sales
-            UNION ALL SELECT 'sale_items', count(*) FROM sale_items
-            UNION ALL SELECT 'payments', count(*) FROM payments
-            UNION ALL SELECT 'inventory_movements', count(*) FROM inventory_movements
-            UNION ALL SELECT 'audit_logs', count(*) FROM audit_logs
-            UNION ALL SELECT 'auth_allowlist', count(*) FROM auth_allowlist
-            UNION ALL SELECT 'auth_bootstrap', count(*) FROM auth_bootstrap
+            SELECT 'organizations' AS tabla, count(*) AS filas FROM public.organizations
+            UNION ALL SELECT 'app_users', count(*) FROM public.app_users
+            UNION ALL SELECT 'organization_members', count(*) FROM public.organization_members
+            UNION ALL SELECT 'suppliers', count(*) FROM public.suppliers
+            UNION ALL SELECT 'products', count(*) FROM public.products
+            UNION ALL SELECT 'exchange_rates', count(*) FROM public.exchange_rates
+            UNION ALL SELECT 'sales', count(*) FROM public.sales
+            UNION ALL SELECT 'sale_items', count(*) FROM public.sale_items
+            UNION ALL SELECT 'payments', count(*) FROM public.payments
+            UNION ALL SELECT 'inventory_movements', count(*) FROM public.inventory_movements
+            UNION ALL SELECT 'audit_logs', count(*) FROM public.audit_logs
+            UNION ALL SELECT 'auth_allowlist', count(*) FROM public.auth_allowlist
+            UNION ALL SELECT 'auth_bootstrap', count(*) FROM public.auth_bootstrap
             ORDER BY 1;"
 
       - name: "Verificación 3/5: restricciones de integridad presentes"
@@ -179,9 +179,9 @@ jobs:
           set -euo pipefail
           ORPHANS="$(psql "$DB_URL" -X -A -t -v ON_ERROR_STOP=1 -c "
             SELECT count(*)
-            FROM organization_members m
-            LEFT JOIN app_users u ON u.id = m.user_id
-            LEFT JOIN organizations o ON o.id = m.organization_id
+            FROM public.organization_members m
+            LEFT JOIN public.app_users u ON u.id = m.user_id
+            LEFT JOIN public.organizations o ON o.id = m.organization_id
             WHERE u.id IS NULL OR o.id IS NULL;")"
           if ! [[ "$ORPHANS" =~ ^[0-9]+$ ]] || [ "$ORPHANS" -ne 0 ]; then
             echo "::error::La restauración contiene membresías huérfanas: $ORPHANS"

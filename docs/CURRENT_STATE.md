@@ -9,11 +9,11 @@ Las PR #116–#120 generadas originalmente quitaban del lockfile el bloque `over
 - [PR #116](https://github.com/BTF14/Micro-app/pull/116), grupo minor/patch de Hono, `@cloudflare/workers-types` y Wrangler: **fusionada** el 2026-10-29. El HEAD final `5d3f2e373e75caf71af207cba61df3066b140a86` incluyó el arreglo para conservar el override; todos los checks de la PR terminaron en `success`, incluidos `verify`, Chromium, migraciones, análisis estático, Trivy, historial de secretos, Dependency Review, Cloudflare Pages y Workers.
 - [PR #117](https://github.com/BTF14/Micro-app/pull/117) TypeScript 7, [#118](https://github.com/BTF14/Micro-app/pull/118) plugin-react 6, [#119](https://github.com/BTF14/Micro-app/pull/119) Vite 8 y [#120](https://github.com/BTF14/Micro-app/pull/120) jsdom 30: actualmente **cerradas sin fusionar**. No asumir que esos upgrades están aplicados ni reabrirlos sin revisar compatibilidad, diffs y checks actuales.
 
-Verificación posterior al merge en `main`: `package.json` sigue declarando `undici: 7.30.1`; `pnpm-lock.yaml` conserva el bloque `overrides`, contiene `undici@7.30.1` y no contiene `undici@7.29.1`. En la consulta posterior al merge, `verify`, Chromium, migraciones, Trivy, historial de secretos y Workers estaban en `success`; análisis estático y Cloudflare Pages aún estaban en curso, por lo que se deben reconsultar antes de afirmar que toda la verificación post-merge concluyó.
+Verificación posterior al merge en `main`: `package.json` sigue declarando `undici: 7.30.1`; `pnpm-lock.yaml` conserva el bloque `overrides`, contiene `undici@7.30.1` y no contiene `undici@7.29.1`. La consulta posterior para el SHA de merge `9f73f8ab0c1581145796f09a41f689fa4bdcf310` confirmó `success` en todos los checks consultados, incluidos análisis estático, Cloudflare Pages, Workers, verify, Chromium, migraciones, Trivy e historial de secretos.
 
 ### Siguiente trabajo
 
-1. Reconsultar checks post-merge del SHA `fb49c32aa1451c4bf763a0b78ba12b507700f10d` y confirmar que los estados que estaban en curso concluyeron correctamente.
+1. **Completado:** reconsultados los checks post-merge; todos los checks consultados para `9f73f8ab0c1581145796f09a41f689fa4bdcf310` terminaron en `success`.
 2. Mantener el override de `undici@7.30.1`; cualquier futura actualización debe conservar coherencia entre `package.json` y `pnpm-lock.yaml`, pasar instalación congelada y Dependency Review.
 3. No reintroducir TypeScript 7, plugin-react 6, Vite 8 ni jsdom 30 sin un plan y pruebas de compatibilidad.
 4. Continuar el resto de tareas de seguridad priorizadas. La restauración integral con datos sintéticos poblados sigue pendiente para la última fase.

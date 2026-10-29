@@ -1,3 +1,16 @@
+## REGLA PERMANENTE PARA EL SIGUIENTE CHAT — capacidad y límites (2026-10-29 UTC)
+
+Antes de declarar listo para producción o aceptar un número de empresas, leer `docs/CAPACITY_AND_LIMITS.md` y `docs/ARCHITECTURE_EVOLUTION_PLAN.md`. El límite de organizaciones/sucursales está **sin medir**. Revisar Neon/PostgreSQL, Cloudflare Workers, Cloudflare Pages y servicios auxiliares; comprobar las cuotas vigentes y probar carga sintética en un entorno efímero/autorizado. Medir latencia, errores, CPU, conexiones, concurrencia, almacenamiento y crecimiento. Entregar capacidad demostrada, límite operativo conservador y umbrales de alerta; no inventar cifras.
+
+No usar Neon `main`, datos reales, despliegues de producción ni servicios de pago para esta auditoría; no cambiar planes/secretos ni incurrir en costes sin autorización. Optimizar según evidencia y no introducir microservicios prematuramente.
+
+### Estado del trabajo en curso
+- Backup real: run [40955935124](https://github.com/BTF14/Micro-app/actions/runs/40955935124) verificó descarga, checksum, descifrado y restauración en PostgreSQL 18 efímero. No demuestra integridad de todos los datos comerciales ni RPO/RTO/alertas/coste $0.
+- PR [#150](https://github.com/BTF14/Micro-app/pull/150) está abierta. Nueve workflows asociados a su HEAD reportaban éxito, pero GitHub rechazó el merge por el check obligatorio `Scan tracked files and reachable Git history` marcado como cancelado. No saltarse la protección: inspeccionar el estado de ese check y conseguir un resultado válido antes de fusionar.
+- La documentación de capacidad se está preparando en una rama separada para no mezclar el objetivo de la PR #150 con otro tema. Consultar estado vivo antes de continuar.
+
+---
+
 ## ESTADO OPERATIVO VIGENTE — respaldo cifrado (2026-10-29 UTC)
 
 > Esta sección prevalece sobre notas históricas inferiores que todavía digan que el incidente de subida está pendiente. No borrar el historial: interpretar cada incidente según la evidencia posterior.

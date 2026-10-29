@@ -686,3 +686,13 @@ Este diario es append-only en cuanto a historia: no borrar hitos antiguos; añad
 - Fusionadas por squash [PR #140](https://github.com/BTF14/Micro-app/pull/140) (commit `4fe2b00ed45cf5b779f44b65bcd00133745760e3`) y [PR #142](https://github.com/BTF14/Micro-app/pull/142) (commit `c87893313534049463917af5ee17dfd36ba319c4`) tras revisar diff y checks.
 - Confirmado que los checks post-merge del SHA `c87893313534049463917af5ee17dfd36ba319c4` acabaron todos en `success`, incluidos CI, Playwright, PostgreSQL migration, Semgrep, Security, Trivy, scan de historial y builds de Cloudflare.
 - Se implementó y verificó la prueba sintética poblada en [run 40849167225](https://github.com/BTF14/Micro-app/actions/runs/40849167225), SHA `caa8d224b0e9c939d033080432caa131b2c8e5bc`: checksum, cifrado/descifrado, 13 tablas, constraints, relaciones y exclusión de tablas efímeras pasaron. No se tocaron Neon ni datos reales. RPO/RTO, alertas y prueba con una copia real siguen pendientes.
+
+
+## 2026-10-29 — PR #143 y cierre de la prueba sintética de recuperación
+
+- PR [#143](https://github.com/BTF14/Micro-app/pull/143) se fusionó por squash; merge commit/main: `5afe912fc53d7a7027c4ad95bf366ee2abbf6596`.
+- Checks post-merge de ese SHA: Pages, Workers, CI, Chromium, migración PostgreSQL, análisis estático, Trivy, escaneo de historial y dashboard terminaron en `success`.
+- La prueba sintética de backup/restore [run 40849605695](https://github.com/BTF14/Micro-app/actions/runs/40849605695) pasó en el SHA final de la PR `11f4efe24d8ee94f57a068c28867f8cae0aed394`. Datos sintéticos relacionados; clave age temporal; checksum; restore; manifiesto de 13 tablas/constraints/relaciones; exclusión de tablas efímeras. No tocó Neon ni datos reales.
+- El monitor diario [run 40845877052](https://github.com/BTF14/Micro-app/actions/runs/40845877052) terminó en `success` y el audit reportó `No known vulnerabilities found`. Su SHA precede la fusión de #142; no es evidencia de auditoría en el main actual.
+- La rama `fix/dependency-watch-report-20261029` está 4 commits detrás y 0 ahead; el workflow coincide con main, por lo que no se abrió PR duplicada.
+- Pendiente: RPO/RTO real, alerta de fallo, coste $0, y evaluar upgrades mayores de frontend/TypeScript con análisis de compatibilidad. No tocar Neon `main`, secretos ni producción.

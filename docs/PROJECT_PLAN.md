@@ -1,14 +1,12 @@
-## Bloqueo operativo — PRs de Dependabot (2026-10-29 UTC)
+## Continuidad — Dependabot y override de Undici (2026-10-29 UTC)
 
-HEAD de `main` observado: `7782293db886fc26f1a8275f4f2e2ffa55c27bc1` (PR #131 fusionada). Las PR #116–#120 siguen abiertas y no son fusionables todavía. Tras solicitar rebase a Dependabot, los checks de los HEAD nuevos fallaron por una causa compartida:
+PR #116 se fusionó por squash/merge en `main` con SHA `fb49c32aa1451c4bf763a0b78ba12b507700f10d`. El HEAD final de PR fue `5d3f2e373e75caf71af207cba61df3066b140a86`; todos los checks de PR pasaron, incluidos Dependency Review, verify, Chromium, migraciones, static analysis, Trivy, scan de historial de secretos y Cloudflare Pages/Workers. La PR incorporó la corrección para conservar el override de Undici.
 
-1. `verify` y Chromium fallan con `ERR_PNPM_LOCKFILE_CONFIG_MISMATCH`: `package.json` y `pnpm-lock.yaml` no coinciden en `overrides`.
-2. Dependency Review encuentra `undici@7.29.1` vulnerable de severidad alta en cada PR.
-3. El `main` verificado conserva `undici: 7.30.1` tanto en `package.json` como en el bloque `overrides` del lockfile. Los diffs de Dependabot eliminan ese bloque del lockfile, aunque el override de `package.json` continúa, y vuelven a resolver la versión vulnerable.
+Causa original: los lockfiles generados en PR #116–#120 quitaban `overrides: undici: 7.30.1` mientras `package.json` conservaba `pnpm.overrides.undici = 7.30.1`. La instalación congelada fallaba con `ERR_PNPM_LOCKFILE_CONFIG_MISMATCH`; Dependency Review detectaba `undici@7.29.1` vulnerable de severidad alta. Tras el merge, se comprobó que el lockfile de `main` mantiene el override, contiene `undici@7.30.1` y no contiene `undici@7.29.1`.
 
-PRs/HEADs revisados: #116 `9459a59b6a4ad7be3334b1234b46ac21e3360418`; #117 `62937a73897c6101a5bed0b7c72808fc51567dd1`; #118 `7e025e3c58559eb35481fbc0b88c4307bc2dee6a`; #119 `af73702fba9db67b290a1608d2d63274e6c282b4`; #120 `7c752808aa032a4713c10620c4733f5ef8048a5e`.
+Las PR #117 (TypeScript 7), #118 (plugin-react 6), #119 (Vite 8) y #120 (jsdom 30) figuran cerradas sin fusionar. No asumir que esos upgrades se aplicaron. Para futuras actualizaciones: verificar SHA exacto, coherencia `package.json`/lockfile, instalación congelada, Dependency Review y compatibilidad. No fusionar majors sin un plan y pruebas.
 
-**Plan de resolución:** investigar la versión/configuración de pnpm usada por Dependabot frente a CI y reproducir la generación del lockfile; corregir el mecanismo común para conservar el override y hacer pasar la instalación congelada; validar #116 primero. Las actualizaciones mayores TypeScript 7, `@vitejs/plugin-react` 6, Vite 8 y jsdom 30 requieren pruebas de compatibilidad adicionales. No fusionar mientras los checks obligatorios o Dependency Review estén fallando; no crear cinco PR para arreglar el mismo defecto. No cerrar PR sin evaluar su trabajo.
+**Pendiente inmediato:** reconsultar el resultado final de los checks post-merge del SHA `fb49c32aa1451c4bf763a0b78ba12b507700f10d`; en la primera consulta static analysis y Cloudflare Pages aún estaban en curso. Después continuar los pendientes de seguridad ya priorizados; la restauración con datos sintéticos poblados sigue reservada para la última fase.
 
 ---
 

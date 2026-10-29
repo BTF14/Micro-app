@@ -749,3 +749,11 @@ Este diario es append-only en cuanto a historia: no borrar hitos antiguos; añad
 - Run [40921815702](https://github.com/BTF14/Micro-app/actions/runs/40921815702) passed all steps.
 - Verified `pg_dump 18.6`, dump generation, age encryption, SHA-256 checksum, commit `2b038bd` and successful push to private backup repository. Files are `daily/backup-2026-10-29T17-29-48Z.dump.age` and matching `.sha256`. Retention completed and deleted zero files.
 - This closes the incident chain for the operational upload path. Remaining independent tasks: verify checksum remotely, test decrypt/restore safely with the protected private key, measure RPO/RTO, validate failure alert delivery, and confirm cost assumptions. Do not conflate synthetic restore CI with restoring this exact production backup.
+
+
+## 2026-10-29 — hardening HTTPS de FRONTEND_ORIGIN iniciado
+
+- Main consultada en vivo: `0ba45e47daa5af9bbd9034690443405aa8bedf44`. PR #154 abierta y sin reviews; ocho workflows del SHA `b4508fda6f4d5f042dbeb2b48c7c9910a8c3852d` terminaron success, pero Codex falló por cuota y no hay revisión independiente. No fusionar PR #154 hasta cumplir su gate.
+- Confirmada divergencia entre `getConfiguredFrontendOrigin` de `google-auth.ts` y el validador global de `index.ts`: el primero aceptaba HTTP no local. No hay evidencia de explotación.
+- Creada rama `fix/google-auth-frontend-origin-https-20261029` desde main para una corrección acotada y tests de regresión. En esta fase no se modificaron secretos, Neon, datos, migraciones ni producción.
+- Pendiente: completar tests, verificar diff/CI en SHA exacto y revisión. No declarar el hallazgo cerrado antes del merge.

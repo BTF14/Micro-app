@@ -1,3 +1,15 @@
+## Estado vivo — hardening HTTPS de FRONTEND_ORIGIN en preparación (2026-10-29 UTC)
+
+- Base verificada: `main` = `0ba45e47daa5af9bbd9034690443405aa8bedf44`; PR #154 sigue abierta, sin reviews registradas. Sus 8 workflows consultados para `b4508fda6f4d5f042dbeb2b48c7c9910a8c3852d` terminaron en `success`, pero falta la revisión adicional solicitada; no fusionar por ahora.
+- Hallazgo confirmado: `apps/api/src/google-auth.ts` validaba la forma/origen de `FRONTEND_ORIGIN` pero no restringía HTTP a localhost, a diferencia de `apps/api/src/index.ts`. No hay evidencia de explotación; es una inconsistencia de configuración.
+- Rama de corrección: `fix/google-auth-frontend-origin-https-20261029`. La propuesta alinea el validador de Google OAuth con la regla global: HTTPS, o HTTP solo para localhost/127.0.0.1/[::1], sin credenciales, path, query ni hash.
+- Se añade prueba unitaria de regresión para origen HTTPS, loopback HTTP y entradas no válidas. Estado de ejecución/CI: pendiente hasta que GitHub Actions procese el SHA final.
+- No se modifica bootstrap POST/GET, OAuth state/PKCE, esquema ni migraciones. No se accede/modifica Neon, secretos, datos reales ni producción. Cloudflare previews automáticos no equivalen a despliegue productivo.
+- Arquitectura comercial sigue bloqueada para implementación: no hay rutas HTTP de productos/inventario/ventas; el stock existente es por organización, no sucursal; matriz de permisos sigue sin aprobación. Primero cerrar diseño organización → sucursal → membresía/rol y aprobación del propietario.
+- Capacidad demostrada de empresas/sucursales sigue sin determinar; respetar `docs/CAPACITY_AND_LIMITS.md` y presupuesto $0.
+
+---
+
 ## ESTADO VIVO PRIORITARIO — PR #152 fusionada; corrección de bootstrap en revisión (2026-10-29 UTC)
 
 - **PR #152 fusionada:** merge commit `9376419231501f837a2d85d8741f7bfa9f57a0cc`; el HEAD de PR fue `e16b577d8454b3f2109a857386516a41fdd0a271`. Los 13 checks de ese HEAD pasaron; los nueve checks post-merge del merge commit también terminaron en `success`.

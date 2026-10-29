@@ -711,3 +711,20 @@ PR [#9](https://github.com/BTF14/Micro-app/pull/9) está fusionado en `main` med
 - El alcance fue documentación solamente; no cambia el estado de autenticación/allowlist P0 ni aprueba las decisiones D1–D8.
 - CI, E2E, migraciones, Semgrep, seguridad y dashboard habían pasado en el SHA exacto de la PR; la revisión Codex no concluyó por límite de uso y no debe registrarse como aprobación formal.
 - Siguiente prioridad de producto/técnica sigue siendo resolver decisiones D1–D8 sin suposiciones, luego implementar y probar auth fail-closed y aislamiento multi-tenant con PostgreSQL efímero. No desplegar producción.
+
+
+---
+
+## Seguridad API — coherencia HTTPS de FRONTEND_ORIGIN (2026-10-29)
+
+**Objetivo:** eliminar la divergencia entre la validación global de CORS/configuración y la validación específica del flujo Google OAuth.
+
+- [ ] Unificar el criterio: permitir HTTPS; permitir HTTP solo para `localhost`, `127.0.0.1` y `[::1]`; rechazar HTTP remoto, credenciales, rutas, query, fragmentos y orígenes no canónicos.
+- [ ] Añadir pruebas unitarias negativas y positivas para el helper usado por OAuth.
+- [ ] Ejecutar tests API, typecheck/build y CI/SAST/E2E en el SHA exacto.
+- [ ] Revisar diff y obtener la revisión requerida antes de merge.
+- [ ] Tras merge, verificar main y checks post-merge; no inferir despliegue productivo por previews.
+
+**Gate:** no cambiar el contrato bootstrap ni secretos. Esta corrección de configuración no certifica el flujo OAuth completo ni la preparación comercial.
+
+**Siguiente fase de producto (bloqueada por diseño/aprobación):** cerrar ownership de catálogo/precios, inventario por sucursal, compras/recepciones, caja/turnos, devoluciones y matriz de permisos organización/sucursal. Mantener stack React/Vite/TypeScript + Workers/Hono + Neon/Drizzle; no reescribir ni introducir microservicios sin medición. Capacidad por organización/sucursal: no determinada hasta pruebas sintéticas y auditoría de cuotas Neon/Cloudflare.

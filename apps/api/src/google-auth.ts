@@ -94,12 +94,20 @@ async function createSession(client: DatabaseClient, userId: string): Promise<st
   return token;
 }
 
-function getConfiguredFrontendOrigin(value: string | undefined): string | undefined {
+export function getConfiguredFrontendOrigin(value: string | undefined): string | undefined {
   if (!value) return undefined;
   try {
     const url = new URL(value);
+    const isLocalHttp =
+      url.protocol === "http:" &&
+      ["localhost", "127.0.0.1", "[::1]"].includes(url.hostname);
+
+    if (url.protocol !== "https:" && !isLocalHttp) return undefined;
+    if (url.username || url.password) return undefined;
     if (url.pathname !== "/" || url.search || url.hash) return undefined;
-    return url.origin === value ? url.origin : undefined;
+    if (url.origin !== value) return undefined;
+
+    return url.origin;
   } catch {
     return undefined;
   }

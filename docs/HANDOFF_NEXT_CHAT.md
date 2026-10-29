@@ -1,3 +1,15 @@
+## Continuidad prioritaria — hardening de FRONTEND_ORIGIN (2026-10-29 UTC)
+
+- Main base verificada: `0ba45e47daa5af9bbd9034690443405aa8bedf44`.
+- PR #154: abierta, sin reviews; ocho workflows consultados para su SHA exacto terminaron success. Codex review falló por cuota; no existe review independiente. Respetar el gate de revisión y no fusionar.
+- Rama de trabajo nueva: `fix/google-auth-frontend-origin-https-20261029`; objetivo único: alinear validación de `FRONTEND_ORIGIN` en `google-auth.ts` con `index.ts` (HTTPS salvo loopback HTTP), y añadir pruebas negativas.
+- Verificar diff completo, ejecutar pruebas API/typecheck/build disponibles y revisar workflows para el SHA exacto. No declarar corregido hasta CI verde y merge autorizado por política.
+- No tocar Neon `main`, secretos, datos reales, esquema/migraciones ni producción. Previews de Cloudflare son automáticos y no son producción.
+- Tras cerrar este hardening, continuar auditoría de arquitectura multiempresa y preparar propuesta de sucursales. No implementar endpoints comerciales ni permisos hasta aprobación de la matriz de roles.
+- La capacidad sostenible de tenants no está medida; revisar todos los límites Neon/Cloudflare y probar en entorno sintético antes de prometer cantidades.
+
+---
+
 ## CONTINUIDAD VIVA — después de PR #152 (2026-10-29 UTC)
 
 - PR [#152](https://github.com/BTF14/Micro-app/pull/152) fusionada en `main`, merge commit `9376419231501f837a2d85d8741f7bfa9f57a0cc`. Los 13 checks del HEAD de PR y los nueve checks post-merge observados terminaron en `success`.

@@ -6,15 +6,13 @@
 - Próximo trabajo: auditoría de solo lectura en GitHub + verificación de cuotas de proveedores; luego pruebas de carga sintética en entorno efímero/autorizado. No probar contra Neon `main`, no desplegar producción ni habilitar costes sin autorización.
 - Capacidad numérica actual: **DESCONOCIDA / NO MEDIDA**. No presentar estimaciones como garantías.
 
----
-
 ## ESTADO OPERATIVO VIGENTE — restauración del backup remoto verificada (2026-10-29 UTC)
 
 - [Run 40955935124](https://github.com/BTF14/Micro-app/actions/runs/40955935124) del workflow `.github/workflows/backup-real-restore.yml` terminó en `success`.
-- Se descargó `daily/backup-2026-10-29T17-29-48Z.dump.age`; el SHA-256 coincidió con su sidecar, `age` lo descifró y PostgreSQL 18 efímero lo restauró sin error. `pg_restore --list` leyó el archivo y la validación encontró tablas base en `public`. Se limpiaron archivos descifrados temporales.
-- Conclusión: restauración técnica de esta copia remota verificada; no se usó Neon `main` ni producción.
-- Límites pendientes: integridad de conteos/relaciones comerciales, RPO/RTO, alerta de fallo y evidencia del coste total $0.
-- PR [#150](https://github.com/BTF14/Micro-app/pull/150) documenta esta restauración y sigue abierta. En el SHA `adb5b054ae7694ccda391e9922763ab3db235df5`, GitHub muestra el escaneo obligatorio `Scan tracked files and reachable Git history` con una ejecución exitosa ([run 40956585398](https://github.com/BTF14/Micro-app/actions/runs/40956585398)) y otra ejecución duplicada cancelada ([run 40956540634](https://github.com/BTF14/Micro-app/actions/runs/40956540634)). No concluir que el check sigue bloqueado solo por la ejecución cancelada; verificar el resultado agregado y la aprobación requerida antes de fusionar. No saltarse la protección.
+- Se descargó `daily/backup-2026-10-29T17-29-48Z.dump.age`; el SHA-256 del objeto remoto coincidió con su sidecar (`OK`), `age` lo descifró y PostgreSQL 18 efímero lo restauró sin error. `pg_restore --list` leyó el archivo y la validación encontró tablas base en `public`. Se limpiaron los archivos descifrados temporales.
+- **Conclusión:** verificada la restauración técnica de la copia remota exacta. No se tocó Neon `main` ni producción.
+- **Límite:** no se verificaron conteos ni relaciones de datos comerciales poblados, RPO/RTO, alerta de fallo o coste total $0. La comprobación de esquema por sí sola no garantiza que los datos comerciales estén completos.
+- **Siguiente paso:** planear una comprobación segura de conteos/relaciones mediante datos sintéticos o metadatos no sensibles; medir RPO/RTO; revisar alerta, retención y coste. No imprimir datos comerciales ni solicitar la clave privada age por chat.
 
 ---
 

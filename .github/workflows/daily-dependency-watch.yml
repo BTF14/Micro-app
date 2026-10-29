@@ -49,6 +49,8 @@ jobs:
           outdated_status=$?
           set -e
           echo "status=$outdated_status" >> "$GITHUB_OUTPUT"
+          echo "pnpm -r outdated --latest exit status: $outdated_status"
+          if [ -s /tmp/pnpm-outdated.txt ]; then cat /tmp/pnpm-outdated.txt; else echo "pnpm outdated produced an empty output file"; fi
 
           {
             printf '## Daily dependency watch\n\n'

@@ -1,32 +1,22 @@
-## Arranque obligatorio — bloqueo de Dependabot (2026-10-29 UTC)
+## Arranque obligatorio — estado vivo tras PR #116 (2026-10-29 UTC)
 
-Repositorio único: https://github.com/BTF14/Micro-app. HEAD de `main` verificado en esta revisión: `7782293db886fc26f1a8275f4f2e2ffa55c27bc1` (PR #131 fusionada). **Reconsultar SHA, PRs y checks en vivo antes de actuar.** Leer primero `AGENTS.md`, `docs/CURRENT_STATE.md`, este handoff, `docs/AI_COLLABORATION_AND_PR_POLICY.md`, `docs/PROJECT_PLAN.md`, `docs/STATE_JOURNAL.md`, `docs/RESOURCE_REGISTRY.md`, `docs/SECURITY_ROADMAP.md` y `docs/BACKUP_AND_RECOVERY.md`.
+Repositorio: https://github.com/BTF14/Micro-app. HEAD verificado de `main`: `fb49c32aa1451c4bf763a0b78ba12b507700f10d`, merge de PR #116. Reconsultar SHA, PRs y checks en vivo antes de actuar. Leer primero `AGENTS.md`, `docs/CURRENT_STATE.md`, este handoff, `docs/AI_COLLABORATION_AND_PR_POLICY.md`, `docs/PROJECT_PLAN.md`, `docs/STATE_JOURNAL.md`, `docs/RESOURCE_REGISTRY.md`, `docs/SECURITY_ROADMAP.md` y `docs/BACKUP_AND_RECOVERY.md`.
 
-### Bloqueo P0 de dependencias — no fusionar aún
+### Dependabot — resultado y guardrails
 
-Las PR #116–#120 siguen abiertas y fallan en el HEAD rebaseado. Se comentó `@dependabot rebase` en las cinco y se inspeccionaron logs posteriores:
+- PR #116 (Hono, Cloudflare Workers types y Wrangler) está fusionada. HEAD final de PR: `5d3f2e373e75caf71af207cba61df3066b140a86`. Los checks de la PR pasaron, incluidos Dependency Review, `verify`, Chromium, migraciones, static analysis, Trivy, scan de historial de secretos y builds de Cloudflare.
+- La causa de los fallos anteriores era que el lockfile generado por Dependabot eliminaba `overrides: undici: 7.30.1`, en desacuerdo con `package.json`, y resolvía `undici@7.29.1`. El arreglo de #116 preserva el override. En el `main` actual, `pnpm-lock.yaml` contiene el override y `undici@7.30.1`, y no contiene `undici@7.29.1`.
+- PR #117 (TypeScript 7), #118 (plugin-react 6), #119 (Vite 8) y #120 (jsdom 30) están cerradas sin fusionar. No afirmar que sus versiones se aplicaron. No reabrir ni aplicar los upgrades sin revisar compatibilidad y plan de pruebas.
+- En la última consulta de checks post-merge para `fb49c32aa1451c4bf763a0b78ba12b507700f10d`, `verify`, Chromium, migraciones, Trivy, scan de secretos/historial y Workers estaban verdes; static analysis y Cloudflare Pages seguían en curso. Reconsultar esos estados antes de afirmar éxito post-merge completo.
 
-- `verify` y Chromium: `ERR_PNPM_LOCKFILE_CONFIG_MISMATCH` — la configuración `overrides` actual no coincide con la del lockfile.
-- Dependency Review: detecta `undici@7.29.1` vulnerable (severidad alta: DoS por content-encodings, renegociación TLS 1.2, bypass de validación TLS y cache poisoning/divulgación cross-origin).
-- En `main`, `package.json` mantiene `pnpm.overrides.undici = 7.30.1` y `pnpm-lock.yaml` tiene `overrides: undici: 7.30.1`; las PR de Dependabot quitan el bloque del lockfile aunque no quitan el override de `package.json`. Resultado: la instalación congelada falla y la revisión detecta la versión vulnerable.
+### Próximos pasos
 
-PRs / HEADs inspeccionados:
-- #116 grupo de patch/minor Hono + Cloudflare types + Wrangler: `9459a59b6a4ad7be3334b1234b46ac21e3360418`.
-- #117 TypeScript 7: `62937a73897c6101a5bed0b7c72808fc51567dd1`.
-- #118 plugin-react 6: `7e025e3c58559eb35481fbc0b88c4307bc2dee6a`.
-- #119 Vite 8: `af73702fba9db67b290a1608d2d63274e6c282b4`.
-- #120 jsdom 30: `7c752808aa032a4713c10620c4733f5ef8048a5e`.
+1. Verificar los checks post-merge que quedaron en curso.
+2. Mantener `pnpm.overrides.undici = 7.30.1` coherente con el lockfile; exigir `pnpm install --frozen-lockfile` y Dependency Review verdes en toda actualización.
+3. No fusionar PR solo porque sea de Dependabot: comprobar SHA exacto, diff, lockfile, seguridad y compatibilidad. Evitar múltiples PR para una causa común.
+4. Continuar la hoja de ruta de seguridad; la prueba integral de restauración con datos sintéticos poblados sigue pendiente y debe quedar para la última fase.
 
-**No fusionar ninguna hasta resolver la causa común y lograr checks verdes en el SHA exacto.** Resolver primero la generación de lockfile y validar #116; evaluar majors por separado con pruebas de compatibilidad. No crear cinco PR de parche para el mismo defecto. No cerrar ni reemplazar PR sin inspeccionar su diff y evidencia actual.
-
-### Próximas acciones de la IA
-
-1. Comprobar qué versión/configuración de pnpm ejecuta Dependabot y compararla con CI.
-2. Reproducir y corregir la generación del lockfile para conservar el override `undici@7.30.1` y que `pnpm install --frozen-lockfile` pase.
-3. Inspeccionar diffs completos y checks de #116–#120 después de corregir; fusionar solo con criterios de `docs/AI_COLLABORATION_AND_PR_POLICY.md` y branch protection.
-4. Seguir documentando cambios aquí, en `CURRENT_STATE.md`, `PROJECT_PLAN.md` y `STATE_JOURNAL.md`, incluyendo SHA, PR, run IDs, causa raíz, pruebas y pendientes.
-
-No se modificaron secretos, Neon `main`, datos reales ni producción. No hubo despliegue manual. PR #131 sí está fusionada; sus cambios solo añaden resumen visible ante fallos de backup en Actions, no una notificación externa.
+PR #131 está fusionada y añade solo un resumen visible ante fallos de backup en Actions; no envía por sí mismo correo/push. No se tocaron Neon `main`, secretos, datos reales ni producción, y no se hizo despliegue manual.
 
 ---
 

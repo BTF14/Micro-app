@@ -1,3 +1,14 @@
+## ESTADO OPERATIVO VIGENTE — restauración del backup remoto verificada (2026-10-29 UTC)
+
+- **Prueba real completada:** [run 40955935124](https://github.com/BTF14/Micro-app/actions/runs/40955935124), workflow `.github/workflows/backup-real-restore.yml`, terminó en `success`.
+- **Archivo exacto probado:** `daily/backup-2026-10-29T17-29-48Z.dump.age`.
+- Los pasos de ejecución confirmaron que el archivo remoto y su sidecar se descargaron, el SHA-256 coincidió (`sha256sum --check` informó `OK`), `age` descifró el archivo, `pg_restore --list` pudo leer el archivo y `pg_restore --exit-on-error` restauró correctamente en PostgreSQL 18 efímero.
+- La validación posterior encontró al menos una tabla base en el esquema `public`; los archivos descifrados temporales se limpiaron. No se imprimieron filas comerciales ni secretos.
+- **Alcance exacto de la evidencia:** queda verificado el recorrido de descarga, integridad, descifrado y restauración técnica de esta copia remota concreta en un entorno desechable. Esta prueba no demuestra que las tablas comerciales contengan filas, que los conteos/relaciones de negocio coincidan con el origen, ni mide RPO/RTO o el coste total. No se usó ni modificó Neon `main` o producción.
+- **Siguientes comprobaciones:** inspeccionar de forma segura un manifiesto de conteos/relaciones de datos sintéticos o de metadatos no sensibles; medir duración total y RPO/RTO; comprobar alerta de fallo, retención y coste $0. No volcar datos de negocio a logs y no solicitar la clave privada age por chat.
+
+---
+
 ## ESTADO OPERATIVO VIGENTE — backup (2026-10-29 UTC)
 
 Esta sección supersede las notas históricas posteriores que indiquen que la subida corregida sigue pendiente. Se conserva el historial de incidentes para trazabilidad.

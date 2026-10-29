@@ -5,12 +5,15 @@ on:
     # 08:15 UTC daily (04:15 Venezuela); report-only, no dependency changes.
     - cron: "15 8 * * *"
   workflow_dispatch:
+  pull_request:
+    paths:
+      - ".github/workflows/daily-dependency-watch.yml"
 
 permissions:
   contents: read
 
 concurrency:
-  group: micro-app-dependency-watch
+  group: micro-app-dependency-watch-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:

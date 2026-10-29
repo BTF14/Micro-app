@@ -84,6 +84,15 @@ Consultar [CAPACITY_AND_LIMITS.md](./CAPACITY_AND_LIMITS.md). No fijar un númer
 - `docs/PRODUCTION_READINESS.md` correctamente mantiene sin completar los flujos comerciales, permisos por operación, pruebas cross-tenant, idempotencia/concurrencia y requisitos fiscales.
 - La PR #151 añadió guardrails de capacidad y fue fusionada; la capacidad real sigue sin medir. Las cuotas publicadas no sustituyen verificación del plan real ni pruebas sintéticas.
 
+### Hallazgo de seguridad preliminar — secreto de bootstrap en URL
+
+- **Prioridad propuesta: P1 para revisar antes de habilitar el bootstrap con usuarios reales; no se ha demostrado una filtración activa.**
+- Evidencia: `apps/api/src/google-auth.ts:138-145` lee `bootstrap_token` desde la query string de `GET /auth/google` y lo copia a una cookie HttpOnly de corta duración.
+- Riesgo: la cookie protege el token después de recibirlo, pero no elimina la exposición del token en la URL de la primera petición. Las URL pueden terminar en historial del navegador o registros de infraestructura. El riesgo depende de quién tenga acceso a esos registros y de si el bootstrap de un solo uso sigue sin consumirse.
+- Mitigaciones existentes: el token también debe coincidir con `BOOTSTRAP_TOKEN`, la identidad Google debe estar verificada y allowlisted, y la fila `auth_bootstrap` se consume transaccionalmente una sola vez. Estos controles reducen el impacto, pero no hacen deseable transportar el secreto en una URL.
+- Recomendación: diseñar un flujo de bootstrap que transporte el secreto en el cuerpo de una petición POST protegida por validación de origen/CSRF y límites de entrada, o un mecanismo administrativo equivalente que no lo incluya en la URL. Añadir pruebas que comprueben que el token no aparece en URL, redirecciones ni logs. No cambiar el flujo sin revisar los callers, tests y el contrato de bootstrap.
+- Estado: documentado para revisión; no se modificó código ni se afirmó que haya ocurrido una filtración.
+
 ### Decisiones necesarias antes de crear el modelo de sucursales
 
 1. Determinar si los productos y precios son compartidos por organización o pueden variar por sucursal; separar catálogo global de existencias por ubicación si corresponde.

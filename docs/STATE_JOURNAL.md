@@ -1,3 +1,11 @@
+## 2026-10-29 — verificación post-merge final de PR #132
+
+- Reconsultados los checks del commit `9f73f8ab0c1581145796f09a41f689fa4bdcf310`: `verify`, Chromium, migraciones PostgreSQL, análisis estático, Trivy, scan de historial de secretos, Cloudflare Pages y Workers terminaron todos en `success`.
+- Se comprobó que el override de `undici` se mantiene coherente: `package.json` declara `7.30.1`; `pnpm-lock.yaml` contiene el bloque `overrides`, `undici@7.30.1` y no contiene `undici@7.29.1`.
+- La prueba integral de restauración con datos sintéticos poblados sigue pendiente para la última fase. No se tocó Neon `main`, secretos, datos reales ni producción; no se hizo despliegue manual.
+
+---
+
 ## 2026-10-29 — PR #116 fusionada tras corregir el override de Undici
 
 - Se comprobó que los HEAD iniciales de PR #116–#120 eliminaban el bloque `overrides: undici: 7.30.1` del lockfile pese a mantener el override en `package.json`. Logs de `verify`/Chromium: `ERR_PNPM_LOCKFILE_CONFIG_MISMATCH`; Dependency Review detectó `undici@7.29.1` con hallazgos de severidad alta.

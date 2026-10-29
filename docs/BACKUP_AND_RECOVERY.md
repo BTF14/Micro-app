@@ -109,3 +109,13 @@ Definir objetivos iniciales para aprobar antes de producción: RPO (máxima pér
 ## Evaluación de Google Drive (2026-10-18)
 
 Ver [evaluación detallada de Google Drive](GOOGLE_DRIVE_BACKUP_EVALUATION.md). Google Drive personal es un candidato viable condicionado, no una copia activa ni un destino ya aprobado. Los 15 GB de una cuenta Google se comparten entre Gmail, Drive y Photos. La automatización requiere OAuth persistente y secretos seguros; las cuentas de servicio no tienen almacenamiento propio para poseer archivos en My Drive. No habilitar billing ni asumir que el OAuth de prueba dura indefinidamente. Antes de usar datos reales, probar cifrado, subida, descarga, checksum y restauración con PostgreSQL desechable y datos sintéticos. Espacio libre, acceso a la cuenta y credenciales siguen sin verificar.
+
+
+## Registro de continuidad — 2026-10-29, después de PR #127
+
+- PR [#127](https://github.com/BTF14/Micro-app/pull/127) está fusionada; el workflow temporal de restauración fue retirado. No recrearlo como solución automática.
+- Run [40804665192](https://github.com/BTF14/Micro-app/actions/runs/40804665192) valida checksum, descifrado y restauración técnica en PostgreSQL desechable, además de 13 tablas, 186 constraints, cero membresías huérfanas y exclusión de tablas de sesión/rate-limit.
+- Límite importante: los datos comerciales y de auditoría de la copia probada estaban vacíos. La recuperación de datos de negocio poblados y la comparación con manifiesto del origen no están probadas.
+- Limpieza: el propietario confirma la eliminación del secreto temporal `RESTORE_TEST_AGE_KEY`; `RESTORE_TEST_DB_URL` sigue pendiente de eliminación/confirmación. No solicitar ni registrar valores secretos.
+- La rama Neon `restore-test-20261028` seguía existiendo en la última consulta. El intento de eliminación por herramienta fue bloqueado por controles de seguridad; no afirmar que se borró. Si se elimina manualmente, comprobar proyecto y branch ID antes de confirmar y no seleccionar `main`.
+- Próximo paso: inspeccionar los mecanismos permanentes de backup y planear una sola prueba con datos sintéticos poblados en PostgreSQL desechable. Comparar un manifiesto de conteos y relaciones, y registrar RPO/RTO, alertas, retención y coste. No usar datos reales, Neon `main` ni producción; no cerrar la tarea hasta tener evidencia.

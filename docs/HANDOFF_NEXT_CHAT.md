@@ -1,3 +1,13 @@
+## CONTINUIDAD VIVA — después de PR #152 (2026-10-29 UTC)
+
+- PR [#152](https://github.com/BTF14/Micro-app/pull/152) fusionada en `main`, merge commit `9376419231501f837a2d85d8741f7bfa9f57a0cc`. Los 13 checks del HEAD de PR y los nueve checks post-merge observados terminaron en `success`.
+- Rama activa para la siguiente corrección: `fix/bootstrap-token-post-body-20261029`. Objetivo único: dejar de aceptar `bootstrap_token` por URL, exigir POST con cuerpo, Origin exacto del frontend configurado, campos únicos/permitidos y límite de 2 KiB; pruebas de regresión incluidas.
+- No considerar el riesgo mitigado hasta comprobar CI del SHA final, revisar diff y fusionar por el proceso protegido. No autoaprobar ni saltar reglas.
+- No producción, secretos ni Neon `main`; no ejecutar migraciones ni borrar ramas/backups.
+- Luego retomar auditoría de consultas/constraints, contrato organización → sucursal → membresía/rol y matriz de permisos aún pendiente de aprobación.
+
+---
+
 ## ESTADO OPERATIVO VIGENTE — respaldo cifrado (2026-10-29 UTC)
 
 > Esta sección prevalece sobre notas históricas inferiores que todavía digan que el incidente de subida está pendiente. No borrar el historial: interpretar cada incidente según la evidencia posterior.

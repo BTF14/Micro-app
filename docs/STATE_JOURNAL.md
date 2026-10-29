@@ -1,3 +1,12 @@
+## 2026-10-29 — PR #152 fusionada; mitigación P1 de bootstrap iniciada
+
+- PR [#152](https://github.com/BTF14/Micro-app/pull/152) fusionada; merge commit `9376419231501f837a2d85d8741f7bfa9f57a0cc`. Verificados 13 checks de su HEAD y nueve checks post-merge en éxito.
+- Se identificó y trazó el transporte del secreto de bootstrap en query string hasta cookie HttpOnly. No hay evidencia de filtración activa.
+- Rama `fix/bootstrap-token-post-body-20261029`: cambio propuesto a POST con cuerpo, Origin exacto, validación de campos y límites, token validado antes de redirigir, y pruebas de regresión. **Aún no fusionado ni declarado resuelto**.
+- No se tocó Neon `main`, secretos ni producción; no se desplegó.
+
+---
+
 ## 2026-10-29 — PR #151 fusionada y hallazgos iniciales de arquitectura multiempresa
 
 - Se fusionó la PR [#151](https://github.com/BTF14/Micro-app/pull/151) mediante squash; merge commit `70984baf7f6ac5a442e6c2364aaf6d7d4ebbc7d4`. La PR documenta límites de Neon/Cloudflare y guardrails de capacidad. Los checks del SHA de cabeza terminaron en éxito antes de la fusión.

@@ -117,47 +117,107 @@ function redirectToFrontend(c: AppContext, path: string): Response {
 
 const SLUG_PATTERN = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 
+async function startGoogleAuthorization(c: AppContext, bootstrapRequest?: BootstrapRequest): Promise<Response> {
+  const clientId = c.env.GOOGLE_CLIENT_ID;
+  const redirectUri = c.env.GOOGLE_REDIRECT_URI;
+  if (!clientId || !redirectUri) {
+    return c.json({ error: "GOOGLE_NOT_CONFIGURED", message: "El inicio de sesión con Google no está configurado." }, 503);
+  }
+
+  const state = randomToken(24);
+  const codeVerifier = randomToken(48);
+  const codeChallenge = await pkceChallengeFromVerifier(codeVerifier);
+
+  setShortLivedCookie(c, STATE_COOKIE, state);
+  setShortLivedCookie(c, VERIFIER_COOKIE, codeVerifier);
+  if (bootstrapRequest) {
+    setShortLivedCookie(c, BOOTSTRAP_COOKIE, JSON.stringify(bootstrapRequest));
+  }
+
+  const authorizationUrl = new URL(GOOGLE_AUTHORIZATION_ENDPOINT);
+  authorizationUrl.searchParams.set("client_id", clientId);
+  authorizationUrl.searchParams.set("redirect_uri", redirectUri);
+  authorizationUrl.searchParams.set("response_type", "code");
+  authorizationUrl.searchParams.set("scope", "openid email");
+  authorizationUrl.searchParams.set("state", state);
+  authorizationUrl.searchParams.set("code_challenge", codeChallenge);
+  authorizationUrl.searchParams.set("code_challenge_method", "S256");
+  authorizationUrl.searchParams.set("access_type", "online");
+  authorizationUrl.searchParams.set("prompt", "select_account");
+
+  return c.redirect(authorizationUrl.toString(), 302);
+}
+
 export function registerGoogleAuthRoutes(app: Hono<{ Bindings: Bindings }>): void {
   app.get("/auth/google", async (c) => {
-    const clientId = c.env.GOOGLE_CLIENT_ID;
-    const redirectUri = c.env.GOOGLE_REDIRECT_URI;
-    if (!clientId || !redirectUri) {
-      return c.json({ error: "GOOGLE_NOT_CONFIGURED", message: "El inicio de sesión con Google no está configurado." }, 503);
+    const url = new URL(c.req.url);
+    if (["bootstrap_token", "org_name", "org_slug"].some((key) => url.searchParams.has(key))) {
+      return c.json({
+        error: "BOOTSTRAP_METHOD_REQUIRED",
+        message: "El alta inicial debe iniciarse mediante una petición POST protegida.",
+      }, 400);
+    }
+    return startGoogleAuthorization(c);
+  });
+
+  app.post("/auth/google", async (c) => {
+    const configuredOrigin = getConfiguredFrontendOrigin(c.env.FRONTEND_ORIGIN);
+    if (!configuredOrigin || c.req.header("Origin") !== configuredOrigin) {
+      return c.json({ error: "INVALID_BOOTSTRAP_ORIGIN", message: "No se pudo iniciar el alta administrativa." }, 403);
     }
 
-    const state = randomToken(24);
-    const codeVerifier = randomToken(48);
-    const codeChallenge = await pkceChallengeFromVerifier(codeVerifier);
-
-    setShortLivedCookie(c, STATE_COOKIE, state);
-    setShortLivedCookie(c, VERIFIER_COOKIE, codeVerifier);
-
-    // Optional one-time bootstrap parameters. Only meaningful the first time
-    // this flow is ever completed successfully; the database seals the
-    // bootstrap path after first use regardless of what is supplied here.
-    const bootstrapToken = c.req.query("bootstrap_token");
-    const organizationName = c.req.query("org_name");
-    const organizationSlug = c.req.query("org_slug");
-    if (bootstrapToken && organizationName && organizationSlug) {
-      if (organizationName.length < 2 || organizationName.length > 120 || !SLUG_PATTERN.test(organizationSlug)) {
-        return c.json({ error: "INVALID_BOOTSTRAP_PARAMS", message: "Datos de organización inválidos." }, 400);
-      }
-      const payload: BootstrapRequest = { token: bootstrapToken, organizationName, organizationSlug };
-      setShortLivedCookie(c, BOOTSTRAP_COOKIE, JSON.stringify(payload));
+    const contentType = c.req.header("Content-Type")?.split(";")[0]?.trim().toLowerCase();
+    if (contentType !== "application/x-www-form-urlencoded") {
+      return c.json({ error: "INVALID_BOOTSTRAP_CONTENT_TYPE", message: "Formato de solicitud inválido." }, 415);
     }
 
-    const authorizationUrl = new URL(GOOGLE_AUTHORIZATION_ENDPOINT);
-    authorizationUrl.searchParams.set("client_id", clientId);
-    authorizationUrl.searchParams.set("redirect_uri", redirectUri);
-    authorizationUrl.searchParams.set("response_type", "code");
-    authorizationUrl.searchParams.set("scope", "openid email");
-    authorizationUrl.searchParams.set("state", state);
-    authorizationUrl.searchParams.set("code_challenge", codeChallenge);
-    authorizationUrl.searchParams.set("code_challenge_method", "S256");
-    authorizationUrl.searchParams.set("access_type", "online");
-    authorizationUrl.searchParams.set("prompt", "select_account");
+    if (new URL(c.req.url).search) {
+      return c.json({ error: "BOOTSTRAP_QUERY_NOT_ALLOWED", message: "No se permiten parámetros de alta en la URL." }, 400);
+    }
 
-    return c.redirect(authorizationUrl.toString(), 302);
+    const declaredLength = c.req.header("Content-Length");
+    if (declaredLength !== undefined && (!/^\d+$/.test(declaredLength) || Number(declaredLength) > 2048)) {
+      return c.json({ error: "INVALID_BOOTSTRAP_BODY", message: "Solicitud de alta inválida." }, 400);
+    }
+
+    let rawBody: string;
+    try {
+      rawBody = await c.req.text();
+    } catch {
+      return c.json({ error: "INVALID_BOOTSTRAP_BODY", message: "Solicitud de alta inválida." }, 400);
+    }
+    if (new TextEncoder().encode(rawBody).byteLength > 2048) {
+      return c.json({ error: "INVALID_BOOTSTRAP_BODY", message: "Solicitud de alta inválida." }, 413);
+    }
+
+    const params = new URLSearchParams(rawBody);
+    const allowed = new Set(["bootstrap_token", "org_name", "org_slug"]);
+    if (
+      Array.from(params.keys()).some((key) => !allowed.has(key)) ||
+      ["bootstrap_token", "org_name", "org_slug"].some((key) => params.getAll(key).length !== 1)
+    ) {
+      return c.json({ error: "INVALID_BOOTSTRAP_PARAMS", message: "Datos de organización inválidos." }, 400);
+    }
+
+    const token = params.get("bootstrap_token") ?? "";
+    const organizationName = (params.get("org_name") ?? "").trim();
+    const organizationSlug = params.get("org_slug") ?? "";
+    if (
+      !token ||
+      token.length > 512 ||
+      organizationName.length < 2 ||
+      organizationName.length > 120 ||
+      organizationSlug.length > 80 ||
+      !SLUG_PATTERN.test(organizationSlug)
+    ) {
+      return c.json({ error: "INVALID_BOOTSTRAP_PARAMS", message: "Datos de organización inválidos." }, 400);
+    }
+
+    if (!c.env.BOOTSTRAP_TOKEN || token !== c.env.BOOTSTRAP_TOKEN) {
+      return c.json({ error: "BOOTSTRAP_NOT_AUTHORIZED", message: "No se pudo iniciar el alta administrativa." }, 403);
+    }
+
+    return startGoogleAuthorization(c, { token, organizationName, organizationSlug });
   });
 
   app.get("/auth/google/callback", async (c) => {

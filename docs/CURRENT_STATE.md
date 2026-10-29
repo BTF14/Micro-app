@@ -1,3 +1,13 @@
+## ESTADO VIVO PRIORITARIO — PR #152 fusionada; corrección de bootstrap en revisión (2026-10-29 UTC)
+
+- **PR #152 fusionada:** merge commit `9376419231501f837a2d85d8741f7bfa9f57a0cc`; el HEAD de PR fue `e16b577d8454b3f2109a857386516a41fdd0a271`. Los 13 checks de ese HEAD pasaron; los nueve checks post-merge del merge commit también terminaron en `success`.
+- **Siguiente corrección P1 en rama** `fix/bootstrap-token-post-body-20261029`: eliminar el transporte de `bootstrap_token` por query string, aceptar bootstrap solo por POST con cuerpo `application/x-www-form-urlencoded`, validar Origin exacto, limitar tamaño/forma del cuerpo y comprobar el token antes de redirigir a Google. Se añaden pruebas de regresión para URL, origen y parámetros ambiguos.
+- **Estado de la corrección:** rama de trabajo no fusionada; no declarar mitigado hasta que los checks del SHA final pasen y el cambio se revise. El bootstrap sigue siendo de un solo uso en la base mediante la transacción existente.
+- **Límites preservados:** no se desplegó producción, no se tocaron secretos ni Neon `main`, no se ejecutó SQL ni se borraron ramas/backups. La PR #152 solo actualizó documentación y no cambió la aplicación.
+- **Después de la corrección:** continuar auditoría multiempresa y decisión de sucursales/roles; no implementar módulos comerciales antes de aprobar la matriz de permisos. La capacidad de organizaciones/sucursales sigue sin medir.
+
+---
+
 ## ESTADO OPERATIVO VIGENTE — restauración del backup remoto verificada (2026-10-29 UTC)
 
 - [Run 40955935124](https://github.com/BTF14/Micro-app/actions/runs/40955935124) del workflow `.github/workflows/backup-real-restore.yml` terminó en `success`.

@@ -173,6 +173,81 @@ async function startGoogleFlow(extraQuery = ""): Promise<{ cookieHeader: string;
   return { cookieHeader, state: cookies.microapp_oauth_state! };
 }
 
+async function startBootstrapGoogleFlow(input: {
+  token: string;
+  organizationName: string;
+  organizationSlug: string;
+}): Promise<{ cookieHeader: string; state: string; authorizationUrl: string }> {
+  const body = new URLSearchParams({
+    bootstrap_token: input.token,
+    org_name: input.organizationName,
+    org_slug: input.organizationSlug,
+  }).toString();
+  const startResponse = await app.fetch(new Request("https://api.example/auth/google", {
+    method: "POST",
+    headers: {
+      Origin: googleOrigin,
+      "Content-Type": "application/x-www-form-urlencoded",
+    },
+    body,
+  }), googleEnv);
+  expect(startResponse.status).toBe(302);
+  const authorizationUrl = startResponse.headers.get("location") ?? "";
+  expect(authorizationUrl).toContain("https://accounts.google.com/");
+  expect(authorizationUrl).not.toContain(input.token);
+  const cookies = extractCookiePairs(startResponse);
+  expect(cookies.microapp_oauth_state).toBeTruthy();
+  expect(cookies.microapp_oauth_verifier).toBeTruthy();
+  expect(cookies.microapp_oauth_bootstrap).toBeTruthy();
+  const cookieHeader = Object.entries(cookies).map(([name, value]) => `${name}=${value}`).join("; ");
+  return { cookieHeader, state: cookies.microapp_oauth_state!, authorizationUrl };
+}
+
+describe("Google bootstrap request transport", () => {
+  it("rejects bootstrap secrets in the GET query string", async () => {
+    const response = await app.fetch(new Request(
+      `https://api.example/auth/google?bootstrap_token=${encodeURIComponent(bootstrapToken)}&org_name=Leaky&org_slug=leaky`,
+    ), googleEnv);
+    expect(response.status).toBe(400);
+    expect(response.headers.get("location")).toBeNull();
+    expect(extractCookiePairs(response).microapp_oauth_bootstrap).toBeUndefined();
+  });
+
+  it("requires the exact configured frontend origin for bootstrap POST", async () => {
+    const response = await app.fetch(new Request("https://api.example/auth/google", {
+      method: "POST",
+      headers: {
+        Origin: "https://attacker.example",
+        "Content-Type": "application/x-www-form-urlencoded",
+      },
+      body: new URLSearchParams({
+        bootstrap_token: bootstrapToken,
+        org_name: bootstrapOrgName,
+        org_slug: bootstrapOrgSlug,
+      }).toString(),
+    }), googleEnv);
+    expect(response.status).toBe(403);
+    expect(response.headers.get("location")).toBeNull();
+    expect(extractCookiePairs(response).microapp_oauth_bootstrap).toBeUndefined();
+  });
+
+  it("rejects duplicate fields and query parameters before redirecting to Google", async () => {
+    const response = await app.fetch(new Request(
+      "https://api.example/auth/google?unexpected=1",
+      {
+        method: "POST",
+        headers: {
+          Origin: googleOrigin,
+          "Content-Type": "application/x-www-form-urlencoded",
+        },
+        body: `bootstrap_token=${encodeURIComponent(bootstrapToken)}&bootstrap_token=duplicate&org_name=Valid+Shop&org_slug=valid-shop`,
+      },
+    ), googleEnv);
+    expect(response.status).toBe(400);
+    expect(response.headers.get("location")).toBeNull();
+  });
+});
+
 const suiteGoogle = describe.skipIf(!databaseAvailable)("Google OAuth routes against PostgreSQL", () => {
   let cleanupClient: Client;
   let fetchSpy: ReturnType<typeof vi.spyOn>;
@@ -322,8 +397,11 @@ const suiteGoogle = describe.skipIf(!databaseAvailable)("Google OAuth routes aga
       [googleEmail],
     );
 
-    const bootstrapQuery = `?bootstrap_token=${encodeURIComponent(bootstrapToken)}&org_name=${encodeURIComponent(bootstrapOrgName)}&org_slug=${encodeURIComponent(bootstrapOrgSlug)}`;
-    const { cookieHeader, state } = await startGoogleFlow(bootstrapQuery);
+    const { cookieHeader, state } = await startBootstrapGoogleFlow({
+      token: bootstrapToken,
+      organizationName: bootstrapOrgName,
+      organizationSlug: bootstrapOrgSlug,
+    });
     mockGoogleIdentity("sub-bootstrap-owner", true);
 
     const callback = await app.fetch(new Request(
@@ -355,8 +433,11 @@ const suiteGoogle = describe.skipIf(!databaseAvailable)("Google OAuth routes aga
     const secondEmail = `google-second-${crypto.randomUUID()}@example.test`;
     await cleanupClient.query("INSERT INTO auth_allowlist (email, added_by) VALUES ($1, 'integration-test')", [secondEmail]);
     const secondOrgName = `Second Shop ${crypto.randomUUID()}`;
-    const secondQuery = `?bootstrap_token=${encodeURIComponent(bootstrapToken)}&org_name=${encodeURIComponent(secondOrgName)}&org_slug=second-${crypto.randomUUID().replace(/-/g, "").slice(0, 10)}`;
-    const second = await startGoogleFlow(secondQuery);
+    const second = await startBootstrapGoogleFlow({
+      token: bootstrapToken,
+      organizationName: secondOrgName,
+      organizationSlug: `second-${crypto.randomUUID().replace(/-/g, "").slice(0, 10)}`,
+    });
     fetchSpy = vi.spyOn(globalThis, "fetch").mockImplementation(async (input) => {
       const url = typeof input === "string" ? input : (input as Request).url ?? String(input);
       if (url.startsWith("https://oauth2.googleapis.com/token")) return new Response(JSON.stringify({ access_token: "mock-access-token" }), { status: 200 });

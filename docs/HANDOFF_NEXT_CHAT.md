@@ -9,8 +9,6 @@ No usar Neon `main`, datos reales, despliegues de producción ni servicios de pa
 - PR [#150](https://github.com/BTF14/Micro-app/pull/150) sigue abierta. En su SHA `adb5b054ae7694ccda391e9922763ab3db235df5`, el escaneo `Scan tracked files and reachable Git history` tiene una ejecución exitosa ([run 40956585398](https://github.com/BTF14/Micro-app/actions/runs/40956585398)) y otra duplicada cancelada ([run 40956540634](https://github.com/BTF14/Micro-app/actions/runs/40956540634)). No asumir que la ejecución cancelada es el estado efectivo del check: verificar el resultado requerido de la PR y la aprobación de rama antes de fusionar; nunca saltarse la protección.
 - La documentación de capacidad se está preparando en una rama separada para no mezclar el objetivo de la PR #150 con otro tema. Consultar estado vivo antes de continuar.
 
----
-
 ## ESTADO OPERATIVO VIGENTE — respaldo cifrado (2026-10-29 UTC)
 
 > Esta sección prevalece sobre notas históricas inferiores que todavía digan que el incidente de subida está pendiente. No borrar el historial: interpretar cada incidente según la evidencia posterior.

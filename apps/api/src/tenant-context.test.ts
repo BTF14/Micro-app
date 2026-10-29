@@ -56,6 +56,32 @@ describe("resolveTenantContext", () => {
     expect(query).not.toHaveBeenCalled();
   });
 
+  it("does not reuse a valid session for a different organization selector", async () => {
+    const otherOrganizationId = "99999999-8888-4777-8666-555555555555";
+    const query = vi.fn(async (_statement: string, values?: unknown[]) => ({
+      rows: values?.[1] === organizationId
+        ? [{ user_id: userId, organization_id: organizationId, role: "owner" as const }]
+        : [],
+    }));
+    const client = {
+      connect: vi.fn(),
+      query,
+      end: vi.fn(),
+    } as unknown as DatabaseClient;
+
+    await expect(resolveTenantContext(client, sessionToken, organizationId)).resolves.toEqual({
+      userId,
+      organizationId,
+      role: "owner",
+    });
+    await expect(resolveTenantContext(client, sessionToken, otherOrganizationId)).resolves.toBeNull();
+
+    expect(query).toHaveBeenNthCalledWith(2, expect.stringContaining("AND o.id = $2"), [
+      expect.stringMatching(/^[a-f0-9]{64}$/),
+      otherOrganizationId,
+    ]);
+  });
+
   it("returns null when the session has no active membership in the requested organization", async () => {
     const { client, query } = makeClient([]);
 

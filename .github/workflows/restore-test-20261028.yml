@@ -81,10 +81,11 @@ jobs:
         run: |
           set -euo pipefail
           git clone --depth 1 "https://x-access-token:${GH_TOKEN}@github.com/${BACKUP_REPO}.git" backups-repo
-          LATEST="$(ls -1 backups-repo/daily/*.dump.age | sort | tail -n1)"
-          echo "LATEST=$LATEST" >> "$GITHUB_ENV"
-          echo "Respaldo seleccionado: $(basename "$LATEST")"
-          sha256sum -c "${LATEST}.sha256"
+          cd backups-repo/daily
+          LATEST_NAME="$(ls -1 *.dump.age | sort | tail -n1)"
+          echo "Respaldo seleccionado: $LATEST_NAME"
+          sha256sum -c "${LATEST_NAME}.sha256"
+          echo "LATEST=$(pwd)/${LATEST_NAME}" >> "$GITHUB_ENV"
 
       - name: Descifrar
         env:

@@ -10,6 +10,7 @@
 - **Plan de arquitectura:** [docs/ARCHITECTURE_EVOLUTION_PLAN.md](./ARCHITECTURE_EVOLUTION_PLAN.md). La restauración técnica está cerrada; continuar la auditoría de solo lectura de esquema, autorización, sucursales y capacidad antes de proponer cambios de código o migraciones.
 - **Base de código auditada antes de esta actualización documental:** `70984baf7f6ac5a442e6c2364aaf6d7d4ebbc7d4`; PR [#151](https://github.com/BTF14/Micro-app/pull/151) está fusionada. No había PR abiertas en la consulta posterior; comprobar de nuevo antes de crear otra.
 - **Capacidad:** sin medir; las cuotas publicadas no prueban plan real ni capacidad del producto. La API expone autenticación y `GET /health`, sin endpoints comerciales HTTP aún. No se encontró tabla de sucursales en la migración inicial.
+- **Seguridad a revisar:** `apps/api/src/google-auth.ts` recibe `bootstrap_token` en la URL. Es un riesgo potencial de exposición, no una filtración confirmada; revisar mitigación con POST/cuerpo y pruebas antes de cambiar el flujo.
 - **Producción: NO lista.** Faltan handlers comerciales, matriz aprobada de permisos, autorización cross-tenant real, idempotencia/concurrencia, pruebas E2E, BCV/fiscalidad y validación completa de recuperación.
 - Límites vigentes: no desplegar producción, no acceder a Neon `main`, no pedir ni imprimir claves privadas age, no borrar backups/recursos, y no declarar coste $0 sin evidencia.
 

@@ -551,3 +551,11 @@ Este diario es append-only en cuanto a historia: no borrar hitos antiguos; añad
 - Workflows de PR exitosos en el HEAD `b93df838095a043e418f5e481ce4422ed014c494`; Codex no completó la revisión por límite de uso. Se revisó manualmente el diff y se dejó comentario sobre descuento del 10 %, alcance de sucursales y serialización concurrente para proteger al último owner. Los estados Vercel del merge commit quedaron pendientes; no afirmar CI post-merge.
 - La rama `security/secret-scan-current-main` está 1 ahead/39 behind. Checklist ya existe en main; el workflow está obsoleto respecto a checkout v7 en main y el `.gitignore` de la rama no incluye la excepción de `apps/web/.env.production`. No se fusionó ni borró.
 - Pendientes: restauración del backup cifrado en PostgreSQL desechable (llave privada age no disponible en la sesión), verificación HTTP de CORS y aislamiento tenant de futuras rutas comerciales. No se tocaron secretos, Neon, datos reales ni producción.
+
+## 2026-10-29 — Fusión de PR #114 y estado posterior
+
+- PR #114 se fusionó por squash en `main`, merge SHA `dc3fae80c485ec52c2e68c80da316df90c68ac83`, tras verificar el SHA esperado de la PR.
+- Los ocho workflows y dos estados Vercel del HEAD de PR estaban en verde. No afirmar CI post-merge: los estados Vercel del merge SHA aparecen pendientes y no se devolvieron workflows de Actions para ese SHA.
+- Cloudflare Workers reportó `Deployment successful!` y URLs explícitas de preview de commit y rama. No se realizó despliegue manual.
+- La PR fusionada era de documentación; no cambió código de runtime, secretos, Neon ni datos reales.
+- Bloqueos persistentes: restore del backup cifrado en PostgreSQL desechable, verificación HTTP real de CORS y aprobación/cobertura de permisos y aislamiento tenant. La aplicación no se considera lista para producción.

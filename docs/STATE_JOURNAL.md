@@ -719,3 +719,10 @@ Este diario es append-only en cuanto a historia: no borrar hitos antiguos; añad
 - Confirmed root cause in workflow: no `actions/checkout` step existed. The path refers to a real repository script, but the runner workspace was empty of source files.
 - Branch `fix/backup-checkout-repository-20261029` adds `actions/checkout@v4` before any repository-dependent commands. Since failure happened before push, the run did not persist a new backup or execute remote retention.
 - Keep unresolved until a verified successful manual run and remote file/checksum evidence.
+
+
+## 2026-10-29 — backup run #8 succeeded end-to-end
+
+- Run [40921815702](https://github.com/BTF14/Micro-app/actions/runs/40921815702) passed all steps.
+- Verified `pg_dump 18.6`, dump generation, age encryption, SHA-256 checksum, commit `2b038bd` and successful push to private backup repository. Files are `daily/backup-2026-10-29T17-29-48Z.dump.age` and matching `.sha256`. Retention completed and deleted zero files.
+- This closes the incident chain for the operational upload path. Remaining independent tasks: verify checksum remotely, test decrypt/restore safely with the protected private key, measure RPO/RTO, validate failure alert delivery, and confirm cost assumptions. Do not conflate synthetic restore CI with restoring this exact production backup.

@@ -7,11 +7,11 @@ Repositorio: https://github.com/BTF14/Micro-app. HEAD verificado de `main`: `fb4
 - PR #116 (Hono, Cloudflare Workers types y Wrangler) está fusionada. HEAD final de PR: `5d3f2e373e75caf71af207cba61df3066b140a86`. Los checks de la PR pasaron, incluidos Dependency Review, `verify`, Chromium, migraciones, static analysis, Trivy, scan de historial de secretos y builds de Cloudflare.
 - La causa de los fallos anteriores era que el lockfile generado por Dependabot eliminaba `overrides: undici: 7.30.1`, en desacuerdo con `package.json`, y resolvía `undici@7.29.1`. El arreglo de #116 preserva el override. En el `main` actual, `pnpm-lock.yaml` contiene el override y `undici@7.30.1`, y no contiene `undici@7.29.1`.
 - PR #117 (TypeScript 7), #118 (plugin-react 6), #119 (Vite 8) y #120 (jsdom 30) están cerradas sin fusionar. No afirmar que sus versiones se aplicaron. No reabrir ni aplicar los upgrades sin revisar compatibilidad y plan de pruebas.
-- En la última consulta de checks post-merge para `fb49c32aa1451c4bf763a0b78ba12b507700f10d`, `verify`, Chromium, migraciones, Trivy, scan de secretos/historial y Workers estaban verdes; static analysis y Cloudflare Pages seguían en curso. Reconsultar esos estados antes de afirmar éxito post-merge completo.
+- Seguimiento completado: los checks consultados del commit de documentación #132, `9f73f8ab0c1581145796f09a41f689fa4bdcf310`, terminaron todos en `success`, incluidos análisis estático, Cloudflare Pages y Workers.
 
 ### Próximos pasos
 
-1. Verificar los checks post-merge que quedaron en curso.
+1. **Completado:** checks post-merge del SHA `9f73f8ab0c1581145796f09a41f689fa4bdcf310` todos en `success`.
 2. Mantener `pnpm.overrides.undici = 7.30.1` coherente con el lockfile; exigir `pnpm install --frozen-lockfile` y Dependency Review verdes en toda actualización.
 3. No fusionar PR solo porque sea de Dependabot: comprobar SHA exacto, diff, lockfile, seguridad y compatibilidad. Evitar múltiples PR para una causa común.
 4. Continuar la hoja de ruta de seguridad; la prueba integral de restauración con datos sintéticos poblados sigue pendiente y debe quedar para la última fase.

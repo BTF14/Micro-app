@@ -1,3 +1,16 @@
+## ESTADO OPERATIVO VIGENTE — respaldo cifrado (2026-10-29 UTC)
+
+> Esta sección prevalece sobre notas históricas inferiores que todavía digan que el incidente de subida está pendiente. No borrar el historial: interpretar cada incidente según la evidencia posterior.
+
+- **Subida del backup: VERIFICADA.** Run [40921815702](https://github.com/BTF14/Micro-app/actions/runs/40921815702) terminó en success: `pg_dump 18.6`, dump no vacío, cifrado age, checksum SHA-256, commit remoto `2b038bd`, push a la rama `main` del repositorio privado de backups y retención `deleted 0 file(s)`.
+- **Par cifrado persistido según logs:** `daily/backup-2026-10-29T17-29-48Z.dump.age` y `.sha256`.
+- **No está probado todavía:** descarga/verificación independiente del archivo remoto exacto, descifrado y restauración de esa copia concreta, RPO/RTO, entrega de alertas de fallo y coste total $0.
+- La prueba sintética automatizada de restauración es complementaria; no sustituye la restauración del backup real.
+- PR documental existente: [#148](https://github.com/BTF14/Micro-app/pull/148), rama `docs/record-backup-success-20261029`. No abrir otra PR para el mismo registro. Sus checks del SHA `256709eac3517de60d7c22f3cdab5f7b574e8a49` terminaron en success; cualquier nuevo commit requiere revalidar checks.
+- Límites vigentes: no desplegar producción, no acceder a Neon `main`, no pedir ni imprimir claves privadas age, no borrar backups/recursos, y no declarar coste $0 sin evidencia.
+
+---
+
 ## ESTADO VIVO PRIORITARIO — tras fusionar PR #137 (2026-10-29 UTC)
 
 **Repositorio único:** https://github.com/BTF14/Micro-app  
@@ -978,3 +991,10 @@ Este bloque es más reciente que los snapshots históricos anteriores; si contra
 - Run [40920403909](https://github.com/BTF14/Micro-app/actions/runs/40920403909) used pg_dump 18.6 successfully, created the dump, encrypted it and generated SHA-256, then failed because `$GITHUB_WORKSPACE/scripts/prune_backups.py` was absent.
 - Root cause: workflow did not use `actions/checkout`; the script exists in repository `main`, but runner workspace was not populated. Fix on branch `fix/backup-checkout-repository-20261029` adds `actions/checkout@v4` before installing/running backup steps.
 - Verify diff and required checks; after merge, manually run backup once. Confirm success, remote encrypted file + checksum in private repo, and retention output. Do not share secrets or age private key, and do not delete existing backups during troubleshooting.
+
+
+## Backup success verified — 2026-10-29
+
+- Run [40921815702](https://github.com/BTF14/Micro-app/actions/runs/40921815702) completed `success`. Logs explicitly show `pg_dump 18.6`, successful dump and age encryption, SHA-256 sidecar, remote backup commit `2b038bd` pushed to `BTF14/Micro-app-backups` (GitHub notes canonical repository URL is now `BTF14/Micro-App-backups`), and retention deleted zero files.
+- Persisted pair: `daily/backup-2026-10-29T17-29-48Z.dump.age` and `daily/backup-2026-10-29T17-29-48Z.dump.age.sha256`.
+- Do not ask user to rerun backup immediately. Next work should be planned: safely verify remote file and checksum, validate backup failure alerting, assess restore procedure using a disposable target and secure age private key without sharing it, then measure RPO/RTO and confirm cost. Do not claim production restore was tested by the synthetic CI test.

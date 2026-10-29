@@ -1,3 +1,27 @@
+## Estado vivo — Dependabot y continuidad (2026-10-29 UTC)
+
+**HEAD verificado de `main`:** `fb49c32aa1451c4bf763a0b78ba12b507700f10d`, merge de [PR #116](https://github.com/BTF14/Micro-app/pull/116). La PR #131 también está fusionada; añadió un resumen visible en GitHub Actions si falla el backup, no una notificación externa.
+
+### Incidente de Dependabot: corregido parcialmente y verificado
+
+Las PR #116–#120 generadas originalmente quitaban del lockfile el bloque `overrides: undici: 7.30.1`, aunque `package.json` mantenía `pnpm.overrides.undici = 7.30.1`. En los HEAD originales, la instalación congelada fallaba con `ERR_PNPM_LOCKFILE_CONFIG_MISMATCH` y Dependency Review encontraba `undici@7.29.1` con vulnerabilidades de severidad alta. Se pidió rebase a Dependabot y se inspeccionaron los logs.
+
+- [PR #116](https://github.com/BTF14/Micro-app/pull/116), grupo minor/patch de Hono, `@cloudflare/workers-types` y Wrangler: **fusionada** el 2026-10-29. El HEAD final `5d3f2e373e75caf71af207cba61df3066b140a86` incluyó el arreglo para conservar el override; todos los checks de la PR terminaron en `success`, incluidos `verify`, Chromium, migraciones, análisis estático, Trivy, historial de secretos, Dependency Review, Cloudflare Pages y Workers.
+- [PR #117](https://github.com/BTF14/Micro-app/pull/117) TypeScript 7, [#118](https://github.com/BTF14/Micro-app/pull/118) plugin-react 6, [#119](https://github.com/BTF14/Micro-app/pull/119) Vite 8 y [#120](https://github.com/BTF14/Micro-app/pull/120) jsdom 30: actualmente **cerradas sin fusionar**. No asumir que esos upgrades están aplicados ni reabrirlos sin revisar compatibilidad, diffs y checks actuales.
+
+Verificación posterior al merge en `main`: `package.json` sigue declarando `undici: 7.30.1`; `pnpm-lock.yaml` conserva el bloque `overrides`, contiene `undici@7.30.1` y no contiene `undici@7.29.1`. En la consulta posterior al merge, `verify`, Chromium, migraciones, Trivy, historial de secretos y Workers estaban en `success`; análisis estático y Cloudflare Pages aún estaban en curso, por lo que se deben reconsultar antes de afirmar que toda la verificación post-merge concluyó.
+
+### Siguiente trabajo
+
+1. Reconsultar checks post-merge del SHA `fb49c32aa1451c4bf763a0b78ba12b507700f10d` y confirmar que los estados que estaban en curso concluyeron correctamente.
+2. Mantener el override de `undici@7.30.1`; cualquier futura actualización debe conservar coherencia entre `package.json` y `pnpm-lock.yaml`, pasar instalación congelada y Dependency Review.
+3. No reintroducir TypeScript 7, plugin-react 6, Vite 8 ni jsdom 30 sin un plan y pruebas de compatibilidad.
+4. Continuar el resto de tareas de seguridad priorizadas. La restauración integral con datos sintéticos poblados sigue pendiente para la última fase.
+
+No se tocaron Neon, secretos, datos reales ni producción. No se hizo despliegue manual.
+
+---
+
 ## Estado vivo — continuidad tras PR #130 (2026-10-29 UTC)
 
 **Última referencia de `main` verificada al iniciar este trabajo:** `3ce18e2aa5bcf2a8c555a47681998405a4f14509` (commit de fusión de PR #130). Reconsultar el HEAD actual antes de operar; este SHA quedará obsoleto al fusionarse esta PR. La PR #129 está fusionada y su corrección de retención de 15 días usa el timestamp UTC validado del nombre del archivo, no `find -mtime`; elimina también el checksum emparejado y tiene pruebas unitarias en CI.

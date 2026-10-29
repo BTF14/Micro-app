@@ -1,3 +1,14 @@
+## 2026-10-29 — PR #116 fusionada tras corregir el override de Undici
+
+- Se comprobó que los HEAD iniciales de PR #116–#120 eliminaban el bloque `overrides: undici: 7.30.1` del lockfile pese a mantener el override en `package.json`. Logs de `verify`/Chromium: `ERR_PNPM_LOCKFILE_CONFIG_MISMATCH`; Dependency Review detectó `undici@7.29.1` con hallazgos de severidad alta.
+- Se pidió rebase a Dependabot. La PR #116 se actualizó para preservar el override y se fusionó en `main` con SHA `fb49c32aa1451c4bf763a0b78ba12b507700f10d`; HEAD final de PR `5d3f2e373e75caf71af207cba61df3066b140a86`. Todos los checks de ese HEAD quedaron en `success`, incluidos Dependency Review, verify, Chromium, migraciones, static analysis, Trivy, scan de historial de secretos y Cloudflare Pages/Workers.
+- Comprobación de lockfile en `main` tras el merge: `package.json` contiene `undici: 7.30.1`; `pnpm-lock.yaml` conserva `overrides: undici: 7.30.1`, incluye `undici@7.30.1` y no contiene `undici@7.29.1`.
+- PR #117 (TypeScript 7), #118 (plugin-react 6), #119 (Vite 8) y #120 (jsdom 30) aparecen cerradas sin fusionar. No considerar esos upgrades aplicados; reabrirlos solo después de revisar compatibilidad, diff y checks.
+- En la primera consulta post-merge al SHA `fb49c32aa1451c4bf763a0b78ba12b507700f10d`, verify, Chromium, migraciones, Trivy, historial de secretos y Workers estaban en verde; static analysis y Cloudflare Pages aún estaban en curso. Pendiente reconsultar su conclusión final.
+- No se tocaron Neon, secretos, datos reales ni producción. No hubo despliegue manual.
+
+---
+
 ## 2026-10-29 — visibilidad de fallos de backup y evidencia viva
 
 - Revisión en vivo de la ejecución programada de backup: run [40698423050](https://github.com/BTF14/Micro-app/actions/runs/40698423050), iniciado el 2026-10-28T13:39:19Z y concluido `success`. El repositorio privado de backups contiene dos copias cifradas, con checksums emparejados: `backup-2026-10-27T21-32-45Z.dump.age` y `backup-2026-10-28T13-39-39Z.dump.age`. No afirmar que se ejecutó el backup del día 29; en el momento de la consulta aún no había una ejecución programada más reciente.

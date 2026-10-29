@@ -1,3 +1,15 @@
+## Continuidad — Dependabot y override de Undici (2026-10-29 UTC)
+
+PR #116 se fusionó por squash/merge en `main` con SHA `fb49c32aa1451c4bf763a0b78ba12b507700f10d`. El HEAD final de PR fue `5d3f2e373e75caf71af207cba61df3066b140a86`; todos los checks de PR pasaron, incluidos Dependency Review, verify, Chromium, migraciones, static analysis, Trivy, scan de historial de secretos y Cloudflare Pages/Workers. La PR incorporó la corrección para conservar el override de Undici.
+
+Causa original: los lockfiles generados en PR #116–#120 quitaban `overrides: undici: 7.30.1` mientras `package.json` conservaba `pnpm.overrides.undici = 7.30.1`. La instalación congelada fallaba con `ERR_PNPM_LOCKFILE_CONFIG_MISMATCH`; Dependency Review detectaba `undici@7.29.1` vulnerable de severidad alta. Tras el merge, se comprobó que el lockfile de `main` mantiene el override, contiene `undici@7.30.1` y no contiene `undici@7.29.1`.
+
+Las PR #117 (TypeScript 7), #118 (plugin-react 6), #119 (Vite 8) y #120 (jsdom 30) figuran cerradas sin fusionar. No asumir que esos upgrades se aplicaron. Para futuras actualizaciones: verificar SHA exacto, coherencia `package.json`/lockfile, instalación congelada, Dependency Review y compatibilidad. No fusionar majors sin un plan y pruebas.
+
+**Pendiente inmediato:** reconsultar el resultado final de los checks post-merge del SHA `fb49c32aa1451c4bf763a0b78ba12b507700f10d`; en la primera consulta static analysis y Cloudflare Pages aún estaban en curso. Después continuar los pendientes de seguridad ya priorizados; la restauración con datos sintéticos poblados sigue reservada para la última fase.
+
+---
+
 ## Checkpoint posterior a PR #114 — 2026-10-29 UTC
 
 - PR #114 quedó fusionada por squash en `main`: [merge commit dc3fae80c485ec52c2e68c80da316df90c68ac83](https://github.com/BTF14/Micro-app/commit/dc3fae80c485ec52c2e68c80da316df90c68ac83). El HEAD revisado fue `780e057435fea4ebd6213fd973745599e71d2088`; GitHub confirmó `merged=true`.

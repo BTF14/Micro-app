@@ -6,7 +6,7 @@ No usar Neon `main`, datos reales, despliegues de producción ni servicios de pa
 
 ### Estado del trabajo en curso
 - Backup real: run [40955935124](https://github.com/BTF14/Micro-app/actions/runs/40955935124) verificó descarga, checksum, descifrado y restauración en PostgreSQL 18 efímero. No demuestra integridad de todos los datos comerciales ni RPO/RTO/alertas/coste $0.
-- PR [#150](https://github.com/BTF14/Micro-app/pull/150) está abierta. Nueve workflows asociados a su HEAD reportaban éxito, pero GitHub rechazó el merge por el check obligatorio `Scan tracked files and reachable Git history` marcado como cancelado. No saltarse la protección: inspeccionar el estado de ese check y conseguir un resultado válido antes de fusionar.
+- PR [#150](https://github.com/BTF14/Micro-app/pull/150) sigue abierta. En su SHA `adb5b054ae7694ccda391e9922763ab3db235df5`, el escaneo `Scan tracked files and reachable Git history` tiene una ejecución exitosa ([run 40956585398](https://github.com/BTF14/Micro-app/actions/runs/40956585398)) y otra duplicada cancelada ([run 40956540634](https://github.com/BTF14/Micro-app/actions/runs/40956540634)). No asumir que la ejecución cancelada es el estado efectivo del check: verificar el resultado requerido de la PR y la aprobación de rama antes de fusionar; nunca saltarse la protección.
 - La documentación de capacidad se está preparando en una rama separada para no mezclar el objetivo de la PR #150 con otro tema. Consultar estado vivo antes de continuar.
 
 ---

@@ -927,3 +927,10 @@ Esta revisión fue estática de contenidos en GitHub; no se ejecutaron tests des
 - Root cause: after `cd backups-repo`, `python3 ../scripts/prune_backups.py` resolved to a nonexistent path under the runner parent directory, not the checked-out repository workspace.
 - Fix prepared on branch `fix/backup-workflow-path-20261029`: use `$GITHUB_WORKSPACE/scripts/prune_backups.py` and pin the backup workflow runner to `ubuntu-24.04` rather than following the newly migrated `ubuntu-latest` image. This is not considered resolved until PR checks pass and a real manual run confirms upload, checksum, retention, and success.
 - No secrets, Neon main data, or existing backup repository contents were changed manually. Do not claim a fresh backup until the follow-up run is verified.
+
+
+## Backup incident — PostgreSQL client mismatch (2026-10-29)
+
+- Latest run [40918687069](https://github.com/BTF14/Micro-app/actions/runs/40918687069) failed in “Generar el volcado” with server PostgreSQL 18.6 vs pg_dump 16.15. It failed before dump creation; encryption and upload were skipped, and the remote backup repository was not modified.
+- Root cause: installing `postgresql-client-17` did not guarantee that the unqualified `pg_dump` command resolved to that version; the runner selected 16.15.
+- Branch `fix/backup-pg-dump-v18-20261029` switches to `postgresql-client-18`, invokes `/usr/lib/postgresql/18/bin/pg_dump` explicitly and asserts major version 18. Verify PR checks and a complete manual backup before closing the incident.

@@ -1,3 +1,28 @@
+## Plan vigente — actualización de dependencias orientada a seguridad (2026-10-29)
+
+El propietario solicita mantener versiones modernas para reducir exposición a vulnerabilidades y autoriza a la IA a avanzar con criterio. La estrategia no es “todo lo más nuevo sin importar compatibilidad”: mantener parches/minors al día, comprobar advisories y migrar majors con lockfile y CI coherentes.
+
+### Base comprobada
+- Node range >=24.22.1 <25; mantener Node 24 LTS y llevarlo al parche actual tras verificar CI.
+- TypeScript 5.9.3; Hono 4.13.14; Workers types 5.20261026.1; Wrangler 4.152.0.
+- React/react-dom 19.3.1; tipos React 19.3.0; Vite 7.3.7; plugin-react 5.2.0; jsdom 26.1.0.
+- pnpm lockfile v9 y override obligatorio undici@7.30.1.
+- Versiones latest estables observadas públicamente: TypeScript 7.0.2, Vite 8.3.5, plugin-react 6.1.2, jsdom 30.1.3, Wrangler 4.154.0, pnpm 12.16.1, Node 24.22.2 LTS. React/react-dom ya están en 19.3.1 y Hono en 4.13.14. Verificar siempre en registry antes de ejecutar porque las páginas pueden quedar desfasadas.
+- PRs #117–#120 fueron cerradas sin merge; no asumir esos upgrades aplicados.
+
+### Gate de aceptación de actualización
+1. Crear una rama para una migración coherente, no una PR por paquete.
+2. Generar pnpm-lock.yaml con la versión real del gestor; prohibido inventar/editar a mano las resoluciones.
+3. Conservar undici@7.30.1 en manifests y lockfile; instalación congelada y Dependency Review deben confirmarlo.
+4. Revisar breaking changes, engines, peer dependencies y configuración TS/Vite/Vitest/jsdom.
+5. Exigir build, tests web/API, typecheck, migración PostgreSQL, Chromium auth, static analysis, Trivy, secret scan, Dependency Review y Cloudflare Pages/Workers en verde para el SHA exacto.
+6. Si falla, diagnosticar logs y corregir causa raíz en la misma rama. No fusionar con checks rojos ni dejar PR de prueba olvidadas.
+7. Fusionar solo tras revisión completa; después comprobar el SHA de main, versiones resueltas y checks post-merge. Actualizar CURRENT_STATE, HANDOFF_NEXT_CHAT y STATE_JOURNAL.
+8. No cambiar major de pnpm ni pasar a Node 26 sin una prueba deliberada. No desplegar manualmente producción ni tocar Neon main, datos reales o secretos.
+
+
+---
+
 ## Continuidad — Dependabot y override de Undici (2026-10-29 UTC)
 
 PR #116 se fusionó por squash/merge; el HEAD vivo posterior de `main` verificado el 2026-10-29 es `764ed502d2a296136d311e05d081ca8e9f7cfeb9` (PR #134, reglas Dependabot/lockfile). El HEAD final de PR fue `5d3f2e373e75caf71af207cba61df3066b140a86`; todos los checks de PR pasaron, incluidos Dependency Review, verify, Chromium, migraciones, static analysis, Trivy, scan de historial de secretos y Cloudflare Pages/Workers. La PR incorporó la corrección para conservar el override de Undici.

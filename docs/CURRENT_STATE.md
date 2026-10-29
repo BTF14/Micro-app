@@ -1,3 +1,59 @@
+## Auditoría de versiones del mercado y plan de actualización — 2026-10-29
+
+**Propósito:** responder a la petición del propietario de mantener Micro app al día frente a riesgos de seguridad, sin confundir “última versión publicada” con “versión más segura para producción”.
+
+### Hechos del repositorio en main (SHA verificado antes de esta nota: 59ad394d6dc5035b114db5379b2e1680d1e7969f)
+
+- Node declarado: >=24.22.1 <25. La línea Node 24 es LTS; la publicación oficial consultada anuncia Node 24.22.2 como parche LTS del 2026-10-28. Mantener la línea 24 y actualizar el parche, sin ampliar a Node 26 hasta probar la compatibilidad del runtime y CI.
+- pnpm lockfile v9. No se debe cambiar de major del gestor sin verificar cómo afecta el lockfile y las instalaciones congeladas.
+- TypeScript: ^5.9.3, lockfile 5.9.3 en raíz, API y web.
+- API: Hono ^4.13.14 (resuelto 4.13.14), @cloudflare/workers-types ^5.20261026.1, Wrangler ^4.152.0.
+- Web: React/React DOM ^19.1.1 (resueltos 19.3.1), Vite ^7.1.7 (resuelto 7.3.7), @vitejs/plugin-react ^5.0.4 (resuelto 5.2.0), jsdom ^26.1.0 (resuelto 26.1.0).
+- Override crítico de seguridad: undici: 7.30.1 en package.json y pnpm-lock.yaml. Nunca aceptar un lockfile que quite el override o resuelva undici@7.29.1; eso ya provocó ERR_PNPM_LOCKFILE_CONFIG_MISMATCH y un hallazgo alto en Dependency Review.
+
+### Exploración pública de versiones estables (consultada el 2026-10-29; no sustituye el registro npm en el momento de actualizar)
+
+| Componente | Versión publicada observada | Situación en Micro app / decisión |
+| --- | --- | --- |
+| Node.js | 24.22.2 LTS; 26.13.0 LTS también aparece en el blog oficial | Mantener Node 24 LTS; actualizar parche y validar CI. No ampliar major sin prueba. |
+| TypeScript | 7.0.2 latest | Upgrade mayor pendiente; probar en rama separada o grupo muy controlado. No usar beta/dev. |
+| Vite | 8.3.5 latest; 7.3.7 figura como versión anterior | Upgrade mayor pendiente; revisar requisitos de Node y peer dependencies. |
+| @vitejs/plugin-react | 6.1.2 latest | Requiere verificar compatibilidad con Vite 8 y build del frontend. |
+| jsdom | 30.1.3 | Upgrade mayor pendiente; comprobar requisitos de Node y todas las pruebas DOM. |
+| Wrangler | 4.154.0 latest | Subir de 4.152.0 después de CI, tipos y build Worker. |
+| Hono | 4.13.14 | Ya coincide con la versión estable observada. No migrar a Hono 5 RC: es pre-release. |
+| React / react-dom | 19.3.1 latest | Ya resueltos en 19.3.1. |
+| @types/react, @types/react-dom | 19.3.0 latest en las páginas consultadas | Ya resueltos en 19.3.0. Mantener sincronizados con React y TypeScript. |
+| pnpm | 12.16.1 latest observado; también hay líneas 10.x/11.x | No cambiar major automáticamente; verificar packageManager, lockfile v9 y CI antes de migrar. |
+| @cloudflare/workers-types | Las páginas indexadas consultadas muestran versiones distintas y retrasadas respecto al repo | No declarar una “última” versión sin consultar directamente el registry durante el cambio. La versión del repo es 5.20261026.1. Cloudflare recomienda considerar wrangler types generado desde configuración/compatibility date; estudiar como migración separada. |
+
+Fuentes públicas consultadas:
+- Node releases: https://nodejs.org/en/blog/release y https://nodejs.org/en/about/previous-releases
+- TypeScript: https://www.npmjs.com/package/typescript
+- Vite: https://www.npmjs.com/package/vite
+- plugin React: https://www.npmjs.com/package/@vitejs/plugin-react
+- jsdom: https://www.npmjs.com/package/jsdom
+- Wrangler: https://www.npmjs.com/package/wrangler
+- Hono: https://www.npmjs.com/package/hono
+- React: https://www.npmjs.com/package/react
+- pnpm: https://www.npmjs.com/package/pnpm
+- Workers types: https://www.npmjs.com/package/@cloudflare/workers-types
+
+### Plan de actualización seguro — no marcar como completado hasta ejecutarlo
+
+1. Actualizar primero los parches de Node 24 y dependencias minor/patch compatibles; comprobar advisories, pnpm install --frozen-lockfile, Dependency Review, Trivy y escaneo de secretos.
+2. Preparar un único grupo coherente de herramientas frontend mayores: Vite 8 + @vitejs/plugin-react 6 + jsdom 30, junto con TypeScript 7 solo si los scripts/configuración lo soportan. Evitar cuatro PRs independientes que creen lockfiles divergentes; una PR coherente con pruebas completas es preferible.
+3. Generar el lockfile con pnpm real; no editar manualmente las resoluciones del lockfile ni aceptar que desaparezca overrides: undici 7.30.1.
+4. Validar en SHA exacto: instalación congelada, build frontend, tests frontend, typecheck API/web, tests API, migraciones PostgreSQL, smoke tests Chromium, análisis estático, Dependency Review, Trivy, scan de historial y builds Cloudflare Pages/Workers.
+5. Inspeccionar requisitos engines, peer dependencies, breaking changes y notas de seguridad de cada paquete. Si falla algo, arreglar causa real en la misma rama; no crear una cadena de PRs de prueba.
+6. Fusionar solo si todos los checks obligatorios están verdes y el diff/lockfile se revisaron. Tras merge, volver a leer manifiestos/lockfile y comprobar checks del SHA de main.
+7. No actualizar Node a 26, pnpm a 12 o Workers types a una versión no verificada solo para igualar un número de versión. Tratar cada cambio de runtime/gestor como decisión de compatibilidad.
+8. Continuar con actualizaciones de seguridad periódicas y Dependabot; no prometer que “todo es seguro” solo porque los paquetes estén al día.
+
+**Límite actual:** esta nota es auditoría y plan; no ha cambiado ninguna dependencia ni lockfile. No se ha ejecutado instalación local durante esta revisión. La PR #136 fue documental y no actualizó paquetes.
+
+---
+
 ## Estado vivo — Dependabot y continuidad (2026-10-29 UTC)
 
 **HEAD verificado de `main` al 2026-10-29:** `764ed502d2a296136d311e05d081ca8e9f7cfeb9`, merge de [PR #134](https://github.com/BTF14/Micro-app/pull/134), que documentó reglas obligatorias para Dependabot/lockfile y continuidad. PR #116 y #131 también están fusionadas; #131 añade un resumen visible en Actions ante fallos del backup, no una notificación externa. La búsqueda en vivo de PR abiertas no devolvió resultados en esta revisión; volver a comprobar antes de trabajar.

@@ -76,9 +76,9 @@ jobs:
           trap 'rm -f "$identity" "$plaintext"' EXIT
           age --decrypt --identity "$identity" --output "$plaintext" "$RUNNER_TEMP/backups-repo/daily/$BACKUP_FILENAME"
           test -s "$plaintext"
-          pg_restore --list "$plaintext" > "$RUNNER_TEMP/archive.list"
+          /usr/lib/postgresql/18/bin/pg_restore --list "$plaintext" > "$RUNNER_TEMP/archive.list"
           test -s "$RUNNER_TEMP/archive.list"
-          pg_restore --exit-on-error --no-owner --no-privileges --dbname="$PGDATABASE" "$plaintext"
+          /usr/lib/postgresql/18/bin/pg_restore --exit-on-error --no-owner --no-privileges --dbname="$PGDATABASE" "$plaintext"
       - name: Validate restored schema without printing business data
         run: |
           set -euo pipefail

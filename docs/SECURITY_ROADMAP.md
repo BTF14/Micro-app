@@ -1,3 +1,12 @@
+## Monitorización diaria de dependencias (añadido en PR #137; pendiente de verificación)
+
+- Workflow: `.github/workflows/daily-dependency-watch.yml`.
+- Intención: aumentar la detección temprana sin autorizar actualizaciones automáticas. Cron diario 08:15 UTC, ejecución manual, `contents: read`, instalación congelada y resumen de dependencias/Node 24 LTS.
+- Auditoría: `pnpm audit --audit-level high`; el workflow debe fallar ante una conclusión de auditoría high/critical y conservar el output en el resumen de Actions.
+- Dependabot sigue revisando semanalmente paquetes npm y GitHub Actions. La frecuencia diaria del informe no significa que cada actualización deba fusionarse.
+- Estado: implementado en rama/PR; pendiente de checks y de una primera ejecución real tras merge. No marcarlo como operativo hasta tener esa evidencia.
+- El monitor no reemplaza Trivy, Dependency Review, escaneo de historial, revisión manual del diff ni tests completos; tampoco garantiza ausencia de vulnerabilidades.
+
 # Hoja de ruta de seguridad — Micro app
 
 - Estado: aprobada por el propietario el 2026-10-26.

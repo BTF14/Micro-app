@@ -696,3 +696,11 @@ Este diario es append-only en cuanto a historia: no borrar hitos antiguos; añad
 - El monitor diario [run 40845877052](https://github.com/BTF14/Micro-app/actions/runs/40845877052) terminó en `success` y el audit reportó `No known vulnerabilities found`. Su SHA precede la fusión de #142; no es evidencia de auditoría en el main actual.
 - La rama `fix/dependency-watch-report-20261029` está 4 commits detrás y 0 ahead; el workflow coincide con main, por lo que no se abrió PR duplicada.
 - Pendiente: RPO/RTO real, alerta de fallo, coste $0, y evaluar upgrades mayores de frontend/TypeScript con análisis de compatibilidad. No tocar Neon `main`, secretos ni producción.
+
+
+## 2026-10-29 — backup workflow failure and corrective change
+
+- Observed manual run [40916692763](https://github.com/BTF14/Micro-app/actions/runs/40916692763) fail at retention with exit code 2. The logs show the dump, age encryption, and SHA-256 checksum succeeded; commit existed only in the temporary clone and push was never reached.
+- Exact cause: from `$GITHUB_WORKSPACE/backups-repo`, relative path `../scripts/prune_backups.py` points outside the checkout root. It is now changed on `fix/backup-workflow-path-20261029` to `$GITHUB_WORKSPACE/scripts/prune_backups.py`.
+- Also pin `runs-on: ubuntu-24.04` to avoid silently following the `ubuntu-latest` migration to Ubuntu 26 before this operational workflow is explicitly tested there. The Ubuntu warning was not the direct cause of the failure.
+- No claim of a new persisted backup: `git push` did not run. Verify PR checks and then a fresh manual run before considering resolved.

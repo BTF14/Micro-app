@@ -25,6 +25,15 @@ Quiere versiones modernas y seguras del mercado por la evolución de amenazas y 
 - Node 24.22.2 LTS publicado el 2026-10-28; Node 26.13.0 también aparece como LTS. Mantener línea Node 24 por ahora y probar parches.
 - Las páginas indexadas de @cloudflare/workers-types no coinciden temporalmente entre sí; repo declara 5.20261026.1. Consultar registry en la ejecución real antes de afirmar que hay una versión superior; considerar wrangler types como proyecto de migración separado.
 
+### Monitor diario de versiones y vulnerabilidades — PR #137
+
+- Se añadió `.github/workflows/daily-dependency-watch.yml` en la rama de la PR #137; verificar que siga en esa PR y revisar checks del HEAD actual.
+- Cron: 08:15 UTC diario (04:15 Venezuela), además de ejecución manual. Solo lectura: permisos `contents: read`, instalación congelada, `pnpm outdated -r`, consulta del parche Node 24 LTS e informe `pnpm audit --audit-level high`.
+- La salida se guarda en el resumen de Actions. No abre PRs ni actualiza paquetes. Un audit con hallazgos high/critical hace fallar el workflow después de escribir el resumen; inspeccionar el log para separar advisories de errores de registry.
+- Dependabot continúa semanal para npm y GitHub Actions. No cambiar a PRs diarias automáticas: se busca visibilidad diaria sin inundar el repositorio.
+- Antes de fusionar, revisar YAML/diff y comprobar checks obligatorios del SHA exacto. Después del merge, verificar el primer run manual del workflow y dejar evidencia (run URL, SHA, resultado) en CURRENT_STATE y STATE_JOURNAL.
+- No afirmar que el monitor ya corre diariamente hasta que esté fusionado y exista al menos una ejecución real. Mantener `undici@7.30.1` en ambos manifiestos de dependencia/lockfile; no editar el lockfile a mano.
+
 ### Qué hacer a continuación
 1. Terminar la auditoría/documentación de esta rama y abrir una sola PR documental si no existe ya una equivalente.
 2. Luego ejecutar una actualización de dependencias real en una rama aparte, generando el lockfile con pnpm real (no edición manual). Agrupar coherentemente Vite 8 + plugin-react 6 + jsdom 30; evaluar TypeScript 7 en la misma migración solo tras revisar compatibilidad. Wrangler patch/minor se puede incluir si pasa CI.

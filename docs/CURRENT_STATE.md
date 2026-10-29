@@ -1,3 +1,23 @@
+## REGLA VIGENTE — capacidad y límites de Neon/Cloudflare (2026-10-29 UTC)
+
+- Requisito permanente: no declarar cuántas organizaciones/sucursales soporta Micro app hasta auditar y medir capacidad con carga sintética representativa.
+- Revisar Neon/PostgreSQL, Cloudflare Workers, Cloudflare Pages y los demás servicios conectados: cuotas del plan, CPU, solicitudes, conexiones, concurrencia, latencia, almacenamiento, crecimiento, errores y costes potenciales.
+- Documento operativo: [CAPACITY_AND_LIMITS.md](./CAPACITY_AND_LIMITS.md); integrado con [ARCHITECTURE_EVOLUTION_PLAN.md](./ARCHITECTURE_EVOLUTION_PLAN.md).
+- Próximo trabajo: auditoría de solo lectura en GitHub + verificación de cuotas de proveedores; luego pruebas de carga sintética en entorno efímero/autorizado. No probar contra Neon `main`, no desplegar producción ni habilitar costes sin autorización.
+- Capacidad numérica actual: **DESCONOCIDA / NO MEDIDA**. No presentar estimaciones como garantías.
+
+---
+
+## ESTADO OPERATIVO VIGENTE — restauración del backup remoto verificada (2026-10-29 UTC)
+
+- [Run 40955935124](https://github.com/BTF14/Micro-app/actions/runs/40955935124) del workflow `.github/workflows/backup-real-restore.yml` terminó en `success`.
+- Se descargó `daily/backup-2026-10-29T17-29-48Z.dump.age`; el SHA-256 coincidió con su sidecar, `age` lo descifró y PostgreSQL 18 efímero lo restauró sin error. `pg_restore --list` leyó el archivo y la validación encontró tablas base en `public`. Se limpiaron archivos descifrados temporales.
+- Conclusión: restauración técnica de esta copia remota verificada; no se usó Neon `main` ni producción.
+- Límites pendientes: integridad de conteos/relaciones comerciales, RPO/RTO, alerta de fallo y evidencia del coste total $0.
+- PR [#150](https://github.com/BTF14/Micro-app/pull/150) documenta esta restauración. No se pudo fusionar en esta sesión porque GitHub rechazó el merge: el check obligatorio `Scan tracked files and reachable Git history` figura como cancelado en la protección de rama, aunque el run asociado consultado mostraba éxito. Resolver/verificar ese check antes de volver a intentar; no saltarse la protección.
+
+---
+
 ## ESTADO OPERATIVO VIGENTE — respaldo cifrado (2026-10-29 UTC)
 
 > Esta sección prevalece sobre notas históricas inferiores que todavía digan que el incidente de subida está pendiente. No borrar el historial: interpretar cada incidente según la evidencia posterior.

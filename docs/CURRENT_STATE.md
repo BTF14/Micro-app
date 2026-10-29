@@ -1,3 +1,32 @@
+## Estado vivo — bloqueo de PR de Dependabot (2026-10-29 UTC)
+
+**HEAD verificado de `main`:** `7782293db886fc26f1a8275f4f2e2ffa55c27bc1` (merge de PR #131). La PR #131 está fusionada; añade un resumen visible en GitHub Actions si falla el backup. El resumen no es una notificación externa.
+
+### Bloqueo actual: actualizaciones de dependencias
+
+Se reconsultaron las PR abiertas #116, #117, #118, #119 y #120 contra el HEAD exacto de `main` anterior. Se pidió a Dependabot rebasear las cinco; las nuevas ejecuciones volvieron a fallar. **Ninguna de estas PR está autorizada para fusión todavía.**
+
+- [#116](https://github.com/BTF14/Micro-app/pull/116): grupo menor/parche (Hono, `@cloudflare/workers-types`, Wrangler), HEAD `9459a59b6a4ad7be3334b1234b46ac21e3360418`.
+- [#117](https://github.com/BTF14/Micro-app/pull/117): TypeScript 7, HEAD `62937a73897c6101a5bed0b7c72808fc51567dd1`.
+- [#118](https://github.com/BTF14/Micro-app/pull/118): `@vitejs/plugin-react` 6, HEAD `7e025e3c58559eb35481fbc0b88c4307bc2dee6a`.
+- [#119](https://github.com/BTF14/Micro-app/pull/119): Vite 8, HEAD `af73702fba9db67b290a1608d2d63274e6c282b4`.
+- [#120](https://github.com/BTF14/Micro-app/pull/120): jsdom 30, HEAD `7c752808aa032a4713c10620c4733f5ef8048a5e`.
+
+Causa reproducida en los logs de `verify` y Chromium para las cinco PR: `ERR_PNPM_LOCKFILE_CONFIG_MISMATCH`; la configuración de `overrides` en `package.json` no coincide con la del `pnpm-lock.yaml` generado por Dependabot. Además, Dependency Review detecta `undici@7.29.1` con vulnerabilidades de severidad alta en las cinco PR. En `main`, `package.json` y `pnpm-lock.yaml` mantienen el override explícito `undici: 7.30.1`; el diff generado por las PR elimina el bloque `overrides` del lockfile, dejando la resolución vulnerable y rompiendo la instalación congelada.
+
+**Decisión operativa:** no fusionar ninguna de estas cinco PR, ni siquiera la actualización menor, hasta reparar/regenerar el lockfile con la configuración correcta, confirmar que conserva `undici@7.30.1` y obtener checks verdes en los HEAD exactos. Las actualizaciones mayores de TypeScript/Vite/plugin-react/jsdom requieren además compatibilidad y pruebas; no aceptar solo porque Dependabot las proponga. No cerrar PR ni descartar su trabajo sin inspeccionar de nuevo su diff y el estado vivo.
+
+### Próxima acción
+
+1. Investigar la versión/configuración de pnpm usada por Dependabot frente a CI y reproducir la generación del lockfile.
+2. Corregir el mecanismo compartido para que los PR de Dependabot conserven el override y la instalación congelada funcione; evitar cinco arreglos manuales divergentes.
+3. Revalidar #116 primero como actualización menor, con `verify`, Dependency Review, Chromium y builds. Evaluar las cuatro actualizaciones mayores por separado después de resolver la causa común.
+4. Mantener las reglas de arranque de `AGENTS.md` y leer `docs/AI_COLLABORATION_AND_PR_POLICY.md`; registrar SHA, run IDs, causa raíz y limitaciones antes de cada fusión.
+
+No se tocó Neon, secretos, datos reales ni producción. No se desplegó manualmente.
+
+---
+
 ## Estado vivo — continuidad tras PR #130 (2026-10-29 UTC)
 
 **Última referencia de `main` verificada al iniciar este trabajo:** `3ce18e2aa5bcf2a8c555a47681998405a4f14509` (commit de fusión de PR #130). Reconsultar el HEAD actual antes de operar; este SHA quedará obsoleto al fusionarse esta PR. La PR #129 está fusionada y su corrección de retención de 15 días usa el timestamp UTC validado del nombre del archivo, no `find -mtime`; elimina también el checksum emparejado y tiene pruebas unitarias en CI.

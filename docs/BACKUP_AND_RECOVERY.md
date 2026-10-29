@@ -15,15 +15,15 @@ Esta sección supersede las notas históricas posteriores que indiquen que la su
 
 - **Subida remota verificada:** run [40921815702](https://github.com/BTF14/Micro-app/actions/runs/40921815702) completó correctamente. Los logs registran `pg_dump 18.6`, dump no vacío, cifrado age, checksum SHA-256, push del commit remoto `2b038bd` y retención sin eliminaciones.
 - Archivo cifrado: `daily/backup-2026-10-29T17-29-48Z.dump.age`; checksum asociado: `daily/backup-2026-10-29T17-29-48Z.dump.age.sha256`.
-- **Pendiente:** descargar el par remoto y comprobar checksum de forma independiente; descifrar/restaurar esa copia exacta en destino desechable; medir RPO/RTO; verificar alerta de fallo y coste total $0.
-- La prueba sintética automatizada demuestra el procedimiento sobre datos ficticios, no la restauración del backup real recién subido.
+- **Restauración técnica real: VERIFICADA** en run [40955935124](https://github.com/BTF14/Micro-app/actions/runs/40955935124): descarga del par remoto, checksum independiente, descifrado y restauración en PostgreSQL 18 efímero.
+- **Pendiente:** validar conteos/relaciones de datos comerciales poblados con datos sintéticos o metadatos no sensibles; medir RPO/RTO; verificar alerta de fallo, retención y coste total $0.
 - No compartir la clave privada age por chat ni incorporarla al repositorio. No tocar Neon `main`, producción ni copias existentes durante la verificación.
 
 ---
 
 # Política de respaldo y recuperación — Micro app
 
-**Estado:** la subida del 2026-10-29 está verificada. La restauración previa en `restore-test-20261028` (run `40804665192`) no demuestra que el archivo exacto `backup-2026-10-29T17-29-48Z.dump.age` sea restaurable; aquella copia tenía tablas de negocio vacías. La restauración de la copia exacta sigue pendiente hasta ejecutar `.github/workflows/backup-real-restore.yml` con `AGE_PRIVATE_KEY` configurada como secreto protegido. No declarar probado RPO/RTO ni el ciclo completo.  
+**Estado:** la subida del 2026-10-29 y la restauración técnica de la copia exacta `daily/backup-2026-10-29T17-29-48Z.dump.age` están verificadas en runs [40921815702](https://github.com/BTF14/Micro-app/actions/runs/40921815702) y [40955935124](https://github.com/BTF14/Micro-app/actions/runs/40955935124). La restauración ocurrió en PostgreSQL 18 efímero después de checksum y descifrado. No se han verificado conteos/relaciones de datos comerciales poblados, RPO/RTO, alertas ni coste total; no declarar completo el ciclo operativo hasta cerrar esos puntos.  
 **Objetivo de coste:** $0; no activar facturación, servicios pagos ni cargos automáticos.  
 **Alcance:** datos comerciales, inventario y capacidad de recuperar el servicio.
 

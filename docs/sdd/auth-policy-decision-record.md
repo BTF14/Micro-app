@@ -1,16 +1,18 @@
-# Registro de decisiones pendientes: identidad y acceso
+# Registro de decisiones de identidad y acceso
 
-- Estado: propuesta para decisión del propietario; no aprobada
-- Fecha: 2026-10-18
-- Relacionado: `docs/sdd/google-signin-allowlist-spec.md` (D1–D8); permisos por rol: [`role-permission-decision-matrix.md`](role-permission-decision-matrix.md)
-- Riesgo: alto
-- Propósito: convertir las decisiones bloqueantes en opciones explícitas sin inventar correos, dominios, administradores ni políticas comerciales.
+- Estado: **D1–D8 aprobadas por el propietario el 2026-10-24**; revisar la tabla de aprobación al final para los valores vigentes.
+- Fecha de decisión: 2026-10-24; la matriz de propuesta original se conserva como historial de deliberación.
+- Relacionado: `docs/sdd/google-signin-allowlist-spec.md` (D1–D8); permisos por rol, documento independiente y todavía no aprobado: [`role-permission-decision-matrix.md`](role-permission-decision-matrix.md).
+- Riesgo: alto.
+- Propósito: registrar decisiones aprobadas de identidad y enlazarlas con la implementación y sus pruebas, sin inventar correos, dominios ni administradores.
 
 ## Límites
 
-Este documento no autoriza ni implementa OAuth, migraciones, cambios de credenciales, despliegues, emails ni cambios en Neon `main`. No contiene una allowlist real. Ninguna opción de esta propuesta se considera aprobada hasta que el propietario la confirme.
+Este documento registra la política de identidad aprobada; no autoriza por sí mismo despliegues de producción, cambios de credenciales ni mutaciones en Neon `main`. No contiene una allowlist real ni valores secretos. La tabla de aprobación del 2026-10-24 es la autoridad para D1–D8; la matriz de propuestas anterior es contexto histórico.
 
-## Matriz de decisión
+## Matriz original de propuestas (histórica)
+
+Las opciones siguientes documentan la discusión previa a la aprobación. Si hay diferencias, prevalece la tabla **Aprobación del propietario — 2026-10-24** al final.
 
 | ID | Decisión requerida | Opción conservadora propuesta para evaluar | Alternativas y consecuencias |
 |---|---|---|---|
@@ -23,7 +25,9 @@ Este documento no autoriza ni implementa OAuth, migraciones, cambios de credenci
 | D7 | Cuentas existentes | No vincular automáticamente por coincidencia de email; exigir un flujo explícito y autenticado de vinculación/recuperación | Migración administrativa verificada puede ser viable si queda auditada y evita apropiación de cuentas |
 | D8 | Sesiones y orígenes | Cookies seguras por entorno, expiración/revocación definidas, callback y orígenes exactos permitidos; nunca comodines por conveniencia | Duración y dominios concretos dependen de los entornos reales y deben confirmarse antes de configurar |
 
-## Preguntas que requieren confirmación del propietario
+## Preguntas originales previas a la aprobación (histórico)
+
+Las preguntas de esta sección fueron planteadas antes de la decisión del 2026-10-24; no deben interpretarse como si D1–D8 siguieran sin respuesta. Consultar la tabla aprobada al final.
 
 1. ¿El producto será inicialmente de acceso privado para un grupo cerrado, o debe permitir que nuevos comercios se registren por invitación?
 2. ¿La allowlist debe contener correos exactos o se necesita permitir dominios completos? No se presupone ningún correo ni dominio.
@@ -44,9 +48,9 @@ Este documento no autoriza ni implementa OAuth, migraciones, cambios de credenci
 - No ejecutar migraciones sobre Neon `main`, desplegar ni activar servicios con cobro durante la fase de decisión.
 - Revisión de seguridad independiente y CI verde para el SHA exacto antes de integrar.
 
-## Estado actual
+## Estado de implementación (no equivale a preparación para producción)
 
-D1–D8 continúan sin aprobar. Este registro organiza la decisión; no reemplaza la aprobación del propietario ni la especificación SDD. La revisión estática previa encontró registro por contraseña sin allowlist en `apps/api/src/auth.ts`; no declarar la autenticación lista para usuarios reales hasta corregir y verificar ese bloqueo.
+D1–D8 fueron aprobadas el 2026-10-24 y la migración `apps/api/migrations/0002_google_identity.sql` registra esa aprobación. La implementación Google OAuth/allowlist está en `apps/api/src/google-auth.ts`; el registro público y login por contraseña permanecen fail-closed en `apps/api/src/auth.ts`. Esto no significa que el producto esté listo para usuarios reales: seguir `docs/PRODUCTION_READINESS.md`, verificar la configuración de entornos y mantener la matriz de permisos por rol como decisión separada pendiente de aprobación.
 
 ## Aprobación del propietario — 2026-10-24
 

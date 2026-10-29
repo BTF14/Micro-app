@@ -8,14 +8,29 @@
 
 ---
 
+## ESTADO VIVO PRIORITARIO — PR #151 fusionada y auditoría multiempresa iniciada (2026-10-29 UTC)
+
+- **Base de código auditada:** `70984baf7f6ac5a442e6c2364aaf6d7d4ebbc7d4`, merge squash de la PR [#151](https://github.com/BTF14/Micro-app/pull/151); los cambios de esta rama son solo documentación. La PR añadió guardrails de capacidad y referencias de límites de Neon/Cloudflare; sus checks del SHA de cabeza terminaron en éxito antes de fusionar.
+- **PR abiertas:** ninguna en la consulta posterior a la fusión; repetir consulta en vivo antes de abrir o fusionar trabajo nuevo.
+- **Capacidad:** organizaciones/sucursales/usuarios concurrentes siguen **sin medir**. La API Neon de solo lectura informa plan `free_v3`, límite de 10 ramas y 3 ramas existentes (`main`, `micro-app-integrity-test`, `restore-test-20261028`); tamaño lógico de rama 512 MiB y autoscaling predeterminado 0.25 CU. No se eliminó ninguna rama. El detalle/fecha está en `docs/CAPACITY_AND_LIMITS.md`. Las cuotas documentadas no demuestran capacidad sostenible de la aplicación ni verifican el consumo/plan real de Cloudflare.
+- **Arquitectura comprobada en `main`:** API Hono registra rutas de autenticación y `GET /health`; no hay aún handlers comerciales HTTP para productos, proveedores, ventas, pagos o inventario. `resolveTenantContext` valida sesión/membresía/organización, pero no constituye por sí solo autorización por operación.
+- **Sucursales:** no se encontró entidad/tabla de sucursal en `apps/api/migrations/0001_initial.sql` ni una relación de sucursal en el esquema inicial revisado. No crear migración hasta decidir el alcance de sucursal, pertenencia de usuarios, permisos y propiedad de datos.
+- **Hallazgo de seguridad preliminar:** `apps/api/src/google-auth.ts` acepta `bootstrap_token` en la query string de `/auth/google` y luego lo copia a una cookie HttpOnly. No hay evidencia de filtración activa, pero la URL puede quedar en historial/registros; revisar un flujo que no transporte secretos en URL antes de habilitar bootstrap con usuarios reales. El análisis está documentado en `docs/ARCHITECTURE_EVOLUTION_PLAN.md`; no se modificó código.
+- **Producción:** **NO lista**. Siguen pendientes flujos comerciales reales, autorización por operación y pruebas cross-tenant, matriz de roles aprobada, integridad/idempotencia/concurrencia, tasa BCV/fiscalidad y validación operativa completa de backup.
+- **Siguiente paso:** cerrar la reconciliación de documentos de estado; después completar la auditoría de solo lectura de esquema, permisos y consultas y preparar un contrato explícito de organización → sucursal → membresía/rol antes de implementar rutas comerciales. No tocar Neon `main`, secretos ni producción.
+
+> Los snapshots históricos que aparecen más abajo se conservan como historial; si contradicen este estado prioritario, no deben tratarse como estado vivo sin una verificación nueva de GitHub/código.
+
+---
+
 ## ESTADO OPERATIVO VIGENTE — respaldo cifrado (2026-10-29 UTC)
 
 > Esta sección prevalece sobre notas históricas inferiores que todavía digan que el incidente de subida está pendiente. No borrar el historial: interpretar cada incidente según la evidencia posterior.
 
 - **Subida del backup: VERIFICADA.** Run [40921815702](https://github.com/BTF14/Micro-app/actions/runs/40921815702) terminó en success: `pg_dump 18.6`, dump no vacío, cifrado age, checksum SHA-256, commit remoto `2b038bd`, push a la rama `main` del repositorio privado de backups y retención `deleted 0 file(s)`.
 - **Par cifrado persistido según logs:** `daily/backup-2026-10-29T17-29-48Z.dump.age` y `.sha256`.
-- **Pendiente:** ejecutar `.github/workflows/backup-real-restore.yml` manualmente tras configurar `AGE_PRIVATE_KEY` como secreto protegido. El workflow verifica checksum de los bytes descargados y restaura en PostgreSQL efímero, sin Neon ni recursos persistentes. También siguen pendientes RPO/RTO, alerta de fallo y evidencia de coste $0.
-- La prueba sintética automatizada de restauración es complementaria; no sustituye la restauración del backup real.
+- **Restauración técnica real: VERIFICADA** en run [40955935124](https://github.com/BTF14/Micro-app/actions/runs/40955935124), tras checksum, descifrado y restauración en PostgreSQL 18 efímero. La prueba sintética automatizada es complementaria.
+- Siguen pendientes la validación de datos comerciales poblados/conteos/relaciones, medición de RPO/RTO, alerta de fallo y evidencia del coste total $0.
 - PR [#148](https://github.com/BTF14/Micro-app/pull/148) quedó fusionada el 2026-10-29; merge commit `0681aea75b555d5eb0b60dfec26c2706207fae45`. No está abierta y no debe reabrirse para este trabajo.
 - **Plan de arquitectura:** [docs/ARCHITECTURE_EVOLUTION_PLAN.md](./ARCHITECTURE_EVOLUTION_PLAN.md). La auditoría comienza después de cerrar la restauración real del backup; primero lectura y diagnóstico, sin migraciones ni cambios productivos.
 - Límites vigentes: no desplegar producción, no acceder a Neon `main`, no pedir ni imprimir claves privadas age, no borrar backups/recursos, y no declarar coste $0 sin evidencia.

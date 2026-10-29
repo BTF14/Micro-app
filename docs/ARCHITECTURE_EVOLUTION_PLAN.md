@@ -9,16 +9,18 @@ No iniciar una reescritura ni introducir microservicios por anticipado. Mantener
 
 ## Secuencia de trabajo
 
-### Fase 0 — Cerrar el trabajo de respaldo en curso
-- [ ] Revisar todos los checks de la PR #149 en el SHA exacto y corregir fallos reales antes de fusionar.
-- [ ] Configurar el secreto protegido `AGE_PRIVATE_KEY` desde GitHub Actions, sin compartirlo por chat ni almacenarlo en Git.
-- [ ] Ejecutar manualmente `.github/workflows/backup-real-restore.yml` y confirmar verificación independiente del checksum, descifrado y restauración en PostgreSQL efímero.
-- [ ] Registrar resultado real y limitaciones en `docs/BACKUP_AND_RECOVERY.md`, incluidos RPO/RTO y alertas aún pendientes.
-- [ ] No usar Neon `main`, no desplegar producción y no borrar recursos ni copias como parte de esta prueba.
+### Fase 0 — Respaldo: restauración técnica verificada; recuperación completa aún pendiente
 
-**Puerta de salida:** el workflow real pasa y la documentación distingue claramente lo probado de lo pendiente. Si depende de una clave o check externo, dejarlo señalado sin afirmar éxito.
+- [x] PR #149 fusionada el 2026-10-29 (merge commit `8d40a90b20545689f346422175b3f0b7f176282d`), para verificar la restauración del backup remoto exacto.
+- [x] Ejecutado el workflow real [run 40955935124](https://github.com/BTF14/Micro-app/actions/runs/40955935124): checksum del objeto remoto correcto, descifrado y restauración en PostgreSQL 18 efímero.
+- [x] Registrada la evidencia y sus límites en `docs/BACKUP_AND_RECOVERY.md` y `docs/CURRENT_STATE.md`.
+- [ ] Validar conteos/relaciones de datos comerciales poblados con datos sintéticos o metadatos no sensibles.
+- [ ] Medir RPO/RTO, comprobar alerta de fallo, retención y evidencia del coste total $0.
+- No usar Neon `main`, datos reales ni despliegues de producción; no borrar recursos ni copias.
 
-### Fase 1 — Auditoría de arquitectura existente (primera tarea tras la Fase 0)
+**Puerta de salida:** la restauración técnica de la copia remota exacta está verificada. El gate de recuperación operativa completa sigue abierto hasta demostrar integridad de datos, RPO/RTO, alertas y coste.
+
+### Fase 1 — Auditoría de arquitectura existente (en curso; lectura y diagnóstico)
 - [ ] Confirmar el HEAD, estructura real, límites entre frontend/API/DB, rutas, servicios, esquema Drizzle, migraciones y flujos de autenticación/autorización.
 - [ ] Trazar un flujo representativo completo: sesión → resolución de organización/sucursal → endpoint → consulta/escritura de DB → auditoría.
 - [ ] Inventariar entidades y relaciones que deben pertenecer a una organización, cómo se determina el tenant en cada petición y si algún identificador enviado por el cliente se confía indebidamente.
@@ -71,8 +73,36 @@ Consultar [CAPACITY_AND_LIMITS.md](./CAPACITY_AND_LIMITS.md). No fijar un númer
 6. **No añadir complejidad sin motivo:** monolito modular antes que microservicios prematuros.
 7. **Cambios de alto riesgo reversibles:** plan de rollback, backup comprobado y migraciones compatibles antes de alterar datos.
 
+## Hallazgos preliminares verificados en el código
+
+**Referencia de código:** `main` en merge commit `70984baf7f6ac5a442e6c2364aaf6d7d4ebbc7d4` (PR #151). Esta sección documenta solo la inspección de los archivos señalados; no es una auditoría exhaustiva ni una certificación de seguridad.
+
+- `apps/api/src/index.ts` registra autenticación y `GET /health`; no se encontraron handlers HTTP comerciales para catálogo, proveedores, inventario, ventas, pagos o devoluciones.
+- `apps/api/src/tenant-context.ts` resuelve sesión, usuario, membresía y organización activa, pero documenta expresamente que no autoriza por sí solo una operación. No existen aún rutas de negocio donde verificar su aplicación end-to-end.
+- `apps/api/migrations/0001_initial.sql` define organizaciones, usuarios/membresías, proveedores, productos, tasas, ventas, líneas, pagos, movimientos y auditoría, con algunas FK compuestas de tenant. No contiene una tabla de sucursales ni una FK de sucursal en las entidades comerciales revisadas.
+- `docs/TENANT_ISOLATION_TEST_PLAN.md` y `docs/sdd/tenant-authorization-contract.md` son planes/contratos, no evidencia de aislamiento integral en producción.
+- `docs/PRODUCTION_READINESS.md` correctamente mantiene sin completar los flujos comerciales, permisos por operación, pruebas cross-tenant, idempotencia/concurrencia y requisitos fiscales.
+- La PR #151 añadió guardrails de capacidad y fue fusionada; la capacidad real sigue sin medir. Las cuotas publicadas no sustituyen verificación del plan real ni pruebas sintéticas.
+
+### Hallazgo de seguridad preliminar — secreto de bootstrap en URL
+
+- **Prioridad propuesta: P1 para revisar antes de habilitar el bootstrap con usuarios reales; no se ha demostrado una filtración activa.**
+- Evidencia: `apps/api/src/google-auth.ts:138-145` lee `bootstrap_token` desde la query string de `GET /auth/google` y lo copia a una cookie HttpOnly de corta duración.
+- Riesgo: la cookie protege el token después de recibirlo, pero no elimina la exposición del token en la URL de la primera petición. Las URL pueden terminar en historial del navegador o registros de infraestructura. El riesgo depende de quién tenga acceso a esos registros y de si el bootstrap de un solo uso sigue sin consumirse.
+- Mitigaciones existentes: el token también debe coincidir con `BOOTSTRAP_TOKEN`, la identidad Google debe estar verificada y allowlisted, y la fila `auth_bootstrap` se consume transaccionalmente una sola vez. Estos controles reducen el impacto, pero no hacen deseable transportar el secreto en una URL.
+- Recomendación: diseñar un flujo de bootstrap que transporte el secreto en el cuerpo de una petición POST protegida por validación de origen/CSRF y límites de entrada, o un mecanismo administrativo equivalente que no lo incluya en la URL. Añadir pruebas que comprueben que el token no aparece en URL, redirecciones ni logs. No cambiar el flujo sin revisar los callers, tests y el contrato de bootstrap.
+- Estado: documentado para revisión; no se modificó código ni se afirmó que haya ocurrido una filtración.
+
+### Decisiones necesarias antes de crear el modelo de sucursales
+
+1. Determinar si los productos y precios son compartidos por organización o pueden variar por sucursal; separar catálogo global de existencias por ubicación si corresponde.
+2. Definir si proveedores/compras se asignan a organización o a sucursal y cómo se distribuye la recepción de mercancía.
+3. Definir permisos a nivel de organización y sucursal, incluyendo acceso a varias sucursales y restricciones de caja/inventario.
+4. Determinar qué entidades necesitan `branch_id` y claves únicas/foráneas compuestas, y cuáles siguen siendo globales dentro del tenant.
+5. Diseñar migración aditiva y pruebas sintéticas A/B entre organizaciones y entre sucursales antes de implementar endpoints. No aplicar migraciones a Neon `main`.
+
 ## Cuándo comenzar
 
-La auditoría de arquitectura comienza inmediatamente después de cerrar la prueba de restauración real del respaldo en curso. No es necesario esperar a completar todas las mejoras de recuperación operativa para empezar el análisis documental y de solo lectura, pero los cambios de esquema o de autorización que afecten producción deben esperar a que exista una base de recuperación comprobada y un plan de pruebas.
+La auditoría de solo lectura puede avanzar ya que la restauración técnica real está verificada. No es necesario esperar a completar RPO/RTO, alertas o el manifiesto de datos para leer el código; sin embargo, cualquier cambio de esquema o autorización que pudiera afectar datos reales queda bloqueado hasta disponer de pruebas aisladas, estrategia de recuperación y revisión del diff.
 
-**Siguiente paso concreto:** terminar la revisión de PR #149 y, tras su cierre seguro, hacer una auditoría de solo lectura del esquema multiempresa, autenticación/autorización, migraciones y pruebas existentes. No realizar cambios de arquitectura hasta presentar hallazgos y acordar el orden de corrección.
+**Siguiente paso concreto:** completar el inventario de consultas y constraints por entidad, revisar la matriz de permisos por rol y definir explícitamente el modelo organización → sucursal → membresía/rol. No implementar el esquema de sucursales hasta cerrar esas decisiones con evidencia y pruebas.

@@ -33,7 +33,7 @@ Este archivo es la fuente de datos para el panel de avance. Un ítem solo puede 
 - [ ] Idempotencia de ventas y pagos verificada con pruebas.
 - [ ] Stock concurrente protegido contra sobreventa.
 - [ ] Instantáneas inmutables de precios, tasa y datos de venta.
-- [ ] Ciclo completo de backup/restore: backup cifrado automatizado, retención y subida están verificados (run 40587638159), pero la restauración en PostgreSQL desechable sigue pendiente (ver [BACKUP_AND_RECOVERY.md](BACKUP_AND_RECOVERY.md)).
+- [ ] Ciclo completo de backup/restore: la subida está verificada y la restauración técnica del backup remoto exacto pasó en PostgreSQL 18 desechable (run 40955935124; ver [BACKUP_AND_RECOVERY.md](BACKUP_AND_RECOVERY.md)). El gate completo sigue pendiente de validación de datos comerciales/conteos/relaciones, RPO/RTO, alerta y evidencia del coste total.
 
 ### Identidad y moneda
 - [x] Registro público y login con contraseña bloqueados fail-closed; Google OAuth + allowlist + verificación de email implementados (PR #102).
@@ -55,7 +55,7 @@ Este archivo es la fuente de datos para el panel de avance. Un ítem solo puede 
 - [ ] Gestión de errores, rate limiting y protección contra abuso revisadas.
 - [ ] Configuración de secretos/orígenes/cookies validada en entorno de preview.
 - [ ] Requisitos fiscales locales revisados y recibos correctamente clasificados.
-- [ ] Restauración desde backup independiente probada y documentada; Neon PITR por sí solo no satisface el requisito.
+- [ ] Recuperación independiente completa: restauración técnica de la copia remota verificada en run 40955935124; falta demostrar integridad de datos comerciales/conteos/relaciones y medir RPO/RTO/alertas/coste. Neon PITR por sí solo no satisface el requisito.
 - [ ] Prueba E2E de flujos reales contra API y DB de prueba (no solo mocks).
 - [ ] Checklist de lanzamiento revisado y aprobación explícita del usuario.
 
@@ -82,4 +82,4 @@ Actualiza este checklist solo junto con evidencia y una entrada en `docs/STATE_J
 
 ## Respaldo y recuperación
 
-La política está documentada en `docs/BACKUP_AND_RECOVERY.md`. El workflow independiente de backup cifrado y subida al repositorio privado tiene una corrida real exitosa (run 40587638159); la restauración en PostgreSQL desechable sigue pendiente, por lo que el control compuesto no está completo.
+La política está documentada en `docs/BACKUP_AND_RECOVERY.md`. La subida cifrada está verificada y la copia remota exacta se restauró técnicamente en PostgreSQL 18 desechable (run 40955935124). El control compuesto permanece incompleto hasta validar datos comerciales/conteos/relaciones, medir RPO/RTO y comprobar alertas y coste total.

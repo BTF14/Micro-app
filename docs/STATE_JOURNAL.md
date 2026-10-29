@@ -1,3 +1,17 @@
+## 2026-10-29 — PR #151 fusionada y hallazgos iniciales de arquitectura multiempresa
+
+- Se fusionó la PR [#151](https://github.com/BTF14/Micro-app/pull/151) mediante squash; merge commit `70984baf7f6ac5a442e6c2364aaf6d7d4ebbc7d4`. La PR documenta límites de Neon/Cloudflare y guardrails de capacidad. Los checks del SHA de cabeza terminaron en éxito antes de la fusión.
+- La restauración técnica del backup remoto exacto se verificó en [run 40955935124](https://github.com/BTF14/Micro-app/actions/runs/40955935124): checksum correcto, descifrado y restauración en PostgreSQL 18 efímero. No se usó Neon `main` ni producción.
+- Límites pendientes del backup: integridad de datos comerciales poblados/conteos/relaciones, RPO/RTO, alerta de fallo y evidencia del coste total $0. La restauración técnica no demuestra esos aspectos.
+- Revisión de código en `main` post-PR #151: `apps/api/src/index.ts` solo registra auth y `GET /health`; aún no hay handlers HTTP comerciales. `resolveTenantContext` comprueba sesión/membresía/organización, pero no autoriza por sí solo una operación.
+- La migración inicial define entidades comerciales ligadas a organización, con algunas FK compuestas; no contiene una tabla de sucursales. Antes de crearla, definir catálogo/precios compartidos o por sucursal, inventario por ubicación, compras/proveedores y permisos organizacionales/sucursal.
+- Hallazgo preliminar para revisar antes de habilitar bootstrap: `apps/api/src/google-auth.ts` acepta `bootstrap_token` en la query string de `/auth/google`. No se confirmó una filtración, pero la URL puede persistir en historial o registros; se documentó como riesgo de transporte del secreto, sin modificar código en esta PR.
+- Snapshot Neon de solo lectura: plan `free_v3`, límite informado de 10 ramas y 3 ramas existentes (`main`, `micro-app-integrity-test`, `restore-test-20261028`), límite lógico 512 MiB por rama, autoscaling predeterminado 0.25 CU. No se eliminó la rama de restauración. Cloudflare no está verificado en vivo.
+- Capacidad real de organizaciones/sucursales sigue **sin medir**; las cuotas documentadas no verifican la carga sostenible.
+- Próximo trabajo: reconciliar estado/handoff/checklist/plan; continuar auditoría de solo lectura de constraints, consultas y matriz de permisos; proponer modelo de sucursales con pruebas sintéticas. No migrar Neon `main`, tocar secretos ni desplegar producción.
+
+---
+
 ## 2026-10-29 — monitor diario de versiones y auditoría de dependencias (PR #137)
 
 - Se añadió `.github/workflows/daily-dependency-watch.yml` en la rama `docs/market-dependency-audit-20261029`, dentro de la PR #137 ya existente, para evitar crear otra PR de seguimiento.

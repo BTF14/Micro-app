@@ -1,3 +1,13 @@
+## Estado vivo — restauración de respaldo verificada técnicamente (2026-10-29 UTC)
+
+- La PR #126 está fusionada; el workflow temporal se ejecutó de nuevo en `main`: [run 40804665192](https://github.com/BTF14/Micro-app/actions/runs/40804665192), resultado `success`, duración mostrada por Actions: 22 s.
+- Evidencia del run: backup `backup-2026-10-28T13-39-39Z.dump.age`; checksum, descifrado y `pg_restore` correctos; 13 tablas esperadas; 186 constraints presentes; 0 membresías huérfanas; `auth_sessions` y `auth_rate_limits` ausentes.
+- La copia tenía 1 organización, 1 usuario, 1 membresía, 1 entrada de allowlist y 1 registro bootstrap; las tablas comerciales y de auditoría verificadas estaban vacías. El camino técnico de restauración queda probado para esta copia, pero falta prueba con datos sintéticos poblados y comparación contra un manifiesto/conteo de origen. No afirmar integridad completa de datos comerciales.
+- No se usó Neon `main` ni se modificaron datos de producción. La PR de limpieza pendiente debe eliminar el workflow temporal y actualizar la documentación. Tras fusionarla, el propietario debe borrar los secretos `RESTORE_TEST_AGE_KEY` y `RESTORE_TEST_DB_URL` y eliminar la rama Neon desechable `restore-test-20261028` después de verificar que ya no se necesita.
+- El punto de backup de Nivel 1 permanece parcialmente verificado: falta evidencia del RPO/RTO extremo a extremo, alertas de fallos, retención y coste $0. No declarar Micro app lista para producción; siguen vigentes los otros bloqueos de seguridad.
+
+---
+
 ## Checkpoint posterior a PR #114 — 2026-10-29 UTC
 
 - PR #114 quedó fusionada por squash en `main`: [merge commit dc3fae80c485ec52c2e68c80da316df90c68ac83](https://github.com/BTF14/Micro-app/commit/dc3fae80c485ec52c2e68c80da316df90c68ac83). El HEAD revisado fue `780e057435fea4ebd6213fd973745599e71d2088`; GitHub confirmó `merged=true`.

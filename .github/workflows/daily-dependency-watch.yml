@@ -55,9 +55,9 @@ jobs:
             printf '%s\n\n' '- Schedule: daily at 08:15 UTC (04:15 Venezuela); manual runs are also available.'
             printf '### Latest Node.js 24 LTS patch\n'
             if curl --fail --silent --show-error --max-time 20 https://nodejs.org/dist/index.json -o /tmp/node-releases.json; then
-              node -e 'const rows=require("/tmp/node-releases.json"); const v=rows.find(x=>/^v24\./.test(x.version)&&x.lts); if(v) console.log("- Latest published Node 24 LTS release: `"+v.version+"` ("+v.date+")."); else console.log("- Could not identify the latest Node 24 LTS release from the official index.");' >> "$GITHUB_STEP_SUMMARY"
+              node -e 'const rows=require("/tmp/node-releases.json"); const v=rows.find(x=>/^v24\./.test(x.version)&&x.lts); if(v) console.log("- Latest published Node 24 LTS release: `"+v.version+"` ("+v.date+")."); else console.log("- Could not identify the latest Node 24 LTS release from the official index.");'
             else
-              printf '%s\n' '- Official Node.js release index could not be reached during this run.' >> "$GITHUB_STEP_SUMMARY"
+              printf '%s\n' '- Official Node.js release index could not be reached during this run.'
             fi
             printf '\n### Package updates (pnpm -r outdated --latest)\n\n'
             if [ -s /tmp/pnpm-outdated.txt ]; then

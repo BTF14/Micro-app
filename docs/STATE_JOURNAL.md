@@ -6,7 +6,8 @@
 - Revisión de código en `main` post-PR #151: `apps/api/src/index.ts` solo registra auth y `GET /health`; aún no hay handlers HTTP comerciales. `resolveTenantContext` comprueba sesión/membresía/organización, pero no autoriza por sí solo una operación.
 - La migración inicial define entidades comerciales ligadas a organización, con algunas FK compuestas; no contiene una tabla de sucursales. Antes de crearla, definir catálogo/precios compartidos o por sucursal, inventario por ubicación, compras/proveedores y permisos organizacionales/sucursal.
 - Hallazgo preliminar para revisar antes de habilitar bootstrap: `apps/api/src/google-auth.ts` acepta `bootstrap_token` en la query string de `/auth/google`. No se confirmó una filtración, pero la URL puede persistir en historial o registros; se documentó como riesgo de transporte del secreto, sin modificar código en esta PR.
-- Capacidad real de organizaciones/sucursales sigue **sin medir**; las cuotas documentadas no verifican el plan contratado ni la carga sostenible.
+- Snapshot Neon de solo lectura: plan `free_v3`, límite informado de 10 ramas y 3 ramas existentes (`main`, `micro-app-integrity-test`, `restore-test-20261028`), límite lógico 512 MiB por rama, autoscaling predeterminado 0.25 CU. No se eliminó la rama de restauración. Cloudflare no está verificado en vivo.
+- Capacidad real de organizaciones/sucursales sigue **sin medir**; las cuotas documentadas no verifican la carga sostenible.
 - Próximo trabajo: reconciliar estado/handoff/checklist/plan; continuar auditoría de solo lectura de constraints, consultas y matriz de permisos; proponer modelo de sucursales con pruebas sintéticas. No migrar Neon `main`, tocar secretos ni desplegar producción.
 
 ---

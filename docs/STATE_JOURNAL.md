@@ -1,3 +1,13 @@
+## 2026-10-29 — monitor diario de versiones y auditoría de dependencias (PR #137)
+
+- Se añadió `.github/workflows/daily-dependency-watch.yml` en la rama `docs/market-dependency-audit-20261029`, dentro de la PR #137 ya existente, para evitar crear otra PR de seguimiento.
+- El workflow está programado diariamente a las 08:15 UTC (04:15 Venezuela) y permite ejecución manual. Usa Node 24 y pnpm 10, instala con `pnpm install --frozen-lockfile`, informa de dependencias desactualizadas, consulta el último parche Node 24 LTS y ejecuta `pnpm audit --audit-level high`.
+- Es de solo lectura (`contents: read`); no actualiza dependencias ni crea PRs. Los resultados se muestran en GitHub Actions; el audit high/critical falla la ejecución tras registrar su salida.
+- Estado: código añadido; aún no verificado por checks de la PR ni por un run real del workflow. No afirmar que la monitorización diaria ya está operativa hasta fusionar y comprobar una ejecución.
+- Se mantiene el guardrail de `undici@7.30.1` y la regla de no aceptar lockfiles incoherentes. Sin cambios a secretos, Neon, datos reales o producción.
+
+---
+
 ## 2026-10-29 — auditoría de versiones estables y plan de migración segura
 
 - El propietario pidió versiones actuales del mercado por motivos de seguridad y exigió documentar exhaustivamente la continuidad para los siguientes chats/IA. Confirmó autorización temporal para actuar con criterio y fusionar PRs cuando la evidencia lo justifique.

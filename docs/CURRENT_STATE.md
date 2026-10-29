@@ -934,3 +934,10 @@ Esta revisión fue estática de contenidos en GitHub; no se ejecutaron tests des
 - Latest run [40918687069](https://github.com/BTF14/Micro-app/actions/runs/40918687069) failed in “Generar el volcado” with server PostgreSQL 18.6 vs pg_dump 16.15. It failed before dump creation; encryption and upload were skipped, and the remote backup repository was not modified.
 - Root cause: installing `postgresql-client-17` did not guarantee that the unqualified `pg_dump` command resolved to that version; the runner selected 16.15.
 - Branch `fix/backup-pg-dump-v18-20261029` switches to `postgresql-client-18`, invokes `/usr/lib/postgresql/18/bin/pg_dump` explicitly and asserts major version 18. Verify PR checks and a complete manual backup before closing the incident.
+
+
+## Backup workflow incident #7 — missing checkout (2026-10-29)
+
+- Manual run [40920403909](https://github.com/BTF14/Micro-app/actions/runs/40920403909) installed PostgreSQL client 18.6, successfully generated the dump, encrypted it with age and wrote its SHA-256 checksum. It failed in the upload/retention step because `$GITHUB_WORKSPACE/scripts/prune_backups.py` did not exist in the runner workspace.
+- Root cause: `.github/workflows/backup.yml` used a repository script but had no `actions/checkout` step, so the repository files were never checked out. The prior absolute path correction alone could not fix this.
+- Branch `fix/backup-checkout-repository-20261029` adds `actions/checkout@v4` before any step that needs repository files. Run #7 failed before `git push`; its backup commit remained only in the ephemeral clone, and remote retention did not run. Do not claim a new persisted backup until a subsequent run succeeds and remote file/checksum are verified.

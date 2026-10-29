@@ -45,6 +45,9 @@ jobs:
       BACKUP_REPO: BTF14/micro-app-backups
       RETENTION_DAYS: 15
     steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
       - name: Instalar pg_dump (versión reciente) y age
         run: |
           set -euo pipefail

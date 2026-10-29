@@ -161,3 +161,11 @@ La restauración manual anterior [run 40804665192](https://github.com/BTF14/Micr
 - Manual run [40918687069](https://github.com/BTF14/Micro-app/actions/runs/40918687069) failed before creating a dump: Neon server reported PostgreSQL 18.6, while the unqualified `pg_dump` on the runner resolved to PostgreSQL 16.15. Encryption, upload, and retention steps were skipped; this run did not change the remote backup repository.
 - Corrective branch `fix/backup-pg-dump-v18-20261029` installs `postgresql-client-18`, invokes `/usr/lib/postgresql/18/bin/pg_dump` explicitly, and asserts that its reported major version is 18 before connecting. This avoids relying on the system-wide `pg_dump` alternative.
 - Keep status open until PR checks pass and a new manual run confirms dump, encryption, checksum, upload, and remote presence. Do not delete or alter older backups to troubleshoot this failure.
+
+
+## Incident: backup run #7 failed because repository was not checked out — 2026-10-29
+
+- Run [40920403909](https://github.com/BTF14/Micro-app/actions/runs/40920403909) verified pg_dump 18.6 against Neon 18, generated the dump, encrypted it with age and calculated SHA-256. It then failed in the upload/retention step because the runner could not find `$GITHUB_WORKSPACE/scripts/prune_backups.py`.
+- Root cause: the workflow referenced a script from the code repository but lacked an `actions/checkout` step. The absolute path was correct; the repository had not been checked out into the runner workspace.
+- Corrective branch `fix/backup-checkout-repository-20261029` adds `actions/checkout@v4` as the first step. Run #7 did not reach `git push`, so no new durable backup is proven and remote retention did not run.
+- Incident remains open until PR checks pass and a new manual run verifies the remote encrypted backup, matching checksum, retention and final success. Preserve all previous valid copies.

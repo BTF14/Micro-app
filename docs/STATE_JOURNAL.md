@@ -711,3 +711,11 @@ Este diario es append-only en cuanto a historia: no borrar hitos antiguos; añad
 - Manual run [40918687069](https://github.com/BTF14/Micro-app/actions/runs/40918687069) showed PostgreSQL server 18.6 but runner executed pg_dump 16.15, aborting before a dump existed. Later steps were skipped; no upload or retention ran.
 - Corrective change on `fix/backup-pg-dump-v18-20261029`: install PostgreSQL 18 client, use the explicit binary `/usr/lib/postgresql/18/bin/pg_dump`, and fail early unless `--version` reports major 18.
 - Keep incident open until checks and a complete manual backup prove remote persistence and checksum.
+
+
+## 2026-10-29 — backup run #7 fails due to missing checkout
+
+- Run [40920403909](https://github.com/BTF14/Micro-app/actions/runs/40920403909) succeeded through PostgreSQL 18.6 dump, age encryption and SHA-256 checksum, then failed at retention because `$GITHUB_WORKSPACE/scripts/prune_backups.py` was not present.
+- Confirmed root cause in workflow: no `actions/checkout` step existed. The path refers to a real repository script, but the runner workspace was empty of source files.
+- Branch `fix/backup-checkout-repository-20261029` adds `actions/checkout@v4` before any repository-dependent commands. Since failure happened before push, the run did not persist a new backup or execute remote retention.
+- Keep unresolved until a verified successful manual run and remote file/checksum evidence.

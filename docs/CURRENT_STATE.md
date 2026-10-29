@@ -52,6 +52,20 @@ Fuentes públicas consultadas:
 
 **Límite actual:** esta nota es auditoría y plan; no ha cambiado ninguna dependencia ni lockfile. No se ha ejecutado instalación local durante esta revisión. La PR #136 fue documental y no actualizó paquetes.
 
+### Monitorización diaria de dependencias — añadido en esta rama, pendiente de merge
+
+- Workflow nuevo: `.github/workflows/daily-dependency-watch.yml`.
+- Frecuencia: diaria a las 08:15 UTC (04:15 Venezuela) y ejecución manual mediante `workflow_dispatch`.
+- Ejecuta instalación reproducible con `pnpm install --frozen-lockfile`, muestra versión del Node usado y consulta el último parche publicado de Node 24 LTS desde el índice oficial.
+- Ejecuta `pnpm outdated -r` para visibilizar dependencias directas con actualizaciones y `pnpm audit --audit-level high`; un fallo del audit deja el informe en el resumen y falla el workflow para llamar la atención.
+- El informe queda en el resumen de GitHub Actions. No crea PR, no actualiza dependencias, no escribe manifiestos/lockfile, no manda email y no despliega.
+- Dependabot permanece semanal para PRs de npm y GitHub Actions; el workflow diario es observabilidad adicional, no remediación automática.
+- Limitaciones: el resultado de `pnpm outdated` debe leerse para distinguir actualizaciones de un error de registry; un audit fallido puede ser advisory high/critical o error de registry. El resumen incluye esta advertencia. El workflow no sustituye revisión de changelogs, peer dependencies, lockfile ni CI completa.
+- Guardrail obligatorio: mantener `undici@7.30.1` coherente entre `package.json` y `pnpm-lock.yaml` hasta que una actualización de seguridad revisada lo reemplace explícitamente.
+- Estado actual: archivo añadido al HEAD de esta rama; todavía debe pasar los checks de la PR #137. No afirmar que la ejecución diaria funciona hasta observar al menos una ejecución real después del merge.
+
+---
+
 ---
 
 ## Estado vivo — Dependabot y continuidad (2026-10-29 UTC)

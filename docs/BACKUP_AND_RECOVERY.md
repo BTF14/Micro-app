@@ -169,3 +169,11 @@ La restauración manual anterior [run 40804665192](https://github.com/BTF14/Micr
 - Root cause: the workflow referenced a script from the code repository but lacked an `actions/checkout` step. The absolute path was correct; the repository had not been checked out into the runner workspace.
 - Corrective branch `fix/backup-checkout-repository-20261029` adds `actions/checkout@v4` as the first step. Run #7 did not reach `git push`, so no new durable backup is proven and remote retention did not run.
 - Incident remains open until PR checks pass and a new manual run verifies the remote encrypted backup, matching checksum, retention and final success. Preserve all previous valid copies.
+
+
+## Successful persisted encrypted backup — 2026-10-29
+
+- Manual run [40921815702](https://github.com/BTF14/Micro-app/actions/runs/40921815702) succeeded end-to-end.
+- Log evidence: PostgreSQL client `pg_dump 18.6`; dump created and checked non-empty; age encryption succeeded; SHA-256 sidecar created; both files committed in the private backup repository as commit `2b038bd`; push to remote `main` succeeded; retention reported `deleted 0 file(s)`.
+- Persisted objects: `daily/backup-2026-10-29T17-29-48Z.dump.age` and `daily/backup-2026-10-29T17-29-48Z.dump.age.sha256`.
+- Status: **encrypted backup upload verified**. Not yet verified by this run: decrypting this exact backup, restoring it into a disposable PostgreSQL target, measured RPO/RTO, failure notification delivery, or total cost. Keep the age private key outside chat and source control.

@@ -2,6 +2,11 @@
 
 **HEAD verificado de `main`:** `d196d8e3e3053e1c51d2e1133aa4ed2d52884631`. PR [#129](https://github.com/BTF14/Micro-app/pull/129) está fusionada; los checks del HEAD `35bee0d04e0c1d8470d526c7f7e961b7e0b4de26` terminaron todos en `success`. La retención de backups ahora interpreta el timestamp UTC validado del nombre del archivo, en vez de confiar en `find -mtime` después del checkout. La política conserva 15 días y elimina el checksum emparejado de un backup vencido. Las pruebas unitarias de retención forman parte del CI.
 
+### Política operativa de backups para continuidad entre sesiones
+- Backup diario; retención configurada en 15 días mediante `scripts/prune_backups.py` (timestamp UTC validado en nombre, no `mtime` del checkout) y eliminación del checksum emparejado. PR #129 fusionada y tests de retención en CI.
+- No borrar todas las copias anteriores al generar una nueva ni reducir el plazo sin análisis y revisión. Si una ejecución nueva falla o no se valida, conservar la última copia válida y comprobar alerta visible.
+- La retención no equivale a restauración probada. Sigue pendiente una prueba aislada con datos sintéticos relacionados y manifiesto de conteos/relaciones, RPO/RTO, alerta y coste $0. Restauración para la última fase.
+
 ### Secretos y recursos temporales: estado exacto
 - El propietario confirma que eliminó `RESTORE_TEST_AGE_KEY` y que `RESTORE_TEST_DB_URL` ya no aparece en la lista actual de Repository secrets. Esta última comprobación es visual, informada por el propietario; no se conoce la fecha exacta de eliminación.
 - Los únicos secretos que el propietario reporta actualmente son `BACKUP_REPO_TOKEN` y `DATABASE_URL_BACKUP_RO`; conservarlos para el backup permanente.

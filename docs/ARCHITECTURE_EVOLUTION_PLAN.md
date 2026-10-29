@@ -73,25 +73,31 @@ Consultar [CAPACITY_AND_LIMITS.md](./CAPACITY_AND_LIMITS.md). No fijar un númer
 6. **No añadir complejidad sin motivo:** monolito modular antes que microservicios prematuros.
 7. **Cambios de alto riesgo reversibles:** plan de rollback, backup comprobado y migraciones compatibles antes de alterar datos.
 
-## Hallazgos preliminares verificados en el código
+## Auditoría de solo lectura actualizada — main `0ba45e47` (2026-10-29 UTC)
 
-**Referencia de código:** `main` en merge commit `70984baf7f6ac5a442e6c2364aaf6d7d4ebbc7d4` (PR #151). Esta sección documenta solo la inspección de los archivos señalados; no es una auditoría exhaustiva ni una certificación de seguridad.
+La PR [#153](https://github.com/BTF14/Micro-app/pull/153) está fusionada; el hallazgo del secreto en URL queda corregido en el código de main, no verificado en producción. La referencia anterior a main `70984baf` que sigue en secciones históricas no describe el HEAD actual.
 
-- `apps/api/src/index.ts` registra autenticación y `GET /health`; no se encontraron handlers HTTP comerciales para catálogo, proveedores, inventario, ventas, pagos o devoluciones.
-- `apps/api/src/tenant-context.ts` resuelve sesión, usuario, membresía y organización activa, pero documenta expresamente que no autoriza por sí solo una operación. No existen aún rutas de negocio donde verificar su aplicación end-to-end.
-- `apps/api/migrations/0001_initial.sql` define organizaciones, usuarios/membresías, proveedores, productos, tasas, ventas, líneas, pagos, movimientos y auditoría, con algunas FK compuestas de tenant. No contiene una tabla de sucursales ni una FK de sucursal en las entidades comerciales revisadas.
-- `docs/TENANT_ISOLATION_TEST_PLAN.md` y `docs/sdd/tenant-authorization-contract.md` son planes/contratos, no evidencia de aislamiento integral en producción.
-- `docs/PRODUCTION_READINESS.md` correctamente mantiene sin completar los flujos comerciales, permisos por operación, pruebas cross-tenant, idempotencia/concurrencia y requisitos fiscales.
-- La PR #151 añadió guardrails de capacidad y fue fusionada; la capacidad real sigue sin medir. Las cuotas publicadas no sustituyen verificación del plan real ni pruebas sintéticas.
+### Rutas y autorización
 
-### Hallazgo de seguridad preliminar — secreto de bootstrap en URL
+- `apps/api/src/index.ts` monta rutas de auth y `GET /health`; no hay handlers HTTP comerciales para catálogo, proveedores, inventario, ventas, pagos o devoluciones.
+- `/auth/register` y `/auth/login` fallan cerrados; `/auth/me`, `/auth/logout`, `/auth/google` (GET/POST) y `/auth/google/callback` son las rutas de identidad inspeccionadas.
+- `resolveTenantContext` en `apps/api/src/tenant-context.ts` valida sesión vigente, usuario, membresía y organización activas, pero explícitamente no autoriza una operación comercial. Como todavía no hay handlers comerciales, no se puede demostrar aislamiento HTTP end-to-end.
+- `docs/sdd/role-permission-decision-matrix.md` permanece sin aprobación del propietario. No implementar permisos comerciales a partir de esta propuesta.
 
-- **Prioridad propuesta: P1 para revisar antes de habilitar el bootstrap con usuarios reales; no se ha demostrado una filtración activa.**
-- Evidencia: `apps/api/src/google-auth.ts:138-145` lee `bootstrap_token` desde la query string de `GET /auth/google` y lo copia a una cookie HttpOnly de corta duración.
-- Riesgo: la cookie protege el token después de recibirlo, pero no elimina la exposición del token en la URL de la primera petición. Las URL pueden terminar en historial del navegador o registros de infraestructura. El riesgo depende de quién tenga acceso a esos registros y de si el bootstrap de un solo uso sigue sin consumirse.
-- Mitigaciones existentes: el token también debe coincidir con `BOOTSTRAP_TOKEN`, la identidad Google debe estar verificada y allowlisted, y la fila `auth_bootstrap` se consume transaccionalmente una sola vez. Estos controles reducen el impacto, pero no hacen deseable transportar el secreto en una URL.
-- Recomendación: diseñar un flujo de bootstrap que transporte el secreto en el cuerpo de una petición POST protegida por validación de origen/CSRF y límites de entrada, o un mecanismo administrativo equivalente que no lo incluya en la URL. Añadir pruebas que comprueben que el token no aparece en URL, redirecciones ni logs. No cambiar el flujo sin revisar los callers, tests y el contrato de bootstrap.
-- Estado: documentado para revisión; no se modificó código ni se afirmó que haya ocurrido una filtración.
+### Relaciones y límites del esquema revisado
+
+- Migraciones revisadas: `0001_initial.sql` y `0002_google_identity.sql`. Entidades: organizaciones, usuarios, membresías, sesiones, límites de autenticación, proveedores, productos, tasas de cambio, ventas, líneas de venta, pagos, movimientos de inventario, auditoría, allowlist y bootstrap.
+- Restricciones compuestas existentes protegen relaciones dentro de la organización para producto/proveedor, venta/miembro, línea/venta/producto, pago/venta/miembro, movimiento/producto/miembro y auditoría/miembro. Esto protege integridad referencial, no sustituye filtros tenant y autorización en cada futura consulta.
+- `products.stock_quantity` vive en el producto de la organización, no en una ubicación. No se encontró tabla de sucursales, categorías, compras/recepciones, caja/turnos ni entidad de devolución en las migraciones revisadas. No añadir solo `branch_id` sin definir ownership de catálogo/precios, stock por ubicación, compras, caja y permisos.
+- `sales` tiene idempotency key única por organización y checks de subtotal/descuento/total. Las constraints revisadas no concilian automáticamente el total con la suma de líneas/pagos ni el saldo de stock con el libro de movimientos; la futura operación debe ser transaccional, idempotente y probada con fallos/concurrencia.
+- `inventory_movements.reference_type/reference_id` es una referencia polimórfica sin FK a una entidad concreta; cualquier handler deberá validar el origen en servidor y escribir movimiento/auditoría junto con la operación de negocio.
+- No se ha ejecutado SQL ni se ha aplicado migración; revisión basada en archivos de main, sin acceso a datos de Neon.
+
+### PR #153 — estado de seguridad
+
+- Merge commit `0ba45e47daa5af9bbd9034690443405aa8bedf44`, HEAD de PR `e7af00db2db27ad4bacd0246447df173d415bbe4`. Los checks de PR reportados pasaron; Codex no pudo completar revisión por cuota y no existe revisión independiente registrada.
+- El cambio impide transporte nuevo del secreto por URL. No demuestra ausencia de registros históricos ni que la corrección esté desplegada en producción.
+- Hardening adicional a revisar: el validador `FRONTEND_ORIGIN` de `google-auth.ts` no restringe protocolo a HTTPS/localhost como el validador global de `index.ts`. Es una inconsistencia de configuración; no hay evidencia de explotación. Corregir en un cambio de seguridad pequeño con pruebas de HTTP no local y URL malformada.
 
 ### Decisiones necesarias antes de crear el modelo de sucursales
 

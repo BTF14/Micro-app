@@ -100,3 +100,8 @@ La actualización frecuente reduce exposición a vulnerabilidades conocidas solo
 - PR #142 actualizó Wrangler y workers-types a versiones compatibles y fijó Node en `>=24.22.2 <25`, manteniendo TypeScript 5, Vite 7 y `undici@7.30.1`.
 - El monitor diario [run 40845877052](https://github.com/BTF14/Micro-app/actions/runs/40845877052) reportó `No known vulnerabilities found` en SHA anterior a #142. Detectó majors estables de Vite, plugin React, jsdom y TypeScript; evaluar compatibilidad antes de actualizar, sin hacer upgrades masivos a ciegas.
 - La rama de corrección del monitor `fix/dependency-watch-report-20261029` ya no contiene cambios exclusivos frente a `main` (0 ahead, 4 behind); no abrir una PR redundante. La siguiente ejecución programada debe informar las versiones actuales tras #142.
+
+
+### Backup workflow incident — 2026-10-29
+
+Manual run [40916692763](https://github.com/BTF14/Micro-app/actions/runs/40916692763) successfully generated, encrypted and checksummed a dump, but failed before pushing it to the private backup repository because the retention script path was resolved relative to the cloned backup repository. The fix on branch `fix/backup-workflow-path-20261029` uses `$GITHUB_WORKSPACE/scripts/prune_backups.py` and pins `ubuntu-24.04`. Treat the incident as open until PR checks and a subsequent manual run verify that a new encrypted backup and checksum exist remotely. The failed run did not alter remote backups or execute retention.

@@ -1,10 +1,24 @@
-## CONTINUIDAD VIVA — después de PR #152 (2026-10-29 UTC)
+## CONTINUIDAD VIVA — PR #153 fusionada; auditoría de tenant/sucursal en curso (2026-10-29 UTC)
 
-- PR [#152](https://github.com/BTF14/Micro-app/pull/152) fusionada en `main`, merge commit `9376419231501f837a2d85d8741f7bfa9f57a0cc`. Los 13 checks del HEAD de PR y los nueve checks post-merge observados terminaron en `success`.
-- Rama activa para la siguiente corrección: `fix/bootstrap-token-post-body-20261029`. Objetivo único: dejar de aceptar `bootstrap_token` por URL, exigir POST con cuerpo, Origin exacto del frontend configurado, campos únicos/permitidos y límite de 2 KiB; pruebas de regresión incluidas.
-- No considerar el riesgo mitigado hasta comprobar CI del SHA final, revisar diff y fusionar por el proceso protegido. No autoaprobar ni saltar reglas.
-- No producción, secretos ni Neon `main`; no ejecutar migraciones ni borrar ramas/backups.
-- Luego retomar auditoría de consultas/constraints, contrato organización → sucursal → membresía/rol y matriz de permisos aún pendiente de aprobación.
+- Main: `0ba45e47daa5af9bbd9034690443405aa8bedf44`, merge de [PR #153](https://github.com/BTF14/Micro-app/pull/153). HEAD revisado de la PR: `e7af00db2db27ad4bacd0246447df173d415bbe4`.
+- La corrección elimina el transporte nuevo de `bootstrap_token` por URL. GET rechaza parámetros bootstrap; POST valida Origin exacto, Content-Type, query vacía, campos únicos/permitidos, cuerpo de hasta 2 KiB y token antes del redirect OAuth. Mantiene state, PKCE y bootstrap transaccional de un solo uso.
+- Workflows consultados en el HEAD de PR: CI, migración PostgreSQL, security scan, secret history scan, Semgrep, Playwright E2E, Dependency Review y dashboard terminaron `success`; el resumen de la PR registró 12/12 checks. Codex review falló por límite de uso; no hay review independiente registrada. El estado combinado post-merge no expuso checks, por lo que no afirmar verificación post-merge completa.
+- Cloudflare dejó previews de rama. No se ha verificado despliegue de producción ni se ha probado el endpoint productivo; no cambiar secretos, Neon `main` ni producción.
+- No se conoce exposición histórica del token. El merge no elimina registros potenciales ya existentes.
+- Auditoría de solo lectura en main `0ba45e47`: no hay handlers comerciales HTTP; `resolveTenantContext` solo resuelve sesión/membresía/organización y no concede permiso de operación. La matriz de roles permanece explícitamente sin aprobar.
+- Migraciones revisadas: tablas tenant-scoped con varias FK compuestas; no hay sucursales, caja/turnos, compras ni entidades de devolución en el esquema inicial revisado. `products.stock_quantity` es stock a nivel organización, así que no agregar `branch_id` superficialmente: definir catálogo/precio, inventario por ubicación, compras, caja y alcance de membresías primero.
+- Invariantes como suma de líneas, conciliación de pagos y consistencia entre stock y libro de movimientos no quedan demostradas solo por las constraints actuales; exigir transacción e integración PostgreSQL sintética al crear handlers.
+- Hallazgo para un cambio de seguridad acotado: `google-auth.ts` acepta una URL configurada no HTTPS en su validador de Origin, mientras `index.ts` restringe a HTTPS salvo localhost. No hay evidencia de explotación; añadir regresión y unificar validación antes de bootstrap con usuarios reales.
+- Capacidad real de organizaciones/sucursales sigue sin medir; consultar `docs/CAPACITY_AND_LIMITS.md`.
+
+### Siguiente secuencia obligatoria
+1. Revisar el diff y checks de esta PR de documentación antes de considerar merge; no abrir PR duplicadas.
+2. Terminar el inventario de tablas, FK, índices, consultas y rutas actuales.
+3. Preparar una propuesta explícita organización → sucursal → membresía/rol; no crear migración hasta decidir ownership y permisos.
+4. Obtener aprobación explícita del propietario de `docs/sdd/role-permission-decision-matrix.md` antes de implementar permisos comerciales.
+5. Priorizar y corregir la inconsistencia de validación HTTPS en un cambio de seguridad separado y acotado, con tests; no mezclarlo con migración de sucursales.
+6. Mantener producción como NO lista hasta rutas comerciales, aislamiento cross-tenant, integridad/idempotencia, pruebas, BCV/fiscalidad y recuperación completa estén verificadas.
+
 
 ---
 

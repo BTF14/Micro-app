@@ -73,8 +73,8 @@ Un sistema de backup no se considera listo hasta que:
 - [x] El workflow publica un resumen visible en GitHub Actions si falla un paso. Esto no es una notificación externa; confirmar si las notificaciones nativas de GitHub cubren la necesidad operativa.
 - [x] Se verificó que la copia cifrada no está vacía, se descifra y su checksum coincide (run [40804665192](https://github.com/BTF14/Micro-app/actions/runs/40804665192)).
 - [x] La copia pudo restaurarse en la rama PostgreSQL desechable `restore-test-20261028`, sin usar Neon `main` (run [40804665192](https://github.com/BTF14/Micro-app/actions/runs/40804665192)).
-- [ ] Las migraciones y restricciones de integridad pasan tras restaurar.
-- [ ] Se validan conteos y relaciones de productos, movimientos, ventas, pagos y auditoría con datos de prueba; no imprimir datos personales.
+- [x] La prueba sintética aplica las migraciones antes del dump y verifica que el recuento de constraints se conserva tras restaurar ([run 40849167225](https://github.com/BTF14/Micro-app/actions/runs/40849167225)); no afirma que ejecutar migraciones sobre una base ya restaurada sea necesario ni probado.
+- [x] Conteos/valores y relaciones sintéticas de productos, movimientos, ventas, pagos y auditoría coinciden entre origen y restauración ([run 40849167225](https://github.com/BTF14/Micro-app/actions/runs/40849167225)); no se usaron datos personales.
 - [ ] Se mide el tiempo de recuperación y la pérdida máxima de datos esperable.
 - [ ] La retención elimina copias vencidas sin eliminar la última copia válida.
 - [ ] Se demuestra que no hay costes ni cargos automáticos fuera del presupuesto.

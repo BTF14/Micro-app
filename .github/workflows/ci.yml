@@ -70,6 +70,8 @@ jobs:
             exit 1
           fi
           CF_PAGES_BRANCH=preview pnpm --filter @micro-app/web exec vitest run src/Preview.test.tsx
+      - name: Test backup retention policy
+        run: python3 -m unittest discover -s scripts/tests -p 'test_*.py'
       - name: Unit tests
         run: pnpm test
       - name: PostgreSQL auth integration tests

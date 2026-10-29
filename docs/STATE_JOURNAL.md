@@ -670,3 +670,12 @@ Este diario es append-only en cuanto a historia: no borrar hitos antiguos; añad
 - Última consulta de checks de main: verify, Chromium, migración PostgreSQL, análisis estático y Trivy en success; algunos checks de Workers/Pages/scan aún figuraban en curso o duplicados. Reconsultar el SHA exacto antes de afirmar que todo pasó.
 - Próximo trabajo: confirmar checks y monitor, luego una única PR de actualización de dependencias estables con lockfile generado por pnpm real y pruebas completas. No aplicar TypeScript 7/Vite 8/plugin-react 6/jsdom 30 solo porque estén publicadas; revisar compatibilidad. Preservar undici@7.30.1 en manifest/lockfile.
 - Se mantiene autorización temporal para fusionar PRs con criterio, evitando PRs pequeñas repetidas. No tocar secretos, Neon main, datos reales ni producción; restauración sintética poblada sigue siendo la última fase.
+
+
+## 2026-10-29 — corrección del informe diario de dependencias
+
+- Se inspeccionó el run real [40829413589](https://github.com/BTF14/Micro-app/actions/runs/40829413589), ejecutado con SHA `0763c70647ff11a8bcf91386a274d549246407ef`. La instalación congelada pasó y `pnpm audit --audit-level high` informó `No known vulnerabilities found`.
+- El run terminó en `success`, pero la revisión de logs encontró defectos en el resumen: las comillas dobles alrededor de backticks provocaron sustitución de comandos Bash (por ejemplo, SHA, versiones y la mención del override), y `pnpm outdated -r` no produjo un listado visible. Por tanto, el run exitoso no prueba que el inventario de actualizaciones estuviera completo.
+- Rama de corrección: `fix/dependency-watch-report-20261029`. Se corrigió el uso de `printf` para preservar Markdown, se cambió la consulta a `pnpm -r outdated` para mostrar también majors estables y se aclaró que una salida vacía requiere inspección, no significa que no existan actualizaciones.
+- Estado: corrección en revisión; no se ha verificado todavía un nuevo run con el código corregido. La auditoría de paquetes y la actualización real de dependencias siguen pendientes; no se modificó ningún paquete ni lockfile en esta corrección.
+- Sin cambios a secretos, Neon, datos reales ni despliegues.

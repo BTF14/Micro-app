@@ -971,3 +971,10 @@ Este bloque es más reciente que los snapshots históricos anteriores; si contra
 - Run [40918687069](https://github.com/BTF14/Micro-app/actions/runs/40918687069) failed before dump creation: Neon is PostgreSQL 18.6; command resolved to pg_dump 16.15. Encryption/upload/retention did not run; remote backups were untouched.
 - Corrective branch `fix/backup-pg-dump-v18-20261029` installs `postgresql-client-18`, calls `/usr/lib/postgresql/18/bin/pg_dump` explicitly and asserts the major version is 18.
 - Inspect exact diff and required PR checks; do not merge with failing or unverified required checks. After merge, dispatch backup workflow and verify dump generation, age encryption, SHA-256, remote file/checksum in private repo, retention output and final success. Never share secrets or private age key.
+
+
+## Immediate continuation — backup run #7 missing checkout (2026-10-29)
+
+- Run [40920403909](https://github.com/BTF14/Micro-app/actions/runs/40920403909) used pg_dump 18.6 successfully, created the dump, encrypted it and generated SHA-256, then failed because `$GITHUB_WORKSPACE/scripts/prune_backups.py` was absent.
+- Root cause: workflow did not use `actions/checkout`; the script exists in repository `main`, but runner workspace was not populated. Fix on branch `fix/backup-checkout-repository-20261029` adds `actions/checkout@v4` before installing/running backup steps.
+- Verify diff and required checks; after merge, manually run backup once. Confirm success, remote encrypted file + checksum in private repo, and retention output. Do not share secrets or age private key, and do not delete existing backups during troubleshooting.

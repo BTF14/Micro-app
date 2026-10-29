@@ -1,6 +1,6 @@
 # Política de respaldo y recuperación — Micro app
 
-**Estado:** workflow diario cifrado y destino privado implementados; generación, cifrado y subida verificados con una corrida real el 2026-10-27. La restauración en PostgreSQL desechable sigue pendiente; no declarar la recuperación probada hasta completar la sección 6.  
+**Estado:** el workflow diario cifrado y el destino privado tienen una ejecución real verificada; el 2026-10-29 se restauró correctamente el backup cifrado en una rama PostgreSQL desechable y pasaron las cinco verificaciones técnicas. La recuperación técnica está probada para la copia examinada, pero la validación de datos de negocio sigue parcial porque las tablas de ventas, productos, pagos, movimientos y auditoría estaban vacías en esa copia. No declarar probado el RPO/RTO ni todo el ciclo operativo de backup hasta completar los pendientes de la sección 6.  
 **Objetivo de coste:** $0; no activar facturación, servicios pagos ni cargos automáticos.  
 **Alcance:** datos comerciales, inventario y capacidad de recuperar el servicio.
 
@@ -65,8 +65,8 @@ Si todavía no hay un destino independiente seguro y gratuito, mantener el backu
 Un sistema de backup no se considera listo hasta que:
 
 - [ ] La ejecución programada funciona y su fallo genera alerta visible.
-- [ ] Se verifica que la copia no está vacía, se puede descifrar y su checksum coincide.
-- [ ] La copia puede restaurarse en una base PostgreSQL aislada sin afectar Neon `main`.
+- [x] Se verificó que la copia cifrada no está vacía, se descifra y su checksum coincide (run [40804665192](https://github.com/BTF14/Micro-app/actions/runs/40804665192)).
+- [x] La copia pudo restaurarse en la rama PostgreSQL desechable `restore-test-20261028`, sin usar Neon `main` (run [40804665192](https://github.com/BTF14/Micro-app/actions/runs/40804665192)).
 - [ ] Las migraciones y restricciones de integridad pasan tras restaurar.
 - [ ] Se validan conteos y relaciones de productos, movimientos, ventas, pagos y auditoría con datos de prueba; no imprimir datos personales.
 - [ ] Se mide el tiempo de recuperación y la pérdida máxima de datos esperable.
@@ -94,7 +94,9 @@ Definir objetivos iniciales para aprobar antes de producción: RPO (máxima pér
 - El workflow `.github/workflows/backup.yml` se ejecuta diariamente, usa el rol de solo lectura `backup_readonly`, excluye `auth_sessions` y `auth_rate_limits`, cifra con `age` antes de subir y aplica retención de 15 días.
 - **Ejecución real verificada:** run [40587638159](https://github.com/BTF14/Micro-app/actions/runs/40587638159) terminó en success el 2026-10-27. Se confirmó que el archivo cifrado llegó a `daily/` y que el checksum coincide. No se imprimió ni inspeccionó el contenido descifrado.
 - El propietario agregó `DATABASE_URL_BACKUP_RO`; no está pendiente de agregar para que el workflow corra.
-- **Único pendiente técnico de recuperación:** restaurar una copia cifrada real en una base PostgreSQL desechable y validar esquema, constraints, relaciones/conteos, duración y RPO/RTO conforme a la sección 6. La llave privada `age` está bajo custodia del propietario y no está disponible en el repositorio ni en esta sesión; no intentar acceder a Neon `main` ni modificar datos reales para suplirla.
+- **Restauración técnica verificada el 2026-10-29:** el run [40804665192](https://github.com/BTF14/Micro-app/actions/runs/40804665192) seleccionó `backup-2026-10-28T13-39-39Z.dump.age`, verificó el checksum, descifró el dump, lo restauró en la rama desechable y pasó las cinco verificaciones: 13 tablas esperadas, conteos ejecutables, 186 constraints presentes, 0 membresías huérfanas y ausencia de `auth_sessions`/`auth_rate_limits`. No se accedió a Neon `main`.
+- **Limitación importante de los datos restaurados:** `organizations=1`, `app_users=1`, `organization_members=1`, `auth_allowlist=1`, `auth_bootstrap=1`; `products`, `suppliers`, `exchange_rates`, `sales`, `sale_items`, `payments`, `inventory_movements` y `audit_logs` tenían 0 filas. Por tanto, se verificó el camino de restauración y la integridad estructural, pero no la recuperación de registros de negocio poblados ni una comparación de conteos con un manifiesto original.
+- **Pendientes para cerrar todo el punto de backup:** validar una copia de prueba con datos sintéticos en las tablas comerciales, medir RPO/RTO de extremo a extremo, comprobar ejecución programada/alerta, retención y coste real. La llave privada `age` sigue bajo custodia del propietario; no pedirla por chat ni acceder a Neon `main`.
 - La aplicación aún tiene trabajo P0 de autorización multiempresa y flujos comerciales; el backup verificado no significa que el producto esté listo para producción.
 
 ## Fuentes

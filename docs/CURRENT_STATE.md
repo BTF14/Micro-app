@@ -941,3 +941,10 @@ Esta revisión fue estática de contenidos en GitHub; no se ejecutaron tests des
 - Manual run [40920403909](https://github.com/BTF14/Micro-app/actions/runs/40920403909) installed PostgreSQL client 18.6, successfully generated the dump, encrypted it with age and wrote its SHA-256 checksum. It failed in the upload/retention step because `$GITHUB_WORKSPACE/scripts/prune_backups.py` did not exist in the runner workspace.
 - Root cause: `.github/workflows/backup.yml` used a repository script but had no `actions/checkout` step, so the repository files were never checked out. The prior absolute path correction alone could not fix this.
 - Branch `fix/backup-checkout-repository-20261029` adds `actions/checkout@v4` before any step that needs repository files. Run #7 failed before `git push`; its backup commit remained only in the ephemeral clone, and remote retention did not run. Do not claim a new persisted backup until a subsequent run succeeds and remote file/checksum are verified.
+
+
+## Backup workflow verified successful — 2026-10-29
+
+- Manual run [40921815702](https://github.com/BTF14/Micro-app/actions/runs/40921815702) concluded `success` on main workflow commit `966c0e1586a4869d2ae57424bd7c32ff7d224a0f`.
+- Logs prove PostgreSQL client `pg_dump 18.6` was used, the dump was generated, encrypted with age, and SHA-256 checksum written. The upload step cloned the private backup repository, committed `daily/backup-2026-10-29T17-29-48Z.dump.age` plus its `.sha256`, reported `retention complete; deleted 0 file(s)`, and pushed commit `2b038bd` to remote `main` successfully.
+- This verifies a new encrypted backup was durably pushed. It does not by itself prove decryption/restoration of this production backup, real RPO/RTO, external failure alerting, or zero cost. Preserve the age private key securely and never place it in Git/chat.

@@ -12,7 +12,7 @@ Esta sección supersede las notas históricas posteriores que indiquen que la su
 
 # Política de respaldo y recuperación — Micro app
 
-**Estado:** el workflow diario cifrado y el destino privado tienen una ejecución real verificada; el 2026-10-29 se restauró correctamente el backup cifrado en una rama PostgreSQL desechable y pasaron las cinco verificaciones técnicas. La recuperación técnica está probada para la copia examinada, pero la validación de datos de negocio sigue parcial porque las tablas de ventas, productos, pagos, movimientos y auditoría estaban vacías en esa copia. No declarar probado el RPO/RTO ni todo el ciclo operativo de backup hasta completar los pendientes de la sección 6.  
+**Estado:** la subida del 2026-10-29 está verificada. La restauración previa en `restore-test-20261028` (run `40804665192`) no demuestra que el archivo exacto `backup-2026-10-29T17-29-48Z.dump.age` sea restaurable; aquella copia tenía tablas de negocio vacías. La restauración de la copia exacta sigue pendiente hasta ejecutar `.github/workflows/backup-real-restore.yml` con `AGE_PRIVATE_KEY` configurada como secreto protegido. No declarar probado RPO/RTO ni el ciclo completo.  
 **Objetivo de coste:** $0; no activar facturación, servicios pagos ni cargos automáticos.  
 **Alcance:** datos comerciales, inventario y capacidad de recuperar el servicio.
 
@@ -84,7 +84,8 @@ Un sistema de backup no se considera listo hasta que:
 - [x] Hay una ejecución programada reciente observada con resultado `success` (run [40698423050](https://github.com/BTF14/Micro-app/actions/runs/40698423050), 2026-10-28). Verificar de nuevo después de la siguiente ventana programada.
 - [x] El workflow publica un resumen visible en GitHub Actions si falla un paso. Esto no es una notificación externa; confirmar si las notificaciones nativas de GitHub cubren la necesidad operativa.
 - [x] Se verificó que la copia cifrada no está vacía, se descifra y su checksum coincide (run [40804665192](https://github.com/BTF14/Micro-app/actions/runs/40804665192)).
-- [x] La copia pudo restaurarse en la rama PostgreSQL desechable `restore-test-20261028`, sin usar Neon `main` (run [40804665192](https://github.com/BTF14/Micro-app/actions/runs/40804665192)).
+- [x] Una copia anterior pudo restaurarse en la rama desechable `restore-test-20261028` (run [40804665192](https://github.com/BTF14/Micro-app/actions/runs/40804665192)); **esto no valida la copia remota del 2026-10-29**.
+- [ ] Descargar la copia exacta, verificar independientemente SHA-256 y restaurarla en PostgreSQL efímero mediante `.github/workflows/backup-real-restore.yml`.
 - [x] La prueba sintética aplica las migraciones antes del dump y verifica que el recuento de constraints se conserva tras restaurar ([run 40849167225](https://github.com/BTF14/Micro-app/actions/runs/40849167225)); no afirma que ejecutar migraciones sobre una base ya restaurada sea necesario ni probado.
 - [x] Conteos/valores y relaciones sintéticas de productos, movimientos, ventas, pagos y auditoría coinciden entre origen y restauración ([run 40849167225](https://github.com/BTF14/Micro-app/actions/runs/40849167225)); no se usaron datos personales.
 - [ ] Se mide el tiempo de recuperación y la pérdida máxima de datos esperable.

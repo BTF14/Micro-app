@@ -10,7 +10,7 @@
 
 ## ESTADO VIVO PRIORITARIO — PR #151 fusionada y auditoría multiempresa iniciada (2026-10-29 UTC)
 
-- **Main verificado:** `70984baf7f6ac5a442e6c2364aaf6d7d4ebbc7d4`, merge squash de la PR [#151](https://github.com/BTF14/Micro-app/pull/151). La PR añadió guardrails de capacidad y referencias de límites de Neon/Cloudflare; sus checks del SHA de cabeza terminaron en éxito antes de fusionar.
+- **Base de código auditada:** `70984baf7f6ac5a442e6c2364aaf6d7d4ebbc7d4`, merge squash de la PR [#151](https://github.com/BTF14/Micro-app/pull/151); los cambios de esta rama son solo documentación. La PR añadió guardrails de capacidad y referencias de límites de Neon/Cloudflare; sus checks del SHA de cabeza terminaron en éxito antes de fusionar.
 - **PR abiertas:** ninguna en la consulta posterior a la fusión; repetir consulta en vivo antes de abrir o fusionar trabajo nuevo.
 - **Capacidad:** organizaciones/sucursales/usuarios concurrentes siguen **sin medir**. Las cuotas documentadas no confirman el plan real de las cuentas ni la capacidad sostenible de la aplicación.
 - **Arquitectura comprobada en `main`:** API Hono registra rutas de autenticación y `GET /health`; no hay aún handlers comerciales HTTP para productos, proveedores, ventas, pagos o inventario. `resolveTenantContext` valida sesión/membresía/organización, pero no constituye por sí solo autorización por operación.

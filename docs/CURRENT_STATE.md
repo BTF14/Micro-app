@@ -1,10 +1,17 @@
-## ESTADO VIVO PRIORITARIO — PR #152 fusionada; corrección de bootstrap en revisión (2026-10-29 UTC)
+## ESTADO VIVO PRIORITARIO — PR #153 fusionada y auditoría multiempresa (2026-10-29 UTC)
 
-- **PR #152 fusionada:** merge commit `9376419231501f837a2d85d8741f7bfa9f57a0cc`; el HEAD de PR fue `e16b577d8454b3f2109a857386516a41fdd0a271`. Los 13 checks de ese HEAD pasaron; los nueve checks post-merge del merge commit también terminaron en `success`.
-- **Siguiente corrección P1 en rama** `fix/bootstrap-token-post-body-20261029`: eliminar el transporte de `bootstrap_token` por query string, aceptar bootstrap solo por POST con cuerpo `application/x-www-form-urlencoded`, validar Origin exacto, limitar tamaño/forma del cuerpo y comprobar el token antes de redirigir a Google. Se añaden pruebas de regresión para URL, origen y parámetros ambiguos.
-- **Estado de la corrección:** rama de trabajo no fusionada; no declarar mitigado hasta que los checks del SHA final pasen y el cambio se revise. El bootstrap sigue siendo de un solo uso en la base mediante la transacción existente.
-- **Límites preservados:** no se desplegó producción, no se tocaron secretos ni Neon `main`, no se ejecutó SQL ni se borraron ramas/backups. La PR #152 solo actualizó documentación y no cambió la aplicación.
-- **Después de la corrección:** continuar auditoría multiempresa y decisión de sucursales/roles; no implementar módulos comerciales antes de aprobar la matriz de permisos. La capacidad de organizaciones/sucursales sigue sin medir.
+- **Main verificado:** merge commit de PR #153 `0ba45e47daa5af9bbd9034690443405aa8bedf44`; HEAD de PR `e7af00db2db27ad4bacd0246447df173d415bbe4`.
+- **Corrección en el código de main:** `GET /auth/google` rechaza parámetros bootstrap en query; `POST /auth/google` exige Origin exacto, formulario URL-encoded, query vacía, campos permitidos/únicos, cuerpo máximo 2 KiB y token correcto antes de iniciar OAuth. Mantiene state/PKCE, cookie temporal HttpOnly y consumo transaccional de un solo uso.
+- **CI de PR:** los workflows consultados para el HEAD terminaron en éxito; el resumen previo registró 12/12 checks verdes. Codex no completó la revisión por límite de uso y no hay review independiente registrada. El endpoint de estado combinado no devolvió checks post-merge; no afirmar que se verificaron.
+- **Despliegue:** Cloudflare publicó URLs de preview de la rama. No hay evidencia aquí de despliegue de producción ni de prueba HTTP sobre el servicio productivo. No se tocaron secretos ni Neon `main`.
+- **Riesgo residual:** no hay evidencia de filtración histórica/activa; el merge no elimina posibles registros antiguos. La mitigación está en `main`, pero no declarar mitigación en producción sin verificación de despliegue.
+- **Auditoría de solo lectura sobre main en `0ba45e47`:** API expone autenticación y `GET /health`; no hay rutas comerciales HTTP. `resolveTenantContext` valida sesión/membresía/organización, pero no autoriza por operación. La matriz de permisos sigue sin aprobación.
+- **Esquema revisado:** organizaciones, usuarios, membresías, sesiones, allowlist/bootstrap, proveedores, productos, tasas, ventas, líneas, pagos, movimientos de inventario y auditoría. Hay varias FK compuestas que preservan relaciones dentro del tenant. No existe modelo de sucursales en las migraciones revisadas; el stock vive en `products.stock_quantity` a nivel organización.
+- **Pendientes de diseño:** alcance de catálogo/precios vs sucursal, stock por ubicación, compras/recepciones, caja/turnos, devoluciones, permisos por organización/sucursal y reglas de propiedad. Las tablas actuales no bastan para demostrar conciliación venta-líneas-pagos-stock; esas invariantes necesitarán transacciones y pruebas.
+- **Hallazgo de hardening a revisar:** el validador de `FRONTEND_ORIGIN` en `google-auth.ts` no aplica la misma restricción de HTTPS (salvo localhost) que el validador global de `index.ts`. Es una inconsistencia de configuración, no evidencia de explotación; añadir prueba y corregir en cambio de seguridad acotado.
+- **Límites:** no migraciones, SQL en Neon, datos reales, secretos ni despliegue de producción. La capacidad real de organizaciones/sucursales sigue sin medir.
+
+**Próximo paso:** continuar auditoría de esquema/consultas y cerrar decisiones de tenant/sucursal/roles antes de crear rutas comerciales. No implementar módulos de negocio con la matriz de permisos sin aprobar.
 
 ---
 

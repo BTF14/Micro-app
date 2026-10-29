@@ -1,0 +1,145 @@
+name: "[Temporal] Prueba de restauración de respaldo — 2026-10-28"
+
+# Workflow de UN SOLO USO para completar docs/BACKUP_AND_RECOVERY.md sección 6
+# (único punto pendiente de Nivel 1 de docs/SECURITY_ROADMAP.md).
+#
+# Por qué existe: el entorno sandbox de IA no tiene salida de red hacia
+# apt.postgresql.org, registry.npmjs.org, pypi.org ni ninguna conexión
+# directa a Neon (confirmado el 2026-10-28; el proxy de red del entorno
+# solo permite git/gh), así que no puede instalar postgresql-client-17
+# (necesario porque el respaldo se genera con esa versión) ni conectarse
+# a Neon directamente. GitHub Actions sí tiene salida de red completa.
+# Mismo patrón ya usado antes en este repo para regenerar pnpm-lock.yaml
+# (workflow temporal `update-vulnerable-dev-deps.yml`, ya eliminado tras
+# su uso) — ver docs/CURRENT_STATE.md.
+#
+# Qué hace, en orden:
+# 1. Descarga el respaldo cifrado más reciente de BTF14/micro-app-backups
+#    (reutiliza el secreto BACKUP_REPO_TOKEN que ya existe para esto).
+# 2. Lo descifra con RESTORE_TEST_AGE_KEY (secreto temporal, de un solo
+#    uso: la llave privada age real del proyecto).
+# 3. Restaura el volcado en una rama Neon DESECHABLE y VACÍA creada aparte
+#    (br-broad-dust-b7cvgjtv, "restore-test-20261028"), nunca en `main`,
+#    usando RESTORE_TEST_DB_URL (secreto temporal con la cadena de
+#    conexión de esa rama desechable).
+# 4. Verifica: lista de tablas restauradas, conteo de filas por tabla, y
+#    una prueba puntual de integridad referencial. No imprime datos
+#    personales ni de negocio, solo nombres de tabla y números.
+#
+# Después de usarlo: el propietario debe borrar los dos secretos
+# RESTORE_TEST_AGE_KEY y RESTORE_TEST_DB_URL, y este archivo de workflow
+# se elimina en una PR de limpieza (igual que update-vulnerable-dev-deps.yml).
+
+on:
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
+
+jobs:
+  restore-test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      BACKUP_REPO: BTF14/micro-app-backups
+    steps:
+      - name: Instalar age y postgresql-client-17 (misma versión que genera el respaldo)
+        run: |
+          set -euo pipefail
+          sudo apt-get update
+          sudo apt-get install -y curl ca-certificates gnupg age
+          sudo install -d /usr/share/postgresql-common/pgdg
+          sudo curl -fsSL https://www.postgresql.org/media/keys/ACCC4CF8.asc \
+            -o /usr/share/postgresql-common/pgdg/apt.postgresql.org.asc
+          echo "deb [signed-by=/usr/share/postgresql-common/pgdg/apt.postgresql.org.asc] https://apt.postgresql.org/pub/repos/apt $(. /etc/os-release && echo "$VERSION_CODENAME")-pgdg main" \
+            | sudo tee /etc/apt/sources.list.d/pgdg.list
+          sudo apt-get update
+          sudo apt-get install -y postgresql-client-17
+
+      - name: Verificar que los secretos temporales están presentes
+        run: |
+          if [ -z "${AGE_KEY:-}" ]; then
+            echo "::error::Falta el secreto temporal RESTORE_TEST_AGE_KEY."
+            exit 1
+          fi
+          if [ -z "${DB_URL:-}" ]; then
+            echo "::error::Falta el secreto temporal RESTORE_TEST_DB_URL."
+            exit 1
+          fi
+          if [ -z "${REPO_TOKEN:-}" ]; then
+            echo "::error::Falta el secreto BACKUP_REPO_TOKEN (ya debería existir del workflow de respaldo)."
+            exit 1
+          fi
+        env:
+          AGE_KEY: ${{ secrets.RESTORE_TEST_AGE_KEY }}
+          DB_URL: ${{ secrets.RESTORE_TEST_DB_URL }}
+          REPO_TOKEN: ${{ secrets.BACKUP_REPO_TOKEN }}
+
+      - name: Descargar el respaldo cifrado más reciente
+        env:
+          GH_TOKEN: ${{ secrets.BACKUP_REPO_TOKEN }}
+        run: |
+          set -euo pipefail
+          git clone --depth 1 "https://x-access-token:${GH_TOKEN}@github.com/${BACKUP_REPO}.git" backups-repo
+          LATEST="$(ls -1 backups-repo/daily/*.dump.age | sort | tail -n1)"
+          echo "LATEST=$LATEST" >> "$GITHUB_ENV"
+          echo "Respaldo seleccionado: $(basename "$LATEST")"
+          sha256sum -c "${LATEST}.sha256"
+
+      - name: Descifrar
+        env:
+          AGE_KEY: ${{ secrets.RESTORE_TEST_AGE_KEY }}
+        run: |
+          set -euo pipefail
+          umask 077
+          printf '%s' "$AGE_KEY" > age.key
+          age -d -i age.key -o restore.dump "$LATEST"
+          shred -u age.key
+          test -s restore.dump
+          pg_restore --list restore.dump | head -50
+
+      - name: Restaurar en la rama Neon desechable
+        env:
+          PGCONNECT_TIMEOUT: "15"
+          DB_URL: ${{ secrets.RESTORE_TEST_DB_URL }}
+        run: |
+          set -euo pipefail
+          pg_restore --no-owner --no-privileges --clean --if-exists \
+            --dbname="$DB_URL" restore.dump
+          shred -u restore.dump 2>/dev/null || rm -f restore.dump
+
+      - name: Verificar esquema, conteos y relaciones (sin imprimir datos reales)
+        env:
+          DB_URL: ${{ secrets.RESTORE_TEST_DB_URL }}
+        run: |
+          set -euo pipefail
+          echo "## Tablas restauradas"
+          psql "$DB_URL" -c "\dt"
+
+          echo "## Conteo de filas por tabla"
+          psql "$DB_URL" -At -c "
+            SELECT table_name, (xpath('/row/c/text()', query_to_xml(format('SELECT count(*) AS c FROM %I', table_name), false, true, '')))[1]::text::int AS row_count
+            FROM information_schema.tables
+            WHERE table_schema = 'public'
+            ORDER BY table_name;"
+
+          echo "## Restricciones (constraints) presentes"
+          psql "$DB_URL" -At -c "
+            SELECT conrelid::regclass::text, conname, contype
+            FROM pg_constraint
+            WHERE connamespace = 'public'::regnamespace
+            ORDER BY 1, 2;"
+
+          echo "## Prueba de integridad referencial: membresías huérfanas (debe ser 0)"
+          psql "$DB_URL" -At -c "
+            SELECT count(*) FROM organization_members m
+            LEFT JOIN app_users u ON u.id = m.user_id
+            LEFT JOIN organizations o ON o.id = m.organization_id
+            WHERE u.id IS NULL OR o.id IS NULL;"
+
+          echo "## Prueba de integridad referencial: sesiones huérfanas (debe ser 0; auth_sessions se excluye del respaldo a propósito, así que esta tabla puede no existir)"
+          psql "$DB_URL" -At -c "
+            SELECT CASE WHEN to_regclass('public.auth_sessions') IS NULL
+                        THEN 'tabla no presente (excluida del respaldo a propósito)'
+                        ELSE (SELECT count(*)::text FROM auth_sessions s LEFT JOIN app_users u ON u.id = s.user_id WHERE u.id IS NULL)
+                   END;"

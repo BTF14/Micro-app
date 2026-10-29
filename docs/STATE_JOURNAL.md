@@ -1,3 +1,15 @@
+## 2026-10-29 — causa común verificada en PRs de Dependabot
+
+- HEAD de `main` consultado: `7782293db886fc26f1a8275f4f2e2ffa55c27bc1` (PR #131 fusionada). Se revisaron las cinco PR abiertas #116–#120, sus HEADs rebaseados y logs de los checks fallidos.
+- Se pidió `@dependabot rebase` en las cinco PR; las nuevas ejecuciones siguieron fallando. No se fusionó ninguna.
+- Evidencia en logs de `verify` y Chromium de #116, #117, #118, #119 y #120: `ERR_PNPM_LOCKFILE_CONFIG_MISMATCH` — el override actual de `package.json` no coincide con el lockfile generado.
+- Evidencia en Dependency Review de las cinco PR: `undici@7.29.1` detectado con vulnerabilidades de severidad alta (DoS por content-encodings, renegociación TLS, bypass de validación de certificado y cache poisoning/divulgación cross-origin).
+- Causa observada en diffs: `main` define `pnpm.overrides.undici = 7.30.1` en `package.json` y `overrides: undici: 7.30.1` en `pnpm-lock.yaml`; las ramas de Dependabot eliminan el bloque `overrides` del lockfile y reintroducen la resolución `undici@7.29.1`. La instalación congelada falla.
+- Próximo paso: investigar la versión/configuración de pnpm de Dependabot y CI; reproducir la actualización; corregir la generación del lockfile compartida; validar primero la PR #116 de patch/minor. Los majors TypeScript 7, plugin-react 6, Vite 8 y jsdom 30 no se fusionan sin validación de compatibilidad aparte.
+- Se deja registro para futuras IA/chats en `CURRENT_STATE.md`, `HANDOFF_NEXT_CHAT.md` y `PROJECT_PLAN.md`. No tocar Neon, secretos, datos reales ni producción; no desplegar manualmente.
+
+---
+
 ## 2026-10-29 — visibilidad de fallos de backup y evidencia viva
 
 - Revisión en vivo de la ejecución programada de backup: run [40698423050](https://github.com/BTF14/Micro-app/actions/runs/40698423050), iniciado el 2026-10-28T13:39:19Z y concluido `success`. El repositorio privado de backups contiene dos copias cifradas, con checksums emparejados: `backup-2026-10-27T21-32-45Z.dump.age` y `backup-2026-10-28T13-39-39Z.dump.age`. No afirmar que se ejecutó el backup del día 29; en el momento de la consulta aún no había una ejecución programada más reciente.

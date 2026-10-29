@@ -1,3 +1,13 @@
+## 2026-10-29 — política de retención de backups confirmada para continuidad
+
+- Política vigente: backup cifrado diario con retención de 15 días en el repositorio privado de backups.
+- PR #129 corrigió el cálculo de antigüedad: se valida el timestamp UTC del nombre del backup, no el `mtime` del checkout, y se elimina el checksum emparejado de los archivos vencidos. Los tests de retención están en CI y los checks del HEAD de la PR pasaron.
+- Instrucción obligatoria para futuras IA/chats: no borrar las copias recientes al crear una nueva; eliminar solo las que superen 15 días. Si falla la nueva ejecución o no se valida, conservar la última copia válida y verificar una alerta visible. No cambiar el plazo sin análisis de riesgo, coste $0 y revisión.
+- La retención no prueba la restauración. Mantener pendientes la prueba aislada con datos sintéticos relacionados, comparación del manifiesto, RPO/RTO y alerta. La restauración se deja para la última fase.
+- No se cambió código ni workflow en esta actualización documental; no se tocó Neon `main`, datos reales, secretos ni producción.
+
+---
+
 ## 2026-10-29 — continuidad después de PR #127 y limpieza de credenciales
 
 - HEAD verificado de `main`: `1fc95ee1a574d435523fc746a10537f1c95c5262`; PR #127 fusionada y workflow temporal retirado.
@@ -589,3 +599,15 @@ Este diario es append-only en cuanto a historia: no borrar hitos antiguos; añad
 - Se abrió la [PR #129](https://github.com/BTF14/Micro-app/pull/129) para corregir ese defecto, con un script que usa la fecha UTC incluida en el nombre del backup, elimina el checksum emparejado y añade pruebas unitarias ejecutadas en CI. Checks pendientes de ejecutar en el HEAD de PR; no declarar corregido hasta verlos verdes.
 - Neon confirma que la rama `restore-test-20261028` (ID `br-broad-dust-b7cvgjtv`) todavía existe. El borrado por la herramienta ya había sido bloqueado por controles de seguridad; no se reintentó ni se eludió ese control. No se tocó `main`, datos reales ni producción.
 - Siguiente paso: revisar checks/diff de la PR de retención; después preparar una única restauración aislada con datos sintéticos poblados y manifiesto de conteos/relaciones. RPO/RTO, alerta visible de fallo y evidencia de coste $0 siguen pendientes.
+
+
+---
+
+## 2026-10-29 — PR #129 fusionada y continuidad actualizada
+
+- El propietario confirmó la fusión de PR [#129](https://github.com/BTF14/Micro-app/pull/129); comprobación independiente: estado `closed`, `merged=true`.
+- HEAD actual de `main`: `d196d8e3e3053e1c51d2e1133aa4ed2d52884631`. Commit de merge de PR #129. Los checks del HEAD de la PR `35bee0d04e0c1d8470d526c7f7e961b7e0b4de26` terminaron todos en `success`, incluidos `verify`, pruebas unitarias de retención, migraciones, Playwright, análisis estático, escaneos de secretos y seguridad, Pages y Worker.
+- La retención de 15 días ya no depende de mtimes posteriores al checkout: usa el timestamp UTC validado en el nombre del backup y elimina el checksum emparejado. CI cubre expiración, checksum, backups recientes, nombres malformados y valor inválido de retención.
+- La documentación previa contenía notas históricas que presentaban PR #129 como pendiente y contradicciones antiguas sobre secretos; se actualizó el estado vivo/handoff para separar hechos actuales de entradas históricas.
+- Neon sigue mostrando `restore-test-20261028` (ID `br-broad-dust-b7cvgjtv`). El intento de borrado por herramienta fue bloqueado por controles de seguridad; no se reintentó ni se eludió.
+- Pendiente: prueba única de restauración con datos sintéticos poblados, manifiesto de conteos/relaciones, RPO/RTO, alerta visible y coste $0. No usar datos reales ni Neon `main`; la restauración sigue siendo la última fase.

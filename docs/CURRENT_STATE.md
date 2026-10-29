@@ -1,3 +1,25 @@
+## Estado vivo — después de fusionar PR #129 (2026-10-29 UTC)
+
+**HEAD verificado de `main`:** `d196d8e3e3053e1c51d2e1133aa4ed2d52884631`. PR [#129](https://github.com/BTF14/Micro-app/pull/129) está fusionada; los checks del HEAD `35bee0d04e0c1d8470d526c7f7e961b7e0b4de26` terminaron todos en `success`. La retención de backups ahora interpreta el timestamp UTC validado del nombre del archivo, en vez de confiar en `find -mtime` después del checkout. La política conserva 15 días y elimina el checksum emparejado de un backup vencido. Las pruebas unitarias de retención forman parte del CI.
+
+### Política operativa de backups para continuidad entre sesiones
+- Backup diario; retención configurada en 15 días mediante `scripts/prune_backups.py` (timestamp UTC validado en nombre, no `mtime` del checkout) y eliminación del checksum emparejado. PR #129 fusionada y tests de retención en CI.
+- No borrar todas las copias anteriores al generar una nueva ni reducir el plazo sin análisis y revisión. Si una ejecución nueva falla o no se valida, conservar la última copia válida y comprobar alerta visible.
+- La retención no equivale a restauración probada. Sigue pendiente una prueba aislada con datos sintéticos relacionados y manifiesto de conteos/relaciones, RPO/RTO, alerta y coste $0. Restauración para la última fase.
+
+### Secretos y recursos temporales: estado exacto
+- El propietario confirma que eliminó `RESTORE_TEST_AGE_KEY` y que `RESTORE_TEST_DB_URL` ya no aparece en la lista actual de Repository secrets. Esta última comprobación es visual, informada por el propietario; no se conoce la fecha exacta de eliminación.
+- Los únicos secretos que el propietario reporta actualmente son `BACKUP_REPO_TOKEN` y `DATABASE_URL_BACKUP_RO`; conservarlos para el backup permanente.
+- La rama Neon `restore-test-20261028` (proyecto `restless-fire-99110035`, branch ID `br-broad-dust-b7cvgjtv`) sigue existiendo en la última consulta. El borrado vía herramienta fue bloqueado por controles de seguridad; no reintentar para eludirlos. Si se decide limpiar, usar la consola Neon y verificar nombre/ID; no tocar `main`.
+- No se modificó Neon `main`, datos de producción ni se hizo despliegue manual.
+
+### Siguiente trabajo — respaldo/recuperación
+- La restauración técnica previa (run [40804665192](https://github.com/BTF14/Micro-app/actions/runs/40804665192)) pasó checksum, descifrado y restauración en PostgreSQL desechable. No demostró recuperación de datos comerciales poblados: las tablas de ventas, productos, pagos, movimientos y auditoría estaban vacías en esa copia.
+- Pendiente: una única prueba aislada con datos sintéticos relacionados y un manifiesto de conteos/relaciones; restaurar a PostgreSQL desechable y comparar. Documentar RPO/RTO, alerta de fallo y coste $0. Mantener la restauración como última fase, según indicación del propietario.
+- No recrear el workflow temporal retirado en PR #127. No crear PRs fragmentadas; usar el flujo CI existente.
+
+---
+
 ## Estado vivo — continuidad tras PR #128 (2026-10-29 UTC)
 
 **Referencia verificada:** `main` = `9b4ee7d2ed704288cd0cf149c93569a698f46e1b`; PR [#128](https://github.com/BTF14/Micro-app/pull/128) está fusionada. El workflow temporal de restauración sigue retirado; no recrearlo.

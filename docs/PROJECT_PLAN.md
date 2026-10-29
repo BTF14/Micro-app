@@ -1,3 +1,11 @@
+## Monitorización diaria de dependencias — 2026-10-29, PR #137
+
+Se añadió `.github/workflows/daily-dependency-watch.yml` para producir un informe diario de actualizaciones estables y vulnerabilidades conocidas sin modificar el árbol de dependencias. Está programado a las 08:15 UTC (04:15 Venezuela), con ejecución manual, permisos de solo lectura, instalación congelada, `pnpm outdated -r`, comprobación del parche de Node 24 LTS y `pnpm audit --audit-level high`.
+
+**Criterio de aceptación:** YAML válido, instalación congelada y checks obligatorios verdes en el SHA exacto de la PR; tras el merge, una ejecución real con resumen visible. No declarar el monitor operativo antes de esa ejecución. No cambiar a actualizaciones automáticas diarias ni crear PR por paquete. Dependabot sigue semanal para npm y GitHub Actions. Preservar `undici@7.30.1` en manifiesto y lockfile.
+
+---
+
 ## Plan vigente — actualización de dependencias orientada a seguridad (2026-10-29)
 
 El propietario solicita mantener versiones modernas para reducir exposición a vulnerabilidades y autoriza a la IA a avanzar con criterio. La estrategia no es “todo lo más nuevo sin importar compatibilidad”: mantener parches/minors al día, comprobar advisories y migrar majors con lockfile y CI coherentes.

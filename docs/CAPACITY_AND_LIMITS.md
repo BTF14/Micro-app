@@ -50,3 +50,17 @@ No afirmar “soporta N empresas” hasta medirlo con una carga representativa, 
 - El número de organizaciones/sucursales soportables está **sin determinar**.
 - No hay evidencia de una prueba de carga representativa que permita declarar una capacidad de producción.
 - La arquitectura documentada es React/Vite/TypeScript, Cloudflare Pages, Cloudflare Workers + Hono, Neon PostgreSQL y Drizzle; debe confirmarse contra HEAD antes de ejecutar cambios.
+
+
+## Referencias oficiales de límites (revisión 2026-10-29)
+
+Estos valores son una **referencia documental**, no una verificación del plan contratado ni una garantía de capacidad del producto. Volver a consultar las páginas oficiales antes de cada decisión de capacidad; los proveedores pueden cambiar cuotas.
+
+- **Neon Free (publicación oficial del 2026-10-02):** 100 proyectos por cuenta; 1 GB de almacenamiento PostgreSQL por proyecto; 100 CU-hours de cómputo por proyecto al mes; autoscaling hasta 2 CU; 10 ramas por proyecto y ventana de instant restore de 6 horas. Referencia: https://neon.com/blog/neon-free-plan-1-gb-per-project
+- **Cloudflare Workers Free:** 100.000 solicitudes por día; 10 ms de CPU por invocación HTTP; 128 MB por isolate; 50 subrequests por invocación; 6 conexiones salientes simultáneas por solicitud; 5 Cron Triggers por cuenta; 100 Workers por cuenta. Referencia: https://developers.cloudflare.com/workers/platform/limits/
+- **Cloudflare Pages Free:** 500 builds por mes, un build concurrente y timeout de build de 20 minutos; 20.000 archivos por sitio y 25 MiB por archivo. Referencia: https://developers.cloudflare.com/pages/platform/limits/
+- **Coste:** Workers Paid tiene un cargo mínimo publicado de USD 5/mes; no se debe habilitar ni migrar a un plan de pago sin autorización. Referencia: https://developers.cloudflare.com/workers/platform/pricing/
+
+### Consecuencia operativa
+
+El techo de 100.000 solicitudes diarias de Workers Free es un límite del proveedor, no el número de ventas ni de empresas. Una operación de negocio puede producir varias llamadas a la API y varias consultas SQL; además, Neon tiene límites independientes de cómputo, almacenamiento, conexiones, transferencia y latencia. La capacidad aceptable se determinará por el primer límite que se alcance con margen de seguridad, y solo tras una prueba sintética autorizada. El plan real de las cuentas y los consumos actuales siguen **sin verificar** desde este repositorio.

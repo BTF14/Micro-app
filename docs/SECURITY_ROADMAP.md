@@ -134,3 +134,14 @@ Manual run [40916692763](https://github.com/BTF14/Micro-app/actions/runs/4091669
 - **Pruebas:** HTTPS válido; HTTP loopback permitido para desarrollo; HTTP remoto, credenciales y URL con path/query/hash rechazados.
 - **Estado:** en rama `fix/google-auth-frontend-origin-https-20261029`; pendiente de tests y CI en SHA final, revisión y merge. No marcar completado hasta tener evidencia.
 - **Alcance excluido:** no cambia secrets, OAuth provider, bootstrap, DB, producción ni despliegues manuales.
+
+
+## Estado de seguridad posterior a PR #155 — 2026-10-29 UTC
+
+- PR #153 (bootstrap POST sin secreto en URL) y PR #155 (validación HTTPS de FRONTEND_ORIGIN) están fusionadas en main.
+- PR #155 SHA verificado: `824e4d02fe4aa56a92c8e6493e65989d4325eaa9`; ocho workflows finalizaron success, incluidos CI y Playwright. Codex review no se completó por límite de uso; no se afirma revisión independiente.
+- Cloudflare informó previews de Pages/Workers para el commit; no hay evidencia de despliegue productivo ni prueba HTTP contra producción.
+- Siguen P0/P1 de producto: autorización por operación, aislamiento cross-tenant end-to-end, matriz de roles aprobada, límites de abuso/rate limiting revisados, integridad transaccional/idempotencia y recuperación operativa. No abrir módulos comerciales antes de estos gates.
+- No hay evidencia de explotación del hallazgo HTTPS anterior; se corrigió en código main. La corrección no sustituye verificación de configuración productiva.
+
+---

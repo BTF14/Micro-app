@@ -1027,3 +1027,17 @@ Esta revisión fue estática de contenidos en GitHub; no se ejecutaron tests des
 - **Conclusión:** verificada la restauración técnica de la copia remota exacta. No se tocó Neon `main` ni producción.
 - **Límite:** no se verificaron conteos ni relaciones de datos comerciales poblados, RPO/RTO, alerta de fallo o coste total $0. La comprobación de esquema por sí sola no garantiza que los datos comerciales estén completos.
 - **Siguiente paso:** planear una comprobación segura de conteos/relaciones mediante datos sintéticos o metadatos no sensibles; medir RPO/RTO; revisar alerta, retención y coste. No imprimir datos comerciales ni solicitar la clave privada age por chat.
+
+
+## Estado vivo prioritario — main posterior a PR #155 (2026-10-29 UTC)
+
+- **Main actual:** `5a9bdc5a18a54c3c68639f52125d913d4e725b91`, merge commit de PR #155. PR #155 (`fix(auth): enforce HTTPS frontend origin for Google OAuth`) está cerrada y fusionada. La corrección de `getConfiguredFrontendOrigin` exige HTTPS salvo HTTP loopback (`localhost`, `127.0.0.1`, `[::1]`), rechaza credenciales y componentes URL adicionales.
+- **Verificación de PR #155:** en SHA `824e4d02fe4aa56a92c8e6493e65989d4325eaa9`, ocho workflows terminaron `success`: CI, Playwright E2E, Database migration validation, Semgrep SAST, Security scan, Dependency review, Secret history scan y Project progress dashboard. CI ejecutó build/typecheck, unit tests y PostgreSQL auth integration tests. La revisión Codex no se completó por límite de uso; no afirmar review independiente.
+- **Despliegues:** Cloudflare informó deployments automáticos de preview para Pages y Workers en la rama/commit. No son despliegues productivos ni validación de producción. No se hizo deploy manual.
+- **PR #154:** continúa abierta, desactualizada y no mergeable contra la nueva main; su propósito documental se está reconciliando en PR #156. No fusionar #154.
+- **Arquitectura:** mantener React/Vite/TypeScript + Cloudflare Pages + Workers/Hono + Neon PostgreSQL/Drizzle; no reescribir ni introducir microservicios sin medición. No existen aún rutas comerciales HTTP. El stock del esquema actual está a nivel organización, no sucursal; no añadir un `branch_id` superficial.
+- **Bloqueos:** matriz `docs/sdd/role-permission-decision-matrix.md` no aprobada; diseño de sucursales y propiedad de catálogo/precios/stock por ubicación pendiente; conciliación transaccional venta-líneas-pagos-stock pendiente. No iniciar rutas comerciales ni migraciones de sucursal hasta resolver estos contratos.
+- **Capacidad:** organizaciones/sucursales concurrentes no medidas. Los límites observados de Neon y las cuotas Cloudflare no permiten prometer un número de tenants. Mantener presupuesto objetivo $0 y revisar cuotas/uso real.
+- **Seguridad/operación:** PR #153 y #155 están en main; no hay evidencia de validación HTTP en producción. Restauración técnica del backup remoto exacto verificada, pero conteos de datos comerciales, RPO/RTO, alertas y coste total aún pendientes. Producción sigue NO lista.
+
+---

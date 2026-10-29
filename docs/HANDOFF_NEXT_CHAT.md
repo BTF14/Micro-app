@@ -1052,3 +1052,17 @@ Este bloque es más reciente que los snapshots históricos anteriores; si contra
 - Run [40921815702](https://github.com/BTF14/Micro-app/actions/runs/40921815702) completed `success`. Logs explicitly show `pg_dump 18.6`, successful dump and age encryption, SHA-256 sidecar, remote backup commit `2b038bd` pushed to `BTF14/Micro-app-backups` (GitHub notes canonical repository URL is now `BTF14/Micro-App-backups`), and retention deleted zero files.
 - Persisted pair: `daily/backup-2026-10-29T17-29-48Z.dump.age` and `daily/backup-2026-10-29T17-29-48Z.dump.age.sha256`.
 - Do not ask user to rerun backup immediately. Next work should be planned: safely verify remote file and checksum, validate backup failure alerting, assess restore procedure using a disposable target and secure age private key without sharing it, then measure RPO/RTO and confirm cost. Do not claim production restore was tested by the synthetic CI test.
+
+
+## Continuidad prioritaria — main posterior a PR #155 (2026-10-29 UTC)
+
+- Main: `5a9bdc5a18a54c3c68639f52125d913d4e725b91`.
+- PR #155 fusionada; la corrección HTTPS de Google OAuth está en main. Ocho workflows del SHA `824e4d02fe4aa56a92c8e6493e65989d4325eaa9` terminaron success (CI, E2E, migraciones, SAST, security, dependency review, secret scan, dashboard). CI incluye build/typecheck, unit y PostgreSQL auth integration tests. Codex review falló por límite de uso; no declarar revisión independiente.
+- Cloudflare generó previews de Pages y Workers; no es producción. No despliegue manual.
+- PR #154 sigue abierta pero stale/no mergeable. PR #156 reconcilia documentación y plan; no crear otra PR para los mismos cambios.
+- Antes de programar productos/inventario/ventas: terminar inventario del esquema, consultas, FKs, índices y rutas; diseñar organización → sucursales → membresías/permisos; decidir catálogo compartido y stock/caja por sucursal; obtener aprobación explícita de la matriz de roles.
+- No implementar permisos de negocio a partir de la matriz no aprobada. No añadir branch_id aislado.
+- No tocar Neon main, secretos, datos reales ni producción. No activar recursos de pago. Capacidad por tenants aún no medida; comprobar cuotas Neon/Cloudflare y pruebas sintéticas antes de fijar límites.
+- Producción continúa NO lista; faltan rutas comerciales, autorización por operación, aislamiento cross-tenant probado, integridad/idempotencia/concurrencia, BCV/fiscalidad y recuperación operativa completa.
+
+---

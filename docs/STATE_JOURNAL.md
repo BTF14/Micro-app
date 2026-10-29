@@ -764,3 +764,15 @@ Este diario es append-only en cuanto a historia: no borrar hitos antiguos; añad
 - SHA `18cf2f158552ce7c97bacc66018e0cfdae60e2d3`: los ocho workflows asociados finalizaron en `success`: CI, Playwright E2E, Database migration validation, Semgrep SAST, Security scan, Dependency review, Secret history scan y Project progress dashboard.
 - CI ejecutó build/typecheck, unit tests y PostgreSQL auth integration tests; Playwright browser tests también completaron con éxito.
 - Revisión manual del diff: cambio acotado al helper de validación y su prueba; no cambia flujo OAuth/bootstrap, DB, secretos ni despliegue. PR #155 aún abierta; falta integrar a main y verificar el estado post-merge. Codex no pudo revisar por cuota; no se afirma revisión independiente.
+
+
+## 2026-10-29 — PR #155 fusionada y continuidad reconciliada
+
+- Main avanzó a `5a9bdc5a18a54c3c68639f52125d913d4e725b91`, merge commit de PR #155.
+- PR #155 implementó validación HTTPS en Google OAuth, permitiendo HTTP solo para loopback y rechazando credenciales, rutas, query, fragmentos y origen no canónico.
+- En SHA `824e4d02fe4aa56a92c8e6493e65989d4325eaa9`, los ocho workflows consultados finalizaron success. CI cubrió build/typecheck, unit tests y PostgreSQL auth integration; Playwright E2E también pasó.
+- Codex review no pudo completarse por límite de uso; no se registra revisión independiente. Cloudflare generó previews automáticos de Pages/Workers, no despliegue productivo.
+- PR #154 quedó obsoleta/stale al avanzar main; su contenido documental se traslada/reconcilia en PR #156. No fusionar PR #154.
+- No se tocó Neon main, secretos, datos reales ni producción; no se ejecutaron migraciones ni se habilitaron recursos pagos.
+
+---

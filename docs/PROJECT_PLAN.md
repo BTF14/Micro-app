@@ -1,3 +1,14 @@
+## Continuidad técnica — 2026-10-29, después de PR #153
+
+- PR [#153](https://github.com/BTF14/Micro-app/pull/153) fusionada en main, merge commit `0ba45e47daa5af9bbd9034690443405aa8bedf44`. Los checks de PR reportados pasaron; revisión Codex falló por cuota y no existe review independiente registrada. No se verificó estado post-merge completo ni despliegue de producción.
+- Auditoría de solo lectura: no hay rutas comerciales HTTP; el contexto tenant valida sesión/membresía/organización, pero no permiso por operación. La matriz de permisos sigue sin aprobar.
+- El esquema inicial tiene FK compuestas para varias relaciones tenant-scoped, pero no sucursales, caja/turnos, compras/recepciones o devoluciones en las migraciones revisadas. Stock vive a nivel organización en `products.stock_quantity`.
+- No iniciar módulos comerciales ni migraciones de sucursal hasta aprobar propiedad de catálogo/precios, stock por ubicación, compras/caja y alcance de roles.
+- Hardening pendiente: unificar la validación de `FRONTEND_ORIGIN` entre `index.ts` y `google-auth.ts` para exigir HTTPS salvo localhost y cubrirlo con tests.
+- Mantener producción NO lista, capacidad de organizaciones/sucursales sin medir, presupuesto $0 y prohibición de modificar Neon `main`/secretos/desplegar producción sin gate explícito.
+
+---
+
 ## Monitorización diaria de dependencias — 2026-10-29, PR #137
 
 Se añadió `.github/workflows/daily-dependency-watch.yml` para producir un informe diario de actualizaciones estables y vulnerabilidades conocidas sin modificar el árbol de dependencias. Está programado a las 08:15 UTC (04:15 Venezuela), con ejecución manual, permisos de solo lectura, instalación congelada, `pnpm outdated -r`, comprobación del parche de Node 24 LTS y `pnpm audit --audit-level high`.

@@ -1,3 +1,35 @@
+## Arranque obligatorio — bloqueo de Dependabot (2026-10-29 UTC)
+
+Repositorio único: https://github.com/BTF14/Micro-app. HEAD de `main` verificado en esta revisión: `7782293db886fc26f1a8275f4f2e2ffa55c27bc1` (PR #131 fusionada). **Reconsultar SHA, PRs y checks en vivo antes de actuar.** Leer primero `AGENTS.md`, `docs/CURRENT_STATE.md`, este handoff, `docs/AI_COLLABORATION_AND_PR_POLICY.md`, `docs/PROJECT_PLAN.md`, `docs/STATE_JOURNAL.md`, `docs/RESOURCE_REGISTRY.md`, `docs/SECURITY_ROADMAP.md` y `docs/BACKUP_AND_RECOVERY.md`.
+
+### Bloqueo P0 de dependencias — no fusionar aún
+
+Las PR #116–#120 siguen abiertas y fallan en el HEAD rebaseado. Se comentó `@dependabot rebase` en las cinco y se inspeccionaron logs posteriores:
+
+- `verify` y Chromium: `ERR_PNPM_LOCKFILE_CONFIG_MISMATCH` — la configuración `overrides` actual no coincide con la del lockfile.
+- Dependency Review: detecta `undici@7.29.1` vulnerable (severidad alta: DoS por content-encodings, renegociación TLS 1.2, bypass de validación TLS y cache poisoning/divulgación cross-origin).
+- En `main`, `package.json` mantiene `pnpm.overrides.undici = 7.30.1` y `pnpm-lock.yaml` tiene `overrides: undici: 7.30.1`; las PR de Dependabot quitan el bloque del lockfile aunque no quitan el override de `package.json`. Resultado: la instalación congelada falla y la revisión detecta la versión vulnerable.
+
+PRs / HEADs inspeccionados:
+- #116 grupo de patch/minor Hono + Cloudflare types + Wrangler: `9459a59b6a4ad7be3334b1234b46ac21e3360418`.
+- #117 TypeScript 7: `62937a73897c6101a5bed0b7c72808fc51567dd1`.
+- #118 plugin-react 6: `7e025e3c58559eb35481fbc0b88c4307bc2dee6a`.
+- #119 Vite 8: `af73702fba9db67b290a1608d2d63274e6c282b4`.
+- #120 jsdom 30: `7c752808aa032a4713c10620c4733f5ef8048a5e`.
+
+**No fusionar ninguna hasta resolver la causa común y lograr checks verdes en el SHA exacto.** Resolver primero la generación de lockfile y validar #116; evaluar majors por separado con pruebas de compatibilidad. No crear cinco PR de parche para el mismo defecto. No cerrar ni reemplazar PR sin inspeccionar su diff y evidencia actual.
+
+### Próximas acciones de la IA
+
+1. Comprobar qué versión/configuración de pnpm ejecuta Dependabot y compararla con CI.
+2. Reproducir y corregir la generación del lockfile para conservar el override `undici@7.30.1` y que `pnpm install --frozen-lockfile` pase.
+3. Inspeccionar diffs completos y checks de #116–#120 después de corregir; fusionar solo con criterios de `docs/AI_COLLABORATION_AND_PR_POLICY.md` y branch protection.
+4. Seguir documentando cambios aquí, en `CURRENT_STATE.md`, `PROJECT_PLAN.md` y `STATE_JOURNAL.md`, incluyendo SHA, PR, run IDs, causa raíz, pruebas y pendientes.
+
+No se modificaron secretos, Neon `main`, datos reales ni producción. No hubo despliegue manual. PR #131 sí está fusionada; sus cambios solo añaden resumen visible ante fallos de backup en Actions, no una notificación externa.
+
+---
+
 ## Arranque obligatorio — continuidad tras PR #130 (2026-10-29 UTC)
 
 Repositorio: https://github.com/BTF14/Micro-app. Última referencia de `main` verificada al iniciar este trabajo: `3ce18e2aa5bcf2a8c555a47681998405a4f14509` (fusión de PR #130); reconsultar el SHA vivo antes de operar, pues cambiará al fusionarse la PR de monitorización. PR #129 corrigió la retención de 15 días y sus checks pasaron.

@@ -1,3 +1,11 @@
+## 2026-10-29 — restauración técnica de backup verificada
+
+- El workflow temporal [run 40804665192](https://github.com/BTF14/Micro-app/actions/runs/40804665192) terminó en `success`; checksum/descifrado/restore correctos y cinco verificaciones en verde: 13 tablas, 186 constraints, 0 membresías huérfanas y tablas de sesión/rate-limit ausentes.
+- La copia restaurada no tenía filas en tablas comerciales ni auditoría. Se registra como prueba técnica exitosa con validación de datos comerciales todavía parcial; no se afirma integridad de registros poblados ni comparación de conteos con origen.
+- Siguiente paso: una PR única elimina el workflow temporal y actualiza documentación; después el propietario borra `RESTORE_TEST_AGE_KEY` y `RESTORE_TEST_DB_URL` y elimina la rama Neon desechable. No se tocó Neon `main` ni producción.
+
+---
+
 ## 2026-10-28 — PR #110 fusionada y continuidad pos-merge
 
 - PR #110 se fusionó por squash en `main` con SHA `33da237ad7592ac394cc266c6a96c4bd1d387e37`; HEAD de PR verificado `65eb5d1cb07199b896a5022d94e739343a7c971b`.

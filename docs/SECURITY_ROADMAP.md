@@ -130,7 +130,7 @@ Manual run [40916692763](https://github.com/BTF14/Micro-app/actions/runs/4091669
 ## Actualización 2026-10-29 — consistencia HTTPS de FRONTEND_ORIGIN
 
 - **Hallazgo:** el helper local de `apps/api/src/google-auth.ts` no exigía HTTPS ni restringía HTTP a loopback, a diferencia del validador de `apps/api/src/index.ts`. No hay evidencia de explotación; clasificado como hardening de configuración P1 antes de habilitar bootstrap en condiciones reales.
-- **Corrección propuesta:** aplicar el mismo allowlist de protocolos/hosts y rechazar credenciales, rutas, query, fragmentos y representaciones no canónicas.
+- **Corrección implementada en PR #155:** aplica el mismo allowlist de protocolos/hosts y rechaza credenciales, rutas, query, fragmentos y representaciones no canónicas. Aún no está en main.
 - **Pruebas:** HTTPS válido; HTTP loopback permitido para desarrollo; HTTP remoto, credenciales y URL con path/query/hash rechazados.
 - **Estado:** en rama `fix/google-auth-frontend-origin-https-20261029`; pendiente de tests y CI en SHA final, revisión y merge. No marcar completado hasta tener evidencia.
 - **Alcance excluido:** no cambia secrets, OAuth provider, bootstrap, DB, producción ni despliegues manuales.

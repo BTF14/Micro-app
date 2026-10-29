@@ -757,3 +757,10 @@ Este diario es append-only en cuanto a historia: no borrar hitos antiguos; añad
 - Confirmada divergencia entre `getConfiguredFrontendOrigin` de `google-auth.ts` y el validador global de `index.ts`: el primero aceptaba HTTP no local. No hay evidencia de explotación.
 - Creada rama `fix/google-auth-frontend-origin-https-20261029` desde main para una corrección acotada y tests de regresión. En esta fase no se modificaron secretos, Neon, datos, migraciones ni producción.
 - Pendiente: completar tests, verificar diff/CI en SHA exacto y revisión. No declarar el hallazgo cerrado antes del merge.
+
+
+### Verificación CI de PR #155 — 2026-10-29
+
+- SHA `18cf2f158552ce7c97bacc66018e0cfdae60e2d3`: los ocho workflows asociados finalizaron en `success`: CI, Playwright E2E, Database migration validation, Semgrep SAST, Security scan, Dependency review, Secret history scan y Project progress dashboard.
+- CI ejecutó build/typecheck, unit tests y PostgreSQL auth integration tests; Playwright browser tests también completaron con éxito.
+- Revisión manual del diff: cambio acotado al helper de validación y su prueba; no cambia flujo OAuth/bootstrap, DB, secretos ni despliegue. PR #155 aún abierta; falta integrar a main y verificar el estado post-merge. Codex no pudo revisar por cuota; no se afirma revisión independiente.

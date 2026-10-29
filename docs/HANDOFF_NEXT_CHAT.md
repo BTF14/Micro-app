@@ -3,7 +3,7 @@
 - Main base verificada: `0ba45e47daa5af9bbd9034690443405aa8bedf44`.
 - PR #154: abierta, sin reviews; ocho workflows consultados para su SHA exacto terminaron success. Codex review falló por cuota; no existe review independiente. Respetar el gate de revisión y no fusionar.
 - Rama de trabajo nueva: `fix/google-auth-frontend-origin-https-20261029`; objetivo único: alinear validación de `FRONTEND_ORIGIN` en `google-auth.ts` con `index.ts` (HTTPS salvo loopback HTTP), y añadir pruebas negativas.
-- Verificar diff completo, ejecutar pruebas API/typecheck/build disponibles y revisar workflows para el SHA exacto. No declarar corregido hasta CI verde y merge autorizado por política.
+- Diff revisado manualmente. En SHA `18cf2f158552ce7c97bacc66018e0cfdae60e2d3`, los 8 workflows consultados terminaron `success`, incluidos CI (build/typecheck, unit tests, PostgreSQL auth integration) y Playwright E2E. PR #155 sigue abierta; no declarar corregido en main hasta merge autorizado y verificado.
 - No tocar Neon `main`, secretos, datos reales, esquema/migraciones ni producción. Previews de Cloudflare son automáticos y no son producción.
 - Tras cerrar este hardening, continuar auditoría de arquitectura multiempresa y preparar propuesta de sucursales. No implementar endpoints comerciales ni permisos hasta aprobación de la matriz de roles.
 - La capacidad sostenible de tenants no está medida; revisar todos los límites Neon/Cloudflare y probar en entorno sintético antes de prometer cantidades.

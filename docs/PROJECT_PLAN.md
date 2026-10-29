@@ -719,7 +719,7 @@ PR [#9](https://github.com/BTF14/Micro-app/pull/9) está fusionado en `main` med
 
 **Objetivo:** eliminar la divergencia entre la validación global de CORS/configuración y la validación específica del flujo Google OAuth.
 
-- [ ] Unificar el criterio: permitir HTTPS; permitir HTTP solo para `localhost`, `127.0.0.1` y `[::1]`; rechazar HTTP remoto, credenciales, rutas, query, fragmentos y orígenes no canónicos.
+- [x] Implementar en la rama `fix/google-auth-frontend-origin-https-20261029`: HTTPS; HTTP solo para `localhost`, `127.0.0.1` y `[::1]`; rechazar HTTP remoto, credenciales, rutas, query, fragmentos y orígenes no canónicos. Pendiente de merge.
 - [ ] Añadir pruebas unitarias negativas y positivas para el helper usado por OAuth.
 - [ ] Ejecutar tests API, typecheck/build y CI/SAST/E2E en el SHA exacto.
 - [ ] Revisar diff y obtener la revisión requerida antes de merge.

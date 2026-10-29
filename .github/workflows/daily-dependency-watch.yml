@@ -1,0 +1,122 @@
+name: Daily dependency watch
+
+on:
+  schedule:
+    # 08:15 UTC daily (04:15 Venezuela); report-only, no dependency changes.
+    - cron: "15 8 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: micro-app-dependency-watch
+  cancel-in-progress: true
+
+jobs:
+  dependency-watch:
+    name: Stable dependency and security report
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Set up Node.js 24 LTS
+        uses: actions/setup-node@v7
+        with:
+          node-version: 24
+
+      - name: Set up pnpm 10
+        uses: pnpm/action-setup@v6
+        with:
+          version: 10
+
+      - name: Install exactly the committed lockfile
+        run: pnpm install --frozen-lockfile
+
+      - name: Report runtime and stable package updates
+        id: outdated
+        shell: bash
+        run: |
+          set +e
+          pnpm outdated -r > /tmp/pnpm-outdated.txt 2>&1
+          outdated_status=$?
+          set -e
+          echo "status=$outdated_status" >> "$GITHUB_OUTPUT"
+
+          {
+            echo "## Daily dependency watch"
+            echo
+            echo "- Commit: `$GITHUB_SHA`"
+            echo "- Runtime used by this report: `$(node --version)`"
+            echo "- Package manager used by this report: `$(pnpm --version)`"
+            echo "- Schedule: daily at 08:15 UTC (04:15 Venezuela); manual runs are also available."
+            echo
+            echo "### Latest Node.js 24 LTS patch"
+            if curl --fail --silent --show-error --max-time 20 https://nodejs.org/dist/index.json -o /tmp/node-releases.json; then
+              node -e 'const rows=require("/tmp/node-releases.json"); const v=rows.find(x=>/^v24\./.test(x.version)&&x.lts); if(v) console.log("- Latest published Node 24 LTS release: `"+v.version+"` ("+v.date+")."); else console.log("- Could not identify the latest Node 24 LTS release from the official index.");'
+            else
+              echo "- Official Node.js release index could not be reached during this run."
+            fi
+            echo
+            echo "### Package updates (pnpm outdated -r)"
+            echo
+            if [ -s /tmp/pnpm-outdated.txt ]; then
+              echo ' ```text'
+              cat /tmp/pnpm-outdated.txt
+              echo ' ```'
+            else
+              echo "No output returned by pnpm outdated."
+            fi
+            echo
+            if [ "$outdated_status" -ne 0 ]; then
+              echo "> Note: `pnpm outdated` returned status $outdated_status. This may mean updates exist or the registry query failed; inspect the output above before concluding."
+            fi
+            echo
+            echo "### Interpretation rules"
+            echo "- This is a report, not an automatic upgrade. It does not create PRs or modify manifests/lockfiles."
+            echo "- Prefer supported stable/LTS releases; do not treat prereleases or a newer major as automatically safe."
+            echo "- Review breaking changes, engines, peer dependencies, advisories, and the full lockfile diff before upgrading."
+            echo "- Preserve `pnpm.overrides.undici = 7.30.1` in both `package.json` and `pnpm-lock.yaml` unless a reviewed security change explicitly replaces it."
+            echo "- Dependabot separately checks npm dependencies and GitHub Actions weekly; this daily workflow adds visibility, not automatic remediation."
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Audit known dependency vulnerabilities (high and critical fail the run)
+        id: audit
+        shell: bash
+        continue-on-error: true
+        run: |
+          set +e
+          pnpm audit --audit-level high > /tmp/pnpm-audit.txt 2>&1
+          audit_status=$?
+          set -e
+          echo "status=$audit_status" >> "$GITHUB_OUTPUT"
+          cat /tmp/pnpm-audit.txt
+          exit "$audit_status"
+
+      - name: Add audit findings to the run summary
+        if: always()
+        shell: bash
+        run: |
+          {
+            echo
+            echo "### Vulnerability audit (pnpm audit --audit-level high)"
+            echo
+            if [ -s /tmp/pnpm-audit.txt ]; then
+              echo ' ```text'
+              cat /tmp/pnpm-audit.txt
+              echo ' ```'
+            else
+              echo "Audit did not produce a report; inspect the job logs."
+            fi
+            echo
+            if [ "${{ steps.audit.outcome }}" = "failure" ]; then
+              echo "**Action required:** the audit step failed. This may indicate a high/critical advisory or a registry/tool error; inspect the output before deciding."
+              exit 1
+            else
+              echo "No high/critical audit failure was reported by this step."
+            fi
+          } >> "$GITHUB_STEP_SUMMARY"

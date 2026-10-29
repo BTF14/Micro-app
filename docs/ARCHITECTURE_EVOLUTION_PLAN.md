@@ -51,6 +51,10 @@ No iniciar una reescritura ni introducir microservicios por anticipado. Mantener
 - [ ] Documentar contratos de API y compatibilidad frontend/backend para que una versión nueva pueda convivir temporalmente con la anterior.
 - [ ] Añadir pruebas de rendimiento reproducibles para flujos críticos antes de optimizar o cambiar la infraestructura.
 
+## Fase 5A — Límites de proveedor y capacidad multiempresa (obligatorio antes de declarar capacidad)
+
+Consultar [CAPACITY_AND_LIMITS.md](./CAPACITY_AND_LIMITS.md). No fijar un número de empresas, sucursales o usuarios por intuición. Auditar Neon, Workers, Pages y servicios auxiliares; confirmar cuotas vigentes; medir escenarios sintéticos en entornos efímeros/autorizados; establecer capacidad demostrada, límite operativo con margen y umbrales de alerta. No generar carga en producción, no tocar Neon `main`, no activar costes ni cambiar planes sin autorización.
+
 ### Fase 5 — Escalado basado en evidencia
 - [ ] Medir latencia, errores, uso de CPU/memoria, conexiones, consultas lentas, tamaño de tablas y carga por tenant.
 - [ ] Mejorar primero índices, consultas, paginación, límites de petición, caché segura y tareas asíncronas donde los datos demuestren necesidad.

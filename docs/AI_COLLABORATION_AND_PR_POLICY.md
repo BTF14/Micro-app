@@ -1,6 +1,6 @@
 # Política de colaboración de IA, PR y verificación
 
-**Estado:** propuesta documental; se convierte en política canónica al fusionarse en `main`.  
+**Estado:** política del repositorio; los cambios de esta revisión se aplican al fusionarse en `main`.  
 **Última actualización:** 2026-10-29.  
 **Aplicación:** toda IA, agente, sesión o chat que trabaje en Micro app, independientemente del proveedor (ChatGPT, Claude, Codex u otro).
 

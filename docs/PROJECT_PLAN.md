@@ -6,7 +6,7 @@ Causa original: los lockfiles generados en PR #116–#120 quitaban `overrides: u
 
 Las PR #117 (TypeScript 7), #118 (plugin-react 6), #119 (Vite 8) y #120 (jsdom 30) figuran cerradas sin fusionar. No asumir que esos upgrades se aplicaron. Para futuras actualizaciones: verificar SHA exacto, coherencia `package.json`/lockfile, instalación congelada, Dependency Review y compatibilidad. No fusionar majors sin un plan y pruebas.
 
-**Pendiente inmediato:** reconsultar el resultado final de los checks post-merge del SHA `fb49c32aa1451c4bf763a0b78ba12b507700f10d`; en la primera consulta static analysis y Cloudflare Pages aún estaban en curso. Después continuar los pendientes de seguridad ya priorizados; la restauración con datos sintéticos poblados sigue reservada para la última fase.
+**Verificación post-merge completada:** los checks consultados para el commit de PR #132 (`9f73f8ab0c1581145796f09a41f689fa4bdcf310`) terminaron en `success`, incluidos análisis estático, Cloudflare Pages y Workers. Continuar los pendientes de seguridad ya priorizados; la restauración con datos sintéticos poblados sigue reservada para la última fase.
 
 ---
 

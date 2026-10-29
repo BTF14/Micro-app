@@ -1,7 +1,7 @@
 # Política de colaboración de IA, PR y verificación
 
-**Estado:** propuesta documental; se convierte en política canónica al fusionarse en `main`.  
-**Última actualización:** 2026-10-28.  
+**Estado:** política del repositorio; los cambios de esta revisión se aplican al fusionarse en `main`.  
+**Última actualización:** 2026-10-29.  
 **Aplicación:** toda IA, agente, sesión o chat que trabaje en Micro app, independientemente del proveedor (ChatGPT, Claude, Codex u otro).
 
 Esta política complementa `AGENTS.md`, `docs/CONSTITUTION.md`, `docs/SECURITY_ROADMAP.md` y los requisitos de seguridad existentes. Si hay conflicto, no se debe elegir silenciosamente la regla más permisiva: verificar la fuente canónica, preservar las restricciones de seguridad y documentar el conflicto antes de actuar.
@@ -63,6 +63,17 @@ Una PR solo está lista para considerar fusión cuando:
 - se respetan los gates de aprobación, branch protection y las instrucciones específicas del propietario.
 
 Una PR verde **no es una garantía de preparación para producción**. No fusionar por inercia ni porque la PR lleve mucho tiempo abierta. Si un gate está pendiente o no se puede verificar, mantenerla abierta y documentar la próxima acción.
+
+### Dependabot, pnpm y overrides del workspace
+
+En este repositorio, `package.json` declara `pnpm.overrides.undici: 7.30.1`. El `pnpm-lock.yaml` debe conservar un bloque `overrides` equivalente y resoluciones compatibles. En 2026-10-29 se comprobó que varias PR de Dependabot omitían ese bloque y volvían a `undici@7.29.1`; las instalaciones congeladas fallaban con `ERR_PNPM_LOCKFILE_CONFIG_MISMATCH` y Dependency Review detectaba vulnerabilidades de alta severidad.
+
+Reglas obligatorias:
+1. Antes de fusionar una PR de Dependabot, revisar el diff y el SHA exacto, no solo el título ni que el bot la haya creado.
+2. En este workspace, verificar la correspondencia entre `package.json` y `pnpm-lock.yaml`; ejecutar o exigir la instalación congelada (`pnpm install --frozen-lockfile`) y revisar Dependency Review.
+3. No quitar ni cambiar el override de `undici` sin revisar avisos de seguridad, la versión resuelta en todo el lockfile y el resultado de las pruebas.
+4. No aceptar actualizaciones mayores de TypeScript, Vite, plugins o jsdom dentro del grupo de parches rutinarios. Separarlas, probar compatibilidad y mantenerlas fuera de `main` mientras fallen gates obligatorios.
+5. Si varias PR de Dependabot comparten el mismo fallo estructural, corregir la causa una sola vez y limpiar las PR fallidas con comentarios explícitos. No fusionar una PR con checks obligatorios fallidos ni dejar PR redundantes abiertas indefinidamente.
 
 ## 6. Producción, datos y configuración
 

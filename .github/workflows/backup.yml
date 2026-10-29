@@ -106,7 +106,7 @@ jobs:
           git config user.name "Micro app backups bot"
           git add daily/
           git commit -m "backup: ${STAMP}"
-          find daily -type f \( -name '*.dump.age' -o -name '*.dump.age.sha256' \) -mtime "+${RETENTION_DAYS}" -print -delete
+          python3 ../scripts/prune_backups.py daily --retention-days "$RETENTION_DAYS"
           git add -A
           git diff --cached --quiet || git commit -m "retention: prune backups older than ${RETENTION_DAYS} days"
           git push origin HEAD:main

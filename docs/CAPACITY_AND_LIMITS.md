@@ -52,6 +52,21 @@ No afirmar “soporta N empresas” hasta medirlo con una carga representativa, 
 - La arquitectura documentada es React/Vite/TypeScript, Cloudflare Pages, Cloudflare Workers + Hono, Neon PostgreSQL y Drizzle; debe confirmarse contra HEAD antes de ejecutar cambios.
 
 
+## Snapshot de cuenta Neon consultado en vivo (solo lectura, 2026-10-29 UTC)
+
+Se consultó el proyecto Neon conectado mediante las operaciones de lectura `list_projects`, `describe_project`, `list_branches` y `list_postgres_endpoints`. No se ejecutó SQL ni se modificó ninguna rama.
+
+- **Proyecto:** `micro-app-db`; plan reportado por la API: `free_v3`; PostgreSQL 18; región `aws-us-east-1`.
+- **Límite de ramas informado por la cuenta:** 10. Se observaron 3 ramas no eliminadas: `main`, `micro-app-integrity-test` y `restore-test-20261028`. Por tanto, quedan 7 posiciones de rama según ese límite reportado, antes de considerar cambios de plan o nuevas ramas externas.
+- **Tamaño lógico de rama informado:** `branch_logical_size_limit_bytes = 536870912` (512 MiB). Tamaños observados: `main` 32,866,304 bytes; `micro-app-integrity-test` 31,686,656 bytes; `restore-test-20261028` 33,570,816 bytes.
+- **Compute predeterminado:** mínimo/máximo de autoscaling de 0.25 CU. El período de consumo reportado va de 2026-10-17 a 2026-11-01; en la consulta, el proyecto mostraba 5,911 segundos de compute y 5,645,769 bytes de transferencia. Son contadores de uso del período, no una prueba de capacidad ni una factura total.
+- **Retención histórica:** `history_retention_seconds = 21600` (6 horas). Los endpoints listados estaban inactivos/idle durante la consulta y el pooler aparecía deshabilitado en esos endpoints.
+- **Rama de restauración antigua:** `restore-test-20261028` sigue existiendo. No se borró: la eliminación es una acción independiente y no autorizada por esta auditoría.
+- El metadato de rama mostraba `protected = false` para `main`; el significado operativo exacto de esa propiedad debe confirmarse en la documentación de Neon antes de recomendar un cambio. No se modificó.
+- **Limitación:** esto confirma metadatos visibles de la cuenta Neon conectada, pero no valida todas las cuotas facturables ni la capacidad del SaaS. La cuota/consumo real de Cloudflare y los planes de servicios auxiliares siguen sin verificar desde las herramientas disponibles.
+
+Este snapshot debe actualizarse antes de tomar decisiones de capacidad. No convertir los límites de ramas, bytes o CU en una cifra de organizaciones soportadas; el límite real depende de carga, conexiones, consultas, crecimiento, disponibilidad y del menor límite efectivo entre proveedores.
+
 ## Referencias oficiales de límites (revisión 2026-10-29)
 
 Estos valores son una **referencia documental**, no una verificación del plan contratado ni una garantía de capacidad del producto. Volver a consultar las páginas oficiales antes de cada decisión de capacidad; los proveedores pueden cambiar cuotas.

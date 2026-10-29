@@ -59,6 +59,7 @@ SELECT 'sale_items|' || count(*)::text FROM sale_items WHERE id='77777777-7777-4
 SELECT 'payments|' || count(*)::text FROM payments WHERE id='88888888-8888-4888-8888-888888888888' AND sale_id='66666666-6666-4666-8666-666666666666' AND amount=10.0000;
 SELECT 'inventory_movements|' || count(*)::text FROM inventory_movements WHERE id='99999999-9999-4999-8999-999999999999' AND product_id='44444444-4444-4444-8444-444444444444' AND quantity_delta=-2.000;
 SELECT 'audit_logs|' || count(*)::text FROM audit_logs WHERE organization_id='11111111-1111-4111-8111-111111111111' AND actor_user_id='22222222-2222-4222-8222-222222222222' AND action='synthetic.sale.completed' AND entity_id='66666666-6666-4666-8666-666666666666';
+SELECT 'constraint_count|' || count(*)::text FROM information_schema.table_constraints WHERE table_schema='public' AND table_name=ANY(ARRAY['organizations','app_users','organization_members','auth_allowlist','auth_bootstrap','suppliers','products','exchange_rates','sales','sale_items','payments','inventory_movements','audit_logs']::text[]);
 SELECT 'schema_table_count|' || count(*)::text FROM information_schema.tables WHERE table_schema='public' AND table_type='BASE TABLE' AND table_name=ANY(ARRAY['organizations','app_users','organization_members','auth_allowlist','auth_bootstrap','suppliers','products','exchange_rates','sales','sale_items','payments','inventory_movements','audit_logs']::text[]);
 SELECT 'sale_item_relationship|' || count(*)::text FROM sale_items i JOIN sales s ON s.organization_id=i.organization_id AND s.id=i.sale_id JOIN products p ON p.organization_id=i.organization_id AND p.id=i.product_id WHERE i.id='77777777-7777-4777-8777-777777777777' AND s.total_usd=10.0000 AND p.stock_quantity=8.000;
 SELECT 'payment_relationship|' || count(*)::text FROM payments p JOIN sales s ON s.organization_id=p.organization_id AND s.id=p.sale_id JOIN organization_members m ON m.organization_id=p.organization_id AND m.user_id=p.received_by WHERE p.id='88888888-8888-4888-8888-888888888888';
@@ -69,9 +70,13 @@ SQL
 source_manifest="$(manifest "$SOURCE_URL")"
 restored_manifest="$(manifest "$RESTORE_URL")"
 while IFS='|' read -r label count; do
-  expected=1
-  [[ "$label" != "schema_table_count" ]] || expected=13
-  [[ "$count" == "$expected" ]] || { echo "Source manifest failed for $label (expected $expected, got $count)." >&2; exit 1; }
+  if [[ "$label" == "schema_table_count" ]]; then
+    [[ "$count" == "13" ]] || { echo "Expected 13 schema tables, got $count." >&2; exit 1; }
+  elif [[ "$label" == "constraint_count" ]]; then
+    [[ "$count" =~ ^[0-9]+$ ]] && (( count > 0 )) || { echo "No schema constraints found." >&2; exit 1; }
+  else
+    [[ "$count" == "1" ]] || { echo "Source manifest failed for $label (expected 1, got $count)." >&2; exit 1; }
+  fi
 done <<< "$source_manifest"
 if [[ "$source_manifest" != "$restored_manifest" ]]; then
   echo "Restored manifest differs from source:" >&2

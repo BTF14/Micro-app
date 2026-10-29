@@ -1,3 +1,23 @@
+## Estado vivo — continuidad tras PR #127 (2026-10-29 UTC)
+
+**Referencia verificada:** `main` = `1fc95ee1a574d435523fc746a10537f1c95c5262`; PR [#127](https://github.com/BTF14/Micro-app/pull/127) está fusionada y retiró el workflow temporal de restauración. No hay que recrearlo ni crear otra PR para retirar ese mismo workflow.
+
+### Secretos y recursos temporales: estado exacto
+- El propietario confirma que eliminó el secreto de Actions `RESTORE_TEST_AGE_KEY`.
+- **Pendiente de confirmación/eliminación:** `RESTORE_TEST_DB_URL`. No afirmar que ambos secretos están borrados. No pedir ni mostrar su valor.
+- La rama Neon de prueba `restore-test-20261028` (proyecto `restless-fire-99110035`, branch ID `br-broad-dust-b7cvgjtv`) seguía existiendo en la última consulta. La operación de borrado vía herramienta fue bloqueada por controles de seguridad; no se debe afirmar que se eliminó ni reintentar para eludir el bloqueo. Borrar desde la consola de Neon solo tras verificar nombre/ID y que no es `main`.
+- No se modificó Neon `main`, datos de producción ni se hizo despliegue manual.
+
+### Evidencia y límites del restore
+- Run [40804665192](https://github.com/BTF14/Micro-app/actions/runs/40804665192): éxito en checksum, descifrado y restauración en PostgreSQL desechable; 13 tablas, 186 constraints, 0 membresías huérfanas y exclusión de `auth_sessions`/`auth_rate_limits`.
+- Las tablas comerciales/auditoría verificadas estaban vacías. Esto demuestra la ruta técnica para esa copia, **no** recuperación integral de datos comerciales poblados ni igualdad con un manifiesto del origen.
+- Pendiente para opción D: inspeccionar el mecanismo permanente de backup; después diseñar una única prueba aislada con datos sintéticos poblados y manifiesto de conteos/relaciones, sin datos reales ni Neon `main`. Medir RPO/RTO, alertas de fallo, retención y coste $0. No recrear el workflow temporal retirado ni abrir PRs duplicadas.
+- No declarar backup/restore completamente cerrado ni Micro app lista para producción; continúan los demás bloqueos de seguridad documentados.
+
+La entrada de continuidad más reciente prevalece sobre snapshots históricos que digan que la PR de limpieza está pendiente o que ambos secretos aún deben borrarse.
+
+---
+
 ## Estado vivo — restauración de respaldo verificada técnicamente (2026-10-29 UTC)
 
 - La PR #126 está fusionada; el workflow temporal se ejecutó de nuevo en `main`: [run 40804665192](https://github.com/BTF14/Micro-app/actions/runs/40804665192), resultado `success`, duración mostrada por Actions: 22 s.

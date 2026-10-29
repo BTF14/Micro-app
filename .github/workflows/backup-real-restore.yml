@@ -1,0 +1,95 @@
+name: Verify and restore latest encrypted backup
+on:
+  workflow_dispatch: {}
+permissions:
+  contents: read
+jobs:
+  verify-and-restore:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    env:
+      BACKUP_REPO: BTF14/micro-app-backups
+      PGHOST: 127.0.0.1
+      PGPORT: "5432"
+      PGUSER: microapp
+      PGPASSWORD: microapp-restore-test-only
+      PGDATABASE: microapp_restore
+    services:
+      postgres:
+        image: postgres:18
+        env:
+          POSTGRES_DB: microapp_restore
+          POSTGRES_USER: microapp
+          POSTGRES_PASSWORD: microapp-restore-test-only
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U microapp -d microapp_restore"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 12
+    steps:
+      - uses: actions/checkout@v4
+      - name: Require protected credentials
+        env:
+          BACKUP_REPO_TOKEN: ${{ secrets.BACKUP_REPO_TOKEN }}
+          AGE_PRIVATE_KEY: ${{ secrets.AGE_PRIVATE_KEY }}
+        run: |
+          set -euo pipefail
+          test -n "${BACKUP_REPO_TOKEN:-}" || { echo "::error::Missing BACKUP_REPO_TOKEN"; exit 1; }
+          test -n "${AGE_PRIVATE_KEY:-}" || { echo "::error::Missing AGE_PRIVATE_KEY. Add the existing age identity as a repository Actions secret; never paste it into chat."; exit 1; }
+      - name: Install age and PostgreSQL 18 client
+        run: |
+          set -euo pipefail
+          sudo apt-get update
+          sudo apt-get install -y age curl ca-certificates gnupg
+          sudo install -d /usr/share/postgresql-common/pgdg
+          sudo curl -fsSL https://www.postgresql.org/media/keys/ACCC4CF8.asc -o /usr/share/postgresql-common/pgdg/apt.postgresql.org.asc
+          echo "deb [signed-by=/usr/share/postgresql-common/pgdg/apt.postgresql.org.asc] https://apt.postgresql.org/pub/repos/apt $(. /etc/os-release && echo "$VERSION_CODENAME")-pgdg main" | sudo tee /etc/apt/sources.list.d/pgdg.list
+          sudo apt-get update
+          sudo apt-get install -y postgresql-client-18
+      - name: Download and verify exact remote bytes
+        id: backup
+        env:
+          BACKUP_REPO_TOKEN: ${{ secrets.BACKUP_REPO_TOKEN }}
+        run: |
+          set -euo pipefail
+          git -c 'credential.helper=!f() { echo username=x-access-token; echo password=$BACKUP_REPO_TOKEN; }; f' clone --depth 1 "https://github.com/$BACKUP_REPO.git" "$RUNNER_TEMP/backups-repo"
+          mapfile -t files < <(find "$RUNNER_TEMP/backups-repo/daily" -maxdepth 1 -type f -name 'backup-*.dump.age' -printf '%f\n' | sort)
+          (("${#files[@]}" > 0)) || { echo "::error::No encrypted backup found"; exit 1; }
+          filename="${files[${#files[@]}-1]}"
+          cd "$RUNNER_TEMP/backups-repo/daily"
+          test -s "$filename"
+          test -s "$filename.sha256"
+          sha256sum --check "$filename.sha256"
+          echo "filename=$filename" >> "$GITHUB_OUTPUT"
+      - name: Decrypt and restore into ephemeral PostgreSQL
+        env:
+          AGE_PRIVATE_KEY: ${{ secrets.AGE_PRIVATE_KEY }}
+          BACKUP_FILENAME: ${{ steps.backup.outputs.filename }}
+        run: |
+          set -euo pipefail
+          umask 077
+          identity="$RUNNER_TEMP/age-identity.txt"
+          plaintext="$RUNNER_TEMP/backup.dump"
+          printf '%s\n' "$AGE_PRIVATE_KEY" > "$identity"
+          trap 'rm -f "$identity" "$plaintext"' EXIT
+          age --decrypt --identity "$identity" --output "$plaintext" "$RUNNER_TEMP/backups-repo/daily/$BACKUP_FILENAME"
+          test -s "$plaintext"
+          pg_restore --list "$plaintext" > "$RUNNER_TEMP/archive.list"
+          test -s "$RUNNER_TEMP/archive.list"
+          pg_restore --exit-on-error --no-owner --no-privileges --dbname="$PGDATABASE" "$plaintext"
+      - name: Validate restored schema without printing business data
+        run: |
+          set -euo pipefail
+          table_count="$(psql -X -A -t -v ON_ERROR_STOP=1 -c "SELECT count(*) FROM information_schema.tables WHERE table_schema = 'public' AND table_type = 'BASE TABLE';")"
+          if ! [[ "$table_count" =~ ^[0-9]+$ ]] || (( table_count < 1 )); then
+            echo "::error::Restore completed but no public tables were found"; exit 1
+          fi
+          echo "Remote object: ${{ steps.backup.outputs.filename }}" >> "$GITHUB_STEP_SUMMARY"
+          echo "Checksum verified; decryption and restore succeeded in ephemeral PostgreSQL 18. Public tables: $table_count. No business rows printed." >> "$GITHUB_STEP_SUMMARY"
+      - name: Remove decrypted files
+        if: always()
+        run: |
+          rm -f "$RUNNER_TEMP/age-identity.txt" "$RUNNER_TEMP/backup.dump" "$RUNNER_TEMP/archive.list"
+          rm -rf "$RUNNER_TEMP/backups-repo"

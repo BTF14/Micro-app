@@ -231,6 +231,24 @@ describe("Google bootstrap request transport", () => {
     expect(extractCookiePairs(response).microapp_oauth_bootstrap).toBeUndefined();
   });
 
+  it("rejects an incorrect bootstrap token before redirecting to Google", async () => {
+    const response = await app.fetch(new Request("https://api.example/auth/google", {
+      method: "POST",
+      headers: {
+        Origin: googleOrigin,
+        "Content-Type": "application/x-www-form-urlencoded",
+      },
+      body: new URLSearchParams({
+        bootstrap_token: "incorrect-synthetic-token",
+        org_name: bootstrapOrgName,
+        org_slug: bootstrapOrgSlug,
+      }).toString(),
+    }), googleEnv);
+    expect(response.status).toBe(403);
+    expect(response.headers.get("location")).toBeNull();
+    expect(extractCookiePairs(response).microapp_oauth_bootstrap).toBeUndefined();
+  });
+
   it("rejects duplicate fields and query parameters before redirecting to Google", async () => {
     const response = await app.fetch(new Request(
       "https://api.example/auth/google?unexpected=1",

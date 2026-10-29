@@ -1,3 +1,13 @@
+## 2026-10-29 — hallazgo y corrección de retención de backups
+
+- Estado verificado: PR [#128](https://github.com/BTF14/Micro-app/pull/128) fusionada en `main`; merge SHA `9b4ee7d2ed704288cd0cf149c93569a698f46e1b`. En ese SHA, los checks de CI, migraciones, Playwright, escaneo de secretos, Semgrep, seguridad, dashboard, Cloudflare Pages/Workers y análisis JS/TS reportaron `success`.
+- El propietario confirma que `RESTORE_TEST_AGE_KEY` fue eliminado y que `RESTORE_TEST_DB_URL` ya no aparece en la lista actual de Repository secrets. Es una confirmación visual del propietario; no se conoce la fecha exacta. Los secretos que quedan, `BACKUP_REPO_TOKEN` y `DATABASE_URL_BACKUP_RO`, se conservan para el backup permanente.
+- Se inspeccionó `.github/workflows/backup.yml`: el paso de retención usaba `find -mtime` sobre un repositorio clonado con `--depth 1`. Como los mtimes de archivos tras checkout no son la fecha de creación del backup, esa estrategia puede no borrar copias vencidas.
+- Se abrió una única PR para corregir ese defecto, con un script que usa la fecha UTC incluida en el nombre del backup, elimina el checksum emparejado y añade pruebas unitarias ejecutadas en CI. Checks pendientes de ejecutar en el HEAD de PR; no declarar corregido hasta verlos verdes.
+- Neon confirma que la rama `restore-test-20261028` (ID `br-broad-dust-b7cvgjtv`) todavía existe. El borrado por la herramienta ya había sido bloqueado por controles de seguridad; no se reintentó ni se eludió ese control. No se tocó `main`, datos reales ni producción.
+- Siguiente paso: revisar checks/diff de la PR de retención; después preparar una única restauración aislada con datos sintéticos poblados y manifiesto de conteos/relaciones. RPO/RTO, alerta visible de fallo y evidencia de coste $0 siguen pendientes.
+
+---
 ## 2026-10-29 — continuidad después de PR #127 y limpieza de credenciales
 
 - HEAD verificado de `main`: `1fc95ee1a574d435523fc746a10537f1c95c5262`; PR #127 fusionada y workflow temporal retirado.

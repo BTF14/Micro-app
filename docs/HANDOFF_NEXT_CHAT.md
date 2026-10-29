@@ -1,19 +1,28 @@
-## Arranque obligatorio — continuidad tras PR #116 y #131 (2026-10-29 UTC)
+## Arranque obligatorio — estado vivo tras PR #116 (2026-10-29 UTC)
 
-Repositorio: https://github.com/BTF14/Micro-app. Último `main` verificado: `fb49c32aa1451c4bf763a0b78ba12b507700f10d` (PR #116 fusionada); PR #131 también está fusionada. Reconsultar el SHA vivo antes de operar. PR #129 corrigió la retención de 15 días y sus checks pasaron.
+Repositorio: https://github.com/BTF14/Micro-app. HEAD verificado de `main`: `fb49c32aa1451c4bf763a0b78ba12b507700f10d`, merge de PR #116. Reconsultar SHA, PRs y checks en vivo antes de actuar. Leer primero `AGENTS.md`, `docs/CURRENT_STATE.md`, este handoff, `docs/AI_COLLABORATION_AND_PR_POLICY.md`, `docs/PROJECT_PLAN.md`, `docs/STATE_JOURNAL.md`, `docs/RESOURCE_REGISTRY.md`, `docs/SECURITY_ROADMAP.md` y `docs/BACKUP_AND_RECOVERY.md`.
 
-## Continuidad verificada — 2026-10-29 UTC
+### Dependabot — resultado y guardrails
 
-- `main` verificado tras la fusión de PR [#116](https://github.com/BTF14/Micro-app/pull/116): `fb49c32aa1451c4bf763a0b78ba12b507700f10d`. PR [#131](https://github.com/BTF14/Micro-app/pull/131) también está fusionada.
-- PR #116 actualizó Hono a 4.13.14, `@cloudflare/workers-types` a 5.20261026.1 y Wrangler a 4.152.0. La corrección conservó el override del workspace `undici: 7.30.1` tanto en `package.json` como en `pnpm-lock.yaml`, y actualizó el lockfile para que coincida.
-- En el HEAD exacto de PR #116 pasaron `verify`, Chromium authentication smoke tests, migraciones PostgreSQL, análisis estático, Trivy, secret/history scan, Dependency Review, Pages y Workers Builds. Tras la fusión, los checks consultados para el commit de merge también terminaron en `success`.
-- Las PR #117–#120 se cerraron sin fusionar: TypeScript 7, plugin-react 6, Vite 8 y jsdom 30 eran actualizaciones mayores y sus HEAD fallaban con `ERR_PNPM_LOCKFILE_CONFIG_MISMATCH`; #118–#120 además reportaban `undici@7.29.1` vulnerable en Dependency Review. No volver a abrirlas en bloque: revisar compatibilidad y actualizar en un cambio controlado si sigue siendo necesario.
-- Lección obligatoria para futuras IA/chats: antes de fusionar una PR de Dependabot en este workspace, comparar `package.json` y `pnpm-lock.yaml`, comprobar que `pnpm.overrides.undici` y el bloque `overrides` del lockfile coincidan, y exigir CI verde en el SHA exacto. No fusionar solo por ser Dependabot ni eliminar el override sin una evaluación de seguridad.
-- No se ejecutó un despliegue manual. Cloudflare Pages/Workers reportaron checks automáticos en éxito; no inferir desde el nombre del check el destino efectivo de producción sin revisar la configuración del proveedor.
-- Backups: la última evidencia disponible sigue siendo la ejecución exitosa [40698423050](https://github.com/BTF14/Micro-app/actions/runs/40698423050) del 2026-10-28. A las 03:46 UTC del 29 de octubre todavía no había llegado la hora programada de las 07:00 UTC; reconsultar después de esa ventana. La restauración sintética poblada sigue pendiente y debe permanecer para la última fase.
-- Límites vigentes: no tocar Neon `main`, datos reales ni secretos; no descifrar backups para esta revisión; no afirmar que la restauración integral está probada.
+- PR #116 (Hono, Cloudflare Workers types y Wrangler) está fusionada. HEAD final de PR: `5d3f2e373e75caf71af207cba61df3066b140a86`. Los checks de la PR pasaron, incluidos Dependency Review, `verify`, Chromium, migraciones, static analysis, Trivy, scan de historial de secretos y builds de Cloudflare.
+- La causa de los fallos anteriores era que el lockfile generado por Dependabot eliminaba `overrides: undici: 7.30.1`, en desacuerdo con `package.json`, y resolvía `undici@7.29.1`. El arreglo de #116 preserva el override. En el `main` actual, `pnpm-lock.yaml` contiene el override y `undici@7.30.1`, y no contiene `undici@7.29.1`.
+- PR #117 (TypeScript 7), #118 (plugin-react 6), #119 (Vite 8) y #120 (jsdom 30) están cerradas sin fusionar. No afirmar que sus versiones se aplicaron. No reabrir ni aplicar los upgrades sin revisar compatibilidad y plan de pruebas.
+- En la última consulta de checks post-merge para `fb49c32aa1451c4bf763a0b78ba12b507700f10d`, `verify`, Chromium, migraciones, Trivy, scan de secretos/historial y Workers estaban verdes; static analysis y Cloudflare Pages seguían en curso. Reconsultar esos estados antes de afirmar éxito post-merge completo.
+
+### Próximos pasos
+
+1. Verificar los checks post-merge que quedaron en curso.
+2. Mantener `pnpm.overrides.undici = 7.30.1` coherente con el lockfile; exigir `pnpm install --frozen-lockfile` y Dependency Review verdes en toda actualización.
+3. No fusionar PR solo porque sea de Dependabot: comprobar SHA exacto, diff, lockfile, seguridad y compatibilidad. Evitar múltiples PR para una causa común.
+4. Continuar la hoja de ruta de seguridad; la prueba integral de restauración con datos sintéticos poblados sigue pendiente y debe quedar para la última fase.
+
+PR #131 está fusionada y añade solo un resumen visible ante fallos de backup en Actions; no envía por sí mismo correo/push. No se tocaron Neon `main`, secretos, datos reales ni producción, y no se hizo despliegue manual.
 
 ---
+
+## Arranque obligatorio — continuidad tras PR #130 (2026-10-29 UTC)
+
+Repositorio: https://github.com/BTF14/Micro-app. Última referencia de `main` verificada al iniciar este trabajo: `3ce18e2aa5bcf2a8c555a47681998405a4f14509` (fusión de PR #130); reconsultar el SHA vivo antes de operar, pues cambiará al fusionarse la PR de monitorización. PR #129 corrigió la retención de 15 días y sus checks pasaron.
 
 ### Lee primero
 `AGENTS.md`, `docs/CONSTITUTION.md`, `docs/CURRENT_STATE.md`, este archivo, `docs/PROJECT_PLAN.md`, `docs/STATE_JOURNAL.md`, `docs/RESOURCE_REGISTRY.md`, `docs/SECURITY_ROADMAP.md` y `docs/BACKUP_AND_RECOVERY.md`. No asumir que notas históricas más abajo siguen describiendo el estado vivo.

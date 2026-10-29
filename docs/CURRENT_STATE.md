@@ -899,3 +899,12 @@ Se compararon los siete archivos enumerados por GitHub al contrastar la rama con
 - Con esta comparación no aparece una implementación de adaptador o pruebas unitarias que falte rescatar de esa rama: los archivos centrales del adaptador ya coinciden con `main`. La rama no debe fusionarse; si se necesita rescatar algo, hacerlo como cambios puntuales después de revisión, no mediante merge.
 
 Esta revisión fue estática de contenidos en GitHub; no se ejecutaron tests desde un entorno local ni se cambió la rama del adaptador.
+
+
+## Estado vivo — fusiones de PR #140/#142 y prueba sintética de recuperación (2026-10-29 UTC)
+
+- `main` quedó en `c87893313534049463917af5ee17dfd36ba319c4` tras fusionar por squash [PR #140](https://github.com/BTF14/Micro-app/pull/140) y [PR #142](https://github.com/BTF14/Micro-app/pull/142). Las comprobaciones post-merge para ese SHA terminaron en `success`: CI, Playwright E2E, migración PostgreSQL, análisis estático, Semgrep, Security scan, Trivy, escaneo de historial, Cloudflare Pages y Workers. Ver runs [CI](https://github.com/BTF14/Micro-app/actions/runs/40847420758), [Playwright](https://github.com/BTF14/Micro-app/actions/runs/40847420957), [migraciones](https://github.com/BTF14/Micro-app/actions/runs/40847420948), [Semgrep](https://github.com/BTF14/Micro-app/actions/runs/40847420899), [seguridad](https://github.com/BTF14/Micro-app/actions/runs/40847420845).
+- PR #140 añadió pruebas unitarias y de integración para el aislamiento del selector de organización. Esto verifica el resolver de contexto, no autoriza afirmar que existan rutas comerciales completas ni que se haya probado todo el aislamiento de endpoints comerciales.
+- PR #142 actualizó Wrangler a `^4.155.0`, `@cloudflare/workers-types` a `^5.20261029.1` y Node a `>=24.22.2 <25`. Se conserva TypeScript 5, Vite 7 y el override `undici@7.30.1`; no se desplegó manualmente producción.
+- Prueba sintética de recuperación verificada: [run 40849167225](https://github.com/BTF14/Micro-app/actions/runs/40849167225), SHA `caa8d224b0e9c939d033080432caa131b2c8e5bc`, terminó en `success`. Validó checksum, cifrado/descifrado age, manifiesto coincidente de 13 tablas, constraints, relaciones de venta/pago/inventario/auditoría y exclusión de tablas efímeras. No mide RPO/RTO de producción ni valida restauración de una copia real.
+- Restricciones vigentes: coste objetivo $0, sin tarjetas/facturación, no tocar Neon `main`, no publicar datos reales, no desplegar manualmente producción. Revalidar el SHA y los checks en vivo antes de toda decisión posterior.

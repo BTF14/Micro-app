@@ -73,8 +73,8 @@ Un sistema de backup no se considera listo hasta que:
 - [x] El workflow publica un resumen visible en GitHub Actions si falla un paso. Esto no es una notificación externa; confirmar si las notificaciones nativas de GitHub cubren la necesidad operativa.
 - [x] Se verificó que la copia cifrada no está vacía, se descifra y su checksum coincide (run [40804665192](https://github.com/BTF14/Micro-app/actions/runs/40804665192)).
 - [x] La copia pudo restaurarse en la rama PostgreSQL desechable `restore-test-20261028`, sin usar Neon `main` (run [40804665192](https://github.com/BTF14/Micro-app/actions/runs/40804665192)).
-- [ ] Las migraciones y restricciones de integridad pasan tras restaurar.
-- [ ] Se validan conteos y relaciones de productos, movimientos, ventas, pagos y auditoría con datos de prueba; no imprimir datos personales.
+- [x] La prueba sintética aplica las migraciones antes del dump y verifica que el recuento de constraints se conserva tras restaurar ([run 40849167225](https://github.com/BTF14/Micro-app/actions/runs/40849167225)); no afirma que ejecutar migraciones sobre una base ya restaurada sea necesario ni probado.
+- [x] Conteos/valores y relaciones sintéticas de productos, movimientos, ventas, pagos y auditoría coinciden entre origen y restauración ([run 40849167225](https://github.com/BTF14/Micro-app/actions/runs/40849167225)); no se usaron datos personales.
 - [ ] Se mide el tiempo de recuperación y la pérdida máxima de datos esperable.
 - [ ] La retención elimina copias vencidas sin eliminar la última copia válida.
 - [ ] Se demuestra que no hay costes ni cargos automáticos fuera del presupuesto.
@@ -126,3 +126,15 @@ Ver [evaluación detallada de Google Drive](GOOGLE_DRIVE_BACKUP_EVALUATION.md). 
 - Limpieza: el propietario confirma la eliminación del secreto temporal `RESTORE_TEST_AGE_KEY`; `RESTORE_TEST_DB_URL` sigue pendiente de eliminación/confirmación. No solicitar ni registrar valores secretos.
 - La rama Neon `restore-test-20261028` seguía existiendo en la última consulta. El intento de eliminación por herramienta fue bloqueado por controles de seguridad; no afirmar que se borró. Si se elimina manualmente, comprobar proyecto y branch ID antes de confirmar y no seleccionar `main`.
 - Próximo paso: inspeccionar los mecanismos permanentes de backup y planear una sola prueba con datos sintéticos poblados en PostgreSQL desechable. Comparar un manifiesto de conteos y relaciones, y registrar RPO/RTO, alertas, retención y coste. No usar datos reales, Neon `main` ni producción; no cerrar la tarea hasta tener evidencia.
+
+
+## Actualización viva — prueba automatizada de restauración sintética (2026-10-29)
+
+La restauración manual anterior [run 40804665192](https://github.com/BTF14/Micro-app/actions/runs/40804665192) solo demostró estructura, porque las tablas comerciales estaban vacías. Para cerrar esa brecha se prepara una prueba permanente de laboratorio:
+
+- PostgreSQL 17 efímero, separado en base fuente y destino de restauración; aplica las migraciones versionadas actuales.
+- Inserta únicamente datos sintéticos enlazados: organización, usuario/membresía, proveedor, producto, tasa de cambio, venta completada, línea de venta, pago, movimiento de inventario y auditoría; también crea filas efímeras de sesión/rate-limit para comprobar su exclusión.
+- Genera un dump custom, cifra con una clave age temporal creada dentro del runner, verifica SHA-256, descifra y restaura en la base de destino.
+- Compara un manifiesto determinista de 13 tablas y cuatro relaciones entre venta/línea/producto, pago/membresía, movimiento/producto/membresía y auditoría/membresía. Confirma que `auth_sessions` y `auth_rate_limits` no existen en la restauración.
+- La prueba no consume secretos del repositorio, no accede a Neon, no almacena dumps como artefactos y limpia la clave y archivos temporales al finalizar. Se programa mensualmente y también corre en PRs que cambian el workflow, script, migraciones o esta política.
+- La prueba sintética poblada terminó en `success` en [run 40849167225](https://github.com/BTF14/Micro-app/actions/runs/40849167225), SHA `caa8d224b0e9c939d033080432caa131b2c8e5bc`. El manifiesto de 13 tablas, constraints y relaciones coincidió entre origen/restauración; checksum, descifrado y exclusión de `auth_sessions`/`auth_rate_limits` también pasaron. La prueba no mide RPO/RTO de producción ni valida una copia real.

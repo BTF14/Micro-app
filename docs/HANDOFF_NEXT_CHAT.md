@@ -936,3 +936,12 @@ Este bloque es más reciente que los snapshots históricos anteriores; si contra
 - La fusión solo incluye documentación: handoff, plan, diario y registro de recursos. No desplegó producción ni modificó Neon, secretos o datos reales.
 - Los 7 workflows de Actions habían terminado en `success` para el HEAD de la PR `46d5a9a0ec40a699176dc4109943cd7f7bfa4ad1`. El aviso de revisión Codex fue una ejecución fallida sin detalle técnico recuperable; no equivale a aprobación formal.
 - La verificación posterior confirmó que `main` avanzó un commit desde `1228a43cb4bc5e1ef8aabb548b034a0af97ec253` mediante la fusión indicada. Consultar GitHub en vivo antes de la siguiente operación.
+
+
+## Continuidad viva — 2026-10-29 UTC: PR #140/#142 fusionadas
+
+- PR [#140](https://github.com/BTF14/Micro-app/pull/140) fusionada por squash, commit `4fe2b00ed45cf5b779f44b65bcd00133745760e3`.
+- PR [#142](https://github.com/BTF14/Micro-app/pull/142) fusionada por squash, commit/HEAD de `main` `c87893313534049463917af5ee17dfd36ba319c4`.
+- Checks post-merge en ese SHA: verify/CI, Chromium authentication, migración PostgreSQL, análisis estático, Trivy, escaneo de historial, Semgrep, Playwright E2E, Cloudflare Pages y Workers: todos `success`. No equivale a validar recuperación de datos reales ni a probar endpoints comerciales aún inexistentes.
+- La prueba sintética poblada pasó en [run 40849167225](https://github.com/BTF14/Micro-app/actions/runs/40849167225), SHA `caa8d224b0e9c939d033080432caa131b2c8e5bc`: checksum, cifrado/descifrado, 13 tablas, constraints, relaciones y exclusión de tablas efímeras. Siguen pendientes RPO/RTO de extremo a extremo, alerta de fallo y confirmación de coste $0; esto no equivale a restaurar una copia real.
+- No abrir PR adicionales para documentar cada micro-paso; integrar test, workflow y continuidad en una sola PR coherente. Si el test falla, inspeccionar logs, corregir la causa en esta misma rama y repetir.

@@ -679,3 +679,10 @@ Este diario es append-only en cuanto a historia: no borrar hitos antiguos; añad
 - Rama de corrección: `fix/dependency-watch-report-20261029`. Se corrigió el uso de `printf` para preservar Markdown, se cambió la consulta a `pnpm -r outdated` para mostrar también majors estables y se aclaró que una salida vacía requiere inspección, no significa que no existan actualizaciones.
 - Estado: corrección en revisión; no se ha verificado todavía un nuevo run con el código corregido. La auditoría de paquetes y la actualización real de dependencias siguen pendientes; no se modificó ningún paquete ni lockfile en esta corrección.
 - Sin cambios a secretos, Neon, datos reales ni despliegues.
+
+
+## 2026-10-29 — fusiones seguras y recuperación sintética
+
+- Fusionadas por squash [PR #140](https://github.com/BTF14/Micro-app/pull/140) (commit `4fe2b00ed45cf5b779f44b65bcd00133745760e3`) y [PR #142](https://github.com/BTF14/Micro-app/pull/142) (commit `c87893313534049463917af5ee17dfd36ba319c4`) tras revisar diff y checks.
+- Confirmado que los checks post-merge del SHA `c87893313534049463917af5ee17dfd36ba319c4` acabaron todos en `success`, incluidos CI, Playwright, PostgreSQL migration, Semgrep, Security, Trivy, scan de historial y builds de Cloudflare.
+- Se implementó y verificó la prueba sintética poblada en [run 40849167225](https://github.com/BTF14/Micro-app/actions/runs/40849167225), SHA `caa8d224b0e9c939d033080432caa131b2c8e5bc`: checksum, cifrado/descifrado, 13 tablas, constraints, relaciones y exclusión de tablas efímeras pasaron. No se tocaron Neon ni datos reales. RPO/RTO, alertas y prueba con una copia real siguen pendientes.

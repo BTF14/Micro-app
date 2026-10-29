@@ -1,6 +1,7 @@
 import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
 import { Client } from "pg";
 import { hashPassword } from "./auth";
+import { resolveTenantContext } from "./tenant-context";
 
 // In integration tests, exercise the real PostgreSQL protocol while keeping
 // production Workers on @neondatabase/serverless. Adapt Neon’s string
@@ -18,7 +19,6 @@ vi.mock("@neondatabase/serverless", async () => {
 
 const appModule = await import("./index");
 const app = appModule.default;
-const { resolveTenantContext } = await import("./tenant-context");
 const databaseUrl = (globalThis as typeof globalThis & {
   process?: { env?: Record<string, string | undefined> };
 }).process?.env?.DATABASE_URL;
@@ -526,8 +526,8 @@ const suiteGoogle = describe.skipIf(!databaseAvailable)("Google OAuth routes aga
       expect(payload.organizations.map((organization) => organization.name)).toEqual([bootstrapOrgName]);
       expect(payload.organizations.some((organization) => organization.name === otherOrgName)).toBe(false);
 
-      // Exercise the actual PostgreSQL-backed tenant resolver with a valid
-      // session and an organization ID belonging to another user.
+      // Resolve tenant context against the real PostgreSQL membership rows.
+      // A valid session must not be reusable with another user's organization ID.
       const ownOrganization = await cleanupClient.query<{ id: string }>(
         "SELECT id FROM organizations WHERE name = $1",
         [bootstrapOrgName],

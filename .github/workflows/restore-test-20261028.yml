@@ -127,7 +127,7 @@ jobs:
             ORDER BY table_name;")"
           if [ -n "$MISSING" ]; then
             echo "::error::Faltan tablas esperadas tras la restauración:"
-            printf '%s\\n' "$MISSING"
+            printf '%s\n' "$MISSING"
             exit 1
           fi
           psql "$DB_URL" -X -v ON_ERROR_STOP=1 -c "\\dt public.*"

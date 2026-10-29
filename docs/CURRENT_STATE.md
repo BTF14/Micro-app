@@ -1,6 +1,16 @@
 ## Estado vivo — Dependabot y continuidad (2026-10-29 UTC)
 
-**HEAD verificado de `main`:** `9f73f8ab0c1581145796f09a41f689fa4bdcf310`, merge de [PR #132](https://github.com/BTF14/Micro-app/pull/132). PR #116 y #131 también están fusionadas; #131 añade un resumen visible en Actions ante fallos del backup, no una notificación externa.
+**HEAD verificado de `main` al 2026-10-29:** `764ed502d2a296136d311e05d081ca8e9f7cfeb9`, merge de [PR #134](https://github.com/BTF14/Micro-app/pull/134), que documentó reglas obligatorias para Dependabot/lockfile y continuidad. PR #116 y #131 también están fusionadas; #131 añade un resumen visible en Actions ante fallos del backup, no una notificación externa. La búsqueda en vivo de PR abiertas no devolvió resultados en esta revisión; volver a comprobar antes de trabajar.
+
+### Inventario de versiones de runtime y herramientas (verificado en `main`, 2026-10-29)
+
+- Runtime CI/Workspace: Node `>=24.22.1 <25`; package manager pnpm (lockfile v9).
+- TypeScript: `^5.9.3` en raíz, API y web; lockfile resuelve `5.9.3`. **TypeScript 7 NO está aplicado.**
+- API: Hono `^4.13.14` (resuelto `4.13.14`); `@cloudflare/workers-types ^5.20261026.1`; Wrangler `^4.152.0`.
+- Web: React/React DOM `^19.1.1` (resueltos `19.3.1`); Vite `^7.1.7` (resuelto `7.3.7`); `@vitejs/plugin-react ^5.0.4` (resuelto `5.2.0`); jsdom `^26.1.0` (resuelto `26.1.0`).
+- Override de seguridad: `undici: 7.30.1` declarado en `package.json` y conservado en `pnpm-lock.yaml`; el lockfile contiene `undici@7.30.1` y no `undici@7.29.1`.
+- PR #116 actualizó el grupo minor/patch de Hono, Workers types y Wrangler. PR #117 (TypeScript 7), #118 (plugin-react 6), #119 (Vite 8) y #120 (jsdom 30) están cerradas sin merge: esos majors **no** se deben describir como instalados. No subirlos sin rama de trabajo, revisión de compatibilidad, lockfile coherente y CI verde.
+- Este inventario indica las versiones declaradas/resueltas, no que todas sean las últimas publicadas ni que se haya ejecutado una auditoría de todas las dependencias transitivas.
 
 ### Incidente de Dependabot: corregido parcialmente y verificado
 
@@ -9,11 +19,11 @@ Las PR #116–#120 generadas originalmente quitaban del lockfile el bloque `over
 - [PR #116](https://github.com/BTF14/Micro-app/pull/116), grupo minor/patch de Hono, `@cloudflare/workers-types` y Wrangler: **fusionada** el 2026-10-29. El HEAD final `5d3f2e373e75caf71af207cba61df3066b140a86` incluyó el arreglo para conservar el override; todos los checks de la PR terminaron en `success`, incluidos `verify`, Chromium, migraciones, análisis estático, Trivy, historial de secretos, Dependency Review, Cloudflare Pages y Workers.
 - [PR #117](https://github.com/BTF14/Micro-app/pull/117) TypeScript 7, [#118](https://github.com/BTF14/Micro-app/pull/118) plugin-react 6, [#119](https://github.com/BTF14/Micro-app/pull/119) Vite 8 y [#120](https://github.com/BTF14/Micro-app/pull/120) jsdom 30: actualmente **cerradas sin fusionar**. No asumir que esos upgrades están aplicados ni reabrirlos sin revisar compatibilidad, diffs y checks actuales.
 
-Verificación posterior al merge: `package.json` declara `undici: 7.30.1`; `pnpm-lock.yaml` conserva el bloque `overrides`, contiene `undici@7.30.1` y no contiene `undici@7.29.1`. Todos los checks consultados para el commit de PR #132 `9f73f8ab0c1581145796f09a41f689fa4bdcf310` terminaron en `success`, incluidos `verify`, Chromium, migraciones, Trivy, historial de secretos, análisis estático, Pages y Workers.
+Verificación posterior al merge: `package.json` declara `undici: 7.30.1`; `pnpm-lock.yaml` conserva el bloque `overrides`, contiene `undici@7.30.1` y no contiene `undici@7.29.1`. Todos los checks consultados para el commit de PR #132 `9f73f8ab0c1581145796f09a41f689fa4bdcf310` terminaron en `success`, incluidos `verify`, Chromium, migraciones, Trivy, historial de secretos, análisis estático, Pages y Workers. El HEAD posterior `764ed502d2a296136d311e05d081ca8e9f7cfeb9` (PR #134, documentación) también tiene en `success` los checks consultados: verify, Chromium, migraciones, análisis estático, Trivy, scan de historial, Cloudflare Pages y Workers.
 
 ### Siguiente trabajo
 
-1. **Completado:** los checks post-merge del SHA `9f73f8ab0c1581145796f09a41f689fa4bdcf310` terminaron en `success`.
+1. **Completado:** los checks del HEAD de documentación `764ed502d2a296136d311e05d081ca8e9f7cfeb9` terminaron en `success`.
 2. Mantener el override de `undici@7.30.1`; cualquier futura actualización debe conservar coherencia entre `package.json` y `pnpm-lock.yaml`, pasar instalación congelada y Dependency Review.
 3. No reintroducir TypeScript 7, plugin-react 6, Vite 8 ni jsdom 30 sin un plan y pruebas de compatibilidad.
 4. Continuar el resto de tareas de seguridad priorizadas. La restauración integral con datos sintéticos poblados sigue pendiente para la última fase.

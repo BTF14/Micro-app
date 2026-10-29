@@ -4,11 +4,16 @@
 
 - **Subida del backup: VERIFICADA.** Run [40921815702](https://github.com/BTF14/Micro-app/actions/runs/40921815702) terminó en success: `pg_dump 18.6`, dump no vacío, cifrado age, checksum SHA-256, commit remoto `2b038bd`, push a la rama `main` del repositorio privado de backups y retención `deleted 0 file(s)`.
 - **Par cifrado persistido según logs:** `daily/backup-2026-10-29T17-29-48Z.dump.age` y `.sha256`.
-- **Pendiente:** ejecutar `.github/workflows/backup-real-restore.yml` manualmente tras configurar `AGE_PRIVATE_KEY` como secreto protegido. El workflow verifica checksum de los bytes descargados y restaura en PostgreSQL efímero, sin Neon ni recursos persistentes. También siguen pendientes RPO/RTO, alerta de fallo y evidencia de coste $0.
-- La prueba sintética automatizada de restauración es complementaria; no sustituye la restauración del backup real.
+- **Restauración técnica real: VERIFICADA** en run [40955935124](https://github.com/BTF14/Micro-app/actions/runs/40955935124), tras checksum, descifrado y restauración en PostgreSQL 18 efímero. La prueba sintética automatizada es complementaria.
+- Siguen pendientes la validación de datos comerciales poblados/conteos/relaciones, medición de RPO/RTO, alerta de fallo y evidencia del coste total $0.
 - PR [#148](https://github.com/BTF14/Micro-app/pull/148) quedó fusionada el 2026-10-29; merge commit `0681aea75b555d5eb0b60dfec26c2706207fae45`. No está abierta y no debe reabrirse para este trabajo.
-- **Plan de arquitectura:** [docs/ARCHITECTURE_EVOLUTION_PLAN.md](./ARCHITECTURE_EVOLUTION_PLAN.md). La auditoría comienza después de cerrar la restauración real del backup; primero lectura y diagnóstico, sin migraciones ni cambios productivos.
+- **Plan de arquitectura:** [docs/ARCHITECTURE_EVOLUTION_PLAN.md](./ARCHITECTURE_EVOLUTION_PLAN.md). La restauración técnica está cerrada; continuar la auditoría de solo lectura de esquema, autorización, sucursales y capacidad antes de proponer cambios de código o migraciones.
+- **Main verificado tras PR #151:** `70984baf7f6ac5a442e6c2364aaf6d7d4ebbc7d4`; PR [#151](https://github.com/BTF14/Micro-app/pull/151) está fusionada. No había PR abiertas en la consulta posterior; comprobar de nuevo antes de crear otra.
+- **Capacidad:** sin medir; las cuotas publicadas no prueban plan real ni capacidad del producto. La API expone autenticación y `GET /health`, sin endpoints comerciales HTTP aún. No se encontró tabla de sucursales en la migración inicial.
+- **Producción: NO lista.** Faltan handlers comerciales, matriz aprobada de permisos, autorización cross-tenant real, idempotencia/concurrencia, pruebas E2E, BCV/fiscalidad y validación completa de recuperación.
 - Límites vigentes: no desplegar producción, no acceder a Neon `main`, no pedir ni imprimir claves privadas age, no borrar backups/recursos, y no declarar coste $0 sin evidencia.
+
+> Estado prioritario de continuidad: la restauración técnica ya pasó y las PR #150/#151 están fusionadas. Las notas históricas posteriores se conservan, pero cualquier afirmación anterior de restauración pendiente o PR abierta está superada por este encabezado y por `docs/CURRENT_STATE.md`. No borrar el historial.
 
 ---
 
@@ -20,8 +25,7 @@ No usar Neon `main`, datos reales, despliegues de producción ni servicios de pa
 
 ### Estado del trabajo en curso
 - Backup real: run [40955935124](https://github.com/BTF14/Micro-app/actions/runs/40955935124) verificó descarga, checksum, descifrado y restauración en PostgreSQL 18 efímero. No demuestra integridad de todos los datos comerciales ni RPO/RTO/alertas/coste $0.
-- PR [#150](https://github.com/BTF14/Micro-app/pull/150) está fusionada; la restauración técnica del backup remoto quedó verificada, con los límites documentados en `docs/CURRENT_STATE.md`. En su SHA `adb5b054ae7694ccda391e9922763ab3db235df5`, el escaneo `Scan tracked files and reachable Git history` tiene una ejecución exitosa ([run 40956585398](https://github.com/BTF14/Micro-app/actions/runs/40956585398)) y otra duplicada cancelada ([run 40956540634](https://github.com/BTF14/Micro-app/actions/runs/40956540634)). No asumir que la ejecución cancelada es el estado efectivo del check: verificar el resultado requerido de la PR y la aprobación de rama antes de fusionar; nunca saltarse la protección.
-- La PR [#151](https://github.com/BTF14/Micro-app/pull/151) reúne la documentación de capacidad y límites. Verificar su estado vivo, los checks y las condiciones de fusión antes de integrarla.
+- PR [#150](https://github.com/BTF14/Micro-app/pull/150) y PR [#151](https://github.com/BTF14/Micro-app/pull/151) están fusionadas. La #151 añadió `docs/CAPACITY_AND_LIMITS.md` y guardrails de capacidad; sus checks del SHA de cabeza pasaron antes de la fusión. Verificar siempre el estado vivo antes de asumir que una PR histórica sigue abierta.
 
 ## ESTADO OPERATIVO VIGENTE — respaldo cifrado (2026-10-29 UTC)
 

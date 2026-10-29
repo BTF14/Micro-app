@@ -661,3 +661,12 @@ Este diario es append-only en cuanto a historia: no borrar hitos antiguos; añad
 - La documentación previa contenía notas históricas que presentaban PR #129 como pendiente y contradicciones antiguas sobre secretos; se actualizó el estado vivo/handoff para separar hechos actuales de entradas históricas.
 - Neon sigue mostrando `restore-test-20261028` (ID `br-broad-dust-b7cvgjtv`). El intento de borrado por herramienta fue bloqueado por controles de seguridad; no se reintentó ni se eludió.
 - Pendiente: prueba única de restauración con datos sintéticos poblados, manifiesto de conteos/relaciones, RPO/RTO, alerta visible y coste $0. No usar datos reales ni Neon `main`; la restauración sigue siendo la última fase.
+
+
+## 2026-10-29 — continuidad post-merge PR #137
+
+- Main observado: `2f5fb9bb837cb6f75eaf691e0d7f8281113557c5`; PR #137 fusionada, sin actualización real de dependencias.
+- El workflow `.github/workflows/daily-dependency-watch.yml` está en main; schedule diario 08:15 UTC, ejecución manual, solo lectura. No se confirmó una ejecución post-merge porque la consulta de runs no estuvo disponible; el siguiente chat debe ejecutarlo desde Actions y documentar URL/SHA/resumen.
+- Última consulta de checks de main: verify, Chromium, migración PostgreSQL, análisis estático y Trivy en success; algunos checks de Workers/Pages/scan aún figuraban en curso o duplicados. Reconsultar el SHA exacto antes de afirmar que todo pasó.
+- Próximo trabajo: confirmar checks y monitor, luego una única PR de actualización de dependencias estables con lockfile generado por pnpm real y pruebas completas. No aplicar TypeScript 7/Vite 8/plugin-react 6/jsdom 30 solo porque estén publicadas; revisar compatibilidad. Preservar undici@7.30.1 en manifest/lockfile.
+- Se mantiene autorización temporal para fusionar PRs con criterio, evitando PRs pequeñas repetidas. No tocar secretos, Neon main, datos reales ni producción; restauración sintética poblada sigue siendo la última fase.

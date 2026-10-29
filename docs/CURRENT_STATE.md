@@ -1,10 +1,10 @@
-## Estado vivo — después de fusionar PR #129 (2026-10-29 UTC)
+## Estado vivo — continuidad tras PR #130 (2026-10-29 UTC)
 
-**HEAD verificado de `main`:** `d196d8e3e3053e1c51d2e1133aa4ed2d52884631`. PR [#129](https://github.com/BTF14/Micro-app/pull/129) está fusionada; los checks del HEAD `35bee0d04e0c1d8470d526c7f7e961b7e0b4de26` terminaron todos en `success`. La retención de backups ahora interpreta el timestamp UTC validado del nombre del archivo, en vez de confiar en `find -mtime` después del checkout. La política conserva 15 días y elimina el checksum emparejado de un backup vencido. Las pruebas unitarias de retención forman parte del CI.
+**Última referencia de `main` verificada al iniciar este trabajo:** `3ce18e2aa5bcf2a8c555a47681998405a4f14509` (commit de fusión de PR #130). Reconsultar el HEAD actual antes de operar; este SHA quedará obsoleto al fusionarse esta PR. La PR #129 está fusionada y su corrección de retención de 15 días usa el timestamp UTC validado del nombre del archivo, no `find -mtime`; elimina también el checksum emparejado y tiene pruebas unitarias en CI.
 
 ### Política operativa de backups para continuidad entre sesiones
 - Backup diario; retención configurada en 15 días mediante `scripts/prune_backups.py` (timestamp UTC validado en nombre, no `mtime` del checkout) y eliminación del checksum emparejado. PR #129 fusionada y tests de retención en CI.
-- No borrar todas las copias anteriores al generar una nueva ni reducir el plazo sin análisis y revisión. Si una ejecución nueva falla o no se valida, conservar la última copia válida y comprobar alerta visible.
+- No borrar todas las copias anteriores al generar una nueva ni reducir el plazo sin análisis y revisión. Si una ejecución nueva falla o no se valida, conservar la última copia válida y comprobar alerta visible. El workflow ahora publica un resumen con enlace al run en GitHub Actions ante fallos; no es una notificación externa.
 - La retención no equivale a restauración probada. Sigue pendiente una prueba aislada con datos sintéticos relacionados y manifiesto de conteos/relaciones, RPO/RTO, alerta y coste $0. Restauración para la última fase.
 
 ### Secretos y recursos temporales: estado exacto
@@ -15,7 +15,8 @@
 
 ### Siguiente trabajo — respaldo/recuperación
 - La restauración técnica previa (run [40804665192](https://github.com/BTF14/Micro-app/actions/runs/40804665192)) pasó checksum, descifrado y restauración en PostgreSQL desechable. No demostró recuperación de datos comerciales poblados: las tablas de ventas, productos, pagos, movimientos y auditoría estaban vacías en esa copia.
-- Pendiente: una única prueba aislada con datos sintéticos relacionados y un manifiesto de conteos/relaciones; restaurar a PostgreSQL desechable y comparar. Documentar RPO/RTO, alerta de fallo y coste $0. Mantener la restauración como última fase, según indicación del propietario.
+- Pendiente: verificar la siguiente ejecución programada y checksum de la copia más reciente; confirmar si las notificaciones nativas de GitHub son suficientes para alertar fuera de la interfaz de Actions.
+- Pendiente: una única prueba aislada con datos sintéticos relacionados y un manifiesto de conteos/relaciones; restaurar a PostgreSQL desechable y comparar. Documentar RPO/RTO y coste $0. Mantener la restauración como última fase, según indicación del propietario.
 - No recrear el workflow temporal retirado en PR #127. No crear PRs fragmentadas; usar el flujo CI existente.
 
 ---

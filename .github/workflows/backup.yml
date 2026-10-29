@@ -110,3 +110,16 @@ jobs:
           git add -A
           git diff --cached --quiet || git commit -m "retention: prune backups older than ${RETENTION_DAYS} days"
           git push origin HEAD:main
+
+      - name: Publicar resumen visible si falla el respaldo
+        if: failure()
+        shell: bash
+        run: |
+          {
+            echo "## ⚠️ Falló el respaldo cifrado de Micro app"
+            echo
+            echo "- Ejecución: ${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}"
+            echo "- Commit: ${GITHUB_SHA}"
+            echo "- No eliminar copias anteriores manualmente. Comprobar la última copia válida y su checksum antes de reintentar."
+            echo "- Esta anotación es visible en el resumen de GitHub Actions; no sustituye una notificación externa."
+          } >> "${GITHUB_STEP_SUMMARY}"

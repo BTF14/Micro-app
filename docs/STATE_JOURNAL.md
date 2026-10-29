@@ -1,3 +1,13 @@
+## 2026-10-29 — visibilidad de fallos de backup y evidencia viva
+
+- Revisión en vivo de la ejecución programada de backup: run [40698423050](https://github.com/BTF14/Micro-app/actions/runs/40698423050), iniciado el 2026-10-28T13:39:19Z y concluido `success`. El repositorio privado de backups contiene dos copias cifradas, con checksums emparejados: `backup-2026-10-27T21-32-45Z.dump.age` y `backup-2026-10-28T13-39-39Z.dump.age`. No afirmar que se ejecutó el backup del día 29; en el momento de la consulta aún no había una ejecución programada más reciente.
+- Se detectó que la sección 3 de `docs/BACKUP_AND_RECOVERY.md` seguía describiendo el backup diario como una implementación futura, aunque el workflow permanente ya existe. Se corrige esa contradicción.
+- Se añade al workflow permanente un resumen visible en GitHub Actions cuando un paso falla, con enlace al run y recordatorio de preservar copias anteriores. No crea un issue público ni pretende ser una notificación externa; queda pendiente confirmar si las notificaciones nativas de GitHub bastan operativamente.
+- No se leyó ni descargó contenido de backup, no se accedió a datos de negocio, no se modificó Neon, secretos ni producción. La restauración sintética poblada continúa para la última fase.
+- Esta actualización aún no está fusionada; verificar todos los checks del HEAD exacto de la PR antes de recomendar fusión.
+
+---
+
 ## 2026-10-29 — política de retención de backups confirmada para continuidad
 
 - Política vigente: backup cifrado diario con retención de 15 días en el repositorio privado de backups.

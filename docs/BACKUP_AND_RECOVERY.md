@@ -33,7 +33,8 @@ No basta con respaldar la cantidad actual de stock: deben preservarse los movimi
 
 ## 3. Frecuencia y retención recomendadas
 
-- **Backup lógico diario** (por ejemplo, `pg_dump` consistente) una vez que exista un destino independiente, privado, cifrado y de coste confirmado en $0. Ejecutarlo automáticamente y alertar ante fallos; no subir el archivo al repositorio.
+- **Backup lógico diario implementado:** `.github/workflows/backup.yml` ejecuta `pg_dump`, cifra con `age` y sube el resultado al repositorio privado `BTF14/micro-app-backups`; el objetivo de coste sigue siendo $0. La última ejecución programada observada en esta revisión fue el 2026-10-28 y terminó en `success` ([run 40698423050](https://github.com/BTF14/Micro-app/actions/runs/40698423050)). Esto no demuestra que el próximo ciclo se ejecute ni que todas las copias sean restaurables.
+- **Visibilidad de fallos:** el workflow añade un resumen visible en la ejecución de GitHub Actions cuando un paso falla, con enlace al run y recordatorio de conservar las copias previas. No es una notificación externa ni garantiza correo/push; la visibilidad debe revisarse en Actions.
 - **Recuperación rápida del proveedor:** usar la ventana de restauración de Neon como una capa adicional, no como único backup. La documentación oficial consultada el 2026-10-18 indica que Free ofrece hasta 6 horas de historial PITR, limitado a 1 GB de historial, y solo una instantánea manual; los backups programados de Neon no están disponibles en Free. Ver [historial de Neon](https://neon.com/docs/postgres/backup-restore/history-window) y [planes de Neon](https://neon.com/docs/introduction/plans). Confirmar estos límites en la consola antes de depender de ellos.
 - **Retención implementada y vigente:** 15 días de backups diarios en el repositorio privado `BTF14/micro-app-backups`. El workflow aplica la retención después de subir la copia cifrada; `scripts/prune_backups.py` calcula la antigüedad a partir del timestamp UTC validado del nombre `backup-YYYY-MM-DDTHH-MM-SSZ.dump.age`, no de los mtimes del checkout, y elimina también el checksum emparejado. La corrección está en PR #129, fusionada, con pruebas unitarias en CI.
 - **Decisión de seguridad:** mantener los 15 días por ahora. No borrar copias recientes al crear una nueva ni reducir el plazo por conveniencia. Cambiarlo solo tras revisar necesidades de recuperación, límites del destino, coste $0 y requisitos de conservación aplicables. Una copia nueva no prueba que sea restaurable; conservar la última copia válida y alertar visiblemente ante fallos.
@@ -68,7 +69,8 @@ Si todavía no hay un destino independiente seguro y gratuito, mantener el backu
 
 Un sistema de backup no se considera listo hasta que:
 
-- [ ] La ejecución programada funciona y su fallo genera alerta visible.
+- [x] Hay una ejecución programada reciente observada con resultado `success` (run [40698423050](https://github.com/BTF14/Micro-app/actions/runs/40698423050), 2026-10-28). Verificar de nuevo después de la siguiente ventana programada.
+- [x] El workflow publica un resumen visible en GitHub Actions si falla un paso. Esto no es una notificación externa; confirmar si las notificaciones nativas de GitHub cubren la necesidad operativa.
 - [x] Se verificó que la copia cifrada no está vacía, se descifra y su checksum coincide (run [40804665192](https://github.com/BTF14/Micro-app/actions/runs/40804665192)).
 - [x] La copia pudo restaurarse en la rama PostgreSQL desechable `restore-test-20261028`, sin usar Neon `main` (run [40804665192](https://github.com/BTF14/Micro-app/actions/runs/40804665192)).
 - [ ] Las migraciones y restricciones de integridad pasan tras restaurar.

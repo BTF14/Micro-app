@@ -3,7 +3,7 @@
 - Workflow: `.github/workflows/daily-dependency-watch.yml`; cron diario 08:15 UTC, ejecución manual, permisos `contents: read`, instalación congelada y auditoría de vulnerabilidades.
 - El run real [40829413589](https://github.com/BTF14/Micro-app/actions/runs/40829413589) terminó en `success` y `pnpm audit --audit-level high` informó `No known vulnerabilities found`.
 - La inspección de logs detectó un defecto de presentación: Bash interpretó backticks dentro de cadenas con comillas dobles y el informe de `pnpm outdated -r` quedó vacío. No considerar completa la información de actualizaciones por ese run.
-- La rama `fix/dependency-watch-report-20261029` corrige el formato y consulta `pnpm -r outdated --latest` para exponer también actualizaciones mayores. El arreglo sigue pendiente de CI y de un nuevo run del código corregido.
+- La rama `fix/dependency-watch-report-20261029` corrige el formato y consulta `pnpm -r outdated` para exponer también actualizaciones mayores. El arreglo sigue pendiente de CI y de un nuevo run del código corregido.
 - Dependabot continúa revisando semanalmente npm y GitHub Actions. El monitor diario es de solo lectura: no modifica dependencias ni crea PR automáticamente.
 - El monitor no reemplaza Trivy, Dependency Review, escaneo de historial, revisión manual del diff ni pruebas completas; tampoco garantiza ausencia de vulnerabilidades.
 

@@ -1,3 +1,16 @@
+## ESTADO OPERATIVO VIGENTE — respaldo cifrado (2026-10-29 UTC)
+
+> Esta sección prevalece sobre notas históricas inferiores que todavía digan que el incidente de subida está pendiente. No borrar el historial: interpretar cada incidente según la evidencia posterior.
+
+- **Subida del backup: VERIFICADA.** Run [40921815702](https://github.com/BTF14/Micro-app/actions/runs/40921815702) terminó en success: `pg_dump 18.6`, dump no vacío, cifrado age, checksum SHA-256, commit remoto `2b038bd`, push a la rama `main` del repositorio privado de backups y retención `deleted 0 file(s)`.
+- **Par cifrado persistido según logs:** `daily/backup-2026-10-29T17-29-48Z.dump.age` y `.sha256`.
+- **No está probado todavía:** descarga/verificación independiente del archivo remoto exacto, descifrado y restauración de esa copia concreta, RPO/RTO, entrega de alertas de fallo y coste total $0.
+- La prueba sintética automatizada de restauración es complementaria; no sustituye la restauración del backup real.
+- PR documental existente: [#148](https://github.com/BTF14/Micro-app/pull/148), rama `docs/record-backup-success-20261029`. No abrir otra PR para el mismo registro. Sus checks del SHA `256709eac3517de60d7c22f3cdab5f7b574e8a49` terminaron en success; cualquier nuevo commit requiere revalidar checks.
+- Límites vigentes: no desplegar producción, no acceder a Neon `main`, no pedir ni imprimir claves privadas age, no borrar backups/recursos, y no declarar coste $0 sin evidencia.
+
+---
+
 ## ESTADO VIVO PRIORITARIO — tras fusionar PR #137 (2026-10-29 UTC)
 
 **Repositorio único:** https://github.com/BTF14/Micro-app  

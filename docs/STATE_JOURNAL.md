@@ -1,3 +1,16 @@
+## 2026-10-29 — dependencias, CI y continuidad entre chats
+
+- `main` verificado tras la fusión de PR [#116](https://github.com/BTF14/Micro-app/pull/116): `fb49c32aa1451c4bf763a0b78ba12b507700f10d`. PR [#131](https://github.com/BTF14/Micro-app/pull/131) también está fusionada.
+- PR #116 actualizó Hono a 4.13.14, `@cloudflare/workers-types` a 5.20261026.1 y Wrangler a 4.152.0. La corrección conservó el override del workspace `undici: 7.30.1` tanto en `package.json` como en `pnpm-lock.yaml`, y actualizó el lockfile para que coincida.
+- En el HEAD exacto de PR #116 pasaron `verify`, Chromium authentication smoke tests, migraciones PostgreSQL, análisis estático, Trivy, secret/history scan, Dependency Review, Pages y Workers Builds. Tras la fusión, los checks consultados para el commit de merge también terminaron en `success`.
+- Las PR #117–#120 se cerraron sin fusionar: TypeScript 7, plugin-react 6, Vite 8 y jsdom 30 eran actualizaciones mayores y sus HEAD fallaban con `ERR_PNPM_LOCKFILE_CONFIG_MISMATCH`; #118–#120 además reportaban `undici@7.29.1` vulnerable en Dependency Review. No volver a abrirlas en bloque: revisar compatibilidad y actualizar en un cambio controlado si sigue siendo necesario.
+- Lección obligatoria para futuras IA/chats: antes de fusionar una PR de Dependabot en este workspace, comparar `package.json` y `pnpm-lock.yaml`, comprobar que `pnpm.overrides.undici` y el bloque `overrides` del lockfile coincidan, y exigir CI verde en el SHA exacto. No fusionar solo por ser Dependabot ni eliminar el override sin una evaluación de seguridad.
+- No se ejecutó un despliegue manual. Cloudflare Pages/Workers reportaron checks automáticos en éxito; no inferir desde el nombre del check el destino efectivo de producción sin revisar la configuración del proveedor.
+- Backups: la última evidencia disponible sigue siendo la ejecución exitosa [40698423050](https://github.com/BTF14/Micro-app/actions/runs/40698423050) del 2026-10-28. A las 03:46 UTC del 29 de octubre todavía no había llegado la hora programada de las 07:00 UTC; reconsultar después de esa ventana. La restauración sintética poblada sigue pendiente y debe permanecer para la última fase.
+- Límites vigentes: no tocar Neon `main`, datos reales ni secretos; no descifrar backups para esta revisión; no afirmar que la restauración integral está probada.
+
+---
+
 ## 2026-10-29 — visibilidad de fallos de backup y evidencia viva
 
 - Revisión en vivo de la ejecución programada de backup: run [40698423050](https://github.com/BTF14/Micro-app/actions/runs/40698423050), iniciado el 2026-10-28T13:39:19Z y concluido `success`. El repositorio privado de backups contiene dos copias cifradas, con checksums emparejados: `backup-2026-10-27T21-32-45Z.dump.age` y `backup-2026-10-28T13-39-39Z.dump.age`. No afirmar que se ejecutó el backup del día 29; en el momento de la consulta aún no había una ejecución programada más reciente.

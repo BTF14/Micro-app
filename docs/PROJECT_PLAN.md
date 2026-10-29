@@ -1,12 +1,12 @@
 ## Continuidad — Dependabot y override de Undici (2026-10-29 UTC)
 
-PR #116 se fusionó por squash/merge en `main` con SHA `fb49c32aa1451c4bf763a0b78ba12b507700f10d`. El HEAD final de PR fue `5d3f2e373e75caf71af207cba61df3066b140a86`; todos los checks de PR pasaron, incluidos Dependency Review, verify, Chromium, migraciones, static analysis, Trivy, scan de historial de secretos y Cloudflare Pages/Workers. La PR incorporó la corrección para conservar el override de Undici.
+PR #116 se fusionó por squash/merge; el HEAD vivo posterior de `main` verificado el 2026-10-29 es `764ed502d2a296136d311e05d081ca8e9f7cfeb9` (PR #134, reglas Dependabot/lockfile). El HEAD final de PR fue `5d3f2e373e75caf71af207cba61df3066b140a86`; todos los checks de PR pasaron, incluidos Dependency Review, verify, Chromium, migraciones, static analysis, Trivy, scan de historial de secretos y Cloudflare Pages/Workers. La PR incorporó la corrección para conservar el override de Undici.
 
 Causa original: los lockfiles generados en PR #116–#120 quitaban `overrides: undici: 7.30.1` mientras `package.json` conservaba `pnpm.overrides.undici = 7.30.1`. La instalación congelada fallaba con `ERR_PNPM_LOCKFILE_CONFIG_MISMATCH`; Dependency Review detectaba `undici@7.29.1` vulnerable de severidad alta. Tras el merge, se comprobó que el lockfile de `main` mantiene el override, contiene `undici@7.30.1` y no contiene `undici@7.29.1`.
 
 Las PR #117 (TypeScript 7), #118 (plugin-react 6), #119 (Vite 8) y #120 (jsdom 30) figuran cerradas sin fusionar. No asumir que esos upgrades se aplicaron. Para futuras actualizaciones: verificar SHA exacto, coherencia `package.json`/lockfile, instalación congelada, Dependency Review y compatibilidad. No fusionar majors sin un plan y pruebas.
 
-**Verificación post-merge completada:** los checks consultados para el commit de PR #132 (`9f73f8ab0c1581145796f09a41f689fa4bdcf310`) terminaron en `success`, incluidos análisis estático, Cloudflare Pages y Workers. Continuar los pendientes de seguridad ya priorizados; la restauración con datos sintéticos poblados sigue reservada para la última fase.
+**Verificación post-merge completada:** los checks consultados para el commit de PR #132 (`9f73f8ab0c1581145796f09a41f689fa4bdcf310`) terminaron en `success`; el HEAD documental actual `764ed502d2a296136d311e05d081ca8e9f7cfeb9` también tiene los checks consultados en `success`, incluidos análisis estático, Cloudflare Pages y Workers. Continuar los pendientes de seguridad ya priorizados; la restauración con datos sintéticos poblados sigue reservada para la última fase.
 
 ---
 

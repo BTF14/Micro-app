@@ -1,13 +1,22 @@
-## Arranque obligatorio — estado vivo tras PR #116 (2026-10-29 UTC)
+## Arranque obligatorio — estado vivo tras PR #134 (2026-10-29 UTC)
 
-Repositorio: https://github.com/BTF14/Micro-app. HEAD verificado de `main`: `9f73f8ab0c1581145796f09a41f689fa4bdcf310`, merge de PR #132. PR #116 y #131 también están fusionadas. Reconsultar SHA, PRs y checks en vivo antes de actuar. Leer primero `AGENTS.md`, `docs/CURRENT_STATE.md`, este handoff, `docs/AI_COLLABORATION_AND_PR_POLICY.md`, `docs/PROJECT_PLAN.md`, `docs/STATE_JOURNAL.md`, `docs/RESOURCE_REGISTRY.md`, `docs/SECURITY_ROADMAP.md` y `docs/BACKUP_AND_RECOVERY.md`.
+Repositorio: https://github.com/BTF14/Micro-app. HEAD verificado de `main`: `764ed502d2a296136d311e05d081ca8e9f7cfeb9`, merge de PR #134 (reglas Dependabot/lockfile y continuidad). PR #116 y #131 también están fusionadas. En la última búsqueda no había PR abiertas; reconsultar SHA, PRs y checks en vivo antes de actuar. Leer primero `AGENTS.md`, `docs/CURRENT_STATE.md`, este handoff, `docs/AI_COLLABORATION_AND_PR_POLICY.md`, `docs/PROJECT_PLAN.md`, `docs/STATE_JOURNAL.md`, `docs/RESOURCE_REGISTRY.md`, `docs/SECURITY_ROADMAP.md` y `docs/BACKUP_AND_RECOVERY.md`.
+
+### Inventario actual de versiones
+
+- Node `>=24.22.1 <25`; pnpm lockfile v9.
+- TypeScript `^5.9.3` (resuelto `5.9.3`) en raíz/API/web. TypeScript 7 NO se fusionó.
+- API: Hono `^4.13.14` (resuelto `4.13.14`), `@cloudflare/workers-types ^5.20261026.1`, Wrangler `^4.152.0`.
+- Web: React/React DOM `^19.1.1` (resueltos `19.3.1`), Vite `^7.1.7` (resuelto `7.3.7`), plugin React `^5.0.4` (resuelto `5.2.0`), jsdom `^26.1.0` (resuelto `26.1.0`).
+- `undici@7.30.1` sigue fijado en el override y lockfile; no aceptar lockfiles que quiten el override o resuelvan `7.29.1`.
+- PR #117 TypeScript 7, #118 plugin-react 6, #119 Vite 8 y #120 jsdom 30 cerradas sin merge. No presentarlas como actualizaciones aplicadas ni reintroducirlas sin plan de compatibilidad y CI verde.
 
 ### Dependabot — resultado y guardrails
 
 - PR #116 (Hono, Cloudflare Workers types y Wrangler) está fusionada. HEAD final de PR: `5d3f2e373e75caf71af207cba61df3066b140a86`. Los checks de la PR pasaron, incluidos Dependency Review, `verify`, Chromium, migraciones, static analysis, Trivy, scan de historial de secretos y builds de Cloudflare.
 - La causa de los fallos anteriores era que el lockfile generado por Dependabot eliminaba `overrides: undici: 7.30.1`, en desacuerdo con `package.json`, y resolvía `undici@7.29.1`. El arreglo de #116 preserva el override. En el `main` actual, `pnpm-lock.yaml` contiene el override y `undici@7.30.1`, y no contiene `undici@7.29.1`.
 - PR #117 (TypeScript 7), #118 (plugin-react 6), #119 (Vite 8) y #120 (jsdom 30) están cerradas sin fusionar. No afirmar que sus versiones se aplicaron. No reabrir ni aplicar los upgrades sin revisar compatibilidad y plan de pruebas.
-- Seguimiento post-merge completado: los checks consultados para `9f73f8ab0c1581145796f09a41f689fa4bdcf310` terminaron todos en `success`, incluidos `verify`, Chromium, migraciones, Trivy, scan de secretos/historial, análisis estático, Cloudflare Pages y Workers.
+- Seguimiento post-merge completado: los checks consultados para `9f73f8ab0c1581145796f09a41f689fa4bdcf310` terminaron todos en `success`. El HEAD de documentación posterior `764ed502d2a296136d311e05d081ca8e9f7cfeb9` también tiene los checks consultados en `success`, incluidos `verify`, Chromium, migraciones, Trivy, scan de secretos/historial, análisis estático, Cloudflare Pages y Workers.
 
 ### Próximos pasos
 

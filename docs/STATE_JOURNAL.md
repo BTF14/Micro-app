@@ -1,3 +1,14 @@
+## 2026-10-29 — auditoría de versiones estables y plan de migración segura
+
+- El propietario pidió versiones actuales del mercado por motivos de seguridad y exigió documentar exhaustivamente la continuidad para los siguientes chats/IA. Confirmó autorización temporal para actuar con criterio y fusionar PRs cuando la evidencia lo justifique.
+- Se consultó main y se confirmó que la PR #136 (merge SHA 59ad394d6dc5035b114db5379b2e1680d1e7969f) solo actualizó documentación. No cambió dependencias.
+- Inventario en manifests/lockfile: Node >=24.22.1 <25; TypeScript 5.9.3; Hono 4.13.14; Workers types 5.20261026.1; Wrangler 4.152.0; React/react-dom 19.3.1; @types/react y @types/react-dom 19.3.0; Vite 7.3.7; plugin-react 5.2.0; jsdom 26.1.0; lockfile pnpm v9; override undici 7.30.1.
+- Escaneo público del 2026-10-29 observó TypeScript 7.0.2, Vite 8.3.5, plugin-react 6.1.2, jsdom 30.1.3, Wrangler 4.154.0, React/react-dom 19.3.1, Hono 4.13.14, pnpm 12.16.1 y Node 24.22.2 LTS. Los índices de workers-types se mostraron inconsistentes; no afirmar última versión sin consulta directa al registry.
+- PR #117 (TS7), #118 (plugin-react 6), #119 (Vite 8) y #120 (jsdom 30) se cerraron sin merge. No afirmar que esas versiones se instalaron. La actualización debe incluir lockfile generado de verdad, revisión de peer dependencies/engines y CI completa.
+- Guardrail crítico: no perder overrides: undici 7.30.1 en package.json y lockfile; el lockfile previo había resuelto undici 7.29.1 y provocado mismatch/finding alto.
+- En esta auditoría no se modificaron paquetes, secretos, Neon, datos reales ni producción; no se ejecutó instalación local. Próximo paso: abrir/confirmar PR documental de esta nota; luego migración técnica en rama separada, una PR coherente y sin dispersar intentos.
+- Fuentes del mercado: https://nodejs.org/en/blog/release ; https://www.npmjs.com/package/typescript ; https://www.npmjs.com/package/vite ; https://www.npmjs.com/package/@vitejs/plugin-react ; https://www.npmjs.com/package/jsdom ; https://www.npmjs.com/package/wrangler ; https://www.npmjs.com/package/hono ; https://www.npmjs.com/package/react ; https://www.npmjs.com/package/pnpm ; https://www.npmjs.com/package/@cloudflare/workers-types .
+
 ## 2026-10-29 — verificación post-merge final de PR #132
 
 - Reconsultados los checks del commit `9f73f8ab0c1581145796f09a41f689fa4bdcf310`: `verify`, Chromium, migraciones PostgreSQL, análisis estático, Trivy, scan de historial de secretos, Cloudflare Pages y Workers terminaron todos en `success`.

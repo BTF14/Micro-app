@@ -1,3 +1,17 @@
+## Bloqueo operativo — PRs de Dependabot (2026-10-29 UTC)
+
+HEAD de `main` observado: `7782293db886fc26f1a8275f4f2e2ffa55c27bc1` (PR #131 fusionada). Las PR #116–#120 siguen abiertas y no son fusionables todavía. Tras solicitar rebase a Dependabot, los checks de los HEAD nuevos fallaron por una causa compartida:
+
+1. `verify` y Chromium fallan con `ERR_PNPM_LOCKFILE_CONFIG_MISMATCH`: `package.json` y `pnpm-lock.yaml` no coinciden en `overrides`.
+2. Dependency Review encuentra `undici@7.29.1` vulnerable de severidad alta en cada PR.
+3. El `main` verificado conserva `undici: 7.30.1` tanto en `package.json` como en el bloque `overrides` del lockfile. Los diffs de Dependabot eliminan ese bloque del lockfile, aunque el override de `package.json` continúa, y vuelven a resolver la versión vulnerable.
+
+PRs/HEADs revisados: #116 `9459a59b6a4ad7be3334b1234b46ac21e3360418`; #117 `62937a73897c6101a5bed0b7c72808fc51567dd1`; #118 `7e025e3c58559eb35481fbc0b88c4307bc2dee6a`; #119 `af73702fba9db67b290a1608d2d63274e6c282b4`; #120 `7c752808aa032a4713c10620c4733f5ef8048a5e`.
+
+**Plan de resolución:** investigar la versión/configuración de pnpm usada por Dependabot frente a CI y reproducir la generación del lockfile; corregir el mecanismo común para conservar el override y hacer pasar la instalación congelada; validar #116 primero. Las actualizaciones mayores TypeScript 7, `@vitejs/plugin-react` 6, Vite 8 y jsdom 30 requieren pruebas de compatibilidad adicionales. No fusionar mientras los checks obligatorios o Dependency Review estén fallando; no crear cinco PR para arreglar el mismo defecto. No cerrar PR sin evaluar su trabajo.
+
+---
+
 ## Checkpoint posterior a PR #114 — 2026-10-29 UTC
 
 - PR #114 quedó fusionada por squash en `main`: [merge commit dc3fae80c485ec52c2e68c80da316df90c68ac83](https://github.com/BTF14/Micro-app/commit/dc3fae80c485ec52c2e68c80da316df90c68ac83). El HEAD revisado fue `780e057435fea4ebd6213fd973745599e71d2088`; GitHub confirmó `merged=true`.

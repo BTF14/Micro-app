@@ -1,3 +1,26 @@
+## Arranque obligatorio — continuidad después de PR #127 (2026-10-29 UTC)
+
+Repositorio único: https://github.com/BTF14/Micro-app. SHA verificado de `main`: `1fc95ee1a574d435523fc746a10537f1c95c5262`. PR [#127](https://github.com/BTF14/Micro-app/pull/127) está fusionada. Reconsultar el estado vivo antes de operar.
+
+### Lee primero
+`AGENTS.md`, `docs/CONSTITUTION.md`, `docs/CURRENT_STATE.md`, este archivo, `docs/PROJECT_PLAN.md`, `docs/STATE_JOURNAL.md`, `docs/RESOURCE_REGISTRY.md`, `docs/SECURITY_ROADMAP.md`, `docs/BACKUP_AND_RECOVERY.md` y cualquier documento de decisión pertinente al siguiente trabajo. No asumir que un snapshot histórico sigue describiendo el estado vivo.
+
+### Estado exacto de limpieza del restore
+- PR #127 eliminó `.github/workflows/restore-test-20261028.yml` y actualizó documentación. No recrear ese workflow ni crear una PR duplicada para retirarlo.
+- El propietario confirma que ya borró el secreto `RESTORE_TEST_AGE_KEY`.
+- `RESTORE_TEST_DB_URL` permanece pendiente hasta que el propietario confirme su eliminación. Nunca pedir el valor ni imprimirlo.
+- La rama Neon `restore-test-20261028` todavía existía en la última comprobación; el intento de borrado de la herramienta fue bloqueado por controles de seguridad. No afirmar que se borró ni intentar eludir el bloqueo. Si se requiere terminar la limpieza, indicar al propietario cómo verificar y borrar esa rama desde la consola Neon, comprobando el ID y evitando `main`.
+- No se tocó Neon `main`, datos reales ni producción.
+
+### Restore y opción D
+Run [40804665192](https://github.com/BTF14/Micro-app/actions/runs/40804665192) fue exitoso: checksum, descifrado, `pg_restore`, 13 tablas, 186 constraints, 0 membresías huérfanas y exclusión de `auth_sessions`/`auth_rate_limits`. Las tablas comerciales/auditoría estaban vacías; esto no prueba la recuperación de un conjunto comercial poblado.
+Próximo trabajo: (1) inspeccionar workflows/scripts permanentes de backup en el HEAD actual; (2) diseñar una sola prueba aislada con datos sintéticos relacionados y manifiesto de conteos; (3) restaurar a PostgreSQL desechable y comparar conteos/relaciones; (4) registrar evidencia y límites; (5) verificar RPO/RTO, alertas, retención y coste $0. No usar datos reales, Neon `main`, producción ni herramientas de pago; no reintroducir el workflow temporal por defecto ni crear PRs fragmentadas.
+
+### Disciplina de continuidad
+Documentar en `CURRENT_STATE.md`, `STATE_JOURNAL.md`, este handoff y el documento técnico afectado. Mantener estado de cada tarea como verificado / pendiente / bloqueado y guardar SHA, PR, run IDs, causa raíz y siguiente paso. No declarar éxito si la herramienta bloqueó una operación. Una sola PR para un objetivo documental coherente, no inundar el repositorio.
+
+---
+
 ## Continuidad verificada — restore de backup (2026-10-29 UTC)
 
 - PR #126 fusionada. Run manual del workflow temporal: [40804665192](https://github.com/BTF14/Micro-app/actions/runs/40804665192), `success`; las cinco verificaciones terminaron en verde.

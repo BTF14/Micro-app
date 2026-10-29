@@ -1,3 +1,14 @@
+## 2026-10-29 — continuidad después de PR #127 y limpieza de credenciales
+
+- HEAD verificado de `main`: `1fc95ee1a574d435523fc746a10537f1c95c5262`; PR #127 fusionada y workflow temporal retirado.
+- El propietario confirma que eliminó `RESTORE_TEST_AGE_KEY`. `RESTORE_TEST_DB_URL` sigue pendiente de eliminación/confirmación; no almacenar ni solicitar el valor.
+- La rama Neon de prueba `restore-test-20261028` seguía presente en la última consulta. El intento de borrado vía herramienta fue bloqueado por controles de seguridad. No afirmar que está borrada ni eludir el bloqueo; si hace falta, guiar al propietario para borrarla manualmente verificando proyecto/branch ID y evitando Neon `main`.
+- Restore run [40804665192](https://github.com/BTF14/Micro-app/actions/runs/40804665192) pasó las verificaciones técnicas; las tablas comerciales/auditoría de esa copia estaban vacías. Queda pendiente un ensayo aislado con datos sintéticos poblados, manifiesto de conteos/relaciones, RPO/RTO, alertas, retención y evidencia de coste $0.
+- No se tocaron Neon `main`, datos reales, secretos productivos ni producción. No se hizo despliegue manual.
+- Continuidad: inspeccionar primero el mecanismo permanente de backup; después proponer/ejecutar una única prueba segura y documentar resultados. No recrear el workflow temporal retirado ni duplicar PRs.
+
+---
+
 ## 2026-10-29 — restauración técnica de backup verificada
 
 - El workflow temporal [run 40804665192](https://github.com/BTF14/Micro-app/actions/runs/40804665192) terminó en `success`; checksum/descifrado/restore correctos y cinco verificaciones en verde: 13 tablas, 186 constraints, 0 membresías huérfanas y tablas de sesión/rate-limit ausentes.

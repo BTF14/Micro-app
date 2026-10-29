@@ -91,3 +91,12 @@ La actualización frecuente reduce exposición a vulnerabilidades conocidas solo
 - La prueba sintética poblada pasó en [run 40849167225](https://github.com/BTF14/Micro-app/actions/runs/40849167225), SHA `caa8d224b0e9c939d033080432caa131b2c8e5bc`: checksum, cifrado/descifrado, 13 tablas, constraints, manifiesto y relaciones preservadas, y exclusión de tablas efímeras. Siguen pendientes RPO/RTO de extremo a extremo, alerta de fallo y confirmación de coste $0; no se ha probado restauración integral de una copia real.
 - Se añade en la rama `test/backup-restore-synthetic-20261029` un workflow mensual/manual de backup-restore smoke test con PostgreSQL efímero, fixture sintético, clave age temporal, checksum, comparación de manifiesto de 13 tablas y relaciones, y exclusión de tablas efímeras de auth. No usa secretos, Neon ni datos reales.
 - Estado de este punto: **en verificación** hasta ver CI verde para el SHA exacto. La prueba sintética no sustituye el RPO/RTO real ni la recuperación operativa de una copia de producción.
+
+
+## Estado vivo — 2026-10-29 UTC, recuperación y dependencias
+
+- PR #143 añadió el smoke test sintético de backup/restore. El run [40849605695](https://github.com/BTF14/Micro-app/actions/runs/40849605695) terminó en `success` para SHA `11f4efe24d8ee94f57a068c28867f8cae0aed394`. Verifica datos sintéticos relacionados, checksum, cifrado/descifrado, manifiesto de 13 tablas/constraints/relaciones y exclusión de tablas efímeras.
+- El punto de backup continúa **parcialmente verificado**: no se han medido RPO/RTO reales ni probado la alerta de fallo y el coste $0; no confundir el laboratorio sintético con la restauración integral de una copia real.
+- PR #142 actualizó Wrangler y workers-types a versiones compatibles y fijó Node en `>=24.22.2 <25`, manteniendo TypeScript 5, Vite 7 y `undici@7.30.1`.
+- El monitor diario [run 40845877052](https://github.com/BTF14/Micro-app/actions/runs/40845877052) reportó `No known vulnerabilities found` en SHA anterior a #142. Detectó majors estables de Vite, plugin React, jsdom y TypeScript; evaluar compatibilidad antes de actualizar, sin hacer upgrades masivos a ciegas.
+- La rama de corrección del monitor `fix/dependency-watch-report-20261029` ya no contiene cambios exclusivos frente a `main` (0 ahead, 4 behind); no abrir una PR redundante. La siguiente ejecución programada debe informar las versiones actuales tras #142.

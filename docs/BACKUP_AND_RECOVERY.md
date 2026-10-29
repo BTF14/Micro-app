@@ -138,3 +138,11 @@ La restauración manual anterior [run 40804665192](https://github.com/BTF14/Micr
 - Compara un manifiesto determinista de 13 tablas y cuatro relaciones entre venta/línea/producto, pago/membresía, movimiento/producto/membresía y auditoría/membresía. Confirma que `auth_sessions` y `auth_rate_limits` no existen en la restauración.
 - La prueba no consume secretos del repositorio, no accede a Neon, no almacena dumps como artefactos y limpia la clave y archivos temporales al finalizar. Se programa mensualmente y también corre en PRs que cambian el workflow, script, migraciones o esta política.
 - La prueba sintética poblada terminó en `success` en [run 40849167225](https://github.com/BTF14/Micro-app/actions/runs/40849167225), SHA `caa8d224b0e9c939d033080432caa131b2c8e5bc`. El manifiesto de 13 tablas, constraints y relaciones coincidió entre origen/restauración; checksum, descifrado y exclusión de `auth_sessions`/`auth_rate_limits` también pasaron. La prueba no mide RPO/RTO de producción ni valida una copia real.
+
+
+## Estado operativo vigente después de PR #143 — 2026-10-29
+
+- La prueba automatizada de datos sintéticos pasó en [run 40849605695](https://github.com/BTF14/Micro-app/actions/runs/40849605695), SHA de PR `11f4efe24d8ee94f57a068c28867f8cae0aed394`. Se aplican las migraciones a PostgreSQL 17 efímero, se crea un conjunto sintético relacionado, se cifra con age temporal, se verifica checksum, se descifra/restaura y se compara el manifiesto de 13 tablas, constraints y relaciones. Las tablas `auth_sessions` y `auth_rate_limits` no aparecen en la restauración.
+- Workflow permanente: `.github/workflows/backup-restore-smoke.yml`; ejecución manual y mensual. No usa secretos del repositorio, Neon, datos reales ni artefactos para persistir dumps.
+- Los checks post-merge de PR #143 pasaron para main `5afe912fc53d7a7027c4ad95bf366ee2abbf6596`.
+- Esta prueba cierra la brecha de fixture vacío, no la recuperación integral de producción. Pendientes: medir RPO/RTO de una recuperación real, validar la alerta de fallo del backup y confirmar el coste real $0. La clave privada age de producción no debe compartirse por chat ni incorporarse a este workflow.

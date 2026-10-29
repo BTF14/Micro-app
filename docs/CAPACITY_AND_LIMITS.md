@@ -37,7 +37,7 @@ No afirmar “soporta N empresas” hasta medirlo con una carga representativa, 
 
 ## Orden de trabajo
 
-1. Terminar de forma segura el trabajo de restauración/documentación pendiente.
+1. Mantener documentada la evidencia de restauración técnica ya verificada; cerrar los pendientes operativos restantes (conteos/relaciones de datos, RPO/RTO, alerta y coste total) sin bloquear la auditoría de solo lectura.
 2. Auditar en solo lectura el repositorio y las configuraciones documentadas.
 3. Crear inventario de límites de Neon, Workers, Pages y servicios auxiliares.
 4. Medir primero con carga sintética y entorno efímero.

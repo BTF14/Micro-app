@@ -109,19 +109,36 @@ jobs:
             --dbname="$DB_URL" restore.dump
           shred -u restore.dump 2>/dev/null || rm -f restore.dump
 
-      - name: "Verificación 1/5: tablas restauradas"
-        continue-on-error: true
-        env:
-          DB_URL: ${{ secrets.RESTORE_TEST_DB_URL }}
-        run: psql "$DB_URL" -c "\dt"
-
-      - name: "Verificación 2/5: conteo de filas por tabla (lista fija, no dinámica)"
-        continue-on-error: true
+      - name: "Verificación 1/5: tablas esperadas restauradas"
         env:
           DB_URL: ${{ secrets.RESTORE_TEST_DB_URL }}
         run: |
-          psql "$DB_URL" -c "
-            SELECT 'organizations' AS tabla, count(*) FROM organizations
+          set -euo pipefail
+          MISSING="$(psql "$DB_URL" -X -A -t -v ON_ERROR_STOP=1 -c "
+            WITH expected(table_name) AS (VALUES
+              ('organizations'), ('app_users'), ('organization_members'),
+              ('suppliers'), ('products'), ('exchange_rates'), ('sales'),
+              ('sale_items'), ('payments'), ('inventory_movements'),
+              ('audit_logs'), ('auth_allowlist'), ('auth_bootstrap')
+            )
+            SELECT table_name
+            FROM expected
+            WHERE to_regclass('public.' || table_name) IS NULL
+            ORDER BY table_name;")"
+          if [ -n "$MISSING" ]; then
+            echo "::error::Faltan tablas esperadas tras la restauración:"
+            printf '%s\n' "$MISSING"
+            exit 1
+          fi
+          psql "$DB_URL" -X -v ON_ERROR_STOP=1 -c "\\dt public.*"
+
+      - name: "Verificación 2/5: conteo de filas en las 13 tablas esperadas"
+        env:
+          DB_URL: ${{ secrets.RESTORE_TEST_DB_URL }}
+        run: |
+          set -euo pipefail
+          psql "$DB_URL" -X -v ON_ERROR_STOP=1 -c "
+            SELECT 'organizations' AS tabla, count(*) AS filas FROM organizations
             UNION ALL SELECT 'app_users', count(*) FROM app_users
             UNION ALL SELECT 'organization_members', count(*) FROM organization_members
             UNION ALL SELECT 'suppliers', count(*) FROM suppliers
@@ -136,33 +153,54 @@ jobs:
             UNION ALL SELECT 'auth_bootstrap', count(*) FROM auth_bootstrap
             ORDER BY 1;"
 
-      - name: "Verificación 3/5: restricciones (constraints) presentes"
-        continue-on-error: true
+      - name: "Verificación 3/5: restricciones de integridad presentes"
         env:
           DB_URL: ${{ secrets.RESTORE_TEST_DB_URL }}
         run: |
-          psql "$DB_URL" -c "
+          set -euo pipefail
+          CONSTRAINT_COUNT="$(psql "$DB_URL" -X -A -t -v ON_ERROR_STOP=1 -c "
+            SELECT count(*) FROM pg_constraint
+            WHERE connamespace = 'public'::regnamespace;")"
+          if ! [[ "$CONSTRAINT_COUNT" =~ ^[0-9]+$ ]] || [ "$CONSTRAINT_COUNT" -eq 0 ]; then
+            echo "::error::No se encontraron constraints en el esquema public."
+            exit 1
+          fi
+          echo "Constraints encontrados: $CONSTRAINT_COUNT"
+          psql "$DB_URL" -X -v ON_ERROR_STOP=1 -c "
             SELECT conrelid::regclass::text AS tabla, conname, contype
             FROM pg_constraint
             WHERE connamespace = 'public'::regnamespace
             ORDER BY 1, 2;"
 
-      - name: "Verificación 4/5: integridad referencial — membresías huérfanas (debe ser 0)"
-        continue-on-error: true
+      - name: "Verificación 4/5: cero membresías huérfanas"
         env:
           DB_URL: ${{ secrets.RESTORE_TEST_DB_URL }}
         run: |
-          psql "$DB_URL" -c "
-            SELECT count(*) AS membresias_huerfanas FROM organization_members m
+          set -euo pipefail
+          ORPHANS="$(psql "$DB_URL" -X -A -t -v ON_ERROR_STOP=1 -c "
+            SELECT count(*)
+            FROM organization_members m
             LEFT JOIN app_users u ON u.id = m.user_id
             LEFT JOIN organizations o ON o.id = m.organization_id
-            WHERE u.id IS NULL OR o.id IS NULL;"
+            WHERE u.id IS NULL OR o.id IS NULL;")"
+          if ! [[ "$ORPHANS" =~ ^[0-9]+$ ]] || [ "$ORPHANS" -ne 0 ]; then
+            echo "::error::La restauración contiene membresías huérfanas: $ORPHANS"
+            exit 1
+          fi
+          echo "Membresías huérfanas: 0"
 
-      - name: "Verificación 5/5: auth_sessions/auth_rate_limits deben estar ausentes (exclusión intencional)"
-        continue-on-error: true
+      - name: "Verificación 5/5: tablas de sesión y rate-limit excluidas"
         env:
           DB_URL: ${{ secrets.RESTORE_TEST_DB_URL }}
         run: |
-          psql "$DB_URL" -c "
-            SELECT to_regclass('public.auth_sessions') AS auth_sessions_presente,
-                   to_regclass('public.auth_rate_limits') AS auth_rate_limits_presente;"
+          set -euo pipefail
+          PRESENT="$(psql "$DB_URL" -X -A -t -v ON_ERROR_STOP=1 -c "
+            SELECT concat_ws(',',
+              CASE WHEN to_regclass('public.auth_sessions') IS NOT NULL THEN 'auth_sessions' END,
+              CASE WHEN to_regclass('public.auth_rate_limits') IS NOT NULL THEN 'auth_rate_limits' END
+            );")"
+          if [ -n "$PRESENT" ]; then
+            echo "::error::Estas tablas debían estar excluidas del respaldo: $PRESENT"
+            exit 1
+          fi
+          echo "auth_sessions y auth_rate_limits están ausentes, como se esperaba."

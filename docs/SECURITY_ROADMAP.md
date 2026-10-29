@@ -1,9 +1,14 @@
-## ESTADO VIVO — mitigación de bootstrap propuesta en rama (2026-10-29 UTC)
+## ESTADO VIVO — PR #153 fusionada; validación de producción pendiente (2026-10-29 UTC)
 
-- PR #152 ya está fusionada; merge commit `9376419231501f837a2d85d8741f7bfa9f57a0cc`.
-- El riesgo de secreto en URL tiene una corrección en curso en `fix/bootstrap-token-post-body-20261029`: GET rechaza los parámetros de bootstrap; POST exige Origin del frontend, content type de formulario, campos únicos permitidos, cuerpo máximo 2 KiB y token correcto antes de iniciar OAuth.
-- **No marcar como corregido aún:** rama sin fusionar; falta revisar diff y esperar todos los checks del SHA final. No hay evidencia de filtración activa.
-- La prueba no toca Neon ni requiere secretos reales; usa el token sintético de integración.
+- PR [#153](https://github.com/BTF14/Micro-app/pull/153) está fusionada en main, merge commit `0ba45e47daa5af9bbd9034690443405aa8bedf44`; HEAD de PR `e7af00db2db27ad4bacd0246447df173d415bbe4`.
+- En main, GET rechaza los parámetros bootstrap en query y POST valida Origin exacto, Content-Type, query vacía, campos permitidos/únicos, cuerpo máximo 2 KiB y token correcto antes de redirigir a Google. Se mantienen state/PKCE, cookie temporal HttpOnly y consumo transaccional de un solo uso.
+- Los workflows consultados en el HEAD de PR pasaron; el resumen de la PR registró 12/12 checks. Codex no completó la revisión por límite de uso y no hay revisión independiente registrada. No se recuperó evidencia de checks post-merge desde el estado combinado.
+- **No declarar mitigado en producción:** Cloudflare mostró previews de rama; no se verificó despliegue productivo ni una prueba HTTP del endpoint de producción. No hay evidencia de filtración activa o histórica; registros previos, si existen, no se borran con este cambio.
+- **Hallazgo pendiente de hardening:** `apps/api/src/google-auth.ts` valida la igualdad exacta del Origin configurado pero no exige HTTPS (salvo localhost) como sí hace el validador de `apps/api/src/index.ts`. Unificar validación y añadir pruebas negativas de esquema HTTP antes de habilitar bootstrap con usuarios reales. No hay evidencia de explotación.
+- **Bloqueo de negocio:** `docs/sdd/role-permission-decision-matrix.md` sigue sin aprobación explícita. No crear rutas comerciales ni asignar permisos basándose solo en la propuesta de IA.
+- **Multiempresa:** no hay rutas comerciales HTTP donde demostrar aislamiento cross-tenant; `resolveTenantContext` no reemplaza autorización por operación.
+- Límites preservados: no Neon `main`, SQL, secretos ni producción; no añadir gastos.
+
 
 ---
 

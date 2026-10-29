@@ -4,7 +4,7 @@
 - Se pidió rebase a Dependabot. La PR #116 se actualizó para preservar el override y se fusionó en `main` con SHA `fb49c32aa1451c4bf763a0b78ba12b507700f10d`; HEAD final de PR `5d3f2e373e75caf71af207cba61df3066b140a86`. Todos los checks de ese HEAD quedaron en `success`, incluidos Dependency Review, verify, Chromium, migraciones, static analysis, Trivy, scan de historial de secretos y Cloudflare Pages/Workers.
 - Comprobación de lockfile en `main` tras el merge: `package.json` contiene `undici: 7.30.1`; `pnpm-lock.yaml` conserva `overrides: undici: 7.30.1`, incluye `undici@7.30.1` y no contiene `undici@7.29.1`.
 - PR #117 (TypeScript 7), #118 (plugin-react 6), #119 (Vite 8) y #120 (jsdom 30) aparecen cerradas sin fusionar. No considerar esos upgrades aplicados; reabrirlos solo después de revisar compatibilidad, diff y checks.
-- En la primera consulta post-merge al SHA `fb49c32aa1451c4bf763a0b78ba12b507700f10d`, verify, Chromium, migraciones, Trivy, historial de secretos y Workers estaban en verde; static analysis y Cloudflare Pages aún estaban en curso. Pendiente reconsultar su conclusión final.
+- En la primera consulta post-merge al SHA `fb49c32aa1451c4bf763a0b78ba12b507700f10d`, static analysis y Cloudflare Pages aún estaban en curso. Reconsulta posterior del commit `9f73f8ab0c1581145796f09a41f689fa4bdcf310` confirmó que todos los checks consultados terminaron en `success`.
 - No se tocaron Neon, secretos, datos reales ni producción. No hubo despliegue manual.
 
 ---

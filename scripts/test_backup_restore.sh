@@ -1,7 +1,10 @@
 #!/usr/bin/env bash
 set -euo pipefail
-if [[ -z "${SOURCE_URL:-}" || -z "${RESTORE_URL:-}" || "${RESTORE_DB_NAME:-}" != "microapp_restore" ]]; then
-  echo "Required test DB environment is missing or unsafe." >&2; exit 2
+expected_source_url="postgresql://microapp:microapp-test-only@localhost:5432/microapp_source"
+expected_restore_url="postgresql://microapp:microapp-test-only@localhost:5432/microapp_restore"
+if [[ "${SOURCE_URL:-}" != "$expected_source_url" || "${RESTORE_URL:-}" != "$expected_restore_url" || "${RESTORE_DB_NAME:-}" != "microapp_restore" ]]; then
+  echo "Refusing to run: connection targets must be the fixed disposable CI databases." >&2
+  exit 2
 fi
 source_db="$(psql "$SOURCE_URL" -X -v ON_ERROR_STOP=1 -Atqc 'SELECT current_database()')"
 if [[ "$source_db" != "microapp_source" ]]; then

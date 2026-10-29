@@ -1,3 +1,13 @@
+## 2026-10-29 — política de retención de backups confirmada para continuidad
+
+- Política vigente: backup cifrado diario con retención de 15 días en el repositorio privado de backups.
+- PR #129 corrigió el cálculo de antigüedad: se valida el timestamp UTC del nombre del backup, no el `mtime` del checkout, y se elimina el checksum emparejado de los archivos vencidos. Los tests de retención están en CI y los checks del HEAD de la PR pasaron.
+- Instrucción obligatoria para futuras IA/chats: no borrar las copias recientes al crear una nueva; eliminar solo las que superen 15 días. Si falla la nueva ejecución o no se valida, conservar la última copia válida y verificar una alerta visible. No cambiar el plazo sin análisis de riesgo, coste $0 y revisión.
+- La retención no prueba la restauración. Mantener pendientes la prueba aislada con datos sintéticos relacionados, comparación del manifiesto, RPO/RTO y alerta. La restauración se deja para la última fase.
+- No se cambió código ni workflow en esta actualización documental; no se tocó Neon `main`, datos reales, secretos ni producción.
+
+---
+
 ## 2026-10-29 — continuidad después de PR #127 y limpieza de credenciales
 
 - HEAD verificado de `main`: `1fc95ee1a574d435523fc746a10537f1c95c5262`; PR #127 fusionada y workflow temporal retirado.

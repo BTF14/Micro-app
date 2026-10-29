@@ -749,3 +749,15 @@ Este diario es append-only en cuanto a historia: no borrar hitos antiguos; añad
 - Run [40921815702](https://github.com/BTF14/Micro-app/actions/runs/40921815702) passed all steps.
 - Verified `pg_dump 18.6`, dump generation, age encryption, SHA-256 checksum, commit `2b038bd` and successful push to private backup repository. Files are `daily/backup-2026-10-29T17-29-48Z.dump.age` and matching `.sha256`. Retention completed and deleted zero files.
 - This closes the incident chain for the operational upload path. Remaining independent tasks: verify checksum remotely, test decrypt/restore safely with the protected private key, measure RPO/RTO, validate failure alert delivery, and confirm cost assumptions. Do not conflate synthetic restore CI with restoring this exact production backup.
+
+
+## 2026-10-29 — PR #153 fusionada y auditoría de esquema/tenant
+
+- PR [#153](https://github.com/BTF14/Micro-app/pull/153) fusionada en main con merge commit `0ba45e47daa5af9bbd9034690443405aa8bedf44`; HEAD revisado `e7af00db2db27ad4bacd0246447df173d415bbe4`.
+- Checks consultados del HEAD de PR terminaron en éxito; resumen de PR registró 12/12. Codex review no pudo completarse por cuota y no hay review independiente registrada. El endpoint combinado no mostró checks post-merge, por lo que no se afirma verificación post-merge completa.
+- La corrección quita `bootstrap_token` de la query de entrada y valida el bootstrap mediante POST con Origin exacto, formulario, campos permitidos/únicos, límite de 2 KiB y comparación de token antes del redirect OAuth. No hay evidencia de exposición activa/histórica y el merge no elimina posibles registros anteriores.
+- Inspección de solo lectura de `index.ts`, `auth.ts`, `google-auth.ts`, `tenant-context.ts`, `database.ts`, migraciones `0001_initial.sql` y `0002_google_identity.sql`, plan de aislamiento y matriz de roles. Main expone auth y health, sin handlers comerciales. El contexto de tenant no autoriza por sí mismo operaciones.
+- Se confirmaron FK compuestas para varias relaciones tenant-scoped. No existe modelo de sucursal en las migraciones revisadas; el stock permanece en `products.stock_quantity` a nivel organización. No hay aún rutas donde probar aislamiento cross-tenant real.
+- La matriz de permisos por rol continúa sin aprobación. Invariantes de ventas/líneas/pagos/stock requerirán transacción e integración PostgreSQL sintética; no se aplicó SQL ni se tocó Neon `main`.
+- Hallazgo pendiente: `google-auth.ts` no aplica la misma restricción HTTPS/localhost que `index.ts` al validar `FRONTEND_ORIGIN`. Registrar como hardening de configuración, sin evidencia de explotación; corregir en PR de seguridad acotada con pruebas.
+- Producción sigue NO lista; no se desplegó producción, no se modificaron secretos ni se incurrió en gastos.

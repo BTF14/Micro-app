@@ -56,7 +56,7 @@ jobs:
           echo "deb [signed-by=/usr/share/postgresql-common/pgdg/apt.postgresql.org.asc] https://apt.postgresql.org/pub/repos/apt $(. /etc/os-release && echo "$VERSION_CODENAME")-pgdg main" \
             | sudo tee /etc/apt/sources.list.d/pgdg.list
           sudo apt-get update
-          sudo apt-get install -y postgresql-client-17
+          sudo apt-get install -y postgresql-client-18
 
       - name: Verificar que la llave de la base de datos está configurada
         run: |
@@ -74,7 +74,10 @@ jobs:
           set -euo pipefail
           STAMP="$(date -u +%Y-%m-%dT%H-%M-%SZ)"
           echo "STAMP=$STAMP" >> "$GITHUB_ENV"
-          pg_dump "$DATABASE_URL" \
+          PG_DUMP="/usr/lib/postgresql/18/bin/pg_dump"
+          "$PG_DUMP" --version
+          "$PG_DUMP" --version | grep -Eq "pg_dump \(PostgreSQL\) 18\."
+          "$PG_DUMP" "$DATABASE_URL" \
             --no-owner --no-privileges --format=custom \
             --exclude-table=auth_sessions \
             --exclude-table=auth_rate_limits \

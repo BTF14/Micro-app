@@ -154,3 +154,10 @@ La restauración manual anterior [run 40804665192](https://github.com/BTF14/Micr
 - Root cause: after changing directory to `backups-repo`, `../scripts/prune_backups.py` resolved to `/home/runner/work/Micro-app/scripts/prune_backups.py`, while the checked-out script lives below `$GITHUB_WORKSPACE/scripts/`. The workflow fix uses the explicit `$GITHUB_WORKSPACE/scripts/prune_backups.py` path.
 - The backup workflow runner is pinned to `ubuntu-24.04` to avoid an unverified migration of this operational job to Ubuntu 26. This is a stability precaution; the observed exit code 2 was caused by the script path, not the runner warning.
 - Status remains **pending verification** until the corrected workflow passes CI and a new manual run confirms remote upload, checksum presence/validity, retention behavior and success. Preserve all existing remote backups meanwhile.
+
+
+## Incident: pg_dump major-version mismatch — 2026-10-29
+
+- Manual run [40918687069](https://github.com/BTF14/Micro-app/actions/runs/40918687069) failed before creating a dump: Neon server reported PostgreSQL 18.6, while the unqualified `pg_dump` on the runner resolved to PostgreSQL 16.15. Encryption, upload, and retention steps were skipped; this run did not change the remote backup repository.
+- Corrective branch `fix/backup-pg-dump-v18-20261029` installs `postgresql-client-18`, invokes `/usr/lib/postgresql/18/bin/pg_dump` explicitly, and asserts that its reported major version is 18 before connecting. This avoids relying on the system-wide `pg_dump` alternative.
+- Keep status open until PR checks pass and a new manual run confirms dump, encryption, checksum, upload, and remote presence. Do not delete or alter older backups to troubleshoot this failure.

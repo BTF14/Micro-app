@@ -704,3 +704,10 @@ Este diario es append-only en cuanto a historia: no borrar hitos antiguos; añad
 - Exact cause: from `$GITHUB_WORKSPACE/backups-repo`, relative path `../scripts/prune_backups.py` points outside the checkout root. It is now changed on `fix/backup-workflow-path-20261029` to `$GITHUB_WORKSPACE/scripts/prune_backups.py`.
 - Also pin `runs-on: ubuntu-24.04` to avoid silently following the `ubuntu-latest` migration to Ubuntu 26 before this operational workflow is explicitly tested there. The Ubuntu warning was not the direct cause of the failure.
 - No claim of a new persisted backup: `git push` did not run. Verify PR checks and then a fresh manual run before considering resolved.
+
+
+## 2026-10-29 — backup fails due to pg_dump major version mismatch
+
+- Manual run [40918687069](https://github.com/BTF14/Micro-app/actions/runs/40918687069) showed PostgreSQL server 18.6 but runner executed pg_dump 16.15, aborting before a dump existed. Later steps were skipped; no upload or retention ran.
+- Corrective change on `fix/backup-pg-dump-v18-20261029`: install PostgreSQL 18 client, use the explicit binary `/usr/lib/postgresql/18/bin/pg_dump`, and fail early unless `--version` reports major 18.
+- Keep incident open until checks and a complete manual backup prove remote persistence and checksum.

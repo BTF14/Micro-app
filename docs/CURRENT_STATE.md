@@ -1,3 +1,13 @@
+## ESTADO OPERATIVO VIGENTE — restauración del backup remoto verificada (2026-10-29 UTC)
+
+- [Run 40955935124](https://github.com/BTF14/Micro-app/actions/runs/40955935124) del workflow `.github/workflows/backup-real-restore.yml` terminó en `success`.
+- Se descargó `daily/backup-2026-10-29T17-29-48Z.dump.age`; el SHA-256 del objeto remoto coincidió con su sidecar (`OK`), `age` lo descifró y PostgreSQL 18 efímero lo restauró sin error. `pg_restore --list` leyó el archivo y la validación encontró tablas base en `public`. Se limpiaron los archivos descifrados temporales.
+- **Conclusión:** verificada la restauración técnica de la copia remota exacta. No se tocó Neon `main` ni producción.
+- **Límite:** no se verificaron conteos ni relaciones de datos comerciales poblados, RPO/RTO, alerta de fallo o coste total $0. La comprobación de esquema por sí sola no garantiza que los datos comerciales estén completos.
+- **Siguiente paso:** planear una comprobación segura de conteos/relaciones mediante datos sintéticos o metadatos no sensibles; medir RPO/RTO; revisar alerta, retención y coste. No imprimir datos comerciales ni solicitar la clave privada age por chat.
+
+---
+
 ## REGLA VIGENTE — capacidad y límites de Neon/Cloudflare (2026-10-29 UTC)
 
 - Requisito permanente: no declarar cuántas organizaciones/sucursales soporta Micro app hasta auditar y medir capacidad con carga sintética representativa.
@@ -13,6 +23,7 @@
 - **Conclusión:** verificada la restauración técnica de la copia remota exacta. No se tocó Neon `main` ni producción.
 - **Límite:** no se verificaron conteos ni relaciones de datos comerciales poblados, RPO/RTO, alerta de fallo o coste total $0. La comprobación de esquema por sí sola no garantiza que los datos comerciales estén completos.
 - **Siguiente paso:** planear una comprobación segura de conteos/relaciones mediante datos sintéticos o metadatos no sensibles; medir RPO/RTO; revisar alerta, retención y coste. No imprimir datos comerciales ni solicitar la clave privada age por chat.
+
 
 ---
 

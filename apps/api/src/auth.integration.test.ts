@@ -1,6 +1,7 @@
 import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
 import { Client } from "pg";
 import { hashPassword } from "./auth";
+import { resolveTenantContext } from "./tenant-context";
 
 // In integration tests, exercise the real PostgreSQL protocol while keeping
 // production Workers on @neondatabase/serverless. Adapt Neon’s string
@@ -524,6 +525,18 @@ const suiteGoogle = describe.skipIf(!databaseAvailable)("Google OAuth routes aga
       const payload = await response.json() as { organizations: Array<{ name: string }> };
       expect(payload.organizations.map((organization) => organization.name)).toEqual([bootstrapOrgName]);
       expect(payload.organizations.some((organization) => organization.name === otherOrgName)).toBe(false);
+
+      // Resolve tenant context against the real PostgreSQL membership rows.
+      // A valid session must not be reusable with another user's organization ID.
+      const ownOrganization = await cleanupClient.query<{ id: string }>(
+        "SELECT id FROM organizations WHERE name = $1",
+        [bootstrapOrgName],
+      );
+      const databaseClient = cleanupClient as unknown as import("./database").DatabaseClient;
+      await expect(resolveTenantContext(databaseClient, token, ownOrganization.rows[0]!.id))
+        .resolves.toMatchObject({ organizationId: ownOrganization.rows[0]!.id });
+      await expect(resolveTenantContext(databaseClient, token, otherOrganizationId))
+        .resolves.toBeNull();
     } finally {
       if (otherUserId) {
         await cleanupClient.query("DELETE FROM organization_members WHERE user_id = $1", [otherUserId]);

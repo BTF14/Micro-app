@@ -1,0 +1,58 @@
+name: Backup restore smoke test
+
+on:
+  schedule:
+    - cron: "0 9 1 * *"
+  workflow_dispatch: {}
+  pull_request:
+    paths:
+      - ".github/workflows/backup-restore-smoke.yml"
+      - "scripts/test_backup_restore.sh"
+      - "apps/api/migrations/**"
+      - "docs/BACKUP_AND_RECOVERY.md"
+
+permissions:
+  contents: read
+
+jobs:
+  restore-smoke:
+    name: Synthetic encrypted backup and restore
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      SOURCE_URL: postgresql://microapp:microapp-test-only@localhost:5432/microapp_source
+      RESTORE_URL: postgresql://microapp:microapp-test-only@localhost:5432/microapp_restore
+      RESTORE_DB_NAME: microapp_restore
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_DB: microapp_source
+          POSTGRES_USER: microapp
+          POSTGRES_PASSWORD: microapp-test-only
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U microapp -d microapp_source"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+      - name: Install age and PostgreSQL 17 client
+        shell: bash
+        run: |
+          set -euo pipefail
+          sudo apt-get update
+          sudo apt-get install -y curl ca-certificates gnupg age
+          sudo install -d /usr/share/postgresql-common/pgdg
+          sudo curl -fsSL https://www.postgresql.org/media/keys/ACCC4CF8.asc \
+            -o /usr/share/postgresql-common/pgdg/apt.postgresql.org.asc
+          echo "deb [signed-by=/usr/share/postgresql-common/pgdg/apt.postgresql.org.asc] https://apt.postgresql.org/pub/repos/apt $(. /etc/os-release && echo "$VERSION_CODENAME")-pgdg main" \
+            | sudo tee /etc/apt/sources.list.d/pgdg.list
+          sudo apt-get update
+          sudo apt-get install -y postgresql-client-17
+      - name: Run isolated synthetic backup/restore round trip
+        shell: bash
+        run: bash scripts/test_backup_restore.sh

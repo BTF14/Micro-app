@@ -146,3 +146,11 @@ La restauración manual anterior [run 40804665192](https://github.com/BTF14/Micr
 - Workflow permanente: `.github/workflows/backup-restore-smoke.yml`; ejecución manual y mensual. No usa secretos del repositorio, Neon, datos reales ni artefactos para persistir dumps.
 - Los checks post-merge de PR #143 pasaron para main `5afe912fc53d7a7027c4ad95bf366ee2abbf6596`.
 - Esta prueba cierra la brecha de fixture vacío, no la recuperación integral de producción. Pendientes: medir RPO/RTO de una recuperación real, validar la alerta de fallo del backup y confirmar el coste real $0. La clave privada age de producción no debe compartirse por chat ni incorporarse a este workflow.
+
+
+## Operational incident — 2026-10-29 manual run failure
+
+- Manual run [40916692763](https://github.com/BTF14/Micro-app/actions/runs/40916692763) failed at the retention step after generating the dump, encrypting it with age and writing its SHA-256 checksum. The encrypted file and checksum were committed only in the ephemeral clone of `BTF14/micro-app-backups`; the command failed before `git push`. Therefore, this run did not create a durable remote backup, and the retention script did not delete remote files.
+- Root cause: after changing directory to `backups-repo`, `../scripts/prune_backups.py` resolved to `/home/runner/work/Micro-app/scripts/prune_backups.py`, while the checked-out script lives below `$GITHUB_WORKSPACE/scripts/`. The workflow fix uses the explicit `$GITHUB_WORKSPACE/scripts/prune_backups.py` path.
+- The backup workflow runner is pinned to `ubuntu-24.04` to avoid an unverified migration of this operational job to Ubuntu 26. This is a stability precaution; the observed exit code 2 was caused by the script path, not the runner warning.
+- Status remains **pending verification** until the corrected workflow passes CI and a new manual run confirms remote upload, checksum presence/validity, retention behavior and success. Preserve all existing remote backups meanwhile.

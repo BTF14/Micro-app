@@ -38,7 +38,7 @@ concurrency:
 
 jobs:
   backup:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 15
     env:
       AGE_PUBLIC_KEY: age1t04pgcguy87u99r4stlm0gcjsk9dj2s34jsmymw55vlarfteuakse8jmfk
@@ -106,7 +106,7 @@ jobs:
           git config user.name "Micro app backups bot"
           git add daily/
           git commit -m "backup: ${STAMP}"
-          python3 ../scripts/prune_backups.py daily --retention-days "$RETENTION_DAYS"
+          python3 "$GITHUB_WORKSPACE/scripts/prune_backups.py" daily --retention-days "$RETENTION_DAYS"
           git add -A
           git diff --cached --quiet || git commit -m "retention: prune backups older than ${RETENTION_DAYS} days"
           git push origin HEAD:main

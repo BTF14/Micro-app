@@ -955,3 +955,12 @@ Este bloque es más reciente que los snapshots históricos anteriores; si contra
 - Pendientes reales de backup: medir RPO/RTO de extremo a extremo; validar alerta de fallo y el coste $0; la prueba sintética no sustituye restaurar una copia real poblada.
 - Monitor diario: [run 40845877052](https://github.com/BTF14/Micro-app/actions/runs/40845877052) pasó en SHA anterior y el audit no encontró vulnerabilidades conocidas. Detectó versiones mayores pendientes (Vite 8, plugin React 6, jsdom 30, TypeScript 7); no actualizarlas a ciegas. Las versiones compatibles Wrangler 4.155.0 y workers-types 5.20261029.1 ya se fusionaron en #142. La rama `fix/dependency-watch-report-20261029` es redundante (0 ahead, 4 behind; workflow idéntico a main); no abrir PR desde ella.
 - Próxima prioridad: cuando haya evidencia y compatibilidad suficientes, evaluar el conjunto de upgrades mayores en una rama coherente. Antes, revalidar registry/advisories y compatibilidad con Node 24, Vite, Vitest, React plugin y lockfile; conservar `undici@7.30.1`. No cambiar pnpm major ni introducir pre-releases sin autorización.
+
+
+## Immediate continuation — fix failed encrypted backup (2026-10-29)
+
+1. PR branch `fix/backup-workflow-path-20261029` contains the minimal workflow fix: use absolute checked-out script path `$GITHUB_WORKSPACE/scripts/prune_backups.py` after changing into the backup clone, and pin runner to `ubuntu-24.04` for a stable, known runner image.
+2. Failure evidence: [run 40916692763](https://github.com/BTF14/Micro-app/actions/runs/40916692763). Dump, age encryption and checksum succeeded; a commit was made only in the ephemeral clone. The path error happened before push; no new backup was persisted and retention did not run.
+3. Inspect diff and PR checks at exact head SHA. Do not merge if required checks fail or are unverified. Then merge only if repository policy/gates allow it.
+4. After merge, manually dispatch the backup workflow once. Verify run conclusion `success`, a new timestamped encrypted file and matching checksum in private repository `BTF14/micro-app-backups/daily/`, and retention output. Never share tokens or the age private key. Existing backups must remain intact if any step fails.
+5. Continue pending backup work only after this is verified: failure-alert validation, RPO/RTO measurement, and cost-$0 confirmation. Synthetic restore CI does not prove a fresh production backup was uploaded.

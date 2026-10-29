@@ -918,3 +918,12 @@ Esta revisión fue estática de contenidos en GitHub; no se ejecutaron tests des
 - **Monitor diario de dependencias:** [run 40845877052](https://github.com/BTF14/Micro-app/actions/runs/40845877052), ejecutado en SHA previo `ecd7795a4699e6079bc3e372474ed24e410d2c8f`, terminó en `success`. La auditoría indicó `No known vulnerabilities found`; el informe de versiones funcionó y reportó Wrangler/workers-types y majors de Vite, plugin React, jsdom y TypeScript. PR #142 ya aplicó los dos updates compatibles de Cloudflare. No afirmar que ese run auditó el SHA actual; esperar la siguiente ejecución programada para el inventario actualizado.
 - La rama `fix/dependency-watch-report-20261029` tiene cero commits exclusivos y está cuatro commits detrás de `main`; su workflow es idéntico al de `main`. Es una rama obsoleta/redundante, no necesita PR nueva.
 - Restricciones sin cambios: coste objetivo $0, no tarjetas/facturación, no tocar Neon `main`, secretos ni datos reales, no desplegar manualmente producción. No abrir PR duplicadas; verificar SHA/checks en vivo antes de futuras fusiones.
+
+
+## Backup workflow incident — 2026-10-29 (in progress)
+
+- Latest manual production-backup workflow run [40916692763](https://github.com/BTF14/Micro-app/actions/runs/40916692763), commit `872d5e54786fa6df4121c97d5e130e9b7599f8ca`, failed after 23 seconds with exit code 2.
+- Logs confirm `pg_dump`, age encryption and SHA-256 checksum succeeded. The encrypted file and checksum were committed only inside the temporary runner's clone of `BTF14/micro-app-backups`; the workflow failed before `git push`, so this run did **not** persist a new backup. Existing remote backups were not pruned or changed by this run.
+- Root cause: after `cd backups-repo`, `python3 ../scripts/prune_backups.py` resolved to a nonexistent path under the runner parent directory, not the checked-out repository workspace.
+- Fix prepared on branch `fix/backup-workflow-path-20261029`: use `$GITHUB_WORKSPACE/scripts/prune_backups.py` and pin the backup workflow runner to `ubuntu-24.04` rather than following the newly migrated `ubuntu-latest` image. This is not considered resolved until PR checks pass and a real manual run confirms upload, checksum, retention, and success.
+- No secrets, Neon main data, or existing backup repository contents were changed manually. Do not claim a fresh backup until the follow-up run is verified.

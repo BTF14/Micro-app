@@ -1,3 +1,43 @@
+## Prioridad del siguiente chat — auditoría de versiones y migración segura (2026-10-29)
+
+**Repo:** https://github.com/BTF14/Micro-app  
+**HEAD vivo conocido al iniciar esta nota:** 59ad394d6dc5035b114db5379b2e1680d1e7969f (merge PR #136). Antes de actuar, volver a consultar SHA de main, PRs abiertas y checks. Esta auditoría se está documentando en la rama docs/market-dependency-audit-20261029; revisar si su PR se abrió/fusionó antes de crear trabajo adicional.
+
+### Qué quiere el propietario
+Quiere versiones modernas y seguras del mercado por la evolución de amenazas y de la cadena de suministro de software. Tiene autorización temporal para que la IA revise, implemente, pruebe y fusione PRs con criterio. El propietario recalca: documentar exhaustivamente la continuidad para el siguiente chat/IA; calidad y seguridad por encima de rapidez; evitar inundar el repo con PRs de limpieza.
+
+### Estado comprobado y corrección importante
+- PR #136 solo actualizó documentación; no actualizó paquetes.
+- En main: TypeScript 5.9.3, Vite 7.3.7, @vitejs/plugin-react 5.2.0, jsdom 26.1.0, Wrangler 4.152.0, Hono 4.13.14, React/react-dom 19.3.1, tipos React 19.3.0, Workers types 5.20261026.1, override de undici 7.30.1.
+- PR #117 (TypeScript 7.0.2), #118 (plugin-react 6.1.2), #119 (Vite 8.3.5), #120 (jsdom 30.1.3) están cerradas sin merge. No declarar que sus versiones están aplicadas.
+- Dependabot anteriormente quitó el override undici@7.30.1 del lockfile y provocó ERR_PNPM_LOCKFILE_CONFIG_MISMATCH; Dependency Review encontró undici@7.29.1 con severidad alta. La PR #116 se fusionó tras preservar el override. Este guardrail es obligatorio.
+- Última consulta de PRs: no se devolvieron PR abiertas; repetir búsqueda en vivo, porque el estado puede cambiar.
+
+### Versiones publicadas observadas el 2026-10-29
+- TypeScript 7.0.2 stable/latest: https://www.npmjs.com/package/typescript
+- Vite 8.3.5 latest, Vite 7.3.7 versión anterior: https://www.npmjs.com/package/vite
+- plugin-react 6.1.2 latest: https://www.npmjs.com/package/@vitejs/plugin-react
+- jsdom 30.1.3: https://www.npmjs.com/package/jsdom
+- Wrangler 4.154.0 latest: https://www.npmjs.com/package/wrangler
+- Hono 4.13.14 estable; no migrar a 5.0.0-rc: https://www.npmjs.com/package/hono
+- React/react-dom 19.3.1; tipos React 19.3.0.
+- pnpm 12.16.1 latest observado, pero el repo usa lockfile v9: https://www.npmjs.com/package/pnpm
+- Node 24.22.2 LTS publicado el 2026-10-28; Node 26.13.0 también aparece como LTS. Mantener línea Node 24 por ahora y probar parches.
+- Las páginas indexadas de @cloudflare/workers-types no coinciden temporalmente entre sí; repo declara 5.20261026.1. Consultar registry en la ejecución real antes de afirmar que hay una versión superior; considerar wrangler types como proyecto de migración separado.
+
+### Qué hacer a continuación
+1. Terminar la auditoría/documentación de esta rama y abrir una sola PR documental si no existe ya una equivalente.
+2. Luego ejecutar una actualización de dependencias real en una rama aparte, generando el lockfile con pnpm real (no edición manual). Agrupar coherentemente Vite 8 + plugin-react 6 + jsdom 30; evaluar TypeScript 7 en la misma migración solo tras revisar compatibilidad. Wrangler patch/minor se puede incluir si pasa CI.
+3. No tocar majors del gestor pnpm ni cambiar Node a 26 sin una prueba explícita.
+4. Preservar overrides.undici = 7.30.1 en package.json y pnpm-lock.yaml; rechazar cualquier lockfile que elimine el bloque o resuelva 7.29.1.
+5. Exigir checks obligatorios verdes en el HEAD exacto: verify, Chromium auth smoke tests, PostgreSQL migration, static analysis, Trivy, secret-history scan; además Dependency Review, Pages y Workers. Revisar logs si falla, arreglar causa real y evitar PRs pequeñas repetidas.
+6. Después del merge, verificar manifests y lockfile en main, checks post-merge y documentar SHA, PR, versiones declaradas/resueltas, limitaciones y siguiente tarea.
+7. No desplegar manualmente a producción, no cambiar secretos, no tocar Neon main ni datos reales. No realizar restore integral hasta la última fase sintética; el backup probado anteriormente tenía tablas comerciales vacías.
+8. Antes de cualquier trabajo, leer AGENTS.md, docs/CONSTITUTION.md, docs/CURRENT_STATE.md, este archivo, docs/AI_COLLABORATION_AND_PR_POLICY.md, docs/PROJECT_PLAN.md, docs/STATE_JOURNAL.md, docs/RESOURCE_REGISTRY.md, docs/SECURITY_ROADMAP.md y docs/BACKUP_AND_RECOVERY.md.
+
+
+---
+
 ## Arranque obligatorio — estado vivo tras PR #134 (2026-10-29 UTC)
 
 Repositorio: https://github.com/BTF14/Micro-app. HEAD verificado de `main`: `764ed502d2a296136d311e05d081ca8e9f7cfeb9`, merge de PR #134 (reglas Dependabot/lockfile y continuidad). PR #116 y #131 también están fusionadas. En la última búsqueda no había PR abiertas; reconsultar SHA, PRs y checks en vivo antes de actuar. Leer primero `AGENTS.md`, `docs/CURRENT_STATE.md`, este handoff, `docs/AI_COLLABORATION_AND_PR_POLICY.md`, `docs/PROJECT_PLAN.md`, `docs/STATE_JOURNAL.md`, `docs/RESOURCE_REGISTRY.md`, `docs/SECURITY_ROADMAP.md` y `docs/BACKUP_AND_RECOVERY.md`.

@@ -167,3 +167,23 @@ No se copiaron ni registraron valores de variables de entorno. No afirmar que es
 - El build previo ejecutó Node 24.22.1 y pnpm 10.11.1, con Unsupported Engine porque root package requiere >=24.22.2 <25. Cloudflare Pages Build System v3 no detecta engines/package manager desde package.json; docs oficiales permiten pin Node con .node-version o NODE_VERSION. Fuente: https://developers.cloudflare.com/pages/configuration/build-image/.
 - PR #159 añade .node-version 24.22.2, packageManager pnpm@10.34.9 y alinea workflows. Build log Cloudflare del SHA 57de704 confirma Node 24.22.2, pnpm 10.34.9, cero warning de engine y preview successful https://70046713.micro-app-63i.pages.dev. GitHub/Cloudflare 13/13 checks success.
 - PR #159 permanece draft y no fusionada. El build fue preview; no producción. PR #158 sigue separada y documental.
+
+
+## Addendum — verificación final de PRs, protección de main y Fail open (2026-10-30 UTC)
+
+### PRs y checks obligatorios verificados en GitHub
+- La rama `main` está protegida (`protected=true`). La API devolvió enforcement `everyone` y seis contexts requeridos: `Chromium authentication smoke tests`, `JavaScript and TypeScript static analysis`, `Scan tracked files and reachable Git history`, `Trivy filesystem and configuration scan`, `postgres-migration` y `verify`.
+- PR #158 permanece abierta/draft, HEAD `517b3496c47b3e82136aadee192717600c558146`, base `1ee1808af4aae484a71dc24750237ff4f4d934a0`. Sus 12 check runs del SHA exacto terminaron `success`; los seis contexts requeridos están presentes y verdes. Cloudflare Pages y Workers preview también reportaron success.
+- PR #159 permanece abierta/draft, HEAD `57de704c03fffebfd9aee2ae91c05a0e3af7515a`, misma base. Sus 13 check runs del SHA exacto terminaron `success`; los seis contexts requeridos están presentes y verdes. Cloudflare Pages preview y el build de CI también reportaron success.
+- No hay reviews ni hilos de revisión registrados en ninguna PR. No se fusionó ninguna. La protección de main no elimina el gate de autorización de producción: un merge puede activar el deploy automático de Pages/Workers.
+
+### Semántica documentada de Pages “Fail open”
+- La opción observada en Pages corresponde al comportamiento cuando se agota el límite diario gratuito de invocaciones de Pages Functions: **Fail open** permite servir los assets estáticos aunque una Pages Function normalmente se hubiera ejecutado primero; **Fail closed** devuelve una página de error en vez de servir esos assets. Fuente oficial: https://developers.cloudflare.com/pages/functions/routing/.
+- En el repositorio inspeccionado no existe directorio `functions/` en la raíz del proyecto Pages ni `apps/web/functions/`; la autenticación actual usa el Worker API separado. Por tanto, no hay evidencia de que la app actual dependa de Pages Functions para aplicar autenticación. El riesgo de Fail open sería relevante si en el futuro se traslada autenticación/autorización crítica a Pages Functions; no cambiar el ajuste ahora ni asumir que protege/bloquea el Worker API.
+- La documentación de la API de Pages también expone un campo `fail_open` descrito como comportamiento ante fallo al aplicar configuración de despliegue; no confundir ese campo de API con la opción Runtime “Fail open / closed” explicada en la guía de routing. No se leyó ni cambió el valor mediante API.
+
+### Preview y headers HTTP
+- La preview `https://70046713.micro-app-63i.pages.dev/` mostró el aviso explícito de vista previa aislada; no mostró controles funcionales de login ni formulario de autenticación. No se enviaron formularios ni se llamaron APIs.
+- El archivo `apps/web/public/_headers` en main define CSP, HSTS, `X-Content-Type-Options: nosniff`, `X-Frame-Options: DENY`, `Referrer-Policy` y `Permissions-Policy`. Sin embargo, la sesión de navegador no expuso las cabeceras HTTP reales y la inspección DOM no permite demostrar que Cloudflare las haya servido. Estado: **configuradas en el repositorio, efectividad HTTP pendiente de verificación**.
+- No se modificaron ajustes, variables, secretos, workflows, DNS, billing, tráfico, Neon ni producción. No se dispararon builds manuales.
+

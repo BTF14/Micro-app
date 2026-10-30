@@ -154,7 +154,7 @@ No habilitar endpoints comerciales mientras la matriz de permisos por operación
 - Contrato API para consulta de tasa y buscador de productos.
 - Política de frescura/TTL de tasa y manejo de feriados/fuente caída.
 - ERD de organización/sucursal/almacén/caja documentado en `docs/sdd/MULTI_BRANCH_DATA_MODEL.md`; sucursales/asignaciones en 0003 y cajas/turnos en 0004 (PR #167 fusionada). Almacenes y stock por almacén siguen pendientes.
-- Matriz de roles con alcance por organización/sucursal/caja; definir qué roles pueden administrar o ejecutar políticas comerciales. Los valores y límites comerciales los define cada organización, no la plataforma.
+- Matriz de permisos por operación y ámbito del recurso (organización, sucursal, caja/turno), sin crear roles por sucursal. La autoridad de rol sigue siendo un único `organization_members.role` por miembro/organización; `branch_memberships` solo concede asignación/acceso a sucursales. Definir qué operaciones y recursos puede administrar o ejecutar cada rol, incluidas la configuración de políticas comerciales de la organización y la ejecución de excepciones. Los valores y límites comerciales los define cada organización, no la plataforma. La matriz permanece **NO APROBADA** hasta aprobación explícita.
 - Método de valoración de inventario y política de costo/margen.
 - Capacidades y permisos para descuentos, cancelación/devolución y aprobaciones; cada organización configura sus propios límites comerciales.
 - Estrategia de caché de catálogo solo tras benchmark.

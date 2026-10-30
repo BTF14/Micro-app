@@ -1,3 +1,31 @@
+# Continuidad viva — 2026-10-29
+
+> Esta sección es la fotografía prioritaria de continuidad de esta sesión. Las notas históricas debajo se conservan, pero no deben tratarse como estado actual si contradicen esta sección. Verificar GitHub otra vez antes de cualquier operación.
+
+- Repositorio: `BTF14/Micro-app`; rama base `main`.
+- PR documental activa: [#156](https://github.com/BTF14/Micro-app/pull/156), abierta y mergeable según consulta; base SHA `5a9bdc5a18a54c3c68639f52125d913d4e725b91`; head inicial consultado `a27e3a9ba853c9bcf14bee5cfbd301fd6c6eae76`. Sin reviews formales ni review threads en la consulta; el estado de checks consultado para ese SHA no devolvió statuses. Consultar Actions/checks en el head nuevo después de actualizar.
+- La PR #156 actualiza seis documentos de continuidad/arquitectura tras #155. Se reutiliza para integrar este diseño SaaS; no abrir PR documental solapada.
+- PR #155 está fusionada en main (merge `5a9bdc5a18a54c3c68639f52125d913d4e725b91`). La descripción de PR #156 confirma este SHA como base.
+- Arquitectura recomendada: plataforma SaaS multi-organización, multi-sucursal y multiusuario; catálogo compartido por organización, existencias por sucursal/almacén, caja/turno por sucursal, usuarios multi-organización y roles con alcance. Ver `docs/SAAS_ARCHITECTURE_DECISIONS.md`.
+- BCV: Cron Trigger + validación + histórico `exchange_rates` + última tasa válida con frescura visible. Fuente oficial/gratuita aún no confirmada; no inventar endpoint ni tasa.
+- Buscador: barcode/SKU exactos antes que nombre; debounce, índices, límites, tenant scoping y medición. Neon fuente de verdad; KV de catálogo solo si benchmark lo justifica. La caché nunca confirma ventas ni stock.
+- Modelo de sucursales/almacenes/cajas aún no implementado; stock actual por organización. No crear migraciones hasta cerrar ERD, reglas de alcance y matriz de permisos.
+- Roles base recomendados: owner/admin/cashier/inventory; matriz existente sigue siendo propuesta y requiere reconciliar alcance por sucursal. Umbrales de descuento/anulación requieren decisión explícita.
+- Capacidad de tenants no medida. Neon y Cloudflare tienen límites; medir sintéticamente antes de fijar planes/cuotas o prometer número de empresas.
+- Producción: **NO lista**. No desplegar producción, no tocar secretos, datos reales ni Neon `main`; no incurrir en costes. Presupuesto objetivo $0.
+- Backup: restauración técnica del backup remoto se verificó en run 40955935124; siguen pendientes integridad de datos comerciales representativos, RPO/RTO, alertas/retención y coste total.
+
+## Próximas acciones obligatorias
+
+1. Verificar el nuevo HEAD de PR #156, diff, workflows y revisión independiente. No fusionar sin satisfacer la política y la revisión adicional solicitada.
+2. Completar auditoría read-only del esquema real, handlers, constraints, índices, queries y rutas; registrar hallazgos con archivos/SHA.
+3. Finalizar ERD organización → sucursal → almacén/caja/turno → operaciones, propiedad y claves tenant/branch-scoped.
+4. Reconciliar `docs/sdd/role-permission-decision-matrix.md` con asignaciones por sucursal/caja; separar propuesta de decisiones que requieren al propietario.
+5. Diseñar contratos API, transacciones, idempotencia, concurrencia y pruebas cross-tenant/cross-branch antes de implementar endpoints comerciales.
+6. Investigar fuente BCV fiable y condiciones de acceso; diseñar job programado y fallback stale; no scrapear fuente frágil sin validar.
+7. Medir Neon y Cloudflare con carga sintética y comprobar cuotas vigentes; no fijar límites SaaS todavía.
+8. Mantener estado, diario y handoff actualizados al completar cada bloque.
+
 ## Estado vivo — hardening HTTPS de FRONTEND_ORIGIN en preparación (2026-10-29 UTC)
 
 - Base verificada: `main` = `0ba45e47daa5af9bbd9034690443405aa8bedf44`; PR #154 sigue abierta, sin reviews registradas. Sus 8 workflows consultados para `b4508fda6f4d5f042dbeb2b48c7c9910a8c3852d` terminaron en `success`, pero falta la revisión adicional solicitada; no fusionar por ahora.

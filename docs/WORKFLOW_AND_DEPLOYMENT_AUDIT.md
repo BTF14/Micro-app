@@ -1,5 +1,26 @@
 # Auditoría corregida de GitHub Actions y despliegues — 2026-10-30 UTC
 
+## Addendum vigente — Cloudflare tras PR #177 (2026-10-30 UTC, sesión autenticada de solo lectura)
+
+Este addendum sustituye las observaciones anteriores sobre el entorno efectivo de los builds de PR #177 / merge a `main`; el historial se conserva.
+
+### Worker `micro-app-api`
+- Panel: entorno **Producción**, Active Deployment versión `49975c43-4161-4809-9c00-8ba83e53e6a0` (prefijo `49975c43`).
+- Build ID `957478f6-0f43-4b5c-932a-621be067d6d9`, commit `82386c6e9300e06f8fa209aa52995b939a72442a` (`main`).
+- Active Deployment mostró **100% de tráfico asignado** a esa versión. La vista de métricas mostró 0 req/sec y 0% de errores en el instante observado; no equivale a una prueba HTTP ni a CORS correcto.
+- Un comentario anterior de #78 documentó 0% para esta versión en otra vista/observación. La inspección autenticada posterior de Active Deployment mostró 100%; usar esta observación posterior como estado actual, sin interpretar el extremo del slider como métrica.
+
+### Pages `micro-app`
+- Production branch `main`; SHA `82386c6e9300e06f8fa209aa52995b939a72442a`; URL de deployment `https://cc23ff0c.micro-app-63i.pages.dev`.
+- La lista visible de variables de entorno estaba vacía; `VITE_API_BASE_URL` no aparecía. No se copiaron valores ni se modificó configuración.
+- La falta visible de esta variable debe investigarse en solo lectura y contrastarse con el código/build settings; no inventar su valor ni asumir que el frontend ya apunta al Worker.
+
+### Límites
+- Inspección autenticada, de solo lectura. No se modificó tráfico, versiones, deployments, variables, secretos, DNS, billing ni producción.
+- La observación del deployment no prueba que CORS funcione. #78 permanece abierta hasta obtener preflight HTTP real para origen permitido y origen externo.
+- No inferir preparación productiva a partir de CI, deployment activo o métricas puntuales.
+
+
 **Base auditada:** `1ee1808af4aae484a71dc24750237ff4f4d934a0` (`main`).  
 **Revisión adicional:** lectura directa de los 15 workflows versionados en `main`, inspección de la PR #158 y acceso de solo lectura al panel de Cloudflare mediante TinyFish.  
 **Estado PR #158:** abierta, draft, no fusionada; HEAD previo a esta actualización `d3f056b780ddad62deb5c1e1c0f1679bba19bb50`.

@@ -1281,3 +1281,12 @@ CI documental: para HEAD `8c15e13fa001a14a0ddf9f2432bc17efb30d476d`, los 8 workf
 - `VITE_API_BASE_URL` se conserva intencionalmente: es una variable pública de build de Vite, no un servicio ni una integración de hosting. `apps/web/.env.production` define la URL canónica del Worker; `apps/web/vite.config.ts` la carga con `loadEnv`. El bundle publicado aún no pudo inspeccionarse.
 - La búsqueda de código no encontró referencias del proveedor en runtime, paquetes, workflows o scripts. El status combinado consultado para el SHA de `main` no devolvió estados externos. La PR #178 muestra checks de GitHub Actions y previews de Cloudflare; branch protection devolvió 403 y no pudo auditarse la instalación/configuración externa de GitHub Apps.
 - No se eliminó ni modificó ninguna cuenta externa, integración GitHub, webhook, deployment, variable, secreto, DNS, configuración Cloudflare, Neon ni producción. La limpieza fue documental.
+
+
+## 2026-10-30 UTC — archivo seguro de rama heredada de runtime alternativo
+
+- La búsqueda de ramas encontró una sola rama heredada asociada a PR #72, que está cerrada y no fusionada. Su HEAD era `b1330a5fa547071a5f500f0481ce88109c612f81`; comparación contra `main`: 3 commits ahead y 277 behind.
+- La revisión del diff mostró cambios antiguos limitados a `apps/api/src/auth.ts`, `apps/api/src/database.ts` y `apps/api/src/index.ts`. La rama no contiene la implementación vigente: carece de Google auth en el entrypoint y conserva lógica de login por contraseña que la rama principal ya retiró. No debe integrarse.
+- Se creó `archive/legacy-api-esm-experiment-20261020` apuntando al HEAD exacto para preservar los tres commits antes de retirar la referencia antigua.
+- La eliminación de la rama original quedó bloqueada: el navegador no tiene sesión GitHub iniciada y el conector disponible no expone borrado de refs. No se intentó force-push ni se modificó la rama original. Requiere sesión GitHub autorizada o eliminación manual del propietario.
+- PR #72 permanece cerrada y no fusionada; su registro y los mensajes de commits son historia GitHub, no configuración activa. No reescribir historial.

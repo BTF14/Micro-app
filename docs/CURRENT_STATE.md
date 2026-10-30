@@ -1,5 +1,16 @@
 # Estado vivo — 2026-10-30 UTC (post PR #165)
 
+## Reanudación verificada — PR #166 y PR #167 (snapshot 2026-10-30 UTC)
+
+- `main` sigue en `1d10befe0cd3367e04bd8998a192e93d9b228063`; PR #165 fusionada.
+- PR #166 (documentación) sigue abierta. HEAD revisado `4cee6e2ff6bfb8f3eecd85b4ff9212c1ab6d98fd`; 8/8 workflows de GitHub Actions terminaron success. No hay reviews humanas/threads inline; no se confirmó un check externo de Cloudflare Pages/Workers para ese SHA.
+- PR #167 (implementación de cajas/turnos) sigue abierta y apunta a main. Rama `feat/register-shifts-0004-20261030`. El HEAD `0b5a9adbdafce25a8483e7ce6953e2d83a826c47` pasó migration validation, build/typecheck, unit tests, auth/branch integration, E2E, backup smoke, Semgrep, Trivy, Dependency Review, secret scan y dashboard; CI falló únicamente en una expectativa de SQLSTATE del test register-shifts.
+- Corrección del trigger comprometida en `4008ec7c09785298dc733e5e0c492cea34ad6f43`: las referencias inexistentes se dejan a las FKs compuestas (23503); el trigger reserva 23514 para registros existentes pero inactivos o no-cashier. En ese HEAD, migration validation, E2E, backup smoke y controles de seguridad pasaron; CI seguía ejecutándose.
+- Los commits documentales que siguen a este snapshot vuelven a cambiar el HEAD; los resultados anteriores no certifican el SHA final. Reconsultar todos los checks en el HEAD vivo.
+- PR #166 reconcilió los inventarios de esquema/API; PR #167 añade 0004 solo en la rama feature. Ninguna PR está fusionada. No aplicar 0003/0004 a Neon main.
+- No se ha autorizado merge ni despliegue. No tocar Neon main, datos reales, Cloudflare settings, secretos, DNS, billing ni producción.
+
+
 **Repositorio:** https://github.com/BTF14/Micro-app  
 **Main verificado:** `1d10befe0cd3367e04bd8998a192e93d9b228063`  
 **PR #165:** fusionada por squash; merge SHA = main SHA. **PR #166:** abierta, base `main`, rama `docs/post-pr165-register-shift-design-20261030`, HEAD inicial revisado `8044a6614b847d580e6e1f755433f05d2b141b75`; no está fusionada.
@@ -12,7 +23,7 @@
 - No hay reviews humanas ni threads inline registrados en la consulta actual.
 - El combined status expuesto por el conector no devolvió status checks; tampoco proporcionó evidencia actual suficiente de checks externos Cloudflare Pages/Workers para este HEAD. No declararlos verdes ni reutilizar resultados de otro SHA.
 - Codex no se reintentó; la limitación de cuota descrita en el checkpoint previo sigue sin considerarse aprobación.
-- La revisión manual del diff detectó documentación post-#165 aún contradictoria: SCHEMA_REVIEW y DATABASE_SCHEMA describían sucursales como inexistentes; MULTI_BRANCH_DATA_MODEL conservaba una sección de asignaciones como pendiente aunque 0003 ya implementó branch_memberships. Se están reconciliando esas fuentes en esta misma PR.
+- La revisión manual detectó y reconcilió discrepancias post-#165 en SCHEMA_REVIEW, DATABASE_SCHEMA, API_INTEGRATION y MULTI_BRANCH_DATA_MODEL. PR #166 contiene esa actualización documental.
 - Estos resultados son del HEAD consultado antes de los nuevos commits de documentación. Cada commit cambia el HEAD y obliga a volver a verificar checks sobre el SHA final antes de integrar.
 - No se ha fusionado la PR ni se ha autorizado despliegue. No tocar Neon main ni producción.
 
@@ -28,7 +39,7 @@
 - API Hono: auth y `GET /health`; no hay handlers comerciales.
 - `resolveTenantContext` y `resolveBranchContext` son helpers de contexto; el helper de sucursal aún no está conectado a rutas. No existe autorización comercial por operación.
 - Implementado en esquema versionado: organizaciones, miembros, productos/stock legacy por organización, sucursales y asignaciones de sucursal.
-- No implementado: almacenes, cajas, turnos, stock por almacén, endpoints de ventas/inventario/pagos, rate limiting runtime ni matriz de permisos comerciales aprobada.
+- No implementado en main: almacenes, cajas/turnos, stock por almacén y endpoints comerciales. PR #167 añade `registers`/`register_shifts` en una rama aún no fusionada. También siguen pendientes rate limiting runtime y matriz de permisos comerciales aprobada.
 - La matriz `docs/sdd/role-permission-decision-matrix.md` sigue **NO APROBADA**. Las políticas comerciales (descuentos/límites/aprobaciones) pertenecen a cada organización; no imponer umbrales universales.
 
 ## Decisión arquitectónica vigente: bases de datos
@@ -47,9 +58,9 @@
 - El diseño detallado se documenta en `docs/sdd/REGISTER_SHIFT_MODEL.md`. Esta decisión no crea endpoints ni aprueba la matriz comercial completa.
 
 ## Bloque de trabajo actual
-- Rama: `docs/post-pr165-register-shift-design-20261030`.
-- Alcance: reconciliación post-#165, corrección de continuidad y especificación de caja/turnos; sin SQL runtime, migraciones, secretos, infraestructura o despliegues.
-- Próxima acción: completar revisión documental, ejecutar checks automáticos de la PR y verificar el SHA exacto antes de considerar merge.
+- Rama técnica: `feat/register-shifts-0004-20261030` (PR #167 abierta); apilada sobre la documentación de PR #166.
+- Alcance: migración aditiva 0004, assertions SQL, pruebas de integración/concurrencia y documentación sincronizada; no endpoints comerciales.
+- Próxima acción: completar CI del HEAD final, revisar diff de ambas PR y conservar Neon main/producción intactas. No fusionar sin autorización expresa.
 
 ## Restricciones y gates
 - No migrar Neon main, no modificar producción, secretos, DNS, billing ni planes de pago.

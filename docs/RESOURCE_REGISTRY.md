@@ -20,6 +20,12 @@ Actualizado: 2026-10-30. Este registro no sustituye la verificación en vivo: pl
 | Semgrep | Reglas estáticas de seguridad. | https://github.com/semgrep/semgrep · https://github.com/semgrep/semgrep-rules | Comparar cobertura/falsos positivos con CodeQL antes de duplicar escaneos. |
 | OWASP ZAP | DAST contra staging aislado. | https://github.com/zaproxy/zaproxy | No hacer escaneo activo sobre producción ni sistemas ajenos. |
 
+## Configuración de build frontend/API
+
+- `VITE_API_BASE_URL` es una variable pública de build de Vite que define la URL base de la API. No pertenece a ningún proveedor de hosting.
+- En este repositorio, `apps/web/.env.production` define la URL canónica de Cloudflare Worker y `apps/web/vite.config.ts` la carga con `loadEnv`; Pages construye el frontend con Vite y puede usar el archivo versionado sin exigir que la variable se configure en su panel.
+- No colocar secretos en variables `VITE_*`: Vite las incorpora al bundle del navegador. Mantener la URL del Worker mientras el frontend consuma esa API.
+
 ## Repositorios de inspiración POS
 
 Solo inspiración funcional/arquitectónica; no copiar código ni asumir que licencias, seguridad o mantenimiento están aprobados. El inventario ampliado está en [INSPIRATION.md](INSPIRATION.md).
@@ -50,12 +56,8 @@ Solo inspiración funcional/arquitectónica; no copiar código ni asumir que lic
 - Cloudflare Workers pricing: https://developers.cloudflare.com/workers/platform/pricing/
 - Cloudflare Pages: https://pages.cloudflare.com/
 - Neon pricing: https://neon.com/pricing
-- Vercel Hobby plan: https://vercel.com/docs/plans/hobby
-- Vercel terms: https://vercel.com/legal/terms
 - Neon serverless driver / transactions: https://github.com/neondatabase/serverless#sessions-transactions-and-node-postgres-compatibility
 - Cloudflare Workers + Neon: https://developers.cloudflare.com/workers/databases/third-party-integrations/neon/
-
-Vercel Hobby no es el hosting objetivo para operación comercial. Reconfirmar condiciones antes de desplegar y mantener el coste $0.
 
 ## Registro de consulta
 

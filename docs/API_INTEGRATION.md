@@ -1,3 +1,19 @@
+## Estado y contrato de autorización por operación (PR #172, 2026-10-30)
+
+La propuesta técnica está en [OPERATION_AUTHORIZATION_ARCHITECTURE.md](sdd/OPERATION_AUTHORIZATION_ARCHITECTURE.md). Se mantiene como diseño, no implementación.
+
+- `resolveTenantContext`, `resolveBranchContext` y `resolveOpenCashierRegisterShift` resuelven identidad/membresía/scope contextual; ninguno concede por sí mismo permiso para ejecutar una operación comercial.
+- No hay rutas comerciales ni middleware de autorización por operación.
+- La matriz `sdd/role-permission-decision-matrix.md` sigue **NO APROBADA**. No implementar un mapa de permisos a partir de roles ni deducir excepciones desde ejemplos.
+- Toda futura mutación debe revalidar sesión, usuario, organización, membresía, rol, asignación y recursos dentro de la misma transacción que las escrituras, con protección concurrente adecuada; definir lock order/isolation por invariante.
+- Consultas y mutaciones deben aplicar filtros tenant-scoped y branch-scoped en la consulta real; IDs enviados por cliente son selectores no confiables.
+- Auditoría de mutaciones, ledger, idempotencia, handlers comerciales y pruebas end-to-end de autorización siguen pendientes. No afirmar que ya existen.
+- No crear endpoints, esquema ni migraciones hasta aprobar matriz y contratos de operación. No aplicar migraciones 0003/0004 a Neon main.
+
+La PR #172 está abierta como draft y no fusionada. En HEAD previo a esta sincronización `93561f0b73f4992d5204f3f461af7961a0e087eb`, 12/12 check-runs terminaron success; revalidar el nuevo HEAD después de la sincronización documental.
+
+---
+
 # API and Neon integration status
 
 ## Current boundary

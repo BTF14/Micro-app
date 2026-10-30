@@ -1,3 +1,11 @@
+## Checkpoint de continuidad — estado después de retirar la rama heredada (2026-10-30 UTC)
+
+- `main` conocido: `82386c6e9300e06f8fa209aa52995b939a72442a` (PR #177); esta operación no modificó `main`.
+- PR #178 permanece abierta como draft, sin fusionar, en `docs/reconcile-role-model-and-cloudflare-20261030`. Los SHA/checks descritos en checkpoints inferiores pueden ser históricos. Resolver el HEAD actual y revisar los checks de ese SHA directamente en GitHub antes de actuar.
+- La rama heredada `fix/vercel-api-esm-imports` ya fue eliminada tras preservar y verificar `archive/legacy-api-esm-experiment-20261020` en SHA `b1330a5fa547071a5f500f0481ce88109c612f81`. PR #72 sigue cerrada y no fusionada.
+- Continuar con PR #178; no crear PR duplicada. No fusionar sin revisión completa y autorización, pues un merge a `main` puede disparar despliegues automáticos.
+- Gates sin cambios: CORS de #78 sigue NO VERIFICADO; matriz comercial de #53 sigue NO APROBADA. No tocar Cloudflare, Neon, producción, secretos, DNS ni datos reales.
+
 ## Actualización posterior — eliminación segura de rama heredada (2026-10-30 UTC)
 
 - La rama original `fix/vercel-api-esm-imports` fue eliminada de GitHub mediante la sesión autenticada del propietario, después de comprobar que el respaldo `archive/legacy-api-esm-experiment-20261020` existía y apuntaba al mismo HEAD exacto: `b1330a5fa547071a5f500f0481ce88109c612f81` (compare devolvió `identical`, 0 ahead / 0 behind).

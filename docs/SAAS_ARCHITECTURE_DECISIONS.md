@@ -236,7 +236,7 @@ El modelo detallado propuesto está en docs/sdd/MULTI_BRANCH_DATA_MODEL.md. Resu
 - Entorno: PostgreSQL 18 desechable de CI para migraciones desde cero. Neon branches son opcionales para pruebas que CI no cubra; evitar su creación rutinaria y establecer expiración/limpieza. Neon main no es entorno de desarrollo.
 
 
-## 12. Estado vigente post PR #165 y trabajo de PR #167 — 2026-10-30 UTC
+## 12. Estado vigente post PR #166 y PR #167 fusionadas — 2026-10-30 UTC
 
 - Main verificado: `1d10befe0cd3367e04bd8998a192e93d9b228063`. PR #165 fusionada; 0003 crea `branches` y `branch_memberships`. La migración 0003 no se ha aplicado a Neon main.
 - `resolveBranchContext` está implementado y probado, pero no conectado a rutas. `branch_memberships` no contiene rol por sucursal; cashier/inventory siguen en `organization_members.role`.

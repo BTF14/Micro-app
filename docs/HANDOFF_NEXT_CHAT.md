@@ -1,4 +1,4 @@
-> **Revalidación GitHub — 2026-10-30 UTC (HEAD documental vigente):** `main` continúa en `a6db2dcaf57e2a0bf1735eb282c3ac2256cd314c`. PR [#172](https://github.com/BTF14/Micro-app/pull/172) sigue abierta, draft, no fusionada, con base en ese SHA. Último HEAD comprobado: `c1bc901ff8b6424cd68a77eeb9e584af5784e38c`; en ese SHA exacto, GitHub reportó **11/11 check-runs completed/success**, incluidos verify, Chromium authentication smoke tests, PostgreSQL migration validation, análisis estático, Trivy, dependency review, history scan, generate-progress y Cloudflare Pages. Este estado corresponde solo a `c1bc901`; cualquier commit posterior requiere verificar sus propios checks. No hay reviews formales. Cloudflare Pages y Workers publicaron previews de rama/commit; no equivalen a validación ni cambio de producción. Issues #53 y #78 continúan abiertas. La matriz comercial permanece **NO APROBADA**. No se modificó `main`, Neon main, datos reales, secretos, DNS, billing ni configuración de producción.
+> **Revalidación GitHub — 2026-10-30 UTC:** `main` = `a6db2dcaf57e2a0bf1735eb282c3ac2256cd314c`. PR [#172](https://github.com/BTF14/Micro-app/pull/172) está abierta, draft y no fusionada; base `main`, rama `docs/operation-authorization-architecture-20261030`, HEAD `87de879b021cd4b68ce4267b138832279d4a043a`. En ese SHA exacto, GitHub reporta **12/12 check-runs completed/success** (incluidos los seis checks requeridos por branch protection); no hay checks fallidos ni pendientes. No hay reviews formales ni threads inline. Los checks de Pages/Workers corresponden a previews, no certifican producción. Issues #53 y #78 siguen abiertas. La matriz comercial sigue **NO APROBADA**. No se modificaron `main`, Neon main, datos reales, secretos, DNS, billing ni configuración de producción.
 
 # Handoff operativo — continuar autorización server-side — 2026-10-30 UTC
 
@@ -11,7 +11,7 @@
 - Último merge runtime: PR #169, `be35a0fde3886271b6ed98b7ccc29cc1255d50e5`.
 - PR #170 y #171: solo documentación/continuidad, fusionadas.
 - PR activa: [#172 — server-side operation authorization architecture](https://github.com/BTF14/Micro-app/pull/172), draft, no fusionada, base main. Rama `docs/operation-authorization-architecture-20261030`.
-- HEAD conocido antes de la sincronización documental: `93561f0b73f4992d5204f3f461af7961a0e087eb`; 12/12 check-runs success en ese SHA exacto. Los commits de documentación posteriores invalidan esa evidencia para el nuevo HEAD. Reconsultar.
+- HEAD vigente: `87de879b021cd4b68ce4267b138832279d4a043a`; 12/12 check-runs completed/success en ese SHA exacto. No hay reviews formales ni threads inline. Si se crea otro commit, revalidar sus propios checks.
 - Matriz `docs/sdd/role-permission-decision-matrix.md`: **NO APROBADA**. No asumir permisos desde los nombres owner/admin/cashier/inventory.
 - Issues #53 y #78: abiertas al último chequeo previo; consultar estado actual.
 - No hay handlers/endpoints comerciales. Los helpers de tenant, branch y turno no autorizan operaciones.
@@ -24,12 +24,12 @@
 3. Se añadió `docs/sdd/OPERATION_AUTHORIZATION_ARCHITECTURE.md` con límites explícitos: autenticación ≠ tenant membership ≠ resource scope ≠ operación autorizada.
 4. Se reforzó el texto para requerir revalidación de sesión dentro de la transacción y protección frente a revocaciones concurrentes/TOCTOU; no asumir columnas de versión que aún no existen.
 5. Se abrió PR #172 como draft, no fusionada. No se tocó runtime, esquema, migraciones ni infraestructura.
-6. En HEAD `93561f0b73f4992d5204f3f461af7961a0e087eb`, GitHub reportó 12/12 check-runs success (incluyendo verify, PostgreSQL migration, static analysis, Chromium smoke, Trivy, Pages y Workers). Esta evidencia corresponde solo a ese SHA.
+6. En HEAD `87de879b021cd4b68ce4267b138832279d4a043a`, GitHub reportó 12/12 check-runs completed/success. Esta evidencia corresponde solo a ese SHA.
 
 ## Orden recomendado desde aquí
 
 1. Consultar `main`, PR #172, diff completo, reviews/threads y checks exactos del HEAD vivo.
-2. Completar/revisar esta sincronización documental; esperar checks verdes del HEAD final. No fusionar #172 solo porque los checks estén verdes: sigue siendo una propuesta y draft.
+2. La revisión documental del HEAD `87de879b021cd4b68ce4267b138832279d4a043a` corrigió la sincronización de estado y sus 12 checks están verdes. Antes de fusionar, confirmar que la PR dejó de ser draft y que los seis checks requeridos siguen verdes en el HEAD exacto. La matriz comercial no queda aprobada por fusionar esta propuesta.
 3. No programar permisos por rol hasta aprobación explícita de la matriz.
 4. Cuando el propietario apruebe decisiones, cerrar catálogo de operaciones, scope por recurso y reglas sensibles.
 5. Diseñar auditoría (evento, actor, scope, operación, motivo, aprobador, idempotency/correlation, retención/immutabilidad) sin afirmar que ya existe.

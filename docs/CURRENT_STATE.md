@@ -1,4 +1,4 @@
-> **Revalidación GitHub — 2026-10-30 UTC (HEAD documental vigente):** `main` continúa en `a6db2dcaf57e2a0bf1735eb282c3ac2256cd314c`. PR [#172](https://github.com/BTF14/Micro-app/pull/172) sigue abierta, draft, no fusionada, con base en ese SHA. Último HEAD comprobado: `c1bc901ff8b6424cd68a77eeb9e584af5784e38c`; en ese SHA exacto, GitHub reportó **11/11 check-runs completed/success**, incluidos verify, Chromium authentication smoke tests, PostgreSQL migration validation, análisis estático, Trivy, dependency review, history scan, generate-progress y Cloudflare Pages. Este estado corresponde solo a `c1bc901`; cualquier commit posterior requiere verificar sus propios checks. No hay reviews formales. Cloudflare Pages y Workers publicaron previews de rama/commit; no equivalen a validación ni cambio de producción. Issues #53 y #78 continúan abiertas. La matriz comercial permanece **NO APROBADA**. No se modificó `main`, Neon main, datos reales, secretos, DNS, billing ni configuración de producción.
+> **Revalidación GitHub — 2026-10-30 UTC:** `main` = `a6db2dcaf57e2a0bf1735eb282c3ac2256cd314c`. PR [#172](https://github.com/BTF14/Micro-app/pull/172) está abierta, draft y no fusionada; base `main`, rama `docs/operation-authorization-architecture-20261030`, HEAD `87de879b021cd4b68ce4267b138832279d4a043a`. En ese SHA exacto, GitHub reporta **12/12 check-runs completed/success** (incluidos los seis checks requeridos por branch protection); no hay checks fallidos ni pendientes. No hay reviews formales ni threads inline. Los checks de Pages/Workers corresponden a previews, no certifican producción. Issues #53 y #78 siguen abiertas. La matriz comercial sigue **NO APROBADA**. No se modificaron `main`, Neon main, datos reales, secretos, DNS, billing ni configuración de producción.
 
 # Estado vivo — reconciliación de autorización server-side — 2026-10-30 UTC
 
@@ -10,7 +10,7 @@
 - `main` verificado en `a6db2dcaf57e2a0bf1735eb282c3ac2256cd314c`. No se ha modificado `main` durante este bloque.
 - Último merge con cambios de runtime: PR #169, merge SHA `be35a0fde3886271b6ed98b7ccc29cc1255d50e5`. PR #170 y #171 fueron reconciliaciones documentales; no alteraron runtime ni esquema.
 - PR #172: https://github.com/BTF14/Micro-app/pull/172 — abierta, draft, base `main`, rama `docs/operation-authorization-architecture-20261030`. Propósito: propuesta de arquitectura de autorización server-side. No está fusionada.
-- HEAD de PR #172 antes de esta sincronización documental: `93561f0b73f4992d5204f3f461af7961a0e087eb`; en ese SHA exacto, los 12 check-runs consultados terminaron `success`. Los commits documentales posteriores cambian el HEAD y requieren nueva verificación; no reutilizar esa evidencia para el HEAD nuevo.
+- HEAD vigente de PR #172: `87de879b021cd4b68ce4267b138832279d4a043a`; en ese SHA exacto, 12/12 check-runs están `completed/success`. No hay reviews formales ni threads inline. La PR continúa draft y no fusionada.
 - No hay aprobación formal de la matriz de permisos comerciales. La matriz `docs/sdd/role-permission-decision-matrix.md` permanece **NO APROBADA**.
 - Issues #53 y #78 permanecen abiertas; no se modificaron en este bloque. Revalidar estado vivo antes de actuar.
 - No se verificó ni se modificó Neon main; migraciones 0003/0004 siguen sin evidencia de aplicación remota. La validación PG18 es desechable/CI.
@@ -25,8 +25,8 @@
 
 ## Próxima secuencia obligatoria
 
-1. Verificar el HEAD vivo de PR #172 y que todos sus checks terminen success tras la sincronización documental; revisar diff y estado de reviews.
-2. Mantener la PR como draft/no fusionada hasta que la propuesta documental esté coherente y la matriz comercial tenga aprobación explícita.
+1. Si se realiza cualquier nuevo commit, verificar de nuevo el HEAD exacto, todos los checks y el diff.
+2. La propuesta documental puede revisarse y fusionarse separadamente de la matriz comercial; la matriz debe permanecer NO APROBADA hasta decisión explícita del propietario. No habilitar implementación comercial por efecto de este documento.
 3. Obtener decisiones del propietario para permisos por operación, gestión de roles/usuarios, excepciones de caja, descuentos/devoluciones/anulaciones, delegación, configuración de políticas y auditoría.
 4. Solo después diseñar/implementar autorización por operación con transacción, locks/isolation, idempotencia y auditoría.
 5. Diseñar ledger de caja e inventario antes de exponer operaciones financieras/comerciales.

@@ -1,4 +1,4 @@
-> **Revalidación GitHub — 2026-10-30 UTC (HEAD documental vigente):** `main` continúa en `a6db2dcaf57e2a0bf1735eb282c3ac2256cd314c`. PR [#172](https://github.com/BTF14/Micro-app/pull/172) sigue abierta, draft, no fusionada, con base en ese SHA. Último HEAD comprobado: `c1bc901ff8b6424cd68a77eeb9e584af5784e38c`; en ese SHA exacto, GitHub reportó **11/11 check-runs completed/success**, incluidos verify, Chromium authentication smoke tests, PostgreSQL migration validation, análisis estático, Trivy, dependency review, history scan, generate-progress y Cloudflare Pages. Este estado corresponde solo a `c1bc901`; cualquier commit posterior requiere verificar sus propios checks. No hay reviews formales. Cloudflare Pages y Workers publicaron previews de rama/commit; no equivalen a validación ni cambio de producción. Issues #53 y #78 continúan abiertas. La matriz comercial permanece **NO APROBADA**. No se modificó `main`, Neon main, datos reales, secretos, DNS, billing ni configuración de producción.
+> **Revalidación GitHub — 2026-10-30 UTC:** `main` = `a6db2dcaf57e2a0bf1735eb282c3ac2256cd314c`. PR [#172](https://github.com/BTF14/Micro-app/pull/172) está abierta, draft y no fusionada; base `main`, rama `docs/operation-authorization-architecture-20261030`, HEAD `87de879b021cd4b68ce4267b138832279d4a043a`. En ese SHA exacto, GitHub reporta **12/12 check-runs completed/success** (incluidos los seis checks requeridos por branch protection); no hay checks fallidos ni pendientes. No hay reviews formales ni threads inline. Los checks de Pages/Workers corresponden a previews, no certifican producción. Issues #53 y #78 siguen abiertas. La matriz comercial sigue **NO APROBADA**. No se modificaron `main`, Neon main, datos reales, secretos, DNS, billing ni configuración de producción.
 
 ## Estado y contrato de autorización por operación (PR #172, 2026-10-30)
 
@@ -12,7 +12,7 @@ La propuesta técnica está en [OPERATION_AUTHORIZATION_ARCHITECTURE.md](sdd/OPE
 - Auditoría de mutaciones, ledger, idempotencia, handlers comerciales y pruebas end-to-end de autorización siguen pendientes. No afirmar que ya existen.
 - No crear endpoints, esquema ni migraciones hasta aprobar matriz y contratos de operación. No aplicar migraciones 0003/0004 a Neon main.
 
-La PR #172 está abierta como draft y no fusionada. En HEAD previo a esta sincronización `93561f0b73f4992d5204f3f461af7961a0e087eb`, 12/12 check-runs terminaron success; revalidar el nuevo HEAD después de la sincronización documental.
+En el HEAD vigente `87de879b021cd4b68ce4267b138832279d4a043a`, los 12/12 check-runs terminaron `completed/success`. Esta evidencia corresponde exclusivamente a ese SHA; cualquier commit posterior requiere su propia verificación.
 
 ---
 

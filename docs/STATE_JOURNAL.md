@@ -1,4 +1,4 @@
-## 2026-10-30 UTC — toolchain Pages fijada y validada por PR #159
+> **Revalidación GitHub — 2026-10-30 UTC:** `main` = `a6db2dcaf57e2a0bf1735eb282c3ac2256cd314c`. PR [#172](https://github.com/BTF14/Micro-app/pull/172) está abierta, draft y no fusionada; base `main`, rama `docs/operation-authorization-architecture-20261030`, HEAD `87de879b021cd4b68ce4267b138832279d4a043a`. En ese SHA exacto, GitHub reporta **12/12 check-runs completed/success** (incluidos los seis checks requeridos por branch protection); no hay checks fallidos ni pendientes. No hay reviews formales ni threads inline. Los checks de Pages/Workers corresponden a previews, no certifican producción. Issues #53 y #78 siguen abiertas. La matriz comercial sigue **NO APROBADA**. No se modificaron `main`, Neon main, datos reales, secretos, DNS, billing ni configuración de producción.
 
 # Checkpoint continuidad — 2026-10-30 UTC (Node/pnpm corregidos en PR #159)
 
@@ -1167,3 +1167,13 @@ CI documental: para HEAD `8c15e13fa001a14a0ddf9f2432bc17efb30d476d`, los 8 workf
 - Issues #53 y #78 siguen abiertas. #53 conserva como pendiente la autorización/aislamiento de futuras rutas comerciales; #78 mantiene pendiente la verificación HTTP CORS con headers observables desde un entorno con salida de red permitida.
 - Se mantiene PR #172 draft. No se fusiona ni se implementan permisos comerciales antes de aprobación explícita de la matriz.
 - Este registro documenta el SHA verificado. Cualquier commit documental posterior exige reconsultar checks del nuevo HEAD.
+
+
+## 2026-10-30 UTC — revalidación y reconciliación documental de PR #172
+
+- GitHub confirma `main` en `a6db2dcaf57e2a0bf1735eb282c3ac2256cd314c`; PR #172 abierta, draft, base main, HEAD `87de879b021cd4b68ce4267b138832279d4a043a`.
+- En el HEAD exacto `87de879b021cd4b68ce4267b138832279d4a043a`, 12/12 check-runs completed/success, sin fallos ni pendientes. No hay reviews formales ni threads inline.
+- Revisión encontró portadas con estado antiguo (`c1bc901` y `93561f0`) aunque el HEAD vivo era `87de879`. Se actualizaron las portadas y los checkpoints activos de los seis documentos de continuidad/API para reflejar el HEAD actual; las entradas históricas permanecen como historial y no se presentan como estado vivo.
+- La PR sigue siendo exclusivamente documental. La matriz `role-permission-decision-matrix.md` continúa NO APROBADA; no se autoriza inferir permisos, crear endpoints comerciales ni ejecutar migraciones remotas.
+- Pages/Workers publicaron previews; no son certificación funcional ni despliegue productivo. Issues #53 y #78 continúan abiertas.
+- No se modificó main, Neon main, runtime, esquema, migraciones, workflows, secretos, DNS, billing ni configuración de producción. Cualquier nuevo commit debe validarse por su propio SHA.

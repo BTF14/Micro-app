@@ -1298,3 +1298,13 @@ CI documental: para HEAD `8c15e13fa001a14a0ddf9f2432bc17efb30d476d`, los 8 workf
 - Antes de borrar, se confirmó que `archive/legacy-api-esm-experiment-20261020` existía y que la comparación entre ambas referencias era `identical`: ambas apuntaban a `b1330a5fa547071a5f500f0481ce88109c612f81`, con 0 commits de diferencia.
 - Después del borrado, búsqueda independiente: la rama original no aparece; la rama de archivo sí permanece. PR #72 sigue cerrada y no fusionada. Los tres commits quedan preservados en el archive.
 - Solo se eliminó la referencia de rama original. No se modificaron PR #72, otras ramas, tags, archivos, settings, deployments, integraciones ni infraestructura. No se reescribió historial.
+
+
+## 2026-10-30 UTC — corrección de discrepancias documentales de PR #178
+
+- Se corrige la interpretación anterior de Pages: no es correcto afirmar que `VITE_API_BASE_URL` está ausente. `apps/web/.env.production` la define y `apps/web/vite.config.ts` la carga mediante `loadEnv`. La verificación aún pendiente es inspeccionar el bundle JavaScript publicado y confirmar el valor efectivo compilado; no inferirlo de la lista del panel.
+- La referencia `fix/vercel-api-esm-imports` ya fue eliminada tras autorización del propietario. El SHA `b1330a5fa547071a5f500f0481ce88109c612f81` permanece preservado en `archive/legacy-api-esm-experiment-20261020`; la comparación previa confirmó referencias idénticas y la búsqueda posterior confirmó la ausencia de la rama original. Cualquier texto anterior que la describa como pendiente de borrado es histórico y queda supersedido.
+- Se actualizó el checkpoint de PR #178 para identificar `8a3db508b10c8a8dfa9c63ace90dbd64825022e0` como snapshot anterior con 9/9 workflows success; esos checks no se transfieren a commits posteriores.
+- La matriz pendiente se describe ahora como permisos por operación y ámbito del recurso, no como roles por sucursal. La autoridad sigue siendo un único `organization_members.role` por miembro/organización; `branch_memberships` solo asigna acceso a sucursales. La matriz comercial continúa **NO APROBADA**.
+- CORS sigue **NO VERIFICADO** hasta completar preflight HTTP real para origen autorizado y externo. No se realizaron cambios de runtime, configuración, despliegue, Cloudflare, Neon ni producción.
+- Estas notas corrigen la interpretación operativa de entradas anteriores sin reescribirlas: el diario permanece append-only.

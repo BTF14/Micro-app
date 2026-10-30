@@ -1,3 +1,12 @@
+# Prioridad operativa viva — 2026-10-30 UTC
+
+- La PR de continuidad activa es [#160](https://github.com/BTF14/Micro-app/pull/160). Consultar siempre `docs/WORK_CHECKPOINT.md` y `docs/CURRENT_STATE.md` antes de continuar.
+- No fusionar #160 hasta que CI requerido esté completo en el HEAD exacto y la revisión manual del diff no encuentre problemas materiales. Codex quedó limitado por cuota y no constituye aprobación.
+- Tras cerrar #160, continuar auditoría de arquitectura/API/esquema y resolver brechas de seguridad/consistencia antes de crear endpoints comerciales. No reabrir auditorías ya completadas sin evidencia nueva.
+- Mantener documentación incremental en cada bloque, no al final de la sesión.
+
+---
+
 # Estado vivo verificado — 2026-10-30 UTC
 
 - **Fuente viva:** GitHub confirma `main` en `dbc7b6c9cf57113a38cddb4155d2917cc3aaeafc`. PR #158 y #159 están fusionadas; PR #160 está abierta. La protección de rama de GitHub no se pudo confirmar por API y no debe afirmarse como verificada.

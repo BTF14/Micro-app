@@ -19,6 +19,8 @@ Hasta que se apruebe una política, no se debe inferir autorización de la inter
 
 Valores: **Permitir**, **Denegar**, o **Permitir con condiciones** (ver columna de condiciones). Lectura y escritura se separan explícitamente cuando una operación cubre ambas.
 
+**Alcance obligatorio de lectura:** esta tabla describe qué tipo de operación podría corresponder a cada rol; no concede acceso a todas las sucursales. `owner`/`admin` se proponen con alcance organizacional, mientras que `cashier`/`inventory` requieren asignaciones explícitas por sucursal (y, para caja, turno/caja activa). Toda consulta y mutación debe limitarse al ámbito autorizado en servidor. La asignación concreta, excepciones y permisos sensibles siguen pendientes de aprobación.
+
 | Área / operación | owner | admin | cashier | inventory | Condiciones / alcance |
 |---|---|---|---|---|---|
 | Ver catálogo y categorías (lectura) | Permitir | Permitir | Permitir | Permitir | Toda la organización; no hay razón de negocio para ocultar el catálogo a ningún rol interno. |
@@ -41,9 +43,9 @@ Valores: **Permitir**, **Denegar**, o **Permitir con condiciones** (ver columna 
 
 ## Decisiones globales que también deben resolverse
 
-Recomendación para cada una; el propietario puede aceptar, ajustar o rechazar:
+Estas decisiones deben resolverse a la luz de `docs/SAAS_ARCHITECTURE_DECISIONS.md` §3 y §14. La recomendación histórica de aplicar los cuatro roles a toda la organización queda **sustituida** y no debe aprobarse ni implementarse. El esquema actual no tiene sucursales; eso es una carencia que debe resolverse en el diseño, no una razón para conceder acceso global:
 
-1. **¿Los roles aplican a toda la organización o por sucursal/caja?** Recomendación: empezar por organización completa (no hay todavía modelo de sucursal/caja en el esquema); introducir alcance por sucursal como una fase posterior si el negocio llega a tener más de un punto de venta. No bloquea el MVP de un solo local.
+1. **Alcance de roles:** dirección recomendada: `owner`/`admin` con alcance organizacional; `cashier`/`inventory` mediante asignaciones explícitas a sucursal. Las operaciones de caja requieren además caja/turno asignados. Falta definir excepciones, multi-sucursal, delegación, visibilidad de reportes y límites exactos; requieren aprobación del propietario.
 2. **¿Permisos personalizados o solo estos cuatro roles fijos?** Recomendación: mantener los cuatro roles fijos por ahora. Permisos personalizados añaden superficie de error (una matriz dinámica es más difícil de auditar) y el negocio no los necesita todavía; revisar si aparece un caso de uso real.
 3. **¿Quién concede/revoca roles y cómo se evita quitar el acceso al último `owner`?** Recomendación: `owner` y `admin` con el límite de la fila "Asignar/cambiar roles" de arriba; regla dura en base de datos/transacción que impida dejar la organización sin `owner` activo (constraint o verificación transaccional, no solo validación en el cliente).
 4. **¿Qué operaciones requieren motivo obligatorio, aprobación adicional o límite monetario?** Recomendación inicial (valores exactos a confirmar por el propietario): ajustes de inventario siempre con motivo; descuentos en venta con un techo porcentual fijo sin aprobación (sugerido: 10%, pero es decisión de negocio del propietario) y cualquier excedente requiere `owner`/`admin`; anulación de venta siempre con motivo y siempre reservada a `owner`/`admin` salvo que el propietario decida la excepción de "mismo turno" mencionada arriba.

@@ -18,7 +18,7 @@
 - **Arquitectura objetivo:** SaaS multi-organización, multi-sucursal y multiusuario. Es dirección documentada, no funcionalidad completa. La matriz de permisos sigue **NO aprobada**; no implementar permisos comerciales desde recomendaciones no aprobadas. La autoridad para administrar la allowlist global debe ser un operador de plataforma separado de los roles `owner/admin` de cada organización; identidad, recuperación y delegación aún no están aprobadas.
 - **Capacidad:** número de organizaciones, sucursales y usuarios concurrentes sostenible **sin medir**. Revisar Neon y Cloudflare y ejecutar carga sintética antes de prometer límites. Presupuesto objetivo USD 0.
 - **Producción:** **NO LISTA**. No desplegar, tocar secretos, datos reales ni Neon `main`; no activar planes o servicios pagos.
-- **Continuidad:** se está preparando una actualización documental en la rama `docs/post-pr156-audit-continuity-20261030`; debe integrarse por una PR pequeña después de validar sus checks.
+- **Continuidad:** la actualización de auditoría/documentación está en [PR #157](https://github.com/BTF14/Micro-app/pull/157), rama `docs/post-pr156-audit-continuity-20261030`. Sigue abierta; no fusionar hasta que todos los checks requeridos del HEAD exacto terminen en success y el diff final se revise manualmente.
 
 ## Próximas acciones obligatorias
 

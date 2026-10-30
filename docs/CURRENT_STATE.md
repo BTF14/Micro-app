@@ -1,54 +1,28 @@
 # Estado actual — Micro app
 
-## Checkpoint post-merge PR #178 — 2026-10-30 UTC
+## Estado operativo vigente — 2026-10-30 UTC
 
-- PR #178 fue fusionada por squash. Merge commit y nuevo HEAD de `main`: `bb5bd72829db0532521857bffd62dac5c42a2eee`. PR cerrada/merged.
-- El diff fusionado fue documental: 14 archivos, 403 adiciones y 238 eliminaciones; ningún cambio de runtime, SQL, migraciones, lockfile, workflows ni infraestructura.
-- En el HEAD exacto de PR #178 (`8bacd57d9c3d624eae8139dadeb7fd6c0730b4dc`) los 9 workflow runs de GitHub Actions consultados terminaron `success`. No extrapolar esos resultados al merge SHA ni a futuros commits.
-- Se realizó login real mediante Google en Micro-app con la cuenta autorizada y TinyFish confirmó el dashboard autenticado en `https://micro-app-63i.pages.dev/#inicio`; la organización visible fue Abasto 7 de Oro y el rol mostrado `owner`. Esto prueba el recorrido OAuth/login y la sesión de navegador; no prueba CORS, llamadas comerciales ni módulos no implementados.
-- Issue #78 permanece ABIERTA: los preflight HTTP reales no tienen status/headers observables por limitación DNS del entorno; falta inspeccionar el bundle JS desplegado y verificar headers CORS desde una red funcional. No afirmar fallo ni éxito de CORS.
-- Issue #53 permanece ABIERTA: matriz de permisos comerciales **NO APROBADA** y aislamiento cross-tenant de rutas comerciales no demostrable porque dichas rutas aún no existen. No crear endpoints/middleware ni inferir permisos.
-- Se detectó que las portadas CURRENT_STATE/HANDOFF aún mostraban PR #178 como draft/no fusionada y SHA anterior. Esta PR correctiva actualiza ambas portadas y añade esta entrada al journal append-only; las entradas históricas no se reescriben.
-- Sin cambios a Cloudflare, producción, Neon main, secretos, DNS, billing ni datos reales. PostgreSQL desechable primero.
+- Repositorio: `BTF14/Micro-app`.
+- `main` en el último merge verificado: `bb5bd72829db0532521857bffd62dac5c42a2eee` (merge squash de PR #178). Consultar GitHub en vivo antes de cualquier acción posterior.
+- PR #178: **MERGED**. Cambio exclusivamente documental: 14 archivos (+403/-238); sin runtime, SQL, migraciones, lockfile, workflows ni infraestructura.
+- PR #179: [docs: reconcile continuity after PR 178 merge](https://github.com/BTF14/Micro-app/pull/179), rama `docs/post-178-merge-checkpoint-20261030`, último HEAD observado `d958eb4e1ca7b6c79b95cf1ec1adcd87dcba685e`, base `bb5bd72829db0532521857bffd62dac5c42a2eee`. **ABIERTA; no fusionada.** La portada de esta PR se está corrigiendo porque su primer commit dejó debajo del nuevo checkpoint bloques operativos antiguos que aún decían que #178 estaba abierta/draft y que main tenía el SHA anterior.
+- Para el SHA exacto de PR #179 `d958eb4e1ca7b6c79b95cf1ec1adcd87dcba685e`, los 8 workflow runs consultados terminaron `success`: CI, Project progress dashboard, Dependency review, Database migration validation, Security scan, Semgrep SAST, Playwright E2E y Secret history scan. El endpoint de combined commit status devolvió lista vacía de statuses; no confundirlo con checks requeridos de branch protection. Cloudflare Pages y Workers reportaron deployments de **preview** exitosos para ese SHA; no son despliegues a producción.
+- Revisión automática Codex en #179: falló/no se completó por límite de uso. No es una revisión aprobatoria ni evidencia de ausencia de hallazgos. Revisión manual de alcance documental necesaria.
+- En el HEAD exacto de PR #178 (`8bacd57d9c3d624eae8139dadeb7fd6c0730b4dc`) los 9 workflow runs consultados terminaron `success`; no extrapolar esos resultados a otros SHA.
+- TinyFish verificó el recorrido OAuth real en `https://micro-app-63i.pages.dev/#inicio`: dashboard autenticado, organización visible Abasto 7 de Oro, rol mostrado `owner`, sesión conservada. Esto no prueba CORS ni operaciones comerciales.
+- Issue #78 sigue ABIERTA: CORS **NO VERIFICADO** por HTTP real. Los OPTIONS previos no obtuvieron status/headers por fallo DNS del entorno; falta inspeccionar bundle JS publicado y repetir preflight desde red funcional.
+- Issue #53 sigue ABIERTA: matriz comercial **NO APROBADA**. No crear endpoints comerciales, middleware ni mapeos rol→operación antes de aprobación explícita. Aislamiento de futuras rutas comerciales no puede certificarse mientras no existan.
+- Arquitectura: un único `organization_members.role` por miembro/organización; `branch_memberships` solo concede/revoca acceso a sucursales y no tiene roles. Inventario sigue organizacional; caja conserva turnos y apertura/cierre ordinario.
+- Restricciones: no modificar Cloudflare producción, tráfico, deployments productivos, variables, secretos, DNS, billing, Neon main ni datos reales. PostgreSQL desechable primero. Presupuesto objetivo USD 0. No reescribir historial Git ni `STATE_JOURNAL.md` (append-only).
 
+## Próxima secuencia obligatoria
 
-## Checkpoint vigente de continuidad — 2026-10-30 UTC
+1. Corregir las portadas de CURRENT_STATE y HANDOFF en PR #179 para que solo exista un estado operativo vigente y los snapshots antiguos queden dentro del bloque histórico claramente delimitado.
+2. Revisar diff completo y contenido de los tres archivos; confirmar que el journal solo recibe una nueva entrada append-only.
+3. Validar checks del nuevo HEAD, previews y estado de PR; la evidencia del SHA anterior no se transfiere.
+4. Fusionar #179 solo si el diff queda coherente y las validaciones aplicables están verdes; si no hay branch protection/checks requeridos visibles, documentar esa limitación antes de decidir.
+5. Continuar #78 (bundle publicado + preflight real desde red funcional) y #53 (auditoría de rutas existentes sin inventar matriz comercial).
 
-**Snapshot GitHub verificado antes de esta sincronización documental:** rama `docs/reconcile-role-model-and-cloudflare-20261030`, HEAD `a45d84eb5f51e50d3a24f9d6858b5d14efb3ce6b` (commit `docs: remove duplicate project plan heading`). El commit de sincronización que actualiza este checkpoint moverá la punta; volver a resolver la rama y validar los checks de su nuevo SHA antes de cualquier decisión.
-
-- Repositorio: `BTF14/Micro-app`; rama base `main` = `82386c6e9300e06f8fa209aa52995b939a72442a`.
-- Comparación de HEAD `a45d84eb5f51e50d3a24f9d6858b5d14efb3ce6b` contra `main`: 68 commits ahead, 0 behind.
-- PR [#178](https://github.com/BTF14/Micro-app/pull/178): OPEN, DRAFT, NOT MERGED; rama `docs/reconcile-role-model-and-cloudflare-20261030`. El último reporte de GitHub indicó `mergeable=true`; no equivale a autorización de merge.
-- Diff de PR #178: 13 archivos, todos documentales (343 adiciones / 235 eliminaciones según la comparación por archivo); sin cambios de runtime, SQL, migraciones, workflows ni infraestructura.
-- GitHub Actions asociado al SHA exacto `a45d84eb5f51e50d3a24f9d6858b5d14efb3ce6b`: 11/11 workflow runs completados en `success` (9 por evento pull_request y 2 por push). Runs PR: [CI](https://github.com/BTF14/Micro-app/actions/runs/41123992893), [Project progress](https://github.com/BTF14/Micro-app/actions/runs/41123992664), [SDD validation](https://github.com/BTF14/Micro-app/actions/runs/41123992694), [Dependency review](https://github.com/BTF14/Micro-app/actions/runs/41123992706), [Secret history](https://github.com/BTF14/Micro-app/actions/runs/41123992695), [Semgrep](https://github.com/BTF14/Micro-app/actions/runs/41123992650), [Playwright E2E](https://github.com/BTF14/Micro-app/actions/runs/41123992682), [Database migration validation](https://github.com/BTF14/Micro-app/actions/runs/41123992653), [Security scan](https://github.com/BTF14/Micro-app/actions/runs/41123992663). Runs push: [Security scan](https://github.com/BTF14/Micro-app/actions/runs/41123984676), [Secret history scan](https://github.com/BTF14/Micro-app/actions/runs/41123984639). Estos resultados no se transfieren al nuevo SHA que produzca esta sincronización.
-- Cloudflare notificó previews exitosas para el mismo SHA `a45d84eb5f51e50d3a24f9d6858b5d14efb3ce6b`: [Pages commit preview](https://16be43d4.micro-app-63i.pages.dev), [Pages branch preview](https://docs-reconcile-role-model-an.micro-app-63i.pages.dev), [Workers commit preview](https://d0883f1d-micro-app-api.btfcasheb.workers.dev), [Workers branch preview](https://docs-reconcile-role-model-and-cloudflare-20261030-micro-app-api.btfcasheb.workers.dev). El GET de `/health` en la preview de Worker respondió `{"status":"ok","service":"micro-app-api","stage":"scaffold"}`; Pages muestra la vista aislada que deshabilita login y acceso a datos. Son previews, no producción.
-- Reviews formales: 0; threads inline: 0. La protección de rama no pudo auditarse en una consulta anterior (403); no afirmar que se verificaron los contextos requeridos.
-- **No marcar Ready ni fusionar:** permanece Draft y no existe autorización explícita para promoverla o fusionarla. Un merge puede activar despliegues automáticos de Cloudflare.
-
-## Issue #78 — CORS y configuración efectiva
-
-Issue #78 sigue abierta. Hono configura CORS y los tests de `app.request` son simulados; no demuestran headers del Worker desplegado. En esta sesión se intentaron ambos preflight OPTIONS contra `https://micro-app-api.btfcasheb.workers.dev/health`:
-- Origin permitido `https://micro-app-63i.pages.dev`: curl exit 6, `Could not resolve host`.
-- Origin externo `https://attacker.example`: curl exit 6, `Could not resolve host`.
-
-No se obtuvo status HTTP ni headers `Access-Control-*`; esto es una limitación DNS/red del entorno, no evidencia de éxito ni de fallo de CORS. Mantener **NO VERIFICADO** y repetir solo desde un entorno con conectividad real.
-
-`VITE_API_BASE_URL` está definida en `apps/web/.env.production` y `apps/web/vite.config.ts` la carga mediante `loadEnv`. No describirla como ausente por no aparecer en el panel de Pages. Sigue pendiente inspeccionar el bundle JavaScript publicado y confirmar el valor efectivo compilado; no se verificó en esta sesión.
-
-## Issue #53 — permisos comerciales
-
-Issue #53 sigue abierta. La matriz `docs/sdd/role-permission-decision-matrix.md` permanece **NO APROBADA**. La estructura vigente es un único `organization_members.role` por miembro/organización; `branch_memberships` solo concede/revoca acceso a sucursales y no contiene roles. No crear endpoints comerciales, middleware ni mapeos rol→operación antes de aprobación explícita.
-
-## Otros límites y próxima secuencia
-
-- La rama `fix/vercel-api-esm-imports` fue eliminada tras preservar el SHA `b1330a5fa547071a5f500f0481ce88109c612f81` en `archive/legacy-api-esm-experiment-20261020`; PR #72 sigue cerrada y no fusionada.
-- Inventario actual organizacional (`products.stock_quantity`); inventario por sucursal/almacén no implementado.
-- Caja mantiene modelo de turnos y apertura/cierre ordinario; no introducir cierres de supervisor incompatibles.
-- PostgreSQL desechable primero; no usar Neon `main` como laboratorio ni ejecutar migraciones remotas.
-- No modificar Cloudflare, tráfico, deployments, variables, secretos, DNS, billing, datos reales ni producción. Presupuesto objetivo USD 0.
-- No reescribir historial Git ni `STATE_JOURNAL.md` (append-only).
-
-Siguiente orden: (1) obtener los dos preflight reales desde entorno con red; (2) inspeccionar el bundle JS publicado; (3) mantener bloqueada la implementación comercial hasta aprobación explícita de la matriz; (4) revisar el nuevo HEAD y todos sus checks/previews antes de considerar cualquier estado de PR.
 ## Snapshot previo — eliminación segura de rama heredada (histórico; no es estado actual de PR #178) — 2026-10-30 UTC
 
 - La rama original `fix/vercel-api-esm-imports` fue eliminada de GitHub mediante la sesión autenticada del propietario, después de comprobar que el respaldo `archive/legacy-api-esm-experiment-20261020` existía y apuntaba al mismo HEAD exacto: `b1330a5fa547071a5f500f0481ce88109c612f81` (compare devolvió `identical`, 0 ahead / 0 behind).

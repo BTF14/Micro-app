@@ -960,3 +960,11 @@ CI documental: para HEAD `8c15e13fa001a14a0ddf9f2432bc17efb30d476d`, los 8 workf
 - SHA del padre del último commit documental previo a esta entrada: `2747ae34849d8fe86e2da198779701ce97e3a711` (consultar el HEAD real después de este commit).
 - Gate sigue siendo no fusionar con CI pendiente/no verificado. El último SHA con evidencia CI consultada fue `bcc667fc6ccd154b8e4f93f041e33d16c29195f0`, con workflow CI pending y siete workflows success.
 - La revisión documental continúa en la misma PR #160; no se abrió PR adicional ni se modificó código o producción.
+
+## 2026-10-30 UTC — precisión de branch protection y revisión de seguridad
+
+- La consulta actual de `GET /repos/BTF14/Micro-app/branches/main/protection` devolvió HTTP 403 `Resource not accessible by integration`. No fue posible revalidar en vivo la protección de main.
+- Se corrigió `docs/SECURITY_ROADMAP.md`: la configuración de protección y seis checks se conserva como evidencia histórica del 2026-10-26, no como estado actual confirmado. Se mantiene la recomendación de al menos una aprobación independiente.
+- La auditoría de código en main confirma que no hay rutas comerciales; `resolveTenantContext` es helper aislado y no aplica permisos de operación ni sucursal. La matriz de permisos sigue no aprobada.
+- La rama `feat/neon-transaction-adapter` existe, pero corresponde a PR #1 ya fusionada; está 14 commits ahead y 245 behind de main. No reabrir ni fusionar. Los cambios funcionales del adaptador ya están integrados en main.
+- No se modificó código ni configuración productiva. Siguiente gate inmediato sigue siendo CI de PR #160 en el HEAD nuevo.

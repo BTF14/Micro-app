@@ -5,7 +5,7 @@
 - **Main:** `18961456ac535146c4a1687d3b07d8f6693ce141`, merge de PR #156.
 - **PR #156:** cerrada y fusionada. HEAD de PR `6c068f3e9734736ac26e51ff754e39915d660abe`; 9/9 workflows success en ese SHA. No hubo review formal ni threads; diff revisado manualmente. No se comprobó un nuevo workflow post-merge del merge SHA.
 - **PRs abiertas al último chequeo:** ninguna. Volver a consultar en vivo.
-- **Nueva rama documental:** `docs/post-pr156-audit-continuity-20261030`; contiene la actualización de continuidad y hallazgos de auditoría de solo lectura. No asumir que está fusionada hasta comprobar la PR y el SHA final.
+- **PR #157 abierta:** `docs/post-pr156-audit-continuity-20261030`; consolida CURRENT_STATE, HANDOFF, PROJECT_PLAN, STATE_JOURNAL, SCHEMA_REVIEW, DATABASE_SCHEMA, API_INTEGRATION, SECURITY_ROADMAP y la matriz de roles. Comprobar el SHA vivo, revisar diff y exigir todos los checks obligatorios antes de fusionar.
 - **API:** rutas existentes: auth register/login (ambas fail-closed), me/logout, Google OAuth GET/POST bootstrap/callback, y health. No existen endpoints comerciales HTTP.
 - **Tenant context:** valida sesión/membresía/organización activas, pero no aplica autorización por operación ni sucursal; la búsqueda de callsites no encontró handlers que invoquen el helper. `withDatabaseTransaction` solo tiene uso actual en el bootstrap Google, no en operaciones comerciales.
 - **Esquema actual:** organización/membresía y entidades comerciales iniciales con FK tenant-scoped; no hay sucursales, almacenes, cajas/turnos, compras/recepciones, devoluciones ni transferencias. Stock por organización. La migración inicial no está aplicada a Neon main.

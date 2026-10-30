@@ -1,3 +1,16 @@
+# 2026-10-30 UTC — PR #176 fusionada; CORS sigue bloqueado por red del entorno
+
+- GitHub en vivo confirmó PR #175 y #176 fusionadas; PR #176 merge SHA y HEAD de `main` observado en la consulta: `287ba4e3b038b434bfec1fffec140bf2acc3f29a`. No había PR abiertas.
+- PR #176 HEAD `d46871f1f23387aeb98a0b25f2bbed9bb155e249`: 12/12 check-runs success; seis archivos documentales (+73/-39); cero reviews formales y cero threads.
+- En el SHA observado de `main`, nueve check-runs terminaron success (siete Actions y dos Cloudflare); los seis contextos requeridos por branch protection estaban success. No extrapolar a commits posteriores.
+- Se releyeron los documentos obligatorios y se inspeccionó el diff de PR #176. Las portadas de continuidad aún presentaban #176 como pendiente; esta actualización corrige la discrepancia sin reescribir el historial.
+- Se inspeccionó `apps/api/src/index.ts`, `apps/api/src/index.test.ts` y `apps/api/wrangler.toml`: la política CORS y pruebas simuladas existen, pero no prueban el Worker desplegado.
+- Se intentaron los dos preflight curl exactos contra `/health` desde este sandbox. Ambos fallaron con exit 6 (`Could not resolve host`); no se obtuvo status ni headers. Esto es limitación de DNS/salida de red, no fallo demostrado de CORS ni del servicio. No se modificó configuración, código runtime, Cloudflare, secretos, datos, Neon, DNS, billing ni producción.
+- #78 permanece abierta y CORS **NO VERIFICADO** hasta recibir status y headers HTTP reales desde un equipo con salida de red completa. #53 permanece abierta; matriz **NO APROBADA**.
+- No se ejecutaron migraciones remotas ni despliegues de producción. Coste objetivo USD 0.
+
+---
+
 # 2026-10-30 UTC — PR #175 fusionada y continuidad posterior
 
 - PR #175: https://github.com/BTF14/Micro-app/pull/175. Merge SHA `b8a2a9d514839bf9fa340b5b04349621b4484385`; HEAD de `main` verificado inmediatamente después del merge en el mismo SHA.

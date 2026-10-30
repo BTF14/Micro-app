@@ -1,37 +1,27 @@
 # Handoff — continuidad segura del proyecto Micro app
 
-**Checkpoint post-merge — 2026-10-30 UTC.** PR [#175](https://github.com/BTF14/Micro-app/pull/175) fusionada. Merge SHA y HEAD observado inmediatamente después del merge: `b8a2a9d514839bf9fa340b5b04349621b4484385`. HEAD exacto de PR: `eac60184748fdab3eae926860e0d6c901251a462`; nueve workflows success, seis contextos obligatorios success; diff documental de siete archivos (+142/-50). Revisión manual realizada; reviews formales y threads: 0. Revisión independiente Claude/Codex de PR #172 **pendiente/no ejecutada**. El SHA de merge es un antecedente, no un HEAD perpetuo: verificar GitHub vivo siempre.
-
-La siguiente PR de cierre de continuidad es [#176](https://github.com/BTF14/Micro-app/pull/176), rama `docs/post-pr175-final-handoff-20261030`. Consultar su estado y checks en vivo; si está fusionada, confirmar merge SHA y HEAD de main. No asumir que sigue abierta.
+**Checkpoint verificado en GitHub — 2026-10-30 UTC.** PR #175 y #176 están fusionadas. PR #176 merge SHA y HEAD de `main` observado en esta consulta: `287ba4e3b038b434bfec1fffec140bf2acc3f29a`. No había PR abiertas. El SHA es una observación fechada, no una promesa del HEAD futuro. En el SHA actual: 9/9 check-runs success (7 Actions + 2 Cloudflare); los seis contextos requeridos por protección de `main` están en success. PR #176 HEAD `d46871f1f23387aeb98a0b25f2bbed9bb155e249`: 12/12 check-runs success, diff documental de seis archivos, cero reviews formales y cero threads.
 
 ## Lectura obligatoria
 1. `AGENTS.md`.
 2. `docs/CURRENT_STATE.md`.
-3. `docs/AI_COLLABORATION_AND_PR_POLICY.md`.
-4. `docs/PROJECT_PLAN.md`, `docs/STATE_JOURNAL.md`, `docs/RESOURCE_REGISTRY.md`, `docs/SECURITY_ROADMAP.md`, `docs/COMPLIANCE_AND_ACCESSIBILITY.md`, `docs/GENTLEMAN_PROGRAMMING_EVALUATION.md`.
-5. `docs/API_INTEGRATION.md`, `docs/sdd/role-permission-decision-matrix.md`, `docs/sdd/OPERATION_AUTHORIZATION_ARCHITECTURE.md`, `docs/sdd/ORGANIZATION_COMMERCIAL_POLICY_CONFIGURATION.md`, `docs/sdd/MULTI_BRANCH_DATA_MODEL.md`.
-6. Verificar GitHub vivo y skills de proyecto aplicables antes de editar.
+3. `docs/HANDOFF_NEXT_CHAT.md`.
+4. `docs/AI_COLLABORATION_AND_PR_POLICY.md`.
+5. `docs/PROJECT_PLAN.md`, `docs/STATE_JOURNAL.md`, `docs/RESOURCE_REGISTRY.md`, `docs/SECURITY_ROADMAP.md`, `docs/COMPLIANCE_AND_ACCESSIBILITY.md`, `docs/GENTLEMAN_PROGRAMMING_EVALUATION.md`.
+6. `docs/API_INTEGRATION.md`, `docs/sdd/role-permission-decision-matrix.md`, `docs/sdd/OPERATION_AUTHORIZATION_ARCHITECTURE.md`, `docs/sdd/ORGANIZATION_COMMERCIAL_POLICY_CONFIGURATION.md`, `docs/sdd/MULTI_BRANCH_DATA_MODEL.md`.
+7. Verificar GitHub en vivo y leer las skills del proyecto aplicables antes de editar.
 
-## Prompt para el siguiente chat (copiar completo)
+## Prompt de continuación (copiar completo)
 
-Continúa el proyecto existente **BTF14/Micro-app** como responsable técnico senior. No reinicies el proyecto ni repitas trabajo completado. El repositorio es la fuente persistente de continuidad; no dependas de la memoria del chat.
+Continúa el proyecto existente **BTF14/Micro-app** como responsable técnico senior. No reinicies el proyecto ni repitas PR #175/#176. Lee el orden obligatorio de `AGENTS.md` y verifica GitHub en vivo antes de cualquier cambio. El checkpoint del 2026-10-30 observó `main` en `287ba4e3b038b434bfec1fffec140bf2acc3f29a`, con PR #175/#176 fusionadas, cero PR abiertas y nueve check-runs success (siete Actions y dos Cloudflare). Ese SHA es histórico desde el momento de la consulta; vuelve a resolver el HEAD.
 
-**Antes de editar:** sigue el orden obligatorio de lectura de `AGENTS.md`; lee `docs/CURRENT_STATE.md` y este handoff; consulta GitHub en vivo para obtener el HEAD real de `main`, PRs abiertas, issues #53/#78, diff completo, reviews/threads y Actions del SHA exacto. PR #175 está fusionada con merge SHA `b8a2a9d514839bf9fa340b5b04349621b4484385`; ese SHA fue el HEAD observado inmediatamente después del merge, no asumas que sigue siendo HEAD. La siguiente reconciliación es [PR #176](https://github.com/BTF14/Micro-app/pull/176), rama `docs/post-pr175-final-handoff-20261030`; reanúdala si sigue abierta. Si ya está fusionada, confirma `merged=true`, merge SHA y HEAD real de `main`. No confíes en snapshots.
+**Prioridad #78:** faltan los dos preflight HTTP reales al Worker para `https://micro-app-api.btfcasheb.workers.dev/health`: origen permitido `https://micro-app-63i.pages.dev` y origen externo `https://attacker.example`. En el último intento desde el sandbox, ambos curl fallaron con exit 6 (`Could not resolve host`); no se recibió status ni headers. No presentes esto como fallo de CORS ni del servicio. No repitas la prueba desde un entorno sin salida de red completa. El propietario debe ejecutar los comandos desde un equipo con conectividad completa y compartir solo status y headers `Access-Control-*`, nunca cookies/tokens. No cambies Cloudflare ni despliegues para forzar el resultado. No cierres #78 sin evidencia.
 
-**Trabajo inmediato:** verificar PR #176 y su diff/checks exactos. Después, la prioridad funcional-operativa es issue #78: obtener los dos preflight HTTP reales del Worker (origen autorizado `https://micro-app-63i.pages.dev` y origen externo `https://attacker.example`), registrar status y headers relevantes sin cookies/tokens, evaluar allow-origin/métodos/headers/credentials y rechazo externo. No modificar Cloudflare para forzar el resultado. No declarar CORS verificado hasta observar esa evidencia.
+**Gate #53:** la matriz `docs/sdd/role-permission-decision-matrix.md` sigue **NO APROBADA**. No inferir permisos de los nombres de rol ni implementar endpoints comerciales, middleware o mapeos rol→operación antes de aprobación explícita. Los helpers tenant/branch/shift resuelven contexto, no autorizan operaciones. No afirmar ledger/auditoría comercial implementados.
 
-**Gates inmutables:** #53 sigue abierta y la matriz `docs/sdd/role-permission-decision-matrix.md` sigue **NO APROBADA**. No inferir permisos por rol; no crear endpoints comerciales, middleware de autorización ni mapeos rol→operación antes de aprobación explícita del propietario. Los resolvers tenant/branch/shift solo resuelven contexto. No afirmar ledger/auditoría comercial implementados. La revisión Claude/Codex de PR #172 sigue pendiente/no ejecutada; no atribuirle aprobación.
-
-**Seguridad y operaciones:** no ejecutar migraciones/SQL remoto ni usar Neon `main` como laboratorio. No modificar Cloudflare, secretos, variables, DNS, billing, planes, datos reales o producción. No desplegar producción. Presupuesto objetivo USD 0. Previews y tests simulados no certifican producción.
-
-**Criterio:** pocas PR, alcance coherente, revisión manual del diff completo, pruebas relevantes, checks del SHA exacto, cero contradicciones documentales y separación entre hechos verificados, hipótesis y desconocidos. Si un check falla, diagnosticar y corregir en la misma rama/PR. Fusionar solo cuando se satisfagan todos los gates aplicables.
-
-**Al terminar:** confirmar el merge de PR #176 (si ocurre), obtener HEAD real de `main`, mantener merge SHA como antecedente y no como HEAD perpetuo, y continuar #78/#53 según los gates. No crear una PR adicional solo para perseguir un SHA que el siguiente commit volvería obsoleto.
-
+No usar Neon `main` como laboratorio; PostgreSQL desechable es el primer entorno de pruebas. No ejecutar migraciones remotas, tocar datos reales, secretos, DNS, billing o producción, ni desplegar producción. Presupuesto USD 0. No afirmar revisión Claude/Codex de PR #172: sigue pendiente/no ejecutada. Verificar checks del SHA exacto, revisar diff completo y actualizar continuidad sin duplicar snapshots.
 
 ---
-
-
 > **Archivo histórico — no usar como estado operativo.** Las entradas siguientes se conservan para trazabilidad y describen estados de su fecha. GitHub en vivo y el checkpoint superior prevalecen.
 
 

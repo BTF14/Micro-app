@@ -1,22 +1,16 @@
 # Prioridad operativa vigente — Micro app
 
-**Estado 2026-10-30 UTC:** PR #175 está fusionada (merge SHA `b8a2a9d514839bf9fa340b5b04349621b4484385`; HEAD observado inmediatamente después del merge igual a ese SHA). Su HEAD `eac60184748fdab3eae926860e0d6c901251a462` tuvo 9/9 workflows success y 6/6 contextos requeridos success. El diff fue documental: siete archivos, +142/-50; revisión manual hecha, sin reviews formales ni threads. La revisión independiente Claude/Codex de PR #172 continúa pendiente/no ejecutada.
-
-La reconciliación post-merge está en [PR #176](https://github.com/BTF14/Micro-app/pull/176), rama `docs/post-pr175-final-handoff-20261030`; consultar su estado y checks en vivo. `docs/CURRENT_STATE.md` es el checkpoint operativo; `AGENTS.md` y `docs/AI_COLLABORATION_AND_PR_POLICY.md` son políticas obligatorias. GitHub vivo es la autoridad para HEAD, ramas, PR, issues y Actions. Las entradas antiguas de este plan son historial.
+**Checkpoint verificado en GitHub — 2026-10-30 UTC:** PR #175 y #176 fusionadas; PR #176 merge SHA y HEAD de `main` observado: `287ba4e3b038b434bfec1fffec140bf2acc3f29a`. No había PR abiertas. En el SHA actual, 9/9 check-runs success (7 Actions + 2 Cloudflare) y los seis contextos requeridos success. El SHA es una observación fechada, no un estado perpetuo. #78 y #53 siguen abiertas.
 
 ## Orden de trabajo y gates
-1. Verificar y completar PR #176 con revisión manual y checks requeridos del HEAD exacto; confirmar su merge y el HEAD real de `main`.
-2. Issue #78: obtener los dos preflight OPTIONS reales del Worker para `https://micro-app-63i.pages.dev` y `https://attacker.example`; revisar status y headers `Access-Control-*` (allow-origin, métodos, headers, credentials y rechazo externo). No incluir cookies/tokens. No modificar Cloudflare para forzar el resultado.
-3. Issue #53: resolver con el propietario las decisiones explícitas de la matriz; no inferir roles/permisos ni cerrar el issue prematuramente.
-4. Solo tras aprobación explícita de matriz: diseñar y probar catálogo de operaciones, autenticación/membresía/scope, autorización server-side, aislamiento cross-tenant/cross-branch, auditoría, idempotencia y pruebas negativas PostgreSQL desechables.
-5. Continuar el roadmap de datos/producto en el orden maestro y respetando seguridad, respaldo, coste cero y gates de producción.
+1. **Issue #78 — CORS:** obtener los dos preflight HTTP reales al Worker para origen permitido `https://micro-app-63i.pages.dev` y origen externo `https://attacker.example`. En el último intento desde el sandbox, ambos curl fallaron por DNS (exit 6, `Could not resolve host`); no se obtuvo status ni headers. Ejecutar solo desde una máquina con salida de red completa. Revisar status y headers `Access-Control-Allow-Origin`, `Access-Control-Allow-Methods`, `Access-Control-Allow-Headers`, `Access-Control-Allow-Credentials` y `Access-Control-Max-Age`. Para el origen externo, confirmar que no se autoriza mediante `Access-Control-Allow-Origin`; no exigir necesariamente HTTP 403 si el preflight devuelve 204 sin ese header. No incluir cookies/tokens. No modificar Cloudflare ni desplegar para forzar resultados. Mantener #78 abierta hasta evidencia suficiente.
+2. **Issue #53 — permisos:** obtener decisiones y aprobación explícita del propietario para `docs/sdd/role-permission-decision-matrix.md`. No inferir permisos por rol ni crear endpoints/middleware/mapeos comerciales antes de esa aprobación.
+3. Solo tras aprobación: diseñar y probar catálogo de operaciones, autorización server-side, aislamiento cross-tenant/cross-branch, auditoría, idempotencia y pruebas negativas con PostgreSQL desechable.
+4. Continuar roadmap de datos/producto respetando seguridad, respaldo, coste cero y gates de producción.
 
-Este orden no declara completados los puntos pendientes ni autoriza por sí mismo cambios de producto, datos o infraestructura.
-
+No crear PR de apariencia ni duplicar trabajo. Toda nueva PR debe tener un propósito coherente y checks del SHA exacto.
 
 ---
-
-
 > **Archivo histórico — no usar como estado operativo.** Las entradas siguientes se conservan para trazabilidad y describen estados de su fecha. GitHub en vivo y el checkpoint superior prevalecen.
 
 

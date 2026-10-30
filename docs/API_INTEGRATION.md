@@ -1,17 +1,19 @@
 # Estado actual de integración API — Micro app
 
-**Checkpoint post-merge — 2026-10-30 UTC.** PR #175 fusionada con merge SHA `b8a2a9d514839bf9fa340b5b04349621b4484385`; HEAD de la rama `main` se observó en ese mismo SHA inmediatamente después del merge. La PR fue documental y no cambió runtime/API. La siguiente reconciliación de continuidad está en [PR #176](https://github.com/BTF14/Micro-app/pull/176); verificar estado/HEAD/checks en GitHub.
+**GitHub vivo — 2026-10-30 UTC:** PR #175/#176 fusionadas; `main` observado en `287ba4e3b038b434bfec1fffec140bf2acc3f29a`; cero PR abiertas. En este SHA, nueve check-runs success (siete Actions y dos Cloudflare), incluidos los seis contextos requeridos. No extrapolar a SHA posteriores.
 
-**Límite actual de API:** no hay handlers comerciales ni autorización por operación demostrada. La matriz de permisos sigue **NO APROBADA**. Los helpers `resolveTenantContext`, `resolveBranchContext` y `resolveOpenCashierRegisterShift` resuelven contexto/ámbito, no autorizan operaciones. No añadir endpoints, middleware ni role-switches comerciales antes de aprobación explícita del propietario. No afirmar ledger/auditoría comercial implementados.
+## Límite actual de API
+No hay handlers comerciales ni autorización por operación demostrada. La matriz `docs/sdd/role-permission-decision-matrix.md` sigue **NO APROBADA**. `resolveTenantContext`, `resolveBranchContext` y `resolveOpenCashierRegisterShift` resuelven contexto/ámbito; no autorizan operaciones. No añadir endpoints, middleware ni role-switches comerciales antes de aprobación explícita. No afirmar ledger/auditoría comercial implementados.
 
-**CORS y Cloudflare:** issue #78 sigue abierta. GET /health con estado scaffold y carga de Pages no demuestran CORS. Faltan los dos preflight HTTP reales (origen permitido y externo) y la revisión de status/headers `Access-Control-*`. No cambiar configuración, variables, secretos ni desplegar para completar la comprobación.
+## CORS y Cloudflare
+Issue #78 sigue abierta. En `apps/api/src/index.ts`, Hono CORS compara el Origin con `FRONTEND_ORIGIN` validado y declara métodos GET/POST/PATCH/DELETE/OPTIONS, headers Content-Type/Authorization/Idempotency-Key, credenciales y max-age 600. `apps/api/src/index.test.ts` prueba un preflight simulado autorizado y que un origen externo no recibe `Access-Control-Allow-Origin`; usa `app.request` y bindings de prueba, no el Worker desplegado. La prueba automatizada no sustituye el preflight HTTP real.
 
-**Migraciones y entorno:** main versiona migraciones 0001–0004; no se afirma que 0003/0004 estén aplicadas a Neon `main`. PostgreSQL desechable es el entorno primario de validación. No ejecutar SQL remoto ni tocar datos reales en esta continuidad.
+En esta sesión se intentaron los dos comandos curl solicitados contra `/health`; ambos fallaron con exit 6 (`Could not resolve host`). No se obtuvo status ni headers, por lo que CORS sigue **NO VERIFICADO**. La limitación corresponde al DNS/salida de red del entorno de ejecución; no demuestra fallo del Worker ni de CORS. Ejecutar desde un equipo con salida de red completa y compartir solo status y headers `Access-Control-*`, nunca cookies/tokens. No modificar configuración, variables, secretos ni desplegar para completar la comprobación.
 
+## Migraciones y entorno
+Main versiona migraciones 0001–0004; no afirmar que 0003/0004 estén aplicadas a Neon `main`. PostgreSQL desechable es el entorno primario de validación. No ejecutar SQL remoto ni tocar datos reales en esta continuidad.
 
 ---
-
-
 > **Archivo histórico — no usar como estado operativo.** Las entradas siguientes se conservan para trazabilidad y describen estados de su fecha. GitHub en vivo y el checkpoint superior prevalecen.
 
 

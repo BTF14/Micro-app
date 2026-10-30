@@ -1,20 +1,18 @@
-# Checkpoint operativo — post-merge PR #175
+# Checkpoint operativo — post-merge PR #176
 
-**Estado verificado 2026-10-30 UTC:** PR #175 fusionada; merge SHA `b8a2a9d514839bf9fa340b5b04349621b4484385`; HEAD de `main` observado inmediatamente después del merge: el mismo SHA. HEAD de PR: `eac60184748fdab3eae926860e0d6c901251a462`. Nueve workflows del HEAD de PR terminaron en success; los seis checks requeridos por branch protection también terminaron en success. Diff: siete documentos, +142/-50. Reviews formales: 0; threads: 0; revisión manual del diff realizada. Esto no completa la revisión independiente Claude/Codex de PR #172, que permanece pendiente/no ejecutada.
+**Verificación GitHub — 2026-10-30 UTC:** PR #175 y #176 fusionadas. Merge SHA de #176 y HEAD de `main` observado en esta consulta: `287ba4e3b038b434bfec1fffec140bf2acc3f29a`. Cero PR abiertas. El SHA actual tiene nueve check-runs success (siete workflows Actions y dos checks Cloudflare); los seis contextos obligatorios de branch protection están en success. PR #176 HEAD `d46871f1f23387aeb98a0b25f2bbed9bb155e249`: 12/12 check-runs success, seis archivos documentales, +73/-39, cero reviews formales y cero threads. No convertir esta observación fechada en una afirmación perpetua del HEAD.
 
-La siguiente PR de cierre de continuidad es [#176](https://github.com/BTF14/Micro-app/pull/176), rama `docs/post-pr175-final-handoff-20261030`; verificar su estado en vivo. La base de PR #175 fue `682868c5fca65a4a1f3f61a1bc428a34ae1a4dd9`, no usarla como HEAD actual.
+## Estado de issues
+- **#78:** abierta. CORS no verificado mediante preflight HTTP real. Los dos curl exactos intentados desde este sandbox fallaron por DNS (exit 6, `Could not resolve host`); no se recibió status ni headers. Requiere ejecución desde equipo con salida de red completa.
+- **#53:** abierta. Matriz de permisos **NO APROBADA**. No implementar endpoints/middleware/mapeos comerciales.
 
-## Gates abiertos
-- #53 abierta; matriz de permisos **NO APROBADA**. No implementar endpoints/middleware/mapeos comerciales.
-- #78 abierta; CORS no verificado mediante preflight HTTP real.
-- Revisión externa Claude/Codex de PR #172 pendiente/no ejecutada.
-- Sin cambios a runtime, SQL, migraciones, workflows, secretos, datos, Cloudflare, Neon o producción en PR #175.
+## Límites
+La implementación y los tests de CORS en código no certifican el Worker desplegado. No usar Neon `main` como laboratorio; no ejecutar migraciones remotas; no tocar datos reales, secretos, DNS, billing, Cloudflare ni producción. No desplegar producción. Presupuesto USD 0. La revisión independiente Claude/Codex de PR #172 sigue pendiente/no ejecutada.
 
 ## Próxima acción
-Verificar PR #176 y, después, priorizar la evidencia CORS de #78. Mantener #53 bloqueada hasta decisiones explícitas del propietario y pruebas negativas de aislamiento en PostgreSQL desechable.
+Obtener los dos preflight OPTIONS reales de #78 desde un entorno con red completa; evaluar status y todos los headers Access-Control-* y mantener el issue abierto hasta evidencia suficiente. Después resolver con el propietario la matriz #53; solo tras aprobación diseñar autorización por operación y pruebas negativas en PostgreSQL desechable.
 
 ---
-
 > **Archivo histórico — no usar como estado operativo.** Los checkpoints anteriores se preservan para trazabilidad; GitHub en vivo y el checkpoint superior prevalecen.
 
 

@@ -1320,3 +1320,14 @@ CI documental: para HEAD `8c15e13fa001a14a0ddf9f2432bc17efb30d476d`, los 8 workf
 - Se precisan en `SAAS_ARCHITECTURE_DECISIONS.md` y `ORGANIZATION_COMMERCIAL_POLICY_CONFIGURATION.md` las distinciones entre rol organizacional único, asignación de sucursal y autorización comercial. No se aprueban permisos ni se crean endpoints/middleware.
 - La matriz comercial de Issue #53 sigue **NO APROBADA**. Inventario continúa organizacional; caja conserva turnos y apertura/cierre ordinario.
 - Alcance exclusivamente documental: no runtime, SQL, migraciones, workflows, Neon, Cloudflare configuración/tráfico/deployments, secretos, datos reales, DNS, billing ni producción. No se reescribió historial ni entradas anteriores del journal.
+
+
+## 2026-10-30 UTC — PR #178 fusionada y continuidad reconciliada
+
+- PR #178 fusionada por squash; merge SHA/main: `bb5bd72829db0532521857bffd62dac5c42a2eee`. Diff documental: 14 archivos (+403/-238), sin runtime, SQL, migraciones, lockfile, workflows ni infraestructura.
+- En HEAD exacto de PR `8bacd57d9c3d624eae8139dadeb7fd6c0730b4dc`, 9/9 workflow runs GitHub Actions consultados terminaron success. No transferir esos resultados a SHA posteriores.
+- TinyFish verificó login OAuth real y dashboard autenticado en `https://micro-app-63i.pages.dev/#inicio`, organización Abasto 7 de Oro, rol visible owner. No demuestra CORS ni operaciones comerciales.
+- #78 sigue abierta: CORS NO VERIFICADO; preflight no obtuvo status/headers por fallo DNS del entorno. Falta inspección del bundle JS y preflight desde conectividad funcional.
+- #53 sigue abierta: matriz comercial NO APROBADA y aislamiento cross-tenant de futuras rutas comerciales pendiente. No crear endpoints ni permisos.
+- Las portadas CURRENT_STATE/HANDOFF se corrigen en la PR documental siguiente porque aún describían PR #178 como draft. No se reescriben entradas históricas.
+- No se tocó Cloudflare producción, Neon main, secretos, DNS, billing ni datos reales.

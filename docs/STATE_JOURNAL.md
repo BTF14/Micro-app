@@ -829,3 +829,9 @@ CI documental: para HEAD `8c15e13fa001a14a0ddf9f2432bc17efb30d476d`, los 8 workf
 - Se corrigió la matriz de permisos: el catálogo maestro se propone compartido a nivel organización, pero esto no habilita acceso a stock, movimientos, ventas o caja de otras sucursales; los roles operativos requieren asignación de sucursal.
 - Se eliminó la recomendación de que el rol tenant `owner` gestione la allowlist global. D1 exige un operador autenticado/auditado, pero el rol/identidad de plataforma y su recuperación no están definidos; el email concreto citado en `SECURITY_PLAN_2026.md` se trata como propuesta histórica, no como autorización vigente.
 - La matriz permanece **NO aprobada**. No implementar estos permisos ni crear endpoints administrativos hasta que el propietario confirme la autoridad de plataforma y los permisos sensibles.
+
+
+## 2026-10-30 UTC — PR #157 abierta para integrar auditoría y continuidad
+
+- Se abrió [PR #157](https://github.com/BTF14/Micro-app/pull/157) desde `docs/post-pr156-audit-continuity-20261030` con alcance documental/auditoría acotado. Incluye la reconciliación de alcance de catálogo y la separación de autoridad global de allowlist respecto a roles tenant.
+- La PR permanece abierta hasta que los checks requeridos pasen en su HEAD exacto y se complete revisión manual final. No se fusiona por inercia ni se usan resultados de SHAs anteriores.

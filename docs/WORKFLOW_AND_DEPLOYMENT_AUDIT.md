@@ -156,3 +156,8 @@ No se copiaron ni registraron valores de variables de entorno. No afirmar que es
 
 **Guardrails:** no se cambiaron settings, variables, DNS, dominios, billing, builds, tráfico, Workers, Neon, workflows ni secretos. PR #158 sigue abierta/draft y no fusionada; su merge puede activar producción vía integración Git.
 
+
+## Check final de PR #158 HEAD 5b1b573
+
+- SHA `5b1b5734f3fa8024f060694e5dbc5f5f9f8ab766`: 12/12 check runs success. Cloudflare Pages preview `https://d8477e48.micro-app-63i.pages.dev`; Worker preview `https://2935f95a-micro-app-api.btfcasheb.workers.dev`. No production deployment.
+- PR #158 abierta, draft, no mergeada; cinco archivos docs. Pendiente verificar Node/pnpm efectivos, build cache, headers HTTP y usage Pages. No cambios productivos.

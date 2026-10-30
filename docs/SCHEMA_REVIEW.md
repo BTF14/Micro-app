@@ -8,7 +8,7 @@ Este documento contiene observaciones históricas del esquema. Las afirmaciones 
 
 **Estado de las observaciones siguientes:** revisión histórica del 2026-10-17. Las secciones de identidad y conexión que siguen están supersedidas por el checkpoint del 2026-10-29/30 de arriba y no describen el estado actual. Se conservan los hallazgos de integridad SQL que siguen siendo relevantes. Esta revisión es documental; no ejecuta SQL ni modifica Neon.
 
-## Estado verificado
+## Estado verificado (snapshot histórico del 2026-10-17; no usar como estado vivo)
 
 - Proyecto: `micro-app-db`, en la organización Neon dedicada a Micro app.
 - Rama primaria: `main`, estado `ready`.

@@ -976,6 +976,7 @@ La consulta de workflow runs asociada al head `f0f489fc6ac2f5ada84105610ae3eb0e1
 - No se modificó ninguna cuenta externa, integración de GitHub, webhook, deployment ni configuración de Cloudflare. El endpoint de protección de rama devolvió 403, por lo que no se afirma haber inspeccionado o cambiado GitHub App/branch protection.
 - `VITE_API_BASE_URL` **se conserva**: es una variable pública de build de Vite, no una integración de hosting. `apps/web/.env.production` apunta al Worker y `vite.config.ts` la carga con `loadEnv`. El bundle JS publicado aún no pudo inspeccionarse; no afirmar que el valor compilado está verificado.
 - El status combinado consultado para el SHA actual de `main` no devolvió checks externos. En PR #178 los checks observados son GitHub Actions y previews de Cloudflare Pages/Workers.
+- Se encontró una única rama heredada asociada a PR #72 (cerrada sin merge): 3 commits propios y 277 commits detrás de `main`, con cambios antiguos de imports ESM en tres archivos API ya supersedidos por el código actual. Se creó `archive/legacy-api-esm-experiment-20261020` en el HEAD exacto `b1330a5fa547071a5f500f0481ce88109c612f81` para preservar esos commits. La referencia original todavía no se pudo borrar: la sesión de navegador GitHub no está autenticada y el conector no expone borrado de ramas. No forzar ni reescribir la rama.
 
 ## Cambios y límites de esta revisión
 

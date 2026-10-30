@@ -20,6 +20,12 @@ Actualizado: 2026-10-30. Este registro no sustituye la verificación en vivo: pl
 | Semgrep | Reglas estáticas de seguridad. | https://github.com/semgrep/semgrep · https://github.com/semgrep/semgrep-rules | Comparar cobertura/falsos positivos con CodeQL antes de duplicar escaneos. |
 | OWASP ZAP | DAST contra staging aislado. | https://github.com/zaproxy/zaproxy | No hacer escaneo activo sobre producción ni sistemas ajenos. |
 
+## Configuración de build frontend/API
+
+- `VITE_API_BASE_URL` es una variable pública de build de Vite que define la URL base de la API. No pertenece a ningún proveedor de hosting.
+- En este repositorio, `apps/web/.env.production` define la URL canónica de Cloudflare Worker y `apps/web/vite.config.ts` la carga con `loadEnv`; Pages construye el frontend con Vite y puede usar el archivo versionado sin exigir que la variable se configure en su panel.
+- No colocar secretos en variables `VITE_*`: Vite las incorpora al bundle del navegador. Mantener la URL del Worker mientras el frontend consuma esa API.
+
 ## Repositorios de inspiración POS
 
 Solo inspiración funcional/arquitectónica; no copiar código ni asumir que licencias, seguridad o mantenimiento están aprobados. El inventario ampliado está en [INSPIRATION.md](INSPIRATION.md).
@@ -50,12 +56,8 @@ Solo inspiración funcional/arquitectónica; no copiar código ni asumir que lic
 - Cloudflare Workers pricing: https://developers.cloudflare.com/workers/platform/pricing/
 - Cloudflare Pages: https://pages.cloudflare.com/
 - Neon pricing: https://neon.com/pricing
-- Vercel Hobby plan: https://vercel.com/docs/plans/hobby
-- Vercel terms: https://vercel.com/legal/terms
 - Neon serverless driver / transactions: https://github.com/neondatabase/serverless#sessions-transactions-and-node-postgres-compatibility
 - Cloudflare Workers + Neon: https://developers.cloudflare.com/workers/databases/third-party-integrations/neon/
-
-Vercel Hobby no es el hosting objetivo para operación comercial. Reconfirmar condiciones antes de desplegar y mantener el coste $0.
 
 ## Registro de consulta
 
@@ -159,3 +161,15 @@ El handoff incluye el prompt copiable para continuar en un chat nuevo. La docume
 | Skills locales Micro app | `.agents/skills/micro-app-auth-security/SKILL.md`, `micro-app-postgres-testing/SKILL.md`, `micro-app-stack-guidance/SKILL.md`, `micro-app-skill-curation/SKILL.md` | Instrucciones propias, adaptadas al stack y a las políticas del repo. No equivalen a bundles descargados/verificados por AutoSkills; no ejecutan scripts ni añaden dependencias. |
 
 Decisión: en un checkout con red, ejecutar primero `npx autoskills --dry-run`, comparar las propuestas con los manifiestos actuales, seleccionar solo skills relevantes y revisar origen/licencia/estado de seguridad/hash antes de instalar. No usar `-y` por defecto, no instalar skills de Next.js/Supabase/Astro si esas tecnologías no están en uso, y no gastar dinero. Mantener separadas las skills locales propias y las externas verificadas.
+
+
+## Registro de verificación — Cloudflare 2026-10-30 (sesión autenticada, solo lectura)
+
+- **Workers `micro-app-api`:** Active Deployment en Producción; versión `49975c43-4161-4809-9c00-8ba83e53e6a0`, Build ID `957478f6-0f43-4b5c-932a-621be067d6d9`, commit `82386c6e9300e06f8fa209aa52995b939a72442a`; el panel mostró 100% de asignación de tráfico.
+- **Pages `micro-app`:** rama de producción `main`, SHA `82386c6e9300e06f8fa209aa52995b939a72442a`, deployment `https://cc23ff0c.micro-app-63i.pages.dev`; la lista visible de variables de entorno estaba vacía; el código versionado sí define `VITE_API_BASE_URL` en `apps/web/.env.production` y `vite.config.ts` lo carga mediante `loadEnv`. Falta confirmar el valor en el bundle publicado.
+- **Conclusión:** queda resuelta la duda sobre si el build de Worker de #177 corresponde a una versión activa de Producción. No queda resuelta la integración frontend/API ni CORS. Confirmar el valor compilado en el bundle JS si puede recuperarse y obtener preflight HTTP real.
+- **Límites:** no se modificaron variables, secretos, tráfico, deployments, DNS, billing ni producción; no se revelaron valores sensibles. La vista de métricas mostró 0 req/sec y 0% errores en el instante observado, lo cual no demuestra CORS ni ausencia de tráfico histórico.
+
+## Verificación pública de frontend — 2026-10-30 (solo lectura)
+
+La página `https://micro-app-63i.pages.dev/` muestra un enlace “Continuar con Google” cuyo `href` es `https://micro-app-api.btfcasheb.workers.dev/auth/google`. Esto confirma el hostname del Worker en el enlace OAuth del HTML público. La inspección no pudo acceder al contenido de los bundles JavaScript ni confirmar `__MICRO_APP_API_BASE_URL__` compilado. La evidencia no demuestra que las demás llamadas API funcionen ni que CORS sea correcto. No se realizaron interacciones ni cambios.

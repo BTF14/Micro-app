@@ -64,9 +64,10 @@ No se define aquí la semántica fiscal/contable de descuentos, su impacto tribu
 
 La dirección de arquitectura mantiene:
 
-- `owner` y `admin`: ámbito organizacional propuesto, sujeto a la matriz aprobada.
-- `cashier` y `inventory`: asignaciones explícitas de sucursal para operaciones limitadas.
-- Caja/turno: acceso restringido a la asignación activa del operador.
+- Cada miembro conserva un único rol organizacional en `organization_members.role`; ese rol no cambia según la sucursal.
+- `branch_memberships` concede o revoca acceso a sucursales, independientemente del rol, y no contiene roles por sucursal.
+- La resolución de ámbito puede permitir a `owner`/`admin` seleccionar sucursales activas de su organización y exigir asignación activa a `cashier`/`inventory`; esto no concede permisos comerciales ni sustituye la matriz aprobada.
+- Caja/turno: el ámbito de turno se resuelve por separado; no autoriza por sí solo operaciones.
 - Políticas comerciales: pertenecen a la organización; la facultad de configurarlas no se deduce automáticamente del rol. La matriz aprobada debe definir quién administra configuración y quién puede ejecutar excepciones.
 
 La matriz `docs/sdd/role-permission-decision-matrix.md` continúa sin aprobación. Antes de implementar autorización comercial, el propietario debe aprobar o corregir las facultades de roles y alcances. Esta especificación no transforma recomendaciones de permisos en política aprobada.

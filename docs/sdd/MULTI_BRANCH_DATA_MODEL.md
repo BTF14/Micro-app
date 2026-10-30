@@ -78,18 +78,18 @@ El diagrama omite claves técnicas y tablas de auditoría/idempotencia para que 
 | inventory_transfers / lines | tenant-scoped | Transferencia entre dos almacenes de la misma organización, con salida y recepción |
 | audit_logs | (organization_id,id) | Auditoría atribuible, protegida contra modificación ordinaria |
 
-### Membresía y asignaciones: base implementada; normalización de roles pendiente
+### Membresía, rol organizacional y asignaciones de sucursal — decisión vigente
 
-La migración 0003 ya crea `branch_memberships` como asignación explícita de un miembro organizacional a una sucursal, con FKs compuestas tenant-scoped y estado revocable. `resolveBranchContext` valida en servidor el tenant, la sucursal activa y la asignación de `cashier`/`inventory`; owner/admin conservan alcance organizacional según la decisión autorizada. El helper no está conectado a rutas.
+La migración 0003 crea `branch_memberships` como asignación explícita de un miembro organizacional a una sucursal, con FKs compuestas tenant-scoped y estado revocable. La autoridad del rol permanece en `organization_members.role`.
 
-Límites actuales y evolución pendiente:
-- `organization_members` sigue almacenando el rol global (`owner`, `admin`, `cashier`, `inventory`). `branch_memberships` no tiene una columna de rol por sucursal; por tanto, un miembro no puede tener roles distintos por sucursal en el esquema actual.
-- `organization_members` conserva pertenencia/estado y el rol existente; no duplicar la autoridad owner en cada sucursal.
-- Un usuario puede tener varias asignaciones de sucursal, cada una revocable independientemente.
-- Cualquier futura normalización de roles por sucursal exige decisión explícita, migración aditiva, backfill verificado, compatibilidad y pruebas; no se infiere de la PR #165.
-- La matriz de permisos comerciales sigue NO APROBADA. La asignación de sucursal no autoriza por sí sola operaciones de ventas, pagos, inventario, anulaciones ni supervisión.
+- Cada miembro tiene **un único rol por organización** (`owner`, `admin`, `cashier` o `inventory`); ese rol aplica uniformemente en todas las sucursales de la organización.
+- `branch_memberships` solo concede/revoca acceso a sucursales. No contiene rol por sucursal y no permite roles distintos para una misma persona según la sucursal.
+- Cambiar `organization_members.role` afecta al miembro en toda la organización. Revocar una asignación de sucursal no modifica el rol ni otras asignaciones.
+- La pertenencia organizacional, el rol global y la asignación activa de sucursal son comprobaciones distintas. Ninguna de ellas, aislada o combinada, autoriza una operación comercial sin una regla explícita server-side.
+- No crear migraciones/backfills para roles por sucursal. Cualquier cambio de esta decisión requiere nueva aprobación explícita del propietario.
+- La matriz de permisos por operación sigue **NO APROBADA**. No inferir permisos para ventas, pagos, inventario, anulaciones, caja, supervisión o políticas comerciales a partir del nombre del rol.
 
-Esto describe la estructura implementada y sus límites; no aprueba facultades adicionales de ningún rol.
+Esto describe la estructura implementada y la decisión vigente; no aprueba facultades comerciales. El inventario continúa organizacional mediante `products.stock_quantity`; el inventario por sucursal/almacén no está implementado.
 
 ## 5. Relaciones e integridad tenant-scoped
 

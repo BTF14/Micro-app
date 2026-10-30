@@ -1,5 +1,38 @@
 # Auditoría corregida de GitHub Actions y despliegues — 2026-10-30 UTC
 
+## Addendum vigente — PR #178, SHA exacto y previews Cloudflare
+
+**Snapshot verificado antes de esta sincronización documental:** `a45d84eb5f51e50d3a24f9d6858b5d14efb3ce6b` en `docs/reconcile-role-model-and-cloudflare-20261030`; base `main` = `82386c6e9300e06f8fa209aa52995b939a72442a`; 68 ahead / 0 behind. La PR permanece OPEN/DRAFT/NOT MERGED.
+
+- GitHub Actions: 11/11 workflow runs asociados al SHA exacto `a45d84eb5f51e50d3a24f9d6858b5d14efb3ce6b` terminaron `success`: nueve eventos pull_request y dos eventos push. Los run IDs y enlaces están en `docs/CURRENT_STATE.md`.
+- Cloudflare Pages notificó deployment exitoso para commit `a45d84e`: [commit preview](https://16be43d4.micro-app-63i.pages.dev) y [branch preview](https://docs-reconcile-role-model-an.micro-app-63i.pages.dev).
+- Cloudflare Workers notificó deployment exitoso para commit `a45d84e`: [commit preview](https://d0883f1d-micro-app-api.btfcasheb.workers.dev) y [branch preview](https://docs-reconcile-role-model-and-cloudflare-20261030-micro-app-api.btfcasheb.workers.dev). GET `/health` en el commit preview respondió `status=ok`.
+- La preview Pages muestra el mensaje de entorno aislado y deshabilita login/acceso a datos. Estos resultados son previews; no certifican producción ni la integración API/frontend completa.
+- Los dos OPTIONS reales contra el Worker de producción no pudieron ejecutarse por DNS en este entorno (curl exit 6 para ambos origins); no se obtuvo status ni headers CORS. El bundle JS publicado tampoco se pudo inspeccionar.
+- No se modificaron deployments, tráfico, variables, secretos, DNS, billing ni producción. El commit documental que añade este addendum crea un SHA nuevo, cuyos checks deben verificarse por separado.
+
+
+## Addendum vigente — Cloudflare tras PR #177 (2026-10-30 UTC, sesión autenticada de solo lectura)
+
+Este addendum sustituye las observaciones anteriores sobre el entorno efectivo de los builds de PR #177 / merge a `main`; el historial se conserva.
+
+### Worker `micro-app-api`
+- Panel: entorno **Producción**, Active Deployment versión `49975c43-4161-4809-9c00-8ba83e53e6a0` (prefijo `49975c43`).
+- Build ID `957478f6-0f43-4b5c-932a-621be067d6d9`, commit `82386c6e9300e06f8fa209aa52995b939a72442a` (`main`).
+- Active Deployment mostró **100% de tráfico asignado** a esa versión. La vista de métricas mostró 0 req/sec y 0% de errores en el instante observado; no equivale a una prueba HTTP ni a CORS correcto.
+- Un comentario anterior de #78 documentó 0% para esta versión en otra vista/observación. La inspección autenticada posterior de Active Deployment mostró 100%; usar esta observación posterior como estado actual, sin interpretar el extremo del slider como métrica.
+
+### Pages `micro-app`
+- Production branch `main`; SHA `82386c6e9300e06f8fa209aa52995b939a72442a`; URL de deployment `https://cc23ff0c.micro-app-63i.pages.dev`.
+- La lista visible de variables de entorno estaba vacía; sin embargo, `apps/web/.env.production` versionado define `VITE_API_BASE_URL` y `apps/web/vite.config.ts` lo carga mediante `loadEnv`. La ausencia en el panel no prueba que el build carezca de URL. Falta confirmar el valor efectivo en el bundle desplegado; no se modificó configuración.
+- El dashboard no lista variables configuradas, pero el código versionado define `VITE_API_BASE_URL` en `apps/web/.env.production` y `vite.config.ts` lo carga mediante `loadEnv`. La página pública muestra el enlace OAuth hacia el Worker; la inspección no pudo leer el bundle JS ni confirmar el valor compilado para otras llamadas API. No cambiar configuración.
+
+### Límites
+- Inspección autenticada, de solo lectura. No se modificó tráfico, versiones, deployments, variables, secretos, DNS, billing ni producción.
+- La observación del deployment no prueba que CORS funcione. #78 permanece abierta hasta obtener preflight HTTP real para origen permitido y origen externo.
+- No inferir preparación productiva a partir de CI, deployment activo o métricas puntuales.
+
+
 **Base auditada:** `1ee1808af4aae484a71dc24750237ff4f4d934a0` (`main`).  
 **Revisión adicional:** lectura directa de los 15 workflows versionados en `main`, inspección de la PR #158 y acceso de solo lectura al panel de Cloudflare mediante TinyFish.  
 **Estado PR #158:** abierta, draft, no fusionada; HEAD previo a esta actualización `d3f056b780ddad62deb5c1e1c0f1679bba19bb50`.

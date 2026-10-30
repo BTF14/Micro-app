@@ -1235,3 +1235,88 @@ CI documental: para HEAD `8c15e13fa001a14a0ddf9f2432bc17efb30d476d`, los 8 workf
 - La PR sigue siendo exclusivamente documental. La matriz `role-permission-decision-matrix.md` continúa NO APROBADA; no se autoriza inferir permisos, crear endpoints comerciales ni ejecutar migraciones remotas.
 - Pages/Workers publicaron previews; no son certificación funcional ni despliegue productivo. Issues #53 y #78 continúan abiertas.
 - No se modificó main, Neon main, runtime, esquema, migraciones, workflows, secretos, DNS, billing ni configuración de producción. Cualquier nuevo commit debe validarse por su propio SHA.
+
+
+## 2026-10-30 UTC — reconciliación de modelo de roles y evidencia Cloudflare tras PR #177
+
+- GitHub confirmó PR #177 fusionada; merge SHA y `main` observado: `82386c6e9300e06f8fa209aa52995b939a72442a`. No había PR abiertas al iniciar este bloque.
+- Se detectó que portadas de continuidad seguían referidas a PR #176 / SHA `287ba4e`. Se actualizaron CURRENT_STATE, HANDOFF, PROJECT_PLAN, WORK_CHECKPOINT y API_INTEGRATION, conservando entradas históricas.
+- Se detectó contradicción en `SAAS_ARCHITECTURE_DECISIONS.md` §§3/14 y `sdd/MULTI_BRANCH_DATA_MODEL.md`: describían roles de alcance por sucursal o futura normalización de roles por sucursal. Se corrigió para reflejar la decisión estructural: un único rol por miembro/organización en `organization_members.role`; `branch_memberships` solo asigna/revoca acceso a sucursales y no contiene rol. La matriz de permisos por operación sigue **NO APROBADA** y se reemplazó su contenido operativo contradictorio por un registro explícito de decisiones pendientes.
+- Cloudflare autenticado, solo lectura: Worker `micro-app-api` Active Deployment Producción, versión `49975c43-4161-4809-9c00-8ba83e53e6a0`, Build ID `957478f6-0f43-4b5c-932a-621be067d6d9`, commit `82386c6e9300e06f8fa209aa52995b939a72442a`, 100% de tráfico asignado. Pages `micro-app` production branch `main`, SHA `82386c6e9300e06f8fa209aa52995b939a72442a`, URL `https://cc23ff0c.micro-app-63i.pages.dev`; lista visible de variables vacía; `apps/web/.env.production` versionado define `VITE_API_BASE_URL` y `vite.config.ts` lo carga con `loadEnv`. Falta confirmar el valor efectivo en el bundle desplegado. Esto corrige lecturas antiguas en #78 que mostraban 0% para esa versión; se registra la observación posterior, sin cambios.
+- La asignación de tráfico y el deployment activo no demuestran CORS. #78 sigue abierta: faltan dos preflight HTTP reales, autorizado y externo, desde un equipo con conectividad completa. La variable ausente de Pages requiere investigación de solo lectura.
+- #53 sigue abierta; no se implementan endpoints ni permisos comerciales. Inventario sigue organizacional (`products.stock_quantity`); no existe inventario por sucursal. Caja sigue el modelo de turnos/cierre ordinario.
+- Alcance documental; no se modifica runtime, SQL, migraciones, workflows, secretos, datos, Neon, Cloudflare, DNS, billing ni producción. No hay pruebas runtime aplicables a este cambio.
+- Validación pendiente: revisar diff completo y checks del SHA exacto de la PR antes de declarar este bloque cerrado.
+
+
+## 2026-10-30 UTC — precisión de VITE_API_BASE_URL tras revisar el build de Pages
+
+- Corrección de la interpretación del dashboard: la lista de variables de Pages estaba vacía, pero eso no significa que el build carezca de URL de API.
+- El commit `82386c6e9300e06f8fa209aa52995b939a72442a` versiona `apps/web/.env.production` con `VITE_API_BASE_URL=https://micro-app-api.btfcasheb.workers.dev`; `apps/web/vite.config.ts` llama a `loadEnv(mode, ".", "VITE_")` y define `__MICRO_APP_API_BASE_URL__` a partir de ese valor (salvo Pages previews, donde se vacía deliberadamente).
+- Interpretación: la fuente de build esperada es el archivo versionado, no necesariamente una variable del dashboard. Aún falta inspeccionar el bundle desplegado/solicitud del navegador para confirmar el valor efectivo en producción. No cambiar variables de Cloudflare.
+- La conclusión de CORS no cambia: siguen pendientes los dos preflight HTTP reales. #78 permanece abierta.
+
+
+## 2026-10-30 UTC — verificación pública del enlace de API en Pages
+
+- Inspección de solo lectura de `https://micro-app-63i.pages.dev/` con navegador: el enlace visible “Continuar con Google” tiene `href=https://micro-app-api.btfcasheb.workers.dev/auth/google`. El hostname canónico del Worker aparece en el HTML público.
+- La herramienta no pudo inspeccionar el contenido del bundle JavaScript ni confirmar el valor compilado de `__MICRO_APP_API_BASE_URL__`; tampoco se observó una llamada API del frontend. La evidencia no prueba CORS.
+- En conjunto con `apps/web/.env.production` y `vite.config.ts`, hay evidencia del valor esperado del build y del enlace OAuth; queda pendiente verificar el bundle JS/solicitudes de la SPA y los dos preflight OPTIONS reales. Issue #78 sigue abierta.
+- No se interactuó con login ni se cambiaron Pages, Worker, tráfico, variables, secretos o producción.
+
+
+## 2026-10-30 UTC — PR #178 abierta para revisión documental
+
+- Se abrió PR [#178](https://github.com/BTF14/Micro-app/pull/178), draft, rama `docs/reconcile-role-model-and-cloudflare-20261030`, base `main` en `82386c6e9300e06f8fa209aa52995b939a72442a`.
+- Alcance: 11 archivos documentales; no runtime, SQL, migraciones, workflows, secretos, datos, Neon ni infraestructura. La PR consolida las correcciones de continuidad, modelo de roles, matriz NO APROBADA y evidencia Cloudflare/frontend.
+- La inspección pública confirma el enlace OAuth HTML hacia el Worker; no se pudo inspeccionar el bundle JS. CORS sigue pendiente de dos preflight HTTP reales.
+- Continuar en esta PR; no crear una PR duplicada. Revalidar el HEAD exacto y sus checks antes de revisión/merge.
+
+
+## 2026-10-30 UTC — auditoría y retiro de hosting alternativo del proyecto
+
+- El propietario confirmó que desconectó el hosting alternativo del proyecto y solicitó retirar sus rastros con precaución.
+- Se revisó el árbol completo de `main` (191 entradas), búsquedas del repositorio y manifiestos/configuración: no hay archivos de configuración específicos del proveedor, `vercel.json`, directorio `.vercel`, paquetes `@vercel/*`, CLI/comandos de despliegue ni workflows que lo invoquen. Las referencias operativas antiguas estaban concentradas en documentos de continuidad/arquitectura/registro.
+- Se limpiaron esas referencias de los documentos operativos actuales en la PR #178. Las entradas antiguas de este diario no se reescriben porque el protocolo del proyecto exige que `STATE_JOURNAL.md` sea append-only; describen hechos históricos y no una dependencia vigente. El historial de Git tampoco se reescribe.
+- `VITE_API_BASE_URL` se conserva intencionalmente: es una variable pública de build de Vite, no un servicio ni una integración de hosting. `apps/web/.env.production` define la URL canónica del Worker; `apps/web/vite.config.ts` la carga con `loadEnv`. El bundle publicado aún no pudo inspeccionarse.
+- La búsqueda de código no encontró referencias del proveedor en runtime, paquetes, workflows o scripts. El status combinado consultado para el SHA de `main` no devolvió estados externos. La PR #178 muestra checks de GitHub Actions y previews de Cloudflare; branch protection devolvió 403 y no pudo auditarse la instalación/configuración externa de GitHub Apps.
+- No se eliminó ni modificó ninguna cuenta externa, integración GitHub, webhook, deployment, variable, secreto, DNS, configuración Cloudflare, Neon ni producción. La limpieza fue documental.
+
+
+## 2026-10-30 UTC — archivo seguro de rama heredada de runtime alternativo
+
+- La búsqueda de ramas encontró una sola rama heredada asociada a PR #72, que está cerrada y no fusionada. Su HEAD era `b1330a5fa547071a5f500f0481ce88109c612f81`; comparación contra `main`: 3 commits ahead y 277 behind.
+- La revisión del diff mostró cambios antiguos limitados a `apps/api/src/auth.ts`, `apps/api/src/database.ts` y `apps/api/src/index.ts`. La rama no contiene la implementación vigente: carece de Google auth en el entrypoint y conserva lógica de login por contraseña que la rama principal ya retiró. No debe integrarse.
+- Se creó `archive/legacy-api-esm-experiment-20261020` apuntando al HEAD exacto para preservar los tres commits antes de retirar la referencia antigua.
+- La eliminación de la rama original quedó bloqueada: el navegador no tiene sesión GitHub iniciada y el conector disponible no expone borrado de refs. No se intentó force-push ni se modificó la rama original. Requiere sesión GitHub autorizada o eliminación manual del propietario.
+- PR #72 permanece cerrada y no fusionada; su registro y los mensajes de commits son historia GitHub, no configuración activa. No reescribir historial.
+
+
+## 2026-10-30 UTC — eliminación verificada de rama heredada
+
+- Tras autenticar la sesión GitHub del propietario, se eliminó únicamente `fix/vercel-api-esm-imports` desde la interfaz del repositorio.
+- Antes de borrar, se confirmó que `archive/legacy-api-esm-experiment-20261020` existía y que la comparación entre ambas referencias era `identical`: ambas apuntaban a `b1330a5fa547071a5f500f0481ce88109c612f81`, con 0 commits de diferencia.
+- Después del borrado, búsqueda independiente: la rama original no aparece; la rama de archivo sí permanece. PR #72 sigue cerrada y no fusionada. Los tres commits quedan preservados en el archive.
+- Solo se eliminó la referencia de rama original. No se modificaron PR #72, otras ramas, tags, archivos, settings, deployments, integraciones ni infraestructura. No se reescribió historial.
+
+
+## 2026-10-30 UTC — corrección de discrepancias documentales de PR #178
+
+- Se corrige la interpretación anterior de Pages: no es correcto afirmar que `VITE_API_BASE_URL` está ausente. `apps/web/.env.production` la define y `apps/web/vite.config.ts` la carga mediante `loadEnv`. La verificación aún pendiente es inspeccionar el bundle JavaScript publicado y confirmar el valor efectivo compilado; no inferirlo de la lista del panel.
+- La referencia `fix/vercel-api-esm-imports` ya fue eliminada tras autorización del propietario. El SHA `b1330a5fa547071a5f500f0481ce88109c612f81` permanece preservado en `archive/legacy-api-esm-experiment-20261020`; la comparación previa confirmó referencias idénticas y la búsqueda posterior confirmó la ausencia de la rama original. Cualquier texto anterior que la describa como pendiente de borrado es histórico y queda supersedido.
+- Se actualizó el checkpoint de PR #178 para identificar `8a3db508b10c8a8dfa9c63ace90dbd64825022e0` como snapshot anterior con 9/9 workflows success; esos checks no se transfieren a commits posteriores.
+- La matriz pendiente se describe ahora como permisos por operación y ámbito del recurso, no como roles por sucursal. La autoridad sigue siendo un único `organization_members.role` por miembro/organización; `branch_memberships` solo asigna acceso a sucursales. La matriz comercial continúa **NO APROBADA**.
+- CORS sigue **NO VERIFICADO** hasta completar preflight HTTP real para origen autorizado y externo. No se realizaron cambios de runtime, configuración, despliegue, Cloudflare, Neon ni producción.
+- Estas notas corrigen la interpretación operativa de entradas anteriores sin reescribirlas: el diario permanece append-only.
+
+## 2026-10-30 UTC — verificación de PR #178 en SHA a45d84e y corrección de continuidad
+
+- HEAD de la rama `docs/reconcile-role-model-and-cloudflare-20261030` verificado: `a45d84eb5f51e50d3a24f9d6858b5d14efb3ce6b`; base `main` = `82386c6e9300e06f8fa209aa52995b939a72442a`; comparación 68 ahead / 0 behind. PR #178 permanece OPEN/DRAFT/NOT MERGED.
+- Para ese SHA exacto, 11/11 workflow runs Actions terminaron success: nueve eventos pull_request y dos push. Cloudflare Pages y Workers notificaron previews exitosas para el mismo commit. Los enlaces exactos se mantienen en el checkpoint vigente de `CURRENT_STATE.md`. Estos resultados no se transfieren al nuevo SHA creado por esta sincronización.
+- La preview Worker devolvió `{"status":"ok","service":"micro-app-api","stage":"scaffold"}` en GET `/health`; Pages mostró el modo aislado que deshabilita login y acceso a datos. No se probaron flujos de autenticación ni producción.
+- Se repitieron los dos OPTIONS reales contra el Worker de producción; ambos terminaron con curl exit 6 (`Could not resolve host`). No se obtuvo status ni headers; Issue #78 permanece **NO VERIFICADO**. El bundle JS publicado sigue sin inspección.
+- Corrección explícita de una frase ambigua en la entrada anterior: `VITE_API_BASE_URL` **no está ausente**. Está definida en `apps/web/.env.production` y `apps/web/vite.config.ts` la carga mediante `loadEnv`. La única verificación pendiente es confirmar el valor efectivo compilado inspeccionando el bundle publicado.
+- La inspección de documentación detectó que CURRENT_STATE, HANDOFF, PROJECT_PLAN y WORK_CHECKPOINT todavía exponían el snapshot `d8a0001` (66 ahead, dos runs queued) como portada vigente. Se actualizan con el snapshot verificado de `a45d84eb5f51e50d3a24f9d6858b5d14efb3ce6b` y se deja claro que esta sincronización creará un HEAD nuevo.
+- Se precisan en `SAAS_ARCHITECTURE_DECISIONS.md` y `ORGANIZATION_COMMERCIAL_POLICY_CONFIGURATION.md` las distinciones entre rol organizacional único, asignación de sucursal y autorización comercial. No se aprueban permisos ni se crean endpoints/middleware.
+- La matriz comercial de Issue #53 sigue **NO APROBADA**. Inventario continúa organizacional; caja conserva turnos y apertura/cierre ordinario.
+- Alcance exclusivamente documental: no runtime, SQL, migraciones, workflows, Neon, Cloudflare configuración/tráfico/deployments, secretos, datos reales, DNS, billing ni producción. No se reescribió historial ni entradas anteriores del journal.

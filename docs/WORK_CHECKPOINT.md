@@ -1,16 +1,33 @@
-# Checkpoint operativo — post-merge PR #176
+# Checkpoint operativo — PR #178 y continuidad — 2026-10-30 UTC
 
-**Verificación GitHub — 2026-10-30 UTC:** PR #175 y #176 fusionadas. Merge SHA de #176 y HEAD de `main` observado en esta consulta: `287ba4e3b038b434bfec1fffec140bf2acc3f29a`. Cero PR abiertas. El SHA actual tiene nueve check-runs success (siete workflows Actions y dos checks Cloudflare); los seis contextos obligatorios de branch protection están en success. PR #176 HEAD `d46871f1f23387aeb98a0b25f2bbed9bb155e249`: 12/12 check-runs success, seis archivos documentales, +73/-39, cero reviews formales y cero threads. No convertir esta observación fechada en una afirmación perpetua del HEAD.
+**Snapshot verificado antes de esta sincronización documental:** rama `docs/reconcile-role-model-and-cloudflare-20261030`, HEAD `a45d84eb5f51e50d3a24f9d6858b5d14efb3ce6b`; base `main` = `82386c6e9300e06f8fa209aa52995b939a72442a`; 68 ahead / 0 behind. PR #178 OPEN, DRAFT, NOT MERGED; último reporte `mergeable=true`. Diff 13 archivos documentales (343 adiciones / 235 eliminaciones); sin runtime, SQL, migraciones ni workflows. 0 reviews formales y 0 threads inline. No marcar Ready ni fusionar sin autorización explícita.
+
+**Checks del SHA exacto `a45d84eb5f51e50d3a24f9d6858b5d14efb3ce6b`:** 11/11 workflow runs Actions en `success` (9 PR + 2 push). Cloudflare Pages y Workers previews reportaron éxito para el mismo SHA. Este commit de sincronización crea otro SHA; reconsultar todos los checks y previews de la nueva punta. No se confirmó branch protection (403 en auditoría anterior).
+
+## Cloudflare — previews del SHA padre, solo lectura
+- Pages commit preview: https://16be43d4.micro-app-63i.pages.dev
+- Pages branch preview: https://docs-reconcile-role-model-an.micro-app-63i.pages.dev
+- Workers commit preview: https://d0883f1d-micro-app-api.btfcasheb.workers.dev
+- Workers branch preview: https://docs-reconcile-role-model-and-cloudflare-20261030-micro-app-api.btfcasheb.workers.dev
+- GET `/health` en Workers commit preview devolvió `{"status":"ok","service":"micro-app-api","stage":"scaffold"}`. Pages muestra una vista aislada que deshabilita login y acceso a datos. No son pruebas de producción.
 
 ## Estado de issues
-- **#78:** abierta. CORS no verificado mediante preflight HTTP real. Los dos curl exactos intentados desde este sandbox fallaron por DNS (exit 6, `Could not resolve host`); no se recibió status ni headers. Requiere ejecución desde equipo con salida de red completa.
-- **#53:** abierta. Matriz de permisos **NO APROBADA**. No implementar endpoints/middleware/mapeos comerciales.
+- **#78:** abierta. Los dos preflight OPTIONS reales contra el Worker de producción fallaron desde este entorno con curl exit 6 (`Could not resolve host`); no se obtuvo status ni headers `Access-Control-*`. CORS sigue **NO VERIFICADO**. El bundle JS publicado aún no se inspeccionó.
+- **#53:** abierta. Un único rol por miembro/organización en `organization_members.role`; `branch_memberships` solo asigna acceso a sucursales. La matriz de permisos por operación sigue **NO APROBADA**. No crear endpoints, middleware ni mapeos rol→operación.
 
-## Límites
-La implementación y los tests de CORS en código no certifican el Worker desplegado. No usar Neon `main` como laboratorio; no ejecutar migraciones remotas; no tocar datos reales, secretos, DNS, billing, Cloudflare ni producción. No desplegar producción. Presupuesto USD 0. La revisión independiente Claude/Codex de PR #172 sigue pendiente/no ejecutada.
+## Variable de build frontend
+`VITE_API_BASE_URL` existe en `apps/web/.env.production` y `apps/web/vite.config.ts` la carga mediante `loadEnv`. La ausencia en el panel de Pages no prueba que falte en el build. Sigue pendiente inspeccionar el bundle publicado y confirmar el valor efectivo compilado.
 
-## Próxima acción
-Obtener los dos preflight OPTIONS reales de #78 desde un entorno con red completa; evaluar status y todos los headers Access-Control-* y mantener el issue abierto hasta evidencia suficiente. Después resolver con el propietario la matriz #53; solo tras aprobación diseñar autorización por operación y pruebas negativas en PostgreSQL desechable.
+## Límites y próxima acción
+No usar Neon `main` como laboratorio; PostgreSQL desechable primero. No tocar datos reales, Cloudflare, tráfico, deployments, variables, secretos, DNS, billing ni producción. Presupuesto USD 0. Inventario sigue organizacional; caja conserva turnos y apertura/cierre ordinario.
+1. Repetir los dos preflight desde un entorno con red real y registrar status + headers `Access-Control-*`.
+2. Inspeccionar el bundle JS publicado para verificar `VITE_API_BASE_URL`.
+3. Obtener aprobación explícita de la matriz comercial antes de cualquier implementación de permisos/endpoints.
+
+
+---
+> **Archivo histórico — no usar como estado operativo.** Los checkpoints anteriores se preservan para trazabilidad; GitHub en vivo y este checkpoint superior prevalecen.
+
 
 ---
 > **Archivo histórico — no usar como estado operativo.** Los checkpoints anteriores se preservan para trazabilidad; GitHub en vivo y el checkpoint superior prevalecen.

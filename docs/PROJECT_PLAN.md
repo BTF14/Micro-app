@@ -751,3 +751,17 @@ PR [#9](https://github.com/BTF14/Micro-app/pull/9) está fusionado en `main` med
 **Estado de salida:** producción NO lista. No tocar Neon main, secretos, datos reales ni producción; no aplicar migraciones sin diseño y autorización.
 
 ---
+
+## SaaS multi-organización y operaciones POS — dirección 2026-10-29
+
+Dirección de producto: una plataforma multi-organización, multi-sucursal y multiusuario. El catálogo/precio es compartido por organización por defecto; existencias, cajas y operaciones pertenecen a sucursal/almacén. BCV se actualizará mediante job programado validado y caché de lectura; el buscador prioriza barcode/SKU, SQL indexado y límites; KV de catálogo queda condicionado a benchmark. Las ventas deben validar precio/stock/tasa en transacción y conservar snapshots. Ver [SAAS_ARCHITECTURE_DECISIONS.md](./SAAS_ARCHITECTURE_DECISIONS.md) para reglas y pendientes.
+
+### Fases pendientes
+1. Auditoría read-only y ERD/scope.
+2. Aprobación/reconciliación de roles y operaciones sensibles.
+3. Diseño de migraciones y pruebas cross-tenant/cross-branch.
+4. Catálogo/búsqueda, inventario, compras, caja, ventas, devoluciones y transferencias.
+5. Fuente BCV y job de actualización con fallback.
+6. Benchmarks Neon/Cloudflare y definición de cuotas comerciales.
+
+No declarar comercial/producción listo hasta completar flujos, seguridad, pruebas, backups, observabilidad y capacidad.

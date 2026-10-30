@@ -4,7 +4,7 @@
 **Repositorio:** BTF14/Micro-app  
 **Main verificado antes de esta sincronización:** `a6db2dcaf57e2a0bf1735eb282c3ac2256cd314c`  
 **Último merge runtime:** PR #169, `be35a0fde3886271b6ed98b7ccc29cc1255d50e5`  
-**PR activa:** [#172](https://github.com/BTF14/Micro-app/pull/172), draft, no fusionada, rama `docs/operation-authorization-architecture-20261030`.  
+**PR activa:** [#172](https://github.com/BTF14/Micro-app/pull/172), abierta, lista para revisión, no fusionada, rama `docs/operation-authorization-architecture-20261030`; consultar su estado y HEAD en vivo.  
 **Último checkpoint previamente validado de PR #172:** `87de879b021cd4b68ce4267b138832279d4a043a`; 12/12 check-runs completed/success en ese SHA exacto. Los commits documentales posteriores requieren checks propios.  
 **Estado de matriz:** NO APROBADA.  
 **Último trabajo:** propuesta técnica y sincronización de continuidad; no cambios runtime/schema/migrations.

@@ -1,3 +1,20 @@
+# Reanudación inmediata — 2026-10-30 UTC, post PR #163
+
+**Fuente de verdad:** GitHub. Verificar main/PR/Actions en vivo antes de cualquier acción.
+
+- PR #163 fusionada: https://github.com/BTF14/Micro-app/pull/163
+- Merge/main verificado: 894895cfeee1c3d67b1e92bf1fae7d0c30cd36f9.
+- Los ocho workflows del HEAD PR 4b9a2b3993115b798ae4a78e3e0318dbdf50c24e terminaron success. No hay PR abiertas tras el merge.
+- El trabajo siguiente está en la rama docs/multibranch-erd-architecture-20261030; documento principal: docs/sdd/MULTI_BRANCH_DATA_MODEL.md.
+- El ERD es propuesta, no implementación. No hay sucursales/almacenes/cajas/turnos en el DDL actual y products.stock_quantity sigue organization-scoped.
+- La matriz docs/sdd/role-permission-decision-matrix.md sigue NO APROBADA. No implementar permisos sensibles ni endpoints comerciales hasta cerrar esa aprobación.
+- Cada organización define su política comercial, incluidos descuentos; Micro app no fija porcentajes/umbrales universales.
+- Revisar el diff de la PR de ERD, checks del SHA exacto y actualizar este handoff/checkpoint dentro de esa PR.
+- No ejecutar migraciones en Neon main, no usar datos reales, no desplegar producción ni incurrir en costes. Pruebas futuras en PostgreSQL efímero.
+- Después del ERD: cerrar membresía/branch assignments, stock balance+ledger, caja/turnos, integridad venta/líneas/pagos, transferencias, idempotencia y auditoría; luego SDD de migración y pruebas antes de implementar.
+
+---
+
 # Reanudación inmediata — 2026-10-30 UTC, post PR #161
 
 **Leer primero:** [docs/WORK_CHECKPOINT.md](WORK_CHECKPOINT.md), [docs/CURRENT_STATE.md](CURRENT_STATE.md), [AGENTS.md](../AGENTS.md) y la política de colaboración.

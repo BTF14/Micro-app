@@ -1,7 +1,7 @@
 # Checkpoint vigente — post PR #166 y #167 — 2026-10-30 UTC
 
 **Repositorio:** BTF14/Micro-app  
-**Main merge SHA:** `c1cd8650db33aa4a249eaf1f55d321513d576e10` (merge PR #167)  
+**Merge SHA de PR #167 (integró 0004):** `c1cd8650db33aa4a249eaf1f55d321513d576e10`.  
 **PR #166:** fusionada en `8a16b4bf70e3b35c45e91366148f4a37aa43b5e7`.  
 **PR #167:** fusionada en `c1cd8650db33aa4a249eaf1f55d321513d576e10`.  
 **Checks:** PR #166 8/8 success en HEAD `4cee6e2ff6bfb8f3eecd85b4ff9212c1ab6d98fd`; PR #167 10/10 success en HEAD `ad45911368e9e9a714ebbe014de2d84a7b3cf1de`.  

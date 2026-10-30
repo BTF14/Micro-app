@@ -1,6 +1,6 @@
 # Implementación base de alcance por sucursal
 
-**Estado:** implementada y fusionada en PR #165; migración 0003 NO aplicada a Neon main. El helper sigue aislado y no conectado a rutas comerciales.  
+**Estado:** implementada y fusionada en PR #165; migración 0003 NO aplicada a Neon main. `resolveBranchContext` sigue aislado y no conectado a rutas comerciales. PR #169 añadió el helper separado `resolveOpenCashierRegisterShift` para turno abierto; tampoco está conectado a rutas ni autoriza operaciones.  
 **Fecha:** 2026-10-30.  
 **Base:** `ce8b0e491fe8b9f6154380cc8b0eea0a19fe8114`.
 
@@ -38,7 +38,7 @@ Alcance de PR #165: no creó almacenes, cajas, turnos, stock por almacén ni mig
 5. Para `cashier/inventory`, exige fila `branch_memberships` activa para el usuario y sucursal.
 6. Devuelve solo identidad y scope; no decide permisos de negocio.
 
-El helper aún no está conectado a middleware ni rutas. Los futuros handlers deberán llamar ambos resolvers y aplicar autorización por operación antes de leer o escribir datos.
+`resolveBranchContext` aún no está conectado a middleware ni rutas. PR #169 añade un resolver separado de turno abierto, también aislado. Los futuros handlers deberán llamar ambos resolvers y aplicar autorización por operación antes de leer o escribir datos.
 
 ## Pruebas requeridas
 
@@ -46,6 +46,7 @@ El helper aún no está conectado a middleware ni rutas. Los futuros handlers de
 - PostgreSQL efímero: FKs cross-tenant para sucursal y usuario, unicidad de slug por organización.
 - Evidencia histórica de PR #165: CI aplicó 0001–0003 en PostgreSQL 18 desechable y ejecutó assertions.
 - PR #167 fusionó la ampliación de workflows a 0001–0004 y assertions de caja/turno; los 10 workflows pasaron en su HEAD final.
+- PR #169 implementó un resolver aislado de turno abierto; sus 7 tests de integración PG18 y 6 unitarios pasaron, incluido el bloqueo frente a cierre concurrente.
 - Antes de producción: pruebas de integración del resolver con DB real aislada, membresías revocadas, acceso IDOR, concurrencia de cambios de asignación y auditoría de cambios.
 
 ## Límites y pendientes

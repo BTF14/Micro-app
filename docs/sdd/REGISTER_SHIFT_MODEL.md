@@ -1,8 +1,8 @@
 # Modelo de cajas y turnos — decisión de arquitectura
 
-**Estado:** migración 0004, assertions y pruebas de integración implementadas en main mediante PR #167. No aplicada a Neon main; no equivale a aprobación de la matriz comercial completa.  
+**Estado:** migración 0004, assertions y pruebas de integración implementadas en main mediante PR #167; helper aislado de turno abierto implementado mediante PR #169. 0003/0004 no aplicadas a Neon main; esto no equivale a aprobación de la matriz comercial completa.  
 **Fecha:** 2026-10-30 UTC  
-**Base de diseño:** main `1d10befe0cd3367e04bd8998a192e93d9b228063`, PR #165 fusionada.  
+**Base de diseño:** main `be35a0fde3886271b6ed98b7ccc29cc1255d50e5`, PR #169 fusionada.  
 **Objetivo:** trazabilidad de efectivo y atribución inequívoca de operaciones en un POS multi-sucursal.
 
 ## 1. Decisión operativa
@@ -48,7 +48,7 @@ Esta es la opción base más simple de auditar: cada venta/pago asociado a caja 
 ## 3. Reglas de aplicación futuras
 
 1. Abrir: validar sesión, tenant, branch context, rol cashier, asignación activa, caja activa y ausencia de turno abierto del cajero/caja; insertar apertura en transacción.
-2. Operar: cada operación de caja debe comprobar en servidor el turno abierto, cajero autenticado y caja/sucursal correctas dentro de la misma transacción que la operación financiera.
+2. Operar: cada operación de caja debe comprobar en servidor el turno abierto, cajero autenticado y caja/sucursal correctas dentro de la misma transacción que la operación financiera. PR #169 implementa el lookup aislado; el futuro caller debe usar el mismo transaction client y añadir autorización por operación.
 3. Cerrar: capturar conteo real separado en USD y VES, registrar actor y hora; no calcular diferencia contra un efectivo esperado hasta que exista un ledger de caja completo. Bloquear modificaciones posteriores.
 4. Cambio de cajero: cerrar el turno actual; abrir uno nuevo para el siguiente cajero. Si el cierre falla, no abrir el siguiente turno.
 5. Concurrencia: índices únicos parciales son la última defensa; la API debe manejar conflictos sin crear duplicados ni filtrar detalles internos.
@@ -57,6 +57,7 @@ Esta es la opción base más simple de auditar: cada venta/pago asociado a caja 
 ## 4. Autorización y límites
 
 - `resolveBranchContext` ya existe, pero no está conectado a rutas.
+- PR #169 implementó `resolveOpenCashierRegisterShift(client, branchContext)` como helper aislado: rol cashier, scope org/user/branch, revalidación de estados activos y lock `FOR SHARE`; no está conectado a rutas ni autoriza operaciones.
 - Un contexto owner/admin de alcance organizacional no significa que puedan operar como cajero en un turno ajeno.
 - No aprobar aquí permisos de apertura/cierre por supervisor, arqueo, diferencias, retiros, ingresos, anulaciones ni reportes financieros.
 - La matriz `docs/sdd/role-permission-decision-matrix.md` sigue NO APROBADA. Antes de endpoints, debe aprobarse o sustituirse por una matriz corregida con autorización server-side por operación.
@@ -84,9 +85,10 @@ En PostgreSQL 18 efímero, desde una base vacía y aplicando migraciones 0001–
 
 1. **Hecho en PR #167:** migración aditiva 0004 y assertions SQL.
 2. **Hecho en PR #167:** workflows CI/migration-check aplican 0001–0004 desde cero en PostgreSQL 18 efímero.
-3. **Hecho en PR #167:** tests de integración para scope, lifecycle, desactivación y concurrencia. El helper de turno/runtime y los endpoints quedan fuera de esta fase.
-4. Corregir cualquier fallo, revisar diff completo y verificar todos los checks sobre el SHA exacto final.
-5. No aplicar 0004 a Neon main ni conectar rutas comerciales en esta fase.
+3. **Hecho en PR #167:** tests de integración para scope, lifecycle, desactivación y concurrencia del modelo de datos.
+4. **Hecho en PR #169:** helper aislado de lookup del turno abierto del cajero autenticado; 6 pruebas unitarias y 7 de integración PG18, incluida concurrencia de cierre. No crea endpoints ni autoriza operaciones.
+5. **Pendiente:** aprobación de matriz de permisos y diseño de autorización server-side por operación antes de handlers comerciales.
+6. No aplicar 0004 a Neon main ni conectar rutas comerciales en esta fase.
 
 ## 7. Estado actual de infraestructura de pruebas
 

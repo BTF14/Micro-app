@@ -1,16 +1,26 @@
-# Revisión del esquema y la API — estado reconciliado post-PR #168 (2026-10-30 UTC)
+# Revisión del esquema y la API — estado reconciliado post-PR #169 (2026-10-30 UTC)
 
-**Fuente de código:** `main` = `e4e4a5f312522ec5efbcc3252958141f56fbd821` (PR #168 fusionada).  
-**Alcance:** revisión estática de solo lectura de rutas, helpers y migraciones versionadas; las pruebas de migración/integración de 0001–0004 se ejecutaron en PostgreSQL 18 desechable, no en Neon main.
+**Fuente de código:** `main` = `be35a0fde3886271b6ed98b7ccc29cc1255d50e5` (PR #169 fusionada).  
+**Alcance:** revisión estática de rutas/helpers y migraciones versionadas; CI post-merge ejecutó migraciones 0001–0004 y pruebas en PostgreSQL 18 desechable, no en Neon main. El helper de turno está implementado, aislado y no conectado a rutas comerciales.
+
+## Helper runtime de turno abierto — PR #169
+
+- `resolveOpenCashierRegisterShift(client, branchContext)` recibe un BranchContext server-derived tras `resolveTenantContext` y `resolveBranchContext`.
+- Rechaza roles distintos de `cashier`; revalida org/branch/register/user/membership/role/assignment activos y filtra org/user/branch/open shift.
+- Retorna null si no hay turno abierto o el scope no es válido; `FOR SHARE OF s` protege frente a cierre concurrente si el caller mantiene la transacción.
+- El helper no abre transacción, no está conectado a rutas y no autoriza operaciones. La matriz de permisos sigue NO APROBADA.
+- PR #169: 6 pruebas unitarias y 7 de integración PostgreSQL 18; el test de concurrencia comprueba el bloqueo de cierre hasta COMMIT.
 
 ## Estado vigente del esquema y el contexto de sucursal
+
+Main contiene migraciones 0001–0004; 0003 añade sucursales/asignaciones y 0004 cajas/turnos. Las migraciones 0003/0004 no se han aplicado a Neon main. El helper de turno PR #169 no modifica el esquema.
 
 ## Esquema de cajas/turnos implementado en main por PR #167
 
 - PR #167 fusionó `0004_register_shifts.sql` con `registers`/`register_shifts`, FKs compuestas, índices parciales de un turno abierto por caja/cajero y triggers de lifecycle/desactivación. Este DDL está en main, pero no se aplicó a Neon.
 - La migración-check para el HEAD inicial `0b5a9adbdafce25a8483e7ce6953e2d83a826c47` aplicó 0001–0004 y pasó las assertions en PostgreSQL 18 efímero.
 - El CI del mismo HEAD detectó una expectativa de SQLSTATE incorrecta en el test de integración (se esperaba FK violation donde el trigger fallaba antes). El trigger se corrigió en `4008ec7c09785298dc733e5e0c492cea34ad6f43` para que referencias inexistentes se rechacen por FK y los registros existentes pero inactivos/no-cashier por check violation. Revalidar CI en el HEAD vivo antes de integrar.
-- No se añadieron endpoints comerciales, helper de turno ni autorización por operación. La matriz sigue NO APROBADA.
+- PR #169 añadió el helper aislado de turno descrito arriba; no se añadieron endpoints comerciales ni autorización por operación. La matriz sigue NO APROBADA.
 
 
 - `0001_initial.sql`: esquema base tenant-scoped; `products.stock_quantity` sigue a nivel organización.
@@ -19,7 +29,7 @@
 - La migración 0003 **no se ha aplicado a Neon main**. El estado de la base remota no se infiere del DDL de Git.
 - `resolveBranchContext` existe y revalida organización, usuario, membresía, rol, sucursal y asignación activa. Es un helper aislado: no se encontró conectado a middleware ni a handlers HTTP.
 - `branch_memberships` no almacena un rol por sucursal; el rol sigue en `organization_members.role`. La asignación limita el alcance de cashier/inventory, pero no modela roles distintos para el mismo usuario en sucursales diferentes.
-- No existen todavía `warehouses`, `registers`, `register_shifts`, `inventory_balances`, compras/recepciones, transferencias ni devoluciones.
+- Siguen ausentes `warehouses`, `inventory_balances`, compras/recepciones, transferencias y devoluciones; `registers`/`register_shifts` existen desde la migración 0004.
 - No hay handlers HTTP comerciales. La matriz `docs/sdd/role-permission-decision-matrix.md` continúa **NO APROBADA**; el contexto de tenant/sucursal no sustituye autorización por operación.
 
 ## Inventario de rutas HTTP observado
@@ -115,7 +125,7 @@ No se encontraron rutas HTTP comerciales en el registro de Hono de `apps/api/src
 3. **Referencia polimórfica no validada (medio):** `inventory_movements.reference_type/reference_id` no tiene FK polimórfica a ventas/compras/devoluciones. La aplicación debe validar tenant y tipo de entidad; mejor diseñar referencias explícitas o tabla de eventos tipada si el modelo crece.
 4. **Idempotencia de pagos ausente (alto antes de pagos):** `sales.idempotency_key` tiene unicidad por organización, pero `payments` no tiene una clave idempotente propia. Un retry del endpoint de pagos podría duplicar un pago si no existe una restricción/diseño de idempotencia.
 5. **Último owner no protegido por esquema (alto antes de gestión de miembros):** `organization_members` limita los roles a cuatro valores, pero no impide desactivar/eliminar el último `owner` activo. Requiere transacción serializada y prueba de concurrencia; una validación solo de UI no sirve.
-6. **Alcance de sucursal ausente (bloqueante de diseño):** no existen tablas de sucursal, almacén, caja o turno; `products.stock_quantity` es organization-scoped. No implementar inventario multi-sucursal sobre este campo.
+6. **Almacenes/balances multi-sucursal pendientes:** `warehouses` e `inventory_balances` siguen ausentes; `products.stock_quantity` permanece organization-scoped. No implementar inventario multi-sucursal sobre este campo.
 7. **Auditoría no inmutable por DB (medio):** `audit_logs` guarda actor/tenant/acción/entidad/metadata, pero el DDL inspeccionado no contiene trigger/privilegios que impidan UPDATE/DELETE. Definir política append-only y privilegios antes de usarlo como libro probatorio.
 8. **Índices de búsqueda (optimización pendiente, no defecto probado):** hay unicidad tenant-scoped para SKU/barcode e índice B-tree `(organization_id, lower(name))`. No se ha medido `EXPLAIN ANALYZE`; no asumir que búsquedas `ILIKE '%term%'` usan ese B-tree. Medir consultas exactas/prefijo con datos sintéticos antes de agregar trigram/GIN.
 
@@ -192,7 +202,7 @@ Este documento contiene observaciones históricas del esquema. Las afirmaciones 
 Se contrastó el DDL versionado en apps/api/migrations/0001_initial.sql con la propuesta docs/sdd/MULTI_BRANCH_DATA_MODEL.md.
 
 - Verificado en el DDL: organizations/organization_members, suppliers/products, sales/sale_items/payments, inventory_movements y audit_logs; products.stock_quantity es organización-scoped.
-- No existen tablas branches, warehouses, registers, register_shifts, branch_memberships ni inventory_balances.
+- El DDL histórico 0001 no incluía branches, registers, register_shifts ni branch_memberships; 0003 añade branches/branch_memberships y 0004 añade registers/register_shifts. Siguen ausentes warehouses e inventory_balances.
 - Las referencias de inventory_movements siguen siendo polimórficas (reference_type/reference_id) sin FK al documento origen.
 - Las FKs compuestas existentes ya protegen varias relaciones por organization_id, pero no sustituyen autorización de servidor por sucursal.
 - La venta completada no queda reconciliada por constraints SQL con sus líneas/pagos; payments no tiene idempotency key propia; saldo y ledger no tienen reconciliación DB; auditoría no es append-only por permisos/DDL.

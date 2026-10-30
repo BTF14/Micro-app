@@ -1123,3 +1123,14 @@ CI documental: para HEAD `8c15e13fa001a14a0ddf9f2432bc17efb30d476d`, los 8 workf
 - La implementación de PR #169 en SHA `253128c6f5213986879ce619da85285251c07416` pasó 8/8 workflows Actions y 14 check-runs observados success; 7/7 nuevas pruebas de integración PostgreSQL 18 pasaron, incluida la prueba de bloqueo ante cierre concurrente.
 - Se sincronizan las portadas de continuidad con esos resultados y se distingue el SHA de implementación verificado de los commits documentales posteriores.
 - Este checkpoint cambia el HEAD de PR #169 sin cambiar runtime; reconsultar los checks del SHA exacto actual antes de merge. No reutilizar el resultado de 253128 como evidencia de un SHA posterior.
+
+
+## 2026-10-30 UTC — PR #169 fusionada y estado post-merge verificado
+
+- PR #169 fusionada con merge SHA `be35a0fde3886271b6ed98b7ccc29cc1255d50e5`; main apunta al mismo SHA y la PR quedó cerrada/merged.
+- En el merge SHA: 7/7 workflows Actions success y Cloudflare Pages/Workers 2/2 success. CI post-merge confirma build/typecheck, suites existentes y cashier-open-shift integration 7/7 en PostgreSQL 18 desechable.
+- Migraciones 0001–0004 validan desde cero en PG18 efímero; 0003/0004 no se aplicaron a Neon main.
+- Helper `resolveOpenCashierRegisterShift` ya está en main; no hay rutas comerciales ni autorización por operación. La matriz sigue NO APROBADA.
+- PR abiertas: ninguna. Issues #53 y #78 siguen abiertos. No se alteraron.
+- Reviews formales/threads inline: 0; Codex agotó cuota. Revisión manual realizada, no aprobación externa.
+- Siguiente trabajo: aprobar matriz de permisos y diseñar autorización server-side por operación/sucursal antes de habilitar endpoints.

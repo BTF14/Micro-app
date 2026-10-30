@@ -1,24 +1,20 @@
-# Prioridad operativa vigente — post PR #166 y #167 — 2026-10-30 UTC
+# Prioridad operativa vigente — resolver turno abierto del cajero — 2026-10-30 UTC
 
-**Merge SHA de PR #167 (integró 0004):** `c1cd8650db33aa4a249eaf1f55d321513d576e10`.  
-**PR #166:** fusionada (8/8 workflows success en su HEAD final).  
-**PR #167:** fusionada (10/10 workflows success en su HEAD final).  
-**Revisión:** manual fallback documentada; sin reviews formales GitHub/Codex por cuota.  
-**Base de datos:** main versiona 0001–0004; Neon main no recibió esas migraciones.
+**Main base verificado:** `e4e4a5f312522ec5efbcc3252958141f56fbd821`.  
+**PR #166/#167/#168:** fusionadas secuencialmente. #166 8/8 y #167 10/10 workflows success en sus HEADs finales; no se obtuvieron runs/status para el merge SHA actual de main.  
+**Base de datos:** main versiona 0001–0004; 0003/0004 no aplicadas a Neon main.
 
 ## Prioridades
 
-1. Implementar helper aislado para resolver turno abierto del cajero autenticado, sin endpoints comerciales.
-2. Aprobar explícitamente matriz de permisos y diseñar autorización server-side por operación y sucursal.
+1. Completar y verificar el helper aislado `resolveOpenCashierRegisterShift` para el cajero autenticado y sucursal resuelta; pruebas unitarias y PostgreSQL 18 efímero.
+2. Aprobar explícitamente la matriz de permisos y diseñar autorización server-side por operación y sucursal antes de handlers comerciales.
 3. Diseñar almacenes, balances/ledger y reconciliación/backfill del stock legacy.
 4. Diseñar transacciones, idempotencia y concurrencia para ventas/pagos/stock antes de crear handlers.
-5. Medir límites Neon/Cloudflare con pruebas sintéticas y mantener objetivo de coste $0.
+5. Medir límites Neon/Cloudflare con pruebas sintéticas y mantener coste $0.
 
-**Gates:** PostgreSQL 18 desechable primero; Neon branches solo si añaden validación específica; Neon main no es laboratorio. No tocar secretos, datos reales, DNS, billing ni Cloudflare settings sin necesidad demostrada y autorización aplicable. No declarar readiness comercial.
+**Gates:** revisar diff completo; exigir todos los workflows requeridos en el SHA exacto; PostgreSQL 18 desechable primero; Neon branches solo si aportan validación específica; Neon main nunca es laboratorio. No tocar secretos, datos reales, DNS, billing ni Cloudflare settings sin necesidad demostrada y autorización aplicable. No declarar readiness comercial.
 
 Los bloques inferiores son históricos; esta portada prevalece y se debe contrastar con GitHub live al comenzar cada sesión.
-
----
 
 ## Histórico — prioridad operativa post PR #161 (supersedida por el estado vigente anterior)
 

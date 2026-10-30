@@ -1,9 +1,8 @@
-# Estado actual del esquema — 2026-10-30 UTC (post PR #165)
+# Estado actual del esquema — 2026-10-30 UTC (main post PR #168)
 
-**DDL en main:** `0001_initial.sql`, `0002_google_identity.sql` y `0003_branch_scope.sql`.  
-**Main verificado:** `1d10befe0cd3367e04bd8998a192e93d9b228063`. La PR #165 fusionó la migración 0003; no significa que se haya aplicado a Neon main.
+**Main verificado:** `e4e4a5f312522ec5efbcc3252958141f56fbd821`. Main versiona `0001_initial.sql`, `0002_google_identity.sql`, `0003_branch_scope.sql` y `0004_register_shifts.sql`; las migraciones 0003/0004 no se han aplicado a Neon main.
 
-**Main (PR #167 fusionada):** `0004_register_shifts.sql` añade `registers` y `register_shifts`. La migración se valida desde cero en PostgreSQL 18 desechable; no se ha aplicado a Neon main.
+`0004_register_shifts.sql` añade `registers` y `register_shifts`; CI valida 0001–0004 desde cero en PostgreSQL 18 desechable. Este estado de Git no demuestra aplicación remota.
 
 ## Esquema versionado actual
 

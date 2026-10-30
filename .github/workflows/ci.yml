@@ -82,3 +82,5 @@ jobs:
         run: pnpm --filter @micro-app/api exec vitest run src/branch-context.integration.test.ts
       - name: PostgreSQL register shift integration tests
         run: pnpm --filter @micro-app/api exec vitest run src/register-shifts.integration.test.ts
+      - name: PostgreSQL authenticated cashier open-shift integration tests
+        run: pnpm --filter @micro-app/api exec vitest run src/cashier-open-shift.integration.test.ts

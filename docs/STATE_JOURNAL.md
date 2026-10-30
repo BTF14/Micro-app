@@ -1077,3 +1077,14 @@ CI documental: para HEAD `8c15e13fa001a14a0ddf9f2432bc17efb30d476d`, los 8 workf
 - Se abrió la rama `docs/post-merge-166-167-continuity-20261030` para corregir referencias que aún presentaban #166/#167 como abiertas/candidatas. Se actualizaron portadas de CURRENT_STATE, HANDOFF, WORK_CHECKPOINT y PROJECT_PLAN, además de README, AGENTS, API/schema/readiness/compliance/architecture/SDD y backup docs. Las entradas históricas inferiores se conservan como historia y quedan supersedidas por las portadas vigentes.
 - Siguiente tarea: helper aislado para resolver el turno abierto del cajero autenticado, con pruebas PostgreSQL efímeras; no añadir endpoints comerciales hasta aprobar matriz y autorización por operación.
 - No se modificaron secretos, datos reales, DNS, billing ni configuración Cloudflare. No se ejecutó SQL en Neon main.
+
+
+## 2026-10-30 UTC — inicio del helper de turno abierto del cajero autenticado
+
+- Revalidación en vivo: `main=e4e4a5f312522ec5efbcc3252958141f56fbd821`; PR #166/#167/#168 fusionadas; no había PR abiertas. Issues #53 y #78 continúan abiertas y no se modificaron.
+- La consulta de workflow runs y combined status sobre el merge SHA e4e4a5f devolvió listas vacías; los resultados 8/8 de #166 y 10/10 de #167 corresponden a sus HEADs de PR, no al merge SHA actual.
+- Se leyeron los 16 documentos obligatorios indicados por el propietario y se inspeccionaron los callers de auth/DB, branch context, migraciones 0001–0004 y tests PostgreSQL existentes.
+- Diseño: helper separado consume BranchContext server-derived, exige role cashier, revalida en una consulta scope org/user/branch + estados activos + turno abierto; devuelve null si no hay turno o scope no válido. `FOR SHARE OF s` permite proteger el turno durante una transacción caller, sin abrir una transacción dentro del helper.
+- Se prepararon helper, tests unitarios, integración PostgreSQL 18 desechable y paso CI. No se ejecutó SQL local ni remoto; CI aún pendiente. No endpoints comerciales ni cambios de matriz.
+- Se detectaron encabezados obsoletos en DATABASE_SCHEMA/SCHEMA_REVIEW con SHA pre-#167; se reconciliaron en la rama de trabajo.
+- Rama: `feat/authenticated-cashier-open-shift-20261030`, basada en el merge SHA e4e4a5f. Continuar con inspección del diff y workflows exactos antes de merge.

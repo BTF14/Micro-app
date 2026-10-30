@@ -1,7 +1,7 @@
-# Revisión del esquema y la API — estado reconciliado post-PR #165 (2026-10-30 UTC)
+# Revisión del esquema y la API — estado reconciliado post-PR #168 (2026-10-30 UTC)
 
-**Fuente de código:** `main` = `1d10befe0cd3367e04bd8998a192e93d9b228063` (PR #165 fusionada).  
-**Alcance:** revisión estática de solo lectura de rutas, helpers y migraciones versionadas; no se ejecutó SQL local ni se conectó a Neon.
+**Fuente de código:** `main` = `e4e4a5f312522ec5efbcc3252958141f56fbd821` (PR #168 fusionada).  
+**Alcance:** revisión estática de solo lectura de rutas, helpers y migraciones versionadas; las pruebas de migración/integración de 0001–0004 se ejecutaron en PostgreSQL 18 desechable, no en Neon main.
 
 ## Estado vigente del esquema y el contexto de sucursal
 

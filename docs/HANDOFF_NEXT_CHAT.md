@@ -1,52 +1,46 @@
-# Handoff operativo — post PR #166 y #167 — 2026-10-30 UTC
+# Handoff operativo — resolver de turno abierto del cajero — 2026-10-30 UTC
 
 ## Punto de partida verificado
 
 - Repositorio: `BTF14/Micro-app`.
-- PR #166 fusionada: `8a16b4bf70e3b35c45e91366148f4a37aa43b5e7`.
-- PR #167 fusionada: `c1cd8650db33aa4a249eaf1f55d321513d576e10`.
-- PR #166 tuvo 8/8 workflows Actions success en HEAD `4cee6e2ff6bfb8f3eecd85b4ff9212c1ab6d98fd`.
-- PR #167 tuvo 10/10 workflows Actions success en HEAD `ad45911368e9e9a714ebbe014de2d84a7b3cf1de`.
-- No hubo reviews formales de GitHub ni threads inline; Codex no pudo completar por cuota. Revisión manual fallback realizada y documentada; no llamarla aprobación externa.
-- Cloudflare Pages/Workers entregó previews; no se hizo deploy manual ni se verificó un despliegue productivo de esta sesión.
+- Main al iniciar el bloque: `e4e4a5f312522ec5efbcc3252958141f56fbd821` (merge PR #168).
+- PR #166/#167/#168 fusionadas; no había PR abiertas.
+- #166: 8/8 workflows success en su HEAD final; #167: 10/10. La consulta del merge SHA de main no devolvió status checks/runs; no afirmar verificación CI post-merge.
+- No hubo reviews formales de GitHub ni Codex completado por cuota en #166–#168; se documentó revisión manual fallback.
+- Migraciones 0001–0004 están en Git; 0003/0004 no aplicadas a Neon main.
 
-## Estado técnico
+## Lectura obligatoria y fuentes canónicas
 
-- Main contiene migraciones 0001–0004. 0003 modela sucursales/asignaciones; 0004 añade cajas y turnos.
-- Ninguna de esas migraciones se aplicó a Neon main. CI utilizó PostgreSQL 18 desechable; no se crearon Neon branches.
-- No hay endpoints comerciales ni helper runtime para resolver el turno actual del cajero autenticado.
-- `resolveBranchContext` no está conectado a rutas y no es autorización comercial.
-- La matriz de permisos comerciales sigue **NO APROBADA**.
-- El modelo de turnos exige un cajero + una caja por turno, máximo un turno abierto por caja y por cajero/organización, cierre antes de cambiar responsable y conteos separados USD/VES. No existe ledger de caja ni efectivo esperado.
+Seguir AGENTS.md y la secuencia de lectura ya ejecutada en esta sesión: README, CURRENT_STATE, HANDOFF, WORK_CHECKPOINT, PROJECT_PLAN, STATE_JOURNAL, AI_COLLABORATION_AND_PR_POLICY, CONSTITUTION, DATABASE_SCHEMA, SCHEMA_REVIEW, SAAS_ARCHITECTURE_DECISIONS, SDD multi-branch/register-shift/matriz de permisos y skill PostgreSQL. Para DB, leer también BACKUP_AND_RECOVERY antes de cualquier mutación.
 
-## Lectura obligatoria antes de actuar
+## Implementación en curso
 
-1. `AGENTS.md`
-2. `docs/CURRENT_STATE.md`
-3. `docs/WORK_CHECKPOINT.md`
-4. `docs/AI_COLLABORATION_AND_PR_POLICY.md`
-5. `docs/CONSTITUTION.md`
-6. `docs/BACKUP_AND_RECOVERY.md`
-7. `docs/SECURITY_ROADMAP.md`
-8. `docs/SAAS_ARCHITECTURE_DECISIONS.md`
-9. `docs/DATABASE_SCHEMA.md` y `docs/SCHEMA_REVIEW.md`
-10. `docs/sdd/MULTI_BRANCH_DATA_MODEL.md`
-11. `docs/sdd/REGISTER_SHIFT_MODEL.md`
-12. `.agents/skills/micro-app-postgres-testing/SKILL.md`
+Rama: `feat/authenticated-cashier-open-shift-20261030`, base `e4e4a5f312522ec5efbcc3252958141f56fbd821`.
 
-## Próxima tarea autorizada
+- Helper aislado: `apps/api/src/cashier-open-shift.ts`.
+- API: `resolveOpenCashierRegisterShift(client, branchContext)`, requiere BranchContext server-derived, role `cashier`, UUIDs válidos.
+- SQL filtra organization/user/branch/closed_at, revalida organization/branch/register/user/membership/cashier role/branch assignment activos y bloquea la fila del turno con `FOR SHARE` si el caller lo usa dentro de una transacción.
+- No autentica por sí mismo: caller debe obtener sesión válida con `resolveTenantContext` y resolver scope con `resolveBranchContext`. No es autorización de ventas/pagos ni reemplaza permisos por operación.
+- Pruebas unitarias + integración PG18 desechable cubren no shift, turno existente, usuario inactivo, membresía/rol/asignación revocados y branch cross-tenant. CI incorpora el nuevo integration test.
+- Estado de verificación: pendiente hasta observar el resultado de los workflows en el HEAD exacto de la PR. No afirmar ejecución local.
 
-Inspeccionar el código actual y diseñar un helper aislado que resuelva el turno abierto del usuario autenticado, con pruebas unitarias e integración en PostgreSQL 18 desechable. No crear endpoints comerciales ni decidir permisos por inferencia. Actualizar los cinco documentos de continuidad y el journal durante el trabajo, no al final.
+## Próximos pasos exactos
 
-## Reglas de ejecución y merge
+1. Inspeccionar el diff completo de la rama y verificar que CI incorpora el integration test.
+2. Esperar y consultar todos los workflows del SHA exacto de la PR; abrir logs de cualquier fallo.
+3. Revisar SQL, locks, errores, tipos de timestamp/numeric y tests negativos.
+4. Corregir fallos en la misma rama/PR; actualizar checkpoint y journal incrementalmente.
+5. Fusionar solo si todos los gates pasan y no quedan hallazgos materiales; después verificar SHA real de main y checks post-merge disponibles.
 
-- El propietario autoriza fusionar PRs cuando hayan superado revisión completa y comprobaciones. No pedir autorización de merge de nuevo; sí detenerse si hay fallos, hallazgos materiales o gates incompletos.
-- La revisión manual no debe presentarse como review humana o Codex. Registrar qué revisión sí se hizo y qué evidencia falta.
-- PostgreSQL desechable primero; Neon branches solo para validación adicional concreta; Neon main nunca como laboratorio.
-- No tocar secretos, datos reales, DNS, billing ni Cloudflare settings sin necesidad demostrada y autorización aplicable.
-- Los merges a main pueden activar despliegues automáticos; distinguir siempre preview de producción y comprobar evidencia post-merge.
-- No abrir PRs de checkpoint redundantes; mantener una PR coherente por bloque sustantivo.
-- Los snapshots inferiores son históricos y están supersedidos por esta portada y CURRENT_STATE.
+## Restricciones
+
+- No endpoints comerciales de ventas/pagos/inventario/caja.
+- Matriz de permisos comerciales NO APROBADA. No asumir owner/admin pueden operar como cajero.
+- No Neon main, no migraciones remotas, no datos reales, secretos, DNS, billing ni Cloudflare settings.
+- PostgreSQL 18 desechable como entorno primario; no crear Neon branches sin valor adicional demostrable.
+- Coste $0; no depender de Codex con cuota agotada.
+- No README update: helper interno no es capacidad comercial disponible.
+- No pedir autorización de merge de nuevo; detenerse ante fallos, hallazgos materiales o gates incompletos.
 
 ---
 

@@ -1,6 +1,6 @@
 # Modelo de cajas y turnos — decisión de arquitectura
 
-**Estado:** migración 0004, assertions y pruebas de integración implementadas en la rama `feat/register-shifts-0004-20261030` (PR #167 fusionada en main). No aplicada a Neon main; no equivale a aprobación de la matriz comercial completa.  
+**Estado:** migración 0004, assertions y pruebas de integración implementadas en main mediante PR #167. No aplicada a Neon main; no equivale a aprobación de la matriz comercial completa.  
 **Fecha:** 2026-10-30 UTC  
 **Base de diseño:** main `1d10befe0cd3367e04bd8998a192e93d9b228063`, PR #165 fusionada.  
 **Objetivo:** trazabilidad de efectivo y atribución inequívoca de operaciones en un POS multi-sucursal.

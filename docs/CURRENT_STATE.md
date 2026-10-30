@@ -1,6 +1,6 @@
 # Estado vivo de la rama de continuidad — 2026-10-30 UTC
 
-- **PR #160:** https://github.com/BTF14/Micro-app/pull/160; abierta, no draft, no fusionada; base `main`. Verificación más reciente de metadatos antes de este bloque: HEAD `ce4578fed5980631f59206bd45ced3fbefcce346`; el HEAD debe volver a consultarse después de los commits documentales que siguen.
+- **PR #160:** https://github.com/BTF14/Micro-app/pull/160; abierta, no draft, no fusionada; base `main`. HEAD verificado de PR #160: `0e6c27bac8a9ef1a9d80da109a136c34aec99a9a`; 14 commits y 8 archivos. La consulta de workflow runs y combined status para este SHA devolvió cero resultados; CI de este HEAD no está verificado.
 - **Revisión automática:** Codex no completó la revisión por límite de uso; su comentario la marca fallida/no completada. No equivale a aprobación ni a hallazgo confirmado. Ver [comentario](https://github.com/BTF14/Micro-app/pull/160#issuecomment-6514563808) y [aviso de cuota](https://github.com/BTF14/Micro-app/pull/160#issuecomment-6514564279).
 - **Previews reportadas para el HEAD anterior:** Pages y Worker exitosos; son previews, no producción.
 - **Continuidad incremental:** se añadió la sección 10 a `docs/AI_COLLABORATION_AND_PR_POLICY.md` y se creó `docs/WORK_CHECKPOINT.md`. Ambos cambios se están incorporando a la misma PR #160, sin abrir otra PR.

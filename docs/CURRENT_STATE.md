@@ -1326,10 +1326,12 @@ Esta revisión fue estática de contenidos en GitHub; no se ejecutaron tests des
 # Estado vivo — 2026-10-30 UTC (branch scope en PR)
 
 - Main base verificado: `ce8b0e491fe8b9f6154380cc8b0eea0a19fe8114`; PR #164 ya está fusionada. Este bloque supersede referencias históricas anteriores que la presenten abierta o pendiente.
-- Rama activa: `feat/branch-scope-context-20261030`; PR por crear/verificar en GitHub.
+- Rama activa: `feat/branch-scope-context-20261030`; PR #165 abierta: https://github.com/BTF14/Micro-app/pull/165.
 - El propietario autorizó el alcance general: owner/admin pueden resolver sucursales activas de su organización; cashier/inventory requieren asignación activa propia. Esto no aprueba permisos sensibles por operación.
 - Cambio preparado: migración aditiva 0003 para branches/branch_memberships, resolver server-side resolveBranchContext, tests unitarios, assertions SQL cross-tenant y workflow PostgreSQL 18 efímero.
 - El resolver no está conectado a rutas y no concede permiso para vender, descontar, anular, pagar, ajustar inventario, transferir, operar caja ni gestionar usuarios.
 - La matriz de permisos por operación sigue NO APROBADA. No hay handlers comerciales.
 - Checks del HEAD de PR y revisión del diff quedan pendientes de consultar. No afirmar tests locales ejecutados.
 - Neon main, datos reales, Cloudflare settings, secretos, DNS, billing y producción sin cambios; migración no aplicada remotamente.
+
+- Ampliación de validación: CI aplica también 0003 al PostgreSQL efímero y ejecuta `branch-context.integration.test.ts` contra PostgreSQL real; el workflow `postgres-migration` mantiene assertions SQL específicas. Verificar ambos resultados en el HEAD final de la PR.

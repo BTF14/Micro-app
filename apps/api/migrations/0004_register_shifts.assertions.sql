@@ -164,6 +164,30 @@ BEGIN
     NULL;
   END;
 
+  BEGIN
+    UPDATE register_shifts
+      SET closed_at = clock_timestamp(),
+          closing_cash_usd = 1,
+          closing_cash_ves = 1,
+          closed_by_user_id = user_cashier_b
+      WHERE id = shift_a;
+    RAISE EXCEPTION 'FAIL: another cashier closed the shift';
+  EXCEPTION WHEN check_violation THEN
+    NULL;
+  END;
+
+  BEGIN
+    UPDATE register_shifts
+      SET closed_at = clock_timestamp(),
+          closing_cash_usd = -1,
+          closing_cash_ves = 1,
+          closed_by_user_id = user_cashier_a
+      WHERE id = shift_a;
+    RAISE EXCEPTION 'FAIL: negative closing cash accepted';
+  EXCEPTION WHEN check_violation THEN
+    NULL;
+  END;
+
   -- Scope components cannot be deactivated or revoked while a shift is open.
   BEGIN
     UPDATE registers SET is_active = false WHERE id = register_a;

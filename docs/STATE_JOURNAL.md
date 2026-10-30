@@ -1290,3 +1290,11 @@ CI documental: para HEAD `8c15e13fa001a14a0ddf9f2432bc17efb30d476d`, los 8 workf
 - Se creó `archive/legacy-api-esm-experiment-20261020` apuntando al HEAD exacto para preservar los tres commits antes de retirar la referencia antigua.
 - La eliminación de la rama original quedó bloqueada: el navegador no tiene sesión GitHub iniciada y el conector disponible no expone borrado de refs. No se intentó force-push ni se modificó la rama original. Requiere sesión GitHub autorizada o eliminación manual del propietario.
 - PR #72 permanece cerrada y no fusionada; su registro y los mensajes de commits son historia GitHub, no configuración activa. No reescribir historial.
+
+
+## 2026-10-30 UTC — eliminación verificada de rama heredada
+
+- Tras autenticar la sesión GitHub del propietario, se eliminó únicamente `fix/vercel-api-esm-imports` desde la interfaz del repositorio.
+- Antes de borrar, se confirmó que `archive/legacy-api-esm-experiment-20261020` existía y que la comparación entre ambas referencias era `identical`: ambas apuntaban a `b1330a5fa547071a5f500f0481ce88109c612f81`, con 0 commits de diferencia.
+- Después del borrado, búsqueda independiente: la rama original no aparece; la rama de archivo sí permanece. PR #72 sigue cerrada y no fusionada. Los tres commits quedan preservados en el archive.
+- Solo se eliminó la referencia de rama original. No se modificaron PR #72, otras ramas, tags, archivos, settings, deployments, integraciones ni infraestructura. No se reescribió historial.

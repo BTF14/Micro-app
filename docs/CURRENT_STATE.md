@@ -5,9 +5,12 @@
 - Repositorio: `BTF14/Micro-app`.
 - `main` verificado: `e4e4a5f312522ec5efbcc3252958141f56fbd821` (merge de PR #168).
 - PR #166, #167 y #168 están fusionadas secuencialmente. PR abiertas: ninguna al iniciar este bloque.
-- PR #166: 8/8 workflows success en su HEAD final; PR #167: 10/10; PR #168: consultar su HEAD exacto si se necesita revalidar los checks de la PR.
+- PR #166: 8/8; PR #167: 10/10; PR #168: 10/10 workflows Actions en sus HEADs finales. Para #168, HEAD `26fef88bfeea656424e8c4c082cef789a177857a`; los check-runs consultados terminaron completed/success.
 - La consulta de checks sobre el merge SHA actual de main devolvió listas vacías; no se afirma CI post-merge sobre `e4e4a5f...`.
-- La rama de trabajo `feat/authenticated-cashier-open-shift-20261030` parte exactamente de ese SHA.
+- PR #169 HEAD inicial `69ef099d586070edf295e0302468e96c4667f11f`, base `e4e4a5f312522ec5efbcc3252958141f56fbd821`; actualizar al HEAD vivo tras cada commit.
+- Primera consulta de PR #169: 8/8 workflow runs Actions `in_progress`; check-runs incluían Cloudflare Pages/Workers, Dependency Review, Trivy, secret-history y dashboard success, con CI/migration/Chromium/Semgrep aún in progress. Es evidencia del HEAD inicial, no de commits posteriores.
+- Cloudflare Pages/Workers publicaron previews para `69ef099`; no son producción.
+- Codex review falló por límite de uso; no hay reviews formales ni threads inline. Se hizo inspección manual del diff; no equivale a aprobación externa.
 
 ## Estado de implementación del bloque actual
 

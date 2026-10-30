@@ -1088,3 +1088,13 @@ CI documental: para HEAD `8c15e13fa001a14a0ddf9f2432bc17efb30d476d`, los 8 workf
 - Se prepararon helper, tests unitarios, integración PostgreSQL 18 desechable y paso CI. No se ejecutó SQL local ni remoto; CI aún pendiente. No endpoints comerciales ni cambios de matriz.
 - Se detectaron encabezados obsoletos en DATABASE_SCHEMA/SCHEMA_REVIEW con SHA pre-#167; se reconciliaron en la rama de trabajo.
 - Rama: `feat/authenticated-cashier-open-shift-20261030`, basada en el merge SHA e4e4a5f. Continuar con inspección del diff y workflows exactos antes de merge.
+
+
+## 2026-10-30 UTC — PR #169 abierta y primera verificación de CI
+
+- PR #169: https://github.com/BTF14/Micro-app/pull/169; rama `feat/authenticated-cashier-open-shift-20261030`; base main `e4e4a5f312522ec5efbcc3252958141f56fbd821`; HEAD inicial `69ef099d586070edf295e0302468e96c4667f11f`.
+- Diff inicial: 11 archivos, helper aislado, tests unitarios, integración PG18, workflow CI y sincronización de continuidad/esquema.
+- Revisión manual del diff completo realizada. Codex review falló por cuota; reviews formales y threads inline: 0. No se presenta como aprobación externa.
+- Primera consulta: 8 workflow runs Actions en progreso. Check-runs de Cloudflare Pages/Workers, Dependency Review, Trivy, secret-history y dashboard observados en success; CI, migration, Chromium y Semgrep seguían en progreso. Reconsultar en el HEAD actual de PR, porque cualquier commit invalida esa evidencia.
+- Cloudflare Pages y Workers publicaron previews para el SHA 69ef099; son previews y no despliegues productivos.
+- No se ejecutó shell local ni SQL remoto. La integración usa exclusivamente el PostgreSQL 18 local sintético del workflow; Neon main no se tocó.

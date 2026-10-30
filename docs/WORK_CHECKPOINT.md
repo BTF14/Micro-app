@@ -3,7 +3,8 @@
 **Repositorio:** BTF14/Micro-app  
 **Main base:** `e4e4a5f312522ec5efbcc3252958141f56fbd821`  
 **Rama:** `feat/authenticated-cashier-open-shift-20261030`  
-**PR:** pendiente de creación tras preparar el primer commit coherente.
+**PR:** [#169](https://github.com/BTF14/Micro-app/pull/169), abierta.  
+**HEAD inicial:** `69ef099d586070edf295e0302468e96c4667f11f`.
 
 ## Inspección completada (solo lectura)
 
@@ -11,8 +12,11 @@
 - Código inspeccionado: `index.ts`, `auth.ts`, `google-auth.ts`, `tenant-context.ts`, `branch-context.ts`, `database.ts`, migraciones 0001–0004, tests de branch/register shifts y workflow CI.
 - `resolveTenantContext` verifica sesión y membresía activa; `resolveBranchContext` revalida usuario/organización/rol/sucursal/asignación. Ninguno concede autorización comercial.
 - `register_shifts` tiene FKs compuestas, índices parciales de unicidad por caja y cajero/organización, triggers de apertura/lifecycle y protección de revocación/desactivación.
-- PRs abiertas: ninguna. Issues abiertos relevantes: #53 y #78; no se modificaron.
-- Checks en merge SHA actual e4e4a5f: la consulta de runs/status no devolvió registros. No se afirma CI post-merge.
+- PR #169 abierta; issues abiertos relevantes: #53 y #78; no se modificaron.
+- Checks en merge SHA e4e4a5f: runs/status vacíos; no se afirma CI post-merge.
+- Primera consulta del HEAD inicial #169: 8 workflow runs Actions in_progress; los check-runs Cloudflare Pages/Workers, Dependency Review, Trivy, secret-history y dashboard observados en success. CI, migration, Chromium y Semgrep seguían en progreso.
+- Codex review falló por cuota. Reviews formales: 0; threads inline: 0. Diff inspeccionado manualmente; no es aprobación externa.
+- Cloudflare generó previews Pages/Workers para HEAD 69ef099; no son producción.
 - Documentos canónicos DATABASE_SCHEMA y SCHEMA_REVIEW tenían encabezados con SHA 1d10... anterior a #167; se actualizarán a e4e4a5f.
 
 ## Decisión de diseño
@@ -38,7 +42,7 @@ Pendiente de ejecución en GitHub Actions sobre el HEAD exacto de la PR. No se e
 
 ## Próxima acción
 
-Crear commit con los blobs preparados, abrir una única PR coherente, inspeccionar diff y workflows completos; no fusionar hasta todos los gates en verde.
+Revalidar HEAD de PR #169, esperar workflows completos, revisar logs y corregir cualquier fallo en la misma PR. No fusionar hasta todos los gates en verde.
 
 # Checkpoint de trabajo vigente — PR de políticas comerciales por organización (2026-10-30 UTC)
 

@@ -1,12 +1,13 @@
 # Prioridad operativa vigente — resolver turno abierto del cajero — 2026-10-30 UTC
 
 **Main base verificado:** `e4e4a5f312522ec5efbcc3252958141f56fbd821`.  
+**PR activa:** [#169](https://github.com/BTF14/Micro-app/pull/169), HEAD inicial `69ef099d586070edf295e0302468e96c4667f11f`; checks iniciales en curso.  
 **PR #166/#167/#168:** fusionadas secuencialmente. #166 8/8 y #167 10/10 workflows success en sus HEADs finales; no se obtuvieron runs/status para el merge SHA actual de main.  
 **Base de datos:** main versiona 0001–0004; 0003/0004 no aplicadas a Neon main.
 
 ## Prioridades
 
-1. Completar y verificar el helper aislado `resolveOpenCashierRegisterShift` para el cajero autenticado y sucursal resuelta; pruebas unitarias y PostgreSQL 18 efímero.
+1. Completar y verificar PR #169: helper `resolveOpenCashierRegisterShift`, pruebas unitarias y PostgreSQL 18 efímero; comprobar siempre el HEAD exacto.
 2. Aprobar explícitamente la matriz de permisos y diseñar autorización server-side por operación y sucursal antes de handlers comerciales.
 3. Diseñar almacenes, balances/ledger y reconciliación/backfill del stock legacy.
 4. Diseñar transacciones, idempotencia y concurrencia para ventas/pagos/stock antes de crear handlers.

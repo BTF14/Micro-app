@@ -4,8 +4,8 @@
 
 - Repositorio: `BTF14/Micro-app`.
 - Main al iniciar el bloque: `e4e4a5f312522ec5efbcc3252958141f56fbd821` (merge PR #168).
-- PR #166/#167/#168 fusionadas; no había PR abiertas.
-- #166: 8/8 workflows success en su HEAD final; #167: 10/10. La consulta del merge SHA de main no devolvió status checks/runs; no afirmar verificación CI post-merge.
+- PR #166/#167/#168 fusionadas. PR #169 abierta: https://github.com/BTF14/Micro-app/pull/169.
+- #166: 8/8; #167: 10/10; #168: 10/10 workflows Actions success en sus HEADs finales. PR #168 HEAD `26fef88bfeea656424e8c4c082cef789a177857a` tuvo 14 check-runs devueltos, todos completed/success. El merge SHA de main no devolvió status checks/runs; no afirmar verificación CI post-merge.
 - No hubo reviews formales de GitHub ni Codex completado por cuota en #166–#168; se documentó revisión manual fallback.
 - Migraciones 0001–0004 están en Git; 0003/0004 no aplicadas a Neon main.
 
@@ -15,14 +15,15 @@ Seguir AGENTS.md y la secuencia de lectura ya ejecutada en esta sesión: README,
 
 ## Implementación en curso
 
-Rama: `feat/authenticated-cashier-open-shift-20261030`, base `e4e4a5f312522ec5efbcc3252958141f56fbd821`.
+Rama: `feat/authenticated-cashier-open-shift-20261030`, PR #169, base `e4e4a5f312522ec5efbcc3252958141f56fbd821`. HEAD inicial `69ef099d586070edf295e0302468e96c4667f11f`.
 
 - Helper aislado: `apps/api/src/cashier-open-shift.ts`.
 - API: `resolveOpenCashierRegisterShift(client, branchContext)`, requiere BranchContext server-derived, role `cashier`, UUIDs válidos.
 - SQL filtra organization/user/branch/closed_at, revalida organization/branch/register/user/membership/cashier role/branch assignment activos y bloquea la fila del turno con `FOR SHARE` si el caller lo usa dentro de una transacción.
 - No autentica por sí mismo: caller debe obtener sesión válida con `resolveTenantContext` y resolver scope con `resolveBranchContext`. No es autorización de ventas/pagos ni reemplaza permisos por operación.
 - Pruebas unitarias + integración PG18 desechable cubren no shift, turno existente, usuario inactivo, membresía/rol/asignación revocados y branch cross-tenant. CI incorpora el nuevo integration test.
-- Estado de verificación: pendiente hasta observar el resultado de los workflows en el HEAD exacto de la PR. No afirmar ejecución local.
+- Primera consulta sobre HEAD `69ef099`: 8 workflow runs Actions in_progress; check-runs externos Cloudflare Pages/Workers y Dependency Review/Trivy/secret-history/dashboard success, mientras CI, migration, Chromium y Semgrep seguían in progress. Codex agotó cuota; no hay review formal ni threads. Se inspeccionó manualmente el diff completo. Estos resultados quedan históricos si cambia el HEAD.
+- Cloudflare previews de `69ef099`: Pages `https://7a452b4c.micro-app-63i.pages.dev` / branch `https://feat-authenticated-cashier-o.micro-app-63i.pages.dev`; Workers commit `https://2ff78759-micro-app-api.btfcasheb.workers.dev` / branch `https://feat-authenticated-cashier-open-shift-20261030-micro-app-api.btfcasheb.workers.dev`. Son previews, no producción.
 
 ## Próximos pasos exactos
 

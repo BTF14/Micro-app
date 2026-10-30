@@ -6,8 +6,8 @@
 **Alcance:** reconciliación de continuidad y especificación de caja/turnos; solo documentación.
 
 ## Evidencia
-- PR #165 fusionada por squash; no hay PR abiertas al iniciar.
-- 9/9 check-runs del merge SHA terminaron success. Cloudflare Pages informó `Deployed successfully`; Workers Builds success. No se ha validado independientemente el routing autenticado/live.
+- PR #165 fusionada por squash. PR #166 está abierta, no fusionada, base `main` SHA `1d10befe0cd3367e04bd8998a192e93d9b228063`, HEAD consultado `8044a6614b847d580e6e1f755433f05d2b141b75`.
+- En el HEAD consultado de PR #166, 8 workflows de GitHub Actions finalizaron `success`; se inspeccionaron jobs/steps. No hay reviews humanas ni threads inline. El conector no confirmó checks externos Cloudflare para ese HEAD. Los checks de PR #165 (incluidos Pages/Workers) corresponden a otro SHA.
 - La PR #165 implementó migración 0003 y contexto de sucursal, con pruebas en PostgreSQL 18 efímero. La migración no se aplicó a Neon main.
 - No hay handlers comerciales; `resolveBranchContext` aún no está conectado a rutas.
 
@@ -19,12 +19,12 @@
 
 ## Trabajo activo
 - Diseño completo en `docs/sdd/REGISTER_SHIFT_MODEL.md`.
-- Revisar el diff documental completo y los checks del HEAD exacto; conservar snapshots antiguos como historia, no como estado vigente.
-- No tocar SQL/runtime, Neon, Cloudflare, secretos, DNS, billing ni producción en este bloque.
-- Ejecutar revisión manual del diff y checks del HEAD exacto antes de merge.
+- Reconciliar SCHEMA_REVIEW, DATABASE_SCHEMA y MULTI_BRANCH_DATA_MODEL con el DDL 0001–0003 y el resolver implementado por #165.
+- Mantener este PR documental sin añadir migraciones ni runtime; conservar snapshots anteriores como historia, no como estado vigente.
+- Revisar manualmente el diff completo y verificar los checks del HEAD final. No fusionar sin autorización expresa ni afirmar Cloudflare verde sin evidencia del SHA.
 
 ## Próximo paso exacto
-Tras integrar esta especificación, implementar migration 0004 (`registers`, `register_shifts`), assertions y tests PostgreSQL efímeros; no añadir endpoints comerciales hasta cerrar autorización por operación.
+Después de cerrar el gate de integración de PR #166, implementar migration 0004 (`registers`, `register_shifts`), assertions y tests PostgreSQL 18 efímeros. Mantener la implementación separada de endpoints comerciales hasta aprobar autorización por operación. No aplicar migraciones a Neon main.
 
 ---
 

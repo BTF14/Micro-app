@@ -5,7 +5,7 @@
 ## Cloudflare — evidencia autenticada, solo lectura
 - Worker `micro-app-api`: Active Deployment en Producción; versión `49975c43-4161-4809-9c00-8ba83e53e6a0`, Build ID `957478f6-0f43-4b5c-932a-621be067d6d9`, commit `82386c6e9300e06f8fa209aa52995b939a72442a`; panel mostró 100% de asignación de tráfico.
 - Pages `micro-app`: production branch `main`, SHA `82386c6e9300e06f8fa209aa52995b939a72442a`, URL `https://cc23ff0c.micro-app-63i.pages.dev`.
-- Variables visibles de Pages: lista vacía; `VITE_API_BASE_URL` ausente. No se inspeccionaron valores secretos ni se modificó configuración.
+- El dashboard de Pages mostró lista vacía, pero `apps/web/.env.production` versionado define `VITE_API_BASE_URL` con la URL canónica del Worker y `apps/web/vite.config.ts` usa `loadEnv`. La ausencia en el panel no prueba que el build carezca de URL; falta confirmar el valor en el bundle desplegado. No se inspeccionaron valores secretos ni se modificó configuración.
 - Una observación anterior de #78 registró 0% para esta versión en otra vista; la inspección posterior de Active Deployment mostró 100% asignado. No confundir asignación con tasa de éxito o volumen de solicitudes.
 
 ## Estado de issues

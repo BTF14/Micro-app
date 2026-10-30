@@ -1,3 +1,10 @@
+## Reconciliación del checkpoint tras la limpieza de rama — 2026-10-30 UTC
+
+- `main` permanece en el SHA conocido `82386c6e9300e06f8fa209aa52995b939a72442a` (merge de PR #177); esta tarea no modifica `main`.
+- PR #178 sigue abierta, en draft y sin fusionar. Su rama es `docs/reconcile-role-model-and-cloudflare-20261030`. El checkpoint de checks que aparecía en la portada antes de esta actualización corresponde a un HEAD anterior y queda supersedido. Consultar siempre el HEAD/checks en vivo de PR #178; no inferir éxito de un SHA anterior.
+- La rama original heredada fue eliminada después de comprobar el respaldo idéntico; detalles y SHA están documentados en la actualización inmediatamente inferior y en `STATE_JOURNAL.md`.
+- La eliminación de rama no afecta los gates: CORS sigue NO VERIFICADO y la matriz de permisos comerciales sigue NO APROBADA.
+
 ## Actualización posterior — eliminación segura de rama heredada (2026-10-30 UTC)
 
 - La rama original `fix/vercel-api-esm-imports` fue eliminada de GitHub mediante la sesión autenticada del propietario, después de comprobar que el respaldo `archive/legacy-api-esm-experiment-20261020` existía y apuntaba al mismo HEAD exacto: `b1330a5fa547071a5f500f0481ce88109c612f81` (compare devolvió `identical`, 0 ahead / 0 behind).

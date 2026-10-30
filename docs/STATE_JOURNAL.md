@@ -1134,3 +1134,11 @@ CI documental: para HEAD `8c15e13fa001a14a0ddf9f2432bc17efb30d476d`, los 8 workf
 - PR abiertas: ninguna. Issues #53 y #78 siguen abiertos. No se alteraron.
 - Reviews formales/threads inline: 0; Codex agotó cuota. Revisión manual realizada, no aprobación externa.
 - Siguiente trabajo: aprobar matriz de permisos y diseñar autorización server-side por operación/sucursal antes de habilitar endpoints.
+
+
+## 2026-10-30 UTC — PR #170 documental fusionada
+
+- PR #170 fusionada en `af08cd913a4e0e155b1b74183a71efc51e5d4646`; actualizó continuidad, schema review, API integration y SDD del modelo de turnos después de PR #169.
+- Post-merge de PR #170: 7/7 workflows Actions success y Cloudflare Pages/Workers 2/2 success. CI y PG18 tests pasaron; no hubo cambios runtime/esquema.
+- Último merge con cambios de runtime sigue siendo PR #169 (`be35a0fde3886271b6ed98b7ccc29cc1255d50e5`). Resolver el ref actual de main en vivo antes de iniciar otro bloque.
+- PRs abiertas: ninguna al momento de esta actualización; issues #53 y #78 siguen abiertos.

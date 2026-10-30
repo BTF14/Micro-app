@@ -1,6 +1,6 @@
 # Revisión del esquema y la API — estado reconciliado post-PR #169 (2026-10-30 UTC)
 
-**Fuente de código:** `main` = `be35a0fde3886271b6ed98b7ccc29cc1255d50e5` (PR #169 fusionada).  
+**Último código/runtime revisado:** PR #169, `be35a0fde3886271b6ed98b7ccc29cc1255d50e5`. PR #170 (`af08cd913a4e0e155b1b74183d8f5a22bc1721af`) fue solo documental; consultar el ref vivo de `main` antes de nuevos cambios.  
 **Alcance:** revisión estática de rutas/helpers y migraciones versionadas; CI post-merge ejecutó migraciones 0001–0004 y pruebas en PostgreSQL 18 desechable, no en Neon main. El helper de turno está implementado, aislado y no conectado a rutas comerciales.
 
 ## Helper runtime de turno abierto — PR #169

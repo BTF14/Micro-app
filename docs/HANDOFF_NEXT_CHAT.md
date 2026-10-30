@@ -3,9 +3,9 @@
 ## Punto de reanudación verificado
 
 - Repositorio: `BTF14/Micro-app`.
-- Main actual: `be35a0fde3886271b6ed98b7ccc29cc1255d50e5` (merge PR #169).
+- Último merge con cambios de runtime: PR #169, SHA `be35a0fde3886271b6ed98b7ccc29cc1255d50e5`. PR #170 (`af08cd913a4e0e155b1b74183a71efc51e5d4646`) fue documental. Consultar el SHA vivo de `main` antes de cualquier cambio.
 - PR #169 fusionada; head revisado `0c437509c0ad1a02b91c08d03d9dba62f0e9bd78`.
-- PR #166–#169 fusionadas. La sincronización documental post-merge está en curso en `docs/post-pr169-cashier-shift-continuity-20261030`; no hay PR de código abierta.
+- PR #166–#170 fusionadas; #170 sincronizó el estado documental posterior a #169. No hay PR de código abierta.
 - Post-merge en el SHA real de main: 7/7 workflows Actions success y Cloudflare Pages/Workers 2/2 success. CI confirma 7/7 tests del nuevo helper en PostgreSQL 18 desechable, además de build/typecheck y suites existentes.
 - Reviews formales/threads GitHub: 0. Codex review agotó cuota; revisión manual fallback, no aprobación externa.
 - Issues #53 y #78 siguen abiertos. No se modificaron.

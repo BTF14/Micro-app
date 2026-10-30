@@ -2,7 +2,7 @@
 
 **Estado:** migración 0004, assertions y pruebas de integración implementadas en main mediante PR #167; helper aislado de turno abierto implementado mediante PR #169. 0003/0004 no aplicadas a Neon main; esto no equivale a aprobación de la matriz comercial completa.  
 **Fecha:** 2026-10-30 UTC  
-**Base de diseño:** main `be35a0fde3886271b6ed98b7ccc29cc1255d50e5`, PR #169 fusionada.  
+**Base de diseño/código:** PR #169 fusionada en `be35a0fde3886271b6ed98b7ccc29cc1255d50e5`; PR #170 fue solo documental.  
 **Objetivo:** trazabilidad de efectivo y atribución inequívoca de operaciones en un POS multi-sucursal.
 
 ## 1. Decisión operativa

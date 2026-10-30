@@ -1,5 +1,8 @@
+> **Revisión pre-merge — 2026-10-30 UTC:** PR #172, HEAD previo `6ade1ed1daad8a50b34eb6fd33c5767255d3aa93`, base `main` en `a6db2dcaf57e2a0bf1735eb282c3ac2256cd314c`. GitHub reportó 12/12 check-runs completados con éxito; los seis checks requeridos por protección de `main` están incluidos y verdes. Diff documental: 7 archivos; sin runtime, esquema, migraciones, workflows, secretos, datos ni infraestructura. Revisión manual del alcance y del contenido realizada; no hay reviews formales ni threads inline. La revisión Codex no pudo completarse por límite de uso, por lo que **no se considera aprobada**. Se deja pendiente una revisión independiente por Claude o Codex cuando vuelva a estar disponible; esa revisión futura debe registrar hallazgos y correcciones, pero no invalida esta decisión de fusionar el cambio documental con revisión manual y CI verde. La matriz comercial sigue **NO APROBADA**; este merge no autoriza endpoints ni permisos comerciales. Consultar GitHub en vivo antes de cualquier acción posterior, porque el siguiente commit generará un HEAD nuevo y requerirá sus propios checks.
+
 ## 2026-10-30 UTC — toolchain Pages fijada y validada por PR #159
 
+> **Snapshot de revisión GitHub — 2026-10-30 UTC:** `main` = `a6db2dcaf57e2a0bf1735eb282c3ac2256cd314c`. Antes de esta sincronización, PR #172 estaba abierta y lista para revisión, con HEAD `785d4a912baf6787eafa6d2a7f51e37697f22de4`; en ese SHA se observaron 9/11 check-runs success y 2 in progress (`verify` y `Chromium authentication smoke tests`), sin fallos. No había reviews formales ni threads inline. **Este snapshot es histórico y no identifica el HEAD de la rama después de esta edición**: consultar siempre [PR #172](https://github.com/BTF14/Micro-app/pull/172) y los checks del SHA vivo antes de actuar. Pages/Workers son previews, no certificación de producción. Issues #53 y #78 abiertas; matriz comercial **NO APROBADA**. No se modificaron `main`, Neon main, datos reales, secretos, DNS, billing ni configuración de producción.
 # Checkpoint continuidad — 2026-10-30 UTC (Node/pnpm corregidos en PR #159)
 
 - **PR #158** (documentación Cloudflare/CI): https://github.com/BTF14/Micro-app/pull/158. Rama docs/workflow-deployment-audit-20261030; abierta, draft, no mergeada. HEAD conocido antes de este checkpoint: 162765fac25bf3aa623a41676d56e570afabd7fd; 12/12 checks success.
@@ -1142,3 +1145,38 @@ CI documental: para HEAD `8c15e13fa001a14a0ddf9f2432bc17efb30d476d`, los 8 workf
 - Post-merge de PR #170: 7/7 workflows Actions success y Cloudflare Pages/Workers 2/2 success. CI y PG18 tests pasaron; no hubo cambios runtime/esquema.
 - Último merge con cambios de runtime sigue siendo PR #169 (`be35a0fde3886271b6ed98b7ccc29cc1255d50e5`). Resolver el ref actual de main en vivo antes de iniciar otro bloque.
 - PRs abiertas: ninguna al momento de esta actualización; issues #53 y #78 siguen abiertos.
+
+
+## 2026-10-30 UTC — PR #172 y reconciliación documental de autorización
+
+- Main comprobado al inicio: `a6db2dcaf57e2a0bf1735eb282c3ac2256cd314c`; no se modificó main.
+- PR #172: https://github.com/BTF14/Micro-app/pull/172; draft, abierta, base main. Añade `docs/sdd/OPERATION_AUTHORIZATION_ARCHITECTURE.md` como propuesta técnica, no política aprobada ni autorización de implementación.
+- El diseño separa autenticación, membresía de organización, scope de recurso y permiso por operación. Incluye deny-by-default, revalidación transaccional, concurrencia/TOCTOU, aislamiento tenant/branch, auditoría, catálogo y tests negativos.
+- Se sincronizaron las portadas vigentes de `CURRENT_STATE.md`, `HANDOFF_NEXT_CHAT.md`, `WORK_CHECKPOINT.md`, `PROJECT_PLAN.md` y el contrato de estado en `API_INTEGRATION.md`; esta entrada registra el historial de la PR.
+- La matriz `role-permission-decision-matrix.md` permanece NO APROBADA. No hay handlers comerciales ni autorización runtime por operación. Los helpers tenant/branch/shift no otorgan permisos comerciales.
+- HEAD `93561f0b73f4992d5204f3f461af7961a0e087eb` tuvo 12/12 check-runs success. Los commits documentales de esta sincronización crean un HEAD nuevo y requieren revalidación; no transferir checks entre SHAs.
+- No hubo reviews formales en la última consulta; no afirmar aprobación humana/Codex. Revisión técnica/manual, sin aprobación externa.
+- No se tocó Neon main, datos reales, migraciones remotas, secretos, DNS, billing, configuración Cloudflare ni producción.
+- Continuación: revisar el HEAD/diff/checks del nuevo SHA; mantener PR #172 draft; esperar aprobación explícita de matriz/decisiones comerciales antes de código. Diseñar ledger/auditoría/idempotencia antes de endpoints.
+
+
+
+## 2026-10-30 UTC — revalidación exacta de PR #172
+
+- Se reconsultó GitHub: main sigue en `a6db2dcaf57e2a0bf1735eb282c3ac2256cd314c`; PR #172 abierta/draft/no fusionada, base main, HEAD `7458928e87fe32b9d9134beabba3e0706bc57931`, mergeable true.
+- Check-runs del HEAD exacto: 12/12 completed/success (Workers Builds, verify, scans, Chromium authentication smoke, postgres-migration validation, static analysis, dependency review, progress y Pages). El commit previo `93561f0...` ya no es la única evidencia: el HEAD `7458928...` también quedó verde.
+- No hay reviews formales. PR contiene exactamente siete archivos documentales, +374/-0; no incluye runtime, esquema ni migraciones.
+- Cloudflare Pages y Workers publicaron URLs de preview asociadas a la rama/commit. No se interpreta la etiqueta/ruta del bot Workers como prueba suficiente de cambio o validación de producción.
+- Issues #53 y #78 siguen abiertas. #53 conserva como pendiente la autorización/aislamiento de futuras rutas comerciales; #78 mantiene pendiente la verificación HTTP CORS con headers observables desde un entorno con salida de red permitida.
+- Se mantiene PR #172 draft. No se fusiona ni se implementan permisos comerciales antes de aprobación explícita de la matriz.
+- Este registro documenta el SHA verificado. Cualquier commit documental posterior exige reconsultar checks del nuevo HEAD.
+
+
+## 2026-10-30 UTC — revalidación y reconciliación documental de PR #172
+
+- GitHub confirma `main` en `a6db2dcaf57e2a0bf1735eb282c3ac2256cd314c`; PR #172 abierta, draft, base main, HEAD `87de879b021cd4b68ce4267b138832279d4a043a`.
+- En el HEAD exacto `87de879b021cd4b68ce4267b138832279d4a043a`, 12/12 check-runs completed/success, sin fallos ni pendientes. No hay reviews formales ni threads inline.
+- Revisión encontró portadas con estado antiguo (`c1bc901` y `93561f0`) aunque el HEAD vivo era `87de879`. Se actualizaron las portadas y los checkpoints activos de los seis documentos de continuidad/API para reflejar el HEAD actual; las entradas históricas permanecen como historial y no se presentan como estado vivo.
+- La PR sigue siendo exclusivamente documental. La matriz `role-permission-decision-matrix.md` continúa NO APROBADA; no se autoriza inferir permisos, crear endpoints comerciales ni ejecutar migraciones remotas.
+- Pages/Workers publicaron previews; no son certificación funcional ni despliegue productivo. Issues #53 y #78 continúan abiertas.
+- No se modificó main, Neon main, runtime, esquema, migraciones, workflows, secretos, DNS, billing ni configuración de producción. Cualquier nuevo commit debe validarse por su propio SHA.

@@ -1,3 +1,22 @@
+> **Revisión pre-merge — 2026-10-30 UTC:** PR #172, HEAD previo `6ade1ed1daad8a50b34eb6fd33c5767255d3aa93`, base `main` en `a6db2dcaf57e2a0bf1735eb282c3ac2256cd314c`. GitHub reportó 12/12 check-runs completados con éxito; los seis checks requeridos por protección de `main` están incluidos y verdes. Diff documental: 7 archivos; sin runtime, esquema, migraciones, workflows, secretos, datos ni infraestructura. Revisión manual del alcance y del contenido realizada; no hay reviews formales ni threads inline. La revisión Codex no pudo completarse por límite de uso, por lo que **no se considera aprobada**. Se deja pendiente una revisión independiente por Claude o Codex cuando vuelva a estar disponible; esa revisión futura debe registrar hallazgos y correcciones, pero no invalida esta decisión de fusionar el cambio documental con revisión manual y CI verde. La matriz comercial sigue **NO APROBADA**; este merge no autoriza endpoints ni permisos comerciales. Consultar GitHub en vivo antes de cualquier acción posterior, porque el siguiente commit generará un HEAD nuevo y requerirá sus propios checks.
+
+> **Snapshot de revisión GitHub — 2026-10-30 UTC:** `main` = `a6db2dcaf57e2a0bf1735eb282c3ac2256cd314c`. Antes de esta sincronización, PR #172 estaba abierta y lista para revisión, con HEAD `785d4a912baf6787eafa6d2a7f51e37697f22de4`; en ese SHA se observaron 9/11 check-runs success y 2 in progress (`verify` y `Chromium authentication smoke tests`), sin fallos. No había reviews formales ni threads inline. **Este snapshot es histórico y no identifica el HEAD de la rama después de esta edición**: consultar siempre [PR #172](https://github.com/BTF14/Micro-app/pull/172) y los checks del SHA vivo antes de actuar. Pages/Workers son previews, no certificación de producción. Issues #53 y #78 abiertas; matriz comercial **NO APROBADA**. No se modificaron `main`, Neon main, datos reales, secretos, DNS, billing ni configuración de producción.
+## Estado y contrato de autorización por operación (PR #172, 2026-10-30)
+
+La propuesta técnica está en [OPERATION_AUTHORIZATION_ARCHITECTURE.md](sdd/OPERATION_AUTHORIZATION_ARCHITECTURE.md). Se mantiene como diseño, no implementación.
+
+- `resolveTenantContext`, `resolveBranchContext` y `resolveOpenCashierRegisterShift` resuelven identidad/membresía/scope contextual; ninguno concede por sí mismo permiso para ejecutar una operación comercial.
+- No hay rutas comerciales ni middleware de autorización por operación.
+- La matriz `sdd/role-permission-decision-matrix.md` sigue **NO APROBADA**. No implementar un mapa de permisos a partir de roles ni deducir excepciones desde ejemplos.
+- Toda futura mutación debe revalidar sesión, usuario, organización, membresía, rol, asignación y recursos dentro de la misma transacción que las escrituras, con protección concurrente adecuada; definir lock order/isolation por invariante.
+- Consultas y mutaciones deben aplicar filtros tenant-scoped y branch-scoped en la consulta real; IDs enviados por cliente son selectores no confiables.
+- Auditoría de mutaciones, ledger, idempotencia, handlers comerciales y pruebas end-to-end de autorización siguen pendientes. No afirmar que ya existen.
+- No crear endpoints, esquema ni migraciones hasta aprobar matriz y contratos de operación. No aplicar migraciones 0003/0004 a Neon main.
+
+El checkpoint anterior `87de879b021cd4b68ce4267b138832279d4a043a` tuvo 12/12 check-runs completed/success. La sincronización documental posterior genera un HEAD nuevo; consultar la PR y validar ese SHA antes de merge.
+
+---
+
 # API and Neon integration status
 
 ## Current boundary

@@ -1012,3 +1012,14 @@ CI documental: para HEAD `8c15e13fa001a14a0ddf9f2432bc17efb30d476d`, los 8 workf
 - La propuesta se contrastó con apps/api/migrations/0001_initial.sql y SCHEMA_REVIEW. No se modificó SQL/runtime ni se ejecutaron pruebas de runtime; no se accedió a Neon.
 - Matriz de permisos continúa NO APROBADA; políticas comerciales siguen bajo control de cada organización.
 - Siguiente paso: revisión de coherencia del documento y de los cambios de continuidad; PR única de diseño, checks CI/SAST, sin implementación hasta cerrar gates.
+
+
+## 2026-10-30 UTC — branch scope context en preparación
+
+- Revalidado main en `ce8b0e491fe8b9f6154380cc8b0eea0a19fe8114`; PR #164 fusionada; no PR abiertas al inicio.
+- El propietario autorizó alcance general de sucursal: owner/admin organización-wide; cashier/inventory requieren asignación activa. La matriz de permisos sensibles permanece pendiente.
+- Rama `feat/branch-scope-context-20261030`: migración aditiva branches/branch_memberships, resolver server-side, pruebas unitarias, assertions PostgreSQL y actualización de continuidad.
+- La migración se valida en PostgreSQL 18 efímero por CI. No aplicar a Neon main ni datos reales.
+- Estado final y SHA de PR/checks deben añadirse tras la ejecución real de Actions y revisión del diff.
+
+- Verificación en HEAD `c3ae1192f0841090ee1b3dea71ed803f1d3c1d8b`: CI, tests unitarios, auth integration (18), branch context PostgreSQL integration (3), migration validation, Playwright, Semgrep, Trivy, secret-history, dependency review, backup smoke y Cloudflare Pages/Workers previews finalizaron success. La primera ejecución del test branch falló solo por cleanup incompleto de un fixture; se corrigió y la ejecución siguiente pasó 3/3 sin warning de uso concurrente del cliente pg. Codex review agotó cuota; revisión manual fallback, sin reviews humanas ni threads.

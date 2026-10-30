@@ -1322,3 +1322,18 @@ Esta revisión fue estática de contenidos en GitHub; no se ejecutaron tests des
 - **Seguridad/operación:** PR #153 y #155 están en main; no hay evidencia de validación HTTP en producción. Restauración técnica del backup remoto exacto verificada, pero conteos de datos comerciales, RPO/RTO, alertas y coste total aún pendientes. Producción sigue NO lista.
 
 ---
+
+# Estado vivo — 2026-10-30 UTC (branch scope en PR)
+
+- Main base verificado: `ce8b0e491fe8b9f6154380cc8b0eea0a19fe8114`; PR #164 ya está fusionada. Este bloque supersede referencias históricas anteriores que la presenten abierta o pendiente.
+- Rama activa: `feat/branch-scope-context-20261030`; PR #165 abierta: https://github.com/BTF14/Micro-app/pull/165.
+- El propietario autorizó el alcance general: owner/admin pueden resolver sucursales activas de su organización; cashier/inventory requieren asignación activa propia. Esto no aprueba permisos sensibles por operación.
+- Cambio preparado: migración aditiva 0003 para branches/branch_memberships, resolver server-side resolveBranchContext, tests unitarios, assertions SQL cross-tenant y workflow PostgreSQL 18 efímero.
+- El resolver no está conectado a rutas y no concede permiso para vender, descontar, anular, pagar, ajustar inventario, transferir, operar caja ni gestionar usuarios.
+- La matriz de permisos por operación sigue NO APROBADA. No hay handlers comerciales.
+- En HEAD de implementación `c3ae1192f0841090ee1b3dea71ed803f1d3c1d8b`, CI, integración PostgreSQL, migration validation, Playwright, Semgrep, Trivy, secret-history, dependency review, backup smoke y Cloudflare previews finalizaron success. La primera ejecución de integración falló solo en teardown por una sucursal sintética residual; se corrigió la limpieza, se eliminó la consulta concurrente del mismo cliente pg y la ejecución posterior pasó (3/3 pruebas de branch scope, sin warning). La sincronización documental posterior debe revalidar el SHA final.
+- Neon main, datos reales, Cloudflare settings, secretos, DNS, billing y producción sin cambios; migración no aplicada remotamente.
+
+- Ampliación de validación: CI aplica también 0003 al PostgreSQL efímero y ejecuta `branch-context.integration.test.ts` contra PostgreSQL real; el workflow `postgres-migration` mantiene assertions SQL específicas. Verificar ambos resultados en el HEAD final de la PR.
+
+- Endurecimiento posterior: `resolveBranchContext` revalida en su propia consulta que organization, app_user y organization_members siguen activos y que el rol actual en DB coincide con el TenantContext; owner/admin se determina desde la fila DB. Se añadieron pruebas PostgreSQL para membresía revocada y rol obsoleto. Esta revisión cambió el HEAD después de los checks previamente documentados; verificar nueva ejecución CI antes de merge.

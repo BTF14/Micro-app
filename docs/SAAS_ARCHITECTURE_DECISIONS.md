@@ -49,16 +49,13 @@ No añadir `branch_id` indiscriminadamente a cada tabla. Añadirlo a las entidad
 
 ## 3. Roles y autorización
 
-Roles base recomendados: `owner`, `admin`, `cashier`, `inventory`. No introducir roles personalizados hasta que exista necesidad real y un modelo auditable.
+Roles base de la organización: `owner`, `admin`, `cashier`, `inventory`. La decisión estructural vigente es **un solo rol por miembro dentro de cada organización**, almacenado en `organization_members.role`. Ese rol es uniforme en toda la organización; una persona no puede ser `cashier` en una sucursal e `inventory` en otra.
 
-- `owner` gobierna la organización y protege la continuidad de propiedad.
-- `admin` gestiona operaciones según permisos delegados, sin poder apropiarse del rol owner.
-- `cashier` opera caja/ventas dentro de sus sucursales y turnos asignados.
-- `inventory` gestiona catálogo operativo, recepción y stock dentro del ámbito asignado, sin acceso financiero innecesario.
+`branch_memberships` tiene una responsabilidad distinta: concede o revoca la asignación/acceso de un miembro a una sucursal. No contiene un rol y no redefine el rol organizacional. El rol por sí solo no sustituye la comprobación de la asignación de sucursal ni constituye autorización de una operación.
 
-**Reglas de diseño obligatorias:** autorización en servidor por operación y recurso; denegar por defecto; validar organización y sucursal en cada consulta; no confiar en IDs del cliente; evitar que una organización quede sin owner activo; revocar sesiones al desactivar membresía/usuario; auditoría de cambios de rol y acciones sensibles.
+**Reglas de diseño obligatorias:** autorización server-side por operación y recurso; denegar por defecto; validar organización y sucursal en cada consulta; no confiar en IDs del cliente; evitar que una organización quede sin owner activo; revocar sesiones al desactivar membresía/usuario; auditar cambios de rol y acciones sensibles.
 
-La matriz `docs/sdd/role-permission-decision-matrix.md` sigue siendo propuesta. Su antigua recomendación de roles de alcance exclusivamente organizacional no debe interpretarse como decisión final para una plataforma multi-sucursal. Debe reconciliarse con asignaciones de sucursal y operaciones de caja antes de aprobarla. Cada organización define sus políticas comerciales, incluidos descuentos, límites y aprobaciones; Micro app no impone porcentajes ni importes universales. La plataforma debe aplicar esa configuración en servidor y conservar snapshots auditables. La facultad para configurar políticas y ejecutar excepciones debe definirse en la matriz aprobada. Ver `docs/sdd/ORGANIZATION_COMMERCIAL_POLICY_CONFIGURATION.md`.
+La matriz `docs/sdd/role-permission-decision-matrix.md` sigue **NO APROBADA**. La decisión estructural anterior no aprueba qué operaciones puede realizar cada rol. Cada organización define sus políticas comerciales, incluidos descuentos, límites y aprobaciones; quién puede configurarlas y quién puede ejecutar excepciones debe quedar definido en la matriz aprobada. Ver `docs/sdd/ORGANIZATION_COMMERCIAL_POLICY_CONFIGURATION.md`. No implementar permisos comerciales basándose solo en este apartado.
 
 ## 4. BCV y conversión USD/VES
 
@@ -197,23 +194,15 @@ La optimización debe reducir conexiones y trabajo de base de datos sin debilita
 **Criterio:** optimizar primero consultas, conexión y paginación; introducir caché distribuida o pooling solo cuando las mediciones demuestren un cuello de botella y la cuota gratuita vigente lo soporte.
 
 
-## 14. Asignación de roles por alcance — diseño recomendado
+## 14. Rol organizacional y asignación de sucursal — decisión vigente
 
-Para evitar que un cajero de una sucursal pueda operar accidentalmente en todas las sucursales, el modelo debe separar **membresía organizacional** de **asignación operativa**:
+La autoridad de rol se mantiene en `organization_members.role`: cada miembro tiene **un único rol por organización** (`owner`, `admin`, `cashier` o `inventory`). El mismo rol aplica en todas las sucursales de esa organización. No existe ni se proyecta en esta decisión un rol distinto por sucursal.
 
-- `owner` y `admin`: roles de alcance organizacional, sujetos a permisos concretos aprobados.
-- `cashier` y `inventory`: alcance operativo por sucursal; no heredan acceso a todas las ubicaciones.
-- PR #165 creó `branch_memberships` con organización, sucursal, usuario y estado activo, pero **sin columna de rol por sucursal**. `organization_members.role` sigue siendo global.
-- Por ello, la posibilidad de que una persona sea cashier en A e inventory en B es una dirección futura, no una capacidad del esquema actual. Exige decisión, backfill y migración independiente.
-- La membresía organizacional confirma pertenencia al tenant; `branch_memberships` confirma asignación a sucursal. El resolver comprueba rol global y asignación activa, sin autorizar operaciones comerciales.
-- No permitir que el valor `cashier` o `inventory` en la membresía se interprete como acceso a todas las sucursales. La migración debe retirar esa ambigüedad del modelo actual de `organization_members.role`; el diseño exacto de columnas y compatibilidad se cierra en el ERD antes de migrar.
-- El contexto de API futuro debe resolver `userId`, `organizationId`, `organizationRole` y, cuando corresponda, `branchId`/asignación activa desde el servidor. Un `branchId` recibido del cliente es solo un selector solicitado; nunca una prueba de permiso.
-- La autorización de caja requiere además una asignación/turno activo: ser cajero de una sucursal no autoriza a abrir, consultar ni cerrar la caja/turno de otra persona.
-- El alcance de inventario por almacén puede restringirse más adelante si existe una necesidad real; empezar por sucursal y no crear permisos granulares innecesarios.
-- Mantener el último `owner` activo protegido por una operación transaccional. Las altas, bajas y cambios de asignación deben auditarse.
+`branch_memberships` es únicamente una relación de asignación de acceso a sucursales: permite conceder o revocar el acceso de un miembro a una sucursal y no tiene columna de rol. Una asignación activa no autoriza por sí sola ventas, pagos, inventario, anulaciones, configuración de políticas ni supervisión. El servidor debe comprobar la membresía organizacional, el rol global, la asignación a la sucursal y el permiso específico de la operación cuando la matriz sea aprobada.
 
-Este diseño sigue siendo la dirección de la futura matriz; no sustituye la aprobación explícita de permisos sensibles. La base de asignación por sucursal sí está implementada en 0003, pero aún no incluye rol por sucursal. La matriz debe decidir por separado qué roles pueden leer catálogo, editar precios/costos, recibir mercancía, ajustar inventario, administrar/aplicar políticas de descuento, devolver ventas, cerrar caja, consultar reportes y exportar datos. Los importes, porcentajes y condiciones comerciales se configuran por organización.
+Cambiar `organization_members.role` afecta al miembro en toda la organización; revocar una fila de `branch_memberships` afecta únicamente esa asignación y no cambia su rol ni las otras asignaciones. No introducir roles por sucursal ni migraciones para ese propósito sin nueva decisión explícita del propietario.
 
+La matriz de permisos por operación permanece **NO APROBADA**. No inferir facultades de los nombres de rol. Las políticas comerciales son propiedad de cada organización; las facultades para configurarlas y ejecutar excepciones siguen pendientes de aprobación. Para caja, conservar el modelo de turnos con apertura y cierre ordinario; no crear un cierre especial de supervisor incompatible con él.
 
 ## Modelo de datos multi-sucursal — diseño inicial (snapshot pre-PR #165; estado vigente en sección 12)
 

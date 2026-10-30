@@ -1,17 +1,23 @@
 # Estado actual de integración API — Micro app
 
-**GitHub vivo — 2026-10-30 UTC:** PR #175/#176 fusionadas; `main` observado en `287ba4e3b038b434bfec1fffec140bf2acc3f29a`; cero PR abiertas. En este SHA, nueve check-runs success (siete Actions y dos Cloudflare), incluidos los seis contextos requeridos. No extrapolar a SHA posteriores.
+**GitHub vivo — 2026-10-30 UTC:** PR #177 fusionada; `main` observado en `82386c6e9300e06f8fa209aa52995b939a72442a`. La validación post-merge de #177 observó 9/9 check-runs success y seis contextos requeridos success. Verificar nuevamente el SHA exacto antes de cualquier cambio.
 
 ## Límite actual de API
-No hay handlers comerciales ni autorización por operación demostrada. La matriz `docs/sdd/role-permission-decision-matrix.md` sigue **NO APROBADA**. `resolveTenantContext`, `resolveBranchContext` y `resolveOpenCashierRegisterShift` resuelven contexto/ámbito; no autorizan operaciones. No añadir endpoints, middleware ni role-switches comerciales antes de aprobación explícita. No afirmar ledger/auditoría comercial implementados.
+No hay handlers comerciales ni autorización por operación demostrada. La matriz `docs/sdd/role-permission-decision-matrix.md` sigue **NO APROBADA**. La estructura vigente es un único rol por miembro/organización en `organization_members.role`; `branch_memberships` solo asigna acceso a sucursales, no define roles por sucursal. Los resolvers de tenant/branch/turno resuelven contexto/ámbito; no autorizan operaciones. No añadir endpoints, middleware ni role-switches comerciales antes de aprobación explícita. No afirmar ledger/auditoría comercial implementados.
 
 ## CORS y Cloudflare
-Issue #78 sigue abierta. En `apps/api/src/index.ts`, Hono CORS compara el Origin con `FRONTEND_ORIGIN` validado y declara métodos GET/POST/PATCH/DELETE/OPTIONS, headers Content-Type/Authorization/Idempotency-Key, credenciales y max-age 600. `apps/api/src/index.test.ts` prueba un preflight simulado autorizado y que un origen externo no recibe `Access-Control-Allow-Origin`; usa `app.request` y bindings de prueba, no el Worker desplegado. La prueba automatizada no sustituye el preflight HTTP real.
+Issue #78 sigue abierta. En `apps/api/src/index.ts`, Hono CORS compara el Origin con `FRONTEND_ORIGIN` validado y declara métodos GET/POST/PATCH/DELETE/OPTIONS, headers Content-Type/Authorization/Idempotency-Key, credenciales y max-age 600. `apps/api/src/index.test.ts` prueba preflight simulado autorizado y origen externo no autorizado; no valida el Worker desplegado.
 
-En esta sesión se intentaron los dos comandos curl solicitados contra `/health`; ambos fallaron con exit 6 (`Could not resolve host`). No se obtuvo status ni headers, por lo que CORS sigue **NO VERIFICADO**. La limitación corresponde al DNS/salida de red del entorno de ejecución; no demuestra fallo del Worker ni de CORS. Ejecutar desde un equipo con salida de red completa y compartir solo status y headers `Access-Control-*`, nunca cookies/tokens. No modificar configuración, variables, secretos ni desplegar para completar la comprobación.
+Inspección autenticada de solo lectura del 2026-10-30: Worker `micro-app-api` Active Deployment en Producción, versión `49975c43-4161-4809-9c00-8ba83e53e6a0`, Build ID `957478f6-0f43-4b5c-932a-621be067d6d9`, commit `82386c6e9300e06f8fa209aa52995b939a72442a`, 100% de asignación de tráfico. Pages `micro-app` production branch `main`, SHA `82386c6e9300e06f8fa209aa52995b939a72442a`, URL `https://cc23ff0c.micro-app-63i.pages.dev`. La lista visible de variables de Pages estaba vacía y `VITE_API_BASE_URL` no aparecía. No se cambió configuración ni se revelaron valores.
+
+**CORS sigue NO VERIFICADO:** falta ejecutar OPTIONS real con Origin autorizado `https://micro-app-63i.pages.dev` y externo `https://attacker.example`, registrar status y headers `Access-Control-*`. No inferir éxito por versión activa, métricas, CI ni tests. La ausencia visible de `VITE_API_BASE_URL` debe investigarse en solo lectura antes de declarar integración frontend/API correcta.
 
 ## Migraciones y entorno
 Main versiona migraciones 0001–0004; no afirmar que 0003/0004 estén aplicadas a Neon `main`. PostgreSQL desechable es el entorno primario de validación. No ejecutar SQL remoto ni tocar datos reales en esta continuidad.
+
+---
+> **Archivo histórico — no usar como estado operativo.** Las entradas siguientes se conservan por trazabilidad y describen estados de su fecha. GitHub en vivo y el checkpoint superior prevalecen.
+
 
 ---
 > **Archivo histórico — no usar como estado operativo.** Las entradas siguientes se conservan para trazabilidad y describen estados de su fecha. GitHub en vivo y el checkpoint superior prevalecen.

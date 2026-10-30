@@ -1,6 +1,6 @@
 # Prioridad operativa vigente — Micro app
 
-**Checkpoint GitHub — 2026-10-30 UTC:** base `main` / PR #178 conocida `82386c6e9300e06f8fa209aa52995b939a72442a`. PR #178 OPEN, DRAFT, NOT MERGED; rama `docs/reconcile-role-model-and-cloudflare-20261030`; último SHA consultado antes del commit de handoff `c8d53fd3d738bab3cdcd8e5e43cca1c6ac4e8ca8`. Comparación previa 63 ahead / 0 behind; `mergeable=true`; 13 archivos documentales; 0 reviews formales y 0 threads inline. Para ese SHA, cinco runs de la primera página aparecían queued y el conjunto completo no estaba verificado. Resolver el HEAD vivo y sus checks. No fusionar mientras Draft ni sin autorización explícita.
+**Checkpoint GitHub — 2026-10-30 UTC:** base `main` / PR #178 `82386c6e9300e06f8fa209aa52995b939a72442a`. PR #178 OPEN, DRAFT, NOT MERGED; rama `docs/reconcile-role-model-and-cloudflare-20261030`; último SHA consultado antes de este ajuste final `720bc7b052a957e3f179558c23e327e19d3a5b42`. Comparación previa 64 ahead / 0 behind; `mergeable=true`; 13 archivos documentales; 351 adiciones / 230 eliminaciones; 0 reviews formales y 0 threads inline. Actions devolvió 0 runs visibles para ese SHA; CI no verificado. Pages preview en progreso; Worker preview success conocido solo para SHA anterior. Resolver HEAD vivo y sus checks. No fusionar mientras Draft ni sin autorización explícita.
 
 ## Orden de trabajo y gates
 ## Orden de trabajo y gates

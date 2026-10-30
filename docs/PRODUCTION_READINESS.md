@@ -11,6 +11,12 @@ Este archivo es la fuente de datos para el panel de avance. Un ítem solo puede 
 - Los criterios bloqueantes P0 se muestran aparte. No se puede declarar listo para producción mientras quede alguno pendiente.
 - No marcar una tarea completa basándose solo en un workflow de mocks.
 
+## Estado arquitectónico al 2026-10-30
+
+- Main contiene 0001–0003: tenant/identidad y fundamento de sucursales/asignaciones; `resolveBranchContext` existe pero no está conectado a rutas.
+- PR #167 añade 0004 (`registers`/`register_shifts`) en una rama abierta; migration validation y assertions se ejecutan en PostgreSQL 18 desechable. No está fusionada ni aplicada a Neon main.
+- No existen endpoints comerciales; la matriz de permisos sigue NO APROBADA. Este trabajo de esquema no marca como completados los flujos POS, ventas, inventario o caja de extremo a extremo.
+
 ## Implementación funcional
 
 ### Base de producto
@@ -26,17 +32,17 @@ Este archivo es la fuente de datos para el panel de avance. Un ítem solo puede 
 - [ ] UX responsive final y accesibilidad validada.
 
 ### Datos e integridad
-- [x] Esquema SQL inicial versionado y validación en PostgreSQL desechable.
+- [x] Esquema SQL versionado 0001–0003 en main y validación en PostgreSQL 18 desechable; 0004 está validada como candidata en PR #167, aún no fusionada ni aplicada a Neon.
 - [ ] Adaptador PostgreSQL conectado y probado en todos los flujos de negocio.
 - [ ] Migraciones automatizadas y operativamente documentadas.
 - [ ] Aislamiento multiempresa validado para todas las operaciones.
 - [ ] Idempotencia de ventas y pagos verificada con pruebas.
 - [ ] Stock concurrente protegido contra sobreventa.
 - [ ] Instantáneas inmutables de precios, tasa y datos de venta.
-- [ ] Ciclo completo de backup/restore: la subida está verificada y la restauración técnica del backup remoto exacto pasó en PostgreSQL 18 desechable (run 40955935124; ver [BACKUP_AND_RECOVERY.md](BACKUP_AND_RECOVERY.md)). El gate completo sigue pendiente de validación de datos comerciales/conteos/relaciones, RPO/RTO, alerta y evidencia del coste total.
+- [ ] Ciclo completo de backup/restore: la restauración técnica del backup remoto exacto pasó en PostgreSQL 18 desechable (run 40955935124) y el smoke sintético cifrado PG18 pasó en run 41020548699. El gate completo sigue pendiente de validación de datos comerciales/conteos/relaciones, RPO/RTO, alerta y evidencia del coste total; ver [BACKUP_AND_RECOVERY.md](BACKUP_AND_RECOVERY.md).
 
 ### Identidad y moneda
-- [x] Registro público y login con contraseña bloqueados fail-closed; Google OAuth + allowlist + verificación de email implementados (PR #102).
+- [x] Registro público y login con contraseña bloqueados fail-closed; Google OAuth + allowlist + verificación de email implementados (PR #102), sesión reforzada y origen HTTPS/canónico (PR #155).
 - [x] Sesiones persistidas y revocables; pruebas de identidad y límites de sesión ampliadas en PR #111 (mismatch, expiración/revocación, membresía/organización inactiva).
 - [ ] Matriz completa de roles/permisos y pruebas negativas.
 - [ ] Integración de tasa BCV validada con fuente, vigencia y fallos.
@@ -72,7 +78,8 @@ Este archivo es la fuente de datos para el panel de avance. Un ítem solo puede 
 
 ## Bloqueos conocidos al último análisis documental
 
-- El registro público y el login con contraseña permanecen bloqueados fail-closed; Google OAuth + allowlist + verificación de email ya están implementados y probados. Issue #53 sigue abierto por aislamiento real de futuras rutas comerciales y cobertura restante.
+- El registro público y el login con contraseña permanecen bloqueados fail-closed; Google OAuth + allowlist + verificación de email y HTTPS/canonical origin están implementados y probados. Issue #53 sigue abierto por aislamiento real de futuras rutas comerciales y cobertura restante.
+- Main ya incluye sucursales/asignaciones (0003); PR #167 propone cajas/turnos (0004) pero no está fusionada. No hay endpoints ni flujos comerciales; almacenes y stock por almacén siguen pendientes.
 - Las pruebas Playwright actuales son smoke tests con API simulada; no prueban el backend real.
 - La aplicación no tiene aún los flujos completos de POS/ventas/inventario.
 - Los cambios en Neon main deben superar el gate de `docs/CONSTITUTION.md`; producción sigue bloqueada hasta completar los gates y obtener aceptación explícita.

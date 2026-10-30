@@ -1271,3 +1271,13 @@ CI documental: para HEAD `8c15e13fa001a14a0ddf9f2432bc17efb30d476d`, los 8 workf
 - Alcance: 11 archivos documentales; no runtime, SQL, migraciones, workflows, secretos, datos, Neon ni infraestructura. La PR consolida las correcciones de continuidad, modelo de roles, matriz NO APROBADA y evidencia Cloudflare/frontend.
 - La inspección pública confirma el enlace OAuth HTML hacia el Worker; no se pudo inspeccionar el bundle JS. CORS sigue pendiente de dos preflight HTTP reales.
 - Continuar en esta PR; no crear una PR duplicada. Revalidar el HEAD exacto y sus checks antes de revisión/merge.
+
+
+## 2026-10-30 UTC — auditoría y retiro de hosting alternativo del proyecto
+
+- El propietario confirmó que desconectó el hosting alternativo del proyecto y solicitó retirar sus rastros con precaución.
+- Se revisó el árbol completo de `main` (191 entradas), búsquedas del repositorio y manifiestos/configuración: no hay archivos de configuración específicos del proveedor, `vercel.json`, directorio `.vercel`, paquetes `@vercel/*`, CLI/comandos de despliegue ni workflows que lo invoquen. Las referencias operativas antiguas estaban concentradas en documentos de continuidad/arquitectura/registro.
+- Se limpiaron esas referencias de los documentos operativos actuales en la PR #178. Las entradas antiguas de este diario no se reescriben porque el protocolo del proyecto exige que `STATE_JOURNAL.md` sea append-only; describen hechos históricos y no una dependencia vigente. El historial de Git tampoco se reescribe.
+- `VITE_API_BASE_URL` se conserva intencionalmente: es una variable pública de build de Vite, no un servicio ni una integración de hosting. `apps/web/.env.production` define la URL canónica del Worker; `apps/web/vite.config.ts` la carga con `loadEnv`. El bundle publicado aún no pudo inspeccionarse.
+- La búsqueda de código no encontró referencias del proveedor en runtime, paquetes, workflows o scripts. El status combinado consultado para el SHA de `main` no devolvió estados externos. La PR #178 muestra checks de GitHub Actions y previews de Cloudflare; branch protection devolvió 403 y no pudo auditarse la instalación/configuración externa de GitHub Apps.
+- No se eliminó ni modificó ninguna cuenta externa, integración GitHub, webhook, deployment, variable, secreto, DNS, configuración Cloudflare, Neon ni producción. La limpieza fue documental.

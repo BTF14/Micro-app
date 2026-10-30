@@ -24,7 +24,7 @@ Micro app es un POS e inventario web para PC, tablet y móvil: catálogo/código
 - Revalidar límites y términos de cada nivel gratuito antes de desplegar/adoptar herramientas. No prometer capacidad ilimitada.
 - Preferir estándares portables y software libre.
 - Arquitectura objetivo documentada: frontend estático Cloudflare Pages, API Cloudflare Workers + Hono y PostgreSQL en Neon Free, sujeto a revalidación de términos/límites.
-- Vercel Hobby no es el destino para operación comercial. Si se exceden límites gratuitos, optimizar o proponer una alternativa gratuita; no generar gastos por cuenta propia.
+- Mantener un único destino de hosting aprobado; si se exceden límites gratuitos, optimizar o revisar una migración mediante PR y pruebas, sin duplicar despliegues ni generar gastos.
 - Referencia: [arquitectura y coste cero](ARCHITECTURE_AND_ZERO_COST.md).
 
 ## 3. Seguridad y autoridad

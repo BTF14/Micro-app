@@ -195,3 +195,21 @@ La optimización debe reducir conexiones y trabajo de base de datos sin debilita
 - Usar `EXPLAIN (ANALYZE, BUFFERS)` con datos sintéticos representativos, nunca datos de clientes, para justificar índices. No añadir índices redundantes por anticipado: elevan almacenamiento y coste de escrituras.
 
 **Criterio:** optimizar primero consultas, conexión y paginación; introducir caché distribuida o pooling solo cuando las mediciones demuestren un cuello de botella y la cuota gratuita vigente lo soporte.
+
+
+## 14. Asignación de roles por alcance — diseño recomendado
+
+Para evitar que un cajero de una sucursal pueda operar accidentalmente en todas las sucursales, el modelo debe separar **membresía organizacional** de **asignación operativa**:
+
+- `owner` y `admin`: roles de alcance organizacional. Pueden administrar o supervisar varias sucursales según los permisos concretos aprobados.
+- `cashier` y `inventory`: asignaciones de alcance sucursal, no roles globales que automáticamente den acceso a todas las ubicaciones.
+- Una persona puede ser `cashier` en la sucursal A y `inventory` en la sucursal B, sin duplicar su identidad ni crear cuentas separadas.
+- La membresía organizacional confirma que el usuario pertenece al tenant y está activa. La asignación sucursal-usuario confirma en qué sucursales y con qué rol puede operar.
+- Dirección de esquema recomendada para la futura migración: mantener una relación de membresía `organization_members` y añadir una tabla tenant-scoped de asignaciones por sucursal (por ejemplo, `organization_member_branches` o `branch_memberships`) con `organization_id`, `branch_id`, `user_id`, rol permitido (`cashier`/`inventory`), estado y timestamps. Las FKs compuestas deben garantizar que usuario y sucursal pertenecen a la misma organización.
+- No permitir que el valor `cashier` o `inventory` en la membresía se interprete como acceso a todas las sucursales. La migración debe retirar esa ambigüedad del modelo actual de `organization_members.role`; el diseño exacto de columnas y compatibilidad se cierra en el ERD antes de migrar.
+- El contexto de API futuro debe resolver `userId`, `organizationId`, `organizationRole` y, cuando corresponda, `branchId`/asignación activa desde el servidor. Un `branchId` recibido del cliente es solo un selector solicitado; nunca una prueba de permiso.
+- La autorización de caja requiere además una asignación/turno activo: ser cajero de una sucursal no autoriza a abrir, consultar ni cerrar la caja/turno de otra persona.
+- El alcance de inventario por almacén puede restringirse más adelante si existe una necesidad real; empezar por sucursal y no crear permisos granulares innecesarios.
+- Mantener el último `owner` activo protegido por una operación transaccional. Las altas, bajas y cambios de asignación deben auditarse.
+
+Este es el diseño recomendado para el ERD y la futura matriz; **no es una migración implementada ni sustituye la aprobación explícita de permisos sensibles**. La matriz debe decidir por separado lectura de catálogo, edición de precios/costos, recepción, ajuste, descuento, devolución, cierre de caja, reportes y exportaciones.

@@ -1036,3 +1036,16 @@ CI documental: para HEAD `8c15e13fa001a14a0ddf9f2432bc17efb30d476d`, los 8 workf
 - No se aplicó SQL a Neon, no se creó/modificó Neon branch, no se tocó Cloudflare settings, secretos, DNS, billing ni producción. La lectura de ramas Neon no devolvió resultado utilizable; no se infiere cantidad de ramas.
 - Trabajo actual solo documental, en rama `docs/post-pr165-register-shift-design-20261030`; el nuevo SDD es `docs/sdd/REGISTER_SHIFT_MODEL.md`. No se modificó runtime ni README porque no se cerró una capacidad de producto.
 - Próximo bloque: revisar diff/checks de esta PR; después implementar migration 0004 y tests PostgreSQL efímeros, sin endpoints comerciales.
+
+
+## 2026-10-30 UTC — auditoría de continuidad y discrepancias post-PR #165
+
+- Estado GitHub revalidado: repositorio `BTF14/Micro-app`; `main` = `1d10befe0cd3367e04bd8998a192e93d9b228063`; PR #166 abierta, base main, rama `docs/post-pr165-register-shift-design-20261030`, HEAD consultado `8044a6614b847d580e6e1f755433f05d2b141b75`. No hay otra PR abierta en la consulta.
+- Para ese HEAD se verificaron 8 workflows de GitHub Actions en `completed/success`: CI, Playwright E2E, Database migration validation (0001–0003 + assertions en PostgreSQL efímero), Security scan/Trivy, Semgrep SAST, Secret history scan, Dependency Review y Project progress dashboard. Se inspeccionaron jobs/steps. No hay reviews humanas ni threads inline.
+- El combined status no devolvió status checks y la consulta no confirmó checks externos Cloudflare Pages/Workers para ese HEAD. No se declara verde Cloudflare ni se reutiliza evidencia de otro SHA. Codex no se reintentó por la limitación de cuota previamente registrada.
+- Revisión manual encontró discrepancias no cubiertas por los nueve archivos iniciales de PR #166: `docs/SCHEMA_REVIEW.md` y `docs/DATABASE_SCHEMA.md` todavía afirmaban que branches/branch_memberships no existían; `docs/sdd/MULTI_BRANCH_DATA_MODEL.md` aún etiquetaba sucursales/asignaciones como no implementadas y la separación de asignaciones como pendiente sin distinguir la parte ya implementada.
+- Se actualizan esos inventarios para reflejar que PR #165 versionó `0003_branch_scope.sql`, creó `branches`/`branch_memberships` y añadió `resolveBranchContext`, validado en PostgreSQL 18 efímero. Se conserva la limitación: la migración 0003 no se aplicó a Neon main; el resolver no está conectado a rutas; no existen handlers comerciales; warehouses/registers/register_shifts/inventory_balances siguen pendientes; la matriz comercial continúa NO APROBADA.
+- Los documentos operativos registran PR #166 como activa y distinguen checks de Actions de checks externos no verificados. Cada actualización cambia el HEAD, por lo que los checks anteriores no certifican el HEAD final.
+- No se fusionó ninguna PR, no se aplicó SQL a Neon, no se crearon ramas Neon, no se modificaron Cloudflare settings, secretos, DNS, billing ni producción.
+- Siguiente trabajo técnico tras cerrar la revisión documental: diseñar e implementar migración aditiva 0004 para cajas/turnos, assertions SQL, pruebas PostgreSQL 18 desechables desde cero y pruebas de concurrencia; sin endpoints comerciales ni cambios en Neon main.
+

@@ -815,3 +815,10 @@ CI documental: para HEAD `8c15e13fa001a14a0ddf9f2432bc17efb30d476d`, los 8 workf
 - Constitución y SCHEMA_REVIEW reconciliadas para que los hallazgos de auth del 2026-10-17 se lean como históricos/supersedidos, preservando el análisis SQL útil.
 - Alcance solo documental. No se cambió código, esquema, migraciones, workflows, secretos, Neon, datos reales ni producción.
 - Verificación pendiente: consultar HEAD final y workflows de ese SHA exacto; revisar diff completo y obtener revisión independiente antes de fusionar. No reutilizar resultados de CI de HEAD previos.
+
+
+## 2026-10-30 UTC — precisión de rate limiting y revisión de rama histórica
+
+- La búsqueda de símbolos y callsites en `apps/api/src` no encontró runtime rate limiting; `auth_rate_limits` aparece en DDL y tests, no como mecanismo activo. Se corrigieron `API_INTEGRATION.md` y `SECURITY_ROADMAP.md` para no afirmar controles inexistentes. Verificar reglas Cloudflare aparte y diseñar protección distribuida compatible con Workers.
+- La rama `feat/neon-transaction-adapter` se comparó con main: 14 commits ahead y 242 behind. Su PR [#1](https://github.com/BTF14/Micro-app/pull/1) ya está fusionada desde 2026-10-17, merge `b6511d0876e33096f75df2466653449165888821`; no se debe reabrir ni fusionar la rama antigua.
+- La auditoría permanece estática/read-only. No se ejecutó SQL ni se accedió a Neon `main`, producción, secretos o datos reales.

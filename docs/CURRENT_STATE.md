@@ -8,8 +8,8 @@
 - PR #166: 8/8; PR #167: 10/10; PR #168: 10/10 workflows Actions en sus HEADs finales. Para #168, HEAD `26fef88bfeea656424e8c4c082cef789a177857a`; los check-runs consultados terminaron completed/success.
 - La consulta de checks sobre el merge SHA actual de main devolvió listas vacías; no se afirma CI post-merge sobre `e4e4a5f...`.
 - PR #169 HEAD inicial `69ef099d586070edf295e0302468e96c4667f11f`, base `e4e4a5f312522ec5efbcc3252958141f56fbd821`; actualizar al HEAD vivo tras cada commit.
-- PR #169 HEAD final `253128c6f5213986879ce619da85285251c07416`: 8/8 workflow runs Actions `completed/success`; 14 check-runs consultados, todos `completed/success` (incluye checks duplicados de seguridad y Cloudflare Pages/Workers). CI, migration validation, Playwright, Semgrep, Trivy, Dependency Review, Secret History Scan y dashboard pasaron en ese SHA.
-- El job CI confirmó build/typecheck, unit tests, auth 18/18, branch 4/4, register shifts 5/5 y cashier open-shift integration 7/7 en PostgreSQL 18 efímero.
+- PR #169 implementación/test SHA `253128c6f5213986879ce619da85285251c07416`: 8/8 workflow runs Actions `completed/success`; 14 check-runs consultados, todos `completed/success`. Se añadió después un checkpoint documental; consultar siempre GitHub para el HEAD exacto de la rama antes de merge.
+- El job CI del SHA de implementación confirmó build/typecheck, unit tests, auth 18/18, branch 4/4, register shifts 5/5 y cashier open-shift integration 7/7 en PostgreSQL 18 efímero. Revalidar checks sobre el HEAD documental más reciente.
 - Cloudflare Pages preview: `https://79028733.micro-app-63i.pages.dev`; branch preview `https://feat-authenticated-cashier-o.micro-app-63i.pages.dev`. Workers commit preview `https://ff076721-micro-app-api.btfcasheb.workers.dev`; branch preview `https://feat-authenticated-cashier-open-shift-20261030-micro-app-api.btfcasheb.workers.dev`. Son previews, no producción.
 - Cloudflare Pages/Workers publicaron previews para el HEAD final `253128c`; no son producción.
 - Codex review falló por límite de uso; no hay reviews formales ni threads inline. Se hizo inspección manual del diff; no equivale a aprobación externa.

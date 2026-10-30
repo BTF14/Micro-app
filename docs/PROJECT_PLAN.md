@@ -1,7 +1,7 @@
 # Prioridad operativa vigente — resolver turno abierto del cajero — 2026-10-30 UTC
 
 **Main base verificado:** `e4e4a5f312522ec5efbcc3252958141f56fbd821`.  
-**PR activa:** [#169](https://github.com/BTF14/Micro-app/pull/169), HEAD final `253128c6f5213986879ce619da85285251c07416`; 8/8 workflows Actions completed/success y 14 check-runs consultados completed/success. Integration PG18 7/7.  
+**PR activa:** [#169](https://github.com/BTF14/Micro-app/pull/169); SHA de implementación `253128c6f5213986879ce619da85285251c07416` pasó 8/8 workflows Actions y 14 check-runs consultados. Integration PG18 7/7; revalidar el HEAD exacto actual tras el checkpoint documental.  
 **PR #166/#167/#168:** fusionadas secuencialmente. #166 8/8 y #167 10/10 workflows success en sus HEADs finales; no se obtuvieron runs/status para el merge SHA actual de main.  
 **Base de datos:** main versiona 0001–0004; 0003/0004 no aplicadas a Neon main.
 

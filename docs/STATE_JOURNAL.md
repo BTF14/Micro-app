@@ -1116,3 +1116,10 @@ CI documental: para HEAD `8c15e13fa001a14a0ddf9f2432bc17efb30d476d`, los 8 workf
 - Migration validation aplica 0001–0004 y pasa assertions en PostgreSQL 18 desechable. Playwright, Semgrep, Trivy, Dependency Review, Secret History y dashboard success.
 - Reviews formales GitHub: 0; inline review threads: 0. Codex no completó por cuota; no se trata como aprobación externa. Diff revisado manualmente.
 - No se tocó Neon main, no se aplicaron migraciones remotas, no se modificaron secretos/Cloudflare settings/DNS/billing y no se crearon endpoints comerciales.
+
+
+## 2026-10-30 UTC — checkpoint documental posterior a la verificación de implementación
+
+- La implementación de PR #169 en SHA `253128c6f5213986879ce619da85285251c07416` pasó 8/8 workflows Actions y 14 check-runs observados success; 7/7 nuevas pruebas de integración PostgreSQL 18 pasaron, incluida la prueba de bloqueo ante cierre concurrente.
+- Se sincronizan las portadas de continuidad con esos resultados y se distingue el SHA de implementación verificado de los commits documentales posteriores.
+- Este checkpoint cambia el HEAD de PR #169 sin cambiar runtime; reconsultar los checks del SHA exacto actual antes de merge. No reutilizar el resultado de 253128 como evidencia de un SHA posterior.

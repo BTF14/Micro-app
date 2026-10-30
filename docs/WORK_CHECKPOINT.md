@@ -1,8 +1,12 @@
-# Checkpoint operativo — reconciliación post-PR #177
+# Checkpoint operativo — PR #178 y continuidad — 2026-10-30 UTC
 
-**Verificación GitHub — 2026-10-30 UTC:** PR #177 fusionada; merge SHA y HEAD de `main` observado: `82386c6e9300e06f8fa209aa52995b939a72442a`. Cero PR abiertas al inicio del bloque. En la validación post-merge de #177: 9/9 check-runs success y seis contextos requeridos success. No extrapolar esos resultados a nuevos commits.
+**Estado GitHub verificado para HEAD exacto `74dddc0275698efd6f2e47840c7abbc0e34d512b`:** PR #178 OPEN, DRAFT, NOT MERGED; rama `docs/reconcile-role-model-and-cloudflare-20261030`; base `main` SHA `82386c6e9300e06f8fa209aa52995b939a72442a`. Comparación: 58 commits ahead, 0 behind; GitHub reporta `mergeable=true`.
 
-**PR en curso:** [#178](https://github.com/BTF14/Micro-app/pull/178), draft, rama `docs/reconcile-role-model-and-cloudflare-20261030`. Continuar allí; no crear otra PR para la misma reconciliación. Revalidar HEAD/checks.
+**CI del HEAD exacto:** 9/9 workflows Actions completados en `success`: Database migration validation, Security scan, Dependency review, Project progress dashboard, SDD and agent documentation validation, Secret history scan, Semgrep SAST, Playwright E2E y CI. Combined status no devolvió estados externos. Cloudflare Pages preview (`201e6fee...`) y Workers preview (`ac0cd319...`) reportaron éxito. Son previews, no producción.
+
+**Revisión:** 13 archivos, todos documentales; 323 adiciones / 228 eliminaciones; 0 reviews formales y 0 threads inline. Branch protection no pudo auditarse (403 en consulta anterior). Aunque checks y mergeability técnica son positivos, **no fusionar mientras siga Draft** ni cambiarla a Ready sin decisión del propietario. Un merge puede activar despliegues automáticos Cloudflare; no está autorizado por esta revisión.
+
+**Cualquier edición posterior crea un HEAD nuevo y requiere reconsultar checks/previews.**
 
 ## Cloudflare — evidencia autenticada, solo lectura
 - Worker `micro-app-api`: Active Deployment en Producción; versión `49975c43-4161-4809-9c00-8ba83e53e6a0`, Build ID `957478f6-0f43-4b5c-932a-621be067d6d9`, commit `82386c6e9300e06f8fa209aa52995b939a72442a`; panel mostró 100% de asignación de tráfico.

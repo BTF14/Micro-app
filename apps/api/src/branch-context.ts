@@ -12,6 +12,7 @@ type BranchContextRow = {
   user_id: string;
   organization_id: string;
   branch_id: string;
+  role: TenantContext["role"];
 };
 
 const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -43,21 +44,33 @@ export async function resolveBranchContext(
 
   const result = await client.query<BranchContextRow>(
     `SELECT
-       $1::uuid AS user_id,
-       b.organization_id,
-       b.id AS branch_id
+       m.user_id,
+       m.organization_id,
+       b.id AS branch_id,
+       m.role
      FROM branches b
+     JOIN organizations o
+       ON o.id = b.organization_id
+      AND o.is_active = true
+     JOIN organization_members m
+       ON m.organization_id = b.organization_id
+      AND m.user_id = $1
+      AND m.is_active = true
+      AND m.role = $4
+     JOIN app_users u
+       ON u.id = m.user_id
+      AND u.is_active = true
      WHERE b.organization_id = $2
        AND b.id = $3
        AND b.is_active = true
        AND (
-         $4 IN ('owner', 'admin')
+         m.role IN ('owner', 'admin')
          OR EXISTS (
            SELECT 1
            FROM branch_memberships bm
            WHERE bm.organization_id = b.organization_id
              AND bm.branch_id = b.id
-             AND bm.user_id = $1
+             AND bm.user_id = m.user_id
              AND bm.is_active = true
          )
        )
@@ -71,7 +84,7 @@ export async function resolveBranchContext(
   return {
     userId: row.user_id,
     organizationId: row.organization_id,
-    organizationRole: tenant.role,
+    organizationRole: row.role,
     branchId: row.branch_id,
   };
 }

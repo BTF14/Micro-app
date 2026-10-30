@@ -2,7 +2,7 @@
 
 El DDL vigente de referencia es apps/api/migrations/0001_initial.sql y la propuesta futura está en docs/sdd/MULTI_BRANCH_DATA_MODEL.md. La migración inicial declara que no se ha aplicado a Neon main; no asumir que el estado remoto coincide sin una lectura autorizada y actual.
 
-**Esquema actual confirmado en Git:** organizations, organization_members, auth_sessions, auth_rate_limits, proveedores/productos, exchange_rates, sales, sale_items, payments, inventory_movements y audit_logs. products.stock_quantity sigue a nivel organización. No existen branches, warehouses, registers, register_shifts, branch_memberships, inventory_balances, compras/recepciones, transferencias ni devoluciones en 0001_initial.sql.
+**Esquema actual confirmado en Git:** organizations, organization_members, auth_sessions, auth_rate_limits, auth_allowlist y auth_bootstrap (estas dos últimas en 0002_google_identity.sql), proveedores/productos, exchange_rates, sales, sale_items, payments, inventory_movements y audit_logs. products.stock_quantity sigue a nivel organización. No existen branches, warehouses, registers, register_shifts, branch_memberships, inventory_balances, compras/recepciones, transferencias ni devoluciones en 0001_initial.sql.
 
 **Brechas previas a negocio:** aislamiento por sucursal ausente; venta/líneas/pagos no reconciliados por constraints; pagos sin idempotencia propia; stock y ledger no están sincronizados por constraint; referencia polimórfica sin FK al origen; guard del último owner y auditoría append-only no implementados. Ver SCHEMA_REVIEW.md.
 

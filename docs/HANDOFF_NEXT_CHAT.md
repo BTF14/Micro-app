@@ -4,6 +4,8 @@
 
 **PR activa:** [#178](https://github.com/BTF14/Micro-app/pull/178) está abierta como draft en `docs/reconcile-role-model-and-cloudflare-20261030`. Continuar y revisar esa PR; no crear otra para el mismo alcance. Revalidar su HEAD y checks en vivo.
 
+**Auditoría de hosting alternativo — 2026-10-30:** el inventario completo del repositorio no encontró configuración, dependencias, scripts, CLI ni workflows de otro proveedor de hosting. La arquitectura vigente es Cloudflare Pages + Cloudflare Workers/Hono + Neon. Se limpiaron las referencias operativas obsoletas en CURRENT_STATE, HANDOFF, PROJECT_PLAN, CONSTITUTION, ARCHITECTURE_AND_ZERO_COST y RESOURCE_REGISTRY. El diario histórico se conserva append-only. `VITE_API_BASE_URL` se mantiene porque es una variable pública de Vite que apunta al Worker; no es específica del proveedor de hosting. No se tocaron cuentas externas ni integraciones de GitHub.
+
 ## Lectura obligatoria
 1. `AGENTS.md`.
 2. `docs/CURRENT_STATE.md`.

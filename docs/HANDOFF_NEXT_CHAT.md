@@ -5,8 +5,8 @@
 ## Estado confirmado
 - Repositorio: `BTF14/Micro-app`.
 - `main` = `1d10befe0cd3367e04bd8998a192e93d9b228063`; PR #165 fusionada por squash (merge SHA idéntico).
-- No había PR abiertas en la consulta de inicio.
-- 9/9 check-runs del merge SHA terminaron `success`, incluidos Cloudflare Pages `Deployed successfully` y Workers Builds success. El check Pages confirma deployment del commit, pero no se ha validado routing autenticado ni flujo comercial live.
+- PR #166 sigue abierta y no fusionada: base `main` SHA `1d10befe0cd3367e04bd8998a192e93d9b228063`; rama `docs/post-pr165-register-shift-design-20261030`; HEAD consultado antes de la reconciliación adicional `8044a6614b847d580e6e1f755433f05d2b141b75`.
+- En el HEAD consultado de PR #166, 8 workflows de GitHub Actions terminaron `success` (CI, Playwright, migraciones PostgreSQL, Trivy, Semgrep, secret-history, Dependency Review y dashboard). No hay reviews humanas ni threads inline. La consulta actual no confirma checks externos de Cloudflare para ese HEAD; no extrapolar resultados.
 - La PR #165 agregó `branches`, `branch_memberships`, migración 0003, resolver de contexto y pruebas PostgreSQL efímeras. No conectó el resolver a rutas.
 - Neon main sigue sin migración 0003. No ejecutar SQL en esa rama.
 
@@ -35,11 +35,11 @@
 - Rama documental: `docs/post-pr165-register-shift-design-20261030`, basada en main `1d10befe0cd3367e04bd8998a192e93d9b228063`.
 - Propósito: corregir snapshots obsoletos post-#165, documentar la decisión de turnos y el flujo de pruebas con PostgreSQL efímero.
 - No contiene implementación de caja/turnos ni migraciones nuevas; no anunciar esas capacidades.
-- Antes de cerrar: revisar diff completo, esperar y verificar todos los checks del HEAD exacto, documentar limitaciones y sincronizar estado/diario/handoff dentro de esta PR.
+- Reconciliar los documentos de esquema que todavía describían `branches`/`branch_memberships` como inexistentes; verificar el diff completo y checks del nuevo HEAD. No fusionar PR #166 sin autorización expresa, aunque los checks estén verdes.
 
 ## Siguiente secuencia después de este bloque
-1. Si el diseño de turnos y continuidad pasan revisión/CI, integrar la especificación.
-2. Diseñar e implementar `registers` y `register_shifts` mediante migración aditiva 0004, assertions SQL y pruebas de integración en PostgreSQL efímero.
+1. Completar la reconciliación documental de PR #166 y verificar su HEAD final.
+2. Tras cerrar el gate de integración documental, implementar `registers` y `register_shifts` mediante migración aditiva 0004, assertions SQL y pruebas de integración en PostgreSQL efímero.
 3. Mantener el resolver de turnos como helper aislado; no añadir endpoints comerciales hasta que matriz de permisos, autorización por operación, transacciones e idempotencia estén resueltas.
 4. Diseñar después almacenes, balances/ledger y backfill del stock legacy con reconciliación.
 5. Revalidar límites de Neon/Cloudflare y hacer pruebas sintéticas de capacidad antes de prometer número de clientes.

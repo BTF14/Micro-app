@@ -26,7 +26,7 @@
 3. Resolver la matriz de permisos con decisiones explícitas del propietario sobre excepciones, descuentos, anulaciones, inventario, exportaciones y delegación.
 4. Diseñar restricciones y transacciones para venta/pagos/stock/ledger, idempotencia, concurrencia, referencias y auditoría.
 5. Crear pruebas PostgreSQL efímeras cross-tenant/cross-branch y de rollback/concurrencia antes de habilitar endpoints comerciales.
-6. Revisar `feat/neon-transaction-adapter` contra main actual; no fusionar sin diff completo y compatibilidad demostrada.
+6. **Rama histórica revisada:** `feat/neon-transaction-adapter` corresponde a la PR [#1](https://github.com/BTF14/Micro-app/pull/1), ya fusionada el 2026-10-17 (merge `b6511d0876e33096f75df2466653449165888821`). La rama está 14 commits ahead y 242 behind respecto a main actual; no reabrir ni fusionar su diff antiguo. La implementación vigente está en main y se revisa desde sus callers actuales.
 7. Medir límites vivos de Neon/Cloudflare y carga sintética; no fijar capacidad SaaS antes de ello.
 8. Mantener README, CURRENT_STATE, PROJECT_PLAN, STATE_JOURNAL y HANDOFF sincronizados tras cada hito verificado.
 

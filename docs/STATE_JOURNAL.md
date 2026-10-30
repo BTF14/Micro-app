@@ -1142,3 +1142,17 @@ CI documental: para HEAD `8c15e13fa001a14a0ddf9f2432bc17efb30d476d`, los 8 workf
 - Post-merge de PR #170: 7/7 workflows Actions success y Cloudflare Pages/Workers 2/2 success. CI y PG18 tests pasaron; no hubo cambios runtime/esquema.
 - Último merge con cambios de runtime sigue siendo PR #169 (`be35a0fde3886271b6ed98b7ccc29cc1255d50e5`). Resolver el ref actual de main en vivo antes de iniciar otro bloque.
 - PRs abiertas: ninguna al momento de esta actualización; issues #53 y #78 siguen abiertos.
+
+
+## 2026-10-30 UTC — PR #172 y reconciliación documental de autorización
+
+- Main comprobado al inicio: `a6db2dcaf57e2a0bf1735eb282c3ac2256cd314c`; no se modificó main.
+- PR #172: https://github.com/BTF14/Micro-app/pull/172; draft, abierta, base main. Añade `docs/sdd/OPERATION_AUTHORIZATION_ARCHITECTURE.md` como propuesta técnica, no política aprobada ni autorización de implementación.
+- El diseño separa autenticación, membresía de organización, scope de recurso y permiso por operación. Incluye deny-by-default, revalidación transaccional, concurrencia/TOCTOU, aislamiento tenant/branch, auditoría, catálogo y tests negativos.
+- Se sincronizaron las portadas vigentes de `CURRENT_STATE.md`, `HANDOFF_NEXT_CHAT.md`, `WORK_CHECKPOINT.md`, `PROJECT_PLAN.md` y el contrato de estado en `API_INTEGRATION.md`; esta entrada registra el historial de la PR.
+- La matriz `role-permission-decision-matrix.md` permanece NO APROBADA. No hay handlers comerciales ni autorización runtime por operación. Los helpers tenant/branch/shift no otorgan permisos comerciales.
+- HEAD `93561f0b73f4992d5204f3f461af7961a0e087eb` tuvo 12/12 check-runs success. Los commits documentales de esta sincronización crean un HEAD nuevo y requieren revalidación; no transferir checks entre SHAs.
+- No hubo reviews formales en la última consulta; no afirmar aprobación humana/Codex. Revisión técnica/manual, sin aprobación externa.
+- No se tocó Neon main, datos reales, migraciones remotas, secretos, DNS, billing, configuración Cloudflare ni producción.
+- Continuación: revisar el HEAD/diff/checks del nuevo SHA; mantener PR #172 draft; esperar aprobación explícita de matriz/decisiones comerciales antes de código. Diseñar ledger/auditoría/idempotencia antes de endpoints.
+

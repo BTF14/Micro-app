@@ -1,6 +1,6 @@
 # Prioridad operativa vigente — post PR #166 y #167 — 2026-10-30 UTC
 
-**Main merge SHA:** `c1cd8650db33aa4a249eaf1f55d321513d576e10`.  
+**Merge SHA de PR #167 (integró 0004):** `c1cd8650db33aa4a249eaf1f55d321513d576e10`.  
 **PR #166:** fusionada (8/8 workflows success en su HEAD final).  
 **PR #167:** fusionada (10/10 workflows success en su HEAD final).  
 **Revisión:** manual fallback documentada; sin reviews formales GitHub/Codex por cuota.  

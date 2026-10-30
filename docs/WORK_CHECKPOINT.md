@@ -10,7 +10,7 @@
 - La matriz de roles sigue NO APROBADA; ninguna autorización comercial se implementa en esta PR.
 - No se tocó Neon main, producción, secretos, DNS, billing ni datos reales.
 - No hay pruebas runtime aplicables al cambio documental; falta revisión completa del diff y verificación de checks del HEAD exacto tras abrir PR.
-- Siguiente paso: revisión del diff, checks CI/SAST del SHA exacto, corregir hallazgos y merge solo si todas las puertas pasan.
+- PR abierta: [#163](https://github.com/BTF14/Micro-app/pull/163). Revisión manual de los ocho archivos completada; no se detectó contradicción pendiente sobre descuentos universales. En HEAD `531296af195ff17988a4ff9fc0ce65b242d7e194`, los ocho workflows devueltos por GitHub terminaron `success` (CI, Chromium, postgres-migration, Semgrep, Trivy, secret-history, Dependency Review y project progress). Este checkpoint cambia el HEAD: revalidar workflows sobre el HEAD final antes de merge. Codex no se ejecutó; revisión manual fallback. No hay reviews humanas ni threads inline.
 
 ---
 

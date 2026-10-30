@@ -15,6 +15,8 @@
 - Producción: **NO lista**. No desplegar producción, no tocar secretos, datos reales ni Neon `main`; no incurrir en costes. Presupuesto objetivo $0.
 - Backup: restauración técnica del backup remoto se verificó en run 40955935124; siguen pendientes integridad de datos comerciales representativos, RPO/RTO, alertas/retención y coste total.
 
+- **Verificación de CI más reciente completa:** HEAD `8c15e13fa001a14a0ddf9f2432bc17efb30d476d` tuvo los 8 workflows requeridos en `success`, incluidos los seis contexts de protección (`verify`, `postgres-migration`, Chromium authentication smoke tests, JavaScript/TypeScript static analysis, Trivy y secret-history scan), además de Dependency Review y dashboard. Runs: 40978525543, 40978521649, 40978521865, 40978521671, 40978521571, 40978521386, 40978521350 y 40978521537. Después se añadieron dos commits documentales hasta `23cbb313ebb163d3c808f8d0953b85645262c520`; no se devolvieron runs/statuses para ese HEAD. Por tanto, **no declarar verde el HEAD actual** ni fusionar hasta verificarlo.
+
 ## Próximas acciones obligatorias
 
 1. Verificar el nuevo HEAD de PR #156, diff, workflows y revisión independiente. No fusionar sin satisfacer la política y la revisión adicional solicitada.

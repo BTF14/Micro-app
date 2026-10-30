@@ -213,3 +213,14 @@ Para evitar que un cajero de una sucursal pueda operar accidentalmente en todas 
 - Mantener el último `owner` activo protegido por una operación transaccional. Las altas, bajas y cambios de asignación deben auditarse.
 
 Este es el diseño recomendado para el ERD y la futura matriz; **no es una migración implementada ni sustituye la aprobación explícita de permisos sensibles**. La matriz debe decidir por separado qué roles pueden leer catálogo, editar precios/costos, recibir mercancía, ajustar inventario, administrar/aplicar políticas de descuento, devolver ventas, cerrar caja, consultar reportes y exportar datos. Los importes, porcentajes y condiciones comerciales se configuran por organización.
+
+
+## Modelo de datos multi-sucursal — diseño 2026-10-30
+
+El modelo detallado propuesto está en docs/sdd/MULTI_BRANCH_DATA_MODEL.md. Resume la dirección:
+- organización = tenant; sucursal = unidad operativa; almacén = ámbito de stock; caja/turno = ámbito de cobro.
+- membresía organizacional y asignaciones de sucursal deben modelarse por separado; cashier/inventory no deben heredar acceso a todas las sucursales.
+- catálogo compartido por organización; stock por almacén/producto, con movimientos como historial y balances como proyección transaccional.
+- ventas, pagos, recepciones y transferencias llevan claves tenant-scoped y relaciones compuestas.
+- migrar desde products.stock_quantity mediante backfill/reconciliación, sin borrar el campo legacy en el primer paso.
+- no se implementan roles, rutas, esquema ni migraciones en este diseño. La matriz de permisos continúa NO APROBADA.

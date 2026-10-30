@@ -2,47 +2,48 @@
 
 **Actualizado:** 2026-10-30 UTC  
 **Repositorio:** https://github.com/BTF14/Micro-app  
-**PR activa:** [#160](https://github.com/BTF14/Micro-app/pull/160)  
+**PR:** [#160](https://github.com/BTF14/Micro-app/pull/160)  
 **Rama:** `docs/continuity-post-158-159-20261030`  
-**Último HEAD verificado de la PR:** `328e1cb264a9727900520648fd73ace573d1b077` (incluye 14 commits; 8 archivos modificados).  
-**Base conocida de PR #160:** `main` en `dbc7b6c9cf57113a38cddb4155d2917cc3aaeafc`.
+**HEAD de esta revisión:** `bcc667fc6ccd154b8e4f93f041e33d16c29195f0`  
+**Base:** `main` en `dbc7b6c9cf57113a38cddb4155d2917cc3aaeafc` (confirmar SHA vivo antes de reanudar).
 
-> Este archivo es el punto de reanudación operativo para tareas de varios pasos. Se reemplaza al avanzar; el historial permanente queda en `docs/STATE_JOURNAL.md`. Verificar siempre GitHub en vivo antes de confiar en estos datos.
+> Fuente de continuidad para el bloque actual. Revalidar GitHub en vivo antes de actuar. El diario conserva el historial; este archivo se reemplaza al avanzar.
 
-## Último bloque completado
+## Estado verificado
 
-- Se verificó PR #160 en vivo: abierta, no fusionada, no draft; base `main`; HEAD anterior `ce4578fed5980631f59206bd45ced3fbefcce346`; la PR ahora tiene 14 commits y 8 archivos modificados.
-- Se recuperó la discusión de PR #160. El resumen automático de Codex indica revisión fallida/no completada y comentario explícito de que se alcanzó el límite de uso de revisiones. Esto **no es aprobación ni un hallazgo de código**.
-- Cloudflare informó despliegues de preview exitosos para Pages y Worker en el HEAD anterior. Son previews, no despliegues de producción ni pruebas funcionales completas.
-- Se inspeccionó el diff de PR #160: cambios documentales en README, capacidad Neon, estado, handoff, plan y diario. Se detectaron snapshots históricos que deben leerse subordinados al estado vivo.
-- Se leyó la política de colaboración y continuidad existente. La política ya pedía documentar hitos significativos, pero no fijaba una cadencia operativa suficientemente explícita para evitar perder trabajo si el chat se interrumpe.
-- Se añadió la sección 10 a `docs/AI_COLLABORATION_AND_PR_POLICY.md`, que exige checkpoints incrementales, define cuándo guardarlos, campos mínimos, documentos canónicos y tratamiento de revisiones incompletas.
-- Se creó este archivo como checkpoint único de trabajo en curso. También se corrigió en CURRENT_STATE, HANDOFF y PROJECT_PLAN la afirmación no demostrada de que la protección de rama de GitHub estaba activa. No se modificó código, esquema, migraciones, workflows, secretos, configuración de proveedores ni producción.
+- PR #160 está abierta, no draft, no fusionada y GitHub reporta `mergeable=true`.
+- El HEAD consultado es `bcc667fc6ccd154b8e4f93f041e33d16c29195f0`; la PR tiene 18 commits y 8 archivos modificados.
+- Para ese SHA, workflow runs devueltos: CI `41002801690` en estado `pending`; Dependency review, Project progress dashboard, Database migration validation, Secret history scan, Security scan, Semgrep SAST y Playwright E2E completaron `success`. El job listing del workflow CI aún devolvió vacío mientras estaba pendiente. No declarar CI completo.
+- Combined commit status devolvió lista vacía; la fuente útil en este caso son los workflow runs.
+- Cloudflare reportó Pages y Worker preview exitosos para `bcc667f`. Son previews, no producción.
+- Codex review falló por cuota agotada en el SHA `ce4578fed5980631f59206bd45ced3fbefcce346`. No es aprobación ni prueba de defecto. No volver a dispararlo durante la limitación.
+- No hay reviews humanas registradas ni threads inline en PR #160.
+- Revisión manual: se inspeccionó el diff documental. Se encontró que el checkpoint creado previamente contenía SHA y número de commits antiguos; CURRENT_STATE y HANDOFF también retenían referencias superiores desactualizadas. Se están corrigiendo ahora.
+- La política de colaboración y AGENTS.md prohíben fusionar mientras checks requeridos estén pendientes/no verificados o haya hallazgos materiales sin resolver.
 
-## Evidencia y límites
+## Cambios de continuidad ya persistidos en esta rama
 
-- PR: https://github.com/BTF14/Micro-app/pull/160
-- Comentario Codex: https://github.com/BTF14/Micro-app/pull/160#issuecomment-6514563808
-- Aviso de cuota Codex: https://github.com/BTF14/Micro-app/pull/160#issuecomment-6514564279
-- Preview Pages reportada por Cloudflare: https://c9c6ed67.micro-app-63i.pages.dev
-- Preview Worker reportada por Cloudflare: https://docs-continuity-post-158-159-20261030-micro-app-api.btfcasheb.workers.dev
-- No se ejecutaron pruebas locales en esta sesión.
-- Para el HEAD `328e1cb264a9727900520648fd73ace573d1b077`, las consultas de workflow runs y combined commit status devolvieron listas vacías. Por tanto, los checks de CI de este HEAD no están verificados; no equivale a éxito ni a fallo.
-- Se revisó el diff original y los cambios documentales añadidos; queda pendiente una segunda pasada manual consolidada del diff completo tras las correcciones de protección de rama.
-- No se cambió ni verificó configuración de branch protection en esta sesión.
+- Sección 10 de `docs/AI_COLLABORATION_AND_PR_POLICY.md`: checkpoints incrementales obligatorios, campos mínimos, persistencia, y clasificación INCOMPLETO.
+- Se creó este `docs/WORK_CHECKPOINT.md`.
+- Se actualizaron CURRENT_STATE, HANDOFF_NEXT_CHAT, PROJECT_PLAN y STATE_JOURNAL; esta sincronización corrige referencias obsoletas.
+- No se modificó código de aplicación, migraciones, workflows, secretos, ajustes Cloudflare/Neon, DNS, billing ni producción.
 
-## Estado
+## Decisión de fusión
 
-- **Persistido:** política de checkpoints incrementales y este archivo.
-- **Persistido:** política incremental, WORK_CHECKPOINT, CURRENT_STATE, HANDOFF_NEXT_CHAT, PROJECT_PLAN y entrada append-only de STATE_JOURNAL. Confirmar el SHA final tras el último commit de sincronización.
-- **Pendiente de verificación:** consultar checks cuando estén disponibles para el HEAD final y completar revisión manual consolidada del diff.
-- **No autorizado/realizado:** merge de PR #160, despliegue a producción, cambios en Neon main, Cloudflare settings, secretos, DNS o billing.
+**NO FUSIONAR TODAVÍA.** Motivos verificables:
+1. El workflow CI del HEAD `bcc667fc6ccd154b8e4f93f041e33d16c29195f0` está pendiente.
+2. La documentación de continuidad tenía referencias de SHA antiguas y debe verificarse tras esta sincronización.
+3. La revisión automática no pudo completarse; la revisión manual consolidada debe cerrar los puntos documentales y no sustituye los checks pendientes.
 
-## Próxima secuencia exacta
+## Próximos pasos
 
-1. Volver a consultar el HEAD de PR #160 y revisar este checkpoint.
-2. Consultar los checks del SHA exacto; la última consulta para `328e1cb264a9727900520648fd73ace573d1b077` devolvió cero workflow runs y cero statuses, por lo que CI no está verificado.
-3. Completar revisión manual consolidada del diff completo de PR #160 y registrar cualquier hallazgo.
-4. Corregir contradicciones si aparecen y sincronizar CURRENT_STATE, HANDOFF y STATE_JOURNAL.
-5. Mantener PR #160 abierta hasta completar checks y revisión; no fusionar sin autorización explícita.
-6. Después, continuar la prioridad técnica registrada en CURRENT_STATE/HANDOFF sin repetir auditorías ya cerradas.
+1. Consultar el HEAD después de los commits de sincronización.
+2. Consultar de nuevo los workflow runs para ese HEAD exacto; esperar a que CI termine y comprobar todos los jobs.
+3. Releer WORK_CHECKPOINT, CURRENT_STATE y HANDOFF desde la rama y verificar SHA/estado coherentes.
+4. Revisar manualmente el diff final completo y que el snapshot Neon/Cloudflare esté correctamente fechado y no se presente como capacidad garantizada.
+5. Si todo pasa, no hay hallazgos materiales y GitHub confirma mergeable, fusionar PR #160 con squash; después verificar main y registrar el merge.
+6. Si CI falla, diagnosticar la causa y corregirla en esta misma PR.
+
+## Siguiente trabajo técnico después de cerrar PR #160
+
+Retomar la auditoría de arquitectura/API/esquema y priorizar brechas antes de endpoints comerciales: autorización por operación, aislamiento de organización/sucursal, idempotencia, consistencia transaccional y límites/rate limiting. Revisar `feat/neon-transaction-adapter` contra main sin merge ciego. No tocar Neon main ni producción.

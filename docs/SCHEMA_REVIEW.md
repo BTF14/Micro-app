@@ -27,7 +27,7 @@ No se encontraron rutas HTTP comerciales en el registro de Hono de `apps/api/src
 
 ### Hallazgos de integridad de esquema
 
-1. **Venta completada no reconciliada por SQL (alto antes de ventas):** `sales` exige `completed_at`, `exchange_rate_id`, `exchange_rate_snapshot` y `total_ves_snapshot` cuando `status='completed'`, y valida `total_usd = subtotal_usd - discount_usd`. No hay constraint que garantice existencia de líneas, suma de `sale_items.line_total_usd`, reconciliación de pagos por moneda ni correspondencia con el total cobrado. La API debe calcular y verificarlo dentro de una transacción; considerar triggers/constraints diferibles solo tras diseñar y probar.
+1. **Venta completada no reconciliada por SQL (alto antes de ventas):** `sales` exige `completed_at`, `exchange_rate_id`, `exchange_rate_snapshot` y `total_ves_snapshot` cuando `status='completed'`, y valida `total_usd = subtotal_usd - discount_usd`. No hay constraint que garantice existencia de líneas, suma de `sale_items.line_total_usd`, reconciliación de pagos por moneda ni correspondencia con el total cobrado. Evidencia reproducible: `apps/api/migrations/0001_initial.assertions.sql` inserta filas `sales` con `status='completed'` y snapshots completos antes de insertar cualquier `sale_items` o `payments`; la aserción no falla. La API debe calcular y verificarlo dentro de una transacción; considerar triggers/constraints diferibles solo tras diseñar y probar.
 2. **Saldo de stock vs ledger (alto antes de inventario):** `products.stock_quantity` y `inventory_movements` son dos representaciones relacionadas, pero la DB no garantiza que cada cambio de saldo tenga movimiento correspondiente ni que la suma del ledger coincida. Las operaciones deben actualizar saldo y movimiento atómicamente; evaluar un ledger como fuente de verdad o reconciliación periódica con pruebas.
 3. **Referencia polimórfica no validada (medio):** `inventory_movements.reference_type/reference_id` no tiene FK polimórfica a ventas/compras/devoluciones. La aplicación debe validar tenant y tipo de entidad; mejor diseñar referencias explícitas o tabla de eventos tipada si el modelo crece.
 4. **Idempotencia de pagos ausente (alto antes de pagos):** `sales.idempotency_key` tiene unicidad por organización, pero `payments` no tiene una clave idempotente propia. Un retry del endpoint de pagos podría duplicar un pago si no existe una restricción/diseño de idempotencia.
@@ -47,7 +47,7 @@ No se encontraron rutas HTTP comerciales en el registro de Hono de `apps/api/src
 
 ### Alcance y límites de la revisión
 
-- Se inspeccionaron archivos del repositorio en GitHub; no se ejecutó suite local ni SQL en PostgreSQL en esta revisión.
+- Se inspeccionaron archivos del repositorio en GitHub; no se ejecutó suite local ni SQL en PostgreSQL durante esta revisión. La evidencia sobre ventas completadas sin líneas/pagos proviene de la propia fixture versionada `0001_initial.assertions.sql`, no de una ejecución nueva.
 - No se leyó ni modificó Neon `main`, secretos, datos reales ni producción.
 - Los hallazgos describen riesgos de diseño previos a habilitar handlers, no evidencia de explotación ni corrupción actual.
 - La migración inicial contiene comentario explícito de que no está aplicada a Neon `main`; no inferir estado remoto distinto sin lectura autorizada y evidencia.

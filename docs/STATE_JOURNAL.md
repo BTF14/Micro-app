@@ -914,3 +914,57 @@ CI documental: para HEAD `8c15e13fa001a14a0ddf9f2432bc17efb30d476d`, los 8 workf
 
 - Se abrió [PR #157](https://github.com/BTF14/Micro-app/pull/157) desde `docs/post-pr156-audit-continuity-20261030` con alcance documental/auditoría acotado. Incluye la reconciliación de alcance de catálogo y la separación de autoridad global de allowlist respecto a roles tenant.
 - La PR permanece abierta hasta que los checks requeridos pasen en su HEAD exacto y se complete revisión manual final. No se fusiona por inercia ni se usan resultados de SHAs anteriores.
+
+
+## 2026-10-30 UTC — verificación post-merge PR #158/#159 y corrección de continuidad
+
+- GitHub confirmó `main` en `dbc7b6c9cf57113a38cddb4155d2917cc3aaeafc`, protegido; PR #158 y #159 fusionadas; cero PR abiertas en la consulta.
+- Checks del SHA exacto: 9/9 success, incluidos Workers Build y Cloudflare Pages.
+- Pages producción cargó la pantalla de acceso; Worker `/health` respondió HTTP 200, `status=ok`, `stage=scaffold`. No se probaron sesiones ni operaciones comerciales.
+- Neon metadata read-only: plan free_v3, PostgreSQL 18; 3/10 ramas; main 32,866,304 bytes; transferencia 5,645,769 bytes, compute 5,911 s, activo 23,240 s en el periodo 2026-10-17 a 2026-11-01. Main y ramas reportadas sin protección; configuración de IP allowlist vacía. No se leyó ni modificó SQL/datos/secretos.
+- Se detectó que README/continuidad seguían afirmando que PR #158/#159 estaban abiertas y README describía toolchain anterior. Se actualiza esa contradicción en esta rama, manteniendo los snapshots viejos como historia.
+- No se cambió producción, Neon, Cloudflare settings, secretos, DNS ni billing.
+
+## 2026-10-30 UTC — protocolo de checkpoints incrementales y continuidad ante interrupción
+
+- Se verificó PR #160 en vivo: abierta, no draft, no fusionada; rama `docs/continuity-post-158-159-20261030`; HEAD consultado antes de esta actualización: `ce4578fed5980631f59206bd45ced3fbefcce346`.
+- Se recuperó la actividad de revisión: Codex no completó la revisión por límite de uso. Estado registrado como revisión incompleta, no como aprobación ni defecto confirmado.
+- Cloudflare había reportado Pages y Worker preview exitosos en el HEAD anterior; no se consideran pruebas de producción.
+- Se revisó el diff de PR #160 y la política de colaboración existente. Se detectó que la obligación de documentar hitos no definía cuándo guardar durante una tarea larga.
+- Se añadió la sección 10 a `docs/AI_COLLABORATION_AND_PR_POLICY.md`: checkpoints después de cada bloque significativo, tras pruebas/hallazgos/bloqueos y antes de tareas largas; campos obligatorios; sincronización de CURRENT_STATE, STATE_JOURNAL, HANDOFF y WORK_CHECKPOINT; clasificación INCOMPLETO cuando no existe evidencia persistida.
+- Se creó `docs/WORK_CHECKPOINT.md` como punto de reanudación operativo único para tareas de varios pasos. Se actualizaron CURRENT_STATE y HANDOFF para dirigir al siguiente agente a ese archivo y evitar reconstruir el chat.
+- Commits de este bloque registrados por GitHub: política `f26dcca32f029edb8782ad71da8c86bcc11b4a8d`; checkpoint `63a8c752c21500ae8f45305c997ac4123e98f40e`; los commits posteriores de sincronización deben verificarse consultando el HEAD final.
+- No se ejecutaron pruebas locales ni se modificó código, esquema, migraciones, workflows, secretos, Cloudflare settings, Neon, DNS, billing o producción.
+- Pendiente: confirmar HEAD final, checks del SHA exacto, revisar manualmente el diff completo y comprobar que los documentos se mantienen coherentes. PR #160 sigue sin fusionar; no fusionar sin autorización explícita.
+
+## 2026-10-30 UTC — verificación final del checkpoint incremental en PR #160
+
+- PR #160 sigue abierta, no draft y no fusionada; base SHA `dbc7b6c9cf57113a38cddb4155d2917cc3aaeafc`; último HEAD consultado antes de esta entrada: `0e6c27bac8a9ef1a9d80da109a136c34aec99a9a`; 14 commits y 8 archivos.
+- Para ese HEAD, `fetch_commit_workflow_runs` y combined commit status devolvieron listas vacías. Estado correcto: CI de ese SHA no verificado; no declarar verde ni rojo.
+- Codex review de `ce4578f` quedó incompleta por cuota agotada. No hay aprobación automática; la revisión manual consolidada del diff actual sigue pendiente.
+- Se corrigió la afirmación de protección de rama en CURRENT_STATE, HANDOFF y PROJECT_PLAN: la protección de GitHub no se pudo confirmar por API; no presentarla como activa/verificada.
+- WORK_CHECKPOINT registra la secuencia, evidencias, limitaciones y siguientes acciones. No hubo cambios de código ni infraestructura y no se fusionó la PR.
+
+## 2026-10-30 UTC — revisión manual y corrección de checkpoint antes de merge PR #160
+
+- Se verificó PR #160: abierta, no draft, no fusionada, `mergeable=true`; HEAD previo `bcc667fc6ccd154b8e4f93f041e33d16c29195f0`; 18 commits, 8 archivos.
+- Workflow runs para ese HEAD: CI `41002801690` en estado `pending`; siete workflows adicionales success. Combined status vacío. CI global no está completo.
+- No hay reviews humanas ni threads inline registrados. Codex review falló por cuota en `ce4578fed5980631f59206bd45ced3fbefcce346`; no es aprobación.
+- Revisión manual encontró datos obsoletos en WORK_CHECKPOINT (HEAD y cantidad de commits) y referencias iniciales antiguas en CURRENT_STATE/HANDOFF. Se actualizó WORK_CHECKPOINT y se sincronizaron CURRENT_STATE, HANDOFF_NEXT_CHAT y PROJECT_PLAN. Este journal registra el hito; volver a consultar SHA final tras los commits.
+- Diff de PR #160 sigue siendo documental: README, política de colaboración, capacidad Neon, estado, handoff, plan, diario y checkpoint. No se tocaron código, migraciones, workflows, secretos, infraestructura ni producción.
+- Decisión: no fusionar mientras CI esté pending/no verificado; fusionar solo cuando checks requeridos terminen en el HEAD exacto y no haya hallazgos materiales.
+
+## 2026-10-30 UTC — sincronización final del handoff antes de cerrar bloque documental
+
+- Se refrescó CURRENT_STATE y HANDOFF_NEXT_CHAT después de la revisión manual de PR #160.
+- SHA del padre del último commit documental previo a esta entrada: `2747ae34849d8fe86e2da198779701ce97e3a711` (consultar el HEAD real después de este commit).
+- Gate sigue siendo no fusionar con CI pendiente/no verificado. El último SHA con evidencia CI consultada fue `bcc667fc6ccd154b8e4f93f041e33d16c29195f0`, con workflow CI pending y siete workflows success.
+- La revisión documental continúa en la misma PR #160; no se abrió PR adicional ni se modificó código o producción.
+
+## 2026-10-30 UTC — precisión de branch protection y revisión de seguridad
+
+- La consulta actual de `GET /repos/BTF14/Micro-app/branches/main/protection` devolvió HTTP 403 `Resource not accessible by integration`. No fue posible revalidar en vivo la protección de main.
+- Se corrigió `docs/SECURITY_ROADMAP.md`: la configuración de protección y seis checks se conserva como evidencia histórica del 2026-10-26, no como estado actual confirmado. Se mantiene la recomendación de al menos una aprobación independiente.
+- La auditoría de código en main confirma que no hay rutas comerciales; `resolveTenantContext` es helper aislado y no aplica permisos de operación ni sucursal. La matriz de permisos sigue no aprobada.
+- La rama `feat/neon-transaction-adapter` existe, pero corresponde a PR #1 ya fusionada; está 14 commits ahead y 245 behind de main. No reabrir ni fusionar. Los cambios funcionales del adaptador ya están integrados en main.
+- No se modificó código ni configuración productiva. Siguiente gate inmediato sigue siendo CI de PR #160 en el HEAD nuevo.

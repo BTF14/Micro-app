@@ -94,8 +94,8 @@ Las reglas completas están en [AGENTS.md](AGENTS.md), [Constitución del proyec
 
 ### Requisitos
 
-- Node.js dentro del rango declarado en `package.json`: `>=24.22.1 <25`.
-- pnpm compatible con el lockfile v9 del repositorio.
+- Node.js `24.22.2`, fijado en `.node-version` y compatible con el rango `>=24.22.2 <25` de `package.json`.
+- pnpm `10.34.9`, fijado mediante `packageManager` en el `package.json` raíz; Corepack debe respetar esa versión.
 - Acceso y configuración de variables de entorno para los servicios que se quieran ejecutar. No copies secretos al repositorio ni uses la base de datos principal para pruebas.
 
 ### Instalación y comandos

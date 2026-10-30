@@ -79,3 +79,14 @@ Estos valores son una **referencia documental**, no una verificación del plan c
 ### Consecuencia operativa
 
 El techo de 100.000 solicitudes diarias de Workers Free es un límite del proveedor, no el número de ventas ni de empresas. Una operación de negocio puede producir varias llamadas a la API y varias consultas SQL; además, Neon tiene límites independientes de cómputo, almacenamiento, conexiones, transferencia y latencia. La capacidad aceptable se determinará por el primer límite que se alcance con margen de seguridad, y solo tras una prueba sintética autorizada. El plan real de las cuentas y los consumos actuales siguen **sin verificar** desde este repositorio.
+
+
+## Snapshot vivo de Neon — 2026-10-30 UTC (metadatos, solo lectura)
+
+- Proyecto `micro-app-db`; plan mostrado `free_v3`; PostgreSQL 18; región `aws-us-east-1`; periodo de consumo mostrado: 2026-10-17 a 2026-11-01.
+- Límites de ramas del owner: 10; ramas existentes: 3 (`main`, `restore-test-20261028`, `micro-app-integrity-test`). Main logical size: 32,866,304 bytes; restore-test: 33,570,816 bytes; integrity-test: 31,686,656 bytes.
+- Contadores del periodo: transferencia 5,645,769 bytes; compute 5,911 s; activo 23,240 s; datos escritos 0 bytes. Son contadores de metadatos del proveedor, no una medición de carga de negocio ni una garantía de cuota restante.
+- Configuración observada: autoscaling min/max 0.25 CU; history retention 21,600 s; branch logical size limit 536,870,912 bytes; `allowed_ips.ips=[]`, `protected_branches_only=false`, `block_public_connections=false`; main y ramas devueltas con `protected=false`.
+- **Riesgo a evaluar:** main no figura protegida en el metadato de Neon y no hay allowlist de IP. No cambiarlo en esta auditoría; evaluar compatibilidad con conexiones Cloudflare Workers, backups y CI, además de las capacidades del plan gratuito, antes de proponer endurecimiento. No se accedió a credenciales, roles, SQL ni filas.
+- No se verificó consumo/cuota actual de Cloudflare en este checkpoint. Los límites Cloudflare de notas anteriores siguen siendo referencias históricas, no cuotas vivas confirmadas.
+- No derivar una cifra de empresas/sucursales soportadas de tamaño o contador de ramas. Hace falta carga sintética y medición end-to-end.

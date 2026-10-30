@@ -1,3 +1,32 @@
+# Estado vivo de la rama de continuidad — 2026-10-30 UTC
+
+- **PR #160:** https://github.com/BTF14/Micro-app/pull/160; abierta, no draft, no fusionada, `mergeable=true`; base `main` SHA `dbc7b6c9cf57113a38cddb4155d2917cc3aaeafc` (revalidar en vivo al reanudar). HEAD anterior a esta sincronización: `bcc667fc6ccd154b8e4f93f041e33d16c29195f0`; checkpoint actualizado después.
+- **CI del HEAD anterior:** workflow CI `41002801690` estaba `pending`; otros siete workflows (Dependency review, Project progress dashboard, Database migration validation, Secret history scan, Security scan, Semgrep SAST y Playwright E2E) terminaron `success`. Combined status vacío. No declarar CI global verde. Los nuevos commits requieren nueva comprobación de su SHA.
+- **Codex:** review fallida por cuota agotada en `ce4578fed5980631f59206bd45ced3fbefcce346`; no es aprobación. No reintentar mientras siga la limitación.
+- **Revisión manual:** diff de PR #160 acotado a ocho archivos documentales. Se detectaron referencias de HEAD/commits obsoletas en WORK_CHECKPOINT y en snapshots de continuidad; se corrige la información de portada y el handoff. Los bloques antiguos en CURRENT_STATE/STATE_JOURNAL son historia y deben permanecer claramente subordinados al estado vivo.
+- **Continuidad incremental:** sección 10 de `docs/AI_COLLABORATION_AND_PR_POLICY.md` y `docs/WORK_CHECKPOINT.md` definen y registran checkpoints durante el trabajo.
+- **Decisión:** NO fusionar mientras CI requerido esté pendiente/no verificado. Ver `docs/WORK_CHECKPOINT.md` para evidencia, limitaciones y secuencia exacta.
+- **No se modificó:** código de aplicación, migraciones, workflows, secretos, Cloudflare/Neon settings, DNS, billing ni producción.
+- **Siguiente acción:** verificar HEAD nuevo y CI exacto; revisar los documentos de continuidad actualizados; solo fusionar PR #160 cuando todos los checks requeridos estén completos y no haya hallazgos materiales.
+
+---
+
+# Estado vivo verificado — 2026-10-30 UTC
+
+- **Fuente viva:** GitHub confirma `main` en `dbc7b6c9cf57113a38cddb4155d2917cc3aaeafc`. PR #158 y #159 están fusionadas; PR #160 está abierta. La protección de rama de GitHub no se pudo confirmar por API y no debe afirmarse como verificada.
+- **PR #158:** merge commit `3fba9870b69a7e1ef05cc20db6d19f3ee18df51d`; auditoría documental de Cloudflare/workflows/continuidad.
+- **PR #159:** merge commit `dbc7b6c9cf57113a38cddb4155d2917cc3aaeafc`; fija Node.js `24.22.2` mediante `.node-version` y pnpm `10.34.9` mediante `packageManager`, con alineación en workflows.
+- **Checks del SHA exacto de main:** 9/9 completed/success, incluidos Workers Build, Cloudflare Pages, Chromium smoke, verify, secret-history scan, postgres-migration, Trivy, generate-progress y static analysis. No extrapolar estos checks a commits futuros.
+- **Producción observada tras merge:** Pages `https://micro-app-63i.pages.dev` cargó la pantalla de acceso; Worker `https://micro-app-api.btfcasheb.workers.dev/health` respondió HTTP 200 con `status=ok`, `service=micro-app-api`, `stage=scaffold`. Es una comprobación básica, no una certificación funcional/comercial.
+- **Neon, lectura de metadatos:** proyecto `micro-app-db`, plan `free_v3`, PostgreSQL 18, región `aws-us-east-1`; periodo de consumo mostrado 2026-10-17 a 2026-11-01. Tamaño lógico de main: 32,866,304 bytes (~31.34 MiB). Consumo del periodo: 5,645,769 bytes transferencia; 5,911 segundos compute; 23,240 segundos activo; 0 bytes escritos reportados. Ramas: 3/10; main 32.87 MB, restore-test ~33.57 MB, integrity-test ~31.69 MB. Son metadatos/contadores del proveedor, no benchmark ni capacidad SaaS.
+- **Seguridad Neon:** metadatos actuales muestran `main.protected=false`, `allowed_ips.ips=[]`, `protected_branches_only=false`, `block_public_connections=false`; ramas listadas sin protección. No cambiar estos ajustes sin evaluación/plan y autorización correspondiente. No se leyó SQL, secretos, roles ni datos.
+- **Protocolo README:** PR #159 ya cambió toolchain de forma concreta y verificada; README debe reflejar Node/pnpm exactos. Este checkpoint actualiza el README y continuidad para no dejar instrucciones contradictorias.
+- **Guardrails vigentes:** no SQL ni cambios en Neon main; no secretos, datos reales, billing, DNS ni ajustes Cloudflare; no merge/deploy de producción sin aceptación explícita. Objetivo $0. No depender de Codex.
+- **Siguiente prioridad:** cerrar lectura documental de arquitectura/API/esquema e inventariar brechas P0; revisar rama `feat/neon-transaction-adapter` con diff completo antes de rescatar nada; después diseñar tenant/branch authorization y rate limiting antes de endpoints comerciales. No prometer número de organizaciones hasta pruebas sintéticas.
+- **Nota histórica:** los bloques inferiores que digan #158/#159 “abiertas”, “draft” o “no mergeadas” son históricos y quedan supersedidos por este estado vivo y por GitHub.
+
+---
+
 # Checkpoint continuidad — 2026-10-30 UTC (Node/pnpm corregidos en PR #159)
 
 - **PR #158** (documentación Cloudflare/CI): https://github.com/BTF14/Micro-app/pull/158. Rama docs/workflow-deployment-audit-20261030; abierta, draft, no mergeada. HEAD conocido antes de este checkpoint: 162765fac25bf3aa623a41676d56e570afabd7fd; 12/12 checks success.

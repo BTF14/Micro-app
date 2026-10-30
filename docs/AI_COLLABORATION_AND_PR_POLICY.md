@@ -122,3 +122,51 @@ Después de cada avance concreto y verificado, actualizar `README.md` en el mism
 - [ ] Sincronicé README si se cerró un avance concreto y verificado; no publiqué capacidades pendientes.
 - [ ] Dejé enlaces, SHA y resultados reproducibles.
 - [ ] No afirmé haber desplegado, fusionado o verificado algo que no ocurrió.
+
+
+## 10. Checkpoint incremental obligatorio — no esperar al cierre del chat
+
+La continuidad no se documenta únicamente al terminar una sesión. Se registra durante el trabajo, en GitHub, para que una interrupción del chat no borre el estado operativo.
+
+### Cuándo guardar
+
+Crear o actualizar un checkpoint al completar cada bloque significativo y, obligatoriamente:
+
+1. Después de terminar una inspección/auditoría de un área o conjunto coherente de archivos.
+2. Después de cada cambio de código, migración, configuración o documentación que altere el estado o una decisión.
+3. Después de ejecutar pruebas, CI, análisis, despliegues de preview o verificaciones externas relevantes.
+4. Inmediatamente después de descubrir un bloqueo, fallo, regresión, contradicción o riesgo.
+5. Antes de iniciar una tarea larga, destructiva, de alto riesgo o que dependa de varios pasos.
+6. Antes de cerrar/cambiar de chat, si hay oportunidad; **nunca esperar a este punto para guardar lo anterior**.
+
+No hace falta un commit por cada comando ni por observaciones triviales. Agrupar solo trabajo coherente y pequeño; no dejar sin registrar un resultado significativo.
+
+### Qué debe registrar cada checkpoint
+
+- Fecha/hora UTC.
+- Repositorio, rama, PR y SHA exactos de base y HEAD.
+- Objetivo del bloque y alcance revisado.
+- Archivos/áreas inspeccionados y cambios realizados (o indicar explícitamente “solo lectura, sin cambios”).
+- Hechos verificados y evidencia: enlaces a PR/commits/workflows, comandos, resultados y SHA al que corresponden.
+- Pruebas no ejecutadas y motivo; distinguir unitarias, integración, E2E, preview y producción.
+- Hallazgos, severidad, riesgos, hipótesis y cuestiones no verificadas, sin mezclarlos.
+- Decisiones tomadas y su justificación.
+- Bloqueos y acción concreta para resolverlos.
+- Próxima acción exacta, en orden, para que otro agente pueda continuar sin reconstruir la conversación.
+
+### Dónde registrar
+
+- `docs/CURRENT_STATE.md`: estado vivo breve, último checkpoint verificado y enlace al trabajo activo. No convertirlo en diario histórico.
+- `docs/STATE_JOURNAL.md`: añadir una entrada append-only por hito significativo; no reescribir ni borrar entradas anteriores.
+- `docs/HANDOFF_NEXT_CHAT.md`: actualizar la instrucción operativa y la próxima acción cada vez que cambie el punto de continuación.
+- `docs/WORK_CHECKPOINT.md`: usarlo como registro operativo del bloque en curso cuando una tarea abarque varios pasos o exista riesgo real de interrupción. Mantener un único checkpoint vigente, reemplazándolo al avanzar; el diario conserva el historial.
+- `README.md`: actualizarlo solo cuando cambie de forma verificada la realidad del producto, instalación o arquitectura pública; no usarlo como bitácora.
+
+### Regla de persistencia y estado incompleto
+
+- Si existe una rama/PR abierta para el mismo objetivo, actualizarla; no crear otra PR por el mero hecho de guardar un checkpoint.
+- Persistir cambios documentales seguros en esa rama mediante commit. No afirmar que algo quedó guardado si solo existe en el chat o en un borrador local.
+- Si no se puede escribir/commitear por permisos o herramientas, dejar constancia explícita del último SHA persistido, del contenido no persistido y del bloqueo. No presentar el bloque como terminado.
+- Una revisión automática fallida, agotada por cuota o no ejecutada es **pendiente**, no aprobación. Registrar el SHA revisado y usar revisión manual autorizada cuando corresponda.
+- Antes de terminar cada bloque, comprobar que los documentos no se contradicen entre sí y que el checkpoint apunta a una rama/PR/commit que realmente existe.
+- El trabajo sin evidencia persistida, pruebas declaradas y siguiente paso reproducible se clasifica como **INCOMPLETO**, aunque el análisis en el chat parezca terminado.

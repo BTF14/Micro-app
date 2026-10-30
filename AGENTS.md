@@ -51,10 +51,12 @@ Whenever a concrete project advance is completed and verified (for example, a fe
 
 ## Current known priorities (re-verify on each session)
 
-1. P0: design/implement/test Google authentication + allowlist against the existing auth model without sending email or guessing provider configuration.
+1. P0: complete the read-only audit of API routes, tenant context, schema constraints, queries and indexes; document concrete blockers before adding commercial handlers.
 2. Review `feat/neon-transaction-adapter` against current `main`; no blind merge.
-3. Expand auth/session/authorization/tenant isolation integration coverage.
-4. Continue inventory, validated BCV rate, transactional sales, audit, responsive UI, and E2E in the order defined by the master plan.
+3. Expand auth/session tests and design server-side operation authorization plus organization/branch isolation before commercial endpoints.
+4. Resolve organization/branch/warehouse/register ownership and obtain owner approval for the role-permission matrix.
+5. Measure Neon and Cloudflare quotas and synthetic workload capacity before promising tenant/branch limits.
+6. Continue inventory, validated BCV rate, transactional sales, audit, responsive UI, and E2E in the order defined by the master plan.
 
 
 ## Gentleman-Programming integrations

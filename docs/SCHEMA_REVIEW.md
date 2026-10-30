@@ -1,7 +1,15 @@
-# Revisión del esquema y la API — estado reconciliado post-PR #168 (2026-10-30 UTC)
+# Revisión del esquema y la API — estado reconciliado post-PR #169 (2026-10-30 UTC)
 
-**Fuente de código:** `main` = `e4e4a5f312522ec5efbcc3252958141f56fbd821` (PR #168 fusionada).  
-**Alcance:** revisión estática de solo lectura de rutas, helpers y migraciones versionadas; las pruebas de migración/integración de 0001–0004 se ejecutaron en PostgreSQL 18 desechable, no en Neon main.
+**Fuente de código:** `main` = `be35a0fde3886271b6ed98b7ccc29cc1255d50e5` (PR #169 fusionada).  
+**Alcance:** revisión estática de rutas/helpers y migraciones versionadas; CI post-merge ejecutó migraciones 0001–0004 y pruebas en PostgreSQL 18 desechable, no en Neon main. El helper de turno está implementado, aislado y no conectado a rutas comerciales.
+
+## Helper runtime de turno abierto — PR #169
+
+- `resolveOpenCashierRegisterShift(client, branchContext)` recibe un BranchContext server-derived tras `resolveTenantContext` y `resolveBranchContext`.
+- Rechaza roles distintos de `cashier`; revalida org/branch/register/user/membership/role/assignment activos y filtra org/user/branch/open shift.
+- Retorna null si no hay turno abierto o el scope no es válido; `FOR SHARE OF s` protege frente a cierre concurrente si el caller mantiene la transacción.
+- El helper no abre transacción, no está conectado a rutas y no autoriza operaciones. La matriz de permisos sigue NO APROBADA.
+- PR #169: 6 pruebas unitarias y 7 de integración PostgreSQL 18; el test de concurrencia comprueba el bloqueo de cierre hasta COMMIT.
 
 ## Estado vigente del esquema y el contexto de sucursal
 
@@ -10,7 +18,7 @@
 - PR #167 fusionó `0004_register_shifts.sql` con `registers`/`register_shifts`, FKs compuestas, índices parciales de un turno abierto por caja/cajero y triggers de lifecycle/desactivación. Este DDL está en main, pero no se aplicó a Neon.
 - La migración-check para el HEAD inicial `0b5a9adbdafce25a8483e7ce6953e2d83a826c47` aplicó 0001–0004 y pasó las assertions en PostgreSQL 18 efímero.
 - El CI del mismo HEAD detectó una expectativa de SQLSTATE incorrecta en el test de integración (se esperaba FK violation donde el trigger fallaba antes). El trigger se corrigió en `4008ec7c09785298dc733e5e0c492cea34ad6f43` para que referencias inexistentes se rechacen por FK y los registros existentes pero inactivos/no-cashier por check violation. Revalidar CI en el HEAD vivo antes de integrar.
-- No se añadieron endpoints comerciales, helper de turno ni autorización por operación. La matriz sigue NO APROBADA.
+- PR #169 añadió el helper aislado de turno descrito arriba; no se añadieron endpoints comerciales ni autorización por operación. La matriz sigue NO APROBADA.
 
 
 - `0001_initial.sql`: esquema base tenant-scoped; `products.stock_quantity` sigue a nivel organización.
@@ -19,7 +27,7 @@
 - La migración 0003 **no se ha aplicado a Neon main**. El estado de la base remota no se infiere del DDL de Git.
 - `resolveBranchContext` existe y revalida organización, usuario, membresía, rol, sucursal y asignación activa. Es un helper aislado: no se encontró conectado a middleware ni a handlers HTTP.
 - `branch_memberships` no almacena un rol por sucursal; el rol sigue en `organization_members.role`. La asignación limita el alcance de cashier/inventory, pero no modela roles distintos para el mismo usuario en sucursales diferentes.
-- No existen todavía `warehouses`, `registers`, `register_shifts`, `inventory_balances`, compras/recepciones, transferencias ni devoluciones.
+- Siguen ausentes `warehouses`, `inventory_balances`, compras/recepciones, transferencias y devoluciones; `registers`/`register_shifts` existen desde la migración 0004.
 - No hay handlers HTTP comerciales. La matriz `docs/sdd/role-permission-decision-matrix.md` continúa **NO APROBADA**; el contexto de tenant/sucursal no sustituye autorización por operación.
 
 ## Inventario de rutas HTTP observado

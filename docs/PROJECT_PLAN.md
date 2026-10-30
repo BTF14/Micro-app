@@ -1,38 +1,22 @@
-# Prioridad operativa vigente — resolver turno abierto del cajero — 2026-10-30 UTC
+# Prioridad operativa vigente — post PR #169 — 2026-10-30 UTC
 
-**Main base verificado:** `e4e4a5f312522ec5efbcc3252958141f56fbd821`.  
-**PR activa:** [#169](https://github.com/BTF14/Micro-app/pull/169); SHA de implementación `253128c6f5213986879ce619da85285251c07416` pasó 8/8 workflows Actions y 14 check-runs consultados. Integration PG18 7/7; revalidar el HEAD exacto actual tras el checkpoint documental.  
-**PR #166/#167/#168:** fusionadas secuencialmente. #166 8/8 y #167 10/10 workflows success en sus HEADs finales; no se obtuvieron runs/status para el merge SHA actual de main.  
+**Main verificado:** `be35a0fde3886271b6ed98b7ccc29cc1255d50e5`.  
+**PR #169:** fusionada; helper de resolución del turno abierto del cajero autenticado implementado y probado.  
+**Post-merge:** 7/7 workflows Actions success; Cloudflare Pages/Workers 2/2 success; PostgreSQL 18 integration 7/7 para el helper.  
 **Base de datos:** main versiona 0001–0004; 0003/0004 no aplicadas a Neon main.
 
 ## Prioridades
 
-1. Completar y verificar PR #169: helper `resolveOpenCashierRegisterShift`, pruebas unitarias y PostgreSQL 18 efímero, incluyendo aislamiento por user/branch y cierre concurrente; comprobar siempre el HEAD exacto.
-2. Aprobar explícitamente la matriz de permisos y diseñar autorización server-side por operación y sucursal antes de handlers comerciales.
-3. Diseñar almacenes, balances/ledger y reconciliación/backfill del stock legacy.
+1. Obtener aprobación explícita de la matriz de permisos por rol/organización/sucursal.
+2. Diseñar autorización server-side por operación, actor y scope antes de habilitar endpoints comerciales.
+3. Definir ledger de caja/efectivo esperado, conciliación y auditoría append-only.
 4. Diseñar transacciones, idempotencia y concurrencia para ventas/pagos/stock antes de crear handlers.
-5. Medir límites Neon/Cloudflare con pruebas sintéticas y mantener coste $0.
+5. Diseñar almacenes/balances y reconciliación/backfill de stock legacy.
+6. Medir límites Neon/Cloudflare con pruebas sintéticas y mantener coste $0.
 
-**Gates:** revisar diff completo; exigir todos los workflows requeridos en el SHA exacto; PostgreSQL 18 desechable primero; Neon branches solo si aportan validación específica; Neon main nunca es laboratorio. No tocar secretos, datos reales, DNS, billing ni Cloudflare settings sin necesidad demostrada y autorización aplicable. No declarar readiness comercial.
+**Gates:** PostgreSQL 18 desechable primero; Neon branches solo si aportan validación específica; Neon main nunca es laboratorio. No tocar secretos, datos reales, DNS, billing ni Cloudflare settings sin necesidad demostrada y autorización aplicable. No declarar readiness comercial.
 
 Los bloques inferiores son históricos; esta portada prevalece y se debe contrastar con GitHub live al comenzar cada sesión.
-
-## Histórico — prioridad operativa post PR #161 (supersedida por el estado vigente anterior)
-
-- PR #160 y #161 fusionadas. La continuidad incremental y el checkpoint post-merge ya están integrados.
-- No crear más PR solo para volver a sincronizar el mismo checkpoint. Desde ahora, actualizar WORK_CHECKPOINT y STATE_JOURNAL en la PR de trabajo que corresponda.
-- Prioridades antes de módulos comerciales:
-  1. Obtener aprobación explícita de la matriz de permisos por rol/organización/sucursal.
-  2. Cerrar ERD y ownership para organización, sucursal, almacén, caja y turno.
-  3. Diseñar autorización server-side por operación y scope de sucursal.
-  4. Diseñar control distribuido de abuso/rate limiting compatible con Workers y verificar opciones gratuitas.
-  5. Cerrar consistencia venta-líneas-pagos-stock-ledger, idempotencia por operación, último owner y auditoría append-only.
-  6. Preparar pruebas PostgreSQL efímeras de aislamiento, rollback y concurrencia.
-- No añadir `branch_id` superficial, no migrar Neon main y no crear endpoints comerciales antes de resolver contratos.
-- No prometer capacidad de organizaciones/sucursales hasta medir carga sintética y límites reales Neon/Cloudflare. Mantener objetivo $0.
-- Documentar cada bloque importante durante el trabajo, dentro de la PR coherente; no esperar al cierre del chat.
-
----
 
 
 - PR #160 fusionada en main: `be6f19486caf5cf3605c6ca6615f87e305822ea7`. La continuidad incremental ya está integrada; no abrir otra PR para el mismo objetivo.

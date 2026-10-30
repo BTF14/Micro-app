@@ -1,6 +1,6 @@
 # Implementación base de alcance por sucursal
 
-**Estado:** implementada y fusionada en PR #165; migración 0003 NO aplicada a Neon main. El helper sigue aislado y no conectado a rutas comerciales.  
+**Estado:** implementada y fusionada en PR #165; migración 0003 NO aplicada a Neon main. `resolveBranchContext` sigue aislado y no conectado a rutas comerciales. PR #169 añadió el helper separado `resolveOpenCashierRegisterShift` para turno abierto; tampoco está conectado a rutas ni autoriza operaciones.  
 **Fecha:** 2026-10-30.  
 **Base:** `ce8b0e491fe8b9f6154380cc8b0eea0a19fe8114`.
 
@@ -46,6 +46,7 @@ El helper aún no está conectado a middleware ni rutas. Los futuros handlers de
 - PostgreSQL efímero: FKs cross-tenant para sucursal y usuario, unicidad de slug por organización.
 - Evidencia histórica de PR #165: CI aplicó 0001–0003 en PostgreSQL 18 desechable y ejecutó assertions.
 - PR #167 fusionó la ampliación de workflows a 0001–0004 y assertions de caja/turno; los 10 workflows pasaron en su HEAD final.
+- PR #169 implementó un resolver aislado de turno abierto; sus 7 tests de integración PG18 y 6 unitarios pasaron, incluido el bloqueo frente a cierre concurrente.
 - Antes de producción: pruebas de integración del resolver con DB real aislada, membresías revocadas, acceso IDOR, concurrencia de cambios de asignación y auditoría de cambios.
 
 ## Límites y pendientes

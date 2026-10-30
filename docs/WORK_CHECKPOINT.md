@@ -1,62 +1,36 @@
-# Checkpoint vigente — resolver de turno abierto del cajero — 2026-10-30 UTC
+# Checkpoint vigente — post PR #169 — 2026-10-30 UTC
 
 **Repositorio:** BTF14/Micro-app  
-**Main base:** `e4e4a5f312522ec5efbcc3252958141f56fbd821`  
-**Rama:** `feat/authenticated-cashier-open-shift-20261030`  
-**PR:** [#169](https://github.com/BTF14/Micro-app/pull/169), abierta.  
-**HEAD inicial:** `69ef099d586070edf295e0302468e96c4667f11f`.
+**Main actual:** `be35a0fde3886271b6ed98b7ccc29cc1255d50e5`  
+**PR #169:** fusionada; HEAD revisado `0c437509c0ad1a02b91c08d03d9dba62f0e9bd78`.
 
-## Inspección completada (solo lectura)
+## Resultado post-merge
 
-- Revalidado repo, main, PR #166–#168, PRs abiertas/cerradas, issues abiertos y commits recientes.
-- Código inspeccionado: `index.ts`, `auth.ts`, `google-auth.ts`, `tenant-context.ts`, `branch-context.ts`, `database.ts`, migraciones 0001–0004, tests de branch/register shifts y workflow CI.
-- `resolveTenantContext` verifica sesión y membresía activa; `resolveBranchContext` revalida usuario/organización/rol/sucursal/asignación. Ninguno concede autorización comercial.
-- `register_shifts` tiene FKs compuestas, índices parciales de unicidad por caja y cajero/organización, triggers de apertura/lifecycle y protección de revocación/desactivación.
-- PR #169 abierta; issues abiertos relevantes: #53 y #78; no se modificaron.
-- Checks en merge SHA e4e4a5f: runs/status vacíos; no se afirma CI post-merge.
-- SHA de implementación/test PR #169 `253128c6f5213986879ce619da85285251c07416`: 8/8 workflow runs Actions y 14 check-runs consultados completed/success. CI confirma build/typecheck, unit tests, auth 18/18, branch 4/4, register-shifts 5/5 y cashier-open-shift integration 7/7 en PostgreSQL 18. Después se añadió un checkpoint documental; revalidar checks en el HEAD actual.
-- Codex review falló por cuota. Reviews formales: 0; threads inline: 0. Diff inspeccionado manualmente; no es aprobación externa.
-- Cloudflare generó previews Pages/Workers para HEAD final 253128c; no son producción.
-- Documentos canónicos DATABASE_SCHEMA y SCHEMA_REVIEW tenían encabezados con SHA 1d10... anterior a #167; se actualizarán a e4e4a5f.
+- PR #169 fusionada; main apunta al merge SHA `be35a0fde3886271b6ed98b7ccc29cc1255d50e5`.
+- Post-merge: 7/7 workflows Actions completed/success; Cloudflare Pages y Workers 2/2 success.
+- CI: build/typecheck, unit tests, auth integration 18/18, branch scope 4/4, register shifts 5/5, cashier open-shift integration 7/7 (PostgreSQL 18 desechable).
+- Migration validation: 0001–0004 aplicadas desde cero y assertions success en PG18 efímero.
+- Playwright, Semgrep, Trivy, Secret History y dashboard success.
+- No hubo reviews formales ni threads inline. Codex no completó por cuota; diff revisado manualmente.
+- PR abiertas: ninguna. Issues abiertos #53 y #78, sin cambios.
 
-## Decisión de diseño
+## Helper implementado
 
-- Implementar helper aislado que recibe un BranchContext producido por `resolveBranchContext` después de `resolveTenantContext`.
-- Rechazar cualquier rol distinto de cashier antes de consultar DB.
-- En una sola consulta, filtrar por organization_id, branch_id y cashier_user_id; exigir turno abierto y revalidar organización/sucursal/caja/usuario/membresía/rol/asignación activos.
-- Devolver `null` si no hay turno o el scope dejó de ser válido.
-- Seleccionar datos de turno y usar `FOR SHARE OF s`; el helper no abre transacción. Los futuros callers comerciales deben invocarlo con el mismo transaction client de la operación.
-- No calcular efectivo esperado ni diferencias; no permitir impersonation, supervisor override ni autorización comercial.
+- `apps/api/src/cashier-open-shift.ts`: `resolveOpenCashierRegisterShift(client, branchContext)`.
+- Requiere BranchContext server-derived; rol cashier solamente; revalida en SQL tenant, usuario, sucursal, caja, membresía, rol y asignación.
+- `FOR SHARE OF s` bloquea cierre concurrente mientras el caller mantiene su transacción.
+- 6 pruebas unitarias y 7 de integración PG18; casos negativos de usuario/membresía/rol/asignación, otro cajero, otra sucursal, cross-tenant y concurrencia.
+- No hay endpoints comerciales; matriz de permisos NO APROBADA.
 
-## Cambios preparados en la rama
+## Estado de base de datos
 
-- `apps/api/src/cashier-open-shift.ts`: helper aislado.
-- `apps/api/src/cashier-open-shift.test.ts`: pruebas unitarias.
-- `apps/api/src/cashier-open-shift.integration.test.ts`: PostgreSQL desechable con guard estricto localhost/microapp_test/microapp.
-- `.github/workflows/ci.yml`: nuevo paso de integración PG18.
-- CURRENT_STATE, HANDOFF, WORK_CHECKPOINT, PROJECT_PLAN y STATE_JOURNAL: continuidad incremental; DATABASE_SCHEMA/SCHEMA_REVIEW: encabezados reconciliados.
+- Main versiona 0001–0004; 0003/0004 no aplicadas a Neon main.
+- No se ejecutó SQL remoto ni se usó Neon main como laboratorio.
+- PostgreSQL 18 efímero continúa como entorno primario.
 
-## Estado de pruebas
+## Siguiente gate
 
-El SHA de implementación/test `253128c6f5213986879ce619da85285251c07416` pasó 8/8 workflows Actions y los check-runs consultados; el job CI confirmó las 7 pruebas de integración nuevas en PostgreSQL 18, además de build/typecheck y suites existentes. Se añadieron después commits exclusivamente documentales; consultar y exigir el resultado del HEAD exacto actual de la PR antes de merge. No se ejecutó shell local ni SQL remoto. La suite de integración exige el URL local sintético exacto de CI y no permite apuntar a Neon.
-
-## Próxima acción
-
-Revalidar HEAD de PR #169, esperar workflows completos, revisar logs y corregir cualquier fallo en la misma PR. No fusionar hasta todos los gates en verde.
-
-# Checkpoint de trabajo vigente — PR de políticas comerciales por organización (2026-10-30 UTC)
-
-**Rama:** `docs/org-policy-architecture-20261030`  
-**Base:** `4ab229296d8858c8c553e00a633a762b9c26a81b`  
-**Alcance:** documentación de arquitectura; no código, esquema, migraciones ni infraestructura.
-
-- Diseño nuevo: `docs/sdd/ORGANIZATION_COMMERCIAL_POLICY_CONFIGURATION.md`.
-- Alineación de `docs/sdd/role-permission-decision-matrix.md` y `docs/SAAS_ARCHITECTURE_DECISIONS.md`.
-- Cada organización controla su propia política comercial; no hay porcentajes/umbrales universales de descuento.
-- La matriz de roles sigue NO APROBADA; ninguna autorización comercial se implementa en esta PR.
-- No se tocó Neon main, producción, secretos, DNS, billing ni datos reales.
-- No hay pruebas runtime aplicables al cambio documental; falta revisión completa del diff y verificación de checks del HEAD exacto tras abrir PR.
-- PR abierta: [#163](https://github.com/BTF14/Micro-app/pull/163). Revisión manual de los ocho archivos completada; no se detectó contradicción pendiente sobre descuentos universales. En HEAD `531296af195ff17988a4ff9fc0ce65b242d7e194`, los ocho workflows devueltos por GitHub terminaron `success` (CI, Chromium, postgres-migration, Semgrep, Trivy, secret-history, Dependency Review y project progress). Este checkpoint cambia el HEAD: revalidar workflows sobre el HEAD final antes de merge. Codex no se ejecutó; revisión manual fallback. No hay reviews humanas ni threads inline.
+Aprobar matriz de permisos y diseñar autorización server-side por operación/sucursal antes de endpoints comerciales. Mantener coste $0 y no alterar infraestructura/secretos.
 
 ---
 

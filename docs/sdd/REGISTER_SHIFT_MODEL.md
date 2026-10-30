@@ -57,6 +57,7 @@ Esta es la opción base más simple de auditar: cada venta/pago asociado a caja 
 ## 4. Autorización y límites
 
 - `resolveBranchContext` ya existe, pero no está conectado a rutas.
+- PR #169 implementó `resolveOpenCashierRegisterShift(client, branchContext)` como helper aislado: rol cashier, scope org/user/branch, revalidación de estados activos y lock `FOR SHARE`; no está conectado a rutas ni autoriza operaciones.
 - Un contexto owner/admin de alcance organizacional no significa que puedan operar como cajero en un turno ajeno.
 - No aprobar aquí permisos de apertura/cierre por supervisor, arqueo, diferencias, retiros, ingresos, anulaciones ni reportes financieros.
 - La matriz `docs/sdd/role-permission-decision-matrix.md` sigue NO APROBADA. Antes de endpoints, debe aprobarse o sustituirse por una matriz corregida con autorización server-side por operación.
@@ -84,7 +85,9 @@ En PostgreSQL 18 efímero, desde una base vacía y aplicando migraciones 0001–
 
 1. **Hecho en PR #167:** migración aditiva 0004 y assertions SQL.
 2. **Hecho en PR #167:** workflows CI/migration-check aplican 0001–0004 desde cero en PostgreSQL 18 efímero.
-3. **Hecho en PR #167:** tests de integración para scope, lifecycle, desactivación y concurrencia. El helper de turno/runtime y los endpoints quedan fuera de esta fase.
+3. **Hecho en PR #167:** tests de integración para scope, lifecycle, desactivación y concurrencia del modelo de datos.
+4. **Hecho en PR #169:** helper aislado de lookup del turno abierto del cajero autenticado; 6 pruebas unitarias y 7 de integración PG18, incluida concurrencia de cierre. No crea endpoints ni autoriza operaciones.
+5. **Pendiente:** aprobación de matriz de permisos y diseño de autorización server-side por operación antes de handlers comerciales.
 4. Corregir cualquier fallo, revisar diff completo y verificar todos los checks sobre el SHA exacto final.
 5. No aplicar 0004 a Neon main ni conectar rutas comerciales en esta fase.
 

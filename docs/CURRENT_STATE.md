@@ -1,52 +1,49 @@
-# Estado vivo — implementación del resolver de turno abierto — 2026-10-30 UTC
+# Estado vivo — post PR #169 — 2026-10-30 UTC
 
 ## Estado verificado en GitHub
 
 - Repositorio: `BTF14/Micro-app`.
-- `main` verificado: `e4e4a5f312522ec5efbcc3252958141f56fbd821` (merge de PR #168).
-- PR #166, #167 y #168 están fusionadas secuencialmente. PR abiertas: ninguna al iniciar este bloque.
-- PR #166: 8/8; PR #167: 10/10; PR #168: 10/10 workflows Actions en sus HEADs finales. Para #168, HEAD `26fef88bfeea656424e8c4c082cef789a177857a`; los check-runs consultados terminaron completed/success.
-- La consulta de checks sobre el merge SHA actual de main devolvió listas vacías; no se afirma CI post-merge sobre `e4e4a5f...`.
-- PR #169 HEAD inicial `69ef099d586070edf295e0302468e96c4667f11f`, base `e4e4a5f312522ec5efbcc3252958141f56fbd821`; actualizar al HEAD vivo tras cada commit.
-- PR #169 implementación/test SHA `253128c6f5213986879ce619da85285251c07416`: 8/8 workflow runs Actions `completed/success`; 14 check-runs consultados, todos `completed/success`. Se añadió después un checkpoint documental; consultar siempre GitHub para el HEAD exacto de la rama antes de merge.
-- El job CI del SHA de implementación confirmó build/typecheck, unit tests, auth 18/18, branch 4/4, register shifts 5/5 y cashier open-shift integration 7/7 en PostgreSQL 18 efímero. Revalidar checks sobre el HEAD documental más reciente.
-- Cloudflare Pages preview: `https://79028733.micro-app-63i.pages.dev`; branch preview `https://feat-authenticated-cashier-o.micro-app-63i.pages.dev`. Workers commit preview `https://ff076721-micro-app-api.btfcasheb.workers.dev`; branch preview `https://feat-authenticated-cashier-open-shift-20261030-micro-app-api.btfcasheb.workers.dev`. Son previews, no producción.
-- Cloudflare Pages/Workers publicaron previews para el HEAD final `253128c`; no son producción.
-- Codex review falló por límite de uso; no hay reviews formales ni threads inline. Se hizo inspección manual del diff; no equivale a aprobación externa.
+- `main` actual: `be35a0fde3886271b6ed98b7ccc29cc1255d50e5` (merge commit de PR #169).
+- PR #169: cerrada y fusionada; HEAD revisado `0c437509c0ad1a02b91c08d03d9dba62f0e9bd78`; merge SHA `be35a0fde3886271b6ed98b7ccc29cc1255d50e5`.
+- PR #166/#167/#168/#169 están fusionadas. No había PR abiertas después de #169.
+- Checks de PR #169: 8/8 workflows Actions success y checks externos Cloudflare Pages/Workers success en el HEAD revisado.
+- Post-merge sobre el merge SHA: 7/7 workflows Actions success (CI, Playwright, migration validation, Security scan, Semgrep, Secret History y Project progress dashboard) y 2/2 checks Cloudflare Pages/Workers success.
+- CI post-merge: build/typecheck; unit tests; auth integration 18/18; branch scope 4/4; register shifts 5/5; cashier open-shift integration 7/7 en PostgreSQL 18 desechable. Migration validation 0001–0004 success.
+- Reviews formales GitHub: 0; threads inline: 0. Codex no completó por límite de cuota; la revisión manual no se presenta como aprobación externa.
+- Issues abiertos relevantes: #53 (seguridad/identidad/aislamiento tenant) y #78 (verificación efectiva Cloudflare); no se modificaron.
 
-## Estado de implementación del bloque actual
+## Implementación fusionada en PR #169
 
-- En curso: helper aislado `resolveOpenCashierRegisterShift(client, branchContext)`.
-- El contrato exige `BranchContext` derivado de `resolveBranchContext`, después de `resolveTenantContext`; acepta solo rol `cashier`.
-- La consulta revalida en PostgreSQL usuario, membresía/rol cashier, organización, sucursal, asignación, caja y turno abierto; filtra simultáneamente por organización, usuario y sucursal.
-- Devuelve `null` si no existe turno abierto o si el scope ya no es válido. No eleva owner/admin ni permite suplantación.
-- `FOR SHARE OF s` permite que un caller futuro mantenga el turno estable durante su transacción; el helper no abre una transacción ni implementa operaciones comerciales.
-- Se añadieron pruebas unitarias e integración PostgreSQL 18 desechable para ausencia/lectura de turno, usuario inactivo, membresía/rol/asignación revocados y scope cross-tenant. CI debe verificarlas en el HEAD exacto de la PR.
-- No se añadieron endpoints comerciales ni se aprobó la matriz de permisos.
+- Helper: `apps/api/src/cashier-open-shift.ts`, función `resolveOpenCashierRegisterShift(client, branchContext)`.
+- Requiere BranchContext derivado de `resolveBranchContext` después de `resolveTenantContext`; acepta solo rol `cashier`.
+- Revalida organización, sucursal, caja, usuario, membresía/rol y asignación activos; filtra por organización, usuario, sucursal y turno abierto.
+- Devuelve `null` si no existe turno abierto o el scope ya no es válido. No eleva owner/admin ni permite suplantación.
+- Usa `FOR SHARE OF s`; el helper no abre transacciones. Un caller futuro debe invocarlo con el mismo transaction client de la operación si requiere impedir un cierre concurrente.
+- Tests unitarios e integración PostgreSQL 18 desechable cubren ausencia/turno propio, usuario inactivo, membresía/rol/asignación revocados, otro cajero, otra sucursal, cross-tenant y cierre concurrente.
+- No añade rutas HTTP comerciales ni autoriza ventas/pagos/caja. La matriz de permisos sigue **NO APROBADA**.
 
 ## Arquitectura y restricciones vigentes
 
 - Main versiona migraciones 0001–0004. 0003 contiene sucursales/asignaciones; 0004 contiene `registers` y `register_shifts`.
 - 0003/0004 no se han aplicado a Neon main. PostgreSQL 18 desechable es el entorno primario de pruebas.
-- No hay endpoints comerciales; `resolveTenantContext`/`resolveBranchContext` son resolutores de contexto, no autorización por operación.
-- La matriz `docs/sdd/role-permission-decision-matrix.md` sigue **NO APROBADA**.
+- `resolveTenantContext`, `resolveBranchContext` y `resolveOpenCashierRegisterShift` son helpers aislados; no están conectados a rutas comerciales ni conceden autorización por operación.
 - Los turnos no se transfieren; cambio de cajero requiere cierre y nueva apertura. No calcular efectivo esperado/diferencias sin ledger de caja.
-- Los encabezados de DATABASE_SCHEMA/SCHEMA_REVIEW se alinean ahora al SHA actual; los snapshots históricos permanecen subordinados a esta portada.
+- Los builds de Cloudflare del merge commit reportaron success; no equivalen a certificación funcional completa de producción.
 
 ## Próxima secuencia
 
-1. Verificar diff completo y todos los workflows requeridos del HEAD exacto de esta PR.
-2. Corregir cualquier fallo de typecheck/unit/integración/seguridad antes de considerar merge.
-3. Si todos los gates están satisfechos, fusionar conforme a la autorización general del propietario y verificar main post-merge.
-4. Mantener el helper como lookup de contexto; no añadir handlers comerciales hasta aprobar matriz y autorización server-side por operación/sucursal.
+1. Obtener aprobación explícita de la matriz de permisos por rol/organización/sucursal.
+2. Diseñar autorización server-side por operación y scope antes de habilitar ventas, pagos, inventario o caja.
+3. Diseñar ledger de caja/efectivo esperado, idempotencia y transacciones antes de handlers comerciales.
+4. Mantener PostgreSQL 18 desechable como entorno primario; Neon branches solo con valor adicional demostrado.
 
 ## Guardrails
 
 - No Neon main como laboratorio ni aplicación remota de migraciones.
 - No usar datos reales, secretos, DNS, billing ni Cloudflare settings.
-- Los merges a main pueden disparar despliegues automáticos; distinguir preview y producción.
+- Los merges a main pueden disparar despliegues automáticos; distinguir builds/previews de verificación funcional productiva.
 - Objetivo de coste: $0.
-- No afirmar reviews formales/Codex: las PR #166–#168 tuvieron revisión manual documentada, sin aprobación externa.
+- No afirmar reviews formales/Codex; las PR #166–#169 tuvieron revisión manual documentada, sin aprobación externa.
 
 ---
 

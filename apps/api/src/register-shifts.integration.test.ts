@@ -245,6 +245,30 @@ const suite = describe.skipIf(!isDisposablePostgresUrl(databaseUrl))(
       ).rejects.toMatchObject({ code: "23514" });
 
       await expect(
+        client.query(
+          `UPDATE register_shifts
+           SET closed_at = clock_timestamp(),
+               closing_cash_usd = 1,
+               closing_cash_ves = 1,
+               closed_by_user_id = $2
+           WHERE id = $1`,
+          [shiftId, fixture.cashierB],
+        ),
+      ).rejects.toMatchObject({ code: "23514" });
+
+      await expect(
+        client.query(
+          `UPDATE register_shifts
+           SET closed_at = clock_timestamp(),
+               closing_cash_usd = -1,
+               closing_cash_ves = 1,
+               closed_by_user_id = $2
+           WHERE id = $1`,
+          [shiftId, fixture.cashierA],
+        ),
+      ).rejects.toMatchObject({ code: "23514" });
+
+      await expect(
         client.query("DELETE FROM register_shifts WHERE id = $1", [shiftId]),
       ).rejects.toMatchObject({ code: "23514" });
 

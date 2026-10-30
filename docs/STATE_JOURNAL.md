@@ -1350,3 +1350,14 @@ CI documental: para HEAD `8c15e13fa001a14a0ddf9f2432bc17efb30d476d`, los 8 workf
 - GitHub confirmó que `main` seguía exactamente en `bb5bd72829db0532521857bffd62dac5c42a2eee` al comparar contra ese SHA. Issues #78 y #53 siguen abiertas.
 - No se inspeccionaron ni modificaron paneles de Cloudflare o Neon para esta PR documental; no eran necesarios para validar su alcance. Las observaciones históricas de infraestructura no se presentan como estado vivo.
 - Esta entrada es append-only; no modifica entradas anteriores.
+
+
+## 2026-10-30 UTC — PR #179 fusionada y checkpoint post-merge
+
+- PR #179 se fusionó por squash; GitHub confirmó `merged=true`, estado cerrado y merge SHA `d6f41448b00b2e03ac25467378c707c6fcba1434`. La comparación de `main` contra ese SHA devolvió `identical`, 0 ahead / 0 behind.
+- HEAD pre-merge revisado: `a09864ad772e3afdfabb911dc041ada1f7a71edd`; base `bb5bd72829db0532521857bffd62dac5c42a2eee`. Diff limitado a `docs/CURRENT_STATE.md`, `docs/HANDOFF_NEXT_CHAT.md` y `docs/STATE_JOURNAL.md`.
+- En ese HEAD, los 8 workflows Actions consultados terminaron `completed/success`. Cloudflare Pages y Workers reportaron previews exitosas para el mismo SHA. Son previews, no validación de producción. El combined commit status devolvió statuses vacíos; branch protection/required checks no está confirmada.
+- Se verificó que el `STATE_JOURNAL.md` de PR #179 conserva el contenido de la base como prefijo exacto; la edición añadió contenido al final y no reescribió entradas previas.
+- Kimi 3.1 Pro auditó un HEAD anterior (`fb724e0...`). Sus tres hallazgos principales se contrastaron contra `a09864a`: las instrucciones de corrección ya no están en la secuencia vigente; el prompt anterior está rotulado `HISTÓRICO — NO COPIAR`; y el bloque Cloudflare antiguo está dentro de una sección histórica explícita. No se abrió otro commit para repetir esos arreglos.
+- Issues #78 y #53 siguen abiertas: CORS continúa NO VERIFICADO por HTTP real y la matriz comercial sigue NO APROBADA. No se modificó Cloudflare producción, Neon main, secretos, DNS, billing ni datos reales.
+- Esta entrada se añade al final; no se modifican ni eliminan entradas anteriores.

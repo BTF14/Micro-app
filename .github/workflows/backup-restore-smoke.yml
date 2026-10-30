@@ -25,7 +25,7 @@ jobs:
       RESTORE_DB_NAME: microapp_restore
     services:
       postgres:
-        image: postgres:17
+        image: postgres:18
         env:
           POSTGRES_DB: microapp_source
           POSTGRES_USER: microapp
@@ -40,7 +40,7 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v7
-      - name: Install age and PostgreSQL 17 client
+      - name: Install age and PostgreSQL 18 client
         shell: bash
         run: |
           set -euo pipefail
@@ -52,7 +52,7 @@ jobs:
           echo "deb [signed-by=/usr/share/postgresql-common/pgdg/apt.postgresql.org.asc] https://apt.postgresql.org/pub/repos/apt $(. /etc/os-release && echo "$VERSION_CODENAME")-pgdg main" \
             | sudo tee /etc/apt/sources.list.d/pgdg.list
           sudo apt-get update
-          sudo apt-get install -y postgresql-client-17
+          sudo apt-get install -y postgresql-client-18
       - name: Run isolated synthetic backup/restore round trip
         shell: bash
         run: bash scripts/test_backup_restore.sh

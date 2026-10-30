@@ -69,11 +69,12 @@ const suite = describe.skipIf(!databaseUrl)("branch context against PostgreSQL",
       [organizationId, ownerId, adminId, cashierAssignedId, cashierUnassignedId, inventoryAssignedId],
     );
 
-    const branches = await Promise.all([
+    const branchSeeds: Array<[string, string, boolean]> = [
       ["Branch A", "branch-a", true],
       ["Branch B", "branch-b", true],
       ["Inactive Branch", "branch-inactive", false],
-    ].map(async ([name, slug, active]) => {
+    ];
+    const branches = await Promise.all(branchSeeds.map(async ([name, slug, active]) => {
       const result = await client.query<{ id: string }>(
         "INSERT INTO branches (organization_id, name, slug, is_active) VALUES ($1, $2, $3, $4) RETURNING id",
         [organizationId, name, slug, active],

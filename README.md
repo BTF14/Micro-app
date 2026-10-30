@@ -27,7 +27,7 @@ El alcance del producto incluye:
 
 **Este listado describe el alcance previsto, no afirma que todos los módulos estén terminados.** Consulta los documentos de estado y los criterios de aceptación para distinguir lo implementado, lo probado y lo pendiente.
 
-La dirección de producto aprobada como arquitectura de referencia es una plataforma SaaS multi-organización, multi-sucursal y multiusuario. Una organización es el tenant y propietario lógico de sus datos; las sucursales son unidades operativas; las cajas y almacenes pertenecen a una sucursal. El modelo y sus reglas están documentados en [SAAS_ARCHITECTURE_DECISIONS.md](docs/SAAS_ARCHITECTURE_DECISIONS.md), pero **no están implementados todavía en el esquema ni en los endpoints comerciales**.
+La dirección de producto aprobada como arquitectura de referencia es una plataforma SaaS multi-organización, multi-sucursal y multiusuario. Una organización es el tenant y propietario lógico de sus datos; las sucursales son unidades operativas; las cajas y almacenes pertenecen a una sucursal. **Main ya incluye** `branches`/`branch_memberships` y el helper `resolveBranchContext` por PR #165 (0003). **PR #167 contiene** la migración 0004 para `registers`/`register_shifts`, pero sigue abierta y no fusionada. Almacenes, balances por almacén y endpoints comerciales no están implementados; el helper de sucursal no está conectado a rutas. El estado de Git no demuestra que 0003/0004 estén aplicadas a Neon main.
 
 ## Estado actual: qué significa en la práctica
 
@@ -38,8 +38,8 @@ La dirección de producto aprobada como arquitectura de referencia es una plataf
 - PostgreSQL como base de datos objetivo, con Drizzle ORM y migraciones SQL versionadas.
 - Pruebas con Vitest y automatización de navegador con Playwright/Chromium en CI.
 - GitHub Actions para validaciones, análisis estático y controles de seguridad.
-- Workflow de backup cifrado y retención documentados; se ha probado una restauración técnica aislada. La validación con un conjunto representativo de datos de negocio relacionados y la comprobación integral de recuperación siguen pendientes.
-- Workflow de vigilancia de dependencias incorporado. No debe darse por verificado como operativo hasta comprobar una ejecución real y revisar su resultado.
+- Workflow sintético de backup cifrado/restauración ejecutado en PostgreSQL 18; demuestra una ruta técnica aislada, no backup productivo independiente ni recuperación integral con datos comerciales poblados. RPO/RTO, alertas y coste siguen pendientes.
+- Dependency Review, Secret History, Semgrep y Trivy se ejecutan en CI/PR; PR #141 integró mantenimiento de dependencias. Estos controles no equivalen a monitorización runtime ni a readiness productiva.
 
 La existencia de archivos de configuración, workflows o migraciones no equivale a que toda la funcionalidad de negocio esté completa.
 
@@ -74,7 +74,7 @@ apps/
 - **Automatización:** GitHub Actions para build, pruebas y análisis.
 - **Tasa y precios:** la base de datos debe conservar la tasa y los importes aplicados a una venta; cualquier caché es una optimización, no la fuente de verdad de una transacción.
 
-La arquitectura objetivo contempla Cloudflare Pages para el frontend, Cloudflare Workers para la API y Neon PostgreSQL, sujetos a límites y condiciones vigentes de cada proveedor. La base de datos compartida con aislamiento tenant-scoped es la dirección prevista; no significa que el aislamiento integral o el modelo de sucursales ya estén implementados. El coste objetivo es **$0**: no activar planes pagos, facturación, tarjetas ni cargos automáticos sin autorización explícita. Los niveles gratuitos pueden cambiar y no garantizan capacidad ilimitada ni disponibilidad comercial.
+La arquitectura objetivo contempla Cloudflare Pages para el frontend, Cloudflare Workers para la API y Neon PostgreSQL, sujetos a límites y condiciones vigentes de cada proveedor. El fundamento de sucursales/asignaciones está en main (0003); el aislamiento integral de operaciones, los roles distintos por sucursal, almacenes y stock por almacén siguen pendientes. PR #167 propone el esquema de cajas/turnos en 0004, aún no fusionado. El coste objetivo es **$0**: no activar planes pagos, facturación, tarjetas ni cargos automáticos sin autorización explícita. Los niveles gratuitos pueden cambiar y no garantizan capacidad ilimitada ni disponibilidad comercial.
 
 ## Reglas de ingeniería que no se deben romper
 

@@ -2,7 +2,7 @@
 
 **Checkpoint vivo verificado — 2026-10-30 UTC.** Repositorio `BTF14/Micro-app`; `main` = `82386c6e9300e06f8fa209aa52995b939a72442a`, merge SHA de PR #177. PR #177 está fusionada; no había PR abiertas en la consulta de continuidad. En la validación post-merge se observaron 9/9 check-runs success y los seis contextos requeridos success; no extrapolar a otros SHA.
 
-**Trabajo documental en curso:** PR [#178](https://github.com/BTF14/Micro-app/pull/178) está abierta como draft sobre la rama `docs/reconcile-role-model-and-cloudflare-20261030`, con base en este SHA. Continuar esa misma PR; verificar su HEAD y checks en vivo antes de cualquier nueva edición. No abrir una PR duplicada.
+**Trabajo documental en curso:** PR [#178](https://github.com/BTF14/Micro-app/pull/178) está abierta como draft sobre la rama `docs/reconcile-role-model-and-cloudflare-20261030`, con base en este SHA. Último HEAD consultado: `db2db8753765666c002f8838129053ca404119c5`; 7/10 check-runs success, 3 in progress, cero fallos observados. Continuar esa misma PR; verificar su HEAD y checks en vivo antes de cualquier nueva edición. No abrir una PR duplicada.
 
 ## Cloudflare — observación autenticada de solo lectura
 - **Workers / `micro-app-api`:** Active Deployment en Producción, versión `49975c43-4161-4809-9c00-8ba83e53e6a0`, Build ID `957478f6-0f43-4b5c-932a-621be067d6d9`, commit `82386c6e9300e06f8fa209aa52995b939a72442a` (`main`). El panel mostró **100% de asignación de tráfico** a esa versión. La vista de métricas mostró 0 req/sec y 0% de error en el instante observado; son métricas puntuales, no prueba de ausencia de tráfico histórico ni de CORS correcto.
@@ -972,7 +972,7 @@ La consulta de workflow runs asociada al head `f0f489fc6ac2f5ada84105610ae3eb0e1
 ## Auditoría de hosting — 2026-10-30
 
 - Arquitectura operativa del proyecto: frontend estático en Cloudflare Pages, API Hono en Cloudflare Workers y PostgreSQL en Neon.
-- Se revisó el árbol completo de `main` (191 entradas) y las búsquedas del repositorio. No hay archivos de configuración, directorios locales, dependencias, CLI/comandos de despliegue ni workflows de un proveedor de hosting alternativo. Las coincidencias restantes en archivos operativos se están retirando; el diario append-only conserva hechos históricos.
+- Se revisó el árbol completo de `main` (191 entradas) y las búsquedas del repositorio. No hay archivos de configuración, directorios locales, dependencias, CLI/comandos de despliegue ni workflows de un proveedor de hosting alternativo. Se retiraron las referencias de los documentos operativos; el diario append-only conserva hechos históricos.
 - No se modificó ninguna cuenta externa, integración de GitHub, webhook, deployment ni configuración de Cloudflare. El endpoint de protección de rama devolvió 403, por lo que no se afirma haber inspeccionado o cambiado GitHub App/branch protection.
 - `VITE_API_BASE_URL` **se conserva**: es una variable pública de build de Vite, no una integración de hosting. `apps/web/.env.production` apunta al Worker y `vite.config.ts` la carga con `loadEnv`. El bundle JS publicado aún no pudo inspeccionarse; no afirmar que el valor compilado está verificado.
 - El status combinado consultado para el SHA actual de `main` no devolvió checks externos. En PR #178 los checks observados son GitHub Actions y previews de Cloudflare Pages/Workers.

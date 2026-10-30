@@ -71,10 +71,10 @@ For example, a discount operation would require (a) approved actor permission, (
 For a state-changing operation, authorization and resource checks that can change concurrently must be evaluated in the same PostgreSQL transaction as the write:
 
 1. Start one transaction using the request-scoped database client.
-2. Revalidate active user, organization, membership, and the current role from database state.
+2. Revalidate the presented session in the transaction (token hash, not the raw token; not revoked; not expired), then revalidate active user, organization, membership, and the current role from database state.
 3. Resolve and validate the requested branch and any register/warehouse/shift relationship from database state.
 4. Evaluate the approved operation permission.
-5. Lock or otherwise protect mutable state where required by the domain invariant (for example, the open shift row, stock balance, or policy version).
+5. Lock or otherwise protect mutable authorization and domain state where required by the invariant (for example, membership/assignment rows against concurrent revocation, the open shift row, stock balance, or policy version). Define a consistent lock order and isolation strategy per operation to avoid TOCTOU gaps and deadlocks; a plain re-read without suitable locking/isolation is not sufficient when concurrent revocation must take effect before commit.
 6. Validate resource ownership and all related records using tenant-scoped predicates and composite relationships.
 7. Perform domain writes and append the corresponding audit event in the same transaction.
 8. Commit only if every check and write succeeds; otherwise roll back all business and audit writes.
@@ -102,7 +102,7 @@ Composite foreign keys remain an integrity control, not a replacement for author
 The schema and semantics of audit records are not yet approved or implemented for commercial operations. Before the first commercial mutation, design an auditable event contract with at least:
 
 - organization and applicable branch/register/shift identifiers;
-- authenticated actor user ID and the role/membership version observed;
+- authenticated actor user ID and the role/membership state observed (do not assume a version column exists until the schema is designed);
 - stable operation key and target resource type/ID;
 - allow/deny outcome and a bounded internal reason code;
 - request/correlation ID and idempotency key reference (never the raw session token);

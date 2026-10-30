@@ -2,7 +2,19 @@
 
 **Repositorio:** https://github.com/BTF14/Micro-app  
 **Main verificado:** `1d10befe0cd3367e04bd8998a192e93d9b228063`  
-**PR #165:** fusionada por squash; merge SHA = main SHA. No hay PR abiertas al inicio de este bloque.
+**PR #165:** fusionada por squash; merge SHA = main SHA. **PR #166:** abierta, base `main`, rama `docs/post-pr165-register-shift-design-20261030`, HEAD inicial revisado `8044a6614b847d580e6e1f755433f05d2b141b75`; no está fusionada.
+
+
+## Verificación actual de PR #166 (consulta GitHub, 2026-10-30 UTC)
+
+- Estado: abierta, no draft, `mergeable=true`; base SHA `1d10befe0cd3367e04bd8998a192e93d9b228063`; HEAD consultado `8044a6614b847d580e6e1f755433f05d2b141b75`.
+- Ocho workflows de GitHub Actions asociados a ese HEAD terminaron `completed/success`: CI, Playwright E2E, Database migration validation, Security scan/Trivy, Semgrep SAST, Secret history scan, Dependency review y Project progress dashboard. Se inspeccionaron jobs y steps; el upload Playwright condicional fue omitido porque no hubo fallo.
+- No hay reviews humanas ni threads inline registrados en la consulta actual.
+- El combined status expuesto por el conector no devolvió status checks; tampoco proporcionó evidencia actual suficiente de checks externos Cloudflare Pages/Workers para este HEAD. No declararlos verdes ni reutilizar resultados de otro SHA.
+- Codex no se reintentó; la limitación de cuota descrita en el checkpoint previo sigue sin considerarse aprobación.
+- La revisión manual del diff detectó documentación post-#165 aún contradictoria: SCHEMA_REVIEW y DATABASE_SCHEMA describían sucursales como inexistentes; MULTI_BRANCH_DATA_MODEL conservaba una sección de asignaciones como pendiente aunque 0003 ya implementó branch_memberships. Se están reconciliando esas fuentes en esta misma PR.
+- Estos resultados son del HEAD consultado antes de los nuevos commits de documentación. Cada commit cambia el HEAD y obliga a volver a verificar checks sobre el SHA final antes de integrar.
+- No se ha fusionado la PR ni se ha autorizado despliegue. No tocar Neon main ni producción.
 
 ## Evidencia exacta del estado actual
 - GitHub check-runs consultados directamente para `1d10befe0cd3367e04bd8998a192e93d9b228063`: 9/9 completados con `success` (verify, Chromium auth smoke, postgres-migration, Semgrep, Trivy, secret-history, generate-progress, Cloudflare Pages y Workers Builds).

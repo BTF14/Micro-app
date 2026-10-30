@@ -23,7 +23,7 @@
 4. Preparar decisión de roles y permisos sensibles para aprobación del propietario; no inferir porcentajes ni excepciones.
 5. Diseñar esquema v2 y migraciones solo después del ERD; probar desde base vacía y upgrade en PostgreSQL desechable.
 6. Diseñar pruebas negativas cross-tenant/cross-branch, transacción, idempotencia y concurrencia.
-7. Revisar la rama `feat/neon-transaction-adapter` de forma independiente; no merge a ciegas.
+7. No reabrir `feat/neon-transaction-adapter`: su PR #1 ya se fusionó el 2026-10-17 (merge `b6511d0876e33096f75df2466653449165888821`); la rama está divergida (14 ahead/242 behind). La tarea correcta es revisar la implementación vigente en main y sus callsites, no fusionar la rama histórica.
 8. Actualizar README solo tras avances concretos verificados y mantener CURRENT_STATE, PROJECT_PLAN, STATE_JOURNAL y este handoff al día.
 
 ## Prompt de continuidad

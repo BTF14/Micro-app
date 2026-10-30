@@ -931,3 +931,5 @@ No declarar comercial/producción listo hasta completar flujos, seguridad, prueb
 - Alcance autorizado: owner/admin organización-wide; cashier/inventory requieren asignación activa a sucursal. No implica aprobar permisos por operación, caja/turnos ni excepciones sensibles.
 - Orden: validar migración y assertions en PostgreSQL efímero; comprobar tests/typecheck/CI del SHA exacto; revisar diff; integrar solo con checks obligatorios verdes. Luego cerrar matriz de permisos sensibles y modelo de caja/turnos antes de rutas comerciales.
 - No ejecutar migraciones en Neon main ni desplegar producción en este bloque.
+
+- Resultado técnico PR #165 (HEAD de implementación `c3ae1192f0841090ee1b3dea71ed803f1d3c1d8b`): checks y pruebas completas en success, incluidas 3 pruebas de resolución contra PostgreSQL efímero y assertions cross-tenant. Revalidar el SHA final tras los commits de sincronización documental antes de integrar.

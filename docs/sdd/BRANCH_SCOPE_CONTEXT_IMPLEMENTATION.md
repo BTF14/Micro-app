@@ -38,7 +38,7 @@ Alcance de PR #165: no creó almacenes, cajas, turnos, stock por almacén ni mig
 5. Para `cashier/inventory`, exige fila `branch_memberships` activa para el usuario y sucursal.
 6. Devuelve solo identidad y scope; no decide permisos de negocio.
 
-El helper aún no está conectado a middleware ni rutas. Los futuros handlers deberán llamar ambos resolvers y aplicar autorización por operación antes de leer o escribir datos.
+`resolveBranchContext` aún no está conectado a middleware ni rutas. PR #169 añade un resolver separado de turno abierto, también aislado. Los futuros handlers deberán llamar ambos resolvers y aplicar autorización por operación antes de leer o escribir datos.
 
 ## Pruebas requeridas
 

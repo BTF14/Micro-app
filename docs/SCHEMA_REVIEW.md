@@ -13,6 +13,8 @@
 
 ## Estado vigente del esquema y el contexto de sucursal
 
+Main contiene migraciones 0001–0004; 0003 añade sucursales/asignaciones y 0004 cajas/turnos. Las migraciones 0003/0004 no se han aplicado a Neon main. El helper de turno PR #169 no modifica el esquema.
+
 ## Esquema de cajas/turnos implementado en main por PR #167
 
 - PR #167 fusionó `0004_register_shifts.sql` con `registers`/`register_shifts`, FKs compuestas, índices parciales de un turno abierto por caja/cajero y triggers de lifecycle/desactivación. Este DDL está en main, pero no se aplicó a Neon.
@@ -123,7 +125,7 @@ No se encontraron rutas HTTP comerciales en el registro de Hono de `apps/api/src
 3. **Referencia polimórfica no validada (medio):** `inventory_movements.reference_type/reference_id` no tiene FK polimórfica a ventas/compras/devoluciones. La aplicación debe validar tenant y tipo de entidad; mejor diseñar referencias explícitas o tabla de eventos tipada si el modelo crece.
 4. **Idempotencia de pagos ausente (alto antes de pagos):** `sales.idempotency_key` tiene unicidad por organización, pero `payments` no tiene una clave idempotente propia. Un retry del endpoint de pagos podría duplicar un pago si no existe una restricción/diseño de idempotencia.
 5. **Último owner no protegido por esquema (alto antes de gestión de miembros):** `organization_members` limita los roles a cuatro valores, pero no impide desactivar/eliminar el último `owner` activo. Requiere transacción serializada y prueba de concurrencia; una validación solo de UI no sirve.
-6. **Alcance de sucursal ausente (bloqueante de diseño):** no existen tablas de sucursal, almacén, caja o turno; `products.stock_quantity` es organization-scoped. No implementar inventario multi-sucursal sobre este campo.
+6. **Almacenes/balances multi-sucursal pendientes:** `warehouses` e `inventory_balances` siguen ausentes; `products.stock_quantity` permanece organization-scoped. No implementar inventario multi-sucursal sobre este campo.
 7. **Auditoría no inmutable por DB (medio):** `audit_logs` guarda actor/tenant/acción/entidad/metadata, pero el DDL inspeccionado no contiene trigger/privilegios que impidan UPDATE/DELETE. Definir política append-only y privilegios antes de usarlo como libro probatorio.
 8. **Índices de búsqueda (optimización pendiente, no defecto probado):** hay unicidad tenant-scoped para SKU/barcode e índice B-tree `(organization_id, lower(name))`. No se ha medido `EXPLAIN ANALYZE`; no asumir que búsquedas `ILIKE '%term%'` usan ese B-tree. Medir consultas exactas/prefijo con datos sintéticos antes de agregar trigram/GIN.
 
@@ -200,7 +202,7 @@ Este documento contiene observaciones históricas del esquema. Las afirmaciones 
 Se contrastó el DDL versionado en apps/api/migrations/0001_initial.sql con la propuesta docs/sdd/MULTI_BRANCH_DATA_MODEL.md.
 
 - Verificado en el DDL: organizations/organization_members, suppliers/products, sales/sale_items/payments, inventory_movements y audit_logs; products.stock_quantity es organización-scoped.
-- No existen tablas branches, warehouses, registers, register_shifts, branch_memberships ni inventory_balances.
+- El DDL histórico 0001 no incluía branches, registers, register_shifts ni branch_memberships; 0003 añade branches/branch_memberships y 0004 añade registers/register_shifts. Siguen ausentes warehouses e inventory_balances.
 - Las referencias de inventory_movements siguen siendo polimórficas (reference_type/reference_id) sin FK al documento origen.
 - Las FKs compuestas existentes ya protegen varias relaciones por organization_id, pero no sustituyen autorización de servidor por sucursal.
 - La venta completada no queda reconciliada por constraints SQL con sus líneas/pagos; payments no tiene idempotency key propia; saldo y ledger no tienen reconciliación DB; auditoría no es append-only por permisos/DDL.

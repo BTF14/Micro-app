@@ -2,7 +2,8 @@
 
 **Repositorio:** BTF14/Micro-app  
 **Main actual:** `be35a0fde3886271b6ed98b7ccc29cc1255d50e5`  
-**PR #169:** fusionada; HEAD revisado `0c437509c0ad1a02b91c08d03d9dba62f0e9bd78`.
+**PR #169:** fusionada; HEAD revisado `0c437509c0ad1a02b91c08d03d9dba62f0e9bd78`.  
+**Rama de reconciliación documental:** `docs/post-pr169-cashier-shift-continuity-20261030`.
 
 ## Resultado post-merge
 

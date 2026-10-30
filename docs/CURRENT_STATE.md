@@ -5,7 +5,7 @@
 - Repositorio: `BTF14/Micro-app`.
 - `main` actual: `be35a0fde3886271b6ed98b7ccc29cc1255d50e5` (merge commit de PR #169).
 - PR #169: cerrada y fusionada; HEAD revisado `0c437509c0ad1a02b91c08d03d9dba62f0e9bd78`; merge SHA `be35a0fde3886271b6ed98b7ccc29cc1255d50e5`.
-- PR #166/#167/#168/#169 están fusionadas. No había PR abiertas después de #169.
+- PR #166–#169 están fusionadas. La reconciliación documental post-merge está preparada en `docs/post-pr169-cashier-shift-continuity-20261030`; no hay trabajo de código abierto.
 - Checks de PR #169: 8/8 workflows Actions success y checks externos Cloudflare Pages/Workers success en el HEAD revisado.
 - Post-merge sobre el merge SHA: 7/7 workflows Actions success (CI, Playwright, migration validation, Security scan, Semgrep, Secret History y Project progress dashboard) y 2/2 checks Cloudflare Pages/Workers success.
 - CI post-merge: build/typecheck; unit tests; auth integration 18/18; branch scope 4/4; register shifts 5/5; cashier open-shift integration 7/7 en PostgreSQL 18 desechable. Migration validation 0001–0004 success.

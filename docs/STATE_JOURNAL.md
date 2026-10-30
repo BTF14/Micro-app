@@ -1,3 +1,15 @@
+## 2026-10-30 UTC — PR #156 fusionada y auditoría estática de API/esquema
+
+- Se fusionó [PR #156](https://github.com/BTF14/Micro-app/pull/156) mediante squash. Merge SHA: `18961456ac535146c4a1687d3b07d8f6693ce141`; main protegido y firmado/verificado por GitHub.
+- HEAD de PR: `6c068f3e9734736ac26e51ff754e39915d660abe`; 9/9 workflows en success: CI, Playwright E2E, migración DB, Semgrep, security scan, secret history, validación SDD/documentación, dashboard y Dependency Review. No hubo review formal ni threads; se aplicó revisión manual del diff completo porque Codex no está disponible. El conector no devolvió workflows ni statuses post-merge para el merge SHA; no afirmar CI post-merge.
+- No se modificó código de aplicación, esquema, migraciones, workflows, secretos, Neon, datos reales ni producción en PR #156.
+- Se revisaron estáticamente rutas registradas, tenant context, helpers DB y migraciones. API: health + auth; sin handlers comerciales. Tenant context comprueba sesión/membresía/organización activas, no autorización por operación ni branch scope.
+- Hallazgos SQL: venta completada no exige reconciliación de líneas/pagos; stock y ledger no están ligados por constraint; referencia de movimientos polimórfica sin FK; pagos sin idempotency key propia; último owner no protegido; audit_logs no es append-only por DB; no modelo branch/warehouse/register/shift.
+- Los hallazgos son brechas de diseño antes de habilitar rutas, no evidencia de explotación/corrupción. No se ejecutó SQL ni se accedió a Neon main.
+- Se creó la rama documental `docs/post-pr156-audit-continuity-20261030` para mantener CURRENT_STATE, HANDOFF, SCHEMA_REVIEW y PROJECT_PLAN sincronizados; verificar PR/checks antes de considerar cerrada esa actualización.
+
+---
+
 ## 2026-10-29 — PR #152 fusionada; mitigación P1 de bootstrap iniciada
 
 - PR [#152](https://github.com/BTF14/Micro-app/pull/152) fusionada; merge commit `9376419231501f837a2d85d8741f7bfa9f57a0cc`. Verificados 13 checks de su HEAD y nueve checks post-merge en éxito.

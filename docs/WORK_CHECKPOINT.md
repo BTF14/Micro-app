@@ -1,31 +1,32 @@
-# Checkpoint vigente — 2026-10-30 UTC, post PR #165
+# Checkpoint vigente — post PR #166 y #167 — 2026-10-30 UTC
 
 **Repositorio:** BTF14/Micro-app  
-**Base/main verificado:** `1d10befe0cd3367e04bd8998a192e93d9b228063`  
-**Ramas activas:** PR #166 `docs/post-pr165-register-shift-design-20261030` (documentación) y PR #167 `feat/register-shifts-0004-20261030` (migración 0004/tests), ambas abiertas y no fusionadas.  
-**Alcance:** reconciliación documental y migración aditiva 0004 con assertions/CI; sin endpoints comerciales ni cambios remotos.
+**Main merge SHA:** `c1cd8650db33aa4a249eaf1f55d321513d576e10` (merge PR #167)  
+**PR #166:** fusionada en `8a16b4bf70e3b35c45e91366148f4a37aa43b5e7`.  
+**PR #167:** fusionada en `c1cd8650db33aa4a249eaf1f55d321513d576e10`.  
+**Checks:** PR #166 8/8 success en HEAD `4cee6e2ff6bfb8f3eecd85b4ff9212c1ab6d98fd`; PR #167 10/10 success en HEAD `ad45911368e9e9a714ebbe014de2d84a7b3cf1de`.  
+**Revisión:** revisión manual del diff y de migración/assertions/tests; no hubo reviews formales ni threads inline; Codex limitado por cuota.  
+**Alcance:** documentación reconciliada + migración 0004 y pruebas; sin endpoints comerciales, sin Neon main y sin deploy manual.
 
-## Evidencia
-- PR #165 fusionada; main `1d10befe0cd3367e04bd8998a192e93d9b228063`.
-- PR #166: HEAD revisado `4cee6e2ff6bfb8f3eecd85b4ff9212c1ab6d98fd`; 8/8 workflows Actions success. No reviews humanas/threads; checks externos Cloudflare no confirmados.
-- PR #167: rama `feat/register-shifts-0004-20261030`. En HEAD `0b5a9ad...`, migration validation, build/typecheck, unit/auth/branch integration, E2E, backup smoke y seguridad pasaron; CI falló solo por una expectativa de SQLSTATE del test register-shifts. Trigger corregido en HEAD `4008ec7...`; migration validation y controles no-CI pasaron; CI estaba en curso. Los commits documentales posteriores exigen revalidación en HEAD vivo.
-- PR #165 implementó 0003/branch context. PR #167 añade 0004 en rama feature, no en main. 0003/0004 no se aplicaron a Neon main.
-- No hay handlers comerciales; `resolveBranchContext` no está conectado a rutas; la matriz comercial sigue NO APROBADA.
+## Decisiones y evidencia
 
-## Decisiones registradas
-- CI PostgreSQL efímero es el entorno primario de migración y pruebas desde cero.
-- Neon branch solo bajo necesidad adicional demostrada, aislada y con expiración/limpieza; Neon main no es laboratorio.
-- Turno individual por cajero y caja; sin compartir ni transferir. Cambio de responsable requiere cierre y nueva apertura. Máximo un turno abierto por caja y por cajero/organización.
-- Overrides de supervisión y permisos comerciales permanecen pendientes de matriz aprobada.
+- Main contiene migraciones 0001–0004; 0003 sucursales/asignaciones y 0004 cajas/turnos.
+- PostgreSQL 18 desechable fue el entorno de migración/assertions/integración. No se aplicaron 0003/0004 a Neon main ni se crearon Neon branches.
+- Cloudflare previews Pages/Workers confirmados por comentarios de integración; no son despliegues productivos. No se modificó configuración ni se ejecutó deploy manual.
+- Turnos individuales: un cajero + una caja; un turno abierto por caja y por cajero/organización; cierre antes de reasignar; conteos USD/VES separados.
+- No hay helper runtime de turno ni endpoints comerciales. La matriz de permisos sigue NO APROBADA.
 
-## Trabajo activo
-- Modelo completo y estado de implementación en `docs/sdd/REGISTER_SHIFT_MODEL.md`.
-- PR #167 añade `0004_register_shifts.sql`, assertions SQL y tests de scope/lifecycle/concurrencia; PostgreSQL migration validation pasó en el HEAD corregido.
-- Documentos de esquema/API/continuidad ya distinguen main (0001–0003) de feature branch (0004 pendiente de merge).
-- Revisar manualmente migration, triggers, assertions y tests; corregir cualquier fallo CI; verificar el HEAD final. No fusionar sin autorización expresa ni afirmar Cloudflare verde sin evidencia del SHA.
+## Próximo paso
 
-## Próximo paso exacto
-Completar la integración CI de PR #167 y revisión de diff; luego revisar/integrar PR #166 y #167 solo con autorización expresa. Mantener la implementación separada de endpoints comerciales hasta aprobar autorización por operación. No aplicar 0003/0004 a Neon main.
+Inspeccionar los callers de autenticación y crear un helper aislado para consultar el turno abierto del cajero autenticado, con pruebas unitarias e integración en PostgreSQL 18 desechable. Mantener fuera de alcance endpoints comerciales, permisos sensibles y Neon main. Sincronizar CURRENT_STATE, HANDOFF_NEXT_CHAT, PROJECT_PLAN y STATE_JOURNAL durante el trabajo.
+
+## Condiciones para continuar
+
+- Revalidar GitHub live y el HEAD actual antes de modificar ramas.
+- Revisar todos los cambios y los checks del SHA exacto.
+- Fusionar solo cuando revisión manual, pruebas, seguridad y checks requeridos estén completos; detenerse ante hallazgos materiales.
+- No confundir checks de PR con verificación post-merge.
+- Los bloques inferiores son checkpoints históricos; esta portada es la fuente operativa vigente.
 
 ---
 

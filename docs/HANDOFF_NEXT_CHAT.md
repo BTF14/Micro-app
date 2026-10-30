@@ -1,26 +1,42 @@
-## Checkpoint de continuidad vigente — 2026-10-30 UTC
+# Handoff operativo — continuidad Micro-app — 2026-10-30 UTC
 
-## Checkpoint post-merge PR #178 — 2026-10-30 UTC
+> No reiniciar el proyecto. Este handoff describe el último estado comprobado; verificar GitHub en vivo antes de actuar.
 
-- PR #178 fue fusionada por squash. Merge commit y nuevo HEAD de `main`: `bb5bd72829db0532521857bffd62dac5c42a2eee`. PR cerrada/merged.
-- El diff fusionado fue documental: 14 archivos, 403 adiciones y 238 eliminaciones; ningún cambio de runtime, SQL, migraciones, lockfile, workflows ni infraestructura.
-- En el HEAD exacto de PR #178 (`8bacd57d9c3d624eae8139dadeb7fd6c0730b4dc`) los 9 workflow runs de GitHub Actions consultados terminaron `success`. No extrapolar esos resultados al merge SHA ni a futuros commits.
-- Se realizó login real mediante Google en Micro-app con la cuenta autorizada y TinyFish confirmó el dashboard autenticado en `https://micro-app-63i.pages.dev/#inicio`; la organización visible fue Abasto 7 de Oro y el rol mostrado `owner`. Esto prueba el recorrido OAuth/login y la sesión de navegador; no prueba CORS, llamadas comerciales ni módulos no implementados.
-- Issue #78 permanece ABIERTA: los preflight HTTP reales no tienen status/headers observables por limitación DNS del entorno; falta inspeccionar el bundle JS desplegado y verificar headers CORS desde una red funcional. No afirmar fallo ni éxito de CORS.
-- Issue #53 permanece ABIERTA: matriz de permisos comerciales **NO APROBADA** y aislamiento cross-tenant de rutas comerciales no demostrable porque dichas rutas aún no existen. No crear endpoints/middleware ni inferir permisos.
-- Se detectó que las portadas CURRENT_STATE/HANDOFF aún mostraban PR #178 como draft/no fusionada y SHA anterior. Esta PR correctiva actualiza ambas portadas y añade esta entrada al journal append-only; las entradas históricas no se reescriben.
-- Sin cambios a Cloudflare, producción, Neon main, secretos, DNS, billing ni datos reales. PostgreSQL desechable primero.
+## Punto exacto de reanudación
 
+- Repositorio: `BTF14/Micro-app`.
+- Último main verificado: `bb5bd72829db0532521857bffd62dac5c42a2eee`, merge SHA de PR #178.
+- PR #178: MERGED por squash; exclusivamente documental, 14 archivos (+403/-238), sin runtime, SQL, migraciones, lockfile, workflows ni infraestructura.
+- PR #179: [https://github.com/BTF14/Micro-app/pull/179](https://github.com/BTF14/Micro-app/pull/179), rama `docs/post-178-merge-checkpoint-20261030`; último HEAD observado `d958eb4e1ca7b6c79b95cf1ec1adcd87dcba685e`, base `bb5bd72829db0532521857bffd62dac5c42a2eee`. Abierta, no fusionada. Se corrigen sus portadas porque todavía conservaban debajo del checkpoint nuevo un bloque antiguo que decía PR #178 OPEN/DRAFT y main SHA anterior.
+- En HEAD #179 `d958eb4...`: 8 workflow runs de Actions consultados, todos completed/success (CI, Project progress dashboard, Dependency review, Database migration validation, Security scan, Semgrep SAST, Playwright E2E, Secret history scan). Combined commit status devolvió statuses vacíos; no se ha confirmado protección de rama ni required checks. Cloudflare Pages y Workers reportaron previews exitosas, no producción.
+- Codex intentó revisión automática de #179, pero falló por límite de uso. No contar como review ni aprobación. Hacer revisión manual independiente del diff.
+- PR #178 HEAD `8bacd57d9c3d624eae8139dadeb7fd6c0730b4dc`: 9/9 workflow runs consultados success. Evidencia solo para ese SHA.
+- Login OAuth real verificado por TinyFish: `https://micro-app-63i.pages.dev/#inicio`, dashboard autenticado, organización visible Abasto 7 de Oro, rol `owner`, sesión conservada. No demuestra CORS ni funcionalidades comerciales.
+- Issue #78 abierta: CORS NO VERIFICADO. OPTIONS no devolvieron status/headers por fallo DNS en el entorno; falta bundle JS y preflight desde red funcional.
+- Issue #53 abierta: matriz de permisos comerciales NO APROBADA; no crear endpoints, middleware ni reglas rol→operación sin aprobación explícita.
+- Arquitectura: `organization_members.role` es un rol único por miembro/organización; `branch_memberships` solo asigna acceso a sucursales, sin roles. Inventario organizacional; caja por turnos y apertura/cierre ordinario.
 
-- Repositorio `BTF14/Micro-app`; `main` = `82386c6e9300e06f8fa209aa52995b939a72442a`.
-- Snapshot verificado antes de esta sincronización: rama `docs/reconcile-role-model-and-cloudflare-20261030`, HEAD `a45d84eb5f51e50d3a24f9d6858b5d14efb3ce6b`; comparación 68 ahead / 0 behind.
-- PR [#178](https://github.com/BTF14/Micro-app/pull/178): OPEN, DRAFT, NOT MERGED; último reporte `mergeable=true`. Diff: 13 archivos documentales (343 adiciones / 235 eliminaciones); 0 reviews formales y 0 threads inline. No marcar Ready ni fusionar sin autorización explícita.
-- Para el SHA exacto `a45d84eb5f51e50d3a24f9d6858b5d14efb3ce6b`, 11/11 workflow runs de Actions terminaron `success` (9 pull_request + 2 push). Cloudflare Pages y Workers publicaron previews exitosas asociadas al mismo SHA. No reutilizar esta evidencia para el commit de sincronización posterior.
-- Previews: [Pages commit](https://16be43d4.micro-app-63i.pages.dev), [Pages branch](https://docs-reconcile-role-model-an.micro-app-63i.pages.dev), [Workers commit](https://d0883f1d-micro-app-api.btfcasheb.workers.dev), [Workers branch](https://docs-reconcile-role-model-and-cloudflare-20261030-micro-app-api.btfcasheb.workers.dev). GET `/health` de la preview Worker respondió `status=ok`; Pages presenta login/datos deshabilitados. No es producción.
-- Issue #78 sigue **NO VERIFICADO**: ambos OPTIONS reales contra el Worker de producción fallaron localmente con curl exit 6 por DNS; no hubo status ni headers. Bundle JS publicado aún no inspeccionado. `VITE_API_BASE_URL` sí existe en `apps/web/.env.production` y se carga con `loadEnv`.
-- Issue #53 sigue **NO APROBADA**: un único `organization_members.role` por miembro/organización; `branch_memberships` solo asigna acceso a sucursales. No endpoints comerciales, middleware ni mapeos rol→operación.
-- La rama heredada `fix/vercel-api-esm-imports` fue eliminada tras preservar el SHA `b1330a5fa547071a5f500f0481ce88109c612f81` en `archive/legacy-api-esm-experiment-20261020`; PR #72 cerrada y no fusionada.
-- Restricciones: USD 0; PostgreSQL desechable primero; no tocar Neon main, Cloudflare/configuración/tráfico/deployments/secretos/DNS/billing/producción/datos reales; no reescribir historial ni `STATE_JOURNAL.md`.
+## Orden de trabajo
+
+1. Completar corrección de CURRENT_STATE y HANDOFF en la PR #179; no dejar bloques de estado anterior como operativos. Mantener los snapshots antiguos solo como historia explícitamente etiquetada.
+2. Revisar el diff completo de #179 y su journal append-only. Reconsultar checks del HEAD resultante y previews después del nuevo commit.
+3. Fusionar #179 únicamente con diff coherente y validaciones aplicables verificadas. No asumir que statuses vacíos equivalen a éxito de branch protection.
+4. Investigar #78: inspeccionar bundle JS publicado y obtener status + headers `Access-Control-*` de preflight permitido y rechazado desde una red funcional. No tocar producción.
+5. Investigar #53 solo sobre rutas que existan hoy; usar PostgreSQL desechable. La matriz comercial permanece sin aprobar; no implementar autorización comercial.
+6. Si se usa Claude web gratuito como segunda revisión, compartirle el prompt de auditoría que se entrega en el chat. Claude debe leer el estado actual de GitHub si tiene acceso; si no, revisar únicamente los archivos/diff pegados y declarar esa limitación. No darle secretos, tokens, cookies ni permisos de producción.
+
+## Restricciones no negociables
+
+- Cloudflare Pages/Workers, Neon PostgreSQL. Presupuesto USD 0.
+- No tocar Cloudflare producción, tráfico, deployments productivos, variables, secretos, DNS, billing, Neon main ni datos reales.
+- PostgreSQL desechable primero; no ejecutar migraciones remotas.
+- No reescribir historial Git ni entradas previas de `docs/STATE_JOURNAL.md`.
+- No afirmar pruebas, revisiones, aprobaciones o verificaciones sin evidencia.
+- No crear endpoints comerciales, middleware ni mapeos rol→operación antes de aprobación explícita de la matriz.
+
+## Prompt para el siguiente chat de ChatGPT
+
+Continúa BTF14/Micro-app como responsable técnico senior. Lee `AGENTS.md`, este handoff, `docs/CURRENT_STATE.md`, `docs/AI_COLLABORATION_AND_PR_POLICY.md`, `docs/PROJECT_PLAN.md`, `docs/STATE_JOURNAL.md`, los registros de recursos/seguridad y los SDD de autorización/sucursales. Verifica GitHub en vivo. PR #178 ya está fusionada (main conocido `bb5bd72829db0532521857bffd62dac5c42a2eee`). PR #179 está abierta, no fusionada; su rama `docs/post-178-merge-checkpoint-20261030` requiere corregir los bloques operativos obsoletos de CURRENT_STATE y HANDOFF, revisar el diff y validar el nuevo SHA. No reutilices checks de commits anteriores. #78 sigue con CORS NO VERIFICADO; #53 sigue con matriz comercial NO APROBADA. No tocar producción/Neon main/secretos/DNS/billing/datos reales; PostgreSQL desechable primero. No implementar permisos comerciales sin aprobación explícita. Registrar solo hechos verificados y mantener STATE_JOURNAL append-only.
 
 ## Snapshot previo — retiro de rama heredada (histórico; no usar como estado actual)
 

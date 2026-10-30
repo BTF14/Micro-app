@@ -1,5 +1,18 @@
 # 2026-10-30 UTC — Reconciliación de continuidad tras PR #174
 
+- Base de `main` verificada antes de esta tarea: `682868c5fca65a4a1f3f61a1bc428a34ae1a4dd9` (merge SHA de PR #174). Es una referencia histórica de base, no una promesa del HEAD posterior.
+- PR #174: merge confirmado; cambio documental de seis archivos (+70/-0); los ocho workflows del HEAD de PR #174 terminaron en success.
+- Hallazgo: los seis documentos de continuidad aún presentaban el SHA de PR #173 como HEAD vigente; `AGENTS.md` conservaba una lista de prioridades antigua. El problema era de portadas/estado activo, no una alteración de los registros históricos.
+- Rama de corrección: `docs/authoritative-continuity-after-pr174-20261030`. Alcance previsto: alinear seis documentos de continuidad y sustituir la lista operativa obsoleta en AGENTS. Sin cambios de runtime, esquema, SQL, migraciones, workflows, secretos, datos o infraestructura.
+- #53 continúa abierta; matriz de permisos **NO APROBADA**. #78 continúa abierta; CORS sigue sin evidencia de preflight HTTP real. Revisión independiente Claude/Codex de PR #172 sigue pendiente/no ejecutada.
+- La PR de reconciliación y sus checks deben verificarse en vivo antes de declarar el trabajo completado. No inferir el merge SHA ni el HEAD posterior.
+
+---
+
+> **Archivo histórico — registro append-only.** Las entradas siguientes se conservan sin reescritura; sus SHA y estados describen el momento de cada entrada, no el estado operativo actual. Para reanudar, consultar `docs/CURRENT_STATE.md` y GitHub en vivo.
+
+# 2026-10-30 UTC — Reconciliación de continuidad tras PR #174
+
 - Base de `main` verificada antes de esta tarea: `682868c5fca65a4a1f3f61a1bc428a34ae1a4dd9` (merge SHA de PR #174). Es referencia histórica de base, no promesa de HEAD posterior.
 - PR #174: fusionada, documental, seis archivos, +70/-0; ocho workflows del HEAD de PR #174 terminaron en success.
 - Se detectó una desactualización: los seis documentos de continuidad todavía presentaban el SHA de PR #173 como HEAD vigente; `AGENTS.md` conservaba una lista de prioridades antigua.

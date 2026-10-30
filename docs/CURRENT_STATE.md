@@ -1,3 +1,36 @@
+# Continuidad viva — 2026-10-30 UTC
+
+> Este bloque prevalece sobre los snapshots históricos inferiores. Verificar GitHub y el SHA vivo antes de actuar.
+
+- **Repositorio:** `BTF14/Micro-app`; rama principal protegida: `main`.
+- **Main actual verificado:** `18961456ac535146c4a1687d3b07d8f6693ce141` — merge squash de [PR #156](https://github.com/BTF14/Micro-app/pull/156). GitHub confirmó `merged=true`; commit firmado/verificado por GitHub.
+- **PR #156:** fusionada. Su HEAD exacto `6c068f3e9734736ac26e51ff754e39915d660abe` tuvo 9/9 workflows de GitHub Actions en `success`: CI, Playwright E2E, Database migration validation, Semgrep SAST, Security scan, Secret history scan, SDD/documentation validation, Project progress dashboard y Dependency review. No se obtuvo evidencia separada de una nueva ejecución post-merge para el merge commit; no afirmar que existió. No hubo reviews formales ni threads en la PR; se aplicó revisión manual del diff completo como fallback por indisponibilidad de Codex.
+- **PRs abiertas al checkpoint:** ninguna según consulta en vivo inmediatamente después del merge. Repetir antes de crear o fusionar otra.
+- **Alcance de PR #156:** reconciliación documental SaaS, identidad, capacidad, plan y handoff; corrección de la matriz para dejar claro que cajero/inventario necesitan asignaciones por sucursal y caja/turno. No cambió código de aplicación, esquema, migraciones, workflows, secretos ni infraestructura.
+- **Identidad:** Google OAuth + allowlist/bootstrap de un solo uso, state/PKCE, sesión HttpOnly revocable y validación Google `email_verified` están implementados según PR #153/#155. Registro y login por contraseña están fail-closed. MFA, recuperación, enlace de cuentas preexistentes, limpieza automática de sesiones/rate limits y ciclo administrativo completo siguen pendientes.
+- **Inventario de rutas API verificado en `apps/api/src/index.ts`, `auth.ts`, `google-auth.ts`:** `GET /health`; `POST /auth/register` (deshabilitado); `POST /auth/login` (deshabilitado); `GET /auth/me`; `POST /auth/logout`; `GET /auth/google`; `POST /auth/google` (bootstrap); `GET /auth/google/callback`. No hay handlers HTTP comerciales para productos, proveedores, catálogo, compras/recepciones, inventario, ventas, pagos, devoluciones, caja o reportes.
+- **Contexto tenant:** `resolveTenantContext` valida token/sesión, usuario, organización y membresía activos y devuelve user/org/role. No aplica permisos por operación ni branch scope. El selector de organización es una solicitud validada, no autorización por sí mismo.
+- **Esquema:** `0001_initial.sql` define organizaciones/membresías y entidades comerciales con varias FKs compuestas tenant-scoped, pero no sucursales, almacenes, cajas/turnos, compras/recepciones, devoluciones ni transferencias. `products.stock_quantity` es por organización. La migración declara expresamente que no se ha aplicado a Neon `main`; no ejecutar migraciones allí.
+- **Hallazgos de integridad para resolver antes de handlers comerciales:** SQL no garantiza que una venta completada tenga líneas/pagos que reconcilien el total; el saldo de producto y el ledger de movimientos pueden divergir si la API no actualiza ambos atómicamente; referencias polimórficas de movimientos no tienen FK a una entidad de negocio; el esquema no impone idempotencia de pagos ni el último owner activo. Son brechas de diseño/contrato, no incidentes de datos observados.
+- **Optimización Neon:** `withDatabaseClient` crea un `Client` request-scoped y el helper transaccional usa BEGIN/COMMIT/ROLLBACK. Evaluar `neon()` HTTP para lecturas simples solo con benchmark; conservar cliente interactivo para operaciones atómicas.
+- **Arquitectura objetivo:** SaaS multi-organización, multi-sucursal y multiusuario. Es dirección documentada, no funcionalidad completa. La matriz de permisos sigue **NO aprobada**; no implementar permisos comerciales desde recomendaciones no aprobadas.
+- **Capacidad:** número de organizaciones, sucursales y usuarios concurrentes sostenible **sin medir**. Revisar Neon y Cloudflare y ejecutar carga sintética antes de prometer límites. Presupuesto objetivo USD 0.
+- **Producción:** **NO LISTA**. No desplegar, tocar secretos, datos reales ni Neon `main`; no activar planes o servicios pagos.
+- **Continuidad:** se está preparando una actualización documental en la rama `docs/post-pr156-audit-continuity-20261030`; debe integrarse por una PR pequeña después de validar sus checks.
+
+## Próximas acciones obligatorias
+
+1. Completar el inventario de consultas SQL y callers de autenticación/tenant; registrar rutas, validaciones, queries y pruebas.
+2. Completar ERD organización → sucursal → almacén/caja/turno → operaciones, con propiedad y claves compuestas; mantenerlo en diseño hasta cerrar decisiones.
+3. Resolver la matriz de permisos con decisiones explícitas del propietario sobre excepciones, descuentos, anulaciones, inventario, exportaciones y delegación.
+4. Diseñar restricciones y transacciones para venta/pagos/stock/ledger, idempotencia, concurrencia, referencias y auditoría.
+5. Crear pruebas PostgreSQL efímeras cross-tenant/cross-branch y de rollback/concurrencia antes de habilitar endpoints comerciales.
+6. Revisar `feat/neon-transaction-adapter` contra main actual; no fusionar sin diff completo y compatibilidad demostrada.
+7. Medir límites vivos de Neon/Cloudflare y carga sintética; no fijar capacidad SaaS antes de ello.
+8. Mantener README, CURRENT_STATE, PROJECT_PLAN, STATE_JOURNAL y HANDOFF sincronizados tras cada hito verificado.
+
+---
+
 # Continuidad viva — 2026-10-30
 
 > Prioridad de estado para esta sesión; las notas históricas inferiores deben contrastarse con GitHub en vivo.

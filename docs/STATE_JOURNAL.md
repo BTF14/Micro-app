@@ -1263,3 +1263,11 @@ CI documental: para HEAD `8c15e13fa001a14a0ddf9f2432bc17efb30d476d`, los 8 workf
 - La herramienta no pudo inspeccionar el contenido del bundle JavaScript ni confirmar el valor compilado de `__MICRO_APP_API_BASE_URL__`; tampoco se observó una llamada API del frontend. La evidencia no prueba CORS.
 - En conjunto con `apps/web/.env.production` y `vite.config.ts`, hay evidencia del valor esperado del build y del enlace OAuth; queda pendiente verificar el bundle JS/solicitudes de la SPA y los dos preflight OPTIONS reales. Issue #78 sigue abierta.
 - No se interactuó con login ni se cambiaron Pages, Worker, tráfico, variables, secretos o producción.
+
+
+## 2026-10-30 UTC — PR #178 abierta para revisión documental
+
+- Se abrió PR [#178](https://github.com/BTF14/Micro-app/pull/178), draft, rama `docs/reconcile-role-model-and-cloudflare-20261030`, base `main` en `82386c6e9300e06f8fa209aa52995b939a72442a`.
+- Alcance: 11 archivos documentales; no runtime, SQL, migraciones, workflows, secretos, datos, Neon ni infraestructura. La PR consolida las correcciones de continuidad, modelo de roles, matriz NO APROBADA y evidencia Cloudflare/frontend.
+- La inspección pública confirma el enlace OAuth HTML hacia el Worker; no se pudo inspeccionar el bundle JS. CORS sigue pendiente de dos preflight HTTP reales.
+- Continuar en esta PR; no crear una PR duplicada. Revalidar el HEAD exacto y sus checks antes de revisión/merge.

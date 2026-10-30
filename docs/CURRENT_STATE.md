@@ -1,4 +1,20 @@
-# Estado vivo verificado tras PR #160 — 2026-10-30 UTC
+# Estado vivo verificado tras PR #161 — 2026-10-30 UTC
+
+- **main verificado antes de este checkpoint:** `c7abcb477afd649161176aad8cae707f5e42f632` (merge squash de PR #161). Este mismo checkpoint se integra mediante una PR; consultar el ref vivo de main después de su fusión.
+- **PR #160:** fusionada por squash en `be6f19486caf5cf3605c6ca6615f87e305822ea7`.
+- **PR #161:** fusionada por squash el 2026-10-30 a las 04:40:49 UTC; merge commit `c7abcb477afd649161176aad8cae707f5e42f632`. Su propósito fue sincronizar el estado post-#160.
+- **Checks de PR #161:** 12 check runs completados con `success` en HEAD `a17a4b95312876f0bf4b201c6a84a323fb69fa3b`, incluidos verify, Chromium, postgres-migration, Semgrep, Trivy, secret-history, dependency review, progress dashboard, Pages y Workers Builds. No extrapolar a otros SHA.
+- **Alcance #161:** cinco archivos documentales; sin cambios de aplicación, migraciones, workflows, secretos ni infraestructura.
+- **Revisión:** Codex no pudo completar revisión por cuota agotada; revisión manual del diff documental completada, sin hallazgos materiales pendientes. No hay reviews humanas ni threads inline.
+- **Cloudflare:** Pages y Workers previews exitosos para HEAD de PR; no se obtuvo evidencia de despliegue productivo post-merge.
+- **Protección de `main`:** endpoint actual devolvió HTTP 403; la configuración del 26 oct es evidencia histórica, no verificación actual.
+- **Estado del producto:** NO LISTO para operación comercial. No hay handlers comerciales; la matriz de permisos sigue sin aprobación; `resolveTenantContext` no aplica permisos por operación ni sucursal.
+- **Siguiente prioridad:** arquitectura de autorización y sucursales, consistencia/idempotencia, rate limiting y pruebas PostgreSQL aisladas antes de endpoints comerciales.
+
+---
+
+## Checkpoint histórico post-PR #160
+
 
 - **main:** `be6f19486caf5cf3605c6ca6615f87e305822ea7` (merge squash de PR #160). GitHub confirmó el ref `refs/heads/main` en este SHA.
 - **PR #160:** fusionada el 2026-10-30 a las 04:36:49 UTC. HEAD revisado `fcb4269a459831be7858358c56e90346d5e4e9a6`; merge commit `be6f19486caf5cf3605c6ca6615f87e305822ea7`.

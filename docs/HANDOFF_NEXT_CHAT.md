@@ -2,6 +2,8 @@
 
 **Checkpoint verificado — 2026-10-30 UTC:** `main` = `82386c6e9300e06f8fa209aa52995b939a72442a`, merge SHA de PR #177. PR #177 fusionada; no había PR abiertas al verificar. Cloudflare autenticado, solo lectura: Worker `micro-app-api` versión `49975c43` en Producción con 100% de tráfico asignado; Pages `micro-app` producción `main` en el mismo SHA. La lista de variables del dashboard Pages está vacía, pero `apps/web/.env.production` versionado define `VITE_API_BASE_URL` y `apps/web/vite.config.ts` usa `loadEnv`. La página pública muestra “Continuar con Google” apuntando a `https://micro-app-api.btfcasheb.workers.dev/auth/google`. No se pudo inspeccionar el bundle JS ni confirmar el valor compilado para las demás llamadas API; CORS sigue sin probarse. CORS real sigue sin probarse. La matriz comercial continúa **NO APROBADA**.
 
+**PR activa:** [#178](https://github.com/BTF14/Micro-app/pull/178) está abierta como draft en `docs/reconcile-role-model-and-cloudflare-20261030`. Continuar y revisar esa PR; no crear otra para el mismo alcance. Revalidar su HEAD y checks en vivo.
+
 ## Lectura obligatoria
 1. `AGENTS.md`.
 2. `docs/CURRENT_STATE.md`.

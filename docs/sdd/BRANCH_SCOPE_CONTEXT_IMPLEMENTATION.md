@@ -68,3 +68,10 @@ El helper aún no está conectado a middleware ni rutas. Los futuros handlers de
 ## Cobertura de integración añadida
 
 La PR incorpora `apps/api/src/branch-context.integration.test.ts`, ejecutado por CI contra PostgreSQL 18 efímero después de aplicar migraciones 0001–0003. Comprueba owner/admin sin asignación, cashier/inventory con asignación activa, cashier sin asignación, asignación inactiva, sucursal inactiva y un identificador de sucursal de otra organización. El test usa datos sintéticos y limpia las filas creadas. Esta cobertura complementa las assertions SQL del workflow `postgres-migration`; no prueba aún handlers comerciales ni producción.
+
+
+## Resultado de verificación observado
+
+En el HEAD de implementación `c3ae1192f0841090ee1b3dea71ed803f1d3c1d8b` finalizaron en success: build/typecheck, unit tests, 18 auth integration tests, 3 branch context PostgreSQL integration tests, migración 0003 + assertions, Chromium E2E, Semgrep, Trivy, secret-history, dependency review, backup restore smoke y Cloudflare Pages/Workers previews. La primera ejecución del nuevo test falló en teardown porque no eliminaba la sucursal sintética de la segunda organización; se corrigió la limpieza. Una segunda ejecución pasó 3/3 y se eliminó además la consulta concurrente del mismo cliente pg (sin warning deprecado). Esta evidencia es de CI en PostgreSQL 18 efímero, no de Neon main ni producción. La sincronización documental genera un SHA posterior y debe revalidarse antes de merge.
+
+La revisión Codex no pudo completarse por límite de uso. No hay review humana ni comentarios inline; se realizó revisión manual del diff y no se detectaron otros defectos materiales. No tratar el fallo de cuota como aprobación.

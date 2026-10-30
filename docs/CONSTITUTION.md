@@ -1,7 +1,7 @@
 # Constitución del proyecto Micro app
 
 **Estado:** norma rectora del proyecto.  
-**Última revisión documental:** 2026-10-18.  
+**Última revisión documental:** 2026-10-30.  
 **Repositorio canónico:** https://github.com/BTF14/Micro-app  
 **Plan operativo:** [PROJECT_PLAN.md](PROJECT_PLAN.md).  
 **Continuidad:** [HANDOFF_NEXT_CHAT.md](HANDOFF_NEXT_CHAT.md).
@@ -43,11 +43,12 @@ Micro app es un POS e inventario web para PC, tablet y móvil: catálogo/código
 
 ## 4. Identidad, roles y aislamiento
 
-- El requisito acordado incluye **Google sign-in + allowlist**. Verificar los requisitos restantes de verificación de correo antes de implementarlos.
-- Una revisión estática histórica de `apps/api/src/auth.ts` no encontró Google OAuth, allowlist ni verificación de email; confirmar contra el HEAD actual antes de tratarlo como estado actual.
+- **Estado verificado tras PR #153 y #155:** la API implementa Google OAuth, allowlist/bootstrap de un solo uso, state y PKCE, cookies de sesión HttpOnly, sesión revocable y validación del claim `email_verified` de Google. La verificación de correo se realiza mediante la identidad verificada del proveedor; no confundirla con un sistema propio de confirmación por correo.
+- El bootstrap ya no acepta el token en query string: usa POST con cuerpo validado, Origin exacto y límites de tamaño/campos. La configuración `FRONTEND_ORIGIN` exige HTTPS salvo loopback HTTP y rechaza componentes no canónicos.
+- El login/registro por contraseña permanece desactivado/fail-closed. Recuperación de cuenta, MFA, recuperación administrativa y limpieza automática completa de sesiones siguen pendientes. La autenticación implementada no demuestra autorización comercial ni aislamiento completo.
 - Autenticación no equivale a autorización: permisos comprobados en servidor y aislamiento tenant en cada lectura/escritura.
 - Probar accesos cruzados, roles, revocación de sesión y recursos ajenos.
-- No inventar proveedor, credenciales, configuración OAuth ni reglas de allowlist.
+- No inventar proveedor, credenciales, configuración OAuth ni reglas de allowlist. No afirmar que hay rutas comerciales HTTP: el estado documentado actual solo incluye rutas de identidad y `GET /health`.
 - Referencias: [API](API_INTEGRATION.md), [esquema](SCHEMA_REVIEW.md), [seguridad](SECURITY_PLAN_2026.md), [OWASP ASVS](OWASP_ASVS_CHECKLIST.md).
 
 ## 5. Integridad financiera e inventario
@@ -146,7 +147,7 @@ No convertir snapshots antiguos en estado actual. Consultar HEAD, ramas, PR y Ac
 5. [RESOURCE_REGISTRY.md](RESOURCE_REGISTRY.md): herramientas y fuentes.
 6. Documentos de dominio: detalles técnicos, seguridad y cumplimiento.
 
-Cada checkpoint significativo actualiza plan, diario y handoff. Ante contradicciones, verificar código/evidencia y corregir los documentos relacionados. No borrar hitos históricos ni registrar secretos.
+Cada checkpoint significativo actualiza plan, diario y handoff. Además, después de cada avance concreto y verificado se sincroniza `README.md` para reflejar con precisión el producto disponible, la arquitectura vigente y la configuración real; nunca se anuncian capacidades incompletas o solo planificadas. Ante contradicciones, verificar código/evidencia y corregir los documentos relacionados. No borrar hitos históricos ni registrar secretos.
 
 ## 13. Índice de documentación de dominio
 

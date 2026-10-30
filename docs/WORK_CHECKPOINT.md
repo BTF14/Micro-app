@@ -85,3 +85,14 @@
 - No desplegar producción ni cambiar secretos, DNS, billing o planes de pago.
 - No prometer capacidad SaaS sin pruebas sintéticas.
 - Guardar checkpoints dentro de cada PR de trabajo después de cada bloque significativo, no al final de la sesión.
+
+
+## Checkpoint incremental — 2026-10-30 UTC — branch scope
+
+- Base verificada: main `ce8b0e491fe8b9f6154380cc8b0eea0a19fe8114`; #164 fusionada; no PR abiertas al inicio.
+- Rama de trabajo: `feat/branch-scope-context-20261030`. PR/checks: consultar estado vivo.
+- Decisión autorizada: owner/admin organización-wide; cashier/inventory requieren asignación activa a sucursal. No se aprobó matriz de permisos comerciales sensibles.
+- Archivos añadidos: migración 0003, assertions PostgreSQL cross-tenant, helper `resolveBranchContext`, tests unitarios, extensión de workflow migration-check y SDD `BRANCH_SCOPE_CONTEXT_IMPLEMENTATION.md`.
+- No se modificó el tenant resolver existente, no se conectó el nuevo helper a rutas, no hay handlers comerciales y no se creó modelo de caja/turnos/almacenes ni migración de stock legacy.
+- Validación local no ejecutada desde esta conexión. Esperar GitHub Actions en el HEAD exacto de PR; revisar diff completo y checks obligatorios.
+- No tocar Neon main, datos reales, secretos, Cloudflare settings, DNS, billing ni producción. No afirmar despliegue.

@@ -13,7 +13,7 @@ Este addendum sustituye las observaciones anteriores sobre el entorno efectivo d
 ### Pages `micro-app`
 - Production branch `main`; SHA `82386c6e9300e06f8fa209aa52995b939a72442a`; URL de deployment `https://cc23ff0c.micro-app-63i.pages.dev`.
 - La lista visible de variables de entorno estaba vacía; sin embargo, `apps/web/.env.production` versionado define `VITE_API_BASE_URL` y `apps/web/vite.config.ts` lo carga mediante `loadEnv`. La ausencia en el panel no prueba que el build carezca de URL. Falta confirmar el valor efectivo en el bundle desplegado; no se modificó configuración.
-- La falta visible de esta variable debe investigarse en solo lectura y contrastarse con el código/build settings; no inventar su valor ni asumir que el frontend ya apunta al Worker.
+- El dashboard no lista variables configuradas, pero el código versionado define `VITE_API_BASE_URL` en `apps/web/.env.production` y `vite.config.ts` lo carga mediante `loadEnv`. La página pública muestra el enlace OAuth hacia el Worker; la inspección no pudo leer el bundle JS ni confirmar el valor compilado para otras llamadas API. No cambiar configuración.
 
 ### Límites
 - Inspección autenticada, de solo lectura. No se modificó tráfico, versiones, deployments, variables, secretos, DNS, billing ni producción.

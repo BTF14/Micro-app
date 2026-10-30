@@ -75,3 +75,10 @@ La PR incorpora `apps/api/src/branch-context.integration.test.ts`, ejecutado por
 En el HEAD de implementación `c3ae1192f0841090ee1b3dea71ed803f1d3c1d8b` finalizaron en success: build/typecheck, unit tests, 18 auth integration tests, 3 branch context PostgreSQL integration tests, migración 0003 + assertions, Chromium E2E, Semgrep, Trivy, secret-history, dependency review, backup restore smoke y Cloudflare Pages/Workers previews. La primera ejecución del nuevo test falló en teardown porque no eliminaba la sucursal sintética de la segunda organización; se corrigió la limpieza. Una segunda ejecución pasó 3/3 y se eliminó además la consulta concurrente del mismo cliente pg (sin warning deprecado). Esta evidencia es de CI en PostgreSQL 18 efímero, no de Neon main ni producción. La sincronización documental genera un SHA posterior y debe revalidarse antes de merge.
 
 La revisión Codex no pudo completarse por límite de uso. No hay review humana ni comentarios inline; se realizó revisión manual del diff y no se detectaron otros defectos materiales. No tratar el fallo de cuota como aprobación.
+
+
+## Revalidación de membresía en la consulta de sucursal
+
+La consulta del resolver también vuelve a unir `organization_members`, `organizations` y `app_users`, exigiendo que organización, usuario y membresía sigan activos y que el rol de la fila coincida con el rol del `TenantContext` recibido. El ámbito owner/admin se deriva del rol leído en DB; cashier/inventory siguen requiriendo asignación activa. Esto reduce el riesgo de usar un contexto obsoleto tras una revocación o cambio de rol entre la resolución de tenant y la resolución de sucursal. No sustituye la autorización por operación ni elimina la necesidad de transacciones/controles al ejecutar futuras mutaciones.
+
+La integración PostgreSQL ahora cubre además membresía de organización desactivada y rol cambiado desde un contexto previamente resuelto; ambos casos deben denegar. El test restaura los datos sintéticos antes de finalizar.

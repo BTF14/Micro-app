@@ -1,66 +1,35 @@
+# Matriz de decisión de permisos comerciales — pendiente de aprobación
 
-> **Reconciliación requerida — 2026-10-29:** la antigua recomendación de aplicar los cuatro roles a toda la organización no es la dirección elegida para un SaaS multi-sucursal. Consultar `docs/SAAS_ARCHITECTURE_DECISIONS.md` §3. La matriz debe especificar asignaciones y alcance por organización/sucursal/caja, sin permitir acceso lateral entre sucursales. Mantener este documento como propuesta NO aprobada hasta que se resuelvan explícitamente los permisos sensibles, anulaciones y delegación. Las políticas comerciales (incluidos descuentos) pertenecen a cada organización; no se fija un umbral universal desde la plataforma. Ver `docs/sdd/ORGANIZATION_COMMERCIAL_POLICY_CONFIGURATION.md`. Ninguna celda autoriza implementación por sí sola.
+**Estado: NO APROBADA.** Este documento no concede permisos, no autoriza endpoints ni middleware y no debe interpretarse como política operativa. Reemplaza propuestas anteriores con recomendaciones por rol/sucursal aún no aprobadas y contradictorias con la decisión estructural vigente.
 
-# Registro de decisión: permisos por rol y organización
+## Decisión estructural ya fijada
+- Cada miembro tiene **un único rol por organización**, guardado en `organization_members.role`: `owner`, `admin`, `cashier` o `inventory`.
+- El rol aplica a toda la organización; no hay roles distintos por sucursal.
+- `branch_memberships` solo concede/revoca acceso a sucursales; no contiene roles.
+- Cambiar el rol organizacional afecta a toda la organización. Revocar una asignación de sucursal no cambia el rol ni otras asignaciones.
+- La asignación a una sucursal no es autorización para ejecutar operaciones.
 
-- Estado: **propuesta de IA, pendiente de aprobación explícita del propietario**. Ninguna celda de este documento autoriza una implementación por sí sola; ver `## Estado` al final.
-- Fecha de la propuesta: 2026-10-28 (reemplaza la matriz vacía del 2026-10-18).
-- Riesgo: alto; afecta aislamiento multiempresa, datos financieros y operaciones de inventario.
-- Roles que aparecen en el modelo actual: `owner`, `admin`, `cashier`, `inventory`.
-- Fuente relacionada: `docs/CONSTITUTION.md`, sección 4; `docs/PRODUCTION_READINESS.md`; matriz de aceptación de aislamiento multiempresa; `docs/SECURITY_ROADMAP.md` Nivel 2, punto 5.
+Fuentes canónicas: `docs/SAAS_ARCHITECTURE_DECISIONS.md` §§3 y 14; `docs/sdd/MULTI_BRANCH_DATA_MODEL.md`; migración `apps/api/migrations/0003_branch_scope.sql`.
 
-## Propósito y límites
+## Decisiones de permisos todavía requeridas
+El propietario debe definir explícitamente, por rol y por operación:
+1. Lectura y modificación de catálogo, precios y costos.
+2. Lectura de existencias y movimientos; recepción, ajuste y transferencia de inventario.
+3. Apertura y cierre ordinario de caja; operaciones permitidas durante un turno abierto.
+4. Creación de ventas, descuentos, cambios de precio y aplicación de políticas comerciales.
+5. Devoluciones, anulaciones, reversos y aprobaciones excepcionales.
+6. Gestión de miembros, invitaciones, desactivaciones, cambios de rol y asignaciones de sucursal.
+7. Configuración de políticas comerciales de la organización y ejecución de excepciones.
+8. Reportes, exportaciones y acceso a auditoría.
 
-Este documento recopila las decisiones necesarias antes de exponer rutas comerciales. **No cambia permisos ni autoriza una implementación por sí mismo.** Cada celda de abajo es una recomendación razonada, no una decisión ya tomada: el propietario debe revisarlas, corregir lo que no le sirva y marcar el documento como aprobado (ver `## Estado`) antes de que ninguna ruta de negocio se implemente apoyándose en esta matriz.
+Para cada operación hay que definir lectura/escritura, alcance organizacional/sucursal/recurso, condiciones, límites, aprobación adicional, auditoría y comportamiento al revocar acceso. No se propone aquí un valor por defecto para ninguna celda.
 
-Hasta que se apruebe una política, no se debe inferir autorización de la interfaz, del ID enviado por el cliente, de que el usuario pertenezca a alguna organización, ni de un nombre de rol sin una regla explícita. Las futuras rutas deben denegar por defecto y validar la pertenencia a la organización en el servidor.
+## Límites
+- No crear endpoints comerciales, middleware de autorización ni mapeos rol→operación hasta aprobación explícita de esta matriz.
+- No convertir `branch_memberships` en una tabla de roles por sucursal.
+- Las políticas comerciales pertenecen a cada organización; no imponer umbrales universales. Las facultades para configurar políticas y ejecutar excepciones son decisiones distintas y ambas siguen pendientes.
+- Caja conserva modelo de turnos y apertura/cierre ordinario; no introducir cierres de supervisor incompatibles.
+- Inventario por sucursal/almacén no está implementado; el stock actual sigue siendo organizacional.
 
-## Matriz por área
-
-Valores: **Permitir**, **Denegar**, o **Permitir con condiciones** (ver columna de condiciones). Lectura y escritura se separan explícitamente cuando una operación cubre ambas.
-
-**Alcance obligatorio de lectura:** esta tabla describe qué tipo de operación podría corresponder a cada rol; no concede acceso a todas las sucursales. `owner`/`admin` se proponen con alcance organizacional, mientras que `cashier`/`inventory` requieren asignaciones explícitas por sucursal (y, para caja, turno/caja activa). Toda consulta y mutación debe limitarse al ámbito autorizado en servidor. La asignación concreta, excepciones y permisos sensibles siguen pendientes de aprobación.
-
-| Área / operación | owner | admin | cashier | inventory | Condiciones / alcance |
-|---|---|---|---|---|---|
-| Ver catálogo y categorías (lectura) | Permitir | Permitir | Permitir | Permitir | Catálogo maestro compartido a nivel organización según `SAAS_ARCHITECTURE_DECISIONS.md` §3; esto no concede acceso a existencias, movimientos, ventas o caja de otra sucursal. `cashier`/`inventory` requieren asignación activa para operar en su sucursal. |
-| Crear/editar/archivar productos | Permitir | Permitir | Denegar | Permitir con condiciones | `inventory` puede crear/editar SKU, descripción, stock mínimo y categoría, pero **no** el precio de venta ni el costo — esos campos quedan reservados a `owner`/`admin`. Archivar un producto (no borrar) requiere `owner`/`admin`. |
-| Ver proveedores (lectura) | Permitir | Permitir | Denegar | Permitir | `cashier` no necesita datos de proveedores para vender. |
-| Crear/editar proveedores | Permitir | Permitir | Denegar | Denegar | Relación comercial/financiera con terceros; se deja fuera de `inventory` para no mezclar "quién mueve stock" con "quién negocia condiciones de compra". |
-| Registrar compras/recepciones | Permitir | Permitir | Denegar | Permitir con condiciones | `inventory` puede recibir mercancía y actualizar existencias; el costo unitario registrado en la compra es visible para `inventory` (lo necesita para el movimiento) pero no editable salvo por `owner`/`admin` una vez confirmada. |
-| Consultar existencias y movimientos (lectura) | Permitir | Permitir | Permitir con condiciones | Permitir | `cashier` ve solo disponibilidad/stock (para saber si puede vender), no el historial completo de movimientos ni costos. |
-| Ajustar inventario manualmente | Permitir | Permitir | Denegar | Permitir con condiciones | Motivo obligatorio en texto libre + categoría (merma, conteo, daño, corrección) en todos los casos; cada ajuste genera entrada de auditoría con usuario, fecha, cantidad anterior/nueva. `inventory` puede ajustar; ajustes por encima de un umbral a definir por el propietario requieren además confirmación de `owner`/`admin`. |
-| Abrir/cerrar caja | Permitir | Permitir | Permitir con condiciones | Denegar | `cashier` abre/cierra únicamente la caja que tiene asignada en el turno actual; no puede cerrar una caja ajena. La sucursal/asignación existe en 0003; Main incluye `registers`/`register_shifts` mediante 0004 (PR #167 fusionada). No hay endpoints ni autorización runtime; esta fila sigue siendo propuesta NO APROBADA y no habilita caja por sí sola. |
-| Crear ventas | Permitir | Permitir | Permitir con condiciones | Denegar | `cashier` solo con caja abierta propia. Descuentos: la organización define si los permite, sus condiciones, límites y aprobaciones. Micro app no impone porcentajes ni importes universales. El cajero solo puede aplicar lo que la política activa de su organización y sus permisos efectivos autoricen; cualquier aprobación debe quedar registrada en servidor. Precio fuera de catálogo: denegado para `cashier`, permitido para `owner`/`admin` con motivo obligatorio. |
-| Anular/devolver ventas | Permitir | Permitir | Denegar | Denegar | Reverso contable auditable (nunca borrar el hecho original); se reserva a `owner`/`admin` para evitar que quien registra la venta también pueda anularla sin control cruzado. Si el propietario quiere que `cashier` pueda anular ventas del mismo turno antes del cierre de caja, es una excepción a decidir explícitamente, no el valor por defecto. |
-| Registrar/ver pagos y cambios | Permitir | Permitir | Permitir con condiciones | Denegar | `cashier` registra pagos/cambio solo de sus propias ventas en el turno abierto; no ve el historial de pagos de otros cajeros ni totales acumulados de caja ajena. |
-| Consultar reportes/exportar datos | Permitir | Permitir | Denegar | Permitir con condiciones | `inventory` puede ver/exportar reportes de existencias y movimientos, no reportes de ventas/ingresos. Exportación de datos personales de clientes (si llegan a existir) queda fuera de todos los roles hasta que haya una decisión de privacidad explícita. |
-| Gestionar usuarios e invitaciones | Permitir | Permitir con condiciones | Denegar | Denegar | `admin` puede invitar/desactivar `cashier`/`inventory`, no puede invitar ni desactivar a otro `admin` ni a `owner` — evita escalamiento lateral. Invitar, desactivar y revocar sesiones son tres acciones separadas en la implementación, cada una auditada. |
-| Asignar/cambiar roles | Permitir | Permitir con condiciones | Denegar | Denegar | `admin` puede asignar `cashier`/`inventory`, nunca `owner` ni `admin`. Regla dura en servidor: nunca permitir que la organización quede sin ningún `owner` activo (bloquear la operación que dejaría el conteo en cero, no solo advertir). |
-| Configurar organización/sucursal | Permitir | Permitir con condiciones | Denegar | Denegar | `admin` puede editar datos operativos (nombre visible, sucursales, horarios); cambios que afectan facturación, identidad legal o eliminar la organización quedan reservados a `owner`. |
-| Ver auditoría | Permitir | Permitir | Denegar | Denegar | Acceso a registros de acciones de otros usuarios es información sensible de control interno; se reserva a quienes pueden actuar sobre todo el negocio. |
-| Gestionar allowlist e identidad de plataforma | Denegar | Denegar | Denegar | Denegar | La allowlist es política de plataforma, no un permiso implícito del `owner` de un tenant. D1 permite administración por operador autenticado y auditado, pero el rol/identidad global y su recuperación no están definidos en el modelo actual. La referencia a un email específico en `SECURITY_PLAN_2026.md` es una propuesta histórica, no una autorización vigente. No exponer esta operación hasta decisión explícita del propietario y un flujo de plataforma seguro. |
-
-## Decisiones globales que también deben resolverse
-
-Estas decisiones deben resolverse a la luz de `docs/SAAS_ARCHITECTURE_DECISIONS.md` §3 y §14. La recomendación histórica de aplicar los cuatro roles a toda la organización queda **sustituida** y no debe aprobarse ni implementarse. Main ya tiene `branches`/`branch_memberships` (0003); Main incluye cajas/turnos mediante 0004. La asignación no implementa roles diferentes por sucursal y no hay endpoints comerciales. Esa base no es una razón para conceder acceso global:
-
-1. **Alcance de roles:** dirección recomendada: `owner`/`admin` con alcance organizacional; `cashier`/`inventory` mediante asignaciones explícitas a sucursal. Las operaciones de caja requieren además caja/turno asignados. Falta definir excepciones, multi-sucursal, delegación, visibilidad de reportes y límites exactos; requieren aprobación del propietario.
-2. **¿Permisos personalizados o solo estos cuatro roles fijos?** Recomendación: mantener los cuatro roles fijos por ahora. Permisos personalizados añaden superficie de error (una matriz dinámica es más difícil de auditar) y el negocio no los necesita todavía; revisar si aparece un caso de uso real.
-3. **¿Quién concede/revoca roles y cómo se evita quitar el acceso al último `owner`?** Recomendación: `owner` y `admin` con el límite de la fila "Asignar/cambiar roles" de arriba; regla dura en base de datos/transacción que impida dejar la organización sin `owner` activo (constraint o verificación transaccional, no solo validación en el cliente).
-4. **¿Qué operaciones requieren motivo obligatorio, aprobación adicional o límite monetario?** Los ajustes de inventario deben exigir motivo auditable. Cada organización decide si permite descuentos y define sus límites, condiciones y aprobaciones; la plataforma no establece un porcentaje ni importe predeterminado. La facultad para configurar esa política y la facultad para ejecutar excepciones deben quedar definidas en la matriz aprobada. La anulación de venta requiere motivo y se propone reservarla a `owner`/`admin`, salvo que la organización adopte otra regla dentro de las capacidades que se aprueben.
-5. **¿Qué datos pueden exportarse y qué queda en auditoría?** Recomendación: todo cambio de precio/costo, ajuste de inventario, anulación de venta, cambio de rol y gestión de allowlist queda en auditoría sin excepción. Exportación de reportes financieros reservada a `owner`/`admin`; exportación de reportes de inventario también a `inventory`, como arriba.
-6. **¿Cómo se revoca acceso inmediatamente al desactivar un usuario?** Recomendación: desactivar un usuario (`is_active = false` en `app_users` o su membresía) debe invalidar en el mismo paso transaccional todas sus sesiones activas (`auth_sessions`), no solo impedir logins futuros — ya existe precedente de este patrón en `getSessionUser`/`resolveTenantContext`, que ya filtran por `u.is_active`/`m.is_active`; falta el paso explícito de revocar sesiones vigentes en el momento de la desactivación.
-
-## Criterios mínimos de implementación posterior
-
-- Cada operación de lectura/escritura obtiene la organización desde una sesión/membresía validada en servidor, no desde un ID confiado del cliente.
-- La consulta SQL limita los registros a esa organización; validar autorización no debe depender solo de UUID difíciles de adivinar.
-- Pruebas negativas con usuario sin sesión, membresía inactiva, rol no autorizado, organización ajena y recurso ajeno.
-- Pruebas positivas por rol únicamente después de aprobar esta matriz.
-- Operaciones de ventas, pagos y stock se implementan con transacciones, idempotencia y auditoría según la Constitución.
-- Los resultados de autorización no se consideran probados hasta que existan rutas reales y pruebas de integración contra PostgreSQL de prueba.
-
-## Estado
-
-**No aprobado todavía.** Esta versión reemplaza la matriz vacía del 2026-10-18 con una propuesta completa y razonada, pero sigue siendo una recomendación de IA: no implementar permisos de negocio apoyándose en ella hasta que el propietario la revise y declare explícitamente qué acepta, qué corrige y qué rechaza. La restauración técnica de la copia remota se verificó en el run 40955935124; el gate completo de recuperación aún requiere validar datos/conteos/relaciones, RPO/RTO, alertas y coste. La matriz no aprobada sigue siendo un bloqueo independiente para iniciar el módulo de negocio real (inventario/ventas), junto con las pruebas de autorización cross-tenant que deberán existir al implementar rutas comerciales.
+## Aprobación
+**Estado actual: NO APROBADA.** Solo el propietario puede aprobar o corregir las decisiones de permisos. Hasta entonces, la API debe permanecer sin operaciones comerciales expuestas y cualquier autorización futura debe denegar por defecto y validarse en servidor.

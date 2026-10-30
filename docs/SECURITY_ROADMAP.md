@@ -1,3 +1,13 @@
+## Estado vivo de identidad y hardening — 2026-10-29
+
+- PR #153 está fusionada en main; bootstrap OAuth ya no acepta secretos por query string: GET rechaza parámetros de bootstrap y el alta inicial usa POST con validación de Origin/content-type/cuerpo/campos y token de un solo uso, además de state/PKCE y cookies temporales HttpOnly. No hay evidencia de filtración activa.
+- PR #155 está fusionada en main: `FRONTEND_ORIGIN` para Google OAuth exige HTTPS, salvo HTTP en loopback de desarrollo, y rechaza credenciales, path, query, hash y origen no canónico.
+- Esto corrige las notas históricas inferiores que describían bootstrap y HTTPS como cambios pendientes. No implica despliegue productivo ni que toda la identidad esté lista para operar comercialmente.
+- La autenticación Google/allowlist tiene implementación en código; siguen pendientes autorización comercial por operación, aislamiento cross-tenant de rutas de negocio (porque aún no hay endpoints comerciales), matriz de roles aprobada, controles de abuso en el contexto completo de la API y los demás gates P0/P1 de esta hoja.
+- Verificar siempre el SHA vivo de main y los workflows exactos antes de marcar controles como completados.
+
+---
+
 ## ESTADO VIVO — mitigación de bootstrap propuesta en rama (2026-10-29 UTC)
 
 - PR #152 ya está fusionada; merge commit `9376419231501f837a2d85d8741f7bfa9f57a0cc`.

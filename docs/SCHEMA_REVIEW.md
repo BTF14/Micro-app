@@ -1,3 +1,9 @@
+## Actualización de estado — 2026-10-29
+
+Este documento contiene observaciones históricas del esquema. Las afirmaciones antiguas de que no existe autenticación o que la API carece de helpers de conexión ya no describen el HEAD actual. En main `5a9bdc5a18a54c3c68639f52125d913d4e725b91` se verificaron rutas Google OAuth/sesión y helpers Neon en `apps/api/src/database.ts`. La API sigue sin handlers comerciales, y no hay evidencia de que las migraciones versionadas se hayan aplicado a Neon `main`. El esquema de negocio no se considera listo para operar: faltan sucursales, almacenes, cajas/turnos, compras/recepciones, devoluciones, y pruebas de autorización de rutas comerciales. Esta nota supersede solo las afirmaciones obsoletas de estado; no reemplaza el análisis de constraints que sigue.
+
+---
+
 # Revisión de integridad del esquema
 
 Estado revisado: 2026-10-17. Esta revisión es documental; no ejecuta SQL ni modifica Neon.

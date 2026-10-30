@@ -1,3 +1,24 @@
+# Continuidad viva — 2026-10-30
+
+> Prioridad de estado para esta sesión; las notas históricas inferiores deben contrastarse con GitHub en vivo.
+
+- PR [#156](https://github.com/BTF14/Micro-app/pull/156), rama `docs/reconcile-main-after-pr155-20261029`, base `main`. La punta de rama se consulta en GitHub; no reutilizar SHA históricos.
+- Reconciliación documental realizada: README, AGENTS, política de colaboración, Constitución y SCHEMA_REVIEW. README ya refleja el estado verificado de Google OAuth/allowlist (PR #153/#155) y diferencia claramente el objetivo SaaS de lo implementado.
+- Autenticación: Google OAuth, allowlist/bootstrap protegido, state/PKCE, sesión HttpOnly revocable y validación de `email_verified` implementados. Password login/registro siguen fail-closed. MFA, recuperación de cuenta/administrativa y limpieza automática de sesiones siguen pendientes.
+- API: autenticación y `GET /health`; no endpoints comerciales HTTP de catálogo, inventario, compras, ventas, pagos o devoluciones. No hay esquema de sucursales/almacenes/cajas/turnos implementado.
+- SaaS multi-organización/multi-sucursal es arquitectura documentada, no funcionalidad completa. Capacidad de tenants sin medir; revisar Neon y Cloudflare y ejecutar pruebas sintéticas antes de fijar cuotas.
+- Regla permanente añadida: README se actualiza tras cada avance concreto y verificado, sin anunciar funciones incompletas o propuestas.
+- Cambios de esta revisión solo documentales. No se modificaron código, esquema, migraciones, workflows, secretos, Neon, datos reales ni producción. Producción NO lista; presupuesto objetivo USD 0.
+- Los workflows deben comprobarse para el HEAD exacto más reciente. La revisión independiente solicitada sigue siendo requisito; no fusionar sin ella.
+
+## Siguiente acción
+1. Verificar SHA vivo, diff completo, reviews/threads y workflows de PR #156.
+2. Revisar cada afirmación del README contra código y API_INTEGRATION.
+3. Mantener PR abierta para revisión independiente.
+4. Continuar auditoría read-only de esquema, rutas, constraints, índices y diseño org-sucursal-almacén-caja; no implementar permisos comerciales antes de aprobar la matriz.
+
+---
+
 # Continuidad viva — 2026-10-29
 
 > Esta sección es la fotografía prioritaria de continuidad de esta sesión. Las notas históricas debajo se conservan, pero no deben tratarse como estado actual si contradicen esta sección. Verificar GitHub otra vez antes de cualquier operación.

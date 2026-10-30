@@ -19,7 +19,8 @@ No se encontraron rutas HTTP comerciales en el registro de Hono de `apps/api/src
 
 ### Contexto de tenant y sesión
 
-- `resolveTenantContext` en `apps/api/src/tenant-context.ts` exige token de sesión y UUID de organización; calcula SHA-256 del token y consulta sesión no revocada/no expirada, usuario activo, membresía activa y organización activa.
+- `resolveTenantContext` en `apps/api/src/tenant-context.ts` exige token de sesión y UUID de organización; calcula SHA-256 del token y consulta sesión no revocada/no expirada, usuario activo, membresía activa y organización activa. La búsqueda de callsites en el código de la API no encontró invocaciones desde handlers; hoy es un helper aislado probado por unit/integration tests, no un middleware aplicado a rutas.
+- `withDatabaseTransaction` está implementado y probado como helper; el único caller productivo encontrado es el bootstrap Google (bloqueo de `auth_bootstrap`). No hay uso comercial de transacciones porque todavía no existen handlers comerciales.
 - Devuelve `userId`, `organizationId` y `role`. El comentario del helper indica expresamente que **no autoriza una operación de negocio**.
 - No hay `branchId`, asignación de sucursal, caja ni turno en el contexto.
 - `GET /auth/me` devuelve las organizaciones activas del usuario; esto no concede permiso comercial por sí solo.

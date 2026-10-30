@@ -106,3 +106,35 @@ Consultar [CAPACITY_AND_LIMITS.md](./CAPACITY_AND_LIMITS.md). No fijar un númer
 La auditoría de solo lectura puede avanzar ya que la restauración técnica real está verificada. No es necesario esperar a completar RPO/RTO, alertas o el manifiesto de datos para leer el código; sin embargo, cualquier cambio de esquema o autorización que pudiera afectar datos reales queda bloqueado hasta disponer de pruebas aisladas, estrategia de recuperación y revisión del diff.
 
 **Siguiente paso concreto:** completar el inventario de consultas y constraints por entidad, revisar la matriz de permisos por rol y definir explícitamente el modelo organización → sucursal → membresía/rol. No implementar el esquema de sucursales hasta cerrar esas decisiones con evidencia y pruebas.
+
+
+## Auditoría y decisiones actualizadas — main posterior a PR #155 (2026-10-29 UTC)
+
+**Referencia:** main `5a9bdc5a18a54c3c68639f52125d913d4e725b91`. PR #155 fusionada. Ocho workflows de su último SHA finalizaron success; la revisión Codex falló por límite de uso. No hay revisión independiente registrada ni evidencia de despliegue productivo.
+
+### Hallazgos que bloquean módulos comerciales
+- API Hono aún no expone handlers HTTP comerciales para productos, inventario, ventas, pagos o devoluciones.
+- El contexto tenant resuelve sesión/membresía/organización; no reemplaza autorización por operación.
+- El esquema inicial no contiene sucursales, compras/recepciones, caja/turnos o devoluciones. `products.stock_quantity` está a nivel organización.
+- La matriz `docs/sdd/role-permission-decision-matrix.md` sigue sin aprobación del propietario.
+- Constraints actuales no concilian por sí solas suma de líneas, pagos y stock con libro de movimientos. Las operaciones deberán ser transaccionales, idempotentes y probadas con concurrencia.
+- Capacidad de tenants/sucursales no está medida; límite de ramas/tamaño de Neon y límites de Cloudflare no equivalen a capacidad SaaS.
+
+### Arquitectura recomendada, pendiente de aprobación del modelo de negocio
+Mantener el stack actual. Evolucionar incrementalmente a organización → sucursales → membresías/roles. Propuesta de partida: catálogo compartido por organización; stock, movimientos, caja y ventas asociados a sucursal; precios compartidos por defecto con capacidad de override por sucursal solo si el propietario confirma ese requisito. No crear migración hasta acordar catálogo, precios, existencias, proveedores/compras, caja, devoluciones y permisos.
+
+### Próximos gates
+1. Completar inventario de consultas, índices, FKs y rutas.
+2. Acordar ownership de datos y reglas de sucursal.
+3. Aprobar matriz de roles y autorización por operación.
+4. Diseñar migraciones compatibles y rollback antes de implementarlas.
+5. Probar aislamiento tenant/sucursal, integridad, idempotencia y concurrencia en PostgreSQL efímero.
+6. Medir consumo/capacidad Neon y Cloudflare; mantener coste objetivo $0.
+
+Producción sigue NO lista. Esta auditoría es documental/read-only; no ejecuta SQL ni modifica Neon.
+
+---
+
+## Dirección SaaS, BCV y búsqueda de productos — 2026-10-29
+
+La dirección de producto y arquitectura, criterios de seguridad, límites de caché, transacciones, secuencia y pendientes se registran en [SAAS_ARCHITECTURE_DECISIONS.md](./SAAS_ARCHITECTURE_DECISIONS.md). Prioridad inmediata: completar auditoría read-only; formalizar ERD organización/sucursal/almacén/caja; reconciliar matriz de roles por alcance; no crear migraciones ni rutas comerciales hasta superar esos gates. BCV y buscador son requisitos, todavía no implementaciones. Capacidad Neon/Cloudflare no medida; no prometer cuotas ni número de tenants.

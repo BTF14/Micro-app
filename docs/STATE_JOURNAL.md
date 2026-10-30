@@ -764,3 +764,42 @@ Este diario es append-only en cuanto a historia: no borrar hitos antiguos; añad
 - SHA `18cf2f158552ce7c97bacc66018e0cfdae60e2d3`: los ocho workflows asociados finalizaron en `success`: CI, Playwright E2E, Database migration validation, Semgrep SAST, Security scan, Dependency review, Secret history scan y Project progress dashboard.
 - CI ejecutó build/typecheck, unit tests y PostgreSQL auth integration tests; Playwright browser tests también completaron con éxito.
 - Revisión manual del diff: cambio acotado al helper de validación y su prueba; no cambia flujo OAuth/bootstrap, DB, secretos ni despliegue. PR #155 aún abierta; falta integrar a main y verificar el estado post-merge. Codex no pudo revisar por cuota; no se afirma revisión independiente.
+
+
+## 2026-10-29 — PR #155 fusionada y continuidad reconciliada
+
+- Main avanzó a `5a9bdc5a18a54c3c68639f52125d913d4e725b91`, merge commit de PR #155.
+- PR #155 implementó validación HTTPS en Google OAuth, permitiendo HTTP solo para loopback y rechazando credenciales, rutas, query, fragmentos y origen no canónico.
+- En SHA `824e4d02fe4aa56a92c8e6493e65989d4325eaa9`, los ocho workflows consultados finalizaron success. CI cubrió build/typecheck, unit tests y PostgreSQL auth integration; Playwright E2E también pasó.
+- Codex review no pudo completarse por límite de uso; no se registra revisión independiente. Cloudflare generó previews automáticos de Pages/Workers, no despliegue productivo.
+- PR #154 quedó obsoleta/stale al avanzar main; su contenido documental se traslada/reconcilia en PR #156. No fusionar PR #154.
+- No se tocó Neon main, secretos, datos reales ni producción; no se ejecutaron migraciones ni se habilitaron recursos pagos.
+
+---
+
+## 2026-10-29 — Dirección SaaS y continuidad de arquitectura
+
+Se consolidó la dirección recomendada para Micro app: una plataforma multi-organización, multi-sucursal y multiusuario; catálogo compartido por organización por defecto; stock por sucursal/almacén; caja y operaciones vinculadas a sucursal; usuarios multi-organización y roles con alcance. Se añadieron criterios de BCV programado con validación/histórico/fallback, búsqueda por barcode/SKU con SQL indexado, caché condicionada a mediciones, confirmación transaccional de venta, idempotencia, auditoría y medición de límites Neon/Cloudflare. La especificación está en `docs/SAAS_ARCHITECTURE_DECISIONS.md`.
+
+Estado: documentación/diseño únicamente; no se implementaron API BCV, buscador, caché de catálogo, sucursales, almacenes, cajas ni endpoints comerciales. La matriz de permisos sigue pendiente de aprobación. Capacidad SaaS sin medir. Se reutiliza PR #156 para evitar PR documental duplicada; verificar checks/revisión del HEAD actualizado antes de considerar merge.
+
+
+## 2026-10-29 — Auditoría estática de API/esquema y CI documental
+
+En `main` SHA `5a9bdc5a18a54c3c68639f52125d913d4e725b91` se revisaron `apps/api/src/index.ts`, `tenant-context.ts`, `database.ts`, `auth.ts`, migraciones `0001_initial.sql` y `0002_google_identity.sql`, además de `API_INTEGRATION.md`, `DATABASE_SCHEMA.md` y `SCHEMA_REVIEW.md`.
+
+Hechos observados: la API registra rutas de autenticación y `GET /health`, no rutas comerciales; tenant context devuelve user/organization/role y comprueba membresía activa, pero explícitamente no autoriza operaciones ni tiene branch scope; `products.stock_quantity` es por organización; existen índices únicos tenant-scoped de SKU/barcode y B-tree sobre `(organization_id, lower(name))`; existe tabla global `exchange_rates`; no hay sucursales/almacenes/cajas/turnos/compras/devoluciones. El helper actual abre `Client` request-scoped y ofrece transacción interactiva; se documentó evaluar HTTP `neon()` para lecturas sencillas y reservar `Client` para operaciones atómicas, siempre con benchmark y pruebas.
+
+CI documental: para HEAD `8c15e13fa001a14a0ddf9f2432bc17efb30d476d`, los 8 workflows consultados finalizaron success, incluyendo todos los contexts requeridos de protección. Se añadieron luego commits documentales hasta `23cbb313ebb163d3c808f8d0953b85645262c520`; para ese SHA posterior no se obtuvieron runs/statuses. No afirmar CI verde en el HEAD actual. PR #156 sigue abierta, sin reviews, y su metadata reportó mergeable=false; no fusionar.
+
+
+## Reconciliación documental de identidad, README y SaaS — 2026-10-30
+
+- Rama: `docs/reconcile-main-after-pr155-20261029`; PR [#156](https://github.com/BTF14/Micro-app/pull/156).
+- Actualizados `README.md`, `AGENTS.md`, `docs/AI_COLLABORATION_AND_PR_POLICY.md`, `docs/CONSTITUTION.md`, `docs/SCHEMA_REVIEW.md`, `docs/CURRENT_STATE.md` y `docs/HANDOFF_NEXT_CHAT.md`.
+- README ahora refleja que Google OAuth + allowlist/bootstrap seguro y sesión revocable están implementados según PR #153/#155; contraseña permanece fail-closed; MFA, recuperación y limpieza completa de sesiones pendientes. No afirma que existan endpoints comerciales ni sucursales.
+- Se aclara que SaaS multi-organización/multi-sucursal es arquitectura de destino documentada, no esquema/funcionalidad desplegada. Capacidad sigue sin medir.
+- Se incorpora regla obligatoria: actualizar README después de cada avance concreto y verificado, distinguiendo implementación de propuestas; no publicitar capacidades incompletas.
+- Constitución y SCHEMA_REVIEW reconciliadas para que los hallazgos de auth del 2026-10-17 se lean como históricos/supersedidos, preservando el análisis SQL útil.
+- Alcance solo documental. No se cambió código, esquema, migraciones, workflows, secretos, Neon, datos reales ni producción.
+- Verificación pendiente: consultar HEAD final y workflows de ese SHA exacto; revisar diff completo y obtener revisión independiente antes de fusionar. No reutilizar resultados de CI de HEAD previos.

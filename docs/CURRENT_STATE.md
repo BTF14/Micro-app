@@ -1,3 +1,54 @@
+# Continuidad viva — 2026-10-30
+
+> Prioridad de estado para esta sesión; las notas históricas inferiores deben contrastarse con GitHub en vivo.
+
+- PR [#156](https://github.com/BTF14/Micro-app/pull/156), rama `docs/reconcile-main-after-pr155-20261029`, base `main`. La punta de rama se consulta en GitHub; no reutilizar SHA históricos.
+- Reconciliación documental realizada: README, AGENTS, política de colaboración, Constitución y SCHEMA_REVIEW. README ya refleja el estado verificado de Google OAuth/allowlist (PR #153/#155) y diferencia claramente el objetivo SaaS de lo implementado.
+- Autenticación: Google OAuth, allowlist/bootstrap protegido, state/PKCE, sesión HttpOnly revocable y validación de `email_verified` implementados. Password login/registro siguen fail-closed. MFA, recuperación de cuenta/administrativa y limpieza automática de sesiones siguen pendientes.
+- API: autenticación y `GET /health`; no endpoints comerciales HTTP de catálogo, inventario, compras, ventas, pagos o devoluciones. No hay esquema de sucursales/almacenes/cajas/turnos implementado.
+- SaaS multi-organización/multi-sucursal es arquitectura documentada, no funcionalidad completa. Capacidad de tenants sin medir; revisar Neon y Cloudflare y ejecutar pruebas sintéticas antes de fijar cuotas.
+- Regla permanente añadida: README se actualiza tras cada avance concreto y verificado, sin anunciar funciones incompletas o propuestas.
+- Cambios de esta revisión solo documentales. No se modificaron código, esquema, migraciones, workflows, secretos, Neon, datos reales ni producción. Producción NO lista; presupuesto objetivo USD 0.
+- Los workflows deben comprobarse para el HEAD exacto más reciente. La revisión independiente solicitada sigue siendo requisito; no fusionar sin ella.
+
+## Siguiente acción
+1. Verificar SHA vivo, diff completo, reviews/threads y workflows de PR #156.
+2. Revisar cada afirmación del README contra código y API_INTEGRATION.
+3. Mantener PR abierta para revisión independiente.
+4. Continuar auditoría read-only de esquema, rutas, constraints, índices y diseño org-sucursal-almacén-caja; no implementar permisos comerciales antes de aprobar la matriz.
+
+---
+
+# Continuidad viva — 2026-10-29
+
+> Esta sección es la fotografía prioritaria de continuidad de esta sesión. Las notas históricas debajo se conservan, pero no deben tratarse como estado actual si contradicen esta sección. Verificar GitHub otra vez antes de cualquier operación.
+
+- Repositorio: `BTF14/Micro-app`; rama base `main`.
+- PR documental activa: [#156](https://github.com/BTF14/Micro-app/pull/156), abierta y mergeable según última consulta; base SHA `5a9bdc5a18a54c3c68639f52125d913d4e725b91`. El HEAD cambia con cada commit documental: consultar el SHA vivo en GitHub antes de actuar; no copiar un SHA histórico de este archivo. La PR contiene 9 archivos modificados. No hay reviews ni review threads. En la última consulta del HEAD `a5aced77ffd1a628bb8175b91cbc7305144fb696`, se observaron 8 workflows: 1 success, 4 in_progress/pending y 3 queued; revisar el HEAD posterior y esperar sus resultados.
+- PR #156 incluye `docs/SAAS_ARCHITECTURE_DECISIONS.md` y actualizaciones de CURRENT_STATE, HANDOFF, PROJECT_PLAN, STATE_JOURNAL, ARCHITECTURE_EVOLUTION_PLAN, PRICING_CACHE_ARCHITECTURE y matriz de roles. Se reutiliza; no abrir PR documental solapada.
+- PR #155 está fusionada en main (merge `5a9bdc5a18a54c3c68639f52125d913d4e725b91`). La descripción de PR #156 confirma este SHA como base.
+- Arquitectura recomendada: plataforma SaaS multi-organización, multi-sucursal y multiusuario; catálogo compartido por organización, existencias por sucursal/almacén, caja/turno por sucursal, usuarios multi-organización y roles con alcance. Ver `docs/SAAS_ARCHITECTURE_DECISIONS.md`.
+- BCV: Cron Trigger + validación + histórico `exchange_rates` + última tasa válida con frescura visible. Fuente oficial/gratuita aún no confirmada; no inventar endpoint ni tasa.
+- Buscador: barcode/SKU exactos antes que nombre; debounce, índices, límites, tenant scoping y medición. Neon fuente de verdad; KV de catálogo solo si benchmark lo justifica. La caché nunca confirma ventas ni stock.
+- Modelo de sucursales/almacenes/cajas aún no implementado; stock actual por organización. No crear migraciones hasta cerrar ERD, reglas de alcance y matriz de permisos.
+- Roles base recomendados: owner/admin/cashier/inventory; matriz existente sigue siendo propuesta y requiere reconciliar alcance por sucursal. Umbrales de descuento/anulación requieren decisión explícita.
+- Capacidad de tenants no medida. Neon y Cloudflare tienen límites; medir sintéticamente antes de fijar planes/cuotas o prometer número de empresas.
+- Producción: **NO lista**. No desplegar producción, no tocar secretos, datos reales ni Neon `main`; no incurrir en costes. Presupuesto objetivo $0.
+- Backup: restauración técnica del backup remoto se verificó en run 40955935124; siguen pendientes integridad de datos comerciales representativos, RPO/RTO, alertas/retención y coste total.
+
+- **Verificación de CI más reciente completa:** HEAD `8c15e13fa001a14a0ddf9f2432bc17efb30d476d` tuvo los 8 workflows requeridos en `success`, incluidos los seis contexts de protección (`verify`, `postgres-migration`, Chromium authentication smoke tests, JavaScript/TypeScript static analysis, Trivy y secret-history scan), además de Dependency Review y dashboard. Runs: 40978525543, 40978521649, 40978521865, 40978521671, 40978521571, 40978521386, 40978521350 y 40978521537. Después se añadieron dos commits documentales hasta `23cbb313ebb163d3c808f8d0953b85645262c520`; no se devolvieron runs/statuses para ese HEAD. Por tanto, **no declarar verde el HEAD actual** ni fusionar hasta verificarlo.
+
+## Próximas acciones obligatorias
+
+1. Verificar el nuevo HEAD de PR #156, diff, workflows y revisión independiente. No fusionar sin satisfacer la política y la revisión adicional solicitada.
+2. Completar auditoría read-only del esquema real, handlers, constraints, índices, queries y rutas; registrar hallazgos con archivos/SHA.
+3. Finalizar ERD organización → sucursal → almacén/caja/turno → operaciones, propiedad y claves tenant/branch-scoped.
+4. Reconciliar `docs/sdd/role-permission-decision-matrix.md` con asignaciones por sucursal/caja; separar propuesta de decisiones que requieren al propietario.
+5. Diseñar contratos API, transacciones, idempotencia, concurrencia y pruebas cross-tenant/cross-branch antes de implementar endpoints comerciales.
+6. Investigar fuente BCV fiable y condiciones de acceso; diseñar job programado y fallback stale; no scrapear fuente frágil sin validar.
+7. Medir Neon y Cloudflare con carga sintética y comprobar cuotas vigentes; no fijar límites SaaS todavía.
+8. Mantener estado, diario y handoff actualizados al completar cada bloque.
+
 ## Estado vivo — hardening HTTPS de FRONTEND_ORIGIN en preparación (2026-10-29 UTC)
 
 - Base verificada: `main` = `0ba45e47daa5af9bbd9034690443405aa8bedf44`; PR #154 sigue abierta, sin reviews registradas. Sus 8 workflows consultados para `b4508fda6f4d5f042dbeb2b48c7c9910a8c3852d` terminaron en `success`, pero falta la revisión adicional solicitada; no fusionar por ahora.
@@ -1027,3 +1078,17 @@ Esta revisión fue estática de contenidos en GitHub; no se ejecutaron tests des
 - **Conclusión:** verificada la restauración técnica de la copia remota exacta. No se tocó Neon `main` ni producción.
 - **Límite:** no se verificaron conteos ni relaciones de datos comerciales poblados, RPO/RTO, alerta de fallo o coste total $0. La comprobación de esquema por sí sola no garantiza que los datos comerciales estén completos.
 - **Siguiente paso:** planear una comprobación segura de conteos/relaciones mediante datos sintéticos o metadatos no sensibles; medir RPO/RTO; revisar alerta, retención y coste. No imprimir datos comerciales ni solicitar la clave privada age por chat.
+
+
+## Estado vivo prioritario — main posterior a PR #155 (2026-10-29 UTC)
+
+- **Main actual:** `5a9bdc5a18a54c3c68639f52125d913d4e725b91`, merge commit de PR #155. PR #155 (`fix(auth): enforce HTTPS frontend origin for Google OAuth`) está cerrada y fusionada. La corrección de `getConfiguredFrontendOrigin` exige HTTPS salvo HTTP loopback (`localhost`, `127.0.0.1`, `[::1]`), rechaza credenciales y componentes URL adicionales.
+- **Verificación de PR #155:** en SHA `824e4d02fe4aa56a92c8e6493e65989d4325eaa9`, ocho workflows terminaron `success`: CI, Playwright E2E, Database migration validation, Semgrep SAST, Security scan, Dependency review, Secret history scan y Project progress dashboard. CI ejecutó build/typecheck, unit tests y PostgreSQL auth integration tests. La revisión Codex no se completó por límite de uso; no afirmar review independiente.
+- **Despliegues:** Cloudflare informó deployments automáticos de preview para Pages y Workers en la rama/commit. No son despliegues productivos ni validación de producción. No se hizo deploy manual.
+- **PR #154:** continúa abierta, desactualizada y no mergeable contra la nueva main; su propósito documental se está reconciliando en PR #156. No fusionar #154.
+- **Arquitectura:** mantener React/Vite/TypeScript + Cloudflare Pages + Workers/Hono + Neon PostgreSQL/Drizzle; no reescribir ni introducir microservicios sin medición. No existen aún rutas comerciales HTTP. El stock del esquema actual está a nivel organización, no sucursal; no añadir un `branch_id` superficial.
+- **Bloqueos:** matriz `docs/sdd/role-permission-decision-matrix.md` no aprobada; diseño de sucursales y propiedad de catálogo/precios/stock por ubicación pendiente; conciliación transaccional venta-líneas-pagos-stock pendiente. No iniciar rutas comerciales ni migraciones de sucursal hasta resolver estos contratos.
+- **Capacidad:** organizaciones/sucursales concurrentes no medidas. Los límites observados de Neon y las cuotas Cloudflare no permiten prometer un número de tenants. Mantener presupuesto objetivo $0 y revisar cuotas/uso real.
+- **Seguridad/operación:** PR #153 y #155 están en main; no hay evidencia de validación HTTP en producción. Restauración técnica del backup remoto exacto verificada, pero conteos de datos comerciales, RPO/RTO, alertas y coste total aún pendientes. Producción sigue NO lista.
+
+---

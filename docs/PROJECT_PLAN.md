@@ -728,3 +728,40 @@ PR [#9](https://github.com/BTF14/Micro-app/pull/9) está fusionado en `main` med
 **Gate:** no cambiar el contrato bootstrap ni secretos. Esta corrección de configuración no certifica el flujo OAuth completo ni la preparación comercial.
 
 **Siguiente fase de producto (bloqueada por diseño/aprobación):** cerrar ownership de catálogo/precios, inventario por sucursal, compras/recepciones, caja/turnos, devoluciones y matriz de permisos organización/sucursal. Mantener stack React/Vite/TypeScript + Workers/Hono + Neon/Drizzle; no reescribir ni introducir microservicios sin medición. Capacidad por organización/sucursal: no determinada hasta pruebas sintéticas y auditoría de cuotas Neon/Cloudflare.
+
+
+## Actualización del plan — reconciliación posterior a PR #155 (2026-10-29)
+
+### Completado
+- [x] PR #153 fusionada: bootstrap ya no transporta el token en query string; POST protegido y validado.
+- [x] PR #155 fusionada: validador de `FRONTEND_ORIGIN` en Google OAuth exige HTTPS salvo loopback HTTP y rechaza URLs con credenciales/componentes extra.
+- [x] En SHA `824e4d02fe4aa56a92c8e6493e65989d4325eaa9`, ocho workflows finalizaron success: CI, E2E, migraciones, SAST, security, dependency review, secret history y dashboard.
+
+### Pendiente / orden de ejecución
+1. [ ] Cerrar reconciliación documental de PR #154 mediante PR #156; cerrar #154 solo después de confirmar que todo su contenido útil quedó preservado.
+2. [ ] Completar auditoría read-only de esquema, FKs, índices, queries, rutas y límites de tenant.
+3. [ ] Proponer contrato de organización, sucursales, catálogo/precios, inventario por sucursal, compras/recepciones, caja/turnos y devoluciones.
+4. [ ] Obtener aprobación del propietario para la matriz de permisos por rol y alcance organización/sucursal.
+5. [ ] Diseñar invariantes y transacciones de ventas, líneas, pagos, stock y auditoría; añadir idempotencia y pruebas de concurrencia sobre PostgreSQL efímero.
+6. [ ] Medir límites de Neon y Cloudflare con cuotas/consumo actual y pruebas sintéticas; no prometer número de empresas/locales sin datos.
+7. [ ] Solo después de los gates anteriores implementar productos/proveedores, inventario y luego POS/ventas/caja en PRs coherentes y acotadas.
+
+**Arquitectura elegida:** conservar React/Vite/TypeScript, Cloudflare Pages, Workers/Hono, Neon PostgreSQL y Drizzle. No reescritura, microservicios, Redis ni servicios de pago anticipados sin evidencia medible. Presupuesto objetivo $0.
+
+**Estado de salida:** producción NO lista. No tocar Neon main, secretos, datos reales ni producción; no aplicar migraciones sin diseño y autorización.
+
+---
+
+## SaaS multi-organización y operaciones POS — dirección 2026-10-29
+
+Dirección de producto: una plataforma multi-organización, multi-sucursal y multiusuario. El catálogo/precio es compartido por organización por defecto; existencias, cajas y operaciones pertenecen a sucursal/almacén. BCV se actualizará mediante job programado validado y caché de lectura; el buscador prioriza barcode/SKU, SQL indexado y límites; KV de catálogo queda condicionado a benchmark. Las ventas deben validar precio/stock/tasa en transacción y conservar snapshots. Ver [SAAS_ARCHITECTURE_DECISIONS.md](./SAAS_ARCHITECTURE_DECISIONS.md) para reglas y pendientes.
+
+### Fases pendientes
+1. Auditoría read-only y ERD/scope.
+2. Aprobación/reconciliación de roles y operaciones sensibles.
+3. Diseño de migraciones y pruebas cross-tenant/cross-branch.
+4. Catálogo/búsqueda, inventario, compras, caja, ventas, devoluciones y transferencias.
+5. Fuente BCV y job de actualización con fallback.
+6. Benchmarks Neon/Cloudflare y definición de cuotas comerciales.
+
+No declarar comercial/producción listo hasta completar flujos, seguridad, pruebas, backups, observabilidad y capacidad.

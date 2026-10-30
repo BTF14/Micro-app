@@ -63,3 +63,8 @@ El helper aún no está conectado a middleware ni rutas. Los futuros handlers de
 4. Resolver la matriz de permisos sensibles con decisiones explícitas.
 5. Diseñar stock por almacén, ledger/balance y migración con backfill/reconciliación.
 6. Solo después implementar handlers comerciales con pruebas PostgreSQL cross-tenant/cross-branch, concurrencia, rollback e idempotencia.
+
+
+## Cobertura de integración añadida
+
+La PR incorpora `apps/api/src/branch-context.integration.test.ts`, ejecutado por CI contra PostgreSQL 18 efímero después de aplicar migraciones 0001–0003. Comprueba owner/admin sin asignación, cashier/inventory con asignación activa, cashier sin asignación, asignación inactiva, sucursal inactiva y un identificador de sucursal de otra organización. El test usa datos sintéticos y limpia las filas creadas. Esta cobertura complementa las assertions SQL del workflow `postgres-migration`; no prueba aún handlers comerciales ni producción.

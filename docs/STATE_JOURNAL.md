@@ -1000,3 +1000,15 @@ CI documental: para HEAD `8c15e13fa001a14a0ddf9f2432bc17efb30d476d`, los 8 workf
 - La matriz sigue pendiente de aprobación; no se interpretó esta aclaración como aprobación de todos los permisos o excepciones.
 - Solo documentación; no se cambiaron código, esquema, workflows, servicios ni datos. No se ejecutaron pruebas runtime.
 - Próximo gate: ERD multi-sucursal y cierre explícito de la matriz antes de cualquier implementación comercial.
+
+
+## 2026-10-30 — PR #163 fusionada y diseño ERD multi-sucursal iniciado
+
+- PR #163 fusionada por squash; merge/main confirmado: 894895cfeee1c3d67b1e92bf1fae7d0c30cd36f9.
+- En el HEAD probado de PR 163 (4b9a2b3993115b798ae4a78e3e0318dbdf50c24e), ocho workflows terminaron success: CI, Playwright, migración PostgreSQL, Semgrep, Trivy, secret history, Dependency Review y Project progress.
+- Se revisó el diff documental; no hubo reviews humanas/threads inline y Codex no se ejecutó.
+- Se inició rama docs/multibranch-erd-architecture-20261030 desde el merge #163.
+- Se añadió docs/sdd/MULTI_BRANCH_DATA_MODEL.md con ERD conceptual, claves tenant-scoped, branch memberships, warehouses, registers/shifts, balances/ledger, ventas/pagos, compras/transferencias, idempotencia, último owner y auditoría.
+- La propuesta se contrastó con apps/api/migrations/0001_initial.sql y SCHEMA_REVIEW. No se modificó SQL/runtime ni se ejecutaron pruebas de runtime; no se accedió a Neon.
+- Matriz de permisos continúa NO APROBADA; políticas comerciales siguen bajo control de cada organización.
+- Siguiente paso: revisión de coherencia del documento y de los cambios de continuidad; PR única de diseño, checks CI/SAST, sin implementación hasta cerrar gates.

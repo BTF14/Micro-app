@@ -19,7 +19,7 @@
 
 ## Trabajo activo
 - Diseño completo en `docs/sdd/REGISTER_SHIFT_MODEL.md`.
-- Reconciliar portada de CURRENT_STATE, HANDOFF, PROJECT_PLAN y STATE_JOURNAL; conservar snapshots anteriores como historia, no como estado vigente.
+- Revisar el diff documental completo y los checks del HEAD exacto; conservar snapshots antiguos como historia, no como estado vigente.
 - No tocar SQL/runtime, Neon, Cloudflare, secretos, DNS, billing ni producción en este bloque.
 - Ejecutar revisión manual del diff y checks del HEAD exacto antes de merge.
 

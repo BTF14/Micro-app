@@ -1,3 +1,26 @@
+# Continuidad prioritaria — 2026-10-30 UTC (post PR #157)
+
+> Este checkpoint sustituye los estados inferiores que todavía describen PR #157 como abierta o main en el SHA anterior. Verificar GitHub en vivo antes de cualquier operación.
+
+- **Main verificado:** `1ee1808af4aae484a71dc24750237ff4f4d934a0`, merge squash de [PR #157](https://github.com/BTF14/Micro-app/pull/157). PR #157 está cerrada y fusionada; su HEAD fue `6eb464c950f195ec67350977575aef77e9790e1d`.
+- **Checks de PR #157:** el conector devolvió ocho workflow runs para el HEAD exacto y todos terminaron `success`: CI, Playwright E2E, Database migration validation, Semgrep SAST, Security scan, Secret history scan, Project progress dashboard y Dependency review. La consulta es de primera página. El combined status devolvió vacío y no se recuperó evidencia post-merge para el merge SHA; no afirmar CI post-merge.
+- **PRs abiertas:** [PR #158](https://github.com/BTF14/Micro-app/pull/158), documental y en borrador. Antes de abrirla no había otras PRs abiertas.
+- **Workflows/deploy:** auditoría de los 15 YAML en [WORKFLOW_AND_DEPLOYMENT_AUDIT.md](WORKFLOW_AND_DEPLOYMENT_AUDIT.md). No hay workflow de GitHub Actions que despliegue Pages o Workers. Los builds de Cloudflare observados anteriormente apuntan a integración Git externa; su configuración efectiva no es visible desde el repo.
+- **Riesgo de merge:** un push a `main` puede activar el despliegue externo de Cloudflare. No fusionar cambios —aunque sean solo documentación— sin autorización explícita de producción y sin conocer la configuración de esa integración.
+- **Duplicación CI:** siete workflows escuchan a la vez `push` y `pull_request` sin filtros de branch/path; `sdd-docs-validation` sí limita `main` y paths; commits a ramas con PR pueden duplicar ejecuciones. No cambiar todavía: primero revisar branch protection/rulesets y contexts requeridos.
+- **Estado de producto:** producción NO lista; API solo auth/health; sin rutas comerciales HTTP; tenant helper sin enforcement de permisos por operación ni branch scope; matriz de roles no aprobada; capacidad multi-tenant no medida.
+- **Guardrails:** no Codex, no Neon `main`, no secretos, no datos reales, no despliegue, no planes pagos; coste objetivo USD 0.
+
+## Próximas acciones prioritarias
+
+1. Obtener auditoría de solo lectura de branch protection/rulesets y confirmar contexts requeridos antes de optimizar workflows.
+2. Solicitar/usar acceso de solo lectura al panel Cloudflare para confirmar ramas Git conectadas, build settings, deployments y cuotas; no modificar configuración.
+3. Diseñar la reducción de workflows duplicados preservando todos los checks obligatorios.
+4. Continuar el inventario de queries/callers y ERD org → branch → warehouse/register/shift; no migrar ni crear endpoints comerciales hasta aprobar matriz y diseño.
+5. Mantener documentación y README sincronizados con hechos comprobados.
+
+---
+
 # Continuidad viva — 2026-10-30 UTC
 
 > Este bloque prevalece sobre los snapshots históricos inferiores. Verificar GitHub y el SHA vivo antes de actuar.

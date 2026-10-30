@@ -1,3 +1,27 @@
+# Handoff prioritario — 2026-10-30 UTC (post PR #157)
+
+> Este bloque prevalece sobre notas inferiores. Continuar el mismo proyecto y verificar el estado vivo antes de actuar.
+
+- **Repositorio:** `BTF14/Micro-app`; **main:** `1ee1808af4aae484a71dc24750237ff4f4d934a0`.
+- **PR #157:** cerrada y fusionada. Merge SHA = main. HEAD `6eb464c950f195ec67350977575aef77e9790e1d`; ocho workflow runs recuperados para ese HEAD y los ocho success. No hay evidencia recuperada de CI post-merge; no afirmar que existió.
+- **PRs abierta:** [PR #158](https://github.com/BTF14/Micro-app/pull/158), documental y en borrador. No fusionar.
+- **Auditoría:** leer [WORKFLOW_AND_DEPLOYMENT_AUDIT.md](WORKFLOW_AND_DEPLOYMENT_AUDIT.md). No hay deploy de Cloudflare en GitHub Actions; los builds históricos de Pages/Workers parecen provenir de Git integration externa. No se puede inspeccionar el dashboard con las conexiones disponibles.
+- **Peligro de merge:** push a `main` puede activar producción por integración externa. No fusionar sin autorización explícita de producción, aunque el cambio sea documental.
+- **CI:** siete workflows usan ambos eventos `push` y `pull_request` sin filtros; un commit a rama con PR puede duplicar validaciones. `sdd-docs-validation` sí limita ramas y paths. Primero revisar branch protection/rulesets, luego proponer una sola optimización coherente.
+- **Producto:** API auth/health únicamente; sin endpoints comerciales; tenant context no autoriza operaciones ni branch scope; esquema sin sucursales/almacenes/cajas/turnos; matriz de permisos NO aprobada; capacidad sin medir.
+- **Restricciones:** no depender de Codex; no tocar Neon `main`, secretos, datos reales ni producción; no ejecutar SQL remoto; no activar servicios pagos; objetivo USD 0.
+
+## Secuencia
+
+1. Revisar branch protection/rulesets y los contexts obligatorios en GitHub.
+2. Verificar en Cloudflare, solo lectura, Git integration, ramas de deploy, build settings y estado real de Pages/Workers.
+3. Reducir duplicación CI sin eliminar checks requeridos ni aplicar paths filters sin mapa de dependencias.
+4. Continuar inventario de queries/callers y ERD multi-sucursal.
+5. Preparar decisiones de roles sensibles para aprobación del propietario; no implementarlas por inferencia.
+6. Mantener CURRENT_STATE, PROJECT_PLAN, STATE_JOURNAL, README y este handoff alineados.
+
+---
+
 # Handoff prioritario — 2026-10-30 UTC
 
 > Fuente de verdad: repositorio `BTF14/Micro-app`. Leer primero `AGENTS.md`, `docs/CURRENT_STATE.md` y `docs/AI_COLLABORATION_AND_PR_POLICY.md`. No depender de Codex: está fuera de disponibilidad por tiempo indefinido y el trabajo debe continuar con revisión manual, tests y GitHub Actions.

@@ -1,12 +1,17 @@
-> **Estado de continuidad vigente — 2026-10-30 UTC:** main confirmado en GitHub: `ec6a2b84e2f84a0f5d2340ced86449804a1b6ed4` (merge PR #173). PR #172 fusionada en `a7fa51d059d35fc679b53de112689a19f37fe967`; PR #173 es una actualización exclusivamente documental. La sincronización anterior omitía el merge SHA de #173; ver checkpoint vigente de los seis documentos. Consultar GitHub en vivo antes de usar cualquier SHA como estado actual.
->
-> **Estado de seguridad API:** no hay handlers comerciales ni autorización por operación. La matriz de permisos sigue **NO APROBADA**. Los helpers `resolveTenantContext`, `resolveBranchContext` y `resolveOpenCashierRegisterShift` establecen identidad/ámbito/contexto, no conceden permisos de negocio. No introducir endpoints, middleware o role-switches comerciales hasta aprobación explícita de la matriz. No afirmar auditoría/ledger comercial implementados.
->
-> **CORS/Cloudflare:** issue #78 abierta. GET /health devolvió status scaffold y Pages cargó, pero no se observaron headers HTTP ni se ejecutó preflight OPTIONS con Origin personalizado. CORS, credenciales y allow/deny de orígenes siguen sin verificar. Exigir evidencia de ambos preflight desde red completa; no tocar configuración Cloudflare/variables/secretos ni desplegar. Preview no certifica producción.
->
-> **Migraciones y producción:** main versiona 0001–0004; 0003/0004 no aplicadas a Neon main. Solo PostgreSQL efímero para validación; no ejecutar SQL remoto. No tocar secretos, DNS, billing ni producción. Producción no lista para operación comercial. Revisión independiente Codex/Claude de PR #172 no completada.
+# Estado actual de integración API — Micro app
+
+**Checkpoint de continuidad — 2026-10-30 UTC.** La base de `main` verificada antes de esta reconciliación fue `682868c5fca65a4a1f3f61a1bc428a34ae1a4dd9` (merge de PR #174); es una referencia de base, no una afirmación perpetua del HEAD. PR #174 está fusionada. La reconciliación documental se trabaja en `docs/authoritative-continuity-after-pr174-20261030`; verificar PR, HEAD, checks y merge SHA en GitHub. GitHub vivo prevalece sobre todo snapshot.
+
+**Límite actual de API:** no hay handlers comerciales ni autorización por operación demostrada. La matriz de permisos sigue **NO APROBADA**. Los helpers `resolveTenantContext`, `resolveBranchContext` y `resolveOpenCashierRegisterShift` resuelven contexto/ámbito, no autorizan operaciones. No añadir endpoints, middleware ni role-switches comerciales antes de aprobación explícita del propietario. No afirmar ledger/auditoría comercial implementados.
+
+**CORS y Cloudflare:** issue #78 sigue abierta. GET /health con estado scaffold y carga de Pages no demuestran CORS. Faltan los dos preflight HTTP reales (origen permitido y externo) y la revisión de status/headers `Access-Control-*`. No cambiar configuración, variables, secretos ni desplegar para completar la comprobación.
+
+**Migraciones y entorno:** main versiona migraciones 0001–0004; no se afirma que 0003/0004 estén aplicadas a Neon `main`. PostgreSQL desechable es el entorno primario de validación. No ejecutar SQL remoto ni tocar datos reales en esta continuidad.
 
 ---
+
+> **Archivo histórico — no usar como estado operativo.** Las notas siguientes se preservan para trazabilidad y pueden contener SHA o límites correspondientes a sesiones anteriores. Usar el checkpoint superior y verificar GitHub en vivo.
+
 
 > **Estado post-merge PR #172 — 2026-10-30 UTC:** GitHub confirma PR #172 fusionada (merge SHA y HEAD de `main`: `a7fa51d059d35fc679b53de112689a19f37fe967`). HEAD de PR validado: `2301a33810067b99ed9b8bd4e74105e65beff701`. En ese HEAD: 12 check-runs; 11 success y `Cloudflare Pages` seguía `in_progress` en la última consulta. Los seis checks requeridos por protección de `main` estaban completed/success; cero checks fallidos. PR #172 era exclusivamente documental (7 archivos, 413 adiciones, 0 eliminaciones), mergeable y autorizada por el propietario tras revisión manual y CI. Reviews formales: 0; threads inline sin resolver: 0. Codex no completó por límite de uso; revisión independiente Claude/Codex queda pendiente y no se considera aprobada. La preview Cloudflare no es certificación de producción. La matriz `docs/sdd/role-permission-decision-matrix.md` continúa **NO APROBADA**. El merge no autoriza permisos comerciales, endpoints, middleware, migraciones ni cambios de producción. Issues #53 y #78 siguen abiertas.
 

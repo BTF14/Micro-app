@@ -1,3 +1,27 @@
+# Prioridad operativa vigente — autorización por operación — 2026-10-30 UTC
+
+> Esta portada supersede prioridades anteriores que presenten la matriz o PR #172 en otro estado.
+
+- Main conocido: `a6db2dcaf57e2a0bf1735eb282c3ac2256cd314c`; resolver en vivo antes de cualquier cambio.
+- Último merge runtime: PR #169 (`be35a0fde3886271b6ed98b7ccc29cc1255d50e5`). PR #170/#171 solo documentación.
+- PR #172 draft, no fusionada: propuesta de arquitectura de autorización server-side y sincronización de continuidad. HEAD previo a sync `93561f0b73f4992d5204f3f461af7961a0e087eb`, 12/12 checks success en ese SHA; el HEAD nuevo debe revalidarse.
+- Matriz comercial de roles/permisos: **NO APROBADA**. No implementar mapeos role→permission ni excepciones.
+- No hay rutas comerciales ni auditoría/ledger comercial implementados. Los resolvers tenant/branch/shift solo resuelven contexto.
+- No Neon main, no cambios de secretos/infra/producción, no aplicar migraciones 0003/0004 remotamente.
+
+## Orden de trabajo
+
+1. Verificar PR #172 y su CI final; revisar documentación/diff. Mantener draft mientras siga pendiente la aprobación del propietario.
+2. Obtener decisiones explícitas para operaciones, scope, delegación, gestión de usuarios/roles, caja, descuentos, anulaciones, devoluciones y administración de políticas.
+3. Cerrar catálogo operación→recurso→scope y matriz aprobada.
+4. Diseñar contrato de auditoría, retención e inmutabilidad.
+5. Diseñar autorización transaccional, lock order/isolation, idempotencia, rollback y error mapping.
+6. Diseñar ledger de caja e inventario y conciliación.
+7. Implementar una vertical slice por vez con integración PostgreSQL efímera y pruebas de handlers reales.
+8. Solo tras pruebas y gates separados, revisar deployment/Neon.
+
+---
+
 # Prioridad operativa vigente — post PR #169 — 2026-10-30 UTC
 
 **Último merge con cambios de runtime:** PR #169, `be35a0fde3886271b6ed98b7ccc29cc1255d50e5`. PR #170 fue documental (`af08cd913a4e0e155b1b74183a71efc51e5d4646`); consultar `main` en vivo.  

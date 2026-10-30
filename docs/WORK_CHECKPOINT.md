@@ -27,7 +27,6 @@
 Tras integrar esta especificación, implementar migration 0004 (`registers`, `register_shifts`), assertions y tests PostgreSQL efímeros; no añadir endpoints comerciales hasta cerrar autorización por operación.
 
 ---
----
 
 # Checkpoint de trabajo vigente — PR de políticas comerciales por organización (2026-10-30 UTC)
 

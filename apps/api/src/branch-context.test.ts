@@ -11,7 +11,7 @@ function tenant(role: TenantContext["role"]): TenantContext {
   return { userId, organizationId, role };
 }
 
-function makeClient(rows: Array<{ user_id: string; organization_id: string; branch_id: string }> = []) {
+function makeClient(rows: Array<{ user_id: string; organization_id: string; branch_id: string; role: TenantContext["role"] }> = []) {
   const query = vi.fn(async (_statement: string, _values?: unknown[]) => ({ rows }));
   return {
     client: { connect: vi.fn(), query, end: vi.fn() } as unknown as DatabaseClient,
@@ -23,7 +23,7 @@ describe("resolveBranchContext", () => {
   it.each(["owner", "admin"] as const)(
     "%s resolves an active branch within the selected organization without a branch assignment",
     async (role) => {
-      const { client, query } = makeClient([{ user_id: userId, organization_id: organizationId, branch_id: branchId }]);
+      const { client, query } = makeClient([{ user_id: userId, organization_id: organizationId, branch_id: branchId, role }]);
 
       await expect(resolveBranchContext(client, tenant(role), branchId)).resolves.toEqual({
         userId,

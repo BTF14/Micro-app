@@ -1381,3 +1381,5 @@ Este bloque es más reciente que los snapshots históricos anteriores; si contra
 - Para continuar: leer AGENTS.md, WORK_CHECKPOINT.md, CURRENT_STATE.md, HANDOFF_NEXT_CHAT.md, PROJECT_PLAN.md y STATE_JOURNAL.md; revalidar main/PR/Actions en vivo.
 
 - CI aplica 0003 a PostgreSQL efímero y ejecuta el test de integración del resolver; el workflow separado `postgres-migration` también aplica 0003 y sus assertions SQL. Comprobar ambos en el HEAD final.
+
+- Endurecimiento adicional de la rama: el resolver ahora vuelve a validar organización, usuario y membresía activos y exige que el rol DB coincida con el TenantContext; integración cubre revocación y cambio de rol. La evidencia de checks del HEAD anterior queda supersedida; verificar el HEAD vivo actual.

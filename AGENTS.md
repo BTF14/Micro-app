@@ -32,11 +32,13 @@ The owner explicitly prioritized correctness and security over speed: implement 
 - Do not send emails; only the user can authorize sending.
 - The user has authorized safe autonomous code/documentation changes and commits/pushes. Do not ask the user to repeat permissions/connections unless a concrete blocker is demonstrated.
 - No force-push. No blind merge of `feat/neon-transaction-adapter`; inspect the complete diff against current `main` first.
-- Identity requirement is a P0: previously agreed Google sign-in + allowlist must be reconciled with actual code. Static review of `apps/api/src/auth.ts` did not find Google OAuth, allowlist, or email verification. Do not claim identity is complete until implementation and tests prove it.
+- Identity status must follow `docs/API_INTEGRATION.md` and live code, not historical static reviews: Google OAuth + allowlist, state/PKCE, revocable session, and Google `email_verified` validation were implemented in PRs #153/#155. Password login/registration remain fail-closed/disabled; account recovery, MFA, full session lifecycle/cleanup, and operation-level authorization remain pending. Never equate authentication with commercial readiness.
 - Do not claim a tool, persistent-memory service, agent, or test is installed/running/passing unless there is current evidence. Existing `.github/agents/*.agent.md` files are reusable role instructions, not proof of active autonomous subagents.
 - Do not state workflows are green without verifying their conclusion for the exact current SHA.
 
-## Change and verification protocol
+## README synchronization after verified progress
+
+Whenever a concrete project advance is completed and verified (for example, a feature or security milestone merged with its required checks, or an operational capability proven with reproducible evidence), update `README.md` in the same coherent change or immediately afterward. Describe only the verified current product state, architecture and setup; distinguish implemented, tested, proposed and pending capabilities. Do not advertise incomplete modules, future plans, preview-only behavior or unverified capacity as available. For documentation-only planning, failed/incomplete work or an unverified change, do not present it as a completed product capability; update continuity documents instead. Review README claims against code, tests and live GitHub state before committing.
 
 - Prefer small, reversible, scoped changes with clear acceptance criteria.
 - Inspect existing implementation and callers before changing interfaces, schema, auth, or deployment configuration.

@@ -51,7 +51,7 @@ Whenever a concrete project advance is completed and verified (for example, a fe
 
 ## Current known priorities (re-verify on each session)
 
-1. P0: finish review and CI for PR #166 (documentation reconciliation) and PR #167 (migration 0004, SQL assertions, lifecycle/concurrency integration tests); never use a previous SHA's checks as proof for the current HEAD.
+1. P0: revalidate current main and open PRs; PR #166/#167 are merged. Main includes migrations 0001–0004. Next, implement an isolated authenticated-cashier open-shift resolver with PostgreSQL 18 disposable tests; no commercial endpoints until permissions are approved.
 2. Keep Neon main untouched; PostgreSQL 18 disposable CI is the first-line migration/test environment, and Neon branches are reserved for additional validation not covered by CI.
 3. Before commercial endpoints, complete operation-level server authorization, tenant/branch isolation, rate limiting and approval of the role-permission matrix.
 4. Continue the data model after register/shift: warehouses, per-warehouse balances/ledger and safe reconciliation/backfill of organization-scoped legacy stock.

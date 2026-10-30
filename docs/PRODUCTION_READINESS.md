@@ -13,8 +13,8 @@ Este archivo es la fuente de datos para el panel de avance. Un ítem solo puede 
 
 ## Estado arquitectónico al 2026-10-30
 
-- Main contiene 0001–0003: tenant/identidad y fundamento de sucursales/asignaciones; `resolveBranchContext` existe pero no está conectado a rutas.
-- PR #167 añade 0004 (`registers`/`register_shifts`) en una rama abierta; migration validation y assertions se ejecutan en PostgreSQL 18 desechable. No está fusionada ni aplicada a Neon main.
+- Main contiene 0001–0004: tenant/identidad, sucursales/asignaciones y cajas/turnos; `resolveBranchContext` existe pero no está conectado a rutas.
+- 0004 (`registers`/`register_shifts`) está fusionada en main y validada en PostgreSQL 18 desechable; no está aplicada a Neon main.
 - No existen endpoints comerciales; la matriz de permisos sigue NO APROBADA. Este trabajo de esquema no marca como completados los flujos POS, ventas, inventario o caja de extremo a extremo.
 
 ## Implementación funcional
@@ -32,7 +32,7 @@ Este archivo es la fuente de datos para el panel de avance. Un ítem solo puede 
 - [ ] UX responsive final y accesibilidad validada.
 
 ### Datos e integridad
-- [x] Esquema SQL versionado 0001–0003 en main y validación en PostgreSQL 18 desechable; 0004 está validada como candidata en PR #167, aún no fusionada ni aplicada a Neon.
+- [x] Esquema SQL versionado 0001–0004 en main y validación en PostgreSQL 18 desechable; las migraciones 0003/0004 aún no se han aplicado a Neon.
 - [ ] Adaptador PostgreSQL conectado y probado en todos los flujos de negocio.
 - [ ] Migraciones automatizadas y operativamente documentadas.
 - [ ] Aislamiento multiempresa validado para todas las operaciones.
@@ -79,7 +79,7 @@ Este archivo es la fuente de datos para el panel de avance. Un ítem solo puede 
 ## Bloqueos conocidos al último análisis documental
 
 - El registro público y el login con contraseña permanecen bloqueados fail-closed; Google OAuth + allowlist + verificación de email y HTTPS/canonical origin están implementados y probados. Issue #53 sigue abierto por aislamiento real de futuras rutas comerciales y cobertura restante.
-- Main ya incluye sucursales/asignaciones (0003); PR #167 propone cajas/turnos (0004) pero no está fusionada. No hay endpoints ni flujos comerciales; almacenes y stock por almacén siguen pendientes.
+- Main incluye sucursales/asignaciones (0003) y cajas/turnos (0004). No hay endpoints ni flujos comerciales; almacenes y stock por almacén siguen pendientes.
 - Las pruebas Playwright actuales son smoke tests con API simulada; no prueban el backend real.
 - La aplicación no tiene aún los flujos completos de POS/ventas/inventario.
 - Los cambios en Neon main deben superar el gate de `docs/CONSTITUTION.md`; producción sigue bloqueada hasta completar los gates y obtener aceptación explícita.

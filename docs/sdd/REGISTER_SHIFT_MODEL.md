@@ -1,6 +1,6 @@
 # Modelo de cajas y turnos — decisión de arquitectura
 
-**Estado:** migración 0004, assertions y pruebas de integración implementadas en la rama `feat/register-shifts-0004-20261030` (PR #167 abierta, no fusionada). No aplicada a Neon main; no equivale a aprobación de la matriz comercial completa.  
+**Estado:** migración 0004, assertions y pruebas de integración implementadas en main mediante PR #167. No aplicada a Neon main; no equivale a aprobación de la matriz comercial completa.  
 **Fecha:** 2026-10-30 UTC  
 **Base de diseño:** main `1d10befe0cd3367e04bd8998a192e93d9b228063`, PR #165 fusionada.  
 **Objetivo:** trazabilidad de efectivo y atribución inequívoca de operaciones en un POS multi-sucursal.
@@ -91,7 +91,7 @@ En PostgreSQL 18 efímero, desde una base vacía y aplicando migraciones 0001–
 ## 7. Estado actual de infraestructura de pruebas
 
 - PR #165 demuestra que CI aplica 0001–0003 y ejecuta integración branch-context contra PostgreSQL 18 efímero.
-- PR #167 añade 0004 y sus assertions; la migración-check pasó en HEAD `4008ec7c09785298dc733e5e0c492cea34ad6f43`.
-- En el HEAD anterior `0b5a9adbdafce25a8483e7ce6953e2d83a826c47`, CI falló solo en una expectativa de código de error del test de integración; build/typecheck, unit tests, auth integration y branch integration pasaron. Se corrigió el trigger para dejar que las FKs respondan por referencias ausentes; CI se está reejecutando en el HEAD 4008.
+- PR #167 fusionó 0004 y sus assertions; 10/10 workflows Actions pasaron en HEAD `ad45911368e9e9a714ebbe014de2d84a7b3cf1de`.
+- Nota histórica: en el HEAD inicial `0b5a9adbdafce25a8483e7ce6953e2d83a826c47`, CI detectó una expectativa SQLSTATE incorrecta. Se corrigió el trigger antes del HEAD final; los 10 workflows del HEAD final terminaron success.
 - No se aplicó 0003 ni 0004 a Neon main. La herramienta de lectura de Neon branches no devolvió un resultado utilizable; no inferir el número actual ni crear una rama por rutina.
 - PostgreSQL efímero de CI es suficiente para la migración y evita consumir ramas Neon.

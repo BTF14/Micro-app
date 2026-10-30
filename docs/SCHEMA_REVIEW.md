@@ -5,9 +5,9 @@
 
 ## Estado vigente del esquema y el contexto de sucursal
 
-## Candidato de implementación en PR #167 (rama, no main)
+## Esquema de cajas/turnos implementado en main por PR #167
 
-- PR #167 añade `0004_register_shifts.sql` con `registers`/`register_shifts`, FKs compuestas, índices parciales de un turno abierto por caja/cajero y triggers de lifecycle/desactivación. Este DDL no está en main ni se aplicó a Neon.
+- PR #167 fusionó `0004_register_shifts.sql` con `registers`/`register_shifts`, FKs compuestas, índices parciales de un turno abierto por caja/cajero y triggers de lifecycle/desactivación. Este DDL está en main, pero no se aplicó a Neon.
 - La migración-check para el HEAD inicial `0b5a9adbdafce25a8483e7ce6953e2d83a826c47` aplicó 0001–0004 y pasó las assertions en PostgreSQL 18 efímero.
 - El CI del mismo HEAD detectó una expectativa de SQLSTATE incorrecta en el test de integración (se esperaba FK violation donde el trigger fallaba antes). El trigger se corrigió en `4008ec7c09785298dc733e5e0c492cea34ad6f43` para que referencias inexistentes se rechacen por FK y los registros existentes pero inactivos/no-cashier por check violation. Revalidar CI en el HEAD vivo antes de integrar.
 - No se añadieron endpoints comerciales, helper de turno ni autorización por operación. La matriz sigue NO APROBADA.
@@ -62,7 +62,7 @@ No se encontraron rutas HTTP comerciales en el registro de Hono de `apps/api/src
 
 ## Próximas decisiones y secuencia
 
-- Completar CI/integración de PR #167 para 0004 y revisar lifecycle/concurrencia en PostgreSQL 18 efímero; mantener Neon main fuera del laboratorio.
+- CI/integración de PR #167 completadas: 10/10 workflows success en HEAD `ad45911368e9e9a714ebbe014de2d84a7b3cf1de`, incluyendo lifecycle/concurrencia en PostgreSQL 18 efímero; mantener Neon main fuera del laboratorio.
 - Mantener el helper de turno aislado; no conectar endpoints de caja/ventas hasta aprobar la matriz de permisos por operación y definir autorización transaccional.
 - Después diseñar almacenes, balances/ledger y backfill/reconciliación de `products.stock_quantity`.
 - Resolver idempotencia de pagos, integridad venta/líneas/pagos, último owner, auditoría append-only y rate limiting antes de exponer operaciones comerciales.

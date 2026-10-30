@@ -1,72 +1,39 @@
-# Estado vivo — 2026-10-30 UTC (post PR #165)
+# Estado vivo — post PR #166 y #167 — 2026-10-30 UTC
 
-## Reanudación verificada — PR #166 y PR #167 (snapshot 2026-10-30 UTC)
+## Estado confirmado en GitHub
 
-- `main` sigue en `1d10befe0cd3367e04bd8998a192e93d9b228063`; PR #165 fusionada.
-- PR #166 (documentación) sigue abierta. HEAD revisado `4cee6e2ff6bfb8f3eecd85b4ff9212c1ab6d98fd`; 8/8 workflows de GitHub Actions terminaron success. No hay reviews humanas/threads inline; no se confirmó un check externo de Cloudflare Pages/Workers para ese SHA.
-- PR #167 (implementación de cajas/turnos) sigue abierta y apunta a main. Rama `feat/register-shifts-0004-20261030`. El HEAD `0b5a9adbdafce25a8483e7ce6953e2d83a826c47` pasó migration validation, build/typecheck, unit tests, auth/branch integration, E2E, backup smoke, Semgrep, Trivy, Dependency Review, secret scan y dashboard; CI falló únicamente en una expectativa de SQLSTATE del test register-shifts.
-- Corrección del trigger comprometida en `4008ec7c09785298dc733e5e0c492cea34ad6f43`: las referencias inexistentes se dejan a las FKs compuestas (23503); el trigger reserva 23514 para registros existentes pero inactivos o no-cashier. En ese HEAD, migration validation, E2E, backup smoke y controles de seguridad pasaron; CI seguía ejecutándose.
-- Los commits documentales que siguen a este snapshot vuelven a cambiar el HEAD; los resultados anteriores no certifican el SHA final. Reconsultar todos los checks en el HEAD vivo.
-- PR #166 reconcilió los inventarios de esquema/API; PR #167 añade 0004 solo en la rama feature. Ninguna PR está fusionada. No aplicar 0003/0004 a Neon main.
-- No se ha autorizado merge ni despliegue. No tocar Neon main, datos reales, Cloudflare settings, secretos, DNS, billing ni producción.
+- Repositorio: `BTF14/Micro-app`.
+- PR [#166](https://github.com/BTF14/Micro-app/pull/166) fusionada primero; merge commit `8a16b4bf70e3b35c45e91366148f4a37aa43b5e7`.
+- PR [#167](https://github.com/BTF14/Micro-app/pull/167) fusionada después; merge commit: `c1cd8650db33aa4a249eaf1f55d321513d576e10`.
+- PR #166: 8/8 workflows Actions success en su HEAD final `4cee6e2ff6bfb8f3eecd85b4ff9212c1ab6d98fd`.
+- PR #167: 10/10 workflows Actions success en su HEAD final `ad45911368e9e9a714ebbe014de2d84a7b3cf1de`, incluyendo CI, migration validation 0001–0004, Playwright, backup restore smoke PostgreSQL 18, Semgrep, Trivy, Dependency Review, secret history, SDD validation y dashboard.
+- No hubo reviews formales de GitHub ni threads inline en #166/#167. Codex review no pudo completarse por cuota. Se realizó revisión manual de los diffs y de la migración/assertions/tests; no presentar esto como aprobación de Codex ni review humana.
+- Cloudflare publicó URLs identificadas como previews de Pages/Workers. No se modificó configuración Cloudflare ni se hizo deploy manual. Un merge a main puede activar integración automática; no afirmar que se verificó un despliegue productivo de esta sesión.
 
+## Estado real del producto y base de datos
 
-**Repositorio:** https://github.com/BTF14/Micro-app  
-**Main verificado:** `1d10befe0cd3367e04bd8998a192e93d9b228063`  
-**PR #165:** fusionada por squash; merge SHA = main SHA. **PR #166:** abierta, base `main`, rama `docs/post-pr165-register-shift-design-20261030`, HEAD inicial revisado `8044a6614b847d580e6e1f755433f05d2b141b75`; no está fusionada.
+- Main contiene migraciones versionadas 0001–0004. 0003 incorpora sucursales/asignaciones; 0004 incorpora `registers` y `register_shifts`.
+- **No se aplicaron 0003 ni 0004 a Neon main.** La validación se ejecutó en PostgreSQL 18 desechable en CI. No se crearon Neon branches en este bloque.
+- API Hono sigue limitada a autenticación y `GET /health`; no hay endpoints comerciales ni helper runtime que resuelva el turno del cajero autenticado.
+- `resolveBranchContext` existe, pero no está conectado a rutas y no implementa autorización por operación.
+- La matriz `docs/sdd/role-permission-decision-matrix.md` continúa **NO APROBADA**. El esquema de turnos no autoriza ventas, pagos, descuentos, anulaciones ni operaciones de caja desde la API.
+- El modelo de turno es individual por cajero y caja; un solo turno abierto por caja y por cajero/organización; cambio de responsable requiere cerrar y abrir otro turno; USD/VES se cuentan por separado. No hay ledger ni cálculo de efectivo esperado/diferencia.
 
+## Próxima prioridad técnica
 
-## Verificación actual de PR #166 (consulta GitHub, 2026-10-30 UTC)
+1. Revalidar en vivo main, PRs abiertas y checks antes de cualquier cambio.
+2. Diseñar e implementar un helper aislado para resolver el turno abierto del cajero autenticado, con tests PostgreSQL efímeros; sin endpoints comerciales.
+3. Cerrar y aprobar explícitamente la matriz de permisos y la autorización server-side por operación/sucursal antes de handlers comerciales.
+4. Después diseñar almacenes, balances/ledger y reconciliación/backfill del stock legacy.
+5. Medir límites y capacidad Neon/Cloudflare con pruebas sintéticas antes de prometer número de organizaciones/locales.
 
-- Estado: abierta, no draft, `mergeable=true`; base SHA `1d10befe0cd3367e04bd8998a192e93d9b228063`; HEAD consultado `8044a6614b847d580e6e1f755433f05d2b141b75`.
-- Ocho workflows de GitHub Actions asociados a ese HEAD terminaron `completed/success`: CI, Playwright E2E, Database migration validation, Security scan/Trivy, Semgrep SAST, Secret history scan, Dependency review y Project progress dashboard. Se inspeccionaron jobs y steps; el upload Playwright condicional fue omitido porque no hubo fallo.
-- No hay reviews humanas ni threads inline registrados en la consulta actual.
-- El combined status expuesto por el conector no devolvió status checks; tampoco proporcionó evidencia actual suficiente de checks externos Cloudflare Pages/Workers para este HEAD. No declararlos verdes ni reutilizar resultados de otro SHA.
-- Codex no se reintentó; la limitación de cuota descrita en el checkpoint previo sigue sin considerarse aprobación.
-- La revisión manual detectó y reconcilió discrepancias post-#165 en SCHEMA_REVIEW, DATABASE_SCHEMA, API_INTEGRATION y MULTI_BRANCH_DATA_MODEL. PR #166 contiene esa actualización documental.
-- Estos resultados son del HEAD consultado antes de los nuevos commits de documentación. Cada commit cambia el HEAD y obliga a volver a verificar checks sobre el SHA final antes de integrar.
-- No se ha fusionado la PR ni se ha autorizado despliegue. No tocar Neon main ni producción.
+## Guardrails permanentes
 
-## Evidencia exacta del estado actual
-- GitHub check-runs consultados directamente para `1d10befe0cd3367e04bd8998a192e93d9b228063`: 9/9 completados con `success` (verify, Chromium auth smoke, postgres-migration, Semgrep, Trivy, secret-history, generate-progress, Cloudflare Pages y Workers Builds).
-- Cloudflare Pages reportó **Deployed successfully** para el commit `1d10befe0cd3367e04bd8998a192e93d9b228063`; Workers Builds reportó build exitoso y un Version ID. Esto confirma los resultados de integración post-merge, no una prueba independiente de routing funcional, sesión OAuth ni operaciones comerciales live.
-- PR #165 implementó migración aditiva `0003_branch_scope.sql`, tablas `branches` y `branch_memberships`, `resolveBranchContext`, tests unitarios/integración PostgreSQL y assertions tenant-scoped.
-- La revisión de PR #165 fue manual sobre el diff completo de 13 archivos. No hubo review humana ni threads inline; Codex no completó por cuota y no se consideró aprobación.
-- La migración 0003 **no se ha aplicado a Neon main**. No se usaron datos reales ni se ejecutó SQL en Neon main.
-- No se ha confirmado el routing/versión live de Pages ni el comportamiento autenticado de producción.
-
-## Arquitectura implementada vs pendiente
-- API Hono: auth y `GET /health`; no hay handlers comerciales.
-- `resolveTenantContext` y `resolveBranchContext` son helpers de contexto; el helper de sucursal aún no está conectado a rutas. No existe autorización comercial por operación.
-- Implementado en esquema versionado: organizaciones, miembros, productos/stock legacy por organización, sucursales y asignaciones de sucursal.
-- No implementado en main: almacenes, cajas/turnos, stock por almacén y endpoints comerciales. PR #167 añade `registers`/`register_shifts` en una rama aún no fusionada. También siguen pendientes rate limiting runtime y matriz de permisos comerciales aprobada.
-- La matriz `docs/sdd/role-permission-decision-matrix.md` sigue **NO APROBADA**. Las políticas comerciales (descuentos/límites/aprobaciones) pertenecen a cada organización; no imponer umbrales universales.
-
-## Decisión arquitectónica vigente: bases de datos
-- PostgreSQL desechable en CI es el entorno primario para migraciones y pruebas desde cero.
-- Neon branches solo se crean cuando aporten una validación adicional que CI no pueda cubrir; deben ser aisladas, sintéticas cuando sea posible, con expiración y limpieza para respetar el límite de ramas/coste.
-- Neon `main` queda fuera del ciclo de desarrollo y no se usa como laboratorio. Toda futura mutación requiere el gate de `docs/CONSTITUTION.md`, prueba previa, recuperación verificada y autorización según riesgo.
-- No se creó ni modificó ninguna Neon branch en este bloque. El intento de lectura de ramas no devolvió resultado utilizable; no inferir su número actual.
-- El flujo de CI actual aplica migraciones en PostgreSQL efímero. No sustituir esta prueba por una migración en Neon main.
-
-## Decisión operativa de caja/turnos adoptada para el diseño
-- Una caja pertenece a una sucursal.
-- Cada turno abierto pertenece a **un único cajero y una única caja**; no se comparte ni se transfiere.
-- Un cajero no mantiene dos turnos abiertos simultáneamente dentro de la misma organización; una caja tampoco puede tener dos turnos abiertos.
-- Cambio de responsable = cerrar el turno anterior con conteo de efectivo y abrir un turno nuevo para el siguiente cajero. No se cambia el cajero de un turno abierto.
-- Supervisión/override de owner/admin será una capacidad separada, auditada y pendiente de la matriz de permisos; no convierte a esos roles en cajeros ni permite operar silenciosamente un turno ajeno.
-- El diseño detallado se documenta en `docs/sdd/REGISTER_SHIFT_MODEL.md`. Esta decisión no crea endpoints ni aprueba la matriz comercial completa.
-
-## Bloque de trabajo actual
-- Rama técnica: `feat/register-shifts-0004-20261030` (PR #167 abierta); apilada sobre la documentación de PR #166.
-- Alcance: migración aditiva 0004, assertions SQL, pruebas de integración/concurrencia y documentación sincronizada; no endpoints comerciales.
-- Próxima acción: completar CI del HEAD final, revisar diff de ambas PR y conservar Neon main/producción intactas. No fusionar sin autorización expresa.
-
-## Restricciones y gates
-- No migrar Neon main, no modificar producción, secretos, DNS, billing ni planes de pago.
-- No afirmar capacidad de tenants/sucursales sin pruebas de carga representativas.
-- No abrir PR solo para checkpoints; incluir continuidad en el cambio sustantivo.
-- Actualizar README solo al cerrar una capacidad de producto implementada y verificada; este bloque es diseño/documentación y no anuncia funcionalidades.
+- PostgreSQL desechable es el entorno primario. Neon branches solo si añaden validación específica; Neon main nunca es laboratorio.
+- No ejecutar migraciones en Neon main ni tocar datos reales, secretos, DNS, billing o configuración Cloudflare sin los gates y autorización correspondientes.
+- No confundir esquema migrado en Git con esquema aplicado en Neon.
+- Mantener CURRENT_STATE, HANDOFF_NEXT_CHAT, WORK_CHECKPOINT, PROJECT_PLAN y STATE_JOURNAL sincronizados dentro de cada cambio sustantivo.
+- Los bloques inferiores de este archivo son snapshots históricos; esta portada es el estado operativo vigente y prevalece sobre ellos.
 
 ---
 

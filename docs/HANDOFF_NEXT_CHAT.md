@@ -1,62 +1,53 @@
-# Reanudación inmediata — 2026-10-30 UTC, post PR #165
+# Handoff operativo — post PR #166 y #167 — 2026-10-30 UTC
 
-## Estado técnico vigente — snapshot 2026-10-30 UTC
+## Punto de partida verificado
 
-- `main` permanece en `1d10befe0cd3367e04bd8998a192e93d9b228063`; PR #165 fusionada.
-- PR #166 (reconciliación documental) está abierta; HEAD revisado `4cee6e2ff6bfb8f3eecd85b4ff9212c1ab6d98fd`, 8/8 workflows Actions success. No se confirmaron checks externos Cloudflare para ese SHA.
-- PR #167 (cajas/turnos) está abierta sobre main, rama `feat/register-shifts-0004-20261030`. Añade 0004, assertions, tests de integración/concurrencia y workflows que aplican 0001–0004 desde cero en PostgreSQL 18.
-- Primer HEAD de PR #167 `0b5a9adbdafce25a8483e7ce6953e2d83a826c47`: migration validation, build/typecheck, unit, auth/branch integration, E2E, backup, Semgrep, Trivy, Dependency Review, secret scan y dashboard pasaron; CI falló en un test porque esperaba SQLSTATE 23503 y el trigger devolvía 23514.
-- Corrección en `4008ec7c09785298dc733e5e0c492cea34ad6f43`: referencias ausentes pasan a FKs compuestas (23503); scope existente pero inactivo/no-cashier se rechaza por trigger (23514). Migration validation y demás workflows completados pasaron en ese HEAD; CI seguía ejecutándose. Los cambios documentales posteriores cambian el HEAD y exigen revalidación.
-- Ninguna PR está fusionada. No hay endpoints comerciales ni helper de turno/runtime. Matriz de permisos sigue NO APROBADA.
-- No se aplicaron 0003/0004 a Neon main, no se crearon Neon branches y no se modificaron producción/Cloudflare settings/secretos/DNS/billing. No fusionar ni desplegar sin autorización expresa.
-
-
-**Fuente de verdad:** GitHub live. No asumir que los snapshots históricos posteriores reflejan main actual.
-
-## Estado confirmado
 - Repositorio: `BTF14/Micro-app`.
-- `main` = `1d10befe0cd3367e04bd8998a192e93d9b228063`; PR #165 fusionada por squash (merge SHA idéntico).
-- PR #166 sigue abierta y no fusionada: base `main` SHA `1d10befe0cd3367e04bd8998a192e93d9b228063`; HEAD revisado final de su rama documental `4cee6e2ff6bfb8f3eecd85b4ff9212c1ab6d98fd`.
-- En el HEAD consultado de PR #166, 8 workflows de GitHub Actions terminaron `success` (CI, Playwright, migraciones PostgreSQL, Trivy, Semgrep, secret-history, Dependency Review y dashboard). No hay reviews humanas ni threads inline. La consulta actual no confirma checks externos de Cloudflare para ese HEAD; no extrapolar resultados.
-- La PR #165 agregó `branches`, `branch_memberships`, migración 0003, resolver de contexto y pruebas PostgreSQL efímeras. No conectó el resolver a rutas.
-- Neon main sigue sin migración 0003. No ejecutar SQL en esa rama.
+- PR #166 fusionada: `8a16b4bf70e3b35c45e91366148f4a37aa43b5e7`.
+- PR #167 fusionada: `c1cd8650db33aa4a249eaf1f55d321513d576e10`.
+- PR #166 tuvo 8/8 workflows Actions success en HEAD `4cee6e2ff6bfb8f3eecd85b4ff9212c1ab6d98fd`.
+- PR #167 tuvo 10/10 workflows Actions success en HEAD `ad45911368e9e9a714ebbe014de2d84a7b3cf1de`.
+- No hubo reviews formales de GitHub ni threads inline; Codex no pudo completar por cuota. Revisión manual fallback realizada y documentada; no llamarla aprobación externa.
+- Cloudflare Pages/Workers entregó previews; no se hizo deploy manual ni se verificó un despliegue productivo de esta sesión.
 
-## Reglas ya decididas
-1. PostgreSQL desechable en CI para migraciones y pruebas desde cero.
-2. Neon branch solo si aporta validación adicional; aislarla, usar datos sintéticos cuando sea posible, fijar expiración y limpiar. No crear una branch por rutina si CI cubre el caso.
-3. Neon `main` no es laboratorio. Cualquier cambio requiere gate constitucional, recuperación demostrada y autorización aplicable.
-4. Caja/turnos: un turno abierto por cajero y caja; no compartir ni transferir. Cambio de cajero = cierre auditado y nueva apertura. Una caja y un cajero no pueden tener dos turnos abiertos a la vez dentro de una organización.
-5. La supervisión/override de owner/admin no está aprobada como permiso comercial; diseñarla como acción separada, explícita y auditada.
-6. La matriz `docs/sdd/role-permission-decision-matrix.md` sigue NO APROBADA. No implementar rutas comerciales ni permisos sensibles basados en la propuesta.
+## Estado técnico
 
-## Lectura obligatoria antes de tocar código/DB
-- `AGENTS.md`
-- `docs/CURRENT_STATE.md`
-- `docs/WORK_CHECKPOINT.md`
-- `docs/AI_COLLABORATION_AND_PR_POLICY.md`
-- `docs/CONSTITUTION.md`
-- `docs/BACKUP_AND_RECOVERY.md`
-- `docs/SECURITY_ROADMAP.md`
-- `docs/SAAS_ARCHITECTURE_DECISIONS.md`
-- `docs/sdd/MULTI_BRANCH_DATA_MODEL.md`
-- `docs/sdd/REGISTER_SHIFT_MODEL.md`
-- `.agents/skills/micro-app-postgres-testing/SKILL.md`
+- Main contiene migraciones 0001–0004. 0003 modela sucursales/asignaciones; 0004 añade cajas y turnos.
+- Ninguna de esas migraciones se aplicó a Neon main. CI utilizó PostgreSQL 18 desechable; no se crearon Neon branches.
+- No hay endpoints comerciales ni helper runtime para resolver el turno actual del cajero autenticado.
+- `resolveBranchContext` no está conectado a rutas y no es autorización comercial.
+- La matriz de permisos comerciales sigue **NO APROBADA**.
+- El modelo de turnos exige un cajero + una caja por turno, máximo un turno abierto por caja y por cajero/organización, cierre antes de cambiar responsable y conteos separados USD/VES. No existe ledger de caja ni efectivo esperado.
 
-## Trabajo activo
-- Rama técnica: `feat/register-shifts-0004-20261030`, PR #167 abierta; contiene 0004, assertions SQL, tests PostgreSQL e integración de workflows. Está apilada sobre los documentos de PR #166.
-- PR #166 ya reconcilió CURRENT_STATE/HANDOFF/PLAN/CHECKPOINT/JOURNAL, DATABASE_SCHEMA, SCHEMA_REVIEW, API_INTEGRATION y SDD con el estado post-#165.
-- Completar CI/test de concurrencia y revisión manual de la migración, assertions y diff. Revalidar todos los checks en el SHA exacto final.
-- No añadir endpoints comerciales, helper runtime ni aplicar migraciones a Neon. No fusionar PR #166/#167 ni desplegar sin autorización expresa.
+## Lectura obligatoria antes de actuar
 
-## Siguiente secuencia después de este bloque
-1. Completar CI y revisión final de PR #167 (migration 0004, assertions, lifecycle, concurrency) sobre su HEAD actual.
-2. Revisar en conjunto PR #166 y #167; integrar documentación primero y luego la implementación, solo con autorización expresa.
-3. Mantener el modelo de turnos como helper/DB contract aislado; no añadir endpoints comerciales hasta aprobar matriz, autorización por operación, transacciones e idempotencia.
-4. Diseñar después almacenes, balances/ledger y backfill del stock legacy con reconciliación.
-5. Revalidar límites de Neon/Cloudflare y ejecutar pruebas sintéticas de capacidad antes de prometer número de clientes.
+1. `AGENTS.md`
+2. `docs/CURRENT_STATE.md`
+3. `docs/WORK_CHECKPOINT.md`
+4. `docs/AI_COLLABORATION_AND_PR_POLICY.md`
+5. `docs/CONSTITUTION.md`
+6. `docs/BACKUP_AND_RECOVERY.md`
+7. `docs/SECURITY_ROADMAP.md`
+8. `docs/SAAS_ARCHITECTURE_DECISIONS.md`
+9. `docs/DATABASE_SCHEMA.md` y `docs/SCHEMA_REVIEW.md`
+10. `docs/sdd/MULTI_BRANCH_DATA_MODEL.md`
+11. `docs/sdd/REGISTER_SHIFT_MODEL.md`
+12. `.agents/skills/micro-app-postgres-testing/SKILL.md`
 
-## Límites
-No Neon main, no datos reales, no secretos, no cambios de Cloudflare, DNS, billing o producción. No reintentar Codex mientras la cuota siga agotada. No crear PR de checkpoint independiente.
+## Próxima tarea autorizada
+
+Inspeccionar el código actual y diseñar un helper aislado que resuelva el turno abierto del usuario autenticado, con pruebas unitarias e integración en PostgreSQL 18 desechable. No crear endpoints comerciales ni decidir permisos por inferencia. Actualizar los cinco documentos de continuidad y el journal durante el trabajo, no al final.
+
+## Reglas de ejecución y merge
+
+- El propietario autoriza fusionar PRs cuando hayan superado revisión completa y comprobaciones. No pedir autorización de merge de nuevo; sí detenerse si hay fallos, hallazgos materiales o gates incompletos.
+- La revisión manual no debe presentarse como review humana o Codex. Registrar qué revisión sí se hizo y qué evidencia falta.
+- PostgreSQL desechable primero; Neon branches solo para validación adicional concreta; Neon main nunca como laboratorio.
+- No tocar secretos, datos reales, DNS, billing ni Cloudflare settings sin necesidad demostrada y autorización aplicable.
+- Los merges a main pueden activar despliegues automáticos; distinguir siempre preview de producción y comprobar evidencia post-merge.
+- No abrir PRs de checkpoint redundantes; mantener una PR coherente por bloque sustantivo.
+- Los snapshots inferiores son históricos y están supersedidos por esta portada y CURRENT_STATE.
+
 ---
 
 # Reanudación inmediata — 2026-10-30 UTC, post PR #161

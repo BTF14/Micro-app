@@ -44,7 +44,7 @@ describe("resolveBranchContext", () => {
   it.each(["cashier", "inventory"] as const)(
     "%s requires an active assignment to the selected branch",
     async (role) => {
-      const { client, query } = makeClient([{ user_id: userId, organization_id: organizationId, branch_id: branchId }]);
+      const { client, query } = makeClient([{ user_id: userId, organization_id: organizationId, branch_id: branchId, role }]);
 
       await expect(resolveBranchContext(client, tenant(role), branchId)).resolves.toMatchObject({
         userId,

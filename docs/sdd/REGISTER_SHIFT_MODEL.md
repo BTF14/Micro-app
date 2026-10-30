@@ -31,20 +31,25 @@ Esta es la opción base más simple de auditar: cada venta/pago asociado a caja 
 ### register_shifts
 - UUID, `organization_id`, `branch_id`, `register_id` y `cashier_user_id` obligatorios.
 - El cajero debe pertenecer a la organización y tener asignación de sucursal. La FK garantiza pertenencia estructural; el runtime debe volver a validar que membresía y asignación sigan activas y que el rol actual sea `cashier`.
-- Apertura con `opening_cash` NUMERIC (nunca float), no negativo, y `opened_at`.
-- Cierre con `closing_cash` NUMERIC no negativo, `closed_at` y `closed_by_user_id`; el cierre debe quedar completo o permanecer abierto, nunca parcialmente cerrado.
-- `opened_by_user_id` debe ser el mismo cajero responsable en la política base. El cierre normal corresponde al mismo cajero; una excepción de supervisor se reservará para un permiso separado, con motivo y auditoría, si la matriz futura lo aprueba.
+- Apertura con `opening_cash_usd NUMERIC(14,4)` y `opening_cash_ves NUMERIC(16,2)`, ambos no negativos y con valor inicial cero permitido; `opened_at` usa `timestamptz`.
+- Cierre con `closing_cash_usd NUMERIC(14,4)`, `closing_cash_ves NUMERIC(16,2)`, `closed_at` y `closed_by_user_id`; ambos conteos de cierre son obligatorios y no negativos. El cierre se escribe en una sola transición atómica o el turno permanece abierto.
+- USD y VES se guardan por separado porque el esquema de pagos admite ambas monedas. No usar un campo genérico sin moneda ni sumar importes de monedas distintas.
+- En la política base, `closed_by_user_id` debe ser el mismo cajero responsable. No se habilita cierre por supervisor; cualquier excepción futura requiere permiso separado, motivo y auditoría aprobados.
 - FK compuestas para evitar mezclar organizaciones, sucursales, cajas, miembros y asignaciones.
 - Índice único parcial: como máximo un turno abierto por caja.
 - Índice único parcial: como máximo un turno abierto por cajero dentro de la organización.
-- Checks que mantienen coherencia entre estado abierto/cerrado y campos de cierre.
-- No almacenar aquí pagos, ventas, movimientos de efectivo ni saldo esperado calculado sin un ledger de caja definido.
+- El estado se deriva de `closed_at IS NULL` (abierto) o `closed_at IS NOT NULL` (cerrado); no duplicar estado en una columna adicional.
+- Checks para importes no negativos, campos de cierre completos/incompletos y `closed_at >= opened_at`.
+- Índices parciales únicos para un turno abierto por caja y por cajero/organización; estos son la defensa final ante aperturas concurrentes.
+- Trigger de ciclo de vida: no permitir editar datos de identidad/apertura de un turno abierto; solo una transición de cierre completa; no permitir UPDATE/DELETE de turnos cerrados ni DELETE de turnos abiertos.
+- Impedir desactivar una caja, sucursal, organización, usuario, membresía o asignación de sucursal mientras tenga turnos abiertos.
+- No almacenar aquí pagos, ventas, movimientos de efectivo ni saldo esperado/diferencia calculada sin un ledger de caja definido. Los conteos USD/VES son efectivo físico contado, no saldo esperado.
 
 ## 3. Reglas de aplicación futuras
 
 1. Abrir: validar sesión, tenant, branch context, rol cashier, asignación activa, caja activa y ausencia de turno abierto del cajero/caja; insertar apertura en transacción.
 2. Operar: cada operación de caja debe comprobar en servidor el turno abierto, cajero autenticado y caja/sucursal correctas dentro de la misma transacción que la operación financiera.
-3. Cerrar: capturar conteo real, calcular diferencias cuando exista un ledger completo, registrar actor y hora; bloquear modificaciones posteriores.
+3. Cerrar: capturar conteo real separado en USD y VES, registrar actor y hora; no calcular diferencia contra un efectivo esperado hasta que exista un ledger de caja completo. Bloquear modificaciones posteriores.
 4. Cambio de cajero: cerrar el turno actual; abrir uno nuevo para el siguiente cajero. Si el cierre falla, no abrir el siguiente turno.
 5. Concurrencia: índices únicos parciales son la última defensa; la API debe manejar conflictos sin crear duplicados ni filtrar detalles internos.
 6. Desactivación: no permitir desactivar caja/sucursal o revocar asignación mientras existan operaciones abiertas sin un flujo de cierre controlado.
@@ -66,9 +71,11 @@ En PostgreSQL 18 efímero, desde una base vacía y aplicando migraciones 0001–
 - Permitir un turno abierto por caja y rechazar el segundo por índice único parcial.
 - Permitir un turno abierto por cajero en una caja y rechazar simultáneo en otra caja de la misma organización.
 - Permitir abrir un nuevo turno después de cerrar el anterior.
-- Rechazar apertura/cierre con importes negativos y estados/campos inconsistentes.
+- Rechazar apertura/cierre con importes USD/VES negativos y estados/campos inconsistentes.
 - Rechazar cierre incompleto y conservar abierto el turno si la transacción de cierre falla.
-- Verificar que un trigger PostgreSQL impide UPDATE/DELETE de un turno cerrado, incluso si el caller intenta limpiar `closed_at` o cambiar el cajero/caja.
+- Rechazar cambiar cajero, caja, sucursal, organización, hora o conteos de apertura de un turno abierto.
+- Verificar que triggers PostgreSQL impiden UPDATE/DELETE de un turno cerrado y DELETE de uno abierto, incluso si el caller intenta limpiar `closed_at` o cambiar el cajero/caja.
+- Rechazar desactivar caja, sucursal, organización, usuario, membresía o asignación mientras exista un turno abierto; permitirlo tras el cierre.
 - Tests de integración del resolver: usuario no asignado, asignación inactiva, rol cambiado, caja inactiva, turno cerrado, turno de otro cajero, cross-tenant/cross-branch.
 - Tests de concurrencia: dos aperturas simultáneas para misma caja y para mismo cajero deben producir un único turno abierto.
 - Fixtures sintéticos y limpieza determinista; nunca Neon main ni datos reales.

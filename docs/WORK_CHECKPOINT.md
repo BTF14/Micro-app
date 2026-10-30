@@ -9,7 +9,7 @@
 - Una observación anterior de #78 registró 0% para esta versión en otra vista; la inspección posterior de Active Deployment mostró 100% asignado. No confundir asignación con tasa de éxito o volumen de solicitudes.
 
 ## Estado de issues
-- **#78:** abierta. CORS no verificado mediante preflight HTTP real. Obtener dos OPTIONS desde entorno con conectividad real: origin permitido `https://micro-app-63i.pages.dev` y externo `https://attacker.example`. Registrar solo status y headers `Access-Control-*`. Investigar ausencia de `VITE_API_BASE_URL` en solo lectura.
+- **#78:** abierta. CORS no verificado mediante preflight HTTP real. Obtener dos OPTIONS desde entorno con conectividad real: origin permitido `https://micro-app-63i.pages.dev` y externo `https://attacker.example`. Registrar solo status y headers `Access-Control-*`. Verificar el bundle JavaScript desplegado si es accesible y realizar los dos preflight HTTP reales; el HTML público solo confirma que el enlace OAuth apunta al Worker, no las demás llamadas API ni CORS.
 - **#53:** abierta. Un rol por miembro/organización en `organization_members.role`; `branch_memberships` solo asigna sucursales, sin roles por sucursal. Matriz de permisos por operación **NO APROBADA**. No implementar autorización comercial antes de aprobación.
 
 ## Límites

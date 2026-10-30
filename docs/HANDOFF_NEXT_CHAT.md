@@ -1336,3 +1336,13 @@ Este bloque es más reciente que los snapshots históricos anteriores; si contra
 - Producción continúa NO lista; faltan rutas comerciales, autorización por operación, aislamiento cross-tenant probado, integridad/idempotencia/concurrencia, BCV/fiscalidad y recuperación operativa completa.
 
 ---
+
+## Continuidad 2026-10-30 — políticas comerciales configurables por organización
+
+- Leer `docs/sdd/ORGANIZATION_COMMERCIAL_POLICY_CONFIGURATION.md` antes de continuar el diseño de ventas.
+- Cada organización decide sus propias políticas comerciales, incluidos descuentos, límites y aprobaciones. Micro app no debe imponer porcentajes ni importes universales.
+- La plataforma aporta configuración segura, versionado, aplicación server-side, aislamiento por organización y snapshots/auditoría por operación.
+- La matriz `docs/sdd/role-permission-decision-matrix.md` sigue NO APROBADA; no implementar permisos comerciales ni asumir quién puede administrar políticas hasta resolverla.
+- La rama `docs/org-policy-architecture-20261030` parte de main `4ab229296d8858c8c553e00a633a762b9c26a81b`. Verificar el HEAD y el estado vivo de la PR antes de actuar.
+- Siguiente secuencia: (1) revisar diff y checks de esta PR; (2) consolidar ERD organización→sucursal→almacén/caja/turno con FKs tenant-scoped; (3) resolver la matriz de roles; (4) diseñar integridad/idempotencia/auditoría; (5) solo después preparar una PR de código/migraciones/tests con PostgreSQL efímero.
+- No ejecutar migraciones en Neon main ni desplegar producción.

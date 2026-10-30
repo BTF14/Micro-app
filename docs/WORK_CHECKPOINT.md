@@ -1,3 +1,19 @@
+# Checkpoint de trabajo vigente — PR de políticas comerciales por organización (2026-10-30 UTC)
+
+**Rama:** `docs/org-policy-architecture-20261030`  
+**Base:** `4ab229296d8858c8c553e00a633a762b9c26a81b`  
+**Alcance:** documentación de arquitectura; no código, esquema, migraciones ni infraestructura.
+
+- Diseño nuevo: `docs/sdd/ORGANIZATION_COMMERCIAL_POLICY_CONFIGURATION.md`.
+- Alineación de `docs/sdd/role-permission-decision-matrix.md` y `docs/SAAS_ARCHITECTURE_DECISIONS.md`.
+- Cada organización controla su propia política comercial; no hay porcentajes/umbrales universales de descuento.
+- La matriz de roles sigue NO APROBADA; ninguna autorización comercial se implementa en esta PR.
+- No se tocó Neon main, producción, secretos, DNS, billing ni datos reales.
+- No hay pruebas runtime aplicables al cambio documental; falta revisión completa del diff y verificación de checks del HEAD exacto tras abrir PR.
+- PR abierta: [#163](https://github.com/BTF14/Micro-app/pull/163). Revisión manual de los ocho archivos completada; no se detectó contradicción pendiente sobre descuentos universales. En HEAD `531296af195ff17988a4ff9fc0ce65b242d7e194`, los ocho workflows devueltos por GitHub terminaron `success` (CI, Chromium, postgres-migration, Semgrep, Trivy, secret-history, Dependency Review y project progress). Este checkpoint cambia el HEAD: revalidar workflows sobre el HEAD final antes de merge. Codex no se ejecutó; revisión manual fallback. No hay reviews humanas ni threads inline.
+
+---
+
 # Checkpoint de trabajo vigente — Micro app
 
 **Actualizado:** 2026-10-30 UTC  

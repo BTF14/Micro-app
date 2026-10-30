@@ -990,3 +990,13 @@ CI documental: para HEAD `8c15e13fa001a14a0ddf9f2432bc17efb30d476d`, los 8 workf
 - Codex review falló por cuota; revisión manual fallback completada sin hallazgos materiales. Cloudflare previews success; no se confirmó despliegue productivo.
 - Se cierra la sincronización documental posterior a PR #160. Regla: los siguientes checkpoints se actualizan dentro de la PR de trabajo, evitando PR separadas solo para cada checkpoint.
 - Siguiente bloque: arquitectura multi-sucursal, aprobación de matriz de roles, autorización por operación, rate limiting, consistencia/idempotencia y pruebas PostgreSQL aisladas.
+
+
+## 2026-10-30 — políticas comerciales propiedad de cada organización
+
+- Base GitHub verificada: main `4ab229296d8858c8c553e00a633a762b9c26a81b`; cero PR abiertas al inicio del bloque.
+- Se creó el diseño `docs/sdd/ORGANIZATION_COMMERCIAL_POLICY_CONFIGURATION.md` para configuración versionada por organización, validación server-side, aislamiento, snapshots de venta y auditoría.
+- Se alinearon la matriz de permisos y `SAAS_ARCHITECTURE_DECISIONS.md`: se elimina la recomendación de umbral universal del 10 %. Cada organización decide sus condiciones comerciales; la plataforma no impone descuentos.
+- La matriz sigue pendiente de aprobación; no se interpretó esta aclaración como aprobación de todos los permisos o excepciones.
+- Solo documentación; no se cambiaron código, esquema, workflows, servicios ni datos. No se ejecutaron pruebas runtime.
+- Próximo gate: ERD multi-sucursal y cierre explícito de la matriz antes de cualquier implementación comercial.

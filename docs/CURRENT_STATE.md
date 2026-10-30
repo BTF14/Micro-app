@@ -1,3 +1,17 @@
+# Checkpoint adicional — políticas comerciales por organización (2026-10-30 UTC)
+
+- Rama de trabajo: `docs/org-policy-architecture-20261030`.
+- Base verificada: `main` = `4ab229296d8858c8c553e00a633a762b9c26a81b`; no había PR abiertas al iniciar.
+- Se añadió `docs/sdd/ORGANIZATION_COMMERCIAL_POLICY_CONFIGURATION.md`: diseño conceptual de políticas comerciales propiedad de cada organización, versionado, aplicación server-side y snapshots auditables.
+- Se corrigieron `docs/sdd/role-permission-decision-matrix.md` y `docs/SAAS_ARCHITECTURE_DECISIONS.md`: no existe umbral universal de descuentos; la organización define si permite descuentos y sus condiciones.
+- La matriz de permisos continúa **NO APROBADA**. No se implementaron roles, endpoints comerciales, esquema ni migraciones.
+- Alcance exclusivamente documental. No se ejecutó SQL, no se tocó Neon `main`, datos reales, secretos, DNS, billing, Cloudflare ni producción.
+- Pruebas runtime: no aplican a documentación; falta revisión final del diff y checks del SHA de PR.
+- PR documental activa: [#163](https://github.com/BTF14/Micro-app/pull/163), rama `docs/org-policy-architecture-20261030`. La revisión manual y los checks reportados en HEAD `531296af195ff17988a4ff9fc0ce65b242d7e194` se deben revalidar si cambia el HEAD.
+- Próximo gate: cerrar ERD multi-sucursal y resolver aprobación de permisos sensibles antes de implementar autorización comercial. Las políticas comerciales configurables no requieren que el propietario de Micro app establezca reglas de negocio para cada cliente.
+
+---
+
 # Estado vivo verificado tras PR #161 — 2026-10-30 UTC
 
 - **main verificado antes de este checkpoint:** `c7abcb477afd649161176aad8cae707f5e42f632` (merge squash de PR #161). Este mismo checkpoint se integra mediante una PR; consultar el ref vivo de main después de su fusión.

@@ -58,7 +58,7 @@ Roles base recomendados: `owner`, `admin`, `cashier`, `inventory`. No introducir
 
 **Reglas de diseño obligatorias:** autorización en servidor por operación y recurso; denegar por defecto; validar organización y sucursal en cada consulta; no confiar en IDs del cliente; evitar que una organización quede sin owner activo; revocar sesiones al desactivar membresía/usuario; auditoría de cambios de rol y acciones sensibles.
 
-La matriz `docs/sdd/role-permission-decision-matrix.md` sigue siendo propuesta. Su antigua recomendación de roles de alcance exclusivamente organizacional no debe interpretarse como decisión final para una plataforma multi-sucursal. Debe reconciliarse con asignaciones de sucursal y operaciones de caja antes de aprobarla. Umbrales de descuentos, anulaciones permitidas al cajero, aprobaciones y límites monetarios requieren decisión explícita del propietario. No codificar valores sugeridos como el 10% sin aprobación.
+La matriz `docs/sdd/role-permission-decision-matrix.md` sigue siendo propuesta. Su antigua recomendación de roles de alcance exclusivamente organizacional no debe interpretarse como decisión final para una plataforma multi-sucursal. Debe reconciliarse con asignaciones de sucursal y operaciones de caja antes de aprobarla. Cada organización define sus políticas comerciales, incluidos descuentos, límites y aprobaciones; Micro app no impone porcentajes ni importes universales. La plataforma debe aplicar esa configuración en servidor y conservar snapshots auditables. La facultad para configurar políticas y ejecutar excepciones debe definirse en la matriz aprobada. Ver `docs/sdd/ORGANIZATION_COMMERCIAL_POLICY_CONFIGURATION.md`.
 
 ## 4. BCV y conversión USD/VES
 
@@ -157,9 +157,9 @@ No saltar directamente a migraciones ni endpoints comerciales mientras la matriz
 - Contrato API para consulta de tasa y buscador de productos.
 - Política de frescura/TTL de tasa y manejo de feriados/fuente caída.
 - ERD de organización/sucursal/almacén/caja y entidades operativas.
-- Matriz de roles con alcance por organización/sucursal/caja y umbrales comerciales.
+- Matriz de roles con alcance por organización/sucursal/caja; definir qué roles pueden administrar o ejecutar políticas comerciales. Los valores y límites comerciales los define cada organización, no la plataforma.
 - Método de valoración de inventario y política de costo/margen.
-- Límites de descuento, cancelación/devolución y aprobaciones.
+- Capacidades y permisos para descuentos, cancelación/devolución y aprobaciones; cada organización configura sus propios límites comerciales.
 - Estrategia de caché de catálogo solo tras benchmark.
 - Pruebas de capacidad de Neon y Cloudflare, cuotas y coste total.
 - RPO/RTO, retención/alertas y validación de integridad del backup.
@@ -212,4 +212,4 @@ Para evitar que un cajero de una sucursal pueda operar accidentalmente en todas 
 - El alcance de inventario por almacén puede restringirse más adelante si existe una necesidad real; empezar por sucursal y no crear permisos granulares innecesarios.
 - Mantener el último `owner` activo protegido por una operación transaccional. Las altas, bajas y cambios de asignación deben auditarse.
 
-Este es el diseño recomendado para el ERD y la futura matriz; **no es una migración implementada ni sustituye la aprobación explícita de permisos sensibles**. La matriz debe decidir por separado lectura de catálogo, edición de precios/costos, recepción, ajuste, descuento, devolución, cierre de caja, reportes y exportaciones.
+Este es el diseño recomendado para el ERD y la futura matriz; **no es una migración implementada ni sustituye la aprobación explícita de permisos sensibles**. La matriz debe decidir por separado qué roles pueden leer catálogo, editar precios/costos, recibir mercancía, ajustar inventario, administrar/aplicar políticas de descuento, devolver ventas, cerrar caja, consultar reportes y exportar datos. Los importes, porcentajes y condiciones comerciales se configuran por organización.

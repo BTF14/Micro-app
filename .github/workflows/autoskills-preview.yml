@@ -28,6 +28,6 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v7
         with:
-          node-version: 24
+          node-version-file: .node-version
       - name: Preview curated skills without installing into the repository
         run: npx --yes autoskills@0.4.1 --dry-run --verbose

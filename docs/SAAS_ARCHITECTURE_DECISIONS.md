@@ -149,14 +149,14 @@ Definir umbrales conservadores, alertas, cuotas server-side y política de degra
 7. Medir carga/coste y definir límites comerciales después de tener flujos reales.
 8. Validar producción, backups, observabilidad, seguridad y recuperación antes de declarar readiness.
 
-No saltar directamente a migraciones ni endpoints comerciales mientras la matriz de permisos y el modelo de datos no estén resueltos.
+No habilitar endpoints comerciales mientras la matriz de permisos por operación siga sin aprobarse. Las migraciones estructurales pueden avanzar en una PR aislada cuando el modelo de datos esté definido, con pruebas PostgreSQL efímeras y sin aplicar cambios a Neon main.
 
 ## 10. Pendientes explícitos
 
 - Fuente BCV fiable/gratuita y mecanismo de extracción verificado.
 - Contrato API para consulta de tasa y buscador de productos.
 - Política de frescura/TTL de tasa y manejo de feriados/fuente caída.
-- ERD de organización/sucursal/almacén/caja y entidades operativas.
+- ERD de organización/sucursal/almacén/caja documentado en `docs/sdd/MULTI_BRANCH_DATA_MODEL.md`; sucursales/asignaciones en 0003 y cajas/turnos en 0004 (PR #167, no fusionada). Almacenes y stock por almacén siguen pendientes.
 - Matriz de roles con alcance por organización/sucursal/caja; definir qué roles pueden administrar o ejecutar políticas comerciales. Los valores y límites comerciales los define cada organización, no la plataforma.
 - Método de valoración de inventario y política de costo/margen.
 - Capacidades y permisos para descuentos, cancelación/devolución y aprobaciones; cada organización configura sus propios límites comerciales.
@@ -164,13 +164,13 @@ No saltar directamente a migraciones ni endpoints comerciales mientras la matriz
 - Pruebas de capacidad de Neon y Cloudflare, cuotas y coste total.
 - RPO/RTO, retención/alertas y validación de integridad del backup.
 
-## 11. Estado de implementación conocido al 2026-10-29
+## 11. Snapshot histórico pre-PR #165 (supersedido por el estado vigente de la sección 12)
 
 - API Hono tiene autenticación y `GET /health`; no se han verificado rutas comerciales HTTP para catálogo/inventario/ventas/pagos/devoluciones.
 - `exchange_rates` existe en el esquema inicial; Cron BCV y API pública/interna de tasa no están implementados.
 - Índices tenant-scoped para nombre/SKU/barcode ya existen en el esquema inicial; buscador de producto todavía no está implementado como flujo comercial HTTP.
 - El stock existente es por organización, no por sucursal.
-- No hay modelo de sucursal/almacén/caja/turno en el esquema inicial revisado.
+- El DDL inicial 0001 no contenía sucursales/cajas/turnos; PR #165 añadió sucursales/asignaciones en 0003 y PR #167 propone 0004 para cajas/turnos en una rama aún no fusionada.
 - La matriz de roles sigue sin aprobación.
 - Capacidad sostenible y cuotas vivas de Cloudflare no están demostradas.
 - Producción: **NO lista**.
@@ -201,18 +201,18 @@ La optimización debe reducir conexiones y trabajo de base de datos sin debilita
 
 Para evitar que un cajero de una sucursal pueda operar accidentalmente en todas las sucursales, el modelo debe separar **membresía organizacional** de **asignación operativa**:
 
-- `owner` y `admin`: roles de alcance organizacional. Pueden administrar o supervisar varias sucursales según los permisos concretos aprobados.
-- `cashier` y `inventory`: asignaciones de alcance sucursal, no roles globales que automáticamente den acceso a todas las ubicaciones.
-- Una persona puede ser `cashier` en la sucursal A y `inventory` en la sucursal B, sin duplicar su identidad ni crear cuentas separadas.
-- La membresía organizacional confirma que el usuario pertenece al tenant y está activa. La asignación sucursal-usuario confirma en qué sucursales y con qué rol puede operar.
-- Dirección de esquema recomendada para la futura migración: mantener una relación de membresía `organization_members` y añadir una tabla tenant-scoped de asignaciones por sucursal (por ejemplo, `organization_member_branches` o `branch_memberships`) con `organization_id`, `branch_id`, `user_id`, rol permitido (`cashier`/`inventory`), estado y timestamps. Las FKs compuestas deben garantizar que usuario y sucursal pertenecen a la misma organización.
+`owner` y `admin`: roles de alcance organizacional, sujetos a permisos concretos aprobados.
+- `cashier` y `inventory`: alcance operativo por sucursal; no heredan acceso a todas las ubicaciones.
+- PR #165 creó `branch_memberships` con organización, sucursal, usuario y estado activo, pero **sin columna de rol por sucursal**. `organization_members.role` sigue siendo global.
+- Por ello, la posibilidad de que una persona sea cashier en A e inventory en B es una dirección futura, no una capacidad del esquema actual. Exige decisión, backfill y migración independiente.
+- La membresía organizacional confirma pertenencia al tenant; `branch_memberships` confirma asignación a sucursal. El resolver comprueba rol global y asignación activa, sin autorizar operaciones comerciales.
 - No permitir que el valor `cashier` o `inventory` en la membresía se interprete como acceso a todas las sucursales. La migración debe retirar esa ambigüedad del modelo actual de `organization_members.role`; el diseño exacto de columnas y compatibilidad se cierra en el ERD antes de migrar.
 - El contexto de API futuro debe resolver `userId`, `organizationId`, `organizationRole` y, cuando corresponda, `branchId`/asignación activa desde el servidor. Un `branchId` recibido del cliente es solo un selector solicitado; nunca una prueba de permiso.
 - La autorización de caja requiere además una asignación/turno activo: ser cajero de una sucursal no autoriza a abrir, consultar ni cerrar la caja/turno de otra persona.
 - El alcance de inventario por almacén puede restringirse más adelante si existe una necesidad real; empezar por sucursal y no crear permisos granulares innecesarios.
 - Mantener el último `owner` activo protegido por una operación transaccional. Las altas, bajas y cambios de asignación deben auditarse.
 
-Este es el diseño recomendado para el ERD y la futura matriz; **no es una migración implementada ni sustituye la aprobación explícita de permisos sensibles**. La matriz debe decidir por separado qué roles pueden leer catálogo, editar precios/costos, recibir mercancía, ajustar inventario, administrar/aplicar políticas de descuento, devolver ventas, cerrar caja, consultar reportes y exportar datos. Los importes, porcentajes y condiciones comerciales se configuran por organización.
+Este diseño sigue siendo la dirección de la futura matriz; no sustituye la aprobación explícita de permisos sensibles. La base de asignación por sucursal sí está implementada en 0003, pero aún no incluye rol por sucursal. La matriz debe decidir por separado qué roles pueden leer catálogo, editar precios/costos, recibir mercancía, ajustar inventario, administrar/aplicar políticas de descuento, devolver ventas, cerrar caja, consultar reportes y exportar datos. Los importes, porcentajes y condiciones comerciales se configuran por organización.
 
 
 ## Modelo de datos multi-sucursal — diseño 2026-10-30
@@ -232,5 +232,18 @@ El modelo detallado propuesto está en docs/sdd/MULTI_BRANCH_DATA_MODEL.md. Resu
 - `resolveBranchContext` está implementado y probado en PostgreSQL efímero, pero no está conectado a rutas ni concede permisos por operación.
 - Decisión de diseño para caja: cada register pertenece a una sucursal. Un register_shift abierto pertenece a un único cajero y una única caja; no se comparte ni se transfiere. Cambio de cajero requiere cierre con conteo y nueva apertura. Máximo un turno abierto por caja y por cajero dentro de la organización, protegido por índices únicos parciales.
 - Owner/admin pueden tener alcance organizacional para resolver sucursales, pero eso no les concede operar el turno de otro cajero. Los overrides requieren permiso separado, motivo y auditoría; siguen pendientes de matriz aprobada.
-- Especificación completa: `docs/sdd/REGISTER_SHIFT_MODEL.md`. No hay migración 0004, tablas registers/register_shifts ni endpoints en el estado actual.
+- Especificación: `docs/sdd/REGISTER_SHIFT_MODEL.md`. PR #167 añade `0004_register_shifts.sql`, assertions y pruebas de integración en `feat/register-shifts-0004-20261030`; no está fusionada, no está en `main` y no se aplicó a Neon. No hay endpoints comerciales.
 - Entorno: PostgreSQL 18 desechable de CI para migraciones desde cero. Neon branches son opcionales para pruebas que CI no cubra; evitar su creación rutinaria y establecer expiración/limpieza. Neon main no es entorno de desarrollo.
+
+
+## 12. Estado vigente post PR #165 y trabajo de PR #167 — 2026-10-30 UTC
+
+- Main verificado: `1d10befe0cd3367e04bd8998a192e93d9b228063`. PR #165 fusionada; 0003 crea `branches` y `branch_memberships`. La migración 0003 no se ha aplicado a Neon main.
+- `resolveBranchContext` está implementado y probado, pero no conectado a rutas. `branch_memberships` no contiene rol por sucursal; cashier/inventory siguen en `organization_members.role`.
+- PR #166 mantiene la reconciliación documental; sigue abierta y no fusionada.
+- PR #167 añade 0004 en `feat/register-shifts-0004-20261030`: `registers`, `register_shifts`, FKs compuestas, índices únicos parciales, lifecycle triggers y protección ante desactivación/revocación con turnos abiertos. No está fusionada ni aplicada a Neon.
+- En el primer HEAD de PR #167, PostgreSQL migration validation y los workflows de seguridad/E2E/backup pasaron; CI detectó una expectativa incorrecta de SQLSTATE en el test de integración. La corrección quedó en el HEAD `4008ec7c09785298dc733e5e0c492cea34ad6f43`; CI se está reejecutando.
+- Conteos de efectivo se guardan separados USD/VES. No existe ledger de caja ni cálculo de efectivo esperado/diferencias.
+- La matriz de permisos comerciales sigue NO APROBADA. No hay endpoints comerciales ni autorización de supervisor para turnos.
+- PostgreSQL 18 efímero es la validación primaria; Neon branches solo si aportan evidencia adicional; Neon main no es laboratorio.
+- No fusionar PR #166/#167 ni desplegar sin la autorización correspondiente; no modificar producción, secretos, DNS, billing ni configuración Cloudflare.

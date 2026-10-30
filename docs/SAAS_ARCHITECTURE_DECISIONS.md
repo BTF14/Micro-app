@@ -201,7 +201,7 @@ La optimización debe reducir conexiones y trabajo de base de datos sin debilita
 
 Para evitar que un cajero de una sucursal pueda operar accidentalmente en todas las sucursales, el modelo debe separar **membresía organizacional** de **asignación operativa**:
 
-`owner` y `admin`: roles de alcance organizacional, sujetos a permisos concretos aprobados.
+- `owner` y `admin`: roles de alcance organizacional, sujetos a permisos concretos aprobados.
 - `cashier` y `inventory`: alcance operativo por sucursal; no heredan acceso a todas las ubicaciones.
 - PR #165 creó `branch_memberships` con organización, sucursal, usuario y estado activo, pero **sin columna de rol por sucursal**. `organization_members.role` sigue siendo global.
 - Por ello, la posibilidad de que una persona sea cashier en A e inventory en B es una dirección futura, no una capacidad del esquema actual. Exige decisión, backfill y migración independiente.

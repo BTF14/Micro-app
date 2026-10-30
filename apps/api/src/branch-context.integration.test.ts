@@ -125,6 +125,32 @@ const suite = describe.skipIf(!databaseUrl)("branch context against PostgreSQL",
     await expect(resolveBranchContext(client as unknown as DatabaseClient, context(cashierAssignedId, "cashier"), branchB)).resolves.toBeNull();
   });
 
+  it("revalidates active organization membership and the current database role", async () => {
+    await client.query(
+      "UPDATE organization_members SET is_active = false WHERE organization_id = $1 AND user_id = $2",
+      [organizationId, cashierAssignedId],
+    );
+    await expect(
+      resolveBranchContext(client as unknown as DatabaseClient, context(cashierAssignedId, "cashier"), branchA),
+    ).resolves.toBeNull();
+
+    await client.query(
+      "UPDATE organization_members SET is_active = true, role = 'inventory' WHERE organization_id = $1 AND user_id = $2",
+      [organizationId, cashierAssignedId],
+    );
+    await expect(
+      resolveBranchContext(client as unknown as DatabaseClient, context(cashierAssignedId, "cashier"), branchA),
+    ).resolves.toBeNull();
+
+    await client.query(
+      "UPDATE organization_members SET role = 'cashier' WHERE organization_id = $1 AND user_id = $2",
+      [organizationId, cashierAssignedId],
+    );
+    await expect(
+      resolveBranchContext(client as unknown as DatabaseClient, context(cashierAssignedId, "cashier"), branchA),
+    ).resolves.toMatchObject({ branchId: branchA });
+  });
+
   it("rejects inactive branches and branch IDs belonging to another organization", async () => {
     await expect(resolveBranchContext(client as unknown as DatabaseClient, context(ownerId, "owner"), inactiveBranch)).resolves.toBeNull();
     await expect(resolveBranchContext(client as unknown as DatabaseClient, context(ownerId, "owner"), otherBranchId)).resolves.toBeNull();

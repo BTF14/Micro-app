@@ -1,20 +1,24 @@
 # Prioridad operativa vigente — Micro app
 
-**Checkpoint de continuidad — 2026-10-30 UTC.** La base de `main` verificada antes de esta reconciliación fue `682868c5fca65a4a1f3f61a1bc428a34ae1a4dd9` (merge de PR #174); es una referencia de base, no una afirmación perpetua del HEAD. PR #174 está fusionada, documental (6 archivos, +70/-0), con 8/8 workflows success en su HEAD exacto. La reconciliación actual está en `docs/authoritative-continuity-after-pr174-20261030`; consultar PR/HEAD/checks/merge SHA en GitHub.
+**Estado 2026-10-30 UTC:** PR #175 está fusionada (merge SHA `b8a2a9d514839bf9fa340b5b04349621b4484385`; HEAD observado inmediatamente después del merge igual a ese SHA). Su HEAD `eac60184748fdab3eae926860e0d6c901251a462` tuvo 9/9 workflows success y 6/6 contextos requeridos success. El diff fue documental: siete archivos, +142/-50; revisión manual hecha, sin reviews formales ni threads. La revisión independiente Claude/Codex de PR #172 continúa pendiente/no ejecutada.
 
-**Regla de precedencia:** `docs/CURRENT_STATE.md` es el checkpoint operativo. `AGENTS.md` y `docs/AI_COLLABORATION_AND_PR_POLICY.md` son políticas obligatorias. GitHub vivo es la autoridad para HEAD, ramas, PR, issues y Actions. Las entradas antiguas de este plan son historial, no estado actual; no reutilizar SHA de snapshots.
+La reconciliación post-merge está en [PR #176](https://github.com/BTF14/Micro-app/pull/176), rama `docs/post-pr175-final-handoff-20261030`; consultar su estado y checks en vivo. `docs/CURRENT_STATE.md` es el checkpoint operativo; `AGENTS.md` y `docs/AI_COLLABORATION_AND_PR_POLICY.md` son políticas obligatorias. GitHub vivo es la autoridad para HEAD, ramas, PR, issues y Actions. Las entradas antiguas de este plan son historial.
 
 ## Orden de trabajo y gates
-1. Completar la reconciliación documental en la PR de la rama indicada: revisión manual del diff completo, alcance acotado y checks obligatorios del HEAD exacto.
-2. Confirmar en GitHub el merge (si ocurre) y el nuevo HEAD real de `main`; no deducirlo de la rama de PR.
-3. Issue #78: obtener los dos preflight OPTIONS reales del Worker para `https://micro-app-63i.pages.dev` y `https://attacker.example`; revisar status y headers `Access-Control-*` (allow-origin, métodos, headers, credentials y rechazo externo). No incluir cookies/tokens. No modificar Cloudflare para forzar el resultado.
-4. Issue #53: resolver con el propietario las decisiones explícitas de la matriz; no inferir roles/permisos ni cerrar el issue prematuramente.
-5. Solo tras aprobación explícita de matriz: diseñar y probar catálogo de operaciones, autenticación/membresía/scope, autorización server-side, aislamiento cross-tenant/cross-branch, auditoría, idempotencia y pruebas negativas PostgreSQL desechables.
-6. Continuar el roadmap de datos/producto en el orden maestro y respetando seguridad, respaldo, coste cero y gates de producción.
+1. Verificar y completar PR #176 con revisión manual y checks requeridos del HEAD exacto; confirmar su merge y el HEAD real de `main`.
+2. Issue #78: obtener los dos preflight OPTIONS reales del Worker para `https://micro-app-63i.pages.dev` y `https://attacker.example`; revisar status y headers `Access-Control-*` (allow-origin, métodos, headers, credentials y rechazo externo). No incluir cookies/tokens. No modificar Cloudflare para forzar el resultado.
+3. Issue #53: resolver con el propietario las decisiones explícitas de la matriz; no inferir roles/permisos ni cerrar el issue prematuramente.
+4. Solo tras aprobación explícita de matriz: diseñar y probar catálogo de operaciones, autenticación/membresía/scope, autorización server-side, aislamiento cross-tenant/cross-branch, auditoría, idempotencia y pruebas negativas PostgreSQL desechables.
+5. Continuar el roadmap de datos/producto en el orden maestro y respetando seguridad, respaldo, coste cero y gates de producción.
 
 Este orden no declara completados los puntos pendientes ni autoriza por sí mismo cambios de producto, datos o infraestructura.
 
+
 ---
+
+
+> **Archivo histórico — no usar como estado operativo.** Las entradas siguientes se conservan para trazabilidad y describen estados de su fecha. GitHub en vivo y el checkpoint superior prevalecen.
+
 
 > **Archivo histórico — no usar como estado operativo.** Las prioridades y snapshots siguientes se conservan como historial y pueden estar superados. Usar el orden superior y verificar GitHub en vivo.
 

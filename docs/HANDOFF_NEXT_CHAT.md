@@ -1,8 +1,8 @@
 # Handoff — continuidad segura del proyecto Micro app
 
-**Checkpoint de continuidad — 2026-10-30 UTC.** Repositorio: [BTF14/Micro-app](https://github.com/BTF14/Micro-app). La última base de `main` verificada antes de esta reconciliación fue `682868c5fca65a4a1f3f61a1bc428a34ae1a4dd9`, merge de PR #174; es una referencia histórica de base, no una afirmación perpetua del HEAD. PR #174 está fusionada, documental (6 archivos, +70/-0), con 8/8 workflows success en su HEAD exacto. La reconciliación actual corresponde a [PR #175](https://github.com/BTF14/Micro-app/pull/175), rama `docs/authoritative-continuity-after-pr174-20261030`; verificar su HEAD/diff/checks/merge SHA en GitHub. GitHub vivo manda siempre sobre los snapshots.
+**Checkpoint post-merge — 2026-10-30 UTC.** PR [#175](https://github.com/BTF14/Micro-app/pull/175) fusionada. Merge SHA y HEAD observado inmediatamente después del merge: `b8a2a9d514839bf9fa340b5b04349621b4484385`. HEAD exacto de PR: `eac60184748fdab3eae926860e0d6c901251a462`; nueve workflows success, seis contextos obligatorios success; diff documental de siete archivos (+142/-50). Revisión manual realizada; reviews formales y threads: 0. Revisión independiente Claude/Codex de PR #172 **pendiente/no ejecutada**. El SHA de merge es un antecedente, no un HEAD perpetuo: verificar GitHub vivo siempre.
 
-**Regla anti-desactualización:** `docs/CURRENT_STATE.md` es el checkpoint operativo único. `AGENTS.md` y `docs/AI_COLLABORATION_AND_PR_POLICY.md` contienen las reglas. Los registros después del separador histórico se conservan como archivo, no como estado actual. Nunca deducir el HEAD de `main` del SHA base o del head de una PR.
+La siguiente PR de cierre de continuidad es [#176](https://github.com/BTF14/Micro-app/pull/176), rama `docs/post-pr175-final-handoff-20261030`. Consultar su estado y checks en vivo; si está fusionada, confirmar merge SHA y HEAD de main. No asumir que sigue abierta.
 
 ## Lectura obligatoria
 1. `AGENTS.md`.
@@ -16,17 +16,24 @@
 
 Continúa el proyecto existente **BTF14/Micro-app** como responsable técnico senior. No reinicies el proyecto ni repitas trabajo completado. El repositorio es la fuente persistente de continuidad; no dependas de la memoria del chat.
 
-**Antes de editar:** sigue el orden obligatorio de lectura de `AGENTS.md`; lee `docs/CURRENT_STATE.md` y este handoff; consulta GitHub en vivo para obtener el HEAD real de `main`, PRs abiertas, issues #53/#78, diff completo, reviews/threads y Actions del SHA exacto. La base anterior a esta reconciliación fue `682868c5fca65a4a1f3f61a1bc428a34ae1a4dd9` (merge de PR #174), pero no asumas que sigue siendo HEAD. La PR de reconciliación es [#175](https://github.com/BTF14/Micro-app/pull/175), rama `docs/authoritative-continuity-after-pr174-20261030`; reanúdala si sigue abierta. Si ya está fusionada, confirma `merged=true`, merge SHA y HEAD real de `main`. No confíes en snapshots.
+**Antes de editar:** sigue el orden obligatorio de lectura de `AGENTS.md`; lee `docs/CURRENT_STATE.md` y este handoff; consulta GitHub en vivo para obtener el HEAD real de `main`, PRs abiertas, issues #53/#78, diff completo, reviews/threads y Actions del SHA exacto. PR #175 está fusionada con merge SHA `b8a2a9d514839bf9fa340b5b04349621b4484385`; ese SHA fue el HEAD observado inmediatamente después del merge, no asumas que sigue siendo HEAD. La siguiente reconciliación es [PR #176](https://github.com/BTF14/Micro-app/pull/176), rama `docs/post-pr175-final-handoff-20261030`; reanúdala si sigue abierta. Si ya está fusionada, confirma `merged=true`, merge SHA y HEAD real de `main`. No confíes en snapshots.
 
-**Trabajo inmediato:** comprobar que la reconciliación documental alinea seis documentos de continuidad y `AGENTS.md`, que el diff no toca runtime/SQL/migraciones/workflows/configuración, y que todos los checks requeridos pasan en el HEAD exacto. No declarar revisión Claude/Codex de PR #172: sigue pendiente/no ejecutada. No declarar CORS verificado: #78 sigue abierta hasta recibir los dos preflight HTTP reales (origen permitido y externo), status y headers. No cerrar #53 ni aprobar la matriz: sigue **NO APROBADA**.
+**Trabajo inmediato:** verificar PR #176 y su diff/checks exactos. Después, la prioridad funcional-operativa es issue #78: obtener los dos preflight HTTP reales del Worker (origen autorizado `https://micro-app-63i.pages.dev` y origen externo `https://attacker.example`), registrar status y headers relevantes sin cookies/tokens, evaluar allow-origin/métodos/headers/credentials y rechazo externo. No modificar Cloudflare para forzar el resultado. No declarar CORS verificado hasta observar esa evidencia.
 
-**Guardrails:** no inferir permisos por rol; no crear endpoints comerciales, middleware de autorización ni mapeos rol→operación antes de aprobación explícita del propietario; los resolvers tenant/branch/shift solo resuelven contexto. No afirmar ledger/auditoría comercial implementados. No ejecutar migraciones/SQL remoto ni usar Neon `main` como laboratorio. No modificar Cloudflare, secretos, variables, DNS, billing, planes, datos reales o producción. No desplegar producción. Presupuesto objetivo USD 0. Previews y tests simulados no certifican producción.
+**Gates inmutables:** #53 sigue abierta y la matriz `docs/sdd/role-permission-decision-matrix.md` sigue **NO APROBADA**. No inferir permisos por rol; no crear endpoints comerciales, middleware de autorización ni mapeos rol→operación antes de aprobación explícita del propietario. Los resolvers tenant/branch/shift solo resuelven contexto. No afirmar ledger/auditoría comercial implementados. La revisión Claude/Codex de PR #172 sigue pendiente/no ejecutada; no atribuirle aprobación.
 
-**Criterio:** pocas PR, alcance coherente, revisión manual del diff completo, pruebas relevantes, checks del SHA exacto, cero contradicciones documentales y separación entre hechos verificados, hipótesis y desconocidos. Si un check falla, diagnosticar y corregir en la misma rama/PR. Fusionar solo cuando se satisfagan todos los gates aplicables; no atribuir revisiones externas que no se recibieron.
+**Seguridad y operaciones:** no ejecutar migraciones/SQL remoto ni usar Neon `main` como laboratorio. No modificar Cloudflare, secretos, variables, DNS, billing, planes, datos reales o producción. No desplegar producción. Presupuesto objetivo USD 0. Previews y tests simulados no certifican producción.
 
-**Al terminar:** confirmar merge (si ocurre), obtener HEAD real de `main`, registrar el merge SHA como antecedente —no como HEAD perpetuo— y mantener coherentes `CURRENT_STATE.md`, `HANDOFF_NEXT_CHAT.md`, `WORK_CHECKPOINT.md`, `PROJECT_PLAN.md`, `STATE_JOURNAL.md`, `API_INTEGRATION.md` y `AGENTS.md`. No crear una PR adicional solo para perseguir un SHA que el siguiente commit volvería obsoleto; aplicar verificación viva.
+**Criterio:** pocas PR, alcance coherente, revisión manual del diff completo, pruebas relevantes, checks del SHA exacto, cero contradicciones documentales y separación entre hechos verificados, hipótesis y desconocidos. Si un check falla, diagnosticar y corregir en la misma rama/PR. Fusionar solo cuando se satisfagan todos los gates aplicables.
+
+**Al terminar:** confirmar el merge de PR #176 (si ocurre), obtener HEAD real de `main`, mantener merge SHA como antecedente y no como HEAD perpetuo, y continuar #78/#53 según los gates. No crear una PR adicional solo para perseguir un SHA que el siguiente commit volvería obsoleto.
+
 
 ---
+
+
+> **Archivo histórico — no usar como estado operativo.** Las entradas siguientes se conservan para trazabilidad y describen estados de su fecha. GitHub en vivo y el checkpoint superior prevalecen.
+
 
 > **Archivo histórico — no usar como estado operativo.** Los handoffs y prompts anteriores se conservan para trazabilidad; pueden contener instrucciones, ramas, SHA o estados superados. Utilizar únicamente el prompt superior y verificar GitHub en vivo.
 

@@ -1,26 +1,28 @@
-# Checkpoint operativo — reconciliación de continuidad tras PR #174
+# Checkpoint operativo — post-merge PR #175
 
-**Checkpoint de continuidad — 2026-10-30 UTC.** La base de `main` verificada antes de esta tarea fue `682868c5fca65a4a1f3f61a1bc428a34ae1a4dd9` (merge de PR #174); es una referencia de base, no una afirmación perpetua del HEAD. PR #174 está fusionada, documental (6 archivos, +70/-0), con 8/8 workflows success en su HEAD exacto. La reconciliación se trabaja en la rama `docs/authoritative-continuity-after-pr174-20261030`; consultar PR, HEAD, diff, checks y merge SHA en GitHub.
+**Estado verificado 2026-10-30 UTC:** PR #175 fusionada; merge SHA `b8a2a9d514839bf9fa340b5b04349621b4484385`; HEAD de `main` observado inmediatamente después del merge: el mismo SHA. HEAD de PR: `eac60184748fdab3eae926860e0d6c901251a462`. Nueve workflows del HEAD de PR terminaron en success; los seis checks requeridos por branch protection también terminaron en success. Diff: siete documentos, +142/-50. Reviews formales: 0; threads: 0; revisión manual del diff realizada. Esto no completa la revisión independiente Claude/Codex de PR #172, que permanece pendiente/no ejecutada.
 
-**Fuente de verdad:** GitHub vivo manda para HEAD, ramas, PR, issues y Actions. `docs/CURRENT_STATE.md` es el checkpoint operativo; los registros posteriores al separador histórico son archivo, no estado actual. No reutilizar SHA de PR como HEAD de `main`.
+La siguiente PR de cierre de continuidad es [#176](https://github.com/BTF14/Micro-app/pull/176), rama `docs/post-pr175-final-handoff-20261030`; verificar su estado en vivo. La base de PR #175 fue `682868c5fca65a4a1f3f61a1bc428a34ae1a4dd9`, no usarla como HEAD actual.
 
-## Alcance de esta reconciliación
-- Alinear seis documentos de continuidad y la sección de prioridades de `AGENTS.md`.
-- Mantener `STATE_JOURNAL.md` append-only; conservar snapshots antiguos, pero etiquetarlos como históricos.
-- Eliminar encabezados que presenten el SHA de PR #173 como HEAD vigente.
-- No afirmar CORS verificado, readiness de producción, aplicación remota de migraciones, revisión externa Claude/Codex ni aprobación de la matriz.
-- No tocar runtime, SQL, migraciones, workflows, secretos, datos o infraestructura.
+## Gates abiertos
+- #53 abierta; matriz de permisos **NO APROBADA**. No implementar endpoints/middleware/mapeos comerciales.
+- #78 abierta; CORS no verificado mediante preflight HTTP real.
+- Revisión externa Claude/Codex de PR #172 pendiente/no ejecutada.
+- Sin cambios a runtime, SQL, migraciones, workflows, secretos, datos, Cloudflare, Neon o producción en PR #175.
 
-## Gates que permanecen
-- #53 abierta; matriz de permisos **NO APROBADA**. No crear endpoints/middleware/mapeos comerciales antes de aprobación explícita.
-- #78 abierta; los dos preflight HTTP reales y sus headers siguen pendientes.
-- Revisión Claude/Codex de PR #172 pendiente/no ejecutada.
-- Neon `main`, producción, secretos, DNS, billing y Cloudflare config fuera del alcance.
-
-## Aceptación
-Revisar el diff completo; confirmar exactamente los archivos autorizados; comprobar ausencia de cambios funcionales/infraestructura; verificar checks obligatorios del HEAD exacto; tras merge, confirmar el merge SHA y el HEAD vivo de `main`. No usar el SHA de esta rama como HEAD de main.
+## Próxima acción
+Verificar PR #176 y, después, priorizar la evidencia CORS de #78. Mantener #53 bloqueada hasta decisiones explícitas del propietario y pruebas negativas de aislamiento en PostgreSQL desechable.
 
 ---
+
+> **Archivo histórico — no usar como estado operativo.** Los checkpoints anteriores se preservan para trazabilidad; GitHub en vivo y el checkpoint superior prevalecen.
+
+
+---
+
+
+> **Archivo histórico — no usar como estado operativo.** Las entradas siguientes se conservan para trazabilidad y describen estados de su fecha. GitHub en vivo y el checkpoint superior prevalecen.
+
 
 > **Archivo histórico — no usar como estado operativo.** Los checkpoints anteriores se preservan para trazabilidad y pueden reflejar estados de su fecha. El checkpoint superior y GitHub en vivo prevalecen.
 

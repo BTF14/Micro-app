@@ -1,6 +1,6 @@
 # Estado actual de integración API — Micro app
 
-**Checkpoint de continuidad — 2026-10-30 UTC.** La base de `main` verificada antes de esta reconciliación fue `682868c5fca65a4a1f3f61a1bc428a34ae1a4dd9` (merge de PR #174); es una referencia de base, no una afirmación perpetua del HEAD. PR #174 está fusionada. La reconciliación documental se trabaja en `docs/authoritative-continuity-after-pr174-20261030`; verificar PR, HEAD, checks y merge SHA en GitHub. GitHub vivo prevalece sobre todo snapshot.
+**Checkpoint post-merge — 2026-10-30 UTC.** PR #175 fusionada con merge SHA `b8a2a9d514839bf9fa340b5b04349621b4484385`; HEAD de la rama `main` se observó en ese mismo SHA inmediatamente después del merge. La PR fue documental y no cambió runtime/API. La siguiente reconciliación de continuidad está en [PR #176](https://github.com/BTF14/Micro-app/pull/176); verificar estado/HEAD/checks en GitHub.
 
 **Límite actual de API:** no hay handlers comerciales ni autorización por operación demostrada. La matriz de permisos sigue **NO APROBADA**. Los helpers `resolveTenantContext`, `resolveBranchContext` y `resolveOpenCashierRegisterShift` resuelven contexto/ámbito, no autorizan operaciones. No añadir endpoints, middleware ni role-switches comerciales antes de aprobación explícita del propietario. No afirmar ledger/auditoría comercial implementados.
 
@@ -8,7 +8,12 @@
 
 **Migraciones y entorno:** main versiona migraciones 0001–0004; no se afirma que 0003/0004 estén aplicadas a Neon `main`. PostgreSQL desechable es el entorno primario de validación. No ejecutar SQL remoto ni tocar datos reales en esta continuidad.
 
+
 ---
+
+
+> **Archivo histórico — no usar como estado operativo.** Las entradas siguientes se conservan para trazabilidad y describen estados de su fecha. GitHub en vivo y el checkpoint superior prevalecen.
+
 
 > **Archivo histórico — no usar como estado operativo.** Las notas siguientes se preservan para trazabilidad y pueden contener SHA o límites correspondientes a sesiones anteriores. Usar el checkpoint superior y verificar GitHub en vivo.
 

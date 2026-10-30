@@ -1,3 +1,29 @@
+# Handoff prioritario — 2026-10-29
+
+> Leer primero este bloque y `AGENTS.md`. Después seguir la política y los documentos canónicos. Las secciones históricas inferiores son contexto, no estado vivo.
+
+- Repo único: `BTF14/Micro-app`; PR documental en curso [#156](https://github.com/BTF14/Micro-app/pull/156); rama `docs/reconcile-main-after-pr155-20261029`.
+- PR #156 se debe reutilizar para integrar decisiones de arquitectura y continuidad; no abrir una segunda PR documental solapada.
+- En la última consulta: PR #156 abierta/mergeable, base `main` SHA `5a9bdc5a18a54c3c68639f52125d913d4e725b91`, head original `a27e3a9ba853c9bcf14bee5cfbd301fd6c6eae76`; sin reviews ni review threads; no se obtuvieron statuses para ese SHA. Verificar checks del head después de cada actualización.
+- Leer `docs/SAAS_ARCHITECTURE_DECISIONS.md` antes de proponer esquema, API comercial, BCV, búsqueda, caché, roles o cuotas.
+- Decisión arquitectónica de dirección: una plataforma multi-organización, multi-sucursal y multiusuario; catálogo compartido por organización, stock por sucursal/almacén, caja/turno por sucursal.
+- BCV y buscador siguen NO implementados. Fuente BCV aún debe investigarse; no inventar API. Búsqueda SQL indexada primero; caché de catálogo solo después de medir. KV nunca autoriza ni confirma una venta.
+- La matriz de roles sigue pendiente de aprobación y debe reconciliarse con alcance de sucursal/caja. No implementar permisos comerciales basándose en celdas no aprobadas.
+- No hay modelo de sucursales/almacenes/cajas ni rutas comerciales HTTP verificadas; stock actual es por organización.
+- Capacidad SaaS sin medir. Revisar límites de Neon, Workers, Pages, KV y transferencia; pruebas sintéticas solamente. Presupuesto $0.
+- No producción, secretos, datos reales ni Neon `main`. Producción NO lista.
+
+## Pasos para el siguiente agente
+
+1. Confirmar branch HEAD, main SHA, estado PR #156, reviews, threads y checks exactos.
+2. Revisar el diff de PR #156 completo; corregir errores documentales y esperar revisión adicional antes de merge.
+3. Continuar auditoría read-only de esquema/rutas/constraints/índices/queries, y registrar evidencias.
+4. Preparar ERD y matriz de propiedad/scope de organización-sucursal-almacén-caja.
+5. Cerrar decisiones de roles y operaciones sensibles con aprobación explícita.
+6. Diseñar API y transacciones de catálogo/inventario/compra/caja/venta/devolución, con idempotencia y pruebas negativas.
+7. Investigar proveedor BCV, fuente/fecha/frescura/fallback; implementar después de validar fiabilidad y condiciones.
+8. Medir capacidad antes de definir límites comerciales.
+
 ## Continuidad prioritaria — hardening de FRONTEND_ORIGIN (2026-10-29 UTC)
 
 - Main base verificada: `0ba45e47daa5af9bbd9034690443405aa8bedf44`.

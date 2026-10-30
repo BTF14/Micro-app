@@ -72,6 +72,10 @@ CREATE INDEX register_shifts_org_register_history_idx
   ON register_shifts (organization_id, register_id, opened_at DESC);
 CREATE INDEX register_shifts_org_cashier_history_idx
   ON register_shifts (organization_id, cashier_user_id, opened_at DESC);
+-- Supports app_users deactivation checks across all organizations.
+CREATE INDEX register_shifts_open_cashier_user_idx
+  ON register_shifts (cashier_user_id)
+  WHERE closed_at IS NULL;
 
 -- Lock the relevant scope rows while opening a shift. This serializes an opening
 -- against concurrent deactivation/revocation of its organization, branch,

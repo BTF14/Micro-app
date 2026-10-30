@@ -1,13 +1,15 @@
 ## Checkpoint de continuidad vigente — 2026-10-30 UTC
 
-- `main` / base de PR #178: `82386c6e9300e06f8fa209aa52995b939a72442a`.
-- PR [#178](https://github.com/BTF14/Micro-app/pull/178): OPEN, DRAFT, NOT MERGED; rama `docs/reconcile-role-model-and-cloudflare-20261030`; HEAD verificado `74dddc0275698efd6f2e47840c7abbc0e34d512b`. Comparación: 58 commits ahead, 0 behind; GitHub `mergeable=true`.
-- En el HEAD exacto `74dddc0275698efd6f2e47840c7abbc0e34d512b`, 9/9 GitHub Actions success y previews Cloudflare Pages/Workers successful. Son previews, no producción. Status combinado devolvió cero estados externos.
-- Diff: 13 archivos documentales; sin cambios de runtime, SQL, migraciones ni workflows. Reviews formales 0; threads inline 0. Branch protection no pudo auditarse por 403 en consulta anterior.
-- **Decisión de merge:** no fusionar todavía. La PR está en Draft; checks verdes y `mergeable=true` no sustituyen revisión/aprobación ni el cambio explícito a Ready. El usuario pidió evaluar/documentar, no ejecutar el merge ni activar despliegues automáticos.
+- Repositorio `BTF14/Micro-app`; `main` / base conocida de PR #178: `82386c6e9300e06f8fa209aa52995b939a72442a`.
+- Último HEAD consultado antes del commit de handoff: `c8d53fd3d738bab3cdcd8e5e43cca1c6ac4e8ca8`; este commit actualiza estos documentos, por lo que el siguiente chat debe resolver la punta real de la rama antes de actuar.
+- PR [#178](https://github.com/BTF14/Micro-app/pull/178): OPEN, DRAFT, NOT MERGED; rama `docs/reconcile-role-model-and-cloudflare-20261030`; GitHub reportó `mergeable=true`. Comparación previa: 63 commits ahead, 0 behind.
+- Para el SHA padre `c8d53fd3d738bab3cdcd8e5e43cca1c6ac4e8ca8`, la primera página de workflow runs devolvió cinco ejecuciones, todas `queued`. Como la consulta solo expone primera página, no se puede declarar el estado completo de nueve workflows: CI **NO VERIFICADO / INCOMPLETO**. El SHA anterior `74dddc0275698efd6f2e47840c7abbc0e34d512b` sí tuvo 9/9 Actions success y previews exitosas, pero no certifica el HEAD posterior.
+- Diff: 13 archivos documentales; sin runtime, SQL, migraciones ni workflows. En el checkpoint previo: 347 adiciones / 229 eliminaciones. Reviews formales 0; threads inline 0. Branch protection no pudo auditarse por 403 en consulta anterior.
+- **No fusionar todavía:** la PR permanece Draft. Checks y `mergeable=true` no sustituyen revisión/aprobación ni el cambio explícito a Ready. El usuario pidió evaluar/documentar, no ejecutar merge ni activar despliegues automáticos.
 - La rama heredada `fix/vercel-api-esm-imports` fue eliminada tras preservar y verificar `archive/legacy-api-esm-experiment-20261020` en SHA `b1330a5fa547071a5f500f0481ce88109c612f81`. PR #72 sigue cerrada y no fusionada.
-- Gates del producto: CORS de #78 **NO VERIFICADO** por preflight HTTP real; matriz comercial de #53 **NO APROBADA**. No tocar Cloudflare, Neon, producción, secretos, DNS ni datos reales.
+- Gates: CORS de #78 **NO VERIFICADO** por preflight HTTP real; matriz comercial de #53 **NO APROBADA**. No tocar Cloudflare, Neon, producción, secretos, DNS ni datos reales.
 
+## Snapshot previo — retiro de rama heredada (histórico; no usar como estado actual)
 ## Snapshot previo — retiro de rama heredada (histórico; no usar como estado actual)
 
 ## Actualización posterior — eliminación segura de rama heredada (2026-10-30 UTC)
@@ -17,7 +19,7 @@
 - Alcance de la operación: solo la referencia de rama original. No se modificaron otras ramas, tags, archivos, PRs, settings, deployments, integraciones, Cloudflare, Neon ni producción.
 - No integrar el código archivado: es una rama ESM heredada, superada por main. El archive es evidencia/recuperación, no una línea de desarrollo activa.
 
-# Handoff — continuidad segura del proyecto Micro app
+## Handoff anterior (histórico; supersedido por el checkpoint y prompt superiores)
 
 **Checkpoint verificado — 2026-10-30 UTC:** `main` = `82386c6e9300e06f8fa209aa52995b939a72442a`, merge SHA de PR #177. PR #177 fusionada; no había PR abiertas al verificar. Cloudflare autenticado, solo lectura: Worker `micro-app-api` versión `49975c43` en Producción con 100% de tráfico asignado; Pages `micro-app` producción `main` en el mismo SHA. El dashboard de Pages muestra una lista vacía, pero `apps/web/.env.production` versionado define `VITE_API_BASE_URL` hacia el Worker y `vite.config.ts` la carga con `loadEnv`. La página pública contiene el enlace OAuth al Worker; no se pudo inspeccionar el bundle JS ni confirmar todas las llamadas API. CORS real sigue sin probarse. La matriz comercial continúa **NO APROBADA**.
 

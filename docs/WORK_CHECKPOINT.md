@@ -1,13 +1,12 @@
 # Checkpoint operativo — PR #178 y continuidad — 2026-10-30 UTC
 
-**Estado GitHub verificado para HEAD exacto `74dddc0275698efd6f2e47840c7abbc0e34d512b`:** PR #178 OPEN, DRAFT, NOT MERGED; rama `docs/reconcile-role-model-and-cloudflare-20261030`; base `main` SHA `82386c6e9300e06f8fa209aa52995b939a72442a`. Comparación: 58 commits ahead, 0 behind; GitHub reporta `mergeable=true`.
+**Último SHA consultado antes del commit de handoff:** `c8d53fd3d738bab3cdcd8e5e43cca1c6ac4e8ca8`; el commit de esta actualización cambia la punta, así que resolver el HEAD real antes de actuar. Base `main`: `82386c6e9300e06f8fa209aa52995b939a72442a`. Comparación previa: 63 ahead / 0 behind. PR #178 OPEN, DRAFT, NOT MERGED; GitHub reportó `mergeable=true`.
 
-**CI del HEAD exacto:** 9/9 workflows Actions completados en `success`: Database migration validation, Security scan, Dependency review, Project progress dashboard, SDD and agent documentation validation, Secret history scan, Semgrep SAST, Playwright E2E y CI. Combined status no devolvió estados externos. Cloudflare Pages preview (`201e6fee...`) y Workers preview (`ac0cd319...`) reportaron éxito. Son previews, no producción.
+**CI del SHA padre:** la primera página de workflow runs mostró cinco ejecuciones `queued`; la consulta no permite certificar el conjunto completo. CI queda **NO VERIFICADO / INCOMPLETO** para ese SHA. El padre anterior `74dddc0275698efd6f2e47840c7abbc0e34d512b` tuvo 9/9 workflows success y previews Cloudflare exitosas, pero no extrapolar esos resultados.
 
-**Revisión:** 13 archivos, todos documentales; 323 adiciones / 228 eliminaciones; 0 reviews formales y 0 threads inline. Branch protection no pudo auditarse (403 en consulta anterior). Aunque checks y mergeability técnica son positivos, **no fusionar mientras siga Draft** ni cambiarla a Ready sin decisión del propietario. Un merge puede activar despliegues automáticos Cloudflare; no está autorizado por esta revisión.
+**Revisión:** 13 archivos, todos documentales; sin runtime, SQL, migraciones ni workflows. En la consulta previa: 347 adiciones / 229 eliminaciones; 0 reviews formales y 0 threads inline. Branch protection no pudo auditarse (403 en consulta anterior). **No fusionar mientras siga Draft** ni cambiarla a Ready sin autorización del propietario. Un merge puede activar despliegues automáticos Cloudflare.
 
-**Cualquier edición posterior crea un HEAD nuevo y requiere reconsultar checks/previews.**
-
+**Cualquier edición crea un HEAD nuevo y requiere reconsultar checks/previews de ese SHA exacto.**
 ## Cloudflare — evidencia autenticada, solo lectura
 - Worker `micro-app-api`: Active Deployment en Producción; versión `49975c43-4161-4809-9c00-8ba83e53e6a0`, Build ID `957478f6-0f43-4b5c-932a-621be067d6d9`, commit `82386c6e9300e06f8fa209aa52995b939a72442a`; panel mostró 100% de asignación de tráfico.
 - Pages `micro-app`: production branch `main`, SHA `82386c6e9300e06f8fa209aa52995b939a72442a`, URL `https://cc23ff0c.micro-app-63i.pages.dev`.

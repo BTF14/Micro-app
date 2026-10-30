@@ -1,8 +1,9 @@
 # ERD objetivo: organización, sucursal, almacén, caja y operaciones
 
-**Estado:** arquitectura de destino; sucursales y asignaciones están implementadas por PR #165 (migración 0003 aún no aplicada a Neon main). Almacenes, cajas, turnos y stock por almacén siguen como diseño/no implementados. No autoriza endpoints ni cambios en Neon.  
+**Estado:** main incluye sucursales/asignaciones por PR #165 (0003); PR #167 implementa `registers`/`register_shifts` en una rama aún no fusionada. Ninguna migración 0003/0004 se ha aplicado a Neon main. Almacenes, balances por almacén y operaciones comerciales siguen pendientes. No autoriza endpoints ni cambios en Neon.  
 **Fecha:** 2026-10-30 UTC  
-**Base:** merge de PR #163, main = 894895cfeee1c3d67b1e92bf1fae7d0c30cd36f9.  
+**Base original del diseño:** merge de PR #163, main = 894895cfeee1c3d67b1e92bf1fae7d0c30cd36f9.  
+**Main vigente:** `1d10befe0cd3367e04bd8998a192e93d9b228063`; ver estado de PR #165/#167 arriba.  
 **Fuentes contrastadas:** apps/api/migrations/0001_initial.sql, docs/SCHEMA_REVIEW.md, docs/DATABASE_SCHEMA.md, docs/SAAS_ARCHITECTURE_DECISIONS.md y docs/sdd/role-permission-decision-matrix.md.
 
 ## 1. Propósito y límites
@@ -12,7 +13,7 @@ Diseñar la evolución del modelo actual, que solo tiene inventario a nivel orga
 Esta especificación separa:
 - **Existente en Git:** esquema base 0001, identidad 0002 y sucursales/asignaciones 0003 (`branches`, `branch_memberships`). La 0003 fue fusionada en PR #165 y validada en PostgreSQL 18 efímero.
 - **Objetivo propuesto:** entidades/relaciones que aún no están implementadas y evolución futura de las ya existentes.
-- **No implementado:** almacenes, cajas, turnos, balances por almacén, compras/recepciones, transferencias y devoluciones. `products.stock_quantity` sigue siendo organización-scoped.
+- **No implementado en main:** almacenes, cajas, turnos, balances por almacén, compras/recepciones, transferencias y devoluciones. PR #167 contiene 0004 para cajas/turnos en una rama no fusionada; `products.stock_quantity` sigue siendo organización-scoped.
 - **Gate de permisos:** la matriz role-permission-decision-matrix.md sigue NO APROBADA. Ninguna recomendación de rol de este documento autoriza permisos comerciales.
 
 La migración 0003 sí se ejecutó en PostgreSQL 18 desechable mediante CI y sus assertions; no se aplicó a Neon `main`. No hay rutas comerciales ni se ha conectado `resolveBranchContext` a handlers.

@@ -35,7 +35,7 @@
 - Workflow: `.github/workflows/daily-dependency-watch.yml`; cron diario 08:15 UTC, ejecución manual, permisos `contents: read`, instalación congelada y auditoría de vulnerabilidades.
 - El run real [40829413589](https://github.com/BTF14/Micro-app/actions/runs/40829413589) terminó en `success` y `pnpm audit --audit-level high` informó `No known vulnerabilities found`.
 - La inspección de logs detectó un defecto de presentación: Bash interpretó backticks dentro de cadenas con comillas dobles y el informe de `pnpm outdated -r` quedó vacío. No considerar completa la información de actualizaciones por ese run.
-- La rama `fix/dependency-watch-report-20261029` corrige el formato y consulta `pnpm -r outdated` para exponer también actualizaciones mayores. El arreglo sigue pendiente de CI y de un nuevo run del código corregido.
+- La fiabilidad del mantenimiento de dependencias se corrigió y fusionó mediante PR #141 (`fix: make dependency maintenance workflows reliable`); la actualización segura de tooling Cloudflare se integró en PR #142. No queda pendiente esa rama histórica.
 - Dependabot continúa revisando semanalmente npm y GitHub Actions. El monitor diario es de solo lectura: no modifica dependencias ni crea PR automáticamente.
 - El monitor no reemplaza Trivy, Dependency Review, escaneo de historial, revisión manual del diff ni pruebas completas; tampoco garantiza ausencia de vulnerabilidades.
 
@@ -136,15 +136,15 @@ La actualización frecuente reduce exposición a vulnerabilidades conocidas solo
 
 ### Backup workflow incident — 2026-10-29
 
-Manual run [40916692763](https://github.com/BTF14/Micro-app/actions/runs/40916692763) successfully generated, encrypted and checksummed a dump, but failed before pushing it to the private backup repository because the retention script path was resolved relative to the cloned backup repository. The fix on branch `fix/backup-workflow-path-20261029` uses `$GITHUB_WORKSPACE/scripts/prune_backups.py` and pins `ubuntu-24.04`. Treat the incident as open until PR checks and a subsequent manual run verify that a new encrypted backup and checksum exist remotely. The failed run did not alter remote backups or execute retention.
+Snapshot histórico: el manual run [40916692763](https://github.com/BTF14/Micro-app/actions/runs/40916692763) generó/cifró/checksum un dump, pero falló antes de subirlo por una ruta incorrecta del script de retención. La corrección se integró en PR #143 (merged 2026-10-29); el run fallido no alteró backups remotos ni ejecutó retención. La validación posterior de backup/restore está documentada por los runs 40955935124 (restore remoto exacto en PG18) y 41020548699 (smoke sintético cifrado PG18).
 
 
 ## Actualización 2026-10-29 — consistencia HTTPS de FRONTEND_ORIGIN
 
 - **Hallazgo:** el helper local de `apps/api/src/google-auth.ts` no exigía HTTPS ni restringía HTTP a loopback, a diferencia del validador de `apps/api/src/index.ts`. No hay evidencia de explotación; clasificado como hardening de configuración P1 antes de habilitar bootstrap en condiciones reales.
-- **Corrección implementada en PR #155:** aplica el mismo allowlist de protocolos/hosts y rechaza credenciales, rutas, query, fragmentos y representaciones no canónicas. Aún no está en main.
+- **Corrección implementada y fusionada en PR #155 (2026-10-29):** aplica el mismo allowlist de protocolos/hosts y rechaza credenciales, rutas, query, fragmentos y representaciones no canónicas. El código está en main; no reabrir la rama histórica.
 - **Pruebas:** HTTPS válido; HTTP loopback permitido para desarrollo; HTTP remoto, credenciales y URL con path/query/hash rechazados.
-- **Estado:** en rama `fix/google-auth-frontend-origin-https-20261029`; pendiente de tests y CI en SHA final, revisión y merge. No marcar completado hasta tener evidencia.
+- **Estado:** corrección HTTPS/canonical frontend origin para Google OAuth integrada en PR #155 (merged 2026-10-29); no reabrir la rama histórica. La implementación no significa que la API tenga endpoints comerciales.
 - **Alcance excluido:** no cambia secrets, OAuth provider, bootstrap, DB, producción ni despliegues manuales.
 
 

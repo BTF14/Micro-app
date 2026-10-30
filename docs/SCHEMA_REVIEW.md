@@ -5,6 +5,14 @@
 
 ## Estado vigente del esquema y el contexto de sucursal
 
+## Candidato de implementación en PR #167 (rama, no main)
+
+- PR #167 añade `0004_register_shifts.sql` con `registers`/`register_shifts`, FKs compuestas, índices parciales de un turno abierto por caja/cajero y triggers de lifecycle/desactivación. Este DDL no está en main ni se aplicó a Neon.
+- La migración-check para el HEAD inicial `0b5a9adbdafce25a8483e7ce6953e2d83a826c47` aplicó 0001–0004 y pasó las assertions en PostgreSQL 18 efímero.
+- El CI del mismo HEAD detectó una expectativa de SQLSTATE incorrecta en el test de integración (se esperaba FK violation donde el trigger fallaba antes). El trigger se corrigió en `4008ec7c09785298dc733e5e0c492cea34ad6f43` para que referencias inexistentes se rechacen por FK y los registros existentes pero inactivos/no-cashier por check violation. Revalidar CI en el HEAD vivo antes de integrar.
+- No se añadieron endpoints comerciales, helper de turno ni autorización por operación. La matriz sigue NO APROBADA.
+
+
 - `0001_initial.sql`: esquema base tenant-scoped; `products.stock_quantity` sigue a nivel organización.
 - `0002_google_identity.sql`: identidad Google/allowlist/bootstrap.
 - `0003_branch_scope.sql` (PR #165): añade `branches` y `branch_memberships`, FKs compuestas e índices tenant-scoped. CI aplica 0001–0003 y ejecuta assertions e integración en PostgreSQL 18 desechable.
@@ -54,7 +62,7 @@ No se encontraron rutas HTTP comerciales en el registro de Hono de `apps/api/src
 
 ## Próximas decisiones y secuencia
 
-- Diseñar e implementar cajas/turnos mediante migración aditiva 0004, assertions SQL y pruebas PostgreSQL 18 efímeras; mantener Neon main fuera del laboratorio.
+- Completar CI/integración de PR #167 para 0004 y revisar lifecycle/concurrencia en PostgreSQL 18 efímero; mantener Neon main fuera del laboratorio.
 - Mantener el helper de turno aislado; no conectar endpoints de caja/ventas hasta aprobar la matriz de permisos por operación y definir autorización transaccional.
 - Después diseñar almacenes, balances/ledger y backfill/reconciliación de `products.stock_quantity`.
 - Resolver idempotencia de pagos, integridad venta/líneas/pagos, último owner, auditoría append-only y rate limiting antes de exponer operaciones comerciales.

@@ -1,7 +1,9 @@
 # Estado actual del esquema — 2026-10-30 UTC (post PR #165)
 
-**Fuente de verdad del DDL en Git:** `apps/api/migrations/0001_initial.sql`, `0002_google_identity.sql` y `0003_branch_scope.sql`.  
+**DDL en main:** `0001_initial.sql`, `0002_google_identity.sql` y `0003_branch_scope.sql`.  
 **Main verificado:** `1d10befe0cd3367e04bd8998a192e93d9b228063`. La PR #165 fusionó la migración 0003; no significa que se haya aplicado a Neon main.
+
+**Candidato en PR #167:** `0004_register_shifts.sql` añade `registers` y `register_shifts` en `feat/register-shifts-0004-20261030`. Está en revisión, no forma parte de main ni se ha aplicado a Neon. CI valida 0001–0004 desde cero en PostgreSQL 18 desechable.
 
 ## Esquema versionado actual
 
@@ -9,12 +11,12 @@
 - Catálogo/operación legacy: `suppliers`, `products`, `exchange_rates`, `sales`, `sale_items`, `payments`, `inventory_movements`, `audit_logs`.
 - Sucursales y asignaciones (0003): `branches`, `branch_memberships`, con FKs compuestas tenant-scoped.
 - `products.stock_quantity` continúa a nivel organización; no existe todavía stock por almacén.
-- No implementado: `warehouses`, `registers`, `register_shifts`, `inventory_balances`, compras/recepciones, transferencias y devoluciones.
+- No implementado en main: `warehouses`, `registers`, `register_shifts`, `inventory_balances`, compras/recepciones, transferencias y devoluciones. PR #167 implementa `registers`/`register_shifts` solo en su rama de feature; almacenes y balances siguen pendientes.
 
 ## Estado de ejecución y límites
 
 - CI aplica 0001–0003 desde cero en PostgreSQL 18 desechable y ejecuta assertions/integración. Esta es la validación primaria de migraciones.
-- La migración 0003 no se ha aplicado a Neon main. No inferir el estado remoto por el contenido de Git ni ejecutar migraciones allí por rutina.
+- Las migraciones 0003 y 0004 no se han aplicado a Neon main. La 0004 está además pendiente de merge en PR #167. No inferir el estado remoto por el contenido de Git ni ejecutar migraciones allí por rutina.
 - `resolveBranchContext` está implementado y probado, pero no conectado a rutas; no existen handlers comerciales ni autorización por operación.
 - La matriz `docs/sdd/role-permission-decision-matrix.md` sigue **NO APROBADA**.
 - Brechas previas a negocio: reconciliación venta/líneas/pagos, idempotencia propia de pagos, saldo/ledger, referencias tipadas de movimientos, guard del último owner y auditoría append-only. Ver `SCHEMA_REVIEW.md`.

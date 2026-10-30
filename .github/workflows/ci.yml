@@ -57,6 +57,7 @@ jobs:
           docker exec -i "${{ job.services.postgres.id }}" psql -v ON_ERROR_STOP=1 -U microapp -d microapp_test -f /dev/stdin < apps/api/migrations/0001_initial.sql
           docker exec -i "${{ job.services.postgres.id }}" psql -v ON_ERROR_STOP=1 -U microapp -d microapp_test -f /dev/stdin < apps/api/migrations/0002_google_identity.sql
           docker exec -i "${{ job.services.postgres.id }}" psql -v ON_ERROR_STOP=1 -U microapp -d microapp_test -f /dev/stdin < apps/api/migrations/0003_branch_scope.sql
+          docker exec -i "${{ job.services.postgres.id }}" psql -v ON_ERROR_STOP=1 -U microapp -d microapp_test -f /dev/stdin < apps/api/migrations/0004_register_shifts.sql
       - name: Build and typecheck
         run: pnpm build
       - name: Verify Cloudflare Pages preview isolation
@@ -79,3 +80,5 @@ jobs:
         run: pnpm --filter @micro-app/api exec vitest run src/auth.integration.test.ts
       - name: PostgreSQL branch scope integration tests
         run: pnpm --filter @micro-app/api exec vitest run src/branch-context.integration.test.ts
+      - name: PostgreSQL register shift integration tests
+        run: pnpm --filter @micro-app/api exec vitest run src/register-shifts.integration.test.ts

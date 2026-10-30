@@ -2,14 +2,15 @@
 
 **Repositorio:** BTF14/Micro-app  
 **Base/main verificado:** `1d10befe0cd3367e04bd8998a192e93d9b228063`  
-**Rama actual:** `docs/post-pr165-register-shift-design-20261030`  
-**Alcance:** reconciliación de continuidad y especificación de caja/turnos; solo documentación.
+**Ramas activas:** PR #166 `docs/post-pr165-register-shift-design-20261030` (documentación) y PR #167 `feat/register-shifts-0004-20261030` (migración 0004/tests), ambas abiertas y no fusionadas.  
+**Alcance:** reconciliación documental y migración aditiva 0004 con assertions/CI; sin endpoints comerciales ni cambios remotos.
 
 ## Evidencia
-- PR #165 fusionada por squash. PR #166 está abierta, no fusionada, base `main` SHA `1d10befe0cd3367e04bd8998a192e93d9b228063`, HEAD consultado `8044a6614b847d580e6e1f755433f05d2b141b75`.
-- En el HEAD consultado de PR #166, 8 workflows de GitHub Actions finalizaron `success`; se inspeccionaron jobs/steps. No hay reviews humanas ni threads inline. El conector no confirmó checks externos Cloudflare para ese HEAD. Los checks de PR #165 (incluidos Pages/Workers) corresponden a otro SHA.
-- La PR #165 implementó migración 0003 y contexto de sucursal, con pruebas en PostgreSQL 18 efímero. La migración no se aplicó a Neon main.
-- No hay handlers comerciales; `resolveBranchContext` aún no está conectado a rutas.
+- PR #165 fusionada; main `1d10befe0cd3367e04bd8998a192e93d9b228063`.
+- PR #166: HEAD revisado `4cee6e2ff6bfb8f3eecd85b4ff9212c1ab6d98fd`; 8/8 workflows Actions success. No reviews humanas/threads; checks externos Cloudflare no confirmados.
+- PR #167: rama `feat/register-shifts-0004-20261030`. En HEAD `0b5a9ad...`, migration validation, build/typecheck, unit/auth/branch integration, E2E, backup smoke y seguridad pasaron; CI falló solo por una expectativa de SQLSTATE del test register-shifts. Trigger corregido en HEAD `4008ec7...`; migration validation y controles no-CI pasaron; CI estaba en curso. Los commits documentales posteriores exigen revalidación en HEAD vivo.
+- PR #165 implementó 0003/branch context. PR #167 añade 0004 en rama feature, no en main. 0003/0004 no se aplicaron a Neon main.
+- No hay handlers comerciales; `resolveBranchContext` no está conectado a rutas; la matriz comercial sigue NO APROBADA.
 
 ## Decisiones registradas
 - CI PostgreSQL efímero es el entorno primario de migración y pruebas desde cero.
@@ -18,13 +19,13 @@
 - Overrides de supervisión y permisos comerciales permanecen pendientes de matriz aprobada.
 
 ## Trabajo activo
-- Diseño completo en `docs/sdd/REGISTER_SHIFT_MODEL.md`.
-- Reconciliar SCHEMA_REVIEW, DATABASE_SCHEMA y MULTI_BRANCH_DATA_MODEL con el DDL 0001–0003 y el resolver implementado por #165.
-- Mantener este PR documental sin añadir migraciones ni runtime; conservar snapshots anteriores como historia, no como estado vigente.
-- Revisar manualmente el diff completo y verificar los checks del HEAD final. No fusionar sin autorización expresa ni afirmar Cloudflare verde sin evidencia del SHA.
+- Modelo completo y estado de implementación en `docs/sdd/REGISTER_SHIFT_MODEL.md`.
+- PR #167 añade `0004_register_shifts.sql`, assertions SQL y tests de scope/lifecycle/concurrencia; PostgreSQL migration validation pasó en el HEAD corregido.
+- Documentos de esquema/API/continuidad ya distinguen main (0001–0003) de feature branch (0004 pendiente de merge).
+- Revisar manualmente migration, triggers, assertions y tests; corregir cualquier fallo CI; verificar el HEAD final. No fusionar sin autorización expresa ni afirmar Cloudflare verde sin evidencia del SHA.
 
 ## Próximo paso exacto
-Después de cerrar el gate de integración de PR #166, implementar migration 0004 (`registers`, `register_shifts`), assertions y tests PostgreSQL 18 efímeros. Mantener la implementación separada de endpoints comerciales hasta aprobar autorización por operación. No aplicar migraciones a Neon main.
+Completar la integración CI de PR #167 y revisión de diff; luego revisar/integrar PR #166 y #167 solo con autorización expresa. Mantener la implementación separada de endpoints comerciales hasta aprobar autorización por operación. No aplicar 0003/0004 a Neon main.
 
 ---
 

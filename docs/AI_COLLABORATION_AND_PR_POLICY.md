@@ -35,6 +35,9 @@ La IA debe hacerse cargo del trabajo técnico autorizado de principio a fin: inv
 
 ## 4. Verificación: no confundir tests con realidad desplegada
 
+**Política de base de datos:** PostgreSQL desechable (preferentemente la misma versión mayor que Neon) es el entorno primario para migraciones y pruebas desde cero. Neon branches se usan solo cuando aportan una validación adicional concreta que CI no cubre; nunca crear una rama por rutina ni usar Neon `main` como laboratorio. Registrar versión, SHA, comandos, resultados y limpieza.
+
+
 Antes de declarar una tarea resuelta:
 
 1. Definir criterios de aceptación que correspondan al problema real, no solo a la implementación elegida.

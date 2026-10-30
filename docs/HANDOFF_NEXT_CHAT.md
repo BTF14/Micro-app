@@ -1,11 +1,22 @@
 # Reanudación inmediata — 2026-10-30 UTC, post PR #165
 
+## Estado técnico vigente — snapshot 2026-10-30 UTC
+
+- `main` permanece en `1d10befe0cd3367e04bd8998a192e93d9b228063`; PR #165 fusionada.
+- PR #166 (reconciliación documental) está abierta; HEAD revisado `4cee6e2ff6bfb8f3eecd85b4ff9212c1ab6d98fd`, 8/8 workflows Actions success. No se confirmaron checks externos Cloudflare para ese SHA.
+- PR #167 (cajas/turnos) está abierta sobre main, rama `feat/register-shifts-0004-20261030`. Añade 0004, assertions, tests de integración/concurrencia y workflows que aplican 0001–0004 desde cero en PostgreSQL 18.
+- Primer HEAD de PR #167 `0b5a9adbdafce25a8483e7ce6953e2d83a826c47`: migration validation, build/typecheck, unit, auth/branch integration, E2E, backup, Semgrep, Trivy, Dependency Review, secret scan y dashboard pasaron; CI falló en un test porque esperaba SQLSTATE 23503 y el trigger devolvía 23514.
+- Corrección en `4008ec7c09785298dc733e5e0c492cea34ad6f43`: referencias ausentes pasan a FKs compuestas (23503); scope existente pero inactivo/no-cashier se rechaza por trigger (23514). Migration validation y demás workflows completados pasaron en ese HEAD; CI seguía ejecutándose. Los cambios documentales posteriores cambian el HEAD y exigen revalidación.
+- Ninguna PR está fusionada. No hay endpoints comerciales ni helper de turno/runtime. Matriz de permisos sigue NO APROBADA.
+- No se aplicaron 0003/0004 a Neon main, no se crearon Neon branches y no se modificaron producción/Cloudflare settings/secretos/DNS/billing. No fusionar ni desplegar sin autorización expresa.
+
+
 **Fuente de verdad:** GitHub live. No asumir que los snapshots históricos posteriores reflejan main actual.
 
 ## Estado confirmado
 - Repositorio: `BTF14/Micro-app`.
 - `main` = `1d10befe0cd3367e04bd8998a192e93d9b228063`; PR #165 fusionada por squash (merge SHA idéntico).
-- PR #166 sigue abierta y no fusionada: base `main` SHA `1d10befe0cd3367e04bd8998a192e93d9b228063`; rama `docs/post-pr165-register-shift-design-20261030`; HEAD consultado antes de la reconciliación adicional `8044a6614b847d580e6e1f755433f05d2b141b75`.
+- PR #166 sigue abierta y no fusionada: base `main` SHA `1d10befe0cd3367e04bd8998a192e93d9b228063`; HEAD revisado final de su rama documental `4cee6e2ff6bfb8f3eecd85b4ff9212c1ab6d98fd`.
 - En el HEAD consultado de PR #166, 8 workflows de GitHub Actions terminaron `success` (CI, Playwright, migraciones PostgreSQL, Trivy, Semgrep, secret-history, Dependency Review y dashboard). No hay reviews humanas ni threads inline. La consulta actual no confirma checks externos de Cloudflare para ese HEAD; no extrapolar resultados.
 - La PR #165 agregó `branches`, `branch_memberships`, migración 0003, resolver de contexto y pruebas PostgreSQL efímeras. No conectó el resolver a rutas.
 - Neon main sigue sin migración 0003. No ejecutar SQL en esa rama.
@@ -32,17 +43,17 @@
 - `.agents/skills/micro-app-postgres-testing/SKILL.md`
 
 ## Trabajo activo
-- Rama documental: `docs/post-pr165-register-shift-design-20261030`, basada en main `1d10befe0cd3367e04bd8998a192e93d9b228063`.
-- Propósito: corregir snapshots obsoletos post-#165, documentar la decisión de turnos y el flujo de pruebas con PostgreSQL efímero.
-- No contiene implementación de caja/turnos ni migraciones nuevas; no anunciar esas capacidades.
-- Reconciliar los documentos de esquema que todavía describían `branches`/`branch_memberships` como inexistentes; verificar el diff completo y checks del nuevo HEAD. No fusionar PR #166 sin autorización expresa, aunque los checks estén verdes.
+- Rama técnica: `feat/register-shifts-0004-20261030`, PR #167 abierta; contiene 0004, assertions SQL, tests PostgreSQL e integración de workflows. Está apilada sobre los documentos de PR #166.
+- PR #166 ya reconcilió CURRENT_STATE/HANDOFF/PLAN/CHECKPOINT/JOURNAL, DATABASE_SCHEMA, SCHEMA_REVIEW, API_INTEGRATION y SDD con el estado post-#165.
+- Completar CI/test de concurrencia y revisión manual de la migración, assertions y diff. Revalidar todos los checks en el SHA exacto final.
+- No añadir endpoints comerciales, helper runtime ni aplicar migraciones a Neon. No fusionar PR #166/#167 ni desplegar sin autorización expresa.
 
 ## Siguiente secuencia después de este bloque
-1. Completar la reconciliación documental de PR #166 y verificar su HEAD final.
-2. Tras cerrar el gate de integración documental, implementar `registers` y `register_shifts` mediante migración aditiva 0004, assertions SQL y pruebas de integración en PostgreSQL efímero.
-3. Mantener el resolver de turnos como helper aislado; no añadir endpoints comerciales hasta que matriz de permisos, autorización por operación, transacciones e idempotencia estén resueltas.
+1. Completar CI y revisión final de PR #167 (migration 0004, assertions, lifecycle, concurrency) sobre su HEAD actual.
+2. Revisar en conjunto PR #166 y #167; integrar documentación primero y luego la implementación, solo con autorización expresa.
+3. Mantener el modelo de turnos como helper/DB contract aislado; no añadir endpoints comerciales hasta aprobar matriz, autorización por operación, transacciones e idempotencia.
 4. Diseñar después almacenes, balances/ledger y backfill del stock legacy con reconciliación.
-5. Revalidar límites de Neon/Cloudflare y hacer pruebas sintéticas de capacidad antes de prometer número de clientes.
+5. Revalidar límites de Neon/Cloudflare y ejecutar pruebas sintéticas de capacidad antes de prometer número de clientes.
 
 ## Límites
 No Neon main, no datos reales, no secretos, no cambios de Cloudflare, DNS, billing o producción. No reintentar Codex mientras la cuota siga agotada. No crear PR de checkpoint independiente.

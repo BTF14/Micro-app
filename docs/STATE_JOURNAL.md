@@ -1049,3 +1049,19 @@ CI documental: para HEAD `8c15e13fa001a14a0ddf9f2432bc17efb30d476d`, los 8 workf
 - No se fusionó ninguna PR, no se aplicó SQL a Neon, no se crearon ramas Neon, no se modificaron Cloudflare settings, secretos, DNS, billing ni producción.
 - Siguiente trabajo técnico tras cerrar la revisión documental: diseñar e implementar migración aditiva 0004 para cajas/turnos, assertions SQL, pruebas PostgreSQL 18 desechables desde cero y pruebas de concurrencia; sin endpoints comerciales ni cambios en Neon main.
 
+
+
+## 2026-10-30 UTC — implementación de cajas/turnos 0004 y primer ciclo CI
+
+- Se creó la rama `feat/register-shifts-0004-20261030` apilada sobre la documentación de PR #166 y se abrió PR #167 contra main para ejecutar workflows de PR.
+- Se añadió `apps/api/migrations/0004_register_shifts.sql`: tablas `registers`/`register_shifts`, FKs compuestas tenant/branch-scoped, códigos únicos por sucursal, índices parciales para un turno abierto por caja y por cajero/organización, importes de efectivo USD/VES separados, trigger de apertura con bloqueo de filas de scope, lifecycle de turno (solo cierre completo; no UPDATE/DELETE posterior) y triggers que impiden desactivar/revocar scope con turnos abiertos.
+- Se añadió `0004_register_shifts.assertions.sql` con assertions de scope, rol cashier, assignment activa, importes, unicidad, lifecycle y revocaciones; corre dentro de BEGIN/ROLLBACK.
+- Se extendieron `.github/workflows/ci.yml` y `migration-check.yml` para aplicar 0001–0004 desde cero en PostgreSQL 18 efímero y ejecutar `register-shifts.integration.test.ts`, con dos pruebas de concurrencia.
+- HEAD inicial de PR #167 `0b5a9adbdafce25a8483e7ce6953e2d83a826c47`: migration-check pasó; CI build/typecheck, unit tests, auth integration y branch integration pasaron; register-shifts integration falló porque el test esperaba 23503, pero el trigger fail-closed devolvía 23514 antes de que las FKs evaluaran referencias inexistentes. E2E, backup restore smoke, Semgrep, Trivy, Dependency Review, secret scan y dashboard pasaron.
+- Corrección comprometida en `4008ec7c09785298dc733e5e0c492cea34ad6f43`: `validate_register_shift_opening` deja que las FKs compuestas rechacen referencias ausentes (23503) y reserva 23514 para scope existente pero inactivo/no-cashier. Migration validation y controles no-CI volvieron a pasar en ese SHA; CI estaba en curso.
+- Se sincronizaron CURRENT_STATE, HANDOFF_NEXT_CHAT, PROJECT_PLAN, WORK_CHECKPOINT, REGISTER_SHIFT_MODEL, DATABASE_SCHEMA, SCHEMA_REVIEW, API_INTEGRATION, MULTI_BRANCH_DATA_MODEL, SAAS_ARCHITECTURE_DECISIONS y COMPLIANCE/SECURITY plan para distinguir main 0001–0003 del candidato 0004 de PR #167.
+- PR #166 sigue abierta; HEAD documental revisado `4cee6e2ff6bfb8f3eecd85b4ff9212c1ab6d98fd`, 8/8 workflows Actions success. PR #167 sigue abierta; los commits de documentación posteriores al snapshot 4008 vuelven a cambiar HEAD y requieren revalidar todos los checks.
+- No se fusionó ninguna PR, no se aplicaron 0003/0004 a Neon main, no se crearon Neon branches ni se tocaron Cloudflare settings, secretos, DNS, billing, producción o datos reales.
+- Límites: no hay endpoints comerciales, helper de turno runtime ni autorización por operación; matriz de permisos sigue NO APROBADA. No se calcula efectivo esperado/diferencia sin ledger de caja.
+- Siguiente: terminar CI de PR #167 en su SHA final, revisar manualmente la migración/assertions/concurrencia y luego decidir integración de PR #166/#167 con autorización expresa.
+

@@ -1,6 +1,6 @@
 # Plan de ciberseguridad para Micro app — 2026
 
-**Estado:** propuesta; controles aún no implementados. Stack considerado: React/Vite, Hono en Cloudflare Workers, PostgreSQL en Neon y Better Auth con Google OAuth.
+**Estado:** plan de hardening parcialmente ejecutado; no es certificación ni prueba de readiness. Stack actual: React/Vite, Hono en Cloudflare Workers, PostgreSQL/Neon y Google OAuth con allowlist/sesiones implementados en la API.
 
 ## Límites de seguridad
 Trabajar en una rama de desarrollo y un entorno de pruebas. No aplicar migraciones a Neon main, desplegar a producción ni activar servicios de pago sin autorización expresa.
@@ -33,9 +33,9 @@ Trabajar en una rama de desarrollo y un entorno de pruebas. No aplicar migracion
 **Aceptación:** no hay secretos en el repo; se conocen los controles CI reales; cambios en rama de desarrollo.
 
 ### Fase 1 — Identidad, autorización y multiempresa (P0)
-- Separar identidad Better Auth, perfiles comerciales, membresías y administrador global.
-- Exigir organization_id y claves foráneas compuestas para impedir referencias entre comercios.
-- En cada ruta protegida validar en el servidor sesión vigente, allowlist, membresía, rol y organización.
+- Google OAuth, allowlist y sesiones revocables ya están implementados; registro público y password login siguen deshabilitados fail-closed.
+- Exigir `organization_id` y claves foráneas compuestas; 0003 añadió sucursales/asignaciones y `resolveBranchContext`, todavía sin rutas comerciales.
+- En cada futura ruta protegida validar en servidor sesión vigente, allowlist, membresía, rol, organización y sucursal. Los helpers de contexto no sustituyen autorización por operación.
 - Solo el administrador global btfcasheb@gmail.com puede gestionar la allowlist; usuarios comerciales no pueden elevarse a privilegios globales.
 - Verificar email Google, aplicar allowlist antes de aprovisionar/vincular cuentas y hacer efectiva la revocación en las solicitudes protegidas.
 - La interfaz nunca sustituye la autorización del servidor.
@@ -48,7 +48,7 @@ Trabajar en una rama de desarrollo y un entorno de pruebas. No aplicar migracion
 - Idempotencia por organización; rechazar el uso de una clave con payload diferente.
 - Conciliar líneas, descuentos, pagos, total y snapshots USD/VES.
 - Devoluciones/anulaciones mediante reversos auditables.
-- Versionar migraciones y probarlas en una rama Neon aislada; main requiere autorización expresa.
+- Versionar migraciones y probar primero desde cero en PostgreSQL desechable de CI. Usar Neon branch solo si añade validación adicional; Neon main no es laboratorio y cualquier mutación exige el gate/autoridad expresa.
 
 **Aceptación:** no hay ventas parciales tras un fallo; dos ventas concurrentes no consumen stock de más; reintentos no duplican ventas ni movimientos.
 

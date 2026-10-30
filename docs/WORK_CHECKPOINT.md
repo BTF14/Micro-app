@@ -38,7 +38,7 @@
 
 ## Estado de pruebas
 
-Pendiente de ejecución en GitHub Actions sobre el HEAD exacto de la PR. No se ejecutó shell local ni SQL remoto. La suite de integración exige el URL local sintético exacto de CI y no permite apuntar a Neon.
+El SHA de implementación/test `253128c6f5213986879ce619da85285251c07416` pasó 8/8 workflows Actions y los check-runs consultados; el job CI confirmó las 7 pruebas de integración nuevas en PostgreSQL 18, además de build/typecheck y suites existentes. Se añadieron después commits exclusivamente documentales; consultar y exigir el resultado del HEAD exacto actual de la PR antes de merge. No se ejecutó shell local ni SQL remoto. La suite de integración exige el URL local sintético exacto de CI y no permite apuntar a Neon.
 
 ## Próxima acción
 

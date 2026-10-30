@@ -28,11 +28,10 @@ Rama: `feat/authenticated-cashier-open-shift-20261030`, PR #169, base `e4e4a5f31
 
 ## Próximos pasos exactos
 
-1. Inspeccionar el diff completo de la rama y verificar que CI incorpora el integration test.
-2. Esperar y consultar todos los workflows del SHA exacto de la PR; abrir logs de cualquier fallo.
-3. Revisar SQL, locks, errores, tipos de timestamp/numeric y tests negativos.
-4. Corregir fallos en la misma rama/PR; actualizar checkpoint y journal incrementalmente.
-5. Fusionar solo si todos los gates pasan y no quedan hallazgos materiales; después verificar SHA real de main y checks post-merge disponibles.
+1. Revalidar en vivo el HEAD actual de PR #169 y confirmar que todos sus workflows/check-runs terminaron success en ese SHA exacto.
+2. Si no hay fallos ni observaciones materiales, fusionar conforme a la autorización general del propietario (sin volver a pedir permiso).
+3. Verificar el SHA real de main, PR cerrada/fusionada, checks post-merge disponibles y cualquier despliegue automático; distinguir previews de producción.
+4. Actualizar la continuidad post-merge con el SHA real y dejar la siguiente prioridad técnica explícita.
 
 ## Restricciones
 

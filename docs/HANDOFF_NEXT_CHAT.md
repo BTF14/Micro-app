@@ -11,6 +11,7 @@
 - **Esquema actual:** organización/membresía y entidades comerciales iniciales con FK tenant-scoped; no hay sucursales, almacenes, cajas/turnos, compras/recepciones, devoluciones ni transferencias. Stock por organización. La migración inicial no está aplicada a Neon main.
 - **Hallazgos SQL pendientes:** reconciliación venta-líneas-pagos; consistencia stock-ledger; referencias polimórficas de movimientos; idempotencia de pagos; regla del último owner; índices y consultas a validar con datos sintéticos.
 - **Matriz de roles:** sigue NO aprobada. Cajero/inventario no deben obtener acceso global; requieren asignación de sucursal, y caja/turno para operaciones de caja.
+- **Rate limiting:** `auth_rate_limits` solo existe en el DDL; no se encontraron funciones ni callers en runtime. Verificar si Cloudflare aplica límites de cuenta y diseñar control distribuido antes de ampliar acceso OAuth/bootstrap.
 - **Capacidad SaaS:** sin medir; no prometer empresas/locales concurrentes. Objetivo de coste USD 0.
 - **No usar Codex, no esperar a Codex.** Revisión manual del diff completo + pruebas + workflows; si una herramienta de IA revisora no está disponible, documentar limitación sin convertirla en bloqueo artificial.
 - **No producción, no Neon main, no secretos, no datos reales, no billing.**

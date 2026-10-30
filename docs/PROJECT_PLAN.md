@@ -1,3 +1,16 @@
+## Checkpoint prioritario — 2026-10-30 UTC: corrección CI/CD + Cloudflare
+
+- La primera auditoría de workflows clasificó erróneamente siete workflows como push+PR sin filtros. La lectura directa posterior de los 15 YAML corrige esto: duplicación general potencial solo en `secret-history-scan.yml` (push todas las ramas) y `security-scan.yml` (push sin filtro). Otros workflows restringen ramas o paths. No modificar triggers hasta confirmar branch protection y contexts requeridos.
+- Cloudflare panel confirmado mediante TinyFish, solo lectura. Workers Free $0/mes; 100k requests/día, 10ms CPU/request, 3.000 build minutes/mes, 100 Workers, 5 cron triggers. Snapshot: 183 requests, 0 errores y 106,68 build minutes últimas 24h; el Worker view reportó 85 invocaciones y P90 CPU 10ms. Métricas puntuales, no benchmark.
+- Worker `micro-app-api`: `main` identificada como producción; ramas `docs/*` como previews. PR #158 obtuvo Worker preview successful y Pages preview successful para `d3f056b`; no son deploys productivos.
+- Pages existe: proyecto `micro-app`, URL `https://micro-app-63i.pages.dev/`, repo BTF14/Micro-app. Historial detallado, producción branch/build settings y consumo no extraídos.
+- Logs/Traces aparecían desactivados. No activar hasta definir redacción de datos y revisar coste.
+- No fusionar PR #158 sin autorización específica de producción. Mantener $0, no tocar Neon main, secretos, datos reales ni infraestructura.
+
+Próximos pasos: completar Pages read-only; verificar branch protection/check contexts; proponer reducción de triggers solo en los dos workflows de push amplio; mantener PR #158 como única PR documental y actualizar handoff.
+
+---
+
 ## Checkpoint prioritario — 2026-10-30 UTC, post PR #157
 
 - Main = `1ee1808af4aae484a71dc24750237ff4f4d934a0`; PR #157 fusionada (HEAD `6eb464c950f195ec67350977575aef77e9790e1d`). Ocho workflow runs devueltos para ese HEAD finalizaron success; no se recuperó evidencia post-merge para el merge SHA.

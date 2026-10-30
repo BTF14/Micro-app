@@ -1,55 +1,85 @@
-# Auditoría de workflows y despliegues — 2026-10-30 UTC
+# Auditoría corregida de GitHub Actions y despliegues — 2026-10-30 UTC
 
-**Base auditada:** `1ee1808af4aae484a71dc24750237ff4f4d934a0` en `main`.  
-**Alcance:** lectura estática de los 15 YAML en `.github/workflows/`, configuración versionada de Wrangler y metadatos de GitHub. No se accedió al panel de Cloudflare ni a secretos.
+**Base auditada:** `1ee1808af4aae484a71dc24750237ff4f4d934a0` (`main`).  
+**Revisión adicional:** lectura directa de los 15 workflows versionados en `main`, inspección de la PR #158 y acceso de solo lectura al panel de Cloudflare mediante TinyFish.  
+**Estado PR #158:** abierta, draft, no fusionada; HEAD previo a esta actualización `d3f056b780ddad62deb5c1e1c0f1679bba19bb50`.
 
-## Estado Git confirmado
+## Corrección importante respecto a la primera auditoría
 
-- PR [#157](https://github.com/BTF14/Micro-app/pull/157) está cerrada y fusionada; merge SHA `1ee1808af4aae484a71dc24750237ff4f4d934a0`.
-- HEAD de PR #157: `6eb464c950f195ec67350977575aef77e9790e1d`. La consulta del conector devolvió ocho runs asociados a ese HEAD y los ocho terminaron `success`: CI, Playwright E2E, Database migration validation, Semgrep SAST, Security scan, Secret history scan, Project progress dashboard y Dependency review. La consulta devuelve solo la primera página; no usarla como prueba de que no existieron otros checks.
-- El combined status consultado para el HEAD y para el merge SHA devolvió una lista vacía. El helper de runs por commit filtra ejecuciones disparadas por pull request y no devolvió runs para el merge SHA. Por tanto, no se afirma CI post-merge.
-- Antes de abrir esta PR documental, la página de PRs no mostró PRs abiertas. Tras crearla, [PR #158](https://github.com/BTF14/Micro-app/pull/158) es la PR de trabajo abierta y en borrador.
+La primera versión afirmó que siete workflows escuchaban a `push` y `pull_request` sin filtros de rama/path. Esa conclusión fue incorrecta. La lectura directa de los YAML confirma que la mayoría de esos workflows sí restringe ramas. Esta sección corregida prevalece sobre cualquier afirmación anterior de duplicación generalizada.
 
-## Inventario de workflows
+## Inventario real de disparadores
 
-| Workflow | Disparadores versionados | Observación |
-|---|---|---|
-| `ci.yml` | push, pull_request | build/typecheck, tests, PostgreSQL efímero y validaciones |
-| `migration-check.yml` | push, pull_request | migraciones y assertions en PostgreSQL efímero |
-| `playwright-e2e.yml` | push, pull_request, workflow_dispatch | pruebas de navegador |
-| `project-progress.yml` | push, pull_request | genera y publica artefacto |
-| `sdd-docs-validation.yml` | push, pull_request | valida documentación SDD |
-| `secret-history-scan.yml` | push, pull_request, workflow_dispatch | escaneo del historial completo |
-| `security-scan.yml` | push, pull_request | Trivy |
-| `semgrep.yml` | push, pull_request, workflow_dispatch | análisis estático |
-| `dependency-review.yml` | pull_request | revisión de dependencias |
-| `autoskills-preview.yml` | pull_request, workflow_dispatch | dry-run; no instala skills en el repo |
-| `daily-dependency-watch.yml` | schedule, workflow_dispatch, pull_request | informe/audit de dependencias; solo lectura |
-| `backup.yml` | schedule, workflow_dispatch | backup cifrado y retención; escribe al repositorio remoto de backups |
-| `backup-restore-smoke.yml` | schedule, workflow_dispatch, pull_request | restore sintético aislado |
-| `backup-real-restore.yml` | workflow_dispatch | lee el backup remoto y restaura en PostgreSQL efímero; requiere credenciales protegidas |
-| `regenerate-lockfile.yml` | workflow_dispatch | tiene permiso `contents: write`; hace commit/push únicamente a ramas `chore/dependency-update-*` |
+| Workflow | Push | Pull request | Otros | Riesgo de duplicación |
+|---|---|---|---|---|
+| `ci.yml` | `main` | destino `main` | — | No por push a rama feature; push solo corre en main |
+| `migration-check.yml` | `main`, `feat/tenant-safe-schema` | destino `main` | — | Solo ramas incluidas explícitamente en push |
+| `playwright-e2e.yml` | `main` | destino `main` | `workflow_dispatch` | No por push a rama feature ordinaria |
+| `project-progress.yml` | `main`, `feat/project-progress-dashboard` | destino `main` | — | Solo ramas incluidas explícitamente en push |
+| `sdd-docs-validation.yml` | `main` + paths documentales | `main` + mismos paths | — | Limitado por rama y paths |
+| `secret-history-scan.yml` | todas las ramas (`**`) | destino `main` | `workflow_dispatch` | **Sí, potencialmente**: push a rama con PR y evento PR |
+| `security-scan.yml` | sin filtro de rama (todas) | destino `main` | — | **Sí, potencialmente**: push a rama con PR y evento PR |
+| `semgrep.yml` | `main` | destino `main` | `workflow_dispatch` | No por push a rama feature ordinaria |
+| `dependency-review.yml` | — | destino `main` | — | Solo PR |
+| `autoskills-preview.yml` | — | destino `main` + paths de workflow/manifiestos | `workflow_dispatch` | Solo PR con paths relevantes |
+| `daily-dependency-watch.yml` | — | solo cambio de su propio YAML | schedule, `workflow_dispatch` | No corre en cada PR; filtro de path específico |
+| `backup.yml` | — | — | schedule, `workflow_dispatch` | No aplica |
+| `backup-restore-smoke.yml` | — | paths concretos de backup/migraciones/docs | schedule, `workflow_dispatch` | Solo PR con paths relevantes |
+| `backup-real-restore.yml` | — | — | `workflow_dispatch` | Operación manual sensible; no ejecutar sin autorización |
+| `regenerate-lockfile.yml` | — | — | `workflow_dispatch` | Operación manual de escritura; no ejecutar sin autorización |
 
-## Hallazgos y riesgos
+### Conclusión sobre duplicación
 
-1. Los siete workflows (`ci`, `migration-check`, `playwright-e2e`, `project-progress`, `secret-history-scan`, `security-scan` y `semgrep`) escuchan tanto `push` como `pull_request` sin filtros `branches` ni `paths`. `sdd-docs-validation` también escucha ambos eventos, pero está limitado a `main` y a paths documentales concretos. Un commit a una rama que ya tiene PR puede ejecutar los mismos validadores por ambos eventos. Esto duplica consumo/tiempo y artefactos sin añadir cobertura proporcional.
-2. `daily-dependency-watch.yml` también se ejecuta en cada PR, además de su programación y ejecución manual. Es informativo y no modifica dependencias; no parece necesario como check de cada PR.
-3. No hay workflow de GitHub Actions que ejecute `wrangler deploy` o publique Cloudflare Pages. La configuración de Wrangler declara `micro-app-api`, frontend origin y callback en `workers.dev`; no declara `routes` ni `custom_domain`.
-4. Los builds de Pages/Workers observados en PRs/merges en el historial son compatibles con una integración Git de Cloudflare externa a GitHub Actions. No se puede verificar desde el repositorio qué ramas están conectadas, qué eventos despliegan, los build settings, ni el estado final de Pages.
-5. Por lo anterior, no asumir que un merge documental es inocuo para producción: un push a `main` puede activar el despliegue configurado en Cloudflare aunque no exista un workflow de deploy en este repositorio. Merge y autorización de producción siguen siendo decisiones separadas.
-6. El Worker declara el endpoint `workers.dev`; al no existir route/custom domain en `wrangler.toml`, no asumir que reglas WAF de una zona protegen este hostname.
-7. El workflow de regeneración de lockfile es una operación de escritura manual. No ejecutarlo sin rama objetivo válida, diff esperado y autorización. El backup real-restoration también es manual y usa credenciales protegidas; no se ejecutó durante esta auditoría.
+- La duplicación potencial general por rama/PR se concentra en `secret-history-scan.yml` y `security-scan.yml`, cuyos disparadores `push` no están limitados a `main`.
+- Los demás workflows de la lista anterior tienen filtros de rama o paths y no deben describirse como “sin filtros”.
+- No modificar triggers todavía. Primero confirmar branch protection/rulesets y contexts obligatorios; la consulta de rulesets devolvió lista vacía y el endpoint legacy de protección de `main` devolvió 403 por permisos insuficientes. No se puede afirmar que no exista protección.
+- Mantener checks de PR y no usar paths filters indiscriminadamente en checks requeridos.
 
-## Recomendaciones priorizadas
+## Hallazgos Cloudflare verificados en vivo (solo lectura)
 
-- **P0 — mantener el gate:** no fusionar a `main` cambios que puedan activar despliegues de producción sin autorización explícita y verificación de Cloudflare.
-- **P1 — reducir duplicación:** en una PR futura, evaluar limitar los eventos `push` de workflows que ya validan `pull_request` a `main`, manteniendo todos los checks requeridos en PR. Antes, inspeccionar branch protection/rulesets para no romper contexts requeridos.
-- **P1 — no aplicar filtros de paths a ciegas:** definir primero el mapa de dependencias del monorepo. Un filtro incorrecto puede dejar checks requeridos en estado pendiente o saltarse validaciones necesarias.
-- **P1 — separar monitor de dependencias:** evaluar quitar el evento `pull_request` del informe diario y conservar schedule + workflow_dispatch; Dependency Review ya cubre el análisis de cambios de dependencias en PR.
-- **P1 — Cloudflare:** obtener acceso de solo lectura al panel para documentar Git integration, ramas de producción/preview, Pages root/build command, Worker deploy branch, últimos deployments y cuotas. No cambiar settings en esta auditoría.
-- **P2 — protección de API:** verificar en Cloudflare si hay rate limiting efectivo para el hostname `workers.dev`; el código no implementa rate limiting runtime. Diseñar control distribuido en la aplicación antes de ampliar OAuth/bootstrap.
-- **P2 — dominio de producción:** evaluar dominio propio y ruta/custom domain del Worker como trabajo de arquitectura separado; no configurar ni comprar ahora.
+Perfil TinyFish Default; Cloudflare panel accesible durante la inspección. No se cambiaron ajustes, tráfico, DNS, secretos, billing ni despliegues.
 
-## Límites de esta auditoría
+### Cuenta y cuotas
 
-Solo lectura. No se ejecutaron workflows manuales, no se crearon recursos, no se modificaron archivos de código, workflows, secretos, Cloudflare, Neon, datos ni producción. No se desplegó nada. Objetivo de coste USD 0.
+- Plan observado: **Workers Free, USD 0/mes**; no se observó método de pago registrado.
+- Workers: 100.000 solicitudes/día; CPU 10 ms por solicitud; 3.000 build minutes/mes; hasta 100 Workers y 5 Cron Triggers.
+- El panel mostró 183 requests y 0 errores en la ventana de 24 horas observada; también se reportaron 85 invocaciones y CPU P90 de 10 ms en la vista de Worker. Es una fotografía del panel, no un benchmark ni una garantía de capacidad.
+- Build minutes observados: 106,68 durante las últimas 24 horas. No confundir esa cifra con la cuota mensual ni extrapolarla linealmente.
+- El consumo restante del periodo, el detalle de facturación y el uso real de Pages no quedaron completamente extraídos. No afirmar que los límites están holgados sin medirlos.
+
+### Workers
+
+- Servicio: `micro-app-api`, URL `https://micro-app-api.btfcasheb.workers.dev/`, repositorio `BTF14/Micro-app`, root `/apps/api`.
+- El panel mostró `main` como versión de producción activa observada; las ramas `docs/...` aparecen como Preview versions, con URLs de commit/branch preview distintas. No-main previews no deben confundirse con tráfico de producción.
+- La PR #158 recibió comentario automático de Cloudflare indicando despliegue exitoso de preview de Worker para commit `d3f056b7`, con URL de commit preview y URL de branch preview. No es evidencia de un deploy productivo.
+- El historial incluyó versiones Ready y cuatro entradas Skipped. La inspección no permite inferir que cada versión Ready recibiera tráfico; el panel identificó previews separadas.
+- No se encontró dominio personalizado ni routes en `apps/api/wrangler.toml`. No asumir que reglas WAF de una zona cubren el hostname `workers.dev`.
+- Logs y Traces aparecían desactivados en la vista observada. Evaluar observabilidad con control de datos sensibles y coste.
+
+### Pages
+
+- Proyecto existente: `micro-app`, URL `https://micro-app-63i.pages.dev/`, repositorio `BTF14/Micro-app`.
+- El panel mostró un despliegue reciente.
+- La PR #158 recibió comentario automático de Cloudflare Pages: preview deploy successful para commit `d3f056b`, con URL de commit preview y branch preview. Esto confirma que la integración Git de Pages produce previews en PR; no confirma que el despliegue de producción esté sano.
+- La vista de historial de versiones de Pages no terminó de cargar; commit de producción, tráfico, ramas de producción/preview y consumo detallado siguen pendientes.
+
+## GitHub / Cloudflare CI-CD
+
+- No hay workflow GitHub Actions que ejecute `wrangler deploy` o publique Pages. Los comentarios automáticos de Cloudflare en la PR #158 prueban que hay integraciones Git de Workers y Pages activas, al menos para previews.
+- El comentario de Workers enlaza el log del build y muestra URLs separadas de commit preview y branch preview. El comentario de Pages hace lo mismo. La rama de PR no debe interpretarse como producción.
+- Aún falta documentar desde el panel la rama configurada como producción, filtros de build, root/build command de Pages, política de previews y versión/traffic split de Pages.
+- Mantener el gate: un merge/push a `main` puede publicar por la integración externa. Merge y autorización de producción siguen siendo decisiones separadas.
+
+## Acciones recomendadas
+
+1. **P0:** no fusionar PR #158 ni otros cambios a `main` sin autorización explícita de producción y sin comprobar qué despliegue productivo activaría.
+2. **P1:** evaluar limitar el `push` de `secret-history-scan.yml` y `security-scan.yml` a ramas relevantes, pero solo tras confirmar checks requeridos. No tocar los triggers en esta actualización documental.
+3. **P1:** completar Pages: production branch, build settings, root directory, build command, previews, historial y consumo.
+4. **P1:** confirmar los límites/uso reales de Workers y Pages desde Analytics/Usage; definir alertas y presupuesto con margen.
+5. **P1:** evaluar Logs/Traces sin capturar tokens, cookies, datos personales ni payloads sensibles.
+6. **P2:** diseñar dominio propio y protección de API; no comprar ni configurar ahora.
+7. **P2:** mantener capacity target de organizaciones/sucursales como DESCONOCIDO hasta pruebas sintéticas aisladas y medición de Neon + Cloudflare.
+
+## Límites y seguridad
+
+Inspección de solo lectura. No se ejecutaron workflows manuales; no se modificaron archivos de aplicación/workflows, secretos, Neon, datos, DNS, configuración de Cloudflare, tráfico, billing ni producción. No se activaron servicios pagos. Objetivo de coste: USD 0.

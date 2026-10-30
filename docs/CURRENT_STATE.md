@@ -1,3 +1,27 @@
+# Continuidad prioritaria — 2026-10-30 UTC (auditoría Cloudflare + corrección CI/CD)
+
+> Este checkpoint prevalece sobre las notas anteriores de la auditoría de workflows. Verificar GitHub en vivo antes de cualquier operación.
+
+- **Repositorio:** `BTF14/Micro-app`; PR de trabajo [#158](https://github.com/BTF14/Micro-app/pull/158), abierta y draft; no fusionada.
+- **PR #158 HEAD observado antes de esta actualización:** `d3f056b780ddad62deb5c1e1c0f1679bba19bb50`; base `main` = `1ee1808af4aae484a71dc24750237ff4f4d934a0`.
+- **Corrección crítica de auditoría:** la afirmación previa de siete workflows push+PR sin filtros fue incorrecta. La inspección directa de los 15 YAML muestra que solo `secret-history-scan.yml` (push todas las ramas) y `security-scan.yml` (push sin filtro) tienen duplicación potencial general con PR. CI y Playwright limitan push a main; migration y project-progress usan listas explícitas de ramas; Semgrep limita a main; SDD, AutoSkills, Dependency Review, Daily Dependency Watch y Backup Restore Smoke tienen filtros de paths/branch según el detalle en [WORKFLOW_AND_DEPLOYMENT_AUDIT.md](WORKFLOW_AND_DEPLOYMENT_AUDIT.md). No cambiar triggers todavía.
+- **Cloudflare:** acceso al panel confirmado con TinyFish, inspección de solo lectura. Plan Workers Free ($0/mes); cuota observada 100.000 requests/día, 10 ms CPU/request, 3.000 build minutes/mes, 100 Workers, 5 Cron Triggers. Snapshot del panel: 183 requests, 0 errores y 106,68 build minutes en las últimas 24h; la vista del Worker también reportó 85 invocaciones y CPU P90 10 ms. Son métricas observadas, no benchmark ni capacidad garantizada.
+- **Worker:** `micro-app-api` en `workers.dev`, conectado a `BTF14/Micro-app`. `main` figura como producción; ramas `docs/...` como previews. PR #158 obtuvo comentario automático Cloudflare Workers con preview deployment successful para commit `d3f056b7`, URLs distintas de commit y branch preview. No es producción.
+- **Pages:** proyecto `micro-app`, `https://micro-app-63i.pages.dev/`, conectado al mismo repo. PR #158 obtuvo comentario automático Pages preview successful para `d3f056b`. Historial detallado de versiones/producción y consumo Pages no pudo extraerse.
+- **Observabilidad:** Logs y Traces aparecían desactivados en la vista de Worker. Evaluar sin registrar secretos, cookies, tokens o datos personales.
+- **Pendiente:** verificar Pages production branch/build settings/uso; confirmar uso real y alertas Workers/Pages; decidir si limitar pushes de secret-history/security tras revisar contexts obligatorios.
+- **Protección GitHub:** rulesets API devolvió lista vacía; branch-protection endpoint legacy 403 por permisos. Estado real de protección/contextos requeridos NO CONFIRMADO.
+- **Producción NO lista:** API aún carece de endpoints comerciales y autorización por operación/sucursal; capacidad multi-tenant no medida.
+- **Guardrails:** no Codex; no Neon main/SQL remoto; no secretos; no datos reales; no pagos/upgrade; no cambios de Cloudflare/DNS/tráfico; no merge ni deploy sin autorización explícita específica. Objetivo USD 0.
+
+## Próximas acciones
+1. Completar revisión read-only de Pages y sus settings/versiones/consumo.
+2. Confirmar contexts de checks y evaluar una única optimización CI dirigida a los dos workflows con push amplio.
+3. Actualizar documentación/handoff y revisar PR #158 diff/checks del SHA exacto.
+4. Continuar arquitectura multi-tenant y pruebas sintéticas aisladas; no habilitar operaciones comerciales antes de aprobar matriz de permisos y modelo branch/warehouse/register/shift.
+
+---
+
 # Continuidad prioritaria — 2026-10-30 UTC (post PR #157)
 
 > Este checkpoint sustituye los estados inferiores que todavía describen PR #157 como abierta o main en el SHA anterior. Verificar GitHub en vivo antes de cualquier operación.

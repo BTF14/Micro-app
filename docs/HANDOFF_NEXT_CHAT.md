@@ -1,3 +1,27 @@
+# Handoff prioritario — 2026-10-30 UTC (Cloudflare y corrección de auditoría CI/CD)
+
+> Continuar el mismo proyecto. Este checkpoint corrige explícitamente una conclusión equivocada de la auditoría anterior.
+
+- **Repositorio:** `BTF14/Micro-app`.
+- **PR #158:** https://github.com/BTF14/Micro-app/pull/158 — abierta, draft, documental; mantener sin merge hasta autorización explícita de producción.
+- **Rama PR:** `docs/workflow-deployment-audit-20261030`. HEAD observado antes de actualizar: `d3f056b780ddad62deb5c1e1c0f1679bba19bb50`; base `main` = `1ee1808af4aae484a71dc24750237ff4f4d934a0`.
+- **Corrección CI:** no son siete workflows sin filtros. Solo `secret-history-scan.yml` (push todas las ramas) y `security-scan.yml` (push sin filtro) tienen potencial duplicación general con PR. CI/Playwright/Semgrep restringen push a main; migration-check y project-progress usan ramas explícitas; otros workflows tienen filtros paths/branch. Leer siempre `docs/WORKFLOW_AND_DEPLOYMENT_AUDIT.md`.
+- **Cloudflare Workers Free:** $0/mes; cuotas observadas: 100k requests/día, 10 ms CPU/request, 3.000 build minutes/mes, 100 Workers, 5 cron triggers. Snapshot: 183 requests, 0 errores, 106,68 build minutes últimas 24 h; Worker view también 85 invocaciones y P90 CPU 10 ms. No usar esto como benchmark.
+- **Worker:** `micro-app-api` en workers.dev. `main` es producción observada; ramas docs son previews. PR #158 obtuvo previews exitosos de Worker y Pages confirmados por comentarios automáticos de Cloudflare; no producción.
+- **Pages:** proyecto `micro-app`, URL `https://micro-app-63i.pages.dev/`; conectado a BTF14/Micro-app. Preview de PR #158 successful. Historial de versiones productivas, build settings y consumo Pages todavía no extraídos.
+- **Logs/Traces:** aparecían desactivados; evaluar seguridad/coste antes de activarlos.
+- **No confirmados:** usage restante, billing detallado, Pages deployment history/production branch, branch protection y contexts requeridos (rulesets vacío; legacy endpoint 403).
+- **No Codex. No Neon main ni SQL remoto. No secretos ni datos reales. No pagos. No tocar Cloudflare/DNS/tráfico. No merge ni deploy sin permiso explícito. Producción no lista y capacidad SaaS no medida.**
+
+## Secuencia de continuación
+1. Completar Pages read-only: producción branch, root/build command, previews, versiones y Analytics/usage.
+2. Confirmar checks requeridos en GitHub si la conexión permite leer branch protection; no asumir ausencia por 403.
+3. Proponer optimización focalizada de los dos workflows con push amplio, solo si preserva los checks requeridos.
+4. Actualizar PR #158 y ejecutar revisión manual de diff/checks exactos. Mantener draft.
+5. Seguir con arquitectura org → branch → warehouse/register/shift, autorización, integridad transaccional y pruebas aisladas.
+
+---
+
 # Handoff prioritario — 2026-10-30 UTC (post PR #157)
 
 > Este bloque prevalece sobre notas inferiores. Continuar el mismo proyecto y verificar el estado vivo antes de actuar.

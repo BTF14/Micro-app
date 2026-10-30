@@ -1,3 +1,16 @@
+## 2026-10-30 UTC — auditoría Cloudflare en vivo y corrección CI/CD
+
+- TinyFish confirmó acceso al panel Cloudflare con el perfil Default. Inspección estrictamente read-only.
+- Plan Workers Free activo ($0/mes); cuotas observadas: 100.000 requests/día, 10 ms CPU/request, 3.000 build minutes/mes, 100 Workers y 5 Cron Triggers. Snapshot de panel: 183 requests, 0 errores, 106,68 build minutes últimas 24h; vista Worker también reportó 85 invocaciones y CPU P90 10 ms. No usar como benchmark ni capacidad garantizada.
+- Worker `micro-app-api`: conectado a BTF14/Micro-app; main identificada como producción y ramas docs como preview. PR #158 obtuvo preview successful de Workers con URLs commit/branch preview separadas.
+- Pages: proyecto `micro-app`, URL `https://micro-app-63i.pages.dev/`, repo conectado. PR #158 obtuvo Pages preview successful. Historial productivo y uso detallado Pages quedaron pendientes.
+- Logs/Traces aparecían desactivados. No se cambiaron.
+- **Corrección de auditoría:** relectura directa de los 15 YAML demostró que la afirmación anterior de siete workflows sin filtros era falsa. La duplicación general potencial se limita a `secret-history-scan.yml` (push todas las ramas) y `security-scan.yml` (push sin filtro); CI, Playwright y Semgrep restringen push a main; migration-check y project-progress usan ramas explícitas; el resto usa filtros de paths/branch o disparadores manuales/programados. Detalle corregido en WORKFLOW_AND_DEPLOYMENT_AUDIT.md.
+- No se modificó código, workflow, Cloudflare, DNS, tráfico, billing, Neon, secretos ni datos. No se ejecutaron workflows manuales ni deploys.
+- PR #158 permanece abierta y draft; actualizar los cinco documentos de continuidad/auditoría en la misma rama, sin abrir otra PR ni fusionar.
+
+---
+
 ## 2026-10-30 UTC — PR #157 fusionada y auditoría de workflows/deploy
 
 - GitHub confirmó PR #157 cerrada/fusionada. Main quedó en `1ee1808af4aae484a71dc24750237ff4f4d934a0`; HEAD de PR `6eb464c950f195ec67350977575aef77e9790e1d`.

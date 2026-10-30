@@ -1,28 +1,23 @@
 # Prioridad operativa vigente — Micro app
 
-**Checkpoint de continuidad — 2026-10-30 UTC.** Repositorio canónico: [BTF14/Micro-app](https://github.com/BTF14/Micro-app). La última base de `main` verificada *antes de esta reconciliación* fue `682868c5fca65a4a1f3f61a1bc428a34ae1a4dd9`; corresponde al merge de PR #174. **Es una referencia de base, no una afirmación perpetua del HEAD actual.** PR #174 está fusionada (merge SHA `682868c5fca65a4a1f3f61a1bc428a34ae1a4dd9`); su cambio fue exclusivamente documental: seis archivos, +70/-0, con 8/8 workflows asociados a su HEAD exacto en success. La PR #175 de continuidad se trabaja en la rama `docs/authoritative-continuity-after-pr174-20261030`; consultar su estado, HEAD, diff, checks y merge SHA en GitHub antes de actuar. Tras cualquier merge, el HEAD actual se obtiene de la API de la rama `main`, nunca se deduce de este texto ni del SHA de la rama de PR.
+**Checkpoint de continuidad — 2026-10-30 UTC.** La base de `main` verificada antes de esta reconciliación fue `682868c5fca65a4a1f3f61a1bc428a34ae1a4dd9` (merge de PR #174); es una referencia de base, no una afirmación perpetua del HEAD. PR #174 está fusionada, documental (6 archivos, +70/-0), con 8/8 workflows success en su HEAD exacto. La reconciliación actual está en `docs/authoritative-continuity-after-pr174-20261030`; consultar PR/HEAD/checks/merge SHA en GitHub.
 
-**Fuente de verdad y regla anti-desactualización:** GitHub vivo es autoridad para HEAD, ramas, PR, issues y Actions. `docs/CURRENT_STATE.md` es el checkpoint operativo; `AGENTS.md` y `docs/AI_COLLABORATION_AND_PR_POLICY.md` contienen las reglas obligatorias; `docs/HANDOFF_NEXT_CHAT.md` contiene el prompt de reanudación. Los snapshots situados después del separador histórico se conservan como evidencia histórica, no como estado operativo. Si un SHA, estado o prioridad no coincide con GitHub, prevalece GitHub y se corrige el checkpoint antes de continuar.
-
-**PR y revisión externa:** PR #172 y #173 están fusionadas; #174 también. La revisión independiente Claude/Codex de PR #172 **no se completó** y sigue pendiente como revisión futura; no atribuirle aprobación. Para PR #175, ejecutar revisión manual del diff completo y exigir todos los checks requeridos en el HEAD exacto. No confundir checks verdes con revisión externa ni con readiness de producción.
-
-**Gates vigentes:** issue [#53](https://github.com/BTF14/Micro-app/issues/53) permanece abierta. La matriz `docs/sdd/role-permission-decision-matrix.md` sigue **NO APROBADA**; no inferir permisos por rol ni crear endpoints/middleware/mapeos comerciales antes de aprobación explícita del propietario. Los helpers `resolveTenantContext`, `resolveBranchContext` y `resolveOpenCashierRegisterShift` resuelven contexto, no autorizan operaciones. No afirmar que el ledger/auditoría comercial está implementado.
-
-Issue [#78](https://github.com/BTF14/Micro-app/issues/78) permanece abierta. El comentario [6526716084](https://github.com/BTF14/Micro-app/issues/78#issuecomment-6526716084) registra GET público de `/health` con respuesta scaffold y carga de Pages; esa evidencia **no verifica CORS**. No se han verificado desde esta sesión los dos preflight HTTP reales (origen permitido y origen externo), ni sus status/headers completos. No cerrar #78 sin ambos resultados y sin revisar `Access-Control-Allow-Origin`, métodos, headers, credenciales y rechazo del origen externo. No cambiar configuración Cloudflare/Pages/Workers, variables, secretos o despliegues para obtener esa evidencia.
-
-**Datos, producción y coste:** no ejecutar migraciones/SQL remotos ni usar Neon `main` como laboratorio; PostgreSQL desechable es el primer entorno de prueba. No tocar datos reales, secretos, DNS, billing, planes o producción; no desplegar producción. Mantener coste objetivo USD 0. No interpretar previews o tests simulados como certificación productiva. Main versiona migraciones 0001–0004; no afirmar que 0003/0004 se hayan aplicado a Neon `main` sin evidencia nueva.
-
-**Orden de continuación:** (1) verificar PR #175 en vivo y completar revisión/CI; (2) confirmar su merge y el nuevo HEAD de `main` si se fusionó; (3) resolver #78 solo con evidencia HTTP CORS reproducible; (4) abordar con el propietario las decisiones explícitas faltantes de la matriz #53; (5) solo después diseñar autorización por operación, aislamiento cross-tenant/cross-branch y pruebas negativas en PostgreSQL desechable.
+**Regla de precedencia:** `docs/CURRENT_STATE.md` es el checkpoint operativo. `AGENTS.md` y `docs/AI_COLLABORATION_AND_PR_POLICY.md` son políticas obligatorias. GitHub vivo es la autoridad para HEAD, ramas, PR, issues y Actions. Las entradas antiguas de este plan son historial, no estado actual; no reutilizar SHA de snapshots.
 
 ## Orden de trabajo y gates
-1. Cerrar correctamente la reconciliación documental PR #175 (revisión completa, diff acotado, checks obligatorios del SHA exacto y verificación post-merge).
-2. Issue #78: recopilar evidencia de preflight OPTIONS del Worker para el origen autorizado `https://micro-app-63i.pages.dev` y el origen externo `https://attacker.example`; registrar solo status y headers relevantes, sin cookies/tokens. No modificar Cloudflare para forzar el resultado.
-3. Issue #53: resolver con el propietario las decisiones explícitas de matriz; no inferir política ni permisos.
-4. Tras aprobación de matriz, diseñar catálogo de operaciones, autenticación/membresía/scope, autorización server-side, aislamiento cross-tenant/cross-branch, auditoría, idempotencia y pruebas negativas PostgreSQL efímeras.
-5. Continuar el roadmap de datos/producto solo en el orden de la planificación maestra y respetando gates de seguridad, coste cero, respaldo y producción.
+1. Completar la reconciliación documental en la PR de la rama indicada: revisión manual del diff completo, alcance acotado y checks obligatorios del HEAD exacto.
+2. Confirmar en GitHub el merge (si ocurre) y el nuevo HEAD real de `main`; no deducirlo de la rama de PR.
+3. Issue #78: obtener los dos preflight OPTIONS reales del Worker para `https://micro-app-63i.pages.dev` y `https://attacker.example`; revisar status y headers `Access-Control-*` (allow-origin, métodos, headers, credentials y rechazo externo). No incluir cookies/tokens. No modificar Cloudflare para forzar el resultado.
+4. Issue #53: resolver con el propietario las decisiones explícitas de la matriz; no inferir roles/permisos ni cerrar el issue prematuramente.
+5. Solo tras aprobación explícita de matriz: diseñar y probar catálogo de operaciones, autenticación/membresía/scope, autorización server-side, aislamiento cross-tenant/cross-branch, auditoría, idempotencia y pruebas negativas PostgreSQL desechables.
+6. Continuar el roadmap de datos/producto en el orden maestro y respetando seguridad, respaldo, coste cero y gates de producción.
 
 Este orden no declara completados los puntos pendientes ni autoriza por sí mismo cambios de producto, datos o infraestructura.
+
 ---
+
+> **Archivo histórico — no usar como estado operativo.** Las prioridades y snapshots siguientes se conservan como historial y pueden estar superados. Usar el orden superior y verificar GitHub en vivo.
+
 
 
 > **Archivo histórico — no usar como estado operativo.** Las entradas siguientes se preservan para trazabilidad y pueden contener SHA, prioridades o estados que eran correctos en su fecha. Para el estado actual, usar el checkpoint de arriba y verificar GitHub en vivo.

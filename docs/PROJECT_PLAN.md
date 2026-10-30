@@ -1,14 +1,27 @@
-> **CHECKPOINT VIGENTE — continuidad verificada 2026-10-30 UTC (supersede snapshots anteriores):** el HEAD de `main` confirmado en GitHub es `ec6a2b84e2f84a0f5d2340ced86449804a1b6ed4`, merge commit de PR #173. PR #172 está fusionada en `a7fa51d059d35fc679b53de112689a19f37fe967`; PR #173 está fusionada en `ec6a2b84e2f84a0f5d2340ced86449804a1b6ed4`. La PR #173 solo añadió documentación de continuidad (6 archivos, 12 adiciones, 0 eliminaciones); no cambió runtime, esquema, migraciones, workflows ni infraestructura. La PR #173 registró el resultado de #172, pero no registró su propio merge SHA como estado vigente; este checkpoint corrige esa omisión. Antes de cualquier acción futura, volver a consultar main, PRs, issues y checks en GitHub: este SHA es una referencia de reanudación, no garantía de que siga siendo HEAD más adelante.
->
-> **Estado de trabajo y gates:** issues [#53](https://github.com/BTF14/Micro-app/issues/53) y [#78](https://github.com/BTF14/Micro-app/issues/78) siguen abiertas. #53 conserva como gate la autorización explícita de la matriz por operación y el aislamiento multi-tenant de futuras rutas comerciales. La matriz `docs/sdd/role-permission-decision-matrix.md` sigue **NO APROBADA**. #78: comentario GitHub [6526716084](https://github.com/BTF14/Micro-app/issues/78#issuecomment-6526716084) registra lectura pública de solo lectura: GET del Worker /health respondió con `{"status":"ok","service":"micro-app-api","stage":"scaffold"}` y Pages cargó; no se observaron headers HTTP ni se pudo emitir preflight OPTIONS con Origin personalizado. Por tanto CORS, credenciales, métodos/headers permitidos y rechazo del origen externo siguen **NO VERIFICADOS**; no cerrar #78 hasta recibir ambos resultados OPTIONS desde una red con salida completa. La lectura GET no certifica CORS ni producción.
->
-> **Límites de seguridad y operación:** no crear endpoints comerciales, middleware de permisos ni mapeos rol→operación antes de aprobación explícita de la matriz. `resolveTenantContext`, `resolveBranchContext` y `resolveOpenCashierRegisterShift` resuelven contexto; no autorizan operaciones. No afirmar auditoría/ledger comercial implementados. Main versiona migraciones 0001–0004, pero 0003/0004 no se han aplicado a Neon main; no ejecutar SQL/migraciones remotas. No cambiar Cloudflare, variables, secretos, DNS, billing, planes ni producción; no interpretar previews como despliegue o certificación productiva. Codex/Claude review independiente de #172 no completada; no afirmar aprobación externa. Producción no está lista para operación comercial.
->
-> **Próxima secuencia recomendada:** (1) solicitar al propietario únicamente los status HTTP y headers `Access-Control-*` de los dos preflight OPTIONS de #78, sin cookies/tokens; (2) registrar y evaluar esa evidencia, cerrar #78 solo si satisface el contrato CORS; (3) trabajar con el propietario las decisiones explícitas pendientes de la matriz #53, sin inferir respuestas; (4) después consolidar catálogo de operaciones, scope, auditoría, idempotencia y pruebas cross-tenant/cross-branch en PostgreSQL efímero; (5) recién entonces preparar una PR de implementación acotada. Para el siguiente chat: leer primero `AGENTS.md`, este checkpoint en los seis documentos, la matriz de permisos, `OPERATION_AUTHORIZATION_ARCHITECTURE.md`, `ORGANIZATION_COMMERCIAL_POLICY_CONFIGURATION.md` y `MULTI_BRANCH_DATA_MODEL.md`; contrastar todo con el estado vivo de GitHub antes de continuar.
->
-> **Alcance de esta actualización documental:** sincronización de estado únicamente. No se cambió código, esquema, migraciones, workflows, configuración, secretos, datos reales ni infraestructura.
+# Prioridad operativa vigente — Micro app
+
+**Checkpoint de continuidad — 2026-10-30 UTC.** La base de `main` verificada antes de esta reconciliación fue `682868c5fca65a4a1f3f61a1bc428a34ae1a4dd9` (merge de PR #174); es una referencia de base, no una afirmación perpetua del HEAD. PR #174 está fusionada, documental (6 archivos, +70/-0), con 8/8 workflows success en su HEAD exacto. La reconciliación actual está en `docs/authoritative-continuity-after-pr174-20261030`; consultar PR/HEAD/checks/merge SHA en GitHub.
+
+**Regla de precedencia:** `docs/CURRENT_STATE.md` es el checkpoint operativo. `AGENTS.md` y `docs/AI_COLLABORATION_AND_PR_POLICY.md` son políticas obligatorias. GitHub vivo es la autoridad para HEAD, ramas, PR, issues y Actions. Las entradas antiguas de este plan son historial, no estado actual; no reutilizar SHA de snapshots.
+
+## Orden de trabajo y gates
+1. Completar la reconciliación documental en la PR de la rama indicada: revisión manual del diff completo, alcance acotado y checks obligatorios del HEAD exacto.
+2. Confirmar en GitHub el merge (si ocurre) y el nuevo HEAD real de `main`; no deducirlo de la rama de PR.
+3. Issue #78: obtener los dos preflight OPTIONS reales del Worker para `https://micro-app-63i.pages.dev` y `https://attacker.example`; revisar status y headers `Access-Control-*` (allow-origin, métodos, headers, credentials y rechazo externo). No incluir cookies/tokens. No modificar Cloudflare para forzar el resultado.
+4. Issue #53: resolver con el propietario las decisiones explícitas de la matriz; no inferir roles/permisos ni cerrar el issue prematuramente.
+5. Solo tras aprobación explícita de matriz: diseñar y probar catálogo de operaciones, autenticación/membresía/scope, autorización server-side, aislamiento cross-tenant/cross-branch, auditoría, idempotencia y pruebas negativas PostgreSQL desechables.
+6. Continuar el roadmap de datos/producto en el orden maestro y respetando seguridad, respaldo, coste cero y gates de producción.
+
+Este orden no declara completados los puntos pendientes ni autoriza por sí mismo cambios de producto, datos o infraestructura.
 
 ---
+
+> **Archivo histórico — no usar como estado operativo.** Las prioridades y snapshots siguientes se conservan como historial y pueden estar superados. Usar el orden superior y verificar GitHub en vivo.
+
+
+
+> **Archivo histórico — no usar como estado operativo.** Las entradas siguientes se preservan para trazabilidad y pueden contener SHA, prioridades o estados que eran correctos en su fecha. Para el estado actual, usar el checkpoint de arriba y verificar GitHub en vivo.
+
 
 > **Estado post-merge PR #172 — 2026-10-30 UTC:** GitHub confirma PR #172 fusionada (merge SHA y HEAD de `main`: `a7fa51d059d35fc679b53de112689a19f37fe967`). HEAD de PR validado: `2301a33810067b99ed9b8bd4e74105e65beff701`. En ese HEAD: 12 check-runs; 11 success y `Cloudflare Pages` seguía `in_progress` en la última consulta. Los seis checks requeridos por protección de `main` estaban completed/success; cero checks fallidos. PR #172 era exclusivamente documental (7 archivos, 413 adiciones, 0 eliminaciones), mergeable y autorizada por el propietario tras revisión manual y CI. Reviews formales: 0; threads inline sin resolver: 0. Codex no completó por límite de uso; revisión independiente Claude/Codex queda pendiente y no se considera aprobada. La preview Cloudflare no es certificación de producción. La matriz `docs/sdd/role-permission-decision-matrix.md` continúa **NO APROBADA**. El merge no autoriza permisos comerciales, endpoints, middleware, migraciones ni cambios de producción. Issues #53 y #78 siguen abiertas.
 

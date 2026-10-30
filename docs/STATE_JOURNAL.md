@@ -936,3 +936,11 @@ CI documental: para HEAD `8c15e13fa001a14a0ddf9f2432bc17efb30d476d`, los 8 workf
 - Commits de este bloque registrados por GitHub: política `f26dcca32f029edb8782ad71da8c86bcc11b4a8d`; checkpoint `63a8c752c21500ae8f45305c997ac4123e98f40e`; los commits posteriores de sincronización deben verificarse consultando el HEAD final.
 - No se ejecutaron pruebas locales ni se modificó código, esquema, migraciones, workflows, secretos, Cloudflare settings, Neon, DNS, billing o producción.
 - Pendiente: confirmar HEAD final, checks del SHA exacto, revisar manualmente el diff completo y comprobar que los documentos se mantienen coherentes. PR #160 sigue sin fusionar; no fusionar sin autorización explícita.
+
+## 2026-10-30 UTC — verificación final del checkpoint incremental en PR #160
+
+- PR #160 sigue abierta, no draft y no fusionada; base SHA `dbc7b6c9cf57113a38cddb4155d2917cc3aaeafc`; último HEAD consultado antes de esta entrada: `0e6c27bac8a9ef1a9d80da109a136c34aec99a9a`; 14 commits y 8 archivos.
+- Para ese HEAD, `fetch_commit_workflow_runs` y combined commit status devolvieron listas vacías. Estado correcto: CI de ese SHA no verificado; no declarar verde ni rojo.
+- Codex review de `ce4578f` quedó incompleta por cuota agotada. No hay aprobación automática; la revisión manual consolidada del diff actual sigue pendiente.
+- Se corrigió la afirmación de protección de rama en CURRENT_STATE, HANDOFF y PROJECT_PLAN: la protección de GitHub no se pudo confirmar por API; no presentarla como activa/verificada.
+- WORK_CHECKPOINT registra la secuencia, evidencias, limitaciones y siguientes acciones. No hubo cambios de código ni infraestructura y no se fusionó la PR.

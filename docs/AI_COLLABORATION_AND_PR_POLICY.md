@@ -98,7 +98,11 @@ El repositorio, no la memoria de una IA ni una conversación aislada, es la fuen
 - No inundar los documentos con duplicados. El estado vivo debe ser conciso; el diario conserva el historial; el handoff debe ayudar al siguiente agente a actuar sin reconstruir todo el chat.
 - No decir “lo haré” como sustituto de realizar el trabajo. Ejecutar lo que sea posible en la sesión actual y reportar solo acciones realmente completadas.
 
-## 8. Lista de comprobación breve
+## 8. Sincronización del README
+
+Después de cada avance concreto y verificado, actualizar `README.md` en el mismo bloque coherente de trabajo o inmediatamente después. El README debe reflejar el estado real del producto, arquitectura y configuración: separar explícitamente lo implementado y probado de lo propuesto o pendiente. No anunciar módulos incompletos, integraciones simuladas, previews ni capacidad no medida como funcionalidades disponibles. Si el trabajo está incompleto o no verificado, no presentarlo como avance terminado; mantener el detalle en los documentos de continuidad. Revisar cada afirmación del README contra código, pruebas y estado vivo de GitHub.
+
+## 9. Lista de comprobación breve
 
 ### Antes de editar
 - [ ] Leí las instrucciones y el estado vivo.
@@ -115,5 +119,6 @@ El repositorio, no la memoria de una IA ni una conversación aislada, es la fuen
 
 ### Al terminar la sesión
 - [ ] Actualicé estado, diario y handoff cuando correspondía.
+- [ ] Sincronicé README si se cerró un avance concreto y verificado; no publiqué capacidades pendientes.
 - [ ] Dejé enlaces, SHA y resultados reproducibles.
 - [ ] No afirmé haber desplegado, fusionado o verificado algo que no ocurrió.

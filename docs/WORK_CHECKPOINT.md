@@ -17,7 +17,7 @@
 - Documenta membresía vs asignación de sucursal, FKs tenant-scoped, stock balance+ledger, transferencias, caja/turnos, integridad venta/pagos, idempotencia, último owner y auditoría.
 - La matriz de permisos continúa NO APROBADA. Diseño no autoriza implementación.
 - No se ejecutaron pruebas runtime porque no hay código/SQL nuevo; los criterios de aceptación quedan especificados para la fase de implementación.
-- Pendiente: revisión del diff documental completo, actualizar referencias/plan/handoff, abrir PR y verificar checks exactos.
+- PR abierta: [#164](https://github.com/BTF14/Micro-app/pull/164). Revisión manual del diff documental de 9 archivos completada; no se detectaron hallazgos materiales pendientes. GitHub muestra 8 workflows iniciados para HEAD `defdd6e2505488f8fc5a95d8690befdbcb3e4fd5`; al checkpoint, varios siguen en curso y deben revalidarse tras cualquier commit. No hay reviews humanas ni threads inline; Codex no se ejecutó. - Pendiente: checks exactos y decisión de merge solo cuando todos finalicen correctamente.
 
 ---
 

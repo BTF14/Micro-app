@@ -1,10 +1,14 @@
-## Checkpoint de continuidad — estado después de retirar la rama heredada (2026-10-30 UTC)
+## Checkpoint de continuidad vigente — 2026-10-30 UTC
 
-- `main` conocido: `82386c6e9300e06f8fa209aa52995b939a72442a` (PR #177); esta operación no modificó `main`.
-- PR #178 permanece abierta como draft, sin fusionar, en `docs/reconcile-role-model-and-cloudflare-20261030`. Los SHA/checks descritos en checkpoints inferiores pueden ser históricos. Resolver el HEAD actual y revisar los checks de ese SHA directamente en GitHub antes de actuar.
-- La rama heredada `fix/vercel-api-esm-imports` ya fue eliminada tras preservar y verificar `archive/legacy-api-esm-experiment-20261020` en SHA `b1330a5fa547071a5f500f0481ce88109c612f81`. PR #72 sigue cerrada y no fusionada.
-- Continuar con PR #178; no crear PR duplicada. No fusionar sin revisión completa y autorización, pues un merge a `main` puede disparar despliegues automáticos.
-- Gates sin cambios: CORS de #78 sigue NO VERIFICADO; matriz comercial de #53 sigue NO APROBADA. No tocar Cloudflare, Neon, producción, secretos, DNS ni datos reales.
+- `main` / base de PR #178: `82386c6e9300e06f8fa209aa52995b939a72442a`.
+- PR [#178](https://github.com/BTF14/Micro-app/pull/178): OPEN, DRAFT, NOT MERGED; rama `docs/reconcile-role-model-and-cloudflare-20261030`; HEAD verificado `74dddc0275698efd6f2e47840c7abbc0e34d512b`. Comparación: 58 commits ahead, 0 behind; GitHub `mergeable=true`.
+- En el HEAD exacto `74dddc0275698efd6f2e47840c7abbc0e34d512b`, 9/9 GitHub Actions success y previews Cloudflare Pages/Workers successful. Son previews, no producción. Status combinado devolvió cero estados externos.
+- Diff: 13 archivos documentales; sin cambios de runtime, SQL, migraciones ni workflows. Reviews formales 0; threads inline 0. Branch protection no pudo auditarse por 403 en consulta anterior.
+- **Decisión de merge:** no fusionar todavía. La PR está en Draft; checks verdes y `mergeable=true` no sustituyen revisión/aprobación ni el cambio explícito a Ready. El usuario pidió evaluar/documentar, no ejecutar el merge ni activar despliegues automáticos.
+- La rama heredada `fix/vercel-api-esm-imports` fue eliminada tras preservar y verificar `archive/legacy-api-esm-experiment-20261020` en SHA `b1330a5fa547071a5f500f0481ce88109c612f81`. PR #72 sigue cerrada y no fusionada.
+- Gates del producto: CORS de #78 **NO VERIFICADO** por preflight HTTP real; matriz comercial de #53 **NO APROBADA**. No tocar Cloudflare, Neon, producción, secretos, DNS ni datos reales.
+
+## Snapshot previo — retiro de rama heredada (histórico; no usar como estado actual)
 
 ## Actualización posterior — eliminación segura de rama heredada (2026-10-30 UTC)
 
@@ -32,7 +36,19 @@
 
 ## Prompt de continuación (copiar completo)
 
-Continúa el proyecto existente **BTF14/Micro-app** como responsable técnico senior. No reinicies el proyecto ni repitas PR #175/#176/#177. Lee `AGENTS.md` y todos los documentos obligatorios; verifica HEAD, PRs, ramas y checks en GitHub en vivo. El checkpoint persistido observó `main` en `82386c6e9300e06f8fa209aa52995b939a72442a` tras PR #177; vuelve a verificarlo.
+Continúa el proyecto existente **BTF14/Micro-app** como responsable técnico senior, sin reiniciar ni repetir trabajo completado. Lee primero `AGENTS.md`, `docs/CURRENT_STATE.md`, este handoff, `docs/CONSTITUTION.md`, `docs/AI_COLLABORATION_AND_PR_POLICY.md`, `docs/PROJECT_PLAN.md`, `docs/WORK_CHECKPOINT.md`, `docs/STATE_JOURNAL.md`, `docs/RESOURCE_REGISTRY.md`, `docs/API_INTEGRATION.md` y los documentos SDD citados. Luego consulta GitHub en vivo; los SHA de este handoff son un checkpoint del 2026-10-30 y deben revalidarse.
+
+**Punto de reanudación GitHub:** repositorio `BTF14/Micro-app`; `main` / base conocida `82386c6e9300e06f8fa209aa52995b939a72442a`. PR #178: `https://github.com/BTF14/Micro-app/pull/178`, OPEN, DRAFT, NOT MERGED; rama `docs/reconcile-role-model-and-cloudflare-20261030`; último HEAD documentado `74dddc0275698efd6f2e47840c7abbc0e34d512b`. En ese SHA se observaron 9/9 workflows Actions success y previews Pages/Workers successful. Comparación entonces: 58 ahead / 0 behind; `mergeable=true`; 13 archivos de documentación, 0 reviews formales y 0 threads inline. **No fusionar ni marcar Ready sin revisión del HEAD actual, checks, diff, aprobación explícita del propietario y evaluación de despliegue automático.** Cualquier nuevo commit invalida los checks previos.
+
+**Revisión de PR #178:** los cinco hallazgos anteriores se corrigieron: (1) `VITE_API_BASE_URL` sí está definida en `apps/web/.env.production` y cargada por `vite.config.ts`; falta inspeccionar bundle publicado, no investigar variable ausente; (2) snapshots antiguos identificados por SHA; (3) rama heredada ya eliminada y respaldada; (4) checkpoint de variable corregido; (5) matriz aclarada como permisos por operación/ámbito del recurso, con un rol organizacional único. Confirmar que estas correcciones siguen presentes en el HEAD vivo antes de proceder.
+
+**Cloudflare, solo lectura:** observación de 2026-10-30: Worker `micro-app-api` versión `49975c43-4161-4809-9c00-8ba83e53e6a0`, Build ID `957478f6-0f43-4b5c-932a-621be067d6d9`, commit `82386c6e9300e06f8fa209aa52995b939a72442a`, 100% de asignación de tráfico; Pages `micro-app` production branch `main`, SHA igual, URL `https://cc23ff0c.micro-app-63i.pages.dev`. `apps/web/.env.production` define `VITE_API_BASE_URL`; `vite.config.ts` la carga con `loadEnv`. La lista del dashboard aparecía vacía, pero eso no demuestra ausencia de variable. El bundle publicado no se pudo inspeccionar. No cambiar tráfico, variables, secretos, DNS ni desplegar.
+
+**Prioridad #78:** CORS permanece **NO VERIFICADO**. Obtener desde entorno con conectividad real dos preflight OPTIONS a `https://micro-app-api.btfcasheb.workers.dev/health`: Origin autorizado `https://micro-app-63i.pages.dev` y externo `https://attacker.example`, método GET y headers authorization/content-type. Registrar status y headers `Access-Control-*` solamente, sin cookies/tokens. Inspeccionar el bundle JS publicado si es accesible para confirmar el valor compilado de `VITE_API_BASE_URL`. No cerrar #78 hasta tener evidencia real.
+
+**Gate #53:** un único rol por miembro/organización en `organization_members.role`; `branch_memberships` únicamente concede/revoca acceso a sucursales, sin roles por sucursal. La matriz de permisos por operación sigue **NO APROBADA**. No implementar endpoints comerciales, middleware ni mapeos rol→operación hasta aprobación explícita. Políticas comerciales pertenecen a cada organización; configuración y ejecución de excepciones son permisos separados pendientes. Mantener caja por turnos y cierre ordinario; no introducir cierres de supervisor incompatibles.
+
+**Límites invariables:** no Cloudflare mutaciones, despliegues, DNS, secretos ni cambios de tráfico; no Neon main, migraciones remotas ni datos reales; PostgreSQL desechable primero; presupuesto USD 0. No reescribir historial ni la bitácora append-only. No afirmar pruebas, reviews, approvals o verificaciones sin evidencia. Documentar todo cambio con SHA exacto y ejecutar/revisar checks del nuevo HEAD.
 
 **Cloudflare, solo lectura:** el 2026-10-30 se observó Worker `micro-app-api` en Producción, versión `49975c43-4161-4809-9c00-8ba83e53e6a0`, Build ID `957478f6-0f43-4b5c-932a-621be067d6d9`, commit `82386c6e9300e06f8fa209aa52995b939a72442a`, con 100% de asignación de tráfico. Pages `micro-app` production branch `main`, SHA `82386c6e9300e06f8fa209aa52995b939a72442a`, URL `https://cc23ff0c.micro-app-63i.pages.dev`. La lista visible de variables de Pages estaba vacía; sin embargo, `apps/web/.env.production` sí define `VITE_API_BASE_URL` y `vite.config.ts` la carga mediante `loadEnv`. La ausencia en el panel no significa que falte en el build. El bundle JS publicado no se pudo inspeccionar. No usar comentarios antiguos de #78 con 0% como estado actual: la observación posterior de Active Deployment mostró 100% asignado. No cambiar tráfico, variables, secretos, DNS ni desplegar.
 

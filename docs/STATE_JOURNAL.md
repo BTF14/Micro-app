@@ -1,3 +1,16 @@
+## 2026-10-30 UTC — Pages Settings y aislamiento de previews verificados
+
+## Checkpoint Pages Settings — 2026-10-30 UTC
+
+- TinyFish accedió a Settings de Pages `micro-app`, solo lectura. Production branch `main`; root directory vacío; build command `corepack enable && pnpm install --frozen-lockfile && pnpm --filter @micro-app/web build`; output `apps/web/dist`; build system v3; cache off; monitoring routes `*`; automatic deploys on; no deploy hooks; build comments on; preview access public by default; no custom domains; vars names only: `CLOUDFLARE_INCLUDE_PROCESS_ENV`, `VITE_API_BASE_URL`.
+- Compatibility date `2026-10-17`; flags panel mostró True; Functions setting mostró `Fail open` (no interpretar/cambiar sin confirmar).
+- Repo main confirma monorepo pnpm `apps/*`; root package requiere Node `>=24.22.2 <25` pero no fija `packageManager`. Pendiente verificar Node/pnpm efectivos en build logs; evaluar pinning en PR separada.
+- Build command compila web vía `apps/web/package.json` script `tsc -b && vite build && node scripts/postbuild.mjs`; API se valida en workflows separados.
+- `apps/web/public/_headers` existe: nosniff, DENY, Referrer-Policy, Permissions-Policy, HSTS, CSP. CSP prod permite API Worker. Postbuild quita Worker de CSP en preview; Vite deja API base vacía y activa preview flag; auth.ts bloquea API y App.tsx deshabilita login y muestra aviso. Preview público por defecto, pero aislamiento API está implementado en main auditada. Mantener tests de regresión.
+- `_redirects` no existe en `apps/web/public/`; UI no mostró configuración de redirects/headers.
+- Cache deshabilitado puede consumir más build time; medir antes de cambiar. Pages usage/billing no consultados.
+- Sin cambios en configuración/infra/secretos/builds/producción. PR #158 sigue draft y no fusionada.
+
 ## 2026-10-30 UTC — Cloudflare Pages producción y previews verificados
 
 - TinyFish inspeccionó Pages `micro-app` en modo solo lectura.

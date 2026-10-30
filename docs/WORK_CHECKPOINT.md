@@ -96,3 +96,6 @@
 - No se modificó el tenant resolver existente, no se conectó el nuevo helper a rutas, no hay handlers comerciales y no se creó modelo de caja/turnos/almacenes ni migración de stock legacy.
 - Validación local no ejecutada desde esta conexión. Esperar GitHub Actions en el HEAD exacto de PR; revisar diff completo y checks obligatorios.
 - No tocar Neon main, datos reales, secretos, Cloudflare settings, DNS, billing ni producción. No afirmar despliegue.
+
+- Validación ampliada en la misma PR: CI aplica 0003 al PostgreSQL efímero y ejecuta `branch-context.integration.test.ts` con casos owner/admin, cashier/inventory asignado/no asignado, sucursal inactiva y selector cross-tenant. El workflow de migración ejecuta también assertions SQL.
+- PR #165 abierta; revalidar HEAD y checks después de cualquier commit adicional.

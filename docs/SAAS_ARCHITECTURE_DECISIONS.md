@@ -1,6 +1,6 @@
 # Arquitectura SaaS de Micro app — decisiones y criterios de evolución
 
-**Fecha:** 2026-10-29  
+**Fecha:** 2026-10-30  
 **Estado:** dirección arquitectónica recomendada para guiar el diseño; no autoriza por sí sola cambios de esquema, políticas comerciales sensibles, despliegues ni migraciones.  
 **Repositorio:** https://github.com/BTF14/Micro-app  
 **PR documental de continuidad:** https://github.com/BTF14/Micro-app/pull/156
@@ -215,7 +215,7 @@ Para evitar que un cajero de una sucursal pueda operar accidentalmente en todas 
 Este diseño sigue siendo la dirección de la futura matriz; no sustituye la aprobación explícita de permisos sensibles. La base de asignación por sucursal sí está implementada en 0003, pero aún no incluye rol por sucursal. La matriz debe decidir por separado qué roles pueden leer catálogo, editar precios/costos, recibir mercancía, ajustar inventario, administrar/aplicar políticas de descuento, devolver ventas, cerrar caja, consultar reportes y exportar datos. Los importes, porcentajes y condiciones comerciales se configuran por organización.
 
 
-## Modelo de datos multi-sucursal — diseño 2026-10-30
+## Modelo de datos multi-sucursal — diseño inicial (snapshot pre-PR #165; estado vigente en sección 12)
 
 El modelo detallado propuesto está en docs/sdd/MULTI_BRANCH_DATA_MODEL.md. Resume la dirección:
 - organización = tenant; sucursal = unidad operativa; almacén = ámbito de stock; caja/turno = ámbito de cobro.

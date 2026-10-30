@@ -1331,3 +1331,11 @@ CI documental: para HEAD `8c15e13fa001a14a0ddf9f2432bc17efb30d476d`, los 8 workf
 - #53 sigue abierta: matriz comercial NO APROBADA y aislamiento cross-tenant de futuras rutas comerciales pendiente. No crear endpoints ni permisos.
 - Las portadas CURRENT_STATE/HANDOFF se corrigen en la PR documental siguiente porque aún describían PR #178 como draft. No se reescriben entradas históricas.
 - No se tocó Cloudflare producción, Neon main, secretos, DNS, billing ni datos reales.
+
+
+## 2026-10-30 UTC — corrección de snapshots operativos post-PR #178
+
+- Durante la revisión de PR #179 se detectó que los nuevos checkpoints estaban seguidos por bloques anteriores que aún describían main en `82386c6e9300e06f8fa209aa52995b939a72442a` y PR #178 como OPEN/DRAFT. Esos bloques no podían permanecer como estado operativo.
+- Se reemplazaron las portadas operativas de CURRENT_STATE y HANDOFF por un único checkpoint basado en el merge SHA `bb5bd72829db0532521857bffd62dac5c42a2eee`; los snapshots previos se conservan íntegros a partir de sus delimitadores históricos.
+- Para el HEAD anterior de PR #179 (`d958eb4e1ca7b6c79b95cf1ec1adcd87dcba685e`) se consultaron 8 workflow runs, todos completed/success; combined commit status devolvió statuses vacíos. Codex review no se completó por límite de uso. Cloudflare Pages y Workers reportaron previews exitosas para ese SHA.
+- Esta entrada no certifica el nuevo commit que genera esta corrección. Reconsultar sus checks y revisar diff antes de merge. PR #179 permanece sin fusionar hasta nueva verificación.

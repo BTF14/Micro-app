@@ -1,3 +1,36 @@
+# Checkpoint vigente — autorización server-side propuesta — 2026-10-30 UTC
+
+**Repositorio:** BTF14/Micro-app  
+**Main verificado antes de esta sincronización:** `a6db2dcaf57e2a0bf1735eb282c3ac2256cd314c`  
+**Último merge runtime:** PR #169, `be35a0fde3886271b6ed98b7ccc29cc1255d50e5`  
+**PR activa:** [#172](https://github.com/BTF14/Micro-app/pull/172), draft, no fusionada, rama `docs/operation-authorization-architecture-20261030`.  
+**HEAD anterior de PR #172:** `93561f0b73f4992d5204f3f461af7961a0e087eb`; 12/12 check-runs success en ese SHA exacto. Los commits de sincronización posteriores requieren checks nuevos.  
+**Estado de matriz:** NO APROBADA.  
+**Último trabajo:** propuesta técnica y sincronización de continuidad; no cambios runtime/schema/migrations.
+
+## Resultado y límites
+
+- PR #169 permanece como último merge de runtime; helper `resolveOpenCashierRegisterShift` ya está en main, aislado y sin rutas comerciales.
+- PR #170 y #171 son reconciliaciones documentales, no cambios runtime.
+- PR #172 propone arquitectura de autorización server-side y actualiza documentación de continuidad. No aprueba permisos ni habilita endpoints.
+- Separación contractual: autenticación, membresía tenant, resolución de scope y autorización por operación son controles distintos.
+- Mutaciones futuras: revalidar sesión/actor/membresía/rol/scope dentro de la misma transacción; definir locks/isolation frente a revocaciones y cambios concurrentes; validar tenant/branch en cada query; escribir auditoría y efectos de negocio atómicamente.
+- Auditoría, ledger de caja/inventario, idempotencia de operaciones comerciales y handlers siguen pendientes de diseño/implementación.
+- Main sigue en el SHA anterior al branch; no se tocó Neon main, datos reales, secretos, DNS, billing ni configuración Cloudflare.
+- Migraciones 0003/0004 siguen versionadas en Git, pero no se ha demostrado aplicación a Neon primary main.
+
+## Evidencia de CI
+
+- En HEAD `93561f0b73f4992d5204f3f461af7961a0e087eb`, 12 check-runs terminaron success: Cloudflare Pages, Workers Builds, postgres-migration, static analysis, Trivy, Chromium authentication smoke, secret/history scan, progress, verify y dependency review (incluyendo checks repetidos por workflows/PR).
+- Esta evidencia no se transfiere a un SHA posterior. Consultar los check-runs del HEAD actual de #172 después de los commits de continuidad.
+- Reviews formales de GitHub: ninguna en la última consulta. No afirmar aprobación humana/Codex. La consistencia fue revisada manualmente.
+
+## Siguiente paso
+
+Verificar nuevo HEAD/checks y revisión documental. Mantener #172 draft. Luego solicitar/esperar decisiones explícitas de la matriz comercial. Solo después diseñar el módulo de autorización y vertical slices comerciales. No repetir helper de turno ni auditorías ya completadas.
+
+---
+
 # Checkpoint vigente — post PR #169 — 2026-10-30 UTC
 
 **Repositorio:** BTF14/Micro-app  

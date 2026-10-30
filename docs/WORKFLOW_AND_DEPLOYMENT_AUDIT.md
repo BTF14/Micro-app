@@ -161,3 +161,9 @@ No se copiaron ni registraron valores de variables de entorno. No afirmar que es
 
 - SHA `5b1b5734f3fa8024f060694e5dbc5f5f9f8ab766`: 12/12 check runs success. Cloudflare Pages preview `https://d8477e48.micro-app-63i.pages.dev`; Worker preview `https://2935f95a-micro-app-api.btfcasheb.workers.dev`. No production deployment.
 - PR #158 abierta, draft, no mergeada; cinco archivos docs. Pendiente verificar Node/pnpm efectivos, build cache, headers HTTP y usage Pages. No cambios productivos.
+
+## Hallazgo resuelto por PR #159 — pinning Node/pnpm
+
+- El build previo ejecutó Node 24.22.1 y pnpm 10.11.1, con Unsupported Engine porque root package requiere >=24.22.2 <25. Cloudflare Pages Build System v3 no detecta engines/package manager desde package.json; docs oficiales permiten pin Node con .node-version o NODE_VERSION. Fuente: https://developers.cloudflare.com/pages/configuration/build-image/.
+- PR #159 añade .node-version 24.22.2, packageManager pnpm@10.34.9 y alinea workflows. Build log Cloudflare del SHA 57de704 confirma Node 24.22.2, pnpm 10.34.9, cero warning de engine y preview successful https://70046713.micro-app-63i.pages.dev. GitHub/Cloudflare 13/13 checks success.
+- PR #159 permanece draft y no fusionada. El build fue preview; no producción. PR #158 sigue separada y documental.

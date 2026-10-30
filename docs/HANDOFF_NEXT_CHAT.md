@@ -7,8 +7,8 @@
 - Repositorio: `BTF14/Micro-app`.
 - Último main verificado: `bb5bd72829db0532521857bffd62dac5c42a2eee`, merge SHA de PR #178.
 - PR #178: MERGED por squash; exclusivamente documental, 14 archivos (+403/-238), sin runtime, SQL, migraciones, lockfile, workflows ni infraestructura.
-- PR #179: [https://github.com/BTF14/Micro-app/pull/179](https://github.com/BTF14/Micro-app/pull/179), rama `docs/post-178-merge-checkpoint-20261030`; HEAD padre anterior a la corrección documental actual `d958eb4e1ca7b6c79b95cf1ec1adcd87dcba685e`, base `bb5bd72829db0532521857bffd62dac5c42a2eee`. Abierta, no fusionada. Se corrigen sus portadas porque todavía conservaban debajo del checkpoint nuevo un bloque antiguo que decía PR #178 OPEN/DRAFT y main SHA anterior.
-- En HEAD #179 `d958eb4...`: 8 workflow runs de Actions consultados, todos completed/success (CI, Project progress dashboard, Dependency review, Database migration validation, Security scan, Semgrep SAST, Playwright E2E, Secret history scan). Combined commit status devolvió statuses vacíos; no se ha confirmado protección de rama ni required checks. Cloudflare Pages y Workers reportaron previews exitosas, no producción.
+- PR #179: [https://github.com/BTF14/Micro-app/pull/179](https://github.com/BTF14/Micro-app/pull/179), rama `docs/post-178-merge-checkpoint-20261030`. Snapshot de revisión: HEAD `fb724e0c3bd8fbaae2a838f042c1e838754675b5`, base `bb5bd72829db0532521857bffd62dac5c42a2eee`; estaba abierta y no fusionada en esa consulta. Consultar GitHub en vivo para el estado posterior.
+- Evidencia del SHA superado `d958eb4...` (no aplicable al HEAD actual en este snapshot): 8 workflows success. En el HEAD `fb724e0c3bd8fbaae2a838f042c1e838754675b5`, 8/8 workflows Actions consultados terminaron completed/success. Combined commit status devolvió statuses vacíos; branch protection/required checks no está confirmada. Cloudflare Pages y Workers reportaron previews exitosas para `fb724e0`, no producción.
 - Codex intentó revisión automática de #179, pero falló por límite de uso. No contar como review ni aprobación. Hacer revisión manual independiente del diff.
 - PR #178 HEAD `8bacd57d9c3d624eae8139dadeb7fd6c0730b4dc`: 9/9 workflow runs consultados success. Evidencia solo para ese SHA.
 - Login OAuth real verificado por TinyFish: `https://micro-app-63i.pages.dev/#inicio`, dashboard autenticado, organización visible Abasto 7 de Oro, rol `owner`, sesión conservada. No demuestra CORS ni funcionalidades comerciales.
@@ -18,12 +18,13 @@
 
 ## Orden de trabajo
 
-1. Completar corrección de CURRENT_STATE y HANDOFF en la PR #179; no dejar bloques de estado anterior como operativos. Mantener los snapshots antiguos solo como historia explícitamente etiquetada.
-2. Revisar el diff completo de #179 y su journal append-only. Reconsultar checks del HEAD resultante y previews después del nuevo commit.
-3. Fusionar #179 únicamente con diff coherente y validaciones aplicables verificadas. No asumir que statuses vacíos equivalen a éxito de branch protection.
-4. Investigar #78: inspeccionar bundle JS publicado y obtener status + headers `Access-Control-*` de preflight permitido y rechazado desde una red funcional. No tocar producción.
-5. Investigar #53 solo sobre rutas que existan hoy; usar PostgreSQL desechable. La matriz comercial permanece sin aprobar; no implementar autorización comercial.
-6. Si se usa Claude web gratuito como segunda revisión, compartirle el prompt de auditoría que se entrega en el chat. Claude debe leer el estado actual de GitHub si tiene acceso; si no, revisar únicamente los archivos/diff pegados y declarar esa limitación. No darle secretos, tokens, cookies ni permisos de producción.
+1. Revisar el diff final de #179 y confirmar que el journal solo agrega una entrada append-only.
+2. Revalidar checks del HEAD exacto; no reutilizar evidencia de commits anteriores.
+3. La autorización del propietario para fusionar #179 ya fue expresada en el chat. El merge a `main` puede activar despliegues automáticos de Cloudflare; no hacer cambios manuales de producción y documentar cualquier efecto automático.
+4. Tras el merge, actualizar las portadas con el merge SHA real y el nuevo `main`.
+5. Investigar #78: inspeccionar el bundle JS publicado y obtener status + headers `Access-Control-*` de preflight permitido y rechazado desde una red funcional, sin cambiar configuración.
+6. Investigar #53 solo sobre rutas existentes y con PostgreSQL desechable. La matriz comercial sigue sin aprobarse; no implementar autorización comercial.
+7. Claude web gratuito puede revisar como segunda opinión. Si no accede al repo, compartir diff/archivos y exigir que declare esa limitación. No compartir secretos, tokens ni cookies.
 
 ## Restricciones no negociables
 
@@ -64,7 +65,7 @@ Continúa BTF14/Micro-app como responsable técnico senior. Lee `AGENTS.md`, est
 6. `docs/API_INTEGRATION.md`, `docs/sdd/role-permission-decision-matrix.md`, `docs/sdd/OPERATION_AUTHORIZATION_ARCHITECTURE.md`, `docs/sdd/ORGANIZATION_COMMERCIAL_POLICY_CONFIGURATION.md`, `docs/sdd/MULTI_BRANCH_DATA_MODEL.md`.
 7. Verificar GitHub en vivo y leer las skills del proyecto aplicables antes de editar.
 
-## Prompt de continuación (copiar completo)
+## Prompt de continuación anterior (HISTÓRICO — NO COPIAR; supersedido por el prompt superior)
 
 Continúa el proyecto existente **BTF14/Micro-app** como responsable técnico senior. No reinicies el proyecto ni repitas trabajo completado. Lee `AGENTS.md`, `docs/CURRENT_STATE.md`, este handoff, `docs/CONSTITUTION.md`, `docs/AI_COLLABORATION_AND_PR_POLICY.md`, `docs/PROJECT_PLAN.md`, `docs/WORK_CHECKPOINT.md`, `docs/STATE_JOURNAL.md`, `docs/RESOURCE_REGISTRY.md`, `docs/API_INTEGRATION.md` y los SDD de permisos/sucursales. Sigue también la secuencia adicional de lectura de `AGENTS.md`. Verifica GitHub en vivo antes de cualquier cambio.
 

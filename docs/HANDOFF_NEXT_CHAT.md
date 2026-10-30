@@ -1,3 +1,23 @@
+# Handoff prioritario — 2026-10-30
+
+> Leer AGENTS.md, CURRENT_STATE.md y AI_COLLABORATION_AND_PR_POLICY.md. Verificar el estado vivo de GitHub antes de actuar.
+
+- Reutilizar PR [#156](https://github.com/BTF14/Micro-app/pull/156), rama `docs/reconcile-main-after-pr155-20261029`; no abrir otra PR documental.
+- Último bloque: README, AGENTS, política, Constitución y SCHEMA_REVIEW reconciliados con el estado actual de auth. Cambios solo documentales.
+- Google OAuth + allowlist/bootstrap seguro, state/PKCE, sesión HttpOnly revocable y validación Google `email_verified` implementados según PR #153/#155. Login/registro por contraseña disabled/fail-closed. MFA, recuperación de cuenta/administrativa y limpieza automática de sesiones pendientes.
+- API actual sin endpoints comerciales HTTP; solo identidad y health. Sucursales/almacenes/cajas/turnos no están modelados en esquema. SaaS multi-org/multi-sucursal es dirección documentada, no producto implementado.
+- Capacidad no medida. Verificar límites de Neon y Cloudflare, hacer pruebas sintéticas y mantener USD 0; no prometer número de empresas/locales.
+- README debe actualizarse al cerrar avances concretos y verificados, nunca para presentar propuestas como funcionalidades.
+- No producción, secretos, datos reales ni Neon main.
+
+## Próximas acciones
+1. Consultar SHA actual de la rama/PR #156, base, estado, diff y workflows exactos.
+2. Revisar README contra `apps/api/src/index.ts`, `google-auth.ts`, `auth.ts`, `tenant-context.ts` y `docs/API_INTEGRATION.md`.
+3. Obtener revisión independiente solicitada; no autoaprobar ni fusionar.
+4. Seguir auditoría read-only de rutas/esquema/constraints/índices/queries; preparar ERD org→sucursal→almacén/caja/turno y reconciliar matriz de permisos. No migraciones/endpoints comerciales antes de gates.
+
+---
+
 # Handoff prioritario — 2026-10-29
 
 > Leer primero este bloque y `AGENTS.md`. Después seguir la política y los documentos canónicos. Las secciones históricas inferiores son contexto, no estado vivo.

@@ -1,3 +1,19 @@
+# Checkpoint de trabajo vigente — PR de políticas comerciales por organización (2026-10-30 UTC)
+
+**Rama:** `docs/org-policy-architecture-20261030`  
+**Base:** `4ab229296d8858c8c553e00a633a762b9c26a81b`  
+**Alcance:** documentación de arquitectura; no código, esquema, migraciones ni infraestructura.
+
+- Diseño nuevo: `docs/sdd/ORGANIZATION_COMMERCIAL_POLICY_CONFIGURATION.md`.
+- Alineación de `docs/sdd/role-permission-decision-matrix.md` y `docs/SAAS_ARCHITECTURE_DECISIONS.md`.
+- Cada organización controla su propia política comercial; no hay porcentajes/umbrales universales de descuento.
+- La matriz de roles sigue NO APROBADA; ninguna autorización comercial se implementa en esta PR.
+- No se tocó Neon main, producción, secretos, DNS, billing ni datos reales.
+- No hay pruebas runtime aplicables al cambio documental; falta revisión completa del diff y verificación de checks del HEAD exacto tras abrir PR.
+- Siguiente paso: revisión del diff, checks CI/SAST del SHA exacto, corregir hallazgos y merge solo si todas las puertas pasan.
+
+---
+
 # Checkpoint de trabajo vigente — Micro app
 
 **Actualizado:** 2026-10-30 UTC  

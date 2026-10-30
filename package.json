@@ -2,6 +2,7 @@
   "name": "micro-app",
   "private": true,
   "version": "0.1.0",
+  "packageManager": "pnpm@10.34.9",
   "description": "Punto de venta e inventario independiente",
   "scripts": {
     "dev:web": "pnpm --filter @micro-app/web dev",

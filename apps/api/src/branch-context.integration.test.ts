@@ -106,7 +106,7 @@ const suite = describe.skipIf(!databaseUrl)("branch context against PostgreSQL",
   afterAll(async () => {
     if (!client) return;
     await client.query("DELETE FROM branch_memberships WHERE organization_id = $1", [organizationId]);
-    await client.query("DELETE FROM branches WHERE organization_id = $1", [organizationId]);
+    await client.query("DELETE FROM branches WHERE organization_id = ANY($1::uuid[])", [[organizationId, otherOrganizationId]]);
     await client.query("DELETE FROM organization_members WHERE organization_id = $1", [organizationId]);
     await client.query("DELETE FROM organizations WHERE id = ANY($1::uuid[])", [[organizationId, otherOrganizationId]]);
     await client.query(

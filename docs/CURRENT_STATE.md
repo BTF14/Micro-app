@@ -1,12 +1,13 @@
 # Estado vivo de la rama de continuidad — 2026-10-30 UTC
 
-- **PR #160:** https://github.com/BTF14/Micro-app/pull/160; abierta, no draft, no fusionada; base `main`. HEAD verificado de PR #160: `0e6c27bac8a9ef1a9d80da109a136c34aec99a9a`; 14 commits y 8 archivos. La consulta de workflow runs y combined status para este SHA devolvió cero resultados; CI de este HEAD no está verificado.
-- **Revisión automática:** Codex no completó la revisión por límite de uso; su comentario la marca fallida/no completada. No equivale a aprobación ni a hallazgo confirmado. Ver [comentario](https://github.com/BTF14/Micro-app/pull/160#issuecomment-6514563808) y [aviso de cuota](https://github.com/BTF14/Micro-app/pull/160#issuecomment-6514564279).
-- **Previews reportadas para el HEAD anterior:** Pages y Worker exitosos; son previews, no producción.
-- **Continuidad incremental:** se añadió la sección 10 a `docs/AI_COLLABORATION_AND_PR_POLICY.md` y se creó `docs/WORK_CHECKPOINT.md`. Ambos cambios se están incorporando a la misma PR #160, sin abrir otra PR.
-- **Últimos commits documentales persistidos:** `f26dcca32f029edb8782ad71da8c86bcc11b4a8d` (política) y `63a8c752c21500ae8f45305c997ac4123e98f40e` (checkpoint). Verificar HEAD vivo, porque los siguientes commits pueden moverlo.
-- **Pruebas:** no se ejecutaron pruebas locales; los checks del nuevo HEAD todavía deben consultarse. No reutilizar checks del SHA anterior.
-- **Siguiente acción:** sincronizar este checkpoint con HANDOFF y STATE_JOURNAL, consultar checks del HEAD final y revisar manualmente el diff completo. No fusionar sin autorización.
+- **PR #160:** https://github.com/BTF14/Micro-app/pull/160; abierta, no draft, no fusionada, `mergeable=true`; base `main` SHA `dbc7b6c9cf57113a38cddb4155d2917cc3aaeafc` (revalidar en vivo al reanudar). HEAD anterior a esta sincronización: `bcc667fc6ccd154b8e4f93f041e33d16c29195f0`; checkpoint actualizado después.
+- **CI del HEAD anterior:** workflow CI `41002801690` estaba `pending`; otros siete workflows (Dependency review, Project progress dashboard, Database migration validation, Secret history scan, Security scan, Semgrep SAST y Playwright E2E) terminaron `success`. Combined status vacío. No declarar CI global verde. Los nuevos commits requieren nueva comprobación de su SHA.
+- **Codex:** review fallida por cuota agotada en `ce4578fed5980631f59206bd45ced3fbefcce346`; no es aprobación. No reintentar mientras siga la limitación.
+- **Revisión manual:** diff de PR #160 acotado a ocho archivos documentales. Se detectaron referencias de HEAD/commits obsoletas en WORK_CHECKPOINT y en snapshots de continuidad; se corrige la información de portada y el handoff. Los bloques antiguos en CURRENT_STATE/STATE_JOURNAL son historia y deben permanecer claramente subordinados al estado vivo.
+- **Continuidad incremental:** sección 10 de `docs/AI_COLLABORATION_AND_PR_POLICY.md` y `docs/WORK_CHECKPOINT.md` definen y registran checkpoints durante el trabajo.
+- **Decisión:** NO fusionar mientras CI requerido esté pendiente/no verificado. Ver `docs/WORK_CHECKPOINT.md` para evidencia, limitaciones y secuencia exacta.
+- **No se modificó:** código de aplicación, migraciones, workflows, secretos, Cloudflare/Neon settings, DNS, billing ni producción.
+- **Siguiente acción:** verificar HEAD nuevo y CI exacto; revisar los documentos de continuidad actualizados; solo fusionar PR #160 cuando todos los checks requeridos estén completos y no haya hallazgos materiales.
 
 ---
 

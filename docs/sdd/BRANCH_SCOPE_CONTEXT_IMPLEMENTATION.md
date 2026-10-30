@@ -25,7 +25,7 @@ La migración aditiva `0003_branch_scope.sql` introduce:
 
 Las FKs compuestas impiden persistir una asignación cuyo usuario o sucursal pertenezca a otra organización. Los registros se restringen con `ON DELETE RESTRICT`; la desactivación es explícita y auditable en futuras operaciones de administración.
 
-Alcance de PR #165: no creó almacenes, cajas, turnos, stock por almacén ni migró `products.stock_quantity`; tampoco modificó el esquema inicial histórico. Trabajo posterior: PR #167 añade `registers`/`register_shifts` mediante 0004 en una rama no fusionada; no está en main ni en Neon.
+Alcance de PR #165: no creó almacenes, cajas, turnos, stock por almacén ni migró `products.stock_quantity`; tampoco modificó el esquema inicial histórico. Trabajo posterior: PR #167 fusionó `registers`/`register_shifts` mediante 0004 en main; no está aplicado a Neon.
 
 ## Resolución de contexto
 
@@ -45,7 +45,7 @@ El helper aún no está conectado a middleware ni rutas. Los futuros handlers de
 - Unitarias: roles de organización, asignación requerida, sucursal ausente/inactiva, selector malformado y rol inválido.
 - PostgreSQL efímero: FKs cross-tenant para sucursal y usuario, unicidad de slug por organización.
 - Evidencia histórica de PR #165: CI aplicó 0001–0003 en PostgreSQL 18 desechable y ejecutó assertions.
-- Continuación PR #167: workflows amplían la secuencia a 0001–0004 y assertions de caja/turno; verificar siempre el SHA actual de esa PR.
+- PR #167 fusionó la ampliación de workflows a 0001–0004 y assertions de caja/turno; los 10 workflows pasaron en su HEAD final.
 - Antes de producción: pruebas de integración del resolver con DB real aislada, membresías revocadas, acceso IDOR, concurrencia de cambios de asignación y auditoría de cambios.
 
 ## Límites y pendientes
@@ -53,7 +53,7 @@ El helper aún no está conectado a middleware ni rutas. Los futuros handlers de
 - No se ha ejecutado localmente el workspace desde esta conexión; la verificación automatizada depende de GitHub Actions para el HEAD de PR.
 - No se ha ejecutado la migración contra Neon ni se ha creado una sucursal en datos reales.
 - La matriz `docs/sdd/role-permission-decision-matrix.md` continúa NO APROBADA en las operaciones comerciales sensibles.
-- El modelo estructural de caja/turno está especificado e implementado como candidato en PR #167; siguen abiertas las políticas de ventas fuera de caja, ledger/efectivo esperado, override de supervisor y permisos por operación.
+- El modelo estructural de caja/turno está implementado en 0004; siguen abiertas las políticas de ventas fuera de caja, ledger/efectivo esperado, override de supervisor y permisos por operación.
 - No declarar aislamiento comercial completo ni preparación de producción por este cambio.
 
 ## Secuencia posterior
@@ -96,7 +96,7 @@ La integración PostgreSQL ahora cubre además membresía de organización desac
 ## Continuidad posterior a PR #165 — PR #167
 
 - La migración 0003 y `resolveBranchContext` siguen siendo el fundamento de organización/sucursal; el helper no está conectado a rutas.
-- PR #167 añade `0004_register_shifts.sql` con `registers`/`register_shifts`, índices de un turno abierto por caja/cajero, FKs compuestas, validación de apertura y lifecycle inmutable. Es una rama de implementación abierta, no parte de main ni aplicada a Neon.
+- PR #167 fusionó `0004_register_shifts.sql` con `registers`/`register_shifts`, índices de un turno abierto por caja/cajero, FKs compuestas, validación de apertura y lifecycle inmutable. Está en main; no se aplicó a Neon.
 - CI de PR #167 aplica 0001–0004 en PostgreSQL 18 desechable y ejecuta assertions y tests de integración/concurrencia. No confundir la evidencia histórica de PR #165 (0001–0003) con la validación actual de PR #167.
 - La matriz de permisos comerciales sigue NO APROBADA; el helper de sucursal y el esquema de turnos no autorizan ventas, pagos, descuentos, anulaciones ni endpoints de caja.
 

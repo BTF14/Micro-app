@@ -1,14 +1,18 @@
 # Prioridad operativa vigente — Micro app
 
-**Checkpoint verificado en GitHub — 2026-10-30 UTC:** PR #175 y #176 fusionadas; PR #176 merge SHA y HEAD de `main` observado: `287ba4e3b038b434bfec1fffec140bf2acc3f29a`. No había PR abiertas. En el SHA actual, 9/9 check-runs success (7 Actions + 2 Cloudflare) y los seis contextos requeridos success. El SHA es una observación fechada, no un estado perpetuo. #78 y #53 siguen abiertas.
+**Checkpoint verificado — 2026-10-30 UTC:** `main` = `82386c6e9300e06f8fa209aa52995b939a72442a` (merge PR #177). PR #177 fusionada; cero PR abiertas en la consulta. En la validación post-merge se observaron 9/9 check-runs success y seis contextos requeridos success. Revalidar SHA/checks en cada sesión.
 
 ## Orden de trabajo y gates
-1. **Issue #78 — CORS:** obtener los dos preflight HTTP reales al Worker para origen permitido `https://micro-app-63i.pages.dev` y origen externo `https://attacker.example`. En el último intento desde el sandbox, ambos curl fallaron por DNS (exit 6, `Could not resolve host`); no se obtuvo status ni headers. Ejecutar solo desde una máquina con salida de red completa. Revisar status y headers `Access-Control-Allow-Origin`, `Access-Control-Allow-Methods`, `Access-Control-Allow-Headers`, `Access-Control-Allow-Credentials` y `Access-Control-Max-Age`. Para el origen externo, confirmar que no se autoriza mediante `Access-Control-Allow-Origin`; no exigir necesariamente HTTP 403 si el preflight devuelve 204 sin ese header. No incluir cookies/tokens. No modificar Cloudflare ni desplegar para forzar resultados. Mantener #78 abierta hasta evidencia suficiente.
-2. **Issue #53 — permisos:** obtener decisiones y aprobación explícita del propietario para `docs/sdd/role-permission-decision-matrix.md`. No inferir permisos por rol ni crear endpoints/middleware/mapeos comerciales antes de esa aprobación.
-3. Solo tras aprobación: diseñar y probar catálogo de operaciones, autorización server-side, aislamiento cross-tenant/cross-branch, auditoría, idempotencia y pruebas negativas con PostgreSQL desechable.
-4. Continuar roadmap de datos/producto respetando seguridad, respaldo, coste cero y gates de producción.
+1. **P0 — Issue #78 / CORS y configuración efectiva:** obtener dos preflight HTTP reales al Worker: origen permitido `https://micro-app-63i.pages.dev` y origen externo `https://attacker.example`, método GET, headers authorization/content-type. Registrar status y headers `Access-Control-*`; el origen externo no debe recibir `Access-Control-Allow-Origin`. No exigir necesariamente 403 si el servidor responde 204 sin ese header. Ejecutar desde equipo con conectividad real; no repetir desde entorno que ya falló por DNS. Investigar en solo lectura que la lista visible de variables de Pages estaba vacía y `VITE_API_BASE_URL` no aparecía. No cambiar variables, secretos, tráfico ni despliegues.
+2. **P1 — Issue #53 / decisión de permisos:** la estructura está definida como un rol único por miembro/organización en `organization_members.role`; `branch_memberships` solo asigna acceso a sucursales y no contiene roles por sucursal. La matriz de permisos por operación sigue **NO APROBADA**. Obtener aprobación explícita antes de implementar autorización comercial.
+3. Solo tras aprobación de la matriz: diseñar catálogo de operaciones, autorización server-side, aislamiento cross-tenant/cross-branch, auditoría, idempotencia y pruebas negativas con PostgreSQL desechable.
+4. Mantener inventario actual organizacional (`products.stock_quantity`); no afirmar inventario por sucursal implementado. Mantener caja por turnos y cierre ordinario; no añadir cierres de supervisor incompatibles.
+5. Continuar roadmap de seguridad y producto respetando backup, coste cero y gates de producción.
 
-No crear PR de apariencia ni duplicar trabajo. Toda nueva PR debe tener un propósito coherente y checks del SHA exacto.
+## Evidencia Cloudflare observada
+Worker `micro-app-api`: Active Deployment Producción, versión `49975c43`, Build ID `957478f6-0f43-4b5c-932a-621be067d6d9`, commit `82386c6e9300e06f8fa209aa52995b939a72442a`, 100% de asignación de tráfico en el panel. Pages `micro-app`: producción `main`, SHA `82386c6e9300e06f8fa209aa52995b939a72442a`, URL `https://cc23ff0c.micro-app-63i.pages.dev`; lista visible de variables vacía, `VITE_API_BASE_URL` ausente. Solo lectura; no se modificó Cloudflare. CORS no queda probado por esta inspección.
+
+No crear PR de apariencia ni duplicar trabajo. Toda PR debe tener propósito coherente, diff acotado, revisión manual y checks del SHA exacto.
 
 ---
 > **Archivo histórico — no usar como estado operativo.** Las entradas siguientes se conservan para trazabilidad y describen estados de su fecha. GitHub en vivo y el checkpoint superior prevalecen.

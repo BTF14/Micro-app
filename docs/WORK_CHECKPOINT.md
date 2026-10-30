@@ -2,6 +2,8 @@
 
 **Verificación GitHub — 2026-10-30 UTC:** PR #177 fusionada; merge SHA y HEAD de `main` observado: `82386c6e9300e06f8fa209aa52995b939a72442a`. Cero PR abiertas al inicio del bloque. En la validación post-merge de #177: 9/9 check-runs success y seis contextos requeridos success. No extrapolar esos resultados a nuevos commits.
 
+**PR en curso:** [#178](https://github.com/BTF14/Micro-app/pull/178), draft, rama `docs/reconcile-role-model-and-cloudflare-20261030`. Continuar allí; no crear otra PR para la misma reconciliación. Revalidar HEAD/checks.
+
 ## Cloudflare — evidencia autenticada, solo lectura
 - Worker `micro-app-api`: Active Deployment en Producción; versión `49975c43-4161-4809-9c00-8ba83e53e6a0`, Build ID `957478f6-0f43-4b5c-932a-621be067d6d9`, commit `82386c6e9300e06f8fa209aa52995b939a72442a`; panel mostró 100% de asignación de tráfico.
 - Pages `micro-app`: production branch `main`, SHA `82386c6e9300e06f8fa209aa52995b939a72442a`, URL `https://cc23ff0c.micro-app-63i.pages.dev`.

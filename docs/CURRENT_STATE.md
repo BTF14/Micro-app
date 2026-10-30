@@ -3,17 +3,16 @@
 ## Checkpoint vigente de continuidad — 2026-10-30 UTC
 
 - Repositorio: `BTF14/Micro-app`; rama por defecto `main`.
-- Último HEAD de la rama PR #178 consultado antes de este commit de handoff: `c8d53fd3d738bab3cdcd8e5e43cca1c6ac4e8ca8`. Este commit actualiza el propio handoff; al reanudar, consultar la punta real de la rama, que será posterior a este SHA.
-- `main` / base de PR #178: `82386c6e9300e06f8fa209aa52995b939a72442a`. Comparación previa: 63 commits ahead, 0 behind.
-- PR [#178](https://github.com/BTF14/Micro-app/pull/178): OPEN, DRAFT, NOT MERGED; rama `docs/reconcile-role-model-and-cloudflare-20261030`; GitHub reportó `mergeable=true` en la consulta de este checkpoint.
-- Para el SHA padre `c8d53fd3d738bab3cdcd8e5e43cca1c6ac4e8ca8`, la primera página de workflow runs devolvió cinco ejecuciones, todas `queued`; el conector solo expone la primera página y no permite afirmar el estado de los nueve workflows completos. Por tanto, CI de ese SHA queda **NO VERIFICADO / INCOMPLETO**. El SHA anterior `74dddc0275698efd6f2e47840c7abbc0e34d512b` sí tuvo 9/9 workflows success y previews Pages/Workers exitosas, pero esa evidencia no se transfiere a commits posteriores.
-- PR #178 mantiene 13 archivos, todos documentales; en el checkpoint anterior se observaron 347 adiciones y 229 eliminaciones. No hay cambios de runtime, SQL, migraciones ni workflows.
-- Reviews formales: 0; threads inline: 0. La política de branch protection no pudo confirmarse mediante el endpoint disponible (403 en auditoría anterior). No afirmar aprobación externa ni que se verificaron todos los requisitos de protección.
-- **No fusionar:** PR #178 sigue en Draft; aunque `mergeable=true` sea una señal técnica, no sustituye el estado Ready, la revisión completa ni la autorización explícita. El commit de este handoff genera otro HEAD y requiere validar todos sus checks y previews.
+- Último HEAD consultado antes de este commit de corrección documental: `c5e48b651b44da1bc0e88467c0e523d3de557926`; al reanudar, resolver la punta real de la rama, que será posterior a este SHA.
+- `main` / base de PR #178: `82386c6e9300e06f8fa209aa52995b939a72442a`. Comparación previa: 65 commits ahead, 0 behind.
+- PR [#178](https://github.com/BTF14/Micro-app/pull/178): OPEN, DRAFT, NOT MERGED; rama `docs/reconcile-role-model-and-cloudflare-20261030`; GitHub reportó `mergeable=true`. El diff: 13 archivos, todos documentales; 349 adiciones y 230 eliminaciones en esta consulta.
+- Para el SHA `c5e48b651b44da1bc0e88467c0e523d3de557926`, Actions devolvió 0 workflow runs visibles al consultar por `head_sha`; CI **NO VERIFICADO**. Cloudflare Pages reportó build en progreso para `c5e48b6`; el último Worker preview exitoso observado correspondía al SHA anterior `720bc7b0`. No transferir checks ni previews entre SHA.
+- El SHA anterior `74dddc0275698efd6f2e47840c7abbc0e34d512b` sí tuvo 9/9 workflows Actions success y previews Pages/Workers exitosas, pero esa evidencia no certifica ningún commit posterior.
+- Reviews formales: 0; threads inline: 0. La política de branch protection no pudo confirmarse mediante el endpoint disponible (403 en auditoría anterior).
+- **No fusionar:** PR #178 sigue en Draft y el HEAD más reciente no tiene CI ni previews completos verificados. No convertirla a Ready ni fusionarla sin revisión y autorización explícita.
 - Gates del producto: Issue #78 CORS **NO VERIFICADO** por HTTP real; Issue #53 matriz de permisos comerciales **NO APROBADA**.
 - La rama heredada `fix/vercel-api-esm-imports` fue eliminada tras preservar y verificar `archive/legacy-api-esm-experiment-20261020` en SHA `b1330a5fa547071a5f500f0481ce88109c612f81`; PR #72 sigue cerrada y no fusionada.
 - No se modificó `main`, runtime, Cloudflare, Neon, datos reales, secretos, DNS, billing ni producción.
-
 ## Snapshot previo — eliminación segura de rama heredada (histórico; no es estado actual de PR #178) — 2026-10-30 UTC
 
 - La rama original `fix/vercel-api-esm-imports` fue eliminada de GitHub mediante la sesión autenticada del propietario, después de comprobar que el respaldo `archive/legacy-api-esm-experiment-20261020` existía y apuntaba al mismo HEAD exacto: `b1330a5fa547071a5f500f0481ce88109c612f81` (compare devolvió `identical`, 0 ahead / 0 behind).

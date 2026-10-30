@@ -1,12 +1,12 @@
 ## Checkpoint de continuidad vigente — 2026-10-30 UTC
 
 - Repositorio `BTF14/Micro-app`; `main` / base conocida de PR #178: `82386c6e9300e06f8fa209aa52995b939a72442a`.
-- Último HEAD consultado antes de este ajuste final: `720bc7b052a957e3f179558c23e327e19d3a5b42`; el commit de este ajuste vuelve a mover la punta, así que el siguiente chat debe resolver el HEAD real antes de actuar.
-- PR [#178](https://github.com/BTF14/Micro-app/pull/178): OPEN, DRAFT, NOT MERGED; rama `docs/reconcile-role-model-and-cloudflare-20261030`; GitHub reportó `mergeable=true`. Comparación previa: 64 commits ahead, 0 behind; 13 archivos documentales, 351 adiciones y 230 eliminaciones.
-- Para el SHA `720bc7b052a957e3f179558c23e327e19d3a5b42`, Actions devolvió 0 runs visibles al consultar por `head_sha`; CI **NO VERIFICADO**. Cloudflare Pages reportó build en progreso para `720bc7b`; el último Worker preview success observado correspondía al SHA anterior `c8d53fd3`. No transferir checks ni previews a un SHA posterior.
-- El SHA anterior `74dddc0275698efd6f2e47840c7abbc0e34d512b` sí tuvo 9/9 workflows Actions success y previews exitosas, pero no certifica el HEAD actual.
+- Último HEAD consultado antes de este commit de corrección: `c5e48b651b44da1bc0e88467c0e523d3de557926`; este commit mueve de nuevo la punta, así que el siguiente chat debe resolver el HEAD real antes de actuar.
+- PR [#178](https://github.com/BTF14/Micro-app/pull/178): OPEN, DRAFT, NOT MERGED; rama `docs/reconcile-role-model-and-cloudflare-20261030`; GitHub reportó `mergeable=true`. Comparación previa: 65 commits ahead, 0 behind; 13 archivos documentales, 349 adiciones y 230 eliminaciones.
+- Para el SHA `c5e48b651b44da1bc0e88467c0e523d3de557926`, Actions devolvió 0 runs visibles; CI **NO VERIFICADO**. Pages reportó build en progreso para `c5e48b6`; Worker preview success conocido solo para SHA anterior `720bc7b0`. No transferir checks/previews a SHA posterior.
+- El SHA anterior `74dddc0275698efd6f2e47840c7abbc0e34d512b` sí tuvo 9/9 Actions success y previews exitosas, pero no certifica el HEAD actual.
 - Reviews formales 0; threads inline 0. Branch protection no pudo auditarse por 403 en consulta anterior.
-- **No fusionar:** la PR permanece Draft, y el HEAD más reciente no tiene CI/previews completos verificados. El usuario pidió revisión y continuidad, no ejecutar merge ni activar despliegues automáticos.
+- **No fusionar:** la PR permanece Draft y el HEAD más reciente no tiene CI/previews completos verificados. El usuario pidió revisión y continuidad, no ejecutar merge ni activar despliegues automáticos.
 - La rama heredada `fix/vercel-api-esm-imports` fue eliminada tras preservar y verificar `archive/legacy-api-esm-experiment-20261020` en SHA `b1330a5fa547071a5f500f0481ce88109c612f81`. PR #72 sigue cerrada y no fusionada.
 - Gates: CORS de #78 **NO VERIFICADO** por preflight HTTP real; matriz comercial de #53 **NO APROBADA**. No tocar Cloudflare, Neon, producción, secretos, DNS ni datos reales.
 ## Snapshot previo — retiro de rama heredada (histórico; no usar como estado actual)

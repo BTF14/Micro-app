@@ -1369,7 +1369,7 @@ Este bloque es más reciente que los snapshots históricos anteriores; si contra
 
 **Rama:** `feat/branch-scope-context-20261030`  
 **Base:** `ce8b0e491fe8b9f6154380cc8b0eea0a19fe8114`.  
-**PR:** consultar GitHub en vivo; no confiar en el estado de este encabezado si el chat se interrumpe.
+**PR:** [#165](https://github.com/BTF14/Micro-app/pull/165), abierta; revalidar estado y HEAD en vivo.
 
 - #164 está fusionada. Cualquier bloque histórico que la describa como abierta queda supersedido por el estado vivo de GitHub y el checkpoint de esta sección.
 - Alcance autorizado: owner/admin organización-wide; cashier/inventory solo sucursales con asignación activa. No se aprobaron permisos comerciales sensibles ni excepciones.
@@ -1379,3 +1379,5 @@ Este bloque es más reciente que los snapshots históricos anteriores; si contra
 - La migración solo se ejecuta en PostgreSQL 18 efímero de CI. No ejecutar en Neon main ni sobre datos reales.
 - Próximo trabajo: cerrar decisiones de caja/turnos y matriz de permisos por operación; después diseño de stock por almacén y reconciliación. No crear rutas comerciales hasta cerrar gates.
 - Para continuar: leer AGENTS.md, WORK_CHECKPOINT.md, CURRENT_STATE.md, HANDOFF_NEXT_CHAT.md, PROJECT_PLAN.md y STATE_JOURNAL.md; revalidar main/PR/Actions en vivo.
+
+- CI aplica 0003 a PostgreSQL efímero y ejecuta el test de integración del resolver; el workflow separado `postgres-migration` también aplica 0003 y sus assertions SQL. Comprobar ambos en el HEAD final.

@@ -1,3 +1,41 @@
+# Estado vivo — reconciliación de autorización server-side — 2026-10-30 UTC
+
+> **Esta portada supersede los estados operativos anteriores de este archivo.** Las entradas históricas inferiores se conservan como historial; no deben interpretarse como estado actual.
+
+## Estado vivo verificado
+
+- Repositorio: `BTF14/Micro-app`.
+- `main` verificado en `a6db2dcaf57e2a0bf1735eb282c3ac2256cd314c`. No se ha modificado `main` durante este bloque.
+- Último merge con cambios de runtime: PR #169, merge SHA `be35a0fde3886271b6ed98b7ccc29cc1255d50e5`. PR #170 y #171 fueron reconciliaciones documentales; no alteraron runtime ni esquema.
+- PR #172: https://github.com/BTF14/Micro-app/pull/172 — abierta, draft, base `main`, rama `docs/operation-authorization-architecture-20261030`. Propósito: propuesta de arquitectura de autorización server-side. No está fusionada.
+- HEAD de PR #172 antes de esta sincronización documental: `93561f0b73f4992d5204f3f461af7961a0e087eb`; en ese SHA exacto, los 12 check-runs consultados terminaron `success`. Los commits documentales posteriores cambian el HEAD y requieren nueva verificación; no reutilizar esa evidencia para el HEAD nuevo.
+- No hay aprobación formal de la matriz de permisos comerciales. La matriz `docs/sdd/role-permission-decision-matrix.md` permanece **NO APROBADA**.
+- Issues #53 y #78 permanecen abiertas; no se modificaron en este bloque. Revalidar estado vivo antes de actuar.
+- No se verificó ni se modificó Neon main; migraciones 0003/0004 siguen sin evidencia de aplicación remota. La validación PG18 es desechable/CI.
+- No hay endpoints comerciales; los resolvers tenant/branch/shift siguen siendo helpers de contexto, no autorización por operación.
+- No se cambiaron secretos, DNS, billing, configuración Cloudflare, datos reales ni despliegue de producción.
+
+## Qué se añadió en PR #172
+
+- `docs/sdd/OPERATION_AUTHORIZATION_ARCHITECTURE.md`: separa autenticación, membresía tenant, scope del recurso y autorización por operación; propone deny-by-default, comprobaciones transaccionales, control TOCTOU/concurrencia, auditoría, catálogo de operaciones y tests negativos.
+- Es propuesta técnica, no política de permisos aprobada ni autorización para crear endpoints o migraciones.
+- Se amplió la sincronización de continuidad para que el siguiente chat pueda reanudar desde un solo checkpoint consistente.
+
+## Próxima secuencia obligatoria
+
+1. Verificar el HEAD vivo de PR #172 y que todos sus checks terminen success tras la sincronización documental; revisar diff y estado de reviews.
+2. Mantener la PR como draft/no fusionada hasta que la propuesta documental esté coherente y la matriz comercial tenga aprobación explícita.
+3. Obtener decisiones del propietario para permisos por operación, gestión de roles/usuarios, excepciones de caja, descuentos/devoluciones/anulaciones, delegación, configuración de políticas y auditoría.
+4. Solo después diseñar/implementar autorización por operación con transacción, locks/isolation, idempotencia y auditoría.
+5. Diseñar ledger de caja e inventario antes de exponer operaciones financieras/comerciales.
+6. No aplicar migraciones a Neon main ni desplegar producción sin gate y autorización específica.
+
+## Regla de continuidad
+
+Consultar siempre el ref vivo de `main`, el HEAD/base de PR #172, los check-runs exactos y los issues antes de continuar. Este archivo y `HANDOFF_NEXT_CHAT.md` son la portada operativa; las notas históricas inferiores son contexto, no estado vivo.
+
+---
+
 # Estado vivo — post PR #169 — 2026-10-30 UTC
 
 ## Estado verificado en GitHub

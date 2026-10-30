@@ -1,4 +1,22 @@
-# Reanudación inmediata — 2026-10-30 UTC, post PR #160
+# Reanudación inmediata — 2026-10-30 UTC, post PR #161
+
+**Leer primero:** [docs/WORK_CHECKPOINT.md](WORK_CHECKPOINT.md), [docs/CURRENT_STATE.md](CURRENT_STATE.md), [AGENTS.md](../AGENTS.md) y la política de colaboración.
+
+- PR #160 y PR #161 están fusionadas. Merge #160: `be6f19486caf5cf3605c6ca6615f87e305822ea7`; merge #161: `c7abcb477afd649161176aad8cae707f5e42f632`.
+- La sincronización de continuidad está integrada. No abrir otra PR solo para repetir estos checkpoints; a partir de ahora, actualizar checkpoint y journal dentro de la PR de trabajo que corresponda.
+- Los 12 checks del HEAD PR #161 `a17a4b95312876f0bf4b201c6a84a323fb69fa3b` terminaron success. No equivalen a un run post-merge separado.
+- Codex review falló por cuota; se realizó revisión manual fallback. Protección de rama no revalidada (HTTP 403).
+- **Siguiente trabajo técnico:** cerrar arquitectura antes de endpoints comerciales. La matriz de permisos por rol/sucursal sigue sin aprobación explícita; no implementar permisos de negocio basados en la propuesta de IA.
+- API: auth/health solamente; no hay handlers comerciales. `resolveTenantContext` valida sesión/membresía/organización, no permisos por operación ni sucursal y no está conectado a handlers.
+- `auth_rate_limits` existe en DDL pero no tiene caller runtime.
+- Esquema: stock por organización; faltan sucursales, almacenes, cajas/turnos; faltan reconciliación venta-líneas-pagos, idempotencia de pagos, consistencia stock-ledger, guard del último owner y auditoría append-only.
+- `feat/neon-transaction-adapter` corresponde a PR #1 ya fusionada; rama 14 ahead/245 behind. No reabrir ni fusionar.
+- No tocar Neon main, secretos, datos reales, billing, DNS ni producción. No ejecutar migraciones ni desplegar producción sin gates.
+
+---
+
+## Handoff histórico previo a PR #161
+
 
 **Leer primero:** [docs/WORK_CHECKPOINT.md](WORK_CHECKPOINT.md), después [docs/CURRENT_STATE.md](CURRENT_STATE.md), [AGENTS.md](../AGENTS.md) y la política de colaboración.
 

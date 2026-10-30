@@ -980,3 +980,13 @@ CI documental: para HEAD `8c15e13fa001a14a0ddf9f2432bc17efb30d476d`, los 8 workf
 - La API de branch protection devolvió HTTP 403; la última evidencia del 26 oct se conserva como histórica y no como configuración actual confirmada.
 - Se actualizan CURRENT_STATE, HANDOFF, PROJECT_PLAN y WORK_CHECKPOINT para que el siguiente chat parta del merge SHA y no trate PR #160 como abierta.
 - Próximo bloque: aprobación de matriz de roles, ERD de sucursal/almacén/caja/turno, autorización por operación, rate limiting y consistencia transaccional antes de endpoints comerciales. No tocar Neon main.
+
+
+## 2026-10-30 UTC — PR #161 fusionada; checkpoint post-merge finalizado
+
+- PR [#161](https://github.com/BTF14/Micro-app/pull/161) se fusionó mediante squash a las 04:40:49 UTC; merge SHA `c7abcb477afd649161176aad8cae707f5e42f632`; GitHub confirmó main en ese SHA.
+- HEAD probado de PR #161: `a17a4b95312876f0bf4b201c6a84a323fb69fa3b`. Los 12 check runs terminaron en success.
+- PR #161 modificó cinco documentos; no tocó código, migraciones, workflows, secretos ni infraestructura.
+- Codex review falló por cuota; revisión manual fallback completada sin hallazgos materiales. Cloudflare previews success; no se confirmó despliegue productivo.
+- Se cierra la sincronización documental posterior a PR #160. Regla: los siguientes checkpoints se actualizan dentro de la PR de trabajo, evitando PR separadas solo para cada checkpoint.
+- Siguiente bloque: arquitectura multi-sucursal, aprobación de matriz de roles, autorización por operación, rate limiting, consistencia/idempotencia y pruebas PostgreSQL aisladas.

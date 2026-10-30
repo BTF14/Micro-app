@@ -1,4 +1,20 @@
-# Prioridad operativa viva — post PR #160 — 2026-10-30 UTC
+# Prioridad operativa viva — post PR #161 — 2026-10-30 UTC
+
+- PR #160 y #161 fusionadas. La continuidad incremental y el checkpoint post-merge ya están integrados.
+- No crear más PR solo para volver a sincronizar el mismo checkpoint. Desde ahora, actualizar WORK_CHECKPOINT y STATE_JOURNAL en la PR de trabajo que corresponda.
+- Prioridades antes de módulos comerciales:
+  1. Obtener aprobación explícita de la matriz de permisos por rol/organización/sucursal.
+  2. Cerrar ERD y ownership para organización, sucursal, almacén, caja y turno.
+  3. Diseñar autorización server-side por operación y scope de sucursal.
+  4. Diseñar control distribuido de abuso/rate limiting compatible con Workers y verificar opciones gratuitas.
+  5. Cerrar consistencia venta-líneas-pagos-stock-ledger, idempotencia por operación, último owner y auditoría append-only.
+  6. Preparar pruebas PostgreSQL efímeras de aislamiento, rollback y concurrencia.
+- No añadir `branch_id` superficial, no migrar Neon main y no crear endpoints comerciales antes de resolver contratos.
+- No prometer capacidad de organizaciones/sucursales hasta medir carga sintética y límites reales Neon/Cloudflare. Mantener objetivo $0.
+- Documentar cada bloque importante durante el trabajo, dentro de la PR coherente; no esperar al cierre del chat.
+
+---
+
 
 - PR #160 fusionada en main: `be6f19486caf5cf3605c6ca6615f87e305822ea7`. La continuidad incremental ya está integrada; no abrir otra PR para el mismo objetivo.
 - Primero cerrar el checkpoint post-merge y verificar que CURRENT_STATE, HANDOFF, PROJECT_PLAN y STATE_JOURNAL apunten al merge SHA real.

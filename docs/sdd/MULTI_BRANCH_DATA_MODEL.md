@@ -1,6 +1,6 @@
 # ERD objetivo: organización, sucursal, almacén, caja y operaciones
 
-**Estado:** propuesta de arquitectura; no implementada, no aprobada como migración y no autoriza endpoints ni cambios en Neon.  
+**Estado:** arquitectura de destino; sucursales y asignaciones están implementadas por PR #165 (migración 0003 aún no aplicada a Neon main). Almacenes, cajas, turnos y stock por almacén siguen como diseño/no implementados. No autoriza endpoints ni cambios en Neon.  
 **Fecha:** 2026-10-30 UTC  
 **Base:** merge de PR #163, main = 894895cfeee1c3d67b1e92bf1fae7d0c30cd36f9.  
 **Fuentes contrastadas:** apps/api/migrations/0001_initial.sql, docs/SCHEMA_REVIEW.md, docs/DATABASE_SCHEMA.md, docs/SAAS_ARCHITECTURE_DECISIONS.md y docs/sdd/role-permission-decision-matrix.md.

@@ -944,3 +944,12 @@ CI documental: para HEAD `8c15e13fa001a14a0ddf9f2432bc17efb30d476d`, los 8 workf
 - Codex review de `ce4578f` quedó incompleta por cuota agotada. No hay aprobación automática; la revisión manual consolidada del diff actual sigue pendiente.
 - Se corrigió la afirmación de protección de rama en CURRENT_STATE, HANDOFF y PROJECT_PLAN: la protección de GitHub no se pudo confirmar por API; no presentarla como activa/verificada.
 - WORK_CHECKPOINT registra la secuencia, evidencias, limitaciones y siguientes acciones. No hubo cambios de código ni infraestructura y no se fusionó la PR.
+
+## 2026-10-30 UTC — revisión manual y corrección de checkpoint antes de merge PR #160
+
+- Se verificó PR #160: abierta, no draft, no fusionada, `mergeable=true`; HEAD previo `bcc667fc6ccd154b8e4f93f041e33d16c29195f0`; 18 commits, 8 archivos.
+- Workflow runs para ese HEAD: CI `41002801690` en estado `pending`; siete workflows adicionales success. Combined status vacío. CI global no está completo.
+- No hay reviews humanas ni threads inline registrados. Codex review falló por cuota en `ce4578fed5980631f59206bd45ced3fbefcce346`; no es aprobación.
+- Revisión manual encontró datos obsoletos en WORK_CHECKPOINT (HEAD y cantidad de commits) y referencias iniciales antiguas en CURRENT_STATE/HANDOFF. Se actualizó WORK_CHECKPOINT y se sincronizaron CURRENT_STATE, HANDOFF_NEXT_CHAT y PROJECT_PLAN. Este journal registra el hito; volver a consultar SHA final tras los commits.
+- Diff de PR #160 sigue siendo documental: README, política de colaboración, capacidad Neon, estado, handoff, plan, diario y checkpoint. No se tocaron código, migraciones, workflows, secretos, infraestructura ni producción.
+- Decisión: no fusionar mientras CI esté pending/no verificado; fusionar solo cuando checks requeridos terminen en el HEAD exacto y no haya hallazgos materiales.

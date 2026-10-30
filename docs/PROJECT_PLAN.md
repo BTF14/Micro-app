@@ -1,4 +1,20 @@
-# Prioridad operativa viva — 2026-10-30 UTC
+# Prioridad operativa viva — post PR #160 — 2026-10-30 UTC
+
+- PR #160 fusionada en main: `be6f19486caf5cf3605c6ca6615f87e305822ea7`. La continuidad incremental ya está integrada; no abrir otra PR para el mismo objetivo.
+- Primero cerrar el checkpoint post-merge y verificar que CURRENT_STATE, HANDOFF, PROJECT_PLAN y STATE_JOURNAL apunten al merge SHA real.
+- Continuar auditoría/diseño de arquitectura antes de módulos comerciales:
+  1. Obtener aprobación explícita de la matriz de permisos por rol/organización/sucursal; está NO aprobada.
+  2. Cerrar ERD y ownership para organización, sucursal, almacén, caja y turno; no añadir `branch_id` superficial ni migrar Neon main.
+  3. Diseñar autorización server-side por operación y scope de sucursal; `resolveTenantContext` es helper aislado, no middleware comercial.
+  4. Diseñar control distribuido de abuso/rate limiting compatible con Workers; `auth_rate_limits` no tiene runtime caller.
+  5. Cerrar consistencia venta-líneas-pagos-stock-ledger, idempotencia por operación, último owner y auditoría append-only.
+  6. Preparar pruebas de integración y concurrencia en PostgreSQL efímero; no usar Neon main.
+- No prometer capacidad de organizaciones/sucursales hasta medir carga sintética y límites reales Neon/Cloudflare.
+- Mantener el objetivo de coste $0 y no activar servicios de pago.
+- Registrar cada bloque importante en WORK_CHECKPOINT y STATE_JOURNAL durante el trabajo, no al final.
+
+---
+
 
 - La PR de continuidad activa es [#160](https://github.com/BTF14/Micro-app/pull/160). Consultar siempre `docs/WORK_CHECKPOINT.md` y `docs/CURRENT_STATE.md` antes de continuar.
 - No fusionar #160 hasta que CI requerido esté completo en el HEAD exacto y la revisión manual del diff no encuentre problemas materiales. Codex quedó limitado por cuota y no constituye aprobación.

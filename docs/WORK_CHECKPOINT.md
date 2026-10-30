@@ -2,43 +2,47 @@
 
 **Actualizado:** 2026-10-30 UTC  
 **Repositorio:** https://github.com/BTF14/Micro-app  
-**PR:** [#160](https://github.com/BTF14/Micro-app/pull/160)  
-**Rama:** `docs/continuity-post-158-159-20261030`  
-**SHA del HEAD inmediatamente anterior a este checkpoint:** `2b3b90f9ab6b05660f2aea37ab1e0ec472b81741`  
-**Base conocida:** `main` = `dbc7b6c9cf57113a38cddb4155d2917cc3aaeafc`; revalidar en vivo.
+**main verificado:** `be6f19486caf5cf3605c6ca6615f87e305822ea7`  
+**PR #160:** fusionada por squash; [ver PR](https://github.com/BTF14/Micro-app/pull/160)  
+**HEAD de PR probado:** `fcb4269a459831be7858358c56e90346d5e4e9a6`
 
-> Este archivo es el punto de reanudación. El commit que lo actualiza mueve el HEAD; consultar la cabecera actual de PR #160 en GitHub para obtener el SHA exacto que contiene este checkpoint.
+> Punto de reanudación post-merge. Revalidar GitHub en vivo antes de actuar.
 
-## Estado de PR #160
+## Bloque completado
 
-- Última consulta de metadatos: abierta, no draft, no fusionada, `mergeable=true`; rama `docs/continuity-post-158-159-20261030`; base `main`.
-- HEAD antes de la sincronización final fue `38632e5a5e65e2c388aa3ce3fb829306c623a249`; commits documentales posteriores movieron la rama.
-- Para el HEAD `4c197e9ca56cc8f5037b07dbf0e356cb0d0d9781`, se consultó la API de check-runs: nueve checks completados con `success` (Workers Builds, Cloudflare Pages, verify, postgres-migration, Chromium E2E, dependency-review, generate-progress, Gitleaks y Trivy). El workflow requerido Semgrep SAST del evento PR `41003353434` seguía `pending` sin job; un run anterior del mismo workflow en SHA `807bd916e6e095d3abf92ad17d1545f748ea85e7` continuaba `in_progress`, por lo que la ejecución actual esperaba su turno. No declarar los seis checks de branch protection completos hasta que Semgrep termine.
-- Esos resultados NO aplican a los commits posteriores. La consulta de runs para HEAD `38632e5a5e65e2c388aa3ce3fb829306c623a249` devolvió cero runs; checks del HEAD final actual están pendientes de consultar.
-- Cloudflare reportó previews Pages y Worker exitosas para `bcc667f`; son previews, no producción.
-- Codex review falló por cuota agotada en `ce4578fed5980631f59206bd45ced3fbefcce346`. No es aprobación ni defecto demostrado. No reintentar mientras la cuota esté agotada.
-- No hay reviews humanas ni threads inline registrados en PR #160.
+- PR #160 fusionada el 2026-10-30 04:36:49 UTC. Merge SHA `be6f19486caf5cf3605c6ca6615f87e305822ea7`; GitHub confirma `main` en ese SHA.
+- La PR integró nueve archivos documentales: README, política de colaboración, capacidad, estado, handoff, plan, roadmap de seguridad, diario y checkpoint.
+- Los 12 check runs del HEAD de PR `fcb4269a459831be7858358c56e90346d5e4e9a6` terminaron en `success`: verify, Chromium authentication smoke, postgres-migration, Semgrep SAST, Trivy, secret-history, dependency review, progress dashboard, Cloudflare Pages y Workers Builds (incluidos contextos push/PR duplicados).
+- No hay ejecución post-merge confirmada para el squash SHA; no reutilizar los checks del HEAD PR como prueba de un run separado post-merge.
+- Codex review falló por cuota agotada en `ce4578fed5980631f59206bd45ced3fbefcce346`. Se aplicó revisión manual fallback; diff documental y sin hallazgos materiales pendientes. No hay reviews humanas ni threads inline.
+- Cloudflare Pages y Workers previews del HEAD PR terminaron success. No se obtuvo evidencia de despliegue productivo post-merge.
+- La consulta actual de branch protection devolvió HTTP 403 `Resource not accessible by integration`; la configuración leída el 26 oct queda como evidencia histórica, no como estado actual.
+- No se modificaron código, migraciones, workflows, secretos, Neon, DNS, billing ni producción.
 
-## Revisión manual y correcciones
+## Estado de arquitectura verificado
 
-- Diff de PR #160: nueve archivos documentales tras añadir `docs/SECURITY_ROADMAP.md` para corregir el estado histórico de branch protection (README, política de colaboración, capacidad Neon, estado, handoff, plan, diario, checkpoint y roadmap). No modifica código de aplicación, migraciones ni workflows.
-- Se encontró que WORK_CHECKPOINT y las portadas de CURRENT_STATE/HANDOFF conservaban SHA/cantidad de commits obsoletos. Se actualizaron checkpoint, estado vivo, handoff, plan y diario dentro de la misma PR.
-- Se corrigió la afirmación no demostrada de que la protección de rama GitHub estaba activa; la consulta actual devolvió HTTP 403. `docs/SECURITY_ROADMAP.md` ahora conserva el resultado del 2026-10-26 como histórico, no como verificación actual.
-- La política de colaboración y AGENTS.md exigen no fusionar si checks requeridos están pending/no verificados o si hay hallazgos materiales sin resolver.
+- API Hono registra autenticación y `GET /health`; no hay handlers HTTP comerciales.
+- `resolveTenantContext` valida sesión, usuario, organización y membresía activa; no aplica permisos por operación ni sucursal y no está conectado a handlers comerciales.
+- `withDatabaseTransaction` existe; el caller transaccional productivo observado es el bootstrap Google. No hay operaciones comerciales que demuestren atomicidad.
+- `auth_rate_limits` existe en el DDL, pero no hay caller/runtime rate limiter.
+- `0001_initial.sql` modela stock a nivel organización; no incluye sucursales, almacenes, cajas o turnos.
+- Brechas antes de ventas/inventario: reconciliación de venta/líneas/pagos, saldo stock vs ledger, referencia polimórfica de movimientos, idempotencia de pagos, último owner y auditoría append-only.
+- La matriz de permisos por rol sigue NO aprobada. No implementar permisos comerciales hasta que el propietario la apruebe.
+- La rama `feat/neon-transaction-adapter` corresponde a PR #1 ya fusionada; está 14 commits ahead/245 behind de main. No reabrir ni fusionar.
 
-## Decisión
+## Próxima secuencia exacta
 
-**NO FUSIONAR TODAVÍA.** Antes:
-1. Consultar el HEAD actual de PR #160.
-2. Consultar workflow runs del SHA exacto y esperar a que CI y todos los checks requeridos terminen con éxito.
-3. Revisar el diff final consolidado y confirmar coherencia entre WORK_CHECKPOINT, CURRENT_STATE, HANDOFF, PROJECT_PLAN y STATE_JOURNAL.
-4. Si todo está correcto, sin hallazgos materiales y mergeable, fusionar con squash (autorización general del propietario concedida).
-5. Verificar el nuevo SHA de main y registrar el merge en los documentos canónicos.
+1. Revalidar main y PRs abiertos; confirmar que el checkpoint post-merge quedó integrado.
+2. Preparar una propuesta técnica consolidada para organización→sucursal→almacén/caja/turno y reconciliarla con SAAS_ARCHITECTURE_DECISIONS.
+3. Presentar la matriz de permisos al propietario para aprobación explícita; no convertir recomendaciones de IA en política.
+4. Diseñar autorización server-side por operación y scope de sucursal.
+5. Diseñar rate limiting distribuido compatible con Workers y confirmar primero límites/controles Cloudflare disponibles sin coste.
+6. Diseñar pruebas PostgreSQL efímeras de aislamiento cross-tenant/cross-branch, idempotencia, concurrencia y rollback.
+7. Solo después, implementar rutas/migraciones en PR coherente y nunca experimentar contra Neon main.
 
-## Siguiente trabajo técnico tras cerrar #160
+## Restricciones
 
-Retomar auditoría de arquitectura/API/esquema. Prioridades antes de endpoints comerciales: autorización por operación, aislamiento organización/sucursal, idempotencia, consistencia transaccional y límites/rate limiting. Revisar `feat/neon-transaction-adapter` contra main sin merge ciego. No tocar Neon main, secretos, datos reales, billing, DNS ni producción.
-
-## Trabajo no realizado
-
-No se ejecutaron pruebas locales en esta sesión. No se modificaron secretos, ajustes Cloudflare/Neon, DNS, billing ni producción. Las previews no equivalen a pruebas funcionales E2E ni a despliegue productivo.
+- No ejecutar SQL ni migraciones en Neon main sin superar el gate de CONSTITUTION.
+- No desplegar producción ni cambiar secretos, DNS, billing o planes de pago.
+- No prometer capacidad SaaS sin pruebas sintéticas.
+- Guardar checkpoints después de cada bloque significativo, no esperar al cierre del chat.

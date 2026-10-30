@@ -1,4 +1,22 @@
-# Reanudación inmediata — 2026-10-30 UTC
+# Reanudación inmediata — 2026-10-30 UTC, post PR #160
+
+**Leer primero:** [docs/WORK_CHECKPOINT.md](WORK_CHECKPOINT.md), después [docs/CURRENT_STATE.md](CURRENT_STATE.md), [AGENTS.md](../AGENTS.md) y la política de colaboración.
+
+- PR #160 está fusionada en `main`; merge commit `be6f19486caf5cf3605c6ca6615f87e305822ea7`. No reabrirla ni duplicar su trabajo.
+- Los 12 checks del HEAD PR `fcb4269a459831be7858358c56e90346d5e4e9a6` terminaron en success. Esos checks cubren el HEAD de PR, no son una ejecución post-merge sobre el squash commit.
+- Codex review no se completó por cuota. Se realizó revisión manual del diff y no quedaron hallazgos materiales.
+- La protección de rama no se pudo revalidar por HTTP 403; no asumir que sigue configurada como en la lectura histórica del 26 oct.
+- **Siguiente trabajo técnico:** completar diseño de arquitectura antes de handlers comerciales. La matriz de permisos por rol sigue sin aprobación explícita del propietario; no implementar permisos comerciales a partir de la propuesta de IA.
+- Inventario verificado: API solo registra auth/health; no hay handlers comerciales. `resolveTenantContext` valida sesión/membresía/organización pero no permisos por operación ni sucursal y no aparece conectado a handlers. `auth_rate_limits` existe en DDL pero no tiene caller runtime.
+- Esquema inicial: stock por organización; faltan sucursales, almacenes, cajas y turnos; faltan reconciliación venta-líneas-pagos, idempotencia propia de pagos, vínculo fuerte entre saldo y ledger, guard del último owner y política append-only de auditoría.
+- La rama `feat/neon-transaction-adapter` pertenece a PR #1 ya fusionada; está 14 commits ahead/245 behind de main. No reabrir ni fusionar; el código vigente está en main.
+- No tocar Neon main, secretos, datos reales, billing, DNS ni producción. No ejecutar migraciones ni desplegar producción sin superar los gates de AGENTS/CONSTITUTION.
+- Documentar cada bloque significativo durante el trabajo; actualizar WORK_CHECKPOINT y STATE_JOURNAL antes de cambiar de área o cerrar el chat.
+
+---
+
+## Handoff histórico previo a la fusión de PR #160
+
 
 **Leer primero:** [docs/WORK_CHECKPOINT.md](WORK_CHECKPOINT.md), después [docs/CURRENT_STATE.md](CURRENT_STATE.md).
 

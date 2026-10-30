@@ -968,3 +968,15 @@ CI documental: para HEAD `8c15e13fa001a14a0ddf9f2432bc17efb30d476d`, los 8 workf
 - La auditoría de código en main confirma que no hay rutas comerciales; `resolveTenantContext` es helper aislado y no aplica permisos de operación ni sucursal. La matriz de permisos sigue no aprobada.
 - La rama `feat/neon-transaction-adapter` existe, pero corresponde a PR #1 ya fusionada; está 14 commits ahead y 245 behind de main. No reabrir ni fusionar. Los cambios funcionales del adaptador ya están integrados en main.
 - No se modificó código ni configuración productiva. Siguiente gate inmediato sigue siendo CI de PR #160 en el HEAD nuevo.
+
+
+## 2026-10-30 UTC — PR #160 fusionada y continuidad post-merge
+
+- PR [#160](https://github.com/BTF14/Micro-app/pull/160) se fusionó mediante squash a las 04:36:49 UTC. Merge commit y main HEAD verificado: `be6f19486caf5cf3605c6ca6615f87e305822ea7`.
+- HEAD de PR probado: `fcb4269a459831be7858358c56e90346d5e4e9a6`. Los 12 check runs del SHA terminaron en success: verify, Chromium, postgres-migration, Semgrep, Trivy, secret-history, dependency review, progress dashboard, Cloudflare Pages y Workers Builds (incluyendo contextos duplicados push/PR).
+- PR #160 cambió nueve archivos documentales; no modificó código de aplicación, migraciones, workflows, secretos ni infraestructura.
+- Codex review no pudo completarse por cuota; se usó revisión manual fallback. No se encontraron hallazgos materiales; no hubo review humana ni threads inline.
+- Cloudflare confirmó previews Pages/Workers en el HEAD de PR. No se verificó despliegue productivo post-merge.
+- La API de branch protection devolvió HTTP 403; la última evidencia del 26 oct se conserva como histórica y no como configuración actual confirmada.
+- Se actualizan CURRENT_STATE, HANDOFF, PROJECT_PLAN y WORK_CHECKPOINT para que el siguiente chat parta del merge SHA y no trate PR #160 como abierta.
+- Próximo bloque: aprobación de matriz de roles, ERD de sucursal/almacén/caja/turno, autorización por operación, rate limiting y consistencia transaccional antes de endpoints comerciales. No tocar Neon main.

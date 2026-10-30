@@ -1,3 +1,56 @@
+# Handoff operativo — continuar autorización server-side — 2026-10-30 UTC
+
+> **Instrucción para el siguiente chat:** no reiniciar el proyecto ni repetir trabajo completado. Leer esta portada y el checkpoint; después consultar GitHub en vivo antes de escribir.
+
+## Punto exacto de reanudación
+
+- Repo: `BTF14/Micro-app`.
+- Main conocido: `a6db2dcaf57e2a0bf1735eb282c3ac2256cd314c`. Consultar el ref vivo; no asumir que sigue igual.
+- Último merge runtime: PR #169, `be35a0fde3886271b6ed98b7ccc29cc1255d50e5`.
+- PR #170 y #171: solo documentación/continuidad, fusionadas.
+- PR activa: [#172 — server-side operation authorization architecture](https://github.com/BTF14/Micro-app/pull/172), draft, no fusionada, base main. Rama `docs/operation-authorization-architecture-20261030`.
+- HEAD conocido antes de la sincronización documental: `93561f0b73f4992d5204f3f461af7961a0e087eb`; 12/12 check-runs success en ese SHA exacto. Los commits de documentación posteriores invalidan esa evidencia para el nuevo HEAD. Reconsultar.
+- Matriz `docs/sdd/role-permission-decision-matrix.md`: **NO APROBADA**. No asumir permisos desde los nombres owner/admin/cashier/inventory.
+- Issues #53 y #78: abiertas al último chequeo previo; consultar estado actual.
+- No hay handlers/endpoints comerciales. Los helpers de tenant, branch y turno no autorizan operaciones.
+- Neon main no se tocó; no se aplicaron 0003/0004 remotamente. No cambiar secretos, DNS, billing, Cloudflare settings ni producción.
+
+## Qué se hizo en esta continuación
+
+1. Se revalidó `main` y PR #172 directamente en GitHub.
+2. Se verificó el documento técnico contra el contrato tenant, resolvers de contexto, helper de turno, DB transaction helper y documentación API existente.
+3. Se añadió `docs/sdd/OPERATION_AUTHORIZATION_ARCHITECTURE.md` con límites explícitos: autenticación ≠ tenant membership ≠ resource scope ≠ operación autorizada.
+4. Se reforzó el texto para requerir revalidación de sesión dentro de la transacción y protección frente a revocaciones concurrentes/TOCTOU; no asumir columnas de versión que aún no existen.
+5. Se abrió PR #172 como draft, no fusionada. No se tocó runtime, esquema, migraciones ni infraestructura.
+6. En HEAD `93561f0b73f4992d5204f3f461af7961a0e087eb`, GitHub reportó 12/12 check-runs success (incluyendo verify, PostgreSQL migration, static analysis, Chromium smoke, Trivy, Pages y Workers). Esta evidencia corresponde solo a ese SHA.
+
+## Orden recomendado desde aquí
+
+1. Consultar `main`, PR #172, diff completo, reviews/threads y checks exactos del HEAD vivo.
+2. Completar/revisar esta sincronización documental; esperar checks verdes del HEAD final. No fusionar #172 solo porque los checks estén verdes: sigue siendo una propuesta y draft.
+3. No programar permisos por rol hasta aprobación explícita de la matriz.
+4. Cuando el propietario apruebe decisiones, cerrar catálogo de operaciones, scope por recurso y reglas sensibles.
+5. Diseñar auditoría (evento, actor, scope, operación, motivo, aprobador, idempotency/correlation, retención/immutabilidad) sin afirmar que ya existe.
+6. Diseñar autorización dentro de la misma transacción de cada mutación, con sesión/membresía/rol/assignment revalidados y locks/isolation definidos por invariantes.
+7. Diseñar ledger de caja e inventario antes de ventas/pagos/ajustes/reversos.
+8. Implementar una sola vertical slice, con pruebas PostgreSQL efímeras reales de handler, denegación sin side effects, cross-tenant/branch, revocación concurrente, rollback e idempotencia.
+
+## Gates que no se deben saltar
+
+- No inferir permisos comerciales de roles, sucursal asignada, turno abierto o configuración comercial.
+- No habilitar descuentos, anulaciones, devoluciones, cambios de precio, cierres ajenos ni aprobaciones sin decisión explícita.
+- No crear endpoints comerciales antes de autorización por operación y pruebas end-to-end.
+- No aplicar 0003/0004 a Neon main ni ejecutar SQL en producción desde esta tarea.
+- No declarar Cloudflare preview como producción validada.
+- No afirmar que auditoría/ledger ya existen.
+- No volver a repetir auditorías previas o reconstruir helper de turno ya fusionado.
+
+## Archivos de continuidad a leer
+
+`AGENTS.md`, `docs/CURRENT_STATE.md`, `docs/WORK_CHECKPOINT.md`, `docs/PROJECT_PLAN.md`, `docs/STATE_JOURNAL.md`, `docs/API_INTEGRATION.md`, `docs/sdd/OPERATION_AUTHORIZATION_ARCHITECTURE.md` y `docs/sdd/role-permission-decision-matrix.md`.
+
+---
+
 # Handoff operativo — post PR #169 — 2026-10-30 UTC
 
 ## Punto de reanudación verificado

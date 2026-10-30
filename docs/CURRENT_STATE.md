@@ -1322,3 +1322,14 @@ Esta revisión fue estática de contenidos en GitHub; no se ejecutaron tests des
 - **Seguridad/operación:** PR #153 y #155 están en main; no hay evidencia de validación HTTP en producción. Restauración técnica del backup remoto exacto verificada, pero conteos de datos comerciales, RPO/RTO, alertas y coste total aún pendientes. Producción sigue NO lista.
 
 ---
+
+# Estado vivo — 2026-10-30 UTC (branch scope en PR)
+
+- Main base verificado: `ce8b0e491fe8b9f6154380cc8b0eea0a19fe8114`; PR #164 ya está fusionada. Este bloque supersede referencias históricas anteriores que la presenten abierta o pendiente.
+- Rama activa: `feat/branch-scope-context-20261030`; PR por crear/verificar en GitHub.
+- El propietario autorizó el alcance general: owner/admin pueden resolver sucursales activas de su organización; cashier/inventory requieren asignación activa propia. Esto no aprueba permisos sensibles por operación.
+- Cambio preparado: migración aditiva 0003 para branches/branch_memberships, resolver server-side resolveBranchContext, tests unitarios, assertions SQL cross-tenant y workflow PostgreSQL 18 efímero.
+- El resolver no está conectado a rutas y no concede permiso para vender, descontar, anular, pagar, ajustar inventario, transferir, operar caja ni gestionar usuarios.
+- La matriz de permisos por operación sigue NO APROBADA. No hay handlers comerciales.
+- Checks del HEAD de PR y revisión del diff quedan pendientes de consultar. No afirmar tests locales ejecutados.
+- Neon main, datos reales, Cloudflare settings, secretos, DNS, billing y producción sin cambios; migración no aplicada remotamente.

@@ -4,7 +4,7 @@
 
 - Repo único: `BTF14/Micro-app`; PR documental en curso [#156](https://github.com/BTF14/Micro-app/pull/156); rama `docs/reconcile-main-after-pr155-20261029`.
 - PR #156 se debe reutilizar para integrar decisiones de arquitectura y continuidad; no abrir una segunda PR documental solapada.
-- Última consulta tras documentación: PR #156 abierta/mergeable; base `main` SHA `5a9bdc5a18a54c3c68639f52125d913d4e725b91`; HEAD `f5279625b22fd72ddcb02be70deba1ad07016203`; 9 archivos modificados. Sin reviews ni review threads. El conector no devolvió statuses ni workflow runs para este HEAD; revisar GitHub Actions en la UI antes de pedir merge.
+- Última consulta: PR #156 abierta/mergeable; base `main` SHA `5a9bdc5a18a54c3c68639f52125d913d4e725b91`; 9 archivos modificados; sin reviews ni review threads. El HEAD cambia al actualizar documentos: consultar siempre el SHA vivo. En HEAD observado `a5aced77ffd1a628bb8175b91cbc7305144fb696` se dispararon 8 workflows (1 success, 4 pending/in_progress, 3 queued); esperar y verificar los resultados del HEAD más reciente en GitHub Actions antes de solicitar merge.
 - Leer `docs/SAAS_ARCHITECTURE_DECISIONS.md` antes de proponer esquema, API comercial, BCV, búsqueda, caché, roles o cuotas.
 - Decisión arquitectónica de dirección: una plataforma multi-organización, multi-sucursal y multiusuario; catálogo compartido por organización, stock por sucursal/almacén, caja/turno por sucursal.
 - BCV y buscador siguen NO implementados. Fuente BCV aún debe investigarse; no inventar API. Búsqueda SQL indexada primero; caché de catálogo solo después de medir. KV nunca autoriza ni confirma una venta.

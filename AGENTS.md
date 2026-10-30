@@ -31,7 +31,7 @@ The owner explicitly prioritized correctness and security over speed: implement 
 - Never commit or disclose secrets, credentials, access tokens, customer data, or database connection strings.
 - Do not send emails; only the user can authorize sending.
 - The user has authorized safe autonomous code/documentation changes and commits/pushes. Do not ask the user to repeat permissions/connections unless a concrete blocker is demonstrated.
-- No force-push. No blind merge of `feat/neon-transaction-adapter`; inspect the complete diff against current `main` first.
+- No force-push. `feat/neon-transaction-adapter` is historical: its work was integrated via PR #1. Do not reopen or merge that branch again. Never blind-merge any future branch; inspect its complete diff against current `main` first.
 - Identity status must follow `docs/API_INTEGRATION.md` and live code, not historical static reviews: Google OAuth + allowlist, state/PKCE, revocable session, and Google `email_verified` validation were implemented in PRs #153/#155. Password login/registration remain fail-closed/disabled; account recovery, MFA, full session lifecycle/cleanup, and operation-level authorization remain pending. Never equate authentication with commercial readiness.
 - Do not claim a tool, persistent-memory service, agent, or test is installed/running/passing unless there is current evidence. Existing `.github/agents/*.agent.md` files are reusable role instructions, not proof of active autonomous subagents.
 - Do not state workflows are green without verifying their conclusion for the exact current SHA.
@@ -51,12 +51,12 @@ Whenever a concrete project advance is completed and verified (for example, a fe
 
 ## Current known priorities (re-verify on each session)
 
-1. P0: complete the read-only audit of API routes, tenant context, schema constraints, queries and indexes; document concrete blockers before adding commercial handlers.
-2. Review `feat/neon-transaction-adapter` against current `main`; no blind merge.
-3. Expand auth/session tests and design server-side operation authorization plus organization/branch isolation before commercial endpoints.
-4. Resolve organization/branch/warehouse/register ownership and obtain owner approval for the role-permission matrix.
+1. P0: finish review and CI for PR #166 (documentation reconciliation) and PR #167 (migration 0004, SQL assertions, lifecycle/concurrency integration tests); never use a previous SHA's checks as proof for the current HEAD.
+2. Keep Neon main untouched; PostgreSQL 18 disposable CI is the first-line migration/test environment, and Neon branches are reserved for additional validation not covered by CI.
+3. Before commercial endpoints, complete operation-level server authorization, tenant/branch isolation, rate limiting and approval of the role-permission matrix.
+4. Continue the data model after register/shift: warehouses, per-warehouse balances/ledger and safe reconciliation/backfill of organization-scoped legacy stock.
 5. Measure Neon and Cloudflare quotas and synthetic workload capacity before promising tenant/branch limits.
-6. Continue inventory, validated BCV rate, transactional sales, audit, responsive UI, and E2E in the order defined by the master plan.
+6. Continue inventory, validated BCV rate, transactional sales, audit, responsive UI and E2E in the order defined by the master plan.
 
 
 ## Gentleman-Programming integrations

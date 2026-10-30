@@ -53,7 +53,8 @@ describe("resolveBranchContext", () => {
         branchId,
       });
       expect(query.mock.calls[0]?.[0]).toContain("bm.is_active = true");
-      expect(query.mock.calls[0]?.[0]).toContain("bm.user_id = $1");
+      expect(query.mock.calls[0]?.[0]).toContain("m.user_id = $1");
+      expect(query.mock.calls[0]?.[0]).toContain("bm.user_id = m.user_id");
     },
   );
 

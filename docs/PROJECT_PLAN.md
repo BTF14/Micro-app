@@ -5,6 +5,7 @@
 - El DDL inicial carece de sucursales/almacenes/cajas/turnos/compras/devoluciones; stock se mantiene por organización. Antes de endpoints, cerrar ERD y scope de roles.
 - Hallazgos a resolver en diseño: venta/pagos no reconciliados por constraints SQL; saldo stock y ledger pueden divergir sin transacción; referencias polimórficas no validadas; falta idempotencia propia de pagos; regla del último owner; auditoría no append-only por DB.
 - Capacidad sostenible Neon/Cloudflare no medida. No fijar cuotas SaaS hasta ejecutar carga sintética y verificar límites actuales de los proveedores.
+- Revisión de `feat/neon-transaction-adapter`: la rama pertenece a PR #1, fusionada el 2026-10-17 (merge `b6511d0876e33096f75df2466653449165888821`). Está divergida frente a main (14 ahead/242 behind); no reabrir ni fusionar. La implementación vigente se audita en `apps/api/src/database.ts` y sus callers.
 - Próximo bloque: inventario completo de queries y callers; ERD org→branch→warehouse/register/shift; contrato de autorización; diseño de transacciones y pruebas negativas. No migrar Neon main ni desplegar producción.
 
 ---

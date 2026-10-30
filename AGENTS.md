@@ -49,15 +49,17 @@ Whenever a concrete project advance is completed and verified (for example, a fe
 - If documents conflict, verify the code and live GitHub evidence, resolve the contradiction, and document the correction.
 - Do not install Gentleman-Programming tools merely because they are documented. Follow `docs/GENTLEMAN_PROGRAMMING_EVALUATION.md`, confirm licence, dependencies, provider requirements, security and $0 cost, and test in isolation first.
 
-## Current known priorities (re-verify on each session)
+## Current priorities — authoritative source
 
-1. P0: revalidate current main and open PRs; PR #166/#167 are merged. Main includes migrations 0001–0004. Next, implement an isolated authenticated-cashier open-shift resolver with PostgreSQL 18 disposable tests; no commercial endpoints until permissions are approved.
-2. Keep Neon main untouched; PostgreSQL 18 disposable CI is the first-line migration/test environment, and Neon branches are reserved for additional validation not covered by CI.
-3. Before commercial endpoints, complete operation-level server authorization, tenant/branch isolation, rate limiting and approval of the role-permission matrix.
-4. Continue the data model after register/shift: warehouses, per-warehouse balances/ledger and safe reconciliation/backfill of organization-scoped legacy stock.
-5. Measure Neon and Cloudflare quotas and synthetic workload capacity before promising tenant/branch limits.
-6. Continue inventory, validated BCV rate, transactional sales, audit, responsive UI and E2E in the order defined by the master plan.
+Do not maintain a second, potentially stale project-status list in this file. Current priorities, issue gates, PR/branch state and next actions are maintained in `docs/CURRENT_STATE.md` and `docs/HANDOFF_NEXT_CHAT.md`. Read those documents and verify GitHub live on every session before planning or editing.
 
+Stable guardrails remain mandatory regardless of the current task:
+- Keep the project cost target at USD 0.
+- Use disposable PostgreSQL as the first-line migration/test environment; do not use Neon `main` as a laboratory.
+- Do not implement commercial endpoints or operation-level permissions before explicit approval of the role-permission matrix.
+- Do not treat context resolvers as authorization.
+- Do not claim production readiness, deployed behavior, external AI review, or test success without exact current evidence.
+- Follow all other constraints in this file, `docs/CONSTITUTION.md`, `docs/AI_COLLABORATION_AND_PR_POLICY.md`, and the relevant domain policies.
 
 ## Gentleman-Programming integrations
 

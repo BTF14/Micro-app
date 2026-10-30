@@ -1,3 +1,15 @@
+## 2026-10-30 UTC — PR #156 fusionada y auditoría estática de API/esquema
+
+- Se fusionó [PR #156](https://github.com/BTF14/Micro-app/pull/156) mediante squash. Merge SHA: `18961456ac535146c4a1687d3b07d8f6693ce141`; main protegido y firmado/verificado por GitHub.
+- HEAD de PR: `6c068f3e9734736ac26e51ff754e39915d660abe`; 9/9 workflows en success: CI, Playwright E2E, migración DB, Semgrep, security scan, secret history, validación SDD/documentación, dashboard y Dependency Review. No hubo review formal ni threads; se aplicó revisión manual del diff completo porque Codex no está disponible. El conector no devolvió workflows ni statuses post-merge para el merge SHA; no afirmar CI post-merge.
+- No se modificó código de aplicación, esquema, migraciones, workflows, secretos, Neon, datos reales ni producción en PR #156.
+- Se revisaron estáticamente rutas registradas, tenant context, helpers DB y migraciones. API: health + auth; sin handlers comerciales. Tenant context comprueba sesión/membresía/organización activas, no autorización por operación ni branch scope.
+- Hallazgos SQL: venta completada no exige reconciliación de líneas/pagos; stock y ledger no están ligados por constraint; referencia de movimientos polimórfica sin FK; pagos sin idempotency key propia; último owner no protegido; audit_logs no es append-only por DB; no modelo branch/warehouse/register/shift.
+- Los hallazgos son brechas de diseño antes de habilitar rutas, no evidencia de explotación/corrupción. No se ejecutó SQL ni se accedió a Neon main.
+- Se creó la rama documental `docs/post-pr156-audit-continuity-20261030` para mantener CURRENT_STATE, HANDOFF, SCHEMA_REVIEW y PROJECT_PLAN sincronizados; verificar PR/checks antes de considerar cerrada esa actualización.
+
+---
+
 ## 2026-10-29 — PR #152 fusionada; mitigación P1 de bootstrap iniciada
 
 - PR [#152](https://github.com/BTF14/Micro-app/pull/152) fusionada; merge commit `9376419231501f837a2d85d8741f7bfa9f57a0cc`. Verificados 13 checks de su HEAD y nueve checks post-merge en éxito.
@@ -803,3 +815,23 @@ CI documental: para HEAD `8c15e13fa001a14a0ddf9f2432bc17efb30d476d`, los 8 workf
 - Constitución y SCHEMA_REVIEW reconciliadas para que los hallazgos de auth del 2026-10-17 se lean como históricos/supersedidos, preservando el análisis SQL útil.
 - Alcance solo documental. No se cambió código, esquema, migraciones, workflows, secretos, Neon, datos reales ni producción.
 - Verificación pendiente: consultar HEAD final y workflows de ese SHA exacto; revisar diff completo y obtener revisión independiente antes de fusionar. No reutilizar resultados de CI de HEAD previos.
+
+
+## 2026-10-30 UTC — precisión de rate limiting y revisión de rama histórica
+
+- La búsqueda de símbolos y callsites en `apps/api/src` no encontró runtime rate limiting; `auth_rate_limits` aparece en DDL y tests, no como mecanismo activo. Se corrigieron `API_INTEGRATION.md` y `SECURITY_ROADMAP.md` para no afirmar controles inexistentes. Verificar reglas Cloudflare aparte y diseñar protección distribuida compatible con Workers.
+- La rama `feat/neon-transaction-adapter` se comparó con main: 14 commits ahead y 242 behind. Su PR [#1](https://github.com/BTF14/Micro-app/pull/1) ya está fusionada desde 2026-10-17, merge `b6511d0876e33096f75df2466653449165888821`; no se debe reabrir ni fusionar la rama antigua.
+- La auditoría permanece estática/read-only. No se ejecutó SQL ni se accedió a Neon `main`, producción, secretos o datos reales.
+
+
+## 2026-10-30 UTC — reconciliación de alcance de catálogo y autoridad de allowlist
+
+- Se corrigió la matriz de permisos: el catálogo maestro se propone compartido a nivel organización, pero esto no habilita acceso a stock, movimientos, ventas o caja de otras sucursales; los roles operativos requieren asignación de sucursal.
+- Se eliminó la recomendación de que el rol tenant `owner` gestione la allowlist global. D1 exige un operador autenticado/auditado, pero el rol/identidad de plataforma y su recuperación no están definidos; el email concreto citado en `SECURITY_PLAN_2026.md` se trata como propuesta histórica, no como autorización vigente.
+- La matriz permanece **NO aprobada**. No implementar estos permisos ni crear endpoints administrativos hasta que el propietario confirme la autoridad de plataforma y los permisos sensibles.
+
+
+## 2026-10-30 UTC — PR #157 abierta para integrar auditoría y continuidad
+
+- Se abrió [PR #157](https://github.com/BTF14/Micro-app/pull/157) desde `docs/post-pr156-audit-continuity-20261030` con alcance documental/auditoría acotado. Incluye la reconciliación de alcance de catálogo y la separación de autoridad global de allowlist respecto a roles tenant.
+- La PR permanece abierta hasta que los checks requeridos pasen en su HEAD exacto y se complete revisión manual final. No se fusiona por inercia ni se usan resultados de SHAs anteriores.

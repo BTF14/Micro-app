@@ -23,7 +23,7 @@ Valores: **Permitir**, **Denegar**, o **Permitir con condiciones** (ver columna 
 
 | Área / operación | owner | admin | cashier | inventory | Condiciones / alcance |
 |---|---|---|---|---|---|
-| Ver catálogo y categorías (lectura) | Permitir | Permitir | Permitir | Permitir | Toda la organización; no hay razón de negocio para ocultar el catálogo a ningún rol interno. |
+| Ver catálogo y categorías (lectura) | Permitir | Permitir | Permitir | Permitir | Catálogo maestro compartido a nivel organización según `SAAS_ARCHITECTURE_DECISIONS.md` §3; esto no concede acceso a existencias, movimientos, ventas o caja de otra sucursal. `cashier`/`inventory` requieren asignación activa para operar en su sucursal. |
 | Crear/editar/archivar productos | Permitir | Permitir | Denegar | Permitir con condiciones | `inventory` puede crear/editar SKU, descripción, stock mínimo y categoría, pero **no** el precio de venta ni el costo — esos campos quedan reservados a `owner`/`admin`. Archivar un producto (no borrar) requiere `owner`/`admin`. |
 | Ver proveedores (lectura) | Permitir | Permitir | Denegar | Permitir | `cashier` no necesita datos de proveedores para vender. |
 | Crear/editar proveedores | Permitir | Permitir | Denegar | Denegar | Relación comercial/financiera con terceros; se deja fuera de `inventory` para no mezclar "quién mueve stock" con "quién negocia condiciones de compra". |
@@ -39,7 +39,7 @@ Valores: **Permitir**, **Denegar**, o **Permitir con condiciones** (ver columna 
 | Asignar/cambiar roles | Permitir | Permitir con condiciones | Denegar | Denegar | `admin` puede asignar `cashier`/`inventory`, nunca `owner` ni `admin`. Regla dura en servidor: nunca permitir que la organización quede sin ningún `owner` activo (bloquear la operación que dejaría el conteo en cero, no solo advertir). |
 | Configurar organización/sucursal | Permitir | Permitir con condiciones | Denegar | Denegar | `admin` puede editar datos operativos (nombre visible, sucursales, horarios); cambios que afectan facturación, identidad legal o eliminar la organización quedan reservados a `owner`. |
 | Ver auditoría | Permitir | Permitir | Denegar | Denegar | Acceso a registros de acciones de otros usuarios es información sensible de control interno; se reserva a quienes pueden actuar sobre todo el negocio. |
-| Gestionar allowlist e identidad | Permitir | Denegar | Denegar | Denegar | Bloqueado también por decisiones D1–D8 de identidad (ya aprobadas, pero el flujo de invitación real — más allá de insertar filas a mano en Neon — todavía no existe). Se recomienda reservarlo a `owner` inicialmente y revisar si delegarlo a `admin` más adelante, una vez exista un flujo de invitación auditable. |
+| Gestionar allowlist e identidad de plataforma | Denegar | Denegar | Denegar | Denegar | La allowlist es política de plataforma, no un permiso implícito del `owner` de un tenant. D1 permite administración por operador autenticado y auditado, pero el rol/identidad global y su recuperación no están definidos en el modelo actual. La referencia a un email específico en `SECURITY_PLAN_2026.md` es una propuesta histórica, no una autorización vigente. No exponer esta operación hasta decisión explícita del propietario y un flujo de plataforma seguro. |
 
 ## Decisiones globales que también deben resolverse
 

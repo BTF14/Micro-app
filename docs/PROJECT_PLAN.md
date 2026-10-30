@@ -1,3 +1,16 @@
+## Checkpoint de arquitectura y auditoría — 2026-10-30 UTC
+
+- PR #156 fusionada en main: `18961456ac535146c4a1687d3b07d8f6693ce141`. Su HEAD `6c068f3e9734736ac26e51ff754e39915d660abe` pasó 9/9 workflows antes de la fusión. Revisión manual del diff por indisponibilidad de Codex; no hubo review formal registrada.
+- La revisión estática de rutas confirma que API solo expone auth/health; no hay handlers HTTP comerciales. `resolveTenantContext` verifica sesión y membresía, no permisos por operación ni alcance sucursal.
+- El DDL inicial carece de sucursales/almacenes/cajas/turnos/compras/devoluciones; stock se mantiene por organización. Antes de endpoints, cerrar ERD y scope de roles.
+- Hallazgos a resolver en diseño: venta/pagos no reconciliados por constraints SQL; saldo stock y ledger pueden divergir sin transacción; referencias polimórficas no validadas; falta idempotencia propia de pagos; regla del último owner; auditoría no append-only por DB.
+- Seguridad de autenticación: no se encontró rate limiting runtime en `apps/api/src`; `auth_rate_limits` solo existe en DDL y no tiene callers. Verificar reglas Cloudflare en vivo y añadir control distribuido compatible con Workers antes de ampliar acceso.
+- Capacidad sostenible Neon/Cloudflare no medida. No fijar cuotas SaaS hasta ejecutar carga sintética y verificar límites actuales de los proveedores.
+- Revisión de `feat/neon-transaction-adapter`: la rama pertenece a PR #1, fusionada el 2026-10-17 (merge `b6511d0876e33096f75df2466653449165888821`). Está divergida frente a main (14 ahead/242 behind); no reabrir ni fusionar. La implementación vigente se audita en `apps/api/src/database.ts` y sus callers.
+- Próximo bloque: inventario completo de queries y callers; ERD org→branch→warehouse/register/shift; contrato de autorización; definir autoridad de plataforma para allowlist; diseño de transacciones y pruebas negativas. No migrar Neon main ni desplegar producción.
+
+---
+
 ## Monitorización diaria de dependencias — 2026-10-29, PR #137
 
 Se añadió `.github/workflows/daily-dependency-watch.yml` para producir un informe diario de actualizaciones estables y vulnerabilidades conocidas sin modificar el árbol de dependencias. Está programado a las 08:15 UTC (04:15 Venezuela), con ejecución manual, permisos de solo lectura, instalación congelada, `pnpm outdated -r`, comprobación del parche de Node 24 LTS y `pnpm audit --audit-level high`.

@@ -1363,3 +1363,19 @@ Este bloque es más reciente que los snapshots históricos anteriores; si contra
 - La rama `docs/org-policy-architecture-20261030` parte de main `4ab229296d8858c8c553e00a633a762b9c26a81b`. Verificar el HEAD y el estado vivo de la PR antes de actuar.
 - Siguiente secuencia: (1) revisar diff y checks de esta PR; (2) consolidar ERD organización→sucursal→almacén/caja/turno con FKs tenant-scoped; (3) resolver la matriz de roles; (4) diseñar integridad/idempotencia/auditoría; (5) solo después preparar una PR de código/migraciones/tests con PostgreSQL efímero.
 - No ejecutar migraciones en Neon main ni desplegar producción.
+
+
+# Reanudación inmediata — 2026-10-30 UTC — branch scope
+
+**Rama:** `feat/branch-scope-context-20261030`  
+**Base:** `ce8b0e491fe8b9f6154380cc8b0eea0a19fe8114`.  
+**PR:** consultar GitHub en vivo; no confiar en el estado de este encabezado si el chat se interrumpe.
+
+- #164 está fusionada. Cualquier bloque histórico que la describa como abierta queda supersedido por el estado vivo de GitHub y el checkpoint de esta sección.
+- Alcance autorizado: owner/admin organización-wide; cashier/inventory solo sucursales con asignación activa. No se aprobaron permisos comerciales sensibles ni excepciones.
+- Archivos: `apps/api/migrations/0003_branch_scope.sql`, `0003_branch_scope.assertions.sql`, `apps/api/src/branch-context.ts`, `branch-context.test.ts`, `.github/workflows/migration-check.yml` y `docs/sdd/BRANCH_SCOPE_CONTEXT_IMPLEMENTATION.md`.
+- `resolveBranchContext` requiere un TenantContext previamente validado en servidor; verifica sucursal activa dentro del tenant y asignación activa para cashier/inventory. No está conectado a handlers y no autoriza operaciones.
+- Revalidar PR, diff completo, checks obligatorios del SHA exacto y cualquier review/thread. No fusionar si hay checks pendientes/fallidos o defectos materiales.
+- La migración solo se ejecuta en PostgreSQL 18 efímero de CI. No ejecutar en Neon main ni sobre datos reales.
+- Próximo trabajo: cerrar decisiones de caja/turnos y matriz de permisos por operación; después diseño de stock por almacén y reconciliación. No crear rutas comerciales hasta cerrar gates.
+- Para continuar: leer AGENTS.md, WORK_CHECKPOINT.md, CURRENT_STATE.md, HANDOFF_NEXT_CHAT.md, PROJECT_PLAN.md y STATE_JOURNAL.md; revalidar main/PR/Actions en vivo.

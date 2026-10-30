@@ -40,7 +40,7 @@ Esta es la opción base más simple de auditar: cada venta/pago asociado a caja 
 - Índice único parcial: como máximo un turno abierto por cajero dentro de la organización.
 - El estado se deriva de `closed_at IS NULL` (abierto) o `closed_at IS NOT NULL` (cerrado); no duplicar estado en una columna adicional.
 - Checks para importes no negativos, campos de cierre completos/incompletos y `closed_at >= opened_at`.
-- Índices parciales únicos para un turno abierto por caja y por cajero/organización; estos son la defensa final ante aperturas concurrentes.
+- Índices parciales únicos para un turno abierto por caja y por cajero/organización; estos son la defensa final ante aperturas concurrentes. Índice parcial adicional por `cashier_user_id` soporta el guard de desactivación de usuario que consulta turnos abiertos a través de todas sus organizaciones.
 - Trigger de ciclo de vida: no permitir editar datos de identidad/apertura de un turno abierto; solo una transición de cierre completa; no permitir UPDATE/DELETE de turnos cerrados ni DELETE de turnos abiertos.
 - Impedir desactivar una caja, sucursal, organización, usuario, membresía o asignación de sucursal mientras tenga turnos abiertos.
 - No almacenar aquí pagos, ventas, movimientos de efectivo ni saldo esperado/diferencia calculada sin un ledger de caja definido. Los conteos USD/VES son efectivo físico contado, no saldo esperado.

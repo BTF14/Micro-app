@@ -1,5 +1,19 @@
 # Reanudación inmediata — 2026-10-30 UTC
 
+**Leer primero:** [docs/WORK_CHECKPOINT.md](WORK_CHECKPOINT.md), después [docs/CURRENT_STATE.md](CURRENT_STATE.md).
+
+- PR #160 está abierta, no draft, no fusionada. Último SHA verificado antes de esta actualización: `be9475d85e1739e3ea5fecabf69ac0104928fa98` (WORK_CHECKPOINT actualizado; CURRENT_STATE/HANDOFF/PROJECT_PLAN/STATE_JOURNAL pueden mover el HEAD después).
+- En el HEAD previo `bcc667fc6ccd154b8e4f93f041e33d16c29195f0`, CI workflow `41002801690` estaba pending; siete workflows adicionales terminaron success. No declarar CI completo ni reutilizar resultados para un SHA posterior.
+- Codex review agotó cuota en un SHA anterior. No es aprobación. No depender de Codex.
+- **Siguiente paso inmediato:** consultar el HEAD vivo de PR #160, consultar workflows de ese SHA, completar revisión manual del diff final y mantener abierta la PR mientras cualquier check requerido esté pendiente/no verificado.
+- **Después:** si todo pasa y no hay hallazgos materiales, fusionar #160 con squash, verificar main y registrar merge. La autorización general del propietario permite fusionar cuando se cumplan los gates.
+- Continuar auditoría de arquitectura/API/esquema; revisar `feat/neon-transaction-adapter` sin merge ciego. Priorizar autorización por operación, aislamiento organización/sucursal, idempotencia, consistencia transaccional y rate limiting antes de endpoints comerciales.
+- No modificar Neon main, secretos, datos reales, billing, DNS ni producción; no desplegar manualmente ni incurrir en costes.
+
+---
+
+# Reanudación inmediata — 2026-10-30 UTC
+
 **Punto de entrada obligatorio:** [docs/WORK_CHECKPOINT.md](WORK_CHECKPOINT.md).
 
 - PR activa: [#160](https://github.com/BTF14/Micro-app/pull/160), rama `docs/continuity-post-158-159-20261030`, abierta, no draft y no fusionada; HEAD verificado `0e6c27bac8a9ef1a9d80da109a136c34aec99a9a`, base `dbc7b6c9cf57113a38cddb4155d2917cc3aaeafc`; 14 commits y 8 archivos. Workflow runs y combined status devolvieron listas vacías para ese SHA: CI pendiente de verificación.

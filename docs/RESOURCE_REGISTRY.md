@@ -159,3 +159,11 @@ El handoff incluye el prompt copiable para continuar en un chat nuevo. La docume
 | Skills locales Micro app | `.agents/skills/micro-app-auth-security/SKILL.md`, `micro-app-postgres-testing/SKILL.md`, `micro-app-stack-guidance/SKILL.md`, `micro-app-skill-curation/SKILL.md` | Instrucciones propias, adaptadas al stack y a las políticas del repo. No equivalen a bundles descargados/verificados por AutoSkills; no ejecutan scripts ni añaden dependencias. |
 
 Decisión: en un checkout con red, ejecutar primero `npx autoskills --dry-run`, comparar las propuestas con los manifiestos actuales, seleccionar solo skills relevantes y revisar origen/licencia/estado de seguridad/hash antes de instalar. No usar `-y` por defecto, no instalar skills de Next.js/Supabase/Astro si esas tecnologías no están en uso, y no gastar dinero. Mantener separadas las skills locales propias y las externas verificadas.
+
+
+## Registro de verificación — Cloudflare 2026-10-30 (sesión autenticada, solo lectura)
+
+- **Workers `micro-app-api`:** Active Deployment en Producción; versión `49975c43-4161-4809-9c00-8ba83e53e6a0`, Build ID `957478f6-0f43-4b5c-932a-621be067d6d9`, commit `82386c6e9300e06f8fa209aa52995b939a72442a`; el panel mostró 100% de asignación de tráfico.
+- **Pages `micro-app`:** rama de producción `main`, SHA `82386c6e9300e06f8fa209aa52995b939a72442a`, deployment `https://cc23ff0c.micro-app-63i.pages.dev`; la lista visible de variables de entorno estaba vacía y `VITE_API_BASE_URL` no aparecía.
+- **Conclusión:** queda resuelta la duda sobre si el build de Worker de #177 corresponde a una versión activa de Producción. No queda resuelta la integración frontend/API ni CORS. Investigar la variable ausente en solo lectura y obtener preflight HTTP real.
+- **Límites:** no se modificaron variables, secretos, tráfico, deployments, DNS, billing ni producción; no se revelaron valores sensibles. La vista de métricas mostró 0 req/sec y 0% errores en el instante observado, lo cual no demuestra CORS ni ausencia de tráfico histórico.

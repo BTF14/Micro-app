@@ -1,19 +1,18 @@
-> **Revalidación GitHub — 2026-10-30 UTC:** `main` = `a6db2dcaf57e2a0bf1735eb282c3ac2256cd314c`. PR [#172](https://github.com/BTF14/Micro-app/pull/172) está abierta, draft y no fusionada; base `main`, rama `docs/operation-authorization-architecture-20261030`, HEAD `87de879b021cd4b68ce4267b138832279d4a043a`. En ese SHA exacto, GitHub reporta **12/12 check-runs completed/success** (incluidos los seis checks requeridos por branch protection); no hay checks fallidos ni pendientes. No hay reviews formales ni threads inline. Los checks de Pages/Workers corresponden a previews, no certifican producción. Issues #53 y #78 siguen abiertas. La matriz comercial sigue **NO APROBADA**. No se modificaron `main`, Neon main, datos reales, secretos, DNS, billing ni configuración de producción.
-
+> **Snapshot de revisión GitHub — 2026-10-30 UTC:** `main` = `a6db2dcaf57e2a0bf1735eb282c3ac2256cd314c`. Antes de esta sincronización, PR #172 estaba abierta y lista para revisión, con HEAD `785d4a912baf6787eafa6d2a7f51e37697f22de4`; en ese SHA se observaron 9/11 check-runs success y 2 in progress (`verify` y `Chromium authentication smoke tests`), sin fallos. No había reviews formales ni threads inline. **Este snapshot es histórico y no identifica el HEAD de la rama después de esta edición**: consultar siempre [PR #172](https://github.com/BTF14/Micro-app/pull/172) y los checks del SHA vivo antes de actuar. Pages/Workers son previews, no certificación de producción. Issues #53 y #78 abiertas; matriz comercial **NO APROBADA**. No se modificaron `main`, Neon main, datos reales, secretos, DNS, billing ni configuración de producción.
 # Prioridad operativa vigente — autorización por operación — 2026-10-30 UTC
 
 > Esta portada supersede prioridades anteriores que presenten la matriz o PR #172 en otro estado.
 
 - Main conocido: `a6db2dcaf57e2a0bf1735eb282c3ac2256cd314c`; resolver en vivo antes de cualquier cambio.
 - Último merge runtime: PR #169 (`be35a0fde3886271b6ed98b7ccc29cc1255d50e5`). PR #170/#171 solo documentación.
-- PR #172 draft, no fusionada: propuesta de arquitectura de autorización server-side y sincronización de continuidad. HEAD verificado `87de879b021cd4b68ce4267b138832279d4a043a`, 12/12 check-runs completed/success; no hay reviews formales ni threads inline. Todo nuevo commit exige revalidación propia.
+- PR #172 abierta y no fusionada: propuesta de arquitectura de autorización server-side y sincronización de continuidad. El último checkpoint previamente validado fue `87de879b021cd4b68ce4267b138832279d4a043a` (12/12 checks success); consultar el HEAD vivo y sus propios checks antes de merge.
 - Matriz comercial de roles/permisos: **NO APROBADA**. No implementar mapeos role→permission ni excepciones.
 - No hay rutas comerciales ni auditoría/ledger comercial implementados. Los resolvers tenant/branch/shift solo resuelven contexto.
 - No Neon main, no cambios de secretos/infra/producción, no aplicar migraciones 0003/0004 remotamente.
 
 ## Orden de trabajo
 
-1. Verificar PR #172 y su CI final; revisar documentación/diff. Mantener draft mientras siga pendiente la aprobación del propietario.
+1. Verificar PR #172 y su CI final; revisar documentación/diff. La propuesta de arquitectura se puede fusionar como documentación sin aprobar la matriz comercial, pero no habilita implementación.
 2. Obtener decisiones explícitas para operaciones, scope, delegación, gestión de usuarios/roles, caja, descuentos, anulaciones, devoluciones y administración de políticas.
 3. Cerrar catálogo operación→recurso→scope y matriz aprobada.
 4. Diseñar contrato de auditoría, retención e inmutabilidad.

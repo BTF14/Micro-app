@@ -1,5 +1,4 @@
-> **Revalidación GitHub — 2026-10-30 UTC:** `main` = `a6db2dcaf57e2a0bf1735eb282c3ac2256cd314c`. PR [#172](https://github.com/BTF14/Micro-app/pull/172) está abierta, draft y no fusionada; base `main`, rama `docs/operation-authorization-architecture-20261030`, HEAD `87de879b021cd4b68ce4267b138832279d4a043a`. En ese SHA exacto, GitHub reporta **12/12 check-runs completed/success** (incluidos los seis checks requeridos por branch protection); no hay checks fallidos ni pendientes. No hay reviews formales ni threads inline. Los checks de Pages/Workers corresponden a previews, no certifican producción. Issues #53 y #78 siguen abiertas. La matriz comercial sigue **NO APROBADA**. No se modificaron `main`, Neon main, datos reales, secretos, DNS, billing ni configuración de producción.
-
+> **Snapshot de revisión GitHub — 2026-10-30 UTC:** `main` = `a6db2dcaf57e2a0bf1735eb282c3ac2256cd314c`. Antes de esta sincronización, PR #172 estaba abierta y lista para revisión, con HEAD `785d4a912baf6787eafa6d2a7f51e37697f22de4`; en ese SHA se observaron 9/11 check-runs success y 2 in progress (`verify` y `Chromium authentication smoke tests`), sin fallos. No había reviews formales ni threads inline. **Este snapshot es histórico y no identifica el HEAD de la rama después de esta edición**: consultar siempre [PR #172](https://github.com/BTF14/Micro-app/pull/172) y los checks del SHA vivo antes de actuar. Pages/Workers son previews, no certificación de producción. Issues #53 y #78 abiertas; matriz comercial **NO APROBADA**. No se modificaron `main`, Neon main, datos reales, secretos, DNS, billing ni configuración de producción.
 ## Estado y contrato de autorización por operación (PR #172, 2026-10-30)
 
 La propuesta técnica está en [OPERATION_AUTHORIZATION_ARCHITECTURE.md](sdd/OPERATION_AUTHORIZATION_ARCHITECTURE.md). Se mantiene como diseño, no implementación.
@@ -12,7 +11,7 @@ La propuesta técnica está en [OPERATION_AUTHORIZATION_ARCHITECTURE.md](sdd/OPE
 - Auditoría de mutaciones, ledger, idempotencia, handlers comerciales y pruebas end-to-end de autorización siguen pendientes. No afirmar que ya existen.
 - No crear endpoints, esquema ni migraciones hasta aprobar matriz y contratos de operación. No aplicar migraciones 0003/0004 a Neon main.
 
-En el HEAD vigente `87de879b021cd4b68ce4267b138832279d4a043a`, los 12/12 check-runs terminaron `completed/success`. Esta evidencia corresponde exclusivamente a ese SHA; cualquier commit posterior requiere su propia verificación.
+El checkpoint anterior `87de879b021cd4b68ce4267b138832279d4a043a` tuvo 12/12 check-runs completed/success. La sincronización documental posterior genera un HEAD nuevo; consultar la PR y validar ese SHA antes de merge.
 
 ---
 

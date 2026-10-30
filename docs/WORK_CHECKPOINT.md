@@ -1,12 +1,11 @@
-> **Revalidación GitHub — 2026-10-30 UTC:** `main` = `a6db2dcaf57e2a0bf1735eb282c3ac2256cd314c`. PR [#172](https://github.com/BTF14/Micro-app/pull/172) está abierta, draft y no fusionada; base `main`, rama `docs/operation-authorization-architecture-20261030`, HEAD `87de879b021cd4b68ce4267b138832279d4a043a`. En ese SHA exacto, GitHub reporta **12/12 check-runs completed/success** (incluidos los seis checks requeridos por branch protection); no hay checks fallidos ni pendientes. No hay reviews formales ni threads inline. Los checks de Pages/Workers corresponden a previews, no certifican producción. Issues #53 y #78 siguen abiertas. La matriz comercial sigue **NO APROBADA**. No se modificaron `main`, Neon main, datos reales, secretos, DNS, billing ni configuración de producción.
-
+> **Snapshot de revisión GitHub — 2026-10-30 UTC:** `main` = `a6db2dcaf57e2a0bf1735eb282c3ac2256cd314c`. Antes de esta sincronización, PR #172 estaba abierta y lista para revisión, con HEAD `785d4a912baf6787eafa6d2a7f51e37697f22de4`; en ese SHA se observaron 9/11 check-runs success y 2 in progress (`verify` y `Chromium authentication smoke tests`), sin fallos. No había reviews formales ni threads inline. **Este snapshot es histórico y no identifica el HEAD de la rama después de esta edición**: consultar siempre [PR #172](https://github.com/BTF14/Micro-app/pull/172) y los checks del SHA vivo antes de actuar. Pages/Workers son previews, no certificación de producción. Issues #53 y #78 abiertas; matriz comercial **NO APROBADA**. No se modificaron `main`, Neon main, datos reales, secretos, DNS, billing ni configuración de producción.
 # Checkpoint vigente — autorización server-side propuesta — 2026-10-30 UTC
 
 **Repositorio:** BTF14/Micro-app  
 **Main verificado antes de esta sincronización:** `a6db2dcaf57e2a0bf1735eb282c3ac2256cd314c`  
 **Último merge runtime:** PR #169, `be35a0fde3886271b6ed98b7ccc29cc1255d50e5`  
 **PR activa:** [#172](https://github.com/BTF14/Micro-app/pull/172), draft, no fusionada, rama `docs/operation-authorization-architecture-20261030`.  
-**HEAD verificado de PR #172:** `87de879b021cd4b68ce4267b138832279d4a043a`; 12/12 check-runs completed/success en ese SHA exacto. No hay reviews formales ni threads inline. Un commit posterior requiere checks propios.  
+**Último checkpoint previamente validado de PR #172:** `87de879b021cd4b68ce4267b138832279d4a043a`; 12/12 check-runs completed/success en ese SHA exacto. Los commits documentales posteriores requieren checks propios.  
 **Estado de matriz:** NO APROBADA.  
 **Último trabajo:** propuesta técnica y sincronización de continuidad; no cambios runtime/schema/migrations.
 
@@ -23,13 +22,13 @@
 
 ## Evidencia de CI
 
-- En el HEAD vigente `87de879b021cd4b68ce4267b138832279d4a043a`, los 12 check-runs terminaron completed/success: Cloudflare Pages, Workers Builds, postgres-migration, static analysis, Trivy, Chromium authentication smoke, secret/history scan, progress, verify y dependency review.
+- En el checkpoint `87de879b021cd4b68ce4267b138832279d4a`, los 12 check-runs terminaron completed/success. Esa evidencia no se hereda a commits documentales posteriores.
 - Esta evidencia no se transfiere a un SHA posterior. Consultar los check-runs del HEAD actual de #172 después de los commits de continuidad.
 - Reviews formales de GitHub: ninguna en la última consulta. No afirmar aprobación humana/Codex. La consistencia fue revisada manualmente.
 
 ## Siguiente paso
 
-La revisión documental del HEAD `87de879b021cd4b68ce4267b138832279d4a043a` corrigió la sincronización de estado y sus 12 checks están verdes. Si se prepara la PR para merge, volver a comprobar los checks requeridos y el estado ready-for-review. La matriz comercial continúa pendiente y bloquea cualquier implementación de permisos/endpoints.
+La revisión documental corrigió las referencias obsoletas. Antes de merge, consultar el HEAD vivo y confirmar checks requeridos verdes, feedback resuelto y estado ready-for-review. La matriz comercial continúa pendiente y bloquea cualquier implementación de permisos/endpoints.
 
 ---
 

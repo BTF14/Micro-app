@@ -34,7 +34,10 @@ describe("resolveBranchContext", () => {
       expect(query).toHaveBeenCalledOnce();
       expect(query.mock.calls[0]?.[1]).toEqual([userId, organizationId, branchId, role]);
       expect(query.mock.calls[0]?.[0]).toContain("b.is_active = true");
-      expect(query.mock.calls[0]?.[0]).toContain("$4 IN ('owner', 'admin')");
+      expect(query.mock.calls[0]?.[0]).toContain("o.is_active = true");
+      expect(query.mock.calls[0]?.[0]).toContain("m.is_active = true");
+      expect(query.mock.calls[0]?.[0]).toContain("m.role = $4");
+      expect(query.mock.calls[0]?.[0]).toContain("m.role IN ('owner', 'admin')");
     },
   );
 

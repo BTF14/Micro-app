@@ -14,9 +14,9 @@
 - `register_shifts` tiene FKs compuestas, índices parciales de unicidad por caja y cajero/organización, triggers de apertura/lifecycle y protección de revocación/desactivación.
 - PR #169 abierta; issues abiertos relevantes: #53 y #78; no se modificaron.
 - Checks en merge SHA e4e4a5f: runs/status vacíos; no se afirma CI post-merge.
-- Primera consulta del HEAD inicial #169: 8 workflow runs Actions in_progress; los check-runs Cloudflare Pages/Workers, Dependency Review, Trivy, secret-history y dashboard observados en success. CI, migration, Chromium y Semgrep seguían en progreso.
+- HEAD final PR #169 `253128c6f5213986879ce619da85285251c07416`: 8/8 workflow runs Actions y 14 check-runs consultados completed/success. CI confirma build/typecheck, unit tests, auth 18/18, branch 4/4, register-shifts 5/5 y cashier-open-shift integration 7/7 en PostgreSQL 18. Migration, Playwright, Semgrep, Trivy, Dependency Review, Secret History y dashboard también success.
 - Codex review falló por cuota. Reviews formales: 0; threads inline: 0. Diff inspeccionado manualmente; no es aprobación externa.
-- Cloudflare generó previews Pages/Workers para HEAD 69ef099; no son producción.
+- Cloudflare generó previews Pages/Workers para HEAD final 253128c; no son producción.
 - Documentos canónicos DATABASE_SCHEMA y SCHEMA_REVIEW tenían encabezados con SHA 1d10... anterior a #167; se actualizarán a e4e4a5f.
 
 ## Decisión de diseño

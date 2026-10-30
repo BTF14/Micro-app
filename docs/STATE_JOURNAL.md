@@ -1105,3 +1105,14 @@ CI documental: para HEAD `8c15e13fa001a14a0ddf9f2432bc17efb30d476d`, los 8 workf
 - Se amplió `cashier-open-shift.integration.test.ts` para verificar que no se devuelve el turno de otro cajero dentro de la misma organización/sucursal ni el turno del mismo cajero en otra sucursal de la misma organización.
 - Se añadió una prueba PostgreSQL 18 de bloqueo: el `FOR SHARE OF s` mantiene bloqueado el cierre concurrente mientras el caller conserva la transacción; tras COMMIT, el cierre puede completarse.
 - Esta ampliación cambia el HEAD de PR #169; las pruebas y workflows del SHA anterior son evidencia histórica y deben revalidarse sobre el nuevo HEAD.
+
+
+## 2026-10-30 UTC — verificación final de PR #169 HEAD 253128c
+
+- HEAD exacto: `253128c6f5213986879ce619da85285251c07416`; PR #169 mantiene base main `e4e4a5f312522ec5efbcc3252958141f56fbd821`.
+- GitHub Actions: 8/8 workflows completed/success (CI, Database migration validation, Playwright E2E, Security scan, Semgrep SAST, Secret history scan, Dependency review y Project progress dashboard).
+- API de check-runs: 14 entradas consultadas, todas completed/success, incluyendo Workers Builds y Cloudflare Pages. Las URLs reportadas por los bots son previews; no se afirma deploy de producción.
+- Job CI: build/typecheck, unit tests, auth integration 18/18, branch-context integration 4/4, register-shifts integration 5/5 y cashier-open-shift integration 7/7. El último test cubre row-locking contra cierre concurrente con dos conexiones PostgreSQL.
+- Migration validation aplica 0001–0004 y pasa assertions en PostgreSQL 18 desechable. Playwright, Semgrep, Trivy, Dependency Review, Secret History y dashboard success.
+- Reviews formales GitHub: 0; inline review threads: 0. Codex no completó por cuota; no se trata como aprobación externa. Diff revisado manualmente.
+- No se tocó Neon main, no se aplicaron migraciones remotas, no se modificaron secretos/Cloudflare settings/DNS/billing y no se crearon endpoints comerciales.

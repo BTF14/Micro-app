@@ -1,3 +1,6 @@
+
+> **Actualización arquitectónica prioritaria 2026-10-29:** aplicar `docs/SAAS_ARCHITECTURE_DECISIONS.md` §§4–5. La tasa BCV debe consultarse por job programado, validarse y persistirse en el histórico existente; la API sirve última tasa válida con fecha/frescura y fallback stale. No se ha confirmado una API BCV oficial gratuita. Para búsqueda de productos, empezar con SQL indexado, debounce, límites y aislamiento tenant/sucursal; NO asumir que KV por producto es la estrategia inicial. Medir Neon primero y evaluar caché agrupada/versionada solo si hay evidencia. KV es eventual/derivable y no fuente de verdad. Nunca usar caché para confirmar precio/stock en una venta: la transacción PostgreSQL debe validar y guardar snapshots. Las secciones históricas inferiores que sugieran lectura exclusiva de catálogo desde KV o que omitan revalidación transaccional quedan subordinadas a esta regla.
+
 # Arquitectura de precios, tasa BCV y caché — decisión 2026-10-26
 
 Este documento resuelve, con evidencia, cuáles ideas de un blueprint externo (redactado por otra IA sin contexto del proyecto, aportado por el propietario como insumo) se adoptan, cuáles ya estaban implementadas y cuál se rechaza explícitamente. Reemplaza cualquier ambigüedad previa sobre caché/offline en `docs/ARCHITECTURE_AND_ZERO_COST.md`, que este documento complementa sin contradecir.

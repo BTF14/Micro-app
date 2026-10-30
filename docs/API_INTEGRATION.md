@@ -58,6 +58,6 @@ Para endpoints de consulta (por ejemplo, búsqueda de catálogo/precio), evaluar
 No usar `ILIKE '%texto%'` asumiendo que el índice B-tree actual lo acelera; probar barcode/SKU exactos y búsqueda de prefijo con `EXPLAIN ANALYZE` sobre datos sintéticos. Añadir trigram/GIN u otros índices solo si se justifican por volumen/latencia medidos.
 
 
-## Estado actual de identidad y sucursal (main post PR #165, 2026-10-30)
+## Estado actual de identidad y sucursal (post PR #170, 2026-10-30)
 
 Las decisiones D1–D8 de identidad están aprobadas y Google OAuth + allowlist se implementaron en PR #153; HTTPS/canonical origin para Google OAuth se reforzó en PR #155. Las rutas de registro y login por contraseña siguen deshabilitadas fail-closed. PR #165 añadió `branches`, `branch_memberships` y `resolveBranchContext`; PR #169 añadió `resolveOpenCashierRegisterShift` como helper aislado para el turno del cajero. Ninguno está conectado a rutas comerciales ni concede autorización por operación. La matriz de permisos comerciales continúa NO APROBADA. No hay endpoints comerciales. Ver `docs/SAAS_ARCHITECTURE_DECISIONS.md`, `docs/sdd/BRANCH_SCOPE_CONTEXT_IMPLEMENTATION.md` y `docs/SCHEMA_REVIEW.md`.

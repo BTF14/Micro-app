@@ -1,8 +1,8 @@
 # Prioridad operativa vigente — post PR #169 — 2026-10-30 UTC
 
-**Main verificado:** `be35a0fde3886271b6ed98b7ccc29cc1255d50e5`.  
+**Último merge con cambios de runtime:** PR #169, `be35a0fde3886271b6ed98b7ccc29cc1255d50e5`. PR #170 fue documental (`af08cd913a4e0e155b1b74183a71efc51e5d4646`); consultar `main` en vivo.  
 **PR #169:** fusionada; helper de resolución del turno abierto del cajero autenticado implementado y probado.  
-**Continuidad documental post-merge:** en rama `docs/post-pr169-cashier-shift-continuity-20261030`.  
+**Continuidad documental post-merge:** PR #170 fusionada; sin cambios de runtime/esquema.  
 **Post-merge:** 7/7 workflows Actions success; Cloudflare Pages/Workers 2/2 success; PostgreSQL 18 integration 7/7 para el helper.  
 **Base de datos:** main versiona 0001–0004; 0003/0004 no aplicadas a Neon main.
 

@@ -1,6 +1,6 @@
 # Estado actual del esquema — 2026-10-30 UTC (main post PR #169)
 
-**Main verificado:** `be35a0fde3886271b6ed98b7ccc29cc1255d50e5`. Main versiona `0001_initial.sql`, `0002_google_identity.sql`, `0003_branch_scope.sql` y `0004_register_shifts.sql`; las migraciones 0003/0004 no se han aplicado a Neon main.
+**Último SHA con cambios de esquema/runtime:** PR #169, `be35a0fde3886271b6ed98b7ccc29cc1255d50e5`. PR #170 (`af08cd913a4e0e155b1b74183a71efc51e5d4646`) fue solo documental y no cambió esquema. Consultar el ref vivo de `main` antes de cualquier cambio. Main versiona `0001_initial.sql`, `0002_google_identity.sql`, `0003_branch_scope.sql` y `0004_register_shifts.sql`; las migraciones 0003/0004 no se han aplicado a Neon main.
 
 `0004_register_shifts.sql` añade `registers` y `register_shifts`; CI valida 0001–0004 desde cero en PostgreSQL 18 desechable. PR #169 añadió un helper runtime aislado de consulta de turno abierto, sin cambios de esquema ni aplicación remota.
 

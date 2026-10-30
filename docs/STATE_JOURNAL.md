@@ -1255,3 +1255,11 @@ CI documental: para HEAD `8c15e13fa001a14a0ddf9f2432bc17efb30d476d`, los 8 workf
 - El commit `82386c6e9300e06f8fa209aa52995b939a72442a` versiona `apps/web/.env.production` con `VITE_API_BASE_URL=https://micro-app-api.btfcasheb.workers.dev`; `apps/web/vite.config.ts` llama a `loadEnv(mode, ".", "VITE_")` y define `__MICRO_APP_API_BASE_URL__` a partir de ese valor (salvo Pages previews, donde se vacía deliberadamente).
 - Interpretación: la fuente de build esperada es el archivo versionado, no necesariamente una variable del dashboard. Aún falta inspeccionar el bundle desplegado/solicitud del navegador para confirmar el valor efectivo en producción. No cambiar variables de Cloudflare.
 - La conclusión de CORS no cambia: siguen pendientes los dos preflight HTTP reales. #78 permanece abierta.
+
+
+## 2026-10-30 UTC — verificación pública del enlace de API en Pages
+
+- Inspección de solo lectura de `https://micro-app-63i.pages.dev/` con navegador: el enlace visible “Continuar con Google” tiene `href=https://micro-app-api.btfcasheb.workers.dev/auth/google`. El hostname canónico del Worker aparece en el HTML público.
+- La herramienta no pudo inspeccionar el contenido del bundle JavaScript ni confirmar el valor compilado de `__MICRO_APP_API_BASE_URL__`; tampoco se observó una llamada API del frontend. La evidencia no prueba CORS.
+- En conjunto con `apps/web/.env.production` y `vite.config.ts`, hay evidencia del valor esperado del build y del enlace OAuth; queda pendiente verificar el bundle JS/solicitudes de la SPA y los dos preflight OPTIONS reales. Issue #78 sigue abierta.
+- No se interactuó con login ni se cambiaron Pages, Worker, tráfico, variables, secretos o producción.

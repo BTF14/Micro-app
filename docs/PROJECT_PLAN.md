@@ -922,3 +922,12 @@ No declarar comercial/producción listo hasta completar flujos, seguridad, prueb
 - Operaciones: venta/pago/recepción/transferencia con claves tenant-scoped, FKs compuestas, transacciones, idempotencia y auditoría.
 - Estado: propuesta documental, no implementada. La matriz de roles sigue pendiente de aprobación; no crear handlers comerciales ni migraciones hasta cerrar contratos.
 - Criterios previos a implementación: decidir ventas fuera de caja, flujo de recepción/transferencias, referencia tipada de movimientos, pagos/reversos y matriz de permisos; diseñar migración aditiva y pruebas PostgreSQL efímeras cross-tenant/cross-branch, concurrencia, rollback y reconciliación.
+
+
+## Estado vivo — 2026-10-30 UTC — fundamento de alcance por sucursal
+
+- PR #164 ya está fusionada en main `ce8b0e491fe8b9f6154380cc8b0eea0a19fe8114`; referencias históricas que la indiquen pendiente quedan supersedidas.
+- Trabajo actual en `feat/branch-scope-context-20261030`: modelo mínimo de sucursales/asignaciones y resolución de contexto en servidor.
+- Alcance autorizado: owner/admin organización-wide; cashier/inventory requieren asignación activa a sucursal. No implica aprobar permisos por operación, caja/turnos ni excepciones sensibles.
+- Orden: validar migración y assertions en PostgreSQL efímero; comprobar tests/typecheck/CI del SHA exacto; revisar diff; integrar solo con checks obligatorios verdes. Luego cerrar matriz de permisos sensibles y modelo de caja/turnos antes de rutas comerciales.
+- No ejecutar migraciones en Neon main ni desplegar producción en este bloque.

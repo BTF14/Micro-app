@@ -19,10 +19,6 @@ Main versiona migraciones 0001–0004; no afirmar que 0003/0004 estén aplicadas
 > **Archivo histórico — no usar como estado operativo.** Las entradas siguientes se conservan por trazabilidad y describen estados de su fecha. GitHub en vivo y el checkpoint superior prevalecen.
 
 
----
-> **Archivo histórico — no usar como estado operativo.** Las entradas siguientes se conservan para trazabilidad y describen estados de su fecha. GitHub en vivo y el checkpoint superior prevalecen.
-
-
 > **Archivo histórico — no usar como estado operativo.** Las notas siguientes se preservan para trazabilidad y pueden contener SHA o límites correspondientes a sesiones anteriores. Usar el checkpoint superior y verificar GitHub en vivo.
 
 

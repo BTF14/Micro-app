@@ -1,14 +1,43 @@
-## Checkpoint de continuidad vigente — 2026-10-30 UTC
+# Handoff operativo — continuidad Micro-app — 2026-10-30 UTC
 
-- Repositorio `BTF14/Micro-app`; `main` = `82386c6e9300e06f8fa209aa52995b939a72442a`.
-- Snapshot verificado antes de esta sincronización: rama `docs/reconcile-role-model-and-cloudflare-20261030`, HEAD `a45d84eb5f51e50d3a24f9d6858b5d14efb3ce6b`; comparación 68 ahead / 0 behind.
-- PR [#178](https://github.com/BTF14/Micro-app/pull/178): OPEN, DRAFT, NOT MERGED; último reporte `mergeable=true`. Diff: 13 archivos documentales (343 adiciones / 235 eliminaciones); 0 reviews formales y 0 threads inline. No marcar Ready ni fusionar sin autorización explícita.
-- Para el SHA exacto `a45d84eb5f51e50d3a24f9d6858b5d14efb3ce6b`, 11/11 workflow runs de Actions terminaron `success` (9 pull_request + 2 push). Cloudflare Pages y Workers publicaron previews exitosas asociadas al mismo SHA. No reutilizar esta evidencia para el commit de sincronización posterior.
-- Previews: [Pages commit](https://16be43d4.micro-app-63i.pages.dev), [Pages branch](https://docs-reconcile-role-model-an.micro-app-63i.pages.dev), [Workers commit](https://d0883f1d-micro-app-api.btfcasheb.workers.dev), [Workers branch](https://docs-reconcile-role-model-and-cloudflare-20261030-micro-app-api.btfcasheb.workers.dev). GET `/health` de la preview Worker respondió `status=ok`; Pages presenta login/datos deshabilitados. No es producción.
-- Issue #78 sigue **NO VERIFICADO**: ambos OPTIONS reales contra el Worker de producción fallaron localmente con curl exit 6 por DNS; no hubo status ni headers. Bundle JS publicado aún no inspeccionado. `VITE_API_BASE_URL` sí existe en `apps/web/.env.production` y se carga con `loadEnv`.
-- Issue #53 sigue **NO APROBADA**: un único `organization_members.role` por miembro/organización; `branch_memberships` solo asigna acceso a sucursales. No endpoints comerciales, middleware ni mapeos rol→operación.
-- La rama heredada `fix/vercel-api-esm-imports` fue eliminada tras preservar el SHA `b1330a5fa547071a5f500f0481ce88109c612f81` en `archive/legacy-api-esm-experiment-20261020`; PR #72 cerrada y no fusionada.
-- Restricciones: USD 0; PostgreSQL desechable primero; no tocar Neon main, Cloudflare/configuración/tráfico/deployments/secretos/DNS/billing/producción/datos reales; no reescribir historial ni `STATE_JOURNAL.md`.
+> No reiniciar el proyecto. Este handoff describe el último estado comprobado; verificar GitHub en vivo antes de actuar.
+
+## Punto exacto de reanudación
+
+- Repositorio: `BTF14/Micro-app`.
+- Último main verificado: `bb5bd72829db0532521857bffd62dac5c42a2eee`, merge SHA de PR #178.
+- PR #178: MERGED por squash; exclusivamente documental, 14 archivos (+403/-238), sin runtime, SQL, migraciones, lockfile, workflows ni infraestructura.
+- PR #179: [https://github.com/BTF14/Micro-app/pull/179](https://github.com/BTF14/Micro-app/pull/179), rama `docs/post-178-merge-checkpoint-20261030`. Snapshot de revisión: HEAD `fb724e0c3bd8fbaae2a838f042c1e838754675b5`, base `bb5bd72829db0532521857bffd62dac5c42a2eee`; estaba abierta y no fusionada en esa consulta. Consultar GitHub en vivo para el estado posterior.
+- Evidencia del SHA superado `d958eb4...` (no aplicable al HEAD actual en este snapshot): 8 workflows success. En el HEAD `fb724e0c3bd8fbaae2a838f042c1e838754675b5`, 8/8 workflows Actions consultados terminaron completed/success. Combined commit status devolvió statuses vacíos; branch protection/required checks no está confirmada. Cloudflare Pages y Workers reportaron previews exitosas para `fb724e0`, no producción.
+- Codex intentó revisión automática de #179, pero falló por límite de uso. No contar como review ni aprobación. Hacer revisión manual independiente del diff.
+- PR #178 HEAD `8bacd57d9c3d624eae8139dadeb7fd6c0730b4dc`: 9/9 workflow runs consultados success. Evidencia solo para ese SHA.
+- Login OAuth real verificado por TinyFish: `https://micro-app-63i.pages.dev/#inicio`, dashboard autenticado, organización visible Abasto 7 de Oro, rol `owner`, sesión conservada. No demuestra CORS ni funcionalidades comerciales.
+- Issue #78 abierta: CORS NO VERIFICADO. OPTIONS no devolvieron status/headers por fallo DNS en el entorno; falta bundle JS y preflight desde red funcional.
+- Issue #53 abierta: matriz de permisos comerciales NO APROBADA; no crear endpoints, middleware ni reglas rol→operación sin aprobación explícita.
+- Arquitectura: `organization_members.role` es un rol único por miembro/organización; `branch_memberships` solo asigna acceso a sucursales, sin roles. Inventario organizacional; caja por turnos y apertura/cierre ordinario.
+
+## Orden de trabajo
+
+1. Revisar el diff final de #179 y confirmar que el journal solo agrega una entrada append-only.
+2. Revalidar checks del HEAD exacto; no reutilizar evidencia de commits anteriores.
+3. La autorización del propietario para fusionar #179 ya fue expresada en el chat. El merge a `main` puede activar despliegues automáticos de Cloudflare; no hacer cambios manuales de producción y documentar cualquier efecto automático.
+4. Tras el merge, actualizar las portadas con el merge SHA real y el nuevo `main`.
+5. Investigar #78: inspeccionar el bundle JS publicado y obtener status + headers `Access-Control-*` de preflight permitido y rechazado desde una red funcional, sin cambiar configuración.
+6. Investigar #53 solo sobre rutas existentes y con PostgreSQL desechable. La matriz comercial sigue sin aprobarse; no implementar autorización comercial.
+7. Claude web gratuito puede revisar como segunda opinión. Si no accede al repo, compartir diff/archivos y exigir que declare esa limitación. No compartir secretos, tokens ni cookies.
+
+## Restricciones no negociables
+
+- Cloudflare Pages/Workers, Neon PostgreSQL. Presupuesto USD 0.
+- No tocar Cloudflare producción, tráfico, deployments productivos, variables, secretos, DNS, billing, Neon main ni datos reales.
+- PostgreSQL desechable primero; no ejecutar migraciones remotas.
+- No reescribir historial Git ni entradas previas de `docs/STATE_JOURNAL.md`.
+- No afirmar pruebas, revisiones, aprobaciones o verificaciones sin evidencia.
+- No crear endpoints comerciales, middleware ni mapeos rol→operación antes de aprobación explícita de la matriz.
+
+## Prompt para el siguiente chat de ChatGPT
+
+Continúa BTF14/Micro-app como responsable técnico senior. Lee `AGENTS.md`, este handoff, `docs/CURRENT_STATE.md`, `docs/AI_COLLABORATION_AND_PR_POLICY.md`, `docs/PROJECT_PLAN.md`, `docs/STATE_JOURNAL.md`, los registros de recursos/seguridad y los SDD de autorización/sucursales. Verifica GitHub en vivo. PR #178 ya está fusionada (main conocido `bb5bd72829db0532521857bffd62dac5c42a2eee`). PR #179 está abierta, no fusionada; su rama `docs/post-178-merge-checkpoint-20261030` ya corrigió los bloques operativos obsoletos de CURRENT_STATE y HANDOFF; revisar el diff resultante y validar el HEAD actual antes de fusionar. No reutilices checks de commits anteriores. #78 sigue con CORS NO VERIFICADO; #53 sigue con matriz comercial NO APROBADA. No tocar producción/Neon main/secretos/DNS/billing/datos reales; PostgreSQL desechable primero. No implementar permisos comerciales sin aprobación explícita. Registrar solo hechos verificados y mantener STATE_JOURNAL append-only.
 
 ## Snapshot previo — retiro de rama heredada (histórico; no usar como estado actual)
 
@@ -36,7 +65,7 @@
 6. `docs/API_INTEGRATION.md`, `docs/sdd/role-permission-decision-matrix.md`, `docs/sdd/OPERATION_AUTHORIZATION_ARCHITECTURE.md`, `docs/sdd/ORGANIZATION_COMMERCIAL_POLICY_CONFIGURATION.md`, `docs/sdd/MULTI_BRANCH_DATA_MODEL.md`.
 7. Verificar GitHub en vivo y leer las skills del proyecto aplicables antes de editar.
 
-## Prompt de continuación (copiar completo)
+## Prompt de continuación anterior (HISTÓRICO — NO COPIAR; supersedido por el prompt superior)
 
 Continúa el proyecto existente **BTF14/Micro-app** como responsable técnico senior. No reinicies el proyecto ni repitas trabajo completado. Lee `AGENTS.md`, `docs/CURRENT_STATE.md`, este handoff, `docs/CONSTITUTION.md`, `docs/AI_COLLABORATION_AND_PR_POLICY.md`, `docs/PROJECT_PLAN.md`, `docs/WORK_CHECKPOINT.md`, `docs/STATE_JOURNAL.md`, `docs/RESOURCE_REGISTRY.md`, `docs/API_INTEGRATION.md` y los SDD de permisos/sucursales. Sigue también la secuencia adicional de lectura de `AGENTS.md`. Verifica GitHub en vivo antes de cualquier cambio.
 

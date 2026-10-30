@@ -92,6 +92,6 @@ En PostgreSQL 18 efímero, desde una base vacía y aplicando migraciones 0001–
 
 - PR #165 demuestra que CI aplica 0001–0003 y ejecuta integración branch-context contra PostgreSQL 18 efímero.
 - PR #167 fusionó 0004 y sus assertions; 10/10 workflows Actions pasaron en HEAD `ad45911368e9e9a714ebbe014de2d84a7b3cf1de`.
-- En el HEAD anterior `0b5a9adbdafce25a8483e7ce6953e2d83a826c47`, CI falló solo en una expectativa de código de error del test de integración; build/typecheck, unit tests, auth integration y branch integration pasaron. Se corrigió el trigger para dejar que las FKs respondan por referencias ausentes; CI se está reejecutando en el HEAD 4008.
+- Nota histórica: en el HEAD inicial `0b5a9adbdafce25a8483e7ce6953e2d83a826c47`, CI detectó una expectativa SQLSTATE incorrecta. Se corrigió el trigger antes del HEAD final; los 10 workflows del HEAD final terminaron success.
 - No se aplicó 0003 ni 0004 a Neon main. La herramienta de lectura de Neon branches no devolvió un resultado utilizable; no inferir el número actual ni crear una rama por rutina.
 - PostgreSQL efímero de CI es suficiente para la migración y evita consumir ramas Neon.

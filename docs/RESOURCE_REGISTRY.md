@@ -167,3 +167,7 @@ Decisión: en un checkout con red, ejecutar primero `npx autoskills --dry-run`, 
 - **Pages `micro-app`:** rama de producción `main`, SHA `82386c6e9300e06f8fa209aa52995b939a72442a`, deployment `https://cc23ff0c.micro-app-63i.pages.dev`; la lista visible de variables de entorno estaba vacía; el código versionado sí define `VITE_API_BASE_URL` en `apps/web/.env.production` y `vite.config.ts` lo carga mediante `loadEnv`. Falta confirmar el valor en el bundle publicado.
 - **Conclusión:** queda resuelta la duda sobre si el build de Worker de #177 corresponde a una versión activa de Producción. No queda resuelta la integración frontend/API ni CORS. Investigar la variable ausente en solo lectura y obtener preflight HTTP real.
 - **Límites:** no se modificaron variables, secretos, tráfico, deployments, DNS, billing ni producción; no se revelaron valores sensibles. La vista de métricas mostró 0 req/sec y 0% errores en el instante observado, lo cual no demuestra CORS ni ausencia de tráfico histórico.
+
+## Verificación pública de frontend — 2026-10-30 (solo lectura)
+
+La página `https://micro-app-63i.pages.dev/` muestra un enlace “Continuar con Google” cuyo `href` es `https://micro-app-api.btfcasheb.workers.dev/auth/google`. Esto confirma el hostname del Worker en el enlace OAuth del HTML público. La inspección no pudo acceder al contenido de los bundles JavaScript ni confirmar `__MICRO_APP_API_BASE_URL__` compilado. La evidencia no demuestra que las demás llamadas API funcionen ni que CORS sea correcto. No se realizaron interacciones ni cambios.

@@ -1,18 +1,17 @@
 # Prioridad operativa vigente — post PR #165 — 2026-10-30 UTC
 
 **Main verificado:** `1d10befe0cd3367e04bd8998a192e93d9b228063`  
-**Rama actual:** `docs/post-pr165-register-shift-design-20261030` (PR #166 abierta; no fusionada). HEAD debe consultarse en GitHub porque cada actualización documental genera un commit.
+**Ramas activas:** PR #166 `docs/post-pr165-register-shift-design-20261030` (reconciliación documental) y PR #167 `feat/register-shifts-0004-20261030` (migración 0004/tests). Ambas abiertas, no fusionadas. Consultar HEAD vivo en GitHub.
 
-1. Cerrar reconciliación documental post-#165 en PR #166: alinear CURRENT_STATE/HANDOFF/CHECKPOINT/PLAN/JOURNAL, SCHEMA_REVIEW, DATABASE_SCHEMA y los SDD con las migraciones 0001–0003 reales.
-2. Modelo de caja/turnos: baseline individual (un cajero + una caja por turno; sin compartir/transferir; un turno abierto máximo por caja y cajero/organización). Diseño en `docs/sdd/REGISTER_SHIFT_MODEL.md`.
-3. Siguiente implementación: migration 0004 para registers/register_shifts, assertions SQL y tests PostgreSQL 18 efímero desde cero.
-4. Mantener helper de turno separado de endpoints; no implementar autorización comercial hasta aprobar matriz por operación.
-5. Después: almacenes, balances/ledger y estrategia de backfill/reconciliación del stock legacy.
-6. Medir capacidad sintética Neon/Cloudflare antes de comprometer límites de clientes.
+1. Reconciliación documental post-#165 realizada en PR #166; revisar el diff completo y mantener sus snapshots sincronizados.
+2. PR #167 implementa migration 0004 (`registers`, `register_shifts`), assertions SQL, triggers de lifecycle/desactivación y pruebas de integración/concurrencia. Cerrar cualquier fallo de CI en el HEAD exacto.
+3. Mantener helper de turno separado de endpoints; no implementar autorización comercial hasta aprobar matriz por operación.
+4. Después: almacenes, balances/ledger y estrategia de backfill/reconciliación del stock legacy.
+5. Medir capacidad sintética Neon/Cloudflare antes de comprometer límites de clientes.
 
 **Gates:** Neon main no se usa como laboratorio; no mutar Neon main ni desplegar producción en esta fase. No tocar secretos, DNS, billing o planes pagos. PostgreSQL efímero CI es la prueba primaria; Neon branch solo si hay una necesidad no cubierta por CI.
 
-**Estado comprobado:** PR #165 merged a `1d10befe0cd3367e04bd8998a192e93d9b228063`. Para PR #166, los 8 workflows de Actions consultados en HEAD `8044a6614b847d580e6e1f755433f05d2b141b75` terminaron success; checks externos Cloudflare no confirmados en esa consulta. Los nuevos commits documentales requieren revalidación sobre el HEAD final. La migración 0003 no se aplicó a Neon main. No hay rutas comerciales; branch context no está conectado a rutas. La matriz de permisos sigue NO APROBADA.
+**Estado comprobado:** PR #166 HEAD `4cee6e2ff6bfb8f3eecd85b4ff9212c1ab6d98fd` tuvo 8/8 workflows Actions success; checks externos Cloudflare no confirmados. PR #167 implementa 0004 en rama feature. En HEAD `0b5a9ad...`, migration validation y los checks no-CI pasaron; CI detectó una expectativa SQLSTATE incorrecta. La corrección quedó en `4008ec7...`; migration validation pasó otra vez y CI se reejecuta. Los commits documentales posteriores requieren verificar el HEAD vivo. 0003/0004 no se aplicaron a Neon main. No hay rutas comerciales; branch context no está conectado a rutas. La matriz de permisos sigue NO APROBADA.
 
 ---
 

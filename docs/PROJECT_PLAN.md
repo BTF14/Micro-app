@@ -7,7 +7,7 @@
 
 ## Prioridades
 
-1. Completar y verificar PR #169: helper `resolveOpenCashierRegisterShift`, pruebas unitarias y PostgreSQL 18 efímero; comprobar siempre el HEAD exacto.
+1. Completar y verificar PR #169: helper `resolveOpenCashierRegisterShift`, pruebas unitarias y PostgreSQL 18 efímero, incluyendo aislamiento por user/branch y cierre concurrente; comprobar siempre el HEAD exacto.
 2. Aprobar explícitamente la matriz de permisos y diseñar autorización server-side por operación y sucursal antes de handlers comerciales.
 3. Diseñar almacenes, balances/ledger y reconciliación/backfill del stock legacy.
 4. Diseñar transacciones, idempotencia y concurrencia para ventas/pagos/stock antes de crear handlers.

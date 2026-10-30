@@ -1098,3 +1098,10 @@ CI documental: para HEAD `8c15e13fa001a14a0ddf9f2432bc17efb30d476d`, los 8 workf
 - Primera consulta: 8 workflow runs Actions en progreso. Check-runs de Cloudflare Pages/Workers, Dependency Review, Trivy, secret-history y dashboard observados en success; CI, migration, Chromium y Semgrep seguían en progreso. Reconsultar en el HEAD actual de PR, porque cualquier commit invalida esa evidencia.
 - Cloudflare Pages y Workers publicaron previews para el SHA 69ef099; son previews y no despliegues productivos.
 - No se ejecutó shell local ni SQL remoto. La integración usa exclusivamente el PostgreSQL 18 local sintético del workflow; Neon main no se tocó.
+
+ 
+## 2026-10-30 UTC — ampliación de pruebas de aislamiento y concurrencia del helper
+
+- Se amplió `cashier-open-shift.integration.test.ts` para verificar que no se devuelve el turno de otro cajero dentro de la misma organización/sucursal ni el turno del mismo cajero en otra sucursal de la misma organización.
+- Se añadió una prueba PostgreSQL 18 de bloqueo: el `FOR SHARE OF s` mantiene bloqueado el cierre concurrente mientras el caller conserva la transacción; tras COMMIT, el cierre puede completarse.
+- Esta ampliación cambia el HEAD de PR #169; las pruebas y workflows del SHA anterior son evidencia histórica y deben revalidarse sobre el nuevo HEAD.

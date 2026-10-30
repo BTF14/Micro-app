@@ -143,6 +143,112 @@ const suite = describe.skipIf(!isDisposablePostgresUrl(databaseUrl))(
       ).resolves.toBeNull();
     });
 
+
+    it("does not return another cashier's shift in the same organization and branch", async () => {
+      const scope = await seedScope();
+      const suffix = crypto.randomUUID().replace(/-/g, "").slice(0, 12);
+      const otherUser = await client.query<{ id: string }>(
+        "INSERT INTO app_users (email, display_name) VALUES ($1, 'Other cashier') RETURNING id",
+        [`other-cashier-${suffix}@example.invalid`],
+      );
+      const otherUserId = otherUser.rows[0]!.id;
+      await client.query(
+        "INSERT INTO organization_members (organization_id, user_id, role) VALUES ($1, $2, 'cashier')",
+        [scope.organizationId, otherUserId],
+      );
+      await client.query(
+        "INSERT INTO branch_memberships (organization_id, branch_id, user_id) VALUES ($1, $2, $3)",
+        [scope.organizationId, scope.branchId, otherUserId],
+      );
+      const otherRegister = await client.query<{ id: string }>(
+        "INSERT INTO registers (organization_id, branch_id, name, code) VALUES ($1, $2, 'Other', $3) RETURNING id",
+        [scope.organizationId, scope.branchId, `other-${suffix}`],
+      );
+      await client.query(
+        "INSERT INTO register_shifts (organization_id, branch_id, register_id, cashier_user_id) VALUES ($1, $2, $3, $4)",
+        [scope.organizationId, scope.branchId, otherRegister.rows[0]!.id, otherUserId],
+      );
+
+      await expect(
+        resolveOpenCashierRegisterShift(client as unknown as DatabaseClient, scope.branchContext),
+      ).resolves.toBeNull();
+    });
+
+    it("does not return the same cashier's shift from another branch in the same organization", async () => {
+      const scope = await seedScope();
+      const suffix = crypto.randomUUID().replace(/-/g, "").slice(0, 12);
+      const otherBranch = await client.query<{ id: string }>(
+        "INSERT INTO branches (organization_id, name, slug) VALUES ($1, 'Other branch', $2) RETURNING id",
+        [scope.organizationId, `other-branch-${suffix}`],
+      );
+      const otherBranchId = otherBranch.rows[0]!.id;
+      await client.query(
+        "INSERT INTO branch_memberships (organization_id, branch_id, user_id) VALUES ($1, $2, $3)",
+        [scope.organizationId, otherBranchId, scope.userId],
+      );
+      const otherRegister = await client.query<{ id: string }>(
+        "INSERT INTO registers (organization_id, branch_id, name, code) VALUES ($1, $2, 'Other branch register', $3) RETURNING id",
+        [scope.organizationId, otherBranchId, `other-register-${suffix}`],
+      );
+      await client.query(
+        "INSERT INTO register_shifts (organization_id, branch_id, register_id, cashier_user_id) VALUES ($1, $2, $3, $4)",
+        [scope.organizationId, otherBranchId, otherRegister.rows[0]!.id, scope.userId],
+      );
+
+      await expect(
+        resolveOpenCashierRegisterShift(client as unknown as DatabaseClient, scope.branchContext),
+      ).resolves.toBeNull();
+    });
+
+    it("holds the resolved shift against a concurrent close until the caller transaction ends", async () => {
+      const scope = await seedScope();
+      const inserted = await client.query<{ id: string }>(
+        "INSERT INTO register_shifts (organization_id, branch_id, register_id, cashier_user_id) VALUES ($1, $2, $3, $4) RETURNING id",
+        [scope.organizationId, scope.branchId, scope.registerId, scope.userId],
+      );
+      const { Client } = await import("pg");
+      const closer = new Client({ connectionString: databaseUrl });
+      await closer.connect();
+      let inTransaction = false;
+
+      try {
+        await client.query("BEGIN");
+        inTransaction = true;
+        await expect(
+          resolveOpenCashierRegisterShift(client as unknown as DatabaseClient, scope.branchContext),
+        ).resolves.toMatchObject({ id: inserted.rows[0]!.id });
+
+        await closer.query("SET lock_timeout = '100ms'");
+        await expect(
+          closer.query(
+            `UPDATE register_shifts
+             SET closed_at = clock_timestamp(),
+                 closing_cash_usd = 0,
+                 closing_cash_ves = 0,
+                 closed_by_user_id = $2
+             WHERE id = $1`,
+            [inserted.rows[0]!.id, scope.userId],
+          ),
+        ).rejects.toMatchObject({ code: "55P03" });
+
+        await client.query("COMMIT");
+        inTransaction = false;
+        await closer.query("SET lock_timeout = '0'");
+        await closer.query(
+          `UPDATE register_shifts
+           SET closed_at = clock_timestamp(),
+               closing_cash_usd = 0,
+               closing_cash_ves = 0,
+               closed_by_user_id = $2
+           WHERE id = $1`,
+          [inserted.rows[0]!.id, scope.userId],
+        );
+      } finally {
+        if (inTransaction) await client.query("ROLLBACK");
+        await closer.end();
+      }
+    });
+
     it("denies a revoked branch assignment", async () => {
       const revokedAssignment = await seedScope();
       await client.query(

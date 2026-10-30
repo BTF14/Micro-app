@@ -114,7 +114,14 @@ BEGIN
     AND r.organization_id = NEW.organization_id
   FOR UPDATE OF o, b, r, bm, m, u;
 
-  IF NOT FOUND OR scope_is_active IS DISTINCT FROM true THEN
+  -- Missing register/branch/assignment rows are left to the composite FKs
+  -- below so callers receive a referential-integrity error (23503). This
+  -- trigger handles only existing-but-inactive or non-cashier scope rows.
+  IF NOT FOUND THEN
+    RETURN NEW;
+  END IF;
+
+  IF scope_is_active IS DISTINCT FROM true THEN
     RAISE EXCEPTION 'REGISTER_SHIFT_REQUIRES_ACTIVE_CASHIER_SCOPE'
       USING ERRCODE = '23514';
   END IF;

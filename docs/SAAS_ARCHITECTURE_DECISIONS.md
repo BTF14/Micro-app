@@ -58,7 +58,7 @@ Roles base recomendados: `owner`, `admin`, `cashier`, `inventory`. No introducir
 
 **Reglas de diseño obligatorias:** autorización en servidor por operación y recurso; denegar por defecto; validar organización y sucursal en cada consulta; no confiar en IDs del cliente; evitar que una organización quede sin owner activo; revocar sesiones al desactivar membresía/usuario; auditoría de cambios de rol y acciones sensibles.
 
-La matriz `docs/sdd/role-permission-decision-matrix.md` sigue siendo propuesta. Su antigua recomendación de roles de alcance exclusivamente organizacional no debe interpretarse como decisión final para una plataforma multi-sucursal. Debe reconciliarse con asignaciones de sucursal y operaciones de caja antes de aprobarla. Umbrales de descuentos, anulaciones permitidas al cajero, aprobaciones y límites monetarios requieren decisión explícita del propietario. No codificar valores sugeridos como el 10% sin aprobación.
+La matriz `docs/sdd/role-permission-decision-matrix.md` sigue siendo propuesta. Su antigua recomendación de roles de alcance exclusivamente organizacional no debe interpretarse como decisión final para una plataforma multi-sucursal. Debe reconciliarse con asignaciones de sucursal y operaciones de caja antes de aprobarla. Cada organización define sus políticas comerciales, incluidos descuentos, límites y aprobaciones; Micro app no impone porcentajes ni importes universales. La plataforma debe aplicar esa configuración en servidor y conservar snapshots auditables. La facultad para configurar políticas y ejecutar excepciones debe definirse en la matriz aprobada. Ver `docs/sdd/ORGANIZATION_COMMERCIAL_POLICY_CONFIGURATION.md`.
 
 ## 4. BCV y conversión USD/VES
 

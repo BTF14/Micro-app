@@ -106,3 +106,18 @@ Este documento contiene observaciones históricas del esquema. Las afirmaciones 
 - No hay despliegue de producción.
 - La interfaz actual es una pantalla inicial; no representa datos comerciales reales.
 - La CI ha compilado y ejecutado las pruebas del repositorio, pero todavía no prueba transacciones reales de PostgreSQL.
+
+
+---
+
+## Revisión de diseño multi-sucursal — 2026-10-30
+
+Se contrastó el DDL versionado en apps/api/migrations/0001_initial.sql con la propuesta docs/sdd/MULTI_BRANCH_DATA_MODEL.md.
+
+- Verificado en el DDL: organizations/organization_members, suppliers/products, sales/sale_items/payments, inventory_movements y audit_logs; products.stock_quantity es organización-scoped.
+- No existen tablas branches, warehouses, registers, register_shifts, branch_memberships ni inventory_balances.
+- Las referencias de inventory_movements siguen siendo polimórficas (reference_type/reference_id) sin FK al documento origen.
+- Las FKs compuestas existentes ya protegen varias relaciones por organization_id, pero no sustituyen autorización de servidor por sucursal.
+- La venta completada no queda reconciliada por constraints SQL con sus líneas/pagos; payments no tiene idempotency key propia; saldo y ledger no tienen reconciliación DB; auditoría no es append-only por permisos/DDL.
+- La propuesta define relaciones tenant-scoped y pruebas futuras, pero no es una migración ni se ejecutó contra PostgreSQL en este bloque.
+- No se accedió a Neon ni se modificó la base remota.

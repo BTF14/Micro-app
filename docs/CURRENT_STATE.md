@@ -1331,7 +1331,7 @@ Esta revisión fue estática de contenidos en GitHub; no se ejecutaron tests des
 - Cambio preparado: migración aditiva 0003 para branches/branch_memberships, resolver server-side resolveBranchContext, tests unitarios, assertions SQL cross-tenant y workflow PostgreSQL 18 efímero.
 - El resolver no está conectado a rutas y no concede permiso para vender, descontar, anular, pagar, ajustar inventario, transferir, operar caja ni gestionar usuarios.
 - La matriz de permisos por operación sigue NO APROBADA. No hay handlers comerciales.
-- Checks del HEAD de PR y revisión del diff quedan pendientes de consultar. No afirmar tests locales ejecutados.
+- En HEAD de implementación `c3ae1192f0841090ee1b3dea71ed803f1d3c1d8b`, CI, integración PostgreSQL, migration validation, Playwright, Semgrep, Trivy, secret-history, dependency review, backup smoke y Cloudflare previews finalizaron success. La primera ejecución de integración falló solo en teardown por una sucursal sintética residual; se corrigió la limpieza, se eliminó la consulta concurrente del mismo cliente pg y la ejecución posterior pasó (3/3 pruebas de branch scope, sin warning). La sincronización documental posterior debe revalidar el SHA final.
 - Neon main, datos reales, Cloudflare settings, secretos, DNS, billing y producción sin cambios; migración no aplicada remotamente.
 
 - Ampliación de validación: CI aplica también 0003 al PostgreSQL efímero y ejecuta `branch-context.integration.test.ts` contra PostgreSQL real; el workflow `postgres-migration` mantiene assertions SQL específicas. Verificar ambos resultados en el HEAD final de la PR.

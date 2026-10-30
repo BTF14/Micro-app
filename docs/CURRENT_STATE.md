@@ -1,18 +1,40 @@
 # Estado actual — Micro app
 
-**Checkpoint verificado en GitHub — 2026-10-30 UTC.** PR #175 y PR #176 están fusionadas. PR #175 merge SHA: `b8a2a9d514839bf9fa340b5b04349621b4484385`. PR #176 merge SHA y HEAD de `main` observado en esta consulta: `287ba4e3b038b434bfec1fffec140bf2acc3f29a`. PR #176 tuvo HEAD `d46871f1f23387aeb98a0b25f2bbed9bb155e249`, 12/12 check-runs success y 10/10 workflow runs success; diff de seis archivos documentales (+73/-39), sin reviews formales ni threads. El merge SHA identifica el estado observado en esta consulta, no un HEAD perpetuo.
+**Checkpoint vivo verificado — 2026-10-30 UTC.** Repositorio `BTF14/Micro-app`; `main` = `82386c6e9300e06f8fa209aa52995b939a72442a`, merge SHA de PR #177. PR #177 está fusionada; no había PR abiertas en la consulta de continuidad. En la validación post-merge se observaron 9/9 check-runs success y los seis contextos requeridos success; no extrapolar a otros SHA.
 
-**GitHub vivo:** no había PR abiertas. La rama `main` informa `protected=true` y seis contextos requeridos. En el SHA actual se observaron nueve check-runs completados en success: siete workflows de GitHub Actions y dos checks Cloudflare Pages/Workers. Los seis contextos obligatorios están incluidos y en success. No extrapolar estos resultados a commits futuros.
+## Cloudflare — observación autenticada de solo lectura
+- **Workers / `micro-app-api`:** Active Deployment en Producción, versión `49975c43-4161-4809-9c00-8ba83e53e6a0`, Build ID `957478f6-0f43-4b5c-932a-621be067d6d9`, commit `82386c6e9300e06f8fa209aa52995b939a72442a` (`main`). El panel mostró **100% de asignación de tráfico** a esa versión. La vista de métricas mostró 0 req/sec y 0% de error en el instante observado; son métricas puntuales, no prueba de ausencia de tráfico histórico ni de CORS correcto.
+- **Pages / `micro-app`:** rama de producción `main`, SHA `82386c6e9300e06f8fa209aa52995b939a72442a`, deployment `https://cc23ff0c.micro-app-63i.pages.dev`. La lista visible de variables de entorno de Pages apareció vacía y `VITE_API_BASE_URL` no estaba presente. No se reveló ni modificó ningún valor.
+- **Corrección de interpretación:** un comentario anterior de #78 describía 0% para `49975c43`; la observación posterior y directa de Active Deployment mostró 100% asignado. La lectura anterior no debe usarse como estado actual. No se cambió tráfico, despliegue, variables, secretos, DNS ni configuración.
 
-**Issue #78 — CORS pendiente.** Sigue abierta. El código configura CORS exacto contra `FRONTEND_ORIGIN`, métodos GET/POST/PATCH/DELETE/OPTIONS, headers Content-Type/Authorization/Idempotency-Key, credenciales y max-age 600. Los tests de Hono verifican un preflight simulado autorizado y la ausencia de `Access-Control-Allow-Origin` para un origen externo; no demuestran la respuesta del Worker desplegado. En esta sesión se intentaron los dos comandos `curl -X OPTIONS` solicitados contra `/health`; ambos terminaron con curl exit 6 (`Could not resolve host`). No se obtuvo status HTTP ni headers. Es una limitación de DNS/salida de red del entorno, no evidencia de fallo del Worker ni de CORS. No repetir hasta disponer de un entorno con salida de red completa; el propietario puede ejecutar los comandos desde su equipo y compartir únicamente status y headers `Access-Control-*`, sin cookies/tokens.
+## Issue #78 — CORS y configuración efectiva
+Sigue **ABIERTA**. La versión activa del Worker y el deployment de Pages están identificados, pero **CORS continúa NO VERIFICADO por HTTP real**. Los tests de Hono son simulados y no sustituyen dos preflight reales:
+1. `Origin: https://micro-app-63i.pages.dev`, `Access-Control-Request-Method: GET`, `Access-Control-Request-Headers: authorization,content-type`.
+2. Mismo preflight con `Origin: https://attacker.example`.
 
-**Issue #53 — bloqueada por decisión de producto.** Sigue abierta. `docs/sdd/role-permission-decision-matrix.md` continúa **NO APROBADA**. No inferir permisos por `owner`, `admin`, `cashier` o `inventory`; no crear endpoints comerciales, middleware ni mapeos rol→operación antes de aprobación explícita del propietario. `resolveTenantContext`, `resolveBranchContext` y `resolveOpenCashierRegisterShift` resuelven contexto, no autorizan operaciones. No afirmar ledger ni auditoría comercial implementados.
+Registrar status HTTP y headers `Access-Control-*` solamente. No compartir cookies, tokens ni secretos. La ausencia de `VITE_API_BASE_URL` en Pages es una discrepancia de configuración visible que debe investigarse antes de declarar integrado el frontend; no inferir un valor ni modificarlo sin plan y aprobación.
 
-**Otros límites:** no usar Neon `main` como laboratorio; PostgreSQL desechable es el primer entorno de pruebas. No ejecutar migraciones remotas, tocar datos reales, secretos, DNS, billing o producción, ni desplegar producción. Presupuesto objetivo USD 0. No afirmar revisión Claude/Codex de PR #172: sigue pendiente/no ejecutada. No confundir previews/tests con certificación productiva.
+## Issue #53 — permisos comerciales
+Sigue **ABIERTA**. La dirección estructural acordada es **un único rol por miembro y organización**, almacenado en `organization_members.role`. `branch_memberships` solo concede/revoca acceso a sucursales; no contiene roles y no permite que una persona sea `cashier` en una sucursal e `inventory` en otra. El rol organizacional aplica uniformemente en la organización. El acceso efectivo a cada sucursal se limita por las asignaciones correspondientes.
 
-**Siguiente orden:** (1) obtener los dos preflight HTTP reales desde una máquina con salida de red completa y evaluar status/headers; (2) mantener #78 abierta hasta evidencia suficiente; (3) obtener aprobación explícita de la matriz #53; (4) solo después diseñar autorización por operación, aislamiento cross-tenant/cross-branch, auditoría, idempotencia y pruebas negativas en PostgreSQL desechable.
+La matriz `docs/sdd/role-permission-decision-matrix.md` permanece **NO APROBADA**: esta decisión estructural no aprueba permisos de operaciones. No crear endpoints comerciales, middleware, asignaciones de permisos ni reglas rol→operación antes de aprobación explícita. Las políticas comerciales pertenecen a cada organización; quién puede configurarlas o ejecutar excepciones sigue pendiente. Apertura y cierre ordinario de caja deben seguir el modelo de turnos; no introducir cierres de supervisor incompatibles.
+
+## Límites permanentes
+- No desplegar ni cambiar tráfico/configuración de Cloudflare; no modificar secretos, variables, DNS o billing.
+- No usar Neon `main` como laboratorio ni ejecutar migraciones remotas; PostgreSQL desechable primero.
+- No tocar datos reales. Presupuesto objetivo USD 0.
+- No afirmar preparación comercial, CORS productivo, ledger o auditoría comercial implementados.
+- La revisión independiente Claude/Codex de PR #172 sigue pendiente/no ejecutada; no convertirla en aprobación.
+
+## Próximo orden reproducible
+1. Obtener desde un equipo con conectividad real los dos preflight OPTIONS de #78 y compartir únicamente status + headers `Access-Control-*`.
+2. Investigar, en solo lectura, por qué Pages muestra vacía la lista de variables y falta `VITE_API_BASE_URL`; contrastar con el código y build settings sin cambiar configuración.
+3. Mantener #53 bloqueada hasta que el propietario apruebe la matriz completa de permisos por operación.
+4. Solo después de aprobarla, diseñar autorización server-side y pruebas negativas en PostgreSQL desechable.
 
 ---
+> **Historial:** las entradas inferiores se conservan por trazabilidad. Sus SHA y estados describen su fecha; este checkpoint y GitHub en vivo prevalecen.
+
 > **Archivo histórico — no usar como estado operativo.** Las entradas siguientes se conservan para trazabilidad y describen estados de su fecha. GitHub en vivo y el checkpoint superior prevalecen.
 
 

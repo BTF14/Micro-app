@@ -1,4 +1,20 @@
-# Estado vivo de la rama de continuidad — 2026-10-30 UTC
+# Estado vivo verificado tras PR #160 — 2026-10-30 UTC
+
+- **main:** `be6f19486caf5cf3605c6ca6615f87e305822ea7` (merge squash de PR #160). GitHub confirmó el ref `refs/heads/main` en este SHA.
+- **PR #160:** fusionada el 2026-10-30 a las 04:36:49 UTC. HEAD revisado `fcb4269a459831be7858358c56e90346d5e4e9a6`; merge commit `be6f19486caf5cf3605c6ca6615f87e305822ea7`.
+- **Checks de PR #160 en el HEAD exacto:** 12 check runs completados con `success`: verify, Chromium authentication smoke tests, postgres-migration, Semgrep SAST, Trivy, secret-history scan, dependency review, project progress, Cloudflare Pages y Workers Builds (Trivy y secret-history aparecen además en runs de push/PR). No extrapolar estos resultados a commits posteriores.
+- **Alcance #160:** nueve archivos documentales; sin cambios de aplicación, migraciones, workflows, secretos, configuración de proveedores, DNS, billing ni SQL.
+- **Revisión:** Codex no pudo completar la revisión por cuota agotada en un SHA anterior; se aplicó revisión manual fallback del diff final. No hay reviews humanas ni threads inline registrados. La revisión manual no encontró problemas materiales pendientes.
+- **Cloudflare:** Pages y Workers preview del HEAD `fcb4269` finalizaron correctamente. No se obtuvo evidencia de un despliegue productivo posterior al merge; no afirmar que producción se desplegó ni que se validó.
+- **Protección de `main`:** la API actual devolvió HTTP 403 `Resource not accessible by integration`. SECURITY_ROADMAP conserva la última lectura histórica del 26 oct como histórica, no como estado vivo. No afirmar configuración actual de protección sin nueva evidencia.
+- **Continuidad:** el protocolo de checkpoints incrementales está en `docs/AI_COLLABORATION_AND_PR_POLICY.md`; el punto operativo está en `docs/WORK_CHECKPOINT.md`.
+- **Estado del producto:** NO LISTO para operación comercial. No existen handlers comerciales; la matriz de permisos sigue sin aprobación; el contexto tenant no aplica permisos por operación ni sucursal.
+- **Siguiente prioridad:** cerrar la arquitectura de autorización por operación y sucursal, ERD organización→sucursal→almacén/caja/turno, consistencia/idempotencia financiera y control de abuso/rate limiting antes de endpoints comerciales. Revisar el handoff y checkpoint antes de actuar.
+
+---
+
+## Checkpoint histórico pre-merge de PR #160
+
 
 - **PR #160:** https://github.com/BTF14/Micro-app/pull/160; abierta, no draft, no fusionada, `mergeable=true`; base `main` SHA `dbc7b6c9cf57113a38cddb4155d2917cc3aaeafc` (revalidar en vivo al reanudar). HEAD anterior a esta sincronización: `bcc667fc6ccd154b8e4f93f041e33d16c29195f0`; checkpoint actualizado después.
 - **CI del HEAD anterior:** workflow CI `41002801690` estaba `pending`; otros siete workflows (Dependency review, Project progress dashboard, Database migration validation, Secret history scan, Security scan, Semgrep SAST y Playwright E2E) terminaron `success`. Combined status vacío. No declarar CI global verde. Los nuevos commits requieren nueva comprobación de su SHA.

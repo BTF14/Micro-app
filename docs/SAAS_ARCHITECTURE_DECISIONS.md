@@ -178,3 +178,20 @@ No saltar directamente a migraciones ni endpoints comerciales mientras la matriz
 ## 12. Referencias del proyecto
 
 Consultar `docs/INSPIRATION.md` y `docs/POS_REFERENCE_MATRIX.md` para patrones funcionales de OSPOS, NexoPOS, Lakasir y POSNext. Son referencias para requisitos y pruebas, no permiso para copiar código. Revisar licencias antes de reutilizar cualquier material.
+
+
+## 13. Estrategia de consultas y conexiones Neon/Workers
+
+La optimización debe reducir conexiones y trabajo de base de datos sin debilitar la consistencia:
+
+- Para búsquedas/lecturas independientes de una sola consulta o batch fijo, evaluar el helper HTTP `neon()` de `@neondatabase/serverless`; evita abrir una sesión WebSocket interactiva para cada lectura.
+- Reservar `Client` con transacción interactiva para operaciones que realmente necesitan varias sentencias atómicas: venta, pago, stock, ledger, devolución, recepción y transferencia.
+- No usar el driver HTTP para simular una transacción de varias sentencias: no ofrece la misma semántica interactiva.
+- El código actual `apps/api/src/database.ts` crea un `Client` request-scoped en `withDatabaseClient`; los endpoints de autenticación también lo usan para lecturas sencillas. Es un punto de medición/optimización, no un defecto demostrado ni permiso para refactorizar a ciegas.
+- Antes de cambiar el helper, comparar en PostgreSQL efímero/preview aislado: latencia p50/p95, número de conexiones/sesiones, compute, errores, comportamiento en Workers y pruebas de integración. Mantener transacciones con `Client` hasta que se demuestre el patrón seguro.
+- Cloudflare Hyperdrive es una opción futura de pooling, no una dependencia asumida: no está configurado en el repo y debe verificarse disponibilidad, cuotas y coste $0 antes de adoptarlo.
+- Evitar N+1: la búsqueda devuelve campos necesarios en una sola consulta, y las pantallas cargan listas con límites/paginación. No ejecutar una consulta por cada resultado.
+- Índices observados en `0001_initial.sql`: unicidad tenant-scoped para SKU y barcode y B-tree sobre `(organization_id, lower(name))`. Barcode/SKU exactos pueden aprovechar índices únicos. Para nombre, medir plan de ejecución de prefijo normalizado; no asumir que `ILIKE '%texto%'` usará el índice B-tree. Considerar `text_pattern_ops` o trigram/GIN solo si un benchmark realista demuestra necesidad y el coste de escritura/almacenamiento es aceptable.
+- Usar `EXPLAIN (ANALYZE, BUFFERS)` con datos sintéticos representativos, nunca datos de clientes, para justificar índices. No añadir índices redundantes por anticipado: elevan almacenamiento y coste de escrituras.
+
+**Criterio:** optimizar primero consultas, conexión y paginación; introducir caché distribuida o pooling solo cuando las mediciones demuestren un cuello de botella y la cuota gratuita vigente lo soporte.

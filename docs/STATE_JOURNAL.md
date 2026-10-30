@@ -3,7 +3,7 @@
 - GitHub confirmó PR #157 cerrada/fusionada. Main quedó en `1ee1808af4aae484a71dc24750237ff4f4d934a0`; HEAD de PR `6eb464c950f195ec67350977575aef77e9790e1d`.
 - El conector devolvió ocho workflow runs para el HEAD exacto y todos terminaron success. Combined status vacío y no se recuperaron runs post-merge para el merge SHA; no afirmar CI post-merge.
 - La página de PRs abiertas no mostró PRs abiertas en la última consulta.
-- Se inspeccionaron los 15 YAML de `.github/workflows`: ocho ejecutan en push + pull_request sin filtros, con potencial duplicación en ramas que ya tienen PR. No se modificaron.
+- Se inspeccionaron los 15 YAML de `.github/workflows`: siete ejecutan en push + pull_request sin filtros, con potencial duplicación en ramas que ya tienen PR. `sdd-docs-validation` limita ambos eventos a `main` y paths documentales. No se modificaron.
 - No hay workflow de GitHub Actions que despliegue Pages/Workers. `apps/api/wrangler.toml` configura `workers.dev`, sin routes/custom_domain. Los builds Cloudflare observados en historial son compatibles con Git integration externa; no se pudo inspeccionar su dashboard.
 - Se documentaron riesgos, límites y recomendaciones en `docs/WORKFLOW_AND_DEPLOYMENT_AUDIT.md`; el análisis distingue siete workflows sin filtros de `sdd-docs-validation`, que sí filtra `main` y paths.
 - Se abrió [PR #158](https://github.com/BTF14/Micro-app/pull/158) en borrador para validar esta actualización; no se fusionó.

@@ -2,7 +2,7 @@
 
 - Main = `1ee1808af4aae484a71dc24750237ff4f4d934a0`; PR #157 fusionada (HEAD `6eb464c950f195ec67350977575aef77e9790e1d`). Ocho workflow runs devueltos para ese HEAD finalizaron success; no se recuperó evidencia post-merge para el merge SHA.
 - Auditoría de 15 workflows en [WORKFLOW_AND_DEPLOYMENT_AUDIT.md](WORKFLOW_AND_DEPLOYMENT_AUDIT.md). No existe workflow de deploy de Cloudflare en GitHub Actions; los builds de Cloudflare parecen gestionados por Git integration externa, no inspeccionable desde las herramientas actuales.
-- Ocho workflows ejecutan tanto en `push` como en `pull_request` sin filtros de branch/path, por lo que commits a una rama con PR pueden duplicar runs. Antes de optimizar, verificar branch protection y contexts requeridos.
+- Siete workflows (`ci`, `migration-check`, `playwright-e2e`, `project-progress`, `secret-history-scan`, `security-scan` y `semgrep`) ejecutan tanto en `push` como en `pull_request` sin filtros de branch/path, por lo que commits a una rama con PR pueden duplicar runs. `sdd-docs-validation` también escucha ambos eventos, pero limita `main` y paths documentales. Antes de optimizar, verificar branch protection y contexts requeridos.
 - No fusionar a main sin autorización explícita para el posible deploy automático externo. Producción sigue NO LISTA.
 - Prioridades: (1) branch protection/rulesets y Cloudflare dashboard en solo lectura; (2) optimización de triggers preservando checks; (3) inventario de queries/callers; (4) ERD branch/warehouse/register/shift; (5) matriz de permisos aprobada antes de endpoints o migraciones.
 

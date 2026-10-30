@@ -12,7 +12,7 @@ Sigue **ABIERTA**. La versión activa del Worker y el deployment de Pages están
 1. `Origin: https://micro-app-63i.pages.dev`, `Access-Control-Request-Method: GET`, `Access-Control-Request-Headers: authorization,content-type`.
 2. Mismo preflight con `Origin: https://attacker.example`.
 
-Registrar status HTTP y headers `Access-Control-*` solamente. No compartir cookies, tokens ni secretos. La ausencia de `VITE_API_BASE_URL` en Pages es una discrepancia de configuración visible que debe investigarse antes de declarar integrado el frontend; no inferir un valor ni modificarlo sin plan y aprobación.
+Registrar status HTTP y headers `Access-Control-*` solamente. No compartir cookies, tokens ni secretos. El dashboard vacío no demuestra que falte la URL: `apps/web/.env.production` versionado define el Worker y `vite.config.ts` lo carga con `loadEnv`. La página pública muestra el enlace “Continuar con Google” apuntando a `https://micro-app-api.btfcasheb.workers.dev/auth/google`. La inspección no pudo leer el bundle JS ni confirmar el valor compilado para las demás llamadas API; tampoco prueba CORS.
 
 ## Issue #53 — permisos comerciales
 Sigue **ABIERTA**. La dirección estructural acordada es **un único rol por miembro y organización**, almacenado en `organization_members.role`. `branch_memberships` solo concede/revoca acceso a sucursales; no contiene roles y no permite que una persona sea `cashier` en una sucursal e `inventory` en otra. El rol organizacional aplica uniformemente en la organización. El acceso efectivo a cada sucursal se limita por las asignaciones correspondientes.

@@ -1,3 +1,28 @@
+# Checkpoint vigente — diseño ERD multi-sucursal (2026-10-30 UTC)
+
+**Rama:** docs/multibranch-erd-architecture-20261030  
+**Base:** 894895cfeee1c3d67b1e92bf1fae7d0c30cd36f9 (merge verificado PR #163)  
+**Alcance:** diseño documental; no código, migración, SQL ni infraestructura.
+
+## Bloque previo completado: PR #163
+- Merge commit: 894895cfeee1c3d67b1e92bf1fae7d0c30cd36f9.
+- HEAD probado: 4b9a2b3993115b798ae4a78e3e0318dbdf50c24e.
+- Ocho workflows success: CI, Playwright Chromium, postgres migration, Semgrep, Trivy, secret history, dependency review y project progress.
+- Diff manual revisado; 8 archivos documentales; no reviews humanas ni threads inline; Codex no disponible/no ejecutado.
+- No se tocó producción, Neon, Cloudflare settings, secretos, datos, DNS ni billing.
+
+## Bloque actual
+- Nuevo diseño: docs/sdd/MULTI_BRANCH_DATA_MODEL.md.
+- Contrasta DDL real apps/api/migrations/0001_initial.sql con el objetivo organización→sucursal→almacén/caja/turno.
+- Documenta membresía vs asignación de sucursal, FKs tenant-scoped, stock balance+ledger, transferencias, caja/turnos, integridad venta/pagos, idempotencia, último owner y auditoría.
+- La matriz de permisos continúa NO APROBADA. Diseño no autoriza implementación.
+- No se ejecutaron pruebas runtime porque no hay código/SQL nuevo; los criterios de aceptación quedan especificados para la fase de implementación.
+- PR abierta: [#164](https://github.com/BTF14/Micro-app/pull/164). Revisión manual del diff documental de 9 archivos completada; no se detectaron hallazgos materiales pendientes.
+- Se iniciaron los 8 workflows requeridos para la PR; los resultados de cualquier SHA anterior no se reutilizan. Verificar todos los workflows sobre el HEAD vivo de la PR inmediatamente antes de merge.
+- No hay reviews humanas ni threads inline; Codex no se ejecutó. No fusionar hasta que todos los checks requeridos del SHA exacto finalicen correctamente.
+
+---
+
 # Checkpoint de trabajo vigente — PR de políticas comerciales por organización (2026-10-30 UTC)
 
 **Rama:** `docs/org-policy-architecture-20261030`  

@@ -1,3 +1,18 @@
+# Estado vivo — 2026-10-30 UTC (post PR #163)
+
+- GitHub confirma PR #163 fusionada; merge commit y main verificado: 894895cfeee1c3d67b1e92bf1fae7d0c30cd36f9.
+- PR abiertas al comprobar tras el merge: ninguna.
+- Ocho workflows del HEAD de PR #163 (4b9a2b3993115b798ae4a78e3e0318dbdf50c24e) finalizaron success: CI, Playwright Chromium auth smoke, Database migration validation, Semgrep SAST, Trivy Security, Secret history, Dependency review y Project progress. Son checks del HEAD de PR, no una ejecución post-merge independiente.
+- PR #163 fue documental (8 archivos); no cambió runtime, SQL, migraciones, Neon, Cloudflare, secretos, DNS, billing ni producción.
+- Política comercial: cada organización decide sus reglas, descuentos, límites y aprobaciones; Micro app no fija porcentajes ni umbrales universales.
+- La matriz de permisos sigue NO APROBADA. No implementar autorizaciones comerciales/roles sensibles basadas solo en la propuesta.
+- Nueva rama de diseño: docs/multibranch-erd-architecture-20261030, basada en el merge #163. Añade docs/sdd/MULTI_BRANCH_DATA_MODEL.md como propuesta, no implementación.
+- Estado de esquema confirmado en apps/api/migrations/0001_initial.sql: productos.stock_quantity está a nivel organización; no existen branches, warehouses, registers ni shifts; ventas/pagos/stock mantienen brechas de integridad documentadas.
+- No se ejecutó SQL ni se accedió a Neon main; no hay handlers comerciales.
+- Siguiente gate: revisar el modelo ERD, reconciliar matriz de roles, cerrar decisiones operativas pendientes y diseñar migración aditiva con pruebas PostgreSQL efímeras antes de código.
+
+---
+
 # Checkpoint adicional — políticas comerciales por organización (2026-10-30 UTC)
 
 - Rama de trabajo: `docs/org-policy-architecture-20261030`.

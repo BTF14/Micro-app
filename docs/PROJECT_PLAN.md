@@ -912,3 +912,13 @@ No declarar comercial/producción listo hasta completar flujos, seguridad, prueb
 - Diseño de referencia: `docs/sdd/ORGANIZATION_COMMERCIAL_POLICY_CONFIGURATION.md`.
 - Estado: diseño documental; no implementado. La matriz de roles sigue pendiente de aprobación y bloquea la implementación de autorización comercial.
 - Criterios previos a código: ERD multi-sucursal; alcance de roles y asignaciones aprobado; integridad venta/líneas/pagos/stock; idempotencia y auditoría; pruebas PostgreSQL efímeras cross-tenant/cross-branch, concurrencia y rollback.
+
+
+## ERD multi-sucursal — 2026-10-30
+
+- Diseño de referencia: docs/sdd/MULTI_BRANCH_DATA_MODEL.md.
+- Objetivo: organización como tenant; sucursal como unidad operativa; almacén como ámbito de stock; caja/turno como ámbito de cobro; asignaciones de usuario por sucursal.
+- Stock objetivo: ledger de movimientos + balance transaccional por almacén/producto; migración desde products.stock_quantity solo con backfill y reconciliación.
+- Operaciones: venta/pago/recepción/transferencia con claves tenant-scoped, FKs compuestas, transacciones, idempotencia y auditoría.
+- Estado: propuesta documental, no implementada. La matriz de roles sigue pendiente de aprobación; no crear handlers comerciales ni migraciones hasta cerrar contratos.
+- Criterios previos a implementación: decidir ventas fuera de caja, flujo de recepción/transferencias, referencia tipada de movimientos, pagos/reversos y matriz de permisos; diseñar migración aditiva y pruebas PostgreSQL efímeras cross-tenant/cross-branch, concurrencia, rollback y reconciliación.

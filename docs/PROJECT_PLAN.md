@@ -903,3 +903,12 @@ Dirección de producto: una plataforma multi-organización, multi-sucursal y mul
 6. Benchmarks Neon/Cloudflare y definición de cuotas comerciales.
 
 No declarar comercial/producción listo hasta completar flujos, seguridad, pruebas, backups, observabilidad y capacidad.
+
+
+## Arquitectura comercial configurable por organización — 2026-10-30
+
+- La plataforma no impone reglas universales de descuentos ni límites comerciales. Cada organización define si los permite y sus condiciones.
+- La capacidad técnica prevista incluye configuración versionada por organización, evaluación server-side, aislamiento tenant-scoped, snapshots históricos y auditoría.
+- Diseño de referencia: `docs/sdd/ORGANIZATION_COMMERCIAL_POLICY_CONFIGURATION.md`.
+- Estado: diseño documental; no implementado. La matriz de roles sigue pendiente de aprobación y bloquea la implementación de autorización comercial.
+- Criterios previos a código: ERD multi-sucursal; alcance de roles y asignaciones aprobado; integridad venta/líneas/pagos/stock; idempotencia y auditoría; pruebas PostgreSQL efímeras cross-tenant/cross-branch, concurrencia y rollback.

@@ -4,7 +4,7 @@
 
 - Repositorio: `BTF14/Micro-app`.
 - PR [#166](https://github.com/BTF14/Micro-app/pull/166) fusionada primero; merge commit `8a16b4bf70e3b35c45e91366148f4a37aa43b5e7`.
-- PR [#167](https://github.com/BTF14/Micro-app/pull/167) fusionada después; merge commit y HEAD de main confirmado por la operación de merge: `c1cd8650db33aa4a249eaf1f55d321513d576e10`.
+- PR [#167](https://github.com/BTF14/Micro-app/pull/167) fusionada después; merge commit: `c1cd8650db33aa4a249eaf1f55d321513d576e10`.
 - PR #166: 8/8 workflows Actions success en su HEAD final `4cee6e2ff6bfb8f3eecd85b4ff9212c1ab6d98fd`.
 - PR #167: 10/10 workflows Actions success en su HEAD final `ad45911368e9e9a714ebbe014de2d84a7b3cf1de`, incluyendo CI, migration validation 0001–0004, Playwright, backup restore smoke PostgreSQL 18, Semgrep, Trivy, Dependency Review, secret history, SDD validation y dashboard.
 - No hubo reviews formales de GitHub ni threads inline en #166/#167. Codex review no pudo completarse por cuota. Se realizó revisión manual de los diffs y de la migración/assertions/tests; no presentar esto como aprobación de Codex ni review humana.

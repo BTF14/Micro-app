@@ -1,16 +1,26 @@
-# Checkpoint operativo — post-merge PR #176
+# Checkpoint operativo — reconciliación post-PR #177
 
-**Verificación GitHub — 2026-10-30 UTC:** PR #175 y #176 fusionadas. Merge SHA de #176 y HEAD de `main` observado en esta consulta: `287ba4e3b038b434bfec1fffec140bf2acc3f29a`. Cero PR abiertas. El SHA actual tiene nueve check-runs success (siete workflows Actions y dos checks Cloudflare); los seis contextos obligatorios de branch protection están en success. PR #176 HEAD `d46871f1f23387aeb98a0b25f2bbed9bb155e249`: 12/12 check-runs success, seis archivos documentales, +73/-39, cero reviews formales y cero threads. No convertir esta observación fechada en una afirmación perpetua del HEAD.
+**Verificación GitHub — 2026-10-30 UTC:** PR #177 fusionada; merge SHA y HEAD de `main` observado: `82386c6e9300e06f8fa209aa52995b939a72442a`. Cero PR abiertas al inicio del bloque. En la validación post-merge de #177: 9/9 check-runs success y seis contextos requeridos success. No extrapolar esos resultados a nuevos commits.
+
+## Cloudflare — evidencia autenticada, solo lectura
+- Worker `micro-app-api`: Active Deployment en Producción; versión `49975c43-4161-4809-9c00-8ba83e53e6a0`, Build ID `957478f6-0f43-4b5c-932a-621be067d6d9`, commit `82386c6e9300e06f8fa209aa52995b939a72442a`; panel mostró 100% de asignación de tráfico.
+- Pages `micro-app`: production branch `main`, SHA `82386c6e9300e06f8fa209aa52995b939a72442a`, URL `https://cc23ff0c.micro-app-63i.pages.dev`.
+- Variables visibles de Pages: lista vacía; `VITE_API_BASE_URL` ausente. No se inspeccionaron valores secretos ni se modificó configuración.
+- Una observación anterior de #78 registró 0% para esta versión en otra vista; la inspección posterior de Active Deployment mostró 100% asignado. No confundir asignación con tasa de éxito o volumen de solicitudes.
 
 ## Estado de issues
-- **#78:** abierta. CORS no verificado mediante preflight HTTP real. Los dos curl exactos intentados desde este sandbox fallaron por DNS (exit 6, `Could not resolve host`); no se recibió status ni headers. Requiere ejecución desde equipo con salida de red completa.
-- **#53:** abierta. Matriz de permisos **NO APROBADA**. No implementar endpoints/middleware/mapeos comerciales.
+- **#78:** abierta. CORS no verificado mediante preflight HTTP real. Obtener dos OPTIONS desde entorno con conectividad real: origin permitido `https://micro-app-63i.pages.dev` y externo `https://attacker.example`. Registrar solo status y headers `Access-Control-*`. Investigar ausencia de `VITE_API_BASE_URL` en solo lectura.
+- **#53:** abierta. Un rol por miembro/organización en `organization_members.role`; `branch_memberships` solo asigna sucursales, sin roles por sucursal. Matriz de permisos por operación **NO APROBADA**. No implementar autorización comercial antes de aprobación.
 
 ## Límites
-La implementación y los tests de CORS en código no certifican el Worker desplegado. No usar Neon `main` como laboratorio; no ejecutar migraciones remotas; no tocar datos reales, secretos, DNS, billing, Cloudflare ni producción. No desplegar producción. Presupuesto USD 0. La revisión independiente Claude/Codex de PR #172 sigue pendiente/no ejecutada.
+No usar Neon `main` como laboratorio; no ejecutar migraciones remotas ni tocar datos reales. No cambiar Cloudflare, tráfico, variables, secretos, DNS, billing ni producción. No desplegar. Presupuesto USD 0. La revisión independiente Claude/Codex de PR #172 sigue pendiente/no ejecutada. El inventario por sucursal no está implementado; el stock sigue organizacional. Caja conserva modelo de turnos y cierre ordinario.
 
 ## Próxima acción
-Obtener los dos preflight OPTIONS reales de #78 desde un entorno con red completa; evaluar status y todos los headers Access-Control-* y mantener el issue abierto hasta evidencia suficiente. Después resolver con el propietario la matriz #53; solo tras aprobación diseñar autorización por operación y pruebas negativas en PostgreSQL desechable.
+Completar preflight CORS desde entorno con red real y revisar la variable ausente de Pages en solo lectura. Después obtener aprobación explícita de la matriz comercial; mantener endpoints comerciales bloqueados.
+
+---
+> **Archivo histórico — no usar como estado operativo.** Los checkpoints anteriores se preservan para trazabilidad; GitHub en vivo y este checkpoint superior prevalecen.
+
 
 ---
 > **Archivo histórico — no usar como estado operativo.** Los checkpoints anteriores se preservan para trazabilidad; GitHub en vivo y el checkpoint superior prevalecen.

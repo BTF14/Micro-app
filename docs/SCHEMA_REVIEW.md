@@ -50,6 +50,7 @@ No se encontraron rutas HTTP comerciales en el registro de Hono de `apps/api/src
 - Política de inventario: stock no negativo, reservas, transferencias, devoluciones, costo/valoración y ledger.
 - Política de idempotencia para ventas, pagos, compras, recepciones y devoluciones.
 - Auditoría append-only, último owner y revocación inmediata de sesiones al desactivar usuarios/membresías.
+- Identidad/rol global de operador de plataforma para gestionar allowlist, separada de `owner/admin` de cada organización; la nota con un correo específico en `SECURITY_PLAN_2026.md` no constituye por sí sola una decisión aprobada.
 
 ### Alcance y límites de la revisión
 

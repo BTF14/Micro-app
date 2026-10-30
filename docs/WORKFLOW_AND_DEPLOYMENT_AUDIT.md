@@ -1,5 +1,17 @@
 # Auditoría corregida de GitHub Actions y despliegues — 2026-10-30 UTC
 
+## Addendum vigente — PR #178, SHA exacto y previews Cloudflare
+
+**Snapshot verificado antes de esta sincronización documental:** `a45d84eb5f51e50d3a24f9d6858b5d14efb3ce6b` en `docs/reconcile-role-model-and-cloudflare-20261030`; base `main` = `82386c6e9300e06f8fa209aa52995b939a72442a`; 68 ahead / 0 behind. La PR permanece OPEN/DRAFT/NOT MERGED.
+
+- GitHub Actions: 11/11 workflow runs asociados al SHA exacto `a45d84eb5f51e50d3a24f9d6858b5d14efb3ce6b` terminaron `success`: nueve eventos pull_request y dos eventos push. Los run IDs y enlaces están en `docs/CURRENT_STATE.md`.
+- Cloudflare Pages notificó deployment exitoso para commit `a45d84e`: [commit preview](https://16be43d4.micro-app-63i.pages.dev) y [branch preview](https://docs-reconcile-role-model-an.micro-app-63i.pages.dev).
+- Cloudflare Workers notificó deployment exitoso para commit `a45d84e`: [commit preview](https://d0883f1d-micro-app-api.btfcasheb.workers.dev) y [branch preview](https://docs-reconcile-role-model-and-cloudflare-20261030-micro-app-api.btfcasheb.workers.dev). GET `/health` en el commit preview respondió `status=ok`.
+- La preview Pages muestra el mensaje de entorno aislado y deshabilita login/acceso a datos. Estos resultados son previews; no certifican producción ni la integración API/frontend completa.
+- Los dos OPTIONS reales contra el Worker de producción no pudieron ejecutarse por DNS en este entorno (curl exit 6 para ambos origins); no se obtuvo status ni headers CORS. El bundle JS publicado tampoco se pudo inspeccionar.
+- No se modificaron deployments, tráfico, variables, secretos, DNS, billing ni producción. El commit documental que añade este addendum crea un SHA nuevo, cuyos checks deben verificarse por separado.
+
+
 ## Addendum vigente — Cloudflare tras PR #177 (2026-10-30 UTC, sesión autenticada de solo lectura)
 
 Este addendum sustituye las observaciones anteriores sobre el entorno efectivo de los builds de PR #177 / merge a `main`; el historial se conserva.

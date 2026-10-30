@@ -1,29 +1,29 @@
 # Checkpoint operativo — PR #178 y continuidad — 2026-10-30 UTC
 
-**Último SHA consultado antes de este commit de documentación:** `d8a00018437d1f82dfbe358f9112704f53cf3c95`; este commit actualiza la punta, así que resolver el HEAD real antes de actuar. Base `main`: `82386c6e9300e06f8fa209aa52995b939a72442a`. Comparación previa: 66 ahead / 0 behind. PR #178 OPEN, DRAFT, NOT MERGED; GitHub reportó `mergeable=true`.
+**Snapshot verificado antes de esta sincronización documental:** rama `docs/reconcile-role-model-and-cloudflare-20261030`, HEAD `a45d84eb5f51e50d3a24f9d6858b5d14efb3ce6b`; base `main` = `82386c6e9300e06f8fa209aa52995b939a72442a`; 68 ahead / 0 behind. PR #178 OPEN, DRAFT, NOT MERGED; último reporte `mergeable=true`. Diff 13 archivos documentales (343 adiciones / 235 eliminaciones); sin runtime, SQL, migraciones ni workflows. 0 reviews formales y 0 threads inline. No marcar Ready ni fusionar sin autorización explícita.
 
-**CI/previews del SHA padre:** Actions mostró dos runs queued (`Security scan` y `Secret history scan`), sin evidencia de los demás workflows; CI **PENDIENTE / INCOMPLETO**. Pages reportó build en progreso para `d8a0001`; Worker preview success más reciente correspondía a `c5e48b65`, no a este SHA. No extrapolar checks ni previews anteriores.
+**Checks del SHA exacto `a45d84eb5f51e50d3a24f9d6858b5d14efb3ce6b`:** 11/11 workflow runs Actions en `success` (9 PR + 2 push). Cloudflare Pages y Workers previews reportaron éxito para el mismo SHA. Este commit de sincronización crea otro SHA; reconsultar todos los checks y previews de la nueva punta. No se confirmó branch protection (403 en auditoría anterior).
 
-**Revisión:** 13 archivos documentales; sin runtime, SQL, migraciones ni workflows. En la consulta previa: 353 adiciones / 235 eliminaciones; 0 reviews formales y 0 threads inline. Branch protection no pudo auditarse (403 en consulta anterior). **No fusionar mientras siga Draft** ni cambiarla a Ready sin autorización del propietario. Un merge puede activar despliegues automáticos Cloudflare.
-
-**Cualquier edición crea un HEAD nuevo y requiere reconsultar checks/previews de ese SHA exacto.**
-## Cloudflare — evidencia autenticada, solo lectura
-- Worker `micro-app-api`: Active Deployment en Producción; versión `49975c43-4161-4809-9c00-8ba83e53e6a0`, Build ID `957478f6-0f43-4b5c-932a-621be067d6d9`, commit `82386c6e9300e06f8fa209aa52995b939a72442a`; panel mostró 100% de asignación de tráfico.
-- Pages `micro-app`: production branch `main`, SHA `82386c6e9300e06f8fa209aa52995b939a72442a`, URL `https://cc23ff0c.micro-app-63i.pages.dev`.
-- El dashboard de Pages mostró lista vacía, pero `apps/web/.env.production` versionado define `VITE_API_BASE_URL` con la URL canónica del Worker y `apps/web/vite.config.ts` usa `loadEnv`. La ausencia en el panel no prueba que el build carezca de URL; falta confirmar el valor en el bundle desplegado. No se inspeccionaron valores secretos ni se modificó configuración.
-- Una observación anterior de #78 registró 0% para esta versión en otra vista; la inspección posterior de Active Deployment mostró 100% asignado. No confundir asignación con tasa de éxito o volumen de solicitudes.
+## Cloudflare — previews del SHA padre, solo lectura
+- Pages commit preview: https://16be43d4.micro-app-63i.pages.dev
+- Pages branch preview: https://docs-reconcile-role-model-an.micro-app-63i.pages.dev
+- Workers commit preview: https://d0883f1d-micro-app-api.btfcasheb.workers.dev
+- Workers branch preview: https://docs-reconcile-role-model-and-cloudflare-20261030-micro-app-api.btfcasheb.workers.dev
+- GET `/health` en Workers commit preview devolvió `{"status":"ok","service":"micro-app-api","stage":"scaffold"}`. Pages muestra una vista aislada que deshabilita login y acceso a datos. No son pruebas de producción.
 
 ## Estado de issues
-- **#78:** abierta. CORS no verificado mediante preflight HTTP real. Obtener dos OPTIONS desde entorno con conectividad real: origin permitido `https://micro-app-63i.pages.dev` y externo `https://attacker.example`. Registrar solo status y headers `Access-Control-*`. Verificar el bundle JavaScript desplegado si es accesible y realizar los dos preflight HTTP reales; el HTML público solo confirma que el enlace OAuth apunta al Worker, no las demás llamadas API ni CORS.
-- **#53:** abierta. Un rol por miembro/organización en `organization_members.role`; `branch_memberships` solo asigna sucursales, sin roles por sucursal. Matriz de permisos por operación **NO APROBADA**. No implementar autorización comercial antes de aprobación.
+- **#78:** abierta. Los dos preflight OPTIONS reales contra el Worker de producción fallaron desde este entorno con curl exit 6 (`Could not resolve host`); no se obtuvo status ni headers `Access-Control-*`. CORS sigue **NO VERIFICADO**. El bundle JS publicado aún no se inspeccionó.
+- **#53:** abierta. Un único rol por miembro/organización en `organization_members.role`; `branch_memberships` solo asigna acceso a sucursales. La matriz de permisos por operación sigue **NO APROBADA**. No crear endpoints, middleware ni mapeos rol→operación.
 
-## Límites
-No usar Neon `main` como laboratorio; no ejecutar migraciones remotas ni tocar datos reales. No cambiar Cloudflare, tráfico, variables, secretos, DNS, billing ni producción. No desplegar. Presupuesto USD 0. La revisión independiente Claude/Codex de PR #172 sigue pendiente/no ejecutada. El inventario por sucursal no está implementado; el stock sigue organizacional. Caja conserva modelo de turnos y cierre ordinario.
+## Variable de build frontend
+`VITE_API_BASE_URL` existe en `apps/web/.env.production` y `apps/web/vite.config.ts` la carga mediante `loadEnv`. La ausencia en el panel de Pages no prueba que falte en el build. Sigue pendiente inspeccionar el bundle publicado y confirmar el valor efectivo compilado.
 
-## Próxima acción
-1. Completar preflight CORS desde un entorno con red real: ejecutar OPTIONS con Origin autorizado `https://micro-app-63i.pages.dev` y externo `https://attacker.example`, y registrar status y headers `Access-Control-*`.
-2. Inspeccionar el bundle JavaScript publicado de Pages para confirmar el valor compilado de `VITE_API_BASE_URL`. La variable está definida en `apps/web/.env.production` y cargada por `apps/web/vite.config.ts`; no describirla como ausente por no aparecer en el panel de Pages.
-3. Obtener aprobación explícita de la matriz comercial antes de implementar permisos/endpoints comerciales. Mantenerlos bloqueados mientras siga NO APROBADA.
+## Límites y próxima acción
+No usar Neon `main` como laboratorio; PostgreSQL desechable primero. No tocar datos reales, Cloudflare, tráfico, deployments, variables, secretos, DNS, billing ni producción. Presupuesto USD 0. Inventario sigue organizacional; caja conserva turnos y apertura/cierre ordinario.
+1. Repetir los dos preflight desde un entorno con red real y registrar status + headers `Access-Control-*`.
+2. Inspeccionar el bundle JS publicado para verificar `VITE_API_BASE_URL`.
+3. Obtener aprobación explícita de la matriz comercial antes de cualquier implementación de permisos/endpoints.
+
 
 ---
 > **Archivo histórico — no usar como estado operativo.** Los checkpoints anteriores se preservan para trazabilidad; GitHub en vivo y este checkpoint superior prevalecen.

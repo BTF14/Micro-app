@@ -2,17 +2,41 @@
 
 ## Checkpoint vigente de continuidad — 2026-10-30 UTC
 
-- Repositorio: `BTF14/Micro-app`; rama por defecto `main`.
-- Último HEAD consultado antes de este commit de documentación: `d8a00018437d1f82dfbe358f9112704f53cf3c95`; este commit vuelve a mover la punta. El siguiente chat debe consultar la punta real de la rama en GitHub.
-- `main` / base de PR #178: `82386c6e9300e06f8fa209aa52995b939a72442a`. Comparación previa: 66 commits ahead, 0 behind.
-- PR [#178](https://github.com/BTF14/Micro-app/pull/178): OPEN, DRAFT, NOT MERGED; rama `docs/reconcile-role-model-and-cloudflare-20261030`; `mergeable=true` en la última consulta. Diff: 13 archivos documentales, 353 adiciones y 235 eliminaciones.
-- Para el SHA `d8a00018437d1f82dfbe358f9112704f53cf3c95`, Actions mostró dos runs (`Security scan` y `Secret history scan`), ambos `queued`; no se encontraron más runs en esa consulta. CI **PENDIENTE / INCOMPLETO**. Pages reportó build en progreso para `d8a0001`; Worker preview success más reciente consultado correspondía al SHA anterior `c5e48b65`. No transferir checks/previews entre SHA.
-- El SHA anterior `74dddc0275698efd6f2e47840c7abbc0e34d512b` tuvo 9/9 workflows Actions success y previews Pages/Workers exitosas; no certifica ningún commit posterior.
-- Reviews formales: 0; threads inline: 0. Branch protection no pudo confirmarse por 403 en auditoría anterior.
-- **No fusionar:** la PR permanece Draft y los checks/previews del HEAD más reciente no están completos. No convertirla a Ready ni fusionarla sin revisión y autorización explícita.
-- Gates: Issue #78 CORS **NO VERIFICADO** por HTTP real; Issue #53 matriz comercial **NO APROBADA**.
-- La rama heredada `fix/vercel-api-esm-imports` fue eliminada tras preservar `archive/legacy-api-esm-experiment-20261020` en SHA `b1330a5fa547071a5f500f0481ce88109c612f81`; PR #72 sigue cerrada y no fusionada.
-- No se modificó `main`, runtime, Cloudflare, Neon, datos reales, secretos, DNS, billing ni producción.
+**Snapshot GitHub verificado antes de esta sincronización documental:** rama `docs/reconcile-role-model-and-cloudflare-20261030`, HEAD `a45d84eb5f51e50d3a24f9d6858b5d14efb3ce6b` (commit `docs: remove duplicate project plan heading`). El commit de sincronización que actualiza este checkpoint moverá la punta; volver a resolver la rama y validar los checks de su nuevo SHA antes de cualquier decisión.
+
+- Repositorio: `BTF14/Micro-app`; rama base `main` = `82386c6e9300e06f8fa209aa52995b939a72442a`.
+- Comparación de HEAD `a45d84eb5f51e50d3a24f9d6858b5d14efb3ce6b` contra `main`: 68 commits ahead, 0 behind.
+- PR [#178](https://github.com/BTF14/Micro-app/pull/178): OPEN, DRAFT, NOT MERGED; rama `docs/reconcile-role-model-and-cloudflare-20261030`. El último reporte de GitHub indicó `mergeable=true`; no equivale a autorización de merge.
+- Diff de PR #178: 13 archivos, todos documentales (343 adiciones / 235 eliminaciones según la comparación por archivo); sin cambios de runtime, SQL, migraciones, workflows ni infraestructura.
+- GitHub Actions asociado al SHA exacto `a45d84eb5f51e50d3a24f9d6858b5d14efb3ce6b`: 11/11 workflow runs completados en `success` (9 por evento pull_request y 2 por push). Runs PR: [CI](https://github.com/BTF14/Micro-app/actions/runs/41123992893), [Project progress](https://github.com/BTF14/Micro-app/actions/runs/41123992664), [SDD validation](https://github.com/BTF14/Micro-app/actions/runs/41123992694), [Dependency review](https://github.com/BTF14/Micro-app/actions/runs/41123992706), [Secret history](https://github.com/BTF14/Micro-app/actions/runs/41123992695), [Semgrep](https://github.com/BTF14/Micro-app/actions/runs/41123992650), [Playwright E2E](https://github.com/BTF14/Micro-app/actions/runs/41123992682), [Database migration validation](https://github.com/BTF14/Micro-app/actions/runs/41123992653), [Security scan](https://github.com/BTF14/Micro-app/actions/runs/41123992663). Runs push: [Security scan](https://github.com/BTF14/Micro-app/actions/runs/41123984676), [Secret history scan](https://github.com/BTF14/Micro-app/actions/runs/41123984639). Estos resultados no se transfieren al nuevo SHA que produzca esta sincronización.
+- Cloudflare notificó previews exitosas para el mismo SHA `a45d84eb5f51e50d3a24f9d6858b5d14efb3ce6b`: [Pages commit preview](https://16be43d4.micro-app-63i.pages.dev), [Pages branch preview](https://docs-reconcile-role-model-an.micro-app-63i.pages.dev), [Workers commit preview](https://d0883f1d-micro-app-api.btfcasheb.workers.dev), [Workers branch preview](https://docs-reconcile-role-model-and-cloudflare-20261030-micro-app-api.btfcasheb.workers.dev). El GET de `/health` en la preview de Worker respondió `{"status":"ok","service":"micro-app-api","stage":"scaffold"}`; Pages muestra la vista aislada que deshabilita login y acceso a datos. Son previews, no producción.
+- Reviews formales: 0; threads inline: 0. La protección de rama no pudo auditarse en una consulta anterior (403); no afirmar que se verificaron los contextos requeridos.
+- **No marcar Ready ni fusionar:** permanece Draft y no existe autorización explícita para promoverla o fusionarla. Un merge puede activar despliegues automáticos de Cloudflare.
+
+## Issue #78 — CORS y configuración efectiva
+
+Issue #78 sigue abierta. Hono configura CORS y los tests de `app.request` son simulados; no demuestran headers del Worker desplegado. En esta sesión se intentaron ambos preflight OPTIONS contra `https://micro-app-api.btfcasheb.workers.dev/health`:
+- Origin permitido `https://micro-app-63i.pages.dev`: curl exit 6, `Could not resolve host`.
+- Origin externo `https://attacker.example`: curl exit 6, `Could not resolve host`.
+
+No se obtuvo status HTTP ni headers `Access-Control-*`; esto es una limitación DNS/red del entorno, no evidencia de éxito ni de fallo de CORS. Mantener **NO VERIFICADO** y repetir solo desde un entorno con conectividad real.
+
+`VITE_API_BASE_URL` está definida en `apps/web/.env.production` y `apps/web/vite.config.ts` la carga mediante `loadEnv`. No describirla como ausente por no aparecer en el panel de Pages. Sigue pendiente inspeccionar el bundle JavaScript publicado y confirmar el valor efectivo compilado; no se verificó en esta sesión.
+
+## Issue #53 — permisos comerciales
+
+Issue #53 sigue abierta. La matriz `docs/sdd/role-permission-decision-matrix.md` permanece **NO APROBADA**. La estructura vigente es un único `organization_members.role` por miembro/organización; `branch_memberships` solo concede/revoca acceso a sucursales y no contiene roles. No crear endpoints comerciales, middleware ni mapeos rol→operación antes de aprobación explícita.
+
+## Otros límites y próxima secuencia
+
+- La rama `fix/vercel-api-esm-imports` fue eliminada tras preservar el SHA `b1330a5fa547071a5f500f0481ce88109c612f81` en `archive/legacy-api-esm-experiment-20261020`; PR #72 sigue cerrada y no fusionada.
+- Inventario actual organizacional (`products.stock_quantity`); inventario por sucursal/almacén no implementado.
+- Caja mantiene modelo de turnos y apertura/cierre ordinario; no introducir cierres de supervisor incompatibles.
+- PostgreSQL desechable primero; no usar Neon `main` como laboratorio ni ejecutar migraciones remotas.
+- No modificar Cloudflare, tráfico, deployments, variables, secretos, DNS, billing, datos reales ni producción. Presupuesto objetivo USD 0.
+- No reescribir historial Git ni `STATE_JOURNAL.md` (append-only).
+
+Siguiente orden: (1) obtener los dos preflight reales desde entorno con red; (2) inspeccionar el bundle JS publicado; (3) mantener bloqueada la implementación comercial hasta aprobación explícita de la matriz; (4) revisar el nuevo HEAD y todos sus checks/previews antes de considerar cualquier estado de PR.
 ## Snapshot previo — eliminación segura de rama heredada (histórico; no es estado actual de PR #178) — 2026-10-30 UTC
 
 - La rama original `fix/vercel-api-esm-imports` fue eliminada de GitHub mediante la sesión autenticada del propietario, después de comprobar que el respaldo `archive/legacy-api-esm-experiment-20261020` existía y apuntaba al mismo HEAD exacto: `b1330a5fa547071a5f500f0481ce88109c612f81` (compare devolvió `identical`, 0 ahead / 0 behind).

@@ -23,7 +23,7 @@ Micro app será **una plataforma SaaS multi-organización, multi-sucursal y mult
 - **Organización:** tenant y frontera de aislamiento de datos; representa el negocio que contrata Micro app, no necesariamente una entidad legal.
 - **Sucursal:** unidad operativa dentro de una organización.
 - **Usuario:** persona que puede pertenecer a una o varias organizaciones.
-- **Membresía:** relación usuario-organización con rol, estado y alcance.
+- **Membresía:** relación usuario-organización con un único rol organizacional y estado; las asignaciones de sucursal se modelan por separado.
 - **Almacén:** ubicación de existencias dentro de una sucursal; permitir más de uno cuando el negocio lo necesite.
 - **Caja/terminal:** pertenece a una sucursal; turnos y cierres deben estar asociados a caja, sucursal y operador.
 - **Operaciones:** ventas, devoluciones, compras/recepciones, movimientos, transferencias y cierres deben incluir la organización y el ámbito operativo correcto.
@@ -41,7 +41,7 @@ Un negocio de una sola ubicación debe poder empezar con una sucursal predetermi
 | Compras y recepciones | Organización + sucursal receptora | Recepción trazable por almacén |
 | Ventas, pagos y devoluciones | Organización + sucursal + caja/turno cuando aplique | Instantáneas históricas e idempotencia |
 | Movimientos de inventario | Organización + sucursal + almacén | Libro de movimientos trazable |
-| Usuarios/membresías | Organización | Asignaciones de sucursal cuando el rol sea limitado |
+| Usuarios/membresías | Organización | Un único rol organizacional; las asignaciones de sucursal son independientes del rol y no conceden permisos comerciales |
 | Informes | Organización y sucursal | Vistas por sucursal y consolidadas según permiso |
 | Transferencias | Origen y destino | Salida y recepción formal, con autorizadores y trazabilidad |
 
@@ -139,7 +139,7 @@ Definir umbrales conservadores, alertas, cuotas server-side y política de degra
 
 1. Reconciliar documentación y estado vivo de GitHub.
 2. Completar auditoría read-only de esquema, rutas, índices, constraints, consultas y límites.
-3. Aprobar el modelo de sucursal/almacén/caja y la matriz de roles/scope; dibujar ERD y reglas de integridad.
+3. Aprobar el modelo de sucursal/almacén/caja y la matriz de permisos por operación y ámbito del recurso, manteniendo un único rol organizacional; dibujar ERD y reglas de integridad.
 4. Diseñar migraciones compatibles y pruebas cross-tenant/cross-branch en PostgreSQL efímero.
 5. Implementar por etapas: catálogo/búsqueda → inventario → compras/recepciones → caja/turnos → ventas/pagos → devoluciones/transferencias/reportes.
 6. Investigar fuente BCV y automatización en paralelo documental; implementar después de contrato y pruebas de frescura/fallback.

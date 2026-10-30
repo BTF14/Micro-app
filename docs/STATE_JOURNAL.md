@@ -1,3 +1,16 @@
+# 2026-10-30 UTC — Reconciliación de continuidad tras PR #174
+
+- Base de `main` verificada antes de esta tarea: `682868c5fca65a4a1f3f61a1bc428a34ae1a4dd9` (merge SHA de PR #174). Es referencia histórica de base, no promesa de HEAD posterior.
+- PR #174: fusionada, documental, seis archivos, +70/-0; ocho workflows del HEAD de PR #174 terminaron en success.
+- Se detectó una desactualización: los seis documentos de continuidad todavía presentaban el SHA de PR #173 como HEAD vigente; `AGENTS.md` conservaba una lista de prioridades antigua.
+- Se crea la rama `docs/authoritative-continuity-after-pr174-20261030` para corregir la portada de seis documentos y sustituir la lista obsoleta de prioridades en AGENTS. No se modifica código, esquema, SQL, migraciones, workflows, secretos, datos o infraestructura.
+- #53 abierta; matriz de permisos **NO APROBADA**. #78 abierta; CORS sigue sin evidencia de preflight HTTP real. Revisión independiente Claude/Codex de PR #172 sigue pendiente/no ejecutada.
+- La PR de reconciliación y sus checks deben verificarse en vivo antes de declarar el trabajo completado. No inferir el merge SHA ni el HEAD posterior.
+
+---
+
+> **Archivo histórico — no usar como estado operativo.** Las entradas anteriores a este hito se conservan como registro append-only. Sus SHA y estados describen el momento de cada entrada; consultar GitHub para el estado actual.
+
 > **CHECKPOINT VIGENTE — 2026-10-30 UTC; supersede snapshots anteriores:** main confirmado en GitHub: `ec6a2b84e2f84a0f5d2340ced86449804a1b6ed4`, merge de PR #173. PR #172 fusionada en `a7fa51d059d35fc679b53de112689a19f37fe967`; PR #173 fusionada en el HEAD actual. #173 solo añadió documentación (6 archivos, +12/-0), sin runtime/esquema/migraciones/workflows/infraestructura. La documentación anterior registraba #172, pero omitía el merge SHA de #173; este checkpoint corrige la omisión. Confirmar siempre main/PRs/issues/checks en vivo al reanudar.
 >
 > Issues #53 y #78 continúan abiertas. La matriz `docs/sdd/role-permission-decision-matrix.md` sigue **NO APROBADA**. #53 bloquea rutas comerciales hasta aprobación explícita de permisos y pruebas de aislamiento. #78: comentario [6526716084](https://github.com/BTF14/Micro-app/issues/78#issuecomment-6526716084) registra GET /health exitoso y carga de Pages, pero no se observaron headers HTTP ni se pudo emitir OPTIONS con Origin personalizado. CORS/preflight sigue **NO VERIFICADO**; no cerrar #78 hasta revisar preflight de origen autorizado y externo. No confundir GET/preview con CORS ni certificación de producción.

@@ -2,7 +2,7 @@
 
 **Micro app** es un proyecto independiente de punto de venta (POS) e inventario para comercios, pensado para PC, tablet y móvil. Su objetivo es ofrecer un flujo fiable para catálogo, existencias, ventas, pagos, caja y trazabilidad, con precios base en USD y equivalentes en VES calculados a partir de una tasa BCV validada.
 
-> **Estado al 29 de octubre de 2026:** el repositorio tiene una base técnica, automatización de calidad/seguridad y trabajo operativo de mantenimiento en marcha. **El producto todavía no debe considerarse listo para operación comercial ni para datos reales.** La implementación integral de identidad, aislamiento entre organizaciones y flujos transaccionales de negocio sigue necesitando verificación y cierre.
+> **Estado al 30 de octubre de 2026:** existe una base técnica con autenticación Google OAuth y allowlist implementadas en la API, además de automatización de calidad y seguridad. **El producto todavía no está listo para operación comercial ni para datos reales.** La autorización por operación, el aislamiento multi-organización completo y los flujos transaccionales comerciales siguen pendientes.
 
 - **Estado técnico vigente:** [CURRENT_STATE.md](docs/CURRENT_STATE.md) y [handoff de continuidad](docs/HANDOFF_NEXT_CHAT.md).
 - **Plan maestro y prioridades:** [PROJECT_PLAN.md](docs/PROJECT_PLAN.md).
@@ -27,6 +27,8 @@ El alcance del producto incluye:
 
 **Este listado describe el alcance previsto, no afirma que todos los módulos estén terminados.** Consulta los documentos de estado y los criterios de aceptación para distinguir lo implementado, lo probado y lo pendiente.
 
+La dirección de producto aprobada como arquitectura de referencia es una plataforma SaaS multi-organización, multi-sucursal y multiusuario. Una organización es el tenant y propietario lógico de sus datos; las sucursales son unidades operativas; las cajas y almacenes pertenecen a una sucursal. El modelo y sus reglas están documentados en [SAAS_ARCHITECTURE_DECISIONS.md](docs/SAAS_ARCHITECTURE_DECISIONS.md), pero **no están implementados todavía en el esquema ni en los endpoints comerciales**.
+
 ## Estado actual: qué significa en la práctica
 
 ### Base técnica y mantenimiento
@@ -43,7 +45,7 @@ La existencia de archivos de configuración, workflows o migraciones no equivale
 
 ### Bloqueos importantes antes de uso comercial
 
-1. **Identidad y acceso:** completar y verificar el requisito de inicio de sesión con Google y allowlist, junto con las decisiones de política de identidad que siguen pendientes.
+1. **Identidad y acceso:** Google OAuth, allowlist, state/PKCE, sesión revocable y validación de `email_verified` están implementados en la API según el estado documentado tras PR #153 y #155. Siguen pendientes recuperación de cuenta, MFA y gestión/limpieza completa de sesiones; además, la autenticación no sustituye la autorización por operación.
 2. **Aislamiento multiempresa:** probar autorización en el servidor y acceso cruzado entre organizaciones en todas las rutas y recursos pertinentes.
 3. **Operaciones de negocio:** demostrar con PostgreSQL de prueba los flujos completos de inventario y venta, incluyendo transacciones, idempotencia y concurrencia.
 4. **Tasa BCV y dinero:** validar origen, vigencia y errores de la tasa; preservar snapshots históricos y usar cálculos decimales seguros.
@@ -66,13 +68,13 @@ apps/
           Drizzle ORM + SQL migrations
 ```
 
-- **Frontend:** aplicación web estática.
-- **API:** endpoints y lógica del servidor sobre Hono/Workers.
-- **Persistencia:** PostgreSQL; las migraciones se versionan en el repositorio.
+- **Frontend:** aplicación web estática con React/Vite/TypeScript.
+- **API:** Hono sobre Cloudflare Workers; hoy expone flujos de autenticación y `GET /health`, no endpoints comerciales de productos, inventario, ventas o pagos.
+- **Persistencia:** PostgreSQL/Neon como destino arquitectónico y Drizzle/SQL versionados. No se debe asumir que las migraciones del repositorio ya estén aplicadas a Neon `main`.
 - **Automatización:** GitHub Actions para build, pruebas y análisis.
 - **Tasa y precios:** la base de datos debe conservar la tasa y los importes aplicados a una venta; cualquier caché es una optimización, no la fuente de verdad de una transacción.
 
-La arquitectura objetivo contempla Cloudflare Pages para el frontend, Cloudflare Workers para la API y Neon PostgreSQL en su plan gratuito, sujetos a límites y condiciones vigentes de cada proveedor. El coste objetivo es **$0**: no activar planes pagos, facturación, tarjetas ni cargos automáticos sin autorización explícita. Los niveles gratuitos pueden cambiar y no garantizan capacidad ilimitada ni disponibilidad comercial.
+La arquitectura objetivo contempla Cloudflare Pages para el frontend, Cloudflare Workers para la API y Neon PostgreSQL, sujetos a límites y condiciones vigentes de cada proveedor. La base de datos compartida con aislamiento tenant-scoped es la dirección prevista; no significa que el aislamiento integral o el modelo de sucursales ya estén implementados. El coste objetivo es **$0**: no activar planes pagos, facturación, tarjetas ni cargos automáticos sin autorización explícita. Los niveles gratuitos pueden cambiar y no garantizan capacidad ilimitada ni disponibilidad comercial.
 
 ## Reglas de ingeniería que no se deben romper
 
@@ -144,3 +146,8 @@ Los archivos de perfiles y skills son instrucciones reutilizables; su presencia 
 El repositorio es privado. Revisa la configuración y los avisos de licencia de las dependencias antes de redistribuir cualquier componente.
 
 **No es una versión de producción ni una promesa de disponibilidad comercial.** El estado cambia con cada PR: usa los documentos de continuidad y las evidencias de GitHub como referencia, no solo la fecha de este README.
+
+
+## Arquitectura SaaS y capacidad
+
+No se promete un número máximo de empresas, sucursales, cajas o usuarios hasta completar pruebas de carga sintéticas y revisar conjuntamente cuotas de Neon, Cloudflare Workers, Pages, KV y transferencia. Las cuotas de un plan gratuito no equivalen a capacidad sostenible del producto. No fijar límites comerciales ni activar servicios de pago sin evidencia y autorización.

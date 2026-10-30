@@ -62,7 +62,7 @@ No se encontraron rutas HTTP comerciales en el registro de Hono de `apps/api/src
 
 ## Próximas decisiones y secuencia
 
-- Completar CI/integración de PR #167 para 0004 y revisar lifecycle/concurrencia en PostgreSQL 18 efímero; mantener Neon main fuera del laboratorio.
+- CI/integración de PR #167 completadas: 10/10 workflows success en HEAD `ad45911368e9e9a714ebbe014de2d84a7b3cf1de`, incluyendo lifecycle/concurrencia en PostgreSQL 18 efímero; mantener Neon main fuera del laboratorio.
 - Mantener el helper de turno aislado; no conectar endpoints de caja/ventas hasta aprobar la matriz de permisos por operación y definir autorización transaccional.
 - Después diseñar almacenes, balances/ledger y backfill/reconciliación de `products.stock_quantity`.
 - Resolver idempotencia de pagos, integridad venta/líneas/pagos, último owner, auditoría append-only y rate limiting antes de exponer operaciones comerciales.

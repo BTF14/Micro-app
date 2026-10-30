@@ -1,3 +1,37 @@
+# Handoff prioritario — 2026-10-30 UTC
+
+> Fuente de verdad: repositorio `BTF14/Micro-app`. Leer primero `AGENTS.md`, `docs/CURRENT_STATE.md` y `docs/AI_COLLABORATION_AND_PR_POLICY.md`. No depender de Codex: está fuera de disponibilidad por tiempo indefinido y el trabajo debe continuar con revisión manual, tests y GitHub Actions.
+
+- **Main:** `18961456ac535146c4a1687d3b07d8f6693ce141`, merge de PR #156.
+- **PR #156:** cerrada y fusionada. HEAD de PR `6c068f3e9734736ac26e51ff754e39915d660abe`; 9/9 workflows success en ese SHA. No hubo review formal ni threads; diff revisado manualmente. No se comprobó un nuevo workflow post-merge del merge SHA.
+- **PRs abiertas al último chequeo:** ninguna. Volver a consultar en vivo.
+- **Nueva rama documental:** `docs/post-pr156-audit-continuity-20261030`; contiene la actualización de continuidad y hallazgos de auditoría de solo lectura. No asumir que está fusionada hasta comprobar la PR y el SHA final.
+- **API:** rutas existentes: auth register/login (ambas fail-closed), me/logout, Google OAuth GET/POST bootstrap/callback, y health. No existen endpoints comerciales HTTP.
+- **Tenant context:** valida sesión/membresía/organización activas, pero no aplica autorización por operación ni sucursal.
+- **Esquema actual:** organización/membresía y entidades comerciales iniciales con FK tenant-scoped; no hay sucursales, almacenes, cajas/turnos, compras/recepciones, devoluciones ni transferencias. Stock por organización. La migración inicial no está aplicada a Neon main.
+- **Hallazgos SQL pendientes:** reconciliación venta-líneas-pagos; consistencia stock-ledger; referencias polimórficas de movimientos; idempotencia de pagos; regla del último owner; índices y consultas a validar con datos sintéticos.
+- **Matriz de roles:** sigue NO aprobada. Cajero/inventario no deben obtener acceso global; requieren asignación de sucursal, y caja/turno para operaciones de caja.
+- **Capacidad SaaS:** sin medir; no prometer empresas/locales concurrentes. Objetivo de coste USD 0.
+- **No usar Codex, no esperar a Codex.** Revisión manual del diff completo + pruebas + workflows; si una herramienta de IA revisora no está disponible, documentar limitación sin convertirla en bloqueo artificial.
+- **No producción, no Neon main, no secretos, no datos reales, no billing.**
+
+## Secuencia de continuación
+
+1. Verificar rama principal, PRs abiertas, PR #156 fusionada y workflows del SHA actual.
+2. Completar el inventario de queries SQL y el mapa de llamadas de auth/tenant; agregar rutas y tests concretos al contrato de autorización.
+3. Completar ERD organizacional y operacional sin ejecutar migraciones.
+4. Preparar decisión de roles y permisos sensibles para aprobación del propietario; no inferir porcentajes ni excepciones.
+5. Diseñar esquema v2 y migraciones solo después del ERD; probar desde base vacía y upgrade en PostgreSQL desechable.
+6. Diseñar pruebas negativas cross-tenant/cross-branch, transacción, idempotencia y concurrencia.
+7. Revisar la rama `feat/neon-transaction-adapter` de forma independiente; no merge a ciegas.
+8. Actualizar README solo tras avances concretos verificados y mantener CURRENT_STATE, PROJECT_PLAN, STATE_JOURNAL y este handoff al día.
+
+## Prompt de continuidad
+
+Continúa el trabajo existente de `BTF14/Micro-app`, no crees un proyecto nuevo. Lee los documentos obligatorios de `AGENTS.md` y verifica GitHub en vivo. No uses ni dependas de Codex. La PR #156 ya está fusionada en main con merge SHA `18961456ac535146c4a1687d3b07d8f6693ce141`; su SHA de PR `6c068f3e9734736ac26e51ff754e39915d660abe` tuvo 9/9 workflows success. Continúa desde el inventario de API/schema/queries y los hallazgos de integridad descritos en CURRENT_STATE y SCHEMA_REVIEW. Trabaja con ramas y una PR coherente, revisa manualmente el diff, exige checks del SHA exacto y documenta todo. No despliegues producción, no toques Neon main, secretos, datos reales ni recursos pagos. No implementes endpoints comerciales ni migraciones hasta cerrar ERD, matriz de permisos y pruebas de aislamiento. Mantén el coste objetivo USD 0.
+
+---
+
 # Handoff prioritario — 2026-10-30
 
 > Leer AGENTS.md, CURRENT_STATE.md y AI_COLLABORATION_AND_PR_POLICY.md. Verificar el estado vivo de GitHub antes de actuar.

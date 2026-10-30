@@ -134,3 +134,7 @@ Mantener el stack actual. Evolucionar incrementalmente a organización → sucur
 Producción sigue NO lista. Esta auditoría es documental/read-only; no ejecuta SQL ni modifica Neon.
 
 ---
+
+## Dirección SaaS, BCV y búsqueda de productos — 2026-10-29
+
+La dirección de producto y arquitectura, criterios de seguridad, límites de caché, transacciones, secuencia y pendientes se registran en [SAAS_ARCHITECTURE_DECISIONS.md](./SAAS_ARCHITECTURE_DECISIONS.md). Prioridad inmediata: completar auditoría read-only; formalizar ERD organización/sucursal/almacén/caja; reconciliar matriz de roles por alcance; no crear migraciones ni rutas comerciales hasta superar esos gates. BCV y buscador son requisitos, todavía no implementaciones. Capacidad Neon/Cloudflare no medida; no prometer cuotas ni número de tenants.

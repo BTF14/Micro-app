@@ -1,5 +1,17 @@
 ## Checkpoint de continuidad vigente — 2026-10-30 UTC
 
+## Checkpoint post-merge PR #178 — 2026-10-30 UTC
+
+- PR #178 fue fusionada por squash. Merge commit y nuevo HEAD de `main`: `bb5bd72829db0532521857bffd62dac5c42a2eee`. PR cerrada/merged.
+- El diff fusionado fue documental: 14 archivos, 403 adiciones y 238 eliminaciones; ningún cambio de runtime, SQL, migraciones, lockfile, workflows ni infraestructura.
+- En el HEAD exacto de PR #178 (`8bacd57d9c3d624eae8139dadeb7fd6c0730b4dc`) los 9 workflow runs de GitHub Actions consultados terminaron `success`. No extrapolar esos resultados al merge SHA ni a futuros commits.
+- Se realizó login real mediante Google en Micro-app con la cuenta autorizada y TinyFish confirmó el dashboard autenticado en `https://micro-app-63i.pages.dev/#inicio`; la organización visible fue Abasto 7 de Oro y el rol mostrado `owner`. Esto prueba el recorrido OAuth/login y la sesión de navegador; no prueba CORS, llamadas comerciales ni módulos no implementados.
+- Issue #78 permanece ABIERTA: los preflight HTTP reales no tienen status/headers observables por limitación DNS del entorno; falta inspeccionar el bundle JS desplegado y verificar headers CORS desde una red funcional. No afirmar fallo ni éxito de CORS.
+- Issue #53 permanece ABIERTA: matriz de permisos comerciales **NO APROBADA** y aislamiento cross-tenant de rutas comerciales no demostrable porque dichas rutas aún no existen. No crear endpoints/middleware ni inferir permisos.
+- Se detectó que las portadas CURRENT_STATE/HANDOFF aún mostraban PR #178 como draft/no fusionada y SHA anterior. Esta PR correctiva actualiza ambas portadas y añade esta entrada al journal append-only; las entradas históricas no se reescriben.
+- Sin cambios a Cloudflare, producción, Neon main, secretos, DNS, billing ni datos reales. PostgreSQL desechable primero.
+
+
 - Repositorio `BTF14/Micro-app`; `main` = `82386c6e9300e06f8fa209aa52995b939a72442a`.
 - Snapshot verificado antes de esta sincronización: rama `docs/reconcile-role-model-and-cloudflare-20261030`, HEAD `a45d84eb5f51e50d3a24f9d6858b5d14efb3ce6b`; comparación 68 ahead / 0 behind.
 - PR [#178](https://github.com/BTF14/Micro-app/pull/178): OPEN, DRAFT, NOT MERGED; último reporte `mergeable=true`. Diff: 13 archivos documentales (343 adiciones / 235 eliminaciones); 0 reviews formales y 0 threads inline. No marcar Ready ni fusionar sin autorización explícita.

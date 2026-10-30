@@ -19,17 +19,17 @@ No se encontraron rutas HTTP comerciales en el registro de Hono de `apps/api/src
 
 ### Contexto de tenant y sesión
 
-### Control de abuso / rate limiting
-
-- La tabla `auth_rate_limits` existe en `0001_initial.sql`, pero la búsqueda de símbolos/callers en `apps/api/src` solo encontró referencias en la migración y pruebas que verifican ausencia de escrituras para rutas de registro/login deshabilitadas. No se encontró implementación runtime de contador/ventana ni middleware de rate limiting.
-- Por tanto, el estado correcto es **no demostrado/no implementado a nivel de aplicación**. Verificar aparte si hay reglas Cloudflare activas; no asumirlas por la presencia de la tabla. Prioridad P1 antes de ampliar acceso o habilitar endpoints públicos, con pruebas de límite, expiración de ventana, concurrencia y fallos de storage.
-
 - `resolveTenantContext` en `apps/api/src/tenant-context.ts` exige token de sesión y UUID de organización; calcula SHA-256 del token y consulta sesión no revocada/no expirada, usuario activo, membresía activa y organización activa. La búsqueda de callsites en el código de la API no encontró invocaciones desde handlers; hoy es un helper aislado probado por unit/integration tests, no un middleware aplicado a rutas.
-- `withDatabaseTransaction` está implementado y probado como helper; el único caller productivo encontrado es el bootstrap Google (bloqueo de `auth_bootstrap`). No hay uso comercial de transacciones porque todavía no existen handlers comerciales.
 - Devuelve `userId`, `organizationId` y `role`. El comentario del helper indica expresamente que **no autoriza una operación de negocio**.
 - No hay `branchId`, asignación de sucursal, caja ni turno en el contexto.
 - `GET /auth/me` devuelve las organizaciones activas del usuario; esto no concede permiso comercial por sí solo.
 - El control de roles por operación y las pruebas negativas cross-tenant/cross-branch siguen pendientes porque no hay handlers comerciales.
+- `withDatabaseTransaction` está implementado y probado como helper; el único caller productivo encontrado es el bootstrap Google (bloqueo de `auth_bootstrap`). No hay uso comercial de transacciones porque todavía no existen handlers comerciales.
+
+### Control de abuso / rate limiting
+
+- La tabla `auth_rate_limits` existe en `0001_initial.sql`, pero la búsqueda de símbolos/callers en `apps/api/src` solo encontró referencias en la migración y pruebas que verifican ausencia de escrituras para rutas de registro/login deshabilitadas. No se encontró implementación runtime de contador/ventana ni middleware de rate limiting.
+- Por tanto, el estado correcto es **no demostrado/no implementado a nivel de aplicación**. Verificar aparte si hay reglas Cloudflare activas; no asumirlas por la presencia de la tabla. Prioridad P1 antes de ampliar acceso o habilitar endpoints públicos, con pruebas de límite, expiración de ventana, concurrencia y fallos de storage.
 
 ### Hallazgos de integridad de esquema
 

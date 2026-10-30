@@ -1,4 +1,22 @@
-# Prioridad operativa viva — post PR #161 — 2026-10-30 UTC
+# Prioridad operativa vigente — post PR #165 — 2026-10-30 UTC
+
+**Main verificado:** `1d10befe0cd3367e04bd8998a192e93d9b228063`  
+**Rama actual:** `docs/post-pr165-register-shift-design-20261030`
+
+1. Continuidad: corregir estados obsoletos post-#165 y registrar las decisiones de base de datos/caja/turnos en esta PR.
+2. Modelo de caja/turnos: baseline individual (un cajero + una caja por turno; sin compartir/transferir; un turno abierto máximo por caja y cajero/organización). Diseño en `docs/sdd/REGISTER_SHIFT_MODEL.md`.
+3. Siguiente implementación: migration 0004 para registers/register_shifts, assertions SQL y tests PostgreSQL 18 efímero desde cero.
+4. Mantener helper de turno separado de endpoints; no implementar autorización comercial hasta aprobar matriz por operación.
+5. Después: almacenes, balances/ledger y estrategia de backfill/reconciliación del stock legacy.
+6. Medir capacidad sintética Neon/Cloudflare antes de comprometer límites de clientes.
+
+**Gates:** Neon main no se usa como laboratorio; no mutar Neon main ni desplegar producción en esta fase. No tocar secretos, DNS, billing o planes pagos. PostgreSQL efímero CI es la prueba primaria; Neon branch solo si hay una necesidad no cubierta por CI.
+
+**Estado comprobado:** PR #165 merged a `1d10befe0cd3367e04bd8998a192e93d9b228063`; 9/9 check-runs success en ese SHA. Pages reportó deployment exitoso y Workers build success, pero el routing autenticado no está probado. La migración 0003 no se aplicó a Neon main. No hay rutas comerciales; branch context no está conectado a rutas. La matriz de permisos sigue NO APROBADA.
+
+---
+
+## Histórico — prioridad operativa post PR #161 (supersedida por el estado vigente anterior)
 
 - PR #160 y #161 fusionadas. La continuidad incremental y el checkpoint post-merge ya están integrados.
 - No crear más PR solo para volver a sincronizar el mismo checkpoint. Desde ahora, actualizar WORK_CHECKPOINT y STATE_JOURNAL en la PR de trabajo que corresponda.

@@ -47,19 +47,15 @@ const suite = describe.skipIf(!databaseUrl)("branch context against PostgreSQL",
     );
     otherOrganizationId = otherOrg.rows[0]!.id;
 
-    const users = await Promise.all([
-      ["owner", "owner"],
-      ["admin", "admin"],
-      ["cashier-assigned", "cashier"],
-      ["cashier-unassigned", "cashier"],
-      ["inventory-assigned", "inventory"],
-    ].map(async ([label]) => {
+    const userLabels = ["owner", "admin", "cashier-assigned", "cashier-unassigned", "inventory-assigned"];
+    const users: string[] = [];
+    for (const label of userLabels) {
       const result = await client.query<{ id: string }>(
         "INSERT INTO app_users (email, display_name) VALUES ($1, $2) RETURNING id",
         [`${label}-${suffix}@example.invalid`, label],
       );
-      return result.rows[0]!.id;
-    }));
+      users.push(result.rows[0]!.id);
+    }
     [ownerId, adminId, cashierAssignedId, cashierUnassignedId, inventoryAssignedId] = users;
 
     await client.query(
@@ -74,13 +70,14 @@ const suite = describe.skipIf(!databaseUrl)("branch context against PostgreSQL",
       ["Branch B", "branch-b", true],
       ["Inactive Branch", "branch-inactive", false],
     ];
-    const branches = await Promise.all(branchSeeds.map(async ([name, slug, active]) => {
+    const branches: string[] = [];
+    for (const [name, slug, active] of branchSeeds) {
       const result = await client.query<{ id: string }>(
         "INSERT INTO branches (organization_id, name, slug, is_active) VALUES ($1, $2, $3, $4) RETURNING id",
         [organizationId, name, slug, active],
       );
-      return result.rows[0]!.id;
-    }));
+      branches.push(result.rows[0]!.id);
+    }
     [branchA, branchB, inactiveBranch] = branches;
 
     await client.query(

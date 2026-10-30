@@ -4,9 +4,12 @@
 **Repositorio:** https://github.com/BTF14/Micro-app  
 **main verificado:** `be6f19486caf5cf3605c6ca6615f87e305822ea7`  
 **PR #160:** fusionada por squash; [ver PR](https://github.com/BTF14/Micro-app/pull/160)  
+**PR #161:** sincronización post-merge abierta; [ver PR](https://github.com/BTF14/Micro-app/pull/161)  
+**Rama de esta actualización:** `docs/post-pr160-merge-checkpoint-20261030`  
+**HEAD de PR #161 antes de este commit:** `12eb9de2e8c9db78485d51f498c51768b8362ab1`  
 **HEAD de PR probado:** `fcb4269a459831be7858358c56e90346d5e4e9a6`
 
-> Punto de reanudación post-merge. Revalidar GitHub en vivo antes de actuar.
+ > Punto de reanudación post-merge. Este checkpoint se encuentra en la PR #161; revalidar el HEAD y checks en vivo antes de actuar.
 
 ## Bloque completado
 

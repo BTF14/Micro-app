@@ -1065,3 +1065,15 @@ CI documental: para HEAD `8c15e13fa001a14a0ddf9f2432bc17efb30d476d`, los 8 workf
 - Límites: no hay endpoints comerciales, helper de turno runtime ni autorización por operación; matriz de permisos sigue NO APROBADA. No se calcula efectivo esperado/diferencia sin ledger de caja.
 - Siguiente: terminar CI de PR #167 en su SHA final, revisar manualmente la migración/assertions/concurrencia y luego decidir integración de PR #166/#167 con autorización expresa.
 
+
+
+## 2026-10-30 UTC — PR #166/#167 fusionadas y reconciliación post-merge
+
+- PR #166 fusionada primero mediante merge commit `8a16b4bf70e3b35c45e91366148f4a37aa43b5e7`; su HEAD `4cee6e2ff6bfb8f3eecd85b4ff9212c1ab6d98fd` tuvo 8/8 workflows Actions success.
+- PR #167 fusionada después mediante merge commit `c1cd8650db33aa4a249eaf1f55d321513d576e10`; su HEAD `ad45911368e9e9a714ebbe014de2d84a7b3cf1de` tuvo 10/10 workflows Actions success, incluidos CI con register-shifts integration, migration validation 0001–0004, Playwright, backup restore PG18, Semgrep, Trivy, Dependency Review, secret history, SDD validation y dashboard.
+- No hubo reviews formales de GitHub ni threads inline; Codex no completó por cuota. Se hizo revisión manual del diff, migración 0004, assertions y pruebas; no presentar como review humana/Codex.
+- Main versiona ahora migraciones 0001–0004. No se aplicaron 0003/0004 a Neon main; no se crearon Neon branches. Las pruebas fueron en PostgreSQL 18 desechable.
+- Cloudflare Pages/Workers mostró previews; no se modificó configuración ni se hizo deploy manual. No afirmar que esta sesión verificó producción post-merge.
+- Se abrió la rama `docs/post-merge-166-167-continuity-20261030` para corregir referencias que aún presentaban #166/#167 como abiertas/candidatas. Se actualizaron portadas de CURRENT_STATE, HANDOFF, WORK_CHECKPOINT y PROJECT_PLAN, además de README, AGENTS, API/schema/readiness/compliance/architecture/SDD y backup docs. Las entradas históricas inferiores se conservan como historia y quedan supersedidas por las portadas vigentes.
+- Siguiente tarea: helper aislado para resolver el turno abierto del cajero autenticado, con pruebas PostgreSQL efímeras; no añadir endpoints comerciales hasta aprobar matriz y autorización por operación.
+- No se modificaron secretos, datos reales, DNS, billing ni configuración Cloudflare. No se ejecutó SQL en Neon main.

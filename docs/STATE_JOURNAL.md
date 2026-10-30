@@ -953,3 +953,10 @@ CI documental: para HEAD `8c15e13fa001a14a0ddf9f2432bc17efb30d476d`, los 8 workf
 - Revisión manual encontró datos obsoletos en WORK_CHECKPOINT (HEAD y cantidad de commits) y referencias iniciales antiguas en CURRENT_STATE/HANDOFF. Se actualizó WORK_CHECKPOINT y se sincronizaron CURRENT_STATE, HANDOFF_NEXT_CHAT y PROJECT_PLAN. Este journal registra el hito; volver a consultar SHA final tras los commits.
 - Diff de PR #160 sigue siendo documental: README, política de colaboración, capacidad Neon, estado, handoff, plan, diario y checkpoint. No se tocaron código, migraciones, workflows, secretos, infraestructura ni producción.
 - Decisión: no fusionar mientras CI esté pending/no verificado; fusionar solo cuando checks requeridos terminen en el HEAD exacto y no haya hallazgos materiales.
+
+## 2026-10-30 UTC — sincronización final del handoff antes de cerrar bloque documental
+
+- Se refrescó CURRENT_STATE y HANDOFF_NEXT_CHAT después de la revisión manual de PR #160.
+- SHA del padre del último commit documental previo a esta entrada: `2747ae34849d8fe86e2da198779701ce97e3a711` (consultar el HEAD real después de este commit).
+- Gate sigue siendo no fusionar con CI pendiente/no verificado. El último SHA con evidencia CI consultada fue `bcc667fc6ccd154b8e4f93f041e33d16c29195f0`, con workflow CI pending y siete workflows success.
+- La revisión documental continúa en la misma PR #160; no se abrió PR adicional ni se modificó código o producción.

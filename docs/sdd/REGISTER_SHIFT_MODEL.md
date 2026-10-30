@@ -1,6 +1,6 @@
 # Modelo de cajas y turnos — decisión de arquitectura
 
-**Estado:** decisión base adoptada para diseño; no implementada en SQL/runtime y no equivale a aprobación de la matriz comercial completa.  
+**Estado:** migración 0004, assertions y pruebas de integración implementadas en la rama `feat/register-shifts-0004-20261030` (PR #167 abierta, no fusionada). No aplicada a Neon main; no equivale a aprobación de la matriz comercial completa.  
 **Fecha:** 2026-10-30 UTC  
 **Base de diseño:** main `1d10befe0cd3367e04bd8998a192e93d9b228063`, PR #165 fusionada.  
 **Objetivo:** trazabilidad de efectivo y atribución inequívoca de operaciones en un POS multi-sucursal.
@@ -52,7 +52,7 @@ Esta es la opción base más simple de auditar: cada venta/pago asociado a caja 
 3. Cerrar: capturar conteo real separado en USD y VES, registrar actor y hora; no calcular diferencia contra un efectivo esperado hasta que exista un ledger de caja completo. Bloquear modificaciones posteriores.
 4. Cambio de cajero: cerrar el turno actual; abrir uno nuevo para el siguiente cajero. Si el cierre falla, no abrir el siguiente turno.
 5. Concurrencia: índices únicos parciales son la última defensa; la API debe manejar conflictos sin crear duplicados ni filtrar detalles internos.
-6. Desactivación: no permitir desactivar caja/sucursal o revocar asignación mientras existan operaciones abiertas sin un flujo de cierre controlado.
+6. Desactivación: no permitir desactivar caja, sucursal u organización, ni revocar asignación/membresía o desactivar usuario mientras exista un turno abierto.
 
 ## 4. Autorización y límites
 
@@ -78,19 +78,20 @@ En PostgreSQL 18 efímero, desde una base vacía y aplicando migraciones 0001–
 - Rechazar desactivar caja, sucursal, organización, usuario, membresía o asignación mientras exista un turno abierto; permitirlo tras el cierre.
 - Tests de integración del resolver: usuario no asignado, asignación inactiva, rol cambiado, caja inactiva, turno cerrado, turno de otro cajero, cross-tenant/cross-branch.
 - Tests de concurrencia: dos aperturas simultáneas para misma caja y para mismo cajero deben producir un único turno abierto.
-- Fixtures sintéticos y limpieza determinista; nunca Neon main ni datos reales.
+- Assertions SQL ejecutadas dentro de una transacción con ROLLBACK. Las pruebas de integración usan identificadores aleatorios en la base PostgreSQL efímera de CI; el job destruye la base al finalizar. Nunca Neon main ni datos reales.
 
 ## 6. Secuencia de implementación
 
-1. Implementar migración aditiva 0004 y assertions SQL.
-2. Extender workflows CI para aplicar 0001–0004 desde cero en PostgreSQL 18 efímero.
-3. Añadir tests de integración y helper aislado para resolver el turno del cajero autenticado.
-4. Revisar diff completo, checks exactos, seguridad y documentación.
+1. **Hecho en PR #167:** migración aditiva 0004 y assertions SQL.
+2. **Hecho en PR #167:** workflows CI/migration-check aplican 0001–0004 desde cero en PostgreSQL 18 efímero.
+3. **Hecho en PR #167:** tests de integración para scope, lifecycle, desactivación y concurrencia. El helper de turno/runtime y los endpoints quedan fuera de esta fase.
+4. Corregir cualquier fallo, revisar diff completo y verificar todos los checks sobre el SHA exacto final.
 5. No aplicar 0004 a Neon main ni conectar rutas comerciales en esta fase.
 
 ## 7. Estado actual de infraestructura de pruebas
 
-- PR #165 ya demuestra que CI aplica 0001–0003 y ejecuta integración branch-context contra PostgreSQL 18 efímero.
-- No se aplicó 0003 a Neon main.
-- La herramienta de lectura de Neon branches no devolvió un resultado utilizable en esta sesión; no se infiere el número actual de ramas ni se crea una rama por rutina.
-- La base efímera de CI es suficiente para la siguiente migración y permite reconstrucción determinista sin consumir ramas Neon.
+- PR #165 demuestra que CI aplica 0001–0003 y ejecuta integración branch-context contra PostgreSQL 18 efímero.
+- PR #167 añade 0004 y sus assertions; la migración-check pasó en HEAD `4008ec7c09785298dc733e5e0c492cea34ad6f43`.
+- En el HEAD anterior `0b5a9adbdafce25a8483e7ce6953e2d83a826c47`, CI falló solo en una expectativa de código de error del test de integración; build/typecheck, unit tests, auth integration y branch integration pasaron. Se corrigió el trigger para dejar que las FKs respondan por referencias ausentes; CI se está reejecutando en el HEAD 4008.
+- No se aplicó 0003 ni 0004 a Neon main. La herramienta de lectura de Neon branches no devolvió un resultado utilizable; no inferir el número actual ni crear una rama por rutina.
+- PostgreSQL efímero de CI es suficiente para la migración y evita consumir ramas Neon.

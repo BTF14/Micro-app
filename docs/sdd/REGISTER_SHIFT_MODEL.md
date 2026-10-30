@@ -13,7 +13,7 @@
 - Un cajero no puede mantener más de un turno abierto simultáneamente dentro de la misma organización.
 - Una caja no puede tener más de un turno abierto simultáneamente.
 - El cambio de responsable se modela como **cierre del turno anterior + apertura de un turno nuevo**. No se realiza handover modificando el usuario del turno abierto.
-- Los turnos cerrados son históricos; no se reabren ni se sobrescriben. Una corrección futura será una acción separada, autorizada y auditada.
+- Los turnos cerrados son históricos; no se reabren ni se sobrescriben. La migración debe impedir en PostgreSQL UPDATE/DELETE de un turno ya cerrado mediante trigger defensivo (además de los controles de permisos del runtime). Una corrección futura será una acción separada, autorizada y auditada.
 - La caja puede reutilizarse por otro cajero después del cierre confirmado.
 
 Esta es la opción base más simple de auditar: cada venta/pago asociado a caja puede atribuirse a un solo cajero y a un intervalo de turno concreto.
@@ -68,7 +68,7 @@ En PostgreSQL 18 efímero, desde una base vacía y aplicando migraciones 0001–
 - Permitir abrir un nuevo turno después de cerrar el anterior.
 - Rechazar apertura/cierre con importes negativos y estados/campos inconsistentes.
 - Rechazar cierre incompleto y conservar abierto el turno si la transacción de cierre falla.
-- Verificar que un turno cerrado no puede reabrirse modificando su estado/campos.
+- Verificar que un trigger PostgreSQL impide UPDATE/DELETE de un turno cerrado, incluso si el caller intenta limpiar `closed_at` o cambiar el cajero/caja.
 - Tests de integración del resolver: usuario no asignado, asignación inactiva, rol cambiado, caja inactiva, turno cerrado, turno de otro cajero, cross-tenant/cross-branch.
 - Tests de concurrencia: dos aperturas simultáneas para misma caja y para mismo cajero deben producir un único turno abierto.
 - Fixtures sintéticos y limpieza determinista; nunca Neon main ni datos reales.

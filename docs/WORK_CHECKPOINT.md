@@ -18,7 +18,9 @@
 No usar Neon `main` como laboratorio; no ejecutar migraciones remotas ni tocar datos reales. No cambiar Cloudflare, tráfico, variables, secretos, DNS, billing ni producción. No desplegar. Presupuesto USD 0. La revisión independiente Claude/Codex de PR #172 sigue pendiente/no ejecutada. El inventario por sucursal no está implementado; el stock sigue organizacional. Caja conserva modelo de turnos y cierre ordinario.
 
 ## Próxima acción
-Completar preflight CORS desde entorno con red real y revisar la variable ausente de Pages en solo lectura. Después obtener aprobación explícita de la matriz comercial; mantener endpoints comerciales bloqueados.
+1. Completar preflight CORS desde un entorno con red real: ejecutar OPTIONS con Origin autorizado `https://micro-app-63i.pages.dev` y externo `https://attacker.example`, y registrar status y headers `Access-Control-*`.
+2. Inspeccionar el bundle JavaScript publicado de Pages para confirmar el valor compilado de `VITE_API_BASE_URL`. La variable está definida en `apps/web/.env.production` y cargada por `apps/web/vite.config.ts`; no describirla como ausente por no aparecer en el panel de Pages.
+3. Obtener aprobación explícita de la matriz comercial antes de implementar permisos/endpoints comerciales. Mantenerlos bloqueados mientras siga NO APROBADA.
 
 ---
 > **Archivo histórico — no usar como estado operativo.** Los checkpoints anteriores se preservan para trazabilidad; GitHub en vivo y este checkpoint superior prevalecen.

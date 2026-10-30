@@ -1,11 +1,20 @@
-## Reconciliación del checkpoint tras la limpieza de rama — 2026-10-30 UTC
+# Estado actual — Micro app
 
-- `main` permanece en el SHA conocido `82386c6e9300e06f8fa209aa52995b939a72442a` (merge de PR #177); esta tarea no modifica `main`.
-- PR #178 sigue abierta, en draft y sin fusionar. Su rama es `docs/reconcile-role-model-and-cloudflare-20261030`. El checkpoint de checks que aparecía en la portada antes de esta actualización corresponde a un HEAD anterior y queda supersedido. Consultar siempre el HEAD/checks en vivo de PR #178; no inferir éxito de un SHA anterior.
-- La rama original heredada fue eliminada después de comprobar el respaldo idéntico; detalles y SHA están documentados en la actualización inmediatamente inferior y en `STATE_JOURNAL.md`.
-- La eliminación de rama no afecta los gates: CORS sigue NO VERIFICADO y la matriz de permisos comerciales sigue NO APROBADA.
+## Checkpoint vigente de continuidad — 2026-10-30 UTC
 
-## Actualización posterior — eliminación segura de rama heredada (2026-10-30 UTC)
+- Repositorio: `BTF14/Micro-app`; rama por defecto `main`.
+- `main` y base de PR #178: `82386c6e9300e06f8fa209aa52995b939a72442a`. La comparación GitHub `main...docs/reconcile-role-model-and-cloudflare-20261030` devuelve 58 commits ahead y 0 behind.
+- PR [#178](https://github.com/BTF14/Micro-app/pull/178): **OPEN, DRAFT, NOT MERGED**. Rama `docs/reconcile-role-model-and-cloudflare-20261030`; HEAD exacto verificado `74dddc0275698efd6f2e47840c7abbc0e34d512b`; GitHub reporta `mergeable=true`. No convertirla a Ready ni fusionarla sin nueva instrucción del propietario.
+- Para ese HEAD exacto, los **9/9 workflows GitHub Actions** consultados terminaron `success`: Database migration validation, Security scan, Dependency review, Project progress dashboard, SDD and agent documentation validation, Secret history scan, Semgrep SAST, Playwright E2E y CI. El status combinado externo devolvió lista vacía; no confundirla con fallo ni con aprobación de protección de rama.
+- Los bots reportaron preview exitosa de Cloudflare Pages (commit `74dddc0`) y Workers (commit `74dddc02`). Son previews, no despliegues de producción.
+- El diff de PR #178 contiene **13 archivos, todos documentación**; 323 adiciones y 228 eliminaciones en la comparación consultada. No hay cambios de runtime, SQL, migraciones ni workflows.
+- Reviews formales: 0; threads inline: 0. La política de branch protection no pudo confirmarse mediante el endpoint disponible (403 en auditoría anterior). No afirmar que existe aprobación externa ni que se verificaron todos los requisitos de protección.
+- PR #178 sigue en Draft, por lo que **no está lista para fusionar en su estado actual**, aunque checks y mergeability técnica estén verdes. No se hizo merge.
+- Gates del producto: Issue #78 CORS **NO VERIFICADO** por HTTP real; Issue #53 matriz de permisos comerciales **NO APROBADA**. No habilitar rutas comerciales ni confundir el merge documental con aprobación de producto.
+- La rama heredada `fix/vercel-api-esm-imports` fue eliminada tras preservar y verificar `archive/legacy-api-esm-experiment-20261020` en SHA `b1330a5fa547071a5f500f0481ce88109c612f81`; PR #72 sigue cerrada y no fusionada.
+- No se modificó `main`, runtime, Cloudflare, Neon, datos reales, secretos, DNS, billing ni producción.
+
+## Snapshot previo — eliminación segura de rama heredada (histórico; no es estado actual de PR #178) — 2026-10-30 UTC
 
 - La rama original `fix/vercel-api-esm-imports` fue eliminada de GitHub mediante la sesión autenticada del propietario, después de comprobar que el respaldo `archive/legacy-api-esm-experiment-20261020` existía y apuntaba al mismo HEAD exacto: `b1330a5fa547071a5f500f0481ce88109c612f81` (compare devolvió `identical`, 0 ahead / 0 behind).
 - Verificación posterior independiente: la búsqueda de ramas no devuelve `fix/vercel-api-esm-imports`; sí devuelve `archive/legacy-api-esm-experiment-20261020`. El respaldo conserva los tres commits. PR #72 permanece cerrada y no fusionada; no se borró ni modificó.

@@ -1156,3 +1156,14 @@ CI documental: para HEAD `8c15e13fa001a14a0ddf9f2432bc17efb30d476d`, los 8 workf
 - No se tocó Neon main, datos reales, migraciones remotas, secretos, DNS, billing, configuración Cloudflare ni producción.
 - Continuación: revisar el HEAD/diff/checks del nuevo SHA; mantener PR #172 draft; esperar aprobación explícita de matriz/decisiones comerciales antes de código. Diseñar ledger/auditoría/idempotencia antes de endpoints.
 
+
+
+## 2026-10-30 UTC — revalidación exacta de PR #172
+
+- Se reconsultó GitHub: main sigue en `a6db2dcaf57e2a0bf1735eb282c3ac2256cd314c`; PR #172 abierta/draft/no fusionada, base main, HEAD `7458928e87fe32b9d9134beabba3e0706bc57931`, mergeable true.
+- Check-runs del HEAD exacto: 12/12 completed/success (Workers Builds, verify, scans, Chromium authentication smoke, postgres-migration validation, static analysis, dependency review, progress y Pages). El commit previo `93561f0...` ya no es la única evidencia: el HEAD `7458928...` también quedó verde.
+- No hay reviews formales. PR contiene exactamente siete archivos documentales, +374/-0; no incluye runtime, esquema ni migraciones.
+- Cloudflare Pages y Workers publicaron URLs de preview asociadas a la rama/commit. No se interpreta la etiqueta/ruta del bot Workers como prueba suficiente de cambio o validación de producción.
+- Issues #53 y #78 siguen abiertas. #53 conserva como pendiente la autorización/aislamiento de futuras rutas comerciales; #78 mantiene pendiente la verificación HTTP CORS con headers observables desde un entorno con salida de red permitida.
+- Se mantiene PR #172 draft. No se fusiona ni se implementan permisos comerciales antes de aprobación explícita de la matriz.
+- Este registro documenta el SHA verificado. Cualquier commit documental posterior exige reconsultar checks del nuevo HEAD.

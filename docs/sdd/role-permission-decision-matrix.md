@@ -1,3 +1,6 @@
+
+> **Reconciliación requerida — 2026-10-29:** la antigua recomendación de aplicar los cuatro roles a toda la organización no es la dirección elegida para un SaaS multi-sucursal. Consultar `docs/SAAS_ARCHITECTURE_DECISIONS.md` §3. La matriz debe especificar asignaciones y alcance por organización/sucursal/caja, sin permitir acceso lateral entre sucursales. Mantener este documento como propuesta NO aprobada hasta que el propietario resuelva explícitamente los permisos sensibles, umbrales de descuentos/anulación y delegación. Ninguna celda autoriza implementación por sí sola.
+
 # Registro de decisión: permisos por rol y organización
 
 - Estado: **propuesta de IA, pendiente de aprobación explícita del propietario**. Ninguna celda de este documento autoriza una implementación por sí sola; ver `## Estado` al final.

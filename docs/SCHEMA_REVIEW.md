@@ -1,3 +1,60 @@
+## Auditoría estática posterior a PR #156 — 2026-10-30 UTC
+
+**Base revisada:** `main` = `18961456ac535146c4a1687d3b07d8f6693ce141`. Archivos inspeccionados mediante GitHub: `apps/api/src/index.ts`, `auth.ts`, `google-auth.ts`, `tenant-context.ts`, `database.ts`, `apps/api/migrations/0001_initial.sql` y `0002_google_identity.sql`, además de los contratos SDD. Revisión estática de solo lectura; no se ejecutó SQL ni se conectó a Neon.
+
+### Inventario de rutas HTTP observado
+
+| Método | Ruta | Estado/propósito |
+|---|---|---|
+| GET | `/health` | Health scaffold |
+| POST | `/auth/register` | Responde fail-closed; registro deshabilitado |
+| POST | `/auth/login` | Responde fail-closed; password login deshabilitado |
+| GET | `/auth/me` | Lee sesión y membresías activas |
+| POST | `/auth/logout` | Revoca sesión actual |
+| GET | `/auth/google` | Inicia OAuth |
+| POST | `/auth/google` | Bootstrap administrativo de un solo uso |
+| GET | `/auth/google/callback` | Callback OAuth; valida state/PKCE, allowlist, email verificado y vinculación de identidad |
+
+No se encontraron rutas HTTP comerciales en el registro de Hono de `apps/api/src/index.ts` ni en los módulos de rutas importados. La lista es el inventario de los tres módulos de registro actualmente inspeccionados, no una afirmación sobre endpoints no montados fuera de ese árbol.
+
+### Contexto de tenant y sesión
+
+- `resolveTenantContext` en `apps/api/src/tenant-context.ts` exige token de sesión y UUID de organización; calcula SHA-256 del token y consulta sesión no revocada/no expirada, usuario activo, membresía activa y organización activa.
+- Devuelve `userId`, `organizationId` y `role`. El comentario del helper indica expresamente que **no autoriza una operación de negocio**.
+- No hay `branchId`, asignación de sucursal, caja ni turno en el contexto.
+- `GET /auth/me` devuelve las organizaciones activas del usuario; esto no concede permiso comercial por sí solo.
+- El control de roles por operación y las pruebas negativas cross-tenant/cross-branch siguen pendientes porque no hay handlers comerciales.
+
+### Hallazgos de integridad de esquema
+
+1. **Venta completada no reconciliada por SQL (alto antes de ventas):** `sales` exige `completed_at`, `exchange_rate_id`, `exchange_rate_snapshot` y `total_ves_snapshot` cuando `status='completed'`, y valida `total_usd = subtotal_usd - discount_usd`. No hay constraint que garantice existencia de líneas, suma de `sale_items.line_total_usd`, reconciliación de pagos por moneda ni correspondencia con el total cobrado. La API debe calcular y verificarlo dentro de una transacción; considerar triggers/constraints diferibles solo tras diseñar y probar.
+2. **Saldo de stock vs ledger (alto antes de inventario):** `products.stock_quantity` y `inventory_movements` son dos representaciones relacionadas, pero la DB no garantiza que cada cambio de saldo tenga movimiento correspondiente ni que la suma del ledger coincida. Las operaciones deben actualizar saldo y movimiento atómicamente; evaluar un ledger como fuente de verdad o reconciliación periódica con pruebas.
+3. **Referencia polimórfica no validada (medio):** `inventory_movements.reference_type/reference_id` no tiene FK polimórfica a ventas/compras/devoluciones. La aplicación debe validar tenant y tipo de entidad; mejor diseñar referencias explícitas o tabla de eventos tipada si el modelo crece.
+4. **Idempotencia de pagos ausente (alto antes de pagos):** `sales.idempotency_key` tiene unicidad por organización, pero `payments` no tiene una clave idempotente propia. Un retry del endpoint de pagos podría duplicar un pago si no existe una restricción/diseño de idempotencia.
+5. **Último owner no protegido por esquema (alto antes de gestión de miembros):** `organization_members` limita los roles a cuatro valores, pero no impide desactivar/eliminar el último `owner` activo. Requiere transacción serializada y prueba de concurrencia; una validación solo de UI no sirve.
+6. **Alcance de sucursal ausente (bloqueante de diseño):** no existen tablas de sucursal, almacén, caja o turno; `products.stock_quantity` es organization-scoped. No implementar inventario multi-sucursal sobre este campo.
+7. **Auditoría no inmutable por DB (medio):** `audit_logs` guarda actor/tenant/acción/entidad/metadata, pero el DDL inspeccionado no contiene trigger/privilegios que impidan UPDATE/DELETE. Definir política append-only y privilegios antes de usarlo como libro probatorio.
+8. **Índices de búsqueda (optimización pendiente, no defecto probado):** hay unicidad tenant-scoped para SKU/barcode e índice B-tree `(organization_id, lower(name))`. No se ha medido `EXPLAIN ANALYZE`; no asumir que búsquedas `ILIKE '%term%'` usan ese B-tree. Medir consultas exactas/prefijo con datos sintéticos antes de agregar trigram/GIN.
+
+### Decisiones de diseño aún necesarias
+
+- ERD y propiedad: organización → sucursal → almacén/caja/turno → operaciones.
+- Membresía organizacional separada de asignación sucursal/rol para `cashier` y `inventory`.
+- Modelo de pagos parciales/múltiples y reconciliación de monedas USD/VES.
+- Política de inventario: stock no negativo, reservas, transferencias, devoluciones, costo/valoración y ledger.
+- Política de idempotencia para ventas, pagos, compras, recepciones y devoluciones.
+- Auditoría append-only, último owner y revocación inmediata de sesiones al desactivar usuarios/membresías.
+
+### Alcance y límites de la revisión
+
+- Se inspeccionaron archivos del repositorio en GitHub; no se ejecutó suite local ni SQL en PostgreSQL en esta revisión.
+- No se leyó ni modificó Neon `main`, secretos, datos reales ni producción.
+- Los hallazgos describen riesgos de diseño previos a habilitar handlers, no evidencia de explotación ni corrupción actual.
+- La migración inicial contiene comentario explícito de que no está aplicada a Neon `main`; no inferir estado remoto distinto sin lectura autorizada y evidencia.
+- Siguiente paso: completar inventario de consultas/callers y ERD, luego diseñar tests de PostgreSQL efímero antes de migraciones o endpoints.
+
+---
+
 ## Actualización de estado — 2026-10-29
 
 Este documento contiene observaciones históricas del esquema. Las afirmaciones antiguas de que no existe autenticación o que la API carece de helpers de conexión ya no describen el HEAD actual. En main `5a9bdc5a18a54c3c68639f52125d913d4e725b91` se verificaron rutas Google OAuth/sesión y helpers Neon en `apps/api/src/database.ts`. La API sigue sin handlers comerciales, y no hay evidencia de que las migraciones versionadas se hayan aplicado a Neon `main`. El esquema de negocio no se considera listo para operar: faltan sucursales, almacenes, cajas/turnos, compras/recepciones, devoluciones, y pruebas de autorización de rutas comerciales. Esta nota supersede solo las afirmaciones obsoletas de estado; no reemplaza el análisis de constraints que sigue.

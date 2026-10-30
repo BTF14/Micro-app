@@ -1,6 +1,6 @@
 # Handoff — continuidad segura del proyecto Micro app
 
-**Checkpoint verificado — 2026-10-30 UTC:** `main` = `82386c6e9300e06f8fa209aa52995b939a72442a`, merge SHA de PR #177. PR #177 fusionada; no había PR abiertas al verificar. Cloudflare autenticado, solo lectura: Worker `micro-app-api` versión `49975c43` en Producción con 100% de tráfico asignado; Pages `micro-app` producción `main` en el mismo SHA. La configuración visible de Pages no contiene `VITE_API_BASE_URL`. CORS real sigue sin probarse. La matriz comercial continúa **NO APROBADA**.
+**Checkpoint verificado — 2026-10-30 UTC:** `main` = `82386c6e9300e06f8fa209aa52995b939a72442a`, merge SHA de PR #177. PR #177 fusionada; no había PR abiertas al verificar. Cloudflare autenticado, solo lectura: Worker `micro-app-api` versión `49975c43` en Producción con 100% de tráfico asignado; Pages `micro-app` producción `main` en el mismo SHA. La lista de variables del dashboard Pages está vacía, pero `apps/web/.env.production` versionado define `VITE_API_BASE_URL` con la URL canónica del Worker y `apps/web/vite.config.ts` usa `loadEnv`; falta confirmar el valor efectivo en el bundle desplegado. CORS real sigue sin probarse. La matriz comercial continúa **NO APROBADA**.
 
 ## Lectura obligatoria
 1. `AGENTS.md`.

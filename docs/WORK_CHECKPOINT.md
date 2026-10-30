@@ -1,10 +1,10 @@
 # Checkpoint operativo — PR #178 y continuidad — 2026-10-30 UTC
 
-**Último SHA consultado antes de este commit de corrección:** `c5e48b651b44da1bc0e88467c0e523d3de557926`; este commit vuelve a cambiar la punta, así que resolver el HEAD real antes de actuar. Base `main`: `82386c6e9300e06f8fa209aa52995b939a72442a`. Comparación previa: 65 ahead / 0 behind. PR #178 OPEN, DRAFT, NOT MERGED; GitHub reportó `mergeable=true`.
+**Último SHA consultado antes de este commit de documentación:** `d8a00018437d1f82dfbe358f9112704f53cf3c95`; este commit actualiza la punta, así que resolver el HEAD real antes de actuar. Base `main`: `82386c6e9300e06f8fa209aa52995b939a72442a`. Comparación previa: 66 ahead / 0 behind. PR #178 OPEN, DRAFT, NOT MERGED; GitHub reportó `mergeable=true`.
 
-**CI/previews del SHA padre:** Actions devolvió 0 runs visibles al consultar por `head_sha`; CI **NO VERIFICADO**. Pages reportó build en progreso para `c5e48b6`; Worker preview success más reciente consultado correspondía a `720bc7b0`, no a este SHA. El SHA anterior `74dddc0275698efd6f2e47840c7abbc0e34d512b` tuvo 9/9 workflows success, pero no extrapolarlo.
+**CI/previews del SHA padre:** Actions mostró dos runs queued (`Security scan` y `Secret history scan`), sin evidencia de los demás workflows; CI **PENDIENTE / INCOMPLETO**. Pages reportó build en progreso para `d8a0001`; Worker preview success más reciente correspondía a `c5e48b65`, no a este SHA. No extrapolar checks ni previews anteriores.
 
-**Revisión:** 13 archivos, todos documentales; sin runtime, SQL, migraciones ni workflows. En la consulta previa: 349 adiciones / 230 eliminaciones; 0 reviews formales y 0 threads inline. Branch protection no pudo auditarse (403 en consulta anterior). **No fusionar mientras siga Draft** ni cambiarla a Ready sin autorización del propietario. Un merge puede activar despliegues automáticos Cloudflare.
+**Revisión:** 13 archivos documentales; sin runtime, SQL, migraciones ni workflows. En la consulta previa: 353 adiciones / 235 eliminaciones; 0 reviews formales y 0 threads inline. Branch protection no pudo auditarse (403 en consulta anterior). **No fusionar mientras siga Draft** ni cambiarla a Ready sin autorización del propietario. Un merge puede activar despliegues automáticos Cloudflare.
 
 **Cualquier edición crea un HEAD nuevo y requiere reconsultar checks/previews de ese SHA exacto.**
 ## Cloudflare — evidencia autenticada, solo lectura

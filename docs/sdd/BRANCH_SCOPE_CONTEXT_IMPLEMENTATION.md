@@ -1,6 +1,6 @@
 # Implementación base de alcance por sucursal
 
-**Estado:** implementación propuesta en PR; no fusionada ni aplicada a Neon main.  
+**Estado:** implementada y fusionada en PR #165; migración 0003 NO aplicada a Neon main. El helper sigue aislado y no conectado a rutas comerciales.  
 **Fecha:** 2026-10-30.  
 **Base:** `ce8b0e491fe8b9f6154380cc8b0eea0a19fe8114`.
 
@@ -82,3 +82,11 @@ La revisión Codex no pudo completarse por límite de uso. No hay review humana 
 La consulta del resolver también vuelve a unir `organization_members`, `organizations` y `app_users`, exigiendo que organización, usuario y membresía sigan activos y que el rol de la fila coincida con el rol del `TenantContext` recibido. El ámbito owner/admin se deriva del rol leído en DB; cashier/inventory siguen requiriendo asignación activa. Esto reduce el riesgo de usar un contexto obsoleto tras una revocación o cambio de rol entre la resolución de tenant y la resolución de sucursal. No sustituye la autorización por operación ni elimina la necesidad de transacciones/controles al ejecutar futuras mutaciones.
 
 La integración PostgreSQL ahora cubre además membresía de organización desactivada y rol cambiado desde un contexto previamente resuelto; ambos casos deben denegar. El test restaura los datos sintéticos antes de finalizar.
+
+
+## Estado post-merge verificado — 2026-10-30 UTC
+
+- PR #165 fusionada por squash; merge/main SHA `1d10befe0cd3367e04bd8998a192e93d9b228063`.
+- 9/9 check-runs del merge SHA completados en success. Pages reportó deployment exitoso y Workers build success; no se ha validado el routing autenticado de producción.
+- La migración 0003 sigue sin aplicarse a Neon main. Las pruebas de integración se ejecutaron en PostgreSQL 18 efímero mediante CI.
+- `resolveBranchContext` sigue siendo un helper aislado, no conectado a middleware ni rutas. No implica autorización comercial ni preparación de ventas/inventario.

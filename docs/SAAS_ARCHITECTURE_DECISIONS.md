@@ -224,3 +224,13 @@ El modelo detallado propuesto está en docs/sdd/MULTI_BRANCH_DATA_MODEL.md. Resu
 - ventas, pagos, recepciones y transferencias llevan claves tenant-scoped y relaciones compuestas.
 - migrar desde products.stock_quantity mediante backfill/reconciliación, sin borrar el campo legacy en el primer paso.
 - no se implementan roles, rutas, esquema ni migraciones en este diseño. La matriz de permisos continúa NO APROBADA.
+
+
+## 10. Estado post-PR #165 y baseline de caja/turnos (2026-10-30 UTC)
+
+- La migración versionada 0003 añade `branches` y `branch_memberships`; PR #165 está fusionada. Esta migración todavía no se ha aplicado a Neon main.
+- `resolveBranchContext` está implementado y probado en PostgreSQL efímero, pero no está conectado a rutas ni concede permisos por operación.
+- Decisión de diseño para caja: cada register pertenece a una sucursal. Un register_shift abierto pertenece a un único cajero y una única caja; no se comparte ni se transfiere. Cambio de cajero requiere cierre con conteo y nueva apertura. Máximo un turno abierto por caja y por cajero dentro de la organización, protegido por índices únicos parciales.
+- Owner/admin pueden tener alcance organizacional para resolver sucursales, pero eso no les concede operar el turno de otro cajero. Los overrides requieren permiso separado, motivo y auditoría; siguen pendientes de matriz aprobada.
+- Especificación completa: `docs/sdd/REGISTER_SHIFT_MODEL.md`. No hay migración 0004, tablas registers/register_shifts ni endpoints en el estado actual.
+- Entorno: PostgreSQL 18 desechable de CI para migraciones desde cero. Neon branches son opcionales para pruebas que CI no cubra; evitar su creación rutinaria y establecer expiración/limpieza. Neon main no es entorno de desarrollo.

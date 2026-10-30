@@ -1,16 +1,29 @@
-# Estado actual del esquema — 2026-10-30 UTC
+# Estado actual del esquema — 2026-10-30 UTC (post PR #165)
 
-El DDL vigente de referencia es apps/api/migrations/0001_initial.sql y la propuesta futura está en docs/sdd/MULTI_BRANCH_DATA_MODEL.md. La migración inicial declara que no se ha aplicado a Neon main; no asumir que el estado remoto coincide sin una lectura autorizada y actual.
+**Fuente de verdad del DDL en Git:** `apps/api/migrations/0001_initial.sql`, `0002_google_identity.sql` y `0003_branch_scope.sql`.  
+**Main verificado:** `1d10befe0cd3367e04bd8998a192e93d9b228063`. La PR #165 fusionó la migración 0003; no significa que se haya aplicado a Neon main.
 
-**Esquema actual confirmado en Git:** organizations, organization_members, auth_sessions, auth_rate_limits, auth_allowlist y auth_bootstrap (estas dos últimas en 0002_google_identity.sql), proveedores/productos, exchange_rates, sales, sale_items, payments, inventory_movements y audit_logs. products.stock_quantity sigue a nivel organización. No existen branches, warehouses, registers, register_shifts, branch_memberships, inventory_balances, compras/recepciones, transferencias ni devoluciones en 0001_initial.sql.
+## Esquema versionado actual
 
-**Brechas previas a negocio:** aislamiento por sucursal ausente; venta/líneas/pagos no reconciliados por constraints; pagos sin idempotencia propia; stock y ledger no están sincronizados por constraint; referencia polimórfica sin FK al origen; guard del último owner y auditoría append-only no implementados. Ver SCHEMA_REVIEW.md.
+- Identidad/tenant: `organizations`, `app_users`, `organization_members`, `auth_sessions`, `auth_rate_limits`, `auth_allowlist`, `auth_bootstrap`.
+- Catálogo/operación legacy: `suppliers`, `products`, `exchange_rates`, `sales`, `sale_items`, `payments`, `inventory_movements`, `audit_logs`.
+- Sucursales y asignaciones (0003): `branches`, `branch_memberships`, con FKs compuestas tenant-scoped.
+- `products.stock_quantity` continúa a nivel organización; no existe todavía stock por almacén.
+- No implementado: `warehouses`, `registers`, `register_shifts`, `inventory_balances`, compras/recepciones, transferencias y devoluciones.
+
+## Estado de ejecución y límites
+
+- CI aplica 0001–0003 desde cero en PostgreSQL 18 desechable y ejecuta assertions/integración. Esta es la validación primaria de migraciones.
+- La migración 0003 no se ha aplicado a Neon main. No inferir el estado remoto por el contenido de Git ni ejecutar migraciones allí por rutina.
+- `resolveBranchContext` está implementado y probado, pero no conectado a rutas; no existen handlers comerciales ni autorización por operación.
+- La matriz `docs/sdd/role-permission-decision-matrix.md` sigue **NO APROBADA**.
+- Brechas previas a negocio: reconciliación venta/líneas/pagos, idempotencia propia de pagos, saldo/ledger, referencias tipadas de movimientos, guard del último owner y auditoría append-only. Ver `SCHEMA_REVIEW.md`.
 
 ---
 
 La descripción histórica inferior debe leerse junto con este checkpoint y con `apps/api/migrations/0001_initial.sql` / `0002_google_identity.sql`. El esquema inicial sí incluye `organizations`, `organization_members`, `auth_sessions`, `auth_rate_limits`, `auth_allowlist` y `auth_bootstrap`, además de las tablas comerciales. La API usa `@neondatabase/serverless` en las rutas de autenticación mediante `withDatabaseClient`; por tanto, las frases históricas que dicen que no hay autenticación/conexión API están supersedidas.
 
-**Límites vigentes:** no hay sucursales, almacenes, cajas/turnos, compras/recepciones, devoluciones ni transferencias en el DDL inicial; `products.stock_quantity` sigue a nivel organización. La migración inicial `0001_initial.sql` declara que no se ha aplicado a Neon `main`. El estado histórico del repositorio registra que `0002_google_identity.sql` se aplicó a Neon `main` el 2026-10-25; ese estado remoto no se revalidó en esta sesión. No inferir que `0001` está aplicada ni ejecutar nuevas migraciones allí.
+**Nota de alcance:** el texto histórico de abajo describe el DDL inicial 0001, no el esquema versionado completo. Desde PR #165, `branches` y `branch_memberships` existen en 0003; siguen ausentes almacenes, cajas/turnos, balances, compras/recepciones, devoluciones y transferencias. `products.stock_quantity` sigue a nivel organización. La migración inicial `0001_initial.sql` declara que no se ha aplicado a Neon `main`. El estado histórico del repositorio registra que `0002_google_identity.sql` se aplicó a Neon `main` el 2026-10-25; ese estado remoto no se revalidó en esta sesión. No inferir que `0001` está aplicada ni ejecutar nuevas migraciones allí.
 
 `apps/api/migrations/0001_initial.assertions.sql` prueba varias FK compuestas contra referencias cruzadas de organización, pero su fixture también inserta ventas `completed` sin insertar líneas ni pagos. Esto confirma que las constraints actuales no hacen reconciliación comercial completa. Los endpoints futuros deben calcular y verificar venta/líneas/pagos/stock/ledger dentro de transacciones, con idempotencia y pruebas de rollback/concurrencia.
 
@@ -49,7 +62,7 @@ La migración versionada `apps/api/migrations/0001_initial.sql` establece el esq
 ## Migraciones y conexión
 
 - Mantener los archivos SQL versionados en este directorio.
-- Probar cada migración en una rama temporal antes de aplicarla a la rama principal.
+- Probar primero cada migración desde cero en PostgreSQL desechable de CI. Usar una Neon branch solo si añade una validación que CI no cubre; Neon main no es laboratorio.
 - No guardar cadenas de conexión, contraseñas ni tokens en Git.
 - La migración inicial crea estructura vacía; no inserta usuarios ni datos comerciales.
-- La conexión de la API con Neon y el ejecutor de migraciones todavía deben implementarse y probarse.
+- La API ya dispone de conexión PostgreSQL mediante `@neondatabase/serverless`; CI valida las migraciones versionadas en PostgreSQL desechable. La aplicación de migraciones a Neon main y la operación comercial siguen sin demostrarse.

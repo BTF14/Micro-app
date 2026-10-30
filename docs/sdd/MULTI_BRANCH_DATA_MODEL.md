@@ -1,6 +1,6 @@
 # ERD objetivo: organización, sucursal, almacén, caja y operaciones
 
-**Estado:** propuesta de arquitectura; no implementada, no aprobada como migración y no autoriza endpoints ni cambios en Neon.  
+**Estado:** arquitectura de destino; sucursales y asignaciones están implementadas por PR #165 (migración 0003 aún no aplicada a Neon main). Almacenes, cajas, turnos y stock por almacén siguen como diseño/no implementados. No autoriza endpoints ni cambios en Neon.  
 **Fecha:** 2026-10-30 UTC  
 **Base:** merge de PR #163, main = 894895cfeee1c3d67b1e92bf1fae7d0c30cd36f9.  
 **Fuentes contrastadas:** apps/api/migrations/0001_initial.sql, docs/SCHEMA_REVIEW.md, docs/DATABASE_SCHEMA.md, docs/SAAS_ARCHITECTURE_DECISIONS.md y docs/sdd/role-permission-decision-matrix.md.
@@ -10,12 +10,12 @@
 Diseñar la evolución del modelo actual, que solo tiene inventario a nivel organización, hacia una plataforma multi-organización y multi-sucursal sin debilitar el aislamiento ya existente.
 
 Esta especificación separa:
-- **Existente:** tablas y restricciones actualmente versionadas en 0001_initial.sql.
-- **Objetivo propuesto:** entidades/relaciones descritas aquí.
-- **No implementado:** sucursales, almacenes, cajas, turnos, asignaciones por sucursal, balances por almacén, compras/recepciones, transferencias y devoluciones.
+- **Existente en Git:** esquema base 0001, identidad 0002 y sucursales/asignaciones 0003 (`branches`, `branch_memberships`). La 0003 fue fusionada en PR #165 y validada en PostgreSQL 18 efímero.
+- **Objetivo propuesto:** entidades/relaciones que aún no están implementadas y evolución futura de las ya existentes.
+- **No implementado:** almacenes, cajas, turnos, balances por almacén, compras/recepciones, transferencias y devoluciones. `products.stock_quantity` sigue siendo organización-scoped.
 - **Gate de permisos:** la matriz role-permission-decision-matrix.md sigue NO APROBADA. Ninguna recomendación de rol de este documento autoriza permisos comerciales.
 
-No se ejecutó SQL, no se modificó Neon, no se aplicaron migraciones ni se crearon rutas comerciales.
+La migración 0003 sí se ejecutó en PostgreSQL 18 desechable mediante CI y sus assertions; no se aplicó a Neon `main`. No hay rutas comerciales ni se ha conectado `resolveBranchContext` a handlers.
 
 ## 2. Principios de modelado
 
@@ -77,18 +77,18 @@ El diagrama omite claves técnicas y tablas de auditoría/idempotencia para que 
 | inventory_transfers / lines | tenant-scoped | Transferencia entre dos almacenes de la misma organización, con salida y recepción |
 | audit_logs | (organization_id,id) | Auditoría atribuible, protegida contra modificación ordinaria |
 
-### Membresía y asignaciones: decisión estructural pendiente
+### Membresía y asignaciones: base implementada; normalización de roles pendiente
 
-El esquema actual tiene organization_members.role con cuatro valores (owner, admin, cashier, inventory). Ese campo único no modela adecuadamente a un miembro con asignación a varias sucursales ni separa autoridad organizacional de ámbito operativo.
+La migración 0003 ya crea `branch_memberships` como asignación explícita de un miembro organizacional a una sucursal, con FKs compuestas tenant-scoped y estado revocable. `resolveBranchContext` valida en servidor el tenant, la sucursal activa y la asignación de `cashier`/`inventory`; owner/admin conservan alcance organizacional según la decisión autorizada. El helper no está conectado a rutas.
 
-Dirección propuesta para el siguiente diseño detallado:
-- organization_members representa pertenencia/estado y el nivel organizacional (por ejemplo owner/admin) de forma explícita.
-- branch_memberships representa asignaciones operativas por sucursal (por ejemplo cashier/inventory).
-- No duplicar la autoridad owner en cada sucursal.
+Límites actuales y evolución pendiente:
+- `organization_members` sigue almacenando el rol global (`owner`, `admin`, `cashier`, `inventory`). `branch_memberships` no tiene una columna de rol por sucursal; por tanto, un miembro no puede tener roles distintos por sucursal en el esquema actual.
+- `organization_members` conserva pertenencia/estado y el rol existente; no duplicar la autoridad owner en cada sucursal.
 - Un usuario puede tener varias asignaciones de sucursal, cada una revocable independientemente.
-- La transformación del campo role existente exige migración aditiva, backfill verificado y plan de compatibilidad; no se cambia hasta cerrar la matriz y preparar tests.
+- Cualquier futura normalización de roles por sucursal exige decisión explícita, migración aditiva, backfill verificado, compatibilidad y pruebas; no se infiere de la PR #165.
+- La matriz de permisos comerciales sigue NO APROBADA. La asignación de sucursal no autoriza por sí sola operaciones de ventas, pagos, inventario, anulaciones ni supervisión.
 
-Esto es una recomendación de estructura, no aprobación de las facultades de cada rol.
+Esto describe la estructura implementada y sus límites; no aprueba facultades adicionales de ningún rol.
 
 ## 5. Relaciones e integridad tenant-scoped
 

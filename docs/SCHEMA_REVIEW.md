@@ -1,4 +1,73 @@
-## Auditoría estática posterior a PR #156 — 2026-10-30 UTC
+# Revisión del esquema y la API — estado reconciliado post-PR #165 (2026-10-30 UTC)
+
+**Fuente de código:** `main` = `1d10befe0cd3367e04bd8998a192e93d9b228063` (PR #165 fusionada).  
+**Alcance:** revisión estática de solo lectura de rutas, helpers y migraciones versionadas; no se ejecutó SQL local ni se conectó a Neon.
+
+## Estado vigente del esquema y el contexto de sucursal
+
+- `0001_initial.sql`: esquema base tenant-scoped; `products.stock_quantity` sigue a nivel organización.
+- `0002_google_identity.sql`: identidad Google/allowlist/bootstrap.
+- `0003_branch_scope.sql` (PR #165): añade `branches` y `branch_memberships`, FKs compuestas e índices tenant-scoped. CI aplica 0001–0003 y ejecuta assertions e integración en PostgreSQL 18 desechable.
+- La migración 0003 **no se ha aplicado a Neon main**. El estado de la base remota no se infiere del DDL de Git.
+- `resolveBranchContext` existe y revalida organización, usuario, membresía, rol, sucursal y asignación activa. Es un helper aislado: no se encontró conectado a middleware ni a handlers HTTP.
+- `branch_memberships` no almacena un rol por sucursal; el rol sigue en `organization_members.role`. La asignación limita el alcance de cashier/inventory, pero no modela roles distintos para el mismo usuario en sucursales diferentes.
+- No existen todavía `warehouses`, `registers`, `register_shifts`, `inventory_balances`, compras/recepciones, transferencias ni devoluciones.
+- No hay handlers HTTP comerciales. La matriz `docs/sdd/role-permission-decision-matrix.md` continúa **NO APROBADA**; el contexto de tenant/sucursal no sustituye autorización por operación.
+
+## Inventario de rutas HTTP observado
+
+| Método | Ruta | Estado/propósito |
+|---|---|---|
+| GET | `/health` | Health scaffold |
+| POST | `/auth/register` | Responde fail-closed; registro deshabilitado |
+| POST | `/auth/login` | Responde fail-closed; password login deshabilitado |
+| GET | `/auth/me` | Lee sesión y membresías activas |
+| POST | `/auth/logout` | Revoca sesión actual |
+| GET | `/auth/google` | Inicia OAuth |
+| POST | `/auth/google` | Bootstrap administrativo de un solo uso |
+| GET | `/auth/google/callback` | Callback OAuth; valida state/PKCE, allowlist, email verificado y vinculación de identidad |
+
+No se encontraron rutas HTTP comerciales en el registro de Hono de `apps/api/src/index.ts` ni en los módulos de rutas importados. La lista es el inventario de los módulos de registro inspeccionados, no una afirmación sobre endpoints no montados fuera de ese árbol.
+
+## Contexto de tenant, sucursal y sesión
+
+- `resolveTenantContext` exige sesión y membresía activas y devuelve `userId`, `organizationId` y `role`; es un helper, no autorización comercial.
+- `resolveBranchContext` recibe un `TenantContext` previamente validado, vuelve a validar estado/rol en DB y resuelve sucursal activa. Para cashier/inventory exige asignación activa; owner/admin conservan el alcance organizacional aprobado.
+- Ninguno de los helpers está conectado a rutas comerciales. No se ha probado aislamiento por sucursal a través de operaciones de negocio porque esas operaciones no existen.
+- `withDatabaseTransaction` existe y está probado como helper; el caller productivo observado es el bootstrap Google. No hay uso comercial de transacciones porque aún no existen handlers comerciales.
+
+## Control de abuso / rate limiting
+
+- La tabla `auth_rate_limits` existe en `0001_initial.sql`, pero no se encontró implementación runtime de contador/ventana ni middleware de rate limiting en `apps/api/src`.
+- Estado correcto: **no demostrado/no implementado a nivel de aplicación**. Verificar aparte las reglas Cloudflare; no asumirlas por la presencia de la tabla.
+
+## Hallazgos de integridad pendientes
+
+1. **Venta completada no reconciliada por SQL:** no existe constraint que garantice líneas, suma de importes, pagos por moneda y total cobrado; la API futura debe validar todo en una transacción.
+2. **Saldo de stock vs ledger:** `products.stock_quantity` y `inventory_movements` no se reconcilian por DB; cada mutación futura debe actualizar saldo y ledger atómicamente.
+3. **Referencia polimórfica:** `inventory_movements.reference_type/reference_id` carece de FK tipada al documento origen.
+4. **Idempotencia de pagos:** `payments` no tiene clave idempotente propia.
+5. **Último owner:** el DDL no impide desactivar/eliminar el último `owner` activo; requiere protección transaccional y prueba de concurrencia.
+6. **Autorización comercial por sucursal:** el fundamento de sucursales/asignaciones y el resolver existen; sigue pendiente conectarlos a rutas y probar autorización negativa cross-tenant/cross-branch para cada operación comercial.
+7. **Auditoría append-only:** `audit_logs` no tiene protección DDL/privilegios que impida UPDATE/DELETE.
+8. **Índices de búsqueda:** no se ha medido `EXPLAIN ANALYZE`; no añadir índices trigram/GIN sin benchmark sintético.
+
+## Próximas decisiones y secuencia
+
+- Diseñar e implementar cajas/turnos mediante migración aditiva 0004, assertions SQL y pruebas PostgreSQL 18 efímeras; mantener Neon main fuera del laboratorio.
+- Mantener el helper de turno aislado; no conectar endpoints de caja/ventas hasta aprobar la matriz de permisos por operación y definir autorización transaccional.
+- Después diseñar almacenes, balances/ledger y backfill/reconciliación de `products.stock_quantity`.
+- Resolver idempotencia de pagos, integridad venta/líneas/pagos, último owner, auditoría append-only y rate limiting antes de exponer operaciones comerciales.
+
+## Evidencia y límites
+
+- PR #165 validó migraciones 0001–0003, assertions SQL y pruebas de contexto de sucursal contra PostgreSQL 18 efímero; no equivale a validación de Neon ni producción.
+- No se leyó ni modificó Neon main, datos reales, secretos, DNS, billing ni producción en esta revisión.
+- Los hallazgos describen brechas de diseño/implementación, no evidencia de explotación o corrupción actual.
+
+---
+
+## Auditoría estática histórica posterior a PR #156 — 2026-10-30 UTC (supersedida en el estado de sucursales por PR #165)
 
 **Base revisada:** `main` = `18961456ac535146c4a1687d3b07d8f6693ce141`. Archivos inspeccionados mediante GitHub: `apps/api/src/index.ts`, `auth.ts`, `google-auth.ts`, `tenant-context.ts`, `database.ts`, `apps/api/migrations/0001_initial.sql` y `0002_google_identity.sql`, además de los contratos SDD. Revisión estática de solo lectura; no se ejecutó SQL ni se conectó a Neon.
 

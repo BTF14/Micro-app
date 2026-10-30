@@ -1,15 +1,61 @@
-# Estado vivo — 2026-10-30 UTC (post PR #163)
+# Estado vivo — 2026-10-30 UTC (post PR #165)
 
-- GitHub confirma PR #163 fusionada; merge commit y main verificado: 894895cfeee1c3d67b1e92bf1fae7d0c30cd36f9.
-- PR abiertas al comprobar tras el merge: ninguna.
-- Ocho workflows del HEAD de PR #163 (4b9a2b3993115b798ae4a78e3e0318dbdf50c24e) finalizaron success: CI, Playwright Chromium auth smoke, Database migration validation, Semgrep SAST, Trivy Security, Secret history, Dependency review y Project progress. Son checks del HEAD de PR, no una ejecución post-merge independiente.
-- PR #163 fue documental (8 archivos); no cambió runtime, SQL, migraciones, Neon, Cloudflare, secretos, DNS, billing ni producción.
-- Política comercial: cada organización decide sus reglas, descuentos, límites y aprobaciones; Micro app no fija porcentajes ni umbrales universales.
-- La matriz de permisos sigue NO APROBADA. No implementar autorizaciones comerciales/roles sensibles basadas solo en la propuesta.
-- Nueva rama de diseño: docs/multibranch-erd-architecture-20261030, basada en el merge #163. Añade docs/sdd/MULTI_BRANCH_DATA_MODEL.md como propuesta, no implementación.
-- Estado de esquema confirmado en apps/api/migrations/0001_initial.sql: productos.stock_quantity está a nivel organización; no existen branches, warehouses, registers ni shifts; ventas/pagos/stock mantienen brechas de integridad documentadas.
-- No se ejecutó SQL ni se accedió a Neon main; no hay handlers comerciales.
-- Siguiente gate: revisar el modelo ERD, reconciliar matriz de roles, cerrar decisiones operativas pendientes y diseñar migración aditiva con pruebas PostgreSQL efímeras antes de código.
+**Repositorio:** https://github.com/BTF14/Micro-app  
+**Main verificado:** `1d10befe0cd3367e04bd8998a192e93d9b228063`  
+**PR #165:** fusionada por squash; merge SHA = main SHA. **PR #166:** abierta, base `main`, rama `docs/post-pr165-register-shift-design-20261030`, HEAD inicial revisado `8044a6614b847d580e6e1f755433f05d2b141b75`; no está fusionada.
+
+
+## Verificación actual de PR #166 (consulta GitHub, 2026-10-30 UTC)
+
+- Estado: abierta, no draft, `mergeable=true`; base SHA `1d10befe0cd3367e04bd8998a192e93d9b228063`; HEAD consultado `8044a6614b847d580e6e1f755433f05d2b141b75`.
+- Ocho workflows de GitHub Actions asociados a ese HEAD terminaron `completed/success`: CI, Playwright E2E, Database migration validation, Security scan/Trivy, Semgrep SAST, Secret history scan, Dependency review y Project progress dashboard. Se inspeccionaron jobs y steps; el upload Playwright condicional fue omitido porque no hubo fallo.
+- No hay reviews humanas ni threads inline registrados en la consulta actual.
+- El combined status expuesto por el conector no devolvió status checks; tampoco proporcionó evidencia actual suficiente de checks externos Cloudflare Pages/Workers para este HEAD. No declararlos verdes ni reutilizar resultados de otro SHA.
+- Codex no se reintentó; la limitación de cuota descrita en el checkpoint previo sigue sin considerarse aprobación.
+- La revisión manual del diff detectó documentación post-#165 aún contradictoria: SCHEMA_REVIEW y DATABASE_SCHEMA describían sucursales como inexistentes; MULTI_BRANCH_DATA_MODEL conservaba una sección de asignaciones como pendiente aunque 0003 ya implementó branch_memberships. Se están reconciliando esas fuentes en esta misma PR.
+- Estos resultados son del HEAD consultado antes de los nuevos commits de documentación. Cada commit cambia el HEAD y obliga a volver a verificar checks sobre el SHA final antes de integrar.
+- No se ha fusionado la PR ni se ha autorizado despliegue. No tocar Neon main ni producción.
+
+## Evidencia exacta del estado actual
+- GitHub check-runs consultados directamente para `1d10befe0cd3367e04bd8998a192e93d9b228063`: 9/9 completados con `success` (verify, Chromium auth smoke, postgres-migration, Semgrep, Trivy, secret-history, generate-progress, Cloudflare Pages y Workers Builds).
+- Cloudflare Pages reportó **Deployed successfully** para el commit `1d10befe0cd3367e04bd8998a192e93d9b228063`; Workers Builds reportó build exitoso y un Version ID. Esto confirma los resultados de integración post-merge, no una prueba independiente de routing funcional, sesión OAuth ni operaciones comerciales live.
+- PR #165 implementó migración aditiva `0003_branch_scope.sql`, tablas `branches` y `branch_memberships`, `resolveBranchContext`, tests unitarios/integración PostgreSQL y assertions tenant-scoped.
+- La revisión de PR #165 fue manual sobre el diff completo de 13 archivos. No hubo review humana ni threads inline; Codex no completó por cuota y no se consideró aprobación.
+- La migración 0003 **no se ha aplicado a Neon main**. No se usaron datos reales ni se ejecutó SQL en Neon main.
+- No se ha confirmado el routing/versión live de Pages ni el comportamiento autenticado de producción.
+
+## Arquitectura implementada vs pendiente
+- API Hono: auth y `GET /health`; no hay handlers comerciales.
+- `resolveTenantContext` y `resolveBranchContext` son helpers de contexto; el helper de sucursal aún no está conectado a rutas. No existe autorización comercial por operación.
+- Implementado en esquema versionado: organizaciones, miembros, productos/stock legacy por organización, sucursales y asignaciones de sucursal.
+- No implementado: almacenes, cajas, turnos, stock por almacén, endpoints de ventas/inventario/pagos, rate limiting runtime ni matriz de permisos comerciales aprobada.
+- La matriz `docs/sdd/role-permission-decision-matrix.md` sigue **NO APROBADA**. Las políticas comerciales (descuentos/límites/aprobaciones) pertenecen a cada organización; no imponer umbrales universales.
+
+## Decisión arquitectónica vigente: bases de datos
+- PostgreSQL desechable en CI es el entorno primario para migraciones y pruebas desde cero.
+- Neon branches solo se crean cuando aporten una validación adicional que CI no pueda cubrir; deben ser aisladas, sintéticas cuando sea posible, con expiración y limpieza para respetar el límite de ramas/coste.
+- Neon `main` queda fuera del ciclo de desarrollo y no se usa como laboratorio. Toda futura mutación requiere el gate de `docs/CONSTITUTION.md`, prueba previa, recuperación verificada y autorización según riesgo.
+- No se creó ni modificó ninguna Neon branch en este bloque. El intento de lectura de ramas no devolvió resultado utilizable; no inferir su número actual.
+- El flujo de CI actual aplica migraciones en PostgreSQL efímero. No sustituir esta prueba por una migración en Neon main.
+
+## Decisión operativa de caja/turnos adoptada para el diseño
+- Una caja pertenece a una sucursal.
+- Cada turno abierto pertenece a **un único cajero y una única caja**; no se comparte ni se transfiere.
+- Un cajero no mantiene dos turnos abiertos simultáneamente dentro de la misma organización; una caja tampoco puede tener dos turnos abiertos.
+- Cambio de responsable = cerrar el turno anterior con conteo de efectivo y abrir un turno nuevo para el siguiente cajero. No se cambia el cajero de un turno abierto.
+- Supervisión/override de owner/admin será una capacidad separada, auditada y pendiente de la matriz de permisos; no convierte a esos roles en cajeros ni permite operar silenciosamente un turno ajeno.
+- El diseño detallado se documenta en `docs/sdd/REGISTER_SHIFT_MODEL.md`. Esta decisión no crea endpoints ni aprueba la matriz comercial completa.
+
+## Bloque de trabajo actual
+- Rama: `docs/post-pr165-register-shift-design-20261030`.
+- Alcance: reconciliación post-#165, corrección de continuidad y especificación de caja/turnos; sin SQL runtime, migraciones, secretos, infraestructura o despliegues.
+- Próxima acción: completar revisión documental, ejecutar checks automáticos de la PR y verificar el SHA exacto antes de considerar merge.
+
+## Restricciones y gates
+- No migrar Neon main, no modificar producción, secretos, DNS, billing ni planes de pago.
+- No afirmar capacidad de tenants/sucursales sin pruebas de carga representativas.
+- No abrir PR solo para checkpoints; incluir continuidad en el cambio sustantivo.
+- Actualizar README solo al cerrar una capacidad de producto implementada y verificada; este bloque es diseño/documentación y no anuncia funcionalidades.
 
 ---
 
@@ -448,8 +494,6 @@ Fuentes públicas consultadas:
 - Limitaciones: el resultado de `pnpm outdated` debe leerse para distinguir actualizaciones de un error de registry; un audit fallido puede ser advisory high/critical o error de registry. El resumen incluye esta advertencia. El workflow no sustituye revisión de changelogs, peer dependencies, lockfile ni CI completa.
 - Guardrail obligatorio: mantener `undici@7.30.1` coherente entre `package.json` y `pnpm-lock.yaml` hasta que una actualización de seguridad revisada lo reemplace explícitamente.
 - Estado actual: archivo añadido al HEAD de esta rama; todavía debe pasar los checks de la PR #137. No afirmar que la ejecución diaria funciona hasta observar al menos una ejecución real después del merge.
-
----
 
 ---
 

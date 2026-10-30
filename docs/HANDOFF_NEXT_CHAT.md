@@ -1,18 +1,51 @@
-# Reanudación inmediata — 2026-10-30 UTC, post PR #163
+# Reanudación inmediata — 2026-10-30 UTC, post PR #165
 
-**Fuente de verdad:** GitHub. Verificar main/PR/Actions en vivo antes de cualquier acción.
+**Fuente de verdad:** GitHub live. No asumir que los snapshots históricos posteriores reflejan main actual.
 
-- PR #163 fusionada: https://github.com/BTF14/Micro-app/pull/163
-- Merge/main verificado: 894895cfeee1c3d67b1e92bf1fae7d0c30cd36f9.
-- Los ocho workflows del HEAD PR 4b9a2b3993115b798ae4a78e3e0318dbdf50c24e terminaron success. No hay PR abiertas tras el merge.
-- El trabajo siguiente está en la rama docs/multibranch-erd-architecture-20261030; documento principal: docs/sdd/MULTI_BRANCH_DATA_MODEL.md.
-- El ERD es propuesta, no implementación. No hay sucursales/almacenes/cajas/turnos en el DDL actual y products.stock_quantity sigue organization-scoped.
-- La matriz docs/sdd/role-permission-decision-matrix.md sigue NO APROBADA. No implementar permisos sensibles ni endpoints comerciales hasta cerrar esa aprobación.
-- Cada organización define su política comercial, incluidos descuentos; Micro app no fija porcentajes/umbrales universales.
-- Revisar el diff de la PR de ERD, checks del SHA exacto y actualizar este handoff/checkpoint dentro de esa PR.
-- No ejecutar migraciones en Neon main, no usar datos reales, no desplegar producción ni incurrir en costes. Pruebas futuras en PostgreSQL efímero.
-- Después del ERD: cerrar membresía/branch assignments, stock balance+ledger, caja/turnos, integridad venta/líneas/pagos, transferencias, idempotencia y auditoría; luego SDD de migración y pruebas antes de implementar.
+## Estado confirmado
+- Repositorio: `BTF14/Micro-app`.
+- `main` = `1d10befe0cd3367e04bd8998a192e93d9b228063`; PR #165 fusionada por squash (merge SHA idéntico).
+- PR #166 sigue abierta y no fusionada: base `main` SHA `1d10befe0cd3367e04bd8998a192e93d9b228063`; rama `docs/post-pr165-register-shift-design-20261030`; HEAD consultado antes de la reconciliación adicional `8044a6614b847d580e6e1f755433f05d2b141b75`.
+- En el HEAD consultado de PR #166, 8 workflows de GitHub Actions terminaron `success` (CI, Playwright, migraciones PostgreSQL, Trivy, Semgrep, secret-history, Dependency Review y dashboard). No hay reviews humanas ni threads inline. La consulta actual no confirma checks externos de Cloudflare para ese HEAD; no extrapolar resultados.
+- La PR #165 agregó `branches`, `branch_memberships`, migración 0003, resolver de contexto y pruebas PostgreSQL efímeras. No conectó el resolver a rutas.
+- Neon main sigue sin migración 0003. No ejecutar SQL en esa rama.
 
+## Reglas ya decididas
+1. PostgreSQL desechable en CI para migraciones y pruebas desde cero.
+2. Neon branch solo si aporta validación adicional; aislarla, usar datos sintéticos cuando sea posible, fijar expiración y limpiar. No crear una branch por rutina si CI cubre el caso.
+3. Neon `main` no es laboratorio. Cualquier cambio requiere gate constitucional, recuperación demostrada y autorización aplicable.
+4. Caja/turnos: un turno abierto por cajero y caja; no compartir ni transferir. Cambio de cajero = cierre auditado y nueva apertura. Una caja y un cajero no pueden tener dos turnos abiertos a la vez dentro de una organización.
+5. La supervisión/override de owner/admin no está aprobada como permiso comercial; diseñarla como acción separada, explícita y auditada.
+6. La matriz `docs/sdd/role-permission-decision-matrix.md` sigue NO APROBADA. No implementar rutas comerciales ni permisos sensibles basados en la propuesta.
+
+## Lectura obligatoria antes de tocar código/DB
+- `AGENTS.md`
+- `docs/CURRENT_STATE.md`
+- `docs/WORK_CHECKPOINT.md`
+- `docs/AI_COLLABORATION_AND_PR_POLICY.md`
+- `docs/CONSTITUTION.md`
+- `docs/BACKUP_AND_RECOVERY.md`
+- `docs/SECURITY_ROADMAP.md`
+- `docs/SAAS_ARCHITECTURE_DECISIONS.md`
+- `docs/sdd/MULTI_BRANCH_DATA_MODEL.md`
+- `docs/sdd/REGISTER_SHIFT_MODEL.md`
+- `.agents/skills/micro-app-postgres-testing/SKILL.md`
+
+## Trabajo activo
+- Rama documental: `docs/post-pr165-register-shift-design-20261030`, basada en main `1d10befe0cd3367e04bd8998a192e93d9b228063`.
+- Propósito: corregir snapshots obsoletos post-#165, documentar la decisión de turnos y el flujo de pruebas con PostgreSQL efímero.
+- No contiene implementación de caja/turnos ni migraciones nuevas; no anunciar esas capacidades.
+- Reconciliar los documentos de esquema que todavía describían `branches`/`branch_memberships` como inexistentes; verificar el diff completo y checks del nuevo HEAD. No fusionar PR #166 sin autorización expresa, aunque los checks estén verdes.
+
+## Siguiente secuencia después de este bloque
+1. Completar la reconciliación documental de PR #166 y verificar su HEAD final.
+2. Tras cerrar el gate de integración documental, implementar `registers` y `register_shifts` mediante migración aditiva 0004, assertions SQL y pruebas de integración en PostgreSQL efímero.
+3. Mantener el resolver de turnos como helper aislado; no añadir endpoints comerciales hasta que matriz de permisos, autorización por operación, transacciones e idempotencia estén resueltas.
+4. Diseñar después almacenes, balances/ledger y backfill del stock legacy con reconciliación.
+5. Revalidar límites de Neon/Cloudflare y hacer pruebas sintéticas de capacidad antes de prometer número de clientes.
+
+## Límites
+No Neon main, no datos reales, no secretos, no cambios de Cloudflare, DNS, billing o producción. No reintentar Codex mientras la cuota siga agotada. No crear PR de checkpoint independiente.
 ---
 
 # Reanudación inmediata — 2026-10-30 UTC, post PR #161

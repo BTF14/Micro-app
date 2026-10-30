@@ -1,25 +1,30 @@
-# Checkpoint vigente — diseño ERD multi-sucursal (2026-10-30 UTC)
+# Checkpoint vigente — 2026-10-30 UTC, post PR #165
 
-**Rama:** docs/multibranch-erd-architecture-20261030  
-**Base:** 894895cfeee1c3d67b1e92bf1fae7d0c30cd36f9 (merge verificado PR #163)  
-**Alcance:** diseño documental; no código, migración, SQL ni infraestructura.
+**Repositorio:** BTF14/Micro-app  
+**Base/main verificado:** `1d10befe0cd3367e04bd8998a192e93d9b228063`  
+**Rama actual:** `docs/post-pr165-register-shift-design-20261030`  
+**Alcance:** reconciliación de continuidad y especificación de caja/turnos; solo documentación.
 
-## Bloque previo completado: PR #163
-- Merge commit: 894895cfeee1c3d67b1e92bf1fae7d0c30cd36f9.
-- HEAD probado: 4b9a2b3993115b798ae4a78e3e0318dbdf50c24e.
-- Ocho workflows success: CI, Playwright Chromium, postgres migration, Semgrep, Trivy, secret history, dependency review y project progress.
-- Diff manual revisado; 8 archivos documentales; no reviews humanas ni threads inline; Codex no disponible/no ejecutado.
-- No se tocó producción, Neon, Cloudflare settings, secretos, datos, DNS ni billing.
+## Evidencia
+- PR #165 fusionada por squash. PR #166 está abierta, no fusionada, base `main` SHA `1d10befe0cd3367e04bd8998a192e93d9b228063`, HEAD consultado `8044a6614b847d580e6e1f755433f05d2b141b75`.
+- En el HEAD consultado de PR #166, 8 workflows de GitHub Actions finalizaron `success`; se inspeccionaron jobs/steps. No hay reviews humanas ni threads inline. El conector no confirmó checks externos Cloudflare para ese HEAD. Los checks de PR #165 (incluidos Pages/Workers) corresponden a otro SHA.
+- La PR #165 implementó migración 0003 y contexto de sucursal, con pruebas en PostgreSQL 18 efímero. La migración no se aplicó a Neon main.
+- No hay handlers comerciales; `resolveBranchContext` aún no está conectado a rutas.
 
-## Bloque actual
-- Nuevo diseño: docs/sdd/MULTI_BRANCH_DATA_MODEL.md.
-- Contrasta DDL real apps/api/migrations/0001_initial.sql con el objetivo organización→sucursal→almacén/caja/turno.
-- Documenta membresía vs asignación de sucursal, FKs tenant-scoped, stock balance+ledger, transferencias, caja/turnos, integridad venta/pagos, idempotencia, último owner y auditoría.
-- La matriz de permisos continúa NO APROBADA. Diseño no autoriza implementación.
-- No se ejecutaron pruebas runtime porque no hay código/SQL nuevo; los criterios de aceptación quedan especificados para la fase de implementación.
-- PR abierta: [#164](https://github.com/BTF14/Micro-app/pull/164). Revisión manual del diff documental de 9 archivos completada; no se detectaron hallazgos materiales pendientes.
-- Se iniciaron los 8 workflows requeridos para la PR; los resultados de cualquier SHA anterior no se reutilizan. Verificar todos los workflows sobre el HEAD vivo de la PR inmediatamente antes de merge.
-- No hay reviews humanas ni threads inline; Codex no se ejecutó. No fusionar hasta que todos los checks requeridos del SHA exacto finalicen correctamente.
+## Decisiones registradas
+- CI PostgreSQL efímero es el entorno primario de migración y pruebas desde cero.
+- Neon branch solo bajo necesidad adicional demostrada, aislada y con expiración/limpieza; Neon main no es laboratorio.
+- Turno individual por cajero y caja; sin compartir ni transferir. Cambio de responsable requiere cierre y nueva apertura. Máximo un turno abierto por caja y por cajero/organización.
+- Overrides de supervisión y permisos comerciales permanecen pendientes de matriz aprobada.
+
+## Trabajo activo
+- Diseño completo en `docs/sdd/REGISTER_SHIFT_MODEL.md`.
+- Reconciliar SCHEMA_REVIEW, DATABASE_SCHEMA y MULTI_BRANCH_DATA_MODEL con el DDL 0001–0003 y el resolver implementado por #165.
+- Mantener este PR documental sin añadir migraciones ni runtime; conservar snapshots anteriores como historia, no como estado vigente.
+- Revisar manualmente el diff completo y verificar los checks del HEAD final. No fusionar sin autorización expresa ni afirmar Cloudflare verde sin evidencia del SHA.
+
+## Próximo paso exacto
+Después de cerrar el gate de integración de PR #166, implementar migration 0004 (`registers`, `register_shifts`), assertions y tests PostgreSQL 18 efímeros. Mantener la implementación separada de endpoints comerciales hasta aprobar autorización por operación. No aplicar migraciones a Neon main.
 
 ---
 

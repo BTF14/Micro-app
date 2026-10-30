@@ -13,6 +13,8 @@
 - Capacidad SaaS sin medir. Revisar límites de Neon, Workers, Pages, KV y transferencia; pruebas sintéticas solamente. Presupuesto $0.
 - No producción, secretos, datos reales ni Neon `main`. Producción NO lista.
 
+- **Verificación de CI más reciente completa:** HEAD `8c15e13fa001a14a0ddf9f2432bc17efb30d476d` tuvo los 8 workflows requeridos en `success`, incluidos los seis contexts de protección (`verify`, `postgres-migration`, Chromium authentication smoke tests, JavaScript/TypeScript static analysis, Trivy y secret-history scan), además de Dependency Review y dashboard. Runs: 40978525543, 40978521649, 40978521865, 40978521671, 40978521571, 40978521386, 40978521350 y 40978521537. Después se añadieron dos commits documentales hasta `23cbb313ebb163d3c808f8d0953b85645262c520`; no se devolvieron runs/statuses para ese HEAD. Por tanto, **no declarar verde el HEAD actual** ni fusionar hasta verificarlo.
+
 ## Pasos para el siguiente agente
 
 1. Confirmar branch HEAD, main SHA, estado PR #156, reviews, threads y checks exactos.

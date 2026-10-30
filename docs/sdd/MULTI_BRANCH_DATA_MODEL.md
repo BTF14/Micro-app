@@ -3,7 +3,7 @@
 **Estado:** main incluye sucursales/asignaciones por PR #165 (0003); PR #167 fusionó `registers`/`register_shifts` mediante 0004 en main. Ninguna migración 0003/0004 se ha aplicado a Neon main. Almacenes, balances por almacén y operaciones comerciales siguen pendientes. No autoriza endpoints ni cambios en Neon.  
 **Fecha:** 2026-10-30 UTC  
 **Base original del diseño:** merge de PR #163, main = 894895cfeee1c3d67b1e92bf1fae7d0c30cd36f9.  
-**Main vigente tras PR #167:** `c1cd8650db33aa4a249eaf1f55d321513d576e10`.  
+**Merge SHA de PR #167 (integró 0004):** `c1cd8650db33aa4a249eaf1f55d321513d576e10`.  
 **Fuentes contrastadas:** apps/api/migrations/0001_initial.sql, docs/SCHEMA_REVIEW.md, docs/DATABASE_SCHEMA.md, docs/SAAS_ARCHITECTURE_DECISIONS.md y docs/sdd/role-permission-decision-matrix.md.
 
 ## 1. Propósito y límites

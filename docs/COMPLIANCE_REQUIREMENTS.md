@@ -2,7 +2,7 @@
 
 Estado: borrador de requisitos de producto; no constituye asesoría legal ni certificación fiscal.
 Alcance: POS e inventario para comercios, con foco inicial en Venezuela.
-Última revisión documental: 2026-10-17.
+Última revisión documental: 2026-10-30.
 
 ## Principios de implementación
 
@@ -31,9 +31,9 @@ Alcance: POS e inventario para comercios, con foco inicial en Venezuela.
 | AUD-02 | Integridad de inventario | Alta | Registrar movimientos de inventario vinculados a operaciones; ejecutar venta, pagos, existencias y libro de movimientos en una sola transacción; evitar stock negativo según política. | Pendiente. |
 | FISC-01 | Estado fiscal transparente | Bloqueante antes de emitir documentos | Confirmar requisitos aplicables de SENIAT y equipos/sistemas fiscales. Si no está autorizado/homologado cuando sea exigible, etiquetar claramente documentos como control interno y no presentarlos como facturas fiscales. | Pendiente de validación legal/técnica. |
 | OFF-01 | Operación sin conexión | Media | Definir qué funciones funcionan offline, cómo se encolan operaciones, cómo se resuelven conflictos y qué se pierde ante cierre, fallo eléctrico o limpieza del dispositivo. No prometer sincronización hasta probarla. | Pendiente; no hay modo offline implementado. |
-| DATA-01 | Exportación y respaldo | Alta | Respaldos automáticos diarios a destino independiente privado/cifrado, retención limitada, alerta de fallos y restauración probada en entorno aislado; exportaciones autorizadas con control de acceso. | Pendiente: política documentada en [BACKUP_AND_RECOVERY.md](BACKUP_AND_RECOVERY.md); no hay evidencia de automatización independiente ni restore probado. |
+| DATA-01 | Exportación y respaldo | Alta | Respaldos automáticos diarios a destino independiente privado/cifrado, retención limitada, alerta de fallos y restauración probada en entorno aislado; exportaciones autorizadas con control de acceso. | Parcial: existe workflow de smoke test sintético cifrado/restauración y la ejecución de PR #167 pasó; no demuestra backup productivo independiente, retención efectiva ni restore operativo recurrente. Revalidar en el SHA actual y seguir [BACKUP_AND_RECOVERY.md](BACKUP_AND_RECOVERY.md). |
 | DATA-02 | Baja y eliminación | Alta | Definir solicitud de baja, exportación previa, plazos y eliminación; preservar registros que deban conservarse legalmente y explicar excepciones. | Pendiente. |
-| SEC-01 | Autenticación y roles | Bloqueante antes de datos reales | Implementar autenticación, aislamiento por comercio/tenant, autorización en servidor, gestión de sesiones y pruebas de acceso cruzado. | Pendiente; todavía no hay autenticación real. |
+| SEC-01 | Autenticación y roles | Bloqueante antes de datos reales | Implementar autenticación, aislamiento por comercio/tenant, autorización en servidor, gestión de sesiones y pruebas de acceso cruzado. | Parcial: Google OAuth, allowlist, sesiones revocables y helpers tenant/branch implementados; no hay rutas comerciales ni autorización server-side por operación, y la matriz de permisos sigue NO APROBADA. No listo para datos reales. |
 | REL-01 | Pruebas de negocio y recuperación | Alta | Probar transacciones fallidas, concurrencia de ventas/stock, idempotencia, restauración, errores de tasa y límites de permisos con base de pruebas separada. | Pendiente. |
 
 ## Reglas de diseño para dinero e impuestos
@@ -69,10 +69,10 @@ Las fuentes secundarias pueden ayudar a localizar normas, pero no deben ser la �
 ## Estado técnico conocido al documentar
 
 - La interfaz es un shell provisional y no está conectada a datos comerciales.
-- La API no tiene autenticación real ni endpoints comerciales.
-- Existe un esquema SQL versionado, pero la migración inicial no se ha aplicado a la rama principal de Neon.
-- Hay una rama de trabajo para el adaptador de transacciones Neon; aún requiere CI y pruebas de integración.
-- No hay despliegue de producción ni integración real con BCV.
+- La API Hono tiene Google OAuth/allowlist, sesiones revocables y helpers de contexto tenant/sucursal; no hay endpoints comerciales ni autorización por operación. Registro público y password login siguen fail-closed.
+- Main versiona migraciones 0001–0003; PR #167 contiene 0004 para cajas/turnos en una rama aún no fusionada. Ninguna de estas afirmaciones implica que 0001/0003/0004 estén aplicadas a Neon main; el estado remoto no se infiere desde Git.
+- El adaptador transaccional histórico se integró mediante PR #1; los flujos comerciales que lo necesiten todavía requieren diseño y pruebas de negocio.
+- No hay readiness productiva demostrada ni integración BCV. Los smoke tests sintéticos de CI no prueban operación productiva.
 
 
 ## Política operativa de respaldo

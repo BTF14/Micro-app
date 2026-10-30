@@ -1,3 +1,71 @@
+# Checkpoint continuidad — 2026-10-30 UTC (Node/pnpm corregidos en PR #159)
+
+- **PR #158** (documentación Cloudflare/CI): https://github.com/BTF14/Micro-app/pull/158. Rama docs/workflow-deployment-audit-20261030; abierta, draft, no mergeada. HEAD conocido antes de este checkpoint: 162765fac25bf3aa623a41676d56e570afabd7fd; 12/12 checks success.
+- **PR #159** (pinning de toolchain): https://github.com/BTF14/Micro-app/pull/159. Rama fix/cloudflare-node-pnpm-pinning-20261030; abierta, draft, no mergeada. HEAD 57de704c03fffebfd9aee2ae91c05a0e3af7515a; 13/13 checks success.
+- PR #159 añade .node-version = 24.22.2, packageManager = pnpm@10.34.9 y alinea node-version-file/pnpm exactos en CI, Playwright, AutoSkills preview, Daily Dependency Watch y Regenerate Lockfile.
+- Cloudflare Pages build log del SHA 57de704 confirmó Node 24.22.2 + pnpm 10.34.9, build exitoso, sin Unsupported Engine warning; preview https://70046713.micro-app-63i.pages.dev. No se fusionó ni se desplegó producción.
+- Mantener PRs separadas: #158 solo docs; #159 solo toolchain/workflows. No fusionar ninguna sin autorización explícita porque push/merge a main activa despliegues externos.
+- No cambiar Cloudflare settings, Neon main, secretos, DNS, billing, datos reales ni producción. Objetivo USD 0. Sin Codex.
+
+---
+
+# Checkpoint final — 2026-10-30 UTC (PR #158 HEAD 5b1b573)
+
+- **PR #158:** abierta, draft, no fusionada; base main = 1ee1808af4aae484a71dc24750237ff4f4d934a0.
+- **HEAD actual:** 5b1b5734f3fa8024f060694e5dbc5f5f9f8ab766; cinco archivos de documentación, cinco commits, sin cambios de aplicación/workflows/migraciones.
+- **Checks del SHA exacto:** 12/12 success (GitHub Actions y Cloudflare). Cloudflare Pages preview: https://d8477e48.micro-app-63i.pages.dev. Workers preview: https://2935f95a-micro-app-api.btfcasheb.workers.dev. Son previews, no producción.
+- **Pages Settings:** main producción; root vacío; build corepack enable && pnpm install --frozen-lockfile && pnpm --filter @micro-app/web build; output apps/web/dist; build system v3; cache off; monitoring *; preview público por defecto; sin dominio custom. Detalles completos en docs/WORKFLOW_AND_DEPLOYMENT_AUDIT.md.
+- **Preview isolation:** verificado en código main: API base vacía, llamadas API bloqueadas, login deshabilitado, CSP sin API en previews; _headers define CSP/seguridad para producción. Mantener pruebas de regresión.
+- **Pendientes:** revisar build logs para versión efectiva Node/pnpm; evaluar pin pnpm, build cache y semántica “Fail open” sin cambiar ahora; verificar headers HTTP efectivos; revisar cuota Pages; confirmar required checks/branch protection (no confirmado).
+- **Guardrails:** no merge/deploy sin permiso explícito; no tocar Cloudflare settings, Neon main, secretos, datos reales, billing ni DNS. Objetivo USD 0. No Codex.
+
+---
+
+## Checkpoint Pages Settings — 2026-10-30 UTC
+
+- TinyFish accedió a Settings de Pages `micro-app`, solo lectura. Production branch `main`; root directory vacío; build command `corepack enable && pnpm install --frozen-lockfile && pnpm --filter @micro-app/web build`; output `apps/web/dist`; build system v3; cache off; monitoring routes `*`; automatic deploys on; no deploy hooks; build comments on; preview access public by default; no custom domains; vars names only: `CLOUDFLARE_INCLUDE_PROCESS_ENV`, `VITE_API_BASE_URL`.
+- Compatibility date `2026-10-17`; flags panel mostró True; Functions setting mostró `Fail open` (no interpretar/cambiar sin confirmar).
+- Repo main confirma monorepo pnpm `apps/*`; root package requiere Node `>=24.22.2 <25` pero no fija `packageManager`. Pendiente verificar Node/pnpm efectivos en build logs; evaluar pinning en PR separada.
+- Build command compila web vía `apps/web/package.json` script `tsc -b && vite build && node scripts/postbuild.mjs`; API se valida en workflows separados.
+- `apps/web/public/_headers` existe: nosniff, DENY, Referrer-Policy, Permissions-Policy, HSTS, CSP. CSP prod permite API Worker. Postbuild quita Worker de CSP en preview; Vite deja API base vacía y activa preview flag; auth.ts bloquea API y App.tsx deshabilita login y muestra aviso. Preview público por defecto, pero aislamiento API está implementado en main auditada. Mantener tests de regresión.
+- `_redirects` no existe en `apps/web/public/`; UI no mostró configuración de redirects/headers.
+- Cache deshabilitado puede consumir más build time; medir antes de cambiar. Pages usage/billing no consultados.
+- Sin cambios en configuración/infra/secretos/builds/producción. PR #158 sigue draft y no fusionada.
+
+## Checkpoint — 2026-10-30 UTC: Pages y despliegues confirmados
+
+- Pages `micro-app` usa `main` como production branch y auto-deploy al push a main. Último deploy productivo observado activo: commit `1ee1808af4aae484a71dc24750237ff4f4d934a0`, timestamp `2026-10-30T01:30:08.9457Z`, URL `https://06553c7b.micro-app-63i.pages.dev`.
+- Las ramas no productivas generan previews. PR #158 commit `79be208` preview successful; no es producción. Vista: 15 despliegues recientes (1 producción + 14 previews), 1.100 total en historial, los 15 visibles successful.
+- Settings Pages no accesible: root/build/output/framework/Functions/redirects/headers/env/uso no confirmados. No custom domain visible.
+- Merge a main puede desplegar frontend automáticamente; PR #158 sigue draft y no debe fusionarse sin autorización explícita.
+- CI duplicación: corregido el falso positivo anterior; solo secret-history-scan y security-scan tienen push amplio con duplicación potencial general. No modificar hasta confirmar required checks.
+- Detalle completo en `docs/WORKFLOW_AND_DEPLOYMENT_AUDIT.md`.
+
+---
+
+## Checkpoint prioritario — 2026-10-30 UTC: corrección CI/CD + Cloudflare
+
+- La primera auditoría de workflows clasificó erróneamente siete workflows como push+PR sin filtros. La lectura directa posterior de los 15 YAML corrige esto: duplicación general potencial solo en `secret-history-scan.yml` (push todas las ramas) y `security-scan.yml` (push sin filtro). Otros workflows restringen ramas o paths. No modificar triggers hasta confirmar branch protection y contexts requeridos.
+- Cloudflare panel confirmado mediante TinyFish, solo lectura. Workers Free $0/mes; 100k requests/día, 10ms CPU/request, 3.000 build minutes/mes, 100 Workers, 5 cron triggers. Snapshot: 183 requests, 0 errores y 106,68 build minutes últimas 24h; el Worker view reportó 85 invocaciones y P90 CPU 10ms. Métricas puntuales, no benchmark.
+- Worker `micro-app-api`: `main` identificada como producción; ramas `docs/*` como previews. PR #158 obtuvo Worker preview successful y Pages preview successful para `d3f056b`; no son deploys productivos.
+- Pages existe: proyecto `micro-app`, URL `https://micro-app-63i.pages.dev/`, repo BTF14/Micro-app. Historial detallado, producción branch/build settings y consumo no extraídos.
+- Logs/Traces aparecían desactivados. No activar hasta definir redacción de datos y revisar coste.
+- No fusionar PR #158 sin autorización específica de producción. Mantener $0, no tocar Neon main, secretos, datos reales ni infraestructura.
+
+Próximos pasos: completar Pages read-only; verificar branch protection/check contexts; proponer reducción de triggers solo en los dos workflows de push amplio; mantener PR #158 como única PR documental y actualizar handoff.
+
+---
+
+## Checkpoint prioritario — 2026-10-30 UTC, post PR #157
+
+- Main = `1ee1808af4aae484a71dc24750237ff4f4d934a0`; PR #157 fusionada (HEAD `6eb464c950f195ec67350977575aef77e9790e1d`). Ocho workflow runs devueltos para ese HEAD finalizaron success; no se recuperó evidencia post-merge para el merge SHA.
+- Auditoría de 15 workflows en [WORKFLOW_AND_DEPLOYMENT_AUDIT.md](WORKFLOW_AND_DEPLOYMENT_AUDIT.md). No existe workflow de deploy de Cloudflare en GitHub Actions; los builds de Cloudflare parecen gestionados por Git integration externa, no inspeccionable desde las herramientas actuales.
+- Siete workflows (`ci`, `migration-check`, `playwright-e2e`, `project-progress`, `secret-history-scan`, `security-scan` y `semgrep`) ejecutan tanto en `push` como en `pull_request` sin filtros de branch/path, por lo que commits a una rama con PR pueden duplicar runs. `sdd-docs-validation` también escucha ambos eventos, pero limita `main` y paths documentales. Antes de optimizar, verificar branch protection y contexts requeridos.
+- No fusionar a main sin autorización explícita para el posible deploy automático externo. Producción sigue NO LISTA.
+- Prioridades: (1) branch protection/rulesets y Cloudflare dashboard en solo lectura; (2) optimización de triggers preservando checks; (3) inventario de queries/callers; (4) ERD branch/warehouse/register/shift; (5) matriz de permisos aprobada antes de endpoints o migraciones.
+
+---
+
 ## Checkpoint de arquitectura y auditoría — 2026-10-30 UTC
 
 - PR #156 fusionada en main: `18961456ac535146c4a1687d3b07d8f6693ce141`. Su HEAD `6c068f3e9734736ac26e51ff754e39915d660abe` pasó 9/9 workflows antes de la fusión. Revisión manual del diff por indisponibilidad de Codex; no hubo review formal registrada.

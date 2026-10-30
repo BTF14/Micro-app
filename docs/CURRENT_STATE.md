@@ -1,3 +1,27 @@
+# Continuidad prioritaria — 2026-10-30 UTC (Pages audit completada)
+
+> Este bloque prevalece sobre notas inferiores. Continuar en la misma PR #158 y no crear otra PR para esta documentación.
+
+- **PR #158:** https://github.com/BTF14/Micro-app/pull/158; abierta, draft, no mergeada. Rama `docs/workflow-deployment-audit-20261030`.
+- **GitHub Actions:** corregida la clasificación anterior. Solo `secret-history-scan.yml` (push todas las ramas) y `security-scan.yml` (push sin filtro) presentan duplicación general potencial con PR. Los otros workflows tienen filtros de rama/path o dispatch/schedule. No cambiar triggers hasta verificar contexts requeridos.
+- **Cloudflare Workers:** Workers Free $0; cuotas observadas 100k requests/día, 10ms CPU/request, 3.000 build minutes/mes, 100 Workers, 5 cron triggers. Worker `micro-app-api`: main identificada como producción; docs branches como previews. PR #158 tiene previews de Worker exitosas.
+- **Cloudflare Pages:** proyecto `micro-app`, repo `BTF14/Micro-app`, producción branch `main`; push a main dispara producción. Último deploy productivo observado activo para commit `1ee1808af4aae484a71dc24750237ff4f4d934a0`, timestamp `2026-10-30T01:30:08.9457Z`, URL de deployment `https://06553c7b.micro-app-63i.pages.dev`. Proyecto base `https://micro-app-63i.pages.dev`.
+- **Previews Pages:** cada commit en ramas no productivas crea preview. PR #158 commit `79be208` preview successful en `https://945ae93c.micro-app-63i.pages.dev`; commit `d3f056b` preview successful en `https://70fea194.micro-app-63i.pages.dev`. Vista mostró 15 despliegues recientes (1 prod + 14 previews), 1.100 en historial; 15 visibles successful. No equivale a validar toda la historia.
+- **Pendiente Pages:** Settings no cargó; build command, output dir, root dir, framework, build env, Functions, redirects, headers y uso/cuotas account-level no disponibles. No inventar.
+- **Custom domain:** no se vio; solo pages.dev.
+- **CI/CD:** Pages confirma auto-deploy main + previews non-main. Un merge a main puede desplegar frontend a producción aunque no haya workflow Pages deploy en GitHub. No fusionar sin autorización explícita.
+- **Branch protection:** rulesets API vacío y endpoint legacy 403; estado real no confirmado.
+- **Guardrails:** no Codex, no Neon main/SQL, no secretos/datos reales, no pagos, no modificar Cloudflare/DNS/tráfico, no merge/deploy sin permiso explícito. Coste objetivo USD 0; capacidad SaaS sin medir.
+
+## Siguiente trabajo
+1. Revisar Settings de Pages en solo lectura para completar root/build/output/runtime/Functions/redirects/headers.
+2. Verificar los checks requeridos de GitHub por método accesible; no inferir protección ausente por 403.
+3. Evaluar una reducción focalizada de los triggers push amplios, sin implementarla hasta saber los contexts requeridos.
+4. Revisar diff y checks de PR #158 en su SHA exacto. Mantenerla draft y sin merge.
+5. Continuar arquitectura multi-tenant y capacidad con pruebas sintéticas aisladas.
+
+---
+
 # Continuidad prioritaria — 2026-10-30 UTC (auditoría Cloudflare + corrección CI/CD)
 
 > Este checkpoint prevalece sobre las notas anteriores de la auditoría de workflows. Verificar GitHub en vivo antes de cualquier operación.

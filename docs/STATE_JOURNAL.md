@@ -1,3 +1,16 @@
+## 2026-10-30 UTC — Cloudflare Pages producción y previews verificados
+
+- TinyFish inspeccionó Pages `micro-app` en modo solo lectura.
+- Production branch = `main`; automatic deployments enabled on push to main.
+- Latest production deployment observado active, commit `1ee1808af4aae484a71dc24750237ff4f4d934a0`, timestamp `2026-10-30T01:30:08.9457Z`, URL deployment `https://06553c7b.micro-app-63i.pages.dev`; primary project domain `https://micro-app-63i.pages.dev`.
+- Cada commit en rama non-production crea preview. PR #158 commit `79be208` preview successful `https://945ae93c.micro-app-63i.pages.dev`; commit `d3f056b` preview `https://70fea194.micro-app-63i.pages.dev`.
+- Vista mostró 15 deploys recientes (1 prod + 14 previews), 1.100 en historial; todos los 15 visibles successful. No se extrapola a todo el historial.
+- Build command/output/root/framework, Functions, redirects, headers, environment y usage/quotas no fueron visibles porque Settings no cargó. No custom domain visible.
+- Push a main puede desplegar producción; no mergear PR #158 sin autorización específica.
+- Sin cambios de settings, builds manuales, DNS, secrets, billing o producción.
+
+---
+
 ## 2026-10-30 UTC — auditoría Cloudflare en vivo y corrección CI/CD
 
 - TinyFish confirmó acceso al panel Cloudflare con el perfil Default. Inspección estrictamente read-only.

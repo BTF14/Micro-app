@@ -1,3 +1,14 @@
+## Checkpoint — 2026-10-30 UTC: Pages y despliegues confirmados
+
+- Pages `micro-app` usa `main` como production branch y auto-deploy al push a main. Último deploy productivo observado activo: commit `1ee1808af4aae484a71dc24750237ff4f4d934a0`, timestamp `2026-10-30T01:30:08.9457Z`, URL `https://06553c7b.micro-app-63i.pages.dev`.
+- Las ramas no productivas generan previews. PR #158 commit `79be208` preview successful; no es producción. Vista: 15 despliegues recientes (1 producción + 14 previews), 1.100 total en historial, los 15 visibles successful.
+- Settings Pages no accesible: root/build/output/framework/Functions/redirects/headers/env/uso no confirmados. No custom domain visible.
+- Merge a main puede desplegar frontend automáticamente; PR #158 sigue draft y no debe fusionarse sin autorización explícita.
+- CI duplicación: corregido el falso positivo anterior; solo secret-history-scan y security-scan tienen push amplio con duplicación potencial general. No modificar hasta confirmar required checks.
+- Detalle completo en `docs/WORKFLOW_AND_DEPLOYMENT_AUDIT.md`.
+
+---
+
 ## Checkpoint prioritario — 2026-10-30 UTC: corrección CI/CD + Cloudflare
 
 - La primera auditoría de workflows clasificó erróneamente siete workflows como push+PR sin filtros. La lectura directa posterior de los 15 YAML corrige esto: duplicación general potencial solo en `secret-history-scan.yml` (push todas las ramas) y `security-scan.yml` (push sin filtro). Otros workflows restringen ramas o paths. No modificar triggers hasta confirmar branch protection y contexts requeridos.

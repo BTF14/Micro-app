@@ -83,3 +83,15 @@ Perfil TinyFish Default; Cloudflare panel accesible durante la inspección. No s
 ## Límites y seguridad
 
 Inspección de solo lectura. No se ejecutaron workflows manuales; no se modificaron archivos de aplicación/workflows, secretos, Neon, datos, DNS, configuración de Cloudflare, tráfico, billing ni producción. No se activaron servicios pagos. Objetivo de coste: USD 0.
+
+## Addendum — Cloudflare Pages audit (2026-10-30 UTC, read-only)
+
+- Project `micro-app`, repository `BTF14/Micro-app`; production branch confirmed as `main`; automatic production deploy on push to `main`.
+- Latest production deployment observed: active, branch `main`, commit `1ee1808af4aae484a71dc24750237ff4f4d934a0`, timestamp `2026-10-30T01:30:08.9457Z`. Production deployment URL observed: `https://06553c7b.micro-app-63i.pages.dev`; primary project domain remains `https://micro-app-63i.pages.dev`.
+- Each new commit on non-production branches creates a Pages preview. PR #158 commit `79be208` has a successful preview URL `https://945ae93c.micro-app-63i.pages.dev`; previous PR commit `d3f056b` preview `https://70fea194.micro-app-63i.pages.dev`. These are not production.
+- The deployments view showed 15 recent entries (1 production + 14 previews) and 1,100 total deployments in history. The 15 visible entries showed successful status; this does not prove every historical deployment succeeded.
+- No custom domain was visible; only `micro-app-63i.pages.dev` was observed.
+- Build command, output directory, root directory, framework detection, build environment variables, Functions, redirects, custom headers and account-level Pages usage/quotas were not accessible because the Settings view did not load. Do not infer them from the deployment list.
+- This confirms Pages production deploys from `main`, and non-main commits create preview deployments. Merge/push to main can therefore trigger a production frontend deployment even though GitHub Actions contains no Pages deploy workflow.
+- No settings, builds, DNS, secrets, billing or deployment state were changed.
+

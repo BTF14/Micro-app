@@ -5,10 +5,10 @@
 ## Punto exacto de reanudación
 
 - Repositorio: `BTF14/Micro-app`.
-- Último main verificado: `bb5bd72829db0532521857bffd62dac5c42a2eee`, merge SHA de PR #178.
+- `main` verificado tras PR #179: `d6f41448b00b2e03ac25467378c707c6fcba1434`, merge SHA de PR #179.
 - PR #178: MERGED por squash; exclusivamente documental, 14 archivos (+403/-238), sin runtime, SQL, migraciones, lockfile, workflows ni infraestructura.
-- PR #179: [https://github.com/BTF14/Micro-app/pull/179](https://github.com/BTF14/Micro-app/pull/179), rama `docs/post-178-merge-checkpoint-20261030`. Snapshot de revisión: HEAD `fb724e0c3bd8fbaae2a838f042c1e838754675b5`, base `bb5bd72829db0532521857bffd62dac5c42a2eee`; estaba abierta y no fusionada en esa consulta. Consultar GitHub en vivo para el estado posterior.
-- Evidencia del SHA superado `d958eb4...` (no aplicable al HEAD actual en este snapshot): 8 workflows success. En el HEAD `fb724e0c3bd8fbaae2a838f042c1e838754675b5`, 8/8 workflows Actions consultados terminaron completed/success. Combined commit status devolvió statuses vacíos; branch protection/required checks no está confirmada. Cloudflare Pages y Workers reportaron previews exitosas para `fb724e0`, no producción.
+- PR #179: [https://github.com/BTF14/Micro-app/pull/179](https://github.com/BTF14/Micro-app/pull/179), fusionada por squash. HEAD revisado `a09864ad772e3afdfabb911dc041ada1f7a71edd`; merge SHA y `main` posterior `d6f41448b00b2e03ac25467378c707c6fcba1434`. GitHub confirma `merged=true` y estado cerrado.
+- Para el HEAD pre-merge exacto `a09864ad772e3afdfabb911dc041ada1f7a71edd`, 8/8 workflows Actions consultados terminaron `completed/success`; Cloudflare Pages y Workers reportaron previews exitosas para ese SHA. Previews no equivalen a producción. Combined commit status devolvió statuses vacíos; branch protection/required checks no está confirmada. No atribuir estos resultados al merge SHA ni a commits futuros.
 - Codex intentó revisión automática de #179, pero falló por límite de uso. No contar como review ni aprobación. Hacer revisión manual independiente del diff.
 - PR #178 HEAD `8bacd57d9c3d624eae8139dadeb7fd6c0730b4dc`: 9/9 workflow runs consultados success. Evidencia solo para ese SHA.
 - Login OAuth real verificado por TinyFish: `https://micro-app-63i.pages.dev/#inicio`, dashboard autenticado, organización visible Abasto 7 de Oro, rol `owner`, sesión conservada. No demuestra CORS ni funcionalidades comerciales.
@@ -37,7 +37,7 @@
 
 ## Prompt para el siguiente chat de ChatGPT
 
-Continúa BTF14/Micro-app como responsable técnico senior. Lee `AGENTS.md`, este handoff, `docs/CURRENT_STATE.md`, `docs/AI_COLLABORATION_AND_PR_POLICY.md`, `docs/PROJECT_PLAN.md`, `docs/STATE_JOURNAL.md`, los registros de recursos/seguridad y los SDD de autorización/sucursales. Verifica GitHub en vivo. PR #178 ya está fusionada (main conocido `bb5bd72829db0532521857bffd62dac5c42a2eee`). PR #179 está abierta, no fusionada; su rama `docs/post-178-merge-checkpoint-20261030` ya corrigió los bloques operativos obsoletos de CURRENT_STATE y HANDOFF; revisar el diff resultante y validar el HEAD actual antes de fusionar. No reutilices checks de commits anteriores. #78 sigue con CORS NO VERIFICADO; #53 sigue con matriz comercial NO APROBADA. No tocar producción/Neon main/secretos/DNS/billing/datos reales; PostgreSQL desechable primero. No implementar permisos comerciales sin aprobación explícita. Registrar solo hechos verificados y mantener STATE_JOURNAL append-only.
+Continúa BTF14/Micro-app como responsable técnico senior. Lee `AGENTS.md`, este handoff, `docs/CURRENT_STATE.md`, `docs/AI_COLLABORATION_AND_PR_POLICY.md`, `docs/PROJECT_PLAN.md`, `docs/STATE_JOURNAL.md`, los registros de recursos/seguridad y los SDD de autorización/sucursales. Verifica GitHub en vivo. PR #178 y PR #179 están fusionadas. `main` verificado tras PR #179: `d6f41448b00b2e03ac25467378c707c6fcba1434`. La PR #179 fue documental; su HEAD pre-merge fue `a09864ad772e3afdfabb911dc041ada1f7a71edd`. No reabrir ni repetir esa corrección; comprobar GitHub en vivo antes de actuar. No reutilices checks de commits anteriores. #78 sigue con CORS NO VERIFICADO; #53 sigue con matriz comercial NO APROBADA. No tocar producción/Neon main/secretos/DNS/billing/datos reales; PostgreSQL desechable primero. No implementar permisos comerciales sin aprobación explícita. Registrar solo hechos verificados y mantener STATE_JOURNAL append-only.
 
 ## Snapshot previo — retiro de rama heredada (histórico; no usar como estado actual)
 

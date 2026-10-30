@@ -7,7 +7,7 @@
 - **PRs abiertas al último chequeo:** ninguna. Volver a consultar en vivo.
 - **Nueva rama documental:** `docs/post-pr156-audit-continuity-20261030`; contiene la actualización de continuidad y hallazgos de auditoría de solo lectura. No asumir que está fusionada hasta comprobar la PR y el SHA final.
 - **API:** rutas existentes: auth register/login (ambas fail-closed), me/logout, Google OAuth GET/POST bootstrap/callback, y health. No existen endpoints comerciales HTTP.
-- **Tenant context:** valida sesión/membresía/organización activas, pero no aplica autorización por operación ni sucursal.
+- **Tenant context:** valida sesión/membresía/organización activas, pero no aplica autorización por operación ni sucursal; la búsqueda de callsites no encontró handlers que invoquen el helper. `withDatabaseTransaction` solo tiene uso actual en el bootstrap Google, no en operaciones comerciales.
 - **Esquema actual:** organización/membresía y entidades comerciales iniciales con FK tenant-scoped; no hay sucursales, almacenes, cajas/turnos, compras/recepciones, devoluciones ni transferencias. Stock por organización. La migración inicial no está aplicada a Neon main.
 - **Hallazgos SQL pendientes:** reconciliación venta-líneas-pagos; consistencia stock-ledger; referencias polimórficas de movimientos; idempotencia de pagos; regla del último owner; índices y consultas a validar con datos sintéticos.
 - **Matriz de roles:** sigue NO aprobada. Cajero/inventario no deben obtener acceso global; requieren asignación de sucursal, y caja/turno para operaciones de caja.

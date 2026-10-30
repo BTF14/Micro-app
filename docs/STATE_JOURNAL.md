@@ -782,3 +782,12 @@ Este diario es append-only en cuanto a historia: no borrar hitos antiguos; añad
 Se consolidó la dirección recomendada para Micro app: una plataforma multi-organización, multi-sucursal y multiusuario; catálogo compartido por organización por defecto; stock por sucursal/almacén; caja y operaciones vinculadas a sucursal; usuarios multi-organización y roles con alcance. Se añadieron criterios de BCV programado con validación/histórico/fallback, búsqueda por barcode/SKU con SQL indexado, caché condicionada a mediciones, confirmación transaccional de venta, idempotencia, auditoría y medición de límites Neon/Cloudflare. La especificación está en `docs/SAAS_ARCHITECTURE_DECISIONS.md`.
 
 Estado: documentación/diseño únicamente; no se implementaron API BCV, buscador, caché de catálogo, sucursales, almacenes, cajas ni endpoints comerciales. La matriz de permisos sigue pendiente de aprobación. Capacidad SaaS sin medir. Se reutiliza PR #156 para evitar PR documental duplicada; verificar checks/revisión del HEAD actualizado antes de considerar merge.
+
+
+## 2026-10-29 — Auditoría estática de API/esquema y CI documental
+
+En `main` SHA `5a9bdc5a18a54c3c68639f52125d913d4e725b91` se revisaron `apps/api/src/index.ts`, `tenant-context.ts`, `database.ts`, `auth.ts`, migraciones `0001_initial.sql` y `0002_google_identity.sql`, además de `API_INTEGRATION.md`, `DATABASE_SCHEMA.md` y `SCHEMA_REVIEW.md`.
+
+Hechos observados: la API registra rutas de autenticación y `GET /health`, no rutas comerciales; tenant context devuelve user/organization/role y comprueba membresía activa, pero explícitamente no autoriza operaciones ni tiene branch scope; `products.stock_quantity` es por organización; existen índices únicos tenant-scoped de SKU/barcode y B-tree sobre `(organization_id, lower(name))`; existe tabla global `exchange_rates`; no hay sucursales/almacenes/cajas/turnos/compras/devoluciones. El helper actual abre `Client` request-scoped y ofrece transacción interactiva; se documentó evaluar HTTP `neon()` para lecturas sencillas y reservar `Client` para operaciones atómicas, siempre con benchmark y pruebas.
+
+CI documental: para HEAD `8c15e13fa001a14a0ddf9f2432bc17efb30d476d`, los 8 workflows consultados finalizaron success, incluyendo todos los contexts requeridos de protección. Se añadieron luego commits documentales hasta `23cbb313ebb163d3c808f8d0953b85645262c520`; para ese SHA posterior no se obtuvieron runs/statuses. No afirmar CI verde en el HEAD actual. PR #156 sigue abierta, sin reviews, y su metadata reportó mergeable=false; no fusionar.

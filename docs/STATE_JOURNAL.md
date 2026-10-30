@@ -914,3 +914,13 @@ CI documental: para HEAD `8c15e13fa001a14a0ddf9f2432bc17efb30d476d`, los 8 workf
 
 - Se abrió [PR #157](https://github.com/BTF14/Micro-app/pull/157) desde `docs/post-pr156-audit-continuity-20261030` con alcance documental/auditoría acotado. Incluye la reconciliación de alcance de catálogo y la separación de autoridad global de allowlist respecto a roles tenant.
 - La PR permanece abierta hasta que los checks requeridos pasen en su HEAD exacto y se complete revisión manual final. No se fusiona por inercia ni se usan resultados de SHAs anteriores.
+
+
+## 2026-10-30 UTC — verificación post-merge PR #158/#159 y corrección de continuidad
+
+- GitHub confirmó `main` en `dbc7b6c9cf57113a38cddb4155d2917cc3aaeafc`, protegido; PR #158 y #159 fusionadas; cero PR abiertas en la consulta.
+- Checks del SHA exacto: 9/9 success, incluidos Workers Build y Cloudflare Pages.
+- Pages producción cargó la pantalla de acceso; Worker `/health` respondió HTTP 200, `status=ok`, `stage=scaffold`. No se probaron sesiones ni operaciones comerciales.
+- Neon metadata read-only: plan free_v3, PostgreSQL 18; 3/10 ramas; main 32,866,304 bytes; transferencia 5,645,769 bytes, compute 5,911 s, activo 23,240 s en el periodo 2026-10-17 a 2026-11-01. Main y ramas reportadas sin protección; configuración de IP allowlist vacía. No se leyó ni modificó SQL/datos/secretos.
+- Se detectó que README/continuidad seguían afirmando que PR #158/#159 estaban abiertas y README describía toolchain anterior. Se actualiza esa contradicción en esta rama, manteniendo los snapshots viejos como historia.
+- No se cambió producción, Neon, Cloudflare settings, secretos, DNS ni billing.

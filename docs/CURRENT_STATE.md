@@ -1,3 +1,15 @@
+# Estado vivo de la rama de continuidad — 2026-10-30 UTC
+
+- **PR #160:** https://github.com/BTF14/Micro-app/pull/160; abierta, no draft, no fusionada; base `main`. Verificación más reciente de metadatos antes de este bloque: HEAD `ce4578fed5980631f59206bd45ced3fbefcce346`; el HEAD debe volver a consultarse después de los commits documentales que siguen.
+- **Revisión automática:** Codex no completó la revisión por límite de uso; su comentario la marca fallida/no completada. No equivale a aprobación ni a hallazgo confirmado. Ver [comentario](https://github.com/BTF14/Micro-app/pull/160#issuecomment-6514563808) y [aviso de cuota](https://github.com/BTF14/Micro-app/pull/160#issuecomment-6514564279).
+- **Previews reportadas para el HEAD anterior:** Pages y Worker exitosos; son previews, no producción.
+- **Continuidad incremental:** se añadió la sección 10 a `docs/AI_COLLABORATION_AND_PR_POLICY.md` y se creó `docs/WORK_CHECKPOINT.md`. Ambos cambios se están incorporando a la misma PR #160, sin abrir otra PR.
+- **Últimos commits documentales persistidos:** `f26dcca32f029edb8782ad71da8c86bcc11b4a8d` (política) y `63a8c752c21500ae8f45305c997ac4123e98f40e` (checkpoint). Verificar HEAD vivo, porque los siguientes commits pueden moverlo.
+- **Pruebas:** no se ejecutaron pruebas locales; los checks del nuevo HEAD todavía deben consultarse. No reutilizar checks del SHA anterior.
+- **Siguiente acción:** sincronizar este checkpoint con HANDOFF y STATE_JOURNAL, consultar checks del HEAD final y revisar manualmente el diff completo. No fusionar sin autorización.
+
+---
+
 # Estado vivo verificado — 2026-10-30 UTC
 
 - **Fuente viva:** GitHub confirma `main` en `dbc7b6c9cf57113a38cddb4155d2917cc3aaeafc`, protegido. PR #158 y #159 están fusionadas; no hay PR abiertas al momento de esta comprobación.

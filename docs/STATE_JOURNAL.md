@@ -822,3 +822,10 @@ CI documental: para HEAD `8c15e13fa001a14a0ddf9f2432bc17efb30d476d`, los 8 workf
 - La búsqueda de símbolos y callsites en `apps/api/src` no encontró runtime rate limiting; `auth_rate_limits` aparece en DDL y tests, no como mecanismo activo. Se corrigieron `API_INTEGRATION.md` y `SECURITY_ROADMAP.md` para no afirmar controles inexistentes. Verificar reglas Cloudflare aparte y diseñar protección distribuida compatible con Workers.
 - La rama `feat/neon-transaction-adapter` se comparó con main: 14 commits ahead y 242 behind. Su PR [#1](https://github.com/BTF14/Micro-app/pull/1) ya está fusionada desde 2026-10-17, merge `b6511d0876e33096f75df2466653449165888821`; no se debe reabrir ni fusionar la rama antigua.
 - La auditoría permanece estática/read-only. No se ejecutó SQL ni se accedió a Neon `main`, producción, secretos o datos reales.
+
+
+## 2026-10-30 UTC — reconciliación de alcance de catálogo y autoridad de allowlist
+
+- Se corrigió la matriz de permisos: el catálogo maestro se propone compartido a nivel organización, pero esto no habilita acceso a stock, movimientos, ventas o caja de otras sucursales; los roles operativos requieren asignación de sucursal.
+- Se eliminó la recomendación de que el rol tenant `owner` gestione la allowlist global. D1 exige un operador autenticado/auditado, pero el rol/identidad de plataforma y su recuperación no están definidos; el email concreto citado en `SECURITY_PLAN_2026.md` se trata como propuesta histórica, no como autorización vigente.
+- La matriz permanece **NO aprobada**. No implementar estos permisos ni crear endpoints administrativos hasta que el propietario confirme la autoridad de plataforma y los permisos sensibles.

@@ -49,3 +49,10 @@ The helper is not yet called by commercial endpoints. Before enabling it for sal
 - Request validation, rate limiting where appropriate, idempotency semantics and safe error mapping.
 - PostgreSQL integration tests, including atomic sale/inventory behavior.
 - A deliberate deployment and secret-configuration review.
+
+
+## Optimización de lecturas frente a transacciones
+
+Para endpoints de consulta (por ejemplo, búsqueda de catálogo/precio), evaluar `neon()` HTTP de `@neondatabase/serverless` para una consulta o batch fijo, en lugar de abrir un `Client` WebSocket por petición. Mantener `Client` interactivo para ventas, pagos, inventario y otras operaciones que requieren atomicidad. El helper actual `withDatabaseClient` crea un `Client` por operación y no debe sustituirse globalmente sin benchmark ni pruebas. Ver [decisiones de arquitectura SaaS](SAAS_ARCHITECTURE_DECISIONS.md) §13.
+
+No usar `ILIKE '%texto%'` asumiendo que el índice B-tree actual lo acelera; probar barcode/SKU exactos y búsqueda de prefijo con `EXPLAIN ANALYZE` sobre datos sintéticos. Añadir trigram/GIN u otros índices solo si se justifican por volumen/latencia medidos.

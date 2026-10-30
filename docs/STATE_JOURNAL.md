@@ -1339,3 +1339,14 @@ CI documental: para HEAD `8c15e13fa001a14a0ddf9f2432bc17efb30d476d`, los 8 workf
 - Se reemplazaron las portadas operativas de CURRENT_STATE y HANDOFF por un único checkpoint basado en el merge SHA `bb5bd72829db0532521857bffd62dac5c42a2eee`; los snapshots previos se conservan íntegros a partir de sus delimitadores históricos.
 - Para el HEAD anterior de PR #179 (`d958eb4e1ca7b6c79b95cf1ec1adcd87dcba685e`) se consultaron 8 workflow runs, todos completed/success; combined commit status devolvió statuses vacíos. Codex review no se completó por límite de uso. Cloudflare Pages y Workers reportaron previews exitosas para ese SHA.
 - Esta entrada no certifica el nuevo commit que genera esta corrección. Reconsultar sus checks y revisar diff antes de merge. PR #179 permanece sin fusionar hasta nueva verificación.
+
+
+## 2026-10-30 UTC — revisión independiente y cierre de hallazgos de continuidad PR #179
+
+- Se incorporaron hallazgos de revisión Claude: el estado pre-merge de PR #179 queda fechado como snapshot, el HEAD y la evidencia de checks se distinguen por SHA, y el bloque de Cloudflare/Pages que describía `main=82386c6e...` y 100% de tráfico se marca explícitamente como histórico/superado.
+- Se aclara que el merge a `main` puede activar despliegues automáticos de Cloudflare y que, tras fusionar #179, las portadas deben actualizarse con el merge SHA real y el nuevo HEAD de `main`. No realizar cambios manuales de producción.
+- El prompt antiguo duplicado en HANDOFF queda etiquetado como histórico/no copiar. El prompt vigente permanece en la portada superior.
+- Estado de PR #179 al registrar esta entrada: HEAD `fb724e0c3bd8fbaae2a838f042c1e838754675b5`; los ocho workflows Actions consultados para ese SHA terminaron completed/success. La revisión de los archivos completos confirma 1.446 líneas en CURRENT_STATE, 1.560 en HANDOFF y 1.342 en STATE_JOURNAL; el diff de journal de PR #179 añade 19 líneas y elimina 0.
+- GitHub confirmó que `main` seguía exactamente en `bb5bd72829db0532521857bffd62dac5c42a2eee` al comparar contra ese SHA. Issues #78 y #53 siguen abiertas.
+- No se inspeccionaron ni modificaron paneles de Cloudflare o Neon para esta PR documental; no eran necesarios para validar su alcance. Las observaciones históricas de infraestructura no se presentan como estado vivo.
+- Esta entrada es append-only; no modifica entradas anteriores.

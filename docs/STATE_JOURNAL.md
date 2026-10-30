@@ -776,3 +776,9 @@ Este diario es append-only en cuanto a historia: no borrar hitos antiguos; añad
 - No se tocó Neon main, secretos, datos reales ni producción; no se ejecutaron migraciones ni se habilitaron recursos pagos.
 
 ---
+
+## 2026-10-29 — Dirección SaaS y continuidad de arquitectura
+
+Se consolidó la dirección recomendada para Micro app: una plataforma multi-organización, multi-sucursal y multiusuario; catálogo compartido por organización por defecto; stock por sucursal/almacén; caja y operaciones vinculadas a sucursal; usuarios multi-organización y roles con alcance. Se añadieron criterios de BCV programado con validación/histórico/fallback, búsqueda por barcode/SKU con SQL indexado, caché condicionada a mediciones, confirmación transaccional de venta, idempotencia, auditoría y medición de límites Neon/Cloudflare. La especificación está en `docs/SAAS_ARCHITECTURE_DECISIONS.md`.
+
+Estado: documentación/diseño únicamente; no se implementaron API BCV, buscador, caché de catálogo, sucursales, almacenes, cajas ni endpoints comerciales. La matriz de permisos sigue pendiente de aprobación. Capacidad SaaS sin medir. Se reutiliza PR #156 para evitar PR documental duplicada; verificar checks/revisión del HEAD actualizado antes de considerar merge.

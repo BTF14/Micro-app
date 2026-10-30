@@ -924,3 +924,15 @@ CI documental: para HEAD `8c15e13fa001a14a0ddf9f2432bc17efb30d476d`, los 8 workf
 - Neon metadata read-only: plan free_v3, PostgreSQL 18; 3/10 ramas; main 32,866,304 bytes; transferencia 5,645,769 bytes, compute 5,911 s, activo 23,240 s en el periodo 2026-10-17 a 2026-11-01. Main y ramas reportadas sin protección; configuración de IP allowlist vacía. No se leyó ni modificó SQL/datos/secretos.
 - Se detectó que README/continuidad seguían afirmando que PR #158/#159 estaban abiertas y README describía toolchain anterior. Se actualiza esa contradicción en esta rama, manteniendo los snapshots viejos como historia.
 - No se cambió producción, Neon, Cloudflare settings, secretos, DNS ni billing.
+
+## 2026-10-30 UTC — protocolo de checkpoints incrementales y continuidad ante interrupción
+
+- Se verificó PR #160 en vivo: abierta, no draft, no fusionada; rama `docs/continuity-post-158-159-20261030`; HEAD consultado antes de esta actualización: `ce4578fed5980631f59206bd45ced3fbefcce346`.
+- Se recuperó la actividad de revisión: Codex no completó la revisión por límite de uso. Estado registrado como revisión incompleta, no como aprobación ni defecto confirmado.
+- Cloudflare había reportado Pages y Worker preview exitosos en el HEAD anterior; no se consideran pruebas de producción.
+- Se revisó el diff de PR #160 y la política de colaboración existente. Se detectó que la obligación de documentar hitos no definía cuándo guardar durante una tarea larga.
+- Se añadió la sección 10 a `docs/AI_COLLABORATION_AND_PR_POLICY.md`: checkpoints después de cada bloque significativo, tras pruebas/hallazgos/bloqueos y antes de tareas largas; campos obligatorios; sincronización de CURRENT_STATE, STATE_JOURNAL, HANDOFF y WORK_CHECKPOINT; clasificación INCOMPLETO cuando no existe evidencia persistida.
+- Se creó `docs/WORK_CHECKPOINT.md` como punto de reanudación operativo único para tareas de varios pasos. Se actualizaron CURRENT_STATE y HANDOFF para dirigir al siguiente agente a ese archivo y evitar reconstruir el chat.
+- Commits de este bloque registrados por GitHub: política `f26dcca32f029edb8782ad71da8c86bcc11b4a8d`; checkpoint `63a8c752c21500ae8f45305c997ac4123e98f40e`; los commits posteriores de sincronización deben verificarse consultando el HEAD final.
+- No se ejecutaron pruebas locales ni se modificó código, esquema, migraciones, workflows, secretos, Cloudflare settings, Neon, DNS, billing o producción.
+- Pendiente: confirmar HEAD final, checks del SHA exacto, revisar manualmente el diff completo y comprobar que los documentos se mantienen coherentes. PR #160 sigue sin fusionar; no fusionar sin autorización explícita.

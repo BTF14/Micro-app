@@ -39,7 +39,7 @@ The helper is not yet called by commercial endpoints. Before enabling it for sal
 
 ## Migration gate
 
-Migrations 0001–0003 are versioned in Git and validated from an empty database in disposable PostgreSQL 18 CI. Migration 0003 has not been applied to Neon primary `main`; do not infer remote schema state from Git. PostgreSQL efímero is the primary test environment. Use an isolated Neon branch only when it adds validation CI cannot provide, with synthetic data, expiry and cleanup. Any mutation of Neon main remains subject to the production gate in `docs/CONSTITUTION.md` and the required approval.
+Main versiona 0001–0003. PR #167 añade 0004 (`registers`/`register_shifts`) en una rama aún no fusionada; su migration-check aplicó 0001–0004 y pasó assertions en PostgreSQL 18 efímero en el HEAD inicial. Un test de integración falló por una expectativa SQLSTATE, ya corregida en un commit posterior; revalidar CI del HEAD actual. Las migraciones 0003 y 0004 no se han aplicado a Neon primary `main`; no inferir estado remoto desde Git. PostgreSQL efímero es el entorno primario. Usar Neon branch solo si añade validación adicional, con datos sintéticos, expiración y limpieza. Toda mutación de Neon main sigue sujeta al gate de `docs/CONSTITUTION.md` y aprobación requerida.
 
 ## Remaining requirements before commercial API routes
 

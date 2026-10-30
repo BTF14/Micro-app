@@ -3,10 +3,10 @@
 ## Estado operativo vigente — 2026-10-30 UTC
 
 - Repositorio: `BTF14/Micro-app`.
-- `main` en el último merge verificado: `bb5bd72829db0532521857bffd62dac5c42a2eee` (merge squash de PR #178). Consultar GitHub en vivo antes de cualquier acción posterior.
+- `main` verificado tras PR #179: `d6f41448b00b2e03ac25467378c707c6fcba1434` (merge squash). Consultar GitHub en vivo antes de cualquier acción posterior.
 - PR #178: **MERGED**. Cambio exclusivamente documental: 14 archivos (+403/-238); sin runtime, SQL, migraciones, lockfile, workflows ni infraestructura.
-- PR #179: [docs: reconcile continuity after PR 178 merge](https://github.com/BTF14/Micro-app/pull/179), rama `docs/post-178-merge-checkpoint-20261030`. Snapshot de revisión: HEAD `fb724e0c3bd8fbaae2a838f042c1e838754675b5`, base `bb5bd72829db0532521857bffd62dac5c42a2eee`; estado observado: ABIERTA, no fusionada. Este estado describe la PR al crear este checkpoint; consultar GitHub en vivo para el estado posterior. La corrección actual incorpora los hallazgos de la revisión independiente.
-- Evidencia de SHA superado `d958eb4e1ca7b6c79b95cf1ec1adcd87dcba685e` (NO aplicable al HEAD): 8 workflow runs terminaron `success`. Para el HEAD `fb724e0c3bd8fbaae2a838f042c1e838754675b5`, GitHub Actions reportó 8/8 workflows `completed/success` en la última consulta: CI, Project progress dashboard, Dependency review, Database migration validation, Security scan, Semgrep SAST, Playwright E2E y Secret history scan. Reconsultar checks tras cada commit. Combined commit status devolvió statuses vacíos; branch protection/required checks no está confirmada. Cloudflare Pages y Workers reportaron previews exitosas para el HEAD `fb724e0`; son previews, no certificación ni prueba de producción.
+- PR #179: [docs: reconcile continuity after PR 178 merge](https://github.com/BTF14/Micro-app/pull/179), fusionada por squash el 2026-10-30. HEAD revisado `a09864ad772e3afdfabb911dc041ada1f7a71edd`; merge SHA y `main` posterior `d6f41448b00b2e03ac25467378c707c6fcba1434`. PR cerrada y `merged=true`, verificado en GitHub. El snapshot pre-merge y sus checks se conservan en el journal; no representan el SHA de merge.
+- En el HEAD exacto pre-merge de PR #179 (`a09864ad772e3afdfabb911dc041ada1f7a71edd`), GitHub Actions reportó 8/8 workflows `completed/success`: CI, Project progress dashboard, Dependency review, Database migration validation, Security scan, Semgrep SAST, Playwright E2E y Secret history scan. Cloudflare Pages y Workers reportaron previews exitosas para ese mismo SHA. Son previews, no certificación ni prueba de producción. El combined commit status devolvió statuses vacíos; branch protection/required checks no está confirmada. Los resultados corresponden al HEAD de PR, no deben atribuirse al merge SHA ni a cambios futuros.
 - Revisión automática Codex en #179: falló/no se completó por límite de uso. No es una revisión aprobatoria ni evidencia de ausencia de hallazgos. Revisión manual de alcance documental necesaria.
 - En el HEAD exacto de PR #178 (`8bacd57d9c3d624eae8139dadeb7fd6c0730b4dc`) los 9 workflow runs consultados terminaron `success`; no extrapolar esos resultados a otros SHA.
 - TinyFish verificó el recorrido OAuth real en `https://micro-app-63i.pages.dev/#inicio`: dashboard autenticado, organización visible Abasto 7 de Oro, rol mostrado `owner`, sesión conservada. Esto no prueba CORS ni operaciones comerciales.
@@ -17,11 +17,9 @@
 
 ## Próxima secuencia obligatoria
 
-1. Revisar el diff final de #179 y comprobar que STATE_JOURNAL solo agrega una entrada nueva, sin reescribir las anteriores.
-2. Revalidar checks del HEAD exacto y revisar los comentarios de preview. No reutilizar resultados de SHA anteriores.
-3. La autorización del propietario para fusionar #179 ya fue expresada en este chat. Fusionar solo si el diff y los checks aplicables permanecen correctos. El merge a `main` puede activar despliegues automáticos de Cloudflare; no realizar cambios manuales de producción, y comprobar/documentar cualquier efecto automático sin modificar configuración, tráfico ni variables.
-4. Después del merge, actualizar este checkpoint para registrar el merge SHA real de #179 y el nuevo `main`; no dejar el estado pre-merge como estado vivo.
-5. Continuar #78 (bundle publicado + preflight real desde red funcional) y #53 (auditoría de rutas existentes sin inventar matriz comercial).
+1. Continuar la investigación de #78: inspeccionar el bundle JS publicado y obtener preflight permitido/rechazado desde una red funcional, registrando status y headers `Access-Control-*` sin cambiar configuración.
+2. Continuar #53 solo sobre rutas existentes y PostgreSQL desechable; la matriz comercial permanece NO APROBADA. No crear endpoints, middleware ni mapeos rol→operación.
+3. No asumir que el merge documental validó producción ni que el merge SHA heredó los checks de la cabeza de PR. Consultar GitHub y la evidencia de despliegue antes de cualquier trabajo posterior.
 
 ## Snapshot previo — eliminación segura de rama heredada (histórico; no es estado actual de PR #178) — 2026-10-30 UTC
 

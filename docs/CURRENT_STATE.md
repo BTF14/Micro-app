@@ -47,8 +47,6 @@
 
 ---
 
----
-
 # Checkpoint adicional — políticas comerciales por organización (2026-10-30 UTC)
 
 - Rama de trabajo: `docs/org-policy-architecture-20261030`.
@@ -484,8 +482,6 @@ Fuentes públicas consultadas:
 - Limitaciones: el resultado de `pnpm outdated` debe leerse para distinguir actualizaciones de un error de registry; un audit fallido puede ser advisory high/critical o error de registry. El resumen incluye esta advertencia. El workflow no sustituye revisión de changelogs, peer dependencies, lockfile ni CI completa.
 - Guardrail obligatorio: mantener `undici@7.30.1` coherente entre `package.json` y `pnpm-lock.yaml` hasta que una actualización de seguridad revisada lo reemplace explícitamente.
 - Estado actual: archivo añadido al HEAD de esta rama; todavía debe pasar los checks de la PR #137. No afirmar que la ejecución diaria funciona hasta observar al menos una ejecución real después del merge.
-
----
 
 ---
 

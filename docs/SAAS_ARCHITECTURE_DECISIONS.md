@@ -156,7 +156,7 @@ No habilitar endpoints comerciales mientras la matriz de permisos por operación
 - Fuente BCV fiable/gratuita y mecanismo de extracción verificado.
 - Contrato API para consulta de tasa y buscador de productos.
 - Política de frescura/TTL de tasa y manejo de feriados/fuente caída.
-- ERD de organización/sucursal/almacén/caja documentado en `docs/sdd/MULTI_BRANCH_DATA_MODEL.md`; sucursales/asignaciones en 0003 y cajas/turnos en 0004 (PR #167, no fusionada). Almacenes y stock por almacén siguen pendientes.
+- ERD de organización/sucursal/almacén/caja documentado en `docs/sdd/MULTI_BRANCH_DATA_MODEL.md`; sucursales/asignaciones en 0003 y cajas/turnos en 0004 (PR #167 fusionada). Almacenes y stock por almacén siguen pendientes.
 - Matriz de roles con alcance por organización/sucursal/caja; definir qué roles pueden administrar o ejecutar políticas comerciales. Los valores y límites comerciales los define cada organización, no la plataforma.
 - Método de valoración de inventario y política de costo/margen.
 - Capacidades y permisos para descuentos, cancelación/devolución y aprobaciones; cada organización configura sus propios límites comerciales.
@@ -170,7 +170,7 @@ No habilitar endpoints comerciales mientras la matriz de permisos por operación
 - `exchange_rates` existe en el esquema inicial; Cron BCV y API pública/interna de tasa no están implementados.
 - Índices tenant-scoped para nombre/SKU/barcode ya existen en el esquema inicial; buscador de producto todavía no está implementado como flujo comercial HTTP.
 - El stock existente es por organización, no por sucursal.
-- El DDL inicial 0001 no contenía sucursales/cajas/turnos; PR #165 añadió sucursales/asignaciones en 0003 y PR #167 propone 0004 para cajas/turnos en una rama aún no fusionada.
+- El DDL inicial 0001 no contenía sucursales/cajas/turnos; PR #165 añadió sucursales/asignaciones en 0003 y PR #167 fusionó 0004 para cajas/turnos en main.
 - La matriz de roles sigue sin aprobación.
 - Capacidad sostenible y cuotas vivas de Cloudflare no están demostradas.
 - Producción: **NO lista**.
@@ -232,7 +232,7 @@ El modelo detallado propuesto está en docs/sdd/MULTI_BRANCH_DATA_MODEL.md. Resu
 - `resolveBranchContext` está implementado y probado en PostgreSQL efímero, pero no está conectado a rutas ni concede permisos por operación.
 - Decisión de diseño para caja: cada register pertenece a una sucursal. Un register_shift abierto pertenece a un único cajero y una única caja; no se comparte ni se transfiere. Cambio de cajero requiere cierre con conteo y nueva apertura. Máximo un turno abierto por caja y por cajero dentro de la organización, protegido por índices únicos parciales.
 - Owner/admin pueden tener alcance organizacional para resolver sucursales, pero eso no les concede operar el turno de otro cajero. Los overrides requieren permiso separado, motivo y auditoría; siguen pendientes de matriz aprobada.
-- Especificación: `docs/sdd/REGISTER_SHIFT_MODEL.md`. PR #167 añade `0004_register_shifts.sql`, assertions y pruebas de integración en `feat/register-shifts-0004-20261030`; no está fusionada, no está en `main` y no se aplicó a Neon. No hay endpoints comerciales.
+- Especificación: `docs/sdd/REGISTER_SHIFT_MODEL.md`. PR #167 fusionó `0004_register_shifts.sql`, assertions y pruebas de integración en main. No se aplicó a Neon. No hay endpoints comerciales.
 - Entorno: PostgreSQL 18 desechable de CI para migraciones desde cero. Neon branches son opcionales para pruebas que CI no cubra; evitar su creación rutinaria y establecer expiración/limpieza. Neon main no es entorno de desarrollo.
 
 
@@ -240,10 +240,10 @@ El modelo detallado propuesto está en docs/sdd/MULTI_BRANCH_DATA_MODEL.md. Resu
 
 - Main verificado: `1d10befe0cd3367e04bd8998a192e93d9b228063`. PR #165 fusionada; 0003 crea `branches` y `branch_memberships`. La migración 0003 no se ha aplicado a Neon main.
 - `resolveBranchContext` está implementado y probado, pero no conectado a rutas. `branch_memberships` no contiene rol por sucursal; cashier/inventory siguen en `organization_members.role`.
-- PR #166 mantiene la reconciliación documental; sigue abierta y no fusionada.
-- PR #167 añade 0004 en `feat/register-shifts-0004-20261030`: `registers`, `register_shifts`, FKs compuestas, índices únicos parciales, lifecycle triggers y protección ante desactivación/revocación con turnos abiertos. No está fusionada ni aplicada a Neon.
-- En el primer HEAD de PR #167, PostgreSQL migration validation y los workflows de seguridad/E2E/backup pasaron; CI detectó una expectativa incorrecta de SQLSTATE en el test de integración. La corrección quedó en el HEAD `4008ec7c09785298dc733e5e0c492cea34ad6f43`; CI se está reejecutando.
+- PR #166 fusionó la reconciliación documental mediante merge commit `8a16b4bf70e3b35c45e91366148f4a37aa43b5e7`.
+- PR #167 fusionó 0004 en main: `registers`, `register_shifts`, FKs compuestas, índices únicos parciales, lifecycle triggers y protección ante desactivación/revocación con turnos abiertos. No se aplicó a Neon.
+- La primera ejecución de PR #167 detectó una expectativa SQLSTATE incorrecta en un test; se corrigió antes del HEAD final. En el HEAD final `ad45911368e9e9a714ebbe014de2d84a7b3cf1de`, los 10 workflows Actions terminaron success.
 - Conteos de efectivo se guardan separados USD/VES. No existe ledger de caja ni cálculo de efectivo esperado/diferencias.
 - La matriz de permisos comerciales sigue NO APROBADA. No hay endpoints comerciales ni autorización de supervisor para turnos.
 - PostgreSQL 18 efímero es la validación primaria; Neon branches solo si aportan evidencia adicional; Neon main no es laboratorio.
-- No fusionar PR #166/#167 ni desplegar sin la autorización correspondiente; no modificar producción, secretos, DNS, billing ni configuración Cloudflare.
+- PR #166/#167 están fusionadas con autorización del propietario y checks completos. La autorización de merge no autoriza cambios directos en Neon main, configuración Cloudflare, secretos, DNS, billing ni despliegues manuales.

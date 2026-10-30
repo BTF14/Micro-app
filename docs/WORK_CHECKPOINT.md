@@ -1,34 +1,48 @@
-# Checkpoint vigente — post PR #166 y #167 — 2026-10-30 UTC
+# Checkpoint vigente — resolver de turno abierto del cajero — 2026-10-30 UTC
 
 **Repositorio:** BTF14/Micro-app  
-**Merge SHA de PR #167 (integró 0004):** `c1cd8650db33aa4a249eaf1f55d321513d576e10`.  
-**PR #166:** fusionada en `8a16b4bf70e3b35c45e91366148f4a37aa43b5e7`.  
-**PR #167:** fusionada en `c1cd8650db33aa4a249eaf1f55d321513d576e10`.  
-**Checks:** PR #166 8/8 success en HEAD `4cee6e2ff6bfb8f3eecd85b4ff9212c1ab6d98fd`; PR #167 10/10 success en HEAD `ad45911368e9e9a714ebbe014de2d84a7b3cf1de`.  
-**Revisión:** revisión manual del diff y de migración/assertions/tests; no hubo reviews formales ni threads inline; Codex limitado por cuota.  
-**Alcance:** documentación reconciliada + migración 0004 y pruebas; sin endpoints comerciales, sin Neon main y sin deploy manual.
+**Main base:** `e4e4a5f312522ec5efbcc3252958141f56fbd821`  
+**Rama:** `feat/authenticated-cashier-open-shift-20261030`  
+**PR:** [#169](https://github.com/BTF14/Micro-app/pull/169), abierta.  
+**HEAD inicial:** `69ef099d586070edf295e0302468e96c4667f11f`.
 
-## Decisiones y evidencia
+## Inspección completada (solo lectura)
 
-- Main contiene migraciones 0001–0004; 0003 sucursales/asignaciones y 0004 cajas/turnos.
-- PostgreSQL 18 desechable fue el entorno de migración/assertions/integración. No se aplicaron 0003/0004 a Neon main ni se crearon Neon branches.
-- Cloudflare previews Pages/Workers confirmados por comentarios de integración; no son despliegues productivos. No se modificó configuración ni se ejecutó deploy manual.
-- Turnos individuales: un cajero + una caja; un turno abierto por caja y por cajero/organización; cierre antes de reasignar; conteos USD/VES separados.
-- No hay helper runtime de turno ni endpoints comerciales. La matriz de permisos sigue NO APROBADA.
+- Revalidado repo, main, PR #166–#168, PRs abiertas/cerradas, issues abiertos y commits recientes.
+- Código inspeccionado: `index.ts`, `auth.ts`, `google-auth.ts`, `tenant-context.ts`, `branch-context.ts`, `database.ts`, migraciones 0001–0004, tests de branch/register shifts y workflow CI.
+- `resolveTenantContext` verifica sesión y membresía activa; `resolveBranchContext` revalida usuario/organización/rol/sucursal/asignación. Ninguno concede autorización comercial.
+- `register_shifts` tiene FKs compuestas, índices parciales de unicidad por caja y cajero/organización, triggers de apertura/lifecycle y protección de revocación/desactivación.
+- PR #169 abierta; issues abiertos relevantes: #53 y #78; no se modificaron.
+- Checks en merge SHA e4e4a5f: runs/status vacíos; no se afirma CI post-merge.
+- SHA de implementación/test PR #169 `253128c6f5213986879ce619da85285251c07416`: 8/8 workflow runs Actions y 14 check-runs consultados completed/success. CI confirma build/typecheck, unit tests, auth 18/18, branch 4/4, register-shifts 5/5 y cashier-open-shift integration 7/7 en PostgreSQL 18. Después se añadió un checkpoint documental; revalidar checks en el HEAD actual.
+- Codex review falló por cuota. Reviews formales: 0; threads inline: 0. Diff inspeccionado manualmente; no es aprobación externa.
+- Cloudflare generó previews Pages/Workers para HEAD final 253128c; no son producción.
+- Documentos canónicos DATABASE_SCHEMA y SCHEMA_REVIEW tenían encabezados con SHA 1d10... anterior a #167; se actualizarán a e4e4a5f.
 
-## Próximo paso
+## Decisión de diseño
 
-Inspeccionar los callers de autenticación y crear un helper aislado para consultar el turno abierto del cajero autenticado, con pruebas unitarias e integración en PostgreSQL 18 desechable. Mantener fuera de alcance endpoints comerciales, permisos sensibles y Neon main. Sincronizar CURRENT_STATE, HANDOFF_NEXT_CHAT, PROJECT_PLAN y STATE_JOURNAL durante el trabajo.
+- Implementar helper aislado que recibe un BranchContext producido por `resolveBranchContext` después de `resolveTenantContext`.
+- Rechazar cualquier rol distinto de cashier antes de consultar DB.
+- En una sola consulta, filtrar por organization_id, branch_id y cashier_user_id; exigir turno abierto y revalidar organización/sucursal/caja/usuario/membresía/rol/asignación activos.
+- Devolver `null` si no hay turno o el scope dejó de ser válido.
+- Seleccionar datos de turno y usar `FOR SHARE OF s`; el helper no abre transacción. Los futuros callers comerciales deben invocarlo con el mismo transaction client de la operación.
+- No calcular efectivo esperado ni diferencias; no permitir impersonation, supervisor override ni autorización comercial.
 
-## Condiciones para continuar
+## Cambios preparados en la rama
 
-- Revalidar GitHub live y el HEAD actual antes de modificar ramas.
-- Revisar todos los cambios y los checks del SHA exacto.
-- Fusionar solo cuando revisión manual, pruebas, seguridad y checks requeridos estén completos; detenerse ante hallazgos materiales.
-- No confundir checks de PR con verificación post-merge.
-- Los bloques inferiores son checkpoints históricos; esta portada es la fuente operativa vigente.
+- `apps/api/src/cashier-open-shift.ts`: helper aislado.
+- `apps/api/src/cashier-open-shift.test.ts`: pruebas unitarias.
+- `apps/api/src/cashier-open-shift.integration.test.ts`: PostgreSQL desechable con guard estricto localhost/microapp_test/microapp.
+- `.github/workflows/ci.yml`: nuevo paso de integración PG18.
+- CURRENT_STATE, HANDOFF, WORK_CHECKPOINT, PROJECT_PLAN y STATE_JOURNAL: continuidad incremental; DATABASE_SCHEMA/SCHEMA_REVIEW: encabezados reconciliados.
 
----
+## Estado de pruebas
+
+El SHA de implementación/test `253128c6f5213986879ce619da85285251c07416` pasó 8/8 workflows Actions y los check-runs consultados; el job CI confirmó las 7 pruebas de integración nuevas en PostgreSQL 18, además de build/typecheck y suites existentes. Se añadieron después commits exclusivamente documentales; consultar y exigir el resultado del HEAD exacto actual de la PR antes de merge. No se ejecutó shell local ni SQL remoto. La suite de integración exige el URL local sintético exacto de CI y no permite apuntar a Neon.
+
+## Próxima acción
+
+Revalidar HEAD de PR #169, esperar workflows completos, revisar logs y corregir cualquier fallo en la misma PR. No fusionar hasta todos los gates en verde.
 
 # Checkpoint de trabajo vigente — PR de políticas comerciales por organización (2026-10-30 UTC)
 

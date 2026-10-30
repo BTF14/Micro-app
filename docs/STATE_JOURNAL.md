@@ -1077,3 +1077,49 @@ CI documental: para HEAD `8c15e13fa001a14a0ddf9f2432bc17efb30d476d`, los 8 workf
 - Se abrió la rama `docs/post-merge-166-167-continuity-20261030` para corregir referencias que aún presentaban #166/#167 como abiertas/candidatas. Se actualizaron portadas de CURRENT_STATE, HANDOFF, WORK_CHECKPOINT y PROJECT_PLAN, además de README, AGENTS, API/schema/readiness/compliance/architecture/SDD y backup docs. Las entradas históricas inferiores se conservan como historia y quedan supersedidas por las portadas vigentes.
 - Siguiente tarea: helper aislado para resolver el turno abierto del cajero autenticado, con pruebas PostgreSQL efímeras; no añadir endpoints comerciales hasta aprobar matriz y autorización por operación.
 - No se modificaron secretos, datos reales, DNS, billing ni configuración Cloudflare. No se ejecutó SQL en Neon main.
+
+
+## 2026-10-30 UTC — inicio del helper de turno abierto del cajero autenticado
+
+- Revalidación en vivo: `main=e4e4a5f312522ec5efbcc3252958141f56fbd821`; PR #166/#167/#168 fusionadas; no había PR abiertas. Issues #53 y #78 continúan abiertas y no se modificaron.
+- La consulta de workflow runs y combined status sobre el merge SHA e4e4a5f devolvió listas vacías; los resultados 8/8 de #166 y 10/10 de #167 corresponden a sus HEADs de PR, no al merge SHA actual.
+- Se leyeron los 16 documentos obligatorios indicados por el propietario y se inspeccionaron los callers de auth/DB, branch context, migraciones 0001–0004 y tests PostgreSQL existentes.
+- Diseño: helper separado consume BranchContext server-derived, exige role cashier, revalida en una consulta scope org/user/branch + estados activos + turno abierto; devuelve null si no hay turno o scope no válido. `FOR SHARE OF s` permite proteger el turno durante una transacción caller, sin abrir una transacción dentro del helper.
+- Se prepararon helper, tests unitarios, integración PostgreSQL 18 desechable y paso CI. No se ejecutó SQL local ni remoto; CI aún pendiente. No endpoints comerciales ni cambios de matriz.
+- Se detectaron encabezados obsoletos en DATABASE_SCHEMA/SCHEMA_REVIEW con SHA pre-#167; se reconciliaron en la rama de trabajo.
+- Rama: `feat/authenticated-cashier-open-shift-20261030`, basada en el merge SHA e4e4a5f. Continuar con inspección del diff y workflows exactos antes de merge.
+
+
+## 2026-10-30 UTC — PR #169 abierta y primera verificación de CI
+
+- PR #169: https://github.com/BTF14/Micro-app/pull/169; rama `feat/authenticated-cashier-open-shift-20261030`; base main `e4e4a5f312522ec5efbcc3252958141f56fbd821`; HEAD inicial `69ef099d586070edf295e0302468e96c4667f11f`.
+- Diff inicial: 11 archivos, helper aislado, tests unitarios, integración PG18, workflow CI y sincronización de continuidad/esquema.
+- Revisión manual del diff completo realizada. Codex review falló por cuota; reviews formales y threads inline: 0. No se presenta como aprobación externa.
+- Primera consulta: 8 workflow runs Actions en progreso. Check-runs de Cloudflare Pages/Workers, Dependency Review, Trivy, secret-history y dashboard observados en success; CI, migration, Chromium y Semgrep seguían en progreso. Reconsultar en el HEAD actual de PR, porque cualquier commit invalida esa evidencia.
+- Cloudflare Pages y Workers publicaron previews para el SHA 69ef099; son previews y no despliegues productivos.
+- No se ejecutó shell local ni SQL remoto. La integración usa exclusivamente el PostgreSQL 18 local sintético del workflow; Neon main no se tocó.
+
+ 
+## 2026-10-30 UTC — ampliación de pruebas de aislamiento y concurrencia del helper
+
+- Se amplió `cashier-open-shift.integration.test.ts` para verificar que no se devuelve el turno de otro cajero dentro de la misma organización/sucursal ni el turno del mismo cajero en otra sucursal de la misma organización.
+- Se añadió una prueba PostgreSQL 18 de bloqueo: el `FOR SHARE OF s` mantiene bloqueado el cierre concurrente mientras el caller conserva la transacción; tras COMMIT, el cierre puede completarse.
+- Esta ampliación cambia el HEAD de PR #169; las pruebas y workflows del SHA anterior son evidencia histórica y deben revalidarse sobre el nuevo HEAD.
+
+
+## 2026-10-30 UTC — verificación final de PR #169 HEAD 253128c
+
+- HEAD exacto: `253128c6f5213986879ce619da85285251c07416`; PR #169 mantiene base main `e4e4a5f312522ec5efbcc3252958141f56fbd821`.
+- GitHub Actions: 8/8 workflows completed/success (CI, Database migration validation, Playwright E2E, Security scan, Semgrep SAST, Secret history scan, Dependency review y Project progress dashboard).
+- API de check-runs: 14 entradas consultadas, todas completed/success, incluyendo Workers Builds y Cloudflare Pages. Las URLs reportadas por los bots son previews; no se afirma deploy de producción.
+- Job CI: build/typecheck, unit tests, auth integration 18/18, branch-context integration 4/4, register-shifts integration 5/5 y cashier-open-shift integration 7/7. El último test cubre row-locking contra cierre concurrente con dos conexiones PostgreSQL.
+- Migration validation aplica 0001–0004 y pasa assertions en PostgreSQL 18 desechable. Playwright, Semgrep, Trivy, Dependency Review, Secret History y dashboard success.
+- Reviews formales GitHub: 0; inline review threads: 0. Codex no completó por cuota; no se trata como aprobación externa. Diff revisado manualmente.
+- No se tocó Neon main, no se aplicaron migraciones remotas, no se modificaron secretos/Cloudflare settings/DNS/billing y no se crearon endpoints comerciales.
+
+
+## 2026-10-30 UTC — checkpoint documental posterior a la verificación de implementación
+
+- La implementación de PR #169 en SHA `253128c6f5213986879ce619da85285251c07416` pasó 8/8 workflows Actions y 14 check-runs observados success; 7/7 nuevas pruebas de integración PostgreSQL 18 pasaron, incluida la prueba de bloqueo ante cierre concurrente.
+- Se sincronizan las portadas de continuidad con esos resultados y se distingue el SHA de implementación verificado de los commits documentales posteriores.
+- Este checkpoint cambia el HEAD de PR #169 sin cambiar runtime; reconsultar los checks del SHA exacto actual antes de merge. No reutilizar el resultado de 253128 como evidencia de un SHA posterior.

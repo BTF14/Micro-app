@@ -1,39 +1,52 @@
-# Estado vivo — post PR #166 y #167 — 2026-10-30 UTC
+# Estado vivo — implementación del resolver de turno abierto — 2026-10-30 UTC
 
-## Estado confirmado en GitHub
+## Estado verificado en GitHub
 
 - Repositorio: `BTF14/Micro-app`.
-- PR [#166](https://github.com/BTF14/Micro-app/pull/166) fusionada primero; merge commit `8a16b4bf70e3b35c45e91366148f4a37aa43b5e7`.
-- PR [#167](https://github.com/BTF14/Micro-app/pull/167) fusionada después; merge commit: `c1cd8650db33aa4a249eaf1f55d321513d576e10`.
-- PR #166: 8/8 workflows Actions success en su HEAD final `4cee6e2ff6bfb8f3eecd85b4ff9212c1ab6d98fd`.
-- PR #167: 10/10 workflows Actions success en su HEAD final `ad45911368e9e9a714ebbe014de2d84a7b3cf1de`, incluyendo CI, migration validation 0001–0004, Playwright, backup restore smoke PostgreSQL 18, Semgrep, Trivy, Dependency Review, secret history, SDD validation y dashboard.
-- No hubo reviews formales de GitHub ni threads inline en #166/#167. Codex review no pudo completarse por cuota. Se realizó revisión manual de los diffs y de la migración/assertions/tests; no presentar esto como aprobación de Codex ni review humana.
-- Cloudflare publicó URLs identificadas como previews de Pages/Workers. No se modificó configuración Cloudflare ni se hizo deploy manual. Un merge a main puede activar integración automática; no afirmar que se verificó un despliegue productivo de esta sesión.
+- `main` verificado: `e4e4a5f312522ec5efbcc3252958141f56fbd821` (merge de PR #168).
+- PR #166, #167 y #168 están fusionadas secuencialmente. PR abiertas: ninguna al iniciar este bloque.
+- PR #166: 8/8; PR #167: 10/10; PR #168: 10/10 workflows Actions en sus HEADs finales. Para #168, HEAD `26fef88bfeea656424e8c4c082cef789a177857a`; los check-runs consultados terminaron completed/success.
+- La consulta de checks sobre el merge SHA actual de main devolvió listas vacías; no se afirma CI post-merge sobre `e4e4a5f...`.
+- PR #169 HEAD inicial `69ef099d586070edf295e0302468e96c4667f11f`, base `e4e4a5f312522ec5efbcc3252958141f56fbd821`; actualizar al HEAD vivo tras cada commit.
+- PR #169 implementación/test SHA `253128c6f5213986879ce619da85285251c07416`: 8/8 workflow runs Actions `completed/success`; 14 check-runs consultados, todos `completed/success`. Se añadió después un checkpoint documental; consultar siempre GitHub para el HEAD exacto de la rama antes de merge.
+- El job CI del SHA de implementación confirmó build/typecheck, unit tests, auth 18/18, branch 4/4, register shifts 5/5 y cashier open-shift integration 7/7 en PostgreSQL 18 efímero. Revalidar checks sobre el HEAD documental más reciente.
+- Cloudflare Pages preview: `https://79028733.micro-app-63i.pages.dev`; branch preview `https://feat-authenticated-cashier-o.micro-app-63i.pages.dev`. Workers commit preview `https://ff076721-micro-app-api.btfcasheb.workers.dev`; branch preview `https://feat-authenticated-cashier-open-shift-20261030-micro-app-api.btfcasheb.workers.dev`. Son previews, no producción.
+- Cloudflare Pages/Workers publicaron previews para el HEAD final `253128c`; no son producción.
+- Codex review falló por límite de uso; no hay reviews formales ni threads inline. Se hizo inspección manual del diff; no equivale a aprobación externa.
 
-## Estado real del producto y base de datos
+## Estado de implementación del bloque actual
 
-- Main contiene migraciones versionadas 0001–0004. 0003 incorpora sucursales/asignaciones; 0004 incorpora `registers` y `register_shifts`.
-- **No se aplicaron 0003 ni 0004 a Neon main.** La validación se ejecutó en PostgreSQL 18 desechable en CI. No se crearon Neon branches en este bloque.
-- API Hono sigue limitada a autenticación y `GET /health`; no hay endpoints comerciales ni helper runtime que resuelva el turno del cajero autenticado.
-- `resolveBranchContext` existe, pero no está conectado a rutas y no implementa autorización por operación.
-- La matriz `docs/sdd/role-permission-decision-matrix.md` continúa **NO APROBADA**. El esquema de turnos no autoriza ventas, pagos, descuentos, anulaciones ni operaciones de caja desde la API.
-- El modelo de turno es individual por cajero y caja; un solo turno abierto por caja y por cajero/organización; cambio de responsable requiere cerrar y abrir otro turno; USD/VES se cuentan por separado. No hay ledger ni cálculo de efectivo esperado/diferencia.
+- En curso: helper aislado `resolveOpenCashierRegisterShift(client, branchContext)`.
+- El contrato exige `BranchContext` derivado de `resolveBranchContext`, después de `resolveTenantContext`; acepta solo rol `cashier`.
+- La consulta revalida en PostgreSQL usuario, membresía/rol cashier, organización, sucursal, asignación, caja y turno abierto; filtra simultáneamente por organización, usuario y sucursal.
+- Devuelve `null` si no existe turno abierto o si el scope ya no es válido. No eleva owner/admin ni permite suplantación.
+- `FOR SHARE OF s` permite que un caller futuro mantenga el turno estable durante su transacción; el helper no abre una transacción ni implementa operaciones comerciales.
+- Se añadieron pruebas unitarias e integración PostgreSQL 18 desechable para ausencia/lectura de turno, usuario inactivo, membresía/rol/asignación revocados y scope cross-tenant. CI debe verificarlas en el HEAD exacto de la PR.
+- No se añadieron endpoints comerciales ni se aprobó la matriz de permisos.
 
-## Próxima prioridad técnica
+## Arquitectura y restricciones vigentes
 
-1. Revalidar en vivo main, PRs abiertas y checks antes de cualquier cambio.
-2. Diseñar e implementar un helper aislado para resolver el turno abierto del cajero autenticado, con tests PostgreSQL efímeros; sin endpoints comerciales.
-3. Cerrar y aprobar explícitamente la matriz de permisos y la autorización server-side por operación/sucursal antes de handlers comerciales.
-4. Después diseñar almacenes, balances/ledger y reconciliación/backfill del stock legacy.
-5. Medir límites y capacidad Neon/Cloudflare con pruebas sintéticas antes de prometer número de organizaciones/locales.
+- Main versiona migraciones 0001–0004. 0003 contiene sucursales/asignaciones; 0004 contiene `registers` y `register_shifts`.
+- 0003/0004 no se han aplicado a Neon main. PostgreSQL 18 desechable es el entorno primario de pruebas.
+- No hay endpoints comerciales; `resolveTenantContext`/`resolveBranchContext` son resolutores de contexto, no autorización por operación.
+- La matriz `docs/sdd/role-permission-decision-matrix.md` sigue **NO APROBADA**.
+- Los turnos no se transfieren; cambio de cajero requiere cierre y nueva apertura. No calcular efectivo esperado/diferencias sin ledger de caja.
+- Los encabezados de DATABASE_SCHEMA/SCHEMA_REVIEW se alinean ahora al SHA actual; los snapshots históricos permanecen subordinados a esta portada.
 
-## Guardrails permanentes
+## Próxima secuencia
 
-- PostgreSQL desechable es el entorno primario. Neon branches solo si añaden validación específica; Neon main nunca es laboratorio.
-- No ejecutar migraciones en Neon main ni tocar datos reales, secretos, DNS, billing o configuración Cloudflare sin los gates y autorización correspondientes.
-- No confundir esquema migrado en Git con esquema aplicado en Neon.
-- Mantener CURRENT_STATE, HANDOFF_NEXT_CHAT, WORK_CHECKPOINT, PROJECT_PLAN y STATE_JOURNAL sincronizados dentro de cada cambio sustantivo.
-- Los bloques inferiores de este archivo son snapshots históricos; esta portada es el estado operativo vigente y prevalece sobre ellos.
+1. Verificar diff completo y todos los workflows requeridos del HEAD exacto de esta PR.
+2. Corregir cualquier fallo de typecheck/unit/integración/seguridad antes de considerar merge.
+3. Si todos los gates están satisfechos, fusionar conforme a la autorización general del propietario y verificar main post-merge.
+4. Mantener el helper como lookup de contexto; no añadir handlers comerciales hasta aprobar matriz y autorización server-side por operación/sucursal.
+
+## Guardrails
+
+- No Neon main como laboratorio ni aplicación remota de migraciones.
+- No usar datos reales, secretos, DNS, billing ni Cloudflare settings.
+- Los merges a main pueden disparar despliegues automáticos; distinguir preview y producción.
+- Objetivo de coste: $0.
+- No afirmar reviews formales/Codex: las PR #166–#168 tuvieron revisión manual documentada, sin aprobación externa.
 
 ---
 

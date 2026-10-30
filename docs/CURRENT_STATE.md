@@ -5,8 +5,8 @@
 - Repositorio: `BTF14/Micro-app`.
 - `main` en el último merge verificado: `bb5bd72829db0532521857bffd62dac5c42a2eee` (merge squash de PR #178). Consultar GitHub en vivo antes de cualquier acción posterior.
 - PR #178: **MERGED**. Cambio exclusivamente documental: 14 archivos (+403/-238); sin runtime, SQL, migraciones, lockfile, workflows ni infraestructura.
-- PR #179: [docs: reconcile continuity after PR 178 merge](https://github.com/BTF14/Micro-app/pull/179), rama `docs/post-178-merge-checkpoint-20261030`, HEAD padre anterior a la corrección documental actual `d958eb4e1ca7b6c79b95cf1ec1adcd87dcba685e`, base `bb5bd72829db0532521857bffd62dac5c42a2eee`. **ABIERTA; no fusionada.** La portada de esta PR se está corrigiendo porque su primer commit dejó debajo del nuevo checkpoint bloques operativos antiguos que aún decían que #178 estaba abierta/draft y que main tenía el SHA anterior.
-- Para el SHA exacto de PR #179 `d958eb4e1ca7b6c79b95cf1ec1adcd87dcba685e`, los 8 workflow runs consultados terminaron `success`: CI, Project progress dashboard, Dependency review, Database migration validation, Security scan, Semgrep SAST, Playwright E2E y Secret history scan. El endpoint de combined commit status devolvió lista vacía de statuses; no confundirlo con checks requeridos de branch protection. Cloudflare Pages y Workers reportaron deployments de **preview** exitosos para ese SHA; no son despliegues a producción.
+- PR #179: [docs: reconcile continuity after PR 178 merge](https://github.com/BTF14/Micro-app/pull/179), rama `docs/post-178-merge-checkpoint-20261030`. Snapshot de revisión: HEAD `fb724e0c3bd8fbaae2a838f042c1e838754675b5`, base `bb5bd72829db0532521857bffd62dac5c42a2eee`; estado observado: ABIERTA, no fusionada. Este estado describe la PR al crear este checkpoint; consultar GitHub en vivo para el estado posterior. La corrección actual incorpora los hallazgos de la revisión independiente.
+- Evidencia de SHA superado `d958eb4e1ca7b6c79b95cf1ec1adcd87dcba685e` (NO aplicable al HEAD): 8 workflow runs terminaron `success`. Para el HEAD `fb724e0c3bd8fbaae2a838f042c1e838754675b5`, GitHub Actions reportó 8/8 workflows `completed/success` en la última consulta: CI, Project progress dashboard, Dependency review, Database migration validation, Security scan, Semgrep SAST, Playwright E2E y Secret history scan. Reconsultar checks tras cada commit. Combined commit status devolvió statuses vacíos; branch protection/required checks no está confirmada. Cloudflare Pages y Workers reportaron previews exitosas para el HEAD `fb724e0`; son previews, no certificación ni prueba de producción.
 - Revisión automática Codex en #179: falló/no se completó por límite de uso. No es una revisión aprobatoria ni evidencia de ausencia de hallazgos. Revisión manual de alcance documental necesaria.
 - En el HEAD exacto de PR #178 (`8bacd57d9c3d624eae8139dadeb7fd6c0730b4dc`) los 9 workflow runs consultados terminaron `success`; no extrapolar esos resultados a otros SHA.
 - TinyFish verificó el recorrido OAuth real en `https://micro-app-63i.pages.dev/#inicio`: dashboard autenticado, organización visible Abasto 7 de Oro, rol mostrado `owner`, sesión conservada. Esto no prueba CORS ni operaciones comerciales.
@@ -17,10 +17,10 @@
 
 ## Próxima secuencia obligatoria
 
-1. Corregir las portadas de CURRENT_STATE y HANDOFF en PR #179 para que solo exista un estado operativo vigente y los snapshots antiguos queden dentro del bloque histórico claramente delimitado.
-2. Revisar diff completo y contenido de los tres archivos; confirmar que el journal solo recibe una nueva entrada append-only.
-3. Validar checks del nuevo HEAD, previews y estado de PR; la evidencia del SHA anterior no se transfiere.
-4. Fusionar #179 solo si el diff queda coherente y las validaciones aplicables están verdes; si no hay branch protection/checks requeridos visibles, documentar esa limitación antes de decidir.
+1. Revisar el diff final de #179 y comprobar que STATE_JOURNAL solo agrega una entrada nueva, sin reescribir las anteriores.
+2. Revalidar checks del HEAD exacto y revisar los comentarios de preview. No reutilizar resultados de SHA anteriores.
+3. La autorización del propietario para fusionar #179 ya fue expresada en este chat. Fusionar solo si el diff y los checks aplicables permanecen correctos. El merge a `main` puede activar despliegues automáticos de Cloudflare; no realizar cambios manuales de producción, y comprobar/documentar cualquier efecto automático sin modificar configuración, tráfico ni variables.
+4. Después del merge, actualizar este checkpoint para registrar el merge SHA real de #179 y el nuevo `main`; no dejar el estado pre-merge como estado vivo.
 5. Continuar #78 (bundle publicado + preflight real desde red funcional) y #53 (auditoría de rutas existentes sin inventar matriz comercial).
 
 ## Snapshot previo — eliminación segura de rama heredada (histórico; no es estado actual de PR #178) — 2026-10-30 UTC
@@ -32,7 +32,9 @@
 
 ## Snapshot de continuidad tras PR #177 (histórico; supersedido por el checkpoint superior) — 2026-10-30 UTC
 
-**Checkpoint vivo verificado — 2026-10-30 UTC.** Repositorio `BTF14/Micro-app`; `main` = `82386c6e9300e06f8fa209aa52995b939a72442a`, merge SHA de PR #177. PR #177 está fusionada; no había PR abiertas en la consulta de continuidad. En la validación post-merge se observaron 9/9 check-runs success y los seis contextos requeridos success; no extrapolar a otros SHA.
+> **BLOQUE HISTÓRICO COMPLETO — NO ES ESTADO ACTUAL.** Todo el contenido desde aquí hasta el siguiente separador horizontal describe observaciones realizadas cuando `main` estaba en `82386c6e...`, antes del merge de PR #178. Los datos de Cloudflare (incluido el 100% de asignación de tráfico), Pages, issues y el próximo orden son históricos y no deben guiar acciones actuales.
+
+**Snapshot histórico verificado — 2026-10-30 UTC.** Repositorio `BTF14/Micro-app`; `main` = `82386c6e9300e06f8fa209aa52995b939a72442a`, merge SHA de PR #177. PR #177 está fusionada; no había PR abiertas en la consulta de continuidad. En la validación post-merge se observaron 9/9 check-runs success y los seis contextos requeridos success; no extrapolar a otros SHA.
 
 **Trabajo documental en curso:** PR [#178](https://github.com/BTF14/Micro-app/pull/178) está abierta como draft sobre la rama `docs/reconcile-role-model-and-cloudflare-20261030`, con base `main` en `82386c6e9300e06f8fa209aa52995b939a72442a`. Snapshot previo a esta corrección: HEAD `8a3db508b10c8a8dfa9c63ace90dbd64825022e0`; sus 9/9 workflows GitHub Actions observados terminaron `success`, y las previews de Pages/Workers reportaron éxito. Ese resultado pertenece exclusivamente a ese SHA. Esta edición documental generará un HEAD nuevo: consultar de nuevo todos sus checks y previews antes de considerar la PR lista. Continuar esa misma PR; no abrir otra.
 

@@ -1,12 +1,12 @@
 name: CORS verification (public Worker)
 
 # Read-only verification for issue #78: confirms the deployed Worker's CORS
-# behaviour against a real HTTP preflight, from a runner with full internet
+# behaviour against real HTTP preflights, from a runner with full internet
 # egress (unlike some sandboxed AI dev environments, which cannot reach
 # micro-app-api.btfcasheb.workers.dev at all — see the issue history).
 #
 # This workflow never sends secrets, tokens or cookies, and never modifies
-# Cloudflare configuration, DNS, traffic or deployments. It only issues two
+# Cloudflare configuration, DNS, traffic or deployments. It only issues
 # anonymous OPTIONS preflight requests against the public health endpoint
 # and reports the exact status/headers observed.
 
@@ -31,6 +31,11 @@ env:
   WORKER_HEALTH_URL: https://micro-app-api.btfcasheb.workers.dev/health
   ALLOWED_ORIGIN: https://micro-app-63i.pages.dev
   DISALLOWED_ORIGIN: https://attacker.example
+  # Mirrors the real preflight a browser sends before calling an
+  # authenticated endpoint (Authorization + Content-Type), not just the
+  # bare GET preflight /health itself would trigger.
+  REQUESTED_HEADERS: "authorization,content-type"
+  EXPECTED_ALLOW_METHODS: "GET,POST,PATCH,DELETE,OPTIONS"
 
 jobs:
   cors-preflight:
@@ -38,19 +43,21 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
-      - name: Preflight from the allowed frontend origin
+      - name: Preflight from the allowed frontend origin (basic GET)
         id: allowed
         shell: bash
         run: |
           set +e
-          headers=$(curl -sS -i -X OPTIONS "$WORKER_HEALTH_URL" \
+          curl -sS -i -X OPTIONS "$WORKER_HEALTH_URL" \
             -H "Origin: $ALLOWED_ORIGIN" \
             -H "Access-Control-Request-Method: GET" \
-            --max-time 20)
+            --max-time 20 > /tmp/allowed-response.txt
           status=$?
           set -e
-          echo "$headers" > /tmp/allowed-response.txt
           echo "curl_exit=$status" >> "$GITHUB_OUTPUT"
+          if [ "$status" -ne 0 ]; then
+            printf '__CURL_EXIT__:%s\n' "$status" >> /tmp/allowed-response.txt
+          fi
           cat /tmp/allowed-response.txt
 
       - name: Preflight from an external, non-allowlisted origin
@@ -58,30 +65,120 @@ jobs:
         shell: bash
         run: |
           set +e
-          headers=$(curl -sS -i -X OPTIONS "$WORKER_HEALTH_URL" \
+          curl -sS -i -X OPTIONS "$WORKER_HEALTH_URL" \
             -H "Origin: $DISALLOWED_ORIGIN" \
             -H "Access-Control-Request-Method: GET" \
-            --max-time 20)
+            --max-time 20 > /tmp/disallowed-response.txt
           status=$?
           set -e
-          echo "$headers" > /tmp/disallowed-response.txt
           echo "curl_exit=$status" >> "$GITHUB_OUTPUT"
+          if [ "$status" -ne 0 ]; then
+            printf '__CURL_EXIT__:%s\n' "$status" >> /tmp/disallowed-response.txt
+          fi
           cat /tmp/disallowed-response.txt
+
+      - name: Preflight from the allowed origin requesting Authorization + Content-Type
+        id: allowed-headers
+        shell: bash
+        run: |
+          set +e
+          curl -sS -i -X OPTIONS "$WORKER_HEALTH_URL" \
+            -H "Origin: $ALLOWED_ORIGIN" \
+            -H "Access-Control-Request-Method: GET" \
+            -H "Access-Control-Request-Headers: $REQUESTED_HEADERS" \
+            --max-time 20 > /tmp/allowed-headers-response.txt
+          status=$?
+          set -e
+          echo "curl_exit=$status" >> "$GITHUB_OUTPUT"
+          if [ "$status" -ne 0 ]; then
+            printf '__CURL_EXIT__:%s\n' "$status" >> /tmp/allowed-headers-response.txt
+          fi
+          cat /tmp/allowed-headers-response.txt
 
       - name: Evaluate CORS result and publish evidence
         shell: bash
         run: |
           set -e
 
-          allowed_http_status=$(head -n1 /tmp/allowed-response.txt | tr -d '\r' || true)
-          disallowed_http_status=$(head -n1 /tmp/disallowed-response.txt | tr -d '\r' || true)
+          pass=true
+          reasons=()
 
-          allowed_acao=$(grep -i '^access-control-allow-origin:' /tmp/allowed-response.txt | tr -d '\r' || true)
-          allowed_acac=$(grep -i '^access-control-allow-credentials:' /tmp/allowed-response.txt | tr -d '\r' || true)
-          allowed_acam=$(grep -i '^access-control-allow-methods:' /tmp/allowed-response.txt | tr -d '\r' || true)
-          allowed_maxage=$(grep -i '^access-control-max-age:' /tmp/allowed-response.txt | tr -d '\r' || true)
+          extract_header() {
+            # $1 = response file, $2 = header name (lowercase, no colon)
+            grep -i "^$2:" "$1" | tr -d '\r' | sed -E "s/^[^:]+:[[:space:]]*//" || true
+          }
 
-          disallowed_acao=$(grep -i '^access-control-allow-origin:' /tmp/disallowed-response.txt | tr -d '\r' || true)
+          check_transport() {
+            # $1 = response file, $2 = label
+            if grep -q '^__CURL_EXIT__:[1-9]' "$1" 2>/dev/null; then
+              pass=false
+              reasons+=("$2: curl transport error (non-zero exit), see raw response in the step summary.")
+              return 1
+            fi
+            return 0
+          }
+
+          check_status() {
+            # $1 = response file, $2 = label
+            local status_line
+            status_line=$(head -n1 "$1" | tr -d '\r')
+            if ! echo "$status_line" | grep -Eq 'HTTP/[0-9.]+ 2[0-9]{2}'; then
+              pass=false
+              reasons+=("$2: unexpected HTTP status line: $status_line")
+            fi
+          }
+
+          # --- Test 1: allowed origin, basic GET preflight ---
+          check_transport /tmp/allowed-response.txt "Allowed origin (basic)" || true
+          check_status /tmp/allowed-response.txt "Allowed origin (basic)"
+          allowed_acao=$(extract_header /tmp/allowed-response.txt "access-control-allow-origin")
+          allowed_acac=$(extract_header /tmp/allowed-response.txt "access-control-allow-credentials")
+          allowed_acam=$(extract_header /tmp/allowed-response.txt "access-control-allow-methods")
+          allowed_maxage=$(extract_header /tmp/allowed-response.txt "access-control-max-age")
+
+          if [ -z "$allowed_acao" ]; then
+            pass=false
+            reasons+=("Allowed origin (basic): missing Access-Control-Allow-Origin.")
+          elif [ "$allowed_acao" != "$ALLOWED_ORIGIN" ]; then
+            pass=false
+            reasons+=("Allowed origin (basic): Access-Control-Allow-Origin was '$allowed_acao', expected '$ALLOWED_ORIGIN'.")
+          fi
+          if [ "$allowed_acac" != "true" ]; then
+            pass=false
+            reasons+=("Allowed origin (basic): Access-Control-Allow-Credentials was '$allowed_acac', expected 'true'.")
+          fi
+          for m in GET POST PATCH DELETE OPTIONS; do
+            if ! echo "$allowed_acam" | grep -qi "$m"; then
+              pass=false
+              reasons+=("Allowed origin (basic): Access-Control-Allow-Methods ('$allowed_acam') is missing '$m'.")
+            fi
+          done
+
+          # --- Test 2: disallowed origin ---
+          check_transport /tmp/disallowed-response.txt "Disallowed origin" || true
+          check_status /tmp/disallowed-response.txt "Disallowed origin"
+          disallowed_acao=$(extract_header /tmp/disallowed-response.txt "access-control-allow-origin")
+          if [ -n "$disallowed_acao" ]; then
+            pass=false
+            reasons+=("Disallowed origin: received Access-Control-Allow-Origin ('$disallowed_acao') — should be absent.")
+          fi
+
+          # --- Test 3: allowed origin requesting Authorization + Content-Type ---
+          check_transport /tmp/allowed-headers-response.txt "Allowed origin (Authorization+Content-Type)" || true
+          check_status /tmp/allowed-headers-response.txt "Allowed origin (Authorization+Content-Type)"
+          ah_acao=$(extract_header /tmp/allowed-headers-response.txt "access-control-allow-origin")
+          ah_acah=$(extract_header /tmp/allowed-headers-response.txt "access-control-allow-headers")
+
+          if [ -z "$ah_acao" ] || [ "$ah_acao" != "$ALLOWED_ORIGIN" ]; then
+            pass=false
+            reasons+=("Allowed origin (Authorization+Content-Type): Access-Control-Allow-Origin was '$ah_acao', expected '$ALLOWED_ORIGIN'.")
+          fi
+          for h in authorization content-type; do
+            if ! echo "$ah_acah" | tr 'A-Z' 'a-z' | grep -q "$h"; then
+              pass=false
+              reasons+=("Allowed origin (Authorization+Content-Type): Access-Control-Allow-Headers ('$ah_acah') does not include '$h', which the browser explicitly requested.")
+            fi
+          done
 
           {
             printf '## CORS verification — micro-app-api (public, read-only)\n\n'
@@ -89,43 +186,35 @@ jobs:
             printf -- '- Commit: `%s`\n' "$GITHUB_SHA"
             printf -- '- Run time (UTC): `%s`\n\n' "$(date -u +%FT%TZ)"
 
-            printf '### Allowed origin (`%s`)\n\n' "$ALLOWED_ORIGIN"
+            printf '### Test 1 — allowed origin, basic GET preflight (`%s`)\n\n' "$ALLOWED_ORIGIN"
             printf '```text\n%s\n```\n\n' "$(cat /tmp/allowed-response.txt)"
 
-            printf '### Disallowed origin (`%s`)\n\n' "$DISALLOWED_ORIGIN"
+            printf '### Test 2 — disallowed origin (`%s`)\n\n' "$DISALLOWED_ORIGIN"
             printf '```text\n%s\n```\n\n' "$(cat /tmp/disallowed-response.txt)"
-          } >> "$GITHUB_STEP_SUMMARY"
 
-          pass=true
-          reasons=()
+            printf '### Test 3 — allowed origin requesting `Access-Control-Request-Headers: %s`\n\n' "$REQUESTED_HEADERS"
+            printf '```text\n%s\n```\n\n' "$(cat /tmp/allowed-headers-response.txt)"
 
-          if [ -z "$allowed_acao" ]; then
-            pass=false
-            reasons+=("Allowed origin did not receive an Access-Control-Allow-Origin header.")
-          elif ! echo "$allowed_acao" | grep -qi "$ALLOWED_ORIGIN"; then
-            pass=false
-            reasons+=("Access-Control-Allow-Origin for the allowed origin did not echo $ALLOWED_ORIGIN: $allowed_acao")
-          fi
-
-          if [ -n "$disallowed_acao" ]; then
-            pass=false
-            reasons+=("Disallowed origin received an Access-Control-Allow-Origin header (should be absent): $disallowed_acao")
-          fi
-
-          {
             printf '### Interpretation\n\n'
             if [ "$pass" = true ]; then
-              printf -- '- **Result: PASS.** The allowed origin receives `Access-Control-Allow-Origin: %s`; the external origin receives none. This matches the fail-closed CORS implementation in `apps/api/src/index.ts`.\n' "$ALLOWED_ORIGIN"
+              printf -- '- **Result: PASS.** All three preflights behaved as expected: the allowed origin receives `Access-Control-Allow-Origin: %s`, `Access-Control-Allow-Credentials: true`, the full method list, and echoes back the Authorization/Content-Type headers it asked for; the external origin receives no CORS allow headers at all. This matches the fail-closed CORS implementation in `apps/api/src/index.ts`.\n' "$ALLOWED_ORIGIN"
             else
-              printf -- '- **Result: FAIL.** %s\n' "${reasons[*]}"
+              printf -- '- **Result: FAIL.**\n'
+              for r in "${reasons[@]}"; do
+                printf -- '  - %s\n' "$r"
+              done
             fi
             printf -- '- This run only issues anonymous `OPTIONS` requests; no secrets, cookies or tokens are sent, and no Cloudflare configuration, traffic or deployment is modified.\n'
           } >> "$GITHUB_STEP_SUMMARY"
 
-          echo "allowed ACAO: $allowed_acao"
-          echo "disallowed ACAO: $disallowed_acao"
+          echo "Test 1 ACAO: $allowed_acao / ACAC: $allowed_acac / ACAM: $allowed_acam"
+          echo "Test 2 ACAO (disallowed, should be empty): $disallowed_acao"
+          echo "Test 3 ACAO: $ah_acao / ACAH: $ah_acah"
 
           if [ "$pass" != true ]; then
-            echo "CORS verification failed: ${reasons[*]}"
+            echo "CORS verification failed:"
+            for r in "${reasons[@]}"; do
+              echo "  - $r"
+            done
             exit 1
           fi

@@ -1,30 +1,23 @@
-# Handoff operativo — continuidad Micro-app — 2026-10-30 UTC
+# Handoff operativo — continuidad Micro-app — 2026-10-31 UTC
 
 > No reiniciar el proyecto. Este handoff describe el último estado comprobado; verificar GitHub en vivo antes de actuar.
 
 ## Punto exacto de reanudación
 
-- Repositorio: `BTF14/Micro-app`.
-- `main` verificado tras PR #179: `d6f41448b00b2e03ac25467378c707c6fcba1434`, merge SHA de PR #179.
-- PR #178: MERGED por squash; exclusivamente documental, 14 archivos (+403/-238), sin runtime, SQL, migraciones, lockfile, workflows ni infraestructura.
-- PR #179: [https://github.com/BTF14/Micro-app/pull/179](https://github.com/BTF14/Micro-app/pull/179), fusionada por squash. HEAD revisado `a09864ad772e3afdfabb911dc041ada1f7a71edd`; merge SHA y `main` posterior `d6f41448b00b2e03ac25467378c707c6fcba1434`. GitHub confirma `merged=true` y estado cerrado.
-- Para el HEAD pre-merge exacto `a09864ad772e3afdfabb911dc041ada1f7a71edd`, 8/8 workflows Actions consultados terminaron `completed/success`; Cloudflare Pages y Workers reportaron previews exitosas para ese SHA. Previews no equivalen a producción. Combined commit status devolvió statuses vacíos; branch protection/required checks no está confirmada. No atribuir estos resultados al merge SHA ni a commits futuros.
-- Codex intentó revisión automática de #179, pero falló por límite de uso. No contar como review ni aprobación. Hacer revisión manual independiente del diff.
-- PR #178 HEAD `8bacd57d9c3d624eae8139dadeb7fd6c0730b4dc`: 9/9 workflow runs consultados success. Evidencia solo para ese SHA.
-- Login OAuth real verificado por TinyFish: `https://micro-app-63i.pages.dev/#inicio`, dashboard autenticado, organización visible Abasto 7 de Oro, rol `owner`, sesión conservada. No demuestra CORS ni funcionalidades comerciales.
-- Issue #78 abierta: CORS NO VERIFICADO. OPTIONS no devolvieron status/headers por fallo DNS en el entorno; falta bundle JS y preflight desde red funcional.
-- Issue #53 abierta: matriz de permisos comerciales NO APROBADA; no crear endpoints, middleware ni reglas rol→operación sin aprobación explícita.
+- Repositorio: `BTF14/Micro-app`. `main` verificado: `062e5ed671a30d356891d9a28dd5d724045cdfa1`.
+- **Issue #78 (CORS): CERRADA el 2026-10-31.** PR #181 añadió `.github/workflows/cors-verification.yml` (manual + semanal, runner con salida completa a internet, a diferencia de los sandboxes de IA de este proyecto). PR #183 lo reforzó con aserciones explícitas de status HTTP/código de salida de `curl` y un tercer preflight pidiendo `Access-Control-Request-Headers: authorization,content-type`. Evidencia real en runs [41186202382](https://github.com/BTF14/Micro-app/actions/runs/41186202382), [41186391247](https://github.com/BTF14/Micro-app/actions/runs/41186391247) y el run de PR #183 (commit `06a398a11a670cafc6becae070cb53eefcf25903`): todos `success`. Origen permitido recibe ACAO/ACAC/métodos/headers correctos; origen externo no recibe ACAO. Workflow queda como guardia de regresión.
+- **Matriz de permisos por rol (`docs/sdd/role-permission-decision-matrix.md`): APROBADA el 2026-10-31** (PR #182). El propietario decidió explícitamente ventas/descuentos, devoluciones/anulaciones y gestión de miembros/políticas; delegó explícitamente a criterio técnico catálogo/inventario, caja y reportes/auditoría. **No implementa nada**: cero endpoints comerciales, cero middleware de autorización en `apps/api/src`.
+- Auditoría de callsites (2026-10-31, solo lectura): `resolveTenantContext`, `resolveBranchContext`, `resolveOpenCashierRegisterShift` son fail-closed y correctos en su SQL, pero no tienen ningún callsite de producción — solo los invocan sus propios archivos de test. No se encontró defecto que corregir.
+- **Issue #53 sigue ABIERTA**: falta implementar los endpoints comerciales siguiendo la matriz aprobada, el middleware de autorización server-side, y pruebas automatizadas de aislamiento cross-tenant/rol en PostgreSQL desechable, antes de poder cerrarla.
 - Arquitectura: `organization_members.role` es un rol único por miembro/organización; `branch_memberships` solo asigna acceso a sucursales, sin roles. Inventario organizacional; caja por turnos y apertura/cierre ordinario.
 
 ## Orden de trabajo
 
-1. Revisar el diff final de #179 y confirmar que el journal solo agrega una entrada append-only.
-2. Revalidar checks del HEAD exacto; no reutilizar evidencia de commits anteriores.
-3. La autorización del propietario para fusionar #179 ya fue expresada en el chat. El merge a `main` puede activar despliegues automáticos de Cloudflare; no hacer cambios manuales de producción y documentar cualquier efecto automático.
-4. Tras el merge, actualizar las portadas con el merge SHA real y el nuevo `main`.
-5. Investigar #78: inspeccionar el bundle JS publicado y obtener status + headers `Access-Control-*` de preflight permitido y rechazado desde una red funcional, sin cambiar configuración.
-6. Investigar #53 solo sobre rutas existentes y con PostgreSQL desechable. La matriz comercial sigue sin aprobarse; no implementar autorización comercial.
-7. Claude web gratuito puede revisar como segunda opinión. Si no accede al repo, compartir diff/archivos y exigir que declare esa limitación. No compartir secretos, tokens ni cookies.
+1. Diseñar e implementar los primeros endpoints comerciales (sugerido: empezar por lectura de catálogo/inventario, el caso más simple y de menor riesgo) siguiendo exactamente `docs/sdd/role-permission-decision-matrix.md`, con middleware server-side que encadene `resolveTenantContext` → `resolveBranchContext` → `resolveOpenCashierRegisterShift` donde aplique, denegando por defecto.
+2. Antes de fusionar cualquier endpoint comercial: pruebas automatizadas de aislamiento cross-tenant (organización A nunca lee/escribe datos de B, ni manipulando IDs) y de aislamiento de rol, con PostgreSQL desechable.
+3. Registro de auditoría (Nivel 2, punto 7 de `docs/SECURITY_ROADMAP.md`) para acciones sensibles antes de considerar el gate de #53 completo.
+4. Revisar periódicamente el workflow `cors-verification.yml` (corre solo automáticamente los lunes); si falla, es una regresión real de CORS, no un falso positivo de entorno.
+5. No asumir que la aprobación documental de la matriz habilita por sí sola producción ni que sustituye las pruebas de aislamiento.
 
 ## Restricciones no negociables
 
@@ -33,11 +26,11 @@
 - PostgreSQL desechable primero; no ejecutar migraciones remotas.
 - No reescribir historial Git ni entradas previas de `docs/STATE_JOURNAL.md`.
 - No afirmar pruebas, revisiones, aprobaciones o verificaciones sin evidencia.
-- No crear endpoints comerciales, middleware ni mapeos rol→operación antes de aprobación explícita de la matriz.
+- No crear endpoints comerciales, middleware ni mapeos rol→operación que se aparten de la matriz ya aprobada sin una nueva decisión explícita del propietario.
 
 ## Prompt para el siguiente chat de ChatGPT
 
-Continúa BTF14/Micro-app como responsable técnico senior. Lee `AGENTS.md`, este handoff, `docs/CURRENT_STATE.md`, `docs/AI_COLLABORATION_AND_PR_POLICY.md`, `docs/PROJECT_PLAN.md`, `docs/STATE_JOURNAL.md`, los registros de recursos/seguridad y los SDD de autorización/sucursales. Verifica GitHub en vivo. PR #178 y PR #179 están fusionadas. `main` verificado tras PR #179: `d6f41448b00b2e03ac25467378c707c6fcba1434`. La PR #179 fue documental; su HEAD pre-merge fue `a09864ad772e3afdfabb911dc041ada1f7a71edd`. No reabrir ni repetir esa corrección; comprobar GitHub en vivo antes de actuar. No reutilices checks de commits anteriores. #78 sigue con CORS NO VERIFICADO; #53 sigue con matriz comercial NO APROBADA. No tocar producción/Neon main/secretos/DNS/billing/datos reales; PostgreSQL desechable primero. No implementar permisos comerciales sin aprobación explícita. Registrar solo hechos verificados y mantener STATE_JOURNAL append-only.
+Continúa BTF14/Micro-app como responsable técnico senior. Lee `AGENTS.md`, este handoff, `docs/CURRENT_STATE.md`, `docs/AI_COLLABORATION_AND_PR_POLICY.md`, `docs/PROJECT_PLAN.md`, `docs/STATE_JOURNAL.md`, los registros de recursos/seguridad y los SDD de autorización/sucursales (incluida la matriz de permisos, ya aprobada). Verifica GitHub en vivo. `main` verificado: `062e5ed671a30d356891d9a28dd5d724045cdfa1`. Issue #78 (CORS) está CERRADA con evidencia real reproducible (PRs #181/#183). La matriz de permisos de #53 está APROBADA (PR #182), pero #53 sigue abierta: falta implementar endpoints comerciales con middleware de autorización y pruebas de aislamiento cross-tenant/rol, con PostgreSQL desechable. No tocar producción/Neon main/secretos/DNS/billing/datos reales. No te apartes de la matriz aprobada sin una nueva decisión explícita del propietario. Registrar solo hechos verificados y mantener STATE_JOURNAL append-only.
 
 ## Snapshot previo — retiro de rama heredada (histórico; no usar como estado actual)
 

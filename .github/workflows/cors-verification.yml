@@ -1,0 +1,131 @@
+name: CORS verification (public Worker)
+
+# Read-only verification for issue #78: confirms the deployed Worker's CORS
+# behaviour against a real HTTP preflight, from a runner with full internet
+# egress (unlike some sandboxed AI dev environments, which cannot reach
+# micro-app-api.btfcasheb.workers.dev at all — see the issue history).
+#
+# This workflow never sends secrets, tokens or cookies, and never modifies
+# Cloudflare configuration, DNS, traffic or deployments. It only issues two
+# anonymous OPTIONS preflight requests against the public health endpoint
+# and reports the exact status/headers observed.
+
+on:
+  workflow_dispatch:
+  schedule:
+    # Weekly, Monday 09:00 UTC (05:00 Venezuela) — ongoing regression guard,
+    # not just a one-time check.
+    - cron: "0 9 * * 1"
+  pull_request:
+    paths:
+      - ".github/workflows/cors-verification.yml"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: micro-app-cors-verification-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  WORKER_HEALTH_URL: https://micro-app-api.btfcasheb.workers.dev/health
+  ALLOWED_ORIGIN: https://micro-app-63i.pages.dev
+  DISALLOWED_ORIGIN: https://attacker.example
+
+jobs:
+  cors-preflight:
+    name: Real CORS preflight (allowed + disallowed origin)
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Preflight from the allowed frontend origin
+        id: allowed
+        shell: bash
+        run: |
+          set +e
+          headers=$(curl -sS -i -X OPTIONS "$WORKER_HEALTH_URL" \
+            -H "Origin: $ALLOWED_ORIGIN" \
+            -H "Access-Control-Request-Method: GET" \
+            --max-time 20)
+          status=$?
+          set -e
+          echo "$headers" > /tmp/allowed-response.txt
+          echo "curl_exit=$status" >> "$GITHUB_OUTPUT"
+          cat /tmp/allowed-response.txt
+
+      - name: Preflight from an external, non-allowlisted origin
+        id: disallowed
+        shell: bash
+        run: |
+          set +e
+          headers=$(curl -sS -i -X OPTIONS "$WORKER_HEALTH_URL" \
+            -H "Origin: $DISALLOWED_ORIGIN" \
+            -H "Access-Control-Request-Method: GET" \
+            --max-time 20)
+          status=$?
+          set -e
+          echo "$headers" > /tmp/disallowed-response.txt
+          echo "curl_exit=$status" >> "$GITHUB_OUTPUT"
+          cat /tmp/disallowed-response.txt
+
+      - name: Evaluate CORS result and publish evidence
+        shell: bash
+        run: |
+          set -e
+
+          allowed_http_status=$(head -n1 /tmp/allowed-response.txt | tr -d '\r' || true)
+          disallowed_http_status=$(head -n1 /tmp/disallowed-response.txt | tr -d '\r' || true)
+
+          allowed_acao=$(grep -i '^access-control-allow-origin:' /tmp/allowed-response.txt | tr -d '\r' || true)
+          allowed_acac=$(grep -i '^access-control-allow-credentials:' /tmp/allowed-response.txt | tr -d '\r' || true)
+          allowed_acam=$(grep -i '^access-control-allow-methods:' /tmp/allowed-response.txt | tr -d '\r' || true)
+          allowed_maxage=$(grep -i '^access-control-max-age:' /tmp/allowed-response.txt | tr -d '\r' || true)
+
+          disallowed_acao=$(grep -i '^access-control-allow-origin:' /tmp/disallowed-response.txt | tr -d '\r' || true)
+
+          {
+            printf '## CORS verification — micro-app-api (public, read-only)\n\n'
+            printf -- '- Target: `%s`\n' "$WORKER_HEALTH_URL"
+            printf -- '- Commit: `%s`\n' "$GITHUB_SHA"
+            printf -- '- Run time (UTC): `%s`\n\n' "$(date -u +%FT%TZ)"
+
+            printf '### Allowed origin (`%s`)\n\n' "$ALLOWED_ORIGIN"
+            printf '```text\n%s\n```\n\n' "$(cat /tmp/allowed-response.txt)"
+
+            printf '### Disallowed origin (`%s`)\n\n' "$DISALLOWED_ORIGIN"
+            printf '```text\n%s\n```\n\n' "$(cat /tmp/disallowed-response.txt)"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+          pass=true
+          reasons=()
+
+          if [ -z "$allowed_acao" ]; then
+            pass=false
+            reasons+=("Allowed origin did not receive an Access-Control-Allow-Origin header.")
+          elif ! echo "$allowed_acao" | grep -qi "$ALLOWED_ORIGIN"; then
+            pass=false
+            reasons+=("Access-Control-Allow-Origin for the allowed origin did not echo $ALLOWED_ORIGIN: $allowed_acao")
+          fi
+
+          if [ -n "$disallowed_acao" ]; then
+            pass=false
+            reasons+=("Disallowed origin received an Access-Control-Allow-Origin header (should be absent): $disallowed_acao")
+          fi
+
+          {
+            printf '### Interpretation\n\n'
+            if [ "$pass" = true ]; then
+              printf -- '- **Result: PASS.** The allowed origin receives `Access-Control-Allow-Origin: %s`; the external origin receives none. This matches the fail-closed CORS implementation in `apps/api/src/index.ts`.\n' "$ALLOWED_ORIGIN"
+            else
+              printf -- '- **Result: FAIL.** %s\n' "${reasons[*]}"
+            fi
+            printf -- '- This run only issues anonymous `OPTIONS` requests; no secrets, cookies or tokens are sent, and no Cloudflare configuration, traffic or deployment is modified.\n'
+          } >> "$GITHUB_STEP_SUMMARY"
+
+          echo "allowed ACAO: $allowed_acao"
+          echo "disallowed ACAO: $disallowed_acao"
+
+          if [ "$pass" != true ]; then
+            echo "CORS verification failed: ${reasons[*]}"
+            exit 1
+          fi

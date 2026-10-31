@@ -1,35 +1,99 @@
-# Matriz de decisión de permisos comerciales — pendiente de aprobación
+# Matriz de decisión de permisos comerciales — APROBADA
 
-**Estado: NO APROBADA.** Este documento no concede permisos, no autoriza endpoints ni middleware y no debe interpretarse como política operativa. Reemplaza propuestas anteriores con recomendaciones por rol/sucursal aún no aprobadas y contradictorias con la decisión estructural vigente.
+**Estado: APROBADA (2026-10-31).** El propietario definió explícitamente las decisiones de ventas, devoluciones y gestión de miembros, y delegó explícitamente en la IA ("elige la mejor opción o inspírate en las demás SaaS parecidas... hacerlo con criterio y fundamentos") el resto de las celdas, con el mandato de aplicar criterio técnico fundamentado. Esta matriz documenta ambas fuentes por separado para trazabilidad. **Sigue sin existir ningún endpoint comercial ni middleware de autorización en el código** — esta aprobación habilita, pero no sustituye, su implementación, revisión y pruebas de aislamiento cross-tenant antes de considerarse completa (issue #53 permanece abierta hasta entonces).
 
 ## Decisión estructural ya fijada
 - Cada miembro tiene **un único rol por organización**, guardado en `organization_members.role`: `owner`, `admin`, `cashier` o `inventory`.
 - El rol aplica a toda la organización; no hay roles distintos por sucursal.
 - `branch_memberships` solo concede/revoca acceso a sucursales; no contiene roles.
 - Cambiar el rol organizacional afecta a toda la organización. Revocar una asignación de sucursal no cambia el rol ni otras asignaciones.
-- La asignación a una sucursal no es autorización para ejecutar operaciones.
+- La asignación a una sucursal no es autorización para ejecutar operaciones: toda operación comercial debe validar rol **y** (cuando aplique) membresía de sucursal activa en el servidor.
 
 Fuentes canónicas: `docs/SAAS_ARCHITECTURE_DECISIONS.md` §§3 y 14; `docs/sdd/MULTI_BRANCH_DATA_MODEL.md`; migración `apps/api/migrations/0003_branch_scope.sql`.
 
-## Decisiones de permisos todavía requeridas
-El propietario debe definir explícitamente, por rol y por operación:
-1. Lectura y modificación de catálogo, precios y costos.
-2. Lectura de existencias y movimientos; recepción, ajuste y transferencia de inventario.
-3. Apertura y cierre ordinario de caja; operaciones permitidas durante un turno abierto.
-4. Creación de ventas, descuentos, cambios de precio y aplicación de políticas comerciales.
-5. Devoluciones, anulaciones, reversos y aprobaciones excepcionales.
-6. Gestión de miembros, invitaciones, desactivaciones, cambios de rol y asignaciones de sucursal.
-7. Configuración de políticas comerciales de la organización y ejecución de excepciones.
-8. Reportes, exportaciones y acceso a auditoría.
+## Convenciones de la tabla
+- **Alcance:** `org` = toda la organización; `sucursal` = limitado a las sucursales donde el miembro tiene `branch_memberships` activa; `propio` = limitado al recurso creado/abierto por el propio miembro (p. ej. su turno de caja).
+- **Auditoría:** toda operación de escritura marcada aquí debe quedar registrada en el log de auditoría (Nivel 2, punto 7 de `docs/SECURITY_ROADMAP.md`) con quién/qué/cuándo/organización/sucursal antes de exponerse en producción.
+- **Revocación:** al desactivar un miembro o revocar su `branch_memberships`, sus sesiones activas deben perder la autorización en la siguiente solicitud (denegar por defecto), sin requerir que el usuario cierre sesión manualmente.
 
-Para cada operación hay que definir lectura/escritura, alcance organizacional/sucursal/recurso, condiciones, límites, aprobación adicional, auditoría y comportamiento al revocar acceso. No se propone aquí un valor por defecto para ninguna celda.
+## 1. Catálogo (precios/costos) e inventario (existencias, recepción, ajuste, transferencia)
+**Fuente: criterio técnico delegado por el propietario.** Razonamiento: separar "quién fija precio/costo" (decisión financiera, debe quedar en manos de quien responde por el negocio) de "quién mueve stock físico" (operación logística diaria) es el patrón estándar en POS/inventario SaaS (Square, Lightspeed, Odoo): minimiza el riesgo de que un error o fraude de inventario también altere márgenes, y viceversa.
 
-## Límites
-- No crear endpoints comerciales, middleware de autorización ni mapeos rol→operación hasta aprobación explícita de esta matriz.
+| Operación | Owner | Admin | Inventory | Cashier |
+|---|---|---|---|---|
+| Leer catálogo/precios/costos | ✅ org | ✅ org | ✅ org | ✅ org (sin costo, solo precio de venta) |
+| Crear/editar/eliminar productos, precios, costos | ✅ org | ✅ org | ❌ | ❌ |
+| Leer existencias y movimientos | ✅ org | ✅ org | ✅ sucursal | ✅ sucursal |
+| Recepción de inventario (entrada) | ✅ org | ✅ org | ✅ sucursal | ❌ |
+| Ajuste de inventario (mermas, conteos) | ✅ org | ✅ org | ✅ sucursal, con motivo obligatorio y auditado | ❌ |
+| Transferencia entre sucursales | ✅ org | ✅ org | ✅ sucursal origen/destino, ambas con membresía activa | ❌ |
+
+Nota: el costo de producto se considera dato financiero sensible; Cashier ve precio de venta pero no costo, para no exponer margen en el punto de venta.
+
+## 2. Apertura y cierre de caja; operaciones durante un turno abierto
+**Fuente: criterio técnico delegado por el propietario**, consistente con la restricción ya fijada ("caja conserva modelo de turnos y apertura/cierre ordinario; no introducir cierres de supervisor incompatibles").
+
+| Operación | Owner | Admin | Inventory | Cashier |
+|---|---|---|---|---|
+| Abrir turno propio | ✅ sucursal | ✅ sucursal | ❌ | ✅ sucursal |
+| Cerrar turno propio (ordinario) | ✅ propio | ✅ propio | ❌ | ✅ propio |
+| Operar ventas/cobros durante turno propio abierto | ✅ propio | ✅ propio | ❌ | ✅ propio |
+| Leer turnos (propios y ajenos) | ✅ org | ✅ org | ❌ | ✅ propio únicamente |
+| Cerrar/reabrir el turno de otro miembro | ✅ org | ✅ org | ❌ | ❌ |
+
+No se introduce cierre forzado por supervisor en esta fase (fuera de alcance; requeriría diseño explícito aprobado aparte).
+
+## 3. Ventas: creación, descuentos, cambios de precio en el momento de la venta
+**Fuente: decisión explícita del propietario (2026-10-31):** *"Cashier/Admin/Owner crean ventas; cualquier descuento requiere aprobación de Admin/Owner."*
+
+| Operación | Owner | Admin | Inventory | Cashier |
+|---|---|---|---|---|
+| Crear venta a precio de lista, turno propio abierto | ✅ propio | ✅ propio | ❌ | ✅ propio |
+| Aplicar descuento (cualquier monto/porcentaje) | ✅ | ✅ | ❌ | ❌ directo — requiere aprobación de Admin/Owner en el momento (ver abajo) |
+| Aprobar un descuento solicitado por Cashier | ✅ | ✅ | ❌ | ❌ |
+| Cambiar precio unitario en la venta (fuera de lista) | ✅ | ✅ | ❌ | ❌ — mismo flujo de aprobación que descuento |
+
+Implementación futura esperada: la aprobación de Admin/Owner debe quedar registrada contra la venta (quién aprobó, cuándo) antes de confirmar el descuento; no basta con una autorización verbal fuera del sistema.
+
+## 4. Devoluciones, anulaciones de venta y reversos
+**Fuente: decisión explícita del propietario (2026-10-31):** *"Cashier puede anular durante el mismo turno abierto; después del cierre solo Admin/Owner."*
+
+| Operación | Owner | Admin | Inventory | Cashier |
+|---|---|---|---|---|
+| Anular venta propia, mismo turno aún abierto | ✅ | ✅ | ❌ | ✅ propio |
+| Anular/devolver venta de un turno ya cerrado | ✅ org | ✅ org | ❌ | ❌ |
+| Anular/devolver venta de otro miembro (turno abierto o cerrado) | ✅ org | ✅ org | ❌ | ❌ |
+
+## 5. Gestión de miembros (invitar, desactivar, cambiar rol, asignar sucursal) y configuración de políticas comerciales
+**Fuente: decisión explícita del propietario (2026-10-31):** *"Solo Owner gestiona miembros y políticas; Admin solo opera el negocio."*
+
+| Operación | Owner | Admin | Inventory | Cashier |
+|---|---|---|---|---|
+| Invitar/desactivar miembros, cambiar rol | ✅ org | ❌ | ❌ | ❌ |
+| Asignar/revocar membresía de sucursal | ✅ org | ❌ | ❌ | ❌ |
+| Configurar políticas comerciales de la organización (p. ej. límites, umbrales futuros) | ✅ org | ❌ | ❌ | ❌ |
+| Ejecutar una excepción puntual ya cubierta en otra sección (p. ej. aprobar descuento) | ✅ | ✅ (ver sección 3, ya autorizado ahí) | ❌ | ❌ |
+
+Nota: esta decisión es más restrictiva que la propuesta original de "Owner y Admin gestionan por igual"; Admin queda limitado a operar el negocio (ventas, inventario, aprobaciones del día a día) sin tocar personal ni configuración de la organización.
+
+## 6. Reportes, exportaciones y acceso a auditoría
+**Fuente: criterio técnico delegado por el propietario**, por analogía directa con el acceso a datos que cada rol ya tiene en las secciones anteriores (un rol no debería poder *reportar* sobre datos que no puede *operar*).
+
+| Operación | Owner | Admin | Inventory | Cashier |
+|---|---|---|---|---|
+| Reportes de ventas/caja, org completa | ✅ | ✅ | ❌ | ❌ |
+| Reportes de ventas/caja, turno propio | ✅ | ✅ | ❌ | ✅ |
+| Reportes de inventario/stock | ✅ org | ✅ org | ✅ sucursal | ❌ |
+| Exportaciones (CSV/PDF) de lo que puede leer | ✅ | ✅ | ✅ (solo inventario) | ✅ (solo su turno) |
+| Acceso al log de auditoría (quién hizo qué) | ✅ org | ✅ org | ❌ | ❌ |
+
+## Límites que se mantienen vigentes
+- No crear endpoints comerciales, middleware de autorización ni mapeos rol→operación sin pruebas automatizadas de aislamiento cross-tenant (organización A nunca ve/escribe datos de organización B, ni manipulando IDs) y de aislamiento de rol (un rol nunca ejecuta una operación fuera de esta tabla), antes de fusionar a `main`.
 - No convertir `branch_memberships` en una tabla de roles por sucursal.
-- Las políticas comerciales pertenecen a cada organización; no imponer umbrales universales. Las facultades para configurar políticas y ejecutar excepciones son decisiones distintas y ambas siguen pendientes.
-- Caja conserva modelo de turnos y apertura/cierre ordinario; no introducir cierres de supervisor incompatibles.
-- Inventario por sucursal/almacén no está implementado; el stock actual sigue siendo organizacional.
+- Caja conserva modelo de turnos y apertura/cierre ordinario; no introducir cierres de supervisor incompatibles sin una decisión aparte.
+- Inventario por sucursal/almacén no está implementado como stock separado; el stock actual sigue siendo organizacional. La columna "alcance sucursal" de Inventory en esta tabla se refiere a *quién puede operar*, no a que el stock ya esté particionado por sucursal.
+- Toda autorización debe implementarse y validarse en el servidor (Hono/Workers), nunca confiar en que el frontend oculte una acción.
+- Cualquier cambio a esta matriz después de esta aprobación requiere de nuevo una decisión explícita del propietario (puede delegarse de nuevo con el mismo criterio, pero debe registrarse aquí igual que esta aprobación).
 
 ## Aprobación
-**Estado actual: NO APROBADA.** Solo el propietario puede aprobar o corregir las decisiones de permisos. Hasta entonces, la API debe permanecer sin operaciones comerciales expuestas y cualquier autorización futura debe denegar por defecto y validarse en servidor.
+**Estado: APROBADA el 2026-10-31.** El propietario aprobó explícitamente las secciones 3, 4 y 5 en esta fecha y delegó explícitamente en la IA, con criterio técnico fundamentado, las secciones 1, 2 y 6. Esta aprobación habilita el diseño y la implementación de endpoints comerciales siguiendo exactamente esta tabla; no exime de completar `docs/sdd/TENANT_ISOLATION_TEST_PLAN.md` ni de las pruebas de aislamiento cross-tenant requeridas antes de cerrar el issue #53 o de marcar cualquier punto del Nivel 2 de `docs/SECURITY_ROADMAP.md` como completado.

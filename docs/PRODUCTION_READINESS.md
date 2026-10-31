@@ -15,7 +15,7 @@ Este archivo es la fuente de datos para el panel de avance. Un ítem solo puede 
 
 - Main contiene 0001–0004: tenant/identidad, sucursales/asignaciones y cajas/turnos; `resolveBranchContext` existe pero no está conectado a rutas.
 - 0004 (`registers`/`register_shifts`) está fusionada en main y validada en PostgreSQL 18 desechable; no está aplicada a Neon main.
-- No existen endpoints comerciales; la matriz de permisos sigue NO APROBADA. Este trabajo de esquema no marca como completados los flujos POS, ventas, inventario o caja de extremo a extremo.
+- No existen endpoints comerciales. La matriz de permisos por rol fue **aprobada el 2026-10-31** (`docs/sdd/role-permission-decision-matrix.md`), pero la aprobación no equivale a implementación: sigue sin existir ningún endpoint ni middleware de autorización, y sigue sin existir ninguna prueba cross-tenant porque las rutas comerciales no existen aún. Este trabajo de esquema no marca como completados los flujos POS, ventas, inventario o caja de extremo a extremo.
 
 ## Implementación funcional
 
@@ -44,7 +44,7 @@ Este archivo es la fuente de datos para el panel de avance. Un ítem solo puede 
 ### Identidad y moneda
 - [x] Registro público y login con contraseña bloqueados fail-closed; Google OAuth + allowlist + verificación de email implementados (PR #102), sesión reforzada y origen HTTPS/canónico (PR #155).
 - [x] Sesiones persistidas y revocables; pruebas de identidad y límites de sesión ampliadas en PR #111 (mismatch, expiración/revocación, membresía/organización inactiva).
-- [ ] Matriz completa de roles/permisos y pruebas negativas.
+- [x] Matriz completa de roles/permisos **aprobada** (2026-10-31; `docs/sdd/role-permission-decision-matrix.md`). Pruebas negativas de aislamiento siguen pendientes porque no existen rutas comerciales que probar.
 - [ ] Integración de tasa BCV validada con fuente, vigencia y fallos.
 - [ ] Tratamiento de IVA/IGTF/documentos fiscales validado por fuentes oficiales y asesoría competente.
 
@@ -55,7 +55,7 @@ Este archivo es la fuente de datos para el panel de avance. Un ítem solo puede 
 - [x] Validación de migración en base efímera en el SHA verificado.
 - [x] El registro público está bloqueado fail-closed y probado sin escrituras ni cookie (PR #57; SHA merge `cb4b9b09ad3ff0f1bacd34f23ee653a5477cddfe`).
 - [x] Google sign-in + allowlist + verificación de email implementados; las pruebas core de identidad/sesión pasaron en PR #111 (14 tests de integración PostgreSQL en HEAD 233844be10bb102fdac34ad41776d4d14420b243).
-- [ ] Pruebas de rutas de error de base de datos y autorización cross-tenant de futuras rutas comerciales; issue #53 sigue abierto.
+- [ ] Pruebas de rutas de error de base de datos y autorización cross-tenant de futuras rutas comerciales; issue #53 sigue abierto hasta que existan endpoints comerciales con esas pruebas pasando, aunque la matriz de permisos que los gobernará ya está aprobada.
 - [ ] Autorización multiempresa y aislamiento comprobados en toda la API.
 - [ ] Flujos reales de venta/inventario con transacciones, idempotencia y concurrencia.
 - [ ] Gestión de errores, rate limiting y protección contra abuso revisadas.
@@ -78,7 +78,7 @@ Este archivo es la fuente de datos para el panel de avance. Un ítem solo puede 
 
 ## Bloqueos conocidos al último análisis documental
 
-- El registro público y el login con contraseña permanecen bloqueados fail-closed; Google OAuth + allowlist + verificación de email y HTTPS/canonical origin están implementados y probados. Issue #53 sigue abierto por aislamiento real de futuras rutas comerciales y cobertura restante.
+- El registro público y el login con contraseña permanecen bloqueados fail-closed; Google OAuth + allowlist + verificación de email y HTTPS/canonical origin están implementados y probados. Issue #53 sigue abierto por aislamiento real de futuras rutas comerciales; la matriz de permisos que las gobernará ya fue aprobada el 2026-10-31 (`docs/sdd/role-permission-decision-matrix.md`), pero no se ha implementado ningún endpoint ni prueba cross-tenant todavía.
 - Main incluye sucursales/asignaciones (0003) y cajas/turnos (0004). No hay endpoints ni flujos comerciales; almacenes y stock por almacén siguen pendientes.
 - Las pruebas Playwright actuales son smoke tests con API simulada; no prueban el backend real.
 - La aplicación no tiene aún los flujos completos de POS/ventas/inventario.

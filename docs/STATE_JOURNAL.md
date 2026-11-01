@@ -1478,3 +1478,13 @@ CI documental: para HEAD `8c15e13fa001a14a0ddf9f2432bc17efb30d476d`, los 8 workf
 - No se modificó Neon `main`, Cloudflare producción, secretos, DNS, billing ni datos reales. Los previews no son despliegue de producción.
 - PR #190 permanece OPEN/DRAFT, mergeable, sin reviews formales ni comentarios inline. La revisión/aceptación del propietario sigue pendiente; no fusionar desde esta sesión.
 - Esta entrada se añade al final; no se reescriben entradas históricas.
+
+
+---
+
+# 2026-11-01 UTC — catálogo sin regla implícita de ocultación de productos inactivos
+
+- Revisión de alcance detectó que el primer SQL filtraba `products.is_active = true`, aunque la matriz aprobada solo autoriza lectura de catálogo/precios y no define ocultación de productos inactivos.
+- Para no inventar una regla comercial, el endpoint ahora devuelve todos los productos de la organización e incluye `is_active` como indicador explícito. La consulta sigue filtrada por tenant y parametrizada.
+- Se actualizan tests unitarios e integración para comprobar que se conserva un producto inactivo sin exponer stock ni coste a Cashier.
+- El cambio está en PR #190; se deben revisar los checks del nuevo HEAD. No se modifica el esquema ni Neon `main`.

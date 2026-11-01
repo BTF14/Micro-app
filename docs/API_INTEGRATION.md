@@ -15,7 +15,7 @@
 
 Estado: implementación en Draft. HEAD `0030a64270e5992acc54f37d2454a8335e43e9d2` con 12/12 check-runs success; revisión del propietario pendiente.
 
-- Lee productos activos de la organización: `id`, `sku`, `barcode`, `name`, `description`, `unit` y `price_usd`.
+- Lee productos de la organización, incluyendo `is_active` para distinguir su estado; no filtra productos inactivos porque esa regla no está definida en la matriz aprobada. Devuelve `id`, `is_active`, `sku`, `barcode`, `name`, `description`, `unit` y `price_usd`.
 - Owner/Admin/Inventory reciben también `cost_usd`; Cashier no recibe ni consulta esa columna.
 - No selecciona `stock_quantity`, existencias, movimientos, sucursal, almacén, proveedor ni turno de caja.
 - Usa `resolveTenantContext(client, sessionToken, organizationId)`; el organizationId de la URL es un selector no confiable. El resolver valida sesión no revocada/no expirada, usuario activo, membresía activa y organización activa.

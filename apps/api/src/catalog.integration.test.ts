@@ -126,11 +126,11 @@ describe.skipIf(!databaseUrl)("catalog route against PostgreSQL", () => {
     inactiveOrganizationMember = await createMember(inactiveOrganization, "owner");
 
     await cleanupClient.query(
-      "INSERT INTO products (id, organization_id, sku, name, description, unit, cost_usd, price_usd, stock_quantity)" +
+      "INSERT INTO products (id, organization_id, sku, name, description, unit, cost_usd, price_usd, stock_quantity, is_active)" +
         " VALUES" +
-        " ('10000000-0000-4000-8000-000000000001', $1, 'A-001', 'Tenant A Product One', 'Synthetic item one', 'unidad', 5.2500, 12.5000, 987)," +
-        " ('10000000-0000-4000-8000-000000000002', $1, 'A-002', 'Tenant A Product Two', NULL, 'unidad', 6.0000, 15.0000, 654)," +
-        " ('20000000-0000-4000-8000-000000000001', $2, 'B-001', 'Tenant B Secret Product', NULL, 'unidad', 90.0000, 190.0000, 321)",
+        " ('10000000-0000-4000-8000-000000000001', $1, 'A-001', 'Tenant A Product One', 'Synthetic item one', 'unidad', 5.2500, 12.5000, 987, true)," +
+        " ('10000000-0000-4000-8000-000000000002', $1, 'A-002', 'Tenant A Product Two', NULL, 'unidad', 6.0000, 15.0000, 654, false)," +
+        " ('20000000-0000-4000-8000-000000000001', $2, 'B-001', 'Tenant B Secret Product', NULL, 'unidad', 90.0000, 190.0000, 321, true)",
       [organizationA, organizationB],
     );
   });
@@ -163,6 +163,7 @@ describe.skipIf(!databaseUrl)("catalog route against PostgreSQL", () => {
       expect(body.items).toHaveLength(2);
       expect(body.items[0]).toHaveProperty("price_usd");
       expect(body.items[0]).toHaveProperty("cost_usd");
+      expect(body.items.some((item) => item.is_active === false)).toBe(true);
       expect(JSON.stringify(body)).not.toContain("stock_quantity");
       expect(JSON.stringify(body)).not.toContain("Tenant B Secret Product");
     },
@@ -174,6 +175,7 @@ describe.skipIf(!databaseUrl)("catalog route against PostgreSQL", () => {
     const body = await response.json() as { items: Array<Record<string, unknown>> };
     expect(body.items).toHaveLength(2);
     expect(body.items[0]).toHaveProperty("price_usd");
+    expect(body.items.some((item) => item.is_active === false)).toBe(true);
     expect(body.items[0]).not.toHaveProperty("cost_usd");
     expect(JSON.stringify(body)).not.toContain("cost_usd");
     expect(JSON.stringify(body)).not.toContain("stock_quantity");

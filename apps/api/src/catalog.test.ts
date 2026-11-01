@@ -18,6 +18,8 @@ describe("catalog SQL projection", () => {
     expect(query.canReadCost).toBe(false);
     expect(query.statement).not.toContain("cost_usd");
     expect(query.statement).not.toContain("stock_quantity");
+    expect(query.statement).toContain("is_active");
+    expect(query.statement).not.toContain("AND is_active = true");
     expect(query.statement).toContain("organization_id = $1");
     expect(query.statement).toContain("id > $2");
     expect(query.statement).toContain("LIMIT $3");
@@ -37,6 +39,7 @@ describe("catalog SQL projection", () => {
       expect(query.canReadCost).toBe(true);
       expect(query.statement).toContain("cost_usd::text AS cost_usd");
       expect(query.statement).not.toContain("stock_quantity");
+      expect(query.statement).not.toContain("AND is_active = true");
       expect(query.values).toEqual([organizationId, 11]);
     },
   );

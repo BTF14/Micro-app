@@ -11,6 +11,7 @@ const MAX_PAGE_SIZE = 200;
 
 type CatalogRow = {
   id: string;
+  is_active: boolean;
   sku: string;
   barcode: string | null;
   name: string;
@@ -41,15 +42,15 @@ export function buildCatalogQuery(
     role === "inventory";
 
   const columns =
-    "id, sku, barcode, name, description, unit, price_usd::text AS price_usd" +
+    "id, is_active, sku, barcode, name, description, unit, price_usd::text AS price_usd" +
     (canReadCost ? ", cost_usd::text AS cost_usd" : "");
 
   const statement = cursor
     ? "SELECT " + columns +
-      " FROM products WHERE organization_id = $1 AND is_active = true AND id > $2" +
+      " FROM products WHERE organization_id = $1 AND id > $2" +
       " ORDER BY id ASC LIMIT $3"
     : "SELECT " + columns +
-      " FROM products WHERE organization_id = $1 AND is_active = true" +
+      " FROM products WHERE organization_id = $1" +
       " ORDER BY id ASC LIMIT $2";
 
   const values = cursor
@@ -115,6 +116,7 @@ export function registerCatalogRoutes(app: Hono<{ Bindings: Bindings }>): void {
         const items: CatalogItem[] = pageRows.map((row) => {
           const item = {
             id: row.id,
+            is_active: row.is_active,
             sku: row.sku,
             barcode: row.barcode,
             name: row.name,

@@ -13,7 +13,7 @@
 
 `GET /api/orgs/:organizationId/catalog`
 
-Estado: implementación en Draft, pendiente de revisión del propietario y de los checks del SHA final.
+Estado: implementación en Draft. HEAD `0030a64270e5992acc54f37d2454a8335e43e9d2` con 12/12 check-runs success; revisión del propietario pendiente.
 
 - Lee productos activos de la organización: `id`, `sku`, `barcode`, `name`, `description`, `unit` y `price_usd`.
 - Owner/Admin/Inventory reciben también `cost_usd`; Cashier no recibe ni consulta esa columna.
@@ -30,7 +30,7 @@ Estado: implementación en Draft, pendiente de revisión del propietario y de lo
 - Tests unitarios para UUID/paginación inválidos y ausencia de sesión.
 - Integración PostgreSQL 18 desechable con fixtures sintéticos: roles, coste, sesión inválida/expirada/revocada, usuario/membresía/organización inactivos, aislamiento A/B y paginación.
 - El workflow CI incorpora un paso dedicado para `catalog.integration.test.ts`.
-- No afirmar que los tests pasan hasta inspeccionar los logs del HEAD actual de la PR. No usar Neon `main`.
+- Logs inspeccionados para el HEAD `0030a64270e5992acc54f37d2454a8335e43e9d2`: 73 tests unitarios API y 8/8 integraciones PostgreSQL de catálogo pasaron; `verify` y `postgres-migration` success. Revalidar si cambia el HEAD. No usar Neon `main`.
 
 ## Identidad y tenant
 

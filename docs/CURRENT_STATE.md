@@ -10,16 +10,16 @@
 - Los resolvers `resolveTenantContext`, `resolveBranchContext` y `resolveOpenCashierRegisterShift` existen. La primera ruta de catálogo usa únicamente `resolveTenantContext`; sucursal y turno no aplican.
 - **Alcance aprobado de la primera fase de #53:** `GET /api/orgs/:organizationId/catalog`; lectura de catálogo y precios; `cost_usd` visible para Owner/Admin/Inventory y excluido para Cashier; sin stock, `stock_quantity`, movimientos, sucursal, almacén ni turno de caja.
 - Implementación en rama `feat/org-catalog-read-endpoint-20261101`, basada en el SHA actual de `main`. La PR debe permanecer abierta hasta la revisión del propietario y los checks obligatorios del SHA final.
-- Pruebas incluidas: UUID/paginación inválidos antes de consultar; sesión inválida/expirada/revocada; usuario/membresía/organización inactivos; aislamiento A/B; exclusión de costes para Cashier; costes para Owner/Admin/Inventory; paginación. La ejecución real queda pendiente de CI sobre el SHA final.
+- Pruebas incluidas: UUID/paginación inválidos antes de consultar; sesión inválida/expirada/revocada; usuario/membresía/organización inactivos; aislamiento A/B; exclusión de costes para Cashier; costes para Owner/Admin/Inventory; paginación. En el HEAD verificado `0030a64270e5992acc54f37d2454a8335e43e9d2`, los 12/12 check-runs terminaron success: 73 tests unitarios API (7 de catálogo), 8/8 integraciones PostgreSQL de catálogo, build/typecheck y los seis checks obligatorios. La PR sigue Draft y la revisión del propietario está pendiente.
 - Arquitectura sin cambios: `organization_members.role` es organizacional; `branch_memberships` solo asigna acceso; inventario sigue organizacional mediante `products.stock_quantity`. No se añadieron campos ni migraciones.
 - Límites: no tocar Cloudflare producción, secretos, DNS, billing, Neon `main` ni datos reales. PostgreSQL 18 desechable en CI. Presupuesto objetivo USD 0.
 
 ## Próximo paso obligatorio
 
 1. Revisar el diff completo de la rama `feat/org-catalog-read-endpoint-20261101`.
-2. Esperar los seis checks requeridos en el SHA exacto de la PR, incluido `verify` y `postgres-migration`.
+2. Los seis checks obligatorios ya están en success en el HEAD `0030a64270e5992acc54f37d2454a8335e43e9d2`; volver a ejecutarlos si cambia el HEAD.
 3. Inspeccionar los logs de la integración PostgreSQL y confirmar que usa únicamente el servicio PostgreSQL 18 desechable de CI.
-4. Corregir hallazgos y volver a verificar el SHA final.
+4. Corregir cualquier hallazgo nuevo y volver a verificar el SHA final.
 5. Presentar informe al propietario. **No fusionar esta primera implementación sin su revisión.**
 
 ---

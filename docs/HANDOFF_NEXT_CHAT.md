@@ -32,7 +32,7 @@ Primera implementación: `GET /api/orgs/:organizationId/catalog`.
 - Base: `88213507d088b82ea9231bbc72f49afade7ec99b`.
 - Se añadieron handler, tests unitarios, integración PostgreSQL, registro de ruta y paso CI.
 - Se actualizan este handoff, CURRENT_STATE, PROJECT_PLAN, SECURITY_ROADMAP y STATE_JOURNAL.
-- No afirmar que las pruebas pasaron hasta comprobar los logs del SHA exacto de la PR.
+- HEAD `0030a64270e5992acc54f37d2454a8335e43e9d2` verificado: 12/12 check-runs success; 73 tests unitarios API y 8/8 integraciones PostgreSQL de catálogo pasaron. Si cambia el HEAD, revalidar todos los checks.
 - La PR #190 debe quedar abierta para revisión del propietario; no fusionar.
 
 ## Criterios de aceptación
@@ -45,7 +45,7 @@ Primera implementación: `GET /api/orgs/:organizationId/catalog`.
 6. No se devuelve ni consulta stock, movimientos, sucursal o turno.
 7. SQL parametrizado; respuesta y logs no exponen SQL, errores internos ni costes.
 8. PostgreSQL 18 efímero, fixtures sintéticos, limpieza determinista.
-9. Checks obligatorios verdes en el SHA exacto; revisión manual del diff completo.
+9. Checks obligatorios verdes en el SHA exacto (ya verificados para `0030a64270e5992acc54f37d2454a8335e43e9d2`); revisión del propietario todavía pendiente.
 
 ## Restricciones
 

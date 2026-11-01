@@ -1463,3 +1463,18 @@ CI documental: para HEAD `8c15e13fa001a14a0ddf9f2432bc17efb30d476d`, los 8 workf
 - Se añadieron pruebas para Owner/Admin/Inventory confirmando selección de coste y ausencia de stock.
 - El cambio está en la PR #190; los checks deben verificarse en el SHA actualizado. No se toca Neon `main`.
 
+
+
+---
+
+# 2026-11-01 UTC — CI completo de PR #190 aprobado en el HEAD verificado
+
+- HEAD exacto: `0030a64270e5992acc54f37d2454a8335e43e9d2`.
+- PR #190: OPEN/DRAFT, base `main` = `88213507d088b82ea9231bbc72f49afade7ec99b`, 0 commits detrás, 11 archivos modificados.
+- GitHub devolvió 12/12 check-runs en `success`, cero fallidos y cero pendientes. Los seis checks obligatorios de branch protection están verdes.
+- `verify` completó build/typecheck, 73 tests unitarios API (incluidos 7 tests de catálogo) y 8/8 tests de integración de catálogo.
+- La integración se ejecutó contra PostgreSQL 18 desechable con datos sintéticos. Se verificaron roles, coste, usuario/membresía/organización inactivos, sesiones inválidas/expiradas/revocadas, aislamiento A/B y paginación.
+- `postgres-migration`, análisis estático, Trivy, Dependency Review, Chromium smoke, escaneo de historial y previews Pages/Workers terminaron en success.
+- No se modificó Neon `main`, Cloudflare producción, secretos, DNS, billing ni datos reales. Los previews no son despliegue de producción.
+- PR #190 permanece OPEN/DRAFT, mergeable, sin reviews formales ni comentarios inline. La revisión/aceptación del propietario sigue pendiente; no fusionar desde esta sesión.
+- Esta entrada se añade al final; no se reescriben entradas históricas.

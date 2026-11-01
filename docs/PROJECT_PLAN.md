@@ -17,7 +17,7 @@ Implementar y revisar `GET /api/orgs/:organizationId/catalog` en rama `feat/org-
 
 ## Gates y límites
 
-1. No declarar tests aprobados hasta inspeccionar los logs del SHA exacto de la PR.
+1. Para el HEAD `0030a64270e5992acc54f37d2454a8335e43e9d2`, los logs fueron inspeccionados: 12/12 check-runs success, build/typecheck correcto, 73 tests unitarios API y 8/8 integraciones PostgreSQL de catálogo. Revalidar si cambia el HEAD.
 2. Exigir los seis checks de branch protection, incluido `verify` y `postgres-migration`.
 3. Mantener issue #53 abierta hasta demostrar aislamiento y autorización en rutas comerciales reales y completar los demás criterios del issue.
 4. Mantener inventario organizacional (`products.stock_quantity`); `branch_memberships` solo concede acceso a sucursales.

@@ -14,6 +14,14 @@ description: Make maintainable, tested changes that fit Micro app's existing Rea
 
 ## Frontend: React + Vite
 
+## Frontend design and UX standard
+
+- Before designing or implementing UI, read `docs/FRONTEND_DESIGN_STANDARD.md`; it is the project's shared UI/UX standard.
+- Apply its responsive, accessibility, loading/empty/error/success, interaction-state and POS/inventory guidance.
+- Inspect and reuse existing CSS variables and visual patterns before adding tokens. Do not introduce Tailwind, a component library, router, SSR or a new styling system without a concrete requirement and review.
+- The standard is adopted for new work and touched screens; it does not authorize a broad visual rewrite of existing screens.
+
+
 - Preserve the SPA architecture and current Vite build configuration; do not introduce SSR, a router, UI framework, form library, or CSS system without a requirement.
 - Use semantic HTML, accessible labels, visible focus, keyboard navigation, and clear loading/empty/error states.
 - Keep components cohesive and state ownership explicit. Avoid premature memoization; optimize only with evidence.

@@ -1,24 +1,56 @@
 # Estado actual de integración API — Micro app
 
-**GitHub/PR checkpoint — 2026-10-30 UTC:** `main` = `82386c6e9300e06f8fa209aa52995b939a72442a`; PR #178 OPEN, DRAFT, NOT MERGED, rama `docs/reconcile-role-model-and-cloudflare-20261030`. HEAD verificado antes de esta sincronización: `a45d84eb5f51e50d3a24f9d6858b5d14efb3ce6b`, 68 ahead / 0 behind. En ese SHA se observaron 11/11 workflow runs Actions success (9 PR + 2 push) y previews Cloudflare Pages/Workers exitosas. Este commit documental produce un SHA posterior; revalidar antes de cualquier decisión. No extrapolar checks/previews.
+**Checkpoint GitHub — 2026-11-01 UTC:** `main` = `88213507d088b82ea9231bbc72f49afade7ec99b` (base de PR #190). PR #189 está fusionada. PR #190 está ABIERTA como Draft en `feat/org-catalog-read-endpoint-20261101`; consultar GitHub para su HEAD y checks actuales. La PR no está fusionada ni desplegada.
 
-**Estado de hosting en main:** PR #177 fusionada; `main` observado en `82386c6e9300e06f8fa209aa52995b939a72442a`. La validación post-merge de #177 observó 9/9 check-runs success y seis contextos requeridos success; ese resultado es histórico y no valida PR #178 ni commits posteriores.
+## Rutas en main
 
-## Límite actual de API
-No hay handlers comerciales ni autorización por operación demostrada. La matriz `docs/sdd/role-permission-decision-matrix.md` sigue **NO APROBADA**. La estructura vigente es un único rol por miembro/organización en `organization_members.role`; `branch_memberships` solo asigna acceso a sucursales, no define roles por sucursal. Los resolvers de tenant/branch/turno resuelven contexto/ámbito; no autorizan operaciones. No añadir endpoints, middleware ni role-switches comerciales antes de aprobación explícita. No afirmar ledger/auditoría comercial implementados.
+- `GET /health`.
+- Rutas de identidad Google OAuth/bootstrap/callback y sesión registradas por `registerGoogleAuthRoutes` y `registerAuthRoutes`.
+- Registro y login por contraseña permanecen fail-closed/deshabilitados.
+- En el SHA base de main no hay handlers comerciales.
+
+## Primera ruta comercial propuesta en PR #190
+
+`GET /api/orgs/:organizationId/catalog`
+
+Estado: implementación en Draft. HEAD de código `3a4d854e9dfdd5aa574315a3eec6e642a40a3cb0` con 12/12 check-runs success; revisión del propietario pendiente.
+
+- Lee productos de la organización, incluyendo `is_active` para distinguir su estado; no filtra productos inactivos porque esa regla no está definida en la matriz aprobada. Devuelve `id`, `is_active`, `sku`, `barcode`, `name`, `description`, `unit` y `price_usd`.
+- Owner/Admin/Inventory reciben también `cost_usd`; Cashier no recibe ni consulta esa columna.
+- No selecciona `stock_quantity`, existencias, movimientos, sucursal, almacén, proveedor ni turno de caja.
+- Usa `resolveTenantContext(client, sessionToken, organizationId)`; el organizationId de la URL es un selector no confiable. El resolver valida sesión no revocada/no expirada, usuario activo, membresía activa y organización activa.
+- No usa `resolveBranchContext` ni `resolveOpenCashierRegisterShift` en esta fase.
+- Consultas parametrizadas, selección explícita de columnas y `Cache-Control: private, no-store`.
+- Paginación keyset: `limit` predeterminado 100, máximo 200; `cursor` UUID opcional, ordenado por `products.id`.
+- Errores de entrada: 400; sesión/tenant no autorizado: 401; error interno de consulta: respuesta genérica 500 sin SQL ni datos sensibles.
+- No requiere migración ni dependencia nueva.
+
+### Verificación de PR #190
+
+- Tests unitarios para UUID/paginación inválidos y ausencia de sesión.
+- Integración PostgreSQL 18 desechable con fixtures sintéticos: roles, coste, sesión inválida/expirada/revocada, usuario/membresía/organización inactivos, aislamiento A/B y paginación.
+- El workflow CI incorpora un paso dedicado para `catalog.integration.test.ts`.
+- Logs inspeccionados para el HEAD de código `3a4d854e9dfdd5aa574315a3eec6e642a40a3cb0`: 73 tests unitarios API y 8/8 integraciones PostgreSQL de catálogo pasaron; `verify` y `postgres-migration` success. La consulta incluye productos inactivos y devuelve `is_active`; no inventa una regla de ocultación. Revalidar si cambia el HEAD. No usar Neon `main`.
+
+## Identidad y tenant
+
+- Google OAuth + allowlist, state/PKCE, bootstrap de un solo uso, email verificado y sesiones persistidas/revocables están implementados en main.
+- La autenticación no equivale a autorización comercial.
+- Los resolvers tenant/branch/shift resuelven contexto; no conceden permisos de operación por sí solos.
+- La matriz `docs/sdd/role-permission-decision-matrix.md` está APROBADA (PR #182) y corregida en PR #187 para no permitir cierre de supervisor ni reapertura de turnos cerrados.
 
 ## CORS y Cloudflare
-Issue #78 sigue abierta. En `apps/api/src/index.ts`, Hono CORS compara el Origin con `FRONTEND_ORIGIN` validado y declara métodos GET/POST/PATCH/DELETE/OPTIONS, headers Content-Type/Authorization/Idempotency-Key, credenciales y max-age 600. `apps/api/src/index.test.ts` prueba preflight simulado autorizado y origen externo no autorizado; no valida el Worker desplegado.
 
-Inspección autenticada de solo lectura del 2026-10-30: Worker `micro-app-api` Active Deployment en Producción, versión `49975c43-4161-4809-9c00-8ba83e53e6a0`, Build ID `957478f6-0f43-4b5c-932a-621be067d6d9`, commit `82386c6e9300e06f8fa209aa52995b939a72442a`, 100% de asignación de tráfico. Pages `micro-app` production branch `main`, SHA `82386c6e9300e06f8fa209aa52995b939a72442a`, URL `https://cc23ff0c.micro-app-63i.pages.dev`. La lista visible de variables de Pages estaba vacía; `apps/web/.env.production` versionado define `VITE_API_BASE_URL` y `apps/web/vite.config.ts` lo carga mediante `loadEnv`. La página pública muestra el enlace “Continuar con Google” apuntando a `/auth/google` del Worker. La inspección no pudo leer el bundle JS ni confirmar el valor compilado para las demás llamadas API. No se cambió configuración ni se revelaron valores.
+Issue #78 está CERRADA con workflows reproducibles para preflight CORS y verificación del bundle JavaScript publicado (PR #181/#183/#185). El origen frontend autorizado y el rechazo de ACAO para origen externo tienen evidencia en los runs registrados en `docs/CURRENT_STATE.md`.
 
-**CORS sigue NO VERIFICADO:** falta ejecutar OPTIONS real con Origin autorizado `https://micro-app-63i.pages.dev` y externo `https://attacker.example`, registrar status y headers `Access-Control-*`. No inferir éxito por versión activa, métricas, CI ni tests. `VITE_API_BASE_URL` sí está definida en `apps/web/.env.production` y `apps/web/vite.config.ts` la carga mediante `loadEnv`; que el panel de Pages no muestre una variable configurada no demuestra que falte en el build. La comprobación pendiente es inspeccionar el bundle JavaScript publicado y confirmar el valor efectivo compilado que usa el frontend para las llamadas API. No declarar integración frontend/API correcta hasta verificarlo.
-
-
-**Preflight de esta sesión:** se intentaron OPTIONS reales contra `https://micro-app-api.btfcasheb.workers.dev/health` para el origen permitido `https://micro-app-63i.pages.dev` y el externo `https://attacker.example`. Ambos fallaron con curl exit 6 (`Could not resolve host`); no se recibió status ni headers. CORS permanece **NO VERIFICADO**. La preview Worker del SHA padre respondió `status=ok` en GET `/health`, pero no sustituye estos preflight. El bundle JS publicado no se pudo inspeccionar.
+La inspección autenticada del valor efectivo de `FRONTEND_ORIGIN` en el dashboard de Cloudflare sigue siendo una confirmación manual separada. No modificar variables, secretos, tráfico ni despliegues productivos.
 
 ## Migraciones y entorno
-Main versiona migraciones 0001–0004; no afirmar que 0003/0004 estén aplicadas a Neon `main`. PostgreSQL desechable es el entorno primario de validación. No ejecutar SQL remoto ni tocar datos reales en esta continuidad.
+
+- Main versiona migraciones 0001–0004.
+- Las migraciones 0003/0004 no se han aplicado a Neon `main`; no ejecutar SQL remoto como parte de esta PR.
+- CI usa PostgreSQL 18 desechable y fixtures sintéticos.
+- No se modifica esquema, datos reales, Cloudflare producción, secretos, DNS ni billing. Presupuesto objetivo USD 0.
 
 ---
 > **Archivo histórico — no usar como estado operativo.** Las entradas siguientes se conservan por trazabilidad y describen estados de su fecha. GitHub en vivo y el checkpoint superior prevalecen.

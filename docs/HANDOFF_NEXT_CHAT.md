@@ -1,41 +1,68 @@
 # Handoff operativo — continuidad Micro-app — 2026-11-01 UTC
 
-> No reiniciar el proyecto. Este handoff describe el último estado comprobado; verificar GitHub en vivo antes de actuar.
+> No reiniciar el proyecto. Este checkpoint prevalece sobre snapshots históricos; verificar GitHub en vivo antes de actuar.
 
 ## Punto exacto de reanudación
 
-- Repositorio: `BTF14/Micro-app`. `main` verificado: `40244698e95d78122011019e456f3d8b392fb05c`.
-- **PR #187 (merge `40244698e95d78122011019e456f3d8b392fb05c`):** corrige `docs/sdd/role-permission-decision-matrix.md` §2 (caja). La aprobación original (PR #182) había otorgado a Owner/Admin la facultad de cerrar/reabrir el turno de otro miembro ("cierre por supervisor"), lo cual contradice `docs/sdd/REGISTER_SHIFT_MODEL.md` §2/§4 (sin cierre por supervisor en la política base; reapertura bloqueada por trigger de PostgreSQL en la migración 0004 para todos los roles, incluido Owner — no solo una cuestión de permisos de aplicación). Corregido con filas de denegación explícita; cualquier excepción futura (p. ej. cierre forzado por soporte) requiere un diseño de permiso, motivo obligatorio y auditoría aprobados aparte por el propietario.
-- **Auditoría de Seguridad Nivel 1 — realizada 2026-11-01** (branch protection, backups, Dependabot, cabeceras/CORS/bundle). Resultados volcados en `docs/SECURITY_ROADMAP.md` (sección "Nivel 1") y resumidos en `docs/CURRENT_STATE.md`. **Corrección de precisión (2026-11-01, misma sesión):** una versión anterior de este párrafo decía "todos los controles de Nivel 1 están implementados y verificados" y "Seguridad Nivel 1 completa" — eso era impreciso. Lo verificado con evidencia reproducible es: protección de `main` (en vivo), Dependabot (config + ver nota de alertas abajo) y cabeceras/CORS/bundle (en vivo). **Backups no está cerrado**: la restauración técnica y la prueba sintética con datos poblados pasaron, pero RPO/RTO no están medidos, no hay alerta externa fuera del resumen de GitHub Actions, y el coste $0 no está confirmado con evidencia (ver desglose completo en `docs/BACKUP_AND_RECOVERY.md` §6 y §8). No declarar Nivel 1 cerrado mientras ese punto siga abierto.
-- **Dependabot — alertas revisadas por el propietario el 2026-11-01:** el propietario confirmó visualmente en `https://github.com/BTF14/Micro-app/security/dependabot` (filtro `is:open`): **0 alertas abiertas, 15 cerradas**. Esta IA no pudo leer `/repos/BTF14/Micro-app/dependabot/alerts` vía API (403 `Resource not accessible by integration`); el dato proviene de la captura de pantalla del propietario, no de una verificación automatizada propia. Tratar como evidencia válida pero de fuente manual, no reproducible por CI.
-- **Punto "inventario" revisado y sin contradicción:** el documento externo que motivó esta auditoría flagueó una posible ambigüedad entre el alcance "sucursal" de Inventory en la matriz y que `products.stock_quantity` sigue siendo organizacional. Se revisó: la matriz ya aclaraba esto correctamente desde su aprobación original (sección "Límites que se mantienen vigentes"); no requirió corrección.
-- **Issue #78 (CORS): CERRADA el 2026-10-31.** PR #181 añadió `.github/workflows/cors-verification.yml` (manual + semanal, runner con salida completa a internet, a diferencia de los sandboxes de IA de este proyecto, que confirmaron `403` en el `CONNECT` saliente tanto hacia el Worker como hacia Pages). PR #183 lo reforzó con aserciones explícitas de status HTTP/código de salida de `curl` y un tercer preflight pidiendo `Access-Control-Request-Headers: authorization,content-type`. PR #185 añadió `.github/workflows/frontend-bundle-verification.yml`, que descarga el bundle JS realmente publicado en Pages y confirma que contiene la URL de API canónica (no solo el código fuente versionado). Evidencia real en runs [41186202382](https://github.com/BTF14/Micro-app/actions/runs/41186202382), [41186391247](https://github.com/BTF14/Micro-app/actions/runs/41186391247), [41254331839](https://github.com/BTF14/Micro-app/actions/runs/41254331839) (CORS) y [41255425480](https://github.com/BTF14/Micro-app/actions/runs/41255425480) (bundle): todos `success`. Origen permitido recibe ACAO/ACAC/métodos/headers correctos; origen externo no recibe ACAO; el bundle publicado contiene `https://micro-app-api.btfcasheb.workers.dev`. Ambos workflows quedan como guardia de regresión semanal. **Pendiente real fuera de alcance de IA:** verificación autenticada del dashboard de Cloudflare, requiere al propietario.
-- **Matriz de permisos por rol (`docs/sdd/role-permission-decision-matrix.md`): APROBADA el 2026-10-31, corregida el 2026-11-01** (PR #182, corrección en PR #187). El propietario decidió explícitamente ventas/descuentos, devoluciones/anulaciones y gestión de miembros/políticas; delegó explícitamente a criterio técnico catálogo/inventario, caja y reportes/auditoría. **No implementa nada**: cero endpoints comerciales, cero middleware de autorización en `apps/api/src`.
-- Auditoría de callsites (2026-10-31, solo lectura): `resolveTenantContext`, `resolveBranchContext`, `resolveOpenCashierRegisterShift` son fail-closed y correctos en su SQL, pero no tienen ningún callsite de producción — solo los invocan sus propios archivos de test. No se encontró defecto que corregir.
-- **Issue #53 sigue ABIERTA**: falta implementar los endpoints comerciales siguiendo la matriz aprobada, el middleware de autorización server-side, y pruebas automatizadas de aislamiento cross-tenant/rol en PostgreSQL desechable, antes de poder cerrarla.
-- Arquitectura: `organization_members.role` es un rol único por miembro/organización; `branch_memberships` solo asigna acceso a sucursales, sin roles. Inventario organizacional; caja por turnos y apertura/cierre ordinario.
+- Repositorio: `BTF14/Micro-app`.
+- `main`: `88213507d088b82ea9231bbc72f49afade7ec99b` (verificado en vivo después de PR #189).
+- PR #189: fusionada. PR #190: ABIERTA como Draft; no fusionar. 
+- Issue #53: ABIERTA.
+- PR #182 aprobó la matriz de permisos. PR #187 corrigió la contradicción de caja: no existe cierre por supervisor en la política base y no se puede reabrir un turno cerrado (trigger de migración 0004).
+- Issue #78: CERRADA con verificación CORS y bundle publicado; la confirmación autenticada de `FRONTEND_ORIGIN` en Cloudflare sigue siendo una evidencia manual separada.
+- Seguridad Nivel 1 no está completa: backups conserva pendientes RPO/RTO, alerta externa y confirmación de coste USD 0.
+- No hay cambios de arquitectura ni de esquema para la primera fase de catálogo.
 
-## Orden de trabajo
+## Decisión funcional aprobada — no volver a preguntar
 
-1. Diseñar e implementar los primeros endpoints comerciales (sugerido: empezar por lectura de catálogo/inventario, el caso más simple y de menor riesgo) siguiendo exactamente `docs/sdd/role-permission-decision-matrix.md` (ya corregida en su sección de caja), con middleware server-side que encadene `resolveTenantContext` → `resolveBranchContext` → `resolveOpenCashierRegisterShift` donde aplique, denegando por defecto.
-2. Antes de fusionar cualquier endpoint comercial: pruebas automatizadas de aislamiento cross-tenant (organización A nunca lee/escribe datos de B, ni manipulando IDs) y de aislamiento de rol, con PostgreSQL desechable.
-3. Registro de auditoría (Nivel 2, punto 7 de `docs/SECURITY_ROADMAP.md`) para acciones sensibles antes de considerar el gate de #53 completo.
-4. Revisar periódicamente el workflow `cors-verification.yml` (corre solo automáticamente los lunes); si falla, es una regresión real de CORS, no un falso positivo de entorno.
-5. No asumir que la aprobación documental de la matriz habilita por sí sola producción ni que sustituye las pruebas de aislamiento.
-6. No bloqueante para #53, pero pendiente: medir RPO/RTO de backups, confirmar coste $0, decidir sobre alerta externa de backups, y que el propietario revise manualmente las alertas de Dependabot en GitHub.
+Primera implementación: `GET /api/orgs/:organizationId/catalog`.
 
-## Restricciones no negociables
+- Devuelve catálogo y precios de venta.
+- Owner/Admin/Inventory pueden recibir `cost_usd`. El catálogo incluye todos los productos, también los inactivos, y devuelve `is_active` sin imponer una regla de ocultación no aprobada.
+- Cashier recibe precio de venta, pero nunca `cost_usd`; el campo tampoco se consulta para ese rol.
+- No devuelve ni consulta `stock_quantity`, existencias, movimientos o proveedores.
+- No usa `resolveBranchContext` ni `resolveOpenCashierRegisterShift`.
+- Usa `resolveTenantContext(client, sessionToken, organizationId)` como frontera obligatoria de sesión, usuario, membresía y organización activas.
+- El ID de organización de la URL es solo un selector, nunca prueba de pertenencia.
+- Pruebas PostgreSQL con datos sintéticos y servicio desechable de CI; nunca Neon `main`.
 
-- Cloudflare Pages/Workers, Neon PostgreSQL. Presupuesto USD 0.
-- No tocar Cloudflare producción, tráfico, deployments productivos, variables, secretos, DNS, billing, Neon main ni datos reales.
-- PostgreSQL desechable primero; no ejecutar migraciones remotas.
-- No reescribir historial Git ni entradas previas de `docs/STATE_JOURNAL.md`.
-- No afirmar pruebas, revisiones, aprobaciones o verificaciones sin evidencia.
-- No crear endpoints comerciales, middleware ni mapeos rol→operación que se aparten de la matriz ya aprobada sin una nueva decisión explícita del propietario.
+## Trabajo en curso
 
-## Prompt para el siguiente chat de ChatGPT
+- Rama: `feat/org-catalog-read-endpoint-20261101`.
+- Base: `88213507d088b82ea9231bbc72f49afade7ec99b`.
+- Se añadieron handler, tests unitarios, integración PostgreSQL, registro de ruta y paso CI.
+- Se actualizan este handoff, CURRENT_STATE, PROJECT_PLAN, SECURITY_ROADMAP y STATE_JOURNAL.
+- HEAD de código `3a4d854e9dfdd5aa574315a3eec6e642a40a3cb0` verificado: 12/12 check-runs success; 73 tests unitarios API y 8/8 integraciones PostgreSQL de catálogo pasaron. Incluye cobertura de producto inactivo y campo `is_active`. Si cambia el HEAD, revalidar todos los checks.
+- La PR #190 debe quedar abierta para revisión del propietario; no fusionar.
 
-Continúa BTF14/Micro-app como responsable técnico senior. Lee `AGENTS.md`, este handoff, `docs/CURRENT_STATE.md`, `docs/AI_COLLABORATION_AND_PR_POLICY.md`, `docs/PROJECT_PLAN.md`, `docs/STATE_JOURNAL.md`, los registros de recursos/seguridad (incluida la sección "Nivel 1" de `docs/SECURITY_ROADMAP.md`, auditada el 2026-11-01) y los SDD de autorización/sucursales (incluida la matriz de permisos, aprobada y corregida). Verifica GitHub en vivo. `main` verificado: `c7bd0a198c30d190586aa6acd207d954f41ff7c9`. Issue #78 (CORS) está CERRADA con evidencia real reproducible (PRs #181/#183/#185, incluida verificación del bundle JS realmente publicado). La matriz de permisos de #53 está APROBADA y su sección de caja fue corregida en PR #187 (ya no permite cierre de turno por supervisor, consistente con `REGISTER_SHIFT_MODEL.md` y el trigger de la migración 0004). Seguridad Nivel 1: branch protection, Dependabot (0 alertas abiertas confirmadas por el propietario el 2026-11-01) y cabeceras/CORS/bundle están verificados con evidencia reproducible; **backups NO está cerrado** — faltan RPO/RTO medidos, alerta externa y confirmación de coste $0 (ver `docs/BACKUP_AND_RECOVERY.md` §6/§8). No declarar Nivel 1 completo mientras ese punto siga abierto. #53 sigue abierta: falta implementar endpoints comerciales con middleware de autorización y pruebas de aislamiento cross-tenant/rol, con PostgreSQL desechable — ese es el siguiente trabajo de fondo, con un alcance técnico propuesto pendiente de aprobación del propietario antes de escribir código. No tocar producción/Neon main/secretos/DNS/billing/datos reales. No te apartes de la matriz aprobada sin una nueva decisión explícita del propietario. Registrar solo hechos verificados y mantener STATE_JOURNAL append-only.
+## Criterios de aceptación
+
+1. A no puede leer el catálogo de B modificando el ID de la URL.
+2. Sesión inválida, expirada o revocada: 401.
+3. Membresía inactiva u organización inactiva: 401.
+4. UUID de organización y parámetros de paginación inválidos: 400 antes de consultar la base.
+5. Owner/Admin/Inventory reciben precio y coste; Cashier no recibe ni consulta `cost_usd`.
+6. No se devuelve ni consulta stock, movimientos, sucursal o turno.
+7. SQL parametrizado; respuesta y logs no exponen SQL, errores internos ni costes.
+8. PostgreSQL 18 efímero, fixtures sintéticos, limpieza determinista.
+9. Checks obligatorios verdes en el SHA exacto (ya verificados para `3a4d854e9dfdd5aa574315a3eec6e642a40a3cb0`); revisión del propietario todavía pendiente.
+
+## Restricciones
+
+- No modificar Cloudflare producción, variables, secretos, DNS, despliegues o facturación.
+- No modificar Neon `main`, ni ejecutar pruebas destructivas allí.
+- No desplegar producción ni fusionar esta primera implementación.
+- No reescribir historia Git; `STATE_JOURNAL.md` es append-only.
+- Presupuesto objetivo USD 0.
+
+## Prompt de continuidad
+
+Continúa BTF14/Micro-app desde el estado vivo de GitHub. Verifica primero `main`, PRs, issue #53 y checks. La base al inicio fue `88213507d088b82ea9231bbc72f49afade7ec99b`; la rama de trabajo es `feat/org-catalog-read-endpoint-20261101`. Revisa el diff completo y los resultados reales de CI. El alcance ya está aprobado: `GET /api/orgs/:organizationId/catalog`, catálogo y precios, coste solo para Owner/Admin/Inventory, nunca para Cashier; sin stock, movimientos, sucursal ni turno de caja. Usa `resolveTenantContext` obligatoriamente. No toques Cloudflare producción, Neon main, secretos, DNS, billing ni datos reales. Mantén la PR abierta para revisión del propietario; no la fusiones. Sincroniza documentación y conserva STATE_JOURNAL append-only.
+
+---
+
+## Snapshot histórico
+Los handoffs anteriores se conservan debajo únicamente como trazabilidad y no prevalecen sobre este checkpoint.
 
 ## Snapshot previo — retiro de rama heredada (histórico; no usar como estado actual)
 

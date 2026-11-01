@@ -1414,3 +1414,90 @@ CI documental: para HEAD `8c15e13fa001a14a0ddf9f2432bc17efb30d476d`, los 8 workf
 - Se verificó de nuevo el estado vivo de GitHub antes de tocar documentos: `main` = `c7bd0a198c30d190586aa6acd207d954f41ff7c9`, 0 PR abiertas, issue #53 abierta — sin cambios desde el cierre anterior.
 - No se tocó Cloudflare producción, Neon `main`, secretos, DNS, billing ni datos reales. No se implementó código de #53; esta entrada corresponde solo al diagnóstico y a la corrección de continuidad pedidos antes de presentar la propuesta técnica.
 - Esta entrada se añade al final; no se modifican ni eliminan entradas anteriores.
+
+
+---
+
+# 2026-11-01 UTC — primera fase de catálogo autorizada; implementación y pruebas en rama
+
+- Base verificada en GitHub antes de trabajar: `main` = `88213507d088b82ea9231bbc72f49afade7ec99b`; PR #189 fusionada; 0 PR abiertas; issue #53 abierta.
+- Se confirmó que PR #182 aprobó la matriz de permisos y PR #187 corrigió la regla de caja (sin cierre por supervisor ni reapertura de turnos cerrados).
+- Alcance aprobado por el propietario: `GET /api/orgs/:organizationId/catalog`; catálogo/precios; `cost_usd` solo Owner/Admin/Inventory y nunca Cashier; sin stock, movimientos, sucursal o turno de caja.
+- Rama de implementación: `feat/org-catalog-read-endpoint-20261101`. El handler usa `resolveTenantContext`, valida UUID/paginación antes de conectar, limita y pagina resultados, usa SQL parametrizado y no selecciona costes para Cashier.
+- Se añaden pruebas unitarias y de integración PostgreSQL con fixtures sintéticos para roles, sesión inválida/expirada/revocada, membresía/organización inactiva, aislamiento A/B y paginación.
+- Se añade un paso CI para ejecutar la integración contra el PostgreSQL 18 desechable ya creado por el workflow; no se modifica Neon `main`.
+- Estado de pruebas al registrar esta entrada: pendiente de ejecución en CI sobre el SHA final de la rama/PR. No afirmar éxito hasta inspeccionar logs.
+- La PR debe permanecer abierta para revisión del propietario. No fusionar ni desplegar producción desde esta sesión.
+- No se modifica Cloudflare, secretos, DNS, billing, datos reales ni infraestructura.
+
+
+
+---
+
+# 2026-11-01 UTC — PR #190 abierta para revisión del endpoint de catálogo
+
+- PR #190: https://github.com/BTF14/Micro-app/pull/190, estado OPEN/DRAFT, base `main`, rama `feat/org-catalog-read-endpoint-20261101`.
+- HEAD inicial de la PR: `14c34c4becd7a1c3c43e435ba6d330f3ab118f81`; los workflows asociados a ese SHA se observaron en ejecución, no como aprobados.
+- La revisión del diff detectó y corrigió un test que intentaba leer dos veces el mismo cuerpo HTTP; se conserva una sola lectura JSON para la respuesta cross-tenant.
+- Se añadió cobertura explícita para usuario inactivo y se alinearon las portadas activas de continuidad/seguridad con PR #190.
+- La corrección produce un nuevo SHA y reinicia los checks pertinentes. Consultar los resultados del SHA actualizado; no extrapolar los checks del HEAD inicial.
+- PR #190 permanece Draft y no debe fusionarse hasta informe de revisión del propietario. No se despliega producción ni se toca Neon `main`.
+
+
+---
+
+# 2026-11-01 UTC — sincronización del contrato de integración API
+
+- Se actualiza la portada de `docs/API_INTEGRATION.md` para distinguir las rutas en `main` de la primera ruta de catálogo propuesta en PR #190 (Draft).
+- Se documentan el contrato de lectura, campos por rol, exclusiones de stock/sucursal/turno, validación tenant, paginación y entorno de prueba.
+- Se conservan debajo las notas históricas; no se presentan como estado actual.
+- La PR #190 sigue abierta para revisión. Los checks del SHA posterior a esta sincronización deben verificarse en vivo antes de declarar cualquier prueba aprobada.
+
+
+---
+
+# 2026-11-01 UTC — prueba explícita de proyección SQL por rol
+
+- Se extrajo la construcción de la consulta de catálogo a `buildCatalogQuery` para que la proyección de columnas y parámetros sea comprobable de forma unitaria.
+- Se añadió una prueba que confirma que Cashier no incluye `cost_usd` ni `stock_quantity` en SQL, y que organizationId/cursor siguen siendo parámetros (`$1`/`$2`).
+- Se añadieron pruebas para Owner/Admin/Inventory confirmando selección de coste y ausencia de stock.
+- El cambio está en la PR #190; los checks deben verificarse en el SHA actualizado. No se toca Neon `main`.
+
+
+
+---
+
+# 2026-11-01 UTC — CI completo de PR #190 aprobado en el HEAD verificado
+
+- HEAD exacto: `0030a64270e5992acc54f37d2454a8335e43e9d2`.
+- PR #190: OPEN/DRAFT, base `main` = `88213507d088b82ea9231bbc72f49afade7ec99b`, 0 commits detrás, 11 archivos modificados.
+- GitHub devolvió 12/12 check-runs en `success`, cero fallidos y cero pendientes. Los seis checks obligatorios de branch protection están verdes.
+- `verify` completó build/typecheck, 73 tests unitarios API (incluidos 7 tests de catálogo) y 8/8 tests de integración de catálogo.
+- La integración se ejecutó contra PostgreSQL 18 desechable con datos sintéticos. Se verificaron roles, coste, usuario/membresía/organización inactivos, sesiones inválidas/expiradas/revocadas, aislamiento A/B y paginación.
+- `postgres-migration`, análisis estático, Trivy, Dependency Review, Chromium smoke, escaneo de historial y previews Pages/Workers terminaron en success.
+- No se modificó Neon `main`, Cloudflare producción, secretos, DNS, billing ni datos reales. Los previews no son despliegue de producción.
+- PR #190 permanece OPEN/DRAFT, mergeable, sin reviews formales ni comentarios inline. La revisión/aceptación del propietario sigue pendiente; no fusionar desde esta sesión.
+- Esta entrada se añade al final; no se reescriben entradas históricas.
+
+
+---
+
+# 2026-11-01 UTC — catálogo sin regla implícita de ocultación de productos inactivos
+
+- Revisión de alcance detectó que el primer SQL filtraba `products.is_active = true`, aunque la matriz aprobada solo autoriza lectura de catálogo/precios y no define ocultación de productos inactivos.
+- Para no inventar una regla comercial, el endpoint ahora devuelve todos los productos de la organización e incluye `is_active` como indicador explícito. La consulta sigue filtrada por tenant y parametrizada.
+- Se actualizan tests unitarios e integración para comprobar que se conserva un producto inactivo sin exponer stock ni coste a Cashier.
+- El cambio está en PR #190; se deben revisar los checks del nuevo HEAD. No se modifica el esquema ni Neon `main`.
+
+
+---
+
+# 2026-11-01 UTC — revisión de catálogo completo y CI repetido
+
+- Se eliminó el filtro implícito `products.is_active = true` porque la matriz aprobada no define ocultación de productos inactivos.
+- La API ahora devuelve todos los productos de la organización e incluye `is_active` para que el consumidor conozca su estado. Cashier sigue sin consultar ni recibir `cost_usd`; ningún rol recibe stock ni movimientos.
+- HEAD de código verificado: `3a4d854e9dfdd5aa574315a3eec6e642a40a3cb0`.
+- GitHub Actions: 12/12 check-runs success; `verify` completó build/typecheck, 73 tests unitarios API y 8/8 integraciones PostgreSQL de catálogo; `postgres-migration`, análisis estático, Trivy, Dependency Review, Chromium y previews Pages/Workers success.
+- La PR #190 sigue OPEN/DRAFT, mergeable y sin reviews formales; la revisión del propietario sigue pendiente. Issue #53 permanece abierta.
+- No se modifica Neon `main`, Cloudflare producción, secretos, DNS, billing, esquema ni datos reales.
+- Esta entrada se añade al final; el diario histórico no se reescribe.

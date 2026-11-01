@@ -1,21 +1,37 @@
 # Prioridad operativa vigente — Micro app
 
-**Snapshot GitHub verificado antes de esta sincronización:** PR #178 OPEN, DRAFT, NOT MERGED; rama `docs/reconcile-role-model-and-cloudflare-20261030`; HEAD `a45d84eb5f51e50d3a24f9d6858b5d14efb3ce6b`; base `main` = `82386c6e9300e06f8fa209aa52995b939a72442a`; 68 ahead / 0 behind. El commit de sincronización generará un SHA nuevo: consultar ese SHA y sus checks/previews antes de cualquier decisión.
-**Validación del SHA padre:** 11/11 workflow runs de GitHub Actions success (9 PR + 2 push); Cloudflare Pages y Workers previews success para el mismo SHA. Diff de 13 archivos documentales (343 adiciones / 235 eliminaciones), 0 reviews formales, 0 threads inline. No marcar Ready ni fusionar sin autorización explícita. No se confirmó branch protection (403 en auditoría anterior).
+**Checkpoint verificado en GitHub, 2026-11-01 UTC:** `main` = `88213507d088b82ea9231bbc72f49afade7ec99b`; PR #189 fusionada; PR #190 abierta como Draft; issue #53 abierta. PR #182 aprobó la matriz y PR #187 corrigió la política de caja. Issue #78 está cerrada con workflows de CORS/bundle. Verificar nuevamente el estado vivo antes de cada acción.
 
-## Orden de trabajo y gates
-1. **P0 — Issue #78 / CORS y configuración efectiva:** obtener dos preflight HTTP reales al Worker: origen permitido `https://micro-app-63i.pages.dev` y origen externo `https://attacker.example`, método GET, headers authorization/content-type. Registrar status y headers `Access-Control-*`; el origen externo no debe recibir `Access-Control-Allow-Origin`. No exigir necesariamente 403 si el servidor responde 204 sin ese header. Ejecutar desde equipo con conectividad real; no repetir desde entorno que ya falló por DNS. El dashboard de Pages muestra una lista vacía, pero `apps/web/.env.production` versionado define `VITE_API_BASE_URL` hacia el Worker y `vite.config.ts` la carga con `loadEnv`. La página pública muestra el enlace OAuth al Worker; el bundle JS publicado aún no pudo inspeccionarse. Mantener la variable: no es específica de un hosting y forma parte de la configuración de build de Vite. No cambiar variables, secretos, tráfico ni despliegues.
-2. **P1 — Issue #53 / decisión de permisos:** la estructura está definida como un rol único por miembro/organización en `organization_members.role`; `branch_memberships` solo asigna acceso a sucursales y no contiene roles por sucursal. La matriz de permisos por operación sigue **NO APROBADA**. Obtener aprobación explícita antes de implementar autorización comercial.
-3. Solo tras aprobación de la matriz: diseñar catálogo de operaciones, autorización server-side, aislamiento cross-tenant/cross-branch, auditoría, idempotencia y pruebas negativas con PostgreSQL desechable.
-4. Mantener inventario actual organizacional (`products.stock_quantity`); no afirmar inventario por sucursal implementado. Mantener caja por turnos y cierre ordinario; no añadir cierres de supervisor incompatibles.
-5. Continuar roadmap de seguridad y producto respetando backup, coste cero y gates de producción.
+## Prioridad inmediata — primera fase de issue #53
 
-## Evidencia Cloudflare observada
-Worker `micro-app-api`: Active Deployment Producción, versión `49975c43`, Build ID `957478f6-0f43-4b5c-932a-621be067d6d9`, commit `82386c6e9300e06f8fa209aa52995b939a72442a`, 100% de asignación de tráfico en el panel. Pages `micro-app`: producción `main`, SHA `82386c6e9300e06f8fa209aa52995b939a72442a`, URL `https://cc23ff0c.micro-app-63i.pages.dev`; lista visible de variables vacía; `apps/web/.env.production` versionado define `VITE_API_BASE_URL` y `vite.config.ts` la carga con `loadEnv`. Solo lectura; no se modificó Cloudflare. CORS no queda probado por esta inspección.
+Implementar y revisar `GET /api/orgs/:organizationId/catalog` en rama `feat/org-catalog-read-endpoint-20261101`:
 
-No crear PR de apariencia ni duplicar trabajo. Toda PR debe tener propósito coherente, diff acotado, revisión manual y checks del SHA exacto.
+- Lectura del catálogo completo y precios, incluidos productos inactivos con `is_active`; Owner/Admin/Inventory reciben `cost_usd`; Cashier nunca. No imponer filtros de actividad no aprobados.
+- Sin stock, `stock_quantity`, movimientos, almacenes ni inventario por sucursal.
+- Sin dependencia de sucursal ni turno de caja.
+- Validar UUID y paginación antes de abrir conexión.
+- Resolver sesión y tenant con `resolveTenantContext`; no confiar en el ID de la URL.
+- Consultas parametrizadas, selección explícita de columnas y respuesta privada/no-store.
+- Pruebas unitarias y PostgreSQL 18 efímero para aislamiento cross-tenant, sesiones y roles.
+- PR abierta para revisión del propietario; no fusionar esta primera implementación sin su informe.
+
+## Gates y límites
+
+1. Para el HEAD de código `3a4d854e9dfdd5aa574315a3eec6e642a40a3cb0`, los logs fueron inspeccionados: 12/12 check-runs success, build/typecheck correcto, 73 tests unitarios API y 8/8 integraciones PostgreSQL de catálogo. Revalidar si cambia el HEAD.
+2. Exigir los seis checks de branch protection, incluido `verify` y `postgres-migration`.
+3. Mantener issue #53 abierta hasta demostrar aislamiento y autorización en rutas comerciales reales y completar los demás criterios del issue.
+4. Mantener inventario organizacional (`products.stock_quantity`); `branch_memberships` solo concede acceso a sucursales.
+5. No tocar Cloudflare producción, Neon `main`, secretos, DNS, billing, datos reales ni desplegar producción.
+6. Presupuesto objetivo USD 0.
+
+## Seguridad Nivel 1
+
+No declarar Nivel 1 completo. Protección de `main`, Dependabot (revisión manual del propietario: 0 alertas abiertas, 15 cerradas) y CORS/bundle cuentan con evidencia documentada. Backups sigue pendiente de medición real de RPO/RTO, alerta externa y confirmación explícita del coste total USD 0.
 
 ---
+
+> **Archivo histórico — no usar como estado operativo.** Las prioridades y snapshots anteriores se conservan para trazabilidad. El checkpoint superior y GitHub en vivo prevalecen.
+
 > **Archivo histórico — no usar como estado operativo.** Las entradas siguientes se conservan para trazabilidad y describen estados de su fecha. GitHub en vivo y el checkpoint superior prevalecen.
 
 

@@ -1452,3 +1452,14 @@ CI documental: para HEAD `8c15e13fa001a14a0ddf9f2432bc17efb30d476d`, los 8 workf
 - Se documentan el contrato de lectura, campos por rol, exclusiones de stock/sucursal/turno, validación tenant, paginación y entorno de prueba.
 - Se conservan debajo las notas históricas; no se presentan como estado actual.
 - La PR #190 sigue abierta para revisión. Los checks del SHA posterior a esta sincronización deben verificarse en vivo antes de declarar cualquier prueba aprobada.
+
+
+---
+
+# 2026-11-01 UTC — prueba explícita de proyección SQL por rol
+
+- Se extrajo la construcción de la consulta de catálogo a `buildCatalogQuery` para que la proyección de columnas y parámetros sea comprobable de forma unitaria.
+- Se añadió una prueba que confirma que Cashier no incluye `cost_usd` ni `stock_quantity` en SQL, y que organizationId/cursor siguen siendo parámetros (`$1`/`$2`).
+- Se añadieron pruebas para Owner/Admin/Inventory confirmando selección de coste y ausencia de stock.
+- El cambio está en la PR #190; los checks deben verificarse en el SHA actualizado. No se toca Neon `main`.
+

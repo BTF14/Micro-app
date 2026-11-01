@@ -2,7 +2,7 @@ import { getCookie } from "hono/cookie";
 import type { Hono } from "hono";
 import type { Bindings } from "./bindings";
 import { withDatabaseClient } from "./database";
-import { resolveTenantContext } from "./tenant-context";
+import { resolveTenantContext, type OrganizationRole } from "./tenant-context";
 
 const SESSION_COOKIE = "microapp_session";
 const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -21,6 +21,43 @@ type CatalogRow = {
 };
 
 type CatalogItem = Omit<CatalogRow, "cost_usd"> & { cost_usd?: string };
+
+
+type CatalogQuery = {
+  statement: string;
+  values: unknown[];
+  canReadCost: boolean;
+};
+
+export function buildCatalogQuery(
+  role: OrganizationRole,
+  organizationId: string,
+  cursor: string | undefined,
+  pageSize: number,
+): CatalogQuery {
+  const canReadCost =
+    role === "owner" ||
+    role === "admin" ||
+    role === "inventory";
+
+  const columns =
+    "id, sku, barcode, name, description, unit, price_usd::text AS price_usd" +
+    (canReadCost ? ", cost_usd::text AS cost_usd" : "");
+
+  const statement = cursor
+    ? "SELECT " + columns +
+      " FROM products WHERE organization_id = $1 AND is_active = true AND id > $2" +
+      " ORDER BY id ASC LIMIT $3"
+    : "SELECT " + columns +
+      " FROM products WHERE organization_id = $1 AND is_active = true" +
+      " ORDER BY id ASC LIMIT $2";
+
+  const values = cursor
+    ? [organizationId, cursor, pageSize + 1]
+    : [organizationId, pageSize + 1];
+
+  return { statement, values, canReadCost };
+}
 
 function parsePageSize(value: string | undefined): number | null {
   if (value === undefined) return DEFAULT_PAGE_SIZE;
@@ -68,34 +105,10 @@ export function registerCatalogRoutes(app: Hono<{ Bindings: Bindings }>): void {
         const tenant = await resolveTenantContext(client, sessionToken, organizationId);
         if (!tenant) return { kind: "unauthenticated" as const };
 
-        const canReadCost =
-          tenant.role === "owner" ||
-          tenant.role === "admin" ||
-          tenant.role === "inventory";
-
-        if (!canReadCost && tenant.role !== "cashier") {
-          return { kind: "forbidden" as const };
-        }
-
         // Do not select cost_usd at all for Cashier. Do not select stock,
         // stock_quantity, branch or register data in this catalog-only phase.
-        const columns =
-          "id, sku, barcode, name, description, unit, price_usd::text AS price_usd" +
-          (canReadCost ? ", cost_usd::text AS cost_usd" : "");
-
-        const statement = cursor
-          ? "SELECT " + columns +
-            " FROM products WHERE organization_id = $1 AND is_active = true AND id > $2" +
-            " ORDER BY id ASC LIMIT $3"
-          : "SELECT " + columns +
-            " FROM products WHERE organization_id = $1 AND is_active = true" +
-            " ORDER BY id ASC LIMIT $2";
-
-        const values = cursor
-          ? [tenant.organizationId, cursor, pageSize + 1]
-          : [tenant.organizationId, pageSize + 1];
-
-        const queryResult = await client.query<CatalogRow>(statement, values);
+        const query = buildCatalogQuery(tenant.role, tenant.organizationId, cursor, pageSize);
+        const queryResult = await client.query<CatalogRow>(query.statement, query.values);
         const hasMore = queryResult.rows.length > pageSize;
         const pageRows = queryResult.rows.slice(0, pageSize);
 
@@ -109,7 +122,7 @@ export function registerCatalogRoutes(app: Hono<{ Bindings: Bindings }>): void {
             unit: row.unit,
             price_usd: row.price_usd,
           };
-          return canReadCost ? { ...item, cost_usd: row.cost_usd! } : item;
+          return query.canReadCost ? { ...item, cost_usd: row.cost_usd! } : item;
         });
 
         return {

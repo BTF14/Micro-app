@@ -1428,3 +1428,15 @@ CI documental: para HEAD `8c15e13fa001a14a0ddf9f2432bc17efb30d476d`, los 8 workf
 - La adopción no certifica la accesibilidad actual: las pantallas existentes no se han auditado como conjunto. El estándar se aplica a trabajo nuevo y a pantallas modificadas gradualmente.
 - Pendiente de completar al registrar esta entrada: revisión final del diff y verificación de checks en el SHA final de la rama.
 
+---
+
+# 2026-11-01 UTC — PR #191 fusionada: estándar frontend incorporado
+
+- El propietario confirmó la fusión; GitHub en vivo verificó PR #191 cerrada y `merged=true`, merge SHA `7ff887328f25cffff69ccb9e89bbb1ba25200aea`. `main` apunta a ese mismo SHA.
+- El estándar oficial quedó incorporado en `docs/FRONTEND_DESIGN_STANDARD.md`, con referencias desde `AGENTS.md`, `.agents/skills/micro-app-stack-guidance/SKILL.md`, `docs/COMPLIANCE_AND_ACCESSIBILITY.md` y `docs/AI_COLLABORATION_AND_PR_POLICY.md`.
+- Alcance de PR #191: 9 archivos documentales; sin cambios en código de aplicación, dependencias, API, esquema, migraciones o configuración de producción.
+- En el merge SHA se consultaron 10 check-runs: Cloudflare Pages, Workers build, postgres-migration, Trivy, generate-progress, validate-sdd-docs y scans de historial completaron success; verify, análisis estático JS/TS y Chromium authentication smoke tests seguían in_progress en el momento de la consulta. No afirmar que todos los checks terminaron hasta volver a consultarlos.
+- PR #190 continúa abierta como Draft y no se fusionó. Issue #53 continúa abierta.
+- Próximo paso operativo: verificar el resultado final de los checks del merge SHA y continuar desde el handoff actualizado. No iniciar rediseño global; aplicar el estándar gradualmente en frontend nuevo y pantallas que se modifiquen.
+- Esta entrada registra el merge; no altera ni elimina entradas anteriores.
+

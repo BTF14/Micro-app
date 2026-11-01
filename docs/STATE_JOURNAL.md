@@ -1430,3 +1430,15 @@ CI documental: para HEAD `8c15e13fa001a14a0ddf9f2432bc17efb30d476d`, los 8 workf
 - La PR debe permanecer abierta para revisión del propietario. No fusionar ni desplegar producción desde esta sesión.
 - No se modifica Cloudflare, secretos, DNS, billing, datos reales ni infraestructura.
 
+
+
+---
+
+# 2026-11-01 UTC — PR #190 abierta para revisión del endpoint de catálogo
+
+- PR #190: https://github.com/BTF14/Micro-app/pull/190, estado OPEN/DRAFT, base `main`, rama `feat/org-catalog-read-endpoint-20261101`.
+- HEAD inicial de la PR: `14c34c4becd7a1c3c43e435ba6d330f3ab118f81`; los workflows asociados a ese SHA se observaron en ejecución, no como aprobados.
+- La revisión del diff detectó y corrigió un test que intentaba leer dos veces el mismo cuerpo HTTP; se conserva una sola lectura JSON para la respuesta cross-tenant.
+- Se añadió cobertura explícita para usuario inactivo y se alinearon las portadas activas de continuidad/seguridad con PR #190.
+- La corrección produce un nuevo SHA y reinicia los checks pertinentes. Consultar los resultados del SHA actualizado; no extrapolar los checks del HEAD inicial.
+- PR #190 permanece Draft y no debe fusionarse hasta informe de revisión del propietario. No se despliega producción ni se toca Neon `main`.

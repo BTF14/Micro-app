@@ -6,7 +6,7 @@
 
 - Repositorio: `BTF14/Micro-app`.
 - `main`: `88213507d088b82ea9231bbc72f49afade7ec99b` (verificado en vivo después de PR #189).
-- PR #189: fusionada. PR abiertas al iniciar: 0.
+- PR #189: fusionada. PR #190: ABIERTA como Draft; no fusionar. 
 - Issue #53: ABIERTA.
 - PR #182 aprobó la matriz de permisos. PR #187 corrigió la contradicción de caja: no existe cierre por supervisor en la política base y no se puede reabrir un turno cerrado (trigger de migración 0004).
 - Issue #78: CERRADA con verificación CORS y bundle publicado; la confirmación autenticada de `FRONTEND_ORIGIN` en Cloudflare sigue siendo una evidencia manual separada.
@@ -33,7 +33,7 @@ Primera implementación: `GET /api/orgs/:organizationId/catalog`.
 - Se añadieron handler, tests unitarios, integración PostgreSQL, registro de ruta y paso CI.
 - Se actualizan este handoff, CURRENT_STATE, PROJECT_PLAN, SECURITY_ROADMAP y STATE_JOURNAL.
 - No afirmar que las pruebas pasaron hasta comprobar los logs del SHA exacto de la PR.
-- La PR debe quedar abierta para revisión del propietario; no fusionar.
+- La PR #190 debe quedar abierta para revisión del propietario; no fusionar.
 
 ## Criterios de aceptación
 

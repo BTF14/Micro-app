@@ -3,7 +3,7 @@
 ## Estado operativo vigente — 2026-11-01 UTC (revalidado después de PR #189)
 
 - Repositorio: `BTF14/Micro-app`. `main` verificado en GitHub: `88213507d088b82ea9231bbc72f49afade7ec99b`.
-- PR #189 está fusionada en `main`; PR abiertas al iniciar: 0. Issue #53 permanece ABIERTA.
+- PR #189 está fusionada en `main`; PR #190 está ABIERTA como Draft para revisión; issue #53 permanece ABIERTA.
 - PR #182 aprobó la matriz de permisos y PR #187 corrigió la política de caja: sin cierre por supervisor ni reapertura de turnos cerrados.
 - Seguridad Nivel 1 no está completa. Protección de `main`, Dependabot (0 abiertas/15 cerradas según revisión manual del propietario) y CORS/bundle tienen evidencia documentada. Backups sigue pendiente de RPO/RTO, alerta externa y confirmación de coste USD 0.
 - Issue #78 (CORS) está CERRADA con workflows de verificación reproducible. La confirmación autenticada del dashboard Cloudflare `FRONTEND_ORIGIN` sigue siendo evidencia manual separada.

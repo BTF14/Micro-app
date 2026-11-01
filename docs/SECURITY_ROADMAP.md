@@ -1,6 +1,6 @@
 ## Alcance de la primera ruta comercial autorizada — 2026-11-01
 
-La primera fase de issue #53 queda acotada a `GET /api/orgs/:organizationId/catalog`: lectura de catálogo/precios, `cost_usd` solo para Owner/Admin/Inventory, sin stock ni movimientos, sin sucursal ni turno de caja. La autorización de tenant debe derivarse con `resolveTenantContext`; el identificador de organización de la URL es un selector no confiable. La prueba de aislamiento debe usar PostgreSQL 18 desechable con organizaciones sintéticas A/B. La ruta y sus pruebas están en curso en `feat/org-catalog-read-endpoint-20261101`; no declarar completadas ni cerrar #53 hasta revisar el SHA final y los checks de CI. Esta implementación no modifica el estado de Seguridad Nivel 1 ni cierra los pendientes de backups.
+La primera fase de issue #53 queda acotada a `GET /api/orgs/:organizationId/catalog`: lectura de catálogo/precios, `cost_usd` solo para Owner/Admin/Inventory, sin stock ni movimientos, sin sucursal ni turno de caja. La autorización de tenant debe derivarse con `resolveTenantContext`; el identificador de organización de la URL es un selector no confiable. La prueba de aislamiento debe usar PostgreSQL 18 desechable con organizaciones sintéticas A/B. La ruta y sus pruebas están en PR #190 (Draft), rama `feat/org-catalog-read-endpoint-20261101`; no declarar completadas ni cerrar #53 hasta revisar el SHA final y los checks de CI. Esta implementación no modifica el estado de Seguridad Nivel 1 ni cierra los pendientes de backups.
 
 ---
 
@@ -9,7 +9,7 @@ La primera fase de issue #53 queda acotada a `GET /api/orgs/:organizationId/cata
 - Google OAuth + allowlist, state/PKCE, sesión revocable y validación de email verificado permanecen implementados. Registro y login por contraseña siguen fail-closed.
 - **Matriz de permisos APROBADA:** PR #182; la corrección PR #187 prohíbe cierre por supervisor y reapertura de turnos cerrados. No volver a describir la matriz como pendiente.
 - **Issue #78 CERRADA:** CORS y bundle publicado tienen workflows reproducibles en GitHub Actions. La lectura autenticada del dashboard Cloudflare para `FRONTEND_ORIGIN` sigue siendo confirmación manual independiente.
-- **Issue #53 ABIERTA:** primera fase autorizada de catálogo en `feat/org-catalog-read-endpoint-20261101`. El handler usa `resolveTenantContext`; no aplica contexto de sucursal ni turno. No considerar aislamiento comercial completo hasta inspeccionar el SHA final, los tests PostgreSQL y los checks.
+- **Issue #53 ABIERTA:** primera fase autorizada de catálogo en PR #190 (Draft), rama `feat/org-catalog-read-endpoint-20261101`. El handler usa `resolveTenantContext`; no aplica contexto de sucursal ni turno. No considerar aislamiento comercial completo hasta inspeccionar el SHA final, los tests PostgreSQL y los checks.
 - **Protección de main:** revalidada en vivo el 2026-11-01: seis checks obligatorios, `enforce_admins=true`, cero aprobaciones mínimas, sin force-push/eliminación y resolución de conversaciones obligatoria.
 - **Dependabot:** el propietario confirmó manualmente 0 alertas abiertas y 15 cerradas el 2026-11-01; no presentar esa observación como consulta automatizada de esta IA.
 - **Backups:** no cerrado. Siguen pendientes medición RPO/RTO, alerta externa ante fallos y confirmación explícita del coste total USD 0.

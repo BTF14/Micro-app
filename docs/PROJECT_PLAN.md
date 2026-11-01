@@ -1,6 +1,6 @@
 # Prioridad operativa vigente — Micro app
 
-**Checkpoint verificado en GitHub, 2026-11-01 UTC:** `main` = `88213507d088b82ea9231bbc72f49afade7ec99b`; PR #189 fusionada; 0 PR abiertas; issue #53 abierta. PR #182 aprobó la matriz y PR #187 corrigió la política de caja. Issue #78 está cerrada con workflows de CORS/bundle. Verificar nuevamente el estado vivo antes de cada acción.
+**Checkpoint verificado en GitHub, 2026-11-01 UTC:** `main` = `88213507d088b82ea9231bbc72f49afade7ec99b`; PR #189 fusionada; PR #190 abierta como Draft; issue #53 abierta. PR #182 aprobó la matriz y PR #187 corrigió la política de caja. Issue #78 está cerrada con workflows de CORS/bundle. Verificar nuevamente el estado vivo antes de cada acción.
 
 ## Prioridad inmediata — primera fase de issue #53
 

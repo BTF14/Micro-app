@@ -182,8 +182,8 @@ describe.skipIf(!databaseUrl)("catalog route against PostgreSQL", () => {
   it("does not allow an organization A member to read organization B by changing the URL ID", async () => {
     const response = await requestCatalog(members.owner.token, organizationB);
     expect(response.status).toBe(401);
-    await expect(response.json()).resolves.toMatchObject({ error: "UNAUTHENTICATED" });
     const body = await response.json() as Record<string, unknown>;
+    expect(body).toMatchObject({ error: "UNAUTHENTICATED" });
     expect(JSON.stringify(body)).not.toContain("Tenant B Secret Product");
   });
 

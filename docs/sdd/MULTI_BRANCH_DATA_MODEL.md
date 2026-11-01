@@ -14,7 +14,7 @@ Esta especificación separa:
 - **Existente en Git:** esquema base 0001, identidad 0002 y sucursales/asignaciones 0003 (`branches`, `branch_memberships`). La 0003 fue fusionada en PR #165 y validada en PostgreSQL 18 efímero.
 - **Objetivo propuesto:** entidades/relaciones que aún no están implementadas y evolución futura de las ya existentes.
 - **No implementado en main:** almacenes, balances por almacén, compras/recepciones, transferencias y devoluciones. Cajas/turnos están en 0004; `products.stock_quantity` sigue siendo organización-scoped.
-- **Gate de permisos:** la matriz role-permission-decision-matrix.md sigue NO APROBADA. Ninguna recomendación de rol de este documento autoriza permisos comerciales.
+- **Gate de permisos:** `docs/sdd/role-permission-decision-matrix.md` está APROBADA (2026-10-31) y su sección de caja fue corregida el 2026-11-01. La aprobación documental no implementa endpoints ni middleware; toda autorización debe seguir la matriz y probarse en servidor.
 
 La migración 0003 sí se ejecutó en PostgreSQL 18 desechable mediante CI y sus assertions; no se aplicó a Neon `main`. No hay rutas comerciales ni se ha conectado `resolveBranchContext` a handlers.
 
@@ -87,7 +87,7 @@ La migración 0003 crea `branch_memberships` como asignación explícita de un m
 - Cambiar `organization_members.role` afecta al miembro en toda la organización. Revocar una asignación de sucursal no modifica el rol ni otras asignaciones.
 - La pertenencia organizacional, el rol global y la asignación activa de sucursal son comprobaciones distintas. Ninguna de ellas, aislada o combinada, autoriza una operación comercial sin una regla explícita server-side.
 - No crear migraciones/backfills para roles por sucursal. Cualquier cambio de esta decisión requiere nueva aprobación explícita del propietario.
-- La matriz de permisos por operación sigue **NO APROBADA**. No inferir permisos para ventas, pagos, inventario, anulaciones, caja, supervisión o políticas comerciales a partir del nombre del rol.
+- La matriz de permisos por operación está **APROBADA** en `docs/sdd/role-permission-decision-matrix.md` (2026-10-31; corrección de caja 2026-11-01). Aplicar exactamente sus reglas; no inferir permisos adicionales a partir del nombre del rol. La aprobación no equivale a implementación.
 
 Esto describe la estructura implementada y la decisión vigente; no aprueba facultades comerciales. El inventario continúa organizacional mediante `products.stock_quantity`; el inventario por sucursal/almacén no está implementado.
 
@@ -188,7 +188,7 @@ Ejecutar contra PostgreSQL efímero con fixtures sintéticas, no Neon main. Las 
 
 ## 12. Decisiones abiertas y gates
 
-1. Aprobar/corregir la estructura de membresía organizacional y asignación de sucursal; el propietario debe resolver la matriz de permisos sensibles antes de implementar autorizaciones.
+1. La estructura de membresía organizacional y asignación de sucursal, así como la matriz de permisos, ya están decididas/aprobadas en sus documentos canónicos. Antes de implementar autorizaciones, aplicar exactamente la matriz aprobada y completar pruebas cross-tenant y de rol.
 2. Definir si todas las ventas requieren turno o si habrá ventas no asociadas a caja (por ejemplo ventas online/facturación externa).
 3. Cerrar el flujo de recepción y transferencia, especialmente transferencias inter-sucursal.
 4. Elegir el diseño de referencia tipada para movimientos, tras prueba de integridad y consultas.

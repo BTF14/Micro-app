@@ -6,7 +6,7 @@
 
 Implementar y revisar `GET /api/orgs/:organizationId/catalog` en rama `feat/org-catalog-read-endpoint-20261101`:
 
-- Lectura de catálogo y precios; Owner/Admin/Inventory reciben `cost_usd`; Cashier nunca.
+- Lectura del catálogo completo y precios, incluidos productos inactivos con `is_active`; Owner/Admin/Inventory reciben `cost_usd`; Cashier nunca. No imponer filtros de actividad no aprobados.
 - Sin stock, `stock_quantity`, movimientos, almacenes ni inventario por sucursal.
 - Sin dependencia de sucursal ni turno de caja.
 - Validar UUID y paginación antes de abrir conexión.
@@ -17,7 +17,7 @@ Implementar y revisar `GET /api/orgs/:organizationId/catalog` en rama `feat/org-
 
 ## Gates y límites
 
-1. Para el HEAD `0030a64270e5992acc54f37d2454a8335e43e9d2`, los logs fueron inspeccionados: 12/12 check-runs success, build/typecheck correcto, 73 tests unitarios API y 8/8 integraciones PostgreSQL de catálogo. Revalidar si cambia el HEAD.
+1. Para el HEAD de código `3a4d854e9dfdd5aa574315a3eec6e642a40a3cb0`, los logs fueron inspeccionados: 12/12 check-runs success, build/typecheck correcto, 73 tests unitarios API y 8/8 integraciones PostgreSQL de catálogo. Revalidar si cambia el HEAD.
 2. Exigir los seis checks de branch protection, incluido `verify` y `postgres-migration`.
 3. Mantener issue #53 abierta hasta demostrar aislamiento y autorización en rutas comerciales reales y completar los demás criterios del issue.
 4. Mantener inventario organizacional (`products.stock_quantity`); `branch_memberships` solo concede acceso a sucursales.

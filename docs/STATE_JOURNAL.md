@@ -1488,3 +1488,16 @@ CI documental: para HEAD `8c15e13fa001a14a0ddf9f2432bc17efb30d476d`, los 8 workf
 - Para no inventar una regla comercial, el endpoint ahora devuelve todos los productos de la organización e incluye `is_active` como indicador explícito. La consulta sigue filtrada por tenant y parametrizada.
 - Se actualizan tests unitarios e integración para comprobar que se conserva un producto inactivo sin exponer stock ni coste a Cashier.
 - El cambio está en PR #190; se deben revisar los checks del nuevo HEAD. No se modifica el esquema ni Neon `main`.
+
+
+---
+
+# 2026-11-01 UTC — revisión de catálogo completo y CI repetido
+
+- Se eliminó el filtro implícito `products.is_active = true` porque la matriz aprobada no define ocultación de productos inactivos.
+- La API ahora devuelve todos los productos de la organización e incluye `is_active` para que el consumidor conozca su estado. Cashier sigue sin consultar ni recibir `cost_usd`; ningún rol recibe stock ni movimientos.
+- HEAD de código verificado: `3a4d854e9dfdd5aa574315a3eec6e642a40a3cb0`.
+- GitHub Actions: 12/12 check-runs success; `verify` completó build/typecheck, 73 tests unitarios API y 8/8 integraciones PostgreSQL de catálogo; `postgres-migration`, análisis estático, Trivy, Dependency Review, Chromium y previews Pages/Workers success.
+- La PR #190 sigue OPEN/DRAFT, mergeable y sin reviews formales; la revisión del propietario sigue pendiente. Issue #53 permanece abierta.
+- No se modifica Neon `main`, Cloudflare producción, secretos, DNS, billing, esquema ni datos reales.
+- Esta entrada se añade al final; el diario histórico no se reescribe.

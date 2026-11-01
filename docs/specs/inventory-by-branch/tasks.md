@@ -16,10 +16,10 @@
   **Archivos:** `docs/specs/inventory-by-branch/`.
   **Validación/evidencia:** revisión documental de coherencia; no aprobación de producto.
 
-- [ ] T3 — Completar discovery de implementación existente.
+- [x] T3 — Completar discovery de implementación existente.
   **Aceptación:** inventario de callsites de `stock_quantity`, `inventory_movements`, ventas, compras y tests, con rutas/consumidores reales.
-  **Archivos:** código y tests existentes (solo lectura).
-  **Validación/evidencia:** búsqueda reproducible y referencias a archivos/lineas.
+  **Archivos:** `docs/sdd/INVENTORY_BRANCH_CODE_DISCOVERY.md`; migraciones `0001_initial.sql`, `0003_branch_scope.sql`, `0004_register_shifts.sql`; módulos API y pruebas asociadas.
+  **Validación/evidencia:** árbol Git recursivo completo del commit `b256c1c3e51a145e5af62fbcbdfb830a4368884c` (169 rutas, sin truncamiento), inspección de esquema/API/contexto de sucursal/caja/pruebas. El discovery confirma que no existe flujo operativo de inventario por sucursal; revisión estática, no ejecución de pruebas.
 
 - [ ] T4 — Resolver decisiones de producto/modelo abiertas.
   **Aceptación:** coste/valoración, reservas, transferencias en tránsito, reversos, referencias de origen y almacén de venta documentados y aprobados.

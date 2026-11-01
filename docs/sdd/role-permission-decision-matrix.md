@@ -31,17 +31,20 @@ Fuentes canónicas: `docs/SAAS_ARCHITECTURE_DECISIONS.md` §§3 y 14; `docs/sdd/
 Nota: el costo de producto se considera dato financiero sensible; Cashier ve precio de venta pero no costo, para no exponer margen en el punto de venta.
 
 ## 2. Apertura y cierre de caja; operaciones durante un turno abierto
-**Fuente: criterio técnico delegado por el propietario**, consistente con la restricción ya fijada ("caja conserva modelo de turnos y apertura/cierre ordinario; no introducir cierres de supervisor incompatibles").
+**Fuente: criterio técnico delegado por el propietario**, consistente con la decisión de arquitectura ya fijada y con trigger defensivo en la migración 0004 (`docs/sdd/REGISTER_SHIFT_MODEL.md` §2 y §4): *"En la política base, `closed_by_user_id` debe ser el mismo cajero responsable. No se habilita cierre por supervisor"*; *"Los turnos cerrados son históricos; no se reabren ni se sobrescriben"* (bloqueado en PostgreSQL por trigger, no solo por convención de permisos).
+
+**Corrección 2026-10-31:** una versión anterior de esta tabla otorgaba a Owner/Admin la facultad de "cerrar/reabrir el turno de otro miembro", lo cual contradecía directamente esa decisión ya fijada (y, para "reabrir", es además técnicamente imposible: la migración 0004 bloquea con un trigger cualquier `UPDATE`/`DELETE` sobre un turno ya cerrado). Se corrige aquí.
 
 | Operación | Owner | Admin | Inventory | Cashier |
 |---|---|---|---|---|
 | Abrir turno propio | ✅ sucursal | ✅ sucursal | ❌ | ✅ sucursal |
-| Cerrar turno propio (ordinario) | ✅ propio | ✅ propio | ❌ | ✅ propio |
+| Cerrar turno propio (ordinario, `closed_by_user_id` = el propio cajero) | ✅ propio | ✅ propio | ❌ | ✅ propio |
 | Operar ventas/cobros durante turno propio abierto | ✅ propio | ✅ propio | ❌ | ✅ propio |
 | Leer turnos (propios y ajenos) | ✅ org | ✅ org | ❌ | ✅ propio únicamente |
-| Cerrar/reabrir el turno de otro miembro | ✅ org | ✅ org | ❌ | ❌ |
+| Cerrar el turno abierto de otro miembro (cierre por supervisor) | ❌ **no implementado en esta fase** | ❌ **no implementado en esta fase** | ❌ | ❌ |
+| Reabrir o modificar un turno ya cerrado | ❌ **bloqueado a nivel de base de datos** (trigger de 0004) para todos los roles, incluido Owner | ❌ | ❌ | ❌ |
 
-No se introduce cierre forzado por supervisor en esta fase (fuera de alcance; requeriría diseño explícito aprobado aparte).
+**Nadie —ni Owner ni Admin— puede cerrar el turno abierto de otro cajero ni reabrir uno ya cerrado en el modelo base.** Un cajero que no puede cerrar su propio turno (p. ej. se fue sin cerrar caja) requiere una vía de corrección separada, explícitamente fuera del alcance de esta matriz: `docs/sdd/REGISTER_SHIFT_MODEL.md` dice literalmente *"cualquier excepción futura requiere permiso separado, motivo y auditoría aprobados"*. No implementar ese flujo de excepción hasta que el propietario lo apruebe específicamente, con su propio diseño de permiso, motivo obligatorio y registro de auditoría — no asumirlo incluido en la aprobación general de esta matriz.
 
 ## 3. Ventas: creación, descuentos, cambios de precio en el momento de la venta
 **Fuente: decisión explícita del propietario (2026-10-31):** *"Cashier/Admin/Owner crean ventas; cualquier descuento requiere aprobación de Admin/Owner."*

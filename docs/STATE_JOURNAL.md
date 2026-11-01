@@ -1414,3 +1414,19 @@ CI documental: para HEAD `8c15e13fa001a14a0ddf9f2432bc17efb30d476d`, los 8 workf
 - Se verificó de nuevo el estado vivo de GitHub antes de tocar documentos: `main` = `c7bd0a198c30d190586aa6acd207d954f41ff7c9`, 0 PR abiertas, issue #53 abierta — sin cambios desde el cierre anterior.
 - No se tocó Cloudflare producción, Neon `main`, secretos, DNS, billing ni datos reales. No se implementó código de #53; esta entrada corresponde solo al diagnóstico y a la corrección de continuidad pedidos antes de presentar la propuesta técnica.
 - Esta entrada se añade al final; no se modifican ni eliminan entradas anteriores.
+
+
+---
+
+# 2026-11-01 UTC — primera fase de catálogo autorizada; implementación y pruebas en rama
+
+- Base verificada en GitHub antes de trabajar: `main` = `88213507d088b82ea9231bbc72f49afade7ec99b`; PR #189 fusionada; 0 PR abiertas; issue #53 abierta.
+- Se confirmó que PR #182 aprobó la matriz de permisos y PR #187 corrigió la regla de caja (sin cierre por supervisor ni reapertura de turnos cerrados).
+- Alcance aprobado por el propietario: `GET /api/orgs/:organizationId/catalog`; catálogo/precios; `cost_usd` solo Owner/Admin/Inventory y nunca Cashier; sin stock, movimientos, sucursal o turno de caja.
+- Rama de implementación: `feat/org-catalog-read-endpoint-20261101`. El handler usa `resolveTenantContext`, valida UUID/paginación antes de conectar, limita y pagina resultados, usa SQL parametrizado y no selecciona costes para Cashier.
+- Se añaden pruebas unitarias y de integración PostgreSQL con fixtures sintéticos para roles, sesión inválida/expirada/revocada, membresía/organización inactiva, aislamiento A/B y paginación.
+- Se añade un paso CI para ejecutar la integración contra el PostgreSQL 18 desechable ya creado por el workflow; no se modifica Neon `main`.
+- Estado de pruebas al registrar esta entrada: pendiente de ejecución en CI sobre el SHA final de la rama/PR. No afirmar éxito hasta inspeccionar logs.
+- La PR debe permanecer abierta para revisión del propietario. No fusionar ni desplegar producción desde esta sesión.
+- No se modifica Cloudflare, secretos, DNS, billing, datos reales ni infraestructura.
+

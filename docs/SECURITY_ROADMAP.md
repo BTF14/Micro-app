@@ -1,3 +1,9 @@
+## Alcance de la primera ruta comercial autorizada — 2026-11-01
+
+La primera fase de issue #53 queda acotada a `GET /api/orgs/:organizationId/catalog`: lectura de catálogo/precios, `cost_usd` solo para Owner/Admin/Inventory, sin stock ni movimientos, sin sucursal ni turno de caja. La autorización de tenant debe derivarse con `resolveTenantContext`; el identificador de organización de la URL es un selector no confiable. La prueba de aislamiento debe usar PostgreSQL 18 desechable con organizaciones sintéticas A/B. La ruta y sus pruebas están en curso en `feat/org-catalog-read-endpoint-20261101`; no declarar completadas ni cerrar #53 hasta revisar el SHA final y los checks de CI. Esta implementación no modifica el estado de Seguridad Nivel 1 ni cierra los pendientes de backups.
+
+---
+
 ## Estado vivo de identidad y hardening — 2026-10-29
 
 - PR #153 está fusionada en main; bootstrap OAuth ya no acepta secretos por query string: GET rechaza parámetros de bootstrap y el alta inicial usa POST con validación de Origin/content-type/cuerpo/campos y token de un solo uso, además de state/PKCE y cookies temporales HttpOnly. No hay evidencia de filtración activa.

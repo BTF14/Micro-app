@@ -43,3 +43,15 @@ Regla general, igual que con `docs/PRICING_CACHE_ARCHITECTURE.md`: ningún punto
 ## Próximo paso técnico concreto (derivado del punto 11)
 
 Se agrega en este cambio `.github/workflows/dependency-review.yml`: usa la acción oficial `actions/dependency-review-action` sobre cada Pull Request, configurada para **fallar el check** si se introduce una dependencia con severidad `critical` o `high` conocida en la base de datos de GitHub Advisories. Esto es distinto de Dependabot (que solo abre PRs de actualización): esto bloquea que un PR *nuevo* introduzca una dependencia vulnerable, sea por Dependabot o por cualquier cambio manual.
+
+## Estándar transversal de interfaz — actualización 2026-11-01
+
+El propietario aprobó `docs/FRONTEND_DESIGN_STANDARD.md` como criterio común para nuevas vistas y cambios sustanciales de frontend. Ese documento desarrolla el objetivo WCAG 2.2 AA, los estados de interfaz, la adaptación responsive, los tokens visuales y la accesibilidad de formularios, diálogos y controles.
+
+Aclaraciones de contraste:
+- 4.5:1 corresponde al texto normal en WCAG AA.
+- 3:1 corresponde al texto grande en WCAG AA.
+- AAA eleva esos umbrales a 7:1 para texto normal y 4.5:1 para texto grande.
+- Los componentes y gráficos esenciales deben cumplir el criterio de contraste no textual aplicable.
+
+AAA es una aspiración donde sea viable, no un requisito universal que sustituya el objetivo AA. Las auditorías automatizadas y manuales se incorporarán cuando existan pantallas operativas representativas; no se afirma que toda la UI actual ya haya sido auditada o que cumpla WCAG 2.2 AA.

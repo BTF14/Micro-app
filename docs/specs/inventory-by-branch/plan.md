@@ -29,7 +29,7 @@ Los nombres de migración, rutas, archivos y módulos son placeholders; descubri
 
 ## Secuencia propuesta
 
-1. **Discovery:** inspeccionar código, esquema, consultas de stock, movimientos, ventas, compras, tests y CI en el SHA objetivo.
+1. **Discovery — completado para el snapshot documentado:** revisar esquema, API, contexto de sucursal, caja, frontend y pruebas. Resultado: no existe flujo operativo de inventario por sucursal ni rutas comerciales de stock; `stock_quantity` y `inventory_movements` solo aparecen como modelo de datos organizacional en el esquema inicial. Evidencia y rutas: [INVENTORY_BRANCH_CODE_DISCOVERY.md](../../sdd/INVENTORY_BRANCH_CODE_DISCOVERY.md). Repetir/actualizar este discovery si cambia el SHA antes de diseñar o implementar.
 2. **Decisiones:** resolver los puntos abiertos de la spec y documentar las decisiones en fuentes canónicas.
 3. **Modelo:** diseñar DDL aditivo, FKs compuestas, restricciones, índices, estados y estrategia de referencia.
 4. **Pruebas primero:** crear casos PostgreSQL desechable para tenant, permisos, concurrencia, idempotencia, rollback y reconciliación.

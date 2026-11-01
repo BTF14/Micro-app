@@ -1414,3 +1414,17 @@ CI documental: para HEAD `8c15e13fa001a14a0ddf9f2432bc17efb30d476d`, los 8 workf
 - Se verificó de nuevo el estado vivo de GitHub antes de tocar documentos: `main` = `c7bd0a198c30d190586aa6acd207d954f41ff7c9`, 0 PR abiertas, issue #53 abierta — sin cambios desde el cierre anterior.
 - No se tocó Cloudflare producción, Neon `main`, secretos, DNS, billing ni datos reales. No se implementó código de #53; esta entrada corresponde solo al diagnóstico y a la corrección de continuidad pedidos antes de presentar la propuesta técnica.
 - Esta entrada se añade al final; no se modifican ni eliminan entradas anteriores.
+
+---
+
+# 2026-11-01 UTC — Estándar transversal UI/UX y frontend aprobado
+
+- El propietario aprobó convertir las reglas UI/UX acordadas en un estándar oficial del proyecto: `docs/FRONTEND_DESIGN_STANDARD.md`.
+- El estándar establece React + Vite/CSS existente como contexto; responsive con pruebas de referencia a 375, 768 y 1280 px; tokens semánticos centralizados tras inspeccionar estilos existentes; skeletons contextuales; estados completos; patrones POS/inventario; interacción por teclado y accesibilidad WCAG 2.2 AA (AAA cuando sea viable).
+- Se corrigió el umbral de contraste del prompt original: AA requiere 4.5:1 para texto normal y 3:1 para texto grande; AAA requiere 7:1 y 4.5:1 respectivamente. Se aclaró que 44 × 44 px es una referencia de comodidad táctil, no el mínimo normativo universal.
+- Integración documental: `AGENTS.md`, `.agents/skills/micro-app-stack-guidance/SKILL.md`, `docs/COMPLIANCE_AND_ACCESSIBILITY.md`, `docs/AI_COLLABORATION_AND_PR_POLICY.md`, `docs/CURRENT_STATE.md`, `docs/HANDOFF_NEXT_CHAT.md` y `docs/PROJECT_PLAN.md`.
+- Base verificada antes del cambio: `main` = `88213507d088b82ea9231bbc72f49afade7ec99b`; PR #190 seguía abierta como Draft con HEAD `42ed27fd9ce13223c6a2d1fd2a9359d3ec871345`. El trabajo se mantiene en la rama documental `docs/frontend-design-standard-20261101`; no se modifica ni fusiona PR #190.
+- Alcance: documentación e instrucciones solamente. No se modificó código de aplicación, CSS, dependencias, APIs, esquema, migraciones, datos, Cloudflare, Neon, secretos, DNS, billing ni producción.
+- La adopción no certifica la accesibilidad actual: las pantallas existentes no se han auditado como conjunto. El estándar se aplica a trabajo nuevo y a pantallas modificadas gradualmente.
+- Pendiente de completar al registrar esta entrada: revisión final del diff y verificación de checks en el SHA final de la rama.
+

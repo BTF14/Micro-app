@@ -6,6 +6,8 @@
 
 Esta política complementa `AGENTS.md`, `docs/CONSTITUTION.md`, `docs/SECURITY_ROADMAP.md` y los requisitos de seguridad existentes. Si hay conflicto, no se debe elegir silenciosamente la regla más permisiva: verificar la fuente canónica, preservar las restricciones de seguridad y documentar el conflicto antes de actuar.
 
+Para cualquier trabajo de diseño UI/UX o frontend, aplicar también `docs/FRONTEND_DESIGN_STANDARD.md` y el skill `.agents/skills/micro-app-stack-guidance/SKILL.md`. El estándar define criterios de diseño y calidad; no autoriza por sí solo cambios de producto, permisos, API, datos ni una reescritura visual amplia.
+
 ## 1. Principio rector
 
 **Priorizar corrección, seguridad, mantenibilidad y evidencia por encima de velocidad aparente o cantidad de PR.** El avance se mide por problemas resueltos y verificados, no por commits, ramas o PR creadas.

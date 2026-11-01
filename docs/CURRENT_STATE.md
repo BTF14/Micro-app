@@ -1,8 +1,15 @@
 # Estado actual — Micro app
 
-## Estado operativo vigente — 2026-10-31 UTC
+## Estado operativo vigente — 2026-11-01 UTC
 
-- Repositorio: `BTF14/Micro-app`. `main` verificado: `51194315b8cbe9138567bdbbd46a08509235de6e`. Consultar GitHub en vivo antes de cualquier acción posterior.
+- Repositorio: `BTF14/Micro-app`. `main` verificado: `40244698e95d78122011019e456f3d8b392fb05c`. Consultar GitHub en vivo antes de cualquier acción posterior.
+- PR #187 (merge `40244698e95d78122011019e456f3d8b392fb05c`): corrige `docs/sdd/role-permission-decision-matrix.md` §2 (caja) — se había aprobado (PR #182) una fila que permitía a Owner/Admin cerrar/reabrir el turno de otro miembro, lo cual contradecía una decisión de arquitectura ya fijada en `docs/sdd/REGISTER_SHIFT_MODEL.md` §2/§4 (sin cierre por supervisor; reapertura bloqueada por trigger de PostgreSQL en la migración 0004, para todos los roles incluido Owner). Corregido con filas de denegación explícita y nota de que cualquier excepción futura requiere diseño de permiso, motivo y auditoría aprobados aparte por el propietario. Encontrado durante la auditoría de Seguridad Nivel 1 de esta sesión, no reportado por el propietario.
+- **Auditoría de Seguridad Nivel 1 — realizada 2026-11-01, resultados volcados en `docs/SECURITY_ROADMAP.md` (sección "Nivel 1"):**
+  - **Protección de `main`:** confirmada en vivo (6 checks requeridos, `enforce_admins: true`, `required_approving_review_count: 0`, sin force-push/deletions, resolución de conversaciones obligatoria). La discrepancia de `required_approving_review_count: 1` registrada el 2026-10-30 ya no está presente.
+  - **Backups:** `backup.yml`, `backup-restore-smoke.yml` y `backup-real-restore.yml` con ejecuciones recientes en éxito (ver detalle en `SECURITY_ROADMAP.md`). RPO/RTO, alerta externa y confirmación de coste $0 siguen sin medir/confirmar.
+  - **Dependabot:** configuración correcta (npm + github-actions); el endpoint de alertas de seguridad devolvió 403 con el token de esta sesión — no se pudo confirmar si hay alertas abiertas; requiere revisión directa del propietario en GitHub.
+  - **Cabeceras de seguridad y CORS/bundle (issue #78):** sin cambios desde PR #183/#185; workflows de verificación siguen en verde en sus últimas ejecuciones (CORS 2026-10-31T23:52:41Z, bundle 2026-11-01T00:08:33Z).
+  - **Matriz de permisos — inventario:** se revisó el punto flagueado externamente (alcance "sucursal" de Inventory vs. `products.stock_quantity` organizacional). La matriz ya documentaba correctamente, desde su aprobación original, que ese alcance se refiere a quién puede operar y no a que el stock esté particionado por sucursal. No se encontró contradicción; no requirió corrección.
 - PR #181 (merge `cf13538e5bc68af4fa544efa71dad96d8ea5412a`): añade `.github/workflows/cors-verification.yml`, un workflow de solo lectura que emite los preflight `OPTIONS` reales contra el Worker público desde un runner con salida completa a internet (este y otros sandboxes de IA del proyecto no pueden alcanzar `micro-app-api.btfcasheb.workers.dev` ni `micro-app-63i.pages.dev`: `403` en el `CONNECT` del proxy saliente, confirmado de nuevo en esta sesión para ambos hosts).
 - PR #183 (merge `d8be0c6249a78f64645fcd2a794362c7cb794452`): refuerza ese workflow con aserciones explícitas de código HTTP/código de salida de `curl`, y un tercer preflight que solicita `Access-Control-Request-Headers: authorization,content-type` y exige que se reflejen en `Access-Control-Allow-Headers`.
 - PR #185 (merge `51194315b8cbe9138567bdbbd46a08509235de6e`): añade `.github/workflows/frontend-bundle-verification.yml` — descarga el `index.html` público y cada `<script src>` referenciado, y confirma que el bundle realmente publicado (no solo el código fuente versionado) contiene el literal `https://micro-app-api.btfcasheb.workers.dev`, fallando si aparece cualquier otro host `*.workers.dev`.
@@ -19,10 +26,11 @@
 
 ## Próxima secuencia obligatoria
 
-1. Diseñar e implementar los endpoints comerciales de #53 siguiendo exactamente `docs/sdd/role-permission-decision-matrix.md` (ahora aprobada), con middleware de autorización servidor-side que use `resolveTenantContext` → `resolveBranchContext` → `resolveOpenCashierRegisterShift` donde aplique, denegando por defecto.
+1. Con Seguridad Nivel 1 auditada y documentada (ver arriba), diseñar e implementar los endpoints comerciales de #53 siguiendo exactamente `docs/sdd/role-permission-decision-matrix.md` (aprobada y ya corregida en su sección de caja), con middleware de autorización servidor-side que use `resolveTenantContext` → `resolveBranchContext` → `resolveOpenCashierRegisterShift` donde aplique, denegando por defecto.
 2. Añadir pruebas automatizadas de aislamiento cross-tenant (organización A nunca lee/escribe datos de organización B, ni manipulando IDs) y de aislamiento de rol, en PostgreSQL desechable, antes de fusionar cualquier endpoint comercial a `main`.
 3. Registro de auditoría (Nivel 2, punto 7 de `docs/SECURITY_ROADMAP.md`) para acciones sensibles, antes de considerar el gate de #53 completo.
 4. No asumir que la aprobación documental de la matriz habilita por sí sola producción. Consultar GitHub y el estado real del código antes de cualquier trabajo posterior.
+5. Pendiente, no bloqueante para #53: medir RPO/RTO de backups, confirmar coste $0 y decidir si hace falta alerta externa (fuera del resumen de GitHub Actions); revisar manualmente las alertas de Dependabot en GitHub (el token de sesión no tiene ese alcance).
 
 ## Snapshot previo — eliminación segura de rama heredada (histórico; no es estado actual de PR #178) — 2026-10-30 UTC
 

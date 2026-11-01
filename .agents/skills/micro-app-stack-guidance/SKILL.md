@@ -14,7 +14,7 @@ description: Make maintainable, tested changes that fit Micro app's existing Rea
 
 ## Frontend: React + Vite
 
-## Frontend design and UX standard
+### Frontend design and UX standard
 
 - Before designing or implementing UI, read `docs/FRONTEND_DESIGN_STANDARD.md`; it is the project's shared UI/UX standard.
 - Apply its responsive, accessibility, loading/empty/error/success, interaction-state and POS/inventory guidance.

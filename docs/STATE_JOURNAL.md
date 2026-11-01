@@ -1442,3 +1442,13 @@ CI documental: para HEAD `8c15e13fa001a14a0ddf9f2432bc17efb30d476d`, los 8 workf
 - Se añadió cobertura explícita para usuario inactivo y se alinearon las portadas activas de continuidad/seguridad con PR #190.
 - La corrección produce un nuevo SHA y reinicia los checks pertinentes. Consultar los resultados del SHA actualizado; no extrapolar los checks del HEAD inicial.
 - PR #190 permanece Draft y no debe fusionarse hasta informe de revisión del propietario. No se despliega producción ni se toca Neon `main`.
+
+
+---
+
+# 2026-11-01 UTC — sincronización del contrato de integración API
+
+- Se actualiza la portada de `docs/API_INTEGRATION.md` para distinguir las rutas en `main` de la primera ruta de catálogo propuesta en PR #190 (Draft).
+- Se documentan el contrato de lectura, campos por rol, exclusiones de stock/sucursal/turno, validación tenant, paginación y entorno de prueba.
+- Se conservan debajo las notas históricas; no se presentan como estado actual.
+- La PR #190 sigue abierta para revisión. Los checks del SHA posterior a esta sincronización deben verificarse en vivo antes de declarar cualquier prueba aprobada.

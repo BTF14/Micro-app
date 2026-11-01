@@ -9,8 +9,8 @@ Before planning or editing:
 4. Read `docs/PROJECT_PLAN.md`, `docs/STATE_JOURNAL.md`, `docs/RESOURCE_REGISTRY.md`, `docs/SECURITY_ROADMAP.md`, `docs/COMPLIANCE_AND_ACCESSIBILITY.md`, and `docs/GENTLEMAN_PROGRAMMING_EVALUATION.md`.
 5. Read the domain-specific documents relevant to the change (architecture, database schema/review, API integration, security plan, compliance, inspiration).
 6. Before any frontend UI/UX design or implementation, read `docs/FRONTEND_DESIGN_STANDARD.md` and follow it together with `.agents/skills/micro-app-stack-guidance/SKILL.md`.
-6. Verify live GitHub state: current `main` SHA, branch heads, pull requests, and GitHub Actions for the exact SHA. Historical documentation is a lead, not proof of current state.
-7. Separate verified facts, hypotheses, and unknowns. Never fill missing evidence by guessing.
+7. Verify live GitHub state: current `main` SHA, branch heads, pull requests, and GitHub Actions for the exact SHA. Historical documentation is a lead, not proof of current state.
+8. Separate verified facts, hypotheses, and unknowns. Never fill missing evidence by guessing.
 
 ## Project agent skills
 

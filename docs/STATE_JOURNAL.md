@@ -1375,3 +1375,15 @@ CI documental: para HEAD `8c15e13fa001a14a0ddf9f2432bc17efb30d476d`, los 8 workf
 - No se tocó Cloudflare producción, Neon main, secretos, DNS, billing, datos reales ni se realizó ningún despliegue manual.
 - `main` verificado al cierre de esta entrada: `062e5ed671a30d356891d9a28dd5d724045cdfa1`.
 - Esta entrada se añade al final; no se modifican ni eliminan entradas anteriores.
+
+
+## 2026-10-31 UTC — Brecha C de #78 resuelta: verificación real del bundle publicado (PR #185)
+
+- Se recibió un documento de continuidad redactado por ChatGPT (aportado por el propietario) señalando brechas adicionales sobre el cierre de #78: (A) falta de preflight con `Access-Control-Request-Headers: authorization,content-type`, (B) el workflow de CORS no fallaba ante error de transporte/status HTTP inesperado, (C) nunca se verificó el bundle JS realmente publicado en Pages (solo el código fuente versionado), (D) falta una verificación autenticada actual del dashboard de Cloudflare. Se verificó cada punto contra GitHub en vivo antes de actuar, sin asumir que el documento externo fuera exacto.
+- (A) y (B) ya habían sido resueltos en esta misma sesión mediante PR #183 (confirmado leyendo el YAML fusionado en `main`, no solo el título del commit).
+- (C) se resolvió con PR #185: nuevo workflow `.github/workflows/frontend-bundle-verification.yml`, de solo lectura, manual + semanal (lunes 09:05 UTC). Descarga `index.html` público de `https://micro-app-63i.pages.dev/`, extrae cada `<script src>` referenciado, descarga esos bundles, y confirma que al menos uno contiene el literal `https://micro-app-api.btfcasheb.workers.dev`; falla si aparece cualquier otro host `*.workers.dev`. Se confirmó de nuevo que este sandbox de IA no puede alcanzar `micro-app-63i.pages.dev` (`403` en el `CONNECT` del proxy saliente), igual que ya ocurría con el Worker.
+- Evidencia real: PR #185 fusionada por squash, merge SHA `51194315b8cbe9138567bdbbd46a08509235de6e`; checks obligatorios del HEAD exacto (`66d0cf5875ef9b741b84cd86c584ac694495b42f`) en verde, incluido el job nuevo `Confirm published bundle uses the canonical API base URL`. Tras el merge, se disparó manualmente el workflow sobre `main` ([run 41255425480](https://github.com/BTF14/Micro-app/actions/runs/41255425480)): `success`. Se publicó un comentario de evidencia en el issue #78 (ya cerrado; no se reabrió, el cierre original ya era válido).
+- (D) sigue sin resolverse: requiere acceso autenticado al dashboard de Cloudflare que solo tiene el propietario. No es una tarea ejecutable desde un sandbox de IA sin esas credenciales; se deja documentada como pendiente real, no como tarea evitada.
+- No se tocó Cloudflare producción, Neon main, secretos, DNS, billing, datos reales ni se realizó ningún despliegue manual. No se modificó código de `apps/api` ni `apps/web`; solo se añadió un workflow de CI de solo lectura.
+- `main` verificado al cierre de esta entrada: `51194315b8cbe9138567bdbbd46a08509235de6e`.
+- Esta entrada se añade al final; no se modifican ni eliminan entradas anteriores.

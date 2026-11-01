@@ -141,13 +141,6 @@ export function registerCatalogRoutes(app: Hono<{ Bindings: Bindings }>): void {
           401,
         );
       }
-      if (result.kind === "forbidden") {
-        return c.json(
-          { error: "FORBIDDEN", message: "No tienes permiso para consultar este catálogo." },
-          403,
-        );
-      }
-
       return c.json(result.body, 200);
     } catch {
       // Never expose database errors, SQL, session material or product costs.

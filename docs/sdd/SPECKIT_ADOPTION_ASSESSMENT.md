@@ -14,8 +14,8 @@ Principios:
 1. `AGENTS.md` y `docs/CONSTITUTION.md` siguen siendo las reglas rectoras del repositorio.
 2. Las decisiones de producto y arquitectura aprobadas siguen viviendo en sus documentos SDD canónicos; Spec Kit no las vuelve a decidir ni las copia como otra fuente de verdad.
 3. Las plantillas `templates/sdd/spec.md`, `plan.md` y `tasks.md` son la base de los artefactos de cada función.
-4. Los artefactos de función continúan en `docs/specs/<feature>/`, conforme a `docs/SDD_WORKFLOW.md` y `skills/feature-sdd/SKILL.md`. No adoptar la carpeta raíz `specs/` por defecto sin verificar primero que la integración de Spec Kit permite personalizar sus rutas sin hacks.
-5. `.specify/` contendrá únicamente configuración, plantillas adaptadas y memoria derivada necesaria para que Spec Kit opere. Su memoria nunca sustituye la Constitución ni los documentos SDD.
+4. Los artefactos de función continúan en `docs/specs/<feature>/`, conforme a `docs/SDD_WORKFLOW.md` y `skills/feature-sdd/SKILL.md`. La documentación oficial confirma que `SPECIFY_FEATURE_DIRECTORY` (o `.specify/feature.json`) permite seleccionar un directorio de función fuera de la carpeta `specs/` por defecto; por tanto, la ruta propia es viable sin symlink. Debe probarse en la versión CLI instalada.
+5. `.specify/` contendrá únicamente configuración, plantillas adaptadas y memoria derivada necesaria para que Spec Kit opere. Para adaptar plantillas, la documentación oficial recomienda overrides locales en `.specify/templates/overrides/`; su precedencia está por encima de presets, extensiones y plantillas core. Su memoria nunca sustituye la Constitución ni los documentos SDD.
 6. No mantener dos copias editables de la misma spec, plan o lista de tareas.
 
 ## 2. Mapeo entre Micro-app y Spec Kit
@@ -68,11 +68,13 @@ Estos son hallazgos de lectura; este documento no corrige ni reemplaza las fuent
 
 ## 6. Verificaciones técnicas pendientes antes de instalar
 
-- Confirmar con la versión exacta de Spec Kit cómo personalizar la ruta de salida de specs y la ubicación de las plantillas, de modo que el flujo escriba en `docs/specs/` y use `templates/sdd/` sin mantener duplicados.
+- Validar con la versión CLI instalada que `SPECIFY_FEATURE_DIRECTORY=docs/specs/inventory-by-branch` y los overrides en `.specify/templates/overrides/` funcionan con los comandos de Codex.
 - Confirmar qué archivos modifica `specify init` en un repositorio existente y revisar el diff inmediatamente; no aceptar sobrescrituras silenciosas.
-- Instalar únicamente la integración Codex en la rama piloto y revisar los skills generados.
+- Confirmar que Codex CLI está disponible en el entorno que ejecutará el piloto. Si lo está, instalar la integración `codex`; si no, inicializar con integración `none` para scaffolding neutral y no generar skills que nadie vaya a ejecutar.
 - Comparar el resultado de cada plantilla adaptada contra los documentos actuales.
 - Ejecutar Specify/Plan/Tasks/Analyze/Clarify en el caso de inventario acotado.
 - Detenerse antes de cualquier comando de implementación.
+
+**Documentación oficial consultada:** [Customize Spec Kit](https://github.github.com/spec-kit/guides/customization.html), [Core Commands](https://github.github.com/spec-kit/reference/core.html), [Integrations](https://github.github.com/spec-kit/integrations/index.html). La documentación actual confirma los overrides locales y `SPECIFY_FEATURE_DIRECTORY`; la ruta debe validarse en ejecución.
 
 **Bloqueo actual:** este entorno no tiene acceso de red a GitHub desde el terminal y no permite clonar/instalar/ejecutar el CLI. La lectura mediante GitHub permite preparar esta evaluación, pero no sustituye la ejecución real de Spec Kit. No se afirma que Spec Kit haya sido instalado o ejecutado.

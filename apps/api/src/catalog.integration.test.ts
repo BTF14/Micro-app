@@ -28,7 +28,7 @@ if (isCi && !databaseUrl) {
 type Role = "owner" | "admin" | "inventory" | "cashier";
 type MemberFixture = { userId: string; token: string };
 
-const integration = describe.skipIf(!databaseUrl)("catalog route against PostgreSQL", () => {
+describe.skipIf(!databaseUrl)("catalog route against PostgreSQL", () => {
   let cleanupClient: Client | undefined;
   let organizationA = "";
   let organizationB = "";
@@ -37,6 +37,7 @@ const integration = describe.skipIf(!databaseUrl)("catalog route against Postgre
   const userIds: string[] = [];
   const members = {} as Record<Role, MemberFixture>;
   let inactiveMember: MemberFixture;
+  let inactiveUser: MemberFixture;
   let expiredMember: MemberFixture;
   let revokedMember: MemberFixture;
   let inactiveOrganizationMember: MemberFixture;
@@ -62,15 +63,15 @@ const integration = describe.skipIf(!databaseUrl)("catalog route against Postgre
   async function createMember(
     organizationId: string,
     role: Role,
-    options: { membershipActive?: boolean; expired?: boolean; revoked?: boolean } = {},
+    options: { membershipActive?: boolean; userActive?: boolean; expired?: boolean; revoked?: boolean } = {},
   ): Promise<MemberFixture> {
     const client = cleanupClient;
     if (!client) throw new Error("Integration database is not connected.");
 
     const suffix = crypto.randomUUID();
     const userResult = await client.query<{ id: string }>(
-      "INSERT INTO app_users (email, display_name) VALUES ($1, $2) RETURNING id",
-      ["catalog-" + suffix + "@example.test", "Catalog Integration " + role],
+      "INSERT INTO app_users (email, display_name, is_active) VALUES ($1, $2, $3) RETURNING id",
+      ["catalog-" + suffix + "@example.test", "Catalog Integration " + role, options.userActive ?? true],
     );
     const userId = userResult.rows[0]!.id;
     userIds.push(userId);
@@ -119,6 +120,7 @@ const integration = describe.skipIf(!databaseUrl)("catalog route against Postgre
       members[role] = await createMember(organizationA, role);
     }
     inactiveMember = await createMember(organizationA, "owner", { membershipActive: false });
+    inactiveUser = await createMember(organizationA, "owner", { userActive: false });
     expiredMember = await createMember(organizationA, "owner", { expired: true });
     revokedMember = await createMember(organizationA, "owner", { revoked: true });
     inactiveOrganizationMember = await createMember(inactiveOrganization, "owner");
@@ -181,7 +183,8 @@ const integration = describe.skipIf(!databaseUrl)("catalog route against Postgre
     const response = await requestCatalog(members.owner.token, organizationB);
     expect(response.status).toBe(401);
     await expect(response.json()).resolves.toMatchObject({ error: "UNAUTHENTICATED" });
-    expect(await response.text().catch(() => "")).not.toContain("Tenant B Secret Product");
+    const body = await response.json() as Record<string, unknown>;
+    expect(JSON.stringify(body)).not.toContain("Tenant B Secret Product");
   });
 
   it("rejects invalid, expired and revoked sessions", async () => {
@@ -194,11 +197,13 @@ const integration = describe.skipIf(!databaseUrl)("catalog route against Postgre
     expect(revoked.status).toBe(401);
   });
 
-  it("rejects inactive memberships and inactive organizations", async () => {
+  it("rejects inactive users, inactive memberships and inactive organizations", async () => {
     const inactiveMembership = await requestCatalog(inactiveMember.token, organizationA);
+    const inactiveUserResponse = await requestCatalog(inactiveUser.token, organizationA);
     const inactiveOrg = await requestCatalog(inactiveOrganizationMember.token, inactiveOrganization);
 
     expect(inactiveMembership.status).toBe(401);
+    expect(inactiveUserResponse.status).toBe(401);
     expect(inactiveOrg.status).toBe(401);
   });
 

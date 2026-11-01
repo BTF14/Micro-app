@@ -1,19 +1,16 @@
 # Estado actual — Micro app
 
-# Estado actual — Micro app
-
 ## Estado operativo vigente — 2026-11-01 UTC (revalidado después de PR #189)
 
 - Repositorio: `BTF14/Micro-app`. `main` verificado en GitHub: `88213507d088b82ea9231bbc72f49afade7ec99b`.
-- PR #189 está fusionada en `main`; su merge commit es el SHA actual indicado arriba. PR abiertas: 0.
-- Issue #53 permanece ABIERTA. La matriz de permisos está APROBADA mediante PR #182 y su corrección de caja PR #187; la aprobación habilita la implementación, pero no cierra el gate.
-- PR #187 elimina la facultad de cierre/reapertura de turnos ajenos; la reapertura sigue bloqueada por el trigger de PostgreSQL de la migración 0004.
-- Seguridad Nivel 1: no declarar completo. Protección de `main`, Dependabot (0 abiertas/15 cerradas según revisión manual del propietario) y CORS/bundle tienen evidencia documentada. Backups sigue pendiente de medición RPO/RTO, alerta externa y confirmación explícita de coste USD 0.
-- La issue #78 (CORS) está CERRADA con workflows de verificación reproducible; la comprobación autenticada del dashboard Cloudflare `FRONTEND_ORIGIN` continúa siendo una evidencia manual separada.
-- Resolutores existentes: `resolveTenantContext`, `resolveBranchContext` y `resolveOpenCashierRegisterShift`. Antes de esta implementación no estaban conectados a handlers comerciales. La ruta de catálogo usa únicamente `resolveTenantContext`; sucursal y turno no aplican al alcance aprobado.
-- **Alcance aprobado para la primera fase de #53:** `GET /api/orgs/:organizationId/catalog`; lectura de catálogo y precios; `cost_usd` visible para Owner/Admin/Inventory y excluido para Cashier; sin stock, `stock_quantity`, movimientos, sucursal, almacén ni turno de caja.
-- Implementación en rama `feat/org-catalog-read-endpoint-20261101`, basada en el SHA actual de `main`. Esta rama/PR no debe fusionarse hasta la revisión del propietario y los checks obligatorios del SHA final.
-- Pruebas diseñadas: UUID inválido sin consulta; sesión inválida/expirada/revocada; usuario/membresía/organización inactivos; aislamiento organización A/B; exclusión de costes para Cashier; costes para Owner/Admin/Inventory; paginación y consultas parametrizadas. La evidencia de ejecución queda pendiente de los checks CI del HEAD de la PR.
+- PR #189 está fusionada en `main`; PR abiertas al iniciar: 0. Issue #53 permanece ABIERTA.
+- PR #182 aprobó la matriz de permisos y PR #187 corrigió la política de caja: sin cierre por supervisor ni reapertura de turnos cerrados.
+- Seguridad Nivel 1 no está completa. Protección de `main`, Dependabot (0 abiertas/15 cerradas según revisión manual del propietario) y CORS/bundle tienen evidencia documentada. Backups sigue pendiente de RPO/RTO, alerta externa y confirmación de coste USD 0.
+- Issue #78 (CORS) está CERRADA con workflows de verificación reproducible. La confirmación autenticada del dashboard Cloudflare `FRONTEND_ORIGIN` sigue siendo evidencia manual separada.
+- Los resolvers `resolveTenantContext`, `resolveBranchContext` y `resolveOpenCashierRegisterShift` existen. La primera ruta de catálogo usa únicamente `resolveTenantContext`; sucursal y turno no aplican.
+- **Alcance aprobado de la primera fase de #53:** `GET /api/orgs/:organizationId/catalog`; lectura de catálogo y precios; `cost_usd` visible para Owner/Admin/Inventory y excluido para Cashier; sin stock, `stock_quantity`, movimientos, sucursal, almacén ni turno de caja.
+- Implementación en rama `feat/org-catalog-read-endpoint-20261101`, basada en el SHA actual de `main`. La PR debe permanecer abierta hasta la revisión del propietario y los checks obligatorios del SHA final.
+- Pruebas incluidas: UUID/paginación inválidos antes de consultar; sesión inválida/expirada/revocada; usuario/membresía/organización inactivos; aislamiento A/B; exclusión de costes para Cashier; costes para Owner/Admin/Inventory; paginación. La ejecución real queda pendiente de CI sobre el SHA final.
 - Arquitectura sin cambios: `organization_members.role` es organizacional; `branch_memberships` solo asigna acceso; inventario sigue organizacional mediante `products.stock_quantity`. No se añadieron campos ni migraciones.
 - Límites: no tocar Cloudflare producción, secretos, DNS, billing, Neon `main` ni datos reales. PostgreSQL 18 desechable en CI. Presupuesto objetivo USD 0.
 
@@ -21,21 +18,11 @@
 
 1. Revisar el diff completo de la rama `feat/org-catalog-read-endpoint-20261101`.
 2. Esperar los seis checks requeridos en el SHA exacto de la PR, incluido `verify` y `postgres-migration`.
-3. Inspeccionar los logs de la nueva prueba PostgreSQL de catálogo y confirmar que usa únicamente el servicio PostgreSQL desechable de CI.
-4. Corregir cualquier hallazgo y volver a verificar el SHA final.
+3. Inspeccionar los logs de la integración PostgreSQL y confirmar que usa únicamente el servicio PostgreSQL 18 desechable de CI.
+4. Corregir hallazgos y volver a verificar el SHA final.
 5. Presentar informe al propietario. **No fusionar esta primera implementación sin su revisión.**
 
 ---
-
-## Snapshot histórico
-Los snapshots anteriores se conservan para trazabilidad. No prevalecen sobre el estado vivo de GitHub ni sobre este checkpoint.
-
-
-1. Con Seguridad Nivel 1 auditada y documentada (ver arriba), diseñar e implementar los endpoints comerciales de #53 siguiendo exactamente `docs/sdd/role-permission-decision-matrix.md` (aprobada y ya corregida en su sección de caja), con middleware de autorización servidor-side que use `resolveTenantContext` → `resolveBranchContext` → `resolveOpenCashierRegisterShift` donde aplique, denegando por defecto.
-2. Añadir pruebas automatizadas de aislamiento cross-tenant (organización A nunca lee/escribe datos de organización B, ni manipulando IDs) y de aislamiento de rol, en PostgreSQL desechable, antes de fusionar cualquier endpoint comercial a `main`.
-3. Registro de auditoría (Nivel 2, punto 7 de `docs/SECURITY_ROADMAP.md`) para acciones sensibles, antes de considerar el gate de #53 completo.
-4. No asumir que la aprobación documental de la matriz habilita por sí sola producción. Consultar GitHub y el estado real del código antes de cualquier trabajo posterior.
-5. Pendiente, no bloqueante para #53: medir RPO/RTO de backups, confirmar coste $0 y decidir si hace falta alerta externa (fuera del resumen de GitHub Actions); revisar manualmente las alertas de Dependabot en GitHub (el token de sesión no tiene ese alcance).
 
 ## Snapshot previo — eliminación segura de rama heredada (histórico; no es estado actual de PR #178) — 2026-10-30 UTC
 

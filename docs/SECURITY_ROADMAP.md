@@ -4,15 +4,17 @@ La primera fase de issue #53 queda acotada a `GET /api/orgs/:organizationId/cata
 
 ---
 
-## Estado vivo de identidad y hardening — 2026-10-29
+## Estado vivo de identidad, autorización y hardening — 2026-11-01
 
-- PR #153 está fusionada en main; bootstrap OAuth ya no acepta secretos por query string: GET rechaza parámetros de bootstrap y el alta inicial usa POST con validación de Origin/content-type/cuerpo/campos y token de un solo uso, además de state/PKCE y cookies temporales HttpOnly. No hay evidencia de filtración activa.
-- PR #155 está fusionada en main: `FRONTEND_ORIGIN` para Google OAuth exige HTTPS, salvo HTTP en loopback de desarrollo, y rechaza credenciales, path, query, hash y origen no canónico.
-- Esto corrige las notas históricas inferiores que describían bootstrap y HTTPS como cambios pendientes. No implica despliegue productivo ni que toda la identidad esté lista para operar comercialmente.
-- La autenticación Google/allowlist tiene implementación en código; siguen pendientes autorización comercial por operación, aislamiento cross-tenant de rutas de negocio (porque aún no hay endpoints comerciales), matriz de roles aprobada, controles de abuso en el contexto completo de la API y los demás gates P0/P1 de esta hoja.
-- **Hallazgo adicional de revisión estática 2026-10-30:** `auth_rate_limits` está definido en SQL, pero no se encontró implementación/callsite runtime en `apps/api/src`. No afirmar que las rutas OAuth/bootstrap tienen rate limiting. Verificar reglas Cloudflare por separado y añadir control distribuido probado antes de ampliar acceso.
-- **Protección de `main` — precisión de estado 2026-10-30:** la sección histórica inferior registra que el 2026-10-26 la API confirmó PR obligatoria, seis checks y una aprobación requerida. En esta sesión, la lectura actual de `/branches/main/protection` devolvió HTTP 403 `Resource not accessible by integration`; por tanto, esa configuración no se pudo revalidar hoy. No afirmar que está activa hoy sin una nueva lectura autorizada. La política recomienda conservar al menos una aprobación independiente.
-- Verificar siempre el SHA vivo de main y los workflows exactos antes de marcar controles como completados.
+- Google OAuth + allowlist, state/PKCE, sesión revocable y validación de email verificado permanecen implementados. Registro y login por contraseña siguen fail-closed.
+- **Matriz de permisos APROBADA:** PR #182; la corrección PR #187 prohíbe cierre por supervisor y reapertura de turnos cerrados. No volver a describir la matriz como pendiente.
+- **Issue #78 CERRADA:** CORS y bundle publicado tienen workflows reproducibles en GitHub Actions. La lectura autenticada del dashboard Cloudflare para `FRONTEND_ORIGIN` sigue siendo confirmación manual independiente.
+- **Issue #53 ABIERTA:** primera fase autorizada de catálogo en `feat/org-catalog-read-endpoint-20261101`. El handler usa `resolveTenantContext`; no aplica contexto de sucursal ni turno. No considerar aislamiento comercial completo hasta inspeccionar el SHA final, los tests PostgreSQL y los checks.
+- **Protección de main:** revalidada en vivo el 2026-11-01: seis checks obligatorios, `enforce_admins=true`, cero aprobaciones mínimas, sin force-push/eliminación y resolución de conversaciones obligatoria.
+- **Dependabot:** el propietario confirmó manualmente 0 alertas abiertas y 15 cerradas el 2026-11-01; no presentar esa observación como consulta automatizada de esta IA.
+- **Backups:** no cerrado. Siguen pendientes medición RPO/RTO, alerta externa ante fallos y confirmación explícita del coste total USD 0.
+- **Rate limiting:** no afirmar que `auth_rate_limits` se aplica en runtime; no se encontró callsite de ese control en `apps/api/src`.
+- No modificar Neon `main`, Cloudflare producción, secretos, DNS o billing. PostgreSQL 18 desechable es el entorno de pruebas.
 
 ---
 

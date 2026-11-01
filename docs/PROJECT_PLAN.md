@@ -1,5 +1,14 @@
 # Prioridad operativa vigente — Micro app
 
+> **Fuente de verdad del estado vivo:** consultar `docs/CURRENT_STATE.md` y `docs/HANDOFF_NEXT_CHAT.md`, y verificar GitHub antes de actuar. Los snapshots y prioridades históricos que siguen en este archivo pueden estar supersedidos.
+
+## Estándar frontend aprobado — 2026-11-01
+
+El propietario aprobó `docs/FRONTEND_DESIGN_STANDARD.md` para todo trabajo UI/UX nuevo y cambios sustanciales de frontend. Aplicar React + Vite/CSS existente, responsive (375/768/1280 px), WCAG 2.2 AA, tokens centralizados tras auditar los estilos existentes, estados completos y patrones específicos de POS/inventario. AAA es aspiracional cuando sea viable.
+
+La adopción es documental y gradual: no requiere rehacer el login ni pantallas existentes, no añade dependencias y no cambia el estado de funcionalidades de producto. Antes de implementar frontend, leer el estándar y el skill `.agents/skills/micro-app-stack-guidance/SKILL.md`.
+
+
 **Snapshot GitHub verificado antes de esta sincronización:** PR #178 OPEN, DRAFT, NOT MERGED; rama `docs/reconcile-role-model-and-cloudflare-20261030`; HEAD `a45d84eb5f51e50d3a24f9d6858b5d14efb3ce6b`; base `main` = `82386c6e9300e06f8fa209aa52995b939a72442a`; 68 ahead / 0 behind. El commit de sincronización generará un SHA nuevo: consultar ese SHA y sus checks/previews antes de cualquier decisión.
 **Validación del SHA padre:** 11/11 workflow runs de GitHub Actions success (9 PR + 2 push); Cloudflare Pages y Workers previews success para el mismo SHA. Diff de 13 archivos documentales (343 adiciones / 235 eliminaciones), 0 reviews formales, 0 threads inline. No marcar Ready ni fusionar sin autorización explícita. No se confirmó branch protection (403 en auditoría anterior).
 

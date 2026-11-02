@@ -132,7 +132,7 @@ El discovery confirma que el modelo actual tiene catálogo, ventas, movimientos 
 
 ## 8. Revalidación dirigida del código actual de main — 2026-11-02
 
-**Snapshot de código:** `main` = `c7bd0a198c30d190586aa6acd207d954f41ff7c9` (HEAD verificado en GitHub). Esta revalidación se limita a los archivos listados abajo; no sustituye un barrido exhaustivo de todos los callsites ni una ejecución runtime. El piloto sigue en `87049399ec458406b6d7c481d928c9b7cdc3569` y no se sincronizó con `main`.
+**Snapshot de código:** `main` = `7ff887328f25cffff69ccb9e89bbb1ba25200aea` (HEAD verificado en GitHub). Esta revalidación se limita a los archivos listados abajo; no sustituye un barrido exhaustivo de todos los callsites ni una ejecución runtime. El piloto sigue en `87049399ec458406b6d7c481d928c9b7cdc3569` y no se sincronizó con `main`.
 
 | Archivo en main | Blob SHA observado | Evidencia / conclusión |
 |---|---|---|

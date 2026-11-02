@@ -1,3 +1,14 @@
+## Inventario por sucursal — checkpoint 2026-11-02 (T3 cerrada para snapshot)
+
+- `main` auditado: `7ff887328f25cffff69ccb9e89bbb1ba25200aea`; árbol `dd4c696ace8a931b363d1642036f7893ebdc7fc4` (`truncated:false`, 194 entradas).
+- Barrido reproducible del código versionado: 21 archivos TS de API, 6 TS/TSX de web, 8 SQL de migraciones/assertions y E2E/config/scripts relevantes. No se encontraron callsites runtime para `stock_quantity`, `inventory_movements`, ventas o compras; existen solo definiciones de esquema y tests de contexto/caja.
+- T3 queda completada para este SHA exacto; repetir el barrido si cambia `main` antes de implementación. Evidencia: `docs/sdd/INVENTORY_BRANCH_CODE_DISCOVERY.md` §9.
+- Confirmado: `index.ts` solo registra auth, Google Auth y `/health`; `products.stock_quantity` sigue organizacional; movimientos no tienen branch/warehouse; no existen tablas warehouse/balances; compras/recepciones no están implementadas.
+- El helper `resolveBranchContext` resuelve alcance, pero no autoriza por sí solo una operación comercial. No hay rutas comerciales que conecten los helpers de tenant/sucursal a inventario.
+- T4 sigue bloqueada por las nueve decisiones owner-only de `DECISION_REGISTER.md` (0 aprobadas, 0 excluidas, 9 pendientes). T5–T9 siguen abiertas.
+- No se ejecutaron tests/runtime/Spec Kit; no se modificó código funcional, SQL/migraciones, Neon, producción, secretos, billing, despliegues ni se abrió PR/merge.
+- Trabajo exclusivamente documental en `pilot/speckit-inventory`; `main` no se modificó ni sincronizó.
+
 # Prioridad activa — piloto de inventario por sucursal — 2026-11-02
 
 **Rama:** `pilot/speckit-inventory`. **Main verificado al inicio:** `7ff887328f25cffff69ccb9e89bbb1ba25200aea`. **Base del piloto:** `87049399ec458406b6d7c481d928c9b7cdc3569`. No sincronizar ni rebasar automáticamente.

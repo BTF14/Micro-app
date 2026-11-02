@@ -1477,3 +1477,14 @@ CI documental: para HEAD `8c15e13fa001a14a0ddf9f2432bc17efb30d476d`, los 8 workf
 - Se ajustó `spec.md` para limitar la afirmación sobre ausencia de endpoints al código versionado inspeccionado; no se afirma ausencia en producción.
 - Se ajustaron `plan.md` y `tasks.md` para mantener T3 explícitamente parcial y describir que falta un barrido reproducible de todos los callsites. No se ejecutaron tests ni runtime.
 - El HEAD final del piloto debe tomarse del último commit de esta entrada; no se modificó `main` ni se abrió PR.
+
+
+## 2026-11-02 UTC — T3 completada: barrido reproducible de callsites
+
+- Se verificó main en SHA `7ff887328f25cffff69ccb9e89bbb1ba25200aea`; árbol Git `dd4c696ace8a931b363d1642036f7893ebdc7fc4`, `truncated:false`, 194 entradas.
+- Se enumeraron y revisaron todos los 21 archivos TS de `apps/api/src`, 6 TS/TSX de `apps/web/src`, 8 SQL de migraciones/assertions, además de E2E, configuración y scripts relevantes. Se inspeccionaron blobs por SHA exacto.
+- Resultado: cero callsites runtime de `products.stock_quantity`, `inventory_movements`, ventas, compras o recepciones; no hay endpoints comerciales registrados. `products.stock_quantity` permanece columna organizacional; movimientos carecen de branch/warehouse; no hay tablas warehouses/inventory_balances. `sales`/`sale_items` y `inventory_movements` existen solo como esquema/assertions.
+- Helpers tenant/sucursal y transacción genérica existen, pero no hay handlers comerciales que los conecten a operaciones de inventario. Las referencias a rol `inventory` en pruebas cubren contexto de sucursal/caja, no stock.
+- T3 se marcó completa para el SHA exacto auditado; se debe repetir si cambia main antes de implementar. Evidencia añadida en `docs/sdd/INVENTORY_BRANCH_CODE_DISCOVERY.md` §9 y reflejada en tasks/plan.
+- No se ejecutaron tests/runtime/Spec Kit; no se modificó código funcional ni SQL/migraciones, Neon, producción, Cloudflare, secretos, billing, despliegues, PR o merge.
+- Próximo gate: resolver D-01…D-09 del DECISION_REGISTER; 0 aprobadas, 0 excluidas, 9 pendientes. Mantener implementación bloqueada.

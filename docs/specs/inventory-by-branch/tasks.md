@@ -16,10 +16,10 @@
   **Archivos:** `docs/specs/inventory-by-branch/`.
   **Validación/evidencia:** revisión documental de coherencia; no aprobación de producto.
 
-- [ ] T3 — Completar discovery exhaustivo de implementación existente (parcial; no cerrar todavía).
+- [x] T3 — Completar discovery exhaustivo de implementación existente para el SHA auditado.
   **Aceptación:** inventario de callsites de `stock_quantity`, `inventory_movements`, ventas, compras y tests, con rutas/consumidores reales.
   **Archivos:** `docs/sdd/INVENTORY_BRANCH_CODE_DISCOVERY.md`; migraciones `0001_initial.sql`, `0003_branch_scope.sql`, `0004_register_shifts.sql`; módulos API y pruebas asociadas.
-  **Validación/evidencia:** el snapshot `b256c1c3e51a145e5af62fbdfb830a4368884c` aporta un árbol recursivo de 169 rutas y revisión estática; la revalidación dirigida de `main` `7ff887328f25cffff69ccb9e89bbb1ba25200aea` está descrita con blob SHAs en `INVENTORY_BRANCH_CODE_DISCOVERY.md`. No se hizo un barrido reproducible de todos los callsites ni se ejecutaron pruebas/runtime; por eso T3 permanece parcial y no se marca completa.
+  **Validación/evidencia:** árbol recursivo exacto dd4c696ace8a931b363d1642036f7893ebdc7fc4 (194 entradas, truncated:false) para main SHA 7ff887328f25cffff69ccb9e89bbb1ba25200aea; barrido de 21 archivos TS de API, 6 archivos TS/TSX web, 8 SQL de migración/assertions y archivos E2E/config/scripts relevantes. Resultado y blobs: INVENTORY_BRANCH_CODE_DISCOVERY.md §9. Cero callsites runtime de stock/movimientos/ventas/compras; existen definiciones de esquema y pruebas de contexto/caja. T3 completada para este SHA; sin ejecución runtime/tests.
 
 - [ ] T4 — Resolver decisiones de producto/modelo abiertas (requiere respuestas/aprobación del propietario).
   **Aceptación:** coste/valoración, reservas, transferencias en tránsito, reversos, referencias de origen y almacén de venta documentados y aprobados.
@@ -61,7 +61,7 @@
 
 ## Criterios verificables para cerrar las tareas de diseño
 
-- **T3:** entregar lista reproducible de todos los callsites de `stock_quantity`, `inventory_movements`, ventas, compras y tests en un SHA exacto; distinguir uso runtime, tests, migraciones y documentación; repetir el barrido si cambia el SHA antes de implementación.
+- **T3 (completada para el SHA auditado):** lista reproducible de callsites y clasificación runtime/tests/migraciones/documentación en INVENTORY_BRANCH_CODE_DISCOVERY.md §9. Repetir el barrido si cambia el SHA de main antes de implementación.
 - **T4:** cada decisión owner-only debe tener pregunta, respuesta explícita, fecha/fuente y alcance. Si se excluye del MVP, registrar explícitamente la exclusión; no convertir silencio en aprobación.
 - **T5:** entregar DDL propuesto con FKs/constraints/índices, contratos de transacción, idempotencia y concurrencia. No fijar estados o campos de coste/reserva dependientes de T4.
 - **T6:** cada caso de prueba debe indicar actor/rol, tenant, sucursal, fixture, operación, resultado HTTP/SQL esperado y aserción de cero escrituras parciales.
@@ -73,5 +73,5 @@
 - SHA: pendiente
 - Workflows: no ejecutados
 - Criterios aceptados / no aceptados: artefactos preliminares creados; criterios de diseño aún no validados
-- Limitaciones no verificadas: Spec Kit CLI no instalado/ejecutado; no terminal con red; no discovery exhaustivo de código; no pruebas
+- Limitaciones no verificadas: Spec Kit CLI no instalado/ejecutado; no terminal con red; discovery estático completado para main SHA 7ff887328f25cffff69ccb9e89bbb1ba25200aea; sin pruebas/runtime; no pruebas
 - Siguiente paso: completar discovery técnico y validar personalización de rutas/plantillas en Spec Kit antes de aprobar el flujo

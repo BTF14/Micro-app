@@ -136,3 +136,5 @@ jobs:
             echo
             cat "$RUNNER_TEMP/sdd-audit-report.md"
           } >> "$GITHUB_STEP_SUMMARY"
+
+# Explicitly gated: only run the single low-effort review after the owner confirms Copilot Free.

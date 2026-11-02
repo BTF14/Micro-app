@@ -90,6 +90,6 @@ Se preparó .github/workflows/speckit-copilot-audit.yml:
 - Desactivado por defecto mediante SPECKIT_COPILOT_FREE_CONFIRMED=true.
 - Contexto documental allowlist; sin herramientas read/write/shell/url.
 - Solo informe en job summary; sin escritura, commits, PR, issue o despliegue.
-- No se ejecuta hasta confirmar Copilot Free y cuota disponible.
+- El job está condicionado a la variable de repositorio; esta sesión no la creó ni pudo inspeccionar su valor preexistente. No afirmar ejecución o ausencia de consumo hasta revisar el run.
 
 No se ha ejecutado specify init, la integración copilot ni comandos /speckit-*. La inicialización debe probarse en checkout efímero y revisarse antes de persistir archivos.

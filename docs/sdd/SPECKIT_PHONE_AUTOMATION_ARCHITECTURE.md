@@ -80,7 +80,7 @@ El diagrama resume el flujo previsto. El preflight existe; el job IA de auditor�
 
 - Comprobar versión y ayuda antes de cualquier inicialización.
 - Mantener `docs/specs/inventory-by-branch/` como directorio de feature si la versión instalada confirma soporte.
-- Mantener integración `none` para validaciones neutrales cuando corresponda.
+- Usar integración `none` para scaffolding neutral; usar `copilot` solo tras confirmar Copilot Free y probar la inicialización en un checkout temporal.
 - No ejecutar `specify init --force` sin baseline, revisión previa de rutas afectadas y autorización explícita.
 - No sobrescribir los artefactos preliminares existentes ni afirmar que fueron generados por Spec Kit.
 - No ejecutar `/speckit.implement` ni su equivalente.
@@ -88,7 +88,7 @@ El diagrama resume el flujo previsto. El preflight existe; el job IA de auditor�
 
 ### D. Validación
 
-El workflow futuro podrá comprobar, sin IA:
+Los workflows actuales y futuros podrán comprobar, sin IA:
 - Rama y SHA permitidos.
 - Presencia de Constitución, instrucciones y documentos SDD requeridos.
 - Presencia de `spec.md`, `plan.md`, `tasks.md` y matriz de decisiones.
@@ -96,6 +96,7 @@ El workflow futuro podrá comprobar, sin IA:
 - Ausencia de cambios fuera de la lista blanca.
 - Que no aparezcan archivos de migración, código funcional, secretos o cambios de infraestructura en el diff del piloto.
 - Resultado y logs descargables.
+- El job IA puede señalar contradicciones y preguntas abiertas; no sustituye la revisión humana ni decide cuestiones de negocio.
 
 Estas comprobaciones no certifican corrección arquitectónica ni sustituyen una revisión humana.
 
@@ -148,7 +149,7 @@ La auditoría IA es un primer paso, no una ejecución real de /speckit-specify, 
 
 ## 8. Estado y siguiente paso seguro
 
-Estado verificado al preparar este documento:
+Snapshot verificado al preparar este documento, antes de los commits de auditoría Copilot:
 - `main`: `705d3db3220894c7d3baca8dc7e7a6b623dfbb94`.
 - pilot/speckit-inventory: HEAD 9301de63d891ef4fbabb3e435ac57ce67246b799; compare vivo con main (705d3db3220894c7d3baca8dc7e7a6b623dfbb94) en estado diverged, 15 commits exclusivos y 20 por detrás; merge-base 88213507d088b82ea9231bbc72f49afade7ec99b.
 - El piloto contiene documentación preliminar, no ejecución real de Spec Kit.
@@ -178,7 +179,7 @@ Controles:
 
 **Estado de ejecución:** el archivo está creado y su contenido fue releído desde GitHub. La disponibilidad de un run push y su resultado todavía no se han confirmado mediante una consulta de runs; por ello no se declara el workflow verde ni Spec Kit ejecutado.
 
-**Límite funcional:** esto automatiza el preflight y la comprobación de CLI, no el razonamiento de un agente. La fase de especificación/planificación/tareas asistida por IA sigue pendiente de una integración gratuita de agente que esté realmente disponible en la cuenta y pueda operar de forma no interactiva. No se configuró ni se simuló.
+**Límite funcional:** el preflight automatiza comprobaciones y el nuevo workflow ofrece una auditoría IA condicionada. La fase de especificación/planificación/tareas con comandos Spec Kit sigue pendiente de confirmar el plan Copilot, ejecutar la auditoría y probar la integración copilot en un checkout temporal. No se ha ejecutado ningún comando Spec Kit con agente.
 
 
 ## 10. Integración IA gratuita condicionada — investigación 2026-11-02
@@ -204,3 +205,13 @@ Guardrails:
 **Límite:** esta automatización es una auditoría IA de solo lectura, no una ejecución de comandos Spec Kit ni autorización para implementar. La integración real debe probarse en checkout efímero; cualquier escritura persistente seguirá limitada a documentos del piloto y no resolverá decisiones de negocio abiertas.
 
 **Estado:** workflow preparado; job IA inactivo hasta confirmación de Copilot Free. No se ha consumido cuota ni ejecutado el agente.
+
+
+## 11. Verificación posterior a la creación del agente condicionado
+
+- Commit que añade el workflow IA: a863ecc5787aa64560c8d7af9fd8f1028ab646e2.
+- El archivo fue releído desde GitHub y coincide con la versión escrita.
+- Compare inmediatamente posterior: main 705d3db3220894c7d3baca8dc7e7a6b623dfbb94; piloto 21 commits ahead y 20 behind; merge-base 88213507d088b82ea9231bbc72f49afade7ec99b.
+- No se sincronizó ni rebasó el piloto.
+- El job IA permanece inactivo por ausencia de la variable de confirmación. No se pudo confirmar un run push ni su conclusión mediante el acceso disponible a GitHub Actions.
+- El contenido del workflow no otorga permisos de escritura de repo ni tools de shell, lectura de archivos o URL al agente. No se ha consumido cuota Copilot.

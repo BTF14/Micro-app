@@ -5,7 +5,7 @@
 - Fecha: 2026-11-02
 - Alcance: arquitectura de datos y operaciones de inventario por sucursal/almacén
 - Base documental del piloto: discovery de código `b256c1c3e51a145e5af62fbcbdfb830a4368884c`; rama piloto creada desde `88213507d088b82ea9231bbc72f49afade7ec99b`
-- Estado vivo consultado durante esta revisión: `main` = `705d3db3220894c7d3baca8dc7e7a6b623dfbb94`; piloto = `7b7ac10b695c0bade077f4621aec9bf3c01f8328`
+- Estado vivo consultado durante esta revisión: `main` = `c7bd0a198c30d190586aa6acd207d954f41ff7c9`; piloto = `87049399ec458406b6d7c481d928c9b7cdc3569`
 
 > Esta matriz separa: (1) hechos ya implementados, (2) decisiones aprobadas por el propietario, (3) recomendaciones técnicas derivadas de las reglas vigentes y (4) decisiones de producto aún abiertas. Una recomendación técnica no se convierte en requisito aprobado por aparecer aquí.
 
@@ -44,7 +44,7 @@ Fuentes de autoridad:
 
 ### Discrepancia documental que debe corregirse en la fuente canónica
 
-En `main` (SHA `705d3db3220894c7d3baca8dc7e7a6b623dfbb94`), `docs/sdd/MULTI_BRANCH_DATA_MODEL.md` todavía afirma en §1 y en la sección de membresía que la matriz de permisos está NO APROBADA. Eso contradice `docs/sdd/role-permission-decision-matrix.md`, que indica APROBADA el 2026-10-31, y `docs/CURRENT_STATE.md`, que registra esa aprobación y la auditoría posterior. La rama piloto ya contiene una corrección documental de esas referencias, pero no se debe sincronizar ni fusionar automáticamente: hay que corregir la fuente canónica en una rama/PR adecuada, con revisión del diff completo.
+En `main` (HEAD verificado `c7bd0a198c30d190586aa6acd207d954f41ff7c9` el 2026-11-02), `docs/sdd/MULTI_BRANCH_DATA_MODEL.md` todavía afirma en §1 y en la sección de membresía que la matriz está NO APROBADA. Eso contradice `docs/sdd/role-permission-decision-matrix.md` (APROBADA el 2026-10-31) y `docs/CURRENT_STATE.md` en ese mismo HEAD, que registra la aprobación y la corrección de caja de PR #187. La copia de `MULTI_BRANCH_DATA_MODEL.md` en este piloto ya contiene el estado correcto; es una propuesta de corrección para la fuente canónica, no un cambio aplicado a `main`. También se detectó una referencia obsoleta en `docs/sdd/REGISTER_SHIFT_MODEL.md` §4 que sigue diciendo que la matriz está NO APROBADA. Ambas correcciones quedan confinadas a esta rama piloto; no se abrió PR ni se sincronizó/rebasó la rama.
 
 La aprobación de permisos no significa que existan endpoints, middleware, pruebas o inventario por sucursal implementados.
 
@@ -121,3 +121,36 @@ No se debe finalizar DDL ni tareas de implementación que dependan de las decisi
 - `docs/specs/inventory-by-branch/spec.md`, `plan.md`, `tasks.md` en piloto: artefactos preliminares y bloqueos ya identificados.
 
 No se ejecutaron pruebas, migraciones, Spec Kit CLI ni código funcional para crear esta matriz. No se consultó ni modificó Neon, Cloudflare, datos reales o producción. La rama piloto estaba divergente respecto de main al momento de redactar este documento; no se incorporaron automáticamente los commits de main.
+
+
+## 8. Auditoría documental posterior — 2026-11-02
+
+### Estado GitHub y límites de esta revisión
+
+- `main` verificado: `c7bd0a198c30d190586aa6acd207d954f41ff7c9`.
+- `pilot/speckit-inventory` verificado: `87049399ec458406b6d7c481d928c9b7cdc3569d`; su padre inmediato es `ea89d1f304e2ee5967bb6cc96259a3402134ed6d`.
+- PR #190 está abierta como Draft y corresponde a una lectura de catálogo; no está fusionada en `main` y no se incorpora a este piloto. No es evidencia de inventario por sucursal.
+- No se sincronizó ni rebasó el piloto con `main`. No se abrió PR, no se implementó código y no se ejecutó Spec Kit.
+
+### Resultado de la auditoría Copilot
+
+La revisión documental del SHA `87049399ec458406b6d7c481d928c9b7cdc3569d` es una fuente auxiliar, no una autoridad. Sus nueve decisiones de producto abiertas siguen sin respuesta y no se deben cerrar por inferencia. Sus cinco prioridades se convierten en este orden de trabajo: (1) corregir referencias canónicas obsoletas en la rama piloto como propuesta, (2) actualizar el discovery con un snapshot vivo claramente identificado, (3) registrar preguntas de negocio y sus impactos para decisión del propietario, (4) convertir criterios de aceptación en resultados observables, y (5) preparar contratos técnicos y pruebas sin fijar reglas de negocio pendientes.
+
+### Decisiones de negocio: bloqueos explícitos
+
+Las nueve preguntas de §4 son de autoridad del propietario. Hasta recibir decisiones expresas:
+- no fijar cardinalidad de almacenes ni almacén predeterminado;
+- no elegir estrategia de consumo de stock por venta;
+- no ampliar MVP a órdenes de compra ni decidir recepción parcial;
+- no fijar estados/semántica de tránsito y recepción de transferencias;
+- no decidir reintegro físico de devoluciones;
+- no elegir método de valoración/coste;
+- no introducir reservas;
+- no inventar cantidades o ubicaciones de stock inicial;
+- no cerrar el conjunto de documentos operativos ni el ciclo de vida.
+
+La recomendación técnica puede definir integridad, atomicidad, idempotencia, concurrencia y pruebas negativas; no puede seleccionar los resultados comerciales anteriores.
+
+### Gate de salida de esta fase documental
+
+La fase documental solo podrá proponerse como lista para revisión cuando: la matriz aprobada sea la única autoridad de permisos; los snapshots y límites del discovery estén explícitos; las decisiones de negocio estén respondidas o excluidas formalmente del MVP; cada criterio tenga resultado esperado y prueba; y el diff completo siga siendo documental. La aprobación de esta fase no autoriza implementación, migraciones, acceso a datos reales, PR ni despliegue.

@@ -1,6 +1,6 @@
 ## Inventario por sucursal — checkpoint 2026-11-02 (T3 cerrada para snapshot)
 
-- `main` auditado: `7ff887328f25cffff69ccb9e89bbb1ba25200aea`; árbol `dd4c696ace8a931b363d1642036f7893ebdc7fc4` (`truncated:false`, 194 entradas).
+- Snapshot de código auditado: `main` en `7ff887328f25cffff69ccb9e89bbb1ba25200aea`; HEAD actual de `main`: `705d3db3220894c7d3baca8dc7e7a6b623dfbb94` (PR #192, solo documentación de continuidad). Árbol `dd4c696ace8a931b363d1642036f7893ebdc7fc4` (`truncated:false`, 194 entradas).
 - Barrido reproducible del código versionado: 21 archivos TS de API, 6 TS/TSX de web, 8 SQL de migraciones/assertions y E2E/config/scripts relevantes. No se encontraron callsites runtime para `stock_quantity`, `inventory_movements`, ventas o compras; existen solo definiciones de esquema y tests de contexto/caja.
 - T3 queda completada para este SHA exacto; repetir el barrido si cambia `main` antes de implementación. Evidencia: `docs/sdd/INVENTORY_BRANCH_CODE_DISCOVERY.md` §9.
 - Confirmado: `index.ts` solo registra auth, Google Auth y `/health`; `products.stock_quantity` sigue organizacional; movimientos no tienen branch/warehouse; no existen tablas warehouse/balances; compras/recepciones no están implementadas.
@@ -8,6 +8,7 @@
 - T4 sigue bloqueada por las nueve decisiones owner-only de `DECISION_REGISTER.md` (0 aprobadas, 0 excluidas, 9 pendientes). T5–T9 siguen abiertas.
 - No se ejecutaron tests/runtime/Spec Kit; no se modificó código funcional, SQL/migraciones, Neon, producción, secretos, billing, despliegues ni se abrió PR/merge.
 - Trabajo exclusivamente documental en `pilot/speckit-inventory`; `main` no se modificó ni sincronizó.
+- **Actualización de referencia GitHub (2026-11-02):** `main` avanzó a `705d3db3220894c7d3baca8dc7e7a6b623dfbb94` por PR #192. La comparación `7ff8873...` → `705d3db...` muestra solo tres documentos de continuidad (`CURRENT_STATE.md`, `HANDOFF_NEXT_CHAT.md`, `STATE_JOURNAL.md`), sin cambios de código. Por eso el discovery de código en `7ff8873...` sigue siendo válido para el código de main; no se sincronizó/rebasó el piloto.
 
 ## Piloto de inventario por sucursal — checkpoint documental 2026-11-02
 

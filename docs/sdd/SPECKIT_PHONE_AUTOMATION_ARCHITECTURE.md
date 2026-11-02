@@ -155,3 +155,27 @@ Estado verificado al preparar este documento:
 - No hay autorización para crear workflows, configurar facturación, usar agentes cloud de pago, abrir PR o implementar.
 
 **Siguiente paso recomendado:** inspeccionar la visibilidad del repositorio y la configuración actual de Actions/cuotas desde GitHub; después preparar un workflow de solo lectura en una propuesta separada y revisarlo antes de crearlo. No activar nada que pueda generar cargos.
+
+
+## 9. Primera automatización implementada en la rama piloto
+
+**Workflow:** `.github/workflows/speckit-pilot-preflight.yml`  
+**Commit que lo incorpora:** `c29bf79e313d4cad4a2ca00ccec90877f530aa52`
+
+El workflow se limita a `push` en `pilot/speckit-inventory` y a cambios en el propio workflow, `docs/sdd/**` o `docs/specs/inventory-by-branch/**`. No se usa `workflow_dispatch`: GitHub solo permite ejecutar manualmente ese evento cuando el archivo de workflow está presente en la rama por defecto; añadirlo a `main` está expresamente fuera de alcance. El disparador push evita tocar `main`.
+
+Controles:
+- Runner estándar `ubuntu-latest`, timeout de 10 minutos y concurrencia cancelable.
+- Permiso `contents: read` únicamente.
+- Exige ref exacta de piloto y verifica que el SHA clonado coincide con `GITHUB_SHA`.
+- Rechaza cambios fuera de la lista blanca de documentos del piloto y el propio workflow.
+- Instala `uv` y `specify-cli==0.12.11` en directorios temporales del runner.
+- Ejecuta `specify version` y `specify init --help`; no ejecuta `specify init`, no escribe en el repo y no ejecuta comandos de agente.
+- No usa secrets, tokens adicionales, APIs externas de IA, Neon, Cloudflare, PRs, merges, migraciones ni despliegues.
+- No guarda artefactos; deja el resumen en el job summary y los logs estándar.
+
+**Coste:** el repositorio está verificado como público. GitHub documenta que los runners estándar hospedados para repositorios públicos no tienen coste de Actions. No se usan runners grandes ni Codespaces en este workflow.
+
+**Estado de ejecución:** el archivo está creado y su contenido fue releído desde GitHub. La disponibilidad de un run push y su resultado todavía no se han confirmado mediante una consulta de runs; por ello no se declara el workflow verde ni Spec Kit ejecutado.
+
+**Límite funcional:** esto automatiza el preflight y la comprobación de CLI, no el razonamiento de un agente. La fase de especificación/planificación/tareas asistida por IA sigue pendiente de una integración gratuita de agente que esté realmente disponible en la cuenta y pueda operar de forma no interactiva. No se configuró ni se simuló.

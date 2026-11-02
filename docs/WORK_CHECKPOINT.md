@@ -239,3 +239,14 @@ Aprobar matriz de permisos y diseñar autorización server-side por operación/s
 - El workflow no tiene permisos contents: write ni herramientas read/write/shell/url habilitadas para el agente; solo produce informe en Actions summary.
 - No se pudo confirmar el resultado de un run push; el archivo verificado no equivale a ejecución exitosa.
 - No se ha instalado Copilot CLI en esta sesión, no se han consumido créditos, no se ha ejecutado Spec Kit, y no se ha modificado main.
+
+
+## Addendum final — estado vivo del piloto — 2026-11-02 UTC
+
+- HEAD consultado: fdd8d8062fb2bb5758cc7f6634ac6e7091a8951b.
+- Main: 705d3db3220894c7d3baca8dc7e7a6b623dfbb94.
+- Compare main...pilot: diverged, 26 ahead / 20 behind, merge-base 88213507d088b82ea9231bbc72f49afade7ec99b.
+- PR #190 está abierta Draft en feat/org-catalog-read-endpoint-20261101 (HEAD 42ed27fd9ce13223c6a2d1fd2a9359d3ec871345); no se tocó. No se abrió PR para el piloto.
+- El workflow Copilot se verificó leyendo el archivo desde GitHub; su job está condicionado a SPECKIT_COPILOT_FREE_CONFIRMED == 'true'. No se creó esa variable.
+- No se pudo verificar un run push ni checks en verde para el HEAD exacto. El endpoint de estado combinado no devolvió status entries.
+- No se ejecutó Copilot CLI ni Spec Kit, no se consumió cuota, y no se modificó main.

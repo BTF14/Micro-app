@@ -173,3 +173,17 @@ Decisión: en un checkout con red, ejecutar primero `npx autoskills --dry-run`, 
 ## Verificación pública de frontend — 2026-10-30 (solo lectura)
 
 La página `https://micro-app-63i.pages.dev/` muestra un enlace “Continuar con Google” cuyo `href` es `https://micro-app-api.btfcasheb.workers.dev/auth/google`. Esto confirma el hostname del Worker en el enlace OAuth del HTML público. La inspección no pudo acceder al contenido de los bundles JavaScript ni confirmar `__MICRO_APP_API_BASE_URL__` compilado. La evidencia no demuestra que las demás llamadas API funcionen ni que CORS sea correcto. No se realizaron interacciones ni cambios.
+
+
+## GitHub Copilot CLI + Spec Kit — evaluación de automatización desde Actions (2026-11-02)
+
+| Recurso | Fuente oficial | Resultado y límites |
+|---|---|---|
+| GitHub Copilot CLI en Actions | https://docs.github.com/en/copilot/concepts/agent-capabilities/agent-powered-workflows-and-operations/copilot-cli-in-github-actions · https://docs.github.com/en/copilot/how-tos/copilot-cli/use-copilot-cli-in-actions | Permite usar GITHUB_TOKEN efímero con copilot-requests: write, sin PAT. En repositorio personal, el consumo se carga al asiento Copilot del propietario. Evaluado documentalmente; no ejecutado. |
+| Copilot Free y créditos IA | https://github.com/features/copilot/plans · https://docs.github.com/en/copilot/concepts/billing-and-usage/individuals/billing | Free incluye CLI/modo programático y créditos IA limitados; no incluye Copilot cloud agent ni compra de créditos adicionales en la tabla de planes. La cuenta del propietario no fue inspeccionada. |
+| Integración Spec Kit Copilot | https://github.github.com/spec-kit/integrations/copilot.html · https://github.github.com/spec-kit/integrations/index.html | Integración oficial copilot, skills bajo .github/skills/; no es multi-install safe. No inicializada ni ejecutada en el repositorio. |
+| GitHub Models | https://github.blog/changelog/2026-07-01-github-models-is-being-fully-retired-on-july-30-2026/ | Servicio retirado el 2026-07-30; descartado como proveedor gratuito actual. |
+| Paquete Copilot CLI | https://www.npmjs.com/package/@github/copilot | Versión estable consultada 1.0.105, publicada 2026-10-28. Fijada en el workflow para evitar instalación flotante. No instalada en esta sesión. |
+| GitHub Actions runners estándar | https://docs.github.com/en/actions/concepts/billing-and-usage | Runners estándar GitHub-hosted para repositorios públicos sin coste de Actions. No equivale a inferencia IA gratuita; Copilot se factura según asiento y cuota del propietario. |
+
+**Decisión:** preparar un job de auditoría Copilot condicionado por variable de repositorio. No habilitarlo hasta confirmar Copilot Free; no usar PAT, API key, proveedor externo, presupuesto adicional ni credenciales de producción.

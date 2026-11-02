@@ -1455,3 +1455,16 @@ CI documental: para HEAD `8c15e13fa001a14a0ddf9f2432bc17efb30d476d`, los 8 workf
 - Por tanto, no está demostrado que el job IA se haya saltado: la condición solo demuestra que depende de ese valor.
 - No se invocó Copilot CLI manualmente desde esta sesión. El run push y cualquier posible consumo de cuota quedan sin verificar; no declarar consumo cero ni éxito del agente sin consultar Actions.
 - HEAD antes de este apunte: e728473547b2b75499a174bdd47e66cdba22aeaf; main 705d3db3220894c7d3baca8dc7e7a6b623dfbb94; compare diverged 28 ahead / 20 behind.
+
+
+## 2026-11-02 UTC — Ejecución de prioridades de auditoría SDD de inventario por sucursal
+
+- Se recibió el Summary completo de Copilot para `pilot/speckit-inventory` SHA `87049399ec458406b6d7c481d928c9b7cdc3569d`. Se trató como revisión documental auxiliar, no como Spec Kit ejecutado ni aprobación.
+- Verificación GitHub en vivo al inicio: `main` = `c7bd0a198c30d190586aa6acd207d954f41ff7c9`; `pilot/speckit-inventory` = `87049399ec458406b6d7c481d928c9b7cdc3569d`. PR #190 estaba abierta como Draft en una rama separada, con alcance de lectura de catálogo. No se sincronizó ni rebasó el piloto.
+- Se confirmó que `docs/sdd/role-permission-decision-matrix.md` en main está APROBADA desde 2026-10-31 y corregida en PR #187. En main, `docs/sdd/MULTI_BRANCH_DATA_MODEL.md` y `docs/sdd/REGISTER_SHIFT_MODEL.md` conservan frases obsoletas NO APROBADA. Se corrigieron las copias de esos documentos en el piloto; main no fue modificado y no se abrió PR.
+- Revalidación dirigida de main SHA `c7bd0a...`: `apps/api/src/index.ts` solo registra auth/Google Auth/health; `branch-context.ts` resuelve scope pero no autoriza operaciones; 0001 conserva `products.stock_quantity` organizacional y movimientos sin branch/warehouse; 0003 crea branches/memberships; 0004 crea registers/shifts, no inventario. Se anotaron blob SHAs y límites. No se hizo búsqueda exhaustiva de callsites ni runtime; por eso T3 quedó parcial.
+- `spec.md` recibió criterios CA-1…CA-10 con resultados observables; `plan.md` recibió contratos técnicos provisionales y matriz mínima de pruebas; `tasks.md` dejó T3 parcial y aclaró gates T3–T9.
+- Se creó `docs/specs/inventory-by-branch/DECISION_REGISTER.md` con nueve decisiones exclusivas del propietario (almacenes, consumo de venta, compras/recepciones, transferencias, devoluciones, valoración, reservas, stock inicial y documentos/ciclo de vida). Estado: 0 aprobadas, 0 excluidas, 9 pendientes.
+- Se actualizaron CURRENT_STATE, HANDOFF_NEXT_CHAT, PROJECT_PLAN y WORK_CHECKPOINT para continuidad. El README no se modificó porque no cambió ninguna capacidad del producto.
+- Cambios únicamente documentales en `pilot/speckit-inventory`. No código funcional, SQL/migraciones, tests, CI, Spec Kit, PR, merge, Neon, datos reales, Cloudflare, producción, secretos, billing ni despliegues.
+- El siguiente paso es un barrido reproducible de callsites sobre un SHA exacto; después, recoger decisiones D-01…D-09. La implementación permanece bloqueada hasta aprobación explícita.

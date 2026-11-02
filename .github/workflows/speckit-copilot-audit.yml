@@ -108,7 +108,7 @@ jobs:
           test -s "$context"
           cd "$RUNNER_TEMP"
 
-      - name: Run one low-effort Copilot audit with all agent tools disabled
+      - name: Run one Copilot audit with all agent tools disabled
         shell: bash
         env:
           GITHUB_TOKEN: ${{ github.token }}
@@ -116,7 +116,6 @@ jobs:
           set -euo pipefail
           prompt="$(cat "$RUNNER_TEMP/sdd-audit-context.md")"
           timeout 360s copilot -p "$prompt" -s \
-            --effort=low \
             --no-ask-user \
             --disable-builtin-mcps \
             --disable-client-telemetry \
@@ -129,7 +128,7 @@ jobs:
             echo "- Branch: $GITHUB_REF_NAME"
             echo "- Commit: $GITHUB_SHA"
             echo "- CLI: @github/copilot@1.0.105"
-            echo "- Effort: low; one model invocation; target 700–900 words"
+            echo "- Model selection/effort: Copilot CLI default (auto); one model invocation; target 700–900 words"
             echo "- Agent tools and built-in MCPs: disabled"
             echo "- Repository permissions: contents: read only; no PR or issue write"
             echo "- Result is an AI review, not a Spec Kit command execution or approval"
@@ -137,4 +136,4 @@ jobs:
             cat "$RUNNER_TEMP/sdd-audit-report.md"
           } >> "$GITHUB_STEP_SUMMARY"
 
-# Explicitly gated: only run the single low-effort review after the owner confirms Copilot Free.
+# Explicitly gated: only run the single review after the owner confirms Copilot Free.

@@ -1436,3 +1436,14 @@ CI documental: para HEAD `8c15e13fa001a14a0ddf9f2432bc17efb30d476d`, los 8 workf
 - No se pudo confirmar el run push ni su conclusión desde el acceso disponible a GitHub Actions. No declarar verde el workflow.
 - Job IA sigue bloqueado por defecto; no se ha establecido la variable, no se consumió cuota Copilot y no se ejecutó agente ni Spec Kit.
 - Main intacta; sin sincronización/rebase; sin PR, merge, código funcional, migraciones, DB, secretos, billing o despliegues.
+
+
+## 2026-11-02 UTC — Estado final de la configuración Copilot del piloto
+
+- HEAD verificado de pilot/speckit-inventory antes de este checkpoint: fdd8d8062fb2bb5758cc7f6634ac6e7091a8951b.
+- main verificado: 705d3db3220894c7d3baca8dc7e7a6b623dfbb94. Compare diverged: piloto 26 commits ahead y 20 behind; merge-base 88213507d088b82ea9231bbc72f49afade7ec99b. No se rebasó ni sincronizó.
+- PR #190 está abierta como Draft en la rama feat/org-catalog-read-endpoint-20261101, con HEAD 42ed27fd9ce13223c6a2d1fd2a9359d3ec871345. Es trabajo separado sobre main; no se modificó ni se mezcló con el piloto.
+- El nuevo workflow Copilot y los documentos de arquitectura, runbook, evaluación, recursos, diario y checkpoint fueron releídos desde GitHub. El workflow está gated por SPECKIT_COPILOT_FREE_CONFIRMED == 'true'.
+- El estado combinado de checks del commit fdd8d806 no devolvió status entries. No se afirma que Actions haya pasado; tampoco se pudo confirmar el run push específico.
+- No se creó la variable de activación, no se ejecutó Copilot CLI, no se consumieron créditos, no se ejecutó Spec Kit y no se abrió PR del piloto.
+- Main intacta. Sin cambios de código funcional, migraciones, DB, secretos, facturación, Cloudflare, Neon, PR/merge o despliegue.

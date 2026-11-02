@@ -1423,7 +1423,7 @@ CI documental: para HEAD `8c15e13fa001a14a0ddf9f2432bc17efb30d476d`, los 8 workf
 - Se creó .github/workflows/speckit-copilot-audit.yml, con activación bloqueada por defecto mediante SPECKIT_COPILOT_FREE_CONFIRMED=true. No se creó esa variable ni se inspeccionó el plan Copilot de la cuenta.
 - El job usa @github/copilot@1.0.105, contexto documental allowlist y deniega herramientas read/write/shell/url. Solo generará informe en job summary; permisos contents: read, sin commits, PR, issues, DB o despliegues.
 - Se actualizaron arquitectura, runbook y registro de recursos para corregir la afirmación antigua de que Copilot Free no ofrece CLI programático.
-- No ejecutado: no se instaló Copilot CLI en este entorno, no se consumieron créditos, no se inicializó Spec Kit, no se ejecutaron comandos /speckit-*, no se crearon archivos .specify ni skills en el repo.
+- No se invocó Copilot CLI manualmente desde este entorno, no se inicializó Spec Kit, no se ejecutaron comandos /speckit-* y no se crearon archivos .specify ni skills en el repo. El valor de la variable de activación no pudo inspeccionarse y no se pudo confirmar si el job push llegó a ejecutarse; por ello no se afirma que no haya consumido cuota.
 - Verificación pendiente: releer archivos creados y comprobar diff completo; no se pudo consultar aún el resultado de runs push.
 - No se tocó main, producción, Neon, Cloudflare, secretos, facturación ni despliegues.
 
@@ -1447,3 +1447,11 @@ CI documental: para HEAD `8c15e13fa001a14a0ddf9f2432bc17efb30d476d`, los 8 workf
 - El estado combinado de checks del commit fdd8d806 no devolvió status entries. No se afirma que Actions haya pasado; tampoco se pudo confirmar el run push específico.
 - No se creó la variable de activación, no se ejecutó Copilot CLI, no se consumieron créditos, no se ejecutó Spec Kit y no se abrió PR del piloto.
 - Main intacta. Sin cambios de código funcional, migraciones, DB, secretos, facturación, Cloudflare, Neon, PR/merge o despliegue.
+
+
+## 2026-11-02 UTC — Aclaración de evidencia sobre el gate Copilot
+
+- La variable SPECKIT_COPILOT_FREE_CONFIRMED no fue creada por esta sesión, pero el acceso disponible no permite leer las variables de Actions del repositorio.
+- Por tanto, no está demostrado que el job IA se haya saltado: la condición solo demuestra que depende de ese valor.
+- No se invocó Copilot CLI manualmente desde esta sesión. El run push y cualquier posible consumo de cuota quedan sin verificar; no declarar consumo cero ni éxito del agente sin consultar Actions.
+- HEAD antes de este apunte: e728473547b2b75499a174bdd47e66cdba22aeaf; main 705d3db3220894c7d3baca8dc7e7a6b623dfbb94; compare diverged 28 ahead / 20 behind.

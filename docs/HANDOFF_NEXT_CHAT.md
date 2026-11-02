@@ -2,7 +2,7 @@
 
 - Repo: BTF14/Micro-app.
 - Rama aislada: pilot/speckit-inventory. No sincronizar ni rebasar automáticamente con main.
-- Main auditado: 7ff887328f25cffff69ccb9e89bbb1ba25200aea. Árbol completo: dd4c696ace8a931b363d1642036f7893ebdc7fc4, 194 entradas, truncated:false.
+- Snapshot de código auditado: 7ff887328f25cffff69ccb9e89bbb1ba25200aea. HEAD actual de main: 705d3db3220894c7d3baca8dc7e7a6b623dfbb94 (PR #192, solo tres documentos de continuidad; sin cambios de código). Árbol completo: dd4c696ace8a931b363d1642036f7893ebdc7fc4, 194 entradas, truncated:false.
 - T3 está completada para ese SHA: se inspeccionaron los archivos TS de API/web, ocho SQL de migraciones/assertions y pruebas/config/scripts relevantes. Cero callsites runtime de stock/movimientos/ventas/compras. Evidencia en docs/sdd/INVENTORY_BRANCH_CODE_DISCOVERY.md §9.
 - No hay endpoints comerciales ni UI operativa de inventario; stock legado es organizacional; inventory_movements carece de sucursal/almacén; no hay warehouses/inventory_balances; compras/recepciones no están implementadas.
 - No se ejecutaron tests/runtime ni Spec Kit. No tocar Neon/producción ni implementar.

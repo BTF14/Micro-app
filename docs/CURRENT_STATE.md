@@ -1,6 +1,6 @@
 ## Piloto de inventario por sucursal — checkpoint documental 2026-11-02
 
-- Rama de trabajo: `pilot/speckit-inventory`. Base del bloque: HEAD `87049399ec458406b6d7c481d928c9b7cdc3569d`; `main` verificado: `c7bd0a198c30d190586aa6acd207d954f41ff7c9`. No se sincronizó ni rebasó el piloto.
+- Rama de trabajo: `pilot/speckit-inventory`. Base del bloque: HEAD `87049399ec458406b6d7c481d928c9b7cdc3569d`; `main` verificado: `7ff887328f25cffff69ccb9e89bbb1ba25200aea`. No se sincronizó ni rebasó el piloto.
 - Auditoría Copilot: informe documental generado para SHA `8704939`; no ejecutó Spec Kit ni certifica implementación.
 - Correcciones preparadas en piloto: estado APROBADA de la matriz reflejado en `MULTI_BRANCH_DATA_MODEL.md` y `REGISTER_SHIFT_MODEL.md`; el `main` actual conserva referencias obsoletas en ambos documentos y no se modificó.
 - Discovery actualizado con revalidación dirigida del código de `main` en `c7bd0a...`; confirma ausencia de handlers de inventario en `index.ts`, stock organizacional y movimientos sin almacén. T3 sigue parcial porque falta barrido exhaustivo de callsites en un checkout reproducible.
@@ -15,9 +15,9 @@
 
 ## Estado operativo vigente — 2026-11-01 UTC
 
-- Repositorio: `BTF14/Micro-app`. `main` verificado: `c7bd0a198c30d190586aa6acd207d954f41ff7c9` (PR #188). Consultar GitHub en vivo antes de cualquier acción posterior.
+- Repositorio: `BTF14/Micro-app`. `main` verificado: `7ff887328f25cffff69ccb9e89bbb1ba25200aea` (PR #188). Consultar GitHub en vivo antes de cualquier acción posterior.
 - PR #187 (merge `40244698e95d78122011019e456f3d8b392fb05c`): corrige `docs/sdd/role-permission-decision-matrix.md` §2 (caja) — se había aprobado (PR #182) una fila que permitía a Owner/Admin cerrar/reabrir el turno de otro miembro, lo cual contradecía una decisión de arquitectura ya fijada en `docs/sdd/REGISTER_SHIFT_MODEL.md` §2/§4 (sin cierre por supervisor; reapertura bloqueada por trigger de PostgreSQL en la migración 0004, para todos los roles incluido Owner). Corregido con filas de denegación explícita y nota de que cualquier excepción futura requiere diseño de permiso, motivo y auditoría aprobados aparte por el propietario. Encontrado durante la auditoría de Seguridad Nivel 1 de esta sesión, no reportado por el propietario.
-- PR #188 (merge `c7bd0a198c30d190586aa6acd207d954f41ff7c9`): auditoría de Seguridad Nivel 1 completa, con evidencia en vivo volcada en `docs/SECURITY_ROADMAP.md`.
+- PR #188 (merge `7ff887328f25cffff69ccb9e89bbb1ba25200aea`): auditoría de Seguridad Nivel 1 completa, con evidencia en vivo volcada en `docs/SECURITY_ROADMAP.md`.
 - **Auditoría de Seguridad Nivel 1 — realizada 2026-11-01, resultados volcados en `docs/SECURITY_ROADMAP.md` (sección "Nivel 1"). Estado real, no "Nivel 1 completo":**
   - **Protección de `main`:** ✅ confirmada en vivo (6 checks requeridos, `enforce_admins: true`, `required_approving_review_count: 0`, sin force-push/deletions, resolución de conversaciones obligatoria). La discrepancia de `required_approving_review_count: 1` registrada el 2026-10-30 ya no está presente.
   - **Backups:** 🟡 **no cerrado.** `backup.yml`, `backup-restore-smoke.yml` (datos sintéticos poblados) y `backup-real-restore.yml` (restauración técnica real) tienen ejecuciones recientes en éxito — ver runs exactos en `SECURITY_ROADMAP.md` y `BACKUP_AND_RECOVERY.md`. **Falta, con evidencia cero hasta ahora:** RPO/RTO medidos de extremo a extremo, alerta de fallo fuera del resumen de GitHub Actions, y confirmación explícita de coste $0. No hay ningún workflow que mida ninguno de los tres (confirmado por `grep` en `.github/workflows/`, 2026-11-01). Este punto bloquea declarar Nivel 1 "completo", no bloquea #53.

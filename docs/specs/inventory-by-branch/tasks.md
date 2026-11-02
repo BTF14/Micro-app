@@ -19,7 +19,7 @@
 - [ ] T3 — Completar discovery exhaustivo de implementación existente (parcial; no cerrar todavía).
   **Aceptación:** inventario de callsites de `stock_quantity`, `inventory_movements`, ventas, compras y tests, con rutas/consumidores reales.
   **Archivos:** `docs/sdd/INVENTORY_BRANCH_CODE_DISCOVERY.md`; migraciones `0001_initial.sql`, `0003_branch_scope.sql`, `0004_register_shifts.sql`; módulos API y pruebas asociadas.
-  **Validación/evidencia:** árbol Git recursivo completo del commit `b256c1c3e51a145e5af62fbcbdfb830a4368884c` (169 rutas, sin truncamiento), inspección de esquema/API/contexto de sucursal/caja/pruebas. El discovery confirma que no existe flujo operativo de inventario por sucursal; revisión estática, no ejecución de pruebas.
+  **Validación/evidencia:** el snapshot `b256c1c3e51a145e5af62fbdfb830a4368884c` aporta un árbol recursivo de 169 rutas y revisión estática; la revalidación dirigida de `main` `7ff887328f25cffff69ccb9e89bbb1ba25200aea` está descrita con blob SHAs en `INVENTORY_BRANCH_CODE_DISCOVERY.md`. No se hizo un barrido reproducible de todos los callsites ni se ejecutaron pruebas/runtime; por eso T3 permanece parcial y no se marca completa.
 
 - [ ] T4 — Resolver decisiones de producto/modelo abiertas (requiere respuestas/aprobación del propietario).
   **Aceptación:** coste/valoración, reservas, transferencias en tránsito, reversos, referencias de origen y almacén de venta documentados y aprobados.

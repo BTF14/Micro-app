@@ -235,7 +235,7 @@ Aprobar matriz de permisos y diseñar autorización server-side por operación/s
 - Workflow IA creado y releído desde GitHub: .github/workflows/speckit-copilot-audit.yml.
 - Commit de creación: a863ecc5787aa64560c8d7af9fd8f1028ab646e2.
 - Compare en ese punto: main 705d3db3220894c7d3baca8dc7e7a6b623dfbb94; piloto 21 ahead / 20 behind; merge-base 88213507d088b82ea9231bbc72f49afade7ec99b.
-- Job IA permanece inactivo hasta que el propietario confirme Copilot Free y establezca SPECKIT_COPILOT_FREE_CONFIRMED=true. No se creó la variable.
+- Job IA depende de SPECKIT_COPILOT_FREE_CONFIRMED=true. Esta sesión no creó la variable y no pudo consultar si ya existía; no afirmar que el job se haya saltado.
 - El workflow no tiene permisos contents: write ni herramientas read/write/shell/url habilitadas para el agente; solo produce informe en Actions summary.
 - No se pudo confirmar el resultado de un run push; el archivo verificado no equivale a ejecución exitosa.
 - No se ha instalado Copilot CLI en esta sesión, no se han consumido créditos, no se ha ejecutado Spec Kit, y no se ha modificado main.
@@ -248,5 +248,14 @@ Aprobar matriz de permisos y diseñar autorización server-side por operación/s
 - Compare main...pilot: diverged, 26 ahead / 20 behind, merge-base 88213507d088b82ea9231bbc72f49afade7ec99b.
 - PR #190 está abierta Draft en feat/org-catalog-read-endpoint-20261101 (HEAD 42ed27fd9ce13223c6a2d1fd2a9359d3ec871345); no se tocó. No se abrió PR para el piloto.
 - El workflow Copilot se verificó leyendo el archivo desde GitHub; su job está condicionado a SPECKIT_COPILOT_FREE_CONFIRMED == 'true'. No se creó esa variable.
-- No se pudo verificar un run push ni checks en verde para el HEAD exacto. El endpoint de estado combinado no devolvió status entries.
+- No se pudo verificar un run push ni checks en verde para el HEAD exacto. El endpoint de estado combinado no devolvió status entries. Tampoco se pudo consultar el valor de la variable de Actions, por lo que la ejecución o salto del job IA permanece desconocido.
 - No se ejecutó Copilot CLI ni Spec Kit, no se consumió cuota, y no se modificó main.
+
+
+## Aclaración final de evidencia — 2026-11-02 UTC
+
+- HEAD antes de esta corrección documental: e728473547b2b75499a174bdd47e66cdba22aeaf.
+- Main: 705d3db3220894c7d3baca8dc7e7a6b623dfbb94; piloto 28 ahead / 20 behind; merge-base 88213507d088b82ea9231bbc72f49afade7ec99b.
+- No se creó la variable de activación desde esta sesión. El valor de variables de Actions no pudo inspeccionarse, así que no se puede asegurar que el job haya quedado skipped ni que no haya consumido cuota.
+- Copilot CLI no se invocó manualmente en esta sesión; el run push específico no pudo verificarse.
+- Mantener la variable sin crear/modificar hasta que el propietario confirme que su cuenta GitHub tiene Copilot Free y que acepta usar esa cuota limitada.

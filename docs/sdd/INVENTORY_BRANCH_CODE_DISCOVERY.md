@@ -1,6 +1,6 @@
 # Discovery de implementación: inventario por sucursal
 
-- Estado: discovery documental/código completado para el snapshot inspeccionado; sin cambios funcionales
+- Estado: T3 completada para el snapshot exacto de main 7ff887328f25cffff69ccb9e89bbb1ba25200aea; sin cambios funcionales
 - Rama: `pilot/speckit-inventory`
 - Commit base de discovery: `b256c1c3e51a145e5af62fbcbdfb830a4368884c`
 - Base común con main: `88213507d088b82ea9231bbc72f49afade7ec99b`
@@ -148,3 +148,45 @@ El discovery confirma que el modelo actual tiene catálogo, ventas, movimientos 
 **Límites adicionales:** GitHub code search devolvió resultados anclados a un snapshot anterior (`705d3db...`), por lo que no se utilizó como evidencia de ausencia de callsites en `c7bd0a...`. Tampoco se hizo un `git grep` exhaustivo sobre el árbol completo de `c7bd0a...`; por ello el requisito de inventario exhaustivo de todos los callsites sigue abierto. La PR #190 está abierta como Draft y no fusionada; su alcance es lectura de catálogo, no inventario por sucursal, y no forma parte del código de `main` en el SHA inspeccionado.
 
 **Estado de T3:** parcial, no cerrada. El snapshot anterior `b256c1c...` y esta revalidación dirigida aportan evidencia útil, pero la aceptación que exige enumerar todos los callsites/consumidores de `stock_quantity`, `inventory_movements`, ventas, compras y pruebas aún requiere un barrido reproducible completo sobre un SHA acordado.
+
+
+## 9. Barrido reproducible de callsites en main — T3 completada para este SHA
+
+**Snapshot exacto:** main = 7ff887328f25cffff69ccb9e89bbb1ba25200aea (merge PR #191).
+**Árbol Git:** dd4c696ace8a931b363d1642036f7893ebdc7fc4; GitHub devolvió truncated: false, 194 entradas.
+**Método:** enumeración del árbol recursivo y lectura por SHA exacto de todos los archivos de código fuente TypeScript/TSX de API y web, los ocho SQL de migraciones/assertions, pruebas E2E/configuración y scripts Python versionados relevantes. Se buscaron referencias a stock_quantity, inventory_movements, sales, sale_items, purchase, warehouse, stock y rutas/API; los resultados se contrastaron con las declaraciones SQL y los routers. No se usó GitHub Code Search como evidencia porque devolvía resultados anclados a un snapshot antiguo.
+
+### 9.1 Resultado por símbolos/callsites
+
+| Símbolo / flujo | Resultado del barrido en el SHA |
+|---|---|
+| products.stock_quantity | Solo definición/constraint/índice en apps/api/migrations/0001_initial.sql:84,98; ningún lector/escritor runtime en API o web. |
+| inventory_movements | Solo definición, tipos, índices y assertions en apps/api/migrations/0001_initial.sql:185-203 y 0001_initial.assertions.sql:87-90; ningún insert/select/update runtime. |
+| sales / sale_items | Definiciones y assertions en 0001_initial.sql:115-163 y 0001_initial.assertions.sql:43-77; no hay servicio, ruta, UI ni suite de flujo comercial. |
+| Compras / recepciones | No se encontraron tablas, servicios, rutas, UI ni pruebas de compras/recepciones. purchase es solo un valor permitido por el CHECK de movimientos. |
+| Almacenes / balances | No se encontraron tablas warehouses o inventory_balances, ni warehouse_id en el esquema actual de inventario. |
+| Contexto de tenant | resolveTenantContext está implementado; no hay rutas comerciales que lo consuman. |
+| Contexto de sucursal | resolveBranchContext está implementado; pruebas unitarias/integración cubren asignación y rol, pero no hay callsite en un handler HTTP comercial. |
+| Turno abierto | La consulta/helper de turno abierto se usa en su suite de caja; no implementa ni consume stock. |
+| Transacción genérica | withDatabaseTransaction y sus tests prueban el wrapper; no hay mutación de stock/ledger conectada a él. |
+| Frontend / E2E | App, auth y pruebas E2E inspeccionadas; no se encontraron pantallas, llamadas API ni tests E2E de catálogo comercial, venta, compra o inventario. |
+
+### 9.2 Evidencia estructural adicional
+
+- apps/api/src/index.ts (blob ec6f8cea532e2018fee75400842967094af273ca, 88 líneas): registra autenticación, Google Auth y GET /health; no registra rutas comerciales.
+- apps/api/migrations/0001_initial.sql (blob a8ecae7dac2e232465329341e943348e267dd628): stock organizacional; ventas/ítems y movimientos son solo esquema.
+- apps/api/migrations/0003_branch_scope.sql (blob cebc4e2874b30b9e846433ab21202ed2929b6faa): sucursales/membresías tenant-scoped, sin inventario.
+- apps/api/migrations/0004_register_shifts.sql (blob c1d89831c18cb0d0afa1363ee9305f1e1b3bebfb): caja/turnos asociados a sucursal, no almacenes ni existencias.
+- apps/api/src/branch-context.ts (blob 89734a636c5d2ef311c1f9918e192796c4badd81): helper de resolución de alcance; no autoriza una operación comercial.
+- apps/api/src/database.ts: transacción genérica sin callsite de inventario.
+
+### 9.3 Clasificación y límites
+
+- Runtime: cero callsites operativos encontrados para stock, movimientos, ventas o compras; no hay rutas comerciales registradas.
+- Schema/assertions: existen definiciones y comprobaciones estructurales tenant-scoped para catálogo/ventas/movimientos; no son operaciones de negocio.
+- Tests: las referencias a rol inventory prueban contexto de sucursal o permisos de caja; no prueban stock, recepción, ajuste, transferencia, venta con descuento, idempotencia de inventario ni reconciliación.
+- Docs: nombres de entidades/operaciones aparecen en propuestas y comentarios, no demuestran implementación.
+- Producción/Neon: no se consultaron ni modificaron; este resultado no certifica rutas desplegadas ni estado de datos.
+- Cambio posterior de main: cualquier nuevo SHA requiere repetir el barrido antes de implementar.
+
+**Cierre T3:** la aceptación de inventario reproducible de callsites queda satisfecha para el SHA exacto indicado. T3 puede marcarse completada como discovery estático del repositorio versionado; no significa que inventario esté implementado ni que se hayan ejecutado pruebas. No se ejecutó runtime, tests, Spec Kit ni migraciones.

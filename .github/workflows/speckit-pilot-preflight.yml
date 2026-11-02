@@ -1,0 +1,124 @@
+name: Spec Kit pilot — zero-cost preflight
+
+on:
+  push:
+    branches:
+      - pilot/speckit-inventory
+    paths:
+      - ".github/workflows/speckit-pilot-preflight.yml"
+      - "docs/sdd/**"
+      - "docs/specs/inventory-by-branch/**"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: speckit-pilot-preflight-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  preflight:
+    name: Read-only Spec Kit preflight
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+    steps:
+      - name: Enforce pilot branch and inspect commit scope
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [[ "$GITHUB_REF" != "refs/heads/pilot/speckit-inventory" ]]; then
+            echo "::error::This workflow is restricted to pilot/speckit-inventory."
+            exit 1
+          fi
+
+          git clone --quiet --no-tags --depth 2 --branch "$GITHUB_REF_NAME" \
+            "https://github.com/$GITHUB_REPOSITORY.git" "$RUNNER_TEMP/micro-app"
+          cd "$RUNNER_TEMP/micro-app"
+
+          actual_sha="$(git rev-parse HEAD)"
+          if [[ "$actual_sha" != "$GITHUB_SHA" ]]; then
+            echo "::error::Checkout SHA does not match the triggering SHA."
+            exit 1
+          fi
+
+          if ! git rev-parse HEAD^ >/dev/null 2>&1; then
+            echo "::error::Cannot verify the triggering commit's file scope."
+            exit 1
+          fi
+
+          while IFS= read -r path; do
+            [[ -z "$path" ]] && continue
+            case "$path" in
+              .github/workflows/speckit-pilot-preflight.yml|docs/sdd/*|docs/specs/inventory-by-branch/*)
+                printf 'Allowed changed path: %s\n' "$path"
+                ;;
+              *)
+                echo "::error::Out-of-scope path in pilot commit: $path"
+                exit 1
+                ;;
+            esac
+          done < <(git diff-tree --no-commit-id --name-only -r HEAD)
+
+          for required in \
+            AGENTS.md \
+            docs/CONSTITUTION.md \
+            docs/sdd/INVENTORY_BRANCH_ARCHITECTURE_DECISIONS.md \
+            docs/specs/inventory-by-branch/spec.md \
+            docs/specs/inventory-by-branch/plan.md \
+            docs/specs/inventory-by-branch/tasks.md; do
+            test -s "$required" || {
+              echo "::error::Required pilot document missing or empty: $required"
+              exit 1
+            }
+          done
+
+          {
+            echo "## Spec Kit pilot preflight"
+            echo
+            echo "- Branch: `$GITHUB_REF_NAME`"
+            echo "- Commit: `$GITHUB_SHA`"
+            echo "- Scope: approved documentation and this workflow only"
+            echo "- Required SDD documents: present"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Install isolated CLI tooling in runner temp
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 -m pip install --disable-pip-version-check --target "$RUNNER_TEMP/python-tools" uv
+          PYTHONPATH="$RUNNER_TEMP/python-tools" python3 -m uv tool install \
+            --tool-dir "$RUNNER_TEMP/specify-tools" \
+            --bin-dir "$RUNNER_TEMP/specify-bin" \
+            specify-cli==0.12.11
+          echo "$RUNNER_TEMP/specify-bin" >> "$GITHUB_PATH"
+
+      - name: Verify Spec Kit CLI without initializing the repository
+        shell: bash
+        run: |
+          set -euo pipefail
+          "$RUNNER_TEMP/specify-bin/specify" version
+          "$RUNNER_TEMP/specify-bin/specify" init --help
+          {
+            echo
+            echo "### Spec Kit CLI"
+            echo "- CLI installation: successful if this step is green."
+            echo "- Version command: executed."
+            echo "- Initialization help: inspected."
+            echo "- Project initialization: NOT executed."
+            echo "- Agent commands: NOT executed; no coding-agent credentials or paid API were configured."
+            echo "- Repository writes: none."
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: State the pilot boundary
+        if: always()
+        shell: bash
+        run: |
+          {
+            echo
+            echo "### Safety boundary"
+            echo "- No application code, migrations, database connections, secrets, deployments, PRs, or merges."
+            echo "- No write permissions were granted to the workflow token."
+            echo "- This run validates the CLI environment only; it does not count as a completed Spec Kit SDD run."
+          } >> "$GITHUB_STEP_SUMMARY"

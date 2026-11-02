@@ -3,16 +3,16 @@
 **Repositorio:** `BTF14/Micro-app`  
 **Rama exclusiva:** `pilot/speckit-inventory`  
 **Objetivo operativo:** maximizar la automatización con presupuesto de **$0**, operando desde Android.  
-**Estado:** propuesta de arquitectura; no se han creado workflows ni ejecutado Spec Kit.
+**Estado:** piloto con un workflow de preflight de solo lectura ya creado y un segundo workflow de auditoría Copilot preparado con activación bloqueada por defecto. No se ha ejecutado Spec Kit ni un agente IA en GitHub Actions.
 
 ## 1. Decisión ejecutiva
 
 Separar el proceso en dos capas:
 
 1. **Automatización determinista gratuita:** GitHub Actions puede ejecutar validaciones reproducibles, comprobar estructura/documentación, guardar logs y publicar un resumen de ejecución. Para un repositorio privado en GitHub Free existe una cuota mensual incluida de minutos y almacenamiento; se debe configurar un límite conservador y detenerse si se agota. No usar runners grandes ni servicios externos de pago.
-2. **Razonamiento de agente IA:** Spec Kit requiere un agente de codificación compatible para ejecutar los pasos de especificación. La CLI instala/configura la integración; los pasos de proceso se invocan dentro del agente. GitHub Copilot Free permite chat, pero no incluye Copilot cloud agent; el cloud agent está disponible en planes Copilot de pago. Por tanto, no prometer ejecución IA autónoma e ilimitada a $0.
+2. **Razonamiento de agente IA:** Spec Kit publica una integración oficial con GitHub Copilot. Copilot Free incluye Copilot CLI y modo programático con créditos IA limitados; no incluye Copilot cloud agent. Copilot CLI puede ejecutarse en GitHub Actions con GITHUB_TOKEN y copilot-requests: write. En un repositorio personal el consumo se carga al asiento Copilot del propietario. Solo se permite activar el job tras confirmar Copilot Free; la cuota es limitada y al agotarse el trabajo debe detenerse, nunca cambiar a un proveedor o uso facturable.
 
-**Conclusión honesta:** con presupuesto estrictamente cero podemos automatizar preparación, comprobaciones y reportes. No podemos garantizar un agente IA desatendido que ejecute todo el flujo Spec Kit sin confirmar una prestación gratuita disponible en la cuenta. No introducir claves API ni servicios con consumo facturable para cerrar esa brecha.
+**Conclusión honesta:** hay una ruta viable para añadir razonamiento IA con Copilot CLI en Actions, pero depende de que el propietario tenga Copilot Free y conserve cuota gratuita. No es ilimitada ni demuestra que Spec Kit haya sido ejecutado. El job está desactivado por defecto mediante SPECKIT_COPILOT_FREE_CONFIRMED; sin esa confirmación no realiza llamadas IA. No se configuran PAT, API keys, proveedores alternativos ni presupuesto adicional.
 
 ## 2. Arquitectura objetivo
 
@@ -23,7 +23,7 @@ Teléfono Android (navegador / GitHub Mobile)
        GitHub repository UI
                  |
                  v
-    workflow_dispatch (manual)
+    push (solo rama piloto; job IA condicionado)
                  |
                  v
       GitHub Actions runner
@@ -53,28 +53,28 @@ Teléfono Android (navegador / GitHub Mobile)
        Revisión humana desde móvil
 ```
 
-El diagrama es una arquitectura propuesta. Ningún workflow se ha creado ni ejecutado.
+El diagrama resume el flujo previsto. El preflight existe; el job IA de auditoría está preparado pero permanece desactivado por defecto. Ningún agente ni comando Spec Kit se ha ejecutado.
 
 ## 3. Componentes y límites
 
 ### A. Interfaz móvil
 
 - GitHub Mobile o navegador Android.
-- Disparar únicamente el workflow manual de la rama piloto.
+- Consultar los runs de la rama piloto; los cambios documentales disparan el preflight y, solo tras la confirmación de Copilot Free, el job de auditoría IA.
 - Consultar estado, logs y artefactos.
 - No aprobar ni fusionar cambios automáticamente.
 
 ### B. GitHub Actions
 
-- Workflow futuro en `.github/workflows/speckit-pilot.yml`.
-- Activación manual mediante `workflow_dispatch`; sin cron ni triggers en cada push durante el piloto.
+- Preflight existente: `.github/workflows/speckit-pilot-preflight.yml`.
+- Auditoría IA gated: `.github/workflows/speckit-copilot-audit.yml`.
+- Ambos responden a push filtrado en pilot/speckit-inventory; el job IA solo se ejecuta si SPECKIT_COPILOT_FREE_CONFIRMED vale true.
 - Rechazar ejecución salvo que `github.ref` sea exactamente `refs/heads/pilot/speckit-inventory`.
 - Checkout explícito de la rama solicitada y verificación del SHA.
-- Permisos mínimos: `contents: read`; sin `contents: write`, `pull-requests: write`, `issues: write`, `id-token: write` ni secretos.
+- Preflight: contents: read únicamente. Job IA: contents: read + copilot-requests: write; no concede contents: write, pull-requests: write, issues: write ni id-token: write. Usa GITHUB_TOKEN efímero, sin PAT ni secrets.
 - Runner estándar Ubuntu; timeout corto y concurrencia limitada.
 - No subir artefactos sensibles. Retención mínima de logs/resultados.
-- No instalar ni ejecutar agentes de terceros ni scripts remotos no auditados.
-- No modificar archivos del repositorio ni crear commits.
+- El job IA instala @github/copilot@1.0.105 desde npm con versión fijada. El agente recibe un contexto documental allowlist; las herramientas read, write, shell y url están denegadas. Solo produce un informe en el job summary; no modifica archivos ni crea commits.
 
 ### C. Spec Kit
 
@@ -116,7 +116,7 @@ Estas comprobaciones no certifican corrección arquitectónica ni sustituyen una
 
 - GitHub Actions: usar solo runners estándar y verificar la cuota vigente antes de activar. GitHub Free publica 2.000 minutos/mes y 500 MB de artefactos para Actions en repositorios privados; el uso adicional puede facturarse si existe método de pago. Configurar presupuestos/límites y no depender de consumo adicional.
 - GitHub Codespaces: GitHub Free personal incluye 120 horas de cómputo y 15 GB-mes de almacenamiento; al exceder la cuota, el uso se bloquea si no hay método de pago. Es una alternativa interactiva desde navegador móvil, no una ejecución desatendida permanente.
-- Copilot: Copilot Free ofrece cuota limitada de chat/créditos; Copilot cloud agent no está incluido en Free según la documentación vigente consultada. No asumir acceso.
+- Copilot Free incluye CLI y modo programático, pero con créditos IA limitados; Copilot cloud agent no está incluido. En repositorios personales, GITHUB_TOKEN carga el consumo al asiento Copilot del propietario. El job queda bloqueado hasta confirmar Copilot Free con SPECKIT_COPILOT_FREE_CONFIRMED=true. No activar si la cuenta es Pro/Pro+/Max, si existe uso adicional facturable o si se desconoce el plan/cuota.
 - Si el usuario no tiene cuota o acceso gratuito disponible, no activar el servicio.
 
 Las cuotas, prestaciones y condiciones pueden cambiar; verificar la página de facturación antes de cada activación.
@@ -128,11 +128,11 @@ Las cuotas, prestaciones y condiciones pueden cambiar; verificar la página de f
 | 0. Auditoría de rama y permisos | Preflight con SHA y guardrails | No | Sí |
 | 1. Instalación temporal CLI | Versión/help/check | No | Sí, con Actions |
 | 2. Validación de artefactos existentes | Informe reproducible | No | Sí |
-| 3. Flujo Spec Kit specify/plan/tasks | Artefactos procesados por agente | Sí | Solo si existe agente gratuito habilitado |
+| 3. Auditoría IA SDD con Copilot CLI | Informe de contradicciones y decisiones abiertas | Sí | Condicional: Copilot Free + cuota disponible |
 | 4. Análisis de diferencias | Reporte de cambios y riesgos | Parcial | Sí, estático; criterio arquitectónico requiere revisión |
 | 5. Handoff | Informe y evidencias | No | Sí |
 
-La fase 3 es el bloqueo explícito para la promesa de autonomía total con $0.
+La auditoría IA es un primer paso, no una ejecución real de /speckit-specify, /speckit-plan o /speckit-tasks. La inicialización de Spec Kit con integración copilot sigue pendiente de prueba aislada y revisión de su diff.
 
 ## 7. Criterios de aceptación
 
@@ -150,11 +150,11 @@ La fase 3 es el bloqueo explícito para la promesa de autonomía total con $0.
 
 Estado verificado al preparar este documento:
 - `main`: `705d3db3220894c7d3baca8dc7e7a6b623dfbb94`.
-- `pilot/speckit-inventory`: compare con `main` en estado `diverged`, 12 commits exclusivos y 20 commits por detrás; merge-base `88213507d088b82ea9231bbc72f49afade7ec99b`.
+- pilot/speckit-inventory: HEAD 9301de63d891ef4fbabb3e435ac57ce67246b799; compare vivo con main (705d3db3220894c7d3baca8dc7e7a6b623dfbb94) en estado diverged, 15 commits exclusivos y 20 por detrás; merge-base 88213507d088b82ea9231bbc72f49afade7ec99b.
 - El piloto contiene documentación preliminar, no ejecución real de Spec Kit.
-- No hay autorización para crear workflows, configurar facturación, usar agentes cloud de pago, abrir PR o implementar.
+- El propietario autorizó automatización segura en la rama piloto, manteniendo presupuesto $0. No se autoriza configurar facturación, usar agentes cloud de pago, abrir PR, fusionar, implementar código funcional ni tocar infraestructura.
 
-**Siguiente paso recomendado:** inspeccionar la visibilidad del repositorio y la configuración actual de Actions/cuotas desde GitHub; después preparar un workflow de solo lectura en una propuesta separada y revisarlo antes de crearlo. No activar nada que pueda generar cargos.
+**Siguiente paso recomendado:** confirmar que la cuenta GitHub tiene Copilot Free (no un plan con uso adicional facturable) y, solo entonces, activar la variable de repositorio que desbloquea el job de auditoría. Después comprobar el run exacto y su cuota antes de plantear la inicialización real de Spec Kit.
 
 
 ## 9. Primera automatización implementada en la rama piloto
@@ -179,3 +179,28 @@ Controles:
 **Estado de ejecución:** el archivo está creado y su contenido fue releído desde GitHub. La disponibilidad de un run push y su resultado todavía no se han confirmado mediante una consulta de runs; por ello no se declara el workflow verde ni Spec Kit ejecutado.
 
 **Límite funcional:** esto automatiza el preflight y la comprobación de CLI, no el razonamiento de un agente. La fase de especificación/planificación/tareas asistida por IA sigue pendiente de una integración gratuita de agente que esté realmente disponible en la cuenta y pueda operar de forma no interactiva. No se configuró ni se simuló.
+
+
+## 10. Integración IA gratuita condicionada — investigación 2026-11-02
+
+La documentación oficial confirma:
+- Spec Kit publica una integración oficial copilot. Instala skills en .github/skills/speckit-<command>/SKILL.md; la sintaxis predeterminada incluye /speckit-specify y /speckit-plan. No se declara segura para múltiples instalaciones simultáneas, por lo que debe probarse en un checkout temporal y revisarse.
+- Copilot Free incluye Copilot CLI y modo programático, con créditos IA limitados. Copilot cloud agent no está incluido en Free.
+- Copilot CLI puede autenticarse en Actions con el GITHUB_TOKEN efímero y copilot-requests: write, sin PAT ni secret. En un repositorio personal el consumo se carga al asiento Copilot del propietario.
+- GitHub Models fue retirado el 2026-07-30; no es una alternativa vigente.
+- La versión estable consultada de @github/copilot es 1.0.105 (publicada 2026-10-28), fijada en el workflow.
+
+**Workflow creado:** .github/workflows/speckit-copilot-audit.yml.
+
+Guardrails:
+- Solo push en pilot/speckit-inventory y cambios documentales SDD.
+- Job desactivado por defecto: requiere la variable SPECKIT_COPILOT_FREE_CONFIRMED=true.
+- El propietario debe establecerla solo tras confirmar que la cuenta tiene Copilot Free y no tiene uso adicional facturable. No se crea ni modifica esa variable desde esta sesión.
+- Usa token efímero Actions, sin PAT ni API keys; permisos contents: read y copilot-requests: write.
+- Contexto limitado a una lista explícita de documentos; herramientas read, write, shell y url denegadas.
+- Solo genera un informe en el resumen del run; no escribe en el repositorio ni crea commits, PRs, issues o despliegues.
+- Timeout de 8 minutos. Si se agota la cuota Copilot, se detiene sin fallback de pago.
+
+**Límite:** esta automatización es una auditoría IA de solo lectura, no una ejecución de comandos Spec Kit ni autorización para implementar. La integración real debe probarse en checkout efímero; cualquier escritura persistente seguirá limitada a documentos del piloto y no resolverá decisiones de negocio abiertas.
+
+**Estado:** workflow preparado; job IA inactivo hasta confirmación de Copilot Free. No se ha consumido cuota ni ejecutado el agente.

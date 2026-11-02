@@ -228,3 +228,14 @@ Aprobar matriz de permisos y diseñar autorización server-side por operación/s
 5. Tras revisar el informe, probar la inicialización de Spec Kit copilot en checkout efímero y auditar el diff antes de persistir nada.
 
 **No tocar:** main, Neon, Cloudflare, datos reales, secretos, billing, código funcional, migraciones, despliegues, PR o merge.
+
+
+## Addendum de verificación — workflow Copilot condicionado — 2026-11-02 UTC
+
+- Workflow IA creado y releído desde GitHub: .github/workflows/speckit-copilot-audit.yml.
+- Commit de creación: a863ecc5787aa64560c8d7af9fd8f1028ab646e2.
+- Compare en ese punto: main 705d3db3220894c7d3baca8dc7e7a6b623dfbb94; piloto 21 ahead / 20 behind; merge-base 88213507d088b82ea9231bbc72f49afade7ec99b.
+- Job IA permanece inactivo hasta que el propietario confirme Copilot Free y establezca SPECKIT_COPILOT_FREE_CONFIRMED=true. No se creó la variable.
+- El workflow no tiene permisos contents: write ni herramientas read/write/shell/url habilitadas para el agente; solo produce informe en Actions summary.
+- No se pudo confirmar el resultado de un run push; el archivo verificado no equivale a ejecución exitosa.
+- No se ha instalado Copilot CLI en esta sesión, no se han consumido créditos, no se ha ejecutado Spec Kit, y no se ha modificado main.

@@ -16,7 +16,7 @@ Requisitos:
 - Checkout limpio de `pilot/speckit-inventory`.
 - Python 3.11+ y `uv`.
 - Acceso a GitHub y terminal.
-- Codex CLI disponible si se elige la integración `codex`; de lo contrario usar integración neutral `none`.
+- GitHub Copilot Free con cuota IA disponible si se habilita el job Copilot; la integración oficial Spec Kit usa la clave `copilot`. La integración `none` sigue siendo válida para scaffolding neutral.
 - Mantener el entorno en coste $0. No habilitar planes o servicios pagos.
 
 Verificar antes de ejecutar:
@@ -36,10 +36,10 @@ Seguir la guía oficial de instalación vigente y registrar versión exacta del 
 
 La inicialización en repositorio existente usa el patrón documentado:
 ```bash
-specify init --here --force --integration <codex|none>
+specify init --here --force --integration <copilot|none>
 ```
 
-Elegir `codex` solo si Codex CLI está instalado y será el agente de ejecución del piloto. Si no, usar `none` para obtener scaffolding neutral. La integración `none` no crea habilidades ejecutables para ChatGPT; tampoco debe describirse como integración nativa de ChatGPT.
+Elegir `copilot` solo tras confirmar Copilot Free y validar el CLI en un checkout temporal; si no, usar `none` para obtener scaffolding neutral. No inicializar todavía el checkout persistente de la rama. La integración `none` no crea habilidades ejecutables para ChatGPT; tampoco debe describirse como integración nativa de ChatGPT.
 
 **Gate inmediatamente después de init:**
 ```bash
@@ -109,3 +109,36 @@ Si Spec Kit no respeta la ruta, los overrides o las restricciones:
 ## 9. Bloqueo conocido
 
 En el entorno de esta sesión, `git clone` falló por ausencia de resolución DNS hacia `github.com`. Las herramientas conectadas permiten inspeccionar y modificar archivos de GitHub, pero no proporcionan una terminal de proyecto donde instalar y ejecutar el CLI. Este runbook prepara una ejecución reproducible; no afirma que el CLI se haya instalado ni ejecutado.
+
+
+## 10. Ruta de agente IA con coste controlado — investigación 2026-11-02
+
+GitHub Copilot CLI ofrece una ruta no interactiva en GitHub Actions:
+- Copilot Free incluye CLI y modo programático con créditos IA limitados; no incluye Copilot cloud agent.
+- Actions admite autenticación con GITHUB_TOKEN y copilot-requests: write, sin PAT ni secret.
+- En este repositorio personal, el consumo se carga al asiento Copilot del propietario. No se activa hasta confirmar que el plan es Copilot Free y no existe uso adicional facturable.
+- Spec Kit ofrece integración oficial copilot; no se ha inicializado ni ejecutado.
+
+### Workflow de auditoría de solo lectura
+
+Archivo: .github/workflows/speckit-copilot-audit.yml.
+- Trigger: push filtrado a pilot/speckit-inventory.
+- Job condicionado a vars.SPECKIT_COPILOT_FREE_CONFIRMED == 'true'; sin la variable no hay llamada IA ni consumo de créditos.
+- Instala @github/copilot@1.0.105 fijado.
+- Suministra únicamente AGENTS, Constitución, matriz de permisos, discovery y artefactos spec/plan/tasks.
+- Deniega herramientas de lectura de archivos, escritura, shell y URL al agente; el contexto se entrega como texto.
+- Solo produce un informe en el job summary. No modifica archivos ni puede crear commits/PR.
+- Actions estándar en un repositorio público no tienen coste de runner; la inferencia Copilot depende del plan y cuota del propietario.
+
+### Activación controlada
+
+No establecer la variable automáticamente. Para habilitarlo desde GitHub:
+1. Abrir el repositorio → Settings → Secrets and variables → Actions → Variables.
+2. Crear SPECKIT_COPILOT_FREE_CONFIRMED con valor true solo si la cuenta GitHub usa Copilot Free.
+3. El job se ejecutará en el siguiente push que coincida con las rutas del workflow. Si no se desea activar, dejar la variable ausente.
+
+Si la cuota gratuita está agotada, el run puede fallar por límite; registrar el SHA y detenerse. No añadir API keys, no activar presupuesto, no cambiar de proveedor y no reintentar repetidamente.
+
+### Siguiente gate
+
+Primero comprobar un run de auditoría y revisar el informe. Después, en un checkout efímero, probar specify init --here --force --integration copilot, inspeccionar cada archivo generado y ejecutar únicamente Specify/Plan/Tasks/Analyze permitidos. No persistir scaffolding ni sobrescribir documentos actuales hasta revisar el diff. Implement permanece prohibido.

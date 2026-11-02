@@ -60,7 +60,7 @@ Esta es la opción base más simple de auditar: cada venta/pago asociado a caja 
 - PR #169 implementó `resolveOpenCashierRegisterShift(client, branchContext)` como helper aislado: rol cashier, scope org/user/branch, revalidación de estados activos y lock `FOR SHARE`; no está conectado a rutas ni autoriza operaciones.
 - Un contexto owner/admin de alcance organizacional no significa que puedan operar como cajero en un turno ajeno.
 - No aprobar aquí permisos de apertura/cierre por supervisor, arqueo, diferencias, retiros, ingresos, anulaciones ni reportes financieros.
-- La matriz `docs/sdd/role-permission-decision-matrix.md` sigue NO APROBADA. Antes de endpoints, debe aprobarse o sustituirse por una matriz corregida con autorización server-side por operación.
+- La matriz `docs/sdd/role-permission-decision-matrix.md` está **APROBADA desde 2026-10-31** y su sección de caja fue corregida en PR #187 (merge `40244698e95d78122011019e456f3d8b392fb05c`, 2026-11-01). Aplicar exactamente sus reglas. La aprobación no implementa endpoints, middleware ni pruebas de autorización; estos siguen pendientes.
 - Este diseño no implementa endpoints, pagos, ventas, ledger de caja, ni autoriza operaciones comerciales.
 
 ## 5. Pruebas de aceptación para 0004

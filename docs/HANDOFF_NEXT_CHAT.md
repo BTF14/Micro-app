@@ -1,3 +1,30 @@
+# Handoff vigente — inventario por sucursal — 2026-11-02
+
+- Repo: BTF14/Micro-app.
+- Rama aislada: pilot/speckit-inventory. No sincronizar ni rebasar automáticamente con main.
+- Main auditado: 7ff887328f25cffff69ccb9e89bbb1ba25200aea. Árbol completo: dd4c696ace8a931b363d1642036f7893ebdc7fc4, 194 entradas, truncated:false.
+- T3 está completada para ese SHA: se inspeccionaron los archivos TS de API/web, ocho SQL de migraciones/assertions y pruebas/config/scripts relevantes. Cero callsites runtime de stock/movimientos/ventas/compras. Evidencia en docs/sdd/INVENTORY_BRANCH_CODE_DISCOVERY.md §9.
+- No hay endpoints comerciales ni UI operativa de inventario; stock legado es organizacional; inventory_movements carece de sucursal/almacén; no hay warehouses/inventory_balances; compras/recepciones no están implementadas.
+- No se ejecutaron tests/runtime ni Spec Kit. No tocar Neon/producción ni implementar.
+
+## Siguiente secuencia
+
+1. Presentar al propietario D-01…D-09 de docs/specs/inventory-by-branch/DECISION_REGISTER.md y registrar respuestas expresas. Estado actual: 0 aprobadas, 0 excluidas, 9 pendientes.
+2. Mantener contratos técnicos neutrales y avanzar T5 solo en aspectos que no dependan de las decisiones.
+3. Diseñar la matriz de pruebas T6 con actor/rol/tenant/sucursal, operación, resultado HTTP/SQL y aserción de cero escrituras parciales.
+4. Preparar diseño de backfill T7 sin asignar automáticamente stock legado a sucursales.
+5. Repetir discovery si main cambia antes de implementación.
+6. No pasar a implementación hasta aprobación explícita de spec/plan y cierre de gates.
+
+## Restricciones vigentes
+
+- Solo documentación en pilot/speckit-inventory; no código funcional, SQL/migraciones, PR, merge ni despliegue.
+- No modificar main ni sincronizar ramas.
+- No Neon main, datos reales, Cloudflare, secretos, billing ni servicios de pago.
+- No volver a invocar Copilot: el único retry autorizado ya fue utilizado.
+- No declarar tests/workflows verdes sin evidencia del SHA exacto.
+
+---
 # Handoff — piloto de inventario por sucursal — 2026-11-02
 
 > Este bloque supersede los estados operativos históricos inferiores para el trabajo del piloto. Verificar GitHub en vivo antes de continuar.

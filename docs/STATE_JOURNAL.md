@@ -1414,3 +1414,15 @@ CI documental: para HEAD `8c15e13fa001a14a0ddf9f2432bc17efb30d476d`, los 8 workf
 - Se verificó de nuevo el estado vivo de GitHub antes de tocar documentos: `main` = `c7bd0a198c30d190586aa6acd207d954f41ff7c9`, 0 PR abiertas, issue #53 abierta — sin cambios desde el cierre anterior.
 - No se tocó Cloudflare producción, Neon `main`, secretos, DNS, billing ni datos reales. No se implementó código de #53; esta entrada corresponde solo al diagnóstico y a la corrección de continuidad pedidos antes de presentar la propuesta técnica.
 - Esta entrada se añade al final; no se modifican ni eliminan entradas anteriores.
+
+
+## 2026-11-02 UTC — Investigación Copilot CLI gratuito y job IA condicionado para piloto Spec Kit
+
+- GitHub verificado en vivo: main = 705d3db3220894c7d3baca8dc7e7a6b623dfbb94; pilot/speckit-inventory HEAD = 9301de63d891ef4fbabb3e435ac57ce67246b799; compare diverged, 15 commits ahead / 20 behind, merge-base 88213507d088b82ea9231bbc72f49afade7ec99b. No se sincronizó la rama ni se tocó main.
+- Investigación oficial: Spec Kit dispone de integración copilot; Copilot Free incluye CLI y modo programático con créditos IA limitados, pero no Copilot cloud agent. Copilot CLI puede ejecutarse en Actions con GITHUB_TOKEN + copilot-requests: write; en repositorio personal el consumo se carga al asiento Copilot del propietario. GitHub Models se retiró el 2026-07-30.
+- Se creó .github/workflows/speckit-copilot-audit.yml, con activación bloqueada por defecto mediante SPECKIT_COPILOT_FREE_CONFIRMED=true. No se creó esa variable ni se inspeccionó el plan Copilot de la cuenta.
+- El job usa @github/copilot@1.0.105, contexto documental allowlist y deniega herramientas read/write/shell/url. Solo generará informe en job summary; permisos contents: read, sin commits, PR, issues, DB o despliegues.
+- Se actualizaron arquitectura, runbook y registro de recursos para corregir la afirmación antigua de que Copilot Free no ofrece CLI programático.
+- No ejecutado: no se instaló Copilot CLI en este entorno, no se consumieron créditos, no se inicializó Spec Kit, no se ejecutaron comandos /speckit-*, no se crearon archivos .specify ni skills en el repo.
+- Verificación pendiente: releer archivos creados y comprobar diff completo; no se pudo consultar aún el resultado de runs push.
+- No se tocó main, producción, Neon, Cloudflare, secretos, facturación ni despliegues.

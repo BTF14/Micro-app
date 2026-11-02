@@ -5,7 +5,7 @@
 - Fecha: 2026-11-02
 - Alcance: arquitectura de datos y operaciones de inventario por sucursal/almacén
 - Base documental del piloto: discovery de código `b256c1c3e51a145e5af62fbcbdfb830a4368884c`; rama piloto creada desde `88213507d088b82ea9231bbc72f49afade7ec99b`
-- Estado vivo consultado durante esta revisión: `main` = `c7bd0a198c30d190586aa6acd207d954f41ff7c9`; piloto = `87049399ec458406b6d7c481d928c9b7cdc3569`
+- Estado vivo consultado durante esta revisión: `main` = `7ff887328f25cffff69ccb9e89bbb1ba25200aea`; piloto = `87049399ec458406b6d7c481d928c9b7cdc3569`
 
 > Esta matriz separa: (1) hechos ya implementados, (2) decisiones aprobadas por el propietario, (3) recomendaciones técnicas derivadas de las reglas vigentes y (4) decisiones de producto aún abiertas. Una recomendación técnica no se convierte en requisito aprobado por aparecer aquí.
 
@@ -44,7 +44,7 @@ Fuentes de autoridad:
 
 ### Discrepancia documental que debe corregirse en la fuente canónica
 
-En `main` (HEAD verificado `c7bd0a198c30d190586aa6acd207d954f41ff7c9` el 2026-11-02), `docs/sdd/MULTI_BRANCH_DATA_MODEL.md` todavía afirma en §1 y en la sección de membresía que la matriz está NO APROBADA. Eso contradice `docs/sdd/role-permission-decision-matrix.md` (APROBADA el 2026-10-31) y `docs/CURRENT_STATE.md` en ese mismo HEAD, que registra la aprobación y la corrección de caja de PR #187. La copia de `MULTI_BRANCH_DATA_MODEL.md` en este piloto ya contiene el estado correcto; es una propuesta de corrección para la fuente canónica, no un cambio aplicado a `main`. También se detectó una referencia obsoleta en `docs/sdd/REGISTER_SHIFT_MODEL.md` §4 que sigue diciendo que la matriz está NO APROBADA. Ambas correcciones quedan confinadas a esta rama piloto; no se abrió PR ni se sincronizó/rebasó la rama.
+En `main` (HEAD verificado `7ff887328f25cffff69ccb9e89bbb1ba25200aea` el 2026-11-02), `docs/sdd/MULTI_BRANCH_DATA_MODEL.md` todavía afirma en §1 y en la sección de membresía que la matriz está NO APROBADA. Eso contradice `docs/sdd/role-permission-decision-matrix.md` (APROBADA el 2026-10-31) y `docs/CURRENT_STATE.md` en ese mismo HEAD, que registra la aprobación y la corrección de caja de PR #187. La copia de `MULTI_BRANCH_DATA_MODEL.md` en este piloto ya contiene el estado correcto; es una propuesta de corrección para la fuente canónica, no un cambio aplicado a `main`. También se detectó una referencia obsoleta en `docs/sdd/REGISTER_SHIFT_MODEL.md` §4 que sigue diciendo que la matriz está NO APROBADA. Ambas correcciones quedan confinadas a esta rama piloto; no se abrió PR ni se sincronizó/rebasó la rama.
 
 La aprobación de permisos no significa que existan endpoints, middleware, pruebas o inventario por sucursal implementados.
 
@@ -127,7 +127,7 @@ No se ejecutaron pruebas, migraciones, Spec Kit CLI ni código funcional para cr
 
 ### Estado GitHub y límites de esta revisión
 
-- `main` verificado: `c7bd0a198c30d190586aa6acd207d954f41ff7c9`.
+- `main` verificado: `7ff887328f25cffff69ccb9e89bbb1ba25200aea`.
 - `pilot/speckit-inventory` verificado: `87049399ec458406b6d7c481d928c9b7cdc3569d`; su padre inmediato es `ea89d1f304e2ee5967bb6cc96259a3402134ed6d`.
 - PR #190 está abierta como Draft y corresponde a una lectura de catálogo; no está fusionada en `main` y no se incorpora a este piloto. No es evidencia de inventario por sucursal.
 - No se sincronizó ni rebasó el piloto con `main`. No se abrió PR, no se implementó código y no se ejecutó Spec Kit.

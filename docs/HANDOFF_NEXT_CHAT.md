@@ -1,3 +1,31 @@
+# Handoff — piloto de inventario por sucursal — 2026-11-02
+
+> Este bloque supersede los estados operativos históricos inferiores para el trabajo del piloto. Verificar GitHub en vivo antes de continuar.
+
+- `main` verificado al inicio del bloque: `c7bd0a198c30d190586aa6acd207d954f41ff7c9`.
+- Rama piloto: `pilot/speckit-inventory`, base del bloque `87049399ec458406b6d7c481d928c9b7cdc3569`. No sincronizada/rebasada con `main`.
+- Auditoría Copilot del SHA `8704939` recibida y evaluada. Resultado: revisión documental, no ejecución de Spec Kit ni aprobación.
+- Correcciones documentales candidatas están confinadas al piloto. `main` mantiene referencias obsoletas de NO APROBADA en `MULTI_BRANCH_DATA_MODEL.md` y `REGISTER_SHIFT_MODEL.md`; no se tocó `main` ni se abrió PR.
+- Discovery revalidado de forma dirigida contra el código de `main` en `c7bd0a...`; no se declara exhaustivo. T3 permanece parcial.
+- `spec.md`, `plan.md` y `tasks.md` ahora contienen criterios medibles, contratos técnicos neutrales y gates; `DECISION_REGISTER.md` recoge nueve decisiones owner-only (9 pendientes).
+- PR #190 está Draft y separada; no incorporar su código al piloto.
+
+## Continuación exacta
+
+1. Revalidar HEAD de `main`, `pilot/speckit-inventory`, PRs e issue #53 antes de editar.
+2. Completar un barrido reproducible de todos los callsites/consumidores de `stock_quantity`, `inventory_movements`, ventas, compras y tests sobre el SHA que se acuerde inspeccionar; mantener separados main y piloto. No cerrar T3 hasta adjuntar rutas y resultados.
+3. Revisar los criterios CA-1 a CA-10 y la matriz de pruebas; no convertir los contratos técnicos en reglas de negocio.
+4. Obtener respuestas expresas a D-01…D-09 en `docs/specs/inventory-by-branch/DECISION_REGISTER.md`; no asumir defaults.
+5. Tras resolver/excluir decisiones, preparar revisión de DDL/contratos y prueba en PostgreSQL desechable. La implementación sigue bloqueada por aprobación explícita de spec/plan.
+
+## Límites vigentes
+
+- Mantener todo el trabajo en `pilot/speckit-inventory`; no rebase/sync automático con `main`.
+- No código funcional, migraciones, PR, merge, despliegue, Neon `main`, datos reales, Cloudflare, secretos, billing ni gasto sin nueva autorización.
+- No ejecutar Copilot otra vez; el único retry autorizado ya se utilizó. No afirmar Spec Kit ejecutado.
+- No marcar tests/workflows verdes sin evidencia para el SHA exacto.
+
+---
 # Handoff operativo — continuidad Micro-app — 2026-11-01 UTC
 
 > No reiniciar el proyecto. Este handoff describe el último estado comprobado; verificar GitHub en vivo antes de actuar.

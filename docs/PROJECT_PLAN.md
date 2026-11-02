@@ -1,3 +1,24 @@
+# Prioridad activa — piloto de inventario por sucursal — 2026-11-02
+
+**Rama:** `pilot/speckit-inventory`. **Main verificado al inicio:** `c7bd0a198c30d190586aa6acd207d954f41ff7c9`. **Base del piloto:** `87049399ec458406b6d7c481d928c9b7cdc3569`. No sincronizar ni rebasar automáticamente.
+
+## Secuencia actualizada tras auditoría Copilot
+
+1. **Correcciones documentales candidatas:** la matriz de permisos está APROBADA desde 2026-10-31 y corregida en PR #187. El `MULTI_BRANCH_DATA_MODEL.md` y `REGISTER_SHIFT_MODEL.md` de `main` conservan referencias NO APROBADA obsoletas. Las copias corregidas del piloto son propuestas; no abrir PR ni modificar main bajo el alcance actual.
+2. **Discovery:** se revalidó `main` en `c7bd0a...` con lectura dirigida de `index.ts`, `branch-context.ts` y migraciones 0001/0003/0004. No hay handler de inventario en el router; el stock sigue organizacional y los movimientos carecen de almacén. T3 permanece parcial: falta inventario reproducible de todos los callsites y consumidores.
+3. **Decisiones de producto:** resolver D-01…D-09 en `docs/specs/inventory-by-branch/DECISION_REGISTER.md`. Ningún default técnico reemplaza estas decisiones.
+4. **Criterios verificables:** CA-1…CA-10 en `spec.md` definen resultados observables para tenant, rol, atomicidad, concurrencia, idempotencia, ciclos de vida, backfill, pruebas y gates.
+5. **Diseño técnico delegable:** avanzar únicamente en contratos neutrales de FKs tenant-scoped, transacciones, idempotencia, concurrencia, ledger/balance, reconciliación y matriz de pruebas. No cerrar DDL que dependa de D-01…D-09.
+6. **Gate:** implementación bloqueada hasta completar discovery, cerrar o excluir formalmente decisiones de negocio, aprobar spec/plan y validar diseño en PostgreSQL desechable. No tocar Neon `main`, producción ni datos reales.
+
+## Evidencia / estado
+
+- Copilot audit: Summary recibido para SHA `8704939`; revisión documental, no Spec Kit ni aprobación.
+- PR #190: abierta como Draft, lectura de catálogo; separada del piloto.
+- Trabajo de esta fase: documentación solamente. No se modificó runtime, SQL, migraciones, workflows, secretos o infraestructura. No se ejecutaron tests ni Spec Kit.
+- No crear PR/merge ni sincronizar ramas dentro de esta fase.
+
+---
 # Prioridad operativa vigente — Micro app
 
 **Snapshot GitHub verificado antes de esta sincronización:** PR #178 OPEN, DRAFT, NOT MERGED; rama `docs/reconcile-role-model-and-cloudflare-20261030`; HEAD `a45d84eb5f51e50d3a24f9d6858b5d14efb3ce6b`; base `main` = `82386c6e9300e06f8fa209aa52995b939a72442a`; 68 ahead / 0 behind. El commit de sincronización generará un SHA nuevo: consultar ese SHA y sus checks/previews antes de cualquier decisión.

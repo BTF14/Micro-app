@@ -128,3 +128,23 @@ Archivo: `apps/api/src/database.ts`
 El discovery confirma que el modelo actual tiene catálogo, ventas, movimientos y sucursales como piezas de esquema separadas, pero no una implementación funcional que conecte esas piezas para operar inventario por sucursal. Esta es la línea base de diseño para el siguiente paso.
 
 **No se ejecutaron pruebas, no se aplicaron migraciones, no se modificó Neon, no se alteró producción y no se implementó código funcional.** Las conclusiones aplican al commit indicado y deben revalidarse si cambia el código base antes de iniciar implementación.
+
+
+## 8. Revalidación dirigida del código actual de main — 2026-11-02
+
+**Snapshot de código:** `main` = `c7bd0a198c30d190586aa6acd207d954f41ff7c9` (HEAD verificado en GitHub). Esta revalidación se limita a los archivos listados abajo; no sustituye un barrido exhaustivo de todos los callsites ni una ejecución runtime. El piloto sigue en `87049399ec458406b6d7c481d928c9b7cdc3569` y no se sincronizó con `main`.
+
+| Archivo en main | Blob SHA observado | Evidencia / conclusión |
+|---|---|---|
+| `apps/api/src/index.ts` | `ec6f8cea532e2018fee75400842967094af273ca` | Registra rutas de autenticación, Google Auth y `GET /health`; no registra rutas de catálogo, ventas, compras ni inventario. |
+| `apps/api/src/branch-context.ts` | `89734a636c5d2ef311c1f9918e192796c4badd81` | `resolveBranchContext` valida contexto y asignación activa; el propio comentario aclara que resuelve alcance, no autoriza una operación comercial. |
+| `apps/api/migrations/0001_initial.sql` | `a8ecae7dac2e232465329341e943348e267dd628` | `products.stock_quantity` es `numeric(14,3)` organizacional. `inventory_movements` no contiene `branch_id` ni `warehouse_id`; usa referencia libre `reference_type/reference_id`. |
+| `apps/api/migrations/0003_branch_scope.sql` | `cebc4e2874b30b9e846433ab21202ed2929b6faa` | Crea `branches` y `branch_memberships` con FKs tenant-scoped; no crea almacenes ni balances. |
+| `apps/api/migrations/0004_register_shifts.sql` | `c1d89831c18cb0d0afa1363ee9305f1e1b3bebfb` | Crea cajas y turnos vinculados a sucursal; no implementa inventario. |
+| `docs/sdd/role-permission-decision-matrix.md` | consultado en `main` | Estado APROBADA (2026-10-31); permisos de inventario distinguen alcance organizacional de Owner/Admin y alcance de sucursales asignadas para Inventory/Cashier. |
+
+**Conclusión limitada y verificable:** en el snapshot de `main` indicado, el handler HTTP principal no registra endpoints de inventario ni catálogo; el esquema versionado mantiene stock organizacional y movimientos sin almacén; 0003/0004 cubren sucursales y caja, no inventario por almacén. Esto confirma que el inventario por sucursal no está implementado en ese snapshot. No se inspeccionó Neon `main`, no se verificó despliegue/producción, y no se ejecutaron pruebas.
+
+**Límites adicionales:** GitHub code search devolvió resultados anclados a un snapshot anterior (`705d3db...`), por lo que no se utilizó como evidencia de ausencia de callsites en `c7bd0a...`. Tampoco se hizo un `git grep` exhaustivo sobre el árbol completo de `c7bd0a...`; por ello el requisito de inventario exhaustivo de todos los callsites sigue abierto. La PR #190 está abierta como Draft y no fusionada; su alcance es lectura de catálogo, no inventario por sucursal, y no forma parte del código de `main` en el SHA inspeccionado.
+
+**Estado de T3:** parcial, no cerrada. El snapshot anterior `b256c1c...` y esta revalidación dirigida aportan evidencia útil, pero la aceptación que exige enumerar todos los callsites/consumidores de `stock_quantity`, `inventory_movements`, ventas, compras y pruebas aún requiere un barrido reproducible completo sobre un SHA acordado.

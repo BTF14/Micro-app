@@ -1,3 +1,16 @@
+## Piloto de inventario por sucursal — checkpoint documental 2026-11-02
+
+- Rama de trabajo: `pilot/speckit-inventory`. Base del bloque: HEAD `87049399ec458406b6d7c481d928c9b7cdc3569d`; `main` verificado: `c7bd0a198c30d190586aa6acd207d954f41ff7c9`. No se sincronizó ni rebasó el piloto.
+- Auditoría Copilot: informe documental generado para SHA `8704939`; no ejecutó Spec Kit ni certifica implementación.
+- Correcciones preparadas en piloto: estado APROBADA de la matriz reflejado en `MULTI_BRANCH_DATA_MODEL.md` y `REGISTER_SHIFT_MODEL.md`; el `main` actual conserva referencias obsoletas en ambos documentos y no se modificó.
+- Discovery actualizado con revalidación dirigida del código de `main` en `c7bd0a...`; confirma ausencia de handlers de inventario en `index.ts`, stock organizacional y movimientos sin almacén. T3 sigue parcial porque falta barrido exhaustivo de callsites en un checkout reproducible.
+- Spec y plan ampliados con criterios de aceptación medibles, contratos técnicos provisionales y matriz de pruebas. Se añadió `docs/specs/inventory-by-branch/DECISION_REGISTER.md`: 9 decisiones de negocio pendientes, ninguna resuelta por inferencia.
+- PR #190 sigue abierta como Draft y fuera del piloto; su alcance de catálogo no es inventario por sucursal.
+- Límites: solo documentación en piloto. Sin código funcional, SQL/migraciones nuevas, ejecución de Spec Kit, PR, merge, Neon, datos reales, Cloudflare, despliegue, secretos, billing o gasto.
+- Commits documentales de este bloque: `d410ba9`, `13bae75`, `09f4d21`, `e8b78ed`, `a0963b7`, `b824702`, `f748148`, `1839a22` (más este checkpoint y handoff).
+
+**Siguiente paso:** completar barrido estático reproducible de callsites sobre un SHA acordado; después presentar al propietario las nueve decisiones de `DECISION_REGISTER.md`. No cerrar T3/T4 ni autorizar DDL final mientras falte evidencia/decisión.
+
 # Estado actual — Micro app
 
 ## Estado operativo vigente — 2026-11-01 UTC

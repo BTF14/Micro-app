@@ -1,3 +1,34 @@
+# Checkpoint vigente — auditoría y preparación SDD de inventario por sucursal — 2026-11-02
+
+- Repositorio: `BTF14/Micro-app`.
+- Rama piloto: `pilot/speckit-inventory`; HEAD base del bloque: `87049399ec458406b6d7c481d928c9b7cdc3569d`.
+- `main` verificado al inicio: `c7bd0a198c30d190586aa6acd207d954f41ff7c9`.
+- PR #190 está abierta como Draft y separada del piloto. No sincronizarla ni copiar su implementación.
+
+## Alcance completado en este bloque
+
+- Auditoría documental Copilot recibida para `8704939`; no equivale a Spec Kit, implementación ni aprobación.
+- `INVENTORY_BRANCH_ARCHITECTURE_DECISIONS.md`: discrepancia de matriz aprobada/obsoleta registrada con SHAs vivos y nueve decisiones de negocio preservadas como owner-only.
+- `MULTI_BRANCH_DATA_MODEL.md` del piloto ya refleja la matriz APROBADA; metadatos actualizados. `REGISTER_SHIFT_MODEL.md` del piloto corregido para eliminar la frase obsoleta NO APROBADA. `main` permanece intacto y conserva esas referencias antiguas.
+- `INVENTORY_BRANCH_CODE_DISCOVERY.md`: revalidación dirigida de código de `main` en `c7bd0a...` con blob SHAs; no exhaustiva. T3 se marca parcial.
+- `spec.md`: criterios CA-1…CA-10 convertidos en resultados verificables.
+- `plan.md`: contratos técnicos provisionales y matriz de pruebas con resultados esperados, sin cerrar semánticas de negocio.
+- `tasks.md`: T3 reabierta como parcial y criterios T3–T9 aclarados.
+- `DECISION_REGISTER.md`: nueve preguntas owner-only, todas pendientes.
+
+## No realizado / no autorizado
+
+- No se modificó código funcional ni SQL/migraciones.
+- No se ejecutó Spec Kit, tests ni CI para este bloque.
+- No se abrió PR, no se fusionó ni se rebasó/sincronizó el piloto.
+- No se tocó Neon, datos reales, Cloudflare, producción, secretos, DNS, billing ni servicios de pago.
+- No se volvió a invocar Copilot.
+
+## Próximo paso
+
+Completar discovery exhaustivo y reproducible de callsites sobre un SHA exacto acordado. Después obtener las decisiones D-01…D-09. Mantener implementación bloqueada hasta aprobación explícita de spec/plan y pruebas de diseño en PostgreSQL efímero.
+
+---
 # Checkpoint operativo — PR #178 y continuidad — 2026-10-30 UTC
 
 **Snapshot verificado antes de esta sincronización documental:** rama `docs/reconcile-role-model-and-cloudflare-20261030`, HEAD `a45d84eb5f51e50d3a24f9d6858b5d14efb3ce6b`; base `main` = `82386c6e9300e06f8fa209aa52995b939a72442a`; 68 ahead / 0 behind. PR #178 OPEN, DRAFT, NOT MERGED; último reporte `mergeable=true`. Diff 13 archivos documentales (343 adiciones / 235 eliminaciones); sin runtime, SQL, migraciones ni workflows. 0 reviews formales y 0 threads inline. No marcar Ready ni fusionar sin autorización explícita.

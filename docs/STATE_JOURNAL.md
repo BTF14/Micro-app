@@ -1468,3 +1468,12 @@ CI documental: para HEAD `8c15e13fa001a14a0ddf9f2432bc17efb30d476d`, los 8 workf
 - Se actualizaron CURRENT_STATE, HANDOFF_NEXT_CHAT, PROJECT_PLAN y WORK_CHECKPOINT para continuidad. El README no se modificó porque no cambió ninguna capacidad del producto.
 - Cambios únicamente documentales en `pilot/speckit-inventory`. No código funcional, SQL/migraciones, tests, CI, Spec Kit, PR, merge, Neon, datos reales, Cloudflare, producción, secretos, billing ni despliegues.
 - El siguiente paso es un barrido reproducible de callsites sobre un SHA exacto; después, recoger decisiones D-01…D-09. La implementación permanece bloqueada hasta aprobación explícita.
+
+
+## 2026-11-02 UTC — Precisión final de snapshot y criterios de discovery
+
+- Se verificó el HEAD principal desde el checkpoint vivo de `main` en el repositorio: `7ff887328f25cffff69ccb9e89bbb1ba25200aea` (merge PR #191). El endpoint de historial de commits consultado devolvió un SHA anterior en caché; se prefirió el SHA explícito del checkpoint actual y se leyó el código por ese SHA exacto.
+- Se corrigieron las referencias al SHA de main en los documentos del piloto, sustituyendo el dato anterior `c7bd0a...` por `7ff887...`; los blob SHAs del código inspeccionado se mantuvieron iguales.
+- Se ajustó `spec.md` para limitar la afirmación sobre ausencia de endpoints al código versionado inspeccionado; no se afirma ausencia en producción.
+- Se ajustaron `plan.md` y `tasks.md` para mantener T3 explícitamente parcial y describir que falta un barrido reproducible de todos los callsites. No se ejecutaron tests ni runtime.
+- El HEAD final del piloto debe tomarse del último commit de esta entrada; no se modificó `main` ni se abrió PR.

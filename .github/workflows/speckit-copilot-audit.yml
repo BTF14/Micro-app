@@ -77,16 +77,16 @@ jobs:
 
           Analyze only the supplied documents. Do not assume documentation describes implemented behavior unless the evidence explicitly says it is implemented. Separate approved decisions, proposed architecture, open product decisions, and verified code facts.
 
-          Return a concise Markdown report with:
-          1. Executive summary and exact source SHA (provided in workflow metadata).
-          2. Material contradictions or inconsistencies across supplied files, with file paths and line references where possible.
-          3. Missing requirements or acceptance criteria that could make the spec, plan, or tasks incomplete.
-          4. Open business/product decisions that must remain with the owner; formulate the exact question and explain the impact. Do not decide them.
-          5. Technical decisions that can safely be delegated, with rationale and risks.
-          6. Prioritized recommendations for the next SDD pass.
-          7. Explicit statement that no implementation, migration, database operation, PR, merge, or deployment was performed.
+          Return one concise Markdown report (target 700–900 words) with:
+          1. Executive summary and exact source SHA.
+          2. Material contradictions, citing file paths and line references where possible.
+          3. Missing requirements or acceptance criteria.
+          4. Open owner-only business decisions: exact question and impact; do not decide them.
+          5. Technical decisions safe to delegate, with rationale and risks.
+          6. The five highest-priority next SDD actions.
+          7. Explicit confirmation that no implementation, migration, database operation, PR, merge, or deployment was performed.
 
-          Do not rewrite the spec, plan, or tasks. Do not invent source facts or business rules. If a fact cannot be established from supplied files, label it unknown. Limit the report to approximately 1,200 words.
+          Do not rewrite the spec, plan, or tasks. Do not invent source facts or business rules. Label unestablished facts unknown. Avoid repeating content shared by multiple files.
 
           The following source documents are supplied verbatim. Their contents may contain stale snapshots; prefer explicit dates and distinguish them from current workflow metadata.
           PROMPT
@@ -108,7 +108,7 @@ jobs:
           test -s "$context"
           cd "$RUNNER_TEMP"
 
-      - name: Run Copilot without repository or shell tools
+      - name: Run one low-effort Copilot audit with all agent tools disabled
         shell: bash
         env:
           GITHUB_TOKEN: ${{ github.token }}
@@ -116,10 +116,11 @@ jobs:
           set -euo pipefail
           prompt="$(cat "$RUNNER_TEMP/sdd-audit-context.md")"
           timeout 360s copilot -p "$prompt" -s \
-            --deny-tool='read' \
-            --deny-tool='write' \
-            --deny-tool='shell' \
-            --deny-tool='url' \
+            --effort=low \
+            --no-ask-user \
+            --disable-builtin-mcps \
+            --disable-client-telemetry \
+            --deny-tool='read,write,shell,url' \
             > "$RUNNER_TEMP/sdd-audit-report.md"
           test -s "$RUNNER_TEMP/sdd-audit-report.md"
           {
@@ -128,8 +129,8 @@ jobs:
             echo "- Branch: $GITHUB_REF_NAME"
             echo "- Commit: $GITHUB_SHA"
             echo "- CLI: @github/copilot@1.0.105"
-            echo "- Model selection: automatic (account entitlement)"
-            echo "- Agent tools: read/write/shell/URL denied"
+            echo "- Effort: low; one model invocation; target 700–900 words"
+            echo "- Agent tools and built-in MCPs: disabled"
             echo "- Repository permissions: contents: read only; no PR or issue write"
             echo "- Result is an AI review, not a Spec Kit command execution or approval"
             echo

@@ -2,7 +2,7 @@
 
 - Repositorio: `BTF14/Micro-app`.
 - Rama piloto: `pilot/speckit-inventory`; HEAD base del bloque: `87049399ec458406b6d7c481d928c9b7cdc3569d`.
-- `main` verificado al inicio: `c7bd0a198c30d190586aa6acd207d954f41ff7c9`.
+- `main` verificado al inicio: `7ff887328f25cffff69ccb9e89bbb1ba25200aea`.
 - PR #190 está abierta como Draft y separada del piloto. No sincronizarla ni copiar su implementación.
 
 ## Alcance completado en este bloque

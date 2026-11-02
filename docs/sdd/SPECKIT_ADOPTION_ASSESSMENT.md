@@ -68,9 +68,9 @@ Estos son hallazgos de lectura; este documento no corrige ni reemplaza las fuent
 
 ## 6. Verificaciones técnicas pendientes antes de instalar
 
-- Validar con la versión CLI instalada que `SPECIFY_FEATURE_DIRECTORY=docs/specs/inventory-by-branch` y los overrides en `.specify/templates/overrides/` funcionan con los comandos de Codex.
+- Validar con la versión CLI instalada que `SPECIFY_FEATURE_DIRECTORY=docs/specs/inventory-by-branch` y los overrides en `.specify/templates/overrides/` funcionan con la integración Copilot. La sintaxis actual documentada usa skills como `/speckit-specify`.
 - Confirmar qué archivos modifica `specify init` en un repositorio existente y revisar el diff inmediatamente; no aceptar sobrescrituras silenciosas.
-- Confirmar que Codex CLI está disponible en el entorno que ejecutará el piloto. Si lo está, instalar la integración `codex`; si no, inicializar con integración `none` para scaffolding neutral y no generar skills que nadie vaya a ejecutar.
+- Confirmar Copilot Free y cuota disponible antes de usar Copilot CLI en Actions. La integración Spec Kit `copilot` es oficial, pero no se declara multi-install safe; probarla solo en un checkout temporal. Si no hay cuota gratuita, usar `none` para scaffolding neutral y no generar skills sin agente disponible.
 - Comparar el resultado de cada plantilla adaptada contra los documentos actuales.
 - Ejecutar Specify/Plan/Tasks/Analyze/Clarify en el caso de inventario acotado.
 - Detenerse antes de cualquier comando de implementación.
@@ -78,3 +78,18 @@ Estos son hallazgos de lectura; este documento no corrige ni reemplaza las fuent
 **Documentación oficial consultada:** [Customize Spec Kit](https://github.github.com/spec-kit/guides/customization.html), [Core Commands](https://github.github.com/spec-kit/reference/core.html), [Integrations](https://github.github.com/spec-kit/integrations/index.html). La documentación actual confirma los overrides locales y `SPECIFY_FEATURE_DIRECTORY`; la ruta debe validarse en ejecución.
 
 **Bloqueo actual:** este entorno no tiene acceso de red a GitHub desde el terminal y no permite clonar/instalar/ejecutar el CLI. La lectura mediante GitHub permite preparar esta evaluación, pero no sustituye la ejecución real de Spec Kit. No se afirma que Spec Kit haya sido instalado o ejecutado.
+
+
+## 7. Actualización de agentes disponibles — 2026-11-02
+
+La documentación oficial de Spec Kit incluye la integración copilot, que instala skills en .github/skills/speckit-<command>/SKILL.md. Las skills se invocan con nombres como /speckit-specify. La integración no se declara multi-install safe; no debe instalarse junto a otra integración sin revisar las reglas específicas.
+
+Copilot Free incluye Copilot CLI y modo programático con créditos IA limitados; no incluye Copilot cloud agent. Copilot CLI puede autenticarse en Actions con GITHUB_TOKEN y permiso copilot-requests: write. En un repositorio personal, el consumo se carga al asiento Copilot del propietario. La cuenta del propietario no fue inspeccionada.
+
+Se preparó .github/workflows/speckit-copilot-audit.yml:
+- Desactivado por defecto mediante SPECKIT_COPILOT_FREE_CONFIRMED=true.
+- Contexto documental allowlist; sin herramientas read/write/shell/url.
+- Solo informe en job summary; sin escritura, commits, PR, issue o despliegue.
+- No se ejecuta hasta confirmar Copilot Free y cuota disponible.
+
+No se ha ejecutado specify init, la integración copilot ni comandos /speckit-*. La inicialización debe probarse en checkout efímero y revisarse antes de persistir archivos.

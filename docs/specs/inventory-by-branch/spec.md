@@ -18,7 +18,7 @@ El objetivo de esta especificación es definir una evolución verificable desde 
 - Existe `inventory_movements` en el esquema inicial, pero no está particionada por sucursal/almacén.
 - `branches` y `branch_memberships` existen en la migración 0003; la asignación de sucursal no concede por sí sola autorización comercial.
 - La migración 0004 define cajas/turnos; no implementa inventario por almacén.
-- No existen endpoints comerciales ni middleware de autorización de inventario en producción.
+- En el snapshot de código de `main` `7ff887328f25cffff69ccb9e89bbb1ba25200aea`, `apps/api/src/index.ts` no registra endpoints comerciales ni middleware de inventario. Esta es una observación del código versionado; no se inspeccionó el runtime ni se verificaron rutas desplegadas, por lo que no se afirma ausencia en producción.
 - La matriz `docs/sdd/role-permission-decision-matrix.md` está APROBADA; su alcance de Inventory por sucursal define quién puede operar, no demuestra que el stock ya esté separado por sucursal.
 - Las migraciones 0003/0004 no deben asumirse aplicadas a Neon `main`; comprobar estado antes de cualquier trabajo futuro.
 

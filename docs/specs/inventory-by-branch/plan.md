@@ -41,6 +41,39 @@ Los nombres de migración, rutas, archivos y módulos son placeholders; descubri
 
 Esta secuencia es un plan propuesto; no se han inspeccionado todos los callsites ni aprobado los detalles.
 
+## Contratos técnicos provisionales — sin decisión comercial implícita
+
+Estos invariantes pueden diseñarse sin elegir todavía cardinalidad de almacenes, política de valoración, reservas ni semántica de documentos:
+
+1. **Tenant:** toda tabla operativa nueva lleva `organization_id`; relaciones entre padres/hijos y productos usan claves únicas/FKs compuestas tenant-scoped. Un ID recibido del cliente nunca demuestra pertenencia.
+2. **Autorización:** la API deriva actor, organización y rol de sesión/DB; resuelve sucursal y membresía activa cuando aplique; luego autoriza la operación concreta conforme a la matriz. Los resolvers de contexto no son autorización.
+3. **Atomicidad:** documento operativo, movimiento, balance e idempotency record se confirman en una transacción PostgreSQL. No existe doble escritura fuera de la transacción.
+4. **Concurrencia:** consumo mediante UPDATE condicional o bloqueo de fila dentro de la transacción; no leer-modificar-escribir sin protección. Restricciones DB defienden el saldo no negativo.
+5. **Idempotencia:** clave única por tenant y tipo de operación, hash canónico del payload y resultado persistido en la misma transacción. Misma clave con distinto payload es conflicto.
+6. **Historial:** los movimientos confirmados no se editan ni borran para corregir errores; se registran movimientos compensatorios vinculados. La referencia de origen debe ser verificable mediante FKs tipadas o documento común con integridad demostrable.
+7. **Reconciliación:** el ledger permite recalcular balance; la reconciliación informa discrepancias y nunca las corrige silenciosamente.
+8. **Compatibilidad:** conservar `products.stock_quantity` durante transición. No realizar doble escritura ni cutover hasta que se defina una fuente única, conteo físico por almacén, umbral aprobado y rollback ensayado.
+
+No se finalizan nombres de estados, columnas de reservas/coste, ciclo de compra, recepción parcial, semántica de transferencia ni política de devolución hasta cerrar las decisiones de propietario. Los contratos anteriores son guardrails de integridad, no un DDL aprobado.
+
+## Matriz mínima de pruebas y resultados esperados
+
+| Caso | Preparación | Resultado exigido |
+|---|---|---|
+| Cross-tenant en FK | Org A referencia branch/warehouse/product/document de Org B | Rechazo de DB; cero filas parciales. |
+| Membresía revocada | Usuario mantiene sesión, pero se desactiva su asignación | Siguiente mutación/read protegido denegado según matriz. |
+| Rol no permitido | Cashier intenta recibir/ajustar/transferir | Denegación server-side; sin movimiento ni balance alterado. |
+| Stock insuficiente | Salida supera disponible | Rechazo atómico; saldo sin cambios. |
+| Última unidad concurrente | Dos transacciones consumen simultáneamente la misma última unidad | Una confirma; la otra falla por saldo insuficiente; saldo final cero. |
+| Idempotencia repetida | Misma key y payload dos veces | Una operación; segunda respuesta corresponde al resultado original. |
+| Colisión de idempotencia | Misma key, payload distinto | Conflicto; no segunda mutación. |
+| Fallo parcial | Inyectar error tras movimiento y tras balance | Rollback completo de documento, movimiento, balance e idempotencia. |
+| Ledger desincronizado | Alterar fixture de balance en entorno efímero | Reconciliación detecta diferencia y no auto-corrige. |
+| Backfill repetido | Ejecutar backfill dos veces con mismo snapshot | Resultado determinista, sin duplicar saldos/movimientos. |
+| Rollback | Fallar gate de conciliación antes de cutover | Volver al modo previo sin pérdida ni doble fuente de escritura. |
+
+Los resultados son contratos de prueba propuestos. No se han ejecutado; no sustituyen decisiones sobre el comportamiento comercial.
+
 ## Riesgos y mitigaciones
 
 | Riesgo | Severidad | Mitigación / evidencia |

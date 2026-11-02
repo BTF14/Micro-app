@@ -120,15 +120,18 @@ La elección definitiva de referencia de origen (FKs tipadas o documento operati
 
 ## Criterios de aceptación verificables
 
-- [ ] CA-1: la spec distingue claramente estado implementado, aprobado y propuesto.
-- [ ] CA-2: cada entidad nueva mantiene integridad tenant-scoped mediante claves compuestas.
-- [ ] CA-3: las reglas de autorización corresponden exactamente a la matriz aprobada.
-- [ ] CA-4: movimiento y balance son atómicos y reconciliables.
-- [ ] CA-5: concurrencia e idempotencia impiden sobreventa y duplicación.
-- [ ] CA-6: recepción, ajuste, venta, devolución y transferencia tienen estados y trazabilidad definidos.
-- [ ] CA-7: el backfill conserva compatibilidad y exige conciliación antes de cambiar la fuente de verdad.
-- [ ] CA-8: se definen pruebas cross-tenant, por rol, concurrencia, rollback y reconciliación.
-- [ ] CA-9: ninguna decisión abierta se presenta como aprobada ni se ejecuta migración/despliegue.
+Estos criterios describen evidencia que deberá obtenerse en la fase de diseño/pruebas. Ninguno se considera satisfecho por la existencia de esta especificación.
+
+- [ ] **CA-1 — Estado y procedencia:** cada afirmación de implementación identifica repositorio, rama y SHA inspeccionado; las decisiones aprobadas citan su fuente y fecha; propuestas y pendientes se etiquetan por separado. Un lector puede distinguir sin inferencia lo implementado, lo aprobado y lo propuesto.
+- [ ] **CA-2 — Integridad tenant-scoped:** para cada nueva relación entre organización, sucursal, almacén, producto, documento y línea, las pruebas PostgreSQL intentan una referencia cruzada entre dos tenants. La FK/constraint rechaza la escritura (SQLSTATE esperado documentado, normalmente `23503` o `23514`) y la transacción no deja filas parciales.
+- [ ] **CA-3 — Autorización por operación:** una matriz de pruebas cubre Owner, Admin, Inventory y Cashier para cada operación y alcance exactamente como la matriz aprobada. Se prueban usuario/organización inactivos, sucursal ajena, membresía revocada y rol cambiado. Resultado esperado: denegación por defecto sin filtrar datos; la asignación de sucursal nunca sustituye el rol.
+- [ ] **CA-4 — Atomicidad y reconciliación:** cada operación que afecta documento, movimiento, balance e idempotencia se prueba con fallos inyectados después de cada escritura. Cada fallo produce rollback total; ningún documento queda confirmado con solo movimiento o solo balance. Una consulta independiente demuestra que el balance coincide con la suma de movimientos para cada (organización, almacén, producto).
+- [ ] **CA-5 — Concurrencia e idempotencia:** dos transacciones concurrentes que intentan consumir la última cantidad disponible producen exactamente una confirmación y una denegación por saldo insuficiente; el saldo nunca es negativo. Misma clave idempotente + mismo hash devuelve el resultado original sin duplicar filas; misma clave + payload distinto devuelve conflicto y no cambia el estado.
+- [ ] **CA-6 — Ciclos de vida operativos:** antes de aceptar cada operación (recepción, ajuste, venta, devolución, transferencia), se documentan estados válidos, transiciones permitidas, actor autorizado, comportamiento ante reintento, cancelación y reverso. Las pruebas cubren cada transición y rechazan transiciones ilegales. Los estados y semánticas que dependen de decisiones de negocio no se fijan hasta su aprobación.
+- [ ] **CA-7 — Backfill y cutover:** el ensayo en PostgreSQL desechable es repetible desde una base vacía; conserva snapshot del legado y evidencia de conteos físicos por almacén. La suma inicial por almacén se compara con el total legado; toda diferencia queda explicada y aprobada antes del cutover. Sin asignación física demostrable, no se distribuye automáticamente stock legado. El rollback se ensaya y restaura el modo previo sin pérdida.
+- [ ] **CA-8 — Suite de pruebas:** existen pruebas unitarias, integración PostgreSQL y (cuando haya API/UI real) E2E diferenciadas. Se incluyen cross-tenant, rol, membresía revocada, concurrencia, idempotencia, atomicidad, reversos, transferencia y reconciliación. Se registra el SHA exacto y el resultado de cada workflow.
+- [ ] **CA-9 — Gate de negocio y seguridad:** ninguna decisión pendiente aparece como aprobada; no se implementa ni migra antes de aprobar spec/plan y los gates correspondientes. Neon `main`, producción, datos reales, secretos, billing y despliegues permanecen fuera del alcance de este piloto.
+- [ ] **CA-10 — Evidencia de código vigente:** el discovery identifica SHA y archivos/consumidores inspeccionados; distingue el snapshot de `main` del HEAD del piloto; una revisión parcial no se presenta como barrido exhaustivo.
 
 ## Decisiones pendientes antes de aprobar
 

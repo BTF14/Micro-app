@@ -204,7 +204,7 @@ Guardrails:
 
 **Límite:** esta automatización es una auditoría IA de solo lectura, no una ejecución de comandos Spec Kit ni autorización para implementar. La integración real debe probarse en checkout efímero; cualquier escritura persistente seguirá limitada a documentos del piloto y no resolverá decisiones de negocio abiertas.
 
-**Estado:** workflow preparado; job IA inactivo hasta confirmación de Copilot Free. No se ha consumido cuota ni ejecutado el agente.
+**Estado:** workflow preparado. Esta sesión no creó la variable; su valor preexistente no pudo consultarse. Por tanto, no se puede afirmar si el job push se ejecutó o se saltó. No se invocó Copilot CLI manualmente desde esta sesión.
 
 
 ## 11. Verificación posterior a la creación del agente condicionado
@@ -213,5 +213,5 @@ Guardrails:
 - El archivo fue releído desde GitHub y coincide con la versión escrita.
 - Compare inmediatamente posterior: main 705d3db3220894c7d3baca8dc7e7a6b623dfbb94; piloto 21 commits ahead y 20 behind; merge-base 88213507d088b82ea9231bbc72f49afade7ec99b.
 - No se sincronizó ni rebasó el piloto.
-- El job IA permanece inactivo por ausencia de la variable de confirmación. No se pudo confirmar un run push ni su conclusión mediante el acceso disponible a GitHub Actions.
+- Esta sesión no creó la variable de confirmación y no pudo consultar si ya existía. No se pudo confirmar si el job push se ejecutó o se saltó ni su conclusión mediante el acceso disponible a GitHub Actions.
 - El contenido del workflow no otorga permisos de escritura de repo ni tools de shell, lectura de archivos o URL al agente. No se ha consumido cuota Copilot.

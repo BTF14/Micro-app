@@ -1488,3 +1488,9 @@ CI documental: para HEAD `8c15e13fa001a14a0ddf9f2432bc17efb30d476d`, los 8 workf
 - T3 se marcó completa para el SHA exacto auditado; se debe repetir si cambia main antes de implementar. Evidencia añadida en `docs/sdd/INVENTORY_BRANCH_CODE_DISCOVERY.md` §9 y reflejada en tasks/plan.
 - No se ejecutaron tests/runtime/Spec Kit; no se modificó código funcional ni SQL/migraciones, Neon, producción, Cloudflare, secretos, billing, despliegues, PR o merge.
 - Próximo gate: resolver D-01…D-09 del DECISION_REGISTER; 0 aprobadas, 0 excluidas, 9 pendientes. Mantener implementación bloqueada.
+
+
+## 2026-11-02 UTC — Revalidación de HEAD main posterior a PR #192
+
+- GitHub muestra `main` en `705d3db3220894c7d3baca8dc7e7a6b623dfbb94` (merge PR #192). Compare contra el snapshot auditado `7ff887328f25cffff69ccb9e89bbb1ba25200aea`: 4 commits ahead, 0 behind; solo cambian `docs/CURRENT_STATE.md`, `docs/HANDOFF_NEXT_CHAT.md` y `docs/STATE_JOURNAL.md`. No hay cambios de código posteriores al snapshot del discovery.
+- El barrido T3 en `7ff8873...` sigue representando el código actual de main al momento de esta verificación. El piloto no se sincronizó ni rebasó; mantener la separación.

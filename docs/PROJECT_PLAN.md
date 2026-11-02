@@ -1,6 +1,6 @@
 # Prioridad activa — piloto de inventario por sucursal — 2026-11-02
 
-**Rama:** `pilot/speckit-inventory`. **Main verificado al inicio:** `c7bd0a198c30d190586aa6acd207d954f41ff7c9`. **Base del piloto:** `87049399ec458406b6d7c481d928c9b7cdc3569`. No sincronizar ni rebasar automáticamente.
+**Rama:** `pilot/speckit-inventory`. **Main verificado al inicio:** `7ff887328f25cffff69ccb9e89bbb1ba25200aea`. **Base del piloto:** `87049399ec458406b6d7c481d928c9b7cdc3569`. No sincronizar ni rebasar automáticamente.
 
 ## Secuencia actualizada tras auditoría Copilot
 

@@ -1,7 +1,8 @@
 # ERD objetivo: organización, sucursal, almacén, caja y operaciones
 
 **Estado:** main incluye sucursales/asignaciones por PR #165 (0003); PR #167 fusionó `registers`/`register_shifts` mediante 0004 en main. Ninguna migración 0003/0004 se ha aplicado a Neon main. Almacenes, balances por almacén y operaciones comerciales siguen pendientes. No autoriza endpoints ni cambios en Neon.  
-**Fecha:** 2026-10-30 UTC  
+**Fecha de actualización documental:** 2026-11-02 UTC  
+**Snapshot de código contrastado:** `main` = `c7bd0a198c30d190586aa6acd207d954f41ff7c9`; revisión documental del piloto `87049399ec458406b6d7c481d928c9b7cdc3569`. Esta actualización no sincroniza ramas ni certifica estado de Neon/producción.  
 **Base original del diseño:** merge de PR #163, main = 894895cfeee1c3d67b1e92bf1fae7d0c30cd36f9.  
 **Merge SHA de PR #167 (integró 0004):** `c1cd8650db33aa4a249eaf1f55d321513d576e10`.  
 **Fuentes contrastadas:** apps/api/migrations/0001_initial.sql, docs/SCHEMA_REVIEW.md, docs/DATABASE_SCHEMA.md, docs/SAAS_ARCHITECTURE_DECISIONS.md y docs/sdd/role-permission-decision-matrix.md.

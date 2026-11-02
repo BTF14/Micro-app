@@ -183,3 +183,48 @@ Aprobar matriz de permisos y diseñar autorización server-side por operación/s
 - PR #165 abierta; revalidar HEAD y checks después de cualquier commit adicional.
 
 - Hardening antes del merge: `resolveBranchContext` vuelve a comprobar organization/app_user/organization_members activos y que el rol actual en DB coincida con el TenantContext; pruebas de integración añadidas para membresía revocada y rol cambiado. HEAD nuevo invalida la evidencia CI del SHA previo; esperar y verificar todos los checks del HEAD final.
+
+
+---
+
+# Checkpoint piloto Spec Kit — Copilot CLI condicionado — 2026-11-02 UTC
+
+**Repositorio:** BTF14/Micro-app  
+**Rama:** pilot/speckit-inventory  
+**HEAD antes de este bloque:** 9301de63d891ef4fbabb3e435ac57ce67246b799  
+**Main verificado:** 705d3db3220894c7d3baca8dc7e7a6b623dfbb94  
+**Divergencia:** 15 commits exclusivos del piloto, 20 por detrás; merge-base 88213507d088b82ea9231bbc72f49afade7ec99b.
+
+## Investigación y decisión
+
+- Spec Kit incluye integración oficial copilot.
+- Copilot Free permite Copilot CLI y modo programático con créditos IA limitados; Copilot cloud agent no está incluido.
+- Actions admite GITHUB_TOKEN con copilot-requests: write; en repositorio personal el consumo se carga al asiento Copilot del propietario.
+- GitHub Models fue retirado el 2026-07-30.
+- Como el plan Copilot de la cuenta no se puede verificar desde este conector, el job IA queda bloqueado por defecto.
+
+## Cambios de este bloque
+
+- Nuevo workflow: .github/workflows/speckit-copilot-audit.yml.
+- Job condicionado a SPECKIT_COPILOT_FREE_CONFIRMED=true; no se crea ni modifica esa variable.
+- Usa Copilot CLI 1.0.105, GITHUB_TOKEN, contexto documental allowlist y deniega read/write/shell/URL. Solo devuelve informe en el summary.
+- Se actualizan arquitectura, runbook, registro de recursos y diario.
+- No se sincroniza main ni se abre PR.
+
+## Límites y pruebas
+
+- La creación del archivo no demuestra que Actions lo haya ejecutado.
+- No se ha ejecutado Copilot CLI ni consumido cuota.
+- No se ha ejecutado specify init, la integración Spec Kit copilot ni comandos Specify/Plan/Tasks/Analyze.
+- No hay escritura del agente, commits automáticos, PR, merge, migraciones, DB, secretos o despliegues.
+- Los runners estándar de Actions son gratuitos en repositorios públicos; la inferencia Copilot depende del plan y cuota del propietario.
+
+## Siguiente acción exacta
+
+1. Verificar el diff y los archivos en el HEAD nuevo.
+2. El propietario confirma si su GitHub tiene Copilot Free (no Pro/Pro+/Max) y sin uso adicional facturable.
+3. Solo con esa confirmación, establecer SPECKIT_COPILOT_FREE_CONFIRMED=true en Settings → Secrets and variables → Actions → Variables.
+4. En el siguiente push documental del piloto, comprobar el run y su informe. Si la cuota está agotada, detenerse sin fallback de pago.
+5. Tras revisar el informe, probar la inicialización de Spec Kit copilot en checkout efímero y auditar el diff antes de persistir nada.
+
+**No tocar:** main, Neon, Cloudflare, datos reales, secretos, billing, código funcional, migraciones, despliegues, PR o merge.

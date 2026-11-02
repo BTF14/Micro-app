@@ -31,11 +31,11 @@ Teléfono Android (navegador / GitHub Mobile)
        +---------+----------+
        |                    |
        v                    v
-  Guardrails             Spec Kit CLI
-  - branch allowlist      - versión reportada
-  - SHA y clean tree      - help/check
-  - paths permitidos      - integración neutral
-  - no secrets            - sin agente automático
+  Guardrails             Spec Kit / Copilot CLI
+  - branch allowlist      - preflight CLI
+  - SHA y clean tree      - auditoría IA condicionada
+  - paths permitidos      - sin escritura del agente
+  - no secrets            - informe en job summary
        |                    |
        +---------+----------+
                  |

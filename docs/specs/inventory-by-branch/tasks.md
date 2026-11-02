@@ -16,12 +16,12 @@
   **Archivos:** `docs/specs/inventory-by-branch/`.
   **Validación/evidencia:** revisión documental de coherencia; no aprobación de producto.
 
-- [x] T3 — Completar discovery de implementación existente.
+- [ ] T3 — Completar discovery exhaustivo de implementación existente (parcial; no cerrar todavía).
   **Aceptación:** inventario de callsites de `stock_quantity`, `inventory_movements`, ventas, compras y tests, con rutas/consumidores reales.
   **Archivos:** `docs/sdd/INVENTORY_BRANCH_CODE_DISCOVERY.md`; migraciones `0001_initial.sql`, `0003_branch_scope.sql`, `0004_register_shifts.sql`; módulos API y pruebas asociadas.
   **Validación/evidencia:** árbol Git recursivo completo del commit `b256c1c3e51a145e5af62fbcbdfb830a4368884c` (169 rutas, sin truncamiento), inspección de esquema/API/contexto de sucursal/caja/pruebas. El discovery confirma que no existe flujo operativo de inventario por sucursal; revisión estática, no ejecución de pruebas.
 
-- [ ] T4 — Resolver decisiones de producto/modelo abiertas.
+- [ ] T4 — Resolver decisiones de producto/modelo abiertas (requiere respuestas/aprobación del propietario).
   **Aceptación:** coste/valoración, reservas, transferencias en tránsito, reversos, referencias de origen y almacén de venta documentados y aprobados.
   **Archivos:** spec y documentos canónicos afectados.
   **Validación/evidencia:** decisiones registradas; no inferir aprobación.
@@ -59,6 +59,15 @@
 - [ ] Diff completo inspeccionado; no hay secretos.
 - [ ] Documentación y handoff actualizados.
 
+## Criterios verificables para cerrar las tareas de diseño
+
+- **T3:** entregar lista reproducible de todos los callsites de `stock_quantity`, `inventory_movements`, ventas, compras y tests en un SHA exacto; distinguir uso runtime, tests, migraciones y documentación; repetir el barrido si cambia el SHA antes de implementación.
+- **T4:** cada decisión owner-only debe tener pregunta, respuesta explícita, fecha/fuente y alcance. Si se excluye del MVP, registrar explícitamente la exclusión; no convertir silencio en aprobación.
+- **T5:** entregar DDL propuesto con FKs/constraints/índices, contratos de transacción, idempotencia y concurrencia. No fijar estados o campos de coste/reserva dependientes de T4.
+- **T6:** cada caso de prueba debe indicar actor/rol, tenant, sucursal, fixture, operación, resultado HTTP/SQL esperado y aserción de cero escrituras parciales.
+- **T7:** documentar origen de conteo físico, responsable/aprobador, total legado, saldo por almacén, diferencias, umbral aprobado, idempotencia de backfill, cutover y rollback ensayado en PostgreSQL efímero.
+- **T8:** separar revisión de arquitectura, seguridad/datos y QA; registrar SHA, alcance, hallazgos, limitaciones y resolución. La auditoría Copilot del SHA `87049399ec458406b6d7c481d928c9b7cdc3569` es revisión documental auxiliar, no ejecución de Spec Kit ni aprobación.
+- **T9:** mantener bloqueada la implementación hasta aprobación explícita de spec/plan y de los gates. Esta fase documental no crea autorización para código funcional, migraciones, PR, merge o despliegue.
 ## Cierre
 
 - SHA: pendiente

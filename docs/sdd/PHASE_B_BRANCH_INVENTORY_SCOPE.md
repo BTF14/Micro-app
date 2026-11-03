@@ -2,21 +2,21 @@
 
 **Estado: BORRADOR. No es una decisión aprobada.** Este documento es una propuesta de arquitectura para revisión del propietario. No autoriza implementación, migraciones, endpoints ni cambios de código. La implementación solo comienza tras aprobación expresa.
 
-**Fecha:** 2026-11-02 UTC.
-**Autor:** sesión de IA (Claude), bajo las instrucciones del propietario del 2026-11-02 ("CONTINUIDAD Y AUDITORÍA ARQUITECTÓNICA — INVENTARIO MULTI-SUCURSAL DE MICRO-APP").
+**Fecha:** 2026-11-02 UTC. **Revisión 2** (añade el diseño de inicialización de inventario por sucursal, sección 7.9, tras aprobación expresa del propietario de la decisión de negocio correspondiente — ver sección 1, punto 8).
+**Autor:** sesión de IA (Claude), bajo las instrucciones del propietario del 2026-11-02 ("CONTINUIDAD Y AUDITORÍA ARQUITECTÓNICA — INVENTARIO MULTI-SUCURSAL DE MICRO-APP" y su seguimiento de cierre de etapa).
 **No modifica:** `docs/sdd/MULTI_BRANCH_DATA_MODEL.md`, `docs/INSPIRATION.md`, `docs/POS_REFERENCE_MATRIX.md`, `docs/sdd/role-permission-decision-matrix.md`, la PR #190 ni el issue #53. Este documento complementa y referencia esos documentos sin duplicarlos.
 
 ---
 
-## 0. Estado verificado al iniciar este trabajo (2026-11-02 UTC)
+## 0. Estado verificado al iniciar este trabajo
 
 Verificado en vivo contra GitHub, no asumido de memoria:
 
-- `main` real: `705d3db3220894c7d3baca8dc7e7a6b623dfbb94`. **El SHA citado en la sesión anterior (`88213507d088b82ea9231bbc72f49afade7ec99b`) quedó obsoleto**: `main` avanzó con las PR #191 y #192 (fusionadas el 2026-11-01), que añadieron `docs/FRONTEND_DESIGN_STANDARD.md` y lo integraron en `AGENTS.md` y el skill de stack. Es trabajo exclusivamente documental de UI/UX (ya mencionado por el propietario como regla permanente para trabajo futuro de frontend); no toca runtime, autorización ni inventario, y no fue creado por esta sesión.
-- **PR #190**: sigue abierta como Draft, sin fusionar, rama `feat/org-catalog-read-endpoint-20261101`. HEAD **sin cambios**: `42ed27fd9ce13223c6a2d1fd2a9359d3ec871345` (igual al citado anteriormente — confirmado, no asumido). Dato nuevo: GitHub reporta ahora `mergeable: false`, `mergeable_state: "dirty"` porque su base (`main`) avanzó; esto es una divergencia de base, no un cambio en el contenido de la PR. No se tocó su estado, no se solicitó pasarla a Ready, no se fusionó. Se mantiene fuera del alcance de este documento.
-- **Issue #53**: `state: open`. Confirmado, sin modificar.
-- `docs/INSPIRATION.md` y `docs/POS_REFERENCE_MATRIX.md`: releídos íntegros en esta sesión; contenido igual al ya analizado (sin cambios recientes relevantes a inventario/sucursales).
-- `docs/sdd/MULTI_BRANCH_DATA_MODEL.md`: releído íntegro en esta sesión (205 líneas). Su sección 12 contiene **exactamente 7 decisiones abiertas** — ver sección 2 de este documento para el análisis punto por punto, verificado contra el texto real, no reconstruido de memoria.
+- `main` real (revisión 1 y revisión 2, sin cambios entre ambas): `705d3db3220894c7d3baca8dc7e7a6b623dfbb94`. **El SHA citado en la sesión previa a la revisión 1 (`88213507d088b82ea9231bbc72f49afade7ec99b`) quedó obsoleto**: `main` avanzó con las PR #191 y #192 (fusionadas el 2026-11-01), que añadieron `docs/FRONTEND_DESIGN_STANDARD.md` y lo integraron en `AGENTS.md` y el skill de stack. Es trabajo exclusivamente documental de UI/UX; no toca runtime, autorización ni inventario.
+- **PR #190**: sigue abierta como Draft, sin fusionar, rama `feat/org-catalog-read-endpoint-20261101`. HEAD **sin cambios**: `42ed27fd9ce13223c6a2d1fd2a9359d3ec871345` (confirmado de nuevo al redactar la revisión 2, no asumido). `mergeable_state: "dirty"` solo por divergencia de base, no por contenido. No se tocó su estado. Fuera de alcance de este documento.
+- **Issue #53**: `state: open`. Confirmado de nuevo, sin modificar.
+- `docs/INSPIRATION.md`, `docs/POS_REFERENCE_MATRIX.md`, `docs/sdd/MULTI_BRANCH_DATA_MODEL.md`, `docs/sdd/role-permission-decision-matrix.md`, `docs/SAAS_ARCHITECTURE_DECISIONS.md`: releídos íntegros (de nuevo en la revisión 2 para los dos últimos). `MULTI_BRANCH_DATA_MODEL.md` §12 contiene **exactamente 7 decisiones abiertas** — ver sección 2. Ninguno contradice el diseño de inicialización añadido en la revisión 2 (`SAAS_ARCHITECTURE_DECISIONS.md` línea 31 confirma explícitamente: *"Un negocio de una sola ubicación debe poder empezar con una sucursal predeterminada creada durante onboarding"* — compatible con "no inicializado hasta su primer conteo").
+- **PR #193** (esta propuesta): `state: open`, `draft: false`, `mergeable_state: clean`, **12/12 check-runs en verde** sobre el HEAD de la revisión 1 (`178e4f7b...`). El revisor de IA (`chatgpt-codex-connector`) no llegó a revisar por cuota agotada (confirmado por su propio comentario) — no se contó como revisión, conforme al protocolo de revisión manual de `AGENTS.md`. Se hizo revisión manual línea por línea contra el repositorio real (migraciones 0001/0003/0004, `role-permission-decision-matrix.md`, resolvers, tests de concurrencia citados) antes de esta revisión 2; no se encontraron errores ni afirmaciones sin respaldo.
 
 ---
 
@@ -31,6 +31,7 @@ Para que no haya ambigüedad, se transcriben tal como las aprobó el propietario
 5. El sistema debe representar mercancía en tránsito y diferencias entre cantidad enviada y recibida.
 6. Los permisos de origen y destino se verifican independientemente.
 7. Los conteos físicos envían cantidades absolutas; el servidor calcula las diferencias.
+8. **(Aprobada 2026-11-02, revisión 2)** Cada sucursal inicializa su inventario mediante un primer conteo registrado y confirmado formalmente, que puede proceder de una verificación física real o de cantidades que el propietario ya tenga documentadas, siempre que se introduzcan mediante el mismo procedimiento controlado, con trazabilidad de quién las declaró, cuándo y para qué sucursal. No se asignan automáticamente las existencias actuales de `products.stock_quantity` a ninguna sucursal; tampoco se inventan distribuciones ni se pierde la información histórica existente. El diseño técnico completo de esta decisión está en la sección 7.9.
 
 No se vuelve a preguntar ninguna de estas. El resto de este documento las trata como restricciones fijas.
 
@@ -224,27 +225,20 @@ No se evaluó una "propuesta de Gemini" en este documento porque no se encontró
 
 Tablas nuevas (migración `0005_branch_inventory.sql`, propuesta):
 
-- `warehouses (organization_id, branch_id, id, code, name, is_active, ...)` — FK compuesta a `branches (organization_id, id)`. Al menos un almacén por defecto por sucursal (backfill, ver 7.2).
-- `inventory_balances (organization_id, warehouse_id, product_id, on_hand_quantity, created_at, updated_at)` — PK `(organization_id, warehouse_id, product_id)`; FKs compuestas a `warehouses` y `products`; `CHECK (on_hand_quantity >= 0)`.
-- `inventory_movements` (extendida, no reemplazada): añadir `warehouse_id` (FK compuesta `(organization_id, warehouse_id)`, NOT NULL tras backfill), y las columnas de referencia tipada del punto 4.D (`sale_id`, `purchase_receipt_id`, `transfer_id`, `physical_count_id` — todas nullable en esta fase salvo `physical_count_id`/ajuste manual, que son los únicos orígenes que Fase B implementa; las demás quedan reservadas para fases siguientes sin requerir otra migración de columnas).
-- `physical_counts (organization_id, branch_id, warehouse_id, id, status, counted_by, counted_at, ...)` y `physical_count_lines (..., product_id, counted_quantity, system_quantity_snapshot, difference)` — cantidad absoluta por línea (decisión aprobada 7); el servidor calcula `difference` y genera el movimiento de ajuste correspondiente dentro de la misma transacción al confirmar el conteo.
-- Triggers de inmutabilidad en `inventory_movements`, replicando el patrón ya probado en `register_shifts` (0004): prohibir `UPDATE`/`DELETE` de cualquier fila ya insertada (append-only real, no solo documental).
-- Índices: `(organization_id, warehouse_id, product_id, created_at DESC)` para consulta de movimientos por almacén/producto; `(organization_id, branch_id, warehouse_id)` en `warehouses`; índice único parcial si se decide que solo pueda existir un almacén "predeterminado" por sucursal.
+- `warehouses (organization_id, branch_id, id, code, name, is_active, is_default, initialized_at, initialized_by, initializing_physical_count_id, ...)` — FK compuesta a `branches (organization_id, id)`. Al menos un almacén por defecto por sucursal (backfill, ver 7.2). `is_default boolean NOT NULL DEFAULT false`, con índice único parcial `(organization_id, branch_id) WHERE is_default` (como mucho un almacén predeterminado por sucursal). `initialized_at timestamptz NULL`, `initialized_by uuid NULL` (FK compuesta a `organization_members`), `initializing_physical_count_id uuid NULL` (FK a `physical_counts.id`, se fija solo al confirmar) — ver diseño completo en 7.9.D.
+- `inventory_balances (organization_id, warehouse_id, product_id, on_hand_quantity, created_at, updated_at)` — PK `(organization_id, warehouse_id, product_id)`; FKs compuestas a `warehouses` y `products`; `CHECK (on_hand_quantity >= 0)`. Una fila solo existe para pares `(warehouse, product)` que hayan tenido al menos un movimiento con cantidad positiva; nunca se borra aunque el saldo llegue a cero después (ver 7.9.C).
+- `inventory_movements` (extendida, no reemplazada): añadir `warehouse_id` (FK compuesta `(organization_id, warehouse_id)`, NOT NULL tras backfill), y las columnas de referencia tipada del punto 4.D (`sale_id`, `purchase_receipt_id`, `transfer_id`, `physical_count_id` — todas nullable en esta fase salvo `physical_count_id`/ajuste manual, que son los únicos orígenes que Fase B implementa; las demás quedan reservadas para fases siguientes sin requerir otra migración de columnas). El valor `movement_type = 'opening'`, ya presente en el `CHECK` de `0001_initial.sql` y nunca usado hasta ahora, se reserva exclusivamente para la línea con `counted_quantity > 0` de un conteo inicializador (ver 7.9.C) — no se introduce ningún valor nuevo de `movement_type`.
+- `physical_counts (organization_id, branch_id, warehouse_id, id, status, is_initializing, initiated_by, confirmed_by, confirmed_at, created_at)` y `physical_count_lines (physical_count_id, product_id, counted_quantity, system_quantity_snapshot, difference)` — cantidad absoluta por línea (decisión aprobada 7); el servidor calcula `difference` y genera el movimiento correspondiente dentro de la misma transacción al confirmar el conteo. `status CHECK (status IN ('draft','confirmed','cancelled'))`. `is_initializing boolean NOT NULL` se fija al crear el conteo según si el almacén tenía `initialized_at IS NULL` en ese instante, y nunca cambia después — ver 7.9.
+- `legacy_stock_snapshot (organization_id, product_id, quantity_at_snapshot, snapshotted_at)` — nueva tabla, instantánea inmutable de `products.stock_quantity`. PK `(organization_id, product_id)`; FK compuesta a `products (organization_id, id)` ON DELETE RESTRICT. Diseño completo en 7.9.A.
+- Triggers de inmutabilidad en `inventory_movements`, `physical_counts`/`physical_count_lines` (tras `confirmed`) y `legacy_stock_snapshot`, replicando el patrón ya probado en `register_shifts` (0004): prohibir `UPDATE`/`DELETE` de cualquier fila ya insertada o confirmada (append-only real, no solo documental). Trigger adicional sobre `products` (`BEFORE UPDATE OF stock_quantity`) que rechaza el cambio si ya existe una fila en `legacy_stock_snapshot` para ese producto — ver 7.9.A.
+- Índices: `(organization_id, warehouse_id, product_id, created_at DESC)` para consulta de movimientos por almacén/producto; `(organization_id, branch_id, warehouse_id)` en `warehouses`; índice único parcial de `is_default` descrito arriba.
 
 ### 7.2 Migración
 
-- **Backfill de almacenes:** crear un almacén predeterminado por sucursal existente (`warehouses`, un registro por `branch_id`), de forma determinista y reversible.
-- **Punto de negocio marcado — distribución inicial de existencias entre sucursales:** hoy solo existe `products.stock_quantity`, un único número por producto a nivel de organización; **no existe ningún dato histórico de cuánto de ese stock está físicamente en cada sucursal.** No hay ninguna fuente de evidencia en el repositorio (código, migraciones, documentos) que permita inferir esa distribución automáticamente. Las alternativas reales son:
-  - **(a)** Asignar todo el stock existente a un único almacén "predeterminado" por organización (el de la sucursal marcada como principal/primera creada) y dejar el resto de sucursales en cero; las cantidades se corrigen después con transferencias reales o conteos físicos.
-  - **(b)** No migrar ningún stock automáticamente: todas las sucursales empiezan en cero y el primer conteo físico de cada sucursal (ya forma parte del alcance de Fase B, decisión aprobada 7) establece su saldo real, mientras `products.stock_quantity` permanece como referencia de solo lectura hasta que todas las sucursales activas hayan hecho su primer conteo.
-  - **(c)** Pedir al propietario (o a cada organización, si aplica) una distribución manual aprobada antes de la migración, organización por organización.
-
-  **Recomendación técnica: (b).** Es la única alternativa que no inventa un reparto sin base real, reutiliza un mecanismo que Fase B ya construye por otras razones (el conteo físico, decisión aprobada 7) en lugar de crear uno nuevo solo para la migración, y dado que (al momento de esta auditoría) no hay evidencia de datos reales de clientes en Neon main, el costo de "empezar en cero y contar" es bajo. (a) es más rápida pero fuerza a asumir cuál es la sucursal "principal", dato que tampoco existe hoy en el esquema. (c) no escala y depende de que el propietario tenga ese dato por cada organización cliente, lo cual no se puede asumir.
-
-  **Esta es la pregunta de negocio real que requiere la confirmación del propietario antes de fijar la regla de asignación** — se presenta formalmente al final de este documento.
-
-- **Compatibilidad temporal:** mientras no todas las sucursales de una organización tengan `inventory_balances` poblado y reconciliado, `products.stock_quantity` se mantiene como fuente de lectura para cualquier superficie que no esté todavía migrada (no existe tal superficie hoy, pero el principio queda documentado para cuando exista un frontend). Ninguna escritura nueva debe ir a `products.stock_quantity` una vez Fase B esté activa — una sola fuente de escritura, conforme al principio 2 de `MULTI_BRANCH_DATA_MODEL.md` §6.
-- **Retirada del campo legacy:** en una migración posterior, solo tras confirmar que `SUM(inventory_balances.on_hand_quantity) por producto` ha sido auditado y no hay escrituras pendientes al campo antiguo.
+- **Backfill de almacenes:** crear un almacén predeterminado (`is_default = true`) por cada sucursal existente (`warehouses`, un registro por `branch_id`), de forma determinista y reversible. Ningún almacén nace inicializado (`initialized_at = NULL`).
+- **Instantánea del inventario anterior y sin reparto automático (decisión aprobada 8):** en la misma transacción de backfill por organización, se copia a `legacy_stock_snapshot` el `stock_quantity` de **todos** los productos de esa organización (activos e inactivos, para no perder referencia de productos descontinuados). No se escribe ninguna fila en `inventory_balances` ni en `inventory_movements` durante el backfill — ningún almacén queda con existencias hasta que su primer conteo se confirme (7.9). No hay ya ninguna regla de reparto que decidir: se eliminó la pregunta de negocio de la revisión 1 de este documento porque el propietario aprobó que no se reparte nada automáticamente. Diseño completo en 7.9.A y 7.9.B.
+- **Compatibilidad temporal:** `products.stock_quantity` queda congelado (trigger, 7.9.A) pero visible como referencia histórica de solo lectura desde el momento del backfill de esa organización. Ninguna escritura nueva va a `products.stock_quantity` una vez Fase B esté activa para esa organización — una sola fuente de escritura, conforme al principio 2 de `MULTI_BRANCH_DATA_MODEL.md` §6.
+- **Retirada del campo legacy:** en una migración posterior, solo tras confirmar que **todos** los almacenes de una organización tienen `initialized_at` no nulo y que una conciliación no encontró escrituras pendientes al campo antiguo (que además el trigger de 7.9.A ya impide desde el snapshot).
 - **Recuperación ante errores:** cada paso de la migración 0005 debe tener su `.assertions.sql` (patrón ya establecido en 0001-0004) ejecutado en PostgreSQL desechable antes de considerarse completo; ningún paso se aplica a Neon main sin ese gate.
 
 ### 7.3 Backend y API (propuesta de endpoints, no implementada)
@@ -253,84 +247,135 @@ Todos bajo autorización `resolveTenantContext → resolveBranchContext`, denega
 
 - `GET /api/orgs/:organizationId/branches/:branchId/inventory` — saldo por almacén/producto (rol: todos los de la matriz línea 26, alcance sucursal para Inventory/Cashier).
 - `GET /api/orgs/:organizationId/branches/:branchId/inventory/movements` — historial de movimientos, paginado.
-- `POST /api/orgs/:organizationId/branches/:branchId/inventory/adjustments` — ajuste manual con motivo obligatorio (rol Inventory/Owner/Admin, matriz línea 28).
-- `POST /api/orgs/:organizationId/branches/:branchId/inventory/physical-counts` — crear conteo, cantidades absolutas por línea.
-- `POST /api/orgs/:organizationId/branches/:branchId/inventory/physical-counts/:id/confirm` — confirmar conteo; el servidor calcula diferencias y genera movimientos dentro de una transacción.
+- `POST /api/orgs/:organizationId/branches/:branchId/inventory/adjustments` — ajuste manual con motivo obligatorio (rol Inventory/Owner/Admin, matriz línea 28). Rechaza con 409 si el almacén destino no está inicializado (7.9.B).
+- `POST /api/orgs/:organizationId/branches/:branchId/inventory/physical-counts` — crea el conteo en estado `draft`. `is_initializing` se fija automáticamente según el estado de `initialized_at` del almacén en ese instante.
+- `POST /api/orgs/:organizationId/branches/:branchId/inventory/physical-counts/:id/lines` — añade/actualiza líneas (producto, cantidad contada) mientras el conteo esté en `draft`. Registra el progreso del conteo (7.9.E).
+- `POST /api/orgs/:organizationId/branches/:branchId/inventory/physical-counts/:id/confirm` — confirma el conteo dentro de una única transacción. Comportamiento distinto según `is_initializing` — diseño completo en 7.9.B y 7.9.C.
 
 Cada mutación: transacción única (saldo + movimiento juntos, usando `withDatabaseTransaction`), validación server-side de cantidades (`NUMERIC`, nunca negativas tras el movimiento salvo que se decida permitir saldo negativo explícitamente — no se propone permitirlo), manejo de errores sin filtrar detalles internos (patrón ya usado en `index.ts` `onError`).
 
 ### 7.4 Seguridad
 
 - Aislamiento de organización y sucursal verificado en cada consulta con cláusula explícita, no solo por FK compuesta (la FK es defensa en profundidad, no sustituto).
-- Permiso verificado server-side contra la matriz ya aprobada; Cashier nunca puede mutar inventario (coherente con línea 27-29 de la matriz: columna Cashier = ❌ en recepción/ajuste/transferencia).
-- Denegación por defecto: cualquier combinación de org/sucursal/rol no cubierta explícitamente por la matriz se rechaza, no se asume permitida.
-- Reutilizar `resolveBranchContext` (ya fail-closed y probado) en vez de reconstruir validación de sucursal ad-hoc.
+- Permiso verificado server-side contra la matriz ya aprobada; Cashier nunca puede mutar inventario (coherente con línea 27-29 de la matriz: columna Cashier = ❌ en recepción/ajuste/transferencia). La inicialización, al ser un conteo físico (decisión aprobada 7), hereda el mismo permiso que cualquier conteo — no se crea una fila de matriz nueva (7.9.F).
+- Denegación por defecto: cualquier combinación de org/sucursal/rol no cubierta explícitamente por la matriz se rechaza, no se asume permitida. Extiende también a almacenes no inicializados: toda mutación de inventario (salvo la propia confirmación del conteo inicializador) rechaza con 409 si `warehouses.initialized_at IS NULL`.
+- Reutilizar `resolveBranchContext` (ya fail-closed y probado) en vez de reconstruir validación de sucursal ad-hoc — también para iniciar/confirmar la inicialización (7.9.F).
 
 ### 7.5 Pruebas
 
 - Unitarias: cálculo de diferencias de conteo, validación de cantidades, construcción de queries.
 - Integración PostgreSQL desechable: cada endpoint contra PG real (patrón ya usado en `*.integration.test.ts`).
-- Concurrencia: dos ajustes/conteos simultáneos sobre el mismo `(warehouse_id, product_id)` no deben producir saldo negativo ni condición de carrera — replicar el patrón `Promise.allSettled` + índice/lock usado en `register-shifts.integration.test.ts`.
+- Concurrencia: dos ajustes/conteos simultáneos sobre el mismo `(warehouse_id, product_id)` no deben producir saldo negativo ni condición de carrera — replicar el patrón `Promise.allSettled` + índice/lock usado en `register-shifts.integration.test.ts`. Incluye específicamente dos confirmaciones simultáneas de conteos inicializadores del mismo almacén: solo una debe tener éxito (7.9.B/E).
 - Aislamiento multi-tenant: organización A no puede leer/escribir inventario de B ni manipulando IDs (patrón ya exigido en `MULTI_BRANCH_DATA_MODEL.md` §11, fila "Tenant").
-- Aislamiento por sucursal: usuario asignado solo a la sucursal A no puede operar inventario de B.
-- Migración: comparación de totales antes/después del backfill en PostgreSQL desechable con datos sintéticos.
+- Aislamiento por sucursal: usuario asignado solo a la sucursal A no puede operar inventario de B, incluida la inicialización.
+- Migración: snapshot de `legacy_stock_snapshot` cubre el 100% de los productos (activos e inactivos) de cada organización migrada, en PostgreSQL desechable con datos sintéticos.
 - Consistencia movimiento-saldo: todo movimiento insertado debe corresponder exactamente a la variación del saldo materializado (test de reconciliación).
-- Rollback: forzar fallo a mitad de una operación (p. ej. tras insertar el movimiento, antes de actualizar el saldo) y verificar que la transacción completa se revierte.
+- Rollback: forzar fallo a mitad de una operación (p. ej. tras insertar los movimientos `opening`, antes de marcar `initialized_at`) y verificar que la transacción completa se revierte, sin dejar el almacén parcialmente inicializado.
+- Cobertura obligatoria: confirmar un conteo inicializador con productos activos faltantes debe rechazarse con 409 y no debe crear ninguna fila (7.9.E).
+- Línea en cero: confirmar un conteo con una línea en 0 no debe crear fila en `inventory_balances` ni en `inventory_movements`; la línea debe persistir y ser consultable como evidencia (7.9.C).
+- Congelación del dato legado: un intento de `UPDATE` sobre `products.stock_quantity` tras su snapshot debe fallar (trigger, 7.9.A); un intento de `UPDATE`/`DELETE` sobre `legacy_stock_snapshot` o sobre un `physical_counts` ya confirmado debe fallar.
+- Operación bloqueada pre-inicialización: cualquier endpoint de mutación de inventario contra un almacén con `initialized_at IS NULL` (salvo su propio conteo inicializador) debe rechazar con 409.
 
 ### 7.6 Criterios de aceptación
 
 Fase B se considera terminada cuando, con evidencia reproducible en PostgreSQL desechable y CI:
 
 1. `inventory_balances` y `inventory_movements` (extendida) existen con `.assertions.sql` en verde.
-2. `inventory_movements` es append-only real (trigger probado: un intento de UPDATE/DELETE falla).
-3. Toda mutación de inventario ocurre en una única transacción (probado con fallo forzado + rollback).
-4. Los tres endpoints de mutación (ajuste, conteo, confirmación de conteo) están protegidos por `resolveTenantContext → resolveBranchContext` y rechazan cross-tenant/cross-branch con pruebas negativas.
-5. Dos mutaciones concurrentes sobre el mismo saldo no producen una cantidad negativa ni una condición de carrera (prueba real con PostgreSQL, no mock).
-6. El backfill desde `products.stock_quantity` tiene su regla de asignación aprobada por el propietario (ver pregunta pendiente) y pruebas de reconciliación de totales.
-7. La matriz de permisos aplicada es exactamente la ya aprobada, sin desviaciones.
+2. `inventory_movements`, `physical_counts`/`physical_count_lines` confirmados y `legacy_stock_snapshot` son append-only real (trigger probado: un intento de UPDATE/DELETE falla en cada uno).
+3. Toda mutación de inventario ocurre en una única transacción (probado con fallo forzado + rollback), incluida la confirmación de un conteo inicializador.
+4. Todos los endpoints de mutación están protegidos por `resolveTenantContext → resolveBranchContext` y rechazan cross-tenant/cross-branch con pruebas negativas.
+5. Dos mutaciones concurrentes sobre el mismo saldo, y dos confirmaciones concurrentes del mismo conteo inicializador, no producen una cantidad negativa, doble inicialización ni condición de carrera (prueba real con PostgreSQL, no mock).
+6. `legacy_stock_snapshot` cubre el 100% de los productos de cada organización migrada **antes** de que cualquiera de sus almacenes pueda inicializarse, con pruebas de cobertura.
+7. Ningún almacén permite mutaciones de inventario mientras `initialized_at` sea nulo, salvo la confirmación de su propio conteo inicializador, con prueba negativa.
+8. La confirmación de un conteo inicializador rechaza cobertura incompleta (producto activo sin línea) con prueba positiva y negativa.
+9. La matriz de permisos aplicada es exactamente la ya aprobada, sin desviaciones, incluida la inicialización.
 
 ### 7.7 Riesgos y mitigaciones
 
 | Riesgo | Mitigación |
 |---|---|
-| Migración de backfill dejando `products.stock_quantity` y `inventory_balances` divergentes | Comparación de totales automatizada en CI antes de considerar el backfill completo; no se corta la fuente antigua hasta que coincidan |
-| Condición de carrera en ajuste/conteo concurrente | Lock de fila (`FOR UPDATE`) o actualización condicional, con prueba de concurrencia real en PostgreSQL desechable antes de fusionar |
+| Migración de backfill dejando `products.stock_quantity` y `inventory_balances` divergentes | Ya no aplica como riesgo de reparto (decisión aprobada 8: no hay reparto automático); se mantiene como riesgo de trigger de congelación mal aplicado — prueba explícita de que `UPDATE` sobre el campo legado falla tras el snapshot |
+| Condición de carrera en ajuste/conteo concurrente, incluida la inicialización | Actualización condicional (`UPDATE ... WHERE initialized_at IS NULL`) dentro de la transacción + prueba de concurrencia real en PostgreSQL desechable antes de fusionar |
+| Confirmar un conteo inicializador incompleto deja productos con saldo implícito en cero sin haber sido realmente contados | Validación de cobertura obligatoria contra `products.is_active`, bloqueante, antes de permitir la confirmación (7.9.E) |
 | Referencia polimórfica heredada reapareciendo por descuido en nuevo código | Revisión de PR explícita contra este documento; cualquier nueva referencia debe usar FK tipada (sección 4.D) |
+| Confundir "sin fila en `inventory_balances`" con "no inicializado" | Disambiguado exclusivamente por `warehouses.initialized_at`, nunca por ausencia de fila (7.9.C/D) |
 | Confundir "existe la tabla" con "funcionalidad terminada" | Los criterios de aceptación (7.6) exigen evidencia de comportamiento, no solo de esquema |
 | Exposición cruzada entre organizaciones/sucursales por error de query | Pruebas negativas obligatorias antes de fusionar cualquier endpoint (igual que exige `AGENTS.md`/`AI_COLLABORATION_AND_PR_POLICY.md` para #53) |
 
 ### 7.8 Orden de implementación propuesto
 
 1. Migración 0005 (esquema + triggers + `.assertions.sql`), sin backfill todavía — validada en PostgreSQL desechable.
-2. Backfill de almacenes predeterminados (sin stock, solo estructura).
-3. Resolver la pregunta de asignación inicial de stock (pendiente del propietario) y aplicar el backfill de saldo correspondiente.
-4. Endpoints de lectura (saldo, movimientos) — menor riesgo, habilita verificación visual temprana.
-5. Endpoint de ajuste manual.
-6. Endpoint de conteo físico (crear + confirmar).
-7. Pruebas de concurrencia, aislamiento y reconciliación — gate final antes de considerar Fase B cerrada.
-8. Documentación de continuidad actualizada **solo después** de que lo anterior esté fusionado y verificado en CI.
+2. Backfill de almacenes predeterminados (sin stock, solo estructura) y, en la misma transacción por organización, snapshot a `legacy_stock_snapshot` (7.9.A) — ya no hay pregunta de reparto pendiente, el backfill nunca escribe saldo.
+3. Endpoints de lectura (saldo, movimientos) — menor riesgo, habilita verificación visual temprana.
+4. Endpoint de ajuste manual (bloqueado por `initialized_at` como cualquier otra mutación).
+5. Endpoints de conteo físico (crear, añadir líneas, confirmar) — incluye el flujo de inicialización (`is_initializing`) descrito en 7.9.
+6. Pruebas de concurrencia, aislamiento, cobertura de inicialización y reconciliación — gate final antes de considerar Fase B cerrada.
+7. Documentación de continuidad actualizada **solo después** de que lo anterior esté fusionado y verificado en CI.
+
+### 7.9 Inicialización del inventario por sucursal — diseño detallado (decisión aprobada 8)
+
+Esta sección resuelve, con criterio técnico, los seis aspectos planteados por el propietario sobre cómo implementar la decisión ya aprobada. Ninguno de los puntos siguientes reabre la decisión de negocio; todos son su concreción técnica.
+
+#### A. Conservación del inventario anterior
+
+`legacy_stock_snapshot (organization_id, product_id, quantity_at_snapshot, snapshotted_at)`, PK `(organization_id, product_id)`, FK compuesta `(organization_id, product_id) → products (organization_id, id)` ON DELETE RESTRICT.
+
+- **Cuándo se toma:** en la misma transacción que el backfill de almacenes predeterminados de esa organización (paso 2 de 7.8), antes de que exista ningún almacén operable. Un solo `snapshotted_at` por organización — instantánea completa del catálogo, no parcial.
+- **Qué cubre:** todos los productos de la organización, activos e inactivos, para no perder referencia de productos descontinuados que de todos modos tenían un `stock_quantity` histórico.
+- **Por qué no se sobrescribe ni se descarta:** la tabla es aditiva (migración nueva, no toca `products`); un trigger de inmutabilidad (mismo patrón `guard_register_shift_lifecycle` de `0004_register_shifts.sql`) prohíbe `UPDATE`/`DELETE` sobre cualquier fila ya insertada. La restricción `PK (organization_id, product_id)` impide además una segunda instantánea accidental del mismo producto — el snapshot ocurre, por diseño, una sola vez por organización.
+- **Cómo se impide que el sistema siga usando la columna como fuente de verdad:** no es solo una convención de código. Un trigger `BEFORE UPDATE OF stock_quantity ON products` consulta `legacy_stock_snapshot`; si ya existe una fila para `(NEW.organization_id, NEW.id)`, la actualización se rechaza con una excepción de PostgreSQL. Esto congela el campo a nivel de base de datos en el momento exacto del snapshot de esa organización, no por disciplina de los desarrolladores — detecta en tiempo real cualquier escritura accidental futura, incluida la de código que aún no existe hoy.
+- **Alcance del congelamiento:** es por `(organization_id, product_id)`, no global. Una organización que todavía no haya activado Fase B (sin fila de snapshot) sigue pudiendo escribir su `stock_quantity` con normalidad — no hay efecto cruzado entre organizaciones en distintos estados de adopción.
+
+#### B. Inicialización por sucursal
+
+La unidad real de inicialización es el **almacén** (`warehouses.initialized_at`), no la sucursal — ver justificación en el punto D. En Fase B, cada sucursal tiene exactamente un almacén predeterminado, así que en la práctica equivalen; el diseño no depende de esa coincidencia.
+
+- **Independencia:** cada almacén se inicializa con su propio conteo, sin relación con el estado de otros almacenes de la misma organización (consistente con la decisión aprobada 2, existencias independientes por sucursal).
+- **Atomicidad:** la confirmación de un conteo inicializador ocurre dentro de una única transacción (`withDatabaseTransaction`) que: (1) valida cobertura completa (7.9.E); (2) inserta `inventory_balances`/`inventory_movements` para las líneas con cantidad > 0; (3) ejecuta `UPDATE warehouses SET initialized_at = now(), initialized_by = $actor, initializing_physical_count_id = $count_id WHERE id = $warehouse_id AND initialized_at IS NULL`. Si cualquier paso falla, o si la actualización condicional afecta 0 filas (ver concurrencia abajo), toda la transacción se revierte — no hay estado intermedio "parcialmente inicializado".
+- **Concurrencia:** la cláusula `WHERE initialized_at IS NULL` en el `UPDATE` es la guarda real. Si dos conteos inicializadores del mismo almacén se confirman a la vez, PostgreSQL serializa ambas transacciones por el bloqueo de fila sobre `warehouses`; la segunda ve `initialized_at` ya no nulo, su `UPDATE` afecta 0 filas, y su transacción se revierte completa con un 409 — sin doble inicialización y sin inconsistencia, sin necesitar un índice único adicional (el propio `UPDATE` condicional cumple el mismo papel que el patrón de índice único parcial de `register_shifts`, adaptado a una transición de estado de una sola vez en lugar de un recurso que se abre/cierra repetidamente).
+- **Bloqueo de operaciones comerciales:** cualquier endpoint que mute inventario de ese almacén (ajuste, conteo rutinario, y los puntos de extensión reservados para transferencia/recepción en fases futuras) debe comprobar `warehouses.initialized_at IS NOT NULL` y rechazar con 409 en caso contrario — única excepción, la propia confirmación del conteo inicializador. Esto es, además, la base sobre la que las fases C (transferencias) y D (compras) deberán apoyarse: ningún endpoint futuro de esas fases podrá mutar un almacén no inicializado sin violar este contrato ya establecido aquí.
+
+#### C. Productos con existencia cero
+
+El `CHECK (quantity_delta <> 0)` de `inventory_movements` (heredado de `0001_initial.sql`, no se modifica) impide generar un movimiento de cantidad cero. En vez de forzar una excepción a esa restricción o inventar un movimiento ficticio:
+
+- **Ningún movimiento ni fila de `inventory_balances` se crea para una línea contada en cero.** La ausencia de saldo ya significa "cero" exactamente igual que antes de inicializar — por eso la inicialización no se infiere por la existencia de filas de saldo, sino exclusivamente por `warehouses.initialized_at` (punto D).
+- **La evidencia de que el producto fue contado y declarado en cero es la propia fila de `physical_count_lines`**, que pasa a ser inmutable en cuanto su `physical_counts` padre queda `confirmed` (mismo trigger de inmutabilidad que protege `inventory_movements` y `legacy_stock_snapshot`). Esa fila es permanente y consultable: "el producto X fue contado el día Y por el usuario Z y se declaró en 0 unidades" — sin necesitar un movimiento de inventario para probarlo.
+- **Distinción contada-en-cero vs. no-contada-todavía:** se resuelve en el punto de confirmación, no por inspección posterior de `inventory_balances`. La validación de cobertura obligatoria (7.9.E) exige que exista una línea de `physical_count_lines` para cada producto activo antes de permitir que el conteo inicializador se confirme — así que, una vez `initialized_at` no es nulo, todo producto activo de esa organización tiene garantizado tener una línea en el conteo que inicializó ese almacén (contada en 0 o en una cantidad positiva). Un producto sin fila de saldo en un almacén ya inicializado significa, sin ambigüedad, "contado y confirmado en cero" o "creado después de la inicialización, aún no contado ahí" — ambos casos son datos legítimos, no un error de datos.
+
+#### D. Estado de inicialización — unidad correcta
+
+`initialized_at`, `initialized_by` e `initializing_physical_count_id` pertenecen a **`warehouses`**, no a `branches`.
+
+- **Por qué:** `inventory_balances` está modelado por `(organization_id, warehouse_id, product_id)` — el propio `MULTI_BRANCH_DATA_MODEL.md` (§4, "almacén: ubicación de existencias dentro de una sucursal; permitir más de uno cuando el negocio lo necesite") y `SAAS_ARCHITECTURE_DECISIONS.md` (tabla de alcance, fila "Existencias y reservas → Sucursal + almacén") fijan el almacén, no la sucursal, como la unidad real donde existe una cantidad física. Poner el estado de inicialización en `branches` presupondría una equivalencia 1:1 entre sucursal y almacén que el propio ERD objetivo ya rechaza (permite más de un almacén por sucursal).
+- **Por qué no es un problema práctico en Fase B:** esta fase solo crea un almacén predeterminado (`is_default = true`) por sucursal existente (backfill, 7.2); no expone todavía ninguna funcionalidad de múltiples almacenes por sucursal. En este alcance concreto, inicializar el almacén predeterminado de una sucursal equivale, en la práctica, a inicializar la sucursal — pero el campo vive en la entidad correcta del modelo de datos, preparado para cuando una organización necesite más de un almacén por sucursal sin requerir otra migración de columnas ni mover el campo.
+- **Resolución de "¿puede operar la sucursal?":** por ahora (un único almacén por sucursal), la pregunta "¿puede esta sucursal vender/ajustar/recibir?" se responde consultando el `initialized_at` de su único almacén `is_default`. Qué almacén exacto usa cada operación cuando una sucursal tenga varios almacenes (fase futura, no de Fase B) es una cuestión de enrutamiento de ventas que no está resuelta en ningún documento vigente — se deja fuera de alcance explícitamente, sin inventar una regla de negocio que nadie ha pedido todavía.
+
+#### E. Conteos parciales y correcciones
+
+- **Progreso:** mientras `physical_counts.status = 'draft'`, el endpoint de líneas (7.3) permite insertar/actualizar filas de `physical_count_lines` de forma incremental, una por producto contado hasta ese momento. No hay límite de tiempo impuesto por el diseño para completar un conteo en `draft`.
+- **Completitud exigida solo para el conteo inicializador:** al llamar a `confirm` sobre un conteo con `is_initializing = true`, la transacción primero ejecuta una comprobación de cobertura: todo producto con `is_active = true` de la organización debe tener una línea en ese conteo. Si falta alguno, la confirmación se rechaza con 409 y la lista de productos faltantes, sin modificar nada — un conteo parcial nunca se confirma ni se trata como si las cantidades faltantes fueran cero. Un conteo **no** inicializador (routine recount posterior, ya con el almacén inicializado) no exige esta cobertura total — puede ser un recuento parcial legítimo de unos pocos productos, porque el almacén ya tiene una línea base fiable para todo lo demás.
+- **Corregir un conteo inicial que resultó incorrecto:** no se edita ni se borra el `opening` original (inmutable por trigger, igual que cualquier otro movimiento). Se corrige exactamente como cualquier otra discrepancia detectada después: un nuevo conteo (rutinario) o un ajuste manual con motivo obligatorio (fila ya aprobada de la matriz, "Ajuste de inventario") que registra la diferencia como un nuevo movimiento. El historial conserva ambos hechos — el conteo inicial declarado y la corrección posterior — sin perder trazabilidad ni requerir un mecanismo nuevo.
+
+#### F. Seguridad y permisos
+
+- **Quién puede iniciar/registrar líneas/confirmar:** la inicialización es, por la decisión aprobada 7, un conteo físico — hereda sin cambios la fila ya aprobada "Ajuste de inventario (mermas, conteos)" de `role-permission-decision-matrix.md`: Owner/Admin con alcance de organización; Inventory con alcance de sucursal, motivo obligatorio y auditoría; Cashier sin acceso. No se crea una fila de matriz nueva ni un rol nuevo.
+- **Verificación server-side:** mismo encadenamiento ya construido y probado, `resolveTenantContext → resolveBranchContext` — un Inventory sin `branch_memberships` activa sobre la sucursal del almacén no puede iniciar, registrar líneas en, ni confirmar su conteo inicializador. No se reconstruye validación de sucursal ad-hoc.
+- **Sin flujo de doble aprobación:** el esquema distingue `initiated_by` de `confirmed_by` (permite que sean personas distintas si una organización lo opera así), pero el sistema no exige un segundo revisor — introducir esa exigencia sería una regla de negocio nueva no solicitada, así que no se añade.
+- **Auditoría:** `physical_counts` registra `initiated_by`, `confirmed_by`, `confirmed_at`, `organization_id`, `branch_id`, `warehouse_id`; cada línea queda ligada a esa fila, inmutable tras confirmar. `warehouses.initialized_by`/`initializing_physical_count_id` dejan, además, la traza directa de qué conteo y qué persona inicializaron cada almacén, consultable sin tener que reconstruirlo a partir del historial de movimientos.
 
 ---
 
 ## 8. Documentación — contradicciones y alcance de este borrador
 
-No se encontró ninguna contradicción entre este borrador y `MULTI_BRANCH_DATA_MODEL.md`, `role-permission-decision-matrix.md`, `INSPIRATION.md` o `POS_REFERENCE_MATRIX.md`: este documento se apoya en ellos y no los reemplaza. `MULTI_BRANCH_DATA_MODEL.md` conserva autoridad sobre el ERD objetivo a largo plazo (incluye compras, pagos avanzados, etc., fuera del alcance de Fase B); este documento es su concreción para la fase inmediata siguiente, no una versión alternativa.
+No se encontró ninguna contradicción entre este borrador y `MULTI_BRANCH_DATA_MODEL.md`, `role-permission-decision-matrix.md`, `INSPIRATION.md`, `POS_REFERENCE_MATRIX.md` o `SAAS_ARCHITECTURE_DECISIONS.md` (los cinco releídos de nuevo para esta revisión 2): este documento se apoya en ellos y no los reemplaza. `MULTI_BRANCH_DATA_MODEL.md` conserva autoridad sobre el ERD objetivo a largo plazo (incluye compras, pagos avanzados, etc., fuera del alcance de Fase B); este documento es su concreción para la fase inmediata siguiente, no una versión alternativa.
 
 No se modificó `CURRENT_STATE.md`, `HANDOFF_NEXT_CHAT.md` ni `STATE_JOURNAL.md`: conforme a la instrucción del propietario, esos documentos de estado general se actualizan solo cuando el trabajo correspondiente esté terminado y autorizado, no mientras es un borrador de propuesta.
 
 ---
 
-## 9. Pregunta pendiente de negocio (la única indispensable)
+## 9. Decisión de inicialización — aprobada y registrada
 
-**Problema en lenguaje sencillo:** hoy el stock de cada producto es un solo número por organización. Al dividir el inventario por sucursal, alguien tiene que decidir cómo repartir ese número inicial entre las sucursales — y no existe ningún dato en el sistema que diga cuánto de ese stock está físicamente en cada una.
+La pregunta de negocio planteada en la revisión 1 de este documento (cómo repartir `products.stock_quantity` entre sucursales) quedó **resuelta por el propietario el 2026-11-02**: no se reparte automáticamente nada; cada sucursal se inicializa mediante un primer conteo confirmado formalmente (decisión aprobada 8, sección 1). El diseño técnico completo de esa decisión está en la sección 7.9.
 
-**Alternativas:**
-- **(a) Repartir todo a una sucursal "principal"** y dejar las demás en cero, a corregir después manualmente.
-- **(b) Empezar todas las sucursales en cero** y que el primer conteo físico de cada una (que de todos modos hay que construir en esta fase) establezca su saldo real.
-- **(c) Pedir una distribución manual** aprobada antes de migrar, sucursal por sucursal.
-
-**Consecuencias:** (a) es rápida pero asume una sucursal "principal" que hoy no existe como concepto en el sistema, y dejaría las demás sucursales con saldo cero aunque tengan stock real hasta que alguien lo corrija. (b) no arriesga ningún número inventado, pero exige literalmente contar el inventario físico de cada sucursal antes de operar con datos fiables — trabajo real, no solo de software. (c) es la más precisa pero no es escalable ni verificable por el sistema, y hoy no hay ningún dato de ese tipo disponible para ninguna organización.
-
-**Recomendación:** (b) — empezar en cero y usar el conteo físico real, porque es la única opción que no inventa un número sin respaldo y porque reutiliza una pieza que Fase B construye de todas formas.
-
-¿Cuál de las tres prefieres, o hay una cuarta opción que no se haya contemplado?
+Ninguna cuestión de negocio nueva surgió al profundizar en los seis aspectos solicitados (7.9.A-F): los seis se resolvieron con criterio técnico, apoyados en mecanismos que Fase B ya necesitaba por otras razones (conteo físico, trigger de inmutabilidad, resolvers existentes, matriz ya aprobada). No hay, a cierre de esta revisión, ninguna pregunta de negocio pendiente para que Fase B pueda aprobarse formalmente.

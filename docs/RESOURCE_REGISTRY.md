@@ -1,6 +1,6 @@
 # Registro de herramientas, repositorios y fuentes de Micro app
 
-Actualizado: 2026-10-30. Este registro no sustituye la verificación en vivo: planes gratuitos, documentación y estado de repositorios cambian. Añadir cada fuente consultada con fecha, uso, conclusión y limitaciones. No registrar secretos ni URLs que contengan credenciales.
+Actualizado: 2026-11-04. Este registro no sustituye la verificación en vivo: planes gratuitos, documentación y estado de repositorios cambian. Añadir cada fuente consultada con fecha, uso, conclusión y limitaciones. No registrar secretos ni URLs que contengan credenciales.
 
 ## Herramientas y servicios del proyecto
 
@@ -173,3 +173,41 @@ Decisión: en un checkout con red, ejecutar primero `npx autoskills --dry-run`, 
 ## Verificación pública de frontend — 2026-10-30 (solo lectura)
 
 La página `https://micro-app-63i.pages.dev/` muestra un enlace “Continuar con Google” cuyo `href` es `https://micro-app-api.btfcasheb.workers.dev/auth/google`. Esto confirma el hostname del Worker en el enlace OAuth del HTML público. La inspección no pudo acceder al contenido de los bundles JavaScript ni confirmar `__MICRO_APP_API_BASE_URL__` compilado. La evidencia no demuestra que las demás llamadas API funcionen ni que CORS sea correcto. No se realizaron interacciones ni cambios.
+
+
+## Flujo ODD y herramientas de agentes — evaluación 2026-11-04
+
+### Organic Driven Development (ODD)
+
+- Fuente primaria: https://github.com/Gentleman-Programming/gentle-ai/blob/main/docs/usage.md
+- Reglas de activación: https://github.com/Gentleman-Programming/gentle-ai/blob/main/docs/trigger-rules.md
+- Gentleman AI v4.0.0 declara ODD como único flujo de implementación y retira SDD/OpenSpec como workflows activos.
+- Decisión Micro-app: adaptar ODD en `docs/ODD_WORKFLOW.md`. No se instala Gentle-AI ni se presupone Engram; GitHub sigue siendo la memoria durable canónica. Las especificaciones de dominio existentes se conservan.
+
+### GitHub Spec Kit — decisión supersedida
+
+- Fuente: https://github.com/github/spec-kit
+- Evaluación previa: v1.3.0, registrada en `docs/SPEC_KIT_ADOPTION.md`.
+- Estado: CLI nunca instalada ni ejecutada. La propuesta de usar Spec Kit como flujo SDD se archiva; no instalar ni invocar como parte del flujo predeterminado ODD.
+- No borrar el documento histórico ni los contratos `docs/sdd/` hasta auditar referencias y dependencias.
+
+### Everything Claude Code (ECC)
+
+- Fuente: https://github.com/affaan-m/ECC
+- Licencia declarada: MIT. El proyecto incluye agentes, skills, reglas, hooks, memoria y herramientas de seguridad; ofrece un target para GitHub Copilot CLI, con límites de paridad por runtime.
+- ECC es un catálogo y un sistema de instalación, no una metodología que debamos copiar completo. Su README recomienda seleccionar componentes y revisar el plan de instalación; hooks requieren elección explícita.
+- Decisión: **evaluar por componentes, no instalar el perfil full ni hooks globales**. Primero elegir skills realmente útiles para el stack/runtime y revisar release exacta, scripts, permisos, telemetría, solapamiento con `.github/agents/` y `.agents/skills/`, coste y procedimiento de desinstalación.
+- Estado: inspección documental solamente; no instalado, no ejecutado, sin skills/hook ECC activos.
+
+### tester-army/e2e
+
+- Fuente: https://github.com/tester-army/e2e
+- Framework E2E web/móvil con acciones de agente y aserciones verificables; el README indica que los pasos agentic pueden grabarse/reproducirse y que se puede aportar suscripción/API key o modelo local.
+- Licencia declarada: Apache-2.0. El CLI reporta telemetría anónima de uso/fallos y documenta la opción `E2E_TELEMETRY_DISABLED=1`.
+- El proyecto declara estar en desarrollo hacia 1.0 y sus APIs pueden cambiar.
+- Decisión: **no reemplaza Vitest, PostgreSQL integration ni Playwright**. Considerar piloto aislado y opcional después de tener una suite determinista estable; no hacerlo requisito de CI hasta verificar el proveedor/modelo, coste real $0, telemetría desactivada, estabilidad, replay y valor añadido.
+- Estado: inspección documental; no instalado, no configurado y no ejecutado.
+
+### Criterio general
+
+Ninguna herramienta externa se considera instalada por estar documentada. Fijar versión/release antes de cualquier piloto; inspeccionar licencia, scripts, permisos, datos enviados, telemetría, coste y rollback. No habilitar servicios, MCP, hooks, plugins ni cuentas facturables sin evaluación explícita.

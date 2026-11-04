@@ -1,5 +1,22 @@
 # Handoff operativo — continuidad Micro-app — 2026-11-01 UTC
 
+## Handoff — adopción ODD y evaluación ECC/E2E — 2026-11-04
+
+- Repositorio: BTF14/Micro-app. Revalidar rama, HEAD, PR y checks en vivo antes de continuar.
+- PR #197: `https://github.com/BTF14/Micro-app/pull/197`; rama `chore/agent-governance-speckit-20261104`; abierta como Draft, sin merge. Base SHA observado en la metadata de PR: `705d3db3220894c7d3baca8dc7e7a6b623dfbb94`. HEAD documental más reciente al escribir este checkpoint: `7f44102792855f2c39f5393fad2e8bd55c27b0d3`; verificar que no haya commits posteriores.
+- ODD es el workflow predeterminado, definido en `docs/ODD_WORKFLOW.md`. El SDD workflow está retirado y `docs/SDD_WORKFLOW.md` redirige al nuevo documento. Los documentos de dominio en `docs/sdd/` permanecen vigentes y no deben borrarse por esta transición.
+- Trabajo sustancial/crítico: un solo `odd/tasks/<feature>.md` antes de editar código. Trabajo pequeño: sin artefactos innecesarios. GitHub es la memoria durable; Engram no está instalado ni es requisito.
+- Spec Kit v1.3.0: evaluación anterior archivada en `docs/SPEC_KIT_ADOPTION.md`; CLI no instalada/ejecutada. No instalar ni invocar como flujo activo.
+- ECC: evaluación documental, licencia MIT declarada, soporte target Copilot CLI; no instalar perfil full ni hooks. Seleccionar skills concretas solo tras fijar release y revisar permisos/coste/telemetría.
+- tester-army/e2e: evaluación documental, Apache-2.0 declarado; framework en desarrollo hacia 1.0, telemetría anónima documentada. No instalar ni añadir a CI. Candidato a piloto aislado tras estabilizar Playwright determinista y demostrar coste $0.
+- RDD es independiente de ODD y no se activa automáticamente.
+- **Gates intactos:** presupuesto $0; no tocar main/Neon producción/datos reales; no desplegar ni fusionar; Seguridad Nivel 1 no está cerrada mientras falten RPO/RTO, alerta externa y evidencia de coste $0; respetar la matriz aprobada y no crear lógica comercial nueva hasta cerrar los gates aplicables.
+- PR #196 permanece independiente y Draft; PR #190/#193 e issue #53 no fueron modificadas por este trabajo.
+- HEAD `25e7e1678b4b3c0f937b4c657f255c6453b95ead` tuvo 9/9 workflows en success (CI, Playwright E2E, migraciones PostgreSQL, Semgrep, Security, Secret history, Dependency Review, documentación y dashboard). ODD-09 quedó cerrado. Este checkpoint puede generar un commit documental posterior: revalidar el HEAD vivo y sus checks al retomar.
+- Próximo paso: revisar diff completo, validar enlaces/documentación y obtener CI del HEAD exacto desde un entorno que dispare Actions; corregir errores y dejar PR #197 Draft. No instalar herramientas externas en este paso.
+
+---
+
 > No reiniciar el proyecto. Este handoff describe el último estado comprobado; verificar GitHub en vivo antes de actuar.
 
 ## Estándar frontend aprobado — 2026-11-01
@@ -1357,7 +1374,7 @@ Después de la fusión, verificar los workflows del commit nuevo de main y actua
 
 ## Prompt de inicio para cualquier IA nueva
 
-> Trabaja exclusivamente en `BTF14/Micro-app`. Antes de tocar código, lee `AGENTS.md`, `docs/CONSTITUTION.md`, `docs/HANDOFF_NEXT_CHAT.md`, `docs/PROJECT_PLAN.md`, `docs/STATE_JOURNAL.md`, `docs/RESOURCE_REGISTRY.md`, `docs/AI_CONTINUITY_PROTOCOL.md` y los documentos de dominio relevantes. Verifica en vivo el SHA de `main`, PRs, ramas y Actions para el SHA exacto. Sigue `docs/SDD_WORKFLOW.md` para cambios significativos y usa `templates/sdd/`. Preserva coste $0; no mezcles Cantina-pos; no expongas secretos; seguir el gate de `docs/CONSTITUTION.md` para Neon `main` y no desplegar producción sin aceptación explícita. Los perfiles `.github/agents/` no prueban que existan subagentes activos. Distingue hechos, inferencias y pendientes. No pidas repetir permisos o contexto ya documentado salvo bloqueo concreto. Al terminar, actualiza plan, diario, handoff y registro de recursos según corresponda, y proporciona enlaces a commits/PR/checks.
+> Trabaja exclusivamente en `BTF14/Micro-app`. Antes de tocar código, lee `AGENTS.md`, `docs/CONSTITUTION.md`, `docs/HANDOFF_NEXT_CHAT.md`, `docs/PROJECT_PLAN.md`, `docs/STATE_JOURNAL.md`, `docs/RESOURCE_REGISTRY.md`, `docs/AI_CONTINUITY_PROTOCOL.md` y los documentos de dominio relevantes. Verifica en vivo el SHA de `main`, PRs, ramas y Actions para el SHA exacto. Sigue `docs/ODD_WORKFLOW.md`; para trabajo sustancial/crítico crea un único registro desde `odd/TASK_TEMPLATE.md`. Preserva coste $0; no mezcles Cantina-pos; no expongas secretos; seguir el gate de `docs/CONSTITUTION.md` para Neon `main` y no desplegar producción sin aceptación explícita. Los perfiles `.github/agents/` no prueban que existan subagentes activos. Distingue hechos, inferencias y pendientes. No pidas repetir permisos o contexto ya documentado salvo bloqueo concreto. Al terminar, actualiza plan, diario, handoff y registro de recursos según corresponda, y proporciona enlaces a commits/PR/checks.
 
 
 ## Checkpoint — política de respaldo y recuperación (2026-10-18)

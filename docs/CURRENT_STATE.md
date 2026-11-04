@@ -1,5 +1,17 @@
 # Estado actual — Micro app
 
+## Actualización de gobernanza ODD — 2026-11-04
+
+- El flujo operativo predeterminado pasa a **Organic Driven Development (ODD)**; ver `docs/ODD_WORKFLOW.md`. SDD deja de ser el workflow activo, pero los documentos `docs/sdd/` siguen siendo contratos, modelos y decisiones de dominio vigentes.
+- PR #197: abierta, Draft, sin merge; título `chore: adopt ODD and streamline agent governance`. Rama `chore/agent-governance-speckit-20261104`. Consultar el HEAD actual en GitHub; esta PR recibió varios commits documentales después de crear este checkpoint.
+- Se añadió `docs/ODD_WORKFLOW.md` y el registro de trabajo `odd/tasks/agent-governance-odd-adoption.md`. `AGENTS.md`, Constitución y perfiles de agentes fueron alineados con ODD.
+- `docs/SDD_WORKFLOW.md` es ahora un redirect histórico. La propuesta Spec Kit v1.3.0 se archivó porque la CLI nunca se instaló ni ejecutó; no debe tratarse como herramienta activa.
+- ECC y `tester-army/e2e` fueron revisados documentalmente. Ninguno se instaló, ejecutó ni añadió al CI. ECC se evaluará por componentes; E2E agentic solo como piloto opcional, complementario a pruebas deterministas.
+- No se tocaron `main`, PR #196, PR #190/#193, issue #53, Neon producción, datos reales, secretos, dependencias, hooks ni despliegues.
+- HEAD `25e7e1678b4b3c0f937b4c657f255c6453b95ead`: 9/9 workflows asociados terminaron en success (CI, Playwright E2E, migraciones PostgreSQL, Semgrep, Security, Secret history, Dependency Review, documentación y dashboard). ODD-09 quedó cerrado con esa evidencia. Este checkpoint documental genera commits adicionales; volver a consultar el HEAD y sus checks antes de cerrar la PR. No fusionar ni marcar producción lista.
+
+---
+
 ## Estado operativo vigente — 2026-11-01 UTC
 
 - **Estándar frontend aprobado:** `docs/FRONTEND_DESIGN_STANDARD.md` fija el estándar transversal UI/UX, responsive y WCAG 2.2 AA. Se integra en `AGENTS.md`, `micro-app-stack-guidance` y la documentación de accesibilidad. Es una adopción documental; no modifica la UI ni declara auditadas las pantallas existentes.

@@ -1,3 +1,18 @@
+# 2026-11-04 UTC — Adopción documental de ODD y evaluación de ECC / tester-army/e2e
+
+- El propietario autorizó una revisión y reorganización profesional del modelo de trabajo de agentes, solicitando investigar ODD de Gentleman Programming, ECC y tester-army/e2e.
+- Se revisaron fuentes upstream: Gentle AI usage/trigger rules (ODD), ECC README y target GitHub Copilot, tester-army/e2e README (modelo/proveedor, telemetría y estado de desarrollo).
+- Decisión: ODD pasa a ser el workflow predeterminado de Micro-app. Se añadió `docs/ODD_WORKFLOW.md`; `AGENTS.md`, Constitución y perfiles de agentes se alinearon. SDD deja de ser el flujo activo, pero `docs/sdd/` conserva contratos, modelos y decisiones de dominio vigentes.
+- `docs/SDD_WORKFLOW.md` se convirtió en redirect histórico. La propuesta Spec Kit v1.3.0 se archivó; la CLI nunca fue instalada ni ejecutada.
+- ECC se mantiene como candidato de adopción selectiva por skills/reglas, no como instalación completa ni hooks. tester-army/e2e se mantiene como posible piloto opcional, sin reemplazar Vitest, PostgreSQL integration o Playwright.
+- Se creó `odd/tasks/agent-governance-odd-adoption.md` y se actualizaron los registros de recursos, evaluación Gentleman, estado y handoff.
+- No se instalaron ni ejecutaron Gentle-AI, Engram, ECC, GGA, Ollama o tester-army/e2e. No se añadieron dependencias, hooks, MCPs ni telemetría.
+- La PR #197 continúa abierta como Draft y sin merge. La PR #196, PR #190/#193 e issue #53 no se modificaron. No se tocó main, Neon producción, datos reales, secretos, Cloudflare configuración ni despliegues.
+- La validación del HEAD final debe consultarse en GitHub; los checks del SHA inicial de PR #197 no validan estos commits posteriores.
+- Los gates de seguridad, coste $0, datos reales y producción permanecen intactos. Esta entrada no declara Nivel 1 completo ni readiness de producción.
+
+---
+
 # 2026-10-30 UTC — PR #176 fusionada; CORS sigue bloqueado por red del entorno
 
 - GitHub en vivo confirmó PR #175 y #176 fusionadas; PR #176 merge SHA y HEAD de `main` observado en la consulta: `287ba4e3b038b434bfec1fffec140bf2acc3f29a`. No había PR abiertas.

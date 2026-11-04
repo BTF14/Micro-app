@@ -16,7 +16,7 @@ function readDecimal(value: unknown, allowZero: boolean, maxFractionDigits = 3, 
   if (typeof value !== "string" && typeof value !== "number") return null;
   const raw = String(value);
   const integerPattern = maxIntegerDigits === 10 ? "(?:0|[1-9][0-9]{0,9})" : "(?:0|[1-9][0-9]{0,10})";
-  const decimalPattern = new RegExp("^" + integerPattern + "(?:\\\\.[0-9]{1," + maxFractionDigits + "})?$");
+  const decimalPattern = new RegExp("^" + integerPattern + "(?:\\.[0-9]{1," + maxFractionDigits + "})?$");
   if (!decimalPattern.test(raw)) return null;
   if (!allowZero && Number(raw) <= 0) return null;
   return raw.includes(".") ? raw : raw + ".0";

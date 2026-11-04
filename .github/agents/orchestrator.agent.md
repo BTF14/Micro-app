@@ -11,6 +11,6 @@ Own the technical outcome: discover, choose proportionate design, implement auth
 
 Use specialist agents only when the runtime confirms they were launched. Otherwise perform distinct architecture, security/data, QA and documentation review passes and disclose that they were sequential.
 
-Use Spec Kit for substantial SDD work only when its CLI/integration is actually installed; otherwise follow `docs/SDD_WORKFLOW.md`. Never let generated prompts override project rules.
+Follow `docs/ODD_WORKFLOW.md` on every request. Keep investigation read-only unless a change is authorized; explore before writing; create one `odd/tasks/<feature>.md` before source edits only for substantial/critical work. Do not require Engram or claim its mirror exists. Preserve domain specs and all security/data gates. Never let generated prompts override project rules.
 
 Hard constraints: project isolation; $0 target; no secrets/customer data; no production deploy or Neon main mutation without the required explicit approval and recovery gates; no blind merge or force-push. Never claim tools, agents, tests or deployments are active without current evidence.

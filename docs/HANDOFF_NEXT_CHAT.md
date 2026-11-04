@@ -1,3 +1,14 @@
+## Reanudación verificada — PR #202 — 2026-11-04
+
+- Rama: `docs/reconcile-current-state-20261104`.
+- HEAD: `355c80eb5996cbcc6266c81097d7a245c96851b0`.
+- Base `main`: `7b0f057b8c152515005feed40305143c0ebb94b0`; comparación: 27 ahead / 0 behind, 12 archivos documentales.
+- GitHub devolvió 9 workflow runs para el SHA exacto; 9/9 concluidos `success`. Revalidar el SHA y checks si hay cualquier commit nuevo.
+- Los checkpoints inferiores que citan `9990f...`, `1ddaba...` u otros SHA de PR #202 son snapshots históricos, no el HEAD actual.
+- Continuar la revisión semántica de documentación. Mantener PR #202 abierta/Draft hasta revisión final. No merge, deploy, migración Neon ni cambios Cloudflare.
+
+---
+
 # Handoff operativo — continuidad Micro-app — 2026-11-04
 
 ## Punto exacto de reanudación

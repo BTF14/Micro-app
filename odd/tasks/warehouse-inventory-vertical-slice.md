@@ -29,12 +29,12 @@ Excluded:
 
 ## Acceptance criteria
 
-- [ ] AC-1 — catalog operations enforce tenant isolation and approved Owner/Admin write permissions; Cashier cannot read cost.
-- [ ] AC-2 — migration 0005 and its SQL assertions pass against disposable PostgreSQL.
-- [ ] AC-3 — count confirmation atomically updates document, balances, append-only ledger and audit; concurrent replay creates no duplicate effects.
-- [ ] AC-4 — branch, warehouse, document and balance locks follow the documented deterministic order; revocation/deactivation races fail closed.
-- [ ] AC-5 — PostgreSQL rejects count movements for products absent from the count and duplicate movements for one count line.
-- [x] AC-6 — exact HEAD `5dd9eb787dced3e394cfef39f177ac421d100432` passes CI, migration, Cloudflare Pages/Workers Preview, Chromium E2E, synthetic encrypted backup/restore, Trivy, Secret History, Security and ODD gates (9/9 check-runs).
+- [x] AC-1 — catalog operations enforce tenant isolation and approved Owner/Admin write permissions; Cashier cannot read cost.
+- [x] AC-2 — migration 0005 and its SQL assertions pass against disposable PostgreSQL.
+- [x] AC-3 — count confirmation atomically updates document, balances, append-only ledger and audit; concurrent replay creates no duplicate effects.
+- [x] AC-4 — branch, warehouse, document and balance locks follow the documented deterministic order; revocation/deactivation races fail closed.
+- [x] AC-5 — PostgreSQL rejects count movements for products absent from the count and duplicate movements for one count line.
+- [x] AC-6 — exact HEAD `cafc66002570ab472569fba67a0fe8ceba8d5060` passes all 8/8 check-runs: six required GitHub contexts plus Cloudflare Pages and Workers Builds. Six GitHub Actions workflows also completed successfully.
 - [x] AC-7 — no Neon, real data or production deployment is touched; production readiness remains blocked.
 
 ## Risks and guardrails
@@ -55,7 +55,7 @@ Excluded:
 | Implement catalog and warehouse count vertical slice | Routes, migration and tests | Source carried from #196 and reviewed on PR #200 | complete |
 | Enforce ledger/count-line integrity | No orphan or duplicate count movements | Migration 0005 assertions passed on HEAD `c0cf8ab71b5d7628bc2e0eda640216fddaec21f6` | complete |
 | Validate PostgreSQL migration chain | Migrations 0001–0005 and assertions pass | GitHub Actions `Database migration validation`, success on `c0cf8ab7` | complete |
-| Run complete application CI | Build, unit and PostgreSQL integration suites pass | CI run for `c0cf8ab7` pending at task update | in progress |
+| Run complete application CI | Build, unit and PostgreSQL integration suites pass | CI run on exact HEAD `cafc66002570ab472569fba67a0fe8ceba8d5060` completed successfully; `verify` check passed | complete |
 | Run browser/security/backup checks | Exact-head gates pass | Cloudflare Pages + Workers previews, Chromium E2E, synthetic encrypted backup/restore, Trivy, Secret History, Security and ODD all pass on `5dd9eb78` | complete |
 
 ## Technical decisions
@@ -67,10 +67,10 @@ Excluded:
 
 ## Closure and handoff
 
-- Last fully validated code and workflow HEAD: `5dd9eb787dced3e394cfef39f177ac421d100432` (9/9 check-runs successful).
+- Last fully validated code and workflow HEAD: `cafc66002570ab472569fba67a0fe8ceba8d5060` (8/8 check-runs successful; six required contexts plus two Cloudflare checks).
 - PR: #200.
-- Checks and exact outcomes: migration/assertions, Trivy, secret history and security scans passed on `c0cf8ab71b5d7628bc2e0eda640216fddaec21f6`; full CI still running.
+- Checks and exact outcomes: all eight check-runs passed on `cafc66002570ab472569fba67a0fe8ceba8d5060`; the six GitHub Actions workflows (CI, Playwright E2E, database migration validation, Semgrep SAST, security scan and secret history scan) all completed successfully. The six required branch-protection contexts are satisfied.
 - Acceptance criteria met / unmet: AC-1 through AC-7 met for this scoped vertical slice; deployment approval and production readiness remain explicitly blocked.
-- Limitations not verified: production rollout behavior and production readiness are intentionally not tested.
+- Limitations not verified: authenticated Cloudflare `Settings → Build → Branch control` and the effective Pages/Workers deploy commands remain uninspected. The Worker check links to a `/production/builds/` dashboard path while Cloudflare's PR comment supplies explicit commit/branch Preview URLs. Direct HTTP verification of the commit Preview confirms `/health` responds and application routes return HTTP 503; Pages Preview disables login/data access. Production rollout behavior and production readiness are intentionally not tested.
 - Residual risks: all other commercial inventory writers and operational recovery gates remain out of scope.
 - Next step: finish exact-HEAD CI review; keep Draft and do not merge while production deployment implications remain unapproved.

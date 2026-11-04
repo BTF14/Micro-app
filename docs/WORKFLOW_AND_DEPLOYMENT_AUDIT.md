@@ -1,3 +1,12 @@
+## Addendum de estado más reciente — PR #202 — 2026-11-04
+
+- HEAD de la rama documental verificado: `355c80eb5996cbcc6266c81097d7a245c96851b0`; base `main` `7b0f057b8c152515005feed40305143c0ebb94b0`; 27 ahead / 0 behind y 12 archivos documentales.
+- La consulta de workflows para ese SHA devolvió 9 ejecuciones, todas completadas con `success`. No confundir ese conjunto con los 12/12 check-runs citados en snapshots anteriores de otro SHA.
+- Cualquier referencia inferior a PR #202 con SHA `6ce448...` u otro SHA previo se conserva como historial, no como evidencia de validación del HEAD actual.
+- Esta PR no cambia runtime ni configuración Cloudflare. Las capturas siguen indicando Pages automatic deployments y Worker `npx wrangler deploy`/Version URLs; el banner “Set up Worker Previews” no fue activado. No afirmar aislamiento Worker Preview.
+
+---
+
 # Addendum de reconciliación — 2026-11-04
 
 Este addendum supersede las afirmaciones operativas anteriores sobre la modalidad actual de previews. Los snapshots fechados más abajo se conservan como historial, no como configuración vigente.

@@ -4,6 +4,7 @@ import type { Bindings } from "./bindings";
 import { isTrustedOrigin } from "./auth";
 import { resolveBranchContext } from "./branch-context";
 import { withDatabaseClient, withDatabaseTransaction } from "./database";
+import { lockInventoryBalances, lockInventoryWarehouses } from "./inventory-locks";
 import { resolveTenantContext } from "./tenant-context";
 
 const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -193,12 +194,8 @@ export function registerInventoryCountRoutes(app: Hono<{ Bindings: Bindings }>):
           const branch = await resolveBranchContext(tx, tenant, branchId);
           if (!branch) return { kind: "branch_denied" as const };
 
-          await tx.query(
-            `SELECT id FROM warehouses
-             WHERE organization_id = $1 AND branch_id = $2 AND id = $3
-             FOR UPDATE`,
-            [tenant.organizationId, branch.branchId, warehouseId],
-          );
+          const lockedWarehouses = await lockInventoryWarehouses(tx, tenant.organizationId, [warehouseId]);
+          if (!lockedWarehouses) return { kind: "not_found" as const };
           const countResult = await tx.query<{
             id: string; count_type: "opening" | "physical"; status: "draft" | "confirmed" | "cancelled"; reason: string;
           }>(
@@ -223,21 +220,12 @@ export function registerInventoryCountRoutes(app: Hono<{ Bindings: Bindings }>):
           );
           if (!lines.rows.length) return { kind: "empty" as const };
 
-          const existingBalances = await tx.query<{
-            product_id: string; on_hand_quantity: string; reserved_quantity: string;
-          }>(
-            `SELECT product_id, on_hand_quantity::text, reserved_quantity::text
-             FROM inventory_balances
-             WHERE organization_id = $1 AND warehouse_id = $2
-             ORDER BY product_id ASC
-             FOR UPDATE`,
-            [tenant.organizationId, warehouseId],
-          );
-          if (count.count_type === "opening" && existingBalances.rows.length) {
+          const existingBalances = await lockInventoryBalances(tx, tenant.organizationId, [warehouseId]);
+          const balanceByProduct = new Map(existingBalances.map((balance) => [balance.product_id, balance]));
+          if (count.count_type === "opening" && existingBalances.length) {
             return { kind: "opening_balance_exists" as const };
           }
           if (count.count_type === "physical") {
-            const balanceByProduct = new Map(existingBalances.rows.map((balance) => [balance.product_id, balance]));
             for (const line of lines.rows) {
               const reserved = balanceByProduct.get(line.product_id)?.reserved_quantity ?? "0.000";
               if (milliUnits(line.counted_quantity) < milliUnits(reserved)) {
@@ -249,13 +237,10 @@ export function registerInventoryCountRoutes(app: Hono<{ Bindings: Bindings }>):
 
           const changes: Array<{ product_id: string; previous_quantity: string; counted_quantity: string; delta: string }> = [];
           for (const line of lines.rows) {
-            const current = await tx.query<{ on_hand_quantity: string }>(
-              `SELECT on_hand_quantity::text FROM inventory_balances
-               WHERE organization_id = $1 AND warehouse_id = $2 AND product_id = $3
-               FOR UPDATE`,
-              [tenant.organizationId, warehouseId, line.product_id],
-            );
-            const previous = current.rows[0]?.on_hand_quantity ?? "0.000";
+            // The complete balance set was locked above in product UUID order.
+            // Re-read from that locked snapshot; do not acquire per-product locks
+            // after the batch lock or introduce a second lock-order path.
+            const previous = balanceByProduct.get(line.product_id)?.on_hand_quantity ?? "0.000";
             const deltaUnits = milliUnits(line.counted_quantity) - milliUnits(previous);
             const delta = formatMilliUnits(deltaUnits);
             await tx.query(

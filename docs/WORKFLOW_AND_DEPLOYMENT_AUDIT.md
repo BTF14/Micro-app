@@ -1,3 +1,29 @@
+# Addendum de reconciliación — 2026-11-04
+
+Este addendum supersede las afirmaciones operativas anteriores sobre la modalidad actual de previews. Los snapshots fechados más abajo se conservan como historial, no como configuración vigente.
+
+## Configuración observada en capturas del propietario
+
+- Pages `micro-app-63i`: producción en `main`, automatic deployments habilitados; build `corepack enable && pnpm install --frozen-lockfile && pnpm --filter @micro-app/web build`, output `apps/web/dist`.
+- Worker `micro-app-api`: producción en `main`; builds de ramas no productivas habilitados; root `apps/api`; build command `pnpm install --frozen-lockfile`; deploy command `npx wrangler deploy`; Version command `npx wrangler versions upload`.
+- El dashboard del Worker mostraba el banner “Set up Worker Previews”. No se pulsó ni se cambió configuración.
+
+## Interpretación correcta
+
+- Pages branch Preview y Worker Version URL son mecanismos distintos.
+- Cloudflare documenta que una Version URL utiliza la configuración y recursos existentes de esa versión; no crea un entorno independiente. Para branch/PR isolation se usa Worker Previews con `npx wrangler preview`.
+- El éxito de Workers Builds en PR #200/PR #202 y una URL `workers.dev` no prueban por sí solos aislamiento de recursos.
+- Worker Previews no hereda automáticamente settings de producción. Variables, secretos y bindings deben definirse expresamente. Bindings que apunten al mismo recurso comparten datos; la base externa Neon requiere branch/base de pruebas y credenciales independientes.
+- No activar el one-time setup ni cambiar Cloudflare sin plan revisado. La transición del modelo existente requiere decisión explícita y verificación posterior.
+
+## PRs y checks
+
+- PR #200 HEAD `7d2ef3d5e9ced1d4e8d386110129d21eb53af045`: 19/19 check-runs exitosos. Es evidencia de CI/build, no de aislamiento completo ni de producción segura.
+- PR #202 HEAD `6ce448693b1c98ab9a418a578940dd865f69735a`: 12/12 check-runs exitosos. Es una PR documental.
+- No hay autorización ni evidencia de cambio productivo realizado durante esta auditoría.
+
+---
+
 # Auditoría corregida de GitHub Actions y despliegues — 2026-10-30 UTC
 
 ## Addendum vigente — PR #178, SHA exacto y previews Cloudflare

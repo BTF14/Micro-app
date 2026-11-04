@@ -4,7 +4,7 @@ DO $$
 DECLARE
   org_a uuid; org_b uuid; user_a uuid; user_b uuid;
   branch_a uuid; branch_b uuid; warehouse_a uuid; warehouse_b uuid;
-  product_a uuid; product_b uuid; count_a uuid;
+  product_a uuid; product_b uuid; count_a uuid; count_b uuid;
 BEGIN
   INSERT INTO organizations (name, slug) VALUES ('Inventory Tenant A','inventory-tenant-a') RETURNING id INTO org_a;
   INSERT INTO organizations (name, slug) VALUES ('Inventory Tenant B','inventory-tenant-b') RETURNING id INTO org_b;
@@ -34,6 +34,11 @@ BEGIN
   INSERT INTO inventory_count_lines (organization_id,branch_id,warehouse_id,count_id,product_id,counted_quantity)
   VALUES (org_a,branch_a,warehouse_a,count_a,product_a,12.500);
 
+  INSERT INTO inventory_counts (organization_id,branch_id,warehouse_id,count_type,reason,created_by)
+  VALUES (org_a,branch_a,warehouse_a,'physical','Second count draft',user_a) RETURNING id INTO count_b;
+  INSERT INTO inventory_count_lines (organization_id,branch_id,warehouse_id,count_id,product_id,counted_quantity)
+  VALUES (org_a,branch_a,warehouse_a,count_b,product_a,13.000);
+
   UPDATE inventory_counts SET status='confirmed',confirmed_by=user_a,confirmed_at=clock_timestamp()
   WHERE id=count_a;
   BEGIN
@@ -50,6 +55,10 @@ BEGIN
     INSERT INTO inventory_count_lines (organization_id,branch_id,warehouse_id,count_id,product_id,counted_quantity)
     VALUES (org_a,branch_a,warehouse_a,count_a,product_a,3);
     RAISE EXCEPTION 'FAIL: line added to confirmed count';
+  EXCEPTION WHEN check_violation THEN NULL; END;
+  BEGIN
+    UPDATE inventory_count_lines SET count_id=count_a WHERE count_id=count_b;
+    RAISE EXCEPTION 'FAIL: draft line moved into confirmed count';
   EXCEPTION WHEN check_violation THEN NULL; END;
   BEGIN
     DELETE FROM inventory_counts WHERE id=count_a;

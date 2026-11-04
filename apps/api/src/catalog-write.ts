@@ -1,4 +1,5 @@
 import type { Hono } from "hono";
+import { getCookie } from "hono/cookie";
 import type { Bindings } from "./bindings";
 import { isTrustedOrigin } from "./auth";
 import { withDatabaseClient, withDatabaseTransaction } from "./database";
@@ -116,7 +117,7 @@ export function registerCatalogWriteRoutes(app: Hono<{ Bindings: Bindings }>): v
     }
 
     try {
-      const sessionToken = (await import("hono/cookie")).getCookie(c, "microapp_session");
+      const sessionToken = getCookie(c, "microapp_session");
       if (!sessionToken || sessionToken.length > 128) {
         return c.json({ error: "UNAUTHENTICATED", message: "Inicia sesión para continuar." }, 401);
       }

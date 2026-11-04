@@ -92,3 +92,5 @@ jobs:
         run: pnpm --filter @micro-app/api exec vitest run src/catalog-write.integration.test.ts
       - name: PostgreSQL catalog product update integration tests
         run: pnpm --filter @micro-app/api exec vitest run src/catalog-update.integration.test.ts
+      - name: PostgreSQL warehouse inventory count integration tests
+        run: pnpm --filter @micro-app/api exec vitest run src/inventory-counts.integration.test.ts

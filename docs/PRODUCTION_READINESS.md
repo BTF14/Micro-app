@@ -2,7 +2,7 @@
 
 ## Estado vivo verificado — 2026-11-04 UTC
 
-PR #196 está abierta y Draft, sin merge. HEAD verificado: `c754881435e9096cd85defbe7a4dab5cff429326`; base main `705d3db3220894c7d3baca8dc7e7a6b623dfbb94`.
+PR #196 está abierta y Draft, sin merge. PR HEAD `1f54c5ca37824807fe1396f0b694d05decfb6e89` (documentación); código verificado `c754881435e9096cd85defbe7a4dab5cff429326`; base main `705d3db3220894c7d3baca8dc7e7a6b623dfbb94`.
 
 Los checks de este HEAD terminaron en success: build/typecheck, API unit tests 97/97, web tests 6/6 (1 test Preview-only omitido en runner normal y verificado en Preview real), PostgreSQL auth 18/18, branch scope 7/7, register shifts 5/5, cashier open-shift 7/7, catálogo 8/8, product create 8/8, product update 7/7, inventory counts 9/9, Chromium/Playwright 4/4, SAST, Trivy, dependency review, secret scan, backup/restore y dashboard. El workflow independiente ejecutó realmente migraciones 0001–0005 y sus assertions contra PostgreSQL desechable.
 
@@ -11,8 +11,6 @@ Pages/Workers son previews aislados; Pages informa login/datos deshabilitados, W
 La rama contiene catálogo GET/POST/PATCH y base de inventario por almacén con conteos y ledger. No implementa aún ventas, pagos, devoluciones, compras/recepciones, transferencias ni reservas comerciales. La coordinación con esos futuros escritores requiere implementar el contrato de locks y pruebas concurrentes por cada flujo.
 
 **Producción sigue bloqueada.** Permanecen pendientes los flujos comerciales, administración de almacenes, rate limiting runtime, pruebas E2E comerciales, RPO/RTO medidos, alertas operativas, confirmación de coste total $0 y aprobación final. Los checks verdes de una vertical slice no equivalen a readiness de producción.
-
-## Snapshot histórico — estado anterior supersedido
 
 ## Snapshot histórico — readiness anterior (supersedido por el estado vivo superior)
 

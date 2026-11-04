@@ -2,15 +2,13 @@
 
 ## Estado vivo verificado — 2026-11-04 UTC
 
-- PR #196 permanece abierta y Draft, sin merge. Rama `feat/catalog-api-vertical-slice-20261104`; HEAD `c754881435e9096cd85defbe7a4dab5cff429326`; base main `705d3db3220894c7d3baca8dc7e7a6b623dfbb94`.
-- Todos los checks de este HEAD terminaron en success: build/typecheck; API unit tests 97/97; web tests 6/6 (un test exclusivo de Preview se omite en el runner normal y se valida mediante Preview real); PostgreSQL integration auth 18/18, branch scope 7/7, register shifts 5/5, cashier open-shift 7/7, catalog 8/8, product create 8/8, product update 7/7 e inventory counts 9/9; Chromium/Playwright 4/4; SAST, Trivy, dependency review, secret scan, backup/restore y dashboard.
+- PR #196 permanece abierta y Draft, sin merge. Rama `feat/catalog-api-vertical-slice-20261104`; PR HEAD `1f54c5ca37824807fe1396f0b694d05decfb6e89` (último commit documental); código validado `c754881435e9096cd85defbe7a4dab5cff429326`; base main `705d3db3220894c7d3baca8dc7e7a6b623dfbb94`.
+- Todos los checks del código `c754881` y del HEAD documental `1f54c5c` terminaron en success: build/typecheck; API unit tests 97/97; web tests 6/6 (un test exclusivo de Preview se omite en el runner normal y se valida mediante Preview real); PostgreSQL integration auth 18/18, branch scope 7/7, register shifts 5/5, cashier open-shift 7/7, catalog 8/8, product create 8/8, product update 7/7 e inventory counts 9/9; Chromium/Playwright 4/4; SAST, Trivy, dependency review, secret scan, backup/restore y dashboard.
 - El workflow independiente de migraciones ejecutó realmente 0001–0005 y sus cinco archivos de assertions en PostgreSQL desechable. Se corrigieron las diez invocaciones `docker exec` con `-i` para adjuntar STDIN; logs confirman ejecución SQL y assertions.
 - Pages Preview permanece aislado: muestra que login y acceso a datos están deshabilitados. Worker Preview devuelve 200 en `/health` y 503 en `/auth/me`, tanto en URL versionada como en alias de rama.
 - La rama contiene catálogo GET/POST/PATCH (baja lógica), migración 0005 y endpoints de almacenes/conteos opening/physical. El contrato de locks estabiliza tenant, sucursales/asignaciones, almacenes, documentos y balances en orden determinista. No hay todavía rutas de ventas, recepción, reservas, devoluciones ni transferencias.
 - No se ejecutaron migraciones ni escrituras contra Neon producción; no se tocaron main ni datos reales. Los previews son entornos de prueba, no despliegues de producción.
 - Micro-app NO está listo para producción: faltan operaciones comerciales, coordinación entre futuros escritores de inventario, administración de almacenes, rate limiting runtime, RPO/RTO medidos, alerta de fallo, evidencia de coste total $0 y aprobación de lanzamiento.
-
-## Snapshot histórico — estado anterior supersedido
 
 ## Snapshot histórico — corrección de estado anterior (supersedida por el estado vivo superior)
 

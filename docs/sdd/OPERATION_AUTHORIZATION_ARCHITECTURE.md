@@ -1,5 +1,10 @@
 # Server-side operation authorization architecture
 
+## Implementation status update — 2026-11-04 UTC
+
+The role/permission decision matrix is **APPROVED** (2026-10-31). PR #196 now implements the first commercial vertical slice: tenant-scoped catalog read, Owner/Admin product create, Owner/Admin product patch and soft deactivation, with transactional audit writes and PostgreSQL isolation tests. Its current HEAD `d3c4196293256a34457f3b06e1b1c867caf5c97e` has all CI checks passing. PR #196 remains Draft and unmerged, so main still does not contain these handlers. This document remains the technical design for operations not yet implemented; it does not authorize unapproved discount, refund, supervisor, or policy-exception behavior. Production readiness is not established.
+
+
 **Status:** technical proposal only; not an approved business permission policy and not implementation authorization.  
 **Date:** 2026-10-30 UTC  
 **Base:** `main` at `a6db2dcaf57e2a0bf1735eb282c3ac2256cd314c` when this proposal branch was created.  

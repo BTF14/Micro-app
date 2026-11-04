@@ -121,7 +121,7 @@ export function registerInventoryCountRoutes(app: Hono<{ Bindings: Bindings }>):
           const tenant = await resolveTenantContext(tx, token, organizationId, true);
           if (!tenant) return { kind: "unauthenticated" as const };
           if (!isInventoryOperator(tenant.role)) return { kind: "forbidden" as const };
-          const branch = await resolveBranchContext(tx, tenant, branchId);
+          const branch = await resolveBranchContext(tx, tenant, branchId, true);
           if (!branch) return { kind: "branch_denied" as const };
           const warehouse = await tx.query<{ id: string }>(
             `SELECT id FROM warehouses
@@ -191,7 +191,7 @@ export function registerInventoryCountRoutes(app: Hono<{ Bindings: Bindings }>):
           const tenant = await resolveTenantContext(tx, token, organizationId, true);
           if (!tenant) return { kind: "unauthenticated" as const };
           if (!isInventoryOperator(tenant.role)) return { kind: "forbidden" as const };
-          const branch = await resolveBranchContext(tx, tenant, branchId);
+          const branch = await resolveBranchContext(tx, tenant, branchId, true);
           if (!branch) return { kind: "branch_denied" as const };
 
           const lockedWarehouses = await lockInventoryWarehouses(tx, tenant.organizationId, [{ warehouseId, branchId: branch.branchId }]);

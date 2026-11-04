@@ -292,6 +292,47 @@ describe.skipIf(!databaseUrl)("warehouse inventory count transactions against Po
     });
   });
 
+  it("rejects an older physical count after a newer count has changed the balance", async () => {
+    const first = await request(root() + "/counts/physical", {
+      reason: "First physical observation",
+      lines: [{ product_id: productId, counted_quantity: "9.000" }],
+    });
+    expect(first.status).toBe(201);
+    const firstBody = await first.json() as { id: string };
+
+    const second = await request(root() + "/counts/physical", {
+      reason: "Second physical observation",
+      lines: [{ product_id: productId, counted_quantity: "8.500" }],
+    });
+    expect(second.status).toBe(201);
+    const secondBody = await second.json() as { id: string };
+
+    const newerConfirmation = await request(root() + "/counts/" + secondBody.id + "/confirm");
+    expect(newerConfirmation.status).toBe(200);
+
+    const staleConfirmation = await request(root() + "/counts/" + firstBody.id + "/confirm");
+    expect(staleConfirmation.status).toBe(409);
+    expect(await staleConfirmation.json()).toMatchObject({
+      error: "COUNT_STALE",
+      expected_on_hand_quantity: "8.250",
+      current_on_hand_quantity: "8.500",
+    });
+
+    const persisted = await client.query<{ balance: string; stale_status: string; newer_status: string; stale_movements: string }>(
+      `SELECT
+        (SELECT on_hand_quantity::text FROM inventory_balances
+         WHERE organization_id = $1 AND warehouse_id = $2 AND product_id = $3) AS balance,
+        (SELECT status FROM inventory_counts WHERE organization_id = $1 AND id = $4) AS stale_status,
+        (SELECT status FROM inventory_counts WHERE organization_id = $1 AND id = $5) AS newer_status,
+        (SELECT count(*)::text FROM warehouse_inventory_movements
+         WHERE organization_id = $1 AND count_id = $4) AS stale_movements`,
+      [organizationId, warehouseId, productId, firstBody.id, secondBody.id],
+    );
+    expect(persisted.rows[0]).toEqual({
+      balance: "8.500", stale_status: "draft", newer_status: "confirmed", stale_movements: "0",
+    });
+  });
+
   it("does not let a physical count reduce stock below reserved quantity", async () => {
     await client.query(
       "UPDATE inventory_balances SET reserved_quantity = 8.000 WHERE organization_id = $1 AND warehouse_id = $2 AND product_id = $3",

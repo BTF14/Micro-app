@@ -10,6 +10,7 @@ import { resolveTenantContext } from "./tenant-context";
 const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const MAX_BODY_BYTES = 128 * 1024;
 const MAX_COUNT_LINES = 500;
+const IDEMPOTENCY_KEY_PATTERN = /^[A-Za-z0-9._:-]{1,128}$/;
 
 type CountLineInput = { productId: string; quantity: string; unitCost: string | null };
 
@@ -84,6 +85,29 @@ function formatMilliUnits(value: bigint): string {
   return sign + (absolute / 1000n).toString() + "." + (absolute % 1000n).toString().padStart(3, "0");
 }
 
+function canonicalDecimal(value: string, fractionDigits: number): string {
+  const [whole, fraction = ""] = value.split(".");
+  return whole + "." + fraction.padEnd(fractionDigits, "0");
+}
+
+async function hashCountRequest(input: {
+  organizationId: string; branchId: string; warehouseId: string; countType: string;
+  reason: string; lines: CountLineInput[];
+}): Promise<string> {
+  const canonical = JSON.stringify({
+    organizationId: input.organizationId.toLowerCase(),
+    branchId: input.branchId.toLowerCase(),
+    warehouseId: input.warehouseId.toLowerCase(),
+    countType: input.countType, reason: input.reason,
+    lines: [...input.lines].sort((left, right) => left.productId.toLowerCase().localeCompare(right.productId.toLowerCase())).map((line) => ({
+      productId: line.productId.toLowerCase(), quantity: canonicalDecimal(line.quantity, 3),
+      unitCost: line.unitCost === null ? null : canonicalDecimal(line.unitCost, 4),
+    })),
+  });
+  const digest = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(canonical));
+  return Array.from(new Uint8Array(digest), (byte) => byte.toString(16).padStart(2, "0")).join("");
+}
+
 function isInventoryOperator(role: string): boolean {
   return role === "owner" || role === "admin" || role === "inventory";
 }
@@ -114,6 +138,10 @@ export function registerInventoryCountRoutes(app: Hono<{ Bindings: Bindings }>):
     try { parsed = JSON.parse(raw); } catch { return c.json({ error: "INVALID_JSON", message: "El JSON no es válido." }, 400); }
     const input = parseCountBody(parsed);
     if (!input) return c.json({ error: "INVALID_COUNT", message: "El motivo o las líneas del conteo no son válidos." }, 400);
+    const idempotencyKey = c.req.header("Idempotency-Key");
+    if (idempotencyKey !== undefined && !IDEMPOTENCY_KEY_PATTERN.test(idempotencyKey)) {
+      return c.json({ error: "INVALID_IDEMPOTENCY_KEY", message: "La clave de idempotencia no tiene un formato válido." }, 400);
+    }
 
     try {
       const result = await withDatabaseClient(c.env.DATABASE_URL, (client) =>
@@ -133,19 +161,46 @@ export function registerInventoryCountRoutes(app: Hono<{ Bindings: Bindings }>):
           );
           if (products.rows.length !== productIds.length) return { kind: "invalid_products" as const };
 
+          const requestHash = idempotencyKey === undefined ? null : await hashCountRequest({
+            organizationId: tenant.organizationId, branchId: branch.branchId, warehouseId, countType,
+            reason: input.reason, lines: input.lines,
+          });
           const capturedBalances = countType === "physical"
             ? await lockInventoryBalances(tx, tenant.organizationId, [warehouseId], productIds)
             : [];
           if (capturedBalances === null) return { kind: "invalid_lock_scope" as const };
           const capturedByProduct = new Map(capturedBalances.map((balance) => [balance.product_id, balance.on_hand_quantity]));
 
-          const inserted = await tx.query<{ id: string }>(
+          const inserted = await tx.query<{ id: string }> (
             `INSERT INTO inventory_counts
-              (organization_id, branch_id, warehouse_id, count_type, reason, created_by)
-             VALUES ($1, $2, $3, $4, $5, $6) RETURNING id`,
-            [tenant.organizationId, branch.branchId, warehouseId, countType, input.reason, tenant.userId],
+              (organization_id, branch_id, warehouse_id, count_type, reason, created_by, idempotency_key, request_hash)
+             VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+             ON CONFLICT (organization_id, created_by, idempotency_key)
+               WHERE idempotency_key IS NOT NULL
+             DO NOTHING
+             RETURNING id`,
+            [tenant.organizationId, branch.branchId, warehouseId, countType, input.reason, tenant.userId, idempotencyKey ?? null, requestHash],
           );
-          const countId = inserted.rows[0]!.id;
+          if (!inserted.rows[0]) {
+            const existing = await tx.query<{
+              id: string; status: "draft" | "confirmed" | "cancelled"; count_type: "opening" | "physical";
+              request_hash: string; line_count: number;
+            }>(
+              `SELECT c.id, c.status, c.count_type, c.request_hash,
+                      (SELECT count(*)::int FROM inventory_count_lines l
+                       WHERE l.organization_id = c.organization_id AND l.count_id = c.id) AS line_count
+               FROM inventory_counts c
+               WHERE c.organization_id = $1 AND c.created_by = $2 AND c.idempotency_key = $3
+               FOR UPDATE OF c`,
+              [tenant.organizationId, tenant.userId, idempotencyKey],
+            );
+            const replay = existing.rows[0];
+            if (!replay) throw new Error("IDEMPOTENCY_RECORD_NOT_VISIBLE");
+            if (replay.request_hash !== requestHash) return { kind: "idempotency_conflict" as const };
+            return { kind: "replayed" as const, countId: replay.id, status: replay.status,
+              countType: replay.count_type, lineCount: replay.line_count };
+          }
+          const countId = inserted.rows[0].id;
           for (const line of input.lines) {
             await tx.query(
               `INSERT INTO inventory_count_lines
@@ -171,6 +226,8 @@ export function registerInventoryCountRoutes(app: Hono<{ Bindings: Bindings }>):
       if (result.kind === "branch_denied") return c.json({ error: "BRANCH_FORBIDDEN", message: "No tienes acceso a esta sucursal." }, 403);
       if (result.kind === "not_found") return c.json({ error: "WAREHOUSE_NOT_FOUND", message: "El almacén no existe o está inactivo." }, 404);
       if (result.kind === "invalid_products") return c.json({ error: "INVALID_PRODUCTS", message: "Uno o más productos no pertenecen a la organización." }, 400);
+      if (result.kind === "idempotency_conflict") return c.json({ error: "IDEMPOTENCY_KEY_REUSED", message: "La clave de idempotencia ya fue utilizada con una solicitud diferente." }, 409);
+      if (result.kind === "replayed") return c.json({ id: result.countId, status: result.status, count_type: result.countType, line_count: result.lineCount, replayed: true }, 200);
       return c.json({ id: result.countId, status: "draft", count_type: countType, line_count: result.lineCount }, 201);
     } catch {
       return c.json({ error: "INVENTORY_COUNT_CREATE_FAILED", message: "No se pudo registrar el conteo." }, 500);

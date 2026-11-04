@@ -32,7 +32,7 @@ const ROLE_OPERATIONS: Readonly<Record<OrganizationRole, ReadonlySet<CommercialO
     "reports.sales.organization", "reports.sales.own_shift", "reports.inventory", "exports.allowed_data", "audit.read",
   ]),
   inventory: new Set<CommercialOperation>([
-    "inventory.read", "inventory.receive", "inventory.adjust", "inventory.transfer",
+    "catalog.read", "inventory.read", "inventory.receive", "inventory.adjust", "inventory.transfer",
     "reports.inventory", "exports.allowed_data",
   ]),
   cashier: new Set<CommercialOperation>([

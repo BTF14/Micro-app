@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { authorizeCommercialOperation, isCommercialOperationAllowed } from "./authorization";
+import { authorizeBranchOperation, authorizeCommercialOperation, authorizeTenantOperation, isCommercialOperationAllowed } from "./authorization";
+import type { DatabaseClient } from "./database";
 import type { OrganizationRole } from "./tenant-context";
 
 const roles: OrganizationRole[] = ["owner", "admin", "inventory", "cashier"];
@@ -59,5 +60,53 @@ describe("commercial role authorization", () => {
   it("fails closed for unknown operations and forged runtime roles", () => {
     expect(authorizeCommercialOperation("cashier", "sales.refund_any")).toBe(false);
     expect(authorizeCommercialOperation("superuser", "catalog.read")).toBe(false);
+  });
+});
+
+describe("authorization context boundaries", () => {
+  const sessionToken = "synthetic-session-token";
+  const organizationId = "11111111-2222-4333-8444-555555555555";
+  const branchId = "99999999-8888-4777-8666-555555555555";
+  const userId = "aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee";
+
+  it("resolves tenant identity from the session and denies a role without the operation", async () => {
+    const query = async (sql: string) => ({
+      rows: sql.includes("auth_sessions")
+        ? [{ user_id: userId, organization_id: organizationId, role: "cashier" as const }]
+        : [],
+    });
+    const client = { connect: async () => {}, query, end: async () => {} } as unknown as DatabaseClient;
+
+    await expect(authorizeTenantOperation(client, sessionToken, organizationId, "catalog.read"))
+      .resolves.toMatchObject({ allowed: true, context: { userId, organizationId, role: "cashier" } });
+    await expect(authorizeTenantOperation(client, sessionToken, organizationId, "catalog.read_costs"))
+      .resolves.toEqual({ allowed: false, reason: "operation_denied" });
+  });
+
+  it("requires server-validated branch scope before granting a branch operation", async () => {
+    const query = async (sql: string) => ({
+      rows: sql.includes("auth_sessions")
+        ? [{ user_id: userId, organization_id: organizationId, role: "inventory" as const }]
+        : [{ user_id: userId, organization_id: organizationId, branch_id: branchId, role: "inventory" as const }],
+    });
+    const client = { connect: async () => {}, query, end: async () => {} } as unknown as DatabaseClient;
+
+    await expect(authorizeBranchOperation(client, sessionToken, organizationId, branchId, "inventory.adjust"))
+      .resolves.toMatchObject({ allowed: true, context: { userId, organizationId, branchId } });
+    await expect(authorizeBranchOperation(client, sessionToken, organizationId, branchId, "sales.create_list_price"))
+      .resolves.toEqual({ allowed: false, reason: "operation_denied" });
+  });
+
+  it("fails closed when tenant or branch resolution fails", async () => {
+    const client = {
+      connect: async () => {},
+      query: async () => ({ rows: [] }),
+      end: async () => {},
+    } as unknown as DatabaseClient;
+
+    await expect(authorizeTenantOperation(client, undefined, organizationId, "catalog.read"))
+      .resolves.toEqual({ allowed: false, reason: "unauthenticated_or_out_of_scope" });
+    await expect(authorizeBranchOperation(client, sessionToken, organizationId, branchId, "inventory.read"))
+      .resolves.toEqual({ allowed: false, reason: "unauthenticated_or_out_of_scope" });
   });
 });

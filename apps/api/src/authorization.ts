@@ -1,4 +1,6 @@
-import type { OrganizationRole } from "./tenant-context";
+import type { DatabaseClient } from "./database";
+import { resolveBranchContext, type BranchContext } from "./branch-context";
+import { resolveTenantContext, type TenantContext, type OrganizationRole } from "./tenant-context";
 
 /**
  * Stable server-side operation keys from the owner-approved role matrix.
@@ -105,4 +107,51 @@ function isCommercialOperation(value: string): value is CommercialOperation {
     "reports.sales.organization", "reports.sales.own_shift", "reports.inventory",
     "exports.allowed_data", "audit.read",
   ].includes(value);
+}
+
+export type AuthorizationResult<Context> =
+  | { allowed: true; context: Context }
+  | { allowed: false; reason: "unauthenticated_or_out_of_scope" | "operation_denied" };
+
+/**
+ * Resolve identity and authorize an organization-scoped operation in one
+ * server-side boundary. The organization ID is only a selector; membership
+ * and role are re-read from PostgreSQL for this request.
+ */
+export async function authorizeTenantOperation(
+  client: DatabaseClient,
+  sessionToken: string | undefined,
+  requestedOrganizationId: string | undefined,
+  operation: string,
+): Promise<AuthorizationResult<TenantContext>> {
+  const tenant = await resolveTenantContext(client, sessionToken, requestedOrganizationId);
+  if (!tenant) return { allowed: false, reason: "unauthenticated_or_out_of_scope" };
+  if (!authorizeCommercialOperation(tenant.role, operation)) {
+    return { allowed: false, reason: "operation_denied" };
+  }
+  return { allowed: true, context: tenant };
+}
+
+/**
+ * Resolve tenant + branch membership before authorizing a branch-scoped
+ * operation. Handlers must still constrain every resource query by both
+ * organizationId and branchId, and enforce any own-resource/shift conditions.
+ */
+export async function authorizeBranchOperation(
+  client: DatabaseClient,
+  sessionToken: string | undefined,
+  requestedOrganizationId: string | undefined,
+  requestedBranchId: string | undefined,
+  operation: string,
+): Promise<AuthorizationResult<BranchContext>> {
+  const tenant = await resolveTenantContext(client, sessionToken, requestedOrganizationId);
+  if (!tenant) return { allowed: false, reason: "unauthenticated_or_out_of_scope" };
+
+  const branch = await resolveBranchContext(client, tenant, requestedBranchId);
+  if (!branch) return { allowed: false, reason: "unauthenticated_or_out_of_scope" };
+
+  if (!authorizeCommercialOperation(tenant.role, operation)) {
+    return { allowed: false, reason: "operation_denied" };
+  }
+  return { allowed: true, context: branch };
 }

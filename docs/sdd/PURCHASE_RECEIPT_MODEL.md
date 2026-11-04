@@ -45,7 +45,7 @@ La propuesta de entidades `purchase_receipts` y `purchase_receipt_lines` del ERD
 
 - FKs compuestas tenant-scoped para organización, sucursal, almacén, proveedor, producto, actor y documento padre.
 - Validar membresía organizacional activa, rol y asignación de sucursal en servidor en cada solicitud; no confiar en frontend.
-- Bloqueo transaccional de recepción y balances; prevenir doble confirmación concurrente.
+- Bloqueo transaccional de recepción y balances siguiendo el contrato común de [`INVENTORY_TRANSACTION_LOCKING.md`](./INVENTORY_TRANSACTION_LOCKING.md): almacenes UUID ascendente, documento, balances por (almacén, producto) ascendente; prevenir doble confirmación concurrente.
 - Restricción de unicidad para idempotencia y protección contra payload distinto.
 - Ledger inmutable y auditoría atómica.
 - Pruebas PostgreSQL de cross-tenant/cross-branch, roles, cantidades decimales, doble envío concurrente, rollback inducido, proveedor inválido, producto inválido, reintento y reverso.

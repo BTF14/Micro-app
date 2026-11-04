@@ -47,6 +47,11 @@ BEGIN
     RAISE EXCEPTION 'FAIL: confirmed count line changed';
   EXCEPTION WHEN check_violation THEN NULL; END;
   BEGIN
+    INSERT INTO inventory_count_lines (organization_id,branch_id,warehouse_id,count_id,product_id,counted_quantity)
+    VALUES (org_a,branch_a,warehouse_a,count_a,product_a,3);
+    RAISE EXCEPTION 'FAIL: line added to confirmed count';
+  EXCEPTION WHEN check_violation THEN NULL; END;
+  BEGIN
     DELETE FROM inventory_counts WHERE id=count_a;
     RAISE EXCEPTION 'FAIL: confirmed count deleted';
   EXCEPTION WHEN check_violation THEN NULL; END;

@@ -87,3 +87,6 @@ COMMENT ON FUNCTION validate_register_shift_opening() IS
   'Requires active organization, branch, register, organization membership, branch membership and user; eligible roles are owner/admin/cashier.';
 COMMENT ON FUNCTION prevent_open_register_shift_owner_role_downgrade() IS
   'Prevents an open shift owner from losing the owner/admin/cashier role required by the approved own-shift policy.';
+
+COMMENT ON COLUMN register_shifts.cashier_user_id IS
+  'Organization member who owns and operates this shift; approved eligible roles are owner, admin and cashier, and only this member may close it.';

@@ -138,11 +138,16 @@ describe.skipIf(!databaseUrl)("catalog product updates against PostgreSQL", () =
     expect(product.price_usd).toBe("15.2500");
     expect(product.description).toBe("Updated description");
 
-    const audit = await client!.query<{ actor_user_id: string; action: string; entity_id: string }>(
-      "SELECT actor_user_id, action, entity_id FROM audit_logs WHERE organization_id = $1 AND entity_id = $2",
+    const audit = await client!.query<{ actor_user_id: string; action: string; entity_id: string; metadata: { changes?: { price_usd?: { before: string; after: string } } } }>(
+      "SELECT actor_user_id, action, entity_id, metadata FROM audit_logs WHERE organization_id = $1 AND entity_id = $2",
       [organizationA, productA],
     );
-    expect(audit.rows).toEqual([{ actor_user_id: fixtures.owner.userId, action: "product.updated", entity_id: productA }]);
+    expect(audit.rows[0]).toMatchObject({
+      actor_user_id: fixtures.owner.userId,
+      action: "product.updated",
+      entity_id: productA,
+      metadata: { changes: { price_usd: { before: "10.0000", after: "15.2500" } } },
+    });
   });
 
   it("Admin can soft-deactivate a product without deleting its history", async () => {

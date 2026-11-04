@@ -1,6 +1,8 @@
-# ERD objetivo: organización, sucursal, almacén, caja y operaciones\n\n## Estado vivo verificado — 2026-11-04 UTC
+# ERD objetivo: organización, sucursal, almacén, caja y operaciones
 
-PR #196 sigue abierta Draft y sin merge. HEAD de aplicación validado: `1eb8da0006061749772e1afd93fa9901f155067b`; CI completo success, incluida prueba de doble confirmación concurrente. En la rama existen migración 0005, tablas tenant-scoped de almacenes/conteos/balances/ledger, endpoints GET de almacenes/conteos y creación/confirmación de conteos opening/physical. La integración PostgreSQL valida apertura, conteo físico, permisos, consultas, reservas y confirmación concurrente idempotente. No hay backfill de `products.stock_quantity`, ni migración aplicada a Neon, ni cambios en main. Los commits documentales posteriores deben volver a pasar CI.
+## Estado vivo verificado — 2026-11-04 UTC
+
+PR #196 sigue abierta Draft y sin merge. HEAD validado: `0d3992bf5f377fe8ddf65776bc09b2e78c1a8915`; CI completo success, incluida confirmación concurrente idempotente y rollback inducido por fallo de auditoría. En la rama existen migración 0005, tablas tenant-scoped de almacenes/conteos/balances/ledger, endpoints GET de almacenes/conteos y creación/confirmación de conteos opening/physical. No hay backfill de `products.stock_quantity`, ni migración aplicada a Neon, ni cambios en main.
 
 La matriz de permisos aprobada permite a Owner/Admin/Inventory realizar conteos; Cashier no. La matriz no define explícitamente quién administra la estructura de almacenes (crear/editar/desactivar); no implementar esos endpoints hasta documentar una decisión explícita. La administración de almacenes queda pendiente, no inferida a partir de permiso de conteo.
 

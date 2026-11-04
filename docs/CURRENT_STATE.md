@@ -1,3 +1,14 @@
+## Addendum de verificación más reciente — PR #202 — 2026-11-04
+
+- HEAD verificado de la rama documental: `355c80eb5996cbcc6266c81097d7a245c96851b0`.
+- Comparación contra `main` `7b0f057b8c152515005feed40305143c0ebb94b0`: 27 commits ahead / 0 behind; exactamente 12 archivos documentales modificados.
+- `fetch_commit_workflow_runs` devolvió 9 ejecuciones asociadas a este SHA; las 9 están completadas con conclusión `success`, incluida Security scan. Esta cifra describe workflow runs devueltos por esa consulta, no debe confundirse con un total universal de check-runs.
+- Las referencias más antiguas de PR #202 que aparecen en snapshots inferiores (incluido `1ddaba...`) son históricas y no describen el HEAD actual. No extrapolar sus resultados al SHA vigente.
+- El diff actual de `README.md` es de 4 líneas y el de `docs/DATABASE_SCHEMA.md` de 17; no se observa una sustitución masiva de esos documentos. El historial y contenido preexistente se conservan.
+- PR #202 sigue abierta/Draft. No fusionar automáticamente: completar revisión semántica del conjunto documental y confirmar checks requeridos/reviews en GitHub.
+
+---
+
 # Estado actual — Micro app
 
 ## Estado vivo vigente — 2026-11-04 UTC (reconciliado tras PR #199)

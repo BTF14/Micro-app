@@ -241,14 +241,6 @@ export function registerInventoryCountRoutes(app: Hono<{ Bindings: Bindings }>):
             const previous = current.rows[0]?.on_hand_quantity ?? "0.000";
             const deltaUnits = milliUnits(line.counted_quantity) - milliUnits(previous);
             const delta = formatMilliUnits(deltaUnits);
-            if (count.count_type === "physical" && !current.rows[0]) {
-              await tx.query(
-                `INSERT INTO inventory_balances
-                  (organization_id, branch_id, warehouse_id, product_id, on_hand_quantity)
-                 VALUES ($1, $2, $3, $4, 0)`,
-                [tenant.organizationId, branch.branchId, warehouseId, line.product_id],
-              );
-            }
             await tx.query(
               `INSERT INTO inventory_balances
                 (organization_id, branch_id, warehouse_id, product_id, on_hand_quantity)
@@ -257,7 +249,7 @@ export function registerInventoryCountRoutes(app: Hono<{ Bindings: Bindings }>):
                DO UPDATE SET on_hand_quantity = EXCLUDED.on_hand_quantity, updated_at = now()`,
               [tenant.organizationId, branch.branchId, warehouseId, line.product_id, line.counted_quantity],
             );
-            if ((count.count_type === "opening" && Number(line.counted_quantity) > 0) || (count.count_type === "physical" && deltaUnits !== 0n)) {
+            if ((count.count_type === "opening" && milliUnits(line.counted_quantity) > 0n) || (count.count_type === "physical" && deltaUnits !== 0n)) {
               const movementType = count.count_type === "opening" ? "opening" : "count_adjustment";
               await tx.query(
                 `INSERT INTO warehouse_inventory_movements

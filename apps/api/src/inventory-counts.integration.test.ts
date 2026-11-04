@@ -370,7 +370,7 @@ describe.skipIf(!databaseUrl)("warehouse inventory count transactions against Po
     await seedInventoryBalance("8.000");
     const draft = await request(root() + "/counts/physical", {
       reason: "Concurrent confirmation must be idempotent",
-      lines: [{ product_id: productId, counted_quantity: "8.000" }],
+      lines: [{ product_id: productId, counted_quantity: "8.500" }],
     });
     expect(draft.status).toBe(201);
     const body = await draft.json() as { id: string };

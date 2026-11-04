@@ -12,7 +12,7 @@ const MAX_COUNT_LINES = 500;
 
 type CountLineInput = { productId: string; quantity: string; unitCost: string | null };
 
-function readDecimal(value: unknown, allowZero: boolean): string | null {
+function readDecimal(value: unknown, allowZero: boolean, maxFractionDigits = 3): string | null {
   if (typeof value !== "string" && typeof value !== "number") return null;
   const raw = String(value);
   if (!/^(?:0|[1-9][0-9]{0,10})(?:\.[0-9]{1,3})?$/.test(raw)) return null;
@@ -37,7 +37,7 @@ function parseCountBody(value: unknown): { reason: string; lines: CountLineInput
     if (typeof line.product_id !== "string" || !UUID_PATTERN.test(line.product_id) || seen.has(line.product_id)) return null;
     const quantity = readDecimal(line.counted_quantity, true);
     const unitCost = line.unit_cost_usd === undefined || line.unit_cost_usd === null
-      ? null : readDecimal(line.unit_cost_usd, true);
+      ? null : readDecimal(line.unit_cost_usd, true, 4);
     if (quantity === null || (line.unit_cost_usd !== undefined && line.unit_cost_usd !== null && unitCost === null)) return null;
     seen.add(line.product_id);
     lines.push({ productId: line.product_id, quantity, unitCost });

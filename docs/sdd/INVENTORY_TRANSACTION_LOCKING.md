@@ -17,11 +17,12 @@ Hallazgo de implementación: después de bloquear en lote todos los balances, el
 
 Cada escritor debe usar una única conexión y una única transacción PostgreSQL para validación final, documento, balances, ledger y auditoría. El orden de locks es:
 
-1. **Contexto de identidad/tenant:** resolver sesión, usuario, membresía y organización dentro de la transacción. Si se bloquean esas filas, hacerlo antes de cualquier lock de inventario. Resolver y validar cada sucursal implicada en servidor; la resolución de sucursal no sustituye autorización por operación.
-2. **Almacenes:** bloquear *todos* los almacenes afectados con `SELECT ... ORDER BY id ASC FOR UPDATE`, en una sola adquisición lógica. El UUID del almacén determina el orden, no si es origen/destino ni el orden recibido en el request.
-3. **Documento operativo:** bloquear el/los documentos que se confirman o modifican después de los almacenes y antes de balances. Si una operación bloquea más de una fila/documento, definir y respetar un orden estable por tipo de documento y clave primaria.
-4. **Balances:** bloquear las filas existentes con `ORDER BY warehouse_id ASC, product_id ASC FOR UPDATE`. Para un solo almacén esto equivale a `product_id ASC`. No adquirir locks individuales por línea después de este lock de conjunto.
-5. **Escrituras:** calcular desde los valores leídos bajo lock; actualizar/crear balances, insertar movimientos append-only, cambiar estado documental y escribir auditoría, todo antes del mismo COMMIT.
+1. **Identidad/tenant:** resolver y bloquear sesión, usuario, membresía organizacional y organización dentro de la transacción. Estas filas se estabilizan antes de los recursos operativos.
+2. **Sucursales:** bloquear todas las filas `branches` activas implicadas en orden UUID ascendente. Después bloquear todas las filas `branch_memberships` requeridas en orden `(branch_id, user_id)` ascendente. Owner/Admin no requieren fila de asignación, pero sí el lock de sucursal activa; Cashier/Inventory requieren ambos. En operaciones multi-sucursal, pasar el conjunto completo a un helper batch; nunca resolver y bloquear sucursales una a una según el orden del request.
+3. **Almacenes:** bloquear *todos* los almacenes afectados con `SELECT ... ORDER BY id ASC FOR UPDATE`, en una sola adquisición lógica. El UUID del almacén determina el orden, no si es origen/destino ni el orden recibido en el request.
+4. **Documento operativo:** bloquear el/los documentos que se confirman o modifican después de los almacenes y antes de balances. Si una operación bloquea más de una fila/documento, definir y respetar un orden estable por tipo de documento y clave primaria.
+5. **Balances:** bloquear las filas existentes con `ORDER BY warehouse_id ASC, product_id ASC FOR UPDATE`. Para un solo almacén esto equivale a `product_id ASC`. No adquirir locks individuales por línea después de este lock de conjunto.
+6. **Escrituras:** calcular desde los valores leídos bajo lock; actualizar/crear balances, insertar movimientos append-only, cambiar estado documental y escribir auditoría, todo antes del mismo COMMIT.
 
 No se permite invertir niveles (por ejemplo, bloquear balance y después almacén), ni bloquear almacenes secuencialmente según el rol funcional (origen y luego destino).
 
@@ -34,7 +35,7 @@ Esto es una convención de todos los escritores, no una garantía frente a SQL m
 ## 4. Reglas para operaciones de una o varias ubicaciones
 
 - **Un almacén:** bloquear ese almacén; después bloquear el conjunto necesario de balances por producto ascendente. El conteo actual bloquea el conjunto completo para validar apertura y reservas.
-- **Varios almacenes (transferencias, movimientos entre ubicaciones):** validar tenant y acceso a cada sucursal; bloquear todos los almacenes en orden UUID ascendente antes de bloquear cualquier documento o balance; después bloquear balances por `(warehouse_id, product_id)`. Esto elimina el ciclo origen→destino frente a destino→origen.
+- **Varias sucursales/almacenes (transferencias, movimientos entre ubicaciones):** resolver tenant una vez; bloquear todas las sucursales UUID ascendente, después todas las asignaciones requeridas por `(branch_id, user_id)`, después todos los almacenes UUID ascendente, antes de cualquier documento o balance; finalmente bloquear balances por `(warehouse_id, product_id)`. Esto elimina los ciclos por orden origen/destino y las carreras con revocación/desactivación.
 - **Reservas y consumo:** modificar `reserved_quantity` bajo el mismo mutex de almacén y lock de balance que usa el consumo físico. Validar disponibilidad con datos leídos bajo lock y una actualización condicional/atómica; nunca hacer read-then-write sin protección.
 - **Productos sin fila de balance:** el mutex del almacén debe seguir retenido hasta completar el INSERT/UPSERT. No asumir que `FOR UPDATE` bloqueó una fila inexistente.
 - **Idempotencia:** resolver/reclamar la clave idempotente dentro de la misma transacción y antes de producir efectos. El replay no puede volver a insertar movimientos ni auditoría duplicados.
@@ -65,15 +66,20 @@ Ejecutar con PostgreSQL efímero y transacciones/conexiones independientes, no s
 6. repetición simultánea de la misma clave idempotente;
 7. fallo inducido después de cambiar balance y antes de ledger/auditoría (rollback total);
 8. tenant/sucursal/almacén/producto ajeno, sin escrituras parciales;
-9. confirmación de conteo concurrente contra otro escritor de existencias/reservas.
+9. confirmación de conteo concurrente contra otro escritor de existencias/reservas;
+10. revocación de branch membership que obtiene su UPDATE antes del lock de autorización (la mutación debe denegarse tras esperar);
+11. revocación iniciada después de que la mutación obtiene `FOR SHARE` (la revocación debe esperar al COMMIT);
+12. desactivación concurrente de sucursal y almacén (serialización y revalidación del estado activo).
 
 Cada operación nueva debe demostrar que respeta el mismo orden. La prueba de doble confirmación de conteo por sí sola no demuestra coordinación con escritores futuros que aún no existen.
 
 ## 7. Implementación de referencia actual
 
-- `apps/api/src/inventory-locks.ts`: helpers compartidos `lockInventoryWarehouses` y `lockInventoryBalances`; ordenan UUIDs, exigen cada par almacén/sucursal validado, rechazan pares conflictivos y fallan cerrados si falta un almacén solicitado.
+- `apps/api/src/branch-context.ts`: `lockBranchScopes` adquiere primero todas las sucursales activas por UUID y después las asignaciones activas por `(branch_id, user_id)`; `resolveBranchContext(..., true)` usa ese contrato para una mutación transaccional.
+- `apps/api/src/inventory-locks.ts`: helpers compartidos `lockInventoryWarehouses` y `lockInventoryBalances`; ordenan UUIDs, exigen cada par almacén/sucursal validado, rechazan pares conflictivos, requieren `warehouses.is_active = true` al bloquear y fallan cerrados si falta un almacén solicitado.
 - `apps/api/src/inventory-counts.ts`: confirmación de conteo usa los helpers; bloquea primero el almacén, después el documento y luego balances en lote; el conteo físico limita el lock a los productos contados, mientras que apertura revisa el conjunto completo; reutiliza la lectura bloqueada para calcular los deltas.
-- `apps/api/src/inventory-locks.test.ts`: pruebas unitarias del orden, deduplicación, rechazo de almacén ausente y conjuntos vacíos.
+- `apps/api/src/branch-context.test.ts` y `branch-context.integration.test.ts`: pruebas del orden batch y carreras de revocación/desactivación con conexiones PostgreSQL independientes.
+- `apps/api/src/inventory-locks.test.ts` y `inventory-counts.integration.test.ts`: predicado de almacén activo, confirmación de borrador tras desactivación y serialización entre lock de inventario y desactivación.
 
 Este helper fija el patrón para nuevos servicios; no hace que un servicio futuro lo use automáticamente. La revisión de cada escritor y sus pruebas PostgreSQL siguen siendo obligatorias.
 

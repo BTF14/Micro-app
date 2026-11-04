@@ -4,7 +4,7 @@
 **Última actualización:** 2026-10-29.  
 **Aplicación:** toda IA, agente, sesión o chat que trabaje en Micro app, independientemente del proveedor (ChatGPT, Claude, Codex u otro).
 
-Esta política complementa `AGENTS.md`, `docs/CONSTITUTION.md`, `docs/SECURITY_ROADMAP.md` y los requisitos de seguridad existentes. Si hay conflicto, no se debe elegir silenciosamente la regla más permisiva: verificar la fuente canónica, preservar las restricciones de seguridad y documentar el conflicto antes de actuar.
+Esta política desarrolla las reglas de PR y verificación; `AGENTS.md` es el punto de entrada y `docs/CONSTITUTION.md` la autoridad normativa. Si hay conflicto, verificar la fuente canónica, preservar las restricciones de seguridad y corregir la contradicción. No es necesario leer el documento completo para tareas que no impliquen PR, revisión o integración.
 
 Para cualquier trabajo de diseño UI/UX o frontend, aplicar también `docs/FRONTEND_DESIGN_STANDARD.md` y el skill `.agents/skills/micro-app-stack-guidance/SKILL.md`. El estándar define criterios de diseño y calidad; no autoriza por sí solo cambios de producto, permisos, API, datos ni una reescritura visual amplia.
 
@@ -95,7 +95,7 @@ Esta política no concede permiso para operaciones sensibles. Siguen aplicando l
 
 El repositorio, no la memoria de una IA ni una conversación aislada, es la fuente de continuidad del trabajo.
 
-- Leer primero `docs/CURRENT_STATE.md` y después `docs/HANDOFF_NEXT_CHAT.md`; seguir la secuencia de lectura obligatoria de `AGENTS.md`.
+- Usar `AGENTS.md` como punto de entrada. Al retomar trabajo previo, leer `docs/HANDOFF_NEXT_CHAT.md`; consultar `docs/CURRENT_STATE.md` por secciones concretas, no leerlo completo por rutina. Consultar el diario solo cuando se necesite reconstruir una decisión histórica.
 - Verificar en vivo el estado de GitHub antes de actuar: rama base, SHA, PR relacionadas, diff y checks.
 - Al cerrar un bloque de trabajo significativo, actualizar `docs/CURRENT_STATE.md` con el estado actual y los hechos comprobados; añadir el hito a `docs/STATE_JOURNAL.md` (historial append-only); actualizar `docs/HANDOFF_NEXT_CHAT.md` con próximos pasos concretos.
 - Mantener separados **hechos verificados, hipótesis, decisiones, pendientes y bloqueos**. Las notas históricas no sustituyen la verificación en vivo.

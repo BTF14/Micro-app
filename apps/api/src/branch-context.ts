@@ -45,7 +45,7 @@ export async function lockBranchScopes(
     const userId = target.userId.toLowerCase();
     branchIds.add(branchId);
     if (target.requiresMembership) {
-      membershipKeys.set(\`\${branchId}:\${userId}\`, { branchId, userId });
+      membershipKeys.set(`${branchId}:${userId}`, { branchId, userId });
     }
   }
 
@@ -53,13 +53,13 @@ export async function lockBranchScopes(
   if (orderedBranchIds.length === 0) return true;
 
   const branches = await tx.query<{ id: string }>(
-    \`SELECT b.id
+    `SELECT b.id
      FROM branches b
      WHERE b.organization_id = $1
        AND b.id = ANY($2::uuid[])
        AND b.is_active = true
      ORDER BY b.id ASC
-     FOR SHARE OF b\`,
+     FOR SHARE OF b`,
     [organizationId, orderedBranchIds],
   );
   if (branches.rows.length !== orderedBranchIds.length) return false;
@@ -72,7 +72,7 @@ export async function lockBranchScopes(
   if (orderedMemberships.length === 0) return true;
 
   const memberships = await tx.query<{ branch_id: string; user_id: string }>(
-    \`SELECT bm.branch_id, bm.user_id
+    `SELECT bm.branch_id, bm.user_id
      FROM branch_memberships bm
      JOIN unnest($2::uuid[], $3::uuid[]) AS requested(branch_id, user_id)
        ON requested.branch_id = bm.branch_id
@@ -80,7 +80,7 @@ export async function lockBranchScopes(
      WHERE bm.organization_id = $1
        AND bm.is_active = true
      ORDER BY bm.branch_id ASC, bm.user_id ASC
-     FOR SHARE OF bm\`,
+     FOR SHARE OF bm`,
     [
       organizationId,
       orderedMemberships.map((target) => target.branchId),

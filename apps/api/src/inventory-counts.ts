@@ -123,13 +123,8 @@ export function registerInventoryCountRoutes(app: Hono<{ Bindings: Bindings }>):
           if (!isInventoryOperator(tenant.role)) return { kind: "forbidden" as const };
           const branch = await resolveBranchContext(tx, tenant, branchId, true);
           if (!branch) return { kind: "branch_denied" as const };
-          const warehouse = await tx.query<{ id: string }>(
-            `SELECT id FROM warehouses
-             WHERE organization_id = $1 AND branch_id = $2 AND id = $3 AND is_active = true
-             FOR SHARE`,
-            [tenant.organizationId, branch.branchId, warehouseId],
-          );
-          if (!warehouse.rows[0]) return { kind: "not_found" as const };
+          const lockedWarehouses = await lockInventoryWarehouses(tx, tenant.organizationId, [{ warehouseId, branchId: branch.branchId }]);
+          if (!lockedWarehouses) return { kind: "not_found" as const };
 
           const productIds = input.lines.map((line) => line.productId);
           const products = await tx.query<{ id: string }>(
@@ -137,6 +132,12 @@ export function registerInventoryCountRoutes(app: Hono<{ Bindings: Bindings }>):
             [tenant.organizationId, productIds],
           );
           if (products.rows.length !== productIds.length) return { kind: "invalid_products" as const };
+
+          const capturedBalances = countType === "physical"
+            ? await lockInventoryBalances(tx, tenant.organizationId, [warehouseId], productIds)
+            : [];
+          if (capturedBalances === null) return { kind: "invalid_lock_scope" as const };
+          const capturedByProduct = new Map(capturedBalances.map((balance) => [balance.product_id, balance.on_hand_quantity]));
 
           const inserted = await tx.query<{ id: string }>(
             `INSERT INTO inventory_counts
@@ -148,9 +149,10 @@ export function registerInventoryCountRoutes(app: Hono<{ Bindings: Bindings }>):
           for (const line of input.lines) {
             await tx.query(
               `INSERT INTO inventory_count_lines
-                (organization_id, branch_id, warehouse_id, count_id, product_id, counted_quantity, unit_cost_usd)
-               VALUES ($1, $2, $3, $4, $5, $6::numeric, $7::numeric)`,
-              [tenant.organizationId, branch.branchId, warehouseId, countId, line.productId, line.quantity, line.unitCost],
+                (organization_id, branch_id, warehouse_id, count_id, product_id, counted_quantity, unit_cost_usd, expected_on_hand_quantity)
+               VALUES ($1, $2, $3, $4, $5, $6::numeric, $7::numeric, $8::numeric)`,
+              [tenant.organizationId, branch.branchId, warehouseId, countId, line.productId, line.quantity, line.unitCost,
+                countType === "physical" ? (capturedByProduct.get(line.productId) ?? "0.000") : null],
             );
           }
           await tx.query(
@@ -210,9 +212,9 @@ export function registerInventoryCountRoutes(app: Hono<{ Bindings: Bindings }>):
           if (count.status !== "draft") return { kind: "not_confirmable" as const };
 
           const lines = await tx.query<{
-            product_id: string; counted_quantity: string; unit_cost_usd: string | null;
+            product_id: string; counted_quantity: string; unit_cost_usd: string | null; expected_on_hand_quantity: string | null;
           }>(
-            `SELECT product_id, counted_quantity::text, unit_cost_usd::text
+            `SELECT product_id, counted_quantity::text, unit_cost_usd::text, expected_on_hand_quantity::text
              FROM inventory_count_lines
              WHERE organization_id = $1 AND count_id = $2
              ORDER BY product_id ASC`,
@@ -236,6 +238,12 @@ export function registerInventoryCountRoutes(app: Hono<{ Bindings: Bindings }>):
           }
           if (count.count_type === "physical") {
             for (const line of lines.rows) {
+              const currentOnHand = balanceByProduct.get(line.product_id)?.on_hand_quantity ?? "0.000";
+              if (line.expected_on_hand_quantity === null ||
+                  milliUnits(line.expected_on_hand_quantity) !== milliUnits(currentOnHand)) {
+                return { kind: "stale_count" as const, productId: line.product_id,
+                  expectedQuantity: line.expected_on_hand_quantity, currentQuantity: currentOnHand };
+              }
               const reserved = balanceByProduct.get(line.product_id)?.reserved_quantity ?? "0.000";
               if (milliUnits(line.counted_quantity) < milliUnits(reserved)) {
                 return { kind: "below_reserved" as const, productId: line.product_id, reservedQuantity: reserved };
@@ -295,6 +303,7 @@ export function registerInventoryCountRoutes(app: Hono<{ Bindings: Bindings }>):
       if (result.kind === "not_confirmable") return c.json({ error: "COUNT_NOT_CONFIRMABLE", message: "El conteo no puede confirmarse." }, 409);
       if (result.kind === "empty") return c.json({ error: "EMPTY_COUNT", message: "El conteo no contiene líneas." }, 409);
       if (result.kind === "opening_balance_exists") return c.json({ error: "OPENING_ALREADY_EXISTS", message: "El almacén ya tiene saldos; no se puede aplicar una apertura." }, 409);
+      if (result.kind === "stale_count") return c.json({ error: "COUNT_STALE", message: "El inventario cambió desde que se creó este conteo. Crea un nuevo conteo físico antes de confirmar.", product_id: result.productId, expected_on_hand_quantity: result.expectedQuantity, current_on_hand_quantity: result.currentQuantity }, 409);
       if (result.kind === "below_reserved") return c.json({ error: "COUNT_BELOW_RESERVED_STOCK", message: "La cantidad contada no puede ser inferior a las existencias reservadas.", product_id: result.productId, reserved_quantity: result.reservedQuantity }, 409);
       if (result.kind === "replayed") return c.json({ id: result.countId, status: "confirmed", replayed: true }, 200);
       return c.json({ id: result.countId, status: "confirmed", count_type: result.countType, changes: result.changes }, 200);

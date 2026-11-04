@@ -15,7 +15,10 @@ type CountLineInput = { productId: string; quantity: string; unitCost: string | 
 function readDecimal(value: unknown, allowZero: boolean, maxFractionDigits = 3): string | null {
   if (typeof value !== "string" && typeof value !== "number") return null;
   const raw = String(value);
-  if (!new RegExp(\`^(?:0|[1-9][0-9]{0,10})(?:\\.[0-9]{1,\${maxFractionDigits}})?$\`).test(raw)) return null;
+  const decimalPattern = maxFractionDigits === 4
+    ? /^(?:0|[1-9][0-9]{0,10})(?:\.[0-9]{1,4})?$/
+    : /^(?:0|[1-9][0-9]{0,10})(?:\.[0-9]{1,3})?$/;
+  if (!decimalPattern.test(raw)) return null;
   if (!allowZero && Number(raw) <= 0) return null;
   return raw.includes(".") ? raw : raw + ".0";
 }

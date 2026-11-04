@@ -2,14 +2,17 @@
 
 ## Estado vivo verificado — 2026-11-04 UTC
 
-- PR #196 sigue abierta y Draft, sin merge; rama `feat/catalog-api-vertical-slice-20261104`. HEAD actual `0d3992bf5f377fe8ddf65776bc09b2e78c1a8915`; CI completo success en este SHA.
-- El SHA `0d3992bf5f377fe8ddf65776bc09b2e78c1a8915` pasó `verify`, migración PostgreSQL, análisis estático, integración/Chromium, backup/restore sintético, SAST/Trivy, revisión de dependencias y builds de preview Workers/Pages. La prueba de rollback atómico por fallo inducido de auditoría pasó dentro de `verify`.
-- La PR incorpora catálogo GET/POST/PATCH con baja lógica, migración 0005 y endpoints de listado de almacenes/conteos y creación/confirmación de conteos opening/physical. Conteos transaccionales, ledger append-only, balances, auditoría, protección de reservas, replay concurrente y rollback inducido están cubiertos por integración PostgreSQL. La coordinación futura con ventas/recepciones/transferencias/reservas aún requiere un protocolo compartido y pruebas al implementar esas operaciones.
-- Se añadió `docs/sdd/PURCHASE_RECEIPT_MODEL.md`: recepción autorizada por matriz, pero aún no implementada; reglas de orden de compra, recepción parcial/excedente, valoración/costes y diferencias quedan explícitamente pendientes. Documentación de permisos multi-sucursal reconciliada.
-- La migración y endpoints viven solo en la rama de PR; no están en main ni aplicados a Neon. No hubo despliegue a producción.
-- No confundir CI de esta vertical slice con preparación total de Micro-app: siguen pendientes recepción de compras, ventas/pagos/devoluciones, transferencias, administración de almacenes, rate limiting runtime, E2E comerciales completos, RPO/RTO medidos, alertas y verificación de coste $0.
+- PR #196 permanece abierta y Draft, sin merge. Rama `feat/catalog-api-vertical-slice-20261104`; HEAD `c754881435e9096cd85defbe7a4dab5cff429326`; base main `705d3db3220894c7d3baca8dc7e7a6b623dfbb94`.
+- Todos los checks de este HEAD terminaron en success: build/typecheck; API unit tests 97/97; web tests 6/6 (un test exclusivo de Preview se omite en el runner normal y se valida mediante Preview real); PostgreSQL integration auth 18/18, branch scope 7/7, register shifts 5/5, cashier open-shift 7/7, catalog 8/8, product create 8/8, product update 7/7 e inventory counts 9/9; Chromium/Playwright 4/4; SAST, Trivy, dependency review, secret scan, backup/restore y dashboard.
+- El workflow independiente de migraciones ejecutó realmente 0001–0005 y sus cinco archivos de assertions en PostgreSQL desechable. Se corrigieron las diez invocaciones `docker exec` con `-i` para adjuntar STDIN; logs confirman ejecución SQL y assertions.
+- Pages Preview permanece aislado: muestra que login y acceso a datos están deshabilitados. Worker Preview devuelve 200 en `/health` y 503 en `/auth/me`, tanto en URL versionada como en alias de rama.
+- La rama contiene catálogo GET/POST/PATCH (baja lógica), migración 0005 y endpoints de almacenes/conteos opening/physical. El contrato de locks estabiliza tenant, sucursales/asignaciones, almacenes, documentos y balances en orden determinista. No hay todavía rutas de ventas, recepción, reservas, devoluciones ni transferencias.
+- No se ejecutaron migraciones ni escrituras contra Neon producción; no se tocaron main ni datos reales. Los previews son entornos de prueba, no despliegues de producción.
+- Micro-app NO está listo para producción: faltan operaciones comerciales, coordinación entre futuros escritores de inventario, administración de almacenes, rate limiting runtime, RPO/RTO medidos, alerta de fallo, evidencia de coste total $0 y aprobación de lanzamiento.
 
-## Corrección de estado vivo — 2026-11-04 UTC
+## Snapshot histórico — estado anterior supersedido
+
+## Snapshot histórico — corrección de estado anterior (supersedida por el estado vivo superior)
 
 - `main` verificado para la PR #196: `705d3db3220894c7d3baca8dc7e7a6b623dfbb94`.
 - La matriz `docs/sdd/role-permission-decision-matrix.md` está **APROBADA** desde 2026-10-31; cualquier mención inferior de “NO APROBADA” pertenece al historial previo y queda supersedida.

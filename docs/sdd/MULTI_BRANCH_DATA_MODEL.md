@@ -2,11 +2,13 @@
 
 ## Estado vivo verificado — 2026-11-04 UTC
 
-PR #196 sigue abierta Draft y sin merge. HEAD validado: `0d3992bf5f377fe8ddf65776bc09b2e78c1a8915`; CI completo success, incluida confirmación concurrente idempotente y rollback inducido por fallo de auditoría. En la rama existen migración 0005, tablas tenant-scoped de almacenes/conteos/balances/ledger, endpoints GET de almacenes/conteos y creación/confirmación de conteos opening/physical. No hay backfill de `products.stock_quantity`, ni migración aplicada a Neon, ni cambios en main.
+PR #196 permanece abierta Draft y sin merge; HEAD `c754881435e9096cd85defbe7a4dab5cff429326`, base main `705d3db3220894c7d3baca8dc7e7a6b623dfbb94`. La rama contiene migración 0005, almacenes, balances, ledger append-only, conteos y endpoints de almacenes/conteos. Las migraciones 0001–0005 y assertions se ejecutaron en PostgreSQL desechable por CI; no se aplicaron a Neon.
 
-La matriz de permisos aprobada permite a Owner/Admin/Inventory realizar conteos; Cashier no. La matriz no define explícitamente quién administra la estructura de almacenes (crear/editar/desactivar); no implementar esos endpoints hasta documentar una decisión explícita. La administración de almacenes queda pendiente, no inferida a partir de permiso de conteo.
+La autorización de conteos sigue siendo Owner/Admin/Inventory; Cashier no puede operar conteos. La matriz no define quién administra estructura de almacenes, por lo que crear/editar/desactivar almacenes permanece fuera del alcance. El contrato de locks está implementado para confirmación de conteos y documenta el orden obligatorio para futuros escritores; ventas, reservas, recepción, devoluciones y transferencias todavía no existen como rutas.
 
+No hay backfill de `products.stock_quantity`, no se modificó main ni se alteraron datos reales. CI completo del HEAD indicado terminó en success. Micro-app no está listo para producción.
 
+## Snapshot histórico — diseño previo supersedido
 
 ## Implementación de base de inventario por almacén — 2026-11-04
 
@@ -19,7 +21,7 @@ La migración `0005_warehouse_inventory.sql` añade la base estructural, sin toc
 
 La migración incluye FKs compuestas tenant/branch/product/member y assertions SQL ejecutadas en PostgreSQL efímero por CI. La confirmación del conteo y la escritura coordinada de ledger/balance están implementadas en servicio transaccional y cuentan con pruebas PostgreSQL de concurrencia e idempotencia; las pruebas adicionales de rollback inducido y escenarios de estrés permanecen como hardening pendiente. Esta migración no habilita por sí sola endpoints ni stock operativo; no crear balances desde `products.stock_quantity` ni asumir distribución entre almacenes. El conteo inicial debe ser un conteo físico o cantidad documentada por el propietario, con actor, fecha, almacén y motivo.
 
-## Corrección de estado — 2026-11-04 UTC
+## Snapshot histórico — corrección de estado anterior (supersedida por el estado vivo superior)
 
 La matriz `docs/sdd/role-permission-decision-matrix.md` está **APROBADA** desde 2026-10-31; las menciones inferiores a “NO APROBADA” son históricas y quedan supersedidas. La PR #196 implementa en rama Draft la primera vertical slice de catálogo (GET/POST/PATCH, baja lógica) con CI completo en HEAD `d3c4196293256a34457f3b06e1b1c867caf5c97e`. No está fusionada; main aún no contiene esas rutas.
 

@@ -2,11 +2,19 @@
 
 ## Estado vivo verificado — 2026-11-04 UTC
 
-PR #196 (abierta, Draft, sin merge), HEAD `0d3992bf5f377fe8ddf65776bc09b2e78c1a8915`: CI completo success, incluidos `verify`, PostgreSQL, análisis estático, Chromium, backup/restore sintético, Trivy/SAST, dependency review y builds de preview Workers/Pages. Los cambios existen solo en la rama; no están en main ni en Neon.
+PR #196 está abierta y Draft, sin merge. HEAD verificado: `c754881435e9096cd85defbe7a4dab5cff429326`; base main `705d3db3220894c7d3baca8dc7e7a6b623dfbb94`.
 
-La base de inventario por almacén ya incluye conteos opening/physical transaccionales, ledger inmutable, balances y auditoría. La integración valida replay concurrente, rollback atómico inducido y límite respecto a stock reservado. La coordinación con futuros escritores comerciales sigue pendiente: todas las operaciones deberán compartir orden de locks y transacción de saldo+ledger. Esto NO completa inventario comercial: recepción de compras, ventas, transferencias, reservas ligadas a ventas, devoluciones y administración de almacenes aún requieren implementación y pruebas. La recepción tiene un SDD inicial con decisiones de negocio pendientes. Producción continúa bloqueada por los P0 enumerados abajo.
+Los checks de este HEAD terminaron en success: build/typecheck, API unit tests 97/97, web tests 6/6 (1 test Preview-only omitido en runner normal y verificado en Preview real), PostgreSQL auth 18/18, branch scope 7/7, register shifts 5/5, cashier open-shift 7/7, catálogo 8/8, product create 8/8, product update 7/7, inventory counts 9/9, Chromium/Playwright 4/4, SAST, Trivy, dependency review, secret scan, backup/restore y dashboard. El workflow independiente ejecutó realmente migraciones 0001–0005 y sus assertions contra PostgreSQL desechable.
 
-## Estado vivo — 2026-11-04 UTC
+Pages/Workers son previews aislados; Pages informa login/datos deshabilitados, Worker `/health` responde 200 y `/auth/me` responde 503. No se modificó Neon producción ni se desplegó a producción.
+
+La rama contiene catálogo GET/POST/PATCH y base de inventario por almacén con conteos y ledger. No implementa aún ventas, pagos, devoluciones, compras/recepciones, transferencias ni reservas comerciales. La coordinación con esos futuros escritores requiere implementar el contrato de locks y pruebas concurrentes por cada flujo.
+
+**Producción sigue bloqueada.** Permanecen pendientes los flujos comerciales, administración de almacenes, rate limiting runtime, pruebas E2E comerciales, RPO/RTO medidos, alertas operativas, confirmación de coste total $0 y aprobación final. Los checks verdes de una vertical slice no equivalen a readiness de producción.
+
+## Snapshot histórico — estado anterior supersedido
+
+## Snapshot histórico — readiness anterior (supersedido por el estado vivo superior)
 
 La PR #196 implementa en una rama basada en el HEAD vigente de `main` la primera vertical slice de catálogo: lectura tenant-scoped, alta, edición y baja lógica de productos. HEAD `d3c4196293256a34457f3b06e1b1c867caf5c97e`; CI completo success, incluyendo 83 tests unitarios, 8/8 lectura PostgreSQL, 8/8 creación PostgreSQL y 7/7 edición/baja lógica PostgreSQL. PR #196 sigue Draft y no está fusionada; por tanto, **main no tiene aún estas rutas**.
 

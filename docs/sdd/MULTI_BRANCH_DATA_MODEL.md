@@ -36,11 +36,11 @@ Diseñar la evolución del modelo actual, que solo tiene inventario a nivel orga
 
 Esta especificación separa:
 - **Existente en Git:** esquema base 0001, identidad 0002 y sucursales/asignaciones 0003 (`branches`, `branch_memberships`). La 0003 fue fusionada en PR #165 y validada en PostgreSQL 18 efímero.
-- **Objetivo propuesto:** entidades/relaciones que aún no están implementadas y evolución futura de las ya existentes.
-- **No implementado en main:** almacenes, balances por almacén, compras/recepciones, transferencias y devoluciones. Cajas/turnos están en 0004; `products.stock_quantity` sigue siendo organización-scoped.
-- **Gate de permisos:** la matriz role-permission-decision-matrix.md sigue NO APROBADA. Ninguna recomendación de rol de este documento autoriza permisos comerciales.
+- **Objetivo propuesto:** entidades/relaciones que aún no están implementadas y evolución futura de las ya existentes. La PR #196 contiene en una rama Draft la base de almacenes, balances, ledger y conteos; no está en main.
+- **No implementado en main:** almacenes, balances por almacén, compras/recepciones, transferencias y devoluciones. La base de almacenes/conteos está solo en PR #196 Draft. Cajas/turnos están en 0004; `products.stock_quantity` sigue siendo organización-scoped.
+- **Gate de permisos:** `docs/sdd/role-permission-decision-matrix.md` está APROBADA desde 2026-10-31. La aprobación habilita implementar las operaciones descritas, pero cada endpoint requiere autorización server-side y pruebas cross-tenant/cross-branch.
 
-La migración 0003 sí se ejecutó en PostgreSQL 18 desechable mediante CI y sus assertions; no se aplicó a Neon `main`. No hay rutas comerciales ni se ha conectado `resolveBranchContext` a handlers.
+La migración 0003 se ejecutó en PostgreSQL desechable mediante CI; no se aplicó a Neon `main`. PR #196 conecta `resolveBranchContext` a rutas de catálogo e inventario de conteos en su rama Draft; esto no significa que estén desplegadas ni disponibles en main.
 
 ## 2. Principios de modelado
 

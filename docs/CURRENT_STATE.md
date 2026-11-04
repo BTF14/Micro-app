@@ -1,6 +1,20 @@
 # Estado actual — Micro app
 
-## Estado vivo verificado — 2026-11-04 UTC
+## Estado vivo vigente — 2026-11-04 UTC (reconciliado tras PR #199)
+
+- **Main verificado:** `7b0f057b8c152515005feed40305143c0ebb94b0`, commit `docs: reconcile security and release state (#199)`. El checkpoint anterior de este archivo todavía indicaba su padre `2e0f4083...`; esa referencia ya no representa el HEAD de main.
+- **PR #200:** abierta y Draft, base `7b0f057b8c152515005feed40305143c0ebb94b0`, HEAD `730143043e0fe9ac11872cb2a379cbcf2fe8446b`; 11 commits ahead / 0 behind, 30 archivos (+3489 / -17). No tiene reviews formales y GitHub reporta `mergeable: null` / `mergeable_state: unknown`.
+- **Validación de PR #200 en el HEAD exacto:** 9/9 check-runs completados con `success`; los siete workflows GitHub Actions asociados al SHA también finalizaron en éxito. Incluye CI, E2E, PostgreSQL migration/integration, análisis estático, seguridad, escaneo de secretos, ODD docs y previews Cloudflare. Revalidar siempre el SHA antes de decidir una fusión.
+- **Previews aislados verificados:** Pages Preview `https://cf3774f5.micro-app-63i.pages.dev`; Workers Preview `https://2642938e-micro-app-api.btfcasheb.workers.dev`. En el Worker, `/health` responde 200 y una ruta de catálogo responde 503 con `PREVIEW_API_DISABLED`; la UI de Pages informa que login y datos están deshabilitados en preview.
+- **Gate de producción de PR #200 sigue abierto:** no se ha podido inspeccionar la configuración autenticada de Cloudflare (Branch control y deploy commands efectivos de Pages/Workers). El check de Workers enlaza un panel bajo `production/builds`, mientras la integración también informa URLs Preview. No inferir de esa ruta cuál es el comportamiento efectivo. **No fusionar PR #200 hasta verificar que el merge no promueve/despliega inesperadamente a producción y definir el procedimiento seguro para la migración 0005.**
+- **Alcance de PR #200:** catálogo tenant-scoped y fundamento de inventario por almacén (opening/physical counts, balances, ledger append-only, locks y auditoría). No incluye administración/creación de almacenes ni los demás escritores comerciales (ventas, reservas, recepciones, pagos, devoluciones y transferencias). Issue #53 sigue abierta.
+- **PR #196:** continúa abierta y Draft, independiente; mantenerla intacta y no fusionarla a ciegas. PR #201 está cerrada como duplicada. PR #190 y #193 se mantienen fuera de este trabajo, sin modificaciones. Issue #53 permanece abierta.
+- **Protecciones operativas vigentes:** no aplicar migraciones ni hacer escrituras contra Neon producción; no desplegar ni cambiar configuración productiva; no tocar secretos ni datos reales. No declarar el producto listo para producción.
+- **Pendientes de producto/operación:** cerrar política de valoración/coste de inventario antes de conectar los flujos comerciales; diseñar administración de almacenes y escritores transaccionales restantes; verificar rate limiting runtime, autorización por ruta, backups/RPO/RTO/alertas y coste operativo antes de cualquier declaración de readiness.
+
+## Checkpoint anterior (conservar como historial; supersedido por el estado vivo anterior)
+
+
 
 - `main` = `2e0f4083ba577de2f301daf8c866bfbdffb5e23f`, merge squash de PR #198. La transición SDD → ODD y su validador documental ya están integrados.
 - PR #198 está fusionada. PR #197 está cerrada **sin merge**, supersedida por #198; no describirla como abierta ni Draft.

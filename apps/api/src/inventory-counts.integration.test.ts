@@ -105,7 +105,7 @@ describe.skipIf(!databaseUrl)("warehouse inventory count transactions against Po
   it("posts opening and physical counts atomically and makes confirmation replay-safe", async () => {
     const opening = await request(root() + "/counts/opening", {
       reason: "Initial documented physical count",
-      lines: [{ product_id: productId, counted_quantity: "10.500", unit_cost_usd: "2.250" }],
+      lines: [{ product_id: productId, counted_quantity: "10.500", unit_cost_usd: "2.2500" }],
     });
     expect(opening.status, await opening.clone().text()).toBe(201);
     const openingBody = await opening.json() as { id: string };

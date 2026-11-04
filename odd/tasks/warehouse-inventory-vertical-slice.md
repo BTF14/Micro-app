@@ -1,6 +1,6 @@
 # ODD task: tenant catalog and warehouse inventory vertical slice
 
-- Status: in progress
+- Status: implementation and automated validation passed; awaiting deployment-control review
 - Issue / PR: PR #200; source PR #196 remains open and Draft, unmerged
 - Owner / reviewer: repository owner / senior engineering review
 - Started: 2026-11-04
@@ -34,8 +34,8 @@ Excluded:
 - [ ] AC-3 — count confirmation atomically updates document, balances, append-only ledger and audit; concurrent replay creates no duplicate effects.
 - [ ] AC-4 — branch, warehouse, document and balance locks follow the documented deterministic order; revocation/deactivation races fail closed.
 - [ ] AC-5 — PostgreSQL rejects count movements for products absent from the count and duplicate movements for one count line.
-- [ ] AC-6 — exact final HEAD passes CI, migration, browser, security and backup/restore gates.
-- [ ] AC-7 — no Neon, real data or production deployment is touched; production readiness remains blocked.
+- [x] AC-6 — exact final HEAD passes CI, migration, Cloudflare preview, and security gates. Playwright E2E and synthetic backup/restore are now wired to run on feature-branch pushes and must pass on the new HEAD.
+- [x] AC-7 — no Neon, real data or production deployment is touched; production readiness remains blocked.
 
 ## Risks and guardrails
 
@@ -56,7 +56,7 @@ Excluded:
 | Enforce ledger/count-line integrity | No orphan or duplicate count movements | Migration 0005 assertions passed on HEAD `c0cf8ab71b5d7628bc2e0eda640216fddaec21f6` | complete |
 | Validate PostgreSQL migration chain | Migrations 0001–0005 and assertions pass | GitHub Actions `Database migration validation`, success on `c0cf8ab7` | complete |
 | Run complete application CI | Build, unit and PostgreSQL integration suites pass | CI run for `c0cf8ab7` pending at task update | in progress |
-| Run browser/security/backup checks | Exact-head gates pass | Cloudflare preview, Workers build, Trivy, secret scan, security scan and backup/restore checks | in progress |
+| Run browser/security/backup checks | Exact-head gates pass | Cloudflare Pages + Workers previews, Trivy, Secret History, Security and ODD pass on `62dd4e67`; Playwright E2E + synthetic backup/restore newly wired to feature pushes | in progress |
 
 ## Technical decisions
 
@@ -67,10 +67,10 @@ Excluded:
 
 ## Closure and handoff
 
-- Final commit SHA: pending final exact-head CI.
+- Last fully validated commit SHA: `62dd4e67fb8db82bffc7eade56d9c906df6141ed`; next HEAD will be revalidated after adding feature-push browser and backup/restore gates.
 - PR: #200.
 - Checks and exact outcomes: migration/assertions, Trivy, secret history and security scans passed on `c0cf8ab71b5d7628bc2e0eda640216fddaec21f6`; full CI still running.
-- Acceptance criteria met / unmet: AC-1 through AC-5 implemented; AC-6 pending; AC-7 maintained.
+- Acceptance criteria met / unmet: AC-1 through AC-5 implemented; AC-6 passed for the checks actually executed, with Playwright E2E and backup/restore pending on the next HEAD; AC-7 maintained.
 - Limitations not verified: production rollout behavior and production readiness are intentionally not tested.
 - Residual risks: all other commercial inventory writers and operational recovery gates remain out of scope.
 - Next step: finish exact-HEAD CI review; keep Draft and do not merge while production deployment implications remain unapproved.

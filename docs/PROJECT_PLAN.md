@@ -1,3 +1,28 @@
+# Addendum vigente — estado reconciliado 2026-11-04
+
+Este bloque supersede los snapshots de prioridad anteriores que aparecen más abajo. Los bloques históricos se conservan para trazabilidad; no ejecutar sus tareas como si siguieran abiertas sin verificar el estado actual.
+
+## Estado operativo comprobado
+
+- `main`: `7b0f057b8c152515005feed40305143c0ebb94b0`.
+- PR #200: abierta, Draft; HEAD `7d2ef3d5e9ced1d4e8d386110129d21eb53af045`; 19/19 check-runs exitosos en ese SHA. Su vertical de catálogo/inventario y migración 0005 aún no están en main ni en Neon.
+- PR #202: abierta, Draft; HEAD `6ce448693b1c98ab9a418a578940dd865f69735a`; 12/12 check-runs exitosos en ese SHA. Es una PR documental, no despliegue productivo.
+- Issue #78 está **CERRADA** desde 2026-10-31 tras las verificaciones CORS y frontend bundle. No mantenerla como bloqueo abierto; cualquier regresión nueva debe documentarse con evidencia y issue apropiada.
+- Issue #53 sigue **ABIERTA**. La implementación de autorización por operación y la cobertura integral de aislamiento tenant/rol siguen siendo gates de seguridad.
+- PR #196 permanece abierta/Draft e independiente. PR #190/#193 no se modifican.
+
+## Orden de trabajo actualizado
+
+1. **P0 — revisión de seguridad/aislamiento de PR #200:** auditar cada ruta, tenant/branch scope, autorización, escrituras, concurrencia, idempotencia y pruebas negativas. No asumir que CI verde equivale a autorización completa.
+2. **P0 — Cloudflare Worker Previews:** el dashboard aún mostraba “Set up Worker Previews”; el Version command observado es `npx wrangler versions upload`. No confundir Version URLs con entornos branch-isolated. Antes de activarlo, definir bindings/secretos separados; jamás exponer `DATABASE_URL` de Neon producción a previews. Requiere recursos de prueba aislados.
+3. **P0 — migración 0005:** resolver atomicidad (SQL sin BEGIN/COMMIT y CI con psql autocommit), preparar preflight, backup/restore, orden de despliegue, compatibilidad y recuperación/rollback. No aplicar a Neon.
+4. **P1 — readiness operativa:** medir RPO/RTO, alertas externas, rate limiting runtime, cobertura E2E comercial y coste total $0 con evidencia.
+5. Mantener PR #202 Draft hasta que sus checks y revisión del HEAD exacto estén completos; no fusionar PR #200 ni #202 como parte de esta tarea.
+
+No se ha autorizado ni ejecutado despliegue productivo, migración remota, modificación de secretos, billing o cambios en Cloudflare/Neon.
+
+---
+
 # Prioridad operativa vigente — Micro app
 
 > **Fuente de verdad del estado vivo:** consultar `docs/CURRENT_STATE.md` y `docs/HANDOFF_NEXT_CHAT.md`, y verificar GitHub antes de actuar. Los snapshots y prioridades históricos que siguen en este archivo pueden estar supersedidos.

@@ -86,15 +86,15 @@ describe.skipIf(!databaseUrl)("warehouse inventory count transactions against Po
       [organizationId, "inventory-" + suffix],
     );
     branchId = branch.rows[0]!.id;
-    const warehouse = await client.query<{ id: string }>(
-      "INSERT INTO warehouses (organization_id, branch_id, code, name) VALUES ($1, $2, 'main', 'Main Warehouse') RETURNING id",
-      [organizationId, branchId],
-    );
-    warehouseId = warehouse.rows[0]!.id;
   });
 
   beforeEach(async () => {
     const suffix = crypto.randomUUID().replace(/-/g, "").slice(0, 16);
+    const warehouse = await client.query<{ id: string }>(
+      "INSERT INTO warehouses (organization_id, branch_id, code, name) VALUES ($1, $2, $3, 'Inventory Count Test Warehouse') RETURNING id",
+      [organizationId, branchId, "inv-" + suffix],
+    );
+    warehouseId = warehouse.rows[0]!.id;
     const product = await client.query<{ id: string }>(
       "INSERT INTO products (organization_id, sku, name, price_usd) VALUES ($1, $2, 'Inventory Count Test Product', 1) RETURNING id",
       [organizationId, "INV-COUNT-" + suffix],
@@ -400,7 +400,8 @@ describe.skipIf(!databaseUrl)("warehouse inventory count transactions against Po
       { headers: { Cookie: "microapp_session=" + token } },
     ), { DATABASE_URL: databaseUrl, FRONTEND_ORIGIN: "https://frontend.example" });
     expect(warehouseList.status).toBe(200);
-    expect(await warehouseList.json()).toMatchObject({ warehouses: [{ id: warehouseId, code: "main" }] });
+    const warehouseListBody = await warehouseList.json() as { warehouses: Array<{ id: string; code: string }> };
+    expect(warehouseListBody.warehouses).toContainEqual({ id: warehouseId, code: expect.any(String) });
 
     const countList = await app.fetch(new Request(
       "https://api.example" + root() + "/counts",

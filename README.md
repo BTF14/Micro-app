@@ -2,7 +2,7 @@
 
 **Micro app** es un proyecto independiente de punto de venta (POS) e inventario para comercios, pensado para PC, tablet y móvil. Su objetivo es ofrecer un flujo fiable para catálogo, existencias, ventas, pagos, caja y trazabilidad, con precios base en USD y equivalentes en VES calculados a partir de una tasa BCV validada.
 
-> **Estado verificado — 4 de noviembre de 2026:** el producto **no está listo para operación comercial ni para datos reales**. PR #200 propone una vertical de catálogo e inventario y añade la migración 0005, pero sigue abierta y en Draft; sus cambios no están en `main` ni aplicados a Neon. PR #202 mantiene la reconciliación documental abierta; su HEAD verificado `f17e15dba2d4d270964a5c7c7cfd2397a1b9241b` aún no tiene checks asociados en la última consulta. Ningún check de CI certifica por sí solo producción.
+> **Estado verificado — 4 de noviembre de 2026:** el producto **no está listo para operación comercial ni para datos reales**. PR #200 propone una vertical de catálogo e inventario y añade la migración 0005, pero sigue abierta y en Draft; sus cambios no están en `main` ni aplicados a Neon. PR #202 mantiene la reconciliación documental abierta; su HEAD actual debe verificarse junto con sus propios checks en GitHub. Ningún check de CI certifica por sí solo producción.
 
 - **Estado técnico vigente:** [CURRENT_STATE.md](docs/CURRENT_STATE.md) y [handoff de continuidad](docs/HANDOFF_NEXT_CHAT.md).
 - **Plan maestro y prioridades:** [PROJECT_PLAN.md](docs/PROJECT_PLAN.md).

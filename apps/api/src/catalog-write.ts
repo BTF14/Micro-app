@@ -35,7 +35,7 @@ type ProductRow = {
 function boundedText(value: unknown, maxLength: number, required: boolean): string | null {
   if (typeof value !== "string") return null;
   const normalized = value.trim();
-  if ((!normalized && required) || normalized.length > maxLength || /[\\u0000-\\u001F\\u007F]/.test(normalized)) return null;
+  if ((!normalized && required) || normalized.length > maxLength || /[\u0000-\u001F\u007F]/.test(normalized)) return null;
   return normalized;
 }
 

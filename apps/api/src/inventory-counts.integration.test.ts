@@ -1,4 +1,4 @@
-import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
+import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 import { Client } from "pg";
 import { lockInventoryWarehouses } from "./inventory-locks";
 import type { DatabaseClient } from "./database";
@@ -90,12 +90,23 @@ describe.skipIf(!databaseUrl)("warehouse inventory count transactions against Po
       [organizationId, branchId],
     );
     warehouseId = warehouse.rows[0]!.id;
+  });
+
+  beforeEach(async () => {
+    const suffix = crypto.randomUUID().replace(/-/g, "").slice(0, 16);
     const product = await client.query<{ id: string }>(
-      "INSERT INTO products (organization_id, sku, name, price_usd) VALUES ($1, 'INV-COUNT', 'Inventory Count Product', 1) RETURNING id",
-      [organizationId],
+      "INSERT INTO products (organization_id, sku, name, price_usd) VALUES ($1, $2, 'Inventory Count Test Product', 1) RETURNING id",
+      [organizationId, "INV-COUNT-" + suffix],
     );
     productId = product.rows[0]!.id;
   });
+
+  async function seedInventoryBalance(onHand: string, reserved = "0.000"): Promise<void> {
+    await client.query(
+      "INSERT INTO inventory_balances (organization_id, branch_id, warehouse_id, product_id, on_hand_quantity, reserved_quantity) VALUES ($1, $2, $3, $4, $5::numeric, $6::numeric)",
+      [organizationId, branchId, warehouseId, productId, onHand, reserved],
+    );
+  }
 
   afterAll(async () => {
     if (!client) return;
@@ -293,6 +304,7 @@ describe.skipIf(!databaseUrl)("warehouse inventory count transactions against Po
   });
 
   it("rejects an older physical count after a newer count has changed the balance", async () => {
+    await seedInventoryBalance("8.250");
     const first = await request(root() + "/counts/physical", {
       reason: "First physical observation",
       lines: [{ product_id: productId, counted_quantity: "9.000" }],
@@ -334,10 +346,7 @@ describe.skipIf(!databaseUrl)("warehouse inventory count transactions against Po
   });
 
   it("does not let a physical count reduce stock below reserved quantity", async () => {
-    await client.query(
-      "UPDATE inventory_balances SET reserved_quantity = 8.000 WHERE organization_id = $1 AND warehouse_id = $2 AND product_id = $3",
-      [organizationId, warehouseId, productId],
-    );
+    await seedInventoryBalance("10.000", "8.000");
     const draft = await request(root() + "/counts/physical", {
       reason: "Count below reserved quantity must be rejected",
       lines: [{ product_id: productId, counted_quantity: "7.500" }],
@@ -354,10 +363,11 @@ describe.skipIf(!databaseUrl)("warehouse inventory count transactions against Po
        WHERE b.organization_id = $1 AND b.warehouse_id = $2 AND b.product_id = $3 AND c.id = $4`,
       [organizationId, warehouseId, productId, draftBody.id],
     );
-    expect(state.rows[0]).toEqual({ quantity: "8.500", status: "draft" });
+    expect(state.rows[0]).toEqual({ quantity: "10.000", status: "draft" });
   });
 
   it("serializes concurrent confirmation and records exactly one ledger movement and audit event", async () => {
+    await seedInventoryBalance("8.000");
     const draft = await request(root() + "/counts/physical", {
       reason: "Concurrent confirmation must be idempotent",
       lines: [{ product_id: productId, counted_quantity: "8.000" }],
@@ -386,6 +396,7 @@ describe.skipIf(!databaseUrl)("warehouse inventory count transactions against Po
   });
 
   it("records an audited zero-delta physical count without creating a ledger movement", async () => {
+    await seedInventoryBalance("8.000");
     const draft = await request(root() + "/counts/physical", {
       reason: "Verify counted stock with no difference",
       lines: [{ product_id: productId, counted_quantity: "8.000" }],
@@ -409,10 +420,7 @@ describe.skipIf(!databaseUrl)("warehouse inventory count transactions against Po
   });
 
   it("rolls back count confirmation, balance and ledger when audit persistence fails", async () => {
-    await client.query(
-      "UPDATE inventory_balances SET reserved_quantity = 0 WHERE organization_id = $1 AND warehouse_id = $2 AND product_id = $3",
-      [organizationId, warehouseId, productId],
-    );
+    await seedInventoryBalance("8.000");
     const draft = await request(root() + "/counts/physical", {
       reason: "Force audit failure to verify atomic rollback",
       lines: [{ product_id: productId, counted_quantity: "7.000" }],

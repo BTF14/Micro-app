@@ -32,6 +32,7 @@ export async function resolveTenantContext(
   client: DatabaseClient,
   sessionToken: string | undefined,
   requestedOrganizationId: string | undefined,
+  lockRows = false,
 ): Promise<TenantContext | null> {
   if (
     typeof sessionToken !== "string" ||
@@ -60,7 +61,7 @@ export async function resolveTenantContext(
        AND m.is_active = true
        AND o.is_active = true
        AND o.id = $2
-     LIMIT 1`,
+     LIMIT 1${lockRows ? " FOR SHARE OF s, u, m, o" : ""}`,
     [tokenHash, requestedOrganizationId],
   );
 

@@ -29,13 +29,14 @@ describe.skipIf(!databaseUrl)("warehouse inventory count transactions against Po
   let productId = "";
   let token = "";
 
-  async function request(path: string, body?: unknown): Promise<Response> {
+  async function request(path: string, body?: unknown, extraHeaders: Record<string, string> = {}): Promise<Response> {
     return app.fetch(new Request("https://api.example" + path, {
       method: "POST",
       headers: {
         Cookie: "microapp_session=" + token,
         Origin: "https://frontend.example",
         "Content-Type": "application/json",
+        ...extraHeaders,
       },
       ...(body === undefined ? {} : { body: JSON.stringify(body) }),
     }), { DATABASE_URL: databaseUrl, FRONTEND_ORIGIN: "https://frontend.example" });
@@ -144,6 +145,73 @@ describe.skipIf(!databaseUrl)("warehouse inventory count transactions against Po
     await client.end();
   });
 
+
+
+  it("replays an idempotent count creation without creating duplicate drafts", async () => {
+    await seedInventoryBalance("4.000");
+    const key = "count-create-" + crypto.randomUUID();
+    const body = { reason: "Retry-safe physical count", lines: [{ product_id: productId, counted_quantity: "5.000" }] };
+    const first = await request(root() + "/counts/physical", body, { "Idempotency-Key": key });
+    expect(first.status).toBe(201);
+    const firstBody = await first.json() as { id: string };
+    const replay = await request(root() + "/counts/physical", body, { "Idempotency-Key": key });
+    expect(replay.status).toBe(200);
+    expect(await replay.json()).toMatchObject({ id: firstBody.id, status: "draft", count_type: "physical", line_count: 1, replayed: true });
+    const persisted = await client.query<{ counts: string; lines: string; audits: string }>(
+      `SELECT
+        (SELECT count(*)::text FROM inventory_counts WHERE organization_id = $1 AND idempotency_key = $2) AS counts,
+        (SELECT count(*)::text FROM inventory_count_lines WHERE organization_id = $1 AND count_id = $3) AS lines,
+        (SELECT count(*)::text FROM audit_logs WHERE organization_id = $1 AND entity_id = $3::text AND action = 'inventory.count.created') AS audits`,
+      [organizationId, key, firstBody.id],
+    );
+    expect(persisted.rows[0]).toEqual({ counts: "1", lines: "1", audits: "1" });
+  });
+
+  it("rejects reuse of an idempotency key with a different canonical payload", async () => {
+    const key = "count-create-" + crypto.randomUUID();
+    const first = await request(root() + "/counts/physical", { reason: "Original request", lines: [{ product_id: productId, counted_quantity: "5" }] }, { "Idempotency-Key": key });
+    expect(first.status).toBe(201);
+    const conflict = await request(root() + "/counts/physical", { reason: "Different request", lines: [{ product_id: productId, counted_quantity: "6.000" }] }, { "Idempotency-Key": key });
+    expect(conflict.status).toBe(409);
+    expect(await conflict.json()).toMatchObject({ error: "IDEMPOTENCY_KEY_REUSED" });
+    const persisted = await client.query<{ counts: string; lines: string }>(
+      `SELECT
+        (SELECT count(*)::text FROM inventory_counts WHERE organization_id = $1 AND idempotency_key = $2) AS counts,
+        (SELECT count(*)::text FROM inventory_count_lines l JOIN inventory_counts c ON c.organization_id = l.organization_id AND c.id = l.count_id
+         WHERE c.organization_id = $1 AND c.idempotency_key = $2) AS lines`,
+      [organizationId, key],
+    );
+    expect(persisted.rows[0]).toEqual({ counts: "1", lines: "1" });
+  });
+
+  it("serializes concurrent create retries with the same idempotency key", async () => {
+    const key = "count-create-" + crypto.randomUUID();
+    const body = { reason: "Concurrent retry must create exactly one draft", lines: [{ product_id: productId, counted_quantity: "2.000" }] };
+    const [first, second] = await Promise.all([
+      request(root() + "/counts/physical", body, { "Idempotency-Key": key }),
+      request(root() + "/counts/physical", body, { "Idempotency-Key": key }),
+    ]);
+    expect([first.status, second.status].sort()).toEqual([200, 201]);
+    const responses = await Promise.all([first.json(), second.json()]) as Array<{ id: string; replayed?: boolean }>;
+    expect(responses[0]!.id).toBe(responses[1]!.id);
+    expect(responses.filter((response) => response.replayed === true)).toHaveLength(1);
+    const persisted = await client.query<{ counts: string; lines: string; audits: string }>(
+      `SELECT
+        (SELECT count(*)::text FROM inventory_counts WHERE organization_id = $1 AND idempotency_key = $2) AS counts,
+        (SELECT count(*)::text FROM inventory_count_lines l JOIN inventory_counts c ON c.organization_id = l.organization_id AND c.id = l.count_id
+         WHERE c.organization_id = $1 AND c.idempotency_key = $2) AS lines,
+        (SELECT count(*)::text FROM audit_logs a JOIN inventory_counts c ON c.organization_id = $1 AND c.id::text = a.entity_id
+         WHERE c.organization_id = $1 AND c.idempotency_key = $2 AND a.action = 'inventory.count.created') AS audits`,
+      [organizationId, key],
+    );
+    expect(persisted.rows[0]).toEqual({ counts: "1", lines: "1", audits: "1" });
+  });
+
+  it("rejects malformed idempotency keys without creating a count", async () => {
+    const response = await request(root() + "/counts/physical", { reason: "Invalid key must fail closed", lines: [{ product_id: productId, counted_quantity: "1.000" }] }, { "Idempotency-Key": "bad key with spaces" });
+    expect(response.status).toBe(400);
+    expect(await response.json()).toMatchObject({ error: "INVALID_IDEMPOTENCY_KEY" });
+  });
 
   it("refuses to confirm a draft after its warehouse has been deactivated", async () => {
     const draft = await request(root() + "/counts/physical", {

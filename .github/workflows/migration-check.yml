@@ -2,7 +2,7 @@ name: Database migration validation
 
 on:
   push:
-    branches: [main, feat/tenant-safe-schema]
+    branches: [main, feat/tenant-safe-schema, "feat/**"]
   pull_request:
     branches: [main]
 

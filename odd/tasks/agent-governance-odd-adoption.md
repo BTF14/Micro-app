@@ -18,7 +18,7 @@
 - [x] ODD-06 Update `AGENTS.md`, Constitution and agent profiles to route through ODD.
 - [x] ODD-07 Retire SDD as active workflow while preserving domain SDD documents and a redirect.
 - [x] ODD-08 Archive the unexecuted Spec Kit proposal and update tool evaluation records.
-- [ ] ODD-09 Verify full diff, links, documentation checks, exact-SHA CI and PR metadata.
+- [x] ODD-09 Verify full diff, links, documentation checks, exact-SHA CI and PR metadata.
 
 ## Log
 
@@ -28,4 +28,5 @@
 - This change is documentation/governance only. No application code, dependencies, hooks, credentials, Neon, production or real data changed.
 - No external agent runtime, Engram, ECC, Gentle-AI, or tester-army/e2e has been installed or executed.
 
-- Final review: the branch comparison reports 30 commits ahead / 0 behind the recorded PR base and 18 changed files. GitHub reports the PR open, Draft, unmerged, and mergeable after recalculation. The connector returned no workflow runs or combined statuses for the latest API-created commits; therefore ODD-09 remains open and CI is not claimed as green for the final HEAD.
+- Final review: the branch comparison reports 34 commits ahead / 0 behind the recorded PR base and 18 changed files. GitHub reports the PR open, Draft, unmerged, and mergeable after recalculation.
+- Exact HEAD `6bcca6450dbae0d03473205c00d140b62e71b58b`: all 9 associated workflow runs completed successfully — CI, Playwright E2E, database migration validation, Semgrep SAST, security scan, secret history scan, dependency review, documentation validation and project progress dashboard.

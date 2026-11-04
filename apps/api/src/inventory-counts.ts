@@ -224,12 +224,28 @@ export function registerInventoryCountRoutes(app: Hono<{ Bindings: Bindings }>):
           );
           if (!lines.rows.length) return { kind: "empty" as const };
 
-          if (count.count_type === "opening") {
-            const existingBalance = await tx.query(
-              "SELECT 1 FROM inventory_balances WHERE organization_id = $1 AND warehouse_id = $2 LIMIT 1 FOR UPDATE",
-              [tenant.organizationId, warehouseId],
-            );
-            if (existingBalance.rows.length) return { kind: "opening_balance_exists" as const };
+          const existingBalances = await tx.query<{
+            product_id: string; on_hand_quantity: string; reserved_quantity: string;
+          }>(
+            `SELECT product_id, on_hand_quantity::text, reserved_quantity::text
+             FROM inventory_balances
+             WHERE organization_id = $1 AND warehouse_id = $2
+               AND product_id = ANY($3::uuid[])
+             ORDER BY product_id ASC
+             FOR UPDATE`,
+            [tenant.organizationId, warehouseId, lines.rows.map((line) => line.product_id)],
+          );
+          if (count.count_type === "opening" && existingBalances.rows.length) {
+            return { kind: "opening_balance_exists" as const };
+          }
+          if (count.count_type === "physical") {
+            const balanceByProduct = new Map(existingBalances.rows.map((balance) => [balance.product_id, balance]));
+            for (const line of lines.rows) {
+              const reserved = balanceByProduct.get(line.product_id)?.reserved_quantity ?? "0.000";
+              if (milliUnits(line.counted_quantity) < milliUnits(reserved)) {
+                return { kind: "below_reserved" as const, productId: line.product_id, reservedQuantity: reserved };
+              }
+            }
           }
           await tx.query("UPDATE inventory_counts SET status = 'confirmed', confirmed_by = $1, confirmed_at = now() WHERE organization_id = $2 AND id = $3", [tenant.userId, tenant.organizationId, countId]);
 
@@ -285,6 +301,7 @@ export function registerInventoryCountRoutes(app: Hono<{ Bindings: Bindings }>):
       if (result.kind === "not_confirmable") return c.json({ error: "COUNT_NOT_CONFIRMABLE", message: "El conteo no puede confirmarse." }, 409);
       if (result.kind === "empty") return c.json({ error: "EMPTY_COUNT", message: "El conteo no contiene líneas." }, 409);
       if (result.kind === "opening_balance_exists") return c.json({ error: "OPENING_ALREADY_EXISTS", message: "El almacén ya tiene saldos; no se puede aplicar una apertura." }, 409);
+      if (result.kind === "below_reserved") return c.json({ error: "COUNT_BELOW_RESERVED_STOCK", message: "La cantidad contada no puede ser inferior a las existencias reservadas.", product_id: result.productId, reserved_quantity: result.reservedQuantity }, 409);
       if (result.kind === "replayed") return c.json({ id: result.countId, status: "confirmed", replayed: true }, 200);
       return c.json({ id: result.countId, status: "confirmed", count_type: result.countType, changes: result.changes }, 200);
     } catch {

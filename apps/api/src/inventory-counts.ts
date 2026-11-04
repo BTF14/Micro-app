@@ -70,6 +70,17 @@ async function readBoundedBody(request: Request): Promise<string | null> {
   }
 }
 
+function milliUnits(value: string): bigint {
+  const [whole, fraction = ""] = value.split(".");
+  return BigInt(whole!) * 1000n + BigInt((fraction + "000").slice(0, 3));
+}
+
+function formatMilliUnits(value: bigint): string {
+  const sign = value < 0n ? "-" : "";
+  const absolute = value < 0n ? -value : value;
+  return sign + (absolute / 1000n).toString() + "." + (absolute % 1000n).toString().padStart(3, "0");
+}
+
 function isInventoryOperator(role: string): boolean {
   return role === "owner" || role === "admin" || role === "inventory";
 }
@@ -210,6 +221,8 @@ export function registerInventoryCountRoutes(app: Hono<{ Bindings: Bindings }>):
           );
           if (!lines.rows.length) return { kind: "empty" as const };
 
+          await tx.query("UPDATE inventory_counts SET status = 'confirmed', confirmed_by = $1, confirmed_at = now() WHERE organization_id = $2 AND id = $3", [tenant.userId, tenant.organizationId, countId]);
+
           const changes: Array<{ product_id: string; previous_quantity: string; counted_quantity: string; delta: string }> = [];
           for (const line of lines.rows) {
             const current = await tx.query<{ on_hand_quantity: string }>(
@@ -219,8 +232,8 @@ export function registerInventoryCountRoutes(app: Hono<{ Bindings: Bindings }>):
               [tenant.organizationId, warehouseId, line.product_id],
             );
             const previous = current.rows[0]?.on_hand_quantity ?? "0.000";
-            const deltaNumber = Number(line.counted_quantity) - Number(previous);
-            const delta = deltaNumber.toFixed(3);
+            const deltaUnits = milliUnits(line.counted_quantity) - milliUnits(previous);
+            const delta = formatMilliUnits(deltaUnits);
             if (count.count_type === "opening" && current.rows[0]) return { kind: "opening_balance_exists" as const };
             if (count.count_type === "physical" && !current.rows[0]) {
               await tx.query(
@@ -238,7 +251,7 @@ export function registerInventoryCountRoutes(app: Hono<{ Bindings: Bindings }>):
                DO UPDATE SET on_hand_quantity = EXCLUDED.on_hand_quantity, updated_at = now()`,
               [tenant.organizationId, branch.branchId, warehouseId, line.product_id, line.counted_quantity],
             );
-            if ((count.count_type === "opening" && Number(line.counted_quantity) > 0) || (count.count_type === "physical" && deltaNumber !== 0)) {
+            if ((count.count_type === "opening" && Number(line.counted_quantity) > 0) || (count.count_type === "physical" && deltaUnits !== 0n)) {
               const movementType = count.count_type === "opening" ? "opening" : "count_adjustment";
               await tx.query(
                 `INSERT INTO warehouse_inventory_movements

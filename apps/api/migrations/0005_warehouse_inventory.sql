@@ -32,6 +32,8 @@ CREATE TABLE inventory_counts (
   status text NOT NULL DEFAULT 'draft' CHECK (status IN ('draft', 'confirmed', 'cancelled')),
   reason text NOT NULL CHECK (length(trim(reason)) > 0),
   created_by uuid NOT NULL,
+  idempotency_key text CHECK (idempotency_key IS NULL OR idempotency_key ~ '^[A-Za-z0-9._:-]{1,128}$'),
+  request_hash text CHECK (request_hash IS NULL OR request_hash ~ '^[0-9a-f]{64}$'),
   confirmed_by uuid,
   created_at timestamptz NOT NULL DEFAULT now(),
   confirmed_at timestamptz,
@@ -51,6 +53,12 @@ CREATE TABLE inventory_counts (
 CREATE UNIQUE INDEX inventory_counts_one_confirmed_opening_uq
   ON inventory_counts (organization_id, warehouse_id)
   WHERE count_type = 'opening' AND status = 'confirmed';
+ALTER TABLE inventory_counts ADD CONSTRAINT inventory_counts_idempotency_pair_ck
+  CHECK ((idempotency_key IS NULL AND request_hash IS NULL)
+      OR (idempotency_key IS NOT NULL AND request_hash IS NOT NULL));
+CREATE UNIQUE INDEX inventory_counts_idempotency_key_uq
+  ON inventory_counts (organization_id, created_by, idempotency_key)
+  WHERE idempotency_key IS NOT NULL;
 CREATE INDEX inventory_counts_warehouse_history_idx
   ON inventory_counts (organization_id, warehouse_id, created_at DESC);
 

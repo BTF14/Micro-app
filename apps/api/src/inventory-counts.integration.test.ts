@@ -247,7 +247,7 @@ describe.skipIf(!databaseUrl)("warehouse inventory count transactions against Po
   it("serializes concurrent confirmation and records exactly one ledger movement and audit event", async () => {
     const draft = await request(root() + "/counts/physical", {
       reason: "Concurrent confirmation must be idempotent",
-      lines: [{ product_id: productId, counted_quantity: "8.250" }],
+      lines: [{ product_id: productId, counted_quantity: "8.000" }],
     });
     expect(draft.status).toBe(201);
     const body = await draft.json() as { id: string };
@@ -269,7 +269,7 @@ describe.skipIf(!databaseUrl)("warehouse inventory count transactions against Po
        FROM inventory_counts c WHERE c.organization_id = $1 AND c.id = $2`,
       [organizationId, body.id],
     );
-    expect(persisted.rows[0]).toEqual({ status: "confirmed", movements: "0", audits: "1" });
+    expect(persisted.rows[0]).toEqual({ status: "confirmed", movements: "1", audits: "1" });
   });
 
   it("rejects a cashier role before creating an inventory count", async () => {

@@ -56,7 +56,7 @@ describe("inventory transaction lock helpers", () => {
 
     expect(calls[0]!.values).toEqual(["org", [warehouse]]);
     expect(calls[0]!.statement).not.toContain("product_id = ANY");
-    expect(calls[0]!.statement).toMatch(/ORDER BY warehouse_id ASC, product_id ASC\\s+FOR UPDATE/);
+    expect(calls[0]!.statement).toMatch(/ORDER BY warehouse_id ASC, product_id ASC\s+FOR UPDATE/);
   });
 
   it("does not issue a query for an empty warehouse or product set", async () => {

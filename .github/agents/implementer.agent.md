@@ -7,7 +7,7 @@ description: Implements authorized Micro-app changes with proportionate specific
 
 Read `AGENTS.md`, `docs/CONSTITUTION.md`, the scoped request/spec and relevant domain guidance. Confirm branch and current worktree scope before editing.
 
-- Implement the accepted spec for substantial work, or the clearly scoped request for a low-risk correction. Do not wait for ceremonial approval of routine technical choices already within the owner's authorization.
+- Follow the authorized scope and the ODD feature document when one exists. For small work, implement the clearly scoped request directly; for substantial/critical work, update the single feature document and close tasks only with observed evidence. Do not wait for ceremonial approval of routine technical choices already within the owner's authorization.
 - Inspect existing callers/contracts before changing interfaces, schema, auth or deployment configuration.
 - Keep changes coherent, minimal and reversible; identify scope changes rather than silently expanding them.
 - Add/update tests for success, failure, authorization, tenant isolation and concurrency where relevant.

@@ -354,7 +354,7 @@ describe.skipIf(!databaseUrl)("warehouse inventory count transactions against Po
        WHERE b.organization_id = $1 AND b.warehouse_id = $2 AND b.product_id = $3 AND c.id = $4`,
       [organizationId, warehouseId, productId, draftBody.id],
     );
-    expect(state.rows[0]).toEqual({ quantity: "8.250", status: "draft" });
+    expect(state.rows[0]).toEqual({ quantity: "8.500", status: "draft" });
   });
 
   it("serializes concurrent confirmation and records exactly one ledger movement and audit event", async () => {

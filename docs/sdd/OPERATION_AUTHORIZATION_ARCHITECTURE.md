@@ -2,8 +2,7 @@
 
 ## Implementation status update — 2026-11-04 UTC
 
-The role/permission decision matrix is **APPROVED** (2026-10-31). PR #196 now implements the first commercial vertical slice: tenant-scoped catalog read, Owner/Admin product create, Owner/Admin product patch and soft deactivation, with transactional audit writes and PostgreSQL isolation tests. Its current HEAD `d3c4196293256a34457f3b06e1b1c867caf5c97e` has all CI checks passing. PR #196 remains Draft and unmerged, so main still does not contain these handlers. This document remains the technical design for operations not yet implemented; it does not authorize unapproved discount, refund, supervisor, or policy-exception behavior. Production readiness is not established.
-
+The role/permission decision matrix is **APPROVED** (2026-10-31). PR #196 implements tenant-scoped catalog read/create/update/soft-deactivation and warehouse inventory count/list/confirm routes, with PostgreSQL integration coverage including concurrent idempotent count confirmation. Application HEAD `1eb8da0006061749772e1afd93fa9901f155067b` passed all checks. Documentation-only commits are now at PR HEAD `eac5028180d0f42f595068f80a9895a65ca8a083`, whose CI is still running. PR #196 remains Draft and unmerged; main does not contain these handlers. Remaining routes still require operation-specific authorization and tests. This does not authorize unapproved discount, refund, supervisor, or policy-exception behavior; production readiness is not established.
 
 **Status:** technical proposal only; not an approved business permission policy and not implementation authorization.  
 **Date:** 2026-10-30 UTC  

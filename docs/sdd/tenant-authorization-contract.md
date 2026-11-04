@@ -1,5 +1,10 @@
 # Contrato de autorización server-side y aislamiento multiempresa
 
+## Estado de implementación — 2026-11-04 UTC
+
+La matriz de permisos por rol está **APROBADA** desde 2026-10-31. La PR #196 implementa la primera vertical slice comercial (lectura/alta/edición/baja lógica de catálogo) con pruebas PostgreSQL cross-tenant y por rol; HEAD `d3c4196293256a34457f3b06e1b1c867caf5c97e`, CI completo success. Sigue Draft y sin fusionar: main todavía no incorpora los handlers. Este contrato sigue aplicando a las rutas restantes; la existencia de un helper o de una ruta no demuestra aislamiento global ni autoriza cerrar issue #53.
+
+
 - Estado: **contrato técnico propuesto; no sustituye la aprobación de la matriz de roles**.
 - Fecha: 2026-10-19.
 - Alcance: futuras rutas HTTP comerciales de Micro app.

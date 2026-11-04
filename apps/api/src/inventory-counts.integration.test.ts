@@ -92,17 +92,21 @@ describe.skipIf(!databaseUrl)("warehouse inventory count transactions against Po
         // triggers during fixture teardown; production ledger immutability is
         // exercised by the migration assertions and remains enabled at runtime.
         await client.query("ALTER TABLE warehouse_inventory_movements DISABLE TRIGGER USER");
+        await client.query("ALTER TABLE inventory_count_lines DISABLE TRIGGER USER");
+        await client.query("ALTER TABLE inventory_counts DISABLE TRIGGER USER");
         await client.query("DELETE FROM audit_logs WHERE organization_id = $1", [organizationId]);
         await client.query("DELETE FROM warehouse_inventory_movements WHERE organization_id = $1", [organizationId]);
+        await client.query("DELETE FROM inventory_balances WHERE organization_id = $1", [organizationId]);
+        await client.query("DELETE FROM inventory_count_lines WHERE organization_id = $1", [organizationId]);
+        await client.query("DELETE FROM inventory_counts WHERE organization_id = $1", [organizationId]);
+        await client.query("ALTER TABLE inventory_counts ENABLE TRIGGER USER");
+        await client.query("ALTER TABLE inventory_count_lines ENABLE TRIGGER USER");
         await client.query("ALTER TABLE warehouse_inventory_movements ENABLE TRIGGER USER");
       } catch (error) {
         await client.query("ROLLBACK");
         throw error;
       }
       await client.query("COMMIT");
-      await client.query("DELETE FROM inventory_balances WHERE organization_id = $1", [organizationId]);
-      await client.query("DELETE FROM inventory_count_lines WHERE organization_id = $1", [organizationId]);
-      await client.query("DELETE FROM inventory_counts WHERE organization_id = $1", [organizationId]);
       await client.query("DELETE FROM warehouses WHERE organization_id = $1", [organizationId]);
       await client.query("DELETE FROM products WHERE organization_id = $1", [organizationId]);
       await client.query("DELETE FROM branches WHERE organization_id = $1", [organizationId]);

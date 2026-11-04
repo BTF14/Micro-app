@@ -98,7 +98,7 @@ async function readBodyWithinLimit(
       bytes.set(chunk, offset);
       offset += chunk.byteLength;
     }
-    return { kind: "ok", text: new TextDecoder("utf-8", { fatal: true }).decode(bytes) };
+    return { kind: "ok", text: new TextDecoder("utf-8").decode(bytes) };
   } catch {
     try { await reader.cancel(); } catch { /* Preserve the invalid-body result. */ }
     return { kind: "invalid" };

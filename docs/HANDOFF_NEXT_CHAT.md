@@ -12,7 +12,7 @@
 - RDD es independiente de ODD y no se activa automáticamente.
 - **Gates intactos:** presupuesto $0; no tocar main/Neon producción/datos reales; no desplegar ni fusionar; Seguridad Nivel 1 no está cerrada mientras falten RPO/RTO, alerta externa y evidencia de coste $0; respetar la matriz aprobada y no crear lógica comercial nueva hasta cerrar los gates aplicables.
 - PR #196 permanece independiente y Draft; PR #190/#193 e issue #53 no fueron modificadas por este trabajo.
-- La comparación más reciente registró 30 commits ahead / 0 behind y 18 archivos cambiados. El conector no devolvió workflow runs ni combined statuses para los últimos commits creados vía API; CI del HEAD final sigue sin evidencia. ODD-09 permanece pendiente.
+- HEAD `25e7e1678b4b3c0f937b4c657f255c6453b95ead` tuvo 9/9 workflows en success (CI, Playwright E2E, migraciones PostgreSQL, Semgrep, Security, Secret history, Dependency Review, documentación y dashboard). ODD-09 quedó cerrado. Este checkpoint puede generar un commit documental posterior: revalidar el HEAD vivo y sus checks al retomar.
 - Próximo paso: revisar diff completo, validar enlaces/documentación y obtener CI del HEAD exacto desde un entorno que dispare Actions; corregir errores y dejar PR #197 Draft. No instalar herramientas externas en este paso.
 
 ---

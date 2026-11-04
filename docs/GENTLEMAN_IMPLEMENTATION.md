@@ -104,10 +104,10 @@ Playwright no es un producto de Gentleman-Programming; es una herramienta comple
 - Playwright: https://playwright.dev/docs/intro
 
 
-## 4. Integración con el flujo SDD y agentes del repositorio
+## 4. Flujo ODD y continuidad
 
-El proceso operativo general está en [SDD_WORKFLOW.md](SDD_WORKFLOW.md), con plantillas [spec](../templates/sdd/spec.md), [plan](../templates/sdd/plan.md), [tasks](../templates/sdd/tasks.md) y la [skill feature-sdd](../skills/feature-sdd/SKILL.md). Los perfiles de agentes están en [`.github/agents/`](../.github/agents/).
+El flujo operativo vigente es [ODD_WORKFLOW.md](ODD_WORKFLOW.md), adaptado de Gentle AI v4.0.0. ODD reemplaza SDD como workflow predeterminado, pero no elimina los contratos, modelos ni decisiones técnicas preservados en `docs/sdd/`. `docs/SDD_WORKFLOW.md` queda como redirect histórico; no generar nuevas cadenas de artefactos SDD por rutina.
 
-La memoria durable canónica es GitHub: constitución, plan, diario, registro de recursos y handoff. Engram sería una capa auxiliar local para runtimes compatibles; no se debe depender de ella para recuperar decisiones del proyecto. No guardar secretos, tokens, cadenas de conexión, datos personales o datos de clientes en memoria persistente.
+Para trabajo sustancial/crítico se utiliza un único archivo de feature en `odd/tasks/`. Engram es opcional y no está instalado/verificado; la memoria durable canónica sigue siendo GitHub. No guardar secretos, tokens, cadenas de conexión, datos personales o de clientes en memoria persistente.
 
-**Estado verificado:** archivos de proceso y roles creados en GitHub; instalación local y ejecución real de GGA/Ollama/Engram/Gentle-AI/MCP no verificadas. El trabajo desde este chat depende de herramientas conectadas y GitHub Actions; no puede instalar software en el teléfono ni afirmar que un MCP local esté conectado.
+**Estado verificado:** ODD está documentado y referenciado por `AGENTS.md`, Constitución y perfiles de agentes. Gentle-AI, Engram, GGA, Ollama, Gentle Shell y sus MCP/hooks no están instalados ni ejecutándose desde este entorno.

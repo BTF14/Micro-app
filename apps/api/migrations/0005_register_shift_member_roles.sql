@@ -40,11 +40,10 @@ BEGIN
     AND r.organization_id = NEW.organization_id
   FOR UPDATE OF o, b, r, bm, m, u;
 
-  IF NOT FOUND THEN
-    RETURN NEW;
-  END IF;
-
-  IF scope_is_active IS DISTINCT FROM true THEN
+  -- Missing scope rows are rejected just like inactive rows. The composite
+  -- foreign keys protect branch/register identity; this check also requires
+  -- the organization membership and active user rows to exist.
+  IF NOT FOUND OR scope_is_active IS DISTINCT FROM true THEN
     RAISE EXCEPTION 'REGISTER_SHIFT_REQUIRES_ACTIVE_MEMBER_SCOPE'
       USING ERRCODE = '23514';
   END IF;

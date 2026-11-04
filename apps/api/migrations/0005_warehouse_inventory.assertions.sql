@@ -4,7 +4,7 @@ DO $$
 DECLARE
   org_a uuid; org_b uuid; user_a uuid; user_b uuid;
   branch_a uuid; branch_b uuid; warehouse_a uuid; warehouse_b uuid;
-  product_a uuid; product_b uuid; count_a uuid; count_b uuid;
+  product_a uuid; product_b uuid; product_extra uuid; count_a uuid; count_b uuid;
 BEGIN
   INSERT INTO organizations (name, slug) VALUES ('Inventory Tenant A','inventory-tenant-a') RETURNING id INTO org_a;
   INSERT INTO organizations (name, slug) VALUES ('Inventory Tenant B','inventory-tenant-b') RETURNING id INTO org_b;
@@ -16,6 +16,7 @@ BEGIN
   INSERT INTO warehouses (organization_id,branch_id,code,name) VALUES (org_a,branch_a,'main','Main warehouse') RETURNING id INTO warehouse_a;
   INSERT INTO warehouses (organization_id,branch_id,code,name) VALUES (org_b,branch_b,'main','Other warehouse') RETURNING id INTO warehouse_b;
   INSERT INTO products (organization_id,sku,name,price_usd) VALUES (org_a,'INV-A','Inventory product A',10) RETURNING id INTO product_a;
+  INSERT INTO products (organization_id,sku,name,price_usd) VALUES (org_a,'INV-A-EXTRA','Inventory product A extra',10) RETURNING id INTO product_extra;
   INSERT INTO products (organization_id,sku,name,price_usd) VALUES (org_b,'INV-B','Inventory product B',10) RETURNING id INTO product_b;
 
   BEGIN
@@ -85,6 +86,20 @@ BEGIN
   INSERT INTO warehouse_inventory_movements
     (organization_id,branch_id,warehouse_id,product_id,movement_type,quantity_delta,reason,count_id,actor_user_id)
   VALUES (org_a,branch_a,warehouse_a,product_a,'opening',12.500,'Opening count',count_a,user_a);
+
+  BEGIN
+    INSERT INTO warehouse_inventory_movements
+      (organization_id,branch_id,warehouse_id,product_id,movement_type,quantity_delta,reason,count_id,actor_user_id)
+    VALUES (org_a,branch_a,warehouse_a,product_extra,'opening',1,'Product not on count',count_a,user_a);
+    RAISE EXCEPTION 'FAIL: movement accepted for product absent from count lines';
+  EXCEPTION WHEN check_violation THEN NULL; END;
+
+  BEGIN
+    INSERT INTO warehouse_inventory_movements
+      (organization_id,branch_id,warehouse_id,product_id,movement_type,quantity_delta,reason,count_id,actor_user_id)
+    VALUES (org_a,branch_a,warehouse_a,product_a,'opening',1,'Duplicate count movement',count_a,user_a);
+    RAISE EXCEPTION 'FAIL: duplicate movement accepted for count line';
+  EXCEPTION WHEN unique_violation THEN NULL; END;
   BEGIN
     UPDATE warehouse_inventory_movements SET quantity_delta=99 WHERE count_id=count_a;
     RAISE EXCEPTION 'FAIL: ledger movement updated';

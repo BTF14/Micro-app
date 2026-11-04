@@ -265,7 +265,14 @@ export function registerCatalogWriteRoutes(app: Hono<{ Bindings: Bindings }>): v
           await transaction.query(
             `INSERT INTO audit_logs (organization_id, actor_user_id, action, entity_type, entity_id, metadata)
              VALUES ($1, $2, 'product.created', 'product', $3, $4::jsonb)`,
-            [tenant.organizationId, tenant.userId, product.id, JSON.stringify({ sku: product.sku, changed_fields: ["sku", "barcode", "name", "description", "unit", "cost_usd", "price_usd", "minimum_stock"] })],
+            [tenant.organizationId, tenant.userId, product.id, JSON.stringify({
+              changed_fields: ["sku", "barcode", "name", "description", "unit", "cost_usd", "price_usd", "minimum_stock"],
+              snapshot: {
+                sku: product.sku, barcode: product.barcode, name: product.name,
+                description: product.description, unit: product.unit, cost_usd: product.cost_usd,
+                price_usd: product.price_usd, minimum_stock: product.minimum_stock, is_active: product.is_active,
+              },
+            })],
           );
 
           return {
@@ -340,6 +347,18 @@ export function registerCatalogWriteRoutes(app: Hono<{ Bindings: Bindings }>): v
           if (!tenant) return { kind: "unauthenticated" as const };
           if (tenant.role !== "owner" && tenant.role !== "admin") return { kind: "forbidden" as const };
 
+          const previousResult = await transaction.query<ProductRow>(
+            `SELECT id, sku, barcode, name, description, unit,
+                    cost_usd::text AS cost_usd, price_usd::text AS price_usd,
+                    minimum_stock::text AS minimum_stock, is_active
+               FROM products
+              WHERE organization_id = $1 AND id = $2
+              FOR UPDATE`,
+            [tenant.organizationId, productId],
+          );
+          const previous = previousResult.rows[0];
+          if (!previous) return { kind: "not_found" as const };
+
           const assignments: string[] = [];
           const values: unknown[] = [tenant.organizationId, productId];
           const fields: Array<[keyof ProductPatch, string, unknown, boolean]> = [
@@ -373,11 +392,24 @@ export function registerCatalogWriteRoutes(app: Hono<{ Bindings: Bindings }>): v
           const product = updated.rows[0];
           if (!product) return { kind: "not_found" as const };
 
+          const auditColumns: Array<[keyof ProductPatch, keyof ProductRow]> = [
+            ["sku", "sku"], ["barcode", "barcode"], ["name", "name"],
+            ["description", "description"], ["unit", "unit"], ["costUsd", "cost_usd"],
+            ["priceUsd", "price_usd"], ["minimumStock", "minimum_stock"], ["isActive", "is_active"],
+          ];
+          const changedColumns = auditColumns
+            .filter(([key]) => Object.prototype.hasOwnProperty.call(patch, key))
+            .map(([, column]) => column);
+          const changes = Object.fromEntries(
+            auditColumns
+              .filter(([key]) => Object.prototype.hasOwnProperty.call(patch, key))
+              .map(([, column]) => [column, { before: previous[column], after: product[column] }]),
+          );
           const action = patch.isActive === false ? "product.deactivated" : "product.updated";
           await transaction.query(
             `INSERT INTO audit_logs (organization_id, actor_user_id, action, entity_type, entity_id, metadata)
              VALUES ($1, $2, $3, 'product', $4, $5::jsonb)`,
-            [tenant.organizationId, tenant.userId, action, product.id, JSON.stringify({ sku: product.sku, changed_fields: Object.keys(patch) })],
+            [tenant.organizationId, tenant.userId, action, product.id, JSON.stringify({ sku: product.sku, changed_fields: changedColumns, changes })],
           );
           return {
             kind: "updated" as const,

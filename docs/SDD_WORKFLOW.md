@@ -1,61 +1,56 @@
-# Flujo Spec-Driven Development (SDD)
+# Flujo de desarrollo guiado por especificaciones (SDD)
 
-**Estado:** proceso versionado para uso desde ChatGPT y otros runtimes compatibles. No implica que un runtime de subagentes esté conectado o ejecutándose.
-**Objetivo:** convertir solicitudes en entregas trazables, comprobables y seguras con coste total objetivo de $0.
+**Propósito:** aplicar suficiente estructura para reducir ambigüedad, riesgo y retrabajo, sin convertir cada cambio en burocracia.
 
-## Flujo de trabajo
+## Selección del proceso
 
-1. **Constitution:** leer `AGENTS.md` y `docs/CONSTITUTION.md`. Sus límites prevalecen sobre cualquier tarea.
-2. **Discovery / Explore:** revisar el HEAD, los documentos, código, consumidores, pruebas, PRs y Actions actuales. Registrar hechos, hipótesis y desconocidos.
-3. **Spec:** escribir alcance, usuarios/casos, reglas de negocio, estados de error, seguridad, datos, criterios de aceptación y fuera de alcance. No comenzar una función significativa sin criterios comprobables.
-4. **Plan:** enumerar archivos/módulos, cambios de API/DB, compatibilidad, riesgos, estrategia de prueba, rollback y dependencias.
-5. **Tasks:** dividir en tareas pequeñas, ordenadas y verificables; cada tarea tiene resultado observable y archivos previstos.
-6. **Build:** implementar solo lo aprobado en la especificación; no ampliar alcance silenciosamente.
-7. **Review:** revisiones independientes de arquitectura, seguridad/datos y QA. Si no hay subagentes reales, hacer pasadas separadas y declarar que no hubo delegación autónoma.
-8. **Validate:** ejecutar pruebas disponibles y verificar los workflows para el SHA exacto. Los mocks no prueban persistencia real; el análisis estático no prueba comportamiento.
-9. **Integrate:** inspeccionar el diff completo, revisar conflictos y fusionar solo si se cumplen los criterios y los checks aplicables.
-10. **Memory / Handoff:** registrar decisiones y resultados verificables en Git; actualizar plan, diario y handoff.
+| Nivel | Cuándo usarlo | Artefactos mínimos |
+|---|---|---|
+| Ligero | Erratas, documentación, copy, refactor localizado o bug de bajo riesgo sin cambio de contrato/datos | Alcance breve, resultado esperado y validación en PR |
+| Estándar | Función nueva o cambio de comportamiento entre módulos | Spec, plan, tareas, pruebas y revisión |
+| Crítico | Auth, permisos, tenant/sucursal, migraciones, inventario, ventas/pagos, tasas/impuestos, seguridad o infraestructura | SDD completo, revisión de seguridad/datos, plan de rollback, pruebas de integración/concurrencia y gates específicos |
 
-## Cuándo usar el flujo completo o reducido
+El coordinador decide el nivel y lo explica brevemente. No debe pedir al propietario que elija el nivel salvo que el alcance sea una decisión de producto.
 
-- **Completo obligatorio:** auth/roles/tenant, esquema o migraciones, ventas/pagos/stock, tasa/impuestos, seguridad, dependencias, infraestructura, despliegue y cambios con riesgo financiero.
-- **Reducido:** cambios pequeños de documentación, copy o correcciones localizadas sin impacto en contratos/datos. Aun así, definir resultado esperado, revisar diff y ejecutar validación proporcional.
-- Si falta información crítica, detenerse en una propuesta segura y registrar el bloqueo; no inventar credenciales, políticas fiscales, secretos ni datos.
+## Flujo estándar/crítico
 
-## Contrato de artefactos
+1. **Constitución y descubrimiento:** leer `AGENTS.md`, `docs/CONSTITUTION.md`, estado vivo y fuentes del dominio. Inspeccionar código, callers, tests, PRs y CI.
+2. **Spec:** definir problema, usuarios, resultados, reglas, casos límite, errores, seguridad, datos, criterios verificables y fuera de alcance.
+3. **Clarify:** usarlo cuando queden decisiones ambiguas que cambien producto, contrato o seguridad. No ejecutar una fase de preguntas por rutina cuando los requisitos ya estén claros.
+4. **Plan:** definir arquitectura, archivos, dependencias, compatibilidad, migración/rollback, riesgos y estrategia de pruebas.
+5. **Tasks:** dividir en unidades pequeñas, ordenadas y observables; indicar dependencias y criterio de cierre.
+6. **Analyze:** comprobar consistencia entre spec, plan y tareas antes de implementar cambios de riesgo.
+7. **Implement:** ejecutar las tareas autorizadas, actualizar tests y documentación; no ampliar silenciosamente el alcance.
+8. **Review:** revisar de forma independiente arquitectura, seguridad/datos, QA y UX según el impacto. Delegar solo cuando exista runtime real; de lo contrario hacer pasadas separadas.
+9. **Validate / Converge:** ejecutar pruebas pertinentes, verificar checks en el SHA final y corregir gaps hasta que los criterios se cumplan o quede un bloqueo demostrado.
+10. **Handoff:** registrar decisión, SHA, evidencia, limitaciones, riesgos y siguiente acción concreta.
 
-Usar las plantillas en [`templates/sdd/`](../templates/sdd/):
+## Uso de Spec Kit
 
-- `spec.md`: qué y por qué, reglas y criterios de aceptación.
-- `plan.md`: cómo, riesgos, archivos, pruebas y reversión.
-- `tasks.md`: unidades ejecutables con estado y evidencia.
+La adopción prevista es GitHub Spec Kit (versión fijada en `docs/SPEC_KIT_ADOPTION.md`). Cuando esté instalado y disponible, usar sus comandos equivalentes:
 
-Cada tarea grande debe enlazar estos artefactos desde el issue o PR. No es obligatorio crear tres archivos para una errata.
+- `/speckit-specify` — especificación.
+- `/speckit-clarify` — solo si hay incertidumbres relevantes.
+- `/speckit-plan` — diseño técnico.
+- `/speckit-tasks` — tareas ejecutables.
+- `/speckit-analyze` — consistencia antes de implementar.
+- `/speckit-implement` — implementación.
+- `/speckit-converge` — brechas restantes y cierre verificable.
 
-## Roles y límites
+La Constitución de Micro-app sigue siendo la autoridad; el contexto Spec Kit no puede reemplazarla. No ejecutar `/speckit-constitution` para recrear las políticas del proyecto sin revisar primero `docs/CONSTITUTION.md`.
 
-- **Coordinador:** controla estado, restricciones, prioridades, conciliación y entrega.
-- **Explorador:** lectura y recopilación; no implementa.
-- **Planificador/arquitecto:** produce spec, plan y tareas; no modifica código de producto durante planificación.
-- **Implementador:** cambia únicamente el alcance acordado.
-- **Revisor de seguridad/datos:** busca defectos y exige evidencia; no se autoaprueba como implementador.
-- **QA/CI:** ejecuta pruebas y verifica SHA/workflows.
-- **Documentador:** sincroniza memoria, decisiones, recursos, panel y handoff.
+## Artefactos y fuentes de verdad
 
-Los perfiles de `.github/agents/` son instrucciones reutilizables. Solo se describen como subagentes activos si la plataforma confirma una ejecución real.
+- Los nuevos artefactos de Spec Kit deben vivir en la estructura que cree la versión fijada de la CLI; no inventar rutas ni duplicar los modelos de dominio existentes.
+- Mantener `docs/sdd/` como arquitectura/decisiones de dominio y evidencia técnica, no convertir retrospectivamente todo el sistema en una especificación artificial.
+- `templates/sdd/` y `skills/feature-sdd/` son el fallback legado hasta que la CLI y su integración estén instaladas y verificadas. Después, decidir su consolidación en un cambio separado.
+- El diario conserva historia; el handoff conserva el punto de continuación; el estado vivo resume el presente. No copiar el mismo contenido en los tres.
 
-## Puertas de seguridad
+## Reglas de cierre
 
-- Nunca mutar Neon `main`, desplegar producción, activar facturación o realizar acciones irreversibles sin autorización específica.
-- No almacenar secretos ni datos de clientes en specs, memoria, logs, prompts o artefactos.
-- No omitir controles de tenant en API/DB ni confiar en controles exclusivos del frontend.
-- No aceptar porcentajes del panel como prueba de calidad; exigir evidencia por criterio.
-- No mergear si hay checks obligatorios fallidos, conflictos sin resolver o hallazgos críticos abiertos.
-
-## Uso desde un teléfono / chat
-
-Pega una solicitud normal. El coordinador debe leer el handoff y estado vivo, decidir el nivel SDD, preparar los artefactos en una rama, implementar los cambios seguros autorizados, ejecutar CI y resumir enlaces, SHA, checks, bloqueos y siguiente acción. No se requiere terminal local para editar documentos/código mediante las herramientas conectadas, pero algunas integraciones locales (Ollama/GGA, Engram, Chrome DevTools MCP) no pueden instalarse desde este chat y deben quedar marcadas como pendientes.
-
-## Plantillas y prompts
-
-La skill [`feature-sdd`](../skills/feature-sdd/SKILL.md) contiene una receta reutilizable para solicitudes de funciones. Se puede pedir en cualquier chat: “Aplica el flujo SDD completo a [función] y trabaja hasta dejar PR verificable, sin tocar Neon main ni producción”.
+- Criterios de aceptación probados o pendientes explícitos.
+- Diff completo revisado y checks del SHA exacto.
+- Mocks diferenciados de integración real; Preview diferenciado de producción.
+- Migraciones probadas en PostgreSQL desechable y rollback documentado.
+- Ningún secreto/dato real en artefactos.
+- No fusionar ni desplegar por el mero hecho de que CI esté verde.

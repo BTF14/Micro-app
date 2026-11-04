@@ -86,8 +86,20 @@ describe.skipIf(!databaseUrl)("warehouse inventory count transactions against Po
   afterAll(async () => {
     if (!client) return;
     if (organizationId) {
-      await client.query("DELETE FROM audit_logs WHERE organization_id = $1", [organizationId]);
-      await client.query("DELETE FROM warehouse_inventory_movements WHERE organization_id = $1", [organizationId]);
+      await client.query("BEGIN");
+      try {
+        // The disposable CI database owns this test schema. Disable only user
+        // triggers during fixture teardown; production ledger immutability is
+        // exercised by the migration assertions and remains enabled at runtime.
+        await client.query("ALTER TABLE warehouse_inventory_movements DISABLE TRIGGER USER");
+        await client.query("DELETE FROM audit_logs WHERE organization_id = $1", [organizationId]);
+        await client.query("DELETE FROM warehouse_inventory_movements WHERE organization_id = $1", [organizationId]);
+        await client.query("ALTER TABLE warehouse_inventory_movements ENABLE TRIGGER USER");
+      } catch (error) {
+        await client.query("ROLLBACK");
+        throw error;
+      }
+      await client.query("COMMIT");
       await client.query("DELETE FROM inventory_balances WHERE organization_id = $1", [organizationId]);
       await client.query("DELETE FROM inventory_count_lines WHERE organization_id = $1", [organizationId]);
       await client.query("DELETE FROM inventory_counts WHERE organization_id = $1", [organizationId]);
@@ -141,7 +153,7 @@ describe.skipIf(!databaseUrl)("warehouse inventory count transactions against Po
         (SELECT quantity_delta::text FROM warehouse_inventory_movements
          WHERE organization_id = $1 AND count_id = $2) AS delta,
         (SELECT count(*)::text FROM audit_logs
-         WHERE organization_id = $1 AND entity_id = $2 AND action = 'inventory.count.confirmed') AS action_count
+         WHERE organization_id = $1 AND entity_id = $2::text AND action = 'inventory.count.confirmed') AS action_count
        FROM inventory_balances b
        WHERE b.organization_id = $1 AND b.warehouse_id = $3 AND b.product_id = $4`,
       [organizationId, physicalBody.id, warehouseId, productId],

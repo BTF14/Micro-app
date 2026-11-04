@@ -1,6 +1,6 @@
 # ERD objetivo: organización, sucursal, almacén, caja y operaciones\n\n## Estado vivo verificado — 2026-11-04 UTC
 
-PR #196, HEAD `235f62f61a13c01cadec3f666e82273102b73a80`, sigue abierta Draft y sin merge. CI completo success. En la rama existen migración 0005, tablas tenant-scoped de almacenes/conteos/balances/ledger, endpoints GET de almacenes/conteos y creación/confirmación de conteos opening/physical. La integración PostgreSQL 3/3 pasó. No hay backfill de `products.stock_quantity`, ni migración aplicada a Neon, ni cambios en main.
+PR #196 sigue abierta Draft y sin merge. HEAD de aplicación validado: `1eb8da0006061749772e1afd93fa9901f155067b`; CI completo success, incluida prueba de doble confirmación concurrente. En la rama existen migración 0005, tablas tenant-scoped de almacenes/conteos/balances/ledger, endpoints GET de almacenes/conteos y creación/confirmación de conteos opening/physical. La integración PostgreSQL valida apertura, conteo físico, permisos, consultas, reservas y confirmación concurrente idempotente. No hay backfill de `products.stock_quantity`, ni migración aplicada a Neon, ni cambios en main. Los commits documentales posteriores deben volver a pasar CI.
 
 La matriz de permisos aprobada permite a Owner/Admin/Inventory realizar conteos; Cashier no. La matriz no define explícitamente quién administra la estructura de almacenes (crear/editar/desactivar); no implementar esos endpoints hasta documentar una decisión explícita. La administración de almacenes queda pendiente, no inferida a partir de permiso de conteo.
 
@@ -15,7 +15,7 @@ La migración `0005_warehouse_inventory.sql` añade la base estructural, sin toc
 - `warehouse_inventory_movements`: ledger append-only; movimientos no se actualizan ni eliminan, las correcciones serán compensaciones.
 - `inventory_counts` y `inventory_count_lines`: conteos absolutos, cantidades no negativas y líneas inmutables tras confirmar; un único conteo inicial confirmado por almacén.
 
-La migración incluye FKs compuestas tenant/branch/product/member y assertions SQL ejecutadas en PostgreSQL efímero por CI. La confirmación del conteo y la escritura coordinada de ledger/balance aún requieren el servicio transaccional y pruebas de concurrencia/rollback. Esta migración no habilita por sí sola endpoints ni stock operativo; no crear balances desde `products.stock_quantity` ni asumir distribución entre almacenes. El conteo inicial debe ser un conteo físico o cantidad documentada por el propietario, con actor, fecha, almacén y motivo.
+La migración incluye FKs compuestas tenant/branch/product/member y assertions SQL ejecutadas en PostgreSQL efímero por CI. La confirmación del conteo y la escritura coordinada de ledger/balance están implementadas en servicio transaccional y cuentan con pruebas PostgreSQL de concurrencia e idempotencia; las pruebas adicionales de rollback inducido y escenarios de estrés permanecen como hardening pendiente. Esta migración no habilita por sí sola endpoints ni stock operativo; no crear balances desde `products.stock_quantity` ni asumir distribución entre almacenes. El conteo inicial debe ser un conteo físico o cantidad documentada por el propietario, con actor, fecha, almacén y motivo.
 
 ## Corrección de estado — 2026-11-04 UTC
 
@@ -164,8 +164,12 @@ La elección final debe probar borrado/reverso, ciclo de vida, integridad y cons
 - Separar orden/compromiso de compra de recepción física. Solo la recepción confirmada aumenta stock.
 - La recepción se asocia a sucursal y almacén; cada línea referencia producto de la misma organización y conserva cantidad/coste recibido.
 - Transferir entre almacenes: crear transferencia, reservar/emitir salida del origen, confirmar recepción en destino. No aumentar destino al crear solicitud.
-- Si la transferencia es entre sucursales, el operador debe tener permiso sobre origen y destino o existir flujo de aprobación explícito; la política de roles permanece pendiente.
+- La matriz aprobada autoriza a Owner/Admin en alcance organizacional y a Inventory únicamente con membresía activa en sucursales de origen y destino; Cashier no puede transferir. Se exige validar ambas sucursales independientemente en servidor. No se implementará un flujo alternativo de aprobación sin decisión separada.
 - Cada paso es idempotente, atribuible y auditable. Las diferencias/daños se registran como incidencias/ajustes, no se corrige el historial.
+
+### Recepción de compras — contrato pendiente
+
+La matriz de permisos ya aprobada permite recepción a Owner/Admin (alcance organizacional) e Inventory (sucursal asignada); Cashier no puede recibir. La recepción confirmada, no la orden de compra ni un borrador, es el único evento que incrementa stock. El diseño y las decisiones pendientes se mantienen en `docs/sdd/PURCHASE_RECEIPT_MODEL.md`; no inferir reglas de proveedor, recepción parcial/excedente, coste/valoración, documento externo ni órdenes de compra hasta cerrar ese contrato.
 
 ## 9. Último owner, auditoría e idempotencia
 

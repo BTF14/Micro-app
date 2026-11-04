@@ -9,7 +9,7 @@
 
 En el HEAD de esta revisión, `apps/api/src/index.ts` registra las rutas de auth, catálogo, escritura de catálogo y `inventory-counts.ts`. No registra rutas HTTP de ventas, recepciones, reservas, devoluciones o transferencias. Por tanto, el único escritor de inventario expuesto en esta vertical slice es la confirmación de conteos.
 
-La confirmación de conteo ya abre una transacción, valida sesión/tenant y sucursal, bloquea el almacén con `FOR UPDATE`, bloquea el documento de conteo y luego bloquea las filas existentes de balance por `product_id ASC`. Actualiza balance, inserta movimientos y registra auditoría en esa misma transacción.
+La confirmación de conteo ya abre una transacción, valida sesión/tenant y sucursal, bloquea el almacén con `FOR UPDATE`, bloquea el documento de conteo y luego bloquea balances. El conteo físico bloquea solo los productos incluidos en sus líneas; la apertura consulta/bloquea el conjunto completo para rechazar un almacén que ya tenga cualquier saldo. Actualiza balance, inserta movimientos y registra auditoría en esa misma transacción.
 
 Hallazgo de implementación: después de bloquear en lote todos los balances, el handler volvía a ejecutar un `SELECT ... FOR UPDATE` individual por línea. Era redundante y dejaba dos formas de adquirir los locks de balance dentro del mismo flujo. Se sustituyó por una lectura del conjunto ya bloqueado.
 
@@ -72,7 +72,7 @@ Cada operación nueva debe demostrar que respeta el mismo orden. La prueba de do
 ## 7. Implementación de referencia actual
 
 - `apps/api/src/inventory-locks.ts`: helpers compartidos `lockInventoryWarehouses` y `lockInventoryBalances`; ordenan UUIDs y fallan cerrados si falta un almacén solicitado.
-- `apps/api/src/inventory-counts.ts`: confirmación de conteo usa los helpers; bloquea primero el almacén, después el documento y luego balances en lote; reutiliza la lectura bloqueada para calcular los deltas.
+- `apps/api/src/inventory-counts.ts`: confirmación de conteo usa los helpers; bloquea primero el almacén, después el documento y luego balances en lote; el conteo físico limita el lock a los productos contados, mientras que apertura revisa el conjunto completo; reutiliza la lectura bloqueada para calcular los deltas.
 - `apps/api/src/inventory-locks.test.ts`: pruebas unitarias del orden, deduplicación, rechazo de almacén ausente y conjuntos vacíos.
 
 Este helper fija el patrón para nuevos servicios; no hace que un servicio futuro lo use automáticamente. La revisión de cada escritor y sus pruebas PostgreSQL siguen siendo obligatorias.

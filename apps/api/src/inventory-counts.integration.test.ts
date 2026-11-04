@@ -1,5 +1,7 @@
 import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
 import { Client } from "pg";
+import { lockInventoryWarehouses } from "./inventory-locks";
+import type { DatabaseClient } from "./database";
 
 vi.mock("@neondatabase/serverless", async () => {
   const postgres = await import("pg");
@@ -40,6 +42,18 @@ describe.skipIf(!databaseUrl)("warehouse inventory count transactions against Po
   }
 
   const root = () => `/api/orgs/${organizationId}/branches/${branchId}/warehouses/${warehouseId}`;
+
+  async function waitForLockWait(pid: number): Promise<void> {
+    for (let attempt = 0; attempt < 500; attempt += 1) {
+      const state = await client.query<{ wait_event_type: string | null }>(
+        "SELECT wait_event_type FROM pg_stat_activity WHERE pid = $1",
+        [pid],
+      );
+      if (state.rows[0]?.wait_event_type === "Lock") return;
+      await new Promise((resolve) => setTimeout(resolve, 10));
+    }
+    throw new Error("Timed out waiting for warehouse row-lock contention.");
+  }
 
   beforeAll(async () => {
     client = new Client({ connectionString: databaseUrl });
@@ -117,6 +131,61 @@ describe.skipIf(!databaseUrl)("warehouse inventory count transactions against Po
       await client.query("DELETE FROM app_users WHERE id = $1", [userId]);
     }
     await client.end();
+  });
+
+
+  it("refuses to confirm a draft after its warehouse has been deactivated", async () => {
+    const draft = await request(root() + "/counts/physical", {
+      reason: "Warehouse lifecycle must be revalidated at confirmation",
+      lines: [{ product_id: productId, counted_quantity: "3.000" }],
+    });
+    expect(draft.status).toBe(201);
+    const body = await draft.json() as { id: string };
+
+    await client.query("UPDATE warehouses SET is_active = false WHERE organization_id = $1 AND id = $2", [organizationId, warehouseId]);
+    const confirmation = await request(root() + "/counts/" + body.id + "/confirm");
+    expect(confirmation.status).toBe(404);
+    expect(await confirmation.json()).toMatchObject({ error: "WAREHOUSE_NOT_FOUND" });
+    expect((await client.query(
+      "SELECT status FROM inventory_counts WHERE organization_id = $1 AND id = $2",
+      [organizationId, body.id],
+    )).rows[0]).toEqual({ status: "draft" });
+    await client.query("UPDATE warehouses SET is_active = true WHERE organization_id = $1 AND id = $2", [organizationId, warehouseId]);
+  });
+
+  it("serializes warehouse deactivation behind an inventory writer and fails closed afterward", async () => {
+    const lockClient = new Client({ connectionString: databaseUrl });
+    const deactivator = new Client({ connectionString: databaseUrl });
+    await Promise.all([lockClient.connect(), deactivator.connect()]);
+    try {
+      await lockClient.query("BEGIN");
+      await expect(lockInventoryWarehouses(
+        lockClient as unknown as DatabaseClient,
+        organizationId,
+        [{ warehouseId, branchId }],
+      )).resolves.toEqual([warehouseId]);
+
+      const pid = (await deactivator.query<{ pid: number }>("SELECT pg_backend_pid() AS pid")).rows[0]!.pid;
+      const deactivation = deactivator.query(
+        "UPDATE warehouses SET is_active = false WHERE organization_id = $1 AND id = $2",
+        [organizationId, warehouseId],
+      );
+      await waitForLockWait(pid);
+      await lockClient.query("COMMIT");
+      await deactivation;
+
+      await lockClient.query("BEGIN");
+      await expect(lockInventoryWarehouses(
+        lockClient as unknown as DatabaseClient,
+        organizationId,
+        [{ warehouseId, branchId }],
+      )).resolves.toBeNull();
+      await lockClient.query("ROLLBACK");
+      await client.query("UPDATE warehouses SET is_active = true WHERE organization_id = $1 AND id = $2", [organizationId, warehouseId]);
+    } finally {
+      await lockClient.query("ROLLBACK").catch(() => undefined);
+      await Promise.all([lockClient.end(), deactivator.end()]);
+    }
   });
 
   it("posts opening and physical counts atomically and makes confirmation replay-safe", async () => {

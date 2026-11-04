@@ -1,3 +1,16 @@
+# 2026-11-04 UTC — Reconciliación documental y gates de inventario
+
+- Se revalidó `main` en `7b0f057b8c152515005feed40305143c0ebb94b0`, PR #200 y PR #202 en sus SHA exactos.
+- PR #200 permanece abierta/Draft; sus 19/19 check-runs son exitosos, pero la migración 0005 solo se valida en PostgreSQL 18 desechable y no está aplicada a Neon.
+- PR #202 permanece abierta/Draft; el HEAD `6ce448693b1c98ab9a418a578940dd865f69735a` terminó 12/12 check-runs success.
+- Se corrigió la discrepancia issue #78: cerrada desde 2026-10-31. Issue #53 sigue abierta.
+- Capturas Cloudflare confirman Pages automatic deployments y Worker build/deploy commands. El banner “Set up Worker Previews” permanecía visible; las Version URLs no equivalen a Worker Previews branch-isolated.
+- Se detectó riesgo de aplicación parcial en migración 0005: no contiene transacción explícita y CI usa psql autocommit con ON_ERROR_STOP. Registrar como gate antes de cualquier aplicación remota.
+- Se identificaron portadas antiguas en README, DATABASE_SCHEMA, PROJECT_PLAN, WORKFLOW_AND_DEPLOYMENT_AUDIT y HANDOFF_NEXT_CHAT; se añadieron addenda de estado actual sin reescribir snapshots históricos.
+- Solo documentación. No se modificaron runtime, SQL/migraciones, Neon, Cloudflare, secretos, datos, DNS, billing ni producción. No se fusionó ninguna PR.
+
+---
+
 # 2026-11-04 UTC — Adopción documental de ODD y evaluación de ECC / tester-army/e2e
 
 - El propietario autorizó una revisión y reorganización profesional del modelo de trabajo de agentes, solicitando investigar ODD de Gentleman Programming, ECC y tester-army/e2e.

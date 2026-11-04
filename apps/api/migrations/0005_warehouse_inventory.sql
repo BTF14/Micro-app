@@ -118,7 +118,7 @@ CREATE TABLE warehouse_inventory_movements (
     REFERENCES organization_members (organization_id, user_id) ON DELETE RESTRICT,
   CHECK (
     (movement_type IN ('opening', 'count_adjustment') AND count_id IS NOT NULL)
-    OR (movement_type NOT IN ('opening', 'count_adjustment'))
+    OR (movement_type NOT IN ('opening', 'count_adjustment') AND count_id IS NULL)
   )
 );
 CREATE INDEX warehouse_inventory_movements_product_history_idx
@@ -201,6 +201,48 @@ FOR EACH ROW EXECUTE FUNCTION guard_inventory_count_lifecycle();
 CREATE TRIGGER inventory_count_lines_guard
 BEFORE INSERT OR UPDATE OR DELETE ON inventory_count_lines
 FOR EACH ROW EXECUTE FUNCTION guard_inventory_count_lifecycle();
+
+-- Count-derived ledger entries may only reference a confirmed count of the
+-- matching kind. This protects the ledger even if a future caller bypasses
+-- the application service.
+CREATE FUNCTION validate_count_inventory_movement() RETURNS trigger
+LANGUAGE plpgsql
+AS $
+DECLARE
+  referenced_count_type text;
+  referenced_count_status text;
+BEGIN
+  IF NEW.count_id IS NULL THEN
+    RETURN NEW;
+  END IF;
+
+  SELECT count_type, status
+    INTO referenced_count_type, referenced_count_status
+    FROM inventory_counts
+   WHERE organization_id = NEW.organization_id
+     AND branch_id = NEW.branch_id
+     AND warehouse_id = NEW.warehouse_id
+     AND id = NEW.count_id
+   FOR SHARE;
+
+  IF NOT FOUND OR referenced_count_status <> 'confirmed' THEN
+    RAISE EXCEPTION 'INVENTORY_MOVEMENT_REQUIRES_CONFIRMED_COUNT'
+      USING ERRCODE = '23514';
+  END IF;
+
+  IF (NEW.movement_type = 'opening' AND referenced_count_type <> 'opening')
+    OR (NEW.movement_type = 'count_adjustment' AND referenced_count_type <> 'physical') THEN
+    RAISE EXCEPTION 'INVENTORY_MOVEMENT_COUNT_TYPE_MISMATCH'
+      USING ERRCODE = '23514';
+  END IF;
+
+  RETURN NEW;
+END;
+$;
+
+CREATE TRIGGER warehouse_inventory_movements_validate_count
+BEFORE INSERT ON warehouse_inventory_movements
+FOR EACH ROW EXECUTE FUNCTION validate_count_inventory_movement();
 
 -- The ledger is append-only; corrections are compensating movements.
 CREATE FUNCTION prevent_warehouse_inventory_movement_mutation() RETURNS trigger

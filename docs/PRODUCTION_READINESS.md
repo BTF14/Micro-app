@@ -1,5 +1,14 @@
 # Micro app — checklist de preparación para producción
 
+## Estado vivo — 2026-11-04 UTC
+
+La PR #196 implementa en una rama basada en el HEAD vigente de `main` la primera vertical slice de catálogo: lectura tenant-scoped, alta, edición y baja lógica de productos. HEAD `d3c4196293256a34457f3b06e1b1c867caf5c97e`; CI completo success, incluyendo 83 tests unitarios, 8/8 lectura PostgreSQL, 8/8 creación PostgreSQL y 7/7 edición/baja lógica PostgreSQL. PR #196 sigue Draft y no está fusionada; por tanto, **main no tiene aún estas rutas**.
+
+La matriz de permisos está aprobada (2026-10-31). Issue #53 sigue abierta hasta implementar y probar todas las rutas comerciales aplicables.
+
+**P0 que siguen bloqueando producción:** operaciones comerciales completas restantes (inventario, ventas, pagos, devoluciones y reportes); stock independiente por sucursal/almacén y transferencias según las reglas aprobadas; autorización cross-tenant/rol en cada operación; rate limiting runtime; idempotencia/concurrencia; ciclo operativo de backup con RPO/RTO medidos, alerta de fallo y coste $0 confirmado; preview aislada verificada con configuración realista; y aprobación final de lanzamiento. No se ha cambiado Neon main ni producción.
+
+
 Este archivo es la fuente de datos para el panel de avance. Un ítem solo puede marcarse `[x]` cuando existe evidencia revisable en código, pruebas o configuración. La documentación por sí sola no demuestra que una función opere correctamente.
 
 ## Cómo se calcula

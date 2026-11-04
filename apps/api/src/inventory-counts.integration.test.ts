@@ -272,6 +272,42 @@ describe.skipIf(!databaseUrl)("warehouse inventory count transactions against Po
     expect(persisted.rows[0]).toEqual({ status: "confirmed", movements: "1", audits: "1" });
   });
 
+  it("requires an active branch assignment for inventory members and revalidates revocation", async () => {
+    await client.query(
+      "UPDATE organization_members SET role = 'inventory' WHERE organization_id = $1 AND user_id = $2",
+      [organizationId, userId],
+    );
+    const unassigned = await request(root() + "/counts/physical", {
+      reason: "Inventory member without branch assignment must be denied",
+      lines: [{ product_id: productId, counted_quantity: "8.000" }],
+    });
+    expect(unassigned.status).toBe(403);
+    expect(await unassigned.json()).toMatchObject({ error: "BRANCH_FORBIDDEN" });
+
+    await client.query(
+      "INSERT INTO branch_memberships (organization_id, branch_id, user_id, is_active) VALUES ($1, $2, $3, true)",
+      [organizationId, branchId, userId],
+    );
+    const assigned = await request(root() + "/counts/physical", {
+      reason: "Assigned inventory member may create a draft",
+      lines: [{ product_id: productId, counted_quantity: "8.000" }],
+    });
+    expect(assigned.status).toBe(201);
+    const assignedBody = await assigned.json() as { id: string };
+
+    await client.query(
+      "UPDATE branch_memberships SET is_active = false WHERE organization_id = $1 AND branch_id = $2 AND user_id = $3",
+      [organizationId, branchId, userId],
+    );
+    const revoked = await request(root() + "/counts/" + assignedBody.id + "/confirm");
+    expect(revoked.status).toBe(403);
+    expect(await revoked.json()).toMatchObject({ error: "BRANCH_FORBIDDEN" });
+    await client.query(
+      "UPDATE organization_members SET role = 'owner' WHERE organization_id = $1 AND user_id = $2",
+      [organizationId, userId],
+    );
+  });
+
   it("rejects a cashier role before creating an inventory count", async () => {
     const changed = await client.query(
       "UPDATE organization_members SET role = 'cashier' WHERE organization_id = $1 AND user_id = $2",

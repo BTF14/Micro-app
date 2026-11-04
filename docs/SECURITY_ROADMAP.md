@@ -1,5 +1,15 @@
 ## Estado vivo de identidad y hardening — 2026-10-29
 
+## Estado vivo de seguridad — 2026-11-04 UTC
+
+- La matriz comercial está **APROBADA** desde 2026-10-31; las menciones inferiores a matriz pendiente son históricas.
+- La PR #196 contiene GET catálogo, POST producto y PATCH producto/baja lógica con aislamiento tenant y roles probados; HEAD `d3c4196293256a34457f3b06e1b1c867caf5c97e`, CI completo success. La PR sigue Draft/no fusionada; main no contiene aún esas rutas.
+- Issue #53 permanece abierta: no se ha demostrado aislamiento de todas las operaciones comerciales. No cerrar hasta cubrir todos los handlers y denegaciones.
+- Hallazgo pendiente: `auth_rate_limits` existe en SQL, pero no hay callsite runtime probado en `apps/api/src`; no afirmar que OAuth/bootstrap tienen rate limiting.
+- Backup/restore sigue parcialmente verificado: falta RPO/RTO extremo a extremo, alerta visible de fallo y evidencia de coste total $0.
+- La protección de `main` no se pudo revalidar con el alcance API disponible; no afirmar que branch protection está activa sin lectura autorizada actual.
+
+
 - PR #153 está fusionada en main; bootstrap OAuth ya no acepta secretos por query string: GET rechaza parámetros de bootstrap y el alta inicial usa POST con validación de Origin/content-type/cuerpo/campos y token de un solo uso, además de state/PKCE y cookies temporales HttpOnly. No hay evidencia de filtración activa.
 - PR #155 está fusionada en main: `FRONTEND_ORIGIN` para Google OAuth exige HTTPS, salvo HTTP en loopback de desarrollo, y rechaza credenciales, path, query, hash y origen no canónico.
 - Esto corrige las notas históricas inferiores que describían bootstrap y HTTPS como cambios pendientes. No implica despliegue productivo ni que toda la identidad esté lista para operar comercialmente.

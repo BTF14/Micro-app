@@ -71,6 +71,42 @@ function parseProductInput(value: unknown): ProductInput | null {
   return { sku, barcode, name, description, unit, costUsd, priceUsd, minimumStock };
 }
 
+async function readBodyWithinLimit(
+  request: Request,
+  maxBytes: number,
+): Promise<{ kind: "ok"; text: string } | { kind: "too_large" } | { kind: "invalid" }> {
+  if (!request.body) return { kind: "ok", text: "" };
+  const reader = request.body.getReader();
+  const chunks: Uint8Array[] = [];
+  let totalBytes = 0;
+
+  try {
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      totalBytes += value.byteLength;
+      if (totalBytes > maxBytes) {
+        await reader.cancel();
+        return { kind: "too_large" };
+      }
+      chunks.push(value);
+    }
+
+    const bytes = new Uint8Array(totalBytes);
+    let offset = 0;
+    for (const chunk of chunks) {
+      bytes.set(chunk, offset);
+      offset += chunk.byteLength;
+    }
+    return { kind: "ok", text: new TextDecoder("utf-8", { fatal: true }).decode(bytes) };
+  } catch {
+    try { await reader.cancel(); } catch { /* Preserve the invalid-body result. */ }
+    return { kind: "invalid" };
+  } finally {
+    reader.releaseLock();
+  }
+}
+
 function postgresCode(error: unknown): string | undefined {
   if (!error || typeof error !== "object" || !("code" in error)) return undefined;
   return typeof error.code === "string" ? error.code : undefined;
@@ -100,19 +136,17 @@ export function registerCatalogWriteRoutes(app: Hono<{ Bindings: Bindings }>): v
       return c.json({ error: "UNAUTHENTICATED", message: "Inicia sesión para continuar." }, 401);
     }
 
-    let rawBody: string;
-    try {
-      rawBody = await c.req.text();
-    } catch {
-      return c.json({ error: "INVALID_JSON", message: "El cuerpo JSON no es válido." }, 400);
-    }
-    if (new TextEncoder().encode(rawBody).byteLength > MAX_BODY_BYTES) {
+    const boundedBody = await readBodyWithinLimit(c.req.raw, MAX_BODY_BYTES);
+    if (boundedBody.kind === "too_large") {
       return c.json({ error: "PAYLOAD_TOO_LARGE", message: "El cuerpo de la solicitud excede el límite." }, 413);
+    }
+    if (boundedBody.kind === "invalid") {
+      return c.json({ error: "INVALID_JSON", message: "El cuerpo JSON no es válido." }, 400);
     }
 
     let parsed: unknown;
     try {
-      parsed = JSON.parse(rawBody);
+      parsed = JSON.parse(boundedBody.text);
     } catch {
       return c.json({ error: "INVALID_JSON", message: "El cuerpo JSON no es válido." }, 400);
     }

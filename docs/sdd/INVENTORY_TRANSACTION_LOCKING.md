@@ -71,7 +71,7 @@ Cada operación nueva debe demostrar que respeta el mismo orden. La prueba de do
 
 ## 7. Implementación de referencia actual
 
-- `apps/api/src/inventory-locks.ts`: helpers compartidos `lockInventoryWarehouses` y `lockInventoryBalances`; ordenan UUIDs y fallan cerrados si falta un almacén solicitado.
+- `apps/api/src/inventory-locks.ts`: helpers compartidos `lockInventoryWarehouses` y `lockInventoryBalances`; ordenan UUIDs, exigen cada par almacén/sucursal validado, rechazan pares conflictivos y fallan cerrados si falta un almacén solicitado.
 - `apps/api/src/inventory-counts.ts`: confirmación de conteo usa los helpers; bloquea primero el almacén, después el documento y luego balances en lote; el conteo físico limita el lock a los productos contados, mientras que apertura revisa el conjunto completo; reutiliza la lectura bloqueada para calcular los deltas.
 - `apps/api/src/inventory-locks.test.ts`: pruebas unitarias del orden, deduplicación, rechazo de almacén ausente y conjuntos vacíos.
 

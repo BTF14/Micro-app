@@ -7,15 +7,6 @@ export interface LockedInventoryBalance {
   reserved_quantity: string;
 }
 
-/**
- * Acquire the warehouse rows that serialize inventory mutations.
- *
- * Every writer must call this before locking inventory_balances. Multi-warehouse
- * operations pass all participating warehouses in one call so PostgreSQL
- * acquires the locks in the same UUID order regardless of request direction.
- * A null result means at least one requested warehouse is outside the tenant
- * or no longer exists; callers must abort the transaction.
- */
 export interface InventoryWarehouseLockTarget {
   warehouseId: string;
   branchId: string;

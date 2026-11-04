@@ -61,7 +61,7 @@ async function readBoundedBody(request: Request): Promise<string | null> {
     const bytes = new Uint8Array(size);
     let offset = 0;
     for (const chunk of chunks) { bytes.set(chunk, offset); offset += chunk.byteLength; }
-    return new TextDecoder("utf-8", { fatal: true }).decode(bytes);
+    return new TextDecoder("utf-8", { fatal: true, ignoreBOM: false }).decode(bytes);
   } catch {
     try { await reader.cancel(); } catch { /* no-op */ }
     return null;

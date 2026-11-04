@@ -1,5 +1,11 @@
 # Micro app — checklist de preparación para producción
 
+## Estado vivo verificado — 2026-11-04 UTC
+
+PR #196 (abierta, Draft, sin merge), HEAD `235f62f61a13c01cadec3f666e82273102b73a80`: CI completo success. La vertical slice de catálogo y conteos por almacén pasó build/typecheck, migración PostgreSQL, unit/integration tests (incluidos 3 tests de conteos), Chromium, Trivy/SAST, backup/restore sintético y builds de Cloudflare. Los cambios existen solo en la rama; no están en main ni en Neon.
+
+La base de inventario por almacén ya incluye conteos opening/physical transaccionales, ledger inmutable, balances y auditoría. Esto NO completa inventario comercial: recepción de compras, ventas, transferencias, reservas ligadas a ventas, devoluciones y administración de almacenes aún requieren implementación y pruebas. Producción continúa bloqueada por los P0 enumerados abajo.
+
 ## Estado vivo — 2026-11-04 UTC
 
 La PR #196 implementa en una rama basada en el HEAD vigente de `main` la primera vertical slice de catálogo: lectura tenant-scoped, alta, edición y baja lógica de productos. HEAD `d3c4196293256a34457f3b06e1b1c867caf5c97e`; CI completo success, incluyendo 83 tests unitarios, 8/8 lectura PostgreSQL, 8/8 creación PostgreSQL y 7/7 edición/baja lógica PostgreSQL. PR #196 sigue Draft y no está fusionada; por tanto, **main no tiene aún estas rutas**.

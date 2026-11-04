@@ -149,6 +149,30 @@ describe.skipIf(!databaseUrl)("warehouse inventory count transactions against Po
     expect(finalState.rows[0]).toEqual({ balance: "8.250", delta: "-2.250", action_count: "1" });
   });
 
+  it("does not let a physical count reduce stock below reserved quantity", async () => {
+    await client.query(
+      "UPDATE inventory_balances SET reserved_quantity = 8.000 WHERE organization_id = $1 AND warehouse_id = $2 AND product_id = $3",
+      [organizationId, warehouseId, productId],
+    );
+    const draft = await request(root() + "/counts/physical", {
+      reason: "Count below reserved quantity must be rejected",
+      lines: [{ product_id: productId, counted_quantity: "7.500" }],
+    });
+    expect(draft.status).toBe(201);
+    const draftBody = await draft.json() as { id: string };
+    const confirmation = await request(root() + "/counts/" + draftBody.id + "/confirm");
+    expect(confirmation.status).toBe(409);
+    expect(await confirmation.json()).toMatchObject({ error: "COUNT_BELOW_RESERVED_STOCK" });
+    const state = await client.query<{ quantity: string; status: string }>(
+      `SELECT b.on_hand_quantity::text AS quantity, c.status
+       FROM inventory_balances b
+       JOIN inventory_counts c ON c.organization_id = b.organization_id
+       WHERE b.organization_id = $1 AND b.warehouse_id = $2 AND b.product_id = $3 AND c.id = $4`,
+      [organizationId, warehouseId, productId, draftBody.id],
+    );
+    expect(state.rows[0]).toEqual({ quantity: "8.250", status: "draft" });
+  });
+
   it("rejects a cashier role before creating an inventory count", async () => {
     const changed = await client.query(
       "UPDATE organization_members SET role = 'cashier' WHERE organization_id = $1 AND user_id = $2",

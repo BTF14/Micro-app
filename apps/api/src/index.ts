@@ -63,8 +63,12 @@ app.use("*", async (c, next) => {
 });
 
 
+const PRODUCTION_WORKER_HOST = "micro-app-api.btfcasheb.workers.dev";
+
 app.use("*", (c, next) => {
-  if (c.env?.APP_ENV === "preview" && c.req.path !== "/health") {
+  const requestHost = new URL(c.req.url).hostname.toLowerCase();
+  const isWorkersDevPreview = requestHost.endsWith(".workers.dev") && requestHost !== PRODUCTION_WORKER_HOST;
+  if ((c.env?.APP_ENV === "preview" || isWorkersDevPreview) && c.req.path !== "/health") {
     return c.json({
       error: "PREVIEW_API_DISABLED",
       message: "La API de preview está aislada y no tiene acceso a datos de aplicación.",

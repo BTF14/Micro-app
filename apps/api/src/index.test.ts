@@ -40,6 +40,21 @@ describe("Micro app API scaffold", () => {
     expect(response.headers.get("cache-control")).toBe("no-store");
   });
 
+  it("blocks a Worker Preview hostname even when Cloudflare omits the preview environment variable", async () => {
+    const response = await app.request(
+      "https://4c32f101-micro-app-api.btfcasheb.workers.dev/auth/me",
+      { headers: { Cookie: "microapp_session=synthetic-session-token" } },
+      {
+        FRONTEND_ORIGIN: "https://micro-app-63i.pages.dev",
+        DATABASE_URL: "postgres://would-be-production-secret",
+      },
+    );
+
+    expect(response.status).toBe(503);
+    await expect(response.json()).resolves.toMatchObject({ error: "PREVIEW_API_DISABLED" });
+    expect(response.headers.get("cache-control")).toBe("no-store");
+  });
+
   it("keeps only the health endpoint available in Worker previews", async () => {
     const health = await app.request("/health", {}, { APP_ENV: "preview" });
     expect(health.status).toBe(200);

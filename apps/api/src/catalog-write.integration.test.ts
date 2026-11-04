@@ -125,15 +125,16 @@ describe.skipIf(!databaseUrl)("catalog product creation against PostgreSQL", () 
     );
     expect(stored.rows[0]).toEqual({ stock_quantity: "0.000", cost_usd: "4.2500" });
 
-    const audit = await client!.query<{ actor_user_id: string; action: string; entity_id: string }>(
-      "SELECT actor_user_id, action, entity_id FROM audit_logs WHERE organization_id = $1 AND entity_id = $2",
+    const audit = await client!.query<{ actor_user_id: string; action: string; entity_id: string; metadata: { snapshot?: { sku?: string; price_usd?: string } } }>(
+      "SELECT actor_user_id, action, entity_id, metadata FROM audit_logs WHERE organization_id = $1 AND entity_id = $2",
       [organizationA, product.id],
     );
-    expect(audit.rows).toEqual([{
+    expect(audit.rows[0]).toMatchObject({
       actor_user_id: fixtures[role].userId,
       action: "product.created",
       entity_id: product.id,
-    }]);
+      metadata: { snapshot: { sku, price_usd: "12.5000" } },
+    });
   });
 
   it.each(["inventory", "cashier"] as const)("%s cannot create products", async (role) => {

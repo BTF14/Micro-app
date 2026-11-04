@@ -144,18 +144,34 @@ BEGIN
     END IF;
     IF NEW.status = 'confirmed' AND (
       NEW.confirmed_by IS NULL OR NEW.confirmed_at IS NULL
+      OR NOT EXISTS (
+        SELECT 1 FROM inventory_count_lines l
+        WHERE l.organization_id = NEW.organization_id AND l.count_id = NEW.id
+      )
     ) THEN
-      RAISE EXCEPTION 'INVENTORY_COUNT_CONFIRMATION_REQUIRES_ACTOR_AND_TIME' USING ERRCODE = '23514';
+      RAISE EXCEPTION 'INVENTORY_COUNT_CONFIRMATION_REQUIRES_ACTOR_TIME_AND_LINES' USING ERRCODE = '23514';
     END IF;
     RETURN NEW;
   END IF;
 
-  IF EXISTS (
-    SELECT 1 FROM inventory_counts c
-    WHERE c.organization_id = OLD.organization_id
-      AND c.id = OLD.count_id
-      AND c.status <> 'draft'
-  ) THEN
+  IF TG_OP = 'INSERT' THEN
+    PERFORM 1 FROM inventory_counts c
+    WHERE c.organization_id = NEW.organization_id
+      AND c.id = NEW.count_id
+      AND c.status = 'draft'
+    FOR SHARE;
+    IF NOT FOUND THEN
+      RAISE EXCEPTION 'INVENTORY_COUNT_LINES_REQUIRE_DRAFT_COUNT' USING ERRCODE = '23514';
+    END IF;
+    RETURN NEW;
+  END IF;
+
+  PERFORM 1 FROM inventory_counts c
+  WHERE c.organization_id = OLD.organization_id
+    AND c.id = OLD.count_id
+    AND c.status = 'draft'
+  FOR SHARE;
+  IF NOT FOUND THEN
     RAISE EXCEPTION 'CONFIRMED_INVENTORY_COUNT_LINES_IMMUTABLE' USING ERRCODE = '23514';
   END IF;
   IF TG_OP = 'DELETE' THEN RETURN OLD; END IF;
@@ -167,7 +183,7 @@ CREATE TRIGGER inventory_counts_guard
 BEFORE UPDATE OR DELETE ON inventory_counts
 FOR EACH ROW EXECUTE FUNCTION guard_inventory_count_lifecycle();
 CREATE TRIGGER inventory_count_lines_guard
-BEFORE UPDATE OR DELETE ON inventory_count_lines
+BEFORE INSERT OR UPDATE OR DELETE ON inventory_count_lines
 FOR EACH ROW EXECUTE FUNCTION guard_inventory_count_lifecycle();
 
 -- The ledger is append-only; corrections are compensating movements.

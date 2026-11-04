@@ -150,6 +150,8 @@ describe.skipIf(!databaseUrl)("warehouse inventory count transactions against Po
       "SELECT status FROM inventory_counts WHERE organization_id = $1 AND id = $2",
       [organizationId, body.id],
     )).rows[0]).toEqual({ status: "draft" });
+    await client.query("DELETE FROM inventory_count_lines WHERE organization_id = $1 AND count_id = $2", [organizationId, body.id]);
+    await client.query("DELETE FROM inventory_counts WHERE organization_id = $1 AND id = $2", [organizationId, body.id]);
     await client.query("UPDATE warehouses SET is_active = true WHERE organization_id = $1 AND id = $2", [organizationId, warehouseId]);
   });
 

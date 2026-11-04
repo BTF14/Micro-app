@@ -1,4 +1,17 @@
-## Estado vivo de identidad y hardening — 2026-10-29
+## Estado vivo de seguridad y gobernanza — 2026-11-04 UTC
+
+- `main` = `2e0f4083ba577de2f301daf8c866bfbdffb5e23f`; PR #198 integró ODD por squash. PR #197 quedó cerrada sin merge como supersedida.
+- PR #196 sigue Draft y sin fusionar, HEAD `c332e740aff279fb8b22a8879581d4b8a3c7de21`, base registrada `705d3db3220894c7d3baca8dc7e7a6b623dfbb94`; está detrás de main y debe reconciliarse antes de otra decisión. Catálogo/inventario solo existen en esa rama, no en main/producción.
+- Los 11 workflows del HEAD exacto de #196 finalizaron success; esta evidencia no convierte la rama stale en mergeable ni declara readiness de producción.
+- La matriz `docs/sdd/role-permission-decision-matrix.md` está **APROBADA desde 2026-10-31**. La implementación sigue parcial: los handlers de catálogo/conteos de #196 están en una PR no fusionada; las demás operaciones requieren autorización y pruebas propias.
+- Issue #53 continúa abierta hasta demostrar aislamiento cross-tenant y por rol en todos los handlers aplicables.
+- `auth_rate_limits` existe en SQL, pero no se ha demostrado un callsite de rate limiting runtime en `apps/api/src`; no afirmar que OAuth/bootstrap tienen limitación por tasa.
+- Backup/restore sigue parcialmente verificado: faltan RPO/RTO medidos de extremo a extremo, alerta externa de fallo y evidencia de coste total $0.
+- Protección de `main`: última lectura exitosa documentada el 2026-11-01; el intento de lectura del 2026-11-04 devolvió 403 por alcance de API. No presentar la configuración como revalidada hoy.
+- No se tocó Neon producción, datos reales, secretos, billing ni despliegues de producción.
+
+## Snapshot histórico — identidad y hardening — 2026-10-29
+
 
 - PR #153 está fusionada en main; bootstrap OAuth ya no acepta secretos por query string: GET rechaza parámetros de bootstrap y el alta inicial usa POST con validación de Origin/content-type/cuerpo/campos y token de un solo uso, además de state/PKCE y cookies temporales HttpOnly. No hay evidencia de filtración activa.
 - PR #155 está fusionada en main: `FRONTEND_ORIGIN` para Google OAuth exige HTTPS, salvo HTTP en loopback de desarrollo, y rechaza credenciales, path, query, hash y origen no canónico.

@@ -1,5 +1,14 @@
 # Micro app — checklist de preparación para producción
 
+## Estado vivo — 2026-11-04 UTC
+
+- `main` = `2e0f4083ba577de2f301daf8c866bfbdffb5e23f`. PR #198 está fusionada; PR #197 cerrada sin merge como supersedida.
+- PR #196 sigue abierta/Draft, HEAD `c332e740aff279fb8b22a8879581d4b8a3c7de21`, base registrada `705d3db3220894c7d3baca8dc7e7a6b623dfbb94`. Quedó detrás de main y requiere actualización/reconciliación antes de evaluar integración.
+- La rama #196 contiene catálogo, almacenes y conteos físicos/apertura, con migración 0005 y ledger. Nada de ese vertical slice está en main mientras la PR no se fusione.
+- Los 11 workflows asociados al HEAD exacto de #196 terminaron success; no equivalen a aprobación de producción ni sustituyen revalidación después de actualizar la base.
+- La matriz de roles está aprobada desde 2026-10-31. La implementación de permisos/operaciones sigue parcial; Issue #53 permanece abierta.
+- Producción sigue bloqueada: faltan rutas comerciales completas, rate limiting runtime, pruebas E2E comerciales, coordinación entre todos los escritores de inventario, RPO/RTO medidos, alertas y confirmación de coste total $0.
+
 Este archivo es la fuente de datos para el panel de avance. Un ítem solo puede marcarse `[x]` cuando existe evidencia revisable en código, pruebas o configuración. La documentación por sí sola no demuestra que una función opere correctamente.
 
 ## Cómo se calcula

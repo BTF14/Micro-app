@@ -220,7 +220,15 @@ export function registerInventoryCountRoutes(app: Hono<{ Bindings: Bindings }>):
           );
           if (!lines.rows.length) return { kind: "empty" as const };
 
-          const existingBalances = await lockInventoryBalances(tx, tenant.organizationId, [warehouseId]);
+          const balanceProductIds = count.count_type === "opening"
+            ? undefined
+            : lines.rows.map((line) => line.product_id);
+          const existingBalances = await lockInventoryBalances(
+            tx,
+            tenant.organizationId,
+            [warehouseId],
+            balanceProductIds,
+          );
           const balanceByProduct = new Map(existingBalances.map((balance) => [balance.product_id, balance]));
           if (count.count_type === "opening" && existingBalances.length) {
             return { kind: "opening_balance_exists" as const };

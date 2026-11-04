@@ -16,24 +16,55 @@ export interface LockedInventoryBalance {
  * A null result means at least one requested warehouse is outside the tenant
  * or no longer exists; callers must abort the transaction.
  */
+export interface InventoryWarehouseLockTarget {
+  warehouseId: string;
+  branchId: string;
+}
+
+/**
+ * Acquire the warehouse rows that serialize inventory mutations.
+ *
+ * Every writer must call this before locking inventory_balances. Multi-warehouse
+ * operations pass every (warehouse, branch) pair in one call so PostgreSQL
+ * acquires locks in UUID order regardless of request direction. Matching both
+ * IDs preserves branch scope at the lock boundary. A null result means at least
+ * one requested warehouse does not belong to the supplied tenant/branch pair.
+ */
 export async function lockInventoryWarehouses(
   tx: DatabaseClient,
   organizationId: string,
-  warehouseIds: readonly string[],
+  targets: readonly InventoryWarehouseLockTarget[],
 ): Promise<string[] | null> {
-  const orderedIds = [...new Set(warehouseIds.map((id) => id.toLowerCase()))].sort();
-  if (orderedIds.length === 0) return [];
+  const targetsById = new Map<string, string>();
+  for (const target of targets) {
+    const warehouseId = target.warehouseId.toLowerCase();
+    const branchId = target.branchId.toLowerCase();
+    const previousBranchId = targetsById.get(warehouseId);
+    if (previousBranchId !== undefined && previousBranchId !== branchId) return null;
+    targetsById.set(warehouseId, branchId);
+  }
+
+  const orderedTargets = [...targetsById.entries()]
+    .map(([warehouseId, branchId]) => ({ warehouseId, branchId }))
+    .sort((left, right) => left.warehouseId < right.warehouseId ? -1 : left.warehouseId > right.warehouseId ? 1 : 0);
+  if (orderedTargets.length === 0) return [];
 
   const result = await tx.query<{ id: string }>(
-    `SELECT id
-     FROM warehouses
-     WHERE organization_id = $1 AND id = ANY($2::uuid[])
-     ORDER BY id ASC
-     FOR UPDATE`,
-    [organizationId, orderedIds],
+    `SELECT w.id
+     FROM warehouses w
+     JOIN unnest($2::uuid[], $3::uuid[]) AS requested(id, branch_id)
+       ON requested.id = w.id AND requested.branch_id = w.branch_id
+     WHERE w.organization_id = $1
+     ORDER BY w.id ASC
+     FOR UPDATE OF w`,
+    [
+      organizationId,
+      orderedTargets.map((target) => target.warehouseId),
+      orderedTargets.map((target) => target.branchId),
+    ],
   );
 
-  if (result.rows.length !== orderedIds.length) return null;
+  if (result.rows.length !== orderedTargets.length) return null;
   return result.rows.map((row) => row.id);
 }
 

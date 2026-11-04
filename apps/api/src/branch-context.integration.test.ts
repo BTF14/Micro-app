@@ -13,6 +13,7 @@ const organizationName = `Branch Context ${suffix}`;
 
 const suite = describe.skipIf(!databaseUrl)("branch context against PostgreSQL", () => {
   let client: import("pg").Client;
+  let secondClient: import("pg").Client;
   let organizationId: string;
   let otherOrganizationId: string;
   let branchA: string;
@@ -33,7 +34,8 @@ const suite = describe.skipIf(!databaseUrl)("branch context against PostgreSQL",
   beforeAll(async () => {
     const { Client } = await import("pg");
     client = new Client({ connectionString: databaseUrl });
-    await client.connect();
+    secondClient = new Client({ connectionString: databaseUrl });
+    await Promise.all([client.connect(), secondClient.connect()]);
 
     const org = await client.query<{ id: string }>(
       "INSERT INTO organizations (name, slug) VALUES ($1, $2) RETURNING id",
@@ -110,8 +112,20 @@ const suite = describe.skipIf(!databaseUrl)("branch context against PostgreSQL",
       "DELETE FROM app_users WHERE id = ANY($1::uuid[])",
       [[ownerId, adminId, cashierAssignedId, cashierUnassignedId, inventoryAssignedId]],
     );
-    await client.end();
+    await Promise.all([client.end(), secondClient.end()]);
   });
+
+  async function waitForLockWait(pid: number): Promise<void> {
+    for (let attempt = 0; attempt < 500; attempt += 1) {
+      const state = await client.query<{ wait_event_type: string | null }>(
+        "SELECT wait_event_type FROM pg_stat_activity WHERE pid = $1",
+        [pid],
+      );
+      if (state.rows[0]?.wait_event_type === "Lock") return;
+      await new Promise((resolve) => setTimeout(resolve, 10));
+    }
+    throw new Error("Timed out waiting for the competing PostgreSQL transaction to block on a row lock.");
+  }
 
   it("allows owner and admin to resolve active branches in their organization", async () => {
     await expect(resolveBranchContext(client as unknown as DatabaseClient, context(ownerId, "owner"), branchB)).resolves.toMatchObject({ branchId: branchB });
@@ -149,6 +163,92 @@ const suite = describe.skipIf(!databaseUrl)("branch context against PostgreSQL",
     await expect(
       resolveBranchContext(client as unknown as DatabaseClient, context(cashierAssignedId, "cashier"), branchA),
     ).resolves.toMatchObject({ branchId: branchA });
+  });
+
+
+  it("denies branch access when a membership revocation commits before authorization acquires its lock", async () => {
+    const { Client } = await import("pg");
+    const reader = new Client({ connectionString: databaseUrl });
+    await reader.connect();
+    await secondClient.query("BEGIN");
+    try {
+      await secondClient.query(
+        "UPDATE branch_memberships SET is_active = false WHERE organization_id = $1 AND branch_id = $2 AND user_id = $3",
+        [organizationId, branchA, cashierAssignedId],
+      );
+      const pid = (await reader.query<{ pid: number }>("SELECT pg_backend_pid() AS pid")).rows[0]!.pid;
+      const resolution = resolveBranchContext(
+        reader as unknown as DatabaseClient,
+        context(cashierAssignedId, "cashier"),
+        branchA,
+        true,
+      );
+      await waitForLockWait(pid);
+      await secondClient.query("COMMIT");
+      await expect(resolution).resolves.toBeNull();
+    } catch (error) {
+      await secondClient.query("ROLLBACK").catch(() => undefined);
+      throw error;
+    } finally {
+      await reader.end();
+    }
+  });
+
+  it("makes a concurrent membership revocation wait until an authorized transaction commits", async () => {
+    const { Client } = await import("pg");
+    const reader = new Client({ connectionString: databaseUrl });
+    await reader.connect();
+    try {
+      await reader.query("BEGIN");
+      await expect(resolveBranchContext(
+        reader as unknown as DatabaseClient,
+        context(cashierAssignedId, "cashier"),
+        branchA,
+        true,
+      )).resolves.toMatchObject({ branchId: branchA });
+      const pid = (await secondClient.query<{ pid: number }>("SELECT pg_backend_pid() AS pid")).rows[0]!.pid;
+      const revocation = secondClient.query(
+        "UPDATE branch_memberships SET is_active = false WHERE organization_id = $1 AND branch_id = $2 AND user_id = $3",
+        [organizationId, branchA, cashierAssignedId],
+      );
+      await waitForLockWait(pid);
+      await reader.query("COMMIT");
+      await revocation;
+      await client.query(
+        "UPDATE branch_memberships SET is_active = true WHERE organization_id = $1 AND branch_id = $2 AND user_id = $3",
+        [organizationId, branchA, cashierAssignedId],
+      );
+    } finally {
+      await reader.query("ROLLBACK").catch(() => undefined);
+      await reader.end();
+    }
+  });
+
+  it("serializes branch deactivation behind a transaction holding the active branch lock", async () => {
+    const { Client } = await import("pg");
+    const reader = new Client({ connectionString: databaseUrl });
+    await reader.connect();
+    try {
+      await reader.query("BEGIN");
+      await expect(resolveBranchContext(
+        reader as unknown as DatabaseClient,
+        context(ownerId, "owner"),
+        branchB,
+        true,
+      )).resolves.toMatchObject({ branchId: branchB });
+      const pid = (await secondClient.query<{ pid: number }>("SELECT pg_backend_pid() AS pid")).rows[0]!.pid;
+      const deactivation = secondClient.query(
+        "UPDATE branches SET is_active = false WHERE organization_id = $1 AND id = $2",
+        [organizationId, branchB],
+      );
+      await waitForLockWait(pid);
+      await reader.query("COMMIT");
+      await deactivation;
+      await client.query("UPDATE branches SET is_active = true WHERE organization_id = $1 AND id = $2", [organizationId, branchB]);
+    } finally {
+      await reader.query("ROLLBACK").catch(() => undefined);
+      await reader.end();
+    }
   });
 
   it("rejects inactive branches and branch IDs belonging to another organization", async () => {

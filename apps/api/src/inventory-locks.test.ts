@@ -28,6 +28,7 @@ describe("inventory transaction lock helpers", () => {
     expect(calls).toHaveLength(1);
     expect(calls[0]!.values).toEqual(["org", [first, second], [branchA, branchB]]);
     expect(calls[0]!.statement).toMatch(/requested\.branch_id = w\.branch_id/);
+    expect(calls[0]!.statement).toContain("w.is_active = true");
     expect(calls[0]!.statement).toMatch(/ORDER BY w\.id ASC\s+FOR UPDATE OF w/);
   });
 

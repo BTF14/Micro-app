@@ -62,6 +62,17 @@ app.use("*", async (c, next) => {
   }
 });
 
+
+app.use("*", (c, next) => {
+  if (c.env.APP_ENV === "preview" && c.req.path !== "/health") {
+    return c.json({
+      error: "PREVIEW_API_DISABLED",
+      message: "La API de preview está aislada y no tiene acceso a datos de aplicación.",
+    }, 503);
+  }
+  return next();
+});
+
 registerAuthRoutes(app);
 registerGoogleAuthRoutes(app);
 registerCatalogRoutes(app);

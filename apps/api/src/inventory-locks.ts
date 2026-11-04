@@ -1,5 +1,11 @@
 import type { DatabaseClient } from "./database";
 
+const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+function isUuid(value: string): boolean {
+  return UUID_PATTERN.test(value);
+}
+
 export interface LockedInventoryBalance {
   warehouse_id: string;
   product_id: string;
@@ -26,8 +32,11 @@ export async function lockInventoryWarehouses(
   organizationId: string,
   targets: readonly InventoryWarehouseLockTarget[],
 ): Promise<string[] | null> {
+  if (!isUuid(organizationId)) return null;
+
   const targetsById = new Map<string, string>();
   for (const target of targets) {
+    if (!isUuid(target.warehouseId) || !isUuid(target.branchId)) return null;
     const warehouseId = target.warehouseId.toLowerCase();
     const branchId = target.branchId.toLowerCase();
     const previousBranchId = targetsById.get(warehouseId);
@@ -73,7 +82,10 @@ export async function lockInventoryBalances(
   organizationId: string,
   warehouseIds: readonly string[],
   productIds?: readonly string[],
-): Promise<LockedInventoryBalance[]> {
+): Promise<LockedInventoryBalance[] | null> {
+  if (!isUuid(organizationId) || warehouseIds.some((id) => !isUuid(id)) ||
+      (productIds !== undefined && productIds.some((id) => !isUuid(id)))) return null;
+
   const orderedWarehouseIds = [...new Set(warehouseIds.map((id) => id.toLowerCase()))].sort();
   if (orderedWarehouseIds.length === 0) return [];
 

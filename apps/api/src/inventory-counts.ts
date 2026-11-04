@@ -229,6 +229,7 @@ export function registerInventoryCountRoutes(app: Hono<{ Bindings: Bindings }>):
             [warehouseId],
             balanceProductIds,
           );
+          if (existingBalances === null) return { kind: "not_found" as const };
           const balanceByProduct = new Map(existingBalances.map((balance) => [balance.product_id, balance]));
           if (count.count_type === "opening" && existingBalances.length) {
             return { kind: "opening_balance_exists" as const };

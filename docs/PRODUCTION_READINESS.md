@@ -2,9 +2,9 @@
 
 ## Estado vivo verificado — 2026-11-04 UTC
 
-PR #196 (abierta, Draft, sin merge), HEAD actual `5387637e710259c14d7bfdbaf9c33560752ae699`: los commits documentales de reconciliación/SDD están en CI; no se atribuye todavía resultado a ese HEAD. El HEAD de aplicación `1eb8da0006061749772e1afd93fa9901f155067b` pasó todos los checks, incluida confirmación concurrente idempotente en PostgreSQL, build/typecheck, migración, unit/integration, Chromium, Trivy/SAST, backup/restore sintético y builds Cloudflare. Los cambios existen solo en la rama; no están en main ni en Neon.
+PR #196 (abierta, Draft, sin merge), HEAD `0d3992bf5f377fe8ddf65776bc09b2e78c1a8915`: CI completo success, incluidos `verify`, PostgreSQL, análisis estático, Chromium, backup/restore sintético, Trivy/SAST, dependency review y builds de preview Workers/Pages. Los cambios existen solo en la rama; no están en main ni en Neon.
 
-La base de inventario por almacén ya incluye conteos opening/physical transaccionales, ledger inmutable, balances y auditoría. Esto NO completa inventario comercial: recepción de compras, ventas, transferencias, reservas ligadas a ventas, devoluciones y administración de almacenes aún requieren implementación y pruebas. La recepción tiene un SDD inicial con decisiones de negocio pendientes. Producción continúa bloqueada por los P0 enumerados abajo.
+La base de inventario por almacén ya incluye conteos opening/physical transaccionales, ledger inmutable, balances y auditoría. La integración valida replay concurrente, rollback atómico inducido y límite respecto a stock reservado. La coordinación con futuros escritores comerciales sigue pendiente: todas las operaciones deberán compartir orden de locks y transacción de saldo+ledger. Esto NO completa inventario comercial: recepción de compras, ventas, transferencias, reservas ligadas a ventas, devoluciones y administración de almacenes aún requieren implementación y pruebas. La recepción tiene un SDD inicial con decisiones de negocio pendientes. Producción continúa bloqueada por los P0 enumerados abajo.
 
 ## Estado vivo — 2026-11-04 UTC
 

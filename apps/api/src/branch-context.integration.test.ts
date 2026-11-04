@@ -186,6 +186,10 @@ const suite = describe.skipIf(!databaseUrl)("branch context against PostgreSQL",
       await waitForLockWait(pid);
       await secondClient.query("COMMIT");
       await expect(resolution).resolves.toBeNull();
+      await client.query(
+        "UPDATE branch_memberships SET is_active = true WHERE organization_id = $1 AND branch_id = $2 AND user_id = $3",
+        [organizationId, branchA, cashierAssignedId],
+      );
     } catch (error) {
       await secondClient.query("ROLLBACK").catch(() => undefined);
       throw error;

@@ -245,7 +245,7 @@ export function registerInventoryCountRoutes(app: Hono<{ Bindings: Bindings }>):
 
           const changes: Array<{ product_id: string; previous_quantity: string; counted_quantity: string; delta: string }> = [];
           for (const line of lines.rows) {
-            // The complete balance set was locked above in product UUID order.
+            // Every relevant balance row was locked above in product UUID order.
             // Re-read from that locked snapshot; do not acquire per-product locks
             // after the batch lock or introduce a second lock-order path.
             const previous = balanceByProduct.get(line.product_id)?.on_hand_quantity ?? "0.000";

@@ -14,7 +14,7 @@ function fakeTransaction(responses: unknown[][]) {
 describe("inventory transaction lock helpers", () => {
   it("locks all warehouses once in canonical UUID order", async () => {
     const first = "00000000-0000-4000-8000-000000000001";
-    const second = "00000000-0000-4000-8000-000000000002";
+    const second = "abcdefab-cdef-4abc-8def-abcdefabcdef";
     const { tx, calls } = fakeTransaction([[{ id: first }, { id: second }]]);
 
     await expect(lockInventoryWarehouses(tx, "org", [second, first, second.toUpperCase()]))
@@ -46,6 +46,17 @@ describe("inventory transaction lock helpers", () => {
 
     expect(calls[0]!.values).toEqual(["org", [warehouseA, warehouseB], [productA, productB]]);
     expect(calls[0]!.statement).toMatch(/ORDER BY warehouse_id ASC, product_id ASC\s+FOR UPDATE/);
+  });
+
+  it("locks every existing balance when product IDs are omitted", async () => {
+    const warehouse = "00000000-0000-4000-8000-000000000001";
+    const { tx, calls } = fakeTransaction([[]]);
+
+    await expect(lockInventoryBalances(tx, "org", [warehouse])).resolves.toEqual([]);
+
+    expect(calls[0]!.values).toEqual(["org", [warehouse]]);
+    expect(calls[0]!.statement).not.toContain("product_id = ANY");
+    expect(calls[0]!.statement).toMatch(/ORDER BY warehouse_id ASC, product_id ASC\\s+FOR UPDATE/);
   });
 
   it("does not issue a query for an empty warehouse or product set", async () => {

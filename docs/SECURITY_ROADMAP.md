@@ -1,3 +1,18 @@
+## Estado verificado — 2026-11-04 UTC (reconciliación de PR #200 y Cloudflare)
+
+> Este bloque supersede el snapshot vivo histórico que aparece más abajo. Se conserva el historial de seguridad y sus decisiones anteriores.
+
+- main actual: 7b0f057b8c152515005feed40305143c0ebb94b0. PR #200 es la integración vigente de catálogo e inventario, abierta/Draft, base 7b0f057b8c152515005feed40305143c0ebb94b0, HEAD 7d2ef3d5e9ced1d4e8d386110129d21eb53af045. PR #196 permanece abierta/Draft e intacta; no describirla como la rama vigente de integración. Issue #53 sigue abierta.
+- Issue #78 está cerrada desde 2026-10-31. Sus comentarios registran los preflight CORS reales (incluyendo Authorization/Content-Type) y la verificación automatizada del bundle JavaScript público. No reabrir ni mantener esos puntos como pendientes sin nueva evidencia de regresión.
+- La matriz de roles/permisos está aprobada desde 2026-10-31. La aprobación no equivale a que toda la cobertura comercial esté implementada: la PR #200 aporta catálogo y conteos de inventario; ventas, pagos, recepciones, reservas, devoluciones, transferencias y otros escritores continúan fuera de alcance. Mantener issue #53 abierta hasta completar las pruebas de aislamiento cross-tenant, sucursal y rol para cada handler aplicable.
+- Cloudflare API: main es la rama de producción; builds no productivos están habilitados; npx wrangler deploy es el deploy command y npx wrangler versions upload el version command. El banner Set up Worker Previews sigue visible en el dashboard. Las Version URLs no son previews aislados y usan recursos de producción. La defensa de PR #200 bloquea rutas de aplicación en hostnames no canónicos *.workers.dev, salvo /health; esto reduce riesgo de ejecución de rutas, pero no reemplaza aislamiento de recursos.
+- Cloudflare Pages: producción main, despliegues automáticos habilitados, build watch paths *. Merge/push a main puede disparar despliegues productivos; PR verde no es autorización de producción.
+- PR #200 añade [previews.vars] APP_ENV = preview; no asumir que se aplica mientras el Worker siga en el modelo de Version URLs. La activación del nuevo Worker Previews requiere una decisión y revisión específica; Cloudflare documenta que el cambio no se puede revertir al modelo anterior.
+- Migración 0005 está validada en PostgreSQL 18 desechable. No hay evidencia de aplicación a Neon main ni procedimiento operativo aprobado de migración/rollback. No ejecutar migraciones ni despliegues como parte de esta revisión.
+- Siguen pendientes: rate limiting runtime comprobado, cobertura completa de writers comerciales y sus pruebas concurrentes, pruebas E2E reales de negocio, procedimiento de migración y recuperación, RPO/RTO medidos, alertas y confirmación de coste total $0.
+- No cambiar secretos, Cloudflare, Neon, DNS, billing ni producción; no fusionar PR #200/#202 ni alterar PR #196/#190/#193 durante esta reconciliación.
+
+---
 ## Estado vivo de seguridad y gobernanza — 2026-11-04 UTC
 
 - `main` = `2e0f4083ba577de2f301daf8c866bfbdffb5e23f`; PR #198 integró ODD por squash. PR #197 quedó cerrada sin merge como supersedida.

@@ -173,3 +173,15 @@ Decisión: en un checkout con red, ejecutar primero `npx autoskills --dry-run`, 
 ## Verificación pública de frontend — 2026-10-30 (solo lectura)
 
 La página `https://micro-app-63i.pages.dev/` muestra un enlace “Continuar con Google” cuyo `href` es `https://micro-app-api.btfcasheb.workers.dev/auth/google`. Esto confirma el hostname del Worker en el enlace OAuth del HTML público. La inspección no pudo acceder al contenido de los bundles JavaScript ni confirmar `__MICRO_APP_API_BASE_URL__` compilado. La evidencia no demuestra que las demás llamadas API funcionen ni que CORS sea correcto. No se realizaron interacciones ni cambios.
+
+
+## GitHub Spec Kit — evaluación y decisión 2026-11-04
+
+| Recurso | URL | Resultado y límites |
+|---|---|---|
+| GitHub Spec Kit | https://github.com/github/spec-kit | Evaluada la release v1.3.0 (2026-11-03), README, guía oficial de adopción en proyectos existentes e integración GitHub Copilot. Recomendado como motor SDD incremental; no sustituye la Constitución ni los controles propios. |
+| Specify CLI | https://github.com/github/spec-kit/releases/tag/v1.3.0 | Instalación fijada mediante `uv tool install specify-cli --from git+https://github.com/github/spec-kit.git@v1.3.0`. Requiere Python 3.11+ y uv. La CLI no se instaló/ejecutó en esta sesión por fallo DNS al resolver github.com desde el entorno disponible. |
+| Copilot integration | https://github.com/github/spec-kit/blob/v1.3.0/docs/integrations/copilot.md | Se recomienda layout skills con `--no-model-invocation` para evitar carga automática y permitir invocación deliberada. No se ha probado aún en el runtime local del propietario. |
+| Existing-project guide | https://github.com/github/spec-kit/blob/v1.3.0/docs/how-to/existing-projects.md | La guía recomienda rama de adopción y revisión de los archivos generados; `--force` puede reemplazar rutas gestionadas. No se ejecutó `specify init` desde este entorno. |
+
+**Decisión:** preparar gobernanza y flujo de adopción en PR independiente. Mantener `docs/SDD_WORKFLOW.md` y `templates/sdd/` como fallback hasta que la CLI se instale, el diff generado se revise y un piloto se valide. No instalar extensiones/presets comunitarios ni actualizar automáticamente a `main`.

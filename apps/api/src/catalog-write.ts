@@ -87,7 +87,7 @@ export function registerCatalogWriteRoutes(app: Hono<{ Bindings: Bindings }>): v
     if (!isTrustedOrigin(c.req.header("Origin"), c.env.FRONTEND_ORIGIN)) {
       return c.json({ error: "ORIGIN_NOT_ALLOWED", message: "Origen no autorizado." }, 403);
     }
-    if (!(c.req.header("Content-Type") ?? "").toLowerCase().startsWith("application/json")) {
+    if (!/^application\\/json(?:\\s*;|$)/i.test(c.req.header("Content-Type") ?? "")) {
       return c.json({ error: "UNSUPPORTED_MEDIA_TYPE", message: "Se requiere application/json." }, 415);
     }
     const declaredLength = c.req.header("Content-Length");

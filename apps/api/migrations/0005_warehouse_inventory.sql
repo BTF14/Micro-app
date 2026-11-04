@@ -123,6 +123,9 @@ CREATE TABLE warehouse_inventory_movements (
 );
 CREATE INDEX warehouse_inventory_movements_product_history_idx
   ON warehouse_inventory_movements (organization_id, warehouse_id, product_id, created_at DESC);
+CREATE UNIQUE INDEX warehouse_inventory_movements_count_line_uq
+  ON warehouse_inventory_movements (organization_id, count_id, product_id)
+  WHERE count_id IS NOT NULL;
 CREATE INDEX warehouse_inventory_movements_reference_idx
   ON warehouse_inventory_movements (organization_id, reference_type, reference_id);
 
@@ -233,6 +236,16 @@ BEGIN
   IF (NEW.movement_type = 'opening' AND referenced_count_type <> 'opening')
     OR (NEW.movement_type = 'count_adjustment' AND referenced_count_type <> 'physical') THEN
     RAISE EXCEPTION 'INVENTORY_MOVEMENT_COUNT_TYPE_MISMATCH'
+      USING ERRCODE = '23514';
+  END IF;
+
+  IF NOT EXISTS (
+    SELECT 1 FROM inventory_count_lines l
+    WHERE l.organization_id = NEW.organization_id
+      AND l.count_id = NEW.count_id
+      AND l.product_id = NEW.product_id
+  ) THEN
+    RAISE EXCEPTION 'INVENTORY_MOVEMENT_REQUIRES_COUNT_LINE'
       USING ERRCODE = '23514';
   END IF;
 

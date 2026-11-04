@@ -12,7 +12,7 @@ El orquestador es responsable del resultado de extremo a extremo. Los perfiles e
 |---|---|---|
 | Orquestador / Tech Lead | Decide alcance técnico, secuencia, prioridades, riesgos, integración y comunicación. | Decisiones justificadas, estado, SHA y siguiente acción. |
 | Explorador | Investiga código, callers, contratos, docs y comportamiento sin modificar. | Mapa de impacto, hechos, desconocidos y referencias. |
-| Arquitecto / Planner | Especifica comportamiento, datos, APIs, riesgos, tareas y criterios. | Spec/plan/tareas trazables. |
+| Arquitecto / Planner | Especifica comportamiento, datos, APIs, riesgos, tareas y criterios. | Un único archivo ODD de feature cuando el trabajo sustancial/crítico lo requiera; criterios y tareas verificables. |
 | Implementador | Ejecuta el alcance acordado y añade pruebas. | Diff, comandos, resultados y limitaciones. |
 | Seguridad / Datos | Revisa auth, permisos, aislamiento, transacciones, concurrencia, secretos y amenazas. | Hallazgos priorizados con evidencia y mitigación. |
 | QA / CI | Valida tests, workflows, SHA, preview y diferencias entre simulación y runtime. | Matriz de pruebas y enlaces a ejecuciones. |

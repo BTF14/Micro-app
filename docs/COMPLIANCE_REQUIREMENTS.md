@@ -1,3 +1,15 @@
+# Addendum de estado técnico — 2026-11-04
+
+La revisión legal/fiscal sigue siendo un borrador de requisitos y **no constituye asesoría legal, certificación fiscal ni conformidad demostrada**. Esta nota solo reconcilia el estado técnico:
+
+- `main` verificado: `7b0f057b8c152515005feed40305143c0ebb94b0`; versiona migraciones 0001–0004.
+- PR #200 propone migración 0005 y una vertical de catálogo/inventario, pero continúa abierta/Draft y no está integrada en main ni aplicada a Neon.
+- Issue #78 está cerrada; issue #53 permanece abierta por cobertura de identidad, sesiones, autorización y aislamiento tenant.
+- No afirmar que el producto ya satisface requisitos fiscales/comerciales por tener migraciones o checks verdes. Los flujos de venta, pagos, devoluciones, cierres y libros de inventario requieren validación funcional, legal y de datos separada.
+- El coste objetivo sigue siendo $0; no activar planes pagos ni compromisos de facturación sin autorización explícita.
+
+---
+
 # Requisitos de cumplimiento y operación — Micro app
 
 Estado: borrador de requisitos de producto; no constituye asesoría legal ni certificación fiscal.

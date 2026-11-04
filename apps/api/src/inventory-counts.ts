@@ -195,7 +195,7 @@ export function registerInventoryCountRoutes(app: Hono<{ Bindings: Bindings }>):
           if (!branch) return { kind: "branch_denied" as const };
 
           const lockedWarehouses = await lockInventoryWarehouses(tx, tenant.organizationId, [{ warehouseId, branchId: branch.branchId }]);
-          if (!lockedWarehouses) return { kind: "not_found" as const };
+          if (!lockedWarehouses) return { kind: "warehouse_not_found" as const };
           const countResult = await tx.query<{
             id: string; count_type: "opening" | "physical"; status: "draft" | "confirmed" | "cancelled"; reason: string;
           }>(
@@ -229,7 +229,7 @@ export function registerInventoryCountRoutes(app: Hono<{ Bindings: Bindings }>):
             [warehouseId],
             balanceProductIds,
           );
-          if (existingBalances === null) return { kind: "not_found" as const };
+          if (existingBalances === null) return { kind: "invalid_lock_scope" as const };
           const balanceByProduct = new Map(existingBalances.map((balance) => [balance.product_id, balance]));
           if (count.count_type === "opening" && existingBalances.length) {
             return { kind: "opening_balance_exists" as const };
@@ -289,6 +289,8 @@ export function registerInventoryCountRoutes(app: Hono<{ Bindings: Bindings }>):
       if (result.kind === "unauthenticated") return c.json({ error: "UNAUTHENTICATED", message: "Inicia sesión para continuar." }, 401);
       if (result.kind === "forbidden") return c.json({ error: "FORBIDDEN", message: "No tienes permiso para operar inventario." }, 403);
       if (result.kind === "branch_denied") return c.json({ error: "BRANCH_FORBIDDEN", message: "No tienes acceso a esta sucursal." }, 403);
+      if (result.kind === "warehouse_not_found") return c.json({ error: "WAREHOUSE_NOT_FOUND", message: "El almacén no existe o está inactivo." }, 404);
+      if (result.kind === "invalid_lock_scope") return c.json({ error: "INVENTORY_LOCK_INVALID_SCOPE", message: "El alcance de bloqueo de inventario no es válido." }, 500);
       if (result.kind === "not_found") return c.json({ error: "COUNT_NOT_FOUND", message: "El conteo no existe." }, 404);
       if (result.kind === "not_confirmable") return c.json({ error: "COUNT_NOT_CONFIRMABLE", message: "El conteo no puede confirmarse." }, 409);
       if (result.kind === "empty") return c.json({ error: "EMPTY_COUNT", message: "El conteo no contiene líneas." }, 409);

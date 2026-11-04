@@ -8,7 +8,7 @@
 - `docs/SDD_WORKFLOW.md` es ahora un redirect histórico. La propuesta Spec Kit v1.3.0 se archivó porque la CLI nunca se instaló ni ejecutó; no debe tratarse como herramienta activa.
 - ECC y `tester-army/e2e` fueron revisados documentalmente. Ninguno se instaló, ejecutó ni añadió al CI. ECC se evaluará por componentes; E2E agentic solo como piloto opcional, complementario a pruebas deterministas.
 - No se tocaron `main`, PR #196, PR #190/#193, issue #53, Neon producción, datos reales, secretos, dependencias, hooks ni despliegues.
-- La comparación más reciente registró 30 commits ahead / 0 behind y 18 archivos modificados. El conector no devolvió workflow runs ni combined statuses para los últimos commits creados vía API; por tanto, **no hay evidencia CI del HEAD final**. ODD-09 permanece pendiente. No fusionar ni marcar producción lista.
+- HEAD `25e7e1678b4b3c0f937b4c657f255c6453b95ead`: 9/9 workflows asociados terminaron en success (CI, Playwright E2E, migraciones PostgreSQL, Semgrep, Security, Secret history, Dependency Review, documentación y dashboard). ODD-09 quedó cerrado con esa evidencia. Este checkpoint documental genera commits adicionales; volver a consultar el HEAD y sus checks antes de cerrar la PR. No fusionar ni marcar producción lista.
 
 ---
 

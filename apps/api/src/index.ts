@@ -4,6 +4,7 @@ import { registerAuthRoutes } from "./auth";
 import { registerGoogleAuthRoutes } from "./google-auth";
 import { registerCatalogRoutes } from "./catalog";
 import { registerCatalogWriteRoutes } from "./catalog-write";
+import { registerInventoryCountRoutes } from "./inventory-counts";
 import type { Bindings } from "./bindings";
 
 const app = new Hono<{ Bindings: Bindings }>();
@@ -65,6 +66,7 @@ registerAuthRoutes(app);
 registerGoogleAuthRoutes(app);
 registerCatalogRoutes(app);
 registerCatalogWriteRoutes(app);
+registerInventoryCountRoutes(app);
 
 app.get("/health", (c) =>
   c.json({

@@ -86,9 +86,9 @@ describe("resolveBranchContext", () => {
 
     expect(query).toHaveBeenCalledTimes(2);
     expect(query.mock.calls[0]?.[1]).toEqual([organizationId, [branchA, branchB]]);
-    expect(query.mock.calls[0]?.[0]).toMatch(/ORDER BY b\.id ASC\\s+FOR SHARE OF b/);
+    expect(query.mock.calls[0]?.[0]).toMatch(/ORDER BY b\.id ASC\s+FOR SHARE OF b/);
     expect(query.mock.calls[1]?.[1]).toEqual([organizationId, [branchA, branchB], [userA, userB]]);
-    expect(query.mock.calls[1]?.[0]).toMatch(/ORDER BY bm\.branch_id ASC, bm\.user_id ASC\\s+FOR SHARE OF bm/);
+    expect(query.mock.calls[1]?.[0]).toMatch(/ORDER BY bm\.branch_id ASC, bm\.user_id ASC\s+FOR SHARE OF bm/);
   });
 
   it("fails closed before membership lookup when any requested branch is inactive or missing", async () => {

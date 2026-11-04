@@ -147,6 +147,25 @@ describe.skipIf(!databaseUrl)("warehouse inventory count transactions against Po
       [organizationId, physicalBody.id, warehouseId, productId],
     );
     expect(finalState.rows[0]).toEqual({ balance: "8.250", delta: "-2.250", action_count: "1" });
+
+    const warehouseList = await app.fetch(new Request(
+      "https://api.example/api/orgs/" + organizationId + "/branches/" + branchId + "/warehouses",
+      { headers: { Cookie: "microapp_session=" + token } },
+    ), { DATABASE_URL: databaseUrl, FRONTEND_ORIGIN: "https://frontend.example" });
+    expect(warehouseList.status).toBe(200);
+    expect(await warehouseList.json()).toMatchObject({ warehouses: [{ id: warehouseId, code: "main" }] });
+
+    const countList = await app.fetch(new Request(
+      "https://api.example" + root() + "/counts",
+      { headers: { Cookie: "microapp_session=" + token } },
+    ), { DATABASE_URL: databaseUrl, FRONTEND_ORIGIN: "https://frontend.example" });
+    expect(countList.status).toBe(200);
+    expect(await countList.json()).toMatchObject({
+      counts: [
+        { id: physicalBody.id, status: "confirmed", line_count: "1" },
+        { id: openingBody.id, status: "confirmed", line_count: "1" },
+      ],
+    });
   });
 
   it("does not let a physical count reduce stock below reserved quantity", async () => {

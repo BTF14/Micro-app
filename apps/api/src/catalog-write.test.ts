@@ -59,4 +59,14 @@ describe("POST /api/orgs/:organizationId/catalog input and origin guards", () =>
     expect(forgedStock.status).toBe(400);
     await expect(forgedStock.json()).resolves.toMatchObject({ error: "INVALID_PRODUCT" });
   });
+  
+  it("rejects unauthenticated requests before parsing their body", async () => {
+    const response = await request("/api/orgs/" + organizationId + "/catalog", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: "{",
+    });
+    expect(response.status).toBe(401);
+  });
+
 });

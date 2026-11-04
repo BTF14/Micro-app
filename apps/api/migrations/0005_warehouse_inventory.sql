@@ -174,6 +174,22 @@ BEGIN
   IF NOT FOUND THEN
     RAISE EXCEPTION 'CONFIRMED_INVENTORY_COUNT_LINES_IMMUTABLE' USING ERRCODE = '23514';
   END IF;
+
+  IF TG_OP = 'UPDATE'
+    AND ROW(NEW.organization_id, NEW.branch_id, NEW.warehouse_id, NEW.count_id)
+      IS DISTINCT FROM ROW(OLD.organization_id, OLD.branch_id, OLD.warehouse_id, OLD.count_id) THEN
+    PERFORM 1 FROM inventory_counts c
+    WHERE c.organization_id = NEW.organization_id
+      AND c.branch_id = NEW.branch_id
+      AND c.warehouse_id = NEW.warehouse_id
+      AND c.id = NEW.count_id
+      AND c.status = 'draft'
+    FOR SHARE;
+    IF NOT FOUND THEN
+      RAISE EXCEPTION 'INVENTORY_COUNT_LINES_REQUIRE_DRAFT_TARGET' USING ERRCODE = '23514';
+    END IF;
+  END IF;
+
   IF TG_OP = 'DELETE' THEN RETURN OLD; END IF;
   RETURN NEW;
 END;

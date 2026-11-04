@@ -296,6 +296,52 @@ describe.skipIf(!databaseUrl)("warehouse inventory count transactions against Po
     expect(persisted.rows[0]).toEqual({ movements: "0", audits: "1", balance: "8.000" });
   });
 
+  it("rolls back count confirmation, balance and ledger when audit persistence fails", async () => {
+    await client.query(
+      "UPDATE inventory_balances SET reserved_quantity = 0 WHERE organization_id = $1 AND warehouse_id = $2 AND product_id = $3",
+      [organizationId, warehouseId, productId],
+    );
+    const draft = await request(root() + "/counts/physical", {
+      reason: "Force audit failure to verify atomic rollback",
+      lines: [{ product_id: productId, counted_quantity: "7.000" }],
+    });
+    expect(draft.status).toBe(201);
+    const body = await draft.json() as { id: string };
+    await client.query(`CREATE FUNCTION test_fail_inventory_count_audit() RETURNS trigger
+      LANGUAGE plpgsql AS $
+      BEGIN
+        IF NEW.action = 'inventory.count.confirmed' THEN
+          RAISE EXCEPTION 'forced audit persistence failure';
+        END IF;
+        RETURN NEW;
+      END;
+      $`);
+    await client.query(`CREATE TRIGGER test_fail_inventory_count_audit
+      BEFORE INSERT ON audit_logs
+      FOR EACH ROW EXECUTE FUNCTION test_fail_inventory_count_audit()`);
+    let confirmation: Response;
+    try {
+      confirmation = await request(root() + "/counts/" + body.id + "/confirm");
+    } finally {
+      await client.query("DROP TRIGGER IF EXISTS test_fail_inventory_count_audit ON audit_logs");
+      await client.query("DROP FUNCTION IF EXISTS test_fail_inventory_count_audit()");
+    }
+    expect(confirmation!.status).toBe(500);
+    const persisted = await client.query<{ count_status: string; balance: string; movements: string; audits: string }>(
+      `SELECT c.status AS count_status,
+        (SELECT on_hand_quantity::text FROM inventory_balances b
+         WHERE b.organization_id = $1 AND b.warehouse_id = $3 AND b.product_id = $4) AS balance,
+        (SELECT count(*)::text FROM warehouse_inventory_movements m
+         WHERE m.organization_id = $1 AND m.count_id = $2) AS movements,
+        (SELECT count(*)::text FROM audit_logs a
+         WHERE a.organization_id = $1 AND a.entity_id = $2::text
+           AND a.action = 'inventory.count.confirmed') AS audits
+       FROM inventory_counts c WHERE c.organization_id = $1 AND c.id = $2`,
+      [organizationId, body.id, warehouseId, productId],
+    );
+    expect(persisted.rows[0]).toEqual({ count_status: "draft", balance: "8.000", movements: "0", audits: "0" });
+  });
+
   it("requires an active branch assignment for inventory members and revalidates revocation", async () => {
     await client.query(
       "UPDATE organization_members SET role = 'inventory' WHERE organization_id = $1 AND user_id = $2",

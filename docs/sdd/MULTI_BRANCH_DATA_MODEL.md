@@ -2,11 +2,11 @@
 
 ## Estado vivo verificado — 2026-11-04 UTC
 
-PR #196 permanece abierta Draft y sin merge; PR HEAD `1f54c5ca37824807fe1396f0b694d05decfb6e89` (documentación); código verificado `c754881435e9096cd85defbe7a4dab5cff429326`, base main `705d3db3220894c7d3baca8dc7e7a6b623dfbb94`. La rama contiene migración 0005, almacenes, balances, ledger append-only, conteos y endpoints de almacenes/conteos. Las migraciones 0001–0005 y assertions se ejecutaron en PostgreSQL desechable por CI; no se aplicaron a Neon.
+PR #196 permanece abierta Draft y sin merge; PR HEAD `39a6aaf184cbbe61f9d95a942f0cb63da79c588e` (documentación); código verificado `c754881435e9096cd85defbe7a4dab5cff429326`, base main `705d3db3220894c7d3baca8dc7e7a6b623dfbb94`. La rama contiene migración 0005, almacenes, balances, ledger append-only, conteos y endpoints de almacenes/conteos. Las migraciones 0001–0005 y assertions se ejecutaron en PostgreSQL desechable por CI; no se aplicaron a Neon.
 
 La autorización de conteos sigue siendo Owner/Admin/Inventory; Cashier no puede operar conteos. La matriz no define quién administra estructura de almacenes, por lo que crear/editar/desactivar almacenes permanece fuera del alcance. El contrato de locks está implementado para confirmación de conteos y documenta el orden obligatorio para futuros escritores; ventas, reservas, recepción, devoluciones y transferencias todavía no existen como rutas.
 
-No hay backfill de `products.stock_quantity`, no se modificó main ni se alteraron datos reales. CI completo del HEAD indicado terminó en success. Micro-app no está listo para producción.
+No hay backfill de `products.stock_quantity`, no se modificó main ni se alteraron datos reales. CI completo del código `c754881` y del commit documental anterior `1f54c5c` terminó en success; el HEAD documental actual `39a6aaf` contiene solo esta corrección de referencias y está en revalidación. Micro-app no está listo para producción.
 
 ## Snapshot histórico — implementación inicial de base de inventario por almacén (2026-11-04)
 

@@ -2,9 +2,9 @@
 
 ## Estado vivo verificado — 2026-11-04 UTC
 
-PR #196 está abierta y Draft, sin merge. PR HEAD `1f54c5ca37824807fe1396f0b694d05decfb6e89` (documentación); código verificado `c754881435e9096cd85defbe7a4dab5cff429326`; base main `705d3db3220894c7d3baca8dc7e7a6b623dfbb94`.
+PR #196 está abierta y Draft, sin merge. PR HEAD `39a6aaf184cbbe61f9d95a942f0cb63da79c588e` (documentación); código verificado `c754881435e9096cd85defbe7a4dab5cff429326`; base main `705d3db3220894c7d3baca8dc7e7a6b623dfbb94`.
 
-Los checks de este HEAD terminaron en success: build/typecheck, API unit tests 97/97, web tests 6/6 (1 test Preview-only omitido en runner normal y verificado en Preview real), PostgreSQL auth 18/18, branch scope 7/7, register shifts 5/5, cashier open-shift 7/7, catálogo 8/8, product create 8/8, product update 7/7, inventory counts 9/9, Chromium/Playwright 4/4, SAST, Trivy, dependency review, secret scan, backup/restore y dashboard. El workflow independiente ejecutó realmente migraciones 0001–0005 y sus assertions contra PostgreSQL desechable.
+Los checks del código `c754881` y del commit documental anterior `1f54c5c` terminaron en success; el HEAD documental actual `39a6aaf` contiene solo esta corrección de referencias y está en revalidación: build/typecheck, API unit tests 97/97, web tests 6/6 (1 test Preview-only omitido en runner normal y verificado en Preview real), PostgreSQL auth 18/18, branch scope 7/7, register shifts 5/5, cashier open-shift 7/7, catálogo 8/8, product create 8/8, product update 7/7, inventory counts 9/9, Chromium/Playwright 4/4, SAST, Trivy, dependency review, secret scan, backup/restore y dashboard. El workflow independiente ejecutó realmente migraciones 0001–0005 y sus assertions contra PostgreSQL desechable.
 
 Pages/Workers son previews aislados; Pages informa login/datos deshabilitados, Worker `/health` responde 200 y `/auth/me` responde 503. No se modificó Neon producción ni se desplegó a producción.
 

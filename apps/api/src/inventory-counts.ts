@@ -194,7 +194,7 @@ export function registerInventoryCountRoutes(app: Hono<{ Bindings: Bindings }>):
           const branch = await resolveBranchContext(tx, tenant, branchId);
           if (!branch) return { kind: "branch_denied" as const };
 
-          const lockedWarehouses = await lockInventoryWarehouses(tx, tenant.organizationId, [warehouseId]);
+          const lockedWarehouses = await lockInventoryWarehouses(tx, tenant.organizationId, [{ warehouseId, branchId: branch.branchId }]);
           if (!lockedWarehouses) return { kind: "not_found" as const };
           const countResult = await tx.query<{
             id: string; count_type: "opening" | "physical"; status: "draft" | "confirmed" | "cancelled"; reason: string;

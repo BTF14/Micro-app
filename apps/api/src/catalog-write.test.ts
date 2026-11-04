@@ -4,10 +4,10 @@ import app from "./index";
 const organizationId = "11111111-2222-4333-8444-555555555555";
 const frontendOrigin = "https://frontend.example";
 
-function request(path: string, init: RequestInit, origin = frontendOrigin): Promise<Response> {
+async function request(path: string, init: RequestInit, origin = frontendOrigin): Promise<Response> {
   const headers = new Headers(init.headers);
   headers.set("Origin", origin);
-  return app.fetch(
+  return await app.fetch(
     new Request("https://api.example" + path, { ...init, headers }),
     { FRONTEND_ORIGIN: frontendOrigin },
   );

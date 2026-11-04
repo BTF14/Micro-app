@@ -1,98 +1,64 @@
-# Instructions for AI agents — Micro app
+# Instrucciones para agentes — Micro app
 
-## Required startup sequence
+Este archivo es el punto de entrada operativo. La autoridad normativa está en `docs/CONSTITUTION.md`; los procedimientos detallados se cargan según la tarea. No conviertas la lectura de documentación en un requisito ceremonial.
 
-Before planning or editing:
-1. Read `docs/CURRENT_STATE.md` first; it is the authoritative concise live-state checkpoint and supersedes stale SHA/status snapshots in historical documents. Re-verify GitHub live before acting.
-2. Read `docs/HANDOFF_NEXT_CHAT.md` for the continuation protocol and copyable prompt.
-3. Read and follow `docs/AI_COLLABORATION_AND_PR_POLICY.md` for mandatory PR scope, review fallback, verification, merge gates, and cross-chat continuity.
-4. Read `docs/PROJECT_PLAN.md`, `docs/STATE_JOURNAL.md`, `docs/RESOURCE_REGISTRY.md`, `docs/SECURITY_ROADMAP.md`, `docs/COMPLIANCE_AND_ACCESSIBILITY.md`, and `docs/GENTLEMAN_PROGRAMMING_EVALUATION.md`.
-5. Read the domain-specific documents relevant to the change (architecture, database schema/review, API integration, security plan, compliance, inspiration).
-6. Before any frontend UI/UX design or implementation, read `docs/FRONTEND_DESIGN_STANDARD.md` and follow it together with `.agents/skills/micro-app-stack-guidance/SKILL.md`.
-7. Verify live GitHub state: current `main` SHA, branch heads, pull requests, and GitHub Actions for the exact SHA. Historical documentation is a lead, not proof of current state.
-8. Separate verified facts, hypotheses, and unknowns. Never fill missing evidence by guessing.
+## Inicio de cada tarea
 
-## Project agent skills
+1. Verifica en vivo el repositorio, rama, HEAD, base, PR relacionadas y checks pertinentes. No confíes en SHA o estados copiados de snapshots.
+2. Si estás retomando trabajo, lee `docs/HANDOFF_NEXT_CHAT.md`. Para una pregunta de estado, consulta `docs/CURRENT_STATE.md` por secciones concretas; no leas el archivo completo por rutina.
+3. Lee `docs/CONSTITUTION.md` y esta guía. Para cambios de PR/merge, consulta `docs/AI_COLLABORATION_AND_PR_POLICY.md`.
+4. Carga solo los documentos y skills del dominio afectado. Consulta `docs/STATE_JOURNAL.md` y `docs/RESOURCE_REGISTRY.md` cuando necesites decisiones históricas o evidencia de herramientas; no son lecturas obligatorias en cada sesión.
+5. Separa hechos verificados, inferencias, hipótesis, desconocidos y bloqueos.
 
-- Before work that matches a project skill, read the relevant `.agents/skills/<skill-name>/SKILL.md`: `micro-app-auth-security` for identity/session/authorization, `micro-app-postgres-testing` for DB/migrations/transactions, `micro-app-stack-guidance` for React/Vite + Hono/Workers changes, and `micro-app-skill-curation` for evaluating/installing skills.
-- These four files are project-owned instructions, not proof that external packages or tools are installed. Follow their safety boundaries and the live checkpoint.
-- AutoSkills external installation remains pending because its CLI could not be run in the current shell due to DNS/network failure. In a network-enabled checkout, start with `npx autoskills --dry-run`; inspect the proposal, source, license, security review, and hashes before installation. Do not fabricate `skills-lock.json` or install irrelevant framework skills.
-- Never let a skill override repository policy, product/security approvals, the $0 budget, or restrictions on production and Neon `main`.
+## Autonomía y responsabilidad
 
-## Security priority — approved by the owner 2026-10-26
+- Actúa como responsable técnico: investiga, decide detalles técnicos rutinarios, implementa, prueba, revisa y documenta el trabajo autorizado de principio a fin.
+- No pidas al propietario que elija entre alternativas técnicas que puedes resolver con evidencia. Explica la decisión y continúa.
+- No solicites permiso repetido para cambios reversibles, acotados y ya autorizados.
+- Consulta solo ante decisiones reales de producto, cambios de requisitos, ambigüedad material, permisos/roles, riesgos financieros, acciones destructivas/irreversibles o una frontera explícita de autoridad.
+- Si una herramienta, permiso o dato realmente falta, prueba la alternativa segura disponible y comunica el bloqueo concreto. No finjas que ejecutaste una herramienta ni esperes pasivamente cuando puedas avanzar por otra vía.
 
-The owner explicitly prioritized correctness and security over speed: implement and respect every item in `docs/SECURITY_ROADMAP.md`, in the tiered order it defines (Nivel 1 before resuming business-logic work, Nivel 2 before any new human gets access, Nivel 3 as the team grows). Do not skip or relax any item in that document to move faster without a new, explicit instruction from the owner. Update that document's "Estado" field with real evidence whenever a item is completed — never mark something done without a merged PR with green checks, or an explicit confirmation from the owner for steps that require their manual action (e.g. GitHub branch protection, which this agent's network sandbox has been confirmed unable to configure via API — `403 Write access ... not permitted through this proxy` even with an admin-scoped token).
+## Límites no negociables
 
-## Non-negotiable project constraints
+- Micro-app es independiente de Cantina-pos y de cualquier otro proyecto.
+- Presupuesto objetivo: **USD 0**. No actives billing, planes de pago, tarjetas, suscripciones ni cargos automáticos.
+- No despliegues producción ni ejecutes cambios irreversibles sin la aceptación explícita requerida.
+- No mutar Neon `main` sin autorización específica y posterior al análisis, prueba aislada y gate de recuperación de `docs/CONSTITUTION.md`. PostgreSQL desechable es el entorno primario de pruebas.
+- No conectar previews a producción ni a datos reales por conveniencia. Usa datos sintéticos y verifica aislamiento.
+- No expongas, registres ni versionees secretos, credenciales, tokens, cadenas de conexión o datos de clientes.
+- No envíes correos ni realices acciones externas en nombre del propietario sin autorización expresa.
+- No force-push. No fusiones a ciegas: inspecciona el diff completo, base, conflictos, checks y gates. Respeta instrucciones específicas que mantengan una PR abierta o Draft.
+- No modifiques PR, ramas, issues o recursos fuera del alcance autorizado.
+- No declares producción lista, seguridad certificada, despliegue activo, herramienta instalada o agente ejecutándose sin evidencia actual.
 
-- This repository is the independent Micro app project. Never mix it with Cantina-pos or other projects.
-- Target total cost is **$0**. Do not enable billing, paid plans, cards, subscriptions, or automatic charges.
-- Neon primary branch `main` is production-sensitive, not permanently read-only. The AI may apply a necessary, justified mutation only after the production-change gate in `docs/CONSTITUTION.md` is satisfied. **Use disposable PostgreSQL as the first-line test environment. Create/use an isolated Neon branch only when it adds a specific validation that disposable PostgreSQL/CI cannot provide**, with synthetic data, expiry and cleanup. Never use Neon main as a laboratory. Destructive, data-deleting, hard-to-reverse, high-uncertainty, or business-critical data changes require explicit user approval before execution. Never proceed without a verified recovery path, target identity, reviewed migration/SQL, and post-change validation.
-- Do not deploy production or make irreversible changes without explicit user acceptance.
-- Never commit or disclose secrets, credentials, access tokens, customer data, or database connection strings.
-- Do not send emails; only the user can authorize sending.
-- The user has authorized safe autonomous code/documentation changes and commits/pushes. Do not ask the user to repeat permissions/connections unless a concrete blocker is demonstrated.
-- No force-push. `feat/neon-transaction-adapter` is historical: its work was integrated via PR #1. Do not reopen or merge that branch again. Never blind-merge any future branch; inspect its complete diff against current `main` first.
-- Identity status must follow `docs/API_INTEGRATION.md` and live code, not historical static reviews: Google OAuth + allowlist, state/PKCE, revocable session, and Google `email_verified` validation were implemented in PRs #153/#155. Password login/registration remain fail-closed/disabled; account recovery, MFA, full session lifecycle/cleanup, and operation-level authorization remain pending. Never equate authentication with commercial readiness.
-- Do not claim a tool, persistent-memory service, agent, or test is installed/running/passing unless there is current evidence. Existing `.github/agents/*.agent.md` files are reusable role instructions, not proof of active autonomous subagents.
-- Do not state workflows are green without verifying their conclusion for the exact current SHA.
+## Seguridad y calidad
 
-## README synchronization after verified progress
+- La autenticación no sustituye autorización. Valida tenant, sucursal, rol y propiedad en servidor y base de datos según el dominio.
+- Para dinero, inventario, reservas y movimientos: prioriza constraints, transacciones, idempotencia, orden de locks, concurrencia y auditoría.
+- Inspecciona callers y contratos antes de cambiar interfaces, schema, auth o configuración.
+- Ejecuta pruebas proporcionales al riesgo y verifica CI en el SHA exacto del HEAD final. Distingue unit, integración, E2E, preview y producción.
+- No rebajes ni omitas gates de `docs/SECURITY_ROADMAP.md`; aplícalos a las áreas y fases que cubre, sin convertirlos en un bloqueo artificial para documentación, investigación o mantenimiento no relacionado.
+- Un check verde no demuestra por sí solo readiness de producción.
 
-Whenever a concrete project advance is completed and verified (for example, a feature or security milestone merged with its required checks, or an operational capability proven with reproducible evidence), update `README.md` in the same coherent change or immediately afterward. Describe only the verified current product state, architecture and setup; distinguish implemented, tested, proposed and pending capabilities. Do not advertise incomplete modules, future plans, preview-only behavior or unverified capacity as available. For documentation-only planning, failed/incomplete work or an unverified change, do not present it as a completed product capability; update continuity documents instead. Review README claims against code, tests and live GitHub state before committing.
+## SDD y Spec Kit
 
-- Prefer small, reversible, scoped changes with clear acceptance criteria.
-- Inspect existing implementation and callers before changing interfaces, schema, auth, or deployment configuration.
-- Run relevant tests where available. Record exact command, environment, outcome, SHA, and what was not tested.
-- For GitHub Actions, record the workflow run URL and exact `head_sha`; a successful documentation-only CI run does not certify production readiness or absence of vulnerabilities.
-- Update `docs/STATE_JOURNAL.md`, `docs/PROJECT_PLAN.md`, and `docs/HANDOFF_NEXT_CHAT.md` after significant checkpoints. Keep journal history append-only and clearly mark the newest verified state.
-- Update `docs/RESOURCE_REGISTRY.md` when evaluating tools/sources. Record date, source, conclusion, caveats, and whether the tool was actually executed.
-- If documents conflict, verify the code and live GitHub evidence, resolve the contradiction, and document the correction.
-- Do not install Gentleman-Programming tools merely because they are documented. Follow `docs/GENTLEMAN_PROGRAMMING_EVALUATION.md`, confirm licence, dependencies, provider requirements, security and $0 cost, and test in isolation first.
+- Usa el nivel de proceso proporcional al riesgo, según `docs/SDD_WORKFLOW.md`.
+- SDD completo para auth/roles/tenant, cambios de datos o migraciones, inventario, ventas/pagos, impuestos/tasas, seguridad e infraestructura.
+- Para bugs acotados, refactors pequeños o documentación, usa un alcance breve y validación proporcional; no exijas tres artefactos para una errata.
+- Si Spec Kit está instalado en el checkout, usa sus comandos/artefactos para el flujo SDD. Si no está instalado o el runtime no puede invocarlo, sigue `docs/SDD_WORKFLOW.md` y `templates/sdd/`; no afirmes que Spec Kit está activo.
+- Spec Kit es una herramienta de proceso. No puede reemplazar ni rebajar esta guía, la Constitución ni las políticas de seguridad.
 
-## Current priorities — authoritative source
+## Skills y agentes
 
-Do not maintain a second, potentially stale project-status list in this file. Current priorities, issue gates, PR/branch state and next actions are maintained in `docs/CURRENT_STATE.md` and `docs/HANDOFF_NEXT_CHAT.md`. Read those documents and verify GitHub live on every session before planning or editing.
+- Lee una skill de `.agents/skills/` solo cuando la tarea corresponda a su ámbito. Son instrucciones versionadas, no evidencia de software externo instalado.
+- Los perfiles `.github/agents/*.agent.md` describen roles. Solo afirma que un subagente fue lanzado si el runtime confirma una ejecución real.
+- Si no hay delegación real, realiza pasadas de revisión independientes (arquitectura, seguridad/datos, QA y documentación según corresponda) y dilo con claridad.
+- No habilites hooks, servicios, MCPs o agentes externos sin revisar licencia, coste, permisos, seguridad y procedimiento de desinstalación.
 
-Stable guardrails remain mandatory regardless of the current task:
-- Keep the project cost target at USD 0.
-- Use disposable PostgreSQL as the first-line migration/test environment; do not use Neon `main` as a laboratory.
-- Do not implement commercial endpoints or operation-level permissions before explicit approval of the role-permission matrix.
-- Do not treat context resolvers as authorization.
-- Do not claim production readiness, deployed behavior, external AI review, or test success without exact current evidence.
-- Follow all other constraints in this file, `docs/CONSTITUTION.md`, `docs/AI_COLLABORATION_AND_PR_POLICY.md`, and the relevant domain policies.
+## Evidencia y continuidad
 
-## Gentleman-Programming integrations
-
-- Read `docs/GENTLEMAN_IMPLEMENTATION.md` before enabling GGA, Engram, Gentle-AI, or Gentle Shell.
-- `.gga` is configured for a local Ollama provider to preserve the $0 budget; it does not mean GGA/Ollama are installed or running.
-- Never install or enable a Git hook automatically. First verify GGA + provider manually on a small, non-sensitive diff; document exact evidence and the uninstall path.
-- Engram is supplementary local memory, not the source of truth and not available to all chats automatically. Never store secrets or customer data in it.
-- Do not state any Gentleman tool is active until its installed version and a successful test are recorded.
-
-## Backups and recovery — mandatory
-
-- Read `docs/BACKUP_AND_RECOVERY.md` before any real-data migration, destructive operation, or production-sensitive change.
-- Never claim that automatic backups or restoration are working without current evidence. As of the documented checkpoint, independent automated backups and a successful restore have not been verified.
-- The target policy is daily automated database backups to an independent private encrypted destination, plus a health/restore review every 15 days. This is a design target, not a claim of implementation.
-- Do not commit database dumps, customer data, inventory exports, sales, payment records, credentials, or connection strings. Do not use GitHub artifacts as an improvised permanent backup destination.
-- Before the first real Neon `main` mutation, verify an actual recovery path. Neon Free's short PITR window is an extra recovery layer, not a substitute for independent backups.
-
-
-## Autonomous execution and review fallback
-
-- Treat `docs/CONSTITUTION.md` §9A as mandatory policy. For authorized engineering work, own the technical sequence end to end: inspect live repository/CI/docs, decide routine reversible implementation details, implement, test, review, document, and report.
-- Prefer the safest proportionate, maintainable and verifiable solution within the $0 budget. Do not offer A/B/C menus or ask for repeated permission on routine technical choices that can be settled from evidence. Explain the decision briefly.
-- Use available repository, CI, and documentation tools rather than delegating checks to the user. Ask for user action only when a real product decision, approval boundary, missing access, or unavailable capability blocks progress; request only the minimum needed.
-- Autonomy never authorizes changing product requirements or security/access policy, deploying production, mutating Neon `main`, using real data, exposing secrets/tokens, spending money, or performing destructive/irreversible actions. Preserve explicit approval gates.
-- Before completion, verify the exact branch/head SHA and full diff; run relevant tests; review security/regressions; confirm required CI/SAST/E2E on that exact SHA; and update the handoff, plan, and journal when appropriate. Separate recommended, approved, implemented, and verified states.
-- Keep continuity in repository documents, not only chat memory. Report blockers precisely and never claim a test, merge, deployment, or fix without evidence.
-
-### Manual review fallback when an AI reviewer is unavailable
-
-- A quota/rate-limit failure is an incomplete review, not approval and not proof of a defect. Record the exact attempted SHA.
-- Retrieve original inline comments/review threads when available. Do not infer findings from a summary status alone.
-- If review details are unavailable, manually inspect the complete diff against the base, trace changes into relevant callers/tests, and record only concrete evidence-based findings with path/line/impact/test where possible.
-- CI, SAST, and E2E complement but do not replace code review. Verify all required checks on the exact current head.
-- Do not repeatedly trigger a quota-limited reviewer or pay to bypass it. Resume when capacity is available or use an already-authorized alternative.
-- Do not merge while required checks are pending/unverified, or while material findings remain unresolved. Document the limitation and next action in the handoff.
+- Registra comandos, entorno, SHA, resultados y límites de las pruebas. No extrapoles evidencia de un commit anterior.
+- Revisa el diff completo y busca regresiones, secretos, cambios de permisos y efectos secundarios.
+- Actualiza `docs/CURRENT_STATE.md`, `docs/STATE_JOURNAL.md` y `docs/HANDOFF_NEXT_CHAT.md` cuando el trabajo cambie de forma significativa el estado o el punto de continuidad; no dupliques el diario en todos los documentos.
+- Actualiza `README.md` solo cuando cambie de forma verificada el producto público, la instalación o la arquitectura; no por cambios internos de documentación.
+- Mantén explícita la diferencia entre recomendado, aprobado, implementado y verificado.

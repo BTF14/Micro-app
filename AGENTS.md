@@ -43,13 +43,14 @@ Este archivo es el punto de entrada operativo. La autoridad normativa está en `
 - No implementes nuevos endpoints comerciales ni permisos de operación hasta que el propietario haya aprobado explícitamente la matriz de permisos por rol.
 - Un check verde no demuestra por sí solo readiness de producción.
 
-## SDD y Spec Kit
+## ODD — flujo operativo
 
-- Usa el nivel de proceso proporcional al riesgo, según `docs/SDD_WORKFLOW.md`.
-- SDD completo para auth/roles/tenant, cambios de datos o migraciones, inventario, ventas/pagos, impuestos/tasas, seguridad e infraestructura.
-- Para bugs acotados, refactors pequeños o documentación, usa un alcance breve y validación proporcional; no exijas tres artefactos para una errata.
-- Si Spec Kit está instalado en el checkout, usa sus comandos/artefactos para el flujo SDD. Si no está instalado o el runtime no puede invocarlo, sigue `docs/SDD_WORKFLOW.md` y `templates/sdd/`; no afirmes que Spec Kit está activo.
-- Spec Kit es una herramienta de proceso. No puede reemplazar ni rebajar esta guía, la Constitución ni las políticas de seguridad.
+- Sigue `docs/ODD_WORKFLOW.md` en toda petición: autorizar, explorar, resolver incertidumbre, clasificar, registrar solo cuando el trabajo lo requiera, implementar/verificar y cerrar.
+- ODD es el flujo predeterminado; no pidas al propietario que invoque fases ni generes planes/artefactos para cambios pequeños y claros.
+- Para trabajo sustancial/crítico, crea un único `odd/tasks/<feature>.md` antes de modificar código fuente. Git es la fuente durable; Engram no está asumido ni es requisito.
+- En trabajo crítico conserva especificaciones técnicas, pruebas de concurrencia, gates de seguridad, recuperación y aprobaciones de producto/datos. ODD no reduce esos controles.
+- `docs/sdd/` conserva modelos, decisiones y contratos de dominio vigentes. `docs/SDD_WORKFLOW.md`, `templates/sdd/` y `skills/feature-sdd/` quedan como compatibilidad histórica, no como flujo operativo activo.
+- Spec Kit no se instalará ni invocará como flujo por defecto; su evaluación anterior queda archivada en `docs/SPEC_KIT_ADOPTION.md`.
 
 ## Skills y agentes
 

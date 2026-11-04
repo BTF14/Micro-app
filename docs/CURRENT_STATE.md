@@ -3,12 +3,12 @@
 ## Actualización de gobernanza ODD — 2026-11-04
 
 - El flujo operativo predeterminado pasa a **Organic Driven Development (ODD)**; ver `docs/ODD_WORKFLOW.md`. SDD deja de ser el workflow activo, pero los documentos `docs/sdd/` siguen siendo contratos, modelos y decisiones de dominio vigentes.
-- PR #197: abierta, Draft, sin merge; título actualizado a `chore: adopt ODD and streamline agent governance`. Rama `chore/agent-governance-speckit-20261104`. El HEAD debe consultarse en GitHub en vivo; la última lectura anterior a esta actualización documental fue `4e8c6dddee374e548ba69ed54de8fc83cd788571`.
+- PR #197: abierta, Draft, sin merge; título `chore: adopt ODD and streamline agent governance`. Rama `chore/agent-governance-speckit-20261104`. Consultar el HEAD actual en GitHub; esta PR recibió varios commits documentales después de crear este checkpoint.
 - Se añadió `docs/ODD_WORKFLOW.md` y el registro de trabajo `odd/tasks/agent-governance-odd-adoption.md`. `AGENTS.md`, Constitución y perfiles de agentes fueron alineados con ODD.
 - `docs/SDD_WORKFLOW.md` es ahora un redirect histórico. La propuesta Spec Kit v1.3.0 se archivó porque la CLI nunca se instaló ni ejecutó; no debe tratarse como herramienta activa.
 - ECC y `tester-army/e2e` fueron revisados documentalmente. Ninguno se instaló, ejecutó ni añadió al CI. ECC se evaluará por componentes; E2E agentic solo como piloto opcional, complementario a pruebas deterministas.
 - No se tocaron `main`, PR #196, PR #190/#193, issue #53, Neon producción, datos reales, secretos, dependencias, hooks ni despliegues.
-- Los checks del nuevo HEAD tras esta actualización aún deben verificarse. No fusionar ni marcar producción lista.
+- La comparación más reciente registró 30 commits ahead / 0 behind y 18 archivos modificados. El conector no devolvió workflow runs ni combined statuses para los últimos commits creados vía API; por tanto, **no hay evidencia CI del HEAD final**. ODD-09 permanece pendiente. No fusionar ni marcar producción lista.
 
 ---
 

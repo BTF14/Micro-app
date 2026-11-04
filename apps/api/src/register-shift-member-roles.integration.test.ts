@@ -110,19 +110,33 @@ const suite = describe.skipIf(!isDisposablePostgresUrl(databaseUrl))(
         "UPDATE branch_memberships SET is_active = true WHERE organization_id = $1 AND branch_id = $2 AND user_id = $3",
         [data.organizationId, data.branchId, data.users.owner],
       );
+
+      // Every scope component that makes the shift operable remains active
+      // until its owner closes the shift.
+      await client.query(
+        "UPDATE organization_members SET is_active = false WHERE organization_id = $1 AND user_id = $2",
+        [data.organizationId, data.users.inventory],
+      );
+      await expect(open(data, data.users.inventory)).rejects.toMatchObject({ code: "23514" });
+      await client.query(
+        "UPDATE organization_members SET is_active = true WHERE organization_id = $1 AND user_id = $2",
+        [data.organizationId, data.users.inventory],
+      );
+
       const shiftId = await open(data, data.users.owner);
-      await expect(
-        client.query(
-          "UPDATE organization_members SET role = 'inventory' WHERE organization_id = $1 AND user_id = $2",
-          [data.organizationId, data.users.owner],
-        ),
-      ).rejects.toMatchObject({ code: "23514" });
-      await expect(
-        client.query(
-          "UPDATE organization_members SET is_active = false WHERE organization_id = $1 AND user_id = $2",
-          [data.organizationId, data.users.owner],
-        ),
-      ).rejects.toMatchObject({ code: "23514" });
+      const blockedUpdates = [
+        ["UPDATE organization_members SET role = 'inventory' WHERE organization_id = $1 AND user_id = $2", [data.organizationId, data.users.owner]],
+        ["UPDATE organization_members SET is_active = false WHERE organization_id = $1 AND user_id = $2", [data.organizationId, data.users.owner]],
+        ["UPDATE branch_memberships SET is_active = false WHERE organization_id = $1 AND branch_id = $2 AND user_id = $3", [data.organizationId, data.branchId, data.users.owner]],
+        ["UPDATE app_users SET is_active = false WHERE id = $1", [data.users.owner]],
+        ["UPDATE branches SET is_active = false WHERE organization_id = $1 AND id = $2", [data.organizationId, data.branchId]],
+        ["UPDATE registers SET is_active = false WHERE organization_id = $1 AND id = $2", [data.organizationId, data.registerId]],
+        ["UPDATE organizations SET is_active = false WHERE id = $1", [data.organizationId]],
+      ] as const;
+      for (const [sql, values] of blockedUpdates) {
+        await expect(client.query(sql, values)).rejects.toMatchObject({ code: "23514" });
+      }
+
       await close(shiftId, data.users.owner);
       await client.query(
         "UPDATE organization_members SET role = 'inventory' WHERE organization_id = $1 AND user_id = $2",

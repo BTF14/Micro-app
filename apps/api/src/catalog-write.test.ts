@@ -69,4 +69,21 @@ describe("POST /api/orgs/:organizationId/catalog input and origin guards", () =>
     expect(response.status).toBe(401);
   });
 
+  it("caps the streamed request body even when Content-Length is absent", async () => {
+    const response = await request("/api/orgs/" + organizationId + "/catalog", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Cookie: "microapp_session=synthetic-token",
+      },
+      body: JSON.stringify({
+        sku: "TOO-LARGE",
+        name: "Too large",
+        price_usd: "1.00",
+        description: "x".repeat(17 * 1024),
+      }),
+    });
+    expect(response.status).toBe(413);
+  });
+
 });

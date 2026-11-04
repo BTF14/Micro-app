@@ -120,7 +120,6 @@ describe("inventory transaction lock helpers", () => {
   it("rejects invalid balance lock identifiers without querying PostgreSQL", async () => {
     const validOrganization = "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa";
     const validWarehouse = "00000000-0000-4000-8000-000000000001";
-    const validProduct = "10000000-0000-4000-8000-000000000001";
     const { tx, calls } = fakeTransaction([]);
 
     await expect(lockInventoryBalances(tx, "not-a-uuid", [validWarehouse])).resolves.toBeNull();

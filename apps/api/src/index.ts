@@ -65,7 +65,7 @@ app.use("*", async (c, next) => {
 
 const PRODUCTION_WORKER_HOST = "micro-app-api.btfcasheb.workers.dev";
 
-app.use("*", (c, next) => {
+app.use("*", async (c, next) => {
   const requestHost = new URL(c.req.url).hostname.toLowerCase();
   const isWorkersDevPreview = requestHost.endsWith(".workers.dev") && requestHost !== PRODUCTION_WORKER_HOST;
   if ((c.env?.APP_ENV === "preview" || isWorkersDevPreview) && c.req.path !== "/health") {

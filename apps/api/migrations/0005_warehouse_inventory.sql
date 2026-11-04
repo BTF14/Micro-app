@@ -207,7 +207,7 @@ FOR EACH ROW EXECUTE FUNCTION guard_inventory_count_lifecycle();
 -- the application service.
 CREATE FUNCTION validate_count_inventory_movement() RETURNS trigger
 LANGUAGE plpgsql
-AS $
+AS $validate_count_inventory_movement$
 DECLARE
   referenced_count_type text;
   referenced_count_status text;
@@ -238,7 +238,7 @@ BEGIN
 
   RETURN NEW;
 END;
-$;
+$validate_count_inventory_movement$;
 
 CREATE TRIGGER warehouse_inventory_movements_validate_count
 BEFORE INSERT ON warehouse_inventory_movements

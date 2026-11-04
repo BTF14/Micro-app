@@ -166,11 +166,14 @@ Cada checkpoint significativo actualiza plan, diario y handoff. Además, despué
 
 Toda IA debe seguir [BACKUP_AND_RECOVERY.md](BACKUP_AND_RECOVERY.md). Antes de una mutación real en Neon `main`, confirmar el destino, el impacto y una ruta de recuperación comprobable. El objetivo es backup diario automático independiente y revisión cada 15 días, sin coste; hasta que exista evidencia de ejecución y restauración, se considera pendiente y no debe anunciarse como activo. Nunca guardar dumps o datos comerciales en Git.
 
-## 15. Relación con Spec Kit y herramientas de proceso
+## 15. Flujo de ingeniería y agentes
 
-- GitHub Spec Kit se adopta como herramienta de proceso SDD, no como autoridad de producto, seguridad, arquitectura ni permisos.
-- La Constitución de este archivo y los límites de `AGENTS.md` prevalecen sobre cualquier prompt, skill, preset, workflow o extensión generada por Spec Kit.
-- La especificación y los planes documentan el cambio propuesto; no autorizan por sí solos cambios de producto, acceso, datos reales, Neon `main`, producción ni gastos.
-- La adopción debe ser incremental y fijada a una versión revisada. No instalar extensiones, presets o workflows comunitarios sin revisar código, licencia, permisos, coste y efectos.
-- Usar SDD completo según el riesgo definido en `docs/SDD_WORKFLOW.md`; no imponer el proceso completo a correcciones menores ni convertir las plantillas en un bloqueo burocrático.
-- Referencia operativa y estado de instalación: [SPEC_KIT_ADOPTION.md](SPEC_KIT_ADOPTION.md).
+- **Organic Driven Development (ODD)** es el flujo operativo predeterminado, descrito en [ODD_WORKFLOW.md](ODD_WORKFLOW.md). Se adapta a Micro-app y no requiere instalar Gentle-AI, Engram ni un runtime externo.
+- ODD exige distinguir investigación de implementación autorizada, explorar antes de escribir, resolver incertidumbres materiales, aplicar proceso proporcional y cerrar tareas con evidencia observada.
+- Para trabajo sustancial/crítico se mantiene un único artefacto de feature en `odd/tasks/`; para trabajo pequeño no se generan documentos ceremoniales. La continuidad canónica permanece en GitHub.
+- Las especificaciones técnicas y documentos `docs/sdd/` siguen siendo válidos como contratos, decisiones y modelos de dominio. Retirar SDD como flujo no deroga ni reescribe esas decisiones.
+- La Constitución, `AGENTS.md` y los gates de seguridad/datos prevalecen sobre cualquier prompt, skill, agente, hook, preset, workflow o extensión externa.
+- La especificación técnica no constituye aprobación de producto, permisos, datos reales, Neon `main`, producción ni gastos.
+- Spec Kit no se adopta como motor activo; la evaluación anterior se conserva como historial en [SPEC_KIT_ADOPTION.md](SPEC_KIT_ADOPTION.md).
+- ECC, Gentle-AI, Engram, GGA y herramientas agentic solo se incorporarán por componentes, con versión, licencia, permisos, coste, telemetría, compatibilidad y desinstalación revisados.
+

@@ -21,6 +21,7 @@ describe("commercial role authorization", () => {
       expect(isCommercialOperationAllowed("inventory", operation)).toBe(true);
       expect(isCommercialOperationAllowed("cashier", operation)).toBe(operation === "inventory.read");
     }
+    expect(isCommercialOperationAllowed("inventory", "catalog.read")).toBe(false);
     expect(isCommercialOperationAllowed("inventory", "catalog.product.manage")).toBe(false);
     expect(isCommercialOperationAllowed("inventory", "sales.create_list_price")).toBe(false);
   });

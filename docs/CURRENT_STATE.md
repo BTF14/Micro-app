@@ -2,11 +2,12 @@
 
 ## Estado vivo verificado — 2026-11-04 UTC
 
-- PR #196 sigue abierta y Draft, sin merge; rama `feat/catalog-api-vertical-slice-20261104`, HEAD `235f62f61a13c01cadec3f666e82273102b73a80`.
-- CI completo del HEAD: build/typecheck, migración PostgreSQL, unit tests, auth/branch/shift/catalog integration, inventario por almacén (3/3), Chromium smoke, SAST/Trivy, dependency review, backup/restore sintético y builds Cloudflare: todos success.
+- PR #196 sigue abierta y Draft, sin merge; rama `feat/catalog-api-vertical-slice-20261104`. HEAD actual `5387637e710259c14d7bfdbaf9c33560752ae699`; los commits documentales finales están en CI y aún no se declara su resultado.
+- HEAD de aplicación inmediatamente anterior `1eb8da0006061749772e1afd93fa9901f155067b`: todos los checks CI success, incluida la nueva prueba PostgreSQL de doble confirmación concurrente (una sola escritura de ledger y auditoría), build/typecheck, migraciones, Chromium, SAST/Trivy, backup/restore y builds Cloudflare.
 - La PR incorpora catálogo GET/POST/PATCH con baja lógica, migración 0005 y endpoints de listado de almacenes/conteos y creación/confirmación de conteos opening/physical. Conteos transaccionales, ledger append-only, balances, auditoría y protección de reservas están cubiertos por integración PostgreSQL.
+- Se añadió `docs/sdd/PURCHASE_RECEIPT_MODEL.md`: recepción autorizada por matriz, pero aún no implementada; reglas de orden de compra, recepción parcial/excedente, valoración/costes y diferencias quedan explícitamente pendientes. Documentación de permisos multi-sucursal reconciliada.
 - La migración y endpoints viven solo en la rama de PR; no están en main ni aplicados a Neon. No hubo despliegue a producción.
-- No confundir esta aprobación de CI con preparación total de Micro-app: siguen pendientes recepción de compras, ventas/pagos/devoluciones, transferencias, administración de almacenes, rate limiting runtime, E2E comerciales completos, RPO/RTO medidos, alertas y verificación de coste $0.
+- No confundir CI de esta vertical slice con preparación total de Micro-app: siguen pendientes recepción de compras, ventas/pagos/devoluciones, transferencias, administración de almacenes, rate limiting runtime, E2E comerciales completos, RPO/RTO medidos, alertas y verificación de coste $0.
 
 ## Corrección de estado vivo — 2026-11-04 UTC
 

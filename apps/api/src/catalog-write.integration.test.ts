@@ -191,7 +191,7 @@ describe.skipIf(!databaseUrl)("catalog product creation against PostgreSQL", () 
     expect(first.status).toBe(201);
     expect(second.status).toBe(409);
     const audit = await client!.query<{ count: string }>(
-      "SELECT count(*)::text AS count FROM audit_logs WHERE organization_id = $1 AND entity_type = 'product' AND action = 'product.created' AND metadata->>'sku' = 'DUPLICATE-SKU'",
+      "SELECT count(*)::text AS count FROM audit_logs WHERE organization_id = $1 AND entity_type = 'product' AND action = 'product.created' AND metadata->'snapshot'->>'sku' = 'DUPLICATE-SKU'",
       [organizationA],
     );
     expect(audit.rows[0]!.count).toBe("1");

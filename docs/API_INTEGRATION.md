@@ -1,3 +1,16 @@
+# Reconciliación de integración API — 2026-11-04
+
+Este bloque supersede los snapshots de integración fechados 2026-10-30 que aparecen más abajo.
+
+- `main` observado: `7b0f057b8c152515005feed40305143c0ebb94b0`.
+- PR #200 permanece abierta/Draft, HEAD `7d2ef3d5e9ced1d4e8d386110129d21eb53af045`; 19/19 check-runs success. La rama añade una vertical de catálogo/inventario y migración 0005; no está integrada en main ni aplicada a Neon.
+- Issue #78 está cerrada desde 2026-10-31 después de las verificaciones CORS y bundle frontend. No repetir el antiguo estado “CORS no verificado / issue abierta” como condición vigente; mantener workflows de regresión y reabrir solo con evidencia de regresión.
+- Issue #53 continúa abierta. La existencia de helpers de tenant/branch y checks de CI no demuestra que todas las rutas estén protegidas. Revisar autorización server-side, aislamiento cross-tenant/branch, writers y pruebas negativas.
+- La migración 0005 se ejecutó en PostgreSQL 18 desechable en CI, no en Neon main. Además, el SQL carece de transacción explícita y el workflow usa psql autocommit; resolver riesgo de aplicación parcial antes de cualquier ejecución remota.
+- No se desplegó ni modificó Cloudflare, Neon, secretos o producción.
+
+---
+
 # Estado actual de integración API — Micro app
 
 **GitHub/PR checkpoint — 2026-10-30 UTC:** `main` = `82386c6e9300e06f8fa209aa52995b939a72442a`; PR #178 OPEN, DRAFT, NOT MERGED, rama `docs/reconcile-role-model-and-cloudflare-20261030`. HEAD verificado antes de esta sincronización: `a45d84eb5f51e50d3a24f9d6858b5d14efb3ce6b`, 68 ahead / 0 behind. En ese SHA se observaron 11/11 workflow runs Actions success (9 PR + 2 push) y previews Cloudflare Pages/Workers exitosas. Este commit documental produce un SHA posterior; revalidar antes de cualquier decisión. No extrapolar checks/previews.

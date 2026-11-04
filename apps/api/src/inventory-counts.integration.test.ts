@@ -36,7 +36,7 @@ describe.skipIf(!databaseUrl)("warehouse inventory count transactions against Po
         "Content-Type": "application/json",
       },
       ...(body === undefined ? {} : { body: JSON.stringify(body) }),
-    }), { DATABASE_URL, FRONTEND_ORIGIN: "https://frontend.example" });
+    }), { DATABASE_URL: databaseUrl, FRONTEND_ORIGIN: "https://frontend.example" });
   }
 
   const root = () => `/api/orgs/${organizationId}/branches/${branchId}/warehouses/${warehouseId}`;

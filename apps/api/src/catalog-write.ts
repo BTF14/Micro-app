@@ -35,7 +35,7 @@ type ProductRow = {
 function boundedText(value: unknown, maxLength: number, required: boolean): string | null {
   if (typeof value !== "string") return null;
   const normalized = value.trim();
-  if ((!normalized && required) || normalized.length > maxLength) return null;
+  if ((!normalized && required) || normalized.length > maxLength || normalized.includes("\u0000")) return null;
   return normalized;
 }
 
@@ -95,6 +95,11 @@ export function registerCatalogWriteRoutes(app: Hono<{ Bindings: Bindings }>): v
       return c.json({ error: "PAYLOAD_TOO_LARGE", message: "El cuerpo de la solicitud excede el límite." }, 413);
     }
 
+    const sessionToken = getCookie(c, "microapp_session");
+    if (!sessionToken || sessionToken.length > 128) {
+      return c.json({ error: "UNAUTHENTICATED", message: "Inicia sesión para continuar." }, 401);
+    }
+
     let rawBody: string;
     try {
       rawBody = await c.req.text();
@@ -117,11 +122,6 @@ export function registerCatalogWriteRoutes(app: Hono<{ Bindings: Bindings }>): v
     }
 
     try {
-      const sessionToken = getCookie(c, "microapp_session");
-      if (!sessionToken || sessionToken.length > 128) {
-        return c.json({ error: "UNAUTHENTICATED", message: "Inicia sesión para continuar." }, 401);
-      }
-
       const result = await withDatabaseClient(c.env.DATABASE_URL, async (client) =>
         withDatabaseTransaction(client, async (transaction) => {
           const tenant = await resolveTenantContext(transaction, sessionToken, organizationId, true);

@@ -5,7 +5,7 @@ Este archivo es el punto de entrada operativo. La autoridad normativa está en `
 ## Inicio de cada tarea
 
 1. Verifica en vivo el repositorio, rama, HEAD, base, PR relacionadas y checks pertinentes. No confíes en SHA o estados copiados de snapshots.
-2. Si estás retomando trabajo, lee `docs/HANDOFF_NEXT_CHAT.md`. Para una pregunta de estado, consulta `docs/CURRENT_STATE.md` por secciones concretas; no leas el archivo completo por rutina.
+2. Si estás retomando trabajo, localiza el checkpoint más reciente o el encabezado del workstream en `docs/HANDOFF_NEXT_CHAT.md`; no leas el historial completo (es extenso). Para preguntas de estado, consulta `docs/CURRENT_STATE.md` por secciones concretas; tampoco lo leas completo por rutina.
 3. Lee `docs/CONSTITUTION.md` y esta guía. Para cambios de PR/merge, consulta `docs/AI_COLLABORATION_AND_PR_POLICY.md`.
 4. Carga solo los documentos y skills del dominio afectado. Consulta `docs/STATE_JOURNAL.md` y `docs/RESOURCE_REGISTRY.md` cuando necesites decisiones históricas o evidencia de herramientas; no son lecturas obligatorias en cada sesión.
 5. Separa hechos verificados, inferencias, hipótesis, desconocidos y bloqueos.

@@ -1,5 +1,16 @@
 # ERD objetivo: organización, sucursal, almacén, caja y operaciones
 
+## Implementación de base de inventario por almacén — 2026-11-04
+
+La migración `0005_warehouse_inventory.sql` añade la base estructural, sin tocar `products.stock_quantity` ni realizar backfill automático:
+
+- `warehouses`: almacenes tenant-scoped pertenecientes a una sucursal, con código único por sucursal y FK compuesta.
+- `inventory_balances`: saldo materializado por organización/almacén/producto, cantidades NUMERIC no negativas y reserva acotada al saldo.
+- `warehouse_inventory_movements`: ledger append-only; movimientos no se actualizan ni eliminan, las correcciones serán compensaciones.
+- `inventory_counts` y `inventory_count_lines`: conteos absolutos, cantidades no negativas y líneas inmutables tras confirmar; un único conteo inicial confirmado por almacén.
+
+La migración incluye FKs compuestas tenant/branch/product/member y assertions SQL ejecutadas en PostgreSQL efímero por CI. La confirmación del conteo y la escritura coordinada de ledger/balance aún requieren el servicio transaccional y pruebas de concurrencia/rollback. Esta migración no habilita por sí sola endpoints ni stock operativo; no crear balances desde `products.stock_quantity` ni asumir distribución entre almacenes. El conteo inicial debe ser un conteo físico o cantidad documentada por el propietario, con actor, fecha, almacén y motivo.
+
 ## Corrección de estado — 2026-11-04 UTC
 
 La matriz `docs/sdd/role-permission-decision-matrix.md` está **APROBADA** desde 2026-10-31; las menciones inferiores a “NO APROBADA” son históricas y quedan supersedidas. La PR #196 implementa en rama Draft la primera vertical slice de catálogo (GET/POST/PATCH, baja lógica) con CI completo en HEAD `d3c4196293256a34457f3b06e1b1c867caf5c97e`. No está fusionada; main aún no contiene esas rutas.

@@ -62,6 +62,7 @@ CREATE TABLE inventory_count_lines (
   product_id uuid NOT NULL,
   counted_quantity numeric(14,3) NOT NULL CHECK (counted_quantity >= 0),
   unit_cost_usd numeric(14,4) CHECK (unit_cost_usd IS NULL OR unit_cost_usd >= 0),
+  expected_on_hand_quantity numeric(14,3) CHECK (expected_on_hand_quantity IS NULL OR expected_on_hand_quantity >= 0),
   created_at timestamptz NOT NULL DEFAULT now(),
   PRIMARY KEY (organization_id, count_id, product_id),
   FOREIGN KEY (organization_id, branch_id, warehouse_id, count_id)

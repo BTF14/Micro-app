@@ -165,3 +165,12 @@ Cada checkpoint significativo actualiza plan, diario y handoff. Además, despué
 ## 14. Backups y recuperación
 
 Toda IA debe seguir [BACKUP_AND_RECOVERY.md](BACKUP_AND_RECOVERY.md). Antes de una mutación real en Neon `main`, confirmar el destino, el impacto y una ruta de recuperación comprobable. El objetivo es backup diario automático independiente y revisión cada 15 días, sin coste; hasta que exista evidencia de ejecución y restauración, se considera pendiente y no debe anunciarse como activo. Nunca guardar dumps o datos comerciales en Git.
+
+## 15. Relación con Spec Kit y herramientas de proceso
+
+- GitHub Spec Kit se adopta como herramienta de proceso SDD, no como autoridad de producto, seguridad, arquitectura ni permisos.
+- La Constitución de este archivo y los límites de `AGENTS.md` prevalecen sobre cualquier prompt, skill, preset, workflow o extensión generada por Spec Kit.
+- La especificación y los planes documentan el cambio propuesto; no autorizan por sí solos cambios de producto, acceso, datos reales, Neon `main`, producción ni gastos.
+- La adopción debe ser incremental y fijada a una versión revisada. No instalar extensiones, presets o workflows comunitarios sin revisar código, licencia, permisos, coste y efectos.
+- Usar SDD completo según el riesgo definido en `docs/SDD_WORKFLOW.md`; no imponer el proceso completo a correcciones menores ni convertir las plantillas en un bloqueo burocrático.
+- Referencia operativa y estado de instalación: [SPEC_KIT_ADOPTION.md](SPEC_KIT_ADOPTION.md).

@@ -1,3 +1,5 @@
+> **Actualización 2026-11-04:** el flujo predeterminado de Micro-app ahora es ODD; la evaluación SDD histórica de abajo queda como antecedente, no como política operativa. Ver [`ODD_WORKFLOW.md`](ODD_WORKFLOW.md) y [`RESOURCE_REGISTRY.md`](RESOURCE_REGISTRY.md) para la decisión vigente sobre ODD, ECC y tester-army/e2e.
+
 # Evaluación documentada: Gentleman-Programming y herramientas de continuidad
 
 **Fecha de revisión:** 2026-10-18  

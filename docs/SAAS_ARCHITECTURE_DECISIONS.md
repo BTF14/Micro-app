@@ -1,5 +1,10 @@
 # Arquitectura SaaS de Micro app — decisiones y criterios de evolución
 
+## Corrección de estado — 2026-11-04 UTC
+
+La matriz de permisos `docs/sdd/role-permission-decision-matrix.md` fue **APROBADA el 2026-10-31**; las afirmaciones inferiores de “NO APROBADA” son snapshots históricos y quedan supersedidas. La PR #196 implementa una primera vertical slice de catálogo (GET/POST/PATCH, baja lógica) y tiene CI completo success en HEAD `d3c4196293256a34457f3b06e1b1c867caf5c97e`; sigue Draft/no fusionada. La matriz habilita el desarrollo conforme a sus reglas, pero no convierte propuestas de otras secciones en permisos aprobados ni declara el producto listo para producción.
+
+
 **Fecha:** 2026-10-30  
 **Estado:** dirección arquitectónica recomendada para guiar el diseño; no autoriza por sí sola cambios de esquema, políticas comerciales sensibles, despliegues ni migraciones.  
 **Repositorio:** https://github.com/BTF14/Micro-app  

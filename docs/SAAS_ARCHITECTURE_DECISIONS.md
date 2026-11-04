@@ -153,6 +153,12 @@ Definir umbrales conservadores, alertas, cuotas server-side y política de degra
 
 No habilitar endpoints comerciales mientras la matriz de permisos por operación siga sin aprobarse. Las migraciones estructurales pueden avanzar en una PR aislada cuando el modelo de datos esté definido, con pruebas PostgreSQL efímeras y sin aplicar cambios a Neon main.
 
+## Estado actualizado de inventario multi-sucursal — 2026-11-04
+
+La matriz `docs/sdd/role-permission-decision-matrix.md` fue aprobada el 2026-10-31; las líneas de este documento que todavía la describen como pendiente son históricas y quedan supersedidas. La migración 0005 y la vertical slice de almacenes/conteos están implementadas únicamente en PR #196 Draft, no en main ni en Neon. La confirmación de conteos usa transacción, ledger inmutable, balance y auditoría, con pruebas PostgreSQL de confirmación concurrente idempotente.
+
+La recepción de inventario está autorizada por la matriz (Owner/Admin org; Inventory sucursal asignada; Cashier denegado), pero aún no implementada. El contrato y las decisiones funcionales pendientes están en `docs/sdd/PURCHASE_RECEIPT_MODEL.md`. El método de valoración, costes, relación con órdenes de compra, recepción parcial/excedente y tratamiento de diferencias siguen sin aprobarse. No inferir ni implementar esas políticas sin cerrar el SDD.
+
 ## 10. Pendientes explícitos
 
 - Fuente BCV fiable/gratuita y mecanismo de extracción verificado.

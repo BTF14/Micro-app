@@ -1,3 +1,5 @@
+> **ARCHIVADO / NO ACTIVO — 2026-11-04.** La decisión de adoptar Spec Kit como flujo SDD fue supersedida por ODD. No instalar ni invocar la CLI basándose en este documento. Se conserva como registro de evaluación y comandos considerados; la política vigente está en [`ODD_WORKFLOW.md`](ODD_WORKFLOW.md).
+
 # Adopción de GitHub Spec Kit en Micro-app
 
 **Decisión:** adoptar Spec Kit como motor de flujo Spec-Driven Development para cambios sustanciales. No reemplaza la Constitución, la arquitectura ni los controles propios del repositorio.

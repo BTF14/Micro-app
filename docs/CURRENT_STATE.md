@@ -1,5 +1,18 @@
 # Estado actual — Micro app
 
+## Corrección de estado vivo — 2026-11-04 UTC
+
+- `main` verificado para la PR #196: `705d3db3220894c7d3baca8dc7e7a6b623dfbb94`.
+- La matriz `docs/sdd/role-permission-decision-matrix.md` está **APROBADA** desde 2026-10-31; cualquier mención inferior de “NO APROBADA” pertenece al historial previo y queda supersedida.
+- La PR #196 (`feat/catalog-api-vertical-slice-20261104`) implementa GET catálogo, POST producto y PATCH producto/baja lógica; sigue abierta, Draft y sin fusionar. HEAD verificado: `d3c4196293256a34457f3b06e1b1c867caf5c97e`, todos los checks CI success.
+- Evidencia de ese HEAD: 83 tests unitarios; PostgreSQL GET 8/8, creación 8/8 y edición/baja lógica 7/7; suites existentes de autenticación, sucursal y turnos aprobadas.
+- Las PR #190 y #195 quedaron cerradas como supersedidas por #196. PR #194 sigue separada, abierta y Draft.
+- `main` aún no contiene estas rutas mientras la PR #196 no se integre. Issue #53 permanece abierta.
+- Esto no declara Micro-app listo para producción: faltan las demás operaciones comerciales, inventario por sucursal/almacén, flujos de venta/pago/devolución, rate limiting runtime y gates de recuperación operativa (RPO/RTO, alerta de fallo y coste $0). No se tocó Neon main ni producción.
+
+Las entradas inferiores que contradigan este estado son snapshots históricos; consultar los SHA y PR vivos antes de actuar.
+
+
 ## Estado operativo vigente — 2026-11-01 UTC
 
 - **Estándar frontend aprobado:** `docs/FRONTEND_DESIGN_STANDARD.md` fija el estándar transversal UI/UX, responsive y WCAG 2.2 AA. Se integra en `AGENTS.md`, `micro-app-stack-guidance` y la documentación de accesibilidad. Es una adopción documental; no modifica la UI ni declara auditadas las pantallas existentes.

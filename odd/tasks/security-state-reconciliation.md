@@ -1,6 +1,6 @@
 # ODD task: reconcile security, authorization and release-state documentation
 
-- Status: in progress
+- Status: completed
 - Issue / PR: PR #199
 - Owner / reviewer: repository owner / senior engineering review
 - Started: 2026-11-04
@@ -44,16 +44,16 @@ Excluded:
 | Task | Expected result | Validation / evidence | Status |
 |---|---|---|---|
 | Reconcile live GitHub state | Correct PR/main references | GitHub API snapshots | complete |
-| Update security and readiness docs | Accurate approval and gate status | Manual diff review | in progress |
-| Update authorization architecture | Separate approved matrix from technical proposal | Manual diff review | in progress |
-| Run CI and review complete diff | Exact-head success | GitHub Actions | pending |
+| Update security and readiness docs | Accurate approval and gate status | Manual diff review | complete |
+| Update authorization architecture | Separate approved matrix from technical proposal | Manual diff review | complete |
+| Run CI and review complete diff | Exact-head success | GitHub Actions on pre-closure HEAD `403df1a0`; rerun for this metadata-only closure commit | complete |
 
 ## Closure and handoff
 
-- Final commit SHA:
-- PR: #199
-- Checks and exact outcomes:
-- Acceptance criteria met / unmet:
-- Limitations not verified:
-- Residual risks:
-- Next step: reconcile PR #196's stale base before any integration decision.
+- Final commit SHA: see the final PR #199 HEAD recorded in GitHub.
+- PR: #199.
+- Checks: all 11 workflow runs on pre-closure HEAD `403df1a0c46ef064bc49a9715a44a638e93092ce` completed successfully; rerun the same checks for this metadata-only closure commit before merge.
+- Acceptance criteria: AC-1 through AC-5 met in the reviewed documentation diff.
+- Limitations not verified: branch-protection settings could not be re-read in this session (GitHub API returned 403); last successful verification remains 2026-11-01.
+- Residual risks: PR #196 remains behind main and must be reconciled before any integration decision; production gates remain open.
+- Next step: do not merge PR #196 until its base is updated and Level 1/security gates are revalidated.

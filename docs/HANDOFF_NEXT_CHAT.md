@@ -1,3 +1,29 @@
+# Handoff operativo — continuidad Micro-app — 2026-11-04
+
+## Punto exacto de reanudación
+
+- Repositorio: `BTF14/Micro-app`.
+- `main` verificado: `7b0f057b8c152515005feed40305143c0ebb94b0`.
+- PR #200: abierta/Draft, rama `feat/inventory-vertical-slice-mainline-20261104`, HEAD `7d2ef3d5e9ced1d4e8d386110129d21eb53af045`; 19/19 check-runs success. No fusionar: faltan gates de aislamiento/seguridad y procedimiento de migración 0005.
+- PR #202: abierta/Draft, rama `docs/reconcile-current-state-20261104`, HEAD `6ce448693b1c98ab9a418a578940dd865f69735a`; 12/12 check-runs success. Diff documental de 3 archivos frente a main en su última comparación, aunque este handoff/otros addenda aún deben integrarse y validarse en el HEAD posterior.
+- Issue #53 abierta; issue #78 cerrada desde 2026-10-31.
+- PR #196 permanece abierta/Draft e intacta. PR #190/#193 protegidas, no modificar.
+- Capturas Cloudflare: Pages production branch main y automatic deployments enabled; Worker production branch main, builds no productivos enabled, deploy `npx wrangler deploy`, Version command `npx wrangler versions upload`. El banner “Set up Worker Previews” seguía visible. No se activó.
+- Worker Version URL no es un entorno branch-isolated. Para Worker Previews se requiere `npx wrangler preview`, configuración separada de variables/secretos/bindings y recursos aislados.
+- Nunca usar `DATABASE_URL` de Neon producción en Previews. Preparar Neon branch/base de pruebas con credenciales propias y datos sintéticos.
+- Migración 0005 solo validada en PostgreSQL 18 desechable. No hay evidencia de aplicación a Neon. SQL sin transacción explícita + psql autocommit implica posible aplicación parcial si falla a mitad; resolver antes de cualquier ejecución remota.
+- Gates restantes: auditoría de PR #200 (tenant/branch/auth/writers/concurrencia/idempotencia), Worker Preview isolation, migración/rollback, RPO/RTO, alertas externas, rate limiting runtime, E2E comerciales y coste $0.
+- No desplegar, fusionar, migrar Neon ni cambiar Cloudflare. Mantener presupuesto $0.
+
+## Próximas acciones
+
+1. Revalidar en vivo HEAD, estado y checks de PR #202 antes de cualquier cambio.
+2. Terminar revisión documental del README, esquema, plan y auditoría Cloudflare en este mismo branch; ejecutar checks del nuevo SHA.
+3. Continuar auditoría de seguridad/código de PR #200 y producir plan de migración 0005 sin aplicarlo.
+4. Mantener ambas PR abiertas/Draft hasta revisión final. No pedir al propietario capturas adicionales ya proporcionadas.
+
+---
+
 # Handoff operativo — continuidad Micro-app — 2026-11-01 UTC
 
 ## Handoff — adopción ODD y evaluación ECC/E2E — 2026-11-04

@@ -1,9 +1,9 @@
 ## Estado vivo verificado — 2026-11-04 UTC
 
-- PR #196 abierta Draft, sin merge; HEAD `235f62f61a13c01cadec3f666e82273102b73a80`. CI completo success, incluido PostgreSQL migration/integration y 3/3 pruebas de conteos por almacén, Chromium smoke, Trivy, SAST, dependency review y backup/restore sintético.
-- La nueva ruta de inventario aplica tenant/session/role/branch checks; conteos opening/physical coordinan transacción, ledger, balance y auditoría. Solo existe en la rama de PR, no en main ni producción.
-- El éxito de estos checks no cierra issue #53 ni acredita aislamiento de todas las futuras operaciones comerciales.
-- Pendiente: rate limiting runtime (la tabla `auth_rate_limits` no prueba un callsite), recepción/ventas/pagos/transferencias/devoluciones, pruebas cross-tenant completas, RPO/RTO, alerta externa y coste $0.
+- PR #196 abierta Draft, sin merge; HEAD actual `eac5028180d0f42f595068f80a9895a65ca8a083`, con CI todavía ejecutándose. HEAD de aplicación `1eb8da0006061749772e1afd93fa9901f155067b` pasó todos los checks, incluida confirmación concurrente de conteos en PostgreSQL.
+- Catálogo y conteos por almacén están implementados solo en la rama de PR; no están en main ni producción. La migración 0005 y assertions se ejecutan en PostgreSQL efímero.
+- Se añadió SDD inicial para recepción; no está implementada. Issue #53 permanece abierta hasta cubrir y probar las operaciones comerciales restantes.
+- Pendiente: rate limiting runtime probado, recepción/ventas/pagos/transferencias/devoluciones, pruebas cross-tenant completas para todos los handlers, RPO/RTO medidos, alerta externa y coste $0 confirmado.
 
 ## Estado vivo de identidad y hardening — 2026-10-29
 

@@ -123,7 +123,7 @@ Los comandos requieren las variables y servicios que cada aplicación necesite. 
 - [Workflow de backup](.github/workflows/backup.yml): respaldo cifrado y política de retención descritos en [BACKUP_AND_RECOVERY.md](docs/BACKUP_AND_RECOVERY.md).
 - [Checklist OWASP ASVS](docs/OWASP_ASVS_CHECKLIST.md).
 - [Matriz de requisitos POS](docs/POS_REFERENCE_MATRIX.md).
-- [Flujo Spec-Driven Development (SDD)](docs/SDD_WORKFLOW.md) y [modelo operativo de agentes](docs/AGENT_OPERATING_MODEL.md).
+- [Flujo Organic Driven Development (ODD)](docs/ODD_WORKFLOW.md) y [modelo operativo de agentes](docs/AGENT_OPERATING_MODEL.md).
 
 Los workflows y sus resultados deben revisarse en GitHub para el SHA exacto que se evalúa. Un workflow configurado no prueba que se haya ejecutado correctamente, y los tests con mocks no demuestran integración real con la base de datos.
 

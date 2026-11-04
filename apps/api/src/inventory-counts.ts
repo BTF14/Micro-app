@@ -221,6 +221,13 @@ export function registerInventoryCountRoutes(app: Hono<{ Bindings: Bindings }>):
           );
           if (!lines.rows.length) return { kind: "empty" as const };
 
+          if (count.count_type === "opening") {
+            const existingBalance = await tx.query(
+              "SELECT 1 FROM inventory_balances WHERE organization_id = $1 AND warehouse_id = $2 LIMIT 1 FOR UPDATE",
+              [tenant.organizationId, warehouseId],
+            );
+            if (existingBalance.rows.length) return { kind: "opening_balance_exists" as const };
+          }
           await tx.query("UPDATE inventory_counts SET status = 'confirmed', confirmed_by = $1, confirmed_at = now() WHERE organization_id = $2 AND id = $3", [tenant.userId, tenant.organizationId, countId]);
 
           const changes: Array<{ product_id: string; previous_quantity: string; counted_quantity: string; delta: string }> = [];
@@ -234,7 +241,6 @@ export function registerInventoryCountRoutes(app: Hono<{ Bindings: Bindings }>):
             const previous = current.rows[0]?.on_hand_quantity ?? "0.000";
             const deltaUnits = milliUnits(line.counted_quantity) - milliUnits(previous);
             const delta = formatMilliUnits(deltaUnits);
-            if (count.count_type === "opening" && current.rows[0]) return { kind: "opening_balance_exists" as const };
             if (count.count_type === "physical" && !current.rows[0]) {
               await tx.query(
                 `INSERT INTO inventory_balances
@@ -266,11 +272,6 @@ export function registerInventoryCountRoutes(app: Hono<{ Bindings: Bindings }>):
             changes.push({ product_id: line.product_id, previous_quantity: previous, counted_quantity: line.counted_quantity, delta });
           }
 
-          await tx.query(
-            `UPDATE inventory_counts SET status = 'confirmed', confirmed_by = $1, confirmed_at = now()
-             WHERE organization_id = $2 AND id = $3`,
-            [tenant.userId, tenant.organizationId, countId],
-          );
           await tx.query(
             `INSERT INTO audit_logs (organization_id, actor_user_id, action, entity_type, entity_id, metadata)
              VALUES ($1, $2, 'inventory.count.confirmed', 'inventory_count', $3, $4::jsonb)`,

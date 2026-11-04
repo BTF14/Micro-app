@@ -47,12 +47,12 @@ describe("POST /api/orgs/:organizationId/catalog input and origin guards", () =>
   it("rejects malformed JSON and client-supplied stock fields before database access", async () => {
     const malformed = await request("/api/orgs/" + organizationId + "/catalog", {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: { "Content-Type": "application/json", Cookie: "microapp_session=synthetic-token" },
       body: "{",
     });
     const forgedStock = await request("/api/orgs/" + organizationId + "/catalog", {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: { "Content-Type": "application/json", Cookie: "microapp_session=synthetic-token" },
       body: JSON.stringify({ sku: "X", name: "X", price_usd: "1.00", stock_quantity: 100 }),
     });
     expect(malformed.status).toBe(400);

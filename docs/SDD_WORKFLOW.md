@@ -6,4 +6,4 @@
 >
 > Los documentos bajo `docs/sdd/` siguen vigentes cuando describen decisiones, contratos, modelos de datos o diseños técnicos aprobados. El retiro de SDD como flujo no elimina esas decisiones ni las convierte automáticamente en requisitos aprobados.
 >
-> Las plantillas `templates/sdd/` y `skills/feature-sdd/` quedan en compatibilidad histórica hasta auditar referencias y migrar cualquier contenido útil. No generar nuevos artefactos SDD por rutina.
+> Las plantillas `templates/sdd/` y la skill `skills/feature-sdd/` fueron retiradas en la migración documental a ODD del 2026-11-04, tras auditar sus referencias operativas. La plantilla vigente es `odd/TASK_TEMPLATE.md`. No generar nuevos artefactos SDD.

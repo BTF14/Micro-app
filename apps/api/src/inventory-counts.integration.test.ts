@@ -308,14 +308,14 @@ describe.skipIf(!databaseUrl)("warehouse inventory count transactions against Po
     expect(draft.status).toBe(201);
     const body = await draft.json() as { id: string };
     await client.query(`CREATE FUNCTION test_fail_inventory_count_audit() RETURNS trigger
-      LANGUAGE plpgsql AS $
+      LANGUAGE plpgsql AS $test_fail_inventory_count_audit$
       BEGIN
         IF NEW.action = 'inventory.count.confirmed' THEN
           RAISE EXCEPTION 'forced audit persistence failure';
         END IF;
         RETURN NEW;
       END;
-      $`);
+      $test_fail_inventory_count_audit$`);
     await client.query(`CREATE TRIGGER test_fail_inventory_count_audit
       BEFORE INSERT ON audit_logs
       FOR EACH ROW EXECUTE FUNCTION test_fail_inventory_count_audit()`);

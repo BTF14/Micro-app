@@ -1,3 +1,10 @@
+## Estado vivo verificado — 2026-11-04 UTC
+
+- PR #196 abierta Draft, sin merge; HEAD `235f62f61a13c01cadec3f666e82273102b73a80`. CI completo success, incluido PostgreSQL migration/integration y 3/3 pruebas de conteos por almacén, Chromium smoke, Trivy, SAST, dependency review y backup/restore sintético.
+- La nueva ruta de inventario aplica tenant/session/role/branch checks; conteos opening/physical coordinan transacción, ledger, balance y auditoría. Solo existe en la rama de PR, no en main ni producción.
+- El éxito de estos checks no cierra issue #53 ni acredita aislamiento de todas las futuras operaciones comerciales.
+- Pendiente: rate limiting runtime (la tabla `auth_rate_limits` no prueba un callsite), recepción/ventas/pagos/transferencias/devoluciones, pruebas cross-tenant completas, RPO/RTO, alerta externa y coste $0.
+
 ## Estado vivo de identidad y hardening — 2026-10-29
 
 ## Estado vivo de seguridad — 2026-11-04 UTC

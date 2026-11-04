@@ -5,7 +5,7 @@
 - Repositorio: `BTF14/Micro-app`.
 - `main` verificado: `7b0f057b8c152515005feed40305143c0ebb94b0`.
 - PR #200: abierta/Draft, rama `feat/inventory-vertical-slice-mainline-20261104`, HEAD `7d2ef3d5e9ced1d4e8d386110129d21eb53af045`; 19/19 check-runs success. No fusionar: faltan gates de aislamiento/seguridad y procedimiento de migración 0005.
-- PR #202: abierta/Draft, rama `docs/reconcile-current-state-20261104`. Se amplió la reconciliación a 9 documentos; consultar en vivo el HEAD y sus checks antes de continuar. No asumir que los 12/12 checks de un SHA anterior cubren commits posteriores.
+- PR #202: abierta/Draft, rama `docs/reconcile-current-state-20261104`. Se amplió la reconciliación a 12 documentos; HEAD al último checkpoint `9990f105201eecd423dc64216bb01b504ba199a5`. Los checks de ese SHA aún no aparecían en la última consulta; revalidar en vivo. No asumir que los 12/12 checks de un SHA anterior cubren commits posteriores.
 - Issue #53 abierta; issue #78 cerrada desde 2026-10-31.
 - PR #196 permanece abierta/Draft e intacta. PR #190/#193 protegidas, no modificar.
 - Capturas Cloudflare: Pages production branch main y automatic deployments enabled; Worker production branch main, builds no productivos enabled, deploy `npx wrangler deploy`, Version command `npx wrangler versions upload`. El banner “Set up Worker Previews” seguía visible. No se activó.

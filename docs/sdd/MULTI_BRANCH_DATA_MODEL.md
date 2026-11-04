@@ -1,4 +1,10 @@
-# ERD objetivo: organización, sucursal, almacén, caja y operaciones
+# ERD objetivo: organización, sucursal, almacén, caja y operaciones\n\n## Estado vivo verificado — 2026-11-04 UTC
+
+PR #196, HEAD `235f62f61a13c01cadec3f666e82273102b73a80`, sigue abierta Draft y sin merge. CI completo success. En la rama existen migración 0005, tablas tenant-scoped de almacenes/conteos/balances/ledger, endpoints GET de almacenes/conteos y creación/confirmación de conteos opening/physical. La integración PostgreSQL 3/3 pasó. No hay backfill de `products.stock_quantity`, ni migración aplicada a Neon, ni cambios en main.
+
+La matriz de permisos aprobada permite a Owner/Admin/Inventory realizar conteos; Cashier no. La matriz no define explícitamente quién administra la estructura de almacenes (crear/editar/desactivar); no implementar esos endpoints hasta documentar una decisión explícita. La administración de almacenes queda pendiente, no inferida a partir de permiso de conteo.
+
+
 
 ## Implementación de base de inventario por almacén — 2026-11-04
 

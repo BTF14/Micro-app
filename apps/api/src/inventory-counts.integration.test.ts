@@ -244,6 +244,34 @@ describe.skipIf(!databaseUrl)("warehouse inventory count transactions against Po
     expect(state.rows[0]).toEqual({ quantity: "8.250", status: "draft" });
   });
 
+  it("serializes concurrent confirmation and records exactly one ledger movement and audit event", async () => {
+    const draft = await request(root() + "/counts/physical", {
+      reason: "Concurrent confirmation must be idempotent",
+      lines: [{ product_id: productId, counted_quantity: "8.250" }],
+    });
+    expect(draft.status).toBe(201);
+    const body = await draft.json() as { id: string };
+    const [first, second] = await Promise.all([
+      request(root() + "/counts/" + body.id + "/confirm"),
+      request(root() + "/counts/" + body.id + "/confirm"),
+    ]);
+    expect([first.status, second.status].sort()).toEqual([200, 200]);
+    const responses = await Promise.all([first.json(), second.json()]) as Array<{ status: string; replayed?: boolean }>;
+    expect(responses.filter((response) => response.replayed === true)).toHaveLength(1);
+    expect(responses.filter((response) => response.status === "confirmed" && !response.replayed)).toHaveLength(1);
+    const persisted = await client.query<{ movements: string; audits: string; status: string }>(
+      `SELECT c.status,
+        (SELECT count(*)::text FROM warehouse_inventory_movements m
+         WHERE m.organization_id = $1 AND m.count_id = $2) AS movements,
+        (SELECT count(*)::text FROM audit_logs a
+         WHERE a.organization_id = $1 AND a.entity_id = $2::text
+           AND a.action = 'inventory.count.confirmed') AS audits
+       FROM inventory_counts c WHERE c.organization_id = $1 AND c.id = $2`,
+      [organizationId, body.id],
+    );
+    expect(persisted.rows[0]).toEqual({ status: "confirmed", movements: "0", audits: "1" });
+  });
+
   it("rejects a cashier role before creating an inventory count", async () => {
     const changed = await client.query(
       "UPDATE organization_members SET role = 'cashier' WHERE organization_id = $1 AND user_id = $2",

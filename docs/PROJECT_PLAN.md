@@ -6,7 +6,7 @@ Este bloque supersede los snapshots de prioridad anteriores que aparecen más ab
 
 - `main`: `7b0f057b8c152515005feed40305143c0ebb94b0`.
 - PR #200: abierta, Draft; HEAD `7d2ef3d5e9ced1d4e8d386110129d21eb53af045`; 19/19 check-runs exitosos en ese SHA. Su vertical de catálogo/inventario y migración 0005 aún no están en main ni en Neon.
-- PR #202: abierta, Draft; HEAD `6ce448693b1c98ab9a418a578940dd865f69735a`; 12/12 check-runs exitosos en ese SHA. Es una PR documental, no despliegue productivo.
+- PR #202: abierta, Draft; PR documental. Revalidar siempre su HEAD y los checks del SHA exacto; los checks verdes de un commit anterior no validan commits posteriores.
 - Issue #78 está **CERRADA** desde 2026-10-31 tras las verificaciones CORS y frontend bundle. No mantenerla como bloqueo abierto; cualquier regresión nueva debe documentarse con evidencia y issue apropiada.
 - Issue #53 sigue **ABIERTA**. La implementación de autorización por operación y la cobertura integral de aislamiento tenant/rol siguen siendo gates de seguridad.
 - PR #196 permanece abierta/Draft e independiente. PR #190/#193 no se modifican.

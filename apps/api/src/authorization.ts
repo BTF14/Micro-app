@@ -46,9 +46,9 @@ export function isCommercialOperationAllowed(role: OrganizationRole, operation: 
   return ROLE_OPERATIONS[role]?.has(operation) ?? false;
 }
 
-export function authorizeCommercialOperation(role: OrganizationRole, operation: string): boolean {
+export function authorizeCommercialOperation(role: string, operation: string): boolean {
   if (!Object.hasOwn(ROLE_OPERATIONS, role) || !isCommercialOperation(operation)) return false;
-  return isCommercialOperationAllowed(role, operation);
+  return isCommercialOperationAllowed(role as OrganizationRole, operation);
 }
 
 function isCommercialOperation(value: string): value is CommercialOperation {

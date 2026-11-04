@@ -229,10 +229,9 @@ export function registerInventoryCountRoutes(app: Hono<{ Bindings: Bindings }>):
             `SELECT product_id, on_hand_quantity::text, reserved_quantity::text
              FROM inventory_balances
              WHERE organization_id = $1 AND warehouse_id = $2
-               AND product_id = ANY($3::uuid[])
              ORDER BY product_id ASC
              FOR UPDATE`,
-            [tenant.organizationId, warehouseId, lines.rows.map((line) => line.product_id)],
+            [tenant.organizationId, warehouseId],
           );
           if (count.count_type === "opening" && existingBalances.rows.length) {
             return { kind: "opening_balance_exists" as const };

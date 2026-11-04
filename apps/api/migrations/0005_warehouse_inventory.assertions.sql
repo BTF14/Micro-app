@@ -25,14 +25,7 @@ BEGIN
   EXCEPTION WHEN foreign_key_violation THEN NULL; END;
 
   BEGIN
-    BEGIN
-    INSERT INTO warehouse_inventory_movements
-      (organization_id,branch_id,warehouse_id,product_id,movement_type,quantity_delta,reason,count_id,actor_user_id)
-    VALUES (org_a,branch_a,warehouse_a,product_a,'opening',1,'Wrong count type',count_b,user_a);
-    RAISE EXCEPTION 'FAIL: opening movement accepted for physical count';
-  EXCEPTION WHEN check_violation THEN NULL; END;
-
-  INSERT INTO inventory_balances (organization_id,branch_id,warehouse_id,product_id,on_hand_quantity)
+    INSERT INTO inventory_balances (organization_id,branch_id,warehouse_id,product_id,on_hand_quantity)
     VALUES (org_a,branch_a,warehouse_a,product_b,5);
     RAISE EXCEPTION 'FAIL: cross-tenant product balance accepted';
   EXCEPTION WHEN foreign_key_violation THEN NULL; END;
@@ -57,6 +50,15 @@ BEGIN
   WHERE id=count_a;
   UPDATE inventory_counts SET status='confirmed',confirmed_by=user_a,confirmed_at=clock_timestamp()
   WHERE id=count_b;
+
+  -- This must reach the trigger with a confirmed physical count; the
+  -- movement-type mismatch, not a missing count_id, must reject the insert.
+  BEGIN
+    INSERT INTO warehouse_inventory_movements
+      (organization_id,branch_id,warehouse_id,product_id,movement_type,quantity_delta,reason,count_id,actor_user_id)
+    VALUES (org_a,branch_a,warehouse_a,product_a,'opening',1,'Opening movement against physical count',count_b,user_a);
+    RAISE EXCEPTION 'FAIL: opening movement accepted for physical count';
+  EXCEPTION WHEN check_violation THEN NULL; END;
   BEGIN
     INSERT INTO inventory_counts (organization_id,branch_id,warehouse_id,count_type,reason,created_by, status,confirmed_by,confirmed_at)
     VALUES (org_a,branch_a,warehouse_a,'opening','Duplicate opening',user_a,'confirmed',user_a,clock_timestamp());

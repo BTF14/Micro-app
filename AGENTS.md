@@ -23,6 +23,8 @@ Este archivo es el punto de entrada operativo. La autoridad normativa está en `
 - Micro-app es independiente de Cantina-pos y de cualquier otro proyecto.
 - Presupuesto objetivo: **USD 0**. No actives billing, planes de pago, tarjetas, suscripciones ni cargos automáticos.
 - No despliegues producción ni ejecutes cambios irreversibles sin la aceptación explícita requerida.
+- Antes de cualquier migración con datos reales, operación destructiva o cambio sensible a producción, lee `docs/BACKUP_AND_RECOVERY.md` y verifica una ruta real de recuperación; no supongas que los backups funcionan.
+- No habilites GGA, Engram, Gentle-AI, Gentle Shell ni hooks de Git sin revisar primero `docs/GENTLEMAN_IMPLEMENTATION.md`, coste, permisos, seguridad y desinstalación. Nunca actives hooks automáticamente.
 - No mutar Neon `main` sin autorización específica y posterior al análisis, prueba aislada y gate de recuperación de `docs/CONSTITUTION.md`. PostgreSQL desechable es el entorno primario de pruebas.
 - No conectar previews a producción ni a datos reales por conveniencia. Usa datos sintéticos y verifica aislamiento.
 - No expongas, registres ni versionees secretos, credenciales, tokens, cadenas de conexión o datos de clientes.
@@ -37,7 +39,8 @@ Este archivo es el punto de entrada operativo. La autoridad normativa está en `
 - Para dinero, inventario, reservas y movimientos: prioriza constraints, transacciones, idempotencia, orden de locks, concurrencia y auditoría.
 - Inspecciona callers y contratos antes de cambiar interfaces, schema, auth o configuración.
 - Ejecuta pruebas proporcionales al riesgo y verifica CI en el SHA exacto del HEAD final. Distingue unit, integración, E2E, preview y producción.
-- No rebajes ni omitas gates de `docs/SECURITY_ROADMAP.md`; aplícalos a las áreas y fases que cubre, sin convertirlos en un bloqueo artificial para documentación, investigación o mantenimiento no relacionado.
+- No rebajes ni omitas gates de `docs/SECURITY_ROADMAP.md`. Los controles Nivel 1 deben completarse antes de reanudar nueva lógica comercial, salvo instrucción expresa posterior del propietario. Esta puerta no bloquea documentación, gobernanza, investigación ni correcciones de seguridad no relacionadas.
+- No implementes nuevos endpoints comerciales ni permisos de operación hasta que el propietario haya aprobado explícitamente la matriz de permisos por rol.
 - Un check verde no demuestra por sí solo readiness de producción.
 
 ## SDD y Spec Kit

@@ -119,6 +119,42 @@ describe.skipIf(!databaseUrl)("warehouse inventory count transactions against Po
   });
 
   it("posts opening and physical counts atomically and makes confirmation replay-safe", async () => {
+    const omittedProduct = await client.query<{ id: string }>(
+      "INSERT INTO products (organization_id, sku, name, price_usd) VALUES ($1, 'INV-OMITTED', 'Omitted Opening Product', 1) RETURNING id",
+      [organizationId],
+    );
+    await client.query(
+      `INSERT INTO inventory_balances (organization_id, branch_id, warehouse_id, product_id, on_hand_quantity)
+       VALUES ($1, $2, $3, $4, 1)`,
+      [organizationId, branchId, warehouseId, omittedProduct.rows[0]!.id],
+    );
+    const partialOpening = await request(root() + "/counts/opening", {
+      reason: "Opening must not ignore balances for omitted products",
+      lines: [{ product_id: productId, counted_quantity: "10.500" }],
+    });
+    expect(partialOpening.status).toBe(201);
+    const partialOpeningBody = await partialOpening.json() as { id: string };
+    const partialConfirmation = await request(root() + "/counts/" + partialOpeningBody.id + "/confirm");
+    expect(partialConfirmation.status).toBe(409);
+    expect(await partialConfirmation.json()).toMatchObject({ error: "OPENING_ALREADY_EXISTS" });
+    expect((await client.query(
+      "SELECT status FROM inventory_counts WHERE organization_id = $1 AND id = $2",
+      [organizationId, partialOpeningBody.id],
+    )).rows[0]).toEqual({ status: "draft" });
+    await client.query(
+      "DELETE FROM inventory_count_lines WHERE organization_id = $1 AND count_id = $2",
+      [organizationId, partialOpeningBody.id],
+    );
+    await client.query(
+      "DELETE FROM inventory_counts WHERE organization_id = $1 AND id = $2",
+      [organizationId, partialOpeningBody.id],
+    );
+    await client.query(
+      "DELETE FROM inventory_balances WHERE organization_id = $1 AND warehouse_id = $2 AND product_id = $3",
+      [organizationId, warehouseId, omittedProduct.rows[0]!.id],
+    );
+    await client.query("DELETE FROM products WHERE organization_id = $1 AND id = $2", [organizationId, omittedProduct.rows[0]!.id]);
+
     const opening = await request(root() + "/counts/opening", {
       reason: "Initial documented physical count",
       lines: [{ product_id: productId, counted_quantity: "10.500", unit_cost_usd: "2.2500" }],

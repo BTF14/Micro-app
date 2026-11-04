@@ -1,5 +1,17 @@
 # Estado actual — Micro app
 
+## Estado vivo verificado — 2026-11-04 UTC
+
+- `main` = `2e0f4083ba577de2f301daf8c866bfbdffb5e23f`, merge squash de PR #198. La transición SDD → ODD y su validador documental ya están integrados.
+- PR #198 está fusionada. PR #197 está cerrada **sin merge**, supersedida por #198; no describirla como abierta ni Draft.
+- PR #196 permanece abierta y Draft, sin merge: rama `feat/catalog-api-vertical-slice-20261104`, HEAD `c332e740aff279fb8b22a8879581d4b8a3c7de21`, base registrada `705d3db3220894c7d3baca8dc7e7a6b623dfbb94`. Tras el avance de main por #198, la rama está detrás y GitHub la reporta no mergeable; actualizar/reconciliar la base y volver a validar antes de cualquier decisión de integración.
+- PR #196 contiene catálogo tenant-scoped (GET/POST/PATCH, baja lógica), almacenes y conteos opening/physical, migración 0005, ledger y contrato de locking. Estos cambios **no están en main** mientras #196 siga sin fusionar.
+- Los 11 workflows asociados al HEAD exacto de PR #196 `c332e740...` terminaron en success. Esa evidencia corresponde a la rama y no elimina la necesidad de actualizarla contra main ni sustituye revisión funcional/seguridad.
+- La matriz de permisos por rol está **APROBADA desde 2026-10-31**. Su aprobación no equivale a implementación completa: PR #196 cubre una parte del catálogo/inventario; ventas, pagos, recepciones, reservas, devoluciones, transferencias y autorización de todas las operaciones siguen pendientes.
+- Issue #53 permanece abierta hasta completar las rutas aplicables y demostrar aislamiento cross-tenant/rol con pruebas negativas.
+- Pendientes de seguridad/operación: rate limiting runtime probado, pruebas de autorización para todas las rutas, RPO/RTO medidos, alerta externa de fallo y confirmación de coste total $0.
+- No se fusionó PR #196, no se ejecutaron migraciones ni escrituras contra Neon producción, y no se promovieron previews a producción.
+
 ## Actualización de gobernanza ODD — 2026-11-04
 
 - El flujo operativo predeterminado pasa a **Organic Driven Development (ODD)**; ver `docs/ODD_WORKFLOW.md`. SDD deja de ser el workflow activo, pero los documentos `docs/sdd/` siguen siendo contratos, modelos y decisiones de dominio vigentes.

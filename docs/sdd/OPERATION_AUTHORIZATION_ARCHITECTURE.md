@@ -1,5 +1,9 @@
 # Server-side operation authorization architecture
 
+## Implementation status update — 2026-11-04 UTC
+
+The role/permission decision matrix is **APPROVED** (2026-10-31). The current `main` HEAD is `2e0f4083ba577de2f301daf8c866bfbdffb5e23f` and does not contain commercial API handlers from PR #196. PR #196 remains open/Draft at `c332e740aff279fb8b22a8879581d4b8a3c7de21`, based on the previous main SHA `705d3db3220894c7d3baca8dc7e7a6b623dfbb94`; it is behind main and must be reconciled before integration. That branch contains tenant-scoped catalog read/create/update/soft-deactivation and warehouse inventory count/list/confirm routes, with PostgreSQL integration coverage including concurrent idempotent count confirmation. This is a partial implementation, not a general authorization layer for all commercial operations. Sales, payments, receipts, reservations, returns and transfers still require their own server-side authorization and tests. Production readiness is not established.
+
 **Status:** technical proposal only; not an approved business permission policy and not implementation authorization.  
 **Date:** 2026-10-30 UTC  
 **Base:** `main` at `a6db2dcaf57e2a0bf1735eb282c3ac2256cd314c` when this proposal branch was created.  
@@ -16,7 +20,7 @@ This document proposes the server-side shape for authorization when commercial A
 
 The current `resolveTenantContext`, `resolveBranchContext`, and `resolveOpenCashierRegisterShift` helpers address parts of the first three concerns. They do **not** authorize business operations. There are currently no commercial HTTP handlers.
 
-This proposal does not approve role permissions, introduce custom roles, choose business thresholds, authorize discounts/voids/refunds, define a supervisor override, create endpoints, add schema, or permit migrations. The role matrix remains **NOT APPROVED**. No implementation may infer missing decisions from examples in this document.
+This proposal does not introduce custom roles, choose business thresholds, authorize additional discounts/voids/refunds, define a supervisor override, create endpoints, add schema, or permit migrations. The separate role matrix is **APPROVED** (2026-10-31); this technical proposal does not extend that approval or authorize behavior outside the matrix. No implementation may infer missing decisions from examples in this document.
 
 ## 2. Current verified foundation
 

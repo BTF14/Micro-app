@@ -272,6 +272,29 @@ describe.skipIf(!databaseUrl)("warehouse inventory count transactions against Po
     expect(persisted.rows[0]).toEqual({ status: "confirmed", movements: "1", audits: "1" });
   });
 
+  it("records an audited zero-delta physical count without creating a ledger movement", async () => {
+    const draft = await request(root() + "/counts/physical", {
+      reason: "Verify counted stock with no difference",
+      lines: [{ product_id: productId, counted_quantity: "8.000" }],
+    });
+    expect(draft.status).toBe(201);
+    const body = await draft.json() as { id: string };
+    const confirmation = await request(root() + "/counts/" + body.id + "/confirm");
+    expect(confirmation.status).toBe(200);
+    const persisted = await client.query<{ movements: string; audits: string; balance: string }>(
+      `SELECT
+        (SELECT count(*)::text FROM warehouse_inventory_movements m
+         WHERE m.organization_id = $1 AND m.count_id = $2) AS movements,
+        (SELECT count(*)::text FROM audit_logs a
+         WHERE a.organization_id = $1 AND a.entity_id = $2::text
+           AND a.action = 'inventory.count.confirmed') AS audits,
+        (SELECT on_hand_quantity::text FROM inventory_balances b
+         WHERE b.organization_id = $1 AND b.warehouse_id = $3 AND b.product_id = $4) AS balance`,
+      [organizationId, body.id, warehouseId, productId],
+    );
+    expect(persisted.rows[0]).toEqual({ movements: "0", audits: "1", balance: "8.000" });
+  });
+
   it("requires an active branch assignment for inventory members and revalidates revocation", async () => {
     await client.query(
       "UPDATE organization_members SET role = 'inventory' WHERE organization_id = $1 AND user_id = $2",

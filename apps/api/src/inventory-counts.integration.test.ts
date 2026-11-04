@@ -29,13 +29,14 @@ describe.skipIf(!databaseUrl)("warehouse inventory count transactions against Po
   let productId = "";
   let token = "";
 
-  async function request(path: string, body?: unknown): Promise<Response> {
+  async function request(path: string, body?: unknown, extraHeaders: Record<string, string> = {}): Promise<Response> {
     return app.fetch(new Request("https://api.example" + path, {
       method: "POST",
       headers: {
         Cookie: "microapp_session=" + token,
         Origin: "https://frontend.example",
         "Content-Type": "application/json",
+        ...extraHeaders,
       },
       ...(body === undefined ? {} : { body: JSON.stringify(body) }),
     }), { DATABASE_URL: databaseUrl, FRONTEND_ORIGIN: "https://frontend.example" });

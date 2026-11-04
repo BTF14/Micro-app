@@ -46,6 +46,7 @@ export async function lockInventoryWarehouses(
      JOIN unnest($2::uuid[], $3::uuid[]) AS requested(id, branch_id)
        ON requested.id = w.id AND requested.branch_id = w.branch_id
      WHERE w.organization_id = $1
+       AND w.is_active = true
      ORDER BY w.id ASC
      FOR UPDATE OF w`,
     [

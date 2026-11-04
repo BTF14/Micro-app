@@ -1,5 +1,12 @@
 # ERD objetivo: organización, sucursal, almacén, caja y operaciones
 
+## Corrección de estado — 2026-11-04 UTC
+
+La matriz `docs/sdd/role-permission-decision-matrix.md` está **APROBADA** desde 2026-10-31; las menciones inferiores a “NO APROBADA” son históricas y quedan supersedidas. La PR #196 implementa en rama Draft la primera vertical slice de catálogo (GET/POST/PATCH, baja lógica) con CI completo en HEAD `d3c4196293256a34457f3b06e1b1c867caf5c97e`. No está fusionada; main aún no contiene esas rutas.
+
+El diseño de stock por sucursal/almacén sigue siendo futuro: `products.stock_quantity` permanece organizacional en main; no presentar el catálogo como inventario multi-sucursal. Se mantienen las reglas aprobadas de ledger, recepción, conteo y transferencias documentadas en el plan Fase B. No se han aplicado migraciones 0003/0004 a Neon main.
+
+
 **Estado:** main incluye sucursales/asignaciones por PR #165 (0003); PR #167 fusionó `registers`/`register_shifts` mediante 0004 en main. Ninguna migración 0003/0004 se ha aplicado a Neon main. Almacenes, balances por almacén y operaciones comerciales siguen pendientes. No autoriza endpoints ni cambios en Neon.  
 **Fecha:** 2026-10-30 UTC  
 **Base original del diseño:** merge de PR #163, main = 894895cfeee1c3d67b1e92bf1fae7d0c30cd36f9.  

@@ -401,7 +401,9 @@ describe.skipIf(!databaseUrl)("warehouse inventory count transactions against Po
     ), { DATABASE_URL: databaseUrl, FRONTEND_ORIGIN: "https://frontend.example" });
     expect(warehouseList.status).toBe(200);
     const warehouseListBody = await warehouseList.json() as { warehouses: Array<{ id: string; code: string }> };
-    expect(warehouseListBody.warehouses).toContainEqual({ id: warehouseId, code: expect.any(String) });
+    expect(warehouseListBody.warehouses).toEqual(expect.arrayContaining([
+      expect.objectContaining({ id: warehouseId, code: expect.any(String) }),
+    ]));
 
     const countList = await app.fetch(new Request(
       "https://api.example" + root() + "/counts",

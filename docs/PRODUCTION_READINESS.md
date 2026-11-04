@@ -2,9 +2,9 @@
 
 ## Estado vivo verificado — 2026-11-04 UTC
 
-PR #196 (abierta, Draft, sin merge), HEAD `235f62f61a13c01cadec3f666e82273102b73a80`: CI completo success. La vertical slice de catálogo y conteos por almacén pasó build/typecheck, migración PostgreSQL, unit/integration tests (incluidos 3 tests de conteos), Chromium, Trivy/SAST, backup/restore sintético y builds de Cloudflare. Los cambios existen solo en la rama; no están en main ni en Neon.
+PR #196 (abierta, Draft, sin merge), HEAD actual `5387637e710259c14d7bfdbaf9c33560752ae699`: los commits documentales de reconciliación/SDD están en CI; no se atribuye todavía resultado a ese HEAD. El HEAD de aplicación `1eb8da0006061749772e1afd93fa9901f155067b` pasó todos los checks, incluida confirmación concurrente idempotente en PostgreSQL, build/typecheck, migración, unit/integration, Chromium, Trivy/SAST, backup/restore sintético y builds Cloudflare. Los cambios existen solo en la rama; no están en main ni en Neon.
 
-La base de inventario por almacén ya incluye conteos opening/physical transaccionales, ledger inmutable, balances y auditoría. Esto NO completa inventario comercial: recepción de compras, ventas, transferencias, reservas ligadas a ventas, devoluciones y administración de almacenes aún requieren implementación y pruebas. Producción continúa bloqueada por los P0 enumerados abajo.
+La base de inventario por almacén ya incluye conteos opening/physical transaccionales, ledger inmutable, balances y auditoría. Esto NO completa inventario comercial: recepción de compras, ventas, transferencias, reservas ligadas a ventas, devoluciones y administración de almacenes aún requieren implementación y pruebas. La recepción tiene un SDD inicial con decisiones de negocio pendientes. Producción continúa bloqueada por los P0 enumerados abajo.
 
 ## Estado vivo — 2026-11-04 UTC
 

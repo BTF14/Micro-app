@@ -1,5 +1,13 @@
 # Estado actual — Micro app
 
+## Estado vivo verificado — 2026-11-04 UTC
+
+- PR #196 sigue abierta y Draft, sin merge; rama `feat/catalog-api-vertical-slice-20261104`, HEAD `235f62f61a13c01cadec3f666e82273102b73a80`.
+- CI completo del HEAD: build/typecheck, migración PostgreSQL, unit tests, auth/branch/shift/catalog integration, inventario por almacén (3/3), Chromium smoke, SAST/Trivy, dependency review, backup/restore sintético y builds Cloudflare: todos success.
+- La PR incorpora catálogo GET/POST/PATCH con baja lógica, migración 0005 y endpoints de listado de almacenes/conteos y creación/confirmación de conteos opening/physical. Conteos transaccionales, ledger append-only, balances, auditoría y protección de reservas están cubiertos por integración PostgreSQL.
+- La migración y endpoints viven solo en la rama de PR; no están en main ni aplicados a Neon. No hubo despliegue a producción.
+- No confundir esta aprobación de CI con preparación total de Micro-app: siguen pendientes recepción de compras, ventas/pagos/devoluciones, transferencias, administración de almacenes, rate limiting runtime, E2E comerciales completos, RPO/RTO medidos, alertas y verificación de coste $0.
+
 ## Corrección de estado vivo — 2026-11-04 UTC
 
 - `main` verificado para la PR #196: `705d3db3220894c7d3baca8dc7e7a6b623dfbb94`.

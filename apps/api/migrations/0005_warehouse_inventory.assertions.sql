@@ -4,7 +4,7 @@ DO $$
 DECLARE
   org_a uuid; org_b uuid; user_a uuid; user_b uuid;
   branch_a uuid; branch_b uuid; warehouse_a uuid; warehouse_b uuid;
-  product_a uuid; product_b uuid; product_extra uuid; count_a uuid; count_b uuid;
+  product_a uuid; product_b uuid; product_extra uuid; count_a uuid; count_b uuid; count_duplicate uuid;
 BEGIN
   INSERT INTO organizations (name, slug) VALUES ('Inventory Tenant A','inventory-tenant-a') RETURNING id INTO org_a;
   INSERT INTO organizations (name, slug) VALUES ('Inventory Tenant B','inventory-tenant-b') RETURNING id INTO org_b;
@@ -67,10 +67,19 @@ BEGIN
     RAISE EXCEPTION 'FAIL: confirmed inventory count inserted without lifecycle transition';
   EXCEPTION WHEN check_violation THEN NULL; END;
 
+  INSERT INTO inventory_counts
+    (organization_id,branch_id,warehouse_id,count_type,reason,created_by)
+  VALUES (org_a,branch_a,warehouse_a,'opening','Second opening draft',user_a)
+  RETURNING id INTO count_duplicate;
+  INSERT INTO inventory_count_lines
+    (organization_id,branch_id,warehouse_id,count_id,product_id,counted_quantity)
+  VALUES (org_a,branch_a,warehouse_a,count_duplicate,product_extra,1);
+
   BEGIN
-    INSERT INTO inventory_counts (organization_id,branch_id,warehouse_id,count_type,reason,created_by, status,confirmed_by,confirmed_at)
-    VALUES (org_a,branch_a,warehouse_a,'opening','Duplicate opening',user_a,'confirmed',user_a,clock_timestamp());
-    RAISE EXCEPTION 'FAIL: second opening count accepted';
+    UPDATE inventory_counts
+       SET status='confirmed',confirmed_by=user_a,confirmed_at=clock_timestamp()
+     WHERE id=count_duplicate;
+    RAISE EXCEPTION 'FAIL: second confirmed opening count accepted';
   EXCEPTION WHEN unique_violation THEN NULL; END;
 
   BEGIN

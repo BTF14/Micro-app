@@ -24,7 +24,6 @@ type GoogleUserInfo = {
 };
 
 type BootstrapRequest = {
-  token: string;
   organizationName: string;
   organizationSlug: string;
 };
@@ -137,10 +136,36 @@ async function startGoogleAuthorization(c: AppContext, bootstrapRequest?: Bootst
   const codeVerifier = randomToken(48);
   const codeChallenge = await pkceChallengeFromVerifier(codeVerifier);
 
+  let bootstrapHandle: string | undefined;
+  if (bootstrapRequest) {
+    bootstrapHandle = randomToken(32);
+    try {
+      const [handleHash, stateHash] = await Promise.all([
+        sha256Hex(bootstrapHandle),
+        sha256Hex(state),
+      ]);
+      await withDatabaseClient(c.env.DATABASE_URL, (client) =>
+        client.query(
+          `INSERT INTO auth_bootstrap_attempts
+             (handle_hash, state_hash, organization_name, organization_slug, expires_at)
+           VALUES ($1, $2, $3, $4, now() + interval '10 minutes')`,
+          [handleHash, stateHash, bootstrapRequest.organizationName, bootstrapRequest.organizationSlug],
+        ),
+      );
+    } catch {
+      return c.json({
+        error: "BOOTSTRAP_HANDOFF_UNAVAILABLE",
+        message: "No se pudo iniciar el alta administrativa.",
+      }, 503);
+    }
+  }
+
   setShortLivedCookie(c, STATE_COOKIE, state);
   setShortLivedCookie(c, VERIFIER_COOKIE, codeVerifier);
-  if (bootstrapRequest) {
-    setShortLivedCookie(c, BOOTSTRAP_COOKIE, JSON.stringify(bootstrapRequest));
+  if (bootstrapHandle) {
+    // Browser receives only an opaque random handle. All bootstrap data and
+    // the binding to this OAuth state stay server-side.
+    setShortLivedCookie(c, BOOTSTRAP_COOKIE, bootstrapHandle);
   }
 
   const authorizationUrl = new URL(GOOGLE_AUTHORIZATION_ENDPOINT);
@@ -231,13 +256,16 @@ export function registerGoogleAuthRoutes(app: Hono<{ Bindings: Bindings }>): voi
       return c.json({ error: "BOOTSTRAP_NOT_AUTHORIZED", message: "No se pudo iniciar el alta administrativa." }, 403);
     }
 
-    return startGoogleAuthorization(c, { token, organizationName, organizationSlug });
+    return startGoogleAuthorization(c, { organizationName, organizationSlug });
   });
 
   app.get("/auth/google/callback", async (c) => {
     const storedState = getCookie(c, STATE_COOKIE);
     const codeVerifier = getCookie(c, VERIFIER_COOKIE);
     const bootstrapCookieRaw = getCookie(c, BOOTSTRAP_COOKIE);
+    const bootstrapHandle = bootstrapCookieRaw && /^[A-Za-z0-9_-]{43}$/.test(bootstrapCookieRaw)
+      ? bootstrapCookieRaw
+      : null;
 
     const queryState = c.req.query("state");
     const code = c.req.query("code");
@@ -303,21 +331,8 @@ export function registerGoogleAuthRoutes(app: Hono<{ Bindings: Bindings }>): voi
       return redirectToFrontend(c, "/?auth_error=email_not_verified");
     }
 
-    let bootstrapRequest: BootstrapRequest | null = null;
-    if (bootstrapCookieRaw) {
-      try {
-        const parsed = JSON.parse(bootstrapCookieRaw) as Partial<BootstrapRequest>;
-        if (
-          typeof parsed.token === "string" &&
-          typeof parsed.organizationName === "string" &&
-          typeof parsed.organizationSlug === "string"
-        ) {
-          bootstrapRequest = parsed as BootstrapRequest;
-        }
-      } catch {
-        bootstrapRequest = null;
-      }
-    }
+    const bootstrapHandleHash = bootstrapHandle ? await sha256Hex(bootstrapHandle) : null;
+    const bootstrapStateHash = await sha256Hex(queryState);
 
     try {
       const outcome = await withDatabaseClient(c.env.DATABASE_URL, async (client) => {
@@ -368,15 +383,39 @@ export function registerGoogleAuthRoutes(app: Hono<{ Bindings: Bindings }>): voi
           return { kind: "ok" as const, token };
         }
 
-        // No existing user: only the sealed, single-use bootstrap path may
-        // create one, and only when the caller supplied the correct secret.
-        if (!bootstrapRequest || !c.env.BOOTSTRAP_TOKEN || bootstrapRequest.token !== c.env.BOOTSTRAP_TOKEN) {
+        // No existing user: require the opaque, expiring handoff that was
+        // created only after the bootstrap bearer secret was validated on POST.
+        if (!bootstrapHandleHash) {
           return { kind: "not_provisioned" as const };
         }
 
         return withDatabaseTransaction(client, async (tx) => {
-          // Locks the single sentinel row so two concurrent bootstrap
-          // attempts cannot both pass the consumed_at check.
+          // The handle and OAuth state must match one unexpired, unconsumed row.
+          // Lock and consume the handoff in the same transaction as owner creation.
+          const handoff = await tx.query<{
+            organization_name: string;
+            organization_slug: string;
+          }>(
+            `SELECT organization_name, organization_slug
+               FROM auth_bootstrap_attempts
+              WHERE handle_hash = $1
+                AND state_hash = $2
+                AND expires_at > now()
+                AND consumed_at IS NULL
+              FOR UPDATE`,
+            [bootstrapHandleHash, bootstrapStateHash],
+          );
+          if (handoff.rows.length === 0) {
+            return { kind: "not_provisioned" as const };
+          }
+
+          await tx.query(
+            "UPDATE auth_bootstrap_attempts SET consumed_at = now() WHERE handle_hash = $1",
+            [bootstrapHandleHash],
+          );
+
+          // Locks the global sentinel so two independent handoffs cannot both
+          // create the first organization/owner.
           const bootstrapRow = await tx.query<{ consumed_at: string | null }>(
             "SELECT consumed_at FROM auth_bootstrap WHERE id = true FOR UPDATE",
           );
@@ -386,7 +425,7 @@ export function registerGoogleAuthRoutes(app: Hono<{ Bindings: Bindings }>): voi
 
           const orgResult = await tx.query<{ id: string }>(
             "INSERT INTO organizations (name, slug) VALUES ($1, $2) RETURNING id",
-            [bootstrapRequest.organizationName, bootstrapRequest.organizationSlug],
+            [handoff.rows[0]!.organization_name, handoff.rows[0]!.organization_slug],
           );
           const organizationId = orgResult.rows[0]!.id;
 

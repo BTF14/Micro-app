@@ -74,6 +74,11 @@ describe("exact decimal arithmetic", () => {
     expect(convertUsdToVes("23.8500", "36.50000000")).toBe("870.53");
     expect(() => calculateLineUsd("1.2500", "23.8500")).toThrow(RangeError);
     expect(() => convertUsdToVes("23.8500", "10000000000.00000000")).toThrow(RangeError);
+    expect(() => calculateLineUsd("0.000", "23.8500")).toThrow(RangeError);
+    expect(() => calculateLineUsd("-1.000", "23.8500")).toThrow(RangeError);
+    expect(() => calculateLineUsd("1.000", "-23.8500")).toThrow(RangeError);
+    expect(() => convertUsdToVes("23.8500", "0.00000000")).toThrow(RangeError);
+    expect(() => convertUsdToVes("23.8500", "-36.50000000")).toThrow(RangeError);
     expect(() => calculateLineUsd("99999999999.999", "9999999999.9999")).toThrow(RangeError);
   });
 });

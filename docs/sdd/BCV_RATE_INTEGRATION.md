@@ -29,7 +29,7 @@ Reject non-HTTPS or off-domain redirects, non-HTML responses, HTTP errors, overs
 
 The writer uses the least-privilege `microapp_runtime` role and receives only SELECT/INSERT on `exchange_rates`; it cannot update or delete history. Repeated identical data is a no-op. Older data cannot replace a newer effective date.
 
-If BCV is unavailable or parsing/validation fails, do not invent a rate and do not silently substitute a third-party quote. Keep the last validated row. The API reports its effective date and marks it `stale` when it is older than the current Venezuela calendar date.
+If BCV is unavailable or parsing/validation fails, do not invent a rate and do not silently substitute a third-party quote. Keep the last validated row. The API reports its effective date and marks it `stale` when it is older than the current Venezuela calendar date. If BCV publishes tomorrow's rate in advance, the history endpoint labels it `scheduled`; the latest-rate endpoint excludes it until its effective date so a POS cannot apply it early.
 
 ## Scheduling and free-tier assumptions
 

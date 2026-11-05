@@ -186,16 +186,16 @@ describe.skipIf(!databaseUrl)("warehouse inventory count transactions against Po
       await client.query("DELETE FROM auth_sessions WHERE user_id = $1", [userId]);
       await client.query("DELETE FROM organization_members WHERE organization_id = $1", [organizationId]);
       await client.query("DELETE FROM organizations WHERE id = $1", [organizationId]);
+      if (foreignOrganizationId) {
+        await client.query("DELETE FROM inventory_count_lines WHERE organization_id = $1", [foreignOrganizationId]);
+        await client.query("DELETE FROM inventory_counts WHERE organization_id = $1", [foreignOrganizationId]);
+        await client.query("DELETE FROM organization_members WHERE organization_id = $1", [foreignOrganizationId]);
+        await client.query("DELETE FROM warehouses WHERE organization_id = $1", [foreignOrganizationId]);
+        await client.query("DELETE FROM products WHERE organization_id = $1", [foreignOrganizationId]);
+        await client.query("DELETE FROM branches WHERE organization_id = $1", [foreignOrganizationId]);
+        await client.query("DELETE FROM organizations WHERE id = $1", [foreignOrganizationId]);
+      }
       await client.query("DELETE FROM app_users WHERE id = $1", [userId]);
-    }
-    if (foreignOrganizationId) {
-      await client.query("DELETE FROM inventory_count_lines WHERE organization_id = $1", [foreignOrganizationId]);
-      await client.query("DELETE FROM inventory_counts WHERE organization_id = $1", [foreignOrganizationId]);
-      await client.query("DELETE FROM organization_members WHERE organization_id = $1", [foreignOrganizationId]);
-      await client.query("DELETE FROM warehouses WHERE organization_id = $1", [foreignOrganizationId]);
-      await client.query("DELETE FROM products WHERE organization_id = $1", [foreignOrganizationId]);
-      await client.query("DELETE FROM branches WHERE organization_id = $1", [foreignOrganizationId]);
-      await client.query("DELETE FROM organizations WHERE id = $1", [foreignOrganizationId]);
     }
     await client.end();
   });

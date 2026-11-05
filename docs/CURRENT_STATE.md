@@ -1946,3 +1946,30 @@ Actúa como ingeniero principal responsable de continuar BTF14/Micro-app. Antes 
 - Las PR comparten 24 rutas de 33 (#196) y 30 (#200), incluidas ambas migraciones/assertions 0005, catálogo, branch-context, inventario, inventory-locks, CI y migration-check. #196 tiene 128 commits ahead / 34 behind respecto a la base #200; no es una dependencia lineal ni un retarget seguro.
 - Migración 0005 difiere: #196 blob `8a2b13651ebd5dc1d3bb87efbe34cb863c0e0d99` (265 líneas), #200 blob `bb9020fdca535f84fda0f468e9d3ab86e1cc319c` (330 líneas). La versión #200 contiene evolución posterior de inventario; no sustituirla por el snapshot #196.
 - Decisión: no retargetear, fusionar ni copiar #196 sobre #200 a ciegas. Mapear commits/rutas y separar código de catálogo de inventario; conservar los cambios más avanzados de #200 y validar la combinación desde PostgreSQL limpio. Issue #53 permanece abierta/P0. Comentario de reconciliación en issue #53: 6651679831.
+
+
+## Reanudación — 2026-11-05 UTC — PR #208 y numeración 0005/0006
+
+### Reconciliación ejecutada en GitHub
+
+- Se compararon las 24 rutas compartidas por #196/#200. **15/24 blobs son idénticos**, incluidos todos los handlers y tests de catálogo, index.ts, tenant-context y parte de branch-context. Las nueve diferencias son: CI, migration-check, migration 0005, assertions 0005, inventory-counts.ts/test y inventory-locks.ts/test. Por tanto, el código de catálogo de #196 ya está en #200; no copiarlo otra vez. #200 mantiene la versión posterior de inventario.
+- #194 colisionaba al usar `0005_register_shift_member_roles.sql`. Se creó merge commit `f8d90fbff7eb274c59d5442873124e7470bb4e66` con primer padre #200 HEAD `5fbc17a48b65076cf5609a7a054bbd125a3a5d1e` y segundo padre #194 HEAD anterior `7b3ad50e5780416868a1a428b856d12c4ea1e2ea`. Se conservó el historial de ambas líneas sin force-push.
+- La migración de roles se renumeró como `0006_register_shift_member_roles.sql`; `0005_warehouse_inventory.sql` de #200 permanece intacta. Los workflows CI y migration-check de #208 aplican 0001–0006 en PostgreSQL desechable y CI incluye la integración PostgreSQL de roles propios de turno.
+- Se creó PR #208 Draft: `work/mvp-foundation` → `feat/inventory-vertical-slice-mainline-20261104`. Compare confirmado: 15 commits ahead / 0 behind; 10 rutas cambiadas; mergeable=true al consultar. PR #194 fue cerrada como supersedida (no merged); comentario explicativo ID 6651810854.
+- Se reforzó `apps/api/src/authorization.ts`: `authorizeTenantOperation` llama `resolveTenantContext(..., true)`; `authorizeBranchOperation` bloquea tenant y branch context con `resolveTenantContext(..., true)` y `resolveBranchContext(..., true)`, usando el contrato de locks más nuevo de #200. Este cambio generó HEAD actual #208 `8b3646adb3d6dc1c2a7a3ef17d8ead4a442e0509`.
+
+### Estado de validación #208
+
+- En el merge commit previo `f8d90fb...`, migration-check reportó success; el workflow aplicó la migración 0006 en PostgreSQL desechable. Los check-runs iniciales incluían CI y backup restore en progreso.
+- En el HEAD actual `8b3646ad...`, el snapshot consultado devolvió cinco check-runs (Cloudflare Pages, Worker build, backup/restore, Trivy y secret scan) en success, pero no devolvió aún CI ni migration-check para este SHA. No declarar el HEAD actual completamente validado; esperar CI completo y comprobar tests unitarios/integración de autorización.
+- #208 permanece Draft y sin merge.
+
+### Dependencia de #207
+
+- #207 sigue abierta/Draft y basada en #200. Su workflow aplica 0005 y luego 0007, todavía omite 0006. Se publicó comentario en #207 (6651848193) y en issue #53 (6651847660) indicando que la pila 0001–0007 no está validada.
+- Próximo trabajo: apilar la rama de audit logs sobre el nuevo commit #208, preservar 0007 y adaptar CI/migration-check para ejecutar 0005 → 0006 → 0007. No declarar AC-5 completo antes de ejecutar el stack entero desde PostgreSQL limpio.
+
+### Issue #53 y límites
+
+- Issue #53 permanece abierta/P0. Comentario actualizado ID 6651847660 registra que #196 catálogo ya está incorporado en #200 y que #208 resuelve la colisión de roles 0006.
+- No se tocó main, Neon, secretos, Cloudflare settings/DNS/billing ni datos reales. No se hizo merge ni despliegue manual. Producción NO LISTA.

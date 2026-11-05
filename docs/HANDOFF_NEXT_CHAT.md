@@ -29,7 +29,7 @@
 - El rol PostgreSQL real de `DATABASE_URL` no está verificado. No leer secretos ni tocar Neon producción. Un trigger no protege contra un propietario/superusuario que pueda deshabilitarlo; el runtime debe ser no propietario y de privilegios mínimos.
 - La migración 0007 está en una PR apilada sobre #200. Debe preservarse la secuencia: inventario 0005, roles #194 renumerados 0006, audit_logs 0007. La CI actual de #207 aplica 0005 y 0007; cuando 0006 se integre, actualizar la secuencia/workflows y revalidar el stack limpio.
 - #53 sigue abierta: falta cobertura completa de autorización por tenant/sucursal/rol, operaciones comerciales aún inexistentes, lectores de balances/movimientos, consistencia ledger/balance y rate limiting runtime, entre otros gates.
-- No activar Worker Previews, no modificar Cloudflare productivo, no tocar Neon, secretos, DNS, billing, main ni datos reales.
+- No se modificó manualmente Cloudflare ni se activó Worker Previews. El check `Workers Builds: micro-app-api` de #207 fue disparado por el push; su registro no pudo leerse (`login_required`) y el destino/deployment está NO VERIFICADO. Antes de afirmar que no hubo despliegue productivo, inspeccionar ese build en el dashboard con acceso autenticado de solo lectura. No tocar settings, Workers, Neon, secretos, DNS, billing, main ni datos reales.
 - La automatización diaria está habilitada, pero sin last_run/next_run_time registrados y con delivery unknown; no crear otra.
 
 ### Siguiente ejecución recomendada

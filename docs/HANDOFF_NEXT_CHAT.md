@@ -1,6 +1,6 @@
-## Última validación exacta de #220 — 2026-11-05 10:53 UTC
+## Corrección posterior de autorización — PR #221
 
-HEAD `40cf9e2cff5e88a5feec7b8168c8f436cb3f0601`, base #218 (`2115d66cca18ee094ee3b3f8148ac6a61df040da`), OPEN/DRAFT/no merge. Se corrigió TS2345 en `TextDecoder` usando `{ fatal: true, ignoreBOM: false }`. Los seis push workflows de este HEAD y sus jobs/steps: CI, migration validation, Playwright E2E, Semgrep, Trivy Security y Secret history scan, todos SUCCESS. La validación de #220 ya no está pendiente. Seguir verificando Worker Build Preview de la pila y revisión semántica; no confundir CI con producción. Issue #53 OPEN/P0.
+PR #221 OPEN/DRAFT/no merge, apilada sobre #220. HEAD `18dfc33525c792802c296469ee6140d3b5f649ff`; base SHA #220 `40cf9e2cff5e88a5feec7b8168c8f436cb3f0601`. En `catalog.ts`, `buildCatalogQuery` ya no replica roles para decidir la proyección de `cost_usd`: consulta `authorizeCommercialOperation(role, "catalog.read_costs")`. Sin ampliación de permisos. CI exacto al último snapshot: Secret history, Trivy, migration validation y Semgrep SUCCESS; CI y Playwright IN_PROGRESS. Pages Preview success; esperar Worker Preview y checks restantes. Orden #218 → #220 → #221.
 
 ---
 

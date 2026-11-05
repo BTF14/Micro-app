@@ -1,6 +1,6 @@
 # Motor monetario de Micro-app
 
-**Estado:** contrato técnico aprobado para orientar la implementación; ventas y pagos todavía no están implementados.  
+**Estado:** contrato técnico aprobado. El primer núcleo de aritmética exacta BigInt ya está implementado y probado en `apps/api/src/money.ts`; integración de catálogo UI, carrito, ventas y pagos todavía pendiente.  
 **Decisión de negocio:** Micro-app no ofrece descuentos ni promociones basadas en descuentos.
 
 ## 1. Moneda base y catálogo

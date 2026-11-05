@@ -140,3 +140,15 @@ Las decisiones D1–D8 de identidad están aprobadas y Google OAuth + allowlist 
 ## Precisión del contrato stale-count — 2026-11-05 UTC
 
 La API de #200 ya persiste el saldo esperado al crear un conteo físico y rechaza con HTTP 409 `COUNT_STALE` cuando el saldo actual ha cambiado al confirmar. Hay prueba de integración de dos conteos confirmados fuera de orden. No presentar este caso básico como pendiente de implementación. Antes de añadir otros escritores, evaluar versión monotónica/ABA y hacer cumplir el lock contract de almacén.
+
+
+
+## Estado reconciliado de inventario — 2026-11-05 UTC
+
+- #200 HEAD `a40d8378d792197628f70b07be04f92686d55bdb`: 17 ahead/0 behind main, 30 archivos; 10 workflow runs success, incluidos CI y validación PostgreSQL de migraciones. No reviews formales.
+- #204 HEAD `e37847c95958c3475f90041263ca4fac7f98c2d1`, base #200 `a40d8378...`: 4 ahead/0 behind. Incluye el cambio atómico de migración. Sin workflow runs/status contexts recuperados en este SHA.
+- #205 HEAD `a2fe55847d72b4d9994b781880843ab4906c7b08`, base #204 `e37847c...`: 10 ahead/0 behind. Incluye el último ajuste de #204 y preserva idempotencia. Solo Backup restore smoke test success; no status contexts. Requiere CI completa.
+- La migración 0005 tiene transacción explícita y el workflow de migración prueba rollback ante fallo inducido antes de aplicar el SQL real. No se aplicó a Neon.
+- Stale-count básico está cubierto por snapshot de cantidad, HTTP 409 y test de confirmación inversa. Riesgo residual ABA/versionado antes de nuevos writers.
+- Issue #53 sigue abierta; autorización/aislamiento total no se ha demostrado. La colisión de migración 0005 de roles en #194 sigue pendiente.
+- Ninguna PR se fusionó. No tocar producción, Neon, secretos, DNS, billing ni configuración productiva.

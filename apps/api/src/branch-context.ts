@@ -52,42 +52,23 @@ export async function lockBranchScopes(
   const orderedBranchIds = [...branchIds].sort();
   if (orderedBranchIds.length === 0) return true;
 
-  const branches = await tx.query<{ id: string }>(
-    `SELECT b.id
-     FROM branches b
-     WHERE b.organization_id = $1
-       AND b.id = ANY($2::uuid[])
-       AND b.is_active = true
-     ORDER BY b.id ASC
-     FOR SHARE OF b`,
-    [organizationId, orderedBranchIds],
-  );
-  if (branches.rows.length !== orderedBranchIds.length) return false;
-
   const orderedMemberships = [...membershipKeys.values()].sort((left, right) =>
     left.branchId < right.branchId ? -1 :
       left.branchId > right.branchId ? 1 :
         left.userId < right.userId ? -1 : left.userId > right.userId ? 1 : 0,
   );
-  if (orderedMemberships.length === 0) return true;
-
-  const memberships = await tx.query<{ branch_id: string; user_id: string }>(
-    `SELECT bm.branch_id, bm.user_id
-     FROM branch_memberships bm
-     JOIN unnest($2::uuid[], $3::uuid[]) AS requested(branch_id, user_id)
-       ON requested.branch_id = bm.branch_id
-      AND requested.user_id = bm.user_id
-     WHERE bm.organization_id = $1
-       AND bm.is_active = true
-     ORDER BY bm.branch_id ASC, bm.user_id ASC
-     FOR SHARE OF bm`,
+  const result = await tx.query<{ locked: boolean }>(
+    `SELECT public.lock_branch_scopes(
+       $1::uuid, $2::uuid[], $3::uuid[], $4::uuid[]
+     ) AS locked`,
     [
       organizationId,
+      orderedBranchIds,
       orderedMemberships.map((target) => target.branchId),
       orderedMemberships.map((target) => target.userId),
     ],
   );
-  return memberships.rows.length === orderedMemberships.length;
+  return result.rows[0]?.locked === true;
 }
 
 /**

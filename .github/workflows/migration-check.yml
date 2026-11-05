@@ -2,9 +2,9 @@ name: Database migration validation
 
 on:
   push:
-    branches: [main, feat/tenant-safe-schema, "feat/**", "work/**"]
+    branches: [main, feat/tenant-safe-schema, "feat/**", "work/**", "security/**"]
   pull_request:
-    branches: [main]
+    branches: [main, "security/**"]
 
 permissions:
   contents: read
@@ -134,3 +134,16 @@ jobs:
         run: docker exec -i "${{ job.services.postgres.id }}" psql -v ON_ERROR_STOP=1 -U microapp -d microapp_test -f /dev/stdin < apps/api/migrations/0010_auth_bootstrap_attempts.sql
       - name: Verify server-side bootstrap handoff privacy and constraints
         run: docker exec -i "${{ job.services.postgres.id }}" psql -v ON_ERROR_STOP=1 -U microapp -d microapp_test -f /dev/stdin < apps/api/migrations/0010_auth_bootstrap_attempts.assertions.sql
+      - name: Verify PostgreSQL lock-helper migration rolls back on failure
+        run: |
+          sed '/^COMMIT;$/i SELECT 1/0;' apps/api/migrations/0011_postgres_runtime_lock_helpers.sql > /tmp/0011-runtime-lock-helpers-failure.sql
+          if docker exec -i "${{ job.services.postgres.id }}" psql -v ON_ERROR_STOP=1 -U microapp -d microapp_test -f /dev/stdin < /tmp/0011-runtime-lock-helpers-failure.sql; then
+            echo "Expected the injected runtime lock-helper migration failure, but psql succeeded."
+            exit 1
+          fi
+          remaining="$(docker exec "${{ job.services.postgres.id }}" psql -At -U microapp -d microapp_test -c "SELECT to_regprocedure('public.lock_tenant_context(text,uuid)') IS NULL AND to_regprocedure('public.lock_branch_scopes(uuid,uuid[],uuid[],uuid[])') IS NULL AND to_regprocedure('public.lock_inventory_warehouses(uuid,uuid[],uuid[])') IS NULL AND NOT (SELECT prosecdef FROM pg_proc WHERE oid='public.validate_count_inventory_movement()'::regprocedure)")"
+          test "$remaining" = "t"
+      - name: Apply hardened PostgreSQL runtime lock helpers
+        run: docker exec -i "${{ job.services.postgres.id }}" psql -v ON_ERROR_STOP=1 -U microapp -d microapp_test -f /dev/stdin < apps/api/migrations/0011_postgres_runtime_lock_helpers.sql
+      - name: Verify hardened PostgreSQL runtime lock-helper contract
+        run: docker exec -i "${{ job.services.postgres.id }}" psql -v ON_ERROR_STOP=1 -U microapp -d microapp_test -f /dev/stdin < apps/api/migrations/0011_postgres_runtime_lock_helpers.assertions.sql

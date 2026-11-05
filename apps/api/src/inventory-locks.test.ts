@@ -12,7 +12,7 @@ function fakeTransaction(responses: unknown[][]) {
 }
 
 describe("inventory transaction lock helpers", () => {
-  it("locks all warehouses once in canonical UUID order", async () => {
+  it("locks all warehouses once in canonical UUID order through the hardened helper", async () => {
     const first = "00000000-0000-4000-8000-000000000001";
     const second = "abcdefab-cdef-4abc-8def-abcdefabcdef";
     const branchA = "11111111-1111-4111-8111-111111111111";
@@ -28,9 +28,7 @@ describe("inventory transaction lock helpers", () => {
 
     expect(calls).toHaveLength(1);
     expect(calls[0]!.values).toEqual([organization, [first, second], [branchA, branchB]]);
-    expect(calls[0]!.statement).toMatch(/requested\.branch_id = w\.branch_id/);
-    expect(calls[0]!.statement).toContain("w.is_active = true");
-    expect(calls[0]!.statement).toMatch(/ORDER BY w\.id ASC\s+FOR UPDATE OF w/);
+    expect(calls[0]!.statement).toContain("public.lock_inventory_warehouses");
   });
 
   it("fails closed when any requested warehouse is missing or outside the tenant", async () => {

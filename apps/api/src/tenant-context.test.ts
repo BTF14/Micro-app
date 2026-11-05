@@ -45,6 +45,22 @@ describe("resolveTenantContext", () => {
     expect(values?.[0]).not.toBe(sessionToken);
   });
 
+  it("uses the hardened database lock helper when tenant rows must be locked", async () => {
+    const { client, query } = makeClient([
+      { user_id: userId, organization_id: organizationId, role: "admin" },
+    ]);
+
+    await expect(resolveTenantContext(client, sessionToken, organizationId, true)).resolves.toEqual({
+      userId,
+      organizationId,
+      role: "admin",
+    });
+
+    expect(query).toHaveBeenCalledOnce();
+    expect(query.mock.calls[0]?.[0]).toContain("public.lock_tenant_context");
+    expect(query.mock.calls[0]?.[1]?.[1]).toBe(organizationId);
+  });
+
   it("does not query the database for missing, oversized, or malformed selectors", async () => {
     const { client, query } = makeClient();
 

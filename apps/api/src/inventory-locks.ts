@@ -51,14 +51,10 @@ export async function lockInventoryWarehouses(
   if (orderedTargets.length === 0) return [];
 
   const result = await tx.query<{ id: string }>(
-    `SELECT w.id
-     FROM warehouses w
-     JOIN unnest($2::uuid[], $3::uuid[]) AS requested(id, branch_id)
-       ON requested.id = w.id AND requested.branch_id = w.branch_id
-     WHERE w.organization_id = $1
-       AND w.is_active = true
-     ORDER BY w.id ASC
-     FOR UPDATE OF w`,
+    `SELECT locked.warehouse_id AS id
+     FROM public.lock_inventory_warehouses(
+       $1::uuid, $2::uuid[], $3::uuid[]
+     ) AS locked(warehouse_id)`,
     [
       organizationId,
       orderedTargets.map((target) => target.warehouseId),

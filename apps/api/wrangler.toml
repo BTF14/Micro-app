@@ -24,3 +24,7 @@ GOOGLE_CLIENT_ID = "1030757133503-huvhkok21n1br10rtfhs4827fo3v106q.apps.googleus
 # accidentally configured, index.ts blocks every application route.
 [previews.vars]
 APP_ENV = "preview"
+
+# Remove inactive, pseudonymous auth rate-limit buckets every hour.
+[triggers]
+crons = ["17 * * * *"]

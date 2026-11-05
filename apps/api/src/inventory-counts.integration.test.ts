@@ -337,7 +337,10 @@ describe.skipIf(!databaseUrl)("warehouse inventory count transactions against Po
 
   it("rejects an ABA-stale physical count even when on-hand returns to the original quantity", async () => {
     await client.query(
-      "INSERT INTO inventory_balances (organization_id, branch_id, warehouse_id, product_id, on_hand_quantity) VALUES ($1, $2, $3, $4, 8.250)",
+      `INSERT INTO inventory_balances (organization_id, branch_id, warehouse_id, product_id, on_hand_quantity, reserved_quantity)
+       VALUES ($1, $2, $3, $4, 8.250, 0)
+       ON CONFLICT (organization_id, warehouse_id, product_id)
+       DO UPDATE SET on_hand_quantity = EXCLUDED.on_hand_quantity, reserved_quantity = EXCLUDED.reserved_quantity`,
       [organizationId, branchId, warehouseId, productId],
     );
     const created = await request(root() + "/counts/physical", {
@@ -350,7 +353,9 @@ describe.skipIf(!databaseUrl)("warehouse inventory count transactions against Po
       "SELECT expected_on_hand_quantity::text AS expected, expected_balance_version::text AS version FROM inventory_count_lines WHERE organization_id = $1 AND count_id = $2",
       [organizationId, body.id],
     );
-    expect(snapshot.rows[0]).toEqual({ expected: "8.250", version: "1" });
+    expect(snapshot.rows[0]!.expected).toBe("8.250");
+    const initialVersion = BigInt(snapshot.rows[0]!.version);
+    const finalVersion = (initialVersion + 2n).toString();
 
     await client.query(
       "UPDATE inventory_balances SET on_hand_quantity = 8.500 WHERE organization_id = $1 AND warehouse_id = $2 AND product_id = $3",
@@ -367,8 +372,8 @@ describe.skipIf(!databaseUrl)("warehouse inventory count transactions against Po
       error: "COUNT_STALE",
       expected_on_hand_quantity: "8.250",
       current_on_hand_quantity: "8.250",
-      expected_balance_version: "1",
-      current_balance_version: "3",
+      expected_balance_version: initialVersion.toString(),
+      current_balance_version: finalVersion,
     });
 
     const persisted = await client.query<{ balance: string; version: string; status: string; movements: string }>(
@@ -379,7 +384,7 @@ describe.skipIf(!databaseUrl)("warehouse inventory count transactions against Po
         (SELECT count(*)::text FROM warehouse_inventory_movements WHERE organization_id = $1 AND count_id = $4) AS movements`,
       [organizationId, warehouseId, productId, body.id],
     );
-    expect(persisted.rows[0]).toEqual({ balance: "8.250", version: "3", status: "draft", movements: "0" });
+    expect(persisted.rows[0]).toEqual({ balance: "8.250", version: finalVersion, status: "draft", movements: "0" });
   });
 
   it("does not let a physical count reduce stock below reserved quantity", async () => {

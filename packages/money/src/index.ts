@@ -13,7 +13,7 @@ function assertNumericPrecision(value: bigint, precision: number): void {
     throw new RangeError("Numeric precision is outside the supported range.");
   }
   const magnitude = value < 0n ? -value : value;
-  if (magnitude >= powerOfTen(precision)) {
+  if (magnitude >= 10n ** BigInt(precision)) {
     throw new RangeError("Numeric value exceeds the supported precision.");
   }
 }

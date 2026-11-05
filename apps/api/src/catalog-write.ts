@@ -41,14 +41,16 @@ function boundedText(value: unknown, maxLength: number, required: boolean): stri
   return normalized;
 }
 
-function decimalValue(value: unknown, scale: number, maxIntegerDigits: number): string | null {
-  // Monetary and quantity inputs must remain decimal strings end-to-end.
-  // JSON numbers have already passed through IEEE-754 parsing in the Worker.
+function decimalValue(value: unknown, precision: number, scale: number): string | null {
+  // Keep money and quantities as strings; validate against the same PostgreSQL
+  // NUMERIC contract used by calculations in the shared package.
   if (typeof value !== "string") return null;
-  const raw = value;
-  const pattern = new RegExp(`^(?:0|[1-9][0-9]{0,${maxIntegerDigits - 1}})(?:\\.[0-9]{1,${scale}})?$`);
-  if (!pattern.test(raw)) return null;
-  return raw.includes(".") ? raw : raw + ".0";
+  try {
+    if (parseNumeric(value, precision, scale) < 0n) return null;
+    return value.includes(".") ? value : value + ".0";
+  } catch {
+    return null;
+  }
 }
 
 function parseProductInput(value: unknown): ProductInput | null {
@@ -140,7 +142,7 @@ function parseProductPatch(value: unknown): ProductPatch | null {
         break;
       }
       case "price_usd": {
-        const parsed = decimalValue(body[key], 4, 10);
+        const parsed = decimalValue(body[key], 14, 4);
         if (parsed === null) return null;
         patch.priceUsd = parsed;
         break;

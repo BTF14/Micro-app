@@ -42,3 +42,24 @@ La matriz no asigna todavía permisos detallados por operación; deben definirse
 ## Siguiente paso técnico
 
 Cuando se implemente el primer handler de negocio, añadir primero pruebas de integración contra PostgreSQL efímero para autenticación, selección de organización y denegación cruzada; después implementar la operación mínima bajo esas pruebas. Repetir por recurso y rol. No marcar aislamiento multiempresa completo en `docs/PRODUCTION_READINESS.md` hasta cubrir todas las lecturas y escrituras expuestas.
+
+
+## Estado reconciliado — 2026-11-05 UTC
+
+Este addendum supersede las afirmaciones históricas anteriores sobre ausencia de handlers. El plan sigue siendo una matriz de aceptación parcial: las pruebas ejecutadas no certifican todo el aislamiento multiempresa ni producción.
+
+### Implementación observable en ramas abiertas (no en main)
+
+- La matriz `docs/sdd/role-permission-decision-matrix.md` fue aprobada el 2026-10-31. El texto histórico que decía que la matriz estaba pendiente ya no describe el estado vigente.
+- PR #200 contiene catálogo tenant-scoped y handlers de almacenes/conteos; PR #204 aísla fixtures PostgreSQL; PR #205 incorpora idempotencia, versionado monotónico y pruebas HTTP de aislamiento. Ninguna está fusionada.
+- En PR #205 HEAD `c564221919c370aa8c1cd3571f4c86f8cafffb78`, la suite `inventory-counts.integration.test.ts` pasó 20/20 pruebas en PostgreSQL efímero. Para ese SHA exacto pasaron 7/7 workflow runs, incluidos CI, Playwright, Database migration validation, Backup restore, Semgrep, Security y Secret history scan.
+- Las pruebas nuevas cubren selector de organización ajena en POST y GET, producto de otro tenant en una solicitud, miembro Inventory sin asignación a otra sucursal, warehouse/branch discordante y ausencia de escrituras ante denegaciones.
+- Las assertions SQL de 0005 también comprueban FKs cross-tenant para warehouse/product y balances.
+
+### Límites que siguen abiertos
+
+- No se han cubierto todavía todas las lecturas/escrituras de cada recurso y rol de la matriz. No existen aún endpoints de ventas, pagos, recepción, reservas, devoluciones o transferencias; tampoco endpoints de lectura de balance y movimiento para cubrir todos los permisos de consulta de Inventory/Cashier.
+- Faltan pruebas HTTP adicionales de IDs de conteo ajenos en confirmación, acceso a todas las rutas de catálogo desde tenants/roles distintos y matriz completa de denegaciones por operación.
+- `audit_logs` no tiene en la migración 0001 un trigger append-only equivalente al ledger de inventario; la protección por privilegios del rol runtime no quedó verificada aquí.
+- Issue #53 sigue abierta y P0. La cobertura agregada reduce el hueco de la vertical slice, pero no cierra el issue ni habilita producción.
+- No se aplicó la migración a Neon ni se tocaron datos reales. Los resultados citados son de PostgreSQL desechable en CI.

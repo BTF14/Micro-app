@@ -203,3 +203,14 @@ Ejecutar contra PostgreSQL efímero con fixtures sintéticas, no Neon main. Las 
 - Este trabajo es análisis y documentación; no se editó código, SQL, migraciones, workflows, secretos ni infraestructura.
 - No se ejecutó suite de runtime ni SQL porque no se introdujo implementación. Las pruebas enumeradas son criterios de aceptación futuros, no pruebas ejecutadas.
 - No se accedió a Neon ni a datos reales; no se tocó Cloudflare, DNS, billing ni producción.
+
+
+## Estado de implementación reconciliado — 2026-11-05 UTC
+
+Este addendum actualiza los checkpoints históricos que indicaban que almacenes y balances por almacén aún no estaban implementados y que la matriz de permisos estaba pendiente. La matriz se aprobó el 2026-10-31; el modelo de inventario por almacén está implementado parcialmente en ramas abiertas, no en main.
+
+- PR #200 incorpora `warehouses`, `inventory_counts`, `inventory_count_lines`, `inventory_balances`, `warehouse_inventory_movements`, FKs tenant-scoped, lifecycle de conteos, ledger append-only y confirmación transaccional. La migración 0005 no hace backfill de `products.stock_quantity`; la inicialización requiere conteo de apertura documentado.
+- PR #205 incorpora idempotencia de creación, `balance_version` monotónico, bloqueo de DELETE de balance y snapshot de versión para invalidar conteos físicos ABA. PR #204 aporta aislamiento de fixtures de integración.
+- HEAD #205 `c564221919c370aa8c1cd3571f4c86f8cafffb78`: 20/20 pruebas PostgreSQL de conteos y 7/7 workflow runs success. Todas las PR siguen Draft; no se fusionaron.
+- No existen todavía ventas, recepción de compras, reservas, devoluciones ni transferencias como writers HTTP; el conteo es el único escritor de inventario expuesto en esta vertical slice. Todo futuro writer debe usar el contrato `docs/architecture/INVENTORY_TRANSACTION_LOCKING.md` y actualizar balance y ledger en una sola transacción.
+- No aplicar 0005 a Neon ni tocar `products.stock_quantity` hasta diseñar backfill/reconciliación y superar gates de producción. Issue #53 permanece abierta.

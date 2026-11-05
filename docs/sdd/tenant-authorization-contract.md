@@ -64,3 +64,15 @@ No rellenar estos puntos por inferencia. Hasta que las decisiones necesarias est
 ## Estado actual verificado en la revisión documental
 
 La API tiene rutas de autenticación, pero no handlers HTTP comerciales para catálogo, proveedores, ventas, pagos ni movimientos de inventario. Por ello, este contrato prepara futuras implementaciones; no demuestra aislamiento efectivo de rutas comerciales ni cambia el estado de preparación para producción.
+
+
+## Estado de aplicación parcial — 2026-11-05 UTC
+
+Este contrato técnico sigue vigente como guía, pero las afirmaciones históricas de que no existen handlers comerciales deben leerse como checkpoints antiguos. La matriz de permisos se aprobó el 2026-10-31.
+
+- En ramas abiertas #200/#204/#205 existen rutas de catálogo y almacenes/conteos con validación server-side de sesión, organización, rol y sucursal. No existe un middleware general ni se han implementado todas las operaciones del catálogo de permisos.
+- Las mutaciones de conteo revalidan y bloquean sesión/tenant y branch/membership dentro de la transacción; las consultas usan predicados tenant/branch/warehouse y FKs compuestas como defensa adicional.
+- PR #205 HEAD `c564221919c370aa8c1cd3571f4c86f8cafffb78`: 20/20 pruebas PostgreSQL de conteos y 7/7 workflow runs success. La suite cubre selector de tenant ajeno, producto ajeno, branch no asignado y warehouse de otro branch, con aserciones de ausencia de escrituras.
+- No se han probado todavía todas las rutas de catálogo y recursos comerciales frente a toda la matriz de roles; no existen endpoints de ventas/pagos/recepciones/reservas/devoluciones/transferencias ni lectura de balances/movimientos para completar los permisos de consulta.
+- `audit_logs` no tiene guard append-only en migración 0001; deben verificarse privilegios runtime y el modelo de inmutabilidad antes de producción.
+- Issue #53 sigue abierta/P0. Los cambios están en ramas Draft; no están en main ni desplegados. Ninguna evidencia de CI autoriza migrar a Neon o declarar producción lista.

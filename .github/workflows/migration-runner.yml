@@ -2,7 +2,7 @@ name: PostgreSQL migration runner validation
 
 on:
   push:
-    branches: ["security/**"]
+    branches: [main, "security/**"]
   pull_request:
     branches: [main, "security/**"]
 
@@ -46,6 +46,8 @@ jobs:
       - name: Provision isolated migrator and runtime LOGIN roles
         run: |
           psql -X -v ON_ERROR_STOP=1 --dbname "$ADMIN_DATABASE_URL" -c "CREATE ROLE microapp_migrator LOGIN PASSWORD 'migrator-test-only' NOSUPERUSER NOCREATEDB NOCREATEROLE NOREPLICATION NOBYPASSRLS; CREATE ROLE microapp_runtime LOGIN PASSWORD 'runtime-test-only' NOSUPERUSER NOCREATEDB NOCREATEROLE NOREPLICATION NOBYPASSRLS NOINHERIT; REVOKE CREATE ON SCHEMA public FROM PUBLIC; GRANT USAGE, CREATE ON SCHEMA public TO microapp_migrator; GRANT USAGE ON SCHEMA public TO microapp_runtime; GRANT CONNECT ON DATABASE microapp_test TO microapp_migrator, microapp_runtime;"
+      - name: Validate migration runner shell syntax
+        run: bash -n scripts/db/migrate.sh
       - name: Apply clean schema through the migration runner
         run: bash scripts/db/migrate.sh
       - name: Verify ledger, owner and recorded checksums

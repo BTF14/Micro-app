@@ -1,3 +1,14 @@
+## Handoff vigente — Cloudflare PR #207: evidencia de preview y siguiente gate — 2026-11-05 01:38 EDT
+
+- Revisar los comentarios automáticos de [Workers](https://github.com/BTF14/Micro-app/pull/207#issuecomment-6649952138) y [Pages](https://github.com/BTF14/Micro-app/pull/207#issuecomment-6649953153). Ambos informan éxito y publican URLs etiquetadas como Commit Preview y Branch Preview para el commit `26c5270`.
+- Workers Build ID de ese comentario: `0c8394a1-4d91-4061-a850-6c78f3b11295`. No confundirlo con el build histórico objetivo `3542c660-e5e3-435e-8be5-dbed236cec1c`.
+- Esto confirma que Cloudflare comunicó previews satisfactorios para #207; **no** confirma ausencia de publicación de versión productiva ni ausencia de tráfico productivo. No inferir destino por el path `/production/builds/`.
+- Próxima acción Cloudflare: recargar TinyFish; comprobar wallet; verificar que el perfil correcto esté autenticado en Cloudflare sin pedir credenciales ni capturas; después inspeccionar en modo estrictamente de solo lectura el build objetivo `3542c660-e5e3-435e-8be5-dbed236cec1c` y el build #207 `0c8394a1-4d91-4061-a850-6c78f3b11295`. Correlacionar build → Worker Version → deployment → tráfico, sin tocar configuración.
+- Estado de la consulta TinyFish actual: wallet `-$0.008 USD`; perfil `prof_5ffc41e691e841a0` existe pero no lista `cloudflare.com` en `signed_in_sites`. No repetir setup ni lanzar runs hasta resolver saldo y perfil.
+- Restricción invariable: Cloudflare solo lectura; no cambiar deployments, versions, traffic, settings, secrets, routes, DNS o billing.
+
+---
+
 ## Handoff vigente — 2026-11-05 00:50 EDT
 
 ### Estado desde el que continuar

@@ -1530,3 +1530,10 @@ CI documental: para HEAD `8c15e13fa001a14a0ddf9f2432bc17efb30d476d`, los 8 workf
 - Stale-count, atomicidad de 0005, divergencia #204/#205, colisión 0005 #194 y gates de issue #53 permanecen abiertos. No se ha declarado resuelto ninguno.
 - No se fusionó ninguna PR ni se tocó main, Neon, Cloudflare productivo, secretos, DNS, billing o producción.
 - Nuevo procedimiento: mantener documentación y handoff sincronizados en el mismo ciclo de implementación; registrar SHA exacto y evidencia por cada afirmación CI.
+
+
+## 2026-11-05 — Corrección de precisión: protección stale-count
+
+- La inspección del código y test de #200 confirma que el caso básico de conteo físico antiguo se protege: se guarda expected_on_hand_quantity al crear y se rechaza con HTTP 409 si el saldo actual difiere al confirmar.
+- Test de integración: dos conteos sobre el mismo snapshot; se confirma el segundo primero; el primero queda draft, recibe COUNT_STALE y no produce ledger movement.
+- Se corrige la anotación anterior que decía que no había control implementado. Riesgo residual: igualdad de cantidad sin versión monotónica no detecta ABA; revisar antes de integrar escritores futuros.

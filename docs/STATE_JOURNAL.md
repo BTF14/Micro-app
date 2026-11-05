@@ -1774,3 +1774,11 @@ Mantener #207 en Draft. Revisar independientemente el diff; resolver la colisió
 - Validación: migration-check pasó en f8d90fb. Para HEAD actual 8b3646ad solo cinco check-runs de preview/security fueron visibles y success; CI/migration-check no devueltos aún. Mantener #208 Draft hasta CI completo.
 - #207 sigue basada en #200 y omite 0006 entre 0005 y 0007. Comentarios: #207 ID 6651848193, issue #53 ID 6651847660. Próximo: apilar audit branch sobre #208 y validar 0005→0006→0007 desde PG limpio.
 - Issue #53 permanece abierta/P0. Sin cambios en main, Neon, secretos, Cloudflare settings/DNS/billing ni datos reales. No merge/deploy; producción NO LISTA.
+
+
+## Auditoría P0 — idempotencia y aislamiento de conteos (#205) — 2026-11-05 UTC
+
+- Revisado diff completo de #205 HEAD `c0bcbbe48aa8783b85ee7787dd1ae8a6d0dfdafc`; 9/9 check-runs success, Draft.
+- Verificado contrato de idempotencia: header opcional validado, unique partial index org/creator/key, request_hash SHA-256 canónico tenant/branch/warehouse/type/reason/lineas, decimal precision, unit cost y orden de producto; duplicate product IDs rechazados.
+- Orden transaccional comprobado en código: tenant/branch locks → warehouse lock → validación de productos → claim idempotency/document → balances; replay con FOR UPDATE; payload diferente 409; audit y líneas transaccionales. Tests PG cubren concurrencia, rollback audit/retry, replay tras confirmación, branch/tenant isolation.
+- Conclusión: idempotencia de creación de conteos robusta para este escritor; no generalizar a writers futuros ni a clientes sin Idempotency-Key (header opcional). No se cambió código #205.

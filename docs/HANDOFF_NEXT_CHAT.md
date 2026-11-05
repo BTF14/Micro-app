@@ -2058,3 +2058,8 @@ No se modificó código runtime, migraciones, main, Neon, secretos, Cloudflare s
 **Bloqueo siguiente:** #207 continúa abierta/Draft basada en #200; su workflow aún ejecuta 0005 → 0007 y omite 0006. Comentario en #207 ID 6651848193; en issue #53 ID 6651847660. Siguiente tarea: apilar audit logs sobre #208 y probar 0005→0006→0007 desde PostgreSQL limpio. No declarar AC-5 completo hasta ese CI.
 
 Issue #53 sigue abierta/P0; producción NO LISTA. No tocar main, Neon, secretos, Cloudflare settings/DNS/billing ni datos reales; no merge/deploy.
+
+
+## Auditoría P0 — idempotencia y aislamiento de conteos (#205) — 2026-11-05 UTC
+
+#205 HEAD `c0bcbbe48aa8783b85ee7787dd1ae8a6d0dfdafc`, 9/9 checks success, Draft. Auditoría estática de idempotencia: key header 1–128 validada; unique partial index por org/creator/key; SHA-256 canónico incluye tenant/branch/warehouse/type/reason/line items sorted/quantity/unitCost; duplicates product IDs rejected. Transacción bloquea tenant/branch/warehouse antes de reclamar el documento y después balances; replay bajo FOR UPDATE evita líneas/auditoría duplicadas; payload distinto 409. Tests PG cubren replay, order-insensitivity, confirmed replay, conflict, concurrent create, audit rollback/retry, malformed key y cross-tenant/branch. Conclusión: fuerte para creación de conteo actual; no demuestra coordinación con escritores futuros. Idempotency-Key sigue opcional; clientes sin header no obtienen dedupe. No se modificó #205.

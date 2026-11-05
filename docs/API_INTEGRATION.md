@@ -124,3 +124,14 @@ No usar `ILIKE '%texto%'` asumiendo que el índice B-tree actual lo acelera; pro
 ## Estado actual de identidad y sucursal (post PR #170, 2026-10-30)
 
 Las decisiones D1–D8 de identidad están aprobadas y Google OAuth + allowlist se implementaron en PR #153; HTTPS/canonical origin para Google OAuth se reforzó en PR #155. Las rutas de registro y login por contraseña siguen deshabilitadas fail-closed. PR #165 añadió `branches`, `branch_memberships` y `resolveBranchContext`; PR #169 añadió `resolveOpenCashierRegisterShift` como helper aislado para el turno del cajero. Ninguno está conectado a rutas comerciales ni concede autorización por operación. La matriz de permisos comerciales continúa NO APROBADA. No hay endpoints comerciales. Ver `docs/SAAS_ARCHITECTURE_DECISIONS.md`, `docs/sdd/BRANCH_SCOPE_CONTEXT_IMPLEMENTATION.md` y `docs/SCHEMA_REVIEW.md`.
+
+
+---
+
+## Estado de inventario y PRs — 2026-11-05 UTC
+
+- #200 propone la vertical slice de inventario en HEAD `243592468e9fd61b1f8c578d867887dbb7f18e4d`; no está integrada en main.
+- #204 añade aislamiento de fixtures sobre el HEAD #200; su HEAD `57a9f098bcb93427315e96c90e62ae13764a485b` no tiene workflow runs/status contexts recuperados en la comprobación actual.
+- #205 añade idempotencia en HEAD `c1f09d09dd08b9600e7a6c0ff8ccbb5be4e9c990`, pero está 9 ahead/1 behind #204 y no tiene validación CI completa acreditada.
+- Idempotencia de creación no resuelve el riesgo stale-count: el servicio debe rechazar o reconciliar snapshots antiguos al confirmar un conteo físico.
+- No declarar endpoints de inventario disponibles en main ni conectados a Neon producción.

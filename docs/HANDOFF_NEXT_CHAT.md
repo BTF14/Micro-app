@@ -1,3 +1,41 @@
+## Handoff vigente — reconciliación de inventario y documentación — 2026-11-04 21:40 EDT
+
+### Fuente de verdad viva
+
+- Repo: `BTF14/Micro-app`.
+- `main`: `7b0f057b8c152515005feed40305143c0ebb94b0`.
+- PR #200: HEAD `243592468e9fd61b1f8c578d867887dbb7f18e4d`, base main, 16 ahead / 0 behind, 30 archivos. Abierta/Draft, sin reviews formales. 20 checks exitosos reportados en la última continuidad; seis cancelaciones históricas no deben contarse como fallos. La descripción de PR sigue con SHA previo `7d2ef3d...` y 12 ahead: corregirla. Blocker funcional: dos conteos físicos creados antes de confirmación pueden confirmarse en orden inverso y el conteo antiguo sobrescribir el saldo nuevo.
+- PR #204: HEAD `57a9f098bcb93427315e96c90e62ae13764a485b`; tres commits sobre #200, 0 behind; 8/8 checks recuperados. Cambio relevante: saldo inicial de test concurrente 7.000 frente a conteo 8.500. Abierta/Draft; su descripción aún dice CI pendiente.
+- PR #205: HEAD `c1f09d09dd08b9600e7a6c0ff8ccbb5be4e9c990`; 9/9 checks recuperados. Añade Idempotency-Key, hash canónico, replay y 409 por payload distinto. Comparación #204→#205: 9 commits ahead y 1 behind; falta incorporar el commit final de #204 (`57a9f09...`). No fusionar ni aprobar hasta reconciliar rama y volver a validar checks.
+- PR #194: HEAD `7b3ad50e5780416868a1a428b856d12c4ea1e2ea`; 13 ahead / 2 behind main. Su `0005_register_shift_member_roles.sql` colisiona con `0005_warehouse_inventory.sql` de #200. Mantener abierta y sin merge; secuencia objetivo: integrar inventario primero, después actualizar #194 y renombrar a 0006 con todas sus referencias/assertions/workflows.
+- PR #202: HEAD `4e54efbf33cc160f532b26cd147b4afa783cddeb`; 30 ahead / 0 behind main; 12 archivos documentales; 9/9 workflow runs success; sin reviews formales ni threads. Abierta/Draft. La propia documentación aún refería a HEADs anteriores (355c80, 4e54efb); este addendum corrige la continuidad.
+- #201 cerrada; #190 cerrada; #193 abierta; #196 abierta y protegida contra cambios en este trabajo. Issue #53 abierta; #78 cerrada completed.
+- No se hizo merge, no se modificó main, no se ejecutó migración remota, no se cambió Neon/Cloudflare, secretos, DNS, billing o producción.
+
+### Próxima secuencia técnica
+
+1. Corregir la descripción de #200 para que indique el HEAD real 2435924 y el estado exacto de CI; conservar Draft.
+2. Resolver stale-count en #200: especificar y probar snapshot/versionado, rechazo de conteo obsoleto y concurrencia; no asumir “último en confirmar gana”.
+3. Incorporar el commit final de #204 a #205 sin force-push; verificar que no se pierda ningún cambio, luego CI del nuevo HEAD.
+4. Revisar #205: transacción de creación/replay, normalización/hash, conflictos concurrentes, rollback y replay cuando warehouse/product hayan quedado inactivos. No inventar requisito funcional; evaluar comportamiento y documentar.
+5. Corregir atomicidad de migración 0005 con prueba de fallo inducido en PostgreSQL desechable.
+6. Solo después de gates de inventario, resolver la colisión #194 0005→0006 y ejecutar la cadena completa 0001–0006 en PostgreSQL efímero.
+7. Terminar revisión semántica de #202 y actualizar los documentos restantes; mantenerla Draft hasta revisión completa.
+8. No fusionar mientras stale-count, dependencia de #205, migración/rollback y aislamiento Cloudflare sigan abiertos.
+
+### Restricciones no negociables
+
+- No tocar Neon producción ni aplicar migraciones remotas.
+- No desplegar producción ni cambiar configuración Cloudflare.
+- No activar Worker Previews.
+- No tocar PR #196, #193 ni alterar el estado histórico de #190.
+- No force-push; no cambiar main directamente.
+- No borrar/recrear la historia del diario. Mantener STATE_JOURNAL append-only.
+- Coste $0; no activar billing ni herramientas pagadas.
+- No pedir capturas: configuración Cloudflare histórica ya está documentada. Si una verificación autenticada no está disponible, registrar el límite y continuar.
+
+---
+
 ## Reanudación verificada — PR #202 — 2026-11-04
 
 - Rama: `docs/reconcile-current-state-20261104`.

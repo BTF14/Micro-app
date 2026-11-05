@@ -146,11 +146,30 @@ describe.skipIf(!databaseUrl)("warehouse inventory count transactions against Po
     productId = product.rows[0]!.id;
   });
 
+  async function seedInventoryBalanceFor(targetProductId: string, onHand: string, reserved = "0.000"): Promise<void> {
+    await client.query("BEGIN");
+    try {
+      await client.query(
+        "INSERT INTO inventory_balances (organization_id, branch_id, warehouse_id, product_id, on_hand_quantity, reserved_quantity) VALUES ($1, $2, $3, $4, $5::numeric, $6::numeric)",
+        [organizationId, branchId, warehouseId, targetProductId, onHand, reserved],
+      );
+      if (Number(onHand) !== 0) {
+        await client.query(
+          `INSERT INTO warehouse_inventory_movements
+            (organization_id, branch_id, warehouse_id, product_id, movement_type, quantity_delta, reason, actor_user_id)
+           VALUES ($1, $2, $3, $4, 'purchase_receipt', $5::numeric, 'Integration test fixture seed', $6)`,
+          [organizationId, branchId, warehouseId, targetProductId, onHand, userId],
+        );
+      }
+      await client.query("COMMIT");
+    } catch (error) {
+      await client.query("ROLLBACK");
+      throw error;
+    }
+  }
+
   async function seedInventoryBalance(onHand: string, reserved = "0.000"): Promise<void> {
-    await client.query(
-      "INSERT INTO inventory_balances (organization_id, branch_id, warehouse_id, product_id, on_hand_quantity, reserved_quantity) VALUES ($1, $2, $3, $4, $5::numeric, $6::numeric)",
-      [organizationId, branchId, warehouseId, productId, onHand, reserved],
-    );
+    await seedInventoryBalanceFor(productId, onHand, reserved);
   }
 
   afterAll(async () => {
@@ -229,10 +248,7 @@ describe.skipIf(!databaseUrl)("warehouse inventory count transactions against Po
       "INSERT INTO products (organization_id, sku, name, price_usd) VALUES ($1, $2, 'Second Inventory Count Product', 1) RETURNING id",
       [organizationId, "INV-COUNT-SECOND-" + crypto.randomUUID().replace(/-/g, "").slice(0, 12)],
     );
-    await client.query(
-      "INSERT INTO inventory_balances (organization_id, branch_id, warehouse_id, product_id, on_hand_quantity, reserved_quantity) VALUES ($1, $2, $3, $4, 2, 0)",
-      [organizationId, branchId, warehouseId, secondProduct.rows[0]!.id],
-    );
+    await seedInventoryBalanceFor(secondProduct.rows[0]!.id, "2.000");
     const key = "count-order-" + crypto.randomUUID();
     const firstLines = [
       { product_id: productId, counted_quantity: "5.000" },
@@ -418,11 +434,7 @@ describe.skipIf(!databaseUrl)("warehouse inventory count transactions against Po
       "INSERT INTO products (organization_id, sku, name, price_usd) VALUES ($1, 'INV-OMITTED', 'Omitted Opening Product', 1) RETURNING id",
       [organizationId],
     );
-    await client.query(
-      `INSERT INTO inventory_balances (organization_id, branch_id, warehouse_id, product_id, on_hand_quantity)
-       VALUES ($1, $2, $3, $4, 1)`,
-      [organizationId, branchId, warehouseId, omittedProduct.rows[0]!.id],
-    );
+    await seedInventoryBalanceFor(omittedProduct.rows[0]!.id, "1.000");
     const partialOpening = await request(root() + "/counts/opening", {
       reason: "Opening must not ignore balances for omitted products",
       lines: [{ product_id: productId, counted_quantity: "10.500" }],
@@ -444,14 +456,20 @@ describe.skipIf(!databaseUrl)("warehouse inventory count transactions against Po
       "DELETE FROM inventory_counts WHERE organization_id = $1 AND id = $2",
       [organizationId, partialOpeningBody.id],
     );
+    await client.query("ALTER TABLE warehouse_inventory_movements DISABLE TRIGGER USER");
     await client.query("ALTER TABLE inventory_balances DISABLE TRIGGER USER");
     try {
+      await client.query(
+        "DELETE FROM warehouse_inventory_movements WHERE organization_id = $1 AND product_id = $2",
+        [organizationId, omittedProduct.rows[0]!.id],
+      );
       await client.query(
         "DELETE FROM inventory_balances WHERE organization_id = $1 AND warehouse_id = $2 AND product_id = $3",
         [organizationId, warehouseId, omittedProduct.rows[0]!.id],
       );
     } finally {
       await client.query("ALTER TABLE inventory_balances ENABLE TRIGGER USER");
+      await client.query("ALTER TABLE warehouse_inventory_movements ENABLE TRIGGER USER");
     }
     await client.query("DELETE FROM products WHERE organization_id = $1 AND id = $2", [organizationId, omittedProduct.rows[0]!.id]);
 
@@ -586,14 +604,33 @@ describe.skipIf(!databaseUrl)("warehouse inventory count transactions against Po
       [organizationId, body.id],
     );
     expect(snapshot.rows[0]).toEqual({ expected: "8.250", version: "1" });
-    await client.query(
-      "UPDATE inventory_balances SET on_hand_quantity = 8.500 WHERE organization_id = $1 AND warehouse_id = $2 AND product_id = $3",
-      [organizationId, warehouseId, productId],
-    );
-    await client.query(
-      "UPDATE inventory_balances SET on_hand_quantity = 8.250 WHERE organization_id = $1 AND warehouse_id = $2 AND product_id = $3",
-      [organizationId, warehouseId, productId],
-    );
+    await client.query("BEGIN");
+    try {
+      await client.query(
+        "UPDATE inventory_balances SET on_hand_quantity = 8.500 WHERE organization_id = $1 AND warehouse_id = $2 AND product_id = $3",
+        [organizationId, warehouseId, productId],
+      );
+      await client.query(
+        `INSERT INTO warehouse_inventory_movements
+          (organization_id, branch_id, warehouse_id, product_id, movement_type, quantity_delta, reason, actor_user_id)
+         VALUES ($1, $2, $3, $4, 'purchase_receipt', 0.250, 'ABA test intermediate increase', $5)`,
+        [organizationId, branchId, warehouseId, productId, userId],
+      );
+      await client.query(
+        "UPDATE inventory_balances SET on_hand_quantity = 8.250 WHERE organization_id = $1 AND warehouse_id = $2 AND product_id = $3",
+        [organizationId, warehouseId, productId],
+      );
+      await client.query(
+        `INSERT INTO warehouse_inventory_movements
+          (organization_id, branch_id, warehouse_id, product_id, movement_type, quantity_delta, reason, actor_user_id)
+         VALUES ($1, $2, $3, $4, 'reversal', -0.250, 'ABA test return to original quantity', $5)`,
+        [organizationId, branchId, warehouseId, productId, userId],
+      );
+      await client.query("COMMIT");
+    } catch (error) {
+      await client.query("ROLLBACK");
+      throw error;
+    }
     const confirmation = await request(root() + "/counts/" + body.id + "/confirm");
     expect(confirmation.status).toBe(409);
     expect(await confirmation.json()).toMatchObject({
@@ -661,6 +698,40 @@ describe.skipIf(!databaseUrl)("warehouse inventory count transactions against Po
       [organizationId, body.id],
     );
     expect(persisted.rows[0]).toEqual({ status: "confirmed", movements: "1", audits: "1" });
+  });
+
+  it("confirms a zero opening balance without a stock movement and still reserves the opening slot", async () => {
+    const opening = await request(root() + "/counts/opening", {
+      reason: "Initialize a warehouse with zero stock",
+      lines: [{ product_id: productId, counted_quantity: "0.000" }],
+    });
+    expect(opening.status).toBe(201);
+    const body = await opening.json() as { id: string };
+    const confirmation = await request(root() + "/counts/" + body.id + "/confirm");
+    expect(confirmation.status).toBe(200);
+
+    const persisted = await client.query<{ balance: string; movements: string; audits: string }>(
+      `SELECT
+        (SELECT on_hand_quantity::text FROM inventory_balances
+         WHERE organization_id = $1 AND warehouse_id = $2 AND product_id = $3) AS balance,
+        (SELECT count(*)::text FROM warehouse_inventory_movements
+         WHERE organization_id = $1 AND count_id = $4) AS movements,
+        (SELECT count(*)::text FROM audit_logs
+         WHERE organization_id = $1 AND entity_id = $4::text
+           AND action = 'inventory.count.confirmed') AS audits`,
+      [organizationId, warehouseId, productId, body.id],
+    );
+    expect(persisted.rows[0]).toEqual({ balance: "0.000", movements: "0", audits: "1" });
+
+    const secondOpening = await request(root() + "/counts/opening", {
+      reason: "A second opening must not overwrite the initial zero balance",
+      lines: [{ product_id: productId, counted_quantity: "1.000" }],
+    });
+    expect(secondOpening.status).toBe(201);
+    const secondBody = await secondOpening.json() as { id: string };
+    const secondConfirmation = await request(root() + "/counts/" + secondBody.id + "/confirm");
+    expect(secondConfirmation.status).toBe(409);
+    expect(await secondConfirmation.json()).toMatchObject({ error: "OPENING_ALREADY_EXISTS" });
   });
 
   it("records an audited zero-delta physical count without creating a ledger movement", async () => {

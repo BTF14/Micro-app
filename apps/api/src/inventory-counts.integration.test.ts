@@ -165,11 +165,13 @@ describe.skipIf(!databaseUrl)("warehouse inventory count transactions against Po
         await client.query("ALTER TABLE inventory_balances DISABLE TRIGGER USER");
         await client.query("ALTER TABLE inventory_count_lines DISABLE TRIGGER USER");
         await client.query("ALTER TABLE inventory_counts DISABLE TRIGGER USER");
+        await client.query("ALTER TABLE audit_logs DISABLE TRIGGER USER");
         await client.query("DELETE FROM audit_logs WHERE organization_id = $1", [organizationId]);
         await client.query("DELETE FROM warehouse_inventory_movements WHERE organization_id = $1", [organizationId]);
         await client.query("DELETE FROM inventory_balances WHERE organization_id = $1", [organizationId]);
         await client.query("DELETE FROM inventory_count_lines WHERE organization_id = $1", [organizationId]);
         await client.query("DELETE FROM inventory_counts WHERE organization_id = $1", [organizationId]);
+        await client.query("ALTER TABLE audit_logs ENABLE TRIGGER USER");
         await client.query("ALTER TABLE inventory_counts ENABLE TRIGGER USER");
         await client.query("ALTER TABLE inventory_count_lines ENABLE TRIGGER USER");
         await client.query("ALTER TABLE warehouse_inventory_movements ENABLE TRIGGER USER");

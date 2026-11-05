@@ -97,8 +97,20 @@ describe.skipIf(!databaseUrl)("catalog product creation against PostgreSQL", () 
   afterAll(async () => {
     if (!client) return;
     if (organizationIds.length) {
-      await client.query("DELETE FROM audit_logs WHERE organization_id = ANY($1::uuid[])", [organizationIds]);
-      await client.query("DELETE FROM products WHERE organization_id = ANY($1::uuid[])", [organizationIds]);
+      await client.query("BEGIN");
+      try {
+        // Test teardown runs with the disposable database owner. Temporarily
+        // disable only user triggers so fixtures can be removed; runtime roles
+        // never receive ownership or trigger-management privileges.
+        await client.query("ALTER TABLE audit_logs DISABLE TRIGGER USER");
+        await client.query("DELETE FROM audit_logs WHERE organization_id = ANY($1::uuid[])", [organizationIds]);
+        await client.query("ALTER TABLE audit_logs ENABLE TRIGGER USER");
+        await client.query("DELETE FROM products WHERE organization_id = ANY($1::uuid[])", [organizationIds]);
+        await client.query("COMMIT");
+      } catch (error) {
+        await client.query("ROLLBACK");
+        throw error;
+      }
     }
     if (userIds.length) await client.query("DELETE FROM auth_sessions WHERE user_id = ANY($1::uuid[])", [userIds]);
     if (organizationIds.length) {
@@ -196,4 +208,46 @@ describe.skipIf(!databaseUrl)("catalog product creation against PostgreSQL", () 
     );
     expect(audit.rows[0]!.count).toBe("1");
   });
+  it("rolls back product creation when audit persistence fails", async () => {
+    await client!.query(`CREATE FUNCTION test_fail_product_audit() RETURNS trigger
+      LANGUAGE plpgsql AS $test_fail_product_audit$
+      BEGIN
+        IF NEW.action = 'product.created'
+          AND NEW.metadata->'snapshot'->>'sku' = 'AUDIT-ROLLBACK' THEN
+          RAISE EXCEPTION 'forced product audit persistence failure';
+        END IF;
+        RETURN NEW;
+      END;
+      $test_fail_product_audit$`);
+    await client!.query(`CREATE TRIGGER test_fail_product_audit
+      BEFORE INSERT ON audit_logs
+      FOR EACH ROW EXECUTE FUNCTION test_fail_product_audit()`);
+
+    let response: Response;
+    try {
+      response = await createRequest(fixtures.owner, organizationA, {
+        sku: "AUDIT-ROLLBACK",
+        name: "Must roll back when audit fails",
+        price_usd: "12.5000",
+        cost_usd: "4.2500",
+        minimum_stock: "3.000",
+      });
+    } finally {
+      await client!.query("DROP TRIGGER IF EXISTS test_fail_product_audit ON audit_logs");
+      await client!.query("DROP FUNCTION IF EXISTS test_fail_product_audit()");
+    }
+
+    expect(response!.status).toBe(500);
+    const persisted = await client!.query<{ products: string; audits: string }>(
+      `SELECT
+        (SELECT count(*)::text FROM products
+         WHERE organization_id = $1 AND sku = 'AUDIT-ROLLBACK') AS products,
+        (SELECT count(*)::text FROM audit_logs
+         WHERE organization_id = $1 AND action = 'product.created'
+           AND metadata->'snapshot'->>'sku' = 'AUDIT-ROLLBACK') AS audits`,
+      [organizationA],
+    );
+    expect(persisted.rows[0]).toEqual({ products: "0", audits: "0" });
+  });
+
 });

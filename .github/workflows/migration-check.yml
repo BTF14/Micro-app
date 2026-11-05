@@ -63,5 +63,18 @@ jobs:
         run: docker exec -i "${{ job.services.postgres.id }}" psql -v ON_ERROR_STOP=1 -U microapp -d microapp_test -f /dev/stdin < apps/api/migrations/0005_warehouse_inventory.sql
       - name: Verify warehouse inventory constraints and lifecycle assertions
         run: docker exec -i "${{ job.services.postgres.id }}" psql -v ON_ERROR_STOP=1 -U microapp -d microapp_test -f /dev/stdin < apps/api/migrations/0005_warehouse_inventory.assertions.sql
-      - name: Apply approved register-shift member roles schema to disposable PostgreSQL
+      - name: Apply approved register-shift member roles schema
         run: docker exec -i "${{ job.services.postgres.id }}" psql -v ON_ERROR_STOP=1 -U microapp -d microapp_test -f /dev/stdin < apps/api/migrations/0006_register_shift_member_roles.sql
+      - name: Verify audit logs migration rolls back on failure
+        run: |
+          sed '/^COMMIT;$/i SELECT 1/0;' apps/api/migrations/0007_audit_logs_append_only.sql > /tmp/0007-audit-logs-failure.sql
+          if docker exec -i "${{ job.services.postgres.id }}" psql -v ON_ERROR_STOP=1 -U microapp -d microapp_test -f /dev/stdin < /tmp/0007-audit-logs-failure.sql; then
+            echo "Expected the injected audit migration failure, but psql succeeded."
+            exit 1
+          fi
+          remaining="$(docker exec "${{ job.services.postgres.id }}" psql -At -U microapp -d microapp_test -c "SELECT to_regprocedure('public.reject_audit_logs_mutation()') IS NULL AND NOT EXISTS (SELECT 1 FROM pg_trigger WHERE tgrelid='public.audit_logs'::regclass AND tgname IN ('audit_logs_10_append_only_rows','audit_logs_20_append_only_truncate'))")"
+          test "$remaining" = "t"
+      - name: Apply audit logs append-only migration
+        run: docker exec -i "${{ job.services.postgres.id }}" psql -v ON_ERROR_STOP=1 -U microapp -d microapp_test -f /dev/stdin < apps/api/migrations/0007_audit_logs_append_only.sql
+      - name: Verify audit logs immutability and runtime-role assertions
+        run: docker exec -i "${{ job.services.postgres.id }}" psql -v ON_ERROR_STOP=1 -U microapp -d microapp_test -f /dev/stdin < apps/api/migrations/0007_audit_logs_append_only.assertions.sql

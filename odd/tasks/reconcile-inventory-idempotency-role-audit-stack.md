@@ -1,6 +1,6 @@
 # ODD task: reconcile inventory idempotency, register roles, and append-only audit stack
 
-- Status: in progress
+- Status: complete for repository branch integration and disposable PostgreSQL CI; production/runtime security gates remain open
 - Risk: critical
 - Issue: #53
 - Branch/PR stack: #200 inventory foundation; #204 inventory test isolation; #205 count idempotency; #208 register-shift roles; #207 append-only audit
@@ -62,3 +62,15 @@ Migration order must remain:
 - The approved role matrix grants the Inventory role organization-wide read access to catalog prices and costs. The new helper currently denies `catalog.read_costs` to Inventory, contradicting both the approved matrix and the existing `catalog.ts` handler. Correct the helper and its tests.
 - `authorizeBranchOperation` currently calls `resolveTenantContext` without `lockRows=true`, then calls `resolveBranchContext(..., true)`. This violates the branch-context helper's documented lock precondition (tenant/session/user/membership/organization locks must be held first), leaving a revocation/role-change race. Correct the call and add a regression assertion that tenant locks are requested before branch locks.
 - These helpers are not yet wired into all route handlers. Correcting them makes the helper contract internally consistent; it does not certify global route coverage.
+
+
+## Verified closure — 2026-11-05 UTC
+
+- Final #208 HEAD: `32c7217a21b7a3719ebf72940419779a7b42c027`, base #205 HEAD `c0bcbbe48aa8783b85ee7787dd1ae8a6d0dfdafc`; compare 21 ahead / 0 behind, mergeable=true. #208 exact HEAD checks: 7/7 success.
+- Final #207 HEAD: `8ba1b9b20a82aec6ca1e3c1b71aff43b7c4787ce`, base #208 HEAD `32c7217a21b7a3719ebf72940419779a7b42c027`; compare 14 ahead / 0 behind, mergeable=true. #207 exact HEAD checks: 9/9 success, including verify, postgres-migration, Chromium, static analysis, Trivy, secret-history scan, backup/restore and Cloudflare Pages/Worker builds.
+- Final ancestry is `#200 → #204 → #205 → #208 → #207`. Migration sequence 0005 (inventory + idempotency) → 0006 (register-shift roles) → 0007 (audit append-only) applied and asserted from clean disposable PostgreSQL in CI.
+- #205's idempotency key/hash runtime logic and PostgreSQL tests are now ancestors of #208/#207. #207 test tree preserves idempotency tests and adds owner-only audit_logs trigger disable/enable around disposable fixture teardown.
+- Authorization review found and fixed: Inventory role may read catalog costs per approved matrix; branch authorization now locks tenant/session/user/membership/organization before branch and branch-membership locks. Regression tests assert the order.
+- CI and migration-check branch filters preserve `work/**` so stacked base branches continue to receive validation after integration.
+- PRs #200/#204/#205/#208/#207 remain open/Draft/unmerged. No main, Neon, secrets, real data, Cloudflare settings, DNS, billing or production deployment changed.
+- Residual gates outside this task: effective Worker DATABASE_URL principal/ownership/grants remain NO VERIFICADO; authorization helpers are not yet globally wired to every handler; issue #53 still requires per-handler scope/role coverage, universal ledger/balance consistency and other commercial/operational controls. Production remains NO LISTA.

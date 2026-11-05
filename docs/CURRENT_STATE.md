@@ -1,3 +1,49 @@
+## Reconciliación viva — 2026-11-05 09:40 UTC (fuente de verdad)
+
+Este bloque supersede todos los snapshots históricos inferiores. Consultar HEAD vivo antes de cualquier nueva acción.
+
+### Main y cadena activa
+
+- `main`: `7b0f057b8c152515005feed40305143c0ebb94b0`.
+- Pila de inventario: #200 → #204 → #205 → #208 → #207 → #209 → #210. Todas abiertas, Draft y sin merge.
+- #204 HEAD `07a5a41c0f5f5c36fb89a5c5950796493d56eb20`: 6/6 workflows success.
+- #205 HEAD `c0bcbbe48aa8783b85ee7787dd1ae8a6d0dfdafc`: 7/7 workflows success.
+- #208 HEAD `32c7217a21b7a3719ebf72940419779a7b42c027`: 5/5 workflow runs observados y 7/7 check runs success.
+- #207 HEAD `962b5e9d34cc23d7bb5929cd17b4599f4da06db4`: workflow runs asociados completados en success.
+- #209 HEAD `666236bc7b2c7e1dd1e30d9ccdc467e37c40784b`: runs finales en success; hubo intentos anteriores cancelados por ejecuciones posteriores.
+- #210 HEAD `ab5d2168a11a825a9ed6b03341b3091c13f3c06e`, base #209. Ocho check runs completados en success: CI, migración PostgreSQL, Semgrep, secret-history, Pages/Workers y backup/restore. Playwright E2E y Security scan siguen pending en la última consulta. No declarar CI global completo.
+- #202 es la PR documental actual; este commit cambia su HEAD y requiere sus checks de nuevo. #194 sigue abierta/supersedida en cuanto a la secuencia de migraciones; no integrarla tal cual.
+- Todas las PR permanecen Draft, no mergeadas; no se detectaron reviews formales en la consulta previa.
+
+### Integridad de inventario añadida
+
+- #209 añade migración 0008: snapshots de cantidad/versión y validación del conteo/ledger.
+- #210 añade migración 0009: pairing exacto, en una transacción, entre delta no nulo de on-hand y movimiento ledger. Incluye trigger diferido que rechaza al COMMIT una pareja incompleta, bloqueo de TRUNCATE y protección contra mutar organization/branch/warehouse/product en la fila de balance.
+- PostgreSQL 18 efímero validó aplicación 0001–0009, assertions de pairing y rollback inducido de 0009. CI y migración del HEAD #210 están en success.
+- El writer HTTP actual de conteos escribe balance y ledger en la misma transacción. Ventas, recepción, reservas, devoluciones y transferencias aún no tienen writers HTTP; no inferir que están cubiertos.
+
+### Hallazgos de auditoría que permanecen abiertos
+
+1. `auth_rate_limits` existe en DDL pero no se encontró caller/runtime rate limiting en `apps/api/src`, incluyendo auth y Google OAuth.
+2. `authorization.ts` define helpers centrales pero los handlers existentes mantienen checks locales; no todos usan los helpers.
+3. Cashier está autorizado por la matriz para lectura de stock/movimientos de su sucursal, pero los handlers GET de almacenes/conteos excluyen Cashier y no hay endpoint de lectura de balances/ledger.
+4. No hay writers HTTP para ventas, compras/recepciones, reservas, pagos, devoluciones o transferencias.
+5. Principal PostgreSQL real detrás de Worker `DATABASE_URL`, ownership, grants y memberships siguen NO VERIFICADOS. No se accedió a Neon ni a secretos.
+
+### Producción y seguridad
+
+Issue #53 sigue abierta/P0. Producción NO LISTA. No merge ni deploy. No tocar Neon principal, secretos, datos reales, settings productivos Cloudflare, DNS o billing. Las ejecuciones de GitHub Actions usan recursos efímeros; un preview no demuestra producción.
+
+### Próximo orden de trabajo
+
+1. Esperar/revisar los workflows pendientes de #210 en el SHA exacto.
+2. Auditar el diff completo de #210 y la cadena #209→#210.
+3. Resolver rate limiting runtime con diseño de abuso y pruebas, luego autorización de rutas/Cashier y aislamiento.
+4. Mantener issue #53 como gate P0; documentar cada cambio en su misma PR/issue.
+5. No pedir al propietario IDs/builds ya recuperables desde GitHub ni tareas que requieran terminal: trabaja desde teléfono Android.
+
+---
+
 ## Estado vivo reconciliado — 2026-11-05 UTC
 
 Este bloque supersede los snapshots anteriores de PRs, migraciones, rutas API y autorización que aparecen debajo. Consultar GitHub por SHA antes de cualquier nueva acción.

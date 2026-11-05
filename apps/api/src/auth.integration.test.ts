@@ -1,6 +1,7 @@
 import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
 import { Client } from "pg";
 import { hashPassword } from "./auth";
+import { cleanupExpiredAuthRateLimits } from "./auth-rate-limit";
 import { resolveTenantContext } from "./tenant-context";
 
 // In integration tests, exercise the real PostgreSQL protocol while keeping
@@ -367,6 +368,24 @@ const suiteGoogle = describe.skipIf(!databaseAvailable)("Google OAuth routes aga
     const digest = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(token));
     return Array.from(new Uint8Array(digest), (byte) => byte.toString(16).padStart(2, "0")).join("");
   }
+
+  it("removes rate-limit identifiers that have been inactive for more than 48 hours", async () => {
+    const staleHash = crypto.randomUUID().replace(/-/g, "").repeat(2).slice(0, 64);
+    await cleanupClient.query(
+      "INSERT INTO auth_rate_limits (key_hash, window_started_at, attempts, updated_at) VALUES ($1, now() - interval '49 hours', 1, now() - interval '49 hours')",
+      [staleHash],
+    );
+    try {
+      await cleanupExpiredAuthRateLimits(databaseUrl);
+      const remaining = await cleanupClient.query(
+        "SELECT 1 FROM auth_rate_limits WHERE key_hash = $1",
+        [staleHash],
+      );
+      expect(remaining.rows).toHaveLength(0);
+    } finally {
+      await cleanupClient.query("DELETE FROM auth_rate_limits WHERE key_hash = $1", [staleHash]);
+    }
+  });
 
   it("enforces the OAuth start limit atomically under concurrent requests", async () => {
     const ip = "198.51.100.50";

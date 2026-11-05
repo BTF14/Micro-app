@@ -1,3 +1,21 @@
+## Estado de preparación — 2026-11-05 00:50 EDT
+
+<badge color="danger">NO LISTO PARA PRODUCCIÓN</badge>
+
+- Main sigue en `7b0f057b8c152515005feed40305143c0ebb94b0`; la vertical slice de inventario permanece en PRs Draft, no integrada.
+- PR #207 `26c5270664b82aebc6a12fafe6973de8544bc6f7` añade una propuesta de hardening append-only para `audit_logs`, apilada sobre #200. Sus 7/7 workflow runs y 9/9 check runs pasan, pero no está fusionada.
+- En PostgreSQL 18 desechable, la migración 0007 y sus assertions bloquean UPDATE/DELETE/TRUNCATE y prueban el contrato de un rol runtime sintético no propietario con SELECT/INSERT. Se verifican rollback de migración y rollback de operaciones de catálogo/conteos cuando falla la auditoría.
+- **No verificado en producción:** rol efectivo del secreto Worker `DATABASE_URL`, propiedad de `audit_logs` y privilegios efectivos. No se leyó el secreto ni se accedió a Neon producción. La prueba sintética no acredita la configuración runtime real.
+- Secuencia pendiente de integración: inventario 0005 (#200), roles 0006 (renumerar #194), audit_logs 0007 (#207). No integrar mientras exista colisión.
+- Issue #53 permanece abierta/P0; falta cobertura completa de autorización y aislamiento tenant/sucursal/rol, más flujos comerciales y gates operativos.
+- No se activó Worker Previews, no se modificó Cloudflare productivo, Neon, secretos, DNS, billing ni datos reales.
+
+### Gate de auditoría general
+
+No marcar `audit_logs` como inmutable en producción hasta demostrar que el runtime es no propietario, no puede alterar privilegios/triggers y solo tiene los permisos necesarios para leer/insertar. Los triggers propuestos son un control de base de datos en la rama #207, no una verificación del rol real.
+
+---
+
 ## Corrección de seguridad Cloudflare — Worker Previews vs Version URLs — 2026-11-04 22:00 EDT
 
 Esta aclaración corrige la formulación demasiado amplia de addenda anteriores: **no existe una prohibición permanente de usar Worker Previews**. El gate es no cambiar el modo de builds de Cloudflare hasta comprobar aislamiento y aceptar el cambio irreversible del flujo existente.

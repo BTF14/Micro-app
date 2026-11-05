@@ -738,7 +738,10 @@ describe.skipIf(!databaseUrl)("warehouse inventory count transactions against Po
     expect(await unassigned.json()).toMatchObject({ error: "BRANCH_FORBIDDEN" });
 
     await client.query(
-      "INSERT INTO branch_memberships (organization_id, branch_id, user_id, is_active) VALUES ($1, $2, $3, true)",
+      `INSERT INTO branch_memberships (organization_id, branch_id, user_id, is_active)
+       VALUES ($1, $2, $3, true)
+       ON CONFLICT (organization_id, branch_id, user_id)
+       DO UPDATE SET is_active = true`,
       [organizationId, branchId, userId],
     );
     const assigned = await request(root() + "/counts/physical", {
@@ -769,6 +772,12 @@ describe.skipIf(!databaseUrl)("warehouse inventory count transactions against Po
     expect(foreignTenantRequest.status).toBe(401);
     expect(await foreignTenantRequest.json()).toMatchObject({ error: "UNAUTHENTICATED" });
 
+    const foreignTenantRead = await get(
+      `/api/orgs/${foreignOrganizationId}/branches/${foreignBranchId}/warehouses`,
+    );
+    expect(foreignTenantRead.status).toBe(401);
+    expect(await foreignTenantRead.json()).toMatchObject({ error: "UNAUTHENTICATED" });
+
     const foreignProductRequest = await request(root() + "/counts/physical", {
       reason: "A product from another tenant must not be accepted",
       lines: [{ product_id: foreignProductId, counted_quantity: "1.000" }],
@@ -779,7 +788,9 @@ describe.skipIf(!databaseUrl)("warehouse inventory count transactions against Po
     const persisted = await client.query<{ counts: string; lines: string }>(
       `SELECT
         (SELECT count(*)::text FROM inventory_counts WHERE organization_id = $1 AND warehouse_id = $2) AS counts,
-        (SELECT count(*)::text FROM inventory_count_lines WHERE organization_id = $1 AND warehouse_id = $2) AS lines`,
+        (SELECT count(*)::text FROM inventory_count_lines l
+         JOIN inventory_counts c ON c.organization_id = l.organization_id AND c.id = l.count_id
+         WHERE c.organization_id = $1 AND c.warehouse_id = $2) AS lines`,
       [organizationId, warehouseId],
     );
     expect(persisted.rows[0]).toEqual({ counts: "0", lines: "0" });

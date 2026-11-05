@@ -149,7 +149,7 @@ describe("Micro app authentication flow", () => {
     expect(container.textContent).toContain("Catálogo");
     expect(container.textContent).toContain("Café");
     expect(container.textContent).toContain("US$ 23,85");
-    expect(container.textContent).toContain("Bs. 870,53");
+    expect(container.textContent).toContain("Bs. 21.343,07");
     expect(container.textContent).toContain("US$ 10,00");
     expect(vi.mocked(fetch).mock.calls[2][0]).toContain("/api/orgs/org-1/catalog?limit=100");
   });

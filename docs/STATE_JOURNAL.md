@@ -1732,3 +1732,14 @@ Mantener #207 en Draft. Revisar independientemente el diff; resolver la colisió
 - Se añadió a HANDOFF_NEXT_CHAT.md y CURRENT_STATE.md un protocolo obligatorio de arranque: leer documentos existentes, consultar GitHub antes de preguntar, no solicitar datos/Build IDs/capturas/terminal/TinyFish ya documentados, separar evidencia por estado, continuar en PRs existentes y actualizar el journal.
 - Se añadió prompt de continuidad copiable para el siguiente chat.
 - No se modificó código de runtime, main, migraciones productivas, Neon, Cloudflare, secretos, DNS, billing ni datos reales. No se fusionó ni desplegó nada.
+
+
+## 2026-11-05 UTC — Reanudación, auditoría #207 y reconciliación de migraciones
+
+- Se leyó la documentación operativa en la rama `docs/reconcile-current-state-20261104`: AGENTS, Constitution, Current State, Handoff, Project Plan, State Journal y Security Roadmap. `WORK_CHECKPOINT.md` no existe en la rama documental ni en main y las ramas consultadas #194/#200/#207.
+- Revalidación viva: #194 `7b3ad50e5780416868a1a428b856d12c4ea1e2ea` (13 ahead/2 behind, 13/13 checks); #200 `5fbc17a48b65076cf5609a7a054bbd125a3a5d1e` (32/0, 20/20); #202 `815efb6b19f4e367c0b0293522231294296e58e7` (110/0, 13/13); #204 `07a5a41c0f5f5c36fb89a5c5950796493d56eb20` (8/0, 8/8); #205 `c0bcbbe48aa8783b85ee7787dd1ae8a6d0dfdafc` (27/0, 9/9); #207 `26c5270664b82aebc6a12fafe6973de8544bc6f7` (10/0, 9/9). Todas abiertas/Draft, sin merge; 0 reviews formales y 0 threads inline.
+- Inspección de #207: triggers UPDATE/DELETE/TRUNCATE, ENABLE ALWAYS, REVOKE a PUBLIC, assertions con roles sintéticos y rollback de creación de producto ante fallo de auditoría. Bloqueo: migration-check aplica 0001–0005 y salta 0006 para ejecutar 0007; no valida el stack combinado con roles. El principal efectivo DATABASE_URL, ownership, grants y memberships runtime permanecen NO VERIFICADOS.
+- Confirmada colisión de rutas: #200 `0005_warehouse_inventory.sql`; #194 `0005_register_shift_member_roles.sql`. #194 está divergida 13/2 y no es descendiente de #200. Objetivo de numeración: 0005 inventario → 0006 roles → 0007 audit logs, sujeto a reconciliar ancestry y CI sin force-push.
+- Se publicaron comentarios técnicos de bloqueo en #207 (6651579307) y #194 (6651592608). Sin cambios de código, migraciones o base.
+- No se modificaron Neon, secretos, Cloudflare settings, DNS, billing ni datos reales. No hubo merge ni despliegue manual. Preview Worker target permanece NO VERIFICADO; producción NO LISTA.
+- Próximo: reconciliar ramas/0006 y CI combinado; ajustar #207 migration-check para 0005+0006+0007; continuar gates P0 #53 (aislamiento, autorización, locks, concurrencia, idempotencia, balance_version y ledger/balance); mantener PR Draft hasta revisión y gates completos.

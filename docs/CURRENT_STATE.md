@@ -1973,3 +1973,13 @@ Actúa como ingeniero principal responsable de continuar BTF14/Micro-app. Antes 
 
 - Issue #53 permanece abierta/P0. Comentario actualizado ID 6651847660 registra que #196 catálogo ya está incorporado en #200 y que #208 resuelve la colisión de roles 0006.
 - No se tocó main, Neon, secretos, Cloudflare settings/DNS/billing ni datos reales. No se hizo merge ni despliegue manual. Producción NO LISTA.
+
+
+## Auditoría P0 — idempotencia y aislamiento de conteos (#205) — 2026-11-05 UTC
+
+- PR #205 HEAD `c0bcbbe48aa8783b85ee7787dd1ae8a6d0dfdafc`: 9/9 check-runs success, abierta/Draft, base #204. Se revisó el diff completo de migración 0005 y `inventory-counts.ts`/integration tests.
+- Idempotencia: clave opcional `Idempotency-Key` validada por regex (1–128 chars); unique partial index por `(organization_id, created_by, idempotency_key)`; hash SHA-256 del payload canónico incluyendo tenant, branch, warehouse, count type, reason, líneas ordenadas, cantidad y unit cost. Duplicados de product_id se rechazan antes del hash.
+- Orden transaccional: resuelve y bloquea tenant/branch, bloquea warehouse, valida productos, reclama el documento/clave idempotente, y luego bloquea balances. Replay consulta el documento bajo `FOR UPDATE` y no duplica líneas ni audit; conflicto de payload devuelve 409. Auditoría, documento y líneas comparten la transacción.
+- Pruebas PG añadidas: replay decimal equivalente, orden de líneas irrelevante, replay después de confirmación, payload conflict, creación concurrente con misma clave, rollback de clave ante fallo de audit y retry posterior, clave malformada, cross-tenant/product, branch sin asignación y confirmación de ID ajeno. Checks 9/9 en SHA citado.
+- Conclusión: idempotencia de creación de conteo bien cubierta para el flujo actual. No demuestra coordinación con escritores comerciales futuros ni sustituye la prueba concurrente entre conteos y futuras ventas/recepciones/reservas/transferencias. La clave sigue siendo opcional por contrato HTTP; no afirmar idempotencia de cualquier cliente que omita el header.
+- No se cambió código #205 en esta auditoría.

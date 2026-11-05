@@ -1573,3 +1573,36 @@ Esta revisión fue estática de contenidos en GitHub; no se ejecutaron tests des
 - Ampliación de validación: CI aplica también 0003 al PostgreSQL efímero y ejecuta `branch-context.integration.test.ts` contra PostgreSQL real; el workflow `postgres-migration` mantiene assertions SQL específicas. Verificar ambos resultados en el HEAD final de la PR.
 
 - Endurecimiento posterior: `resolveBranchContext` revalida en su propia consulta que organization, app_user y organization_members siguen activos y que el rol actual en DB coincide con el TenantContext; owner/admin se determina desde la fila DB. Se añadieron pruebas PostgreSQL para membresía revocada y rol obsoleto. Esta revisión cambió el HEAD después de los checks previamente documentados; verificar nueva ejecución CI antes de merge.
+
+
+---
+
+## Checkpoint de reconciliación viva — 2026-11-05 UTC
+
+Este bloque es la referencia vigente para las PR #200/#202/#204/#205 y supersede cualquier SHA, conteo de checks o estado de ramas anterior que las secciones históricas inferiores indiquen.
+
+### GitHub: refs, ramas y validación del SHA exacto
+
+- `main`: `7b0f057b8c152515005feed40305143c0ebb94b0`.
+- **#200** abierta/Draft; HEAD `243592468e9fd61b1f8c578d867887dbb7f18e4d`; 16 ahead / 0 behind; 30 archivos (+3542/-17). Descripción de PR corregida. En este SHA se recuperaron 10 workflow runs completados en success; combined status contexts vacío; sin reviews ni threads. Los recuentos históricos 19/19 y 20 checks no describen este SHA.
+- **#204** abierta/Draft; base #200 en `243592468e9fd61b1f8c578d867887dbb7f18e4d`; HEAD `57a9f098bcb93427315e96c90e62ae13764a485b`; 3 ahead / 0 behind; diff de un archivo. No se devolvieron workflow runs ni status contexts para este SHA; no hay reviews ni threads. CI no está verificada como verde.
+- **#205** abierta/Draft; HEAD `c1f09d09dd08b9600e7a6c0ff8ccbb5be4e9c990`; frente a #204 está divergida: 9 commits ahead / 1 behind; falta el último commit #204. Solo se recuperó un workflow run para su SHA (Backup restore smoke test, success); status contexts vacío; sin reviews ni threads. No equivale a CI completa.
+- **#202** abierta/Draft; HEAD observado antes de este checkpoint `348cf0a1067c5410ff262f817b054cef46f0afae`; 43 ahead / 0 behind; 12 archivos. Ese SHA tenía 9 workflow runs success, sin status contexts ni reviews/threads. Este nuevo commit documental moverá el HEAD: **la validación 9/9 queda asociada únicamente al SHA anterior**, y el nuevo HEAD debe revalidarse.
+- Las descripciones de #200, #202, #204 y #205 se actualizaron para reflejar evidencia exacta, límites y dependencias. Las cuatro siguen Draft; no se fusionó ninguna.
+
+### Defectos y gates que siguen abiertos
+
+1. **Stale-count:** no se ha implementado ni demostrado todavía el control de snapshot/versionado que impida que un conteo físico antiguo, confirmado después, sobrescriba un conteo reciente. Requiere diseño, código y test determinista de confirmación inversa; no afirmar que locks o idempotencia lo resuelven.
+2. **Atomicidad 0005:** requiere BEGIN/COMMIT compatible o recuperación explícita y prueba de fallo inducido en PostgreSQL efímero.
+3. **Pila #204/#205:** reconciliar el commit faltante de #204 en #205 sin force-push, revisar conflictos/diff y volver a ejecutar validaciones completas.
+4. **Colisión #194:** migración de roles 0005 colisiona con inventario 0005; mantener #194 sin merge y resolver numeración después de estabilizar inventario.
+5. **Autorización/aislamiento:** issue #53 abierta; la matriz aprobada no equivale a autorización implementada y probada en todas las rutas.
+6. **Cloudflare Worker Previews:** no hay prohibición permanente. No cambiar el modo de builds hasta inspeccionar de forma autenticada Previews Base, bindings, secrets, routes, service bindings, Workflows, KV/D1/R2 y aislamiento real. No confundir Version URLs con previews aislados.
+
+### Método de trabajo obligatorio
+
+Cada cambio de código, SQL, configuración o decisión se acompaña en el mismo ciclo por actualización de los documentos afectados, STATE_JOURNAL y HANDOFF. Cada afirmación de CI debe citar el SHA exacto y separar workflow runs, status contexts y reviews. Los snapshots anteriores se conservan como historia, no como estado vivo.
+
+### Límites de seguridad
+
+No tocar Neon producción, despliegues productivos, Cloudflare productivo, secretos, DNS, billing ni datos reales. No force-push ni modificar main directamente. No modificar PR #196/#193 ni reabrir #190.

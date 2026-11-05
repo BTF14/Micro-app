@@ -1926,3 +1926,15 @@ Actúa como ingeniero principal responsable de continuar BTF14/Micro-app. Antes 
 - Para el SHA exacto #205, 9/9 check-runs success. La PR permanece abierta/Draft, 27 ahead/0 behind de #204, sin reviews formales ni threads inline.
 - **Riesgo residual P0:** el DDL protege el ledger contra UPDATE/DELETE y valida referencias de movimientos a conteos confirmados, pero no impone universalmente que cada mutación de `inventory_balances` tenga su movimiento correspondiente ni que el delta del movimiento coincida con el cambio de balance. El endpoint actual acopla ambos en la misma transacción; no es una garantía de base de datos frente a SQL directo ni frente a futuros writers que omitan el contrato. No se debe declarar consistencia global del ledger ni habilitar writers adicionales hasta definir y probar la reconciliación.
 - Comentario técnico publicado en #205 (6651640740). Se actualizó el cuerpo de la PR para reemplazar snapshots antiguos y reflejar HEAD, base, checks, ABA, límites y riesgo residual actuales. No se cambió código.
+
+
+## Hallazgo adicional — divergencia #196/#200 y migraciones — 2026-11-05 UTC
+
+- Issue #53 se consultó en vivo: abierta, labels security/P0. Su cuerpo aún presenta #196 como fuente principal de la vertical slice y su referencia de SHA/validación es histórica. No debe tomarse como descripción suficiente de la pila actual.
+- PR #196: abierta/Draft, base main SHA `705d3db3220894c7d3baca8dc7e7a6b623dfbb94`, HEAD `c332e740aff279fb8b22a8879581d4b8a3c7de21`, GitHub `mergeable=false`.
+- PR #200: abierta/Draft, base main SHA `7b0f057b8c152515005feed40305143c0ebb94b0`, HEAD `5fbc17a48b65076cf5609a7a054bbd125a3a5d1e`.
+- Compare #200-base → #196-head: diverged, 128 ahead / 34 behind; 24 rutas cambiadas se solapan. Incluye migration 0005, assertions, migration-check, catalog, inventory, branch-context y CI.
+- Las versiones de migration 0005 no son iguales: #196 blob `8a2b13651ebd5dc1d3bb87efbe34cb863c0e0d99` (265 líneas), #200 blob `bb9020fdca535f84fda0f468e9d3ab86e1cc319c` (330 líneas). Assertions: #196 `ceedc8212aad028c053071397b3ca9e523166e2d`, #200 `58071689c493fa5467bbff7d752d7f410cef8d7f`. Workflows también difieren (#196 `75c05e46322dbc9718b06354dde2520017edb892`; #200 `a8a9289b4e477f8a57f8c15269fd55370766c000`). #200 contiene evolución posterior de inventario (balance_version, lifecycle/ABA y rollback validation); no sustituirlo por el snapshot #196.
+- Decisión: no retargetear, fusionar ni copiar #196 dentro de #200 a ciegas. Elaborar mapa de commits/rutas para separar catálogo/API de la parte solapada de inventario, preservar la implementación avanzada de #200 y probar integración en PostgreSQL limpio. #207 sigue apilada sobre #200; 0006 roles debe integrarse antes de 0007 audit.
+- Se publicó comentario en issue #53 (comment ID 6651679831) registrando este solapamiento y la decisión de no fusionar a ciegas.
+- No se modificó código, migraciones, bases de PR, main, Neon, secretos, Cloudflare, DNS, billing ni datos reales. Todas las PR permanecen Draft y sin merge.

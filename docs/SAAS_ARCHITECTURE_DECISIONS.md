@@ -63,8 +63,8 @@ Objetivo: USD como moneda base del catálogo/contabilidad interna y VES como con
 
 ### Diseño
 
-1. Investigar y validar una fuente BCV fiable. No asumir que existe una API oficial gratuita ni codificar una URL no verificada.
-2. Un Cron Trigger de Cloudflare consulta la fuente en horario programado; convertir correctamente el horario local de Venezuela a UTC y contemplar fines de semana/feriados.
+1. Fuente primaria elegida: publicación oficial del BCV en https://www.bcv.org.ve/, consultada directamente por HTTPS. El BCV no expone una API JSON pública documentada; Micro-app implementa un extractor controlado de la página oficial, con fixtures y validaciones estrictas.
+2. Un Cron Trigger de Cloudflare consulta la página oficial cada hora de lunes a viernes, entre 09:00 y 19:00 hora de Venezuela (13:00–23:00 UTC). La programación evita depender de un horario único de publicación y contempla que fines de semana/feriados pueden no producir una tasa nueva.
 3. Validar estructura, valor positivo, fecha efectiva, fuente, duplicados y cambios anómalos antes de persistir.
 4. Persistir el histórico en `exchange_rates` (la tabla ya existe en el esquema revisado), con fuente, fecha efectiva, valor y estado de validación.
 5. No escribir filas vacías ni repetir escrituras si no hay tasa nueva. Sin bucles de reintento.
@@ -72,7 +72,7 @@ Objetivo: USD como moneda base del catálogo/contabilidad interna y VES como con
 7. KV puede distribuir una copia de lectura de la tasa, con clave y versión controladas. Neon permanece como fuente persistente de verdad.
 8. Cada venta/línea debe conservar la tasa, moneda, importe original, importe convertido, fecha efectiva y referencia/fuente usados en ese momento. Actualizar la tasa nunca recalcula ventas pasadas.
 
-La automatización BCV y la API de consulta no están implementadas por el mero hecho de estar documentadas. El proveedor, la licencia/condiciones de acceso y la estabilidad de extracción son gates previos.
+La implementación inicial está desarrollada en `apps/api/src/exchange-rates.ts` y se propone en la PR de integración BCV. No se considera desplegada hasta que CI, migración, configuración Cloudflare y smoke test estén verificados. La página oficial es HTML y puede cambiar: cualquier fallo de extracción conserva la última tasa válida y marca la lectura como stale; no se usa una fuente de terceros como sustituto automático.
 
 ## 5. Buscador de productos y precio vigente
 
@@ -150,7 +150,7 @@ No habilitar endpoints comerciales mientras la matriz de permisos por operación
 
 ## 10. Pendientes explícitos
 
-- Fuente BCV fiable/gratuita y mecanismo de extracción verificado.
+- Validar en CI y en despliegue controlado la extracción de la página oficial BCV, su estabilidad, el Cron Trigger y el endpoint público; la implementación inicial está en PR y aún no está desplegada.
 - Contrato API para consulta de tasa y buscador de productos.
 - Política de frescura/TTL de tasa y manejo de feriados/fuente caída.
 - ERD de organización/sucursal/almacén/caja documentado en `docs/sdd/MULTI_BRANCH_DATA_MODEL.md`; sucursales/asignaciones en 0003 y cajas/turnos en 0004 (PR #167 fusionada). Almacenes y stock por almacén siguen pendientes.

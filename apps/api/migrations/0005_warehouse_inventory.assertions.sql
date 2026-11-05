@@ -5,6 +5,7 @@ DECLARE
   org_a uuid; org_b uuid; user_a uuid; user_b uuid;
   branch_a uuid; branch_b uuid; warehouse_a uuid; warehouse_b uuid;
   product_a uuid; product_b uuid; product_extra uuid; count_a uuid; count_b uuid; count_duplicate uuid;
+  balance_version_a bigint;
 BEGIN
   INSERT INTO organizations (name, slug) VALUES ('Inventory Tenant A','inventory-tenant-a') RETURNING id INTO org_a;
   INSERT INTO organizations (name, slug) VALUES ('Inventory Tenant B','inventory-tenant-b') RETURNING id INTO org_b;
@@ -29,6 +30,40 @@ BEGIN
     VALUES (org_a,branch_a,warehouse_a,product_b,5);
     RAISE EXCEPTION 'FAIL: cross-tenant product balance accepted';
   EXCEPTION WHEN foreign_key_violation THEN NULL; END;
+
+  INSERT INTO inventory_balances
+    (organization_id,branch_id,warehouse_id,product_id,on_hand_quantity,reserved_quantity)
+  VALUES (org_a,branch_a,warehouse_a,product_extra,5,1)
+  RETURNING balance_version INTO balance_version_a;
+  IF balance_version_a <> 1 THEN
+    RAISE EXCEPTION 'FAIL: new balance version must start at 1, got %', balance_version_a;
+  END IF;
+  UPDATE inventory_balances SET on_hand_quantity=6
+   WHERE organization_id=org_a AND warehouse_id=warehouse_a AND product_id=product_extra;
+  SELECT balance_version INTO balance_version_a FROM inventory_balances
+   WHERE organization_id=org_a AND warehouse_id=warehouse_a AND product_id=product_extra;
+  IF balance_version_a <> 2 THEN
+    RAISE EXCEPTION 'FAIL: on-hand change must increment balance version to 2, got %', balance_version_a;
+  END IF;
+  UPDATE inventory_balances SET reserved_quantity=2
+   WHERE organization_id=org_a AND warehouse_id=warehouse_a AND product_id=product_extra;
+  SELECT balance_version INTO balance_version_a FROM inventory_balances
+   WHERE organization_id=org_a AND warehouse_id=warehouse_a AND product_id=product_extra;
+  IF balance_version_a <> 3 THEN
+    RAISE EXCEPTION 'FAIL: reservation change must increment balance version to 3, got %', balance_version_a;
+  END IF;
+  UPDATE inventory_balances SET updated_at=clock_timestamp()
+   WHERE organization_id=org_a AND warehouse_id=warehouse_a AND product_id=product_extra;
+  SELECT balance_version INTO balance_version_a FROM inventory_balances
+   WHERE organization_id=org_a AND warehouse_id=warehouse_a AND product_id=product_extra;
+  IF balance_version_a <> 3 THEN
+    RAISE EXCEPTION 'FAIL: metadata-only update must not increment balance version, got %', balance_version_a;
+  END IF;
+  BEGIN
+    DELETE FROM inventory_balances
+     WHERE organization_id=org_a AND warehouse_id=warehouse_a AND product_id=product_extra;
+    RAISE EXCEPTION 'FAIL: inventory balance deletion accepted';
+  EXCEPTION WHEN check_violation THEN NULL; END;
 
   INSERT INTO inventory_counts (organization_id,branch_id,warehouse_id,count_type,reason,created_by)
   VALUES (org_a,branch_a,warehouse_a,'opening','Initial physical count',user_a) RETURNING id INTO count_a;

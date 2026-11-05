@@ -3,6 +3,7 @@ import { getCookie } from "hono/cookie";
 import type { Bindings } from "./bindings";
 import { isTrustedOrigin } from "./auth";
 import { withDatabaseClient, withDatabaseTransaction } from "./database";
+import { readBodyWithinLimit } from "./bounded-body";
 import { resolveTenantContext } from "./tenant-context";
 
 const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -69,42 +70,6 @@ function parseProductInput(value: unknown): ProductInput | null {
   ) return null;
 
   return { sku, barcode, name, description, unit, costUsd, priceUsd, minimumStock };
-}
-
-async function readBodyWithinLimit(
-  request: Request,
-  maxBytes: number,
-): Promise<{ kind: "ok"; text: string } | { kind: "too_large" } | { kind: "invalid" }> {
-  if (!request.body) return { kind: "ok", text: "" };
-  const reader = request.body.getReader();
-  const chunks: Uint8Array[] = [];
-  let totalBytes = 0;
-
-  try {
-    while (true) {
-      const { done, value } = await reader.read();
-      if (done) break;
-      totalBytes += value.byteLength;
-      if (totalBytes > maxBytes) {
-        await reader.cancel();
-        return { kind: "too_large" };
-      }
-      chunks.push(value);
-    }
-
-    const bytes = new Uint8Array(totalBytes);
-    let offset = 0;
-    for (const chunk of chunks) {
-      bytes.set(chunk, offset);
-      offset += chunk.byteLength;
-    }
-    return { kind: "ok", text: new TextDecoder("utf-8").decode(bytes) };
-  } catch {
-    try { await reader.cancel(); } catch { /* Preserve the invalid-body result. */ }
-    return { kind: "invalid" };
-  } finally {
-    reader.releaseLock();
-  }
 }
 
 type ProductPatch = {
@@ -222,7 +187,7 @@ export function registerCatalogWriteRoutes(app: Hono<{ Bindings: Bindings }>): v
       return c.json({ error: "UNAUTHENTICATED", message: "Inicia sesión para continuar." }, 401);
     }
 
-    const boundedBody = await readBodyWithinLimit(c.req.raw, MAX_BODY_BYTES);
+    const boundedBody = await readBodyWithinLimit(c.req.raw.body, MAX_BODY_BYTES);
     if (boundedBody.kind === "too_large") {
       return c.json({ error: "PAYLOAD_TOO_LARGE", message: "El cuerpo de la solicitud excede el límite." }, 413);
     }
@@ -322,7 +287,7 @@ export function registerCatalogWriteRoutes(app: Hono<{ Bindings: Bindings }>): v
       return c.json({ error: "UNAUTHENTICATED", message: "Inicia sesión para continuar." }, 401);
     }
 
-    const boundedBody = await readBodyWithinLimit(c.req.raw, MAX_BODY_BYTES);
+    const boundedBody = await readBodyWithinLimit(c.req.raw.body, MAX_BODY_BYTES);
     if (boundedBody.kind === "too_large") {
       return c.json({ error: "PAYLOAD_TOO_LARGE", message: "El cuerpo de la solicitud excede el límite." }, 413);
     }

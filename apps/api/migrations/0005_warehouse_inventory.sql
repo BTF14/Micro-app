@@ -100,7 +100,7 @@ CREATE INDEX inventory_balances_branch_product_idx
 -- mutation, even when the final quantity later returns to its old value.
 CREATE FUNCTION advance_inventory_balance_version() RETURNS trigger
 LANGUAGE plpgsql
-AS $
+AS $advance_inventory_balance_version$
 BEGIN
   IF TG_OP = 'INSERT' THEN
     NEW.balance_version := 1;
@@ -115,7 +115,7 @@ BEGIN
   END IF;
   RETURN NEW;
 END;
-$;
+$advance_inventory_balance_version$;
 
 CREATE TRIGGER inventory_balances_version
 BEFORE INSERT OR UPDATE ON inventory_balances
@@ -123,11 +123,11 @@ FOR EACH ROW EXECUTE FUNCTION advance_inventory_balance_version();
 
 CREATE FUNCTION prevent_inventory_balance_delete() RETURNS trigger
 LANGUAGE plpgsql
-AS $
+AS $prevent_inventory_balance_delete$
 BEGIN
   RAISE EXCEPTION 'INVENTORY_BALANCE_DELETE_FORBIDDEN' USING ERRCODE = '23514';
 END;
-$;
+$prevent_inventory_balance_delete$;
 
 CREATE TRIGGER inventory_balances_no_delete
 BEFORE DELETE ON inventory_balances

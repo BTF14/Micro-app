@@ -39,7 +39,7 @@ The following matrix is derived from active production callsites in `apps/api/sr
 | `organizations` | `google-auth.ts`, auth/tenant/branch context | SELECT, INSERT | No active organization UPDATE/DELETE callsite. |
 | `organization_members` | `google-auth.ts`, auth/tenant/branch context | SELECT, INSERT | No active membership UPDATE/DELETE callsite in current API handlers. |
 | `branches` | `branch-context.ts`, `cashier-open-shift.ts` | SELECT | Locking is delegated to the dedicated SECURITY DEFINER helper implemented in 0011. |
-| `branch_memberships` | `branch-context.ts`, `cashier-open-shift.ts` | SELECT | Locking is delegated to the dedicated lock helper proposed below. |
+| `branch_memberships` | `branch-context.ts`, `cashier-open-shift.ts` | SELECT | Locking is delegated to the dedicated SECURITY DEFINER helper implemented in 0011. |
 | `registers` | `cashier-open-shift.ts` | SELECT | No active register write handler in this source tree. |
 | `register_shifts` | `cashier-open-shift.ts` | SELECT | No active shift create/close handler in this source tree. |
 | `products` | `catalog.ts`, `catalog-write.ts`, `inventory-counts.ts` | SELECT, INSERT, UPDATE | Catalog writes use SELECT FOR UPDATE; inventory validates product scope. |
@@ -65,7 +65,7 @@ The original lock sites included:
 - `catalog-write.ts`: `FOR UPDATE` over products.
 - `inventory-counts.ts`: row locks over inventory counts.
 
-Granting UPDATE on whole read-only tables just to obtain locks is not an acceptable default. The implementation should move the read-only lock operations into small SECURITY DEFINER functions owned by the migration owner, with `SET search_path = pg_catalog`, schema-qualified table references, fixed SQL (no dynamic identifiers), narrow parameters, and PUBLIC EXECUTE revoked. Grant EXECUTE only to the runtime role. The functions must preserve deterministic lock ordering and existing revocation/concurrency semantics.
+Granting UPDATE on whole read-only tables just to obtain locks is not acceptable. Migration 0011 moves tenant/session, branch/membership and warehouse lock operations into narrow SECURITY DEFINER functions owned by the migration owner. They pin `search_path = pg_catalog`, schema-qualify application tables, use fixed SQL and narrow parameters, reject malformed/duplicate targets, revoke PUBLIC EXECUTE, and preserve deterministic lock ordering. Migration 0012 grants EXECUTE only to `microapp_runtime`.
 
 The 0008 `validate_count_inventory_movement()` trigger function selects `inventory_count_lines ... FOR SHARE`. Migration 0011 replaces it with a SECURITY DEFINER implementation, pins the search path, and qualifies every application relation. The runtime retains SELECT/INSERT only on count lines; it receives no UPDATE/DELETE/TRUNCATE.
 
@@ -125,7 +125,7 @@ Historical baseline verified at #221 HEAD `18dfc33525c792802c296469ee6140d3b5f64
 - PR #224's migration validation applies migrations 0001–0012 as the non-superuser migrator, proves application object ownership and default privileges, and runs the actual runtime smoke with a separate login.
 
 - Source files inspected: `database.ts`, `auth.ts`, `google-auth.ts`, `auth-rate-limit.ts`, `tenant-context.ts`, `branch-context.ts`, `cashier-open-shift.ts`, `catalog.ts`, `catalog-write.ts`, `inventory-counts.ts`, `inventory-locks.ts`, `authorization.ts`.
-- Migrations inspected: 0001–0010, with detailed review of 0001, 0004, 0005, 0007, 0008, 0009 and 0010 plus their relevant assertions.
+- Migrations inspected: 0001–0012, with detailed review of 0001, 0004, 0005, 0007, 0008, 0009, 0010, 0011 and 0012 plus their relevant assertions.
 - PR #221 HEAD has 6/6 GitHub Actions workflows and 8/8 check-runs completed successfully. Worker Build and Pages Preview are checks, not production deployment.
 - PR #210 HEAD `ab5d2168a11a825a9ed6b03341b3091c13f3c06e` has 7 distinct workflow names completed successfully and 14 check-runs completed successfully. #210 is an ancestor of #221 (60 commits behind #221, zero commits ahead).
 - PR #210 and #221 have no formal reviews or review threads in the current GitHub response.

@@ -43,6 +43,12 @@ If a transaction-owning migration leaves a ledger row in `applying` (for example
 
 For non-transactional historical migrations, the runner wraps the migration and its ledger update in one transaction, so a failure rolls both back. The original SQL files remain unchanged.
 
+## CI harnesses and release integration
+
+The existing `.github/workflows/ci.yml` and `.github/workflows/migration-check.yml` retain explicit per-file application because they exercise intermediate migration assertions and injected failures at the exact migration boundary. Those sequences are test harnesses, not production deployment entry points. The separate `.github/workflows/migration-runner.yml` job validates this runner as the ordered application path.
+
+No release/deployment workflow invokes this runner yet, and no `MIGRATION_DATABASE_URL` production secret has been configured by this change. Before rollout, add a separately gated migration job that runs this script against the approved target using a protected migrator credential, with a reviewed backup/restore and rollback plan. Do not move the migrator credential into the Worker runtime environment.
+
 ## What this does not prove
 
 - It does not adopt or reconcile a pre-existing database.

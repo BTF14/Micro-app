@@ -66,7 +66,7 @@ describe("exact decimal arithmetic", () => {
   it("validates formatted values and prevents aggregate overflow", () => {
     expect(formatNumeric(238500n, 14, 4)).toBe("23.8500");
     expect(() => formatNumeric(100000000000000n, 14, 4)).toThrow(RangeError);
-    expect(sumNumeric(["9999999999.9999", "0.0001"], 14, 4)).toThrow(RangeError);
+    expect(() => sumNumeric(["9999999999.9999", "0.0001"], 14, 4)).toThrow(RangeError);
   });
 
   it("provides domain-safe line USD and BCV conversion operations", () => {

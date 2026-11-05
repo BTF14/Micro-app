@@ -1,12 +1,12 @@
 # Matriz de pruebas de autorización y aislamiento multiempresa
 
 **Estado:** plan de aceptación; no es evidencia de que los controles ya estén implementados.  
-**Fecha de revisión:** 2026-10-18  
-**Rama base revisada:** `main` en `838715d211918f521f5e6401a91dc773236ef3ad`.
+**Fecha de revisión:** 2026-11-05  
+**Rama revisada:** `security/centralize-existing-route-authorization-20261105`, apilada sobre PR #215.
 
 ## Hallazgo de alcance
 
-La API registrada actualmente en `apps/api/src/index.ts` expone las rutas de autenticación registradas por `apps/api/src/auth.ts` y `GET /health`. No hay todavía handlers de negocio para productos, proveedores, ventas, pagos o movimientos de inventario. Por ello no es posible escribir una prueba HTTP real de acceso cruzado a esos recursos sin inventar rutas o interfaces que no existen. Las pruebas de esquema/migración y las de sesión existentes son controles parciales, no sustitutos de las pruebas de autorización por recurso.
+La API registra actualmente catálogo GET/POST/PATCH y rutas de almacenes/conteos por sucursal, además de autenticación y `GET /health`. La cobertura de autorización real se limita a esas rutas; no existen aún handlers HTTP para ventas, pagos, proveedores, recepción, reservas, devoluciones ni transferencias. No se debe inferir aislamiento completo de recursos que aún no tienen endpoints.
 
 ## Reglas de seguridad para las pruebas
 
@@ -31,11 +31,13 @@ La API registrada actualmente en `apps/api/src/index.ts` expone las rutas de aut
 | Roles | Cada rol accede solo a las operaciones explícitamente permitidas | `cashier` y `inventory` no adquieren permisos de `admin/owner` por manipular cuerpo, ruta o cabeceras |
 | Membresía/sesión | Membresía activa permite acceso conforme al rol | Membresía revocada, organización inactiva, usuario inactivo o sesión revocada/expirada deniega acceso inmediatamente |
 
-La matriz no asigna todavía permisos detallados por operación; deben definirse a partir de requisitos documentados antes de implementar los handlers. No inventar reglas de identidad, allowlist ni vinculación de cuentas como parte de este trabajo.
+La matriz de permisos por rol está aprobada (2026-10-31). `authorization.ts` centraliza las decisiones de operación y los helpers tenant/branch se conectan a los handlers existentes en esta rama. La cobertura pendiente debe ampliarse por endpoint y por rol, sin inventar rutas ni permisos fuera de la matriz.
 
 ## Cobertura existente revisada
 
-- `apps/api/src/auth.integration.test.ts`: registro, duplicado, credenciales incorrectas, consulta de sesión, usuario/membresía inactivos, cierre y revocación, expiración y limpieza de rate limits.
+- `apps/api/src/auth.integration.test.ts`: autenticación, estado de sesión, revocación, expiración y casos de identidad.
+- `apps/api/src/authorization.test.ts`: matriz de permisos, denegación por operación y límites de contexto tenant/branch.
+- `apps/api/src/inventory-counts.integration.test.ts`: aislamiento tenant/branch, membresía de sucursal, denegación de Cashier, idempotencia, atomicidad y ledger para conteos.
 - `apps/api/migrations/0001_initial.sql`: restricciones compuestas para que productos/proveedores de organizaciones diferentes no puedan vincularse mediante la clave foránea compuesta; revisar también las restricciones de ventas y líneas en la propia migración.
 - Workflows de CI y validación de migración sobre el SHA base revisado terminaron en éxito después de la fusión documental. Eso no prueba las rutas de negocio que todavía no existen.
 

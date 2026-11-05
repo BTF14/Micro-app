@@ -1812,3 +1812,15 @@ Mantener #207 en Draft. Revisar independientemente el diff; resolver la colisió
 - #207 HEAD 3e4490695128e7638d5e71ee822dccf134fc2bce: 9/9 checks success. #208 HEAD 76a246ea141eedbee877608e7c0f50d6a07f3019: 7/7 success. Stack 0001–0007 validado en PostgreSQL efímero.
 - #208 authorization.ts es utilidad de política, no middleware central conectado a handlers. Catálogo/inventario conservan comprobaciones explícitas locales; issue #53 requiere auditoría por handler y pruebas tenant/branch/role. Comentario #208 ID 6652013382.
 - DATABASE_URL real/ownership/grants permanece NO VERIFICADO. Sin merge/deploy.
+
+
+## 2026-11-05 UTC — reconciliación completa de idempotencia, roles y auditoría
+
+- Se verificó que #205 y #208 eran ramas hermanas: compare reportó divergencia; #205 no era ancestro de #208/#207. Se creó ancestry lineal segura mediante merge commits explícitos y sin force-push: #200 → #204 → #205 → #208 → #207.
+- #208 se retargeteó a base #205. HEAD final #208 `32c7217a21b7a3719ebf72940419779a7b42c027`, compare 21 ahead/0 behind, 7/7 checks success.
+- #207 se actualizó para incluir la rama de #208 y preservar el contenido idempotente de #205. Se fusionaron los tres archivos de #205 (migration 0005, inventory-counts.ts, integration tests), conservando teardown audit append-only mediante deshabilitar/reactivar trigger solo durante cleanup de PostgreSQL efímero. HEAD final #207 `962b5e9d34cc23d7bb5929cd17b4599f4da06db4`, compare 16 ahead/0 behind, 10/10 checks success.
+- CI/migration-check de #207 aplican 0001–0007 en PostgreSQL efímero: 0005 inventario+idempotencia, 0006 roles own-shift, 0007 audit append-only. CI verifica rollback de 0005/0007, assertions y pruebas integradas. Los filtros `work/**` se preservan para que las ramas base apiladas continúen validándose.
+- Revisión de autorización encontró y corrigió dos defectos en #208: Inventory debe poder leer costos según matriz aprobada; `authorizeBranchOperation` debe bloquear tenant/session/user/membership/org antes de branch locks. Regression test confirma el orden. HEAD #208 final 32c... 7/7 success y #207 final 962... 10/10 success.
+- Rutas actuales auditadas: catálogo GET todos los roles (Cashier sin cost_usd); catálogo POST/PATCH solo Owner/Admin; conteos create/confirm Owner/Admin/Inventory con branch scope y locks. Helpers authorization.ts no están globalmente conectados; rutas usan checks locales. No hay handlers HTTP de ventas/recepciones/pagos/devoluciones/transferencias.
+- PRs #200/#204/#205/#208/#207 siguen Draft/unmerged; #194 cerrada no merged; #196 abierta Draft/no mergeable; #202 docs 13/13 antes de la nueva sincronización. 0 reviews formales/threads en las PR principales.
+- Issue #53 comment 6652542657 registra el stack y los gates residuales. Runtime DATABASE_URL principal/ownership/grants sigue NO VERIFICADO; no se leyeron secretos ni Neon. Rate limiting runtime ausente; balance↔ledger universal aún no garantizado; backup RPO/RTO/alertas/coste $0 pendientes. Producción NO LISTA.

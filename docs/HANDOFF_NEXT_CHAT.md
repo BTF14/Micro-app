@@ -1,3 +1,36 @@
+## Handoff vigente — stack consolidado y gates P0 — 2026-11-05 UTC
+
+Continuar sin reiniciar ni pedir al propietario Build IDs, capturas, terminal, secretos, URLs o información ya documentada. El propietario trabaja desde Android sin terminal y autorizó ejecución autónoma de cambios técnicos necesarios, siempre con pruebas y seguridad. Respetar Constitución: no force-push, no merge ciego, no producción/Neon main/secretos/datos reales/Cloudflare settings/DNS/billing sin gates específicos.
+
+### Estado vivo
+
+- #200 base main, HEAD `5fbc17a48b65076cf5609a7a054bbd125a3a5d1e`, 32 ahead/0 behind, 20/20 checks success, Draft.
+- #204 base #200, HEAD `07a5a41c0f5f5c36fb89a5c5950796493d56eb20`, 8 ahead/0 behind, 8/8 checks success, Draft.
+- #205 base #204, HEAD `c0bcbbe48aa8783b85ee7787dd1ae8a6d0dfdafc`, 27 ahead/0 behind, 9/9 checks success, Draft.
+- #208 base #205, HEAD `32c7217a21b7a3719ebf72940419779a7b42c027`, 21 ahead/0 behind, 7/7 checks success, Draft.
+- #207 base #208, HEAD `962b5e9d34cc23d7bb5929cd17b4599f4da06db4`, 16 ahead/0 behind, 10/10 checks success, Draft.
+- Stack exacto: `#200 → #204 → #205 → #208 → #207`. Migraciones 0005 inventario+idempotencia, 0006 roles own-shift, 0007 audit append-only.
+- #194 cerrada como supersedida, no merged. #196 sigue abierta/Draft/no mergeable; no copiar su snapshot.
+- #202 docs HEAD antes de la actualización actual `f4b914e3530a4d8cdf5e5995b16e5bd0d1afe8d8`, 13/13 checks; revalidar el nuevo SHA que genere esta sincronización.
+- 0 reviews formales y 0 review threads en #200/#202/#204/#205/#207/#208.
+
+### Hallazgos de autorización ya corregidos
+
+- Helper role map tenía Inventory sin `catalog.read_costs`, contrario a matriz aprobada y a `catalog.ts`; corregido.
+- `authorizeBranchOperation` no pedía `resolveTenantContext(..., true)` antes de locks de branch; corregido para mantener lock order tenant/session/user/membership/org → branch → branch_membership. Regression test verifica orden.
+- Helpers no están conectados globalmente a todos los handlers. No afirmar middleware central; las rutas existentes tienen checks locales. Cada nuevo handler debe adoptar contrato o demostrar equivalente.
+- Rutas existentes: catálogo GET (todos los roles, Cashier sin costo), catálogo POST/PATCH (Owner/Admin), conteos create/confirm (Owner/Admin/Inventory, branch scope). Cashier aún no tiene endpoint de lectura de balances/ledger aunque la matriz permita leer existencias/movimientos.
+
+### Siguiente prioridad
+
+1. Auditar en profundidad la consistencia universal balance↔ledger: triggers/constraints, mutaciones directas, reconciliación de deltas y riesgo de futuros writers. No añadir endpoints comerciales.
+2. Continuar pruebas negativas por cada ruta existente: cross-tenant, cross-branch, role denial, membresía revocada y atomicidad.
+3. Investigar rate limiting runtime: `auth_rate_limits` no tiene caller.
+4. Revisar runtime DATABASE_URL principal/ownership/grants solo mediante evidencia autorizada read-only que no exponga secretos; no leer secret ni conectarse a Neon por conveniencia.
+5. Mantener gates de backup/RPO/RTO/alertas/coste $0.
+6. Actualizar docs y PR descriptions tras cada avance significativo.
+
+No fusionar ni desplegar mientras issue #53 P0 y los gates de seguridad/runtime sigan abiertos. Producción NO LISTA.
 ## Regla de continuidad — Build IDs y datos de Cloudflare — 2026-11-05
 
 - **No pedir al propietario Build IDs, deployment IDs, SHA, URLs ni capturas de nuevo** antes de consultar GitHub y la documentación vigente. Consultar checks, Actions, logs accesibles y comentarios automáticos de Cloudflare asociados al SHA/PR exactos.

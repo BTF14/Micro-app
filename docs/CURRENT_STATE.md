@@ -1,3 +1,63 @@
+## Estado vivo reconciliado — 2026-11-05 UTC
+
+Este bloque supersede los snapshots anteriores de PRs, migraciones, rutas API y autorización que aparecen debajo. Consultar GitHub por SHA antes de cualquier nueva acción.
+
+### Topología viva de PRs y CI
+
+La cadena consolidada es `#200 → #204 → #205 → #208 → #207`; todas permanecen abiertas, Draft y sin merge.
+
+| PR | Base | HEAD exacto | Ahead/behind de su base | Check-runs |
+|---|---|---|---:|---:|
+| #200 | main | `5fbc17a48b65076cf5609a7a054bbd125a3a5d1e` | 32/0 | 20/20 success |
+| #204 | #200 | `07a5a41c0f5f5c36fb89a5c5950796493d56eb20` | 8/0 | 8/8 success |
+| #205 | #204 | `c0bcbbe48aa8783b85ee7787dd1ae8a6d0dfdafc` | 27/0 | 9/9 success |
+| #208 | #205 | `32c7217a21b7a3719ebf72940419779a7b42c027` | 21/0 | 7/7 success |
+| #207 | #208 | `962b5e9d34cc23d7bb5929cd17b4599f4da06db4` | 16/0 | 10/10 success |
+
+- #200 contiene la vertical slice de catálogo/inventario y migración 0005.
+- #204 mantiene el aislamiento de fixtures PostgreSQL.
+- #205 añade idempotencia de conteos (Idempotency-Key opcional, hash canónico, replay/conflicto y tests de concurrencia/rollback/ABA).
+- #208 integra roles own-shift y migración 0006; su base es #205, no #200.
+- #207 integra audit append-only y migración 0007; su base es #208.
+- La comparación #205→#208 es 21 ahead/0 behind; #208→#207 es 16 ahead/0 behind. Las ramas no pierden historial ni copian el snapshot antiguo de #196.
+- #194 está cerrada como supersedida, no fusionada. #196 permanece abierta/Draft y no mergeable; no sustituir la migración/implementación avanzada de #200 por su snapshot.
+- #202 (esta PR documental) HEAD antes de este commit: `f4b914e3530a4d8cdf5e5995b16e5bd0d1afe8d8`, 13/13 check-runs success. Este commit generará un nuevo HEAD y requiere revalidación.
+- GitHub devolvió 0 reviews formales y 0 review threads en #200, #202, #204, #205, #207 y #208. CI verde no equivale a revisión formal.
+
+### Migraciones y validación integrada
+
+La secuencia 0001–0007 se aplicó y verificó desde PostgreSQL efímero limpio:
+1. 0005 `warehouse_inventory`, con `idempotency_key`/`request_hash` de #205.
+2. 0006 `register_shift_member_roles` de #208.
+3. 0007 `audit_logs_append_only` de #207.
+
+En #207, CI y migration-check aplican 0001→0007; el job de migraciones prueba rollback inducido y assertions de auditoría. El teardown de `inventory-counts.integration.test.ts` deshabilita el trigger append-only de `audit_logs` solo durante la limpieza de fixtures en PostgreSQL desechable y lo reactiva dentro de la misma transacción. Los workflows de #208/#207 conservan filtros `work/**` para que las ramas apiladas sigan ejecutando CI después de cambios de base.
+
+### Auditoría de autorización por rutas existentes
+
+- `GET /api/orgs/:organizationId/catalog`: requiere sesión/membresía activa. Owner/Admin/Inventory/Cashier leen catálogo organizacional; el campo `cost_usd` se omite para Cashier. Inventory sí puede leer costos según la matriz aprobada.
+- `POST /api/orgs/:organizationId/catalog` y `PATCH /api/orgs/:organizationId/catalog/:productId`: Owner/Admin únicamente; validación de Origin, cuerpo acotado, tenant lock, transacción y audit insert en la misma transacción.
+- Crear/confirmar conteos de inventario: Owner/Admin/Inventory; resuelve tenant y sucursal con locks, exige membresía de sucursal para Inventory y valida warehouse/product dentro del tenant. Cashier no puede crear ni confirmar conteos.
+- Consultas actuales de warehouses y conteos también se limitan a Owner/Admin/Inventory. La matriz permite a Cashier leer existencias/movimientos en su sucursal, pero no debe afirmarse que exista ya un endpoint de lectura de balances/ledger para Cashier.
+- Los helpers `authorization.ts` y tests ahora coinciden con la matriz: Inventory puede `catalog.read_costs`; `authorizeBranchOperation` bloquea tenant/session/user/membership/organization antes de branch y branch_membership. Regression tests verifican el orden.
+- **Importante:** los helpers no están conectados como middleware global a todos los handlers. Las rutas existentes aplican checks locales; cada ruta nueva debe probar rol y scope server-side. No hay todavía rutas HTTP de ventas, compras/recepciones, pagos, devoluciones, transferencias, gestión de miembros o reportes.
+
+### Gates abiertos — issue #53 / producción
+
+- El principal PostgreSQL efectivo detrás de Worker `DATABASE_URL`, su ownership, grants heredados y memberships siguen **NO VERIFICADOS**. No se leyó ningún secreto ni se accedió a Neon. Las assertions usan roles sintéticos de PostgreSQL desechable.
+- La protección append-only no resiste a un owner/superuser con capacidad de alterar esquema/triggers; el runtime productivo debe ser non-owner y least-privilege, probado por una fuente autorizada sin exponer secretos.
+- No existe enforcement universal de base de datos que garantice que toda mutación de `inventory_balances` tenga movimiento ledger correspondiente y delta idéntico. Los writers actuales acoplan sus operaciones en transacción; no hay coordinación demostrada con futuros writers comerciales.
+- `auth_rate_limits` existe en DDL, pero no tiene caller runtime de rate limiting.
+- Backup/restore continúa parcialmente verificado: faltan RPO/RTO medidos, alerta externa de fallo y evidencia completa de coste $0.
+- Issue #53 sigue abierta/P0. Producción **NO LISTA**. No merge ni deploy hasta cerrar los gates aplicables.
+- No se modificaron main, Neon, secretos, datos reales, settings Cloudflare, DNS, billing ni producción.
+
+### Próximo trabajo técnico
+
+Continuar la auditoría P0 de integridad balance↔ledger y de cada handler existente, mantener las pruebas de aislamiento tenant/branch/role y revisar controles operativos restantes. No abrir nuevos writers comerciales hasta demostrar el contrato transaccional y la matriz de autorización en sus pruebas PostgreSQL.
+
+---
+
 ## Protocolo permanente — no volver a pedir Build IDs al propietario — 2026-11-05
 
 - Antes de solicitar cualquier Build ID, deployment ID, commit SHA, URL, captura o dato de Cloudflare, consultar primero la evidencia ya disponible en GitHub: checks/statuses del SHA exacto, workflow runs, logs accesibles, comentarios de Cloudflare en PR y documentos de auditoría/handoff.

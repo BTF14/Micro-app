@@ -1,3 +1,34 @@
+## Estado API vivo — 2026-11-05 UTC
+
+Este addendum supersede la descripción histórica de “auth/health solamente” que aparece más abajo.
+
+### Rutas HTTP registradas en la pila actual de #207
+
+- Auth: `POST /auth/register` y `POST /auth/login` fail-closed/deshabilitados; `GET /auth/me`; `POST /auth/logout`; Google OAuth `GET /auth/google`, bootstrap `POST /auth/google`, callback `GET /auth/google/callback`.
+- Catálogo: `GET /api/orgs/:organizationId/catalog`; `POST /api/orgs/:organizationId/catalog`; `PATCH /api/orgs/:organizationId/catalog/:productId`.
+- Inventario: `POST /api/orgs/:organizationId/branches/:branchId/warehouses/:warehouseId/counts/:countType`; `POST /api/orgs/:organizationId/branches/:branchId/warehouses/:warehouseId/counts/:countId/confirm`; `GET /api/orgs/:organizationId/branches/:branchId/warehouses`; `GET /api/orgs/:organizationId/branches/:branchId/warehouses/:warehouseId/counts`.
+- Health: `GET /health`.
+- No hay todavía handlers HTTP de ventas, pagos, recepciones/compras, devoluciones, transferencias, gestión de miembros o reportes.
+
+### Autorización y transacciones
+
+- Catálogo GET: sesión y membresía activas; todos los roles pueden leer catálogo; Owner/Admin/Inventory reciben `cost_usd`; Cashier recibe solo precio de venta.
+- Catálogo POST/PATCH: Owner/Admin únicamente; validación Origin/JSON/tamaño; tenant lock y transacción; el audit INSERT está en la misma transacción.
+- Conteos: Owner/Admin/Inventory pueden crear/confirmar; la resolución de sucursal exige branch membership activa para Inventory; warehouse mutex y balance locks se mantienen en el orden documentado. Cashier no crea ni confirma conteos.
+- Las consultas de warehouse/count history actuales se limitan a Owner/Admin/Inventory. No afirmar que Cashier dispone de una ruta de lectura de balances/ledger, aunque la matriz permita leer existencias/movimientos en su sucursal.
+- `resolveTenantContext`, `resolveBranchContext` y `authorization.ts` derivan identidad/scope; los helpers no equivalen por sí mismos a middleware global. Los handlers existentes tienen checks locales y deben auditarse uno por uno.
+- Corrección de #208: Inventory puede `catalog.read_costs`; `authorizeBranchOperation` ahora llama `resolveTenantContext(..., true)` antes de branch locks. Tests verifican orden tenant → branch → branch_membership.
+- Migraciones 0005/0006/0007 y CI completo validados en PostgreSQL efímero. #207 HEAD `962b5e9d34cc23d7bb5929cd17b4599f4da06db4`, 10/10 check-runs success.
+
+### Límites
+
+- `auth_rate_limits` está en DDL pero no tiene caller runtime; no afirmar que OAuth/bootstrap tenga rate limiting.
+- Worker DATABASE_URL principal/ownership/grants efectivos no verificados; no leer secretos ni conectar a Neon.
+- Balance↔ledger no tiene todavía enforcement universal para todos los posibles writers.
+- Issue #53 abierta/P0; producción NO LISTA. No merge/deploy.
+
+---
+
 # Reconciliación de integración API — 2026-11-04
 
 Este bloque supersede los snapshots de integración fechados 2026-10-30 que aparecen más abajo.

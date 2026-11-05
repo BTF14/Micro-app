@@ -1,3 +1,14 @@
+## Prioridad operativa vigente — stack consolidado 2026-11-05 UTC
+
+1. **Stack de inventario/roles/auditoría reconciliado en ramas y CI:** #200→#204→#205→#208→#207. Migraciones 0005→0006→0007 probadas desde PostgreSQL limpio; #207 exact HEAD `962b5e9d34cc23d7bb5929cd17b4599f4da06db4`, 10/10 checks success. Todas las PR siguen Draft/no merge.
+2. **P0 siguiente — integridad universal balance↔ledger:** inspeccionar DDL/triggers/callers, identificar si cada cambio de balance tiene movimiento de ledger con delta idéntico; diseñar enforcement DB o reconciliación transaccional y pruebas de manipulación directa, rollback y concurrencia. No abrir nuevos writers.
+3. **P0 — issue #53:** auditar todos los handlers existentes cross-tenant/cross-branch/role y revocación; helpers authorization.ts no están conectados globalmente. La matriz de roles está aprobada; su aprobación no sustituye tests por handler.
+4. **Runtime security:** identidad/ownership/grants efectivos de Worker DATABASE_URL siguen NO VERIFICADOS; no leer secretos ni acceder a Neon por conveniencia. Rate limiting runtime no tiene caller pese a que existe auth_rate_limits en DDL.
+5. **Operación:** backup/restore requiere completar RPO/RTO, alertas externas y coste total $0.
+6. Mantener producción NO LISTA y PRs Draft hasta cerrar los gates aplicables.
+
+---
+
 ## Prioridad operativa vigente — reconciliación GitHub 2026-11-04 21:40 EDT
 
 Este bloque sustituye los snapshots anteriores de prioridad como guía operativa. El historial inferior se conserva.

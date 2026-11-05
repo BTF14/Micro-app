@@ -1,3 +1,18 @@
+## Reconciliación de seguridad — stack de inventario/roles/auditoría — 2026-11-05 UTC
+
+- La secuencia de PRs es #200 → #204 → #205 → #208 → #207; checks exactos: #200 20/20, #204 8/8, #205 9/9, #208 7/7, #207 10/10. Todas siguen Draft/no merge.
+- Migraciones validadas en PostgreSQL efímero desde cero: 0005 inventario+idempotencia, 0006 roles own-shift, 0007 audit append-only.
+- La matriz de permisos está aprobada. Rutas existentes: catalog GET all roles (Cashier no ve cost_usd); product POST/PATCH Owner/Admin; count create/confirm Owner/Admin/Inventory con branch scope. Helpers authorization.ts no son middleware global; route-level checks deben revisarse individualmente.
+- Se corrigió role map para que Inventory pueda leer costos, y el helper de branch authorization ahora bloquea tenant/session/user/membership/org antes de branch scope.
+- Issue #53 sigue abierta/P0. Runtime PostgreSQL principal/ownership/grants detrás de Worker DATABASE_URL NO VERIFICADO; no leer secretos ni conectar a Neon para resolverlo. Audit append-only no protege frente a owner/superuser con capacidad de alterar esquema.
+- No existe caller runtime para auth_rate_limits; rate limiting de aplicación no está implementado/demostrado.
+- No existe enforcement universal balance↔ledger para toda mutación directa/futuros writers. Los endpoints actuales acoplan sus escrituras en transacción, pero no demostrar integridad global.
+- Backup/restore parcial: faltan RPO/RTO medidos, alerta externa y coste total $0.
+- Producción NO LISTA. No merge/deploy ni cambios en Neon, secretos, Cloudflare settings, DNS, billing o datos reales.
+- Próxima prioridad de seguridad: auditar balance↔ledger y todos los handlers existentes; mantener nuevos writers comerciales bloqueados hasta pruebas completas de autorización/concurrencia.
+
+---
+
 ## Cloudflare — precisión de evidencia Workers/Pages para PR #207 — 2026-11-05 UTC
 
 - GitHub contiene comentarios de `cloudflare-workers-and-pages[bot]` en [Workers](https://github.com/BTF14/Micro-app/pull/207#issuecomment-6649952138) y [Pages](https://github.com/BTF14/Micro-app/pull/207#issuecomment-6649953153), ambos con estado de despliegue exitoso y URLs identificadas como Commit Preview y Branch Preview para el commit `26c5270`.

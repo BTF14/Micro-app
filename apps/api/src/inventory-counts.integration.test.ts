@@ -700,6 +700,40 @@ describe.skipIf(!databaseUrl)("warehouse inventory count transactions against Po
     expect(persisted.rows[0]).toEqual({ status: "confirmed", movements: "1", audits: "1" });
   });
 
+  it("confirms a zero opening balance without a stock movement and still reserves the opening slot", async () => {
+    const opening = await request(root() + "/counts/opening", {
+      reason: "Initialize a warehouse with zero stock",
+      lines: [{ product_id: productId, counted_quantity: "0.000" }],
+    });
+    expect(opening.status).toBe(201);
+    const body = await opening.json() as { id: string };
+    const confirmation = await request(root() + "/counts/" + body.id + "/confirm");
+    expect(confirmation.status).toBe(200);
+
+    const persisted = await client.query<{ balance: string; movements: string; audits: string }>(
+      `SELECT
+        (SELECT on_hand_quantity::text FROM inventory_balances
+         WHERE organization_id = $1 AND warehouse_id = $2 AND product_id = $3) AS balance,
+        (SELECT count(*)::text FROM warehouse_inventory_movements
+         WHERE organization_id = $1 AND count_id = $4) AS movements,
+        (SELECT count(*)::text FROM audit_logs
+         WHERE organization_id = $1 AND entity_id = $4::text
+           AND action = 'inventory.count.confirmed') AS audits`,
+      [organizationId, warehouseId, productId, body.id],
+    );
+    expect(persisted.rows[0]).toEqual({ balance: "0.000", movements: "0", audits: "1" });
+
+    const secondOpening = await request(root() + "/counts/opening", {
+      reason: "A second opening must not overwrite the initial zero balance",
+      lines: [{ product_id: productId, counted_quantity: "1.000" }],
+    });
+    expect(secondOpening.status).toBe(201);
+    const secondBody = await secondOpening.json() as { id: string };
+    const secondConfirmation = await request(root() + "/counts/" + secondBody.id + "/confirm");
+    expect(secondConfirmation.status).toBe(409);
+    expect(await secondConfirmation.json()).toMatchObject({ error: "OPENING_ALREADY_EXISTS" });
+  });
+
   it("records an audited zero-delta physical count without creating a ledger movement", async () => {
     await seedInventoryBalance("8.000");
     const draft = await request(root() + "/counts/physical", {

@@ -1704,3 +1704,15 @@ Mantener #207 en Draft. Revisar independientemente el diff; resolver la colisió
 - El push de la rama #207 produjo un check-run `Workers Builds: micro-app-api` con enlace de detalles bajo `/production/builds/`. No se cambió manualmente la configuración Cloudflare ni se activó Worker Previews.
 - La lectura del enlace con fetch sin sesión devolvió `login_required`. El check por sí solo no permite concluir si fue compilación, publicación de Worker Version o despliegue ni confirmar el entorno destino.
 - No declarar que producción no fue afectada. Requiere inspección autenticada de solo lectura en el dashboard; no tocar settings, secrets, deployments ni activar previews.
+
+
+## Revalidación de continuidad y PRs — 2026-11-05 UTC
+
+- Se consultaron en vivo PR #194/#200/#202/#204/#205/#207, ramas, comparaciones, archivos cambiados, reviews/threads y workflow runs disponibles; también #196/#206/#193 e issue #53.
+- HEADs vigentes: #194 `7b3ad50e5780416868a1a428b856d12c4ea1e2ea`; #200 `5fbc17a48b65076cf5609a7a054bbd125a3a5d1e`; #202 `5a5b7514e84dfb1420a35e3ca5747250ae9fa1d4`; #204 `07a5a41c0f5f5c36fb89a5c5950796493d56eb20`; #205 `bb4a60454061ce09fef07100e75010f3abc5b883`; #207 `26c5270664b82aebc6a12fafe6973de8544bc6f7`.
+- Comparaciones contra base: #194 13/2 divergida de main; #200 32/0; #202 101/0; #204 8/0 de #200; #205 25/0 de #204; #207 10/0 de #200.
+- Reviews formales/threads inline: 0 en las seis PRs prioritarias. No se fusionó ni modificó ninguna PR.
+- Se detectó que el handoff/documentación tenía snapshots antiguos y no reflejaba la última revalidación. Este checkpoint añade los datos vivos y aclara límites de paginación de workflow runs; no reemplaza evidencia histórica con resultados parciales.
+- Se inspeccionó la migración #207: triggers para UPDATE/DELETE/TRUNCATE y roles sintéticos en assertions. El rol efectivo de DATABASE_URL sigue NO VERIFICADO; la pila final 0005/0006/0007 no está reconciliada por la colisión de #194/#200.
+- Se mantiene la regla: no pedir de nuevo Build IDs ni capturas ya documentados, no usar TinyFish ni pedir terminal/CLI. Si dashboard autenticado no está disponible por un conector independiente, registrar NO VERIFICADO y continuar.
+- Sin cambios en código/runtime, migraciones, main, Neon, Cloudflare, secretos, DNS, billing ni datos reales. Producción NO LISTA.

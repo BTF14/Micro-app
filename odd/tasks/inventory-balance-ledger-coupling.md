@@ -52,4 +52,5 @@ Make PostgreSQL reject any non-zero on-hand balance insertion/update unless exac
 
 ## Execution log
 
-- 2026-11-05: traced all API source files in the current stack. The only current API writer pair is count confirmation, which updates balances before inserting movements in one transaction. Confirmed universal database pairing was not yet enforced. No source or production data changed.
+- 2026-11-05: traced all API source files in the current stack. The only current API writer pair is count confirmation, which updates balances before inserting movements in one transaction. Confirmed universal database pairing was not yet enforced.
+- 2026-11-05: first PostgreSQL CI run caught an invalid negative-delta test fixture using `count_adjustment` without its required `count_id`; changed that fixture to a non-count `reversal` movement while retaining a negative signed delta. Added explicit TRUNCATE protection because row-level DELETE triggers do not cover TRUNCATE, and added rollback assertions for those guards. Re-run the exact updated HEAD before considering this task verified.

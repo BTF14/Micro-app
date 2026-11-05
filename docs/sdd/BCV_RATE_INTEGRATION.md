@@ -37,7 +37,7 @@ A single Cloudflare Cron Trigger runs hourly on weekdays during the Venezuela pu
 
 ## API
 
-`GET /api/exchange-rates/latest` returns the latest validated official rate, source, effective date, fetch timestamp, and freshness status. The response preserves the decimal as a string.
+`GET /api/exchange-rates/latest` returns the latest validated official rate, source, effective date, fetch timestamp, and freshness status. `GET /api/exchange-rates/history?limit=30` returns a bounded history (1–365 rows). Both responses preserve each decimal as a string.
 
 ## Operational gates
 

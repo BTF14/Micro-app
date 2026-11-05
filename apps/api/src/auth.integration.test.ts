@@ -474,7 +474,7 @@ const suiteGoogle = describe.skipIf(!databaseAvailable)("Google OAuth routes aga
     });
     const secondCallback = await app.fetch(new Request(
       `https://api.example/auth/google/callback?code=test-code&state=${second.state}`,
-      { headers: { Cookie: second.cookieHeader } },
+      { headers: { Cookie: second.cookieHeader, "CF-Connecting-IP": nextIntegrationIp() } },
     ), googleEnv);
     expect(secondCallback.status).toBe(302);
     expect(secondCallback.headers.get("location")).toContain("auth_error=bootstrap_consumed");

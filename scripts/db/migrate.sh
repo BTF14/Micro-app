@@ -157,6 +157,7 @@ BEGIN
         SELECT 1 FROM pg_catalog.pg_type
         WHERE typnamespace = 'public'::regnamespace
           AND typrelid = 0
+          AND typelem = 0
       )
     )
   THEN

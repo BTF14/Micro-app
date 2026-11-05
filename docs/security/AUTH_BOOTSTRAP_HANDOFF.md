@@ -20,6 +20,7 @@ A handoff that does not match the OAuth state, is expired, is already consumed, 
 - `handle_hash` and `state_hash` are fixed-length SHA-256 hashes; the handle itself has 256 bits of randomness.
 - PUBLIC receives no table privileges.
 - The hourly Worker Cron cleanup removes expired handoff rows after 48 hours, alongside inactive rate-limit buckets.
+- The encrypted database backup explicitly excludes `auth_bootstrap_attempts`, just as it excludes sessions and rate-limit buckets; pending browser authentication flows are not recovery-critical business data.
 - The migration is additive (`0010_auth_bootstrap_attempts.sql`) and has dedicated PostgreSQL assertions plus rollback validation.
 
 ## Deployment gate

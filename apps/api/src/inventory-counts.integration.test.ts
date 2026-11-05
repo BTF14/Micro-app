@@ -166,6 +166,49 @@ describe.skipIf(!databaseUrl)("warehouse inventory count transactions against Po
     expect(persisted.rows[0]).toEqual({ counts: "1", lines: "1", audits: "1" });
   });
 
+  it("treats line order as irrelevant when replaying an idempotent count", async () => {
+    await seedInventoryBalance("4.000");
+    const secondProduct = await client.query<{ id: string }>(
+      "INSERT INTO products (organization_id, sku, name, price_usd) VALUES ($1, $2, 'Second Inventory Count Product', 1) RETURNING id",
+      [organizationId, "INV-COUNT-SECOND-" + crypto.randomUUID().replace(/-/g, "").slice(0, 12)],
+    );
+    await client.query(
+      "INSERT INTO inventory_balances (organization_id, branch_id, warehouse_id, product_id, on_hand_quantity, reserved_quantity) VALUES ($1, $2, $3, $4, 2, 0)",
+      [organizationId, branchId, warehouseId, secondProduct.rows[0]!.id],
+    );
+    const key = "count-order-" + crypto.randomUUID();
+    const firstLines = [
+      { product_id: productId, counted_quantity: "5.000" },
+      { product_id: secondProduct.rows[0]!.id, counted_quantity: "3.000" },
+    ];
+    const first = await request(root() + "/counts/physical", { reason: "Line order is not semantically meaningful", lines: firstLines }, { "Idempotency-Key": key });
+    expect(first.status).toBe(201);
+    const firstBody = await first.json() as { id: string };
+    const replay = await request(root() + "/counts/physical", {
+      reason: "Line order is not semantically meaningful",
+      lines: [...firstLines].reverse(),
+    }, { "Idempotency-Key": key });
+    expect(replay.status).toBe(200);
+    expect(await replay.json()).toMatchObject({ id: firstBody.id, status: "draft", replayed: true });
+  });
+
+  it("replays the original confirmed status after an idempotent count has been confirmed", async () => {
+    await seedInventoryBalance("4.000");
+    const key = "count-confirmed-" + crypto.randomUUID();
+    const body = { reason: "Confirmed count must remain the idempotent result", lines: [{ product_id: productId, counted_quantity: "5.000" }] };
+    const first = await request(root() + "/counts/physical", body, { "Idempotency-Key": key });
+    expect(first.status).toBe(201);
+    const firstBody = await first.json() as { id: string };
+    const confirmation = await request(root() + "/counts/" + firstBody.id + "/confirm");
+    expect(confirmation.status).toBe(200);
+    expect(await confirmation.json()).toMatchObject({ id: firstBody.id, status: "confirmed" });
+    const replay = await request(root() + "/counts/physical", body, { "Idempotency-Key": key });
+    expect(replay.status).toBe(200);
+    expect(await replay.json()).toMatchObject({
+      id: firstBody.id, status: "confirmed", count_type: "physical", line_count: 1, replayed: true,
+    });
+  });
+
   it("rejects reuse of an idempotency key with a different canonical payload", async () => {
     const key = "count-create-" + crypto.randomUUID();
     const first = await request(root() + "/counts/physical", { reason: "Original request", lines: [{ product_id: productId, counted_quantity: "5" }] }, { "Idempotency-Key": key });

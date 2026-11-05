@@ -378,6 +378,7 @@ export default function App() {
               organizationId={organization?.id ?? ""}
               exchangeRate={bcvRate && !bcvError ? bcvRate.rate : null}
               exchangeRateStatus={bcvError ? "unavailable" : bcvRate?.status ?? "unavailable"}
+              canManage={organization?.role === "owner" || organization?.role === "admin"}
             />
           )}
         </div>

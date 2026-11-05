@@ -3,7 +3,7 @@ import { getCookie } from "hono/cookie";
 import type { Bindings } from "./bindings";
 import { isTrustedOrigin } from "./auth";
 import { withDatabaseClient, withDatabaseTransaction } from "./database";
-import { resolveTenantContext } from "./tenant-context";
+import { authorizeTenantOperation } from "./authorization";
 
 const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const MAX_BODY_BYTES = 16 * 1024;
@@ -244,11 +244,13 @@ export function registerCatalogWriteRoutes(app: Hono<{ Bindings: Bindings }>): v
     try {
       const result = await withDatabaseClient(c.env.DATABASE_URL, async (client) =>
         withDatabaseTransaction(client, async (transaction) => {
-          const tenant = await resolveTenantContext(transaction, sessionToken, organizationId, true);
-          if (!tenant) return { kind: "unauthenticated" as const };
-          if (tenant.role !== "owner" && tenant.role !== "admin") {
-            return { kind: "forbidden" as const };
+          const authorization = await authorizeTenantOperation(transaction, sessionToken, organizationId, "catalog.product.manage");
+          if (!authorization.allowed) {
+            return authorization.reason === "operation_denied"
+              ? { kind: "forbidden" as const }
+              : { kind: "unauthenticated" as const };
           }
+          const tenant = authorization.context;
 
           const inserted = await transaction.query<ProductRow>(
             `INSERT INTO products
@@ -343,9 +345,13 @@ export function registerCatalogWriteRoutes(app: Hono<{ Bindings: Bindings }>): v
     try {
       const result = await withDatabaseClient(c.env.DATABASE_URL, async (client) =>
         withDatabaseTransaction(client, async (transaction) => {
-          const tenant = await resolveTenantContext(transaction, sessionToken, organizationId, true);
-          if (!tenant) return { kind: "unauthenticated" as const };
-          if (tenant.role !== "owner" && tenant.role !== "admin") return { kind: "forbidden" as const };
+          const authorization = await authorizeTenantOperation(transaction, sessionToken, organizationId, "catalog.product.manage");
+          if (!authorization.allowed) {
+            return authorization.reason === "operation_denied"
+              ? { kind: "forbidden" as const }
+              : { kind: "unauthenticated" as const };
+          }
+          const tenant = authorization.context;
 
           const previousResult = await transaction.query<ProductRow>(
             `SELECT id, sku, barcode, name, description, unit,

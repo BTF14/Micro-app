@@ -1798,3 +1798,10 @@ Mantener #207 en Draft. Revisar independientemente el diff; resolver la colisió
 - #207 HEAD `dd3eb55ee3dc5776ce0e0617a3012c29ab355132`: 10/10 checks success, verify y postgres-migration incluidos; Chromium, SAST, Trivy, secret scan, Pages/Worker y backup/restore success.
 - Compare #208→#207: 11 ahead/0 behind, 8 archivos, mergeable=true. CI/migration-check aplicó 0001→0007 desde PostgreSQL efímero y pasó test PG own-shift roles. AC-5 audit migration stack validado. DATABASE_URL/ownership/grants runtime permanece NO VERIFICADO.
 - Comentario en #207 ID 6651950993. Ambas PR Draft/no merge. #202 docs PR seguía con checks en progreso (verify, postgres-migration, SAST, Trivy, backup/restore, Pages) al último snapshot.
+
+
+## ODD task cerrado técnicamente y revalidación documental — 2026-11-05 UTC
+
+- Actualizado ODD audit-logs: AC-1..AC-7 cumplidos para alcance de código/PostgreSQL desechable; runtime DATABASE_URL sigue NO VERIFICADO. SHA implementación #207 dd3eb55 pasó 10/10.
+- Nuevo HEAD documental #207 `3e4490695128e7638d5e71ee822dccf134fc2bce`: 5 success / 4 in_progress, 0 failures; postgres-migration y validate-odd-docs success. Esperar verify, Chromium, Pages y backup/restore.
+- #208 HEAD `76a246ea141eedbee877608e7c0f50d6a07f3019` 7/7 success. #202 docs HEAD `2ef0d0820b8df9e5667ac1c478b7a51d2816dfec`: 12/13 success, Workers Build in_progress. Comentario #207 6651990379. Sin secretos/Neon/producción; PRs Draft/no merge.

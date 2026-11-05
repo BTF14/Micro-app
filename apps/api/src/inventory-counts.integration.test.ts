@@ -118,6 +118,7 @@ describe.skipIf(!databaseUrl)("warehouse inventory count transactions against Po
         // triggers during fixture teardown; production ledger immutability is
         // exercised by the migration assertions and remains enabled at runtime.
         await client.query("ALTER TABLE warehouse_inventory_movements DISABLE TRIGGER USER");
+        await client.query("ALTER TABLE inventory_balances DISABLE TRIGGER USER");
         await client.query("ALTER TABLE inventory_count_lines DISABLE TRIGGER USER");
         await client.query("ALTER TABLE inventory_counts DISABLE TRIGGER USER");
         await client.query("DELETE FROM audit_logs WHERE organization_id = $1", [organizationId]);
@@ -128,6 +129,7 @@ describe.skipIf(!databaseUrl)("warehouse inventory count transactions against Po
         await client.query("ALTER TABLE inventory_counts ENABLE TRIGGER USER");
         await client.query("ALTER TABLE inventory_count_lines ENABLE TRIGGER USER");
         await client.query("ALTER TABLE warehouse_inventory_movements ENABLE TRIGGER USER");
+        await client.query("ALTER TABLE inventory_balances ENABLE TRIGGER USER");
       } catch (error) {
         await client.query("ROLLBACK");
         throw error;
@@ -463,6 +465,12 @@ describe.skipIf(!databaseUrl)("warehouse inventory count transactions against Po
 
   it("rejects an older physical count after a newer count has changed the balance", async () => {
     await seedInventoryBalance("8.250");
+    const initial = await client.query<{ version: string }>(
+      "SELECT balance_version::text AS version FROM inventory_balances WHERE organization_id = $1 AND warehouse_id = $2 AND product_id = $3",
+      [organizationId, warehouseId, productId],
+    );
+    const initialVersion = BigInt(initial.rows[0]!.version);
+    const currentVersion = (initialVersion + 1n).toString();
     const first = await request(root() + "/counts/physical", {
       reason: "First physical observation",
       lines: [{ product_id: productId, counted_quantity: "9.000" }],
@@ -486,6 +494,8 @@ describe.skipIf(!databaseUrl)("warehouse inventory count transactions against Po
       error: "COUNT_STALE",
       expected_on_hand_quantity: "8.250",
       current_on_hand_quantity: "8.500",
+      expected_balance_version: initialVersion.toString(),
+      current_balance_version: currentVersion,
     });
 
     const persisted = await client.query<{ balance: string; stale_status: string; newer_status: string; stale_movements: string }>(
@@ -501,6 +511,46 @@ describe.skipIf(!databaseUrl)("warehouse inventory count transactions against Po
     expect(persisted.rows[0]).toEqual({
       balance: "8.500", stale_status: "draft", newer_status: "confirmed", stale_movements: "0",
     });
+  });
+
+  it("rejects an ABA-stale physical count even when on-hand returns to the original quantity", async () => {
+    await seedInventoryBalance("8.250");
+    const created = await request(root() + "/counts/physical", {
+      reason: "ABA changes must invalidate a physical snapshot",
+      lines: [{ product_id: productId, counted_quantity: "9.000" }],
+    });
+    expect(created.status).toBe(201);
+    const body = await created.json() as { id: string };
+    const snapshot = await client.query<{ expected: string; version: string }>(
+      "SELECT expected_on_hand_quantity::text AS expected, expected_balance_version::text AS version FROM inventory_count_lines WHERE organization_id = $1 AND count_id = $2",
+      [organizationId, body.id],
+    );
+    expect(snapshot.rows[0]).toEqual({ expected: "8.250", version: "1" });
+    await client.query(
+      "UPDATE inventory_balances SET on_hand_quantity = 8.500 WHERE organization_id = $1 AND warehouse_id = $2 AND product_id = $3",
+      [organizationId, warehouseId, productId],
+    );
+    await client.query(
+      "UPDATE inventory_balances SET on_hand_quantity = 8.250 WHERE organization_id = $1 AND warehouse_id = $2 AND product_id = $3",
+      [organizationId, warehouseId, productId],
+    );
+    const confirmation = await request(root() + "/counts/" + body.id + "/confirm");
+    expect(confirmation.status).toBe(409);
+    expect(await confirmation.json()).toMatchObject({
+      error: "COUNT_STALE",
+      expected_on_hand_quantity: "8.250",
+      current_on_hand_quantity: "8.250",
+      expected_balance_version: "1",
+      current_balance_version: "3",
+    });
+    const persisted = await client.query<{ version: string; status: string; movements: string }>(
+      `SELECT
+        (SELECT balance_version::text FROM inventory_balances WHERE organization_id = $1 AND warehouse_id = $2 AND product_id = $3) AS version,
+        (SELECT status FROM inventory_counts WHERE organization_id = $1 AND id = $4) AS status,
+        (SELECT count(*)::text FROM warehouse_inventory_movements WHERE organization_id = $1 AND count_id = $4) AS movements`,
+      [organizationId, warehouseId, productId, body.id],
+    );
+    expect(persisted.rows[0]).toEqual({ version: "3", status: "draft", movements: "0" });
   });
 
   it("does not let a physical count reduce stock below reserved quantity", async () => {

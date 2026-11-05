@@ -1,3 +1,9 @@
+## Actualización de CI — 2026-11-05 09:40 UTC
+
+Corrección del estado anterior en este documento: PR #210 HEAD `ab5d2168a11a825a9ed6b03341b3091c13f3c06e` terminó **8/8 workflow runs en success**. Playwright E2E y Security scan, que estaban pending en la consulta anterior, completaron correctamente. PR #210 continúa Draft/no merge; no hay review formal ni verificación de producción. PR #202 HEAD `64f0ca8cfd101216db64e7fc7c9540f226e9b394` tiene Security scan y Secret history scan pending tras esta reconciliación documental.
+
+---
+
 ## Reconciliación viva — 2026-11-05 09:40 UTC (fuente de verdad)
 
 Este bloque supersede todos los snapshots históricos inferiores. Consultar HEAD vivo antes de cualquier nueva acción.

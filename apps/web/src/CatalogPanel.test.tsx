@@ -54,6 +54,7 @@ describe("catalog panel", () => {
       organizationId: "00000000-0000-4000-8000-000000000010",
       exchangeRate: "36.50000000",
       exchangeRateStatus: "current",
+      canManage: true,
     });
 
     expect(container.textContent).toContain("Producto exacto");
@@ -61,6 +62,8 @@ describe("catalog panel", () => {
     expect(container.textContent).toContain("Bs. 870,53");
     expect(container.textContent).toContain("US$ 10,00");
     expect(container.textContent).toContain("Costo USD");
+    expect(container.textContent).toContain("Nuevo producto");
+    expect(container.textContent).toContain("Editar");
     expect(vi.mocked(fetch).mock.calls[0][0]).toBe(
       "/api/orgs/00000000-0000-4000-8000-000000000010/catalog?limit=100",
     );
@@ -86,12 +89,15 @@ describe("catalog panel", () => {
       organizationId: "00000000-0000-4000-8000-000000000010",
       exchangeRate: "36.50000000",
       exchangeRateStatus: "stale",
+      canManage: false,
     });
 
     expect(container.textContent).toContain("La última tasa BCV está desactualizada");
     expect(container.textContent).toContain("US$ 1,25");
     expect(container.textContent).not.toContain("Bs. 45,63");
     expect(container.textContent).not.toContain("Costo USD");
+    expect(container.textContent).not.toContain("Nuevo producto");
+    expect(container.textContent).not.toContain("Editar");
   });
 
   it("loads the next cursor page without replacing the products already shown", async () => {
@@ -118,6 +124,7 @@ describe("catalog panel", () => {
       organizationId: "00000000-0000-4000-8000-000000000010",
       exchangeRate: null,
       exchangeRateStatus: "unavailable",
+      canManage: false,
     });
 
     const loadMore = [...container.querySelectorAll("button")].find((button) => button.textContent?.includes("Cargar más"));

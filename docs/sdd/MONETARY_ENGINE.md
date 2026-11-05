@@ -1,6 +1,6 @@
 # Motor monetario de Micro-app
 
-**Estado:** contrato técnico aprobado. El núcleo decimal exacto basado en BigInt vive en el paquete interno `packages/money`; la API ya lo usa para validar entradas numéricas del catálogo y la web ya lo importa en pruebas. La integración en la UI de catálogo, carrito, ventas y pagos todavía está pendiente.  
+**Estado:** contrato técnico aprobado. El núcleo decimal exacto basado en BigInt vive en el paquete interno `packages/money`; la API lo usa para validar entradas numéricas del catálogo. La UI de catálogo con lectura/precios exactos está propuesta en PR #230 y los formularios de alta/edición en PR #231; ambas siguen Draft y pendientes de merge. Carrito, checkout, ventas y pagos siguen pendientes.  
 **Decisión de negocio:** Micro-app no ofrece descuentos ni promociones basadas en descuentos.
 
 ## 1. Moneda base y catálogo
@@ -110,9 +110,11 @@ La suite debe cubrir, como mínimo:
 
 ## 10. Estado de implementación
 
-- Catálogo API: precios USD decimales y paginación ya existen.
+- Catálogo API: lectura paginada y escrituras POST/PATCH tenant-scoped existentes; validación decimal exacta en la rama de PR #229.
 - Esquema base: cantidades con tres decimales y snapshots comerciales previstos.
-- PR #227: integración BCV propuesta, pendiente de sus gates y despliegue.
+- PR #227: integración BCV propuesta; no afirmar despliegue de Worker/Cron ni tasa en producción.
 - PR #228: migración propuesta para retirar el campo de descuentos.
-- Paquete interno compartido de aritmética BigInt y límites NUMERIC: implementado en esta rama, pendiente de CI.
-- Catálogo UI, carrito, checkout, ventas, pagos, facturación y reportes: pendientes de integración y pruebas.
+- Paquete interno compartido de aritmética BigInt y límites NUMERIC: implementado y con CI aprobado en PR #229; sigue Draft y sin merge.
+- PR #230: UI de catálogo de solo lectura con USD/VES exactos, paginación y costos según respuesta autorizada; CI aprobado, sigue Draft.
+- PR #231: formularios de alta/edición, desactivación y payloads decimales string; CI aprobado, sigue Draft.
+- Carrito, checkout, ventas, pagos, facturación y reportes: pendientes de integración, contrato transaccional y pruebas.

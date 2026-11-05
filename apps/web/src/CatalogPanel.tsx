@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { convertUsdToVes, formatDecimal, parseNumeric } from "@micro-app/money";
 import { apiRequest } from "./auth";
+import ProductForm from "./ProductForm";
 import "./catalog.css";
 
 type ExchangeRateStatus = "current" | "stale" | "unavailable";
@@ -27,6 +28,7 @@ type CatalogPanelProps = {
   organizationId: string;
   exchangeRate: string | null;
   exchangeRateStatus: ExchangeRateStatus;
+  canManage: boolean;
 };
 
 function formatLocalizedDecimal(value: string): string {
@@ -55,11 +57,14 @@ export default function CatalogPanel({
   organizationId,
   exchangeRate,
   exchangeRateStatus,
+  canManage,
 }: CatalogPanelProps) {
   const [items, setItems] = useState<CatalogProduct[]>([]);
   const [nextCursor, setNextCursor] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [showCreateForm, setShowCreateForm] = useState(false);
+  const [editingProduct, setEditingProduct] = useState<CatalogProduct | null>(null);
   const requestSequence = useRef(0);
 
   const fetchPage = useCallback(async (cursor?: string, append = false) => {
@@ -110,9 +115,16 @@ export default function CatalogPanel({
           <h1 id="catalog-title">Catálogo</h1>
           <p className="catalog-intro">Precios base en USD y equivalencia en bolívares calculada con la tasa oficial vigente del BCV.</p>
         </div>
-        <button className="catalog-refresh" type="button" onClick={() => void fetchPage()} disabled={loading}>
-          {loading ? "Actualizando…" : "Actualizar"}
-        </button>
+        <div className="catalog-heading-actions">
+          {canManage && (
+            <button className="catalog-create" type="button" onClick={() => { setEditingProduct(null); setShowCreateForm(true); }}>
+              Nuevo producto
+            </button>
+          )}
+          <button className="catalog-refresh" type="button" onClick={() => void fetchPage()} disabled={loading}>
+            {loading ? "Actualizando…" : "Actualizar"}
+          </button>
+        </div>
       </div>
 
       {exchangeRateStatus === "stale" && (
@@ -126,6 +138,20 @@ export default function CatalogPanel({
         </p>
       )}
       {error && <p className="catalog-error" role="alert">{error}</p>}
+
+      {canManage && (showCreateForm || editingProduct) && (
+        <ProductForm
+          key={editingProduct?.id ?? "new"}
+          organizationId={organizationId}
+          product={editingProduct ?? undefined}
+          onCancel={() => { setShowCreateForm(false); setEditingProduct(null); }}
+          onSaved={() => {
+            setShowCreateForm(false);
+            setEditingProduct(null);
+            void fetchPage();
+          }}
+        />
+      )}
 
       <div className="catalog-summary">
         <span>{items.length} {items.length === 1 ? "producto cargado" : "productos cargados"}</span>
@@ -150,6 +176,7 @@ export default function CatalogPanel({
                   <th scope="col">Equivalente VES</th>
                   {canReadCosts && <th scope="col">Costo USD</th>}
                   <th scope="col">Estado</th>
+                  {canManage && <th scope="col">Acciones</th>}
                 </tr>
               </thead>
               <tbody>
@@ -173,6 +200,17 @@ export default function CatalogPanel({
                         {item.is_active ? "Activo" : "Inactivo"}
                       </span>
                     </td>
+                    {canManage && (
+                      <td>
+                        <button
+                          className="catalog-edit"
+                          type="button"
+                          onClick={() => { setShowCreateForm(false); setEditingProduct(item); }}
+                        >
+                          Editar
+                        </button>
+                      </td>
+                    )}
                   </tr>
                 ))}
               </tbody>

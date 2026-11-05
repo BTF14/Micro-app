@@ -78,9 +78,22 @@ The 0004 register-shift opening trigger locks several identity/scope rows. There
 1. **Bootstrap administrator**: disposable CI superuser only, used to create test roles and database. Never used by the Worker.
 2. **Migration owner/login**: `microapp_migrator`, NOSUPERUSER, NOCREATEDB, NOCREATEROLE, NOREPLICATION, NOBYPASSRLS. It owns application objects created by migrations and has USAGE/CREATE on the application schema. It is not a member of runtime.
 3. **Application runtime/login**: `microapp_runtime`, LOGIN, NOSUPERUSER, NOCREATEDB, NOCREATEROLE, NOREPLICATION, NOBYPASSRLS. This exact principal is the username in `DATABASE_URL`; no SET ROLE or inherited owner role is assumed. It owns no application table, sequence, schema, trigger or function, has no CREATE on the application schema, and is not a member of `microapp_migrator`.
+### Database/schema bootstrap prerequisite
+
+The application-schema ACL is owned by the database/schema owner, not by the migration role. Before applying migrations 0001–0012, the controlled database bootstrap operation must:
+
+- create the database and the two LOGIN roles with the reviewed attributes;
+- revoke `CREATE` on schema `public` from `PUBLIC`;
+- grant `USAGE, CREATE` on schema `public` to `microapp_migrator`;
+- grant `USAGE` on schema `public` to `microapp_runtime`;
+- grant database `CONNECT` to the two roles; and
+- verify the effective schema owner/ACLs before handing the connection strings to migration/runtime workflows.
+
+Migration 0012 now fails closed unless those effective schema privileges are already correct. It does not attempt to change schema ownership or schema ACLs from the non-owner migrator connection. The CI bootstrap performs these steps using its disposable administrator; production/preproduction must use the separately approved database-owner procedure.
+
 4. **Synthetic assertion roles**: disposable test-only roles created by the CI bootstrap administrator. They are not production principals.
 
-The #224 CI harness revokes PUBLIC schema CREATE, gives `microapp_runtime` schema USAGE only, revokes PUBLIC/runtime privileges on existing application tables/sequences/functions, and configures default privileges for `microapp_migrator` so future objects are not automatically exposed. Runtime grants are explicit and table/column-specific in migration 0012. CI asserts application object ownership by the non-superuser migrator and creates a future table/function probe after grants to prove no implicit runtime access. All future migrations must continue to run as the same migration owner.
+The #224 CI harness revokes PUBLIC schema CREATE, gives `microapp_runtime` schema USAGE only, revokes PUBLIC/runtime privileges on existing application tables/sequences/functions, and configures default privileges for `microapp_migrator` so future objects are not automatically exposed. Migration 0012 explicitly checks the effective schema ACLs before granting table privileges and fails closed if the database-owner bootstrap was incomplete. Runtime grants are explicit and table/column-specific in migration 0012. CI asserts application object ownership by the non-superuser migrator and creates a future table/function probe after grants to prove no implicit runtime access. All future migrations must continue to run as the same migration owner.
 
 Do not grant CREATEROLE to the migration owner merely to support the existing 0007 assertion script. In the harness, the bootstrap administrator creates synthetic roles and the migration owner applies DDL. Run the assertions under the intended synthetic/runtime role as appropriate.
 

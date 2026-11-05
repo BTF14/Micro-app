@@ -17,8 +17,9 @@ ALTER TABLE public.sales
 ALTER TABLE public.payments
   ALTER COLUMN exchange_rate_snapshot TYPE numeric(18,8);
 
--- The scheduled Worker uses the least-privilege runtime login. It can only
--- read and append official rate rows; it cannot rewrite or delete history.
+-- The scheduled Worker uses the least-privilege runtime login. It can read
+-- and append rate rows, and mark validation_status stale on a detected conflict;
+-- it cannot rewrite rate values, effective dates, or delete history.
 GRANT SELECT, INSERT ON TABLE public.exchange_rates TO microapp_runtime;
 GRANT UPDATE (validation_status) ON TABLE public.exchange_rates TO microapp_runtime;
 

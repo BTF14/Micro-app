@@ -35,7 +35,7 @@ describe("BCV official HTML parser", () => {
   });
 
   it("rejects a missing USD rate", () => {
-    expect(() => parseBcvOfficialRate(OFFICIAL_PAGE.replace(/USD[\s\S]*?894,88760000/, "GBP 1,00"), NOW))
+    expect(() => parseBcvOfficialRate(OFFICIAL_PAGE.replace(/USD/g, "GBP"), NOW))
       .toThrow("BCV_USD_RATE_MISSING");
   });
 

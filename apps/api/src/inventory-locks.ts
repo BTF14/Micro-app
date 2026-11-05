@@ -11,6 +11,7 @@ export interface LockedInventoryBalance {
   product_id: string;
   on_hand_quantity: string;
   reserved_quantity: string;
+  balance_version: string;
 }
 
 export interface InventoryWarehouseLockTarget {
@@ -96,7 +97,7 @@ export async function lockInventoryBalances(
 
   if (orderedProductIds === undefined) {
     const result = await tx.query<LockedInventoryBalance>(
-      `SELECT warehouse_id, product_id, on_hand_quantity::text, reserved_quantity::text
+      `SELECT warehouse_id, product_id, on_hand_quantity::text, reserved_quantity::text, balance_version::text
        FROM inventory_balances
        WHERE organization_id = $1 AND warehouse_id = ANY($2::uuid[])
        ORDER BY warehouse_id ASC, product_id ASC
@@ -107,7 +108,7 @@ export async function lockInventoryBalances(
   }
 
   const result = await tx.query<LockedInventoryBalance>(
-    `SELECT warehouse_id, product_id, on_hand_quantity::text, reserved_quantity::text
+    `SELECT warehouse_id, product_id, on_hand_quantity::text, reserved_quantity::text, balance_version::text
      FROM inventory_balances
      WHERE organization_id = $1
        AND warehouse_id = ANY($2::uuid[])

@@ -28,7 +28,7 @@ Para PR #193, #194, #196, #200, #202, #204, #205 y #207 la consulta devolvió 0 
 ### Issue, infraestructura y vigilancia
 
 - Issue #53 sigue abierta y P0. Su cuerpo se actualizó para reflejar el HEAD vivo de #196 y el progreso de #207; los demás criterios de autorización, aislamiento tenant/sucursal/rol, escritores comerciales y readiness continúan abiertos.
-- No se activó Worker Previews ni se modificó Cloudflare productivo. Los resultados Pages/Workers de #207 son builds/checks de rama, no despliegue ni evidencia de aislamiento productivo.
+- No se cambió manualmente la configuración de Cloudflare ni se activó Worker Previews. Sin embargo, el push de la rama #207 disparó el check `Workers Builds: micro-app-api`; su enlace de detalles apunta a `/production/builds/`, y la lectura del dashboard devolvió `login_required`. **No está verificado** si fue solo build, publicación de versión o despliegue ni el entorno destino. No afirmar que producción no fue afectada hasta revisar ese registro autenticadamente en modo solo lectura.
 - No se modificó Neon, secretos, DNS, billing ni datos reales. Producción sigue **NO LISTA**.
 - Automatización `Vigilar PR y CI de Micro-app` (`6aec009171408191b1db52aabdbdd011`) está habilitada, con schedule diario 14:00 America/New_York. No tiene last_run ni next_run_time registrado; delivery_status figura unknown. No crear duplicado y no afirmar que ya entregó informes.
 

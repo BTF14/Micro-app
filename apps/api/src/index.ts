@@ -110,6 +110,7 @@ app.onError((_error, c) => {
 
 export default Object.assign(app, {
   async scheduled(controller: ScheduledController, env: Bindings): Promise<void> {
+    if (env.APP_ENV === "preview") return;
     if (controller.cron === "17 * * * *") {
       await cleanupExpiredAuthRateLimits(env.DATABASE_URL);
       return;

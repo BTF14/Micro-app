@@ -61,13 +61,15 @@ export async function consumeAuthRateLimit(
   if (!row) throw new Error("Authentication rate-limit counter was not returned.");
 
   const attempts = Number(row.attempts);
-  const windowStartMs = new Date(row.window_started_at).getTime();
+  const windowStartMs = row.window_started_at instanceof Date
+    ? row.window_started_at.getTime()
+    : Date.parse(row.window_started_at);
   const retryAfterSeconds = attempts <= maxAttempts
     ? 0
     : Math.max(
         1,
         Number.isFinite(windowStartMs)
-          ? Math.ceil((windowStartMs + windowSeconds * 1000 - Date.now()) / 1000)
+          ? Math.min(windowSeconds, Math.ceil((windowStartMs + windowSeconds * 1000 - Date.now()) / 1000))
           : windowSeconds,
       );
 

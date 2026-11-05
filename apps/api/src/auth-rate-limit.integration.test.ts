@@ -99,7 +99,7 @@ const suite = describe.skipIf(!databaseUrl)("authentication rate limiting agains
   it("enforces the Google OAuth start limit and returns Retry-After", async () => {
     const ip = "198.51.100.40";
     cleanupKeys.push(`google:start:${ip}`);
-    const responses = [];
+    const responses: Response[] = [];
     for (let index = 0; index < 11; index += 1) {
       responses.push(await app.fetch(
         new Request("https://api.example/auth/google", {

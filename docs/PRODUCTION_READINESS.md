@@ -223,9 +223,14 @@ La consulta directa a GitHub Actions por `head_sha` incluye eventos `push` y `pu
 
 ## Revalidación de seguridad e aislamiento — 2026-11-05 UTC
 
-- PR #205 HEAD `c564221919c370aa8c1cd3571f4c86f8cafffb78`: 7/7 workflow runs success; suite PostgreSQL de conteos 20/20. Incluye pruebas HTTP de selector de tenant ajeno (POST/GET), producto ajeno, branch no asignado y warehouse/branch discordante, con ausencia de escrituras ante denegación.
+- PR #205 HEAD `bb4a60454061ce09fef07100e75010f3abc5b883`: 7/7 workflow runs success; suite PostgreSQL de conteos 20/20. Incluye pruebas HTTP de selector de tenant ajeno (POST/GET), producto ajeno, branch no asignado y warehouse/branch discordante, con ausencia de escrituras ante denegación.
 - PR #202 HEAD `52996471ce3c143527fe4725085b38ee67bdf402`: 11/11 workflow runs success tras reconciliar seis documentos de autorización/aislamiento.
 - #200 16/16, #204 6/6, #194 11/11 en sus HEAD exactos. Todas las PR siguen Draft; sin reviews formales, threads ni status contexts en la consulta. No hay merge.
 - La cobertura cross-tenant/cross-branch sigue parcial: falta confirmar denegación con ID de conteo ajeno, cubrir todas las rutas de catálogo/roles y materializar lectura de balances/movimientos para Cashier/Inventory. Issue #53 permanece abierta/P0.
 - La tabla `audit_logs` no tiene trigger append-only en migraciones 0001–0005. Los privilegios efectivos del rol runtime no fueron verificados; no declarar auditoría general inmutable.
 - Producción continúa NO LISTA por autorización/aislamiento completo, flujos comerciales ausentes, auditoría y privilegios por cerrar, backups/restore reales, RPO/RTO, alertas, rate limiting runtime, coste total y gates legales/fiscales. No migrar a Neon ni desplegar.
+
+
+### Orden de idempotencia/locks verificado — 2026-11-05 UTC
+
+PR #205 HEAD `bb4a60454061ce09fef07100e75010f3abc5b883` reclama el documento idempotente antes de bloquear balances; los replays no bloquean stock y los nuevos documentos siguen almacén → documento → balances. CI exacto: 7/7 success, PostgreSQL inventory 20/20. Esta mejora no cierra los gaps de auditoría general, autorización completa ni producción.

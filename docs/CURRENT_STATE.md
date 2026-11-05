@@ -1676,7 +1676,7 @@ El stale-count compara `expected_on_hand_quantity` y `expected_balance_version` 
 | #200 | `5fbc17a48b65076cf5609a7a054bbd125a3a5d1e` | main `7b0f057...` | 32 ahead / 0 behind | 16/16 success | Draft |
 | #202 | `52996471ce3c143527fe4725085b38ee67bdf402` | main `7b0f057...` | 74 ahead / 0 behind; 18 archivos | 11/11 success | Draft; reconciliación documental |
 | #204 | `07a5a41c0f5f5c36fb89a5c5950796493d56eb20` | #200 `5fbc17a...` | 8 ahead / 0 behind | 6/6 success | Draft |
-| #205 | `c564221919c370aa8c1cd3571f4c86f8cafffb78` | #204 `07a5a41...` | 24 ahead / 0 behind; diff propio 3 archivos | 7/7 success | Draft |
+| #205 | `bb4a60454061ce09fef07100e75010f3abc5b883` | #204 `07a5a41...` | 25 ahead / 0 behind; diff propio 3 archivos | 7/7 success | Draft |
 
 En la consulta conjunta: 0 reviews formales, 0 review threads y 0 combined status contexts para las PR indicadas. Los números anteriores son **workflow runs**, no aprobaciones. Todas siguen Draft; ninguna fue fusionada.
 
@@ -1693,3 +1693,8 @@ En la consulta conjunta: 0 reviews formales, 0 review threads y 0 combined statu
 - `audit_logs` no tiene trigger append-only en migraciones 0001–0005; privilegios runtime no verificados. No declarar auditoría inmutable.
 - #194 sigue divergida y colisiona en migración 0005. No integrar antes de consolidar inventario y renumerar roles a 0006.
 - No Neon, producción, Cloudflare productivo, secretos, DNS, billing ni datos reales. Producción sigue NO LISTA.
+
+
+### Revalidación de orden idempotencia/locks — 2026-11-05 UTC
+
+PR #205 avanzó a HEAD `bb4a60454061ce09fef07100e75010f3abc5b883`, 25 ahead/0 behind de #204, diff propio 3 archivos. La creación de conteos ahora reclama el documento/idempotency key antes de bloquear balances; replay no retiene locks de stock y las creaciones nuevas siguen almacén → documento → balances. Para ese SHA exacto: 7/7 workflow runs success, CI/PostgreSQL inventory 20/20. No se hereda evidencia de SHA anterior.

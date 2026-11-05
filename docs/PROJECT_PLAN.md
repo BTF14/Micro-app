@@ -1125,7 +1125,7 @@ No desplegar, no migrar a Neon, no tocar Cloudflare productivo, secretos, DNS, b
 
 - #200 HEAD `5fbc17a48b65076cf5609a7a054bbd125a3a5d1e`: 32 ahead/0 behind, 16/16 workflows success.
 - #204 HEAD `07a5a41c0f5f5c36fb89a5c5950796493d56eb20`: 8 ahead/0 behind, 6/6 success.
-- #205 HEAD `c564221919c370aa8c1cd3571f4c86f8cafffb78`: 24 ahead/0 behind, 7/7 success; 20/20 pruebas PostgreSQL de conteos, incluidas denegaciones cross-tenant/cross-branch.
+- #205 HEAD `bb4a60454061ce09fef07100e75010f3abc5b883`: 25 ahead/0 behind, 7/7 success; 20/20 pruebas PostgreSQL de conteos, incluidas denegaciones cross-tenant/cross-branch.
 - #202 HEAD `52996471ce3c143527fe4725085b38ee67bdf402`: 74 ahead/0 behind, 18 archivos, 11/11 workflows success.
 - #194: 13 ahead/2 behind de main actual; 11/11 success no resuelve la colisión 0005.
 - Todas siguen Draft; no reviews formales ni threads en la consulta. No se fusionó ninguna.
@@ -1139,3 +1139,8 @@ No desplegar, no migrar a Neon, no tocar Cloudflare productivo, secretos, DNS, b
 5. Auditar Worker Previews con acceso autenticado antes de activar switches irreversibles.
 
 No migrar a Neon, no desplegar producción, no tocar Cloudflare productivo, secretos, DNS, billing ni datos reales. No main directo, no force-push y no merge sin revisión formal.
+
+
+### Ajuste del protocolo de creación idempotente — 2026-11-05 UTC
+
+PR #205 HEAD `bb4a60454061ce09fef07100e75010f3abc5b883` ahora reclama el documento/idempotency key antes de tomar locks de balances. Los replays no adquieren locks de stock; las nuevas creaciones siguen almacén → documento → balances. El SHA exacto pasó 7/7 workflow runs y 20/20 pruebas PostgreSQL de conteos.

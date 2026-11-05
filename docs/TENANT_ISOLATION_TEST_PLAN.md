@@ -52,7 +52,7 @@ Este addendum supersede las afirmaciones históricas anteriores sobre ausencia d
 
 - La matriz `docs/sdd/role-permission-decision-matrix.md` fue aprobada el 2026-10-31. El texto histórico que decía que la matriz estaba pendiente ya no describe el estado vigente.
 - PR #200 contiene catálogo tenant-scoped y handlers de almacenes/conteos; PR #204 aísla fixtures PostgreSQL; PR #205 incorpora idempotencia, versionado monotónico y pruebas HTTP de aislamiento. Ninguna está fusionada.
-- En PR #205 HEAD `c564221919c370aa8c1cd3571f4c86f8cafffb78`, la suite `inventory-counts.integration.test.ts` pasó 20/20 pruebas en PostgreSQL efímero. Para ese SHA exacto pasaron 7/7 workflow runs, incluidos CI, Playwright, Database migration validation, Backup restore, Semgrep, Security y Secret history scan.
+- En PR #205 HEAD `bb4a60454061ce09fef07100e75010f3abc5b883`, la suite `inventory-counts.integration.test.ts` pasó 20/20 pruebas en PostgreSQL efímero. Para ese SHA exacto pasaron 7/7 workflow runs, incluidos CI, Playwright, Database migration validation, Backup restore, Semgrep, Security y Secret history scan.
 - Las pruebas nuevas cubren selector de organización ajena en POST y GET, producto de otro tenant en una solicitud, miembro Inventory sin asignación a otra sucursal, warehouse/branch discordante y ausencia de escrituras ante denegaciones.
 - Las assertions SQL de 0005 también comprueban FKs cross-tenant para warehouse/product y balances.
 

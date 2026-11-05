@@ -1786,7 +1786,7 @@ No migrar a Neon, no desplegar producción, no cambiar Cloudflare productivo, se
 
 - #200 HEAD `5fbc17a48b65076cf5609a7a054bbd125a3a5d1e`: 32 ahead/0 behind de main, 16/16 workflow runs success.
 - #204 HEAD `07a5a41c0f5f5c36fb89a5c5950796493d56eb20`: 8 ahead/0 behind de #200, 6/6 success.
-- #205 HEAD `c564221919c370aa8c1cd3571f4c86f8cafffb78`: 24 ahead/0 behind de #204, diff propio 3 archivos, 7/7 success; suite PostgreSQL de conteos 20/20.
+- #205 HEAD `bb4a60454061ce09fef07100e75010f3abc5b883`: 25 ahead/0 behind de #204, diff propio 3 archivos, 7/7 success; suite PostgreSQL de conteos 20/20.
 - #202 HEAD `52996471ce3c143527fe4725085b38ee67bdf402`: 74 ahead/0 behind de main, 18 documentos, 11/11 success.
 - #194 HEAD `7b3ad50e5780416868a1a428b856d12c4ea1e2ea`: 13 ahead/2 behind de main actual; 11/11 success no resuelve su colisión de migración.
 - Todas Draft; sin reviews formales, threads ni status contexts en la consulta. No se fusionó ninguna.
@@ -1808,3 +1808,8 @@ No migrar a Neon, no desplegar producción, no cambiar Cloudflare productivo, se
 ### Límites vigentes
 
 No fusionar sin review formal y gates completos. No migrar a Neon, no desplegar producción, no tocar Cloudflare productivo, secretos, DNS, billing ni datos reales. No modificar main directamente ni force-push.
+
+
+### Última mejora de concurrencia — 2026-11-05 UTC
+
+PR #205 HEAD `bb4a60454061ce09fef07100e75010f3abc5b883`: el handler reclama el documento idempotente antes de tomar locks de balance. Replays retornan sin bloquear stock; los nuevos conteos siguen almacén → documento → balances. La suite PostgreSQL pasó 20/20 y el SHA exacto 7/7 workflows. Próximo paso: terminar auditoría estática de auditoría general, privilegios runtime, IDOR de confirmación y cobertura restante de roles.

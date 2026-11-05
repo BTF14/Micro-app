@@ -1606,3 +1606,10 @@ La consulta directa a GitHub Actions por `head_sha` incluye eventos `push` y `pu
 - Hallazgo: la tabla `audit_logs` no tiene trigger append-only en migraciones 0001–0005; privilegios runtime no verificados. No confundir la inmutabilidad del ledger de inventario con la auditoría general.
 - Issue #53 continúa abierta/P0. La cobertura HTTP añadida es parcial, no certifica todas las rutas/roles ni readiness de producción.
 - No se tocó Neon, producción, Cloudflare productivo, secretos, DNS, billing ni datos reales.
+
+
+## 2026-11-05 — Orden idempotencia antes de locks de balance
+
+- La revisión estática detectó que el replay idempotente de creación bloqueaba balances antes de resolver la clave, contrario al contrato global almacén → documento → balances.
+- PR #205 reordena la operación: primero reclama el documento/idempotency key; replay retorna antes de adquirir locks de stock; documento nuevo bloquea balances después. Fallo de scope fuerza ROLLBACK.
+- HEAD `bb4a60454061ce09fef07100e75010f3abc5b883`: 25 ahead/0 behind de #204, 7/7 workflow runs success; PostgreSQL inventory integration 20/20.

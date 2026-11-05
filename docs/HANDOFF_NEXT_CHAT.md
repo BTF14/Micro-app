@@ -2043,3 +2043,18 @@ No se modificó código runtime, migraciones, main, Neon, secretos, Cloudflare s
 - Las PR comparten 24 rutas de 33 (#196) y 30 (#200), incluidas ambas migraciones/assertions 0005, catálogo, branch-context, inventario, inventory-locks, CI y migration-check. #196 tiene 128 commits ahead / 34 behind respecto a la base #200; no es una dependencia lineal ni un retarget seguro.
 - Migración 0005 difiere: #196 blob `8a2b13651ebd5dc1d3bb87efbe34cb863c0e0d99` (265 líneas), #200 blob `bb9020fdca535f84fda0f468e9d3ab86e1cc319c` (330 líneas). La versión #200 contiene evolución posterior de inventario; no sustituirla por el snapshot #196.
 - Decisión: no retargetear, fusionar ni copiar #196 sobre #200 a ciegas. Mapear commits/rutas y separar código de catálogo de inventario; conservar los cambios más avanzados de #200 y validar la combinación desde PostgreSQL limpio. Issue #53 permanece abierta/P0. Comentario de reconciliación en issue #53: 6651679831.
+
+
+## Reanudación — 2026-11-05 UTC — PR #208 y numeración 0005/0006
+
+**Estado vivo:** #208 es la continuación Draft de #194 sobre #200. HEAD actual `8b3646adb3d6dc1c2a7a3ef17d8ead4a442e0509`, base `feat/inventory-vertical-slice-mainline-20261104` HEAD `5fbc17a48b65076cf5609a7a054bbd125a3a5d1e`, 15 ahead / 0 behind, 10 archivos, mergeable=true. #194 fue cerrada como supersedida, no merged; comentario ID 6651810854. Merge commit base `f8d90fbff7eb274c59d5442873124e7470bb4e66` tiene padres #200 y antiguo #194, sin force-push.
+
+**Migraciones:** #200 conserva 0005 inventario. #208 renombra la migración de roles a `0006_register_shift_member_roles.sql`; ambos workflows ejecutan 0001–0006 y CI incluye tests PostgreSQL para roles own-shift. El migration-check pasó en SHA previo `f8d90fb...`. Tras el ajuste de locks de autorización, HEAD actual es `8b3646ad...`; solo cinco checks de seguridad/preview fueron visibles en el último snapshot, CI/migration-check para ese SHA no aparecen todavía. No afirmar validación completa; esperar CI.
+
+**Código autorización:** en #208, `authorizeTenantOperation` ahora resuelve tenant con `lockRows=true`; `authorizeBranchOperation` resuelve tenant y branch con locks. Aprovecha tenant/branch context actualizado de #200; no copiar versiones antiguas de #194 de esos dos módulos.
+
+**Comparación #196/#200:** 15/24 blobs compartidos son idénticos, incluidos todos los handlers/tests de catálogo; no copiar catálogo. Nueve diferencias son workflows, migración/assertions 0005 y servicios/tests inventory; preservar #200. #196 sigue abierta/Draft (no se ha cerrado).
+
+**Bloqueo siguiente:** #207 continúa abierta/Draft basada en #200; su workflow aún ejecuta 0005 → 0007 y omite 0006. Comentario en #207 ID 6651848193; en issue #53 ID 6651847660. Siguiente tarea: apilar audit logs sobre #208 y probar 0005→0006→0007 desde PostgreSQL limpio. No declarar AC-5 completo hasta ese CI.
+
+Issue #53 sigue abierta/P0; producción NO LISTA. No tocar main, Neon, secretos, Cloudflare settings/DNS/billing ni datos reales; no merge/deploy.

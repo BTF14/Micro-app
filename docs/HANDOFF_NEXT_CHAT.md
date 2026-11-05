@@ -1,3 +1,47 @@
+## Handoff vigente — 2026-11-05 00:50 EDT
+
+### Estado desde el que continuar
+
+- Fuente viva: GitHub `BTF14/Micro-app`. Main `7b0f057b8c152515005feed40305143c0ebb94b0`.
+- #200 HEAD `5fbc17a48b65076cf5609a7a054bbd125a3a5d1e`, 32 ahead/0 behind, 18/18 workflow runs success; Draft.
+- #204 HEAD `07a5a41c0f5f5c36fb89a5c5950796493d56eb20`, base #200, 8 ahead/0 behind, 6/6 success; Draft.
+- #205 HEAD `bb4a60454061ce09fef07100e75010f3abc5b883`, base #204, 25 ahead/0 behind, 7/7 success; Draft. Se conserva idempotencia y protección monotónica del balance.
+- #194 HEAD `7b3ad50e5780416868a1a428b856d12c4ea1e2ea`, 13 ahead/2 behind main, 11/11 success; Draft. Su migración de roles sigue siendo 0005 y colisiona con inventario 0005.
+- #202 HEAD `31ef601f744027f1a0fe95eac549d7fe6f6f994c`, 76 ahead/0 behind, 11/11 success; Draft.
+- #196 HEAD vivo `c332e740aff279fb8b22a8879581d4b8a3c7de21`, 128 ahead/2 behind main, 11/11 success; Draft y no mergeable. Issue #53 ya no debe citar el SHA histórico 66ed.
+- #193 HEAD `ac57ab4f3415f82279b8a49c0befe09f8e3aec68`, 5 ahead/2 behind main, 10/10 success; abierta, no Draft.
+- #207 nueva PR Draft: `https://github.com/BTF14/Micro-app/pull/207`; rama `feat/audit-logs-append-only-20261105`; HEAD `26c5270664b82aebc6a12fafe6973de8544bc6f7`; base #200 HEAD `5fbc17a48b65076cf5609a7a054bbd125a3a5d1e`; 10 ahead/0 behind; 7/7 workflow runs y 9/9 check runs success. No reviews/threads/status contexts. No fusionar.
+- En todas las PR citadas: 0 reviews formales, 0 review threads y 0 combined status contexts en la última consulta. No convertir CI verde en aprobación.
+
+### Trabajo completado en este bloque
+
+- Recuperación en vivo de ramas/PRs, divergencias, runs y check-runs exactos, reviews, threads y status contexts.
+- Issue #53 continúa abierta/P0; se corrigió su SHA vivo de PR #196 y se registró PR #207.
+- Auditoría estática confirmó que `audit_logs` se crea en 0001 y no tenía protección append-only en 0001–0005. La protección del ledger de inventario no cubría esta tabla.
+- PR #207 implementa migración 0007 con triggers ALWAYS para UPDATE/DELETE/TRUNCATE y revoca a PUBLIC privilegios de mutación/trigger.
+- Assertions PostgreSQL prueban un runtime sintético no propietario SELECT/INSERT, un segundo rol no propietario con privilegios de mutación y la imposibilidad de deshabilitar/eliminar triggers desde el runtime.
+- Se añadieron pruebas de rollback de auditoría para creación de producto y se mantuvo la prueba de rollback de confirmación de conteos.
+- Los teardowns de `catalog-write`, `catalog-update` e `inventory-counts` se adaptaron para deshabilitar triggers solo dentro de limpieza de PostgreSQL desechable. CI detectó primero el teardown olvidado en catalog-update; se corrigió y el HEAD final pasó completo.
+- HEAD #207 `26c527...`: 7/7 workflow runs y 9/9 check runs success. Build/typecheck, unit, PostgreSQL migration/assertions, catalog create/update, inventory counts, Playwright, Semgrep, Trivy, secret scan, Pages/Workers builds y backup/restore sintético pasaron.
+
+### Límites no resueltos
+
+- El rol PostgreSQL real de `DATABASE_URL` no está verificado. No leer secretos ni tocar Neon producción. Un trigger no protege contra un propietario/superusuario que pueda deshabilitarlo; el runtime debe ser no propietario y de privilegios mínimos.
+- La migración 0007 está en una PR apilada sobre #200. Debe preservarse la secuencia: inventario 0005, roles #194 renumerados 0006, audit_logs 0007. La CI actual de #207 aplica 0005 y 0007; cuando 0006 se integre, actualizar la secuencia/workflows y revalidar el stack limpio.
+- #53 sigue abierta: falta cobertura completa de autorización por tenant/sucursal/rol, operaciones comerciales aún inexistentes, lectores de balances/movimientos, consistencia ledger/balance y rate limiting runtime, entre otros gates.
+- No activar Worker Previews, no modificar Cloudflare productivo, no tocar Neon, secretos, DNS, billing, main ni datos reales.
+- La automatización diaria está habilitada, pero sin last_run/next_run_time registrados y con delivery unknown; no crear otra.
+
+### Siguiente ejecución recomendada
+
+1. Mantener #207 Draft y realizar revisión manual completa del diff; no fusionar.
+2. Resolver la colisión de migraciones con #194 mediante secuencia 0005/0006 antes de integrar #207.
+3. Determinar cómo obtener evidencia autorizada del rol runtime sin leer/exponer el secreto ni modificar producción.
+4. Continuar issue #53 con pruebas HTTP cross-tenant/cross-branch/por rol y balance/ledger.
+5. Mantener esta sección y `docs/CURRENT_STATE.md` como estado vivo; el resto del documento es historial.
+
+---
+
 ## Corrección de seguridad Cloudflare — Worker Previews vs Version URLs — 2026-11-04 22:00 EDT
 
 Esta aclaración corrige la formulación demasiado amplia de addenda anteriores: **no existe una prohibición permanente de usar Worker Previews**. El gate es no cambiar el modo de builds de Cloudflare hasta comprobar aislamiento y aceptar el cambio irreversible del flujo existente.

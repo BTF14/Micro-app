@@ -1,12 +1,46 @@
-## Continuidad actualizada — 2026-11-05 10:09 UTC
+## Continuidad actualizada — 2026-11-05 10:44 UTC
 
-- PR #210 HEAD `ab5d2168a11a825a9ed6b03341b3091c13f3c06e`: 8/8 workflow runs success; migraciones 0001–0009 validadas en PostgreSQL 18 desechable. Draft/no merge.
-- PR #213 (rama independiente desde main) HEAD `0c1e5e40eb259cc50d0a3f602e96e07bd88fac32`: 12/12 check-runs y 10/10 workflow runs success, incluidos CI, auth/rate-limit integration tests, PostgreSQL, TypeScript, Security, Semgrep, Playwright, Pages y Workers Builds. Draft/no merge.
-- PR #202 docs HEAD `de617d3ccc616c7056ca10af1b42e959107c1ca5`: 13/13 check-runs y 11/11 workflow runs success. Draft/no merge.
-- #213 usa la tabla auth_rate_limits existente, sin migración nueva; HMAC-SHA-256 con GOOGLE_CLIENT_SECRET por entorno, buckets por CF-Connecting-IP: OAuth start 10/10m, bootstrap 5/h, callback 20/10m. Fail-closed 503, 429/Retry-After, cleanup best-effort. No rate-limita /auth/me ni /auth/logout y aún no está en main.
-- Issue #53 sigue abierta/P0. authorization.ts no está conectado globalmente; Cashier aún no tiene endpoint de balances/ledger; principal DATABASE_URL/ownership/grants no verificado. Producción NO LISTA.
-- No se tocaron main, Neon, secretos, datos reales, Cloudflare settings, DNS, billing ni producción.
+### Estado vivo de PRs y dependencias
 
+| PR | Base | HEAD verificado | Estado |
+|---|---|---|---|
+| #202 | main | `99fb44d93fe73dd2c47f9a77b5021852c5ba706b` | Open / Draft |
+| #210 | #209 | `ab5d2168a11a825a9ed6b03341b3091c13f3c06e` | Open / Draft |
+| #211 | #210 | `1ebb998b9711f6feb8b70191a704f627713cdc07` | Open / Draft |
+| #213 | main | `0c1e5e40eb259cc50d0a3f602e96e07bd88fac32` | Open / Draft; implementación alternativa |
+| #214 | #211 | `d51f2c4e7bde153ef31aa25571022d68510c6558` | Open / Draft |
+| #215 | #214 | `9ba4f76e0c155ceaff911a4033406a8afa9f09cd` | Open / Draft |
+| #218 | #215 | `2115d66cca18ee094ee3b3f8148ac6a61df040da` | Open / Draft; 6/6 workflows success |
+| #220 | #218 | `983a76ea2aa5f4753999d098bb71b341407c89c7` | Open / Draft; CI en ejecución |
+
+PR #216 se cerró como supersedida por #218; #217 y #219 se cerraron como supersedidas por #220. No hubo merge. La secuencia de nuevas correcciones es #215 → #218 → #220.
+
+### Hallazgos y cambios recientes
+
+- #218 conecta los helpers centrales de autorización con los handlers existentes de catálogo y almacenes/conteos. Mantiene Owner/Admin/Inventory para gestión de conteos y excluye Cashier de ese metadata. No crea un endpoint de balances/ledger para Cashier.
+- #218 añadió pruebas de denegación por rol, acceso cross-branch y autorización read-only sin locks de escritura. Su HEAD exacto terminó 6/6 workflows en success: CI (build/typecheck, unit tests y PostgreSQL auth/branch/catalog/inventory), PostgreSQL migration validation, Playwright E2E, Semgrep, Security/Trivy y Secret history scan. Pages Preview success; Workers Build seguía en progreso al último comentario.
+- #220 corrige la lectura no acotada del cuerpo POST de bootstrap: lectura por streaming con límite estricto 2.048 bytes, cancelación temprana, UTF-8 fatal, reutilización en escrituras de catálogo y pruebas unitarias/integración. En HEAD `983a76ea...`, Security scan y Secret history scan terminaron success; CI, migration validation, Playwright y Semgrep estaban pending/in_progress. No declarar validado hasta terminar todos.
+- La PR #213 es independiente desde main y solapa funcionalmente con el rate limiter de #214. #214/#215 usan la pila auditada y `AUTH_RATE_LIMIT_HMAC_KEY`; #213 usa `GOOGLE_CLIENT_SECRET` como pepper y política distinta. No integrar ambas implementaciones sin reconciliar diferencias.
+- Los filtros de Actions activan el conjunto completo de push workflows en `feat/**`; los PRs apilados sobre una base distinta de main no activan todos los workflows `pull_request` porque el filtro actual solo incluye main. Las ramas de seguridad se mantienen bajo `feat/**` para validar el HEAD exacto; evaluar corrección permanente del filtro por PR separado.
+
+### Gates de seguridad/producción que continúan abiertos
+
+- Issue #53 sigue OPEN/P0. No cerrar por CI verde.
+- No verificados: secreto productivo `AUTH_RATE_LIMIT_HMAC_KEY`, procedencia confiable de `CF-Connecting-IP`, grants/ownership del runtime DB role y aplicación/orden de migración 0010 en el entorno destino.
+- Sesión absoluta de 7 días; no se observó actualización de `last_seen_at` ni timeout de inactividad. No modificar hasta validar el impacto en POS/cajeros y definir política funcional.
+- Cashier aún no dispone de endpoint autorizado de lectura de balances/movimientos.
+- Faltan RPO/RTO medidos, alertas externas de backup, evidencia de coste total USD 0 y cobertura de futuros writers comerciales.
+- Producción **NO LISTA**. No se tocó main, Neon, datos reales, secretos, Cloudflare productivo, DNS, billing ni producción.
+
+### Próxima secuencia
+
+1. Completar CI del HEAD exacto #220 y revisar fallos/steps; revisar después Worker Preview de #218/#220 sin confundirlo con producción.
+2. Hacer revisión semántica final de #218/#220 y reconciliar #213 frente a #214 antes de cualquier integración.
+3. Continuar auditoría de autorización endpoint por endpoint; no inventar permisos ni writers.
+4. Revisar runtime grants y migración 0010 solo con evidencia segura, sin leer secretos ni tocar Neon productivo.
+5. Mantener issue #53 como gate P0 y sincronizar esta documentación cuando cambie el estado vivo.
+
+---
 ---
 
 ## Corrección de estado — 2026-11-05 09:43 UTC

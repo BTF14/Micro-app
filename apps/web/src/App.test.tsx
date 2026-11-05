@@ -7,6 +7,13 @@ import App from "./App";
 const user = { id: "user-1", email: "ana@example.com", display_name: "Ana Pérez" };
 const organizations = [{ id: "org-1", name: "Mi tienda", slug: "mi-tienda", role: "owner" }];
 const authResponse = { user, organizations };
+const bcvRateResponse = {
+  rate: "894.88760000",
+  effectiveDate: "2026-11-05",
+  fetchedAt: "2026-11-05T18:00:00.000Z",
+  source: "BCV_OFFICIAL_HTML_V1",
+  status: "current" as const,
+};
 
 let container: HTMLDivElement;
 let root: Root;
@@ -98,8 +105,22 @@ describe("Micro app authentication flow", () => {
     expect(container.querySelector('[role="dialog"]')?.textContent).toContain("Qué datos guardamos");
   });
 
+  it("shows the official BCV rate, effective date and current status on the dashboard", async () => {
+    vi.mocked(fetch)
+      .mockResolvedValueOnce(jsonResponse(authResponse))
+      .mockResolvedValueOnce(jsonResponse(bcvRateResponse));
+    await renderApp();
+    await settle();
+
+    const panel = container.querySelector(".exchange-rate-panel");
+    expect(panel?.textContent).toContain("894,88760000");
+    expect(panel?.textContent).toContain("noviembre de 2026");
+    expect(panel?.textContent).toContain("Vigente");
+    expect(panel?.textContent).toContain("Banco Central de Venezuela");
+  });
+
   it("shows help links (WhatsApp support, FAQ, privacy) on the authenticated dashboard footer", async () => {
-    vi.mocked(fetch).mockResolvedValueOnce(jsonResponse(authResponse));
+    vi.mocked(fetch).mockResolvedValueOnce(jsonResponse(authResponse)).mockResolvedValueOnce(jsonResponse(bcvRateResponse));
     await renderApp();
     await settle();
 
@@ -115,6 +136,7 @@ describe("Micro app authentication flow", () => {
   it("revokes the session on logout and returns to the login screen", async () => {
     vi.mocked(fetch)
       .mockResolvedValueOnce(jsonResponse(authResponse))
+      .mockResolvedValueOnce(jsonResponse(bcvRateResponse))
       .mockResolvedValueOnce(new Response(null, { status: 204 }));
     await renderApp();
     await settle();
@@ -125,7 +147,7 @@ describe("Micro app authentication flow", () => {
     await act(async () => { logoutButton.click(); });
     await settle();
 
-    expect(vi.mocked(fetch).mock.calls[1][0]).toBe("/auth/logout");
+    expect(vi.mocked(fetch).mock.calls[2][0]).toBe("/auth/logout");
     expect(container.textContent).toContain("Inicia sesión");
     expect(container.textContent).toContain("Has cerrado la sesión de forma segura.");
   });

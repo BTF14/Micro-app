@@ -56,3 +56,9 @@ Migration order must remain:
 - 2026-11-05: live GitHub metadata and check-runs queried for #200/#202/#204/#205/#207/#208. All observed check-runs on these exact SHAs completed successfully.
 - 2026-11-05: discovered #205 and #208 are sibling branches; #205 is not an ancestor of #208/#207. Compare #205→#208: diverged, 17 ahead / 35 behind; compare reverse: 35 ahead / 17 behind.
 - 2026-11-05: inspected #205 patch; it adds idempotency_key/request_hash to migration 0005 and idempotency logic/tests to inventory counts. #207 currently does not include the runtime idempotency implementation.
+
+## Additional security findings discovered during review
+
+- The approved role matrix grants the Inventory role organization-wide read access to catalog prices and costs. The new helper currently denies `catalog.read_costs` to Inventory, contradicting both the approved matrix and the existing `catalog.ts` handler. Correct the helper and its tests.
+- `authorizeBranchOperation` currently calls `resolveTenantContext` without `lockRows=true`, then calls `resolveBranchContext(..., true)`. This violates the branch-context helper's documented lock precondition (tenant/session/user/membership/organization locks must be held first), leaving a revocation/role-change race. Correct the call and add a regression assertion that tenant locks are requested before branch locks.
+- These helpers are not yet wired into all route handlers. Correcting them makes the helper contract internally consistent; it does not certify global route coverage.

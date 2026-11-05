@@ -50,10 +50,13 @@ BEGIN
   EXCEPTION WHEN check_violation THEN NULL;
   END;
 
-  IF has_table_privilege('public', 'public.auth_bootstrap_attempts', 'SELECT')
-    OR has_table_privilege('public', 'public.auth_bootstrap_attempts', 'INSERT')
-    OR has_table_privilege('public', 'public.auth_bootstrap_attempts', 'UPDATE')
-    OR has_table_privilege('public', 'public.auth_bootstrap_attempts', 'DELETE') THEN
+  IF EXISTS (
+    SELECT 1
+    FROM pg_class c,
+         LATERAL aclexplode(COALESCE(c.relacl, acldefault('r', c.relowner))) acl
+    WHERE c.oid = 'public.auth_bootstrap_attempts'::regclass
+      AND acl.grantee = 0
+  ) THEN
     RAISE EXCEPTION 'FAIL: PUBLIC has privileges on bootstrap handoff table';
   END IF;
 

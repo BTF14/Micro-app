@@ -16,6 +16,7 @@ trap 'rm -rf "$tmpdir"' EXIT
 
 psql "$SOURCE_URL" -X -v ON_ERROR_STOP=1 -f apps/api/migrations/0001_initial.sql
 psql "$SOURCE_URL" -X -v ON_ERROR_STOP=1 -f apps/api/migrations/0002_google_identity.sql
+psql "$SOURCE_URL" -X -v ON_ERROR_STOP=1 -f apps/api/migrations/0010_auth_bootstrap_attempts.sql
 psql "$SOURCE_URL" -X -v ON_ERROR_STOP=1 <<'SQL'
 INSERT INTO organizations (id, name, slug) VALUES ('11111111-1111-4111-8111-111111111111', 'Synthetic Restore Shop', 'synthetic-restore-shop');
 INSERT INTO app_users (id, email, display_name, google_sub, email_verified_at) VALUES ('22222222-2222-4222-8222-222222222222', 'backup-restore@example.invalid', 'Synthetic Restore User', 'synthetic-backup-restore-sub', now());
@@ -32,12 +33,13 @@ INSERT INTO inventory_movements (id, organization_id, product_id, movement_type,
 INSERT INTO audit_logs (organization_id, actor_user_id, action, entity_type, entity_id, metadata) VALUES ('11111111-1111-4111-8111-111111111111', '22222222-2222-4222-8222-222222222222', 'synthetic.sale.completed', 'sale', '66666666-6666-4666-8666-666666666666', '{"fixture":"synthetic-backup-restore","version":1}'::jsonb);
 INSERT INTO auth_sessions (user_id, token_hash, expires_at) VALUES ('22222222-2222-4222-8222-222222222222', repeat('b', 64), now() + interval '1 day');
 INSERT INTO auth_rate_limits (key_hash, attempts) VALUES (repeat('c', 64), 3);
+INSERT INTO auth_bootstrap_attempts (handle_hash, state_hash, organization_name, organization_slug, expires_at) VALUES (repeat('d', 64), repeat('e', 64), 'Synthetic Pending Bootstrap', 'synthetic-pending-bootstrap', now() + interval '10 minutes');
 SQL
 
-ephemeral="$(psql "$SOURCE_URL" -X -v ON_ERROR_STOP=1 -Atq -F '|' -c 'SELECT (SELECT count(*) FROM auth_sessions), (SELECT count(*) FROM auth_rate_limits)')"
-[[ "$ephemeral" == "1|1" ]] || { echo "Synthetic ephemeral auth fixture missing." >&2; exit 1; }
+ephemeral="$(psql "$SOURCE_URL" -X -v ON_ERROR_STOP=1 -Atq -F '|' -c 'SELECT (SELECT count(*) FROM auth_sessions), (SELECT count(*) FROM auth_rate_limits), (SELECT count(*) FROM auth_bootstrap_attempts)')"
+[[ "$ephemeral" == "1|1|1" ]] || { echo "Synthetic ephemeral auth fixture missing." >&2; exit 1; }
 psql "$SOURCE_URL" -X -v ON_ERROR_STOP=1 -c 'CREATE DATABASE microapp_restore' >/dev/null
-pg_dump "$SOURCE_URL" --no-owner --no-privileges --format=custom --exclude-table=public.auth_sessions --exclude-table=public.auth_rate_limits --file="$tmpdir/backup.dump"
+pg_dump "$SOURCE_URL" --no-owner --no-privileges --format=custom --exclude-table=public.auth_sessions --exclude-table=public.auth_rate_limits --exclude-table=public.auth_bootstrap_attempts --file="$tmpdir/backup.dump"
 
 age-keygen -o "$tmpdir/age-key.txt" >/dev/null 2>"$tmpdir/age-keygen.log"
 public_key="$(awk '/^# public key:/ {print $4}' "$tmpdir/age-key.txt")"
@@ -86,10 +88,10 @@ if [[ "$source_manifest" != "$restored_manifest" ]]; then
   diff -u <(printf '%s\n' "$source_manifest") <(printf '%s\n' "$restored_manifest") || true
   exit 1
 fi
-excluded="$(psql "$RESTORE_URL" -X -v ON_ERROR_STOP=1 -Atqc "SELECT (to_regclass('public.auth_sessions') IS NULL AND to_regclass('public.auth_rate_limits') IS NULL)")"
+excluded="$(psql "$RESTORE_URL" -X -v ON_ERROR_STOP=1 -Atqc "SELECT (to_regclass('public.auth_sessions') IS NULL AND to_regclass('public.auth_rate_limits') IS NULL AND to_regclass('public.auth_bootstrap_attempts') IS NULL)")"
 [[ "$excluded" == "t" ]] || { echo "Ephemeral auth tables were unexpectedly restored." >&2; exit 1; }
 echo "PASS: encrypted dump checksum and age decryption verified."
 echo "PASS: 13 expected tables and the synthetic source/restore manifests match."
 echo "PASS: sale, payment, stock movement and audit relationships are preserved."
-echo "PASS: auth_sessions and auth_rate_limits are excluded."
+echo "PASS: auth_sessions, auth_rate_limits and auth_bootstrap_attempts are excluded."
 echo "Synthetic round-trip elapsed seconds: $((SECONDS - started_at))."

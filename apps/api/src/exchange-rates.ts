@@ -99,10 +99,12 @@ function validateEffectiveDate(effectiveDate: string, now: Date): void {
 export function parseBcvOfficialRate(html: string, now = new Date()): BcvOfficialRate {
   if (!html || html.length > MAX_BCV_HTML_BYTES) throw new Error("BCV_HTML_SIZE_INVALID");
   const text = normalizeHtmlText(html);
-  const usd = text.match(/\bUSD\s+([\d.]+,[\d]{1,8})\b/i);
-  if (!usd?.[1]) throw new Error("BCV_USD_RATE_MISSING");
+  const usdLabel = /\bUSD\b/i.exec(text);
+  if (!usdLabel || usdLabel.index === undefined) throw new Error("BCV_USD_RATE_MISSING");
+  const rateToken = text.slice(usdLabel.index + usdLabel[0].length).trim().split(/\s+/)[0] ?? "";
+  if (!/^[\d.,]+$/.test(rateToken)) throw new Error("BCV_RATE_FORMAT_INVALID");
 
-  const rate = parseLocalizedRate(usd[1]);
+  const rate = parseLocalizedRate(rateToken);
   const effectiveDate = parseSpanishEffectiveDate(text);
   validateEffectiveDate(effectiveDate, now);
   return { rate, effectiveDate };

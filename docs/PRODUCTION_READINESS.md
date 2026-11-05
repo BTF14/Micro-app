@@ -1,6 +1,6 @@
 ## Estado de preparación — 2026-11-05 00:50 EDT
 
-<badge color="danger">NO LISTO PARA PRODUCCIÓN</badge>
+**Estado: NO LISTO PARA PRODUCCIÓN.**
 
 - Main sigue en `7b0f057b8c152515005feed40305143c0ebb94b0`; la vertical slice de inventario permanece en PRs Draft, no integrada.
 - PR #207 `26c5270664b82aebc6a12fafe6973de8544bc6f7` añade una propuesta de hardening append-only para `audit_logs`, apilada sobre #200. Sus 7/7 workflow runs y 9/9 check runs pasan, pero no está fusionada.

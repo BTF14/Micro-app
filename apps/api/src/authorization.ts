@@ -74,7 +74,7 @@ export async function authorizeTenantOperation(
   requestedOrganizationId: string | undefined,
   operation: string,
 ): Promise<AuthorizationResult<TenantContext>> {
-  const tenant = await resolveTenantContext(client, sessionToken, requestedOrganizationId);
+  const tenant = await resolveTenantContext(client, sessionToken, requestedOrganizationId, true);
   if (!tenant) return { allowed: false, reason: "unauthenticated_or_out_of_scope" };
   if (!authorizeCommercialOperation(tenant.role, operation)) return { allowed: false, reason: "operation_denied" };
   return { allowed: true, context: tenant };
@@ -89,7 +89,7 @@ export async function authorizeBranchOperation(
 ): Promise<AuthorizationResult<BranchContext>> {
   const tenant = await resolveTenantContext(client, sessionToken, requestedOrganizationId);
   if (!tenant) return { allowed: false, reason: "unauthenticated_or_out_of_scope" };
-  const branch = await resolveBranchContext(client, tenant, requestedBranchId);
+  const branch = await resolveBranchContext(client, tenant, requestedBranchId, true);
   if (!branch) return { allowed: false, reason: "unauthenticated_or_out_of_scope" };
   if (!authorizeCommercialOperation(tenant.role, operation)) return { allowed: false, reason: "operation_denied" };
   return { allowed: true, context: branch };

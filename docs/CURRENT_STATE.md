@@ -1,6 +1,12 @@
-## Actualización de CI — 2026-11-05 09:40 UTC
+## Corrección de estado — 2026-11-05 09:43 UTC
 
-Corrección del estado anterior en este documento: PR #210 HEAD `ab5d2168a11a825a9ed6b03341b3091c13f3c06e` terminó **8/8 workflow runs en success**. Playwright E2E y Security scan, que estaban pending en la consulta anterior, completaron correctamente. PR #210 continúa Draft/no merge; no hay review formal ni verificación de producción. PR #202 HEAD `64f0ca8cfd101216db64e7fc7c9540f226e9b394` tiene Security scan y Secret history scan pending tras esta reconciliación documental.
+PR #210 HEAD `ab5d2168a11a825a9ed6b03341b3091c13f3c06e` terminó **8/8 workflow runs success**, incluidos Playwright E2E y Security scan. PR #202 docs HEAD `38c91f975376161be97e49a3799730c3c05ecdb9` terminó **11/11 workflow runs success**. Esta corrección supersede los estados pending del bloque inferior.
+
+---
+
+## Actualización de CI — 2026-11-05 09:43 UTC
+
+Corrección del estado anterior en este documento: PR #210 HEAD `ab5d2168a11a825a9ed6b03341b3091c13f3c06e` terminó **8/8 workflow runs en success**. Playwright E2E y Security scan, que estaban pending en la consulta anterior, completaron correctamente. PR #210 continúa Draft/no merge; no hay review formal ni verificación de producción. PR #202 HEAD `38c91f975376161be97e49a3799730c3c05ecdb9` terminó 11/11 workflow runs en success.
 
 ---
 
@@ -17,7 +23,7 @@ Este bloque supersede todos los snapshots históricos inferiores. Consultar HEAD
 - #208 HEAD `32c7217a21b7a3719ebf72940419779a7b42c027`: 5/5 workflow runs observados y 7/7 check runs success.
 - #207 HEAD `962b5e9d34cc23d7bb5929cd17b4599f4da06db4`: workflow runs asociados completados en success.
 - #209 HEAD `666236bc7b2c7e1dd1e30d9ccdc467e37c40784b`: runs finales en success; hubo intentos anteriores cancelados por ejecuciones posteriores.
-- #210 HEAD `ab5d2168a11a825a9ed6b03341b3091c13f3c06e`, base #209. Ocho check runs completados en success: CI, migración PostgreSQL, Semgrep, secret-history, Pages/Workers y backup/restore. Playwright E2E y Security scan siguen pending en la última consulta. No declarar CI global completo.
+- #210 HEAD `ab5d2168a11a825a9ed6b03341b3091c13f3c06e`, base #209. Ocho check runs completados en success: CI, migración PostgreSQL, Semgrep, secret-history, Pages/Workers y backup/restore. Playwright E2E y Security scan completaron success; 8/8 workflow runs del SHA exacto están en success.
 - #202 es la PR documental actual; este commit cambia su HEAD y requiere sus checks de nuevo. #194 sigue abierta/supersedida en cuanto a la secuencia de migraciones; no integrarla tal cual.
 - Todas las PR permanecen Draft, no mergeadas; no se detectaron reviews formales en la consulta previa.
 
@@ -42,7 +48,7 @@ Issue #53 sigue abierta/P0. Producción NO LISTA. No merge ni deploy. No tocar N
 
 ### Próximo orden de trabajo
 
-1. Esperar/revisar los workflows pendientes de #210 en el SHA exacto.
+1. Revisar semánticamente el diff completo de #210 y conservar el SHA `ab5d2168...` como el último validado (8/8 workflows success).
 2. Auditar el diff completo de #210 y la cadena #209→#210.
 3. Resolver rate limiting runtime con diseño de abuso y pruebas, luego autorización de rutas/Cashier y aislamiento.
 4. Mantener issue #53 como gate P0; documentar cada cambio en su misma PR/issue.

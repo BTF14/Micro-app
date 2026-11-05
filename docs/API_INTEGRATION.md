@@ -1,3 +1,12 @@
+## Estado API vivo — actualización 2026-11-05 09:43 UTC
+
+- PR #210 HEAD `ab5d2168a11a825a9ed6b03341b3091c13f3c06e`: 8/8 workflow runs success; 0009 acopla balance↔ledger en la misma transacción. 0005–0009 siguen solo en la pila Draft, no en main/Neon.
+- Rutas actuales siguen limitadas a auth/Google OAuth, catálogo GET/POST/PATCH, conteos create/confirm, GET warehouses/count history y health. No hay endpoint de lectura de balances/ledger para Cashier, aunque la matriz aprobada lo permite en su sucursal.
+- authorization.ts contiene helpers, pero no es middleware global; handlers mantienen checks locales. auth_rate_limits no tiene caller runtime.
+- Issue #53 sigue abierta/P0. Principal DATABASE_URL real/ownership/grants no verificado. Producción NO LISTA.
+
+---
+
 ## Estado API vivo — 2026-11-05 UTC
 
 Este addendum supersede la descripción histórica de “auth/health solamente” que aparece más abajo.

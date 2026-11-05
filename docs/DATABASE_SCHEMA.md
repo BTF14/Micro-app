@@ -1,3 +1,12 @@
+## Estado vivo del esquema — 2026-11-05 09:43 UTC
+
+- main `7b0f057b8c152515005feed40305143c0ebb94b0` conserva 0001–0004.
+- La pila Draft #200→#210 añade 0005 almacenes/balances/counts/ledger; 0006 roles own-shift; 0007 audit append-only; 0008 snapshots/deltas de conteos; 0009 pairing balance↔ledger e identidad inmutable de balances.
+- 0005–0009 no están en main ni se han aplicado a Neon. PostgreSQL 18 desechable aplicó 0001–0009 y pasó assertions/rollback en el HEAD exacto #210 `ab5d2168a11a825a9ed6b03341b3091c13f3c06e`; 8/8 workflows success.
+- 0009 requiere un movimiento ledger exacto en la misma transacción para cada delta no nulo de on-hand; movimiento sin intención y commit con intención no consumida fallan. Reservation-only/no-op no requieren movimiento.
+- Las claves organization/branch/warehouse/product de una fila de balance son inmutables. Transferencias futuras deben registrar salida/entrada ledger; no reescribir la clave.
+- Runtime principal PostgreSQL/ownership/grants no verificado; no inferir estado de Neon a partir de CI.
+
 ## Estado vivo de migraciones y ramas — 2026-11-04 21:40 EDT
 
 - `main` = `7b0f057b8c152515005feed40305143c0ebb94b0`; contiene migraciones 0001–0004. No afirmar que 0005 esté en main ni aplicada a Neon.

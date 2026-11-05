@@ -1,3 +1,14 @@
+## Readiness actualizado — 2026-11-05 09:43 UTC
+
+**Estado: NO LISTO PARA PRODUCCIÓN.**
+
+- La pila #200→#210 sigue sin fusionar. Migraciones 0005–0009 solo validadas en PostgreSQL 18 desechable; main conserva 0001–0004.
+- #210 HEAD `ab5d2168a11a825a9ed6b03341b3091c13f3c06e`: 8/8 workflow runs success, incluidos CI, migración, Security, Semgrep, Playwright, secret scan, Pages/Workers y backup/restore.
+- 0009 añade enforcement transaccional balance↔ledger e identidad inmutable de balances. El principal PostgreSQL real, ownership y grants de DATABASE_URL siguen NO VERIFICADOS.
+- authorization helpers no están conectados globalmente; rate limiting runtime no implementado; lectura de inventario para Cashier no está disponible aunque está aprobada en la matriz.
+- Faltan flujos comerciales, pruebas concurrentes entre futuros writers, RPO/RTO medidos, alerta externa de backup y evidencia de coste total USD 0.
+- No aplicar migraciones a Neon, no desplegar producción, no cambiar secretos/Cloudflare/DNS/billing ni tocar datos reales.
+
 ## Aclaración de Cloudflare — previews de PR #207 — 2026-11-05 UTC
 
 - Los comentarios automáticos de Cloudflare en [PR #207 Workers](https://github.com/BTF14/Micro-app/pull/207#issuecomment-6649952138) y [PR #207 Pages](https://github.com/BTF14/Micro-app/pull/207#issuecomment-6649953153) informan despliegues satisfactorios de destinos etiquetados como Commit Preview y Branch Preview para el commit `26c5270`.

@@ -1,3 +1,11 @@
+## Cobertura de aislamiento — estado vivo 2026-11-05 09:43 UTC
+
+La pila #200→#210 añade y prueba inventario/ledger en PostgreSQL desechable, pero no equivale a cobertura de todos los handlers comerciales. PR #210 HEAD `ab5d2168a11a825a9ed6b03341b3091c13f3c06e` tiene 8/8 workflow runs success; migraciones 0005–0009 no están en main ni Neon.
+
+Cobertura actual: catálogo GET tenant-scoped; catálogo POST/PATCH Owner/Admin; conteos create/confirm Owner/Admin/Inventory con branch scope y locks; assertions SQL cross-tenant/branch; migración 0009 balance↔ledger. Cashier aún no tiene endpoint de lectura de balances/movimientos a pesar del permiso aprobado. authorization.ts no es middleware global. auth_rate_limits no tiene caller runtime.
+
+Pendiente: tests HTTP negativos por ruta para tenant, branch, rol, membresía revocada e IDs ajenos; rate-limit/abuso; tests PostgreSQL concurrentes entre todos los futuros writers. Mantener issue #53 abierta y producción NO LISTA.
+
 # Matriz de pruebas de autorización y aislamiento multiempresa
 
 **Estado:** plan de aceptación; no es evidencia de que los controles ya estén implementados.  

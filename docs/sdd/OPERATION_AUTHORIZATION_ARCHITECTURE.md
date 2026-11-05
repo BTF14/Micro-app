@@ -1,3 +1,17 @@
+## Implementation status update — 2026-11-05 09:43 UTC
+
+The role/permission matrix remains APPROVED (2026-10-31). Main remains `7b0f057b8c152515005feed40305143c0ebb94b0`. PRs #200–#210 are open Draft and not merged; the stacked chain is #200 → #204 → #205 → #208 → #207 → #209 → #210. Migrations 0005–0009 passed disposable PostgreSQL 18 validation in PR #210 HEAD `ab5d2168a11a825a9ed6b03341b3091c13f3c06e` (8/8 workflow runs success), but are not in main or Neon.
+
+Current handlers:
+- Catalog GET is tenant-scoped; all roles can read catalog, but Cashier does not receive cost data.
+- Catalog POST/PATCH are Owner/Admin only.
+- Inventory count create/confirm are Owner/Admin/Inventory and resolve tenant + branch scope with locks.
+- Warehouse/count GET handlers currently exclude Cashier; no HTTP endpoint reads balances or ledger movements for Cashier, although the approved matrix grants branch-scoped inventory read access.
+- `authorization.ts` contains role-operation helpers but is not wired as global middleware; route-level checks remain in handlers and must be audited individually.
+- `auth_rate_limits` is present in migration 0001 but no runtime module uses it. Google OAuth start/callback/bootstrap have no demonstrated application rate limiting.
+
+Issue #53 remains open/P0. Runtime DATABASE_URL principal/ownership/grants remain NO VERIFICADO. No sales, receipts, reservations, transfers, refunds or member-management handlers exist. Production remains not ready.
+
 # Server-side operation authorization architecture
 
 ## Implementation status update — 2026-11-04 UTC

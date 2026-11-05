@@ -1,4 +1,10 @@
-## Handoff vivo — 2026-11-05 09:40 UTC
+## Corrección de continuidad — 2026-11-05 09:43 UTC
+
+PR #210 HEAD `ab5d2168a11a825a9ed6b03341b3091c13f3c06e`: 8/8 workflow runs success, incluidos Playwright E2E y Security scan. PR #202 HEAD `38c91f975376161be97e49a3799730c3c05ecdb9`: 11/11 workflow runs success. No repetir la espera de esos workflows.
+
+---
+
+## Handoff vivo — 2026-11-05 09:43 UTC
 
 Continuar el repositorio BTF14/Micro-app desde GitHub MCP, sin pedir al propietario que repita información recuperable. Trabaja como ingeniero principal: inspecciona HEAD/diff/checks actuales antes de cada cambio, corrige de forma acotada, prueba y documenta. El propietario trabaja desde Android y no dispone de terminal.
 
@@ -6,7 +12,7 @@ Continuar el repositorio BTF14/Micro-app desde GitHub MCP, sin pedir al propieta
 
 - main: `7b0f057b8c152515005feed40305143c0ebb94b0`.
 - Pila activa abierta/Draft/no merge: #200→#204→#205→#208→#207→#209→#210.
-- #210 HEAD: `ab5d2168a11a825a9ed6b03341b3091c13f3c06e`; migración 0009 acopla balance↔ledger en PostgreSQL. 8 check runs success; Playwright E2E y Security scan aún pending en la última lectura.
+- #210 HEAD: `ab5d2168a11a825a9ed6b03341b3091c13f3c06e`; migración 0009 acopla balance↔ledger en PostgreSQL. 8/8 workflow runs success, incluidos Playwright E2E y Security scan.
 - #209 HEAD: `666236bc7b2c7e1dd1e30d9ccdc467e37c40784b`; migración 0008 protege snapshot/validación de conteos.
 - #202 es PR documental; actualizarla no debe sobrescribir ni eliminar su historial. Sus checks deben revalidarse después del commit.
 - Issue #53 sigue abierta/P0; producción NO LISTA.

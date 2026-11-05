@@ -1,3 +1,11 @@
+## Implementation status note — 2026-11-05 UTC
+
+La matriz de permisos fue aprobada el 2026-10-31. La pila #200→#210 contiene handlers parciales de catálogo e inventario, pero no constituye middleware global ni cubre todas las operaciones. Los handlers existentes hacen checks locales; cada ruta requiere pruebas de denegación por rol, tenant, sucursal, membresía revocada e IDs ajenos.
+
+La matriz permite que Cashier lea existencias/movimientos de su sucursal, pero el API actual no expone balances/ledger para ese rol. auth_rate_limits existe en DDL, sin caller runtime. Issue #53 permanece abierta/P0. No declarar aislamiento integral ni producción lista.
+
+---
+
 # Contrato de autorización server-side y aislamiento multiempresa
 
 - Estado: **contrato técnico propuesto; no sustituye la aprobación de la matriz de roles**.

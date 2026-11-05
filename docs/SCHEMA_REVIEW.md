@@ -1,3 +1,14 @@
+## Revisión de esquema viva — 2026-11-05 09:43 UTC
+
+- Pila #200→#204→#205→#208→#207→#209→#210. Migraciones 0005–0009 validadas en PostgreSQL 18 desechable; #210 HEAD `ab5d2168a11a825a9ed6b03341b3091c13f3c06e`, 8/8 workflow runs success.
+- 0008 valida snapshots/versiones y delta/actor/razón/coste de conteos físicos.
+- 0009 añade pareja transaccional exacta balance↔ledger, trigger diferido al COMMIT, bloqueo de TRUNCATE e inmutabilidad de claves organization/branch/warehouse/product.
+- El principal PostgreSQL real/ownership/grants de DATABASE_URL no está verificado; no extrapolar assertions sintéticas a producción.
+- Rate limiting runtime ausente; authorization.ts no está conectado globalmente; lectura Cashier de balances/ledger falta según la matriz aprobada.
+- 0005–0009 siguen fuera de main y Neon. Issue #53 abierta/P0; producción NO LISTA.
+
+---
+
 ## Revisión de esquema viva — 2026-11-05 UTC
 
 - PR stack #200→#204→#205→#208→#207; migraciones 0005 inventario, 0006 roles own-shift, 0007 audit append-only; validación PostgreSQL efímera completa en #207 HEAD `962b5e9d34cc23d7bb5929cd17b4599f4da06db4` (10/10 checks).

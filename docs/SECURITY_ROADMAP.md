@@ -1,3 +1,15 @@
+## Reconciliación de seguridad — 2026-11-05 09:43 UTC
+
+- Pila #200→#204→#205→#208→#207→#209→#210 abierta/Draft/no merge.
+- Migraciones 0005–0009 validadas desde PostgreSQL 18 efímero. #210 HEAD `ab5d2168a11a825a9ed6b03341b3091c13f3c06e`: 8/8 workflow runs success, incluidos CI, PostgreSQL migration, Semgrep, Security, Playwright, secret scan, Pages/Workers y backup/restore.
+- 0009 añade pareja transaccional exacta balance↔ledger, trigger diferido al COMMIT, bloqueos TRUNCATE e identidad inmutable de balance. Esto cubre el esquema probado, no todos los writers comerciales aún inexistentes ni la configuración real del principal DB.
+- Rate limiting runtime ausente: auth_rate_limits no tiene callers.
+- authorization.ts no está conectado globalmente; los handlers mantienen checks locales.
+- La matriz permite lectura de stock/movimientos para Cashier, pero no hay endpoint de balances/ledger para Cashier y los GET actuales de warehouses/counts lo excluyen.
+- Principal DATABASE_URL/ownership/grants no verificado. Issue #53 abierta/P0. Producción NO LISTA. No acceder a Neon ni secretos; no merge/deploy ni cambios Cloudflare/DNS/billing.
+
+---
+
 ## Reconciliación de seguridad — stack de inventario/roles/auditoría — 2026-11-05 UTC
 
 - La secuencia de PRs es #200 → #204 → #205 → #208 → #207; checks exactos: #200 20/20, #204 8/8, #205 9/9, #208 7/7, #207 10/10. Todas siguen Draft/no merge.

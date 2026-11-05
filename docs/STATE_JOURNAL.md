@@ -1824,3 +1824,13 @@ Mantener #207 en Draft. Revisar independientemente el diff; resolver la colisió
 - Rutas actuales auditadas: catálogo GET todos los roles (Cashier sin cost_usd); catálogo POST/PATCH solo Owner/Admin; conteos create/confirm Owner/Admin/Inventory con branch scope y locks. Helpers authorization.ts no están globalmente conectados; rutas usan checks locales. No hay handlers HTTP de ventas/recepciones/pagos/devoluciones/transferencias.
 - PRs #200/#204/#205/#208/#207 siguen Draft/unmerged; #194 cerrada no merged; #196 abierta Draft/no mergeable; #202 docs 13/13 antes de la nueva sincronización. 0 reviews formales/threads en las PR principales.
 - Issue #53 comment 6652542657 registra el stack y los gates residuales. Runtime DATABASE_URL principal/ownership/grants sigue NO VERIFICADO; no se leyeron secretos ni Neon. Rate limiting runtime ausente; balance↔ledger universal aún no garantizado; backup RPO/RTO/alertas/coste $0 pendientes. Producción NO LISTA.
+
+## 2026-11-05 09:43 UTC — cierre de CI #210 y reconciliación de continuidad
+
+- PR #210 HEAD `ab5d2168a11a825a9ed6b03341b3091c13f3c06e`: 8/8 workflow runs success, incluidos CI, PostgreSQL migration validation, Semgrep, Security scan, Playwright E2E, secret-history scan, Cloudflare Pages/Workers y backup/restore sintético.
+- PostgreSQL 18 efímero aplicó 0001–0009; migration-check verificó rollback inducido de 0009, assertions balance↔ledger, mutación de identidad rechazada y fallo diferido al COMMIT.
+- PR #202 docs HEAD `38c91f975376161be97e49a3799730c3c05ecdb9`: 11 workflow runs completados en success. Cualquier nuevo commit documental exige revalidar su SHA exacto.
+- Se actualizó issue #53 para corregir los estados pending ya superados y registrar los gaps de rate limiting, helpers no conectados y lectura Cashier.
+- La auditoría de módulos de producción confirmó que `auth_rate_limits` no tiene callers; `authorization.ts` no se consume desde los handlers; Cashier no tiene endpoint de balances/ledger pese a la matriz aprobada.
+- No se fusionó ninguna PR ni se tocó main, Neon, secretos, datos reales, Cloudflare productivo, DNS o billing. Producción NO LISTA.
+

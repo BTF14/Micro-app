@@ -1,3 +1,13 @@
+## Prioridad operativa vigente — 2026-11-05 09:43 UTC
+
+1. PR #210 HEAD `ab5d2168a11a825a9ed6b03341b3091c13f3c06e` terminó 8/8 workflow runs success. La pila #200→#210 sigue Draft/no merge; revisar diff completo antes de cualquier integración.
+2. Siguiente P0: implementar rate limiting runtime; auth_rate_limits existe en DDL pero no tiene callers. Diseñar límites de OAuth/bootstrap, almacenamiento atómico, expiración, protección contra abuso y tests concurrentes.
+3. Auditar todos los handlers por tenant/branch/role; authorization.ts no es middleware global y los checks siguen locales.
+4. Resolver lectura de existencias/movimientos para Cashier conforme a la matriz aprobada, con branch scope y tests.
+5. No añadir writers de ventas/recepciones/reservas/devoluciones/transferencias sin locks, pairing ledger, idempotencia, rollback y pruebas PostgreSQL concurrentes.
+6. Principal PostgreSQL real y ownership/grants siguen NO VERIFICADOS; no leer secretos ni acceder a Neon.
+7. Mantener RPO/RTO, alertas externas y coste total USD 0 como gates. Producción NO LISTA.
+
 ## Prioridad operativa vigente — stack consolidado 2026-11-05 UTC
 
 1. **Stack de inventario/roles/auditoría reconciliado en ramas y CI:** #200→#204→#205→#208→#207. Migraciones 0005→0006→0007 probadas desde PostgreSQL limpio; #207 exact HEAD `962b5e9d34cc23d7bb5929cd17b4599f4da06db4`, 10/10 checks success. Todas las PR siguen Draft/no merge.

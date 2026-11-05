@@ -1,3 +1,11 @@
+## Estado implementado y pendiente — 2026-11-05 09:43 UTC
+
+La arquitectura objetivo de sucursal/almacén sigue vigente. En main (SHA `7b0f057...`) están 0001–0004; la pila Draft #200→#210 propone 0005–0009. El inventario multi-almacén aún no está fusionado ni aplicado a Neon.
+
+La migración 0009 exige que cada cambio no nulo de on_hand se empareje en la misma transacción con un movimiento exacto y bloquea la reescritura de organization/branch/warehouse/product en una fila de balance. Una transferencia futura debe representar explícitamente salida y entrada, no cambiar la clave de balance. 0008 valida snapshots/deltas de conteos; 0007 protege audit_logs append-only.
+
+La matriz de permisos sigue aprobada. La matriz permite lectura de existencias/movimientos a Cashier en su sucursal, pero el API actual no expone balances/ledger a ese rol. No cambiar la matriz por la limitación de la implementación; cerrar el gap con handler y pruebas branch-scoped.
+
 # ERD objetivo: organización, sucursal, almacén, caja y operaciones
 
 **Estado:** main incluye sucursales/asignaciones por PR #165 (0003); PR #167 fusionó `registers`/`register_shifts` mediante 0004 en main. Ninguna migración 0003/0004 se ha aplicado a Neon main. Almacenes, balances por almacén y operaciones comerciales siguen pendientes. No autoriza endpoints ni cambios en Neon.  

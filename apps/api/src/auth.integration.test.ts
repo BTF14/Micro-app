@@ -347,10 +347,45 @@ const suiteGoogle = describe.skipIf(!databaseAvailable)("Google OAuth routes aga
     }
   }
 
+  async function hashRateLimitKey(bucket: string, ip: string): Promise<string> {
+    const key = await crypto.subtle.importKey(
+      "raw",
+      new TextEncoder().encode(googleEnv.AUTH_RATE_LIMIT_HMAC_KEY),
+      { name: "HMAC", hash: "SHA-256" },
+      false,
+      ["sign"],
+    );
+    const signature = await crypto.subtle.sign(
+      "HMAC",
+      key,
+      new TextEncoder().encode(`micro-app-auth-rate-limit:v1:${bucket}:${ip}`),
+    );
+    return Array.from(new Uint8Array(signature), (byte) => byte.toString(16).padStart(2, "0")).join("");
+  }
+
   async function hashSessionToken(token: string): Promise<string> {
     const digest = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(token));
     return Array.from(new Uint8Array(digest), (byte) => byte.toString(16).padStart(2, "0")).join("");
   }
+
+  it("enforces the OAuth start limit atomically under concurrent requests", async () => {
+    const ip = "198.51.100.50";
+    const keyHash = await hashRateLimitKey("oauth_start", ip);
+    try {
+      const responses = await Promise.all(Array.from({ length: 21 }, () =>
+        app.fetch(new Request("https://api.example/auth/google", {
+          headers: { "CF-Connecting-IP": ip },
+        }), googleEnv),
+      ));
+      expect(responses.filter((response) => response.status === 302)).toHaveLength(20);
+      const limited = responses.filter((response) => response.status === 429);
+      expect(limited).toHaveLength(1);
+      expect(Number(limited[0]!.headers.get("Retry-After"))).toBeGreaterThan(0);
+      await expect(limited[0]!.json()).resolves.toMatchObject({ error: "RATE_LIMITED" });
+    } finally {
+      await cleanupClient.query("DELETE FROM auth_rate_limits WHERE key_hash = $1", [keyHash]);
+    }
+  });
 
   it("denies an email that is not on the allowlist, without creating any identity", async () => {
     const { cookieHeader, state } = await startGoogleFlow();
@@ -488,7 +523,7 @@ const suiteGoogle = describe.skipIf(!databaseAvailable)("Google OAuth routes aga
     });
     const secondCallback = await app.fetch(new Request(
       `https://api.example/auth/google/callback?code=test-code&state=${second.state}`,
-      { headers: { Cookie: second.cookieHeader } },
+      { headers: { Cookie: second.cookieHeader, "CF-Connecting-IP": "203.0.113.11" } },
     ), googleEnv);
     expect(secondCallback.status).toBe(302);
     expect(secondCallback.headers.get("location")).toContain("auth_error=bootstrap_consumed");

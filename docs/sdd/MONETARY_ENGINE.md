@@ -1,6 +1,6 @@
 # Motor monetario de Micro-app
 
-**Estado:** contrato técnico aprobado. El núcleo decimal exacto basado en BigInt vive en el paquete interno compartido `packages/money`, consumido por API y web; la integración con catálogo UI, carrito, ventas y pagos todavía está pendiente.  
+**Estado:** contrato técnico aprobado. El núcleo decimal exacto basado en BigInt vive en el paquete interno `packages/money`; la API ya lo usa para validar entradas numéricas del catálogo y la web ya lo importa en pruebas. La integración en la UI de catálogo, carrito, ventas y pagos todavía está pendiente.  
 **Decisión de negocio:** Micro-app no ofrece descuentos ni promociones basadas en descuentos.
 
 ## 1. Moneda base y catálogo
@@ -22,7 +22,7 @@
 ## 3. Aritmética y redondeo
 
 - No usar JavaScript Number para operaciones monetarias.
-- API y web consumen la misma implementación TypeScript desde `@micro-app/money`; no mantener copias separadas de las funciones.
+- La API utiliza la implementación TypeScript desde `@micro-app/money`; la web dispone del paquete en su workspace y pruebas de compatibilidad, pero la UI aún no lo consume en runtime. No mantener copias separadas de las funciones.
 - El paquete utiliza cadenas decimales y aritmética entera escalada con BigInt.
 - USD interno y subtotales: cuatro decimales.
 - VES monetario: dos decimales.

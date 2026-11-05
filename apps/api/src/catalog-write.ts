@@ -1,3 +1,4 @@
+import { parseNumeric } from "@micro-app/money";
 import type { Hono } from "hono";
 import { getCookie } from "hono/cookie";
 import type { Bindings } from "./bindings";
@@ -40,14 +41,16 @@ function boundedText(value: unknown, maxLength: number, required: boolean): stri
   return normalized;
 }
 
-function decimalValue(value: unknown, scale: number, maxIntegerDigits: number): string | null {
-  // Monetary and quantity inputs must remain decimal strings end-to-end.
-  // JSON numbers have already passed through IEEE-754 parsing in the Worker.
+function decimalValue(value: unknown, precision: number, scale: number): string | null {
+  // Keep money and quantities as strings; validate against the same PostgreSQL
+  // NUMERIC contract used by calculations in the shared package.
   if (typeof value !== "string") return null;
-  const raw = value;
-  const pattern = new RegExp(`^(?:0|[1-9][0-9]{0,${maxIntegerDigits - 1}})(?:\\.[0-9]{1,${scale}})?$`);
-  if (!pattern.test(raw)) return null;
-  return raw.includes(".") ? raw : raw + ".0";
+  try {
+    if (parseNumeric(value, precision, scale) < 0n) return null;
+    return value.includes(".") ? value : value + ".0";
+  } catch {
+    return null;
+  }
 }
 
 function parseProductInput(value: unknown): ProductInput | null {
@@ -61,9 +64,9 @@ function parseProductInput(value: unknown): ProductInput | null {
   const unit = body.unit === undefined ? "unidad" : boundedText(body.unit, 40, true);
   const barcode = body.barcode === undefined || body.barcode === null ? null : boundedText(body.barcode, 128, true);
   const description = body.description === undefined || body.description === null ? null : boundedText(body.description, 2000, false);
-  const costUsd = body.cost_usd === undefined ? "0.0" : decimalValue(body.cost_usd, 4, 10);
-  const priceUsd = decimalValue(body.price_usd, 4, 10);
-  const minimumStock = body.minimum_stock === undefined ? "0.0" : decimalValue(body.minimum_stock, 3, 11);
+  const costUsd = body.cost_usd === undefined ? "0.0" : decimalValue(body.cost_usd, 14, 4);
+  const priceUsd = decimalValue(body.price_usd, 14, 4);
+  const minimumStock = body.minimum_stock === undefined ? "0.0" : decimalValue(body.minimum_stock, 14, 3);
 
   if (
     sku === null || name === null || unit === null || barcode === null && body.barcode !== undefined && body.barcode !== null ||
@@ -133,19 +136,19 @@ function parseProductPatch(value: unknown): ProductPatch | null {
         break;
       }
       case "cost_usd": {
-        const parsed = decimalValue(body[key], 4, 10);
+        const parsed = decimalValue(body[key], 14, 4);
         if (parsed === null) return null;
         patch.costUsd = parsed;
         break;
       }
       case "price_usd": {
-        const parsed = decimalValue(body[key], 4, 10);
+        const parsed = decimalValue(body[key], 14, 4);
         if (parsed === null) return null;
         patch.priceUsd = parsed;
         break;
       }
       case "minimum_stock": {
-        const parsed = decimalValue(body[key], 3, 11);
+        const parsed = decimalValue(body[key], 14, 3);
         if (parsed === null) return null;
         patch.minimumStock = parsed;
         break;

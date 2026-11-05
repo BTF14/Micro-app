@@ -9,6 +9,7 @@
     "test": "vitest run --exclude '**/*.integration.test.ts'"
   },
   "dependencies": {
+    "@micro-app/money": "workspace:*",
     "@neondatabase/serverless": "^1.2.0",
     "hono": "^4.13.14"
   },

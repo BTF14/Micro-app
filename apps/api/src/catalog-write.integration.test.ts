@@ -198,9 +198,21 @@ describe.skipIf(!databaseUrl)("catalog product creation against PostgreSQL", () 
     const numericMoney = await createRequest(fixtures.owner, organizationA, {
       sku: "NUMERIC-MONEY", name: "Numeric JSON money", price_usd: 23.85,
     });
+    const integerOverflow = await createRequest(fixtures.owner, organizationA, {
+      sku: "INTEGER-OVERFLOW", name: "Integer overflow", price_usd: "10000000000.0000",
+    });
+    const negativeMoney = await createRequest(fixtures.owner, organizationA, {
+      sku: "NEGATIVE-MONEY", name: "Negative money", price_usd: "-0.0100",
+    });
+    const negativeQuantity = await createRequest(fixtures.owner, organizationA, {
+      sku: "NEGATIVE-STOCK", name: "Negative minimum stock", price_usd: "1.00", minimum_stock: "-0.001",
+    });
     expect(origin.status).toBe(403);
     expect(precision.status).toBe(400);
     expect(numericMoney.status).toBe(400);
+    expect(integerOverflow.status).toBe(400);
+    expect(negativeMoney.status).toBe(400);
+    expect(negativeQuantity.status).toBe(400);
   });
 
   it("maps duplicate tenant SKU to conflict without creating a second audit event", async () => {

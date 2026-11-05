@@ -26,4 +26,4 @@ APP_ENV = "preview"
 
 # Remove inactive, pseudonymous auth rate-limit buckets every hour.
 [triggers]
-crons = ["17 * * * *"]
+crons = ["17 * * * *", "0 13-23 * * 1-5"]

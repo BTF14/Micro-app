@@ -177,7 +177,7 @@ export async function syncBcvOfficialRate(databaseUrl: string | undefined): Prom
 export function registerExchangeRateRoutes(app: Hono<{ Bindings: Bindings }>): void {
   app.get("/api/exchange-rates/history", async (c) => {
     const rawLimit = c.req.query("limit") ?? "30";
-    if (!/^\\d{1,3}$/.test(rawLimit)) {
+    if (!/^\d{1,3}$/.test(rawLimit)) {
       return c.json({ error: "INVALID_LIMIT", message: "El límite debe estar entre 1 y 365." }, 400);
     }
     const limit = Number(rawLimit);
@@ -186,7 +186,7 @@ export function registerExchangeRateRoutes(app: Hono<{ Bindings: Bindings }>): v
     }
     try {
       const rows = await withDatabaseClient(c.env.DATABASE_URL, async (client) => {
-        const result = await client.query<StoredRateRow & { fetched_at: string }> (
+        const result = await client.query<StoredRateRow & { fetched_at: string }>(
           "SELECT rate::text AS rate, effective_date::text AS effective_date, fetched_at::text AS fetched_at FROM public.exchange_rates WHERE source = $1 AND validation_status = 'valid' ORDER BY effective_date DESC, fetched_at DESC LIMIT $2",
           [BCV_SOURCE_ID, limit],
         );

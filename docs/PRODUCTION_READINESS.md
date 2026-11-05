@@ -9,8 +9,8 @@
 | Inventario balance↔ledger | Validación CI | #210 HEAD `ab5d2168...`, 8/8 workflows; migraciones 0001–0009 en PostgreSQL efímero |
 | OAuth rate limiting | Implementado en ramas | #214/#215; #213 es alternativa independiente que requiere reconciliación |
 | Bootstrap handoff | Validación histórica | #215 HEAD `9ba4f76e...`; 7/7 workflows según snapshot anterior |
-| Autorización de rutas existentes | <badge color="success">CI success</badge> | #218 HEAD `2115d66...`, 6/6 workflows |
-| Body bootstrap acotado | <badge color="warning">CI pendiente</badge> | #220 HEAD `983a76ea...`; Security y Secret history success; CI/migration/Playwright/Semgrep pendientes |
+| Autorización de rutas existentes | CI success | #218 HEAD `2115d66...`, 6/6 workflows |
+| Body bootstrap acotado | CI pendiente | #220 HEAD `983a76ea...`; Security y Secret history success; CI/migration/Playwright/Semgrep pendientes |
 | Worker Preview | Pendiente | No confundir Pages Preview o Worker Build con versión productiva |
 | Runtime PostgreSQL | No verificado | Principal efectivo, ownership y grants de DATABASE_URL desconocidos |
 | Sesiones / idle timeout | Pendiente de decisión | Duración absoluta 7 días; last_seen_at no se actualiza en resolución de sesión |

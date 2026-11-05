@@ -1985,3 +1985,38 @@ Los recuentos anteriores corresponden a check-runs consultados para esos SHAs, n
 ### Prompt de continuidad para el siguiente chat
 Actúa como ingeniero principal responsable de continuar BTF14/Micro-app. Antes de actuar, lee toda la documentación enumerada en el bloque “Fuente de verdad y arranque sin repetir trabajo” de la rama `docs/reconcile-current-state-20261104`, y consulta GitHub en vivo. No me pidas repetir información ya documentada, IDs, Build IDs, capturas, terminal, CLI, TinyFish ni reconexiones. Trabajo desde teléfono. No inventes verificaciones ni presentes snapshots antiguos como actuales. Distingue HECHO VERIFICADO / HISTÓRICO / PENDIENTE / NO VERIFICADO. Continúa desde los bloqueos y próximos pasos de este handoff, con criterio técnico senior y cambios concretos en las PR existentes. No toques producción, secretos, Neon main, Cloudflare settings/DNS/billing ni datos reales. No fusiones ni despliegues hasta cumplir todos los gates. Al terminar, actualiza HANDOFF_NEXT_CHAT.md, CURRENT_STATE.md y STATE_JOURNAL.md con evidencia y SHAs, y deja listo el siguiente relevo.
 
+
+
+## Reanudación técnica — 2026-11-05 UTC — auditoría viva de #207 y pila de migraciones
+
+### Snapshot vivo — 2026-11-05 UTC
+
+- #194: `work/mvp-foundation`, HEAD `7b3ad50e5780416868a1a428b856d12c4ea1e2ea`, base main, 13 ahead / 2 behind, 13/13 checks success, Draft. Migration conflict: `0005_register_shift_member_roles.sql`.
+- #200: `feat/inventory-vertical-slice-mainline-20261104`, HEAD `5fbc17a48b65076cf5609a7a054bbd125a3a5d1e`, base main, 32 ahead / 0 behind, 20/20 checks success, Draft. Owns `0005_warehouse_inventory.sql`.
+- #202: `docs/reconcile-current-state-20261104`, HEAD before this documentation commit `815efb6b19f4e367c0b0293522231294296e58e7`, 110 ahead / 0 behind, 13/13 checks success, Draft. Recheck after docs commit.
+- #204: HEAD `07a5a41c0f5f5c36fb89a5c5950796493d56eb20`, base #200, 8 ahead / 0 behind, 8/8 checks success, Draft.
+- #205: HEAD `c0bcbbe48aa8783b85ee7787dd1ae8a6d0dfdafc`, base #204, 27 ahead / 0 behind, 9/9 checks success, Draft.
+- #207: HEAD `26c5270664b82aebc6a12fafe6973de8544bc6f7`, base #200, 10 ahead / 0 behind, 9/9 checks success, Draft.
+- All six are open/unmerged; 0 formal reviews and 0 inline review threads were returned. Issue #53 remains open/P0.
+
+### Estado de #207
+
+La migración y assertions de append-only para audit_logs están implementadas; CI 9/9 success en el SHA citado. No aprobar todavía: `.github/workflows/migration-check.yml` aplica 0001–0005 y luego 0007, omitiendo 0006 de roles. Las assertions usan roles sintéticos, no demuestran el principal real de DATABASE_URL. Ownership runtime, memberships y grants efectivos permanecen NO VERIFICADOS. ENABLE ALWAYS no protege contra owner/superuser con capacidad de alterar triggers. Comentario técnico publicado en #207, ID 6651579307.
+
+### Estado de colisión 0005
+
+#194 y #200 usan el mismo número 0005 para migraciones distintas. La numeración final prevista es 0005 inventario, 0006 roles, 0007 audit logs. #194 está 13 ahead / 2 behind de main y no desciende de #200; no renumerar sin resolver la relación de ramas y actualizar CI/assertions para probar el stack combinado. Comentario de coordinación publicado en #194, ID 6651592608.
+
+### Archivos y límites
+
+`WORK_CHECKPOINT.md` se buscó en la rama documental, main y ramas #194/#200/#207; no existe en esas referencias. No pedirlo al usuario ni inventarlo. HANDOFF/CURRENT_STATE/JOURNAL conservan la continuidad.
+
+No se modificó código runtime, migraciones, main, Neon, secretos, Cloudflare settings, DNS, billing ni datos reales. No merge ni despliegue manual. Check-runs Cloudflare publican URLs de preview, pero el destino final del Worker sigue NO VERIFICADO sin lectura autenticada. Producción NO LISTA.
+
+### Próximas acciones
+
+1. Resolver ancestry de #194/#200 sin force-push ni diff duplicado; renumerar migración de roles a 0006 y hacer que CI aplique 0005+0006.
+2. Actualizar #207 para probar 0005+0006+0007 desde base limpia; revalidar su SHA exacto.
+3. Mantener sin resolver el gate de DATABASE_URL hasta evidencia autorizada read-only del principal efectivo y sus grants/membresías.
+4. Seguir P0 #53: autorización tenant/branch/role, idempotencia, concurrencia, locks, balance_version/ABA y consistencia ledger/balance. Los writers comerciales futuros siguen sin implementar.
+5. No aprobar, fusionar ni desplegar hasta resolver migraciones, runtime security, revisiones y gates.

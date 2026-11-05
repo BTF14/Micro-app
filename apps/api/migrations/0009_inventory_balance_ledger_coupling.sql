@@ -81,6 +81,23 @@ CREATE TRIGGER warehouse_inventory_movements_no_truncate
 BEFORE TRUNCATE ON public.warehouse_inventory_movements
 FOR EACH STATEMENT EXECUTE FUNCTION public.prevent_inventory_ledger_truncate();
 
+CREATE FUNCTION public.prevent_inventory_balance_identity_change()
+RETURNS trigger LANGUAGE plpgsql SET search_path = pg_catalog
+AS $
+BEGIN
+  IF ROW(NEW.organization_id, NEW.branch_id, NEW.warehouse_id, NEW.product_id)
+      IS DISTINCT FROM ROW(OLD.organization_id, OLD.branch_id, OLD.warehouse_id, OLD.product_id) THEN
+    RAISE EXCEPTION 'INVENTORY_BALANCE_IDENTITY_IMMUTABLE' USING ERRCODE = '23514';
+  END IF;
+  RETURN NEW;
+END;
+$;
+REVOKE ALL ON FUNCTION public.prevent_inventory_balance_identity_change() FROM PUBLIC;
+
+CREATE TRIGGER inventory_balances_identity_immutable
+BEFORE UPDATE OF organization_id, branch_id, warehouse_id, product_id ON public.inventory_balances
+FOR EACH ROW EXECUTE FUNCTION public.prevent_inventory_balance_identity_change();
+
 CREATE TRIGGER inventory_balances_ledger_intent
 AFTER INSERT OR UPDATE ON public.inventory_balances
 FOR EACH ROW EXECUTE FUNCTION public.record_inventory_balance_ledger_intent();
@@ -93,6 +110,8 @@ DEFERRABLE INITIALLY DEFERRED
 FOR EACH ROW EXECUTE FUNCTION public.assert_inventory_balance_ledger_intent_consumed();
 COMMENT ON TABLE public.inventory_balance_ledger_intents IS
   'Private transaction-scoped pairing intents. Every non-zero on-hand change must consume exactly one matching append-only ledger movement before commit.';
+COMMENT ON FUNCTION public.prevent_inventory_balance_identity_change() IS
+  'Prevents re-keying a balance row; inventory relocation must use explicit paired ledger movements.';
 COMMENT ON FUNCTION public.record_inventory_balance_ledger_intent() IS
   'Records a private same-transaction intent for every non-zero on-hand balance change.';
 COMMENT ON FUNCTION public.consume_inventory_balance_ledger_intent() IS

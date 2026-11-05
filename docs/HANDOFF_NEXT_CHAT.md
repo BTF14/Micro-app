@@ -1751,10 +1751,10 @@ La consulta directa a GitHub Actions por `head_sha` incluye eventos `push` y `pu
 ### Estado exacto verificado
 
 - `main`: `7b0f057b8c152515005feed40305143c0ebb94b0`.
-- #200: HEAD documental `daaeaf8d87e08c62c749168ea00eb6adde2c7abf`, 21 ahead/0 behind; 16/16 workflow runs success. Código anterior `05bac0b68ec4883d4a7d057165ca1b9ac3aaf40c` tuvo 17/17 success e incluye el fix de lifecycle SQL.
-- #204: HEAD `22bca40a0e14de2ba747e1226a1829f91cd34561`, base #200 `daaeaf8...`, 5 ahead/0 behind, diff propio 1 archivo, 7/7 workflows success.
-- #205: HEAD `94a7fbd5f8e721cf672ad472c3d228aa7fa23bf2`, base #204 `22bca40...`, 14 ahead/0 behind, diff propio 3 archivos, 7/7 workflows success.
-- #202: HEAD `7375a0aa7bc100f1166115dd59374099608dd848` antes de esta actualización, 64 ahead/0 behind, 11/11 workflows success. Esta edición documental genera un nuevo SHA y requiere revalidación.
+- #200: HEAD documental `5fbc17a48b65076cf5609a7a054bbd125a3a5d1e`, 32 ahead/0 behind; 16/16 workflow runs success. HEAD de código `7b58b140e50c46a3d3b087e3445a4b04e6243a81` tuvo 16/16 success e incluye balance_version y la prueba ABA.
+- #204: HEAD `07a5a41c0f5f5c36fb89a5c5950796493d56eb20`, base #200 `5fbc17a...`, 8 ahead/0 behind, diff propio 1 archivo, 6/6 workflows success.
+- #205: HEAD `7005d9a5b03234bd0209d0cc1ea75e8ae21e0032`, base #204 `07a5a41...`, 20 ahead/0 behind, diff propio 3 archivos, 8/8 workflows success; preserva idempotencia y añade versión monotónica.
+- #202: HEAD `c2bc689c535c69cea6e94a69826ba6e1f465a5d2` antes de esta actualización, 67 ahead/0 behind, 11/11 workflows success. Esta edición documental genera un nuevo SHA y requiere revalidación.
 - #194: HEAD `7b3ad50e5780416868a1a428b856d12c4ea1e2ea`, 13 ahead/2 behind frente a main actual, 11/11 workflows success. Sigue sin integrar por colisión de migraciones 0005 (roles vs inventario) y divergencia.
 
 En #200/#204/#205/#202/#194 no se encontraron status contexts, reviews formales ni review threads en la consulta de este checkpoint. Todas siguen Draft. CI success no es aprobación formal. No se fusionó ninguna.
@@ -1764,7 +1764,7 @@ En #200/#204/#205/#202/#194 no se encontraron status contexts, reviews formales 
 - `inventory_counts_guard` ahora se ejecuta en INSERT/UPDATE/DELETE y exige que los conteos nazcan como `draft`; assertions PostgreSQL prueban el rechazo de INSERT directo `confirmed` y la unicidad de opening por transición draft→confirmed.
 - PR #200 código SHA `05bac0b...`: 17/17 workflows success; PR #200 HEAD documental `daaeaf...`: 16/16 workflows success.
 - PR #204 y #205 se sincronizaron con merge commits no-forzados; ambas están 0 behind y sus HEAD exactos pasaron 7/7 workflows.
-- Stale-count básico ya funciona con `expected_on_hand_quantity` y 409 `COUNT_STALE`. Residual ABA no resuelto: cambio y retorno al mismo saldo no se detecta. Próximo gate: diseñar versionado monotónico `balance_version` antes de añadir otros escritores de existencias/reservas.
+- ABA queda cubierto con `balance_version`: incremento automático en cambios de on-hand/reservas, no-DELETE de balance, snapshot `expected_balance_version` por línea y comparación al confirmar. El test 8.250 → 8.500 → 8.250 devuelve 409 aun con saldo final igual. Próximo gate: comprobar que todo futuro escritor actualice `inventory_balances` y respete el mutex.
 - La matriz de permisos está APROBADA desde 2026-10-31; no confundir aprobación de política con implementación completa. Issue #53 sigue abierta.
 
 ### Próximos pasos técnicos

@@ -1,39 +1,41 @@
 # Server-side operation authorization architecture
 
-## Implementation status update — 2026-11-04 UTC
+## Implementation status update — 2026-11-05 UTC
 
-The role/permission decision matrix is **APPROVED** (2026-10-31). The current `main` HEAD is `2e0f4083ba577de2f301daf8c866bfbdffb5e23f` and does not contain commercial API handlers from PR #196. PR #196 remains open/Draft at `c332e740aff279fb8b22a8879581d4b8a3c7de21`, based on the previous main SHA `705d3db3220894c7d3baca8dc7e7a6b623dfbb94`; it is behind main and must be reconciled before integration. That branch contains tenant-scoped catalog read/create/update/soft-deactivation and warehouse inventory count/list/confirm routes, with PostgreSQL integration coverage including concurrent idempotent count confirmation. This is a partial implementation, not a general authorization layer for all commercial operations. Sales, payments, receipts, reservations, returns and transfers still require their own server-side authorization and tests. Production readiness is not established.
+The role/permission decision matrix is **APPROVED** (2026-10-31). The active development stack is #210 → #211 → #214 → #215; PR #216 is a Draft authorization follow-up based on #215. PR #216 connects `authorizeTenantOperation` to catalog GET/POST/PATCH and `authorizeBranchOperation` to inventory count create/confirm and warehouse/count list routes. The helpers enforce server-derived session, tenant, operation and branch scope; write routes retain transactional row locks. This is route-level enforcement, not global middleware. The internal `inventory.management.read` key preserves the pre-existing Owner/Admin/Inventory allowlist for warehouse/count metadata; it is not the separate matrix permission `inventory.read` and does not grant Cashier access to those management records.
 
-**Status:** technical proposal only; not an approved business permission policy and not implementation authorization.  
+Current business API coverage remains partial: catalog and warehouse inventory-count handlers exist, but sales, payments, suppliers, purchase receipts, reservations, returns and transfers do not yet have HTTP handlers. The approved Cashier inventory-read capability still lacks a balances/ledger endpoint. PR #216 preserves the existing stricter Cashier denial on warehouse/count-management metadata. Issue #53 remains open/P0 and production readiness is not established. CI for the exact PR #216 HEAD must pass before this work is considered validated.
+
+**Status:** arquitectura técnica parcialmente implementada; la matriz de permisos está aprobada (2026-10-31). No existe middleware global y la cobertura comercial sigue siendo parcial.  
 **Date:** 2026-10-30 UTC  
 **Base:** `main` at `a6db2dcaf57e2a0bf1735eb282c3ac2256cd314c` when this proposal branch was created.  
 **Related:** [tenant authorization contract](tenant-authorization-contract.md), [role/permission decision matrix](role-permission-decision-matrix.md), [branch scope implementation](BRANCH_SCOPE_CONTEXT_IMPLEMENTATION.md), [register shift model](REGISTER_SHIFT_MODEL.md), [organization commercial policies](ORGANIZATION_COMMERCIAL_POLICY_CONFIGURATION.md), [Constitution](../CONSTITUTION.md).
 
 ## 1. Purpose and non-goals
 
-This document proposes the server-side shape for authorization when commercial API routes are eventually introduced. It separates four concerns that must not be conflated:
+This document defines the server-side authorization boundary for current and future commercial API routes. It separates four concerns that must not be conflated:
 
 1. **Authentication:** identify a user from a valid server-side session.
 2. **Tenant membership:** establish that the user is an active member of the selected organization.
 3. **Resource scope:** establish the organization, branch, register, warehouse, or shift to which a request refers.
 4. **Operation authorization:** decide whether that actor may perform this specific action on this specific resource under an explicitly approved policy.
 
-The current `resolveTenantContext`, `resolveBranchContext`, and `resolveOpenCashierRegisterShift` helpers address parts of the first three concerns. They do **not** authorize business operations. There are currently no commercial HTTP handlers.
+The `resolveTenantContext`, `resolveBranchContext`, and `resolveOpenCashierRegisterShift` helpers establish identity and resource scope. `authorization.ts` adds the operation decision. Existing handlers include tenant-scoped catalog GET/POST/PATCH and branch-scoped warehouse/count create/confirm/list routes.
 
-This proposal does not introduce custom roles, choose business thresholds, authorize additional discounts/voids/refunds, define a supervisor override, create endpoints, add schema, or permit migrations. The separate role matrix is **APPROVED** (2026-10-31); this technical proposal does not extend that approval or authorize behavior outside the matrix. No implementation may infer missing decisions from examples in this document.
+This architecture does not introduce custom roles, choose business thresholds, authorize additional discounts/voids/refunds, or define a supervisor override. The role matrix is **APPROVED** (2026-10-31); implementation must remain within that matrix and must not infer missing business decisions.
 
 ## 2. Current verified foundation
 
 - `resolveTenantContext` derives user, organization, and role from the validated session and active database membership. The requested organization is a selector, not proof of access.
 - `resolveBranchContext` rechecks active organization, user, membership, role, branch, and (for cashier/inventory) active branch assignment. Its documented owner/admin organization-wide branch resolution is an already-approved **scope-resolution** boundary only.
 - `resolveOpenCashierRegisterShift` resolves the authenticated cashier's own open shift and uses `FOR SHARE OF s`. A future caller that depends on the shift remaining open must use the same transaction client through the business operation.
-- These helpers are isolated and are not wired to commercial routes or middleware.
-- `withDatabaseTransaction` exists, but no commercial route currently demonstrates transaction-level authorization or business atomicity.
+- `authorizeTenantOperation` and `authorizeBranchOperation` are wired into the existing catalog and inventory handlers by this branch; there is no global authorization middleware.
+- Catalog writes and inventory count mutations perform authorization within their transaction before tenant-scoped writes; this does not establish coverage for sales, payments, receipts, reservations, returns or transfers.
 - Main versions migrations 0001–0004. Migrations 0003/0004 have not been applied to Neon main; PostgreSQL 18 disposable CI is the current migration/integration test environment.
 
 ## 3. Proposed authorization boundary
 
-A future API operation should call one explicit authorization boundary after parsing the request and establishing a trusted session identity. The boundary should receive server-derived context and a stable operation identifier, not a client-supplied role or permission.
+Every API operation must call one explicit authorization boundary after parsing the request and establishing a trusted session identity. The boundary should receive server-derived context and a stable operation identifier, not a client-supplied role or permission.
 
 Conceptual input:
 

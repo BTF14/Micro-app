@@ -2,7 +2,8 @@ import { getCookie } from "hono/cookie";
 import type { Hono } from "hono";
 import type { Bindings } from "./bindings";
 import { withDatabaseClient } from "./database";
-import { resolveTenantContext, type OrganizationRole } from "./tenant-context";
+import { authorizeTenantOperation } from "./authorization";
+import type { OrganizationRole } from "./tenant-context";
 
 const SESSION_COOKIE = "microapp_session";
 const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -103,8 +104,13 @@ export function registerCatalogRoutes(app: Hono<{ Bindings: Bindings }>): void {
       const result = await withDatabaseClient(c.env.DATABASE_URL, async (client) => {
         // The URL organization ID is only a selector. The resolver proves the
         // session, active user, active membership and active organization.
-        const tenant = await resolveTenantContext(client, sessionToken, organizationId);
-        if (!tenant) return { kind: "unauthenticated" as const };
+        const authorization = await authorizeTenantOperation(client, sessionToken, organizationId, "catalog.read", false);
+        if (!authorization.allowed) {
+          return authorization.reason === "operation_denied"
+            ? { kind: "forbidden" as const }
+            : { kind: "unauthenticated" as const };
+        }
+        const tenant = authorization.context;
 
         // Do not select cost_usd at all for Cashier. Do not select stock,
         // stock_quantity, branch or register data in this catalog-only phase.
@@ -142,6 +148,9 @@ export function registerCatalogRoutes(app: Hono<{ Bindings: Bindings }>): void {
           { error: "UNAUTHENTICATED", message: "Inicia sesión para continuar." },
           401,
         );
+      }
+      if (result.kind === "forbidden") {
+        return c.json({ error: "FORBIDDEN", message: "No tienes permiso para consultar el catálogo." }, 403);
       }
       return c.json(result.body, 200);
     } catch {

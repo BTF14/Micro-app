@@ -2,10 +2,10 @@ import { getCookie } from "hono/cookie";
 import type { Hono } from "hono";
 import type { Bindings } from "./bindings";
 import { isTrustedOrigin } from "./auth";
-import { resolveBranchContext } from "./branch-context";
+import { authorizeBranchOperation } from "./authorization";
 import { withDatabaseClient, withDatabaseTransaction } from "./database";
 import { lockInventoryBalances, lockInventoryWarehouses } from "./inventory-locks";
-import { resolveTenantContext } from "./tenant-context";
+
 
 const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const MAX_BODY_BYTES = 128 * 1024;
@@ -108,10 +108,6 @@ async function hashCountRequest(input: {
   return Array.from(new Uint8Array(digest), (byte) => byte.toString(16).padStart(2, "0")).join("");
 }
 
-function isInventoryOperator(role: string): boolean {
-  return role === "owner" || role === "admin" || role === "inventory";
-}
-
 export function registerInventoryCountRoutes(app: Hono<{ Bindings: Bindings }>): void {
   app.post("/api/orgs/:organizationId/branches/:branchId/warehouses/:warehouseId/counts/:countType", async (c) => {
     c.header("Cache-Control", "private, no-store");
@@ -146,11 +142,14 @@ export function registerInventoryCountRoutes(app: Hono<{ Bindings: Bindings }>):
     try {
       const result = await withDatabaseClient(c.env.DATABASE_URL, (client) =>
         withDatabaseTransaction(client, async (tx) => {
-          const tenant = await resolveTenantContext(tx, token, organizationId, true);
-          if (!tenant) return { kind: "unauthenticated" as const };
-          if (!isInventoryOperator(tenant.role)) return { kind: "forbidden" as const };
-          const branch = await resolveBranchContext(tx, tenant, branchId, true);
-          if (!branch) return { kind: "branch_denied" as const };
+          const authorization = await authorizeBranchOperation(tx, token, organizationId, branchId, "inventory.adjust");
+          if (!authorization.allowed) {
+            if (authorization.reason === "unauthenticated_or_out_of_scope") return { kind: "unauthenticated" as const };
+            if (authorization.reason === "branch_out_of_scope") return { kind: "branch_denied" as const };
+            return { kind: "forbidden" as const };
+          }
+          const branch = authorization.context;
+          const tenant = { userId: branch.userId, organizationId: branch.organizationId };
           const lockedWarehouses = await lockInventoryWarehouses(tx, tenant.organizationId, [{ warehouseId, branchId: branch.branchId }]);
           if (!lockedWarehouses) return { kind: "not_found" as const };
 
@@ -252,11 +251,14 @@ export function registerInventoryCountRoutes(app: Hono<{ Bindings: Bindings }>):
     try {
       const result = await withDatabaseClient(c.env.DATABASE_URL, (client) =>
         withDatabaseTransaction(client, async (tx) => {
-          const tenant = await resolveTenantContext(tx, token, organizationId, true);
-          if (!tenant) return { kind: "unauthenticated" as const };
-          if (!isInventoryOperator(tenant.role)) return { kind: "forbidden" as const };
-          const branch = await resolveBranchContext(tx, tenant, branchId, true);
-          if (!branch) return { kind: "branch_denied" as const };
+          const authorization = await authorizeBranchOperation(tx, token, organizationId, branchId, "inventory.adjust");
+          if (!authorization.allowed) {
+            if (authorization.reason === "unauthenticated_or_out_of_scope") return { kind: "unauthenticated" as const };
+            if (authorization.reason === "branch_out_of_scope") return { kind: "branch_denied" as const };
+            return { kind: "forbidden" as const };
+          }
+          const branch = authorization.context;
+          const tenant = { userId: branch.userId, organizationId: branch.organizationId };
 
           const lockedWarehouses = await lockInventoryWarehouses(tx, tenant.organizationId, [{ warehouseId, branchId: branch.branchId }]);
           if (!lockedWarehouses) return { kind: "warehouse_not_found" as const };
@@ -394,11 +396,14 @@ export function registerInventoryCountRoutes(app: Hono<{ Bindings: Bindings }>):
     }
     try {
       const result = await withDatabaseClient(c.env.DATABASE_URL, async (db) => {
-        const tenant = await resolveTenantContext(db, token, organizationId);
-        if (!tenant) return { kind: "unauthenticated" as const };
-        if (!isInventoryOperator(tenant.role)) return { kind: "forbidden" as const };
-        const branch = await resolveBranchContext(db, tenant, branchId);
-        if (!branch) return { kind: "branch_denied" as const };
+        const authorization = await authorizeBranchOperation(db, token, organizationId, branchId, "inventory.management.read", false);
+        if (!authorization.allowed) {
+          if (authorization.reason === "unauthenticated_or_out_of_scope") return { kind: "unauthenticated" as const };
+          if (authorization.reason === "branch_out_of_scope") return { kind: "branch_denied" as const };
+          return { kind: "forbidden" as const };
+        }
+        const branch = authorization.context;
+        const tenant = { organizationId: branch.organizationId };
         const warehouses = await db.query<{
           id: string; code: string; name: string; is_active: boolean; created_at: string; updated_at: string;
         }>(
@@ -435,11 +440,14 @@ export function registerInventoryCountRoutes(app: Hono<{ Bindings: Bindings }>):
     }
     try {
       const result = await withDatabaseClient(c.env.DATABASE_URL, async (db) => {
-        const tenant = await resolveTenantContext(db, token, organizationId);
-        if (!tenant) return { kind: "unauthenticated" as const };
-        if (!isInventoryOperator(tenant.role)) return { kind: "forbidden" as const };
-        const branch = await resolveBranchContext(db, tenant, branchId);
-        if (!branch) return { kind: "branch_denied" as const };
+        const authorization = await authorizeBranchOperation(db, token, organizationId, branchId, "inventory.management.read", false);
+        if (!authorization.allowed) {
+          if (authorization.reason === "unauthenticated_or_out_of_scope") return { kind: "unauthenticated" as const };
+          if (authorization.reason === "branch_out_of_scope") return { kind: "branch_denied" as const };
+          return { kind: "forbidden" as const };
+        }
+        const branch = authorization.context;
+        const tenant = { organizationId: branch.organizationId };
         const warehouse = await db.query<{ id: string }>(
           "SELECT id FROM warehouses WHERE organization_id = $1 AND branch_id = $2 AND id = $3",
           [tenant.organizationId, branch.branchId, warehouseId],

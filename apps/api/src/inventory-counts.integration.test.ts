@@ -898,6 +898,12 @@ describe.skipIf(!databaseUrl)("warehouse inventory count transactions against Po
     expect(otherBranchRead.status).toBe(403);
     expect(await otherBranchRead.json()).toMatchObject({ error: "BRANCH_FORBIDDEN" });
 
+    const otherBranchCountRead = await get(
+      `/api/orgs/${organizationId}/branches/${unassignedBranchId}/warehouses/${unassignedWarehouseId}/counts`,
+    );
+    expect(otherBranchCountRead.status).toBe(403);
+    expect(await otherBranchCountRead.json()).toMatchObject({ error: "BRANCH_FORBIDDEN" });
+
     const wrongWarehouseScope = await request(
       `/api/orgs/${organizationId}/branches/${branchId}/warehouses/${unassignedWarehouseId}/counts/physical`,
       { reason: "Warehouse must belong to the requested branch", lines: [{ product_id: productId, counted_quantity: "1.000" }] },
@@ -974,5 +980,10 @@ describe.skipIf(!databaseUrl)("warehouse inventory count transactions against Po
       lines: [{ product_id: productId, counted_quantity: "1" }],
     });
     expect(response.status).toBe(403);
+
+    const warehouseRead = await get(`/api/orgs/${organizationId}/branches/${branchId}/warehouses`);
+    expect(warehouseRead.status).toBe(403);
+    const countRead = await get(`/api/orgs/${organizationId}/branches/${branchId}/warehouses/${warehouseId}/counts`);
+    expect(countRead.status).toBe(403);
   });
 });

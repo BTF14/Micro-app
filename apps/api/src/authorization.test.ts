@@ -16,6 +16,13 @@ describe("commercial role authorization", () => {
     expect(isCommercialOperationAllowed("cashier", "catalog.read_costs")).toBe(false);
   });
 
+  it("keeps inventory metadata reads restricted to inventory operators", () => {
+    for (const role of ["owner", "admin", "inventory"] as const) {
+      expect(isCommercialOperationAllowed(role, "inventory.management.read")).toBe(true);
+    }
+    expect(isCommercialOperationAllowed("cashier", "inventory.management.read")).toBe(false);
+  });
+
   it("keeps inventory operations away from cashiers and limits inventory role to its approved duties", () => {
     for (const operation of ["inventory.read", "inventory.receive", "inventory.adjust", "inventory.transfer"] as const) {
       expect(isCommercialOperationAllowed("inventory", operation)).toBe(true);
@@ -120,6 +127,49 @@ describe("authorization context boundaries", () => {
     expect(queries[0]).toContain("FOR SHARE OF s, u, m, o");
     expect(queries[1]).toContain("FOR SHARE OF b");
     expect(queries[2]).toContain("FOR SHARE OF bm");
+  });
+
+  it("denies an unauthorized role before resolving branch membership", async () => {
+    const queries: string[] = [];
+    const query = async (sql: string) => {
+      queries.push(sql);
+      return { rows: [{ user_id: userId, organization_id: organizationId, role: "cashier" as const }] };
+    };
+    const client = { connect: async () => {}, query, end: async () => {} } as unknown as DatabaseClient;
+
+    await expect(authorizeBranchOperation(client, sessionToken, organizationId, branchId, "inventory.adjust"))
+      .resolves.toEqual({ allowed: false, reason: "operation_denied" });
+    expect(queries).toHaveLength(1);
+    expect(queries[0]).toContain("auth_sessions");
+  });
+
+  it("distinguishes a valid tenant with no access to the requested branch", async () => {
+    const query = async (sql: string) => ({
+      rows: sql.includes("auth_sessions")
+        ? [{ user_id: userId, organization_id: organizationId, role: "inventory" as const }]
+        : [],
+    });
+    const client = { connect: async () => {}, query, end: async () => {} } as unknown as DatabaseClient;
+
+    await expect(authorizeBranchOperation(client, sessionToken, organizationId, branchId, "inventory.adjust"))
+      .resolves.toEqual({ allowed: false, reason: "branch_out_of_scope" });
+  });
+
+  it("supports read-only authorization without acquiring write-path row locks", async () => {
+    const queries: string[] = [];
+    const query = async (sql: string) => {
+      queries.push(sql);
+      if (sql.includes("auth_sessions")) {
+        return { rows: [{ user_id: userId, organization_id: organizationId, role: "inventory" as const }] };
+      }
+      return { rows: [{ user_id: userId, organization_id: organizationId, branch_id: branchId, role: "inventory" as const }] };
+    };
+    const client = { connect: async () => {}, query, end: async () => {} } as unknown as DatabaseClient;
+
+    await expect(authorizeBranchOperation(client, sessionToken, organizationId, branchId, "inventory.management.read", false))
+      .resolves.toMatchObject({ allowed: true, context: { organizationId, branchId } });
+    expect(queries).toHaveLength(2);
+    expect(queries.every((sql) => !sql.includes("FOR SHARE"))).toBe(true);
   });
 
   it("fails closed when tenant or branch resolution fails", async () => {

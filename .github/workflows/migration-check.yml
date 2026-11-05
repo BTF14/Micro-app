@@ -94,11 +94,15 @@ jobs:
       - name: Verify balance-ledger coupling migration rolls back on failure
         run: |
           sed '/^COMMIT;$/i SELECT 1/0;' apps/api/migrations/0009_inventory_balance_ledger_coupling.sql > /tmp/0009-balance-ledger-failure.sql
-          if docker exec -i "${{ job.services.postgres.id }}" psql -v ON_ERROR_STOP=1 -U microapp -d microapp_test -f /dev/stdin < /tmp/0009-balance-ledger-failure.sql; then
+          status=0
+          output="$(docker exec -i "${{ job.services.postgres.id }}" psql -v ON_ERROR_STOP=1 -U microapp -d microapp_test -f /dev/stdin < /tmp/0009-balance-ledger-failure.sql 2>&1)" || status=$?
+          printf '%s\n' "$output"
+          if [ "$status" -eq 0 ]; then
             echo "Expected the injected balance-ledger migration failure, but psql succeeded."
             exit 1
           fi
-          remaining="$(docker exec "${{ job.services.postgres.id }}" psql -At -U microapp -d microapp_test -c "SELECT to_regclass('public.inventory_balance_ledger_intents') IS NULL AND to_regprocedure('public.record_inventory_balance_ledger_intent()') IS NULL AND to_regprocedure('public.prevent_inventory_ledger_truncate()') IS NULL AND NOT EXISTS (SELECT 1 FROM pg_trigger WHERE tgname IN ('inventory_balances_ledger_intent','warehouse_inventory_movements_require_balance_intent','inventory_balance_ledger_intent_complete','inventory_balances_no_truncate','warehouse_inventory_movements_no_truncate'))")"
+          printf '%s\n' "$output" | grep -F "division by zero"
+          remaining="$(docker exec "${{ job.services.postgres.id }}" psql -At -U microapp -d microapp_test -c "SELECT to_regclass('public.inventory_balance_ledger_intents') IS NULL AND to_regclass('public.inventory_balance_ledger_intents_event_id_seq') IS NULL AND to_regprocedure('public.record_inventory_balance_ledger_intent()') IS NULL AND to_regprocedure('public.consume_inventory_balance_ledger_intent()') IS NULL AND to_regprocedure('public.assert_inventory_balance_ledger_intent_consumed()') IS NULL AND to_regprocedure('public.prevent_inventory_ledger_truncate()') IS NULL AND NOT EXISTS (SELECT 1 FROM pg_trigger WHERE tgname IN ('inventory_balances_ledger_intent','warehouse_inventory_movements_require_balance_intent','inventory_balance_ledger_intent_complete','inventory_balances_no_truncate','warehouse_inventory_movements_no_truncate'))")"
           test "$remaining" = "t"
       - name: Apply transactional balance-ledger coupling migration
         run: docker exec -i "${{ job.services.postgres.id }}" psql -v ON_ERROR_STOP=1 -U microapp -d microapp_test -f /dev/stdin < apps/api/migrations/0009_inventory_balance_ledger_coupling.sql
@@ -106,9 +110,13 @@ jobs:
         run: docker exec -i "${{ job.services.postgres.id }}" psql -v ON_ERROR_STOP=1 -U microapp -d microapp_test -f /dev/stdin < apps/api/migrations/0009_inventory_balance_ledger_coupling.assertions.sql
       - name: Verify unmatched balance changes fail at transaction commit
         run: |
-          if docker exec -i "${{ job.services.postgres.id }}" psql -v ON_ERROR_STOP=1 -U microapp -d microapp_test -f /dev/stdin < apps/api/migrations/0009_inventory_balance_ledger_coupling.deferred_failure.sql; then
+          status=0
+          output="$(docker exec -i "${{ job.services.postgres.id }}" psql -v ON_ERROR_STOP=1 -U microapp -d microapp_test -f /dev/stdin < apps/api/migrations/0009_inventory_balance_ledger_coupling.deferred_failure.sql 2>&1)" || status=$?
+          printf '%s\n' "$output"
+          if [ "$status" -eq 0 ]; then
             echo "Expected unmatched balance change to fail at commit, but psql succeeded."
             exit 1
           fi
+          printf '%s\n' "$output" | grep -F "INVENTORY_BALANCE_CHANGE_REQUIRES_MATCHING_LEDGER_MOVEMENT"
           remaining="$(docker exec "${{ job.services.postgres.id }}" psql -At -U microapp -d microapp_test -c "SELECT count(*) = 1 AND NOT EXISTS (SELECT 1 FROM public.inventory_balance_ledger_intents) FROM public.inventory_balances WHERE on_hand_quantity = 0")"
           test "$remaining" = "t"

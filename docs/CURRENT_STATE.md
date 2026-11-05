@@ -2004,3 +2004,14 @@ Actúa como ingeniero principal responsable de continuar BTF14/Micro-app. Antes 
 - **AC-5 de la tarea ODD audit-logs-append-only queda validado para la pila de migraciones en CI efímero.** Esto no valida el usuario efectivo de DATABASE_URL, ownership runtime, grants/memberships, Neon ni producción. Mantener el gate de runtime security.
 - Comentario de cierre de evidencia en PR #207: 6651950993. PR #207/#208 siguen abiertas/Draft y sin merge.
 - PR #202 documentación: HEAD previo a este registro `0055a1713d50574d174b3fc602afee1618a923fc`; en último snapshot sus checks aún tenían verify, postgres-migration, SAST, Trivy, backup/restore y Pages in progress. No declarar la PR documental aprobada hasta completar esos checks.
+
+
+## ODD task cerrado técnicamente y revalidación documental — 2026-11-05 UTC
+
+- Se actualizó `odd/tasks/audit-logs-append-only.md` en rama de #207 para registrar AC-1 a AC-7 como cumplidos dentro del alcance de repositorio/PostgreSQL desechable, y separar expresamente el gate externo del principal efectivo DATABASE_URL. ODD validation pasó en el nuevo SHA.
+- SHA de implementación audit-stack previamente validado: `dd3eb55ee3dc5776ce0e0617a3012c29ab355132`, 10/10 check-runs success. El cambio posterior es documental; HEAD actual #207: `3e4490695128e7638d5e71ee822dccf134fc2bce`.
+- En HEAD actual #207 se observaron 9 checks: 5 success (incluye postgres-migration y validate-odd-docs), 4 in_progress (verify, Chromium, Pages, backup/restore), 0 fallos. No declarar este SHA final validado hasta completar los cuatro.
+- #208 sigue HEAD `76a246ea141eedbee877608e7c0f50d6a07f3019`, 7/7 success.
+- PR #202 docs actual HEAD `2ef0d0820b8df9e5667ac1c478b7a51d2816dfec`: 12/13 checks success, Workers Build in_progress, 0 fallos. Esperar último check antes de declarar documentación validada.
+- El gate real de DATABASE_URL permanece **NO VERIFICADO**: no se leyó el secreto ni se accedió a Neon. La tarea ODD se considera cerrada para garantías de código/CI efímero, no para la garantía runtime productiva.
+- Comentario en #207 ID 6651990379. #207/#208 siguen Draft y sin merge.

@@ -75,6 +75,39 @@ jobs:
             exit 1
           fi
           printf '%s\n' "$output" | grep -F "MIGRATION_CHECKSUM_MISMATCH: 0001"
+      - name: Verify migration ledger gaps fail closed
+        run: |
+          checksum="$(sha256sum apps/api/migrations/0006_register_shift_member_roles.sql | awk '{print $1}')"
+          restore() {
+            psql -X -v ON_ERROR_STOP=1 --dbname "$ADMIN_DATABASE_URL" -c "INSERT INTO public.schema_migrations (version, filename, checksum, state, applied_at) VALUES ('0006', '0006_register_shift_member_roles.sql', '$checksum', 'applied', pg_catalog.clock_timestamp()) ON CONFLICT (version) DO UPDATE SET filename=EXCLUDED.filename, checksum=EXCLUDED.checksum, state='applied', applied_at=pg_catalog.clock_timestamp();" >/dev/null
+          }
+          trap restore EXIT
+          psql -X -v ON_ERROR_STOP=1 --dbname "$ADMIN_DATABASE_URL" -c "DELETE FROM public.schema_migrations WHERE version='0006';"
+          status=0
+          output="$(bash scripts/db/migrate.sh 2>&1)" || status=$?
+          if [ "$status" -eq 0 ]; then
+            echo "Expected a missing earlier migration with later applied rows to fail."
+            exit 1
+          fi
+          printf '%s\n' "$output" | grep -F "MIGRATION_LEDGER_GAP: 0006"
+          restore
+          trap - EXIT
+      - name: Verify interrupted migration state fails closed
+        run: |
+          restore() {
+            psql -X -v ON_ERROR_STOP=1 --dbname "$ADMIN_DATABASE_URL" -c "UPDATE public.schema_migrations SET state='applied', applied_at=COALESCE(applied_at, pg_catalog.clock_timestamp()) WHERE version='0012';" >/dev/null
+          }
+          trap restore EXIT
+          psql -X -v ON_ERROR_STOP=1 --dbname "$ADMIN_DATABASE_URL" -c "UPDATE public.schema_migrations SET state='applying', applied_at=NULL WHERE version='0012';"
+          status=0
+          output="$(bash scripts/db/migrate.sh 2>&1)" || status=$?
+          if [ "$status" -eq 0 ]; then
+            echo "Expected an interrupted applying row to require reconciliation."
+            exit 1
+          fi
+          printf '%s\n' "$output" | grep -F "MIGRATION_RECONCILIATION_REQUIRED"
+          restore
+          trap - EXIT
       - name: Verify populated schema without ledger requires explicit adoption
         run: |
           psql -X -v ON_ERROR_STOP=1 --dbname "$ADMIN_DATABASE_URL" -c "CREATE DATABASE microapp_legacy_test;"

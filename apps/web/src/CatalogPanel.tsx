@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { convertUsdToVes, formatDecimal, parseNumeric } from "@micro-app/money";
 import { apiRequest } from "./auth";
 import "./catalog.css";
@@ -36,12 +36,19 @@ function formatLocalizedDecimal(value: string): string {
 }
 
 function formatUsd(value: string): string {
-  return formatLocalizedDecimal(formatDecimal(parseNumeric(value, 14, 4), 4, 2));
+  try {
+    return formatLocalizedDecimal(formatDecimal(parseNumeric(value, 14, 4), 4, 2));
+  } catch {
+    return "No disponible";
+  }
 }
 
 function formatVes(valueUsd: string, rate: string): string {
-  const amount = convertUsdToVes(valueUsd, rate);
-  return formatLocalizedDecimal(amount);
+  try {
+    return formatLocalizedDecimal(convertUsdToVes(valueUsd, rate));
+  } catch {
+    return "—";
+  }
 }
 
 export default function CatalogPanel({
@@ -53,8 +60,17 @@ export default function CatalogPanel({
   const [nextCursor, setNextCursor] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const requestSequence = useRef(0);
 
   const fetchPage = useCallback(async (cursor?: string, append = false) => {
+    const requestId = ++requestSequence.current;
+    if (!organizationId) {
+      setItems([]);
+      setNextCursor(null);
+      setError("No hay una organización activa para consultar el catálogo.");
+      setLoading(false);
+      return;
+    }
     setLoading(true);
     setError("");
     const query = new URLSearchParams({ limit: "100" });
@@ -64,12 +80,15 @@ export default function CatalogPanel({
       const result = await apiRequest<CatalogResponse>(
         `/api/orgs/${encodeURIComponent(organizationId)}/catalog?${query.toString()}`,
       );
+      if (requestId !== requestSequence.current) return;
       setItems((current) => append ? [...current, ...result.items] : result.items);
       setNextCursor(result.nextCursor);
     } catch (reason) {
-      setError(reason instanceof Error ? reason.message : "No se pudo consultar el catálogo.");
+      if (requestId === requestSequence.current) {
+        setError(reason instanceof Error ? reason.message : "No se pudo consultar el catálogo.");
+      }
     } finally {
-      setLoading(false);
+      if (requestId === requestSequence.current) setLoading(false);
     }
   }, [organizationId]);
 
@@ -77,6 +96,7 @@ export default function CatalogPanel({
     setItems([]);
     setNextCursor(null);
     void fetchPage();
+    return () => { requestSequence.current += 1; };
   }, [fetchPage]);
 
   const canConvert = exchangeRateStatus === "current" && exchangeRate !== null;

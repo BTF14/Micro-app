@@ -1763,3 +1763,14 @@ Mantener #207 en Draft. Revisar independientemente el diff; resolver la colisió
 - Compare #200-base → #196-head: diverged, 128 ahead / 34 behind; 24 rutas cambiadas en común. La migración 0005 difiere (#196 blob `8a2b13651ebd5dc1d3bb87efbe34cb863c0e0d99`, 265 líneas; #200 blob `bb9020fdca535f84fda0f468e9d3ab86e1cc319c`, 330 líneas); assertions y migration-check también difieren. #200 contiene evolución posterior de inventario; no reemplazarla por snapshot #196.
 - Decisión: no retargetear, fusionar ni copiar #196 en #200 a ciegas. Mapear commits/rutas y separar catálogo/API de inventario; preservar #200 y probar el stack combinado desde PostgreSQL limpio. #207 depende de #200 y falta integrar roles 0006 antes de 0007.
 - Comentario en issue #53 ID 6651679831. No se modificó código, migraciones, bases de PR, main, Neon, secretos, Cloudflare, DNS, billing ni datos reales.
+
+
+## Reanudación — 2026-11-05 UTC — PR #208 y numeración 0005/0006
+
+- Comparación detallada #196/#200: 15/24 blobs compartidos idénticos (handlers/tests catálogo incluidos); nueve difieren: workflows, migración/assertions 0005 y servicios/tests de inventario. No copiar catálogo; preservar implementación más reciente #200.
+- Merge commit `f8d90fbff7eb274c59d5442873124e7470bb4e66` creado con primer padre #200 HEAD `5fbc17a48b65076cf5609a7a054bbd125a3a5d1e` y segundo padre antiguo #194 HEAD `7b3ad50e5780416868a1a428b856d12c4ea1e2ea`. Fast-forward de rama `work/mvp-foundation`, sin force-push.
+- Colisión resuelta en esa rama: roles renumerados a `0006_register_shift_member_roles.sql`; #200 0005 inventario intacta; CI y migration-check aplican 0001–0006; se añade integración PG own-shift roles. PR #208 creada Draft sobre #200. Compare 15 ahead/0 behind, 10 rutas, mergeable=true.
+- PR #194 cerrada como supersedida, no merged; comentario 6651810854. #208 HEAD inicial f8d90fb; se reforzó `authorization.ts` con `resolveTenantContext(..., true)` y `resolveBranchContext(..., true)`, creando HEAD actual `8b3646adb3d6dc1c2a7a3ef17d8ead4a442e0509`.
+- Validación: migration-check pasó en f8d90fb. Para HEAD actual 8b3646ad solo cinco check-runs de preview/security fueron visibles y success; CI/migration-check no devueltos aún. Mantener #208 Draft hasta CI completo.
+- #207 sigue basada en #200 y omite 0006 entre 0005 y 0007. Comentarios: #207 ID 6651848193, issue #53 ID 6651847660. Próximo: apilar audit branch sobre #208 y validar 0005→0006→0007 desde PG limpio.
+- Issue #53 permanece abierta/P0. Sin cambios en main, Neon, secretos, Cloudflare settings/DNS/billing ni datos reales. No merge/deploy; producción NO LISTA.

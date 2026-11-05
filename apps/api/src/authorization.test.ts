@@ -6,13 +6,13 @@ import type { OrganizationRole } from "./tenant-context";
 const roles: OrganizationRole[] = ["owner", "admin", "inventory", "cashier"];
 
 describe("commercial role authorization", () => {
-  it("allows catalog reads for every role but exposes cost capability only to owner/admin", () => {
+  it("allows catalog reads for every role and cost reads for owner/admin/inventory", () => {
     for (const role of roles) {
       expect(isCommercialOperationAllowed(role, "catalog.read")).toBe(true);
     }
     expect(isCommercialOperationAllowed("owner", "catalog.read_costs")).toBe(true);
     expect(isCommercialOperationAllowed("admin", "catalog.read_costs")).toBe(true);
-    expect(isCommercialOperationAllowed("inventory", "catalog.read_costs")).toBe(false);
+    expect(isCommercialOperationAllowed("inventory", "catalog.read_costs")).toBe(true);
     expect(isCommercialOperationAllowed("cashier", "catalog.read_costs")).toBe(false);
   });
 
@@ -96,6 +96,30 @@ describe("authorization context boundaries", () => {
       .resolves.toMatchObject({ allowed: true, context: { userId, organizationId, branchId } });
     await expect(authorizeBranchOperation(client, sessionToken, organizationId, branchId, "sales.create_list_price"))
       .resolves.toEqual({ allowed: false, reason: "operation_denied" });
+  });
+
+  it("locks tenant identity and membership before locking the requested branch scope", async () => {
+    const queries: string[] = [];
+    const query = async (sql: string) => {
+      queries.push(sql);
+      if (sql.includes("auth_sessions")) {
+        return { rows: [{ user_id: userId, organization_id: organizationId, role: "inventory" as const }] };
+      }
+      if (sql.includes("FROM branches b") && sql.includes("FOR SHARE OF b")) {
+        return { rows: [{ id: branchId }] };
+      }
+      if (sql.includes("FROM branch_memberships bm") && sql.includes("FOR SHARE OF bm")) {
+        return { rows: [{ branch_id: branchId, user_id: userId }] };
+      }
+      return { rows: [{ user_id: userId, organization_id: organizationId, branch_id: branchId, role: "inventory" as const }] };
+    };
+    const client = { connect: async () => {}, query, end: async () => {} } as unknown as DatabaseClient;
+
+    await expect(authorizeBranchOperation(client, sessionToken, organizationId, branchId, "inventory.adjust"))
+      .resolves.toMatchObject({ allowed: true });
+    expect(queries[0]).toContain("FOR SHARE OF s, u, m, o");
+    expect(queries[1]).toContain("FOR SHARE OF b");
+    expect(queries[2]).toContain("FOR SHARE OF bm");
   });
 
   it("fails closed when tenant or branch resolution fails", async () => {

@@ -1,3 +1,14 @@
+## Regla de continuidad — Build IDs y datos de Cloudflare — 2026-11-05
+
+- **No pedir al propietario Build IDs, deployment IDs, SHA, URLs ni capturas de nuevo** antes de consultar GitHub y la documentación vigente. Consultar checks, Actions, logs accesibles y comentarios automáticos de Cloudflare asociados al SHA/PR exactos.
+- Ya está documentado para PR #207 Workers Build ID `0c8394a1-4d91-4061-a850-6c78f3b11295` y los previews Workers/Pages. No volver a solicitarlo.
+- El Build ID histórico `3542c660-e5e3-435e-8be5-dbed236cec1c` solo queda como una inspección histórica no resuelta. No convertirlo en tarea recurrente del propietario. Si no puede verificarse con conectores disponibles, marcar NO VERIFICADO y continuar.
+- Diferenciar CI/build, Version URL, preview, producción activa y tráfico; no usar un éxito de preview como prueba de producción.
+- Solo solicitar texto al propietario si el dato no está en fuentes accesibles, es imprescindible para una decisión concreta y se explica por qué. Nunca exigir capturas como primera opción.
+- Al cambiar de chat, iniciar leyendo CURRENT_STATE y HANDOFF, y verificar cambios nuevos por SHA; no pedir que el propietario reconstruya el historial.
+
+---
+
 ## Instrucción vigente — acceso móvil y abandono de TinyFish — 2026-11-05
 
 - El propietario trabaja desde Android y no tiene terminal. **No solicitar comandos CLI, npx, edición de archivos locales, Codex CLI ni pasos de escritorio.**

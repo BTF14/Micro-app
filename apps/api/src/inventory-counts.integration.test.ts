@@ -27,17 +27,30 @@ describe.skipIf(!databaseUrl)("warehouse inventory count transactions against Po
   let branchId = "";
   let warehouseId = "";
   let productId = "";
+  let unassignedBranchId = "";
+  let unassignedWarehouseId = "";
+  let foreignOrganizationId = "";
+  let foreignBranchId = "";
+  let foreignWarehouseId = "";
+  let foreignProductId = "";
   let token = "";
 
-  async function request(path: string, body?: unknown): Promise<Response> {
+  async function request(path: string, body?: unknown, extraHeaders: Record<string, string> = {}): Promise<Response> {
     return app.fetch(new Request("https://api.example" + path, {
       method: "POST",
       headers: {
         Cookie: "microapp_session=" + token,
         Origin: "https://frontend.example",
         "Content-Type": "application/json",
+        ...extraHeaders,
       },
       ...(body === undefined ? {} : { body: JSON.stringify(body) }),
+    }), { DATABASE_URL: databaseUrl, FRONTEND_ORIGIN: "https://frontend.example" });
+  }
+
+  async function get(path: string): Promise<Response> {
+    return app.fetch(new Request("https://api.example" + path, {
+      headers: { Cookie: "microapp_session=" + token },
     }), { DATABASE_URL: databaseUrl, FRONTEND_ORIGIN: "https://frontend.example" });
   }
 
@@ -85,15 +98,47 @@ describe.skipIf(!databaseUrl)("warehouse inventory count transactions against Po
       [organizationId, "inventory-" + suffix],
     );
     branchId = branch.rows[0]!.id;
-    const warehouse = await client.query<{ id: string }>(
-      "INSERT INTO warehouses (organization_id, branch_id, code, name) VALUES ($1, $2, 'main', 'Main Warehouse') RETURNING id",
-      [organizationId, branchId],
+
+    const unassignedBranch = await client.query<{ id: string }>(
+      "INSERT INTO branches (organization_id, name, slug) VALUES ($1, 'Unassigned Inventory Branch', $2) RETURNING id",
+      [organizationId, "inventory-unassigned-" + suffix],
     );
-    warehouseId = warehouse.rows[0]!.id;
+    unassignedBranchId = unassignedBranch.rows[0]!.id;
+    const unassignedWarehouse = await client.query<{ id: string }>(
+      "INSERT INTO warehouses (organization_id, branch_id, code, name) VALUES ($1, $2, 'other', 'Unassigned Branch Warehouse') RETURNING id",
+      [organizationId, unassignedBranchId],
+    );
+    unassignedWarehouseId = unassignedWarehouse.rows[0]!.id;
+
+    const foreignOrg = await client.query<{ id: string }>(
+      "INSERT INTO organizations (name, slug) VALUES ($1, $2) RETURNING id",
+      ["Foreign Inventory " + suffix, "foreign-inventory-" + suffix],
+    );
+    foreignOrganizationId = foreignOrg.rows[0]!.id;
+    const foreignBranch = await client.query<{ id: string }>(
+      "INSERT INTO branches (organization_id, name, slug) VALUES ($1, 'Foreign Inventory Branch', $2) RETURNING id",
+      [foreignOrganizationId, "foreign-inventory-" + suffix],
+    );
+    foreignBranchId = foreignBranch.rows[0]!.id;
+    const foreignWarehouse = await client.query<{ id: string }>(
+      "INSERT INTO warehouses (organization_id, branch_id, code, name) VALUES ($1, $2, 'foreign', 'Foreign Warehouse') RETURNING id",
+      [foreignOrganizationId, foreignBranchId],
+    );
+    foreignWarehouseId = foreignWarehouse.rows[0]!.id;
+    const foreignProduct = await client.query<{ id: string }>(
+      "INSERT INTO products (organization_id, sku, name, price_usd) VALUES ($1, 'FOREIGN-INV', 'Foreign Inventory Product', 1) RETURNING id",
+      [foreignOrganizationId],
+    );
+    foreignProductId = foreignProduct.rows[0]!.id;
   });
 
   beforeEach(async () => {
     const suffix = crypto.randomUUID().replace(/-/g, "").slice(0, 16);
+    const warehouse = await client.query<{ id: string }>(
+      "INSERT INTO warehouses (organization_id, branch_id, code, name) VALUES ($1, $2, $3, 'Inventory Count Test Warehouse') RETURNING id",
+      [organizationId, branchId, "inv-" + suffix],
+    );
+    warehouseId = warehouse.rows[0]!.id;
     const product = await client.query<{ id: string }>(
       "INSERT INTO products (organization_id, sku, name, price_usd) VALUES ($1, $2, 'Inventory Count Test Product', 1) RETURNING id",
       [organizationId, "INV-COUNT-" + suffix],
@@ -141,12 +186,175 @@ describe.skipIf(!databaseUrl)("warehouse inventory count transactions against Po
       await client.query("DELETE FROM auth_sessions WHERE user_id = $1", [userId]);
       await client.query("DELETE FROM organization_members WHERE organization_id = $1", [organizationId]);
       await client.query("DELETE FROM organizations WHERE id = $1", [organizationId]);
+      if (foreignOrganizationId) {
+        await client.query("DELETE FROM inventory_count_lines WHERE organization_id = $1", [foreignOrganizationId]);
+        await client.query("DELETE FROM inventory_counts WHERE organization_id = $1", [foreignOrganizationId]);
+        await client.query("DELETE FROM organization_members WHERE organization_id = $1", [foreignOrganizationId]);
+        await client.query("DELETE FROM warehouses WHERE organization_id = $1", [foreignOrganizationId]);
+        await client.query("DELETE FROM products WHERE organization_id = $1", [foreignOrganizationId]);
+        await client.query("DELETE FROM branches WHERE organization_id = $1", [foreignOrganizationId]);
+        await client.query("DELETE FROM organizations WHERE id = $1", [foreignOrganizationId]);
+      }
       await client.query("DELETE FROM app_users WHERE id = $1", [userId]);
     }
     await client.end();
   });
 
 
+  it("replays an idempotent count creation without creating duplicate drafts", async () => {
+    await seedInventoryBalance("4.000");
+    const key = "count-create-" + crypto.randomUUID();
+    const body = { reason: "Retry-safe physical count", lines: [{ product_id: productId, counted_quantity: "5.000" }] };
+    const first = await request(root() + "/counts/physical", body, { "Idempotency-Key": key });
+    expect(first.status).toBe(201);
+    const firstBody = await first.json() as { id: string };
+    const replay = await request(root() + "/counts/physical", { reason: body.reason, lines: [{ product_id: productId, counted_quantity: "5" }] }, { "Idempotency-Key": key });
+    expect(replay.status).toBe(200);
+    expect(await replay.json()).toMatchObject({ id: firstBody.id, status: "draft", count_type: "physical", line_count: 1, replayed: true });
+    const persisted = await client.query<{ counts: string; lines: string; audits: string }>(
+      `SELECT
+        (SELECT count(*)::text FROM inventory_counts WHERE organization_id = $1 AND idempotency_key = $2) AS counts,
+        (SELECT count(*)::text FROM inventory_count_lines WHERE organization_id = $1 AND count_id = $3) AS lines,
+        (SELECT count(*)::text FROM audit_logs WHERE organization_id = $1 AND entity_id = $3::text AND action = 'inventory.count.created') AS audits`,
+      [organizationId, key, firstBody.id],
+    );
+    expect(persisted.rows[0]).toEqual({ counts: "1", lines: "1", audits: "1" });
+  });
+
+  it("treats line order as irrelevant when replaying an idempotent count", async () => {
+    await seedInventoryBalance("4.000");
+    const secondProduct = await client.query<{ id: string }>(
+      "INSERT INTO products (organization_id, sku, name, price_usd) VALUES ($1, $2, 'Second Inventory Count Product', 1) RETURNING id",
+      [organizationId, "INV-COUNT-SECOND-" + crypto.randomUUID().replace(/-/g, "").slice(0, 12)],
+    );
+    await client.query(
+      "INSERT INTO inventory_balances (organization_id, branch_id, warehouse_id, product_id, on_hand_quantity, reserved_quantity) VALUES ($1, $2, $3, $4, 2, 0)",
+      [organizationId, branchId, warehouseId, secondProduct.rows[0]!.id],
+    );
+    const key = "count-order-" + crypto.randomUUID();
+    const firstLines = [
+      { product_id: productId, counted_quantity: "5.000" },
+      { product_id: secondProduct.rows[0]!.id, counted_quantity: "3.000" },
+    ];
+    const first = await request(root() + "/counts/physical", { reason: "Line order is not semantically meaningful", lines: firstLines }, { "Idempotency-Key": key });
+    expect(first.status).toBe(201);
+    const firstBody = await first.json() as { id: string };
+    const replay = await request(root() + "/counts/physical", {
+      reason: "Line order is not semantically meaningful",
+      lines: [...firstLines].reverse(),
+    }, { "Idempotency-Key": key });
+    expect(replay.status).toBe(200);
+    expect(await replay.json()).toMatchObject({ id: firstBody.id, status: "draft", replayed: true });
+  });
+
+  it("replays the original confirmed status after an idempotent count has been confirmed", async () => {
+    await seedInventoryBalance("4.000");
+    const key = "count-confirmed-" + crypto.randomUUID();
+    const body = { reason: "Confirmed count must remain the idempotent result", lines: [{ product_id: productId, counted_quantity: "5.000" }] };
+    const first = await request(root() + "/counts/physical", body, { "Idempotency-Key": key });
+    expect(first.status).toBe(201);
+    const firstBody = await first.json() as { id: string };
+    const confirmation = await request(root() + "/counts/" + firstBody.id + "/confirm");
+    expect(confirmation.status).toBe(200);
+    expect(await confirmation.json()).toMatchObject({ id: firstBody.id, status: "confirmed" });
+    const replay = await request(root() + "/counts/physical", body, { "Idempotency-Key": key });
+    expect(replay.status).toBe(200);
+    expect(await replay.json()).toMatchObject({
+      id: firstBody.id, status: "confirmed", count_type: "physical", line_count: 1, replayed: true,
+    });
+  });
+
+  it("rejects reuse of an idempotency key with a different canonical payload", async () => {
+    const key = "count-create-" + crypto.randomUUID();
+    const first = await request(root() + "/counts/physical", { reason: "Original request", lines: [{ product_id: productId, counted_quantity: "5" }] }, { "Idempotency-Key": key });
+    expect(first.status).toBe(201);
+    const conflict = await request(root() + "/counts/physical", { reason: "Different request", lines: [{ product_id: productId, counted_quantity: "6.000" }] }, { "Idempotency-Key": key });
+    expect(conflict.status).toBe(409);
+    expect(await conflict.json()).toMatchObject({ error: "IDEMPOTENCY_KEY_REUSED" });
+    const persisted = await client.query<{ counts: string; lines: string }>(
+      `SELECT
+        (SELECT count(*)::text FROM inventory_counts WHERE organization_id = $1 AND idempotency_key = $2) AS counts,
+        (SELECT count(*)::text FROM inventory_count_lines l JOIN inventory_counts c ON c.organization_id = l.organization_id AND c.id = l.count_id
+         WHERE c.organization_id = $1 AND c.idempotency_key = $2) AS lines`,
+      [organizationId, key],
+    );
+    expect(persisted.rows[0]).toEqual({ counts: "1", lines: "1" });
+  });
+
+  it("serializes concurrent create retries with the same idempotency key", async () => {
+    const key = "count-create-" + crypto.randomUUID();
+    const body = { reason: "Concurrent retry must create exactly one draft", lines: [{ product_id: productId, counted_quantity: "2.000" }] };
+    const [first, second] = await Promise.all([
+      request(root() + "/counts/physical", body, { "Idempotency-Key": key }),
+      request(root() + "/counts/physical", body, { "Idempotency-Key": key }),
+    ]);
+    expect([first.status, second.status].sort()).toEqual([200, 201]);
+    const responses = await Promise.all([first.json(), second.json()]) as Array<{ id: string; replayed?: boolean }>;
+    expect(responses[0]!.id).toBe(responses[1]!.id);
+    expect(responses.filter((response) => response.replayed === true)).toHaveLength(1);
+    const persisted = await client.query<{ counts: string; lines: string; audits: string }>(
+      `SELECT
+        (SELECT count(*)::text FROM inventory_counts WHERE organization_id = $1 AND idempotency_key = $2) AS counts,
+        (SELECT count(*)::text FROM inventory_count_lines l JOIN inventory_counts c ON c.organization_id = l.organization_id AND c.id = l.count_id
+         WHERE c.organization_id = $1 AND c.idempotency_key = $2) AS lines,
+        (SELECT count(*)::text FROM audit_logs a JOIN inventory_counts c ON c.organization_id = $1 AND c.id::text = a.entity_id
+         WHERE c.organization_id = $1 AND c.idempotency_key = $2 AND a.action = 'inventory.count.created') AS audits`,
+      [organizationId, key],
+    );
+    expect(persisted.rows[0]).toEqual({ counts: "1", lines: "1", audits: "1" });
+  });
+
+  it("rolls back the idempotency key when count creation audit persistence fails", async () => {
+    await seedInventoryBalance("2.000");
+    const key = "count-create-" + crypto.randomUUID();
+    await client.query(`CREATE FUNCTION test_fail_inventory_count_created_audit() RETURNS trigger
+      LANGUAGE plpgsql AS $test_fail_inventory_count_created_audit$
+      BEGIN
+        IF NEW.action = 'inventory.count.created' THEN
+          RAISE EXCEPTION 'forced count creation audit failure';
+        END IF;
+        RETURN NEW;
+      END;
+      $test_fail_inventory_count_created_audit$;`);
+    await client.query(`CREATE TRIGGER test_fail_inventory_count_created_audit
+      BEFORE INSERT ON audit_logs
+      FOR EACH ROW EXECUTE FUNCTION test_fail_inventory_count_created_audit()`);
+    const body = { reason: "Audit rollback must release the idempotency key", lines: [{ product_id: productId, counted_quantity: "3.000" }] };
+    let failed: Response | undefined;
+    try {
+      failed = await request(root() + "/counts/physical", body, { "Idempotency-Key": key });
+    } finally {
+      await client.query("DROP TRIGGER IF EXISTS test_fail_inventory_count_created_audit ON audit_logs");
+      await client.query("DROP FUNCTION IF EXISTS test_fail_inventory_count_created_audit()");
+    }
+    expect(failed?.status).toBe(500);
+    const afterFailure = await client.query<{ count: string }>(
+      "SELECT count(*)::text AS count FROM inventory_counts WHERE organization_id = $1 AND idempotency_key = $2",
+      [organizationId, key],
+    );
+    expect(afterFailure.rows[0]).toEqual({ count: "0" });
+
+    const retry = await request(root() + "/counts/physical", body, { "Idempotency-Key": key });
+    expect(retry.status).toBe(201);
+    const persisted = await client.query<{ counts: string; lines: string; audits: string }>(
+      `SELECT
+        (SELECT count(*)::text FROM inventory_counts WHERE organization_id = $1 AND idempotency_key = $2) AS counts,
+        (SELECT count(*)::text FROM inventory_count_lines l JOIN inventory_counts c ON c.organization_id = l.organization_id AND c.id = l.count_id
+         WHERE c.organization_id = $1 AND c.idempotency_key = $2) AS lines,
+        (SELECT count(*)::text FROM audit_logs a JOIN inventory_counts c ON c.organization_id = $1 AND c.id::text = a.entity_id
+         WHERE c.organization_id = $1 AND c.idempotency_key = $2 AND a.action = 'inventory.count.created') AS audits`,
+      [organizationId, key],
+    );
+    expect(persisted.rows[0]).toEqual({ counts: "1", lines: "1", audits: "1" });
+  });
+
+
+
+  it("rejects malformed idempotency keys without creating a count", async () => {
+    const response = await request(root() + "/counts/physical", { reason: "Invalid key must fail closed", lines: [{ product_id: productId, counted_quantity: "1.000" }] }, { "Idempotency-Key": "bad key with spaces" });
+    expect(response.status).toBe(400);
+    expect(await response.json()).toMatchObject({ error: "INVALID_IDEMPOTENCY_KEY" });
+  });
   it("refuses to confirm a draft after its warehouse has been deactivated", async () => {
     const draft = await request(root() + "/counts/physical", {
       reason: "Warehouse lifecycle must be revalidated at confirmation",
@@ -295,7 +503,10 @@ describe.skipIf(!databaseUrl)("warehouse inventory count transactions against Po
       { headers: { Cookie: "microapp_session=" + token } },
     ), { DATABASE_URL: databaseUrl, FRONTEND_ORIGIN: "https://frontend.example" });
     expect(warehouseList.status).toBe(200);
-    expect(await warehouseList.json()).toMatchObject({ warehouses: [{ id: warehouseId, code: "main" }] });
+    const warehouseListBody = await warehouseList.json() as { warehouses: Array<{ id: string; code: string }> };
+    expect(warehouseListBody.warehouses).toEqual(expect.arrayContaining([
+      expect.objectContaining({ id: warehouseId, code: expect.any(String) }),
+    ]));
 
     const countList = await app.fetch(new Request(
       "https://api.example" + root() + "/counts",
@@ -373,7 +584,6 @@ describe.skipIf(!databaseUrl)("warehouse inventory count transactions against Po
       [organizationId, body.id],
     );
     expect(snapshot.rows[0]).toEqual({ expected: "8.250", version: "1" });
-
     await client.query(
       "UPDATE inventory_balances SET on_hand_quantity = 8.500 WHERE organization_id = $1 AND warehouse_id = $2 AND product_id = $3",
       [organizationId, warehouseId, productId],
@@ -382,7 +592,6 @@ describe.skipIf(!databaseUrl)("warehouse inventory count transactions against Po
       "UPDATE inventory_balances SET on_hand_quantity = 8.250 WHERE organization_id = $1 AND warehouse_id = $2 AND product_id = $3",
       [organizationId, warehouseId, productId],
     );
-
     const confirmation = await request(root() + "/counts/" + body.id + "/confirm");
     expect(confirmation.status).toBe(409);
     expect(await confirmation.json()).toMatchObject({
@@ -532,7 +741,10 @@ describe.skipIf(!databaseUrl)("warehouse inventory count transactions against Po
     expect(await unassigned.json()).toMatchObject({ error: "BRANCH_FORBIDDEN" });
 
     await client.query(
-      "INSERT INTO branch_memberships (organization_id, branch_id, user_id, is_active) VALUES ($1, $2, $3, true)",
+      `INSERT INTO branch_memberships (organization_id, branch_id, user_id, is_active)
+       VALUES ($1, $2, $3, true)
+       ON CONFLICT (organization_id, branch_id, user_id)
+       DO UPDATE SET is_active = true`,
       [organizationId, branchId, userId],
     );
     const assigned = await request(root() + "/counts/physical", {
@@ -553,6 +765,129 @@ describe.skipIf(!databaseUrl)("warehouse inventory count transactions against Po
       "UPDATE organization_members SET role = 'owner' WHERE organization_id = $1 AND user_id = $2",
       [organizationId, userId],
     );
+  });
+
+  it("rejects cross-tenant organization and product identifiers without writing inventory", async () => {
+    const foreignTenantRequest = await request(
+      `/api/orgs/${foreignOrganizationId}/branches/${foreignBranchId}/warehouses/${foreignWarehouseId}/counts/physical`,
+      { reason: "Cross-tenant resource IDs must be denied", lines: [{ product_id: foreignProductId, counted_quantity: "1.000" }] },
+    );
+    expect(foreignTenantRequest.status).toBe(401);
+    expect(await foreignTenantRequest.json()).toMatchObject({ error: "UNAUTHENTICATED" });
+
+    const foreignTenantRead = await get(
+      `/api/orgs/${foreignOrganizationId}/branches/${foreignBranchId}/warehouses`,
+    );
+    expect(foreignTenantRead.status).toBe(401);
+    expect(await foreignTenantRead.json()).toMatchObject({ error: "UNAUTHENTICATED" });
+
+    const foreignProductRequest = await request(root() + "/counts/physical", {
+      reason: "A product from another tenant must not be accepted",
+      lines: [{ product_id: foreignProductId, counted_quantity: "1.000" }],
+    });
+    expect(foreignProductRequest.status).toBe(400);
+    expect(await foreignProductRequest.json()).toMatchObject({ error: "INVALID_PRODUCTS" });
+
+    const persisted = await client.query<{ counts: string; lines: string }>(
+      `SELECT
+        (SELECT count(*)::text FROM inventory_counts WHERE organization_id = $1 AND warehouse_id = $2) AS counts,
+        (SELECT count(*)::text FROM inventory_count_lines l
+         JOIN inventory_counts c ON c.organization_id = l.organization_id AND c.id = l.count_id
+         WHERE c.organization_id = $1 AND c.warehouse_id = $2) AS lines`,
+      [organizationId, warehouseId],
+    );
+    expect(persisted.rows[0]).toEqual({ counts: "0", lines: "0" });
+  });
+
+  it("denies inventory members access to an unassigned branch and rejects a warehouse from another branch", async () => {
+    await client.query(
+      "UPDATE organization_members SET role = 'inventory' WHERE organization_id = $1 AND user_id = $2",
+      [organizationId, userId],
+    );
+    await client.query(
+      `INSERT INTO branch_memberships (organization_id, branch_id, user_id, is_active)
+       VALUES ($1, $2, $3, true)
+       ON CONFLICT (organization_id, branch_id, user_id)
+       DO UPDATE SET is_active = true`,
+      [organizationId, branchId, userId],
+    );
+
+    const otherBranchCreate = await request(
+      `/api/orgs/${organizationId}/branches/${unassignedBranchId}/warehouses/${unassignedWarehouseId}/counts/physical`,
+      { reason: "Inventory member cannot write to an unassigned branch", lines: [{ product_id: productId, counted_quantity: "1.000" }] },
+    );
+    expect(otherBranchCreate.status).toBe(403);
+    expect(await otherBranchCreate.json()).toMatchObject({ error: "BRANCH_FORBIDDEN" });
+
+    const otherBranchRead = await get(
+      `/api/orgs/${organizationId}/branches/${unassignedBranchId}/warehouses`,
+    );
+    expect(otherBranchRead.status).toBe(403);
+    expect(await otherBranchRead.json()).toMatchObject({ error: "BRANCH_FORBIDDEN" });
+
+    const wrongWarehouseScope = await request(
+      `/api/orgs/${organizationId}/branches/${branchId}/warehouses/${unassignedWarehouseId}/counts/physical`,
+      { reason: "Warehouse must belong to the requested branch", lines: [{ product_id: productId, counted_quantity: "1.000" }] },
+    );
+    expect(wrongWarehouseScope.status).toBe(404);
+    expect(await wrongWarehouseScope.json()).toMatchObject({ error: "WAREHOUSE_NOT_FOUND" });
+
+    const persisted = await client.query<{ counts: string }>(
+      "SELECT count(*)::text AS counts FROM inventory_counts WHERE organization_id = $1 AND (warehouse_id = $2 OR warehouse_id = $3)",
+      [organizationId, warehouseId, unassignedWarehouseId],
+    );
+    expect(persisted.rows[0]).toEqual({ counts: "0" });
+    await client.query("DELETE FROM branch_memberships WHERE organization_id = $1 AND branch_id = $2 AND user_id = $3", [organizationId, branchId, userId]);
+    await client.query("UPDATE organization_members SET role = 'owner' WHERE organization_id = $1 AND user_id = $2", [organizationId, userId]);
+  });
+
+  it("rejects confirmation when the count ID belongs to another branch or tenant", async () => {
+    const branchCount = await client.query<{ id: string }>(
+      `INSERT INTO inventory_counts
+        (organization_id, branch_id, warehouse_id, count_type, reason, created_by)
+       VALUES ($1, $2, $3, 'physical', 'Cross-branch confirmation ID test', $4)
+       RETURNING id`,
+      [organizationId, unassignedBranchId, unassignedWarehouseId, userId],
+    );
+    const branchCountId = branchCount.rows[0]!.id;
+
+    const branchAttempt = await request(root() + "/counts/" + branchCountId + "/confirm");
+    expect(branchAttempt.status).toBe(404);
+    expect(await branchAttempt.json()).toMatchObject({ error: "COUNT_NOT_FOUND" });
+
+    // Give the same test identity a valid membership in the foreign tenant so
+    // the fixture is a real foreign-tenant count, not merely an invalid row.
+    await client.query(
+      "INSERT INTO organization_members (organization_id, user_id, role) VALUES ($1, $2, 'owner')",
+      [foreignOrganizationId, userId],
+    );
+    const tenantCount = await client.query<{ id: string }>(
+      `INSERT INTO inventory_counts
+        (organization_id, branch_id, warehouse_id, count_type, reason, created_by)
+       VALUES ($1, $2, $3, 'physical', 'Cross-tenant confirmation ID test', $4)
+       RETURNING id`,
+      [foreignOrganizationId, foreignBranchId, foreignWarehouseId, userId],
+    );
+    const tenantCountId = tenantCount.rows[0]!.id;
+
+    const tenantAttempt = await request(root() + "/counts/" + tenantCountId + "/confirm");
+    expect(tenantAttempt.status).toBe(404);
+    expect(await tenantAttempt.json()).toMatchObject({ error: "COUNT_NOT_FOUND" });
+
+    const persisted = await client.query<{ branch_status: string; tenant_status: string; branch_movements: string; tenant_movements: string }>(
+      `SELECT
+        (SELECT status FROM inventory_counts WHERE organization_id = $1 AND id = $2) AS branch_status,
+        (SELECT status FROM inventory_counts WHERE organization_id = $3 AND id = $4) AS tenant_status,
+        (SELECT count(*)::text FROM warehouse_inventory_movements WHERE organization_id = $1 AND count_id = $2) AS branch_movements,
+        (SELECT count(*)::text FROM warehouse_inventory_movements WHERE organization_id = $3 AND count_id = $4) AS tenant_movements`,
+      [organizationId, branchCountId, foreignOrganizationId, tenantCountId],
+    );
+    expect(persisted.rows[0]).toEqual({
+      branch_status: "draft",
+      tenant_status: "draft",
+      branch_movements: "0",
+      tenant_movements: "0",
+    });
   });
 
   it("rejects a cashier role before creating an inventory count", async () => {

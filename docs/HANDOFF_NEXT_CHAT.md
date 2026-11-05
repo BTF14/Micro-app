@@ -1,6 +1,6 @@
-## Corrección posterior de autorización — PR #221
+## PR #221 — estado final de validación
 
-PR #221 OPEN/DRAFT/no merge, apilada sobre #220. HEAD `18dfc33525c792802c296469ee6140d3b5f649ff`; base SHA #220 `40cf9e2cff5e88a5feec7b8168c8f436cb3f0601`. En `catalog.ts`, `buildCatalogQuery` ya no replica roles para decidir la proyección de `cost_usd`: consulta `authorizeCommercialOperation(role, "catalog.read_costs")`. Sin ampliación de permisos. CI exacto al último snapshot: Secret history, Trivy, migration validation y Semgrep SUCCESS; CI y Playwright IN_PROGRESS. Pages Preview success; esperar Worker Preview y checks restantes. Orden #218 → #220 → #221.
+HEAD `18dfc33525c792802c296469ee6140d3b5f649ff`, base #220 HEAD `40cf9e2cff5e88a5feec7b8168c8f436cb3f0601`, OPEN/DRAFT/no merge. Seis workflows SUCCESS (CI, migration validation, Playwright, Semgrep, Trivy, Secret history), con jobs/steps del CI revisados. Cloudflare Pages y Workers Preview success; Worker Preview `https://62c0ecb8-micro-app-api.btfcasheb.workers.dev`, no producción. La corrección usa `authorizeCommercialOperation(role, "catalog.read_costs")` para la proyección de costes; permisos sin cambios. Revisión secuencial pendiente #218 → #220 → #221.
 
 ---
 

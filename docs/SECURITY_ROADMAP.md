@@ -1,6 +1,6 @@
-## Auditoría de duplicación de política — PR #221
+## PR #221 — validación final — 2026-11-05 11:05 UTC
 
-#221 OPEN/DRAFT, apilada sobre #220; HEAD `18dfc33525c792802c296469ee6140d3b5f649ff`. Corrige duplicación en `catalog.ts`: proyección de `cost_usd` ahora deriva de `authorizeCommercialOperation(role, "catalog.read_costs")`, en vez de una lista local de roles. Sin cambios de permisos. Cuatro workflows SUCCESS (Secret history, Trivy, migration validation, Semgrep); CI y Playwright siguen IN_PROGRESS en último snapshot. Pages Preview success; Worker Preview pendiente. No marcar completa.
+HEAD `18dfc33525c792802c296469ee6140d3b5f649ff`, base #220. Los seis workflows terminaron SUCCESS; CI jobs/steps comprobados. Cloudflare Pages y Workers Preview exitosos (Worker Preview `https://62c0ecb8-micro-app-api.btfcasheb.workers.dev`). La política de lectura de costes ya no se duplica localmente en catálogo: se deriva de `catalog.read_costs` en authorization.ts. No se ampliaron roles. PR OPEN/DRAFT/no merge; Preview no certifica producción.
 
 ---
 

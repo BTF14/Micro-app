@@ -7,7 +7,7 @@
 - #204 HEAD `07a5a41c0f5f5c36fb89a5c5950796493d56eb20`, base #200, 8 ahead/0 behind, 6/6 success; Draft.
 - #205 HEAD `bb4a60454061ce09fef07100e75010f3abc5b883`, base #204, 25 ahead/0 behind, 7/7 success; Draft. Se conserva idempotencia y protección monotónica del balance.
 - #194 HEAD `7b3ad50e5780416868a1a428b856d12c4ea1e2ea`, 13 ahead/2 behind main, 11/11 success; Draft. Su migración de roles sigue siendo 0005 y colisiona con inventario 0005.
-- #202 HEAD `31ef601f744027f1a0fe95eac549d7fe6f6f994c`, 76 ahead/0 behind, 11/11 success; Draft.
+- #202 está abierta/Draft y recibe esta actualización de continuidad. El HEAD `31ef601f...`/76 ahead registrado antes de este bloque ya fue superado por los commits documentales de esta misma PR; consultar GitHub en vivo para el SHA final y no reutilizar el anterior.
 - #196 HEAD vivo `c332e740aff279fb8b22a8879581d4b8a3c7de21`, 128 ahead/2 behind main, 11/11 success; Draft y no mergeable. Issue #53 ya no debe citar el SHA histórico 66ed.
 - #193 HEAD `ac57ab4f3415f82279b8a49c0befe09f8e3aec68`, 5 ahead/2 behind main, 10/10 success; abierta, no Draft.
 - #207 nueva PR Draft: `https://github.com/BTF14/Micro-app/pull/207`; rama `feat/audit-logs-append-only-20261105`; HEAD `26c5270664b82aebc6a12fafe6973de8544bc6f7`; base #200 HEAD `5fbc17a48b65076cf5609a7a054bbd125a3a5d1e`; 10 ahead/0 behind; 7/7 workflow runs y 9/9 check runs success. No reviews/threads/status contexts. No fusionar.

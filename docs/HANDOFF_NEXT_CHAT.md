@@ -1709,3 +1709,8 @@ Este bloque es más reciente que los snapshots históricos anteriores; si contra
 **Forma de trabajo:** actualizar docs en el mismo ciclo de cada cambio; toda afirmación debe vincularse al SHA/ejecución exacta; conservar snapshots históricos marcados como históricos; no declarar PR validada por un solo workflow. No pedir al usuario información ya disponible en repo/documentos.
 
 **Seguridad:** no Neon producción, no despliegue productivo, no cambios Cloudflare/secretos/DNS/billing, no force-push, no main directo; respetar PR #196/#193/#190.
+
+
+### Corrección del estado stale-count — 2026-11-05 UTC
+
+No reabrir como defecto no resuelto el caso básico de conteo fuera de orden: #200 ya captura `expected_on_hand_quantity` en la creación y devuelve 409 `COUNT_STALE` si el saldo cambió antes de confirmar. Hay prueba de integración que confirma primero el conteo más nuevo y rechaza el antiguo sin ledger movement. La revisión pendiente es más estrecha: evaluar ABA/versionado monotónico y exigir que todos los escritores futuros respeten el mutex del almacén. La migración 0005 sigue siendo un riesgo separado de atomicidad.

@@ -112,17 +112,19 @@ Resolved in migrations 0011/0012 and the PR #224 PostgreSQL 18 harness:
 
 Still required:
 
-- Complete the full unit/integration/browser CI for PR #224.
-- Add a separate API handler integration suite that connects as `microapp_runtime`. Existing handler integration tests are a separate layer and must not be described as runtime-role verified unless their connection principal is the actual runtime LOGIN.
-- Inspect the effective production/preproduction `DATABASE_URL` principal, role membership, ownership and grants through an approved controlled operation. CI roles are synthetic and do not prove the deployed principal.
+- Project-owner review of the stacked Draft PRs and grant matrix.
+- Extend actual-runtime handler coverage to any future write paths or handlers not included in the selected four-suite runtime integration set. The remaining broad integration suites continue to run as CI administrator and are not claimed as runtime-role verified.
+- Inspect the effective preproduction/production `DATABASE_URL` principal, role membership, ownership and grants through an approved controlled operation. CI roles are synthetic and do not prove the deployed principal.
 - Keep role creation, credential provisioning, DATABASE_URL rotation, migration rollout and grant application behind separate preproduction/production gates. No production change is authorized by this document.
 
 ## Evidence and residual risk
 
 Historical baseline verified at #221 HEAD `18dfc33525c792802c296469ee6140d3b5f649ff`:
 - PR #223 current HEAD `dc47c3ecc5f47f3f2dc49e5366d85d7f43b0e990` has all 7 observed check-runs completed successfully, including migration validation and Worker/Pages previews.
-- PR #224 current implementation HEAD at the time of this document update is the direct-runtime role harness branch; migration validation, direct runtime LOGIN SQL smoke, security scans and Cloudflare Pages preview are under CI verification. Keep the PR Draft until all checks and API handler integration gates pass.
-- PR #224's migration validation applies migrations 0001–0012 as the non-superuser migrator, proves application object ownership and default privileges, and runs the actual runtime smoke with a separate login.
+- PR #224 HEAD `70d75a79ce2e1483d23e679a8de51cc3a5f8b3f6`: 13/13 observed check-runs completed successfully. This includes build/typecheck, unit tests, PostgreSQL migration validation, all existing integration suites, 62/62 tests across four API handler suites using the actual `microapp_runtime` LOGIN, Chromium authentication smoke, Semgrep, Trivy/security, secret history, backup/restore, Cloudflare Pages Preview and Workers Build Preview.
+- The PR #224 migration workflow applies migrations 0001–0012 as non-superuser `microapp_migrator`, proves application object ownership and future default privileges, and exercises both positive SQL operations and privilege denials through an actual separate `microapp_runtime` LOGIN.
+- The selected runtime HTTP integration suites are `auth.integration.test.ts`, `catalog-write.integration.test.ts`, `catalog-update.integration.test.ts` and `inventory-counts.integration.test.ts`. Fixture setup/teardown uses the disposable CI administrator; app requests and lock clients use the runtime LOGIN.
+- PR #224 remains OPEN/DRAFT and has no formal review yet. The successful Workers/Pages results are previews, not production deployment.
 
 - Source files inspected: `database.ts`, `auth.ts`, `google-auth.ts`, `auth-rate-limit.ts`, `tenant-context.ts`, `branch-context.ts`, `cashier-open-shift.ts`, `catalog.ts`, `catalog-write.ts`, `inventory-counts.ts`, `inventory-locks.ts`, `authorization.ts`.
 - Migrations inspected: 0001–0012, with detailed review of 0001, 0004, 0005, 0007, 0008, 0009, 0010, 0011 and 0012 plus their relevant assertions.

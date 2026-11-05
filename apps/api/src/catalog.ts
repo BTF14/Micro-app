@@ -2,7 +2,7 @@ import { getCookie } from "hono/cookie";
 import type { Hono } from "hono";
 import type { Bindings } from "./bindings";
 import { withDatabaseClient } from "./database";
-import { authorizeTenantOperation } from "./authorization";
+import { authorizeCommercialOperation, authorizeTenantOperation } from "./authorization";
 import type { OrganizationRole } from "./tenant-context";
 
 const SESSION_COOKIE = "microapp_session";
@@ -37,10 +37,8 @@ export function buildCatalogQuery(
   cursor: string | undefined,
   pageSize: number,
 ): CatalogQuery {
-  const canReadCost =
-    role === "owner" ||
-    role === "admin" ||
-    role === "inventory";
+  // Keep the SQL projection tied to the same central policy used by route authorization.
+  const canReadCost = authorizeCommercialOperation(role, "catalog.read_costs");
 
   const columns =
     "id, is_active, sku, barcode, name, description, unit, price_usd::text AS price_usd" +

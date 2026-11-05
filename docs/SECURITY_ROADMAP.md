@@ -1,11 +1,16 @@
-## Seguridad — actualización 2026-11-05 10:09 UTC
+## Seguridad — actualización 2026-11-05 10:44 UTC
 
-- #210: migración 0009 balance↔ledger e identidad inmutable; 8/8 workflows success en PostgreSQL 18 efímero. Draft/no merge.
-- #213: rate limiting runtime implementado en rama Draft independiente desde main; 12/12 check-runs y 10/10 workflows success. Google OAuth start 10/10m, bootstrap 5/h, callback 20/10m por CF-Connecting-IP. Contadores atómicos PostgreSQL, HMAC-SHA-256 con GOOGLE_CLIENT_SECRET, retención best-effort, fail-closed 503 y 429/Retry-After. Sin nueva migración.
-- #213 no cubre /auth/me ni /auth/logout; no se verificó header CF-Connecting-IP ni grants del principal real. El código no está en main hasta merge.
-- authorization.ts sigue sin conexión global; los handlers conservan checks locales. Cashier carece de endpoint de lectura de balances/ledger aunque la matriz lo permite.
-- Principal DATABASE_URL/ownership/grants NO VERIFICADO; RPO/RTO, alerta externa y coste USD 0 pendientes. Issue #53 abierta/P0. Producción NO LISTA.
+- **#218 autorización:** HEAD `2115d66cca18ee094ee3b3f8148ac6a61df040da`, base #215, 6/6 workflows success. Centraliza los permisos de handlers existentes; no es middleware global ni implementa todos los writers.
+- **#220 body hardening:** HEAD `983a76ea2aa5f4753999d098bb71b341407c89c7`, base #218. Body bootstrap limitado a 2.048 bytes en streaming, cancelación temprana, UTF-8 fatal y pruebas. Security/Secret history success; CI, migration validation, Playwright y Semgrep pendientes/in progress.
+- **#213 vs #214:** implementaciones alternativas de rate limiting; #213 desde main usa GOOGLE_CLIENT_SECRET y otra política; #214/#215 usan AUTH_RATE_LIMIT_HMAC_KEY dedicado y handoff seguro. No combinar sin reconciliar.
+- **Sesiones:** 7 días absolutos; last_seen_at/idle timeout no implementados. No cambiar sin validar impacto POS.
+- **Cashier:** no hay endpoint de lectura de balances/ledger aunque la matriz permite lectura de existencias/movimientos de su sucursal.
+- **Runtime:** AUTH_RATE_LIMIT_HMAC_KEY productivo, CF-Connecting-IP trust, runtime DB grants/ownership y migración 0010 no verificados.
+- Issue #53 OPEN/P0. RPO/RTO, alertas externas y coste USD 0 pendientes. Producción NO LISTA.
 
+Los workflows de PR apiladas sobre base distinta de main no disparan el filtro actual de pull_request (solo main). Para validar los SHA exactos se usan ramas `feat/**`, que sí disparan push workflows. Considerar ajuste permanente del filtro por una PR separada.
+
+---
 ---
 
 ## Reconciliación de seguridad — 2026-11-05 09:43 UTC

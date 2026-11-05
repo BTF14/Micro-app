@@ -63,7 +63,7 @@ const PRIVACY_SECTIONS: { heading: string; body: string }[] = [
 const modules = [
   { number: "01", title: "Caja y ventas", description: "Flujo de venta, cobro y comprobante.", status: "Pendiente de implementación" },
   { number: "02", title: "Inventario", description: "Existencias, movimientos y alertas de stock.", status: "Pendiente de implementación" },
-  { number: "03", title: "Productos", description: "Catálogo, costos y precios en USD.", status: "Pendiente de implementación" },
+  { number: "03", title: "Productos", description: "Catálogo y precios exactos en USD y VES.", status: "Disponible · solo lectura" },
   { number: "04", title: "Tasa BCV", description: "Conversión a VES con fuente y fecha verificables.", status: "Implementación en validación" },
 ];
 

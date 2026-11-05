@@ -135,3 +135,8 @@ Las decisiones D1–D8 de identidad están aprobadas y Google OAuth + allowlist 
 - #205 añade idempotencia en HEAD `c1f09d09dd08b9600e7a6c0ff8ccbb5be4e9c990`, pero está 9 ahead/1 behind #204 y no tiene validación CI completa acreditada.
 - Idempotencia de creación no resuelve el riesgo stale-count: el servicio debe rechazar o reconciliar snapshots antiguos al confirmar un conteo físico.
 - No declarar endpoints de inventario disponibles en main ni conectados a Neon producción.
+
+
+## Precisión del contrato stale-count — 2026-11-05 UTC
+
+La API de #200 ya persiste el saldo esperado al crear un conteo físico y rechaza con HTTP 409 `COUNT_STALE` cuando el saldo actual ha cambiado al confirmar. Hay prueba de integración de dos conteos confirmados fuera de orden. No presentar este caso básico como pendiente de implementación. Antes de añadir otros escritores, evaluar versión monotónica/ABA y hacer cumplir el lock contract de almacén.

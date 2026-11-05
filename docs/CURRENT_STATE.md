@@ -2015,3 +2015,11 @@ Actúa como ingeniero principal responsable de continuar BTF14/Micro-app. Antes 
 - PR #202 docs actual HEAD `2ef0d0820b8df9e5667ac1c478b7a51d2816dfec`: 12/13 checks success, Workers Build in_progress, 0 fallos. Esperar último check antes de declarar documentación validada.
 - El gate real de DATABASE_URL permanece **NO VERIFICADO**: no se leyó el secreto ni se accedió a Neon. La tarea ODD se considera cerrada para garantías de código/CI efímero, no para la garantía runtime productiva.
 - Comentario en #207 ID 6651990379. #207/#208 siguen Draft y sin merge.
+
+
+## Precisión de alcance — authorization helpers y handlers existentes — 2026-11-05 UTC
+
+- #207 HEAD actual `3e4490695128e7638d5e71ee822dccf134fc2bce`: 9/9 check-runs success, incluyendo verify, validate-odd-docs y postgres-migration. #208 HEAD `76a246ea141eedbee877608e7c0f50d6a07f3019`: 7/7 success. La secuencia 0001–0007 está validada en PostgreSQL efímero.
+- Precisión de #208: `authorization.ts` y sus tests añaden utilidades de política; #208 no modifica los handlers de catálogo/inventario para conectarlos a ellas. Los handlers existentes conservan checks explícitos por ruta. No describir esta utilidad como middleware central aplicado globalmente. Se dejó comentario en #208 ID 6652013382.
+- Issue #53 sigue requiriendo auditoría individual de cada handler y pruebas de denegación tenant/branch/role; los writers comerciales futuros deben adoptar el contrato de autorización y lock en la misma transacción o demostrar equivalente.
+- Runtime principal DATABASE_URL y ownership/grants reales permanecen NO VERIFICADOS. #207/#208 siguen Draft y sin merge.

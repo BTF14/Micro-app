@@ -234,10 +234,15 @@ describe.skipIf(!databaseUrl)("warehouse inventory count transactions against Po
       "DELETE FROM inventory_counts WHERE organization_id = $1 AND id = $2",
       [organizationId, partialOpeningBody.id],
     );
-    await client.query(
-      "DELETE FROM inventory_balances WHERE organization_id = $1 AND warehouse_id = $2 AND product_id = $3",
-      [organizationId, warehouseId, omittedProduct.rows[0]!.id],
-    );
+    await client.query("ALTER TABLE inventory_balances DISABLE TRIGGER USER");
+    try {
+      await client.query(
+        "DELETE FROM inventory_balances WHERE organization_id = $1 AND warehouse_id = $2 AND product_id = $3",
+        [organizationId, warehouseId, omittedProduct.rows[0]!.id],
+      );
+    } finally {
+      await client.query("ALTER TABLE inventory_balances ENABLE TRIGGER USER");
+    }
     await client.query("DELETE FROM products WHERE organization_id = $1 AND id = $2", [organizationId, omittedProduct.rows[0]!.id]);
 
     const opening = await request(root() + "/counts/opening", {

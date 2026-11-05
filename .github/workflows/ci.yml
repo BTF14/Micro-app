@@ -128,4 +128,9 @@ jobs:
         run: pnpm --filter @micro-app/api exec vitest run src/catalog-update.integration.test.ts
       - name: PostgreSQL warehouse inventory count integration tests
         run: pnpm --filter @micro-app/api exec vitest run src/inventory-counts.integration.test.ts
+      - name: Runtime-role API handler integration tests
+        env:
+          DATABASE_URL: postgres://microapp_runtime:runtime-test-only@localhost:5432/microapp_test
+          DATABASE_URL_ADMIN: postgres://microapp:microapp-test-only@localhost:5432/microapp_test
+        run: pnpm --filter @micro-app/api exec vitest run src/auth.integration.test.ts src/catalog-write.integration.test.ts src/catalog-update.integration.test.ts src/inventory-counts.integration.test.ts
 

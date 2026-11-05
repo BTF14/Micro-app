@@ -1809,3 +1809,17 @@ Antes de pedir cualquier Build ID, deployment ID, SHA, URL, captura o dato al pr
 - Mantener todas las PR anteriores abiertas/Draft hasta resolver revisión funcional, migraciones y gates. No fusionar ni desplegar.
 - Próximo trabajo técnico: completar auditoría estática de #207 y de la confirmación de conteos con IDs ajenos; verificar los contratos de locks y consistencia ledger/balance; documentar hallazgos concretos en las PR/issue existentes, sin abrir PR duplicadas.
 - No se modificó código, migraciones, main, Neon, Cloudflare, secretos, DNS, billing ni datos reales en esta revalidación. Producción permanece **NO LISTA**.
+
+
+## Checkpoint incremental — 2026-11-05 UTC — prueba de IDs de confirmación cerrada
+
+- PR #205 avanzó en su rama existente a HEAD `c0bcbbe48aa8783b85ee7787dd1ae8a6d0dfdafc`, 26 ahead / 0 behind de #204, diff propio de 3 archivos. Sigue abierta/Draft.
+- Se añadió una prueba PostgreSQL HTTP que intenta confirmar un count ID perteneciente a otra sucursal y otro perteneciente a otro tenant, usando el scope de la ruta legítima del tenant actual. Ambos deben devolver 404 `COUNT_NOT_FOUND`; las filas permanecen `draft` y no aparecen movimientos de ledger.
+- Primer CI del commit de prueba: los 21 tests pasaron, pero falló el teardown porque el fixture del tenant ajeno conservaba una membresía al intentar borrar el usuario. Se corrigió el orden de limpieza para borrar primero la membresía/organización extranjera y luego el usuario. No fue un fallo del handler ni de la nueva aserción.
+- Validación final del HEAD `c0bcbbe48aa8783b85ee7787dd1ae8a6d0dfdafc`: **9/9 check-runs success**, 0 failure, 0 pending; incluye CI `verify`, PostgreSQL migration, Chromium smoke, SAST/Trivy, secret history, backup restore y checks Cloudflare. El log exacto de `verify` confirma **21/21 pruebas** en `inventory-counts.integration.test.ts`.
+- No se fusionó #205. No se alteró runtime productivo, migraciones remotas, Neon, Cloudflare settings/secrets/DNS/billing ni datos reales. Los checks de Workers/Pages son evidencia de build/check de la integración; no prueban producción ni tráfico.
+- La última actualización de esta rama documental (#202) antes de este checkpoint fue HEAD `5057fe007b02c98b5be7ecd73aca4f943a0f2e7a`, con 13/13 check-runs success. Los commits de este checkpoint avanzarán #202 y requieren verificación propia del nuevo SHA.
+
+### Siguiente paso
+
+Continuar la revisión de #207 y los gates P0 de issue #53; resolver la secuencia de migraciones #194/#200 antes de cualquier integración. No pedir IDs, capturas ni acciones manuales ya documentadas. Mantener todas las PR en Draft hasta review y gates completos.

@@ -1,3 +1,14 @@
+## Continuidad actualizada — 2026-11-05 10:09 UTC
+
+- PR #210 HEAD `ab5d2168a11a825a9ed6b03341b3091c13f3c06e`: 8/8 workflow runs success; migraciones 0001–0009 validadas en PostgreSQL 18 desechable. Draft/no merge.
+- PR #213 (rama independiente desde main) HEAD `0c1e5e40eb259cc50d0a3f602e96e07bd88fac32`: 12/12 check-runs y 10/10 workflow runs success, incluidos CI, auth/rate-limit integration tests, PostgreSQL, TypeScript, Security, Semgrep, Playwright, Pages y Workers Builds. Draft/no merge.
+- PR #202 docs HEAD `de617d3ccc616c7056ca10af1b42e959107c1ca5`: 13/13 check-runs y 11/11 workflow runs success. Draft/no merge.
+- #213 usa la tabla auth_rate_limits existente, sin migración nueva; HMAC-SHA-256 con GOOGLE_CLIENT_SECRET por entorno, buckets por CF-Connecting-IP: OAuth start 10/10m, bootstrap 5/h, callback 20/10m. Fail-closed 503, 429/Retry-After, cleanup best-effort. No rate-limita /auth/me ni /auth/logout y aún no está en main.
+- Issue #53 sigue abierta/P0. authorization.ts no está conectado globalmente; Cashier aún no tiene endpoint de balances/ledger; principal DATABASE_URL/ownership/grants no verificado. Producción NO LISTA.
+- No se tocaron main, Neon, secretos, datos reales, Cloudflare settings, DNS, billing ni producción.
+
+---
+
 ## Corrección de estado — 2026-11-05 09:43 UTC
 
 PR #210 HEAD `ab5d2168a11a825a9ed6b03341b3091c13f3c06e` terminó **8/8 workflow runs success**, incluidos Playwright E2E y Security scan. PR #202 docs HEAD `38c91f975376161be97e49a3799730c3c05ecdb9` terminó **11/11 workflow runs success**. Esta corrección supersede los estados pending del bloque inferior.

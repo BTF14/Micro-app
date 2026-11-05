@@ -1,3 +1,14 @@
+## Handoff operativo — actualización 2026-11-05 10:09 UTC
+
+Retomar sin repetir validaciones ya hechas:
+- PR #210 HEAD `ab5d2168a11a825a9ed6b03341b3091c13f3c06e`: 8/8 workflow runs success; PostgreSQL 18 aplicó 0001–0009, incluyó rollback y assertions balance↔ledger. Draft/no merge.
+- PR #213 HEAD `0c1e5e40eb259cc50d0a3f602e96e07bd88fac32`: 12/12 check-runs y 10/10 workflow runs success. OAuth start 10/10m, bootstrap 5/h, callback 20/10m; HMAC-SHA-256 con GOOGLE_CLIENT_SECRET, clave por CF-Connecting-IP, 429/Retry-After, fail-closed 503. Usa DDL 0001; no nueva migración. Draft/no merge, independiente de #200–#210.
+- PR #202 docs HEAD `de617d3ccc616c7056ca10af1b42e959107c1ca5`: 13/13 check-runs y 11/11 workflows success. Draft/no merge.
+- #213 no cubre /auth/me ni /auth/logout; tampoco verifica header/grants en Worker productivo.
+- Próximo: auditar todos los handlers por tenant/branch/role; integrar authorization helpers o alinear checks locales; implementar lectura balances/ledger para Cashier conforme a matriz; valorar rate-limit de sesiones con pruebas/telemetría.
+- Runtime DATABASE_URL/ownership/grants sigue NO VERIFICADO. RPO/RTO, alerta externa y coste total USD 0 pendientes. Issue #53 abierta/P0. Producción NO LISTA.
+- Sin Neon, secretos, datos reales, Cloudflare settings, DNS, billing, main ni producción.
+
 ## Corrección de continuidad — 2026-11-05 09:43 UTC
 
 PR #210 HEAD `ab5d2168a11a825a9ed6b03341b3091c13f3c06e`: 8/8 workflow runs success, incluidos Playwright E2E y Security scan. PR #202 HEAD `38c91f975376161be97e49a3799730c3c05ecdb9`: 11/11 workflow runs success. No repetir la espera de esos workflows.

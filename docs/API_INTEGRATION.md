@@ -1,3 +1,13 @@
+## Estado API vivo — actualización 2026-11-05 10:09 UTC
+
+- PR #213 HEAD `0c1e5e40eb259cc50d0a3f602e96e07bd88fac32` (12/12 check-runs, 10/10 workflows success) añade límites runtime a GET /auth/google (10/10m), POST /auth/google bootstrap (5/h) y GET /auth/google/callback (20/10m). HMAC-SHA-256 con GOOGLE_CLIENT_SECRET, CF-Connecting-IP, counters atómicos, 429/Retry-After, fail-closed 503. Sin migración nueva; solo rama Draft, no main.
+- /auth/me y /auth/logout no se limitan en #213. No se verificaron header ni grants reales de Worker.
+- PR #210 HEAD `ab5d2168a11a825a9ed6b03341b3091c13f3c06e`: 8/8 workflows success; 0009 acopla balance↔ledger en la misma transacción. 0005–0009 siguen solo en la pila Draft, no en main/Neon.
+- authorization.ts contiene helpers, pero no es middleware global; handlers mantienen checks locales. Cashier no tiene endpoint de lectura de balances/ledger aunque la matriz aprobada lo permite.
+- Issue #53 sigue abierta/P0. Principal DATABASE_URL real/ownership/grants no verificado. Producción NO LISTA.
+
+---
+
 ## Estado API vivo — actualización 2026-11-05 09:43 UTC
 
 - PR #210 HEAD `ab5d2168a11a825a9ed6b03341b3091c13f3c06e`: 8/8 workflow runs success; 0009 acopla balance↔ledger en la misma transacción. 0005–0009 siguen solo en la pila Draft, no en main/Neon.

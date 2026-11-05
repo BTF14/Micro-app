@@ -1,3 +1,14 @@
+## Prioridad operativa — actualización 2026-11-05 10:09 UTC
+
+1. #210 (inventario balance↔ledger) validada 8/8 workflows; #213 (OAuth rate limiting) validada 12/12 check-runs y 10/10 workflows. Ambas Draft/no merge; #213 es rama independiente desde main.
+2. Revisar semánticamente las PR #200→#210 y #213 antes de integración; no confundir previews con despliegue productivo.
+3. Completar auditoría por handler tenant/branch/role; authorization.ts no es middleware global.
+4. Implementar lectura de existencias/movimientos para Cashier según la matriz aprobada, con branch scope y tests.
+5. Decidir si /auth/me y /auth/logout requieren límites adicionales; #213 cubre Google OAuth start/bootstrap/callback.
+6. No añadir writers de ventas/recepciones/reservas/devoluciones/transferencias sin locks, pairing ledger, idempotencia, rollback y pruebas concurrentes.
+7. Principal PostgreSQL real/ownership/grants no verificado; no leer secretos ni acceder a Neon.
+8. RPO/RTO, alerta externa y coste total USD 0 siguen como gates. Producción NO LISTA.
+
 ## Prioridad operativa vigente — 2026-11-05 09:43 UTC
 
 1. PR #210 HEAD `ab5d2168a11a825a9ed6b03341b3091c13f3c06e` terminó 8/8 workflow runs success. La pila #200→#210 sigue Draft/no merge; revisar diff completo antes de cualquier integración.

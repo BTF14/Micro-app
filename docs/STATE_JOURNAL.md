@@ -1834,3 +1834,12 @@ Mantener #207 en Draft. Revisar independientemente el diff; resolver la colisió
 - La auditoría de módulos de producción confirmó que `auth_rate_limits` no tiene callers; `authorization.ts` no se consume desde los handlers; Cashier no tiene endpoint de balances/ledger pese a la matriz aprobada.
 - No se fusionó ninguna PR ni se tocó main, Neon, secretos, datos reales, Cloudflare productivo, DNS o billing. Producción NO LISTA.
 
+## 2026-11-05 10:09 UTC — rate limiting OAuth y estado final de CI
+
+- PR #213 (branch independiente desde main) HEAD `0c1e5e40eb259cc50d0a3f602e96e07bd88fac32`: 12/12 check-runs y 10/10 workflows success. Añade HMAC-SHA-256 keyed por GOOGLE_CLIENT_SECRET, contadores PostgreSQL atómicos por CF-Connecting-IP para OAuth start 10/10m, bootstrap 5/h y callback 20/10m, 429/Retry-After y fail-closed 503. Sin nueva migración.
+- La primera ejecución detectó un fixture bootstrap callback sin CF-Connecting-IP; corregido en el HEAD validado. Tests unitarios e integración PostgreSQL, concurrencia, reset de ventana, bootstrap y callback pasan.
+- La poda de filas antiguas es best-effort y no afecta la decisión del contador; los valores raw IP/key no se almacenan. La rotación del Google client secret reinicia los buckets.
+- /auth/me y /auth/logout no están rate-limited en esta PR; el header CF-Connecting-IP y grants reales de DATABASE_URL siguen sin verificación productiva.
+- PR #210 HEAD `ab5d2168a11a825a9ed6b03341b3091c13f3c06e`: 8/8 workflows success. PR #202 docs HEAD `de617d3ccc616c7056ca10af1b42e959107c1ca5`: 13/13 check-runs y 11/11 workflows success.
+- Issue #53 sigue abierta/P0; authorization helpers no conectados globalmente, Cashier sin lectura de balances/ledger, principal DB real no verificado y backup RPO/RTO/alerta/coste USD 0 pendientes. No se tocó main, Neon, secretos ni producción.
+

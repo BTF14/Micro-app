@@ -1,3 +1,13 @@
+## Seguridad — actualización 2026-11-05 10:09 UTC
+
+- #210: migración 0009 balance↔ledger e identidad inmutable; 8/8 workflows success en PostgreSQL 18 efímero. Draft/no merge.
+- #213: rate limiting runtime implementado en rama Draft independiente desde main; 12/12 check-runs y 10/10 workflows success. Google OAuth start 10/10m, bootstrap 5/h, callback 20/10m por CF-Connecting-IP. Contadores atómicos PostgreSQL, HMAC-SHA-256 con GOOGLE_CLIENT_SECRET, retención best-effort, fail-closed 503 y 429/Retry-After. Sin nueva migración.
+- #213 no cubre /auth/me ni /auth/logout; no se verificó header CF-Connecting-IP ni grants del principal real. El código no está en main hasta merge.
+- authorization.ts sigue sin conexión global; los handlers conservan checks locales. Cashier carece de endpoint de lectura de balances/ledger aunque la matriz lo permite.
+- Principal DATABASE_URL/ownership/grants NO VERIFICADO; RPO/RTO, alerta externa y coste USD 0 pendientes. Issue #53 abierta/P0. Producción NO LISTA.
+
+---
+
 ## Reconciliación de seguridad — 2026-11-05 09:43 UTC
 
 - Pila #200→#204→#205→#208→#207→#209→#210 abierta/Draft/no merge.

@@ -1,3 +1,13 @@
+## Revisión de esquema viva — 2026-11-05 10:09 UTC
+
+- PR #213 no añade migración: usa `auth_rate_limits` ya creada en 0001. Sus 12/12 check-runs y 10/10 workflows success prueban uso de HMAC-SHA-256 y UPSERT atómico en PostgreSQL.
+- #210 HEAD `ab5d2168a11a825a9ed6b03341b3091c13f3c06e`: 8/8 workflows success; 0009 añade pairing transaccional balance↔ledger, trigger diferido al COMMIT, bloqueo TRUNCATE e inmutabilidad de claves organization/branch/warehouse/product.
+- Migraciones 0005–0009 siguen fuera de main/Neon; solo validadas en PostgreSQL 18 desechable.
+- El principal PostgreSQL real/ownership/grants de DATABASE_URL no está verificado; no extrapolar assertions sintéticas a producción.
+- Issue #53 abierta/P0; Cashier sin lectura de balances/ledger, authorization helpers no conectados globalmente, RPO/RTO/alerta/coste USD 0 pendientes. Producción NO LISTA.
+
+---
+
 ## Revisión de esquema viva — 2026-11-05 09:43 UTC
 
 - Pila #200→#204→#205→#208→#207→#209→#210. Migraciones 0005–0009 validadas en PostgreSQL 18 desechable; #210 HEAD `ab5d2168a11a825a9ed6b03341b3091c13f3c06e`, 8/8 workflow runs success.

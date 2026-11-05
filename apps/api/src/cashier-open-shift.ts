@@ -15,11 +15,12 @@ export type OpenCashierRegisterShift = {
 type OpenCashierRegisterShiftRow = OpenCashierRegisterShift;
 
 const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+const SHIFT_OWNER_ROLES = ["owner", "admin", "cashier"] as const;
 
 /**
- * Resolve the authenticated cashier's open shift within an already-resolved
- * branch context. The context must come from resolveBranchContext after
- * resolveTenantContext; never build it from request-supplied identity fields.
+ * Resolve the authenticated member's own open register shift within an
+ * already-resolved branch context. Owner, Admin and Cashier may own a shift;
+ * the active branch_memberships join remains mandatory for all three roles.
  *
  * This is context lookup, not authorization for a commercial operation.
  * Call it on the same transaction client as any future operation that must
@@ -32,7 +33,7 @@ export async function resolveOpenCashierRegisterShift(
 ): Promise<OpenCashierRegisterShift | null> {
   if (
     !branch ||
-    branch.organizationRole !== "cashier" ||
+    !SHIFT_OWNER_ROLES.includes(branch.organizationRole as (typeof SHIFT_OWNER_ROLES)[number]) ||
     typeof branch.userId !== "string" ||
     !UUID_PATTERN.test(branch.userId) ||
     typeof branch.organizationId !== "string" ||
@@ -73,7 +74,7 @@ export async function resolveOpenCashierRegisterShift(
        ON m.organization_id = s.organization_id
       AND m.user_id = s.cashier_user_id
       AND m.is_active = true
-      AND m.role = 'cashier'
+      AND m.role IN ('owner', 'admin', 'cashier')
      JOIN branch_memberships bm
        ON bm.organization_id = s.organization_id
       AND bm.branch_id = s.branch_id

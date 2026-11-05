@@ -1592,9 +1592,9 @@ Este bloque es la referencia vigente para las PR #200/#202/#204/#205 y supersede
 
 ### Defectos y gates que siguen abiertos
 
-1. **Stale-count:** no se ha implementado ni demostrado todavía el control de snapshot/versionado que impida que un conteo físico antiguo, confirmado después, sobrescriba un conteo reciente. Requiere diseño, código y test determinista de confirmación inversa; no afirmar que locks o idempotencia lo resuelven.
-2. **Atomicidad 0005:** requiere BEGIN/COMMIT compatible o recuperación explícita y prueba de fallo inducido en PostgreSQL efímero.
-3. **Pila #204/#205:** reconciliar el commit faltante de #204 en #205 sin force-push, revisar conflictos/diff y volver a ejecutar validaciones completas.
+1. **Stale-count:** el caso básico está implementado y probado: snapshot de cantidad al crear el conteo físico y HTTP 409 `COUNT_STALE` si el saldo difiere al confirmar. Sigue abierto el riesgo ABA (el saldo cambia y vuelve al valor original); evaluar `balance_version` monotónico antes de añadir otros escritores de stock.
+2. **Atomicidad 0005:** implementada con `BEGIN`/`COMMIT` de nivel superior y prueba de rollback por fallo inducido en PostgreSQL efímero. Validado en CI; no aplicado a Neon ni a producción.
+3. **Pila #204/#205:** sincronizada mediante merge commits no-forzados; #204 y #205 comparan 0 commits detrás de sus bases y ambos tienen 7/7 workflow runs success en sus HEAD actuales.
 4. **Colisión #194:** migración de roles 0005 colisiona con inventario 0005; mantener #194 sin merge y resolver numeración después de estabilizar inventario.
 5. **Autorización/aislamiento:** issue #53 abierta; la matriz aprobada no equivale a autorización implementada y probada en todas las rutas.
 6. **Cloudflare Worker Previews:** no hay prohibición permanente. No cambiar el modo de builds hasta inspeccionar de forma autenticada Previews Base, bindings, secrets, routes, service bindings, Workflows, KV/D1/R2 y aislamiento real. No confundir Version URLs con previews aislados.
@@ -1639,3 +1639,30 @@ La consulta directa a GitHub Actions por `head_sha` incluye eventos `push` y `pu
 - La migración 0005 está envuelta en BEGIN/COMMIT y el workflow de migración ejecuta un fallo inducido antes de COMMIT, verifica ausencia de tablas y después aplica el SQL real. Los 17/7/8 runs incluyen la validación de migraciones de sus SHA correspondientes.
 - Stale-count básico: snapshot de cantidad, 409 y prueba de confirmación inversa. Residual ABA/versionado antes de futuros writers.
 - #202 HEAD `2793550cb9ccb4595971ad86ce6b950203c681df` tenía 11 workflow runs (7 success, 4 in_progress) en la consulta; ese estado se recalcula para cualquier commit documental posterior.
+
+
+## Estado autoritativo — 2026-11-05 UTC (supersede checkpoints anteriores)
+
+### Ramas y validación GitHub exacta
+
+- `main`: `7b0f057b8c152515005feed40305143c0ebb94b0`.
+- PR #200: HEAD documental `daaeaf8d87e08c62c749168ea00eb6adde2c7abf`, **21 ahead / 0 behind**, 30 archivos; **16/16 workflow runs success** en ese SHA. El HEAD de código previo `05bac0b68ec4883d4a7d057165ca1b9ac3aaf40c` tuvo **17/17 workflow runs success** e incluye la corrección SQL del lifecycle. Reviews formales 0, threads 0, status contexts 0.
+- PR #204: HEAD `22bca40a0e14de2ba747e1226a1829f91cd34561`, base #200 HEAD `daaeaf8d87e08c62c749168ea00eb6adde2c7abf`, **5 ahead / 0 behind**, diff propio de 1 archivo; **7/7 workflow runs success**. Reviews 0, threads 0, status contexts 0.
+- PR #205: HEAD `94a7fbd5f8e721cf672ad472c3d228aa7fa23bf2`, base #204 HEAD `22bca40a0e14de2ba747e1226a1829f91cd34561`, **14 ahead / 0 behind**, diff propio de 3 archivos; **7/7 workflow runs success**, incluidos CI, Playwright y Database migration validation. Reviews 0, threads 0, status contexts 0.
+- PR #202: HEAD consultado antes de esta actualización documental `7375a0aa7bc100f1166115dd59374099608dd848`, **64 ahead / 0 behind**, 12 archivos; 11/11 workflow runs success. Esta edición creará otro SHA: esos 11/11 no validan el nuevo HEAD.
+- PR #194: HEAD `7b3ad50e5780416868a1a428b856d12c4ea1e2ea`; comparación viva contra main actual **13 ahead / 2 behind** (su base configurada conserva SHA histórico); 11/11 workflow runs success en su HEAD. Sigue bloqueada por divergencia y colisión de migración `0005_register_shift_member_roles.sql` con inventario `0005_warehouse_inventory.sql`. No integrar antes de consolidar y renumerar roles a 0006, con referencias/assertions/workflows actualizados.
+
+Los conteos anteriores son **workflow runs**, no status contexts únicos ni reviews. En las PR listadas no hay status contexts, reviews formales ni review threads en la consulta de este checkpoint. Todas siguen Draft; ninguna fue fusionada.
+
+### Corrección de integridad del ciclo de conteos
+
+La auditoría encontró que `inventory_counts_guard` cubría UPDATE/DELETE, pero no INSERT. La migración ahora aplica el trigger a INSERT/UPDATE/DELETE y exige que todo conteo nuevo comience en `draft`. Las assertions PostgreSQL prueban que un INSERT directo con estado `confirmed` se rechaza y que la segunda apertura solo se intenta confirmar después de crear draft y línea, verificando el índice único por el flujo correcto. Esta corrección pasó CI en el HEAD de código `05bac0b68ec4883d4a7d057165ca1b9ac3aaf40c` (17/17 workflows).
+
+El stale-count básico compara `expected_on_hand_quantity` con el saldo al confirmar y rechaza con 409 si cambió. Residual: no detecta ABA si el saldo cambia y vuelve al mismo valor. Evaluar `balance_version` monotónico y exigir que todo futuro escritor incremente versión bajo el mutex del almacén antes de habilitar ventas, recepciones, reservas o transferencias.
+
+### Seguridad y alcance
+
+- Issue #53 sigue abierta: la matriz de permisos fue aprobada por el propietario el 2026-10-31, pero esa aprobación no demuestra implementación completa ni aislamiento cross-tenant/cross-branch de todas las rutas.
+- No existen todavía los flujos comerciales completos de ventas/pagos, recepción, devoluciones, reservas y transferencias.
+- Worker Previews no está prohibido permanentemente; sigue pendiente auditoría autenticada de bindings, secrets, rutas, service bindings, Workflows y aislamiento real.
+- No listo para producción. No migrar a Neon, no desplegar, no tocar Cloudflare productivo, secretos, DNS, billing ni datos reales. No force-push ni modificar main directamente.

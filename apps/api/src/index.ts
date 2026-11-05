@@ -7,6 +7,7 @@ import { registerCatalogWriteRoutes } from "./catalog-write";
 import { registerInventoryCountRoutes } from "./inventory-counts";
 import type { Bindings } from "./bindings";
 import { cleanupExpiredAuthRateLimits } from "./auth-rate-limit";
+import { registerExchangeRateRoutes, syncBcvOfficialRate } from "./exchange-rates";
 
 const app = new Hono<{ Bindings: Bindings }>();
 
@@ -83,6 +84,7 @@ registerGoogleAuthRoutes(app);
 registerCatalogRoutes(app);
 registerCatalogWriteRoutes(app);
 registerInventoryCountRoutes(app);
+registerExchangeRateRoutes(app);
 
 app.get("/health", (c) =>
   c.json({
@@ -107,7 +109,19 @@ app.onError((_error, c) => {
 });
 
 export default Object.assign(app, {
-  async scheduled(_controller: ScheduledController, env: Bindings): Promise<void> {
-    await cleanupExpiredAuthRateLimits(env.DATABASE_URL);
+  async scheduled(controller: ScheduledController, env: Bindings): Promise<void> {
+    if (env.APP_ENV === "preview") return;
+    if (controller.cron === "17 * * * *") {
+      await cleanupExpiredAuthRateLimits(env.DATABASE_URL);
+      return;
+    }
+    if (controller.cron === "0 22 * * 1-5") {
+      try {
+        await syncBcvOfficialRate(env.DATABASE_URL);
+      } catch {
+        // Never log provider payloads, database URLs, or credentials.
+        console.error("BCV official rate synchronization failed");
+      }
+    }
   },
 });

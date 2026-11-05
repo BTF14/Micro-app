@@ -176,3 +176,8 @@ La preparación para producción permanece **bloqueada**. El estado vivo de las 
 - #202 docs: 9 workflows success en HEAD previo `348cf0a1067c5410ff262f817b054cef46f0afae`; cualquier commit posterior requiere revalidación.
 
 Gates persistentes: stale-count, autorización/aislamiento multi-tenant y por sucursal (issue #53), atomicidad y rollback de migración, sincronización de ramas, coordinación de escritores de inventario, rate limiting runtime, recuperación RPO/RTO/alertas y coste operativo comprobado. No usar CI verde como sustituto de estos gates.
+
+
+## Precisión de integridad de conteos — 2026-11-05 UTC
+
+El stale-count básico no está totalmente ausente: #200 captura cantidad esperada y rechaza con 409 un conteo cuyo saldo cambió; la prueba de integración de confirmación inversa pasa en la suite de esa rama. No marcar como gate “sin protección stale-count”. El gate residual es revisar ABA/versionado y disciplina de locks al incorporar otros escritores. Esto no elimina los gates de autorización, atomicidad de migración, backup/restore operativo y readiness general.

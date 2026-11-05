@@ -1,10 +1,15 @@
 import { describe, expect, it } from "vitest";
 import {
+  calculateLineUsd,
+  convertUsdToVes,
   formatDecimal,
   formatMoneyForDisplay,
+  formatNumeric,
   multiplyDecimals,
   parseDecimal,
+  parseNumeric,
   sumDecimals,
+  sumNumeric,
 } from "./money";
 
 describe("exact decimal arithmetic", () => {
@@ -39,11 +44,36 @@ describe("exact decimal arithmetic", () => {
     expect(formatDecimal(-5n, 2, 2)).toBe("-0.05");
   });
 
-  it("rejects floats, exponents, whitespace, excess precision and oversized integers", () => {
+  it("rejects floats, exponents, whitespace and excess decimal scale", () => {
     expect(() => parseDecimal("1.23456", 4)).toThrow(RangeError);
     expect(() => parseDecimal("1e3", 4)).toThrow(TypeError);
     expect(() => parseDecimal(" 1.00", 2)).toThrow(TypeError);
-    expect(() => parseDecimal("10000000000.00", 2, 10)).toThrow(RangeError);
     expect(() => parseDecimal(23.85 as unknown as string, 2)).toThrow(TypeError);
+  });
+
+  it("enforces PostgreSQL NUMERIC precision and scale for catalog, quantity and BCV values", () => {
+    expect(parseNumeric("9999999999.9999", 14, 4)).toBe(99999999999999n);
+    expect(parseNumeric("99999999999.999", 14, 3)).toBe(99999999999999n);
+    expect(parseNumeric("9999999999.99999999", 18, 8)).toBe(999999999999999999n);
+    expect(parseNumeric("0.99", 2, 2)).toBe(99n);
+    expect(() => parseNumeric("10000000000.0000", 14, 4)).toThrow(RangeError);
+    expect(() => parseNumeric("100000000000.000", 14, 3)).toThrow(RangeError);
+    expect(() => parseNumeric("10000000000.00000000", 18, 8)).toThrow(RangeError);
+    expect(() => parseNumeric("1.00", 2, 2)).toThrow(RangeError);
+    expect(() => parseNumeric("1.23456", 14, 4)).toThrow(RangeError);
+  });
+
+  it("validates formatted values and prevents aggregate overflow", () => {
+    expect(formatNumeric(238500n, 14, 4)).toBe("23.8500");
+    expect(() => formatNumeric(100000000000000n, 14, 4)).toThrow(RangeError);
+    expect(sumNumeric(["9999999999.9999", "0.0001"], 14, 4)).toThrow(RangeError);
+  });
+
+  it("provides domain-safe line USD and BCV conversion operations", () => {
+    expect(calculateLineUsd("1.250", "23.8500")).toBe("29.8125");
+    expect(convertUsdToVes("23.8500", "36.50000000")).toBe("870.53");
+    expect(() => calculateLineUsd("1.2500", "23.8500")).toThrow(RangeError);
+    expect(() => convertUsdToVes("23.8500", "10000000000.00000000")).toThrow(RangeError);
+    expect(() => calculateLineUsd("99999999999.999", "9999999999.9999")).toThrow(RangeError);
   });
 });

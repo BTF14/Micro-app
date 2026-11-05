@@ -101,3 +101,14 @@ La integración PostgreSQL ahora cubre además membresía de organización desac
 - CI de PR #167 aplica 0001–0004 en PostgreSQL 18 desechable y ejecuta assertions y tests de integración/concurrencia. No confundir la evidencia histórica de PR #165 (0001–0003) con la validación actual de PR #167.
 - La matriz de permisos comerciales sigue NO APROBADA; el helper de sucursal y el esquema de turnos no autorizan ventas, pagos, descuentos, anulaciones ni endpoints de caja.
 
+
+
+## Reconciliación de conexión a handlers — 2026-11-05 UTC
+
+Las secciones históricas que describen `resolveBranchContext` como helper aún no conectado a rutas quedan supersedidas para la vertical slice de inventario:
+
+- PR #200 conecta `resolveTenantContext(..., true)` y `resolveBranchContext(..., true)` a las rutas de almacenes/conteos. La autorización de operación sigue siendo explícita en cada handler; no se ha creado un middleware universal.
+- Owner/Admin pueden resolver sucursales activas de su organización; Inventory necesita `branch_memberships` activa. Para mutaciones, la resolución bloquea filas de tenant y branch/membership dentro de la transacción. La ruta de conteo no permite Cashier.
+- PR #205 HEAD `bb4a60454061ce09fef07100e75010f3abc5b883` pasó 20/20 pruebas de integración PostgreSQL y 7/7 workflow runs. Incluye denegación HTTP de branch no asignado y warehouse cuyo branch no coincide.
+- La matriz de permisos está APROBADA desde 2026-10-31. El estado de este addendum describe la rama de implementación, no main ni producción.
+- Faltan otros recursos y operaciones comerciales; la autorización cross-tenant/cross-branch completa y la issue #53 siguen abiertas. No aplicar migraciones a Neon ni desplegar.

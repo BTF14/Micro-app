@@ -1,3 +1,262 @@
+## PR #221 — estado final de validación
+
+HEAD `18dfc33525c792802c296469ee6140d3b5f649ff`, base #220 HEAD `40cf9e2cff5e88a5feec7b8168c8f436cb3f0601`, OPEN/DRAFT/no merge. Seis workflows SUCCESS (CI, migration validation, Playwright, Semgrep, Trivy, Secret history), con jobs/steps del CI revisados. Cloudflare Pages y Workers Preview success; Worker Preview `https://62c0ecb8-micro-app-api.btfcasheb.workers.dev`, no producción. La corrección usa `authorizeCommercialOperation(role, "catalog.read_costs")` para la proyección de costes; permisos sin cambios. Revisión secuencial pendiente #218 → #220 → #221.
+
+---
+
+## Handoff vivo — 2026-11-05 09:43 UTC
+
+Continuar el repositorio BTF14/Micro-app desde GitHub MCP, sin pedir al propietario que repita información recuperable. Trabaja como ingeniero principal: inspecciona HEAD/diff/checks actuales antes de cada cambio, corrige de forma acotada, prueba y documenta. El propietario trabaja desde Android y no dispone de terminal.
+
+### Estado confirmado
+
+- main: `7b0f057b8c152515005feed40305143c0ebb94b0`.
+- Pila activa abierta/Draft/no merge: #200→#204→#205→#208→#207→#209→#210.
+- #210 HEAD: `ab5d2168a11a825a9ed6b03341b3091c13f3c06e`; migración 0009 acopla balance↔ledger en PostgreSQL. 8/8 workflow runs success, incluidos Playwright E2E y Security scan.
+- #209 HEAD: `666236bc7b2c7e1dd1e30d9ccdc467e37c40784b`; migración 0008 protege snapshot/validación de conteos.
+- #202 es PR documental; actualizarla no debe sobrescribir ni eliminar su historial. Sus checks deben revalidarse después del commit.
+- Issue #53 sigue abierta/P0; producción NO LISTA.
+
+### Autorización y límites permanentes
+
+Autorización continua para inspeccionar, modificar código/documentación y ejecutar validaciones seguras en ramas/PRs, siempre con verificación. No pedir confirmación repetida para cada paso técnico seguro. Prohibido tocar Neon principal/producción, datos reales, secretos, Cloudflare productivo, DNS, billing, fusionar PRs o desplegar. No force-push ni modificar main directamente. Mantener PRs Draft hasta completar gates y revisión. No usar TinyFish ni pedir setup de terminal/CLI; trabajar desde las herramientas conectadas.
+
+### Hallazgos pendientes concretos
+
+- No hay caller runtime de `auth_rate_limits` ni rate limiting identificado en auth/Google OAuth.
+- Helpers centrales de autorización no se consumen uniformemente en handlers; hay checks locales.
+- Cashier carece de endpoint de lectura de balances/movimientos aunque la matriz permite esa lectura en su sucursal.
+- Writers HTTP de ventas, recepción, reservas, pagos, devoluciones y transferencias no existen aún.
+- Principal DB efectivo, owner/runtime grants y memberships no verificados; nunca leer o copiar secretos.
+
+### Secuencia inmediata
+
+1. Reconsultar los dos workflows pendientes de #210 por SHA exacto.
+2. Si fallan, leer logs y corregir solo el defecto demostrado; si siguen pending, avanzar en auditoría estática/documentación sin afirmar éxito.
+3. Auditar #210 diff y dependencias #209/#208/#207; verificar compatibilidad de migraciones y tests.
+4. Seguir con rate limiting de OAuth y auth, con límites por IP/identidad, almacenamiento atómico, expiración y tests de concurrencia/abuso. No improvisar reglas que bloqueen usuarios legítimos.
+5. Corregir/implementar autorización de rutas y lectura Cashier únicamente tras reconciliar matriz vigente; tests cross-tenant/branch/role en PostgreSQL efímero.
+6. Actualizar issue #53 y docs en el mismo ciclo.
+
+No pedir Build IDs, commit IDs, URLs o capturas ya registrados; obtenerlos por GitHub. Diferenciar CI, Worker Version, preview y producción. No dar producción por verificada por un check verde.
+
+## Handoff vigente — stack consolidado y gates P0 — 2026-11-05 UTC
+
+Continuar sin reiniciar ni pedir al propietario Build IDs, capturas, terminal, secretos, URLs o información ya documentada. El propietario trabaja desde Android sin terminal y autorizó ejecución autónoma de cambios técnicos necesarios, siempre con pruebas y seguridad. Respetar Constitución: no force-push, no merge ciego, no producción/Neon main/secretos/datos reales/Cloudflare settings/DNS/billing sin gates específicos.
+
+### Estado vivo
+
+- #200 base main, HEAD `5fbc17a48b65076cf5609a7a054bbd125a3a5d1e`, 32 ahead/0 behind, 20/20 checks success, Draft.
+- #204 base #200, HEAD `07a5a41c0f5f5c36fb89a5c5950796493d56eb20`, 8 ahead/0 behind, 8/8 checks success, Draft.
+- #205 base #204, HEAD `c0bcbbe48aa8783b85ee7787dd1ae8a6d0dfdafc`, 27 ahead/0 behind, 9/9 checks success, Draft.
+- #208 base #205, HEAD `32c7217a21b7a3719ebf72940419779a7b42c027`, 21 ahead/0 behind, 7/7 checks success, Draft.
+- #207 base #208, HEAD `962b5e9d34cc23d7bb5929cd17b4599f4da06db4`, 16 ahead/0 behind, 10/10 checks success, Draft.
+- Stack exacto: `#200 → #204 → #205 → #208 → #207`. Migraciones 0005 inventario+idempotencia, 0006 roles own-shift, 0007 audit append-only.
+- #194 cerrada como supersedida, no merged. #196 sigue abierta/Draft/no mergeable; no copiar su snapshot.
+- #202 docs HEAD antes de la actualización actual `f4b914e3530a4d8cdf5e5995b16e5bd0d1afe8d8`, 13/13 checks; revalidar el nuevo SHA que genere esta sincronización.
+- 0 reviews formales y 0 review threads en #200/#202/#204/#205/#207/#208.
+
+### Hallazgos de autorización ya corregidos
+
+- Helper role map tenía Inventory sin `catalog.read_costs`, contrario a matriz aprobada y a `catalog.ts`; corregido.
+- `authorizeBranchOperation` no pedía `resolveTenantContext(..., true)` antes de locks de branch; corregido para mantener lock order tenant/session/user/membership/org → branch → branch_membership. Regression test verifica orden.
+- Helpers no están conectados globalmente a todos los handlers. No afirmar middleware central; las rutas existentes tienen checks locales. Cada nuevo handler debe adoptar contrato o demostrar equivalente.
+- Rutas existentes: catálogo GET (todos los roles, Cashier sin costo), catálogo POST/PATCH (Owner/Admin), conteos create/confirm (Owner/Admin/Inventory, branch scope). Cashier aún no tiene endpoint de lectura de balances/ledger aunque la matriz permita leer existencias/movimientos.
+
+### Siguiente prioridad
+
+1. Auditar en profundidad la consistencia universal balance↔ledger: triggers/constraints, mutaciones directas, reconciliación de deltas y riesgo de futuros writers. No añadir endpoints comerciales.
+2. Continuar pruebas negativas por cada ruta existente: cross-tenant, cross-branch, role denial, membresía revocada y atomicidad.
+3. Investigar rate limiting runtime: `auth_rate_limits` no tiene caller.
+4. Revisar runtime DATABASE_URL principal/ownership/grants solo mediante evidencia autorizada read-only que no exponga secretos; no leer secret ni conectarse a Neon por conveniencia.
+5. Mantener gates de backup/RPO/RTO/alertas/coste $0.
+6. Actualizar docs y PR descriptions tras cada avance significativo.
+
+No fusionar ni desplegar mientras issue #53 P0 y los gates de seguridad/runtime sigan abiertos. Producción NO LISTA.
+## Regla de continuidad — Build IDs y datos de Cloudflare — 2026-11-05
+
+- **No pedir al propietario Build IDs, deployment IDs, SHA, URLs ni capturas de nuevo** antes de consultar GitHub y la documentación vigente. Consultar checks, Actions, logs accesibles y comentarios automáticos de Cloudflare asociados al SHA/PR exactos.
+- Ya está documentado para PR #207 Workers Build ID `0c8394a1-4d91-4061-a850-6c78f3b11295` y los previews Workers/Pages. No volver a solicitarlo.
+- El Build ID histórico `3542c660-e5e3-435e-8be5-dbed236cec1c` solo queda como una inspección histórica no resuelta. No convertirlo en tarea recurrente del propietario. Si no puede verificarse con conectores disponibles, marcar NO VERIFICADO y continuar.
+- Diferenciar CI/build, Version URL, preview, producción activa y tráfico; no usar un éxito de preview como prueba de producción.
+- Solo solicitar texto al propietario si el dato no está en fuentes accesibles, es imprescindible para una decisión concreta y se explica por qué. Nunca exigir capturas como primera opción.
+- Al cambiar de chat, iniciar leyendo CURRENT_STATE y HANDOFF, y verificar cambios nuevos por SHA; no pedir que el propietario reconstruya el historial.
+
+---
+
+## Instrucción vigente — acceso móvil y abandono de TinyFish — 2026-11-05
+
+- El propietario trabaja desde Android y no tiene terminal. **No solicitar comandos CLI, npx, edición de archivos locales, Codex CLI ni pasos de escritorio.**
+- `@tiny-fish/cli connect codex` configura Codex CLI local; no actualiza el MCP de esta sesión ChatGPT móvil. Este punto ya fue aclarado y no debe volver a preguntarse ni proponerse.
+- Por decisión del propietario, **no usar TinyFish para Micro-app**: no invocar automatización de navegador, no comprobar wallet/perfiles ni pedir que conecte otra cuenta. No consumir saldo.
+- Priorizar GitHub MCP para revisar y modificar documentación/código dentro del alcance autorizado. Usar fuentes web oficiales cuando haga falta. Para Cloudflare, aprovechar checks y comentarios automáticos de GitHub; si la evidencia del dashboard requiere una sesión que no está disponible mediante otro conector, dejar el estado como NO VERIFICADO y documentar la limitación. No pedir capturas ni reautenticaciones repetidas.
+- La API key expuesta en conversación debe rotarse/revocarse por el propietario; no volver a incluirla ni pedirla. No se afirma que la nueva cuenta TinyFish haya quedado conectada.
+- Esta instrucción sustituye los pasos anteriores de handoff que decían recargar TinyFish, revisar su saldo o autenticar el perfil Cloudflare. Esos pasos quedan **cancelados/supersedidos** por esta decisión.
+
+---
+
+## Handoff vigente — Cloudflare PR #207: evidencia de preview y siguiente gate — 2026-11-05 01:38 EDT
+
+- Revisar los comentarios automáticos de [Workers](https://github.com/BTF14/Micro-app/pull/207#issuecomment-6649952138) y [Pages](https://github.com/BTF14/Micro-app/pull/207#issuecomment-6649953153). Ambos informan éxito y publican URLs etiquetadas como Commit Preview y Branch Preview para el commit `26c5270`.
+- Workers Build ID de ese comentario: `0c8394a1-4d91-4061-a850-6c78f3b11295`. No confundirlo con el build histórico objetivo `3542c660-e5e3-435e-8be5-dbed236cec1c`.
+- Esto confirma que Cloudflare comunicó previews satisfactorios para #207; **no** confirma ausencia de publicación de versión productiva ni ausencia de tráfico productivo. No inferir destino por el path `/production/builds/`.
+- Próxima acción Cloudflare: recargar TinyFish; comprobar wallet; verificar que el perfil correcto esté autenticado en Cloudflare sin pedir credenciales ni capturas; después inspeccionar en modo estrictamente de solo lectura el build objetivo `3542c660-e5e3-435e-8be5-dbed236cec1c` y el build #207 `0c8394a1-4d91-4061-a850-6c78f3b11295`. Correlacionar build → Worker Version → deployment → tráfico, sin tocar configuración.
+- Estado de la consulta TinyFish actual: wallet `-$0.008 USD`; perfil `prof_5ffc41e691e841a0` existe pero no lista `cloudflare.com` en `signed_in_sites`. No repetir setup ni lanzar runs hasta resolver saldo y perfil.
+- Restricción invariable: Cloudflare solo lectura; no cambiar deployments, versions, traffic, settings, secrets, routes, DNS o billing.
+
+---
+
+## Handoff vigente — 2026-11-05 00:50 EDT
+
+### Estado desde el que continuar
+
+- Fuente viva: GitHub `BTF14/Micro-app`. Main `7b0f057b8c152515005feed40305143c0ebb94b0`.
+- #200 HEAD `5fbc17a48b65076cf5609a7a054bbd125a3a5d1e`, 32 ahead/0 behind, 18/18 workflow runs success; Draft.
+- #204 HEAD `07a5a41c0f5f5c36fb89a5c5950796493d56eb20`, base #200, 8 ahead/0 behind, 6/6 success; Draft.
+- #205 HEAD `bb4a60454061ce09fef07100e75010f3abc5b883`, base #204, 25 ahead/0 behind, 7/7 success; Draft. Se conserva idempotencia y protección monotónica del balance.
+- #194 HEAD `7b3ad50e5780416868a1a428b856d12c4ea1e2ea`, 13 ahead/2 behind main, 11/11 success; Draft. Su migración de roles sigue siendo 0005 y colisiona con inventario 0005.
+- #202 está abierta/Draft y recibe esta actualización de continuidad. El HEAD `31ef601f...`/76 ahead registrado antes de este bloque ya fue superado por los commits documentales de esta misma PR; consultar GitHub en vivo para el SHA final y no reutilizar el anterior.
+- #196 HEAD vivo `c332e740aff279fb8b22a8879581d4b8a3c7de21`, 128 ahead/2 behind main, 11/11 success; Draft y no mergeable. Issue #53 ya no debe citar el SHA histórico 66ed.
+- #193 HEAD `ac57ab4f3415f82279b8a49c0befe09f8e3aec68`, 5 ahead/2 behind main, 10/10 success; abierta, no Draft.
+- #207 nueva PR Draft: `https://github.com/BTF14/Micro-app/pull/207`; rama `feat/audit-logs-append-only-20261105`; HEAD `26c5270664b82aebc6a12fafe6973de8544bc6f7`; base #200 HEAD `5fbc17a48b65076cf5609a7a054bbd125a3a5d1e`; 10 ahead/0 behind; 7/7 workflow runs y 9/9 check runs success. No reviews/threads/status contexts. No fusionar.
+- En todas las PR citadas: 0 reviews formales, 0 review threads y 0 combined status contexts en la última consulta. No convertir CI verde en aprobación.
+
+### Trabajo completado en este bloque
+
+- Recuperación en vivo de ramas/PRs, divergencias, runs y check-runs exactos, reviews, threads y status contexts.
+- Issue #53 continúa abierta/P0; se corrigió su SHA vivo de PR #196 y se registró PR #207.
+- Auditoría estática confirmó que `audit_logs` se crea en 0001 y no tenía protección append-only en 0001–0005. La protección del ledger de inventario no cubría esta tabla.
+- PR #207 implementa migración 0007 con triggers ALWAYS para UPDATE/DELETE/TRUNCATE y revoca a PUBLIC privilegios de mutación/trigger.
+- Assertions PostgreSQL prueban un runtime sintético no propietario SELECT/INSERT, un segundo rol no propietario con privilegios de mutación y la imposibilidad de deshabilitar/eliminar triggers desde el runtime.
+- Se añadieron pruebas de rollback de auditoría para creación de producto y se mantuvo la prueba de rollback de confirmación de conteos.
+- Los teardowns de `catalog-write`, `catalog-update` e `inventory-counts` se adaptaron para deshabilitar triggers solo dentro de limpieza de PostgreSQL desechable. CI detectó primero el teardown olvidado en catalog-update; se corrigió y el HEAD final pasó completo.
+- HEAD #207 `26c527...`: 7/7 workflow runs y 9/9 check runs success. Build/typecheck, unit, PostgreSQL migration/assertions, catalog create/update, inventory counts, Playwright, Semgrep, Trivy, secret scan, Pages/Workers builds y backup/restore sintético pasaron.
+
+### Límites no resueltos
+
+- El rol PostgreSQL real de `DATABASE_URL` no está verificado. No leer secretos ni tocar Neon producción. Un trigger no protege contra un propietario/superusuario que pueda deshabilitarlo; el runtime debe ser no propietario y de privilegios mínimos.
+- La migración 0007 está en una PR apilada sobre #200. Debe preservarse la secuencia: inventario 0005, roles #194 renumerados 0006, audit_logs 0007. La CI actual de #207 aplica 0005 y 0007; cuando 0006 se integre, actualizar la secuencia/workflows y revalidar el stack limpio.
+- #53 sigue abierta: falta cobertura completa de autorización por tenant/sucursal/rol, operaciones comerciales aún inexistentes, lectores de balances/movimientos, consistencia ledger/balance y rate limiting runtime, entre otros gates.
+- No se modificó manualmente Cloudflare ni se activó Worker Previews. El check `Workers Builds: micro-app-api` de #207 fue disparado por el push; su registro no pudo leerse (`login_required`) y el destino/deployment está NO VERIFICADO. Antes de afirmar que no hubo despliegue productivo, inspeccionar ese build en el dashboard con acceso autenticado de solo lectura. No tocar settings, Workers, Neon, secretos, DNS, billing, main ni datos reales.
+- La automatización diaria está habilitada, pero sin last_run/next_run_time registrados y con delivery unknown; no crear otra.
+
+### Siguiente ejecución recomendada
+
+1. Mantener #207 Draft y realizar revisión manual completa del diff; no fusionar.
+2. Resolver la colisión de migraciones con #194 mediante secuencia 0005/0006 antes de integrar #207.
+3. Determinar cómo obtener evidencia autorizada del rol runtime sin leer/exponer el secreto ni modificar producción.
+4. Continuar issue #53 con pruebas HTTP cross-tenant/cross-branch/por rol y balance/ledger.
+5. Mantener esta sección y `docs/CURRENT_STATE.md` como estado vivo; el resto del documento es historial.
+
+---
+
+## Corrección de seguridad Cloudflare — Worker Previews vs Version URLs — 2026-11-04 22:00 EDT
+
+Esta aclaración corrige la formulación demasiado amplia de addenda anteriores: **no existe una prohibición permanente de usar Worker Previews**. El gate es no cambiar el modo de builds de Cloudflare hasta comprobar aislamiento y aceptar el cambio irreversible del flujo existente.
+
+### Evidencia directa en el código de la rama #200
+
+- `apps/api/wrangler.toml` en `feat/inventory-vertical-slice-mainline-20261104` declara `[previews.vars] APP_ENV = "preview"`; la dependencia `apps/api/package.json` declara Wrangler `^4.155.0`, superior al mínimo documentado por Cloudflare para Worker Previews (4.135.0).
+- `apps/api/src/index.ts` instala un middleware global antes de registrar rutas: si `APP_ENV === "preview"` o el hostname es un `workers.dev` distinto del Worker productivo, solo permite `/health`; las demás rutas responden 503 `PREVIEW_API_DISABLED`. Esto cubre auth, catálogo, escritura e inventario.
+- `apps/api/src/index.test.ts` ya prueba: API apagada incluso cuando se simula un `DATABASE_URL` de producción; bloqueo por hostname workers.dev aunque falte `APP_ENV`; y disponibilidad exclusiva de `/health`. Es una defensa de aplicación comprobada por tests unitarios, no prueba por sí sola de aislamiento Cloudflare ni sustituye credenciales separadas.
+- No hay `DATABASE_URL` ni otros secretos declarados en el bloque `[previews.vars]` versionado. No se ha verificado en esta sesión el Previews Base/secret store del dashboard; no afirmar que está vacío.
+
+### Distinción decisiva
+
+- `npx wrangler versions upload` crea una Worker Version y Version URL. Cloudflare documenta que esta modalidad utiliza la configuración y recursos existentes de esa versión; **no es un entorno aislado de rama**.
+- `npx wrangler preview` crea/actualiza Worker Preview para la rama, con variables, secretos y bindings propios definidos en `previews`. Cloudflare recomienda Previews para pruebas de ramas/PR.
+- Cloudflare indica que el cambio de Workers Builds del modelo anterior a Worker Previews es de una sola vía: después de seleccionar “Switch to Worker Previews” no se puede volver al modelo anterior. Es una decisión operativa que requiere revisión previa.
+- Aun con Worker Previews, recursos compartidos por el mismo ID siguen compartiendo datos (p. ej. KV/D1); Service Bindings pueden llamar al Worker productivo; Workflows se enlazan a Workflows existentes; las URLs son públicas por defecto salvo protección con Cloudflare Access. Debe configurarse explícitamente aislamiento y control de acceso.
+
+### Decisión y gate actualizado
+
+1. Mantener el modo actual sin cambios mientras no se complete el inventario autenticado de bindings, secrets, routes, service bindings, workflows, KV/D1/R2 y Previews Base.
+2. Antes de activar, preparar `previews` con `APP_ENV=preview`, sin DATABASE_URL/BOOTSTRAP_TOKEN/GOOGLE_CLIENT_SECRET de producción; cualquier DB de prueba futura debe ser un recurso Neon independiente, con credenciales propias y datos sintéticos. No conectar Preview a Neon producción.
+3. Conservar y probar el middleware API-dark; añadir/confirmar tests de hostname y secret present (ya existen en la rama #200). Verificar también Pages preview, CORS/origins, OAuth redirect, rate limits y acceso a la URL.
+4. Revisar bindings uno por uno: no compartir IDs de KV/D1/R2; no usar Service Bindings hacia Workers productivos; no asociar workflows productivos; no configurar routes ni cron de producción. Aplicar Cloudflare Access si el contenido no debe ser público.
+5. Evaluar el impacto de la migración irreversible en CI/branch cleanup, costos y mantenimiento. Solo entonces solicitar/ejecutar el switch, y comprobar un Preview real con evidencia de que no puede alcanzar datos o servicios productivos.
+
+**Conclusión:** la restricción original protegía frente a Version URLs con recursos de producción y frente a una migración irreversible sin inventario. La nueva documentación de Cloudflare sí ofrece un modelo de Worker Previews con aislamiento por rama. El código de Micro-app ya tiene un primer control API-dark, por lo que debemos preparar y verificar la adopción; no mantener un “nunca activar” obsoleto.
+
+Fuentes oficiales consultadas el 2026-11-04: Cloudflare [Previews](https://developers.cloudflare.com/workers/previews/), [Version URLs](https://developers.cloudflare.com/workers/versions-and-deployments/version-urls/), [Build branches](https://developers.cloudflare.com/workers/ci-cd/builds/build-branches/), [Resources and isolation](https://developers.cloudflare.com/workers/previews/resources/), [Compare workflows](https://developers.cloudflare.com/workers/previews/compare-workflows/).
+
+---
+
+## Handoff vigente — reconciliación de inventario y documentación — 2026-11-04 21:40 EDT
+
+### Fuente de verdad viva
+
+- Repo: `BTF14/Micro-app`.
+- `main`: `7b0f057b8c152515005feed40305143c0ebb94b0`.
+- PR #200: HEAD `243592468e9fd61b1f8c578d867887dbb7f18e4d`, base main, 16 ahead / 0 behind, 30 archivos. Abierta/Draft, sin reviews formales. 20 checks exitosos reportados en la última continuidad; seis cancelaciones históricas no deben contarse como fallos. La descripción de PR sigue con SHA previo `7d2ef3d...` y 12 ahead: corregirla. Blocker funcional: dos conteos físicos creados antes de confirmación pueden confirmarse en orden inverso y el conteo antiguo sobrescribir el saldo nuevo.
+- PR #204: HEAD `57a9f098bcb93427315e96c90e62ae13764a485b`; tres commits sobre #200, 0 behind; 8/8 checks recuperados. Cambio relevante: saldo inicial de test concurrente 7.000 frente a conteo 8.500. Abierta/Draft; su descripción aún dice CI pendiente.
+- PR #205: HEAD `c1f09d09dd08b9600e7a6c0ff8ccbb5be4e9c990`; 9/9 checks recuperados. Añade Idempotency-Key, hash canónico, replay y 409 por payload distinto. Comparación #204→#205: 9 commits ahead y 1 behind; falta incorporar el commit final de #204 (`57a9f09...`). No fusionar ni aprobar hasta reconciliar rama y volver a validar checks.
+- PR #194: HEAD `7b3ad50e5780416868a1a428b856d12c4ea1e2ea`; 13 ahead / 2 behind main. Su `0005_register_shift_member_roles.sql` colisiona con `0005_warehouse_inventory.sql` de #200. Mantener abierta y sin merge; secuencia objetivo: integrar inventario primero, después actualizar #194 y renombrar a 0006 con todas sus referencias/assertions/workflows.
+- PR #202: HEAD `4e54efbf33cc160f532b26cd147b4afa783cddeb`; 30 ahead / 0 behind main; 12 archivos documentales; 9/9 workflow runs success; sin reviews formales ni threads. Abierta/Draft. La propia documentación aún refería a HEADs anteriores (355c80, 4e54efb); este addendum corrige la continuidad.
+- #201 cerrada; #190 cerrada; #193 abierta; #196 abierta y protegida contra cambios en este trabajo. Issue #53 abierta; #78 cerrada completed.
+- No se hizo merge, no se modificó main, no se ejecutó migración remota, no se cambió Neon/Cloudflare, secretos, DNS, billing o producción.
+
+### Próxima secuencia técnica
+
+1. Corregir la descripción de #200 para que indique el HEAD real 2435924 y el estado exacto de CI; conservar Draft.
+2. Resolver stale-count en #200: especificar y probar snapshot/versionado, rechazo de conteo obsoleto y concurrencia; no asumir “último en confirmar gana”.
+3. Incorporar el commit final de #204 a #205 sin force-push; verificar que no se pierda ningún cambio, luego CI del nuevo HEAD.
+4. Revisar #205: transacción de creación/replay, normalización/hash, conflictos concurrentes, rollback y replay cuando warehouse/product hayan quedado inactivos. No inventar requisito funcional; evaluar comportamiento y documentar.
+5. Corregir atomicidad de migración 0005 con prueba de fallo inducido en PostgreSQL desechable.
+6. Solo después de gates de inventario, resolver la colisión #194 0005→0006 y ejecutar la cadena completa 0001–0006 en PostgreSQL efímero.
+7. Terminar revisión semántica de #202 y actualizar los documentos restantes; mantenerla Draft hasta revisión completa.
+8. No fusionar mientras stale-count, dependencia de #205, migración/rollback y aislamiento Cloudflare sigan abiertos.
+
+### Restricciones no negociables
+
+- No tocar Neon producción ni aplicar migraciones remotas.
+- No desplegar producción ni cambiar configuración Cloudflare.
+- No activar Worker Previews.
+- No tocar PR #196, #193 ni alterar el estado histórico de #190.
+- No force-push; no cambiar main directamente.
+- No borrar/recrear la historia del diario. Mantener STATE_JOURNAL append-only.
+- Coste $0; no activar billing ni herramientas pagadas.
+- No pedir capturas: configuración Cloudflare histórica ya está documentada. Si una verificación autenticada no está disponible, registrar el límite y continuar.
+
+---
+
+## Reanudación verificada — PR #202 — 2026-11-04
+
+- Rama: `docs/reconcile-current-state-20261104`.
+- HEAD: `355c80eb5996cbcc6266c81097d7a245c96851b0`.
+- Base `main`: `7b0f057b8c152515005feed40305143c0ebb94b0`; comparación: 27 ahead / 0 behind, 12 archivos documentales.
+- GitHub devolvió 9 workflow runs para el SHA exacto; 9/9 concluidos `success`. Revalidar el SHA y checks si hay cualquier commit nuevo.
+- Los checkpoints inferiores que citan `9990f...`, `1ddaba...` u otros SHA de PR #202 son snapshots históricos, no el HEAD actual.
+- Continuar la revisión semántica de documentación. Mantener PR #202 abierta/Draft hasta revisión final. No merge, deploy, migración Neon ni cambios Cloudflare.
+
+---
+
+# Handoff operativo — continuidad Micro-app — 2026-11-04
+
+## Punto exacto de reanudación
+
+- Repositorio: `BTF14/Micro-app`.
+- `main` verificado: `7b0f057b8c152515005feed40305143c0ebb94b0`.
+- PR #200: abierta/Draft, rama `feat/inventory-vertical-slice-mainline-20261104`, HEAD `7d2ef3d5e9ced1d4e8d386110129d21eb53af045`; 19/19 check-runs success. No fusionar: faltan gates de aislamiento/seguridad y procedimiento de migración 0005.
+- PR #202: abierta/Draft, rama `docs/reconcile-current-state-20261104`. Se amplió la reconciliación a 12 documentos; HEAD al último checkpoint `9990f105201eecd423dc64216bb01b504ba199a5`. Los checks de ese SHA aún no aparecían en la última consulta; revalidar en vivo. No asumir que los 12/12 checks de un SHA anterior cubren commits posteriores.
+- Issue #53 abierta; issue #78 cerrada desde 2026-10-31.
+- PR #196 permanece abierta/Draft e intacta. PR #190/#193 protegidas, no modificar.
+- Capturas Cloudflare: Pages production branch main y automatic deployments enabled; Worker production branch main, builds no productivos enabled, deploy `npx wrangler deploy`, Version command `npx wrangler versions upload`. El banner “Set up Worker Previews” seguía visible. No se activó.
+- Worker Version URL no es un entorno branch-isolated. Para Worker Previews se requiere `npx wrangler preview`, configuración separada de variables/secretos/bindings y recursos aislados.
+- Nunca usar `DATABASE_URL` de Neon producción en Previews. Preparar Neon branch/base de pruebas con credenciales propias y datos sintéticos.
+- Migración 0005 solo validada en PostgreSQL 18 desechable. No hay evidencia de aplicación a Neon. SQL sin transacción explícita + psql autocommit implica posible aplicación parcial si falla a mitad; resolver antes de cualquier ejecución remota.
+- Gates restantes: auditoría de PR #200 (tenant/branch/auth/writers/concurrencia/idempotencia), Worker Preview isolation, migración/rollback, RPO/RTO, alertas externas, rate limiting runtime, E2E comerciales y coste $0.
+- No desplegar, fusionar, migrar Neon ni cambiar Cloudflare. Mantener presupuesto $0.
+
+## Próximas acciones
+
+1. Revalidar en vivo HEAD, estado y checks de PR #202 antes de cualquier cambio.
+2. Terminar revisión documental del README, esquema, plan y auditoría Cloudflare en este mismo branch; ejecutar checks del nuevo SHA.
+3. Continuar auditoría de seguridad/código de PR #200 y producir plan de migración 0005 sin aplicarlo.
+4. Mantener ambas PR abiertas/Draft hasta revisión final. No pedir al propietario capturas adicionales ya proporcionadas.
+
+---
+
 # Handoff operativo — continuidad Micro-app — 2026-11-01 UTC
 
 ## Handoff — adopción ODD y evaluación ECC/E2E — 2026-11-04
@@ -1583,3 +1842,325 @@ Este bloque es más reciente que los snapshots históricos anteriores; si contra
 - CI aplica 0003 a PostgreSQL efímero y ejecuta el test de integración del resolver; el workflow separado `postgres-migration` también aplica 0003 y sus assertions SQL. Comprobar ambos en el HEAD final.
 
 - Endurecimiento adicional de la rama: el resolver ahora vuelve a validar organización, usuario y membresía activos y exige que el rol DB coincida con el TenantContext; integración cubre revocación y cambio de rol. La evidencia de checks del HEAD anterior queda supersedida; verificar el HEAD vivo actual.
+
+
+---
+
+## Handoff autoritativo — 2026-11-05 UTC
+
+**No comenzar desde checkpoints históricos sin reconciliar GitHub.** Referencias vivas comprobadas:
+
+- main: `7b0f057b8c152515005feed40305143c0ebb94b0`.
+- #200 HEAD `243592468e9fd61b1f8c578d867887dbb7f18e4d`, 16 ahead/0 behind, 30 files; 10 workflow runs success en este SHA; status contexts vacío; sin reviews/threads. Body actualizado.
+- #204 HEAD `57a9f098bcb93427315e96c90e62ae13764a485b`, base exacta #200 HEAD; 3 ahead/0 behind; no workflow runs/status contexts recuperados; sin reviews/threads. No declarar CI verde. Body actualizado.
+- #205 HEAD `c1f09d09dd08b9600e7a6c0ff8ccbb5be4e9c990`; diverged respecto de #204: 9 ahead/1 behind; solo Backup restore smoke test success; no status contexts/reviews/threads. Body actualizado. Sincronizar sin force-push y revalidar.
+- #202 HEAD previo a este handoff `348cf0a1067c5410ff262f817b054cef46f0afae`, 43 ahead/0 behind, 12 archivos; 9 workflow runs success en ese SHA. El nuevo commit de handoff/documentación cambia el HEAD: volver a leer PR y ejecutar validaciones en el SHA resultante; no trasladar 9/9.
+
+**Bloqueos técnicos prioritarios:** (1) stale-count: conteo físico antiguo puede confirmar después y sobrescribir snapshot más nuevo; diseñar versión/snapshot y 409 o política explícita, añadir test determinista inverso. (2) 0005 necesita atomicidad/recuperación y prueba de fallo inducido. (3) #205 debe incorporar el commit final de #204. (4) colisión 0005 con roles en #194. (5) issue #53 y autorización/aislamiento incompletos. (6) Cloudflare Previews requiere auditoría autenticada de recursos y aislamiento; no activar por ahora, pero tampoco documentar prohibición permanente.
+
+**Forma de trabajo:** actualizar docs en el mismo ciclo de cada cambio; toda afirmación debe vincularse al SHA/ejecución exacta; conservar snapshots históricos marcados como históricos; no declarar PR validada por un solo workflow. No pedir al usuario información ya disponible en repo/documentos.
+
+**Seguridad:** no Neon producción, no despliegue productivo, no cambios Cloudflare/secretos/DNS/billing, no force-push, no main directo; respetar PR #196/#193/#190.
+
+
+### Corrección del estado stale-count — 2026-11-05 UTC
+
+No reabrir como defecto no resuelto el caso básico de conteo fuera de orden: #200 ya captura `expected_on_hand_quantity` en la creación y devuelve 409 `COUNT_STALE` si el saldo cambió antes de confirmar. Hay prueba de integración que confirma primero el conteo más nuevo y rechaza el antiguo sin ledger movement. La revisión pendiente es más estrecha: evaluar ABA/versionado monotónico y exigir que todos los escritores futuros respeten el mutex del almacén. La migración 0005 sigue siendo un riesgo separado de atomicidad.
+
+
+
+## Reconciliación posterior: migración atómica y ramas sincronizadas — 2026-11-05 UTC
+
+- #200 HEAD `a40d8378d792197628f70b07be04f92686d55bdb`: 17 ahead/0 behind de main, 30 archivos (+3555/-17). Diez workflow runs completados success en este SHA, incluidos CI, Playwright, Database migration validation, Semgrep, Security, Secret history, Backup restore, Dependency review, ODD docs y Project progress. Sin status contexts, reviews formales ni threads inline.
+- #204 HEAD `e37847c95958c3475f90041263ca4fac7f98c2d1`, base #200 HEAD `a40d8378...`: 4 ahead/0 behind. Merge commit que incorpora la migración atómica de #200 y preserva el cambio de fixtures. No se recuperaron runs/status contexts para este SHA; sin reviews/threads.
+- #205 HEAD `a2fe55847d72b4d9994b781880843ab4906c7b08`, base #204 HEAD `e37847c...`: 10 ahead/0 behind. Merge commit que incorpora el último cambio de #204, la migración atómica y el workflow de rollback, preservando idempotencia. No se recuperaron runs/status contexts para este SHA; sin reviews/threads.
+- Migración 0005 tiene ahora BEGIN/COMMIT de nivel superior. migration-check prueba una copia con fallo inyectado antes de COMMIT, espera que psql falle y comprueba que no existan tablas de inventario; después aplica la migración real y sus assertions. Los diez workflows success de #200 incluyen Database migration validation en el SHA a40d8378...
+- #204/#205 requieren validación completa en sus nuevos merge HEAD; no heredar CI de SHA anteriores. Todas las PR siguen Draft; ninguna se fusionó.
+- Stale-count básico está implementado: captura expected_on_hand_quantity y devuelve 409 si el saldo difiere; una prueba confirma primero el conteo nuevo y rechaza el antiguo. Riesgo residual ABA/versionado monotónico antes de sumar otros escritores.
+- Issue #53 sigue abierta; autorización/aislamiento completo aún no probado. Colisión 0005 roles en #194 sigue pendiente.
+- No tocar Neon producción, deploy productivo, secretos, DNS, billing ni datos reales; no force-push ni modificar main.
+
+
+
+## Corrección de evidencia CI y sincronización de ramas — 2026-11-05 UTC
+
+La consulta directa a GitHub Actions por `head_sha` incluye eventos `push` y `pull_request`; sus resultados amplían la consulta anterior, que solo devolvía runs PR-triggered:
+
+- #200 HEAD `a40d8378d792197628f70b07be04f92686d55bdb`: **17/17 workflow runs success** (10 pull_request + 7 push), incluye Database migration validation con rollback inducido, CI y Playwright. 17 ejecuciones no significan 17 checks únicos. Combined statuses vacío; sin reviews formales ni threads.
+- #204 HEAD `e37847c95958c3475f90041263ca4fac7f98c2d1`: **7/7 workflow runs success** (push), incluye CI, Playwright, Database migration validation, Semgrep, Security, Secret history y Backup restore. Sin status contexts, reviews ni threads.
+- #205 HEAD `a2fe55847d72b4d9994b781880843ab4906c7b08`: **8/8 workflow runs success** (7 push + 1 pull_request), incluye CI, Playwright, Database migration validation, Semgrep, Security, Secret history y Backup restore. Sin status contexts, reviews ni threads.
+- Relaciones verificadas: #200 17 ahead/0 behind main; #204 4 ahead/0 behind #200; #205 10 ahead/0 behind #204. No hay divergencia entre la pila.
+- Los cuerpos de #200/#204/#205 reflejan estos SHA y resultados. Todas permanecen Draft; no hay aprobación formal ni merge.
+- La migración 0005 está envuelta en BEGIN/COMMIT y el workflow de migración ejecuta un fallo inducido antes de COMMIT, verifica ausencia de tablas y después aplica el SQL real. Los 17/7/8 runs incluyen la validación de migraciones de sus SHA correspondientes.
+- Stale-count básico: snapshot de cantidad, 409 y prueba de confirmación inversa. Residual ABA/versionado antes de futuros writers.
+- #202 HEAD `2793550cb9ccb4595971ad86ce6b950203c681df` tenía 11 workflow runs (7 success, 4 in_progress) en la consulta; ese estado se recalcula para cualquier commit documental posterior.
+
+
+## Handoff vigente — 2026-11-05 UTC (supersede handoffs anteriores)
+
+**Reconciliar el estado vivo antes de continuar.** Este checkpoint sustituye los SHA/estados de las secciones históricas anteriores.
+
+### Estado exacto verificado
+
+- `main`: `7b0f057b8c152515005feed40305143c0ebb94b0`.
+- #200: HEAD documental `5fbc17a48b65076cf5609a7a054bbd125a3a5d1e`, 32 ahead/0 behind; 16/16 workflow runs success. HEAD de código `7b58b140e50c46a3d3b087e3445a4b04e6243a81` tuvo 16/16 success e incluye balance_version y la prueba ABA.
+- #204: HEAD `07a5a41c0f5f5c36fb89a5c5950796493d56eb20`, base #200 `5fbc17a...`, 8 ahead/0 behind, diff propio 1 archivo, 6/6 workflows success.
+- #205: HEAD `7005d9a5b03234bd0209d0cc1ea75e8ae21e0032`, base #204 `07a5a41...`, 20 ahead/0 behind, diff propio 3 archivos, 8/8 workflows success; preserva idempotencia y añade versión monotónica.
+- #202: HEAD `c2bc689c535c69cea6e94a69826ba6e1f465a5d2` antes de esta actualización, 67 ahead/0 behind, 11/11 workflows success. Esta edición documental genera un nuevo SHA y requiere revalidación.
+- #194: HEAD `7b3ad50e5780416868a1a428b856d12c4ea1e2ea`, 13 ahead/2 behind frente a main actual, 11/11 workflows success. Sigue sin integrar por colisión de migraciones 0005 (roles vs inventario) y divergencia.
+
+En #200/#204/#205/#202/#194 no se encontraron status contexts, reviews formales ni review threads en la consulta de este checkpoint. Todas siguen Draft. CI success no es aprobación formal. No se fusionó ninguna.
+
+### Corrección técnica recién incorporada
+
+- `inventory_counts_guard` ahora se ejecuta en INSERT/UPDATE/DELETE y exige que los conteos nazcan como `draft`; assertions PostgreSQL prueban el rechazo de INSERT directo `confirmed` y la unicidad de opening por transición draft→confirmed.
+- PR #200 código SHA `05bac0b...`: 17/17 workflows success; PR #200 HEAD documental `daaeaf...`: 16/16 workflows success.
+- PR #204 y #205 se sincronizaron con merge commits no-forzados; ambas están 0 behind y sus HEAD exactos pasaron 7/7 workflows.
+- ABA queda cubierto con `balance_version`: incremento automático en cambios de on-hand/reservas, no-DELETE de balance, snapshot `expected_balance_version` por línea y comparación al confirmar. El test 8.250 → 8.500 → 8.250 devuelve 409 aun con saldo final igual. Próximo gate: comprobar que todo futuro escritor actualice `inventory_balances` y respete el mutex.
+- La matriz de permisos está APROBADA desde 2026-10-31; no confundir aprobación de política con implementación completa. Issue #53 sigue abierta.
+
+### Próximos pasos técnicos
+
+1. Terminar auditoría estática de #200/#204/#205: idempotencia, locks, tenant/branch scope, restricciones SQL, lifecycle, manejo de errores y pruebas de concurrencia.
+2. Diseñar y cerrar ABA/versionado monotónico; todos los escritores futuros deben incrementar versión bajo el mutex del almacén.
+3. Completar autorización server-side y pruebas cross-tenant/cross-branch exigidas por issue #53 antes de cualquier merge a main.
+4. Después de estabilizar inventario, resolver #194: renumerar la migración de roles a 0006 y actualizar referencias/assertions/workflows; no integrar la rama divergida tal cual.
+5. Mantener Worker Previews sin activar hasta auditar autenticadamente bindings, secrets, routes, service bindings, Workflows y aislamiento de recursos.
+
+### Límites que no cambian
+
+No migrar a Neon, no desplegar producción, no cambiar Cloudflare productivo, secretos, DNS, billing ni datos reales. No modificar main directamente ni force-push. No fusionar PRs sin revisión formal y gates completos. Mantener documentos y handoff actualizados en el mismo ciclo de cada cambio.
+
+
+## Handoff vigente — 2026-11-05 UTC
+
+### HEAD y CI verificados
+
+- #200 HEAD `5fbc17a48b65076cf5609a7a054bbd125a3a5d1e`: 32 ahead/0 behind de main, 16/16 workflow runs success.
+- #204 HEAD `07a5a41c0f5f5c36fb89a5c5950796493d56eb20`: 8 ahead/0 behind de #200, 6/6 success.
+- #205 HEAD `bb4a60454061ce09fef07100e75010f3abc5b883`: 25 ahead/0 behind de #204, diff propio 3 archivos, 7/7 success; suite PostgreSQL de conteos 20/20.
+- #202 HEAD `52996471ce3c143527fe4725085b38ee67bdf402`: 74 ahead/0 behind de main, 18 documentos, 11/11 success.
+- #194 HEAD `7b3ad50e5780416868a1a428b856d12c4ea1e2ea`: 13 ahead/2 behind de main actual; 11/11 success no resuelve su colisión de migración.
+- Todas Draft; sin reviews formales, threads ni status contexts en la consulta. No se fusionó ninguna.
+
+### Trabajo que acaba de quedar hecho
+
+- Se añadieron pruebas HTTP PostgreSQL para selector de tenant ajeno (POST/GET), producto de otro tenant, Inventory sin asignación a otra sucursal y warehouse/branch discordante. Los casos denegados verifican cero escrituras. Los primeros dos intentos de CI encontraron defectos en los propios fixtures (aserción sin join al padre y asignación de sucursal ya existente/inactiva); se corrigieron y el HEAD final pasó 20/20.
+- Se reconciliaron addenda de seis documentos históricos de autorización/aislamiento, distinguiendo matriz aprobada, implementación parcial en ramas y límites que siguen abiertos.
+- Hallazgo residual de auditoría: migraciones 0001–0005 no crean trigger append-only para `audit_logs`; no se han verificado privilegios del rol runtime. El ledger de inventario sí impide UPDATE/DELETE.
+
+### Próxima secuencia recomendada
+
+1. Continuar auditoría estática con foco en integridad de auditoría, privilegios runtime, IDs ajenos en confirmación, rutas de catálogo y cobertura de cada rol.
+2. No añadir todavía otros escritores de stock hasta revisar consistencia ledger/balance y exigir mutex de almacén + `balance_version` en todos los writers.
+3. Completar issue #53 con pruebas cross-tenant/cross-branch por recurso y operación; añadir endpoints de lectura de balances/movimientos según matriz antes de declarar permisos de lectura completos.
+4. Después de consolidar inventario, resolver PR #194: migración de roles 0005 → 0006 y actualizar assertions/referencias/workflows; volver a validar.
+5. Mantener Worker Previews sin activar hasta auditoría autenticada de bindings, secrets, routes, service bindings, Workflows y aislamiento real.
+
+### Límites vigentes
+
+No fusionar sin review formal y gates completos. No migrar a Neon, no desplegar producción, no tocar Cloudflare productivo, secretos, DNS, billing ni datos reales. No modificar main directamente ni force-push.
+
+
+### Última mejora de concurrencia — 2026-11-05 UTC
+
+PR #205 HEAD `bb4a60454061ce09fef07100e75010f3abc5b883`: el handler reclama el documento idempotente antes de tomar locks de balance. Replays retornan sin bloquear stock; los nuevos conteos siguen almacén → documento → balances. La suite PostgreSQL pasó 20/20 y el SHA exacto 7/7 workflows. Próximo paso: terminar auditoría estática de auditoría general, privilegios runtime, IDOR de confirmación y cobertura restante de roles.
+
+
+## Checkpoint operativo más reciente — 2026-11-05 UTC (revalidación directa GitHub)
+
+### Estado vivo de PRs prioritarias
+
+- `main` resuelve actualmente a `7b0f057b8c152515005feed40305143c0ebb94b0`.
+- #194: abierta/Draft, HEAD `7b3ad50e5780416868a1a428b856d12c4ea1e2ea`, 13 ahead / 2 behind de main; colisión de migración `0005_register_shift_member_roles.sql` contra `0005_warehouse_inventory.sql` de #200. No integrar todavía.
+- #200: abierta/Draft, HEAD `5fbc17a48b65076cf5609a7a054bbd125a3a5d1e`, 32 ahead / 0 behind de main. El conector devolvió 10 workflow runs PR-triggered en la primera página y los 10 figuran completed/success; el historial de la PR registra además 16/16 runs totales (push + PR) para este SHA. Sin reviews formales ni threads.
+- #202: abierta/Draft, HEAD `5a5b7514e84dfb1420a35e3ca5747250ae9fa1d4`, 101 ahead / 0 behind de main, 18 archivos. El conector devolvió 9 workflow runs PR-triggered, todos completed/success; no confundir esta página filtrada con el total histórico. Sin reviews formales ni threads.
+- #204: abierta/Draft, HEAD `07a5a41c0f5f5c36fb89a5c5950796493d56eb20`, 8 ahead / 0 behind de #200; el conector no devolvió runs PR-triggered para este SHA en esta consulta. El handoff previo conserva evidencia histórica 6/6; no presentarla como nueva comprobación.
+- #205: abierta/Draft, HEAD `bb4a60454061ce09fef07100e75010f3abc5b883`, 25 ahead / 0 behind de #204, diff propio 3 archivos. El conector devolvió 1 run PR-triggered success; el handoff previo conserva evidencia histórica 7/7 y PostgreSQL integration 20/20 para el mismo SHA.
+- #207: abierta/Draft, HEAD `26c5270664b82aebc6a12fafe6973de8544bc6f7`, 10 ahead / 0 behind de #200. El conector devolvió 1 run PR-triggered success; el handoff previo conserva evidencia histórica 7/7 workflows y 9/9 check runs para este SHA. Sin reviews formales ni threads.
+- #196 sigue abierta/Draft con HEAD histórico `c332e740aff279fb8b22a8879581d4b8a3c7de21`, base antigua; no usarla como fuente actual de inventario porque #200 contiene la vertical slice más reciente.
+- #206 está abierta y no Draft (Dependabot, HEAD `d40b730d91888838789c27ac5e8925b451b4e4f2`); requiere revisión independiente del lockfile/override antes de cualquier merge.
+- #193 sigue abierta no Draft. No se cerró ni se modificó ninguna PR durante esta revalidación.
+
+### Revisiones y dependencias
+
+- Reviews formales y threads inline: cero en #194/#200/#202/#204/#205/#207.
+- Combined status contexts vacíos para los HEAD consultados de #200/#202/#207; esto no equivale a ausencia de workflow/check runs.
+- #205 depende de #204, que depende de #200. #207 depende directamente de #200.
+- #207 añade `0007_audit_logs_append_only.sql`, pero el stack aún requiere resolver el conflicto `0005` y reservar/aplicar correctamente `0006` para roles antes de validar la secuencia consolidada. Su CI actual prueba 0001–0005 inventario y después 0007; no demuestra todavía la pila final con la migración de roles.
+- La migración #207 protege UPDATE/DELETE/TRUNCATE y añade assertions con roles sintéticos. Esto **no verifica** el rol PostgreSQL efectivo de `DATABASE_URL` ni demuestra que el runtime real sea no propietario con SELECT/INSERT solamente. Mantener ese punto como NO VERIFICADO.
+- Issue #53 continúa abierta/P0. La confirmación de conteos es el único escritor HTTP de stock; ventas, recepciones, reservas, devoluciones y transferencias siguen sin estar implementadas.
+
+### Regla permanente anti-repetición
+
+Antes de pedir cualquier Build ID, deployment ID, SHA, URL, captura o dato al propietario: consultar GitHub, checks, workflow runs, comentarios de bots y documentos. No volver a pedir el Workers Build ID de #207 (`0c8394a1-4d91-4061-a850-6c78f3b11295`) ni el Build ID histórico `3542c660-e5e3-435e-8be5-dbed236cec1c`. El segundo sigue pendiente de inspección autenticada y debe permanecer NO VERIFICADO si no existe un conector independiente. No pedir capturas ni acceso a TinyFish; TinyFish queda fuera del flujo. No pedir terminal, CLI ni reconexiones. Solicitar un dato al propietario solo si no es recuperable por herramientas/documentos y cambia una decisión de seguridad.
+
+### Decisión y siguiente trabajo
+
+- Mantener todas las PR anteriores abiertas/Draft hasta resolver revisión funcional, migraciones y gates. No fusionar ni desplegar.
+- Próximo trabajo técnico: completar auditoría estática de #207 y de la confirmación de conteos con IDs ajenos; verificar los contratos de locks y consistencia ledger/balance; documentar hallazgos concretos en las PR/issue existentes, sin abrir PR duplicadas.
+- No se modificó código, migraciones, main, Neon, Cloudflare, secretos, DNS, billing ni datos reales en esta revalidación. Producción permanece **NO LISTA**.
+
+
+## Checkpoint incremental — 2026-11-05 UTC — prueba de IDs de confirmación cerrada
+
+- PR #205 avanzó en su rama existente a HEAD `c0bcbbe48aa8783b85ee7787dd1ae8a6d0dfdafc`, 26 ahead / 0 behind de #204, diff propio de 3 archivos. Sigue abierta/Draft.
+- Se añadió una prueba PostgreSQL HTTP que intenta confirmar un count ID perteneciente a otra sucursal y otro perteneciente a otro tenant, usando el scope de la ruta legítima del tenant actual. Ambos deben devolver 404 `COUNT_NOT_FOUND`; las filas permanecen `draft` y no aparecen movimientos de ledger.
+- Primer CI del commit de prueba: los 21 tests pasaron, pero falló el teardown porque el fixture del tenant ajeno conservaba una membresía al intentar borrar el usuario. Se corrigió el orden de limpieza para borrar primero la membresía/organización extranjera y luego el usuario. No fue un fallo del handler ni de la nueva aserción.
+- Validación final del HEAD `c0bcbbe48aa8783b85ee7787dd1ae8a6d0dfdafc`: **9/9 check-runs success**, 0 failure, 0 pending; incluye CI `verify`, PostgreSQL migration, Chromium smoke, SAST/Trivy, secret history, backup restore y checks Cloudflare. El log exacto de `verify` confirma **21/21 pruebas** en `inventory-counts.integration.test.ts`.
+- No se fusionó #205. No se alteró runtime productivo, migraciones remotas, Neon, Cloudflare settings/secrets/DNS/billing ni datos reales. Los checks de Workers/Pages son evidencia de build/check de la integración; no prueban producción ni tráfico.
+- La última actualización de esta rama documental (#202) antes de este checkpoint fue HEAD `5057fe007b02c98b5be7ecd73aca4f943a0f2e7a`, con 13/13 check-runs success. Los commits de este checkpoint avanzarán #202 y requieren verificación propia del nuevo SHA.
+
+### Siguiente paso
+
+Continuar la revisión de #207 y los gates P0 de issue #53; resolver la secuencia de migraciones #194/#200 antes de cualquier integración. No pedir IDs, capturas ni acciones manuales ya documentadas. Mantener todas las PR en Draft hasta review y gates completos.
+
+
+## HANDOFF OBLIGATORIO PARA CHAT NUEVO — 2026-11-05 UTC
+
+Este bloque prevalece sobre instrucciones antiguas contradictorias o snapshots previos. Es el punto de continuidad más reciente consultado directamente en GitHub.
+
+### Fuente de verdad y arranque sin repetir trabajo
+1. Repositorio: https://github.com/BTF14/Micro-app
+2. Rama documental y de continuidad: `docs/reconcile-current-state-20261104`; PR #202.
+3. Al iniciar un chat nuevo, NO preguntes al usuario qué se hizo, qué PRs existen, cuál es el Build ID, ni solicites capturas, terminal, CLI, TinyFish o reconexión. Primero lee en esta rama y en este orden: `AGENTS.md`, `WORK_CHECKPOINT.md`, `docs/CONSTITUTION.md`, `docs/CURRENT_STATE.md`, `docs/HANDOFF_NEXT_CHAT.md`, `docs/PROJECT_PLAN.md`, `docs/STATE_JOURNAL.md`, `docs/SECURITY_ROADMAP.md`. Si un archivo no existe en esa rama, comprueba la ruta/ramas disponibles antes de concluir que falta.
+4. Después consulta GitHub en vivo: PRs #194/#200/#202/#204/#205/#207, sus HEADs, bases, archivos, reviews, comentarios/threads, commits, check-runs y workflows. Los SHAs de este bloque son puntos de partida, no sustituyen la consulta viva.
+5. No pidas al usuario información que puede obtenerse de GitHub, los documentos o los conectores disponibles. Solo pregunta por un dato si no puede recuperarse técnicamente y es indispensable para una decisión de seguridad; explica exactamente qué dato falta y por qué.
+6. No reabrir diagnósticos ya resueltos ni recrear PR/documentos duplicados. Actualiza el registro existente con evidencia y fecha; separa siempre HECHO VERIFICADO, HISTÓRICO, PENDIENTE y NO VERIFICADO.
+7. El usuario trabaja desde teléfono y no dispone de terminal. No le des instrucciones de terminal/CLI. TinyFish queda fuera del flujo; no solicitar credenciales ni volver a conectar TinyFish.
+8. El usuario autorizó criterio técnico senior para avanzar autónomamente dentro del repositorio. Mantén cambios enfocados y reversibles; no interpretes esa autorización como permiso para tocar producción, secretos, billing, DNS o datos reales. No fusionar ni desplegar sin cumplir gates de seguridad, migraciones, reviews y pruebas. Las PR abiertas se mantienen Draft mientras no haya aprobación objetiva.
+
+### Snapshot GitHub vivo — 2026-11-05 UTC
+Todos los seis PR siguen abiertos y Draft; ninguna se fusionó. Los check-runs del HEAD actual consultado son:
+- #194 — HEAD `7b3ad50e5780416868a1a428b856d12c4ea1e2ea`, base `main`: 13/13 success, 0 failure, 0 pending.
+- #200 — HEAD `5fbc17a48b65076cf5609a7a054bbd125a3a5d1e`, base `main`: 20/20 success, 0 failure, 0 pending.
+- #202 — HEAD `44d073c68b256267ec6d13bda1832faa13880bcc`, base `main`: 13/13 success, 0 failure, 0 pending. Es la rama documental; este bloque nuevo todavía debe añadirse y validarse en un nuevo SHA.
+- #204 — HEAD `07a5a41c0f5f5c36fb89a5c5950796493d56eb20`, base #200: 8/8 success, 0 failure, 0 pending.
+- #205 — HEAD `c0bcbbe48aa8783b85ee7787dd1ae8a6d0dfdafc`, base #204: 9/9 success, 0 failure, 0 pending. Incluye 21/21 pruebas en `inventory-counts.integration.test.ts`, incluida la prueba de IDs de conteo de otra sucursal/tenant; intentos rechazados 404 y sin cambios de estado ni movimientos.
+- #207 — HEAD `26c5270664b82aebc6a12fafe6973de8544bc6f7`, base #200: 9/9 success, 0 failure, 0 pending.
+
+Los recuentos anteriores corresponden a check-runs consultados para esos SHAs, no garantizan estado futuro ni despliegue productivo. Verificar de nuevo al retomar. No afirmar que un check de preview equivale a producción.
+
+### Decisiones/bloqueos que siguen vigentes
+- #194/#200 tienen colisión de migración `0005`: `0005_register_shift_member_roles.sql` frente a `0005_warehouse_inventory.sql`. Reconciliar numeración y dependencias antes de integrar.
+- Revisar la secuencia consolidada `0005/0006/0007` del stack de inventario/roles/audit logs.
+- #207 implementa protecciones append-only para UPDATE/DELETE/TRUNCATE y assertions con roles sintéticos. El rol PostgreSQL efectivo usado por `DATABASE_URL` (owner/bypass/privilegios reales) sigue **NO VERIFICADO**; los tests sintéticos no demuestran el rol runtime real.
+- Issue #53 continúa abierta/P0: el flujo de confirmación de conteos es el único escritor HTTP de stock; ventas, recepciones, reservas, devoluciones y transferencias no están implementadas. No declarar inventario completo.
+- Verificar contracts de locks, atomicidad ledger/balance, idempotencia, autorización por tenant/sucursal/almacén y pruebas de concurrencia.
+- No hay autorización para migrar datos reales, modificar Neon main, runtime de Cloudflare, secretos, DNS, billing o producción. Producción permanece **NO LISTA**.
+- Build IDs ya documentados: #207 `0c8394a1-4d91-4061-a850-6c78f3b11295`; histórico `3542c660-e5e3-435e-8be5-dbed236cec1c`. No volver a pedirlos. El segundo permanece **NO VERIFICADO** si no hay conector independiente que permita inspección autenticada.
+
+### Próximo trabajo concreto
+1. Auditar #207 completa: migración SQL, assertions, privilegios/ownership, trigger coverage, bypass paths, test workflow y orden final de migraciones. Registrar qué queda demostrado y qué no.
+2. Resolver diseño de numeración y orden de migraciones #194/#200/#207 sin reescribir historia de forma insegura ni integrar ramas incompatibles.
+3. Revisar issue #53 y confirmar alcance P0/P1 del inventario; completar pruebas de concurrencia, consistencia ledger/balance e idempotencia donde falten, trabajando en PR existentes.
+4. Revisar reviews y threads reales antes de cualquier recomendación de merge. No fusionar por tener checks verdes solamente.
+5. Registrar resultados en HANDOFF, CURRENT_STATE y STATE_JOURNAL, y verificar que la rama documental/PR #202 queda con checks verdes después de cada actualización.
+
+### Prompt de continuidad para el siguiente chat
+Actúa como ingeniero principal responsable de continuar BTF14/Micro-app. Antes de actuar, lee toda la documentación enumerada en el bloque “Fuente de verdad y arranque sin repetir trabajo” de la rama `docs/reconcile-current-state-20261104`, y consulta GitHub en vivo. No me pidas repetir información ya documentada, IDs, Build IDs, capturas, terminal, CLI, TinyFish ni reconexiones. Trabajo desde teléfono. No inventes verificaciones ni presentes snapshots antiguos como actuales. Distingue HECHO VERIFICADO / HISTÓRICO / PENDIENTE / NO VERIFICADO. Continúa desde los bloqueos y próximos pasos de este handoff, con criterio técnico senior y cambios concretos en las PR existentes. No toques producción, secretos, Neon main, Cloudflare settings/DNS/billing ni datos reales. No fusiones ni despliegues hasta cumplir todos los gates. Al terminar, actualiza HANDOFF_NEXT_CHAT.md, CURRENT_STATE.md y STATE_JOURNAL.md con evidencia y SHAs, y deja listo el siguiente relevo.
+
+
+
+## Reanudación técnica — 2026-11-05 UTC — auditoría viva de #207 y pila de migraciones
+
+### Snapshot vivo — 2026-11-05 UTC
+
+- #194: `work/mvp-foundation`, HEAD `7b3ad50e5780416868a1a428b856d12c4ea1e2ea`, base main, 13 ahead / 2 behind, 13/13 checks success, Draft. Migration conflict: `0005_register_shift_member_roles.sql`.
+- #200: `feat/inventory-vertical-slice-mainline-20261104`, HEAD `5fbc17a48b65076cf5609a7a054bbd125a3a5d1e`, base main, 32 ahead / 0 behind, 20/20 checks success, Draft. Owns `0005_warehouse_inventory.sql`.
+- #202: `docs/reconcile-current-state-20261104`, HEAD before this documentation commit `815efb6b19f4e367c0b0293522231294296e58e7`, 110 ahead / 0 behind, 13/13 checks success, Draft. Recheck after docs commit.
+- #204: HEAD `07a5a41c0f5f5c36fb89a5c5950796493d56eb20`, base #200, 8 ahead / 0 behind, 8/8 checks success, Draft.
+- #205: HEAD `c0bcbbe48aa8783b85ee7787dd1ae8a6d0dfdafc`, base #204, 27 ahead / 0 behind, 9/9 checks success, Draft.
+- #207: HEAD `26c5270664b82aebc6a12fafe6973de8544bc6f7`, base #200, 10 ahead / 0 behind, 9/9 checks success, Draft.
+- All six are open/unmerged; 0 formal reviews and 0 inline review threads were returned. Issue #53 remains open/P0.
+
+### Estado de #207
+
+La migración y assertions de append-only para audit_logs están implementadas; CI 9/9 success en el SHA citado. No aprobar todavía: `.github/workflows/migration-check.yml` aplica 0001–0005 y luego 0007, omitiendo 0006 de roles. Las assertions usan roles sintéticos, no demuestran el principal real de DATABASE_URL. Ownership runtime, memberships y grants efectivos permanecen NO VERIFICADOS. ENABLE ALWAYS no protege contra owner/superuser con capacidad de alterar triggers. Comentario técnico publicado en #207, ID 6651579307.
+
+### Estado de colisión 0005
+
+#194 y #200 usan el mismo número 0005 para migraciones distintas. La numeración final prevista es 0005 inventario, 0006 roles, 0007 audit logs. #194 está 13 ahead / 2 behind de main y no desciende de #200; no renumerar sin resolver la relación de ramas y actualizar CI/assertions para probar el stack combinado. Comentario de coordinación publicado en #194, ID 6651592608.
+
+### Archivos y límites
+
+`WORK_CHECKPOINT.md` se buscó en la rama documental, main y ramas #194/#200/#207; no existe en esas referencias. No pedirlo al usuario ni inventarlo. HANDOFF/CURRENT_STATE/JOURNAL conservan la continuidad.
+
+No se modificó código runtime, migraciones, main, Neon, secretos, Cloudflare settings, DNS, billing ni datos reales. No merge ni despliegue manual. Check-runs Cloudflare publican URLs de preview, pero el destino final del Worker sigue NO VERIFICADO sin lectura autenticada. Producción NO LISTA.
+
+### Próximas acciones
+
+1. Resolver ancestry de #194/#200 sin force-push ni diff duplicado; renumerar migración de roles a 0006 y hacer que CI aplique 0005+0006.
+2. Actualizar #207 para probar 0005+0006+0007 desde base limpia; revalidar su SHA exacto.
+3. Mantener sin resolver el gate de DATABASE_URL hasta evidencia autorizada read-only del principal efectivo y sus grants/membresías.
+4. Seguir P0 #53: autorización tenant/branch/role, idempotencia, concurrencia, locks, balance_version/ABA y consistencia ledger/balance. Los writers comerciales futuros siguen sin implementar.
+5. No aprobar, fusionar ni desplegar hasta resolver migraciones, runtime security, revisiones y gates.
+
+
+## Revisión adicional P0 de inventario — PR #205 — 2026-11-05 UTC
+
+- Inspección estática del HEAD #205 `c0bcbbe48aa8783b85ee7787dd1ae8a6d0dfdafc`: idempotency key opcional con índice único por organización/actor; hash canónico incorpora organización, sucursal, almacén, tipo, motivo y líneas ordenadas/normalizadas. Misma clave y payload devuelve el mismo conteo; payload distinto devuelve 409. La cabecera, líneas y auditoría se crean en una transacción; fallo inducido de auditoría revierte también la clave.
+- La prueba de concurrencia de creación envía dos requests simultáneos con la misma clave y comprueba una cabecera, una línea y un evento de auditoría. Replay de conteo ya confirmado devuelve estado confirmado.
+- Los conteos físicos capturan cantidad y `balance_version` bajo el mutex del almacén. El trigger incrementa versión por cambios de existencias/reservas, no por metadatos, y bloquea DELETE. La prueba ABA 8.250 → 8.500 → 8.250 devuelve 409 aunque la cantidad vuelva al valor original.
+- Confirmación sigue almacén → documento → balances ordenados y escribe balance, movimiento, estado y auditoría dentro de la misma transacción. Tests de aislamiento rechazan count IDs de otra sucursal/tenant sin escrituras.
+- Para el SHA exacto #205, 9/9 check-runs success. La PR permanece abierta/Draft, 27 ahead/0 behind de #204, sin reviews formales ni threads inline.
+- **Riesgo residual P0:** el DDL protege el ledger contra UPDATE/DELETE y valida referencias de movimientos a conteos confirmados, pero no impone universalmente que cada mutación de `inventory_balances` tenga su movimiento correspondiente ni que el delta del movimiento coincida con el cambio de balance. El endpoint actual acopla ambos en la misma transacción; no es una garantía de base de datos frente a SQL directo ni frente a futuros writers que omitan el contrato. No se debe declarar consistencia global del ledger ni habilitar writers adicionales hasta definir y probar la reconciliación.
+- Comentario técnico publicado en #205 (6651640740). Se actualizó el cuerpo de la PR para reemplazar snapshots antiguos y reflejar HEAD, base, checks, ABA, límites y riesgo residual actuales. No se cambió código.
+
+
+## Hallazgo adicional — divergencia #196/#200 y migraciones — 2026-11-05 UTC
+
+**Nueva advertencia de continuidad:** #196 y #200 no son cambios independientes. #196 (HEAD `c332e740aff279fb8b22a8879581d4b8a3c7de21`, base main SHA `705d3db3220894c7d3baca8dc7e7a6b623dfbb94`, Draft, mergeable=false) vs #200 (HEAD `5fbc17a48b65076cf5609a7a054bbd125a3a5d1e`, base main SHA `7b0f057b8c152515005feed40305143c0ebb94b0`, Draft): comparación diverged 128 ahead / 34 behind, 24 rutas solapadas. Incluye migration 0005, assertions, migration-check, catálogo, inventario, branch-context y CI. El SQL 0005 difiere (blob #196 `8a2b13651ebd5dc1d3bb87efbe34cb863c0e0d99`, 265 líneas; #200 `bb9020fdca535f84fda0f468e9d3ab86e1cc319c`, 330 líneas); #200 contiene evolución posterior (balance_version/lifecycle/rollback). No copiar ni retargetear #196 a ciegas. Mapear commits y rutas para separar catálogo/API de inventario y preservar #200. Issue #53 sigue abierta/P0; su cuerpo refleja #196 y referencias históricas, por lo que necesita reconciliación documental. Comentario registrado en issue #53, ID 6651679831.
+
+## Dependencia adicional de issue #53 — divergencia #196/#200 — 2026-11-05 UTC
+
+- Comparación viva: #196 sigue abierta/Draft, HEAD `c332e740aff279fb8b22a8879581d4b8a3c7de21`, base main `705d3db3220894c7d3baca8dc7e7a6b623dfbb94`, mergeable=false. #200 sigue abierta/Draft, HEAD `5fbc17a48b65076cf5609a7a054bbd125a3a5d1e`, base main `7b0f057b8c152515005feed40305143c0ebb94b0`.
+- Las PR comparten 24 rutas de 33 (#196) y 30 (#200), incluidas ambas migraciones/assertions 0005, catálogo, branch-context, inventario, inventory-locks, CI y migration-check. #196 tiene 128 commits ahead / 34 behind respecto a la base #200; no es una dependencia lineal ni un retarget seguro.
+- Migración 0005 difiere: #196 blob `8a2b13651ebd5dc1d3bb87efbe34cb863c0e0d99` (265 líneas), #200 blob `bb9020fdca535f84fda0f468e9d3ab86e1cc319c` (330 líneas). La versión #200 contiene evolución posterior de inventario; no sustituirla por el snapshot #196.
+- Decisión: no retargetear, fusionar ni copiar #196 sobre #200 a ciegas. Mapear commits/rutas y separar código de catálogo de inventario; conservar los cambios más avanzados de #200 y validar la combinación desde PostgreSQL limpio. Issue #53 permanece abierta/P0. Comentario de reconciliación en issue #53: 6651679831.
+
+
+## Reanudación — 2026-11-05 UTC — PR #208 y numeración 0005/0006
+
+**Estado vivo:** #208 es la continuación Draft de #194 sobre #200. HEAD actual `8b3646adb3d6dc1c2a7a3ef17d8ead4a442e0509`, base `feat/inventory-vertical-slice-mainline-20261104` HEAD `5fbc17a48b65076cf5609a7a054bbd125a3a5d1e`, 15 ahead / 0 behind, 10 archivos, mergeable=true. #194 fue cerrada como supersedida, no merged; comentario ID 6651810854. Merge commit base `f8d90fbff7eb274c59d5442873124e7470bb4e66` tiene padres #200 y antiguo #194, sin force-push.
+
+**Migraciones:** #200 conserva 0005 inventario. #208 renombra la migración de roles a `0006_register_shift_member_roles.sql`; ambos workflows ejecutan 0001–0006 y CI incluye tests PostgreSQL para roles own-shift. El migration-check pasó en SHA previo `f8d90fb...`. Tras el ajuste de locks de autorización, HEAD actual es `8b3646ad...`; solo cinco checks de seguridad/preview fueron visibles en el último snapshot, CI/migration-check para ese SHA no aparecen todavía. No afirmar validación completa; esperar CI.
+
+**Código autorización:** en #208, `authorizeTenantOperation` ahora resuelve tenant con `lockRows=true`; `authorizeBranchOperation` resuelve tenant y branch con locks. Aprovecha tenant/branch context actualizado de #200; no copiar versiones antiguas de #194 de esos dos módulos.
+
+**Comparación #196/#200:** 15/24 blobs compartidos son idénticos, incluidos todos los handlers/tests de catálogo; no copiar catálogo. Nueve diferencias son workflows, migración/assertions 0005 y servicios/tests inventory; preservar #200. #196 sigue abierta/Draft (no se ha cerrado).
+
+**Bloqueo siguiente:** #207 continúa abierta/Draft basada en #200; su workflow aún ejecuta 0005 → 0007 y omite 0006. Comentario en #207 ID 6651848193; en issue #53 ID 6651847660. Siguiente tarea: apilar audit logs sobre #208 y probar 0005→0006→0007 desde PostgreSQL limpio. No declarar AC-5 completo hasta ese CI.
+
+Issue #53 sigue abierta/P0; producción NO LISTA. No tocar main, Neon, secretos, Cloudflare settings/DNS/billing ni datos reales; no merge/deploy.
+
+
+## Auditoría P0 — idempotencia y aislamiento de conteos (#205) — 2026-11-05 UTC
+
+#205 HEAD `c0bcbbe48aa8783b85ee7787dd1ae8a6d0dfdafc`, 9/9 checks success, Draft. Auditoría estática de idempotencia: key header 1–128 validada; unique partial index por org/creator/key; SHA-256 canónico incluye tenant/branch/warehouse/type/reason/line items sorted/quantity/unitCost; duplicates product IDs rejected. Transacción bloquea tenant/branch/warehouse antes de reclamar el documento y después balances; replay bajo FOR UPDATE evita líneas/auditoría duplicadas; payload distinto 409. Tests PG cubren replay, order-insensitivity, confirmed replay, conflict, concurrent create, audit rollback/retry, malformed key y cross-tenant/branch. Conclusión: fuerte para creación de conteo actual; no demuestra coordinación con escritores futuros. Idempotency-Key sigue opcional; clientes sin header no obtienen dedupe. No se modificó #205.
+
+
+## Integración apilada — PR #207 sobre #208 — 2026-11-05 UTC
+
+**Stack actual:** #208 HEAD `76a246ea141eedbee877608e7c0f50d6a07f3019`, base #200. #207 ahora base `work/mvp-foundation` (#208), HEAD `dd3eb55ee3dc5776ce0e0617a3012c29ab355132`. Merge commit #207 tiene padres #207 previo `26c5270664b82aebc6a12fafe6973de8544bc6f7` y #208 `76a246ea...`; sin force-push. Compare #208-base→#207-head: 11 ahead / 0 behind, 8 archivos, mergeable=true. El diff de #207 solo contiene CI/migration-check, migración/assertions 0007, tests y ODD de audit logs.
+
+**Migraciones:** CI aplica 0001→0007 en orden e incluye integración PG de own-shift roles. migration-check aplica 0005, luego 0006, luego rollback/apply/assertions de 0007. En #208, postgres-migration success en SHA 76a246ea; CI verify y Cloudflare Pages in progress al último snapshot. En #207 SHA dd3eb55, nueve checks queued/in_progress; esperar resultados antes de declarar AC-5 completo. Comentarios: #207 6651930131, issue #53 6651930707.
+
+Ambas PR Draft/no merge. Issue #53 abierta/P0. Producción NO LISTA. No tocar main, Neon, secretos, Cloudflare productivo, DNS, billing o datos reales.
+
+
+## CI finalizado — secuencia 0001–0007 validada en PostgreSQL efímero — 2026-11-05 UTC
+
+**Validación confirmada:** #208 SHA `76a246ea141eedbee877608e7c0f50d6a07f3019` = 7/7 checks success (verify + postgres-migration incluidos). #207 SHA `dd3eb55ee3dc5776ce0e0617a3012c29ab355132` = 10/10 checks success (verify, postgres-migration, Chromium, SAST, Trivy, secret scan, Pages/Worker y backup/restore). Compare #208→#207 11 ahead/0 behind, 8 archivos, mergeable=true. CI y migration-check ejecutaron 0001→0007 desde PostgreSQL desechable; el test PG own-shift roles pasó. AC-5 de audit-logs-append-only queda validado para el stack de migraciones en CI efímero. No cierra el gate DATABASE_URL/ownership/grants runtime/Neon. #207 y #208 Draft/no merge. Comentario evidencia #207 6651950993.
+
+PR #202 documentación sigue con checks en progreso al último snapshot (verify, postgres-migration, SAST, Trivy, backup/restore, Pages); esperar resultados.
+
+
+## ODD task cerrado técnicamente y revalidación documental — 2026-11-05 UTC
+
+ODD task `odd/tasks/audit-logs-append-only.md` actualizado: AC-1..AC-7 completados para alcance de repositorio/PostgreSQL desechable; runtime DATABASE_URL real explícitamente NO VERIFICADO. SHA de implementación #207 `dd3eb55ee3dc5776ce0e0617a3012c29ab355132` pasó 10/10. Commit documental posterior HEAD #207 `3e4490695128e7638d5e71ee822dccf134fc2bce`: 5 success / 4 in_progress (verify, Chromium, Pages, backup/restore), 0 fallos; postgres-migration y validate-odd-docs success. #208 HEAD `76a246ea...` 7/7 success. #202 docs HEAD `2ef0d0820b8df9e5667ac1c478b7a51d2816dfec`: 12/13 success, Workers Build in_progress, 0 fallos. Esperar checks finales de #207 y #202. Comentario #207 ID 6651990379. No leer secreto ni Neon; no merge/deploy.
+
+
+## Precisión de alcance — authorization helpers y handlers existentes — 2026-11-05 UTC
+
+#207 HEAD 3e4490695128e7638d5e71ee822dccf134fc2bce ahora 9/9 success; #208 HEAD 76a246ea141eedbee877608e7c0f50d6a07f3019 7/7 success. Stack 0001–0007 validado en PostgreSQL efímero. Nota de alcance: authorization.ts de #208 es utilidad de política probada, no middleware conectado globalmente; los handlers catálogo/inventario no fueron modificados por #208 y mantienen checks locales. Issue #53 requiere auditoría individual de cada handler y pruebas tenant/branch/role, además del gate runtime DATABASE_URL/ownership/grants NO VERIFICADO. Comentario #208 ID 6652013382. PRs Draft/no merge.

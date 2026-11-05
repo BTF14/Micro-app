@@ -1,3 +1,11 @@
+## Estado implementado y pendiente — 2026-11-05 09:43 UTC
+
+La arquitectura objetivo de sucursal/almacén sigue vigente. En main (SHA `7b0f057...`) están 0001–0004; la pila Draft #200→#210 propone 0005–0009. El inventario multi-almacén aún no está fusionado ni aplicado a Neon.
+
+La migración 0009 exige que cada cambio no nulo de on_hand se empareje en la misma transacción con un movimiento exacto y bloquea la reescritura de organization/branch/warehouse/product en una fila de balance. Una transferencia futura debe representar explícitamente salida y entrada, no cambiar la clave de balance. 0008 valida snapshots/deltas de conteos; 0007 protege audit_logs append-only.
+
+La matriz de permisos sigue aprobada. La matriz permite lectura de existencias/movimientos a Cashier en su sucursal, pero el API actual no expone balances/ledger a ese rol. No cambiar la matriz por la limitación de la implementación; cerrar el gap con handler y pruebas branch-scoped.
+
 # ERD objetivo: organización, sucursal, almacén, caja y operaciones
 
 **Estado:** main incluye sucursales/asignaciones por PR #165 (0003); PR #167 fusionó `registers`/`register_shifts` mediante 0004 en main. Ninguna migración 0003/0004 se ha aplicado a Neon main. Almacenes, balances por almacén y operaciones comerciales siguen pendientes. No autoriza endpoints ni cambios en Neon.  
@@ -203,3 +211,14 @@ Ejecutar contra PostgreSQL efímero con fixtures sintéticas, no Neon main. Las 
 - Este trabajo es análisis y documentación; no se editó código, SQL, migraciones, workflows, secretos ni infraestructura.
 - No se ejecutó suite de runtime ni SQL porque no se introdujo implementación. Las pruebas enumeradas son criterios de aceptación futuros, no pruebas ejecutadas.
 - No se accedió a Neon ni a datos reales; no se tocó Cloudflare, DNS, billing ni producción.
+
+
+## Estado de implementación reconciliado — 2026-11-05 UTC
+
+Este addendum actualiza los checkpoints históricos que indicaban que almacenes y balances por almacén aún no estaban implementados y que la matriz de permisos estaba pendiente. La matriz se aprobó el 2026-10-31; el modelo de inventario por almacén está implementado parcialmente en ramas abiertas, no en main.
+
+- PR #200 incorpora `warehouses`, `inventory_counts`, `inventory_count_lines`, `inventory_balances`, `warehouse_inventory_movements`, FKs tenant-scoped, lifecycle de conteos, ledger append-only y confirmación transaccional. La migración 0005 no hace backfill de `products.stock_quantity`; la inicialización requiere conteo de apertura documentado.
+- PR #205 incorpora idempotencia de creación, `balance_version` monotónico, bloqueo de DELETE de balance y snapshot de versión para invalidar conteos físicos ABA. PR #204 aporta aislamiento de fixtures de integración.
+- HEAD #205 `bb4a60454061ce09fef07100e75010f3abc5b883`: 20/20 pruebas PostgreSQL de conteos y 7/7 workflow runs success. Todas las PR siguen Draft; no se fusionaron.
+- No existen todavía ventas, recepción de compras, reservas, devoluciones ni transferencias como writers HTTP; el conteo es el único escritor de inventario expuesto en esta vertical slice. Todo futuro writer debe usar el contrato `docs/architecture/INVENTORY_TRANSACTION_LOCKING.md` y actualizar balance y ledger en una sola transacción.
+- No aplicar 0005 a Neon ni tocar `products.stock_quantity` hasta diseñar backfill/reconciliación y superar gates de producción. Issue #53 permanece abierta.

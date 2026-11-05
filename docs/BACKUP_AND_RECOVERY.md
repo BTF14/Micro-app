@@ -1,3 +1,12 @@
+## Reconciliación de evidencia — 2026-11-04
+
+- PR #200 reporta checks exitosos para `Synthetic encrypted backup and restore` en su HEAD `7d2ef3d5e9ced1d4e8d386110129d21eb53af045`. Esto añade evidencia de que el workflow sintético de CI pasa en ese SHA.
+- Esa ejecución no sustituye una verificación de la última copia programada en el repositorio privado de backups, una restauración de esa copia concreta, reconciliación de conteos/relaciones comerciales, medición RPO/RTO, alerta externa ni confirmación del coste total $0.
+- No marcar recuperación operativa completa ni cerrar el gate de Seguridad Nivel 1 basándose únicamente en el check sintético de PR.
+- No se modificó backup remoto, Neon, secretos, workflows ni producción.
+
+---
+
 ## ESTADO OPERATIVO VIGENTE — restauración del backup remoto verificada (2026-10-29 UTC)
 
 - **Prueba real completada:** [run 40955935124](https://github.com/BTF14/Micro-app/actions/runs/40955935124), workflow `.github/workflows/backup-real-restore.yml`, terminó en `success`.

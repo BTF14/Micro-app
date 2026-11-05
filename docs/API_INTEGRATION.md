@@ -1,3 +1,66 @@
+## Estado API vivo — actualización 2026-11-05 10:09 UTC
+
+- PR #213 HEAD `0c1e5e40eb259cc50d0a3f602e96e07bd88fac32` (12/12 check-runs, 10/10 workflows success) añade límites runtime a GET /auth/google (10/10m), POST /auth/google bootstrap (5/h) y GET /auth/google/callback (20/10m). HMAC-SHA-256 con GOOGLE_CLIENT_SECRET, CF-Connecting-IP, counters atómicos, 429/Retry-After, fail-closed 503. Sin migración nueva; solo rama Draft, no main.
+- /auth/me y /auth/logout no se limitan en #213. No se verificaron header ni grants reales de Worker.
+- PR #210 HEAD `ab5d2168a11a825a9ed6b03341b3091c13f3c06e`: 8/8 workflows success; 0009 acopla balance↔ledger en la misma transacción. 0005–0009 siguen solo en la pila Draft, no en main/Neon.
+- authorization.ts contiene helpers, pero no es middleware global; handlers mantienen checks locales. Cashier no tiene endpoint de lectura de balances/ledger aunque la matriz aprobada lo permite.
+- Issue #53 sigue abierta/P0. Principal DATABASE_URL real/ownership/grants no verificado. Producción NO LISTA.
+
+---
+
+## Estado API vivo — actualización 2026-11-05 09:43 UTC
+
+- PR #210 HEAD `ab5d2168a11a825a9ed6b03341b3091c13f3c06e`: 8/8 workflow runs success; 0009 acopla balance↔ledger en la misma transacción. 0005–0009 siguen solo en la pila Draft, no en main/Neon.
+- Rutas actuales siguen limitadas a auth/Google OAuth, catálogo GET/POST/PATCH, conteos create/confirm, GET warehouses/count history y health. No hay endpoint de lectura de balances/ledger para Cashier, aunque la matriz aprobada lo permite en su sucursal.
+- authorization.ts contiene helpers, pero no es middleware global; handlers mantienen checks locales. auth_rate_limits no tiene caller runtime.
+- Issue #53 sigue abierta/P0. Principal DATABASE_URL real/ownership/grants no verificado. Producción NO LISTA.
+
+---
+
+## Estado API vivo — 2026-11-05 UTC
+
+Este addendum supersede la descripción histórica de “auth/health solamente” que aparece más abajo.
+
+### Rutas HTTP registradas en la pila actual de #207
+
+- Auth: `POST /auth/register` y `POST /auth/login` fail-closed/deshabilitados; `GET /auth/me`; `POST /auth/logout`; Google OAuth `GET /auth/google`, bootstrap `POST /auth/google`, callback `GET /auth/google/callback`.
+- Catálogo: `GET /api/orgs/:organizationId/catalog`; `POST /api/orgs/:organizationId/catalog`; `PATCH /api/orgs/:organizationId/catalog/:productId`.
+- Inventario: `POST /api/orgs/:organizationId/branches/:branchId/warehouses/:warehouseId/counts/:countType`; `POST /api/orgs/:organizationId/branches/:branchId/warehouses/:warehouseId/counts/:countId/confirm`; `GET /api/orgs/:organizationId/branches/:branchId/warehouses`; `GET /api/orgs/:organizationId/branches/:branchId/warehouses/:warehouseId/counts`.
+- Health: `GET /health`.
+- No hay todavía handlers HTTP de ventas, pagos, recepciones/compras, devoluciones, transferencias, gestión de miembros o reportes.
+
+### Autorización y transacciones
+
+- Catálogo GET: sesión y membresía activas; todos los roles pueden leer catálogo; Owner/Admin/Inventory reciben `cost_usd`; Cashier recibe solo precio de venta.
+- Catálogo POST/PATCH: Owner/Admin únicamente; validación Origin/JSON/tamaño; tenant lock y transacción; el audit INSERT está en la misma transacción.
+- Conteos: Owner/Admin/Inventory pueden crear/confirmar; la resolución de sucursal exige branch membership activa para Inventory; warehouse mutex y balance locks se mantienen en el orden documentado. Cashier no crea ni confirma conteos.
+- Las consultas de warehouse/count history actuales se limitan a Owner/Admin/Inventory. No afirmar que Cashier dispone de una ruta de lectura de balances/ledger, aunque la matriz permita leer existencias/movimientos en su sucursal.
+- `resolveTenantContext`, `resolveBranchContext` y `authorization.ts` derivan identidad/scope; los helpers no equivalen por sí mismos a middleware global. Los handlers existentes tienen checks locales y deben auditarse uno por uno.
+- Corrección de #208: Inventory puede `catalog.read_costs`; `authorizeBranchOperation` ahora llama `resolveTenantContext(..., true)` antes de branch locks. Tests verifican orden tenant → branch → branch_membership.
+- Migraciones 0005/0006/0007 y CI completo validados en PostgreSQL efímero. #207 HEAD `962b5e9d34cc23d7bb5929cd17b4599f4da06db4`, 10/10 check-runs success.
+
+### Límites
+
+- `auth_rate_limits` está en DDL pero no tiene caller runtime; no afirmar que OAuth/bootstrap tenga rate limiting.
+- Worker DATABASE_URL principal/ownership/grants efectivos no verificados; no leer secretos ni conectar a Neon.
+- Balance↔ledger no tiene todavía enforcement universal para todos los posibles writers.
+- Issue #53 abierta/P0; producción NO LISTA. No merge/deploy.
+
+---
+
+# Reconciliación de integración API — 2026-11-04
+
+Este bloque supersede los snapshots de integración fechados 2026-10-30 que aparecen más abajo.
+
+- `main` observado: `7b0f057b8c152515005feed40305143c0ebb94b0`.
+- PR #200 permanece abierta/Draft, HEAD `7d2ef3d5e9ced1d4e8d386110129d21eb53af045`; 19/19 check-runs success. La rama añade una vertical de catálogo/inventario y migración 0005; no está integrada en main ni aplicada a Neon.
+- Issue #78 está cerrada desde 2026-10-31 después de las verificaciones CORS y bundle frontend. No repetir el antiguo estado “CORS no verificado / issue abierta” como condición vigente; mantener workflows de regresión y reabrir solo con evidencia de regresión.
+- Issue #53 continúa abierta. La existencia de helpers de tenant/branch y checks de CI no demuestra que todas las rutas estén protegidas. Revisar autorización server-side, aislamiento cross-tenant/branch, writers y pruebas negativas.
+- La migración 0005 se ejecutó en PostgreSQL 18 desechable en CI, no en Neon main. Además, el SQL carece de transacción explícita y el workflow usa psql autocommit; resolver riesgo de aplicación parcial antes de cualquier ejecución remota.
+- No se desplegó ni modificó Cloudflare, Neon, secretos o producción.
+
+---
+
 # Estado actual de integración API — Micro app
 
 **GitHub/PR checkpoint — 2026-10-30 UTC:** `main` = `82386c6e9300e06f8fa209aa52995b939a72442a`; PR #178 OPEN, DRAFT, NOT MERGED, rama `docs/reconcile-role-model-and-cloudflare-20261030`. HEAD verificado antes de esta sincronización: `a45d84eb5f51e50d3a24f9d6858b5d14efb3ce6b`, 68 ahead / 0 behind. En ese SHA se observaron 11/11 workflow runs Actions success (9 PR + 2 push) y previews Cloudflare Pages/Workers exitosas. Este commit documental produce un SHA posterior; revalidar antes de cualquier decisión. No extrapolar checks/previews.
@@ -111,3 +174,45 @@ No usar `ILIKE '%texto%'` asumiendo que el índice B-tree actual lo acelera; pro
 ## Estado actual de identidad y sucursal (post PR #170, 2026-10-30)
 
 Las decisiones D1–D8 de identidad están aprobadas y Google OAuth + allowlist se implementaron en PR #153; HTTPS/canonical origin para Google OAuth se reforzó en PR #155. Las rutas de registro y login por contraseña siguen deshabilitadas fail-closed. PR #165 añadió `branches`, `branch_memberships` y `resolveBranchContext`; PR #169 añadió `resolveOpenCashierRegisterShift` como helper aislado para el turno del cajero. Ninguno está conectado a rutas comerciales ni concede autorización por operación. La matriz de permisos comerciales continúa NO APROBADA. No hay endpoints comerciales. Ver `docs/SAAS_ARCHITECTURE_DECISIONS.md`, `docs/sdd/BRANCH_SCOPE_CONTEXT_IMPLEMENTATION.md` y `docs/SCHEMA_REVIEW.md`.
+
+
+---
+
+## Estado de inventario y PRs — 2026-11-05 UTC
+
+- #200 propone la vertical slice de inventario en HEAD `243592468e9fd61b1f8c578d867887dbb7f18e4d`; no está integrada en main.
+- #204 añade aislamiento de fixtures sobre el HEAD #200; su HEAD `57a9f098bcb93427315e96c90e62ae13764a485b` no tiene workflow runs/status contexts recuperados en la comprobación actual.
+- #205 añade idempotencia en HEAD `c1f09d09dd08b9600e7a6c0ff8ccbb5be4e9c990`, pero está 9 ahead/1 behind #204 y no tiene validación CI completa acreditada.
+- Idempotencia de creación no resuelve el riesgo stale-count: el servicio debe rechazar o reconciliar snapshots antiguos al confirmar un conteo físico.
+- No declarar endpoints de inventario disponibles en main ni conectados a Neon producción.
+
+
+## Precisión del contrato stale-count — 2026-11-05 UTC
+
+La API de #200 ya persiste el saldo esperado al crear un conteo físico y rechaza con HTTP 409 `COUNT_STALE` cuando el saldo actual ha cambiado al confirmar. Hay prueba de integración de dos conteos confirmados fuera de orden. No presentar este caso básico como pendiente de implementación. Antes de añadir otros escritores, evaluar versión monotónica/ABA y hacer cumplir el lock contract de almacén.
+
+
+
+## Estado reconciliado de inventario — 2026-11-05 UTC
+
+- #200 HEAD `a40d8378d792197628f70b07be04f92686d55bdb`: 17 ahead/0 behind main, 30 archivos; 10 workflow runs success, incluidos CI y validación PostgreSQL de migraciones. No reviews formales.
+- #204 HEAD `e37847c95958c3475f90041263ca4fac7f98c2d1`, base #200 `a40d8378...`: 4 ahead/0 behind. Incluye el cambio atómico de migración. Sin workflow runs/status contexts recuperados en este SHA.
+- #205 HEAD `a2fe55847d72b4d9994b781880843ab4906c7b08`, base #204 `e37847c...`: 10 ahead/0 behind. Incluye el último ajuste de #204 y preserva idempotencia. Solo Backup restore smoke test success; no status contexts. Requiere CI completa.
+- La migración 0005 tiene transacción explícita y el workflow de migración prueba rollback ante fallo inducido antes de aplicar el SQL real. No se aplicó a Neon.
+- Stale-count básico está cubierto por snapshot de cantidad, HTTP 409 y test de confirmación inversa. Riesgo residual ABA/versionado antes de nuevos writers.
+- Issue #53 sigue abierta; autorización/aislamiento total no se ha demostrado. La colisión de migración 0005 de roles en #194 sigue pendiente.
+- Ninguna PR se fusionó. No tocar producción, Neon, secretos, DNS, billing ni configuración productiva.
+
+
+
+## Corrección de evidencia CI y sincronización de ramas — 2026-11-05 UTC
+
+La consulta directa a GitHub Actions por `head_sha` incluye push y pull_request:
+- #200 HEAD `a40d8378d792197628f70b07be04f92686d55bdb`: 17/17 workflow runs success (10 PR + 7 push), incluye CI, Playwright y migración PostgreSQL con prueba de rollback inducido.
+- #204 HEAD `e37847c95958c3475f90041263ca4fac7f98c2d1`: 7/7 workflow runs success (push), incluye CI, Playwright y migración PostgreSQL.
+- #205 HEAD `a2fe55847d72b4d9994b781880843ab4906c7b08`: 8/8 workflow runs success (7 push + 1 PR), incluye CI, Playwright y migración PostgreSQL.
+- Relaciones: #200 17 ahead/0 behind main; #204 4 ahead/0 behind #200; #205 10 ahead/0 behind #204. Sin divergencia. No status contexts ni reviews formales/threads en esas PR.
+- Todas siguen Draft y ninguna se fusionó. Los cuerpos de PR ya reflejan los SHA y recuentos.
+- Migración 0005 con BEGIN/COMMIT y prueba de fallo/rollback inducido en PostgreSQL efímero. No se aplicó a Neon.
+- Stale-count básico tiene snapshot, 409 y test de confirmación inversa; revisar ABA/versionado antes de otros writers.
+- Issue #53 sigue abierta; la colisión 0005 de roles en #194 sigue pendiente.

@@ -1,3 +1,83 @@
+## Corrección de seguridad Cloudflare — Worker Previews vs Version URLs — 2026-11-04 22:00 EDT
+
+Esta aclaración corrige la formulación demasiado amplia de addenda anteriores: **no existe una prohibición permanente de usar Worker Previews**. El gate es no cambiar el modo de builds de Cloudflare hasta comprobar aislamiento y aceptar el cambio irreversible del flujo existente.
+
+### Evidencia directa en el código de la rama #200
+
+- `apps/api/wrangler.toml` en `feat/inventory-vertical-slice-mainline-20261104` declara `[previews.vars] APP_ENV = "preview"`; la dependencia `apps/api/package.json` declara Wrangler `^4.155.0`, superior al mínimo documentado por Cloudflare para Worker Previews (4.135.0).
+- `apps/api/src/index.ts` instala un middleware global antes de registrar rutas: si `APP_ENV === "preview"` o el hostname es un `workers.dev` distinto del Worker productivo, solo permite `/health`; las demás rutas responden 503 `PREVIEW_API_DISABLED`. Esto cubre auth, catálogo, escritura e inventario.
+- `apps/api/src/index.test.ts` ya prueba: API apagada incluso cuando se simula un `DATABASE_URL` de producción; bloqueo por hostname workers.dev aunque falte `APP_ENV`; y disponibilidad exclusiva de `/health`. Es una defensa de aplicación comprobada por tests unitarios, no prueba por sí sola de aislamiento Cloudflare ni sustituye credenciales separadas.
+- No hay `DATABASE_URL` ni otros secretos declarados en el bloque `[previews.vars]` versionado. No se ha verificado en esta sesión el Previews Base/secret store del dashboard; no afirmar que está vacío.
+
+### Distinción decisiva
+
+- `npx wrangler versions upload` crea una Worker Version y Version URL. Cloudflare documenta que esta modalidad utiliza la configuración y recursos existentes de esa versión; **no es un entorno aislado de rama**.
+- `npx wrangler preview` crea/actualiza Worker Preview para la rama, con variables, secretos y bindings propios definidos en `previews`. Cloudflare recomienda Previews para pruebas de ramas/PR.
+- Cloudflare indica que el cambio de Workers Builds del modelo anterior a Worker Previews es de una sola vía: después de seleccionar “Switch to Worker Previews” no se puede volver al modelo anterior. Es una decisión operativa que requiere revisión previa.
+- Aun con Worker Previews, recursos compartidos por el mismo ID siguen compartiendo datos (p. ej. KV/D1); Service Bindings pueden llamar al Worker productivo; Workflows se enlazan a Workflows existentes; las URLs son públicas por defecto salvo protección con Cloudflare Access. Debe configurarse explícitamente aislamiento y control de acceso.
+
+### Decisión y gate actualizado
+
+1. Mantener el modo actual sin cambios mientras no se complete el inventario autenticado de bindings, secrets, routes, service bindings, workflows, KV/D1/R2 y Previews Base.
+2. Antes de activar, preparar `previews` con `APP_ENV=preview`, sin DATABASE_URL/BOOTSTRAP_TOKEN/GOOGLE_CLIENT_SECRET de producción; cualquier DB de prueba futura debe ser un recurso Neon independiente, con credenciales propias y datos sintéticos. No conectar Preview a Neon producción.
+3. Conservar y probar el middleware API-dark; añadir/confirmar tests de hostname y secret present (ya existen en la rama #200). Verificar también Pages preview, CORS/origins, OAuth redirect, rate limits y acceso a la URL.
+4. Revisar bindings uno por uno: no compartir IDs de KV/D1/R2; no usar Service Bindings hacia Workers productivos; no asociar workflows productivos; no configurar routes ni cron de producción. Aplicar Cloudflare Access si el contenido no debe ser público.
+5. Evaluar el impacto de la migración irreversible en CI/branch cleanup, costos y mantenimiento. Solo entonces solicitar/ejecutar el switch, y comprobar un Preview real con evidencia de que no puede alcanzar datos o servicios productivos.
+
+**Conclusión:** la restricción original protegía frente a Version URLs con recursos de producción y frente a una migración irreversible sin inventario. La nueva documentación de Cloudflare sí ofrece un modelo de Worker Previews con aislamiento por rama. El código de Micro-app ya tiene un primer control API-dark, por lo que debemos preparar y verificar la adopción; no mantener un “nunca activar” obsoleto.
+
+Fuentes oficiales consultadas el 2026-11-04: Cloudflare [Previews](https://developers.cloudflare.com/workers/previews/), [Version URLs](https://developers.cloudflare.com/workers/versions-and-deployments/version-urls/), [Build branches](https://developers.cloudflare.com/workers/ci-cd/builds/build-branches/), [Resources and isolation](https://developers.cloudflare.com/workers/previews/resources/), [Compare workflows](https://developers.cloudflare.com/workers/previews/compare-workflows/).
+
+---
+
+## Addendum vivo — despliegues de PR de inventario y estado de continuidad — 2026-11-04
+
+- Main verificado: `7b0f057b8c152515005feed40305143c0ebb94b0`.
+- PR #200 HEAD `243592468e9fd61b1f8c578d867887dbb7f18e4d`; Cloudflare bot reportó Pages y Workers builds exitosos para el prefijo `2435924`. Pages Preview: `https://6ff8d968.micro-app-63i.pages.dev`; branch preview: `https://feat-inventory-test-isolatio.micro-app-63i.pages.dev`. Worker commit Version URL: `https://09254838-micro-app-api.btfcasheb.workers.dev`; branch URL: `https://feat-inventory-test-isolation-20261104-micro-app-api.btfcasheb.workers.dev`.
+- PR #204 HEAD `57a9f098bcb93427315e96c90e62ae13764a485b`; Pages Preview `https://12d9c5bc.micro-app-63i.pages.dev`; Worker Version URL `https://8b3b7e8d-micro-app-api.btfcasheb.workers.dev`; branch URL `https://feat-inventory-test-isolation-20261104-micro-app-api.btfcasheb.workers.dev`. Ambos builds reportados exitosos.
+- PR #205 HEAD `c1f09d09dd08b9600e7a6c0ff8ccbb5be4e9c990`; Pages Preview `https://9d8491b5.micro-app-63i.pages.dev`; Worker Version URL `https://d4532b6a-micro-app-api.btfcasheb.workers.dev`; branch URL `https://feat-inventory-count-idempotency-20261104-micro-app-api.btfcasheb.workers.dev`. Ambos builds reportados exitosos.
+- PR #202 HEAD `4e54efbf33cc160f532b26cd147b4afa783cddeb`; Pages Preview `https://aff7f4d7.micro-app-63i.pages.dev`; Worker Version URL `https://df3c17b4-micro-app-api.btfcasheb.workers.dev`; branch URL `https://docs-reconcile-current-state-20261104-micro-app-api.btfcasheb.workers.dev`. Builds reportados exitosos.
+- **Interpretación de seguridad:** un build exitoso y una URL workers.dev/Version URL no prueban aislamiento de recursos por rama. La evidencia documentada de Cloudflare del 2026-11-04 indica que el dashboard aún mostraba “Set up Worker Previews” y el Version command era `npx wrangler versions upload`. Ese modelo puede compartir bindings/recursos de producción. La guardia de código `APP_ENV=preview`/hostname limita rutas, pero no sustituye aislamiento real de secretos, bindings y base de datos.
+- No se activó Worker Previews. No se cambió branch control, comandos, variables, secretos, bindings, tráfico, DNS, billing, despliegues productivos ni Neon. La configuración autenticada de dashboard no se releyó en esta sesión; los datos del dashboard son evidencia histórica documentada, no una nueva verificación en vivo.
+- Merge a main puede disparar despliegues automáticos Pages/Workers. Mantener todas las PR abiertas/Draft hasta resolver stale-count, migración/rollback, seguridad y aislamiento.
+
+---
+
+## Addendum de estado más reciente — PR #202 — 2026-11-04
+
+- HEAD de la rama documental verificado: `355c80eb5996cbcc6266c81097d7a245c96851b0`; base `main` `7b0f057b8c152515005feed40305143c0ebb94b0`; 27 ahead / 0 behind y 12 archivos documentales.
+- La consulta de workflows para ese SHA devolvió 9 ejecuciones, todas completadas con `success`. No confundir ese conjunto con los 12/12 check-runs citados en snapshots anteriores de otro SHA.
+- Cualquier referencia inferior a PR #202 con SHA `6ce448...` u otro SHA previo se conserva como historial, no como evidencia de validación del HEAD actual.
+- Esta PR no cambia runtime ni configuración Cloudflare. Las capturas siguen indicando Pages automatic deployments y Worker `npx wrangler deploy`/Version URLs; el banner “Set up Worker Previews” no fue activado. No afirmar aislamiento Worker Preview.
+
+---
+
+# Addendum de reconciliación — 2026-11-04
+
+Este addendum supersede las afirmaciones operativas anteriores sobre la modalidad actual de previews. Los snapshots fechados más abajo se conservan como historial, no como configuración vigente.
+
+## Configuración observada en capturas del propietario
+
+- Pages `micro-app-63i`: producción en `main`, automatic deployments habilitados; build `corepack enable && pnpm install --frozen-lockfile && pnpm --filter @micro-app/web build`, output `apps/web/dist`.
+- Worker `micro-app-api`: producción en `main`; builds de ramas no productivas habilitados; root `apps/api`; build command `pnpm install --frozen-lockfile`; deploy command `npx wrangler deploy`; Version command `npx wrangler versions upload`.
+- El dashboard del Worker mostraba el banner “Set up Worker Previews”. No se pulsó ni se cambió configuración.
+
+## Interpretación correcta
+
+- Pages branch Preview y Worker Version URL son mecanismos distintos.
+- Cloudflare documenta que una Version URL utiliza la configuración y recursos existentes de esa versión; no crea un entorno independiente. Para branch/PR isolation se usa Worker Previews con `npx wrangler preview`.
+- El éxito de Workers Builds en PR #200/PR #202 y una URL `workers.dev` no prueban por sí solos aislamiento de recursos.
+- Worker Previews no hereda automáticamente settings de producción. Variables, secretos y bindings deben definirse expresamente. Bindings que apunten al mismo recurso comparten datos; la base externa Neon requiere branch/base de pruebas y credenciales independientes.
+- No activar el one-time setup ni cambiar Cloudflare sin plan revisado. La transición del modelo existente requiere decisión explícita y verificación posterior.
+
+## PRs y checks
+
+- PR #200 HEAD `7d2ef3d5e9ced1d4e8d386110129d21eb53af045`: 19/19 check-runs exitosos. Es evidencia de CI/build, no de aislamiento completo ni de producción segura.
+- PR #202 HEAD `6ce448693b1c98ab9a418a578940dd865f69735a`: 12/12 check-runs exitosos. Es una PR documental.
+- No hay autorización ni evidencia de cambio productivo realizado durante esta auditoría.
+
+---
+
 # Auditoría corregida de GitHub Actions y despliegues — 2026-10-30 UTC
 
 ## Addendum vigente — PR #178, SHA exacto y previews Cloudflare
@@ -220,3 +300,51 @@ No se copiaron ni registraron valores de variables de entorno. No afirmar que es
 - El archivo `apps/web/public/_headers` en main define CSP, HSTS, `X-Content-Type-Options: nosniff`, `X-Frame-Options: DENY`, `Referrer-Policy` y `Permissions-Policy`. Sin embargo, la sesión de navegador no expuso las cabeceras HTTP reales y la inspección DOM no permite demostrar que Cloudflare las haya servido. Estado: **configuradas en el repositorio, efectividad HTTP pendiente de verificación**.
 - No se modificaron ajustes, variables, secretos, workflows, DNS, billing, tráfico, Neon ni producción. No se dispararon builds manuales.
 
+
+
+---
+
+## Estado vivo de ramas y CI — 2026-11-05 UTC
+
+- #200 HEAD `243592468e9fd61b1f8c578d867887dbb7f18e4d`: 10 workflow runs success; combined statuses vacío; sin reviews/threads.
+- #204 HEAD `57a9f098bcb93427315e96c90e62ae13764a485b`: no workflow runs ni status contexts recuperados; sin reviews/threads.
+- #205 HEAD `c1f09d09dd08b9600e7a6c0ff8ccbb5be4e9c990`: solo Backup restore smoke test success; rama divergida 9 ahead/1 behind #204.
+- #202 HEAD previo `348cf0a1067c5410ff262f817b054cef46f0afae`: 9 workflows success. El checkpoint documental que sigue modifica el HEAD y requiere nueva ejecución de CI.
+- En todos los casos la consulta actual no devolvió reviews formales ni threads inline. Las descripciones de las PR se actualizaron con esta evidencia.
+
+No confundir workflow runs con combined status contexts ni con aprobación. La consulta de runs usada filtra eventos pull_request y devuelve la primera página; la ausencia de resultados se registra como “no recuperados”, no como prueba de que jamás existieron.
+
+Worker Previews: la restricción es condicional, no permanente. No hacer el switch irreversible hasta auditar Previews Base, bindings/secrets, recursos compartidos, routes, service bindings, Workflows, cron y control de acceso; mantener API-dark y demostrar aislamiento real. Version URLs no son un sustituto de branch previews aislados.
+
+
+## Corrección de precisión stale-count — 2026-11-05 UTC
+
+El código de #200 ya tiene protección de snapshot por cantidad: captura expected_on_hand_quantity y responde 409 COUNT_STALE si cambió el saldo; existe test de confirmación de conteos fuera de orden. La descripción anterior de ausencia total de guard queda corregida. Revisión residual: versionado monotónico para ABA y lock contract de futuros writers.
+
+
+
+## Reconciliación posterior: migración atómica y ramas sincronizadas — 2026-11-05 UTC
+
+- #200 HEAD `a40d8378d792197628f70b07be04f92686d55bdb`: 17 ahead/0 behind de main, 30 archivos (+3555/-17). Diez workflow runs completados success en este SHA, incluidos CI, Playwright, Database migration validation, Semgrep, Security, Secret history, Backup restore, Dependency review, ODD docs y Project progress. Sin status contexts, reviews formales ni threads inline.
+- #204 HEAD `e37847c95958c3475f90041263ca4fac7f98c2d1`, base #200 HEAD `a40d8378...`: 4 ahead/0 behind. Merge commit que incorpora la migración atómica de #200 y preserva el cambio de fixtures. No se recuperaron runs/status contexts para este SHA; sin reviews/threads.
+- #205 HEAD `a2fe55847d72b4d9994b781880843ab4906c7b08`, base #204 HEAD `e37847c...`: 10 ahead/0 behind. Merge commit que incorpora el último cambio de #204, la migración atómica y el workflow de rollback, preservando idempotencia. No se recuperaron runs/status contexts para este SHA; sin reviews/threads.
+- Migración 0005 tiene BEGIN/COMMIT de nivel superior. migration-check prueba una copia con fallo inyectado antes de COMMIT, espera que psql falle y comprueba que no existan tablas de inventario; después aplica la migración real y sus assertions. Los diez workflows success de #200 incluyen Database migration validation en el SHA a40d8378...
+- #204/#205 requieren validación completa en sus nuevos merge HEAD; no heredar CI de SHA anteriores. Todas las PR siguen Draft; ninguna se fusionó.
+- Stale-count básico está implementado: captura expected_on_hand_quantity y devuelve 409 si el saldo difiere; una prueba confirma primero el conteo nuevo y rechaza el antiguo. Riesgo residual ABA/versionado monotónico antes de sumar otros escritores.
+- Issue #53 sigue abierta; autorización/aislamiento completo aún no probado. Colisión 0005 roles en #194 sigue pendiente.
+- No tocar Neon producción, deploy productivo, secretos, DNS, billing ni datos reales; no force-push ni modificar main.
+
+
+
+## Corrección de evidencia CI y sincronización de ramas — 2026-11-05 UTC
+
+La consulta directa a GitHub Actions por `head_sha` incluye eventos `push` y `pull_request`; sus resultados amplían la consulta anterior, que solo devolvía runs PR-triggered:
+
+- #200 HEAD `a40d8378d792197628f70b07be04f92686d55bdb`: **17/17 workflow runs success** (10 pull_request + 7 push), incluye Database migration validation con rollback inducido, CI y Playwright. 17 ejecuciones no significan 17 checks únicos. Combined statuses vacío; sin reviews formales ni threads.
+- #204 HEAD `e37847c95958c3475f90041263ca4fac7f98c2d1`: **7/7 workflow runs success** (push), incluye CI, Playwright, Database migration validation, Semgrep, Security, Secret history y Backup restore. Sin status contexts, reviews ni threads.
+- #205 HEAD `a2fe55847d72b4d9994b781880843ab4906c7b08`: **8/8 workflow runs success** (7 push + 1 pull_request), incluye CI, Playwright, Database migration validation, Semgrep, Security, Secret history y Backup restore. Sin status contexts, reviews ni threads.
+- Relaciones verificadas: #200 17 ahead/0 behind main; #204 4 ahead/0 behind #200; #205 10 ahead/0 behind #204. No hay divergencia entre la pila.
+- Los cuerpos de #200/#204/#205 reflejan estos SHA y resultados. Todas permanecen Draft; no hay aprobación formal ni merge.
+- La migración 0005 está envuelta en BEGIN/COMMIT y el workflow de migración ejecuta un fallo inducido antes de COMMIT, verifica ausencia de tablas y después aplica el SQL real. Los 17/7/8 runs incluyen la validación de migraciones de sus SHA correspondientes.
+- Stale-count básico: snapshot de cantidad, 409 y prueba de confirmación inversa. Residual ABA/versionado antes de futuros writers.
+- #202 HEAD `2793550cb9ccb4595971ad86ce6b950203c681df` tenía 11 workflow runs (7 success, 4 in_progress) en la consulta; ese estado se recalcula para cualquier commit documental posterior.

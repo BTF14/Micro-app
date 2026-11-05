@@ -1,3 +1,35 @@
+## Revisión de esquema viva — 2026-11-05 10:09 UTC
+
+- PR #213 no añade migración: usa `auth_rate_limits` ya creada en 0001. Sus 12/12 check-runs y 10/10 workflows success prueban uso de HMAC-SHA-256 y UPSERT atómico en PostgreSQL.
+- #210 HEAD `ab5d2168a11a825a9ed6b03341b3091c13f3c06e`: 8/8 workflows success; 0009 añade pairing transaccional balance↔ledger, trigger diferido al COMMIT, bloqueo TRUNCATE e inmutabilidad de claves organization/branch/warehouse/product.
+- Migraciones 0005–0009 siguen fuera de main/Neon; solo validadas en PostgreSQL 18 desechable.
+- El principal PostgreSQL real/ownership/grants de DATABASE_URL no está verificado; no extrapolar assertions sintéticas a producción.
+- Issue #53 abierta/P0; Cashier sin lectura de balances/ledger, authorization helpers no conectados globalmente, RPO/RTO/alerta/coste USD 0 pendientes. Producción NO LISTA.
+
+---
+
+## Revisión de esquema viva — 2026-11-05 09:43 UTC
+
+- Pila #200→#204→#205→#208→#207→#209→#210. Migraciones 0005–0009 validadas en PostgreSQL 18 desechable; #210 HEAD `ab5d2168a11a825a9ed6b03341b3091c13f3c06e`, 8/8 workflow runs success.
+- 0008 valida snapshots/versiones y delta/actor/razón/coste de conteos físicos.
+- 0009 añade pareja transaccional exacta balance↔ledger, trigger diferido al COMMIT, bloqueo de TRUNCATE e inmutabilidad de claves organization/branch/warehouse/product.
+- El principal PostgreSQL real/ownership/grants de DATABASE_URL no está verificado; no extrapolar assertions sintéticas a producción.
+- Rate limiting runtime ausente; authorization.ts no está conectado globalmente; lectura Cashier de balances/ledger falta según la matriz aprobada.
+- 0005–0009 siguen fuera de main y Neon. Issue #53 abierta/P0; producción NO LISTA.
+
+---
+
+## Revisión de esquema viva — 2026-11-05 UTC
+
+- PR stack #200→#204→#205→#208→#207; migraciones 0005 inventario, 0006 roles own-shift, 0007 audit append-only; validación PostgreSQL efímera completa en #207 HEAD `962b5e9d34cc23d7bb5929cd17b4599f4da06db4` (10/10 checks).
+- 0005 incluye `inventory_counts.idempotency_key` y `request_hash`, par CHECK, índice único parcial por organización/actor/clave. La API valida clave, hash canónico y replay/conflicto; los tests cubren retries concurrentes, payload distinto, confirmed replay, rollback de audit y stale/ABA.
+- 0006 agrega el contrato de roles own-shift Owner/Admin/Cashier y mantiene branch membership obligatoria; Inventory no puede abrir turnos.
+- 0007 agrega triggers ALWAYS que rechazan UPDATE/DELETE/TRUNCATE en audit_logs y revoca privilegios mutadores a PUBLIC. Assertions prueban roles sintéticos; no verifican el rol real de Worker.
+- Riesgo P0 restante: no hay constraint/trigger universal que acople cada mutación de inventory_balances a un warehouse_inventory_movements con delta idéntico. Los endpoints actuales escriben ambos en una transacción, pero SQL directo/futuros writers podrían divergir.
+- Worker DATABASE_URL principal/ownership/grants NO VERIFICADO; no se leyó secreto ni se conectó a Neon. Issue #53 sigue abierta/P0.
+
+---
+
 # Revisión del esquema y la API — estado reconciliado post-PR #169 (2026-10-30 UTC)
 
 **Último código/runtime revisado:** PR #169, `be35a0fde3886271b6ed98b7ccc29cc1255d50e5`. PR #170 (`af08cd913a4e0e155b1b74183d8f5a22bc1721af`) fue solo documental; consultar el ref vivo de `main` antes de nuevos cambios.  

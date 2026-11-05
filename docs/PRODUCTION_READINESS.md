@@ -1,101 +1,39 @@
-# Micro app — checklist de preparación para producción
+# Production readiness — BTF14/Micro-app
 
-## Estado vivo — 2026-11-04 UTC
+## Evidencia nueva — 2026-11-05 10:53 UTC
 
-- `main` = `2e0f4083ba577de2f301daf8c866bfbdffb5e23f`. PR #198 está fusionada; PR #197 cerrada sin merge como supersedida.
-- PR #196 sigue abierta/Draft, HEAD `c332e740aff279fb8b22a8879581d4b8a3c7de21`, base registrada `705d3db3220894c7d3baca8dc7e7a6b623dfbb94`. Quedó detrás de main y requiere actualización/reconciliación antes de evaluar integración.
-- La rama #196 contiene catálogo, almacenes y conteos físicos/apertura, con migración 0005 y ledger. Nada de ese vertical slice está en main mientras la PR no se fusione.
-- Los 11 workflows asociados al HEAD exacto de #196 terminaron success; no equivalen a aprobación de producción ni sustituyen revalidación después de actualizar la base.
-- La matriz de roles está aprobada desde 2026-10-31. La implementación de permisos/operaciones sigue parcial; Issue #53 permanece abierta.
-- Producción sigue bloqueada: faltan rutas comerciales completas, rate limiting runtime, pruebas E2E comerciales, coordinación entre todos los escritores de inventario, RPO/RTO medidos, alertas y confirmación de coste total $0.
+PR #220 HEAD `40cf9e2cff5e88a5feec7b8168c8f436cb3f0601` (base #218) completó SUCCESS en los seis push workflows: build/typecheck y tests PostgreSQL, migration validation, Playwright E2E, Semgrep, Trivy Security y Secret history scan. El fallo TS2345 de TextDecoder fue corregido con `ignoreBOM: false` manteniendo `fatal: true`. Sigue OPEN/DRAFT y no constituye certificación de producción. Los gates de Issue #53 siguen abiertos.
 
-Este archivo es la fuente de datos para el panel de avance. Un ítem solo puede marcarse `[x]` cuando existe evidencia revisable en código, pruebas o configuración. La documentación por sí sola no demuestra que una función opere correctamente.
+**Estado global: NO LISTO PARA PRODUCCIÓN.** Todas las PR mencionadas siguen Draft y sin merge; no se ha desplegado producción ni aplicado migraciones a Neon productivo.
 
-## Cómo se calcula
+## Evidencia técnica actual
 
-- **Avance de implementación:** tareas funcionales de producto completadas / tareas funcionales inventariadas.
-- **Preparación para producción:** controles de salida completados / controles de salida inventariados.
-- **CI y seguridad:** se muestran como evidencia independiente; no sustituyen las pruebas funcionales.
-- Los porcentajes son conteos simples de los criterios listados, no una predicción de fechas, calidad ni disponibilidad comercial.
-- Los criterios bloqueantes P0 se muestran aparte. No se puede declarar listo para producción mientras quede alguno pendiente.
-- No marcar una tarea completa basándose solo en un workflow de mocks.
+| Área | Estado | Evidencia / límite |
+|---|---|---|
+| Inventario balance↔ledger | Validación CI | #210 HEAD `ab5d2168...`, 8/8 workflows; migraciones 0001–0009 en PostgreSQL efímero |
+| OAuth rate limiting | Implementado en ramas | #214/#215; #213 es alternativa independiente que requiere reconciliación |
+| Bootstrap handoff | Validación histórica | #215 HEAD `9ba4f76e...`; 7/7 workflows según snapshot anterior |
+| Autorización de rutas existentes | CI success | #218 HEAD `2115d66...`, 6/6 workflows |
+| Body bootstrap acotado | 6/6 workflows success | #220 HEAD `40cf9e2c...`; CI, migration, Playwright, Semgrep, Trivy y Secret history success |
+| Worker Preview | Pendiente | No confundir Pages Preview o Worker Build con versión productiva |
+| Runtime PostgreSQL | No verificado | Principal efectivo, ownership y grants de DATABASE_URL desconocidos |
+| Sesiones / idle timeout | Pendiente de decisión | Duración absoluta 7 días; last_seen_at no se actualiza en resolución de sesión |
+| Cashier stock/ledger read | No implementado | Falta endpoint específico de balances/movimientos |
+| Backup/DR | Parcial | Faltan RPO/RTO medidos, alerta externa y coste total USD 0 |
 
-## Estado arquitectónico al 2026-10-30
+## Gates obligatorios antes de cualquier producción
 
-- Main contiene 0001–0004: tenant/identidad, sucursales/asignaciones y cajas/turnos; `resolveBranchContext` existe pero no está conectado a rutas.
-- 0004 (`registers`/`register_shifts`) está fusionada en main y validada en PostgreSQL 18 desechable; no está aplicada a Neon main.
-- No existen endpoints comerciales. La matriz de permisos por rol fue **aprobada el 2026-10-31** (`docs/sdd/role-permission-decision-matrix.md`), pero la aprobación no equivale a implementación: sigue sin existir ningún endpoint ni middleware de autorización, y sigue sin existir ninguna prueba cross-tenant porque las rutas comerciales no existen aún. Este trabajo de esquema no marca como completados los flujos POS, ventas, inventario o caja de extremo a extremo.
+- [ ] Revisión formal de #210–#220 y reconciliación de #213 frente a #214.
+- [ ] Verificar Worker Preview aislado; Pages Preview no demuestra Worker isolation.
+- [ ] Provisionar AUTH_RATE_LIMIT_HMAC_KEY como secreto cifrado en el entorno correcto; no reutilizar GOOGLE_CLIENT_SECRET por conveniencia.
+- [ ] Verificar que CF-Connecting-IP procede del ingress Cloudflare confiable y no de un header controlable por cliente.
+- [ ] Verificar grants/ownership del runtime DB role para auth_rate_limits y auth_bootstrap_attempts mediante procedimiento read-only aprobado; no leer secretos.
+- [ ] Confirmar secuencia y aplicación de migraciones 0001–0010 en entorno aislado antes de considerar cualquier destino real.
+- [ ] Pruebas por rol, tenant y branch en cada endpoint existente y nuevo.
+- [ ] Definir política de inactividad de sesión con impacto POS/cajeros, sin reducir sesiones a ciegas.
+- [ ] Medir RPO/RTO, alertas externas de backup y coste total USD 0.
+- [ ] Aprobación formal de lanzamiento.
 
-## Implementación funcional
+## Restricciones vigentes
 
-### Base de producto
-- [x] Repositorio independiente y alcance documentados.
-- [x] Esqueleto React/Vite/TypeScript para frontend.
-- [x] Esqueleto Hono/Workers/TypeScript para API.
-- [ ] Flujos completos de catálogo y categorías.
-- [ ] Flujos completos de inventario y movimientos auditables.
-- [ ] Flujo de caja/POS de extremo a extremo.
-- [ ] Pagos mixtos, cambio, recibos y cierre de caja.
-- [ ] Devoluciones y reversos auditables.
-- [ ] Reportes y exportaciones autorizadas.
-- [ ] UX responsive final y accesibilidad validada.
-
-### Datos e integridad
-- [x] Esquema SQL versionado 0001–0004 en main y validación en PostgreSQL 18 desechable; las migraciones 0003/0004 aún no se han aplicado a Neon.
-- [ ] Adaptador PostgreSQL conectado y probado en todos los flujos de negocio.
-- [ ] Migraciones automatizadas y operativamente documentadas.
-- [ ] Aislamiento multiempresa validado para todas las operaciones.
-- [ ] Idempotencia de ventas y pagos verificada con pruebas.
-- [ ] Stock concurrente protegido contra sobreventa.
-- [ ] Instantáneas inmutables de precios, tasa y datos de venta.
-- [ ] Ciclo completo de backup/restore: la restauración técnica del backup remoto exacto pasó en PostgreSQL 18 desechable (run 40955935124) y el smoke sintético cifrado PG18 pasó en run 41020548699. El gate completo sigue pendiente de validación de datos comerciales/conteos/relaciones, RPO/RTO, alerta y evidencia del coste total; ver [BACKUP_AND_RECOVERY.md](BACKUP_AND_RECOVERY.md).
-
-### Identidad y moneda
-- [x] Registro público y login con contraseña bloqueados fail-closed; Google OAuth + allowlist + verificación de email implementados (PR #102), sesión reforzada y origen HTTPS/canónico (PR #155).
-- [x] Sesiones persistidas y revocables; pruebas de identidad y límites de sesión ampliadas en PR #111 (mismatch, expiración/revocación, membresía/organización inactiva).
-- [x] Matriz completa de roles/permisos **aprobada** (2026-10-31; `docs/sdd/role-permission-decision-matrix.md`). Pruebas negativas de aislamiento siguen pendientes porque no existen rutas comerciales que probar.
-- [ ] Integración de tasa BCV validada con fuente, vigencia y fallos.
-- [ ] Tratamiento de IVA/IGTF/documentos fiscales validado por fuentes oficiales y asesoría competente.
-
-## Preparación para producción (gates)
-
-### P0 — bloqueantes
-- [x] CI compila y ejecuta pruebas automatizadas en PostgreSQL desechable para un SHA verificado.
-- [x] Validación de migración en base efímera en el SHA verificado.
-- [x] El registro público está bloqueado fail-closed y probado sin escrituras ni cookie (PR #57; SHA merge `cb4b9b09ad3ff0f1bacd34f23ee653a5477cddfe`).
-- [x] Google sign-in + allowlist + verificación de email implementados; las pruebas core de identidad/sesión pasaron en PR #111 (14 tests de integración PostgreSQL en HEAD 233844be10bb102fdac34ad41776d4d14420b243).
-- [ ] Pruebas de rutas de error de base de datos y autorización cross-tenant de futuras rutas comerciales; issue #53 sigue abierto hasta que existan endpoints comerciales con esas pruebas pasando, aunque la matriz de permisos que los gobernará ya está aprobada.
-- [ ] Autorización multiempresa y aislamiento comprobados en toda la API.
-- [ ] Flujos reales de venta/inventario con transacciones, idempotencia y concurrencia.
-- [ ] Gestión de errores, rate limiting y protección contra abuso revisadas.
-- [ ] Configuración de secretos/orígenes/cookies validada en entorno de preview.
-- [ ] Requisitos fiscales locales revisados y recibos correctamente clasificados.
-- [ ] Recuperación independiente completa: restauración técnica de la copia remota verificada en run 40955935124; falta demostrar integridad de datos comerciales/conteos/relaciones y medir RPO/RTO/alertas/coste. Neon PITR por sí solo no satisface el requisito.
-- [ ] Prueba E2E de flujos reales contra API y DB de prueba (no solo mocks).
-- [ ] Checklist de lanzamiento revisado y aprobación explícita del usuario.
-
-### P1 — operación y UX
-- [x] Análisis Semgrep configurado en CI.
-- [x] Escaneo Trivy configurado en CI.
-- [x] Smoke E2E de navegador con API simulada configurado.
-- [ ] Pruebas E2E de ventas, inventario, caja y devoluciones en móvil/escritorio.
-- [ ] Accesibilidad y uso por teclado verificados.
-- [ ] Logs operativos sin secretos/datos sensibles y estrategia de retención.
-- [ ] Monitorización de fallos y procedimiento de soporte documentados.
-- [ ] Límites gratuitos/capacidad y ausencia de cargos automáticos revalidados.
-- [ ] Preview aislada desplegada y verificada, sin datos de producción.
-
-## Bloqueos conocidos al último análisis documental
-
-- El registro público y el login con contraseña permanecen bloqueados fail-closed; Google OAuth + allowlist + verificación de email y HTTPS/canonical origin están implementados y probados. Issue #53 sigue abierto por aislamiento real de futuras rutas comerciales; la matriz de permisos que las gobernará ya fue aprobada el 2026-10-31 (`docs/sdd/role-permission-decision-matrix.md`), pero no se ha implementado ningún endpoint ni prueba cross-tenant todavía.
-- Main incluye sucursales/asignaciones (0003) y cajas/turnos (0004). No hay endpoints ni flujos comerciales; almacenes y stock por almacén siguen pendientes.
-- Las pruebas Playwright actuales son smoke tests con API simulada; no prueban el backend real.
-- La aplicación no tiene aún los flujos completos de POS/ventas/inventario.
-- Los cambios en Neon main deben superar el gate de `docs/CONSTITUTION.md`; producción sigue bloqueada hasta completar los gates y obtener aceptación explícita.
-- La obligación fiscal no debe declararse resuelta sin fuentes oficiales y revisión competente.
-
-Actualiza este checklist solo junto con evidencia y una entrada en `docs/STATE_JOURNAL.md`.
-
-## Respaldo y recuperación
-
-La política está documentada en `docs/BACKUP_AND_RECOVERY.md`. La subida cifrada está verificada y la copia remota exacta se restauró técnicamente en PostgreSQL 18 desechable (run 40955935124). El control compuesto permanece incompleto hasta validar datos comerciales/conteos/relaciones, medir RPO/RTO y comprobar alertas y coste total.
+No mergear PRs, desplegar producción, tocar Neon principal, datos reales, secretos, Cloudflare productivo, DNS, billing ni main. Issue #53 permanece OPEN/P0. Un CI verde, Pages Preview o Worker Build Preview no certifica producción.

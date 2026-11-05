@@ -1,3 +1,104 @@
+## PR #221 — validación final — 2026-11-05 11:05 UTC
+
+HEAD `18dfc33525c792802c296469ee6140d3b5f649ff`, base #220. Los seis workflows terminaron SUCCESS; CI jobs/steps comprobados. Cloudflare Pages y Workers Preview exitosos (Worker Preview `https://62c0ecb8-micro-app-api.btfcasheb.workers.dev`). La política de lectura de costes ya no se duplica localmente en catálogo: se deriva de `catalog.read_costs` en authorization.ts. No se ampliaron roles. PR OPEN/DRAFT/no merge; Preview no certifica producción.
+
+---
+
+## Seguridad — actualización 2026-11-05 10:44 UTC
+
+- **#218 autorización:** HEAD `2115d66cca18ee094ee3b3f8148ac6a61df040da`, base #215, 6/6 workflows success. Centraliza los permisos de handlers existentes; no es middleware global ni implementa todos los writers.
+- **#220 body hardening:** HEAD `983a76ea2aa5f4753999d098bb71b341407c89c7`, base #218. Body bootstrap limitado a 2.048 bytes en streaming, cancelación temprana, UTF-8 fatal y pruebas. Security/Secret history success; CI, migration validation, Playwright y Semgrep pendientes/in progress.
+- **#213 vs #214:** implementaciones alternativas de rate limiting; #213 desde main usa GOOGLE_CLIENT_SECRET y otra política; #214/#215 usan AUTH_RATE_LIMIT_HMAC_KEY dedicado y handoff seguro. No combinar sin reconciliar.
+- **Sesiones:** 7 días absolutos; last_seen_at/idle timeout no implementados. No cambiar sin validar impacto POS.
+- **Cashier:** no hay endpoint de lectura de balances/ledger aunque la matriz permite lectura de existencias/movimientos de su sucursal.
+- **Runtime:** AUTH_RATE_LIMIT_HMAC_KEY productivo, CF-Connecting-IP trust, runtime DB grants/ownership y migración 0010 no verificados.
+- Issue #53 OPEN/P0. RPO/RTO, alertas externas y coste USD 0 pendientes. Producción NO LISTA.
+
+Los workflows de PR apiladas sobre base distinta de main no disparan el filtro actual de pull_request (solo main). Para validar los SHA exactos se usan ramas `feat/**`, que sí disparan push workflows. Considerar ajuste permanente del filtro por una PR separada.
+
+---
+---
+
+## Reconciliación de seguridad — 2026-11-05 09:43 UTC
+
+- Pila #200→#204→#205→#208→#207→#209→#210 abierta/Draft/no merge.
+- Migraciones 0005–0009 validadas desde PostgreSQL 18 efímero. #210 HEAD `ab5d2168a11a825a9ed6b03341b3091c13f3c06e`: 8/8 workflow runs success, incluidos CI, PostgreSQL migration, Semgrep, Security, Playwright, secret scan, Pages/Workers y backup/restore.
+- 0009 añade pareja transaccional exacta balance↔ledger, trigger diferido al COMMIT, bloqueos TRUNCATE e identidad inmutable de balance. Esto cubre el esquema probado, no todos los writers comerciales aún inexistentes ni la configuración real del principal DB.
+- Rate limiting runtime ausente: auth_rate_limits no tiene callers.
+- authorization.ts no está conectado globalmente; los handlers mantienen checks locales.
+- La matriz permite lectura de stock/movimientos para Cashier, pero no hay endpoint de balances/ledger para Cashier y los GET actuales de warehouses/counts lo excluyen.
+- Principal DATABASE_URL/ownership/grants no verificado. Issue #53 abierta/P0. Producción NO LISTA. No acceder a Neon ni secretos; no merge/deploy ni cambios Cloudflare/DNS/billing.
+
+---
+
+## Reconciliación de seguridad — stack de inventario/roles/auditoría — 2026-11-05 UTC
+
+- La secuencia de PRs es #200 → #204 → #205 → #208 → #207; checks exactos: #200 20/20, #204 8/8, #205 9/9, #208 7/7, #207 10/10. Todas siguen Draft/no merge.
+- Migraciones validadas en PostgreSQL efímero desde cero: 0005 inventario+idempotencia, 0006 roles own-shift, 0007 audit append-only.
+- La matriz de permisos está aprobada. Rutas existentes: catalog GET all roles (Cashier no ve cost_usd); product POST/PATCH Owner/Admin; count create/confirm Owner/Admin/Inventory con branch scope. Helpers authorization.ts no son middleware global; route-level checks deben revisarse individualmente.
+- Se corrigió role map para que Inventory pueda leer costos, y el helper de branch authorization ahora bloquea tenant/session/user/membership/org antes de branch scope.
+- Issue #53 sigue abierta/P0. Runtime PostgreSQL principal/ownership/grants detrás de Worker DATABASE_URL NO VERIFICADO; no leer secretos ni conectar a Neon para resolverlo. Audit append-only no protege frente a owner/superuser con capacidad de alterar esquema.
+- No existe caller runtime para auth_rate_limits; rate limiting de aplicación no está implementado/demostrado.
+- No existe enforcement universal balance↔ledger para toda mutación directa/futuros writers. Los endpoints actuales acoplan sus escrituras en transacción, pero no demostrar integridad global.
+- Backup/restore parcial: faltan RPO/RTO medidos, alerta externa y coste total $0.
+- Producción NO LISTA. No merge/deploy ni cambios en Neon, secretos, Cloudflare settings, DNS, billing o datos reales.
+- Próxima prioridad de seguridad: auditar balance↔ledger y todos los handlers existentes; mantener nuevos writers comerciales bloqueados hasta pruebas completas de autorización/concurrencia.
+
+---
+
+## Cloudflare — precisión de evidencia Workers/Pages para PR #207 — 2026-11-05 UTC
+
+- GitHub contiene comentarios de `cloudflare-workers-and-pages[bot]` en [Workers](https://github.com/BTF14/Micro-app/pull/207#issuecomment-6649952138) y [Pages](https://github.com/BTF14/Micro-app/pull/207#issuecomment-6649953153), ambos con estado de despliegue exitoso y URLs identificadas como Commit Preview y Branch Preview para el commit `26c5270`.
+- Workers Build ID: `0c8394a1-4d91-4061-a850-6c78f3b11295`. Esto confirma el reporte de previews de la integración de GitHub; no confirma por sí solo el estado de producción, la versión activa o el tráfico.
+- El build objetivo histórico `3542c660-e5e3-435e-8be5-dbed236cec1c` permanece pendiente de inspección autenticada de solo lectura. No interpretar `/production/builds/` en el enlace como prueba suficiente de deployment productivo.
+- No se cambiaron settings, deployments, versions, traffic, secrets, routes, DNS ni billing. Mantener la restricción de Cloudflare solo lectura.
+
+---
+
+## Actualización de auditoría general — 2026-11-05 UTC
+
+- PR #207 está abierta/Draft, apilada sobre #200, HEAD `26c5270664b82aebc6a12fafe6973de8544bc6f7`; 7/7 workflow runs y 9/9 check runs success.
+- La migración propuesta `0007_audit_logs_append_only.sql` agrega triggers ALWAYS para rechazar UPDATE/DELETE/TRUNCATE en `audit_logs` y revoca privilegios de mutación/trigger a PUBLIC. Assertions PostgreSQL prueban un runtime sintético no propietario con SELECT/INSERT y otro rol no propietario con grants de mutación.
+- Se añadieron pruebas de rollback de auditoría para creación de producto y se conserva la prueba equivalente de confirmación de conteos; todos los tests CI del HEAD indicado pasan.
+- La migración 0007 se reserva después de inventario 0005 y de la futura renumeración de roles de #194 a 0006. La colisión actual sigue abierta; no integrar aún.
+- El rol efectivo de `DATABASE_URL` continúa NO VERIFICADO. No leer secretos ni acceder/modificar Neon producción. Los tests sintéticos no demuestran la configuración runtime real.
+- Issue #53 sigue abierta/P0. No declarar readiness ni cerrar el issue.
+- El check automático `Workers Builds: micro-app-api` de #207 fue disparado por el push; el enlace de detalles apunta a `/production/builds/`, pero el dashboard devolvió `login_required`. No está verificado si fue solo build, publicación de versión o despliegue ni el entorno destino. No cambiar settings; inspeccionar el registro autenticadamente en modo solo lectura antes de cerrar este gate.
+
+---
+
+## Estado vivo de seguridad y gobernanza — 2026-11-04 21:40 EDT
+
+- Main `7b0f057b8c152515005feed40305143c0ebb94b0`.
+- #200 HEAD `243592468e9fd61b1f8c578d867887dbb7f18e4d`; #204 HEAD `57a9f098bcb93427315e96c90e62ae13764a485b`; #205 HEAD `c1f09d09dd08b9600e7a6c0ff8ccbb5be4e9c990`. Todas abiertas/Draft según continuidad; ninguna fusionada. #205 está 1 commit detrás de #204.
+- La revisión técnica de #200 documenta riesgo de sobrescritura por conteo físico obsoleto. La idempotencia de #205 no mitiga ese riesgo. Mantenerlo como blocker hasta añadir control de vigencia/snapshot y prueba de concurrencia con conteos distintos.
+- La migración 0005 no está en main ni en Neon. Su ausencia de BEGIN/COMMIT, combinada con psql autocommit, deja riesgo de aplicación parcial. Exigir transacción o recuperación comprobada y prueba de fallo inducido.
+- #194 sigue abierta, 13 ahead / 2 behind main, con migración 0005 de roles que colisiona con inventario. No integrar hasta secuencia 0005/0006 y validación completa.
+- Issue #53 abierta: cobertura de autorización y aislamiento tenant/sucursal/rol incompleta. La matriz de roles sí está aprobada (2026-10-31); no confundir aprobación con implementación.
+- Issue #78 cerrada completed desde 2026-10-31; no reabrir por inercia. Evidencia previa documenta CORS y bundle público verificados.
+- Rate limiting runtime sigue sin demostración; backups/restore sigue parcial (RPO/RTO, alerta externa y coste total $0 pendientes).
+- Cloudflare: Pages/Workers builds de ramas reportados exitosos, pero Worker Version URLs no equivalen a previews aislados. El dashboard documentado aún mostraba “Set up Worker Previews”; no activar ni compartir secretos/bindings productivos. La lectura autenticada actual no está disponible en esta sesión.
+- No modificar Neon producción, secretos, bindings, configuración Cloudflare, DNS, billing ni despliegues. No declarar Nivel 1 ni producción listos.
+
+---
+
+## Estado verificado — 2026-11-04 UTC (reconciliación de PR #200 y Cloudflare)
+
+> Este bloque supersede el snapshot vivo histórico que aparece más abajo. Se conserva el historial de seguridad y sus decisiones anteriores.
+
+- main actual: 7b0f057b8c152515005feed40305143c0ebb94b0. PR #200 es la integración vigente de catálogo e inventario, abierta/Draft, base 7b0f057b8c152515005feed40305143c0ebb94b0, HEAD 7d2ef3d5e9ced1d4e8d386110129d21eb53af045. PR #196 permanece abierta/Draft e intacta; no describirla como la rama vigente de integración. Issue #53 sigue abierta.
+- Issue #78 está cerrada desde 2026-10-31. Sus comentarios registran los preflight CORS reales (incluyendo Authorization/Content-Type) y la verificación automatizada del bundle JavaScript público. No reabrir ni mantener esos puntos como pendientes sin nueva evidencia de regresión.
+- La matriz de roles/permisos está aprobada desde 2026-10-31. La aprobación no equivale a que toda la cobertura comercial esté implementada: la PR #200 aporta catálogo y conteos de inventario; ventas, pagos, recepciones, reservas, devoluciones, transferencias y otros escritores continúan fuera de alcance. Mantener issue #53 abierta hasta completar las pruebas de aislamiento cross-tenant, sucursal y rol para cada handler aplicable.
+- Cloudflare API: `main` es la rama de producción; builds no productivos están habilitados; `npx wrangler deploy` es el deploy command y `npx wrangler versions upload` el Version command. El banner **Set up Worker Previews** seguía visible en la captura del propietario. Cloudflare documenta que Version URLs no crean recursos aislados por rama. La guardia de PR #200 bloquea rutas de aplicación en hostnames no canónicos `*.workers.dev`, salvo `/health`; esto reduce el riesgo de ejecución de rutas, pero no reemplaza aislamiento de bindings, secretos ni recursos.
+- Cloudflare Pages: producción main, despliegues automáticos habilitados, build watch paths *. Merge/push a main puede disparar despliegues productivos; PR verde no es autorización de producción.
+- PR #200 añade [previews.vars] APP_ENV = preview; no asumir que se aplica mientras el Worker siga en el modelo de Version URLs. La activación del nuevo Worker Previews requiere una decisión y revisión específica; Cloudflare documenta que el cambio no se puede revertir al modelo anterior.
+- Antes de activar Worker Previews, definir expresamente sus variables, secretos y bindings: Cloudflare no hereda la configuración productiva. El Worker se conecta a Neon mediante `DATABASE_URL`; ninguna Preview debe recibir ese secreto productivo. Se requiere una base/branch de prueba aislada con credenciales propias y datos sintéticos. La separación de Worker Preview no garantiza por sí sola aislamiento de una base externa o de un recurso al que se enlace compartidamente. Referencias: [Worker Previews](https://developers.cloudflare.com/workers/previews/), [Resources and isolation](https://developers.cloudflare.com/workers/previews/resources/), [Preview configuration](https://developers.cloudflare.com/workers/previews/configuration/).
+- Migración 0005 está validada en PostgreSQL 18 desechable. No hay evidencia de aplicación a Neon main ni procedimiento operativo aprobado de migración/rollback. No ejecutar migraciones ni despliegues como parte de esta revisión.
+- **Riesgo de atomicidad identificado en 0005:** el SQL no abre una transacción explícita y el workflow ejecuta `psql -v ON_ERROR_STOP=1 -f`, con autocommit predeterminado. Si falla una sentencia intermedia, DDL previo puede quedar confirmado en la base. Añadir transacción explícita compatible o diseñar recuperación de estado parcial y una prueba de fallo inducido antes de considerar cualquier aplicación remota. `ON_ERROR_STOP` detiene el script; no convierte por sí solo todo el archivo en una transacción. Fuentes: [PostgreSQL BEGIN](https://www.postgresql.org/docs/current/sql-begin.html), [psql](https://www.postgresql.org/docs/18/app-psql.html).
+- Siguen pendientes: rate limiting runtime comprobado, cobertura completa de writers comerciales y sus pruebas concurrentes, pruebas E2E reales de negocio, procedimiento de migración y recuperación, RPO/RTO medidos, alertas y confirmación de coste total $0.
+- No cambiar secretos, Cloudflare, Neon, DNS, billing ni producción; no fusionar PR #200/#202 ni alterar PR #196/#190/#193 durante esta reconciliación.
+
+---
 ## Estado vivo de seguridad y gobernanza — 2026-11-04 UTC
 
 - `main` = `2e0f4083ba577de2f301daf8c866bfbdffb5e23f`; PR #198 integró ODD por squash. PR #197 quedó cerrada sin merge como supersedida.
@@ -184,3 +285,39 @@ Snapshot histórico: el manual run [40916692763](https://github.com/BTF14/Micro-
 - No hay evidencia de explotación del hallazgo HTTPS anterior; se corrigió en código main. La corrección no sustituye verificación de configuración productiva.
 
 ---
+
+---
+
+## Reconciliación de seguridad y gates — 2026-11-05 UTC
+
+- Issue #53 sigue abierta: aprobación de matriz de roles no equivale a autorización aplicada y probada por endpoint, tenant y sucursal.
+- #200 tiene 10 workflow runs success en HEAD `243592468e9fd61b1f8c578d867887dbb7f18e4d`, pero no reviews formales. #204 no tiene runs/status contexts recuperados en su HEAD actual; #205 solo tiene un backup restore smoke test success y está 1 commit detrás de #204. No declarar estas ramas aprobadas.
+- Stale-count sigue siendo un riesgo de integridad: idempotencia no impide aplicar un snapshot obsoleto. Requiere control de versión y prueba de orden inverso.
+- Worker Previews no está prohibido permanentemente. El switch debe esperar al inventario autenticado de secretos/bindings/recursos y prueba de aislamiento; jamás conectar preview a Neon producción.
+- No modificar producción, Neon, secretos, DNS, billing ni configuración productiva como parte de este trabajo.
+
+
+
+## Estado reconciliado de inventario — 2026-11-05 UTC
+
+- #200 HEAD `a40d8378d792197628f70b07be04f92686d55bdb`: 17 ahead/0 behind main, 30 archivos; 10 workflow runs success, incluidos CI y validación PostgreSQL de migraciones. No reviews formales.
+- #204 HEAD `e37847c95958c3475f90041263ca4fac7f98c2d1`, base #200 `a40d8378...`: 4 ahead/0 behind. Incluye el cambio atómico de migración. Sin workflow runs/status contexts recuperados en este SHA.
+- #205 HEAD `a2fe55847d72b4d9994b781880843ab4906c7b08`, base #204 `e37847c...`: 10 ahead/0 behind. Incluye el último ajuste de #204 y preserva idempotencia. Solo Backup restore smoke test success; no status contexts. Requiere CI completa.
+- La migración 0005 tiene transacción explícita y el workflow de migración prueba rollback ante fallo inducido antes de aplicar el SQL real. No se aplicó a Neon.
+- Stale-count básico está cubierto por snapshot de cantidad, HTTP 409 y test de confirmación inversa. Riesgo residual ABA/versionado antes de nuevos writers.
+- Issue #53 sigue abierta; autorización/aislamiento total no se ha demostrado. La colisión de migración 0005 de roles en #194 sigue pendiente.
+- Ninguna PR se fusionó. No tocar producción, Neon, secretos, DNS, billing ni configuración productiva.
+
+
+
+## Corrección de evidencia CI y sincronización de ramas — 2026-11-05 UTC
+
+La consulta directa a GitHub Actions por `head_sha` incluye push y pull_request:
+- #200 HEAD `a40d8378d792197628f70b07be04f92686d55bdb`: 17/17 workflow runs success (10 PR + 7 push), incluye CI, Playwright y migración PostgreSQL con prueba de rollback inducido.
+- #204 HEAD `e37847c95958c3475f90041263ca4fac7f98c2d1`: 7/7 workflow runs success (push), incluye CI, Playwright y migración PostgreSQL.
+- #205 HEAD `a2fe55847d72b4d9994b781880843ab4906c7b08`: 8/8 workflow runs success (7 push + 1 PR), incluye CI, Playwright y migración PostgreSQL.
+- Relaciones: #200 17 ahead/0 behind main; #204 4 ahead/0 behind #200; #205 10 ahead/0 behind #204. Sin divergencia. No status contexts ni reviews formales/threads en esas PR.
+- Todas siguen Draft y ninguna se fusionó. Los cuerpos de PR ya reflejan los SHA y recuentos.
+- Migración 0005 con BEGIN/COMMIT y prueba de fallo/rollback inducido en PostgreSQL efímero. No se aplicó a Neon.
+- Stale-count básico tiene snapshot, 409 y test de confirmación inversa; revisar ABA/versionado antes de otros writers.
+- Issue #53 sigue abierta; la colisión 0005 de roles en #194 sigue pendiente.

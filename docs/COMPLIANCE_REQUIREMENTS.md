@@ -1,3 +1,15 @@
+# Addendum de estado técnico — 2026-11-04
+
+La revisión legal/fiscal sigue siendo un borrador de requisitos y **no constituye asesoría legal, certificación fiscal ni conformidad demostrada**. Esta nota solo reconcilia el estado técnico:
+
+- `main` verificado: `7b0f057b8c152515005feed40305143c0ebb94b0`; versiona migraciones 0001–0004.
+- PR #200 propone migración 0005 y una vertical de catálogo/inventario, pero continúa abierta/Draft y no está integrada en main ni aplicada a Neon.
+- Issue #78 está cerrada; issue #53 permanece abierta por cobertura de identidad, sesiones, autorización y aislamiento tenant.
+- No afirmar que el producto ya satisface requisitos fiscales/comerciales por tener migraciones o checks verdes. Los flujos de venta, pagos, devoluciones, cierres y libros de inventario requieren validación funcional, legal y de datos separada.
+- El coste objetivo sigue siendo $0; no activar planes pagos ni compromisos de facturación sin autorización explícita.
+
+---
+
 # Requisitos de cumplimiento y operación — Micro app
 
 Estado: borrador de requisitos de producto; no constituye asesoría legal ni certificación fiscal.
@@ -33,7 +45,7 @@ Alcance: POS e inventario para comercios, con foco inicial en Venezuela.
 | OFF-01 | Operación sin conexión | Media | Definir qué funciones funcionan offline, cómo se encolan operaciones, cómo se resuelven conflictos y qué se pierde ante cierre, fallo eléctrico o limpieza del dispositivo. No prometer sincronización hasta probarla. | Pendiente; no hay modo offline implementado. |
 | DATA-01 | Exportación y respaldo | Alta | Respaldos automáticos diarios a destino independiente privado/cifrado, retención limitada, alerta de fallos y restauración probada en entorno aislado; exportaciones autorizadas con control de acceso. | Parcial: existe workflow de smoke test sintético cifrado/restauración; el run PG18 `41020548699` pasó en un HEAD anterior de PR #167. La repetición final se completó en HEAD `ad45911368e9e9a714ebbe014de2d84a7b3cf1de` (10/10 workflows success). No demuestra backup productivo independiente, retención efectiva ni restore operativo recurrente. Seguir [BACKUP_AND_RECOVERY.md](BACKUP_AND_RECOVERY.md). |
 | DATA-02 | Baja y eliminación | Alta | Definir solicitud de baja, exportación previa, plazos y eliminación; preservar registros que deban conservarse legalmente y explicar excepciones. | Pendiente. |
-| SEC-01 | Autenticación y roles | Bloqueante antes de datos reales | Implementar autenticación, aislamiento por comercio/tenant, autorización en servidor, gestión de sesiones y pruebas de acceso cruzado. | Parcial: Google OAuth, allowlist, sesiones revocables y helpers tenant/branch implementados; no hay rutas comerciales ni autorización server-side por operación, y la matriz de permisos sigue NO APROBADA. No listo para datos reales. |
+| SEC-01 | Autenticación y roles | Bloqueante antes de datos reales | Implementar autenticación, aislamiento por comercio/tenant, autorización en servidor, gestión de sesiones y pruebas de acceso cruzado. | Parcial: Google OAuth, allowlist, sesiones revocables y helpers tenant/branch están implementados. La matriz de permisos fue APROBADA por el propietario el 2026-10-31 (ver `docs/sdd/role-permission-decision-matrix.md`); esa aprobación autoriza el diseño, pero no demuestra implementación completa. En `main` aún no está integrada la vertical de catálogo/inventario: PR #196 y la pila #200/#204/#205 siguen abiertas/Draft. Las ramas incluyen controles server-side para sus endpoints actuales, pero falta demostrar cobertura completa de la matriz y aislamiento cross-tenant/cross-branch para toda la superficie comercial. No listo para datos reales. |
 | REL-01 | Pruebas de negocio y recuperación | Alta | Probar transacciones fallidas, concurrencia de ventas/stock, idempotencia, restauración, errores de tasa y límites de permisos con base de pruebas separada. | Pendiente. |
 
 ## Reglas de diseño para dinero e impuestos

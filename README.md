@@ -2,7 +2,7 @@
 
 **Micro app** es un proyecto independiente de punto de venta (POS) e inventario para comercios, pensado para PC, tablet y móvil. Su objetivo es ofrecer un flujo fiable para catálogo, existencias, ventas, pagos, caja y trazabilidad, con precios base en USD y equivalentes en VES calculados a partir de una tasa BCV validada.
 
-> **Estado al 30 de octubre de 2026:** existe una base técnica con autenticación Google OAuth y allowlist implementadas en la API, además de automatización de calidad y seguridad. **El producto todavía no está listo para operación comercial ni para datos reales.** La autorización por operación, el aislamiento multi-organización completo y los flujos transaccionales comerciales siguen pendientes.
+> **Estado verificado — 4 de noviembre de 2026:** el producto **no está listo para operación comercial ni para datos reales**. PR #200 propone una vertical de catálogo e inventario y añade la migración 0005, pero sigue abierta y en Draft; sus cambios no están en `main` ni aplicados a Neon. PR #202 mantiene la reconciliación documental abierta; su HEAD actual debe verificarse junto con sus propios checks en GitHub. Ningún check de CI certifica por sí solo producción.
 
 - **Estado técnico vigente:** [CURRENT_STATE.md](docs/CURRENT_STATE.md) y [handoff de continuidad](docs/HANDOFF_NEXT_CHAT.md).
 - **Plan maestro y prioridades:** [PROJECT_PLAN.md](docs/PROJECT_PLAN.md).
@@ -27,7 +27,7 @@ El alcance del producto incluye:
 
 **Este listado describe el alcance previsto, no afirma que todos los módulos estén terminados.** Consulta los documentos de estado y los criterios de aceptación para distinguir lo implementado, lo probado y lo pendiente.
 
-La dirección de producto aprobada como arquitectura de referencia es una plataforma SaaS multi-organización, multi-sucursal y multiusuario. Una organización es el tenant y propietario lógico de sus datos; las sucursales son unidades operativas; las cajas y almacenes pertenecen a una sucursal. **Main ya incluye** `branches`/`branch_memberships` y el helper `resolveBranchContext` por PR #165 (0003). **Main incluye ahora** `registers`/`register_shifts` mediante la migración 0004 (PR #167 fusionada). Almacenes, balances por almacén y endpoints comerciales no están implementados; el helper de sucursal no está conectado a rutas. Las migraciones 0003/0004 no se han aplicado a Neon main.
+La dirección de producto aprobada como arquitectura de referencia es una plataforma SaaS multi-organización, multi-sucursal y multiusuario. Una organización es el tenant y propietario lógico de sus datos; las sucursales son unidades operativas; las cajas y almacenes pertenecen a una sucursal. `main` verificado en `7b0f057b8c152515005feed40305143c0ebb94b0` incluye `branches`/`branch_memberships` (0003) y `registers`/`register_shifts` (0004). PR #200 propone `warehouses` y balances por almacén mediante 0005, pero no está fusionada; no describirlo como parte de `main`. Las migraciones 0003/0004 no se consideran aplicadas a Neon main sin evidencia remota.
 
 ## Estado actual: qué significa en la práctica
 

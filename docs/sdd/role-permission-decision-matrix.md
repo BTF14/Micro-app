@@ -100,3 +100,14 @@ Nota: esta decisión es más restrictiva que la propuesta original de "Owner y A
 
 ## Aprobación
 **Estado: APROBADA el 2026-10-31.** El propietario aprobó explícitamente las secciones 3, 4 y 5 en esta fecha y delegó explícitamente en la IA, con criterio técnico fundamentado, las secciones 1, 2 y 6. Esta aprobación habilita el diseño y la implementación de endpoints comerciales siguiendo exactamente esta tabla; no exime de completar `docs/sdd/TENANT_ISOLATION_TEST_PLAN.md` ni de las pruebas de aislamiento cross-tenant requeridas antes de cerrar el issue #53 o de marcar cualquier punto del Nivel 2 de `docs/SECURITY_ROADMAP.md` como completado.
+
+
+## Estado de implementación de la matriz — 2026-11-05 UTC
+
+La matriz fue aprobada el 2026-10-31. La afirmación histórica del encabezado de que no existe ningún endpoint comercial ya no es exacta para las ramas de trabajo; se mantiene la distinción entre decisiones aprobadas e implementación parcial.
+
+- PR #200 contiene rutas de catálogo y almacenes/conteos. En las rutas de conteo, Owner/Admin/Inventory pueden crear/confirmar/listar conteos; Inventory requiere asignación activa a la sucursal. Cashier queda excluido de las mutaciones de conteo. La escritura de catálogo está limitada a Owner/Admin; el catálogo de lectura omite el coste para Cashier.
+- No se ha implementado aún el permiso de lectura de existencias/movimientos para Cashier/Inventory mediante endpoints de balances o historial de movimientos. La ruta de lista de almacenes y la lista de conteos no sustituyen esa capacidad.
+- Ventas, pagos, recepciones, reservas, devoluciones, transferencias, reportes, exportaciones y gestión de miembros/políticas siguen sin implementación completa. No existe una capa central general que materialice todas las celdas de esta matriz.
+- PR #205 HEAD `bb4a60454061ce09fef07100e75010f3abc5b883`: 20/20 pruebas PostgreSQL de conteos y 7/7 workflow runs success, incluidas pruebas de denegación por tenant/branch. La evidencia solo corresponde a la vertical slice y a CI efímera.
+- Todas las PR siguen Draft y sin aprobación formal. Issue #53 permanece abierta/P0. La aprobación de la matriz no equivale a implementación completa ni a readiness de producción.

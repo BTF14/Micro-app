@@ -1,8 +1,10 @@
 # Server-side operation authorization architecture
 
-## Implementation status update — 2026-11-04 UTC
+## Implementation status update — 2026-11-05 UTC
 
-The role/permission decision matrix is **APPROVED** (2026-10-31). The current `main` HEAD is `2e0f4083ba577de2f301daf8c866bfbdffb5e23f` and does not contain commercial API handlers from PR #196. PR #196 remains open/Draft at `c332e740aff279fb8b22a8879581d4b8a3c7de21`, based on the previous main SHA `705d3db3220894c7d3baca8dc7e7a6b623dfbb94`; it is behind main and must be reconciled before integration. That branch contains tenant-scoped catalog read/create/update/soft-deactivation and warehouse inventory count/list/confirm routes, with PostgreSQL integration coverage including concurrent idempotent count confirmation. This is a partial implementation, not a general authorization layer for all commercial operations. Sales, payments, receipts, reservations, returns and transfers still require their own server-side authorization and tests. Production readiness is not established.
+The role/permission decision matrix is **APPROVED** (2026-10-31). The active development stack is #210 → #211 → #214 → #215; PR #216 is a Draft authorization follow-up based on #215. PR #216 connects `authorizeTenantOperation` to catalog GET/POST/PATCH and `authorizeBranchOperation` to inventory count create/confirm and warehouse/count list routes. The helpers enforce server-derived session, tenant, operation and branch scope; write routes retain transactional row locks. This is route-level enforcement, not global middleware.
+
+Current business API coverage remains partial: catalog and warehouse inventory-count handlers exist, but sales, payments, suppliers, purchase receipts, reservations, returns and transfers do not yet have HTTP handlers. The approved Cashier inventory-read capability still lacks a balances/ledger endpoint. PR #216 preserves the existing stricter Cashier denial on warehouse/count-management metadata. Issue #53 remains open/P0 and production readiness is not established. CI for the exact PR #216 HEAD must pass before this work is considered validated.
 
 **Status:** arquitectura técnica parcialmente implementada; la matriz de permisos está aprobada (2026-10-31). No existe middleware global y la cobertura comercial sigue siendo parcial.  
 **Date:** 2026-10-30 UTC  

@@ -1983,3 +1983,13 @@ Actúa como ingeniero principal responsable de continuar BTF14/Micro-app. Antes 
 - Pruebas PG añadidas: replay decimal equivalente, orden de líneas irrelevante, replay después de confirmación, payload conflict, creación concurrente con misma clave, rollback de clave ante fallo de audit y retry posterior, clave malformada, cross-tenant/product, branch sin asignación y confirmación de ID ajeno. Checks 9/9 en SHA citado.
 - Conclusión: idempotencia de creación de conteo bien cubierta para el flujo actual. No demuestra coordinación con escritores comerciales futuros ni sustituye la prueba concurrente entre conteos y futuras ventas/recepciones/reservas/transferencias. La clave sigue siendo opcional por contrato HTTP; no afirmar idempotencia de cualquier cliente que omita el header.
 - No se cambió código #205 en esta auditoría.
+
+## Integración apilada — PR #207 sobre #208 — 2026-11-05 UTC
+
+- Se modificó la base de PR #207 a `work/mvp-foundation` (PR #208) y se actualizó su rama mediante merge commit `dd3eb55ee3dc5776ce0e0617a3012c29ab355132`, con padres: HEAD anterior de #207 `26c5270664b82aebc6a12fafe6973de8544bc6f7` y HEAD #208 `76a246ea141eedbee877608e7c0f50d6a07f3019`. No force-push.
+- Compare #208 base → #207 head: 11 ahead / 0 behind, 8 archivos, status ahead, mergeable=true. Diff de #207 queda reducido a CI/migration-check, migración/assertions 0007, tests y ODD de audit logs. La migración/rol 0006 y su implementación están en la base #208.
+- Se verificó estáticamente que CI aplica 0001→0007 en orden y ejecuta `register-shift-member-roles.integration.test.ts`. Migration-check aplica 0005, después 0006, y después ejecuta rollback/apply/assertions de 0007.
+- #208 HEAD `76a246ea141eedbee877608e7c0f50d6a07f3019`: check `postgres-migration` completed success; CI `verify` y Cloudflare Pages estaban in_progress en el último snapshot. Otros checks de seguridad/backup habían completado success.
+- #207 HEAD `dd3eb55ee3dc5776ce0e0617a3012c29ab355132`: nueve checks fueron observados queued/in_progress; no declarar la pila 0001–0007 validada hasta que terminen y se inspeccionen los resultados.
+- Comentario de corrección en #207 ID 6651930131 y en issue #53 ID 6651930707. El comentario previo que indicaba que #207 omitía 0006 queda supersedido por esta integración.
+- Ambas PR siguen Draft, sin merge. Issue #53 abierta/P0. No se tocó main, Neon, secretos, Cloudflare productivo, DNS, billing ni datos reales.

@@ -1,6 +1,6 @@
 # Motor monetario de Micro-app
 
-**Estado:** contrato técnico aprobado. El primer núcleo de aritmética exacta BigInt ya está implementado y probado en `apps/api/src/money.ts`; integración de catálogo UI, carrito, ventas y pagos todavía pendiente.  
+**Estado:** contrato técnico aprobado. El núcleo decimal exacto basado en BigInt vive en el paquete interno compartido `packages/money`, consumido por API y web; la integración con catálogo UI, carrito, ventas y pagos todavía está pendiente.  
 **Decisión de negocio:** Micro-app no ofrece descuentos ni promociones basadas en descuentos.
 
 ## 1. Moneda base y catálogo
@@ -22,7 +22,8 @@
 ## 3. Aritmética y redondeo
 
 - No usar JavaScript Number para operaciones monetarias.
-- Usar cadenas decimales con una biblioteca decimal revisada o aritmética entera escalada con BigInt.
+- API y web consumen la misma implementación TypeScript desde `@micro-app/money`; no mantener copias separadas de las funciones.
+- El paquete utiliza cadenas decimales y aritmética entera escalada con BigInt.
 - USD interno y subtotales: cuatro decimales.
 - VES monetario: dos decimales.
 - Regla única: redondeo al más cercano, con los empates alejándose de cero (ROUND_HALF_AWAY_FROM_ZERO), equivalente a round(numeric, scale) de PostgreSQL.
@@ -32,7 +33,24 @@
 - El total VES de la venta es la suma de los importes VES de las líneas. Así, el total del documento reconcilia con sus líneas y no se recalcula con una fórmula distinta en cada pantalla.
 - Aplicar las mismas funciones de cálculo y formato en catálogo, carrito, checkout, pagos, comprobante e informes.
 
-## 4. Tasa BCV y snapshots
+## 4. Precisión PostgreSQL y límites de dominio
+
+El paquete valida tanto la escala fraccionaria como la precisión total de cada columna antes de calcular:
+
+| Dato | PostgreSQL | Dígitos enteros máximos | Escala |
+|---|---:|---:|---:|
+| Precio/costo USD | NUMERIC(14,4) | 10 | 4 |
+| Cantidad | NUMERIC(14,3) | 11 | 3 |
+| Tasa BCV | NUMERIC(18,8) | 10 | 8 |
+| Importe VES | NUMERIC(16,2) | 14 | 2 |
+
+- `parseNumeric` rechaza valores que exceden la precisión total o la escala de su columna.
+- `calculateLineUsd` aplica cantidad NUMERIC(14,3) × precio NUMERIC(14,4) y valida el resultado NUMERIC(14,4).
+- `convertUsdToVes` aplica importe USD NUMERIC(14,4) × tasa BCV NUMERIC(18,8), redondea a dos decimales y valida NUMERIC(16,2).
+- `sumNumeric` evita que una suma exceda el rango del destino.
+- Los valores deben seguir siendo cadenas decimales hasta llegar al paquete; no convertirlos a Number.
+
+## 5. Tasa BCV y snapshots
 
 - Fuente primaria: publicación oficial del BCV integrada por la PR #227.
 - La tasa conserva sus ocho decimales como cadena decimal y PostgreSQL NUMERIC(18,8).
@@ -43,7 +61,7 @@
 - Cambios posteriores de la tasa o del catálogo nunca modifican operaciones históricas.
 - Una tasa stale no debe usarse silenciosamente para nuevas operaciones que requieran conversión a VES. La política exacta para ventas exclusivamente USD se cerrará junto con el contrato de checkout antes de habilitar ventas.
 
-## 5. Sin descuentos
+## 6. Sin descuentos
 
 - No existe descuento porcentual ni fijo.
 - No existen campos de descuento en formularios, API, modelo comercial o documentos.
@@ -51,7 +69,7 @@
 - La base de datos exige sales.total_usd = sales.subtotal_usd.
 - La migración 0014 elimina el campo heredado discount_usd. Si encuentra ventas históricas con total_usd <> subtotal_usd, se detiene y exige reconciliación manual; nunca reescribe importes históricos para forzar la migración.
 
-## 6. Integridad transaccional de ventas y pagos
+## 7. Integridad transaccional de ventas y pagos
 
 Antes de implementar endpoints comerciales, cada checkout deberá:
 
@@ -66,7 +84,7 @@ Antes de implementar endpoints comerciales, cada checkout deberá:
 
 La ausencia de endpoints de ventas/pagos es deliberada en el estado actual; este documento no afirma que el flujo ya esté implementado.
 
-## 7. Rendimiento y coste
+## 8. Rendimiento y coste
 
 - Consultar la tasa compartida una vez por sesión o cuando expire su caché; nunca una consulta por producto.
 - No almacenar una copia VES en cada producto.
@@ -75,7 +93,7 @@ La ausencia de endpoints de ventas/pagos es deliberada en el estado actual; este
 - No añadir Redis, otra base de datos ni un proveedor de tasa sin evidencia de que sea necesario.
 - Medir consultas y latencia antes de añadir índices o cachés adicionales.
 
-## 8. Pruebas de aceptación monetaria
+## 9. Pruebas de aceptación monetaria
 
 La suite debe cubrir, como mínimo:
 
@@ -87,13 +105,14 @@ La suite debe cubrir, como mínimo:
 - Pagos USD, VES y mixtos.
 - Cambio de tasa entre dos ventas sin alterar la primera.
 - Cambio de precio de catálogo sin alterar ventas anteriores.
-- Tasa stale, reintentos idempotentes, anulaciones y devoluciones.
+- Pagos mixtos, tasa stale, reintentos idempotentes, anulaciones y devoluciones.
 - Rollback completo ante fallo de inventario, pago o auditoría.
 
-## 9. Estado de implementación
+## 10. Estado de implementación
 
 - Catálogo API: precios USD decimales y paginación ya existen.
 - Esquema base: cantidades con tres decimales y snapshots comerciales previstos.
 - PR #227: integración BCV propuesta, pendiente de sus gates y despliegue.
 - PR #228: migración propuesta para retirar el campo de descuentos.
-- Motor de cálculo monetario compartido, carrito, checkout, pagos, facturación y reportes: pendientes de implementación y pruebas.
+- Paquete interno compartido de aritmética BigInt y límites NUMERIC: implementado en esta rama, pendiente de CI.
+- Catálogo UI, carrito, checkout, ventas, pagos, facturación y reportes: pendientes de integración y pruebas.

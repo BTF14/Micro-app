@@ -30,7 +30,7 @@ Each bucket is isolated by endpoint and client IP. The client IP comes only from
 - PostgreSQL `INSERT ... ON CONFLICT DO UPDATE` increments/reset attempts atomically, avoiding read-then-write races across concurrent Workers; stored attempts saturate at limit+1 to prevent integer overflow.
 - Requests over the limit receive `429 RATE_LIMITED` and a `Retry-After` header.
 - Missing secret/IP and database failures return `503`, never silently allow the request.
-- A Worker Cron trigger runs hourly and deletes buckets inactive for more than 48 hours. The schedule is declared in `apps/api/wrangler.toml`.
+- A Worker Cron trigger runs hourly and deletes rate-limit buckets inactive for more than 48 hours and expired server-side bootstrap handoffs older than 48 hours. The schedule is declared in `apps/api/wrangler.toml`.
 
 ## Validation still required before production
 

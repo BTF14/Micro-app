@@ -779,7 +779,7 @@ describe.skipIf(!databaseUrl)("warehouse inventory count transactions against Po
     const persisted = await client.query<{ counts: string; lines: string }>(
       `SELECT
         (SELECT count(*)::text FROM inventory_counts WHERE organization_id = $1 AND warehouse_id = $2) AS counts,
-        (SELECT count(*)::text FROM inventory_count_lines WHERE organization_id = $1) AS lines`,
+        (SELECT count(*)::text FROM inventory_count_lines WHERE organization_id = $1 AND warehouse_id = $2) AS lines`,
       [organizationId, warehouseId],
     );
     expect(persisted.rows[0]).toEqual({ counts: "0", lines: "0" });

@@ -1,3 +1,14 @@
+## Actualización de auditoría general — 2026-11-05 UTC
+
+- PR #207 está abierta/Draft, apilada sobre #200, HEAD `26c5270664b82aebc6a12fafe6973de8544bc6f7`; 7/7 workflow runs y 9/9 check runs success.
+- La migración propuesta `0007_audit_logs_append_only.sql` agrega triggers ALWAYS para rechazar UPDATE/DELETE/TRUNCATE en `audit_logs` y revoca privilegios de mutación/trigger a PUBLIC. Assertions PostgreSQL prueban un runtime sintético no propietario con SELECT/INSERT y otro rol no propietario con grants de mutación.
+- Se añadieron pruebas de rollback de auditoría para creación de producto y se conserva la prueba equivalente de confirmación de conteos; todos los tests CI del HEAD indicado pasan.
+- La migración 0007 se reserva después de inventario 0005 y de la futura renumeración de roles de #194 a 0006. La colisión actual sigue abierta; no integrar aún.
+- El rol efectivo de `DATABASE_URL` continúa NO VERIFICADO. No leer secretos ni acceder/modificar Neon producción. Los tests sintéticos no demuestran la configuración runtime real.
+- Issue #53 sigue abierta/P0. No declarar readiness ni cerrar el issue.
+
+---
+
 ## Estado vivo de seguridad y gobernanza — 2026-11-04 21:40 EDT
 
 - Main `7b0f057b8c152515005feed40305143c0ebb94b0`.

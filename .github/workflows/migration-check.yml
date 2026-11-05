@@ -94,7 +94,7 @@ jobs:
         env:
           POSTGRES_CONTAINER: ${{ job.services.postgres.id }}
           MIGRATION_FILE: apps/api/migrations/0006_register_shift_member_roles.sql
-          ROLLBACK_ASSERTION_SQL: "SELECT to_regprocedure('public.prevent_open_register_shift_owner_role_downgrade()') IS NULL AND NOT EXISTS (SELECT 1 FROM pg_catalog.pg_trigger WHERE tgname='organization_members_prevent_open_shift_owner_role_downgrade') AND pg_catalog.position('REGISTER_SHIFT_REQUIRES_ACTIVE_MEMBER_SCOPE' in pg_catalog.pg_get_functiondef('public.validate_register_shift_opening()'::regprocedure)) = 0"
+          ROLLBACK_ASSERTION_SQL: "SELECT to_regprocedure('public.prevent_open_register_shift_owner_role_downgrade()') IS NULL AND NOT EXISTS (SELECT 1 FROM pg_catalog.pg_trigger WHERE tgname='organization_members_prevent_open_shift_owner_role_downgrade') AND pg_catalog.strpos(pg_catalog.pg_get_functiondef('public.validate_register_shift_opening()'::regprocedure), 'REGISTER_SHIFT_REQUIRES_ACTIVE_MEMBER_SCOPE') = 0"
         run: bash .github/scripts/assert-migration-atomicity.sh
       - name: Apply approved register-shift member roles schema
         run: docker exec -i -e PGPASSWORD=migrator-test-only "${{ job.services.postgres.id }}" psql -h 127.0.0.1 -1 -v ON_ERROR_STOP=1 -U microapp_migrator -d microapp_test -f /dev/stdin < apps/api/migrations/0006_register_shift_member_roles.sql

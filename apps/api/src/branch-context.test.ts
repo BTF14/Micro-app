@@ -65,17 +65,12 @@ describe("resolveBranchContext", () => {
   });
 
 
-  it("locks all branch rows before membership rows in canonical order", async () => {
+  it("locks branch rows before membership rows through one hardened helper in canonical order", async () => {
     const branchA = "11111111-1111-4111-8111-111111111111";
     const branchB = "22222222-2222-4222-8222-222222222222";
     const userA = "aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee";
     const userB = "bbbbbbbb-cccc-4ddd-8eee-ffffffffffff";
-    const query = vi.fn()
-      .mockResolvedValueOnce({ rows: [{ id: branchA }, { id: branchB }] })
-      .mockResolvedValueOnce({ rows: [
-        { branch_id: branchA, user_id: userA },
-        { branch_id: branchB, user_id: userB },
-      ] });
+    const query = vi.fn().mockResolvedValueOnce({ rows: [{ locked: true }] });
     const client = { query } as unknown as DatabaseClient;
 
     await expect(lockBranchScopes(client, organizationId, [
@@ -84,33 +79,19 @@ describe("resolveBranchContext", () => {
       { branchId: branchA.toUpperCase(), userId: userA.toUpperCase(), requiresMembership: true },
     ])).resolves.toBe(true);
 
-    expect(query).toHaveBeenCalledTimes(2);
-    expect(query.mock.calls[0]?.[1]).toEqual([organizationId, [branchA, branchB]]);
-    expect(query.mock.calls[0]?.[0]).toMatch(/ORDER BY b\.id ASC\s+FOR SHARE OF b/);
-    expect(query.mock.calls[1]?.[1]).toEqual([organizationId, [branchA, branchB], [userA, userB]]);
-    expect(query.mock.calls[1]?.[0]).toMatch(/ORDER BY bm\.branch_id ASC, bm\.user_id ASC\s+FOR SHARE OF bm/);
-  });
-
-  it("fails closed before membership lookup when any requested branch is inactive or missing", async () => {
-    const query = vi.fn().mockResolvedValueOnce({ rows: [] });
-    const client = { query } as unknown as DatabaseClient;
-
-    await expect(lockBranchScopes(client, organizationId, [
-      { branchId, userId, requiresMembership: false },
-    ])).resolves.toBe(false);
     expect(query).toHaveBeenCalledOnce();
+    expect(query.mock.calls[0]?.[0]).toContain("public.lock_branch_scopes");
+    expect(query.mock.calls[0]?.[1]).toEqual([organizationId, [branchA, branchB], [branchA, branchB], [userA, userB]]);
   });
 
-  it("fails closed when a required active branch membership is missing", async () => {
-    const query = vi.fn()
-      .mockResolvedValueOnce({ rows: [{ id: branchId }] })
-      .mockResolvedValueOnce({ rows: [] });
+  it("fails closed when a requested branch or required active membership is missing", async () => {
+    const query = vi.fn().mockResolvedValueOnce({ rows: [{ locked: false }] });
     const client = { query } as unknown as DatabaseClient;
 
     await expect(lockBranchScopes(client, organizationId, [
       { branchId, userId, requiresMembership: true },
     ])).resolves.toBe(false);
-    expect(query).toHaveBeenCalledTimes(2);
+    expect(query).toHaveBeenCalledOnce();
   });
 
   it("does not query for malformed branch or untrusted role context", async () => {

@@ -373,7 +373,7 @@ const suiteGoogle = describe.skipIf(!databaseAvailable)("Google OAuth routes aga
     mockGoogleIdentity("sub-unlinked-legacy-account", true);
     const callback = await app.fetch(new Request(
       `https://api.example/auth/google/callback?code=test-code&state=${state}`,
-      { headers: { Cookie: cookieHeader } },
+      { headers: { Cookie: cookieHeader, "CF-Connecting-IP": "203.0.113.10" } },
     ), googleEnv);
 
     expect(callback.status).toBe(302);
@@ -405,7 +405,7 @@ const suiteGoogle = describe.skipIf(!databaseAvailable)("Google OAuth routes aga
 
     const callback = await app.fetch(new Request(
       "https://api.example/auth/google/callback?code=test-code&state=not-the-real-state",
-      { headers: { Cookie: cookieHeader } },
+      { headers: { Cookie: cookieHeader, "CF-Connecting-IP": "203.0.113.10" } },
     ), googleEnv);
 
     expect(callback.status).toBe(302);
@@ -428,7 +428,7 @@ const suiteGoogle = describe.skipIf(!databaseAvailable)("Google OAuth routes aga
 
     const callback = await app.fetch(new Request(
       `https://api.example/auth/google/callback?code=test-code&state=${state}`,
-      { headers: { Cookie: cookieHeader } },
+      { headers: { Cookie: cookieHeader, "CF-Connecting-IP": "203.0.113.10" } },
     ), googleEnv);
 
     expect(callback.status).toBe(302);
@@ -485,7 +485,7 @@ const suiteGoogle = describe.skipIf(!databaseAvailable)("Google OAuth routes aga
 
     const callback = await app.fetch(new Request(
       `https://api.example/auth/google/callback?code=test-code&state=${state}`,
-      { headers: { Cookie: cookieHeader } },
+      { headers: { Cookie: cookieHeader, "CF-Connecting-IP": "203.0.113.10" } },
     ), googleEnv);
 
     expect(callback.status).toBe(302);
@@ -508,7 +508,7 @@ const suiteGoogle = describe.skipIf(!databaseAvailable)("Google OAuth routes aga
     try {
       const callback = await app.fetch(new Request(
         `https://api.example/auth/google/callback?code=test-code&state=${state}`,
-        { headers: { Cookie: cookieHeader } },
+        { headers: { Cookie: cookieHeader, "CF-Connecting-IP": "203.0.113.10" } },
       ), googleEnv);
       expect(callback.status).toBe(302);
       expect(callback.headers.get("location")).toContain("auth_error=identity_mismatch");
@@ -659,7 +659,7 @@ const suiteGoogle = describe.skipIf(!databaseAvailable)("Google OAuth routes aga
 
     const callback = await app.fetch(new Request(
       `https://api.example/auth/google/callback?code=test-code&state=${state}`,
-      { headers: { Cookie: cookieHeader } },
+      { headers: { Cookie: cookieHeader, "CF-Connecting-IP": "203.0.113.10" } },
     ), googleEnv);
 
     expect(callback.status).toBe(302);
@@ -674,7 +674,7 @@ const suiteGoogle = describe.skipIf(!databaseAvailable)("Google OAuth routes aga
 
     const callback = await app.fetch(new Request(
       `https://api.example/auth/google/callback?code=test-code&state=${state}`,
-      { headers: { Cookie: cookieHeader } },
+      { headers: { Cookie: cookieHeader, "CF-Connecting-IP": "203.0.113.10" } },
     ), googleEnv);
 
     expect(callback.status).toBe(302);

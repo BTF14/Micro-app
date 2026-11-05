@@ -1,3 +1,18 @@
+# 2026-11-04 UTC — Reconciliación viva de PR #200/#204/#205/#194/#202
+
+- GitHub confirmó `main` en `7b0f057b8c152515005feed40305143c0ebb94b0` (PR #199).
+- PR #200 rama `feat/inventory-vertical-slice-mainline-20261104`: HEAD `243592468e9fd61b1f8c578d867887dbb7f18e4d`, 16 ahead / 0 behind, 30 archivos. La descripción de PR aún cita `7d2ef3d...` y 12 ahead; queda identificada como metadato desactualizado. Evidencia de continuidad: 20 checks exitosos; 0 reviews formales. Revisión técnica del propietario mantiene blocker de conteos físicos obsoletos.
+- PR #204 HEAD `57a9f098bcb93427315e96c90e62ae13764a485b`, exactamente 3 commits sobre #200; corrección de fixture de saldo 7.000 vs conteo 8.500; 8/8 checks en continuidad previa.
+- PR #205 HEAD `c1f09d09dd08b9600e7a6c0ff8ccbb5be4e9c990`; 9/9 checks en continuidad previa. Comparación #204→#205: 9 ahead / 1 behind; falta incorporar el commit final de #204 antes de evaluar integración. Su alcance de idempotencia no resuelve stale-count.
+- PR #194 HEAD `7b3ad50e5780416868a1a428b856d12c4ea1e2ea`, 13 ahead / 2 behind main; migración 0005 de roles colisiona con 0005 de almacenes.
+- PR #202 HEAD `4e54efbf33cc160f532b26cd147b4afa783cddeb`, 30 ahead / 0 behind main; 12 archivos documentales; 9 workflow runs success; 0 reviews/threads. Sus addenda previas aún citaban SHA anteriores, por lo que se agrega esta reconciliación sin reescribir entradas anteriores.
+- Issue #53 abierta; #78 cerrada completed; #201 y #190 cerradas; #193 y #196 abiertas.
+- Cloudflare bot confirmó builds Pages/Workers exitosos en SHA 2435924 (#200), 57a9f09 (#204), c1f09d0 (#205) y 4e54efb (#202). Los Worker URLs de versión/branch no acreditan aislamiento de bindings/recursos. No se activó Worker Previews ni se modificó Cloudflare.
+- Sin merge, sin cambio a main, sin Neon, migraciones remotas, datos reales, secretos, DNS, billing o despliegues productivos.
+- Próximo trabajo: resolver stale-count, sincronizar #205 con #204, revisar atomicidad 0005 y completar documentación #202. Diario append-only: esta entrada agrega evidencia y no elimina historia.
+
+---
+
 # 2026-11-04 UTC — Reconciliación documental y gates de inventario
 
 - Se revalidó `main` en `7b0f057b8c152515005feed40305143c0ebb94b0`, PR #200 y PR #202 en sus SHA exactos.

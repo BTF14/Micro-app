@@ -31,7 +31,10 @@ BEGIN
 
   IF NOT pg_catalog.has_table_privilege('microapp_runtime', 'public.exchange_rates', 'SELECT')
     OR NOT pg_catalog.has_table_privilege('microapp_runtime', 'public.exchange_rates', 'INSERT')
-    OR pg_catalog.has_table_privilege('microapp_runtime', 'public.exchange_rates', 'UPDATE')
+    OR NOT pg_catalog.has_column_privilege('microapp_runtime', 'public.exchange_rates', 'validation_status', 'UPDATE')
+    OR pg_catalog.has_column_privilege('microapp_runtime', 'public.exchange_rates', 'rate', 'UPDATE')
+    OR pg_catalog.has_column_privilege('microapp_runtime', 'public.exchange_rates', 'effective_date', 'UPDATE')
+    OR pg_catalog.has_column_privilege('microapp_runtime', 'public.exchange_rates', 'source', 'UPDATE')
     OR pg_catalog.has_table_privilege('microapp_runtime', 'public.exchange_rates', 'DELETE')
   THEN
     RAISE EXCEPTION 'BCV_RUNTIME_EXCHANGE_RATE_GRANTS_INVALID';

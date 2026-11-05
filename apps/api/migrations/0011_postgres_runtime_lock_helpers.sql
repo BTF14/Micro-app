@@ -46,11 +46,11 @@ BEGIN
   THEN RETURN false; END IF;
 
   IF EXISTS (
-    SELECT 1 FROM pg_catalog.unnest(p_membership_branch_ids, p_membership_user_ids) AS x(branch_id, user_id)
+    SELECT 1 FROM unnest(p_membership_branch_ids, p_membership_user_ids) AS x(branch_id, user_id)
     WHERE x.branch_id IS NULL OR x.user_id IS NULL OR NOT (x.branch_id = ANY(p_branch_ids))
   ) OR EXISTS (
     SELECT x.branch_id, x.user_id
-    FROM pg_catalog.unnest(p_membership_branch_ids, p_membership_user_ids) AS x(branch_id, user_id)
+    FROM unnest(p_membership_branch_ids, p_membership_user_ids) AS x(branch_id, user_id)
     GROUP BY x.branch_id, x.user_id HAVING pg_catalog.count(*) > 1
   ) THEN RETURN false; END IF;
 
@@ -66,7 +66,7 @@ BEGIN
 
   PERFORM bm.branch_id
   FROM public.branch_memberships bm
-  JOIN pg_catalog.unnest(p_membership_branch_ids, p_membership_user_ids) AS x(branch_id, user_id)
+  JOIN unnest(p_membership_branch_ids, p_membership_user_ids) AS x(branch_id, user_id)
     ON x.branch_id = bm.branch_id AND x.user_id = bm.user_id
   WHERE bm.organization_id = p_organization_id AND bm.is_active = true
   ORDER BY bm.branch_id ASC, bm.user_id ASC FOR SHARE OF bm;
@@ -85,7 +85,7 @@ BEGIN
   IF p_organization_id IS NULL OR p_warehouse_ids IS NULL OR p_branch_ids IS NULL
     OR pg_catalog.cardinality(p_warehouse_ids) <> pg_catalog.cardinality(p_branch_ids)
     OR EXISTS (
-      SELECT 1 FROM pg_catalog.unnest(p_warehouse_ids, p_branch_ids) AS x(warehouse_id, branch_id)
+      SELECT 1 FROM unnest(p_warehouse_ids, p_branch_ids) AS x(warehouse_id, branch_id)
       WHERE x.warehouse_id IS NULL OR x.branch_id IS NULL
     )
     OR EXISTS (
@@ -96,7 +96,7 @@ BEGIN
 
   RETURN QUERY
   SELECT w.id FROM public.warehouses w
-  JOIN pg_catalog.unnest(p_warehouse_ids, p_branch_ids) AS x(warehouse_id, branch_id)
+  JOIN unnest(p_warehouse_ids, p_branch_ids) AS x(warehouse_id, branch_id)
     ON x.warehouse_id = w.id AND x.branch_id = w.branch_id
   WHERE w.organization_id = p_organization_id AND w.is_active = true
   ORDER BY w.id ASC FOR UPDATE OF w;

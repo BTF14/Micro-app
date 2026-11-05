@@ -84,6 +84,7 @@ jobs:
             --no-owner --no-privileges --format=custom \
             --exclude-table=auth_sessions \
             --exclude-table=auth_rate_limits \
+            --exclude-table=auth_bootstrap_attempts \
             --file="backup-${STAMP}.dump"
           test -s "backup-${STAMP}.dump"
 

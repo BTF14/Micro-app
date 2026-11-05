@@ -153,8 +153,10 @@ export function sumNumeric(values: readonly string[], precision: number, scale: 
 
 /** Calculate a line amount using quantity NUMERIC(14,3) × USD price NUMERIC(14,4). */
 export function calculateLineUsd(quantity: string, unitPriceUsd: string): string {
-  parseNumeric(quantity, 14, 3);
-  parseNumeric(unitPriceUsd, 14, 4);
+  const quantityValue = parseNumeric(quantity, 14, 3);
+  const unitPriceValue = parseNumeric(unitPriceUsd, 14, 4);
+  if (quantityValue <= 0n) throw new RangeError("Line quantity must be greater than zero.");
+  if (unitPriceValue < 0n) throw new RangeError("Unit price cannot be negative.");
   const result = multiplyDecimals(quantity, 3, unitPriceUsd, 4, 4);
   parseNumeric(result, 14, 4);
   return result;
@@ -163,7 +165,8 @@ export function calculateLineUsd(quantity: string, unitPriceUsd: string): string
 /** Convert USD NUMERIC(14,4) with BCV NUMERIC(18,8) to VES NUMERIC(16,2). */
 export function convertUsdToVes(amountUsd: string, bcvRate: string): string {
   parseNumeric(amountUsd, 14, 4);
-  parseNumeric(bcvRate, 18, 8);
+  const rateValue = parseNumeric(bcvRate, 18, 8);
+  if (rateValue <= 0n) throw new RangeError("BCV rate must be greater than zero.");
   const result = multiplyDecimals(amountUsd, 4, bcvRate, 8, 2);
   parseNumeric(result, 16, 2);
   return result;

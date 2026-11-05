@@ -74,7 +74,7 @@ BEGIN
     INSERT INTO public.sales (
       organization_id, idempotency_key, subtotal_usd, total_usd, created_by
     ) VALUES (
-      organization_id, 'discounted-sale-must-fail', 23.85, 22.85, user_id
+      organization_id, 'mismatched-total-must-fail', 23.85, 22.85, user_id
     );
     RAISE EXCEPTION 'FAIL: sales accepted total_usd different from subtotal_usd';
   EXCEPTION WHEN check_violation THEN

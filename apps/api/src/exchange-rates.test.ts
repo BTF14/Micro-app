@@ -1,0 +1,65 @@
+import { describe, expect, it } from "vitest";
+import { parseBcvOfficialRate } from "./exchange-rates";
+
+const NOW = new Date("2026-11-05T12:00:00-04:00");
+
+const OFFICIAL_PAGE = `
+<html><body>
+<p>El tipo de cambio publicado por el BCV es el promedio ponderado.</p>
+<p>EUR</p><p>1.006,03263992</p>
+<p>CNY</p><p>134,13589147</p>
+<p>TRY</p><p>17,89005927</p>
+<p>RUB</p><p>10,93279578</p>
+<p>USD</p><p>894,88760000</p>
+<p>Fecha Valor: Jueves, 05 Noviembre 2026<br/></p>
+<h2>Tasas Informativas del Sistema Bancario</h2>
+<p>USD Banco Mercantil 895,2581</p>
+</body></html>`;
+
+describe("BCV official HTML parser", () => {
+  it("extracts the official USD rate and explicit effective date without float rounding", () => {
+    expect(parseBcvOfficialRate(OFFICIAL_PAGE, NOW)).toEqual({
+      rate: "894.88760000",
+      effectiveDate: "2026-11-05",
+    });
+  });
+
+  it("normalizes Spanish thousands and decimal separators", () => {
+    const html = OFFICIAL_PAGE.replace("894,88760000", "1.234,56789012");
+    expect(parseBcvOfficialRate(html, NOW).rate).toBe("1234.56789012");
+  });
+
+  it("accepts the next effective date when BCV publishes in advance", () => {
+    const html = OFFICIAL_PAGE.replace("05 Noviembre 2026", "06 Noviembre 2026");
+    expect(parseBcvOfficialRate(html, NOW).effectiveDate).toBe("2026-11-06");
+  });
+
+  it("rejects a missing USD rate", () => {
+    expect(() => parseBcvOfficialRate(OFFICIAL_PAGE.replace(/USD[\s\S]*?894,88760000/, "GBP 1,00"), NOW))
+      .toThrow("BCV_USD_RATE_MISSING");
+  });
+
+  it("rejects a missing or malformed effective date", () => {
+    expect(() => parseBcvOfficialRate(OFFICIAL_PAGE.replace("Fecha Valor:", "Fecha:"), NOW))
+      .toThrow("BCV_EFFECTIVE_DATE_MISSING");
+  });
+
+  it("rejects zero, invalid separators and impossible values", () => {
+    expect(() => parseBcvOfficialRate(OFFICIAL_PAGE.replace("894,88760000", "0,00000000"), NOW))
+      .toThrow("BCV_RATE_VALUE_INVALID");
+    expect(() => parseBcvOfficialRate(OFFICIAL_PAGE.replace("894,88760000", "894.88760000"), NOW))
+      .toThrow("BCV_RATE_FORMAT_INVALID");
+  });
+
+  it("rejects an implausibly old or future effective date", () => {
+    const oldPage = OFFICIAL_PAGE.replace("05 Noviembre 2026", "01 Enero 2026");
+    const futurePage = OFFICIAL_PAGE.replace("05 Noviembre 2026", "10 Noviembre 2026");
+    expect(() => parseBcvOfficialRate(oldPage, NOW)).toThrow("BCV_EFFECTIVE_DATE_OUT_OF_RANGE");
+    expect(() => parseBcvOfficialRate(futurePage, NOW)).toThrow("BCV_EFFECTIVE_DATE_OUT_OF_RANGE");
+  });
+
+  it("rejects oversized or empty source responses", () => {
+    expect(() => parseBcvOfficialRate("", NOW)).toThrow("BCV_HTML_SIZE_INVALID");
+    expect(() => parseBcvOfficialRate("x".repeat(2_000_001), NOW)).toThrow("BCV_HTML_SIZE_INVALID");
+  });
+});

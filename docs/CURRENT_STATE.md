@@ -1,9 +1,10 @@
-## Actualización de validación — 2026-11-05 10:53 UTC
+## Nueva corrección de autorización — 2026-11-05 11:04 UTC
 
-- PR #220 HEAD confirmado: `40cf9e2cff5e88a5feec7b8168c8f436cb3f0601`, base #218 (`2115d66cca18ee094ee3b3f8148ac6a61df040da`), OPEN/DRAFT/no merge.
-- Se corrigió TS2345 en `TextDecoder` añadiendo `ignoreBOM: false` sin relajar `fatal: true`.
-- Los seis workflows ejecutados por push sobre ese HEAD terminaron SUCCESS: CI/build/typecheck + unit/PostgreSQL auth integration, migration validation, Playwright E2E, Semgrep, Trivy Security y Secret history scan. Jobs/steps consultados; todos los pasos ejecutados terminaron success.
-- Esta evidencia no equivale a Worker Preview ni a producción. La PR permanece Draft y la Issue #53 sigue OPEN/P0 hasta completar gates de entorno y revisión formal.
+- Se abrió PR #221 (OPEN/DRAFT/no merge), apilada sobre #220. HEAD `18dfc33525c792802c296469ee6140d3b5f649ff`; base #220 HEAD `40cf9e2cff5e88a5feec7b8168c8f436cb3f0601`.
+- Hallazgo: `catalog.ts` duplicaba localmente la lista owner/admin/inventory para decidir si seleccionar `cost_usd`, aunque la matriz central ya define `catalog.read_costs`.
+- Cambio: `buildCatalogQuery` usa `authorizeCommercialOperation(role, "catalog.read_costs")`; sin cambiar permisos ni respuesta esperada. Tests existentes de proyección por rol y matriz cubren owner/admin/inventory frente a cashier.
+- CI exacto #221: Secret history, Trivy Security, migration validation y Semgrep SUCCESS; CI y Playwright todavía IN_PROGRESS en la última consulta. No declarar 6/6 hasta terminar ambos.
+- Pages Preview #221 success. Worker Preview aún pendiente de notificación. Orden de revisión #218 → #220 → #221.
 
 ---
 

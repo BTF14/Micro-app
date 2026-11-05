@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-import { act } from "react";
+import { act, type ComponentProps } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import CatalogPanel from "./CatalogPanel";
@@ -14,7 +14,7 @@ function jsonResponse(body: unknown, status = 200) {
   });
 }
 
-async function renderPanel(props: React.ComponentProps<typeof CatalogPanel>) {
+async function renderPanel(props: ComponentProps<typeof CatalogPanel>) {
   await act(async () => { root.render(<CatalogPanel {...props} />); });
   await act(async () => { await new Promise((resolve) => setTimeout(resolve, 0)); });
 }

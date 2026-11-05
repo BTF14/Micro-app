@@ -1,3 +1,5 @@
+BEGIN;
+
 -- Warehouse-scoped inventory foundation.
 -- Apply after migrations 0001-0004. No legacy stock backfill is performed here.
 -- Opening quantities must enter through a confirmed physical/documented count.
@@ -276,3 +278,5 @@ COMMENT ON TABLE warehouse_inventory_movements IS
   'Append-only warehouse inventory ledger. Never update/delete; record compensating movements.';
 COMMENT ON TABLE inventory_counts IS
   'Absolute physical counts. Opening count must be formally confirmed before a warehouse receives initial stock.';
+
+COMMIT;

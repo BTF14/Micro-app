@@ -1993,3 +1993,14 @@ Actúa como ingeniero principal responsable de continuar BTF14/Micro-app. Antes 
 - #207 HEAD `dd3eb55ee3dc5776ce0e0617a3012c29ab355132`: nueve checks fueron observados queued/in_progress; no declarar la pila 0001–0007 validada hasta que terminen y se inspeccionen los resultados.
 - Comentario de corrección en #207 ID 6651930131 y en issue #53 ID 6651930707. El comentario previo que indicaba que #207 omitía 0006 queda supersedido por esta integración.
 - Ambas PR siguen Draft, sin merge. Issue #53 abierta/P0. No se tocó main, Neon, secretos, Cloudflare productivo, DNS, billing ni datos reales.
+
+
+## CI finalizado — secuencia 0001–0007 validada en PostgreSQL efímero — 2026-11-05 UTC
+
+- #208 HEAD `76a246ea141eedbee877608e7c0f50d6a07f3019`: 7/7 check-runs success, incluyendo `verify` y `postgres-migration`.
+- #207 HEAD `dd3eb55ee3dc5776ce0e0617a3012c29ab355132`: 10/10 check-runs success, incluyendo `verify`, `postgres-migration`, Chromium, SAST, Trivy, secret scan, Cloudflare Pages/Worker builds y backup/restore.
+- Compare #208 base → #207 head: 11 ahead / 0 behind, 8 rutas cambiadas, mergeable=true.
+- La secuencia 0001→0007 se ejecutó desde PostgreSQL desechable en CI: 0005 inventario, 0006 roles own-shift, 0007 audit append-only. El workflow de migration-check y CI terminaron success en el SHA exacto #207; también pasó el test PostgreSQL de roles propios de turno.
+- **AC-5 de la tarea ODD audit-logs-append-only queda validado para la pila de migraciones en CI efímero.** Esto no valida el usuario efectivo de DATABASE_URL, ownership runtime, grants/memberships, Neon ni producción. Mantener el gate de runtime security.
+- Comentario de cierre de evidencia en PR #207: 6651950993. PR #207/#208 siguen abiertas/Draft y sin merge.
+- PR #202 documentación: HEAD previo a este registro `0055a1713d50574d174b3fc602afee1618a923fc`; en último snapshot sus checks aún tenían verify, postgres-migration, SAST, Trivy, backup/restore y Pages in progress. No declarar la PR documental aprobada hasta completar esos checks.

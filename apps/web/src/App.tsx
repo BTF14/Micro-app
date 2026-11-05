@@ -219,8 +219,8 @@ export default function App() {
         });
     };
     refreshBcvRate();
-    // BCV publishes a daily reference rate; avoid needless API/Neon reads.
-    const interval = window.setInterval(refreshBcvRate, 6 * 60 * 60 * 1000);
+    // BCV publishes a daily reference rate; refresh once per day while the session stays open.
+    const interval = window.setInterval(refreshBcvRate, 24 * 60 * 60 * 1000);
     return () => {
       active = false;
       window.clearInterval(interval);

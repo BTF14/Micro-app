@@ -27,17 +27,6 @@ BEGIN
   EXCEPTION WHEN check_violation THEN NULL; END;
 
   BEGIN
-    UPDATE inventory_balances SET on_hand_quantity = 7 WHERE organization_id = org_id AND warehouse_id = warehouse_a AND product_id = product_a;
-    RAISE NOTICE 'balance-ledger intents before deferred check: %', (
-    SELECT string_agg(event_id::text || ':' || product_id::text || ':' || quantity_delta::text || ':' || consumed::text, ',')
-      FROM inventory_balance_ledger_intents
-     WHERE transaction_id = txid_current()
-  );
-  SET CONSTRAINTS inventory_balance_ledger_intent_complete IMMEDIATE;
-    RAISE EXCEPTION 'FAIL: balance change without movement was accepted';
-  EXCEPTION WHEN check_violation THEN NULL; END;
-
-  BEGIN
     INSERT INTO warehouse_inventory_movements (organization_id, branch_id, warehouse_id, product_id, movement_type, quantity_delta, reason, actor_user_id)
     VALUES (org_id, branch_id, warehouse_a, product_a, 'purchase_receipt', 1, 'Unpaired movement', actor_id);
     RAISE EXCEPTION 'FAIL: movement without balance change was accepted';

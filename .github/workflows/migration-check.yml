@@ -104,3 +104,11 @@ jobs:
         run: docker exec -i "${{ job.services.postgres.id }}" psql -v ON_ERROR_STOP=1 -U microapp -d microapp_test -f /dev/stdin < apps/api/migrations/0009_inventory_balance_ledger_coupling.sql
       - name: Verify transactional balance-ledger coupling assertions
         run: docker exec -i "${{ job.services.postgres.id }}" psql -v ON_ERROR_STOP=1 -U microapp -d microapp_test -f /dev/stdin < apps/api/migrations/0009_inventory_balance_ledger_coupling.assertions.sql
+      - name: Verify unmatched balance changes fail at transaction commit
+        run: |
+          if docker exec -i "${{ job.services.postgres.id }}" psql -v ON_ERROR_STOP=1 -U microapp -d microapp_test -f /dev/stdin < apps/api/migrations/0009_inventory_balance_ledger_coupling.deferred_failure.sql; then
+            echo "Expected unmatched balance change to fail at commit, but psql succeeded."
+            exit 1
+          fi
+          remaining="$(docker exec "${{ job.services.postgres.id }}" psql -At -U microapp -d microapp_test -c "SELECT count(*) = 1 AND NOT EXISTS (SELECT 1 FROM public.inventory_balance_ledger_intents) FROM public.inventory_balances WHERE on_hand_quantity = 0")"
+          test "$remaining" = "t"

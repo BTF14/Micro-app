@@ -2,7 +2,7 @@
 BEGIN;
 DO $$
 DECLARE org_id uuid; actor_id uuid; branch_id uuid; warehouse_a uuid; warehouse_b uuid;
-  product_a uuid; product_b uuid; balance_version bigint; remaining_intents bigint;
+  product_a uuid; product_b uuid; v_balance_version bigint; remaining_intents bigint;
 BEGIN
   INSERT INTO organizations (name, slug) VALUES ('Balance Ledger Coupling', 'balance-ledger-coupling') RETURNING id INTO org_id;
   INSERT INTO app_users (email, display_name) VALUES ('balance-ledger-owner@example.invalid', 'Balance Ledger Owner') RETURNING id INTO actor_id;
@@ -82,8 +82,8 @@ BEGIN
   SELECT count(*) INTO remaining_intents FROM inventory_balance_ledger_intents;
   IF remaining_intents <> 0 THEN RAISE EXCEPTION 'FAIL: consumed balance ledger intents were not cleaned up'; END IF;
   SET CONSTRAINTS inventory_balance_ledger_intent_complete DEFERRED;
-  SELECT balance_version INTO balance_version FROM inventory_balances
-   WHERE organization_id = org_id AND warehouse_id = warehouse_a AND product_id = product_a;
-  IF balance_version <> 4 THEN RAISE EXCEPTION 'FAIL: balance version changed unexpectedly, got %', balance_version; END IF;
+  SELECT ib.balance_version INTO v_balance_version FROM inventory_balances ib
+   WHERE ib.organization_id = org_id AND ib.warehouse_id = warehouse_a AND ib.product_id = product_a;
+  IF v_balance_version <> 4 THEN RAISE EXCEPTION 'FAIL: balance version changed unexpectedly, got %', v_balance_version; END IF;
 END $$;
 ROLLBACK;

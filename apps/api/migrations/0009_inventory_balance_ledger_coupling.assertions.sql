@@ -1,8 +1,9 @@
 -- Run after 0009_inventory_balance_ledger_coupling.sql on disposable PostgreSQL 18.
 BEGIN;
 DO $$
-DECLARE org_id uuid; actor_id uuid; branch_id uuid; warehouse_a uuid; warehouse_b uuid;
-  product_a uuid; product_b uuid; v_balance_version bigint; remaining_intents bigint;
+DECLARE org_id uuid; actor_id uuid; branch_id uuid; branch_b uuid; warehouse_a uuid; warehouse_b uuid; warehouse_branch_b uuid;
+  product_a uuid; product_b uuid; org_b uuid; actor_b uuid; tenant_branch_b uuid; tenant_warehouse_b uuid; tenant_product_b uuid;
+  v_balance_version bigint; remaining_intents bigint;
 BEGIN
   INSERT INTO organizations (name, slug) VALUES ('Balance Ledger Coupling', 'balance-ledger-coupling') RETURNING id INTO org_id;
   INSERT INTO app_users (email, display_name) VALUES ('balance-ledger-owner@example.invalid', 'Balance Ledger Owner') RETURNING id INTO actor_id;
@@ -12,6 +13,14 @@ BEGIN
   INSERT INTO warehouses (organization_id, branch_id, code, name) VALUES (org_id, branch_id, 'warehouse-b', 'Warehouse B') RETURNING id INTO warehouse_b;
   INSERT INTO products (organization_id, sku, name, price_usd) VALUES (org_id, 'BAL-LEDGER-A', 'Balance Ledger A', 10) RETURNING id INTO product_a;
   INSERT INTO products (organization_id, sku, name, price_usd) VALUES (org_id, 'BAL-LEDGER-B', 'Balance Ledger B', 10) RETURNING id INTO product_b;
+  INSERT INTO branches (organization_id, name, slug) VALUES (org_id, 'Balance Ledger Branch B', 'balance-ledger-branch-b') RETURNING id INTO branch_b;
+  INSERT INTO warehouses (organization_id, branch_id, code, name) VALUES (org_id, branch_b, 'warehouse-branch-b', 'Warehouse Branch B') RETURNING id INTO warehouse_branch_b;
+  INSERT INTO organizations (name, slug) VALUES ('Balance Ledger Tenant B', 'balance-ledger-tenant-b') RETURNING id INTO org_b;
+  INSERT INTO app_users (email, display_name) VALUES ('balance-ledger-tenant-b@example.invalid', 'Balance Ledger Tenant B') RETURNING id INTO actor_b;
+  INSERT INTO organization_members (organization_id, user_id, role) VALUES (org_b, actor_b, 'owner');
+  INSERT INTO branches (organization_id, name, slug) VALUES (org_b, 'Tenant B Branch', 'tenant-b-branch') RETURNING id INTO tenant_branch_b;
+  INSERT INTO warehouses (organization_id, branch_id, code, name) VALUES (org_b, tenant_branch_b, 'tenant-b-warehouse', 'Tenant B Warehouse') RETURNING id INTO tenant_warehouse_b;
+  INSERT INTO products (organization_id, sku, name, price_usd) VALUES (org_b, 'BAL-LEDGER-TENANT-B', 'Tenant B Product', 10) RETURNING id INTO tenant_product_b;
 
   INSERT INTO inventory_balances (organization_id, branch_id, warehouse_id, product_id, on_hand_quantity)
   VALUES (org_id, branch_id, warehouse_a, product_a, 0);
@@ -51,6 +60,26 @@ BEGIN
     INSERT INTO warehouse_inventory_movements (organization_id, branch_id, warehouse_id, product_id, movement_type, quantity_delta, reason, actor_user_id)
     VALUES (org_id, branch_id, warehouse_b, product_a, 'purchase_receipt', 4, 'Wrong warehouse', actor_id);
     RAISE EXCEPTION 'FAIL: movement for wrong warehouse was accepted';
+  EXCEPTION WHEN check_violation THEN NULL; END;
+  BEGIN
+    UPDATE inventory_balances SET on_hand_quantity = 1 WHERE organization_id = org_id AND warehouse_id = warehouse_a AND product_id = product_a;
+    INSERT INTO warehouse_inventory_movements (organization_id, branch_id, warehouse_id, product_id, movement_type, quantity_delta, reason, actor_user_id)
+    VALUES (org_id, branch_id, warehouse_a, product_a, 'reversal', -1, 'Wrong signed delta', actor_id);
+    RAISE EXCEPTION 'FAIL: movement with opposite signed delta was accepted';
+  EXCEPTION WHEN check_violation THEN NULL; END;
+
+  BEGIN
+    UPDATE inventory_balances SET on_hand_quantity = 3 WHERE organization_id = org_id AND warehouse_id = warehouse_a AND product_id = product_a;
+    INSERT INTO warehouse_inventory_movements (organization_id, branch_id, warehouse_id, product_id, movement_type, quantity_delta, reason, actor_user_id)
+    VALUES (org_id, branch_b, warehouse_branch_b, product_a, 'purchase_receipt', 3, 'Wrong branch', actor_id);
+    RAISE EXCEPTION 'FAIL: movement for wrong branch was accepted';
+  EXCEPTION WHEN check_violation THEN NULL; END;
+
+  BEGIN
+    UPDATE inventory_balances SET on_hand_quantity = 4 WHERE organization_id = org_id AND warehouse_id = warehouse_a AND product_id = product_a;
+    INSERT INTO warehouse_inventory_movements (organization_id, branch_id, warehouse_id, product_id, movement_type, quantity_delta, reason, actor_user_id)
+    VALUES (org_b, tenant_branch_b, tenant_warehouse_b, tenant_product_b, 'purchase_receipt', 4, 'Wrong tenant', actor_b);
+    RAISE EXCEPTION 'FAIL: movement for wrong tenant was accepted';
   EXCEPTION WHEN check_violation THEN NULL; END;
 
   BEGIN

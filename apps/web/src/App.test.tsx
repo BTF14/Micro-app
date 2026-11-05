@@ -119,6 +119,19 @@ describe("Micro app authentication flow", () => {
     expect(panel?.textContent).toContain("Banco Central de Venezuela");
   });
 
+  it("does not invent or substitute a rate when the BCV endpoint is unavailable", async () => {
+    vi.mocked(fetch)
+      .mockResolvedValueOnce(jsonResponse(authResponse))
+      .mockResolvedValueOnce(jsonResponse({ message: "Todavía no hay una tasa BCV validada." }, 503));
+    await renderApp();
+    await settle();
+
+    const panel = container.querySelector(".exchange-rate-panel");
+    expect(panel?.textContent).toContain("No disponible");
+    expect(panel?.textContent).toContain("Todavía no hay una tasa BCV validada.");
+    expect(panel?.textContent).not.toContain("894,88760000");
+  });
+
   it("shows help links (WhatsApp support, FAQ, privacy) on the authenticated dashboard footer", async () => {
     vi.mocked(fetch).mockResolvedValueOnce(jsonResponse(authResponse)).mockResolvedValueOnce(jsonResponse(bcvRateResponse));
     await renderApp();

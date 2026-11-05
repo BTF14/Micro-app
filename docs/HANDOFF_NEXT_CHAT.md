@@ -1,18 +1,39 @@
-## Handoff operativo — actualización 2026-11-05 10:09 UTC
+## Handoff operativo — actualización 2026-11-05 10:44 UTC
 
-Retomar sin repetir validaciones ya hechas:
-- PR #210 HEAD `ab5d2168a11a825a9ed6b03341b3091c13f3c06e`: 8/8 workflow runs success; PostgreSQL 18 aplicó 0001–0009, incluyó rollback y assertions balance↔ledger. Draft/no merge.
-- PR #213 HEAD `0c1e5e40eb259cc50d0a3f602e96e07bd88fac32`: 12/12 check-runs y 10/10 workflow runs success. OAuth start 10/10m, bootstrap 5/h, callback 20/10m; HMAC-SHA-256 con GOOGLE_CLIENT_SECRET, clave por CF-Connecting-IP, 429/Retry-After, fail-closed 503. Usa DDL 0001; no nueva migración. Draft/no merge, independiente de #200–#210.
-- PR #202 docs HEAD `de617d3ccc616c7056ca10af1b42e959107c1ca5`: 13/13 check-runs y 11/11 workflows success. Draft/no merge.
-- #213 no cubre /auth/me ni /auth/logout; tampoco verifica header/grants en Worker productivo.
-- Próximo: auditar todos los handlers por tenant/branch/role; integrar authorization helpers o alinear checks locales; implementar lectura balances/ledger para Cashier conforme a matriz; valorar rate-limit de sesiones con pruebas/telemetría.
-- Runtime DATABASE_URL/ownership/grants sigue NO VERIFICADO. RPO/RTO, alerta externa y coste total USD 0 pendientes. Issue #53 abierta/P0. Producción NO LISTA.
-- Sin Neon, secretos, datos reales, Cloudflare settings, DNS, billing, main ni producción.
+Continuar desde GitHub; no pedir al propietario terminal, SHAs, builds, logs o capturas recuperables.
 
-## Corrección de continuidad — 2026-11-05 09:43 UTC
+### Estado y orden de PRs
 
-PR #210 HEAD `ab5d2168a11a825a9ed6b03341b3091c13f3c06e`: 8/8 workflow runs success, incluidos Playwright E2E y Security scan. PR #202 HEAD `38c91f975376161be97e49a3799730c3c05ecdb9`: 11/11 workflow runs success. No repetir la espera de esos workflows.
+- Inventario: #200 → #204 → #205 → #208 → #207 → #209 → #210. #210 HEAD `ab5d2168a11a825a9ed6b03341b3091c13f3c06e`, 8/8 workflows success, Draft/no merge.
+- Autenticación: #211 → #214 → #215. #211 HEAD `1ebb998b9711f6feb8b70191a704f627713cdc07`; #214 HEAD `d51f2c4e7bde153ef31aa25571022d68510c6558`; #215 HEAD `9ba4f76e0c155ceaff911a4033406a8afa9f09cd`. Todas abiertas/Draft/no merge.
+- #213 es alternativa independiente desde main y solapa funcionalmente con #214. No combinar hasta comparar implementación, secreto HMAC, límites, cleanup y fallos.
+- #218 está apilada sobre #215, HEAD `2115d66cca18ee094ee3b3f8148ac6a61df040da`, 6/6 workflows success. Centraliza autorización en catálogo e inventario existentes. Draft/no merge.
+- #220 está apilada sobre #218, HEAD `983a76ea2aa5f4753999d098bb71b341407c89c7`. Endurece lectura de body bootstrap por streaming, CI/migration/Playwright/Semgrep pendientes al último snapshot; Security y Secret history success. Draft/no merge.
+- #216 cerrada como supersedida por #218; #217 y #219 cerradas como supersedidas por #220. No merge.
+- #202 docs HEAD `99fb44d93fe73dd2c47f9a77b5021852c5ba706b`; esta actualización documental cambia su HEAD y requiere revalidación de CI.
 
+### Cambios técnicos que no deben repetirse
+
+1. #218 conecta `authorizeTenantOperation` con catálogo GET/POST/PATCH y `authorizeBranchOperation` con conteos create/confirm y GET almacenes/conteos. Preserva los permisos existentes. `inventory.management.read` es una clave interna que conserva Owner/Admin/Inventory; no concede a Cashier lectura de metadata ni reemplaza el futuro permiso de balances/ledger.
+2. #218 distingue branch fuera de alcance, niega roles antes de consultar membresía de sucursal y permite resolución read-only sin locks de escritura. Las escrituras mantienen locks transaccionales.
+3. #220 introduce `readBodyWithinLimit`, límite 2.048 bytes, cancelación inmediata del stream, UTF-8 fatal y uso compartido con catalog writes. Tiene tests de cancelación, límite exacto, UTF-8 inválido, body vacío y POST oversized sin Content-Length.
+
+### Próximas tareas
+
+1. Consultar nuevamente los seis workflows del HEAD exacto #220 (CI, migration-check, Playwright, Semgrep, Security/Trivy, Secret history). Leer jobs/steps, corregir cualquier fallo y verificar el HEAD nuevo si hay commits.
+2. Revisar el check de Workers Build Preview para #218 y #220. Pages Preview no equivale a Worker Preview ni a producción.
+3. Reconciliar #213 con #214/#215: #213 usa GOOGLE_CLIENT_SECRET como pepper y límites diferentes; #214 usa AUTH_RATE_LIMIT_HMAC_KEY separado, fail-closed y cleanup horario. Evitar duplicidad de rate limiter.
+4. Completar auditoría de autorización de rutas existentes y futuras sin ampliar permisos. No implementar writers comerciales no aprobados.
+5. Mantener sin cambios la política de sesión de 7 días hasta entender el impacto POS/cajeros. last_seen_at/idle timeout pendiente.
+6. Actualizar Issue #53 y docs al completar verificaciones.
+
+### Gates P0 / producción
+
+Issue #53 OPEN/P0. No verificados: secreto AUTH_RATE_LIMIT_HMAC_KEY productivo, confianza de CF-Connecting-IP, grants/ownership runtime DB role, orden/aplicación de migración 0010, RPO/RTO, alertas y coste USD 0. Cashier aún no tiene endpoint de balances/ledger. Producción NO LISTA.
+
+No merge, deploy, Neon principal, datos reales, secretos, Cloudflare productivo, DNS, billing ni cambios en main. El usuario trabaja desde Android sin terminal; no trasladarle trabajo que pueda resolverse desde GitHub.
+
+---
 ---
 
 ## Handoff vivo — 2026-11-05 09:43 UTC

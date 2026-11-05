@@ -115,7 +115,7 @@ export default Object.assign(app, {
       await cleanupExpiredAuthRateLimits(env.DATABASE_URL);
       return;
     }
-    if (controller.cron === "0 13-23 * * 1-5") {
+    if (controller.cron === "0 22 * * 1-5") {
       try {
         await syncBcvOfficialRate(env.DATABASE_URL);
       } catch {

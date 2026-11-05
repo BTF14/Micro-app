@@ -20,7 +20,7 @@ The code deliberately returns `503 AUTH_RATE_LIMIT_UNAVAILABLE` when the secret 
 |---|---|---:|---:|
 | `GET /auth/google` | `oauth_start` | 20 | 10 minutes |
 | `POST /auth/google` | `bootstrap_start` | 5 | 15 minutes |
-| `GET /auth/google/callback` | `oauth_callback` | 30 | 10 minutes |
+| `GET /auth/google/callback` (valid OAuth state only) | `oauth_callback` | 60 | 10 minutes |
 
 Each bucket is isolated by endpoint and client IP. The client IP comes only from Cloudflare's `CF-Connecting-IP` header; user-controlled `X-Forwarded-For` is not used. Confirm the Worker is reachable only through Cloudflare's edge before relying on this trust boundary.
 

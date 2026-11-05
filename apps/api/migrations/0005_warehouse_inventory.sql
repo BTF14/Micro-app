@@ -139,6 +139,14 @@ LANGUAGE plpgsql
 AS $$
 BEGIN
   IF TG_TABLE_NAME = 'inventory_counts' THEN
+    IF TG_OP = 'INSERT' THEN
+      -- Counts must enter the lifecycle as drafts. A direct INSERT must not
+      -- manufacture a confirmed/cancelled historical record.
+      IF NEW.status <> 'draft' THEN
+        RAISE EXCEPTION 'INVENTORY_COUNT_MUST_START_AS_DRAFT' USING ERRCODE = '23514';
+      END IF;
+      RETURN NEW;
+    END IF;
     IF TG_OP = 'DELETE' THEN
       IF OLD.status <> 'draft' THEN
         RAISE EXCEPTION 'CONFIRMED_INVENTORY_COUNT_IMMUTABLE' USING ERRCODE = '23514';
@@ -202,7 +210,7 @@ END;
 $$;
 
 CREATE TRIGGER inventory_counts_guard
-BEFORE UPDATE OR DELETE ON inventory_counts
+BEFORE INSERT OR UPDATE OR DELETE ON inventory_counts
 FOR EACH ROW EXECUTE FUNCTION guard_inventory_count_lifecycle();
 CREATE TRIGGER inventory_count_lines_guard
 BEFORE INSERT OR UPDATE OR DELETE ON inventory_count_lines

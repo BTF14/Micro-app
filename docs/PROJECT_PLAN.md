@@ -1,3 +1,25 @@
+## Prioridad operativa vigente — reconciliación GitHub 2026-11-04 21:40 EDT
+
+Este bloque sustituye los snapshots anteriores de prioridad como guía operativa. El historial inferior se conserva.
+
+1. **Resolver blocker de conteos obsoletos en #200.** La revisión técnica registrada en la PR demuestra que dos conteos físicos creados antes de confirmar pueden confirmarse en orden inverso y el conteo antiguo puede sobrescribir el nuevo. Diseñar snapshot/versionado y conflicto stale (preferentemente 409) o formalizar otra política explícita; añadir prueba PostgreSQL determinista.
+2. **Reconciliar #205 con #204.** #204 HEAD `57a9f098...`; #205 HEAD `c1f09d09...`; comparación #204→#205 = 9 ahead / 1 behind. Incorporar el commit final de #204 sin force-push y ejecutar CI en el nuevo HEAD. La idempotencia de creación no resuelve stale-count.
+3. **Revisar y hacer atómica la migración 0005.** SQL actual sin BEGIN/COMMIT + psql autocommit/ON_ERROR_STOP puede dejar DDL parcial. Añadir transacción compatible o recuperación explícita, con prueba de fallo inducido en PostgreSQL efímero.
+4. **Revisar replay idempotente ante recursos inactivos** (warehouse/product), concurrencia, normalización/hash, payload conflictivo y rollback. No cambiar requisito funcional sin evidencia.
+5. **Resolver #194 después de estabilizar #200.** #194 HEAD `7b3ad50e...`, 13 ahead / 2 behind main; su `0005_register_shift_member_roles.sql` colisiona con `0005_warehouse_inventory.sql`. Actualizar base y renombrar a 0006 con referencias/assertions/workflows coordinados; validar 0001–0006 en PostgreSQL efímero.
+6. **Completar revisión semántica de #202.** Rama documental HEAD `4e54efbf...`, 30 ahead / 0 behind, 9 workflow runs success. La reconciliación actual actualiza CURRENT_STATE, HANDOFF, STATE_JOURNAL y auditoría de despliegues; completar revisión de documentos afectados antes de cualquier merge.
+
+### Estado de gates
+
+- Main: `7b0f057b8c152515005feed40305143c0ebb94b0`.
+- #200 abierta/Draft, HEAD `243592468e9fd61b1f8c578d867887dbb7f18e4d`, 16 ahead / 0 behind; descripción de PR desactualizada (menciona 7d2ef3d y 12 ahead). 20 checks exitosos recuperados; sin review formal.
+- #204 abierta/Draft, HEAD `57a9f098bcb93427315e96c90e62ae13764a485b`, 3 commits sobre #200; 8/8 checks recuperados.
+- #205 abierta/Draft, HEAD `c1f09d09dd08b9600e7a6c0ff8ccbb5be4e9c990`; 9/9 checks recuperados; 9 ahead / 1 behind de #204.
+- #194 abierta; #202 abierta/Draft; #53 abierta. #78 cerrada completed. #201 y #190 cerradas. #193 y #196 abiertas; no modificar #196, #193 ni reabrir/cambiar #190.
+- No merge, migración Neon, deploy productivo, cambio Cloudflare, secreto, DNS o billing.
+
+---
+
 # Addendum vigente — estado reconciliado 2026-11-04
 
 Este bloque supersede los snapshots de prioridad anteriores que aparecen más abajo. Los bloques históricos se conservan para trazabilidad; no ejecutar sus tareas como si siguieran abiertas sin verificar el estado actual.

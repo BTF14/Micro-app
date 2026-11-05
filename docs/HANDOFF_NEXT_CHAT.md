@@ -1,3 +1,14 @@
+## Instrucción vigente — acceso móvil y abandono de TinyFish — 2026-11-05
+
+- El propietario trabaja desde Android y no tiene terminal. **No solicitar comandos CLI, npx, edición de archivos locales, Codex CLI ni pasos de escritorio.**
+- `@tiny-fish/cli connect codex` configura Codex CLI local; no actualiza el MCP de esta sesión ChatGPT móvil. Este punto ya fue aclarado y no debe volver a preguntarse ni proponerse.
+- Por decisión del propietario, **no usar TinyFish para Micro-app**: no invocar automatización de navegador, no comprobar wallet/perfiles ni pedir que conecte otra cuenta. No consumir saldo.
+- Priorizar GitHub MCP para revisar y modificar documentación/código dentro del alcance autorizado. Usar fuentes web oficiales cuando haga falta. Para Cloudflare, aprovechar checks y comentarios automáticos de GitHub; si la evidencia del dashboard requiere una sesión que no está disponible mediante otro conector, dejar el estado como NO VERIFICADO y documentar la limitación. No pedir capturas ni reautenticaciones repetidas.
+- La API key expuesta en conversación debe rotarse/revocarse por el propietario; no volver a incluirla ni pedirla. No se afirma que la nueva cuenta TinyFish haya quedado conectada.
+- Esta instrucción sustituye los pasos anteriores de handoff que decían recargar TinyFish, revisar su saldo o autenticar el perfil Cloudflare. Esos pasos quedan **cancelados/supersedidos** por esta decisión.
+
+---
+
 ## Handoff vigente — Cloudflare PR #207: evidencia de preview y siguiente gate — 2026-11-05 01:38 EDT
 
 - Revisar los comentarios automáticos de [Workers](https://github.com/BTF14/Micro-app/pull/207#issuecomment-6649952138) y [Pages](https://github.com/BTF14/Micro-app/pull/207#issuecomment-6649953153). Ambos informan éxito y publican URLs etiquetadas como Commit Preview y Branch Preview para el commit `26c5270`.

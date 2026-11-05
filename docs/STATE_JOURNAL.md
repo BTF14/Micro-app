@@ -1,3 +1,13 @@
+## 2026-11-05 — Protocolo anti-repetición para builds y Cloudflare
+
+- Se detectó que las notas de continuidad mantenían un Build ID histórico pendiente (`3542c660-e5e3-435e-8be5-dbed236cec1c`) sin distinguir que era una investigación puntual y no un requisito que el propietario deba repetir en cada chat.
+- Se establece regla: primero buscar IDs, checks, Actions, logs y comentarios de Cloudflare en GitHub y documentación; nunca pedirlos al propietario si ya son recuperables.
+- El Workers Build ID de preview de PR #207 (`0c8394a1-4d91-4061-a850-6c78f3b11295`) está registrado. No volver a pedirlo.
+- Si el dashboard autenticado no puede consultarse desde las integraciones disponibles, conservar el estado como NO VERIFICADO; no hacer que el propietario repita capturas o búsquedas. Solo solicitar información textual nueva cuando sea imprescindible para una decisión concreta y explicar el motivo.
+- El handoff debe conservar SHA, IDs, fuentes consultadas y preguntas realmente abiertas. Diferenciar CI/build, Version URL, preview, producción y tráfico.
+
+---
+
 ## 2026-11-05 — Decisión de acceso móvil: dejar de depender de TinyFish
 
 - El propietario aclaró que solo dispone de teléfono Android y no tiene terminal. Se verificó que el comando compartido `npx -y @tiny-fish/cli@latest connect codex ...` pertenece al flujo de configuración de Codex CLI local y requiere un entorno con terminal; no conecta el MCP de esta conversación móvil.

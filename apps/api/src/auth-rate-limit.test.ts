@@ -1,5 +1,6 @@
-import { describe, expect, it } from "vitest";
-import { hashAuthRateLimitKey } from "./auth-rate-limit";
+import { describe, expect, it, vi } from "vitest";
+import type { DatabaseClient } from "./database";
+import { consumeAuthRateLimit, hashAuthRateLimitKey } from "./auth-rate-limit";
 import app from "./index";
 
 describe("authentication rate-limit key handling", () => {
@@ -12,6 +13,25 @@ describe("authentication rate-limit key handling", () => {
     expect(first).toBe(second);
     expect(first).toMatch(/^[a-f0-9]{64}$/);
     expect(first).not.toContain("198.51.100.24");
+    await expect(hashAuthRateLimitKey(raw, "different-google-client-secret")).resolves.not.toBe(first);
+  });
+
+  it("keeps the enforced counter when best-effort cleanup is unavailable", async () => {
+    const query = vi.fn()
+      .mockResolvedValueOnce({ rows: [{ attempts: 1, window_started_at: new Date() }] })
+      .mockRejectedValueOnce(new Error("cleanup permission denied"));
+    const client = { query } as unknown as DatabaseClient;
+
+    const decision = await consumeAuthRateLimit(
+      client,
+      "google:start:198.51.100.26",
+      10,
+      600,
+      "test-google-client-secret",
+    );
+
+    expect(decision).toMatchObject({ allowed: true, attempts: 1, retryAfterSeconds: 0 });
+    expect(query).toHaveBeenCalledTimes(2);
   });
 
   it("fails closed when Cloudflare does not provide a client IP", async () => {

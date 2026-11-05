@@ -85,16 +85,21 @@ export async function consumeAuthRateLimit(
   // Opportunistically prune a bounded batch of expired buckets when a new
   // window starts. The updated_at index keeps this bounded and infrequent.
   if (attempts === 1) {
-    await client.query(
-      `DELETE FROM auth_rate_limits
-        WHERE key_hash IN (
-          SELECT key_hash
-            FROM auth_rate_limits
-           WHERE updated_at < now() - interval '7 days'
-           ORDER BY updated_at ASC
-           LIMIT 100
-        )`,
-    );
+    try {
+      await client.query(
+        `DELETE FROM auth_rate_limits
+          WHERE key_hash IN (
+            SELECT key_hash
+              FROM auth_rate_limits
+             WHERE updated_at < now() - interval '7 days'
+             ORDER BY updated_at ASC
+             LIMIT 100
+          )`,
+      );
+    } catch {
+      // Retention is best-effort; a cleanup privilege/connection issue must
+      // not undo a counter that has already been atomically enforced.
+    }
   }
 
   return { allowed: attempts <= maxAttempts, attempts, retryAfterSeconds };

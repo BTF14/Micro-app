@@ -1,3 +1,18 @@
+## Estado vivo de seguridad y gobernanza — 2026-11-04 21:40 EDT
+
+- Main `7b0f057b8c152515005feed40305143c0ebb94b0`.
+- #200 HEAD `243592468e9fd61b1f8c578d867887dbb7f18e4d`; #204 HEAD `57a9f098bcb93427315e96c90e62ae13764a485b`; #205 HEAD `c1f09d09dd08b9600e7a6c0ff8ccbb5be4e9c990`. Todas abiertas/Draft según continuidad; ninguna fusionada. #205 está 1 commit detrás de #204.
+- La revisión técnica de #200 documenta riesgo de sobrescritura por conteo físico obsoleto. La idempotencia de #205 no mitiga ese riesgo. Mantenerlo como blocker hasta añadir control de vigencia/snapshot y prueba de concurrencia con conteos distintos.
+- La migración 0005 no está en main ni en Neon. Su ausencia de BEGIN/COMMIT, combinada con psql autocommit, deja riesgo de aplicación parcial. Exigir transacción o recuperación comprobada y prueba de fallo inducido.
+- #194 sigue abierta, 13 ahead / 2 behind main, con migración 0005 de roles que colisiona con inventario. No integrar hasta secuencia 0005/0006 y validación completa.
+- Issue #53 abierta: cobertura de autorización y aislamiento tenant/sucursal/rol incompleta. La matriz de roles sí está aprobada (2026-10-31); no confundir aprobación con implementación.
+- Issue #78 cerrada completed desde 2026-10-31; no reabrir por inercia. Evidencia previa documenta CORS y bundle público verificados.
+- Rate limiting runtime sigue sin demostración; backups/restore sigue parcial (RPO/RTO, alerta externa y coste total $0 pendientes).
+- Cloudflare: Pages/Workers builds de ramas reportados exitosos, pero Worker Version URLs no equivalen a previews aislados. El dashboard documentado aún mostraba “Set up Worker Previews”; no activar ni compartir secretos/bindings productivos. La lectura autenticada actual no está disponible en esta sesión.
+- No modificar Neon producción, secretos, bindings, configuración Cloudflare, DNS, billing ni despliegues. No declarar Nivel 1 ni producción listos.
+
+---
+
 ## Estado verificado — 2026-11-04 UTC (reconciliación de PR #200 y Cloudflare)
 
 > Este bloque supersede el snapshot vivo histórico que aparece más abajo. Se conserva el historial de seguridad y sus decisiones anteriores.

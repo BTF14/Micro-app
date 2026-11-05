@@ -42,7 +42,7 @@ function initialDraft(product?: CatalogProduct): ProductDraft {
     unit: product?.unit ?? "unidad",
     cost_usd: product?.cost_usd ?? "0.0000",
     price_usd: product?.price_usd ?? "",
-    minimum_stock: "0.000",
+    minimum_stock: product ? "" : "0.000",
     is_active: product?.is_active ?? true,
   };
 }
@@ -68,8 +68,10 @@ export default function ProductForm({ organizationId, product, onCancel, onSaved
     try {
       const cost = parseNumeric(draft.cost_usd, 14, 4);
       const price = parseNumeric(draft.price_usd, 14, 4);
-      const minimumStock = parseNumeric(draft.minimum_stock, 14, 3);
-      if (cost < 0n || price < 0n || minimumStock < 0n) {
+      const minimumStock = draft.minimum_stock.trim()
+        ? parseNumeric(draft.minimum_stock, 14, 3)
+        : null;
+      if (cost < 0n || price < 0n || minimumStock !== null && minimumStock < 0n) {
         setError("Los costos, precios y mínimos de inventario no pueden ser negativos.");
         return;
       }
@@ -86,8 +88,12 @@ export default function ProductForm({ organizationId, product, onCancel, onSaved
       unit: draft.unit.trim(),
       cost_usd: draft.cost_usd,
       price_usd: draft.price_usd,
-      minimum_stock: draft.minimum_stock,
-      ...(product ? { is_active: draft.is_active } : {}),
+      ...(product
+        ? {
+            is_active: draft.is_active,
+            ...(draft.minimum_stock.trim() ? { minimum_stock: draft.minimum_stock } : {}),
+          }
+        : { minimum_stock: draft.minimum_stock }),
     };
 
     setSaving(true);
@@ -153,7 +159,7 @@ export default function ProductForm({ organizationId, product, onCancel, onSaved
         <label>
           Stock mínimo
           <input value={draft.minimum_stock} onChange={(event) => update("minimum_stock", event.target.value)} inputMode="decimal" autoComplete="off" placeholder="0.000" required />
-          <span className="product-field-hint">Cantidad con hasta 3 decimales.</span>
+          <span className="product-field-hint">{product ? "Hasta 3 decimales. Déjalo vacío para conservar el mínimo actual." : "Cantidad con hasta 3 decimales."}</span>
         </label>
         {product && (
           <label className="product-active-toggle">

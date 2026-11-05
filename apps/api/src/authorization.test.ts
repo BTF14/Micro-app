@@ -129,6 +129,20 @@ describe("authorization context boundaries", () => {
     expect(queries[2]).toContain("FOR SHARE OF bm");
   });
 
+  it("denies an unauthorized role before resolving branch membership", async () => {
+    const queries: string[] = [];
+    const query = async (sql: string) => {
+      queries.push(sql);
+      return { rows: [{ user_id: userId, organization_id: organizationId, role: "cashier" as const }] };
+    };
+    const client = { connect: async () => {}, query, end: async () => {} } as unknown as DatabaseClient;
+
+    await expect(authorizeBranchOperation(client, sessionToken, organizationId, branchId, "inventory.adjust"))
+      .resolves.toEqual({ allowed: false, reason: "operation_denied" });
+    expect(queries).toHaveLength(1);
+    expect(queries[0]).toContain("auth_sessions");
+  });
+
   it("distinguishes a valid tenant with no access to the requested branch", async () => {
     const query = async (sql: string) => ({
       rows: sql.includes("auth_sessions")

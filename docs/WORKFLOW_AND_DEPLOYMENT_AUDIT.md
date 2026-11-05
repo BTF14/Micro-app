@@ -1,3 +1,16 @@
+## Addendum vivo — despliegues de PR de inventario y estado de continuidad — 2026-11-04
+
+- Main verificado: `7b0f057b8c152515005feed40305143c0ebb94b0`.
+- PR #200 HEAD `243592468e9fd61b1f8c578d867887dbb7f18e4d`; Cloudflare bot reportó Pages y Workers builds exitosos para el prefijo `2435924`. Pages Preview: `https://6ff8d968.micro-app-63i.pages.dev`; branch preview: `https://feat-inventory-test-isolatio.micro-app-63i.pages.dev`. Worker commit Version URL: `https://09254838-micro-app-api.btfcasheb.workers.dev`; branch URL: `https://feat-inventory-test-isolation-20261104-micro-app-api.btfcasheb.workers.dev`.
+- PR #204 HEAD `57a9f098bcb93427315e96c90e62ae13764a485b`; Pages Preview `https://12d9c5bc.micro-app-63i.pages.dev`; Worker Version URL `https://8b3b7e8d-micro-app-api.btfcasheb.workers.dev`; branch URL `https://feat-inventory-test-isolation-20261104-micro-app-api.btfcasheb.workers.dev`. Ambos builds reportados exitosos.
+- PR #205 HEAD `c1f09d09dd08b9600e7a6c0ff8ccbb5be4e9c990`; Pages Preview `https://9d8491b5.micro-app-63i.pages.dev`; Worker Version URL `https://d4532b6a-micro-app-api.btfcasheb.workers.dev`; branch URL `https://feat-inventory-count-idempotency-20261104-micro-app-api.btfcasheb.workers.dev`. Ambos builds reportados exitosos.
+- PR #202 HEAD `4e54efbf33cc160f532b26cd147b4afa783cddeb`; Pages Preview `https://aff7f4d7.micro-app-63i.pages.dev`; Worker Version URL `https://df3c17b4-micro-app-api.btfcasheb.workers.dev`; branch URL `https://docs-reconcile-current-state-20261104-micro-app-api.btfcasheb.workers.dev`. Builds reportados exitosos.
+- **Interpretación de seguridad:** un build exitoso y una URL workers.dev/Version URL no prueban aislamiento de recursos por rama. La evidencia documentada de Cloudflare del 2026-11-04 indica que el dashboard aún mostraba “Set up Worker Previews” y el Version command era `npx wrangler versions upload`. Ese modelo puede compartir bindings/recursos de producción. La guardia de código `APP_ENV=preview`/hostname limita rutas, pero no sustituye aislamiento real de secretos, bindings y base de datos.
+- No se activó Worker Previews. No se cambió branch control, comandos, variables, secretos, bindings, tráfico, DNS, billing, despliegues productivos ni Neon. La configuración autenticada de dashboard no se releyó en esta sesión; los datos del dashboard son evidencia histórica documentada, no una nueva verificación en vivo.
+- Merge a main puede disparar despliegues automáticos Pages/Workers. Mantener todas las PR abiertas/Draft hasta resolver stale-count, migración/rollback, seguridad y aislamiento.
+
+---
+
 ## Addendum de estado más reciente — PR #202 — 2026-11-04
 
 - HEAD de la rama documental verificado: `355c80eb5996cbcc6266c81097d7a245c96851b0`; base `main` `7b0f057b8c152515005feed40305143c0ebb94b0`; 27 ahead / 0 behind y 12 archivos documentales.

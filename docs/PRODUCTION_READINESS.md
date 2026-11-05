@@ -162,3 +162,17 @@ Actualiza este checklist solo junto con evidencia y una entrada en `docs/STATE_J
 ## Respaldo y recuperación
 
 La política está documentada en `docs/BACKUP_AND_RECOVERY.md`. La subida cifrada está verificada y la copia remota exacta se restauró técnicamente en PostgreSQL 18 desechable (run 40955935124). El control compuesto permanece incompleto hasta validar datos comerciales/conteos/relaciones, medir RPO/RTO y comprobar alertas y coste total.
+
+
+---
+
+## Revalidación de estado — 2026-11-05 UTC
+
+La preparación para producción permanece **bloqueada**. El estado vivo de las PR de inventario se encuentra en `docs/CURRENT_STATE.md`; este addendum corrige cualquier snapshot anterior:
+
+- #200 HEAD `243592468e9fd61b1f8c578d867887dbb7f18e4d`: 10 workflow runs success; no reviews formales. No equivale a aprobación funcional ni readiness.
+- #204 HEAD `57a9f098bcb93427315e96c90e62ae13764a485b`: no workflow runs/status contexts recuperados; CI no verificada como verde.
+- #205 HEAD `c1f09d09dd08b9600e7a6c0ff8ccbb5be4e9c990`: solo backup restore smoke test success; rama 9 ahead/1 behind de #204.
+- #202 docs: 9 workflows success en HEAD previo `348cf0a1067c5410ff262f817b054cef46f0afae`; cualquier commit posterior requiere revalidación.
+
+Gates persistentes: stale-count, autorización/aislamiento multi-tenant y por sucursal (issue #53), atomicidad y rollback de migración, sincronización de ramas, coordinación de escritores de inventario, rate limiting runtime, recuperación RPO/RTO/alertas y coste operativo comprobado. No usar CI verde como sustituto de estos gates.

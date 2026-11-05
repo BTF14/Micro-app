@@ -25,7 +25,7 @@ No paid exchange-rate API, API key, third-party scraper, or TLS verification byp
 
 ## Validation and failure behavior
 
-Reject non-HTTPS or off-domain redirects, non-HTML responses, HTTP errors, oversized payloads, missing USD/date fields, invalid locale-formatted numbers, non-positive rates, implausible effective dates, and conflicting values for an already stored effective date.
+Reject non-HTTPS or off-domain redirects, non-HTML responses, HTTP errors, oversized payloads, missing USD/date fields, invalid locale-formatted numbers, non-positive rates, and implausible effective dates. If BCV revises a value for an already stored effective date, mark the stored row stale using a column-scoped status update, preserve the original decimal, and fail closed.
 
 The writer uses the least-privilege `microapp_runtime` role and receives only SELECT/INSERT on `exchange_rates`; it cannot update or delete history. Repeated identical data is a no-op. Older data cannot replace a newer effective date.
 

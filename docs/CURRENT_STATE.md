@@ -1,5 +1,14 @@
 # Estado actual — Micro app
 
+## Decisiones aprobadas y continuidad técnica — 2026-11-05
+
+- **Sin descuentos:** el propietario decidió que Micro-app no tendrá descuentos, promociones basadas en descuentos ni overrides manuales de precio durante checkout. Toda venta usará el precio vigente del catálogo; Owner/Admin podrán cambiar el precio del producto antes de la venta y el cambio será auditado.
+- **Moneda y precisión:** USD es la moneda base del catálogo; precios se conservan con NUMERIC(14,4), cantidades con NUMERIC(14,3), VES se convierte con la tasa BCV y las ventas deben congelar sus snapshots. La API de catálogo exige cadenas decimales, no JSON numbers.
+- **PR #227:** integración BCV oficial, Draft, pendiente de revisión/CI y dependiente de #226; no desplegada. Cron propuesto una vez por día hábil a las 18:00 Caracas (22:00 UTC). Migración 0013 no aplicada a Neon.
+- **PR #228:** contrato monetario y migración 0014 para retirar el campo heredado de descuentos; Draft apilada sobre #227. La migración falla de forma segura si encuentra importes históricos cuyo total no coincide con el subtotal. PostgreSQL 18 migration-check ya pasó; CI y backup restore siguen sujetos a sus ejecuciones del HEAD exacto.
+- **Límite funcional:** no existen todavía endpoints de ventas, checkout, pagos, facturación ni reportes. El motor monetario está documentado como contrato, no como flujo POS implementado.
+- No fusionar PRs, aplicar migraciones a Neon ni desplegar producción hasta revisar dependencias, checks completos y gates de seguridad.
+
 ## Estado vivo verificado — 2026-11-04 UTC
 
 - `main` = `2e0f4083ba577de2f301daf8c866bfbdffb5e23f`, merge squash de PR #198. La transición SDD → ODD y su validador documental ya están integrados.
@@ -49,7 +58,7 @@
   - Bundle publicado: run en `main` [41255425480](https://github.com/BTF14/Micro-app/actions/runs/41255425480) (`success`) confirma que el JS realmente servido por Pages contiene la URL de API canónica.
   - Ambos workflows quedan como guardia de regresión semanal (lunes 09:00/09:05 UTC) y manual.
   - **Pendiente real fuera del alcance de un sandbox de IA:** verificación autenticada del dashboard de Cloudflare (`FRONTEND_ORIGIN` efectivo del Worker vía panel) — requiere que el propietario la confirme manualmente; los comentarios históricos de #78 ya registran la última vez que se hizo.
-- PR #182 (merge `062e5ed671a30d356891d9a28dd5d724045cdfa1`): **matriz de permisos por rol APROBADA** en `docs/sdd/role-permission-decision-matrix.md`. El propietario decidió explícitamente ventas/descuentos (cualquier descuento requiere aprobación Admin/Owner), devoluciones/anulaciones (Cashier anula solo en el mismo turno abierto; tras el cierre, solo Admin/Owner) y gestión de miembros/políticas (solo Owner); delegó explícitamente a criterio técnico catálogo/inventario, mecánica de caja y reportes/auditoría. La aprobación **no implementa nada**: sigue sin existir ningún endpoint comercial ni middleware de autorización en `apps/api/src`.
+- PR #182 (merge `062e5ed671a30d356891d9a28dd5d724045cdfa1`): aprobó la matriz de permisos por rol. **La regla histórica de descuentos sujetos a aprobación fue supersedida el 2026-11-05:** Micro-app no tendrá descuentos ni overrides manuales de precio en checkout. La matriz actualizada mantiene ventas para Owner/Admin/Cashier al precio vigente del catálogo. La aprobación **no implementa nada**: siguen pendientes los endpoints comerciales y las pruebas de aislamiento.
 - Auditoría de callsites (solo lectura, 2026-10-31): `resolveTenantContext`, `resolveBranchContext` y `resolveOpenCashierRegisterShift` son fail-closed y correctos en su lógica SQL (UUID, sesión no revocada/expirada, `is_active` en cada capa), pero **no tienen ningún callsite fuera de sus propios archivos de test** — ninguna ruta HTTP de `apps/api/src/index.ts` los usa todavía. No se encontró ningún defecto que corregir; no se modificó código de producto.
 - **Issue #53 sigue ABIERTA**: permanece así hasta que existan endpoints comerciales reales con middleware de autorización siguiendo exactamente la matriz aprobada, y pruebas automatizadas de aislamiento cross-tenant y de rol, con PostgreSQL desechable. La aprobación de la matriz es una precondición satisfecha, no el cierre del issue.
 - Arquitectura: un único `organization_members.role` por miembro/organización; `branch_memberships` solo concede/revoca acceso a sucursales y no tiene roles. Inventario sigue organizacional; caja conserva turnos y apertura/cierre ordinario.

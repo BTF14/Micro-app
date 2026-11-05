@@ -1,4 +1,7 @@
-# Estado actual del esquema — 2026-10-30 UTC (main post PR #169)
+# Estado actual del esquema — política monetaria aprobada 2026-11-05
+
+**Decisión de negocio:** Micro-app no ofrecerá descuentos. La migración 0014 elimina el campo heredado de descuentos y exige que el total USD sea igual al subtotal USD. Esta migración está propuesta en PR #228 y todavía no está aplicada a Neon. El catálogo ya admite precios USD con cuatro decimales y cantidades con tres decimales; el flujo de ventas y pagos aún no está implementado.
+
 
 **Último SHA con cambios de esquema/runtime:** PR #169, `be35a0fde3886271b6ed98b7ccc29cc1255d50e5`. PR #170 (`af08cd913a4e0e155b1b74183a71efc51e5d4646`) fue solo documental y no cambió esquema. Consultar el ref vivo de `main` antes de cualquier cambio. Main versiona `0001_initial.sql`, `0002_google_identity.sql`, `0003_branch_scope.sql` y `0004_register_shifts.sql`; las migraciones 0003/0004 no se han aplicado a Neon main.
 
@@ -51,7 +54,7 @@ La migración versionada `apps/api/migrations/0001_initial.sql` establece el esq
 ## Invariantes que la API debe cumplir
 
 1. Crear la venta, insertar sus líneas y pagos, descontar existencias, registrar movimientos y completar la venta dentro de una única transacción.
-2. La base de datos verifica que `total_usd = subtotal_usd - discount_usd`; una venta completada requiere fecha de finalización y una tasa identificada y capturada.
+2. La base de datos exige `total_usd = subtotal_usd`; no existe un concepto de descuento. Una venta completada requiere fecha de finalización y una tasa identificada y capturada.
 3. Usar `idempotency_key` para que reintentos no generen ventas duplicadas.
 4. Bloquear las filas de productos y validar las cantidades dentro de la transacción; una venta no puede dejar stock negativo.
 5. Calcular los importes en el servidor y usar `NUMERIC`/decimales, nunca `float` de JavaScript para dinero.

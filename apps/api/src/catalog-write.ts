@@ -41,8 +41,10 @@ function boundedText(value: unknown, maxLength: number, required: boolean): stri
 }
 
 function decimalValue(value: unknown, scale: number, maxIntegerDigits: number): string | null {
-  if (typeof value !== "string" && typeof value !== "number") return null;
-  const raw = String(value);
+  // Monetary and quantity inputs must remain decimal strings end-to-end.
+  // JSON numbers have already passed through IEEE-754 parsing in the Worker.
+  if (typeof value !== "string") return null;
+  const raw = value;
   const pattern = new RegExp(`^(?:0|[1-9][0-9]{0,${maxIntegerDigits - 1}})(?:\\.[0-9]{1,${scale}})?$`);
   if (!pattern.test(raw)) return null;
   return raw.includes(".") ? raw : raw + ".0";

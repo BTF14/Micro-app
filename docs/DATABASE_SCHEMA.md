@@ -142,3 +142,23 @@ La consulta directa a GitHub Actions por `head_sha` incluye eventos `push` y `pu
 - La migración 0005 está envuelta en BEGIN/COMMIT y el workflow de migración ejecuta un fallo inducido antes de COMMIT, verifica ausencia de tablas y después aplica el SQL real. Los 17/7/8 runs incluyen la validación de migraciones de sus SHA correspondientes.
 - Stale-count básico: snapshot de cantidad, 409 y prueba de confirmación inversa. Residual ABA/versionado antes de futuros writers.
 - #202 HEAD `2793550cb9ccb4595971ad86ce6b950203c681df` tenía 11 workflow runs (7 success, 4 in_progress) en la consulta; ese estado se recalcula para cualquier commit documental posterior.
+
+
+## Addendum de integridad de inventario — 2026-11-05 UTC
+
+Este addendum describe el esquema propuesto en las ramas de PR #200/#204/#205. **No forma parte de `main` ni ha sido aplicado a Neon** mientras las PR sigan abiertas.
+
+### Versionado monotónico de balances
+
+- `inventory_balances.balance_version BIGINT NOT NULL DEFAULT 1 CHECK (balance_version > 0)`: el trigger `inventory_balances_version` fija 1 en INSERT y suma 1 en cada UPDATE que cambie `on_hand_quantity` o `reserved_quantity`. Cambios solo de metadatos conservan la versión.
+- `inventory_balances_no_delete` rechaza DELETE. Los balances se ponen en cero mediante UPDATE; no se elimina y recrea una fila porque eso reiniciaría la secuencia.
+- `inventory_count_lines.expected_balance_version BIGINT`: snapshot capturado al crear un conteo físico junto con `expected_on_hand_quantity`; versión 0 representa que aún no existe fila de balance. En conteos opening ambos campos permanecen NULL.
+- Al confirmar un conteo físico, el servicio compara cantidad y versión contra el balance bloqueado. Una diferencia en cualquiera devuelve 409 `COUNT_STALE` sin confirmar el documento ni crear movimientos.
+- La prueba ABA modifica 8.250 → 8.500 → 8.250 y exige 409 aunque la cantidad final coincida, porque la versión aumenta en ambos cambios. Assertions SQL también verifican incrementos por saldo/reserva, ausencia de incremento por metadatos y rechazo de DELETE.
+
+### Evidencia de validación de las ramas
+
+- PR #200 código HEAD `7b58b140e50c46a3d3b087e3445a4b04e6243a81`: 16/16 workflow runs success, incluidos CI/PostgreSQL y Database migration validation. HEAD documental `5fbc17a48b65076cf5609a7a054bbd125a3a5d1e`: 16/16 success.
+- PR #204 HEAD `07a5a41c0f5f5c36fb89a5c5950796493d56eb20`: 6/6 workflow runs success.
+- PR #205 HEAD `7005d9a5b03234bd0209d0cc1ea75e8ae21e0032`: 8/8 workflow runs success; conserva idempotencia y lleva el versionado ABA.
+- Son workflow runs de los SHA indicados, no status contexts ni aprobación formal. Las tres PR siguen Draft, sin merge ni despliegue.

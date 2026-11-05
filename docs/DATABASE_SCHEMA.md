@@ -109,3 +109,8 @@ La migración versionada `apps/api/migrations/0001_initial.sql` establece el esq
 - La migración 0005 no está en main ni aplicada a Neon. El riesgo de DDL parcial sigue abierto hasta implementar transacción/recuperación y probar fallo inducido.
 - Stale-count es independiente de idempotencia: hace falta versión/snapshot al crear/confirmar conteo y prueba determinista de dos conteos confirmados en orden inverso.
 - La colisión de migración 0005 de inventario con 0005 de roles en #194 sigue abierta; no fusionar #194 ni renumerar sin plan coordinado.
+
+
+## Corrección de stale-count — 2026-11-05 UTC
+
+El servicio y la prueba de integración de #200 ya implementan y demuestran el guard básico: `expected_on_hand_quantity` se captura al crear el conteo físico y la confirmación retorna 409 `COUNT_STALE` cuando el saldo actual difiere. El test confirma primero un conteo más nuevo y rechaza el anterior sin ledger movement. La afirmación anterior de que no estaba implementado queda supersedida. Queda por evaluar una versión monotónica para detectar ABA (saldo cambia y vuelve al mismo valor) antes de añadir nuevos escritores; todos deben respetar el mutex de almacén.

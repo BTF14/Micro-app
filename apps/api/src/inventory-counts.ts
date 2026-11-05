@@ -169,7 +169,7 @@ export function registerInventoryCountRoutes(app: Hono<{ Bindings: Bindings }>):
             ? await lockInventoryBalances(tx, tenant.organizationId, [warehouseId], productIds)
             : [];
           if (capturedBalances === null) return { kind: "invalid_lock_scope" as const };
-          const capturedByProduct = new Map(capturedBalances.map((balance) => [balance.product_id, balance.on_hand_quantity]));
+          const capturedByProduct = new Map(capturedBalances.map((balance) => [balance.product_id, balance]));
 
           const inserted = await tx.query<{ id: string }> (
             `INSERT INTO inventory_counts
@@ -204,10 +204,12 @@ export function registerInventoryCountRoutes(app: Hono<{ Bindings: Bindings }>):
           for (const line of input.lines) {
             await tx.query(
               `INSERT INTO inventory_count_lines
-                (organization_id, branch_id, warehouse_id, count_id, product_id, counted_quantity, unit_cost_usd, expected_on_hand_quantity)
-               VALUES ($1, $2, $3, $4, $5, $6::numeric, $7::numeric, $8::numeric)`,
+                (organization_id, branch_id, warehouse_id, count_id, product_id, counted_quantity, unit_cost_usd,
+                 expected_on_hand_quantity, expected_balance_version)
+               VALUES ($1, $2, $3, $4, $5, $6::numeric, $7::numeric, $8::numeric, $9::bigint)`,
               [tenant.organizationId, branch.branchId, warehouseId, countId, line.productId, line.quantity, line.unitCost,
-                countType === "physical" ? (capturedByProduct.get(line.productId) ?? "0.000") : null],
+                countType === "physical" ? (capturedByProduct.get(line.productId)?.on_hand_quantity ?? "0.000") : null,
+                countType === "physical" ? (capturedByProduct.get(line.productId)?.balance_version ?? "0") : null],
             );
           }
           await tx.query(
@@ -269,9 +271,11 @@ export function registerInventoryCountRoutes(app: Hono<{ Bindings: Bindings }>):
           if (count.status !== "draft") return { kind: "not_confirmable" as const };
 
           const lines = await tx.query<{
-            product_id: string; counted_quantity: string; unit_cost_usd: string | null; expected_on_hand_quantity: string | null;
+            product_id: string; counted_quantity: string; unit_cost_usd: string | null;
+            expected_on_hand_quantity: string | null; expected_balance_version: string | null;
           }>(
-            `SELECT product_id, counted_quantity::text, unit_cost_usd::text, expected_on_hand_quantity::text
+            `SELECT product_id, counted_quantity::text, unit_cost_usd::text,
+                    expected_on_hand_quantity::text, expected_balance_version::text
              FROM inventory_count_lines
              WHERE organization_id = $1 AND count_id = $2
              ORDER BY product_id ASC`,
@@ -295,11 +299,15 @@ export function registerInventoryCountRoutes(app: Hono<{ Bindings: Bindings }>):
           }
           if (count.count_type === "physical") {
             for (const line of lines.rows) {
-              const currentOnHand = balanceByProduct.get(line.product_id)?.on_hand_quantity ?? "0.000";
-              if (line.expected_on_hand_quantity === null ||
+              const currentBalance = balanceByProduct.get(line.product_id);
+              const currentOnHand = currentBalance?.on_hand_quantity ?? "0.000";
+              const currentVersion = currentBalance?.balance_version ?? "0";
+              if (line.expected_on_hand_quantity === null || line.expected_balance_version === null ||
+                  BigInt(line.expected_balance_version) !== BigInt(currentVersion) ||
                   milliUnits(line.expected_on_hand_quantity) !== milliUnits(currentOnHand)) {
                 return { kind: "stale_count" as const, productId: line.product_id,
-                  expectedQuantity: line.expected_on_hand_quantity, currentQuantity: currentOnHand };
+                  expectedQuantity: line.expected_on_hand_quantity, currentQuantity: currentOnHand,
+                  expectedVersion: line.expected_balance_version, currentVersion };
               }
               const reserved = balanceByProduct.get(line.product_id)?.reserved_quantity ?? "0.000";
               if (milliUnits(line.counted_quantity) < milliUnits(reserved)) {
@@ -360,7 +368,7 @@ export function registerInventoryCountRoutes(app: Hono<{ Bindings: Bindings }>):
       if (result.kind === "not_confirmable") return c.json({ error: "COUNT_NOT_CONFIRMABLE", message: "El conteo no puede confirmarse." }, 409);
       if (result.kind === "empty") return c.json({ error: "EMPTY_COUNT", message: "El conteo no contiene líneas." }, 409);
       if (result.kind === "opening_balance_exists") return c.json({ error: "OPENING_ALREADY_EXISTS", message: "El almacén ya tiene saldos; no se puede aplicar una apertura." }, 409);
-      if (result.kind === "stale_count") return c.json({ error: "COUNT_STALE", message: "El inventario cambió desde que se creó este conteo. Crea un nuevo conteo físico antes de confirmar.", product_id: result.productId, expected_on_hand_quantity: result.expectedQuantity, current_on_hand_quantity: result.currentQuantity }, 409);
+      if (result.kind === "stale_count") return c.json({ error: "COUNT_STALE", message: "El inventario cambió desde que se creó este conteo. Crea un nuevo conteo físico antes de confirmar.", product_id: result.productId, expected_on_hand_quantity: result.expectedQuantity, current_on_hand_quantity: result.currentQuantity, expected_balance_version: result.expectedVersion, current_balance_version: result.currentVersion }, 409);
       if (result.kind === "below_reserved") return c.json({ error: "COUNT_BELOW_RESERVED_STOCK", message: "La cantidad contada no puede ser inferior a las existencias reservadas.", product_id: result.productId, reserved_quantity: result.reservedQuantity }, 409);
       if (result.kind === "replayed") return c.json({ id: result.countId, status: "confirmed", replayed: true }, 200);
       return c.json({ id: result.countId, status: "confirmed", count_type: result.countType, changes: result.changes }, 200);

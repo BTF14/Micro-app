@@ -8,7 +8,7 @@
 - **No verificado en producción:** rol efectivo del secreto Worker `DATABASE_URL`, propiedad de `audit_logs` y privilegios efectivos. No se leyó el secreto ni se accedió a Neon producción. La prueba sintética no acredita la configuración runtime real.
 - Secuencia pendiente de integración: inventario 0005 (#200), roles 0006 (renumerar #194), audit_logs 0007 (#207). No integrar mientras exista colisión.
 - Issue #53 permanece abierta/P0; falta cobertura completa de autorización y aislamiento tenant/sucursal/rol, más flujos comerciales y gates operativos.
-- No se activó Worker Previews, no se modificó Cloudflare productivo, Neon, secretos, DNS, billing ni datos reales.
+- No se cambió manualmente Cloudflare ni se activó Worker Previews. El check automático `Workers Builds: micro-app-api` de #207 tiene un registro de detalles bajo `/production/builds/`; el dashboard devolvió `login_required`, por lo que el destino y si produjo una publicación/despliegue siguen NO VERIFICADOS. No declarar que producción no fue afectada hasta inspección autenticada de solo lectura. No se modificaron Neon, secretos, DNS, billing ni datos reales.
 
 ### Gate de auditoría general
 

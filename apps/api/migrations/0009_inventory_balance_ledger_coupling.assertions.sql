@@ -78,6 +78,11 @@ BEGIN
   INSERT INTO warehouse_inventory_movements (organization_id, branch_id, warehouse_id, product_id, movement_type, quantity_delta, reason, actor_user_id)
   VALUES (org_id, branch_id, warehouse_a, product_b, 'purchase_receipt', 2, 'Second product receipt', actor_id);
 
+  RAISE NOTICE 'pending intents: %', (
+    SELECT string_agg(event_id::text || ':' || product_id::text || ':' || quantity_delta::text || ':' || consumed::text, ',')
+      FROM inventory_balance_ledger_intents
+     WHERE transaction_id = txid_current()
+  );
   SET CONSTRAINTS inventory_balance_ledger_intent_complete IMMEDIATE;
   SELECT count(*) INTO remaining_intents FROM inventory_balance_ledger_intents;
   IF remaining_intents <> 0 THEN RAISE EXCEPTION 'FAIL: consumed balance ledger intents were not cleaned up'; END IF;

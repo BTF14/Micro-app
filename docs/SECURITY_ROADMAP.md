@@ -1,6 +1,6 @@
-## Validación actualizada — 2026-11-05 10:53 UTC
+## Auditoría de duplicación de política — PR #221
 
-#220 HEAD `40cf9e2cff5e88a5feec7b8168c8f436cb3f0601` pasó los seis workflows de push: CI, migration validation, Playwright E2E, Semgrep, Trivy Security y Secret history scan. TS2345 de TextDecoder resuelto mediante `ignoreBOM: false`, conservando UTF-8 fatal. No se considera validación de Worker Preview ni producción. #220 permanece Draft/no merge; Issue #53 OPEN/P0.
+#221 OPEN/DRAFT, apilada sobre #220; HEAD `18dfc33525c792802c296469ee6140d3b5f649ff`. Corrige duplicación en `catalog.ts`: proyección de `cost_usd` ahora deriva de `authorizeCommercialOperation(role, "catalog.read_costs")`, en vez de una lista local de roles. Sin cambios de permisos. Cuatro workflows SUCCESS (Secret history, Trivy, migration validation, Semgrep); CI y Playwright siguen IN_PROGRESS en último snapshot. Pages Preview success; Worker Preview pendiente. No marcar completa.
 
 ---
 

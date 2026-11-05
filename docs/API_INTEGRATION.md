@@ -152,3 +152,17 @@ La API de #200 ya persiste el saldo esperado al crear un conteo físico y rechaz
 - Stale-count básico está cubierto por snapshot de cantidad, HTTP 409 y test de confirmación inversa. Riesgo residual ABA/versionado antes de nuevos writers.
 - Issue #53 sigue abierta; autorización/aislamiento total no se ha demostrado. La colisión de migración 0005 de roles en #194 sigue pendiente.
 - Ninguna PR se fusionó. No tocar producción, Neon, secretos, DNS, billing ni configuración productiva.
+
+
+
+## Corrección de evidencia CI y sincronización de ramas — 2026-11-05 UTC
+
+La consulta directa a GitHub Actions por `head_sha` incluye push y pull_request:
+- #200 HEAD `a40d8378d792197628f70b07be04f92686d55bdb`: 17/17 workflow runs success (10 PR + 7 push), incluye CI, Playwright y migración PostgreSQL con prueba de rollback inducido.
+- #204 HEAD `e37847c95958c3475f90041263ca4fac7f98c2d1`: 7/7 workflow runs success (push), incluye CI, Playwright y migración PostgreSQL.
+- #205 HEAD `a2fe55847d72b4d9994b781880843ab4906c7b08`: 8/8 workflow runs success (7 push + 1 PR), incluye CI, Playwright y migración PostgreSQL.
+- Relaciones: #200 17 ahead/0 behind main; #204 4 ahead/0 behind #200; #205 10 ahead/0 behind #204. Sin divergencia. No status contexts ni reviews formales/threads en esas PR.
+- Todas siguen Draft y ninguna se fusionó. Los cuerpos de PR ya reflejan los SHA y recuentos.
+- Migración 0005 con BEGIN/COMMIT y prueba de fallo/rollback inducido en PostgreSQL efímero. No se aplicó a Neon.
+- Stale-count básico tiene snapshot, 409 y test de confirmación inversa; revisar ABA/versionado antes de otros writers.
+- Issue #53 sigue abierta; la colisión 0005 de roles en #194 sigue pendiente.

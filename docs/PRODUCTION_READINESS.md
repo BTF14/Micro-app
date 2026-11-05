@@ -194,3 +194,18 @@ El stale-count básico no está totalmente ausente: #200 captura cantidad espera
 - Stale-count básico está implementado: captura expected_on_hand_quantity y devuelve 409 si el saldo difiere; una prueba confirma primero el conteo nuevo y rechaza el antiguo. Riesgo residual ABA/versionado monotónico antes de sumar otros escritores.
 - Issue #53 sigue abierta; autorización/aislamiento completo aún no probado. Colisión 0005 roles en #194 sigue pendiente.
 - No tocar Neon producción, deploy productivo, secretos, DNS, billing ni datos reales; no force-push ni modificar main.
+
+
+
+## Corrección de evidencia CI y sincronización de ramas — 2026-11-05 UTC
+
+La consulta directa a GitHub Actions por `head_sha` incluye eventos `push` y `pull_request`; sus resultados amplían la consulta anterior, que solo devolvía runs PR-triggered:
+
+- #200 HEAD `a40d8378d792197628f70b07be04f92686d55bdb`: **17/17 workflow runs success** (10 pull_request + 7 push), incluye Database migration validation con rollback inducido, CI y Playwright. 17 ejecuciones no significan 17 checks únicos. Combined statuses vacío; sin reviews formales ni threads.
+- #204 HEAD `e37847c95958c3475f90041263ca4fac7f98c2d1`: **7/7 workflow runs success** (push), incluye CI, Playwright, Database migration validation, Semgrep, Security, Secret history y Backup restore. Sin status contexts, reviews ni threads.
+- #205 HEAD `a2fe55847d72b4d9994b781880843ab4906c7b08`: **8/8 workflow runs success** (7 push + 1 pull_request), incluye CI, Playwright, Database migration validation, Semgrep, Security, Secret history y Backup restore. Sin status contexts, reviews ni threads.
+- Relaciones verificadas: #200 17 ahead/0 behind main; #204 4 ahead/0 behind #200; #205 10 ahead/0 behind #204. No hay divergencia entre la pila.
+- Los cuerpos de #200/#204/#205 reflejan estos SHA y resultados. Todas permanecen Draft; no hay aprobación formal ni merge.
+- La migración 0005 está envuelta en BEGIN/COMMIT y el workflow de migración ejecuta un fallo inducido antes de COMMIT, verifica ausencia de tablas y después aplica el SQL real. Los 17/7/8 runs incluyen la validación de migraciones de sus SHA correspondientes.
+- Stale-count básico: snapshot de cantidad, 409 y prueba de confirmación inversa. Residual ABA/versionado antes de futuros writers.
+- #202 HEAD `2793550cb9ccb4595971ad86ce6b950203c681df` tenía 11 workflow runs (7 success, 4 in_progress) en la consulta; ese estado se recalcula para cualquier commit documental posterior.

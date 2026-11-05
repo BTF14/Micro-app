@@ -1,3 +1,39 @@
+## Handoff vivo — 2026-11-05 09:40 UTC
+
+Continuar el repositorio BTF14/Micro-app desde GitHub MCP, sin pedir al propietario que repita información recuperable. Trabaja como ingeniero principal: inspecciona HEAD/diff/checks actuales antes de cada cambio, corrige de forma acotada, prueba y documenta. El propietario trabaja desde Android y no dispone de terminal.
+
+### Estado confirmado
+
+- main: `7b0f057b8c152515005feed40305143c0ebb94b0`.
+- Pila activa abierta/Draft/no merge: #200→#204→#205→#208→#207→#209→#210.
+- #210 HEAD: `ab5d2168a11a825a9ed6b03341b3091c13f3c06e`; migración 0009 acopla balance↔ledger en PostgreSQL. 8 check runs success; Playwright E2E y Security scan aún pending en la última lectura.
+- #209 HEAD: `666236bc7b2c7e1dd1e30d9ccdc467e37c40784b`; migración 0008 protege snapshot/validación de conteos.
+- #202 es PR documental; actualizarla no debe sobrescribir ni eliminar su historial. Sus checks deben revalidarse después del commit.
+- Issue #53 sigue abierta/P0; producción NO LISTA.
+
+### Autorización y límites permanentes
+
+Autorización continua para inspeccionar, modificar código/documentación y ejecutar validaciones seguras en ramas/PRs, siempre con verificación. No pedir confirmación repetida para cada paso técnico seguro. Prohibido tocar Neon principal/producción, datos reales, secretos, Cloudflare productivo, DNS, billing, fusionar PRs o desplegar. No force-push ni modificar main directamente. Mantener PRs Draft hasta completar gates y revisión. No usar TinyFish ni pedir setup de terminal/CLI; trabajar desde las herramientas conectadas.
+
+### Hallazgos pendientes concretos
+
+- No hay caller runtime de `auth_rate_limits` ni rate limiting identificado en auth/Google OAuth.
+- Helpers centrales de autorización no se consumen uniformemente en handlers; hay checks locales.
+- Cashier carece de endpoint de lectura de balances/movimientos aunque la matriz permite esa lectura en su sucursal.
+- Writers HTTP de ventas, recepción, reservas, pagos, devoluciones y transferencias no existen aún.
+- Principal DB efectivo, owner/runtime grants y memberships no verificados; nunca leer o copiar secretos.
+
+### Secuencia inmediata
+
+1. Reconsultar los dos workflows pendientes de #210 por SHA exacto.
+2. Si fallan, leer logs y corregir solo el defecto demostrado; si siguen pending, avanzar en auditoría estática/documentación sin afirmar éxito.
+3. Auditar #210 diff y dependencias #209/#208/#207; verificar compatibilidad de migraciones y tests.
+4. Seguir con rate limiting de OAuth y auth, con límites por IP/identidad, almacenamiento atómico, expiración y tests de concurrencia/abuso. No improvisar reglas que bloqueen usuarios legítimos.
+5. Corregir/implementar autorización de rutas y lectura Cashier únicamente tras reconciliar matriz vigente; tests cross-tenant/branch/role en PostgreSQL efímero.
+6. Actualizar issue #53 y docs en el mismo ciclo.
+
+No pedir Build IDs, commit IDs, URLs o capturas ya registrados; obtenerlos por GitHub. Diferenciar CI, Worker Version, preview y producción. No dar producción por verificada por un check verde.
+
 ## Handoff vigente — stack consolidado y gates P0 — 2026-11-05 UTC
 
 Continuar sin reiniciar ni pedir al propietario Build IDs, capturas, terminal, secretos, URLs o información ya documentada. El propietario trabaja desde Android sin terminal y autorizó ejecución autónoma de cambios técnicos necesarios, siempre con pruebas y seguridad. Respetar Constitución: no force-push, no merge ciego, no producción/Neon main/secretos/datos reales/Cloudflare settings/DNS/billing sin gates específicos.

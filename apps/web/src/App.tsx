@@ -350,7 +350,7 @@ export default function App() {
               {bcvError && <p className="exchange-rate-error">{bcvError}</p>}
             </div>
             <span className={`exchange-rate-status ${bcvError ? "unverified" : bcvRate?.status ?? "unavailable"}`}>
-              {bcvError ? "Actualización no confirmada"
+              {bcvError ? (bcvRate ? "Actualización no confirmada" : "No disponible")
                 : bcvRate?.status === "current" ? "Vigente"
                 : bcvRate?.status === "stale" ? "Última tasa · desactualizada"
                 : bcvLoading ? "Consultando" : "Sin tasa validada"}

@@ -1939,3 +1939,49 @@ Antes de pedir cualquier Build ID, deployment ID, SHA, URL, captura o dato al pr
 ### Siguiente paso
 
 Continuar la revisión de #207 y los gates P0 de issue #53; resolver la secuencia de migraciones #194/#200 antes de cualquier integración. No pedir IDs, capturas ni acciones manuales ya documentadas. Mantener todas las PR en Draft hasta review y gates completos.
+
+
+## HANDOFF OBLIGATORIO PARA CHAT NUEVO — 2026-11-05 UTC
+
+Este bloque prevalece sobre instrucciones antiguas contradictorias o snapshots previos. Es el punto de continuidad más reciente consultado directamente en GitHub.
+
+### Fuente de verdad y arranque sin repetir trabajo
+1. Repositorio: https://github.com/BTF14/Micro-app
+2. Rama documental y de continuidad: `docs/reconcile-current-state-20261104`; PR #202.
+3. Al iniciar un chat nuevo, NO preguntes al usuario qué se hizo, qué PRs existen, cuál es el Build ID, ni solicites capturas, terminal, CLI, TinyFish o reconexión. Primero lee en esta rama y en este orden: `AGENTS.md`, `WORK_CHECKPOINT.md`, `docs/CONSTITUTION.md`, `docs/CURRENT_STATE.md`, `docs/HANDOFF_NEXT_CHAT.md`, `docs/PROJECT_PLAN.md`, `docs/STATE_JOURNAL.md`, `docs/SECURITY_ROADMAP.md`. Si un archivo no existe en esa rama, comprueba la ruta/ramas disponibles antes de concluir que falta.
+4. Después consulta GitHub en vivo: PRs #194/#200/#202/#204/#205/#207, sus HEADs, bases, archivos, reviews, comentarios/threads, commits, check-runs y workflows. Los SHAs de este bloque son puntos de partida, no sustituyen la consulta viva.
+5. No pidas al usuario información que puede obtenerse de GitHub, los documentos o los conectores disponibles. Solo pregunta por un dato si no puede recuperarse técnicamente y es indispensable para una decisión de seguridad; explica exactamente qué dato falta y por qué.
+6. No reabrir diagnósticos ya resueltos ni recrear PR/documentos duplicados. Actualiza el registro existente con evidencia y fecha; separa siempre HECHO VERIFICADO, HISTÓRICO, PENDIENTE y NO VERIFICADO.
+7. El usuario trabaja desde teléfono y no dispone de terminal. No le des instrucciones de terminal/CLI. TinyFish queda fuera del flujo; no solicitar credenciales ni volver a conectar TinyFish.
+8. El usuario autorizó criterio técnico senior para avanzar autónomamente dentro del repositorio. Mantén cambios enfocados y reversibles; no interpretes esa autorización como permiso para tocar producción, secretos, billing, DNS o datos reales. No fusionar ni desplegar sin cumplir gates de seguridad, migraciones, reviews y pruebas. Las PR abiertas se mantienen Draft mientras no haya aprobación objetiva.
+
+### Snapshot GitHub vivo — 2026-11-05 UTC
+Todos los seis PR siguen abiertos y Draft; ninguna se fusionó. Los check-runs del HEAD actual consultado son:
+- #194 — HEAD `7b3ad50e5780416868a1a428b856d12c4ea1e2ea`, base `main`: 13/13 success, 0 failure, 0 pending.
+- #200 — HEAD `5fbc17a48b65076cf5609a7a054bbd125a3a5d1e`, base `main`: 20/20 success, 0 failure, 0 pending.
+- #202 — HEAD `44d073c68b256267ec6d13bda1832faa13880bcc`, base `main`: 13/13 success, 0 failure, 0 pending. Es la rama documental; este bloque nuevo todavía debe añadirse y validarse en un nuevo SHA.
+- #204 — HEAD `07a5a41c0f5f5c36fb89a5c5950796493d56eb20`, base #200: 8/8 success, 0 failure, 0 pending.
+- #205 — HEAD `c0bcbbe48aa8783b85ee7787dd1ae8a6d0dfdafc`, base #204: 9/9 success, 0 failure, 0 pending. Incluye 21/21 pruebas en `inventory-counts.integration.test.ts`, incluida la prueba de IDs de conteo de otra sucursal/tenant; intentos rechazados 404 y sin cambios de estado ni movimientos.
+- #207 — HEAD `26c5270664b82aebc6a12fafe6973de8544bc6f7`, base #200: 9/9 success, 0 failure, 0 pending.
+
+Los recuentos anteriores corresponden a check-runs consultados para esos SHAs, no garantizan estado futuro ni despliegue productivo. Verificar de nuevo al retomar. No afirmar que un check de preview equivale a producción.
+
+### Decisiones/bloqueos que siguen vigentes
+- #194/#200 tienen colisión de migración `0005`: `0005_register_shift_member_roles.sql` frente a `0005_warehouse_inventory.sql`. Reconciliar numeración y dependencias antes de integrar.
+- Revisar la secuencia consolidada `0005/0006/0007` del stack de inventario/roles/audit logs.
+- #207 implementa protecciones append-only para UPDATE/DELETE/TRUNCATE y assertions con roles sintéticos. El rol PostgreSQL efectivo usado por `DATABASE_URL` (owner/bypass/privilegios reales) sigue **NO VERIFICADO**; los tests sintéticos no demuestran el rol runtime real.
+- Issue #53 continúa abierta/P0: el flujo de confirmación de conteos es el único escritor HTTP de stock; ventas, recepciones, reservas, devoluciones y transferencias no están implementadas. No declarar inventario completo.
+- Verificar contracts de locks, atomicidad ledger/balance, idempotencia, autorización por tenant/sucursal/almacén y pruebas de concurrencia.
+- No hay autorización para migrar datos reales, modificar Neon main, runtime de Cloudflare, secretos, DNS, billing o producción. Producción permanece **NO LISTA**.
+- Build IDs ya documentados: #207 `0c8394a1-4d91-4061-a850-6c78f3b11295`; histórico `3542c660-e5e3-435e-8be5-dbed236cec1c`. No volver a pedirlos. El segundo permanece **NO VERIFICADO** si no hay conector independiente que permita inspección autenticada.
+
+### Próximo trabajo concreto
+1. Auditar #207 completa: migración SQL, assertions, privilegios/ownership, trigger coverage, bypass paths, test workflow y orden final de migraciones. Registrar qué queda demostrado y qué no.
+2. Resolver diseño de numeración y orden de migraciones #194/#200/#207 sin reescribir historia de forma insegura ni integrar ramas incompatibles.
+3. Revisar issue #53 y confirmar alcance P0/P1 del inventario; completar pruebas de concurrencia, consistencia ledger/balance e idempotencia donde falten, trabajando en PR existentes.
+4. Revisar reviews y threads reales antes de cualquier recomendación de merge. No fusionar por tener checks verdes solamente.
+5. Registrar resultados en HANDOFF, CURRENT_STATE y STATE_JOURNAL, y verificar que la rama documental/PR #202 queda con checks verdes después de cada actualización.
+
+### Prompt de continuidad para el siguiente chat
+Actúa como ingeniero principal responsable de continuar BTF14/Micro-app. Antes de actuar, lee toda la documentación enumerada en el bloque “Fuente de verdad y arranque sin repetir trabajo” de la rama `docs/reconcile-current-state-20261104`, y consulta GitHub en vivo. No me pidas repetir información ya documentada, IDs, Build IDs, capturas, terminal, CLI, TinyFish ni reconexiones. Trabajo desde teléfono. No inventes verificaciones ni presentes snapshots antiguos como actuales. Distingue HECHO VERIFICADO / HISTÓRICO / PENDIENTE / NO VERIFICADO. Continúa desde los bloqueos y próximos pasos de este handoff, con criterio técnico senior y cambios concretos en las PR existentes. No toques producción, secretos, Neon main, Cloudflare settings/DNS/billing ni datos reales. No fusiones ni despliegues hasta cumplir todos los gates. Al terminar, actualiza HANDOFF_NEXT_CHAT.md, CURRENT_STATE.md y STATE_JOURNAL.md con evidencia y SHAs, y deja listo el siguiente relevo.
+

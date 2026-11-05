@@ -1,3 +1,17 @@
+## Estado vivo — 2026-11-04 21:40 EDT
+
+- Main `7b0f057b8c152515005feed40305143c0ebb94b0`; inventario 0005 no está integrado ni aplicado a Neon.
+- #200 HEAD `243592468e9fd61b1f8c578d867887dbb7f18e4d`, abierta/Draft; 20 checks exitosos recuperados, sin reviews formales. La revisión del propietario mantiene stale-count como blocker.
+- #204 HEAD `57a9f098bcb93427315e96c90e62ae13764a485b`, 8/8 checks; fixtures aislados y delta de ledger corregido.
+- #205 HEAD `c1f09d09dd08b9600e7a6c0ff8ccbb5be4e9c990`, 9/9 checks; idempotencia de creación y replay. Está 1 commit detrás de #204 y no debe integrarse sin reconciliación y CI nuevo.
+- #194 mantiene colisión de migración 0005; #202 documentación abierta/Draft, 9/9 workflow runs en HEAD `4e54efbf33cc160f532b26cd147b4afa783cddeb`.
+- Issue #53 sigue abierta. Issue #78 cerrada completed.
+- Cloudflare confirmó builds/preview deployments de Pages/Workers para ramas #200/#204/#205/#202, pero Version URLs/workers.dev no prueban aislamiento de bindings o base de datos. No activar Worker Previews ni conectar previews a Neon producción.
+- Producción sigue bloqueada por stale-count, cobertura de todos los escritores comerciales, autorización/aislamiento cross-tenant/branch/role, rate limiting runtime, migración/rollback, RPO/RTO, alertas externas y confirmación de coste $0.
+- No ejecutar migraciones remotas, despliegues ni cambios productivos. Checks verdes no equivalen a readiness.
+
+---
+
 # Estado verificado — 2026-11-04 UTC (reconciliación de Cloudflare y PR #200)
 
 > Este bloque supersede el snapshot vivo histórico que aparece más abajo. Se conserva el resto del documento como historial y checklist; no se borra evidencia anterior.

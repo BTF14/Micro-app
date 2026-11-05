@@ -208,6 +208,22 @@ async function startBootstrapGoogleFlow(input: {
 }
 
 describe("Google bootstrap request transport", () => {
+  it("fails closed when the HMAC secret is missing or too short", async () => {
+    for (const secret of [undefined, "short"]) {
+      const response = await app.fetch(new Request("https://api.example/auth/google", {
+        headers: { "CF-Connecting-IP": "198.51.100.20" },
+      }), { ...googleEnv, AUTH_RATE_LIMIT_HMAC_KEY: secret });
+      expect(response.status).toBe(503);
+      await expect(response.json()).resolves.toMatchObject({ error: "AUTH_RATE_LIMIT_UNAVAILABLE" });
+    }
+  });
+
+  it("fails closed when the Cloudflare client IP is absent", async () => {
+    const response = await app.fetch(new Request("https://api.example/auth/google"), googleEnv);
+    expect(response.status).toBe(503);
+    await expect(response.json()).resolves.toMatchObject({ error: "AUTH_RATE_LIMIT_UNAVAILABLE" });
+  });
+
   it("rejects bootstrap secrets in the GET query string", async () => {
     const response = await app.fetch(new Request(
       `https://api.example/auth/google?bootstrap_token=${encodeURIComponent(bootstrapToken)}&org_name=Leaky&org_slug=leaky`,
@@ -241,6 +257,7 @@ describe("Google bootstrap request transport", () => {
       headers: {
         Origin: googleOrigin,
         "Content-Type": "application/x-www-form-urlencoded",
+        "CF-Connecting-IP": "198.51.100.12",
       },
       body: new URLSearchParams({
         bootstrap_token: "incorrect-synthetic-token",
@@ -261,6 +278,7 @@ describe("Google bootstrap request transport", () => {
         headers: {
           Origin: googleOrigin,
           "Content-Type": "application/x-www-form-urlencoded",
+          "CF-Connecting-IP": "198.51.100.13",
         },
         body: `bootstrap_token=${encodeURIComponent(bootstrapToken)}&bootstrap_token=duplicate&org_name=Valid+Shop&org_slug=valid-shop`,
       },

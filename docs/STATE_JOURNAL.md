@@ -1580,3 +1580,17 @@ La consulta directa a GitHub Actions por `head_sha` incluye eventos `push` y `pu
 - #194 sigue 13 ahead/2 behind de main actual; migración roles 0005 colisiona con inventario 0005. No integrar hasta renumerar roles a 0006 y validar.
 - No se tocó Neon, producción, Cloudflare productivo, secretos, DNS, billing ni datos reales. No main directo ni force-push.
 - Esta entrada actualiza el estado operativo; las entradas previas se conservan como historia y no deben presentarse como estado vivo.
+
+
+## 2026-11-05 — Versionado monotónico y cierre de ABA
+
+- Se añadió `inventory_balances.balance_version` BIGINT. INSERT establece versión 1; cambios en `on_hand_quantity` o `reserved_quantity` incrementan automáticamente; cambios solo de metadatos preservan la versión. Un trigger impide DELETE para evitar reinicios por recreación.
+- Cada línea de conteo físico guarda `expected_balance_version` y `expected_on_hand_quantity`; la confirmación compara ambos contra el balance bloqueado. Si el saldo no existe al crear el conteo, la versión esperada es 0.
+- Prueba de integración ABA: snapshot 8.250, mutaciones 8.500 y 8.250; la confirmación devuelve 409 `COUNT_STALE` aunque el saldo final coincida. Assertions SQL prueban incremento por stock/reserva, no incremento por metadatos y rechazo de DELETE.
+- PR #200 código HEAD `7b58b140e50c46a3d3b087e3445a4b04e6243a81`: 16/16 workflows success. HEAD documental `5fbc17a48b65076cf5609a7a054bbd125a3a5d1e`: 16/16 success.
+- PR #204 HEAD `07a5a41c0f5f5c36fb89a5c5950796493d56eb20`: 8 ahead/0 behind de #200, diff propio 1 archivo, 6/6 workflows success.
+- PR #205 HEAD `7005d9a5b03234bd0209d0cc1ea75e8ae21e0032`: 20 ahead/0 behind de #204, diff propio 3 archivos, 8/8 workflows success; preserva idempotencia.
+- Las PR #200/#204/#205 siguen Draft; 0 reviews formales, 0 review threads y 0 combined status contexts en la consulta. CI success no sustituye aprobación.
+- La matriz de permisos está aprobada desde 2026-10-31, pero la implementación completa y el aislamiento cross-tenant/cross-branch siguen abiertos en issue #53.
+- #194 sigue 13 ahead/2 behind de main actual y mantiene colisión entre migración de roles 0005 e inventario 0005; no integrar antes de renumerar roles a 0006 y revalidar.
+- No se tocó Neon, producción, Cloudflare productivo, secretos, DNS, billing ni datos reales. Ninguna PR se fusionó.

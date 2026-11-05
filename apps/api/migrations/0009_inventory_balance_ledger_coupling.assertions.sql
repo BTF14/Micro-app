@@ -26,6 +26,24 @@ BEGIN
   VALUES (org_id, branch_id, warehouse_a, product_a, 0);
 
   BEGIN
+    UPDATE inventory_balances SET warehouse_id = warehouse_b
+     WHERE organization_id = org_id AND warehouse_id = warehouse_a AND product_id = product_a;
+    RAISE EXCEPTION 'FAIL: balance warehouse identity change was accepted';
+  EXCEPTION WHEN check_violation THEN NULL; END;
+
+  BEGIN
+    UPDATE inventory_balances SET branch_id = branch_b, warehouse_id = warehouse_branch_b
+     WHERE organization_id = org_id AND warehouse_id = warehouse_a AND product_id = product_a;
+    RAISE EXCEPTION 'FAIL: balance branch identity change was accepted';
+  EXCEPTION WHEN check_violation THEN NULL; END;
+
+  BEGIN
+    UPDATE inventory_balances SET product_id = product_b
+     WHERE organization_id = org_id AND warehouse_id = warehouse_a AND product_id = product_a;
+    RAISE EXCEPTION 'FAIL: balance product identity change was accepted';
+  EXCEPTION WHEN check_violation THEN NULL; END;
+
+  BEGIN
     INSERT INTO inventory_balances (organization_id, branch_id, warehouse_id, product_id, on_hand_quantity)
     VALUES (org_id, branch_id, warehouse_a, product_b, 1);
     SET CONSTRAINTS inventory_balance_ledger_intent_complete IMMEDIATE;

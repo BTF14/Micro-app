@@ -1790,3 +1790,11 @@ Mantener #207 en Draft. Revisar independientemente el diff; resolver la colisió
 - Compare #208→#207: 11 ahead/0 behind, 8 archivos, mergeable=true. Diff queda solo audit logs, no duplica cambios de roles.
 - CI aplica 0001→0007 y ejecuta integración de own-shift roles; migration-check aplica 0005→0006→0007 con rollback/assertions de 0007. #208 postgres-migration success en 76a246ea; CI verify y Cloudflare Pages in_progress. #207 SHA dd3eb55 tiene 9 checks queued/in_progress. AC-5 pendiente hasta check completo del SHA actual.
 - Comentarios correctivos #207 6651930131 e issue #53 6651930707. Ambas PR Draft/no merge; issue #53 abierta/P0. Sin cambios en main, Neon, secretos, Cloudflare productivo, DNS, billing ni datos reales.
+
+
+## CI finalizado — secuencia 0001–0007 validada en PostgreSQL efímero — 2026-11-05 UTC
+
+- #208 HEAD `76a246ea141eedbee877608e7c0f50d6a07f3019`: 7/7 checks success, verify y postgres-migration incluidos.
+- #207 HEAD `dd3eb55ee3dc5776ce0e0617a3012c29ab355132`: 10/10 checks success, verify y postgres-migration incluidos; Chromium, SAST, Trivy, secret scan, Pages/Worker y backup/restore success.
+- Compare #208→#207: 11 ahead/0 behind, 8 archivos, mergeable=true. CI/migration-check aplicó 0001→0007 desde PostgreSQL efímero y pasó test PG own-shift roles. AC-5 audit migration stack validado. DATABASE_URL/ownership/grants runtime permanece NO VERIFICADO.
+- Comentario en #207 ID 6651950993. Ambas PR Draft/no merge. #202 docs PR seguía con checks en progreso (verify, postgres-migration, SAST, Trivy, backup/restore, Pages) al último snapshot.

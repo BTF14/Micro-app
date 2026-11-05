@@ -1515,3 +1515,18 @@ CI documental: para HEAD `8c15e13fa001a14a0ddf9f2432bc17efb30d476d`, los 8 workf
 - Próximo paso operativo: verificar el resultado final de los checks del merge SHA y continuar desde el handoff actualizado. No iniciar rediseño global; aplicar el estándar gradualmente en frontend nuevo y pantallas que se modifiquen.
 - Esta entrada registra el merge; no altera ni elimina entradas anteriores.
 
+
+
+
+## 2026-11-05 — Reconciliación de PRs y corrección de evidencia
+
+- Reconsultados metadatos, HEAD/base, comparaciones, workflow runs, combined status, reviews y threads de #200/#202/#204/#205.
+- Corregidos los cuerpos de #200, #202, #204 y #205 para que no presenten SHA/conteos históricos como vigentes.
+- #200: HEAD `243592468e9fd61b1f8c578d867887dbb7f18e4d`, 16 ahead/0 behind, 30 archivos; 10 workflow runs success en ese SHA; sin status contexts ni reviews/threads.
+- #204: HEAD `57a9f098bcb93427315e96c90e62ae13764a485b`, 3 ahead/0 behind de #200; no runs/status contexts devueltos; no reviews/threads.
+- #205: HEAD `c1f09d09dd08b9600e7a6c0ff8ccbb5be4e9c990`, 9 ahead/1 behind respecto a #204; solo un workflow (Backup restore smoke test) success; sin status contexts ni reviews/threads.
+- #202: HEAD previo `348cf0a1067c5410ff262f817b054cef46f0afae`, 43 ahead/0 behind, 12 archivos; 9 workflows success en ese SHA. Los cambios documentales de este checkpoint crearán un SHA posterior que debe validarse por separado.
+- Confirmado que no hay reviews formales ni threads inline en las cuatro PR en la consulta actual.
+- Stale-count, atomicidad de 0005, divergencia #204/#205, colisión 0005 #194 y gates de issue #53 permanecen abiertos. No se ha declarado resuelto ninguno.
+- No se fusionó ninguna PR ni se tocó main, Neon, Cloudflare productivo, secretos, DNS, billing o producción.
+- Nuevo procedimiento: mantener documentación y handoff sincronizados en el mismo ciclo de implementación; registrar SHA exacto y evidencia por cada afirmación CI.

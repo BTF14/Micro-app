@@ -1049,3 +1049,12 @@ No declarar comercial/producción listo hasta completar flujos, seguridad, prueb
 - No ejecutar migraciones en Neon main ni desplegar producción en este bloque.
 
 - Resultado técnico PR #165 (HEAD de implementación `c3ae1192f0841090ee1b3dea71ed803f1d3c1d8b`): checks y pruebas completas en success, incluidas 3 pruebas de resolución contra PostgreSQL efímero y assertions cross-tenant. Revalidar el SHA final tras los commits de sincronización documental antes de integrar.
+
+
+---
+
+## Reconciliación de estado — 2026-11-05 UTC
+
+Las PR #200/#204/#205 siguen abiertas y Draft; ninguna se fusionó. #200 HEAD `243592468e9fd61b1f8c578d867887dbb7f18e4d` (16 ahead/0 behind; 10 workflows success); #204 HEAD `57a9f098bcb93427315e96c90e62ae13764a485b` (3 ahead/0 behind; sin workflow runs/status contexts recuperados); #205 HEAD `c1f09d09dd08b9600e7a6c0ff8ccbb5be4e9c990` (9 ahead/1 behind #204; un workflow de backup restore success). No hay reviews formales/threads en la consulta actual.
+
+Orden de trabajo actualizado: (1) corregir stale-count con snapshot/versionado y test de confirmación inversa; (2) hacer 0005 atómica o recuperable y probar fallo inducido; (3) reconciliar #205 con el commit faltante #204 sin force-push y revalidar CI; (4) resolver colisión 0005 de #194; (5) completar autorización/aislamiento de issue #53; (6) revisar previews Cloudflare de forma autenticada antes de cualquier switch irreversible. Documentar cada cambio en el mismo ciclo.

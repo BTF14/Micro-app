@@ -11,4 +11,7 @@ export type Bindings = {
   // when starting the very first Google sign-in; the database seals further use
   // regardless of whether this secret is reused or leaked.
   BOOTSTRAP_TOKEN?: string;
+  // Dedicated high-entropy HMAC key used to pseudonymize auth rate-limit identifiers.
+  // Provision as an encrypted Worker secret; never add it to wrangler.toml or source control.
+  AUTH_RATE_LIMIT_HMAC_KEY?: string;
 };

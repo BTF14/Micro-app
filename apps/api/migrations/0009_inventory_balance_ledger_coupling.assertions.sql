@@ -61,6 +61,10 @@ BEGIN
   UPDATE inventory_balances SET on_hand_quantity = 5 WHERE organization_id = org_id AND warehouse_id = warehouse_a AND product_id = product_a;
   INSERT INTO warehouse_inventory_movements (organization_id, branch_id, warehouse_id, product_id, movement_type, quantity_delta, reason, actor_user_id)
   VALUES (org_id, branch_id, warehouse_a, product_a, 'purchase_receipt', 5, 'Matched balance receipt', actor_id);
+  -- Signed negative deltas are paired exactly for physical adjustments.
+  UPDATE inventory_balances SET on_hand_quantity = 3 WHERE organization_id = org_id AND warehouse_id = warehouse_a AND product_id = product_a;
+  INSERT INTO warehouse_inventory_movements (organization_id, branch_id, warehouse_id, product_id, movement_type, quantity_delta, reason, actor_user_id)
+  VALUES (org_id, branch_id, warehouse_a, product_a, 'count_adjustment', -2, 'Matched negative adjustment', actor_id);
   UPDATE inventory_balances SET reserved_quantity = 2 WHERE organization_id = org_id AND warehouse_id = warehouse_a AND product_id = product_a;
   UPDATE inventory_balances SET on_hand_quantity = 5, updated_at = clock_timestamp()
    WHERE organization_id = org_id AND warehouse_id = warehouse_a AND product_id = product_a;
@@ -76,6 +80,6 @@ BEGIN
   SET CONSTRAINTS inventory_balance_ledger_intent_complete DEFERRED;
   SELECT balance_version INTO balance_version FROM inventory_balances
    WHERE organization_id = org_id AND warehouse_id = warehouse_a AND product_id = product_a;
-  IF balance_version <> 3 THEN RAISE EXCEPTION 'FAIL: balance version changed unexpectedly, got %', balance_version; END IF;
+  IF balance_version <> 4 THEN RAISE EXCEPTION 'FAIL: balance version changed unexpectedly, got %', balance_version; END IF;
 END $$;
 ROLLBACK;

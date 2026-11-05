@@ -13,7 +13,7 @@ CREATE TABLE public.inventory_balance_ledger_intents (
 REVOKE ALL ON TABLE public.inventory_balance_ledger_intents FROM PUBLIC;
 REVOKE ALL ON SEQUENCE public.inventory_balance_ledger_intents_event_id_seq FROM PUBLIC;
 CREATE FUNCTION public.record_inventory_balance_ledger_intent()
-RETURNS trigger LANGUAGE plpgsql SECURITY DEFINER SET search_path = pg_catalog, public
+RETURNS trigger LANGUAGE plpgsql SECURITY DEFINER SET search_path = pg_catalog
 AS $$
 DECLARE previous_quantity numeric(14,3); delta_quantity numeric(14,3);
 BEGIN
@@ -28,7 +28,7 @@ BEGIN
 END;
 $$;
 CREATE FUNCTION public.consume_inventory_balance_ledger_intent()
-RETURNS trigger LANGUAGE plpgsql SECURITY DEFINER SET search_path = pg_catalog, public
+RETURNS trigger LANGUAGE plpgsql SECURITY DEFINER SET search_path = pg_catalog
 AS $$
 DECLARE matching_event_id bigint;
 BEGIN
@@ -45,7 +45,7 @@ BEGIN
 END;
 $$;
 CREATE FUNCTION public.assert_inventory_balance_ledger_intent_consumed()
-RETURNS trigger LANGUAGE plpgsql SECURITY DEFINER SET search_path = pg_catalog, public
+RETURNS trigger LANGUAGE plpgsql SECURITY DEFINER SET search_path = pg_catalog
 AS $$
 DECLARE intent_consumed boolean;
 BEGIN

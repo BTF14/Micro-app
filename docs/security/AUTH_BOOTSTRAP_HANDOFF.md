@@ -4,6 +4,8 @@
 
 The bootstrap POST still accepts the one-time administrative bearer token in its request body over HTTPS and validates it against the encrypted `BOOTSTRAP_TOKEN` Worker secret. After validation, the raw token is discarded by the route and is never copied into a browser cookie, redirect URL, or database row.
 
+The form body is read through a shared streaming byte limiter with a hard 2,048-byte ceiling. The reader cancels the stream immediately when the limit is exceeded, including when `Content-Length` is absent; malformed UTF-8 is rejected. The catalog write routes use the same bounded reader. Unit tests verify early stream cancellation, exact-limit acceptance, malformed UTF-8 rejection and empty-body handling; the route integration test covers an oversized POST without `Content-Length`.
+
 The API creates a cryptographically random 32-byte opaque handoff handle. It stores only SHA-256 hashes of the handle and the OAuth state, plus the organization name/slug and a ten-minute expiry, in `auth_bootstrap_attempts`. The browser receives only the base64url handle in the existing short-lived HttpOnly/SameSite=Lax cookie.
 
 At callback:

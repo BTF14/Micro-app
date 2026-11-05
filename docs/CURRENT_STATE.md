@@ -1,3 +1,32 @@
+## Addendum de estado vivo reconciliado — 2026-11-04 21:40 EDT
+
+Este addendum prevalece sobre los snapshots anteriores de este archivo. Los SHA y estados históricos inferiores se conservan como evidencia, no como estado actual.
+
+### Main y PRs verificados en GitHub
+
+- `main`: `7b0f057b8c152515005feed40305143c0ebb94b0` (merge de PR #199). La documentación anterior que indicaba `2e0f4083...` está desactualizada.
+- PR #200: abierta, Draft según el último checkpoint de continuidad; rama `feat/inventory-vertical-slice-mainline-20261104`; HEAD vivo `243592468e9fd61b1f8c578d867887dbb7f18e4d`; base `main`; comparación 16 ahead / 0 behind; 30 archivos. La descripción de la PR todavía menciona el SHA anterior `7d2ef3d...` y 12 commits ahead: actualizar esa descripción antes de considerarla una fuente de estado. Evidencia previa recuperada: 20 check-runs exitosos y 6 cancelados históricos en el conjunto consultado; no extrapolar checks a un SHA distinto. Sin reviews formales ni threads. El comentario técnico del propietario deja pendiente resolver conteos físicos obsoletos: un conteo antiguo puede sobrescribir uno más reciente confirmado antes.
+- PR #204: abierta/Draft; rama `feat/inventory-test-isolation-20261104`; HEAD `57a9f098bcb93427315e96c90e62ae13764a485b`; base funcional #200; exactamente 3 commits sobre el HEAD de #200 y 0 behind. La corrección cambia el saldo inicial del test concurrente de `8.000` a `7.000`, para que el conteo `8.500` produzca un delta/ledger movement. Evidencia previa recuperada: 8/8 checks exitosos. El cuerpo de la PR aún dice CI pendiente; sincronizarlo.
+- PR #205: abierta/Draft; rama `feat/inventory-count-idempotency-20261104`; HEAD `c1f09d09dd08b9600e7a6c0ff8ccbb5be4e9c990`; evidencia previa recuperada: 9/9 checks exitosos. Añade idempotencia de creación, hash canónico, replay, 409 por payload distinto, replay de conteo confirmado y orden de líneas irrelevante. La comparación #204→#205 está divergida: #205 tiene 9 commits propios y está 1 commit detrás de la punta actual #204 (`57a9f09...`). No fusionar #205 hasta incorporar/verificar ese commit de #204 y volver a correr CI sobre el HEAD reconciliado.
+- PR #194: abierta; rama `work/mvp-foundation`; HEAD `7b3ad50e5780416868a1a428b856d12c4ea1e2ea`; comparación contra main: 13 ahead / 2 behind. Su migración `0005_register_shift_member_roles.sql` colisiona con `0005_warehouse_inventory.sql` de #200. Mantener sin merge; resolver la secuencia y renombrar a 0006 solo después de integrar/estabilizar inventario y actualizar CI/assertions.
+- PR #202: abierta/Draft; rama `docs/reconcile-current-state-20261104`; HEAD `4e54efbf33cc160f532b26cd147b4afa783cddeb`; base main `7b0f057...`; comparación 30 ahead / 0 behind, 12 archivos documentales; 9 workflow runs asociados a este SHA terminaron success. Sin reviews formales ni threads. El encabezado antiguo que citaba `355c80...` está supersedido por este SHA.
+- PR #201 está cerrada; PR #190 está cerrada; PR #193 permanece abierta. PR #196 permanece abierta y no debe modificarse. Issue #53 sigue abierta. Issue #78 está cerrada (completed) desde 2026-10-31.
+- No se fusionó ninguna de estas PR en esta reconciliación.
+
+### Arquitectura y bloqueos que condicionan integración
+
+- `main` contiene migraciones 0001–0004. 0005 de almacenes/conteos existe solo en la pila #200/#204/#205; no está en main ni se aplicó a Neon.
+- La idempotencia de #205 no resuelve el defecto de conteo físico obsoleto documentado en la revisión de #200. Definir snapshot/versionado y conflicto stale (p. ej. 409) o una política explícita aprobada antes de integrar.
+- La migración 0005 debe revisarse por atomicidad: el SQL no abre transacción explícita y el workflow usa psql autocommit con ON_ERROR_STOP; un error intermedio podría dejar DDL parcial. Añadir transacción compatible o estrategia de recuperación y prueba de fallo inducido antes de cualquier migración remota.
+- Los preview builds reportados por Cloudflare para Pages y Workers tuvieron éxito en los SHA #200/#204/#205/#202. Las URLs workers.dev/version/branch no prueban aislamiento de recursos. La evidencia documentada de Cloudflare indica que el banner “Set up Worker Previews” seguía visible y que el Worker usaba `npx wrangler versions upload`; no activar Worker Previews ni exponer DATABASE_URL/Neon producción.
+- Producción no está lista: issue #53, autorización y aislamiento completos, coordinación de todos los escritores, rate limiting runtime, stale-count, migración/rollback, RPO/RTO, alertas externas y confirmación de coste $0 siguen como gates.
+
+### Fuente y límites
+
+Estado obtenido mediante lecturas GitHub de ramas/commits, comparaciones, workflow runs disponibles, reviews/threads, issues y comentarios de PR. La consulta de workflow-runs filtra eventos pull_request y devuelve solo la primera página; cuando se citan 8/8 y 9/9 se conserva la verificación previa de continuidad. La configuración autenticada de Cloudflare no se pudo reconsultar en este turno; se mantiene como evidencia histórica documentada, no como lectura autenticada actual.
+
+---
+
 ## Addendum de verificación más reciente — PR #202 — 2026-11-04
 
 - HEAD verificado de la rama documental: `355c80eb5996cbcc6266c81097d7a245c96851b0`.

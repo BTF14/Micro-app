@@ -1,3 +1,12 @@
+## Aclaración de Cloudflare — previews de PR #207 — 2026-11-05 UTC
+
+- Los comentarios automáticos de Cloudflare en [PR #207 Workers](https://github.com/BTF14/Micro-app/pull/207#issuecomment-6649952138) y [PR #207 Pages](https://github.com/BTF14/Micro-app/pull/207#issuecomment-6649953153) informan despliegues satisfactorios de destinos etiquetados como Commit Preview y Branch Preview para el commit `26c5270`.
+- Workers Build ID asociado: `0c8394a1-4d91-4061-a850-6c78f3b11295`. Pages publica preview de commit y de rama. Esta evidencia confirma previews reportados por la integración; no certifica el entorno productivo ni el tráfico activo.
+- El build histórico objetivo `3542c660-e5e3-435e-8be5-dbed236cec1c` sigue sin inspección autenticada. Tampoco se ha demostrado si la versión de #207 fue únicamente preview o si hubo una acción adicional sobre producción.
+- No se cambia el estado **NO LISTO PARA PRODUCCIÓN**. No modificar Cloudflare, Neon, secretos, DNS, billing ni datos reales.
+
+---
+
 ## Estado de preparación — 2026-11-05 00:50 EDT
 
 **Estado: NO LISTO PARA PRODUCCIÓN.**

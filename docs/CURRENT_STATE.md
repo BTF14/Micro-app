@@ -1,3 +1,14 @@
+## Protocolo permanente — no volver a pedir Build IDs al propietario — 2026-11-05
+
+- Antes de solicitar cualquier Build ID, deployment ID, commit SHA, URL, captura o dato de Cloudflare, consultar primero la evidencia ya disponible en GitHub: checks/statuses del SHA exacto, workflow runs, logs accesibles, comentarios de Cloudflare en PR y documentos de auditoría/handoff.
+- No pedir de nuevo el Workers Build ID de PR #207 (`0c8394a1-4d91-4061-a850-6c78f3b11295`) ni otros identificadores que ya estén registrados. No pedir al propietario un dato que podamos recuperar por GitHub o documentación.
+- Distinguir siempre: (1) build/check CI, (2) Worker Version/Version URL, (3) preview deployment, (4) producción activa y (5) tráfico. El éxito de una build o preview no demuestra los estados posteriores.
+- El Build ID histórico `3542c660-e5e3-435e-8be5-dbed236cec1c` queda como referencia histórica pendiente de inspección autenticada, no como requisito recurrente ni bloqueo que deba trasladarse al propietario. Si no existe un conector independiente para consultar el dashboard, conservar **NO VERIFICADO** y seguir con tareas que sí puedan verificarse. No pedirlo repetidamente.
+- Solo preguntar al propietario por información en texto cuando sea un dato nuevo, estrictamente necesario, no recuperable desde GitHub/documentación/conectores disponibles y que cambie una decisión de seguridad. Explicar exactamente qué decisión depende de ese dato y aceptar texto; no exigir capturas.
+- En cada handoff, pasar el contexto y los IDs ya conocidos, las fuentes consultadas y el último SHA; no reiniciar la investigación ni convertir verificaciones históricas en solicitudes repetidas.
+
+---
+
 ## Decisión operativa — no depender de TinyFish ni pedir configuración local — 2026-11-05
 
 - El propietario indicó que trabaja únicamente desde un teléfono Android y no dispone de terminal. No volver a pedirle ejecutar comandos `npx`, abrir Codex CLI, editar `config.toml` o realizar pasos que requieren una computadora.

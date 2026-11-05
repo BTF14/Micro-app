@@ -203,7 +203,10 @@ async function startBootstrapGoogleFlow(input: {
   const cookies = extractCookiePairs(startResponse);
   expect(cookies.microapp_oauth_state).toBeTruthy();
   expect(cookies.microapp_oauth_verifier).toBeTruthy();
-  expect(cookies.microapp_oauth_bootstrap).toBeTruthy();
+  expect(cookies.microapp_oauth_bootstrap).toMatch(/^[A-Za-z0-9_-]{43}$/);
+  expect(cookies.microapp_oauth_bootstrap).not.toContain(input.token);
+  expect(cookies.microapp_oauth_bootstrap).not.toContain(input.organizationName);
+  expect(cookies.microapp_oauth_bootstrap).not.toContain(input.organizationSlug);
   const cookieHeader = Object.entries(cookies).map(([name, value]) => `${name}=${value}`).join("; ");
   return { cookieHeader, state: cookies.microapp_oauth_state!, authorizationUrl };
 }
@@ -302,6 +305,7 @@ const suiteGoogle = describe.skipIf(!databaseAvailable)("Google OAuth routes aga
     await cleanupClient.query("DELETE FROM auth_sessions WHERE user_id IN (SELECT id FROM app_users WHERE email = $1)", [googleEmail]);
     await cleanupClient.query("DELETE FROM organization_members WHERE user_id IN (SELECT id FROM app_users WHERE email = $1)", [googleEmail]);
     await cleanupClient.query("DELETE FROM app_users WHERE email = $1", [googleEmail]);
+    await cleanupClient.query("DELETE FROM auth_bootstrap_attempts WHERE organization_name = $1", [bootstrapOrgName]);
     // auth_bootstrap still references the organization this test's bootstrap
     // run created (ON DELETE RESTRICT by design, so a sealed bootstrap can
     // never be silently orphaned in production). Reset the singleton sentinel
@@ -523,6 +527,13 @@ const suiteGoogle = describe.skipIf(!databaseAvailable)("Google OAuth routes aga
     );
     expect(bootstrapRow.rows[0]!.consumed_at).not.toBeNull();
 
+    const consumedHandoff = await cleanupClient.query<{ consumed_at: string | null }>(
+      "SELECT consumed_at FROM auth_bootstrap_attempts WHERE organization_name = $1",
+      [bootstrapOrgName],
+    );
+    expect(consumedHandoff.rows).toHaveLength(1);
+    expect(consumedHandoff.rows[0]!.consumed_at).not.toBeNull();
+
     // A second, independent allowlisted identity must not be able to reuse the bootstrap.
     const secondEmail = `google-second-${crypto.randomUUID()}@example.test`;
     await cleanupClient.query("INSERT INTO auth_allowlist (email, added_by) VALUES ($1, 'integration-test')", [secondEmail]);
@@ -548,6 +559,7 @@ const suiteGoogle = describe.skipIf(!databaseAvailable)("Google OAuth routes aga
     expect(secondCallback.headers.get("location")).toContain("auth_error=bootstrap_consumed");
     fetchSpy.mockRestore();
     await cleanupClient.query("DELETE FROM auth_allowlist WHERE lower(email) = lower($1)", [secondEmail]);
+    await cleanupClient.query("DELETE FROM auth_bootstrap_attempts WHERE organization_name = $1", [secondOrgName]);
     await cleanupClient.query("DELETE FROM organizations WHERE name = $1", [secondOrgName]);
   });
 

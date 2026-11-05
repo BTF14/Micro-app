@@ -1,7 +1,7 @@
 # ODD task: make general audit logs append-only
 
-- Status: in progress
-- Issue / PR: Issue #53; stacked on PR #200 (inventory foundation)
+- Status: complete (disposable PostgreSQL guarantees verified; production runtime identity remains an explicit external gate)
+- Issue / PR: Issue #53; PR #207 stacked on PR #208 (register roles 0006), which is stacked on PR #200 (inventory 0005)
 - Owner / reviewer: repository owner / senior engineering review
 - Started: 2026-11-05
 - Risk: critical
@@ -30,13 +30,13 @@ Excluded:
 
 ## Acceptance criteria
 
-- [ ] AC-1 — every migration and runtime call site affecting `audit_logs` is inventoried; no existing protection is assumed from the inventory ledger.
-- [ ] AC-2 — PostgreSQL rejects UPDATE, DELETE and TRUNCATE of `audit_logs`, including direct SQL that bypasses application services.
-- [ ] AC-3 — a disposable non-owner runtime role can perform only the intended SELECT/INSERT operations and cannot alter table ownership, privileges or triggers.
-- [ ] AC-4 — audit INSERT remains transactionally coupled to the corresponding business operation; induced audit failure rolls back the business write.
-- [ ] AC-5 — migration ordering is collision-free with inventory 0005 and the register-role migration currently also named 0005; assertions and CI apply the complete ordered stack from a clean PostgreSQL database.
-- [ ] AC-6 — exact final HEAD CI and PostgreSQL migration/assertion results pass; full diff and security review are recorded.
-- [ ] AC-7 — documentation distinguishes verified database guarantees from the still-unverified effective production runtime role.
+- [x] AC-1 — every migration and runtime call site affecting `audit_logs` is inventoried; no existing protection is assumed from the inventory ledger.
+- [x] AC-2 — PostgreSQL rejects UPDATE, DELETE and TRUNCATE of `audit_logs`, including direct SQL that bypasses application services.
+- [x] AC-3 — a disposable non-owner runtime role can perform only the intended SELECT/INSERT operations and cannot alter table ownership, privileges or triggers.
+- [x] AC-4 — audit INSERT remains transactionally coupled to the corresponding business operation; induced audit failure rolls back the business write.
+- [x] AC-5 — migration ordering is collision-free with inventory 0005 and the register-role migration currently also named 0005; assertions and CI apply the complete ordered stack from a clean PostgreSQL database.
+- [x] AC-6 — exact final HEAD CI and PostgreSQL migration/assertion results pass; full diff and security review are recorded.
+- [x] AC-7 — documentation distinguishes verified database guarantees from the still-unverified effective production runtime role.
 
 ## Risks and guardrails
 
@@ -55,9 +55,9 @@ Excluded:
 | Reconcile GitHub and current PR stack | Current bases, HEADs and CI are known | Live GitHub metadata, exact-SHA workflow runs/check-runs | complete |
 | Static audit of audit_logs | DDL, triggers, grants and callers inventoried | 0001 DDL; code search; catalog and inventory audit INSERT call sites | complete |
 | Design mutation guard and runtime-role test | Testable DDL and privilege contract | Migration and assertion SQL drafted; PostgreSQL execution pending CI | complete |
-| Implement migration and assertions | UPDATE/DELETE/TRUNCATE rejected; SELECT/INSERT supported | `0007_audit_logs_append_only.sql` and `.assertions.sql` added; exact-HEAD CI pending | in progress |
+| Implement migration and assertions | UPDATE/DELETE/TRUNCATE rejected; SELECT/INSERT supported | `0007_audit_logs_append_only.sql` and `.assertions.sql`; PostgreSQL 18 disposable assertions passed on final HEAD | complete |
 | Verify transaction coupling | Business write rolls back on audit insert failure | Existing inventory rollback test retained; catalog/inventory teardown updated for append-only trigger | in progress |
-| Reconcile documentation and handoff | Current state, journal and handoff reflect evidence and gaps | Exact SHA and diff review | pending |
+| Reconcile documentation and handoff | Current state, journal and handoff reflect evidence and gaps | ODD task, CURRENT_STATE, HANDOFF_NEXT_CHAT and STATE_JOURNAL updated with exact SHAs and residual runtime gate | complete |
 
 ## Technical decisions
 
@@ -65,14 +65,15 @@ Excluded:
 - The inventory ledger's append-only trigger is separate and does not protect `audit_logs`.
 - Runtime connects through the single Worker binding `DATABASE_URL`; the effective PostgreSQL username and privileges are not inferable from checked-in code and will not be read from secrets.
 - A database trigger is not sufficient if the runtime role owns the table or can disable/drop its triggers. Production closure therefore requires proof that runtime is a non-owner with least privilege; this task will not alter the production role or secret.
-- Migration numbering must be collision-free. Inventory currently occupies 0005; PR #194 still has a distinct register-role migration also named 0005. The planned sequence is inventory 0005, register roles 0006, audit-log hardening after both; verify the actual integration graph before finalizing the filename.
+- Migration numbering is reconciled and validated: inventory 0005, register-shift roles 0006, audit-log hardening 0007. CI and migration-check apply the full ordered stack from a clean disposable PostgreSQL database.
 
 ## Closure and handoff
 
-- Final commit SHA:
-- PR:
-- Checks and exact outcomes:
-- Acceptance criteria met / unmet:
-- Limitations not verified:
-- Residual risks:
-- Next step:
+- Final commit SHA: `dd3eb55ee3dc5776ce0e0617a3012c29ab355132`.
+- PR: #207 (base `work/mvp-foundation`, PR #208); #208 HEAD `76a246ea141eedbee877608e7c0f50d6a07f3019`.
+- Checks and exact outcomes: #207 10/10 check-runs success, including `verify`, `postgres-migration`, Chromium, SAST, Trivy, secret-history scan, Pages/Worker builds and synthetic backup/restore. #208 7/7 success, including `verify` and `postgres-migration`.
+- Acceptance criteria met: AC-1 through AC-7 for the repository/disposable PostgreSQL scope. CI applied 0001→0007 in order; migration-check and assertions passed.
+- Limitations not verified: the effective PostgreSQL principal behind the real Worker `DATABASE_URL`, its memberships/inherited grants, and whether it owns `audit_logs` or can assume a privileged role. No secret was read and no Neon connection was opened.
+- Residual risks: a production runtime owner/superuser or role with schema/trigger-management capability can bypass trigger protections. `ENABLE ALWAYS` does not protect against an owner/superuser altering the schema. Production append-only assurance therefore remains conditional on an independently verified non-owner least-privilege runtime principal.
+- Next step: obtain authorized read-only evidence of the effective runtime database identity and grants without reading/exposing secrets; keep #207/#208 Draft and do not merge/deploy until that gate and all remaining issue #53 gates are reviewed.
+

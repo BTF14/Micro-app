@@ -315,3 +315,8 @@ No se copiaron ni registraron valores de variables de entorno. No afirmar que es
 No confundir workflow runs con combined status contexts ni con aprobación. La consulta de runs usada filtra eventos pull_request y devuelve la primera página; la ausencia de resultados se registra como “no recuperados”, no como prueba de que jamás existieron.
 
 Worker Previews: la restricción es condicional, no permanente. No hacer el switch irreversible hasta auditar Previews Base, bindings/secrets, recursos compartidos, routes, service bindings, Workflows, cron y control de acceso; mantener API-dark y demostrar aislamiento real. Version URLs no son un sustituto de branch previews aislados.
+
+
+## Corrección de precisión stale-count — 2026-11-05 UTC
+
+El código de #200 ya tiene protección de snapshot por cantidad: captura expected_on_hand_quantity y responde 409 COUNT_STALE si cambió el saldo; existe test de confirmación de conteos fuera de orden. La descripción anterior de ausencia total de guard queda corregida. Revisión residual: versionado monotónico para ABA y lock contract de futuros writers.

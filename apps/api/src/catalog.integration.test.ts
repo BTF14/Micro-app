@@ -17,6 +17,9 @@ const app = (await import("./index")).default;
 const databaseUrl = (globalThis as typeof globalThis & {
   process?: { env?: Record<string, string | undefined> };
 }).process?.env?.DATABASE_URL;
+const databaseUrlAdmin = (globalThis as typeof globalThis & {
+  process?: { env?: Record<string, string | undefined> };
+}).process?.env?.DATABASE_URL_ADMIN ?? databaseUrl;
 const isCi = Boolean((globalThis as typeof globalThis & {
   process?: { env?: Record<string, string | undefined> };
 }).process?.env?.CI);
@@ -109,7 +112,7 @@ describe.skipIf(!databaseUrl)("catalog route against PostgreSQL", () => {
   }
 
   beforeAll(async () => {
-    cleanupClient = new Client({ connectionString: databaseUrl });
+    cleanupClient = new Client({ connectionString: databaseUrlAdmin });
     await cleanupClient.connect();
 
     organizationA = await createOrganization("Catalog Tenant A", true);

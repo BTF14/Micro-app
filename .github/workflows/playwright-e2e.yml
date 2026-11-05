@@ -2,9 +2,9 @@ name: Playwright E2E
 
 on:
   push:
-    branches: [main, "feat/**"]
+    branches: [main, "feat/**", "security/**"]
   pull_request:
-    branches: [main]
+    branches: [main, "security/**"]
   workflow_dispatch:
 
 permissions:

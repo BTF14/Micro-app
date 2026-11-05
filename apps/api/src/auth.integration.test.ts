@@ -23,6 +23,9 @@ const app = appModule.default;
 const databaseUrl = (globalThis as typeof globalThis & {
   process?: { env?: Record<string, string | undefined> };
 }).process?.env?.DATABASE_URL;
+const databaseUrlAdmin = (globalThis as typeof globalThis & {
+  process?: { env?: Record<string, string | undefined> };
+}).process?.env?.DATABASE_URL_ADMIN ?? databaseUrl;
 const frontendOrigin = "https://micro-app.example";
 const password = "integration-test-password-2026";
 const email = `auth-integration-${crypto.randomUUID()}@example.test`;
@@ -39,7 +42,7 @@ const suite = describe.skipIf(!databaseAvailable)("authentication routes against
   let cleanupClient: Client;
 
   beforeAll(async () => {
-    cleanupClient = new Client({ connectionString: databaseUrl });
+    cleanupClient = new Client({ connectionString: databaseUrlAdmin });
     await cleanupClient.connect();
   });
 
@@ -317,7 +320,7 @@ const suiteGoogle = describe.skipIf(!databaseAvailable)("Google OAuth routes aga
   let fetchSpy: ReturnType<typeof vi.spyOn>;
 
   beforeAll(async () => {
-    cleanupClient = new Client({ connectionString: databaseUrl });
+    cleanupClient = new Client({ connectionString: databaseUrlAdmin });
     await cleanupClient.connect();
   });
 

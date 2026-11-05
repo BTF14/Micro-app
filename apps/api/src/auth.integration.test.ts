@@ -232,6 +232,22 @@ describe("Google bootstrap request transport", () => {
     await expect(response.json()).resolves.toMatchObject({ error: "AUTH_RATE_LIMIT_UNAVAILABLE" });
   });
 
+  it("rejects an oversized bootstrap POST body without Content-Length", async () => {
+    const response = await app.fetch(new Request("https://api.example/auth/google", {
+      method: "POST",
+      headers: {
+        Origin: googleOrigin,
+        "Content-Type": "application/x-www-form-urlencoded",
+        "CF-Connecting-IP": "198.51.100.29",
+      },
+      body: "x".repeat(4096),
+    }), googleEnv);
+
+    expect(response.status).toBe(413);
+    expect(response.headers.get("location")).toBeNull();
+    expect(extractCookiePairs(response).microapp_oauth_bootstrap).toBeUndefined();
+  });
+
   it("rejects bootstrap secrets in the GET query string", async () => {
     const response = await app.fetch(new Request(
       `https://api.example/auth/google?bootstrap_token=${encodeURIComponent(bootstrapToken)}&org_name=Leaky&org_slug=leaky`,

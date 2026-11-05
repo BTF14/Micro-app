@@ -97,8 +97,20 @@ describe.skipIf(!databaseUrl)("catalog product creation against PostgreSQL", () 
   afterAll(async () => {
     if (!client) return;
     if (organizationIds.length) {
-      await client.query("DELETE FROM audit_logs WHERE organization_id = ANY($1::uuid[])", [organizationIds]);
-      await client.query("DELETE FROM products WHERE organization_id = ANY($1::uuid[])", [organizationIds]);
+      await client.query("BEGIN");
+      try {
+        // Test teardown runs with the disposable database owner. Temporarily
+        // disable only user triggers so fixtures can be removed; runtime roles
+        // never receive ownership or trigger-management privileges.
+        await client.query("ALTER TABLE audit_logs DISABLE TRIGGER USER");
+        await client.query("DELETE FROM audit_logs WHERE organization_id = ANY($1::uuid[])", [organizationIds]);
+        await client.query("ALTER TABLE audit_logs ENABLE TRIGGER USER");
+        await client.query("DELETE FROM products WHERE organization_id = ANY($1::uuid[])", [organizationIds]);
+        await client.query("COMMIT");
+      } catch (error) {
+        await client.query("ROLLBACK");
+        throw error;
+      }
     }
     if (userIds.length) await client.query("DELETE FROM auth_sessions WHERE user_id = ANY($1::uuid[])", [userIds]);
     if (organizationIds.length) {

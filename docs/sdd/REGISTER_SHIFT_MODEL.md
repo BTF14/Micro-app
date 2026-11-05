@@ -97,3 +97,17 @@ En PostgreSQL 18 efímero, desde una base vacía y aplicando migraciones 0001–
 - Nota histórica: en el HEAD inicial `0b5a9adbdafce25a8483e7ce6953e2d83a826c47`, CI detectó una expectativa SQLSTATE incorrecta. Se corrigió el trigger antes del HEAD final; los 10 workflows del HEAD final terminaron success.
 - No se aplicó 0003 ni 0004 a Neon main. La herramienta de lectura de Neon branches no devolvió un resultado utilizable; no inferir el número actual ni crear una rama por rutina.
 - PostgreSQL efímero de CI es suficiente para la migración y evita consumir ramas Neon.
+
+
+## Addendum — alineación con la matriz de roles aprobada (2026-11-04)
+
+Este addendum sustituye las referencias anteriores de este documento que restringían la apertura de turnos exclusivamente al rol `cashier` o indicaban que la matriz de permisos seguía sin aprobarse. La fuente normativa vigente es `docs/sdd/role-permission-decision-matrix.md`, aprobada el 2026-10-31.
+
+- Owner, Admin y Cashier pueden abrir, operar y cerrar exclusivamente su propio turno, siempre que tengan membresía activa en la organización y asignación activa a la sucursal.
+- Inventory no puede abrir, operar ni cerrar turnos.
+- Ningún rol puede cerrar el turno de otro miembro, cambiar su responsable ni reabrir/modificar un turno cerrado.
+- La columna histórica `cashier_user_id` identifica al miembro responsable/propietario del turno; no concede facultades de supervisor.
+- La autorización de apertura se valida en PostgreSQL además de la API. La migración aditiva `0005_register_shift_member_roles.sql` amplía los roles elegibles y mantiene las protecciones de ciclo de vida y revocación.
+- Owner/Admin tienen alcance organizacional para otras operaciones, pero eso no elimina el requisito de `branch_memberships` activa para ser propietario de un turno de esa sucursal. No se crean asignaciones implícitas.
+
+La matriz aprobada prevalece sobre el texto histórico de las secciones 2, 3 y 4 de este documento en cualquier punto incompatible.

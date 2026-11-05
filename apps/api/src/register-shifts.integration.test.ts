@@ -193,11 +193,11 @@ const suite = describe.skipIf(!isDisposablePostgresUrl(databaseUrl))(
 
       await expect(
         openShift(client, fixture, fixture.otherRegister, fixture.cashierA),
-      ).rejects.toMatchObject({ code: "23503" });
+      ).rejects.toMatchObject({ code: "23514" });
 
       await expect(
         openShift(client, fixture, fixture.registerA, fixture.otherCashier),
-      ).rejects.toMatchObject({ code: "23503" });
+      ).rejects.toMatchObject({ code: "23514" });
 
       await expect(
         openShift(client, fixture, fixture.registerA, fixture.inventoryUser),

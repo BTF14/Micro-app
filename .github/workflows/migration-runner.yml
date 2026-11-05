@@ -64,8 +64,11 @@ jobs:
           temp_dir="$(mktemp -d)"
           cp -R apps/api/migrations "$temp_dir/migrations"
           printf '\n-- deliberate checksum drift test\n' >> "$temp_dir/migrations/0001_initial.sql"
+          echo "Modified migration checksum:"
+          sha256sum "$temp_dir/migrations/0001_initial.sql"
           status=0
           output="$(MIGRATIONS_DIR="$temp_dir/migrations" bash scripts/db/migrate.sh 2>&1)" || status=$?
+          printf '%s\n' "$output"
           rm -rf "$temp_dir"
           if [ "$status" -eq 0 ]; then
             echo "Expected checksum drift to fail, but the runner succeeded."

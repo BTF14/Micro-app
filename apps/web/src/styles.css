@@ -360,7 +360,9 @@ h1 { margin: 0; font-size: clamp(2.2rem, 4.2vw, 3.6rem); font-weight: 550; lette
   .welcome { min-height: 0; padding: 1.5rem; }
   .welcome-art { display: none; }
   .welcome-copy { font-size: 0.84rem; }
-  .exchange-rate-panel { align-items: flex-start; padding: 0.95rem; }\n  .exchange-rate-status { margin-left: auto; }\n  .setup-banner { align-items: flex-start; padding: 0.9rem; }
+  .exchange-rate-panel { align-items: flex-start; padding: 0.95rem; }
+  .exchange-rate-status { margin-left: auto; }
+  .setup-banner { align-items: flex-start; padding: 0.9rem; }
   .setup-icon { width: 2rem; height: 2rem; }
   .setup-text h2 { font-size: 0.8rem; }
   .setup-text p { font-size: 0.7rem; }

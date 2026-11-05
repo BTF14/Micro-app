@@ -1782,3 +1782,11 @@ Mantener #207 en Draft. Revisar independientemente el diff; resolver la colisió
 - Verificado contrato de idempotencia: header opcional validado, unique partial index org/creator/key, request_hash SHA-256 canónico tenant/branch/warehouse/type/reason/lineas, decimal precision, unit cost y orden de producto; duplicate product IDs rechazados.
 - Orden transaccional comprobado en código: tenant/branch locks → warehouse lock → validación de productos → claim idempotency/document → balances; replay con FOR UPDATE; payload diferente 409; audit y líneas transaccionales. Tests PG cubren concurrencia, rollback audit/retry, replay tras confirmación, branch/tenant isolation.
 - Conclusión: idempotencia de creación de conteos robusta para este escritor; no generalizar a writers futuros ni a clientes sin Idempotency-Key (header opcional). No se cambió código #205.
+
+
+## Integración apilada — PR #207 sobre #208 — 2026-11-05 UTC
+
+- PR #207 retargeted a base `work/mvp-foundation` (#208); se creó merge commit `dd3eb55ee3dc5776ce0e0617a3012c29ab355132` con padres #207 anterior `26c5270664b82aebc6a12fafe6973de8544bc6f7` y #208 `76a246ea141eedbee877608e7c0f50d6a07f3019`; update_ref fast-forward, no force-push.
+- Compare #208→#207: 11 ahead/0 behind, 8 archivos, mergeable=true. Diff queda solo audit logs, no duplica cambios de roles.
+- CI aplica 0001→0007 y ejecuta integración de own-shift roles; migration-check aplica 0005→0006→0007 con rollback/assertions de 0007. #208 postgres-migration success en 76a246ea; CI verify y Cloudflare Pages in_progress. #207 SHA dd3eb55 tiene 9 checks queued/in_progress. AC-5 pendiente hasta check completo del SHA actual.
+- Comentarios correctivos #207 6651930131 e issue #53 6651930707. Ambas PR Draft/no merge; issue #53 abierta/P0. Sin cambios en main, Neon, secretos, Cloudflare productivo, DNS, billing ni datos reales.

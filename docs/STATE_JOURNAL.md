@@ -1662,3 +1662,10 @@ Mantener #207 en Draft. Revisar independientemente el diff; resolver la colisió
 - El snapshot anterior de esta sesión registró PR #202 en HEAD `31ef601f...`, 76 ahead/0 behind. La reconciliación documental de este bloque se añadió a la propia PR #202 mediante cinco commits; inmediatamente antes de esta corrección, GitHub mostraba HEAD `0dd2f11fcb4d36d7c54b698870737de34c7ba103`, 81 ahead/0 behind.
 - El commit que contiene esta corrección también avanza esa rama; por diseño no se vuelve a escribir un SHA auto-referencial dentro del mismo commit. Consultar el HEAD vivo de PR #202 en GitHub antes de la siguiente acción.
 - El estado de PR #207 permanece independiente: HEAD `26c5270664b82aebc6a12fafe6973de8544bc6f7`, 7/7 workflow runs y 9/9 check runs success; Draft, apilada sobre #200.
+
+
+## Cloudflare Workers Build — destino no verificado — 2026-11-05 UTC
+
+- El push de la rama #207 produjo un check-run `Workers Builds: micro-app-api` con enlace de detalles bajo `/production/builds/`. No se cambió manualmente la configuración Cloudflare ni se activó Worker Previews.
+- La lectura del enlace con fetch sin sesión devolvió `login_required`. El check por sí solo no permite concluir si fue compilación, publicación de Worker Version o despliegue ni confirmar el entorno destino.
+- No declarar que producción no fue afectada. Requiere inspección autenticada de solo lectura en el dashboard; no tocar settings, secrets, deployments ni activar previews.

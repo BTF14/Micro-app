@@ -162,3 +162,12 @@ Este addendum describe el esquema propuesto en las ramas de PR #200/#204/#205. *
 - PR #204 HEAD `07a5a41c0f5f5c36fb89a5c5950796493d56eb20`: 6/6 workflow runs success.
 - PR #205 HEAD `7005d9a5b03234bd0209d0cc1ea75e8ae21e0032`: 8/8 workflow runs success; conserva idempotencia y lleva el versionado ABA.
 - Son workflow runs de los SHA indicados, no status contexts ni aprobación formal. Las tres PR siguen Draft, sin merge ni despliegue.
+
+
+## Reconciliación de cobertura HTTP — 2026-11-05 UTC
+
+- PR #205 HEAD vigente `c564221919c370aa8c1cd3571f4c86f8cafffb78`, base #204 `07a5a41c0f5f5c36fb89a5c5950796493d56eb20`: 24 ahead/0 behind, diff propio de 3 archivos, 7/7 workflow runs success. Su suite PostgreSQL de conteos pasó 20/20 pruebas.
+- La suite ahora prueba selector de tenant ajeno en POST/GET, producto de otro tenant en la solicitud, Inventory sin asignación a otra sucursal y warehouse cuyo branch no coincide; las denegaciones verifican que no se creen conteos/líneas.
+- El alcance sigue parcial: falta probar, entre otros, un ID de conteo ajeno en confirmación y todas las rutas de catálogo/lectura contra cada combinación de rol. No existen todavía endpoints de balances/movimientos para completar permisos de lectura de Cashier/Inventory.
+- La tabla `audit_logs` definida en migración 0001 no tiene trigger append-only en las migraciones 0001–0005. No se verificaron aquí los GRANT/privilegios efectivos del rol runtime. El ledger `warehouse_inventory_movements` sí tiene protección UPDATE/DELETE en 0005.
+- PR #202 con estos addenda: HEAD `52996471ce3c143527fe4725085b38ee67bdf402`, 74 ahead/0 behind, 18 archivos documentales, 11/11 workflow runs success. Sin reviews formales, threads ni status contexts en la consulta; sigue Draft.

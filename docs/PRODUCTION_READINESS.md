@@ -219,3 +219,13 @@ La consulta directa a GitHub Actions por `head_sha` incluye eventos `push` y `pu
 - PR #205 HEAD `7005d9a5b03234bd0209d0cc1ea75e8ae21e0032`: 20 ahead/0 behind de #204, diff propio 3 archivos, 8/8 workflows success; conserva idempotencia.
 - Las tres PR siguen Draft y no tienen reviews formales, review threads ni combined status contexts en la consulta. No se ha fusionado ninguna. CI success no es aprobación.
 - **Producción sigue bloqueada** por autorización/aislamiento completo y pruebas cross-tenant/cross-branch (issue #53), flujos comerciales incompletos, backups/restore reales y RPO/RTO operativos, alertas externas, rate limiting runtime, coste total y gates legales/fiscales. No migrar a Neon ni desplegar.
+
+
+## Revalidación de seguridad e aislamiento — 2026-11-05 UTC
+
+- PR #205 HEAD `c564221919c370aa8c1cd3571f4c86f8cafffb78`: 7/7 workflow runs success; suite PostgreSQL de conteos 20/20. Incluye pruebas HTTP de selector de tenant ajeno (POST/GET), producto ajeno, branch no asignado y warehouse/branch discordante, con ausencia de escrituras ante denegación.
+- PR #202 HEAD `52996471ce3c143527fe4725085b38ee67bdf402`: 11/11 workflow runs success tras reconciliar seis documentos de autorización/aislamiento.
+- #200 16/16, #204 6/6, #194 11/11 en sus HEAD exactos. Todas las PR siguen Draft; sin reviews formales, threads ni status contexts en la consulta. No hay merge.
+- La cobertura cross-tenant/cross-branch sigue parcial: falta confirmar denegación con ID de conteo ajeno, cubrir todas las rutas de catálogo/roles y materializar lectura de balances/movimientos para Cashier/Inventory. Issue #53 permanece abierta/P0.
+- La tabla `audit_logs` no tiene trigger append-only en migraciones 0001–0005. Los privilegios efectivos del rol runtime no fueron verificados; no declarar auditoría general inmutable.
+- Producción continúa NO LISTA por autorización/aislamiento completo, flujos comerciales ausentes, auditoría y privilegios por cerrar, backups/restore reales, RPO/RTO, alertas, rate limiting runtime, coste total y gates legales/fiscales. No migrar a Neon ni desplegar.

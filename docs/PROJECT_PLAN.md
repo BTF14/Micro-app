@@ -1117,3 +1117,25 @@ La consulta directa a GitHub Actions por `head_sha` incluye push y pull_request:
 5. Mantener gates de producción: backups/restore reales, RPO/RTO, alertas, rate limiting, coste total, flujos comerciales y revisión legal/fiscal.
 
 No desplegar, no migrar a Neon, no tocar Cloudflare productivo, secretos, DNS, billing ni datos reales. No force-push ni modificar main directamente. No fusionar PRs sin revisión formal y gates completos.
+
+
+## Repriorización después de pruebas de aislamiento — 2026-11-05 UTC
+
+### Estado de la pila
+
+- #200 HEAD `5fbc17a48b65076cf5609a7a054bbd125a3a5d1e`: 32 ahead/0 behind, 16/16 workflows success.
+- #204 HEAD `07a5a41c0f5f5c36fb89a5c5950796493d56eb20`: 8 ahead/0 behind, 6/6 success.
+- #205 HEAD `c564221919c370aa8c1cd3571f4c86f8cafffb78`: 24 ahead/0 behind, 7/7 success; 20/20 pruebas PostgreSQL de conteos, incluidas denegaciones cross-tenant/cross-branch.
+- #202 HEAD `52996471ce3c143527fe4725085b38ee67bdf402`: 74 ahead/0 behind, 18 archivos, 11/11 workflows success.
+- #194: 13 ahead/2 behind de main actual; 11/11 success no resuelve la colisión 0005.
+- Todas siguen Draft; no reviews formales ni threads en la consulta. No se fusionó ninguna.
+
+### Próximos gates técnicos
+
+1. Cerrar auditoría de auditoría: decidir y probar inmutabilidad de `audit_logs`, revisar privilegios runtime, retención y trazabilidad/correlation ID.
+2. Completar pruebas HTTP IDOR para confirmación con count ID ajeno y matriz de rutas de catálogo por tenant/rol; implementar lectura de balances/movimientos para los roles autorizados antes de afirmar que la matriz está completa.
+3. Mantener todos los futuros writers bajo el contrato de locks y `balance_version`; no crear ventas/recepciones/reservas/devoluciones/transferencias hasta tener sus modelos y pruebas concurrentes.
+4. Completar issue #53, luego consolidar #194 renumerando migración de roles a 0006 y revalidando todo.
+5. Auditar Worker Previews con acceso autenticado antes de activar switches irreversibles.
+
+No migrar a Neon, no desplegar producción, no tocar Cloudflare productivo, secretos, DNS, billing ni datos reales. No main directo, no force-push y no merge sin revisión formal.

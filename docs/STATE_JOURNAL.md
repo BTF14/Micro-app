@@ -1594,3 +1594,15 @@ La consulta directa a GitHub Actions por `head_sha` incluye eventos `push` y `pu
 - La matriz de permisos está aprobada desde 2026-10-31, pero la implementación completa y el aislamiento cross-tenant/cross-branch siguen abiertos en issue #53.
 - #194 sigue 13 ahead/2 behind de main actual y mantiene colisión entre migración de roles 0005 e inventario 0005; no integrar antes de renumerar roles a 0006 y revalidar.
 - No se tocó Neon, producción, Cloudflare productivo, secretos, DNS, billing ni datos reales. Ninguna PR se fusionó.
+
+
+## 2026-11-05 — Pruebas HTTP de aislamiento y reconciliación documental
+
+- En PR #205 se añadieron pruebas PostgreSQL de rutas reales: selector de organización ajena por POST/GET, producto ajeno en conteo, Inventory sin asignación a branch y warehouse perteneciente a otro branch. Se verificó ausencia de escrituras ante denegaciones.
+- Dos ejecuciones iniciales detectaron defectos de fixture; se corrigieron. HEAD final `c564221919c370aa8c1cd3571f4c86f8cafffb78`: 20/20 pruebas PostgreSQL de conteos y 7/7 workflow runs success.
+- PR #202 añadió addenda de estado vigente a seis documentos de autorización/aislamiento. HEAD `52996471ce3c143527fe4725085b38ee67bdf402`: 74 ahead/0 behind, 18 archivos y 11/11 workflow runs success.
+- PR #200 16/16, #204 6/6 y #194 11/11 workflow runs success en los HEAD exactos consultados; #194 sigue 13 ahead/2 behind de main y mantiene colisión de migración.
+- Las PR #194/#200/#202/#204/#205 siguen Draft, sin reviews formales, review threads ni combined status contexts en la consulta. No se fusionó ninguna.
+- Hallazgo: la tabla `audit_logs` no tiene trigger append-only en migraciones 0001–0005; privilegios runtime no verificados. No confundir la inmutabilidad del ledger de inventario con la auditoría general.
+- Issue #53 continúa abierta/P0. La cobertura HTTP añadida es parcial, no certifica todas las rutas/roles ni readiness de producción.
+- No se tocó Neon, producción, Cloudflare productivo, secretos, DNS, billing ni datos reales.

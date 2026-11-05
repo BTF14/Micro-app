@@ -1778,3 +1778,33 @@ En #200/#204/#205/#202/#194 no se encontraron status contexts, reviews formales 
 ### Límites que no cambian
 
 No migrar a Neon, no desplegar producción, no cambiar Cloudflare productivo, secretos, DNS, billing ni datos reales. No modificar main directamente ni force-push. No fusionar PRs sin revisión formal y gates completos. Mantener documentos y handoff actualizados en el mismo ciclo de cada cambio.
+
+
+## Handoff vigente — 2026-11-05 UTC
+
+### HEAD y CI verificados
+
+- #200 HEAD `5fbc17a48b65076cf5609a7a054bbd125a3a5d1e`: 32 ahead/0 behind de main, 16/16 workflow runs success.
+- #204 HEAD `07a5a41c0f5f5c36fb89a5c5950796493d56eb20`: 8 ahead/0 behind de #200, 6/6 success.
+- #205 HEAD `c564221919c370aa8c1cd3571f4c86f8cafffb78`: 24 ahead/0 behind de #204, diff propio 3 archivos, 7/7 success; suite PostgreSQL de conteos 20/20.
+- #202 HEAD `52996471ce3c143527fe4725085b38ee67bdf402`: 74 ahead/0 behind de main, 18 documentos, 11/11 success.
+- #194 HEAD `7b3ad50e5780416868a1a428b856d12c4ea1e2ea`: 13 ahead/2 behind de main actual; 11/11 success no resuelve su colisión de migración.
+- Todas Draft; sin reviews formales, threads ni status contexts en la consulta. No se fusionó ninguna.
+
+### Trabajo que acaba de quedar hecho
+
+- Se añadieron pruebas HTTP PostgreSQL para selector de tenant ajeno (POST/GET), producto de otro tenant, Inventory sin asignación a otra sucursal y warehouse/branch discordante. Los casos denegados verifican cero escrituras. Los primeros dos intentos de CI encontraron defectos en los propios fixtures (aserción sin join al padre y asignación de sucursal ya existente/inactiva); se corrigieron y el HEAD final pasó 20/20.
+- Se reconciliaron addenda de seis documentos históricos de autorización/aislamiento, distinguiendo matriz aprobada, implementación parcial en ramas y límites que siguen abiertos.
+- Hallazgo residual de auditoría: migraciones 0001–0005 no crean trigger append-only para `audit_logs`; no se han verificado privilegios del rol runtime. El ledger de inventario sí impide UPDATE/DELETE.
+
+### Próxima secuencia recomendada
+
+1. Continuar auditoría estática con foco en integridad de auditoría, privilegios runtime, IDs ajenos en confirmación, rutas de catálogo y cobertura de cada rol.
+2. No añadir todavía otros escritores de stock hasta revisar consistencia ledger/balance y exigir mutex de almacén + `balance_version` en todos los writers.
+3. Completar issue #53 con pruebas cross-tenant/cross-branch por recurso y operación; añadir endpoints de lectura de balances/movimientos según matriz antes de declarar permisos de lectura completos.
+4. Después de consolidar inventario, resolver PR #194: migración de roles 0005 → 0006 y actualizar assertions/referencias/workflows; volver a validar.
+5. Mantener Worker Previews sin activar hasta auditoría autenticada de bindings, secrets, routes, service bindings, Workflows y aislamiento real.
+
+### Límites vigentes
+
+No fusionar sin review formal y gates completos. No migrar a Neon, no desplegar producción, no tocar Cloudflare productivo, secretos, DNS, billing ni datos reales. No modificar main directamente ni force-push.

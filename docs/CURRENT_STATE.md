@@ -1666,3 +1666,30 @@ El stale-count compara `expected_on_hand_quantity` y `expected_balance_version` 
 - No existen todavía los flujos comerciales completos de ventas/pagos, recepción, devoluciones, reservas y transferencias.
 - Worker Previews no está prohibido permanentemente; sigue pendiente auditoría autenticada de bindings, secrets, rutas, service bindings, Workflows y aislamiento real.
 - No listo para producción. No migrar a Neon, no desplegar, no tocar Cloudflare productivo, secretos, DNS, billing ni datos reales. No force-push ni modificar main directamente.
+
+
+## Reconciliación de HEAD y cobertura HTTP — 2026-11-05 UTC (estado vigente)
+
+| PR | HEAD | Base | Divergencia | Workflow runs del HEAD exacto | Estado |
+|---|---|---|---:|---:|---|
+| #194 | `7b3ad50e5780416868a1a428b856d12c4ea1e2ea` | main (base histórica `705d3db...`) | 13 ahead / 2 behind de main actual `7b0f057...` | 11/11 success | Draft; colisión roles 0005 vs inventario 0005 |
+| #200 | `5fbc17a48b65076cf5609a7a054bbd125a3a5d1e` | main `7b0f057...` | 32 ahead / 0 behind | 16/16 success | Draft |
+| #202 | `52996471ce3c143527fe4725085b38ee67bdf402` | main `7b0f057...` | 74 ahead / 0 behind; 18 archivos | 11/11 success | Draft; reconciliación documental |
+| #204 | `07a5a41c0f5f5c36fb89a5c5950796493d56eb20` | #200 `5fbc17a...` | 8 ahead / 0 behind | 6/6 success | Draft |
+| #205 | `c564221919c370aa8c1cd3571f4c86f8cafffb78` | #204 `07a5a41...` | 24 ahead / 0 behind; diff propio 3 archivos | 7/7 success | Draft |
+
+En la consulta conjunta: 0 reviews formales, 0 review threads y 0 combined status contexts para las PR indicadas. Los números anteriores son **workflow runs**, no aprobaciones. Todas siguen Draft; ninguna fue fusionada.
+
+### Cobertura nueva verificada
+
+- PR #205: `inventory-counts.integration.test.ts` pasó 20/20 contra PostgreSQL efímero en el HEAD exacto `c564221...`.
+- Se prueban selector de tenant ajeno en POST/GET, producto ajeno, miembro Inventory sin asignación a otra sucursal y warehouse de otra sucursal; las denegaciones no producen escrituras.
+- Los addenda de aislamiento/autorización se añadieron a `docs/TENANT_ISOLATION_TEST_PLAN.md`, `docs/sdd/OPERATION_AUTHORIZATION_ARCHITECTURE.md`, `docs/sdd/BRANCH_SCOPE_CONTEXT_IMPLEMENTATION.md`, `docs/sdd/tenant-authorization-contract.md`, `docs/sdd/MULTI_BRANCH_DATA_MODEL.md` y `docs/sdd/role-permission-decision-matrix.md`.
+
+### Gaps que permanecen
+
+- Issue #53 sigue abierta/P0: faltan pruebas completas de todas las rutas/roles y recursos, incluida confirmación con IDs ajenos y cobertura completa de catálogo.
+- No hay endpoints de lectura de balances/movimientos para cubrir los permisos de consulta de Cashier/Inventory; tampoco ventas, pagos, recepción, reservas, devoluciones o transferencias.
+- `audit_logs` no tiene trigger append-only en migraciones 0001–0005; privilegios runtime no verificados. No declarar auditoría inmutable.
+- #194 sigue divergida y colisiona en migración 0005. No integrar antes de consolidar inventario y renumerar roles a 0006.
+- No Neon, producción, Cloudflare productivo, secretos, DNS, billing ni datos reales. Producción sigue NO LISTA.

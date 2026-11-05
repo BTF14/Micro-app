@@ -6,6 +6,7 @@ import { registerCatalogRoutes } from "./catalog";
 import { registerCatalogWriteRoutes } from "./catalog-write";
 import { registerInventoryCountRoutes } from "./inventory-counts";
 import type { Bindings } from "./bindings";
+import { cleanupExpiredAuthRateLimits } from "./auth-rate-limit";
 
 const app = new Hono<{ Bindings: Bindings }>();
 
@@ -105,4 +106,9 @@ app.onError((_error, c) => {
   );
 });
 
-export default app;
+export default {
+  fetch: app.fetch.bind(app),
+  async scheduled(_controller: ScheduledController, env: Bindings): Promise<void> {
+    await cleanupExpiredAuthRateLimits(env.DATABASE_URL);
+  },
+};

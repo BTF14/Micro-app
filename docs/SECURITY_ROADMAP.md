@@ -216,3 +216,13 @@ Snapshot histórico: el manual run [40916692763](https://github.com/BTF14/Micro-
 - No hay evidencia de explotación del hallazgo HTTPS anterior; se corrigió en código main. La corrección no sustituye verificación de configuración productiva.
 
 ---
+
+---
+
+## Reconciliación de seguridad y gates — 2026-11-05 UTC
+
+- Issue #53 sigue abierta: aprobación de matriz de roles no equivale a autorización aplicada y probada por endpoint, tenant y sucursal.
+- #200 tiene 10 workflow runs success en HEAD `243592468e9fd61b1f8c578d867887dbb7f18e4d`, pero no reviews formales. #204 no tiene runs/status contexts recuperados en su HEAD actual; #205 solo tiene un backup restore smoke test success y está 1 commit detrás de #204. No declarar estas ramas aprobadas.
+- Stale-count sigue siendo un riesgo de integridad: idempotencia no impide aplicar un snapshot obsoleto. Requiere control de versión y prueba de orden inverso.
+- Worker Previews no está prohibido permanentemente. El switch debe esperar al inventario autenticado de secretos/bindings/recursos y prueba de aislamiento; jamás conectar preview a Neon producción.
+- No modificar producción, Neon, secretos, DNS, billing ni configuración productiva como parte de este trabajo.

@@ -1805,3 +1805,10 @@ Mantener #207 en Draft. Revisar independientemente el diff; resolver la colisió
 - Actualizado ODD audit-logs: AC-1..AC-7 cumplidos para alcance de código/PostgreSQL desechable; runtime DATABASE_URL sigue NO VERIFICADO. SHA implementación #207 dd3eb55 pasó 10/10.
 - Nuevo HEAD documental #207 `3e4490695128e7638d5e71ee822dccf134fc2bce`: 5 success / 4 in_progress, 0 failures; postgres-migration y validate-odd-docs success. Esperar verify, Chromium, Pages y backup/restore.
 - #208 HEAD `76a246ea141eedbee877608e7c0f50d6a07f3019` 7/7 success. #202 docs HEAD `2ef0d0820b8df9e5667ac1c478b7a51d2816dfec`: 12/13 success, Workers Build in_progress. Comentario #207 6651990379. Sin secretos/Neon/producción; PRs Draft/no merge.
+
+
+## Precisión de alcance — authorization helpers y handlers existentes — 2026-11-05 UTC
+
+- #207 HEAD 3e4490695128e7638d5e71ee822dccf134fc2bce: 9/9 checks success. #208 HEAD 76a246ea141eedbee877608e7c0f50d6a07f3019: 7/7 success. Stack 0001–0007 validado en PostgreSQL efímero.
+- #208 authorization.ts es utilidad de política, no middleware central conectado a handlers. Catálogo/inventario conservan comprobaciones explícitas locales; issue #53 requiere auditoría por handler y pruebas tenant/branch/role. Comentario #208 ID 6652013382.
+- DATABASE_URL real/ownership/grants permanece NO VERIFICADO. Sin merge/deploy.

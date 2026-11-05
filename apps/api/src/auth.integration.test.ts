@@ -200,6 +200,10 @@ async function startBootstrapGoogleFlow(input: {
   const authorizationUrl = startResponse.headers.get("location") ?? "";
   expect(authorizationUrl).toContain("https://accounts.google.com/");
   expect(authorizationUrl).not.toContain(input.token);
+  const setCookieHeader = startResponse.headers.get("set-cookie") ?? "";
+  expect(setCookieHeader).not.toContain(input.token);
+  expect(setCookieHeader).not.toContain(input.organizationName);
+  expect(setCookieHeader).not.toContain(input.organizationSlug);
   const cookies = extractCookiePairs(startResponse);
   expect(cookies.microapp_oauth_state).toBeTruthy();
   expect(cookies.microapp_oauth_verifier).toBeTruthy();
@@ -487,6 +491,33 @@ const suiteGoogle = describe.skipIf(!databaseAvailable)("Google OAuth routes aga
     expect(callback.status).toBe(302);
     expect(callback.headers.get("location")).toContain("auth_error=oauth_failed");
     fetchSpy.mockRestore();
+  });
+
+  it("binds a bootstrap handoff to the exact OAuth state", async () => {
+    const orgName = `State-bound Shop ${crypto.randomUUID()}`;
+    const orgSlug = `state-bound-${crypto.randomUUID().replace(/-/g, "").slice(0, 10)}`;
+    const { cookieHeader, state } = await startBootstrapGoogleFlow({
+      token: bootstrapToken,
+      organizationName: orgName,
+      organizationSlug: orgSlug,
+    });
+    const callback = await app.fetch(new Request(
+      `https://api.example/auth/google/callback?code=test-code&state=${encodeURIComponent(`${state}-tampered`)}`,
+      { headers: { Cookie: cookieHeader, "CF-Connecting-IP": "203.0.113.12" } },
+    ), googleEnv);
+
+    expect(callback.status).toBe(302);
+    expect(callback.headers.get("location")).toContain("auth_error=oauth_failed");
+    expect(extractCookiePairs(callback).microapp_session).toBeUndefined();
+
+    const handoff = await cleanupClient.query<{ consumed_at: string | null }>(
+      "SELECT consumed_at FROM auth_bootstrap_attempts WHERE organization_name = $1",
+      [orgName],
+    );
+    expect(handoff.rows).toHaveLength(1);
+    expect(handoff.rows[0]!.consumed_at).toBeNull();
+
+    await cleanupClient.query("DELETE FROM auth_bootstrap_attempts WHERE organization_name = $1", [orgName]);
   });
 
   it("runs the one-time bootstrap exactly once, then seals it even with the correct token", async () => {

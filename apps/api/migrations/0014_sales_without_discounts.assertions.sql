@@ -67,7 +67,7 @@ BEGIN
     created_by, completed_at
   ) VALUES (
     organization_id, 'no-discount-valid-sale', 'completed', 23.85, 23.85,
-    rate_id, 250.12345678, 5965.45, user_id, now()
+    rate_id, 250.12345678, 5965.44, user_id, now()
   ) RETURNING id INTO sale_id;
 
   BEGIN

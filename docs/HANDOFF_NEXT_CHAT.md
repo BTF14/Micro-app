@@ -2072,3 +2072,10 @@ Issue #53 sigue abierta/P0; producción NO LISTA. No tocar main, Neon, secretos,
 **Migraciones:** CI aplica 0001→0007 en orden e incluye integración PG de own-shift roles. migration-check aplica 0005, luego 0006, luego rollback/apply/assertions de 0007. En #208, postgres-migration success en SHA 76a246ea; CI verify y Cloudflare Pages in progress al último snapshot. En #207 SHA dd3eb55, nueve checks queued/in_progress; esperar resultados antes de declarar AC-5 completo. Comentarios: #207 6651930131, issue #53 6651930707.
 
 Ambas PR Draft/no merge. Issue #53 abierta/P0. Producción NO LISTA. No tocar main, Neon, secretos, Cloudflare productivo, DNS, billing o datos reales.
+
+
+## CI finalizado — secuencia 0001–0007 validada en PostgreSQL efímero — 2026-11-05 UTC
+
+**Validación confirmada:** #208 SHA `76a246ea141eedbee877608e7c0f50d6a07f3019` = 7/7 checks success (verify + postgres-migration incluidos). #207 SHA `dd3eb55ee3dc5776ce0e0617a3012c29ab355132` = 10/10 checks success (verify, postgres-migration, Chromium, SAST, Trivy, secret scan, Pages/Worker y backup/restore). Compare #208→#207 11 ahead/0 behind, 8 archivos, mergeable=true. CI y migration-check ejecutaron 0001→0007 desde PostgreSQL desechable; el test PG own-shift roles pasó. AC-5 de audit-logs-append-only queda validado para el stack de migraciones en CI efímero. No cierra el gate DATABASE_URL/ownership/grants runtime/Neon. #207 y #208 Draft/no merge. Comentario evidencia #207 6651950993.
+
+PR #202 documentación sigue con checks en progreso al último snapshot (verify, postgres-migration, SAST, Trivy, backup/restore, Pages); esperar resultados.

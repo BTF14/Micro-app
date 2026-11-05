@@ -66,12 +66,12 @@ REVOKE TRUNCATE ON TABLE public.inventory_balances, public.warehouse_inventory_m
 CREATE FUNCTION public.prevent_inventory_ledger_truncate()
 RETURNS trigger LANGUAGE plpgsql
 SET search_path = pg_catalog
-AS $
+AS $$
 BEGIN
   RAISE EXCEPTION 'INVENTORY_LEDGER_TRUNCATE_FORBIDDEN' USING ERRCODE = '23514';
   RETURN NULL;
 END;
-$;
+$$;
 REVOKE ALL ON FUNCTION public.prevent_inventory_ledger_truncate() FROM PUBLIC;
 
 CREATE TRIGGER inventory_balances_no_truncate

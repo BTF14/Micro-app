@@ -235,21 +235,25 @@ export function registerGoogleAuthRoutes(app: Hono<{ Bindings: Bindings }>): voi
   });
 
   app.get("/auth/google/callback", async (c) => {
-    const limited = await enforceAuthRateLimit(c, { bucket: "oauth_callback", limit: 30, windowSeconds: 600 });
-    if (limited) return limited;
-
     const storedState = getCookie(c, STATE_COOKIE);
     const codeVerifier = getCookie(c, VERIFIER_COOKIE);
     const bootstrapCookieRaw = getCookie(c, BOOTSTRAP_COOKIE);
-    clearOAuthCookies(c);
 
     const queryState = c.req.query("state");
     const code = c.req.query("code");
     const oauthError = c.req.query("error");
 
     if (oauthError || !code || !storedState || !queryState || storedState !== queryState || !codeVerifier) {
+      clearOAuthCookies(c);
       return redirectToFrontend(c, "/?auth_error=oauth_failed");
     }
+
+    // Count only callbacks carrying a valid state cookie. Invalid probes cannot
+    // exhaust the shared-IP budget and deny legitimate users behind the same NAT.
+    const limited = await enforceAuthRateLimit(c, { bucket: "oauth_callback", limit: 60, windowSeconds: 600 });
+    if (limited) return limited;
+
+    clearOAuthCookies(c);
 
     const clientId = c.env.GOOGLE_CLIENT_ID;
     const clientSecret = c.env.GOOGLE_CLIENT_SECRET;

@@ -74,13 +74,13 @@ export async function enforceAuthRateLimit(
                attempts = CASE
                  WHEN auth_rate_limits.window_started_at + ($2::double precision * interval '1 second') <= now()
                    THEN 1
-                 ELSE auth_rate_limits.attempts + 1
+                 ELSE LEAST(auth_rate_limits.attempts + 1, $3)
                END,
                updated_at = now()
          RETURNING attempts,
            GREATEST(1, CEIL(EXTRACT(EPOCH FROM
              (window_started_at + ($2::double precision * interval '1 second') - now())))::integer) AS retry_after_seconds`,
-        [keyHash, policy.windowSeconds],
+        [keyHash, policy.windowSeconds, policy.limit + 1],
       ),
     );
 

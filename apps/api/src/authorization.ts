@@ -32,7 +32,7 @@ const ROLE_OPERATIONS: Readonly<Record<OrganizationRole, ReadonlySet<CommercialO
     "reports.sales.organization", "reports.sales.own_shift", "reports.inventory", "exports.allowed_data", "audit.read",
   ]),
   inventory: new Set<CommercialOperation>([
-    "catalog.read", "inventory.read", "inventory.receive", "inventory.adjust", "inventory.transfer",
+    "catalog.read", "catalog.read_costs", "inventory.read", "inventory.receive", "inventory.adjust", "inventory.transfer",
     "reports.inventory", "exports.allowed_data",
   ]),
   cashier: new Set<CommercialOperation>([
@@ -87,7 +87,7 @@ export async function authorizeBranchOperation(
   requestedBranchId: string | undefined,
   operation: string,
 ): Promise<AuthorizationResult<BranchContext>> {
-  const tenant = await resolveTenantContext(client, sessionToken, requestedOrganizationId);
+  const tenant = await resolveTenantContext(client, sessionToken, requestedOrganizationId, true);
   if (!tenant) return { allowed: false, reason: "unauthenticated_or_out_of_scope" };
   const branch = await resolveBranchContext(client, tenant, requestedBranchId, true);
   if (!branch) return { allowed: false, reason: "unauthenticated_or_out_of_scope" };

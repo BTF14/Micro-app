@@ -26,6 +26,15 @@ BEGIN
     RAISE EXCEPTION 'RUNTIME_MUST_NOT_INHERIT_MIGRATOR';
   END IF;
 
+  -- Schema ACLs are bootstrap-owned: require the database owner to have
+  -- removed PUBLIC CREATE before this migration can install table grants.
+  -- This prevents a successful migration from masking an unsafe public schema.
+  IF NOT pg_catalog.has_schema_privilege('microapp_migrator', 'public', 'USAGE')
+    OR NOT pg_catalog.has_schema_privilege('microapp_migrator', 'public', 'CREATE')
+    OR NOT pg_catalog.has_schema_privilege('microapp_runtime', 'public', 'USAGE')
+    OR pg_catalog.has_schema_privilege('microapp_runtime', 'public', 'CREATE')
+  THEN RAISE EXCEPTION 'POSTGRES_SCHEMA_BOOTSTRAP_PRIVILEGES_INVALID'; END IF;
+
   IF EXISTS (
     SELECT 1 FROM pg_catalog.pg_auth_members m
     WHERE m.member IN (runtime_role.oid, migrator_role.oid)

@@ -1,6 +1,6 @@
 # ODD task: reconcile tenant-scoped catalog API from PR #196 into the active inventory/audit stack
 
-- Status: in progress
+- Status: closed (no-op; implementation already present in base)
 - Risk: high (tenant data, product cost/price, audit integrity)
 - Issue: #53
 - Branch: feat/catalog-api-reconcile-20261105
@@ -48,5 +48,6 @@ Do NOT port PR #196's `0005_warehouse_inventory.sql`, inventory-count routes, in
 
 ## Execution log
 
-- 2026-11-05: mapped PR #196 vs active #200/#209. Confirmed catalog API/test files are unique to #196; inventory migration/API changes overlap and must not be copied.
-- 2026-11-05: inspected AGENTS.md, project Constitution, and the approved role matrix. No product-policy change is needed for the catalog scope.
+- 2026-11-05: initial comparison against PR #200 suggested catalog files were absent. A second live tree comparison against the actual active base `work/mvp-foundation` and #207/#209 proved that all catalog files, tests, and route registration already exist in the active stack. Their blob SHAs match the current PR #196 source for most files; product update integration test has a newer active-branch blob.
+- 2026-11-05: verified active #209 base contains `catalog.ts`, `catalog-write.ts`, `catalog-update.integration.test.ts`, their unit/integration tests, `index.ts` route registration, and CI catalog test steps. No code port is necessary.
+- 2026-11-05: closed this task as a no-op to prevent duplicate work. The temporary branch contains only this ODD record; no product source, migration, workflow, production, or infrastructure was changed. Continue authorization coverage audit on the existing stack instead.

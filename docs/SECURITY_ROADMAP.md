@@ -1,3 +1,12 @@
+## Cloudflare — precisión de evidencia Workers/Pages para PR #207 — 2026-11-05 UTC
+
+- GitHub contiene comentarios de `cloudflare-workers-and-pages[bot]` en [Workers](https://github.com/BTF14/Micro-app/pull/207#issuecomment-6649952138) y [Pages](https://github.com/BTF14/Micro-app/pull/207#issuecomment-6649953153), ambos con estado de despliegue exitoso y URLs identificadas como Commit Preview y Branch Preview para el commit `26c5270`.
+- Workers Build ID: `0c8394a1-4d91-4061-a850-6c78f3b11295`. Esto confirma el reporte de previews de la integración de GitHub; no confirma por sí solo el estado de producción, la versión activa o el tráfico.
+- El build objetivo histórico `3542c660-e5e3-435e-8be5-dbed236cec1c` permanece pendiente de inspección autenticada de solo lectura. No interpretar `/production/builds/` en el enlace como prueba suficiente de deployment productivo.
+- No se cambiaron settings, deployments, versions, traffic, secrets, routes, DNS ni billing. Mantener la restricción de Cloudflare solo lectura.
+
+---
+
 ## Actualización de auditoría general — 2026-11-05 UTC
 
 - PR #207 está abierta/Draft, apilada sobre #200, HEAD `26c5270664b82aebc6a12fafe6973de8544bc6f7`; 7/7 workflow runs y 9/9 check runs success.

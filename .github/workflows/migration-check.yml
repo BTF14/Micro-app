@@ -150,6 +150,18 @@ jobs:
         run: docker exec -i -e PGPASSWORD=migrator-test-only "${{ job.services.postgres.id }}" psql -h 127.0.0.1 -v ON_ERROR_STOP=1 -U microapp_migrator -d microapp_test -f /dev/stdin < apps/api/migrations/0011_postgres_runtime_lock_helpers.sql
       - name: Verify hardened PostgreSQL runtime lock-helper contract
         run: docker exec -i "${{ job.services.postgres.id }}" psql -v ON_ERROR_STOP=1 -U microapp -d microapp_test -f /dev/stdin < apps/api/migrations/0011_postgres_runtime_lock_helpers.assertions.sql
+      - name: Verify runtime grants migration rejects unsafe PUBLIC schema ACL
+        run: |
+          docker exec "${{ job.services.postgres.id }}" psql -v ON_ERROR_STOP=1 -U microapp -d microapp_test -c "GRANT CREATE ON SCHEMA public TO PUBLIC;"
+          status=0
+          output="$(docker exec -i -e PGPASSWORD=migrator-test-only "${{ job.services.postgres.id }}" psql -h 127.0.0.1 -v ON_ERROR_STOP=1 -U microapp_migrator -d microapp_test -f /dev/stdin < apps/api/migrations/0012_postgres_runtime_role_grants.sql 2>&1)" || status=$?
+          docker exec "${{ job.services.postgres.id }}" psql -v ON_ERROR_STOP=1 -U microapp -d microapp_test -c "REVOKE CREATE ON SCHEMA public FROM PUBLIC;"
+          printf '%s\\n' "$output"
+          if [ "$status" -eq 0 ]; then
+            echo "Expected runtime grants migration to reject PUBLIC schema CREATE, but it succeeded."
+            exit 1
+          fi
+          printf '%s\\n' "$output" | grep -F "POSTGRES_SCHEMA_BOOTSTRAP_PRIVILEGES_INVALID"
       - name: Verify runtime grants migration rolls back on failure
         run: |
           sed '/^COMMIT;$/i SELECT 1/0;' apps/api/migrations/0012_postgres_runtime_role_grants.sql > /tmp/0012-runtime-role-grants-failure.sql

@@ -1565,3 +1565,18 @@ La consulta directa a GitHub Actions por `head_sha` incluye eventos `push` y `pu
 - La migración 0005 está envuelta en BEGIN/COMMIT y el workflow de migración ejecuta un fallo inducido antes de COMMIT, verifica ausencia de tablas y después aplica el SQL real. Los 17/7/8 runs incluyen la validación de migraciones de sus SHA correspondientes.
 - Stale-count básico: snapshot de cantidad, 409 y prueba de confirmación inversa. Residual ABA/versionado antes de futuros writers.
 - #202 HEAD `2793550cb9ccb4595971ad86ce6b950203c681df` tenía 11 workflow runs (7 success, 4 in_progress) en la consulta; ese estado se recalcula para cualquier commit documental posterior.
+
+
+## 2026-11-05 — Fix lifecycle de conteos y reconciliación de pila
+
+- Auditoría estática encontró que `inventory_counts_guard` cubría UPDATE/DELETE pero no INSERT. Se amplió a INSERT/UPDATE/DELETE y se impuso que cada conteo nuevo nazca como `draft`.
+- Se añadió assertion PostgreSQL que intenta insertar directamente un conteo físico `confirmed` y exige rechazo. Se corrigió la assertion de apertura única para crear el segundo opening como draft, agregar línea y luego confirmar, comprobando el índice parcial por la transición normal.
+- Commit de código #200 `05bac0b68ec4883d4a7d057165ca1b9ac3aaf40c`: 17/17 workflow runs success (incluye CI y Database migration validation). Commit documental posterior #200 `daaeaf8d87e08c62c749168ea00eb6adde2c7abf`: 16/16 workflow runs success.
+- Sincronización no-forzada #204: merge commit `22bca40a0e14de2ba747e1226a1829f91cd34561`, base #200 `daaeaf8...`, 5 ahead/0 behind, diff propio 1 archivo, 7/7 workflow runs success.
+- Sincronización no-forzada #205: merge commit `94a7fbd5f8e721cf672ad472c3d228aa7fa23bf2`, base #204 `22bca40...`, 14 ahead/0 behind, diff propio 3 archivos, 7/7 workflow runs success.
+- Reviews formales, review threads y combined status contexts: 0 en #200/#204/#205 en la consulta de este checkpoint. Todas Draft; no se fusionó ninguna.
+- Riesgo residual documentado: ABA no se detecta comparando solo `expected_on_hand_quantity`; estudiar `balance_version` monotónico antes de habilitar escritores adicionales.
+- Se corrigió SEC-01: la matriz de permisos sí fue aprobada el 2026-10-31; la aprobación no sustituye implementación ni pruebas de aislamiento. Issue #53 sigue abierta.
+- #194 sigue 13 ahead/2 behind de main actual; migración roles 0005 colisiona con inventario 0005. No integrar hasta renumerar roles a 0006 y validar.
+- No se tocó Neon, producción, Cloudflare productivo, secretos, DNS, billing ni datos reales. No main directo ni force-push.
+- Esta entrada actualiza el estado operativo; las entradas previas se conservan como historia y no deben presentarse como estado vivo.

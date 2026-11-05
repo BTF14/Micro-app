@@ -300,3 +300,18 @@ No se copiaron ni registraron valores de variables de entorno. No afirmar que es
 - El archivo `apps/web/public/_headers` en main define CSP, HSTS, `X-Content-Type-Options: nosniff`, `X-Frame-Options: DENY`, `Referrer-Policy` y `Permissions-Policy`. Sin embargo, la sesión de navegador no expuso las cabeceras HTTP reales y la inspección DOM no permite demostrar que Cloudflare las haya servido. Estado: **configuradas en el repositorio, efectividad HTTP pendiente de verificación**.
 - No se modificaron ajustes, variables, secretos, workflows, DNS, billing, tráfico, Neon ni producción. No se dispararon builds manuales.
 
+
+
+---
+
+## Estado vivo de ramas y CI — 2026-11-05 UTC
+
+- #200 HEAD `243592468e9fd61b1f8c578d867887dbb7f18e4d`: 10 workflow runs success; combined statuses vacío; sin reviews/threads.
+- #204 HEAD `57a9f098bcb93427315e96c90e62ae13764a485b`: no workflow runs ni status contexts recuperados; sin reviews/threads.
+- #205 HEAD `c1f09d09dd08b9600e7a6c0ff8ccbb5be4e9c990`: solo Backup restore smoke test success; rama divergida 9 ahead/1 behind #204.
+- #202 HEAD previo `348cf0a1067c5410ff262f817b054cef46f0afae`: 9 workflows success. El checkpoint documental que sigue modifica el HEAD y requiere nueva ejecución de CI.
+- En todos los casos la consulta actual no devolvió reviews formales ni threads inline. Las descripciones de las PR se actualizaron con esta evidencia.
+
+No confundir workflow runs con combined status contexts ni con aprobación. La consulta de runs usada filtra eventos pull_request y devuelve la primera página; la ausencia de resultados se registra como “no recuperados”, no como prueba de que jamás existieron.
+
+Worker Previews: la restricción es condicional, no permanente. No hacer el switch irreversible hasta auditar Previews Base, bindings/secrets, recursos compartidos, routes, service bindings, Workflows, cron y control de acceso; mantener API-dark y demostrar aislamiento real. Version URLs no son un sustituto de branch previews aislados.

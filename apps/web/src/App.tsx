@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { apiRequest, ApiError, googleLoginUrl, type AuthResponse } from "./auth";
+import CatalogPanel from "./CatalogPanel";
 import "./auth.css";
 
 // WhatsApp number format (no "+", no spaces) per https://faq.whatsapp.com/general/chats/how-to-use-click-to-chat.
@@ -62,7 +63,7 @@ const PRIVACY_SECTIONS: { heading: string; body: string }[] = [
 const modules = [
   { number: "01", title: "Caja y ventas", description: "Flujo de venta, cobro y comprobante.", status: "Pendiente de implementación" },
   { number: "02", title: "Inventario", description: "Existencias, movimientos y alertas de stock.", status: "Pendiente de implementación" },
-  { number: "03", title: "Productos", description: "Catálogo, costos y precios en USD.", status: "Pendiente de implementación" },
+  { number: "03", title: "Productos", description: "Catálogo y precios exactos en USD y VES.", status: "Disponible · solo lectura" },
   { number: "04", title: "Tasa BCV", description: "Conversión a VES con fuente y fecha verificables.", status: "Implementación en validación" },
 ];
 
@@ -180,6 +181,7 @@ export default function App() {
   const [bcvRate, setBcvRate] = useState<BcvRateResponse | null>(null);
   const [bcvLoading, setBcvLoading] = useState(false);
   const [bcvError, setBcvError] = useState("");
+  const [activeView, setActiveView] = useState<"overview" | "catalog">("overview");
 
   useEffect(() => {
     let active = true;
@@ -312,8 +314,9 @@ export default function App() {
           <span><strong>{organization?.name ?? "Mi negocio"}</strong><small>{organization?.role ?? "Miembro"}</small></span>
         </div>
         <nav className="side-nav">
-          <a className="nav-item active" href="#inicio" aria-current="page"><span className="nav-symbol" aria-hidden="true">⌂</span> Resumen</a>
-          {["Caja y ventas", "Inventario", "Productos", "Reportes"].map((label) => <span className="nav-item disabled" aria-disabled="true" key={label}><span className="nav-symbol" aria-hidden="true">▦</span>{label}<span className="nav-lock">Pronto</span></span>)}
+          <a className={`nav-item ${activeView === "overview" ? "active" : ""}`} href="#inicio" onClick={() => setActiveView("overview")} aria-current={activeView === "overview" ? "page" : undefined}><span className="nav-symbol" aria-hidden="true">⌂</span> Resumen</a>
+          <button className={`nav-item nav-item-button ${activeView === "catalog" ? "active" : ""}`} type="button" onClick={() => setActiveView("catalog")} aria-current={activeView === "catalog" ? "page" : undefined}><span className="nav-symbol" aria-hidden="true">▦</span>Productos</button>
+          {["Caja y ventas", "Inventario", "Reportes"].map((label) => <span className="nav-item disabled" aria-disabled="true" key={label}><span className="nav-symbol" aria-hidden="true">▦</span>{label}<span className="nav-lock">Pronto</span></span>)}
         </nav>
         <div className="sidebar-bottom">
           <div className="connection-indicator"><span className="connection-dot" aria-hidden="true" /><span><strong>Sesión activa</strong><small>{user.email}</small></span></div>
@@ -323,7 +326,7 @@ export default function App() {
       </aside>
       <section className="main-panel" id="inicio">
         <header className="topbar">
-          <div className="breadcrumb">{organization?.name ?? "Mi negocio"} <span>/</span> Resumen</div>
+          <div className="breadcrumb">{organization?.name ?? "Mi negocio"} <span>/</span> {activeView === "catalog" ? "Productos" : "Resumen"}</div>
           <div className="topbar-end">
             <div className="account-chip"><span>{user.display_name.slice(0, 1).toUpperCase()}</span><div><strong>{user.display_name}</strong><small>{user.email}</small></div></div>
             {/* The sidebar's own logout button (.sidebar-bottom) is hidden on narrow screens
@@ -338,6 +341,8 @@ export default function App() {
               <a href={SUPPORT_WHATSAPP_URL} target="_blank" rel="noopener noreferrer">Escríbenos por WhatsApp</a>.
             </div>
           )}
+          {activeView === "overview" ? (
+            <>
           <section className="welcome"><div><p className="eyebrow">TU NEGOCIO, EN UN SOLO LUGAR</p><h1>Hola, {user.display_name.split(" ")[0]}.</h1><p className="welcome-copy">Tu espacio de trabajo ya está listo. Estamos preparando las herramientas para gestionar tus ventas, controlar el inventario y consultar precios en USD y VES.</p></div><div className="welcome-art" aria-hidden="true"><div className="art-ring ring-one" /><div className="art-ring ring-two" /><div className="art-card"><span className="art-card-label">MICRO APP</span><span className="art-card-line" /><span className="art-card-line short" /><span className="art-card-foot">GESTIÓN · CONTROL · CLARIDAD</span></div></div></section>
           <section className="exchange-rate-panel" aria-label="Tasa oficial del Banco Central de Venezuela" aria-live="polite">
             <div className="exchange-rate-main">
@@ -367,6 +372,14 @@ export default function App() {
             </div>
             <HelpLinks onOpen={setHelpModal} />
           </footer>
+            </>
+          ) : (
+            <CatalogPanel
+              organizationId={organization?.id ?? ""}
+              exchangeRate={bcvRate && !bcvError ? bcvRate.rate : null}
+              exchangeRateStatus={bcvError ? "unavailable" : bcvRate?.status ?? "unavailable"}
+            />
+          )}
         </div>
       </section>
     </main>

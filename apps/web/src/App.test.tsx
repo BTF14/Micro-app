@@ -119,6 +119,41 @@ describe("Micro app authentication flow", () => {
     expect(panel?.textContent).toContain("Banco Central de Venezuela");
   });
 
+  it("opens the authenticated catalog and displays exact USD and BCV VES amounts", async () => {
+    vi.mocked(fetch)
+      .mockResolvedValueOnce(jsonResponse(authResponse))
+      .mockResolvedValueOnce(jsonResponse(bcvRateResponse))
+      .mockResolvedValueOnce(jsonResponse({
+        items: [{
+          id: "00000000-0000-4000-8000-000000000030",
+          is_active: true,
+          sku: "CAFE-001",
+          barcode: null,
+          name: "Café",
+          description: null,
+          unit: "kg",
+          price_usd: "23.8500",
+          cost_usd: "10.0000",
+        }],
+        nextCursor: null,
+        limit: 100,
+      }));
+    await renderApp();
+    await settle();
+
+    const productsButton = [...container.querySelectorAll("button")].find((button) => button.textContent?.includes("Productos"));
+    if (!productsButton) throw new Error("Products navigation button not found");
+    await act(async () => { productsButton.click(); });
+    await settle();
+
+    expect(container.textContent).toContain("Catálogo");
+    expect(container.textContent).toContain("Café");
+    expect(container.textContent).toContain("US$ 23,85");
+    expect(container.textContent).toContain("Bs. 21.343,07");
+    expect(container.textContent).toContain("US$ 10,00");
+    expect(vi.mocked(fetch).mock.calls[2][0]).toContain("/api/orgs/org-1/catalog?limit=100");
+  });
+
   it("does not invent or substitute a rate when the BCV endpoint is unavailable", async () => {
     vi.mocked(fetch)
       .mockResolvedValueOnce(jsonResponse(authResponse))

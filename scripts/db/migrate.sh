@@ -252,7 +252,7 @@ SELECT
      WHERE version = '$migration_id' AND state = 'applying';
     COMMIT;
   \endif
-  DO $migration_row_verify$
+  DO \$migration_row_verify\$
   BEGIN
     IF NOT EXISTS (
       SELECT 1 FROM public.schema_migrations
@@ -262,7 +262,7 @@ SELECT
       RAISE EXCEPTION 'MIGRATION_LEDGER_WRITE_FAILED: $migration_id';
     END IF;
   END;
-  $migration_row_verify$;
+  \$migration_row_verify\$;
 \endif
 SQL
 done
@@ -277,7 +277,7 @@ SELECT EXISTS (
   \quit 3
 \endif
 
-DO $migration_final_verify$
+DO \$migration_final_verify\$
 DECLARE
   applied_count integer;
   unapplied_count integer;
@@ -291,7 +291,7 @@ BEGIN
     RAISE EXCEPTION 'MIGRATION_FINAL_LEDGER_STATE_INVALID';
   END IF;
 END;
-$migration_final_verify$;
+\$migration_final_verify\$;
 
 SELECT pg_catalog.pg_advisory_unlock(20261105, 120012);
 SQL

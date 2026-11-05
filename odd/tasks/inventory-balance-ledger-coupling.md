@@ -1,6 +1,6 @@
 # ODD task: enforce transactional inventory balance ↔ ledger coupling
 
-- Status: in progress
+- Status: complete within repository/CI scope; PR remains Draft pending stack integration and production-principal verification
 - Risk: critical (inventory integrity)
 - Issue: #53
 - Branch: feat/inventory-balance-ledger-coupling-20261105
@@ -30,7 +30,7 @@ Make PostgreSQL reject any non-zero on-hand balance insertion/update unless exac
 
 ## Acceptance criteria
 
-- [ ] Non-zero balance insert/update without movement fails at commit.
+- [x] Non-zero balance insert/update without movement fails at commit.
 - [ ] Movement without a same-transaction balance delta fails immediately.
 - [ ] Wrong signed delta, product, warehouse, branch or tenant fails.
 - [ ] Duplicate movement cannot consume the same balance intent.
@@ -53,4 +53,9 @@ Make PostgreSQL reject any non-zero on-hand balance insertion/update unless exac
 ## Execution log
 
 - 2026-11-05: traced all API source files in the current stack. The only current API writer pair is count confirmation, which updates balances before inserting movements in one transaction. Confirmed universal database pairing was not yet enforced.
-- 2026-11-05: first PostgreSQL CI run caught an invalid negative-delta test fixture using `count_adjustment` without its required `count_id`; changed that fixture to a non-count `reversal` movement while retaining a negative signed delta. Added explicit TRUNCATE protection because row-level DELETE triggers do not cover TRUNCATE, and added rollback assertions for those guards. Re-run the exact updated HEAD before considering this task verified.
+- 2026-11-05: first PostgreSQL CI run caught an invalid negative-delta test fixture using `count_adjustment` without its required `count_id`; changed that fixture to a non-count `reversal` movement while retaining a negative signed delta. Added explicit TRUNCATE protection because row-level DELETE triggers do not cover TRUNCATE.
+- 2026-11-05: PostgreSQL assertions now cover missing movement at commit, movement without balance change, wrong signed delta/product/warehouse/branch/tenant, duplicate movement, exact positive/negative pairing, multiple independent balance keys, reservation-only/no-op updates, and TRUNCATE rejection.
+- 2026-11-05: integration fixtures were updated to pair non-zero balance mutations with ledger movements. Added API integration coverage proving a zero-quantity opening count creates a zero balance without a stock movement, audits the count, and prevents a second opening from overwriting it. Existing zero-delta physical-count coverage remains green.
+- 2026-11-05: exact HEAD `b6d4da7cb03d519206aee9b6c1576df542a75d61` passed 9/9 checks: CI, PostgreSQL migration validation (clean PostgreSQL 18; 0001–0009; rollback of 0009; assertions and deferred-failure test), Chromium, Semgrep, Trivy, secret-history scan, synthetic backup/restore, Cloudflare Pages preview and Workers preview build.
+- 2026-11-05: manual review covered trigger ordering, transaction-scoped intent matching, rollback behavior, SECURITY DEFINER search_path/privileges, signed deltas, concurrency via row locks, test cleanup and full PR diff. No separate agent was launched.
+- Remaining production caveat: the effective Worker `DATABASE_URL` principal, ownership and grants remain NO VERIFICADO. The database-level guard assumes the runtime role cannot disable/drop triggers or mutate the private intent table. No production secrets or Neon were accessed. This PR does not establish production readiness or authorize merge/deploy.

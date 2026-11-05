@@ -1,3 +1,9 @@
+## Validación actualizada — 2026-11-05 10:53 UTC
+
+#220 HEAD `40cf9e2cff5e88a5feec7b8168c8f436cb3f0601` pasó los seis workflows de push: CI, migration validation, Playwright E2E, Semgrep, Trivy Security y Secret history scan. TS2345 de TextDecoder resuelto mediante `ignoreBOM: false`, conservando UTF-8 fatal. No se considera validación de Worker Preview ni producción. #220 permanece Draft/no merge; Issue #53 OPEN/P0.
+
+---
+
 ## Seguridad — actualización 2026-11-05 10:44 UTC
 
 - **#218 autorización:** HEAD `2115d66cca18ee094ee3b3f8148ac6a61df040da`, base #215, 6/6 workflows success. Centraliza los permisos de handlers existentes; no es middleware global ni implementa todos los writers.

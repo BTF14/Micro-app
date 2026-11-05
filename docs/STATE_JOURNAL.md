@@ -1724,3 +1724,11 @@ Mantener #207 en Draft. Revisar independientemente el diff; resolver la colisió
 - El primer CI mostró 21/21 tests aprobados, pero el teardown falló al borrar el usuario antes de limpiar la membresía del tenant extranjero. Se corrigió el orden de limpieza; no se alteró código de runtime.
 - HEAD final #205 `c0bcbbe48aa8783b85ee7787dd1ae8a6d0dfdafc`: 9/9 check-runs success, 0 fallos/pendientes; el log exacto de CI confirma 21/21 tests PostgreSQL de conteos.
 - #205 permanece abierta/Draft y 26 ahead/0 behind de #204. No merge ni cambios en Neon/Cloudflare productivo/secretos/datos.
+
+
+## 2026-11-05 — Preparación explícita de continuidad entre chats
+- Reconsultados en vivo los HEADs y check-runs de #194/#200/#202/#204/#205/#207.
+- Los seis siguen abiertos/Draft y no fusionados. Check-runs: #194 13/13; #200 20/20; #202 13/13; #204 8/8; #205 9/9; #207 9/9 (todos success en los SHAs enumerados en HANDOFF).
+- Se añadió a HANDOFF_NEXT_CHAT.md y CURRENT_STATE.md un protocolo obligatorio de arranque: leer documentos existentes, consultar GitHub antes de preguntar, no solicitar datos/Build IDs/capturas/terminal/TinyFish ya documentados, separar evidencia por estado, continuar en PRs existentes y actualizar el journal.
+- Se añadió prompt de continuidad copiable para el siguiente chat.
+- No se modificó código de runtime, main, migraciones productivas, Neon, Cloudflare, secretos, DNS, billing ni datos reales. No se fusionó ni desplegó nada.

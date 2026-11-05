@@ -3,7 +3,7 @@ import { hashAuthRateLimitKey } from "./auth-rate-limit";
 import app from "./index";
 
 describe("authentication rate-limit key handling", () => {
-  it("stores a deterministic SHA-256 hash instead of the raw scoped key", async () => {
+  it("stores a deterministic keyed HMAC-SHA-256 hash instead of the raw scoped key", async () => {
     const raw = "google:start:198.51.100.24";
     const pepper = "test-google-client-secret";
     const first = await hashAuthRateLimitKey(raw, pepper);

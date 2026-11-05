@@ -84,7 +84,7 @@ const suite = describe.skipIf(!databaseUrl)("authentication rate limiting agains
   it("resets an expired window atomically", async () => {
     const key = `integration:reset:${crypto.randomUUID()}`;
     cleanupKeys.push(key);
-    const keyHash = await hashAuthRateLimitKey(key);
+    const keyHash = await hashAuthRateLimitKey(key, testPepper);
     await cleanupClient.query(
       `INSERT INTO auth_rate_limits (key_hash, window_started_at, attempts, updated_at)
        VALUES ($1, now() - interval '61 seconds', 99, now())`,

@@ -1,3 +1,17 @@
+## Estado vivo de migraciones y ramas — 2026-11-04 21:40 EDT
+
+- `main` = `7b0f057b8c152515005feed40305143c0ebb94b0`; contiene migraciones 0001–0004. No afirmar que 0005 esté en main ni aplicada a Neon.
+- PR #200 propone `0005_warehouse_inventory.sql` y assertions para warehouses, inventory_balances, counts y ledger; HEAD actual de rama `243592468e9fd61b1f8c578d867887dbb7f18e4d`.
+- PR #204 añade aislamiento de fixtures; HEAD `57a9f098bcb93427315e96c90e62ae13764a485b`.
+- PR #205 extiende la misma migración 0005 con campos/índice de idempotencia; HEAD `c1f09d09dd08b9600e7a6c0ff8ccbb5be4e9c990`. Su rama está 1 commit detrás de #204. No tratar el esquema de #205 como candidato de integración hasta sincronizar y revalidar.
+- PR #194 contiene `0005_register_shift_member_roles.sql` en rama `work/mvp-foundation`, HEAD `7b3ad50e5780416868a1a428b856d12c4ea1e2ea`. Colisiona por número con la migración de inventario. Mantener la secuencia prevista: inventario 0005 primero; después renombrar roles a 0006 y actualizar referencias, assertions y workflows en una sola operación coordinada.
+- **Atomicidad:** `0005_warehouse_inventory.sql` no contiene transacción explícita. `migration-check.yml` invoca psql con `ON_ERROR_STOP=1`, pero el autocommit predeterminado puede conservar DDL ejecutado antes de un error. Antes de aplicación remota, implementar BEGIN/COMMIT compatible o estrategia de recuperación y una prueba de fallo inducido en PostgreSQL efímero.
+- La suite PostgreSQL efímera y checks de CI no prueban migración remota. No ejecutar Neon producción ni modificar datos reales.
+- Stale-count sigue siendo defecto funcional pendiente: el lock durante confirmación no detecta por sí solo que un conteo se creó a partir de un balance anterior. Añadir snapshot/version o política equivalente y test de dos conteos confirmados en orden inverso.
+- Idempotencia #205 cubre clave, hash canónico, replay y conflicto, pero no resuelve stale-count ni la dependencia de rama 1 commit detrás de #204.
+
+---
+
 # Estado actual del esquema — reconciliación 2026-11-04
 
 **Este addendum supersede las afirmaciones de estado que siguen fechadas 2026-10-30; el contenido anterior se conserva como historial.**

@@ -37,20 +37,44 @@ jobs:
       - name: Provision isolated migrator and runtime LOGIN roles
         run: |
           docker exec "${{ job.services.postgres.id }}" psql -v ON_ERROR_STOP=1 -U microapp -d microapp_test -c "CREATE ROLE microapp_migrator LOGIN PASSWORD 'migrator-test-only' NOSUPERUSER NOCREATEDB NOCREATEROLE NOREPLICATION NOBYPASSRLS; CREATE ROLE microapp_runtime LOGIN PASSWORD 'runtime-test-only' NOSUPERUSER NOCREATEDB NOCREATEROLE NOREPLICATION NOBYPASSRLS NOINHERIT; REVOKE CREATE ON SCHEMA public FROM PUBLIC; GRANT USAGE, CREATE ON SCHEMA public TO microapp_migrator; GRANT USAGE ON SCHEMA public TO microapp_runtime; GRANT CONNECT ON DATABASE microapp_test TO microapp_migrator, microapp_runtime;"
+      - name: Verify 0001_initial rollback is atomic
+        env:
+          POSTGRES_CONTAINER: ${{ job.services.postgres.id }}
+          MIGRATION_FILE: apps/api/migrations/0001_initial.sql
+          ROLLBACK_ASSERTION_SQL: "SELECT to_regclass('public.organizations') IS NULL"
+        run: bash .github/scripts/assert-migration-atomicity.sh
       - name: Apply initial schema to disposable PostgreSQL
-        run: docker exec -i -e PGPASSWORD=migrator-test-only "${{ job.services.postgres.id }}" psql -h 127.0.0.1 -v ON_ERROR_STOP=1 -U microapp_migrator -d microapp_test -f /dev/stdin < apps/api/migrations/0001_initial.sql
+        run: docker exec -i -e PGPASSWORD=migrator-test-only "${{ job.services.postgres.id }}" psql -h 127.0.0.1 -1 -v ON_ERROR_STOP=1 -U microapp_migrator -d microapp_test -f /dev/stdin < apps/api/migrations/0001_initial.sql
       - name: Verify cross-tenant constraints reject invalid references
         run: docker exec -i "${{ job.services.postgres.id }}" psql -v ON_ERROR_STOP=1 -U microapp -d microapp_test -f /dev/stdin < apps/api/migrations/0001_initial.assertions.sql
+      - name: Verify 0002_google_identity rollback is atomic
+        env:
+          POSTGRES_CONTAINER: ${{ job.services.postgres.id }}
+          MIGRATION_FILE: apps/api/migrations/0002_google_identity.sql
+          ROLLBACK_ASSERTION_SQL: "SELECT to_regclass('public.auth_allowlist') IS NULL AND NOT EXISTS (SELECT 1 FROM pg_catalog.pg_attribute WHERE attrelid='public.app_users'::regclass AND attname IN ('google_sub','email_verified_at') AND NOT attisdropped)"
+        run: bash .github/scripts/assert-migration-atomicity.sh
       - name: Apply Google identity schema to disposable PostgreSQL
-        run: docker exec -i -e PGPASSWORD=migrator-test-only "${{ job.services.postgres.id }}" psql -h 127.0.0.1 -v ON_ERROR_STOP=1 -U microapp_migrator -d microapp_test -f /dev/stdin < apps/api/migrations/0002_google_identity.sql
+        run: docker exec -i -e PGPASSWORD=migrator-test-only "${{ job.services.postgres.id }}" psql -h 127.0.0.1 -1 -v ON_ERROR_STOP=1 -U microapp_migrator -d microapp_test -f /dev/stdin < apps/api/migrations/0002_google_identity.sql
       - name: Verify allowlist/bootstrap constraints reject invalid state
         run: docker exec -i "${{ job.services.postgres.id }}" psql -v ON_ERROR_STOP=1 -U microapp -d microapp_test -f /dev/stdin < apps/api/migrations/0002_google_identity.assertions.sql
+      - name: Verify 0003_branch_scope rollback is atomic
+        env:
+          POSTGRES_CONTAINER: ${{ job.services.postgres.id }}
+          MIGRATION_FILE: apps/api/migrations/0003_branch_scope.sql
+          ROLLBACK_ASSERTION_SQL: "SELECT to_regclass('public.branches') IS NULL AND to_regclass('public.branch_memberships') IS NULL"
+        run: bash .github/scripts/assert-migration-atomicity.sh
       - name: Apply branch scope schema to disposable PostgreSQL
-        run: docker exec -i -e PGPASSWORD=migrator-test-only "${{ job.services.postgres.id }}" psql -h 127.0.0.1 -v ON_ERROR_STOP=1 -U microapp_migrator -d microapp_test -f /dev/stdin < apps/api/migrations/0003_branch_scope.sql
+        run: docker exec -i -e PGPASSWORD=migrator-test-only "${{ job.services.postgres.id }}" psql -h 127.0.0.1 -1 -v ON_ERROR_STOP=1 -U microapp_migrator -d microapp_test -f /dev/stdin < apps/api/migrations/0003_branch_scope.sql
       - name: Verify cross-organization branch scope constraints
         run: docker exec -i "${{ job.services.postgres.id }}" psql -v ON_ERROR_STOP=1 -U microapp -d microapp_test -f /dev/stdin < apps/api/migrations/0003_branch_scope.assertions.sql
+      - name: Verify 0004_register_shifts rollback is atomic
+        env:
+          POSTGRES_CONTAINER: ${{ job.services.postgres.id }}
+          MIGRATION_FILE: apps/api/migrations/0004_register_shifts.sql
+          ROLLBACK_ASSERTION_SQL: "SELECT to_regclass('public.registers') IS NULL AND to_regclass('public.register_shifts') IS NULL"
+        run: bash .github/scripts/assert-migration-atomicity.sh
       - name: Apply register and shift schema to disposable PostgreSQL
-        run: docker exec -i -e PGPASSWORD=migrator-test-only "${{ job.services.postgres.id }}" psql -h 127.0.0.1 -v ON_ERROR_STOP=1 -U microapp_migrator -d microapp_test -f /dev/stdin < apps/api/migrations/0004_register_shifts.sql
+        run: docker exec -i -e PGPASSWORD=migrator-test-only "${{ job.services.postgres.id }}" psql -h 127.0.0.1 -1 -v ON_ERROR_STOP=1 -U microapp_migrator -d microapp_test -f /dev/stdin < apps/api/migrations/0004_register_shifts.sql
       - name: Verify register and shift integrity/lifecycle assertions
         run: docker exec -i "${{ job.services.postgres.id }}" psql -v ON_ERROR_STOP=1 -U microapp -d microapp_test -f /dev/stdin < apps/api/migrations/0004_register_shifts.assertions.sql
       - name: Verify warehouse inventory migration rolls back on failure
@@ -66,8 +90,14 @@ jobs:
         run: docker exec -i -e PGPASSWORD=migrator-test-only "${{ job.services.postgres.id }}" psql -h 127.0.0.1 -v ON_ERROR_STOP=1 -U microapp_migrator -d microapp_test -f /dev/stdin < apps/api/migrations/0005_warehouse_inventory.sql
       - name: Verify warehouse inventory constraints and lifecycle assertions
         run: docker exec -i "${{ job.services.postgres.id }}" psql -v ON_ERROR_STOP=1 -U microapp -d microapp_test -f /dev/stdin < apps/api/migrations/0005_warehouse_inventory.assertions.sql
+      - name: Verify 0006_register_shift_member_roles rollback is atomic
+        env:
+          POSTGRES_CONTAINER: ${{ job.services.postgres.id }}
+          MIGRATION_FILE: apps/api/migrations/0006_register_shift_member_roles.sql
+          ROLLBACK_ASSERTION_SQL: "SELECT to_regprocedure('public.prevent_open_register_shift_owner_role_downgrade()') IS NULL AND NOT EXISTS (SELECT 1 FROM pg_catalog.pg_trigger WHERE tgname='organization_members_prevent_open_shift_owner_role_downgrade') AND pg_catalog.strpos(pg_catalog.pg_get_functiondef('public.validate_register_shift_opening()'::regprocedure), 'REGISTER_SHIFT_REQUIRES_ACTIVE_MEMBER_SCOPE') = 0"
+        run: bash .github/scripts/assert-migration-atomicity.sh
       - name: Apply approved register-shift member roles schema
-        run: docker exec -i -e PGPASSWORD=migrator-test-only "${{ job.services.postgres.id }}" psql -h 127.0.0.1 -v ON_ERROR_STOP=1 -U microapp_migrator -d microapp_test -f /dev/stdin < apps/api/migrations/0006_register_shift_member_roles.sql
+        run: docker exec -i -e PGPASSWORD=migrator-test-only "${{ job.services.postgres.id }}" psql -h 127.0.0.1 -1 -v ON_ERROR_STOP=1 -U microapp_migrator -d microapp_test -f /dev/stdin < apps/api/migrations/0006_register_shift_member_roles.sql
       - name: Verify audit logs migration rolls back on failure
         run: |
           sed '/^COMMIT;$/i SELECT 1/0;' apps/api/migrations/0007_audit_logs_append_only.sql > /tmp/0007-audit-logs-failure.sql

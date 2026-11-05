@@ -2,9 +2,9 @@ name: CI
 
 on:
   push:
-    branches: [main, "feat/**", "work/**"]
+    branches: [main, "feat/**", "work/**", "security/**"]
   pull_request:
-    branches: [main]
+    branches: [main, "security/**"]
 
 permissions:
   contents: read
@@ -36,6 +36,9 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v7
+      - name: Provision isolated migrator and runtime LOGIN roles
+        run: |
+          docker exec "${{ job.services.postgres.id }}" psql -v ON_ERROR_STOP=1 -U microapp -d microapp_test -c "CREATE ROLE microapp_migrator LOGIN PASSWORD 'migrator-test-only' NOSUPERUSER NOCREATEDB NOCREATEROLE NOREPLICATION NOBYPASSRLS; CREATE ROLE microapp_runtime LOGIN PASSWORD 'runtime-test-only' NOSUPERUSER NOCREATEDB NOCREATEROLE NOREPLICATION NOBYPASSRLS NOINHERIT; REVOKE CREATE ON SCHEMA public FROM PUBLIC; GRANT USAGE, CREATE ON SCHEMA public TO microapp_migrator; GRANT USAGE ON SCHEMA public TO microapp_runtime; GRANT CONNECT ON DATABASE microapp_test TO microapp_migrator, microapp_runtime;"
       - name: Setup Node.js
         uses: actions/setup-node@v7
         with:
@@ -54,18 +57,18 @@ jobs:
           ln -s /tmp/micro-app-test-deps/node_modules/@types/pg node_modules/@types/pg
       - name: Apply schema to disposable PostgreSQL
         run: |
-          docker exec -i "${{ job.services.postgres.id }}" psql -v ON_ERROR_STOP=1 -U microapp -d microapp_test -f /dev/stdin < apps/api/migrations/0001_initial.sql
-          docker exec -i "${{ job.services.postgres.id }}" psql -v ON_ERROR_STOP=1 -U microapp -d microapp_test -f /dev/stdin < apps/api/migrations/0002_google_identity.sql
-          docker exec -i "${{ job.services.postgres.id }}" psql -v ON_ERROR_STOP=1 -U microapp -d microapp_test -f /dev/stdin < apps/api/migrations/0003_branch_scope.sql
-          docker exec -i "${{ job.services.postgres.id }}" psql -v ON_ERROR_STOP=1 -U microapp -d microapp_test -f /dev/stdin < apps/api/migrations/0004_register_shifts.sql
-          docker exec -i "${{ job.services.postgres.id }}" psql -v ON_ERROR_STOP=1 -U microapp -d microapp_test -f /dev/stdin < apps/api/migrations/0005_warehouse_inventory.sql
+          docker exec -i -e PGPASSWORD=migrator-test-only "${{ job.services.postgres.id }}" psql -h 127.0.0.1 -v ON_ERROR_STOP=1 -U microapp_migrator -d microapp_test -f /dev/stdin < apps/api/migrations/0001_initial.sql
+          docker exec -i -e PGPASSWORD=migrator-test-only "${{ job.services.postgres.id }}" psql -h 127.0.0.1 -v ON_ERROR_STOP=1 -U microapp_migrator -d microapp_test -f /dev/stdin < apps/api/migrations/0002_google_identity.sql
+          docker exec -i -e PGPASSWORD=migrator-test-only "${{ job.services.postgres.id }}" psql -h 127.0.0.1 -v ON_ERROR_STOP=1 -U microapp_migrator -d microapp_test -f /dev/stdin < apps/api/migrations/0003_branch_scope.sql
+          docker exec -i -e PGPASSWORD=migrator-test-only "${{ job.services.postgres.id }}" psql -h 127.0.0.1 -v ON_ERROR_STOP=1 -U microapp_migrator -d microapp_test -f /dev/stdin < apps/api/migrations/0004_register_shifts.sql
+          docker exec -i -e PGPASSWORD=migrator-test-only "${{ job.services.postgres.id }}" psql -h 127.0.0.1 -v ON_ERROR_STOP=1 -U microapp_migrator -d microapp_test -f /dev/stdin < apps/api/migrations/0005_warehouse_inventory.sql
           docker exec -i "${{ job.services.postgres.id }}" psql -v ON_ERROR_STOP=1 -U microapp -d microapp_test -f /dev/stdin < apps/api/migrations/0005_warehouse_inventory.assertions.sql
-          docker exec -i "${{ job.services.postgres.id }}" psql -v ON_ERROR_STOP=1 -U microapp -d microapp_test -f /dev/stdin < apps/api/migrations/0006_register_shift_member_roles.sql
-          docker exec -i "${{ job.services.postgres.id }}" psql -v ON_ERROR_STOP=1 -U microapp -d microapp_test -f /dev/stdin < apps/api/migrations/0007_audit_logs_append_only.sql
+          docker exec -i -e PGPASSWORD=migrator-test-only "${{ job.services.postgres.id }}" psql -h 127.0.0.1 -v ON_ERROR_STOP=1 -U microapp_migrator -d microapp_test -f /dev/stdin < apps/api/migrations/0006_register_shift_member_roles.sql
+          docker exec -i -e PGPASSWORD=migrator-test-only "${{ job.services.postgres.id }}" psql -h 127.0.0.1 -v ON_ERROR_STOP=1 -U microapp_migrator -d microapp_test -f /dev/stdin < apps/api/migrations/0007_audit_logs_append_only.sql
           docker exec -i "${{ job.services.postgres.id }}" psql -v ON_ERROR_STOP=1 -U microapp -d microapp_test -f /dev/stdin < apps/api/migrations/0007_audit_logs_append_only.assertions.sql
-          docker exec -i "${{ job.services.postgres.id }}" psql -v ON_ERROR_STOP=1 -U microapp -d microapp_test -f /dev/stdin < apps/api/migrations/0008_inventory_count_ledger_validation.sql
+          docker exec -i -e PGPASSWORD=migrator-test-only "${{ job.services.postgres.id }}" psql -h 127.0.0.1 -v ON_ERROR_STOP=1 -U microapp_migrator -d microapp_test -f /dev/stdin < apps/api/migrations/0008_inventory_count_ledger_validation.sql
           docker exec -i "${{ job.services.postgres.id }}" psql -v ON_ERROR_STOP=1 -U microapp -d microapp_test -f /dev/stdin < apps/api/migrations/0008_inventory_count_ledger_validation.assertions.sql
-          docker exec -i "${{ job.services.postgres.id }}" psql -v ON_ERROR_STOP=1 -U microapp -d microapp_test -f /dev/stdin < apps/api/migrations/0009_inventory_balance_ledger_coupling.sql
+          docker exec -i -e PGPASSWORD=migrator-test-only "${{ job.services.postgres.id }}" psql -h 127.0.0.1 -v ON_ERROR_STOP=1 -U microapp_migrator -d microapp_test -f /dev/stdin < apps/api/migrations/0009_inventory_balance_ledger_coupling.sql
           docker exec -i "${{ job.services.postgres.id }}" psql -v ON_ERROR_STOP=1 -U microapp -d microapp_test -f /dev/stdin < apps/api/migrations/0009_inventory_balance_ledger_coupling.assertions.sql
           status=0
           output="$(docker exec -i "${{ job.services.postgres.id }}" psql -v ON_ERROR_STOP=1 -U microapp -d microapp_test -f /dev/stdin < apps/api/migrations/0009_inventory_balance_ledger_coupling.deferred_failure.sql 2>&1)" || status=$?
@@ -78,9 +81,17 @@ jobs:
           remaining="$(docker exec "${{ job.services.postgres.id }}" psql -At -U microapp -d microapp_test -c "SELECT count(*) = 1 AND NOT EXISTS (SELECT 1 FROM public.inventory_balance_ledger_intents) FROM public.inventory_balances WHERE on_hand_quantity = 0")"
           test "$remaining" = "t"
       - name: Apply server-side OAuth bootstrap handoff schema
-        run: docker exec -i "${{ job.services.postgres.id }}" psql -v ON_ERROR_STOP=1 -U microapp -d microapp_test -f /dev/stdin < apps/api/migrations/0010_auth_bootstrap_attempts.sql
+        run: docker exec -i -e PGPASSWORD=migrator-test-only "${{ job.services.postgres.id }}" psql -h 127.0.0.1 -v ON_ERROR_STOP=1 -U microapp_migrator -d microapp_test -f /dev/stdin < apps/api/migrations/0010_auth_bootstrap_attempts.sql
       - name: Verify server-side bootstrap handoff privacy and constraints
         run: docker exec -i "${{ job.services.postgres.id }}" psql -v ON_ERROR_STOP=1 -U microapp -d microapp_test -f /dev/stdin < apps/api/migrations/0010_auth_bootstrap_attempts.assertions.sql
+      - name: Apply hardened PostgreSQL runtime lock helpers
+        run: docker exec -i -e PGPASSWORD=migrator-test-only "${{ job.services.postgres.id }}" psql -h 127.0.0.1 -v ON_ERROR_STOP=1 -U microapp_migrator -d microapp_test -f /dev/stdin < apps/api/migrations/0011_postgres_runtime_lock_helpers.sql
+      - name: Verify hardened PostgreSQL runtime lock-helper contract
+        run: docker exec -i "${{ job.services.postgres.id }}" psql -v ON_ERROR_STOP=1 -U microapp -d microapp_test -f /dev/stdin < apps/api/migrations/0011_postgres_runtime_lock_helpers.assertions.sql
+      - name: Apply least-privilege PostgreSQL runtime grants
+        run: docker exec -i -e PGPASSWORD=migrator-test-only "${{ job.services.postgres.id }}" psql -h 127.0.0.1 -v ON_ERROR_STOP=1 -U microapp_migrator -d microapp_test -f /dev/stdin < apps/api/migrations/0012_postgres_runtime_role_grants.sql
+      - name: Verify PostgreSQL runtime grants
+        run: docker exec -i "${{ job.services.postgres.id }}" psql -v ON_ERROR_STOP=1 -U microapp -d microapp_test -f /dev/stdin < apps/api/migrations/0012_postgres_runtime_role_grants.assertions.sql
       - name: Build and typecheck
         run: pnpm build
       - name: Verify Cloudflare Pages preview isolation

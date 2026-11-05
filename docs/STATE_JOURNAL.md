@@ -1743,3 +1743,14 @@ Mantener #207 en Draft. Revisar independientemente el diff; resolver la colisió
 - Se publicaron comentarios técnicos de bloqueo en #207 (6651579307) y #194 (6651592608). Sin cambios de código, migraciones o base.
 - No se modificaron Neon, secretos, Cloudflare settings, DNS, billing ni datos reales. No hubo merge ni despliegue manual. Preview Worker target permanece NO VERIFICADO; producción NO LISTA.
 - Próximo: reconciliar ramas/0006 y CI combinado; ajustar #207 migration-check para 0005+0006+0007; continuar gates P0 #53 (aislamiento, autorización, locks, concurrencia, idempotencia, balance_version y ledger/balance); mantener PR Draft hasta revisión y gates completos.
+
+
+## Revisión adicional P0 de inventario — PR #205 — 2026-11-05 UTC
+
+- Inspección estática del HEAD #205 `c0bcbbe48aa8783b85ee7787dd1ae8a6d0dfdafc`: idempotency key opcional con índice único por organización/actor; hash canónico incorpora organización, sucursal, almacén, tipo, motivo y líneas ordenadas/normalizadas. Misma clave y payload devuelve el mismo conteo; payload distinto devuelve 409. La cabecera, líneas y auditoría se crean en una transacción; fallo inducido de auditoría revierte también la clave.
+- La prueba de concurrencia de creación envía dos requests simultáneos con la misma clave y comprueba una cabecera, una línea y un evento de auditoría. Replay de conteo ya confirmado devuelve estado confirmado.
+- Los conteos físicos capturan cantidad y `balance_version` bajo el mutex del almacén. El trigger incrementa versión por cambios de existencias/reservas, no por metadatos, y bloquea DELETE. La prueba ABA 8.250 → 8.500 → 8.250 devuelve 409 aunque la cantidad vuelva al valor original.
+- Confirmación sigue almacén → documento → balances ordenados y escribe balance, movimiento, estado y auditoría dentro de la misma transacción. Tests de aislamiento rechazan count IDs de otra sucursal/tenant sin escrituras.
+- Para el SHA exacto #205, 9/9 check-runs success. La PR permanece abierta/Draft, 27 ahead/0 behind de #204, sin reviews formales ni threads inline.
+- **Riesgo residual P0:** el DDL protege el ledger contra UPDATE/DELETE y valida referencias de movimientos a conteos confirmados, pero no impone universalmente que cada mutación de `inventory_balances` tenga su movimiento correspondiente ni que el delta del movimiento coincida con el cambio de balance. El endpoint actual acopla ambos en la misma transacción; no es una garantía de base de datos frente a SQL directo ni frente a futuros writers que omitan el contrato. No se debe declarar consistencia global del ledger ni habilitar writers adicionales hasta definir y probar la reconciliación.
+- Comentario técnico publicado en #205 (6651640740). Se actualizó el cuerpo de la PR para reemplazar snapshots antiguos y reflejar HEAD, base, checks, ABA, límites y riesgo residual actuales. No se cambió código.

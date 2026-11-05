@@ -66,7 +66,7 @@ describe("inventory transaction lock helpers", () => {
     const warehouseB = "00000000-0000-4000-8000-000000000002";
     const productA = "10000000-0000-4000-8000-000000000001";
     const productB = "10000000-0000-4000-8000-000000000002";
-    const rows = [{ warehouse_id: warehouseA, product_id: productA, on_hand_quantity: "2.000", reserved_quantity: "0.000" }];
+    const rows = [{ warehouse_id: warehouseA, product_id: productA, on_hand_quantity: "2.000", reserved_quantity: "0.000", balance_version: "1" }];
     const organization = "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa";
     const { tx, calls } = fakeTransaction([rows]);
 

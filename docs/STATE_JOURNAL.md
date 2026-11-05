@@ -1,3 +1,35 @@
+## Corrección de seguridad Cloudflare — Worker Previews vs Version URLs — 2026-11-04 22:00 EDT
+
+Esta aclaración corrige la formulación demasiado amplia de addenda anteriores: **no existe una prohibición permanente de usar Worker Previews**. El gate es no cambiar el modo de builds de Cloudflare hasta comprobar aislamiento y aceptar el cambio irreversible del flujo existente.
+
+### Evidencia directa en el código de la rama #200
+
+- `apps/api/wrangler.toml` en `feat/inventory-vertical-slice-mainline-20261104` declara `[previews.vars] APP_ENV = "preview"`; la dependencia `apps/api/package.json` declara Wrangler `^4.155.0`, superior al mínimo documentado por Cloudflare para Worker Previews (4.135.0).
+- `apps/api/src/index.ts` instala un middleware global antes de registrar rutas: si `APP_ENV === "preview"` o el hostname es un `workers.dev` distinto del Worker productivo, solo permite `/health`; las demás rutas responden 503 `PREVIEW_API_DISABLED`. Esto cubre auth, catálogo, escritura e inventario.
+- `apps/api/src/index.test.ts` ya prueba: API apagada incluso cuando se simula un `DATABASE_URL` de producción; bloqueo por hostname workers.dev aunque falte `APP_ENV`; y disponibilidad exclusiva de `/health`. Es una defensa de aplicación comprobada por tests unitarios, no prueba por sí sola de aislamiento Cloudflare ni sustituye credenciales separadas.
+- No hay `DATABASE_URL` ni otros secretos declarados en el bloque `[previews.vars]` versionado. No se ha verificado en esta sesión el Previews Base/secret store del dashboard; no afirmar que está vacío.
+
+### Distinción decisiva
+
+- `npx wrangler versions upload` crea una Worker Version y Version URL. Cloudflare documenta que esta modalidad utiliza la configuración y recursos existentes de esa versión; **no es un entorno aislado de rama**.
+- `npx wrangler preview` crea/actualiza Worker Preview para la rama, con variables, secretos y bindings propios definidos en `previews`. Cloudflare recomienda Previews para pruebas de ramas/PR.
+- Cloudflare indica que el cambio de Workers Builds del modelo anterior a Worker Previews es de una sola vía: después de seleccionar “Switch to Worker Previews” no se puede volver al modelo anterior. Es una decisión operativa que requiere revisión previa.
+- Aun con Worker Previews, recursos compartidos por el mismo ID siguen compartiendo datos (p. ej. KV/D1); Service Bindings pueden llamar al Worker productivo; Workflows se enlazan a Workflows existentes; las URLs son públicas por defecto salvo protección con Cloudflare Access. Debe configurarse explícitamente aislamiento y control de acceso.
+
+### Decisión y gate actualizado
+
+1. Mantener el modo actual sin cambios mientras no se complete el inventario autenticado de bindings, secrets, routes, service bindings, workflows, KV/D1/R2 y Previews Base.
+2. Antes de activar, preparar `previews` con `APP_ENV=preview`, sin DATABASE_URL/BOOTSTRAP_TOKEN/GOOGLE_CLIENT_SECRET de producción; cualquier DB de prueba futura debe ser un recurso Neon independiente, con credenciales propias y datos sintéticos. No conectar Preview a Neon producción.
+3. Conservar y probar el middleware API-dark; añadir/confirmar tests de hostname y secret present (ya existen en la rama #200). Verificar también Pages preview, CORS/origins, OAuth redirect, rate limits y acceso a la URL.
+4. Revisar bindings uno por uno: no compartir IDs de KV/D1/R2; no usar Service Bindings hacia Workers productivos; no asociar workflows productivos; no configurar routes ni cron de producción. Aplicar Cloudflare Access si el contenido no debe ser público.
+5. Evaluar el impacto de la migración irreversible en CI/branch cleanup, costos y mantenimiento. Solo entonces solicitar/ejecutar el switch, y comprobar un Preview real con evidencia de que no puede alcanzar datos o servicios productivos.
+
+**Conclusión:** la restricción original protegía frente a Version URLs con recursos de producción y frente a una migración irreversible sin inventario. La nueva documentación de Cloudflare sí ofrece un modelo de Worker Previews con aislamiento por rama. El código de Micro-app ya tiene un primer control API-dark, por lo que debemos preparar y verificar la adopción; no mantener un “nunca activar” obsoleto.
+
+Fuentes oficiales consultadas el 2026-11-04: Cloudflare [Previews](https://developers.cloudflare.com/workers/previews/), [Version URLs](https://developers.cloudflare.com/workers/versions-and-deployments/version-urls/), [Build branches](https://developers.cloudflare.com/workers/ci-cd/builds/build-branches/), [Resources and isolation](https://developers.cloudflare.com/workers/previews/resources/), [Compare workflows](https://developers.cloudflare.com/workers/previews/compare-workflows/).
+
+---
+
 # 2026-11-04 UTC — Reconciliación viva de PR #200/#204/#205/#194/#202
 
 - GitHub confirmó `main` en `7b0f057b8c152515005feed40305143c0ebb94b0` (PR #199).

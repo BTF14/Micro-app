@@ -5,8 +5,9 @@ import app from "./index";
 describe("authentication rate-limit key handling", () => {
   it("stores a deterministic SHA-256 hash instead of the raw scoped key", async () => {
     const raw = "google:start:198.51.100.24";
-    const first = await hashAuthRateLimitKey(raw);
-    const second = await hashAuthRateLimitKey(raw);
+    const pepper = "test-google-client-secret";
+    const first = await hashAuthRateLimitKey(raw, pepper);
+    const second = await hashAuthRateLimitKey(raw, pepper);
 
     expect(first).toBe(second);
     expect(first).toMatch(/^[a-f0-9]{64}$/);
@@ -19,6 +20,7 @@ describe("authentication rate-limit key handling", () => {
       {
         FRONTEND_ORIGIN: "https://micro-app.example",
         GOOGLE_CLIENT_ID: "test-client-id",
+        GOOGLE_CLIENT_SECRET: "test-google-client-secret",
         GOOGLE_REDIRECT_URI: "https://api.example/auth/google/callback",
       },
     );

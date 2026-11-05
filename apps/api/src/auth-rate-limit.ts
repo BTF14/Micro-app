@@ -7,27 +7,36 @@ export type AuthRateLimitDecision = {
 };
 
 /**
- * Hash a namespaced rate-limit key before it reaches PostgreSQL.
- * Callers must include the route scope and trusted client IP in the value.
+ * HMAC a namespaced rate-limit key before it reaches PostgreSQL.
+ * Callers must include the route scope and trusted client IP in the value;
+ * the existing Google OAuth client secret is the per-environment HMAC pepper.
  */
-export async function hashAuthRateLimitKey(value: string): Promise<string> {
-  if (!value || value.length > 512) {
-    throw new Error("Invalid authentication rate-limit key.");
+export async function hashAuthRateLimitKey(value: string, pepper: string): Promise<string> {
+  if (!value || value.length > 512 || !pepper || pepper.length < 16) {
+    throw new Error("Invalid authentication rate-limit key or HMAC pepper.");
   }
-  const digest = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(value));
+  const key = await crypto.subtle.importKey(
+    "raw",
+    new TextEncoder().encode(pepper),
+    { name: "HMAC", hash: "SHA-256" },
+    false,
+    ["sign"],
+  );
+  const digest = await crypto.subtle.sign("HMAC", key, new TextEncoder().encode(value));
   return Array.from(new Uint8Array(digest), (byte) => byte.toString(16).padStart(2, "0")).join("");
 }
 
 /**
  * Atomically increments one fixed-window bucket. The UPSERT row lock makes
  * concurrent requests share one counter; the counter saturates at max+1.
- * Only the hash is stored, never the raw IP or caller-supplied key.
+ * Only a keyed HMAC is stored, never the raw IP or caller-supplied key.
  */
 export async function consumeAuthRateLimit(
   client: DatabaseClient,
   key: string,
   maxAttempts: number,
   windowSeconds: number,
+  pepper: string,
 ): Promise<AuthRateLimitDecision> {
   if (
     !Number.isInteger(maxAttempts) || maxAttempts < 1 || maxAttempts > 10_000 ||
@@ -36,7 +45,7 @@ export async function consumeAuthRateLimit(
     throw new Error("Invalid authentication rate-limit policy.");
   }
 
-  const keyHash = await hashAuthRateLimitKey(key);
+  const keyHash = await hashAuthRateLimitKey(key, pepper);
   const result = await client.query<{
     attempts: number;
     window_started_at: string | Date;

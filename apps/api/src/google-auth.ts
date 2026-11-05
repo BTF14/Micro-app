@@ -173,7 +173,7 @@ async function enforceGoogleRateLimit(
 
   try {
     const decision = await withDatabaseClient(c.env.DATABASE_URL, (client) =>
-      consumeAuthRateLimit(client, `google:${action}:${clientIp}`, maxAttempts, windowSeconds),
+      consumeAuthRateLimit(client, `google:${action}:${clientIp}`, maxAttempts, windowSeconds, c.env.GOOGLE_CLIENT_SECRET ?? ""),
     );
     if (!decision.allowed) {
       c.header("Retry-After", String(decision.retryAfterSeconds));

@@ -29,10 +29,12 @@ if (isCi && !databaseUrl) {
 }
 
 const frontendOrigin = "https://micro-app.example";
+const testPepper = "test-google-client-secret";
 const googleEnv = {
   DATABASE_URL: databaseUrl,
   FRONTEND_ORIGIN: frontendOrigin,
   GOOGLE_CLIENT_ID: "test-client-id",
+  GOOGLE_CLIENT_SECRET: testPepper,
   GOOGLE_REDIRECT_URI: "https://api.example/auth/google/callback",
   BOOTSTRAP_TOKEN: "expected-bootstrap-token",
 };
@@ -46,7 +48,7 @@ const suite = describe.skipIf(!databaseUrl)("authentication rate limiting agains
   });
 
   afterAll(async () => {
-    const hashes = await Promise.all(cleanupKeys.map((key) => hashAuthRateLimitKey(key)));
+    const hashes = await Promise.all(cleanupKeys.map((key) => hashAuthRateLimitKey(key, testPepper)));
     if (hashes.length > 0) {
       await cleanupClient.query(
         "DELETE FROM auth_rate_limits WHERE key_hash = ANY($1::char(64)[])",
@@ -61,14 +63,14 @@ const suite = describe.skipIf(!databaseUrl)("authentication rate limiting agains
     cleanupKeys.push(key);
     const decisions = await Promise.all(
       Array.from({ length: 12 }, () =>
-        withDatabaseClient(databaseUrl, (client) => consumeAuthRateLimit(client, key, 5, 60)),
+        withDatabaseClient(databaseUrl, (client) => consumeAuthRateLimit(client, key, 5, 60, testPepper)),
       ),
     );
 
     expect(decisions.filter((decision) => decision.allowed)).toHaveLength(5);
     expect(decisions.filter((decision) => !decision.allowed)).toHaveLength(7);
 
-    const keyHash = await hashAuthRateLimitKey(key);
+    const keyHash = await hashAuthRateLimitKey(key, testPepper);
     const stored = await cleanupClient.query<{ key_hash: string; attempts: number }>(
       "SELECT key_hash, attempts FROM auth_rate_limits WHERE key_hash = $1",
       [keyHash],
@@ -91,7 +93,7 @@ const suite = describe.skipIf(!databaseUrl)("authentication rate limiting agains
 
     const decision = await withDatabaseClient(
       databaseUrl,
-      (client) => consumeAuthRateLimit(client, key, 5, 60),
+      (client) => consumeAuthRateLimit(client, key, 5, 60, testPepper),
     );
     expect(decision).toMatchObject({ allowed: true, attempts: 1, retryAfterSeconds: 0 });
   });

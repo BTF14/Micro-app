@@ -63,3 +63,5 @@ jobs:
         run: docker exec -i "${{ job.services.postgres.id }}" psql -v ON_ERROR_STOP=1 -U microapp -d microapp_test -f /dev/stdin < apps/api/migrations/0005_warehouse_inventory.sql
       - name: Verify warehouse inventory constraints and lifecycle assertions
         run: docker exec -i "${{ job.services.postgres.id }}" psql -v ON_ERROR_STOP=1 -U microapp -d microapp_test -f /dev/stdin < apps/api/migrations/0005_warehouse_inventory.assertions.sql
+      - name: Apply approved register-shift member roles schema to disposable PostgreSQL
+        run: docker exec -i "${{ job.services.postgres.id }}" psql -v ON_ERROR_STOP=1 -U microapp -d microapp_test -f /dev/stdin < apps/api/migrations/0006_register_shift_member_roles.sql

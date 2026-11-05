@@ -83,16 +83,13 @@ FOR EACH STATEMENT EXECUTE FUNCTION public.prevent_inventory_ledger_truncate();
 
 CREATE FUNCTION public.prevent_inventory_balance_identity_change()
 RETURNS trigger LANGUAGE plpgsql SET search_path = pg_catalog
-AS $
+AS $prevent_inventory_balance_identity_change$
 BEGIN
   IF ROW(NEW.organization_id, NEW.branch_id, NEW.warehouse_id, NEW.product_id)
       IS DISTINCT FROM ROW(OLD.organization_id, OLD.branch_id, OLD.warehouse_id, OLD.product_id) THEN
     RAISE EXCEPTION 'INVENTORY_BALANCE_IDENTITY_IMMUTABLE' USING ERRCODE = '23514';
   END IF;
-  RETURN NEW;
-END;
-$;
-REVOKE ALL ON FUNCTION public.prevent_inventory_balance_identity_change() FROM PUBLIC;
+  RETURN NEW;\nEND;\n$prevent_inventory_balance_identity_change$;\nREVOKE ALL ON FUNCTION public.prevent_inventory_balance_identity_change() FROM PUBLIC;
 
 CREATE TRIGGER inventory_balances_identity_immutable
 BEFORE UPDATE OF organization_id, branch_id, warehouse_id, product_id ON public.inventory_balances

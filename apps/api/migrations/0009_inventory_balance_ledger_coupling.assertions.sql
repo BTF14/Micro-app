@@ -26,6 +26,14 @@ BEGIN
   VALUES (org_id, branch_id, warehouse_a, product_a, 0);
 
   BEGIN
+    INSERT INTO inventory_balances (organization_id, branch_id, warehouse_id, product_id, on_hand_quantity)
+    VALUES (org_id, branch_id, warehouse_a, product_b, 1);
+    SET CONSTRAINTS inventory_balance_ledger_intent_complete IMMEDIATE;
+    RAISE EXCEPTION 'FAIL: non-zero balance insert without a ledger movement was accepted';
+  EXCEPTION WHEN check_violation THEN NULL; END;
+  SET CONSTRAINTS inventory_balance_ledger_intent_complete DEFERRED;
+
+  BEGIN
     TRUNCATE TABLE inventory_balances;
     RAISE EXCEPTION 'FAIL: inventory balances truncate was accepted';
   EXCEPTION WHEN check_violation THEN NULL; END;

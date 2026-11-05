@@ -60,6 +60,14 @@ BEGIN
     RAISE EXCEPTION 'FAIL: opening movement accepted for physical count';
   EXCEPTION WHEN check_violation THEN NULL; END;
   BEGIN
+    INSERT INTO inventory_counts
+      (organization_id,branch_id,warehouse_id,count_type,reason,created_by,status,confirmed_by,confirmed_at)
+    VALUES (org_a,branch_a,warehouse_a,'physical','Direct confirmed insert must be rejected',
+            user_a,'confirmed',user_a,clock_timestamp());
+    RAISE EXCEPTION 'FAIL: confirmed inventory count inserted without lifecycle transition';
+  EXCEPTION WHEN check_violation THEN NULL; END;
+
+  BEGIN
     INSERT INTO inventory_counts (organization_id,branch_id,warehouse_id,count_type,reason,created_by, status,confirmed_by,confirmed_at)
     VALUES (org_a,branch_a,warehouse_a,'opening','Duplicate opening',user_a,'confirmed',user_a,clock_timestamp());
     RAISE EXCEPTION 'FAIL: second opening count accepted';

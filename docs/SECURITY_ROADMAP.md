@@ -6,6 +6,7 @@
 - La migración 0007 se reserva después de inventario 0005 y de la futura renumeración de roles de #194 a 0006. La colisión actual sigue abierta; no integrar aún.
 - El rol efectivo de `DATABASE_URL` continúa NO VERIFICADO. No leer secretos ni acceder/modificar Neon producción. Los tests sintéticos no demuestran la configuración runtime real.
 - Issue #53 sigue abierta/P0. No declarar readiness ni cerrar el issue.
+- El check automático `Workers Builds: micro-app-api` de #207 fue disparado por el push; el enlace de detalles apunta a `/production/builds/`, pero el dashboard devolvió `login_required`. No está verificado si fue solo build, publicación de versión o despliegue ni el entorno destino. No cambiar settings; inspeccionar el registro autenticadamente en modo solo lectura antes de cerrar este gate.
 
 ---
 

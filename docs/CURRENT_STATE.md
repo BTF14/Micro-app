@@ -1,10 +1,9 @@
-## Nueva corrección de autorización — 2026-11-05 11:04 UTC
+## PR #221 — validación completada — 2026-11-05 11:05 UTC
 
-- Se abrió PR #221 (OPEN/DRAFT/no merge), apilada sobre #220. HEAD `18dfc33525c792802c296469ee6140d3b5f649ff`; base #220 HEAD `40cf9e2cff5e88a5feec7b8168c8f436cb3f0601`.
-- Hallazgo: `catalog.ts` duplicaba localmente la lista owner/admin/inventory para decidir si seleccionar `cost_usd`, aunque la matriz central ya define `catalog.read_costs`.
-- Cambio: `buildCatalogQuery` usa `authorizeCommercialOperation(role, "catalog.read_costs")`; sin cambiar permisos ni respuesta esperada. Tests existentes de proyección por rol y matriz cubren owner/admin/inventory frente a cashier.
-- CI exacto #221: Secret history, Trivy Security, migration validation y Semgrep SUCCESS; CI y Playwright todavía IN_PROGRESS en la última consulta. No declarar 6/6 hasta terminar ambos.
-- Pages Preview #221 success. Worker Preview aún pendiente de notificación. Orden de revisión #218 → #220 → #221.
+- HEAD exacto `18dfc33525c792802c296469ee6140d3b5f649ff`, base #220 `40cf9e2cff5e88a5feec7b8168c8f436cb3f0601`; OPEN/DRAFT/no merge.
+- Los seis workflows de este HEAD finalizaron SUCCESS: CI (build/typecheck, unit y PostgreSQL integration), migration validation, Playwright E2E, Semgrep, Trivy Security y Secret history scan. Se consultaron jobs/steps del CI; todos los pasos finalizaron success.
+- Cloudflare Pages Preview y Cloudflare Workers Preview reportaron Deployment successful sobre `18dfc335`. Worker Preview: `https://62c0ecb8-micro-app-api.btfcasheb.workers.dev`; no es producción.
+- Cambio: `catalog.read_costs` centralizado para determinar la proyección SQL de `cost_usd`; no altera los permisos.
 
 ---
 

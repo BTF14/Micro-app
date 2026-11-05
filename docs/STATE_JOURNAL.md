@@ -1,3 +1,15 @@
+## 2026-11-05 — Decisión de acceso móvil: dejar de depender de TinyFish
+
+- El propietario aclaró que solo dispone de teléfono Android y no tiene terminal. Se verificó que el comando compartido `npx -y @tiny-fish/cli@latest connect codex ...` pertenece al flujo de configuración de Codex CLI local y requiere un entorno con terminal; no conecta el MCP de esta conversación móvil.
+- Se revisó la documentación operativa vigente: `CURRENT_STATE.md` y `HANDOFF_NEXT_CHAT.md` indicaban todavía recargar TinyFish, revisar wallet/perfil y acceder al dashboard de Cloudflare con TinyFish. Esa instrucción estaba desactualizada para las condiciones de acceso declaradas y podía provocar solicitudes repetidas.
+- **Decisión del propietario:** dejar de utilizar TinyFish para Micro-app. Se cancelan los pasos de cambio de cuenta, wallet, perfiles y automatización TinyFish. No volver a pedir CLI, terminal, login de Cloudflare ni capturas.
+- Continuidad: usar GitHub MCP y las demás integraciones ya disponibles. Para Cloudflare, usar evidencia verificable de GitHub Actions/bot; si el dashboard autenticado no puede consultarse con un conector distinto, registrar la limitación como NO VERIFICADO sin trasladar la tarea al propietario.
+- La API key de TinyFish compartida en el chat se considera expuesta y debe rotarse/revocarse; no se copia ni se conserva en el repositorio. No se ha probado ni confirmado la conexión de la segunda cuenta.
+- Alcance: actualización documental únicamente. No se modificaron código runtime, configuración de TinyFish, Cloudflare, Neon, secretos, datos, DNS, billing, producción ni la instalación de integraciones del usuario.
+- Esta entrada es append-only y supersede las instrucciones anteriores de handoff que pedían recargar TinyFish o validar saldo/perfiles.
+
+---
+
 ## 2026-11-05 01:38 EDT — Reconciliación de evidencia Cloudflare para PR #207
 
 - Se inspeccionaron los comentarios de la PR #207 mediante GitHub. El bot oficial `cloudflare-workers-and-pages[bot]` publicó:

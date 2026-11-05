@@ -77,6 +77,10 @@ jobs:
           printf '%s\n' "$output" | grep -F "INVENTORY_BALANCE_CHANGE_REQUIRES_MATCHING_LEDGER_MOVEMENT"
           remaining="$(docker exec "${{ job.services.postgres.id }}" psql -At -U microapp -d microapp_test -c "SELECT count(*) = 1 AND NOT EXISTS (SELECT 1 FROM public.inventory_balance_ledger_intents) FROM public.inventory_balances WHERE on_hand_quantity = 0")"
           test "$remaining" = "t"
+      - name: Apply server-side OAuth bootstrap handoff schema
+        run: docker exec -i "${{ job.services.postgres.id }}" psql -v ON_ERROR_STOP=1 -U microapp -d microapp_test -f /dev/stdin < apps/api/migrations/0010_auth_bootstrap_attempts.sql
+      - name: Verify server-side bootstrap handoff privacy and constraints
+        run: docker exec -i "${{ job.services.postgres.id }}" psql -v ON_ERROR_STOP=1 -U microapp -d microapp_test -f /dev/stdin < apps/api/migrations/0010_auth_bootstrap_attempts.assertions.sql
       - name: Build and typecheck
         run: pnpm build
       - name: Verify Cloudflare Pages preview isolation
@@ -114,7 +118,3 @@ jobs:
       - name: PostgreSQL warehouse inventory count integration tests
         run: pnpm --filter @micro-app/api exec vitest run src/inventory-counts.integration.test.ts
 
-      - name: Apply server-side OAuth bootstrap handoff schema
-        run: docker exec -i "${{ job.services.postgres.id }}" psql -v ON_ERROR_STOP=1 -U microapp -d microapp_test -f /dev/stdin < apps/api/migrations/0010_auth_bootstrap_attempts.sql
-      - name: Verify server-side bootstrap handoff privacy and constraints
-        run: docker exec -i "${{ job.services.postgres.id }}" psql -v ON_ERROR_STOP=1 -U microapp -d microapp_test -f /dev/stdin < apps/api/migrations/0010_auth_bootstrap_attempts.assertions.sql

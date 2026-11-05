@@ -2,6 +2,7 @@ import { deleteCookie, getCookie, setCookie } from "hono/cookie";
 import type { Context, Hono } from "hono";
 import { withDatabaseClient, withDatabaseTransaction, type DatabaseClient } from "./database";
 import type { Bindings } from "./bindings";
+import { enforceAuthRateLimit } from "./auth-rate-limit";
 
 type AppContext = Context<{ Bindings: Bindings }>;
 
@@ -165,6 +166,8 @@ export function registerGoogleAuthRoutes(app: Hono<{ Bindings: Bindings }>): voi
         message: "El alta inicial debe iniciarse mediante una petición POST protegida.",
       }, 400);
     }
+    const limited = await enforceAuthRateLimit(c, { bucket: "oauth_start", limit: 20, windowSeconds: 600 });
+    if (limited) return limited;
     return startGoogleAuthorization(c);
   });
 
@@ -173,6 +176,9 @@ export function registerGoogleAuthRoutes(app: Hono<{ Bindings: Bindings }>): voi
     if (!configuredOrigin || c.req.header("Origin") !== configuredOrigin) {
       return c.json({ error: "INVALID_BOOTSTRAP_ORIGIN", message: "No se pudo iniciar el alta administrativa." }, 403);
     }
+
+    const limited = await enforceAuthRateLimit(c, { bucket: "bootstrap_start", limit: 5, windowSeconds: 900 });
+    if (limited) return limited;
 
     const contentType = c.req.header("Content-Type")?.split(";")[0]?.trim().toLowerCase();
     if (contentType !== "application/x-www-form-urlencoded") {
@@ -229,6 +235,9 @@ export function registerGoogleAuthRoutes(app: Hono<{ Bindings: Bindings }>): voi
   });
 
   app.get("/auth/google/callback", async (c) => {
+    const limited = await enforceAuthRateLimit(c, { bucket: "oauth_callback", limit: 30, windowSeconds: 600 });
+    if (limited) return limited;
+
     const storedState = getCookie(c, STATE_COOKIE);
     const codeVerifier = getCookie(c, VERIFIER_COOKIE);
     const bootstrapCookieRaw = getCookie(c, BOOTSTRAP_COOKIE);

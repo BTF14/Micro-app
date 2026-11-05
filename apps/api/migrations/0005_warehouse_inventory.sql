@@ -65,6 +65,7 @@ CREATE TABLE inventory_count_lines (
   counted_quantity numeric(14,3) NOT NULL CHECK (counted_quantity >= 0),
   unit_cost_usd numeric(14,4) CHECK (unit_cost_usd IS NULL OR unit_cost_usd >= 0),
   expected_on_hand_quantity numeric(14,3) CHECK (expected_on_hand_quantity IS NULL OR expected_on_hand_quantity >= 0),
+  expected_balance_version bigint CHECK (expected_balance_version IS NULL OR expected_balance_version >= 0),
   created_at timestamptz NOT NULL DEFAULT now(),
   PRIMARY KEY (organization_id, count_id, product_id),
   FOREIGN KEY (organization_id, branch_id, warehouse_id, count_id)
@@ -84,6 +85,7 @@ CREATE TABLE inventory_balances (
   reserved_quantity numeric(14,3) NOT NULL DEFAULT 0 CHECK (
     reserved_quantity >= 0 AND reserved_quantity <= on_hand_quantity
   ),
+  balance_version bigint NOT NULL DEFAULT 1 CHECK (balance_version > 0),
   updated_at timestamptz NOT NULL DEFAULT now(),
   PRIMARY KEY (organization_id, warehouse_id, product_id),
   FOREIGN KEY (organization_id, branch_id, warehouse_id)
@@ -93,6 +95,43 @@ CREATE TABLE inventory_balances (
 );
 CREATE INDEX inventory_balances_branch_product_idx
   ON inventory_balances (organization_id, branch_id, product_id, warehouse_id);
+
+-- A physical count snapshot is invalidated by every stock or reservation
+-- mutation, even when the final quantity later returns to its old value.
+CREATE FUNCTION advance_inventory_balance_version() RETURNS trigger
+LANGUAGE plpgsql
+AS $advance_inventory_balance_version$
+BEGIN
+  IF TG_OP = 'INSERT' THEN
+    NEW.balance_version := 1;
+    RETURN NEW;
+  END IF;
+
+  IF ROW(NEW.on_hand_quantity, NEW.reserved_quantity)
+      IS DISTINCT FROM ROW(OLD.on_hand_quantity, OLD.reserved_quantity) THEN
+    NEW.balance_version := OLD.balance_version + 1;
+  ELSE
+    NEW.balance_version := OLD.balance_version;
+  END IF;
+  RETURN NEW;
+END;
+$advance_inventory_balance_version$;
+
+CREATE TRIGGER inventory_balances_version
+BEFORE INSERT OR UPDATE ON inventory_balances
+FOR EACH ROW EXECUTE FUNCTION advance_inventory_balance_version();
+
+CREATE FUNCTION prevent_inventory_balance_delete() RETURNS trigger
+LANGUAGE plpgsql
+AS $prevent_inventory_balance_delete$
+BEGIN
+  RAISE EXCEPTION 'INVENTORY_BALANCE_DELETE_FORBIDDEN' USING ERRCODE = '23514';
+END;
+$prevent_inventory_balance_delete$;
+
+CREATE TRIGGER inventory_balances_no_delete
+BEFORE DELETE ON inventory_balances
+FOR EACH ROW EXECUTE FUNCTION prevent_inventory_balance_delete();
 
 CREATE TABLE warehouse_inventory_movements (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -281,7 +320,7 @@ BEFORE UPDATE OR DELETE ON warehouse_inventory_movements
 FOR EACH ROW EXECUTE FUNCTION prevent_warehouse_inventory_movement_mutation();
 
 COMMENT ON TABLE inventory_balances IS
-  'Transactional materialized balance by organization, warehouse and product; reconcile against warehouse_inventory_movements.';
+  'Transactional materialized balance by organization, warehouse and product. balance_version increments on every on-hand/reservation change and never resets because rows cannot be deleted; reconcile against warehouse_inventory_movements.';
 COMMENT ON TABLE warehouse_inventory_movements IS
   'Append-only warehouse inventory ledger. Never update/delete; record compensating movements.';
 COMMENT ON TABLE inventory_counts IS

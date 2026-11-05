@@ -20,5 +20,6 @@ ALTER TABLE public.payments
 -- The scheduled Worker uses the least-privilege runtime login. It can only
 -- read and append official rate rows; it cannot rewrite or delete history.
 GRANT SELECT, INSERT ON TABLE public.exchange_rates TO microapp_runtime;
+GRANT UPDATE (validation_status) ON TABLE public.exchange_rates TO microapp_runtime;
 
 COMMIT;

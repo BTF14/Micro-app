@@ -138,10 +138,9 @@ const googleEmail = `google-integration-${crypto.randomUUID()}@example.test`;
 const bootstrapOrgName = `Bootstrap Shop ${crypto.randomUUID()}`;
 const bootstrapOrgSlug = `bootstrap-${crypto.randomUUID().replace(/-/g, "").slice(0, 12)}`;
 const bootstrapToken = `test-bootstrap-${crypto.randomUUID()}`;
-let integrationIpCounter = 0;
 function nextIntegrationIp(): string {
-  integrationIpCounter += 1;
-  return `198.51.100.${((integrationIpCounter - 1) % 254) + 1}`;
+  const id = crypto.randomUUID().replace(/-/g, "");
+  return `2001:db8:${id.slice(0, 4)}:${id.slice(4, 8)}:${id.slice(8, 12)}:${id.slice(12, 16)}:${id.slice(16, 20)}:${id.slice(20, 24)}`;
 }
 
 const googleEnv = {

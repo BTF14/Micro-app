@@ -126,7 +126,7 @@ Resolved in migrations 0011/0012 and the PR #224 PostgreSQL 18 harness:
 Still required:
 
 - Project-owner review of the stacked Draft PRs and grant matrix.
-- Extend actual-runtime handler coverage to any future write paths or handlers not included in the selected four-suite runtime integration set. The remaining broad integration suites continue to run as CI administrator and are not claimed as runtime-role verified.
+- Extend actual-runtime handler coverage to any future write paths or handlers not included in the selected five-suite runtime integration set. The remaining broad integration suites continue to run as CI administrator and are not claimed as runtime-role verified.
 - Inspect the effective preproduction/production `DATABASE_URL` principal, role membership, ownership and grants through an approved controlled operation. CI roles are synthetic and do not prove the deployed principal.
 - Keep role creation, credential provisioning, DATABASE_URL rotation, migration rollout and grant application behind separate preproduction/production gates. No production change is authorized by this document.
 

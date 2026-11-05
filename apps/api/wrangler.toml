@@ -12,9 +12,8 @@ compatibility_date = "2026-10-17"
 # set only through the Cloudflare dashboard and never declared here gets
 # silently wiped on the next deploy — that happened on 2026-10-25, breaking
 # login right after it had been verified working end-to-end. GOOGLE_CLIENT_SECRET,
-# DATABASE_URL and BOOTSTRAP_TOKEN are "Secreto" (encrypted) in the dashboard,
-# which is a separate store that `wrangler deploy` does not touch — do not
-# add those here.
+# DATABASE_URL, BOOTSTRAP_TOKEN and AUTH_RATE_LIMIT_HMAC_KEY are encrypted
+# Worker secrets managed separately; never add their values here.
 APP_ENV = "production"
 FRONTEND_ORIGIN = "https://micro-app-63i.pages.dev"
 GOOGLE_REDIRECT_URI = "https://micro-app-api.btfcasheb.workers.dev/auth/google/callback"

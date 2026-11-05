@@ -224,6 +224,23 @@ jobs:
         run: docker exec -i -e PGPASSWORD=migrator-test-only "${{ job.services.postgres.id }}" psql -h 127.0.0.1 -v ON_ERROR_STOP=1 -U microapp_migrator -d microapp_test -f /dev/stdin < apps/api/migrations/0013_bcv_official_rate_precision_and_grants.sql
       - name: Verify BCV rate precision and least-privilege grants
         run: docker exec -i "${{ job.services.postgres.id }}" psql -v ON_ERROR_STOP=1 -U microapp -d microapp_test -f /dev/stdin < apps/api/migrations/0013_bcv_official_rate_precision_and_grants.assertions.sql
+      - name: Verify no-discount migration rolls back atomically
+        run: |
+          sed '/^COMMIT;$/i SELECT 1/0;' apps/api/migrations/0014_sales_without_discounts.sql > /tmp/0014-no-discounts-failure.sql
+          status=0
+          output="$(docker exec -i -e PGPASSWORD=migrator-test-only "${{ job.services.postgres.id }}" psql -h 127.0.0.1 -v ON_ERROR_STOP=1 -U microapp_migrator -d microapp_test -f /dev/stdin < /tmp/0014-no-discounts-failure.sql 2>&1)" || status=$?
+          printf '%s\\n' "$output"
+          if [ "$status" -eq 0 ]; then
+            echo "Expected the injected no-discount migration failure, but psql succeeded."
+            exit 1
+          fi
+          printf '%s\\n' "$output" | grep -F "division by zero"
+          unchanged="$(docker exec "${{ job.services.postgres.id }}" psql -At -U microapp -d microapp_test -c "SELECT EXISTS (SELECT 1 FROM pg_attribute WHERE attrelid='public.sales'::regclass AND attname='discount_usd' AND NOT attisdropped) AND NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conrelid='public.sales'::regclass AND conname='sales_total_equals_subtotal')")"
+          test "$unchanged" = "t"
+      - name: Apply sales no-discount schema contract
+        run: docker exec -i -e PGPASSWORD=migrator-test-only "${{ job.services.postgres.id }}" psql -h 127.0.0.1 -v ON_ERROR_STOP=1 -U microapp_migrator -d microapp_test -f /dev/stdin < apps/api/migrations/0014_sales_without_discounts.sql
+      - name: Verify sales no-discount and exact-decimal contract
+        run: docker exec -i "${{ job.services.postgres.id }}" psql -v ON_ERROR_STOP=1 -U microapp -d microapp_test -f /dev/stdin < apps/api/migrations/0014_sales_without_discounts.assertions.sql
       - name: Verify application objects are owned by the non-superuser migrator
         run: |
           ownership="$(docker exec "${{ job.services.postgres.id }}" psql -At -U microapp -d microapp_test -c "SELECT NOT EXISTS (SELECT 1 FROM pg_class WHERE relnamespace='public'::regnamespace AND relkind IN ('r','p','S','v','m') AND relowner <> (SELECT oid FROM pg_roles WHERE rolname='microapp_migrator')) AND NOT EXISTS (SELECT 1 FROM pg_proc WHERE pronamespace='public'::regnamespace AND proowner <> (SELECT oid FROM pg_roles WHERE rolname='microapp_migrator'))")"

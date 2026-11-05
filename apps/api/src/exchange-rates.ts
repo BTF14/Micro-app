@@ -201,7 +201,7 @@ export function registerExchangeRateRoutes(app: Hono<{ Bindings: Bindings }>): v
           rate: row.rate,
           effectiveDate: row.effective_date,
           fetchedAt: row.fetched_at,
-          status: row.effective_date < caracasDate(new Date()) ? "stale" : "current",
+          status: row.effective_date > caracasDate(new Date()) ? "scheduled" : row.effective_date < caracasDate(new Date()) ? "stale" : "current",
         })),
       });
     } catch {
@@ -216,10 +216,10 @@ export function registerExchangeRateRoutes(app: Hono<{ Bindings: Bindings }>): v
           `SELECT rate::text AS rate, effective_date::text AS effective_date,
                   fetched_at::text AS fetched_at
              FROM public.exchange_rates
-            WHERE source = $1 AND validation_status = 'valid'
+            WHERE source = $1 AND validation_status = 'valid' AND effective_date <= $2::date
             ORDER BY effective_date DESC, fetched_at DESC
             LIMIT 1`,
-          [BCV_SOURCE_ID],
+          [BCV_SOURCE_ID, caracasDate(new Date())],
         );
         return result.rows[0] ?? null;
       });

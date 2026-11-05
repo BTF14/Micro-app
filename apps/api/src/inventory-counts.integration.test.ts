@@ -802,7 +802,10 @@ describe.skipIf(!databaseUrl)("warehouse inventory count transactions against Po
       [organizationId, userId],
     );
     await client.query(
-      "INSERT INTO branch_memberships (organization_id, branch_id, user_id, is_active) VALUES ($1, $2, $3, true)",
+      `INSERT INTO branch_memberships (organization_id, branch_id, user_id, is_active)
+       VALUES ($1, $2, $3, true)
+       ON CONFLICT (organization_id, branch_id, user_id)
+       DO UPDATE SET is_active = true`,
       [organizationId, branchId, userId],
     );
 

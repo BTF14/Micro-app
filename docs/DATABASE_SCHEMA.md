@@ -96,3 +96,16 @@ La migración versionada `apps/api/migrations/0001_initial.sql` establece el esq
 - No guardar cadenas de conexión, contraseñas ni tokens en Git.
 - La migración inicial crea estructura vacía; no inserta usuarios ni datos comerciales.
 - La API ya dispone de conexión PostgreSQL mediante `@neondatabase/serverless`; CI valida las migraciones versionadas en PostgreSQL desechable. La aplicación de migraciones a Neon main y la operación comercial siguen sin demostrarse.
+
+
+---
+
+## Reconciliación de ramas y validación — 2026-11-05 UTC
+
+- #200: HEAD `243592468e9fd61b1f8c578d867887dbb7f18e4d`, 16 ahead/0 behind main. 10 workflow runs success para ese SHA; sin status contexts ni reviews/threads.
+- #204: HEAD `57a9f098bcb93427315e96c90e62ae13764a485b`, 3 ahead/0 behind #200; no workflow runs/status contexts recuperados para ese SHA.
+- #205: HEAD `c1f09d09dd08b9600e7a6c0ff8ccbb5be4e9c990`, divergida respecto a #204 (9 ahead/1 behind); solo un workflow de backup restore success. No integrar hasta sincronizar y revalidar.
+- #202 docs: el SHA `348cf0a1067c5410ff262f817b054cef46f0afae` tuvo 9 workflows success, pero los commits documentales nuevos cambian el HEAD; no trasladar su estado CI.
+- La migración 0005 no está en main ni aplicada a Neon. El riesgo de DDL parcial sigue abierto hasta implementar transacción/recuperación y probar fallo inducido.
+- Stale-count es independiente de idempotencia: hace falta versión/snapshot al crear/confirmar conteo y prueba determinista de dos conteos confirmados en orden inverso.
+- La colisión de migración 0005 de inventario con 0005 de roles en #194 sigue abierta; no fusionar #194 ni renumerar sin plan coordinado.

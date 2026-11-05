@@ -165,12 +165,6 @@ export function registerInventoryCountRoutes(app: Hono<{ Bindings: Bindings }>):
             organizationId: tenant.organizationId, branchId: branch.branchId, warehouseId, countType,
             reason: input.reason, lines: input.lines,
           });
-          const capturedBalances = countType === "physical"
-            ? await lockInventoryBalances(tx, tenant.organizationId, [warehouseId], productIds)
-            : [];
-          if (capturedBalances === null) return { kind: "invalid_lock_scope" as const };
-          const capturedByProduct = new Map(capturedBalances.map((balance) => [balance.product_id, balance]));
-
           const inserted = await tx.query<{ id: string }> (
             `INSERT INTO inventory_counts
               (organization_id, branch_id, warehouse_id, count_type, reason, created_by, idempotency_key, request_hash)
@@ -200,6 +194,15 @@ export function registerInventoryCountRoutes(app: Hono<{ Bindings: Bindings }>):
             return { kind: "replayed" as const, countId: replay.id, status: replay.status,
               countType: replay.count_type, lineCount: replay.line_count };
           }
+          // Claim the idempotency key/document before locking balances. A replay
+          // returns above without holding stock locks; new documents follow the
+          // global warehouse -> document -> balances lock order.
+          const capturedBalances = countType === "physical"
+            ? await lockInventoryBalances(tx, tenant.organizationId, [warehouseId], productIds)
+            : [];
+          if (capturedBalances === null) throw new Error("INVENTORY_LOCK_INVALID_SCOPE");
+          const capturedByProduct = new Map(capturedBalances.map((balance) => [balance.product_id, balance]));
+
           const countId = inserted.rows[0].id;
           for (const line of input.lines) {
             await tx.query(

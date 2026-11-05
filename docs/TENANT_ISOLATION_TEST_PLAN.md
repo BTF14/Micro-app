@@ -39,7 +39,7 @@ La matriz de permisos por rol está aprobada (2026-10-31). `authorization.ts` ce
 - `apps/api/src/authorization.test.ts`: matriz de permisos, denegación por operación y límites de contexto tenant/branch.
 - `apps/api/src/inventory-counts.integration.test.ts`: aislamiento tenant/branch, membresía de sucursal, denegación de Cashier, idempotencia, atomicidad y ledger para conteos.
 - `apps/api/migrations/0001_initial.sql`: restricciones compuestas para que productos/proveedores de organizaciones diferentes no puedan vincularse mediante la clave foránea compuesta; revisar también las restricciones de ventas y líneas en la propia migración.
-- Workflows de CI y validación de migración sobre el SHA base revisado terminaron en éxito después de la fusión documental. Eso no prueba las rutas de negocio que todavía no existen.
+- Los workflows de CI y validación de migraciones deben comprobarse para el HEAD exacto de cada PR. La cobertura actual no prueba todavía las rutas comerciales futuras de ventas, pagos, proveedores, recepción, reservas, devoluciones o transferencias.
 
 ## Siguiente paso técnico
 

@@ -127,12 +127,12 @@ describe.skipIf(!databaseUrl)("catalog product creation against PostgreSQL", () 
   it.each(["owner", "admin"] as const)("%s can create a product and its audit event atomically", async (role) => {
     const sku = "CREATE-" + role.toUpperCase();
     const response = await createRequest(fixtures[role], organizationA, {
-      sku, name: "Created " + role, price_usd: "12.5000", cost_usd: "4.2500", minimum_stock: "3.000",
+      sku, name: "Created " + role, price_usd: "23.85", cost_usd: "4.2500", minimum_stock: "3.000",
     });
     expect(response.status).toBe(201);
     const product = await response.json() as { id: string; cost_usd: string; price_usd: string };
     expect(product.cost_usd).toBe("4.2500");
-    expect(product.price_usd).toBe("12.5000");
+    expect(product.price_usd).toBe("23.8500");
 
     const stored = await client!.query<{ stock_quantity: string; cost_usd: string }>(
       "SELECT stock_quantity::text, cost_usd::text FROM products WHERE id = $1 AND organization_id = $2",
@@ -148,7 +148,7 @@ describe.skipIf(!databaseUrl)("catalog product creation against PostgreSQL", () 
       actor_user_id: fixtures[role].userId,
       action: "product.created",
       entity_id: product.id,
-      metadata: { snapshot: { sku, price_usd: "12.5000" } },
+      metadata: { snapshot: { sku, price_usd: "23.8500" } },
     });
   });
 
@@ -195,8 +195,12 @@ describe.skipIf(!databaseUrl)("catalog product creation against PostgreSQL", () 
     const precision = await createRequest(fixtures.owner, organizationA, {
       sku: "BAD-PRECISION", name: "Bad precision", price_usd: "1.12345",
     });
+    const numericMoney = await createRequest(fixtures.owner, organizationA, {
+      sku: "NUMERIC-MONEY", name: "Numeric JSON money", price_usd: 23.85,
+    });
     expect(origin.status).toBe(403);
     expect(precision.status).toBe(400);
+    expect(numericMoney.status).toBe(400);
   });
 
   it("maps duplicate tenant SKU to conflict without creating a second audit event", async () => {

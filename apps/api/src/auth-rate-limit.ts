@@ -67,19 +67,19 @@ export async function enforceAuthRateLimit(
          VALUES ($1, now(), 1, now())
          ON CONFLICT (key_hash) DO UPDATE
            SET window_started_at = CASE
-                 WHEN auth_rate_limits.window_started_at + ($2 * interval '1 second') <= now()
+                 WHEN auth_rate_limits.window_started_at + ($2::double precision * interval '1 second') <= now()
                    THEN now()
                  ELSE auth_rate_limits.window_started_at
                END,
                attempts = CASE
-                 WHEN auth_rate_limits.window_started_at + ($2 * interval '1 second') <= now()
+                 WHEN auth_rate_limits.window_started_at + ($2::double precision * interval '1 second') <= now()
                    THEN 1
                  ELSE auth_rate_limits.attempts + 1
                END,
                updated_at = now()
          RETURNING attempts,
            GREATEST(1, CEIL(EXTRACT(EPOCH FROM
-             (window_started_at + ($2 * interval '1 second') - now())))::integer) AS retry_after_seconds`,
+             (window_started_at + ($2::double precision * interval '1 second') - now())))::integer) AS retry_after_seconds`,
         [keyHash, policy.windowSeconds],
       ),
     );

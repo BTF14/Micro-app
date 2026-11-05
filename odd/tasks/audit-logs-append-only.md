@@ -54,9 +54,9 @@ Excluded:
 |---|---|---|---|
 | Reconcile GitHub and current PR stack | Current bases, HEADs and CI are known | Live GitHub metadata, exact-SHA workflow runs/check-runs | complete |
 | Static audit of audit_logs | DDL, triggers, grants and callers inventoried | 0001 DDL; code search; catalog and inventory audit INSERT call sites | complete |
-| Design mutation guard and runtime-role test | Testable DDL and privilege contract | PostgreSQL disposable assertions | in progress |
-| Implement migration and assertions | UPDATE/DELETE/TRUNCATE rejected; SELECT/INSERT supported | Migration check from clean database | pending |
-| Verify transaction coupling | Business write rolls back on audit insert failure | PostgreSQL integration test | pending |
+| Design mutation guard and runtime-role test | Testable DDL and privilege contract | Migration and assertion SQL drafted; PostgreSQL execution pending CI | complete |
+| Implement migration and assertions | UPDATE/DELETE/TRUNCATE rejected; SELECT/INSERT supported | `0007_audit_logs_append_only.sql` and `.assertions.sql` added; exact-HEAD CI pending | in progress |
+| Verify transaction coupling | Business write rolls back on audit insert failure | Existing inventory rollback test retained; catalog/inventory teardown updated for append-only trigger | in progress |
 | Reconcile documentation and handoff | Current state, journal and handoff reflect evidence and gaps | Exact SHA and diff review | pending |
 
 ## Technical decisions

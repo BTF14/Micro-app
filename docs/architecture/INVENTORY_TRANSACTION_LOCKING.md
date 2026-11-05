@@ -86,3 +86,18 @@ Este helper fija el patrón para nuevos servicios; no hace que un servicio futur
 ## 8. Relación con el diseño de recepción
 
 `docs/sdd/PURCHASE_RECEIPT_MODEL.md` sigue siendo un diseño inicial. El contrato de locks de este documento sí puede reutilizarse técnicamente en una recepción cuando se apruebe su modelo, pero no aprueba proveedor obligatorio, órdenes de compra, recepción parcial/excedente, valoración, documento externo, diferencias, ni reglas de reverso. No crear DDL ni endpoints de recepción hasta resolver esas decisiones.
+
+
+## 9. Lifecycle de conteos — revisión de integridad 2026-11-05 UTC
+
+La revisión estática detectó que el trigger de `inventory_counts` cubría UPDATE/DELETE, pero no INSERT. Por tanto, una escritura SQL directa podía intentar crear un documento que ya naciera como `confirmed`, saltándose la transición draft → confirmed del servicio.
+
+La migración ahora aplica `inventory_counts_guard` en INSERT/UPDATE/DELETE y exige que todo documento nuevo nazca como `draft`. La transición a `confirmed` continúa validando actor, timestamp y al menos una línea; los documentos confirmados no se pueden editar ni borrar. Las líneas solo se pueden insertar/modificar/eliminar mientras el padre siga en draft. Los movimientos derivados de conteo exigen un documento confirmado, tipo coincidente y línea correspondiente.
+
+La assertion PostgreSQL cubre dos caminos distintos:
+- intento de INSERT directo con estado confirmed, que debe ser rechazado por el trigger;
+- segundo conteo opening creado como draft con línea y confirmado mediante UPDATE, que debe ser rechazado por el índice parcial de apertura única.
+
+**Evidencia del código:** commit `05bac0b68ec4883d4a7d057165ca1b9ac3aaf40c`; para ese SHA exacto, 17/17 workflow runs completados en success, incluidos Database migration validation y CI con PostgreSQL desechable. Esta evidencia no valida migraciones remotas ni Neon.
+
+**Riesgo residual ABA:** el snapshot de conteo físico compara cantidad esperada con cantidad actual. Si otro escritor cambia el saldo y lo devuelve exactamente al valor inicial antes de confirmar, la comparación por cantidad no detecta el movimiento intermedio. Antes de habilitar otros escritores de existencias, evaluar un `balance_version` monotónico incrementado por toda mutación de existencias/reservas, y guardar esa versión en cada línea de conteo. No declarar el ABA resuelto por el test actual, que cubre solo un cambio neto de cantidad.

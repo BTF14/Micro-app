@@ -14,6 +14,9 @@ const app = (await import("./index")).default;
 const databaseUrl = (globalThis as typeof globalThis & {
   process?: { env?: Record<string, string | undefined> };
 }).process?.env?.DATABASE_URL;
+const databaseUrlAdmin = (globalThis as typeof globalThis & {
+  process?: { env?: Record<string, string | undefined> };
+}).process?.env?.DATABASE_URL_ADMIN ?? databaseUrl;
 const isCi = Boolean((globalThis as typeof globalThis & {
   process?: { env?: Record<string, string | undefined> };
 }).process?.env?.CI);
@@ -89,7 +92,7 @@ describe.skipIf(!databaseUrl)("catalog product updates against PostgreSQL", () =
   }
 
   beforeAll(async () => {
-    client = new Client({ connectionString: databaseUrl });
+    client = new Client({ connectionString: databaseUrlAdmin });
     await client.connect();
     organizationA = await createOrganization("Product Update Tenant A");
     organizationB = await createOrganization("Product Update Tenant B");

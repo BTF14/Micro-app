@@ -34,6 +34,8 @@ CREATE TABLE inventory_counts (
   status text NOT NULL DEFAULT 'draft' CHECK (status IN ('draft', 'confirmed', 'cancelled')),
   reason text NOT NULL CHECK (length(trim(reason)) > 0),
   created_by uuid NOT NULL,
+  idempotency_key text CHECK (idempotency_key IS NULL OR idempotency_key ~ '^[A-Za-z0-9._:-]{1,128}$'),
+  request_hash text CHECK (request_hash IS NULL OR request_hash ~ '^[0-9a-f]{64}$'),
   confirmed_by uuid,
   created_at timestamptz NOT NULL DEFAULT now(),
   confirmed_at timestamptz,
@@ -53,6 +55,12 @@ CREATE TABLE inventory_counts (
 CREATE UNIQUE INDEX inventory_counts_one_confirmed_opening_uq
   ON inventory_counts (organization_id, warehouse_id)
   WHERE count_type = 'opening' AND status = 'confirmed';
+ALTER TABLE inventory_counts ADD CONSTRAINT inventory_counts_idempotency_pair_ck
+  CHECK ((idempotency_key IS NULL AND request_hash IS NULL)
+      OR (idempotency_key IS NOT NULL AND request_hash IS NOT NULL));
+CREATE UNIQUE INDEX inventory_counts_idempotency_key_uq
+  ON inventory_counts (organization_id, created_by, idempotency_key)
+  WHERE idempotency_key IS NOT NULL;
 CREATE INDEX inventory_counts_warehouse_history_idx
   ON inventory_counts (organization_id, warehouse_id, created_at DESC);
 
@@ -96,8 +104,7 @@ CREATE TABLE inventory_balances (
 CREATE INDEX inventory_balances_branch_product_idx
   ON inventory_balances (organization_id, branch_id, product_id, warehouse_id);
 
--- A physical count snapshot is invalidated by every stock or reservation
--- mutation, even when the final quantity later returns to its old value.
+-- Invalidate physical count snapshots on every stock/reservation mutation.
 CREATE FUNCTION advance_inventory_balance_version() RETURNS trigger
 LANGUAGE plpgsql
 AS $advance_inventory_balance_version$
@@ -106,7 +113,6 @@ BEGIN
     NEW.balance_version := 1;
     RETURN NEW;
   END IF;
-
   IF ROW(NEW.on_hand_quantity, NEW.reserved_quantity)
       IS DISTINCT FROM ROW(OLD.on_hand_quantity, OLD.reserved_quantity) THEN
     NEW.balance_version := OLD.balance_version + 1;
@@ -320,7 +326,7 @@ BEFORE UPDATE OR DELETE ON warehouse_inventory_movements
 FOR EACH ROW EXECUTE FUNCTION prevent_warehouse_inventory_movement_mutation();
 
 COMMENT ON TABLE inventory_balances IS
-  'Transactional materialized balance by organization, warehouse and product. balance_version increments on every on-hand/reservation change and never resets because rows cannot be deleted; reconcile against warehouse_inventory_movements.';
+  'Transactional materialized balance by organization, warehouse and product. balance_version increments on stock/reservation changes; rows cannot be deleted; reconcile against warehouse_inventory_movements.';
 COMMENT ON TABLE warehouse_inventory_movements IS
   'Append-only warehouse inventory ledger. Never update/delete; record compensating movements.';
 COMMENT ON TABLE inventory_counts IS

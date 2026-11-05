@@ -141,6 +141,7 @@ export default function CatalogPanel({
 
       {canManage && (showCreateForm || editingProduct) && (
         <ProductForm
+          key={editingProduct?.id ?? "new"}
           organizationId={organizationId}
           product={editingProduct ?? undefined}
           onCancel={() => { setShowCreateForm(false); setEditingProduct(null); }}

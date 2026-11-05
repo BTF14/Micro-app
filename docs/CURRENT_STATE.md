@@ -1,3 +1,43 @@
+## Estado vivo verificado — 2026-11-05 00:50 EDT
+
+Este bloque es la fuente vigente para esta sesión y supersede los checkpoints históricos inferiores. Los SHA y conteos de CI se consultaron en GitHub para el HEAD exacto de cada PR. Workflow runs, check runs, status contexts y reviews son categorías distintas.
+
+### Main y PRs relacionadas
+
+- `main`: `7b0f057b8c152515005feed40305143c0ebb94b0`.
+- PR #194: abierta/Draft; `work/mvp-foundation`; HEAD `7b3ad50e5780416868a1a428b856d12c4ea1e2ea`; 13 ahead / 2 behind main; 11/11 workflow runs y 13/13 check runs success. Conserva `0005_register_shift_member_roles.sql`, que colisiona con inventario 0005 de #200. Mantener abierta; secuencia objetivo roles 0006 tras inventario.
+- PR #200: abierta/Draft; `feat/inventory-vertical-slice-mainline-20261104`; HEAD `5fbc17a48b65076cf5609a7a054bbd125a3a5d1e`; 32 ahead / 0 behind main; 30 archivos; 18/18 workflow runs y 20/20 check runs success. Contiene la vertical slice catálogo/inventario y la migración 0005.
+- PR #202: abierta/Draft; `docs/reconcile-current-state-20261104`; HEAD `31ef601f744027f1a0fe95eac549d7fe6f6f994c`; 76 ahead / 0 behind main; 18 archivos; 11/11 workflow runs y 13/13 check runs success.
+- PR #204: abierta/Draft; `feat/inventory-test-isolation-20261104`; HEAD `07a5a41c0f5f5c36fb89a5c5950796493d56eb20`; base #200; 8 ahead / 0 behind; diff propio de 1 archivo; 6/6 workflow runs y 8/8 check runs success.
+- PR #205: abierta/Draft; `feat/inventory-count-idempotency-20261104`; HEAD `bb4a60454061ce09fef07100e75010f3abc5b883`; base #204; 25 ahead / 0 behind; diff propio de 3 archivos; 7/7 workflow runs y 9/9 check runs success.
+- PR #196: abierta/Draft, GitHub la reporta no mergeable; `feat/catalog-api-vertical-slice-20261104`; HEAD vivo `c332e740aff279fb8b22a8879581d4b8a3c7de21`; 128 ahead / 2 behind main; 33 archivos; 11/11 workflow runs y 13/13 check runs success. El cuerpo de issue #53 citaba el SHA anterior `66edbdff...`; ya se corrigió a este HEAD.
+- PR #193: abierta, no Draft (ready for review); `docs/phase-b-branch-inventory-scope-20261102`; HEAD `ac57ab4f3415f82279b8a49c0befe09f8e3aec68`; 5 ahead / 2 behind main; 1 archivo; 10/10 workflow runs y 12/12 check runs success. No asumir que su mergeable=true elimina la divergencia.
+- PR #207: nueva, abierta/Draft y mergeable; `feat/audit-logs-append-only-20261105`; HEAD `26c5270664b82aebc6a12fafe6973de8544bc6f7`; base #200 en `5fbc17a48b65076cf5609a7a054bbd125a3a5d1e`; 10 ahead / 0 behind; 8 archivos; 7/7 workflow runs y 9/9 check runs success. Es una PR apilada, no integrada.
+
+Para PR #193, #194, #196, #200, #202, #204, #205 y #207 la consulta devolvió 0 reviews formales, 0 review threads (0 unresolved) y 0 combined status contexts. Los workflows/check runs verdes no son aprobaciones formales. Ninguna de estas PR se fusionó en esta sesión.
+
+### Auditoría general de audit_logs
+
+- La tabla `audit_logs` nace en `0001_initial.sql`; las migraciones 0001–0005 no definían trigger append-only para esta tabla. La protección del ledger `warehouse_inventory_movements` es independiente.
+- Los callsites relevantes escriben auditoría dentro de las transacciones de catálogo y conteos. Ya existía prueba PostgreSQL de rollback del conteo ante fallo de auditoría; #207 añade prueba equivalente para creación de producto.
+- PR #207 añade `0007_audit_logs_append_only.sql`: trigger ALWAYS que rechaza UPDATE/DELETE por fila y TRUNCATE por sentencia, y REVOKE de privilegios de mutación/gestión de triggers a PUBLIC. Sus assertions PostgreSQL crean un rol runtime sintético no propietario (SELECT/INSERT) y otro rol no propietario con privilegios de mutación para probar que los triggers bloquean cambios.
+- Validación exacta de #207 HEAD `26c5270664b82aebc6a12fafe6973de8544bc6f7`: migración y assertions PostgreSQL, CI completo, suites de catálogo/conteos, Playwright, Semgrep, Trivy, secret scan y backup/restore sintético; 7/7 workflow runs y 9/9 check runs success.
+- La secuencia prevista es inventario 0005 → roles de #194 renumerados 0006 → audit_logs 0007. #207 sigue apilada sobre #200; no integrar antes de reconciliar la dependencia #194.
+- **No verificado:** usuario/rol PostgreSQL efectivo que utiliza el secreto Worker `DATABASE_URL`. No se leyó el secreto ni se accedió a Neon producción. Los tests demuestran el contrato con roles sintéticos en PostgreSQL desechable, no la configuración efectiva de producción. No afirmar que la auditoría productiva ya es inmutable.
+
+### Issue, infraestructura y vigilancia
+
+- Issue #53 sigue abierta y P0. Su cuerpo se actualizó para reflejar el HEAD vivo de #196 y el progreso de #207; los demás criterios de autorización, aislamiento tenant/sucursal/rol, escritores comerciales y readiness continúan abiertos.
+- No se activó Worker Previews ni se modificó Cloudflare productivo. Los resultados Pages/Workers de #207 son builds/checks de rama, no despliegue ni evidencia de aislamiento productivo.
+- No se modificó Neon, secretos, DNS, billing ni datos reales. Producción sigue **NO LISTA**.
+- Automatización `Vigilar PR y CI de Micro-app` (`6aec009171408191b1db52aabdbdd011`) está habilitada, con schedule diario 14:00 America/New_York. No tiene last_run ni next_run_time registrado; delivery_status figura unknown. No crear duplicado y no afirmar que ya entregó informes.
+
+### Próximo paso
+
+Mantener #207 en Draft. Revisar independientemente el diff; resolver la colisión 0005/0006 antes de integrar la pila; verificar mediante evidencia autorizada y sin tocar secretos la identidad/privilegios runtime; continuar los criterios P0 de #53. No fusionar, cerrar ni desplegar por el solo hecho de que CI esté verde.
+
+---
+
 ## Corrección de seguridad Cloudflare — Worker Previews vs Version URLs — 2026-11-04 22:00 EDT
 
 Esta aclaración corrige la formulación demasiado amplia de addenda anteriores: **no existe una prohibición permanente de usar Worker Previews**. El gate es no cambiar el modo de builds de Cloudflare hasta comprobar aislamiento y aceptar el cambio irreversible del flujo existente.

@@ -1646,10 +1646,10 @@ La consulta directa a GitHub Actions por `head_sha` incluye eventos `push` y `pu
 ### Ramas y validación GitHub exacta
 
 - `main`: `7b0f057b8c152515005feed40305143c0ebb94b0`.
-- PR #200: HEAD documental `daaeaf8d87e08c62c749168ea00eb6adde2c7abf`, **21 ahead / 0 behind**, 30 archivos; **16/16 workflow runs success** en ese SHA. El HEAD de código previo `05bac0b68ec4883d4a7d057165ca1b9ac3aaf40c` tuvo **17/17 workflow runs success** e incluye la corrección SQL del lifecycle. Reviews formales 0, threads 0, status contexts 0.
-- PR #204: HEAD `22bca40a0e14de2ba747e1226a1829f91cd34561`, base #200 HEAD `daaeaf8d87e08c62c749168ea00eb6adde2c7abf`, **5 ahead / 0 behind**, diff propio de 1 archivo; **7/7 workflow runs success**. Reviews 0, threads 0, status contexts 0.
-- PR #205: HEAD `94a7fbd5f8e721cf672ad472c3d228aa7fa23bf2`, base #204 HEAD `22bca40a0e14de2ba747e1226a1829f91cd34561`, **14 ahead / 0 behind**, diff propio de 3 archivos; **7/7 workflow runs success**, incluidos CI, Playwright y Database migration validation. Reviews 0, threads 0, status contexts 0.
-- PR #202: HEAD consultado antes de esta actualización documental `7375a0aa7bc100f1166115dd59374099608dd848`, **64 ahead / 0 behind**, 12 archivos; 11/11 workflow runs success. Esta edición creará otro SHA: esos 11/11 no validan el nuevo HEAD.
+- PR #200: HEAD documental `5fbc17a48b65076cf5609a7a054bbd125a3a5d1e`, **32 ahead / 0 behind**, 30 archivos; **16/16 workflow runs success**. El HEAD de código `7b58b140e50c46a3d3b087e3445a4b04e6243a81` también tuvo **16/16 success**, e incluye balance_version y prueba ABA. Reviews formales 0, threads 0, status contexts 0.
+- PR #204: HEAD `07a5a41c0f5f5c36fb89a5c5950796493d56eb20`, base #200 HEAD `5fbc17a48b65076cf5609a7a054bbd125a3a5d1e`, **8 ahead / 0 behind**, diff propio de 1 archivo; **6/6 workflow runs success**. Reviews 0, threads 0, status contexts 0.
+- PR #205: HEAD `7005d9a5b03234bd0209d0cc1ea75e8ae21e0032`, base #204 HEAD `07a5a41c0f5f5c36fb89a5c5950796493d56eb20`, **20 ahead / 0 behind**, diff propio de 3 archivos; **8/8 workflow runs success**, incluidos CI, Playwright y Database migration validation. Reviews 0, threads 0, status contexts 0.
+- PR #202: HEAD antes de esta actualización `c2bc689c535c69cea6e94a69826ba6e1f465a5d2`, **67 ahead / 0 behind**, 12 archivos; 11/11 workflow runs success. Esta edición creará otro SHA: esos 11/11 no validan el nuevo HEAD.
 - PR #194: HEAD `7b3ad50e5780416868a1a428b856d12c4ea1e2ea`; comparación viva contra main actual **13 ahead / 2 behind** (su base configurada conserva SHA histórico); 11/11 workflow runs success en su HEAD. Sigue bloqueada por divergencia y colisión de migración `0005_register_shift_member_roles.sql` con inventario `0005_warehouse_inventory.sql`. No integrar antes de consolidar y renumerar roles a 0006, con referencias/assertions/workflows actualizados.
 
 Los conteos anteriores son **workflow runs**, no status contexts únicos ni reviews. En las PR listadas no hay status contexts, reviews formales ni review threads en la consulta de este checkpoint. Todas siguen Draft; ninguna fue fusionada.
@@ -1658,7 +1658,7 @@ Los conteos anteriores son **workflow runs**, no status contexts únicos ni revi
 
 La auditoría encontró que `inventory_counts_guard` cubría UPDATE/DELETE, pero no INSERT. La migración ahora aplica el trigger a INSERT/UPDATE/DELETE y exige que todo conteo nuevo comience en `draft`. Las assertions PostgreSQL prueban que un INSERT directo con estado `confirmed` se rechaza y que la segunda apertura solo se intenta confirmar después de crear draft y línea, verificando el índice único por el flujo correcto. Esta corrección pasó CI en el HEAD de código `05bac0b68ec4883d4a7d057165ca1b9ac3aaf40c` (17/17 workflows).
 
-El stale-count básico compara `expected_on_hand_quantity` con el saldo al confirmar y rechaza con 409 si cambió. Residual: no detecta ABA si el saldo cambia y vuelve al mismo valor. Evaluar `balance_version` monotónico y exigir que todo futuro escritor incremente versión bajo el mutex del almacén antes de habilitar ventas, recepciones, reservas o transferencias.
+El stale-count compara `expected_on_hand_quantity` y `expected_balance_version` contra el balance bloqueado. `balance_version` inicia en 1, incrementa en cada cambio de on-hand/reservas, no cambia por metadatos y la fila no se puede borrar. La prueba ABA 8.250 → 8.500 → 8.250 exige 409 aunque el saldo final coincida. El riesgo ABA queda cubierto para toda mutación de `inventory_balances`; todo escritor futuro debe actualizar esa tabla y respetar el mutex del almacén.
 
 ### Seguridad y alcance
 

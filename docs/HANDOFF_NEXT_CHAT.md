@@ -1742,3 +1742,39 @@ La consulta directa a GitHub Actions por `head_sha` incluye eventos `push` y `pu
 - La migración 0005 está envuelta en BEGIN/COMMIT y el workflow de migración ejecuta un fallo inducido antes de COMMIT, verifica ausencia de tablas y después aplica el SQL real. Los 17/7/8 runs incluyen la validación de migraciones de sus SHA correspondientes.
 - Stale-count básico: snapshot de cantidad, 409 y prueba de confirmación inversa. Residual ABA/versionado antes de futuros writers.
 - #202 HEAD `2793550cb9ccb4595971ad86ce6b950203c681df` tenía 11 workflow runs (7 success, 4 in_progress) en la consulta; ese estado se recalcula para cualquier commit documental posterior.
+
+
+## Handoff vigente — 2026-11-05 UTC (supersede handoffs anteriores)
+
+**Reconciliar el estado vivo antes de continuar.** Este checkpoint sustituye los SHA/estados de las secciones históricas anteriores.
+
+### Estado exacto verificado
+
+- `main`: `7b0f057b8c152515005feed40305143c0ebb94b0`.
+- #200: HEAD documental `daaeaf8d87e08c62c749168ea00eb6adde2c7abf`, 21 ahead/0 behind; 16/16 workflow runs success. Código anterior `05bac0b68ec4883d4a7d057165ca1b9ac3aaf40c` tuvo 17/17 success e incluye el fix de lifecycle SQL.
+- #204: HEAD `22bca40a0e14de2ba747e1226a1829f91cd34561`, base #200 `daaeaf8...`, 5 ahead/0 behind, diff propio 1 archivo, 7/7 workflows success.
+- #205: HEAD `94a7fbd5f8e721cf672ad472c3d228aa7fa23bf2`, base #204 `22bca40...`, 14 ahead/0 behind, diff propio 3 archivos, 7/7 workflows success.
+- #202: HEAD `7375a0aa7bc100f1166115dd59374099608dd848` antes de esta actualización, 64 ahead/0 behind, 11/11 workflows success. Esta edición documental genera un nuevo SHA y requiere revalidación.
+- #194: HEAD `7b3ad50e5780416868a1a428b856d12c4ea1e2ea`, 13 ahead/2 behind frente a main actual, 11/11 workflows success. Sigue sin integrar por colisión de migraciones 0005 (roles vs inventario) y divergencia.
+
+En #200/#204/#205/#202/#194 no se encontraron status contexts, reviews formales ni review threads en la consulta de este checkpoint. Todas siguen Draft. CI success no es aprobación formal. No se fusionó ninguna.
+
+### Corrección técnica recién incorporada
+
+- `inventory_counts_guard` ahora se ejecuta en INSERT/UPDATE/DELETE y exige que los conteos nazcan como `draft`; assertions PostgreSQL prueban el rechazo de INSERT directo `confirmed` y la unicidad de opening por transición draft→confirmed.
+- PR #200 código SHA `05bac0b...`: 17/17 workflows success; PR #200 HEAD documental `daaeaf...`: 16/16 workflows success.
+- PR #204 y #205 se sincronizaron con merge commits no-forzados; ambas están 0 behind y sus HEAD exactos pasaron 7/7 workflows.
+- Stale-count básico ya funciona con `expected_on_hand_quantity` y 409 `COUNT_STALE`. Residual ABA no resuelto: cambio y retorno al mismo saldo no se detecta. Próximo gate: diseñar versionado monotónico `balance_version` antes de añadir otros escritores de existencias/reservas.
+- La matriz de permisos está APROBADA desde 2026-10-31; no confundir aprobación de política con implementación completa. Issue #53 sigue abierta.
+
+### Próximos pasos técnicos
+
+1. Terminar auditoría estática de #200/#204/#205: idempotencia, locks, tenant/branch scope, restricciones SQL, lifecycle, manejo de errores y pruebas de concurrencia.
+2. Diseñar y cerrar ABA/versionado monotónico; todos los escritores futuros deben incrementar versión bajo el mutex del almacén.
+3. Completar autorización server-side y pruebas cross-tenant/cross-branch exigidas por issue #53 antes de cualquier merge a main.
+4. Después de estabilizar inventario, resolver #194: renumerar la migración de roles a 0006 y actualizar referencias/assertions/workflows; no integrar la rama divergida tal cual.
+5. Mantener Worker Previews sin activar hasta auditar autenticadamente bindings, secrets, routes, service bindings, Workflows y aislamiento de recursos.
+
+### Límites que no cambian
+
+No migrar a Neon, no desplegar producción, no cambiar Cloudflare productivo, secretos, DNS, billing ni datos reales. No modificar main directamente ni force-push. No fusionar PRs sin revisión formal y gates completos. Mantener documentos y handoff actualizados en el mismo ciclo de cada cambio.

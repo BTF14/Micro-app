@@ -36,7 +36,8 @@ La matriz de permisos por rol está aprobada (2026-10-31). `authorization.ts` ce
 ## Cobertura existente revisada
 
 - `apps/api/src/auth.integration.test.ts`: autenticación, estado de sesión, revocación, expiración y casos de identidad.
-- `apps/api/src/authorization.test.ts`: matriz de permisos, denegación por operación y límites de contexto tenant/branch.
+- `apps/api/src/authorization.test.ts`: matriz de permisos, denegación por operación, rechazo de roles antes de resolver sucursal, diferenciación de sucursal fuera de alcance y lecturas sin bloqueos de escritura.
+- `apps/api/src/inventory-counts.integration.test.ts`: además de las pruebas existentes, valida denegación de Cashier para GET de almacenes/conteos y rechazo de lectura de conteos en una sucursal no asignada.
 - `apps/api/src/inventory-counts.integration.test.ts`: aislamiento tenant/branch, membresía de sucursal, denegación de Cashier, idempotencia, atomicidad y ledger para conteos.
 - `apps/api/migrations/0001_initial.sql`: restricciones compuestas para que productos/proveedores de organizaciones diferentes no puedan vincularse mediante la clave foránea compuesta; revisar también las restricciones de ventas y líneas en la propia migración.
 - Los workflows de CI y validación de migraciones deben comprobarse para el HEAD exacto de cada PR. La cobertura actual no prueba todavía las rutas comerciales futuras de ventas, pagos, proveedores, recepción, reservas, devoluciones o transferencias.

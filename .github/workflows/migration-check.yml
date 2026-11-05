@@ -78,3 +78,16 @@ jobs:
         run: docker exec -i "${{ job.services.postgres.id }}" psql -v ON_ERROR_STOP=1 -U microapp -d microapp_test -f /dev/stdin < apps/api/migrations/0007_audit_logs_append_only.sql
       - name: Verify audit logs immutability and runtime-role assertions
         run: docker exec -i "${{ job.services.postgres.id }}" psql -v ON_ERROR_STOP=1 -U microapp -d microapp_test -f /dev/stdin < apps/api/migrations/0007_audit_logs_append_only.assertions.sql
+      - name: Verify count-ledger validation migration rolls back on failure
+        run: |
+          sed '/^COMMIT;$/i SELECT 1/0;' apps/api/migrations/0008_inventory_count_ledger_validation.sql > /tmp/0008-count-ledger-failure.sql
+          if docker exec -i "${{ job.services.postgres.id }}" psql -v ON_ERROR_STOP=1 -U microapp -d microapp_test -f /dev/stdin < /tmp/0008-count-ledger-failure.sql; then
+            echo "Expected the injected count-ledger migration failure, but psql succeeded."
+            exit 1
+          fi
+          remaining="$(docker exec "${{ job.services.postgres.id }}" psql -At -U microapp -d microapp_test -c "SELECT position('INVENTORY_COUNT_PHYSICAL_SNAPSHOT_REQUIRED' in pg_get_functiondef('public.guard_inventory_count_lifecycle()'::regprocedure)) = 0 AND position('INVENTORY_MOVEMENT_DELTA_MUST_MATCH_COUNT_SNAPSHOT' in pg_get_functiondef('public.validate_count_inventory_movement()'::regprocedure)) = 0")"
+          test "$remaining" = "t"
+      - name: Apply count snapshot and ledger validation migration
+        run: docker exec -i "${{ job.services.postgres.id }}" psql -v ON_ERROR_STOP=1 -U microapp -d microapp_test -f /dev/stdin < apps/api/migrations/0008_inventory_count_ledger_validation.sql
+      - name: Verify count snapshot and ledger delta assertions
+        run: docker exec -i "${{ job.services.postgres.id }}" psql -v ON_ERROR_STOP=1 -U microapp -d microapp_test -f /dev/stdin < apps/api/migrations/0008_inventory_count_ledger_validation.assertions.sql

@@ -146,6 +146,7 @@ const googleEnv = {
   GOOGLE_CLIENT_SECRET: "test-client-secret",
   GOOGLE_REDIRECT_URI: "https://api.example/auth/google/callback",
   BOOTSTRAP_TOKEN: bootstrapToken,
+  AUTH_RATE_LIMIT_HMAC_KEY: "integration-test-only-hmac-key-32-bytes-minimum",
 };
 
 function extractCookiePairs(response: Response): Record<string, string> {
@@ -162,7 +163,9 @@ function extractCookiePairs(response: Response): Record<string, string> {
 
 async function startGoogleFlow(extraQuery = ""): Promise<{ cookieHeader: string; state: string }> {
   const startResponse = await app.fetch(
-    new Request(`https://api.example/auth/google${extraQuery}`),
+    new Request(`https://api.example/auth/google${extraQuery}`, {
+      headers: { "CF-Connecting-IP": "198.51.100.10" },
+    }),
     googleEnv,
   );
   expect(startResponse.status).toBe(302);
@@ -188,6 +191,7 @@ async function startBootstrapGoogleFlow(input: {
     headers: {
       Origin: googleOrigin,
       "Content-Type": "application/x-www-form-urlencoded",
+      "CF-Connecting-IP": "198.51.100.11",
     },
     body,
   }), googleEnv);
@@ -313,7 +317,7 @@ const suiteGoogle = describe.skipIf(!databaseAvailable)("Google OAuth routes aga
     try {
       const callback = await app.fetch(new Request(
         `https://api.example/auth/google/callback?code=test-code&state=${state}`,
-        { headers: { Cookie: cookieHeader } },
+        { headers: { Cookie: cookieHeader, "CF-Connecting-IP": "203.0.113.10" } },
       ), googleEnv);
       expect(callback.status).toBe(302);
       expect(callback.headers.get("location")).toBe(`${googleOrigin}/`);
@@ -336,7 +340,7 @@ const suiteGoogle = describe.skipIf(!databaseAvailable)("Google OAuth routes aga
 
     const callback = await app.fetch(new Request(
       `https://api.example/auth/google/callback?code=test-code&state=${state}`,
-      { headers: { Cookie: cookieHeader } },
+      { headers: { Cookie: cookieHeader, "CF-Connecting-IP": "203.0.113.10" } },
     ), googleEnv);
 
     expect(callback.status).toBe(302);

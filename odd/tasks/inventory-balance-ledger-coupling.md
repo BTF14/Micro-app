@@ -1,0 +1,54 @@
+# ODD task: enforce transactional inventory balance ↔ ledger coupling
+
+- Status: in progress
+- Risk: critical (inventory integrity)
+- Issue: #53
+- Branch: feat/inventory-balance-ledger-coupling-20261105
+- Base: PR #209 HEAD 666236bc7b2c7e1dd1e30d9ccdc467e37c40784b
+- Started: 2026-11-05 UTC
+
+## Objective
+
+Make PostgreSQL reject any non-zero on-hand balance insertion/update unless exactly one matching append-only ledger movement is inserted in the same transaction, and reject any ledger movement unless a matching on-hand balance change exists in that transaction. This closes the universal balance↔ledger pairing gap for writes performed through the database triggers.
+
+## Existing contract and evidence
+
+- Current API writer is `apps/api/src/inventory-counts.ts`: it locks the warehouse and balances, validates physical snapshot version/quantity, updates/inserts `inventory_balances`, then inserts `warehouse_inventory_movements`, all inside one transaction.
+- Migration 0005 already has balance versioning and a no-delete trigger; movement ledger is append-only.
+- Migration 0008 validates count snapshots and count-derived movement delta/actor/reason/unit cost.
+- No other API source module currently writes `inventory_balances` or `warehouse_inventory_movements`.
+- Reservation-only changes and on-hand no-op updates must not require a stock movement. A non-zero on-hand delta must pair exactly with one movement for the same org/branch/warehouse/product and signed quantity.
+
+## Design
+
+- Add a private transaction-intent table populated by an AFTER INSERT/UPDATE OF on_hand_quantity trigger.
+- The intent is transaction-scoped via `txid_current()`, scoped to the exact inventory key and signed delta, and starts unconsumed.
+- A SECURITY DEFINER BEFORE INSERT movement trigger consumes one exact matching intent using row locking; it rejects movements with no corresponding balance change and prevents duplicate consumption.
+- A DEFERRABLE INITIALLY DEFERRED constraint trigger on newly inserted intents rejects balance changes left unmatched at transaction commit, then removes the consumed intent.
+- Internal table and trigger functions use a fixed search_path and no direct PUBLIC privileges. This is defense-in-depth, not a substitute for a non-owner least-privilege runtime principal; production principal/ownership remains NO VERIFICADO.
+- Contract order: update balance first, insert matching movement second, commit. Existing count confirmation already follows this order.
+
+## Acceptance criteria
+
+- [ ] Non-zero balance insert/update without movement fails at commit.
+- [ ] Movement without a same-transaction balance delta fails immediately.
+- [ ] Wrong signed delta, product, warehouse, branch or tenant fails.
+- [ ] Duplicate movement cannot consume the same balance intent.
+- [ ] Exact one-to-one matching succeeds.
+- [ ] Zero opening balance, zero-delta physical count and reservation-only update remain valid without a stock movement.
+- [ ] Multiple distinct balance changes in one transaction pair independently.
+- [ ] Existing append-only, count snapshot, stale/ABA, tenant and branch tests remain passing.
+- [ ] CI and migration-check apply 0001–0009 from clean disposable PostgreSQL 18; migration rollback is verified.
+- [ ] Exact HEAD CI and PostgreSQL assertions pass; full diff and ODD review completed.
+- [ ] Documentation states the database-level pairing scope and the remaining runtime-owner caveat.
+
+## Scope and safety
+
+- Only additive migration, disposable PostgreSQL assertions, workflow integration and docs in this feature branch.
+- No main/production/Neon access, no secrets, no real data, no Cloudflare settings/DNS/billing, no merge or deployment.
+- Do not weaken append-only, stale/ABA, authorization or migration rollback checks.
+- The transaction-intent table is an internal mechanism, not a business ledger or user-facing API.
+
+## Execution log
+
+- 2026-11-05: traced all API source files in the current stack. The only current API writer pair is count confirmation, which updates balances before inserting movements in one transaction. Confirmed universal database pairing was not yet enforced. No source or production data changed.

@@ -34,6 +34,7 @@ Make PostgreSQL reject any non-zero on-hand balance insertion/update unless exac
 - [ ] Movement without a same-transaction balance delta fails immediately.
 - [ ] Wrong signed delta, product, warehouse, branch or tenant fails.
 - [ ] Duplicate movement cannot consume the same balance intent.
+- [ ] TRUNCATE is rejected for both inventory balances and the append-only movement ledger.
 - [ ] Exact one-to-one matching succeeds.
 - [ ] Zero opening balance, zero-delta physical count and reservation-only update remain valid without a stock movement.
 - [ ] Multiple distinct balance changes in one transaction pair independently.
@@ -47,7 +48,7 @@ Make PostgreSQL reject any non-zero on-hand balance insertion/update unless exac
 - Only additive migration, disposable PostgreSQL assertions, workflow integration and docs in this feature branch.
 - No main/production/Neon access, no secrets, no real data, no Cloudflare settings/DNS/billing, no merge or deployment.
 - Do not weaken append-only, stale/ABA, authorization or migration rollback checks.
-- The transaction-intent table is an internal mechanism, not a business ledger or user-facing API.
+- The transaction-intent table is an internal mechanism, not a business ledger or user-facing API. TRUNCATE must also be blocked because row-level DELETE triggers do not fire for TRUNCATE.
 
 ## Execution log
 

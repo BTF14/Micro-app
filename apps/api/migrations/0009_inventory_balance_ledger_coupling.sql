@@ -61,6 +61,26 @@ $$;
 REVOKE ALL ON FUNCTION public.record_inventory_balance_ledger_intent() FROM PUBLIC;
 REVOKE ALL ON FUNCTION public.consume_inventory_balance_ledger_intent() FROM PUBLIC;
 REVOKE ALL ON FUNCTION public.assert_inventory_balance_ledger_intent_consumed() FROM PUBLIC;
+REVOKE TRUNCATE ON TABLE public.inventory_balances, public.warehouse_inventory_movements FROM PUBLIC;
+
+CREATE FUNCTION public.prevent_inventory_ledger_truncate()
+RETURNS trigger LANGUAGE plpgsql
+SET search_path = pg_catalog
+AS $
+BEGIN
+  RAISE EXCEPTION 'INVENTORY_LEDGER_TRUNCATE_FORBIDDEN' USING ERRCODE = '23514';
+  RETURN NULL;
+END;
+$;
+REVOKE ALL ON FUNCTION public.prevent_inventory_ledger_truncate() FROM PUBLIC;
+
+CREATE TRIGGER inventory_balances_no_truncate
+BEFORE TRUNCATE ON public.inventory_balances
+FOR EACH STATEMENT EXECUTE FUNCTION public.prevent_inventory_ledger_truncate();
+CREATE TRIGGER warehouse_inventory_movements_no_truncate
+BEFORE TRUNCATE ON public.warehouse_inventory_movements
+FOR EACH STATEMENT EXECUTE FUNCTION public.prevent_inventory_ledger_truncate();
+
 CREATE TRIGGER inventory_balances_ledger_intent
 AFTER INSERT OR UPDATE ON public.inventory_balances
 FOR EACH ROW EXECUTE FUNCTION public.record_inventory_balance_ledger_intent();

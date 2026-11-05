@@ -98,7 +98,7 @@ jobs:
             echo "Expected the injected balance-ledger migration failure, but psql succeeded."
             exit 1
           fi
-          remaining="$(docker exec "${{ job.services.postgres.id }}" psql -At -U microapp -d microapp_test -c "SELECT to_regclass('public.inventory_balance_ledger_intents') IS NULL AND to_regprocedure('public.record_inventory_balance_ledger_intent()') IS NULL AND NOT EXISTS (SELECT 1 FROM pg_trigger WHERE tgname IN ('inventory_balances_ledger_intent','warehouse_inventory_movements_require_balance_intent','inventory_balance_ledger_intent_complete'))")"
+          remaining="$(docker exec "${{ job.services.postgres.id }}" psql -At -U microapp -d microapp_test -c "SELECT to_regclass('public.inventory_balance_ledger_intents') IS NULL AND to_regprocedure('public.record_inventory_balance_ledger_intent()') IS NULL AND to_regprocedure('public.prevent_inventory_ledger_truncate()') IS NULL AND NOT EXISTS (SELECT 1 FROM pg_trigger WHERE tgname IN ('inventory_balances_ledger_intent','warehouse_inventory_movements_require_balance_intent','inventory_balance_ledger_intent_complete','inventory_balances_no_truncate','warehouse_inventory_movements_no_truncate'))")"
           test "$remaining" = "t"
       - name: Apply transactional balance-ledger coupling migration
         run: docker exec -i "${{ job.services.postgres.id }}" psql -v ON_ERROR_STOP=1 -U microapp -d microapp_test -f /dev/stdin < apps/api/migrations/0009_inventory_balance_ledger_coupling.sql

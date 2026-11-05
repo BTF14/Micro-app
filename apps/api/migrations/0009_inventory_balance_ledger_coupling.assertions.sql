@@ -17,6 +17,16 @@ BEGIN
   VALUES (org_id, branch_id, warehouse_a, product_a, 0);
 
   BEGIN
+    TRUNCATE TABLE inventory_balances;
+    RAISE EXCEPTION 'FAIL: inventory balances truncate was accepted';
+  EXCEPTION WHEN check_violation THEN NULL; END;
+
+  BEGIN
+    TRUNCATE TABLE warehouse_inventory_movements;
+    RAISE EXCEPTION 'FAIL: inventory ledger truncate was accepted';
+  EXCEPTION WHEN check_violation THEN NULL; END;
+
+  BEGIN
     UPDATE inventory_balances SET on_hand_quantity = 7 WHERE organization_id = org_id AND warehouse_id = warehouse_a AND product_id = product_a;
     SET CONSTRAINTS inventory_balance_ledger_intent_complete IMMEDIATE;
     RAISE EXCEPTION 'FAIL: balance change without movement was accepted';
@@ -64,7 +74,7 @@ BEGIN
   -- Signed negative deltas are paired exactly for physical adjustments.
   UPDATE inventory_balances SET on_hand_quantity = 3 WHERE organization_id = org_id AND warehouse_id = warehouse_a AND product_id = product_a;
   INSERT INTO warehouse_inventory_movements (organization_id, branch_id, warehouse_id, product_id, movement_type, quantity_delta, reason, actor_user_id)
-  VALUES (org_id, branch_id, warehouse_a, product_a, 'count_adjustment', -2, 'Matched negative adjustment', actor_id);
+  VALUES (org_id, branch_id, warehouse_a, product_a, 'reversal', -2, 'Matched negative adjustment', actor_id);
   UPDATE inventory_balances SET reserved_quantity = 2 WHERE organization_id = org_id AND warehouse_id = warehouse_a AND product_id = product_a;
   UPDATE inventory_balances SET on_hand_quantity = 5, updated_at = clock_timestamp()
    WHERE organization_id = org_id AND warehouse_id = warehouse_a AND product_id = product_a;

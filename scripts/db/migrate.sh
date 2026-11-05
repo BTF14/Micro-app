@@ -43,7 +43,11 @@ SELECT pg_catalog.pg_try_advisory_lock(20261105, 120012) AS migration_lock_acqui
   \echo MIGRATION_LOCK_ACQUIRED
 \else
   \echo MIGRATION_LOCK_NOT_ACQUIRED
-  \quit 3
+  DO $migration_lock_error$
+  BEGIN
+    RAISE EXCEPTION 'MIGRATION_LOCK_NOT_ACQUIRED';
+  END;
+  $migration_lock_error$;
 \endif
 
 DO $migration_preflight$
@@ -217,13 +221,21 @@ SELECT
 \if :has_row
   \if :checksum_mismatch
     \echo MIGRATION_CHECKSUM_MISMATCH: $migration_id
-    \quit 3
+    DO \$migration_checksum_error\$
+    BEGIN
+      RAISE EXCEPTION 'MIGRATION_CHECKSUM_MISMATCH: $migration_id';
+    END;
+    \$migration_checksum_error\$;
   \endif
   \if :is_applied
     \echo MIGRATION_ALREADY_APPLIED: $migration_id
   \else
     \echo MIGRATION_RECONCILIATION_REQUIRED: $migration_id
-    \quit 3
+    DO \$migration_state_error\$
+    BEGIN
+      RAISE EXCEPTION 'MIGRATION_RECONCILIATION_REQUIRED: $migration_id';
+    END;
+    \$migration_state_error\$;
   \endif
 \else
   SELECT EXISTS (
@@ -233,7 +245,11 @@ SELECT
   \gset
   \if :later_migration_applied
     \echo MIGRATION_LEDGER_GAP: $migration_id
-    \quit 3
+    DO \$migration_gap_error\$
+    BEGIN
+      RAISE EXCEPTION 'MIGRATION_LEDGER_GAP: $migration_id';
+    END;
+    \$migration_gap_error\$;
   \endif
   \set migration_is_transactional $is_transactional
   \if :migration_is_transactional
@@ -275,7 +291,11 @@ SELECT EXISTS (
 \gset
 \if :ledger_ahead_of_bundle
   \echo MIGRATION_LEDGER_AHEAD_OF_BUNDLE
-  \quit 3
+  DO \$migration_ahead_error\$
+  BEGIN
+    RAISE EXCEPTION 'MIGRATION_LEDGER_AHEAD_OF_BUNDLE';
+  END;
+  \$migration_ahead_error\$;
 \endif
 
 DO \$migration_final_verify\$

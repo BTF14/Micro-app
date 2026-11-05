@@ -120,5 +120,8 @@ export async function cleanupExpiredAuthRateLimits(databaseUrl: string | undefin
     await client.query(
       "DELETE FROM auth_rate_limits WHERE updated_at < now() - interval '48 hours'",
     );
+    await client.query(
+      "DELETE FROM auth_bootstrap_attempts WHERE expires_at < now() - interval '48 hours'",
+    );
   });
 }

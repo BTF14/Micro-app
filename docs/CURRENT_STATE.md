@@ -1,3 +1,16 @@
+## Reconciliación Cloudflare — evidencia automática de previews — 2026-11-05 01:38 EDT
+
+- La PR #207 recibió dos comentarios del bot oficial `cloudflare-workers-and-pages[bot]` el 2026-11-05 04:48 UTC (actualizados alrededor de 04:50 UTC): [Workers comment](https://github.com/BTF14/Micro-app/pull/207#issuecomment-6649952138) y [Pages comment](https://github.com/BTF14/Micro-app/pull/207#issuecomment-6649953153).
+- Workers informó `Deployment successful!` para `micro-app-api`, commit `26c5270`, con Build ID `0c8394a1-4d91-4061-a850-6c78f3b11295`, y etiquetó dos destinos como Commit Preview (`https://f30223c5-micro-app-api.btfcasheb.workers.dev`) y Branch Preview (`https://feat-audit-logs-append-only-20261105-micro-app-api.btfcasheb.workers.dev`).
+- Pages informó `Deploy successful!` para el mismo commit, con preview de commit `https://7b2769c3.micro-app-63i.pages.dev/` y preview de rama `https://feat-audit-logs-append-only.micro-app-63i.pages.dev/`.
+- **Confirmado:** la integración de Cloudflare comunicó la publicación satisfactoria de destinos etiquetados como previews para #207. Esto corrige el snapshot previo que solo disponía del check `Workers Builds: micro-app-api`.
+- **No confirmado:** que el build se limitara exclusivamente a previews, el estado de Worker Version/deployment de producción, el porcentaje de tráfico y si producción recibió tráfico del commit. El segmento `/production/builds/` en el enlace del dashboard no demuestra por sí solo un despliegue productivo.
+- El Build ID anterior es el asociado al comentario automático de #207; no es el build objetivo histórico `3542c660-e5e3-435e-8be5-dbed236cec1c`, que sigue pendiente de inspección autenticada de solo lectura.
+- No se realizó ninguna modificación manual en Cloudflare, ni se cambiaron deployments, versions, traffic, settings, secrets, routes, DNS o billing. Producción sigue **NO LISTA**.
+- La auditoría autenticada del dashboard sigue bloqueada: el perfil TinyFish `Micro-app Cloudflare` no registra `cloudflare.com` en `signed_in_sites` y el wallet consultado está en `-$0.008`. No iniciar ejecuciones metered hasta recargar y confirmar el perfil adecuado.
+
+---
+
 ## Estado vivo verificado — 2026-11-05 00:50 EDT
 
 Este bloque es la fuente vigente para esta sesión y supersede los checkpoints históricos inferiores. Los SHA y conteos de CI se consultaron en GitHub para el HEAD exacto de cada PR. Workflow runs, check runs, status contexts y reviews son categorías distintas.

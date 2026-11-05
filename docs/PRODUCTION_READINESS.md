@@ -209,3 +209,13 @@ La consulta directa a GitHub Actions por `head_sha` incluye eventos `push` y `pu
 - La migración 0005 está envuelta en BEGIN/COMMIT y el workflow de migración ejecuta un fallo inducido antes de COMMIT, verifica ausencia de tablas y después aplica el SQL real. Los 17/7/8 runs incluyen la validación de migraciones de sus SHA correspondientes.
 - Stale-count básico: snapshot de cantidad, 409 y prueba de confirmación inversa. Residual ABA/versionado antes de futuros writers.
 - #202 HEAD `2793550cb9ccb4595971ad86ce6b950203c681df` tenía 11 workflow runs (7 success, 4 in_progress) en la consulta; ese estado se recalcula para cualquier commit documental posterior.
+
+
+## Actualización de gates de inventario — 2026-11-05 UTC (supersede checkpoints anteriores)
+
+- El stale-count no se limita a comparar cantidades: `inventory_balances.balance_version` incrementa en cada cambio de on-hand/reservas, el DELETE de balance está bloqueado y cada línea física captura `expected_balance_version`. La confirmación compara versión y cantidad; el test ABA 8.250 → 8.500 → 8.250 devuelve 409. El riesgo ABA queda cubierto para escritores que actualicen la tabla de balance; los futuros escritores deben respetar el mutex y no escribir ledger sin actualizar balance.
+- PR #200 código HEAD `7b58b140e50c46a3d3b087e3445a4b04e6243a81`: 16/16 workflow runs success; HEAD documental `5fbc17a48b65076cf5609a7a054bbd125a3a5d1e`: 16/16 success.
+- PR #204 HEAD `07a5a41c0f5f5c36fb89a5c5950796493d56eb20`: 8 ahead/0 behind de #200, diff propio 1 archivo, 6/6 workflows success.
+- PR #205 HEAD `7005d9a5b03234bd0209d0cc1ea75e8ae21e0032`: 20 ahead/0 behind de #204, diff propio 3 archivos, 8/8 workflows success; conserva idempotencia.
+- Las tres PR siguen Draft y no tienen reviews formales, review threads ni combined status contexts en la consulta. No se ha fusionado ninguna. CI success no es aprobación.
+- **Producción sigue bloqueada** por autorización/aislamiento completo y pruebas cross-tenant/cross-branch (issue #53), flujos comerciales incompletos, backups/restore reales y RPO/RTO operativos, alertas externas, rate limiting runtime, coste total y gates legales/fiscales. No migrar a Neon ni desplegar.

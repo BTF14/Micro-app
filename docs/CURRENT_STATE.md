@@ -1606,3 +1606,8 @@ Cada cambio de código, SQL, configuración o decisión se acompaña en el mismo
 ### Límites de seguridad
 
 No tocar Neon producción, despliegues productivos, Cloudflare productivo, secretos, DNS, billing ni datos reales. No force-push ni modificar main directamente. No modificar PR #196/#193 ni reabrir #190.
+
+
+## Corrección técnica: stale-count ya tiene guard básico — 2026-11-05 UTC
+
+La descripción previa de este checkpoint fue demasiado amplia al decir que no existía control demostrado. En #200, `apps/api/src/inventory-counts.ts` captura `expected_on_hand_quantity` al crear un conteo físico bajo los locks de almacén/saldo. Al confirmar, vuelve a bloquear y compara el saldo actual; si difiere, responde 409 `COUNT_STALE` y mantiene el conteo en draft. `inventory-counts.integration.test.ts` prueba dos conteos creados sobre el mismo saldo, confirma el segundo primero y verifica que el primero sea rechazado sin ledger movement. El caso básico de confirmación fuera de orden con cambio de cantidad está protegido y probado. Riesgo residual: no hay versión monotónica, por lo que una secuencia ABA (cambio de saldo y retorno al mismo valor) no se detecta por igualdad de cantidad. Antes de añadir escritores comerciales, exigir lock contract uniforme y evaluar versionado con prueba ABA. Esto sustituye la afirmación anterior de “stale-count sin solución”.

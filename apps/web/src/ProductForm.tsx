@@ -172,7 +172,6 @@ export default function ProductForm({ organizationId, product, onCancel, onSaved
           <button className="product-form-submit" type="submit" disabled={saving}>
             {saving ? "Guardando…" : product ? "Guardar cambios" : "Crear producto"}
           </button>
-          <button className="product-editor-cancel" type="button" onClick={onCancel} disabled={saving}>Cancelar</button>
         </div>
       </form>
     </section>

@@ -1716,3 +1716,11 @@ Mantener #207 en Draft. Revisar independientemente el diff; resolver la colisió
 - Se inspeccionó la migración #207: triggers para UPDATE/DELETE/TRUNCATE y roles sintéticos en assertions. El rol efectivo de DATABASE_URL sigue NO VERIFICADO; la pila final 0005/0006/0007 no está reconciliada por la colisión de #194/#200.
 - Se mantiene la regla: no pedir de nuevo Build IDs ni capturas ya documentados, no usar TinyFish ni pedir terminal/CLI. Si dashboard autenticado no está disponible por un conector independiente, registrar NO VERIFICADO y continuar.
 - Sin cambios en código/runtime, migraciones, main, Neon, Cloudflare, secretos, DNS, billing ni datos reales. Producción NO LISTA.
+
+
+## 2026-11-05 — Prueba de confirmación cross-scope en #205
+
+- Añadida en la PR existente #205 una prueba PostgreSQL para IDs de conteo ajenos por sucursal y tenant. La ruta debe devolver 404 sin cambiar estado ni crear movimientos.
+- El primer CI mostró 21/21 tests aprobados, pero el teardown falló al borrar el usuario antes de limpiar la membresía del tenant extranjero. Se corrigió el orden de limpieza; no se alteró código de runtime.
+- HEAD final #205 `c0bcbbe48aa8783b85ee7787dd1ae8a6d0dfdafc`: 9/9 check-runs success, 0 fallos/pendientes; el log exacto de CI confirma 21/21 tests PostgreSQL de conteos.
+- #205 permanece abierta/Draft y 26 ahead/0 behind de #204. No merge ni cambios en Neon/Cloudflare productivo/secretos/datos.

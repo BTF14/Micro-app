@@ -3,7 +3,7 @@
 **Status:** implementation proposed in PR; not deployed or production-verified.  
 **Cost target:** USD 0 in additional recurring provider fees.  
 **Primary source:** https://www.bcv.org.ve/  
-**Worker schedule:** weekdays, hourly from 09:00 through 19:00 Venezuela time (13:00–23:00 UTC).
+**Worker schedule:** once per weekday at 18:00 Venezuela time (22:00 UTC).
 
 ## Source-of-truth decision
 
@@ -33,7 +33,7 @@ If BCV is unavailable or parsing/validation fails, do not invent a rate and do n
 
 ## Scheduling and free-tier assumptions
 
-A single Cloudflare Cron Trigger runs hourly on weekdays during the Venezuela publication window. This is well below the documented Workers Free daily request allowance; the account's actual plan, quota, and Cron configuration still require verification in Cloudflare before production rollout. No paid plan or provider subscription is introduced by this code.
+The BCV reference rate is a daily publication, so the Worker fetches the official page once per weekday at 18:00 Venezuela time (22:00 UTC), after the usual late-afternoon publication window. This reduces scheduled BCV fetches from up to 55 per week to 5. The existing hourly cleanup trigger remains unchanged. The dashboard refreshes at most every six hours, and successful rate responses are browser-cacheable for one hour to avoid repeated reads during reloads. The account's actual plan, quota, and Cron configuration still require verification in Cloudflare before production rollout. No paid plan or provider subscription is introduced by this code.
 
 ## API
 

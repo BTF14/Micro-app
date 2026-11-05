@@ -1,6 +1,6 @@
 # Arquitectura SaaS de Micro app — decisiones y criterios de evolución
 
-**Fecha:** 2026-10-30  
+**Fecha:** 2026-11-05  
 **Estado:** dirección arquitectónica recomendada para guiar el diseño; no autoriza por sí sola cambios de esquema, políticas comerciales sensibles, despliegues ni migraciones.  
 **Repositorio:** https://github.com/BTF14/Micro-app  
 **PR documental de continuidad:** https://github.com/BTF14/Micro-app/pull/156
@@ -10,7 +10,7 @@
 Este documento conserva decisiones y criterios para que cualquier chat, agente o desarrollador pueda continuar sin reconstruir conversaciones. El repositorio es la fuente de continuidad. Distinguir siempre:
 
 - **Dirección adoptada para diseño:** guía técnica recomendada por el propietario al delegar criterio arquitectónico.
-- **Propuesta pendiente de aprobación:** especialmente permisos detallados, límites comerciales, descuentos, excepciones operativas y políticas financieras.
+- **Decisión comercial actualizada (2026-11-05):** Micro-app no tendrá descuentos ni cambios manuales de precio durante el checkout. Toda venta usa el precio vigente del catálogo; los cambios se hacen previamente por Owner/Admin y quedan auditados. Ver `docs/sdd/MONETARY_ENGINE.md` y la matriz de permisos.
 - **Implementado y verificado:** solo cuando existe código y evidencia identificable.
 - **Pendiente:** no presentarlo como funcionalidad existente.
 
@@ -55,7 +55,7 @@ Roles base de la organización: `owner`, `admin`, `cashier`, `inventory`. La dec
 
 **Reglas de diseño obligatorias:** autorización server-side por operación y recurso; denegar por defecto; validar organización y sucursal en cada consulta; no confiar en IDs del cliente; evitar que una organización quede sin owner activo; revocar sesiones al desactivar membresía/usuario; auditar cambios de rol y acciones sensibles.
 
-La matriz `docs/sdd/role-permission-decision-matrix.md` sigue **NO APROBADA**. La decisión estructural anterior no aprueba qué operaciones puede realizar cada rol. Cada organización define sus políticas comerciales, incluidos descuentos, límites y aprobaciones; quién puede configurarlas y quién puede ejecutar excepciones debe quedar definido en la matriz aprobada. Ver `docs/sdd/ORGANIZATION_COMMERCIAL_POLICY_CONFIGURATION.md`. No implementar permisos comerciales basándose solo en este apartado.
+La matriz `docs/sdd/role-permission-decision-matrix.md` está **APROBADA desde 2026-10-31** y actualizada el 2026-11-05. La decisión más reciente del propietario elimina descuentos y overrides de precio durante checkout; el backend debe exigir el precio vigente del catálogo. La antigua propuesta de políticas de descuentos por organización quedó supersedida y no debe implementarse. La aprobación de permisos no sustituye endpoints, autorización server-side ni pruebas cross-tenant.
 
 ## 4. BCV y conversión USD/VES
 
@@ -64,7 +64,7 @@ Objetivo: USD como moneda base del catálogo/contabilidad interna y VES como con
 ### Diseño
 
 1. Fuente primaria elegida: publicación oficial del BCV en https://www.bcv.org.ve/, consultada directamente por HTTPS. El BCV no expone una API JSON pública documentada; Micro-app implementa un extractor controlado de la página oficial, con fixtures y validaciones estrictas.
-2. Un Cron Trigger de Cloudflare consulta la página oficial cada hora de lunes a viernes, entre 09:00 y 19:00 hora de Venezuela (13:00–23:00 UTC). La programación evita depender de un horario único de publicación y contempla que fines de semana/feriados pueden no producir una tasa nueva.
+2. La PR #227 propone un Cron Trigger de Cloudflare una vez por día hábil a las 18:00 hora de Venezuela (22:00 UTC), conservando la última tasa válida si el BCV no publica o falla la extracción. La programación reduce llamadas y debe validarse en CI y en un despliegue controlado antes de declararse operativa.
 3. Validar estructura, valor positivo, fecha efectiva, fuente, duplicados y cambios anómalos antes de persistir.
 4. Persistir el histórico en `exchange_rates` (la tabla ya existe en el esquema revisado), con fuente, fecha efectiva, valor y estado de validación.
 5. No escribir filas vacías ni repetir escrituras si no hay tasa nueva. Sin bucles de reintento.
@@ -146,7 +146,7 @@ Definir umbrales conservadores, alertas, cuotas server-side y política de degra
 7. Medir carga/coste y definir límites comerciales después de tener flujos reales.
 8. Validar producción, backups, observabilidad, seguridad y recuperación antes de declarar readiness.
 
-No habilitar endpoints comerciales mientras la matriz de permisos por operación siga sin aprobarse. Las migraciones estructurales pueden avanzar en una PR aislada cuando el modelo de datos esté definido, con pruebas PostgreSQL efímeras y sin aplicar cambios a Neon main.
+La matriz de permisos por operación está aprobada, pero los endpoints comerciales siguen pendientes. No habilitarlos hasta implementar autorización server-side y pruebas PostgreSQL de aislamiento cross-tenant/rol. Las migraciones deben avanzar en PR aisladas, con pruebas efímeras y sin aplicar cambios a Neon main.
 
 ## 10. Pendientes explícitos
 
@@ -156,7 +156,7 @@ No habilitar endpoints comerciales mientras la matriz de permisos por operación
 - ERD de organización/sucursal/almacén/caja documentado en `docs/sdd/MULTI_BRANCH_DATA_MODEL.md`; sucursales/asignaciones en 0003 y cajas/turnos en 0004 (PR #167 fusionada). Almacenes y stock por almacén siguen pendientes.
 - Matriz de permisos por operación y ámbito del recurso (organización, sucursal, caja/turno), sin crear roles por sucursal. La autoridad de rol sigue siendo un único `organization_members.role` por miembro/organización; `branch_memberships` solo concede asignación/acceso a sucursales. Definir qué operaciones y recursos puede administrar o ejecutar cada rol, incluidas la configuración de políticas comerciales de la organización y la ejecución de excepciones. Los valores y límites comerciales los define cada organización, no la plataforma. La matriz permanece **NO APROBADA** hasta aprobación explícita.
 - Método de valoración de inventario y política de costo/margen.
-- Capacidades y permisos para descuentos, cancelación/devolución y aprobaciones; cada organización configura sus propios límites comerciales.
+- Descuentos y overrides de precio en checkout: **fuera del producto** por decisión del propietario (2026-11-05). Cancelaciones/devoluciones mantienen las reglas de la matriz aprobada.
 - Estrategia de caché de catálogo solo tras benchmark.
 - Pruebas de capacidad de Neon y Cloudflare, cuotas y coste total.
 - RPO/RTO, retención/alertas y validación de integridad del backup.

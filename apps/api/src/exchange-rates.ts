@@ -15,6 +15,7 @@ export type BcvOfficialRate = {
 type StoredRateRow = {
   rate: string;
   effective_date: string;
+  validation_status?: "valid" | "stale";
 };
 
 function caracasDate(now: Date): string {
@@ -154,7 +155,7 @@ export async function persistBcvOfficialRate(
   if (inserted.rows.length > 0) return "inserted";
 
   const existing = await client.query<StoredRateRow>(
-    `SELECT rate::text AS rate, effective_date::text AS effective_date
+    `SELECT rate::text AS rate, effective_date::text AS effective_date, validation_status
        FROM public.exchange_rates
       WHERE source = $1 AND effective_date = $2::date
       LIMIT 1`,
@@ -163,7 +164,12 @@ export async function persistBcvOfficialRate(
   const sameDate = existing.rows[0];
   if (sameDate) {
     if (normalizeDecimal(sameDate.rate) !== normalizeDecimal(rate.rate)) {
-      // Never silently rewrite a rate already used by completed sales.
+      // Mark the old value stale without rewriting the rate or historical sales.
+      // The runtime grant is column-scoped to validation_status only.
+      await client.query(
+        "UPDATE public.exchange_rates SET validation_status = 'stale' WHERE source = $1 AND effective_date = $2::date",
+        [BCV_SOURCE_ID, rate.effectiveDate],
+      );
       throw new Error("BCV_RATE_CHANGED_FOR_EXISTING_EFFECTIVE_DATE");
     }
     return "unchanged";
@@ -189,7 +195,7 @@ export function registerExchangeRateRoutes(app: Hono<{ Bindings: Bindings }>): v
     try {
       const rows = await withDatabaseClient(c.env.DATABASE_URL, async (client) => {
         const result = await client.query<StoredRateRow & { fetched_at: string }>(
-          "SELECT rate::text AS rate, effective_date::text AS effective_date, fetched_at::text AS fetched_at FROM public.exchange_rates WHERE source = $1 AND validation_status = 'valid' ORDER BY effective_date DESC, fetched_at DESC LIMIT $2",
+          "SELECT rate::text AS rate, effective_date::text AS effective_date, fetched_at::text AS fetched_at, validation_status FROM public.exchange_rates WHERE source = $1 ORDER BY effective_date DESC, fetched_at DESC LIMIT $2",
           [BCV_SOURCE_ID, limit],
         );
         return result.rows;
@@ -203,7 +209,7 @@ export function registerExchangeRateRoutes(app: Hono<{ Bindings: Bindings }>): v
           rate: row.rate,
           effectiveDate: row.effective_date,
           fetchedAt: row.fetched_at,
-          status: row.effective_date > caracasDate(new Date()) ? "scheduled" : row.effective_date < caracasDate(new Date()) ? "stale" : "current",
+          status: row.validation_status === "stale" || row.effective_date < caracasDate(new Date()) ? "stale" : row.effective_date > caracasDate(new Date()) ? "scheduled" : "current",
         })),
       });
     } catch {

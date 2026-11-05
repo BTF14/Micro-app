@@ -108,3 +108,17 @@ export async function enforceAuthRateLimit(
     }, 503);
   }
 }
+
+/**
+ * Hourly scheduled retention: fixed-window entries are useful only while
+ * traffic is active. Remove inactive pseudonymous identifiers after 48 hours.
+ * The scheduled handler must surface failures so Cloudflare records a failed
+ * invocation rather than silently claiming cleanup succeeded.
+ */
+export async function cleanupExpiredAuthRateLimits(databaseUrl: string | undefined): Promise<void> {
+  await withDatabaseClient(databaseUrl, async (client) => {
+    await client.query(
+      "DELETE FROM auth_rate_limits WHERE updated_at < now() - interval '48 hours'",
+    );
+  });
+}

@@ -1714,3 +1714,16 @@ Este bloque es más reciente que los snapshots históricos anteriores; si contra
 ### Corrección del estado stale-count — 2026-11-05 UTC
 
 No reabrir como defecto no resuelto el caso básico de conteo fuera de orden: #200 ya captura `expected_on_hand_quantity` en la creación y devuelve 409 `COUNT_STALE` si el saldo cambió antes de confirmar. Hay prueba de integración que confirma primero el conteo más nuevo y rechaza el antiguo sin ledger movement. La revisión pendiente es más estrecha: evaluar ABA/versionado monotónico y exigir que todos los escritores futuros respeten el mutex del almacén. La migración 0005 sigue siendo un riesgo separado de atomicidad.
+
+
+
+## Reconciliación posterior: migración atómica y ramas sincronizadas — 2026-11-05 UTC
+
+- #200 HEAD `a40d8378d792197628f70b07be04f92686d55bdb`: 17 ahead/0 behind de main, 30 archivos (+3555/-17). Diez workflow runs completados success en este SHA, incluidos CI, Playwright, Database migration validation, Semgrep, Security, Secret history, Backup restore, Dependency review, ODD docs y Project progress. Sin status contexts, reviews formales ni threads inline.
+- #204 HEAD `e37847c95958c3475f90041263ca4fac7f98c2d1`, base #200 HEAD `a40d8378...`: 4 ahead/0 behind. Merge commit que incorpora la migración atómica de #200 y preserva el cambio de fixtures. No se recuperaron runs/status contexts para este SHA; sin reviews/threads.
+- #205 HEAD `a2fe55847d72b4d9994b781880843ab4906c7b08`, base #204 HEAD `e37847c...`: 10 ahead/0 behind. Merge commit que incorpora el último cambio de #204, la migración atómica y el workflow de rollback, preservando idempotencia. No se recuperaron runs/status contexts para este SHA; sin reviews/threads.
+- Migración 0005 tiene ahora BEGIN/COMMIT de nivel superior. migration-check prueba una copia con fallo inyectado antes de COMMIT, espera que psql falle y comprueba que no existan tablas de inventario; después aplica la migración real y sus assertions. Los diez workflows success de #200 incluyen Database migration validation en el SHA a40d8378...
+- #204/#205 requieren validación completa en sus nuevos merge HEAD; no heredar CI de SHA anteriores. Todas las PR siguen Draft; ninguna se fusionó.
+- Stale-count básico está implementado: captura expected_on_hand_quantity y devuelve 409 si el saldo difiere; una prueba confirma primero el conteo nuevo y rechaza el antiguo. Riesgo residual ABA/versionado monotónico antes de sumar otros escritores.
+- Issue #53 sigue abierta; autorización/aislamiento completo aún no probado. Colisión 0005 roles en #194 sigue pendiente.
+- No tocar Neon producción, deploy productivo, secretos, DNS, billing ni datos reales; no force-push ni modificar main.

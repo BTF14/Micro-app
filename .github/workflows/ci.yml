@@ -134,5 +134,5 @@ jobs:
         env:
           DATABASE_URL: postgres://microapp_runtime:runtime-test-only@localhost:5432/microapp_test
           DATABASE_URL_ADMIN: postgres://microapp:microapp-test-only@localhost:5432/microapp_test
-        run: pnpm --filter @micro-app/api exec vitest run src/auth.integration.test.ts src/catalog-write.integration.test.ts src/catalog-update.integration.test.ts src/inventory-counts.integration.test.ts
+        run: pnpm --filter @micro-app/api exec vitest run src/auth.integration.test.ts src/catalog.integration.test.ts src/catalog-write.integration.test.ts src/catalog-update.integration.test.ts src/inventory-counts.integration.test.ts
 

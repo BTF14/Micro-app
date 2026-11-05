@@ -1890,3 +1890,38 @@ No fusionar sin review formal y gates completos. No migrar a Neon, no desplegar 
 ### Última mejora de concurrencia — 2026-11-05 UTC
 
 PR #205 HEAD `bb4a60454061ce09fef07100e75010f3abc5b883`: el handler reclama el documento idempotente antes de tomar locks de balance. Replays retornan sin bloquear stock; los nuevos conteos siguen almacén → documento → balances. La suite PostgreSQL pasó 20/20 y el SHA exacto 7/7 workflows. Próximo paso: terminar auditoría estática de auditoría general, privilegios runtime, IDOR de confirmación y cobertura restante de roles.
+
+
+## Checkpoint operativo más reciente — 2026-11-05 UTC (revalidación directa GitHub)
+
+### Estado vivo de PRs prioritarias
+
+- `main` resuelve actualmente a `7b0f057b8c152515005feed40305143c0ebb94b0`.
+- #194: abierta/Draft, HEAD `7b3ad50e5780416868a1a428b856d12c4ea1e2ea`, 13 ahead / 2 behind de main; colisión de migración `0005_register_shift_member_roles.sql` contra `0005_warehouse_inventory.sql` de #200. No integrar todavía.
+- #200: abierta/Draft, HEAD `5fbc17a48b65076cf5609a7a054bbd125a3a5d1e`, 32 ahead / 0 behind de main. El conector devolvió 10 workflow runs PR-triggered en la primera página y los 10 figuran completed/success; el historial de la PR registra además 16/16 runs totales (push + PR) para este SHA. Sin reviews formales ni threads.
+- #202: abierta/Draft, HEAD `5a5b7514e84dfb1420a35e3ca5747250ae9fa1d4`, 101 ahead / 0 behind de main, 18 archivos. El conector devolvió 9 workflow runs PR-triggered, todos completed/success; no confundir esta página filtrada con el total histórico. Sin reviews formales ni threads.
+- #204: abierta/Draft, HEAD `07a5a41c0f5f5c36fb89a5c5950796493d56eb20`, 8 ahead / 0 behind de #200; el conector no devolvió runs PR-triggered para este SHA en esta consulta. El handoff previo conserva evidencia histórica 6/6; no presentarla como nueva comprobación.
+- #205: abierta/Draft, HEAD `bb4a60454061ce09fef07100e75010f3abc5b883`, 25 ahead / 0 behind de #204, diff propio 3 archivos. El conector devolvió 1 run PR-triggered success; el handoff previo conserva evidencia histórica 7/7 y PostgreSQL integration 20/20 para el mismo SHA.
+- #207: abierta/Draft, HEAD `26c5270664b82aebc6a12fafe6973de8544bc6f7`, 10 ahead / 0 behind de #200. El conector devolvió 1 run PR-triggered success; el handoff previo conserva evidencia histórica 7/7 workflows y 9/9 check runs para este SHA. Sin reviews formales ni threads.
+- #196 sigue abierta/Draft con HEAD histórico `c332e740aff279fb8b22a8879581d4b8a3c7de21`, base antigua; no usarla como fuente actual de inventario porque #200 contiene la vertical slice más reciente.
+- #206 está abierta y no Draft (Dependabot, HEAD `d40b730d91888838789c27ac5e8925b451b4e4f2`); requiere revisión independiente del lockfile/override antes de cualquier merge.
+- #193 sigue abierta no Draft. No se cerró ni se modificó ninguna PR durante esta revalidación.
+
+### Revisiones y dependencias
+
+- Reviews formales y threads inline: cero en #194/#200/#202/#204/#205/#207.
+- Combined status contexts vacíos para los HEAD consultados de #200/#202/#207; esto no equivale a ausencia de workflow/check runs.
+- #205 depende de #204, que depende de #200. #207 depende directamente de #200.
+- #207 añade `0007_audit_logs_append_only.sql`, pero el stack aún requiere resolver el conflicto `0005` y reservar/aplicar correctamente `0006` para roles antes de validar la secuencia consolidada. Su CI actual prueba 0001–0005 inventario y después 0007; no demuestra todavía la pila final con la migración de roles.
+- La migración #207 protege UPDATE/DELETE/TRUNCATE y añade assertions con roles sintéticos. Esto **no verifica** el rol PostgreSQL efectivo de `DATABASE_URL` ni demuestra que el runtime real sea no propietario con SELECT/INSERT solamente. Mantener ese punto como NO VERIFICADO.
+- Issue #53 continúa abierta/P0. La confirmación de conteos es el único escritor HTTP de stock; ventas, recepciones, reservas, devoluciones y transferencias siguen sin estar implementadas.
+
+### Regla permanente anti-repetición
+
+Antes de pedir cualquier Build ID, deployment ID, SHA, URL, captura o dato al propietario: consultar GitHub, checks, workflow runs, comentarios de bots y documentos. No volver a pedir el Workers Build ID de #207 (`0c8394a1-4d91-4061-a850-6c78f3b11295`) ni el Build ID histórico `3542c660-e5e3-435e-8be5-dbed236cec1c`. El segundo sigue pendiente de inspección autenticada y debe permanecer NO VERIFICADO si no existe un conector independiente. No pedir capturas ni acceso a TinyFish; TinyFish queda fuera del flujo. No pedir terminal, CLI ni reconexiones. Solicitar un dato al propietario solo si no es recuperable por herramientas/documentos y cambia una decisión de seguridad.
+
+### Decisión y siguiente trabajo
+
+- Mantener todas las PR anteriores abiertas/Draft hasta resolver revisión funcional, migraciones y gates. No fusionar ni desplegar.
+- Próximo trabajo técnico: completar auditoría estática de #207 y de la confirmación de conteos con IDs ajenos; verificar los contratos de locks y consistencia ledger/balance; documentar hallazgos concretos en las PR/issue existentes, sin abrir PR duplicadas.
+- No se modificó código, migraciones, main, Neon, Cloudflare, secretos, DNS, billing ni datos reales en esta revalidación. Producción permanece **NO LISTA**.

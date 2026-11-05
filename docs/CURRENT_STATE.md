@@ -1938,3 +1938,11 @@ Actúa como ingeniero principal responsable de continuar BTF14/Micro-app. Antes 
 - Decisión: no retargetear, fusionar ni copiar #196 dentro de #200 a ciegas. Elaborar mapa de commits/rutas para separar catálogo/API de la parte solapada de inventario, preservar la implementación avanzada de #200 y probar integración en PostgreSQL limpio. #207 sigue apilada sobre #200; 0006 roles debe integrarse antes de 0007 audit.
 - Se publicó comentario en issue #53 (comment ID 6651679831) registrando este solapamiento y la decisión de no fusionar a ciegas.
 - No se modificó código, migraciones, bases de PR, main, Neon, secretos, Cloudflare, DNS, billing ni datos reales. Todas las PR permanecen Draft y sin merge.
+
+
+## Dependencia adicional de issue #53 — divergencia #196/#200 — 2026-11-05 UTC
+
+- Comparación viva: #196 sigue abierta/Draft, HEAD `c332e740aff279fb8b22a8879581d4b8a3c7de21`, base main `705d3db3220894c7d3baca8dc7e7a6b623dfbb94`, mergeable=false. #200 sigue abierta/Draft, HEAD `5fbc17a48b65076cf5609a7a054bbd125a3a5d1e`, base main `7b0f057b8c152515005feed40305143c0ebb94b0`.
+- Las PR comparten 24 rutas de 33 (#196) y 30 (#200), incluidas ambas migraciones/assertions 0005, catálogo, branch-context, inventario, inventory-locks, CI y migration-check. #196 tiene 128 commits ahead / 34 behind respecto a la base #200; no es una dependencia lineal ni un retarget seguro.
+- Migración 0005 difiere: #196 blob `8a2b13651ebd5dc1d3bb87efbe34cb863c0e0d99` (265 líneas), #200 blob `bb9020fdca535f84fda0f468e9d3ab86e1cc319c` (330 líneas). La versión #200 contiene evolución posterior de inventario; no sustituirla por el snapshot #196.
+- Decisión: no retargetear, fusionar ni copiar #196 sobre #200 a ciegas. Mapear commits/rutas y separar código de catálogo de inventario; conservar los cambios más avanzados de #200 y validar la combinación desde PostgreSQL limpio. Issue #53 permanece abierta/P0. Comentario de reconciliación en issue #53: 6651679831.

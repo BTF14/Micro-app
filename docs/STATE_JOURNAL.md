@@ -1,3 +1,16 @@
+## 2026-11-05 01:38 EDT — Reconciliación de evidencia Cloudflare para PR #207
+
+- Se inspeccionaron los comentarios de la PR #207 mediante GitHub. El bot oficial `cloudflare-workers-and-pages[bot]` publicó:
+  - [Workers comment](https://github.com/BTF14/Micro-app/pull/207#issuecomment-6649952138), creado 04:48:04Z y actualizado 04:50:24Z: `Deployment successful!`, Worker `micro-app-api`, commit `26c52706`, Build ID `0c8394a1-4d91-4061-a850-6c78f3b11295`, Commit Preview URL `https://f30223c5-micro-app-api.btfcasheb.workers.dev` y Branch Preview URL `https://feat-audit-logs-append-only-20261105-micro-app-api.btfcasheb.workers.dev`.
+  - [Pages comment](https://github.com/BTF14/Micro-app/pull/207#issuecomment-6649953153), creado 04:48:08Z y actualizado 04:50:11Z: `Deploy successful!`, commit `26c5270`, preview `https://7b2769c3.micro-app-63i.pages.dev` y branch preview `https://feat-audit-logs-append-only.micro-app-63i.pages.dev`.
+- **Conclusión respaldada:** Cloudflare Git integration informó despliegues exitosos de destinos etiquetados como previews para el commit de #207. Esta evidencia es más específica que el check-run aislado y corrige el estado anterior de “no se sabe si hubo preview”.
+- **Límite de evidencia:** el comentario del bot no muestra el estado de la Worker Version de producción, deployment activo, porcentaje de tráfico ni requests servidos por esa versión. El link de logs apunta a una ruta del dashboard que contiene `/production/builds/`, pero ese texto de URL no prueba por sí solo que el tráfico productivo haya cambiado.
+- El build ID `0c8394a1-4d91-4061-a850-6c78f3b11295` corresponde al comentario de #207; no es el build histórico `3542c660-e5e3-435e-8be5-dbed236cec1c` solicitado para auditoría inicial.
+- No se efectuó navegación autenticada del dashboard en esta sesión ni cambios en Cloudflare. TinyFish wallet leído: `-$0.008 USD`; perfil `Micro-app Cloudflare` (`prof_5ffc41e691e841a0`) no lista `cloudflare.com` en `signed_in_sites`. La auditoría del dashboard queda BLOQUEADA por saldo y autenticación de perfil no confirmada. No repetir login ni pedir capturas.
+- Próximo paso: con saldo disponible y perfil adecuado confirmado, inspeccionar ambos build IDs en solo lectura y registrar por separado build, Worker Version creada, deployment publicado, deployment activo y tráfico real.
+
+---
+
 ## Corrección de seguridad Cloudflare — Worker Previews vs Version URLs — 2026-11-04 22:00 EDT
 
 Esta aclaración corrige la formulación demasiado amplia de addenda anteriores: **no existe una prohibición permanente de usar Worker Previews**. El gate es no cambiar el modo de builds de Cloudflare hasta comprobar aislamiento y aceptar el cambio irreversible del flujo existente.

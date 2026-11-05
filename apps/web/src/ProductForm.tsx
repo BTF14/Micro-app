@@ -158,7 +158,7 @@ export default function ProductForm({ organizationId, product, onCancel, onSaved
         </label>
         <label>
           Stock mínimo
-          <input value={draft.minimum_stock} onChange={(event) => update("minimum_stock", event.target.value)} inputMode="decimal" autoComplete="off" placeholder="0.000" required />
+          <input value={draft.minimum_stock} onChange={(event) => update("minimum_stock", event.target.value)} inputMode="decimal" autoComplete="off" placeholder="0.000" required={!product} />
           <span className="product-field-hint">{product ? "Hasta 3 decimales. Déjalo vacío para conservar el mínimo actual." : "Cantidad con hasta 3 decimales."}</span>
         </label>
         {product && (

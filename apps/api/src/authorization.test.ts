@@ -79,7 +79,7 @@ describe("authorization context boundaries", () => {
 
   it("resolves tenant identity from the session and denies a role without the operation", async () => {
     const query = async (sql: string) => ({
-      rows: sql.includes("auth_sessions")
+      rows: sql.includes("public.lock_tenant_context")
         ? [{ user_id: userId, organization_id: organizationId, role: "cashier" as const }]
         : [],
     });
@@ -93,9 +93,11 @@ describe("authorization context boundaries", () => {
 
   it("requires server-validated branch scope before granting a branch operation", async () => {
     const query = async (sql: string) => ({
-      rows: sql.includes("auth_sessions")
+      rows: sql.includes("public.lock_tenant_context")
         ? [{ user_id: userId, organization_id: organizationId, role: "inventory" as const }]
-        : [{ user_id: userId, organization_id: organizationId, branch_id: branchId, role: "inventory" as const }],
+        : sql.includes("public.lock_branch_scopes")
+          ? [{ locked: true }]
+          : [{ user_id: userId, organization_id: organizationId, branch_id: branchId, role: "inventory" as const }],
     });
     const client = { connect: async () => {}, query, end: async () => {} } as unknown as DatabaseClient;
 
@@ -109,14 +111,11 @@ describe("authorization context boundaries", () => {
     const queries: string[] = [];
     const query = async (sql: string) => {
       queries.push(sql);
-      if (sql.includes("auth_sessions")) {
+      if (sql.includes("public.lock_tenant_context")) {
         return { rows: [{ user_id: userId, organization_id: organizationId, role: "inventory" as const }] };
       }
-      if (sql.includes("FROM branches b") && sql.includes("FOR SHARE OF b")) {
-        return { rows: [{ id: branchId }] };
-      }
-      if (sql.includes("FROM branch_memberships bm") && sql.includes("FOR SHARE OF bm")) {
-        return { rows: [{ branch_id: branchId, user_id: userId }] };
+      if (sql.includes("public.lock_branch_scopes")) {
+        return { rows: [{ locked: true }] };
       }
       return { rows: [{ user_id: userId, organization_id: organizationId, branch_id: branchId, role: "inventory" as const }] };
     };
@@ -124,9 +123,9 @@ describe("authorization context boundaries", () => {
 
     await expect(authorizeBranchOperation(client, sessionToken, organizationId, branchId, "inventory.adjust"))
       .resolves.toMatchObject({ allowed: true });
-    expect(queries[0]).toContain("FOR SHARE OF s, u, m, o");
-    expect(queries[1]).toContain("FOR SHARE OF b");
-    expect(queries[2]).toContain("FOR SHARE OF bm");
+    expect(queries[0]).toContain("public.lock_tenant_context");
+    expect(queries[1]).toContain("public.lock_branch_scopes");
+    expect(queries[2]).toContain("FROM branches b");
   });
 
   it("denies an unauthorized role before resolving branch membership", async () => {
@@ -140,12 +139,12 @@ describe("authorization context boundaries", () => {
     await expect(authorizeBranchOperation(client, sessionToken, organizationId, branchId, "inventory.adjust"))
       .resolves.toEqual({ allowed: false, reason: "operation_denied" });
     expect(queries).toHaveLength(1);
-    expect(queries[0]).toContain("auth_sessions");
+    expect(queries[0]).toContain("public.lock_tenant_context");
   });
 
   it("distinguishes a valid tenant with no access to the requested branch", async () => {
     const query = async (sql: string) => ({
-      rows: sql.includes("auth_sessions")
+      rows: sql.includes("public.lock_tenant_context")
         ? [{ user_id: userId, organization_id: organizationId, role: "inventory" as const }]
         : [],
     });

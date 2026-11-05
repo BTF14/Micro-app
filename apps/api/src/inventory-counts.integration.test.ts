@@ -27,6 +27,12 @@ describe.skipIf(!databaseUrl)("warehouse inventory count transactions against Po
   let branchId = "";
   let warehouseId = "";
   let productId = "";
+  let unassignedBranchId = "";
+  let unassignedWarehouseId = "";
+  let foreignOrganizationId = "";
+  let foreignBranchId = "";
+  let foreignWarehouseId = "";
+  let foreignProductId = "";
   let token = "";
 
   async function request(path: string, body?: unknown, extraHeaders: Record<string, string> = {}): Promise<Response> {
@@ -39,6 +45,12 @@ describe.skipIf(!databaseUrl)("warehouse inventory count transactions against Po
         ...extraHeaders,
       },
       ...(body === undefined ? {} : { body: JSON.stringify(body) }),
+    }), { DATABASE_URL: databaseUrl, FRONTEND_ORIGIN: "https://frontend.example" });
+  }
+
+  async function get(path: string): Promise<Response> {
+    return app.fetch(new Request("https://api.example" + path, {
+      headers: { Cookie: "microapp_session=" + token },
     }), { DATABASE_URL: databaseUrl, FRONTEND_ORIGIN: "https://frontend.example" });
   }
 
@@ -86,6 +98,38 @@ describe.skipIf(!databaseUrl)("warehouse inventory count transactions against Po
       [organizationId, "inventory-" + suffix],
     );
     branchId = branch.rows[0]!.id;
+
+    const unassignedBranch = await client.query<{ id: string }>(
+      "INSERT INTO branches (organization_id, name, slug) VALUES ($1, 'Unassigned Inventory Branch', $2) RETURNING id",
+      [organizationId, "inventory-unassigned-" + suffix],
+    );
+    unassignedBranchId = unassignedBranch.rows[0]!.id;
+    const unassignedWarehouse = await client.query<{ id: string }>(
+      "INSERT INTO warehouses (organization_id, branch_id, code, name) VALUES ($1, $2, 'other', 'Unassigned Branch Warehouse') RETURNING id",
+      [organizationId, unassignedBranchId],
+    );
+    unassignedWarehouseId = unassignedWarehouse.rows[0]!.id;
+
+    const foreignOrg = await client.query<{ id: string }>(
+      "INSERT INTO organizations (name, slug) VALUES ($1, $2) RETURNING id",
+      ["Foreign Inventory " + suffix, "foreign-inventory-" + suffix],
+    );
+    foreignOrganizationId = foreignOrg.rows[0]!.id;
+    const foreignBranch = await client.query<{ id: string }>(
+      "INSERT INTO branches (organization_id, name, slug) VALUES ($1, 'Foreign Inventory Branch', $2) RETURNING id",
+      [foreignOrganizationId, "foreign-inventory-" + suffix],
+    );
+    foreignBranchId = foreignBranch.rows[0]!.id;
+    const foreignWarehouse = await client.query<{ id: string }>(
+      "INSERT INTO warehouses (organization_id, branch_id, code, name) VALUES ($1, $2, 'foreign', 'Foreign Warehouse') RETURNING id",
+      [foreignOrganizationId, foreignBranchId],
+    );
+    foreignWarehouseId = foreignWarehouse.rows[0]!.id;
+    const foreignProduct = await client.query<{ id: string }>(
+      "INSERT INTO products (organization_id, sku, name, price_usd) VALUES ($1, 'FOREIGN-INV', 'Foreign Inventory Product', 1) RETURNING id",
+      [foreignOrganizationId],
+    );
+    foreignProductId = foreignProduct.rows[0]!.id;
   });
 
   beforeEach(async () => {
@@ -143,6 +187,12 @@ describe.skipIf(!databaseUrl)("warehouse inventory count transactions against Po
       await client.query("DELETE FROM organization_members WHERE organization_id = $1", [organizationId]);
       await client.query("DELETE FROM organizations WHERE id = $1", [organizationId]);
       await client.query("DELETE FROM app_users WHERE id = $1", [userId]);
+    }
+    if (foreignOrganizationId) {
+      await client.query("DELETE FROM warehouses WHERE organization_id = $1", [foreignOrganizationId]);
+      await client.query("DELETE FROM products WHERE organization_id = $1", [foreignOrganizationId]);
+      await client.query("DELETE FROM branches WHERE organization_id = $1", [foreignOrganizationId]);
+      await client.query("DELETE FROM organizations WHERE id = $1", [foreignOrganizationId]);
     }
     await client.end();
   });
@@ -709,6 +759,69 @@ describe.skipIf(!databaseUrl)("warehouse inventory count transactions against Po
       "UPDATE organization_members SET role = 'owner' WHERE organization_id = $1 AND user_id = $2",
       [organizationId, userId],
     );
+  });
+
+  it("rejects cross-tenant organization and product identifiers without writing inventory", async () => {
+    const foreignTenantRequest = await request(
+      `/api/orgs/${foreignOrganizationId}/branches/${foreignBranchId}/warehouses/${foreignWarehouseId}/counts/physical`,
+      { reason: "Cross-tenant resource IDs must be denied", lines: [{ product_id: foreignProductId, counted_quantity: "1.000" }] },
+    );
+    expect(foreignTenantRequest.status).toBe(401);
+    expect(await foreignTenantRequest.json()).toMatchObject({ error: "UNAUTHENTICATED" });
+
+    const foreignProductRequest = await request(root() + "/counts/physical", {
+      reason: "A product from another tenant must not be accepted",
+      lines: [{ product_id: foreignProductId, counted_quantity: "1.000" }],
+    });
+    expect(foreignProductRequest.status).toBe(400);
+    expect(await foreignProductRequest.json()).toMatchObject({ error: "INVALID_PRODUCTS" });
+
+    const persisted = await client.query<{ counts: string; lines: string }>(
+      `SELECT
+        (SELECT count(*)::text FROM inventory_counts WHERE organization_id = $1 AND warehouse_id = $2) AS counts,
+        (SELECT count(*)::text FROM inventory_count_lines WHERE organization_id = $1) AS lines`,
+      [organizationId, warehouseId],
+    );
+    expect(persisted.rows[0]).toEqual({ counts: "0", lines: "0" });
+  });
+
+  it("denies inventory members access to an unassigned branch and rejects a warehouse from another branch", async () => {
+    await client.query(
+      "UPDATE organization_members SET role = 'inventory' WHERE organization_id = $1 AND user_id = $2",
+      [organizationId, userId],
+    );
+    await client.query(
+      "INSERT INTO branch_memberships (organization_id, branch_id, user_id, is_active) VALUES ($1, $2, $3, true)",
+      [organizationId, branchId, userId],
+    );
+
+    const otherBranchCreate = await request(
+      `/api/orgs/${organizationId}/branches/${unassignedBranchId}/warehouses/${unassignedWarehouseId}/counts/physical`,
+      { reason: "Inventory member cannot write to an unassigned branch", lines: [{ product_id: productId, counted_quantity: "1.000" }] },
+    );
+    expect(otherBranchCreate.status).toBe(403);
+    expect(await otherBranchCreate.json()).toMatchObject({ error: "BRANCH_FORBIDDEN" });
+
+    const otherBranchRead = await get(
+      `/api/orgs/${organizationId}/branches/${unassignedBranchId}/warehouses`,
+    );
+    expect(otherBranchRead.status).toBe(403);
+    expect(await otherBranchRead.json()).toMatchObject({ error: "BRANCH_FORBIDDEN" });
+
+    const wrongWarehouseScope = await request(
+      `/api/orgs/${organizationId}/branches/${branchId}/warehouses/${unassignedWarehouseId}/counts/physical`,
+      { reason: "Warehouse must belong to the requested branch", lines: [{ product_id: productId, counted_quantity: "1.000" }] },
+    );
+    expect(wrongWarehouseScope.status).toBe(404);
+    expect(await wrongWarehouseScope.json()).toMatchObject({ error: "WAREHOUSE_NOT_FOUND" });
+
+    const persisted = await client.query<{ counts: string }>(
+      "SELECT count(*)::text AS counts FROM inventory_counts WHERE organization_id = $1 AND (warehouse_id = $2 OR warehouse_id = $3)",
+      [organizationId, warehouseId, unassignedWarehouseId],
+    );
+    expect(persisted.rows[0]).toEqual({ counts: "0" });
+    await client.query("DELETE FROM branch_memberships WHERE organization_id = $1 AND branch_id = $2 AND user_id = $3", [organizationId, branchId, userId]);
+    await client.query("UPDATE organization_members SET role = 'owner' WHERE organization_id = $1 AND user_id = $2", [organizationId, userId]);
   });
 
   it("rejects a cashier role before creating an inventory count", async () => {

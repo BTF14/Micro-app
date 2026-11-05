@@ -1,3 +1,15 @@
+## Decisión operativa — no depender de TinyFish ni pedir configuración local — 2026-11-05
+
+- El propietario indicó que trabaja únicamente desde un teléfono Android y no dispone de terminal. No volver a pedirle ejecutar comandos `npx`, abrir Codex CLI, editar `config.toml` o realizar pasos que requieren una computadora.
+- El comando `npx -y @tiny-fish/cli@latest connect codex ...` es un instalador/configurador para **Codex CLI en un equipo con terminal**; no conecta ni cambia la autenticación de esta conversación de ChatGPT móvil. No volver a presentarlo como solución móvil.
+- Se decide **no utilizar TinyFish para continuar Micro-app**. No ejecutar `run_web_automation`, no consumir su wallet y no pedir cambio de cuenta, perfil, saldo, sesión o capturas de TinyFish. La presencia de herramientas TinyFish en el entorno no equivale a autorización ni necesidad de usarlas.
+- Continuar con las integraciones disponibles que no dependan de TinyFish: GitHub MCP para repositorio/PRs, y las demás fuentes/conectores ya habilitados. Para Cloudflare, usar evidencia de GitHub Actions y comentarios oficiales del bot. Si una verificación exige dashboard autenticado y no hay conector independiente disponible, registrarla como **no verificable desde las herramientas actuales**; no trasladar la tarea al propietario ni pedirle que repita autenticaciones/capturas.
+- **No volver a pedir al propietario que conecte TinyFish ni que ejecute el comando anterior.** La decisión de dejar de usar TinyFish resuelve ese bloqueo operativo; no es un requisito pendiente del proyecto.
+- Seguridad: la API key de TinyFish se compartió en el chat; tratarla como expuesta y recomendar revocación/rotación. Nunca copiarla a documentación, comandos, issues, PRs, logs ni volver a solicitarla. No se ha intentado usarla ni se afirma que la cuenta nueva esté conectada.
+- Esta decisión no desconecta ni desinstala integraciones de la cuenta; simplemente prohíbe depender de TinyFish para el trabajo de Micro-app. No cambiar integraciones de la cuenta sin una solicitud explícita separada.
+
+---
+
 ## Reconciliación Cloudflare — evidencia automática de previews — 2026-11-05 01:38 EDT
 
 - La PR #207 recibió dos comentarios del bot oficial `cloudflare-workers-and-pages[bot]` el 2026-11-05 04:48 UTC (actualizados alrededor de 04:50 UTC): [Workers comment](https://github.com/BTF14/Micro-app/pull/207#issuecomment-6649952138) y [Pages comment](https://github.com/BTF14/Micro-app/pull/207#issuecomment-6649953153).

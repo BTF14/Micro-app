@@ -2079,3 +2079,8 @@ Ambas PR Draft/no merge. Issue #53 abierta/P0. Producción NO LISTA. No tocar ma
 **Validación confirmada:** #208 SHA `76a246ea141eedbee877608e7c0f50d6a07f3019` = 7/7 checks success (verify + postgres-migration incluidos). #207 SHA `dd3eb55ee3dc5776ce0e0617a3012c29ab355132` = 10/10 checks success (verify, postgres-migration, Chromium, SAST, Trivy, secret scan, Pages/Worker y backup/restore). Compare #208→#207 11 ahead/0 behind, 8 archivos, mergeable=true. CI y migration-check ejecutaron 0001→0007 desde PostgreSQL desechable; el test PG own-shift roles pasó. AC-5 de audit-logs-append-only queda validado para el stack de migraciones en CI efímero. No cierra el gate DATABASE_URL/ownership/grants runtime/Neon. #207 y #208 Draft/no merge. Comentario evidencia #207 6651950993.
 
 PR #202 documentación sigue con checks en progreso al último snapshot (verify, postgres-migration, SAST, Trivy, backup/restore, Pages); esperar resultados.
+
+
+## ODD task cerrado técnicamente y revalidación documental — 2026-11-05 UTC
+
+ODD task `odd/tasks/audit-logs-append-only.md` actualizado: AC-1..AC-7 completados para alcance de repositorio/PostgreSQL desechable; runtime DATABASE_URL real explícitamente NO VERIFICADO. SHA de implementación #207 `dd3eb55ee3dc5776ce0e0617a3012c29ab355132` pasó 10/10. Commit documental posterior HEAD #207 `3e4490695128e7638d5e71ee822dccf134fc2bce`: 5 success / 4 in_progress (verify, Chromium, Pages, backup/restore), 0 fallos; postgres-migration y validate-odd-docs success. #208 HEAD `76a246ea...` 7/7 success. #202 docs HEAD `2ef0d0820b8df9e5667ac1c478b7a51d2816dfec`: 12/13 success, Workers Build in_progress, 0 fallos. Esperar checks finales de #207 y #202. Comentario #207 ID 6651990379. No leer secreto ni Neon; no merge/deploy.

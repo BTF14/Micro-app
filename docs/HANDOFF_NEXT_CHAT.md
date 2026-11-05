@@ -1690,3 +1690,22 @@ Este bloque es más reciente que los snapshots históricos anteriores; si contra
 - CI aplica 0003 a PostgreSQL efímero y ejecuta el test de integración del resolver; el workflow separado `postgres-migration` también aplica 0003 y sus assertions SQL. Comprobar ambos en el HEAD final.
 
 - Endurecimiento adicional de la rama: el resolver ahora vuelve a validar organización, usuario y membresía activos y exige que el rol DB coincida con el TenantContext; integración cubre revocación y cambio de rol. La evidencia de checks del HEAD anterior queda supersedida; verificar el HEAD vivo actual.
+
+
+---
+
+## Handoff autoritativo — 2026-11-05 UTC
+
+**No comenzar desde checkpoints históricos sin reconciliar GitHub.** Referencias vivas comprobadas:
+
+- main: `7b0f057b8c152515005feed40305143c0ebb94b0`.
+- #200 HEAD `243592468e9fd61b1f8c578d867887dbb7f18e4d`, 16 ahead/0 behind, 30 files; 10 workflow runs success en este SHA; status contexts vacío; sin reviews/threads. Body actualizado.
+- #204 HEAD `57a9f098bcb93427315e96c90e62ae13764a485b`, base exacta #200 HEAD; 3 ahead/0 behind; no workflow runs/status contexts recuperados; sin reviews/threads. No declarar CI verde. Body actualizado.
+- #205 HEAD `c1f09d09dd08b9600e7a6c0ff8ccbb5be4e9c990`; diverged respecto de #204: 9 ahead/1 behind; solo Backup restore smoke test success; no status contexts/reviews/threads. Body actualizado. Sincronizar sin force-push y revalidar.
+- #202 HEAD previo a este handoff `348cf0a1067c5410ff262f817b054cef46f0afae`, 43 ahead/0 behind, 12 archivos; 9 workflow runs success en ese SHA. El nuevo commit de handoff/documentación cambia el HEAD: volver a leer PR y ejecutar validaciones en el SHA resultante; no trasladar 9/9.
+
+**Bloqueos técnicos prioritarios:** (1) stale-count: conteo físico antiguo puede confirmar después y sobrescribir snapshot más nuevo; diseñar versión/snapshot y 409 o política explícita, añadir test determinista inverso. (2) 0005 necesita atomicidad/recuperación y prueba de fallo inducido. (3) #205 debe incorporar el commit final de #204. (4) colisión 0005 con roles en #194. (5) issue #53 y autorización/aislamiento incompletos. (6) Cloudflare Previews requiere auditoría autenticada de recursos y aislamiento; no activar por ahora, pero tampoco documentar prohibición permanente.
+
+**Forma de trabajo:** actualizar docs en el mismo ciclo de cada cambio; toda afirmación debe vincularse al SHA/ejecución exacta; conservar snapshots históricos marcados como históricos; no declarar PR validada por un solo workflow. No pedir al usuario información ya disponible en repo/documentos.
+
+**Seguridad:** no Neon producción, no despliegue productivo, no cambios Cloudflare/secretos/DNS/billing, no force-push, no main directo; respetar PR #196/#193/#190.

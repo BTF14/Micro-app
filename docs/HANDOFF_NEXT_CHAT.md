@@ -2063,3 +2063,12 @@ Issue #53 sigue abierta/P0; producción NO LISTA. No tocar main, Neon, secretos,
 ## Auditoría P0 — idempotencia y aislamiento de conteos (#205) — 2026-11-05 UTC
 
 #205 HEAD `c0bcbbe48aa8783b85ee7787dd1ae8a6d0dfdafc`, 9/9 checks success, Draft. Auditoría estática de idempotencia: key header 1–128 validada; unique partial index por org/creator/key; SHA-256 canónico incluye tenant/branch/warehouse/type/reason/line items sorted/quantity/unitCost; duplicates product IDs rejected. Transacción bloquea tenant/branch/warehouse antes de reclamar el documento y después balances; replay bajo FOR UPDATE evita líneas/auditoría duplicadas; payload distinto 409. Tests PG cubren replay, order-insensitivity, confirmed replay, conflict, concurrent create, audit rollback/retry, malformed key y cross-tenant/branch. Conclusión: fuerte para creación de conteo actual; no demuestra coordinación con escritores futuros. Idempotency-Key sigue opcional; clientes sin header no obtienen dedupe. No se modificó #205.
+
+
+## Integración apilada — PR #207 sobre #208 — 2026-11-05 UTC
+
+**Stack actual:** #208 HEAD `76a246ea141eedbee877608e7c0f50d6a07f3019`, base #200. #207 ahora base `work/mvp-foundation` (#208), HEAD `dd3eb55ee3dc5776ce0e0617a3012c29ab355132`. Merge commit #207 tiene padres #207 previo `26c5270664b82aebc6a12fafe6973de8544bc6f7` y #208 `76a246ea...`; sin force-push. Compare #208-base→#207-head: 11 ahead / 0 behind, 8 archivos, mergeable=true. El diff de #207 solo contiene CI/migration-check, migración/assertions 0007, tests y ODD de audit logs.
+
+**Migraciones:** CI aplica 0001→0007 en orden e incluye integración PG de own-shift roles. migration-check aplica 0005, luego 0006, luego rollback/apply/assertions de 0007. En #208, postgres-migration success en SHA 76a246ea; CI verify y Cloudflare Pages in progress al último snapshot. En #207 SHA dd3eb55, nueve checks queued/in_progress; esperar resultados antes de declarar AC-5 completo. Comentarios: #207 6651930131, issue #53 6651930707.
+
+Ambas PR Draft/no merge. Issue #53 abierta/P0. Producción NO LISTA. No tocar main, Neon, secretos, Cloudflare productivo, DNS, billing o datos reales.

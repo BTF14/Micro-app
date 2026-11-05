@@ -1089,3 +1089,31 @@ La consulta directa a GitHub Actions por `head_sha` incluye push y pull_request:
 - Migración 0005 con BEGIN/COMMIT y prueba de fallo/rollback inducido en PostgreSQL efímero. No se aplicó a Neon.
 - Stale-count básico tiene snapshot, 409 y test de confirmación inversa; revisar ABA/versionado antes de otros writers.
 - Issue #53 sigue abierta; la colisión 0005 de roles en #194 sigue pendiente.
+
+
+## Plan vigente — 2026-11-05 UTC (supersede prioridades antiguas)
+
+### Estado técnico de la pila
+
+- PR #200 código HEAD `7b58b140e50c46a3d3b087e3445a4b04e6243a81`: 16/16 workflow runs success; HEAD documental `5fbc17a48b65076cf5609a7a054bbd125a3a5d1e`: 16/16 success.
+- PR #204 HEAD `07a5a41c0f5f5c36fb89a5c5950796493d56eb20`: 8 ahead/0 behind de #200, diff propio 1 archivo, 6/6 workflows success.
+- PR #205 HEAD `7005d9a5b03234bd0209d0cc1ea75e8ae21e0032`: 20 ahead/0 behind de #204, diff propio 3 archivos, 8/8 workflows success; idempotencia preservada.
+- Todas siguen Draft; sin reviews formales, threads ni status contexts en la consulta. No se fusionó ninguna.
+
+### Correcciones ya implementadas y probadas
+
+1. Migración 0005 atómica con prueba de rollback ante fallo inducido en PostgreSQL efímero.
+2. Lifecycle de conteos protegido en INSERT/UPDATE/DELETE; nuevos conteos deben nacer draft; assertions SQL prueban rechazo de INSERT directo confirmed y unicidad de opening por transición válida.
+3. Stale-count con snapshot de cantidad y versión monotónica; trigger incrementa `balance_version` por cambios de on-hand/reservas y prohíbe DELETE; test ABA devuelve 409 aunque el saldo vuelva al mismo valor.
+4. Idempotencia de creación de conteos en #205: clave, hash de payload, replay seguro y 409 ante reutilización con payload distinto.
+5. Aislamiento de fixtures de integración en #204/#205, preservado tras la sincronización.
+
+### Siguientes prioridades
+
+1. Completar auditoría estática de #200/#204/#205: tenant/branch scope, autorización por operación, orden de locks, consistencia ledger/balance, idempotencia, errores y concurrencia multi-writer.
+2. Completar issue #53 con pruebas cross-tenant/cross-branch y cobertura de la matriz de permisos aprobada el 2026-10-31.
+3. Resolver PR #194: migración de roles debe pasar de 0005 a 0006 y actualizar referencias/assertions/workflows; la rama está divergida y no se integra tal cual.
+4. Auditar Worker Previews con acceso autenticado antes de activar cualquier switch irreversible.
+5. Mantener gates de producción: backups/restore reales, RPO/RTO, alertas, rate limiting, coste total, flujos comerciales y revisión legal/fiscal.
+
+No desplegar, no migrar a Neon, no tocar Cloudflare productivo, secretos, DNS, billing ni datos reales. No force-push ni modificar main directamente. No fusionar PRs sin revisión formal y gates completos.

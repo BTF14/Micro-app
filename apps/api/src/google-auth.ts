@@ -1,6 +1,7 @@
 import { deleteCookie, getCookie, setCookie } from "hono/cookie";
 import type { Context, Hono } from "hono";
 import { withDatabaseClient, withDatabaseTransaction, type DatabaseClient } from "./database";
+import { consumeAuthRateLimit } from "./auth-rate-limit";
 import type { Bindings } from "./bindings";
 
 type AppContext = Context<{ Bindings: Bindings }>;
@@ -156,6 +157,42 @@ async function startGoogleAuthorization(c: AppContext, bootstrapRequest?: Bootst
   return c.redirect(authorizationUrl.toString(), 302);
 }
 
+async function enforceGoogleRateLimit(
+  c: AppContext,
+  action: "start" | "bootstrap" | "callback",
+  maxAttempts: number,
+  windowSeconds: number,
+): Promise<Response | null> {
+  const clientIp = c.req.header("CF-Connecting-IP")?.trim();
+  if (!clientIp || clientIp.length > 64 || clientIp.includes(",")) {
+    return c.json({
+      error: "RATE_LIMIT_UNAVAILABLE",
+      message: "No se pudo verificar el límite de solicitudes.",
+    }, 503);
+  }
+
+  try {
+    const decision = await withDatabaseClient(c.env.DATABASE_URL, (client) =>
+      consumeAuthRateLimit(client, `google:${action}:${clientIp}`, maxAttempts, windowSeconds),
+    );
+    if (!decision.allowed) {
+      c.header("Retry-After", String(decision.retryAfterSeconds));
+      c.header("Cache-Control", "no-store");
+      return c.json({
+        error: "RATE_LIMITED",
+        message: "Demasiadas solicitudes. Inténtalo de nuevo más tarde.",
+      }, 429);
+    }
+    return null;
+  } catch {
+    // Authentication must fail closed when the rate-limit store is unavailable.
+    return c.json({
+      error: "RATE_LIMIT_UNAVAILABLE",
+      message: "No se pudo verificar el límite de solicitudes.",
+    }, 503);
+  }
+}
+
 export function registerGoogleAuthRoutes(app: Hono<{ Bindings: Bindings }>): void {
   app.get("/auth/google", async (c) => {
     const url = new URL(c.req.url);
@@ -165,6 +202,8 @@ export function registerGoogleAuthRoutes(app: Hono<{ Bindings: Bindings }>): voi
         message: "El alta inicial debe iniciarse mediante una petición POST protegida.",
       }, 400);
     }
+    const rateLimitResponse = await enforceGoogleRateLimit(c, "start", 10, 600);
+    if (rateLimitResponse) return rateLimitResponse;
     return startGoogleAuthorization(c);
   });
 
@@ -173,6 +212,9 @@ export function registerGoogleAuthRoutes(app: Hono<{ Bindings: Bindings }>): voi
     if (!configuredOrigin || c.req.header("Origin") !== configuredOrigin) {
       return c.json({ error: "INVALID_BOOTSTRAP_ORIGIN", message: "No se pudo iniciar el alta administrativa." }, 403);
     }
+
+    const rateLimitResponse = await enforceGoogleRateLimit(c, "bootstrap", 5, 3600);
+    if (rateLimitResponse) return rateLimitResponse;
 
     const contentType = c.req.header("Content-Type")?.split(";")[0]?.trim().toLowerCase();
     if (contentType !== "application/x-www-form-urlencoded") {
@@ -229,6 +271,9 @@ export function registerGoogleAuthRoutes(app: Hono<{ Bindings: Bindings }>): voi
   });
 
   app.get("/auth/google/callback", async (c) => {
+    const rateLimitResponse = await enforceGoogleRateLimit(c, "callback", 20, 600);
+    if (rateLimitResponse) return rateLimitResponse;
+
     const storedState = getCookie(c, STATE_COOKIE);
     const codeVerifier = getCookie(c, VERIFIER_COOKIE);
     const bootstrapCookieRaw = getCookie(c, BOOTSTRAP_COOKIE);

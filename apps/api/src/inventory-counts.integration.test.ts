@@ -189,6 +189,9 @@ describe.skipIf(!databaseUrl)("warehouse inventory count transactions against Po
       await client.query("DELETE FROM app_users WHERE id = $1", [userId]);
     }
     if (foreignOrganizationId) {
+      await client.query("DELETE FROM inventory_count_lines WHERE organization_id = $1", [foreignOrganizationId]);
+      await client.query("DELETE FROM inventory_counts WHERE organization_id = $1", [foreignOrganizationId]);
+      await client.query("DELETE FROM organization_members WHERE organization_id = $1", [foreignOrganizationId]);
       await client.query("DELETE FROM warehouses WHERE organization_id = $1", [foreignOrganizationId]);
       await client.query("DELETE FROM products WHERE organization_id = $1", [foreignOrganizationId]);
       await client.query("DELETE FROM branches WHERE organization_id = $1", [foreignOrganizationId]);
@@ -836,6 +839,55 @@ describe.skipIf(!databaseUrl)("warehouse inventory count transactions against Po
     expect(persisted.rows[0]).toEqual({ counts: "0" });
     await client.query("DELETE FROM branch_memberships WHERE organization_id = $1 AND branch_id = $2 AND user_id = $3", [organizationId, branchId, userId]);
     await client.query("UPDATE organization_members SET role = 'owner' WHERE organization_id = $1 AND user_id = $2", [organizationId, userId]);
+  });
+
+  it("rejects confirmation when the count ID belongs to another branch or tenant", async () => {
+    const branchCount = await client.query<{ id: string }>(
+      `INSERT INTO inventory_counts
+        (organization_id, branch_id, warehouse_id, count_type, reason, created_by)
+       VALUES ($1, $2, $3, 'physical', 'Cross-branch confirmation ID test', $4)
+       RETURNING id`,
+      [organizationId, unassignedBranchId, unassignedWarehouseId, userId],
+    );
+    const branchCountId = branchCount.rows[0]!.id;
+
+    const branchAttempt = await request(root() + "/counts/" + branchCountId + "/confirm");
+    expect(branchAttempt.status).toBe(404);
+    expect(await branchAttempt.json()).toMatchObject({ error: "COUNT_NOT_FOUND" });
+
+    // Give the same test identity a valid membership in the foreign tenant so
+    // the fixture is a real foreign-tenant count, not merely an invalid row.
+    await client.query(
+      "INSERT INTO organization_members (organization_id, user_id, role) VALUES ($1, $2, 'owner')",
+      [foreignOrganizationId, userId],
+    );
+    const tenantCount = await client.query<{ id: string }>(
+      `INSERT INTO inventory_counts
+        (organization_id, branch_id, warehouse_id, count_type, reason, created_by)
+       VALUES ($1, $2, $3, 'physical', 'Cross-tenant confirmation ID test', $4)
+       RETURNING id`,
+      [foreignOrganizationId, foreignBranchId, foreignWarehouseId, userId],
+    );
+    const tenantCountId = tenantCount.rows[0]!.id;
+
+    const tenantAttempt = await request(root() + "/counts/" + tenantCountId + "/confirm");
+    expect(tenantAttempt.status).toBe(404);
+    expect(await tenantAttempt.json()).toMatchObject({ error: "COUNT_NOT_FOUND" });
+
+    const persisted = await client.query<{ branch_status: string; tenant_status: string; branch_movements: string; tenant_movements: string }>(
+      `SELECT
+        (SELECT status FROM inventory_counts WHERE organization_id = $1 AND id = $2) AS branch_status,
+        (SELECT status FROM inventory_counts WHERE organization_id = $3 AND id = $4) AS tenant_status,
+        (SELECT count(*)::text FROM warehouse_inventory_movements WHERE organization_id = $1 AND count_id = $2) AS branch_movements,
+        (SELECT count(*)::text FROM warehouse_inventory_movements WHERE organization_id = $3 AND count_id = $4) AS tenant_movements`,
+      [organizationId, branchCountId, foreignOrganizationId, tenantCountId],
+    );
+    expect(persisted.rows[0]).toEqual({
+      branch_status: "draft",
+      tenant_status: "draft",
+      branch_movements: "0",
+      tenant_movements: "0",
+    });
   });
 
   it("rejects a cashier role before creating an inventory count", async () => {

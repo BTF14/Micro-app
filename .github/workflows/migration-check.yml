@@ -50,6 +50,15 @@ jobs:
         run: docker exec -i "${{ job.services.postgres.id }}" psql -v ON_ERROR_STOP=1 -U microapp -d microapp_test -f /dev/stdin < apps/api/migrations/0004_register_shifts.sql
       - name: Verify register and shift integrity/lifecycle assertions
         run: docker exec -i "${{ job.services.postgres.id }}" psql -v ON_ERROR_STOP=1 -U microapp -d microapp_test -f /dev/stdin < apps/api/migrations/0004_register_shifts.assertions.sql
+      - name: Verify warehouse inventory migration rolls back on failure
+        run: |
+          sed '/^COMMIT;$/i SELECT 1/0;' apps/api/migrations/0005_warehouse_inventory.sql > /tmp/0005-warehouse-inventory-failure.sql
+          if docker exec -i "${{ job.services.postgres.id }}" psql -v ON_ERROR_STOP=1 -U microapp -d microapp_test -f /dev/stdin < /tmp/0005-warehouse-inventory-failure.sql; then
+            echo "Expected the injected migration failure, but psql succeeded."
+            exit 1
+          fi
+          remaining="$(docker exec "${{ job.services.postgres.id }}" psql -At -U microapp -d microapp_test -c "SELECT to_regclass('public.warehouses') IS NULL AND to_regclass('public.inventory_counts') IS NULL")"
+          test "$remaining" = "t"
       - name: Apply warehouse inventory schema to disposable PostgreSQL
         run: docker exec -i "${{ job.services.postgres.id }}" psql -v ON_ERROR_STOP=1 -U microapp -d microapp_test -f /dev/stdin < apps/api/migrations/0005_warehouse_inventory.sql
       - name: Verify warehouse inventory constraints and lifecycle assertions

@@ -525,7 +525,7 @@ describe.skipIf(!databaseUrl)("warehouse inventory count transactions against Po
   });
 
   it("serializes concurrent confirmation and records exactly one ledger movement and audit event", async () => {
-    await seedInventoryBalance("8.000");
+    await seedInventoryBalance("7.000");
     const draft = await request(root() + "/counts/physical", {
       reason: "Concurrent confirmation must be idempotent",
       lines: [{ product_id: productId, counted_quantity: "8.500" }],

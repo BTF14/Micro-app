@@ -1869,3 +1869,49 @@ Los recuentos anteriores corresponden a check-runs consultados para esos SHAs, n
 ### Prompt de continuidad para el siguiente chat
 Actúa como ingeniero principal responsable de continuar BTF14/Micro-app. Antes de actuar, lee toda la documentación enumerada en el bloque “Fuente de verdad y arranque sin repetir trabajo” de la rama `docs/reconcile-current-state-20261104`, y consulta GitHub en vivo. No me pidas repetir información ya documentada, IDs, Build IDs, capturas, terminal, CLI, TinyFish ni reconexiones. Trabajo desde teléfono. No inventes verificaciones ni presentes snapshots antiguos como actuales. Distingue HECHO VERIFICADO / HISTÓRICO / PENDIENTE / NO VERIFICADO. Continúa desde los bloqueos y próximos pasos de este handoff, con criterio técnico senior y cambios concretos en las PR existentes. No toques producción, secretos, Neon main, Cloudflare settings/DNS/billing ni datos reales. No fusiones ni despliegues hasta cumplir todos los gates. Al terminar, actualiza HANDOFF_NEXT_CHAT.md, CURRENT_STATE.md y STATE_JOURNAL.md con evidencia y SHAs, y deja listo el siguiente relevo.
 
+
+
+## Reanudación técnica — 2026-11-05 UTC — auditoría viva de #207 y pila de migraciones
+
+### Hechos verificados en GitHub en esta sesión
+
+- PR #194: abierta/Draft, HEAD `7b3ad50e5780416868a1a428b856d12c4ea1e2ea`, base `main` en `705d3db3220894c7d3baca8dc7e7a6b623dfbb94`, comparación 13 ahead / 2 behind, 13/13 check-runs success. Su migración sigue llamándose `0005_register_shift_member_roles.sql`.
+- PR #200: abierta/Draft, HEAD `5fbc17a48b65076cf5609a7a054bbd125a3a5d1e`, base `main` en `7b0f057b8c152515005feed40305143c0ebb94b0`, 32 ahead / 0 behind, 20/20 check-runs success. Contiene `0005_warehouse_inventory.sql`.
+- PR #202 (esta rama documental): abierta/Draft, HEAD consultado antes de este checkpoint `815efb6b19f4e367c0b0293522231294296e58e7`, 110 ahead / 0 behind, 13/13 check-runs success. Los commits documentales de este checkpoint harán avanzar el HEAD; consultar GitHub después de escribir.
+- PR #204: abierta/Draft, HEAD `07a5a41c0f5f5c36fb89a5c5950796493d56eb20`, base #200, 8 ahead / 0 behind, 8/8 check-runs success.
+- PR #205: abierta/Draft, HEAD `c0bcbbe48aa8783b85ee7787dd1ae8a6d0dfdafc`, base #204, 27 ahead / 0 behind, 9/9 check-runs success.
+- PR #207: abierta/Draft, HEAD `26c5270664b82aebc6a12fafe6973de8544bc6f7`, base #200, 10 ahead / 0 behind, 9/9 check-runs success.
+- Las seis PR permanecen sin merge. Reviews formales: 0; review threads inline: 0. Los check-runs se consultaron por SHA exacto mediante GitHub API. Los checks verdes no equivalen a aprobación formal ni readiness de producción.
+- Issue #53 sigue abierta con etiquetas `security` y `P0`; su cuerpo mantiene pendientes los criterios de aislamiento/autorización y operaciones comerciales futuras.
+
+### Auditoría de #207 — evidencia y límites
+
+- Inspeccionados el diff completo de la PR, `0007_audit_logs_append_only.sql`, `0007_audit_logs_append_only.assertions.sql`, `.github/workflows/migration-check.yml`, `.github/workflows/ci.yml`, tests de catálogo/conteos y `odd/tasks/audit-logs-append-only.md`.
+- Implementado: trigger BEFORE UPDATE/DELETE por fila, trigger BEFORE TRUNCATE por sentencia, ENABLE ALWAYS, REVOKE a PUBLIC de UPDATE/DELETE/TRUNCATE/TRIGGER y EXECUTE de la función, rol sintético runtime no propietario con SELECT/INSERT, rol mutador sintético para demostrar bloqueo por triggers, y rollback de creación de producto si falla la auditoría.
+- **Bloqueo de secuencia:** el workflow de migración aplica 0001–0005 y salta a 0007. No aplica 0006 de roles de #194. Por ello, 9/9 checks de #207 solo validan el stack disponible en la rama #207 basada en #200; no validan la secuencia consolidada 0005 inventario → 0006 roles → 0007 audit logs. AC-5 de la tarea ODD no está cumplido.
+- **Bloqueo runtime:** los roles de assertions son sintéticos y reciben grants explícitos. No prueban el principal efectivo, membresías ni privilegios heredados del Worker `DATABASE_URL`. La migración revoca privilegios a PUBLIC, pero no configura el login runtime real. Si es owner/privilegiado puede deshabilitar triggers; si es no-owner sin grants suficientes, los inserts de auditoría pueden fallar. El rol efectivo permanece **NO VERIFICADO**; no leer ni cambiar secretos.
+- ENABLE ALWAYS no impide al owner/superuser alterar el esquema o deshabilitar triggers. La separación de ownership y least privilege es un gate independiente.
+- AC-1 inventario estático: completo según tarea ODD. AC-2 guardas SQL y assertions sintéticas: implementadas y CI verde en el HEAD citado. AC-3 contrato sintético: parcial; principal runtime real no verificado. AC-4 rollback de catálogo probado y rollback de conteo existente conservado; cobertura total de todos los callsites aún requiere revisión. AC-5 pila completa: no cumplido. AC-6 CI del SHA actual: 9/9 success, pero falta validación del stack consolidado y review. AC-7 limitación runtime documentada.
+- Se publicó comentario técnico en PR #207 (comentario ID 6651579307) documentando ambos bloqueos, evidencia positiva y decisión de mantener Draft.
+
+### Reconciliación de migraciones
+
+- Colisión confirmada: #200 contiene `0005_warehouse_inventory.sql`; #194 contiene `0005_register_shift_member_roles.sql`.
+- Destino de numeración: 0005 inventario → 0006 roles → 0007 audit logs.
+- #194 está divergida 13 ahead / 2 behind de main y no es descendiente de #200. No basta renombrar el archivo: deben coordinarse ancestry/base, CI y assertions sobre el stack completo. No force-push ni cambio de base a ciegas.
+- Se publicó comentario de reconciliación en PR #194 (comentario ID 6651592608). La PR permanece Draft; no se cambió código ni base.
+
+### Continuidad y límites
+
+- `WORK_CHECKPOINT.md` fue buscado en la rama documental, `main`, #194, #200 y #207; no existe en ninguna de esas referencias consultadas. No inventar su contenido ni crear duplicado: HANDOFF/CURRENT_STATE contienen el checkpoint operativo vigente.
+- Se mantuvieron sin cambios código runtime, migraciones, main, Neon, Cloudflare settings/secrets/DNS/billing y datos reales. No se ejecutó merge ni despliegue manual.
+- Los check-runs Cloudflare muestran artefactos/URLs de preview; la ruta del detalle Worker contiene `/production/builds/`. Sin inspección autenticada del dashboard no afirmar el destino o estado final del servicio. Mantenerlo **NO VERIFICADO**.
+- Producción sigue **NO LISTA**.
+
+### Próximos pasos concretos
+
+1. Resolver el grafo de ramas de #194/#200 y renumerar roles a 0006 sin force-push ni duplicar el diff; actualizar CI para aplicar 0005, 0006 y sus assertions desde PostgreSQL limpio.
+2. Actualizar migration-check de #207 para aplicar 0006 y validar después 0007; reejecutar CI sobre el SHA final.
+3. Mantener el gate del principal runtime DATABASE_URL: no leer secretos; exigir evidencia autorizada de solo lectura de identidad/ownership/grants y revisar membresías efectivas antes de afirmar inmutabilidad productiva.
+4. Continuar auditoría P0 de #53: revisar autorización por tenant/sucursal/rol, idempotencia, concurrencia, ABA/versionado, orden de locks, integridad ledger/balance y writers futuros. #205 aporta idempotencia y balance_version, pero no implementa ventas/recepciones/reservas/devoluciones/transferencias.
+5. Revisar nuevamente comentarios/reviews, diffs y check-runs de SHA exactos antes de cualquier recomendación de integración. Mantener todas las PR en Draft y sin merge.

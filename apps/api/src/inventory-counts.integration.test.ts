@@ -223,10 +223,15 @@ describe.skipIf(!databaseUrl)("warehouse inventory count transactions against Po
       "DELETE FROM inventory_counts WHERE organization_id = $1 AND id = $2",
       [organizationId, partialOpeningBody.id],
     );
-    await client.query(
-      "DELETE FROM inventory_balances WHERE organization_id = $1 AND warehouse_id = $2 AND product_id = $3",
-      [organizationId, warehouseId, omittedProduct.rows[0]!.id],
-    );
+    await client.query("ALTER TABLE inventory_balances DISABLE TRIGGER USER");
+    try {
+      await client.query(
+        "DELETE FROM inventory_balances WHERE organization_id = $1 AND warehouse_id = $2 AND product_id = $3",
+        [organizationId, warehouseId, omittedProduct.rows[0]!.id],
+      );
+    } finally {
+      await client.query("ALTER TABLE inventory_balances ENABLE TRIGGER USER");
+    }
     await client.query("DELETE FROM products WHERE organization_id = $1 AND id = $2", [organizationId, omittedProduct.rows[0]!.id]);
 
     const opening = await request(root() + "/counts/opening", {
@@ -295,6 +300,20 @@ describe.skipIf(!databaseUrl)("warehouse inventory count transactions against Po
   });
 
   it("rejects an older physical count after a newer count has changed the balance", async () => {
+    await client.query(
+      `INSERT INTO inventory_balances (organization_id, branch_id, warehouse_id, product_id, on_hand_quantity, reserved_quantity)
+       VALUES ($1, $2, $3, $4, 8.250, 0)
+       ON CONFLICT (organization_id, warehouse_id, product_id)
+       DO UPDATE SET on_hand_quantity = EXCLUDED.on_hand_quantity, reserved_quantity = EXCLUDED.reserved_quantity`,
+      [organizationId, branchId, warehouseId, productId],
+    );
+    const initial = await client.query<{ version: string }>(
+      "SELECT balance_version::text AS version FROM inventory_balances WHERE organization_id = $1 AND warehouse_id = $2 AND product_id = $3",
+      [organizationId, warehouseId, productId],
+    );
+    const initialVersion = BigInt(initial.rows[0]!.version);
+    const currentVersion = (initialVersion + 1n).toString();
+
     const first = await request(root() + "/counts/physical", {
       reason: "First physical observation",
       lines: [{ product_id: productId, counted_quantity: "9.000" }],
@@ -318,6 +337,8 @@ describe.skipIf(!databaseUrl)("warehouse inventory count transactions against Po
       error: "COUNT_STALE",
       expected_on_hand_quantity: "8.250",
       current_on_hand_quantity: "8.500",
+      expected_balance_version: initialVersion.toString(),
+      current_balance_version: currentVersion,
     });
 
     const persisted = await client.query<{ balance: string; stale_status: string; newer_status: string; stale_movements: string }>(
@@ -388,6 +409,13 @@ describe.skipIf(!databaseUrl)("warehouse inventory count transactions against Po
   });
 
   it("does not let a physical count reduce stock below reserved quantity", async () => {
+    await client.query(
+      `INSERT INTO inventory_balances (organization_id, branch_id, warehouse_id, product_id, on_hand_quantity, reserved_quantity)
+       VALUES ($1, $2, $3, $4, 8.500, 0)
+       ON CONFLICT (organization_id, warehouse_id, product_id)
+       DO UPDATE SET on_hand_quantity = EXCLUDED.on_hand_quantity, reserved_quantity = EXCLUDED.reserved_quantity`,
+      [organizationId, branchId, warehouseId, productId],
+    );
     await client.query(
       "UPDATE inventory_balances SET reserved_quantity = 8.000 WHERE organization_id = $1 AND warehouse_id = $2 AND product_id = $3",
       [organizationId, warehouseId, productId],

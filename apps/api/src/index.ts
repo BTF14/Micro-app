@@ -106,9 +106,8 @@ app.onError((_error, c) => {
   );
 });
 
-export default {
-  fetch: app.fetch.bind(app),
+export default Object.assign(app, {
   async scheduled(_controller: ScheduledController, env: Bindings): Promise<void> {
     await cleanupExpiredAuthRateLimits(env.DATABASE_URL);
   },
-};
+});

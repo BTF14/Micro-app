@@ -1,6 +1,6 @@
 # Matriz de decisión de permisos comerciales — APROBADA
 
-**Estado: APROBADA (2026-10-31).** El propietario definió explícitamente las decisiones de ventas, devoluciones y gestión de miembros, y delegó explícitamente en la IA ("elige la mejor opción o inspírate en las demás SaaS parecidas... hacerlo con criterio y fundamentos") el resto de las celdas, con el mandato de aplicar criterio técnico fundamentado. Esta matriz documenta ambas fuentes por separado para trazabilidad. Existe una implementación comercial parcial: catálogo GET/POST/PATCH y almacenes/conteos por sucursal. Los handlers deben aplicar la matriz mediante el límite server-side de autorización; no existe middleware global ni cobertura de ventas, pagos, recepción, reservas, devoluciones o transferencias. La aprobación no sustituye las pruebas de aislamiento cross-tenant/branch ni la revisión formal; issue #53 permanece abierta.
+**Estado: APROBADA (2026-10-31), con actualización de decisión comercial 2026-11-05.** El propietario definió las decisiones de ventas, devoluciones y gestión de miembros, y delegó explícitamente en la IA el resto de las celdas con criterio técnico fundamentado. La decisión del 2026-11-05 **sustituye la regla anterior de descuentos sujetos a aprobación**: Micro-app no tendrá descuentos ni cambios manuales de precio durante el checkout. Toda venta usa el precio vigente del catálogo, validado por el servidor. Si el precio debe cambiar, Owner/Admin actualizan primero el producto en el catálogo y queda auditado. Existe implementación comercial parcial: catálogo GET/POST/PATCH y almacenes/conteos. No existen todavía flujos de ventas, pagos, recepción, reservas, devoluciones o transferencias. La aprobación no sustituye las pruebas de aislamiento cross-tenant/branch; issue #53 permanece abierta.
 
 ## Decisión estructural ya fijada
 - Cada miembro tiene **un único rol por organización**, guardado en `organization_members.role`: `owner`, `admin`, `cashier` o `inventory`.
@@ -46,17 +46,15 @@ Nota: el costo de producto se considera dato financiero sensible; Cashier ve pre
 
 **Nadie —ni Owner ni Admin— puede cerrar el turno abierto de otro cajero ni reabrir uno ya cerrado en el modelo base.** Un cajero que no puede cerrar su propio turno (p. ej. se fue sin cerrar caja) requiere una vía de corrección separada, explícitamente fuera del alcance de esta matriz: `docs/sdd/REGISTER_SHIFT_MODEL.md` dice literalmente *"cualquier excepción futura requiere permiso separado, motivo y auditoría aprobados"*. No implementar ese flujo de excepción hasta que el propietario lo apruebe específicamente, con su propio diseño de permiso, motivo obligatorio y registro de auditoría — no asumirlo incluido en la aprobación general de esta matriz.
 
-## 3. Ventas: creación, descuentos, cambios de precio en el momento de la venta
-**Fuente: decisión explícita del propietario (2026-10-31):** *"Cashier/Admin/Owner crean ventas; cualquier descuento requiere aprobación de Admin/Owner."*
+## 3. Ventas: creación al precio vigente del catálogo
+**Fuente: decisión explícita actualizada por el propietario (2026-11-05), que sustituye la regla del 2026-10-31:** Cashier/Admin/Owner pueden crear ventas durante su propio turno abierto. Micro-app no ofrece descuentos ni cambios manuales del precio unitario durante el checkout. El precio aplicado debe coincidir con el precio vigente del catálogo, leído y validado por el servidor.
 
 | Operación | Owner | Admin | Inventory | Cashier |
 |---|---|---|---|---|
-| Crear venta a precio de lista, turno propio abierto | ✅ propio | ✅ propio | ❌ | ✅ propio |
-| Aplicar descuento (cualquier monto/porcentaje) | ✅ | ✅ | ❌ | ❌ directo — requiere aprobación de Admin/Owner en el momento (ver abajo) |
-| Aprobar un descuento solicitado por Cashier | ✅ | ✅ | ❌ | ❌ |
-| Cambiar precio unitario en la venta (fuera de lista) | ✅ | ✅ | ❌ | ❌ — mismo flujo de aprobación que descuento |
+| Crear venta al precio vigente del catálogo, turno propio abierto | ✅ propio | ✅ propio | ❌ | ✅ propio |
+| Cambiar precio unitario manualmente durante el checkout | ❌ | ❌ | ❌ | ❌ |
 
-Implementación futura esperada: la aprobación de Admin/Owner debe quedar registrada contra la venta (quién aprobó, cuándo) antes de confirmar el descuento; no basta con una autorización verbal fuera del sistema.
+Para cambiar el precio de venta, Owner/Admin deben editar primero el producto en el catálogo. El cambio queda sujeto a los permisos y al evento de auditoría de la sección 1. El backend no acepta un precio unitario arbitrario enviado por el navegador.
 
 ## 4. Devoluciones, anulaciones de venta y reversos
 **Fuente: decisión explícita del propietario (2026-10-31):** *"Cashier puede anular durante el mismo turno abierto; después del cierre solo Admin/Owner."*
@@ -75,7 +73,6 @@ Implementación futura esperada: la aprobación de Admin/Owner debe quedar regis
 | Invitar/desactivar miembros, cambiar rol | ✅ org | ❌ | ❌ | ❌ |
 | Asignar/revocar membresía de sucursal | ✅ org | ❌ | ❌ | ❌ |
 | Configurar políticas comerciales de la organización (p. ej. límites, umbrales futuros) | ✅ org | ❌ | ❌ | ❌ |
-| Ejecutar una excepción puntual ya cubierta en otra sección (p. ej. aprobar descuento) | ✅ | ✅ (ver sección 3, ya autorizado ahí) | ❌ | ❌ |
 
 Nota: esta decisión es más restrictiva que la propuesta original de "Owner y Admin gestionan por igual"; Admin queda limitado a operar el negocio (ventas, inventario, aprobaciones del día a día) sin tocar personal ni configuración de la organización.
 
@@ -99,4 +96,4 @@ Nota: esta decisión es más restrictiva que la propuesta original de "Owner y A
 - Cualquier cambio a esta matriz después de esta aprobación requiere de nuevo una decisión explícita del propietario (puede delegarse de nuevo con el mismo criterio, pero debe registrarse aquí igual que esta aprobación).
 
 ## Aprobación
-**Estado: APROBADA el 2026-10-31.** El propietario aprobó explícitamente las secciones 3, 4 y 5 en esta fecha y delegó explícitamente en la IA, con criterio técnico fundamentado, las secciones 1, 2 y 6. Esta aprobación habilita el diseño y la implementación de endpoints comerciales siguiendo exactamente esta tabla; no exime de completar `docs/sdd/TENANT_ISOLATION_TEST_PLAN.md` ni de las pruebas de aislamiento cross-tenant requeridas antes de cerrar el issue #53 o de marcar cualquier punto del Nivel 2 de `docs/SECURITY_ROADMAP.md` como completado.
+**Estado: APROBADA el 2026-10-31 y actualizada el 2026-11-05.** El propietario sustituyó la decisión anterior sobre descuentos: no se implementarán descuentos ni overrides de precio en checkout. El resto de las decisiones de roles y operaciones se mantiene. Esta matriz guía los futuros endpoints, pero no exime de completar `docs/sdd/TENANT_ISOLATION_TEST_PLAN.md` ni de las pruebas de aislamiento cross-tenant requeridas antes de cerrar el issue #53.

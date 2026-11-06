@@ -248,6 +248,7 @@ describe.skipIf(!databaseUrl || !databaseUrlAdmin)("atomic sales checkout Postgr
         for (const table of [
           "public.sales", "public.sale_items", "public.payments",
           "public.warehouse_inventory_movements", "public.inventory_balances", "public.audit_logs",
+          "public.register_shifts",
         ]) {
           await client.query("ALTER TABLE " + table + " ENABLE TRIGGER USER");
         }

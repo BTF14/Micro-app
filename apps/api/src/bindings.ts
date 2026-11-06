@@ -1,4 +1,5 @@
 export type Bindings = {
+  APP_ENV?: "production" | "preview";
   DATABASE_URL?: string;
   FRONTEND_ORIGIN?: string;
   GOOGLE_CLIENT_ID?: string;

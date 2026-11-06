@@ -14,7 +14,7 @@ on:
       - 'tools/validate-agent-docs.py'
       - '.github/workflows/odd-docs-validation.yml'
   push:
-    branches: [main]
+    branches: [main, "feat/**"]
     paths:
       - 'AGENTS.md'
       - 'docs/CONSTITUTION.md'

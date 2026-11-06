@@ -2,7 +2,7 @@ name: CI
 
 on:
   push:
-    branches: [main]
+    branches: [main, "feat/**"]
   pull_request:
     branches: [main]
 
@@ -58,6 +58,8 @@ jobs:
           docker exec -i "${{ job.services.postgres.id }}" psql -v ON_ERROR_STOP=1 -U microapp -d microapp_test -f /dev/stdin < apps/api/migrations/0002_google_identity.sql
           docker exec -i "${{ job.services.postgres.id }}" psql -v ON_ERROR_STOP=1 -U microapp -d microapp_test -f /dev/stdin < apps/api/migrations/0003_branch_scope.sql
           docker exec -i "${{ job.services.postgres.id }}" psql -v ON_ERROR_STOP=1 -U microapp -d microapp_test -f /dev/stdin < apps/api/migrations/0004_register_shifts.sql
+          docker exec -i "${{ job.services.postgres.id }}" psql -v ON_ERROR_STOP=1 -U microapp -d microapp_test -f /dev/stdin < apps/api/migrations/0005_warehouse_inventory.sql
+          docker exec -i "${{ job.services.postgres.id }}" psql -v ON_ERROR_STOP=1 -U microapp -d microapp_test -f /dev/stdin < apps/api/migrations/0005_warehouse_inventory.assertions.sql
       - name: Build and typecheck
         run: pnpm build
       - name: Verify Cloudflare Pages preview isolation
@@ -86,3 +88,11 @@ jobs:
         run: pnpm --filter @micro-app/api exec vitest run src/register-shifts.integration.test.ts
       - name: PostgreSQL authenticated cashier open-shift integration tests
         run: pnpm --filter @micro-app/api exec vitest run src/cashier-open-shift.integration.test.ts
+      - name: PostgreSQL catalog endpoint integration tests
+        run: pnpm --filter @micro-app/api exec vitest run src/catalog.integration.test.ts
+      - name: PostgreSQL catalog product creation integration tests
+        run: pnpm --filter @micro-app/api exec vitest run src/catalog-write.integration.test.ts
+      - name: PostgreSQL catalog product update integration tests
+        run: pnpm --filter @micro-app/api exec vitest run src/catalog-update.integration.test.ts
+      - name: PostgreSQL warehouse inventory count integration tests
+        run: pnpm --filter @micro-app/api exec vitest run src/inventory-counts.integration.test.ts

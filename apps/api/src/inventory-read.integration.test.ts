@@ -234,9 +234,13 @@ describe.skipIf(!databaseUrl)("inventory balance and ledger read APIs against Po
     expect(third.status).toBe(200);
     const thirdBody = await third.json() as { items: Array<{ product_id: string; is_active?: boolean }>; nextCursor: string | null };
     expect(thirdBody.items).toHaveLength(1);
-    expect(thirdBody.items[0]!.product_id).toBe(inactiveProductId);
-    expect(thirdBody.items[0]!.is_active).toBe(false);
     expect(thirdBody.nextCursor).toBeNull();
+
+    const allItems = [...firstBody.items, ...secondBody.items, ...thirdBody.items];
+    expect(allItems.map((item) => item.product_id)).toEqual(
+      [firstProductId, secondProductId, inactiveProductId].sort(),
+    );
+    expect(allItems.find((item) => item.product_id === inactiveProductId)?.is_active).toBe(false);
   });
 
   it("returns append-only movement history with stable cursors and cost visibility", async () => {

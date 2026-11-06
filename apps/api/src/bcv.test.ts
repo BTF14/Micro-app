@@ -23,9 +23,9 @@ const ratePayload = {
 };
 
 function createDatabaseFactory(rows: Array<{ id: string }> = [], queryError?: Error) {
-  const query = vi.fn(async () => {
+  const query = vi.fn(async <Row = unknown>(_statement: string, _values?: unknown[]) => {
     if (queryError) throw queryError;
-    return { rows };
+    return { rows: rows as Row[] };
   });
   const client: DatabaseClient = {
     connect: vi.fn(async () => undefined),
@@ -109,7 +109,7 @@ describe("BCV scheduled ingestion", () => {
 
 describe("GET /exchange-rates/current", () => {
   function createApp(rows: Array<Record<string, unknown>>, queryError?: Error) {
-    const { factory } = createDatabaseFactory(rows as Array<{ id: string }>, queryError);
+    const { factory } = createDatabaseFactory(rows as unknown as Array<{ id: string }>, queryError);
     const app = new Hono<{ Bindings: Bindings }>();
     registerBcvRoutes(app, { databaseClientFactory: factory, now: () => now });
     return app;

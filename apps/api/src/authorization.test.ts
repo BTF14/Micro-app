@@ -33,14 +33,18 @@ describe("commercial role authorization", () => {
     expect(isCommercialOperationAllowed("inventory", "sales.create_list_price")).toBe(false);
   });
 
-  it("allows only own-shift cashier operations and blocks supervisor exceptions", () => {
-    expect(isCommercialOperationAllowed("cashier", "register.shift.open_own")).toBe(true);
-    expect(isCommercialOperationAllowed("cashier", "register.shift.close_own")).toBe(true);
-    expect(isCommercialOperationAllowed("cashier", "register.shift.operate_own")).toBe(true);
+  it("allows owner/admin/cashier to operate only their own shifts and keeps inventory excluded", () => {
+    for (const role of ["owner", "admin", "cashier"] as const) {
+      expect(isCommercialOperationAllowed(role, "register.shift.open_own")).toBe(true);
+      expect(isCommercialOperationAllowed(role, "register.shift.close_own")).toBe(true);
+      expect(isCommercialOperationAllowed(role, "register.shift.operate_own")).toBe(true);
+    }
     expect(isCommercialOperationAllowed("cashier", "register.shift.read_own")).toBe(true);
     expect(isCommercialOperationAllowed("cashier", "register.shift.read_all")).toBe(false);
     expect(isCommercialOperationAllowed("owner", "register.shift.read_all")).toBe(true);
     expect(isCommercialOperationAllowed("admin", "register.shift.read_all")).toBe(true);
+    expect(isCommercialOperationAllowed("inventory", "register.shift.open_own")).toBe(false);
+    expect(isCommercialOperationAllowed("inventory", "register.shift.operate_own")).toBe(false);
   });
 
   it("requires owner/admin for discounts and price overrides; cashier can void only own open-shift sale", () => {

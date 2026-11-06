@@ -10,7 +10,7 @@ const MAX_STATUS_AGE_MS = 36 * 60 * 60 * 1000;
 const MAX_RATE_CAPTURE_AGE_MS = 7 * 24 * 60 * 60 * 1000;
 const MAX_FUTURE_SKEW_MS = 5 * 60 * 1000;
 const MAX_EFFECTIVE_DATE_DISTANCE_DAYS = 7;
-const STALE_EFFECTIVE_DATE_DAYS = 4;
+const STALE_EFFECTIVE_DATE_DAYS = 7;
 const STALE_FETCH_AGE_MS = 7 * 24 * 60 * 60 * 1000;
 
 type JsonObject = Record<string, unknown>;
@@ -139,9 +139,9 @@ export function registerBcvRoutes(
           `SELECT rate::text AS rate, source, effective_date::text AS effective_date,
                   fetched_at::text AS fetched_at, validation_status
              FROM exchange_rates
-            WHERE base_currency = $1 AND quote_currency = $2 AND validation_status = $3
+            WHERE base_currency = $1 AND quote_currency = $2
             ORDER BY effective_date DESC, fetched_at DESC LIMIT 1`,
-          ["USD", "VES", "valid"],
+          ["USD", "VES"],
         ),
         dependencies.databaseClientFactory,
       );

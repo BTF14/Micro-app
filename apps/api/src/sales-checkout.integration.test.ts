@@ -368,6 +368,36 @@ describe.skipIf(!databaseUrl || !databaseUrlAdmin)("atomic sales checkout Postgr
     expect(sales.rows[0].count).toBe(1);
   });
 
+  it("serializes concurrent identical idempotency requests into one sale and one stock movement", async () => {
+    await seedBalance("5.000");
+    const key = "concurrent-replay-" + crypto.randomUUID();
+    const body = checkoutBody("1.000", "23.8500");
+
+    const [first, second] = await Promise.all([
+      request(body, key),
+      request(body, key),
+    ]);
+    expect([first.status, second.status].sort()).toEqual([200, 201]);
+
+    const [firstSale, secondSale] = await Promise.all([
+      first.json() as Promise<{ id: string }>,
+      second.json() as Promise<{ id: string }>,
+    ]);
+    expect(firstSale.id).toBe(secondSale.id);
+    expect((await readBalance()).on_hand_quantity).toBe("4.000");
+
+    const persisted = await client.query(
+      `SELECT
+         (SELECT count(*)::int FROM public.sales WHERE organization_id=$1 AND idempotency_key=$2) AS sales,
+         (SELECT count(*)::int FROM public.sale_items WHERE organization_id=$1 AND sale_id=$3) AS lines,
+         (SELECT count(*)::int FROM public.payments WHERE organization_id=$1 AND sale_id=$3) AS payments,
+         (SELECT count(*)::int FROM public.warehouse_inventory_movements WHERE organization_id=$1 AND reference_type='sale' AND reference_id=$3) AS movements,
+         (SELECT count(*)::int FROM public.audit_logs WHERE organization_id=$1 AND action='sale.completed' AND entity_id=$3) AS audits`,
+      [organizationId, key, firstSale.id],
+    );
+    expect(persisted.rows[0]).toEqual({ sales: 1, lines: 1, payments: 1, movements: 1, audits: 1 });
+  });
+
   it("settles VES with two-decimal amount and exact USD-equivalent snapshot", async () => {
     await seedBalance("3.000");
     const totalVes = convertUsdToVes("23.8500", "250.12345678");

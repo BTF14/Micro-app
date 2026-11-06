@@ -297,14 +297,14 @@ BEGIN
     RAISE EXCEPTION 'SALE_PAYMENT_SNAPSHOT_OR_ACTOR_MISMATCH' USING ERRCODE = '23514';
   END IF;
 
-  IF NOT EXISTS (
-    SELECT 1
-      FROM public.exchange_rates er
-     WHERE er.id = sale_row.exchange_rate_id
-       AND er.validation_status = 'valid'
-       AND er.rate = sale_row.exchange_rate_snapshot
-       AND er.effective_date = (pg_catalog.now() AT TIME ZONE 'America/Caracas')::date
-  ) THEN
+  PERFORM 1
+    FROM public.exchange_rates er
+   WHERE er.id = sale_row.exchange_rate_id
+     AND er.validation_status = 'valid'
+     AND er.rate = sale_row.exchange_rate_snapshot
+     AND er.effective_date = (pg_catalog.now() AT TIME ZONE 'America/Caracas')::date
+   FOR SHARE;
+  IF NOT FOUND THEN
     RAISE EXCEPTION 'SALE_REQUIRES_CURRENT_BCV_RATE' USING ERRCODE = '23514';
   END IF;
 
@@ -314,13 +314,17 @@ BEGIN
         target_org, sale_row.branch_id, sale_row.created_by
       ) AS active_shift
      WHERE active_shift.shift_id = sale_row.register_shift_id
-  ) OR NOT EXISTS (
-    SELECT 1 FROM public.warehouses w
-     WHERE w.organization_id = target_org
-       AND w.branch_id = sale_row.branch_id
-       AND w.id = sale_row.warehouse_id
-       AND w.is_active = true
   ) THEN
+    RAISE EXCEPTION 'SALE_REQUIRES_OWN_OPEN_SHIFT_AND_ACTIVE_WAREHOUSE' USING ERRCODE = '23514';
+  END IF;
+
+  PERFORM 1 FROM public.warehouses w
+   WHERE w.organization_id = target_org
+     AND w.branch_id = sale_row.branch_id
+     AND w.id = sale_row.warehouse_id
+     AND w.is_active = true
+   FOR SHARE;
+  IF NOT FOUND THEN
     RAISE EXCEPTION 'SALE_REQUIRES_OWN_OPEN_SHIFT_AND_ACTIVE_WAREHOUSE' USING ERRCODE = '23514';
   END IF;
 

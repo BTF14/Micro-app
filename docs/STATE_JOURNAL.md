@@ -1465,3 +1465,15 @@ CI documental: para HEAD `8c15e13fa001a14a0ddf9f2432bc17efb30d476d`, los 8 workf
 - Próximo paso operativo: verificar el resultado final de los checks del merge SHA y continuar desde el handoff actualizado. No iniciar rediseño global; aplicar el estándar gradualmente en frontend nuevo y pantallas que se modifiquen.
 - Esta entrada registra el merge; no altera ni elimina entradas anteriores.
 
+
+
+# 2026-11-05 UTC — merges seguros, backlog y hallazgo runtime Neon
+
+- PR #237 fusionada por squash en `66ca2b99331df6d9eb4175bf79e53a9ba118dde7`; los checks post-merge de Cloudflare Pages, Workers Builds, CI, ODD docs, migraciones, Chromium, análisis estático y Trivy terminaron en success.
+- PR #206 fusionada por squash en `85f1aa46db7797ff6ae2d7e08b2a85e15e067797`; actualizó Hono 4.13.14→4.13.16, Cloudflare Workers Types 5.20261029.1→5.20261102.1 y Wrangler 4.155.0→4.156.1; se confirmó que el override undici 7.30.1 permanece. Checks post-merge de Pages, Workers Builds, CI, Chromium, migraciones, estático y Trivy: success.
+- PR #196 cerrada como duplicada de implementación frente a #200 después de comparar patches completos: 16 archivos de código compartidos idénticos y 8 archivos de inventario/migración más evolucionados en #200. Nueve archivos documentales exclusivos de #196 permanecen en la rama para rescate selectivo; no se perdieron del historial.
+- Backlog vivo tras esas acciones: 28 PR abiertas. No abrir nuevas PR para el mismo trabajo.
+- Neon main: inspección de solo lectura de `pg_roles` y membresías. No existen logins `microapp_runtime` ni `microapp_migrator`. Se observó un login etiquetado para backup con atributos privilegiados y membresía en el rol privilegiado del proveedor; no se leyeron secretos ni connection strings, por lo que no se afirma qué secret utiliza ese login. Tratar como P0 la discrepancia entre el nombre/uso esperado readonly y los privilegios observados. No se cambiaron roles ni datos.
+- `auth_rate_limits` existe en Neon main y su owner es `neondb_owner`; el principal efectivo del Worker sigue sin verificarse. Por ello #213 no se fusiona todavía aunque su SHA histórico tenga CI verde.
+- #200 necesita migración 0005 y principal runtime compatible; no fusionar hasta resolver el despliegue seguro. #224 contiene el contrato y el harness para los logins dedicados, pero su stack debe aplanarse y los roles de Neon requieren aprobación específica. #227 BCV continúa bloqueada por esa cadena.
+- Se reafirma la autorización permanente de merges con gates completos y despliegue automático de Pages; no incluye mutaciones de Neon main, secretos ni configuración manual de Cloudflare.

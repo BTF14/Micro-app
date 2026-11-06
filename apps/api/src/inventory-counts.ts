@@ -15,12 +15,16 @@ const IDEMPOTENCY_KEY_PATTERN = /^[A-Za-z0-9._:-]{1,128}$/;
 type CountLineInput = { productId: string; quantity: string; unitCost: string | null };
 
 function readDecimal(value: unknown, allowZero: boolean, maxFractionDigits = 3, maxIntegerDigits = 11): string | null {
-  if (typeof value !== "string" && typeof value !== "number") return null;
+  if (typeof value !== "string") return null;
   const raw = String(value);
   const integerPattern = maxIntegerDigits === 10 ? "(?:0|[1-9][0-9]{0,9})" : "(?:0|[1-9][0-9]{0,10})";
   const decimalPattern = new RegExp("^" + integerPattern + "(?:\\.[0-9]{1," + maxFractionDigits + "})?$");
   if (!decimalPattern.test(raw)) return null;
-  if (!allowZero && Number(raw) <= 0) return null;
+  if (!allowZero) {
+    const [whole, fraction = ""] = raw.split(".");
+    const scaled = BigInt(whole!) * 10n ** BigInt(maxFractionDigits) + BigInt(fraction.padEnd(maxFractionDigits, "0") || "0");
+    if (scaled === 0n) return null;
+  }
   return raw.includes(".") ? raw : raw + ".0";
 }
 

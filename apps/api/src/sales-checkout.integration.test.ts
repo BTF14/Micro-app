@@ -348,6 +348,25 @@ describe.skipIf(!databaseUrl || !databaseUrlAdmin).sequential("atomic sales chec
     await client.query("UPDATE public.exchange_rates SET validation_status='valid' WHERE id=$1", [rateId]);
   });
 
+  it("fails closed when no BCV row has the current Caracas effective date", async () => {
+    await seedBalance("2.000");
+    await client.query("UPDATE public.exchange_rates SET effective_date='1900-01-01'::date WHERE id=$1", [rateId]);
+    try {
+      const key = "missing-rate-" + crypto.randomUUID();
+      const response = await request(checkoutBody("1.000", "23.8500"), key);
+      expect(response.status).toBe(409);
+      expect((await response.json() as { error: string }).error).toBe("BCV_RATE_NOT_CURRENT");
+      expect((await readBalance()).on_hand_quantity).toBe("2.000");
+      const sales = await client.query(
+        "SELECT count(*)::int AS count FROM public.sales WHERE organization_id=$1 AND idempotency_key=$2",
+        [organizationId, key],
+      );
+      expect(sales.rows[0].count).toBe(0);
+    } finally {
+      await client.query("UPDATE public.exchange_rates SET effective_date=$2::date WHERE id=$1", [rateId, rateDate]);
+    }
+  });
+
   it("rejects insufficient stock before creating a sale draft", async () => {
     await seedBalance("1.000");
     const key = "stock-" + crypto.randomUUID();
@@ -376,38 +395,54 @@ describe.skipIf(!databaseUrl || !databaseUrlAdmin).sequential("atomic sales chec
     expect(sales.rows[0].count).toBe(1);
   });
 
-  it("rolls back sale, balance and ledger when audit insertion fails", async () => {
+  it("rolls back sale, balance and ledger for failures at movement, line, payment and audit writes", async () => {
     await seedBalance("2.000");
-    const beforeMovements = await client.query(
-      "SELECT count(*)::int AS count FROM public.warehouse_inventory_movements WHERE organization_id=$1",
-      [organizationId],
-    );
-    await client.query(`CREATE OR REPLACE FUNCTION public.test_fail_checkout_audit()
+    await client.query(`CREATE OR REPLACE FUNCTION public.test_fail_checkout_write()
       RETURNS trigger LANGUAGE plpgsql AS $$
       BEGIN
-        IF NEW.action='sale.completed' THEN RAISE EXCEPTION 'TEST_AUDIT_FAILURE'; END IF;
-        RETURN NEW;
+        RAISE EXCEPTION 'TEST_CHECKOUT_WRITE_FAILURE';
       END $$`);
-    await client.query(`CREATE TRIGGER zz_test_fail_checkout_audit
-      BEFORE INSERT ON public.audit_logs FOR EACH ROW
-      EXECUTE FUNCTION public.test_fail_checkout_audit()`);
-    const key = "audit-fail-" + crypto.randomUUID();
+    const failureTables = [
+      "warehouse_inventory_movements",
+      "sale_items",
+      "payments",
+      "audit_logs",
+    ] as const;
+
     try {
-      const response = await request(checkoutBody("1.000", "23.8500"), key);
-      expect(response.status).toBe(500);
-      expect((await readBalance()).on_hand_quantity).toBe("2.000");
-      const sales = await client.query("SELECT count(*)::int AS count FROM public.sales WHERE organization_id=$1 AND idempotency_key=$2", [organizationId, key]);
-      expect(sales.rows[0].count).toBe(0);
-      const movements = await client.query(
-        "SELECT count(*)::int AS count FROM public.warehouse_inventory_movements WHERE organization_id=$1",
-        [organizationId],
-      );
-      expect(movements.rows[0].count).toBe(beforeMovements.rows[0].count);
+      for (const table of failureTables) {
+        const key = "write-fail-" + table + "-" + crypto.randomUUID();
+        const beforeMovements = await client.query(
+          "SELECT count(*)::int AS count FROM public.warehouse_inventory_movements WHERE organization_id=$1",
+          [organizationId],
+        );
+        await client.query(
+          "CREATE TRIGGER zz_test_fail_checkout_write BEFORE INSERT ON public." + table +
+          " FOR EACH ROW EXECUTE FUNCTION public.test_fail_checkout_write()",
+        );
+        try {
+          const response = await request(checkoutBody("1.000", "23.8500"), key);
+          expect(response.status).toBe(500);
+          expect((await readBalance()).on_hand_quantity).toBe("2.000");
+          const sales = await client.query(
+            "SELECT count(*)::int AS count FROM public.sales WHERE organization_id=$1 AND idempotency_key=$2",
+            [organizationId, key],
+          );
+          expect(sales.rows[0].count).toBe(0);
+          const afterMovements = await client.query(
+            "SELECT count(*)::int AS count FROM public.warehouse_inventory_movements WHERE organization_id=$1",
+            [organizationId],
+          );
+          expect(afterMovements.rows[0].count).toBe(beforeMovements.rows[0].count);
+        } finally {
+          await client.query("DROP TRIGGER IF EXISTS zz_test_fail_checkout_write ON public." + table);
+        }
+      }
     } finally {
-      await client.query("DROP TRIGGER IF EXISTS zz_test_fail_checkout_audit ON public.audit_logs");
-      await client.query("DROP FUNCTION IF EXISTS public.test_fail_checkout_audit()");
+      await client.query("DROP FUNCTION IF EXISTS public.test_fail_checkout_write()");
     }
   });
+
 
   it("rejects a warehouse from another branch and a product from another tenant", async () => {
     await seedBalance("2.000");

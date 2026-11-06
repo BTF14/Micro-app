@@ -1,3 +1,9 @@
+# 2026-11-06 UTC — Lectura de Neon y plan de adopción (propuesta)
+
+- Se verificó en solo lectura que Neon está en 0001+0002 con 0 filas de negocio y PITR de 6 h, y que el código desplegado desde #244 ya excede el esquema. Se redactó `docs/security/NEON_MIGRATION_APPLICATION_PLAN.md`. Sin escrituras en Neon, roles, secretos, Cloudflare, DNS ni billing.
+
+---
+
 # 2026-11-06 UTC — PR #244 merged; inventory read/kardex recovery started
 
 - PR #244 merged at `158ec68bd55825d6e8d5527d086023a13445a89c`. Post-merge commit checks 10/10 SUCCESS, including Cloudflare Pages and Workers Builds.

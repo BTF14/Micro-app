@@ -2,9 +2,9 @@ name: Database migration validation
 
 on:
   push:
-    branches: [main, feat/tenant-safe-schema]
+    branches: [main, feat/tenant-safe-schema, "feat/**", "work/**", "security/**"]
   pull_request:
-    branches: [main]
+    branches: [main, "security/**", "feat/**"]
 
 permissions:
   contents: read
@@ -34,32 +34,241 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v7
+      - name: Provision isolated migrator and runtime LOGIN roles
+        run: |
+          docker exec "${{ job.services.postgres.id }}" psql -v ON_ERROR_STOP=1 -U microapp -d microapp_test -c "CREATE ROLE microapp_migrator LOGIN PASSWORD 'migrator-test-only' NOSUPERUSER NOCREATEDB NOCREATEROLE NOREPLICATION NOBYPASSRLS; CREATE ROLE microapp_runtime LOGIN PASSWORD 'runtime-test-only' NOSUPERUSER NOCREATEDB NOCREATEROLE NOREPLICATION NOBYPASSRLS NOINHERIT; REVOKE CREATE ON SCHEMA public FROM PUBLIC; GRANT USAGE, CREATE ON SCHEMA public TO microapp_migrator; GRANT USAGE ON SCHEMA public TO microapp_runtime; GRANT CONNECT ON DATABASE microapp_test TO microapp_migrator, microapp_runtime;"
+      - name: Verify 0001_initial rollback is atomic
+        env:
+          POSTGRES_CONTAINER: ${{ job.services.postgres.id }}
+          MIGRATION_FILE: apps/api/migrations/0001_initial.sql
+          ROLLBACK_ASSERTION_SQL: "SELECT to_regclass('public.organizations') IS NULL"
+        run: bash .github/scripts/assert-migration-atomicity.sh
       - name: Apply initial schema to disposable PostgreSQL
-        run: docker exec "${{ job.services.postgres.id }}" psql -v ON_ERROR_STOP=1 -U microapp -d microapp_test -f /dev/stdin < apps/api/migrations/0001_initial.sql
+        run: docker exec -i -e PGPASSWORD=migrator-test-only "${{ job.services.postgres.id }}" psql -h 127.0.0.1 -1 -v ON_ERROR_STOP=1 -U microapp_migrator -d microapp_test -f /dev/stdin < apps/api/migrations/0001_initial.sql
       - name: Verify cross-tenant constraints reject invalid references
-        run: docker exec "${{ job.services.postgres.id }}" psql -v ON_ERROR_STOP=1 -U microapp -d microapp_test -f /dev/stdin < apps/api/migrations/0001_initial.assertions.sql
+        run: docker exec -i "${{ job.services.postgres.id }}" psql -v ON_ERROR_STOP=1 -U microapp -d microapp_test -f /dev/stdin < apps/api/migrations/0001_initial.assertions.sql
+      - name: Verify 0002_google_identity rollback is atomic
+        env:
+          POSTGRES_CONTAINER: ${{ job.services.postgres.id }}
+          MIGRATION_FILE: apps/api/migrations/0002_google_identity.sql
+          ROLLBACK_ASSERTION_SQL: "SELECT to_regclass('public.auth_allowlist') IS NULL AND NOT EXISTS (SELECT 1 FROM pg_catalog.pg_attribute WHERE attrelid='public.app_users'::regclass AND attname IN ('google_sub','email_verified_at') AND NOT attisdropped)"
+        run: bash .github/scripts/assert-migration-atomicity.sh
       - name: Apply Google identity schema to disposable PostgreSQL
-        run: docker exec "${{ job.services.postgres.id }}" psql -v ON_ERROR_STOP=1 -U microapp -d microapp_test -f /dev/stdin < apps/api/migrations/0002_google_identity.sql
+        run: docker exec -i -e PGPASSWORD=migrator-test-only "${{ job.services.postgres.id }}" psql -h 127.0.0.1 -1 -v ON_ERROR_STOP=1 -U microapp_migrator -d microapp_test -f /dev/stdin < apps/api/migrations/0002_google_identity.sql
       - name: Verify allowlist/bootstrap constraints reject invalid state
-        run: docker exec "${{ job.services.postgres.id }}" psql -v ON_ERROR_STOP=1 -U microapp -d microapp_test -f /dev/stdin < apps/api/migrations/0002_google_identity.assertions.sql
+        run: docker exec -i "${{ job.services.postgres.id }}" psql -v ON_ERROR_STOP=1 -U microapp -d microapp_test -f /dev/stdin < apps/api/migrations/0002_google_identity.assertions.sql
+      - name: Verify 0003_branch_scope rollback is atomic
+        env:
+          POSTGRES_CONTAINER: ${{ job.services.postgres.id }}
+          MIGRATION_FILE: apps/api/migrations/0003_branch_scope.sql
+          ROLLBACK_ASSERTION_SQL: "SELECT to_regclass('public.branches') IS NULL AND to_regclass('public.branch_memberships') IS NULL"
+        run: bash .github/scripts/assert-migration-atomicity.sh
       - name: Apply branch scope schema to disposable PostgreSQL
-        run: docker exec "${{ job.services.postgres.id }}" psql -v ON_ERROR_STOP=1 -U microapp -d microapp_test -f /dev/stdin < apps/api/migrations/0003_branch_scope.sql
+        run: docker exec -i -e PGPASSWORD=migrator-test-only "${{ job.services.postgres.id }}" psql -h 127.0.0.1 -1 -v ON_ERROR_STOP=1 -U microapp_migrator -d microapp_test -f /dev/stdin < apps/api/migrations/0003_branch_scope.sql
       - name: Verify cross-organization branch scope constraints
-        run: docker exec "${{ job.services.postgres.id }}" psql -v ON_ERROR_STOP=1 -U microapp -d microapp_test -f /dev/stdin < apps/api/migrations/0003_branch_scope.assertions.sql
+        run: docker exec -i "${{ job.services.postgres.id }}" psql -v ON_ERROR_STOP=1 -U microapp -d microapp_test -f /dev/stdin < apps/api/migrations/0003_branch_scope.assertions.sql
+      - name: Verify 0004_register_shifts rollback is atomic
+        env:
+          POSTGRES_CONTAINER: ${{ job.services.postgres.id }}
+          MIGRATION_FILE: apps/api/migrations/0004_register_shifts.sql
+          ROLLBACK_ASSERTION_SQL: "SELECT to_regclass('public.registers') IS NULL AND to_regclass('public.register_shifts') IS NULL"
+        run: bash .github/scripts/assert-migration-atomicity.sh
       - name: Apply register and shift schema to disposable PostgreSQL
-        run: docker exec "${{ job.services.postgres.id }}" psql -v ON_ERROR_STOP=1 -U microapp -d microapp_test -f /dev/stdin < apps/api/migrations/0004_register_shifts.sql
+        run: docker exec -i -e PGPASSWORD=migrator-test-only "${{ job.services.postgres.id }}" psql -h 127.0.0.1 -1 -v ON_ERROR_STOP=1 -U microapp_migrator -d microapp_test -f /dev/stdin < apps/api/migrations/0004_register_shifts.sql
       - name: Verify register and shift integrity/lifecycle assertions
-        run: docker exec "${{ job.services.postgres.id }}" psql -v ON_ERROR_STOP=1 -U microapp -d microapp_test -f /dev/stdin < apps/api/migrations/0004_register_shifts.assertions.sql
+        run: docker exec -i "${{ job.services.postgres.id }}" psql -v ON_ERROR_STOP=1 -U microapp -d microapp_test -f /dev/stdin < apps/api/migrations/0004_register_shifts.assertions.sql
       - name: Verify bootstrap handoff migration rolls back on failure
         run: |
-          sed '/^COMMIT;$/i SELECT 1/0;' apps/api/migrations/0005_auth_bootstrap_attempts.sql > /tmp/0005-failure.sql
-          if docker exec -i "${{ job.services.postgres.id }}" psql -v ON_ERROR_STOP=1 -U microapp -d microapp_test -f /dev/stdin < /tmp/0005-failure.sql; then
-            echo "Expected the injected migration failure, but psql succeeded."
+          sed '/^COMMIT;$/i SELECT 1/0;' apps/api/migrations/0005_auth_bootstrap_attempts.sql > /tmp/0005-bootstrap-handoff-failure.sql
+          if docker exec -i "${{ job.services.postgres.id }}" psql -v ON_ERROR_STOP=1 -U microapp -d microapp_test -f /dev/stdin < /tmp/0005-bootstrap-handoff-failure.sql; then
+            echo "Expected the injected bootstrap handoff migration failure, but psql succeeded."
             exit 1
           fi
           remaining="$(docker exec "${{ job.services.postgres.id }}" psql -At -U microapp -d microapp_test -c "SELECT to_regclass('public.auth_bootstrap_attempts') IS NULL")"
           test "$remaining" = "t"
       - name: Apply server-side OAuth bootstrap handoff schema
-        run: docker exec "${{ job.services.postgres.id }}" psql -v ON_ERROR_STOP=1 -U microapp -d microapp_test -f /dev/stdin < apps/api/migrations/0005_auth_bootstrap_attempts.sql
-      - name: Verify bootstrap handoff privacy and constraints
-        run: docker exec "${{ job.services.postgres.id }}" psql -v ON_ERROR_STOP=1 -U microapp -d microapp_test -f /dev/stdin < apps/api/migrations/0005_auth_bootstrap_attempts.assertions.sql
+        run: docker exec -i -e PGPASSWORD=migrator-test-only "${{ job.services.postgres.id }}" psql -h 127.0.0.1 -v ON_ERROR_STOP=1 -U microapp_migrator -d microapp_test -f /dev/stdin < apps/api/migrations/0005_auth_bootstrap_attempts.sql
+      - name: Verify server-side bootstrap handoff privacy and constraints
+        run: docker exec -i "${{ job.services.postgres.id }}" psql -v ON_ERROR_STOP=1 -U microapp -d microapp_test -f /dev/stdin < apps/api/migrations/0005_auth_bootstrap_attempts.assertions.sql
+      - name: Verify warehouse inventory migration rolls back on failure
+        run: |
+          sed '/^COMMIT;$/i SELECT 1/0;' apps/api/migrations/0006_warehouse_inventory.sql > /tmp/0006-warehouse-inventory-failure.sql
+          if docker exec -i "${{ job.services.postgres.id }}" psql -v ON_ERROR_STOP=1 -U microapp -d microapp_test -f /dev/stdin < /tmp/0006-warehouse-inventory-failure.sql; then
+            echo "Expected the injected migration failure, but psql succeeded."
+            exit 1
+          fi
+          remaining="$(docker exec "${{ job.services.postgres.id }}" psql -At -U microapp -d microapp_test -c "SELECT to_regclass('public.warehouses') IS NULL AND to_regclass('public.inventory_counts') IS NULL")"
+          test "$remaining" = "t"
+      - name: Apply warehouse inventory schema to disposable PostgreSQL
+        run: docker exec -i -e PGPASSWORD=migrator-test-only "${{ job.services.postgres.id }}" psql -h 127.0.0.1 -v ON_ERROR_STOP=1 -U microapp_migrator -d microapp_test -f /dev/stdin < apps/api/migrations/0006_warehouse_inventory.sql
+      - name: Verify warehouse inventory constraints and lifecycle assertions
+        run: docker exec -i "${{ job.services.postgres.id }}" psql -v ON_ERROR_STOP=1 -U microapp -d microapp_test -f /dev/stdin < apps/api/migrations/0006_warehouse_inventory.assertions.sql
+      - name: Verify 0007_register_shift_member_roles rollback is atomic
+        env:
+          POSTGRES_CONTAINER: ${{ job.services.postgres.id }}
+          MIGRATION_FILE: apps/api/migrations/0007_register_shift_member_roles.sql
+          ROLLBACK_ASSERTION_SQL: "SELECT to_regprocedure('public.prevent_open_register_shift_owner_role_downgrade()') IS NULL AND NOT EXISTS (SELECT 1 FROM pg_catalog.pg_trigger WHERE tgname='organization_members_prevent_open_shift_owner_role_downgrade') AND pg_catalog.strpos(pg_catalog.pg_get_functiondef('public.validate_register_shift_opening()'::regprocedure), 'REGISTER_SHIFT_REQUIRES_ACTIVE_MEMBER_SCOPE') = 0"
+        run: bash .github/scripts/assert-migration-atomicity.sh
+      - name: Apply approved register-shift member roles schema
+        run: docker exec -i -e PGPASSWORD=migrator-test-only "${{ job.services.postgres.id }}" psql -h 127.0.0.1 -1 -v ON_ERROR_STOP=1 -U microapp_migrator -d microapp_test -f /dev/stdin < apps/api/migrations/0007_register_shift_member_roles.sql
+      - name: Verify audit logs migration rolls back on failure
+        run: |
+          sed '/^COMMIT;$/i SELECT 1/0;' apps/api/migrations/0008_audit_logs_append_only.sql > /tmp/0008-audit-logs-failure.sql
+          if docker exec -i "${{ job.services.postgres.id }}" psql -v ON_ERROR_STOP=1 -U microapp -d microapp_test -f /dev/stdin < /tmp/0008-audit-logs-failure.sql; then
+            echo "Expected the injected audit migration failure, but psql succeeded."
+            exit 1
+          fi
+          remaining="$(docker exec "${{ job.services.postgres.id }}" psql -At -U microapp -d microapp_test -c "SELECT to_regprocedure('public.reject_audit_logs_mutation()') IS NULL AND NOT EXISTS (SELECT 1 FROM pg_trigger WHERE tgrelid='public.audit_logs'::regclass AND tgname IN ('audit_logs_10_append_only_rows','audit_logs_20_append_only_truncate'))")"
+          test "$remaining" = "t"
+      - name: Apply audit logs append-only migration
+        run: docker exec -i -e PGPASSWORD=migrator-test-only "${{ job.services.postgres.id }}" psql -h 127.0.0.1 -v ON_ERROR_STOP=1 -U microapp_migrator -d microapp_test -f /dev/stdin < apps/api/migrations/0008_audit_logs_append_only.sql
+      - name: Verify audit logs immutability and runtime-role assertions
+        run: docker exec -i "${{ job.services.postgres.id }}" psql -v ON_ERROR_STOP=1 -U microapp -d microapp_test -f /dev/stdin < apps/api/migrations/0008_audit_logs_append_only.assertions.sql
+      - name: Verify count-ledger validation migration rolls back on failure
+        run: |
+          sed '/^COMMIT;$/i SELECT 1/0;' apps/api/migrations/0009_inventory_count_ledger_validation.sql > /tmp/0009-count-ledger-failure.sql
+          if docker exec -i "${{ job.services.postgres.id }}" psql -v ON_ERROR_STOP=1 -U microapp -d microapp_test -f /dev/stdin < /tmp/0009-count-ledger-failure.sql; then
+            echo "Expected the injected count-ledger migration failure, but psql succeeded."
+            exit 1
+          fi
+          remaining="$(docker exec "${{ job.services.postgres.id }}" psql -At -U microapp -d microapp_test -c "SELECT position('INVENTORY_COUNT_PHYSICAL_SNAPSHOT_REQUIRED' in pg_get_functiondef('public.guard_inventory_count_lifecycle()'::regprocedure)) = 0 AND position('INVENTORY_MOVEMENT_DELTA_MUST_MATCH_COUNT_SNAPSHOT' in pg_get_functiondef('public.validate_count_inventory_movement()'::regprocedure)) = 0")"
+          test "$remaining" = "t"
+      - name: Apply count snapshot and ledger validation migration
+        run: docker exec -i -e PGPASSWORD=migrator-test-only "${{ job.services.postgres.id }}" psql -h 127.0.0.1 -v ON_ERROR_STOP=1 -U microapp_migrator -d microapp_test -f /dev/stdin < apps/api/migrations/0009_inventory_count_ledger_validation.sql
+      - name: Verify count snapshot and ledger delta assertions
+        run: docker exec -i "${{ job.services.postgres.id }}" psql -v ON_ERROR_STOP=1 -U microapp -d microapp_test -f /dev/stdin < apps/api/migrations/0009_inventory_count_ledger_validation.assertions.sql
+      - name: Verify balance-ledger coupling migration rolls back on failure
+        run: |
+          sed '/^COMMIT;$/i SELECT 1/0;' apps/api/migrations/0010_inventory_balance_ledger_coupling.sql > /tmp/0010-balance-ledger-failure.sql
+          status=0
+          output="$(docker exec -i "${{ job.services.postgres.id }}" psql -v ON_ERROR_STOP=1 -U microapp -d microapp_test -f /dev/stdin < /tmp/0010-balance-ledger-failure.sql 2>&1)" || status=$?
+          printf '%s\n' "$output"
+          if [ "$status" -eq 0 ]; then
+            echo "Expected the injected balance-ledger migration failure, but psql succeeded."
+            exit 1
+          fi
+          printf '%s\n' "$output" | grep -F "division by zero"
+          remaining="$(docker exec "${{ job.services.postgres.id }}" psql -At -U microapp -d microapp_test -c "SELECT to_regclass('public.inventory_balance_ledger_intents') IS NULL AND to_regclass('public.inventory_balance_ledger_intents_event_id_seq') IS NULL AND to_regprocedure('public.record_inventory_balance_ledger_intent()') IS NULL AND to_regprocedure('public.consume_inventory_balance_ledger_intent()') IS NULL AND to_regprocedure('public.assert_inventory_balance_ledger_intent_consumed()') IS NULL AND to_regprocedure('public.prevent_inventory_ledger_truncate()') IS NULL AND to_regprocedure('public.prevent_inventory_balance_identity_change()') IS NULL AND NOT EXISTS (SELECT 1 FROM pg_trigger WHERE tgname IN ('inventory_balances_ledger_intent','warehouse_inventory_movements_require_balance_intent','inventory_balance_ledger_intent_complete','inventory_balances_no_truncate','warehouse_inventory_movements_no_truncate','inventory_balances_identity_immutable'))")"
+          test "$remaining" = "t"
+      - name: Apply transactional balance-ledger coupling migration
+        run: docker exec -i -e PGPASSWORD=migrator-test-only "${{ job.services.postgres.id }}" psql -h 127.0.0.1 -v ON_ERROR_STOP=1 -U microapp_migrator -d microapp_test -f /dev/stdin < apps/api/migrations/0010_inventory_balance_ledger_coupling.sql
+      - name: Verify transactional balance-ledger coupling assertions
+        run: docker exec -i "${{ job.services.postgres.id }}" psql -v ON_ERROR_STOP=1 -U microapp -d microapp_test -f /dev/stdin < apps/api/migrations/0010_inventory_balance_ledger_coupling.assertions.sql
+      - name: Verify unmatched balance changes fail at transaction commit
+        run: |
+          status=0
+          output="$(docker exec -i "${{ job.services.postgres.id }}" psql -v ON_ERROR_STOP=1 -U microapp -d microapp_test -f /dev/stdin < apps/api/migrations/0010_inventory_balance_ledger_coupling.deferred_failure.sql 2>&1)" || status=$?
+          printf '%s\n' "$output"
+          if [ "$status" -eq 0 ]; then
+            echo "Expected unmatched balance change to fail at commit, but psql succeeded."
+            exit 1
+          fi
+          printf '%s\n' "$output" | grep -F "INVENTORY_BALANCE_CHANGE_REQUIRES_MATCHING_LEDGER_MOVEMENT"
+          remaining="$(docker exec "${{ job.services.postgres.id }}" psql -At -U microapp -d microapp_test -c "SELECT count(*) = 1 AND NOT EXISTS (SELECT 1 FROM public.inventory_balance_ledger_intents) FROM public.inventory_balances WHERE on_hand_quantity = 0")"
+          test "$remaining" = "t"
+
+      - name: Verify PostgreSQL lock-helper migration rolls back on failure
+        run: |
+          sed '/^COMMIT;$/i SELECT 1/0;' apps/api/migrations/0011_postgres_runtime_lock_helpers.sql > /tmp/0011-runtime-lock-helpers-failure.sql
+          if docker exec -i "${{ job.services.postgres.id }}" psql -v ON_ERROR_STOP=1 -U microapp -d microapp_test -f /dev/stdin < /tmp/0011-runtime-lock-helpers-failure.sql; then
+            echo "Expected the injected runtime lock-helper migration failure, but psql succeeded."
+            exit 1
+          fi
+          remaining="$(docker exec "${{ job.services.postgres.id }}" psql -At -U microapp -d microapp_test -c "SELECT to_regprocedure('public.lock_tenant_context(text,uuid)') IS NULL AND to_regprocedure('public.lock_branch_scopes(uuid,uuid[],uuid[],uuid[])') IS NULL AND to_regprocedure('public.lock_inventory_warehouses(uuid,uuid[],uuid[])') IS NULL AND NOT (SELECT prosecdef FROM pg_proc WHERE oid='public.validate_count_inventory_movement()'::regprocedure)")"
+          test "$remaining" = "t"
+      - name: Apply hardened PostgreSQL runtime lock helpers
+        run: docker exec -i -e PGPASSWORD=migrator-test-only "${{ job.services.postgres.id }}" psql -h 127.0.0.1 -v ON_ERROR_STOP=1 -U microapp_migrator -d microapp_test -f /dev/stdin < apps/api/migrations/0011_postgres_runtime_lock_helpers.sql
+      - name: Verify hardened PostgreSQL runtime lock-helper contract
+        run: docker exec -i "${{ job.services.postgres.id }}" psql -v ON_ERROR_STOP=1 -U microapp -d microapp_test -f /dev/stdin < apps/api/migrations/0011_postgres_runtime_lock_helpers.assertions.sql
+      - name: Verify runtime grants migration rejects unsafe PUBLIC schema ACL
+        run: |
+          docker exec "${{ job.services.postgres.id }}" psql -v ON_ERROR_STOP=1 -U microapp -d microapp_test -c "GRANT CREATE ON SCHEMA public TO PUBLIC;"
+          status=0
+          output="$(docker exec -i -e PGPASSWORD=migrator-test-only "${{ job.services.postgres.id }}" psql -h 127.0.0.1 -v ON_ERROR_STOP=1 -U microapp_migrator -d microapp_test -f /dev/stdin < apps/api/migrations/0012_postgres_runtime_role_grants.sql 2>&1)" || status=$?
+          docker exec "${{ job.services.postgres.id }}" psql -v ON_ERROR_STOP=1 -U microapp -d microapp_test -c "REVOKE CREATE ON SCHEMA public FROM PUBLIC;"
+          printf '%s\\n' "$output"
+          if [ "$status" -eq 0 ]; then
+            echo "Expected runtime grants migration to reject PUBLIC schema CREATE, but it succeeded."
+            exit 1
+          fi
+          printf '%s\\n' "$output" | grep -F "POSTGRES_SCHEMA_BOOTSTRAP_PRIVILEGES_INVALID"
+      - name: Verify runtime grants migration rolls back on failure
+        run: |
+          sed '/^COMMIT;$/i SELECT 1/0;' apps/api/migrations/0012_postgres_runtime_role_grants.sql > /tmp/0012-runtime-role-grants-failure.sql
+          status=0
+          output="$(docker exec -i -e PGPASSWORD=migrator-test-only "${{ job.services.postgres.id }}" psql -h 127.0.0.1 -v ON_ERROR_STOP=1 -U microapp_migrator -d microapp_test -f /dev/stdin < /tmp/0012-runtime-role-grants-failure.sql 2>&1)" || status=$?
+          printf '%s\n' "$output"
+          if [ "$status" -eq 0 ]; then
+            echo "Expected the injected runtime grants migration failure, but psql succeeded."
+            exit 1
+          fi
+          printf '%s\n' "$output" | grep -F "division by zero"
+      - name: Apply least-privilege PostgreSQL runtime grants as migrator
+        run: docker exec -i -e PGPASSWORD=migrator-test-only "${{ job.services.postgres.id }}" psql -h 127.0.0.1 -v ON_ERROR_STOP=1 -U microapp_migrator -d microapp_test -f /dev/stdin < apps/api/migrations/0012_postgres_runtime_role_grants.sql
+      - name: Verify runtime grants and forbidden privileges
+        run: docker exec -i "${{ job.services.postgres.id }}" psql -v ON_ERROR_STOP=1 -U microapp -d microapp_test -f /dev/stdin < apps/api/migrations/0012_postgres_runtime_role_grants.assertions.sql
+      - name: Verify BCV rate migration rolls back atomically
+        run: |
+          sed '/^COMMIT;$/i SELECT 1/0;' apps/api/migrations/0013_bcv_official_rate_precision_and_grants.sql > /tmp/0013-bcv-rate-failure.sql
+          status=0
+          output="$(docker exec -i -e PGPASSWORD=migrator-test-only "${{ job.services.postgres.id }}" psql -h 127.0.0.1 -v ON_ERROR_STOP=1 -U microapp_migrator -d microapp_test -f /dev/stdin < /tmp/0013-bcv-rate-failure.sql 2>&1)" || status=$?
+          printf '%s\\n' "$output"
+          if [ "$status" -eq 0 ]; then
+            echo "Expected the injected BCV migration failure, but psql succeeded."
+            exit 1
+          fi
+          printf '%s\\n' "$output" | grep -F "division by zero"
+          unchanged="$(docker exec "${{ job.services.postgres.id }}" psql -At -U microapp -d microapp_test -c "SELECT (SELECT pg_catalog.format_type(atttypid, atttypmod) FROM pg_attribute WHERE attrelid='public.exchange_rates'::regclass AND attname='rate') = 'numeric(14,6)' AND (SELECT pg_catalog.format_type(atttypid, atttypmod) FROM pg_attribute WHERE attrelid='public.sales'::regclass AND attname='exchange_rate_snapshot') = 'numeric(14,6)' AND (SELECT pg_catalog.format_type(atttypid, atttypmod) FROM pg_attribute WHERE attrelid='public.payments'::regclass AND attname='exchange_rate_snapshot') = 'numeric(14,6)' AND NOT has_table_privilege('microapp_runtime', 'public.exchange_rates', 'SELECT') AND NOT has_table_privilege('microapp_runtime', 'public.exchange_rates', 'INSERT') AND NOT has_column_privilege('microapp_runtime', 'public.exchange_rates', 'validation_status', 'UPDATE')")"
+          test "$unchanged" = "t"
+      - name: Apply BCV official-rate precision and runtime grants
+        run: docker exec -i -e PGPASSWORD=migrator-test-only "${{ job.services.postgres.id }}" psql -h 127.0.0.1 -v ON_ERROR_STOP=1 -U microapp_migrator -d microapp_test -f /dev/stdin < apps/api/migrations/0013_bcv_official_rate_precision_and_grants.sql
+      - name: Verify BCV rate precision and least-privilege grants
+        run: docker exec -i "${{ job.services.postgres.id }}" psql -v ON_ERROR_STOP=1 -U microapp -d microapp_test -f /dev/stdin < apps/api/migrations/0013_bcv_official_rate_precision_and_grants.assertions.sql
+      - name: Verify no-discount migration rolls back atomically
+        run: |
+          sed '/^COMMIT;$/i SELECT 1/0;' apps/api/migrations/0014_sales_without_discounts.sql > /tmp/0014-no-discounts-failure.sql
+          status=0
+          output="$(docker exec -i -e PGPASSWORD=migrator-test-only "${{ job.services.postgres.id }}" psql -h 127.0.0.1 -v ON_ERROR_STOP=1 -U microapp_migrator -d microapp_test -f /dev/stdin < /tmp/0014-no-discounts-failure.sql 2>&1)" || status=$?
+          printf '%s\\n' "$output"
+          if [ "$status" -eq 0 ]; then
+            echo "Expected the injected no-discount migration failure, but psql succeeded."
+            exit 1
+          fi
+          printf '%s\\n' "$output" | grep -F "division by zero"
+          unchanged="$(docker exec "${{ job.services.postgres.id }}" psql -At -U microapp -d microapp_test -c "SELECT EXISTS (SELECT 1 FROM pg_attribute WHERE attrelid='public.sales'::regclass AND attname='discount_usd' AND NOT attisdropped) AND NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conrelid='public.sales'::regclass AND conname='sales_total_equals_subtotal')")"
+          test "$unchanged" = "t"
+      - name: Apply sales no-discount schema contract
+        run: docker exec -i -e PGPASSWORD=migrator-test-only "${{ job.services.postgres.id }}" psql -h 127.0.0.1 -v ON_ERROR_STOP=1 -U microapp_migrator -d microapp_test -f /dev/stdin < apps/api/migrations/0014_sales_without_discounts.sql
+      - name: Verify sales no-discount and exact-decimal contract
+        run: docker exec -i "${{ job.services.postgres.id }}" psql -v ON_ERROR_STOP=1 -U microapp -d microapp_test -f /dev/stdin < apps/api/migrations/0014_sales_without_discounts.assertions.sql
+      - name: Verify atomic checkout migration rolls back atomically
+        run: |
+          sed '/^COMMIT;$/i SELECT 1/0;' apps/api/migrations/0015_sales_checkout_atomicity.sql > /tmp/0015-sales-checkout-failure.sql
+          status=0
+          output="$(docker exec -i -e PGPASSWORD=migrator-test-only "${{ job.services.postgres.id }}" psql -h 127.0.0.1 -v ON_ERROR_STOP=1 -U microapp_migrator -d microapp_test -f /dev/stdin < /tmp/0015-sales-checkout-failure.sql 2>&1)" || status=$?
+          printf '%s\\n' "$output"
+          if [ "$status" -eq 0 ]; then
+            echo "Expected the injected checkout migration failure, but psql succeeded."
+            exit 1
+          fi
+          printf '%s\\n' "$output" | grep -F "division by zero"
+          unchanged="$(docker exec "${{ job.services.postgres.id }}" psql -At -U microapp -d microapp_test -c "SELECT NOT EXISTS (SELECT 1 FROM pg_attribute WHERE attrelid='public.sales'::regclass AND attname='branch_id' AND NOT attisdropped) AND to_regprocedure('public.lock_open_register_shift(uuid,uuid,uuid)') IS NULL AND to_regprocedure('public.assert_completed_sale_reconciled()') IS NULL AND to_regprocedure('public.guard_sale_inventory_movement()') IS NULL AND to_regprocedure('public.guard_sale_completion_audit()') IS NULL AND NOT EXISTS (SELECT 1 FROM pg_trigger WHERE tgname IN ('sales_checkout_lifecycle_guard','sales_completed_reconciliation','sale_inventory_movement_draft_guard','sale_completion_audit_draft_guard'))")"
+          test "$unchanged" = "t"
+      - name: Apply atomic sales checkout schema and constraints
+        run: docker exec -i -e PGPASSWORD=migrator-test-only "${{ job.services.postgres.id }}" psql -h 127.0.0.1 -v ON_ERROR_STOP=1 -U microapp_migrator -d microapp_test -f /dev/stdin < apps/api/migrations/0015_sales_checkout_atomicity.sql
+      - name: Verify atomic sales checkout schema and runtime grants
+        run: docker exec -i "${{ job.services.postgres.id }}" psql -v ON_ERROR_STOP=1 -U microapp -d microapp_test -f /dev/stdin < apps/api/migrations/0015_sales_checkout_atomicity.assertions.sql
+      - name: Verify application objects are owned by the non-superuser migrator
+        run: |
+          ownership="$(docker exec "${{ job.services.postgres.id }}" psql -At -U microapp -d microapp_test -c "SELECT NOT EXISTS (SELECT 1 FROM pg_class WHERE relnamespace='public'::regnamespace AND relkind IN ('r','p','S','v','m') AND relowner <> (SELECT oid FROM pg_roles WHERE rolname='microapp_migrator')) AND NOT EXISTS (SELECT 1 FROM pg_proc WHERE pronamespace='public'::regnamespace AND proowner <> (SELECT oid FROM pg_roles WHERE rolname='microapp_migrator'))")"
+          test "$ownership" = "t"
+      - name: Verify future migration DDL remains owned and private
+        run: |
+          docker exec -e PGPASSWORD=migrator-test-only "${{ job.services.postgres.id }}" psql -h 127.0.0.1 -v ON_ERROR_STOP=1 -U microapp_migrator -d microapp_test -c "CREATE TABLE public.runtime_default_privilege_probe(id integer); CREATE FUNCTION public.runtime_default_privilege_probe() RETURNS integer LANGUAGE sql AS 'SELECT 1';"
+          defaults="$(docker exec "${{ job.services.postgres.id }}" psql -At -U microapp -d microapp_test -c "SELECT NOT has_table_privilege('microapp_runtime','public.runtime_default_privilege_probe','SELECT') AND NOT has_function_privilege('microapp_runtime','public.runtime_default_privilege_probe()','EXECUTE')")"
+          test "$defaults" = "t"
+          docker exec -e PGPASSWORD=migrator-test-only "${{ job.services.postgres.id }}" psql -h 127.0.0.1 -v ON_ERROR_STOP=1 -U microapp_migrator -d microapp_test -c "DROP FUNCTION public.runtime_default_privilege_probe(); DROP TABLE public.runtime_default_privilege_probe;"
+      - name: Seed disposable runtime-login fixtures
+        run: docker exec -i "${{ job.services.postgres.id }}" psql -v ON_ERROR_STOP=1 -U microapp -d microapp_test -f /dev/stdin < .github/scripts/postgres-runtime-role-fixtures.sql
+      - name: Exercise SQL operations and privilege denials through actual runtime LOGIN
+        run: docker exec -i -e PGPASSWORD=runtime-test-only "${{ job.services.postgres.id }}" psql -h 127.0.0.1 -v ON_ERROR_STOP=1 -U microapp_runtime -d microapp_test -f /dev/stdin < .github/scripts/postgres-runtime-role-smoke.sql

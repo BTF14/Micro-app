@@ -1,0 +1,154 @@
+name: PostgreSQL migration runner validation
+
+on:
+  push:
+    branches: [main, "security/**"]
+  pull_request:
+    branches: [main, "security/**"]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: micro-app-migration-runner-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  migration-runner:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    services:
+      postgres:
+        image: postgres:18
+        env:
+          POSTGRES_DB: microapp_test
+          POSTGRES_USER: microapp
+          POSTGRES_PASSWORD: microapp-test-only
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U microapp -d microapp_test"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      ADMIN_DATABASE_URL: postgres://microapp:microapp-test-only@localhost:5432/microapp_test
+      MIGRATION_DATABASE_URL: postgres://microapp_migrator:migrator-test-only@localhost:5432/microapp_test
+      RUNTIME_DATABASE_URL: postgres://microapp_runtime:runtime-test-only@localhost:5432/microapp_test
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+      - name: Install PostgreSQL client
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y postgresql-client
+          psql --version
+      - name: Provision isolated migrator and runtime LOGIN roles
+        run: |
+          psql -X -v ON_ERROR_STOP=1 --dbname "$ADMIN_DATABASE_URL" -c "CREATE ROLE microapp_migrator LOGIN PASSWORD 'migrator-test-only' NOSUPERUSER NOCREATEDB NOCREATEROLE NOREPLICATION NOBYPASSRLS; CREATE ROLE microapp_runtime LOGIN PASSWORD 'runtime-test-only' NOSUPERUSER NOCREATEDB NOCREATEROLE NOREPLICATION NOBYPASSRLS NOINHERIT; REVOKE CREATE ON SCHEMA public FROM PUBLIC; GRANT USAGE, CREATE ON SCHEMA public TO microapp_migrator; GRANT USAGE ON SCHEMA public TO microapp_runtime; GRANT CONNECT ON DATABASE microapp_test TO microapp_migrator, microapp_runtime;"
+      - name: Validate migration runner shell syntax
+        run: bash -n scripts/db/migrate.sh
+      - name: Apply clean schema through the migration runner
+        run: bash scripts/db/migrate.sh
+      - name: Verify ledger, owner and recorded checksums
+        run: |
+          expected="$(find apps/api/migrations -maxdepth 1 -type f -name '[0-9][0-9][0-9][0-9]_*.sql' ! -name '*.assertions.sql' ! -name '*.deferred_failure.sql' | wc -l | awk '{print $1}')"
+          ledger="$(psql -X -At -v ON_ERROR_STOP=1 --dbname "$ADMIN_DATABASE_URL" -c "SELECT count(*) = ${expected} AND bool_and(state = 'applied') AND bool_and(length(checksum) = 64) FROM public.schema_migrations")"
+          test "$ledger" = "t"
+          owner="$(psql -X -At -v ON_ERROR_STOP=1 --dbname "$ADMIN_DATABASE_URL" -c "SELECT pg_catalog.pg_get_userbyid(relowner) = 'microapp_migrator' FROM pg_catalog.pg_class WHERE oid = 'public.schema_migrations'::regclass")"
+          test "$owner" = "t"
+      - name: Verify rerun is idempotent
+        run: bash scripts/db/migrate.sh
+      - name: Verify checksum drift fails closed
+        run: |
+          temp_dir="$(mktemp -d)"
+          cp -R apps/api/migrations "$temp_dir/migrations"
+          printf '\n-- deliberate checksum drift test\n' >> "$temp_dir/migrations/0001_initial.sql"
+          echo "Modified migration checksum:"
+          sha256sum "$temp_dir/migrations/0001_initial.sql"
+          status=0
+          output="$(MIGRATIONS_DIR="$temp_dir/migrations" bash scripts/db/migrate.sh 2>&1)" || status=$?
+          printf '%s\n' "$output"
+          rm -rf "$temp_dir"
+          if [ "$status" -eq 0 ]; then
+            echo "Expected checksum drift to fail, but the runner succeeded."
+            exit 1
+          fi
+          printf '%s\n' "$output" | grep -F "MIGRATION_CHECKSUM_MISMATCH: 0001"
+      - name: Verify migration ledger gaps fail closed
+        run: |
+          checksum="$(sha256sum apps/api/migrations/0007_register_shift_member_roles.sql | awk '{print $1}')"
+          restore() {
+            psql -X -v ON_ERROR_STOP=1 --dbname "$ADMIN_DATABASE_URL" -c "INSERT INTO public.schema_migrations (version, filename, checksum, state, applied_at) VALUES ('0007', '0007_register_shift_member_roles.sql', '$checksum', 'applied', pg_catalog.clock_timestamp()) ON CONFLICT (version) DO UPDATE SET filename=EXCLUDED.filename, checksum=EXCLUDED.checksum, state='applied', applied_at=pg_catalog.clock_timestamp();" >/dev/null
+          }
+          trap restore EXIT
+          psql -X -v ON_ERROR_STOP=1 --dbname "$ADMIN_DATABASE_URL" -c "DELETE FROM public.schema_migrations WHERE version='0007';"
+          status=0
+          output="$(bash scripts/db/migrate.sh 2>&1)" || status=$?
+          if [ "$status" -eq 0 ]; then
+            echo "Expected a missing earlier migration with later applied rows to fail."
+            exit 1
+          fi
+          printf '%s\n' "$output" | grep -F "MIGRATION_LEDGER_GAP: 0007"
+          restore
+          trap - EXIT
+      - name: Verify interrupted migration state fails closed
+        run: |
+          restore() {
+            psql -X -v ON_ERROR_STOP=1 --dbname "$ADMIN_DATABASE_URL" -c "UPDATE public.schema_migrations SET state='applied', applied_at=COALESCE(applied_at, pg_catalog.clock_timestamp()) WHERE version='0012';" >/dev/null
+          }
+          trap restore EXIT
+          psql -X -v ON_ERROR_STOP=1 --dbname "$ADMIN_DATABASE_URL" -c "UPDATE public.schema_migrations SET state='applying', applied_at=NULL WHERE version='0012';"
+          status=0
+          output="$(bash scripts/db/migrate.sh 2>&1)" || status=$?
+          if [ "$status" -eq 0 ]; then
+            echo "Expected an interrupted applying row to require reconciliation."
+            exit 1
+          fi
+          printf '%s\n' "$output" | grep -F "MIGRATION_RECONCILIATION_REQUIRED"
+          restore
+          trap - EXIT
+      - name: Verify populated schema without ledger requires explicit adoption
+        run: |
+          psql -X -v ON_ERROR_STOP=1 --dbname "$ADMIN_DATABASE_URL" -c "CREATE DATABASE microapp_legacy_test;"
+          legacy_admin="postgres://microapp:microapp-test-only@localhost:5432/microapp_legacy_test"
+          legacy_migrator="postgres://microapp_migrator:migrator-test-only@localhost:5432/microapp_legacy_test"
+          psql -X -v ON_ERROR_STOP=1 --dbname "$legacy_admin" -c "REVOKE CREATE ON SCHEMA public FROM PUBLIC; GRANT USAGE, CREATE ON SCHEMA public TO microapp_migrator; GRANT USAGE ON SCHEMA public TO microapp_runtime; GRANT CONNECT ON DATABASE microapp_legacy_test TO microapp_migrator, microapp_runtime; CREATE TABLE public.preexisting_table(id integer);"
+          status=0
+          output="$(MIGRATION_DATABASE_URL="$legacy_migrator" bash scripts/db/migrate.sh 2>&1)" || status=$?
+          if [ "$status" -eq 0 ]; then
+            echo "Expected a populated schema without a ledger to require adoption."
+            exit 1
+          fi
+          printf '%s\n' "$output" | grep -F "MIGRATION_BASELINE_REQUIRED"
+          preserved="$(psql -X -At -v ON_ERROR_STOP=1 --dbname "$legacy_admin" -c "SELECT to_regclass('public.preexisting_table') IS NOT NULL AND to_regclass('public.schema_migrations') IS NULL")"
+          test "$preserved" = "t"
+      - name: Verify concurrent runner is rejected by advisory lock
+        run: |
+          psql -X -v ON_ERROR_STOP=1 --dbname "$ADMIN_DATABASE_URL" -c "SELECT pg_catalog.pg_advisory_lock(20261105, 120012); SELECT pg_catalog.pg_sleep(20);" >/tmp/migration-lock-holder.log 2>&1 &
+          lock_pid=$!
+          cleanup() { kill "$lock_pid" 2>/dev/null || true; wait "$lock_pid" 2>/dev/null || true; }
+          trap cleanup EXIT
+          acquired=false
+          for attempt in $(seq 1 20); do
+            locked="$(psql -X -At -v ON_ERROR_STOP=1 --dbname "$ADMIN_DATABASE_URL" -c "SELECT EXISTS (SELECT 1 FROM pg_catalog.pg_locks WHERE locktype='advisory' AND granted AND classid=20261105::oid AND objid=120012::oid AND objsubid=2)")"
+            if [ "$locked" = "t" ]; then acquired=true; break; fi
+            sleep 1
+          done
+          test "$acquired" = "true"
+          status=0
+          output="$(bash scripts/db/migrate.sh 2>&1)" || status=$?
+          if [ "$status" -eq 0 ]; then
+            echo "Expected concurrent runner to fail fast on the advisory lock."
+            exit 1
+          fi
+          printf '%s\n' "$output" | grep -F "MIGRATION_LOCK_NOT_ACQUIRED"
+      - name: Verify runtime cannot read the migration ledger
+        run: |
+          status=0
+          output="$(psql -X -v ON_ERROR_STOP=1 --dbname "$RUNTIME_DATABASE_URL" -c "SELECT * FROM public.schema_migrations" 2>&1)" || status=$?
+          if [ "$status" -eq 0 ]; then
+            echo "Runtime role unexpectedly read the migration ledger."
+            exit 1
+          fi
+          printf '%s\n' "$output" | grep -E "permission denied|insufficient privilege"

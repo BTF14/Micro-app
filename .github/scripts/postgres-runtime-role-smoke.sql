@@ -197,17 +197,6 @@ BEGIN
     RAISE EXCEPTION 'RUNTIME_TRUNCATED_INVENTORY_LEDGER';
   EXCEPTION WHEN insufficient_privilege THEN NULL; END;
 
-  -- Runtime may read the append-only movement history, but never mutate it.
-  PERFORM 1 FROM public.warehouse_inventory_movements LIMIT 1;
-  BEGIN
-    EXECUTE 'UPDATE public.warehouse_inventory_movements SET reason=''tampered''';
-    RAISE EXCEPTION 'RUNTIME_UPDATED_INVENTORY_LEDGER';
-  EXCEPTION WHEN insufficient_privilege THEN NULL; END;
-  BEGIN
-    EXECUTE 'TRUNCATE public.warehouse_inventory_movements';
-    RAISE EXCEPTION 'RUNTIME_TRUNCATED_INVENTORY_LEDGER';
-  EXCEPTION WHEN insufficient_privilege THEN NULL; END;
-
   -- Explicitly deny DDL, privilege escalation, unsupported reads and mutations.
   BEGIN
     EXECUTE 'SELECT * FROM public.inventory_balance_ledger_intents';

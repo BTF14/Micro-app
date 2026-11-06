@@ -1,3 +1,12 @@
+
+
+## INSTRUCCIÓN EXPLÍCITA DEL PROPIETARIO — BACKLOG PR Y LIBERACIÓN
+
+El propietario confirma que el backlog comunicado es de 26 PR y que el objetivo es completarlas y fusionarlas cuando cada una supere **todas** sus verificaciones y sea segura para integrarse. El número debe reconciliarse con GitHub en vivo (puede cambiar). No fusionar en bloque ni por CI verde aislado; tampoco dejar una PR elegible esperando a que finalicen todas las demás. Integrar raíz primero, actualizar/rebasar dependientes, preservar cambios únicos y mantener máximo dos frentes.
+
+Para cada PR: revisar diff/base/head/dependencias, tests funcionales y de regresión, seguridad, migraciones/roles cuando aplique, typecheck/build/E2E, checks obligatorios del SHA final, reviews solicitadas y branch protection. Si todo pasa y no queda riesgo material, usar la autorización permanente de merge sin volver a preguntar; luego comprobar merge SHA, checks post-merge y despliegue, diferenciando preview y producción.
+
+La liberación global requiere evidencia end-to-end y cierre de P0/P1, especialmente baseline y secuencia de migraciones, privilegios PostgreSQL efectivos mínimos y separación runtime/migrator/backup, integridad de inventario/ventas, auth y permisos, importes exactos sin descuentos, BCV verificable, backup/restore + RPO/RTO, alertas, seguridad, coste $0 y smoke test autenticado de producción. La autorización de merge no autoriza operaciones sensibles en Neon main, migraciones remotas, roles/grants, secretos, datos reales, Cloudflare manual, DNS o billing.
 ## CHECKPOINT DE CONTINUIDAD — 2026-11-06 03:49 UTC — estado vivo tras PR #240
 
 Continuar desde el estado real de GitHub, no desde los snapshots históricos que siguen debajo.

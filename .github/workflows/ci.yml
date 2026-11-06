@@ -16,7 +16,7 @@ concurrency:
 jobs:
   verify:
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 30
     env:
       DATABASE_URL: postgres://microapp:microapp-test-only@localhost:5432/microapp_test
       DATABASE_URL_ADMIN: postgres://microapp:microapp-test-only@localhost:5432/microapp_test

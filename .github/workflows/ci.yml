@@ -95,7 +95,7 @@ jobs:
       - name: PostgreSQL register shift integration tests
         run: pnpm --filter @micro-app/api exec vitest run src/register-shifts.integration.test.ts
       - name: PostgreSQL authenticated cashier open-shift integration tests
-        run: pnpm --filter @micro-app/api exec vitest run src/cashier-open-shift.integration.test.ts
+        run: DATABASE_URL_RUNTIME="$RUNTIME_DATABASE_URL" pnpm --filter @micro-app/api exec vitest run src/cashier-open-shift.integration.test.ts
       - name: PostgreSQL register-shift member role integration tests
         run: pnpm --filter @micro-app/api exec vitest run src/register-shift-member-roles.integration.test.ts
       - name: PostgreSQL catalog integration tests

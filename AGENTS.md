@@ -69,3 +69,12 @@ Este archivo es el punto de entrada operativo. La autoridad normativa está en `
 - Actualiza `docs/CURRENT_STATE.md`, `docs/STATE_JOURNAL.md` y `docs/HANDOFF_NEXT_CHAT.md` cuando el trabajo cambie de forma significativa el estado o el punto de continuidad; no dupliques el diario en todos los documentos.
 - Actualiza `README.md` solo cuando cambie de forma verificada el producto público, la instalación o la arquitectura; no por cambios internos de documentación.
 - Mantén explícita la diferencia entre recomendado, aprobado, implementado y verificado.
+
+
+## Objetivo explícito de cierre del backlog y producción
+
+- El objetivo del propietario es completar el backlog de PR abiertas (26 en el snapshot 2026-11-06; recontar en GitHub antes de informar), preservar los cambios únicos y fusionar a `main` cada PR cuando haya superado íntegramente los gates aplicables. **No** fusionar las 26 en bloque, por antigüedad o por checks verdes aislados.
+- Para cada PR: verificar diff/base/head/dependencias; rescatar cambios únicos; corregir y probar; exigir checks obligatorios en el SHA final, reviews solicitadas y branch protection; resolver riesgos materiales; fusionar sin reconfirmación cuando sea elegible; comprobar merge SHA, checks post-merge y despliegue automático; continuar con la siguiente PR desbloqueada.
+- No esperar a terminar las 26 para fusionar una PR que ya sea segura y elegible. No fusionar una PR que dependa de migraciones, tablas, roles, secretos, configuración o decisiones no disponibles/validadas en el destino.
+- La liberación de producción es un gate global adicional: demostrar integración end-to-end, migraciones y baseline seguros, roles efectivos runtime/migrator/backup de mínimo privilegio, autorización, integridad transaccional, precisión monetaria decimal sin descuentos, BCV trazable, auth, backup/restore y RPO/RTO, alertas/observabilidad, seguridad, presupuesto $0, despliegue y smoke tests autenticados. CI verde no basta.
+- La autorización permanente cubre merges elegibles y el despliegue automático inherente. No amplía los permisos para Neon `main`, migraciones remotas, roles/grants, datos reales, secretos, Cloudflare manual, DNS ni billing. Mantener máximo dos frentes activos y un tablero vivo de las PR pendientes.

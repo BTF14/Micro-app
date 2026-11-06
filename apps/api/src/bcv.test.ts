@@ -117,17 +117,18 @@ describe("GET /exchange-rates/current", () => {
     const { factory } = createDatabaseFactory(rows as unknown as Array<{ id: string }>, queryError);
     const app = new Hono<{ Bindings: Bindings }>();
     registerBcvRoutes(app, { databaseClientFactory: factory, now: () => now });
-    return app;
+    return { app, query: factory };
   }
 
   it("returns the latest stored rate as a decimal string with explicit provenance", async () => {
-    const app = createApp([{
+    const { app, query } = createApp([{
       rate: "894.887600", source: "bcv.today", effective_date: "2026-11-05",
       fetched_at: "2026-11-05T17:00:00.000Z", validation_status: "valid",
     }]);
     const response = await app.request("/exchange-rates/current", {}, { DATABASE_URL: databaseUrl });
     expect(response.status).toBe(200);
     expect(response.headers.get("cache-control")).toBe("no-store");
+    expect(query).toHaveBeenCalledWith(expect.stringContaining("source = $3"), ["USD", "VES", "bcv.today"]);
     await expect(response.json()).resolves.toEqual({
       base_currency: "USD", quote_currency: "VES", rate: "894.887600",
       source: { provider: "bcv.today", upstream: "https://www.bcv.org.ve/", official_api: false },
@@ -136,7 +137,7 @@ describe("GET /exchange-rates/current", () => {
   });
 
   it("returns the last stored rate but labels it stale when its effective date is old", async () => {
-    const app = createApp([{
+    const { app } = createApp([{
       rate: "800.000000", source: "bcv.today", effective_date: "2026-10-28",
       fetched_at: "2026-10-28T17:00:00.000Z", validation_status: "valid",
     }]);
@@ -147,7 +148,7 @@ describe("GET /exchange-rates/current", () => {
 
 
   it("does not hide a stored rate that has already been marked stale", async () => {
-    const app = createApp([{
+    const { app } = createApp([{
       rate: "780.000000", source: "bcv.today", effective_date: "2026-11-05",
       fetched_at: "2026-11-05T17:00:00.000Z", validation_status: "stale",
     }]);
@@ -156,12 +157,12 @@ describe("GET /exchange-rates/current", () => {
     await expect(response.json()).resolves.toMatchObject({ rate: "780.000000", status: "stale" });
   });
   it("returns 503 instead of inventing a rate when no rate exists or the database fails", async () => {
-    const empty = createApp([]);
+    const { app: empty } = createApp([]);
     const unavailable = await empty.request("/exchange-rates/current", {}, { DATABASE_URL: databaseUrl });
     expect(unavailable.status).toBe(503);
     await expect(unavailable.json()).resolves.toMatchObject({ error: "BCV_RATE_UNAVAILABLE" });
 
-    const broken = createApp([], new Error("database offline"));
+    const { app: broken } = createApp([], new Error("database offline"));
     const failed = await broken.request("/exchange-rates/current", {}, { DATABASE_URL: databaseUrl });
     expect(failed.status).toBe(503);
   });

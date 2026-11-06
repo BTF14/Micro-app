@@ -441,6 +441,58 @@ describe.skipIf(!databaseUrl || !databaseUrlAdmin).sequential("atomic sales chec
     expect(productResponse.status).toBe(409);
   });
 
+  it("rejects a missing inventory balance without creating a sale", async () => {
+    const key = "missing-balance-" + crypto.randomUUID();
+    const response = await request(checkoutBody("1.000", "23.8500"), key);
+    expect(response.status).toBe(409);
+    expect((await response.json() as { error: string }).error).toBe("INSUFFICIENT_STOCK");
+    const sales = await client.query(
+      "SELECT count(*)::int AS count FROM public.sales WHERE organization_id=$1 AND idempotency_key=$2",
+      [organizationId, key],
+    );
+    expect(sales.rows[0].count).toBe(0);
+    const balances = await client.query(
+      "SELECT count(*)::int AS count FROM public.inventory_balances WHERE organization_id=$1 AND warehouse_id=$2 AND product_id=$3",
+      [organizationId, warehouseId, productId],
+    );
+    expect(balances.rows[0].count).toBe(0);
+  });
+
+  it("rejects partial or overpaid settlement before creating a sale", async () => {
+    await seedBalance("2.000");
+    for (const amount of ["23.8400", "23.8600"]) {
+      const key = "payment-mismatch-" + crypto.randomUUID();
+      const response = await request(checkoutBody("1.000", amount), key);
+      expect(response.status).toBe(400);
+      expect((await response.json() as { error: string }).error).toBe("PAYMENT_TOTAL_INVALID");
+      const sales = await client.query(
+        "SELECT count(*)::int AS count FROM public.sales WHERE organization_id=$1 AND idempotency_key=$2",
+        [organizationId, key],
+      );
+      expect(sales.rows[0].count).toBe(0);
+    }
+    expect((await readBalance()).on_hand_quantity).toBe("2.000");
+  });
+
+  it("requires active branch membership even for an owner replay or new sale", async () => {
+    await seedBalance("2.000");
+    await client.query(
+      "UPDATE public.branch_memberships SET is_active=false WHERE organization_id=$1 AND branch_id=$2 AND user_id=$3",
+      [organizationId, branchId, userId],
+    );
+    try {
+      const response = await request(checkoutBody("1.000", "23.8500"), "membership-" + crypto.randomUUID());
+      expect(response.status).toBe(403);
+      expect((await response.json() as { error: string }).error).toBe("BRANCH_FORBIDDEN");
+      expect((await readBalance()).on_hand_quantity).toBe("2.000");
+    } finally {
+      await client.query(
+        "UPDATE public.branch_memberships SET is_active=true WHERE organization_id=$1 AND branch_id=$2 AND user_id=$3",
+        [organizationId, branchId, userId],
+      );
+    }
+  });
+
   it("rejects a closed operator shift", async () => {
     await seedBalance("2.000");
     await client.query(

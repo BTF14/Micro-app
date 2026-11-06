@@ -1,4 +1,4 @@
--- Run after 0005_warehouse_inventory.sql on disposable PostgreSQL 18.
+-- Run after 0006_warehouse_inventory.sql on disposable PostgreSQL 18.
 BEGIN;
 DO $$
 DECLARE

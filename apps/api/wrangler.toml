@@ -1,5 +1,5 @@
 name = "micro-app-api"
-main = "src/index.ts"
+main = "src/worker.ts"
 compatibility_date = "2026-10-17"
 
 [vars]
@@ -18,3 +18,8 @@ compatibility_date = "2026-10-17"
 FRONTEND_ORIGIN = "https://micro-app-63i.pages.dev"
 GOOGLE_REDIRECT_URI = "https://micro-app-api.btfcasheb.workers.dev/auth/google/callback"
 GOOGLE_CLIENT_ID = "1030757133503-huvhkok21n1br10rtfhs4827fo3v106q.apps.googleusercontent.com"
+
+[triggers]
+# Poll the public BCV-derived feed twice per hour; unchanged values are a DB no-op.
+# Cloudflare cron is UTC. Source freshness and Caracas effective date are validated in code.
+crons = ["0,30 * * * *"]

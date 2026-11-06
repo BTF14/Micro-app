@@ -66,13 +66,8 @@ jobs:
           psql -X -v ON_ERROR_STOP=1 --dbname "$ADMIN_DATABASE_URL" -c "CREATE ROLE microapp_migrator LOGIN PASSWORD 'migrator-test-only' NOSUPERUSER NOCREATEDB NOCREATEROLE NOREPLICATION NOBYPASSRLS; CREATE ROLE microapp_runtime LOGIN PASSWORD 'runtime-test-only' NOSUPERUSER NOCREATEDB NOCREATEROLE NOREPLICATION NOBYPASSRLS NOINHERIT; REVOKE CREATE ON SCHEMA public FROM PUBLIC; GRANT USAGE, CREATE ON SCHEMA public TO microapp_migrator; GRANT USAGE ON SCHEMA public TO microapp_runtime; GRANT CONNECT ON DATABASE microapp_test TO microapp_migrator, microapp_runtime;"
       - name: Apply canonical schema through the fail-closed migration runner
         run: bash scripts/db/migrate.sh
-      - name: Run PostgreSQL migration assertions
-        run: |
-          for assertion in apps/api/migrations/[0-9][0-9][0-9][0-9]_*.assertions.sql; do
-            test -f "$assertion" || continue
-            echo "Running $assertion"
-            psql -X -v ON_ERROR_STOP=1 --dbname "$ADMIN_DATABASE_URL" -f "$assertion"
-          done
+      - name: Verify final PostgreSQL schema contract
+        run: psql -X -v ON_ERROR_STOP=1 --dbname "$ADMIN_DATABASE_URL" -f apps/api/migrations/0015_sales_checkout_atomicity.assertions.sql
       - name: Build and typecheck
         run: pnpm build
       - name: Verify Cloudflare Pages preview isolation

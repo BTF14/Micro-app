@@ -274,6 +274,7 @@ describe.skipIf(!databaseUrl || !databaseUrlAdmin).sequential("atomic sales chec
       quantity: "1.250", line_total_usd: "29.8125",
       line_total_ves: convertUsdToVes("29.8125", "250.12345678"),
     });
+    expect(sale.lines[0]).not.toHaveProperty("unit_cost_usd");
     expect(sale.total_ves).toBe(convertUsdToVes("29.8125", "250.12345678"));
 
     const balance = await readBalance();

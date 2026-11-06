@@ -11,8 +11,9 @@ const MAX_PAGE_SIZE = 100;
 
 function parsePageSize(value: string | undefined): number | null {
   if (value === undefined) return DEFAULT_PAGE_SIZE;
-  if (!/^(?:[1-9]|[1-9][0-9]|100)$/.test(value)) return null;
-  return Number(value);
+  if (!/^[1-9][0-9]*$/.test(value)) return null;
+  const parsed = Number(value);
+  return Number.isSafeInteger(parsed) && parsed <= MAX_PAGE_SIZE ? parsed : null;
 }
 
 type InventoryBalanceRow = {

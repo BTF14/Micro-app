@@ -36,6 +36,7 @@ describe.skipIf(!databaseUrl || !databaseUrlAdmin)("atomic sales checkout Postgr
   let registerId = "";
   let shiftId = "";
   let productId = "";
+  let legacyStockBefore: string | null = null;
   let foreignOrganizationId = "";
   let token = "";
   let rateId = "";
@@ -248,6 +249,11 @@ describe.skipIf(!databaseUrl || !databaseUrlAdmin)("atomic sales checkout Postgr
       [organizationId, "CHECKOUT-" + crypto.randomUUID().replace(/-/g, "").slice(0, 12)],
     );
     productId = product.rows[0]!.id;
+    const legacyStock = await client.query<{ stock_quantity: string | null }>(
+      "SELECT stock_quantity::text FROM public.products WHERE id=$1",
+      [productId],
+    );
+    legacyStockBefore = legacyStock.rows[0]!.stock_quantity;
   });
 
   afterAll(async () => {
@@ -342,7 +348,7 @@ describe.skipIf(!databaseUrl || !databaseUrlAdmin)("atomic sales checkout Postgr
     );
     expect(audit.rows[0].count).toBe(1);
     const legacyStock = await client.query("SELECT stock_quantity::text FROM public.products WHERE id=$1", [productId]);
-    expect(legacyStock.rows[0].stock_quantity).toBe("0.000");
+    expect(legacyStock.rows[0].stock_quantity).toBe(legacyStockBefore);
   });
 
   it("replays an identical idempotency key and rejects a changed payload without consuming stock twice", async () => {

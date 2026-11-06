@@ -400,6 +400,22 @@ describe.skipIf(!databaseUrl)("warehouse inventory count transactions against Po
     expect(response.status).toBe(400);
     expect(await response.json()).toMatchObject({ error: "INVALID_IDEMPOTENCY_KEY" });
   });
+  it("rejects JSON numbers for quantities and unit costs to preserve exact decimal strings", async () => {
+    const numericQuantity = await request(root() + "/counts/physical", {
+      reason: "Numeric quantity must be rejected",
+      lines: [{ product_id: productId, counted_quantity: 1.25 }],
+    }, { "Idempotency-Key": "numeric-quantity-rejected" });
+    expect(numericQuantity.status).toBe(400);
+    expect(await numericQuantity.json()).toMatchObject({ error: "INVALID_COUNT" });
+
+    const numericUnitCost = await request(root() + "/counts/physical", {
+      reason: "Numeric unit cost must be rejected",
+      lines: [{ product_id: productId, counted_quantity: "1.250", unit_cost_usd: 2.25 }],
+    }, { "Idempotency-Key": "numeric-unit-cost-rejected" });
+    expect(numericUnitCost.status).toBe(400);
+    expect(await numericUnitCost.json()).toMatchObject({ error: "INVALID_COUNT" });
+  });
+
   it("refuses to confirm a draft after its warehouse has been deactivated", async () => {
     const draft = await request(root() + "/counts/physical", {
       reason: "Warehouse lifecycle must be revalidated at confirmation",

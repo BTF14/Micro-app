@@ -50,7 +50,7 @@ describe.skipIf(!databaseUrl)("warehouse inventory count transactions against Po
         Cookie: "microapp_session=" + token,
         Origin: "https://frontend.example",
         "Content-Type": "application/json",
-        ...(includeDefaultIdempotencyKey && /\\/counts\\/(opening|physical)$/.test(path)
+        ...(includeDefaultIdempotencyKey && /\/counts\/(opening|physical)$/.test(path)
           ? { "Idempotency-Key": "test-" + crypto.randomUUID() }
           : {}),
         ...extraHeaders,

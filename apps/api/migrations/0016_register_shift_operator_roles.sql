@@ -13,7 +13,8 @@ $register_shift_role_preflight$;
 -- sync without weakening tenant, branch, register, membership or user checks.
 CREATE OR REPLACE FUNCTION public.validate_register_shift_opening() RETURNS trigger
 LANGUAGE plpgsql
-AS $$
+SET search_path = pg_catalog
+AS $
 DECLARE
   scope_is_active boolean;
 BEGIN
@@ -68,7 +69,8 @@ $$;
 -- and role changes that would make an owner/admin/cashier shift inoperable.
 CREATE OR REPLACE FUNCTION public.prevent_scope_deactivation_with_open_register_shift() RETURNS trigger
 LANGUAGE plpgsql
-AS $$
+SET search_path = pg_catalog
+AS $
 DECLARE
   old_row jsonb := to_jsonb(OLD);
   new_row jsonb := to_jsonb(NEW);

@@ -8,6 +8,7 @@ import { registerInventoryCountRoutes } from "./inventory-counts";
 import type { Bindings } from "./bindings";
 import { cleanupExpiredAuthRateLimits } from "./auth-rate-limit";
 import { registerExchangeRateRoutes, syncBcvOfficialRate } from "./exchange-rates";
+import { registerSalesCheckoutRoutes } from "./sales-checkout";
 
 const app = new Hono<{ Bindings: Bindings }>();
 
@@ -85,6 +86,7 @@ registerCatalogRoutes(app);
 registerCatalogWriteRoutes(app);
 registerInventoryCountRoutes(app);
 registerExchangeRateRoutes(app);
+registerSalesCheckoutRoutes(app);
 
 app.get("/health", (c) =>
   c.json({

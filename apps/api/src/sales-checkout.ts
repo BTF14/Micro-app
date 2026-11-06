@@ -237,7 +237,7 @@ async function loadSaleResponse(
   if (!sale) return null;
   const lines = await tx.query<SaleLineRow>(
     `SELECT product_id, product_name_snapshot, sku_snapshot, quantity::text,
-            unit_price_usd::text, unit_cost_usd::text, line_total_usd::text, line_total_ves::text
+            unit_price_usd::text, line_total_usd::text, line_total_ves::text
        FROM public.sale_items
       WHERE organization_id = $1 AND sale_id = $2
       ORDER BY product_id ASC`,

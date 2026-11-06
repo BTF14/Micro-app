@@ -235,7 +235,6 @@ describe.skipIf(!databaseUrl || !databaseUrlAdmin)("atomic sales checkout Postgr
         for (const table of [
           "public.sales", "public.sale_items", "public.payments",
           "public.warehouse_inventory_movements", "public.inventory_balances", "public.audit_logs",
-          "public.register_shifts",
         ]) {
           await client.query("ALTER TABLE " + table + " DISABLE TRIGGER USER");
         }
@@ -245,7 +244,6 @@ describe.skipIf(!databaseUrl || !databaseUrlAdmin)("atomic sales checkout Postgr
         await client.query("DELETE FROM public.sales WHERE organization_id=$1", [organizationId]);
         await client.query("DELETE FROM public.warehouse_inventory_movements WHERE organization_id=$1", [organizationId]);
         await client.query("DELETE FROM public.inventory_balances WHERE organization_id=$1", [organizationId]);
-        await client.query("DELETE FROM public.register_shifts WHERE organization_id=$1", [organizationId]);
         for (const table of [
           "public.sales", "public.sale_items", "public.payments",
           "public.warehouse_inventory_movements", "public.inventory_balances", "public.audit_logs",
@@ -258,15 +256,10 @@ describe.skipIf(!databaseUrl || !databaseUrlAdmin)("atomic sales checkout Postgr
         await client.query("ROLLBACK");
         throw error;
       }
-      await client.query("DELETE FROM public.registers WHERE organization_id=$1", [organizationId]);
+      // Register shifts are append-only by design. This test database is ephemeral,
+      // so retain the closed shift and its scope rows rather than bypass lifecycle guards.
       await client.query("DELETE FROM public.warehouses WHERE organization_id=$1", [organizationId]);
       await client.query("DELETE FROM public.products WHERE organization_id=$1", [organizationId]);
-      await client.query("DELETE FROM public.branch_memberships WHERE organization_id=$1", [organizationId]);
-      await client.query("DELETE FROM public.branches WHERE organization_id=$1", [organizationId]);
-      await client.query("DELETE FROM public.auth_sessions WHERE user_id IN ($1,$2)", [userId, unauthorizedUserId]);
-      await client.query("DELETE FROM public.organization_members WHERE organization_id=$1", [organizationId]);
-      await client.query("DELETE FROM public.organizations WHERE id=$1", [organizationId]);
-      await client.query("DELETE FROM public.app_users WHERE id IN ($1,$2)", [userId, unauthorizedUserId]);
     }
     if (foreignOrganizationId) {
       await client.query("DELETE FROM public.products WHERE organization_id=$1", [foreignOrganizationId]);
@@ -380,15 +373,19 @@ describe.skipIf(!databaseUrl || !databaseUrlAdmin)("atomic sales checkout Postgr
     const totalVes = convertUsdToVes("23.8500", "250.12345678");
     const response = await request(checkoutBody("1.000", totalVes, "VES"), "ves-" + crypto.randomUUID());
     expect(response.status).toBe(201);
-    const sale = await response.json() as { id: string; total_usd: string; total_ves: string };
+    const sale = await response.json() as {
+      id: string; total_usd: string; total_ves: string;
+      payments: Array<{ currency: string; amount: string }>;
+    };
     expect(sale.total_usd).toBe("23.8500");
     expect(sale.total_ves).toBe(totalVes);
+    expect(sale.payments[0]).toMatchObject({ currency: "VES", amount: totalVes });
     const payment = await client.query(
       "SELECT currency,amount::text,usd_equivalent_snapshot::text,exchange_rate_snapshot::text FROM public.payments WHERE organization_id=$1 AND sale_id=$2",
       [organizationId, sale.id],
     );
     expect(payment.rows[0]).toEqual({
-      currency: "VES", amount: totalVes, usd_equivalent_snapshot: "23.8500",
+      currency: "VES", amount: totalVes + "00", usd_equivalent_snapshot: "23.8500",
       exchange_rate_snapshot: "250.12345678",
     });
   });

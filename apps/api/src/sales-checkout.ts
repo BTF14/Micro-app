@@ -95,7 +95,7 @@ function boundedText(value: unknown, maxLength: number): string | null {
   return normalized;
 }
 
-function parseCheckoutInput(value: unknown): CheckoutInput | null {
+export function parseCheckoutInput(value: unknown): CheckoutInput | null {
   if (!value || typeof value !== "object" || Array.isArray(value)) return null;
   const body = value as Record<string, unknown>;
   if (Object.keys(body).some((key) => !["warehouse_id", "lines", "payments"].includes(key))) return null;
@@ -157,7 +157,7 @@ async function sha256Hex(value: string): Promise<string> {
   return Array.from(new Uint8Array(digest), (byte) => byte.toString(16).padStart(2, "0")).join("");
 }
 
-async function canonicalRequestHash(
+export async function canonicalRequestHash(
   organizationId: string,
   branchId: string,
   userId: string,
@@ -179,7 +179,7 @@ function divideProportionFloor(numerator: bigint, denominator: bigint): bigint {
   return numerator / denominator;
 }
 
-function allocateUsdEquivalents(
+export function allocateUsdEquivalents(
   payments: readonly CheckoutPayment[],
   currency: Currency,
   totalUsd: string,

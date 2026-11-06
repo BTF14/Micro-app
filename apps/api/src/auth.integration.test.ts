@@ -138,6 +138,10 @@ const googleEmail = `google-integration-${crypto.randomUUID()}@example.test`;
 const bootstrapOrgName = `Bootstrap Shop ${crypto.randomUUID()}`;
 const bootstrapOrgSlug = `bootstrap-${crypto.randomUUID().replace(/-/g, "").slice(0, 12)}`;
 const bootstrapToken = `test-bootstrap-${crypto.randomUUID()}`;
+function nextIntegrationIp(): string {
+  const id = crypto.randomUUID().replace(/-/g, "");
+  return `2001:db8:${id.slice(0, 4)}:${id.slice(4, 8)}:${id.slice(8, 12)}:${id.slice(12, 16)}:${id.slice(16, 20)}:${id.slice(20, 24)}`;
+}
 
 const googleEnv = {
   DATABASE_URL: databaseUrl,
@@ -162,7 +166,7 @@ function extractCookiePairs(response: Response): Record<string, string> {
 
 async function startGoogleFlow(extraQuery = ""): Promise<{ cookieHeader: string; state: string }> {
   const startResponse = await app.fetch(
-    new Request(`https://api.example/auth/google${extraQuery}`),
+    new Request(`https://api.example/auth/google${extraQuery}`, { headers: { "CF-Connecting-IP": nextIntegrationIp() } }),
     googleEnv,
   );
   expect(startResponse.status).toBe(302);
@@ -188,6 +192,7 @@ async function startBootstrapGoogleFlow(input: {
     headers: {
       Origin: googleOrigin,
       "Content-Type": "application/x-www-form-urlencoded",
+      "CF-Connecting-IP": nextIntegrationIp(),
     },
     body,
   }), googleEnv);
@@ -237,6 +242,7 @@ describe("Google bootstrap request transport", () => {
       headers: {
         Origin: googleOrigin,
         "Content-Type": "application/x-www-form-urlencoded",
+        "CF-Connecting-IP": nextIntegrationIp(),
       },
       body: new URLSearchParams({
         bootstrap_token: "incorrect-synthetic-token",
@@ -257,6 +263,7 @@ describe("Google bootstrap request transport", () => {
         headers: {
           Origin: googleOrigin,
           "Content-Type": "application/x-www-form-urlencoded",
+          "CF-Connecting-IP": nextIntegrationIp(),
         },
         body: `bootstrap_token=${encodeURIComponent(bootstrapToken)}&bootstrap_token=duplicate&org_name=Valid+Shop&org_slug=valid-shop`,
       },
@@ -313,7 +320,7 @@ const suiteGoogle = describe.skipIf(!databaseAvailable)("Google OAuth routes aga
     try {
       const callback = await app.fetch(new Request(
         `https://api.example/auth/google/callback?code=test-code&state=${state}`,
-        { headers: { Cookie: cookieHeader } },
+        { headers: { Cookie: cookieHeader, "CF-Connecting-IP": nextIntegrationIp() } },
       ), googleEnv);
       expect(callback.status).toBe(302);
       expect(callback.headers.get("location")).toBe(`${googleOrigin}/`);
@@ -336,7 +343,7 @@ const suiteGoogle = describe.skipIf(!databaseAvailable)("Google OAuth routes aga
 
     const callback = await app.fetch(new Request(
       `https://api.example/auth/google/callback?code=test-code&state=${state}`,
-      { headers: { Cookie: cookieHeader } },
+      { headers: { Cookie: cookieHeader, "CF-Connecting-IP": nextIntegrationIp() } },
     ), googleEnv);
 
     expect(callback.status).toBe(302);
@@ -369,7 +376,7 @@ const suiteGoogle = describe.skipIf(!databaseAvailable)("Google OAuth routes aga
     mockGoogleIdentity("sub-unlinked-legacy-account", true);
     const callback = await app.fetch(new Request(
       `https://api.example/auth/google/callback?code=test-code&state=${state}`,
-      { headers: { Cookie: cookieHeader } },
+      { headers: { Cookie: cookieHeader, "CF-Connecting-IP": nextIntegrationIp() } },
     ), googleEnv);
 
     expect(callback.status).toBe(302);
@@ -401,7 +408,7 @@ const suiteGoogle = describe.skipIf(!databaseAvailable)("Google OAuth routes aga
 
     const callback = await app.fetch(new Request(
       "https://api.example/auth/google/callback?code=test-code&state=not-the-real-state",
-      { headers: { Cookie: cookieHeader } },
+      { headers: { Cookie: cookieHeader, "CF-Connecting-IP": nextIntegrationIp() } },
     ), googleEnv);
 
     expect(callback.status).toBe(302);
@@ -424,7 +431,7 @@ const suiteGoogle = describe.skipIf(!databaseAvailable)("Google OAuth routes aga
 
     const callback = await app.fetch(new Request(
       `https://api.example/auth/google/callback?code=test-code&state=${state}`,
-      { headers: { Cookie: cookieHeader } },
+      { headers: { Cookie: cookieHeader, "CF-Connecting-IP": nextIntegrationIp() } },
     ), googleEnv);
 
     expect(callback.status).toBe(302);
@@ -466,7 +473,7 @@ const suiteGoogle = describe.skipIf(!databaseAvailable)("Google OAuth routes aga
     });
     const secondCallback = await app.fetch(new Request(
       `https://api.example/auth/google/callback?code=test-code&state=${second.state}`,
-      { headers: { Cookie: second.cookieHeader } },
+      { headers: { Cookie: second.cookieHeader, "CF-Connecting-IP": nextIntegrationIp() } },
     ), googleEnv);
     expect(secondCallback.status).toBe(302);
     expect(secondCallback.headers.get("location")).toContain("auth_error=bootstrap_consumed");
@@ -481,7 +488,7 @@ const suiteGoogle = describe.skipIf(!databaseAvailable)("Google OAuth routes aga
 
     const callback = await app.fetch(new Request(
       `https://api.example/auth/google/callback?code=test-code&state=${state}`,
-      { headers: { Cookie: cookieHeader } },
+      { headers: { Cookie: cookieHeader, "CF-Connecting-IP": nextIntegrationIp() } },
     ), googleEnv);
 
     expect(callback.status).toBe(302);
@@ -504,7 +511,7 @@ const suiteGoogle = describe.skipIf(!databaseAvailable)("Google OAuth routes aga
     try {
       const callback = await app.fetch(new Request(
         `https://api.example/auth/google/callback?code=test-code&state=${state}`,
-        { headers: { Cookie: cookieHeader } },
+        { headers: { Cookie: cookieHeader, "CF-Connecting-IP": nextIntegrationIp() } },
       ), googleEnv);
       expect(callback.status).toBe(302);
       expect(callback.headers.get("location")).toContain("auth_error=identity_mismatch");
@@ -655,7 +662,7 @@ const suiteGoogle = describe.skipIf(!databaseAvailable)("Google OAuth routes aga
 
     const callback = await app.fetch(new Request(
       `https://api.example/auth/google/callback?code=test-code&state=${state}`,
-      { headers: { Cookie: cookieHeader } },
+      { headers: { Cookie: cookieHeader, "CF-Connecting-IP": nextIntegrationIp() } },
     ), googleEnv);
 
     expect(callback.status).toBe(302);
@@ -670,7 +677,7 @@ const suiteGoogle = describe.skipIf(!databaseAvailable)("Google OAuth routes aga
 
     const callback = await app.fetch(new Request(
       `https://api.example/auth/google/callback?code=test-code&state=${state}`,
-      { headers: { Cookie: cookieHeader } },
+      { headers: { Cookie: cookieHeader, "CF-Connecting-IP": nextIntegrationIp() } },
     ), googleEnv);
 
     expect(callback.status).toBe(302);

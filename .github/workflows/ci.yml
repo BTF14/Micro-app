@@ -78,6 +78,8 @@ jobs:
         run: pnpm test
       - name: PostgreSQL auth integration tests
         run: pnpm --filter @micro-app/api exec vitest run src/auth.integration.test.ts
+      - name: PostgreSQL auth rate limit integration tests
+        run: pnpm --filter @micro-app/api exec vitest run src/auth-rate-limit.integration.test.ts
       - name: PostgreSQL branch scope integration tests
         run: pnpm --filter @micro-app/api exec vitest run src/branch-context.integration.test.ts
       - name: PostgreSQL register shift integration tests

@@ -80,6 +80,8 @@ BEGIN
     OR NOT EXISTS (SELECT 1 FROM pg_catalog.pg_trigger WHERE tgname='sales_completed_reconciliation' AND NOT tgisinternal)
     OR NOT EXISTS (SELECT 1 FROM pg_catalog.pg_trigger WHERE tgname='sale_items_completed_reconciliation' AND NOT tgisinternal)
     OR NOT EXISTS (SELECT 1 FROM pg_catalog.pg_trigger WHERE tgname='payments_completed_reconciliation' AND NOT tgisinternal)
+    OR NOT EXISTS (SELECT 1 FROM pg_catalog.pg_trigger WHERE tgname='sale_inventory_movement_draft_guard' AND NOT tgisinternal)
+    OR NOT EXISTS (SELECT 1 FROM pg_catalog.pg_trigger WHERE tgname='sale_completion_audit_draft_guard' AND NOT tgisinternal)
   THEN
     RAISE EXCEPTION 'SALES_CHECKOUT_LIFECYCLE_OR_RECONCILIATION_TRIGGERS_MISSING';
   END IF;

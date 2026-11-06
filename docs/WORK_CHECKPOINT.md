@@ -30,3 +30,12 @@ No migration or write on Neon; no role/grant/secret change; no production data c
 2. Run migration-check, migration-runner, injected rollback, checksum/gap/reconciliation tests, API integration tests, typecheck, build, SAST and E2E on the integrated HEAD.
 3. Separately design and test an adoption baseline for the already populated Neon schema; require specific owner approval before any production role/grant or migration operation.
 4. Reconcile the stacked PRs on current main; do not merge stale bases or code depending on missing tables.
+
+
+## Regla de ejecución del backlog confirmada por el propietario — 2026-11-06
+
+- Objetivo: completar las 26 PR comunicadas y llevar a main los cambios que pasen todos los gates; reconfirmar el conteo real en GitHub porque es variable.
+- Cada PR se termina y evalúa por separado: diff íntegro, base/head y dependencias actuales, pruebas funcionales/regresión, seguridad, migraciones/roles si aplica, typecheck/build/E2E, checks obligatorios en SHA final, reviews solicitadas y branch protection.
+- Fusionar sin pedir autorización repetida cuando todo esté satisfecho y no haya riesgo material. No fusionar en bloque ni por checks verdes aislados; no retener PR elegibles solo porque otras sigan pendientes. Actualizar dependientes tras cada merge y verificar merge SHA, checks post-merge y despliegue.
+- Gate global antes de declarar producción lista: E2E integrado, migraciones y baseline seguros, privilegios efectivos mínimos y separación runtime/migrator/backup, integridad transaccional, auth/permisos, dinero decimal exacto sin descuentos, BCV verificable, backup/restore y RPO/RTO, alertas, seguridad, coste $0, despliegue y smoke test autenticado de producción.
+- Las operaciones sensibles de Neon main, migraciones remotas, roles/grants, datos reales, secretos, Cloudflare manual, DNS y billing siguen fuera de la autorización general de merge.

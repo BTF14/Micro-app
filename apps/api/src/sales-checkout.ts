@@ -152,6 +152,15 @@ export function parseCheckoutInput(value: unknown): CheckoutInput | null {
   const currency = payments[0]!.currency;
   if (payments.some((payment) => payment.currency !== currency)) return null;
   payments.sort((a, b) => JSON.stringify(a).localeCompare(JSON.stringify(b)));
+  try {
+    sumNumeric(
+      payments.map((payment) => payment.amount),
+      14,
+      currency === "USD" ? 4 : 2,
+    );
+  } catch {
+    return null;
+  }
 
   return { warehouseId: body.warehouse_id.toLowerCase(), lines, payments, currency };
 }

@@ -189,7 +189,7 @@ const suite = describe.skipIf(!isDisposablePostgresUrl(databaseUrl))(
       if (client) await client.end();
     });
 
-    it("enforces tenant, branch assignment and cashier-role boundaries", async () => {
+    it("enforces tenant, branch assignment and eligible operator-role boundaries", async () => {
       const fixture = await seedFixture(client);
 
       await expect(

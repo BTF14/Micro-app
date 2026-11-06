@@ -63,16 +63,16 @@ Objetivo: USD como moneda base del catálogo/contabilidad interna y VES como con
 
 ### Diseño
 
-1. Investigar y validar una fuente BCV fiable. No asumir que existe una API oficial gratuita ni codificar una URL no verificada.
-2. Un Cron Trigger de Cloudflare consulta la fuente en horario programado; convertir correctamente el horario local de Venezuela a UTC y contemplar fines de semana/feriados.
-3. Validar estructura, valor positivo, fecha efectiva, fuente, duplicados y cambios anómalos antes de persistir.
-4. Persistir el histórico en `exchange_rates` (la tabla ya existe en el esquema revisado), con fuente, fecha efectiva, valor y estado de validación.
+1. La implementación usa `https://bcv.today/api/v1/` como intermediario no oficial. Su repositorio documenta que el scraper consulta `https://www.bcv.org.ve/` y extrae `Fecha Valor`; no existe garantía contractual de disponibilidad/precisión y no debe describirse como API oficial del BCV. Mantener explícita la procedencia y reevaluar una fuente primaria directa o corroboración independiente.
+2. El Worker tiene un Cron Trigger cada 30 minutos (`0,30 * * * *`, UTC). La fecha calendario se valida en `America/Caracas`; la fecha efectiva puede ser distinta por publicación anticipada, fines de semana o feriados.
+3. Validar el estado del proveedor, procedencia declarada, fechas calendario/efectiva, timestamps, disponibilidad USD y tasa positiva finita antes de persistir.
+4. Persistir el histórico en `exchange_rates` (tabla existente) con `source = 'bcv.today'`; usar upsert condicional por `(source, effective_date)`, sin escritura si el valor no cambia y actualizando la misma fila ante una corrección para esa fecha.
 5. No escribir filas vacías ni repetir escrituras si no hay tasa nueva. Sin bucles de reintento.
 6. Ante caída o dato inválido, conservar la última tasa válida y exponer su fecha/frescura y estado stale; no sustituirla por cero ni presentar una tasa inventada.
-7. KV puede distribuir una copia de lectura de la tasa, con clave y versión controladas. Neon permanece como fuente persistente de verdad.
+7. La primera implementación no usa KV: el endpoint lee Neon directamente. KV sigue siendo opcional y solo se añadirá si mediciones justifican su uso y se define invalidación/frescura; Neon permanece como fuente persistente de verdad.
 8. Cada venta/línea debe conservar la tasa, moneda, importe original, importe convertido, fecha efectiva y referencia/fuente usados en ese momento. Actualizar la tasa nunca recalcula ventas pasadas.
 
-La automatización BCV y la API de consulta no están implementadas por el mero hecho de estar documentadas. El proveedor, la licencia/condiciones de acceso y la estabilidad de extracción son gates previos.
+El código de automatización y `GET /exchange-rates/current` está implementado en la PR #235, pendiente de merge y despliegue. El feed es un intermediario no oficial sin SLA; la validación directa de `bcv.org.ve` no pudo completarse en esta sesión. No declarar integración productiva hasta verificar una ejecución real del Cron y la lectura desde el Worker desplegado.
 
 ## 5. Buscador de productos y precio vigente
 
@@ -150,9 +150,9 @@ No habilitar endpoints comerciales mientras la matriz de permisos por operación
 
 ## 10. Pendientes explícitos
 
-- Fuente BCV fiable/gratuita y mecanismo de extracción verificado.
-- Contrato API para consulta de tasa y buscador de productos.
-- Política de frescura/TTL de tasa y manejo de feriados/fuente caída.
+- Verificar continuidad/precisión de `bcv.today` y evaluar corroboración independiente o consumo directo del BCV; el proveedor actual es un intermediario no oficial sin SLA.
+- Contrato API para buscador de productos; el endpoint de tasa BCV está implementado en PR #235, pendiente de merge/despliegue.
+- Revisar con datos reales la política de frescura/feriados; el endpoint marca stale cuando la fecha efectiva supera siete días o la fila almacenada supera siete días.
 - ERD de organización/sucursal/almacén/caja documentado en `docs/sdd/MULTI_BRANCH_DATA_MODEL.md`; sucursales/asignaciones en 0003 y cajas/turnos en 0004 (PR #167 fusionada). Almacenes y stock por almacén siguen pendientes.
 - Matriz de permisos por operación y ámbito del recurso (organización, sucursal, caja/turno), sin crear roles por sucursal. La autoridad de rol sigue siendo un único `organization_members.role` por miembro/organización; `branch_memberships` solo concede asignación/acceso a sucursales. Definir qué operaciones y recursos puede administrar o ejecutar cada rol, incluidas la configuración de políticas comerciales de la organización y la ejecución de excepciones. Los valores y límites comerciales los define cada organización, no la plataforma. La matriz permanece **NO APROBADA** hasta aprobación explícita.
 - Método de valoración de inventario y política de costo/margen.

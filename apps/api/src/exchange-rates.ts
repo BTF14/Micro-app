@@ -135,17 +135,23 @@ export async function fetchBcvOfficialRate(now = new Date()): Promise<BcvOfficia
     cache: "no-store",
     signal: AbortSignal.timeout(10_000),
   });
-  if (!response.ok) throw new Error("BCV_SOURCE_HTTP_ERROR");
+  if (!response.ok) {
+    await response.body?.cancel().catch(() => undefined);
+    throw new Error("BCV_SOURCE_HTTP_ERROR");
+  }
   const finalUrl = new URL(response.url || BCV_SOURCE_URL);
   if (finalUrl.protocol !== "https:" || finalUrl.hostname !== "www.bcv.org.ve") {
+    await response.body?.cancel().catch(() => undefined);
     throw new Error("BCV_SOURCE_REDIRECT_REJECTED");
   }
   if (!(response.headers.get("content-type") ?? "").toLowerCase().includes("text/html")) {
+    await response.body?.cancel().catch(() => undefined);
     throw new Error("BCV_SOURCE_CONTENT_TYPE_INVALID");
   }
   const declaredLength = response.headers.get("content-length");
   if (declaredLength !== null &&
       (!/^\d+$/.test(declaredLength) || Number(declaredLength) > MAX_BCV_HTML_BYTES)) {
+    await response.body?.cancel().catch(() => undefined);
     throw new Error("BCV_HTML_SIZE_INVALID");
   }
   const body = await readBodyWithinLimit(response.body, MAX_BCV_HTML_BYTES);

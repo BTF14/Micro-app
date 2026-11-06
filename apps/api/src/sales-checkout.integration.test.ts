@@ -29,6 +29,8 @@ describe.skipIf(!databaseUrl || !databaseUrlAdmin)("atomic sales checkout Postgr
   let organizationId = "";
   let userId = "";
   let unauthorizedUserId = "";
+  let cashierUserId = "";
+  let cashierToken = "";
   let branchId = "";
   let warehouseId = "";
   let registerId = "";
@@ -184,6 +186,35 @@ describe.skipIf(!databaseUrl || !databaseUrlAdmin)("atomic sales checkout Postgr
       [unauthorizedUserId, unauthorizedTokenHash],
     );
 
+    const cashier = await client.query<{ id: string }>(
+      "INSERT INTO public.app_users(email,display_name) VALUES($1,$2) RETURNING id",
+      ["checkout-authorized-cashier-" + suffix + "@example.test", "Assigned Cashier"],
+    );
+    cashierUserId = cashier.rows[0]!.id;
+    await client.query(
+      "INSERT INTO public.organization_members(organization_id,user_id,role) VALUES($1,$2,'cashier')",
+      [organizationId, cashierUserId],
+    );
+    await client.query(
+      "INSERT INTO public.branch_memberships(organization_id,branch_id,user_id) VALUES($1,$2,$3)",
+      [organizationId, branchId, cashierUserId],
+    );
+    const cashierRegister = await client.query<{ id: string }>(
+      "INSERT INTO public.registers(organization_id,branch_id,name,code) VALUES($1,$2,$3,$4) RETURNING id",
+      [organizationId, branchId, "Cashier Register", "cashier-register-" + suffix],
+    );
+    await client.query(
+      "INSERT INTO public.register_shifts(organization_id,branch_id,register_id,cashier_user_id) VALUES($1,$2,$3,$4)",
+      [organizationId, branchId, cashierRegister.rows[0]!.id, cashierUserId],
+    );
+    cashierToken = "checkout-authorized-cashier-session-" + suffix;
+    const cashierDigest = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(cashierToken));
+    const cashierTokenHash = Array.from(new Uint8Array(cashierDigest), (byte) => byte.toString(16).padStart(2, "0")).join("");
+    await client.query(
+      "INSERT INTO public.auth_sessions(user_id,token_hash,expires_at) VALUES($1,$2,now()+interval '1 day')",
+      [cashierUserId, cashierTokenHash],
+    );
+
     const rateDateResult = await client.query<{ effective_date: string }>(
       "SELECT (now() AT TIME ZONE 'America/Caracas')::date::text AS effective_date",
     );
@@ -253,10 +284,10 @@ describe.skipIf(!databaseUrl || !databaseUrlAdmin)("atomic sales checkout Postgr
       await client.query("DELETE FROM public.products WHERE organization_id=$1", [organizationId]);
       await client.query("DELETE FROM public.branch_memberships WHERE organization_id=$1", [organizationId]);
       await client.query("DELETE FROM public.branches WHERE organization_id=$1", [organizationId]);
-      await client.query("DELETE FROM public.auth_sessions WHERE user_id IN ($1,$2)", [userId, unauthorizedUserId]);
+      await client.query("DELETE FROM public.auth_sessions WHERE user_id IN ($1,$2,$3)", [userId, unauthorizedUserId, cashierUserId]);
       await client.query("DELETE FROM public.organization_members WHERE organization_id=$1", [organizationId]);
       await client.query("DELETE FROM public.organizations WHERE id=$1", [organizationId]);
-      await client.query("DELETE FROM public.app_users WHERE id IN ($1,$2)", [userId, unauthorizedUserId]);
+      await client.query("DELETE FROM public.app_users WHERE id IN ($1,$2,$3)", [userId, unauthorizedUserId, cashierUserId]);
     }
     if (foreignOrganizationId) {
       await client.query("DELETE FROM public.products WHERE organization_id=$1", [foreignOrganizationId]);
@@ -526,6 +557,26 @@ describe.skipIf(!databaseUrl || !databaseUrlAdmin)("atomic sales checkout Postgr
       expect(sales.rows[0].count).toBe(0);
     }
     expect((await readBalance()).on_hand_quantity).toBe("2.000");
+  });
+
+  it("allows an assigned cashier to checkout on their own open shift without exposing cost", async () => {
+    await seedBalance("2.000");
+    const originalToken = token;
+    try {
+      token = cashierToken;
+      const response = await request(checkoutBody("1.000", "23.8500"), "cashier-" + crypto.randomUUID());
+      expect(response.status).toBe(201);
+      const sale = await response.json() as { id: string; lines: Array<Record<string, unknown>> };
+      expect(sale.lines[0]).not.toHaveProperty("unit_cost_usd");
+      const persisted = await client.query(
+        "SELECT created_by,register_shift_id FROM public.sales WHERE id=$1",
+        [sale.id],
+      );
+      expect(persisted.rows[0].created_by).toBe(cashierUserId);
+      expect(persisted.rows[0].register_shift_id).not.toBe(shiftId);
+    } finally {
+      token = originalToken;
+    }
   });
 
   it("rejects a cashier who has no active branch membership", async () => {

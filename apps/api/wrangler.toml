@@ -4,7 +4,7 @@ compatibility_date = "2026-10-17"
 
 [vars]
 APP_ENV = "production"
-# These three are plain (non-secret) config, safe to commit: a Google OAuth
+# These plain (non-secret) config values are safe to commit: a Google OAuth
 # client ID is designed to be public (it's exposed in the browser redirect
 # URL anyway), and the other two are just this deployment's own URLs.
 #

@@ -79,17 +79,17 @@ jobs:
         run: |
           checksum="$(sha256sum apps/api/migrations/0007_register_shift_member_roles.sql | awk '{print $1}')"
           restore() {
-            psql -X -v ON_ERROR_STOP=1 --dbname "$ADMIN_DATABASE_URL" -c "INSERT INTO public.schema_migrations (version, filename, checksum, state, applied_at) VALUES ('0006', '0007_register_shift_member_roles.sql', '$checksum', 'applied', pg_catalog.clock_timestamp()) ON CONFLICT (version) DO UPDATE SET filename=EXCLUDED.filename, checksum=EXCLUDED.checksum, state='applied', applied_at=pg_catalog.clock_timestamp();" >/dev/null
+            psql -X -v ON_ERROR_STOP=1 --dbname "$ADMIN_DATABASE_URL" -c "INSERT INTO public.schema_migrations (version, filename, checksum, state, applied_at) VALUES ('0007', '0007_register_shift_member_roles.sql', '$checksum', 'applied', pg_catalog.clock_timestamp()) ON CONFLICT (version) DO UPDATE SET filename=EXCLUDED.filename, checksum=EXCLUDED.checksum, state='applied', applied_at=pg_catalog.clock_timestamp();" >/dev/null
           }
           trap restore EXIT
-          psql -X -v ON_ERROR_STOP=1 --dbname "$ADMIN_DATABASE_URL" -c "DELETE FROM public.schema_migrations WHERE version='0006';"
+          psql -X -v ON_ERROR_STOP=1 --dbname "$ADMIN_DATABASE_URL" -c "DELETE FROM public.schema_migrations WHERE version='0007';"
           status=0
           output="$(bash scripts/db/migrate.sh 2>&1)" || status=$?
           if [ "$status" -eq 0 ]; then
             echo "Expected a missing earlier migration with later applied rows to fail."
             exit 1
           fi
-          printf '%s\n' "$output" | grep -F "MIGRATION_LEDGER_GAP: 0006"
+          printf '%s\n' "$output" | grep -F "MIGRATION_LEDGER_GAP: 0007"
           restore
           trap - EXIT
       - name: Verify interrupted migration state fails closed

@@ -2,9 +2,9 @@
 
 **Snapshot:** 2026-11-06  
 **Repository:** `BTF14/Micro-app`  
-**Recovery branch:** `chore/backlog-recovery-ledger-20261106`  
-**Observed main baseline:** `9e0a0b5ead33dd3d43ac6182a9ea1de550adfd14`  
-**Source backlog snapshot:** 25 open implementation/documentation PRs, verified before creating #242. **Current open count:** 27 (the 25 source PRs plus recovery-ledger PR #242 and migration-recovery PR #243). Re-query GitHub before future reports.
+**Recovery branch:** `feat/recover-inventory-application-20261106`  
+**Observed main baseline:** `38e1d61acc083b3c0b9b73edcb2bc7887ca56872`  
+**Source backlog snapshot:** 25 open implementation/documentation PRs. PR #242 and PR #243 have since merged; **current open count: 25 source PRs plus this in-progress recovery PR once opened**. Re-query GitHub before future reports.
 
 ## Purpose and operating rules
 
@@ -87,28 +87,28 @@ Changed filenames were fetched from GitHub's paginated PR file listing. These ar
 - Current `main` does **not** contain `apps/api/src/inventory-counts.ts` or `apps/api/src/inventory-locks.ts`.
 - Current `main` does contain `branch-context.ts`, but it must be diffed against the source branch before reusing assumptions/signatures.
 - Current `main` has `0005_auth_bootstrap_attempts.sql`; it does not have the inventory `0005`.
-- Current `.github/workflows/migration-check.yml` still reflects the older migration sequence and must be reconciled with every numbered migration and assertion.
+- `main` now contains the canonical 0001–0015 sequence, paired assertions, fail-closed runner and PostgreSQL role harness via PR #243. The application handlers/tests are the next recovery front.
 - #200 and #205 both modify the inventory `0005` migration. #205 adds `idempotency_key`, `request_hash`, a paired-nullability constraint, and a partial unique index. #200 contains the distinct balance-version/snapshot logic. These are compatible concepts but require one reviewed merged migration definition and tests.
 
-### Current recovery-ledger PR
-- PR #242: `chore/backlog-recovery-ledger-20261106` → `main`; Draft; HEAD `3b4f0002a460ece614c94fb23794580d9f2e2f18`; current comparison is 2 commits ahead / 0 behind and exactly one added documentation file.
-- Latest observed GitHub PR metadata reports `mergeable=true`. At the last workflow query, CI and Playwright were still in progress; do not merge until every required check on the final SHA is complete and successful.
+### Integrated recovery PRs
+- PR #242 (backlog ledger) merged to `main` at `7a719d593248341aac86b1ded980d5bb9a6f94e8`.
+- PR #243 (canonical migrations and runner) merged to `main` at `38e1d61acc083b3c0b9b73edcb2bc7887ca56872`. Its final head `481f3b956c96c50b6f956541d1d675646fe66b51` passed 10/10 workflows, including all PostgreSQL migration/assertion/rollback and runner checks.
+- The current recovery branch is `feat/recover-inventory-application-20261106`, based on that main. It ports tenant authorization/locking, catalog read/write, inventory counts, shared BigInt money, preview isolation, and bounded request bodies. Its checks have not yet run on a PR SHA.
 
 ## Active recovery sequence
 
-### Front A — Inventory integrity and migration sequence
-1. Re-fetch live metadata and changed filenames for #200, #204, #205, #207, #208, #209, #210, and #222–#226.
-2. Build a file-level provenance map: PR → changed path → unique hunks/behavior → dependency → target file on new branch.
-3. Reconcile the two different warehouse migration definitions, preserving count idempotency and balance-version snapshot invalidation. Add explicit tests for both behaviors.
-4. Reconcile migration numbering from current `main`; update paired assertions, CI workflow references, runner, fixtures, docs and expected checksums together.
-5. Validate on disposable PostgreSQL only. Do not connect this recovery workflow to production Neon.
+### Front A — Inventory integrity and application routes
+1. Schema sequence 0001–0015, paired assertions, runner and role harness are integrated in main via #243.
+2. Current branch ports inventory count lifecycle/idempotency, balance/ledger locks, branch/tenant authorization, own-shift helper, catalog read/write routes and PostgreSQL integration suites.
+3. CI now applies the canonical runner, executes assertions, and tests admin plus runtime-role paths. Await exact-SHA workflows and fix all failures before marking ready.
+4. After integration, recover remaining inventory read/movement endpoints and reconcile any unique tests from #200/#204/#205/#207–#210/#223/#224.
 
-### Front B — Money, BCV, catalog and checkout
-1. Recover #227–#233 in dependency order, not by merging their stacked branches.
-2. Preserve integer/BigInt exact decimal operations and decimal string serialization; no floating-point money arithmetic.
-3. Remove all discount functionality and discount assumptions.
-4. Verify BCV official source, extraction, rate date/time, freshness, precision and stale/error handling.
-5. Recover catalog read/write authorization and atomic checkout only after the integrated database contract is stable.
+### Front B — Money, BCV and checkout
+1. BigInt decimal package and catalog UI/API are being recovered in the current branch; no floating-point money arithmetic.
+2. No discounts are included in the money/catalog policy or product form.
+3. #227 has a recorded future-effective-date ordering bug: storing tomorrow's BCV row first can block today's row. Fix and test this before enabling BCV.
+4. Recover BCV official source, extraction, rate date/time, freshness, precision and stale/error handling.
+5. Recover checkout application code only after DB invariants and runtime-role integration are validated.
 6. Run integration/E2E and security checks on the final consolidated head.
 
 ### Authentication and documentation
@@ -134,3 +134,11 @@ Changed filenames were fetched from GitHub's paginated PR file listing. These ar
 ## Next update format
 
 For each PR, record: live head/base SHA; changed file list; unique changes retained; conflicting hunks; target commit/PR; tests run on final SHA; unresolved blockers; disposition. Mark a source PR superseded/closed only after its unique changes are verified in the consolidated replacement.
+
+### 2026-11-06 — Schema recovery integrated; application recovery underway
+- Merged #242 (ledger) and #243 (canonical migration sequence/runner) after required checks passed. Current `main`: `38e1d61acc083b3c0b9b73edcb2bc7887ca56872`.
+- #243 final SHA `481f3b956c96c50b6f956541d1d675646fe66b51`: 10/10 workflows passed. PostgreSQL validated migrations 0001–0015, assertions, rollback atomicity, runtime login privileges, checksum drift, ledger gaps, interrupted states, populated-schema baseline rejection, advisory lock and runtime ledger denial.
+- Current branch `feat/recover-inventory-application-20261106` ports catalog read/create/update, inventory count creation/confirmation with required Idempotency-Key, tenant/branch locking, own-shift helper, BigInt decimal package, bounded streaming bodies and preview API isolation. Adds admin/runtime-role integration tests and web catalog UI. Not yet validated by PR workflows.
+- Removed discount operations from the recovered authorization policy and kept discount fields out of product forms.
+- Recorded the BCV future-date persistence ordering issue on #227; no BCV API route or checkout handler is being enabled until this is fixed.
+- No Neon production writes, roles/grants, secrets, DNS, manual Cloudflare changes or production deployment actions were performed.

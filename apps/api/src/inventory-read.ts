@@ -16,6 +16,30 @@ function parsePageSize(value: string | undefined): number | null {
   return Number.isSafeInteger(parsed) && parsed <= MAX_PAGE_SIZE ? parsed : null;
 }
 
+function postgresErrorCode(error: unknown): string | undefined {
+  if (!error || typeof error !== "object" || !("code" in error)) return undefined;
+  return typeof error.code === "string" ? error.code : undefined;
+}
+
+function inventoryReadFailure(
+  c: Parameters<Parameters<Hono<{ Bindings: Bindings }>["get"]>[1]>[0],
+  error: unknown,
+  errorCode: "INVENTORY_READ_FAILED" | "INVENTORY_MOVEMENTS_READ_FAILED",
+  message: string,
+) {
+  const code = postgresErrorCode(error);
+  // The application may be deployed before the separately authorized Neon
+  // migration/baseline work is complete. Fail closed as unavailable, not as
+  // an internal server error, when required schema/helpers/grants are absent.
+  if (code && ["42P01", "42883", "42703", "42501"].includes(code)) {
+    return c.json({
+      error: "INVENTORY_READ_NOT_ENABLED",
+      message: "La lectura de inventario todavía no está habilitada en esta base de datos.",
+    }, 503);
+  }
+  return c.json({ error: errorCode, message }, 500);
+}
+
 type InventoryBalanceRow = {
   product_id: string;
   is_active: boolean;
@@ -145,8 +169,8 @@ export function registerInventoryReadRoutes(app: Hono<{ Bindings: Bindings }>): 
       if (result.kind === "warehouse_not_found") return c.json({ error: "WAREHOUSE_NOT_FOUND", message: "El almacén no existe o está inactivo." }, 404);
       if (result.kind === "invalid_cursor") return c.json({ error: "INVALID_INVENTORY_CURSOR", message: "El cursor no pertenece a esta organización." }, 400);
       return c.json(result.body, 200);
-    } catch {
-      return c.json({ error: "INVENTORY_READ_FAILED", message: "No se pudo consultar el inventario." }, 500);
+    } catch (error) {
+      return inventoryReadFailure(c, error, "INVENTORY_READ_FAILED", "No se pudo consultar el inventario.");
     }
   });
 
@@ -243,8 +267,8 @@ export function registerInventoryReadRoutes(app: Hono<{ Bindings: Bindings }>): 
       if (result.kind === "warehouse_not_found") return c.json({ error: "WAREHOUSE_NOT_FOUND", message: "El almacén no existe o está inactivo." }, 404);
       if (result.kind === "invalid_cursor") return c.json({ error: "INVALID_MOVEMENT_CURSOR", message: "El cursor no pertenece a este almacén o filtro." }, 400);
       return c.json(result.body, 200);
-    } catch {
-      return c.json({ error: "INVENTORY_MOVEMENTS_READ_FAILED", message: "No se pudo consultar el kardex." }, 500);
+    } catch (error) {
+      return inventoryReadFailure(c, error, "INVENTORY_MOVEMENTS_READ_FAILED", "No se pudo consultar el kardex.");
     }
   });
 }

@@ -1,6 +1,6 @@
 # ODD task: BCV USD/VES rate ingestion and read API
 
-- Status: in progress (implementation complete; final CI/review pending)
+- Status: in progress (implementation and architecture documentation complete; final CI/review pending)
 - Issue / PR: [PR #235](https://github.com/BTF14/Micro-app/pull/235); consolidated replacement for initial PR #234
 - Owner / reviewer: repository owner / technical implementation delegated to assistant
 - Started: 2026-11-05
@@ -61,7 +61,7 @@ Excluded:
 | Research candidate source | Source behavior and limitations documented | `bcv.today` docs/API/OpenAPI and upstream scraper README inspected 2026-11-05; see `docs/RESOURCE_REGISTRY.md` | complete |
 | Implement source validation and persistence | Strict, idempotent ingestion | `apps/api/src/bcv.ts`; conditional upsert and source validation tests | implemented; CI pending |
 | Implement read-only endpoint | Safe current-rate contract | `GET /exchange-rates/current`; route tests include no-rate, stale and DB failure | implemented; CI pending |
-| Add Worker scheduled handler | Automated bounded polling | `apps/api/src/worker.ts`; `wrangler.toml` Cron `0,30 * * * *` | implemented; CI pending |
+| Add Worker scheduled handler | Automated bounded polling | `apps/api/src/worker.ts`; `worker.test.ts` verifies `waitUntil`; `wrangler.toml` Cron `0,30 * * * *` | implemented; CI pending |
 | Review, PR and merge | Verified integration | PR #235 targets main; first CI exposed a generic test-double typing error, corrected in this consolidated PR | pending final CI/review |
 
 ## Technical decisions
@@ -75,10 +75,10 @@ Excluded:
 
 ## Closure and handoff
 
-- Final commit SHA: `3f86c6abb7013e653fbac46f38348e7e24958b64` (current fix-branch HEAD; verify again before merge)
+- Final commit SHA: pending final CI; current branch is `fix/bcv-rate-validation-20261106` (re-read exact HEAD before merge)
 - PR: https://github.com/BTF14/Micro-app/pull/235
 - Checks and exact outcomes: pending
 - Acceptance criteria met / unmet: pending
 - Limitations not verified: direct live access to `bcv.org.ve` was unavailable during source verification; the third-party feed's upstream scraper is documented but has no uptime/accuracy guarantee.
 - Residual risks: external source outage or upstream scraping changes; monitor freshness and keep last valid value explicitly stale.
-- Next step: complete CI on PR #235, inspect any failures, then merge and close superseded PR #234.
+- Next step: complete CI on the final PR #235 HEAD, inspect all checks, merge when required gates pass, then close any duplicate PRs only after verifying the integrated diff.

@@ -34,38 +34,31 @@ function makeClient(rows: typeof openShift[] = []) {
 }
 
 describe("resolveOpenCashierRegisterShift", () => {
-  it("returns the open shift belonging to the authenticated cashier and exact branch", async () => {
-    const { client, query } = makeClient([openShift]);
+  it.each(["cashier", "owner", "admin"] as const)(
+    "returns the open shift belonging to the authenticated %s and exact branch",
+    async (organizationRole) => {
+      const { client, query } = makeClient([openShift]);
 
-    await expect(resolveOpenCashierRegisterShift(client, context())).resolves.toEqual(openShift);
-    expect(query).toHaveBeenCalledOnce();
-    expect(query.mock.calls[0]?.[1]).toEqual([organizationId, branchId, userId]);
-    const sql = query.mock.calls[0]?.[0] ?? "";
-    expect(sql).toContain("s.organization_id = $1");
-    expect(sql).toContain("s.branch_id = $2");
-    expect(sql).toContain("s.cashier_user_id = $3");
-    expect(sql).toContain("s.closed_at IS NULL");
-    expect(sql).toContain("m.role = 'cashier'");
-    expect(sql).toContain("bm.is_active = true");
-    expect(sql).toContain("u.is_active = true");
-    expect(sql).toContain("FOR SHARE OF s");
-  });
+      await expect(resolveOpenCashierRegisterShift(client, context(organizationRole))).resolves.toEqual(openShift);
+      expect(query).toHaveBeenCalledOnce();
+      expect(query.mock.calls[0]?.[1]).toEqual([organizationId, branchId, userId]);
+      const sql = query.mock.calls[0]?.[0] ?? "";
+      expect(sql).toContain("public.lock_open_register_shift($1::uuid, $2::uuid, $3::uuid)");
+      expect(sql).toContain("JOIN public.register_shifts s ON s.id = locked.shift_id");
+      expect(sql).not.toContain("FOR SHARE OF s");
+    },
+  );
 
-  it("returns null when the cashier has no open shift", async () => {
+  it("returns null when the member has no open shift", async () => {
     const { client } = makeClient();
     await expect(resolveOpenCashierRegisterShift(client, context())).resolves.toBeNull();
   });
 
-  it.each(["owner", "admin", "inventory"] as const)(
-    "does not query for the %s role",
-    async (organizationRole) => {
-      const { client, query } = makeClient([openShift]);
-      await expect(
-        resolveOpenCashierRegisterShift(client, context(organizationRole)),
-      ).resolves.toBeNull();
-      expect(query).not.toHaveBeenCalled();
-    },
-  );
+  it("does not query for the inventory role", async () => {
+    const { client, query } = makeClient([openShift]);
+    await expect(resolveOpenCashierRegisterShift(client, context("inventory"))).resolves.toBeNull();
+    expect(query).not.toHaveBeenCalled();
+  });
 
   it("does not query with malformed or incomplete branch scope", async () => {
     const { client, query } = makeClient();

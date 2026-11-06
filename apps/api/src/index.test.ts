@@ -8,7 +8,7 @@ describe("Micro app API", () => {
     await expect(response.json()).resolves.toMatchObject({
       status: "ok",
       service: "micro-app-api",
-      stage: "catalog-inventory",
+      stage: "catalog-inventory-read",
     });
   });
 

@@ -1,3 +1,12 @@
+
+
+## OBJETIVO DEL PROPIETARIO — CIERRE DEL BACKLOG DE PR Y PRODUCCIÓN (2026-11-06)
+
+- El propietario ha reiterado que hay 26 PR en el backlog que deben completarse y llevarse a integración. Recontar el backlog en GitHub antes de cada informe; el 26 es el snapshot comunicado, no un conteo perpetuo.
+- Cada PR se completa, revisa y fusiona individualmente cuando diff/base/dependencias, pruebas, seguridad, reviews solicitadas, checks del SHA exacto y branch protection estén íntegramente satisfechos. La autorización permanente de merge sigue vigente; no pedir permiso repetido. No fusionar en bloque ni dejar elegibles esperando innecesariamente a que acabe todo el backlog.
+- La preparación global de producción exige además demostrar end-to-end y cerrar P0/P1 de migraciones/baseline, permisos efectivos runtime/migrator/backup, integridad de datos, autenticación/autorización, importes decimales sin descuentos, BCV verificable, backups/restore y RPO/RTO, alertas, seguridad, coste $0, despliegue y smoke test autenticado de producción.
+- Una PR no se fusiona si depende de infraestructura, tablas, roles, secretos o datos aún no disponibles y validados en destino. La autorización de merge no autoriza escrituras ni cambios sensibles en Neon main, migraciones remotas, secretos, DNS, Cloudflare manual o billing.
+- Mantener tablero vivo de todas las PR pendientes: objetivo, base/head, dependencias, estado de checks, bloqueo, acción y decisión (integrar/consolidar/cerrar duplicado). Máximo dos frentes activos.
 ## CHECKPOINT VIVO PRIORITARIO — 2026-11-06 03:49 UTC — post PR #240 y auditoría Neon
 
 **Fuente de verdad:** GitHub/Neon consultados en vivo. Este bloque supersede los snapshots anteriores de esta sección; no reescribe el historial del diario.

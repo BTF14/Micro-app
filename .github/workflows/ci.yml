@@ -143,6 +143,9 @@ jobs:
       - name: PostgreSQL warehouse inventory count integration tests
         run: pnpm --filter @micro-app/api exec vitest run src/inventory-counts.integration.test.ts
       - name: PostgreSQL atomic sales checkout integration tests
+        env:
+          DATABASE_URL: postgres://microapp_runtime:runtime-test-only@localhost:5432/microapp_test
+          DATABASE_URL_ADMIN: postgres://microapp:microapp-test-only@localhost:5432/microapp_test
         run: pnpm --filter @micro-app/api exec vitest run src/sales-checkout.integration.test.ts
       - name: Reset disposable OAuth throttling fixtures before runtime handler tests
         run: docker exec "${{ job.services.postgres.id }}" psql -v ON_ERROR_STOP=1 -U microapp -d microapp_test -c "DELETE FROM auth_rate_limits; DELETE FROM auth_bootstrap_attempts;"

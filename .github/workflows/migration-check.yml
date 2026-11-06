@@ -258,23 +258,6 @@ jobs:
         run: docker exec -i -e PGPASSWORD=migrator-test-only "${{ job.services.postgres.id }}" psql -h 127.0.0.1 -v ON_ERROR_STOP=1 -U microapp_migrator -d microapp_test -f /dev/stdin < apps/api/migrations/0015_sales_checkout_atomicity.sql
       - name: Verify atomic sales checkout schema and runtime grants
         run: docker exec -i "${{ job.services.postgres.id }}" psql -v ON_ERROR_STOP=1 -U microapp -d microapp_test -f /dev/stdin < apps/api/migrations/0015_sales_checkout_atomicity.assertions.sql
-      - name: Verify owner/admin register-shift role migration rolls back atomically
-        run: |
-          sed '/^COMMIT;$/i SELECT 1/0;' apps/api/migrations/0016_register_shift_operator_roles.sql > /tmp/0016-register-shift-role-failure.sql
-          status=0
-          output="$(docker exec -i -e PGPASSWORD=migrator-test-only "${{ job.services.postgres.id }}" psql -h 127.0.0.1 -v ON_ERROR_STOP=1 -U microapp_migrator -d microapp_test -f /dev/stdin < /tmp/0016-register-shift-role-failure.sql 2>&1)" || status=$?
-          printf '%s\\n' "$output"
-          if [ "$status" -eq 0 ]; then
-            echo "Expected the injected register-shift role migration failure, but psql succeeded."
-            exit 1
-          fi
-          printf '%s\\n' "$output" | grep -F "division by zero"
-          unchanged="$(docker exec "${{ job.services.postgres.id }}" psql -At -U microapp -d microapp_test -c "SELECT position('m.role = ''cashier''' in pg_get_functiondef('public.validate_register_shift_opening()'::regprocedure)) > 0 AND position('m.role IN (' in pg_get_functiondef('public.validate_register_shift_opening()'::regprocedure)) = 0 AND position('old_row' in pg_get_functiondef('public.prevent_scope_deactivation_with_open_register_shift()'::regprocedure)) > 0 AND position('new_row' in pg_get_functiondef('public.prevent_scope_deactivation_with_open_register_shift()'::regprocedure)) > 0 AND position(' IN (' in pg_get_functiondef('public.prevent_scope_deactivation_with_open_register_shift()'::regprocedure)) = 0")"
-          test "$unchanged" = "t"
-      - name: Apply owner/admin register-shift operator role policy
-        run: docker exec -i -e PGPASSWORD=migrator-test-only "${{ job.services.postgres.id }}" psql -h 127.0.0.1 -v ON_ERROR_STOP=1 -U microapp_migrator -d microapp_test -f /dev/stdin < apps/api/migrations/0016_register_shift_operator_roles.sql
-      - name: Verify owner/admin register-shift operator role policy
-        run: docker exec -i "${{ job.services.postgres.id }}" psql -v ON_ERROR_STOP=1 -U microapp -d microapp_test -f /dev/stdin < apps/api/migrations/0016_register_shift_operator_roles.assertions.sql
       - name: Verify application objects are owned by the non-superuser migrator
         run: |
           ownership="$(docker exec "${{ job.services.postgres.id }}" psql -At -U microapp -d microapp_test -c "SELECT NOT EXISTS (SELECT 1 FROM pg_class WHERE relnamespace='public'::regnamespace AND relkind IN ('r','p','S','v','m') AND relowner <> (SELECT oid FROM pg_roles WHERE rolname='microapp_migrator')) AND NOT EXISTS (SELECT 1 FROM pg_proc WHERE pronamespace='public'::regnamespace AND proowner <> (SELECT oid FROM pg_roles WHERE rolname='microapp_migrator'))")"

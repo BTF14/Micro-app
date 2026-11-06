@@ -423,6 +423,21 @@ export function registerSalesCheckoutRoutes(app: Hono<{ Bindings: Bindings }>): 
             input.payments, input.currency, subtotalUsd, totalVes, rate.rate,
           );
 
+          // Lock and validate every required balance before claiming the sale.
+          // No early return after the draft row is inserted may commit a draft.
+          const balances = await lockInventoryBalances(
+            tx, branch.organizationId, [input.warehouseId], productIds,
+          );
+          if (!balances) throw new Error("INVENTORY_BALANCE_LOCK_FAILED");
+          const balanceByProduct = new Map(balances.map((balance) => [balance.product_id, balance]));
+          for (const line of computedLines) {
+            const balance = balanceByProduct.get(line.productId);
+            if (!balance) return { kind: "insufficient_stock" };
+            const available = parseNumeric(balance.on_hand_quantity, 14, 3) -
+              parseNumeric(balance.reserved_quantity, 14, 3);
+            if (available < parseNumeric(line.quantity, 14, 3)) return { kind: "insufficient_stock" };
+          }
+
           const insertedSale = await tx.query<{ id: string }>(
             `INSERT INTO public.sales (
                organization_id, idempotency_key, status, subtotal_usd, total_usd,
@@ -445,20 +460,7 @@ export function registerSalesCheckoutRoutes(app: Hono<{ Bindings: Bindings }>): 
             return raced ?? { kind: "idempotency_conflict" };
           }
 
-          const balances = await lockInventoryBalances(
-            tx, branch.organizationId, [input.warehouseId], productIds,
-          );
-          if (!balances) throw new Error("INVENTORY_BALANCE_LOCK_FAILED");
-          const balanceByProduct = new Map(balances.map((balance) => [balance.product_id, balance]));
-
           for (const line of computedLines) {
-            const balance = balanceByProduct.get(line.productId);
-            if (!balance) return { kind: "insufficient_stock" };
-            const available = parseNumeric(balance.on_hand_quantity, 14, 3) -
-              parseNumeric(balance.reserved_quantity, 14, 3);
-            const requested = parseNumeric(line.quantity, 14, 3);
-            if (available < requested) return { kind: "insufficient_stock" };
-
             const updated = await tx.query<{ on_hand_quantity: string }>(
               `UPDATE public.inventory_balances
                   SET on_hand_quantity = on_hand_quantity - $5::numeric,
@@ -469,7 +471,7 @@ export function registerSalesCheckoutRoutes(app: Hono<{ Bindings: Bindings }>): 
                 RETURNING on_hand_quantity::text`,
               [branch.organizationId, branch.branchId, input.warehouseId, line.productId, line.quantity],
             );
-            if (!updated.rows[0]) return { kind: "insufficient_stock" };
+            if (!updated.rows[0]) throw new Error("INVENTORY_BALANCE_UPDATE_FAILED");
 
             await tx.query(
               `INSERT INTO public.warehouse_inventory_movements (

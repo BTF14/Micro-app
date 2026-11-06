@@ -1,4 +1,4 @@
--- Run after 0009_inventory_balance_ledger_coupling.sql on disposable PostgreSQL 18.
+-- Run after 0010_inventory_balance_ledger_coupling.sql on disposable PostgreSQL 18.
 BEGIN;
 DO $$
 DECLARE org_id uuid; actor_id uuid; branch_id uuid; branch_b uuid; warehouse_a uuid; warehouse_b uuid; warehouse_branch_b uuid;

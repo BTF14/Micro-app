@@ -23,3 +23,9 @@ GOOGLE_CLIENT_ID = "1030757133503-huvhkok21n1br10rtfhs4827fo3v106q.apps.googleus
 # Worker previews are API-dark even if preview secrets are accidentally configured.
 [previews.vars]
 APP_ENV = "preview"
+
+
+# Fetch the official BCV USD/VES reference after the daily publication window.
+# 22:00 UTC is 18:00 in Caracas (UTC-4); weekdays only.
+[triggers]
+crons = ["0 22 * * 1-5"]

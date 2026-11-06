@@ -59,20 +59,25 @@ La matriz `docs/sdd/role-permission-decision-matrix.md` sigue **NO APROBADA**. L
 
 ## 4. BCV y conversión USD/VES
 
-Objetivo: USD como moneda base del catálogo/contabilidad interna y VES como conversión basada en una tasa identificable, sin inventar ni ocultar la frescura de la tasa.
+Objetivo: USD como moneda base del catálogo/contabilidad interna y VES como conversión basada en una tasa oficial identificable, sin inventar ni ocultar la frescura de la tasa.
 
-### Diseño
+### Fuente y operación adoptadas para implementación
 
-1. Investigar y validar una fuente BCV fiable. No asumir que existe una API oficial gratuita ni codificar una URL no verificada.
-2. Un Cron Trigger de Cloudflare consulta la fuente en horario programado; convertir correctamente el horario local de Venezuela a UTC y contemplar fines de semana/feriados.
-3. Validar estructura, valor positivo, fecha efectiva, fuente, duplicados y cambios anómalos antes de persistir.
-4. Persistir el histórico en `exchange_rates` (la tabla ya existe en el esquema revisado), con fuente, fecha efectiva, valor y estado de validación.
-5. No escribir filas vacías ni repetir escrituras si no hay tasa nueva. Sin bucles de reintento.
-6. Ante caída o dato inválido, conservar la última tasa válida y exponer su fecha/frescura y estado stale; no sustituirla por cero ni presentar una tasa inventada.
-7. KV puede distribuir una copia de lectura de la tasa, con clave y versión controladas. Neon permanece como fuente persistente de verdad.
+1. Fuente primaria seleccionada: página pública oficial del Banco Central de Venezuela, consultada por HTTPS en https://www.bcv.org.ve/. No se afirma que exista una API JSON oficial documentada; el extractor lee el HTML publicado por el propio BCV.
+2. Worker Cron previsto: `0 22 * * 1-5`, equivalente a 18:00 hora de Caracas de lunes a viernes. La configuración real del Worker y sus secretos deben verificarse sin exponerlos ni modificarlos.
+3. El extractor limita el cuerpo a 2 MB durante streaming, valida host/redirecciones, tipo de contenido, formato local, valor positivo, precisión, fecha efectiva y frescura.
+4. Fuente persistida: `BCV_OFFICIAL_HTML_V1`; tasa y snapshots usan PostgreSQL `NUMERIC(18,8)` y strings decimales, nunca floats para operaciones monetarias.
+5. Las fechas futuras publicadas por BCV se guardan como programadas, pero no se aplican antes de su vigencia. Una fila futura nunca puede impedir insertar la tasa de hoy cuando llegue después.
+6. Si el BCV cambia el valor de una fecha ya almacenada, se marca la fila anterior como stale y se falla de forma cerrada; no se reescribe la historia ni se sustituye automáticamente por una fuente de terceros.
+7. Ante caída o dato inválido, conservar la última tasa válida y exponer su fecha/frescura; si no existe una tasa aplicable, no mostrar una conversión inventada.
 8. Cada venta/línea debe conservar la tasa, moneda, importe original, importe convertido, fecha efectiva y referencia/fuente usados en ese momento. Actualizar la tasa nunca recalcula ventas pasadas.
 
-La automatización BCV y la API de consulta no están implementadas por el mero hecho de estar documentadas. El proveedor, la licencia/condiciones de acceso y la estabilidad de extracción son gates previos.
+### Estado verificado
+
+- La migración de precisión y permisos `0013_bcv_official_rate_precision_and_grants.sql` forma parte de `main`; su aplicación a Neon producción no está autorizada ni ejecutada.
+- La recuperación del parser, endpoints y Cron se desarrolla en `feat/bcv-official-recovery-20261106`; aún requiere CI, integración PostgreSQL con login runtime y revisión.
+- La página oficial no pudo verificarse en vivo durante esta revisión por un error HTTP 502 del origen/herramienta. Los fixtures prueban el formato esperado, pero no prueban disponibilidad actual ni estabilidad del HTML. Si la extracción real falla, se conserva la última tasa válida y se informa stale; no se cambia a un proveedor alternativo.
+- La implementación no se considera desplegada ni producción-ready hasta completar CI, verificar el Cron real y aprobar específicamente baseline/adoption y permisos de Neon.
 
 ## 5. Buscador de productos y precio vigente
 

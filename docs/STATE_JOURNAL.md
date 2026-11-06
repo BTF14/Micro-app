@@ -1,3 +1,17 @@
+# 2026-11-06 UTC — PR #244 validación completa y hardening adicional
+
+- PR #244 HEAD `d3de5216fac446580e4afdd39376af503cc94b51`: 10/10 workflows SUCCESS. CI, PostgreSQL migration validation, migration runner, Playwright, Semgrep, Trivy, dependency review, secret scan, AutoSkills y progress dashboard.
+- La CI ya no repite aserciones históricas tras la cadena completa; corre la aserción final 0015, mientras migration-check ejecuta cada assertion inmediatamente después de su migración.
+- Se corrigió el runtime test harness: fixtures y limpieza usan conexión admin; rutas/helper calls usan el login runtime. Branch-context y cashier own-shift se ejercitan con runtime login real.
+- Se endurecieron los GET de catálogo/almacenes/conteos con transacciones y locks de autorización; counts GET bloquea warehouse.
+- Inventory count API rechaza JSON numbers para cantidad y unit cost: los decimales deben llegar como strings exactas.
+- Se corrigió el texto del catálogo para no afirmar equivalencia VES cuando BCV no está disponible.
+- Cloudflare Pages y Workers previews completaron correctamente. Smoke del Worker preview: /health 200; API de catálogo 503 por PREVIEW_API_DISABLED. Sin deploy de producción.
+- PR #244 sigue Draft; no hay reviews formales ni threads. No se han cambiado Neon producción, roles/grants, datos, secretos, DNS, configuración manual Cloudflare ni billing.
+- Producción NOT READY.
+
+---
+
 # 2026-11-06 UTC — PR #244 Draft abierta para recuperar API/UI de inventario y catálogo
 
 - Se abrió PR #244: https://github.com/BTF14/Micro-app/pull/244, rama feat/recover-inventory-application-20261106, base main después de #243.

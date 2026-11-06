@@ -4,7 +4,7 @@
 **Repository:** `BTF14/Micro-app`  
 **Recovery branch:** `feat/recover-inventory-application-20261106`  
 **Observed main baseline:** `38e1d61acc083b3c0b9b73edcb2bc7887ca56872`  
-**Source backlog snapshot:** 25 open implementation/documentation PRs. PR #242 and PR #243 have since merged; PR #244 is now open as the active recovery PR. **Current open count: 26 (25 source PRs + #244)**. Re-query GitHub before future reports.
+**Source backlog snapshot:** 25 open source implementation/documentation PRs. PR #242 and #243 merged; PR #244 is the active recovery PR. **Current open count: 26 (25 source PRs + #244)**, verified 2026-11-06. Re-query GitHub before future reports.
 
 ## Purpose and operating rules
 
@@ -144,3 +144,9 @@ For each PR, record: live head/base SHA; changed file list; unique changes retai
 - No Neon production writes, roles/grants, secrets, DNS, manual Cloudflare changes or production deployment actions were performed.
 
 - PR #244 opened Draft on 2026-11-06: https://github.com/BTF14/Micro-app/pull/244. Exact HEAD at opening: `d180f2709be7ca0a193cdecb3223709c6a64bb15`; 10 workflows in progress. No production changes.
+
+### PR #244 validation record — 2026-11-06
+- Validated HEAD: `d3de5216fac446580e4afdd39376af503cc94b51`; 10/10 workflows SUCCESS.
+- Cloudflare Pages and Workers preview deployments succeeded. Worker preview smoke: health 200; application catalog route 503 by design. No production deployment.
+- Follow-up hardening included transactional authorization locks for catalog/warehouse/count reads and exact-string decimal input enforcement for inventory counts.
+- PR remains Draft pending final diff/review gate. Source PRs remain open until every unique change is recovered.

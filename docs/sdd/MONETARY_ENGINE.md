@@ -52,7 +52,7 @@ El paquete valida tanto la escala fraccionaria como la precisión total de cada 
 
 ## 5. Tasa BCV y snapshots
 
-- Fuente primaria: publicación oficial del BCV integrada por la PR #227.
+- Fuente primaria propuesta: publicación oficial del BCV en PR #227. No está integrada en main ni habilitada en producción; corregir primero el bug de orden de fechas efectivas.
 - La tasa conserva sus ocho decimales como cadena decimal y PostgreSQL NUMERIC(18,8).
 - Una operación utiliza una sola tasa de referencia durante todo el checkout.
 - Guardar en la venta la tasa, fecha efectiva, identificador de tasa y total VES capturados.

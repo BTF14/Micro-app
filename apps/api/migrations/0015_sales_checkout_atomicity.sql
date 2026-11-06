@@ -239,7 +239,13 @@ BEGIN
     FROM public.sales
    WHERE organization_id = target_org AND id = target_sale;
 
-  IF NOT FOUND OR sale_row.status <> 'completed' THEN
+  IF NOT FOUND THEN
+    RETURN NULL;
+  END IF;
+  IF sale_row.status = 'draft' THEN
+    RAISE EXCEPTION 'SALE_DRAFT_MUST_NOT_COMMIT' USING ERRCODE = '23514';
+  END IF;
+  IF sale_row.status <> 'completed' THEN
     RETURN NULL;
   END IF;
 
@@ -371,6 +377,71 @@ END;
 $assert_completed_sale_reconciled$;
 
 REVOKE ALL ON FUNCTION public.assert_completed_sale_reconciled() FROM PUBLIC;
+
+-- A sale movement and its completion audit event must belong to a draft sale
+-- in the same tenant/branch/warehouse and actor. They cannot be appended after
+-- the sale is completed.
+CREATE FUNCTION public.guard_sale_inventory_movement()
+RETURNS trigger
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = pg_catalog
+AS $guard_sale_inventory_movement$
+DECLARE sale_row public.sales%ROWTYPE;
+BEGIN
+  IF NEW.movement_type <> 'sale' THEN
+    RETURN NEW;
+  END IF;
+  IF NEW.reference_type <> 'sale' OR NEW.reference_id IS NULL THEN
+    RAISE EXCEPTION 'SALE_MOVEMENT_REQUIRES_SALE_REFERENCE' USING ERRCODE = '23514';
+  END IF;
+  SELECT * INTO sale_row
+    FROM public.sales
+   WHERE organization_id = NEW.organization_id AND id = NEW.reference_id
+   FOR SHARE;
+  IF NOT FOUND OR sale_row.status <> 'draft'
+    OR sale_row.branch_id <> NEW.branch_id
+    OR sale_row.warehouse_id <> NEW.warehouse_id
+    OR sale_row.created_by <> NEW.actor_user_id
+  THEN
+    RAISE EXCEPTION 'SALE_MOVEMENT_REQUIRES_MATCHING_DRAFT_SALE' USING ERRCODE = '23514';
+  END IF;
+  RETURN NEW;
+END;
+$guard_sale_inventory_movement$;
+REVOKE ALL ON FUNCTION public.guard_sale_inventory_movement() FROM PUBLIC;
+CREATE TRIGGER sale_inventory_movement_draft_guard
+BEFORE INSERT ON public.warehouse_inventory_movements
+FOR EACH ROW EXECUTE FUNCTION public.guard_sale_inventory_movement();
+
+CREATE FUNCTION public.guard_sale_completion_audit()
+RETURNS trigger
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = pg_catalog
+AS $guard_sale_completion_audit$
+DECLARE sale_row public.sales%ROWTYPE;
+BEGIN
+  IF NEW.action <> 'sale.completed' OR NEW.entity_type <> 'sale' THEN
+    RETURN NEW;
+  END IF;
+  IF NEW.entity_id IS NULL THEN
+    RAISE EXCEPTION 'SALE_COMPLETION_AUDIT_REQUIRES_SALE_ID' USING ERRCODE = '23514';
+  END IF;
+  SELECT * INTO sale_row
+    FROM public.sales
+   WHERE organization_id = NEW.organization_id AND id = NEW.entity_id::uuid
+   FOR SHARE;
+  IF NOT FOUND OR sale_row.status <> 'draft' OR sale_row.created_by <> NEW.actor_user_id THEN
+    RAISE EXCEPTION 'SALE_COMPLETION_AUDIT_REQUIRES_MATCHING_DRAFT_SALE' USING ERRCODE = '23514';
+  END IF;
+  RETURN NEW;
+END;
+$guard_sale_completion_audit$;
+REVOKE ALL ON FUNCTION public.guard_sale_completion_audit() FROM PUBLIC;
+CREATE TRIGGER sale_completion_audit_draft_guard
+BEFORE INSERT ON public.audit_logs
+FOR EACH ROW EXECUTE FUNCTION public.guard_sale_completion_audit();
 
 CREATE CONSTRAINT TRIGGER sales_completed_reconciliation
 AFTER INSERT OR UPDATE ON public.sales

@@ -5,6 +5,8 @@ DO $sales_checkout_contract_assertions$
 DECLARE
   helper_oid oid;
   reconciliation_oid oid;
+  helper_definition text;
+  reconciliation_definition text;
 BEGIN
   IF NOT EXISTS (
     SELECT 1 FROM pg_catalog.pg_attribute
@@ -23,6 +25,16 @@ BEGIN
     RAISE EXCEPTION 'SALES_CHECKOUT_FORWARD_COMPATIBLE_CONSTRAINTS_MISSING';
   END IF;
 
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_catalog.pg_constraint
+     WHERE conrelid = 'public.sales'::regclass
+       AND conname = 'sales_completed_checkout_context_ck'
+       AND pg_catalog.strpos(pg_catalog.pg_get_constraintdef(oid), 'settlement_currency IS NOT NULL') > 0
+       AND pg_catalog.strpos(pg_catalog.pg_get_constraintdef(oid), 'request_hash IS NOT NULL') > 0
+  ) THEN
+    RAISE EXCEPTION 'SALES_COMPLETED_CONTEXT_CONSTRAINT_MUST_REJECT_NULL_SNAPSHOTS';
+  END IF;
+
   IF NOT EXISTS (SELECT 1 FROM pg_catalog.pg_constraint WHERE conrelid='public.sales'::regclass AND conname='sales_branch_scope_fk')
     OR NOT EXISTS (SELECT 1 FROM pg_catalog.pg_constraint WHERE conrelid='public.sales'::regclass AND conname='sales_register_shift_scope_fk')
     OR NOT EXISTS (SELECT 1 FROM pg_catalog.pg_constraint WHERE conrelid='public.sales'::regclass AND conname='sales_warehouse_scope_fk')
@@ -34,7 +46,11 @@ BEGIN
     FROM pg_catalog.pg_proc
    WHERE oid = 'public.lock_open_register_shift(uuid,uuid,uuid)'::regprocedure
      AND prosecdef = true;
+  IF helper_oid IS NOT NULL THEN
+    SELECT pg_catalog.pg_get_functiondef(helper_oid) INTO helper_definition;
+  END IF;
   IF helper_oid IS NULL
+    OR pg_catalog.strpos(helper_definition, 'FOR SHARE OF s, o, b, r, u, m, bm') = 0
     OR NOT pg_catalog.has_function_privilege('microapp_runtime', helper_oid, 'EXECUTE')
     OR EXISTS (
       SELECT 1 FROM pg_catalog.aclexplode(
@@ -53,6 +69,10 @@ BEGIN
      AND prosecdef = true;
   IF reconciliation_oid IS NULL THEN
     RAISE EXCEPTION 'SALE_RECONCILIATION_TRIGGER_MUST_BE_SECURITY_DEFINER';
+  END IF;
+  SELECT pg_catalog.pg_get_functiondef(reconciliation_oid) INTO reconciliation_definition;
+  IF pg_catalog.strpos(reconciliation_definition, 'lock_open_register_shift') = 0 THEN
+    RAISE EXCEPTION 'SALE_RECONCILIATION_MUST_REVALIDATE_AND_LOCK_ACTIVE_SHIFT_SCOPE';
   END IF;
 
   IF NOT EXISTS (

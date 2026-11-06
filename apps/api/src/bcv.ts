@@ -140,9 +140,9 @@ export function registerBcvRoutes(
           `SELECT rate::text AS rate, source, effective_date::text AS effective_date,
                   fetched_at::text AS fetched_at, validation_status
              FROM exchange_rates
-            WHERE base_currency = $1 AND quote_currency = $2
+            WHERE base_currency = $1 AND quote_currency = $2 AND source = $3
             ORDER BY effective_date DESC, fetched_at DESC LIMIT 1`,
-          ["USD", "VES"],
+          ["USD", "VES", BCV_PROVIDER],
         ),
         dependencies.databaseClientFactory,
       );

@@ -24,7 +24,7 @@ if (isCi && (!databaseUrl || !databaseUrlAdmin)) {
 const BCV_SOURCE = "BCV_OFFICIAL_HTML_V1";
 const FRONTEND_ORIGIN = "https://frontend.example";
 
-describe.skipIf(!databaseUrl || !databaseUrlAdmin).sequential("atomic sales checkout PostgreSQL integration", () => {
+describe.skipIf(!databaseUrl || !databaseUrlAdmin)("atomic sales checkout PostgreSQL integration", () => {
   let client: Client;
   let organizationId = "";
   let userId = "";

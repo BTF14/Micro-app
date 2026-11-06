@@ -259,11 +259,18 @@ jobs:
       - name: Verify atomic sales checkout schema and runtime grants
         run: docker exec -i "${{ job.services.postgres.id }}" psql -v ON_ERROR_STOP=1 -U microapp -d microapp_test -f /dev/stdin < apps/api/migrations/0015_sales_checkout_atomicity.assertions.sql
       - name: Verify runtime inventory ledger read migration rolls back atomically
-        env:
-          POSTGRES_CONTAINER: ${{ job.services.postgres.id }}
-          MIGRATION_FILE: apps/api/migrations/0016_runtime_inventory_ledger_read.sql
-          ROLLBACK_ASSERTION_SQL: "SELECT NOT has_table_privilege('microapp_runtime','public.warehouse_inventory_movements','SELECT')"
-        run: bash .github/scripts/assert-migration-atomicity.sh
+        run: |
+          sed '/^COMMIT;$/i SELECT 1/0;' apps/api/migrations/0016_runtime_inventory_ledger_read.sql > /tmp/0016-runtime-inventory-read-failure.sql
+          status=0
+          output="$(docker exec -i -e PGPASSWORD=migrator-test-only "${{ job.services.postgres.id }}" psql -h 127.0.0.1 -v ON_ERROR_STOP=1 -U microapp_migrator -d microapp_test -f /dev/stdin < /tmp/0016-runtime-inventory-read-failure.sql 2>&1)" || status=$?
+          printf '%s\\n' "$output"
+          if [ "$status" -eq 0 ]; then
+            echo "Expected the injected runtime inventory read grant migration failure, but psql succeeded."
+            exit 1
+          fi
+          printf '%s\\n' "$output" | grep -F "division by zero"
+          remaining="$(docker exec "${{ job.services.postgres.id }}" psql -At -U microapp -d microapp_test -c "SELECT NOT has_table_privilege('microapp_runtime','public.warehouse_inventory_movements','SELECT')")"
+          test "$remaining" = "t"
       - name: Apply runtime inventory ledger read grant
         run: docker exec -i -e PGPASSWORD=migrator-test-only "${{ job.services.postgres.id }}" psql -h 127.0.0.1 -v ON_ERROR_STOP=1 -U microapp_migrator -d microapp_test -f /dev/stdin < apps/api/migrations/0016_runtime_inventory_ledger_read.sql
       - name: Verify runtime inventory ledger remains append-only

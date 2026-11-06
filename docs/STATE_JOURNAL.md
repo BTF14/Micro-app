@@ -1499,3 +1499,10 @@ CI documental: para HEAD `8c15e13fa001a14a0ddf9f2432bc17efb30d476d`, los 8 workf
 - Se dejó un comentario técnico en PR #233 con evidencia, secuencia candidata y bloqueadores. No se ejecutaron migraciones, escrituras SQL, cambios de roles/grants, secretos, datos reales, Cloudflare, DNS, billing ni deploy manual.
 - Producción continúa **NO LISTA**. Próximo paso: reconciliar numeración y pruebas completas en PostgreSQL efímero; diseñar baseline de Neon separadamente. No hacer cambios remotos sin aprobación específica.
 
+
+
+## 2026-11-06 — Confirmación explícita del propietario: completar backlog PR y liberar producción
+
+El propietario reiteró que el backlog comunicado es de 26 PR y que deben completarse y fusionarse cuando hayan superado todas las verificaciones y sean seguras para integrarse. Se registra como objetivo operativo: recontar en GitHub en vivo; revisar cada PR y sus dependencias; preservar cambios únicos; integrar raíz primero; máximo dos frentes; no fusionar en bloque ni por CI verde aislado; no retener una PR elegible esperando las demás; usar la autorización permanente de merge sin reconfirmación una vez satisfechos todos los gates; verificar merge SHA, checks post-merge y despliegue; continuar con la siguiente PR desbloqueada.
+
+La preparación global para producción exige pruebas end-to-end y cierre de P0/P1: secuencia/baseline de migraciones, privilegios PostgreSQL efectivos mínimos y separación runtime/migrator/backup, integridad transaccional, auth/autorización, importes decimales exactos sin descuentos, BCV verificable, backup/restore y RPO/RTO, alertas/observabilidad, seguridad, presupuesto $0, despliegue y smoke test autenticado. La autorización de merge no amplía permisos para Neon main, migraciones remotas, roles/grants, datos reales, secretos, Cloudflare manual, DNS ni billing.

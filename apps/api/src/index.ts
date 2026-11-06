@@ -2,6 +2,9 @@ import { Hono } from "hono";
 import { cors } from "hono/cors";
 import { registerAuthRoutes } from "./auth";
 import { registerGoogleAuthRoutes } from "./google-auth";
+import { registerCatalogRoutes } from "./catalog";
+import { registerInventoryCountRoutes } from "./inventory-counts";
+import { registerCatalogWriteRoutes } from "./catalog-write";
 import type { Bindings } from "./bindings";
 
 const app = new Hono<{ Bindings: Bindings }>();
@@ -42,6 +45,20 @@ app.use(
   }),
 );
 
+const PRODUCTION_WORKER_HOST = "micro-app-api.btfcasheb.workers.dev";
+
+app.use("*", async (c, next) => {
+  const requestHost = new URL(c.req.url).hostname.toLowerCase();
+  const isWorkersDevPreview = requestHost.endsWith(".workers.dev") && requestHost !== PRODUCTION_WORKER_HOST;
+  if ((c.env?.APP_ENV === "preview" || isWorkersDevPreview) && c.req.path !== "/health") {
+    return c.json({
+      error: "PREVIEW_API_DISABLED",
+      message: "La API de preview está aislada y no tiene acceso a datos de aplicación.",
+    }, 503);
+  }
+  return next();
+});
+
 // Baseline security headers on every response. This is a JSON API (no HTML
 // rendered here), so there's no CSP to set, but these still matter: nosniff
 // stops a browser from guessing a response is HTML/script from its content,
@@ -61,12 +78,15 @@ app.use("*", async (c, next) => {
 
 registerAuthRoutes(app);
 registerGoogleAuthRoutes(app);
+registerCatalogRoutes(app);
+registerInventoryCountRoutes(app);
+registerCatalogWriteRoutes(app);
 
 app.get("/health", (c) =>
   c.json({
     status: "ok",
     service: "micro-app-api",
-    stage: "scaffold",
+    stage: "catalog-inventory",
   }),
 );
 

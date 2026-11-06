@@ -32,6 +32,7 @@ export async function resolveTenantContext(
   client: DatabaseClient,
   sessionToken: string | undefined,
   requestedOrganizationId: string | undefined,
+  lockRows = false,
 ): Promise<TenantContext | null> {
   if (
     typeof sessionToken !== "string" ||
@@ -45,22 +46,25 @@ export async function resolveTenantContext(
 
   const tokenHash = await sha256Hex(sessionToken);
   const result = await client.query<TenantContextRow>(
-    `SELECT
-       u.id AS user_id,
-       o.id AS organization_id,
-       m.role
-     FROM auth_sessions s
-     JOIN app_users u ON u.id = s.user_id
-     JOIN organization_members m ON m.user_id = u.id
-     JOIN organizations o ON o.id = m.organization_id
-     WHERE s.token_hash = $1
-       AND s.revoked_at IS NULL
-       AND s.expires_at > now()
-       AND u.is_active = true
-       AND m.is_active = true
-       AND o.is_active = true
-       AND o.id = $2
-     LIMIT 1`,
+    lockRows
+      ? `SELECT user_id, organization_id, role
+         FROM public.lock_tenant_context($1, $2)`
+      : `SELECT
+           u.id AS user_id,
+           o.id AS organization_id,
+           m.role
+         FROM auth_sessions s
+         JOIN app_users u ON u.id = s.user_id
+         JOIN organization_members m ON m.user_id = u.id
+         JOIN organizations o ON o.id = m.organization_id
+         WHERE s.token_hash = $1
+           AND s.revoked_at IS NULL
+           AND s.expires_at > now()
+           AND u.is_active = true
+           AND m.is_active = true
+           AND o.is_active = true
+           AND o.id = $2
+         LIMIT 1`,
     [tokenHash, requestedOrganizationId],
   );
 

@@ -1,3 +1,37 @@
+## Estado verificado — PR #244 — 2026-11-06
+
+- PR: https://github.com/BTF14/Micro-app/pull/244 — Draft, base main.
+- HEAD validado: `d3de5216fac446580e4afdd39376af503cc94b51`; 56 archivos, +5,630/-218.
+- **10/10 workflows SUCCESS en este SHA exacto**: CI, PostgreSQL migration validation, migration-runner validation, Playwright E2E, Semgrep, Trivy, dependency review, secret-history scan, AutoSkills preview y progress dashboard.
+- CI incluye build/typecheck, unit tests, integración PostgreSQL admin/runtime para auth, branch scope, register shifts, cashier own-shift, catálogo y conteos; todas pasaron.
+- Correcciones de test harness: aserciones históricas se ejecutan junto a su migración, no después de aplicar toda la cadena; las fixtures usan conexión admin y las peticiones/helper checks usan runtime. Se añadió test que prueba que cashier open-shift ejecuta realmente con login runtime.
+- Seguridad añadida: lecturas de catálogo/almacenes/conteos mantienen locks de sesión/tenant/sucursal durante la consulta; la lista de conteos bloquea el warehouse. Cantidades y costos de conteo solo aceptan strings decimales, no JSON numbers.
+- UI: catálogo y formularios consumen el paquete BigInt compartido; aviso BCV ya no afirma conversión vigente cuando no existe tasa validada. Descuentos ausentes.
+- Cloudflare Pages preview: https://feat-recover-inventory-appli.micro-app-63i.pages.dev
+- Cloudflare Worker preview: https://feat-recover-inventory-application-20261106-micro-app-api.btfcasheb.workers.dev
+- Smoke directo del Worker preview: `/health` responde 200; endpoint de catálogo devuelve 503, bloqueado por el aislamiento de preview. Esto no es producción.
+- No hay reviews formales ni threads de revisión registrados en PR #244. main está protegido; la integración no tiene permiso para leer el endpoint de branch protection (403). No se ha intentado eludir protección.
+- Producción sigue **NOT READY**: no hay baseline/adoption de Neon ejecutado, smoke autenticado de producción, cierre completo de issue #53/P0-P1, inventory movement/read UI, BCV corregido/integrado ni checkout de ventas en la app.
+
+# Checkpoint técnico vivo — 2026-11-06
+
+- main verificado en SHA 38e1d61acc083b3c0b9b73edcb2bc7887ca56872.
+- PR #242 (registro de recuperación) fusionada en 7a719d593248341aac86b1ded980d5bb9a6f94e8.
+- PR #243 (migraciones canónicas 0001–0015, assertions y runner fail-closed) fusionada en 38e1d61acc083b3c0b9b73edcb2bc7887ca56872. Su HEAD final 481f3b956c96c50b6f956541d1d675646fe66b51 pasó 10/10 workflows, incluyendo PostgreSQL migration validation y migration-runner validation.
+- El bundle de migraciones ya está en main. No se ha ejecutado contra Neon producción; la base poblada sigue sin ledger y sin login roles dedicados. El baseline/adoption plan y la autorización específica siguen siendo obligatorios.
+- Frente activo: feat/recover-inventory-application-20261106. Portando API y UI de catálogo, creación/edición de productos, BigInt decimal compartido, conteos de inventario idempotentes, locking tenant/branch/warehouse/balance, own-shift authorization, bounded streaming request bodies y aislamiento de previews. Se añadieron pruebas unitarias e integración con roles admin/runtime.
+- Se exige Idempotency-Key en creación de conteos; el contrato de DB conserva columnas nullable solo para compatibilidad histórica.
+- Política sin descuentos preservada: no hay operaciones discount en autorización ni campos discount en formularios.
+- El catálogo se presenta en USD; no se inventa conversión VES hasta integrar y validar BCV. En #227 quedó registrado un riesgo: almacenar primero una tasa con fecha efectiva de mañana puede bloquear la tasa del día actual. Debe corregirse y probarse antes de habilitar el endpoint BCV.
+- PR #244 está abierta en Draft. Diez workflows comenzaron en el SHA inicial; cualquier commit posterior supersede esos resultados. Consultar el HEAD y las conclusiones actuales en GitHub antes de decidir Ready/merge.
+- No se realizaron escrituras Neon, cambios de roles/grants, secretos, datos reales, DNS, Cloudflare manual, billing ni despliegue manual. Producción NOT READY.
+
+## Próximos pasos
+1. Abrir PR Draft para la rama de recuperación y ejecutar todos los workflows en el HEAD exacto.
+2. Corregir fallos reales de tests/typecheck/build/privilegios antes de quitar Draft.
+3. Tras integración, recuperar inventory read/movement APIs y completar BCV (incluido el bug de fecha efectiva) antes del checkout app handler.
+4. Reconciliar y cerrar las PR originales solo después de rescatar y verificar todos sus cambios únicos.
+5. Mantener el gate de Neon producción separado: revisar baseline/adoption y pedir autorización específica antes de cualquier escritura o cambio de roles/grants.
 
 
 ## OBJETIVO DEL PROPIETARIO — CIERRE DEL BACKLOG DE PR Y PRODUCCIÓN (2026-11-06)

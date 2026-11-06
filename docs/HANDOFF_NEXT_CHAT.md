@@ -1,3 +1,47 @@
+## Estado verificado — PR #244 — 2026-11-06
+
+- PR: https://github.com/BTF14/Micro-app/pull/244 — Draft, base main.
+- HEAD validado: `d3de5216fac446580e4afdd39376af503cc94b51`; 56 archivos, +5,630/-218.
+- **10/10 workflows SUCCESS en este SHA exacto**: CI, PostgreSQL migration validation, migration-runner validation, Playwright E2E, Semgrep, Trivy, dependency review, secret-history scan, AutoSkills preview y progress dashboard.
+- CI incluye build/typecheck, unit tests, integración PostgreSQL admin/runtime para auth, branch scope, register shifts, cashier own-shift, catálogo y conteos; todas pasaron.
+- Correcciones de test harness: aserciones históricas se ejecutan junto a su migración, no después de aplicar toda la cadena; las fixtures usan conexión admin y las peticiones/helper checks usan runtime. Se añadió test que prueba que cashier open-shift ejecuta realmente con login runtime.
+- Seguridad añadida: lecturas de catálogo/almacenes/conteos mantienen locks de sesión/tenant/sucursal durante la consulta; la lista de conteos bloquea el warehouse. Cantidades y costos de conteo solo aceptan strings decimales, no JSON numbers.
+- UI: catálogo y formularios consumen el paquete BigInt compartido; aviso BCV ya no afirma conversión vigente cuando no existe tasa validada. Descuentos ausentes.
+- Cloudflare Pages preview: https://feat-recover-inventory-appli.micro-app-63i.pages.dev
+- Cloudflare Worker preview: https://feat-recover-inventory-application-20261106-micro-app-api.btfcasheb.workers.dev
+- Smoke directo del Worker preview: `/health` responde 200; endpoint de catálogo devuelve 503, bloqueado por el aislamiento de preview. Esto no es producción.
+- No hay reviews formales ni threads de revisión registrados en PR #244. main está protegido; la integración no tiene permiso para leer el endpoint de branch protection (403). No se ha intentado eludir protección.
+- Producción sigue **NOT READY**: no hay baseline/adoption de Neon ejecutado, smoke autenticado de producción, cierre completo de issue #53/P0-P1, inventory movement/read UI, BCV corregido/integrado ni checkout de ventas en la app.
+
+# Continuidad inmediata BTF14/Micro-app — 2026-11-06
+
+Continúa desde el repositorio real, no desde supuestos. El último main verificado es 38e1d61acc083b3c0b9b73edcb2bc7887ca56872.
+
+## Ya integrado
+- PR #242: backlog recovery ledger, merge 7a719d593248341aac86b1ded980d5bb9a6f94e8.
+- PR #243: secuencia canónica de migraciones 0001–0015, assertions, migration runner fail-closed y harness PostgreSQL. Merge 38e1d61acc083b3c0b9b73edcb2bc7887ca56872; final head 481f3b956c96c50b6f956541d1d675646fe66b51, 10/10 workflows SUCCESS.
+
+## Frente activo
+Rama feat/recover-inventory-application-20261106:
+- API catalog read/create/update; BigInt exact-decimal package compartido.
+- Inventario: create/confirm opening/physical counts, Idempotency-Key obligatorio, deterministic locks para tenant/branch/warehouse/balances.
+- Central authorization sin operaciones de descuento.
+- Streaming body limits para bootstrap/catalog writes.
+- Worker preview API isolation.
+- Web catalog navigation, product form, USD pricing; VES conversion permanece desactivada hasta BCV verificado.
+- Nuevas pruebas unitarias y PostgreSQL integration para roles admin/runtime.
+- PR #244 está abierta en Draft. Consultar el HEAD vivo y ejecutar/esperar todos los workflows sobre ese SHA exacto; no tratar resultados del SHA anterior como evidencia del HEAD actual.
+
+## Hallazgos pendientes
+- #227: validateEffectiveDate permite mañana, pero persistBcvOfficialRate puede rechazar la tasa de hoy si ya se guardó mañana. Corregir y probar el orden mañana→hoy.
+- Aún falta portar BCV route/scheduler y checkout handler; no declarar ventas completas.
+- Las PR originales deben permanecer abiertas hasta rescatar y verificar todo su contenido único.
+
+## Seguridad / producción
+No ejecutar escrituras Neon, baseline/ledger adoption, roles/grants, secretos, DNS, Cloudflare manual o billing sin autorización específica. El Neon main audit encontró esquema poblado sin ledger y sin login roles dedicados; no ejecutar el runner allí. Preview/CI green no equivale a smoke autenticado de producción. Producción sigue NOT READY.
+
+## Instrucción de ejecución
+Primero abre/consulta la PR de la rama activa, verifica el SHA exacto y deja correr CI, PostgreSQL, runtime-role, Playwright, SAST, Trivy, secret scan y backup/restore. Corrige todo fallo antes de marcar Ready. Después continúa con inventory read/movement, BCV y checkout, recuperando cambios de las PR fuente sin fusionar ramas antiguas divergidas.
 
 
 ## INSTRUCCIÓN EXPLÍCITA DEL PROPIETARIO — BACKLOG PR Y LIBERACIÓN

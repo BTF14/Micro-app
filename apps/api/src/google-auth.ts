@@ -2,6 +2,7 @@ import { deleteCookie, getCookie, setCookie } from "hono/cookie";
 import type { Context, Hono } from "hono";
 import { withDatabaseClient, withDatabaseTransaction, type DatabaseClient } from "./database";
 import { consumeAuthRateLimit } from "./auth-rate-limit";
+import { readBodyWithinLimit } from "./bounded-body";
 import type { Bindings } from "./bindings";
 
 type AppContext = Context<{ Bindings: Bindings }>;
@@ -266,20 +267,18 @@ export function registerGoogleAuthRoutes(app: Hono<{ Bindings: Bindings }>): voi
 
     const declaredLength = c.req.header("Content-Length");
     if (declaredLength !== undefined && (!/^\d+$/.test(declaredLength) || Number(declaredLength) > 2048)) {
-      return c.json({ error: "INVALID_BOOTSTRAP_BODY", message: "Solicitud de alta inválida." }, 400);
-    }
-
-    let rawBody: string;
-    try {
-      rawBody = await c.req.text();
-    } catch {
-      return c.json({ error: "INVALID_BOOTSTRAP_BODY", message: "Solicitud de alta inválida." }, 400);
-    }
-    if (new TextEncoder().encode(rawBody).byteLength > 2048) {
       return c.json({ error: "INVALID_BOOTSTRAP_BODY", message: "Solicitud de alta inválida." }, 413);
     }
 
-    const params = new URLSearchParams(rawBody);
+    const body = await readBodyWithinLimit(c.req.raw.body, 2048);
+    if (body.kind === "too_large") {
+      return c.json({ error: "INVALID_BOOTSTRAP_BODY", message: "Solicitud de alta inválida." }, 413);
+    }
+    if (body.kind === "invalid") {
+      return c.json({ error: "INVALID_BOOTSTRAP_BODY", message: "Solicitud de alta inválida." }, 400);
+    }
+
+    const params = new URLSearchParams(body.text);
     const allowed = new Set(["bootstrap_token", "org_name", "org_slug"]);
     if (
       Array.from(params.keys()).some((key) => !allowed.has(key)) ||

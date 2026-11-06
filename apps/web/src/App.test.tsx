@@ -112,6 +112,41 @@ describe("Micro app authentication flow", () => {
     expect(container.querySelector('[role="dialog"]')).toBeTruthy();
   });
 
+  it("opens the authenticated catalog and shows exact USD prices without inventing a VES conversion", async () => {
+    vi.mocked(fetch)
+      .mockResolvedValueOnce(jsonResponse(authResponse))
+      .mockResolvedValueOnce(jsonResponse({
+        items: [{
+          id: "product-1",
+          is_active: true,
+          sku: "COFFEE-001",
+          barcode: null,
+          name: "Café",
+          description: null,
+          unit: "kg",
+          price_usd: "23.8500",
+          cost_usd: "10.0000",
+        }],
+        nextCursor: null,
+        limit: 100,
+      }));
+    await renderApp();
+    await settle();
+
+    const productsButton = [...container.querySelectorAll("button")].find((button) => button.textContent?.includes("Productos"));
+    if (!productsButton) throw new Error("Products navigation button not found");
+    await act(async () => { productsButton.click(); });
+    await settle();
+
+    expect(container.textContent).toContain("Catálogo");
+    expect(container.textContent).toContain("Café");
+    expect(container.textContent).toContain("US$ 23,85");
+    expect(container.textContent).toContain("US$ 10,00");
+    expect(container.textContent).toContain("No hay una tasa BCV validada");
+    expect(container.textContent).not.toContain("Bs. 870,53");
+    expect(vi.mocked(fetch).mock.calls[1][0]).toBe("/api/orgs/org-1/catalog?limit=100");
+  });
+
   it("revokes the session on logout and returns to the login screen", async () => {
     vi.mocked(fetch)
       .mockResolvedValueOnce(jsonResponse(authResponse))

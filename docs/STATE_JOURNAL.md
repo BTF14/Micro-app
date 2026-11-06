@@ -1,3 +1,38 @@
+# 2026-11-06 UTC — PR #244 validación completa y hardening adicional
+
+- PR #244 HEAD `d3de5216fac446580e4afdd39376af503cc94b51`: 10/10 workflows SUCCESS. CI, PostgreSQL migration validation, migration runner, Playwright, Semgrep, Trivy, dependency review, secret scan, AutoSkills y progress dashboard.
+- La CI ya no repite aserciones históricas tras la cadena completa; corre la aserción final 0015, mientras migration-check ejecuta cada assertion inmediatamente después de su migración.
+- Se corrigió el runtime test harness: fixtures y limpieza usan conexión admin; rutas/helper calls usan el login runtime. Branch-context y cashier own-shift se ejercitan con runtime login real.
+- Se endurecieron los GET de catálogo/almacenes/conteos con transacciones y locks de autorización; counts GET bloquea warehouse.
+- Inventory count API rechaza JSON numbers para cantidad y unit cost: los decimales deben llegar como strings exactas.
+- Se corrigió el texto del catálogo para no afirmar equivalencia VES cuando BCV no está disponible.
+- Cloudflare Pages y Workers previews completaron correctamente. Smoke del Worker preview: /health 200; API de catálogo 503 por PREVIEW_API_DISABLED. Sin deploy de producción.
+- PR #244 sigue Draft; no hay reviews formales ni threads. No se han cambiado Neon producción, roles/grants, datos, secretos, DNS, configuración manual Cloudflare ni billing.
+- Producción NOT READY.
+
+---
+
+# 2026-11-06 UTC — PR #244 Draft abierta para recuperar API/UI de inventario y catálogo
+
+- Se abrió PR #244: https://github.com/BTF14/Micro-app/pull/244, rama feat/recover-inventory-application-20261106, base main después de #243.
+- Alcance: authorization/tenant/branch locking; catalog read/create/update; inventory count opening/physical create+confirm con Idempotency-Key obligatorio; shared BigInt money package; web catalog UI; bounded streaming body limits; Worker preview API isolation; admin/runtime PostgreSQL integration tests.
+- La PR se mantiene Draft. Los workflows se ejecutan en HEAD exacto; cada commit posterior supersede las conclusiones anteriores. No marcar Ready ni mergear hasta que todos los checks y el diff completo pasen.
+- BCV y checkout app handlers no se incluyen todavía. #227 tiene un bug de orden de fecha efectiva registrado; corregir antes de habilitar VES conversion.
+- Sin escrituras en Neon producción ni cambios de roles/grants, secretos, DNS, Cloudflare manual, billing o datos reales.
+
+---
+
+# 2026-11-06 UTC — migraciones integradas; recuperación de API/UI en curso
+
+- PR #242 se fusionó en 7a719d593248341aac86b1ded980d5bb9a6f94e8 y PR #243 en 38e1d61acc083b3c0b9b73edcb2bc7887ca56872.
+- #243 integró la secuencia 0001–0015, assertions, migration runner fail-closed y validación PostgreSQL. El HEAD final 481f3b956c96c50b6f956541d1d675646fe66b51 pasó 10/10 workflows.
+- Se confirmó la diferencia entre migración de inventario #200 y versión apilada #233: la versión #233 conserva balance-version/snapshot de #200 y añade idempotencia de conteos de #205. Esta versión quedó integrada en 0006.
+- La rama feat/recover-inventory-application-20261106 recupera autorización centralizada, branch/tenant locking, catalog read/write, inventory counts con idempotency key obligatorio, BigInt money package, bounded streaming bodies, preview API isolation y UI de catálogo. Pendiente validación CI sobre SHA final.
+- #227 recibió comentario con bug de orden de fecha BCV: tasa futura insertada primero puede bloquear tasa de hoy. Corregir antes de habilitar BCV.
+- Sin escrituras en Neon producción ni cambios de roles/grants, secretos, DNS, Cloudflare manual, billing o datos reales. Producción NOT READY.
+
+---
+
 # 2026-11-05 UTC — autorización permanente de merge y carril rápido de integración
 
 - El propietario confirmó que autoriza fusiones a `main` cuando la PR pase las verificaciones técnicas, de seguridad y gates requeridos, incluyendo el despliegue automático de Cloudflare Pages inherente al merge. No volver a solicitar confirmación genérica por PR.

@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 import type { DatabaseClient } from "./database";
-import { resolveBranchContext } from "./branch-context";
+import { lockBranchScopes, resolveBranchContext } from "./branch-context";
 import type { TenantContext } from "./tenant-context";
 
 const userId = "aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee";
@@ -61,6 +61,36 @@ describe("resolveBranchContext", () => {
   it("denies when the branch is missing, inactive, or not assigned", async () => {
     const { client, query } = makeClient([]);
     await expect(resolveBranchContext(client, tenant("cashier"), branchId)).resolves.toBeNull();
+    expect(query).toHaveBeenCalledOnce();
+  });
+
+
+  it("locks branch rows before membership rows through one hardened helper in canonical order", async () => {
+    const branchA = "11111111-1111-4111-8111-111111111111";
+    const branchB = "22222222-2222-4222-8222-222222222222";
+    const userA = "aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee";
+    const userB = "bbbbbbbb-cccc-4ddd-8eee-ffffffffffff";
+    const query = vi.fn().mockResolvedValueOnce({ rows: [{ locked: true }] });
+    const client = { query } as unknown as DatabaseClient;
+
+    await expect(lockBranchScopes(client, organizationId, [
+      { branchId: branchB, userId: userB, requiresMembership: true },
+      { branchId: branchA, userId: userA, requiresMembership: true },
+      { branchId: branchA.toUpperCase(), userId: userA.toUpperCase(), requiresMembership: true },
+    ])).resolves.toBe(true);
+
+    expect(query).toHaveBeenCalledOnce();
+    expect(query.mock.calls[0]?.[0]).toContain("public.lock_branch_scopes");
+    expect(query.mock.calls[0]?.[1]).toEqual([organizationId, [branchA, branchB], [branchA, branchB], [userA, userB]]);
+  });
+
+  it("fails closed when a requested branch or required active membership is missing", async () => {
+    const query = vi.fn().mockResolvedValueOnce({ rows: [{ locked: false }] });
+    const client = { query } as unknown as DatabaseClient;
+
+    await expect(lockBranchScopes(client, organizationId, [
+      { branchId, userId, requiresMembership: true },
+    ])).resolves.toBe(false);
     expect(query).toHaveBeenCalledOnce();
   });
 

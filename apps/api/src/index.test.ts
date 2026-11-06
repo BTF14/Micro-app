@@ -1,14 +1,14 @@
 import { describe, expect, it } from "vitest";
 import app from "./index";
 
-describe("Micro app API scaffold", () => {
+describe("Micro app API", () => {
   it("returns a healthy service response without environment bindings", async () => {
     const response = await app.request("/health");
     expect(response.status).toBe(200);
     await expect(response.json()).resolves.toMatchObject({
       status: "ok",
       service: "micro-app-api",
-      stage: "scaffold",
+      stage: "catalog-inventory",
     });
   });
 
@@ -371,6 +371,21 @@ describe("Micro app API scaffold", () => {
     expect(response.status).toBe(503);
     await expect(response.json()).resolves.toMatchObject({ error: "REGISTRATION_DISABLED" });
     expect(response.headers.get("set-cookie")).toBeNull();
+  });
+
+  it("keeps Worker previews API-dark while allowing health checks", async () => {
+    const blocked = await app.fetch(
+      new Request("https://feature-preview.micro-app-api.btfcasheb.workers.dev/api/orgs/test/catalog"),
+      { APP_ENV: "preview", DATABASE_URL: "not-a-valid-database-url" },
+    );
+    expect(blocked.status).toBe(503);
+    await expect(blocked.json()).resolves.toMatchObject({ error: "PREVIEW_API_DISABLED" });
+
+    const health = await app.fetch(
+      new Request("https://feature-preview.micro-app-api.btfcasheb.workers.dev/health"),
+      { APP_ENV: "preview" },
+    );
+    expect(health.status).toBe(200);
   });
 
 });

@@ -373,4 +373,19 @@ describe("Micro app API scaffold", () => {
     expect(response.headers.get("set-cookie")).toBeNull();
   });
 
+  it("keeps Worker previews API-dark while allowing health checks", async () => {
+    const blocked = await app.fetch(
+      new Request("https://feature-preview.micro-app-api.btfcasheb.workers.dev/api/orgs/test/catalog"),
+      { APP_ENV: "preview", DATABASE_URL: "not-a-valid-database-url" },
+    );
+    expect(blocked.status).toBe(503);
+    await expect(blocked.json()).resolves.toMatchObject({ error: "PREVIEW_API_DISABLED" });
+
+    const health = await app.fetch(
+      new Request("https://feature-preview.micro-app-api.btfcasheb.workers.dev/health"),
+      { APP_ENV: "preview" },
+    );
+    expect(health.status).toBe(200);
+  });
+
 });

@@ -121,7 +121,7 @@ jobs:
             exit 1
           fi
           printf '%s\n' "$output" | grep -F "MIGRATION_BASELINE_REQUIRED"
-          preserved="$(psql -X -At -v ON_ERROR_STOP=1 --dbname "$legacy_admin" -c "SELECT to_regclass('public.preexisting_table') IS NOT NULL AND NOT EXISTS (SELECT 1 FROM public.schema_migrations)")"
+          preserved="$(psql -X -At -v ON_ERROR_STOP=1 --dbname "$legacy_admin" -c "SELECT to_regclass('public.preexisting_table') IS NOT NULL AND to_regclass('public.schema_migrations') IS NULL")"
           test "$preserved" = "t"
       - name: Verify concurrent runner is rejected by advisory lock
         run: |

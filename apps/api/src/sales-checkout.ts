@@ -280,7 +280,15 @@ async function loadSaleResponse(
     created_at: sale.created_at,
     completed_at: sale.completed_at,
     lines: lines.rows,
-    payments: payments.rows,
+    payments: payments.rows.map((payment) => {
+      const amountUnits = parseNumeric(payment.amount, 14, 4);
+      return {
+        ...payment,
+        amount: payment.currency === "VES"
+          ? formatNumeric(amountUnits / 100n, 14, 2)
+          : formatNumeric(amountUnits, 14, 4),
+      };
+    }),
   };
 }
 

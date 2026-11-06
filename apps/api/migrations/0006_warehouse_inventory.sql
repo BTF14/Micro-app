@@ -1,7 +1,7 @@
 BEGIN;
 
 -- Warehouse-scoped inventory foundation.
--- Apply after migrations 0001-0004. No legacy stock backfill is performed here.
+-- Apply after migrations 0001-0005. No legacy stock backfill is performed here.
 -- Opening quantities must enter through a confirmed physical/documented count.
 
 CREATE TABLE warehouses (

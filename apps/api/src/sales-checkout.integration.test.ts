@@ -28,6 +28,7 @@ describe.skipIf(!databaseUrl || !databaseUrlAdmin)("atomic sales checkout Postgr
   let client: Client;
   let organizationId = "";
   let userId = "";
+  let unauthorizedUserId = "";
   let branchId = "";
   let warehouseId = "";
   let registerId = "";
@@ -166,6 +167,23 @@ describe.skipIf(!databaseUrl || !databaseUrlAdmin)("atomic sales checkout Postgr
       [userId, tokenHash],
     );
 
+    const unauthorizedUser = await client.query<{ id: string }>(
+      "INSERT INTO public.app_users(email,display_name) VALUES($1,$2) RETURNING id",
+      ["checkout-cashier-" + suffix + "@example.test", "Unassigned Cashier"],
+    );
+    unauthorizedUserId = unauthorizedUser.rows[0]!.id;
+    await client.query(
+      "INSERT INTO public.organization_members(organization_id,user_id,role) VALUES($1,$2,'cashier')",
+      [organizationId, unauthorizedUserId],
+    );
+    const unauthorizedToken = "checkout-cashier-session-" + suffix;
+    const unauthorizedDigest = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(unauthorizedToken));
+    const unauthorizedTokenHash = Array.from(new Uint8Array(unauthorizedDigest), (byte) => byte.toString(16).padStart(2, "0")).join("");
+    await client.query(
+      "INSERT INTO public.auth_sessions(user_id,token_hash,expires_at) VALUES($1,$2,now()+interval '1 day')",
+      [unauthorizedUserId, unauthorizedTokenHash],
+    );
+
     const rateDateResult = await client.query<{ effective_date: string }>(
       "SELECT (now() AT TIME ZONE 'America/Caracas')::date::text AS effective_date",
     );
@@ -235,10 +253,10 @@ describe.skipIf(!databaseUrl || !databaseUrlAdmin)("atomic sales checkout Postgr
       await client.query("DELETE FROM public.products WHERE organization_id=$1", [organizationId]);
       await client.query("DELETE FROM public.branch_memberships WHERE organization_id=$1", [organizationId]);
       await client.query("DELETE FROM public.branches WHERE organization_id=$1", [organizationId]);
-      await client.query("DELETE FROM public.auth_sessions WHERE user_id=$1", [userId]);
+      await client.query("DELETE FROM public.auth_sessions WHERE user_id IN ($1,$2)", [userId, unauthorizedUserId]);
       await client.query("DELETE FROM public.organization_members WHERE organization_id=$1", [organizationId]);
       await client.query("DELETE FROM public.organizations WHERE id=$1", [organizationId]);
-      await client.query("DELETE FROM public.app_users WHERE id=$1", [userId]);
+      await client.query("DELETE FROM public.app_users WHERE id IN ($1,$2)", [userId, unauthorizedUserId]);
     }
     if (foreignOrganizationId) {
       await client.query("DELETE FROM public.products WHERE organization_id=$1", [foreignOrganizationId]);
@@ -510,22 +528,18 @@ describe.skipIf(!databaseUrl || !databaseUrlAdmin)("atomic sales checkout Postgr
     expect((await readBalance()).on_hand_quantity).toBe("2.000");
   });
 
-  it("requires active branch membership even for an owner replay or new sale", async () => {
+  it("rejects a cashier who has no active branch membership", async () => {
     await seedBalance("2.000");
-    await client.query(
-      "UPDATE public.branch_memberships SET is_active=false WHERE organization_id=$1 AND branch_id=$2 AND user_id=$3",
-      [organizationId, branchId, userId],
-    );
+    const originalToken = token;
+    const unauthorizedToken = "checkout-cashier-session-" + suffix;
     try {
-      const response = await request(checkoutBody("1.000", "23.8500"), "membership-" + crypto.randomUUID());
+      token = unauthorizedToken;
+      const response = await request(checkoutBody("1.000", "23.8500"), "unassigned-cashier-" + crypto.randomUUID());
       expect(response.status).toBe(403);
       expect((await response.json() as { error: string }).error).toBe("BRANCH_FORBIDDEN");
       expect((await readBalance()).on_hand_quantity).toBe("2.000");
     } finally {
-      await client.query(
-        "UPDATE public.branch_memberships SET is_active=true WHERE organization_id=$1 AND branch_id=$2 AND user_id=$3",
-        [organizationId, branchId, userId],
-      );
+      token = originalToken;
     }
   });
 

@@ -1,3 +1,33 @@
+
+
+## OBJETIVO DEL PROPIETARIO — CIERRE DEL BACKLOG DE PR Y PRODUCCIÓN (2026-11-06)
+
+- El propietario ha reiterado que hay 26 PR en el backlog que deben completarse y llevarse a integración. Recontar el backlog en GitHub antes de cada informe; el 26 es el snapshot comunicado, no un conteo perpetuo.
+- Cada PR se completa, revisa y fusiona individualmente cuando diff/base/dependencias, pruebas, seguridad, reviews solicitadas, checks del SHA exacto y branch protection estén íntegramente satisfechos. La autorización permanente de merge sigue vigente; no pedir permiso repetido. No fusionar en bloque ni dejar elegibles esperando innecesariamente a que acabe todo el backlog.
+- La preparación global de producción exige además demostrar end-to-end y cerrar P0/P1 de migraciones/baseline, permisos efectivos runtime/migrator/backup, integridad de datos, autenticación/autorización, importes decimales sin descuentos, BCV verificable, backups/restore y RPO/RTO, alertas, seguridad, coste $0, despliegue y smoke test autenticado de producción.
+- Una PR no se fusiona si depende de infraestructura, tablas, roles, secretos o datos aún no disponibles y validados en destino. La autorización de merge no autoriza escrituras ni cambios sensibles en Neon main, migraciones remotas, secretos, DNS, Cloudflare manual o billing.
+- Mantener tablero vivo de todas las PR pendientes: objetivo, base/head, dependencias, estado de checks, bloqueo, acción y decisión (integrar/consolidar/cerrar duplicado). Máximo dos frentes activos.
+## CHECKPOINT VIVO PRIORITARIO — 2026-11-06 03:49 UTC — post PR #240 y auditoría Neon
+
+**Fuente de verdad:** GitHub/Neon consultados en vivo. Este bloque supersede los snapshots anteriores de esta sección; no reescribe el historial del diario.
+
+- Repositorio: `BTF14/Micro-app`; `main` verificado en `71d6434a1877b5e618a093e60472621af8ef790f`.
+- PR #240 fusionada: merge SHA `71d6434a1877b5e618a093e60472621af8ef790f`; 9/9 check-runs SUCCESS sobre ese SHA (Pages, Workers Build, verify, análisis JS/TS, Trivy, Chromium, migraciones y secret-history). Esto no equivale a smoke test autenticado de producción.
+- PR #213 fusionada: `0f2c142a8e3dc624437e3c6c36c0951c64d3890b`; rate limiting OAuth ya está en main.
+- Backlog: 25 PR abiertas en la consulta actual. PR #215 está cerrada sin merge; #218/#220 siguen Draft y dependen de la antigua rama de #215, por lo que requieren port/rebase sobre el handoff ya fusionado en #240.
+- PR #200: HEAD `464ca08b9020fad128cc9c8a321568493d484517`, 33 commits ahead y 2 behind del main actual. 19/19 check-runs SUCCESS en ese HEAD; la base ya no es actual y los checks no resuelven la colisión de migraciones.
+- PR #233: HEAD `070f49ec1f1e45debb7fe99d998dc2429b5da9b1`, 9/9 check-runs SUCCESS. Es una pila Draft que incluye inventario, runtime/migrator, BCV, decimal exacto, catálogo y checkout; no fusionar mientras persistan los gates P0 y la base antigua.
+- **Migraciones:** main contiene `0005_auth_bootstrap_attempts.sql`. Las ramas de la pila contienen `0005_warehouse_inventory.sql` y una copia idéntica de auth en `0010_auth_bootstrap_attempts.sql` (el SQL 0010 y el 0005 de main comparten blob SHA `ada5d01a555102959ece094946a0920c11d39a66`). Secuencia candidata: 0001 initial, 0002 Google identity, 0003 branch scope, 0004 register shifts, 0005 auth bootstrap (main), 0006 warehouse inventory, 0007 register shift member roles, 0008 audit append-only, 0009 inventory count ledger validation, 0010 inventory balance-ledger coupling, 0011 runtime lock helpers, 0012 runtime grants, 0013 BCV precision/grants, 0014 sales without discounts, 0015 sales checkout. Deben renombrarse conjuntamente SQL/assertions y actualizar workflows/scripts/docs; retirar el duplicado 0010 auth. No se ha aplicado ni probado esta reconciliación todavía.
+- **Neon main, solo lectura:** conexión de auditoría `neondb_owner`; no existen logins `microapp_runtime`/`microapp_migrator`; `backup_readonly`, `neon_service`, `neondb_owner` heredan `pg_write_all_data` vía `neon_superuser`; `cloud_admin` tiene `rolsuper=true`. `public.schema_migrations` y `public.auth_bootstrap_attempts` no aparecen; el esquema público sí está poblado (incluye `products`, `inventory_movements`, `auth_rate_limits`).
+- El runner `scripts/db/migrate.sh` exige conexión directa como `microapp_migrator` y rechaza esquema poblado sin ledger con `MIGRATION_BASELINE_REQUIRED`. Hoy fallaría primero por la ausencia del login migrator; incluso después de provisionarlo se necesita un plan explícito de adopción/baseline, probado y revisado.
+- Se dejó comentario técnico persistente en PR #233 (comment ID `6676411612`) con la secuencia candidata y ambos bloqueos.
+
+**Límites:** solo lecturas de GitHub/Neon y un comentario de auditoría en PR #233. No se modificaron Neon, roles/grants, datos, secretos, Cloudflare, DNS, billing ni despliegues manuales. Producción sigue **NO LISTA**.
+
+**Siguiente acción:** consolidar en una única rama integrada la secuencia 0005–0015 y las referencias de CI/assertions, ejecutar todos los tests en PostgreSQL 18 desechable, y diseñar/adaptar por separado el baseline de la Neon ya poblada. No ejecutar migraciones en Neon main ni fusionar endpoints que dependan de tablas ausentes hasta que runtime/migrator, baseline y rollout estén aprobados y verificados.
+
+---
+
 # Estado actual — Micro app
 
 ## CHECKPOINT VIVO PRIORITARIO — 2026-11-06 UTC

@@ -1,3 +1,47 @@
+
+
+## INSTRUCCIÓN EXPLÍCITA DEL PROPIETARIO — BACKLOG PR Y LIBERACIÓN
+
+El propietario confirma que el backlog comunicado es de 26 PR y que el objetivo es completarlas y fusionarlas cuando cada una supere **todas** sus verificaciones y sea segura para integrarse. El número debe reconciliarse con GitHub en vivo (puede cambiar). No fusionar en bloque ni por CI verde aislado; tampoco dejar una PR elegible esperando a que finalicen todas las demás. Integrar raíz primero, actualizar/rebasar dependientes, preservar cambios únicos y mantener máximo dos frentes.
+
+Para cada PR: revisar diff/base/head/dependencias, tests funcionales y de regresión, seguridad, migraciones/roles cuando aplique, typecheck/build/E2E, checks obligatorios del SHA final, reviews solicitadas y branch protection. Si todo pasa y no queda riesgo material, usar la autorización permanente de merge sin volver a preguntar; luego comprobar merge SHA, checks post-merge y despliegue, diferenciando preview y producción.
+
+La liberación global requiere evidencia end-to-end y cierre de P0/P1, especialmente baseline y secuencia de migraciones, privilegios PostgreSQL efectivos mínimos y separación runtime/migrator/backup, integridad de inventario/ventas, auth y permisos, importes exactos sin descuentos, BCV verificable, backup/restore + RPO/RTO, alertas, seguridad, coste $0 y smoke test autenticado de producción. La autorización de merge no autoriza operaciones sensibles en Neon main, migraciones remotas, roles/grants, secretos, datos reales, Cloudflare manual, DNS o billing.
+## CHECKPOINT DE CONTINUIDAD — 2026-11-06 03:49 UTC — estado vivo tras PR #240
+
+Continuar desde el estado real de GitHub, no desde los snapshots históricos que siguen debajo.
+
+### Estado verificado
+- `main` = `71d6434a1877b5e618a093e60472621af8ef790f`. PR #240 está fusionada con 9/9 check-runs SUCCESS en su merge SHA. PR #213 también está integrada en `0f2c142a8e3dc624437e3c6c36c0951c64d3890b`.
+- PR #215 está cerrada sin merge; su handoff server-side fue integrado mediante #240. PR #218/#220 siguen Draft con base heredada de #215: portar/reconciliar su diff con el código de main antes de considerar sus checks.
+- 25 PR abiertas. PR #200 HEAD `464ca08b9020fad128cc9c8a321568493d484517` (33 ahead/2 behind; 19/19 checks success). PR #233 HEAD `070f49ec1f1e45debb7fe99d998dc2429b5da9b1` (9/9 checks success) y representa la pila funcional más integrada, pero sigue Draft.
+- El éxito de Pages/Workers checks es evidencia del build/deployment reportado por CI; no se ha demostrado smoke test autenticado de producción.
+
+### Bloqueadores P0 confirmados por lectura
+1. Neon main carece de logins `microapp_runtime` y `microapp_migrator`; los roles backup/service/owner heredan `pg_write_all_data` vía `neon_superuser`, y `cloud_admin` es superuser.
+2. No existe `public.schema_migrations`; el esquema `public` está poblado. El runner requiere conexión directa como migrator y falla cerrado con `MIGRATION_BASELINE_REQUIRED` para un esquema poblado sin ledger. No intentar ejecutarlo contra Neon main.
+3. La numeración colisiona: main tiene `0005_auth_bootstrap_attempts`; el stack tiene `0005_warehouse_inventory` y repite la misma migración auth como `0010_auth_bootstrap_attempts`. SQL de auth 0010 y 0005 de main es el mismo blob.
+
+### Secuencia candidata a consolidar (aún no implementada)
+0001 initial → 0002 Google identity → 0003 branch scope → 0004 register shifts → 0005 auth bootstrap (main) → 0006 warehouse inventory → 0007 register shift roles → 0008 audit append-only → 0009 inventory count validation → 0010 balance-ledger coupling → 0011 runtime lock helpers → 0012 runtime grants → 0013 BCV precision/grants → 0014 no-discount sales → 0015 atomic checkout.
+
+Actualizar todos los nombres SQL/assertions, pasos explícitos de migration-check/CI, runner tests y documentación. Retirar la copia 0010 auth y utilizar la migración/assertions 0005 ya fusionadas. Probar orden completo, checksums, rollback/injected failure, ledger gaps, role smoke y regresión API en PostgreSQL 18 efímero.
+
+### Siguiente ejecución recomendada
+1. Inspeccionar diff completo y bases actuales de #200, #204/#205/#207–#211 y #218–#233. Evitar fusionar PRs encadenadas con bases antiguas.
+2. Preparar una única rama integrada desde main actual para la reconciliación de migraciones y sus pruebas, conservando los cambios de dominio y eliminando la duplicidad auth.
+3. Diseñar baseline/adopción de la Neon poblada. Comparar el esquema real contra migraciones 0001–0005 y ownership/ACLs; no insertar filas de ledger por suposición. La provisión de roles/grants y cualquier migración remota siguen requiriendo autorización específica.
+4. Mantener #200/#233 y endpoints dependientes de tablas nuevas sin merge/despliegue hasta resolver el P0 de runtime/migrator y un rollout seguro.
+5. Mantener BCV y checkout con decimales exactos; no reintroducir descuentos.
+
+### Evidencia persistente
+- Comentario de auditoría en PR #233, ID `6676411612`, contiene la secuencia candidata y bloqueos.
+- Merge #240: `71d6434a1877b5e618a093e60472621af8ef790f`, 9/9 checks success.
+- Neon: consultas exclusivamente SELECT; no se cambiaron roles, grants ni datos.
+- Producción: **NO LISTA**. No se ha probado un smoke test de producción.
+
+---
+
 ## CHECKPOINT ACTUAL — 2026-11-06 UTC — fuente de verdad
 
 > Este bloque supersede checkpoints antiguos. Si una sección histórica contradice este estado o `AGENTS.md` / `docs/AI_COLLABORATION_AND_PR_POLICY.md`, prevalece la política permanente y el estado vivo. Revalidar GitHub antes de cada acción.

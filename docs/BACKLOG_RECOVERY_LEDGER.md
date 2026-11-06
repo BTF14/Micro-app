@@ -128,6 +128,7 @@ Changed filenames were fetched from GitHub's paginated PR file listing. These ar
 - Opened draft PR #243 from `feat/recover-schema-migrations-20261106` to `main`; it carries the canonical migration sequence, paired assertions, runner, PostgreSQL runtime-role harness and docs. It is 36 commits ahead / 0 behind with 28 changed files; all required checks are still being evaluated.
 - Corrected the migration sequence in the recovery branch: keep main's auth bootstrap at 0005; inventory 0006; shift roles 0007; audit 0008; count-ledger validation 0009; balance-ledger coupling 0010; runtime locks 0011; runtime grants 0012; BCV 0013; no-discount 0014; checkout 0015. The old 0010 auth duplicate is omitted.
 - Main's API still lacks the inventory route and lock modules; PR #243 is schema/validation only and does not yet port application handlers.
+- Recorded a BCV recovery finding on #227: the parser accepts a next-day effective rate, while persistence can reject today's rate if that future row was stored first. The recovery must allow today's row alongside a future row and test the ordering; stale rows must not become valid implicitly.
 - No Neon production writes, role/grant changes, secret changes, DNS changes, manual Cloudflare changes, or production deployments performed.
 
 ## Next update format

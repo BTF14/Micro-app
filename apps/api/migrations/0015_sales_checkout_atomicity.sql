@@ -268,10 +268,10 @@ BEGIN
    WHERE organization_id = target_org AND sale_id = target_sale;
 
   IF payment_count = 0 OR wrong_currency_count <> 0
-    OR payment_amount <> CASE sale_row.settlement_currency
+    OR payment_amount <> (CASE sale_row.settlement_currency
       WHEN 'USD' THEN sale_row.total_usd
       ELSE sale_row.total_ves_snapshot
-    END
+    END)
     OR payment_usd <> sale_row.total_usd
   THEN
     RAISE EXCEPTION 'COMPLETED_SALE_PAYMENTS_DO_NOT_RECONCILE' USING ERRCODE = '23514';

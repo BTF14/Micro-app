@@ -15,7 +15,7 @@ Rama feat/recover-inventory-application-20261106:
 - Worker preview API isolation.
 - Web catalog navigation, product form, USD pricing; VES conversion permanece desactivada hasta BCV verificado.
 - Nuevas pruebas unitarias y PostgreSQL integration para roles admin/runtime.
-- La rama aún necesita PR y workflows en su SHA final; revisar GitHub antes de afirmar que está validada.
+- PR #244 está abierta en Draft. Consultar el HEAD vivo y ejecutar/esperar todos los workflows sobre ese SHA exacto; no tratar resultados del SHA anterior como evidencia del HEAD actual.
 
 ## Hallazgos pendientes
 - #227: validateEffectiveDate permite mañana, pero persistBcvOfficialRate puede rechazar la tasa de hoy si ya se guardó mañana. Corregir y probar el orden mañana→hoy.

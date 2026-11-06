@@ -1,4 +1,4 @@
--- Run after 0008_inventory_count_ledger_validation.sql on disposable PostgreSQL 18.
+-- Run after 0009_inventory_count_ledger_validation.sql on disposable PostgreSQL 18.
 BEGIN;
 DO $$
 DECLARE

@@ -1,3 +1,14 @@
+# 2026-11-06 UTC — migraciones integradas; recuperación de API/UI en curso
+
+- PR #242 se fusionó en 7a719d593248341aac86b1ded980d5bb9a6f94e8 y PR #243 en 38e1d61acc083b3c0b9b73edcb2bc7887ca56872.
+- #243 integró la secuencia 0001–0015, assertions, migration runner fail-closed y validación PostgreSQL. El HEAD final 481f3b956c96c50b6f956541d1d675646fe66b51 pasó 10/10 workflows.
+- Se confirmó la diferencia entre migración de inventario #200 y versión apilada #233: la versión #233 conserva balance-version/snapshot de #200 y añade idempotencia de conteos de #205. Esta versión quedó integrada en 0006.
+- La rama feat/recover-inventory-application-20261106 recupera autorización centralizada, branch/tenant locking, catalog read/write, inventory counts con idempotency key obligatorio, BigInt money package, bounded streaming bodies, preview API isolation y UI de catálogo. Pendiente validación CI sobre SHA final.
+- #227 recibió comentario con bug de orden de fecha BCV: tasa futura insertada primero puede bloquear tasa de hoy. Corregir antes de habilitar BCV.
+- Sin escrituras en Neon producción ni cambios de roles/grants, secretos, DNS, Cloudflare manual, billing o datos reales. Producción NOT READY.
+
+---
+
 # 2026-11-05 UTC — autorización permanente de merge y carril rápido de integración
 
 - El propietario confirmó que autoriza fusiones a `main` cuando la PR pase las verificaciones técnicas, de seguridad y gates requeridos, incluyendo el despliegue automático de Cloudflare Pages inherente al merge. No volver a solicitar confirmación genérica por PR.

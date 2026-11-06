@@ -160,11 +160,13 @@ async function sha256Hex(value: string): Promise<string> {
 async function canonicalRequestHash(
   organizationId: string,
   branchId: string,
+  userId: string,
   input: CheckoutInput,
 ): Promise<string> {
   return sha256Hex(JSON.stringify({
     organizationId: organizationId.toLowerCase(),
     branchId: branchId.toLowerCase(),
+    userId: userId.toLowerCase(),
     warehouseId: input.warehouseId,
     currency: input.currency,
     lines: input.lines,
@@ -327,13 +329,6 @@ export function registerSalesCheckoutRoutes(app: Hono<{ Bindings: Bindings }>): 
       return c.json({ error: "INVALID_CHECKOUT", message: "Los datos del checkout no cumplen el contrato." }, 400);
     }
 
-    let requestHash: string;
-    try {
-      requestHash = await canonicalRequestHash(organizationId, branchId, input);
-    } catch {
-      return c.json({ error: "INVALID_CHECKOUT", message: "No se pudo normalizar el checkout." }, 400);
-    }
-
     try {
       const result = await withDatabaseClient(c.env.DATABASE_URL, (client) =>
         withDatabaseTransaction(client, async (tx): Promise<CheckoutResult> => {
@@ -346,7 +341,7 @@ export function registerSalesCheckoutRoutes(app: Hono<{ Bindings: Bindings }>): 
             return { kind: "unauthenticated" };
           }
           const branch = authorization.context;
-          const hash = await canonicalRequestHash(branch.organizationId, branch.branchId, input);
+          const hash = await canonicalRequestHash(branch.organizationId, branch.branchId, branch.userId, input);
 
           const membershipLocked = await lockBranchScopes(tx, branch.organizationId, [{
             branchId: branch.branchId,

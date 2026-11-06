@@ -1,14 +1,14 @@
 import { describe, expect, it } from "vitest";
 import app from "./index";
 
-describe("Micro app API scaffold", () => {
+describe("Micro app API", () => {
   it("returns a healthy service response without environment bindings", async () => {
     const response = await app.request("/health");
     expect(response.status).toBe(200);
     await expect(response.json()).resolves.toMatchObject({
       status: "ok",
       service: "micro-app-api",
-      stage: "scaffold",
+      stage: "catalog-inventory",
     });
   });
 

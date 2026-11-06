@@ -26,6 +26,8 @@ type Fixture = {
   otherBranchId: string;
   cashierA: string;
   cashierB: string;
+  ownerUser: string;
+  adminUser: string;
   inventoryUser: string;
   otherCashier: string;
   registerA: string;
@@ -50,7 +52,7 @@ async function seedFixture(db: import("pg").Client): Promise<Fixture> {
   const otherOrganizationId = otherOrganization.rows[0]!.id;
 
   const users: Record<string, string> = {};
-  for (const role of ["cashier-a", "cashier-b", "inventory", "other-cashier"]) {
+  for (const role of ["cashier-a", "cashier-b", "owner", "admin", "inventory", "other-cashier"]) {
     const result = await db.query<{ id: string }>(
       "INSERT INTO app_users (email, display_name) VALUES ($1, $2) RETURNING id",
       [`${role}-${suffix}@example.invalid`, role],
@@ -60,12 +62,14 @@ async function seedFixture(db: import("pg").Client): Promise<Fixture> {
 
   await db.query(
     `INSERT INTO organization_members (organization_id, user_id, role)
-     VALUES ($1, $2, 'cashier'), ($1, $3, 'cashier'), ($1, $4, 'inventory'),
-            ($5, $6, 'cashier')`,
+     VALUES ($1, $2, 'cashier'), ($1, $3, 'cashier'), ($1, $4, 'owner'),
+            ($1, $5, 'admin'), ($1, $6, 'inventory'), ($7, $8, 'cashier')`,
     [
       organizationId,
       users["cashier-a"],
       users["cashier-b"],
+      users.owner,
+      users.admin,
       users.inventory,
       otherOrganizationId,
       users["other-cashier"],
@@ -85,12 +89,14 @@ async function seedFixture(db: import("pg").Client): Promise<Fixture> {
 
   await db.query(
     `INSERT INTO branch_memberships (organization_id, branch_id, user_id)
-     VALUES ($1, $2, $3), ($1, $2, $4), ($1, $2, $5), ($6, $7, $8)`,
+     VALUES ($1, $2, $3), ($1, $2, $4), ($1, $2, $5), ($1, $2, $6), ($1, $2, $7), ($8, $9, $10)`,
     [
       organizationId,
       branchId,
       users["cashier-a"],
       users["cashier-b"],
+      users.owner,
+      users.admin,
       users.inventory,
       otherOrganizationId,
       otherBranchId,
@@ -118,6 +124,8 @@ async function seedFixture(db: import("pg").Client): Promise<Fixture> {
     otherBranchId,
     cashierA: users["cashier-a"]!,
     cashierB: users["cashier-b"]!,
+    ownerUser: users.owner!,
+    adminUser: users.admin!,
     inventoryUser: users.inventory!,
     otherCashier: users["other-cashier"]!,
     registerA: registerA.rows[0]!.id,
@@ -181,7 +189,7 @@ const suite = describe.skipIf(!isDisposablePostgresUrl(databaseUrl))(
       if (client) await client.end();
     });
 
-    it("enforces tenant, branch assignment and cashier-role boundaries", async () => {
+    it("enforces tenant, branch assignment and eligible operator-role boundaries", async () => {
       const fixture = await seedFixture(client);
 
       await expect(
@@ -193,11 +201,11 @@ const suite = describe.skipIf(!isDisposablePostgresUrl(databaseUrl))(
 
       await expect(
         openShift(client, fixture, fixture.otherRegister, fixture.cashierA),
-      ).rejects.toMatchObject({ code: "23503" });
+      ).rejects.toMatchObject({ code: "23514" });
 
       await expect(
         openShift(client, fixture, fixture.registerA, fixture.otherCashier),
-      ).rejects.toMatchObject({ code: "23503" });
+      ).rejects.toMatchObject({ code: "23514" });
 
       await expect(
         openShift(client, fixture, fixture.registerA, fixture.inventoryUser),
@@ -211,6 +219,32 @@ const suite = describe.skipIf(!isDisposablePostgresUrl(databaseUrl))(
       await expect(
         openShift(client, fixture, fixture.registerA, fixture.cashierA),
       ).rejects.toMatchObject({ code: "23514" });
+    });
+
+    it("allows owner and admin to open and close only their own register shifts", async () => {
+      const fixture = await seedFixture(client);
+      const ownerShift = await openShift(client, fixture, fixture.registerA, fixture.ownerUser);
+      const adminShift = await openShift(client, fixture, fixture.registerB, fixture.adminUser);
+
+      const shifts = await client.query(
+        "SELECT cashier_user_id,closed_at FROM register_shifts WHERE id = ANY($1::uuid[]) ORDER BY cashier_user_id",
+        [[ownerShift, adminShift]],
+      );
+      expect(shifts.rows).toHaveLength(2);
+      expect(shifts.rows.every((row) => row.closed_at === null)).toBe(true);
+
+      await expect(
+        client.query("UPDATE organization_members SET role='inventory' WHERE organization_id=$1 AND user_id=$2", [
+          fixture.organizationId, fixture.ownerUser,
+        ]),
+      ).rejects.toMatchObject({ code: "23514" });
+
+      await closeShift(client, ownerShift, fixture.ownerUser);
+      await closeShift(client, adminShift, fixture.adminUser);
+      await client.query(
+        "UPDATE organization_members SET role='inventory' WHERE organization_id=$1 AND user_id=$2",
+        [fixture.organizationId, fixture.ownerUser],
+      );
     });
 
     it("enforces one open shift per register and per cashier, then permits reuse after close", async () => {

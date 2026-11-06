@@ -1477,3 +1477,14 @@ CI documental: para HEAD `8c15e13fa001a14a0ddf9f2432bc17efb30d476d`, los 8 workf
 - `auth_rate_limits` existe en Neon main y su owner es `neondb_owner`; el principal efectivo del Worker sigue sin verificarse. Por ello #213 no se fusiona todavía aunque su SHA histórico tenga CI verde.
 - #200 necesita migración 0005 y principal runtime compatible; no fusionar hasta resolver el despliegue seguro. #224 contiene el contrato y el harness para los logins dedicados, pero su stack debe aplanarse y los roles de Neon requieren aprobación específica. #227 BCV continúa bloqueada por esa cadena.
 - Se reafirma la autorización permanente de merges con gates completos y despliegue automático de Pages; no incluye mutaciones de Neon main, secretos ni configuración manual de Cloudflare.
+
+
+# 2026-11-06 UTC — OAuth rate limit integrado, PR inventory reconciliada y Neon roles auditados
+
+- PR #213 fusionada en main: `0f2c142a8e3dc624437e3c6c36c0951c64d3890b`. Su HEAD integrado pasó 12/12 check-runs y 10/10 workflows antes del squash; los checks post-merge de Pages, Workers Builds, CI, Playwright, migration validation, Semgrep, Trivy, Chromium, secret-history y dashboard finalizaron SUCCESS.
+- La implementación cubre GET /auth/google (10/10m), POST bootstrap (5/h) y GET callback (20/10m); usa CF-Connecting-IP, HMAC con GOOGLE_CLIENT_SECRET existente, UPSERT atómico, 429/Retry-After y fail-closed 503. Sin nueva migración ni secreto.
+- PR #214 cerrada como duplicada de #213. El trabajo de bootstrap handoff server-side y bounded body es independiente y se conserva en #215; se debe portar sin AUTH_RATE_LIMIT_HMAC_KEY ni rate limiter duplicado.
+- PR #200 actualizada con merge commit de main + feature: HEAD `464ca08b9020fad128cc9c8a321568493d484517`; 33 ahead/0 behind, 30 archivos de feature. Se resolvió el único solapamiento CI con #213 conservando ambos conjuntos de tests. 19 check-runs y 17 workflow runs observados en SUCCESS. Permanece Draft porque las tablas de inventario no existen en Neon main.
+- Neon main, solo lectura: `backup_readonly`, `neon_service` y `neondb_owner` pertenecen a `neon_superuser`; este pertenece a `pg_write_all_data` y `pg_read_all_data`. `cloud_admin` tiene `rolsuper=true`. La ACL por defecto de tablas de `neondb_owner` concede SELECT a `backup_readonly`, pero la membresía heredada en neon_superuser invalida el supuesto de solo lectura. No se inspeccionaron secretos/connection strings, así que no se asigna ningún rol a un binding específico. No se alteraron roles/grants/datos.
+- Se añadió comentario de evidencia y próximos pasos a Issue #53; continúa OPEN/P0.
+- Backlog: 26 PR abiertas. Producción NO LISTA. No se ejecutaron cambios manuales en Cloudflare, secretos ni migraciones de Neon.

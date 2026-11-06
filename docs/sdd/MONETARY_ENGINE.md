@@ -1,6 +1,6 @@
 # Motor monetario de Micro-app
 
-**Estado:** contrato técnico aprobado. El núcleo decimal exacto basado en BigInt vive en el paquete interno `packages/money`; la API lo usa para validar entradas numéricas del catálogo. La UI de catálogo con lectura/precios exactos está propuesta en PR #230 y los formularios de alta/edición en PR #231; ambas siguen Draft y pendientes de merge. Carrito, checkout, ventas y pagos siguen pendientes.  
+**Estado:** contrato técnico aprobado. El núcleo decimal exacto basado en BigInt vive en `packages/money` y lo consumen la API y la UI de catálogo en la PR de recuperación #244 (Draft). Esa PR incluye lectura paginada, creación/edición de productos y precios USD exactos; la validación automatizada está verde en su SHA actual, pero aún no se ha fusionado. Carrito, checkout, ventas y pagos siguen pendientes.  
 **Decisión de negocio:** Micro-app no ofrece descuentos ni promociones basadas en descuentos.
 
 ## 1. Moneda base y catálogo
@@ -22,7 +22,7 @@
 ## 3. Aritmética y redondeo
 
 - No usar JavaScript Number para operaciones monetarias.
-- La API utiliza la implementación TypeScript desde `@micro-app/money`; la web dispone del paquete en su workspace y pruebas de compatibilidad, pero la UI aún no lo consume en runtime. No mantener copias separadas de las funciones.
+- La API utiliza la implementación TypeScript desde `@micro-app/money`; la web consume el mismo paquete en catálogo y formularios; no mantener copias separadas de las funciones. No mantener copias separadas de las funciones.
 - El paquete utiliza cadenas decimales y aritmética entera escalada con BigInt.
 - USD interno y subtotales: cuatro decimales.
 - VES monetario: dos decimales.
@@ -110,11 +110,10 @@ La suite debe cubrir, como mínimo:
 
 ## 10. Estado de implementación
 
-- Catálogo API: lectura paginada y escrituras POST/PATCH tenant-scoped existentes; validación decimal exacta en la rama de PR #229.
+- Catálogo API: lectura paginada y escrituras POST/PATCH tenant-scoped incluidas en PR #244 Draft; pruebas PostgreSQL admin/runtime exitosas en el SHA validado.
 - Esquema base: cantidades con tres decimales y snapshots comerciales previstos.
 - PR #227: integración BCV propuesta; no afirmar despliegue de Worker/Cron ni tasa en producción.
 - PR #228: migración propuesta para retirar el campo de descuentos.
-- Paquete interno compartido de aritmética BigInt y límites NUMERIC: implementado y con CI aprobado en PR #229; sigue Draft y sin merge.
-- PR #230: UI de catálogo de solo lectura con USD/VES exactos, paginación y costos según respuesta autorizada; CI aprobado, sigue Draft.
-- PR #231: formularios de alta/edición, desactivación y payloads decimales string; CI aprobado, sigue Draft.
+- Paquete interno compartido de aritmética BigInt y límites NUMERIC: recuperado e integrado en PR #244 Draft; validado por build, unit tests y pruebas de catálogo.
+- Los cambios únicos de #229, #230 y #231 se están consolidando en PR #244; las PR fuente siguen abiertas hasta completar el rescate de sus demás cambios únicos.
 - Carrito, checkout, ventas, pagos, facturación y reportes: pendientes de integración, contrato transaccional y pruebas.

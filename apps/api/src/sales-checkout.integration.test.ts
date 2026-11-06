@@ -392,7 +392,7 @@ describe.skipIf(!databaseUrl || !databaseUrlAdmin)("atomic sales checkout Postgr
          (SELECT count(*)::int FROM public.sale_items WHERE organization_id=$1 AND sale_id=$3) AS lines,
          (SELECT count(*)::int FROM public.payments WHERE organization_id=$1 AND sale_id=$3) AS payments,
          (SELECT count(*)::int FROM public.warehouse_inventory_movements WHERE organization_id=$1 AND reference_type='sale' AND reference_id=$3) AS movements,
-         (SELECT count(*)::int FROM public.audit_logs WHERE organization_id=$1 AND action='sale.completed' AND entity_id=$3) AS audits`,
+         (SELECT count(*)::int FROM public.audit_logs WHERE organization_id=$1 AND action='sale.completed' AND entity_id=$3::text) AS audits`,
       [organizationId, key, firstSale.id],
     );
     expect(persisted.rows[0]).toEqual({ sales: 1, lines: 1, payments: 1, movements: 1, audits: 1 });

@@ -1,7 +1,7 @@
 # Política de colaboración de IA, PR y verificación
 
 **Estado:** política del repositorio; los cambios de esta revisión se aplican al fusionarse en `main`.  
-**Última actualización:** 2026-11-04.  
+**Última actualización:** 2026-11-05.  
 **Aplicación:** toda IA, agente, sesión o chat que trabaje en Micro app, independientemente del proveedor (ChatGPT, Claude, Codex u otro).
 
 El flujo de trabajo vigente es ODD, descrito en `docs/ODD_WORKFLOW.md`. Esta política desarrolla las reglas de PR y verificación; `AGENTS.md` es el punto de entrada y `docs/CONSTITUTION.md` la autoridad normativa. Si hay conflicto, verificar la fuente canónica, preservar las restricciones de seguridad y corregir la contradicción. No es necesario leer el documento completo para tareas que no impliquen PR, revisión o integración.
@@ -69,6 +69,42 @@ Una PR solo está lista para considerar fusión cuando:
 
 Una PR verde **no es una garantía de preparación para producción**. No fusionar por inercia ni porque la PR lleve mucho tiempo abierta. Si un gate está pendiente o no se puede verificar, mantenerla abierta y documentar la próxima acción.
 
+## 5A. Carril rápido de integración — política operativa obligatoria
+
+Objetivo: reducir el tiempo desde cambio terminado hasta código integrado sin bajar ningún gate de calidad. Esta sección aplica a toda IA/agente y prevalece sobre handoffs antiguos que contradigan la autorización vigente del propietario.
+
+### Autorización de merge del propietario (2026-11-05)
+
+El propietario autoriza fusionar a `main` cualquier PR cuando la IA responsable haya verificado que cumple íntegramente los criterios de esta política, los checks obligatorios y la protección de rama. La autorización incluye la consecuencia conocida de que un merge a `main` puede activar el despliegue automático de Cloudflare Pages. **No volver a pedir confirmación para cada PR elegible.** No fusionar si un gate está fallando, pendiente, no verificable o si existe un riesgo material sin resolver.
+
+Esta autorización cubre únicamente el merge de PR elegibles y su despliegue automático inherente. No autoriza despliegues manuales, cambios de configuración/secretos/variables de Cloudflare, DNS, billing, Neon `main`, migraciones remotas, escrituras en datos reales ni otras operaciones de producción sensibles; esos cambios conservan sus gates y autorizaciones específicos.
+
+### Flujo de integración de extremo a extremo
+
+1. **Inventario vivo, una sola vez por bloque de trabajo:** consultar `main`, PR abiertas, Issues prioritarias, ramas base/head, SHA, checks, Draft/reviews y dependencias. Mantener una matriz compacta: `PR | objetivo | base | depende de | estado CI | riesgo | acción`. No volver a reconstruir el inventario en cada mensaje si no cambió el estado.
+2. **Elegir un frente principal y uno secundario como máximo.** Priorizar bloqueadores P0/P1, la raíz de una cadena de dependencias y cambios que desbloqueen varias PR. Pausar la creación de PR nuevas salvo corrección crítica o alcance realmente independiente.
+3. **Integrar raíz primero.** Preferir PR contra `main`. Se permite como máximo una dependencia apilada cuando sea inevitable y esté documentada. No añadir nuevas capas a una cadena existente. Tras fusionar una raíz, actualizar/rebasar la siguiente PR sobre el nuevo `main`, revisar el diff resultante y volver a ejecutar checks.
+4. **Una PR por objetivo coherente.** Continuar sobre la PR existente para arreglos del mismo objetivo. Consolidar solo tras comparar diffs completos y preservar cada cambio único. Cerrar duplicados con explicación y enlace a la PR ganadora; nunca cerrar por título o antigüedad solamente.
+5. **Preparación para merge:** sacar de Draft solo cuando el trabajo esté terminado; comprobar base actual, mergeability, diff completo, conflictos, permisos, migraciones, cambios de datos/infra, revisiones solicitadas y checks del HEAD exacto. No aceptar checks de un SHA anterior.
+6. **Merge sin pausa artificial:** si todos los gates están verdes y no quedan dudas materiales, fusionar usando el método permitido por el repositorio (preferir squash para PR de objetivo único), con `expected_head_sha` cuando la API lo permita. La autorización permanente elimina la pregunta repetida, no los gates.
+7. **Verificación post-merge:** confirmar el merge SHA y el nuevo `main`; consultar Actions/checks y el estado de Pages/Workers que corresponda. Distinguir merge, despliegue automático, preview, producción y smoke test. Si falla un workflow post-merge o el despliegue, detener la siguiente promoción relacionada, diagnosticar y revertir solo mediante el procedimiento seguro aplicable.
+8. **Cerrar el ciclo:** actualizar el checkpoint vivo, handoff y diario append-only en el mismo bloque; registrar el siguiente PR elegible y continuar. No terminar con un informe si hay otro paso seguro y autorizado que se pueda ejecutar ahora.
+
+### Reglas anti-fragmentación y límites de WIP
+
+- Máximo recomendado: **2 frentes de implementación activos** a la vez; el resto queda en cola priorizada, no en nuevas ramas paralelas.
+- No abrir una PR para guardar avances, documentar una idea sin decisión o dividir artificialmente un mismo objetivo.
+- No dejar PRs Draft sin criterio de salida. Cada PR abierta debe tener una acción concreta y un bloqueo identificable; si no, revisar si se puede terminar, integrar, consolidar o cerrar con evidencia.
+- Evitar PRs grandes acumulativas. Separar por límites funcionales verificables, pero no apilar capas sin integrar la base.
+- CI debe correr en paralelo cuando sea seguro; la revisión del diff, la seguridad y la integración no deben esperar a que termine una tarea no relacionada.
+- No hacer polling repetitivo sin cambio: consultar una vez, esperar un evento/cambio material o avanzar a otra tarea independiente.
+- No exigir Claude/Codex ni revisores externos no disponibles salvo que el propietario haya pedido expresamente esa revisión para esa PR. La revisión manual técnica y los gates automatizados siguen siendo obligatorios.
+- Si un bloqueo no puede resolverse con las herramientas disponibles, documentar el impedimento concreto y avanzar con otra PR independiente; no dejar todo el repositorio detenido.
+
+### Política de prioridad para el backlog
+
+Orden por defecto: (1) P0 de seguridad/datos y correcciones que eviten corrupción; (2) PR raíz que desbloquea dependencias; (3) cambios de seguridad/runtime; (4) funcionalidad ya aprobada por el propietario y con pruebas completas; (5) mantenimiento/documentación; (6) mejoras no aprobadas o experimentos. Recalcular con evidencia actual, no por orden numérico ni antigüedad.
+
 ### Dependabot, pnpm y overrides del workspace
 
 En este repositorio, `package.json` declara `pnpm.overrides.undici: 7.30.1`. El `pnpm-lock.yaml` debe conservar un bloque `overrides` equivalente y resoluciones compatibles. En 2026-10-29 se comprobó que varias PR de Dependabot omitían ese bloque y volvían a `undici@7.29.1`; las instalaciones congeladas fallaban con `ERR_PNPM_LOCKFILE_CONFIG_MISMATCH` y Dependency Review detectaba vulnerabilidades de alta severidad.
@@ -84,7 +120,8 @@ Reglas obligatorias:
 
 Esta política no concede permiso para operaciones sensibles. Siguen aplicando las restricciones más estrictas de `AGENTS.md`, `docs/CONSTITUTION.md` y `docs/BACKUP_AND_RECOVERY.md`.
 
-- No desplegar producción ni realizar cambios irreversibles sin la aprobación explícita requerida.
+- La autorización permanente del propietario (2026-11-05) permite fusionar PRs elegibles a `main`, incluidos los despliegues automáticos de Cloudflare Pages inherentes al merge, sin pedir reconfirmación por PR. Se mantienen todos los gates técnicos y de seguridad.
+- No realizar despliegues manuales ni cambios sensibles de producción sin la aprobación específica requerida.
 - No cambiar secretos, variables, OAuth, dominios, proveedores, permisos, datos reales o Neon `main` por conveniencia ni para hacer que una prueba pase.
 - Antes de cambiar infraestructura/configuración, confirmar el destino canónico, el entorno afectado, la fuente de verdad, el plan de reversión y la validación posterior.
 - No conectar Preview a producción de forma automática. Primero definir aislamiento, origen CORS permitido, credenciales y estrategia de datos. No mezclar datos ni entornos por resolver un error temporal.

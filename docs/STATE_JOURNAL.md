@@ -1,3 +1,13 @@
+# 2026-11-05 UTC — autorización permanente de merge y carril rápido de integración
+
+- El propietario confirmó que autoriza fusiones a `main` cuando la PR pase las verificaciones técnicas, de seguridad y gates requeridos, incluyendo el despliegue automático de Cloudflare Pages inherente al merge. No volver a solicitar confirmación genérica por PR.
+- La autorización no se extiende a cambios manuales de Cloudflare, secretos/variables, DNS, billing, Neon `main`, migraciones remotas, escrituras/datos reales u otras operaciones sensibles.
+- Se identificó fragmentación operativa por exceso de PR apiladas/Draft, solapamientos y reconstrucción repetida del contexto. Se establece máximo recomendado de dos frentes activos, raíz primero, PR única por objetivo, no duplicar ramas, verificación exacta de SHA, merge inmediato al cumplir gates y comprobación post-merge.
+- Se crea la rama documental `docs/operating-model-fast-integration-20261105` desde `main` observado en `7b0f057b8c152515005feed40305143c0ebb94b0`. Cambios propuestos: AGENTS, política transversal, handoff y estado vivo. La política solo será efectiva en `main` tras merge.
+- Sin cambios en producción, Cloudflare, Neon, secretos o datos reales.
+
+---
+
 # 2026-11-04 UTC — Adopción documental de ODD y evaluación de ECC / tester-army/e2e
 
 - El propietario autorizó una revisión y reorganización profesional del modelo de trabajo de agentes, solicitando investigar ODD de Gentleman Programming, ECC y tester-army/e2e.

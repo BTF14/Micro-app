@@ -6,7 +6,7 @@ Este archivo es el punto de entrada operativo. La autoridad normativa está en `
 
 1. Verifica en vivo el repositorio, rama, HEAD, base, PR relacionadas y checks pertinentes. No confíes en SHA o estados copiados de snapshots.
 2. Si estás retomando trabajo, localiza el checkpoint más reciente o el encabezado del workstream en `docs/HANDOFF_NEXT_CHAT.md`; no leas el historial completo (es extenso). Para preguntas de estado, consulta `docs/CURRENT_STATE.md` por secciones concretas; tampoco lo leas completo por rutina.
-3. Lee `docs/CONSTITUTION.md` y esta guía. Para cambios de PR/merge, consulta `docs/AI_COLLABORATION_AND_PR_POLICY.md`.
+3. Lee `docs/CONSTITUTION.md` y esta guía. Para cambios de PR/merge, consulta `docs/AI_COLLABORATION_AND_PR_POLICY.md`; sigue su sección de carril rápido de integración y la autorización permanente de merge del propietario.
 4. Carga solo los documentos y skills del dominio afectado. Consulta `docs/STATE_JOURNAL.md` y `docs/RESOURCE_REGISTRY.md` cuando necesites decisiones históricas o evidencia de herramientas; no son lecturas obligatorias en cada sesión.
 5. Separa hechos verificados, inferencias, hipótesis, desconocidos y bloqueos.
 
@@ -15,6 +15,8 @@ Este archivo es el punto de entrada operativo. La autoridad normativa está en `
 - Actúa como responsable técnico: investiga, decide detalles técnicos rutinarios, implementa, prueba, revisa y documenta el trabajo autorizado de principio a fin.
 - No pidas al propietario que elija entre alternativas técnicas que puedes resolver con evidencia. Explica la decisión y continúa.
 - No solicites permiso repetido para cambios reversibles, acotados y ya autorizados.
+- No conviertas el proceso en una cadena de planes y reportes: ejecuta el siguiente paso seguro en la misma sesión, integra resultados y deja un único checkpoint accionable.
+- Para PRs que cumplan los gates, usa la autorización de merge ya concedida; no detengas el flujo por una reconfirmación genérica del despliegue automático.
 - Consulta solo ante decisiones reales de producto, cambios de requisitos, ambigüedad material, permisos/roles, riesgos financieros, acciones destructivas/irreversibles o una frontera explícita de autoridad.
 - Si una herramienta, permiso o dato realmente falta, prueba la alternativa segura disponible y comunica el bloqueo concreto. No finjas que ejecutaste una herramienta ni esperes pasivamente cuando puedas avanzar por otra vía.
 
@@ -22,7 +24,8 @@ Este archivo es el punto de entrada operativo. La autoridad normativa está en `
 
 - Micro-app es independiente de Cantina-pos y de cualquier otro proyecto.
 - Presupuesto objetivo: **USD 0**. No actives billing, planes de pago, tarjetas, suscripciones ni cargos automáticos.
-- No despliegues producción ni ejecutes cambios irreversibles sin la aceptación explícita requerida.
+- **Fusiones a `main`:** el propietario autorizó el 2026-11-05 fusionar PRs cuando superen todos los gates técnicos, de seguridad, CI y branch protection. En este repositorio, el merge a `main` puede activar el despliegue automático de Cloudflare Pages; esa consecuencia está incluida en la autorización. No vuelvas a pedir permiso para cada merge que cumpla los gates.
+- Esta autorización **no** permite despliegues manuales, cambios directos de Cloudflare, secretos/variables, DNS, billing, Neon `main`, migraciones remotas, escrituras/datos reales ni otras operaciones sensibles. Para ellas siguen siendo necesarios los permisos y gates específicos.
 - Antes de cualquier migración con datos reales, operación destructiva o cambio sensible a producción, lee `docs/BACKUP_AND_RECOVERY.md` y verifica una ruta real de recuperación; no supongas que los backups funcionan.
 - No habilites GGA, Engram, Gentle-AI, Gentle Shell ni hooks de Git sin revisar primero `docs/GENTLEMAN_IMPLEMENTATION.md`, coste, permisos, seguridad y desinstalación. Nunca actives hooks automáticamente.
 - No mutar Neon `main` sin autorización específica y posterior al análisis, prueba aislada y gate de recuperación de `docs/CONSTITUTION.md`. PostgreSQL desechable es el entorno primario de pruebas.

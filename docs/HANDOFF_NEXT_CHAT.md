@@ -1,3 +1,18 @@
+## CHECKPOINT PRIORITARIO — autorización y carril de integración — 2026-11-05 UTC
+
+> Este bloque supersede cualquier instrucción histórica inferior que diga que no se debe fusionar o que se debe pedir confirmación genérica para desplegar al fusionar. Verificar siempre el estado vivo de GitHub antes de actuar.
+
+- Repositorio: `BTF14/Micro-app`. `main` observado en `7b0f057b8c152515005feed40305143c0ebb94b0` al iniciar este trabajo; revalidar antes de integrar.
+- **Autorización del propietario:** fusionar a `main` cuando la PR supere todos los gates técnicos, de seguridad, branch protection y checks del SHA exacto. El propietario conoce y autoriza la consecuencia de despliegue automático de Cloudflare Pages. No volver a pedir permiso para cada merge elegible.
+- La autorización no cubre cambios manuales de Cloudflare, secretos/variables, DNS, billing, Neon `main`, migraciones/escrituras de producción ni datos reales.
+- El backlog observado contiene 30 PR abiertas. Hay cadenas de PR apiladas, objetivos solapados y ramas Draft. No crear más PR salvo necesidad real; clasificar, consolidar con diff completo e integrar raíz primero.
+- PR #227 es la ruta BCV seleccionada; está Draft, tiene 37 commits/13 archivos y depende de #226. No es elegible para merge hasta integrar/verificar su cadena base, sacar de Draft tras revisión completa y comprobar todos los gates en su HEAD final.
+- Se crea una única PR documental para alinear `AGENTS.md`, política, estado y handoff. No se ha modificado `main`, Cloudflare, Neon, secretos ni datos.
+- Método obligatorio: máximo 2 frentes activos; preferir base `main`; máximo una dependencia apilada excepcional; raíz primero; actualizar checks tras cada cambio de base; merge inmediato cuando todos los gates pasen; comprobar post-merge y continuar al siguiente elemento sin pedir permiso repetido.
+- Próxima acción: revisar esta PR documental y sus checks; luego retomar la cola priorizada empezando por la raíz de la cadena de seguridad/DB que desbloquea BCV y el resto.
+
+---
+
 # Handoff operativo — continuidad Micro-app — 2026-11-01 UTC
 
 ## Handoff — adopción ODD y evaluación ECC/E2E — 2026-11-04

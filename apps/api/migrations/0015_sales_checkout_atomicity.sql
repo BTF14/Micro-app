@@ -300,6 +300,7 @@ BEGIN
   PERFORM 1
     FROM public.exchange_rates er
    WHERE er.id = sale_row.exchange_rate_id
+     AND er.source = 'BCV_OFFICIAL_HTML_V1'
      AND er.validation_status = 'valid'
      AND er.rate = sale_row.exchange_rate_snapshot
      AND er.effective_date = (pg_catalog.now() AT TIME ZONE 'America/Caracas')::date

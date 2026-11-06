@@ -71,8 +71,12 @@ BEGIN
     RAISE EXCEPTION 'SALE_RECONCILIATION_TRIGGER_MUST_BE_SECURITY_DEFINER';
   END IF;
   SELECT pg_catalog.pg_get_functiondef(reconciliation_oid) INTO reconciliation_definition;
-  IF pg_catalog.strpos(reconciliation_definition, 'lock_open_register_shift') = 0 THEN
-    RAISE EXCEPTION 'SALE_RECONCILIATION_MUST_REVALIDATE_AND_LOCK_ACTIVE_SHIFT_SCOPE';
+  IF pg_catalog.strpos(reconciliation_definition, 'lock_open_register_shift') = 0
+    OR pg_catalog.strpos(reconciliation_definition, 'FROM public.exchange_rates er') = 0
+    OR pg_catalog.strpos(reconciliation_definition, 'FROM public.warehouses w') = 0
+    OR pg_catalog.strpos(reconciliation_definition, 'FOR SHARE') = 0
+  THEN
+    RAISE EXCEPTION 'SALE_RECONCILIATION_MUST_LOCK_ACTIVE_SHIFT_BCV_AND_WAREHOUSE_STATE';
   END IF;
 
   IF NOT EXISTS (

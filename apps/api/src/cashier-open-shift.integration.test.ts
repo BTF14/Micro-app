@@ -3,37 +3,40 @@ import { resolveOpenCashierRegisterShift } from "./cashier-open-shift";
 import type { BranchContext } from "./branch-context";
 import type { DatabaseClient } from "./database";
 
-const databaseUrl = (globalThis as typeof globalThis & {
+const testEnvironment = (globalThis as typeof globalThis & {
   process?: { env?: Record<string, string | undefined> };
-}).process?.env?.DATABASE_URL;
+}).process?.env;
+const databaseUrl = testEnvironment?.DATABASE_URL;
+const runtimeDatabaseUrl = testEnvironment?.DATABASE_URL_RUNTIME;
 
-function isDisposablePostgresUrl(value: string | undefined): boolean {
+function isDisposablePostgresUrl(value: string | undefined, expectedUser: string, expectedPassword: string): boolean {
   if (!value) return false;
   try {
     const url = new URL(value);
-    return (
-      (url.hostname === "localhost" || url.hostname === "127.0.0.1") &&
-      url.pathname === "/microapp_test" &&
-      url.username === "microapp" &&
-      url.password === "microapp-test-only"
-    );
-  } catch {
-    return false;
-  }
+    return (url.hostname === "localhost" || url.hostname === "127.0.0.1") &&
+      url.pathname === "/microapp_test" && url.username === expectedUser && url.password === expectedPassword;
+  } catch { return false; }
 }
 
-const suite = describe.skipIf(!isDisposablePostgresUrl(databaseUrl))(
+const suite = describe.skipIf(
+  !isDisposablePostgresUrl(databaseUrl, "microapp", "microapp-test-only") ||
+  !isDisposablePostgresUrl(runtimeDatabaseUrl, "microapp_runtime", "runtime-test-only"),
+)(
   "authenticated cashier open-shift resolver against disposable PostgreSQL",
   () => {
     let client: import("pg").Client;
+    let runtimeClient: import("pg").Client;
 
     beforeAll(async () => {
       const { Client } = await import("pg");
       client = new Client({ connectionString: databaseUrl });
+      runtimeClient = new Client({ connectionString: runtimeDatabaseUrl });
       await client.connect();
+      await runtimeClient.connect();
     });
 
     afterAll(async () => {
+      if (runtimeClient) await runtimeClient.end();
       if (client) await client.end();
     });
 
@@ -110,7 +113,7 @@ const suite = describe.skipIf(!isDisposablePostgresUrl(databaseUrl))(
       const inactiveUser = await seedScope();
       await client.query("UPDATE app_users SET is_active = false WHERE id = $1", [inactiveUser.userId]);
       await expect(
-        resolveOpenCashierRegisterShift(client as unknown as DatabaseClient, inactiveUser.branchContext),
+        resolveOpenCashierRegisterShift(runtimeClient as unknown as DatabaseClient, inactiveUser.branchContext),
       ).resolves.toBeNull();
 
       const revokedMembership = await seedScope();
@@ -119,7 +122,7 @@ const suite = describe.skipIf(!isDisposablePostgresUrl(databaseUrl))(
         [revokedMembership.organizationId, revokedMembership.userId],
       );
       await expect(
-        resolveOpenCashierRegisterShift(client as unknown as DatabaseClient, revokedMembership.branchContext),
+        resolveOpenCashierRegisterShift(runtimeClient as unknown as DatabaseClient, revokedMembership.branchContext),
       ).resolves.toBeNull();
     });
 
@@ -130,13 +133,13 @@ const suite = describe.skipIf(!isDisposablePostgresUrl(databaseUrl))(
         [staleRole.organizationId, staleRole.userId],
       );
       await expect(
-        resolveOpenCashierRegisterShift(client as unknown as DatabaseClient, staleRole.branchContext),
+        resolveOpenCashierRegisterShift(runtimeClient as unknown as DatabaseClient, staleRole.branchContext),
       ).resolves.toBeNull();
 
       const scopeA = await seedScope();
       const scopeB = await seedScope();
       await expect(
-        resolveOpenCashierRegisterShift(client as unknown as DatabaseClient, {
+        resolveOpenCashierRegisterShift(runtimeClient as unknown as DatabaseClient, {
           ...scopeA.branchContext,
           branchId: scopeB.branchId,
         }),
@@ -170,7 +173,7 @@ const suite = describe.skipIf(!isDisposablePostgresUrl(databaseUrl))(
       );
 
       await expect(
-        resolveOpenCashierRegisterShift(client as unknown as DatabaseClient, scope.branchContext),
+        resolveOpenCashierRegisterShift(runtimeClient as unknown as DatabaseClient, scope.branchContext),
       ).resolves.toBeNull();
     });
 
@@ -196,7 +199,7 @@ const suite = describe.skipIf(!isDisposablePostgresUrl(databaseUrl))(
       );
 
       await expect(
-        resolveOpenCashierRegisterShift(client as unknown as DatabaseClient, scope.branchContext),
+        resolveOpenCashierRegisterShift(runtimeClient as unknown as DatabaseClient, scope.branchContext),
       ).resolves.toBeNull();
     });
 
@@ -212,10 +215,10 @@ const suite = describe.skipIf(!isDisposablePostgresUrl(databaseUrl))(
       let inTransaction = false;
 
       try {
-        await client.query("BEGIN");
+        await runtimeClient.query("BEGIN");
         inTransaction = true;
         await expect(
-          resolveOpenCashierRegisterShift(client as unknown as DatabaseClient, scope.branchContext),
+          resolveOpenCashierRegisterShift(runtimeClient as unknown as DatabaseClient, scope.branchContext),
         ).resolves.toMatchObject({ id: inserted.rows[0]!.id });
 
         await closer.query("SET lock_timeout = '100ms'");
@@ -231,7 +234,7 @@ const suite = describe.skipIf(!isDisposablePostgresUrl(databaseUrl))(
           ),
         ).rejects.toMatchObject({ code: "55P03" });
 
-        await client.query("COMMIT");
+        await runtimeClient.query("COMMIT");
         inTransaction = false;
         await closer.query("SET lock_timeout = '0'");
         await closer.query(
@@ -244,7 +247,7 @@ const suite = describe.skipIf(!isDisposablePostgresUrl(databaseUrl))(
           [inserted.rows[0]!.id, scope.userId],
         );
       } finally {
-        if (inTransaction) await client.query("ROLLBACK");
+        if (inTransaction) await runtimeClient.query("ROLLBACK");
         await closer.end();
       }
     });
@@ -257,7 +260,7 @@ const suite = describe.skipIf(!isDisposablePostgresUrl(databaseUrl))(
         [revokedAssignment.organizationId, revokedAssignment.branchId, revokedAssignment.userId],
       );
       await expect(
-        resolveOpenCashierRegisterShift(client as unknown as DatabaseClient, revokedAssignment.branchContext),
+        resolveOpenCashierRegisterShift(runtimeClient as unknown as DatabaseClient, revokedAssignment.branchContext),
       ).resolves.toBeNull();
     });
   },

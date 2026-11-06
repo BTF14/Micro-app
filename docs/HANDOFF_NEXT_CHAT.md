@@ -1,18 +1,17 @@
-## CHECKPOINT ACTUAL — 2026-11-05 UTC — fuente de verdad
+## CHECKPOINT ACTUAL — 2026-11-06 UTC — fuente de verdad
 
-> Este checkpoint reemplaza los estados anteriores de este handoff. Si un bloque histórico contradice estas reglas, prevalece este bloque y la documentación permanente en `AGENTS.md` y `docs/AI_COLLABORATION_AND_PR_POLICY.md`. Antes de actuar, consultar GitHub en vivo.
+> Este bloque supersede checkpoints antiguos. Si una sección histórica contradice este estado o `AGENTS.md` / `docs/AI_COLLABORATION_AND_PR_POLICY.md`, prevalece la política permanente y el estado vivo. Revalidar GitHub antes de cada acción.
 
-- Repo: `BTF14/Micro-app`; `main` verificado en `85f1aa46db7797ff6ae2d7e08b2a85e15e067797`.
-- El propietario autoriza merges a `main` cuando el diff y todos los gates técnicos, de seguridad, branch protection y checks del HEAD exacto estén verdes. La autorización incluye el despliegue automático de Cloudflare Pages inherente al merge. No volver a pedir permiso por cada PR elegible.
-- No incluye despliegues manuales, secretos/variables, DNS, billing, cambios manuales de Cloudflare, migraciones/escrituras de Neon `main` ni datos reales.
-- Últimos resultados: #237 fusionada (política de colaboración/continuidad) y #206 fusionada (Hono 4.13.16, Workers Types 5.20261102.1, Wrangler 4.156.1; override undici 7.30.1 conservado). Checks post-merge de ambos SHAs: success. #196 cerrada como implementación duplicada de #200; sus documentos exclusivos quedan para reconciliación selectiva. Backlog observado: 28 PR abiertas.
-- El proceso debe ser continuo: máximo dos frentes activos, inventario vivo una vez por bloque, raíz primero, preferir `main`, no añadir stacks, una PR por objetivo, no duplicar ramas, no hacer polling sin cambio, merge inmediato al pasar todos los gates y comprobación post-merge.
-- Neon `main` inspeccionado solo en metadatos: no existen `microapp_runtime` ni `microapp_migrator`; un login etiquetado para backup presenta privilegios elevados y no debe considerarse readonly sin corrección/verificación. No se leyó ningún secret ni se modificó la base.
-- #200: vertical slice catálogo/inventario, migración 0005; Draft, base por reconciliar. No fusionar hasta resolver la migración 0005 y la identidad/permisos runtime. Neon `main` no está autorizado para cambios.
-- #213: rate limiting OAuth, checks verdes en SHA histórico pero branch detrás de main; no fusionar hasta revalidar base/HEAD y confirmar el principal runtime. #214 exige un Worker secret nuevo y está bloqueada por falta de autorización para secretos.
-- #224: contrato de roles runtime y harness de login real, todavía apilada. #227: ruta BCV elegida, depende de #226 y de la cadena previa; no lista para merge.
-- Issue #53 sigue P0 abierta. No afirmar producción lista por tener CI verde.
-- Siguiente paso: diseñar la ruta mínima y segura para crear/verificar roles dedicados y aplicar migraciones solo tras aprobación específica; en paralelo, reconciliar la cadena de PRs sin duplicar trabajo.
+- Repo `BTF14/Micro-app`; main `0f2c142a8e3dc624437e3c6c36c0951c64d3890b`.
+- El propietario autoriza merge a main al pasar todos los gates y acepta Pages/Workers auto-deploy inherente. No pedir reconfirmación por PR. No cubre cambios manuales de Cloudflare, secretos, DNS, billing, roles/grants, migraciones o datos reales de Neon.
+- Últimos merges: #237 (política), #206 (deps) y #213 (rate limit OAuth). #213 cubre start/bootstrap/callback con HMAC de GOOGLE_CLIENT_SECRET existente, CF-Connecting-IP, contador atómico y fail-closed; checks post-merge SUCCESS. #214 cerrada como duplicada. Backlog: 26 PR abiertas.
+- Hallazgo Neon main, solo lectura: `backup_readonly`, `neon_service` y `neondb_owner` son miembros de `neon_superuser`; este hereda `pg_write_all_data`. `cloud_admin` es superuser. El supuesto rol backup readonly y el rol de servicio incumplen el principio de mínimo privilegio. No se leyeron secretos ni se modificó DB; identidad de cada Worker binding sigue sin mapear.
+- #200: HEAD `464ca08b9020fad128cc9c8a321568493d484517`, 33 ahead/0 behind, 30 archivos; check-runs/workflows SUCCESS. Sigue Draft porque las tablas de inventario 0005 no existen en Neon main. No fusionar hasta que migración/runtime estén preparados y autorizados.
+- #213 merge SHA `0f2c142a8e3dc624437e3c6c36c0951c64d3890b`. #214 cerrada; el trabajo de bootstrap handoff distinto se conserva en #215.
+- #215: Draft sobre #214; preservar handoff server-side + streaming body, eliminar rate-limit duplicado/secreto nuevo y portar sobre #213. Migración 0010 exige grants reales; no fusionar antes de resolver runtime/migrator.
+- #224 runtime grants harness; #226 migration runner; #227 BCV dependen de la cadena de roles/migraciones. No se han aplicado migraciones 0005–0013 a Neon main.
+- Issue #53 permanece OPEN/P0. Producción NO LISTA. Checks sintéticos no verifican grants efectivos, migraciones remotas, backup real ni smoke tests reales.
+- Próxima secuencia: (1) plan de remediación de roles, (2) migrator/runtime separado y grants, (3) migración segura con rollback/restore, (4) portar #215, (5) integrar inventario y BCV raíz primero. Máximo dos frentes activos; no crear PR duplicadas; continuar al siguiente paso seguro sin pedir autorización de merge repetida.
 
 
 ---

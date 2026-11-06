@@ -399,27 +399,28 @@ export function registerInventoryCountRoutes(app: Hono<{ Bindings: Bindings }>):
       return c.json({ error: "INVALID_LIMIT", message: "El límite debe estar entre 1 y 100." }, 400);
     }
     try {
-      const result = await withDatabaseClient(c.env.DATABASE_URL, async (db) => {
-        const authorization = await authorizeBranchOperation(db, token, organizationId, branchId, "inventory.management.read", false);
-        if (!authorization.allowed) {
-          if (authorization.reason === "unauthenticated_or_out_of_scope") return { kind: "unauthenticated" as const };
-          if (authorization.reason === "branch_out_of_scope") return { kind: "branch_denied" as const };
-          return { kind: "forbidden" as const };
-        }
-        const branch = authorization.context;
-        const tenant = { organizationId: branch.organizationId };
-        const warehouses = await db.query<{
-          id: string; code: string; name: string; is_active: boolean; created_at: string; updated_at: string;
-        }>(
-          `SELECT id, code, name, is_active, created_at, updated_at
-           FROM warehouses
-           WHERE organization_id = $1 AND branch_id = $2
-           ORDER BY lower(name), id
-           LIMIT $3`,
-          [tenant.organizationId, branch.branchId, limit],
-        );
-        return { kind: "ok" as const, warehouses: warehouses.rows };
-      });
+      const result = await withDatabaseClient(c.env.DATABASE_URL, (db) =>
+        withDatabaseTransaction(db, async (tx) => {
+          const authorization = await authorizeBranchOperation(tx, token, organizationId, branchId, "inventory.management.read");
+          if (!authorization.allowed) {
+            if (authorization.reason === "unauthenticated_or_out_of_scope") return { kind: "unauthenticated" as const };
+            if (authorization.reason === "branch_out_of_scope") return { kind: "branch_denied" as const };
+            return { kind: "forbidden" as const };
+          }
+          const branch = authorization.context;
+          const warehouses = await tx.query<{
+            id: string; code: string; name: string; is_active: boolean; created_at: string; updated_at: string;
+          }>(
+            `SELECT id, code, name, is_active, created_at, updated_at
+             FROM warehouses
+             WHERE organization_id = $1 AND branch_id = $2
+             ORDER BY lower(name), id
+             LIMIT $3`,
+            [branch.organizationId, branch.branchId, limit],
+          );
+          return { kind: "ok" as const, warehouses: warehouses.rows };
+        }),
+      );
       if (result.kind === "unauthenticated") return c.json({ error: "UNAUTHENTICATED", message: "Inicia sesión para continuar." }, 401);
       if (result.kind === "forbidden") return c.json({ error: "FORBIDDEN", message: "No tienes permiso para consultar inventario." }, 403);
       if (result.kind === "branch_denied") return c.json({ error: "BRANCH_FORBIDDEN", message: "No tienes acceso a esta sucursal." }, 403);
@@ -443,38 +444,36 @@ export function registerInventoryCountRoutes(app: Hono<{ Bindings: Bindings }>):
       return c.json({ error: "INVALID_LIMIT", message: "El límite debe estar entre 1 y 100." }, 400);
     }
     try {
-      const result = await withDatabaseClient(c.env.DATABASE_URL, async (db) => {
-        const authorization = await authorizeBranchOperation(db, token, organizationId, branchId, "inventory.management.read", false);
-        if (!authorization.allowed) {
-          if (authorization.reason === "unauthenticated_or_out_of_scope") return { kind: "unauthenticated" as const };
-          if (authorization.reason === "branch_out_of_scope") return { kind: "branch_denied" as const };
-          return { kind: "forbidden" as const };
-        }
-        const branch = authorization.context;
-        const tenant = { organizationId: branch.organizationId };
-        const warehouse = await db.query<{ id: string }>(
-          "SELECT id FROM warehouses WHERE organization_id = $1 AND branch_id = $2 AND id = $3",
-          [tenant.organizationId, branch.branchId, warehouseId],
-        );
-        if (!warehouse.rows[0]) return { kind: "not_found" as const };
-        const counts = await db.query<{
-          id: string; count_type: string; status: string; reason: string;
-          created_by: string; confirmed_by: string | null; created_at: string; confirmed_at: string | null;
-          line_count: string;
-        }>(
-          `SELECT c.id, c.count_type, c.status, c.reason, c.created_by, c.confirmed_by,
-                  c.created_at, c.confirmed_at, count(l.product_id)::text AS line_count
-           FROM inventory_counts c
-           LEFT JOIN inventory_count_lines l
-             ON l.organization_id = c.organization_id AND l.count_id = c.id
-           WHERE c.organization_id = $1 AND c.branch_id = $2 AND c.warehouse_id = $3
-           GROUP BY c.id
-           ORDER BY c.created_at DESC, c.id DESC
-           LIMIT $4`,
-          [tenant.organizationId, branch.branchId, warehouseId, limit],
-        );
-        return { kind: "ok" as const, counts: counts.rows };
-      });
+      const result = await withDatabaseClient(c.env.DATABASE_URL, (db) =>
+        withDatabaseTransaction(db, async (tx) => {
+          const authorization = await authorizeBranchOperation(tx, token, organizationId, branchId, "inventory.management.read");
+          if (!authorization.allowed) {
+            if (authorization.reason === "unauthenticated_or_out_of_scope") return { kind: "unauthenticated" as const };
+            if (authorization.reason === "branch_out_of_scope") return { kind: "branch_denied" as const };
+            return { kind: "forbidden" as const };
+          }
+          const branch = authorization.context;
+          const lockedWarehouses = await lockInventoryWarehouses(tx, branch.organizationId, [{ warehouseId, branchId: branch.branchId }]);
+          if (!lockedWarehouses) return { kind: "not_found" as const };
+          const counts = await tx.query<{
+            id: string; count_type: string; status: string; reason: string;
+            created_by: string; confirmed_by: string | null; created_at: string; confirmed_at: string | null;
+            line_count: string;
+          }>(
+            `SELECT c.id, c.count_type, c.status, c.reason, c.created_by, c.confirmed_by,
+                    c.created_at, c.confirmed_at, count(l.product_id)::text AS line_count
+             FROM inventory_counts c
+             LEFT JOIN inventory_count_lines l
+               ON l.organization_id = c.organization_id AND l.count_id = c.id
+             WHERE c.organization_id = $1 AND c.branch_id = $2 AND c.warehouse_id = $3
+             GROUP BY c.id
+             ORDER BY c.created_at DESC, c.id DESC
+             LIMIT $4`,
+            [branch.organizationId, branch.branchId, warehouseId, limit],
+          );
+          return { kind: "ok" as const, counts: counts.rows };
+        }),
+      );
       if (result.kind === "unauthenticated") return c.json({ error: "UNAUTHENTICATED", message: "Inicia sesión para continuar." }, 401);
       if (result.kind === "forbidden") return c.json({ error: "FORBIDDEN", message: "No tienes permiso para consultar inventario." }, 403);
       if (result.kind === "branch_denied") return c.json({ error: "BRANCH_FORBIDDEN", message: "No tienes acceso a esta sucursal." }, 403);

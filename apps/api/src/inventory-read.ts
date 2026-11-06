@@ -18,6 +18,7 @@ function parsePageSize(value: string | undefined): number | null {
 
 type InventoryBalanceRow = {
   product_id: string;
+  is_active: boolean;
   sku: string;
   name: string;
   unit: string;
@@ -93,7 +94,7 @@ export function registerInventoryReadRoutes(app: Hono<{ Bindings: Bindings }>): 
             ? [branch.organizationId, branch.branchId, warehouseId, cursor, limit + 1]
             : [branch.organizationId, branch.branchId, warehouseId, limit + 1];
           const rows = await tx.query<InventoryBalanceRow>(
-            `SELECT p.id AS product_id, p.sku, p.name, p.unit,
+            `SELECT p.id AS product_id, p.is_active, p.sku, p.name, p.unit,
                     p.price_usd::text AS price_usd, p.minimum_stock::text AS minimum_stock,
                     COALESCE(b.on_hand_quantity, 0)::numeric(14,3)::text AS on_hand_quantity,
                     COALESCE(b.reserved_quantity, 0)::numeric(14,3)::text AS reserved_quantity,
@@ -106,7 +107,7 @@ export function registerInventoryReadRoutes(app: Hono<{ Bindings: Bindings }>): 
                 AND b.warehouse_id = $3
                 AND b.product_id = p.id
               WHERE p.organization_id = $1
-                AND p.is_active = true
+                AND (p.is_active = true OR b.balance_version IS NOT NULL)
                 ${cursor ? "AND p.id > $4" : ""}
               ORDER BY p.id ASC
               LIMIT $${values.length}`,
@@ -119,6 +120,7 @@ export function registerInventoryReadRoutes(app: Hono<{ Bindings: Bindings }>): 
             body: {
               items: items.map((row) => ({
                 product_id: row.product_id,
+                is_active: row.is_active,
                 sku: row.sku,
                 name: row.name,
                 unit: row.unit,

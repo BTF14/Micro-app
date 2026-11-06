@@ -1,5 +1,19 @@
 # Estado actual — Micro app
 
+## CHECKPOINT VIVO PRIORITARIO — 2026-11-05 UTC
+
+- `main` observado al inicio del checkpoint: `7b0f057b8c152515005feed40305143c0ebb94b0`. Consultar GitHub en vivo antes de cualquier operación.
+- El propietario autorizó fusionar PRs a `main` cuando superen todos los gates técnicos, de seguridad, branch protection y checks del SHA exacto; conoce que el merge puede activar el despliegue automático de Cloudflare Pages. No volver a pedir confirmación para cada merge elegible.
+- La autorización no incluye despliegues manuales, cambios de Cloudflare, secretos/variables, DNS, billing, Neon `main`, migraciones remotas, escrituras ni datos reales.
+- Backlog observado: 30 PR abiertas. El proceso actual está fragmentado por cadenas largas de PR Draft/stacked y objetivos solapados. Aplicar el carril rápido documentado en `docs/AI_COLLABORATION_AND_PR_POLICY.md`: máximo 2 frentes activos, raíz primero, una PR por objetivo, no duplicar ramas, checks exactos, merge al cumplir gates y verificación post-merge.
+- PR #227 es la implementación BCV seleccionada, pero continúa Draft y apilada sobre #226. No se debe presentar como lista para main hasta integrar/revisar la cadena de dependencias y validar su HEAD final.
+- Esta revisión documental se prepara en `docs/operating-model-fast-integration-20261105`; la documentación solo será política activa en `main` después de fusionar su PR.
+- No se han realizado merges, despliegues manuales, cambios de Cloudflare, Neon, secretos ni datos de producción durante este checkpoint.
+
+---
+
+# Estado actual — Micro app
+
 ## Estado vivo verificado — 2026-11-04 UTC
 
 - `main` = `2e0f4083ba577de2f301daf8c866bfbdffb5e23f`, merge squash de PR #198. La transición SDD → ODD y su validador documental ya están integrados.

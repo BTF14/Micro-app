@@ -252,7 +252,7 @@ jobs:
             exit 1
           fi
           printf '%s\\n' "$output" | grep -F "division by zero"
-          unchanged="$(docker exec "${{ job.services.postgres.id }}" psql -At -U microapp -d microapp_test -c "SELECT NOT EXISTS (SELECT 1 FROM pg_attribute WHERE attrelid='public.sales'::regclass AND attname='branch_id' AND NOT attisdropped) AND to_regprocedure('public.lock_open_register_shift(uuid,uuid,uuid)') IS NULL AND to_regprocedure('public.assert_completed_sale_reconciled()') IS NULL AND NOT EXISTS (SELECT 1 FROM pg_trigger WHERE tgname IN ('sales_checkout_lifecycle_guard','sales_completed_reconciliation'))")"
+          unchanged="$(docker exec "${{ job.services.postgres.id }}" psql -At -U microapp -d microapp_test -c "SELECT NOT EXISTS (SELECT 1 FROM pg_attribute WHERE attrelid='public.sales'::regclass AND attname='branch_id' AND NOT attisdropped) AND to_regprocedure('public.lock_open_register_shift(uuid,uuid,uuid)') IS NULL AND to_regprocedure('public.assert_completed_sale_reconciled()') IS NULL AND to_regprocedure('public.guard_sale_inventory_movement()') IS NULL AND to_regprocedure('public.guard_sale_completion_audit()') IS NULL AND NOT EXISTS (SELECT 1 FROM pg_trigger WHERE tgname IN ('sales_checkout_lifecycle_guard','sales_completed_reconciliation','sale_inventory_movement_draft_guard','sale_completion_audit_draft_guard'))")"
           test "$unchanged" = "t"
       - name: Apply atomic sales checkout schema and constraints
         run: docker exec -i -e PGPASSWORD=migrator-test-only "${{ job.services.postgres.id }}" psql -h 127.0.0.1 -v ON_ERROR_STOP=1 -U microapp_migrator -d microapp_test -f /dev/stdin < apps/api/migrations/0015_sales_checkout_atomicity.sql

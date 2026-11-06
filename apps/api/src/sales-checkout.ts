@@ -116,12 +116,17 @@ export function parseCheckoutInput(value: unknown): CheckoutInput | null {
   }
 
   if (quantities.size < 1 || quantities.size > MAX_LINES) return null;
-  const lines = [...quantities.entries()]
-    .sort(([a], [b]) => a.localeCompare(b))
-    .map(([productId, quantity]) => {
-      const normalized = formatNumeric(quantity, 14, 3);
-      return { productId, quantity: normalized };
-    });
+  let lines: CheckoutLine[];
+  try {
+    lines = [...quantities.entries()]
+      .sort(([a], [b]) => a.localeCompare(b))
+      .map(([productId, quantity]) => ({
+        productId,
+        quantity: formatNumeric(quantity, 14, 3),
+      }));
+  } catch {
+    return null;
+  }
 
   const payments: CheckoutPayment[] = [];
   for (const raw of body.payments) {

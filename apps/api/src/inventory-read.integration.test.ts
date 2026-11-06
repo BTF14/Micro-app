@@ -1,4 +1,4 @@
-import { afterAll, beforeAll, describe, expect, it } from "vitest";
+import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
 import { Client } from "pg";
 
 vi.mock("@neondatabase/serverless", async () => {
@@ -128,7 +128,7 @@ describe.skipIf(!databaseUrl)("inventory balance and ledger read APIs against Po
       [organizationId, branchId, warehouseId, firstProductId],
     );
     await admin.query(
-      "INSERT INTO warehouse_inventory_movements (organization_id, branch_id, warehouse_id, product_id, movement_type, quantity_delta, unit_cost_usd, reason, actor_user_id) VALUES ($1, $2, $3, $4, 'purchase_receipt', 12.000, 4.2500, 'Seed receipt', $5)",
+      "INSERT INTO warehouse_inventory_movements (organization_id, branch_id, warehouse_id, product_id, movement_type, quantity_delta, unit_cost_usd, reason, actor_user_id, created_at) VALUES ($1, $2, $3, $4, 'purchase_receipt', 12.000, 4.2500, 'Seed receipt', $5, now() - interval '1 minute')",
       [organizationId, branchId, warehouseId, firstProductId, ownerId],
     );
     await admin.query(
@@ -140,7 +140,7 @@ describe.skipIf(!databaseUrl)("inventory balance and ledger read APIs against Po
       [organizationId, warehouseId, firstProductId],
     );
     await admin.query(
-      "INSERT INTO warehouse_inventory_movements (organization_id, branch_id, warehouse_id, product_id, movement_type, quantity_delta, unit_cost_usd, reason, actor_user_id) VALUES ($1, $2, $3, $4, 'purchase_receipt', 3.000, 4.2500, 'Second seed receipt', $5)",
+      "INSERT INTO warehouse_inventory_movements (organization_id, branch_id, warehouse_id, product_id, movement_type, quantity_delta, unit_cost_usd, reason, actor_user_id, created_at) VALUES ($1, $2, $3, $4, 'purchase_receipt', 3.000, 4.2500, 'Second seed receipt', $5, now())",
       [organizationId, branchId, warehouseId, firstProductId, ownerId],
     );
     await admin.query("COMMIT");

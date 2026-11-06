@@ -19,10 +19,10 @@ BEGIN
     JOIN pg_catalog.pg_roles r ON r.oid = p.proowner
    WHERE p.oid = 'public.prevent_scope_deactivation_with_open_register_shift()'::regprocedure;
 
-  IF pg_catalog.strpos(opening_definition, 'm.role IN (''owner'', ''admin'', ''cashier'')') = 0 THEN
+  IF (pg_catalog.strpos(opening_definition, 'owner') = 0 OR pg_catalog.strpos(opening_definition, 'admin') = 0 OR pg_catalog.strpos(opening_definition, 'cashier') = 0) THEN
     RAISE EXCEPTION 'REGISTER_SHIFT_OPENING_ROLE_MATRIX_NOT_ALIGNED';
   END IF;
-  IF pg_catalog.strpos(scope_definition, '''owner'', ''admin'', ''cashier''') = 0 THEN
+  IF (pg_catalog.strpos(scope_definition, 'owner') = 0 OR pg_catalog.strpos(scope_definition, 'admin') = 0 OR pg_catalog.strpos(scope_definition, 'cashier') = 0) THEN
     RAISE EXCEPTION 'REGISTER_SHIFT_OPEN_SCOPE_ROLE_GUARD_NOT_ALIGNED';
   END IF;
   IF opening_owner <> 'microapp_migrator' OR scope_owner <> 'microapp_migrator' THEN

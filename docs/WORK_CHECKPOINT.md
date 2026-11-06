@@ -1,41 +1,19 @@
-# Work checkpoint — BTF14/Micro-app
+# Checkpoint técnico vivo — 2026-11-06
 
-**Updated:** 2026-11-06 03:49 UTC  
-**Base:** `main` at `71d6434a1877b5e618a093e60472621af8ef790f`  
-**Branch:** `docs/reconcile-post-pr240-neon-migration-audit-20261106`  
-**Scope:** read-only reconciliation and documentation checkpoint; no application, database or infrastructure changes.
+- main verificado en SHA 38e1d61acc083b3c0b9b73edcb2bc7887ca56872.
+- PR #242 (registro de recuperación) fusionada en 7a719d593248341aac86b1ded980d5bb9a6f94e8.
+- PR #243 (migraciones canónicas 0001–0015, assertions y runner fail-closed) fusionada en 38e1d61acc083b3c0b9b73edcb2bc7887ca56872. Su HEAD final 481f3b956c96c50b6f956541d1d675646fe66b51 pasó 10/10 workflows, incluyendo PostgreSQL migration validation y migration-runner validation.
+- El bundle de migraciones ya está en main. No se ha ejecutado contra Neon producción; la base poblada sigue sin ledger y sin login roles dedicados. El baseline/adoption plan y la autorización específica siguen siendo obligatorios.
+- Frente activo: feat/recover-inventory-application-20261106. Portando API y UI de catálogo, creación/edición de productos, BigInt decimal compartido, conteos de inventario idempotentes, locking tenant/branch/warehouse/balance, own-shift authorization, bounded streaming request bodies y aislamiento de previews. Se añadieron pruebas unitarias e integración con roles admin/runtime.
+- Se exige Idempotency-Key en creación de conteos; el contrato de DB conserva columnas nullable solo para compatibilidad histórica.
+- Política sin descuentos preservada: no hay operaciones discount en autorización ni campos discount en formularios.
+- El catálogo se presenta en USD; no se inventa conversión VES hasta integrar y validar BCV. En #227 quedó registrado un riesgo: almacenar primero una tasa con fecha efectiva de mañana puede bloquear la tasa del día actual. Debe corregirse y probarse antes de habilitar el endpoint BCV.
+- Checks de esta rama todavía pendientes de ejecutarse sobre su SHA final. No declararla lista hasta CI, PostgreSQL, runtime-role, E2E, seguridad y revisión de diff completos.
+- No se realizaron escrituras Neon, cambios de roles/grants, secretos, datos reales, DNS, Cloudflare manual, billing ni despliegue manual. Producción NOT READY.
 
-## Verified
-- PR #240 merged at `71d6434a1877b5e618a093e60472621af8ef790f`; 9/9 check-runs SUCCESS on that exact SHA.
-- PR #213 merged at `0f2c142a8e3dc624437e3c6c36c0951c64d3890b`.
-- PR #200: `464ca08b9020fad128cc9c8a321568493d484517`, 33 ahead/2 behind current main; 19/19 checks SUCCESS on its head.
-- PR #233: `070f49ec1f1e45debb7fe99d998dc2429b5da9b1`, 9/9 checks SUCCESS on its head.
-- Migration collision: main `0005_auth_bootstrap_attempts`; stack `0005_warehouse_inventory` and duplicate auth `0010_auth_bootstrap_attempts`. Auth SQL blob is identical between main 0005 and stack 0010.
-- Neon main read-only audit: no dedicated runtime/migrator logins; provider role inheritance grants read/write-all to backup/service/owner roles; cloud_admin superuser; no schema_migrations ledger; public schema populated.
-- Migration runner requires direct microapp_migrator login and a clean schema or a separately reviewed baseline adoption. It cannot safely initialize current Neon main as observed.
-
-## Candidate migration order
-0001 initial; 0002 Google identity; 0003 branch scope; 0004 register shifts; 0005 auth bootstrap; 0006 warehouse inventory; 0007 register shift roles; 0008 audit append-only; 0009 inventory count validation; 0010 inventory balance-ledger coupling; 0011 runtime lock helpers; 0012 runtime role grants; 0013 BCV precision/grants; 0014 sales without discounts; 0015 sales checkout atomicity.
-
-This is a proposed reconciliation only. Rename paired SQL/assertion files and update CI workflows, runner fixtures, scripts, tests and documentation together. Remove duplicate auth 0010 and use main's 0005 migration.
-
-## Persisted communication
-Comment on PR #233: ID `6676411612`, containing the verified collision, candidate order and Neon blockers.
-
-## Not done
-No migration or write on Neon; no role/grant/secret change; no production data change; no Cloudflare/DNS/billing change; no production deployment or smoke test. No application code or migration file modified. Production remains **NOT READY**.
-
-## Next actions
-1. Build one coherent integration branch from current main for migration renumbering and all corresponding references.
-2. Run migration-check, migration-runner, injected rollback, checksum/gap/reconciliation tests, API integration tests, typecheck, build, SAST and E2E on the integrated HEAD.
-3. Separately design and test an adoption baseline for the already populated Neon schema; require specific owner approval before any production role/grant or migration operation.
-4. Reconcile the stacked PRs on current main; do not merge stale bases or code depending on missing tables.
-
-
-## Regla de ejecución del backlog confirmada por el propietario — 2026-11-06
-
-- Objetivo: completar las 26 PR comunicadas y llevar a main los cambios que pasen todos los gates; reconfirmar el conteo real en GitHub porque es variable.
-- Cada PR se termina y evalúa por separado: diff íntegro, base/head y dependencias actuales, pruebas funcionales/regresión, seguridad, migraciones/roles si aplica, typecheck/build/E2E, checks obligatorios en SHA final, reviews solicitadas y branch protection.
-- Fusionar sin pedir autorización repetida cuando todo esté satisfecho y no haya riesgo material. No fusionar en bloque ni por checks verdes aislados; no retener PR elegibles solo porque otras sigan pendientes. Actualizar dependientes tras cada merge y verificar merge SHA, checks post-merge y despliegue.
-- Gate global antes de declarar producción lista: E2E integrado, migraciones y baseline seguros, privilegios efectivos mínimos y separación runtime/migrator/backup, integridad transaccional, auth/permisos, dinero decimal exacto sin descuentos, BCV verificable, backup/restore y RPO/RTO, alertas, seguridad, coste $0, despliegue y smoke test autenticado de producción.
-- Las operaciones sensibles de Neon main, migraciones remotas, roles/grants, datos reales, secretos, Cloudflare manual, DNS y billing siguen fuera de la autorización general de merge.
+## Próximos pasos
+1. Abrir PR Draft para la rama de recuperación y ejecutar todos los workflows en el HEAD exacto.
+2. Corregir fallos reales de tests/typecheck/build/privilegios antes de quitar Draft.
+3. Tras integración, recuperar inventory read/movement APIs y completar BCV (incluido el bug de fecha efectiva) antes del checkout app handler.
+4. Reconciliar y cerrar las PR originales solo después de rescatar y verificar todos sus cambios únicos.
+5. Mantener el gate de Neon producción separado: revisar baseline/adoption y pedir autorización específica antes de cualquier escritura o cambio de roles/grants.

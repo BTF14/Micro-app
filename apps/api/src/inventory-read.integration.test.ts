@@ -39,6 +39,7 @@ describe.skipIf(!databaseUrl)("inventory balance and ledger read APIs against Po
   let cashierToken = "";
   let firstProductId = "";
   let secondProductId = "";
+  let inactiveProductId = "";
   let foreignOrganizationId = "";
   let foreignBranchId = "";
   let foreignWarehouseId = "";
@@ -120,6 +121,11 @@ describe.skipIf(!databaseUrl)("inventory balance and ledger read APIs against Po
       [organizationId, "READ-B-" + suffix],
     );
     secondProductId = second.rows[0]!.id;
+    const inactive = await admin.query<{ id: string }>(
+      "INSERT INTO products (organization_id, sku, name, unit, cost_usd, price_usd, minimum_stock, is_active) VALUES ($1, $2, 'Inactive Stocked Product', 'unidad', 2.0000, 5.0000, 0.000, false) RETURNING id",
+      [organizationId, "READ-INACTIVE-" + suffix],
+    );
+    inactiveProductId = inactive.rows[0]!.id;
 
     // Every non-zero balance mutation is paired with one immutable ledger event.
     await admin.query("BEGIN");
@@ -142,6 +148,14 @@ describe.skipIf(!databaseUrl)("inventory balance and ledger read APIs against Po
     await admin.query(
       "INSERT INTO warehouse_inventory_movements (organization_id, branch_id, warehouse_id, product_id, movement_type, quantity_delta, unit_cost_usd, reason, actor_user_id, created_at) VALUES ($1, $2, $3, $4, 'purchase_receipt', 3.000, 4.2500, 'Second seed receipt', $5, now())",
       [organizationId, branchId, warehouseId, firstProductId, ownerId],
+    );
+    await admin.query(
+      "INSERT INTO inventory_balances (organization_id, branch_id, warehouse_id, product_id, on_hand_quantity) VALUES ($1, $2, $3, $4, 1.000)",
+      [organizationId, branchId, warehouseId, inactiveProductId],
+    );
+    await admin.query(
+      "INSERT INTO warehouse_inventory_movements (organization_id, branch_id, warehouse_id, product_id, movement_type, quantity_delta, unit_cost_usd, reason, actor_user_id) VALUES ($1, $2, $3, $4, 'purchase_receipt', 1.000, 2.0000, 'Inactive product stock', $5)",
+      [organizationId, branchId, warehouseId, inactiveProductId, ownerId],
     );
     await admin.query("COMMIT");
 
@@ -171,7 +185,7 @@ describe.skipIf(!databaseUrl)("inventory balance and ledger read APIs against Po
     expect(response.status).toBe(200);
     expect(response.headers.get("Cache-Control")).toContain("no-store");
     const body = await response.json() as { items: Array<Record<string, unknown>>; nextCursor: string | null };
-    expect(body.items).toHaveLength(2);
+    expect(body.items).toHaveLength(3);
     const stocked = body.items.find((item) => item.product_id === firstProductId)!;
     const empty = body.items.find((item) => item.product_id === secondProductId)!;
     expect(stocked).toMatchObject({
@@ -181,11 +195,13 @@ describe.skipIf(!databaseUrl)("inventory balance and ledger read APIs against Po
       cost_usd: "4.2500",
     });
     expect(empty).toMatchObject({ on_hand_quantity: "0.000", reserved_quantity: "0.000", balance_version: null });
+    const inactive = body.items.find((item) => item.product_id === inactiveProductId)!;
+    expect(inactive).toMatchObject({ is_active: false, on_hand_quantity: "1.000", available_quantity: "1.000" });
 
     const cashierResponse = await get(root() + "/inventory", cashierToken);
     expect(cashierResponse.status).toBe(200);
     const cashierBody = await cashierResponse.json() as { items: Array<Record<string, unknown>> };
-    expect(cashierBody.items).toHaveLength(2);
+    expect(cashierBody.items).toHaveLength(3);
     expect(cashierBody.items.every((item) => !("cost_usd" in item))).toBe(true);
   });
 
@@ -202,11 +218,19 @@ describe.skipIf(!databaseUrl)("inventory balance and ledger read APIs against Po
     const secondBody = await second.json() as { items: Array<{ product_id: string }>; nextCursor: string | null };
     expect(secondBody.items).toHaveLength(1);
     expect(secondBody.items[0]!.product_id).not.toBe(firstBody.items[0]!.product_id);
-    expect(secondBody.nextCursor).toBeNull();
+    expect(secondBody.nextCursor).not.toBeNull();
+
+    const third = await get(root() + "/inventory?limit=1&cursor=" + secondBody.nextCursor);
+    expect(third.status).toBe(200);
+    const thirdBody = await third.json() as { items: Array<{ product_id: string; is_active?: boolean }>; nextCursor: string | null };
+    expect(thirdBody.items).toHaveLength(1);
+    expect(thirdBody.items[0]!.product_id).toBe(inactiveProductId);
+    expect(thirdBody.items[0]!.is_active).toBe(false);
+    expect(thirdBody.nextCursor).toBeNull();
   });
 
   it("returns append-only movement history with stable cursors and cost visibility", async () => {
-    const first = await get(root() + "/inventory/movements?limit=1");
+    const first = await get(root() + "/inventory/movements?product_id=" + firstProductId + "&limit=1");
     expect(first.status).toBe(200);
     const firstBody = await first.json() as { items: Array<Record<string, unknown>>; nextCursor: string | null };
     expect(firstBody.items).toHaveLength(1);
@@ -218,7 +242,7 @@ describe.skipIf(!databaseUrl)("inventory balance and ledger read APIs against Po
     });
     expect(firstBody.nextCursor).not.toBeNull();
 
-    const second = await get(root() + "/inventory/movements?limit=1&cursor=" + firstBody.nextCursor);
+    const second = await get(root() + "/inventory/movements?product_id=" + firstProductId + "&limit=1&cursor=" + firstBody.nextCursor);
     expect(second.status).toBe(200);
     const secondBody = await second.json() as { items: Array<Record<string, unknown>>; nextCursor: string | null };
     expect(secondBody.items).toHaveLength(1);

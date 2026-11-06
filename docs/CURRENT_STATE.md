@@ -8,7 +8,7 @@
 - Se exige Idempotency-Key en creación de conteos; el contrato de DB conserva columnas nullable solo para compatibilidad histórica.
 - Política sin descuentos preservada: no hay operaciones discount en autorización ni campos discount en formularios.
 - El catálogo se presenta en USD; no se inventa conversión VES hasta integrar y validar BCV. En #227 quedó registrado un riesgo: almacenar primero una tasa con fecha efectiva de mañana puede bloquear la tasa del día actual. Debe corregirse y probarse antes de habilitar el endpoint BCV.
-- Checks de esta rama todavía pendientes de ejecutarse sobre su SHA final. No declararla lista hasta CI, PostgreSQL, runtime-role, E2E, seguridad y revisión de diff completos.
+- PR #244 está abierta en Draft. Diez workflows comenzaron en el SHA inicial; cualquier commit posterior supersede esos resultados. Consultar el HEAD y las conclusiones actuales en GitHub antes de decidir Ready/merge.
 - No se realizaron escrituras Neon, cambios de roles/grants, secretos, datos reales, DNS, Cloudflare manual, billing ni despliegue manual. Producción NOT READY.
 
 ## Próximos pasos

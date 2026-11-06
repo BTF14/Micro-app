@@ -1,5 +1,5 @@
 import { getCookie } from "hono/cookie";
-import type { Hono } from "hono";
+import type { Context, Hono } from "hono";
 import type { Bindings } from "./bindings";
 import { authorizeBranchOperation, authorizeCommercialOperation } from "./authorization";
 import { withDatabaseClient, withDatabaseTransaction } from "./database";
@@ -22,7 +22,7 @@ function postgresErrorCode(error: unknown): string | undefined {
 }
 
 function inventoryReadFailure(
-  c: Parameters<Parameters<Hono<{ Bindings: Bindings }>["get"]>[1]>[0],
+  c: Context<{ Bindings: Bindings }>,
   error: unknown,
   errorCode: "INVENTORY_READ_FAILED" | "INVENTORY_MOVEMENTS_READ_FAILED",
   message: string,

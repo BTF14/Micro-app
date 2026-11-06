@@ -8,8 +8,16 @@ describe("Micro app API", () => {
     await expect(response.json()).resolves.toMatchObject({
       status: "ok",
       service: "micro-app-api",
-      stage: "catalog-inventory",
+      stage: "catalog-inventory-bcv",
     });
+  });
+
+  it("does not run the BCV scheduled sync in Worker previews", async () => {
+    const scheduled = app as typeof app & {
+      scheduled?: (controller: ScheduledController, env: { APP_ENV: "preview" }) => Promise<void>;
+    };
+    expect(scheduled.scheduled).toBeTypeOf("function");
+    await scheduled.scheduled!({ cron: "0 22 * * 1-5" } as ScheduledController, { APP_ENV: "preview" });
   });
 
   it("sets baseline security headers on every response, and no-store on auth routes", async () => {

@@ -1,7 +1,7 @@
 # ODD task: BCV USD/VES rate ingestion and read API
 
-- Status: in progress
-- Issue / PR: pending; dedicated branch `feat/bcv-rate-integration-20261105`
+- Status: in progress (implementation complete; final CI/review pending)
+- Issue / PR: [PR #235](https://github.com/BTF14/Micro-app/pull/235); consolidated replacement for initial PR #234
 - Owner / reviewer: repository owner / technical implementation delegated to assistant
 - Started: 2026-11-05
 - Risk: critical (financial reference data; no sales execution or production database mutation)
@@ -59,10 +59,10 @@ Excluded:
 |---|---|---|---|
 | Inspect current API/schema/security contracts | Existing table and Worker structure understood | Live main SHA `7b0f057b8c152515005feed40305143c0ebb94b0`; migration 0001 defines `exchange_rates` and unique `(source,effective_date)` | complete |
 | Research candidate source | Source behavior and limitations documented | `bcv.today` docs/API/OpenAPI and upstream scraper README inspected 2026-11-05; see `docs/RESOURCE_REGISTRY.md` | complete |
-| Implement source validation and persistence | Strict, idempotent ingestion | Unit tests + CI | pending |
-| Implement read-only endpoint | Safe current-rate contract | Route tests | pending |
-| Add Worker scheduled handler | Automated bounded polling | Worker config + scheduler tests + CI | pending |
-| Review, PR and merge | Verified integration | Exact-head CI, diff/review, merge result | pending |
+| Implement source validation and persistence | Strict, idempotent ingestion | `apps/api/src/bcv.ts`; conditional upsert and source validation tests | implemented; CI pending |
+| Implement read-only endpoint | Safe current-rate contract | `GET /exchange-rates/current`; route tests include no-rate, stale and DB failure | implemented; CI pending |
+| Add Worker scheduled handler | Automated bounded polling | `apps/api/src/worker.ts`; `wrangler.toml` Cron `0,30 * * * *` | implemented; CI pending |
+| Review, PR and merge | Verified integration | PR #235 targets main; first CI exposed a generic test-double typing error, corrected in this consolidated PR | pending final CI/review |
 
 ## Technical decisions
 
@@ -75,10 +75,10 @@ Excluded:
 
 ## Closure and handoff
 
-- Final commit SHA: pending
-- PR: pending
+- Final commit SHA: `3f86c6abb7013e653fbac46f38348e7e24958b64` (current fix-branch HEAD; verify again before merge)
+- PR: https://github.com/BTF14/Micro-app/pull/235
 - Checks and exact outcomes: pending
 - Acceptance criteria met / unmet: pending
 - Limitations not verified: direct live access to `bcv.org.ve` was unavailable during source verification; the third-party feed's upstream scraper is documented but has no uptime/accuracy guarantee.
 - Residual risks: external source outage or upstream scraping changes; monitor freshness and keep last valid value explicitly stale.
-- Next step: implement service, route, scheduler and deterministic tests on the isolated branch.
+- Next step: complete CI on PR #235, inspect any failures, then merge and close superseded PR #234.

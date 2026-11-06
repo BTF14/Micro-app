@@ -4,7 +4,7 @@
 **Repository:** `BTF14/Micro-app`  
 **Recovery branch:** `feat/recover-inventory-application-20261106`  
 **Observed main baseline:** `38e1d61acc083b3c0b9b73edcb2bc7887ca56872`  
-**Source backlog snapshot:** 25 open implementation/documentation PRs. PR #242 and PR #243 have since merged; **current open count: 25 source PRs plus this in-progress recovery PR once opened**. Re-query GitHub before future reports.
+**Source backlog snapshot:** 25 open implementation/documentation PRs. PR #242 and PR #243 have since merged; PR #244 is now open as the active recovery PR. **Current open count: 26 (25 source PRs + #244)**. Re-query GitHub before future reports.
 
 ## Purpose and operating rules
 
@@ -142,3 +142,5 @@ For each PR, record: live head/base SHA; changed file list; unique changes retai
 - Removed discount operations from the recovered authorization policy and kept discount fields out of product forms.
 - Recorded the BCV future-date persistence ordering issue on #227; no BCV API route or checkout handler is being enabled until this is fixed.
 - No Neon production writes, roles/grants, secrets, DNS, manual Cloudflare changes or production deployment actions were performed.
+
+- PR #244 opened Draft on 2026-11-06: https://github.com/BTF14/Micro-app/pull/244. Exact HEAD at opening: `d180f2709be7ca0a193cdecb3223709c6a64bb15`; 10 workflows in progress. No production changes.

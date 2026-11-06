@@ -1,6 +1,6 @@
 # Modelo de ventas y checkout transaccional
 
-**Estado:** diseño técnico en propuesta; no aprobado como política comercial y no implementado.  
+**Estado:** política comercial aprobada por el propietario (2026-11-05); implementación técnica en PR #233 Draft. No desplegado ni probado en producción.  
 **Fecha:** 2026-11-05 UTC  
 **Dependencias de código:** PR #226–#229 (migraciones y motor monetario), PR #230 (catálogo de lectura), PR #231 (mantenimiento de productos).  
 **Límites:** este documento no crea endpoints, DDL, migraciones ni cambios de infraestructura. No autoriza merge, Neon, Cloudflare ni producción.
@@ -31,14 +31,14 @@ Reglas no negociables:
 - warehouses, inventory_balances y warehouse_inventory_movements: inventario por almacén/sucursal. El ledger es append-only y PR #210 acopla cada cambio de balance a un movimiento mediante intentos transaccionales.
 - withDatabaseTransaction: helper existente para BEGIN/COMMIT/ROLLBACK en un único cliente.
 
-### Brechas verificadas que impiden implementar checkout sin diseño adicional
+### Brechas verificadas en la base #232 y estado de la implementación en PR #233
 
-1. sales no tiene actualmente branch_id, register_shift_id ni warehouse_id; no puede vincular una venta a la sucursal, caja/turno y almacén que la originaron.
-2. La base no garantiza por sí sola que una venta completada tenga al menos una línea, que la suma de líneas coincida con subtotal/total ni que los pagos concilien con lo cobrado. El servicio debe comprobarlo dentro de la transacción; se debe evaluar una constraint/trigger diferible adicional.
-3. payments no tiene clave idempotente independiente. Para un checkout único, la clave de idempotencia de la venta debe cubrir el conjunto completo de pagos; no se debe exponer un endpoint separado de pago hasta definir su propia idempotencia.
-4. payments.amount admite cuatro decimales independientemente de la moneda. La aplicación debe imponer escala 4 para USD y 2 para VES; se debe decidir si también se añade constraint SQL para VES.
+1. En la base #232, sales no tenía branch_id, register_shift_id ni warehouse_id. La migración 0015 de PR #233 añade esas relaciones compuestas sin backfill ni defaults.
+2. La migración 0015 de PR #233 añade reconciliación diferida al COMMIT para líneas, pagos, BCV, turno, almacén, ledger y auditoría. El servicio HTTP aún debe demostrar el contrato mediante pruebas de integración.
+3. payments no tiene clave idempotente independiente. La clave de idempotencia de la venta cubre el checkout completo y todos sus pagos; no se expone un endpoint separado de pagos.
+4. payments.amount admite cuatro decimales por compatibilidad. La migración 0015 añade una constraint SQL que limita VES a dos decimales; el backend valida USD a cuatro y VES a dos.
 5. La tabla heredada products.stock_quantity sigue en el esquema inicial, pero el inventario por almacén usa inventory_balances y warehouse_inventory_movements. Checkout no debe actualizar ambas representaciones a la vez ni inventar un backfill. El stock vendible debe proceder del balance del almacén elegido.
-6. sales exige snapshots BCV/total VES para estado completed, incluso si el cliente pagó solo en USD. La política de tasa stale/no disponible debe cerrarse antes de exponer checkout.
+6. sales exige snapshots BCV/total VES para estado completed, incluso si el cliente pagó solo en USD. El propietario aprobó bloquear toda finalización si BCV no está current y validada; PR #233 exige fecha efectiva del día en Caracas y validation_status=valid.
 7. Los importes VES por línea están almacenados en sale_items.line_total_ves; falta fijar explícitamente si sales.total_ves_snapshot es la suma de líneas redondeadas o la conversión del subtotal global. Para evitar dos totales distintos, la propuesta es sumar los line_total_ves ya redondeados.
 8. No hay handlers HTTP de ventas/checkout registrados en apps/api/src/index.ts. Las tablas no significan que la operación esté implementada.
 
@@ -84,16 +84,17 @@ Cualquier error antes de COMMIT produce ROLLBACK total. No enviar correos, webho
 - No usar Number para multiplicación, división, suma o redondeo monetario.
 - Si la tasa está stale/no disponible, no inventar ni reutilizar silenciosamente una tasa.
 
-### Pagos
+### Pagos — política aprobada
 
-El esquema permite métodos cash/card/transfer/mobile_payment/other y monedas USD/VES, pero no define por sí solo mezcla de monedas, cambio ni tolerancias. No implementar la conciliación hasta aprobar:
-- si una venta acepta pagos mixtos USD+VES;
-- si se permite sobrepago en efectivo y cómo se registra el cambio;
-- si se permiten pagos parciales o la venta solo se completa al cubrir el total;
-- cómo asignar el equivalente USD de cada pago VES y cómo conciliar el redondeo con total_usd;
-- si se admite un pago en moneda distinta a la moneda de liquidación de la venta.
+- Cada venta usa una sola moneda de liquidación: USD o VES. No se mezclan monedas.
+- La suma de los pagos debe ser exactamente igual al total en la moneda de liquidación. No se permiten parcialidades, sobrepago ni cálculo de cambio.
+- Una venta no se completa si BCV no está current y validada, incluso si el pago se realiza en USD.
+- Los métodos existentes siguen siendo cash/card/transfer/mobile_payment/other.
+- Para pagos USD, usd_equivalent_snapshot coincide con amount.
+- Para pagos VES, el backend calcula equivalentes con la tasa congelada. La suma de usd_equivalent_snapshot debe ser exactamente igual a total_usd; el último pago absorbe el residuo de asignación para no introducir diferencias de redondeo.
+- La clave de idempotencia de la venta cubre todos los pagos del checkout; no existe endpoint independiente de pagos.
 
-Recomendación técnica inicial: en la primera versión, un solo checkout atómico, sin pagos parciales ni sobrepago/cambio, y una sola moneda de liquidación por venta. Esto reduce ambigüedad contable; requiere aprobación funcional antes de codificarlo.
+La política comercial anterior no autoriza descuentos, cupones, cambio manual de precios, mezcla de monedas, pagos parciales ni sobrepago.
 
 ## 5. Idempotencia y concurrencia
 
@@ -147,36 +148,35 @@ Cada reverso futuro deberá ser un documento/operación compensatoria y auditada
 
 Las pruebas deben correr contra PostgreSQL efímero con roles migrator/runtime reales; nunca contra Neon main o datos reales.
 
-## 8. Decisiones funcionales pendientes antes del primer endpoint
+## 8. Decisiones funcionales aprobadas y límites
 
-| Decisión | Recomendación inicial | Motivo |
+| Decisión | Regla aprobada | Implementación |
 |---|---|---|
-| Vínculo de venta | Organización + sucursal + turno propio + un almacén explícito | Trazabilidad y aislamiento |
-| Almacén por venta | Un solo almacén por checkout v1 | Evita fulfillment ambiguo |
-| Stock disponible | on_hand - reserved | No consumir stock reservado |
-| Precio | Precio actual de catálogo leído por backend | Sin override ni descuento |
-| Redondeo VES | Redondear por línea y sumar snapshots de línea | Coherencia con sale_items.line_total_ves |
-| Pagos parciales | No en v1 | Simplifica estado y conciliación |
-| Sobrepago/cambio | No en v1 | No existe modelo de cambio/ledger de caja |
-| Mezcla USD/VES | Una moneda de liquidación por venta v1 | Evita tolerancias de equivalencia no definidas |
-| BCV stale | Bloquear finalización si no hay tasa current validada | Cumple fail-closed y snapshots obligatorios actuales |
-| Reversos/refunds | Fuera de v1 | Requiere flujos compensatorios separados |
+| Vínculo de venta | Organización + sucursal + turno propio abierto + un almacén | Migración 0015; servicio en curso |
+| Almacén por venta | Un solo almacén por checkout | Handler en PR #233 |
+| Stock vendible | on_hand - reserved | Validación bajo lock de balance |
+| Precio | Precio vigente de catálogo leído por backend | Sin precio enviado por el cliente |
+| Descuentos | No existen en Micro-app | Sin campo ni cálculo de descuento |
+| Redondeo VES | Redondear cada línea a dos decimales y sumar snapshots de línea | @micro-app/money |
+| Pagos parciales | No permitidos | Total exacto obligatorio |
+| Sobrepago/cambio | No permitidos | Total exacto obligatorio |
+| Monedas | Una sola moneda por venta | USD o VES, nunca mixtas |
+| BCV | current y validada obligatoria para toda venta | Fail-closed |
+| Reversos/refunds | Fuera de v1 | Operación compensatoria futura |
 
-Estas recomendaciones no son políticas aprobadas. El propietario debe confirmarlas o cambiarlas antes de cerrar el contrato funcional y añadir DDL/handlers.
+No se deben ampliar estas reglas sin una decisión explícita del propietario. El soporte de varios registros de pago solo permite repartir el pago completo entre métodos de la misma moneda; la suma debe cubrir exactamente el total y no representa una parcialidad.
 
 ## 9. Secuencia técnica recomendada
 
-1. Revisar y cerrar las decisiones de la sección 8.
-2. Diseñar migración aditiva para vincular venta a sucursal, turno y almacén, request hash/idempotencia y constraints de integridad.
-3. Añadir constraints diferibles o un mecanismo de reconciliación SQL que impida completar una venta sin líneas/pagos conciliados.
-4. Implementar un servicio de dominio puro para normalizar request, calcular líneas, totales, VES y pagos sin IO.
-5. Implementar handler POST checkout usando una única transacción y helpers existentes de tenant, branch, shift, warehouse y balances.
-6. Añadir pruebas de concurrencia/rollback/idempotencia contra PostgreSQL desechable.
-7. Solo después crear UI de carrito/checkout; no duplicar cálculos monetarios en React.
+1. Completar el handler POST checkout y su contrato de errores/respuesta.
+2. Completar pruebas PostgreSQL para concurrencia, idempotencia, rollback, BCV, turno, stock, ledger, auditoría y aislamiento cross-tenant/cross-branch.
+3. Verificar el bloqueo de turno, almacén y balances bajo el LOGIN runtime real.
+4. Revisar los gates de seguridad de Issue #53 que condicionan la exposición del checkout.
+5. Solo después crear UI de carrito/checkout; no duplicar cálculos monetarios en React.
 
 ## 10. Estado de infraestructura
 
-- PR #226–#231 siguen siendo ramas/PRs de trabajo; verificar sus estados vivos antes de integrar.
+- PR #226–#232 siguen siendo dependencias apiladas; PR #233 es la implementación inicial de checkout y permanece Draft.
 - CI verde en una rama no significa que migraciones estén aplicadas a Neon.
-- No se ha probado checkout en producción porque no existe handler de checkout.
+- No se ha probado checkout en producción ni se ha aplicado la migración 0015 a Neon.
 - No desplegar ni fusionar fuera del orden de dependencias.

@@ -1,6 +1,6 @@
 # Modelo de ventas y checkout transaccional
 
-**Estado:** diseño técnico en propuesta; no aprobado como política comercial y no implementado.  
+**Estado:** política comercial aprobada por el propietario (2026-11-05); implementación técnica en PR #233 Draft. No desplegado ni probado en producción.  
 **Fecha:** 2026-11-05 UTC  
 **Dependencias de código:** PR #226–#229 (migraciones y motor monetario), PR #230 (catálogo de lectura), PR #231 (mantenimiento de productos).  
 **Límites:** este documento no crea endpoints, DDL, migraciones ni cambios de infraestructura. No autoriza merge, Neon, Cloudflare ni producción.
@@ -31,38 +31,55 @@ Reglas no negociables:
 - warehouses, inventory_balances y warehouse_inventory_movements: inventario por almacén/sucursal. El ledger es append-only y PR #210 acopla cada cambio de balance a un movimiento mediante intentos transaccionales.
 - withDatabaseTransaction: helper existente para BEGIN/COMMIT/ROLLBACK en un único cliente.
 
-### Brechas verificadas que impiden implementar checkout sin diseño adicional
+### Brechas verificadas en la base #232 y estado de la implementación en PR #233
 
-1. sales no tiene actualmente branch_id, register_shift_id ni warehouse_id; no puede vincular una venta a la sucursal, caja/turno y almacén que la originaron.
-2. La base no garantiza por sí sola que una venta completada tenga al menos una línea, que la suma de líneas coincida con subtotal/total ni que los pagos concilien con lo cobrado. El servicio debe comprobarlo dentro de la transacción; se debe evaluar una constraint/trigger diferible adicional.
-3. payments no tiene clave idempotente independiente. Para un checkout único, la clave de idempotencia de la venta debe cubrir el conjunto completo de pagos; no se debe exponer un endpoint separado de pago hasta definir su propia idempotencia.
-4. payments.amount admite cuatro decimales independientemente de la moneda. La aplicación debe imponer escala 4 para USD y 2 para VES; se debe decidir si también se añade constraint SQL para VES.
+1. En la base #232, sales no tenía branch_id, register_shift_id ni warehouse_id. La migración 0015 de PR #233 añade esas relaciones compuestas sin backfill ni defaults.
+2. La migración 0015 de PR #233 añade reconciliación diferida al COMMIT para líneas, pagos, BCV, turno, almacén, ledger y auditoría. El servicio HTTP aún debe demostrar el contrato mediante pruebas de integración.
+3. payments no tiene clave idempotente independiente. La clave de idempotencia de la venta cubre el checkout completo y todos sus pagos; no se expone un endpoint separado de pagos.
+4. payments.amount admite cuatro decimales por compatibilidad. La migración 0015 añade una constraint SQL que limita VES a dos decimales; el backend valida USD a cuatro y VES a dos.
 5. La tabla heredada products.stock_quantity sigue en el esquema inicial, pero el inventario por almacén usa inventory_balances y warehouse_inventory_movements. Checkout no debe actualizar ambas representaciones a la vez ni inventar un backfill. El stock vendible debe proceder del balance del almacén elegido.
-6. sales exige snapshots BCV/total VES para estado completed, incluso si el cliente pagó solo en USD. La política de tasa stale/no disponible debe cerrarse antes de exponer checkout.
+6. sales exige snapshots BCV/total VES para estado completed, incluso si el cliente pagó solo en USD. El propietario aprobó bloquear toda finalización si BCV no está current y validada; PR #233 exige fecha efectiva del día en Caracas y validation_status=valid.
 7. Los importes VES por línea están almacenados en sale_items.line_total_ves; falta fijar explícitamente si sales.total_ves_snapshot es la suma de líneas redondeadas o la conversión del subtotal global. Para evitar dos totales distintos, la propuesta es sumar los line_total_ves ya redondeados.
 8. No hay handlers HTTP de ventas/checkout registrados en apps/api/src/index.ts. Las tablas no significan que la operación esté implementada.
 
-## 3. Flujo transaccional propuesto
+## 3. Flujo transaccional implementado en PR #233
 
-El siguiente orden es una propuesta que debe respetar docs/architecture/INVENTORY_TRANSACTION_LOCKING.md:
+El handler implementado en PR #233 respeta docs/architecture/INVENTORY_TRANSACTION_LOCKING.md. CI unitario, PostgreSQL checkout y validación de migraciones han pasado para el HEAD verificado; PR continúa Draft hasta cerrar los gates humanos y de seguridad de la sección 7.
 
-1. **Validación de borde:** método/ruta, origen confiable, content-type, tamaño de cuerpo, sesión, UUIDs, clave idempotente y estructura estricta. Rechazar propiedades desconocidas.
-2. **BEGIN y tenant:** usar un único cliente/una transacción; resolver y bloquear sesión, usuario, membresía y organización.
-3. **Sucursal:** resolver branch context y revalidar sucursal/asignación activa dentro de la misma transacción. No confiar en organization/branch IDs del navegador.
-4. **Almacén:** bloquear el almacén activo que pertenece a esa organización y sucursal con lockInventoryWarehouses. No aceptar almacén de otra sucursal/tenant.
-5. **Turno:** resolver el turno abierto del usuario autenticado con resolveOpenCashierRegisterShift en el mismo cliente transaccional. Exigir que el turno pertenezca al usuario, sucursal y organización actuales. FOR SHARE mantiene el turno abierto hasta el COMMIT y evita cerrar mientras se procesa una venta.
-6. **Idempotencia:** reclamar (organization_id, idempotency_key) dentro de la transacción y asociar un hash canónico de toda la petición. Mismo key + mismo hash devuelve el resultado original sin efectos nuevos; mismo key + distinto hash devuelve 409. Una restricción única resuelve concurrencia.
-7. **Productos y líneas:** leer productos activos y bloquear el conjunto necesario; validar tenant, precio vigente, escala, cantidad positiva, SKU/nombre y costo snapshot. Consolidar IDs duplicados antes de bloquear balances, o definir expresamente si se conservan líneas duplicadas.
-8. **Balances:** bloquear todos los balances del almacén en orden estable product_id ASC mediante el helper compartido. Validar on_hand_quantity - reserved_quantity >= quantity para cada producto; no permitir stock negativo ni consumir reservado.
-9. **Cálculo exacto:** recalcular en backend cada line_total_usd = quantity × current price_usd; sumar a cuatro decimales; sin descuentos. Convertir cada línea a VES con la tasa aprobada, redondear a dos decimales y sumar esos importes para total_ves_snapshot (propuesta pendiente de aprobación).
-10. **Venta draft:** insertar venta draft con tenant/sucursal/turno/almacén, actor, idempotency key/hash y snapshots calculados. Insertar líneas con snapshots de producto, precio, costo, cantidad y totales.
-11. **Pagos:** validar cada método, moneda, referencia, escala y equivalencia; insertar todos los pagos. La conciliación debe seguir una política única aprobada; no aceptar pagos parciales, exceso ni cambio hasta que exista un modelo explícito.
-12. **Inventario y ledger:** actualizar inventory_balances.on_hand_quantity bajo locks; insertar movimiento sale negativo por cada producto con referencia tipada a la venta y actor. El trigger de ledger debe consumir el intent correspondiente en la misma transacción.
-13. **Auditoría:** insertar evento de venta completada con actor, scope, turno, almacén, venta, correlación/idempotencia y metadatos mínimos no sensibles.
-14. **Finalización:** cambiar draft a completed únicamente después de verificar líneas, total, pagos, balances y ledger; establecer completed_at; COMMIT.
-15. **Respuesta:** devolver snapshots persistidos. Replay idempotente devuelve la misma venta/snapshots y nunca vuelve a consumir inventario ni duplicar pagos/movimientos/auditoría.
+1. **Borde HTTP:** POST, origen confiable, `application/json`, límite 64 KiB, sesión, UUIDs, `Idempotency-Key` y esquema estricto. Rechaza propiedades desconocidas.
+2. **Tenant/sucursal:** `authorizeBranchOperation(..., "sales.create_list_price")` resuelve sesión/tenant/rol/branch; luego `lockBranchScopes` exige y bloquea membresía activa incluso para owner/admin.
+3. **Replay temprano:** busca (organization_id, idempotency_key). Mismo actor/hash y venta completed devuelve snapshots; distinto hash o draft existente devuelve 409.
+4. **Almacén:** `lockInventoryWarehouses` valida y serializa el almacén de la misma organización/sucursal. Repite comprobación de idempotencia tras adquirir el mutex.
+5. **Turno:** `resolveOpenCashierRegisterShift` invoca `lock_open_register_shift` SECURITY DEFINER y mantiene el bloqueo del turno abierto del propio usuario.
+6. **BCV:** selecciona una sola tasa `BCV_OFFICIAL_HTML_V1`, `validation_status='valid'`, con fecha efectiva del día en Caracas. Sin tasa actual, falla cerrado.
+7. **Productos/líneas:** consulta productos activos bajo `FOR SHARE`; consolida IDs duplicados, valida cantidades y lee precios/costos actuales desde PostgreSQL. El cliente no envía precios.
+8. **Cálculo exacto:** `packages/money` calcula cada línea USD a cuatro decimales, convierte cada línea a VES a dos decimales y suma los snapshots de línea. No usa `Number` para importes.
+9. **Pagos:** exige una sola moneda por venta y suma exacta al total; USD a escala 4, VES a escala 2. No admite parcialidad, sobrepago ni cambio. El equivalente USD VES suma exactamente el total USD.
+10. **Balances:** bloquea balances después del mutex del almacén; valida `on_hand - reserved` antes de reclamar la venta. Si falta el balance o no hay stock, no inserta draft.
+11. **Claim y escrituras:** inserta sale draft con scope, turno, actor, snapshots y hash; actualiza balances y crea movimientos `sale` negativos; inserta líneas y pagos; registra auditoría.
+12. **Finalización:** cambia draft a completed. Triggers diferidos reconcilian líneas, pagos, BCV current, turno propio abierto, almacén, ledger y auditoría en COMMIT. Una venta draft no puede confirmarse en una transacción.
+13. **Rollback:** cualquier error después del claim se lanza como excepción y provoca ROLLBACK completo. No hay dual-write con `products.stock_quantity`.
 
-Cualquier error antes de COMMIT produce ROLLBACK total. No enviar correos, webhooks ni efectos externos dentro de la transacción.
+### Contrato HTTP inicial
+
+`POST /api/orgs/:organizationId/branches/:branchId/checkout`
+
+Header obligatorio: `Idempotency-Key: <1–128 caracteres ASCII seguros>`.
+
+Cuerpo:
+```json
+{
+  "warehouse_id": "uuid",
+  "lines": [
+    { "product_id": "uuid", "quantity": "1.250" }
+  ],
+  "payments": [
+    { "method": "cash", "currency": "USD", "amount": "29.8125" }
+  ]
+}
+```
+
+Las cantidades e importes se envían como strings decimales. No se aceptan precios unitarios, subtotales, totales, descuentos ni snapshots del cliente. El backend calcula y persiste los valores. Respuesta 201 para venta nueva, 200 para replay; errores de validación/autorización/stock/BCV/idempotencia se devuelven sin efectos parciales.
 
 ## 4. Contrato monetario
 
@@ -84,21 +101,22 @@ Cualquier error antes de COMMIT produce ROLLBACK total. No enviar correos, webho
 - No usar Number para multiplicación, división, suma o redondeo monetario.
 - Si la tasa está stale/no disponible, no inventar ni reutilizar silenciosamente una tasa.
 
-### Pagos
+### Pagos — política aprobada
 
-El esquema permite métodos cash/card/transfer/mobile_payment/other y monedas USD/VES, pero no define por sí solo mezcla de monedas, cambio ni tolerancias. No implementar la conciliación hasta aprobar:
-- si una venta acepta pagos mixtos USD+VES;
-- si se permite sobrepago en efectivo y cómo se registra el cambio;
-- si se permiten pagos parciales o la venta solo se completa al cubrir el total;
-- cómo asignar el equivalente USD de cada pago VES y cómo conciliar el redondeo con total_usd;
-- si se admite un pago en moneda distinta a la moneda de liquidación de la venta.
+- Cada venta usa una sola moneda de liquidación: USD o VES. No se mezclan monedas.
+- La suma de los pagos debe ser exactamente igual al total en la moneda de liquidación. No se permiten parcialidades, sobrepago ni cálculo de cambio.
+- Una venta no se completa si BCV no está current y validada, incluso si el pago se realiza en USD.
+- Los métodos existentes siguen siendo cash/card/transfer/mobile_payment/other.
+- Para pagos USD, usd_equivalent_snapshot coincide con amount.
+- Para pagos VES, el backend calcula equivalentes con la tasa congelada. La suma de usd_equivalent_snapshot debe ser exactamente igual a total_usd; el último pago absorbe el residuo de asignación para no introducir diferencias de redondeo.
+- La clave de idempotencia de la venta cubre todos los pagos del checkout; no existe endpoint independiente de pagos.
 
-Recomendación técnica inicial: en la primera versión, un solo checkout atómico, sin pagos parciales ni sobrepago/cambio, y una sola moneda de liquidación por venta. Esto reduce ambigüedad contable; requiere aprobación funcional antes de codificarlo.
+La política comercial anterior no autoriza descuentos, cupones, cambio manual de precios, mezcla de monedas, pagos parciales ni sobrepago.
 
 ## 5. Idempotencia y concurrencia
 
 - La clave es obligatoria para POST checkout; patrón acotado, por ejemplo 1–128 caracteres ASCII seguros.
-- El hash canónico debe incluir organización, sucursal, turno, almacén, líneas ordenadas (product_id + quantity), y pagos normalizados (method, currency, amount, reference si aplica). No incluir campos calculados por cliente.
+- El hash canónico incluye organización, sucursal, usuario autenticado, almacén, moneda, líneas ordenadas (product_id + quantity) y pagos normalizados (method, currency, amount, reference). No incluye turno ni campos calculados por cliente; un replay devuelve la venta y el turno originales.
 - Mismo key/hash: replay sin efectos; mismo key/diferente hash: 409.
 - Dos requests simultáneas con la misma clave deben producir una sola venta, un conjunto de pagos, un conjunto de movimientos y un evento de auditoría.
 - Dos ventas concurrentes que consumen el último stock deben serializarse en el mutex del almacén/balance; solo una puede completar.
@@ -147,36 +165,37 @@ Cada reverso futuro deberá ser un documento/operación compensatoria y auditada
 
 Las pruebas deben correr contra PostgreSQL efímero con roles migrator/runtime reales; nunca contra Neon main o datos reales.
 
-## 8. Decisiones funcionales pendientes antes del primer endpoint
+## 8. Decisiones funcionales aprobadas y límites
 
-| Decisión | Recomendación inicial | Motivo |
+| Decisión | Regla aprobada | Implementación |
 |---|---|---|
-| Vínculo de venta | Organización + sucursal + turno propio + un almacén explícito | Trazabilidad y aislamiento |
-| Almacén por venta | Un solo almacén por checkout v1 | Evita fulfillment ambiguo |
-| Stock disponible | on_hand - reserved | No consumir stock reservado |
-| Precio | Precio actual de catálogo leído por backend | Sin override ni descuento |
-| Redondeo VES | Redondear por línea y sumar snapshots de línea | Coherencia con sale_items.line_total_ves |
-| Pagos parciales | No en v1 | Simplifica estado y conciliación |
-| Sobrepago/cambio | No en v1 | No existe modelo de cambio/ledger de caja |
-| Mezcla USD/VES | Una moneda de liquidación por venta v1 | Evita tolerancias de equivalencia no definidas |
-| BCV stale | Bloquear finalización si no hay tasa current validada | Cumple fail-closed y snapshots obligatorios actuales |
-| Reversos/refunds | Fuera de v1 | Requiere flujos compensatorios separados |
+| Vínculo de venta | Organización + sucursal + turno propio abierto + un almacén | Migración 0015 y handler en PR #233; CI PostgreSQL aprobado |
+| Almacén por venta | Un solo almacén por checkout | Handler en PR #233 |
+| Stock vendible | on_hand - reserved | Validación bajo lock de balance |
+| Precio | Precio vigente de catálogo leído por backend | Sin precio enviado por el cliente |
+| Descuentos | No existen en Micro-app | Sin campo ni cálculo de descuento |
+| Redondeo VES | Redondear cada línea a dos decimales y sumar snapshots de línea | @micro-app/money |
+| Pagos parciales | No permitidos | Total exacto obligatorio |
+| Sobrepago/cambio | No permitidos | Total exacto obligatorio |
+| Monedas | Una sola moneda por venta | USD o VES, nunca mixtas |
+| BCV | current y validada obligatoria para toda venta | Fail-closed |
+| Reversos/refunds | Fuera de v1 | Operación compensatoria futura |
 
-Estas recomendaciones no son políticas aprobadas. El propietario debe confirmarlas o cambiarlas antes de cerrar el contrato funcional y añadir DDL/handlers.
+No se deben ampliar estas reglas sin una decisión explícita del propietario. El soporte de varios registros de pago solo permite repartir el pago completo entre métodos de la misma moneda; la suma debe cubrir exactamente el total y no representa una parcialidad.
+
+**Reconciliación de roles:** `authorization.ts` concede `register.shift.open_own`, `register.shift.operate_own` y `sales.create_list_price` a owner/admin/cashier. La migración existente `0006_register_shift_member_roles.sql` ya alinea la validación SQL de apertura y el bloqueo de degradación de rol con esa matriz. La migración 0015 reutiliza `lock_open_register_shift` y exige el turno propio. Se añadieron pruebas para cubrir apertura/cierre de owner/admin y resolución del turno mediante LOGIN runtime; no se necesita otra migración.
 
 ## 9. Secuencia técnica recomendada
 
-1. Revisar y cerrar las decisiones de la sección 8.
-2. Diseñar migración aditiva para vincular venta a sucursal, turno y almacén, request hash/idempotencia y constraints de integridad.
-3. Añadir constraints diferibles o un mecanismo de reconciliación SQL que impida completar una venta sin líneas/pagos conciliados.
-4. Implementar un servicio de dominio puro para normalizar request, calcular líneas, totales, VES y pagos sin IO.
-5. Implementar handler POST checkout usando una única transacción y helpers existentes de tenant, branch, shift, warehouse y balances.
-6. Añadir pruebas de concurrencia/rollback/idempotencia contra PostgreSQL desechable.
-7. Solo después crear UI de carrito/checkout; no duplicar cálculos monetarios en React.
+1. Mantener PR #233 en Draft hasta revisión humana del contrato, migración 0015 y servicio.
+2. CI ya cubre PostgreSQL checkout, concurrencia, idempotencia, rollback, BCV, turno, stock, ledger, auditoría y aislamiento cross-tenant/cross-branch; revisar cualquier regresión en cada nuevo HEAD.
+3. Mantener evidencia de permisos mínimos bajo LOGIN runtime y no aplicar la migración a Neon antes de completar los gates de seguridad.
+4. Cerrar los gates P0 de Issue #53 que condicionan la exposición del checkout.
+5. Solo después crear UI de carrito/checkout; no duplicar cálculos monetarios en React.
 
 ## 10. Estado de infraestructura
 
-- PR #226–#231 siguen siendo ramas/PRs de trabajo; verificar sus estados vivos antes de integrar.
+- PR #226–#232 siguen siendo dependencias apiladas; PR #233 es la implementación inicial de checkout y permanece Draft.
 - CI verde en una rama no significa que migraciones estén aplicadas a Neon.
-- No se ha probado checkout en producción porque no existe handler de checkout.
+- No se ha probado checkout en producción ni se ha aplicado la migración 0015 a Neon.
 - No desplegar ni fusionar fuera del orden de dependencias.

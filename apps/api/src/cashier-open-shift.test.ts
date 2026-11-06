@@ -43,14 +43,9 @@ describe("resolveOpenCashierRegisterShift", () => {
       expect(query).toHaveBeenCalledOnce();
       expect(query.mock.calls[0]?.[1]).toEqual([organizationId, branchId, userId]);
       const sql = query.mock.calls[0]?.[0] ?? "";
-      expect(sql).toContain("s.organization_id = $1");
-      expect(sql).toContain("s.branch_id = $2");
-      expect(sql).toContain("s.cashier_user_id = $3");
-      expect(sql).toContain("s.closed_at IS NULL");
-      expect(sql).toContain("m.role IN ('owner', 'admin', 'cashier')");
-      expect(sql).toContain("bm.is_active = true");
-      expect(sql).toContain("u.is_active = true");
-      expect(sql).toContain("FOR SHARE OF s");
+      expect(sql).toContain("public.lock_open_register_shift($1::uuid, $2::uuid, $3::uuid)");
+      expect(sql).toContain("JOIN public.register_shifts s ON s.id = locked.shift_id");
+      expect(sql).not.toContain("FOR SHARE OF s");
     },
   );
 

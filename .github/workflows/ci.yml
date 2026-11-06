@@ -100,6 +100,10 @@ jobs:
         run: docker exec -i -e PGPASSWORD=migrator-test-only "${{ job.services.postgres.id }}" psql -h 127.0.0.1 -v ON_ERROR_STOP=1 -U microapp_migrator -d microapp_test -f /dev/stdin < apps/api/migrations/0014_sales_without_discounts.sql
       - name: Verify sales no-discount and exact-decimal contract
         run: docker exec -i "${{ job.services.postgres.id }}" psql -v ON_ERROR_STOP=1 -U microapp -d microapp_test -f /dev/stdin < apps/api/migrations/0014_sales_without_discounts.assertions.sql
+      - name: Apply atomic sales checkout schema and constraints
+        run: docker exec -i -e PGPASSWORD=migrator-test-only "${{ job.services.postgres.id }}" psql -h 127.0.0.1 -v ON_ERROR_STOP=1 -U microapp_migrator -d microapp_test -f /dev/stdin < apps/api/migrations/0015_sales_checkout_atomicity.sql
+      - name: Verify atomic sales checkout schema and runtime grants
+        run: docker exec -i "${{ job.services.postgres.id }}" psql -v ON_ERROR_STOP=1 -U microapp -d microapp_test -f /dev/stdin < apps/api/migrations/0015_sales_checkout_atomicity.assertions.sql
       - name: Build and typecheck
         run: pnpm build
       - name: Verify Cloudflare Pages preview isolation
@@ -127,6 +131,8 @@ jobs:
       - name: PostgreSQL approved own-shift role integration tests
         run: pnpm --filter @micro-app/api exec vitest run src/register-shift-member-roles.integration.test.ts
       - name: PostgreSQL authenticated cashier open-shift integration tests
+        env:
+          DATABASE_URL_RUNTIME: postgres://microapp_runtime:runtime-test-only@localhost:5432/microapp_test
         run: pnpm --filter @micro-app/api exec vitest run src/cashier-open-shift.integration.test.ts
       - name: PostgreSQL catalog endpoint integration tests
         run: pnpm --filter @micro-app/api exec vitest run src/catalog.integration.test.ts
@@ -136,6 +142,11 @@ jobs:
         run: pnpm --filter @micro-app/api exec vitest run src/catalog-update.integration.test.ts
       - name: PostgreSQL warehouse inventory count integration tests
         run: pnpm --filter @micro-app/api exec vitest run src/inventory-counts.integration.test.ts
+      - name: PostgreSQL atomic sales checkout integration tests
+        env:
+          DATABASE_URL: postgres://microapp_runtime:runtime-test-only@localhost:5432/microapp_test
+          DATABASE_URL_ADMIN: postgres://microapp:microapp-test-only@localhost:5432/microapp_test
+        run: pnpm --filter @micro-app/api exec vitest run src/sales-checkout.integration.test.ts
       - name: Reset disposable OAuth throttling fixtures before runtime handler tests
         run: docker exec "${{ job.services.postgres.id }}" psql -v ON_ERROR_STOP=1 -U microapp -d microapp_test -c "DELETE FROM auth_rate_limits; DELETE FROM auth_bootstrap_attempts;"
       - name: Runtime-role API handler integration tests

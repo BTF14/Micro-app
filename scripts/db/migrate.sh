@@ -95,6 +95,35 @@ BEGIN
 END;
 $migration_preflight$;
 
+-- A populated schema without an existing migration ledger must be rejected
+-- before this runner creates any object. Baseline adoption is a separate,
+-- explicitly reviewed operation; the runner must leave legacy schemas untouched.
+DO $migration_baseline_preflight$
+BEGIN
+  IF pg_catalog.to_regclass('public.schema_migrations') IS NULL
+    AND (
+      EXISTS (
+        SELECT 1 FROM pg_catalog.pg_class
+        WHERE relnamespace = 'public'::regnamespace
+          AND relkind IN ('r', 'p', 'v', 'm', 'S', 'f')
+      )
+      OR EXISTS (
+        SELECT 1 FROM pg_catalog.pg_proc
+        WHERE pronamespace = 'public'::regnamespace
+      )
+      OR EXISTS (
+        SELECT 1 FROM pg_catalog.pg_type
+        WHERE typnamespace = 'public'::regnamespace
+          AND typrelid = 0
+          AND typelem = 0
+      )
+    )
+  THEN
+    RAISE EXCEPTION 'MIGRATION_BASELINE_REQUIRED: public schema is not empty and has no migration ledger';
+  END IF;
+END;
+$migration_baseline_preflight$;
+
 CREATE TABLE IF NOT EXISTS public.schema_migrations (
   version text PRIMARY KEY CHECK (version ~ '^[0-9]{4}$'),
   filename text NOT NULL UNIQUE,

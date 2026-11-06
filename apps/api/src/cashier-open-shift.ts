@@ -54,38 +54,8 @@ export async function resolveOpenCashierRegisterShift(
        s.opened_at AS "openedAt",
        s.opening_cash_usd::text AS "openingCashUsd",
        s.opening_cash_ves::text AS "openingCashVes"
-     FROM register_shifts s
-     JOIN organizations o
-       ON o.id = s.organization_id
-      AND o.is_active = true
-     JOIN branches b
-       ON b.organization_id = s.organization_id
-      AND b.id = s.branch_id
-      AND b.is_active = true
-     JOIN registers r
-       ON r.organization_id = s.organization_id
-      AND r.branch_id = s.branch_id
-      AND r.id = s.register_id
-      AND r.is_active = true
-     JOIN app_users u
-       ON u.id = s.cashier_user_id
-      AND u.is_active = true
-     JOIN organization_members m
-       ON m.organization_id = s.organization_id
-      AND m.user_id = s.cashier_user_id
-      AND m.is_active = true
-      AND m.role IN ('owner', 'admin', 'cashier')
-     JOIN branch_memberships bm
-       ON bm.organization_id = s.organization_id
-      AND bm.branch_id = s.branch_id
-      AND bm.user_id = s.cashier_user_id
-      AND bm.is_active = true
-     WHERE s.organization_id = $1
-       AND s.branch_id = $2
-       AND s.cashier_user_id = $3
-       AND s.closed_at IS NULL
-     LIMIT 1
-     FOR SHARE OF s`,
+     FROM public.lock_open_register_shift($1::uuid, $2::uuid, $3::uuid) locked
+     JOIN public.register_shifts s ON s.id = locked.shift_id`,
     [branch.organizationId, branch.branchId, branch.userId],
   );
 

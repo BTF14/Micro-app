@@ -5,6 +5,7 @@ DECLARE
   v_user uuid;
   v_product uuid;
   v_count uuid;
+  v_sale uuid;
   v_token_hash text := pg_catalog.repeat('a',64);
   v_handle_hash text := pg_catalog.repeat('b',64);
   v_state_hash text := pg_catalog.repeat('c',64);
@@ -70,6 +71,14 @@ BEGIN
   IF v_locked IS DISTINCT FROM true THEN RAISE EXCEPTION 'BRANCH_LOCK_HELPER_FAILED'; END IF;
 
   SELECT count(*) INTO v_rows
+  FROM public.lock_open_register_shift(
+    '11111111-1111-4111-8111-111111111111'::uuid,
+    '33333333-3333-4333-8333-333333333333'::uuid,
+    '22222222-2222-4222-8222-222222222222'::uuid
+  );
+  IF v_rows <> 1 THEN RAISE EXCEPTION 'OPEN_REGISTER_SHIFT_DEFINER_HELPER_FAILED'; END IF;
+
+  SELECT count(*) INTO v_rows
   FROM public.lock_inventory_warehouses(
     '11111111-1111-4111-8111-111111111111'::uuid,
     ARRAY['55555555-5555-4555-8555-555555555555'::uuid],
@@ -83,6 +92,35 @@ BEGIN
   RETURNING id INTO v_product;
   UPDATE public.products SET price_usd=11,updated_at=pg_catalog.now()
    WHERE organization_id='11111111-1111-4111-8111-111111111111' AND id=v_product;
+
+  -- Runtime can read and create draft sales/children for idempotency replay.
+  -- The lifecycle and deferred constraints still own finalization.
+  INSERT INTO public.sales (
+    organization_id,idempotency_key,status,subtotal_usd,total_usd,created_by,
+    branch_id,register_shift_id,warehouse_id,settlement_currency,request_hash
+  ) VALUES (
+    '11111111-1111-4111-8111-111111111111','runtime-draft-smoke','draft',1,1,
+    '22222222-2222-4222-8222-222222222222',
+    '33333333-3333-4333-8333-333333333333',
+    (SELECT id FROM public.register_shifts WHERE organization_id='11111111-1111-4111-8111-111111111111' LIMIT 1),
+    '55555555-5555-4555-8555-555555555555','USD',pg_catalog.repeat('a',64)
+  ) RETURNING id INTO v_sale;
+  INSERT INTO public.sale_items (
+    organization_id,sale_id,product_id,product_name_snapshot,sku_snapshot,
+    quantity,unit_price_usd,unit_cost_usd,line_total_usd,line_total_ves
+  ) VALUES (
+    '11111111-1111-4111-8111-111111111111',v_sale,v_product,'Runtime Product','RUNTIME-SKU',
+    1,1,1,1,1
+  );
+  INSERT INTO public.payments (
+    organization_id,sale_id,method,currency,amount,usd_equivalent_snapshot,received_by
+  ) VALUES (
+    '11111111-1111-4111-8111-111111111111',v_sale,'cash','USD',1,1,
+    '22222222-2222-4222-8222-222222222222'
+  );
+  PERFORM 1 FROM public.sales WHERE id=v_sale;
+  PERFORM 1 FROM public.sale_items WHERE sale_id=v_sale;
+  PERFORM 1 FROM public.payments WHERE sale_id=v_sale;
 
   -- Full opening-count transaction: lifecycle trigger, count-line validator,
   -- balance version trigger, and private balance/ledger pairing all execute
@@ -207,8 +245,8 @@ BEGIN
     RAISE EXCEPTION 'RUNTIME_ESCALATED_TO_MIGRATOR';
   EXCEPTION WHEN insufficient_privilege THEN NULL; END;
   BEGIN
-    EXECUTE 'SELECT * FROM public.sales';
-    RAISE EXCEPTION 'RUNTIME_READ_UNSUPPORTED_SALES_TABLE';
+    EXECUTE 'UPDATE public.sales SET subtotal_usd=0';
+    RAISE EXCEPTION 'RUNTIME_UPDATED_PROTECTED_SALE_TOTAL';
   EXCEPTION WHEN insufficient_privilege THEN NULL; END;
 END;
 $runtime_login_smoke$;

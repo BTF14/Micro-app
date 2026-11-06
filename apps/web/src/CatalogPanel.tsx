@@ -113,7 +113,7 @@ export default function CatalogPanel({
         <div>
           <p className="eyebrow">GESTIÓN DE PRODUCTOS</p>
           <h1 id="catalog-title">Catálogo</h1>
-          <p className="catalog-intro">Precios base en USD y equivalencia en bolívares calculada con la tasa oficial vigente del BCV.</p>
+          <p className="catalog-intro">Precios base en USD. La equivalencia en bolívares solo aparece cuando hay una tasa BCV vigente y validada.</p>
         </div>
         <div className="catalog-heading-actions">
           {canManage && (

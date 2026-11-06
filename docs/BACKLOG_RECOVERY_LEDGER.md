@@ -62,7 +62,7 @@ The list below is the complete 25-PR open snapshot returned by GitHub. "Recovery
 | #200 | `464ca08b9020fad128cc9c8a321568493d484517` | `7b0f057b8c152515005feed40305143c0ebb94b0` | yes | 37 | Tenant catalog + warehouse inventory; diverged (33 ahead/3 behind in prior compare), mergeable=false; preserve unique inventory/catalog changes. |
 | #193 | `ac57ab4f3415f82279b8a49c0befe09f8e3aec68` | `705d3db3220894c7d3baca8dc7e7a6b623dfbb94` | no | 5 | Phase B inventory scope docs; reconcile against implementation and retain only current useful design. |
 
-> **Data-quality correction required:** the row for #210 above has a copied head SHA typo. Always re-read #210 metadata from GitHub before using any SHA or constructing a patch. This ledger is an index; live GitHub refs remain authoritative.
+> Live refs are authoritative: re-fetch the PR metadata before using a SHA for any patch or cherry-pick. This ledger is a snapshot, not a substitute for a fresh ref check.
 
 ## Active recovery sequence
 

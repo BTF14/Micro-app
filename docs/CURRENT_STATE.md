@@ -12,8 +12,6 @@
 
 ---
 
-# Estado actual — Micro app
-
 ## Estado vivo verificado — 2026-11-04 UTC
 
 - `main` = `2e0f4083ba577de2f301daf8c866bfbdffb5e23f`, merge squash de PR #198. La transición SDD → ODD y su validador documental ya están integrados.

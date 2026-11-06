@@ -60,9 +60,8 @@ function isRecentTimestamp(value: unknown, now: Date, maxAgeMs: number): value i
 
 export function validateBcvPayloads(statusPayload: unknown, ratePayload: unknown, now = new Date()): BcvValidationResult {
   if (!isObject(statusPayload) || !isObject(ratePayload)) return { ok: false, reason: "payload_not_object" };
-  if (statusPayload.status !== "ok" || statusPayload.timezone !== TIME_ZONE) return { ok: false, reason: "source_status_invalid" };
-  if (statusPayload.source !== BCV_UPSTREAM) return { ok: false, reason: "source_provenance_invalid" };
-  if (!isObject(statusPayload.currencies) || statusPayload.currencies.USD !== true) return { ok: false, reason: "usd_unavailable" };
+  if (statusPayload.status !== "ok" || statusPayload.timezone !== TIME_ZONE || statusPayload.api_version !== "v1") return { ok: false, reason: "source_status_invalid" };
+  if (!Array.isArray(statusPayload.supported_currencies) || !statusPayload.supported_currencies.includes("USD")) return { ok: false, reason: "usd_unavailable" };
 
   const today = caracasDate(now);
   if (!isRecentTimestamp(statusPayload.generated_at, now, MAX_STATUS_AGE_MS)) return { ok: false, reason: "status_stale" };

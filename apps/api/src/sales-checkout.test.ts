@@ -87,6 +87,17 @@ describe("sales checkout request contract", () => {
     })).toBeNull();
   });
 
+  it("rejects payment-sum overflow", () => {
+    expect(parseCheckoutInput({
+      warehouse_id: warehouseId,
+      lines: [{ product_id: productA, quantity: "1.000" }],
+      payments: [
+        { method: "cash", currency: "USD", amount: "99999999999.9999" },
+        { method: "transfer", currency: "USD", amount: "99999999999.9999" },
+      ],
+    })).toBeNull();
+  });
+
   it("rejects mixed settlement currencies and VES amounts beyond two decimals", () => {
     const base = {
       warehouse_id: warehouseId,

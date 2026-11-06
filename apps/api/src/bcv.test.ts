@@ -85,6 +85,8 @@ describe("BCV scheduled ingestion", () => {
     expect(result).toEqual({ status: "updated", effectiveDate: "2026-11-05" });
     expect(fetcher).toHaveBeenCalledTimes(2);
     expect(query).toHaveBeenCalledTimes(1);
+    expect(query.mock.calls[0]?.[0]).toContain("ON CONFLICT (source, effective_date)");
+    expect(query.mock.calls[0]?.[0]).toContain("IS DISTINCT FROM");
     expect(query.mock.calls[0]?.[1]).toEqual(["USD", "VES", "894.887600", "bcv.today", "2026-11-05", "valid"]);
   });
 

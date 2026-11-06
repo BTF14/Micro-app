@@ -134,8 +134,8 @@ describe("GET /exchange-rates/current", () => {
 
   it("returns the last stored rate but labels it stale when its effective date is old", async () => {
     const app = createApp([{
-      rate: "800.000000", source: "bcv.today", effective_date: "2026-10-30",
-      fetched_at: "2026-10-30T17:00:00.000Z", validation_status: "valid",
+      rate: "800.000000", source: "bcv.today", effective_date: "2026-10-28",
+      fetched_at: "2026-10-28T17:00:00.000Z", validation_status: "valid",
     }]);
     const response = await app.request("/exchange-rates/current", {}, { DATABASE_URL: databaseUrl });
     expect(response.status).toBe(200);

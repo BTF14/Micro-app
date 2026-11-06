@@ -35,6 +35,7 @@ describe.skipIf(!databaseUrl)("inventory balance and ledger read APIs against Po
   let organizationId = "";
   let branchId = "";
   let warehouseId = "";
+  let otherWarehouseId = "";
   let ownerToken = "";
   let cashierToken = "";
   let firstProductId = "";
@@ -110,6 +111,15 @@ describe.skipIf(!databaseUrl)("inventory balance and ledger read APIs against Po
       [organizationId, branchId, "read-" + suffix],
     );
     warehouseId = warehouse.rows[0]!.id;
+    const otherBranch = await admin.query<{ id: string }>(
+      "INSERT INTO branches (organization_id, name, slug) VALUES ($1, 'Other Inventory Branch', $2) RETURNING id",
+      [organizationId, "inventory-read-other-" + suffix],
+    );
+    const otherWarehouse = await admin.query<{ id: string }>(
+      "INSERT INTO warehouses (organization_id, branch_id, code, name) VALUES ($1, $2, $3, 'Other Branch Warehouse') RETURNING id",
+      [organizationId, otherBranch.rows[0]!.id, "other-" + suffix],
+    );
+    otherWarehouseId = otherWarehouse.rows[0]!.id;
 
     const first = await admin.query<{ id: string }>(
       "INSERT INTO products (organization_id, sku, name, unit, cost_usd, price_usd, minimum_stock) VALUES ($1, $2, 'Read Product A', 'unidad', 4.2500, 10.0000, 2.000) RETURNING id",
@@ -264,6 +274,9 @@ describe.skipIf(!databaseUrl)("inventory balance and ledger read APIs against Po
   it("denies cross-tenant access and inactive warehouses", async () => {
     const foreign = await get(`/api/orgs/${foreignOrganizationId}/branches/${foreignBranchId}/warehouses/${foreignWarehouseId}/inventory`);
     expect(foreign.status).toBe(401);
+
+    const crossBranch = await get(`/api/orgs/${organizationId}/branches/${branchId}/warehouses/${otherWarehouseId}/inventory`);
+    expect(crossBranch.status).toBe(404);
 
     await admin.query("UPDATE warehouses SET is_active = false WHERE organization_id = $1 AND id = $2", [organizationId, warehouseId]);
     const inactive = await get(root() + "/inventory");

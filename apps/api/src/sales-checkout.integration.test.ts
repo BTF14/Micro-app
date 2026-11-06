@@ -245,7 +245,8 @@ describe.skipIf(!databaseUrl || !databaseUrlAdmin)("atomic sales checkout Postgr
         await client.query("DELETE FROM public.sales WHERE organization_id=$1", [organizationId]);
         await client.query("DELETE FROM public.warehouse_inventory_movements WHERE organization_id=$1", [organizationId]);
         await client.query("DELETE FROM public.inventory_balances WHERE organization_id=$1", [organizationId]);
-          for (const table of [
+        await client.query("DELETE FROM public.register_shifts WHERE organization_id=$1", [organizationId]);
+        for (const table of [
           "public.sales", "public.sale_items", "public.payments",
           "public.warehouse_inventory_movements", "public.inventory_balances", "public.audit_logs",
           "public.register_shifts",
@@ -257,7 +258,6 @@ describe.skipIf(!databaseUrl || !databaseUrlAdmin)("atomic sales checkout Postgr
         await client.query("ROLLBACK");
         throw error;
       }
-      await client.query("DELETE FROM public.register_shifts WHERE organization_id=$1", [organizationId]);
       await client.query("DELETE FROM public.registers WHERE organization_id=$1", [organizationId]);
       await client.query("DELETE FROM public.warehouses WHERE organization_id=$1", [organizationId]);
       await client.query("DELETE FROM public.products WHERE organization_id=$1", [organizationId]);

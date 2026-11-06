@@ -286,6 +286,29 @@ describe.skipIf(!databaseUrl || !databaseUrlAdmin)("atomic sales checkout Postgr
     await client.end();
   });
 
+  it("prevents a draft sale from committing without completed reconciliation", async () => {
+    const key = "draft-guard-" + crypto.randomUUID();
+    await client.query("BEGIN");
+    try {
+      await client.query(
+        `INSERT INTO public.sales (
+          organization_id,idempotency_key,status,subtotal_usd,total_usd,created_by,
+          branch_id,register_shift_id,warehouse_id,settlement_currency,
+          exchange_rate_id,exchange_rate_snapshot,total_ves_snapshot,request_hash
+        ) VALUES ($1,$2,'draft',0,0,$3,$4,$5,$6,'USD',$7,250.12345678,0,pg_catalog.repeat('a',64))`,
+        [organizationId, key, userId, branchId, shiftId, warehouseId, rateId],
+      );
+      await expect(client.query("COMMIT")).rejects.toThrow(/SALE_DRAFT_MUST_NOT_COMMIT/);
+    } finally {
+      await client.query("ROLLBACK");
+    }
+    const persisted = await client.query(
+      "SELECT count(*)::int AS count FROM public.sales WHERE organization_id=$1 AND idempotency_key=$2",
+      [organizationId, key],
+    );
+    expect(persisted.rows[0].count).toBe(0);
+  });
+
   it("completes a USD sale with exact decimals, current BCV, own shift and ledger reconciliation", async () => {
     await seedBalance("10.000", "1.000");
     const response = await request(checkoutBody("1.250", "29.8125"), "usd-" + crypto.randomUUID());

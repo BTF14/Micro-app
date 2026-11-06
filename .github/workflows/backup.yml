@@ -7,8 +7,8 @@ name: Respaldo cifrado de la base de datos
 # Qué hace, en orden:
 # 1. Vuelca (pg_dump) solo las tablas de negocio de Neon, usando un rol de
 #    solo lectura dedicado (backup_readonly). Excluye explícitamente
-#    auth_sessions y auth_rate_limits (datos efímeros de sesión, no hacen
-#    falta para reconstruir el negocio).
+#    auth_sessions, auth_rate_limits y auth_bootstrap_attempts (datos
+#    efímeros de autenticación, no hacen falta para reconstruir el negocio).
 # 2. Cifra el volcado con la llave pública age del proyecto (no es secreta,
 #    por eso vive directo en este archivo) antes de que salga del runner.
 #    El volcado SIN cifrar nunca se sube a ningún lado ni queda en el runner
@@ -84,6 +84,7 @@ jobs:
             --no-owner --no-privileges --format=custom \
             --exclude-table=auth_sessions \
             --exclude-table=auth_rate_limits \
+            --exclude-table=auth_bootstrap_attempts \
             --file="backup-${STAMP}.dump"
           test -s "backup-${STAMP}.dump"
 

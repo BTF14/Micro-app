@@ -24,7 +24,6 @@ type GoogleUserInfo = {
 };
 
 type BootstrapRequest = {
-  token: string;
   organizationName: string;
   organizationSlug: string;
 };
@@ -137,10 +136,50 @@ async function startGoogleAuthorization(c: AppContext, bootstrapRequest?: Bootst
   const codeVerifier = randomToken(48);
   const codeChallenge = await pkceChallengeFromVerifier(codeVerifier);
 
+  let bootstrapHandle: string | undefined;
+  if (bootstrapRequest) {
+    bootstrapHandle = randomToken(32);
+    try {
+      const [handleHash, stateHash] = await Promise.all([
+        sha256Hex(bootstrapHandle),
+        sha256Hex(state),
+      ]);
+      await withDatabaseClient(c.env.DATABASE_URL, async (client) => {
+        await client.query(
+          `INSERT INTO auth_bootstrap_attempts
+             (handle_hash, state_hash, organization_name, organization_slug, expires_at)
+           VALUES ($1, $2, $3, $4, now() + interval '10 minutes')`,
+          [handleHash, stateHash, bootstrapRequest.organizationName, bootstrapRequest.organizationSlug],
+        );
+        try {
+          // Best-effort bounded retention: expired handoffs are not recovery data.
+          await client.query(
+            `DELETE FROM auth_bootstrap_attempts
+              WHERE handle_hash IN (
+                SELECT handle_hash FROM auth_bootstrap_attempts
+                 WHERE expires_at < now() - interval '48 hours'
+                 ORDER BY expires_at ASC
+                 LIMIT 100
+              )`,
+          );
+        } catch {
+          // Cleanup must never undo the handoff that was just stored.
+        }
+      });
+    } catch {
+      return c.json({
+        error: "BOOTSTRAP_HANDOFF_UNAVAILABLE",
+        message: "No se pudo iniciar el alta administrativa.",
+      }, 503);
+    }
+  }
+
   setShortLivedCookie(c, STATE_COOKIE, state);
   setShortLivedCookie(c, VERIFIER_COOKIE, codeVerifier);
-  if (bootstrapRequest) {
-    setShortLivedCookie(c, BOOTSTRAP_COOKIE, JSON.stringify(bootstrapRequest));
+  if (bootstrapHandle) {
+    // The browser receives only an opaque random handle; bootstrap data and
+    // its binding to this OAuth state stay server-side.
+    setShortLivedCookie(c, BOOTSTRAP_COOKIE, bootstrapHandle);
   }
 
   const authorizationUrl = new URL(GOOGLE_AUTHORIZATION_ENDPOINT);
@@ -267,7 +306,7 @@ export function registerGoogleAuthRoutes(app: Hono<{ Bindings: Bindings }>): voi
       return c.json({ error: "BOOTSTRAP_NOT_AUTHORIZED", message: "No se pudo iniciar el alta administrativa." }, 403);
     }
 
-    return startGoogleAuthorization(c, { token, organizationName, organizationSlug });
+    return startGoogleAuthorization(c, { organizationName, organizationSlug });
   });
 
   app.get("/auth/google/callback", async (c) => {
@@ -277,6 +316,9 @@ export function registerGoogleAuthRoutes(app: Hono<{ Bindings: Bindings }>): voi
     const storedState = getCookie(c, STATE_COOKIE);
     const codeVerifier = getCookie(c, VERIFIER_COOKIE);
     const bootstrapCookieRaw = getCookie(c, BOOTSTRAP_COOKIE);
+    const bootstrapHandle = bootstrapCookieRaw && /^[A-Za-z0-9_-]{43}$/.test(bootstrapCookieRaw)
+      ? bootstrapCookieRaw
+      : null;
     clearOAuthCookies(c);
 
     const queryState = c.req.query("state");
@@ -335,21 +377,8 @@ export function registerGoogleAuthRoutes(app: Hono<{ Bindings: Bindings }>): voi
       return redirectToFrontend(c, "/?auth_error=email_not_verified");
     }
 
-    let bootstrapRequest: BootstrapRequest | null = null;
-    if (bootstrapCookieRaw) {
-      try {
-        const parsed = JSON.parse(bootstrapCookieRaw) as Partial<BootstrapRequest>;
-        if (
-          typeof parsed.token === "string" &&
-          typeof parsed.organizationName === "string" &&
-          typeof parsed.organizationSlug === "string"
-        ) {
-          bootstrapRequest = parsed as BootstrapRequest;
-        }
-      } catch {
-        bootstrapRequest = null;
-      }
-    }
+    const bootstrapHandleHash = bootstrapHandle ? await sha256Hex(bootstrapHandle) : null;
+    const bootstrapStateHash = await sha256Hex(queryState);
 
     try {
       const outcome = await withDatabaseClient(c.env.DATABASE_URL, async (client) => {
@@ -400,13 +429,36 @@ export function registerGoogleAuthRoutes(app: Hono<{ Bindings: Bindings }>): voi
           return { kind: "ok" as const, token };
         }
 
-        // No existing user: only the sealed, single-use bootstrap path may
-        // create one, and only when the caller supplied the correct secret.
-        if (!bootstrapRequest || !c.env.BOOTSTRAP_TOKEN || bootstrapRequest.token !== c.env.BOOTSTRAP_TOKEN) {
+        // No existing user: require the opaque, expiring handoff that was
+        // created only after the bootstrap secret was validated on POST.
+        if (!bootstrapHandleHash) {
           return { kind: "not_provisioned" as const };
         }
 
         return withDatabaseTransaction(client, async (tx) => {
+          // Handle and OAuth state must match one unexpired, unconsumed row,
+          // consumed in the same transaction that creates the owner.
+          const handoff = await tx.query<{
+            organization_name: string;
+            organization_slug: string;
+          }>(
+            `SELECT organization_name, organization_slug
+               FROM auth_bootstrap_attempts
+              WHERE handle_hash = $1
+                AND state_hash = $2
+                AND expires_at > now()
+                AND consumed_at IS NULL
+              FOR UPDATE`,
+            [bootstrapHandleHash, bootstrapStateHash],
+          );
+          if (handoff.rows.length === 0) {
+            return { kind: "not_provisioned" as const };
+          }
+          await tx.query(
+            "UPDATE auth_bootstrap_attempts SET consumed_at = now() WHERE handle_hash = $1",
+            [bootstrapHandleHash],
+          );
+
           // Locks the single sentinel row so two concurrent bootstrap
           // attempts cannot both pass the consumed_at check.
           const bootstrapRow = await tx.query<{ consumed_at: string | null }>(
@@ -418,7 +470,7 @@ export function registerGoogleAuthRoutes(app: Hono<{ Bindings: Bindings }>): voi
 
           const orgResult = await tx.query<{ id: string }>(
             "INSERT INTO organizations (name, slug) VALUES ($1, $2) RETURNING id",
-            [bootstrapRequest.organizationName, bootstrapRequest.organizationSlug],
+            [handoff.rows[0]!.organization_name, handoff.rows[0]!.organization_slug],
           );
           const organizationId = orgResult.rows[0]!.id;
 

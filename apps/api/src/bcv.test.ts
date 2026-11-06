@@ -117,7 +117,7 @@ describe("GET /exchange-rates/current", () => {
     return app;
   }
 
-  it("returns the latest valid rate as a decimal string with explicit provenance", async () => {
+  it("returns the latest stored rate as a decimal string with explicit provenance", async () => {
     const app = createApp([{
       rate: "894.887600", source: "bcv.today", effective_date: "2026-11-05",
       fetched_at: "2026-11-05T17:00:00.000Z", validation_status: "valid",
@@ -142,7 +142,17 @@ describe("GET /exchange-rates/current", () => {
     await expect(response.json()).resolves.toMatchObject({ rate: "800.000000", status: "stale" });
   });
 
-  it("returns 503 instead of inventing a rate when no valid rate exists or the database fails", async () => {
+
+  it("does not hide a stored rate that has already been marked stale", async () => {
+    const app = createApp([{
+      rate: "780.000000", source: "bcv.today", effective_date: "2026-11-05",
+      fetched_at: "2026-11-05T17:00:00.000Z", validation_status: "stale",
+    }]);
+    const response = await app.request("/exchange-rates/current", {}, { DATABASE_URL: databaseUrl });
+    expect(response.status).toBe(200);
+    await expect(response.json()).resolves.toMatchObject({ rate: "780.000000", status: "stale" });
+  });
+  it("returns 503 instead of inventing a rate when no rate exists or the database fails", async () => {
     const empty = createApp([]);
     const unavailable = await empty.request("/exchange-rates/current", {}, { DATABASE_URL: databaseUrl });
     expect(unavailable.status).toBe(503);

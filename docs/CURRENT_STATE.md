@@ -2,13 +2,19 @@
 
 ## CHECKPOINT VIVO PRIORITARIO — 2026-11-05 UTC
 
-- `main` observado al inicio del checkpoint: `7b0f057b8c152515005feed40305143c0ebb94b0`. Consultar GitHub en vivo antes de cualquier operación.
-- El propietario autorizó fusionar PRs a `main` cuando superen todos los gates técnicos, de seguridad, branch protection y checks del SHA exacto; conoce que el merge puede activar el despliegue automático de Cloudflare Pages. No volver a pedir confirmación para cada merge elegible.
-- La autorización no incluye despliegues manuales, cambios de Cloudflare, secretos/variables, DNS, billing, Neon `main`, migraciones remotas, escrituras ni datos reales.
-- Backlog observado: 30 PR abiertas. El proceso actual está fragmentado por cadenas largas de PR Draft/stacked y objetivos solapados. Aplicar el carril rápido documentado en `docs/AI_COLLABORATION_AND_PR_POLICY.md`: máximo 2 frentes activos, raíz primero, una PR por objetivo, no duplicar ramas, checks exactos, merge al cumplir gates y verificación post-merge.
-- PR #227 es la implementación BCV seleccionada, pero continúa Draft y apilada sobre #226. No se debe presentar como lista para main hasta integrar/revisar la cadena de dependencias y validar su HEAD final.
-- Esta revisión documental se prepara en `docs/operating-model-fast-integration-20261105`; la documentación solo será política activa en `main` después de fusionar su PR.
-- No se han realizado merges, despliegues manuales, cambios de Cloudflare, Neon, secretos ni datos de producción durante este checkpoint.
+- `main` actual verificado: `85f1aa46db7797ff6ae2d7e08b2a85e15e067797`.
+- **Autorización permanente del propietario:** fusionar PRs a `main` cuando el diff, la seguridad, branch protection y todos los checks del HEAD exacto estén verificados. El propietario conoce y autoriza el despliegue automático de Cloudflare Pages inherente al merge. No volver a pedir confirmación por cada PR elegible.
+- No cubre despliegues manuales, secretos/variables, DNS, billing, cambios de Cloudflare, migraciones/escrituras de Neon `main` ni datos reales.
+- Backlog vivo: **28 PR abiertas** (reconsultar GitHub antes de actuar). PR #237 y #206 están fusionadas; sus checks post-merge terminaron en success. PR #196 se cerró por duplicar la implementación de #200; su documentación exclusiva permanece disponible en la rama cerrada para reconciliación selectiva.
+- PR #237 integró las reglas permanentes en `AGENTS.md`, `docs/AI_COLLABORATION_AND_PR_POLICY.md`, este checkpoint, handoff y diario. El carril rápido exige máximo dos frentes activos, raíz primero, una PR por objetivo, preferir base `main`, no crear stacks nuevos y verificar post-merge.
+- PR #200 contiene la vertical slice catálogo/inventario y migración 0005; continúa Draft y ahora necesita reconciliar su base con el nuevo `main`. No fusionar mientras el esquema 0005 y el principal runtime no estén listos para el Worker: la migración no está aplicada a Neon `main`, y no hay autorización para aplicarla.
+- PR #213 (rate limit OAuth) pasa sus checks en el SHA histórico, pero está detrás del nuevo `main`; requiere actualizar base y volver a verificar. No fusionar hasta verificar el principal efectivo de `DATABASE_URL` y sus permisos. PR #214 requiere un secreto Worker nuevo, que no está autorizado.
+- PR #224 define el contrato de `microapp_runtime`/`microapp_migrator` y pruebas LOGIN reales, pero sigue apilada. Auditoría **solo lectura** de Neon `main`: ambos logins dedicados no existen. También se observó un login etiquetado para backup con privilegios elevados; no se leyó ningún secreto ni se verificó qué login usa `DATABASE_URL_BACKUP_RO`. Tratar la identidad de backup como P0 pendiente de verificación/corrección; no modificar roles ni secretos sin autorización específica.
+- PR #227 sigue siendo la ruta BCV elegida, pero está apilada sobre #226 y depende de la cadena de seguridad/DB. No está lista para `main` ni para producción.
+- Issue #53 continúa abierta y P0. Checks verdes en CI no equivalen a producción lista; no declarar ventas/inventario/BCV desplegados hasta verificar migraciones, principal runtime, permisos y smoke tests reales.
+- Últimos merges: #237 → `66ca2b99331df6d9eb4175bf79e53a9ba118dde7`; #206 → `85f1aa46db7797ff6ae2d7e08b2a85e15e067797`. Ambos tienen checks post-merge success, incluidos Cloudflare Pages y Workers Builds. No se ejecutó despliegue manual ni mutación de Neon.
+- Próxima prioridad: resolver la identidad runtime/migrator y el bloqueo de migración 0005 en una ruta de integración controlada; después rebasar/integrar padres de la cadena y revalidar hijos uno por uno. No abrir PR paralelas para el mismo objetivo.
+
 
 ---
 

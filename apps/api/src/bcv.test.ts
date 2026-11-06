@@ -114,10 +114,10 @@ describe("BCV scheduled ingestion", () => {
 
 describe("GET /exchange-rates/current", () => {
   function createApp(rows: Array<Record<string, unknown>>, queryError?: Error) {
-    const { factory } = createDatabaseFactory(rows as unknown as Array<{ id: string }>, queryError);
+    const { factory, query } = createDatabaseFactory(rows as unknown as Array<{ id: string }>, queryError);
     const app = new Hono<{ Bindings: Bindings }>();
     registerBcvRoutes(app, { databaseClientFactory: factory, now: () => now });
-    return { app, query: factory };
+    return { app, query };
   }
 
   it("returns the latest stored rate as a decimal string with explicit provenance", async () => {

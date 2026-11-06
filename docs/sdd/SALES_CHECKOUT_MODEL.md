@@ -42,27 +42,44 @@ Reglas no negociables:
 7. Los importes VES por línea están almacenados en sale_items.line_total_ves; falta fijar explícitamente si sales.total_ves_snapshot es la suma de líneas redondeadas o la conversión del subtotal global. Para evitar dos totales distintos, la propuesta es sumar los line_total_ves ya redondeados.
 8. No hay handlers HTTP de ventas/checkout registrados en apps/api/src/index.ts. Las tablas no significan que la operación esté implementada.
 
-## 3. Flujo transaccional propuesto
+## 3. Flujo transaccional implementado en PR #233
 
-El siguiente orden es una propuesta que debe respetar docs/architecture/INVENTORY_TRANSACTION_LOCKING.md:
+El handler inicial respeta docs/architecture/INVENTORY_TRANSACTION_LOCKING.md. Está en Draft y aún necesita completar los gates de prueba indicados en la sección 7.
 
-1. **Validación de borde:** método/ruta, origen confiable, content-type, tamaño de cuerpo, sesión, UUIDs, clave idempotente y estructura estricta. Rechazar propiedades desconocidas.
-2. **BEGIN y tenant:** usar un único cliente/una transacción; resolver y bloquear sesión, usuario, membresía y organización.
-3. **Sucursal:** resolver branch context y revalidar sucursal/asignación activa dentro de la misma transacción. No confiar en organization/branch IDs del navegador.
-4. **Almacén:** bloquear el almacén activo que pertenece a esa organización y sucursal con lockInventoryWarehouses. No aceptar almacén de otra sucursal/tenant.
-5. **Turno:** resolver el turno abierto del usuario autenticado con resolveOpenCashierRegisterShift en el mismo cliente transaccional. Exigir que el turno pertenezca al usuario, sucursal y organización actuales. FOR SHARE mantiene el turno abierto hasta el COMMIT y evita cerrar mientras se procesa una venta.
-6. **Idempotencia:** reclamar (organization_id, idempotency_key) dentro de la transacción y asociar un hash canónico de toda la petición. Mismo key + mismo hash devuelve el resultado original sin efectos nuevos; mismo key + distinto hash devuelve 409. Una restricción única resuelve concurrencia.
-7. **Productos y líneas:** leer productos activos y bloquear el conjunto necesario; validar tenant, precio vigente, escala, cantidad positiva, SKU/nombre y costo snapshot. Consolidar IDs duplicados antes de bloquear balances, o definir expresamente si se conservan líneas duplicadas.
-8. **Balances:** bloquear todos los balances del almacén en orden estable product_id ASC mediante el helper compartido. Validar on_hand_quantity - reserved_quantity >= quantity para cada producto; no permitir stock negativo ni consumir reservado.
-9. **Cálculo exacto:** recalcular en backend cada line_total_usd = quantity × current price_usd; sumar a cuatro decimales; sin descuentos. Convertir cada línea a VES con la tasa aprobada, redondear a dos decimales y sumar esos importes para total_ves_snapshot (propuesta pendiente de aprobación).
-10. **Venta draft:** insertar venta draft con tenant/sucursal/turno/almacén, actor, idempotency key/hash y snapshots calculados. Insertar líneas con snapshots de producto, precio, costo, cantidad y totales.
-11. **Pagos:** validar cada método, moneda, referencia, escala y equivalencia; insertar todos los pagos. La conciliación debe seguir una política única aprobada; no aceptar pagos parciales, exceso ni cambio hasta que exista un modelo explícito.
-12. **Inventario y ledger:** actualizar inventory_balances.on_hand_quantity bajo locks; insertar movimiento sale negativo por cada producto con referencia tipada a la venta y actor. El trigger de ledger debe consumir el intent correspondiente en la misma transacción.
-13. **Auditoría:** insertar evento de venta completada con actor, scope, turno, almacén, venta, correlación/idempotencia y metadatos mínimos no sensibles.
-14. **Finalización:** cambiar draft a completed únicamente después de verificar líneas, total, pagos, balances y ledger; establecer completed_at; COMMIT.
-15. **Respuesta:** devolver snapshots persistidos. Replay idempotente devuelve la misma venta/snapshots y nunca vuelve a consumir inventario ni duplicar pagos/movimientos/auditoría.
+1. **Borde HTTP:** POST, origen confiable, `application/json`, límite 64 KiB, sesión, UUIDs, `Idempotency-Key` y esquema estricto. Rechaza propiedades desconocidas.
+2. **Tenant/sucursal:** `authorizeBranchOperation(..., "sales.create_list_price")` resuelve sesión/tenant/rol/branch; luego `lockBranchScopes` exige y bloquea membresía activa incluso para owner/admin.
+3. **Replay temprano:** busca (organization_id, idempotency_key). Mismo actor/hash y venta completed devuelve snapshots; distinto hash o draft existente devuelve 409.
+4. **Almacén:** `lockInventoryWarehouses` valida y serializa el almacén de la misma organización/sucursal. Repite comprobación de idempotencia tras adquirir el mutex.
+5. **Turno:** `resolveOpenCashierRegisterShift` invoca `lock_open_register_shift` SECURITY DEFINER y mantiene el bloqueo del turno abierto del propio usuario.
+6. **BCV:** selecciona una sola tasa `BCV_OFFICIAL_HTML_V1`, `validation_status='valid'`, con fecha efectiva del día en Caracas. Sin tasa actual, falla cerrado.
+7. **Productos/líneas:** consulta productos activos bajo `FOR SHARE`; consolida IDs duplicados, valida cantidades y lee precios/costos actuales desde PostgreSQL. El cliente no envía precios.
+8. **Cálculo exacto:** `packages/money` calcula cada línea USD a cuatro decimales, convierte cada línea a VES a dos decimales y suma los snapshots de línea. No usa `Number` para importes.
+9. **Pagos:** exige una sola moneda por venta y suma exacta al total; USD a escala 4, VES a escala 2. No admite parcialidad, sobrepago ni cambio. El equivalente USD VES suma exactamente el total USD.
+10. **Balances:** bloquea balances después del mutex del almacén; valida `on_hand - reserved` antes de reclamar la venta. Si falta el balance o no hay stock, no inserta draft.
+11. **Claim y escrituras:** inserta sale draft con scope, turno, actor, snapshots y hash; actualiza balances y crea movimientos `sale` negativos; inserta líneas y pagos; registra auditoría.
+12. **Finalización:** cambia draft a completed. Triggers diferidos reconcilian líneas, pagos, BCV current, turno propio abierto, almacén, ledger y auditoría en COMMIT. Una venta draft no puede confirmarse en una transacción.
+13. **Rollback:** cualquier error después del claim se lanza como excepción y provoca ROLLBACK completo. No hay dual-write con `products.stock_quantity`.
 
-Cualquier error antes de COMMIT produce ROLLBACK total. No enviar correos, webhooks ni efectos externos dentro de la transacción.
+### Contrato HTTP inicial
+
+`POST /api/orgs/:organizationId/branches/:branchId/checkout`
+
+Header obligatorio: `Idempotency-Key: <1–128 caracteres ASCII seguros>`.
+
+Cuerpo:
+```json
+{
+  "warehouse_id": "uuid",
+  "lines": [
+    { "product_id": "uuid", "quantity": "1.250" }
+  ],
+  "payments": [
+    { "method": "cash", "currency": "USD", "amount": "29.8125" }
+  ]
+}
+```
+
+Las cantidades e importes se envían como strings decimales. No se aceptan precios unitarios, subtotales, totales, descuentos ni snapshots del cliente. El backend calcula y persiste los valores. Respuesta 201 para venta nueva, 200 para replay; errores de validación/autorización/stock/BCV/idempotencia se devuelven sin efectos parciales.
 
 ## 4. Contrato monetario
 
@@ -99,7 +116,7 @@ La política comercial anterior no autoriza descuentos, cupones, cambio manual d
 ## 5. Idempotencia y concurrencia
 
 - La clave es obligatoria para POST checkout; patrón acotado, por ejemplo 1–128 caracteres ASCII seguros.
-- El hash canónico debe incluir organización, sucursal, turno, almacén, líneas ordenadas (product_id + quantity), y pagos normalizados (method, currency, amount, reference si aplica). No incluir campos calculados por cliente.
+- El hash canónico incluye organización, sucursal, usuario autenticado, almacén, moneda, líneas ordenadas (product_id + quantity) y pagos normalizados (method, currency, amount, reference). No incluye turno ni campos calculados por cliente; un replay devuelve la venta y el turno originales.
 - Mismo key/hash: replay sin efectos; mismo key/diferente hash: 409.
 - Dos requests simultáneas con la misma clave deben producir una sola venta, un conjunto de pagos, un conjunto de movimientos y un evento de auditoría.
 - Dos ventas concurrentes que consumen el último stock deben serializarse en el mutex del almacén/balance; solo una puede completar.

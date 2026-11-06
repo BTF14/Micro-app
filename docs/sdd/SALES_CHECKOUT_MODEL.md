@@ -183,7 +183,7 @@ Las pruebas deben correr contra PostgreSQL efímero con roles migrator/runtime r
 
 No se deben ampliar estas reglas sin una decisión explícita del propietario. El soporte de varios registros de pago solo permite repartir el pago completo entre métodos de la misma moneda; la suma debe cubrir exactamente el total y no representa una parcialidad.
 
-**Reconciliación de roles:** `authorization.ts` ya concede `register.shift.open_own`, `register.shift.operate_own` y `sales.create_list_price` a owner/admin/cashier. La migración forward-only `0016_register_shift_operator_roles.sql` alinea la validación SQL de apertura de turnos con esa matriz y bloquea degradar/desactivar una membresía mientras conserve un turno abierto. Se preserva el turno propio: ningún rol puede operar el turno de otro usuario. La migración 0004 no se modifica.
+**Reconciliación de roles:** `authorization.ts` concede `register.shift.open_own`, `register.shift.operate_own` y `sales.create_list_price` a owner/admin/cashier. La migración existente `0006_register_shift_member_roles.sql` ya alinea la validación SQL de apertura y el bloqueo de degradación de rol con esa matriz. La migración 0015 reutiliza `lock_open_register_shift` y exige el turno propio. Se añadieron pruebas para cubrir apertura/cierre de owner/admin y resolución del turno mediante LOGIN runtime; no se necesita otra migración.
 
 ## 9. Secuencia técnica recomendada
 

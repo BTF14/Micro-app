@@ -33,6 +33,7 @@ describe.skipIf(!databaseUrl || !databaseUrlAdmin).sequential("atomic sales chec
   let registerId = "";
   let shiftId = "";
   let productId = "";
+  let foreignOrganizationId = "";
   let token = "";
   let rateId = "";
   let rateDate = "";
@@ -239,6 +240,11 @@ describe.skipIf(!databaseUrl || !databaseUrlAdmin).sequential("atomic sales chec
       await client.query("DELETE FROM public.organizations WHERE id=$1", [organizationId]);
       await client.query("DELETE FROM public.app_users WHERE id=$1", [userId]);
     }
+    if (foreignOrganizationId) {
+      await client.query("DELETE FROM public.products WHERE organization_id=$1", [foreignOrganizationId]);
+      await client.query("DELETE FROM public.branches WHERE organization_id=$1", [foreignOrganizationId]);
+      await client.query("DELETE FROM public.organizations WHERE id=$1", [foreignOrganizationId]);
+    }
     if (rateId) {
       if (createdRate) {
         await client.query("DELETE FROM public.exchange_rates WHERE id=$1", [rateId]);
@@ -355,18 +361,27 @@ describe.skipIf(!databaseUrl || !databaseUrlAdmin).sequential("atomic sales chec
 
   it("allows only one concurrent sale to consume the last unit", async () => {
     await seedBalance("1.000");
+    const keyA = "race-a-" + crypto.randomUUID();
+    const keyB = "race-b-" + crypto.randomUUID();
     const [first, second] = await Promise.all([
-      request(checkoutBody("1.000", "23.8500"), "race-a-" + crypto.randomUUID()),
-      request(checkoutBody("1.000", "23.8500"), "race-b-" + crypto.randomUUID()),
+      request(checkoutBody("1.000", "23.8500"), keyA),
+      request(checkoutBody("1.000", "23.8500"), keyB),
     ]);
     expect([first.status, second.status].sort()).toEqual([201, 409]);
     expect((await readBalance()).on_hand_quantity).toBe("0.000");
-    const sales = await client.query("SELECT count(*)::int AS count FROM public.sales WHERE organization_id=$1 AND product_id IS NULL", [organizationId]);
-    expect(sales.rows[0].count).toBe(0);
+    const sales = await client.query(
+      "SELECT count(*)::int AS count FROM public.sales WHERE organization_id=$1 AND idempotency_key IN ($2,$3)",
+      [organizationId, keyA, keyB],
+    );
+    expect(sales.rows[0].count).toBe(1);
   });
 
   it("rolls back sale, balance and ledger when audit insertion fails", async () => {
     await seedBalance("2.000");
+    const beforeMovements = await client.query(
+      "SELECT count(*)::int AS count FROM public.warehouse_inventory_movements WHERE organization_id=$1",
+      [organizationId],
+    );
     await client.query(`CREATE OR REPLACE FUNCTION public.test_fail_checkout_audit()
       RETURNS trigger LANGUAGE plpgsql AS $$
       BEGIN
@@ -383,8 +398,11 @@ describe.skipIf(!databaseUrl || !databaseUrlAdmin).sequential("atomic sales chec
       expect((await readBalance()).on_hand_quantity).toBe("2.000");
       const sales = await client.query("SELECT count(*)::int AS count FROM public.sales WHERE organization_id=$1 AND idempotency_key=$2", [organizationId, key]);
       expect(sales.rows[0].count).toBe(0);
-      const movements = await client.query("SELECT count(*)::int AS count FROM public.warehouse_inventory_movements WHERE organization_id=$1 AND movement_type='sale'", [organizationId]);
-      expect(movements.rows[0].count).toBe(0);
+      const movements = await client.query(
+        "SELECT count(*)::int AS count FROM public.warehouse_inventory_movements WHERE organization_id=$1",
+        [organizationId],
+      );
+      expect(movements.rows[0].count).toBe(beforeMovements.rows[0].count);
     } finally {
       await client.query("DROP TRIGGER IF EXISTS zz_test_fail_checkout_audit ON public.audit_logs");
       await client.query("DROP FUNCTION IF EXISTS public.test_fail_checkout_audit()");
@@ -404,9 +422,10 @@ describe.skipIf(!databaseUrl || !databaseUrlAdmin).sequential("atomic sales chec
     const foreignOrg = await client.query<{ id: string }>(
       "INSERT INTO public.organizations(name,slug) VALUES('Foreign Checkout','foreign-checkout-" + suffix + "') RETURNING id",
     );
+    foreignOrganizationId = foreignOrg.rows[0]!.id;
     const foreignProduct = await client.query<{ id: string }>(
       "INSERT INTO public.products(organization_id,sku,name,price_usd) VALUES($1,'FOREIGN-CHECKOUT','Foreign Product',1) RETURNING id",
-      [foreignOrg.rows[0]!.id],
+      [foreignOrganizationId],
     );
 
     const warehouseResponse = await request(

@@ -44,7 +44,7 @@ Reglas no negociables:
 
 ## 3. Flujo transaccional implementado en PR #233
 
-El handler inicial respeta docs/architecture/INVENTORY_TRANSACTION_LOCKING.md. Está en Draft y aún necesita completar los gates de prueba indicados en la sección 7.
+El handler implementado en PR #233 respeta docs/architecture/INVENTORY_TRANSACTION_LOCKING.md. CI unitario, PostgreSQL checkout y validación de migraciones han pasado para el HEAD verificado; PR continúa Draft hasta cerrar los gates humanos y de seguridad de la sección 7.
 
 1. **Borde HTTP:** POST, origen confiable, `application/json`, límite 64 KiB, sesión, UUIDs, `Idempotency-Key` y esquema estricto. Rechaza propiedades desconocidas.
 2. **Tenant/sucursal:** `authorizeBranchOperation(..., "sales.create_list_price")` resuelve sesión/tenant/rol/branch; luego `lockBranchScopes` exige y bloquea membresía activa incluso para owner/admin.
@@ -169,7 +169,7 @@ Las pruebas deben correr contra PostgreSQL efímero con roles migrator/runtime r
 
 | Decisión | Regla aprobada | Implementación |
 |---|---|---|
-| Vínculo de venta | Organización + sucursal + turno propio abierto + un almacén | Migración 0015; servicio en curso |
+| Vínculo de venta | Organización + sucursal + turno propio abierto + un almacén | Migración 0015 y handler en PR #233; CI PostgreSQL aprobado |
 | Almacén por venta | Un solo almacén por checkout | Handler en PR #233 |
 | Stock vendible | on_hand - reserved | Validación bajo lock de balance |
 | Precio | Precio vigente de catálogo leído por backend | Sin precio enviado por el cliente |
@@ -187,10 +187,10 @@ No se deben ampliar estas reglas sin una decisión explícita del propietario. E
 
 ## 9. Secuencia técnica recomendada
 
-1. Completar el handler POST checkout y su contrato de errores/respuesta.
-2. Completar pruebas PostgreSQL para concurrencia, idempotencia, rollback, BCV, turno, stock, ledger, auditoría y aislamiento cross-tenant/cross-branch.
-3. Verificar el bloqueo de turno, almacén y balances bajo el LOGIN runtime real.
-4. Revisar los gates de seguridad de Issue #53 que condicionan la exposición del checkout.
+1. Mantener PR #233 en Draft hasta revisión humana del contrato, migración 0015 y servicio.
+2. CI ya cubre PostgreSQL checkout, concurrencia, idempotencia, rollback, BCV, turno, stock, ledger, auditoría y aislamiento cross-tenant/cross-branch; revisar cualquier regresión en cada nuevo HEAD.
+3. Mantener evidencia de permisos mínimos bajo LOGIN runtime y no aplicar la migración a Neon antes de completar los gates de seguridad.
+4. Cerrar los gates P0 de Issue #53 que condicionan la exposición del checkout.
 5. Solo después crear UI de carrito/checkout; no duplicar cálculos monetarios en React.
 
 ## 10. Estado de infraestructura

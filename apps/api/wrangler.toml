@@ -3,6 +3,7 @@ main = "src/index.ts"
 compatibility_date = "2026-10-17"
 
 [vars]
+APP_ENV = "production"
 # These three are plain (non-secret) config, safe to commit: a Google OAuth
 # client ID is designed to be public (it's exposed in the browser redirect
 # URL anyway), and the other two are just this deployment's own URLs.
@@ -18,3 +19,7 @@ compatibility_date = "2026-10-17"
 FRONTEND_ORIGIN = "https://micro-app-63i.pages.dev"
 GOOGLE_REDIRECT_URI = "https://micro-app-api.btfcasheb.workers.dev/auth/google/callback"
 GOOGLE_CLIENT_ID = "1030757133503-huvhkok21n1br10rtfhs4827fo3v106q.apps.googleusercontent.com"
+
+# Worker previews are API-dark even if preview secrets are accidentally configured.
+[previews.vars]
+APP_ENV = "preview"

@@ -1,7 +1,7 @@
 import { getCookie } from "hono/cookie";
 import type { Hono } from "hono";
 import type { Bindings } from "./bindings";
-import { withDatabaseClient } from "./database";
+import { withDatabaseClient, withDatabaseTransaction } from "./database";
 import { authorizeCommercialOperation, authorizeTenantOperation } from "./authorization";
 import type { OrganizationRole } from "./tenant-context";
 
@@ -99,47 +99,49 @@ export function registerCatalogRoutes(app: Hono<{ Bindings: Bindings }>): void {
     }
 
     try {
-      const result = await withDatabaseClient(c.env.DATABASE_URL, async (client) => {
-        // The URL organization ID is only a selector. The resolver proves the
-        // session, active user, active membership and active organization.
-        const authorization = await authorizeTenantOperation(client, sessionToken, organizationId, "catalog.read", false);
-        if (!authorization.allowed) {
-          return authorization.reason === "operation_denied"
-            ? { kind: "forbidden" as const }
-            : { kind: "unauthenticated" as const };
-        }
-        const tenant = authorization.context;
+      const result = await withDatabaseClient(c.env.DATABASE_URL, (client) =>
+        withDatabaseTransaction(client, async (transaction) => {
+          // Hold the active session, user, organization and membership locks
+          // through the tenant-scoped catalog read so revocation serializes.
+          const authorization = await authorizeTenantOperation(transaction, sessionToken, organizationId, "catalog.read");
+          if (!authorization.allowed) {
+            return authorization.reason === "operation_denied"
+              ? { kind: "forbidden" as const }
+              : { kind: "unauthenticated" as const };
+          }
+          const tenant = authorization.context;
 
-        // Do not select cost_usd at all for Cashier. Do not select stock,
-        // stock_quantity, branch or register data in this catalog-only phase.
-        const query = buildCatalogQuery(tenant.role, tenant.organizationId, cursor, pageSize);
-        const queryResult = await client.query<CatalogRow>(query.statement, query.values);
-        const hasMore = queryResult.rows.length > pageSize;
-        const pageRows = queryResult.rows.slice(0, pageSize);
+          // Do not select cost_usd at all for Cashier. Do not select stock,
+          // stock_quantity, branch or register data in this catalog-only phase.
+          const query = buildCatalogQuery(tenant.role, tenant.organizationId, cursor, pageSize);
+          const queryResult = await transaction.query<CatalogRow>(query.statement, query.values);
+          const hasMore = queryResult.rows.length > pageSize;
+          const pageRows = queryResult.rows.slice(0, pageSize);
 
-        const items: CatalogItem[] = pageRows.map((row) => {
-          const item = {
-            id: row.id,
-            is_active: row.is_active,
-            sku: row.sku,
-            barcode: row.barcode,
-            name: row.name,
-            description: row.description,
-            unit: row.unit,
-            price_usd: row.price_usd,
+          const items: CatalogItem[] = pageRows.map((row) => {
+            const item = {
+              id: row.id,
+              is_active: row.is_active,
+              sku: row.sku,
+              barcode: row.barcode,
+              name: row.name,
+              description: row.description,
+              unit: row.unit,
+              price_usd: row.price_usd,
+            };
+            return query.canReadCost ? { ...item, cost_usd: row.cost_usd! } : item;
+          });
+
+          return {
+            kind: "ok" as const,
+            body: {
+              items,
+              nextCursor: hasMore ? pageRows[pageRows.length - 1]!.id : null,
+              limit: pageSize,
+            },
           };
-          return query.canReadCost ? { ...item, cost_usd: row.cost_usd! } : item;
-        });
-
-        return {
-          kind: "ok" as const,
-          body: {
-            items,
-            nextCursor: hasMore ? pageRows[pageRows.length - 1]!.id : null,
-            limit: pageSize,
-          },
-        };
-      });
+        }),
+      );
 
       if (result.kind === "unauthenticated") {
         return c.json(

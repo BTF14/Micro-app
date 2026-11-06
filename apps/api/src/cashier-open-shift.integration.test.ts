@@ -40,7 +40,7 @@ const suite = describe.skipIf(
       if (client) await client.end();
     });
 
-    async function seedScope() {
+    async function seedScope(role: BranchContext["organizationRole"] = "cashier") {
       const suffix = crypto.randomUUID().replace(/-/g, "").slice(0, 12);
       const org = await client.query<{ id: string }>(
         "INSERT INTO organizations (name, slug) VALUES ($1, $2) RETURNING id",
@@ -58,8 +58,8 @@ const suite = describe.skipIf(
       );
       const branchId = branch.rows[0]!.id;
       await client.query(
-        "INSERT INTO organization_members (organization_id, user_id, role) VALUES ($1, $2, 'cashier')",
-        [organizationId, userId],
+        "INSERT INTO organization_members (organization_id, user_id, role) VALUES ($1, $2, $3)",
+        [organizationId, userId, role],
       );
       await client.query(
         "INSERT INTO branch_memberships (organization_id, branch_id, user_id) VALUES ($1, $2, $3)",
@@ -73,7 +73,7 @@ const suite = describe.skipIf(
       const branchContext: BranchContext = {
         userId,
         organizationId,
-        organizationRole: "cashier",
+        organizationRole: role,
         branchId,
       };
       return { organizationId, userId, branchId, registerId, branchContext };
@@ -107,6 +107,26 @@ const suite = describe.skipIf(
         openingCashUsd: "12.5000",
         openingCashVes: "125.00",
       });
+    });
+
+    it("resolves owner and admin own shifts through the runtime lock helper", async () => {
+      const owner = await seedScope("owner");
+      const admin = await seedScope("admin");
+      const ownerShift = await client.query<{ id: string }>(
+        "INSERT INTO register_shifts (organization_id,branch_id,register_id,cashier_user_id) VALUES ($1,$2,$3,$4) RETURNING id",
+        [owner.organizationId, owner.branchId, owner.registerId, owner.userId],
+      );
+      const adminShift = await client.query<{ id: string }>(
+        "INSERT INTO register_shifts (organization_id,branch_id,register_id,cashier_user_id) VALUES ($1,$2,$3,$4) RETURNING id",
+        [admin.organizationId, admin.branchId, admin.registerId, admin.userId],
+      );
+
+      await expect(
+        resolveOpenCashierRegisterShift(runtimeClient as unknown as DatabaseClient, owner.branchContext),
+      ).resolves.toMatchObject({ id: ownerShift.rows[0]!.id, cashierUserId: owner.userId });
+      await expect(
+        resolveOpenCashierRegisterShift(runtimeClient as unknown as DatabaseClient, admin.branchContext),
+      ).resolves.toMatchObject({ id: adminShift.rows[0]!.id, cashierUserId: admin.userId });
     });
 
     it("denies an inactive user or revoked organization membership", async () => {

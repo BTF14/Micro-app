@@ -19,7 +19,7 @@ No production database, Neon branch, secret, Worker binding, or deployed configu
 - Before #224, the migration workflow used PostgreSQL 18 with `POSTGRES_USER=microapp` for all migrations, so it did not prove a non-superuser migration owner or application runtime role.
 - #224 changes both migration-check and application CI to bootstrap separate disposable LOGIN principals, apply migrations as non-superuser `microapp_migrator`, run role-creation assertions as the CI administrator, and test database operations through an actual `microapp_runtime` login.
 - Migration 0008 has a useful synthetic non-owner audit test. It grants SELECT/INSERT and sequence privileges to a test role, then verifies mutation denial and append-only triggers. It is not a whole-schema runtime contract.
-- Migration 0005 revokes PUBLIC access to its private balance/ledger intent table and SECURITY DEFINER functions. Its assertions validate pairing invariants, not the complete runtime role.
+- Migration 0010 revokes PUBLIC access to its private balance/ledger intent table and SECURITY DEFINER functions. Its assertions validate pairing invariants, not the complete runtime role.
 - Migration 0005 revokes PUBLIC access to `auth_bootstrap_attempts`; its assertions validate shape, uniqueness and privacy, not runtime SELECT/INSERT/UPDATE/DELETE.
 - `auth_rate_limits` is created in 0001. Migration 0012 grants only the columns used by INSERT/ON CONFLICT UPDATE/RETURNING and retention DELETE, including SELECT on `updated_at` for the cleanup predicate.
 - This is an evidence/configuration gap. It does not prove that production is broken or that production uses an owner.
@@ -49,7 +49,7 @@ The following matrix is derived from active production callsites in `apps/api/sr
 | `inventory_count_lines` | `inventory-counts.ts` and validation trigger | SELECT, INSERT | No direct UPDATE/DELETE callsite. Trigger-side FOR SHARE is executed by the hardened SECURITY DEFINER validator from 0011; no UPDATE grant is given on count lines. |
 | `inventory_balances` | `inventory-counts.ts`, `inventory-locks.ts` | SELECT, INSERT, UPDATE | Upsert changes on-hand and updated_at; row locks serialize count snapshots. |
 | `warehouse_inventory_movements` | `inventory-counts.ts` | INSERT | Append-only; do not grant UPDATE/DELETE/TRUNCATE. |
-| `inventory_balance_ledger_intents` | #210 migration 0009 triggers | No direct runtime access | Private transaction-scoped table; SECURITY DEFINER trigger functions own its access. |
+| `inventory_balance_ledger_intents` | #210 migration 0010 triggers | No direct runtime access | Private transaction-scoped table; SECURITY DEFINER trigger functions own its access. |
 | `suppliers`, `exchange_rates`, `sales`, `sale_items`, `payments`, legacy `inventory_movements` | No active production callsite found in current API source tree | No runtime grant justified | Revisit only when a handler is introduced. |
 
 ### Locking and trigger privilege consequences
@@ -80,7 +80,7 @@ The 0004 register-shift opening trigger locks several identity/scope rows. There
 3. **Application runtime/login**: `microapp_runtime`, LOGIN, NOSUPERUSER, NOCREATEDB, NOCREATEROLE, NOREPLICATION, NOBYPASSRLS. This exact principal is the username in `DATABASE_URL`; no SET ROLE or inherited owner role is assumed. It owns no application table, sequence, schema, trigger or function, has no CREATE on the application schema, and is not a member of `microapp_migrator`.
 ### Database/schema bootstrap prerequisite
 
-The application-schema ACL is owned by the database/schema owner, not by the migration role. Before applying migrations 0001–0012, the controlled database bootstrap operation must:
+The application-schema ACL is owned by the database/schema owner, not by the migration role. Before applying migrations 0001–0015, the controlled database bootstrap operation must:
 
 - create the database and the two LOGIN roles with the reviewed attributes;
 - revoke `CREATE` on schema `public` from `PUBLIC`;
@@ -95,14 +95,14 @@ Migration 0012 now fails closed unless those effective schema privileges are alr
 
 The #224 CI harness revokes PUBLIC schema CREATE, gives `microapp_runtime` schema USAGE only, revokes PUBLIC/runtime privileges on existing application tables/sequences/functions, and configures default privileges for `microapp_migrator` so future objects are not automatically exposed. Migration 0012 explicitly checks the effective schema ACLs before granting table privileges and fails closed if the database-owner bootstrap was incomplete. Runtime grants are explicit and table/column-specific in migration 0012. CI asserts application object ownership by the non-superuser migrator and creates a future table/function probe after grants to prove no implicit runtime access. All future migrations must continue to run as the same migration owner.
 
-Do not grant CREATEROLE to the migration owner merely to support the existing 0007 assertion script. In the harness, the bootstrap administrator creates synthetic roles and the migration owner applies DDL. Run the assertions under the intended synthetic/runtime role as appropriate.
+Do not grant CREATEROLE to the migration owner merely to support the existing 0008 assertion script. In the harness, the bootstrap administrator creates synthetic roles and the migration owner applies DDL. Run the assertions under the intended synthetic/runtime role as appropriate.
 
 ## Implemented PostgreSQL 18 harness
 
 PR #224 adds a disposable PostgreSQL 18 migration/runtime contract path with these phases:
 
 1. Bootstrap the database and the two LOGIN roles as the CI administrator. Explicitly assert role attributes, schema ownership/ACLs and absence of role membership.
-2. Apply migrations 0001–0012 using `microapp_migrator`, not the superuser. Run migration assertions as the disposable CI administrator where role creation is required.
+2. Apply the canonical migration sequence 0001–0015 using `microapp_migrator`, not the superuser. Run migration assertions as the disposable CI administrator where role creation is required.
 3. Apply the reviewed runtime grants and hardened lock/trigger helper functions. Migration 0012 fails closed if the named runtime role is absent or has unsafe role attributes.
 4. Connect using the actual `microapp_runtime` LOGIN (not only SET ROLE). Assert role attributes, current_user, object ownership, absence of migrator membership, schema USAGE without CREATE, and inability to SET ROLE to migrator.
 5. Exercise positive SQL operations derived from current handlers: organization/user/member bootstrap inserts; bootstrap sentinel update; session create/revoke and tenant lock; bootstrap handoff insert/read/consume/delete; rate-limit upsert/cleanup; branch and warehouse locks; product insert/update; count creation/confirmation; inventory balance upsert and row lock; paired ledger movements; and audit identity insert.
@@ -135,12 +135,12 @@ Still required:
 Historical baseline verified at #221 HEAD `18dfc33525c792802c296469ee6140d3b5f649ff`:
 - PR #223 current HEAD `dc47c3ecc5f47f3f2dc49e5366d85d7f43b0e990` has all 7 observed check-runs completed successfully, including migration validation and Worker/Pages previews.
 - PR #224 earlier validation HEAD `a4cb037225a273d9225a8dacdd3315321c26490a`: 13/13 observed check-runs completed successfully, including a negative migration test that deliberately grants `CREATE ON SCHEMA public` to `PUBLIC` and confirms migration 0012 aborts with `POSTGRES_SCHEMA_BOOTSTRAP_PRIVILEGES_INVALID` before applying runtime grants. This includes build/typecheck, unit tests, PostgreSQL migration validation, all existing integration suites, 70/70 tests across five API handler suites using the actual `microapp_runtime` LOGIN, Chromium authentication smoke, Semgrep, Trivy/security, secret history, backup/restore, Cloudflare Pages Preview and Workers Build Preview.
-- The PR #224 migration workflow applies migrations 0001–0012 as non-superuser `microapp_migrator`, proves application object ownership and future default privileges, and exercises both positive SQL operations and privilege denials through an actual separate `microapp_runtime` LOGIN.
+- The PR #224 validation originally applied migrations through 0012 as non-superuser `microapp_migrator`, proves application object ownership and future default privileges, and exercises both positive SQL operations and privilege denials through an actual separate `microapp_runtime` LOGIN.
 - The selected runtime HTTP integration suites are `auth.integration.test.ts`, `catalog.integration.test.ts`, `catalog-write.integration.test.ts`, `catalog-update.integration.test.ts` and `inventory-counts.integration.test.ts`. They cover auth/Google bootstrap, catalog reads (including role-based cost visibility), catalog creation/update and inventory-count operations. Fixture setup/teardown uses the disposable CI administrator; app requests and lock clients use the runtime LOGIN. The auth suite also exercises scheduled rate-limit/bootstrap retention cleanup through the runtime LOGIN.
 - PR #224 remains OPEN/DRAFT and has no formal review yet. The successful Workers/Pages results are previews, not production deployment.
 
 - Source files inspected: `database.ts`, `auth.ts`, `google-auth.ts`, `auth-rate-limit.ts`, `tenant-context.ts`, `branch-context.ts`, `cashier-open-shift.ts`, `catalog.ts`, `catalog-write.ts`, `inventory-counts.ts`, `inventory-locks.ts`, `authorization.ts`.
-- Migrations inspected: 0001–0012, with detailed review of 0001, 0004, 0005, 0007, 0008, 0009, 0010, 0011 and 0012 plus their relevant assertions.
+- Migrations inspected: 0001–0015, with detailed review of 0001, 0004, 0005, 0007, 0008, 0009, 0010, 0011 and 0012 plus their relevant assertions.
 - PR #221 HEAD has 6/6 GitHub Actions workflows and 8/8 check-runs completed successfully. Worker Build and Pages Preview are checks, not production deployment.
 - PR #210 HEAD `ab5d2168a11a825a9ed6b03341b3091c13f3c06e` has 7 distinct workflow names completed successfully and 14 check-runs completed successfully. #210 is an ancestor of #221 (60 commits behind #221, zero commits ahead).
 - PR #210 and #221 have no formal reviews or review threads in the current GitHub response.

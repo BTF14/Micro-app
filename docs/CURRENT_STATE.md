@@ -1,19 +1,19 @@
 # Estado actual — Micro app
 
-## CHECKPOINT VIVO PRIORITARIO — 2026-11-05 UTC
+## CHECKPOINT VIVO PRIORITARIO — 2026-11-06 UTC
 
-- `main` actual verificado: `85f1aa46db7797ff6ae2d7e08b2a85e15e067797`.
-- **Autorización permanente del propietario:** fusionar PRs a `main` cuando el diff, la seguridad, branch protection y todos los checks del HEAD exacto estén verificados. El propietario conoce y autoriza el despliegue automático de Cloudflare Pages inherente al merge. No volver a pedir confirmación por cada PR elegible.
-- No cubre despliegues manuales, secretos/variables, DNS, billing, cambios de Cloudflare, migraciones/escrituras de Neon `main` ni datos reales.
-- Backlog vivo: **28 PR abiertas** (reconsultar GitHub antes de actuar). PR #237 y #206 están fusionadas; sus checks post-merge terminaron en success. PR #196 se cerró por duplicar la implementación de #200; su documentación exclusiva permanece disponible en la rama cerrada para reconciliación selectiva.
-- PR #237 integró las reglas permanentes en `AGENTS.md`, `docs/AI_COLLABORATION_AND_PR_POLICY.md`, este checkpoint, handoff y diario. El carril rápido exige máximo dos frentes activos, raíz primero, una PR por objetivo, preferir base `main`, no crear stacks nuevos y verificar post-merge.
-- PR #200 contiene la vertical slice catálogo/inventario y migración 0005; continúa Draft y ahora necesita reconciliar su base con el nuevo `main`. No fusionar mientras el esquema 0005 y el principal runtime no estén listos para el Worker: la migración no está aplicada a Neon `main`, y no hay autorización para aplicarla.
-- PR #213 (rate limit OAuth) pasa sus checks en el SHA histórico, pero está detrás del nuevo `main`; requiere actualizar base y volver a verificar. No fusionar hasta verificar el principal efectivo de `DATABASE_URL` y sus permisos. PR #214 requiere un secreto Worker nuevo, que no está autorizado.
-- PR #224 define el contrato de `microapp_runtime`/`microapp_migrator` y pruebas LOGIN reales, pero sigue apilada. Auditoría **solo lectura** de Neon `main`: ambos logins dedicados no existen. También se observó un login etiquetado para backup con privilegios elevados; no se leyó ningún secreto ni se verificó qué login usa `DATABASE_URL_BACKUP_RO`. Tratar la identidad de backup como P0 pendiente de verificación/corrección; no modificar roles ni secretos sin autorización específica.
-- PR #227 sigue siendo la ruta BCV elegida, pero está apilada sobre #226 y depende de la cadena de seguridad/DB. No está lista para `main` ni para producción.
-- Issue #53 continúa abierta y P0. Checks verdes en CI no equivalen a producción lista; no declarar ventas/inventario/BCV desplegados hasta verificar migraciones, principal runtime, permisos y smoke tests reales.
-- Últimos merges: #237 → `66ca2b99331df6d9eb4175bf79e53a9ba118dde7`; #206 → `85f1aa46db7797ff6ae2d7e08b2a85e15e067797`. Ambos tienen checks post-merge success, incluidos Cloudflare Pages y Workers Builds. No se ejecutó despliegue manual ni mutación de Neon.
-- Próxima prioridad: resolver la identidad runtime/migrator y el bloqueo de migración 0005 en una ruta de integración controlada; después rebasar/integrar padres de la cadena y revalidar hijos uno por uno. No abrir PR paralelas para el mismo objetivo.
+- `main` actual verificado: `0f2c142a8e3dc624437e3c6c36c0951c64d3890b`.
+- **Autorización permanente del propietario:** fusionar PRs a `main` cuando diff, seguridad, branch protection y checks del HEAD exacto estén verificados. La autorización incluye el despliegue automático de Cloudflare Pages/Workers inherente al merge. No volver a pedir confirmación por PR elegible.
+- No cubre cambios manuales de Cloudflare, secretos/variables, DNS, billing, roles/grants de Neon, migraciones remotas, escrituras ni datos reales.
+- Backlog vivo: **26 PR abiertas**. PR #237, #206 y #213 fusionadas; PR #196 y #214 cerradas como duplicadas/supersedidas tras comparar implementaciones. Issue #53 sigue OPEN/P0.
+- **PR #213 integrada:** rate limiting atómico en GET /auth/google (10/10m), POST bootstrap (5/h), GET callback (20/10m); HMAC con GOOGLE_CLIENT_SECRET existente, CF-Connecting-IP, 429/Retry-After y fail-closed 503. No añade secreto ni migración. Merge SHA `0f2c142a8e3dc624437e3c6c36c0951c64d3890b`; checks post-merge de Pages, Workers Builds, CI, Playwright, PostgreSQL migration, Semgrep, Trivy, Chromium y secret-history: SUCCESS.
+- **Neon main — auditoría de solo lectura:** `backup_readonly`, `neon_service` y `neondb_owner` son miembros de `neon_superuser`; este hereda `pg_write_all_data` y otros roles. `cloud_admin` tiene `rolsuper=true`. Por tanto `backup_readonly` no es readonly y `neon_service` no es mínimo privilegio. No se leyó DATABASE_URL ni secretos; no se sabe qué rol consume cada binding. No se modificaron roles/grants/datos.
+- **PR #200:** vertical slice catálogo/inventario, HEAD `464ca08b9020fad128cc9c8a321568493d484517`, 33 commits ahead / 0 behind, 30 archivos de feature. Checks del SHA exacto completados SUCCESS. Se integró main como primer padre y se conservaron los cambios de feature; CI conserva el test rate-limit OAuth y añade migration/assertions 0005 y suites catálogo/inventario. Sigue Draft deliberadamente: las tablas `warehouses`, `inventory_balances`, `inventory_ledger`, `inventory_counts`, `inventory_count_lines` no existen en Neon main. No fusionar endpoints dependientes de un esquema ausente.
+- **PR #214 cerrada** como rate limiter duplicado; #213 es la implementación canónica y no requiere AUTH_RATE_LIMIT_HMAC_KEY. El trabajo distinto de bootstrap handoff y streaming body se conserva en #215.
+- **PR #215** sigue Draft y apilada sobre #214: preservar handoff server-side y bounded streaming body, portar sobre rate limiter #213 y eliminar dependencia de secreto nuevo; migración 0010 necesita grants runtime reales. No fusionar todavía.
+- **PR #224/#226/#227** siguen parte de la ruta runtime/migrator/BCV. #227 no está lista para merge mientras la cadena de migraciones y permisos no esté integrada/verificada.
+- No aplicar migraciones 0005–0013 a Neon main sin plan/permiso específico y comprobación de rol migrator, rollback y restore.
+- Próximas prioridades: (1) remediar modelo de roles runtime/backup con plan revisado, (2) preparar ruta segura de migraciones 0005–0013, (3) portar bootstrap handoff #215, (4) continuar aplanando pila #207–#233. Producción sigue **NO LISTA**; CI verde no equivale a readiness real.
 
 
 ---

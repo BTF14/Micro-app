@@ -405,23 +405,33 @@ export function registerSalesCheckoutRoutes(app: Hono<{ Bindings: Bindings }>): 
           if (productsResult.rows.length !== input.lines.length) return { kind: "invalid_products" };
           const productById = new Map(productsResult.rows.map((product) => [product.id, product]));
 
-          const computedLines = input.lines.map((line) => {
-            const product = productById.get(line.productId)!;
-            const lineUsd = calculateLineUsd(line.quantity, product.price_usd);
-            const lineVes = convertUsdToVes(lineUsd, rate.rate);
-            return {
-              productId: product.id,
-              name: product.name,
-              sku: product.sku,
-              quantity: line.quantity,
-              unitPriceUsd: formatNumeric(parseNumeric(product.price_usd, 14, 4), 14, 4),
-              unitCostUsd: formatNumeric(parseNumeric(product.cost_usd, 14, 4), 14, 4),
-              lineUsd,
-              lineVes,
-            };
-          });
-          const subtotalUsd = sumNumeric(computedLines.map((line) => line.lineUsd), 14, 4);
-          const totalVes = sumNumeric(computedLines.map((line) => line.lineVes), 16, 2);
+          let computedLines: Array<{
+            productId: string; name: string; sku: string; quantity: string;
+            unitPriceUsd: string; unitCostUsd: string; lineUsd: string; lineVes: string;
+          }>;
+          let subtotalUsd: string;
+          let totalVes: string;
+          try {
+            computedLines = input.lines.map((line) => {
+              const product = productById.get(line.productId)!;
+              const lineUsd = calculateLineUsd(line.quantity, product.price_usd);
+              const lineVes = convertUsdToVes(lineUsd, rate.rate);
+              return {
+                productId: product.id,
+                name: product.name,
+                sku: product.sku,
+                quantity: line.quantity,
+                unitPriceUsd: formatNumeric(parseNumeric(product.price_usd, 14, 4), 14, 4),
+                unitCostUsd: formatNumeric(parseNumeric(product.cost_usd, 14, 4), 14, 4),
+                lineUsd,
+                lineVes,
+              };
+            });
+            subtotalUsd = sumNumeric(computedLines.map((line) => line.lineUsd), 14, 4);
+            totalVes = sumNumeric(computedLines.map((line) => line.lineVes), 16, 2);
+          } catch {
+            return { kind: "invalid_payment" };
+          }
           if (parseNumeric(subtotalUsd, 14, 4) <= 0n || parseNumeric(totalVes, 16, 2) <= 0n) {
             return { kind: "invalid_payment" };
           }

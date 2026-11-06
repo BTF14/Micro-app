@@ -92,8 +92,8 @@ jobs:
         run: docker exec -i "${{ job.services.postgres.id }}" psql -v ON_ERROR_STOP=1 -U microapp -d microapp_test -f /dev/stdin < apps/api/migrations/0005_auth_bootstrap_attempts.assertions.sql
       - name: Verify warehouse inventory migration rolls back on failure
         run: |
-          sed '/^COMMIT;$/i SELECT 1/0;' apps/api/migrations/0006_warehouse_inventory.sql > /tmp/0005-warehouse-inventory-failure.sql
-          if docker exec -i "${{ job.services.postgres.id }}" psql -v ON_ERROR_STOP=1 -U microapp -d microapp_test -f /dev/stdin < /tmp/0005-warehouse-inventory-failure.sql; then
+          sed '/^COMMIT;$/i SELECT 1/0;' apps/api/migrations/0006_warehouse_inventory.sql > /tmp/0006-warehouse-inventory-failure.sql
+          if docker exec -i "${{ job.services.postgres.id }}" psql -v ON_ERROR_STOP=1 -U microapp -d microapp_test -f /dev/stdin < /tmp/0006-warehouse-inventory-failure.sql; then
             echo "Expected the injected migration failure, but psql succeeded."
             exit 1
           fi
@@ -113,8 +113,8 @@ jobs:
         run: docker exec -i -e PGPASSWORD=migrator-test-only "${{ job.services.postgres.id }}" psql -h 127.0.0.1 -1 -v ON_ERROR_STOP=1 -U microapp_migrator -d microapp_test -f /dev/stdin < apps/api/migrations/0007_register_shift_member_roles.sql
       - name: Verify audit logs migration rolls back on failure
         run: |
-          sed '/^COMMIT;$/i SELECT 1/0;' apps/api/migrations/0008_audit_logs_append_only.sql > /tmp/0007-audit-logs-failure.sql
-          if docker exec -i "${{ job.services.postgres.id }}" psql -v ON_ERROR_STOP=1 -U microapp -d microapp_test -f /dev/stdin < /tmp/0007-audit-logs-failure.sql; then
+          sed '/^COMMIT;$/i SELECT 1/0;' apps/api/migrations/0008_audit_logs_append_only.sql > /tmp/0008-audit-logs-failure.sql
+          if docker exec -i "${{ job.services.postgres.id }}" psql -v ON_ERROR_STOP=1 -U microapp -d microapp_test -f /dev/stdin < /tmp/0008-audit-logs-failure.sql; then
             echo "Expected the injected audit migration failure, but psql succeeded."
             exit 1
           fi
@@ -126,8 +126,8 @@ jobs:
         run: docker exec -i "${{ job.services.postgres.id }}" psql -v ON_ERROR_STOP=1 -U microapp -d microapp_test -f /dev/stdin < apps/api/migrations/0008_audit_logs_append_only.assertions.sql
       - name: Verify count-ledger validation migration rolls back on failure
         run: |
-          sed '/^COMMIT;$/i SELECT 1/0;' apps/api/migrations/0009_inventory_count_ledger_validation.sql > /tmp/0008-count-ledger-failure.sql
-          if docker exec -i "${{ job.services.postgres.id }}" psql -v ON_ERROR_STOP=1 -U microapp -d microapp_test -f /dev/stdin < /tmp/0008-count-ledger-failure.sql; then
+          sed '/^COMMIT;$/i SELECT 1/0;' apps/api/migrations/0009_inventory_count_ledger_validation.sql > /tmp/0009-count-ledger-failure.sql
+          if docker exec -i "${{ job.services.postgres.id }}" psql -v ON_ERROR_STOP=1 -U microapp -d microapp_test -f /dev/stdin < /tmp/0009-count-ledger-failure.sql; then
             echo "Expected the injected count-ledger migration failure, but psql succeeded."
             exit 1
           fi
@@ -139,9 +139,9 @@ jobs:
         run: docker exec -i "${{ job.services.postgres.id }}" psql -v ON_ERROR_STOP=1 -U microapp -d microapp_test -f /dev/stdin < apps/api/migrations/0009_inventory_count_ledger_validation.assertions.sql
       - name: Verify balance-ledger coupling migration rolls back on failure
         run: |
-          sed '/^COMMIT;$/i SELECT 1/0;' apps/api/migrations/0010_inventory_balance_ledger_coupling.sql > /tmp/0009-balance-ledger-failure.sql
+          sed '/^COMMIT;$/i SELECT 1/0;' apps/api/migrations/0010_inventory_balance_ledger_coupling.sql > /tmp/0010-balance-ledger-failure.sql
           status=0
-          output="$(docker exec -i "${{ job.services.postgres.id }}" psql -v ON_ERROR_STOP=1 -U microapp -d microapp_test -f /dev/stdin < /tmp/0009-balance-ledger-failure.sql 2>&1)" || status=$?
+          output="$(docker exec -i "${{ job.services.postgres.id }}" psql -v ON_ERROR_STOP=1 -U microapp -d microapp_test -f /dev/stdin < /tmp/0010-balance-ledger-failure.sql 2>&1)" || status=$?
           printf '%s\n' "$output"
           if [ "$status" -eq 0 ]; then
             echo "Expected the injected balance-ledger migration failure, but psql succeeded."

@@ -12,8 +12,8 @@ const statusPayload = {
   date: "2026-11-05",
   effective_date: "2026-11-05",
   timezone: "America/Caracas",
-  source: "https://www.bcv.org.ve/",
-  currencies: { USD: true },
+  api_version: "v1",
+  supported_currencies: ["USD", "EUR", "CNY", "TRY", "RUB"],
 };
 const ratePayload = {
   USD: 894.8876,
@@ -56,7 +56,7 @@ describe("BCV source validation", () => {
 
   it("rejects an unavailable or partial source status", () => {
     expect(validateBcvPayloads({ ...statusPayload, status: "partial" }, ratePayload, now)).toMatchObject({ ok: false });
-    expect(validateBcvPayloads({ ...statusPayload, currencies: { USD: false } }, ratePayload, now)).toMatchObject({ ok: false });
+    expect(validateBcvPayloads({ ...statusPayload, supported_currencies: ["EUR", "CNY"] }, ratePayload, now)).toMatchObject({ ok: false, reason: "usd_unavailable" });
   });
 
   it("rejects stale status, stale capture timestamps, and mismatched calendar dates", () => {
@@ -65,8 +65,8 @@ describe("BCV source validation", () => {
     expect(validateBcvPayloads(statusPayload, { ...ratePayload, date: "2026-11-04" }, now)).toMatchObject({ ok: false, reason: "rate_date_mismatch" });
   });
 
-  it("rejects a provenance mismatch, an invalid effective date, and non-positive rates", () => {
-    expect(validateBcvPayloads({ ...statusPayload, source: "https://attacker.example/" }, ratePayload, now)).toMatchObject({ ok: false, reason: "source_provenance_invalid" });
+  it("rejects an unsupported API version, an invalid effective date, and non-positive rates", () => {
+    expect(validateBcvPayloads({ ...statusPayload, api_version: "v2" }, ratePayload, now)).toMatchObject({ ok: false, reason: "source_status_invalid" });
     expect(validateBcvPayloads(statusPayload, { ...ratePayload, effective_date: "2026-02-30" }, now)).toMatchObject({ ok: false, reason: "effective_date_invalid" });
     expect(validateBcvPayloads(statusPayload, { ...ratePayload, USD: 0 }, now)).toMatchObject({ ok: false, reason: "usd_rate_invalid" });
   });

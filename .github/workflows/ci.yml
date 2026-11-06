@@ -106,6 +106,8 @@ jobs:
         run: pnpm --filter @micro-app/api exec vitest run src/catalog-update.integration.test.ts
       - name: PostgreSQL inventory count integration tests
         run: pnpm --filter @micro-app/api exec vitest run src/inventory-counts.integration.test.ts
+      - name: PostgreSQL BCV effective-date and runtime privilege integration tests
+        run: DATABASE_URL="$RUNTIME_DATABASE_URL" DATABASE_URL_ADMIN="$ADMIN_DATABASE_URL" pnpm --filter @micro-app/api exec vitest run src/exchange-rates.integration.test.ts
       - name: Runtime-role API integration tests
         run: |
           DATABASE_URL="$RUNTIME_DATABASE_URL" DATABASE_URL_ADMIN="$ADMIN_DATABASE_URL" pnpm --filter @micro-app/api exec vitest run src/auth.integration.test.ts src/auth-rate-limit.integration.test.ts src/branch-context.integration.test.ts src/catalog.integration.test.ts src/catalog-write.integration.test.ts src/catalog-update.integration.test.ts src/inventory-counts.integration.test.ts

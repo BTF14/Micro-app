@@ -211,3 +211,12 @@ La página `https://micro-app-63i.pages.dev/` muestra un enlace “Continuar con
 ### Criterio general
 
 Ninguna herramienta externa se considera instalada por estar documentada. Fijar versión/release antes de cualquier piloto; inspeccionar licencia, scripts, permisos, datos enviados, telemetría, coste y rollback. No habilitar servicios, MCP, hooks, plugins ni cuentas facturables sin evaluación explícita.
+
+## Fuente BCV USD/VES — investigación 2026-11-05
+
+| Fuente | Evidencia consultada | Conclusión y limitaciones |
+|---|---|---|
+| BCV Today (intermediario no oficial) | https://bcv.today/api/ · https://bcv.today/api/v1/rate.json · https://bcv.today/api/v1/status.json · https://github.com/grupoclip/bcv-api | API JSON pública, sin clave. Su README declara que `main.py` consulta `https://www.bcv.org.ve/`, extrae `Fecha Valor` y genera JSON estático; la automatización de origen corre cada 30 minutos. El propio proyecto se declara no oficial y sin garantía de uptime/precisión. No presentarlo como API oficial del BCV. |
+| BCV (fuente primaria) | https://www.bcv.org.ve/ | El README del scraper declara que obtiene los datos de la web pública del BCV. La consulta directa desde este entorno devolvió HTTP 502, por lo que no se pudo hacer una verificación independiente en vivo de la cifra publicada. |
+
+**Decisión provisional para la implementación:** usar BCV Today únicamente como transporte de datos de una fuente secundaria documentada, persistir `source = 'bcv.today'`, validar también su endpoint de estado y fecha de generación, y exponer claramente el proveedor y el origen declarado. Ante cualquier discrepancia o dato inválido, no actualizar la tasa. La aceptación final requiere pruebas automatizadas y revisión de CI; no implica garantía contractual del proveedor.

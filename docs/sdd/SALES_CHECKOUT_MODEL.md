@@ -183,6 +183,8 @@ Las pruebas deben correr contra PostgreSQL efímero con roles migrator/runtime r
 
 No se deben ampliar estas reglas sin una decisión explícita del propietario. El soporte de varios registros de pago solo permite repartir el pago completo entre métodos de la misma moneda; la suma debe cubrir exactamente el total y no representa una parcialidad.
 
+**Gate de roles detectado:** `authorization.ts` concede `sales.create_list_price` a owner/admin/cashier, pero `validate_register_shift_opening()` en la migración 0004 solo permite abrir turnos cuando `organization_members.role='cashier'`. El checkout exige un turno propio abierto, por lo que owner/admin no podrán completar ventas con el modelo actual. PR #233 no amplía esta política; se requiere confirmar si el checkout v1 será exclusivo de Cashier o si owner/admin también deben poder abrir/operar su propio turno.
+
 ## 9. Secuencia técnica recomendada
 
 1. Completar el handler POST checkout y su contrato de errores/respuesta.

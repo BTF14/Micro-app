@@ -4,7 +4,7 @@
 **Repository:** `BTF14/Micro-app`  
 **Recovery branch:** `chore/backlog-recovery-ledger-20261106`  
 **Observed main baseline:** `9e0a0b5ead33dd3d43ac6182a9ea1de550adfd14`  
-**Open PR count:** 25 (live query via GitHub listing; this supersedes older counts in historical checkpoint text).
+**Source backlog snapshot:** 25 open implementation/documentation PRs, verified before creating #242. **Current open count:** 26 (the 25 source PRs plus recovery-ledger PR #242). Re-query GitHub before future reports.
 
 ## Purpose and operating rules
 
@@ -52,7 +52,7 @@ The list below is the complete 25-PR open snapshot returned by GitHub. "Recovery
 | #220 | `40cf9e2cff5e88a5feec7b8168c8f436cb3f0601` | `2115d66cca18ee094ee3b3f8148ac6a61df040da` | yes | 7 | Streaming request-body limit; recover unique security change onto current auth baseline. |
 | #218 | `2115d66cca18ee094ee3b3f8148ac6a61df040da` | `9ba4f76e0c155ceaff911a4033406a8afa9f09cd` | yes | 15 | Central authorization for existing API routes; recover unique changes; old dependency chain is stale. |
 | #211 | `1ebb998b9711f6feb8b70191a704f627713cdc07` | `ab5d2168a11a825a9ed6b03341b3091c13f3c06e` | yes | 1 | Authentication/rate-limit audit docs; update to current code and P0 issue #53. |
-| #210 | `ab5d2168a11f6feb8b70191a704f627713cdc07` | `666236bc7b2c7e1dd1e30d9ccdc467e37c40784b` | yes | 24 | Transactional inventory balance-ledger coupling; high-priority integrity requirement. Verify SHA from live PR before cherry-pick (see note below). |
+| #210 | `ab5d2168a11a825a9ed6b03341b3091c13f3c06e` | `666236bc7b2c7e1dd1e30d9ccdc467e37c40784b` | yes | 24 | Transactional inventory balance-ledger coupling; high-priority integrity requirement. Verify SHA from live PR before cherry-pick (see note below). |
 | #209 | `666236bc7b2c7e1dd1e30d9ccdc467e37c40784b` | `962b5e9d34cc23d7bb5929cd17b4599f4da06db4` | yes | 2 | Inventory count snapshot/ledger delta validation; integrate with #200/#205 semantics. |
 | #208 | `32c7217a21b7a3719ebf72940419779a7b42c027` | `c0bcbbe48aa8783b85ee7787dd1ae8a6d0dfdafc` | yes | 21 | Register-shift own-shift roles after inventory migration; reconcile after role and inventory contract. |
 | #207 | `962b5e9d34cc23d7bb5929cd17b4599f4da06db4` | `32c7217a21b7a3719ebf72940419779a7b42c027` | yes | 16 | Append-only audit logs; preserve immutability and test runtime denial paths. |
@@ -63,6 +63,36 @@ The list below is the complete 25-PR open snapshot returned by GitHub. "Recovery
 | #193 | `ac57ab4f3415f82279b8a49c0befe09f8e3aec68` | `705d3db3220894c7d3baca8dc7e7a6b623dfbb94` | no | 5 | Phase B inventory scope docs; reconcile against implementation and retain only current useful design. |
 
 > Live refs are authoritative: re-fetch the PR metadata before using a SHA for any patch or cherry-pick. This ledger is a snapshot, not a substitute for a fresh ref check.
+
+## File-level provenance map — inventory / database work
+
+Changed filenames were fetched from GitHub's paginated PR file listing. These are source paths, not proof that a change is ready to port.
+
+| PR | Changed files | Key paths / role |
+|---:|---:|---|
+| #200 | 42 | First inventory/catalog vertical slice: `0005_warehouse_inventory.sql`, `inventory-counts.ts`, `inventory-locks.ts`, branch/tenant context, catalog routes, integration tests, CI workflows, docs. |
+| #204 | 1 | Inventory integration-test fixture isolation only: `inventory-counts.integration.test.ts`. Depends on the inventory implementation/schema. |
+| #205 | 3 | Adds count idempotency to `0005_warehouse_inventory.sql`, `inventory-counts.ts`, and integration tests. |
+| #207 | 9 | Audit append-only migration/assertions plus CI and integration coverage. |
+| #208 | 11 | Register-shift role migration and authorization/shift tests. |
+| #209 | 5 | Inventory count ledger validation migration/assertions and workflow references. |
+| #210 | 7 | Inventory balance↔ledger coupling migration, deferred-failure fixture, integration tests. |
+| #222 | 1 | Runtime role contract design document. |
+| #223 | 9 | Runtime lock-helper migration/assertions and branch/tenant/inventory locking code/tests. |
+| #224 | 16 | Runtime role grants migration/assertions, fixtures, smoke tests, and CI/backup/E2E workflow changes. |
+| #225 | 3 | Atomic migration test helper and workflow changes. |
+| #226 | 3 | Migration runner, its workflow, and operator documentation. |
+
+### Confirmed main-vs-source implementation gap
+- Current `main` does **not** contain `apps/api/src/inventory-counts.ts` or `apps/api/src/inventory-locks.ts`.
+- Current `main` does contain `branch-context.ts`, but it must be diffed against the source branch before reusing assumptions/signatures.
+- Current `main` has `0005_auth_bootstrap_attempts.sql`; it does not have the inventory `0005`.
+- Current `.github/workflows/migration-check.yml` still reflects the older migration sequence and must be reconciled with every numbered migration and assertion.
+- #200 and #205 both modify the inventory `0005` migration. #205 adds `idempotency_key`, `request_hash`, a paired-nullability constraint, and a partial unique index. #200 contains the distinct balance-version/snapshot logic. These are compatible concepts but require one reviewed merged migration definition and tests.
+
+### Current recovery-ledger PR
+- PR #242: `chore/backlog-recovery-ledger-20261106` → `main`; Draft; HEAD `3b4f0002a460ece614c94fb23794580d9f2e2f18`; current comparison is 2 commits ahead / 0 behind and exactly one added documentation file.
+- Latest observed GitHub PR metadata reports `mergeable=true`. At the last workflow query, CI and Playwright were still in progress; do not merge until every required check on the final SHA is complete and successful.
 
 ## Active recovery sequence
 

@@ -1,4 +1,4 @@
--- Run after 0007_audit_logs_append_only.sql on disposable PostgreSQL 18.
+-- Run after 0008_audit_logs_append_only.sql on disposable PostgreSQL 18.
 -- Tests both the intended least-privilege runtime role and database triggers
 -- against a separate non-owner role deliberately granted mutation privileges.
 BEGIN;

@@ -535,12 +535,14 @@ export function registerSalesCheckoutRoutes(app: Hono<{ Bindings: Bindings }>): 
             ],
           );
 
-          await tx.query(
+          const completedSale = await tx.query<{ id: string }>(
             `UPDATE public.sales
                 SET status = 'completed', completed_at = now()
-              WHERE organization_id = $1 AND id = $2 AND status = 'draft'`,
+              WHERE organization_id = $1 AND id = $2 AND status = 'draft'
+              RETURNING id`,
             [branch.organizationId, saleId],
           );
+          if (!completedSale.rows[0]) throw new Error("SALE_FINALIZATION_FAILED");
 
           const sale = await loadSaleResponse(tx, branch.organizationId, saleId);
           if (!sale) throw new Error("COMPLETED_SALE_RESPONSE_MISSING");

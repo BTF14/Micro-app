@@ -1,15 +1,19 @@
-## CHECKPOINT PRIORITARIO — autorización y carril de integración — 2026-11-05 UTC
+## CHECKPOINT ACTUAL — 2026-11-05 UTC — fuente de verdad
 
-> Este bloque supersede cualquier instrucción histórica inferior que diga que no se debe fusionar o que se debe pedir confirmación genérica para desplegar al fusionar. Verificar siempre el estado vivo de GitHub antes de actuar.
+> Este checkpoint reemplaza los estados anteriores de este handoff. Si un bloque histórico contradice estas reglas, prevalece este bloque y la documentación permanente en `AGENTS.md` y `docs/AI_COLLABORATION_AND_PR_POLICY.md`. Antes de actuar, consultar GitHub en vivo.
 
-- Repositorio: `BTF14/Micro-app`. `main` observado en `7b0f057b8c152515005feed40305143c0ebb94b0` al iniciar este trabajo; revalidar antes de integrar.
-- **Autorización del propietario:** fusionar a `main` cuando la PR supere todos los gates técnicos, de seguridad, branch protection y checks del SHA exacto. El propietario conoce y autoriza la consecuencia de despliegue automático de Cloudflare Pages. No volver a pedir permiso para cada merge elegible.
-- La autorización no cubre cambios manuales de Cloudflare, secretos/variables, DNS, billing, Neon `main`, migraciones/escrituras de producción ni datos reales.
-- El backlog observado contiene 30 PR abiertas. Hay cadenas de PR apiladas, objetivos solapados y ramas Draft. No crear más PR salvo necesidad real; clasificar, consolidar con diff completo e integrar raíz primero.
-- PR #227 es la ruta BCV seleccionada; está Draft, tiene 37 commits/13 archivos y depende de #226. No es elegible para merge hasta integrar/verificar su cadena base, sacar de Draft tras revisión completa y comprobar todos los gates en su HEAD final.
-- Se crea una única PR documental para alinear `AGENTS.md`, política, estado y handoff. No se ha modificado `main`, Cloudflare, Neon, secretos ni datos.
-- Método obligatorio: máximo 2 frentes activos; preferir base `main`; máximo una dependencia apilada excepcional; raíz primero; actualizar checks tras cada cambio de base; merge inmediato cuando todos los gates pasen; comprobar post-merge y continuar al siguiente elemento sin pedir permiso repetido.
-- Próxima acción: revisar esta PR documental y sus checks; luego retomar la cola priorizada empezando por la raíz de la cadena de seguridad/DB que desbloquea BCV y el resto.
+- Repo: `BTF14/Micro-app`; `main` verificado en `85f1aa46db7797ff6ae2d7e08b2a85e15e067797`.
+- El propietario autoriza merges a `main` cuando el diff y todos los gates técnicos, de seguridad, branch protection y checks del HEAD exacto estén verdes. La autorización incluye el despliegue automático de Cloudflare Pages inherente al merge. No volver a pedir permiso por cada PR elegible.
+- No incluye despliegues manuales, secretos/variables, DNS, billing, cambios manuales de Cloudflare, migraciones/escrituras de Neon `main` ni datos reales.
+- Últimos resultados: #237 fusionada (política de colaboración/continuidad) y #206 fusionada (Hono 4.13.16, Workers Types 5.20261102.1, Wrangler 4.156.1; override undici 7.30.1 conservado). Checks post-merge de ambos SHAs: success. #196 cerrada como implementación duplicada de #200; sus documentos exclusivos quedan para reconciliación selectiva. Backlog observado: 28 PR abiertas.
+- El proceso debe ser continuo: máximo dos frentes activos, inventario vivo una vez por bloque, raíz primero, preferir `main`, no añadir stacks, una PR por objetivo, no duplicar ramas, no hacer polling sin cambio, merge inmediato al pasar todos los gates y comprobación post-merge.
+- Neon `main` inspeccionado solo en metadatos: no existen `microapp_runtime` ni `microapp_migrator`; un login etiquetado para backup presenta privilegios elevados y no debe considerarse readonly sin corrección/verificación. No se leyó ningún secret ni se modificó la base.
+- #200: vertical slice catálogo/inventario, migración 0005; Draft, base por reconciliar. No fusionar hasta resolver la migración 0005 y la identidad/permisos runtime. Neon `main` no está autorizado para cambios.
+- #213: rate limiting OAuth, checks verdes en SHA histórico pero branch detrás de main; no fusionar hasta revalidar base/HEAD y confirmar el principal runtime. #214 exige un Worker secret nuevo y está bloqueada por falta de autorización para secretos.
+- #224: contrato de roles runtime y harness de login real, todavía apilada. #227: ruta BCV elegida, depende de #226 y de la cadena previa; no lista para merge.
+- Issue #53 sigue P0 abierta. No afirmar producción lista por tener CI verde.
+- Siguiente paso: diseñar la ruta mínima y segura para crear/verificar roles dedicados y aplicar migraciones solo tras aprobación específica; en paralelo, reconciliar la cadena de PRs sin duplicar trabajo.
+
 
 ---
 

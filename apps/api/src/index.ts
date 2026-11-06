@@ -2,6 +2,7 @@ import { Hono } from "hono";
 import { cors } from "hono/cors";
 import { registerAuthRoutes } from "./auth";
 import { registerGoogleAuthRoutes } from "./google-auth";
+import { registerBcvRoutes } from "./bcv";
 import type { Bindings } from "./bindings";
 
 const app = new Hono<{ Bindings: Bindings }>();
@@ -61,6 +62,7 @@ app.use("*", async (c, next) => {
 
 registerAuthRoutes(app);
 registerGoogleAuthRoutes(app);
+registerBcvRoutes(app);
 
 app.get("/health", (c) =>
   c.json({

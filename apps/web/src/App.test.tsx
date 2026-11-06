@@ -7,6 +7,13 @@ import App from "./App";
 const user = { id: "user-1", email: "ana@example.com", display_name: "Ana Pérez" };
 const organizations = [{ id: "org-1", name: "Mi tienda", slug: "mi-tienda", role: "owner" }];
 const authResponse = { user, organizations };
+const bcvRateResponse = {
+  rate: "894.88760000",
+  effectiveDate: "2026-11-06",
+  fetchedAt: "2026-11-06T22:00:00.000Z",
+  source: "BCV_OFFICIAL_HTML_V1",
+  status: "current" as const,
+};
 
 let container: HTMLDivElement;
 let root: Root;
@@ -99,7 +106,9 @@ describe("Micro app authentication flow", () => {
   });
 
   it("shows help links (WhatsApp support, FAQ, privacy) on the authenticated dashboard footer", async () => {
-    vi.mocked(fetch).mockResolvedValueOnce(jsonResponse(authResponse));
+    vi.mocked(fetch)
+      .mockResolvedValueOnce(jsonResponse(authResponse))
+      .mockResolvedValueOnce(jsonResponse(bcvRateResponse));
     await renderApp();
     await settle();
 
@@ -112,9 +121,10 @@ describe("Micro app authentication flow", () => {
     expect(container.querySelector('[role="dialog"]')).toBeTruthy();
   });
 
-  it("opens the authenticated catalog and shows exact USD prices without inventing a VES conversion", async () => {
+  it("opens the authenticated catalog and converts exact USD prices only with a current BCV rate", async () => {
     vi.mocked(fetch)
       .mockResolvedValueOnce(jsonResponse(authResponse))
+      .mockResolvedValueOnce(jsonResponse(bcvRateResponse))
       .mockResolvedValueOnce(jsonResponse({
         items: [{
           id: "product-1",
@@ -142,14 +152,42 @@ describe("Micro app authentication flow", () => {
     expect(container.textContent).toContain("Café");
     expect(container.textContent).toContain("US$ 23,85");
     expect(container.textContent).toContain("US$ 10,00");
-    expect(container.textContent).toContain("No hay una tasa BCV validada");
-    expect(container.textContent).not.toContain("Bs. 870,53");
-    expect(vi.mocked(fetch).mock.calls[1][0]).toBe("/api/orgs/org-1/catalog?limit=100");
+    expect(container.textContent).toContain("Bs. 21.343,07");
+    expect(container.textContent).not.toContain("No hay una tasa BCV validada");
+    expect(vi.mocked(fetch).mock.calls[2][0]).toBe("/api/orgs/org-1/catalog?limit=100");
+  });
+
+  it("shows the official BCV rate, effective date and status on the authenticated dashboard", async () => {
+    vi.mocked(fetch)
+      .mockResolvedValueOnce(jsonResponse(authResponse))
+      .mockResolvedValueOnce(jsonResponse(bcvRateResponse));
+    await renderApp();
+    await settle();
+
+    const panel = container.querySelector(".exchange-rate-panel");
+    expect(panel?.textContent).toContain("894,88760000");
+    expect(panel?.textContent).toContain("noviembre de 2026");
+    expect(panel?.textContent).toContain("Vigente");
+    expect(panel?.textContent).toContain("Banco Central de Venezuela");
+  });
+
+  it("does not invent a BCV rate when the endpoint is unavailable", async () => {
+    vi.mocked(fetch)
+      .mockResolvedValueOnce(jsonResponse(authResponse))
+      .mockResolvedValueOnce(jsonResponse({ message: "Todavía no hay una tasa BCV validada." }, 503));
+    await renderApp();
+    await settle();
+
+    const panel = container.querySelector(".exchange-rate-panel");
+    expect(panel?.textContent).toContain("No disponible");
+    expect(panel?.textContent).toContain("Todavía no hay una tasa BCV validada.");
+    expect(panel?.textContent).not.toContain("894,88760000");
   });
 
   it("revokes the session on logout and returns to the login screen", async () => {
     vi.mocked(fetch)
       .mockResolvedValueOnce(jsonResponse(authResponse))
+      .mockResolvedValueOnce(jsonResponse(bcvRateResponse))
       .mockResolvedValueOnce(new Response(null, { status: 204 }));
     await renderApp();
     await settle();
@@ -160,7 +198,7 @@ describe("Micro app authentication flow", () => {
     await act(async () => { logoutButton.click(); });
     await settle();
 
-    expect(vi.mocked(fetch).mock.calls[1][0]).toBe("/auth/logout");
+    expect(vi.mocked(fetch).mock.calls[2][0]).toBe("/auth/logout");
     expect(container.textContent).toContain("Inicia sesión");
     expect(container.textContent).toContain("Has cerrado la sesión de forma segura.");
   });

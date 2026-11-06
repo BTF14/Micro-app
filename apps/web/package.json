@@ -10,6 +10,7 @@
   },
   "dependencies": {
     "@micro-app/money": "workspace:*",
+    "@micro-app/money": "workspace:*",
     "react": "^19.1.1",
     "react-dom": "^19.1.1"
   },

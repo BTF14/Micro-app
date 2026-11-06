@@ -131,6 +131,8 @@ jobs:
       - name: PostgreSQL approved own-shift role integration tests
         run: pnpm --filter @micro-app/api exec vitest run src/register-shift-member-roles.integration.test.ts
       - name: PostgreSQL authenticated cashier open-shift integration tests
+        env:
+          DATABASE_URL_RUNTIME: postgres://microapp_runtime:runtime-test-only@localhost:5432/microapp_test
         run: pnpm --filter @micro-app/api exec vitest run src/cashier-open-shift.integration.test.ts
       - name: PostgreSQL catalog endpoint integration tests
         run: pnpm --filter @micro-app/api exec vitest run src/catalog.integration.test.ts

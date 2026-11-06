@@ -112,7 +112,8 @@ function parseCheckoutInput(value: unknown): CheckoutInput | null {
     const quantity = normalizeDecimal(line.quantity, 14, 3, true);
     if (quantity === null) return null;
     const scaled = parseNumeric(quantity, 14, 3);
-    quantities.set(line.product_id, (quantities.get(line.product_id) ?? 0n) + scaled);
+    const productId = line.product_id.toLowerCase();
+    quantities.set(productId, (quantities.get(productId) ?? 0n) + scaled);
   }
 
   if (quantities.size < 1 || quantities.size > MAX_LINES) return null;
@@ -171,11 +172,9 @@ async function canonicalRequestHash(
   }));
 }
 
-function divideRoundHalfAwayFromZero(numerator: bigint, denominator: bigint): bigint {
-  if (denominator <= 0n) throw new RangeError("Denominator must be positive.");
-  const quotient = numerator / denominator;
-  const remainder = numerator % denominator;
-  return remainder * 2n < denominator ? quotient : quotient + 1n;
+function divideProportionFloor(numerator: bigint, denominator: bigint): bigint {
+  if (numerator < 0n || denominator <= 0n) throw new RangeError("Proportion must be non-negative with a positive denominator.");
+  return numerator / denominator;
 }
 
 function allocateUsdEquivalents(
@@ -201,7 +200,7 @@ function allocateUsdEquivalents(
   return payments.map((payment, index) => {
     const equivalent = index === payments.length - 1
       ? totalUsdUnits - allocatedUsd
-      : divideRoundHalfAwayFromZero(
+      : divideProportionFloor(
           parseNumeric(payment.amount, 14, 2) * totalUsdUnits,
           totalVesUnits,
         );
@@ -349,15 +348,15 @@ export function registerSalesCheckoutRoutes(app: Hono<{ Bindings: Bindings }>): 
           const branch = authorization.context;
           const hash = await canonicalRequestHash(branch.organizationId, branch.branchId, input);
 
-          const existingBeforeLocks = await findExistingSale(tx, branch.organizationId, idempotencyKey, hash);
-          if (existingBeforeLocks) return existingBeforeLocks;
-
           const membershipLocked = await lockBranchScopes(tx, branch.organizationId, [{
             branchId: branch.branchId,
             userId: branch.userId,
             requiresMembership: true,
           }]);
           if (!membershipLocked) return { kind: "branch_denied" };
+
+          const existingBeforeLocks = await findExistingSale(tx, branch.organizationId, idempotencyKey, hash);
+          if (existingBeforeLocks) return existingBeforeLocks;
 
           const warehouses = await lockInventoryWarehouses(tx, branch.organizationId, [{
             warehouseId: input.warehouseId,

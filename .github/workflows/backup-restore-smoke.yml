@@ -1,6 +1,13 @@
 name: Backup restore smoke test
 
 on:
+  push:
+    branches: [main, "feat/**"]
+    paths:
+      - ".github/workflows/backup-restore-smoke.yml"
+      - "scripts/test_backup_restore.sh"
+      - "apps/api/migrations/**"
+      - "docs/BACKUP_AND_RECOVERY.md"
   schedule:
     - cron: "0 9 1 * *"
   workflow_dispatch: {}

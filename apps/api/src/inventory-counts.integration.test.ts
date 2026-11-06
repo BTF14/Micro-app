@@ -38,13 +38,21 @@ describe.skipIf(!databaseUrl)("warehouse inventory count transactions against Po
   let foreignProductId = "";
   let token = "";
 
-  async function request(path: string, body?: unknown, extraHeaders: Record<string, string> = {}): Promise<Response> {
+  async function request(
+    path: string,
+    body?: unknown,
+    extraHeaders: Record<string, string> = {},
+    includeDefaultIdempotencyKey = true,
+  ): Promise<Response> {
     return app.fetch(new Request("https://api.example" + path, {
       method: "POST",
       headers: {
         Cookie: "microapp_session=" + token,
         Origin: "https://frontend.example",
         "Content-Type": "application/json",
+        ...(includeDefaultIdempotencyKey && /\\/counts\\/(opening|physical)$/.test(path)
+          ? { "Idempotency-Key": "test-" + crypto.randomUUID() }
+          : {}),
         ...extraHeaders,
       },
       ...(body === undefined ? {} : { body: JSON.stringify(body) }),
@@ -370,6 +378,22 @@ describe.skipIf(!databaseUrl)("warehouse inventory count transactions against Po
   });
 
 
+
+  it("requires an idempotency key before creating a count", async () => {
+    const response = await request(
+      root() + "/counts/physical",
+      { reason: "Missing idempotency key must fail closed", lines: [{ product_id: productId, counted_quantity: "1.000" }] },
+      {},
+      false,
+    );
+    expect(response.status).toBe(400);
+    expect(await response.json()).toMatchObject({ error: "INVALID_IDEMPOTENCY_KEY" });
+    const rows = await client.query<{ count: string }>(
+      "SELECT count(*)::text AS count FROM inventory_counts WHERE organization_id = $1 AND reason = $2",
+      [organizationId, "Missing idempotency key must fail closed"],
+    );
+    expect(rows.rows[0]).toEqual({ count: "0" });
+  });
 
   it("rejects malformed idempotency keys without creating a count", async () => {
     const response = await request(root() + "/counts/physical", { reason: "Invalid key must fail closed", lines: [{ product_id: productId, counted_quantity: "1.000" }] }, { "Idempotency-Key": "bad key with spaces" });

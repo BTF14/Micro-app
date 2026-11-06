@@ -126,7 +126,7 @@ BEGIN
       OR NEW.settlement_currency NOT IN ('USD', 'VES')
       OR NEW.request_hash IS NULL
       OR NEW.request_hash !~ '^[0-9a-f]{64}$'
-      OR NEW.idempotency_key !~ '^-A-Za-z0-9._:]{1,128}$'
+      OR NEW.idempotency_key !~ '^[-A-Za-z0-9._:]{1,128}$'
     THEN
       RAISE EXCEPTION 'SALE_MUST_START_AS_VALID_DRAFT' USING ERRCODE = '23514';
     END IF;

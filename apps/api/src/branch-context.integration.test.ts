@@ -6,6 +6,9 @@ import type { TenantContext } from "./tenant-context";
 const databaseUrl = (globalThis as typeof globalThis & {
   process?: { env?: Record<string, string | undefined> };
 }).process?.env?.DATABASE_URL;
+const databaseUrlAdmin = (globalThis as typeof globalThis & {
+  process?: { env?: Record<string, string | undefined> };
+}).process?.env?.DATABASE_URL_ADMIN ?? databaseUrl;
 
 const suffix = crypto.randomUUID().replace(/-/g, "").slice(0, 12);
 const organizationSlug = `branch-context-${suffix}`;
@@ -14,6 +17,7 @@ const organizationName = `Branch Context ${suffix}`;
 const suite = describe.skipIf(!databaseUrl)("branch context against PostgreSQL", () => {
   let client: import("pg").Client;
   let secondClient: import("pg").Client;
+  let runtimeClient: import("pg").Client;
   let organizationId: string;
   let otherOrganizationId: string;
   let branchA: string;
@@ -33,9 +37,10 @@ const suite = describe.skipIf(!databaseUrl)("branch context against PostgreSQL",
 
   beforeAll(async () => {
     const { Client } = await import("pg");
-    client = new Client({ connectionString: databaseUrl });
-    secondClient = new Client({ connectionString: databaseUrl });
-    await Promise.all([client.connect(), secondClient.connect()]);
+    client = new Client({ connectionString: databaseUrlAdmin });
+    secondClient = new Client({ connectionString: databaseUrlAdmin });
+    runtimeClient = new Client({ connectionString: databaseUrl });
+    await Promise.all([client.connect(), secondClient.connect(), runtimeClient.connect()]);
 
     const org = await client.query<{ id: string }>(
       "INSERT INTO organizations (name, slug) VALUES ($1, $2) RETURNING id",
@@ -112,7 +117,7 @@ const suite = describe.skipIf(!databaseUrl)("branch context against PostgreSQL",
       "DELETE FROM app_users WHERE id = ANY($1::uuid[])",
       [[ownerId, adminId, cashierAssignedId, cashierUnassignedId, inventoryAssignedId]],
     );
-    await Promise.all([client.end(), secondClient.end()]);
+    await Promise.all([client.end(), secondClient.end(), runtimeClient.end()]);
   });
 
   async function waitForLockWait(pid: number): Promise<void> {
@@ -128,15 +133,15 @@ const suite = describe.skipIf(!databaseUrl)("branch context against PostgreSQL",
   }
 
   it("allows owner and admin to resolve active branches in their organization", async () => {
-    await expect(resolveBranchContext(client as unknown as DatabaseClient, context(ownerId, "owner"), branchB)).resolves.toMatchObject({ branchId: branchB });
-    await expect(resolveBranchContext(client as unknown as DatabaseClient, context(adminId, "admin"), branchA)).resolves.toMatchObject({ branchId: branchA });
+    await expect(resolveBranchContext(runtimeClient as unknown as DatabaseClient, context(ownerId, "owner"), branchB)).resolves.toMatchObject({ branchId: branchB });
+    await expect(resolveBranchContext(runtimeClient as unknown as DatabaseClient, context(adminId, "admin"), branchA)).resolves.toMatchObject({ branchId: branchA });
   });
 
   it("requires active branch assignments for cashier and inventory", async () => {
-    await expect(resolveBranchContext(client as unknown as DatabaseClient, context(cashierAssignedId, "cashier"), branchA)).resolves.toMatchObject({ branchId: branchA });
-    await expect(resolveBranchContext(client as unknown as DatabaseClient, context(inventoryAssignedId, "inventory"), branchA)).resolves.toMatchObject({ branchId: branchA });
-    await expect(resolveBranchContext(client as unknown as DatabaseClient, context(cashierUnassignedId, "cashier"), branchA)).resolves.toBeNull();
-    await expect(resolveBranchContext(client as unknown as DatabaseClient, context(cashierAssignedId, "cashier"), branchB)).resolves.toBeNull();
+    await expect(resolveBranchContext(runtimeClient as unknown as DatabaseClient, context(cashierAssignedId, "cashier"), branchA)).resolves.toMatchObject({ branchId: branchA });
+    await expect(resolveBranchContext(runtimeClient as unknown as DatabaseClient, context(inventoryAssignedId, "inventory"), branchA)).resolves.toMatchObject({ branchId: branchA });
+    await expect(resolveBranchContext(runtimeClient as unknown as DatabaseClient, context(cashierUnassignedId, "cashier"), branchA)).resolves.toBeNull();
+    await expect(resolveBranchContext(runtimeClient as unknown as DatabaseClient, context(cashierAssignedId, "cashier"), branchB)).resolves.toBeNull();
   });
 
   it("revalidates active organization membership and the current database role", async () => {
@@ -145,7 +150,7 @@ const suite = describe.skipIf(!databaseUrl)("branch context against PostgreSQL",
       [organizationId, cashierAssignedId],
     );
     await expect(
-      resolveBranchContext(client as unknown as DatabaseClient, context(cashierAssignedId, "cashier"), branchA),
+      resolveBranchContext(runtimeClient as unknown as DatabaseClient, context(cashierAssignedId, "cashier"), branchA),
     ).resolves.toBeNull();
 
     await client.query(
@@ -153,7 +158,7 @@ const suite = describe.skipIf(!databaseUrl)("branch context against PostgreSQL",
       [organizationId, cashierAssignedId],
     );
     await expect(
-      resolveBranchContext(client as unknown as DatabaseClient, context(cashierAssignedId, "cashier"), branchA),
+      resolveBranchContext(runtimeClient as unknown as DatabaseClient, context(cashierAssignedId, "cashier"), branchA),
     ).resolves.toBeNull();
 
     await client.query(
@@ -161,7 +166,7 @@ const suite = describe.skipIf(!databaseUrl)("branch context against PostgreSQL",
       [organizationId, cashierAssignedId],
     );
     await expect(
-      resolveBranchContext(client as unknown as DatabaseClient, context(cashierAssignedId, "cashier"), branchA),
+      resolveBranchContext(runtimeClient as unknown as DatabaseClient, context(cashierAssignedId, "cashier"), branchA),
     ).resolves.toMatchObject({ branchId: branchA });
   });
 
@@ -256,7 +261,7 @@ const suite = describe.skipIf(!databaseUrl)("branch context against PostgreSQL",
   });
 
   it("rejects inactive branches and branch IDs belonging to another organization", async () => {
-    await expect(resolveBranchContext(client as unknown as DatabaseClient, context(ownerId, "owner"), inactiveBranch)).resolves.toBeNull();
-    await expect(resolveBranchContext(client as unknown as DatabaseClient, context(ownerId, "owner"), otherBranchId)).resolves.toBeNull();
+    await expect(resolveBranchContext(runtimeClient as unknown as DatabaseClient, context(ownerId, "owner"), inactiveBranch)).resolves.toBeNull();
+    await expect(resolveBranchContext(runtimeClient as unknown as DatabaseClient, context(ownerId, "owner"), otherBranchId)).resolves.toBeNull();
   });
 });

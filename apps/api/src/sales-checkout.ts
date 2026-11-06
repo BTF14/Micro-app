@@ -119,7 +119,7 @@ export function parseCheckoutInput(value: unknown): CheckoutInput | null {
   let lines: CheckoutLine[];
   try {
     lines = [...quantities.entries()]
-      .sort(([a], [b]) => a.localeCompare(b))
+      .sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0))
       .map(([productId, quantity]) => ({
         productId,
         quantity: formatNumeric(quantity, 14, 3),
@@ -151,7 +151,11 @@ export function parseCheckoutInput(value: unknown): CheckoutInput | null {
 
   const currency = payments[0]!.currency;
   if (payments.some((payment) => payment.currency !== currency)) return null;
-  payments.sort((a, b) => JSON.stringify(a).localeCompare(JSON.stringify(b)));
+  payments.sort((a, b) => {
+    const left = JSON.stringify(a);
+    const right = JSON.stringify(b);
+    return left < right ? -1 : left > right ? 1 : 0;
+  });
   try {
     sumNumeric(
       payments.map((payment) => payment.amount),

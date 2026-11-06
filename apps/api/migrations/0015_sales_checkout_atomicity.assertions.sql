@@ -55,6 +55,16 @@ BEGIN
     RAISE EXCEPTION 'SALE_RECONCILIATION_TRIGGER_MUST_BE_SECURITY_DEFINER';
   END IF;
 
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_catalog.pg_proc
+     WHERE oid='public.guard_sale_inventory_movement()'::regprocedure AND prosecdef=true
+  ) OR NOT EXISTS (
+    SELECT 1 FROM pg_catalog.pg_proc
+     WHERE oid='public.guard_sale_completion_audit()'::regprocedure AND prosecdef=true
+  ) THEN
+    RAISE EXCEPTION 'SALE_LEDGER_AND_AUDIT_GUARDS_MUST_BE_SECURITY_DEFINER';
+  END IF;
+
   IF NOT pg_catalog.has_table_privilege('microapp_runtime', 'public.sales', 'SELECT')
     OR NOT pg_catalog.has_table_privilege('microapp_runtime', 'public.sales', 'INSERT')
     OR NOT pg_catalog.has_table_privilege('microapp_runtime', 'public.sale_items', 'SELECT')
@@ -69,6 +79,11 @@ BEGIN
     OR NOT pg_catalog.has_column_privilege('microapp_runtime', 'public.sales', 'completed_at', 'UPDATE')
     OR pg_catalog.has_table_privilege('microapp_runtime', 'public.sales', 'UPDATE')
     OR pg_catalog.has_column_privilege('microapp_runtime', 'public.sales', 'subtotal_usd', 'UPDATE')
+    OR pg_catalog.has_table_privilege('microapp_runtime', 'public.sales', 'DELETE')
+    OR pg_catalog.has_table_privilege('microapp_runtime', 'public.sale_items', 'UPDATE')
+    OR pg_catalog.has_table_privilege('microapp_runtime', 'public.sale_items', 'DELETE')
+    OR pg_catalog.has_table_privilege('microapp_runtime', 'public.payments', 'UPDATE')
+    OR pg_catalog.has_table_privilege('microapp_runtime', 'public.payments', 'DELETE')
     OR pg_catalog.has_table_privilege('microapp_runtime', 'public.register_shifts', 'UPDATE')
   THEN
     RAISE EXCEPTION 'SALES_CHECKOUT_RUNTIME_UPDATE_GRANTS_TOO_BROAD_OR_MISSING';

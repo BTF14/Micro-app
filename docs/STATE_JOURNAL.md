@@ -1,3 +1,13 @@
+# 2026-11-06 UTC — PR #244 Draft abierta para recuperar API/UI de inventario y catálogo
+
+- Se abrió PR #244: https://github.com/BTF14/Micro-app/pull/244, rama feat/recover-inventory-application-20261106, base main después de #243.
+- Alcance: authorization/tenant/branch locking; catalog read/create/update; inventory count opening/physical create+confirm con Idempotency-Key obligatorio; shared BigInt money package; web catalog UI; bounded streaming body limits; Worker preview API isolation; admin/runtime PostgreSQL integration tests.
+- La PR se mantiene Draft. Los workflows se ejecutan en HEAD exacto; cada commit posterior supersede las conclusiones anteriores. No marcar Ready ni mergear hasta que todos los checks y el diff completo pasen.
+- BCV y checkout app handlers no se incluyen todavía. #227 tiene un bug de orden de fecha efectiva registrado; corregir antes de habilitar VES conversion.
+- Sin escrituras en Neon producción ni cambios de roles/grants, secretos, DNS, Cloudflare manual, billing o datos reales.
+
+---
+
 # 2026-11-06 UTC — migraciones integradas; recuperación de API/UI en curso
 
 - PR #242 se fusionó en 7a719d593248341aac86b1ded980d5bb9a6f94e8 y PR #243 en 38e1d61acc083b3c0b9b73edcb2bc7887ca56872.

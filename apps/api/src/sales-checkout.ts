@@ -58,7 +58,6 @@ type SaleLineRow = {
   sku_snapshot: string;
   quantity: string;
   unit_price_usd: string;
-  unit_cost_usd: string;
   line_total_usd: string;
   line_total_ves: string;
 };

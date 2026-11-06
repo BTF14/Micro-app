@@ -23,13 +23,13 @@ const ratePayload = {
 };
 
 function createDatabaseFactory(rows: Array<{ id: string }> = [], queryError?: Error) {
-  const query = vi.fn(async <Row = unknown>(_statement: string, _values?: unknown[]) => {
+  const query = vi.fn(async (_statement: string, _values?: unknown[]) => {
     if (queryError) throw queryError;
-    return { rows: rows as Row[] };
+    return { rows };
   });
   const client: DatabaseClient = {
     connect: vi.fn(async () => undefined),
-    query,
+    query: query as unknown as DatabaseClient["query"],
     end: vi.fn(async () => undefined),
   };
   const factory: DatabaseClientFactory = vi.fn(() => client);

@@ -73,6 +73,7 @@ BEGIN
   SELECT pg_catalog.pg_get_functiondef(reconciliation_oid) INTO reconciliation_definition;
   IF pg_catalog.strpos(reconciliation_definition, 'lock_open_register_shift') = 0
     OR pg_catalog.strpos(reconciliation_definition, 'FROM public.exchange_rates er') = 0
+    OR pg_catalog.strpos(reconciliation_definition, 'er.source = ''BCV_OFFICIAL_HTML_V1''') = 0
     OR pg_catalog.strpos(reconciliation_definition, 'FROM public.warehouses w') = 0
     OR pg_catalog.strpos(reconciliation_definition, 'FOR SHARE') = 0
   THEN

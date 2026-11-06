@@ -1,3 +1,13 @@
+# 2026-11-06 UTC — PR #244 merged; inventory read/kardex recovery started
+
+- PR #244 merged at `158ec68bd55825d6e8d5527d086023a13445a89c`. Post-merge commit checks 10/10 SUCCESS, including Cloudflare Pages and Workers Builds.
+- Public unauthenticated production catalog request returned HTTP 401, not preview 503; no authenticated production smoke was performed.
+- New branch `feat/inventory-read-ledger-20261106` adds tenant/branch/warehouse-scoped GET APIs for balances and append-only movement history, stable cursors, role-based cost redaction, and runtime-role integration coverage.
+- Inventory transfer workflow remains unimplemented until persistent transfer/dispatch/receipt schema is designed. Do not simulate transit using unlinked movements.
+- BCV future-date ordering bug and checkout remain pending. No Neon production writes or manual infrastructure changes.
+
+---
+
 # 2026-11-06 UTC — PR #244 validación completa y hardening adicional
 
 - PR #244 HEAD `d3de5216fac446580e4afdd39376af503cc94b51`: 10/10 workflows SUCCESS. CI, PostgreSQL migration validation, migration runner, Playwright, Semgrep, Trivy, dependency review, secret scan, AutoSkills y progress dashboard.

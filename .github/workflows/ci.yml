@@ -67,7 +67,7 @@ jobs:
       - name: Apply canonical schema through the fail-closed migration runner
         run: bash scripts/db/migrate.sh
       - name: Verify final PostgreSQL schema contract
-        run: psql -X -v ON_ERROR_STOP=1 --dbname "$ADMIN_DATABASE_URL" -f apps/api/migrations/0015_sales_checkout_atomicity.assertions.sql
+        run: psql -X -v ON_ERROR_STOP=1 --dbname "$ADMIN_DATABASE_URL" -f apps/api/migrations/0016_runtime_inventory_ledger_read.assertions.sql
       - name: Build and typecheck
         run: pnpm build
       - name: Verify Cloudflare Pages preview isolation
@@ -106,6 +106,8 @@ jobs:
         run: pnpm --filter @micro-app/api exec vitest run src/catalog-update.integration.test.ts
       - name: PostgreSQL inventory count integration tests
         run: pnpm --filter @micro-app/api exec vitest run src/inventory-counts.integration.test.ts
+      - name: PostgreSQL inventory read integration tests
+        run: pnpm --filter @micro-app/api exec vitest run src/inventory-read.integration.test.ts
       - name: Runtime-role API integration tests
         run: |
-          DATABASE_URL="$RUNTIME_DATABASE_URL" DATABASE_URL_ADMIN="$ADMIN_DATABASE_URL" pnpm --filter @micro-app/api exec vitest run src/auth.integration.test.ts src/auth-rate-limit.integration.test.ts src/branch-context.integration.test.ts src/catalog.integration.test.ts src/catalog-write.integration.test.ts src/catalog-update.integration.test.ts src/inventory-counts.integration.test.ts
+          DATABASE_URL="$RUNTIME_DATABASE_URL" DATABASE_URL_ADMIN="$ADMIN_DATABASE_URL" pnpm --filter @micro-app/api exec vitest run src/auth.integration.test.ts src/auth-rate-limit.integration.test.ts src/branch-context.integration.test.ts src/catalog.integration.test.ts src/catalog-write.integration.test.ts src/catalog-update.integration.test.ts src/inventory-counts.integration.test.ts src/inventory-read.integration.test.ts

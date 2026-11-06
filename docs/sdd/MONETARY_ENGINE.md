@@ -1,6 +1,6 @@
 # Motor monetario de Micro-app
 
-**Estado:** contrato técnico aprobado. El núcleo decimal exacto basado en BigInt vive en `packages/money` y lo consumen la API y la UI de catálogo en la PR de recuperación #244 (Draft). Esa PR incluye lectura paginada, creación/edición de productos y precios USD exactos; la validación automatizada está verde en su SHA actual, pero aún no se ha fusionado. Carrito, checkout, ventas y pagos siguen pendientes.  
+**Estado:** contrato técnico aprobado. El núcleo decimal exacto basado en BigInt vive en `packages/money` y lo consumen la API y la UI de catálogo en la PR de recuperación #244, ya fusionada en main y validada por 10/10 checks post-merge. Incluye lectura paginada, creación/edición de productos y precios USD exactos. Carrito, checkout, ventas y pagos siguen pendientes.  
 **Decisión de negocio:** Micro-app no ofrece descuentos ni promociones basadas en descuentos.
 
 ## 1. Moneda base y catálogo
@@ -110,10 +110,10 @@ La suite debe cubrir, como mínimo:
 
 ## 10. Estado de implementación
 
-- Catálogo API: lectura paginada y escrituras POST/PATCH tenant-scoped incluidas en PR #244 Draft; pruebas PostgreSQL admin/runtime exitosas en el SHA validado.
+- Catálogo API: lectura paginada y escrituras POST/PATCH tenant-scoped incluidas en PR #244, ya fusionada; pruebas PostgreSQL admin/runtime exitosas.
 - Esquema base: cantidades con tres decimales y snapshots comerciales previstos.
 - PR #227: integración BCV propuesta; no afirmar despliegue de Worker/Cron ni tasa en producción.
 - PR #228: migración propuesta para retirar el campo de descuentos.
-- Paquete interno compartido de aritmética BigInt y límites NUMERIC: recuperado e integrado en PR #244 Draft; validado por build, unit tests y pruebas de catálogo.
+- Paquete interno compartido de aritmética BigInt y límites NUMERIC: recuperado e integrado en PR #244, ya fusionada; validado por build, unit tests y pruebas de catálogo.
 - Los cambios únicos de #229, #230 y #231 se están consolidando en PR #244; las PR fuente siguen abiertas hasta completar el rescate de sus demás cambios únicos.
 - Carrito, checkout, ventas, pagos, facturación y reportes: pendientes de integración, contrato transaccional y pruebas.

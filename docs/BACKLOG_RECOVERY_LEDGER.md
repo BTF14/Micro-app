@@ -4,7 +4,7 @@
 **Repository:** `BTF14/Micro-app`  
 **Recovery branch:** `feat/recover-inventory-application-20261106`  
 **Observed main baseline:** `38e1d61acc083b3c0b9b73edcb2bc7887ca56872`  
-**Source backlog snapshot:** 25 open source implementation/documentation PRs. PR #242 and #243 merged; PR #244 is the active recovery PR. **Current open count: 26 (25 source PRs + #244)**, verified 2026-11-06. Re-query GitHub before future reports.
+**Source backlog snapshot:** 25 open source implementation/documentation PRs. PR #242, #243 and #244 merged; the active recovery branch is `feat/inventory-read-ledger-20261106`. **Current open count after opening its PR: 26 (25 source PRs + next recovery PR)**. Re-query GitHub before future reports.
 
 ## Purpose and operating rules
 
@@ -150,3 +150,12 @@ For each PR, record: live head/base SHA; changed file list; unique changes retai
 - Cloudflare Pages and Workers preview deployments succeeded. Worker preview smoke: health 200; application catalog route 503 by design. No production deployment.
 - Follow-up hardening included transactional authorization locks for catalog/warehouse/count reads and exact-string decimal input enforcement for inventory counts.
 - PR remains Draft pending final diff/review gate. Source PRs remain open until every unique change is recovered.
+
+### PR #244 final integration record
+- Merged to main at `158ec68bd55825d6e8d5527d086023a13445a89c`.
+- Post-merge 10/10 commit checks SUCCESS, including Cloudflare Pages and Workers Builds.
+- Production unauthenticated catalog route returned 401 as expected; no authenticated production smoke or Neon writes.
+
+### Next recovery front — inventory read/kardex
+- Branch `feat/inventory-read-ledger-20261106` adds balances and append-only movement read APIs with pagination and role-based cost visibility. Draft PR and exact-SHA checks pending.
+- Transfer dispatch/receipt must be designed as a persisted two-stage lifecycle before implementation.

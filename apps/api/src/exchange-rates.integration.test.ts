@@ -8,12 +8,22 @@ const processEnv = (globalThis as typeof globalThis & {
 }).process?.env;
 const databaseUrl = processEnv?.DATABASE_URL_ADMIN ?? processEnv?.DATABASE_URL;
 const isCi = Boolean(processEnv?.CI);
+const isDisposableCiDatabase = (() => {
+  if (!isCi || !databaseUrl) return false;
+  try {
+    const url = new URL(databaseUrl);
+    return (url.hostname === "localhost" || url.hostname === "127.0.0.1") &&
+      url.pathname === "/microapp_test";
+  } catch {
+    return false;
+  }
+})();
 
-if (isCi && !databaseUrl) {
-  throw new Error("DATABASE_URL is required in CI; refusing to skip BCV PostgreSQL integration tests.");
+if (isCi && !isDisposableCiDatabase) {
+  throw new Error("BCV PostgreSQL integration tests require the disposable localhost microapp_test database.");
 }
 
-describe.skipIf(!databaseUrl)("BCV effective-date persistence against PostgreSQL", () => {
+describe.skipIf(!isDisposableCiDatabase)("BCV effective-date persistence against disposable PostgreSQL", () => {
   let client: Client | undefined;
   const source = "BCV_OFFICIAL_HTML_V1";
 

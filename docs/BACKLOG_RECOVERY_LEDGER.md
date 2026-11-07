@@ -21,7 +21,7 @@ GitHub reports **27 open PRs** and main `fc332946a9128e92ce39a3eb1ef1ee7ebd26159
 ### Current recovery order
 
 1. Reconstruct #200 on current main and reconcile migration definitions/checksums.
-2. Reapply #204 fixture isolation; synchronize descendants in dependency order without force-push.
+2. Verify #204's fixture isolation is already present in stronger form on main; if full diff confirms no unique behavior, close as superseded with evidence. Audit #205–#211 against current main before porting.
 3. Port #215/#218 bootstrap handoff onto #213's rate limiter and verify migration 0010 runtime grants.
 4. Keep #250's regression intact and rerun all required checks after it is moved to the recovered current-main base.
 

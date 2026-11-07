@@ -63,6 +63,60 @@ describe.skipIf(!isDisposableCiDatabase)("BCV effective-date persistence against
     }
   });
 
+  it("runs BCV synchronization only on the production Cron using the runtime role", async () => {
+    if (!client || !cleanupClient || !databaseUrl) {
+      throw new Error("PostgreSQL integration clients are not connected.");
+    }
+
+    const dates = await cleanupClient.query<{ today: string }>(
+      "SELECT (now() AT TIME ZONE 'America/Caracas')::date::text AS today",
+    );
+    const today = dates.rows[0]!.today;
+    const weekday = new Intl.DateTimeFormat("en-US", {
+      timeZone: "America/Caracas", weekday: "short",
+    }).format(new Date(`${today}T16:00:00.000Z`));
+    const daysUntilNextBusinessDay = weekday === "Fri" ? 3 : weekday === "Sat" ? 2 : weekday === "Sun" ? 1 : 1;
+    const nextDate = new Date(`${today}T12:00:00Z`);
+    nextDate.setUTCDate(nextDate.getUTCDate() + daysUntilNextBusinessDay);
+    const nextEffectiveDate = nextDate.toISOString().slice(0, 10);
+    const dateLabel = new Intl.DateTimeFormat("es-VE", {
+      weekday: "long", day: "2-digit", month: "long", year: "numeric",
+      timeZone: "America/Caracas",
+    }).format(new Date(`${nextEffectiveDate}T16:00:00.000Z`));
+    const html = `<html><body><p>USD</p><p>895,10000000</p><p>Fecha Valor: ${dateLabel}</p></body></html>`;
+    const fetchMock = vi.fn().mockResolvedValue(new Response(html, {
+      status: 200,
+      headers: { "content-type": "text/html; charset=utf-8" },
+    }));
+    const scheduledApp = app as typeof app & {
+      scheduled: (controller: { cron: string }, env: { APP_ENV: "production" | "preview"; DATABASE_URL?: string }) => Promise<void>;
+    };
+
+    await cleanupClient.query("DELETE FROM public.exchange_rates WHERE source = $1", [source]);
+    vi.stubGlobal("fetch", fetchMock);
+    try {
+      await scheduledApp.scheduled({ cron: "0 22 * * 1-5" }, { APP_ENV: "preview" });
+      expect(fetchMock).not.toHaveBeenCalled();
+
+      await scheduledApp.scheduled(
+        { cron: "0 22 * * 1-5" },
+        { APP_ENV: "production", DATABASE_URL: databaseUrl },
+      );
+      expect(fetchMock).toHaveBeenCalledTimes(1);
+
+      const stored = await cleanupClient.query<{ effective_date: string; rate: string }>(
+        "SELECT effective_date::text, rate::text FROM public.exchange_rates WHERE source = $1",
+        [source],
+      );
+      expect(stored.rows).toEqual([
+        { effective_date: nextEffectiveDate, rate: "895.10000000" },
+      ]);
+    } finally {
+      vi.unstubAllGlobals();
+      await cleanupClient.query("DELETE FROM public.exchange_rates WHERE source = $1", [source]);
+    }
+  });
+
   it("stores today's rate after the next business-day rate and selects the applicable date", async () => {
     if (!client) throw new Error("PostgreSQL integration client is not connected.");
 

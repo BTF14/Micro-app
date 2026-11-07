@@ -1,3 +1,15 @@
+# 2026-11-07 UTC — cierre de stack supersedido y reconciliación de Neon
+
+- Main pasó a `c4be53ea3247c69206a79ebe5fa2f875a4f9aac4` tras fusionar #252; #249 ya estaba fusionada. #252 agregó la regresión de bootstrap oversized sin Content-Length y su documentación; 10/10 workflows PR success. El job CI necesitó un reintento por una colisión DDL transitoria en `catalog-write.integration.test.ts`; el reintento exacto pasó 32/32 pasos, incluidos auth integration admin/runtime.
+- Se cerraron #218–#226 como supersedidas, con comentarios por PR y evidencia. #218 authz/handoff ya está en main; cleanup >48 h preservado en #251. #220 bounded-body helper ya está en main; la regresión route-level se fusionó en #252. #221 authorization policy está en main con no-discounts. #222 role contract actualizado en main. #223 migration 0011/helper/tests idénticos a main. #224 migration 0012/assertions idénticos y CI main más reciente. #225 atomicity script idéntico y migration-check main lo ejecuta. #226 runner es subconjunto estricto de main.
+- GitHub reportó 19 PR abiertas después de cierres. #251 permanece Draft, HEAD `2a0c685a2348af87f76417b4f3ac0f77a70cbb5d`, 10/10 PR workflows y 2 push scans success. No mergear hasta resolver Neon schema/runtime gate.
+- #227/#250 permanecen abiertas como snapshots BCV; #250 exact SHA `081ec1026f4bda889a633bb3fcbe420433e13336` incluye y pasó integración PostgreSQL real para insertar mañana antes que hoy, seleccionar hoy en America/Caracas e idempotencia. No fusionar old base.
+- Neon project `restless-fire-99110035`, rehearsal `br-curly-poetry-b7dxsddm` parent `br-summer-math-b7297a60`: ambos schemas 133 columns, 204 constraints (98 other +106 NOT NULL), 46 indexes, 17 relations, 15 tables. Rehearsal roles: direct login migrator works (public USAGE/CREATE); runtime login works (public USAGE, no CREATE, no table grants). Existing 15 tables, 46 indexes and 2 sequences owned by migrator. No `schema_migrations`, `auth_bootstrap_attempts`, warehouses or inventory count tables. Main has only `neondb_owner` and `backup_readonly`; unchanged.
+- All Neon queries in this checkpoint were SELECT-only. No baseline apply, migration 0003–0016, data write, secret change or Cloudflare production operation.
+- The repo has no Neon rehearsal secret and no release workflow that invokes `adopt-baseline.sh`/`migrate.sh`. Next safe path requires a protected workflow/environment plus explicitly authorized rehearsal credentials; never paste migrations one-by-one through SQL.
+
+---
+
 # 2026-11-07 UTC — PR #251: port de limpieza de retención auth
 
 - Se portó desde #218 la única función útil de retención al código canónico de main en PR #251 (`fix/auth-retention-cleanup-20261107`), HEAD `4a0662346c2a1f95bcf09d815df55755f53686cd`.

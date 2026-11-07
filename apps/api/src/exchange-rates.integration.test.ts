@@ -2,6 +2,7 @@ import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
 import { Client } from "pg";
 import { persistBcvOfficialRate } from "./exchange-rates";
 import type { DatabaseClient } from "./database";
+import app from "./index";
 
 // Run the Hono routes through the same PostgreSQL adapter contract as the Worker.
 vi.mock("@neondatabase/serverless", async () => {
@@ -14,8 +15,6 @@ vi.mock("@neondatabase/serverless", async () => {
     },
   };
 });
-import app from "./index";
-
 const processEnv = (globalThis as typeof globalThis & {
   process?: { env?: Record<string, string | undefined> };
 }).process?.env;

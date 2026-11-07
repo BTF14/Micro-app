@@ -1,3 +1,12 @@
+# 2026-11-07 UTC — merge seguro del fixture backup/restore
+
+- PR #256 `fix/backup-restore-no-discount-20261107` se fusionó por squash en main: `a38463ea00415c7601d716132e70a29e381a2e34`.
+- Diff: una línea; el fixture sintético de `scripts/test_backup_restore.sh` deja de insertar la columna retirada `discount_usd`. Es compatible con el baseline de prueba (donde el campo tenía default 0) y con el esquema actual posterior a migration 0014 (donde ya no existe).
+- Exact HEAD pre-merge `2d08b556529a67735d3070bd467892bc0a743164`: 10 workflows pull_request + 2 push scans SUCCESS, incluido el workflow Synthetic encrypted backup and restore. No reviews/threads; cambio aislado y reversible.
+- El merge no modificó migraciones, código de aplicación, secretos, Neon, Cloudflare manual, DNS, billing ni datos reales. Los check-runs post-merge en el nuevo main estaban queued/in-progress al registrar esta entrada; verificar su conclusión antes de cerrar el ciclo.
+
+---
+
 # 2026-11-07 UTC — final exact-HEAD validation and dependency correction
 
 - Main remains `c4be53ea3247c69206a79ebe5fa2f875a4f9aac4`; live open PR count is 21 after reopening #227 as a temporary dependency anchor for #228–#233.

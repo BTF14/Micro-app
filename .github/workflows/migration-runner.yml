@@ -2,9 +2,9 @@ name: PostgreSQL migration runner validation
 
 on:
   push:
-    branches: [main, "security/**"]
+    branches: [main, "feat/**", "fix/**", "security/**"]
   pull_request:
-    branches: [main, "security/**"]
+    branches: [main, "feat/**", "fix/**", "security/**"]
 
 permissions:
   contents: read

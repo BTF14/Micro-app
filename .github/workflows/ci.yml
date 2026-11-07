@@ -2,9 +2,9 @@ name: CI
 
 on:
   push:
-    branches: [main, "feat/**", "work/**", "security/**"]
+    branches: [main, "feat/**", "fix/**", "work/**", "security/**"]
   pull_request:
-    branches: [main, "security/**"]
+    branches: [main, "feat/**", "fix/**", "security/**"]
 
 permissions:
   contents: read
@@ -114,6 +114,13 @@ jobs:
         run: python3 -m unittest discover -s scripts/tests -p 'test_*.py'
       - name: Unit tests
         run: pnpm test
+      - name: PostgreSQL BCV effective-date integration tests
+        run: |
+          if [ -f apps/api/src/exchange-rates.integration.test.ts ]; then
+            pnpm --filter @micro-app/api exec vitest run src/exchange-rates.integration.test.ts
+          else
+            echo "No BCV PostgreSQL integration test in this branch; covered by stacked BCV PR when present."
+          fi
       - name: PostgreSQL auth integration tests
         run: pnpm --filter @micro-app/api exec vitest run src/auth.integration.test.ts
       - name: PostgreSQL branch scope integration tests

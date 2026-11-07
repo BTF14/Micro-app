@@ -144,10 +144,6 @@ export async function persistBcvOfficialRate(
     `INSERT INTO public.exchange_rates
        (base_currency, quote_currency, rate, source, effective_date, fetched_at, validation_status)
      SELECT 'USD', 'VES', $1::numeric, $2, $3::date, now(), 'valid'
-      WHERE NOT EXISTS (
-        SELECT 1 FROM public.exchange_rates
-         WHERE source = $2 AND effective_date > $3::date
-      )
      ON CONFLICT (source, effective_date) DO NOTHING
      RETURNING id`,
     [rate.rate, BCV_SOURCE_ID, rate.effectiveDate],

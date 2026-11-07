@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { parseBcvOfficialRate } from "./exchange-rates";
+import { parseBcvOfficialRate, persistBcvOfficialRate, type BcvOfficialRate } from "./exchange-rates";
+import type { DatabaseClient } from "./database";
 
 const NOW = new Date("2026-11-05T12:00:00-04:00");
 
@@ -61,5 +62,33 @@ describe("BCV official HTML parser", () => {
   it("rejects oversized or empty source responses", () => {
     expect(() => parseBcvOfficialRate("", NOW)).toThrow("BCV_HTML_SIZE_INVALID");
     expect(() => parseBcvOfficialRate("x".repeat(2_000_001), NOW)).toThrow("BCV_HTML_SIZE_INVALID");
+  });
+});
+
+
+describe("BCV effective-date persistence", () => {
+  it("stores today's rate even when tomorrow's rate was stored first", async () => {
+    const insertStatements: string[] = [];
+    const client = {
+      query: async <Row = unknown>(statement: string, values?: unknown[]) => {
+        if (statement.includes("INSERT INTO public.exchange_rates")) {
+          insertStatements.push(statement);
+          return { rows: [{ id: String(values?.[2] ?? "rate") }] as Row[] };
+        }
+        throw new Error("Unexpected query in BCV persistence regression test");
+      },
+    } as unknown as DatabaseClient;
+
+    const tomorrow: BcvOfficialRate = { rate: "895.10000000", effectiveDate: "2026-11-06" };
+    const today: BcvOfficialRate = { rate: "894.88760000", effectiveDate: "2026-11-05" };
+
+    await expect(persistBcvOfficialRate(client, tomorrow)).resolves.toBe("inserted");
+    await expect(persistBcvOfficialRate(client, today)).resolves.toBe("inserted");
+
+    expect(insertStatements).toHaveLength(2);
+    for (const statement of insertStatements) {
+      expect(statement).toContain("ON CONFLICT (source, effective_date) DO NOTHING");
+      expect(statement).not.toContain("effective_date >");
+    }
   });
 });

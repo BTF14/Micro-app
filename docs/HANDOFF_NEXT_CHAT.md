@@ -24,13 +24,12 @@
 - No se ejecutó baseline ni migraciones 0003–0016. Neon main intacta. No pegar SQL manualmente ni pedir secretos/terminal/capturas/TinyFish al usuario.
 - PR #251 no puede mergearse/activarse hasta aplicar schema y probar roles/grants con el runner protegido en rehearsal y, después, obtener autorización específica para cualquier cambio de producción.
 - PR #255 no puede mergearse/desplegarse hasta que migration 0013 esté aplicada y runtime login/grants y Cron real estén verificados.
-- No cambiar secretos, Cloudflare dashboard, DNS, billing ni datos reales. No desplegar. Producción sigue **NOT READY**.
+- No cambiar secretos, Cloudflare dashboard, DNS, billing ni datos reales. No hacer despliegues manuales. El merge de #256 generó automáticamente builds/checks de Cloudflare Pages y Workers con SUCCESS; no se hizo smoke HTTP independiente contra producción. Producción sigue **NOT READY**.
 
 ## Próximas acciones
 
 1. Solicitar/obtener revisión independiente de #255 y resolver cualquier hallazgo; su CI exacto ya terminó verde.
 2. Confirmar PostgreSQL admin/runtime integration de BCV: mañana/fecha siguiente hábil primero, fecha de hoy después, idempotencia, latest de fin de semana, stale nearest future y endpoints latest/history.
-3. Obtener revisión independiente de #255 y mantener Draft hasta completar todos los gates.
 4. Mantener #251 Draft hasta el gate de Neon; no activar Cron antes de la adopción segura y prueba con runtime login.
 5. Reconciliar #228–#231 como supersedidas solo tras conservar la corrección útil del fixture de backup; portar #232 y revisar/portar #233 sobre #255, sin migration 0015 duplicada.
 6. Diseñar migration 0017 para alinear el trigger SQL de checkout con BCV weekday/weekend; no activar checkout hasta resolver el contrato de pagos que migration 0015 ya impone (una moneda y pago exacto completo) y obtener confirmación funcional.

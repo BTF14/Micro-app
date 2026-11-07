@@ -1,3 +1,78 @@
+# 2026-11-07 UTC — PR #251: port de limpieza de retención auth
+
+- Se portó desde #218 la única función útil de retención al código canónico de main en PR #251 (`fix/auth-retention-cleanup-20261107`), HEAD `4a0662346c2a1f95bcf09d815df55755f53686cd`.
+- Cron horario (`17 * * * *`) invoca cleanup solo cuando `APP_ENV === production`; preview no conecta a DB. Borra `auth_rate_limits` inactivos y `auth_bootstrap_attempts` expirados hace más de 48 horas.
+- La prueba PostgreSQL verifica eliminación de filas antiguas y conservación de recientes. El job CI corrió la suite con admin y con login real `microapp_runtime`; 10/10 PR workflows SUCCESS en HEAD exacto. Las assertions de migration 0012 ahora comprueban grants DELETE mínimos ya existentes.
+- PR #251 permanece Draft/no merge: Neon main, según lectura previa vigente, no contiene `auth_bootstrap_attempts` ni los roles dedicados `microapp_runtime`/`microapp_migrator`. No activar el Cron en producción hasta que el esquema y runtime role estén reconciliados y verificados por el gate de Neon. No se conectó ni escribió en Neon.
+- #218 permanece abierta para auditar sus restantes cambios de autorización; no fusionar la rama obsoleta.
+
+---
+
+# 2026-11-07 UTC — procedencia de migraciones de inventario/security
+
+- #205: idempotency_key/request_hash, constraint, índice parcial, handler y los 21 nombres de pruebas de la rama están presentes en main; main tiene 24 pruebas de conteos.
+- #207: SQL append-only audit blob idéntico a main 0008; assertion solo cambia comentario de filename.
+- #208: SQL own-shift roles idéntico a main 0007.
+- #209: SQL count-ledger validation idéntico a main 0009; assertion solo cambia comentario de filename.
+- #210: SQL balance↔ledger coupling idéntico a main 0010; assertion solo cambia comentario de filename.
+- Revisar todavía tests/workflows/docs y dependencias downstream antes de cerrar estas PR como supersedidas. No cerrar por título ni solo por migración idéntica.
+
+---
+
+# 2026-11-07 UTC — delta único de limpieza de auth en #218
+
+- Main ya tiene el handoff OAuth #215 vía #240 y el rate limiter canónico #213. No reintroducir la copia antigua de #214/#215, la migración duplicada 0010 ni `AUTH_RATE_LIMIT_HMAC_KEY`.
+- Se identificó un comportamiento único en #218: cleanup programado cada hora que elimina `auth_rate_limits` y `auth_bootstrap_attempts` con retención de 48 h. Main solo poda oportunísticamente rate-limit rows de más de 7 días y no limpia handoff rows expiradas.
+- Preservar ese cleanup en un port pequeño sobre el módulo canónico `consumeAuthRateLimit`, con skip de previews, verificación de permisos DELETE del runtime y pruebas PostgreSQL. No cerrar #218 hasta preservar o demostrar que ese comportamiento se ha portado.
+
+---
+
+# 2026-11-07 UTC — corrección de procedencia del handoff OAuth
+
+- Corrección a la anotación anterior: el handoff OAuth server-side de PR #215 ya está integrado en main vía #240. El blob de `apps/api/migrations/0005_auth_bootstrap_attempts.sql` en main es idéntico al antiguo `0010_auth_bootstrap_attempts.sql` de #215/#218; el `google-auth.ts` de main conserva opaque handle, hash de estado y consumo atómico.
+- Main usa además el rate limiter canónico de #213 (`consumeAuthRateLimit`) y `readBodyWithinLimit`. El branch #218 conserva la versión obsoleta de #214 (`enforceAuthRateLimit`) y un google-auth anterior. No portar el handoff/migración duplicados; auditar solo deltas de autorización que no estén ya en main.
+- #214 está supersedida por #213; #215 cerrada sin merge pero su handoff no se perdió: está en main. #218 permanece Draft como fuente para revisión, no como implementación lista para merge.
+
+---
+
+# 2026-11-07 UTC — corrección de disposición de #204 y estado de main
+
+- Verificación adicional en main `fc332946a9128e92ce39a3eb1ef1ee7ebd261598`: existen `inventory-counts.ts`, `inventory-locks.ts`, `catalog.ts`, `catalog-write.ts` e `inventory-read.ts`. La sección histórica del backlog que decía que faltaban inventory-counts/locks está supersedida.
+- Main `inventory-counts.integration.test.ts` ya tiene fixture isolation más completa que PR #204: `beforeEach` crea warehouse y product por test; `seedInventoryBalanceFor` registra el movimiento correspondiente en el ledger. #204 probablemente está supersedida; cerrar solo después de comparar el diff completo y confirmar que no queda comportamiento único.
+- PR #200 continúa divergida del main actual (37 ahead/14 behind; mergeable=false) y sus migraciones 0005–0010 chocan con la secuencia canónica 0005–0016. No importar ni rebasar la rama completa.
+- PR #250 sigue validada en SHA `081ec1026f4bda889a633bb3fcbe420433e13336` con 6/6 workflows exactos; el fix BCV y su integración PostgreSQL están completos en la rama, pero no integrados.
+- La recuperación debe comparar las PR #200/#204/#205/#207–#211 contra el código ya integrado por #244–#248 antes de portar o cerrar. Preservar solo cambios únicos comprobados.
+
+---
+
+# 2026-11-07 UTC — recuperación de PR apiladas y BCV
+
+- GitHub main `fc332946a9128e92ce39a3eb1ef1ee7ebd261598`; 27 PR abiertas en consulta directa.
+- #250 HEAD `081ec1026f4bda889a633bb3fcbe420433e13336`: 6/6 workflows exact-HEAD success; PostgreSQL integration mañana→hoy, fecha America/Caracas e idempotencia. Sigue Draft, 9 ahead/0 behind #227, sin reviews/threads.
+- #227 HEAD `83cf96b7fcb7b0e304f676d21ab721de61364a59`: 13/13 workflows success; Draft y apilada sobre #226.
+- #200 HEAD `464ca08b9020fad128cc9c8a321568493d484517` diverge de main actual: 37 ahead/14 behind, mergeable=false. Main ya contiene migraciones 0005–0016 y #200 usa secuencia incompatible; reconstrucción selectiva requerida, no rebase/merge ciego.
+- #204 HEAD `07a5a41c0f5f5c36fb89a5c5950796493d56eb20` diverge del #200 actual 8 ahead/5 behind; solo un archivo solapado, `inventory-counts.integration.test.ts`. Preservar su fixture isolation sobre el archivo actualizado.
+- #218 retargeteada desde base cerrada #215 a #211. #214 está supersedida por #213 merged; #215 contiene handoff único que se conserva en #218, pero el rate limiter duplicado debe portarse a la implementación canónica de #213 antes de integrar.
+- Sin merges ni cambios en Neon main, datos reales, secretos, Cloudflare productivo, DNS o billing. Producción NOT READY.
+
+## Siguiente bloque
+1. Recuperar #200 sobre main actual, reconciliando migraciones 0005–0016.
+2. Reaplicar aislamiento de fixtures de #204 y sincronizar descendientes en orden.
+3. Portar handoff #215/#218 al rate limiter de #213.
+4. Mantener #250 Draft hasta que la base esté reconstruida y los checks corran en el SHA final.
+
+---
+
+# 2026-11-07 UTC — verificación directa de rehearsal y auditoría de BCV
+
+- GitHub: #248 merged fc332946a9128e92ce39a3eb1ef1ee7ebd261598; #244–#248 fusionadas; 25 PR abiertas al consultar GitHub.
+- Neon project restless-fire-99110035: branch main br-summer-math-b7297a60 sigue sin ledger ni roles de aplicación; solo SELECT.
+- Neon rehearsal br-curly-poetry-b7dxsddm: roles microapp_migrator y microapp_runtime conectan; 15 objetos son propiedad de migrator; no ledger; runner 0003–0016 aún no ejecutado. Runtime no tiene privilegios de tabla todavía. neondb_owner mantiene ADMIN OPTION con SET FALSE/INHERIT FALSE. No se hicieron escrituras desde esta auditoría.
+- #227 source audit: se encontró que la condición WHERE NOT EXISTS (effective_date > incoming_date) bloquea insertar la tasa de hoy si una tasa futura ya existe. Requiere test mañana→hoy; #227 no es mergeable hacia main por su stack/base antigua aunque GitHub reporte mergeable true respecto a su base.
+- Se actualizó docs/security/NEON_MIGRATION_APPLICATION_PLAN.md para distinguir Fase 1 parcial de Fase 2/3 no ejecutadas. Producción sigue NOT READY.
+
+---
+
 # 2026-11-07 UTC — Ensayo de adopción en rama Neon
 
 - Se ensayó la adopción en una rama Neon (no en producción) y se corrigieron dos defectos del script que CI no podía ver (dueño no superusuario). Añadido escenario CI equivalente. Sin escrituras en la rama principal de Neon, secretos, Cloudflare, DNS ni billing.

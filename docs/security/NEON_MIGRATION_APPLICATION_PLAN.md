@@ -1,6 +1,6 @@
-# Plan de aplicación segura de migraciones en Neon — PROPUESTA (no ejecutado)
+# Plan de aplicación segura de migraciones en Neon — Fase 1 parcial; producción no ejecutada
 
-**Estado:** propuesta del 2026-11-06 UTC, ajustada a `main` tras #245. Nada de este documento se ha ejecutado. Cada fase de escritura requiere autorización específica y posterior del propietario (AGENTS.md; Constitución). Producción sigue **NO LISTA**.
+**Estado actualizado:** Fase 1 tiene una rama de ensayo creada y preparada parcialmente; no se ha ejecutado aún `adopt-baseline.sh apply` ni `migrate.sh` en esa rama. Fase 2 (Neon main) y Fase 3 (secreto `DATABASE_URL`) no se han ejecutado. La Fase 1 parcial fue verificada en vivo el 2026-11-07; producción sigue **NO LISTA**. Toda escritura en Neon main y todo cambio de secreto siguen fuera de la autorización general.
 
 ## 1. Hechos verificados (Neon `micro-app-db`, solo lectura, 2026-11-06 UTC)
 
@@ -39,10 +39,10 @@ Aplicarla aislada deja la Neon en un estado (0001, 0002, 0005) que ningún entor
 3. En PostgreSQL 18 desechable: migraciones completas, rollback inyectado por migración, checksum alterado, hueco de numeración, reejecución idempotente, y pruebas negativas con logins reales `microapp_runtime`/`microapp_migrator` (nunca superusuario ni `SET ROLE`).
 
 ### Fase 1 — ensayo en rama Neon (autorización A, reversible)
-1. Crear rama Neon `rehearsal-<fecha>` desde `main` (copy-on-write; sin tocar la rama principal).
-2. En la rama: crear roles, baseline, migraciones 0003–0016, pruebas de privilegios efectivos y comparación de filas (las 6+1+1+1+1 filas intactas).
-3. Smoke del API contra esa rama desde entorno local o preview, **sin** apuntar el Worker de producción.
-4. Borrar la rama al terminar o conservarla como evidencia.
+1. **Hecho:** existe `rehearsal-baseline-20261107` (`br-curly-poetry-b7dxsddm`), derivada de Neon main (`br-summer-math-b7297a60`). La rama está `ready`; main no se modificó.
+2. **Hecho parcialmente:** roles `microapp_migrator` y `microapp_runtime` creados; los 15 objetos existentes aparecen propiedad de `microapp_migrator`; no existe ledger todavía. `neondb_owner` conserva membresías con `ADMIN OPTION` y `SET FALSE`/`INHERIT FALSE`. Las consultas de login confirman que ambos logins conectan; runtime no tiene todavía privilegios de tabla (las migraciones 0003–0016 no se han aplicado). El runner aún no se ha ejecutado.
+3. **Pendiente:** ejecutar `adopt-baseline.sh verify` y `apply`, luego `migrate.sh` 0003–0016 usando login directo `microapp_migrator`; después probar permisos negativos/positivos con login directo `microapp_runtime`, preservar y comparar filas, y ejecutar smoke autenticado de API en entorno aislado. No ejecutar desde el SQL tool pegando migraciones una por una: no equivale al runner.
+4. **Pendiente:** conservar la rama como evidencia hasta cerrar todas las verificaciones. No borrarla aún.
 
 ### Fase 2 — producción (autorización B, separada y explícita)
 Precondiciones: Fase 1 verde; snapshot reciente (`create_snapshot`) más rama de respaldo; ventana acordada; `docs/BACKUP_AND_RECOVERY.md` leído y restore probado en rama.

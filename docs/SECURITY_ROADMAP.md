@@ -1,3 +1,16 @@
+# Estado vivo de seguridad — 2026-11-07 UTC
+
+> Este bloque sustituye los snapshots antiguos de estado que aparecen debajo. Verificar SHA, PR y entorno antes de cualquier acción; Neon main y producción siguen siendo gates separados.
+
+- `main` de GitHub verificado en `fc332946a9128e92ce39a3eb1ef1ee7ebd261598`. La implementación actual de rate limiting OAuth vive en `apps/api/src/auth-rate-limit.ts` y usa el HMAC canónico de #213; no es correcto seguir afirmando que solo existe la tabla sin callsite runtime.
+- El control de tasa usa UPSERT atómico PostgreSQL y las pruebas de concurrencia/endpoint están en `auth-rate-limit.integration.test.ts`. El CI de #251 confirmó también las pruebas con el login desechable `microapp_runtime`.
+- La retención horaria de 48 h para `auth_rate_limits` y `auth_bootstrap_attempts` está implementada en PR #251, HEAD `4a0662346c2a1f95bcf09d815df55755f53686cd`, con 10/10 workflows PR SUCCESS. Sigue Draft: no activar Cron en producción hasta que Neon main tenga el esquema `auth_bootstrap_attempts` y el runtime login/grants validados.
+- La lectura anterior de Neon main encontró esquema 0001+0002, sin `schema_migrations`, sin `auth_bootstrap_attempts`, sin `microapp_runtime` ni `microapp_migrator`. No se ha escrito en Neon main ni se han cambiado credenciales.
+- El código de repositorio y CI no demuestran que el Worker de producción use el principal runtime correcto ni que la base productiva tenga las migraciones/grants actuales. No declarar autenticación o catálogo/inventario listos en producción por CI verde.
+- No se han modificado secretos, Cloudflare dashboard, DNS, billing ni datos reales. Producción **NOT READY**.
+
+---
+
 ## Estado vivo de seguridad y gobernanza — 2026-11-04 UTC
 
 - `main` = `2e0f4083ba577de2f301daf8c866bfbdffb5e23f`; PR #198 integró ODD por squash. PR #197 quedó cerrada sin merge como supersedida.

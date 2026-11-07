@@ -356,8 +356,8 @@ export default function App() {
               </p>
               {bcvError && <p className="exchange-rate-error" role="status">{bcvError}</p>}
             </div>
-            <span className={`exchange-rate-status ${bcvError || bcvRate?.status === "stale" ? "stale" : !bcvRate ? "unavailable" : ""}`}>
-              {bcvLoading ? "Actualizando…" : bcvError ? "Sin actualizar" : bcvRate?.status === "current" ? "Vigente" : bcvRate?.status === "stale" ? "Desactualizada" : "No disponible"}
+            <span className={`exchange-rate-status ${bcvRate && (bcvError || bcvRate.status === "stale") ? "stale" : !bcvRate ? "unavailable" : ""}`}>
+              {bcvLoading ? "Actualizando…" : bcvError && bcvRate ? "Sin actualizar" : bcvRate?.status === "current" ? "Vigente" : bcvRate?.status === "stale" ? "Desactualizada" : "No disponible"}
             </span>
             <p className="exchange-rate-source">Fuente: Banco Central de Venezuela (BCV). No se sustituye por tasas de terceros.</p>
           </section>
@@ -374,7 +374,7 @@ export default function App() {
             <CatalogPanel
               organizationId={organization?.id ?? ""}
               exchangeRate={bcvRate?.rate ?? null}
-              exchangeRateStatus={bcvError ? "stale" : bcvRate?.status ?? "unavailable"}
+              exchangeRateStatus={bcvRate ? (bcvError ? "stale" : bcvRate.status) : "unavailable"}
               canManage={organization?.role === "owner" || organization?.role === "admin"}
             />
           )}

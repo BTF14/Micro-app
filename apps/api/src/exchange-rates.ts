@@ -263,7 +263,13 @@ export function registerExchangeRateRoutes(app: Hono<{ Bindings: Bindings }>): v
     try {
       const rows = await withDatabaseClient(c.env.DATABASE_URL, async (client) => {
         const result = await client.query<StoredRateRow & { fetched_at: string }>(
-          "SELECT rate::text AS rate, effective_date::text AS effective_date, to_char(fetched_at AT TIME ZONE 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS.MS"Z"') AS fetched_at, validation_status FROM public.exchange_rates WHERE source = $1 ORDER BY effective_date DESC, fetched_at DESC LIMIT $2",
+          `SELECT rate::text AS rate, effective_date::text AS effective_date,
+                  to_char(fetched_at AT TIME ZONE 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS.MS"Z"') AS fetched_at,
+                  validation_status
+             FROM public.exchange_rates
+            WHERE source = $1
+            ORDER BY effective_date DESC, fetched_at DESC
+            LIMIT $2`,
           [BCV_SOURCE_ID, limit],
         );
         return result.rows;

@@ -1,3 +1,13 @@
+# 2026-11-07 UTC — PR #251: port de limpieza de retención auth
+
+- Se portó desde #218 la única función útil de retención al código canónico de main en PR #251 (`fix/auth-retention-cleanup-20261107`), HEAD `4a0662346c2a1f95bcf09d815df55755f53686cd`.
+- Cron horario (`17 * * * *`) invoca cleanup solo cuando `APP_ENV === production`; preview no conecta a DB. Borra `auth_rate_limits` inactivos y `auth_bootstrap_attempts` expirados hace más de 48 horas.
+- La prueba PostgreSQL verifica eliminación de filas antiguas y conservación de recientes. El job CI corrió la suite con admin y con login real `microapp_runtime`; 10/10 PR workflows SUCCESS en HEAD exacto. Las assertions de migration 0012 ahora comprueban grants DELETE mínimos ya existentes.
+- PR #251 permanece Draft/no merge: Neon main, según lectura previa vigente, no contiene `auth_bootstrap_attempts` ni los roles dedicados `microapp_runtime`/`microapp_migrator`. No activar el Cron en producción hasta que el esquema y runtime role estén reconciliados y verificados por el gate de Neon. No se conectó ni escribió en Neon.
+- #218 permanece abierta para auditar sus restantes cambios de autorización; no fusionar la rama obsoleta.
+
+---
+
 # 2026-11-07 UTC — procedencia de migraciones de inventario/security
 
 - #205: idempotency_key/request_hash, constraint, índice parcial, handler y los 21 nombres de pruebas de la rama están presentes en main; main tiene 24 pruebas de conteos.

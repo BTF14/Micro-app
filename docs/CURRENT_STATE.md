@@ -1,3 +1,20 @@
+## Reconciliación de PR y dependencias — 2026-11-07 UTC
+
+- GitHub consultado en vivo: **27 PR abiertas**. Main: `fc332946a9128e92ce39a3eb1ef1ee7ebd261598`. No reutilizar el snapshot anterior de 25/26 PR.
+- [PR #250](https://github.com/BTF14/Micro-app/pull/250), corrección BCV mañana→hoy: HEAD `081ec1026f4bda889a633bb3fcbe420433e13336`, base #227 `83cf96b7fcb7b0e304f676d21ab721de61364a59`, 9 ahead/0 behind, Draft. Seis workflows del SHA exacto success: CI push/PR, migration runner push/PR, Security scan y Secret history scan. CI ejecutó PostgreSQL real en servicio desechable; probó insertar mañana antes que hoy, conservar ambas fechas, elegir hoy con fecha America/Caracas e idempotencia. La suite solo corre con CI=true y localhost/127.0.0.1/microapp_test. Sin reviews ni review threads.
+- [PR #227](https://github.com/BTF14/Micro-app/pull/227) HEAD `83cf96b7fcb7b0e304f676d21ab721de61364a59`: 13 workflow runs success (6 pull_request + 7 push). Sigue Draft y apilada sobre #226; sus checks no sustituyen la corrección ni el CI de #250.
+- [PR #200](https://github.com/BTF14/Micro-app/pull/200) HEAD `464ca08b9020fad128cc9c8a321568493d484517`: 17 workflow runs success, pero compare con main actual es **diverged 37 ahead/14 behind** y GitHub indica no mergeable. Main ya tiene migraciones canónicas 0005–0016; #200 usa una secuencia distinta que vuelve a numerar inventario/roles/auditoría/ledger. Hay solapamiento amplio en auth, catálogo, tenant context, workflows, lockfile y migraciones. No rebase/merge automático: reconstruir los cambios únicos sobre main y preservar una única secuencia de migraciones.
+- [PR #204](https://github.com/BTF14/Micro-app/pull/204) HEAD `07a5a41c0f5f5c36fb89a5c5950796493d56eb20`: su base histórica era #200 en `5fbc17a48b65076cf5609a7a054bbd125a3a5d1e`; contra el #200 actual está **diverged 8 ahead/5 behind**, con solapamiento en un solo archivo: `apps/api/src/inventory-counts.integration.test.ts`. Preservar su aislamiento de fixtures y aplicarlo sobre la versión nueva de #200; no descartar ni cerrar.
+- Pila de migraciones/auth: #224→#225→#226→#227 está apilada sin divergencia interna, pero depende de la cadena anterior. #218 fue retargeteada desde la cerrada #215 a la PR activa #211 (HEAD #218 `2115d66cca18ee094ee3b3f8148ac6a61df040da`, 51 ahead/0 behind). #214 está explícitamente supersedida por #213, ya fusionada; #215 sigue cerrada sin merge, pero su handoff de bootstrap tiene cambios únicos preservados en #218. Antes de integrar #218, quitar la implementación de rate-limit competidora de #214 y usar la implementación canónica de #213 en main (`consumeAuthRateLimit`); conservar el handoff y migración 0010, sujetos al gate de grants/adopción.
+- No se fusionó ninguna de estas PR. No se tocaron Neon main, datos reales, secretos, Cloudflare productivo, DNS ni billing. Producción sigue **NOT READY**.
+
+### Orden de recuperación
+1. Reconstruir #200 sobre main actual, conciliando migraciones y preservando catálogo/inventario único.
+2. Reaplicar fixture isolation de #204 a la versión vigente del test y sincronizar la cadena descendiente en orden, sin force-push.
+3. Portar el handoff único de #215 y la autorización de #218 sobre el rate limiter ya integrado por #213; retirar el rate limiter duplicado.
+4. Revalidar la cadena de runtime/migrator y el runner frente a las migraciones ya canónicas en main.
+5. Mantener #250 como corrección verificada en su rama apilada; no fusionarla hasta reconstruir una base actual y repetir los gates sobre el HEAD resultante.
+
 ## Reconciliación en vivo — Neon rehearsal y BCV — 2026-11-07
 
 - Neon project micro-app-db (restless-fire-99110035), PostgreSQL 18. La rama principal br-summer-math-b7297a60 sigue sin schema_migrations, no tiene microapp_runtime ni microapp_migrator, y conserva 15 objetos de aplicación propiedad del owner. Solo se hicieron SELECT.

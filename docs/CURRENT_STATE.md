@@ -1,3 +1,10 @@
+## Adopción de baseline — 2026-11-07 UTC
+
+- Nuevo `scripts/db/adopt-baseline.sh` + huella `baselines/0002.schema.txt`. La huella de Neon `main` coincide con 0001+0002 del repositorio (columnas, constraints, índices, relaciones). CI prueba adopción, deriva, rechazo sin confirmación, runner hasta 0016, conservación de filas y rechazo de readopción.
+- **No aplicado en Neon.** Falta ensayo en rama Neon (¿puede `neondb_owner` transferir la propiedad a `microapp_migrator`?) y autorización específica. Producción sigue NO LISTA.
+
+---
+
 ## Neon: nivel de esquema real y plan de adopción — 2026-11-06 UTC
 
 - Lectura solo-`SELECT` de Neon: esquema en **0001+0002** (15 tablas); sin 0003–0016 ni `schema_migrations`; 1 org, 1 usuario, 1 allowlist, bootstrap consumido, 6 sesiones, 0 filas de negocio; PITR 6 h. El propietario afirma que no hay datos reales de negocio.

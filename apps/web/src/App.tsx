@@ -220,8 +220,8 @@ export default function App() {
         });
     };
     refreshBcvRate();
-    // The BCV publishes a daily reference rate; refresh once per day per active session.
-    const interval = window.setInterval(refreshBcvRate, 24 * 60 * 60 * 1000);
+    // Refresh hourly so an open POS picks up the new effective rate after the daily BCV publication.
+    const interval = window.setInterval(refreshBcvRate, 60 * 60 * 1000);
     return () => {
       active = false;
       window.clearInterval(interval);

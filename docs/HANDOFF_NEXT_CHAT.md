@@ -9,7 +9,7 @@ Fuente de verdad: GitHub consultado en vivo; main `fc332946a9128e92ce39a3eb1ef1e
 
 ### Bloqueo estructural del stack
 - PR #200 HEAD `464ca08b9020fad128cc9c8a321568493d484517`, main actual `fc332946a9128e92ce39a3eb1ef1ee7ebd261598`: diverged 37 ahead/14 behind, GitHub no mergeable. Main ya contiene migraciones 0005–0016; #200 tiene numeración incompatible (inventario 0005 y migraciones posteriores desplazadas) y amplio solapamiento de auth/catalog/tenant/workflows/lockfile. **No rebase ni merge automático**; reconstruir los cambios únicos en ramas basadas en main.
-- PR #204 HEAD `07a5a41c0f5f5c36fb89a5c5950796493d56eb20` está diverged 8 ahead/5 behind respecto al #200 actual, con un único archivo compartido (`inventory-counts.integration.test.ts`). Su aislamiento de fixtures debe re-aplicarse sobre el test más nuevo, preservando todas las pruebas nuevas.
+- PR #204 HEAD `07a5a41c0f5f5c36fb89a5c5950796493d56eb20` está diverged 8 ahead/5 behind respecto al #200 actual, con un único archivo cambiado (`inventory-counts.integration.test.ts`). Su fixture isolation ya está en main de forma más completa: `beforeEach` crea warehouse/product por test y `seedInventoryBalanceFor` registra el movimiento de fixture. Revisar el diff completo; si no queda comportamiento único, cerrar #204 como supersedida con comentario/evidencia.
 - La secuencia descendiente activa incluye #205, #208, #207, #209, #210, #211, #218, #220–#227. Máximo dos frentes activos; resolver raíz y dependencias en orden. No cerrar PR sin rescatar y verificar sus cambios únicos.
 
 ### PR cerradas conservadas
@@ -24,8 +24,8 @@ Fuente de verdad: GitHub consultado en vivo; main `fc332946a9128e92ce39a3eb1ef1e
 
 ### Próximas acciones exactas
 1. Auditar y reconstruir PR #200 sobre main actual, resolviendo numeración y contenido de migraciones con pruebas PostgreSQL.
-2. Reaplicar el cambio de aislamiento de #204 a la versión actualizada de `inventory-counts.integration.test.ts`.
-3. Sincronizar downstream en orden y revisar diff/CI en cada SHA final.
+2. Verificar que #204 no aporta más que fixture isolation ya presente y ampliada en main; si se confirma, documentar y cerrar como supersedida. Auditar #205–#211 contra las implementaciones ya integradas.
+3. Sincronizar o portar solo diferencias únicas downstream en orden y revisar diff/CI en cada SHA final.
 4. Portar #215/#218 sobre el rate limiter de #213 y validar grants para migration 0010.
 5. Mantener #250 como corrección verificada; integrar solo después de tener base actual y exact-HEAD CI.
 

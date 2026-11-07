@@ -64,7 +64,7 @@ const modules = [
   { number: "01", title: "Caja y ventas", description: "Flujo de venta, cobro y comprobante.", status: "Pendiente de implementación" },
   { number: "02", title: "Inventario", description: "Existencias, movimientos y alertas de stock.", status: "Pendiente de implementación" },
   { number: "03", title: "Productos", description: "Catálogo y precios exactos en USD.", status: "Disponible · catálogo en USD" },
-  { number: "04", title: "Tasa BCV", description: "Conversión a VES con fuente y fecha verificables.", status: "Pendiente de integración" },
+  { number: "04", title: "Tasa BCV", description: "Conversión a VES con fuente y fecha verificables.", status: "Disponible · fuente oficial" },
 ];
 
 // Shown after a failed GET /auth/google/callback redirect (see apps/api/src/google-auth.ts).
@@ -93,6 +93,33 @@ function readAuthErrorFromUrl(): string {
 }
 
 type HelpModalKind = "faq" | "privacy";
+
+type BcvRateResponse = {
+  rate: string;
+  effectiveDate: string;
+  fetchedAt: string;
+  source: string;
+  status: "current" | "stale";
+};
+
+// Keep the official decimal string intact; never convert exchange rates to JS floats.
+function formatBcvRate(value: string): string {
+  const [integerPart = "0", fractionalPart] = value.split(".");
+  const grouped = integerPart.replace(/\\B(?=(\\d{3})+(?!\\d))/g, ".");
+  return fractionalPart ? `${grouped},${fractionalPart}` : grouped;
+}
+
+function formatBcvEffectiveDate(value: string): string {
+  return new Intl.DateTimeFormat("es-VE", {
+    day: "numeric", month: "long", year: "numeric", timeZone: "America/Caracas",
+  }).format(new Date(`${value}T12:00:00Z`));
+}
+
+function formatBcvFetchedAt(value: string): string {
+  return new Intl.DateTimeFormat("es-VE", {
+    day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit", timeZone: "America/Caracas",
+  }).format(new Date(value));
+}
 
 function HelpLinks({ onOpen }: { onOpen: (kind: HelpModalKind) => void }) {
   return (
@@ -151,6 +178,9 @@ export default function App() {
   const [notice, setNotice] = useState("");
   const [helpModal, setHelpModal] = useState<HelpModalKind | null>(null);
   const [activeView, setActiveView] = useState<"overview" | "catalog">("overview");
+  const [bcvRate, setBcvRate] = useState<BcvRateResponse | null>(null);
+  const [bcvLoading, setBcvLoading] = useState(false);
+  const [bcvError, setBcvError] = useState("");
 
   useEffect(() => {
     let active = true;
@@ -170,12 +200,42 @@ export default function App() {
     return () => { active = false; };
   }, []);
 
+  useEffect(() => {
+    if (!session) return;
+    let active = true;
+    const refreshBcvRate = () => {
+      setBcvLoading(true);
+      apiRequest<BcvRateResponse>("/api/exchange-rates/latest")
+        .then((result) => {
+          if (!active) return;
+          setBcvRate(result);
+          setBcvError("");
+        })
+        .catch((reason: unknown) => {
+          if (!active) return;
+          setBcvError(reason instanceof Error ? reason.message : "No se pudo actualizar la tasa BCV.");
+        })
+        .finally(() => {
+          if (active) setBcvLoading(false);
+        });
+    };
+    refreshBcvRate();
+    // The BCV publishes a daily reference rate; refresh once per day per active session.
+    const interval = window.setInterval(refreshBcvRate, 24 * 60 * 60 * 1000);
+    return () => {
+      active = false;
+      window.clearInterval(interval);
+    };
+  }, [session]);
+
   async function handleLogout() {
     setBusy(true);
     setError("");
     try {
       await apiRequest<void>("/auth/logout", { method: "POST" });
       setSession(null);
+      setBcvRate(null);
+      setBcvError("");
       setActiveView("overview");
       setNotice("Has cerrado la sesión de forma segura.");
     } catch (reason) {
@@ -287,6 +347,20 @@ export default function App() {
           <>
           <section className="welcome"><div><p className="eyebrow">TU NEGOCIO, EN UN SOLO LUGAR</p><h1>Hola, {user.display_name.split(" ")[0]}.</h1><p className="welcome-copy">Tu espacio de trabajo ya está listo. El catálogo de productos está disponible; seguimos preparando las herramientas de ventas e inventario.</p></div><div className="welcome-art" aria-hidden="true"><div className="art-ring ring-one" /><div className="art-ring ring-two" /><div className="art-card"><span className="art-card-label">MICRO APP</span><span className="art-card-line" /><span className="art-card-line short" /><span className="art-card-foot">GESTIÓN · CONTROL · CLARIDAD</span></div></div></section>
           <section className="setup-banner"><div className="setup-icon" aria-hidden="true">↗</div><div className="setup-text"><h2>Cuenta conectada</h2><p>Tu sesión está activa. Las funciones de ventas e inventario se habilitarán en próximas fases.</p></div><span className="setup-status">Acceso seguro</span></section>
+          <section className="exchange-rate-panel" aria-live="polite" aria-label="Tasa oficial del Banco Central de Venezuela">
+            <div className="exchange-rate-main">
+              <p className="eyebrow">TIPO DE CAMBIO OFICIAL</p>
+              <h2>{bcvRate ? <>1 USD <span>=</span> Bs. {formatBcvRate(bcvRate.rate)}</> : "Tasa BCV no disponible"}</h2>
+              <p className="exchange-rate-meta">
+                {bcvRate ? `Fecha valor: ${formatBcvEffectiveDate(bcvRate.effectiveDate)} · Actualizada: ${formatBcvFetchedAt(bcvRate.fetchedAt)}` : "La equivalencia en bolívares aparecerá cuando exista una tasa oficial validada."}
+              </p>
+              {bcvError && <p className="exchange-rate-error" role="status">{bcvError}</p>}
+            </div>
+            <span className={`exchange-rate-status ${bcvError || bcvRate?.status === "stale" ? "stale" : !bcvRate ? "unavailable" : ""}`}>
+              {bcvLoading ? "Actualizando…" : bcvError ? "Sin actualizar" : bcvRate?.status === "current" ? "Vigente" : bcvRate?.status === "stale" ? "Desactualizada" : "No disponible"}
+            </span>
+            <p className="exchange-rate-source">Fuente: Banco Central de Venezuela (BCV). No se sustituye por tasas de terceros.</p>
+          </section>
           <section className="modules-section" aria-labelledby="modules-title"><div className="section-heading"><div><p className="eyebrow">MÓDULOS DEL SISTEMA</p><h2>Herramientas de tu negocio</h2></div><span className="module-count">04 módulos previstos</span></div><div className="module-grid">{modules.map((module) => <article className="module-card" key={module.number}><div className="module-card-top"><span className="module-number">{module.number}</span><span className="module-indicator" aria-hidden="true">↗</span></div><h3>{module.title}</h3><p>{module.description}</p><div className="module-card-bottom"><span className="module-status-dot" aria-hidden="true" /><span>{module.status}</span></div></article>)}</div></section>
           <footer className="main-footer">
             <div className="main-footer-row">
@@ -299,8 +373,8 @@ export default function App() {
           ) : (
             <CatalogPanel
               organizationId={organization?.id ?? ""}
-              exchangeRate={null}
-              exchangeRateStatus="unavailable"
+              exchangeRate={bcvRate?.rate ?? null}
+              exchangeRateStatus={bcvError ? "stale" : bcvRate?.status ?? "unavailable"}
               canManage={organization?.role === "owner" || organization?.role === "admin"}
             />
           )}

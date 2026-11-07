@@ -1,7 +1,7 @@
 # ODD task: official BCV rate integration and effective-date correctness
 
 - Status: implementation on recovery branch; exact-HEAD CI and independent review pending; production blocked on Neon migration/runtime reconciliation
-- PR: #252 (stacked on #251)
+- PR: #255 (stacked on #251)
 - Branch: `feat/bcv-official-rate-recovered-20261107`
 - Risk: critical (financial rate selection and POS conversion)
 - Started: 2026-11-07

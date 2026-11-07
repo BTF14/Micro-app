@@ -59,7 +59,7 @@ Excluded:
 - Use `INSERT ... ON CONFLICT (source, effective_date) DO NOTHING` as the only same-date idempotency guard. A future effective date is not evidence that today's rate already exists.
 - The integration test derives dates from PostgreSQL `now() AT TIME ZONE 'America/Caracas'`, matching the API's business-date boundary rather than assuming the runner's UTC date.
 - Keep the fix stacked on #227 because it corrects the BCV feature branch's behavior. Do not merge #227 until #250 is resolved and the complete final HEAD is verified.
-- The integration test uses the disposable PostgreSQL service in CI. It does not connect to Neon.
+- The integration test runs only when `CI=true` and the connection URL resolves to `localhost`/`127.0.0.1` with database path `/microapp_test`; outside that disposable CI target it skips. It does not connect to Neon or an arbitrary developer-configured database.
 
 ## Closure and handoff
 

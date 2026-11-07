@@ -31,15 +31,16 @@ The writer uses the least-privilege `microapp_runtime` role. Migration 0013 gran
 
 ## API and UI behavior
 
-- `GET /api/exchange-rates/latest` returns the latest valid rate whose effective date is not in the future.
+- `GET /api/exchange-rates/latest` returns today's effective rate on weekdays. On Saturday/Sunday it selects the nearest future effective date published for the next business day, which is the applicable BCV rate for non-business days.
 - `GET /api/exchange-rates/history?limit=30` returns a bounded history (1–365 rows), including future-dated rows labelled `scheduled`.
+- Weekday bank holidays are not yet backed by an authoritative holiday calendar. On those days, if no row exists for the calendar date, latest remains stale/unavailable and the catalog disables VES conversion rather than guessing. This is a known MVP limitation and must be resolved before POS use on bank holidays.
 - The dashboard displays the official value, effective date, fetch timestamp, source, and freshness.
 - The catalog converts USD prices to VES only when the API reports a current validated rate. Stale/unavailable data disables conversion; the UI never invents a fallback rate.
 - The dashboard fetches on authenticated session load and refreshes at most once every 24 hours. Successful read responses are cacheable for one hour.
 
 ## Scheduling and cost
 
-The Worker Cron fetches the official page once per weekday at 18:00 Venezuela time (22:00 UTC), after the usual late-afternoon publication window. This is five scheduled fetches per week; weekends/holidays do not trigger polling. The existing hourly auth-retention Cron remains configured separately. Preview environments are excluded by the Worker scheduled handler.
+The Worker Cron fetches the official page once per weekday at 18:00 Venezuela time (22:00 UTC), after the usual late-afternoon publication window. Friday's publication can carry Monday's effective date; the weekend latest endpoint uses that next-business-day row. Weekday holidays do not trigger a Cron and currently fail closed until a reviewed holiday calendar is available. The existing hourly auth-retention Cron remains configured separately. Preview environments are excluded by the Worker scheduled handler.
 
 No paid provider, subscription, or new secret is introduced. Cloudflare plan/quotas and the actual deployed Cron configuration still require verification before production rollout.
 

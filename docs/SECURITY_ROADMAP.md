@@ -8,7 +8,7 @@
 - Neon main, verificada en vivo por SELECT: 15 tablas, sin `schema_migrations`, `auth_bootstrap_attempts`, `microapp_runtime` ni `microapp_migrator`. El ensayo tiene esos roles, pero runtime todavía carece de grants de tabla hasta aplicar 0003–0016. No hay evidencia de que el Worker de producción use el principal runtime correcto.
 - No hay workflow de release ni secret de rehearsal para ejecutar el runner de migraciones contra Neon. El proceso de producción debe seguir bloqueado hasta tener runner protegido, backup/restore, grants y smoke autenticado verificados.
 - #218–#226 fueron cerradas como supersedidas; los cambios útiles están en main/#251/#252. #227 permanece reabierta solo como ancla temporal para #228–#233; su aplicación BCV y la corrección de #250 están recuperadas en #255. #250 y #254 están cerradas como supersedidas/duplicada.
-- PR #256 integró una corrección de fixture de backup/restore sin tocar código de aplicación ni datos reales; los checks post-merge aún se ejecutan.
+- PR #256 integró una corrección de fixture de backup/restore sin tocar código de aplicación ni datos reales; los checks post-merge finalizaron SUCCESS (10 check-runs y 8 push workflows, incluidos Cloudflare Pages y Workers builds).
 - No se modificaron secretos, Cloudflare dashboard, DNS, billing, datos reales ni Neon main. Producción **NOT READY**.
 
 ---

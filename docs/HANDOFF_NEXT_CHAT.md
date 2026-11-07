@@ -1,6 +1,6 @@
 ## Continuidad inmediata — reconciliación de stack y BCV — 2026-11-07 UTC
 
-Fuente de verdad: GitHub consultado en vivo; main `fc332946a9128e92ce39a3eb1ef1ee7ebd261598`; 27 PR abiertas. El snapshot anterior de 25 PR quedó obsoleto.
+Fuente de verdad: GitHub consultado en vivo; main `fc332946a9128e92ce39a3eb1ef1ee7ebd261598`; 28 PR abiertas. El snapshot anterior de 25 PR quedó obsoleto.
 
 ### BCV corregido, aún no integrado
 - PR #250 HEAD `081ec1026f4bda889a633bb3fcbe420433e13336`, base #227 `83cf96b7fcb7b0e304f676d21ab721de61364a59`, 9 ahead/0 behind, Draft. Seis workflows exact-HEAD success: CI push/PR, migration-runner push/PR, Security scan, Secret history scan. La prueba PostgreSQL real valida mañana→hoy, selección por fecha America/Caracas e idempotencia. La prueba está protegida para ejecutarse solo contra localhost/127.0.0.1 y DB /microapp_test con CI=true. No reviews formales ni threads.
@@ -33,13 +33,13 @@ Fuente de verdad: GitHub consultado en vivo; main `fc332946a9128e92ce39a3eb1ef1e
 
 ## Continuidad inmediata — estado real 2026-11-07
 
-El main de GitHub está actualizado por #248; merge SHA fc332946a9128e92ce39a3eb1ef1ee7ebd261598. PR #244–#248 están fusionadas. La consulta viva más reciente reporta **27 PR abiertas**; ver la reconciliación al inicio de este archivo.
+El main de GitHub está actualizado por #248; merge SHA fc332946a9128e92ce39a3eb1ef1ee7ebd261598. PR #244–#248 están fusionadas. La consulta viva más reciente reporta **28 PR abiertas**; ver la reconciliación al inicio de este archivo.
 
 Neon: la rama principal br-summer-math-b7297a60 no fue modificada y sigue sin ledger ni roles app. La rama rehearsal-baseline-20261107 (br-curly-poetry-b7dxsddm) está lista, tiene microapp_migrator/microapp_runtime, 15 objetos propiedad de migrator, pero no ledger ni migraciones 0003–0016. SELECT con ambos logins confirmó conexión; runtime aún no tiene grants de tablas. El propietario debe ejecutar los scripts versionados reales en la rama de ensayo (no pegar migraciones manualmente) y verificar runtime después de grants. No usar Neon main.
 
 BCV: la migración 0013 de #227 ya está en main. El bug mañana→hoy se corrigió en #250; HEAD `081ec1026f4bda889a633bb3fcbe420433e13336` pasó 6/6 workflows exactos, incluida integración PostgreSQL real con fecha America/Caracas e idempotencia. #250 sigue Draft y apilada sobre #227; no fusionar #227 completo ni su base antigua. Rescatar código BCV único sobre main después de reconstruir la cadena.
 
-Backlog: 27 PR abiertas según consulta viva. #214 está cerrada como supersedida por #213; #215 cerrada sin merge conserva handoff único portado a #218. #200/#204 tienen drift y #218 se retargeteó a #211. Ver sección superior para refs actuales. El objetivo es consolidar en ramas basadas en main y fusionar PR elegibles, no rebasar/mergear a ciegas cada rama apilada.
+Backlog: 28 PR abiertas según consulta viva. #214 está cerrada como supersedida por #213; #215 cerrada sin merge conserva handoff único portado a #218. #200/#204 tienen drift y #218 se retargeteó a #211. Ver sección superior para refs actuales. El objetivo es consolidar en ramas basadas en main y fusionar PR elegibles, no rebasar/mergear a ciegas cada rama apilada.
 
 Prioridad próxima: 1) auditar diferencias únicas de #200 frente a main y reconciliar migraciones; 2) verificar #204 como posible supersedida y revisar #205–#211 contra main; 3) portar handoff #215/#218 sobre rate limiter canónico #213; 4) mantener #250 y recuperar su código BCV sobre base actual; 5) continuar ensayo Neon solo en rama de rehearsal y bajo los gates específicos. Producción sigue NOT READY. No ejecutar Neon main, cambiar secretos, Cloudflare manual, DNS ni billing.
 

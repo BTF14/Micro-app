@@ -38,6 +38,14 @@ describe("BCV official HTML parser", () => {
     expect(parseBcvOfficialRate(html, NOW).effectiveDate).toBe("2026-11-09");
   });
 
+  it("parses a Spanish effective date with weekday but no comma", () => {
+    const html = OFFICIAL_PAGE.replace(
+      "Jueves, 05 Noviembre 2026",
+      "Lunes 09 de noviembre de 2026",
+    );
+    expect(parseBcvOfficialRate(html, NOW).effectiveDate).toBe("2026-11-09");
+  });
+
   it("accepts the next effective date when BCV publishes in advance", () => {
     const html = OFFICIAL_PAGE.replace("05 Noviembre 2026", "06 Noviembre 2026");
     expect(parseBcvOfficialRate(html, NOW).effectiveDate).toBe("2026-11-06");

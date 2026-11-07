@@ -1,3 +1,16 @@
+## Reconciliación en vivo — Neon rehearsal y BCV — 2026-11-07
+
+- Neon project micro-app-db (restless-fire-99110035), PostgreSQL 18. La rama principal br-summer-math-b7297a60 sigue sin schema_migrations, no tiene microapp_runtime ni microapp_migrator, y conserva 15 objetos de aplicación propiedad del owner. Solo se hicieron SELECT.
+- La rama rehearsal-baseline-20261107 (br-curly-poetry-b7dxsddm) existe y está ready. Tiene los roles de aplicación y los 15 objetos transferidos a microapp_migrator; no tiene ledger y todavía no ejecutó adopt-baseline.sh apply ni migrate.sh.
+- SELECT usando logins directos confirmó que microapp_migrator y microapp_runtime pueden conectarse. Runtime aún no tiene privilegios de tabla (esperable antes de 0003–0016). neondb_owner conserva ADMIN OPTION con SET FALSE/INHERIT FALSE sobre ambos roles. No se probó aún el runtime después de aplicar grants ni el runner real.
+- No ejecutar las migraciones pegadas manualmente por SQL: debe ejecutarse el script exacto adopt-baseline.sh/migrate.sh contra la rama de ensayo, con logins directos y comparación de filas. Neon main no se tocó.
+- PR #248 está fusionada en fc332946a9128e92ce39a3eb1ef1ee7ebd261598; Claude reportó 10/10 checks post-merge. La consulta de status contexts no devolvió contextos; no confundir eso con los check-runs de Actions.
+- Backlog GitHub en vivo: 25 PR abiertas, no 26. #244, #245, #246, #247 y #248 están fusionadas. PR #227 sigue Draft y apilada sobre #226, cuya base es #225 etc.; no está lista para merge.
+- Hallazgo de código en #227: persistBcvOfficialRate usa WHERE NOT EXISTS (effective_date > incoming_date) antes de ON CONFLICT. Si mañana ya está almacenada y después llega hoy, la inserción de hoy se omite y la función devuelve older; la consulta latest excluye mañana y por tanto puede quedar sin tasa actual. Añadir regresión mañana→hoy y permitir insertar fechas históricas faltantes sin sobrescribir filas de misma fecha ni la tasa futura.
+- Producción NOT READY: faltan adopción/migraciones en Neon main con autorización específica, runtime grants reales, secreto DATABASE_URL apuntando a microapp_runtime, smoke autenticado, BCV validado, checkout E2E, restore probado y cierre de los gates P0/P1.
+
+---
+
 ## Ensayo en rama Neon — 2026-11-07 UTC
 
 - Rama `rehearsal-baseline-20261107` (copia de `main`; producción intacta). Dos hallazgos reales corregidos en `adopt-baseline.sh`: (1) `neondb_owner` solo tiene ADMIN OPTION sobre roles creados, sin SET → se concede SET solo durante la transacción y se revoca; (2) el nuevo dueño necesita CREATE en `public`. Con eso, la transferencia de propiedad de los 15 objetos funciona y el estado de membresías queda compatible con el preflight del runner.

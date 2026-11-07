@@ -246,7 +246,7 @@ h1 { margin: 0; font-size: clamp(2.2rem, 4.2vw, 3.6rem); font-weight: 550; lette
 }
 .exchange-rate-main { min-width: 0; }
 .exchange-rate-main .eyebrow { margin-bottom: 0.45rem; color: #7a8a80; }
-.exchange-rate-main h2 { margin: 0; color: var(--petrol-dark); font-size: clamp(1.25rem, 2.2rem, 1.7rem); font-weight: 650; letter-spacing: -0.04em; }
+.exchange-rate-main h2 { margin: 0; color: var(--petrol-dark); font-size: clamp(1.25rem, 2.2vw, 1.7rem); font-weight: 650; letter-spacing: -0.04em; }
 .exchange-rate-main h2 span { color: #8b9c91; font-weight: 400; }
 .exchange-rate-meta { margin: 0.45rem 0 0; color: #78837c; font-size: 0.72rem; }
 .exchange-rate-error { margin: 0.35rem 0 0; color: #8a6136; font-size: 0.7rem; }

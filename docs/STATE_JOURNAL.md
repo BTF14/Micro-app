@@ -1,3 +1,13 @@
+# 2026-11-07 UTC — corrección de disposición de #204 y estado de main
+
+- Verificación adicional en main `fc332946a9128e92ce39a3eb1ef1ee7ebd261598`: existen `inventory-counts.ts`, `inventory-locks.ts`, `catalog.ts`, `catalog-write.ts` e `inventory-read.ts`. La sección histórica del backlog que decía que faltaban inventory-counts/locks está supersedida.
+- Main `inventory-counts.integration.test.ts` ya tiene fixture isolation más completa que PR #204: `beforeEach` crea warehouse y product por test; `seedInventoryBalanceFor` registra el movimiento correspondiente en el ledger. #204 probablemente está supersedida; cerrar solo después de comparar el diff completo y confirmar que no queda comportamiento único.
+- PR #200 continúa divergida del main actual (37 ahead/14 behind; mergeable=false) y sus migraciones 0005–0010 chocan con la secuencia canónica 0005–0016. No importar ni rebasar la rama completa.
+- PR #250 sigue validada en SHA `081ec1026f4bda889a633bb3fcbe420433e13336` con 6/6 workflows exactos; el fix BCV y su integración PostgreSQL están completos en la rama, pero no integrados.
+- La recuperación debe comparar las PR #200/#204/#205/#207–#211 contra el código ya integrado por #244–#248 antes de portar o cerrar. Preservar solo cambios únicos comprobados.
+
+---
+
 # 2026-11-07 UTC — recuperación de PR apiladas y BCV
 
 - GitHub main `fc332946a9128e92ce39a3eb1ef1ee7ebd261598`; 27 PR abiertas en consulta directa.

@@ -1,3 +1,17 @@
+## Continuidad inmediata — estado corregido 2026-11-07 UTC
+
+Main `c4be53ea3247c69206a79ebe5fa2f875a4f9aac4`; 19 PR abiertas. #249 y #252 están fusionadas. #218–#226 cerradas como supersedidas con evidencia. #252 integró la prueba de 413 para bootstrap oversized sin Content-Length; exact HEAD CI 10/10 workflows SUCCESS, con reintento del job CI por colisión DDL transitoria no relacionada en catalog-write (segundo intento 32/32 pasos success).
+
+### Frentes activos
+- **#251 auth retention:** Draft, HEAD `2a0c685a2348af87f76417b4f3ac0f77a70cbb5d`, 10/10 workflows PR SUCCESS + 2 push scans SUCCESS. Cron horario de limpieza >48 h, preview skip, pruebas PostgreSQL y grants runtime. No mergear/activar hasta que Neon main tenga bootstrap table y roles/grants verificados.
+- **BCV #227/#250:** mantener como fuente; #250 exact HEAD `081ec1026f4bda889a633bb3fcbe420433e13336` pasó 6 workflows e integración PostgreSQL real mañana→hoy. La base #227 depende de #226 cerrado. Reconstruir código/API/UI/cron sobre base actual y conservar el fix; no fusionar el stack antiguo.
+- **Checkout #232/#233:** main tiene money engine, catalog panel/product form y migraciones 0014/0015; `sales-checkout.ts` aún no está en main. Revisar el diseño #232 y portar el handler transaccional único de #233 después de auditar dependencias.
+
+### Neon rehearsal — evidencia solo lectura
+Proyecto `restless-fire-99110035`; rama `rehearsal-baseline-20261107` (`br-curly-poetry-b7dxsddm`) parentada a Neon main (`br-summer-math-b7297a60`). Huella en ambas: 133 columnas, 204 constraints (98 sin NOT NULL + 106 NOT NULL), 46 índices, 17 relaciones, 15 tablas. En rehearsal, los logins `microapp_migrator` y `microapp_runtime` conectan; migrator tiene USAGE/CREATE; runtime solo USAGE y cero grants de tabla antes de aplicar migraciones. 15 tablas, 46 índices y 2 sequences son propiedad de migrator. No existe ledger ni `auth_bootstrap_attempts`; no hay migraciones 0003–0016 aplicadas. Neon main sigue intacta, sin roles de aplicación.
+
+El siguiente paso de base de datos requiere un runner protegido que ejecute `adopt-baseline.sh apply` y `migrate.sh` en esa rama, no SQL manual. El repositorio no tiene secret/entorno de rehearsal ni workflow de release configurado. No leer/rotar secretos ni escribir Neon sin autorización específica. No pedir terminal/capturas/TinyFish al usuario como workaround.
+
 ## Continuidad inmediata — reconciliación de stack y BCV — 2026-11-07 UTC
 
 Fuente de verdad: GitHub consultado en vivo; main `fc332946a9128e92ce39a3eb1ef1ee7ebd261598`; 28 PR abiertas. El snapshot anterior de 25 PR quedó obsoleto.

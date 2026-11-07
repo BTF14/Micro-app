@@ -16,7 +16,8 @@ Integrate the official BCV USD/VES reference rate at zero additional provider co
 - Stream-limit the response to 2 MB, validate content type, final origin, UTF-8, official USD value and explicit effective date.
 - Store decimal strings in PostgreSQL `NUMERIC(18,8)`; use the existing migration 0013 already in main, do not duplicate or renumber it.
 - Use `(source, effective_date)` uniqueness for idempotency. A future row must not prevent inserting a missing earlier date.
-- Expose bounded latest/history endpoints; latest excludes future-effective rows and history labels them scheduled.
+- Expose bounded latest/history endpoints; weekdays select today's effective row, weekends select the nearest next-business-day row, and history labels future rows scheduled.
+- Fail closed on weekday bank holidays until an authoritative Venezuelan bank-holiday calendar is implemented; never guess or apply a future rate to a normal business weekday.
 - Display rate/date/source/freshness in the dashboard; convert catalog prices only with a current validated rate.
 - Add one weekday Cron at 18:00 Caracas (22:00 UTC), preserving #251's hourly auth-retention Cron and preview skip.
 - Test PostgreSQL persistence and API behavior with both admin and the actual disposable `microapp_runtime` login.
@@ -24,7 +25,8 @@ Integrate the official BCV USD/VES reference rate at zero additional provider co
 ## Acceptance criteria
 
 - [ ] API source parser fixtures and bounded streaming tests pass.
-- [ ] PostgreSQL integration verifies tomorrow-first/today-second, same-date idempotency, latest endpoint selection, and scheduled history status.
+- [ ] PostgreSQL integration verifies next-business-day-first/today-second, same-date idempotency, weekend latest selection, and scheduled history status.
+- [ ] Weekday bank-holiday handling has an authoritative calendar before POS conversion is enabled for those dates.
 - [ ] Runtime-role integration passes without broadening migration 0013 grants.
 - [ ] Dashboard displays exact decimal/date/freshness and catalog conversion uses shared exact-money arithmetic.
 - [ ] Unavailable/stale rates never produce a VES conversion or third-party fallback.

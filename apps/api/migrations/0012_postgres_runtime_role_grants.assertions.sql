@@ -33,6 +33,8 @@ BEGIN
     OR NOT pg_catalog.has_table_privilege('microapp_runtime','public.auth_sessions','INSERT')
     OR NOT pg_catalog.has_column_privilege('microapp_runtime','public.auth_sessions','revoked_at','UPDATE')
     OR NOT pg_catalog.has_column_privilege('microapp_runtime','public.auth_rate_limits','updated_at','SELECT')
+    OR NOT pg_catalog.has_table_privilege('microapp_runtime','public.auth_rate_limits','DELETE')
+    OR NOT pg_catalog.has_table_privilege('microapp_runtime','public.auth_bootstrap_attempts','DELETE')
     OR NOT pg_catalog.has_column_privilege('microapp_runtime','public.products','price_usd','UPDATE')
     OR NOT pg_catalog.has_column_privilege('microapp_runtime','public.inventory_counts','status','UPDATE')
     OR NOT pg_catalog.has_column_privilege('microapp_runtime','public.inventory_balances','on_hand_quantity','UPDATE')

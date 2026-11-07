@@ -41,6 +41,7 @@ const googleEnv = {
 const suite = describe.skipIf(!databaseUrl)("authentication rate limiting against PostgreSQL", () => {
   let cleanupClient: Client;
   const cleanupKeys: string[] = [];
+  const cleanupRateLimitHashes: string[] = [];
   const cleanupBootstrapHandles: string[] = [];
 
   beforeAll(async () => {
@@ -49,7 +50,10 @@ const suite = describe.skipIf(!databaseUrl)("authentication rate limiting agains
   });
 
   afterAll(async () => {
-    const hashes = await Promise.all(cleanupKeys.map((key) => hashAuthRateLimitKey(key, testPepper)));
+    const hashes = [
+      ...cleanupRateLimitHashes,
+      ...await Promise.all(cleanupKeys.map((key) => hashAuthRateLimitKey(key, testPepper))),
+    ];
     if (hashes.length > 0) {
       await cleanupClient.query(
         "DELETE FROM auth_rate_limits WHERE key_hash = ANY($1::char(64)[])",
@@ -129,8 +133,17 @@ const suite = describe.skipIf(!databaseUrl)("authentication rate limiting agains
       [oldHandleHash, oldStateHash, freshHandleHash, freshStateHash],
     );
 
-    const deleted = await withDatabaseClient(databaseUrl, (client) => cleanupExpiredAuthRecords(client));
-    expect(deleted).toMatchObject({ rateLimitBucketsDeleted: 1, bootstrapAttemptsDeleted: 1 });
+    // Preview invocations must be a no-op and must not open a database client.
+    const scheduledApp = app as typeof app & {
+      scheduled: (controller: unknown, env: { APP_ENV?: "production" | "preview"; DATABASE_URL?: string }) => Promise<void>;
+    };
+    await expect(scheduledApp.scheduled({}, { APP_ENV: "preview" })).resolves.toBeUndefined();
+
+    // Exercise the real Worker scheduled entrypoint with the actual runtime
+    // login used by this test invocation, not only the helper function.
+    await scheduledApp.scheduled({}, { APP_ENV: "production", DATABASE_URL: databaseUrl });
+    // The scheduled handler intentionally returns no row counts; the rows
+    // below prove it invoked the production cleanup against PostgreSQL.
 
     const rateLimitRows = await cleanupClient.query<{ key_hash: string }>(
       "SELECT key_hash FROM auth_rate_limits WHERE key_hash = ANY($1::char(64)[])",
@@ -144,6 +157,54 @@ const suite = describe.skipIf(!databaseUrl)("authentication rate limiting agains
     );
     expect(bootstrapRows.rows.map((row) => row.handle_hash.trim())).toEqual([freshHandleHash]);
   });
+  it("deletes no more than 500 expired rows per table in one scheduled run", async () => {
+    const prefix = crypto.randomUUID().replace(/-/g, "");
+    const rateHashes = Array.from({ length: 501 }, (_, index) =>
+      `${prefix}${index.toString(16).padStart(32, "0")}`,
+    );
+    const handlePrefix = crypto.randomUUID().replace(/-/g, "");
+    const statePrefix = crypto.randomUUID().replace(/-/g, "");
+    const handleHashes = Array.from({ length: 501 }, (_, index) =>
+      `${handlePrefix}${index.toString(16).padStart(32, "0")}`,
+    );
+    const stateHashes = Array.from({ length: 501 }, (_, index) =>
+      `${statePrefix}${index.toString(16).padStart(32, "0")}`,
+    );
+    cleanupRateLimitHashes.push(...rateHashes);
+    cleanupBootstrapHandles.push(...handleHashes);
+
+    await cleanupClient.query(
+      `INSERT INTO auth_rate_limits (key_hash, window_started_at, attempts, updated_at)
+       SELECT key_hash, now() - interval '60 hours', 1, now() - interval '60 hours'
+         FROM unnest($1::char(64)[]) AS fixtures(key_hash)`,
+      [rateHashes],
+    );
+    await cleanupClient.query(
+      `INSERT INTO auth_bootstrap_attempts
+         (handle_hash, state_hash, organization_name, organization_slug, expires_at, created_at)
+       SELECT handle_hash, state_hash, 'Retention Batch Fixture', 'retention-batch-fixture',
+              now() - interval '60 hours', now() - interval '72 hours'
+         FROM unnest($1::char(64)[], $2::char(64)[]) AS fixtures(handle_hash, state_hash)`,
+      [handleHashes, stateHashes],
+    );
+
+    const scheduledApp = app as typeof app & {
+      scheduled: (controller: unknown, env: { APP_ENV?: "production" | "preview"; DATABASE_URL?: string }) => Promise<void>;
+    };
+    await scheduledApp.scheduled({}, { APP_ENV: "production", DATABASE_URL: databaseUrl });
+
+    const remainingRateLimits = await cleanupClient.query<{ count: string }>(
+      "SELECT count(*)::text AS count FROM auth_rate_limits WHERE key_hash = ANY($1::char(64)[])",
+      [rateHashes],
+    );
+    const remainingBootstrapAttempts = await cleanupClient.query<{ count: string }>(
+      "SELECT count(*)::text AS count FROM auth_bootstrap_attempts WHERE handle_hash = ANY($1::char(64)[])",
+      [handleHashes],
+    );
+    expect(Number(remainingRateLimits.rows[0]?.count)).toBe(1);
+    expect(Number(remainingBootstrapAttempts.rows[0]?.count)).toBe(1);
+  });
+
   it("enforces the Google OAuth start limit and returns Retry-After", async () => {
     const ip = "198.51.100.40";
     cleanupKeys.push(`google:start:${ip}`);

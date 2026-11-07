@@ -39,7 +39,7 @@ async function readBcvHtmlWithinLimit(response: Response): Promise<string> {
   if (!response.body) throw new Error("BCV_HTML_SIZE_INVALID");
 
   const reader = response.body.getReader();
-  const decoder = new TextDecoder("utf-8", { fatal: true });
+  const decoder = new TextDecoder("utf-8", { fatal: true, ignoreBOM: false });
   let bytesRead = 0;
   let html = "";
   try {

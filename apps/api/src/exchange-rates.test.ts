@@ -30,6 +30,14 @@ describe("BCV official HTML parser", () => {
     expect(parseBcvOfficialRate(html, NOW).rate).toBe("1234.56789012");
   });
 
+  it("parses the full Spanish date form with de and weekday", () => {
+    const html = OFFICIAL_PAGE.replace(
+      "Jueves, 05 Noviembre 2026",
+      "Lunes, 09 de noviembre de 2026",
+    );
+    expect(parseBcvOfficialRate(html, NOW).effectiveDate).toBe("2026-11-09");
+  });
+
   it("accepts the next effective date when BCV publishes in advance", () => {
     const html = OFFICIAL_PAGE.replace("05 Noviembre 2026", "06 Noviembre 2026");
     expect(parseBcvOfficialRate(html, NOW).effectiveDate).toBe("2026-11-06");

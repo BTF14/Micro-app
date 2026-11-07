@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
-import { fetchBcvOfficialRate, parseBcvOfficialRate, persistBcvOfficialRate, type BcvOfficialRate } from "./exchange-rates";
+import { fetchBcvOfficialRate, findApplicableBcvRate, parseBcvOfficialRate, persistBcvOfficialRate, type BcvOfficialRate } from "./exchange-rates";
 import type { DatabaseClient } from "./database";
 
 const NOW = new Date("2026-11-05T12:00:00-04:00");
@@ -52,9 +52,14 @@ describe("BCV official HTML parser", () => {
       .toThrow("BCV_RATE_FORMAT_INVALID");
   });
 
-  it("rejects an implausibly old or future effective date", () => {
+  it("accepts a next-business-day rate published before a weekend", () => {
+    const mondayPage = OFFICIAL_PAGE.replace("05 Noviembre 2026", "09 Noviembre 2026");
+    expect(parseBcvOfficialRate(mondayPage, NOW).effectiveDate).toBe("2026-11-09");
+  });
+
+  it("rejects implausibly old or distant future effective dates", () => {
     const oldPage = OFFICIAL_PAGE.replace("05 Noviembre 2026", "01 Enero 2026");
-    const futurePage = OFFICIAL_PAGE.replace("05 Noviembre 2026", "10 Noviembre 2026");
+    const futurePage = OFFICIAL_PAGE.replace("05 Noviembre 2026", "20 Noviembre 2026");
     expect(() => parseBcvOfficialRate(oldPage, NOW)).toThrow("BCV_EFFECTIVE_DATE_OUT_OF_RANGE");
     expect(() => parseBcvOfficialRate(futurePage, NOW)).toThrow("BCV_EFFECTIVE_DATE_OUT_OF_RANGE");
   });
@@ -65,6 +70,37 @@ describe("BCV official HTML parser", () => {
   });
 });
 
+
+describe("BCV applicable-date selection", () => {
+  it("selects the next effective date on a Caracas weekend", async () => {
+    const statements: string[] = [];
+    const client = {
+      query: async <Row = unknown>(statement: string) => {
+        statements.push(statement);
+        return { rows: [{ rate: "895.10000000", effective_date: "2026-11-09", fetched_at: "2026-11-06T22:00:00Z", validation_status: "valid" }] as Row[] };
+      },
+    } as unknown as DatabaseClient;
+
+    const selected = await findApplicableBcvRate(client, new Date("2026-11-07T12:00:00-04:00"));
+    expect(selected?.effective_date).toBe("2026-11-09");
+    expect(statements[0]).toContain("effective_date > $2::date");
+    expect(statements[0]).toContain("ORDER BY effective_date ASC");
+  });
+
+  it("never substitutes a future rate for a missing rate on a weekday", async () => {
+    const statements: string[] = [];
+    const client = {
+      query: async <Row = unknown>(statement: string) => {
+        statements.push(statement);
+        return { rows: [] as Row[] };
+      },
+    } as unknown as DatabaseClient;
+
+    await findApplicableBcvRate(client, new Date("2026-11-05T12:00:00-04:00"));
+    expect(statements[0]).toContain("effective_date <= $2::date");
+    expect(statements[0]).toContain("ORDER BY effective_date DESC");
+  });
+});
 
 describe("BCV effective-date persistence", () => {
   it("stores today's rate even when tomorrow's rate was stored first", async () => {

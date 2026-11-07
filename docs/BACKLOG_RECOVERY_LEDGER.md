@@ -1,12 +1,21 @@
-# Live recovery correction — 2026-11-07 UTC
+# Live recovery ledger — 2026-11-07 UTC
 
-- Main `c4be53ea3247c69206a79ebe5fa2f875a4f9aac4`; 19 PR abiertas. #249/#252 merged. #218–#226 closed as superseded after file-level provenance checks. Unique #218 cleanup is retained in #251; #220 route-level body regression merged in #252.
-- #251 is Draft at HEAD `2a0c685a2348af87f76417b4f3ac0f77a70cbb5d`; 10/10 PR workflows + 2 push security scans succeeded. Do not merge until Neon main has `auth_bootstrap_attempts` and the dedicated runtime role/grants are proven.
-- #227/#250 remain open as BCV source snapshots; #250's exact SHA `081ec1026f4bda889a633bb3fcbe420433e13336` passed 6 workflows including real PostgreSQL tomorrow→today/idempotency. Do not merge the old stacked base.
-- #228–#231 functionality is largely already in main: exact decimal package, no-discount migration 0014, catalog UI, product form. #232 design and #233 checkout handler remain to be audited; main does not yet have `apps/api/src/sales-checkout.ts`.
-- #200 remains divergent and must not be merged wholesale. #204/#205/#207–#210 are likely superseded; finish remaining test/workflow/doc comparison before closure. Current open PR count includes those still-open legacy stacks.
-- Neon rehearsal branch is read-only verified: schema fingerprint matches main (133 columns, 204 constraints = 98 non-NOT-NULL + 106 NOT NULL, 46 indexes, 17 relations, 15 tables). App roles exist only in rehearsal; migrator login has public CREATE, runtime login has no table grants yet. 15 tables/46 indexes/2 sequences are owned by migrator. No ledger, auth bootstrap attempts or branch-inventory schema yet. No writes have been executed.
-- No repository secret/workflow currently exists to run the baseline adoption + migration runner against Neon rehearsal. Do not paste migrations manually via SQL; add a protected runner only after explicit authorization for the rehearsal credential/environment.
+- Main: `c4be53ea3247c69206a79ebe5fa2f875a4f9aac4`; GitHub open PR count: **21**.
+- #251 auth-retention: Draft, HEAD `7c6df0016834e2e6f2ca4b4d062c94995e756662`; 11/11 PR workflows + 2/2 push security scans SUCCESS. Cleanup uses 48-hour retention, max 500 rows/table/run, `FOR UPDATE SKIP LOCKED`, production-only Cron, preview skip, and admin/runtime PostgreSQL integration. Neon main still lacks bootstrap table and runtime role/grants; do not merge or activate.
+- #255 BCV recovery: Draft, HEAD `0ccd2b814a6c581132d761c06ee52f86514979f4`, base #251 HEAD `7c6df0016834e2e6f2ca4b4d062c94995e756662`; mergeable. Exact-HEAD workflows are running; no green claim yet. Includes #250's future-first/today-second fix, bounded source parser, current/history endpoints, UI, weekday Cron, weekend next-business-day rule and admin/runtime PostgreSQL integration.
+- #254 closed as a duplicate recovery attempt; all code/docs copied into #255. #218–#226 closed as superseded after file-level recovery; #218's unique cleanup is in #251. #227 remains open as the source/base for money/catalog/checkout #228–#233. #250 remains a historical source; its fix is present in #255.
+- BCV edge policy: weekdays select today's effective date; Saturday/Sunday select nearest future effective date (next business day). Never skip a stale nearest future row. Allow future effective dates up to 7 days for long weekends. Weekday bank holidays have no authoritative calendar yet: fail closed and disable VES conversion until implemented.
+- Migration 0013 is already in GitHub main and is not duplicated. Neon rehearsal is read-only verified but has no baseline ledger, no bootstrap table, no warehouses/counts, and runtime grants are not applied. Neon main untouched.
+- PR #253 is the current documentation reconciliation branch. Production remains **NOT READY**. No production secrets, Cloudflare settings, DNS, billing or real data were changed.
+
+## Recovery priorities
+
+1. Finish all exact-HEAD checks and independent review on #255; fix every failure before marking Ready.
+2. Keep #251 Draft until Neon rehearsal/adoption, schema and runtime grants are proven.
+3. Recover #228–#233 on current code in dependency order, preserving money/checkout behavior and no-discount policy.
+4. Reconstruct #200's unique inventory changes on current main; do not merge its divergent branch wholesale.
+5. Close #227/#250 only after downstream dependents have a current base and their unique changes are preserved.
+
 
 ---
 

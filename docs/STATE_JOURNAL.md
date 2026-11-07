@@ -1,3 +1,14 @@
+# 2026-11-07 UTC — procedencia de migraciones de inventario/security
+
+- #205: idempotency_key/request_hash, constraint, índice parcial, handler y los 21 nombres de pruebas de la rama están presentes en main; main tiene 24 pruebas de conteos.
+- #207: SQL append-only audit blob idéntico a main 0008; assertion solo cambia comentario de filename.
+- #208: SQL own-shift roles idéntico a main 0007.
+- #209: SQL count-ledger validation idéntico a main 0009; assertion solo cambia comentario de filename.
+- #210: SQL balance↔ledger coupling idéntico a main 0010; assertion solo cambia comentario de filename.
+- Revisar todavía tests/workflows/docs y dependencias downstream antes de cerrar estas PR como supersedidas. No cerrar por título ni solo por migración idéntica.
+
+---
+
 # 2026-11-07 UTC — delta único de limpieza de auth en #218
 
 - Main ya tiene el handoff OAuth #215 vía #240 y el rate limiter canónico #213. No reintroducir la copia antigua de #214/#215, la migración duplicada 0010 ni `AUTH_RATE_LIMIT_HMAC_KEY`.

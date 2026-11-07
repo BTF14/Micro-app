@@ -26,4 +26,4 @@ APP_ENV = "preview"
 
 # Prune expired authentication metadata hourly; preview environments are skipped in index.ts.
 [triggers]
-crons = ["17 * * * *"]
+crons = ["17 * * * *", "0 22 * * 1-5"]

@@ -6,6 +6,7 @@ const BCV_SOURCE_URL = "https://www.bcv.org.ve/";
 const BCV_SOURCE_ID = "BCV_OFFICIAL_HTML_V1";
 const MAX_BCV_HTML_BYTES = 2_000_000;
 const MAX_EFFECTIVE_DATE_AGE_DAYS = 10;
+const MAX_EFFECTIVE_DATE_FUTURE_DAYS = 7;
 
 export type BcvOfficialRate = {
   rate: string;
@@ -125,7 +126,10 @@ function validateEffectiveDate(effectiveDate: string, now: Date): void {
   ) / 86_400_000;
   // BCV can publish tomorrow's effective rate in advance. Reject implausible
   // future dates and old cached pages rather than presenting them as current.
-  if (differenceDays > 1 || differenceDays < -MAX_EFFECTIVE_DATE_AGE_DAYS) {
+  // Friday/holiday publications may carry the next business day's value.
+  // Keep a bounded horizon so legitimate long weekends work without accepting
+  // implausibly distant future dates.
+  if (differenceDays > MAX_EFFECTIVE_DATE_FUTURE_DAYS || differenceDays < -MAX_EFFECTIVE_DATE_AGE_DAYS) {
     throw new Error("BCV_EFFECTIVE_DATE_OUT_OF_RANGE");
   }
 }
@@ -212,6 +216,40 @@ export async function syncBcvOfficialRate(databaseUrl: string | undefined): Prom
   return withDatabaseClient(databaseUrl, (client) => persistBcvOfficialRate(client, rate));
 }
 
+function isCaracasWeekend(now: Date): boolean {
+  const weekday = new Intl.DateTimeFormat("en-US", {
+    timeZone: "America/Caracas",
+    weekday: "short",
+  }).format(now);
+  return weekday === "Sat" || weekday === "Sun";
+}
+
+/**
+ * On Saturday/Sunday the applicable BCV rate is the next business-day
+ * effective rate published in advance. On weekdays, never substitute a
+ * future rate for a missing today's rate; fail closed as stale instead.
+ * Weekday bank-holiday calendar support remains a separate acceptance gate.
+ */
+export async function findApplicableBcvRate(
+  client: DatabaseClient,
+  now = new Date(),
+): Promise<(StoredRateRow & { fetched_at: string }) | null> {
+  const isWeekend = isCaracasWeekend(now);
+  const comparison = isWeekend ? ">" : "<=";
+  const ordering = isWeekend ? "ASC" : "DESC";
+  const result = await client.query<StoredRateRow & { fetched_at: string }>(
+    `SELECT rate::text AS rate, effective_date::text AS effective_date,
+            fetched_at::text AS fetched_at, validation_status
+       FROM public.exchange_rates
+      WHERE source = $1 AND validation_status = 'valid'
+        AND effective_date ${comparison} $2::date
+      ORDER BY effective_date ${ordering}, fetched_at DESC
+      LIMIT 1`,
+    [BCV_SOURCE_ID, caracasDate(now)],
+  );
+  return result.rows[0] ?? null;
+}
+
 export function registerExchangeRateRoutes(app: Hono<{ Bindings: Bindings }>): void {
   app.get("/api/exchange-rates/history", async (c) => {
     const rawLimit = c.req.query("limit") ?? "30";
@@ -249,18 +287,9 @@ export function registerExchangeRateRoutes(app: Hono<{ Bindings: Bindings }>): v
 
   app.get("/api/exchange-rates/latest", async (c) => {
     try {
-      const row = await withDatabaseClient(c.env.DATABASE_URL, async (client) => {
-        const result = await client.query<StoredRateRow & { fetched_at: string }>(
-          `SELECT rate::text AS rate, effective_date::text AS effective_date,
-                  fetched_at::text AS fetched_at
-             FROM public.exchange_rates
-            WHERE source = $1 AND validation_status = 'valid' AND effective_date <= $2::date
-            ORDER BY effective_date DESC, fetched_at DESC
-            LIMIT 1`,
-          [BCV_SOURCE_ID, caracasDate(new Date())],
-        );
-        return result.rows[0] ?? null;
-      });
+      const row = await withDatabaseClient(c.env.DATABASE_URL, (client) =>
+        findApplicableBcvRate(client),
+      );
       if (!row) {
         return c.json({ error: "BCV_RATE_UNAVAILABLE", message: "Todavía no hay una tasa BCV validada." }, 503);
       }

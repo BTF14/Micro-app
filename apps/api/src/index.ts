@@ -8,6 +8,7 @@ import { registerInventoryReadRoutes } from "./inventory-read";
 import { registerCatalogWriteRoutes } from "./catalog-write";
 import { withDatabaseClient } from "./database";
 import { cleanupExpiredAuthRecords } from "./auth-rate-limit";
+import { registerExchangeRateRoutes, syncBcvOfficialRate } from "./exchange-rates";
 import type { Bindings } from "./bindings";
 
 const app = new Hono<{ Bindings: Bindings }>();
@@ -85,6 +86,7 @@ registerCatalogRoutes(app);
 registerInventoryCountRoutes(app);
 registerInventoryReadRoutes(app);
 registerCatalogWriteRoutes(app);
+registerExchangeRateRoutes(app);
 
 app.get("/health", (c) =>
   c.json({
@@ -109,12 +111,24 @@ app.onError((_error, c) => {
 });
 
 export default Object.assign(app, {
-  async scheduled(_controller: ScheduledController, env: Bindings): Promise<void> {
+  async scheduled(controller: ScheduledController, env: Bindings): Promise<void> {
     // Worker previews must never connect to the application database.
     if (env.APP_ENV !== "production") return;
 
-    await withDatabaseClient(env.DATABASE_URL, (client) =>
-      cleanupExpiredAuthRecords(client),
-    );
+    if (controller.cron === "17 * * * *") {
+      await withDatabaseClient(env.DATABASE_URL, (client) =>
+        cleanupExpiredAuthRecords(client),
+      );
+      return;
+    }
+
+    if (controller.cron === "0 22 * * 1-5") {
+      try {
+        await syncBcvOfficialRate(env.DATABASE_URL);
+      } catch {
+        // Never log provider payloads, database URLs, or credentials.
+        console.error("BCV official rate synchronization failed");
+      }
+    }
   },
 });

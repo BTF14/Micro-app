@@ -11,7 +11,7 @@
 GitHub reports **27 open PRs** and main `fc332946a9128e92ce39a3eb1ef1ee7ebd261598`. This supersedes the 2026-11-06 snapshot count and refs above.
 
 - #200 HEAD `464ca08b9020fad128cc9c8a321568493d484517` is 37 ahead / 14 behind current main and GitHub reports `mergeable=false`. Current main already has canonical migrations 0005–0016; #200 independently assigns inventory migration 0005 and shifts later migrations. Many auth/catalog/tenant/workflow/lockfile paths overlap. Reconstruct unique functionality on current main; do not merge or rebase this branch wholesale.
-- #204 HEAD `07a5a41c0f5f5c36fb89a5c5950796493d56eb20` is 8 ahead / 5 behind current #200 head, with one overlapping file (`apps/api/src/inventory-counts.integration.test.ts`). Preserve its per-test fixture isolation and reapply it to the current #200 version while retaining newer tests.
+- #204 HEAD `07a5a41c0f5f5c36fb89a5c5950796493d56eb20` is 8 ahead / 5 behind current #200 head, with one changed file (`apps/api/src/inventory-counts.integration.test.ts`). Its per-test warehouse/product isolation is already present in stronger form on current main; verify the full diff and close as superseded only if no unique behavior remains.
 - #227 HEAD `83cf96b7fcb7b0e304f676d21ab721de61364a59` has 13 successful workflow runs, but remains Draft and depends on the older migration/auth stack.
 - #250 is a distinct BCV regression fix stacked on #227: HEAD `081ec1026f4bda889a633bb3fcbe420433e13336`, 9 ahead / 0 behind #227, six exact-HEAD workflow runs success. Its disposable PostgreSQL integration test verifies tomorrow-first/today-second, Caracas effective date and same-date idempotency. It remains Draft with no formal review.
 - #218 was retargeted from closed #215 to active #211 (51 ahead / 0 behind). #214 was superseded by merged #213; do not restore its competing rate-limit module or HMAC secret dependency. #215's unique server-side bootstrap handoff remains preserved in #218 and must be ported onto #213's canonical `consumeAuthRateLimit` before integration.
@@ -102,12 +102,14 @@ Changed filenames were fetched from GitHub's paginated PR file listing. These ar
 | #225 | 3 | Atomic migration test helper and workflow changes. |
 | #226 | 3 | Migration runner, its workflow, and operator documentation. |
 
-### Confirmed main-vs-source implementation gap
-- Current `main` does **not** contain `apps/api/src/inventory-counts.ts` or `apps/api/src/inventory-locks.ts`.
-- Current `main` does contain `branch-context.ts`, but it must be diffed against the source branch before reusing assumptions/signatures.
-- Current `main` has `0005_auth_bootstrap_attempts.sql`; it does not have the inventory `0005`.
-- `main` now contains the canonical 0001–0015 sequence, paired assertions, fail-closed runner and PostgreSQL role harness via PR #243. The application handlers/tests are the next recovery front.
-- #200 and #205 both modify the inventory `0005` migration. #205 adds `idempotency_key`, `request_hash`, a paired-nullability constraint, and a partial unique index. #200 contains the distinct balance-version/snapshot logic. These are compatible concepts but require one reviewed merged migration definition and tests.
+### Current main-vs-source implementation status — reconciled 2026-11-07
+
+The earlier statement that main lacked inventory handlers/locks is superseded by the later integration of PR #244 and the canonical migration chain. Live checks on current `main` (`fc332946a9128e92ce39a3eb1ef1ee7ebd261598`) confirmed:
+- `apps/api/src/inventory-counts.ts`, `inventory-locks.ts`, `catalog.ts`, `catalog-write.ts` and `inventory-read.ts` all exist on main.
+- Main's `inventory-counts.integration.test.ts` already uses `beforeEach`, creates a warehouse and product per test, and has `seedInventoryBalanceFor` that records fixture ledger movements. This is stronger/more complete than the old #204 fixture-isolation patch. #204 is likely superseded; compare its full diff before closing.
+- Main's canonical sequence is now 0001–0016: 0005 auth bootstrap, 0006 warehouse inventory, 0007 register-shift roles, 0008 audit append-only, 0009 count-ledger validation, 0010 balance-ledger coupling, 0011 runtime lock helpers, 0012 runtime grants, 0013 BCV precision/grants, 0014–0015 sales, 0016 inventory ledger read.
+- #200 still uses a conflicting sequence (inventory at 0005, roles at 0006, audit at 0007, count ledger at 0008, balance coupling at 0009, auth bootstrap at 0010). Its branch also overlaps current main across auth, catalog, tenant context, workflows, lockfile and inventory code. Do not port old migration files or branch snapshots wholesale.
+- #200/#204/#205/#207–#211 must now be reviewed as possible superseded source PRs against the integrated implementation. Preserve any demonstrably unique behavior/tests/docs; close only after file-level evidence and explicit comments. Do not assume every old PR still represents missing functionality.
 
 ### Integrated recovery PRs
 - PR #242 (backlog ledger) merged to `main` at `7a719d593248341aac86b1ded980d5bb9a6f94e8`.

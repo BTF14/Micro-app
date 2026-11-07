@@ -9,7 +9,7 @@
 
 ## Live recovery delta — 2026-11-07 UTC
 
-GitHub reports **27 open PRs** and main `fc332946a9128e92ce39a3eb1ef1ee7ebd261598`. This supersedes the 2026-11-06 snapshot count and refs above.
+GitHub reports **28 open PRs** and main `fc332946a9128e92ce39a3eb1ef1ee7ebd261598`. This supersedes the 2026-11-06 snapshot count and refs above.
 
 - #200 HEAD `464ca08b9020fad128cc9c8a321568493d484517` is 37 ahead / 14 behind current main and GitHub reports `mergeable=false`. Current main already has canonical migrations 0005–0016; #200 independently assigns inventory migration 0005 and shifts later migrations. Many auth/catalog/tenant/workflow/lockfile paths overlap. Reconstruct unique functionality on current main; do not merge or rebase this branch wholesale.
 - #204 HEAD `07a5a41c0f5f5c36fb89a5c5950796493d56eb20` is 8 ahead / 5 behind current #200 head, with one changed file (`apps/api/src/inventory-counts.integration.test.ts`). Its per-test warehouse/product isolation is already present in stronger form on current main; verify the full diff and close as superseded only if no unique behavior remains.

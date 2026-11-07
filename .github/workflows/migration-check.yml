@@ -4,7 +4,7 @@ on:
   push:
     branches: [main, feat/tenant-safe-schema, "feat/**", "work/**", "security/**"]
   pull_request:
-    branches: [main, "security/**", "feat/**"]
+    branches: [main, "security/**", "feat/**", "fix/**"]
 
 permissions:
   contents: read

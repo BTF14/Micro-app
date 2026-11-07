@@ -137,7 +137,7 @@ const suite = describe.skipIf(!databaseUrl)("authentication rate limiting agains
     const scheduledApp = app as typeof app & {
       scheduled: (controller: { cron?: string }, env: { APP_ENV?: "production" | "preview"; DATABASE_URL?: string }) => Promise<void>;
     };
-    await expect(scheduledApp.scheduled({}, { APP_ENV: "preview" })).resolves.toBeUndefined();
+    await expect(scheduledApp.scheduled({ cron: "17 * * * *" }, { APP_ENV: "preview" })).resolves.toBeUndefined();
 
     // Exercise the real Worker scheduled entrypoint with the actual runtime
     // login used by this test invocation, not only the helper function.

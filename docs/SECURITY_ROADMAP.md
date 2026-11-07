@@ -7,7 +7,7 @@
 - PR #252 está fusionada: ruta de bootstrap rechaza un body oversized sin Content-Length con 413; el body limiter compartido ya cubría el stream y UTF-8 inválido.
 - Neon main, verificada en vivo por SELECT: 15 tablas, sin `schema_migrations`, `auth_bootstrap_attempts`, `microapp_runtime` ni `microapp_migrator`. El ensayo tiene esos roles, pero runtime todavía carece de grants de tabla hasta aplicar 0003–0016. No hay evidencia de que el Worker de producción use el principal runtime correcto.
 - No hay workflow de release ni secret de rehearsal para ejecutar el runner de migraciones contra Neon. El proceso de producción debe seguir bloqueado hasta tener runner protegido, backup/restore, grants y smoke autenticado verificados.
-- #218–#226 fueron cerradas como supersedidas; los cambios útiles están en main/#251/#252. #227/#250 BCV aún requieren reconstrucción sobre base actual.
+- #218–#226 fueron cerradas como supersedidas; los cambios útiles están en main/#251/#252. #227 permanece reabierta solo como ancla temporal para #228–#233; su aplicación BCV y la corrección de #250 están recuperadas en #255. #250 y #254 están cerradas como supersedidas/duplicada.
 - No se modificaron secretos, Cloudflare dashboard, DNS, billing, datos reales ni Neon main. Producción **NOT READY**.
 
 ---

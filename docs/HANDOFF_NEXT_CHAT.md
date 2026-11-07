@@ -15,7 +15,7 @@ Fuente de verdad: GitHub consultado en vivo; main `fc332946a9128e92ce39a3eb1ef1e
 ### PR cerradas conservadas
 - #214: cerrada como supersedida por #213, que está fusionada en main. No reintroducir su módulo rate-limit ni su secreto HMAC alternativo.
 - #215: cerrada sin merge, pero el handoff OAuth server-side ya está integrado en main vía #240: migración main 0005 byte-identical a la antigua 0010 y flujo opaque handle/state hash/consumo atómico presente en `google-auth.ts`.
-- #218 fue retargeteada a la rama activa #211 (51 ahead/0 behind) solo para auditar procedencia. Su branch todavía contiene copias obsoletas de #214/#215 (`enforceAuthRateLimit`, migration 0010, google-auth antiguo) y no debe integrarse como está. Main ya usa #213 `consumeAuthRateLimit` y `readBodyWithinLimit`; verificar si quedan deltas de autorización únicos y cerrar #218 como supersedida si no.
+- #218 fue retargeteada a la rama activa #211 (51 ahead/0 behind) solo para auditar procedencia. Su branch contiene copias obsoletas de #214/#215 (`enforceAuthRateLimit`, migration 0010, google-auth antiguo) y no debe integrarse como está. El handoff y migration 0010 ya están en main vía #240; main usa #213 `consumeAuthRateLimit` y `readBodyWithinLimit`. Sí hay un delta útil: limpieza programada cada hora de `auth_rate_limits` y `auth_bootstrap_attempts` con retención de 48 h. Main solo poda oportunísticamente `auth_rate_limits` de más de 7 días. Portar el cleanup al módulo canónico, probar grants runtime y preview skip; solo después cerrar #218 como supersedida.
 
 ### Seguridad y límites
 - Neon main intacta. Ensayo `rehearsal-baseline-20261107` aún sin aplicar baseline ni migraciones 0003–0016; runtime grants posteriores siguen pendientes.

@@ -40,7 +40,7 @@ describe("BCV official HTML parser", () => {
 
   it("skips unrelated USD mentions and decodes Spanish date entities", () => {
     const html = OFFICIAL_PAGE
-      .replace("USD 894,88760000", "USD referencia general USD 894,88760000")
+      .replace("<p>USD</p><p>894,88760000</p>", "<p>USD</p><p>referencia general</p><p>USD</p><p>894,88760000</p>")
       .replace("Jueves, 05 Noviembre 2026", "Mi&eacute;rcoles, 04 de noviembre de 2026");
     expect(parseBcvOfficialRate(html, NOW)).toMatchObject({
       rate: "894.88760000",

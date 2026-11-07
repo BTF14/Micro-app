@@ -95,6 +95,20 @@ describe("BCV applicable-date selection", () => {
     expect(statements[0]).toContain("ORDER BY effective_date ASC");
   });
 
+  it("does not skip a stale nearest future rate to select a later date", async () => {
+    const statements: string[] = [];
+    const client = {
+      query: async <Row = unknown>(statement: string) => {
+        statements.push(statement);
+        return { rows: [{ rate: "895.10000000", effective_date: "2026-11-09", fetched_at: "2026-11-06T22:00:00Z", validation_status: "stale" }] as Row[] };
+      },
+    } as unknown as DatabaseClient;
+
+    const selected = await findApplicableBcvRate(client, new Date("2026-11-07T12:00:00-04:00"));
+    expect(selected?.validation_status).toBe("stale");
+    expect(statements[0]).not.toContain("validation_status = 'valid'");
+  });
+
   it("never substitutes a future rate for a missing rate on a weekday", async () => {
     const statements: string[] = [];
     const client = {

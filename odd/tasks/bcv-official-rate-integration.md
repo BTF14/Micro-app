@@ -1,6 +1,6 @@
 # ODD task: official BCV rate integration and effective-date correctness
 
-- Status: implementation on recovery branch; exact-HEAD CI and independent review pending; production blocked on Neon migration/runtime reconciliation
+- Status: implementation and exact-HEAD CI verified; manual technical review recorded in PR #255; external review and production gates pending
 - PR: #255 (stacked on #251)
 - Branch: `feat/bcv-official-rate-recovered-v2-20261107`
 - Risk: critical (financial rate selection and POS conversion)
@@ -24,15 +24,20 @@ Integrate the official BCV USD/VES reference rate at zero additional provider co
 
 ## Acceptance criteria
 
-- [ ] API source parser fixtures and bounded streaming tests pass.
-- [ ] PostgreSQL integration verifies next-business-day-first/today-second, same-date idempotency, weekend latest selection, scheduled history status, production Cron persistence and preview no-op.
+- [x] API source parser fixtures and bounded streaming tests pass on exact HEAD `4e9f01ab85fd767736f4f47f3e47ffefbe7efd88`.
+- [x] PostgreSQL integration verifies next-business-day-first/today-second, same-date idempotency, weekend latest selection, scheduled history status, production Cron persistence and preview no-op; 2/2 tests pass under admin and 2/2 under disposable `microapp_runtime`.
 - [ ] Weekday bank-holiday handling has an authoritative calendar before POS conversion is enabled for those dates.
-- [ ] Runtime-role integration passes without broadening migration 0013 grants.
-- [ ] Dashboard displays exact decimal/date/freshness and catalog conversion uses shared exact-money arithmetic.
-- [ ] Unavailable/stale rates never produce a VES conversion or third-party fallback.
-- [ ] CI, migration runner, backup restore, security, SAST, E2E, ODD validation and secret scans pass on the final exact HEAD.
-- [ ] Independent review completed.
+- [x] Runtime-role integration passes without broadening migration 0013 grants in disposable PostgreSQL CI; production grants remain unverified.
+- [x] Dashboard displays exact decimal/date/freshness and catalog conversion uses shared exact-money arithmetic; UI tests verify exact conversion.
+- [x] Unavailable/stale rates never produce a VES conversion or third-party fallback; `CatalogPanel` tests cover stale and unavailable states.
+- [x] CI, migration runner, backup restore, security, SAST, E2E, ODD validation and secret scans pass on exact HEAD `4e9f01ab85fd767736f4f47f3e47ffefbe7efd88` (10 PR workflows + 3 push runs).
+- [ ] Separate external reviewer approval completed; only manual review by this ChatGPT session is recorded.
 - [ ] Neon migration 0013, runtime login/ACLs, Cloudflare Worker identity and Cron are verified under the separate production gates.
+
+## Evidence and legal basis
+
+- BCV non-business-day selection follows Article 25 of Venezuela's VAT Law: the exchange rate for a taxable event on a non-financial business day is the rate in force on the immediately following business day. Reference copy of Official Gazette No. 6,507 Extraordinary (2020-01-29): https://www.ivecofi.net/informacion/legislacion/leyes/ley-impuesto-valor-agregado/titulo-iv. This is a technical reference, not legal/accounting advice.
+- Exact HEAD `4e9f01ab85fd767736f4f47f3e47ffefbe7efd88`: 10/10 PR workflows and 3/3 push runs SUCCESS; manual review comment on PR #255. No external review or production smoke test.
 
 ## Safety
 

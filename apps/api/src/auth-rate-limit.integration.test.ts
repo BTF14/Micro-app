@@ -1,6 +1,6 @@
 import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
 import { Client } from "pg";
-import { consumeAuthRateLimit, hashAuthRateLimitKey } from "./auth-rate-limit";
+import { cleanupExpiredAuthRecords, consumeAuthRateLimit, hashAuthRateLimitKey } from "./auth-rate-limit";
 import { withDatabaseClient } from "./database";
 
 // Exercise the same query contract with real PostgreSQL while keeping the
@@ -41,6 +41,7 @@ const googleEnv = {
 const suite = describe.skipIf(!databaseUrl)("authentication rate limiting against PostgreSQL", () => {
   let cleanupClient: Client;
   const cleanupKeys: string[] = [];
+  const cleanupBootstrapHandles: string[] = [];
 
   beforeAll(async () => {
     cleanupClient = new Client({ connectionString: databaseUrl });
@@ -53,6 +54,12 @@ const suite = describe.skipIf(!databaseUrl)("authentication rate limiting agains
       await cleanupClient.query(
         "DELETE FROM auth_rate_limits WHERE key_hash = ANY($1::char(64)[])",
         [hashes],
+      );
+    }
+    if (cleanupBootstrapHandles.length > 0) {
+      await cleanupClient.query(
+        "DELETE FROM auth_bootstrap_attempts WHERE handle_hash = ANY($1::char(64)[])",
+        [cleanupBootstrapHandles],
       );
     }
     await cleanupClient.end();
@@ -98,6 +105,45 @@ const suite = describe.skipIf(!databaseUrl)("authentication rate limiting agains
     expect(decision).toMatchObject({ allowed: true, attempts: 1, retryAfterSeconds: 0 });
   });
 
+  it("prunes only authentication records older than 48 hours using runtime grants", async () => {
+    const oldRateLimitKey = "integration:retention:old:" + crypto.randomUUID();
+    const freshRateLimitKey = "integration:retention:fresh:" + crypto.randomUUID();
+    cleanupKeys.push(oldRateLimitKey, freshRateLimitKey);
+    const [oldRateLimitHash, freshRateLimitHash, oldHandleHash, oldStateHash, freshHandleHash, freshStateHash] =
+      await Promise.all([
+        hashAuthRateLimitKey(oldRateLimitKey, testPepper),
+        hashAuthRateLimitKey(freshRateLimitKey, testPepper),
+        hashAuthRateLimitKey("bootstrap:old:" + crypto.randomUUID(), testPepper),
+        hashAuthRateLimitKey("state:old:" + crypto.randomUUID(), testPepper),
+        hashAuthRateLimitKey("bootstrap:fresh:" + crypto.randomUUID(), testPepper),
+        hashAuthRateLimitKey("state:fresh:" + crypto.randomUUID(), testPepper),
+      ]);
+    cleanupBootstrapHandles.push(oldHandleHash, freshHandleHash);
+
+    await cleanupClient.query(
+      "INSERT INTO auth_rate_limits (key_hash, window_started_at, attempts, updated_at) VALUES ($1, now() - interval '72 hours', 1, now() - interval '60 hours'), ($2, now(), 1, now())",
+      [oldRateLimitHash, freshRateLimitHash],
+    );
+    await cleanupClient.query(
+      "INSERT INTO auth_bootstrap_attempts (handle_hash, state_hash, organization_name, organization_slug, expires_at, created_at) VALUES ($1, $2, 'Expired Retention Fixture', 'expired-retention-fixture', now() - interval '60 hours', now() - interval '72 hours'), ($3, $4, 'Fresh Retention Fixture', 'fresh-retention-fixture', now() + interval '10 minutes', now())",
+      [oldHandleHash, oldStateHash, freshHandleHash, freshStateHash],
+    );
+
+    const deleted = await withDatabaseClient(databaseUrl, (client) => cleanupExpiredAuthRecords(client));
+    expect(deleted).toMatchObject({ rateLimitBucketsDeleted: 1, bootstrapAttemptsDeleted: 1 });
+
+    const rateLimitRows = await cleanupClient.query<{ key_hash: string }>(
+      "SELECT key_hash FROM auth_rate_limits WHERE key_hash = ANY($1::char(64)[])",
+      [[oldRateLimitHash, freshRateLimitHash]],
+    );
+    expect(rateLimitRows.rows.map((row) => row.key_hash.trim())).toEqual([freshRateLimitHash]);
+
+    const bootstrapRows = await cleanupClient.query<{ handle_hash: string }>(
+      "SELECT handle_hash FROM auth_bootstrap_attempts WHERE handle_hash = ANY($1::char(64)[])",
+      [[oldHandleHash, freshHandleHash]],
+    );
+    expect(bootstrapRows.rows.map((row) => row.handle_hash.trim())).toEqual([freshHandleHash]);
+  });
   it("enforces the Google OAuth start limit and returns Retry-After", async () => {
     const ip = "198.51.100.40";
     cleanupKeys.push(`google:start:${ip}`);

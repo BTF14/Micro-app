@@ -1,6 +1,6 @@
 # Estado vivo de seguridad — 2026-11-07 UTC (corregido)
 
-> Sustituye los snapshots antiguos de estado que aparecen debajo. Main actual: `c4be53ea3247c69206a79ebe5fa2f875a4f9aac4`.
+> Sustituye los snapshots antiguos de estado que aparecen debajo. Main actual: `a38463ea00415c7601d716132e70a29e381a2e34`.
 
 - Rate limiting OAuth canónico de #213 está integrado en `apps/api/src/auth-rate-limit.ts`, con UPSERT atómico PostgreSQL y pruebas de concurrencia/endpoint.
 - Limpieza horaria de 48 h para `auth_rate_limits` y `auth_bootstrap_attempts` está en PR #251, HEAD `2a0c685a2348af87f76417b4f3ac0f77a70cbb5d`; 10/10 workflows PR + 2 push scans SUCCESS. Sigue Draft y no se debe activar en producción hasta que Neon main tenga `auth_bootstrap_attempts`, login `microapp_runtime` y grants comprobados.
@@ -8,6 +8,7 @@
 - Neon main, verificada en vivo por SELECT: 15 tablas, sin `schema_migrations`, `auth_bootstrap_attempts`, `microapp_runtime` ni `microapp_migrator`. El ensayo tiene esos roles, pero runtime todavía carece de grants de tabla hasta aplicar 0003–0016. No hay evidencia de que el Worker de producción use el principal runtime correcto.
 - No hay workflow de release ni secret de rehearsal para ejecutar el runner de migraciones contra Neon. El proceso de producción debe seguir bloqueado hasta tener runner protegido, backup/restore, grants y smoke autenticado verificados.
 - #218–#226 fueron cerradas como supersedidas; los cambios útiles están en main/#251/#252. #227 permanece reabierta solo como ancla temporal para #228–#233; su aplicación BCV y la corrección de #250 están recuperadas en #255. #250 y #254 están cerradas como supersedidas/duplicada.
+- PR #256 integró una corrección de fixture de backup/restore sin tocar código de aplicación ni datos reales; los checks post-merge aún se ejecutan.
 - No se modificaron secretos, Cloudflare dashboard, DNS, billing, datos reales ni Neon main. Producción **NOT READY**.
 
 ---

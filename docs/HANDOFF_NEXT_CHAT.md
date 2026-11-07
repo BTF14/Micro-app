@@ -1,18 +1,44 @@
-## Continuidad inmediata — estado corregido 2026-11-07 UTC
+# Handoff operativo — 2026-11-07 UTC
 
-Main `c4be53ea3247c69206a79ebe5fa2f875a4f9aac4`; 19 PR abiertas. #249 y #252 están fusionadas. #218–#226 cerradas como supersedidas con evidencia. #252 integró la prueba de 413 para bootstrap oversized sin Content-Length; exact HEAD CI 10/10 workflows SUCCESS, con reintento del job CI por colisión DDL transitoria no relacionada en catalog-write (segundo intento 32/32 pasos success).
+## Estado actual y prioridades
 
-### Frentes activos
-- **#251 auth retention:** Draft, HEAD `2a0c685a2348af87f76417b4f3ac0f77a70cbb5d`, 10/10 workflows PR SUCCESS + 2 push scans SUCCESS. Cron horario de limpieza >48 h, preview skip, pruebas PostgreSQL y grants runtime. No mergear/activar hasta que Neon main tenga bootstrap table y roles/grants verificados.
-- **BCV #227/#250:** mantener como fuente; #250 exact HEAD `081ec1026f4bda889a633bb3fcbe420433e13336` pasó 6 workflows e integración PostgreSQL real mañana→hoy. La base #227 depende de #226 cerrado. Reconstruir código/API/UI/cron sobre base actual y conservar el fix; no fusionar el stack antiguo.
-- **Checkout #232/#233:** main tiene money engine, catalog panel/product form y migraciones 0014/0015; `sales-checkout.ts` aún no está en main. Revisar el diseño #232 y portar el handler transaccional único de #233 después de auditar dependencias.
+- GitHub main: `c4be53ea3247c69206a79ebe5fa2f875a4f9aac4`; 21 PR abiertas en consulta directa.
+- PR #251 auth retention: Draft, HEAD `7c6df0016834e2e6f2ca4b4d062c94995e756662`; 11/11 workflows PR y 2/2 push security scans SUCCESS. Incluye cleanup 48 h limitado a 500 filas por tabla, `SKIP LOCKED`, preview skip y pruebas PostgreSQL con `microapp_runtime`. No mergear ni activar hasta resolver Neon schema/runtime gate.
+- PR #255 BCV: Draft, HEAD `0ccd2b814a6c581132d761c06ee52f86514979f4`, base #251 HEAD `7c6df0016834e2e6f2ca4b4d062c94995e756662`, mergeable. CI exact-HEAD aún en ejecución; no asumir éxito. Reconstruye BCV de #227 y fix de #250 sobre la cadena actual, sin duplicar migration 0013.
+- #254 está cerrada como duplicado de recuperación; su código completo está copiado en #255. #218–#226 están cerradas como supersedidas tras recuperación/verificación. #218 cleanup se conserva en #251.
+- #227 permanece abierta porque sirve de base al stack money/catalog/checkout #228–#233. #250 sigue como fuente de la regresión mañana→hoy que #255 ya incorpora; no fusionar ramas antiguas.
+- PR #253 es esta reconciliación documental (Draft, base main `c4be53ea3247c69206a79ebe5fa2f875a4f9aac4`).
 
-### Neon rehearsal — evidencia solo lectura
-Proyecto `restless-fire-99110035`; rama `rehearsal-baseline-20261107` (`br-curly-poetry-b7dxsddm`) parentada a Neon main (`br-summer-math-b7297a60`). Huella en ambas: 133 columnas, 204 constraints (98 sin NOT NULL + 106 NOT NULL), 46 índices, 17 relaciones, 15 tablas. En rehearsal, los logins `microapp_migrator` y `microapp_runtime` conectan; migrator tiene USAGE/CREATE; runtime solo USAGE y cero grants de tabla antes de aplicar migraciones. 15 tablas, 46 índices y 2 sequences son propiedad de migrator. No existe ledger ni `auth_bootstrap_attempts`; no hay migraciones 0003–0016 aplicadas. Neon main sigue intacta, sin roles de aplicación.
+## Reglas BCV verificadas
 
-El siguiente paso de base de datos requiere un runner protegido que ejecute `adopt-baseline.sh apply` y `migrate.sh` en esa rama, no SQL manual. El repositorio no tiene secret/entorno de rehearsal ni workflow de release configurado. No leer/rotar secretos ni escribir Neon sin autorización específica. No pedir terminal/capturas/TinyFish al usuario como workaround.
+- BCV publica la tasa con fecha valor del siguiente día hábil; para sábado/domingo aplica la tasa del próximo día hábil. Viernes por la tarde puede publicar la tasa del lunes. No utilizar la tasa del viernes en operaciones del fin de semana. <https://elcambiove.com/guias/tasa-bcv-fin-de-semana/>
+- Días hábiles: usar fecha efectiva de hoy. Sábado/domingo: elegir la fecha efectiva futura más cercana. Una fecha futura no bloquea insertar una fecha anterior faltante. Nunca saltar una fila futura stale para usar una posterior.
+- Fechas futuras aceptadas hasta 7 días. Los feriados bancarios entre semana todavía no tienen calendario autoritativo: fail closed, sin conversión VES, hasta implementar y validar el calendario.
+- No usar tasa estimada ni proveedor tercero. La conversión requiere tasa BCV actual/validada y aritmética decimal exacta.
 
-## Continuidad inmediata — reconciliación de stack y BCV — 2026-11-07 UTC
+## Neon y seguridad
+
+- Neon rehearsal `br-curly-poetry-b7dxsddm`, parent main `br-summer-math-b7297a60`. La huella es 133 columnas, 204 constraints, 46 índices, 17 relaciones y 15 tablas. En rehearsal existen logins migrator/runtime; runtime todavía no tiene grants de tabla. No hay ledger, `auth_bootstrap_attempts`, warehouses ni conteos.
+- No se ejecutó baseline ni migraciones 0003–0016. Neon main intacta. No pegar SQL manualmente ni pedir secretos/terminal/capturas/TinyFish al usuario.
+- PR #251 no puede mergearse/activarse hasta aplicar schema y probar roles/grants con el runner protegido en rehearsal y, después, obtener autorización específica para cualquier cambio de producción.
+- PR #255 no puede mergearse/desplegarse hasta que migration 0013 esté aplicada y runtime login/grants y Cron real estén verificados.
+- No cambiar secretos, Cloudflare dashboard, DNS, billing ni datos reales. No desplegar. Producción sigue **NOT READY**.
+
+## Próximas acciones
+
+1. Completar CI de #255 sobre su HEAD exacto; revisar logs, corregir fallos y repetir en el SHA nuevo.
+2. Confirmar PostgreSQL admin/runtime integration de BCV: mañana/fecha siguiente hábil primero, fecha de hoy después, idempotencia, latest de fin de semana, stale nearest future y endpoints latest/history.
+3. Obtener revisión independiente de #255 y mantener Draft hasta completar todos los gates.
+4. Mantener #251 Draft hasta el gate de Neon; no activar Cron antes de la adopción segura y prueba con runtime login.
+5. Recuperar #228–#233 en orden, conservando el money engine/checkout y sin reimportar migraciones duplicadas.
+6. Resolver #200 por reconstrucción de cambios únicos sobre main; no rebase/merge wholesale.
+7. Actualizar este handoff y el journal con cada cambio de estado real. No repetir preguntas ya documentadas.
+
+---
+
+## Snapshot histórico supersedido — 2026-11-07 (antes de #252/#255)
+
+
 
 Fuente de verdad: GitHub consultado en vivo; main `fc332946a9128e92ce39a3eb1ef1ee7ebd261598`; 28 PR abiertas. El snapshot anterior de 25 PR quedó obsoleto.
 

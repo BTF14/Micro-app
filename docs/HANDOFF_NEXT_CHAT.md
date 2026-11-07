@@ -4,7 +4,7 @@ El main de GitHub está actualizado por #248; merge SHA fc332946a9128e92ce39a3eb
 
 Neon: la rama principal br-summer-math-b7297a60 no fue modificada y sigue sin ledger ni roles app. La rama rehearsal-baseline-20261107 (br-curly-poetry-b7dxsddm) está lista, tiene microapp_migrator/microapp_runtime, 15 objetos propiedad de migrator, pero no ledger ni migraciones 0003–0016. SELECT con ambos logins confirmó conexión; runtime aún no tiene grants de tablas. El propietario debe ejecutar los scripts versionados reales en la rama de ensayo (no pegar migraciones manualmente) y verificar runtime después de grants. No usar Neon main.
 
-BCV: #227 sigue Draft y stacked sobre #226→#225→#224… Se encontró bug real en persistBcvOfficialRate: mañana insertada primero bloquea insertar hoy por el WHERE NOT EXISTS effective_date > incoming. Corregir con test de regresión mañana→hoy antes de considerar BCV. No mergear #227 en su base vieja.
+BCV: la migración 0013 de #227 ya está en main (blob idéntico al de su rama), pero el código exchange-rates.ts, tests, route registration, scheduler y UI BCV no están integrados. #227 sigue Draft y stacked sobre #226→#225→#224… No fusionar la rama completa; rescatar el código único sobre main. Se encontró bug real en persistBcvOfficialRate: mañana insertada primero bloquea insertar hoy por el WHERE NOT EXISTS effective_date > incoming. Corregir con test de regresión mañana→hoy antes de considerar BCV. No mergear #227 en su base vieja.
 
 Backlog: 25 PR abiertas: stack #218–#233 (con huecos #219/#217 ya cerradas), #193, #200, #202, #204/#205, #207–#211. No cerrar ninguna hasta rescatar y comparar cambios únicos. El objetivo es consolidar en ramas basadas en main y fusionar PR elegibles, no rebasar/mergear a ciegas cada rama apilada.
 

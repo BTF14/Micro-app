@@ -104,3 +104,29 @@ export async function consumeAuthRateLimit(
 
   return { allowed: attempts <= maxAttempts, attempts, retryAfterSeconds };
 }
+
+
+/**
+ * Remove expired authentication metadata after its 48-hour retention window.
+ * This runs from the hourly production Worker Cron using least-privilege
+ * runtime DELETE grants established by migration 0012.
+ */
+export async function cleanupExpiredAuthRecords(
+  client: DatabaseClient,
+): Promise<{ rateLimitBucketsDeleted: number; bootstrapAttemptsDeleted: number }> {
+  const rateLimits = await client.query<{ key_hash: string }>(
+    `DELETE FROM auth_rate_limits
+      WHERE updated_at < now() - interval '48 hours'
+      RETURNING key_hash`,
+  );
+  const bootstrapAttempts = await client.query<{ handle_hash: string }>(
+    `DELETE FROM auth_bootstrap_attempts
+      WHERE expires_at < now() - interval '48 hours'
+      RETURNING handle_hash`,
+  );
+
+  return {
+    rateLimitBucketsDeleted: rateLimits.rows.length,
+    bootstrapAttemptsDeleted: bootstrapAttempts.rows.length,
+  };
+}

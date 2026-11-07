@@ -105,7 +105,7 @@ type BcvRateResponse = {
 // Keep the official decimal string intact; never convert exchange rates to JS floats.
 function formatBcvRate(value: string): string {
   const [integerPart = "0", fractionalPart] = value.split(".");
-  const grouped = integerPart.replace(/\\B(?=(\\d{3})+(?!\\d))/g, ".");
+  const grouped = integerPart.replace(/\B(?=(\d{3})+(?!\d))/g, ".");
   return fractionalPart ? `${grouped},${fractionalPart}` : grouped;
 }
 

@@ -7,6 +7,13 @@ import App from "./App";
 const user = { id: "user-1", email: "ana@example.com", display_name: "Ana Pérez" };
 const organizations = [{ id: "org-1", name: "Mi tienda", slug: "mi-tienda", role: "owner" }];
 const authResponse = { user, organizations };
+const bcvRateResponse = {
+  rate: "894.88760000",
+  effectiveDate: "2026-11-05",
+  fetchedAt: "2026-11-05T18:00:00.000Z",
+  source: "BCV_OFFICIAL_HTML_V1",
+  status: "current" as const,
+};
 
 let container: HTMLDivElement;
 let root: Root;
@@ -99,7 +106,9 @@ describe("Micro app authentication flow", () => {
   });
 
   it("shows help links (WhatsApp support, FAQ, privacy) on the authenticated dashboard footer", async () => {
-    vi.mocked(fetch).mockResolvedValueOnce(jsonResponse(authResponse));
+    vi.mocked(fetch)
+      .mockResolvedValueOnce(jsonResponse(authResponse))
+      .mockResolvedValueOnce(jsonResponse(bcvRateResponse));
     await renderApp();
     await settle();
 
@@ -112,9 +121,54 @@ describe("Micro app authentication flow", () => {
     expect(container.querySelector('[role="dialog"]')).toBeTruthy();
   });
 
+  it("shows the official BCV rate, effective date and freshness on the dashboard", async () => {
+    vi.mocked(fetch)
+      .mockResolvedValueOnce(jsonResponse(authResponse))
+      .mockResolvedValueOnce(jsonResponse(bcvRateResponse));
+    await renderApp();
+    await settle();
+
+    const panel = container.querySelector(".exchange-rate-panel");
+    expect(panel?.textContent).toContain("894,88760000");
+    expect(panel?.textContent).toContain("noviembre de 2026");
+    expect(panel?.textContent).toContain("Vigente");
+    expect(panel?.textContent).toContain("Banco Central de Venezuela");
+  });
+
+  it("passes the current official BCV rate into the catalog conversion", async () => {
+    vi.mocked(fetch)
+      .mockResolvedValueOnce(jsonResponse(authResponse))
+      .mockResolvedValueOnce(jsonResponse(bcvRateResponse))
+      .mockResolvedValueOnce(jsonResponse({
+        items: [{
+          id: "product-2",
+          is_active: true,
+          sku: "WATER-001",
+          barcode: null,
+          name: "Agua",
+          description: null,
+          unit: "unidad",
+          price_usd: "23.8500",
+        }],
+        nextCursor: null,
+        limit: 100,
+      }));
+    await renderApp();
+    await settle();
+
+    const productsButton = [...container.querySelectorAll("button")].find((button) => button.textContent?.includes("Productos"));
+    if (!productsButton) throw new Error("Products navigation button not found");
+    await act(async () => { productsButton.click(); });
+    await settle();
+
+    expect(container.textContent).toContain("US$ 23,85");
+    expect(container.textContent).toContain("Bs. 21.343,07");
+  });
+
   it("opens the authenticated catalog and shows exact USD prices without inventing a VES conversion", async () => {
     vi.mocked(fetch)
       .mockResolvedValueOnce(jsonResponse(authResponse))
+      .mockResolvedValueOnce(jsonResponse({ message: "Todavía no hay una tasa BCV validada." }, 503))
       .mockResolvedValueOnce(jsonResponse({
         items: [{
           id: "product-1",
@@ -144,12 +198,14 @@ describe("Micro app authentication flow", () => {
     expect(container.textContent).toContain("US$ 10,00");
     expect(container.textContent).toContain("No hay una tasa BCV validada");
     expect(container.textContent).not.toContain("Bs. 870,53");
-    expect(vi.mocked(fetch).mock.calls[1][0]).toBe("/api/orgs/org-1/catalog?limit=100");
+    expect(container.textContent).toContain("Tasa BCV no disponible");
+    expect(vi.mocked(fetch).mock.calls[2][0]).toBe("/api/orgs/org-1/catalog?limit=100");
   });
 
   it("revokes the session on logout and returns to the login screen", async () => {
     vi.mocked(fetch)
       .mockResolvedValueOnce(jsonResponse(authResponse))
+      .mockResolvedValueOnce(jsonResponse(bcvRateResponse))
       .mockResolvedValueOnce(new Response(null, { status: 204 }));
     await renderApp();
     await settle();
@@ -160,7 +216,7 @@ describe("Micro app authentication flow", () => {
     await act(async () => { logoutButton.click(); });
     await settle();
 
-    expect(vi.mocked(fetch).mock.calls[1][0]).toBe("/auth/logout");
+    expect(vi.mocked(fetch).mock.calls[2][0]).toBe("/auth/logout");
     expect(container.textContent).toContain("Inicia sesión");
     expect(container.textContent).toContain("Has cerrado la sesión de forma segura.");
   });

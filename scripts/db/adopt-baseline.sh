@@ -83,6 +83,21 @@ BEGIN
   IF pg_catalog.to_regclass('public.schema_migrations') IS NOT NULL THEN
     RAISE EXCEPTION 'BASELINE_LEDGER_ALREADY_PRESENT';
   END IF;
+  -- ALTER ... OWNER TO requires the new owner to hold CREATE on the schema.
+  IF NOT pg_catalog.has_schema_privilege('microapp_migrator', 'public', 'CREATE')
+    OR NOT pg_catalog.has_schema_privilege('microapp_migrator', 'public', 'USAGE')
+  THEN
+    RAISE EXCEPTION 'POSTGRES_SCHEMA_BOOTSTRAP_PRIVILEGES_INVALID: grant USAGE, CREATE on schema public to microapp_migrator first';
+  END IF;
+  -- Managed PostgreSQL (Neon): the owner is not a superuser and holds only ADMIN
+  -- OPTION on roles it created, which cannot SET ROLE. Grant SET for this
+  -- transaction only; it is revoked below, before the runner's membership check.
+  IF NOT (SELECT rolsuper FROM pg_catalog.pg_roles WHERE rolname = current_user)
+    AND NOT pg_catalog.pg_has_role(current_user, 'microapp_migrator', 'SET')
+  THEN
+    EXECUTE pg_catalog.format('GRANT microapp_migrator TO %I WITH SET TRUE, INHERIT FALSE', current_user);
+    PERFORM pg_catalog.set_config('microapp.adopt_temp_set_grant', 'on', true);
+  END IF;
 END
 \$adopt_preflight\$;
 
@@ -98,6 +113,19 @@ CREATE TABLE public.schema_migrations (
     OR (state = 'applied' AND applied_at IS NOT NULL)
   )
 );
+
+-- Ledger is written and verified first: after the ownership transfer below the
+-- adopting owner (without SET on microapp_migrator) can no longer touch it.
+INSERT INTO public.schema_migrations (version, filename, checksum, state, started_at, applied_at)
+VALUES $rows;
+
+DO \$adopt_ledger_verify\$
+BEGIN
+  IF (SELECT count(*) FROM public.schema_migrations WHERE state = 'applied') <> 2 THEN
+    RAISE EXCEPTION 'BASELINE_LEDGER_WRITE_FAILED';
+  END IF;
+END
+\$adopt_ledger_verify\$;
 
 -- Future migrations run as microapp_migrator, which must own what they ALTER.
 DO \$adopt_ownership\$
@@ -131,14 +159,21 @@ BEGIN
 END
 \$adopt_ownership\$;
 
-INSERT INTO public.schema_migrations (version, filename, checksum, state, started_at, applied_at)
-VALUES $rows;
+DO \$adopt_revoke\$
+BEGIN
+  IF pg_catalog.current_setting('microapp.adopt_temp_set_grant', true) = 'on' THEN
+    EXECUTE pg_catalog.format('REVOKE microapp_migrator FROM %I', current_user);
+  END IF;
+  IF pg_catalog.pg_has_role(current_user, 'microapp_migrator', 'SET')
+    AND NOT (SELECT rolsuper FROM pg_catalog.pg_roles WHERE rolname = current_user)
+  THEN
+    RAISE EXCEPTION 'BASELINE_TEMPORARY_ROLE_GRANT_NOT_REVOKED';
+  END IF;
+END
+\$adopt_revoke\$;
 
 DO \$adopt_verify\$
 BEGIN
-  IF (SELECT count(*) FROM public.schema_migrations WHERE state = 'applied') <> 2 THEN
-    RAISE EXCEPTION 'BASELINE_LEDGER_WRITE_FAILED';
-  END IF;
   IF EXISTS (
     SELECT 1 FROM pg_catalog.pg_class c
      WHERE c.relnamespace = 'public'::regnamespace AND c.relkind IN ('r','p','v','m','f')

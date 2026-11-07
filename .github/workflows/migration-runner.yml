@@ -176,6 +176,40 @@ jobs:
           status=0; output="$(ADOPT_BASELINE_CONFIRM=adopt-0002 bash scripts/db/adopt-baseline.sh apply 2>&1)" || status=$?
           test "$status" -ne 0
           printf '%s\n' "$output" | grep -F "BASELINE_LEDGER_ALREADY_PRESENT"
+      - name: Verify baseline adoption by a non-superuser owner (managed PostgreSQL shape)
+        run: |
+          set -euo pipefail
+          psql -X -v ON_ERROR_STOP=1 --dbname "$ADMIN_DATABASE_URL" -c "CREATE ROLE legacy_owner LOGIN PASSWORD 'legacy-owner-test-only' NOSUPERUSER CREATEDB CREATEROLE;"
+          # Managed-PostgreSQL shape: the creator holds ADMIN OPTION on the application roles but cannot SET ROLE.
+          psql -X -v ON_ERROR_STOP=1 --dbname "$ADMIN_DATABASE_URL" -c "GRANT microapp_migrator TO legacy_owner WITH ADMIN OPTION, SET FALSE, INHERIT FALSE;"
+          psql -X -v ON_ERROR_STOP=1 --dbname "$ADMIN_DATABASE_URL" -c "CREATE DATABASE microapp_adopt_owner_test OWNER legacy_owner;"
+          owner_url="postgres://legacy_owner:legacy-owner-test-only@localhost:5432/microapp_adopt_owner_test"
+          migrator_url="postgres://microapp_migrator:migrator-test-only@localhost:5432/microapp_adopt_owner_test"
+          for f in 0001_initial 0002_google_identity; do
+            psql -X -v ON_ERROR_STOP=1 --dbname "$owner_url" -f "apps/api/migrations/$f.sql" >/dev/null
+          done
+          psql -X -v ON_ERROR_STOP=1 --dbname "$owner_url" -c "INSERT INTO organizations (name, slug) VALUES ('Sentinel', 'sentinel-owner');"
+          export ADOPTION_DATABASE_URL="$owner_url"
+          bash scripts/db/adopt-baseline.sh verify | grep -F "BASELINE_VERIFIED"
+
+          echo "== refused when the migrator lacks CREATE on schema public; nothing written"
+          status=0; output="$(ADOPT_BASELINE_CONFIRM=adopt-0002 bash scripts/db/adopt-baseline.sh apply 2>&1)" || status=$?
+          test "$status" -ne 0
+          printf '%s\n' "$output" | grep -F "POSTGRES_SCHEMA_BOOTSTRAP_PRIVILEGES_INVALID"
+          test "$(psql -X -At --dbname "$owner_url" -c "SELECT to_regclass('public.schema_migrations') IS NULL")" = "t"
+
+          echo "== adoption succeeds with only ADMIN OPTION and leaves no SET membership behind"
+          psql -X -v ON_ERROR_STOP=1 --dbname "$owner_url" -c "REVOKE CREATE ON SCHEMA public FROM PUBLIC; GRANT USAGE, CREATE ON SCHEMA public TO microapp_migrator; GRANT USAGE ON SCHEMA public TO microapp_runtime; GRANT CONNECT ON DATABASE microapp_adopt_owner_test TO microapp_migrator, microapp_runtime;"
+          ADOPT_BASELINE_CONFIRM=adopt-0002 bash scripts/db/adopt-baseline.sh apply | grep -F "BASELINE_ADOPTED"
+          test "$(psql -X -At --dbname "$ADMIN_DATABASE_URL" -c "SELECT pg_has_role('legacy_owner','microapp_migrator','SET')")" = "f"
+          test "$(psql -X -At --dbname "$ADMIN_DATABASE_URL" -c "SELECT count(*) FROM pg_auth_members WHERE member IN (SELECT oid FROM pg_roles WHERE rolname IN ('microapp_migrator','microapp_runtime'))")" = "0"
+          test "$(psql -X -At --dbname "$ADMIN_DATABASE_URL" -c "SELECT count(*) FROM pg_auth_members m JOIN pg_roles g ON g.oid=m.roleid WHERE g.rolname='microapp_migrator' AND m.member=(SELECT oid FROM pg_roles WHERE rolname='legacy_owner') AND m.admin_option")" = "1"
+
+          echo "== runner completes 0003+ and the sentinel row survives"
+          MIGRATION_DATABASE_URL="$migrator_url" bash scripts/db/migrate.sh
+          expected_total="$(find apps/api/migrations -maxdepth 1 -type f -name '[0-9][0-9][0-9][0-9]_*.sql' ! -name '*.assertions.sql' ! -name '*.deferred_failure.sql' | wc -l | awk '{print $1}')"
+          test "$(psql -X -At --dbname "postgres://microapp:microapp-test-only@localhost:5432/microapp_adopt_owner_test" -c "SELECT count(*) = ${expected_total} AND bool_and(state='applied') FROM public.schema_migrations")" = "t"
+          test "$(psql -X -At --dbname "postgres://microapp:microapp-test-only@localhost:5432/microapp_adopt_owner_test" -c "SELECT count(*) FROM organizations WHERE slug='sentinel-owner'")" = "1"
       - name: Verify concurrent runner is rejected by advisory lock
         run: |
           psql -X -v ON_ERROR_STOP=1 --dbname "$ADMIN_DATABASE_URL" -c "SELECT pg_catalog.pg_advisory_lock(20261105, 120012); SELECT pg_catalog.pg_sleep(20);" >/tmp/migration-lock-holder.log 2>&1 &

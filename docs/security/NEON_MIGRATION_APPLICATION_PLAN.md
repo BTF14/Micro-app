@@ -17,6 +17,16 @@ Se ejecutó la huella (solo `SELECT`) sobre Neon `main` (PG 18.6) y sobre una ba
 
 CI (`migration-runner.yml`) prueba: verify correcto, deriva detectada sin escribir, rechazo sin confirmación, checksums registrados, propiedad transferida, el runner completa 0003–0016 como `microapp_migrator`, una fila centinela se conserva y una segunda adopción se rechaza.
 
+## 1c. Ensayo en rama Neon `rehearsal-baseline-20261107` (`br-curly-poetry-b7dxsddm`, copia de `main`)
+
+Resultados reales (ejecutado con la herramienta SQL de Neon como `neondb_owner`; producción no se tocó):
+- `CREATE ROLE` como `neondb_owner` otorga **ADMIN OPTION sin SET ni INHERIT** sobre los roles nuevos. `ALTER TABLE … OWNER TO microapp_migrator` falla con `must be able to SET ROLE`. Segundo bloqueo: el nuevo dueño necesita `CREATE` en `public`.
+- Con los grants de esquema del contrato y un `GRANT … WITH SET TRUE, INHERIT FALSE` temporal, los 15 objetos pasaron a `microapp_migrator`. Tras `REVOKE`, `neondb_owner` volvió a tener solo ADMIN OPTION, `pg_auth_members` no tiene membresías del migrator/runtime (lo que exige el preflight del runner), el runtime no tiene `CREATE` y el migrator sí.
+- `adopt-baseline.sh` incorpora ambos requisitos y CI los cubre con un escenario de dueño no superusuario.
+- Un ensayo en CI con superusuario no habría mostrado ninguno de los dos fallos.
+
+**No demostrado en Neon:** la ejecución real de `migrate.sh` 0003→0016 con login `microapp_migrator`, ni pruebas negativas con login real `microapp_runtime`. El agente no tiene ruta de red a Neon desde su entorno de ejecución (solo la herramienta SQL), y volcar 14 migraciones por esa vía no es una prueba fiel del runner. Ese ensayo lo ejecuta el propietario (o un job con secreto de la rama) apuntando a la rama de ensayo, no a producción. La rama no tiene el ledger todavía: contiene solo los roles, los grants de esquema y la propiedad transferida, y puede borrarse sin efecto en producción.
+
 ## 2. Decisión: no aplicar la 0005 sola
 
 Aplicarla aislada deja la Neon en un estado (0001, 0002, 0005) que ningún entorno de prueba ejercita y que el runner con ledger rechaza. Se aplica como parte de la secuencia contigua 0001–0016 que ya está en `main`, tras ensayo.
@@ -37,7 +47,7 @@ Aplicarla aislada deja la Neon en un estado (0001, 0002, 0005) que ningún entor
 ### Fase 2 — producción (autorización B, separada y explícita)
 Precondiciones: Fase 1 verde; snapshot reciente (`create_snapshot`) más rama de respaldo; ventana acordada; `docs/BACKUP_AND_RECOVERY.md` leído y restore probado en rama.
 1. Snapshot de la rama principal.
-2. Roles y grants → `adopt-baseline.sh verify` → `apply` → `migrate.sh` (cada migración en su transacción con registro en el ledger). En Neon, `neondb_owner` no es superusuario: `ALTER … OWNER TO microapp_migrator` exige que sea miembro con SET del rol destino. **Esto no está probado**; es el primer punto a validar en la rama de ensayo. Revocar esa membresía al terminar (el runner la exige vacía para el migrator).
+2. Roles y grants de esquema (contrato #222–#224) → `adopt-baseline.sh verify` → `apply` → `migrate.sh` (cada migración en su transacción con registro en el ledger). Precondición comprobada por el script: `microapp_migrator` con USAGE y CREATE en `public`, porque `ALTER … OWNER TO` lo exige.
 3. Validación (sección 5). Si falla cualquier comprobación: **detener**.
 
 ### Fase 3 — cambio de credenciales (autorización C, la ejecuta el propietario)

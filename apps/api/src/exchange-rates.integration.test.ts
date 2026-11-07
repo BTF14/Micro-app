@@ -53,6 +53,12 @@ describe.skipIf(!databaseUrl)("BCV effective-date persistence against PostgreSQL
       effectiveDate: today,
     })).resolves.toBe("inserted");
 
+    // Replaying the same official effective date/value must remain idempotent.
+    await expect(persistBcvOfficialRate(databaseClient, {
+      rate: "894.88760000",
+      effectiveDate: today,
+    })).resolves.toBe("unchanged");
+
     const stored = await client.query<{ effective_date: string; rate: string }>(
       "SELECT effective_date::text, rate::text FROM public.exchange_rates WHERE source = $1 ORDER BY effective_date DESC",
       [source],

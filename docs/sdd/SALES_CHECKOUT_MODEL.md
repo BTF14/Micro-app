@@ -46,6 +46,8 @@ Reglas ya aprobadas/documentadas:
 
 ## 3. Bloqueador BCV: el trigger SQL de checkout no coincide con la regla de fin de semana
 
+**Base normativa:** el artículo 25 de la Ley del IVA dispone que, si el hecho imponible ocurre en un día no hábil para el sector financiero, la equivalencia se calcula con el tipo de cambio vigente el día hábil inmediatamente siguiente. Referencia documental: Gaceta Oficial N.º 6.507 Extraordinario (29-01-2020), artículo 25: <https://www.ivecofi.net/informacion/legislacion/leyes/ley-impuesto-valor-agregado/titulo-iv>. La fecha efectiva del BCV debe corresponder a ese siguiente día hábil. Esto es una referencia normativa para el diseño, no asesoría legal/contable; cualquier caso fiscal especial requiere validación profesional.
+
 La API BCV recuperada en PR #255 selecciona:
 - Lunes–viernes: la fila con fecha efectiva de hoy.
 - Sábado/domingo: la fila válida con la fecha efectiva futura más próxima publicada para el siguiente día hábil.

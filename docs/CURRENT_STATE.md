@@ -1,14 +1,25 @@
-## Estado vivo corregido — 2026-11-07 UTC
+## Estado vivo — reconciliación posterior a #252 — 2026-11-07 UTC
 
-- **Main actual:** `c4be53ea3247c69206a79ebe5fa2f875a4f9aac4`. PR #249 (reconciliación documental) y #252 (regresión de bootstrap oversized sin Content-Length) están fusionadas. #252 pasó 10/10 workflows PR en su HEAD exacto; CI se reintentó una vez por una colisión DDL transitoria en tests de catálogo y la segunda ejecución completó 32/32 pasos, incluido runtime-role.
-- **Backlog vivo:** 19 PR abiertas. Las PR #218–#226 fueron cerradas como supersedidas después de verificar que sus cambios únicos estaban en main o preservados en #251/#252. No se perdió código: el cleanup de auth está en #251 y la regresión de body limit quedó integrada por #252.
-- **PR #251:** Draft, HEAD `2a0c685a2348af87f76417b4f3ac0f77a70cbb5d`, mergeable, 10/10 workflows PR SUCCESS y ambos scans de push SUCCESS. Portó la limpieza horaria de auth >48 h con preview skip y prueba PostgreSQL bajo `microapp_runtime`. No mergear hasta que Neon main tenga `auth_bootstrap_attempts`, roles runtime y grants verificados; no activar el Cron en producción antes de ese gate.
-- **BCV:** #227 y #250 siguen abiertas como fuente histórica. #250 HEAD `081ec1026f4bda889a633bb3fcbe420433e13336` tiene 6 workflows SUCCESS e integración PostgreSQL real mañana→hoy/idempotencia. Su base #227 depende del stack viejo; no fusionar. Reconstruir BCV sobre base actual preservando el fix.
-- **Stack money/catalog/sales:** main ya contiene `packages/money`, `CatalogPanel`, `ProductForm`, migraciones 0014/0015 y no-discounts. #233 aporta el handler de checkout `sales-checkout.ts`, que aún no está en main; #232 contiene su diseño. Auditar y portar solo ese comportamiento único, no reimportar migraciones.
-- **Inventario:** #200 sigue divergida (37 ahead/14 behind) y su migración antigua 0005 colisiona con main. #204/#205 y #207–#210 tienen gran parte del comportamiento ya integrado; revisar diffs restantes antes de cerrar. #202 y #193 siguen abiertos como documentación histórica; Issue #53 permanece OPEN/P0.
-- **Neon — solo lectura, 2026-11-07:** proyecto `micro-app-db`, rehearsal `br-curly-poetry-b7dxsddm`, parent `br-summer-math-b7297a60`. Ambas ramas tienen 133 columnas, 204 constraints (98 no-NOT-NULL + 106 NOT NULL), 46 índices, 17 relaciones y 15 tablas. Rehearsal tiene roles `microapp_migrator` y `microapp_runtime`; migrator login funciona con public USAGE/CREATE; runtime login funciona con USAGE, sin CREATE ni grants de tabla todavía. Los 15 tables, 46 índices y 2 sequences están bajo owner migrator. No hay ledger, `auth_bootstrap_attempts`, warehouses ni tablas de conteo. Neon main sigue sin esos roles y sin ledger. No se aplicó baseline ni migraciones.
-- El repo no tiene actualmente un secret de rehearsal ni un workflow release que ejecute `adopt-baseline.sh`/`migrate.sh` contra Neon. No intentar aplicar migraciones pegándolas manualmente por SQL; requiere runner protegido y autorización específica para el secreto/entorno de ensayo.
-- Producción sigue **NOT READY**. No se modificaron Neon main, secretos, Cloudflare production, DNS, billing ni datos reales.
+- **Main actual:** `c4be53ea3247c69206a79ebe5fa2f875a4f9aac4`. PR #249 y #252 están fusionadas. #252 incorporó la regresión de bootstrap oversized sin Content-Length y su documentación.
+- **Backlog vivo:** 21 PR abiertas en consulta GitHub directa. No reutilizar conteos 19/28 anteriores.
+- **PR #251 — retención auth:** Draft, HEAD `7c6df0016834e2e6f2ca4b4d062c94995e756662`, base main registrada `fc332946a9128e92ce39a3eb1ef1ee7ebd261598`, compare 22 ahead/2 behind, mergeable. 11/11 workflows PR SUCCESS y 2/2 push security scans SUCCESS. Implementa Cron horario de cleanup con límite 500 filas por tabla, `FOR UPDATE SKIP LOCKED`, retención 48 h, preview skip y PostgreSQL integration bajo `microapp_runtime`. No mergear ni activar hasta que Neon main tenga `auth_bootstrap_attempts` y login/runtime grants verificados.
+- **PR #255 — recuperación BCV:** Draft, HEAD actual `0ccd2b814a6c581132d761c06ee52f86514979f4`, base #251 `7c6df0016834e2e6f2ca4b4d062c94995e756662`, mergeable. Workflows exact-HEAD en ejecución; todavía no marcar verde. Recupera API/UI/cron de #227 y el fix de persistencia de #250, sin duplicar migration 0013. Incluye parser streaming 2 MB, fechas BCV en español, decimal `NUMERIC(18,8)`, idempotencia, latest/history, conversión exacta y pruebas admin/runtime.
+- **Regla BCV:** días hábiles seleccionan la fecha efectiva de hoy; sábado/domingo usan la fecha futura más próxima publicada para el siguiente día hábil. Un registro futuro no bloquea insertar una fecha anterior faltante; un registro futuro stale bloquea selección de fechas posteriores. Las fechas futuras se limitan a 7 días. No existe aún calendario bancario oficial para feriados entre semana: la API falla cerrado y el catálogo suspende conversión si falta la fecha exacta. No usar tasa aproximada ni terceros.
+- **PRs fuente BCV:** #227 sigue abierta porque sirve de base al stack money/catalog/checkout #228–#233. #250 conserva la corrección mañana→hoy, ya portada a #255; no fusionar su base antigua. #254 fue cerrada como duplicado recuperado por #255.
+- **PRs supersedidas:** #218–#226 fueron cerradas tras recuperar o verificar sus cambios únicos. El cleanup útil de #218 quedó preservado en #251. #254 está cerrada sin merge; su implementación se copió a #255.
+- **Documentación:** esta reconciliación está en PR #253 (Draft), base main `c4be53ea3247c69206a79ebe5fa2f875a4f9aac4`. Mantener el snapshot superior actualizado y conservar debajo solo historia explícitamente supersedida.
+- **Neon — evidencia solo lectura:** rehearsal `br-curly-poetry-b7dxsddm`, parent main `br-summer-math-b7297a60`; ambas huellas 133 columnas, 204 constraints, 46 índices, 17 relaciones, 15 tablas. En rehearsal existen logins migrator/runtime; runtime aún sin grants de tabla y no hay `schema_migrations`, `auth_bootstrap_attempts`, warehouses ni conteos. No se ejecutó baseline ni migraciones. Neon main sigue intacta.
+- **Producción:** **NOT READY**. No se modificaron Neon main, secretos, Cloudflare productivo, DNS, billing ni datos reales. No activar Cron ni convertir precios en producción antes de completar migraciones, runtime identity/grants, fuente BCV y calendario de feriados.
+
+### Próximos pasos obligatorios
+
+1. Completar CI y todos los gates exact-HEAD de #255; corregir cada fallo y volver a validar el nuevo SHA.
+2. Revisar la integración BCV en PostgreSQL con login `microapp_runtime`, especialmente selección de fin de semana y comportamiento ante fila futura stale.
+3. Obtener revisión independiente; mantener #255 Draft hasta terminarla.
+4. Mantener #251 Draft hasta completar el gate Neon rehearsal/adopción y probar el Cron con runtime login real.
+5. Recuperar #228–#233 en orden sobre una base vigente, preservando money engine y checkout sin reintroducir migraciones duplicadas.
+6. Reconciliar #200 y cerrar solo PRs realmente supersedidas tras comparar diffs y dependencias.
+
 
 ---
 

@@ -14,8 +14,8 @@ Fuente de verdad: GitHub consultado en vivo; main `fc332946a9128e92ce39a3eb1ef1e
 
 ### PR cerradas conservadas
 - #214: cerrada como supersedida por #213, que está fusionada en main. No reintroducir su módulo rate-limit ni su secreto HMAC alternativo.
-- #215: cerrada sin merge; contiene handoff OAuth server-side único. #218 fue retargeteada a la rama activa #211 (51 ahead/0 behind) para conservarlo en una PR abierta. Antes de integrar #218, portar el handoff al rate limiter canónico de #213 (`consumeAuthRateLimit`) y eliminar el duplicado de #214.
-- #218 sigue Draft. El retarget no modificó código ni fusionó nada; requiere fresh exact-HEAD PR checks después de los cambios de port.
+- #215: cerrada sin merge, pero el handoff OAuth server-side ya está integrado en main vía #240: migración main 0005 byte-identical a la antigua 0010 y flujo opaque handle/state hash/consumo atómico presente en `google-auth.ts`.
+- #218 fue retargeteada a la rama activa #211 (51 ahead/0 behind) solo para auditar procedencia. Su branch todavía contiene copias obsoletas de #214/#215 (`enforceAuthRateLimit`, migration 0010, google-auth antiguo) y no debe integrarse como está. Main ya usa #213 `consumeAuthRateLimit` y `readBodyWithinLimit`; verificar si quedan deltas de autorización únicos y cerrar #218 como supersedida si no.
 
 ### Seguridad y límites
 - Neon main intacta. Ensayo `rehearsal-baseline-20261107` aún sin aplicar baseline ni migraciones 0003–0016; runtime grants posteriores siguen pendientes.

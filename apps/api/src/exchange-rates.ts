@@ -92,7 +92,7 @@ function parseLocalizedRate(value: string): string {
 
 function parseSpanishEffectiveDate(text: string): string {
   const match = text.match(
-    /Fecha Valor:\s*(?:(?:[A-Za-zÁÉÍÓÚáéíóúÑñ]+),\s*)?(\d{1,2})\s+([A-Za-zÁÉÍÓÚáéíóúÑñ]+)\s+(\d{4})/i,
+    /Fecha Valor:\s*(?:(?:[A-Za-zÁÉÍÓÚáéíóúÑñ]+),\s*)?(\d{1,2})\s+(?:de\s+)?([A-Za-zÁÉÍÓÚáéíóúÑñ]+)\s+(?:de\s+)?(\d{4})/i,
   );
   if (!match) throw new Error("BCV_EFFECTIVE_DATE_MISSING");
 

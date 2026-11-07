@@ -241,7 +241,7 @@ export async function findApplicableBcvRate(
     `SELECT rate::text AS rate, effective_date::text AS effective_date,
             to_char(fetched_at AT TIME ZONE 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS.MS"Z"') AS fetched_at, validation_status
        FROM public.exchange_rates
-      WHERE source = $1 AND validation_status = 'valid'
+      WHERE source = $1
         AND effective_date ${comparison} $2::date
       ORDER BY effective_date ${ordering}, fetched_at DESC
       LIMIT 1`,
@@ -299,7 +299,7 @@ export function registerExchangeRateRoutes(app: Hono<{ Bindings: Bindings }>): v
       if (!row) {
         return c.json({ error: "BCV_RATE_UNAVAILABLE", message: "Todavía no hay una tasa BCV validada." }, 503);
       }
-      const isStale = row.effective_date < caracasDate(new Date());
+      const isStale = row.validation_status === "stale" || row.effective_date < caracasDate(new Date());
       c.header("Cache-Control", "public, max-age=3600");
       return c.json({
         baseCurrency: "USD",

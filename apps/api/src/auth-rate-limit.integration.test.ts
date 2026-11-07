@@ -1,6 +1,6 @@
 import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
 import { Client } from "pg";
-import { cleanupExpiredAuthRecords, consumeAuthRateLimit, hashAuthRateLimitKey } from "./auth-rate-limit";
+import { consumeAuthRateLimit, hashAuthRateLimitKey } from "./auth-rate-limit";
 import { withDatabaseClient } from "./database";
 
 // Exercise the same query contract with real PostgreSQL while keeping the

@@ -191,7 +191,7 @@ const suite = describe.skipIf(!databaseUrl)("authentication rate limiting agains
     const scheduledApp = app as typeof app & {
       scheduled: (controller: unknown, env: { APP_ENV?: "production" | "preview"; DATABASE_URL?: string }) => Promise<void>;
     };
-    await scheduledApp.scheduled({}, { APP_ENV: "production", DATABASE_URL: databaseUrl });
+    await scheduledApp.scheduled({ cron: "17 * * * *" }, { APP_ENV: "production", DATABASE_URL: databaseUrl });
 
     const remainingRateLimits = await cleanupClient.query<{ count: string }>(
       "SELECT count(*)::text AS count FROM auth_rate_limits WHERE key_hash = ANY($1::char(64)[])",

@@ -23,3 +23,7 @@ GOOGLE_CLIENT_ID = "1030757133503-huvhkok21n1br10rtfhs4827fo3v106q.apps.googleus
 # Worker previews are API-dark even if preview secrets are accidentally configured.
 [previews.vars]
 APP_ENV = "preview"
+
+# Prune expired authentication metadata hourly; preview environments are skipped in index.ts.
+[triggers]
+crons = ["17 * * * *"]

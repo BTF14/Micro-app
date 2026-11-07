@@ -30,9 +30,10 @@
 2. Confirmar PostgreSQL admin/runtime integration de BCV: mañana/fecha siguiente hábil primero, fecha de hoy después, idempotencia, latest de fin de semana, stale nearest future y endpoints latest/history.
 3. Obtener revisión independiente de #255 y mantener Draft hasta completar todos los gates.
 4. Mantener #251 Draft hasta el gate de Neon; no activar Cron antes de la adopción segura y prueba con runtime login.
-5. Recuperar #228–#233 en orden, conservando el money engine/checkout y sin reimportar migraciones duplicadas.
-6. Resolver #200 por reconstrucción de cambios únicos sobre main; no rebase/merge wholesale.
-7. Actualizar este handoff y el journal con cada cambio de estado real. No repetir preguntas ya documentadas.
+5. Reconciliar #228–#231 como supersedidas solo tras conservar la corrección útil del fixture de backup; portar #232 y revisar/portar #233 sobre #255, sin migration 0015 duplicada.
+6. Diseñar migration 0017 para alinear el trigger SQL de checkout con BCV weekday/weekend; no activar checkout hasta resolver el contrato de pagos que migration 0015 ya impone (una moneda y pago exacto completo) y obtener confirmación funcional.
+7. Resolver #200 por reconstrucción de cambios únicos sobre main; no rebase/merge wholesale.
+8. Actualizar este handoff y el journal con cada cambio de estado real. No repetir preguntas ya documentadas.
 
 ---
 

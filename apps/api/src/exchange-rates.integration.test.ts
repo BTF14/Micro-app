@@ -1,6 +1,6 @@
 import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
 import { Client } from "pg";
-import { persistBcvOfficialRate } from "./exchange-rates";
+import { findApplicableBcvRate, persistBcvOfficialRate } from "./exchange-rates";
 import type { DatabaseClient } from "./database";
 import app from "./index";
 
@@ -63,18 +63,28 @@ describe.skipIf(!isDisposableCiDatabase)("BCV effective-date persistence against
     }
   });
 
-  it("keeps today's BCV rate when tomorrow's effective date was inserted first", async () => {
+  it("stores today's rate after the next business-day rate and selects the applicable date", async () => {
     if (!client) throw new Error("PostgreSQL integration client is not connected.");
 
-    const dates = await client.query<{ today: string; tomorrow: string }>(
-      "SELECT (now() AT TIME ZONE 'America/Caracas')::date::text AS today, ((now() AT TIME ZONE 'America/Caracas')::date + 1)::text AS tomorrow",
+    const dates = await client.query<{ today: string }>(
+      "SELECT (now() AT TIME ZONE 'America/Caracas')::date::text AS today",
     );
-    const { today, tomorrow } = dates.rows[0]!;
+    const { today } = dates.rows[0]!;
+    const weekday = new Intl.DateTimeFormat("en-US", {
+      timeZone: "America/Caracas", weekday: "short",
+    }).format(new Date());
+    const daysUntilNextBusinessDay = weekday === "Fri" ? 3 : weekday === "Sat" ? 2 : weekday === "Sun" ? 1 : 1;
+    const nextBusinessDate = new Date(`${today}T12:00:00Z`);
+    nextBusinessDate.setUTCDate(nextBusinessDate.getUTCDate() + daysUntilNextBusinessDay);
+    const nextEffectiveDate = nextBusinessDate.toISOString().slice(0, 10);
+    const isWeekend = weekday === "Sat" || weekday === "Sun";
+    const expectedApplicableDate = isWeekend ? nextEffectiveDate : today;
+    const expectedApplicableRate = isWeekend ? "895.10000000" : "894.88760000";
     const databaseClient = client as unknown as DatabaseClient;
 
     await expect(persistBcvOfficialRate(databaseClient, {
       rate: "895.10000000",
-      effectiveDate: tomorrow,
+      effectiveDate: nextEffectiveDate,
     })).resolves.toBe("inserted");
 
     await expect(persistBcvOfficialRate(databaseClient, {
@@ -93,21 +103,15 @@ describe.skipIf(!isDisposableCiDatabase)("BCV effective-date persistence against
       [source],
     );
     expect(stored.rows).toEqual([
-      { effective_date: tomorrow, rate: "895.10000000" },
+      { effective_date: nextEffectiveDate, rate: "895.10000000" },
       { effective_date: today, rate: "894.88760000" },
     ]);
 
-    const latest = await cleanupClient!.query<{ effective_date: string; rate: string }>(
-      `SELECT effective_date::text, rate::text
-         FROM public.exchange_rates
-        WHERE source = $1 AND validation_status = 'valid' AND effective_date <= $2::date
-        ORDER BY effective_date DESC, fetched_at DESC
-        LIMIT 1`,
-      [source, today],
-    );
-    expect(latest.rows).toEqual([
-      { effective_date: today, rate: "894.88760000" },
-    ]);
+    const latest = await findApplicableBcvRate(databaseClient, new Date());
+    expect(latest).toMatchObject({
+      effective_date: expectedApplicableDate,
+      rate: expectedApplicableRate,
+    });
 
     const latestResponse = await app.fetch(
       new Request("https://api.example/api/exchange-rates/latest"),
@@ -115,8 +119,8 @@ describe.skipIf(!isDisposableCiDatabase)("BCV effective-date persistence against
     );
     expect(latestResponse.status).toBe(200);
     await expect(latestResponse.json()).resolves.toMatchObject({
-      rate: "894.88760000",
-      effectiveDate: today,
+      rate: expectedApplicableRate,
+      effectiveDate: expectedApplicableDate,
       source,
       status: "current",
     });
@@ -129,7 +133,7 @@ describe.skipIf(!isDisposableCiDatabase)("BCV effective-date persistence against
     await expect(historyResponse.json()).resolves.toMatchObject({
       source,
       rates: [
-        { rate: "895.10000000", effectiveDate: tomorrow, status: "scheduled" },
+        { rate: "895.10000000", effectiveDate: nextEffectiveDate, status: "scheduled" },
         { rate: "894.88760000", effectiveDate: today, status: "current" },
       ],
     });

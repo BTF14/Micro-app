@@ -71,14 +71,14 @@ The confirmation flow:
 3. locks the count document with `FOR UPDATE`;
 4. reads the count lines in product UUID order;
 5. locks the required balances in one batch;
-6. compares both expected on-hand quantity and `balance_version` for physical counts, and checks reserved quantity;
+6. compares both expected on-hand quantity and `balance_version` for physical counts, and checks reserved quantity. The balance-version trigger increments on every on-hand or reserved change; a quantity that changes away and later returns to its original value still invalidates the old snapshot (ABA protection);
 7. updates the count, applies balance changes, inserts any required ledger movements and writes the audit event before commit.
 
 A confirmed count is immutable and a repeated confirmation is idempotent. Opening counts inspect the complete warehouse balance set and are rejected if any balance already exists. Physical counts cannot reduce on-hand quantity below reserved quantity.
 
 ## 5. Ledger, balance and audit atomicity
 
-- Migration 0006 creates warehouses, counts, count lines, balances and append-only warehouse movements.
+- Migration 0006 creates warehouses, counts, count lines, balances and append-only warehouse movements. Its `balance_version` trigger increments on stock/reservation changes, and balance rows cannot be deleted, so the version cannot be reset by a DELETE/INSERT cycle.
 - Migration 0009 enforces count lifecycle and movement-to-count-line consistency, including physical snapshot/version requirements.
 - Migration 0010 records a private transaction-scoped intent for each non-zero on-hand balance change. A movement must consume the exact matching intent, and a deferred constraint rejects commit if an intent remains unconsumed. Balance identity cannot be re-keyed.
 - Migration 0008 makes audit logs append-only. The inventory count handler inserts its audit event inside the same transaction as the count/balance/ledger writes.

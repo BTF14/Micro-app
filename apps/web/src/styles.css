@@ -238,6 +238,23 @@ h1 { margin: 0; font-size: clamp(2.2rem, 4.2vw, 3.6rem); font-weight: 550; lette
 .art-card-line.short { width: 65%; margin-top: 0.4rem; background: rgba(255,255,255,0.25); }
 .art-card-foot { margin-top: auto; color: #b9cdc3; font-size: 0.43rem; letter-spacing: 0.07em; }
 
+
+.exchange-rate-panel {
+  display: flex; align-items: center; justify-content: space-between; gap: 1rem; flex-wrap: wrap;
+  margin-top: 1.25rem; padding: 1.15rem 1.3rem; border: 1px solid #dfe8e1;
+  border-radius: 1rem; background: #fff;
+}
+.exchange-rate-main { min-width: 0; }
+.exchange-rate-main .eyebrow { margin-bottom: 0.45rem; color: #7a8a80; }
+.exchange-rate-main h2 { margin: 0; color: var(--petrol-dark); font-size: clamp(1.25rem, 2.2rem, 1.7rem); font-weight: 650; letter-spacing: -0.04em; }
+.exchange-rate-main h2 span { color: #8b9c91; font-weight: 400; }
+.exchange-rate-meta { margin: 0.45rem 0 0; color: #78837c; font-size: 0.72rem; }
+.exchange-rate-error { margin: 0.35rem 0 0; color: #8a6136; font-size: 0.7rem; }
+.exchange-rate-status { flex: 0 0 auto; padding: 0.42rem 0.7rem; border-radius: 999px; color: #426a58; background: #edf4ef; font-size: 0.68rem; font-weight: 650; }
+.exchange-rate-status.stale, .exchange-rate-status.unavailable { color: #866737; background: #f4ead7; }
+.exchange-rate-source { width: 100%; margin: 0; color: #929b94; font-size: 0.62rem; }
+
+
 .setup-banner {
   display: flex;
   align-items: center;
@@ -345,6 +362,8 @@ h1 { margin: 0; font-size: clamp(2.2rem, 4.2vw, 3.6rem); font-weight: 550; lette
   .welcome { min-height: 0; padding: 1.5rem; }
   .welcome-art { display: none; }
   .welcome-copy { font-size: 0.84rem; }
+  .exchange-rate-panel { align-items: flex-start; padding: 0.95rem; }
+  .exchange-rate-status { margin-left: auto; }
   .setup-banner { align-items: flex-start; padding: 0.9rem; }
   .setup-icon { width: 2rem; height: 2rem; }
   .setup-text h2 { font-size: 0.8rem; }

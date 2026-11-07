@@ -4,9 +4,9 @@
 
 - GitHub main: `c4be53ea3247c69206a79ebe5fa2f875a4f9aac4`; 21 PR abiertas en consulta directa.
 - PR #251 auth retention: Draft, HEAD `7c6df0016834e2e6f2ca4b4d062c94995e756662`; 11/11 workflows PR y 2/2 push security scans SUCCESS. Incluye cleanup 48 h limitado a 500 filas por tabla, `SKIP LOCKED`, preview skip y pruebas PostgreSQL con `microapp_runtime`. No mergear ni activar hasta resolver Neon schema/runtime gate.
-- PR #255 BCV: Draft, HEAD `0ccd2b814a6c581132d761c06ee52f86514979f4`, base #251 HEAD `7c6df0016834e2e6f2ca4b4d062c94995e756662`, mergeable. CI exact-HEAD aún en ejecución; no asumir éxito. Reconstruye BCV de #227 y fix de #250 sobre la cadena actual, sin duplicar migration 0013.
+- PR #255 BCV: Draft, HEAD `4e9f01ab85fd767736f4f47f3e47ffefbe7efd88`, base #251 HEAD `7c6df0016834e2e6f2ca4b4d062c94995e756662`, mergeable. 10/10 workflows pull_request y 3/3 runs push SUCCESS en SHA exacto; CI logs confirman 2/2 tests PostgreSQL BCV con admin y microapp_runtime. Reconstruye BCV de #227 y fix de #250 sobre la cadena actual, sin duplicar migration 0013.
 - #254 está cerrada como duplicado de recuperación; su código completo está copiado en #255. #218–#226 están cerradas como supersedidas tras recuperación/verificación. #218 cleanup se conserva en #251.
-- #227 permanece abierta porque sirve de base al stack money/catalog/checkout #228–#233. #250 sigue como fuente de la regresión mañana→hoy que #255 ya incorpora; no fusionar ramas antiguas.
+- #227 fue reabierta como ancla temporal de dependencia/procedencia mientras #228–#233 sigan apuntando a su rama; Draft, no merge-ready. #250 está cerrada como supersedida; su fix está preservado en #255. #254 está cerrada como duplicado.
 - PR #253 es esta reconciliación documental (Draft, base main `c4be53ea3247c69206a79ebe5fa2f875a4f9aac4`).
 
 ## Reglas BCV verificadas
@@ -26,7 +26,7 @@
 
 ## Próximas acciones
 
-1. Completar CI de #255 sobre su HEAD exacto; revisar logs, corregir fallos y repetir en el SHA nuevo.
+1. Solicitar/obtener revisión independiente de #255 y resolver cualquier hallazgo; su CI exacto ya terminó verde.
 2. Confirmar PostgreSQL admin/runtime integration de BCV: mañana/fecha siguiente hábil primero, fecha de hoy después, idempotencia, latest de fin de semana, stale nearest future y endpoints latest/history.
 3. Obtener revisión independiente de #255 y mantener Draft hasta completar todos los gates.
 4. Mantener #251 Draft hasta el gate de Neon; no activar Cron antes de la adopción segura y prueba con runtime login.

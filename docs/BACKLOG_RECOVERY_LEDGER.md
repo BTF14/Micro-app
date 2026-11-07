@@ -6,6 +6,25 @@
 **Observed main baseline:** `38e1d61acc083b3c0b9b73edcb2bc7887ca56872`  
 **Source backlog snapshot:** 25 open source implementation/documentation PRs. PR #242, #243 and #244 merged; the active recovery branch is `feat/inventory-read-ledger-20261106`. **Current open count after opening its PR: 26 (25 source PRs + next recovery PR)**. Re-query GitHub before future reports.
 
+## Live recovery delta — 2026-11-07 UTC
+
+GitHub reports **27 open PRs** and main `fc332946a9128e92ce39a3eb1ef1ee7ebd261598`. This supersedes the 2026-11-06 snapshot count and refs above.
+
+- #200 HEAD `464ca08b9020fad128cc9c8a321568493d484517` is 37 ahead / 14 behind current main and GitHub reports `mergeable=false`. Current main already has canonical migrations 0005–0016; #200 independently assigns inventory migration 0005 and shifts later migrations. Many auth/catalog/tenant/workflow/lockfile paths overlap. Reconstruct unique functionality on current main; do not merge or rebase this branch wholesale.
+- #204 HEAD `07a5a41c0f5f5c36fb89a5c5950796493d56eb20` is 8 ahead / 5 behind current #200 head, with one overlapping file (`apps/api/src/inventory-counts.integration.test.ts`). Preserve its per-test fixture isolation and reapply it to the current #200 version while retaining newer tests.
+- #227 HEAD `83cf96b7fcb7b0e304f676d21ab721de61364a59` has 13 successful workflow runs, but remains Draft and depends on the older migration/auth stack.
+- #250 is a distinct BCV regression fix stacked on #227: HEAD `081ec1026f4bda889a633bb3fcbe420433e13336`, 9 ahead / 0 behind #227, six exact-HEAD workflow runs success. Its disposable PostgreSQL integration test verifies tomorrow-first/today-second, Caracas effective date and same-date idempotency. It remains Draft with no formal review.
+- #218 was retargeted from closed #215 to active #211 (51 ahead / 0 behind). #214 was superseded by merged #213; do not restore its competing rate-limit module or HMAC secret dependency. #215's unique server-side bootstrap handoff remains preserved in #218 and must be ported onto #213's canonical `consumeAuthRateLimit` before integration.
+- Closed PRs are not discarded: unique work is carried by active branches/comments. Do not close any additional PR until file-level provenance and exact tests confirm the change is preserved.
+- No PR merged during this recovery block. No Neon main, production data, secrets, Cloudflare production settings, DNS, billing or production deployment changed. Production remains NOT READY.
+
+### Current recovery order
+
+1. Reconstruct #200 on current main and reconcile migration definitions/checksums.
+2. Reapply #204 fixture isolation; synchronize descendants in dependency order without force-push.
+3. Port #215/#218 bootstrap handoff onto #213's rate limiter and verify migration 0010 runtime grants.
+4. Keep #250's regression intact and rerun all required checks after it is moved to the recovered current-main base.
+
 ## Purpose and operating rules
 
 This ledger is the working index for recovering every open PR without losing unique work or importing stale branch history. A PR is not considered recovered merely because its branch exists or its checks are green.

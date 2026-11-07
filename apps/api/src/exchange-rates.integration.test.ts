@@ -38,7 +38,7 @@ describe.skipIf(!databaseUrl)("BCV effective-date persistence against PostgreSQL
     if (!client) throw new Error("PostgreSQL integration client is not connected.");
 
     const dates = await client.query<{ today: string; tomorrow: string }>(
-      "SELECT current_date::text AS today, (current_date + 1)::text AS tomorrow",
+      "SELECT (now() AT TIME ZONE 'America/Caracas')::date::text AS today, ((now() AT TIME ZONE 'America/Caracas')::date + 1)::text AS tomorrow",
     );
     const { today, tomorrow } = dates.rows[0]!;
     const databaseClient = client as unknown as DatabaseClient;
@@ -71,10 +71,10 @@ describe.skipIf(!databaseUrl)("BCV effective-date persistence against PostgreSQL
     const latest = await client.query<{ effective_date: string; rate: string }>(
       `SELECT effective_date::text, rate::text
          FROM public.exchange_rates
-        WHERE source = $1 AND validation_status = 'valid' AND effective_date <= current_date
+        WHERE source = $1 AND validation_status = 'valid' AND effective_date <= $2::date
         ORDER BY effective_date DESC, fetched_at DESC
         LIMIT 1`,
-      [source],
+      [source, today],
     );
     expect(latest.rows).toEqual([
       { effective_date: today, rate: "894.88760000" },

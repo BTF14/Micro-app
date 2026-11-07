@@ -1,6 +1,6 @@
-# Plan de aplicación segura de migraciones en Neon — PROPUESTA (no ejecutado)
+# Plan de aplicación segura de migraciones en Neon — Fase 1 parcial; producción no ejecutada
 
-**Estado:** propuesta del 2026-11-06 UTC, ajustada a `main` tras #245. Nada de este documento se ha ejecutado. Cada fase de escritura requiere autorización específica y posterior del propietario (AGENTS.md; Constitución). Producción sigue **NO LISTA**.
+**Estado actualizado:** Fase 1 tiene una rama de ensayo creada y preparada parcialmente; no se ha ejecutado aún `adopt-baseline.sh apply` ni `migrate.sh` en esa rama. Fase 2 (Neon main) y Fase 3 (secreto `DATABASE_URL`) no se han ejecutado. La Fase 1 parcial fue verificada en vivo el 2026-11-07; producción sigue **NO LISTA**. Toda escritura en Neon main y todo cambio de secreto siguen fuera de la autorización general.
 
 ## 1. Hechos verificados (Neon `micro-app-db`, solo lectura, 2026-11-06 UTC)
 

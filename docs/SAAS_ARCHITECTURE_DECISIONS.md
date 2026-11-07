@@ -72,7 +72,7 @@ Objetivo: USD como moneda base del catálogo/contabilidad interna y VES como con
 7. El dashboard muestra fuente, fecha efectiva y frescura. El catálogo convierte USD→VES solo con tasa vigente y validada usando aritmética decimal exacta; si falta o está stale, suspende la conversión.
 8. Cada venta/pago debe conservar tasa, moneda, importe original, importe convertido, fecha efectiva y fuente usados en ese momento. Actualizar la tasa nunca recalcula operaciones pasadas.
 
-La implementación se propone en PR #252, apilada sobre la limpieza de retención #251. Sigue sin desplegarse ni verificarse en producción: requiere CI exact-HEAD, revisión independiente, migración 0013 aplicada, login `microapp_runtime` comprobado y Cron/configuración Cloudflare verificados. No se introduce un proveedor pagado ni un secreto nuevo.
+La implementación se propone en PR #255, apilada sobre la limpieza de retención #251. Sigue sin desplegarse ni verificarse en producción: requiere CI exact-HEAD, revisión independiente, migración 0013 aplicada, login `microapp_runtime` comprobado y Cron/configuración Cloudflare verificados. No se introduce un proveedor pagado ni un secreto nuevo.
 
 ## 5. Buscador de productos y precio vigente
 

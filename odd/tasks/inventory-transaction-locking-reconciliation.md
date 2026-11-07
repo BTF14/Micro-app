@@ -1,7 +1,7 @@
 # ODD task: reconcile the inventory transaction locking contract with current main
 
 - Status: documentation reconciliation in progress; exact-HEAD validation pending
-- Source: unique locking-contract document from superseded PR #200
+- Source: unique locking-contract document from the stale PR #200 branch
 - Target: current main `96e2e2d9f76bc8fcc3bab2fa9503e480545c8869`
 - Risk: critical (tenant isolation, authorization revocation races, inventory/ledger integrity)
 - Scope: documentation only; no application code, DDL, migration, Neon, secret, Cloudflare or production changes

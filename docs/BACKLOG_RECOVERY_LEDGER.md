@@ -1,3 +1,4 @@
+- #218's unique 48-hour auth retention behavior has been ported independently in PR #251 (Draft), HEAD `4a0662346c2a1f95bcf09d815df55755f53686cd`; hourly production-only Cron, preview skip, PostgreSQL old-vs-fresh retention test, runtime DELETE grant assertions, 10/10 PR workflows SUCCESS including `microapp_runtime`. Do not merge until Neon main has the bootstrap table and dedicated runtime role/grants; #218 remains open for other unique authz deltas.
 # Backlog Recovery Ledger — BTF14 / Micro-app
 
 **Snapshot:** 2026-11-06  

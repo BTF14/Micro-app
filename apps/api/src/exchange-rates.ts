@@ -145,15 +145,19 @@ export function parseBcvOfficialRate(html: string, now = new Date()): BcvOfficia
   if (!html || new TextEncoder().encode(html).byteLength > MAX_BCV_HTML_BYTES) throw new Error("BCV_HTML_SIZE_INVALID");
   const text = normalizeHtmlText(html);
   let rate: string | null = null;
+  let candidateError: Error | null = null;
   for (const match of text.matchAll(/\bUSD\b\s*([\d.,]+)/gi)) {
     try {
       rate = parseLocalizedRate(match[1]!);
       break;
-    } catch {
-      // Ignore unrelated USD mentions; accept only a valid locale-formatted rate.
+    } catch (error) {
+      if (error instanceof Error) candidateError = error;
     }
   }
-  if (!rate) throw new Error("BCV_USD_RATE_MISSING");
+  if (!rate) {
+    if (candidateError) throw candidateError;
+    throw new Error("BCV_USD_RATE_MISSING");
+  }
   const effectiveDate = parseSpanishEffectiveDate(text);
   validateEffectiveDate(effectiveDate, now);
   return { rate, effectiveDate };

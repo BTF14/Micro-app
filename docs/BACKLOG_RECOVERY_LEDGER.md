@@ -12,9 +12,10 @@
 
 1. Finish all exact-HEAD checks and independent review on #255; fix every failure before marking Ready.
 2. Keep #251 Draft until Neon rehearsal/adoption, schema and runtime grants are proven.
-3. Recover #228–#233 on current code in dependency order, preserving money/checkout behavior and no-discount policy.
-4. Reconstruct #200's unique inventory changes on current main; do not merge its divergent branch wholesale.
-5. Close #227/#250 only after downstream dependents have a current base and their unique changes are preserved.
+3. Reconcile #228–#231 as superseded where their behavior is already in main; preserve the backup fixture improvement via #256. Port #232's updated checkout design and recover #233's unique handler/tests on #255 without its obsolete migration 0015.
+4. Add migration 0017 to align the checkout DB trigger's BCV effective date with the API's weekday/weekend rule; confirm the existing single-currency/exact-full-payment schema contract before enabling checkout.
+5. Reconstruct #200's unique inventory changes on current main; do not merge its divergent branch wholesale.
+6. Keep #227 as provenance until #228–#233 are rebuilt; #250 is already closed as superseded by #255.
 
 
 ---

@@ -1,3 +1,14 @@
+# 2026-11-07 UTC — checkout stack audit against current canonical main
+
+- #229 money engine, #230 CatalogPanel and #231 ProductForm are present in main in equal or stronger form. #228 migration 0014 and assertions are byte-identical to canonical main migration 0014; main catalog-write handler/tests are stronger. The backup restore fixture's no-discount INSERT is a small unique alignment, tracked separately in PR #256.
+- #232's SALES_CHECKOUT_MODEL document was missing from main and is now recovered/updated in PR #253. It corrects stale claims: migration 0015 already adds branch/shift/warehouse/request-hash/settlement context, lifecycle guards, deferred sale reconciliation, single-currency exact-payment constraints, BCV check, own-shift lock and ledger/audit checks.
+- #233's migration 0015 is older/weaker than canonical main migration 0015; do not port it. Its sales-checkout handler/tests are unique and require careful port to #255.
+- Critical incompatibility: main migration 0015's `assert_completed_sale_reconciled()` requires BCV effective_date = today's Caracas date. PR #255's API correctly uses next-business-day rate on weekends. Before checkout can work on weekends, add migration 0017 to update the deferred SQL trigger to the same weekday/weekend selection, without skipping a stale nearest future row. Keep weekday bank holidays fail-closed until a calendar exists.
+- Migration 0015 already enforces one settlement currency and exact full payment. The original design doc did not record explicit functional approval; confirm before activating checkout. Review per-line VES/USD formula and per-payment USD-equivalent allocation for DB-level integrity.
+- PR #227 remains as provenance for #228–#233; #250 is closed as superseded by #255. Do not merge the old stack wholesale.
+
+---
+
 # 2026-11-07 UTC — BCV weekend correctness and recovered stack #255
 
 - PR #255 created from the current #251 recovery branch; PR #254 closed as a duplicate after all its code/docs were copied to the refreshed branch. PR #255 remains Draft; latest HEAD `0ccd2b814a6c581132d761c06ee52f86514979f4`, exact-HEAD workflows still running.

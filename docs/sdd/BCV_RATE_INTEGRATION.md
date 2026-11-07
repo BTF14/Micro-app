@@ -36,7 +36,7 @@ The writer uses the least-privilege `microapp_runtime` role. Migration 0013 gran
 - Weekday bank holidays are not yet backed by an authoritative holiday calendar. On those days, if no row exists for the calendar date, latest remains stale/unavailable and the catalog disables VES conversion rather than guessing. This is a known MVP limitation and must be resolved before POS use on bank holidays.
 - The dashboard displays the official value, effective date, fetch timestamp, source, and freshness.
 - The catalog converts USD prices to VES only when the API reports a current validated rate. Stale/unavailable data disables conversion; the UI never invents a fallback rate.
-- The dashboard fetches on authenticated session load and refreshes at most once every 24 hours. Successful read responses are cacheable for one hour.
+- The dashboard fetches on authenticated session load and refreshes hourly while the session remains active, so an open POS picks up the daily Cron publication without a manual reload. Successful read responses are cacheable for one hour.
 
 ## Scheduling and cost
 

@@ -1,6 +1,6 @@
 # BCV official exchange-rate integration
 
-**Status:** implementation under review in PR #252; not deployed or production-verified.  
+**Status:** implementation under review in PR #255; not deployed or production-verified.  
 **Cost target:** USD 0 in additional recurring provider fees.  
 **Primary source:** https://www.bcv.org.ve/  
 **Worker schedule:** weekdays at 18:00 Venezuela time (22:00 UTC); no weekend polling.

@@ -1,3 +1,14 @@
+# 2026-11-07 UTC — final exact-HEAD validation and dependency correction
+
+- Main remains `c4be53ea3247c69206a79ebe5fa2f875a4f9aac4`; live open PR count is 21 after reopening #227 as a temporary dependency anchor for #228–#233.
+- #255 HEAD `4e9f01ab85fd767736f4f47f3e47ffefbe7efd88`, base #251 at `7c6df0016834e2e6f2ca4b4d062c94995e756662`: 10/10 pull_request workflows and 3/3 push runs completed SUCCESS. CI log confirms the two BCV PostgreSQL integration tests passed with admin and disposable `microapp_runtime` logins. Cloudflare Pages/Workers produced branch previews only; no production deployment or manual Cloudflare changes. Combined classic status contexts are empty; check-runs include all required contexts and are green.
+- #255 has no formal reviews or inline threads and remains Draft. Independent review and production gates are outstanding.
+- #251 HEAD `7c6df0016834e2e6f2ca4b4d062c94995e756662`: 11/11 pull_request workflows and 2/2 push security scans SUCCESS. It remains Draft because Neon main lacks `auth_bootstrap_attempts` and the dedicated runtime role/grants. Main advanced by two commits after the PR's recorded base; compare shows 22 ahead/2 behind and mergeable true.
+- #227 was reopened solely as a temporary dependency/provenance anchor because #228–#233 still target its branch family. Do not merge the obsolete stack; close it only after downstream PRs are rebuilt or explicitly retired. #250 is closed as superseded by #255; #254 is closed as duplicate. All BCV code and the tomorrow-first/today-second fix are in #255; migration 0013 is byte-identical to main.
+- No Neon writes, production data changes, secret changes, manual Cloudflare changes, DNS, billing, or production deployments were made. Production remains NOT READY.
+
+---
+
 # 2026-11-07 UTC — checkout stack audit against current canonical main
 
 - #229 money engine, #230 CatalogPanel and #231 ProductForm are present in main in equal or stronger form. #228 migration 0014 and assertions are byte-identical to canonical main migration 0014; main catalog-write handler/tests are stronger. The backup restore fixture's no-discount INSERT is a small unique alignment, tracked separately in PR #256.
@@ -5,13 +16,13 @@
 - #233's migration 0015 is older/weaker than canonical main migration 0015; do not port it. Its sales-checkout handler/tests are unique and require careful port to #255.
 - Critical incompatibility: main migration 0015's `assert_completed_sale_reconciled()` requires BCV effective_date = today's Caracas date. PR #255's API correctly uses next-business-day rate on weekends. Before checkout can work on weekends, add migration 0017 to update the deferred SQL trigger to the same weekday/weekend selection, without skipping a stale nearest future row. Keep weekday bank holidays fail-closed until a calendar exists.
 - Migration 0015 already enforces one settlement currency and exact full payment. The original design doc did not record explicit functional approval; confirm before activating checkout. Review per-line VES/USD formula and per-payment USD-equivalent allocation for DB-level integrity.
-- PR #227 remains as provenance for #228–#233; #250 is closed as superseded by #255. Do not merge the old stack wholesale.
+- PR #227 was reopened as a temporary dependency/provenance anchor for #228–#233, which still target its branch family; #250 and #254 are closed, with the #250 regression preserved in #255. Do not merge the old stack wholesale.
 
 ---
 
 # 2026-11-07 UTC — BCV weekend correctness and recovered stack #255
 
-- PR #255 created from the current #251 recovery branch; PR #254 closed as a duplicate after all its code/docs were copied to the refreshed branch. PR #255 remains Draft; latest HEAD `0ccd2b814a6c581132d761c06ee52f86514979f4`, exact-HEAD workflows still running.
+- PR #255 created from the current #251 recovery branch; PR #254 closed as a duplicate after all its code/docs were copied to the refreshed branch. PR #255 remains Draft; latest HEAD `4e9f01ab85fd767736f4f47f3e47ffefbe7efd88`; 10/10 pull_request workflows and 3/3 push runs SUCCESS, including BCV PostgreSQL admin/runtime tests. No formal reviews/threads; Draft pending independent review.
 - PR #251 refreshed its workflow filters so PRs stacked on `fix/**` receive the full required pull_request checks. Its exact HEAD `7c6df0016834e2e6f2ca4b4d062c94995e756662` now has 11/11 PR workflows and 2/2 push security scans successful. It remains Draft due Neon schema/runtime gate.
 - BCV parser now accepts full Spanish effective dates with optional "de" and weekday comma, limits source HTML to 2 MB while streaming, and allows future effective dates up to 7 days for weekends/long weekends.
 - A review of BCV effective-date practice found Saturday/Sunday operations use the next business day's effective rate (Friday publication commonly carries Monday's date). Latest selection now uses today's date on weekdays and the nearest future effective date on weekends; it does not skip a stale nearest future row. Weekday bank holidays remain fail-closed pending an authoritative calendar.

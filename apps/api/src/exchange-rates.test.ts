@@ -38,6 +38,16 @@ describe("BCV official HTML parser", () => {
     expect(parseBcvOfficialRate(html, NOW).effectiveDate).toBe("2026-11-09");
   });
 
+  it("skips unrelated USD mentions and decodes Spanish date entities", () => {
+    const html = OFFICIAL_PAGE
+      .replace("USD 894,88760000", "USD referencia general USD 894,88760000")
+      .replace("Jueves, 05 Noviembre 2026", "Mi&eacute;rcoles, 04 de noviembre de 2026");
+    expect(parseBcvOfficialRate(html, NOW)).toMatchObject({
+      rate: "894.88760000",
+      effectiveDate: "2026-11-04",
+    });
+  });
+
   it("parses a Spanish effective date with weekday but no comma", () => {
     const html = OFFICIAL_PAGE.replace(
       "Jueves, 05 Noviembre 2026",

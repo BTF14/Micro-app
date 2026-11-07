@@ -25,7 +25,7 @@ Integrate the official BCV USD/VES reference rate at zero additional provider co
 ## Acceptance criteria
 
 - [ ] API source parser fixtures and bounded streaming tests pass.
-- [ ] PostgreSQL integration verifies next-business-day-first/today-second, same-date idempotency, weekend latest selection, and scheduled history status.
+- [ ] PostgreSQL integration verifies next-business-day-first/today-second, same-date idempotency, weekend latest selection, scheduled history status, production Cron persistence and preview no-op.
 - [ ] Weekday bank-holiday handling has an authoritative calendar before POS conversion is enabled for those dates.
 - [ ] Runtime-role integration passes without broadening migration 0013 grants.
 - [ ] Dashboard displays exact decimal/date/freshness and catalog conversion uses shared exact-money arithmetic.

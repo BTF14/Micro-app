@@ -1,3 +1,10 @@
+## Ensayo en rama Neon — 2026-11-07 UTC
+
+- Rama `rehearsal-baseline-20261107` (copia de `main`; producción intacta). Dos hallazgos reales corregidos en `adopt-baseline.sh`: (1) `neondb_owner` solo tiene ADMIN OPTION sobre roles creados, sin SET → se concede SET solo durante la transacción y se revoca; (2) el nuevo dueño necesita CREATE en `public`. Con eso, la transferencia de propiedad de los 15 objetos funciona y el estado de membresías queda compatible con el preflight del runner.
+- Pendiente de demostrar: `migrate.sh` 0003–0016 y pruebas negativas con logins reales `microapp_migrator`/`microapp_runtime` sobre Neon (requieren red; las ejecuta el propietario contra la rama de ensayo).
+
+---
+
 ## Adopción de baseline — 2026-11-07 UTC
 
 - Nuevo `scripts/db/adopt-baseline.sh` + huella `baselines/0002.schema.txt`. La huella de Neon `main` coincide con 0001+0002 del repositorio (columnas, constraints, índices, relaciones). CI prueba adopción, deriva, rechazo sin confirmación, runner hasta 0016, conservación de filas y rechazo de readopción.

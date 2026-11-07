@@ -1,3 +1,9 @@
+# 2026-11-07 UTC — Ensayo de adopción en rama Neon
+
+- Se ensayó la adopción en una rama Neon (no en producción) y se corrigieron dos defectos del script que CI no podía ver (dueño no superusuario). Añadido escenario CI equivalente. Sin escrituras en la rama principal de Neon, secretos, Cloudflare, DNS ni billing.
+
+---
+
 # 2026-11-07 UTC — Modo de adopción de baseline
 
 - Añadidos `adopt-baseline.sh`, `schema_fingerprint.sql` y la huella 0002; pruebas en `migration-runner.yml`. Huella de Neon `main` leída con `SELECT`: coincide con 0001+0002. Sin escrituras en Neon.

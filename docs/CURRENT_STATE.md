@@ -1,3 +1,11 @@
+## Neon: nivel de esquema real y plan de adopción — 2026-11-06 UTC
+
+- Lectura solo-`SELECT` de Neon: esquema en **0001+0002** (15 tablas); sin 0003–0016 ni `schema_migrations`; 1 org, 1 usuario, 1 allowlist, bootstrap consumido, 6 sesiones, 0 filas de negocio; PITR 6 h. El propietario afirma que no hay datos reales de negocio.
+- **El código de #244/#245 ya desplegado depende de tablas ausentes en Neon:** las rutas autenticadas de catálogo/inventario fallarán en producción hasta adoptar el esquema. Build y preview exitosos no prueban lo contrario.
+- Plan por fases (ensayo en rama Neon → producción → cambio de `DATABASE_URL` por el propietario): `docs/security/NEON_MIGRATION_APPLICATION_PLAN.md`. Ninguna fase de escritura está autorizada.
+
+---
+
 ## Estado verificado — 2026-11-06
 
 ### PR #244 integrada

@@ -1,7 +1,7 @@
 ## Estado vivo — reconciliación posterior a #252 — 2026-11-07 UTC
 
-- **Main actual:** `c4be53ea3247c69206a79ebe5fa2f875a4f9aac4`. PR #249 y #252 están fusionadas. #252 incorporó la regresión de bootstrap oversized sin Content-Length y su documentación.
-- **Backlog vivo:** 21 PR abiertas en consulta GitHub directa. No reutilizar conteos 19/28 anteriores.
+- **Main actual:** `a38463ea00415c7601d716132e70a29e381a2e34`. PR #249 y #252 están fusionadas. #252 incorporó la regresión de bootstrap oversized sin Content-Length y su documentación.
+- **Backlog vivo:** 20 PR abiertas en consulta GitHub directa. No reutilizar conteos 19/28 anteriores.
 - **PR #251 — retención auth:** Draft, HEAD `7c6df0016834e2e6f2ca4b4d062c94995e756662`, base main registrada `fc332946a9128e92ce39a3eb1ef1ee7ebd261598`, compare 22 ahead/2 behind, mergeable. 11/11 workflows PR SUCCESS y 2/2 push security scans SUCCESS. Implementa Cron horario de cleanup con límite 500 filas por tabla, `FOR UPDATE SKIP LOCKED`, retención 48 h, preview skip y PostgreSQL integration bajo `microapp_runtime`. No mergear ni activar hasta que Neon main tenga `auth_bootstrap_attempts` y login/runtime grants verificados.
 - **PR #255 — recuperación BCV:** Draft, HEAD actual `4e9f01ab85fd767736f4f47f3e47ffefbe7efd88`, base #251 `7c6df0016834e2e6f2ca4b4d062c94995e756662`, mergeable. 10/10 workflows pull_request y 3/3 runs push terminaron SUCCESS en este SHA exacto; logs confirman 2/2 pruebas PostgreSQL BCV con admin y microapp_runtime. Recupera API/UI/cron de #227 y el fix de persistencia de #250, sin duplicar migration 0013. Incluye parser streaming 2 MB, fechas BCV en español, decimal `NUMERIC(18,8)`, idempotencia, latest/history, conversión exacta y pruebas admin/runtime.
 - **Regla BCV:** días hábiles seleccionan la fecha efectiva de hoy; sábado/domingo usan la fecha futura más próxima publicada para el siguiente día hábil. Un registro futuro no bloquea insertar una fecha anterior faltante; un registro futuro stale bloquea selección de fechas posteriores. Las fechas futuras se limitan a 7 días. No existe aún calendario bancario oficial para feriados entre semana: la API falla cerrado y el catálogo suspende conversión si falta la fecha exacta. No usar tasa aproximada ni terceros.
@@ -11,6 +11,8 @@
 - **Documentación:** esta reconciliación está en PR #253 (Draft), base main `c4be53ea3247c69206a79ebe5fa2f875a4f9aac4`. Mantener el snapshot superior actualizado y conservar debajo solo historia explícitamente supersedida.
 - **Neon — evidencia solo lectura:** rehearsal `br-curly-poetry-b7dxsddm`, parent main `br-summer-math-b7297a60`; ambas huellas 133 columnas, 204 constraints, 46 índices, 17 relaciones, 15 tablas. En rehearsal existen logins migrator/runtime; runtime aún sin grants de tabla y no hay `schema_migrations`, `auth_bootstrap_attempts`, warehouses ni conteos. No se ejecutó baseline ni migraciones. Neon main sigue intacta.
 - **Producción:** **NOT READY**. No se modificaron Neon main, secretos, Cloudflare productivo, DNS, billing ni datos reales. No activar Cron ni convertir precios en producción antes de completar migraciones, runtime identity/grants, fuente BCV y calendario de feriados.
+
+- **PR #256:** fusionada en `a38463ea00415c7601d716132e70a29e381a2e34`; alinea el fixture sintético de backup/restore con el esquema sin descuentos sin modificar migraciones ni código de aplicación. Checks PR exactos verdes; post-merge checks aún en ejecución al redactar este bloque.
 
 ### Próximos pasos obligatorios
 

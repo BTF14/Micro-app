@@ -1,3 +1,34 @@
+## Continuidad inmediata — reconciliación de stack y BCV — 2026-11-07 UTC
+
+Fuente de verdad: GitHub consultado en vivo; main `fc332946a9128e92ce39a3eb1ef1ee7ebd261598`; 27 PR abiertas. El snapshot anterior de 25 PR quedó obsoleto.
+
+### BCV corregido, aún no integrado
+- PR #250 HEAD `081ec1026f4bda889a633bb3fcbe420433e13336`, base #227 `83cf96b7fcb7b0e304f676d21ab721de61364a59`, 9 ahead/0 behind, Draft. Seis workflows exact-HEAD success: CI push/PR, migration-runner push/PR, Security scan, Secret history scan. La prueba PostgreSQL real valida mañana→hoy, selección por fecha America/Caracas e idempotencia. La prueba está protegida para ejecutarse solo contra localhost/127.0.0.1 y DB /microapp_test con CI=true. No reviews formales ni threads.
+- PR #227 HEAD `83cf96b7fcb7b0e304f676d21ab721de61364a59`: 13 workflows success; Draft, base #226. No integrar su stack completo sin reconstruirlo sobre main actual.
+- #250 debe conservarse; no cerrar ni fusionar mientras su base dependa de la cadena vieja.
+
+### Bloqueo estructural del stack
+- PR #200 HEAD `464ca08b9020fad128cc9c8a321568493d484517`, main actual `fc332946a9128e92ce39a3eb1ef1ee7ebd261598`: diverged 37 ahead/14 behind, GitHub no mergeable. Main ya contiene migraciones 0005–0016; #200 tiene numeración incompatible (inventario 0005 y migraciones posteriores desplazadas) y amplio solapamiento de auth/catalog/tenant/workflows/lockfile. **No rebase ni merge automático**; reconstruir los cambios únicos en ramas basadas en main.
+- PR #204 HEAD `07a5a41c0f5f5c36fb89a5c5950796493d56eb20` está diverged 8 ahead/5 behind respecto al #200 actual, con un único archivo compartido (`inventory-counts.integration.test.ts`). Su aislamiento de fixtures debe re-aplicarse sobre el test más nuevo, preservando todas las pruebas nuevas.
+- La secuencia descendiente activa incluye #205, #208, #207, #209, #210, #211, #218, #220–#227. Máximo dos frentes activos; resolver raíz y dependencias en orden. No cerrar PR sin rescatar y verificar sus cambios únicos.
+
+### PR cerradas conservadas
+- #214: cerrada como supersedida por #213, que está fusionada en main. No reintroducir su módulo rate-limit ni su secreto HMAC alternativo.
+- #215: cerrada sin merge; contiene handoff OAuth server-side único. #218 fue retargeteada a la rama activa #211 (51 ahead/0 behind) para conservarlo en una PR abierta. Antes de integrar #218, portar el handoff al rate limiter canónico de #213 (`consumeAuthRateLimit`) y eliminar el duplicado de #214.
+- #218 sigue Draft. El retarget no modificó código ni fusionó nada; requiere fresh exact-HEAD PR checks después de los cambios de port.
+
+### Seguridad y límites
+- Neon main intacta. Ensayo `rehearsal-baseline-20261107` aún sin aplicar baseline ni migraciones 0003–0016; runtime grants posteriores siguen pendientes.
+- No tocar Neon main, datos reales, secretos, Cloudflare productivo, DNS, billing ni hacer despliegues manuales. No force-push. No fusionar PRs Draft ni stacks obsoletos.
+- Producción **NOT READY**; gates P0/P1 e issue #53 continúan abiertos.
+
+### Próximas acciones exactas
+1. Auditar y reconstruir PR #200 sobre main actual, resolviendo numeración y contenido de migraciones con pruebas PostgreSQL.
+2. Reaplicar el cambio de aislamiento de #204 a la versión actualizada de `inventory-counts.integration.test.ts`.
+3. Sincronizar downstream en orden y revisar diff/CI en cada SHA final.
+4. Portar #215/#218 sobre el rate limiter de #213 y validar grants para migration 0010.
+5. Mantener #250 como corrección verificada; integrar solo después de tener base actual y exact-HEAD CI.
+
 ## Continuidad inmediata — estado real 2026-11-07
 
 El main de GitHub está actualizado por #248; merge SHA fc332946a9128e92ce39a3eb1ef1ee7ebd261598. PR #244–#248 (incluyendo inventario read/kardex, plan Neon, baseline adoption y corrección de owner no superuser) están fusionadas. Hay 25 PR abiertas ahora; no asumir 26.

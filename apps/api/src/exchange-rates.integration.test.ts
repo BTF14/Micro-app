@@ -1,7 +1,20 @@
-import { afterAll, beforeAll, describe, expect, it } from "vitest";
+import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
 import { Client } from "pg";
 import { persistBcvOfficialRate } from "./exchange-rates";
 import type { DatabaseClient } from "./database";
+
+// Run the Hono routes through the same PostgreSQL adapter contract as the Worker.
+vi.mock("@neondatabase/serverless", async () => {
+  const postgres = await import("pg");
+  return {
+    Client: class extends postgres.Client {
+      constructor(connectionString: string) {
+        super({ connectionString });
+      }
+    },
+  };
+});
+import app from "./index";
 
 const processEnv = (globalThis as typeof globalThis & {
   process?: { env?: Record<string, string | undefined> };
@@ -96,5 +109,30 @@ describe.skipIf(!isDisposableCiDatabase)("BCV effective-date persistence against
     expect(latest.rows).toEqual([
       { effective_date: today, rate: "894.88760000" },
     ]);
+
+    const latestResponse = await app.fetch(
+      new Request("https://api.example/api/exchange-rates/latest"),
+      { APP_ENV: "production", DATABASE_URL: databaseUrl },
+    );
+    expect(latestResponse.status).toBe(200);
+    await expect(latestResponse.json()).resolves.toMatchObject({
+      rate: "894.88760000",
+      effectiveDate: today,
+      source,
+      status: "current",
+    });
+
+    const historyResponse = await app.fetch(
+      new Request("https://api.example/api/exchange-rates/history?limit=10"),
+      { APP_ENV: "production", DATABASE_URL: databaseUrl },
+    );
+    expect(historyResponse.status).toBe(200);
+    await expect(historyResponse.json()).resolves.toMatchObject({
+      source,
+      rates: [
+        { rate: "895.10000000", effectiveDate: tomorrow, status: "scheduled" },
+        { rate: "894.88760000", effectiveDate: today, status: "current" },
+      ],
+    });
   });
 });

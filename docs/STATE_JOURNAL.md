@@ -1,3 +1,11 @@
+# 2026-11-07 UTC — corrección de procedencia del handoff OAuth
+
+- Corrección a la anotación anterior: el handoff OAuth server-side de PR #215 ya está integrado en main vía #240. El blob de `apps/api/migrations/0005_auth_bootstrap_attempts.sql` en main es idéntico al antiguo `0010_auth_bootstrap_attempts.sql` de #215/#218; el `google-auth.ts` de main conserva opaque handle, hash de estado y consumo atómico.
+- Main usa además el rate limiter canónico de #213 (`consumeAuthRateLimit`) y `readBodyWithinLimit`. El branch #218 conserva la versión obsoleta de #214 (`enforceAuthRateLimit`) y un google-auth anterior. No portar el handoff/migración duplicados; auditar solo deltas de autorización que no estén ya en main.
+- #214 está supersedida por #213; #215 cerrada sin merge pero su handoff no se perdió: está en main. #218 permanece Draft como fuente para revisión, no como implementación lista para merge.
+
+---
+
 # 2026-11-07 UTC — corrección de disposición de #204 y estado de main
 
 - Verificación adicional en main `fc332946a9128e92ce39a3eb1ef1ee7ebd261598`: existen `inventory-counts.ts`, `inventory-locks.ts`, `catalog.ts`, `catalog-write.ts` e `inventory-read.ts`. La sección histórica del backlog que decía que faltaban inventory-counts/locks está supersedida.

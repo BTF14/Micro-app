@@ -1,3 +1,21 @@
+# 2026-11-07 UTC — recuperación de PR apiladas y BCV
+
+- GitHub main `fc332946a9128e92ce39a3eb1ef1ee7ebd261598`; 27 PR abiertas en consulta directa.
+- #250 HEAD `081ec1026f4bda889a633bb3fcbe420433e13336`: 6/6 workflows exact-HEAD success; PostgreSQL integration mañana→hoy, fecha America/Caracas e idempotencia. Sigue Draft, 9 ahead/0 behind #227, sin reviews/threads.
+- #227 HEAD `83cf96b7fcb7b0e304f676d21ab721de61364a59`: 13/13 workflows success; Draft y apilada sobre #226.
+- #200 HEAD `464ca08b9020fad128cc9c8a321568493d484517` diverge de main actual: 37 ahead/14 behind, mergeable=false. Main ya contiene migraciones 0005–0016 y #200 usa secuencia incompatible; reconstrucción selectiva requerida, no rebase/merge ciego.
+- #204 HEAD `07a5a41c0f5f5c36fb89a5c5950796493d56eb20` diverge del #200 actual 8 ahead/5 behind; solo un archivo solapado, `inventory-counts.integration.test.ts`. Preservar su fixture isolation sobre el archivo actualizado.
+- #218 retargeteada desde base cerrada #215 a #211. #214 está supersedida por #213 merged; #215 contiene handoff único que se conserva en #218, pero el rate limiter duplicado debe portarse a la implementación canónica de #213 antes de integrar.
+- Sin merges ni cambios en Neon main, datos reales, secretos, Cloudflare productivo, DNS o billing. Producción NOT READY.
+
+## Siguiente bloque
+1. Recuperar #200 sobre main actual, reconciliando migraciones 0005–0016.
+2. Reaplicar aislamiento de fixtures de #204 y sincronizar descendientes en orden.
+3. Portar handoff #215/#218 al rate limiter de #213.
+4. Mantener #250 Draft hasta que la base esté reconstruida y los checks corran en el SHA final.
+
+---
+
 # 2026-11-07 UTC — verificación directa de rehearsal y auditoría de BCV
 
 - GitHub: #248 merged fc332946a9128e92ce39a3eb1ef1ee7ebd261598; #244–#248 fusionadas; 25 PR abiertas al consultar GitHub.

@@ -1,3 +1,13 @@
+# 2026-11-07 UTC — verificación directa de rehearsal y auditoría de BCV
+
+- GitHub: #248 merged fc332946a9128e92ce39a3eb1ef1ee7ebd261598; #244–#248 fusionadas; 25 PR abiertas al consultar GitHub.
+- Neon project restless-fire-99110035: branch main br-summer-math-b7297a60 sigue sin ledger ni roles de aplicación; solo SELECT.
+- Neon rehearsal br-curly-poetry-b7dxsddm: roles microapp_migrator y microapp_runtime conectan; 15 objetos son propiedad de migrator; no ledger; runner 0003–0016 aún no ejecutado. Runtime no tiene privilegios de tabla todavía. neondb_owner mantiene ADMIN OPTION con SET FALSE/INHERIT FALSE. No se hicieron escrituras desde esta auditoría.
+- #227 source audit: se encontró que la condición WHERE NOT EXISTS (effective_date > incoming_date) bloquea insertar la tasa de hoy si una tasa futura ya existe. Requiere test mañana→hoy; #227 no es mergeable hacia main por su stack/base antigua aunque GitHub reporte mergeable true respecto a su base.
+- Se actualizó docs/security/NEON_MIGRATION_APPLICATION_PLAN.md para distinguir Fase 1 parcial de Fase 2/3 no ejecutadas. Producción sigue NOT READY.
+
+---
+
 # 2026-11-07 UTC — Ensayo de adopción en rama Neon
 
 - Se ensayó la adopción en una rama Neon (no en producción) y se corrigieron dos defectos del script que CI no podía ver (dueño no superusuario). Añadido escenario CI equivalente. Sin escrituras en la rama principal de Neon, secretos, Cloudflare, DNS ni billing.

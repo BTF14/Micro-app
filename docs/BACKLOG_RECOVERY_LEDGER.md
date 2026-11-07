@@ -1,3 +1,15 @@
+# Live recovery correction — 2026-11-07 UTC
+
+- Main `c4be53ea3247c69206a79ebe5fa2f875a4f9aac4`; 19 PR abiertas. #249/#252 merged. #218–#226 closed as superseded after file-level provenance checks. Unique #218 cleanup is retained in #251; #220 route-level body regression merged in #252.
+- #251 is Draft at HEAD `2a0c685a2348af87f76417b4f3ac0f77a70cbb5d`; 10/10 PR workflows + 2 push security scans succeeded. Do not merge until Neon main has `auth_bootstrap_attempts` and the dedicated runtime role/grants are proven.
+- #227/#250 remain open as BCV source snapshots; #250's exact SHA `081ec1026f4bda889a633bb3fcbe420433e13336` passed 6 workflows including real PostgreSQL tomorrow→today/idempotency. Do not merge the old stacked base.
+- #228–#231 functionality is largely already in main: exact decimal package, no-discount migration 0014, catalog UI, product form. #232 design and #233 checkout handler remain to be audited; main does not yet have `apps/api/src/sales-checkout.ts`.
+- #200 remains divergent and must not be merged wholesale. #204/#205/#207–#210 are likely superseded; finish remaining test/workflow/doc comparison before closure. Current open PR count includes those still-open legacy stacks.
+- Neon rehearsal branch is read-only verified: schema fingerprint matches main (133 columns, 204 constraints = 98 non-NOT-NULL + 106 NOT NULL, 46 indexes, 17 relations, 15 tables). App roles exist only in rehearsal; migrator login has public CREATE, runtime login has no table grants yet. 15 tables/46 indexes/2 sequences are owned by migrator. No ledger, auth bootstrap attempts or branch-inventory schema yet. No writes have been executed.
+- No repository secret/workflow currently exists to run the baseline adoption + migration runner against Neon rehearsal. Do not paste migrations manually via SQL; add a protected runner only after explicit authorization for the rehearsal credential/environment.
+
+---
+
 - #218's unique 48-hour auth retention behavior has been ported independently in PR #251 (Draft), HEAD `4a0662346c2a1f95bcf09d815df55755f53686cd`; hourly production-only Cron, preview skip, PostgreSQL old-vs-fresh retention test, runtime DELETE grant assertions, 10/10 PR workflows SUCCESS including `microapp_runtime`. Do not merge until Neon main has the bootstrap table and dedicated runtime role/grants; #218 remains open for other unique authz deltas.
 # Backlog Recovery Ledger — BTF14 / Micro-app
 

@@ -1,3 +1,11 @@
+# 2026-11-07 UTC — cierre de verificación post-merge #256
+
+- El merge SHA `a38463ea00415c7601d716132e70a29e381a2e34` quedó verificado: los 10 check-runs de commit y 8 workflows push terminaron SUCCESS.
+- Cloudflare Pages y Workers Builds reportaron SUCCESS para el merge. El cambio integrado solo afecta el script sintético de backup/restore; no hubo modificación manual de Cloudflare ni datos reales.
+- La PR #253 se actualiza para reflejar este estado y el HEAD final #255 `c45c8ec050ddf96381968535cb6bddfd24ac1feb`.
+
+---
+
 # 2026-11-07 UTC — merge seguro del fixture backup/restore
 
 - PR #256 `fix/backup-restore-no-discount-20261107` se fusionó por squash en main: `a38463ea00415c7601d716132e70a29e381a2e34`.
@@ -10,7 +18,7 @@
 # 2026-11-07 UTC — final exact-HEAD validation and dependency correction
 
 - Main remains `c4be53ea3247c69206a79ebe5fa2f875a4f9aac4`; live open PR count is 21 after reopening #227 as a temporary dependency anchor for #228–#233.
-- #255 HEAD `4e9f01ab85fd767736f4f47f3e47ffefbe7efd88`, base #251 at `7c6df0016834e2e6f2ca4b4d062c94995e756662`: 10/10 pull_request workflows and 3/3 push runs completed SUCCESS. CI log confirms the two BCV PostgreSQL integration tests passed with admin and disposable `microapp_runtime` logins. Cloudflare Pages/Workers produced branch previews only; no production deployment or manual Cloudflare changes. Combined classic status contexts are empty; check-runs include all required contexts and are green.
+- #255 HEAD `c45c8ec050ddf96381968535cb6bddfd24ac1feb`, base #251 at `7c6df0016834e2e6f2ca4b4d062c94995e756662`: 10/10 pull_request workflows and 3/3 push runs completed SUCCESS. CI log confirms the two BCV PostgreSQL integration tests passed with admin and disposable `microapp_runtime` logins. Cloudflare Pages/Workers produced branch previews only; no production deployment or manual Cloudflare changes. Combined classic status contexts are empty; check-runs include all required contexts and are green.
 - #255 has no formal reviews or inline threads and remains Draft. Independent review and production gates are outstanding.
 - #251 HEAD `7c6df0016834e2e6f2ca4b4d062c94995e756662`: 11/11 pull_request workflows and 2/2 push security scans SUCCESS. It remains Draft because Neon main lacks `auth_bootstrap_attempts` and the dedicated runtime role/grants. Main advanced by two commits after the PR's recorded base; compare shows 22 ahead/2 behind and mergeable true.
 - #227 was reopened solely as a temporary dependency/provenance anchor because #228–#233 still target its branch family. Do not merge the obsolete stack; close it only after downstream PRs are rebuilt or explicitly retired. #250 is closed as superseded by #255; #254 is closed as duplicate. All BCV code and the tomorrow-first/today-second fix are in #255; migration 0013 is byte-identical to main.
@@ -31,7 +39,7 @@
 
 # 2026-11-07 UTC — BCV weekend correctness and recovered stack #255
 
-- PR #255 created from the current #251 recovery branch; PR #254 closed as a duplicate after all its code/docs were copied to the refreshed branch. PR #255 remains Draft; latest HEAD `4e9f01ab85fd767736f4f47f3e47ffefbe7efd88`; 10/10 pull_request workflows and 3/3 push runs SUCCESS, including BCV PostgreSQL admin/runtime tests. No formal reviews/threads; Draft pending independent review.
+- PR #255 created from the current #251 recovery branch; PR #254 closed as a duplicate after all its code/docs were copied to the refreshed branch. PR #255 remains Draft; latest HEAD `c45c8ec050ddf96381968535cb6bddfd24ac1feb`; 10/10 pull_request workflows and 3/3 push runs SUCCESS, including BCV PostgreSQL admin/runtime tests. No formal reviews/threads; Draft pending independent review.
 - PR #251 refreshed its workflow filters so PRs stacked on `fix/**` receive the full required pull_request checks. Its exact HEAD `7c6df0016834e2e6f2ca4b4d062c94995e756662` now has 11/11 PR workflows and 2/2 push security scans successful. It remains Draft due Neon schema/runtime gate.
 - BCV parser now accepts full Spanish effective dates with optional "de" and weekday comma, limits source HTML to 2 MB while streaming, and allows future effective dates up to 7 days for weekends/long weekends.
 - A review of BCV effective-date practice found Saturday/Sunday operations use the next business day's effective rate (Friday publication commonly carries Monday's date). Latest selection now uses today's date on weekdays and the nearest future effective date on weekends; it does not skip a stale nearest future row. Weekday bank holidays remain fail-closed pending an authoritative calendar.

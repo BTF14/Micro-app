@@ -123,6 +123,59 @@ jobs:
           printf '%s\n' "$output" | grep -F "MIGRATION_BASELINE_REQUIRED"
           preserved="$(psql -X -At -v ON_ERROR_STOP=1 --dbname "$legacy_admin" -c "SELECT to_regclass('public.preexisting_table') IS NOT NULL AND to_regclass('public.schema_migrations') IS NULL")"
           test "$preserved" = "t"
+      - name: Verify baseline adoption of a pre-ledger 0001-0002 schema
+        run: |
+          set -euo pipefail
+          psql -X -v ON_ERROR_STOP=1 --dbname "$ADMIN_DATABASE_URL" -c "CREATE DATABASE microapp_adopt_test;"
+          adopt_admin="postgres://microapp:microapp-test-only@localhost:5432/microapp_adopt_test"
+          adopt_migrator="postgres://microapp_migrator:migrator-test-only@localhost:5432/microapp_adopt_test"
+          psql -X -v ON_ERROR_STOP=1 --dbname "$adopt_admin" -c "REVOKE CREATE ON SCHEMA public FROM PUBLIC; GRANT USAGE, CREATE ON SCHEMA public TO microapp_migrator; GRANT USAGE ON SCHEMA public TO microapp_runtime; GRANT CONNECT ON DATABASE microapp_adopt_test TO microapp_migrator, microapp_runtime;"
+          for f in 0001_initial 0002_google_identity; do
+            psql -X -v ON_ERROR_STOP=1 --dbname "$adopt_admin" -f "apps/api/migrations/$f.sql" >/dev/null
+          done
+          psql -X -v ON_ERROR_STOP=1 --dbname "$adopt_admin" -c "INSERT INTO organizations (name, slug) VALUES ('Sentinel', 'sentinel-adoption');"
+          export ADOPTION_DATABASE_URL="$adopt_admin"
+          bash -n scripts/db/adopt-baseline.sh
+
+          echo "== verify passes on the exact legacy schema"
+          bash scripts/db/adopt-baseline.sh verify | grep -F "BASELINE_VERIFIED"
+
+          echo "== drift is detected and nothing is written"
+          psql -X -v ON_ERROR_STOP=1 --dbname "$adopt_admin" -c "ALTER TABLE products ADD COLUMN adoption_drift integer;"
+          status=0; output="$(bash scripts/db/adopt-baseline.sh verify 2>&1)" || status=$?
+          test "$status" -ne 0
+          printf '%s\n' "$output" | grep -F "BASELINE_SCHEMA_MISMATCH"
+          status=0; output="$(ADOPT_BASELINE_CONFIRM=adopt-0002 bash scripts/db/adopt-baseline.sh apply 2>&1)" || status=$?
+          test "$status" -ne 0
+          test "$(psql -X -At --dbname "$adopt_admin" -c "SELECT to_regclass('public.schema_migrations') IS NULL")" = "t"
+          psql -X -v ON_ERROR_STOP=1 --dbname "$adopt_admin" -c "ALTER TABLE products DROP COLUMN adoption_drift;"
+
+          echo "== apply refuses without explicit confirmation"
+          status=0; output="$(bash scripts/db/adopt-baseline.sh apply 2>&1)" || status=$?
+          test "$status" -eq 3
+          test "$(psql -X -At --dbname "$adopt_admin" -c "SELECT to_regclass('public.schema_migrations') IS NULL")" = "t"
+
+          echo "== apply records 0001-0002 with repository checksums and transfers ownership"
+          ADOPT_BASELINE_CONFIRM=adopt-0002 bash scripts/db/adopt-baseline.sh apply | grep -F "BASELINE_ADOPTED"
+          for pair in "0001:0001_initial.sql" "0002:0002_google_identity.sql"; do
+            version="${pair%%:*}"; file="${pair#*:}"
+            expected="$(sha256sum "apps/api/migrations/$file" | awk '{print $1}')"
+            recorded="$(psql -X -At --dbname "$adopt_admin" -c "SELECT checksum FROM public.schema_migrations WHERE version='$version' AND state='applied'")"
+            test "$recorded" = "$expected"
+          done
+          foreign="$(psql -X -At --dbname "$adopt_admin" -c "SELECT count(*) FROM pg_class WHERE relnamespace='public'::regnamespace AND relkind IN ('r','p','v','m','f') AND pg_get_userbyid(relowner) <> 'microapp_migrator'")"
+          test "$foreign" = "0"
+
+          echo "== runner now completes 0003+ as microapp_migrator and rows are preserved"
+          MIGRATION_DATABASE_URL="$adopt_migrator" bash scripts/db/migrate.sh
+          expected_total="$(find apps/api/migrations -maxdepth 1 -type f -name '[0-9][0-9][0-9][0-9]_*.sql' ! -name '*.assertions.sql' ! -name '*.deferred_failure.sql' | wc -l | awk '{print $1}')"
+          test "$(psql -X -At --dbname "$adopt_admin" -c "SELECT count(*) = ${expected_total} AND bool_and(state='applied') FROM public.schema_migrations")" = "t"
+          test "$(psql -X -At --dbname "$adopt_admin" -c "SELECT count(*) FROM organizations WHERE slug='sentinel-adoption'")" = "1"
+
+          echo "== a second adoption is refused"
+          status=0; output="$(ADOPT_BASELINE_CONFIRM=adopt-0002 bash scripts/db/adopt-baseline.sh apply 2>&1)" || status=$?
+          test "$status" -ne 0
+          printf '%s\n' "$output" | grep -F "BASELINE_LEDGER_ALREADY_PRESENT"
       - name: Verify concurrent runner is rejected by advisory lock
         run: |
           psql -X -v ON_ERROR_STOP=1 --dbname "$ADMIN_DATABASE_URL" -c "SELECT pg_catalog.pg_advisory_lock(20261105, 120012); SELECT pg_catalog.pg_sleep(20);" >/tmp/migration-lock-holder.log 2>&1 &

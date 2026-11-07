@@ -1,3 +1,9 @@
+# 2026-11-07 UTC — Modo de adopción de baseline
+
+- Añadidos `adopt-baseline.sh`, `schema_fingerprint.sql` y la huella 0002; pruebas en `migration-runner.yml`. Huella de Neon `main` leída con `SELECT`: coincide con 0001+0002. Sin escrituras en Neon.
+
+---
+
 # 2026-11-06 UTC — Lectura de Neon y plan de adopción (propuesta)
 
 - Se verificó en solo lectura que Neon está en 0001+0002 con 0 filas de negocio y PITR de 6 h, y que el código desplegado desde #244 ya excede el esquema. Se redactó `docs/security/NEON_MIGRATION_APPLICATION_PLAN.md`. Sin escrituras en Neon, roles, secretos, Cloudflare, DNS ni billing.

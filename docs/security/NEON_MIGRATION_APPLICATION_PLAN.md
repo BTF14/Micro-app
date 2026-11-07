@@ -11,6 +11,12 @@
 - **Código desplegado por delante del esquema.** Desde #244 el Worker de producción monta rutas de catálogo/inventario que consultan `branches`, `branch_memberships`, `warehouses`, etc. (migraciones 0003+). Esas rutas fallarán en producción hasta que el esquema se adopte; fallan cerradas (error), no exponen datos. Un GET sin sesión a catálogo respondió 401 (observado por otro agente); **no** se ha probado una llamada autenticada, que es justo la que fallaría. Hasta aplicar el plan, no usar el catálogo en producción.
 - Como el bootstrap ya está consumido, la 0005 no es urgente: `POST /auth/google` de bootstrap devolvería 503 sin la tabla, y ningún usuario existente depende de ella.
 
+## 1b. Evidencia: Neon coincide con 0001+0002 del repositorio
+
+Se ejecutó la huella (solo `SELECT`) sobre Neon `main` (PG 18.6) y sobre una base nueva construida con 0001+0002 (PG 16). Los hashes por tipo coinciden: columnas 133 (`a695404a…`), constraints 98 (`3f0efe69…`), índices 46 (`a977bb66…`), relaciones 17 (`26186200…`). No hay funciones, triggers, tipos ni extensiones en ninguno. Es evidencia estructural, no prueba de que los checksums históricos coincidan.
+
+CI (`migration-runner.yml`) prueba: verify correcto, deriva detectada sin escribir, rechazo sin confirmación, checksums registrados, propiedad transferida, el runner completa 0003–0016 como `microapp_migrator`, una fila centinela se conserva y una segunda adopción se rechaza.
+
 ## 2. Decisión: no aplicar la 0005 sola
 
 Aplicarla aislada deja la Neon en un estado (0001, 0002, 0005) que ningún entorno de prueba ejercita y que el runner con ledger rechaza. Se aplica como parte de la secuencia contigua 0001–0016 que ya está en `main`, tras ensayo.
@@ -19,7 +25,7 @@ Aplicarla aislada deja la Neon en un estado (0001, 0002, 0005) que ningún entor
 
 ### Fase 0 — solo repositorio (sin Neon). Autorizada por el merge permanente.
 1. **Ya integrado en `main` (#243–#245):** secuencia 0001–0016 con assertions, runner con ledger que falla cerrado ante esquema poblado sin ledger (`MIGRATION_BASELINE_REQUIRED`) y arnés de roles runtime. No se rehace.
-2. **Falta:** el runner necesita un modo de **adopción de baseline**: calcular la huella del catálogo de una base recién construida con 0001–0002 y compararla con la Neon; solo si coincide, registrar 0001–0002 en el ledger. Sin coincidencia, abortar.
+2. **Hecho en esta entrega:** `scripts/db/adopt-baseline.sh` (`verify` solo lectura; `apply` en una transacción) y `scripts/db/schema_fingerprint.sql`. Compara la estructura viva contra la huella canónica `apps/api/migrations/baselines/0002.schema.txt` (294 hechos de catálogo; excluye propietarios, ACL y datos). Solo si coincide y no hay ledger, crea el ledger, transfiere la propiedad de los objetos a `microapp_migrator` y registra 0001–0002 con los checksums reales del repositorio. `migrate.sh` no se modificó y sigue rechazando un esquema poblado sin ledger. Requiere `ADOPT_BASELINE_CONFIRM=adopt-0002`.
 3. En PostgreSQL 18 desechable: migraciones completas, rollback inyectado por migración, checksum alterado, hueco de numeración, reejecución idempotente, y pruebas negativas con logins reales `microapp_runtime`/`microapp_migrator` (nunca superusuario ni `SET ROLE`).
 
 ### Fase 1 — ensayo en rama Neon (autorización A, reversible)
@@ -31,7 +37,7 @@ Aplicarla aislada deja la Neon en un estado (0001, 0002, 0005) que ningún entor
 ### Fase 2 — producción (autorización B, separada y explícita)
 Precondiciones: Fase 1 verde; snapshot reciente (`create_snapshot`) más rama de respaldo; ventana acordada; `docs/BACKUP_AND_RECOVERY.md` leído y restore probado en rama.
 1. Snapshot de la rama principal.
-2. Roles y grants → baseline → migraciones, cada una en su transacción con registro en el ledger.
+2. Roles y grants → `adopt-baseline.sh verify` → `apply` → `migrate.sh` (cada migración en su transacción con registro en el ledger). En Neon, `neondb_owner` no es superusuario: `ALTER … OWNER TO microapp_migrator` exige que sea miembro con SET del rol destino. **Esto no está probado**; es el primer punto a validar en la rama de ensayo. Revocar esa membresía al terminar (el runner la exige vacía para el migrator).
 3. Validación (sección 5). Si falla cualquier comprobación: **detener**.
 
 ### Fase 3 — cambio de credenciales (autorización C, la ejecuta el propietario)

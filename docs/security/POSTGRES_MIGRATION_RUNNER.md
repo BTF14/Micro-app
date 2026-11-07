@@ -79,3 +79,8 @@ No release/deployment workflow invokes this runner yet, and no `MIGRATION_DATABA
 - Passing CI against disposable PostgreSQL 18 is not production approval.
 
 Before any real rollout, the exact target database must be inspected through an explicitly approved, read-only baseline and role/ownership review. A populated database requires an explicit adoption plan and its own tests.
+
+## Adopción de un esquema heredado sin ledger
+
+El runner rechaza (`MIGRATION_BASELINE_REQUIRED`) un esquema poblado sin ledger y no se modifica. La adopción es una operación aparte y explícita: `scripts/db/adopt-baseline.sh verify|apply` (ver `docs/security/NEON_MIGRATION_APPLICATION_PLAN.md`). Si cambian 0001 o 0002, hay que regenerar `baselines/0002.schema.txt` y justificarlo en la PR; si cambia la huella pero el esquema vivo no, la adopción falla cerrada.
+

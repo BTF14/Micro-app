@@ -1,3 +1,11 @@
+# 2026-11-07 UTC — delta único de limpieza de auth en #218
+
+- Main ya tiene el handoff OAuth #215 vía #240 y el rate limiter canónico #213. No reintroducir la copia antigua de #214/#215, la migración duplicada 0010 ni `AUTH_RATE_LIMIT_HMAC_KEY`.
+- Se identificó un comportamiento único en #218: cleanup programado cada hora que elimina `auth_rate_limits` y `auth_bootstrap_attempts` con retención de 48 h. Main solo poda oportunísticamente rate-limit rows de más de 7 días y no limpia handoff rows expiradas.
+- Preservar ese cleanup en un port pequeño sobre el módulo canónico `consumeAuthRateLimit`, con skip de previews, verificación de permisos DELETE del runtime y pruebas PostgreSQL. No cerrar #218 hasta preservar o demostrar que ese comportamiento se ha portado.
+
+---
+
 # 2026-11-07 UTC — corrección de procedencia del handoff OAuth
 
 - Corrección a la anotación anterior: el handoff OAuth server-side de PR #215 ya está integrado en main vía #240. El blob de `apps/api/migrations/0005_auth_bootstrap_attempts.sql` en main es idéntico al antiguo `0010_auth_bootstrap_attempts.sql` de #215/#218; el `google-auth.ts` de main conserva opaque handle, hash de estado y consumo atómico.

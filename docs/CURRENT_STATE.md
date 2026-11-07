@@ -1,3 +1,17 @@
+## Estado vivo corregido — 2026-11-07 UTC
+
+- **Main actual:** `c4be53ea3247c69206a79ebe5fa2f875a4f9aac4`. PR #249 (reconciliación documental) y #252 (regresión de bootstrap oversized sin Content-Length) están fusionadas. #252 pasó 10/10 workflows PR en su HEAD exacto; CI se reintentó una vez por una colisión DDL transitoria en tests de catálogo y la segunda ejecución completó 32/32 pasos, incluido runtime-role.
+- **Backlog vivo:** 19 PR abiertas. Las PR #218–#226 fueron cerradas como supersedidas después de verificar que sus cambios únicos estaban en main o preservados en #251/#252. No se perdió código: el cleanup de auth está en #251 y la regresión de body limit quedó integrada por #252.
+- **PR #251:** Draft, HEAD `2a0c685a2348af87f76417b4f3ac0f77a70cbb5d`, mergeable, 10/10 workflows PR SUCCESS y ambos scans de push SUCCESS. Portó la limpieza horaria de auth >48 h con preview skip y prueba PostgreSQL bajo `microapp_runtime`. No mergear hasta que Neon main tenga `auth_bootstrap_attempts`, roles runtime y grants verificados; no activar el Cron en producción antes de ese gate.
+- **BCV:** #227 y #250 siguen abiertas como fuente histórica. #250 HEAD `081ec1026f4bda889a633bb3fcbe420433e13336` tiene 6 workflows SUCCESS e integración PostgreSQL real mañana→hoy/idempotencia. Su base #227 depende del stack viejo; no fusionar. Reconstruir BCV sobre base actual preservando el fix.
+- **Stack money/catalog/sales:** main ya contiene `packages/money`, `CatalogPanel`, `ProductForm`, migraciones 0014/0015 y no-discounts. #233 aporta el handler de checkout `sales-checkout.ts`, que aún no está en main; #232 contiene su diseño. Auditar y portar solo ese comportamiento único, no reimportar migraciones.
+- **Inventario:** #200 sigue divergida (37 ahead/14 behind) y su migración antigua 0005 colisiona con main. #204/#205 y #207–#210 tienen gran parte del comportamiento ya integrado; revisar diffs restantes antes de cerrar. #202 y #193 siguen abiertos como documentación histórica; Issue #53 permanece OPEN/P0.
+- **Neon — solo lectura, 2026-11-07:** proyecto `micro-app-db`, rehearsal `br-curly-poetry-b7dxsddm`, parent `br-summer-math-b7297a60`. Ambas ramas tienen 133 columnas, 204 constraints (98 no-NOT-NULL + 106 NOT NULL), 46 índices, 17 relaciones y 15 tablas. Rehearsal tiene roles `microapp_migrator` y `microapp_runtime`; migrator login funciona con public USAGE/CREATE; runtime login funciona con USAGE, sin CREATE ni grants de tabla todavía. Los 15 tables, 46 índices y 2 sequences están bajo owner migrator. No hay ledger, `auth_bootstrap_attempts`, warehouses ni tablas de conteo. Neon main sigue sin esos roles y sin ledger. No se aplicó baseline ni migraciones.
+- El repo no tiene actualmente un secret de rehearsal ni un workflow release que ejecute `adopt-baseline.sh`/`migrate.sh` contra Neon. No intentar aplicar migraciones pegándolas manualmente por SQL; requiere runner protegido y autorización específica para el secreto/entorno de ensayo.
+- Producción sigue **NOT READY**. No se modificaron Neon main, secretos, Cloudflare production, DNS, billing ni datos reales.
+
+---
+
 ## Reconciliación de PR y dependencias — 2026-11-07 UTC
 
 - GitHub consultado en vivo: **28 PR abiertas**. Main: `fc332946a9128e92ce39a3eb1ef1ee7ebd261598`. No reutilizar el snapshot anterior de 25/26 PR.

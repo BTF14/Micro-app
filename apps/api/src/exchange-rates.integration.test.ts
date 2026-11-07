@@ -1,0 +1,141 @@
+import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
+import { Client } from "pg";
+import { findApplicableBcvRate, persistBcvOfficialRate } from "./exchange-rates";
+import type { DatabaseClient } from "./database";
+import app from "./index";
+
+// Run the Hono routes through the same PostgreSQL adapter contract as the Worker.
+vi.mock("@neondatabase/serverless", async () => {
+  const postgres = await import("pg");
+  return {
+    Client: class extends postgres.Client {
+      constructor(connectionString: string) {
+        super({ connectionString });
+      }
+    },
+  };
+});
+const processEnv = (globalThis as typeof globalThis & {
+  process?: { env?: Record<string, string | undefined> };
+}).process?.env;
+// DATABASE_URL is the principal under test (admin in the regular CI job,
+ // microapp_runtime in the runtime-role job). Cleanup always uses the admin URL.
+const databaseUrl = processEnv?.DATABASE_URL ?? processEnv?.DATABASE_URL_ADMIN;
+const cleanupDatabaseUrl = processEnv?.DATABASE_URL_ADMIN ?? databaseUrl;
+const isCi = Boolean(processEnv?.CI);
+const isDisposableCiDatabase = (() => {
+  if (!isCi || !databaseUrl) return false;
+  try {
+    const url = new URL(databaseUrl);
+    return (url.hostname === "localhost" || url.hostname === "127.0.0.1") &&
+      url.pathname === "/microapp_test";
+  } catch {
+    return false;
+  }
+})();
+
+if (isCi && !isDisposableCiDatabase) {
+  throw new Error("BCV PostgreSQL integration tests require the disposable localhost microapp_test database.");
+}
+
+describe.skipIf(!isDisposableCiDatabase)("BCV effective-date persistence against disposable PostgreSQL", () => {
+  let client: Client | undefined;
+  let cleanupClient: Client | undefined;
+  const source = "BCV_OFFICIAL_HTML_V1";
+
+  beforeAll(async () => {
+    if (!databaseUrl) throw new Error("PostgreSQL integration database is not configured.");
+    if (!cleanupDatabaseUrl) throw new Error("PostgreSQL admin cleanup URL is not configured.");
+    client = new Client({ connectionString: databaseUrl });
+    cleanupClient = new Client({ connectionString: cleanupDatabaseUrl });
+    await client.connect();
+    await cleanupClient.connect();
+    // This suite runs only against the disposable PostgreSQL service in CI.
+    await cleanupClient.query("DELETE FROM public.exchange_rates WHERE source = $1", [source]);
+  });
+
+  afterAll(async () => {
+    try {
+      if (cleanupClient) await cleanupClient.query("DELETE FROM public.exchange_rates WHERE source = $1", [source]);
+    } finally {
+      await client?.end();
+      await cleanupClient?.end();
+    }
+  });
+
+  it("stores today's rate after the next business-day rate and selects the applicable date", async () => {
+    if (!client) throw new Error("PostgreSQL integration client is not connected.");
+
+    const dates = await client.query<{ today: string }>(
+      "SELECT (now() AT TIME ZONE 'America/Caracas')::date::text AS today",
+    );
+    const { today } = dates.rows[0]!;
+    const weekday = new Intl.DateTimeFormat("en-US", {
+      timeZone: "America/Caracas", weekday: "short",
+    }).format(new Date());
+    const daysUntilNextBusinessDay = weekday === "Fri" ? 3 : weekday === "Sat" ? 2 : weekday === "Sun" ? 1 : 1;
+    const nextBusinessDate = new Date(`${today}T12:00:00Z`);
+    nextBusinessDate.setUTCDate(nextBusinessDate.getUTCDate() + daysUntilNextBusinessDay);
+    const nextEffectiveDate = nextBusinessDate.toISOString().slice(0, 10);
+    const isWeekend = weekday === "Sat" || weekday === "Sun";
+    const expectedApplicableDate = isWeekend ? nextEffectiveDate : today;
+    const expectedApplicableRate = isWeekend ? "895.10000000" : "894.88760000";
+    const databaseClient = client as unknown as DatabaseClient;
+
+    await expect(persistBcvOfficialRate(databaseClient, {
+      rate: "895.10000000",
+      effectiveDate: nextEffectiveDate,
+    })).resolves.toBe("inserted");
+
+    await expect(persistBcvOfficialRate(databaseClient, {
+      rate: "894.88760000",
+      effectiveDate: today,
+    })).resolves.toBe("inserted");
+
+    // Replaying the same official effective date/value must remain idempotent.
+    await expect(persistBcvOfficialRate(databaseClient, {
+      rate: "894.88760000",
+      effectiveDate: today,
+    })).resolves.toBe("unchanged");
+
+    const stored = await cleanupClient!.query<{ effective_date: string; rate: string }>(
+      "SELECT effective_date::text, rate::text FROM public.exchange_rates WHERE source = $1 ORDER BY effective_date DESC",
+      [source],
+    );
+    expect(stored.rows).toEqual([
+      { effective_date: nextEffectiveDate, rate: "895.10000000" },
+      { effective_date: today, rate: "894.88760000" },
+    ]);
+
+    const latest = await findApplicableBcvRate(databaseClient, new Date());
+    expect(latest).toMatchObject({
+      effective_date: expectedApplicableDate,
+      rate: expectedApplicableRate,
+    });
+
+    const latestResponse = await app.fetch(
+      new Request("https://api.example/api/exchange-rates/latest"),
+      { APP_ENV: "production", DATABASE_URL: databaseUrl },
+    );
+    expect(latestResponse.status).toBe(200);
+    await expect(latestResponse.json()).resolves.toMatchObject({
+      rate: expectedApplicableRate,
+      effectiveDate: expectedApplicableDate,
+      source,
+      status: "current",
+    });
+
+    const historyResponse = await app.fetch(
+      new Request("https://api.example/api/exchange-rates/history?limit=10"),
+      { APP_ENV: "production", DATABASE_URL: databaseUrl },
+    );
+    expect(historyResponse.status).toBe(200);
+    await expect(historyResponse.json()).resolves.toMatchObject({
+      source,
+      rates: [
+        { rate: "895.10000000", effectiveDate: nextEffectiveDate, status: "scheduled" },
+        { rate: "894.88760000", effectiveDate: today, status: "current" },
+      ],
+    });
+  });
+});

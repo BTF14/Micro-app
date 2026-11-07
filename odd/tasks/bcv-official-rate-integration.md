@@ -2,7 +2,7 @@
 
 - Status: implementation on recovery branch; exact-HEAD CI and independent review pending; production blocked on Neon migration/runtime reconciliation
 - PR: #255 (stacked on #251)
-- Branch: `feat/bcv-official-rate-recovered-20261107`
+- Branch: `feat/bcv-official-rate-recovered-v2-20261107`
 - Risk: critical (financial rate selection and POS conversion)
 - Started: 2026-11-07
 

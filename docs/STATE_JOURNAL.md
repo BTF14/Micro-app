@@ -1,3 +1,14 @@
+# 2026-11-07 UTC — BCV weekend correctness and recovered stack #255
+
+- PR #255 created from the current #251 recovery branch; PR #254 closed as a duplicate after all its code/docs were copied to the refreshed branch. PR #255 remains Draft; latest HEAD `0ccd2b814a6c581132d761c06ee52f86514979f4`, exact-HEAD workflows still running.
+- PR #251 refreshed its workflow filters so PRs stacked on `fix/**` receive the full required pull_request checks. Its exact HEAD `7c6df0016834e2e6f2ca4b4d062c94995e756662` now has 11/11 PR workflows and 2/2 push security scans successful. It remains Draft due Neon schema/runtime gate.
+- BCV parser now accepts full Spanish effective dates with optional "de" and weekday comma, limits source HTML to 2 MB while streaming, and allows future effective dates up to 7 days for weekends/long weekends.
+- A review of BCV effective-date practice found Saturday/Sunday operations use the next business day's effective rate (Friday publication commonly carries Monday's date). Latest selection now uses today's date on weekdays and the nearest future effective date on weekends; it does not skip a stale nearest future row. Weekday bank holidays remain fail-closed pending an authoritative calendar.
+- #255 adds PostgreSQL integration of persistence and latest/history API through the actual runtime login in the runtime-role CI job; admin login is used only for fixture cleanup. Unit/UI/ODD tests are in the PR.
+- No Neon production reads/writes, secret changes, Cloudflare production changes, deployments, DNS, billing or real-data operations were performed.
+
+---
+
 # 2026-11-07 UTC — cierre de stack supersedido y reconciliación de Neon
 
 - Main pasó a `c4be53ea3247c69206a79ebe5fa2f875a4f9aac4` tras fusionar #252; #249 ya estaba fusionada. #252 agregó la regresión de bootstrap oversized sin Content-Length y su documentación; 10/10 workflows PR success. El job CI necesitó un reintento por una colisión DDL transitoria en `catalog-write.integration.test.ts`; el reintento exacto pasó 32/32 pasos, incluidos auth integration admin/runtime.

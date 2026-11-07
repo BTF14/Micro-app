@@ -10,7 +10,7 @@
 
 ### Orden de recuperación
 1. Reconstruir #200 sobre main actual, conciliando migraciones y preservando catálogo/inventario único.
-2. Reaplicar fixture isolation de #204 a la versión vigente del test y sincronizar la cadena descendiente en orden, sin force-push.
+2. Verificar que #204 no aporta más que fixture isolation ya presente y ampliada en main; si se confirma, documentar y cerrar como supersedida. Auditar #205–#211 contra las implementaciones ya integradas.
 3. Portar el handoff único de #215 y la autorización de #218 sobre el rate limiter ya integrado por #213; retirar el rate limiter duplicado.
 4. Revalidar la cadena de runtime/migrator y el runner frente a las migraciones ya canónicas en main.
 5. Mantener #250 como corrección verificada en su rama apilada; no fusionarla hasta reconstruir una base actual y repetir los gates sobre el HEAD resultante.
@@ -22,9 +22,9 @@
 - SELECT usando logins directos confirmó que microapp_migrator y microapp_runtime pueden conectarse. Runtime aún no tiene privilegios de tabla (esperable antes de 0003–0016). neondb_owner conserva ADMIN OPTION con SET FALSE/INHERIT FALSE sobre ambos roles. No se probó aún el runtime después de aplicar grants ni el runner real.
 - No ejecutar las migraciones pegadas manualmente por SQL: debe ejecutarse el script exacto adopt-baseline.sh/migrate.sh contra la rama de ensayo, con logins directos y comparación de filas. Neon main no se tocó.
 - PR #248 está fusionada en fc332946a9128e92ce39a3eb1ef1ee7ebd261598; Claude reportó 10/10 checks post-merge. La consulta de status contexts no devolvió contextos; no confundir eso con los check-runs de Actions.
-- Backlog GitHub en vivo: 25 PR abiertas, no 26. #244, #245, #246, #247 y #248 están fusionadas. PR #227 sigue Draft y apilada sobre #226, cuya base es #225 etc.; no está lista para merge.
+- Backlog GitHub en vivo: **27 PR abiertas** en la consulta del 2026-11-07; el snapshot de 25 PR de esta sección quedó supersedido por la reconciliación al inicio del archivo. #244–#248 están fusionadas.
 - Reconciliación de #227: la migración 0013_bcv_official_rate_precision_and_grants.sql ya está en main y es byte-identical a la del branch #227 (SHA de blob 2d3f5d6f8daf091e0ce25f921b517566c4c91475). Sin embargo, apps/api/src/exchange-rates.ts, tests, route registration, scheduler y UI BCV no están en main. No fusionar #227 completo: rescatar solo cambios de aplicación que sigan únicos y revisar su CI/configuración sobre el esquema ya integrado.
-- Hallazgo de código en #227: persistBcvOfficialRate usa WHERE NOT EXISTS (effective_date > incoming_date) antes de ON CONFLICT. Si mañana ya está almacenada y después llega hoy, la inserción de hoy se omite y la función devuelve older; la consulta latest excluye mañana y por tanto puede quedar sin tasa actual. Añadir regresión mañana→hoy y permitir insertar fechas históricas faltantes sin sobrescribir filas de misma fecha ni la tasa futura.
+- Hallazgo BCV corregido en PR #250: se eliminó el filtro que impedía insertar hoy si mañana ya estaba almacenada. La regresión PostgreSQL mañana→hoy, fecha America/Caracas e idempotencia pasó en los 6 workflows del HEAD exacto `081ec1026f4bda889a633bb3fcbe420433e13336`. #250 sigue Draft y apilada sobre #227; no está integrada.
 - Producción NOT READY: faltan adopción/migraciones en Neon main con autorización específica, runtime grants reales, secreto DATABASE_URL apuntando a microapp_runtime, smoke autenticado, BCV validado, checkout E2E, restore probado y cierre de los gates P0/P1.
 
 ---

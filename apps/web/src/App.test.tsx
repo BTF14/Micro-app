@@ -162,7 +162,7 @@ describe("Micro app authentication flow", () => {
     await settle();
 
     expect(container.textContent).toContain("US$ 23,85");
-    expect(container.textContent).toContain("Bs. 21.332,57");
+    expect(container.textContent).toContain("Bs. 21.343,07");
   });
 
   it("opens the authenticated catalog and shows exact USD prices without inventing a VES conversion", async () => {

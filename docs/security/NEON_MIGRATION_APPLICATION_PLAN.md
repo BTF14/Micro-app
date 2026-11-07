@@ -1,3 +1,18 @@
+# Verificación en vivo adicional — 2026-11-07 UTC (solo lectura)
+
+Proyecto `micro-app-db` (`restless-fire-99110035`), base de datos `neondb`.
+
+- Neon main `br-summer-math-b7297a60`; rehearsal `br-curly-poetry-b7dxsddm` (`rehearsal-baseline-20261107`), parentada a main en LSN `0/27226A8` y timestamp `2026-11-07T13:43:46Z`. Rehearsal está `ready`, no default; main no se modificó.
+- Fingerprint consultado en ambas ramas: 133 columnas, 204 constraints PostgreSQL (98 constraints distintos de NOT NULL + 106 NOT NULL), 46 índices, 17 relaciones y 15 tablas. Ambas tienen las mismas tablas públicas. No hay `schema_migrations`, `auth_bootstrap_attempts`, `warehouses`, `inventory_counts`, `inventory_balances` ni `warehouse_inventory_movements`.
+- En rehearsal existen roles LOGIN `microapp_migrator` y `microapp_runtime`; ambos logins reales conectan. Migrator tiene public USAGE/CREATE; runtime tiene public USAGE y no CREATE. Runtime no tiene aún SELECT/INSERT/UPDATE/DELETE sobre `auth_rate_limits`; la tabla `auth_bootstrap_attempts` todavía no existe, por tanto sus grants no se pueden probar hasta aplicar migraciones.
+- Los 15 objetos de tabla, 46 índices y 2 secuencias existentes aparecen bajo owner `microapp_migrator`. `neondb_owner` conserva membership ADMIN OPTION a ambos roles, con SET FALSE e INHERIT FALSE. Esto es estado del ensayo, no de producción.
+- En Neon main solo aparecen los roles `neondb_owner` y `backup_readonly`; no hay roles de aplicación ni ledger. Su huella es igual a rehearsal.
+- Consultas usadas fueron SELECT-only. No se ejecutó `adopt-baseline.sh apply`, `migrate.sh`, grants, DDL, escritura de datos ni cambios de secretos.
+
+**Siguiente gate:** el repositorio no contiene actualmente un secret `NEON_REHEARSAL_DATABASE_URL`/migrator ni un workflow de release que invoque los scripts reales. La adopción baseline debe ejecutarse con el runner protegido en la rama rehearsal, no pegando SQL manualmente. El usuario debe autorizar explícitamente cualquier creación de credencial/secret y el uso de ese runner. Neon main, secrets y Cloudflare production permanecen fuera de alcance.
+
+---
+
 # Plan de aplicación segura de migraciones en Neon — Fase 1 parcial; producción no ejecutada
 
 **Estado actualizado:** Fase 1 tiene una rama de ensayo creada y preparada parcialmente; no se ha ejecutado aún `adopt-baseline.sh apply` ni `migrate.sh` en esa rama. Fase 2 (Neon main) y Fase 3 (secreto `DATABASE_URL`) no se han ejecutado. La Fase 1 parcial fue verificada en vivo el 2026-11-07; producción sigue **NO LISTA**. Toda escritura en Neon main y todo cambio de secreto siguen fuera de la autorización general.

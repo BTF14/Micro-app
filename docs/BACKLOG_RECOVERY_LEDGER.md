@@ -1,16 +1,16 @@
 # Live recovery ledger — 2026-11-07 UTC
 
-- Main: `c4be53ea3247c69206a79ebe5fa2f875a4f9aac4`; GitHub open PR count: **21**.
+- Main: `c4be53ea3247c69206a79ebe5fa2f875a4f9aac4`; GitHub open PR count: **21** (recounted after reopening #227 as a temporary dependency anchor).
 - #251 auth-retention: Draft, HEAD `7c6df0016834e2e6f2ca4b4d062c94995e756662`; 11/11 PR workflows + 2/2 push security scans SUCCESS. Cleanup uses 48-hour retention, max 500 rows/table/run, `FOR UPDATE SKIP LOCKED`, production-only Cron, preview skip, and admin/runtime PostgreSQL integration. Neon main still lacks bootstrap table and runtime role/grants; do not merge or activate.
-- #255 BCV recovery: Draft, HEAD `0ccd2b814a6c581132d761c06ee52f86514979f4`, base #251 HEAD `7c6df0016834e2e6f2ca4b4d062c94995e756662`; mergeable. Exact-HEAD workflows are running; no green claim yet. Includes #250's future-first/today-second fix, bounded source parser, current/history endpoints, UI, weekday Cron, weekend next-business-day rule and admin/runtime PostgreSQL integration.
-- #254 closed as a duplicate recovery attempt; all code/docs copied into #255. #218–#226 closed as superseded after file-level recovery; #218's unique cleanup is in #251. #227 remains open as the source/base for money/catalog/checkout #228–#233. #250 remains a historical source; its fix is present in #255.
+- #255 BCV recovery: Draft, HEAD `4e9f01ab85fd767736f4f47f3e47ffefbe7efd88`, base #251 HEAD `7c6df0016834e2e6f2ca4b4d062c94995e756662`; mergeable. All 10 pull_request workflows and all 3 push-triggered runs completed successfully on this exact SHA. The six required check-run contexts (verify, postgres-migration, migration-runner, Chromium authentication smoke, JavaScript/TypeScript static analysis, Trivy, plus history scan) are green; combined classic status contexts are empty. CI logs confirm both BCV PostgreSQL integration tests passed under admin and disposable microapp_runtime logins. No formal reviews/threads; Draft pending independent review and production gates. Includes #250's future-first/today-second fix, bounded source parser, current/history endpoints, UI, weekday Cron, weekend next-business-day rule and admin/runtime PostgreSQL integration.
+- #254 closed as a duplicate recovery attempt; all code/docs copied into #255. #218–#226 closed as superseded after file-level recovery; #218's unique cleanup is in #251. #227 was reopened as a temporary dependency/provenance anchor for still-open #228–#233, which continue to target its branch family; it is Draft and not merge-ready. #250 is closed as superseded by #255; its fix is preserved there.
 - BCV edge policy: weekdays select today's effective date; Saturday/Sunday select nearest future effective date (next business day). Never skip a stale nearest future row. Allow future effective dates up to 7 days for long weekends. Weekday bank holidays have no authoritative calendar yet: fail closed and disable VES conversion until implemented.
 - Migration 0013 is already in GitHub main and is not duplicated. Neon rehearsal is read-only verified but has no baseline ledger, no bootstrap table, no warehouses/counts, and runtime grants are not applied. Neon main untouched.
 - PR #253 is the current documentation reconciliation branch. Production remains **NOT READY**. No production secrets, Cloudflare settings, DNS, billing or real data were changed.
 
 ## Recovery priorities
 
-1. Finish all exact-HEAD checks and independent review on #255; fix every failure before marking Ready.
+1. Obtain independent review of #255 and resolve findings; its exact-HEAD workflows already pass.
 2. Keep #251 Draft until Neon rehearsal/adoption, schema and runtime grants are proven.
 3. Reconcile #228–#231 as superseded where their behavior is already in main; preserve the backup fixture improvement via #256. Port #232's updated checkout design and recover #233's unique handler/tests on #255 without its obsolete migration 0015.
 4. Add migration 0017 to align the checkout DB trigger's BCV effective date with the API's weekday/weekend rule; confirm the existing single-currency/exact-full-payment schema contract before enabling checkout.

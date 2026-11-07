@@ -135,13 +135,13 @@ const suite = describe.skipIf(!databaseUrl)("authentication rate limiting agains
 
     // Preview invocations must be a no-op and must not open a database client.
     const scheduledApp = app as typeof app & {
-      scheduled: (controller: unknown, env: { APP_ENV?: "production" | "preview"; DATABASE_URL?: string }) => Promise<void>;
+      scheduled: (controller: { cron?: string }, env: { APP_ENV?: "production" | "preview"; DATABASE_URL?: string }) => Promise<void>;
     };
     await expect(scheduledApp.scheduled({}, { APP_ENV: "preview" })).resolves.toBeUndefined();
 
     // Exercise the real Worker scheduled entrypoint with the actual runtime
     // login used by this test invocation, not only the helper function.
-    await scheduledApp.scheduled({}, { APP_ENV: "production", DATABASE_URL: databaseUrl });
+    await scheduledApp.scheduled({ cron: "17 * * * *" }, { APP_ENV: "production", DATABASE_URL: databaseUrl });
     // The scheduled handler intentionally returns no row counts; the rows
     // below prove it invoked the production cleanup against PostgreSQL.
 

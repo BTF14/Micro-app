@@ -73,6 +73,12 @@ function normalizeHtmlText(html: string): string {
     .replace(/&amp;/gi, "&")
     .replace(/&quot;/gi, '"')
     .replace(/&#39;|&apos;/gi, "'")
+    .replace(/&aacute;|&#225;|&#xE1;/gi, "á")
+    .replace(/&eacute;|&#233;|&#xE9;/gi, "é")
+    .replace(/&iacute;|&#237;|&#xED;/gi, "í")
+    .replace(/&oacute;|&#243;|&#xF3;/gi, "ó")
+    .replace(/&uacute;|&#250;|&#xFA;/gi, "ú")
+    .replace(/&ntilde;|&#241;|&#xF1;/gi, "ñ")
     .replace(/\s+/g, " ")
     .trim();
 }
@@ -138,12 +144,16 @@ function validateEffectiveDate(effectiveDate: string, now: Date): void {
 export function parseBcvOfficialRate(html: string, now = new Date()): BcvOfficialRate {
   if (!html || new TextEncoder().encode(html).byteLength > MAX_BCV_HTML_BYTES) throw new Error("BCV_HTML_SIZE_INVALID");
   const text = normalizeHtmlText(html);
-  const usdLabel = /\bUSD\b/i.exec(text);
-  if (!usdLabel || usdLabel.index === undefined) throw new Error("BCV_USD_RATE_MISSING");
-  const rateToken = text.slice(usdLabel.index + usdLabel[0].length).trim().split(/\s+/)[0] ?? "";
-  if (!/^[\d.,]+$/.test(rateToken)) throw new Error("BCV_RATE_FORMAT_INVALID");
-
-  const rate = parseLocalizedRate(rateToken);
+  let rate: string | null = null;
+  for (const match of text.matchAll(/\bUSD\b\s*([\d.,]+)/gi)) {
+    try {
+      rate = parseLocalizedRate(match[1]!);
+      break;
+    } catch {
+      // Ignore unrelated USD mentions; accept only a valid locale-formatted rate.
+    }
+  }
+  if (!rate) throw new Error("BCV_USD_RATE_MISSING");
   const effectiveDate = parseSpanishEffectiveDate(text);
   validateEffectiveDate(effectiveDate, now);
   return { rate, effectiveDate };

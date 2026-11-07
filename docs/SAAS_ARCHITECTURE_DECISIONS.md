@@ -67,8 +67,8 @@ Objetivo: USD como moneda base del catálogo/contabilidad interna y VES como con
 2. Un Cron Trigger de Cloudflare consulta una vez cada día hábil a las 18:00 de Venezuela (22:00 UTC). No se consulta en fines de semana; los feriados se manejan conservando la última tasa validada.
 3. La respuesta se limita a 2 MB durante streaming; se valida origen HTTPS, tipo de contenido, UTF-8, USD, valor positivo y "Fecha Valor" explícita. Un fallo conserva la última tasa y no usa terceros como fallback.
 4. Persistir histórico en `exchange_rates` con `NUMERIC(18,8)`, fuente, fecha efectiva y timestamp de captura. La migración 0013 ya está en la secuencia de GitHub; debe aplicarse y verificarse en Neon antes de desplegar este uso.
-5. La idempotencia se basa en `(source, effective_date)`. Una fila futura no bloquea insertar una fecha anterior faltante; la ruta latest excluye fechas futuras y el histórico las etiqueta como programadas.
-6. Si BCV revisa un valor para la misma fecha, conservar el decimal original, marcarlo stale con el permiso column-scoped y fallar cerrado. No sobrescribir tasas históricas.
+5. La idempotencia se basa en `(source, effective_date)`. Una fila futura no bloquea insertar una fecha anterior faltante. En días hábiles, latest selecciona la fecha efectiva de hoy; sábados y domingos selecciona la fecha futura más cercana publicada para el siguiente día hábil. El histórico etiqueta filas futuras como programadas.
+6. Si BCV revisa un valor para la misma fecha, conservar el decimal original, marcarlo stale con el permiso column-scoped y fallar cerrado. No sobrescribir tasas históricas. Los feriados bancarios que caen entre semana aún requieren calendario oficial; hasta integrarlo, se suspende conversión si no existe una fila exacta para ese día.
 7. El dashboard muestra fuente, fecha efectiva y frescura. El catálogo convierte USD→VES solo con tasa vigente y validada usando aritmética decimal exacta; si falta o está stale, suspende la conversión.
 8. Cada venta/pago debe conservar tasa, moneda, importe original, importe convertido, fecha efectiva y fuente usados en ese momento. Actualizar la tasa nunca recalcula operaciones pasadas.
 

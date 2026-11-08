@@ -68,6 +68,12 @@ jobs:
         run: bash scripts/db/migrate.sh
       - name: Verify final PostgreSQL schema contract
         run: psql -X -v ON_ERROR_STOP=1 --dbname "$ADMIN_DATABASE_URL" -f apps/api/migrations/0016_runtime_inventory_ledger_read.assertions.sql
+      - name: Verify checkout BCV weekday/weekend effective-date contract
+        run: psql -X -v ON_ERROR_STOP=1 --dbname "$ADMIN_DATABASE_URL" -f apps/api/migrations/0017_checkout_bcv_weekend_effective_date.assertions.sql
+      - name: Verify checkout per-payment USD allocation contract
+        run: psql -X -v ON_ERROR_STOP=1 --dbname "$ADMIN_DATABASE_URL" -f apps/api/migrations/0018_checkout_payment_allocation.assertions.sql
+      - name: Verify ledger-authoritative inventory balance projection contract
+        run: psql -X -v ON_ERROR_STOP=1 --dbname "$ADMIN_DATABASE_URL" -f apps/api/migrations/0019_inventory_ledger_balance_projection.assertions.sql
       - name: Build and typecheck
         run: pnpm build
       - name: Verify Cloudflare Pages preview isolation
@@ -108,6 +114,8 @@ jobs:
         run: pnpm --filter @micro-app/api exec vitest run src/inventory-counts.integration.test.ts
       - name: PostgreSQL inventory read integration tests
         run: pnpm --filter @micro-app/api exec vitest run src/inventory-read.integration.test.ts
+      - name: PostgreSQL atomic sales checkout integration tests
+        run: DATABASE_URL="$RUNTIME_DATABASE_URL" DATABASE_URL_ADMIN="$ADMIN_DATABASE_URL" pnpm --filter @micro-app/api exec vitest run src/sales-checkout.integration.test.ts
       - name: Runtime-role API integration tests
         run: |
           DATABASE_URL="$RUNTIME_DATABASE_URL" DATABASE_URL_ADMIN="$ADMIN_DATABASE_URL" pnpm --filter @micro-app/api exec vitest run --no-file-parallelism src/auth.integration.test.ts src/auth-rate-limit.integration.test.ts src/branch-context.integration.test.ts src/catalog.integration.test.ts src/catalog-write.integration.test.ts src/catalog-update.integration.test.ts src/inventory-counts.integration.test.ts src/inventory-read.integration.test.ts

@@ -275,6 +275,57 @@ jobs:
         run: docker exec -i -e PGPASSWORD=migrator-test-only "${{ job.services.postgres.id }}" psql -h 127.0.0.1 -v ON_ERROR_STOP=1 -U microapp_migrator -d microapp_test -f /dev/stdin < apps/api/migrations/0016_runtime_inventory_ledger_read.sql
       - name: Verify runtime inventory ledger remains append-only
         run: docker exec -i "${{ job.services.postgres.id }}" psql -v ON_ERROR_STOP=1 -U microapp -d microapp_test -f /dev/stdin < apps/api/migrations/0016_runtime_inventory_ledger_read.assertions.sql
+      - name: Verify checkout BCV migration rolls back atomically
+        run: |
+          sed '/^COMMIT;$/i SELECT 1/0;' apps/api/migrations/0017_checkout_bcv_weekend_effective_date.sql > /tmp/0017-checkout-bcv-failure.sql
+          status=0
+          output="$(docker exec -i -e PGPASSWORD=migrator-test-only "${{ job.services.postgres.id }}" psql -h 127.0.0.1 -v ON_ERROR_STOP=1 -U microapp_migrator -d microapp_test -f /dev/stdin < /tmp/0017-checkout-bcv-failure.sql 2>&1)" || status=$?
+          printf '%s\n' "$output"
+          if [ "$status" -eq 0 ]; then
+            echo "Expected the checkout BCV migration failure, but psql succeeded."
+            exit 1
+          fi
+          printf '%s\n' "$output" | grep -F "division by zero"
+          unchanged="$(docker exec "${{ job.services.postgres.id }}" psql -At -U microapp -d microapp_test -c "SELECT to_regprocedure('public.applicable_bcv_effective_date(timestamptz)') IS NULL AND pg_catalog.strpos(pg_catalog.pg_get_functiondef('public.assert_completed_sale_reconciled()'::regprocedure),'applicable_bcv_effective_date')=0")"
+          test "$unchanged" = "t"
+      - name: Apply checkout BCV weekend effective-date migration
+        run: docker exec -i -e PGPASSWORD=migrator-test-only "${{ job.services.postgres.id }}" psql -h 127.0.0.1 -v ON_ERROR_STOP=1 -U microapp_migrator -d microapp_test -f /dev/stdin < apps/api/migrations/0017_checkout_bcv_weekend_effective_date.sql
+      - name: Verify checkout BCV weekday/weekend effective-date contract
+        run: docker exec -i "${{ job.services.postgres.id }}" psql -v ON_ERROR_STOP=1 -U microapp -d microapp_test -f /dev/stdin < apps/api/migrations/0017_checkout_bcv_weekend_effective_date.assertions.sql
+      - name: Verify checkout payment allocation migration rolls back atomically
+        run: |
+          sed '/^COMMIT;$/i SELECT 1/0;' apps/api/migrations/0018_checkout_payment_allocation.sql > /tmp/0018-checkout-payment-allocation-failure.sql
+          status=0
+          output="$(docker exec -i -e PGPASSWORD=migrator-test-only "${{ job.services.postgres.id }}" psql -h 127.0.0.1 -v ON_ERROR_STOP=1 -U microapp_migrator -d microapp_test -f /dev/stdin < /tmp/0018-checkout-payment-allocation-failure.sql 2>&1)" || status=$?
+          printf '%s\n' "$output"
+          if [ "$status" -eq 0 ]; then
+            echo "Expected the checkout payment allocation migration failure, but psql succeeded."
+            exit 1
+          fi
+          printf '%s\n' "$output" | grep -F "division by zero"
+          unchanged="$(docker exec "${{ job.services.postgres.id }}" psql -At -U microapp -d microapp_test -c "SELECT NOT EXISTS (SELECT 1 FROM pg_attribute WHERE attrelid='public.payments'::regclass AND attname='allocation_position' AND NOT attisdropped) AND to_regprocedure('public.assert_completed_sale_payment_allocation()') IS NULL AND NOT EXISTS (SELECT 1 FROM pg_trigger WHERE tgname IN ('sales_payment_allocation_reconciled','payments_payment_allocation_reconciled'))")"
+          test "$unchanged" = "t"
+      - name: Apply checkout payment allocation migration
+        run: docker exec -i -e PGPASSWORD=migrator-test-only "${{ job.services.postgres.id }}" psql -h 127.0.0.1 -v ON_ERROR_STOP=1 -U microapp_migrator -d microapp_test -f /dev/stdin < apps/api/migrations/0018_checkout_payment_allocation.sql
+      - name: Verify checkout per-payment USD allocation contract
+        run: docker exec -i "${{ job.services.postgres.id }}" psql -v ON_ERROR_STOP=1 -U microapp -d microapp_test -f /dev/stdin < apps/api/migrations/0018_checkout_payment_allocation.assertions.sql
+      - name: Verify inventory ledger projection migration rolls back atomically
+        run: |
+          sed '/^COMMIT;$/i SELECT 1/0;' apps/api/migrations/0019_inventory_ledger_balance_projection.sql > /tmp/0019-inventory-projection-failure.sql
+          status=0
+          output="$(docker exec -i -e PGPASSWORD=migrator-test-only "${{ job.services.postgres.id }}" psql -h 127.0.0.1 -v ON_ERROR_STOP=1 -U microapp_migrator -d microapp_test -f /dev/stdin < /tmp/0019-inventory-projection-failure.sql 2>&1)" || status=$?
+          printf '%s\n' "$output"
+          if [ "$status" -eq 0 ]; then
+            echo "Expected inventory projection migration failure, but psql succeeded."
+            exit 1
+          fi
+          printf '%s\n' "$output" | grep -F "division by zero"
+          unchanged="$(docker exec "${{ job.services.postgres.id }}" psql -At -U microapp -d microapp_test -c "SELECT to_regclass('public.inventory_balance_ledger_intents') IS NOT NULL AND to_regprocedure('public.project_inventory_movement_to_balance()') IS NULL AND has_table_privilege('microapp_runtime','public.inventory_balances','INSERT')")"
+          test "$unchanged" = "t"
+      - name: Apply ledger-authoritative inventory balance projection migration
+        run: docker exec -i -e PGPASSWORD=migrator-test-only "${{ job.services.postgres.id }}" psql -h 127.0.0.1 -v ON_ERROR_STOP=1 -U microapp_migrator -d microapp_test -f /dev/stdin < apps/api/migrations/0019_inventory_ledger_balance_projection.sql
+      - name: Verify ledger-authoritative inventory balance projection contract
+        run: docker exec -i "${{ job.services.postgres.id }}" psql -v ON_ERROR_STOP=1 -U microapp -d microapp_test -f /dev/stdin < apps/api/migrations/0019_inventory_ledger_balance_projection.assertions.sql
       - name: Verify application objects are owned by the non-superuser migrator
         run: |
           ownership="$(docker exec "${{ job.services.postgres.id }}" psql -At -U microapp -d microapp_test -c "SELECT NOT EXISTS (SELECT 1 FROM pg_class WHERE relnamespace='public'::regnamespace AND relkind IN ('r','p','S','v','m') AND relowner <> (SELECT oid FROM pg_roles WHERE rolname='microapp_migrator')) AND NOT EXISTS (SELECT 1 FROM pg_proc WHERE pronamespace='public'::regnamespace AND proowner <> (SELECT oid FROM pg_roles WHERE rolname='microapp_migrator'))")"

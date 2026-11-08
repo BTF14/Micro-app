@@ -6,6 +6,7 @@ import { registerCatalogRoutes } from "./catalog";
 import { registerInventoryCountRoutes } from "./inventory-counts";
 import { registerInventoryReadRoutes } from "./inventory-read";
 import { registerCatalogWriteRoutes } from "./catalog-write";
+import { registerSalesCheckoutRoutes } from "./sales-checkout";
 import { withDatabaseClient } from "./database";
 import { cleanupExpiredAuthRecords } from "./auth-rate-limit";
 import type { Bindings } from "./bindings";
@@ -85,6 +86,7 @@ registerCatalogRoutes(app);
 registerInventoryCountRoutes(app);
 registerInventoryReadRoutes(app);
 registerCatalogWriteRoutes(app);
+registerSalesCheckoutRoutes(app);
 
 app.get("/health", (c) =>
   c.json({

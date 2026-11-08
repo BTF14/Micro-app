@@ -1,3 +1,5 @@
+> **Superseded design note — 2026-11-08:** This task documents the original migration 0010 balance/ledger intent-pairing approach. It remains as historical evidence, but its direct balance-write model is superseded by `odd/tasks/inventory-ledger-balance-projection.md` and Draft PR #262, which make the append-only ledger the projection source and remove runtime balance mutation privileges. Do not use this task as the current target architecture.
+
 > **Historical ODD record — reconciled 2026-11-07.** Original PR #210 migration `0009_inventory_balance_ledger_coupling.sql` is present on main as `0010_inventory_balance_ledger_coupling.sql`; the SQL body and deferred-failure assertion are byte-for-byte identical. The main assertion file differs only in its first comment naming the migration. Main retains the transaction-scoped balance/ledger coupling. The checklist and SHAs below are historical branch evidence, not proof of Neon production application or production runtime ownership.
 
 ---

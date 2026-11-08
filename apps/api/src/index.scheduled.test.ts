@@ -14,7 +14,7 @@ import app from "./index";
 
 const productionEnv = {
   APP_ENV: "production",
-  DATABASE_URL: "postgresql://microapp_migrator:masked@localhost/microapp",
+  DATABASE_URL: "postgresql://localhost/microapp",
 } as unknown as Bindings;
 
 const bcvCron = { cron: "0 22 * * 1-5" } as ScheduledController;
@@ -41,7 +41,7 @@ describe("BCV scheduled failure reporting", () => {
 
   it("does not expose an unrecognized error message in logs", async () => {
     mocks.syncBcvOfficialRate.mockRejectedValue(
-      new Error("postgresql://user:secret@host/database"),
+      new Error("internal-db-detail-should-not-be-logged"),
     );
     const errorLog = vi.spyOn(console, "error").mockImplementation(() => undefined);
 
@@ -51,7 +51,7 @@ describe("BCV scheduled failure reporting", () => {
     expect(errorLog).toHaveBeenCalledWith("BCV_SYNC_FAILED", {
       code: "UNKNOWN",
     });
-    expect(JSON.stringify(errorLog.mock.calls)).not.toContain("secret");
+    expect(JSON.stringify(errorLog.mock.calls)).not.toContain("internal-db-detail-should-not-be-logged");
   });
 
   it("does not invoke BCV synchronization outside production", async () => {

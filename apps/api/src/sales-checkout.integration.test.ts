@@ -505,6 +505,43 @@ describe.skipIf(!isDisposableCheckoutDatabase)("atomic sales checkout PostgreSQL
     expect(sales.rows[0].count).toBe(1);
   });
 
+  it("rejects a database-tampered line amount and rolls back stock, sale and ledger", async () => {
+    await seedBalance("2.000");
+    const key = "line-arithmetic-guard-" + crypto.randomUUID();
+    const beforeMovements = await client.query(
+      "SELECT count(*)::int AS count FROM public.warehouse_inventory_movements WHERE organization_id=$1",
+      [organizationId],
+    );
+    await client.query(`CREATE OR REPLACE FUNCTION public.test_corrupt_checkout_line()
+      RETURNS trigger LANGUAGE plpgsql SECURITY DEFINER SET search_path=pg_catalog AS $
+      BEGIN
+        NEW.line_total_usd := NEW.line_total_usd + 0.0001;
+        RETURN NEW;
+      END $`);
+    await client.query(
+      "CREATE TRIGGER zz_test_corrupt_checkout_line BEFORE INSERT ON public.sale_items FOR EACH ROW EXECUTE FUNCTION public.test_corrupt_checkout_line()",
+    );
+    try {
+      const response = await request(checkoutBody("1.000", "23.8500"), key);
+      expect(response.status).toBe(409);
+      expect((await response.json() as { error: string }).error).toBe("CHECKOUT_REJECTED");
+      expect((await readBalance()).on_hand_quantity).toBe("2.000");
+      const sales = await client.query(
+        "SELECT count(*)::int AS count FROM public.sales WHERE organization_id=$1 AND idempotency_key=$2",
+        [organizationId, key],
+      );
+      expect(sales.rows[0].count).toBe(0);
+      const afterMovements = await client.query(
+        "SELECT count(*)::int AS count FROM public.warehouse_inventory_movements WHERE organization_id=$1",
+        [organizationId],
+      );
+      expect(afterMovements.rows[0].count).toBe(beforeMovements.rows[0].count);
+    } finally {
+      await client.query("DROP TRIGGER IF EXISTS zz_test_corrupt_checkout_line ON public.sale_items");
+      await client.query("DROP FUNCTION IF EXISTS public.test_corrupt_checkout_line()");
+    }
+  });
+
   it("rolls back sale, balance and ledger for failures at movement, line, payment and audit writes", async () => {
     await seedBalance("2.000");
     await client.query(`CREATE OR REPLACE FUNCTION public.test_fail_checkout_write()

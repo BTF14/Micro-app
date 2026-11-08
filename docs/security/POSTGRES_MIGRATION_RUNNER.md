@@ -1,3 +1,7 @@
+## Bundle de migración validado en Neon rehearsal — 2026-11-08
+
+El bundle fijado en `6227a3a8497f6be94d675b64da5da61530c200fc` contiene migraciones 0001–0019. El runner fue ejercitado por el workflow protegido en Neon `microapp_rehearsal` (run [#42507066215](https://github.com/BTF14/Micro-app/actions/runs/42507066215)): baseline 0001–0002/fingerprint y migraciones posteriores, assertions 0017–0019 y verificación final de 19 registros `applied` terminaron SUCCESS. El alcance fue solo la rama de ensayo; Neon main y producción no fueron modificados. Esta evidencia no sustituye las pruebas de rollback/fallo/concurrencia del runner en PostgreSQL efímero ni el gate de producción.
+
 # PostgreSQL migration runner
 
 ## Purpose

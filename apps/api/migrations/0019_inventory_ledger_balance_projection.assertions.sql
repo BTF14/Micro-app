@@ -3,8 +3,10 @@ DO $inventory_ledger_balance_projection_assertions$
 DECLARE
   projection_oid oid;
   lock_oid oid;
+  warehouse_lock_oid oid;
   projection_def text;
   lock_def text;
+  warehouse_lock_def text;
   index_predicate text;
 BEGIN
   IF pg_catalog.to_regclass('public.inventory_balance_ledger_intents') IS NOT NULL
@@ -32,6 +34,44 @@ BEGIN
 
   IF NOT pg_catalog.has_table_privilege('microapp_runtime','public.warehouse_inventory_movements','INSERT') THEN
     RAISE EXCEPTION 'RUNTIME_MUST_APPEND_MOVEMENTS_TO_PROJECT_BALANCES';
+  END IF;
+
+  SELECT p.oid INTO warehouse_lock_oid
+    FROM pg_catalog.pg_proc p
+   WHERE p.oid='public.lock_inventory_movement_warehouse()'::regprocedure
+     AND p.prosecdef=true
+     AND p.proowner=(SELECT oid FROM pg_catalog.pg_roles WHERE rolname='microapp_migrator')
+     AND p.proconfig @> ARRAY['search_path=pg_catalog'];
+  IF warehouse_lock_oid IS NULL THEN
+    RAISE EXCEPTION 'INVENTORY_MOVEMENT_WAREHOUSE_LOCK_SECURITY_CONTRACT_INVALID';
+  END IF;
+  SELECT pg_catalog.pg_get_functiondef(warehouse_lock_oid) INTO warehouse_lock_def;
+  IF pg_catalog.strpos(warehouse_lock_def,'FOR UPDATE')=0
+    OR pg_catalog.strpos(warehouse_lock_def,'is_active')=0
+    OR pg_catalog.strpos(warehouse_lock_def,'organization_id')=0
+    OR pg_catalog.strpos(warehouse_lock_def,'branch_id')=0
+  THEN
+    RAISE EXCEPTION 'INVENTORY_MOVEMENT_WAREHOUSE_LOCK_DEFINITION_INVALID';
+  END IF;
+  IF pg_catalog.has_function_privilege('microapp_runtime',warehouse_lock_oid,'EXECUTE')
+    OR EXISTS (
+      SELECT 1 FROM pg_catalog.aclexplode(
+        COALESCE((SELECT proacl FROM pg_catalog.pg_proc WHERE oid=warehouse_lock_oid),
+                 pg_catalog.acldefault('f',(SELECT proowner FROM pg_catalog.pg_proc WHERE oid=warehouse_lock_oid)))
+      ) acl
+      WHERE acl.grantee=0 AND acl.privilege_type='EXECUTE'
+    )
+  THEN
+    RAISE EXCEPTION 'INVENTORY_MOVEMENT_WAREHOUSE_LOCK_MUST_BE_TRIGGER_ONLY';
+  END IF;
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_catalog.pg_trigger t
+     WHERE t.tgrelid='public.warehouse_inventory_movements'::regclass
+       AND t.tgname='warehouse_inventory_movements_00_lock_warehouse'
+       AND NOT t.tgisinternal AND t.tgenabled='O'
+       AND pg_catalog.pg_get_triggerdef(t.oid) ILIKE '%BEFORE INSERT%'
+  ) THEN
+    RAISE EXCEPTION 'INVENTORY_MOVEMENT_WAREHOUSE_LOCK_TRIGGER_MISSING';
   END IF;
 
   SELECT p.oid INTO projection_oid

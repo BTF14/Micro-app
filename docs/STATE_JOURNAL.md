@@ -2067,3 +2067,9 @@ No se tocaron Neon main, datos reales, secretos, Worker productivo, DNS, billing
 - CURRENT_STATE, HANDOFF_NEXT_CHAT, WORK_CHECKPOINT y STATE_JOURNAL quedaron reconciliados en la rama documental de PR #271.
 - No se copia un SHA de PR #271 dentro de sus propios documentos porque cada commit documental mueve el HEAD; consultar siempre el HEAD vivo de la PR.
 - Los runs observados en commits anteriores de #271 no validan el HEAD final. Requerido: CI completo en el HEAD final antes de merge.
+
+## 2026-11-08 13:27 UTC — reconciliación de estados de mergeability fluctuantes
+
+- En consultas consecutivas GitHub alternó `mergeable` de #269 y #255 entre false y true sin cambios en sus HEADs; última respuesta para ambos: true. Se conserva compare: #269 13 ahead/1 behind; #255 48 ahead/3 behind. No inferir conflicto únicamente de una lectura anterior de mergeable.
+- Para #271, la última lectura devolvió mergeable=false y compare 28 ahead/1 behind; no se han devuelto runs para su última actualización documental.
+- Los gates técnicos/producto de #269/#255 permanecen; mergeable=true no equivale a elegibilidad para fusionar.

@@ -2191,3 +2191,14 @@ No se tocaron Neon main, datos reales, secretos, Worker productivo, DNS, billing
 - Estado vivo de integración: #269 Draft y divergida (24 ahead / 3 behind), sin workflows pull_request completos en su HEAD actual; #255 53 ahead / 10 behind; #258 35 ahead / 41 behind; #262 apilada sobre #258 (107 ahead / 41 behind). #233 histórica Draft; #193 permanece intacta.
 - #269 conserva el mismo contenido de migraciones 0017–0019 que la fuente ensayada `6227a3a8497f6be94d675b64da5da61530c200fc`; los cinco commits posteriores solo modifican workflow/documentación/ODD. El ensayo no certifica el runtime de la aplicación ni resuelve la aprobación del contrato comercial de checkout.
 - Producción continúa NOT READY. Próxima prioridad: reconciliar #269 sin force-push, completar CI exact-HEAD y mantener Draft hasta aprobación del contrato comercial; revisar #255 por separado.
+
+
+## 2026-11-08 UTC — PR #281 integrada y validación post-merge
+
+- PR [#281](https://github.com/BTF14/Micro-app/pull/281) se fusionó por squash. HEAD revisado `756526779491a74b12e1b2746963b36cec59eff6`; merge SHA `e6f0c6021d82cfffce12f4c1d5283f657dc74c64`.
+- En el HEAD exacto pre-merge: 10/10 workflow runs y 14/14 check-runs SUCCESS; los seis contextos requeridos por la protección de main pasaron. No hubo reviews formales ni hilos inline abiertos; la revisión técnica del diff fue manual.
+- En el merge SHA: 9/9 workflow runs y 11/11 check-runs SUCCESS, incluidos CI, Playwright, PostgreSQL, SAST, secret-history y builds de Pages/Workers. Esto no certifica tráfico productivo ni smoke test comercial autenticado.
+- #255 se convirtió a Draft por gates P1 de BCV. Se identificó además que la vigencia de la tasa no está ligada a la antigüedad de `fetched_at`; no se fijará umbral sin decisión del propietario.
+- #269 permanece Draft; sus migraciones 0017–0019 coinciden con el source SHA del rehearsal. El HEAD actual aún no tiene todos los contextos pull_request requeridos y el contrato comercial sigue pendiente.
+- #258/#262 permanecen abiertas y divergidas; no fusionar independientemente ni cerrar sin verificar contenido único.
+- No hubo nuevas escrituras Neon. Producción continúa NOT READY.

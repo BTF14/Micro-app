@@ -1,4 +1,4 @@
-> **Reconciliación 2026-11-08 UTC:** GitHub main es `aa2804a0a6e7879f684b3baeb60646e50f1d6419`; PR #280 está integrada por squash (HEAD `233c1046866c479c1e79d35c8eca0290b09e97b2`). Sus pruebas post-merge terminaron 9/9 workflows y 11/11 check-runs SUCCESS. El ensayo Neon [run #42507066215](https://github.com/BTF14/Micro-app/actions/runs/42507066215) aplicó y verificó 0001–0019 exclusivamente en `microapp_rehearsal`; Neon main no fue modificado. **Producción continúa NOT READY.** Estado operativo y próximos pasos: [CURRENT_STATE](docs/CURRENT_STATE.md) y [HANDOFF](docs/HANDOFF_NEXT_CHAT.md).
+> **Checkpoint 2026-11-08 UTC:** PR #280 y PR #281 están integradas. Último main verificado antes de este checkpoint: `e6f0c6021d82cfffce12f4c1d5283f657dc74c64` (merge SHA PR #281); consultar GitHub para la punta viva. PR #281 post-merge: 9/9 workflows y 11/11 check-runs SUCCESS. Neon rehearsal #42507066215 verificó 0001–0019 únicamente en `microapp_rehearsal`; Neon main no fue modificado. **Producción continúa NOT READY.** Estado operativo: [CURRENT_STATE](docs/CURRENT_STATE.md) y [HANDOFF](docs/HANDOFF_NEXT_CHAT.md).
 
 # Micro app
 

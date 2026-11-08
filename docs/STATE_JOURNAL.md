@@ -2210,3 +2210,11 @@ No se tocaron Neon main, datos reales, secretos, Worker productivo, DNS, billing
 - Pre-merge: 10/10 workflow runs y 14/14 check-runs SUCCESS; los seis contextos requeridos de main pasaron. No hubo reviews formales ni hilos inline abiertos.
 - Post-merge: 9/9 workflow runs y 11/11 check-runs SUCCESS, incluidos CI, Playwright, PostgreSQL, Security/SAST, secret-history, Pages y Workers Builds.
 - Cambio docs-only para actualizar continuidad tras PR #281; no se tocó código, Neon, secretos ni configuración productiva.
+
+
+## 2026-11-08 UTC — PR #269 sincronizada con main y CI exact-HEAD completado
+
+- La rama de PR [#269](https://github.com/BTF14/Micro-app/pull/269) se sincronizó sin force-push mediante merge commit `8615c75ac8a339f5591ea268e0b6c6d6473ae6d3`, con padres pre-sync `14afd5de938a6ff655ecdfc5cb747f0f799290c5` y main `9c6b30281ed59726e532da840568fc9e80b528f7`. Resultado: 25 ahead / 0 behind, mergeable true.
+- En el HEAD exacto `8615c75...`: 16/16 check-runs y 14/14 workflow runs SUCCESS; los seis contextos requeridos por branch protection pasaron, incluidos verify, Chromium, JS/TS, postgres-migration, Trivy y secret-history.
+- PR #269 permanece Draft: el contrato comercial checkout sigue sin aprobación explícita y hay decisiones BCV pendientes. CI verde no autoriza por sí solo la integración funcional.
+- No se ejecutaron escrituras Neon adicionales. El rehearsal #42507066215 sigue siendo evidencia de la DB aislada; no certifica producción.

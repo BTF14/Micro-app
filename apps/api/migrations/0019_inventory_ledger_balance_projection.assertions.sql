@@ -17,6 +17,23 @@ BEGIN
     RAISE EXCEPTION 'INVENTORY_BALANCE_LEDGER_INTENT_PAIRING_MUST_BE_REPLACED';
   END IF;
 
+  IF EXISTS (
+    SELECT 1 FROM pg_catalog.pg_roles
+     WHERE rolname='microapp_runtime'
+       AND (rolsuper OR rolcreatedb OR rolcreaterole OR rolreplication OR rolbypassrls OR NOT rolcanlogin)
+  ) OR pg_catalog.pg_has_role('microapp_runtime','microapp_migrator','MEMBER')
+  THEN
+    RAISE EXCEPTION 'RUNTIME_ROLE_MUST_REMAIN_UNPRIVILEGED_AND_SEPARATE';
+  END IF;
+
+  IF EXISTS (
+    SELECT 1 FROM pg_catalog.pg_class
+     WHERE oid='public.inventory_balances'::regclass
+       AND relowner=(SELECT oid FROM pg_catalog.pg_roles WHERE rolname='microapp_runtime')
+  ) THEN
+    RAISE EXCEPTION 'RUNTIME_MUST_NOT_OWN_INVENTORY_BALANCES';
+  END IF;
+
   IF NOT pg_catalog.has_table_privilege('microapp_runtime','public.inventory_balances','SELECT')
     OR pg_catalog.has_table_privilege('microapp_runtime','public.inventory_balances','INSERT')
     OR pg_catalog.has_table_privilege('microapp_runtime','public.inventory_balances','UPDATE')

@@ -499,6 +499,33 @@ describe.skipIf(!isDisposableCheckoutDatabase)("atomic sales checkout PostgreSQL
     expect((await readBalance()).on_hand_quantity).toBe("1.000");
   });
 
+  it("database projection rejects a runtime movement that would consume reserved stock", async () => {
+    await seedBalance("1.000", "1.000");
+    const before = await client.query(
+      "SELECT count(*)::int AS count FROM public.warehouse_inventory_movements WHERE organization_id=$1",
+      [organizationId],
+    );
+    const runtime = new Client({ connectionString: databaseUrl });
+    await runtime.connect();
+    try {
+      await expect(runtime.query(
+        `INSERT INTO public.warehouse_inventory_movements
+          (organization_id,branch_id,warehouse_id,product_id,movement_type,quantity_delta,reason,actor_user_id)
+         VALUES ($1,$2,$3,$4,'reversal',-0.001,'Reserved stock database guard',$5)`,
+        [organizationId, branchId, warehouseId, productId, userId],
+      )).rejects.toMatchObject({ code: "23514" });
+    } finally {
+      await runtime.end();
+    }
+
+    expect(await readBalance()).toEqual({ on_hand_quantity: "1.000", reserved_quantity: "1.000" });
+    const after = await client.query(
+      "SELECT count(*)::int AS count FROM public.warehouse_inventory_movements WHERE organization_id=$1",
+      [organizationId],
+    );
+    expect(after.rows[0].count).toBe(before.rows[0].count);
+  });
+
   it("allows only one concurrent sale to consume the last unit", async () => {
     await seedBalance("1.000");
     const keyA = "race-a-" + crypto.randomUUID();

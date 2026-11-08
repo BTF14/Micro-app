@@ -1,3 +1,57 @@
+## Handoff vigente — 2026-11-08 UTC
+
+## Estado operativo autoritativo — 2026-11-08 UTC
+
+- **main:** `912e4d269de3b7ac2d43632c9bfcdb10041dbae8`. #259 (serialización CI) y #257 (reconciliación documental) están integradas.
+- **PR #251 — retención auth 48 h:** Draft, HEAD `ded2d95681e9a9436fdb2c9630092379a60405cb`, base main, 26 ahead / 0 behind; **15/15 check-runs y 13/13 workflows SUCCESS**. Prueba de cap 500 por tabla y segunda invocación que drena el remanente. Sin review formal independiente.
+- **PR #255 — BCV oficial:** Draft, HEAD `a31892ae74958573a741cb36470182da6bdd529e`, base #251, 45 ahead / 0 behind; **15/15 check-runs y 13/13 workflows SUCCESS**. Parser/productor/API/UI/Cron y selección weekend. Sin review formal independiente; no integrado en main.
+- **PR #258 — checkout atómico:** Draft, HEAD `48eaa489dfc062912871b98594c6db4083812087`, base main, 23 ahead / 0 behind; **15/15 check-runs y 13/13 workflows SUCCESS**. CI exact-SHA: 141 unit tests, 85 runtime-role PostgreSQL tests y 16 checkout PostgreSQL tests. Migration 0017 añade BCV weekday/weekend y validación SQL por línea; no está en main ni Neon. Sin review formal independiente.
+- **PR #260 — este refresh:** HEAD previo `ebfc650954f9a65de0f51d36781605c36c73650c` pasó 13/13 check-runs y 11/11 workflows. Este commit actualiza el snapshot y cambia el SHA; revalidar el nuevo HEAD.
+- **PR #193:** sigue abierta; no modificar la rama. Privilegios directos de runtime sobre balances, referencias sin FK tipada y snapshot legado ausente siguen documentados como gates.
+- **PR #233:** fuente histórica; el checkout fue recuperado en #258. No fusionar la rama antigua ni cerrarla antes de integrar y verificar #258/#255.
+- **PR #202 y #211:** cerradas después de preservar material único/hallazgos en documentación.
+- **Producción: NOT READY.** No hay revisión independiente formal; Neon main/rehearsal no tiene las migraciones 0003–0017 aplicadas mediante runner protegido; falta validar login runtime/ownership/grants. No se ha activado ningún Cron productivo.
+- **Gates checkout:** tasa BCV real #255; política comercial de pago (una moneda, pago exacto, sin parcial/sobrepago) sin aprobación funcional explícita; asignación USD proporcional por pago VES no validada individualmente por SQL; falta rate limit específico de checkout; privilegio directo de escritura de balances; falta UI y calendario oficial de feriados weekday.
+- **No acciones productivas:** sin DDL/DML en Neon, cambios de secretos, configuración manual de Cloudflare, DNS, billing, deploy manual ni datos reales. Builds Cloudflare de PR son previews de rama, no prueba de producción.
+
+### Orden de continuación
+
+1. Esperar/validar los SHA exactos de #251, #255 y #258; no copiar checks de commits anteriores.
+2. Obtener review formal independiente de las tres PR; mantener Draft mientras no exista.
+3. Mantener la pila #251 → #255; no retargetear #255 a main sin reconstruir su base.
+4. Resolver Neon rehearsal por runner protegido, verificar current_user, ownership, grants mínimos y Worker identity; main permanece intocable.
+5. Resolver asignación por pago, rate limit checkout y privilegios de balances antes de producción.
+6. Integrar UI de checkout después de cerrar contrato funcional y API; cerrar #233 solo cuando #258/#255 estén integradas y se confirme que no queda contenido único.
+
+---
+
+Empieza leyendo `AGENTS.md`, `docs/CONSTITUTION.md`, `docs/AI_COLLABORATION_AND_PR_POLICY.md`, `docs/CURRENT_STATE.md`, este handoff, `docs/WORK_CHECKPOINT.md`, `docs/PROJECT_PLAN.md`, `docs/STATE_JOURNAL.md`, `docs/SECURITY_ROADMAP.md` y los SDD/ODD aplicables. Usa GitHub como fuente de verdad y comprueba refs/HEADs antes de actuar.
+
+No pedir Build IDs, capturas, terminal, CLI, TinyFish ni reconexiones ya documentadas. No hacer SQL manual ni escribir en Neon main. No cambiar secretos, Worker productivo, DNS o billing. No fusionar por CI verde solamente; separar check-runs, workflows, status contexts y reviews formales.
+## Handoff vigente posterior a #257 — 2026-11-08 UTC
+
+Empieza leyendo `AGENTS.md`, `docs/CONSTITUTION.md`, `docs/AI_COLLABORATION_AND_PR_POLICY.md`, `docs/CURRENT_STATE.md`, este handoff, `docs/WORK_CHECKPOINT.md`, `docs/PROJECT_PLAN.md`, `docs/STATE_JOURNAL.md`, `docs/SECURITY_ROADMAP.md` y los SDD/ODD aplicables. Usa GitHub como fuente de verdad y comprueba los HEADs actuales antes de actuar.
+
+### Estado exacto de trabajo
+
+- #259 CI serialization y #257 documentación ya están fusionadas en main.
+- #258 Draft: HEAD `7cc80b47b39d557c1d1837c3176d97d7d23c8d94`, 15/15 check-runs y 13/13 workflows SUCCESS; 141 unit tests, 85 runtime-role tests y 16 checkout PostgreSQL tests. Incluye handler transaccional, migration 0017, selección BCV weekday/weekend y defensa SQL de aritmética por línea. No está fusionada ni aplicada en Neon.
+- #255 Draft, base #251: parser/productor/API/Cron BCV; no está en main. #251 también Draft. Sus checks verdes no son review formal ni prueba de despliegue/Neon.
+- #233 es la fuente antigua divergida; no fusionar. El código de checkout se recuperó en #258.
+- #193 no modificar; respetar la restricción previa. Su revisión de privilegios inventario está registrada.
+
+### Próximas acciones
+
+1. Mantener #258 Draft hasta resolver los gates restantes: BCV #255, aprobación explícita de política de pagos, assertion SQL por pago, privilegios de balances, feriados y UI.
+2. Resolver ordenadamente la pila #251 → #255 y después sincronizar #258; revisar conflictos de `index.ts`, `ci.yml` y `wrangler.toml`. No copiar checks de SHA anterior.
+3. Continuar el plan de Neon rehearsal solo con runner protegido y autorización específica; Neon main permanece intocable.
+4. Cerrar #233 solo después de integrar #258/#255 y comprobar que no queda contenido único.
+5. Actualizar documentación viva después de cada cambio sustancial; no dejar HEADs, PRs o gates obsoletos.
+
+### Límites
+
+No Neon main, datos reales, secretos, Cloudflare manual, DNS, billing ni deploy manual. No pedir Build IDs, capturas, terminal, CLI, TinyFish ni reconexiones ya documentadas. No fusionar por CI verde solamente; distinguir check-runs, workflows, status contexts y reviews formales.
+
 ## Handoff vivo — 2026-11-08 UTC — usar este snapshot antes de continuar
 
 ## Snapshot operativo autoritativo — 2026-11-08 UTC — sincronización #259 y recuperación de ventas

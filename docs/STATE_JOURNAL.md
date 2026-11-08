@@ -1,3 +1,23 @@
+# 2026-11-08 UTC — actualización posterior a la validación exact-SHA
+
+- #251 HEAD `ded2d95681e9a9436fdb2c9630092379a60405cb`: 15/15 check-runs y 13/13 workflows SUCCESS; 26 ahead / 0 behind main.
+- #255 HEAD `a31892ae74958573a741cb36470182da6bdd529e`: 15/15 + 13/13 SUCCESS; 45 ahead / 0 behind de base #251.
+- #258 HEAD `48eaa489dfc062912871b98594c6db4083812087`: 15/15 + 13/13 SUCCESS; 141 unit, 85 runtime-role PostgreSQL y 16 checkout PostgreSQL tests; 23 ahead / 0 behind main.
+- #260 HEAD previo `ebfc650954f9a65de0f51d36781605c36c73650c`: 13/13 + 11/11 SUCCESS; este refresh genera nuevo SHA y exige revalidación.
+- #257 y #259 integradas en main `912e4d269de3b7ac2d43632c9bfcdb10041dbae8`.
+- Sin cambios de Neon, secretos, Cloudflare productivo, DNS, billing, datos reales ni deploy manual.
+- Producción sigue NOT READY por gates documentados.
+
+---
+# 2026-11-08 UTC — post-merge state refresh (#257/#259)
+
+- #259 CI serialization merged to main as `07b146a3f2b7830bbd328a585535084e57e43c4e`.
+- #257 documentation reconciliation merged to main as `912e4d269de3b7ac2d43632c9bfcdb10041dbae8`.
+- #258 remains Draft, HEAD `7cc80b47b39d557c1d1837c3176d97d7d23c8d94`: 15/15 check-runs and 13/13 workflows SUCCESS; 141 unit tests, 85 runtime-role integration tests, 16 checkout PostgreSQL tests. Migration 0017 now validates per-line arithmetic as well as BCV weekend effective date.
+- #251/#255 remain Draft, green exact SHA, no formal review; #255 is the BCV producer dependency.
+- No Neon main writes, secrets, manual Cloudflare deployment, DNS or billing changes. Production NOT READY.
+---
+
 # 2026-11-08 UTC — sincronización de ramas, retención y checkout
 
 - #251 se sincronizó con main mediante merge commit `cb43dfc3b4eced25afafd1813af28629fda48bb8`; después se añadió una regresión que ejecuta dos invocaciones del Cron y prueba el drenaje del backlog de 501 filas por tabla. HEAD final de esa actualización: `e2015f3742c2fba62bada2468efdb3689e2e1db4`, 15/15 check-runs y 13/13 workflows SUCCESS.

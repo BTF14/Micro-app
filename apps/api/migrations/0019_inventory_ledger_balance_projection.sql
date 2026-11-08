@@ -258,9 +258,9 @@ BEGIN
   END IF;
 
   PERFORM 1
-    FROM public.organizations AS organization
+    FROM public.organizations AS org
     JOIN public.branches AS branch
-      ON branch.organization_id = organization.id
+      ON branch.organization_id = org.id
      AND branch.id = NEW.branch_id
      AND branch.is_active = true
     JOIN public.warehouses AS warehouse
@@ -269,7 +269,7 @@ BEGIN
      AND warehouse.id = NEW.warehouse_id
      AND warehouse.is_active = true
     JOIN public.organization_members AS confirmer
-      ON confirmer.organization_id = organization.id
+      ON confirmer.organization_id = org.id
      AND confirmer.user_id = NEW.confirmed_by
      AND confirmer.is_active = true
      AND confirmer.role IN ('owner', 'admin', 'inventory')
@@ -277,14 +277,14 @@ BEGIN
       ON confirmer_user.id = confirmer.user_id
      AND confirmer_user.is_active = true
     JOIN public.organization_members AS creator
-      ON creator.organization_id = organization.id
+      ON creator.organization_id = org.id
      AND creator.user_id = NEW.created_by
      AND creator.is_active = true
      AND creator.role IN ('owner', 'admin', 'inventory')
     JOIN public.app_users AS creator_user
       ON creator_user.id = creator.user_id
      AND creator_user.is_active = true
-   WHERE organization.id = NEW.organization_id
+   WHERE org.id = NEW.organization_id
      AND organization.is_active = true
      AND (
        confirmer.role IN ('owner', 'admin')
@@ -306,7 +306,7 @@ BEGIN
             AND membership.is_active = true
        )
      )
-   FOR SHARE OF organization, branch, warehouse, confirmer, confirmer_user, creator, creator_user;
+   FOR SHARE OF org, branch, warehouse, confirmer, confirmer_user, creator, creator_user;
 
   IF NOT FOUND THEN
     RAISE EXCEPTION 'INVENTORY_COUNT_CONFIRMER_NOT_AUTHORIZED'

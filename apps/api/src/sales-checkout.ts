@@ -544,18 +544,43 @@ export function registerSalesCheckoutRoutes(app: Hono<{ Bindings: Bindings }>): 
             return raced ?? { kind: "idempotency_conflict" };
           }
 
+          // Migration 0019 makes the append-only ledger the sole stock writer.
+          // Keep the legacy paired-write path only while that projection migration
+          // is not installed, so the checkout PR remains deployable before #262.
+          const projectionState = await tx.query<{ enabled: boolean }>(
+            `SELECT pg_catalog.to_regprocedure('public.project_inventory_movement_to_balance()') IS NOT NULL AS enabled`,
+          );
+          const ledgerProjectionEnabled = projectionState.rows[0]?.enabled === true;
+
+          // The database movement guard validates each sale movement against
+          // the draft sale line, so persist immutable line snapshots first.
           for (const line of computedLines) {
-            const updated = await tx.query<{ on_hand_quantity: string }>(
-              `UPDATE public.inventory_balances
-                  SET on_hand_quantity = on_hand_quantity - $5::numeric,
-                      updated_at = now()
-                WHERE organization_id = $1 AND branch_id = $2
-                  AND warehouse_id = $3 AND product_id = $4
-                  AND on_hand_quantity - reserved_quantity >= $5::numeric
-                RETURNING on_hand_quantity::text`,
-              [branch.organizationId, branch.branchId, input.warehouseId, line.productId, line.quantity],
+            await tx.query(
+              `INSERT INTO public.sale_items (
+                 organization_id, sale_id, product_id, product_name_snapshot, sku_snapshot,
+                 quantity, unit_price_usd, unit_cost_usd, line_total_usd, line_total_ves
+               ) VALUES ($1, $2, $3, $4, $5, $6::numeric, $7::numeric, $8::numeric, $9::numeric, $10::numeric)`,
+              [
+                branch.organizationId, saleId, line.productId, line.name, line.sku,
+                line.quantity, line.unitPriceUsd, line.unitCostUsd, line.lineUsd, line.lineVes,
+              ],
             );
-            if (!updated.rows[0]) throw new Error("INVENTORY_BALANCE_UPDATE_FAILED");
+          }
+
+          for (const line of computedLines) {
+            if (!ledgerProjectionEnabled) {
+              const updated = await tx.query<{ on_hand_quantity: string }>(
+                `UPDATE public.inventory_balances
+                    SET on_hand_quantity = on_hand_quantity - $5::numeric,
+                        updated_at = now()
+                  WHERE organization_id = $1 AND branch_id = $2
+                    AND warehouse_id = $3 AND product_id = $4
+                    AND on_hand_quantity - reserved_quantity >= $5::numeric
+                  RETURNING on_hand_quantity::text`,
+                [branch.organizationId, branch.branchId, input.warehouseId, line.productId, line.quantity],
+              );
+              if (!updated.rows[0]) throw new Error("INVENTORY_BALANCE_UPDATE_FAILED");
+            }
 
             await tx.query(
               `INSERT INTO public.warehouse_inventory_movements (
@@ -566,19 +591,6 @@ export function registerSalesCheckoutRoutes(app: Hono<{ Bindings: Bindings }>): 
               [
                 branch.organizationId, branch.branchId, input.warehouseId, line.productId,
                 line.quantity, line.unitCostUsd, saleId, branch.userId,
-              ],
-            );
-          }
-
-          for (const line of computedLines) {
-            await tx.query(
-              `INSERT INTO public.sale_items (
-                 organization_id, sale_id, product_id, product_name_snapshot, sku_snapshot,
-                 quantity, unit_price_usd, unit_cost_usd, line_total_usd, line_total_ves
-               ) VALUES ($1, $2, $3, $4, $5, $6::numeric, $7::numeric, $8::numeric, $9::numeric, $10::numeric)`,
-              [
-                branch.organizationId, saleId, line.productId, line.name, line.sku,
-                line.quantity, line.unitPriceUsd, line.unitCostUsd, line.lineUsd, line.lineVes,
               ],
             );
           }

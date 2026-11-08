@@ -1,6 +1,8 @@
+> **Checkpoint 2026-11-08 UTC:** PR #280 y PR #281 están integradas. Último main verificado antes de este checkpoint: `e6f0c6021d82cfffce12f4c1d5283f657dc74c64` (merge SHA PR #281); consultar GitHub para la punta viva. PR #281 post-merge: 9/9 workflows y 11/11 check-runs SUCCESS. Neon rehearsal #42507066215 verificó 0001–0019 únicamente en `microapp_rehearsal`; Neon main no fue modificado. **Producción continúa NOT READY.** Estado operativo: [CURRENT_STATE](docs/CURRENT_STATE.md) y [HANDOFF](docs/HANDOFF_NEXT_CHAT.md).
+
 # Registro de herramientas, repositorios y fuentes de Micro app
 
-Actualizado: 2026-11-04. Este registro no sustituye la verificación en vivo: planes gratuitos, documentación y estado de repositorios cambian. Añadir cada fuente consultada con fecha, uso, conclusión y limitaciones. No registrar secretos ni URLs que contengan credenciales.
+Actualizado: 2026-11-08. Estado de Neon contrastado con run #42507066215; los recursos y planes gratuitos deben seguir revalidándose en vivo. Este registro no sustituye la verificación en vivo: planes gratuitos, documentación y estado de repositorios cambian. Añadir cada fuente consultada con fecha, uso, conclusión y limitaciones. No registrar secretos ni URLs que contengan credenciales.
 
 ## Herramientas y servicios del proyecto
 

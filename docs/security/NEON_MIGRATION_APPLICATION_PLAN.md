@@ -1,3 +1,31 @@
+# Estado del repositorio — 2026-11-08 UTC
+
+El estado vivo de main, PRs, SHA, checks y próximos pasos está centralizado en [CURRENT_STATE.md](../CURRENT_STATE.md) y [HANDOFF_NEXT_CHAT.md](../HANDOFF_NEXT_CHAT.md). Los snapshots históricos que siguen en este documento son evidencia temporal: no reutilizar SHA ni resultados CI sin comprobar el HEAD exacto.
+
+- GitHub main protegido: `aa2804a0a6e7879f684b3baeb60646e50f1d6419`; PR #280 integrada por squash.
+- Neon rehearsal #42507066215: SUCCESS; migraciones 0001–0019 verificadas únicamente en `microapp_rehearsal`. Neon main no fue modificado.
+- Producción: **NOT READY**; no extrapolar el ensayo ni los builds automáticos a certificación productiva.
+
+---
+## Reconciliación de PRs de documentación — 2026-11-08 UTC
+
+- PR #265 `docs: reconcile live Neon and integration state after runner merge` mantiene esta reconciliación en una rama protegida y está pendiente de checks exact-HEAD.
+- PR #266 se abrió temporalmente para evaluar la integración de main en la rama de #258. GitHub reportó `mergeable=false`; se cerró sin merge. Los cambios se solapan en nueve archivos: CI/migration workflows, `apps/api/src/index.ts` y cinco documentos de estado/plan. La rama #258 permanece intacta.
+- No se hizo force-push, merge de #266 ni actualización de #258.
+
+---
+
+## Estado actualizado después de integrar el runner — 2026-11-08 UTC
+
+- PR #264 se fusionó en main mediante commit `c46ed6f3e57a12bf92a7f0718435dfff8096b540`. Workflow manual disponible en `.github/workflows/neon-rehearsal-migrations.yml`.
+- Los checks de PR #264 finalizaron SUCCESS en el HEAD `519d66a8bfab0fc9dc1ebbaeeeb0fc5418da391e`. No hay evidencia de que el workflow manual se haya ejecutado ni de que se hayan aplicado migraciones en rehearsal.
+- El conector GitHub no permite leer el endpoint de Actions secrets; no se afirma si `NEON_REHEARSAL_DATABASE_URL` existe. No se creó ni modificó secreto alguno.
+- Lectura solo de metadatos en Neon main `br-summer-math-b7297a60`: no hay roles runtime/migrator, migration ledger, auth_bootstrap_attempts, branches, warehouses ni inventory_balances; sí auth_rate_limits; exchange_rates.rate NUMERIC(14,6). Main sigue en baseline 0001–0002.
+- No se escribió en Neon main, no se aplicaron migraciones remotas, no se modificó Worker DATABASE_URL ni configuración Cloudflare.
+- El riesgo del Cron #251 sigue condicionado a que el Worker esté desplegado/activo; deployment y ejecución real no están verificados.
+
+---
+
 ## Addendum — Neon main confirmado en vivo por SELECT — 2026-11-08 UTC
 
 Lectura directa y de solo lectura sobre Neon main `br-summer-math-b7297a60`, proyecto `restless-fire-99110035`, base `neondb`, sesión `neondb_owner`:

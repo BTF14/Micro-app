@@ -17,7 +17,7 @@ No paid exchange-rate API, API key, third-party scraper, TLS verification bypass
 - Source identifier: `BCV_OFFICIAL_HTML_V1`.
 - Rate remains a decimal string in TypeScript and PostgreSQL `NUMERIC(18,8)`; never convert the persisted rate to a JavaScript float.
 - `effective_date` comes from BCV's explicit "Fecha Valor", not the local fetch date.
-- `fetched_at` records when Micro-app retrieved the page.
+- `fetched_at` is set when a new rate row is inserted. Replaying the same rate currently returns `unchanged` without refreshing this timestamp; it is **not** a last-success/last-check timestamp.
 - The `exchange_rates` table is shared platform reference data, not tenant-owned data.
 - Completed sales/payments retain their own rate snapshot; refreshing the reference rate must never recalculate historical transactions.
 
@@ -36,7 +36,13 @@ The writer uses the least-privilege `microapp_runtime` role. Migration 0013 gran
 - Weekday bank holidays are not yet backed by an authoritative holiday calendar. On those days, if no row exists for the calendar date, latest remains stale/unavailable and the catalog disables VES conversion rather than guessing. This is a known MVP limitation and must be resolved before POS use on bank holidays.
 - The dashboard displays the official value, effective date, fetch timestamp, source, and freshness.
 - The catalog converts USD prices to VES only when the API reports a current validated rate. Stale/unavailable data disables conversion; the UI never invents a fallback rate.
-- The dashboard fetches on authenticated session load and refreshes hourly while the session remains active, so an open POS picks up the daily Cron publication without a manual reload. Successful read responses are cacheable for one hour.
+- The dashboard fetches on authenticated session load and refreshes hourly, on tab visibility, and when the Caracas calendar date changes. `/latest` is `Cache-Control: no-store`; only bounded history responses are cacheable for one hour. The browser client disables HTTP caching for `/latest`.
+
+## Operational freshness limitation — 2026-11-08
+
+The current implementation does not enforce a maximum age based on `fetched_at`. The latest API and checkout selection use `effective_date` plus `validation_status`. When a successful sync sees the same rate, persistence returns `unchanged` and does not update `fetched_at`; if the Cron fails or BCV corrects a future-published rate, an older row can remain marked valid/current. The UI trusts the API status and does not independently calculate age. The owner must decide the freshness/last-success policy; do not invent a time threshold. Until then, this is a production blocker for VES conversion.
+
+The scheduled handler logs a sanitized `BCV_SYNC_FAILED` and rethrows so the Cron execution fails, but there is no persisted last-attempt/last-success record or external alert. A real official BCV HTML fixture, anomaly policy, and authoritative weekday bank-holiday calendar also remain open gates.
 
 ## Scheduling and cost
 

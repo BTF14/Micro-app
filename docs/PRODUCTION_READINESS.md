@@ -1,3 +1,12 @@
+# Estado del repositorio — 2026-11-08 UTC
+
+El estado vivo de main, PRs, SHA, checks y próximos pasos está centralizado en [CURRENT_STATE.md](CURRENT_STATE.md) y [HANDOFF_NEXT_CHAT.md](HANDOFF_NEXT_CHAT.md). Los snapshots históricos que siguen en este documento son evidencia temporal: no reutilizar SHA ni resultados CI sin comprobar el HEAD exacto.
+
+- GitHub main protegido: `aa2804a0a6e7879f684b3baeb60646e50f1d6419`; PR #280 integrada por squash.
+- Neon rehearsal #42507066215: SUCCESS; migraciones 0001–0019 verificadas únicamente en `microapp_rehearsal`. Neon main no fue modificado.
+- Producción: **NOT READY**; no extrapolar el ensayo ni los builds automáticos a certificación productiva.
+
+---
 ## Readiness de producción — 2026-11-08 UTC
 
 **Resultado: NOT READY.** Los checks exactos de #251, #255 y #258 están verdes, pero ninguna tiene review formal independiente y los gates de Neon/runtime y producto siguen abiertos.

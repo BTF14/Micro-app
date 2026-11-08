@@ -2,7 +2,7 @@
 
 **Estado:** handler HTTP y pruebas recuperados sobre `main` en PR #258 Draft. Se conserva la migración 0015 canónica; PR #258 añade migración 0017 para alinear la validación SQL de BCV con la regla weekday/weekend. No desplegado ni aprobado para producción.  
 **Fecha:** 2026-11-08 UTC  
-**Dependencias vigentes:** migraciones canónicas 0013–0016 en `main`; motor monetario `@micro-app/money`; autorización tenant/branch; locks de warehouse/balances/turno. El productor/API/Cron BCV está en PR #255 Draft y todavía no está integrado en `main`.  
+**Dependencias vigentes:** migraciones canónicas 0013–0016 en `main`; motor monetario `@micro-app/money`; autorización tenant/branch; locks de warehouse/balances/turno. El productor/API/Cron BCV sigue en PR #255 Draft y todavía no está integrado en `main`.  
 **Límites:** este documento no autoriza merge, Neon, Cloudflare, despliegue ni activar checkout.
 
 ## 1. Objetivo y principios
@@ -56,7 +56,7 @@ La API BCV recuperada en PR #255 selecciona:
 
 La migration 0015 de `main` todavía contiene la regla weekday-only. PR #258 añade la migration 0017, que reemplaza únicamente la selección de fecha efectiva del trigger: weekdays exigen hoy; sábado/domingo seleccionan el `MIN(effective_date)` futuro sin filtrar estado, y luego requieren que esa fila exacta sea válida y quede bloqueada `FOR SHARE`. Hasta que #258 se integre, `main` conserva el comportamiento weekday-only.
 
-**Estado del gate en PR #258 (Draft, CI pendiente):** la migration 0017 ya está añadida en la rama de recuperación, sin modificar retroactivamente 0015. Implementa la regla weekday/weekend anterior, mantiene SECURITY DEFINER/search_path, restringe EXECUTE y añade assertions funcionales con fechas deterministas de sábado, domingo y viernes, incluyendo nearest-future stale. Las pruebas exact-SHA de PostgreSQL y del migration runner deben terminar antes de considerar cerrado este gate.
+**Estado del gate en PR #258 (Draft):** la migration 0017 ya está añadida sin modificar retroactivamente 0015. Implementa la regla weekday/weekend, mantiene SECURITY DEFINER/search_path, restringe EXECUTE y añade assertions funcionales con fechas deterministas de sábado, domingo y viernes, incluyendo nearest-future stale. El SHA de implementación `d9ae6cd7f65c99126e7c4e45faa20a1dadaf3cdb` pasó 15/15 check-runs y 13/13 workflows; el checkout PostgreSQL pasó 15/15. No se ha aplicado en Neon. Si cambia el código o las migraciones, las verificaciones deben repetirse en el SHA final.
 
 El handler #258 usa la misma selección de fecha efectiva y rechaza la fila nearest-future si está stale. La fuente de datos y Cron BCV siguen dependiendo de la integración pendiente #255. Feriados bancarios entre semana aún no tienen calendario autoritativo; si no hay fila exacta para hoy, checkout falla cerrado. No ejecutar migraciones en Neon main.
 
@@ -175,7 +175,7 @@ Todas las pruebas usan PostgreSQL efímero; nunca Neon main ni datos reales.
 - Main actual al redactar: `96e2e2d9f76bc8fcc3bab2fa9503e480545c8869`.
 - PR #251: cleanup auth 48 h, Draft, HEAD `5dec5d5a9025de16b19d0cb7cfeac6585e2ad5d6`; 15/15 check-runs y 13/13 workflows SUCCESS en ese SHA; producción bloqueada por Neon schema/runtime.
 - PR #255: BCV parser/API/UI/Cron y weekend selection, Draft, HEAD `35b9ac6894f79c5760a1f56fb37506ed2278afa0`; 15/15 check-runs y 13/13 workflows SUCCESS en ese SHA; base #251 y sin review formal. No está integrado.
-- PR #258: recuperación del checkout y migration 0017 weekday/weekend, Draft, base main `96e2e2d9f76bc8fcc3bab2fa9503e480545c8869`, HEAD `c578441fda16f3e06cb0367867eb3136396fdaf3`; checks exact-SHA en curso. La integración BCV #255 es prerequisite para activar operaciones con tasa real.
+- PR #258: recuperación del checkout y migration 0017 weekday/weekend, Draft, base main `96e2e2d9f76bc8fcc3bab2fa9503e480545c8869`; el SHA de implementación `d9ae6cd7f65c99126e7c4e45faa20a1dadaf3cdb` pasó 15/15 check-runs y 13/13 workflows, sin review formal. La ingesta BCV #255 es prerequisite para activar operaciones con tasa real. El siguiente cambio documental hará que el SHA exacto de la rama avance; cualquier modificación posterior debe validar su nuevo SHA.
 - PR #233 queda como fuente histórica; su handler/tests se recuperaron en #258 sobre main. No fusionar la rama antigua ni reutilizar sus checks.
 - Migration 0015 existe en GitHub main, pero Neon main no ha recibido baseline/migraciones 0003–0016. No asumir que el esquema live tiene checkout listo.
 - Producción **NOT READY**. No Neon main, secretos, Cloudflare productivo, DNS, billing ni datos reales modificados.

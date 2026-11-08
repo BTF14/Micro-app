@@ -184,6 +184,25 @@ BEGIN
     AND product_id=v_product;
   IF v_quantity <> 3.000 THEN RAISE EXCEPTION 'LEDGER_PROJECTION_INCREMENT_FAILED'; END IF;
 
+  -- A direct negative ledger entry cannot underflow on-hand stock.
+  BEGIN
+    INSERT INTO public.warehouse_inventory_movements
+      (organization_id,branch_id,warehouse_id,product_id,movement_type,quantity_delta,
+       reason,actor_user_id)
+    VALUES ('11111111-1111-4111-8111-111111111111',
+            '33333333-3333-4333-8333-333333333333',
+            '55555555-5555-4555-8555-555555555555',v_product,'reversal',-4.000,
+            'Runtime underflow rejection smoke','22222222-2222-4222-8222-222222222222');
+    RAISE EXCEPTION 'RUNTIME_LEDGER_MOVEMENT_UNDERFLOWED_BALANCE';
+  EXCEPTION WHEN check_violation THEN NULL; END;
+
+  SELECT on_hand_quantity INTO v_quantity
+  FROM public.inventory_balances
+  WHERE organization_id='11111111-1111-4111-8111-111111111111'
+    AND warehouse_id='55555555-5555-4555-8555-555555555555'
+    AND product_id=v_product;
+  IF v_quantity <> 3.000 THEN RAISE EXCEPTION 'REJECTED_MOVEMENT_CHANGED_BALANCE'; END IF;
+
   -- Runtime has no direct INSERT/UPDATE/DELETE/TRUNCATE path to balances.
   BEGIN
     INSERT INTO public.inventory_balances

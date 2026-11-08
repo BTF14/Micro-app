@@ -24,15 +24,22 @@ Integrate the official BCV USD/VES reference rate at zero additional provider co
 
 ## Acceptance criteria
 
-- [x] API source parser fixtures and bounded streaming tests pass on exact HEAD `4e9f01ab85fd767736f4f47f3e47ffefbe7efd88`.
+- [x] API source parser fixtures and bounded streaming tests passed on previous exact HEAD `4e9f01ab85fd767736f4f47f3e47ffefbe7efd88`; follow-up precision-bound regression is now added and awaits final-HEAD CI.
 - [x] PostgreSQL integration verifies next-business-day-first/today-second, same-date idempotency, weekend latest selection, scheduled history status, production Cron persistence and preview no-op; 2/2 tests pass under admin and 2/2 under disposable `microapp_runtime`.
 - [ ] Weekday bank-holiday handling has an authoritative calendar before POS conversion is enabled for those dates.
 - [x] Runtime-role integration passes without broadening migration 0013 grants in disposable PostgreSQL CI; production grants remain unverified.
 - [x] Dashboard displays exact decimal/date/freshness and catalog conversion uses shared exact-money arithmetic; UI tests verify exact conversion.
 - [x] Unavailable/stale rates never produce a VES conversion or third-party fallback; `CatalogPanel` tests cover stale and unavailable states.
-- [x] CI, migration runner, backup restore, security, SAST, E2E, ODD validation and secret scans pass on exact HEAD `4e9f01ab85fd767736f4f47f3e47ffefbe7efd88` (10 PR workflows + 3 push runs).
+- [x] CI, migration runner, backup restore, security, SAST, E2E, ODD validation and secret scans passed on previous exact HEAD `4e9f01ab85fd767736f4f47f3e47ffefbe7efd88` (10 PR workflows + 3 push runs).
+- [ ] Re-run all required checks on the final exact HEAD after follow-up precision-bound hardening.
 - [ ] Separate external reviewer approval completed; only manual review by this ChatGPT session is recorded.
 - [ ] Neon migration 0013, runtime login/ACLs, Cloudflare Worker identity and Cron are verified under the separate production gates.
+
+## Follow-up hardening — 2026-11-07
+
+- Replaced JavaScript `Number()` range validation with exact `BigInt` comparison so a value just above the `1,000,000,000` ceiling cannot round down and pass.
+- Added a regression test that accepts the exact ceiling and rejects `1.000.000.000,00000001`.
+- Final exact-HEAD CI is pending for this follow-up.
 
 ## Evidence and legal basis
 

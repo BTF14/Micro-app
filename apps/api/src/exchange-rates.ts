@@ -88,12 +88,17 @@ function parseLocalizedRate(value: string): string {
     throw new Error("BCV_RATE_FORMAT_INVALID");
   }
   const [integerPart, fractionalPart] = value.split(",");
-  const normalized = `${integerPart!.replace(/\./g, "")}.${fractionalPart!}`;
-  const numeric = Number(normalized);
-  if (!Number.isFinite(numeric) || numeric <= 0 || numeric > 1_000_000_000) {
+  const integerDigits = integerPart!.replace(/\./g, "");
+  const fractionalDigits = fractionalPart!;
+  const integerValue = BigInt(integerDigits);
+  const isZero = integerValue === 0n && /^0+$/.test(fractionalDigits);
+  const exceedsMaximum = integerValue > 1_000_000_000n ||
+    (integerValue === 1_000_000_000n && /[1-9]/.test(fractionalDigits));
+  if (isZero || exceedsMaximum) {
     throw new Error("BCV_RATE_VALUE_INVALID");
   }
-  return normalized;
+  // Keep range validation exact too: Number() rounds values near the 1e9 cap.
+  return integerDigits + "." + fractionalDigits;
 }
 
 function parseSpanishEffectiveDate(text: string): string {

@@ -78,6 +78,13 @@ describe("BCV official HTML parser", () => {
       .toThrow("BCV_RATE_FORMAT_INVALID");
   });
 
+  it("enforces the maximum rate without IEEE-754 rounding", () => {
+    const exactMaximum = OFFICIAL_PAGE.replace("894,88760000", "1.000.000.000,00000000");
+    const justAboveMaximum = OFFICIAL_PAGE.replace("894,88760000", "1.000.000.000,00000001");
+    expect(parseBcvOfficialRate(exactMaximum, NOW).rate).toBe("1000000000.00000000");
+    expect(() => parseBcvOfficialRate(justAboveMaximum, NOW)).toThrow("BCV_RATE_VALUE_INVALID");
+  });
+
   it("accepts a next-business-day rate published before a weekend", () => {
     const mondayPage = OFFICIAL_PAGE.replace("05 Noviembre 2026", "09 Noviembre 2026");
     expect(parseBcvOfficialRate(mondayPage, NOW).effectiveDate).toBe("2026-11-09");

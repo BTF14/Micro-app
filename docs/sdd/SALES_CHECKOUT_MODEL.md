@@ -54,18 +54,11 @@ La API BCV recuperada en PR #255 selecciona:
 - Nunca salta una fila futura más próxima marcada stale para usar otra posterior.
 - Si no hay fila aplicable/validada, falla cerrado.
 
-Sin embargo, la función `public.assert_completed_sale_reconciled()` de migration 0015 todavía exige `exchange_rates.effective_date = fecha de hoy en Caracas`. Esto rechazaría una venta de sábado/domingo aunque la API haya seleccionado correctamente la tasa del lunes.
+La migration 0015 de `main` todavía contiene la regla weekday-only. PR #258 añade la migration 0017, que reemplaza únicamente la selección de fecha efectiva del trigger: weekdays exigen hoy; sábado/domingo seleccionan el `MIN(effective_date)` futuro sin filtrar estado, y luego requieren que esa fila exacta sea válida y quede bloqueada `FOR SHARE`. Hasta que #258 se integre, `main` conserva el comportamiento weekday-only.
 
-**Gate obligatorio antes de checkout:** crear una nueva migration 0017, sin modificar retroactivamente 0015, que reemplace de forma segura `assert_completed_sale_reconciled()` para aplicar la misma regla de fecha efectiva que la API:
-- weekdays → fecha de hoy;
-- weekends → MIN(effective_date) futura para source `BCV_OFFICIAL_HTML_V1`, sin filtrar validation_status en el MIN;
-- la fila seleccionada debe seguir siendo `validation_status = 'valid'`, misma tasa/snapshot/source y bloqueada FOR SHARE;
-- si la fila futura más próxima está stale, no se permite usar una posterior;
-- feriados bancarios entre semana aún no tienen calendario autoritativo; por tanto se falla cerrado si no hay fila exacta para hoy.
+**Estado del gate en PR #258 (Draft, CI pendiente):** la migration 0017 ya está añadida en la rama de recuperación, sin modificar retroactivamente 0015. Implementa la regla weekday/weekend anterior, mantiene SECURITY DEFINER/search_path, restringe EXECUTE y añade assertions funcionales con fechas deterministas de sábado, domingo y viernes, incluyendo nearest-future stale. Las pruebas exact-SHA de PostgreSQL y del migration runner deben terminar antes de considerar cerrado este gate.
 
-La migration 0017 debe exigir login directo `microapp_migrator`, preservar SECURITY DEFINER/search_path, tener assertions sobre `pg_get_functiondef` y probarse con PostgreSQL desechable y el runner real. No ejecutar en Neon main.
-
-El handler #233 también consulta actualmente `effective_date = today`; al recuperarlo debe usar el helper compartido `findApplicableBcvRate(tx)` de PR #255 y exigir `validation_status = 'valid'`. La API y el trigger SQL deben implementar exactamente la misma selección.
+El handler #258 usa la misma selección de fecha efectiva y rechaza la fila nearest-future si está stale. La fuente de datos y Cron BCV siguen dependiendo de la integración pendiente #255. Feriados bancarios entre semana aún no tienen calendario autoritativo; si no hay fila exacta para hoy, checkout falla cerrado. No ejecutar migraciones en Neon main.
 
 ## 4. Brechas de integridad restantes para revisar
 
@@ -171,7 +164,7 @@ Todas las pruebas usan PostgreSQL efímero; nunca Neon main ni datos reales.
 
 1. Mantener esta especificación alineada con el esquema actual; no usar el texto histórico de 2026-11-05.
 2. Resolver la confirmación funcional del contrato de pagos antes de activar checkout.
-3. Crear y probar migration 0017 para que el trigger de checkout use la misma regla BCV weekday/weekend que la API.
+3. Validar la migration 0017 de PR #258 y sus assertions PostgreSQL/migration-runner en el SHA exacto.
 4. Validar PR #258 sobre la migración 0015 canónica y 0017 nueva; recuperar el productor y Cron BCV de #255 antes de activar checkout. No portar la migration 0015 antigua de #233.
 5. Añadir las assertions de cálculo por línea y asignación de equivalentes si la revisión confirma que el SQL actual no las cubre.
 6. Ejecutar unitarias, CI, migration runner, PostgreSQL admin/runtime integration, E2E y backup/restore cuando aplique; todos sobre el SHA final exacto.

@@ -190,7 +190,12 @@ describe.skipIf(!databaseUrl || !databaseUrlAdmin)("atomic sales checkout Postgr
     const rateDateResult = await client.query<{ effective_date: string }>(
       "SELECT (now() AT TIME ZONE 'America/Caracas')::date::text AS effective_date",
     );
-    rateDate = rateDateResult.rows[0]!.effective_date;
+    const today = rateDateResult.rows[0]!.effective_date;
+    const localWeekday = new Intl.DateTimeFormat("en-US", { timeZone: "America/Caracas", weekday: "short" }).format(new Date(`${today}T16:00:00.000Z`));
+    const applicableDate = new Date(`${today}T16:00:00.000Z`);
+    if (localWeekday === "Sat") applicableDate.setUTCDate(applicableDate.getUTCDate() + 2);
+    if (localWeekday === "Sun") applicableDate.setUTCDate(applicableDate.getUTCDate() + 1);
+    rateDate = applicableDate.toISOString().slice(0, 10);
     const existingRate = await client.query<{ id: string; rate: string; validation_status: string; fetched_at: string }>(
       "SELECT id,rate::text,validation_status,fetched_at::text FROM public.exchange_rates WHERE source=$1 AND effective_date=$2::date",
       [BCV_SOURCE, rateDate],

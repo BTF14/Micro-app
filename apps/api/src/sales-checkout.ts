@@ -38,7 +38,7 @@ type ProductRow = {
   price_usd: string;
   cost_usd: string;
 };
-type RateRow = { id: string; rate: string; effective_date: string };
+type RateRow = { id: string; rate: string; effective_date: string; validation_status: "valid" | "stale" };
 type ExistingSale = { id: string; status: string; request_hash: string | null };
 type SaleHeader = {
   id: string;
@@ -75,6 +75,34 @@ type CheckoutResult =
   | { kind: "unauthenticated" | "forbidden" | "branch_denied" | "warehouse_not_found" |
       "shift_required" | "rate_unavailable" | "invalid_products" | "insufficient_stock" |
       "idempotency_conflict" | "invalid_payment" };
+
+function caracasDate(now: Date): string {
+  const parts = new Intl.DateTimeFormat("en-US", { timeZone: "America/Caracas", year: "numeric", month: "2-digit", day: "2-digit" }).formatToParts(now);
+  const value = (type: string) => parts.find((part) => part.type === type)?.value ?? "";
+  return `${value("year")}-${value("month")}-${value("day")}`;
+}
+function isCaracasWeekend(now: Date): boolean {
+  const weekday = new Intl.DateTimeFormat("en-US", { timeZone: "America/Caracas", weekday: "short" }).format(now);
+  return weekday === "Sat" || weekday === "Sun";
+}
+/** Select the same effective date enforced by migration 0017. */
+export async function findApplicableCheckoutRate(tx: import("./database").DatabaseClient, now = new Date()): Promise<RateRow | null> {
+  const today = caracasDate(now);
+  const weekend = isCaracasWeekend(now);
+  const comparison = weekend ? ">" : "<=";
+  const ordering = weekend ? "ASC" : "DESC";
+  const result = await tx.query<RateRow>(
+    `SELECT id, rate::text AS rate, effective_date::text AS effective_date, validation_status
+       FROM public.exchange_rates
+      WHERE source = $1 AND effective_date ${comparison} $2::date
+      ORDER BY effective_date ${ordering}, fetched_at DESC LIMIT 1`,
+    [BCV_SOURCE, today],
+  );
+  const row = result.rows[0];
+  if (!row || row.validation_status !== "valid") return null;
+  if (weekend ? row.effective_date <= today : row.effective_date !== today) return null;
+  return row;
+}
 
 function normalizeDecimal(value: unknown, precision: number, scale: number, positive: boolean): string | null {
   if (typeof value !== "string") return null;
@@ -390,17 +418,7 @@ export function registerSalesCheckoutRoutes(app: Hono<{ Bindings: Bindings }>): 
           const shift = await resolveOpenCashierRegisterShift(tx, branch);
           if (!shift) return { kind: "shift_required" };
 
-          const rateResult = await tx.query<RateRow>(
-            `SELECT id, rate::text AS rate, effective_date::text AS effective_date
-               FROM public.exchange_rates
-              WHERE source = $1
-                AND validation_status = 'valid'
-                AND effective_date = (now() AT TIME ZONE 'America/Caracas')::date
-              ORDER BY fetched_at DESC
-              LIMIT 1`,
-            [BCV_SOURCE],
-          );
-          const rate = rateResult.rows[0];
+          const rate = await findApplicableCheckoutRate(tx);
           if (!rate) return { kind: "rate_unavailable" };
 
           const productIds = input.lines.map((line) => line.productId);

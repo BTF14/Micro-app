@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   allocateUsdEquivalents,
   canonicalRequestHash,
+  findApplicableCheckoutRate,
   parseCheckoutInput,
 } from "./sales-checkout";
 
@@ -163,5 +164,28 @@ describe("sales checkout request contract", () => {
     expect(allocated.map((item) => item.usdEquivalent)).toEqual(["0.0000", "0.0000", "0.0001"]);
     expect(allocated.reduce((sum, item) => sum + BigInt(item.usdEquivalent.replace(".", "")), 0n)).toBe(1n);
     expect(allocated.every((item) => item.rateSnapshot === "100.00000000")).toBe(true);
+  });
+});
+
+describe("checkout BCV effective-date selection", () => {
+  it("selects the nearest future effective date on a Caracas weekend", async () => {
+    const statements: string[] = [];
+    const client = { query: async <Row = unknown>(statement: string) => {
+      statements.push(statement);
+      return { rows: [{ id: "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa", rate: "895.10000000", effective_date: "2026-11-09", validation_status: "valid" }] as Row[] };
+    }} as unknown as import("./database").DatabaseClient;
+    const selected = await findApplicableCheckoutRate(client, new Date("2026-11-07T12:00:00-04:00"));
+    expect(selected?.effective_date).toBe("2026-11-09");
+    expect(statements[0]).toContain("effective_date > $2::date");
+    expect(statements[0]).toContain("ORDER BY effective_date ASC");
+    expect(statements[0]).not.toContain("validation_status = 'valid'");
+  });
+  it("does not skip a stale nearest future row to use a later valid rate", async () => {
+    const client = { query: async <Row = unknown>() => ({ rows: [{ id: "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa", rate: "895.10000000", effective_date: "2026-11-09", validation_status: "stale" }] as Row[] }) } as unknown as import("./database").DatabaseClient;
+    await expect(findApplicableCheckoutRate(client, new Date("2026-11-07T12:00:00-04:00"))).resolves.toBeNull();
+  });
+  it("requires today's exact effective date on a weekday", async () => {
+    const client = { query: async <Row = unknown>() => ({ rows: [{ id: "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa", rate: "895.10000000", effective_date: "2026-11-05", validation_status: "valid" }] as Row[] }) } as unknown as import("./database").DatabaseClient;
+    await expect(findApplicableCheckoutRate(client, new Date("2026-11-06T12:00:00-04:00"))).resolves.toBeNull();
   });
 });

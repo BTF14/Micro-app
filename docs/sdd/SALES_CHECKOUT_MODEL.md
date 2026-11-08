@@ -1,7 +1,7 @@
 # Modelo de ventas y checkout transaccional
 
-**Estado:** la base de datos ya contiene parte importante del contrato de checkout; el handler HTTP no está integrado en `main`. El código de PR #233 es una fuente de recuperación, no una implementación aprobada para producción.  
-**Fecha:** 2026-11-07 UTC  
+**Estado:** handler HTTP y pruebas recuperados sobre `main` en PR #258 Draft. Se conserva la migración 0015 canónica; PR #258 añade migración 0017 para alinear la validación SQL de BCV con la regla weekday/weekend. No desplegado ni aprobado para producción.  
+**Fecha:** 2026-11-08 UTC  
 **Dependencias vigentes:** migraciones canónicas 0013–0016 en `main`; motor monetario `@micro-app/money`; autorización tenant/branch; locks de warehouse/balances/turno; tasa BCV recuperada en PR #255.  
 **Límites:** este documento no autoriza merge, Neon, Cloudflare, despliegue ni activar checkout.
 
@@ -38,9 +38,9 @@ Reglas ya aprobadas/documentadas:
 
 ### Lo que todavía NO está integrado
 
-- No hay handler `POST checkout` registrado en `apps/api/src/index.ts`.
+- PR #258 registra `POST /api/orgs/:organizationId/branches/:branchId/checkout`, con autorización branch, idempotencia, exact decimals, locks de warehouse/stock/turno, pagos, ledger y audit en una sola transacción. Sigue Draft y requiere CI exact-SHA y revisión independiente.
 - No hay flujo de carrito/checkout UI integrado.
-- El handler `sales-checkout.ts` de PR #233 es código fuente para recuperar y revisar; no debe copiarse wholesale.
+- La selección BCV de PR #258 sigue la regla weekday/weekend; el productor y Cron de tasas siguen pendientes de integrar desde PR #255.
 - PR #229–#231 aportan motor monetario/catálogo/formulario que ya están en main en forma igual o más completa. PR #228 comparte la migración 0014 canónica; su handler/tests también son inferiores a la implementación actual. Comparar y cerrar como supersedidas solo después de preservar cambios realmente únicos.
 - PR #232 contiene este diseño, pero su texto original quedó obsoleto respecto a las migraciones 0014/0015 y debe mantenerse actualizado.
 
@@ -172,7 +172,7 @@ Todas las pruebas usan PostgreSQL efímero; nunca Neon main ni datos reales.
 1. Mantener esta especificación alineada con el esquema actual; no usar el texto histórico de 2026-11-05.
 2. Resolver la confirmación funcional del contrato de pagos antes de activar checkout.
 3. Crear y probar migration 0017 para que el trigger de checkout use la misma regla BCV weekday/weekend que la API.
-4. Portar el handler de PR #233 sobre una rama basada en #255, usando `findApplicableBcvRate(tx)`, helpers canónicos y migration 0015 actual; no portar su migration 0015 antigua.
+4. Validar PR #258 sobre la migración 0015 canónica y 0017 nueva; recuperar el productor y Cron BCV de #255 antes de activar checkout. No portar la migration 0015 antigua de #233.
 5. Añadir las assertions de cálculo por línea y asignación de equivalentes si la revisión confirma que el SQL actual no las cubre.
 6. Ejecutar unitarias, CI, migration runner, PostgreSQL admin/runtime integration, E2E y backup/restore cuando aplique; todos sobre el SHA final exacto.
 7. Solo después implementar UI de checkout; no duplicar cálculos monetarios en React.
@@ -182,6 +182,6 @@ Todas las pruebas usan PostgreSQL efímero; nunca Neon main ni datos reales.
 - Main actual al redactar: `c4be53ea3247c69206a79ebe5fa2f875a4f9aac4`.
 - PR #251: cleanup auth 48 h, Draft, 11/11 workflows PR + 2/2 push security exitosos; producción bloqueada por Neon schema/runtime.
 - PR #255: BCV parser/API/UI/Cron y weekend selection, Draft; exact HEAD `4e9f01ab85fd767736f4f47f3e47ffefbe7efd88`, 10/10 workflows PR + 3/3 push runs exitosos; sin review formal, no merge.
-- PR #227/#228–#233 son ramas fuente históricas. #229–#231 están mayormente supersedidas por código ya integrado; #232 aporta este diseño; #233 aporta handler/tests únicos que requieren adaptación.
+- PR #233 queda como fuente histórica; su handler/tests se recuperaron en #258 sobre main. #258 incorpora 0017 y pruebas BCV; sigue Draft. #255 aporta el productor/Cron BCV y continúa como dependencia.
 - Migration 0015 existe en GitHub main, pero Neon main no ha recibido baseline/migraciones 0003–0016. No asumir que el esquema live tiene checkout listo.
 - Producción **NOT READY**. No Neon main, secretos, Cloudflare productivo, DNS, billing ni datos reales modificados.

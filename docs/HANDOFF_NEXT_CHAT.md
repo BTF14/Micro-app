@@ -1,19 +1,22 @@
-## Actualización posterior a PR #285 y cierre de #233 — 2026-11-08 UTC
+# Handoff operativo — BTF14/Micro-app — 2026-11-08 UTC
 
-Esta corrección parte de main `594382f6f191f2ea0b55d913683841e51c210e5d`, merge SHA de PR #285. No etiquetar ese SHA como punta posterior a la integración de esta PR; consultar GitHub tras el merge para la punta nueva.
+**Punto de partida verificado:** `main` está en `594382f6f191f2ea0b55d913683841e51c210e5d`, merge SHA de #285 y último commit observado en GitHub. La sección autoritativa y detallada del estado está en `docs/CURRENT_STATE.md`; no duplicarla aquí.
 
-### Estado reconciliado
-- PR #285 MERGED por squash en `594382f6f191f2ea0b55d913683841e51c210e5d`. Su HEAD exacto `8d7acfa3325f59c79e8c98cebf6e9e60ac0c4500` pasó 14/14 check-runs y 12/12 workflow runs. El post-merge CI del SHA `594382f...` estaba recién iniciado al último sondeo (11 check-runs y 8 workflows aún pendientes); consultar su estado vivo.
-- **PR #233 ya está CLOSED como superseded por #269, no merged.** La revisión semántica confirmó que sus 18/18 paths existen en #269; 5 son byte-idénticos y 13 fueron evolucionados. La migración 0015 y sus assertions fueron endurecidas; el endpoint/tests se ampliaron con rate limiting, BCV de fin de semana, allocation_position, ledger 0019, protección de DB desechable y regresiones. La expectativa antigua de descuentos se reemplazó por rechazo explícito acorde con el alcance vigente. El index heredado no se copió: la ruta checkout se conserva sobre el index actualizado de main. La rama y los 83 commits históricos de #233 se conservan; no borrar.
-- **#269:** OPEN/Draft, HEAD `8f05befb7ac1a46d68850b9f89f89edc8cd46283`, base registrada `9c6b30281ed59726e532da840568fc9e80b528f7`; frente a main `594382f...`: 26 ahead / 3 behind, diverged y `mergeable=false`. En su HEAD exacto: 16/16 check-runs y 14/14 workflows SUCCESS. Estos resultados validan ese SHA, no resuelven divergencia ni gates de producto.
-- **#255:** OPEN/Draft, HEAD `7e43d7fd1519889605174da5818190bb84685059`, base registrada `9c6b30281ed59726e532da840568fc9e80b528f7`; frente a main `594382f...`: 54 ahead / 3 behind, diverged y `mergeable=false`. En su HEAD exacto: 15/15 check-runs y 13/13 workflows SUCCESS. Mantener Draft por anomalías/freshness BCV, último intento/éxito y alerta, fixture oficial y calendario de feriados.
-- PR #258/#262 siguen cerradas como superseded; #193 permanece intacta.
-- #269 sigue bloqueada por aprobación del contrato comercial checkout y decisión USD-only/BCV. No inventar decisiones ni force-push. Las dos ramas requieren sincronización no destructiva y CI nuevo en HEAD resultante antes de cualquier merge.
+## Estado vivo
+- **#286 — documentación:** OPEN, docs-only. HEAD inicial revisado `c034bfe5715f01015df3bf530af14353300e168b`, 5 commits ahead / 0 behind de main; 10/10 workflow runs disparados por pull_request SUCCESS en ese SHA. Sin reviews formales ni threads inline. La API disponible no permitió confirmar mergeability ni branch protection; no afirmar que esté lista o integrada. Este handoff debe actualizarse si el HEAD cambia.
+- **#233:** CLOSED como superseded por #269, no merged. Auditoría semántica: 18/18 paths preservados/evolucionados; 5 idénticos y 13 evolucionados. Conservar la rama y sus 83 commits históricos.
+- **#269 — checkout + ledger:** OPEN/Draft; HEAD `8f05befb7ac1a46d68850b9f89f89edc8cd46283`; frente a main 26 ahead / 3 behind. En el SHA exacto se observaron 11/11 workflow runs pull_request SUCCESS. Mantener Draft por contrato comercial checkout y dependencia BCV para ventas USD-only aún sin decisión.
+- **#255 — BCV:** OPEN/Draft; HEAD `7e43d7fd1519889605174da5818190bb84685059`; frente a main 54 ahead / 3 behind. En el SHA exacto se observaron 10/10 workflow runs pull_request SUCCESS. Mantener Draft por anomalías/freshness, last-attempt/last-success y alertas, fixture HTML oficial y calendario de feriados.
+- **Neon:** rehearsal #42507066215 SUCCESS en `microapp_rehearsal`, migraciones 0001–0019. No repetir escrituras ni migraciones remotas.
 
-### Límites invariables
-No repetir escrituras Neon ni migraciones remotas. No modificar Neon main/`neondb`, secretos, Cloudflare, DNS, billing o producción. Producción **NOT READY**. La configuración branch protection no pudo verificarse por HTTP 403 del conector; no inferir su estado.
+## Próxima secuencia
+1. Terminar la evaluación de merge de #286 solo cuando puedan comprobarse mergeability y los contextos obligatorios; no inferirlos de workflow runs.
+2. Revisar el solapamiento documental antes de sincronizar #269 y #255 con main; usar merges no destructivos, nunca force-push, y ejecutar CI en cada HEAD nuevo.
+3. Mantener ambas PR Draft hasta cerrar sus gates de producto/operación.
+4. Continuar validaciones en PostgreSQL desechable. Producción sigue **NOT READY**.
 
-**Precedencia:** este bloque es más reciente que los snapshots inferiores; estos se conservan como historial, no como estado vivo.
+## Límites
+No tocar Neon main, datos reales, secretos, Cloudflare manual, DNS, billing ni despliegues. No repetir Neon bootstrap-and-migrate. No reutilizar CI de SHAs anteriores.
 
 ---
 

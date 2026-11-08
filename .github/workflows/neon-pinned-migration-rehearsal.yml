@@ -1,0 +1,252 @@
+name: Neon pinned migration rehearsal
+
+on:
+  workflow_dispatch:
+    inputs:
+      operation:
+        description: "Read-only preflight by default; writes require explicit confirmation"
+        required: true
+        type: choice
+        default: verify-empty
+        options:
+          - verify-empty
+          - bootstrap-and-migrate
+      confirmation:
+        description: "Required only for bootstrap-and-migrate"
+        required: false
+        type: string
+        default: ""
+
+permissions:
+  contents: read
+
+concurrency:
+  group: neon-pinned-migration-rehearsal
+  cancel-in-progress: false
+
+jobs:
+  rehearsal:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      SOURCE_BRANCH: feat/checkout-ledger-recovered-main-20261108
+      SOURCE_SHA: bc3939510e132e6f77c751514ff1b7dca58cdd4d
+      TARGET_DATABASE: microapp_rehearsal
+      EXPECTED_BRANCH_ID: br-curly-poetry-b7dxsddm
+      EXPECTED_PROJECT_ID: restless-fire-99110035
+    steps:
+      - name: Checkout trusted runner from main
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          persist-credentials: true
+
+      - name: Require manual dispatch from main
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$GITHUB_EVENT_NAME" = "workflow_dispatch"
+          test "$GITHUB_REF" = "refs/heads/main"
+          echo "DISPATCH_REF_VERIFIED"
+
+      - name: Derive empty rehearsal database URL without exposing credentials
+        shell: bash
+        env:
+          NEON_REHEARSAL_DATABASE_URL: \${{ secrets.NEON_REHEARSAL_DATABASE_URL }}
+        run: |
+          set -euo pipefail
+          target_url="$(python3 - <<'PY'
+          import os
+          from urllib.parse import parse_qsl, urlencode, urlsplit, urlunsplit
+
+          raw = os.environ["NEON_REHEARSAL_DATABASE_URL"]
+          parts = urlsplit(raw)
+          if parts.scheme not in ("postgres", "postgresql"):
+              raise SystemExit("Unexpected PostgreSQL URL scheme")
+          if not parts.hostname or "-pooler" in parts.hostname.lower():
+              raise SystemExit("A direct Neon connection is required")
+          if parts.path.rstrip("/") != "/neondb":
+              raise SystemExit("The configured rehearsal secret must still target neondb")
+          query = [(key, value) for key, value in parse_qsl(parts.query, keep_blank_values=True)
+                   if key.lower() != "dbname"]
+          print(urlunsplit((parts.scheme, parts.netloc, "/microapp_rehearsal",
+                            urlencode(query), parts.fragment)))
+          PY
+          )"
+          test -n "$target_url"
+          echo "::add-mask::$target_url"
+          printf 'NEON_REHEARSAL_TARGET_DATABASE_URL=%s\n' "$target_url" >> "$GITHUB_ENV"
+          echo "TARGET_DATABASE_URL_DERIVED"
+
+      - name: Install PostgreSQL client
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y postgresql-client
+
+      - name: Fetch and verify pinned migration source
+        shell: bash
+        run: |
+          set -euo pipefail
+          git fetch --no-tags --depth=1 origin "refs/heads/$SOURCE_BRANCH"
+          actual_sha="$(git rev-parse FETCH_HEAD)"
+          test "$actual_sha" = "$SOURCE_SHA"
+
+          source_root="$RUNNER_TEMP/pinned-migration-source"
+          mkdir -p "$source_root"
+          git archive "$SOURCE_SHA" apps/api/migrations | tar -x -C "$source_root"
+          migrations_dir="$source_root/apps/api/migrations"
+          test -d "$migrations_dir"
+          test -f "$migrations_dir/0017_checkout_bcv_weekend_effective_date.sql"
+          test -f "$migrations_dir/0018_checkout_payment_allocation.sql"
+          test -f "$migrations_dir/0019_inventory_ledger_balance_projection.sql"
+
+          mapfile -t versions < <(
+            find "$migrations_dir" -maxdepth 1 -type f \
+              -name '[0-9][0-9][0-9][0-9]_*.sql' \
+              ! -name '*.assertions.sql' \
+              ! -name '*.deferred_failure.sql' \
+              -printf '%f\n' | sed -E 's/^([0-9]{4})_.*/\1/' | sort
+          )
+          test "\${#versions[@]}" -eq 19
+          for index in "\${!versions[@]}"; do
+            expected="$(printf '%04d' "$((index + 1))")"
+            test "\${versions[$index]}" = "$expected"
+          done
+
+          for version in 0017 0018 0019; do
+            matches=("$migrations_dir"/"\${version}"_*.assertions.sql)
+            test "\${#matches[@]}" -eq 1
+            test -f "\${matches[0]}"
+          done
+
+          printf 'PINNED_MIGRATIONS_DIR=%s\n' "$migrations_dir" >> "$GITHUB_ENV"
+          echo "PINNED_MIGRATION_SOURCE_VERIFIED=$actual_sha"
+          echo "MIGRATION_CHAIN_VERIFIED=0001-0019"
+
+      - name: Verify exact empty target and least-privilege roles
+        shell: bash
+        env:
+          TARGET_URL: \${{ env.NEON_REHEARSAL_TARGET_DATABASE_URL }}
+        run: |
+          set -euo pipefail
+          identity="$(psql -X -A -t -v ON_ERROR_STOP=1 --dbname "$TARGET_URL" -c "
+            SELECT current_database() || '|' || current_user || '|' || session_user || '|' ||
+                   COALESCE(current_setting('neon.branch_id', true),'') || '|' ||
+                   COALESCE(current_setting('neon.project_id', true),'');
+          ")"
+          expected="microapp_rehearsal|microapp_migrator|microapp_migrator|$EXPECTED_BRANCH_ID|$EXPECTED_PROJECT_ID"
+          test "$identity" = "$expected"
+
+          empty="$(psql -X -A -t -v ON_ERROR_STOP=1 --dbname "$TARGET_URL" -c "
+            SELECT pg_catalog.to_regclass('public.schema_migrations') IS NULL
+              AND NOT EXISTS (
+                SELECT 1 FROM pg_catalog.pg_class
+                WHERE relnamespace='public'::regnamespace
+                  AND relkind IN ('r','p','v','m','S','f')
+              )
+              AND NOT EXISTS (
+                SELECT 1 FROM pg_catalog.pg_proc
+                WHERE pronamespace='public'::regnamespace
+              )
+              AND NOT EXISTS (
+                SELECT 1 FROM pg_catalog.pg_type
+                WHERE typnamespace='public'::regnamespace
+                  AND typrelid=0 AND typelem=0
+              );
+          ")"
+          test "$empty" = "t"
+
+          roles="$(psql -X -A -t -v ON_ERROR_STOP=1 --dbname "$TARGET_URL" -c "
+            SELECT
+              (SELECT rolcanlogin AND NOT rolsuper AND NOT rolcreatedb
+                      AND NOT rolcreaterole AND NOT rolreplication AND NOT rolbypassrls
+               FROM pg_catalog.pg_roles WHERE rolname='microapp_migrator')
+              AND
+              (SELECT rolcanlogin AND NOT rolsuper AND NOT rolcreatedb
+                      AND NOT rolcreaterole AND NOT rolreplication AND NOT rolbypassrls
+                      AND NOT rolinherit
+               FROM pg_catalog.pg_roles WHERE rolname='microapp_runtime')
+              AND pg_catalog.has_schema_privilege('microapp_migrator','public','USAGE')
+              AND pg_catalog.has_schema_privilege('microapp_migrator','public','CREATE')
+              AND pg_catalog.has_schema_privilege('microapp_runtime','public','USAGE')
+              AND NOT pg_catalog.has_schema_privilege('microapp_runtime','public','CREATE')
+              AND pg_catalog.has_database_privilege('microapp_migrator',current_database(),'CONNECT')
+              AND pg_catalog.has_database_privilege('microapp_runtime',current_database(),'CONNECT')
+              AND NOT EXISTS (
+                SELECT 1 FROM pg_catalog.pg_auth_members
+                WHERE member IN (
+                  SELECT oid FROM pg_catalog.pg_roles
+                  WHERE rolname IN ('microapp_migrator','microapp_runtime')
+                )
+              )
+              AND NOT pg_catalog.pg_has_role('microapp_runtime','microapp_migrator','MEMBER');
+          ")"
+          test "$roles" = "t"
+          echo "EMPTY_REHEARSAL_TARGET_VERIFIED"
+
+      - name: Require exact write confirmation
+        if: \${{ inputs.operation == 'bootstrap-and-migrate' }}
+        shell: bash
+        env:
+          CONFIRMATION: \${{ inputs.confirmation }}
+        run: |
+          set -euo pipefail
+          expected="APPLY-ONLY-microapp_rehearsal-br-curly-poetry-b7dxsddm-bc3939510e132e6f77c751514ff1b7dca58cdd4d"
+          test "$CONFIRMATION" = "$expected"
+          echo "EXPLICIT_REHEARSAL_WRITE_CONFIRMATION_VERIFIED"
+
+      - name: Apply pinned migrations 0001-0019 to the empty rehearsal database
+        if: \${{ inputs.operation == 'bootstrap-and-migrate' }}
+        shell: bash
+        env:
+          MIGRATION_DATABASE_URL: \${{ env.NEON_REHEARSAL_TARGET_DATABASE_URL }}
+          MIGRATIONS_DIR: \${{ env.PINNED_MIGRATIONS_DIR }}
+        run: |
+          set -euo pipefail
+          bash scripts/db/migrate.sh
+
+      - name: Run checkout, payment-allocation and inventory-ledger assertions
+        if: \${{ inputs.operation == 'bootstrap-and-migrate' }}
+        shell: bash
+        env:
+          MIGRATION_DATABASE_URL: \${{ env.NEON_REHEARSAL_TARGET_DATABASE_URL }}
+          MIGRATIONS_DIR: \${{ env.PINNED_MIGRATIONS_DIR }}
+        run: |
+          set -euo pipefail
+          for version in 0017 0018 0019; do
+            matches=("$MIGRATIONS_DIR"/"\${version}"_*.assertions.sql)
+            test "\${#matches[@]}" -eq 1
+            psql -X -v ON_ERROR_STOP=1 --dbname "$MIGRATION_DATABASE_URL" --file "\${matches[0]}"
+            echo "MIGRATION_ASSERTIONS_PASSED=$version"
+          done
+
+      - name: Verify complete ledger, ownership and runtime boundaries
+        if: \${{ inputs.operation == 'bootstrap-and-migrate' }}
+        shell: bash
+        env:
+          TARGET_URL: \${{ env.NEON_REHEARSAL_TARGET_DATABASE_URL }}
+        run: |
+          set -euo pipefail
+          ledger="$(psql -X -A -t -v ON_ERROR_STOP=1 --dbname "$TARGET_URL" -c "
+            SELECT count(*)=19 AND max(version)='0019' AND bool_and(state='applied')
+            FROM public.schema_migrations;
+          ")"
+          test "$ledger" = "t"
+
+          ownership="$(psql -X -A -t -v ON_ERROR_STOP=1 --dbname "$TARGET_URL" -c "
+            SELECT
+              NOT EXISTS (
+                SELECT 1 FROM pg_catalog.pg_class
+                WHERE relnamespace='public'::regnamespace
+                  AND relkind IN ('r','p','S','v','m')
+                  AND relowner <> (SELECT oid FROM pg_catalog.pg_roles WHERE rolname='microapp_migrator')
+              )
+              AND NOT EXISTS (
+                SELECT 1 FROM pg_catalog.pg_proc
+                WHERE pronamespace='public'::regnamespace
+                  AND proowner <> (SELECT oid FROM pg_catalog.pg_roles WHERE rolname='microapp_migrator')
+              );
+          ")"
+          test "$ownership" = "t"
+          echo "PINNED_REHEARSAL_MIGRATIONS_0001_0019_VERIFIED"

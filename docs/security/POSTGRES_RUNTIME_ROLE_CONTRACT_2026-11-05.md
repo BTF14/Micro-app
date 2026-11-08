@@ -4,7 +4,7 @@
 |---|---|---|
 | `inventory_balances` | SELECT | Sin INSERT/UPDATE/DELETE/TRUNCATE. Los locks usan `lock_inventory_balances` SECURITY DEFINER. |
 | `warehouse_inventory_movements` | INSERT | Solo opening/count_adjustment respaldados por conteo confirmado y sale respaldado por sale draft/línea exacta. Otros tipos (purchase_receipt, customer_return, transfer_in/out, reversal) rechazados. Sin UPDATE/DELETE/TRUNCATE. |
-| `inventory_counts` | SELECT, INSERT, UPDATE | Trigger de confirmación exige organización/sucursal/almacén activos y confirmer activo owner/admin/inventory; inventory requiere branch_membership activo. Opening requiere warehouse vacío. |
+| `inventory_counts` | SELECT, INSERT, UPDATE(status, confirmed_by, confirmed_at) | Trigger de confirmación exige organización/sucursal/almacén activos y confirmer activo owner/admin/inventory; inventory requiere branch_membership activo. Opening requiere warehouse vacío. |
 | `inventory_count_lines` | SELECT, INSERT | Inmutables tras confirmar; movimientos físicos revalidan expected quantity y balance_version bajo warehouse mutex. |
 | `sales` | SELECT, INSERT, UPDATE(status, completed_at) | Solo transición draft→completed; reconciliación diferida de líneas, pagos, ledger y audit. |
 | `sale_items` | SELECT, INSERT | Líneas de una venta draft; inmutables tras completar por triggers. |

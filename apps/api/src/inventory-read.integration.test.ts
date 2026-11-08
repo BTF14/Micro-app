@@ -39,6 +39,7 @@ describe.skipIf(!databaseUrl)("inventory balance and ledger read APIs against Po
   let ownerToken = "";
   let cashierToken = "";
   let ownerId = "";
+  let ledgerProjectionEnabled = false;
   let firstProductId = "";
   let secondProductId = "";
   let inactiveProductId = "";
@@ -145,7 +146,8 @@ describe.skipIf(!databaseUrl)("inventory balance and ledger read APIs against Po
     const projection = await admin.query<{ enabled: boolean }>(
       "SELECT pg_catalog.to_regprocedure('public.project_inventory_movement_to_balance()') IS NOT NULL AS enabled",
     );
-    if (!projection.rows[0]?.enabled) {
+    ledgerProjectionEnabled = projection.rows[0]?.enabled === true;
+    if (!ledgerProjectionEnabled) {
       await admin.query(
         "INSERT INTO inventory_balances (organization_id, branch_id, warehouse_id, product_id, on_hand_quantity) VALUES ($1, $2, $3, $4, 12.000)",
         [organizationId, branchId, warehouseId, firstProductId],
@@ -305,7 +307,7 @@ describe.skipIf(!databaseUrl)("inventory balance and ledger read APIs against Po
     expect(firstBody.items).toHaveLength(1);
     expect(firstBody.items[0]).toMatchObject({
       product_id: firstProductId,
-      movement_type: "count_adjustment",
+      movement_type: ledgerProjectionEnabled ? "count_adjustment" : "purchase_receipt",
       quantity_delta: "3.000",
       unit_cost_usd: "4.2500",
     });
@@ -315,7 +317,7 @@ describe.skipIf(!databaseUrl)("inventory balance and ledger read APIs against Po
     expect(second.status).toBe(200);
     const secondBody = await second.json() as { items: Array<Record<string, unknown>>; nextCursor: string | null };
     expect(secondBody.items).toHaveLength(1);
-    expect(secondBody.items[0]).toMatchObject({ movement_type: "count_adjustment", quantity_delta: "12.000" });
+    expect(secondBody.items[0]).toMatchObject({ movement_type: ledgerProjectionEnabled ? "count_adjustment" : "purchase_receipt", quantity_delta: "12.000" });
     expect(secondBody.nextCursor).toBeNull();
 
     const cashierResponse = await get(root() + "/inventory/movements", cashierToken);

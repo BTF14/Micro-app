@@ -1,3 +1,92 @@
+# Handoff operativo — 2026-11-07 UTC
+
+## Estado actual y prioridades
+
+- GitHub main: `a38463ea00415c7601d716132e70a29e381a2e34`; 20 PR abiertas en consulta directa.
+- PR #251 auth retention: Draft, HEAD `7c6df0016834e2e6f2ca4b4d062c94995e756662`; 11/11 workflows PR y 2/2 push security scans SUCCESS. Incluye cleanup 48 h limitado a 500 filas por tabla, `SKIP LOCKED`, preview skip y pruebas PostgreSQL con `microapp_runtime`. No mergear ni activar hasta resolver Neon schema/runtime gate.
+- PR #255 BCV: Draft, HEAD `c45c8ec050ddf96381968535cb6bddfd24ac1feb`, base #251 HEAD `7c6df0016834e2e6f2ca4b4d062c94995e756662`, mergeable. 10/10 workflows pull_request y 3/3 runs push SUCCESS en SHA exacto; CI logs confirman 2/2 tests PostgreSQL BCV con admin y microapp_runtime. Reconstruye BCV de #227 y fix de #250 sobre la cadena actual, sin duplicar migration 0013.
+- #254 está cerrada como duplicado de recuperación; su código completo está copiado en #255. #218–#226 están cerradas como supersedidas tras recuperación/verificación. #218 cleanup se conserva en #251.
+- #227 fue reabierta como ancla temporal de dependencia/procedencia mientras #228–#233 sigan apuntando a su rama; Draft, no merge-ready. #250 está cerrada como supersedida; su fix está preservado en #255. #254 está cerrada como duplicado.
+- PR #253 es esta reconciliación documental (Draft, base main `c4be53ea3247c69206a79ebe5fa2f875a4f9aac4`).
+
+- PR #256 merged to main at `a38463ea00415c7601d716132e70a29e381a2e34`: backup/restore synthetic sale fixture no longer references removed `discount_usd`; exact-HEAD PR workflows passed, post-merge checks 10/10 check-runs + 8/8 push workflows SUCCESS, incluidos Cloudflare Pages y Workers builds.
+
+## Reglas BCV verificadas
+
+- **Base normativa para operaciones en días no hábiles:** el artículo 25 de la Ley del IVA dispone que, si el hecho imponible ocurre en un día no hábil para el sector financiero, se aplica el tipo de cambio vigente el día hábil inmediatamente siguiente. Referencia documental: Gaceta Oficial N.º 6.507 Extraordinario (29-01-2020), texto del artículo 25: <https://www.ivecofi.net/informacion/legislacion/leyes/ley-impuesto-valor-agregado/titulo-iv>. La publicación BCV lleva `Fecha Valor`; se usa la tasa con la fecha valor que corresponda al día hábil siguiente para sábado/domingo/feriado. El BCV suele publicar esa tasa en la tarde del día hábil anterior. Verificación explicativa secundaria: <https://elcambiove.com/guias/tasa-bcv-fin-de-semana/>. Esto documenta la regla de conversión de IVA; no sustituye revisión contable/fiscal del caso concreto.
+- Días hábiles: usar fecha efectiva de hoy. Sábado/domingo: elegir la fecha efectiva futura más cercana. Una fecha futura no bloquea insertar una fecha anterior faltante. Nunca saltar una fila futura stale para usar una posterior.
+- Fechas futuras aceptadas hasta 7 días. Los feriados bancarios entre semana todavía no tienen calendario autoritativo: fail closed, sin conversión VES, hasta implementar y validar el calendario.
+- No usar tasa estimada ni proveedor tercero. La conversión requiere tasa BCV actual/validada y aritmética decimal exacta.
+
+## Neon y seguridad
+
+- Neon rehearsal `br-curly-poetry-b7dxsddm`, parent main `br-summer-math-b7297a60`. La huella es 133 columnas, 204 constraints, 46 índices, 17 relaciones y 15 tablas. En rehearsal existen logins migrator/runtime; runtime todavía no tiene grants de tabla. No hay ledger, `auth_bootstrap_attempts`, warehouses ni conteos.
+- No se ejecutó baseline ni migraciones 0003–0016. Neon main intacta. No pegar SQL manualmente ni pedir secretos/terminal/capturas/TinyFish al usuario.
+- PR #251 no puede mergearse/activarse hasta aplicar schema y probar roles/grants con el runner protegido en rehearsal y, después, obtener autorización específica para cualquier cambio de producción.
+- PR #255 no puede mergearse/desplegarse hasta que migration 0013 esté aplicada y runtime login/grants y Cron real estén verificados.
+- No cambiar secretos, Cloudflare dashboard, DNS, billing ni datos reales. No hacer despliegues manuales. El merge de #256 generó automáticamente builds/checks de Cloudflare Pages y Workers con SUCCESS; no se hizo smoke HTTP independiente contra producción. Producción sigue **NOT READY**.
+
+## Próximas acciones
+
+1. Solicitar/obtener revisión independiente de #255 y resolver cualquier hallazgo; su CI exacto ya terminó verde.
+2. Confirmar PostgreSQL admin/runtime integration de BCV: mañana/fecha siguiente hábil primero, fecha de hoy después, idempotencia, latest de fin de semana, stale nearest future y endpoints latest/history.
+4. Mantener #251 Draft hasta el gate de Neon; no activar Cron antes de la adopción segura y prueba con runtime login.
+5. Reconciliar #228–#231 como supersedidas solo tras conservar la corrección útil del fixture de backup; portar #232 y revisar/portar #233 sobre #255, sin migration 0015 duplicada.
+6. Diseñar migration 0017 para alinear el trigger SQL de checkout con BCV weekday/weekend; no activar checkout hasta resolver el contrato de pagos que migration 0015 ya impone (una moneda y pago exacto completo) y obtener confirmación funcional.
+7. Resolver #200 por reconstrucción de cambios únicos sobre main; no rebase/merge wholesale.
+8. Actualizar este handoff y el journal con cada cambio de estado real. No repetir preguntas ya documentadas.
+
+---
+
+## Snapshot histórico supersedido — 2026-11-07 (antes de #252/#255)
+
+
+
+Fuente de verdad: GitHub consultado en vivo; main `fc332946a9128e92ce39a3eb1ef1ee7ebd261598`; 28 PR abiertas. El snapshot anterior de 25 PR quedó obsoleto.
+
+### BCV corregido, aún no integrado
+- PR #250 HEAD `081ec1026f4bda889a633bb3fcbe420433e13336`, base #227 `83cf96b7fcb7b0e304f676d21ab721de61364a59`, 9 ahead/0 behind, Draft. Seis workflows exact-HEAD success: CI push/PR, migration-runner push/PR, Security scan, Secret history scan. La prueba PostgreSQL real valida mañana→hoy, selección por fecha America/Caracas e idempotencia. La prueba está protegida para ejecutarse solo contra localhost/127.0.0.1 y DB /microapp_test con CI=true. No reviews formales ni threads.
+- PR #227 HEAD `83cf96b7fcb7b0e304f676d21ab721de61364a59`: 13 workflows success; Draft, base #226. No integrar su stack completo sin reconstruirlo sobre main actual.
+- #250 debe conservarse; no cerrar ni fusionar mientras su base dependa de la cadena vieja.
+
+### Bloqueo estructural del stack
+- PR #200 HEAD `464ca08b9020fad128cc9c8a321568493d484517`, main actual `fc332946a9128e92ce39a3eb1ef1ee7ebd261598`: diverged 37 ahead/14 behind, GitHub no mergeable. Main ya contiene migraciones 0005–0016; #200 tiene numeración incompatible (inventario 0005 y migraciones posteriores desplazadas) y amplio solapamiento de auth/catalog/tenant/workflows/lockfile. **No rebase ni merge automático**; reconstruir los cambios únicos en ramas basadas en main.
+- PR #204 HEAD `07a5a41c0f5f5c36fb89a5c5950796493d56eb20` está diverged 8 ahead/5 behind respecto al #200 actual, con un único archivo cambiado (`inventory-counts.integration.test.ts`). Su fixture isolation ya está en main de forma más completa: `beforeEach` crea warehouse/product por test y `seedInventoryBalanceFor` registra el movimiento de fixture. Revisar el diff completo; si no queda comportamiento único, cerrar #204 como supersedida con comentario/evidencia.
+- La secuencia descendiente activa incluye #205, #208, #207, #209, #210, #211, #218, #220–#227. Máximo dos frentes activos; resolver raíz y dependencias en orden. No cerrar PR sin rescatar y verificar sus cambios únicos.
+
+- #205/#207/#208/#209/#210 llevan comportamiento ya integrado en main: #205 idempotency fields, handler y sus 21 test names están en main; #207 SQL igual a main 0008; #208 SQL igual a main 0007; #209 SQL igual a main 0009; #210 SQL igual a main 0010. Las assertions solo difieren en el comentario del filename. Auditar tests/workflows/docs restantes y dependencias downstream antes de cerrar como supersedidas.
+
+### PR cerradas conservadas
+- #214: cerrada como supersedida por #213, que está fusionada en main. No reintroducir su módulo rate-limit ni su secreto HMAC alternativo.
+- #215: cerrada sin merge, pero el handoff OAuth server-side ya está integrado en main vía #240: migración main 0005 byte-identical a la antigua 0010 y flujo opaque handle/state hash/consumo atómico presente en `google-auth.ts`.
+- #218 fue retargeteada a la rama activa #211 (51 ahead/0 behind) solo para auditar procedencia. Su branch contiene copias obsoletas de #214/#215 (`enforceAuthRateLimit`, migration 0010, google-auth antiguo) y no debe integrarse como está. El handoff y migration 0010 ya están en main vía #240; main usa #213 `consumeAuthRateLimit` y `readBodyWithinLimit`. El delta útil ya está portado en PR #251 (Draft), basada en main: Cron horario solo producción, cleanup de auth rows mayores a 48 h, preview skip, grants runtime verificados y PostgreSQL integration tests. HEAD `4a0662346c2a1f95bcf09d815df55755f53686cd`; 10/10 PR workflows success, incluido login real `microapp_runtime`. No mergear hasta que la adopción segura en Neon resuelva que main no tiene `auth_bootstrap_attempts` ni roles `microapp_runtime`/`microapp_migrator`. #218 queda abierta para revisar otros deltas únicos.
+
+### Seguridad y límites
+- Neon main intacta. Ensayo `rehearsal-baseline-20261107` aún sin aplicar baseline ni migraciones 0003–0016; runtime grants posteriores siguen pendientes.
+- No tocar Neon main, datos reales, secretos, Cloudflare productivo, DNS, billing ni hacer despliegues manuales. No force-push. No fusionar PRs Draft ni stacks obsoletos.
+- Producción **NOT READY**; gates P0/P1 e issue #53 continúan abiertos.
+
+### Próximas acciones exactas
+1. Auditar y reconstruir PR #200 sobre main actual, resolviendo numeración y contenido de migraciones con pruebas PostgreSQL.
+2. Verificar que #204 no aporta más que fixture isolation ya presente y ampliada en main; si se confirma, documentar y cerrar como supersedida. Auditar #205–#211 contra las implementaciones ya integradas.
+3. Sincronizar o portar solo diferencias únicas downstream en orden y revisar diff/CI en cada SHA final.
+4. Portar #215/#218 sobre el rate limiter de #213 y validar grants para migration 0010.
+5. Mantener #250 como corrección verificada; integrar solo después de tener base actual y exact-HEAD CI.
+
+## Continuidad inmediata — estado real 2026-11-07
+
+El main de GitHub está actualizado por #248; merge SHA fc332946a9128e92ce39a3eb1ef1ee7ebd261598. PR #244–#248 están fusionadas. La consulta viva más reciente reporta **28 PR abiertas**; ver la reconciliación al inicio de este archivo.
+
+Neon: la rama principal br-summer-math-b7297a60 no fue modificada y sigue sin ledger ni roles app. La rama rehearsal-baseline-20261107 (br-curly-poetry-b7dxsddm) está lista, tiene microapp_migrator/microapp_runtime, 15 objetos propiedad de migrator, pero no ledger ni migraciones 0003–0016. SELECT con ambos logins confirmó conexión; runtime aún no tiene grants de tablas. El propietario debe ejecutar los scripts versionados reales en la rama de ensayo (no pegar migraciones manualmente) y verificar runtime después de grants. No usar Neon main.
+
+BCV: la migración 0013 de #227 ya está en main. El bug mañana→hoy se corrigió en #250; HEAD `081ec1026f4bda889a633bb3fcbe420433e13336` pasó 6/6 workflows exactos, incluida integración PostgreSQL real con fecha America/Caracas e idempotencia. #250 sigue Draft y apilada sobre #227; no fusionar #227 completo ni su base antigua. Rescatar código BCV único sobre main después de reconstruir la cadena.
+
+Backlog: 28 PR abiertas según consulta viva. #214 está cerrada como supersedida por #213; #215 cerrada sin merge conserva handoff único portado a #218. #200/#204 tienen drift y #218 se retargeteó a #211. Ver sección superior para refs actuales. El objetivo es consolidar en ramas basadas en main y fusionar PR elegibles, no rebasar/mergear a ciegas cada rama apilada.
+
+Prioridad próxima: 1) auditar diferencias únicas de #200 frente a main y reconciliar migraciones; 2) verificar #204 como posible supersedida y revisar #205–#211 contra main; 3) portar handoff #215/#218 sobre rate limiter canónico #213; 4) mantener #250 y recuperar su código BCV sobre base actual; 5) continuar ensayo Neon solo en rama de rehearsal y bajo los gates específicos. Producción sigue NOT READY. No ejecutar Neon main, cambiar secretos, Cloudflare manual, DNS ni billing.
+
+---
+
 ## Estado verificado — 2026-11-06
 
 ### PR #244 integrada

@@ -1,3 +1,140 @@
+# 2026-11-07 UTC — cierre de verificación post-merge #256
+
+- El merge SHA `a38463ea00415c7601d716132e70a29e381a2e34` quedó verificado: los 10 check-runs de commit y 8 workflows push terminaron SUCCESS.
+- Cloudflare Pages y Workers Builds reportaron SUCCESS para el merge. El cambio integrado solo afecta el script sintético de backup/restore; no hubo modificación manual de Cloudflare ni datos reales.
+- La PR #253 se actualiza para reflejar este estado y el HEAD final #255 `c45c8ec050ddf96381968535cb6bddfd24ac1feb`.
+
+---
+
+# 2026-11-07 UTC — merge seguro del fixture backup/restore
+
+- PR #256 `fix/backup-restore-no-discount-20261107` se fusionó por squash en main: `a38463ea00415c7601d716132e70a29e381a2e34`.
+- Diff: una línea; el fixture sintético de `scripts/test_backup_restore.sh` deja de insertar la columna retirada `discount_usd`. Es compatible con el baseline de prueba (donde el campo tenía default 0) y con el esquema actual posterior a migration 0014 (donde ya no existe).
+- Exact HEAD pre-merge `2d08b556529a67735d3070bd467892bc0a743164`: 10 workflows pull_request + 2 push scans SUCCESS, incluido el workflow Synthetic encrypted backup and restore. No reviews/threads; cambio aislado y reversible.
+- El merge no modificó migraciones, código de aplicación, secretos, Neon, Cloudflare manual, DNS, billing ni datos reales. Los check-runs post-merge en el nuevo main estaban queued/in-progress al registrar esta entrada; verificar su conclusión antes de cerrar el ciclo.
+
+---
+
+# 2026-11-07 UTC — final exact-HEAD validation and dependency correction
+
+- Main remains `c4be53ea3247c69206a79ebe5fa2f875a4f9aac4`; live open PR count is 21 after reopening #227 as a temporary dependency anchor for #228–#233.
+- #255 HEAD `c45c8ec050ddf96381968535cb6bddfd24ac1feb`, base #251 at `7c6df0016834e2e6f2ca4b4d062c94995e756662`: 10/10 pull_request workflows and 3/3 push runs completed SUCCESS. CI log confirms the two BCV PostgreSQL integration tests passed with admin and disposable `microapp_runtime` logins. Cloudflare Pages/Workers produced branch previews only; no production deployment or manual Cloudflare changes. Combined classic status contexts are empty; check-runs include all required contexts and are green.
+- #255 has no formal reviews or inline threads and remains Draft. Independent review and production gates are outstanding.
+- #251 HEAD `7c6df0016834e2e6f2ca4b4d062c94995e756662`: 11/11 pull_request workflows and 2/2 push security scans SUCCESS. It remains Draft because Neon main lacks `auth_bootstrap_attempts` and the dedicated runtime role/grants. Main advanced by three commits after the PR's recorded base; compare shows 22 ahead/3 behind and mergeable true.
+- #227 was reopened solely as a temporary dependency/provenance anchor because #228–#233 still target its branch family. Do not merge the obsolete stack; close it only after downstream PRs are rebuilt or explicitly retired. #250 is closed as superseded by #255; #254 is closed as duplicate. All BCV code and the tomorrow-first/today-second fix are in #255; migration 0013 is byte-identical to main.
+- No Neon writes, production data changes, secret changes, manual Cloudflare changes, DNS, billing, or production deployments were made. Production remains NOT READY.
+
+---
+
+# 2026-11-07 UTC — checkout stack audit against current canonical main
+
+- #229 money engine, #230 CatalogPanel and #231 ProductForm are present in main in equal or stronger form. #228 migration 0014 and assertions are byte-identical to canonical main migration 0014; main catalog-write handler/tests are stronger. The backup restore fixture's no-discount INSERT is a small unique alignment, tracked separately in PR #256.
+- #232's SALES_CHECKOUT_MODEL document was missing from main and is now recovered/updated in PR #253. It corrects stale claims: migration 0015 already adds branch/shift/warehouse/request-hash/settlement context, lifecycle guards, deferred sale reconciliation, single-currency exact-payment constraints, BCV check, own-shift lock and ledger/audit checks.
+- #233's migration 0015 is older/weaker than canonical main migration 0015; do not port it. Its sales-checkout handler/tests are unique and require careful port to #255.
+- Critical incompatibility: main migration 0015's `assert_completed_sale_reconciled()` requires BCV effective_date = today's Caracas date. PR #255's API correctly uses next-business-day rate on weekends. Before checkout can work on weekends, add migration 0017 to update the deferred SQL trigger to the same weekday/weekend selection, without skipping a stale nearest future row. Keep weekday bank holidays fail-closed until a calendar exists.
+- Migration 0015 already enforces one settlement currency and exact full payment. The original design doc did not record explicit functional approval; confirm before activating checkout. Review per-line VES/USD formula and per-payment USD-equivalent allocation for DB-level integrity.
+- PR #227 was reopened as a temporary dependency/provenance anchor for #228–#233, which still target its branch family; #250 and #254 are closed, with the #250 regression preserved in #255. Do not merge the old stack wholesale.
+
+---
+
+# 2026-11-07 UTC — BCV weekend correctness and recovered stack #255
+
+- PR #255 created from the current #251 recovery branch; PR #254 closed as a duplicate after all its code/docs were copied to the refreshed branch. PR #255 remains Draft; latest HEAD `c45c8ec050ddf96381968535cb6bddfd24ac1feb`; 10/10 pull_request workflows and 3/3 push runs SUCCESS, including BCV PostgreSQL admin/runtime tests. No formal reviews/threads; Draft pending independent review.
+- PR #251 refreshed its workflow filters so PRs stacked on `fix/**` receive the full required pull_request checks. Its exact HEAD `7c6df0016834e2e6f2ca4b4d062c94995e756662` now has 11/11 PR workflows and 2/2 push security scans successful. It remains Draft due Neon schema/runtime gate.
+- BCV parser now accepts full Spanish effective dates with optional "de" and weekday comma, limits source HTML to 2 MB while streaming, and allows future effective dates up to 7 days for weekends/long weekends.
+- A review of BCV effective-date practice found Saturday/Sunday operations use the next business day's effective rate (Friday publication commonly carries Monday's date). Latest selection now uses today's date on weekdays and the nearest future effective date on weekends; it does not skip a stale nearest future row. Weekday bank holidays remain fail-closed pending an authoritative calendar.
+- #255 adds PostgreSQL integration of persistence and latest/history API through the actual runtime login in the runtime-role CI job; admin login is used only for fixture cleanup. Unit/UI/ODD tests are in the PR.
+- No Neon production reads/writes, secret changes, Cloudflare production changes, deployments, DNS, billing or real-data operations were performed.
+
+---
+
+# 2026-11-07 UTC — cierre de stack supersedido y reconciliación de Neon
+
+- Main pasó a `c4be53ea3247c69206a79ebe5fa2f875a4f9aac4` tras fusionar #252; #249 ya estaba fusionada. #252 agregó la regresión de bootstrap oversized sin Content-Length y su documentación; 10/10 workflows PR success. El job CI necesitó un reintento por una colisión DDL transitoria en `catalog-write.integration.test.ts`; el reintento exacto pasó 32/32 pasos, incluidos auth integration admin/runtime.
+- Se cerraron #218–#226 como supersedidas, con comentarios por PR y evidencia. #218 authz/handoff ya está en main; cleanup >48 h preservado en #251. #220 bounded-body helper ya está en main; la regresión route-level se fusionó en #252. #221 authorization policy está en main con no-discounts. #222 role contract actualizado en main. #223 migration 0011/helper/tests idénticos a main. #224 migration 0012/assertions idénticos y CI main más reciente. #225 atomicity script idéntico y migration-check main lo ejecuta. #226 runner es subconjunto estricto de main.
+- GitHub reportó 19 PR abiertas después de cierres. #251 permanece Draft, HEAD `2a0c685a2348af87f76417b4f3ac0f77a70cbb5d`, 10/10 PR workflows y 2 push scans success. No mergear hasta resolver Neon schema/runtime gate.
+- #227/#250 permanecen abiertas como snapshots BCV; #250 exact SHA `081ec1026f4bda889a633bb3fcbe420433e13336` incluye y pasó integración PostgreSQL real para insertar mañana antes que hoy, seleccionar hoy en America/Caracas e idempotencia. No fusionar old base.
+- Neon project `restless-fire-99110035`, rehearsal `br-curly-poetry-b7dxsddm` parent `br-summer-math-b7297a60`: ambos schemas 133 columns, 204 constraints (98 other +106 NOT NULL), 46 indexes, 17 relations, 15 tables. Rehearsal roles: direct login migrator works (public USAGE/CREATE); runtime login works (public USAGE, no CREATE, no table grants). Existing 15 tables, 46 indexes and 2 sequences owned by migrator. No `schema_migrations`, `auth_bootstrap_attempts`, warehouses or inventory count tables. Main has only `neondb_owner` and `backup_readonly`; unchanged.
+- All Neon queries in this checkpoint were SELECT-only. No baseline apply, migration 0003–0016, data write, secret change or Cloudflare production operation.
+- The repo has no Neon rehearsal secret and no release workflow that invokes `adopt-baseline.sh`/`migrate.sh`. Next safe path requires a protected workflow/environment plus explicitly authorized rehearsal credentials; never paste migrations one-by-one through SQL.
+
+---
+
+# 2026-11-07 UTC — PR #251: port de limpieza de retención auth
+
+- Se portó desde #218 la única función útil de retención al código canónico de main en PR #251 (`fix/auth-retention-cleanup-20261107`), HEAD `4a0662346c2a1f95bcf09d815df55755f53686cd`.
+- Cron horario (`17 * * * *`) invoca cleanup solo cuando `APP_ENV === production`; preview no conecta a DB. Borra `auth_rate_limits` inactivos y `auth_bootstrap_attempts` expirados hace más de 48 horas.
+- La prueba PostgreSQL verifica eliminación de filas antiguas y conservación de recientes. El job CI corrió la suite con admin y con login real `microapp_runtime`; 10/10 PR workflows SUCCESS en HEAD exacto. Las assertions de migration 0012 ahora comprueban grants DELETE mínimos ya existentes.
+- PR #251 permanece Draft/no merge: Neon main, según lectura previa vigente, no contiene `auth_bootstrap_attempts` ni los roles dedicados `microapp_runtime`/`microapp_migrator`. No activar el Cron en producción hasta que el esquema y runtime role estén reconciliados y verificados por el gate de Neon. No se conectó ni escribió en Neon.
+- #218 permanece abierta para auditar sus restantes cambios de autorización; no fusionar la rama obsoleta.
+
+---
+
+# 2026-11-07 UTC — procedencia de migraciones de inventario/security
+
+- #205: idempotency_key/request_hash, constraint, índice parcial, handler y los 21 nombres de pruebas de la rama están presentes en main; main tiene 24 pruebas de conteos.
+- #207: SQL append-only audit blob idéntico a main 0008; assertion solo cambia comentario de filename.
+- #208: SQL own-shift roles idéntico a main 0007.
+- #209: SQL count-ledger validation idéntico a main 0009; assertion solo cambia comentario de filename.
+- #210: SQL balance↔ledger coupling idéntico a main 0010; assertion solo cambia comentario de filename.
+- Revisar todavía tests/workflows/docs y dependencias downstream antes de cerrar estas PR como supersedidas. No cerrar por título ni solo por migración idéntica.
+
+---
+
+# 2026-11-07 UTC — delta único de limpieza de auth en #218
+
+- Main ya tiene el handoff OAuth #215 vía #240 y el rate limiter canónico #213. No reintroducir la copia antigua de #214/#215, la migración duplicada 0010 ni `AUTH_RATE_LIMIT_HMAC_KEY`.
+- Se identificó un comportamiento único en #218: cleanup programado cada hora que elimina `auth_rate_limits` y `auth_bootstrap_attempts` con retención de 48 h. Main solo poda oportunísticamente rate-limit rows de más de 7 días y no limpia handoff rows expiradas.
+- Preservar ese cleanup en un port pequeño sobre el módulo canónico `consumeAuthRateLimit`, con skip de previews, verificación de permisos DELETE del runtime y pruebas PostgreSQL. No cerrar #218 hasta preservar o demostrar que ese comportamiento se ha portado.
+
+---
+
+# 2026-11-07 UTC — corrección de procedencia del handoff OAuth
+
+- Corrección a la anotación anterior: el handoff OAuth server-side de PR #215 ya está integrado en main vía #240. El blob de `apps/api/migrations/0005_auth_bootstrap_attempts.sql` en main es idéntico al antiguo `0010_auth_bootstrap_attempts.sql` de #215/#218; el `google-auth.ts` de main conserva opaque handle, hash de estado y consumo atómico.
+- Main usa además el rate limiter canónico de #213 (`consumeAuthRateLimit`) y `readBodyWithinLimit`. El branch #218 conserva la versión obsoleta de #214 (`enforceAuthRateLimit`) y un google-auth anterior. No portar el handoff/migración duplicados; auditar solo deltas de autorización que no estén ya en main.
+- #214 está supersedida por #213; #215 cerrada sin merge pero su handoff no se perdió: está en main. #218 permanece Draft como fuente para revisión, no como implementación lista para merge.
+
+---
+
+# 2026-11-07 UTC — corrección de disposición de #204 y estado de main
+
+- Verificación adicional en main `fc332946a9128e92ce39a3eb1ef1ee7ebd261598`: existen `inventory-counts.ts`, `inventory-locks.ts`, `catalog.ts`, `catalog-write.ts` e `inventory-read.ts`. La sección histórica del backlog que decía que faltaban inventory-counts/locks está supersedida.
+- Main `inventory-counts.integration.test.ts` ya tiene fixture isolation más completa que PR #204: `beforeEach` crea warehouse y product por test; `seedInventoryBalanceFor` registra el movimiento correspondiente en el ledger. #204 probablemente está supersedida; cerrar solo después de comparar el diff completo y confirmar que no queda comportamiento único.
+- PR #200 continúa divergida del main actual (37 ahead/14 behind; mergeable=false) y sus migraciones 0005–0010 chocan con la secuencia canónica 0005–0016. No importar ni rebasar la rama completa.
+- PR #250 sigue validada en SHA `081ec1026f4bda889a633bb3fcbe420433e13336` con 6/6 workflows exactos; el fix BCV y su integración PostgreSQL están completos en la rama, pero no integrados.
+- La recuperación debe comparar las PR #200/#204/#205/#207–#211 contra el código ya integrado por #244–#248 antes de portar o cerrar. Preservar solo cambios únicos comprobados.
+
+---
+
+# 2026-11-07 UTC — recuperación de PR apiladas y BCV
+
+- GitHub main `fc332946a9128e92ce39a3eb1ef1ee7ebd261598`; 27 PR abiertas en consulta directa.
+- #250 HEAD `081ec1026f4bda889a633bb3fcbe420433e13336`: 6/6 workflows exact-HEAD success; PostgreSQL integration mañana→hoy, fecha America/Caracas e idempotencia. Sigue Draft, 9 ahead/0 behind #227, sin reviews/threads.
+- #227 HEAD `83cf96b7fcb7b0e304f676d21ab721de61364a59`: 13/13 workflows success; Draft y apilada sobre #226.
+- #200 HEAD `464ca08b9020fad128cc9c8a321568493d484517` diverge de main actual: 37 ahead/14 behind, mergeable=false. Main ya contiene migraciones 0005–0016 y #200 usa secuencia incompatible; reconstrucción selectiva requerida, no rebase/merge ciego.
+- #204 HEAD `07a5a41c0f5f5c36fb89a5c5950796493d56eb20` diverge del #200 actual 8 ahead/5 behind; solo un archivo solapado, `inventory-counts.integration.test.ts`. Preservar su fixture isolation sobre el archivo actualizado.
+- #218 retargeteada desde base cerrada #215 a #211. #214 está supersedida por #213 merged; #215 contiene handoff único que se conserva en #218, pero el rate limiter duplicado debe portarse a la implementación canónica de #213 antes de integrar.
+- Sin merges ni cambios en Neon main, datos reales, secretos, Cloudflare productivo, DNS o billing. Producción NOT READY.
+
+## Siguiente bloque
+1. Recuperar #200 sobre main actual, reconciliando migraciones 0005–0016.
+2. Reaplicar aislamiento de fixtures de #204 y sincronizar descendientes en orden.
+3. Portar handoff #215/#218 al rate limiter de #213.
+4. Mantener #250 Draft hasta que la base esté reconstruida y los checks corran en el SHA final.
+
+---
+
+# 2026-11-07 UTC — verificación directa de rehearsal y auditoría de BCV
+
+- GitHub: #248 merged fc332946a9128e92ce39a3eb1ef1ee7ebd261598; #244–#248 fusionadas; 25 PR abiertas al consultar GitHub.
+- Neon project restless-fire-99110035: branch main br-summer-math-b7297a60 sigue sin ledger ni roles de aplicación; solo SELECT.
+- Neon rehearsal br-curly-poetry-b7dxsddm: roles microapp_migrator y microapp_runtime conectan; 15 objetos son propiedad de migrator; no ledger; runner 0003–0016 aún no ejecutado. Runtime no tiene privilegios de tabla todavía. neondb_owner mantiene ADMIN OPTION con SET FALSE/INHERIT FALSE. No se hicieron escrituras desde esta auditoría.
+- #227 source audit: se encontró que la condición WHERE NOT EXISTS (effective_date > incoming_date) bloquea insertar la tasa de hoy si una tasa futura ya existe. Requiere test mañana→hoy; #227 no es mergeable hacia main por su stack/base antigua aunque GitHub reporte mergeable true respecto a su base.
+- Se actualizó docs/security/NEON_MIGRATION_APPLICATION_PLAN.md para distinguir Fase 1 parcial de Fase 2/3 no ejecutadas. Producción sigue NOT READY.
+
+---
+
 # 2026-11-07 UTC — Ensayo de adopción en rama Neon
 
 - Se ensayó la adopción en una rama Neon (no en producción) y se corrigieron dos defectos del script que CI no podía ver (dueño no superusuario). Añadido escenario CI equivalente. Sin escrituras en la rama principal de Neon, secretos, Cloudflare, DNS ni billing.

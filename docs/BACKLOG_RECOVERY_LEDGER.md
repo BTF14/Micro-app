@@ -1,3 +1,27 @@
+# Live recovery ledger — 2026-11-07 UTC
+
+- Main: `c4be53ea3247c69206a79ebe5fa2f875a4f9aac4`; GitHub open PR count: **20** (recounted after #256 merged and #227 remained reopened as a temporary dependency anchor).
+- #251 auth-retention: Draft, HEAD `7c6df0016834e2e6f2ca4b4d062c94995e756662`; 11/11 PR workflows + 2/2 push security scans SUCCESS. Cleanup uses 48-hour retention, max 500 rows/table/run, `FOR UPDATE SKIP LOCKED`, production-only Cron, preview skip, and admin/runtime PostgreSQL integration. Neon main still lacks bootstrap table and runtime role/grants; do not merge or activate.
+- #255 BCV recovery: Draft, HEAD `c45c8ec050ddf96381968535cb6bddfd24ac1feb`, base #251 HEAD `7c6df0016834e2e6f2ca4b4d062c94995e756662`; mergeable. All 10 pull_request workflows and all 3 push-triggered runs completed successfully on this exact SHA. The six required check-run contexts (verify, postgres-migration, migration-runner, Chromium authentication smoke, JavaScript/TypeScript static analysis, Trivy, plus history scan) are green; combined classic status contexts are empty. CI logs confirm both BCV PostgreSQL integration tests passed under admin and disposable microapp_runtime logins. No formal reviews/threads; Draft pending independent review and production gates. Includes #250's future-first/today-second fix, bounded source parser, current/history endpoints, UI, weekday Cron, weekend next-business-day rule and admin/runtime PostgreSQL integration.
+- #256 merged to main at `a38463ea00415c7601d716132e70a29e381a2e34`: one-line backup/restore fixture correction; 10/10 PR workflows + 2 push scans SUCCESS, including Synthetic encrypted backup and restore. Post-merge checks all passed: 10/10 check-runs and 8/8 push workflows, including Cloudflare Pages and Workers build checks.
+- #254 closed as a duplicate recovery attempt; all code/docs copied into #255. #218–#226 closed as superseded after file-level recovery; #218's unique cleanup is in #251. #227 was reopened as a temporary dependency/provenance anchor for still-open #228–#233, which continue to target its branch family; it is Draft and not merge-ready. #250 is closed as superseded by #255; its fix is preserved there.
+- BCV edge policy: weekdays select today's effective date; Saturday/Sunday select nearest future effective date (next business day). Never skip a stale nearest future row. Allow future effective dates up to 7 days for long weekends. Weekday bank holidays have no authoritative calendar yet: fail closed and disable VES conversion until implemented.
+- Migration 0013 is already in GitHub main and is not duplicated. Neon rehearsal is read-only verified but has no baseline ledger, no bootstrap table, no warehouses/counts, and runtime grants are not applied. Neon main untouched.
+- PR #253 is the current documentation reconciliation branch. Production remains **NOT READY**. No production secrets, Cloudflare settings, DNS, billing or real data were changed.
+
+## Recovery priorities
+
+1. Obtain independent review of #255 and resolve findings; its exact-HEAD workflows already pass.
+2. Keep #251 Draft until Neon rehearsal/adoption, schema and runtime grants are proven.
+3. Reconcile #228–#231 as superseded where their behavior is already in main; preserve the backup fixture improvement via #256. Port #232's updated checkout design and recover #233's unique handler/tests on #255 without its obsolete migration 0015.
+4. Add migration 0017 to align the checkout DB trigger's BCV effective date with the API's weekday/weekend rule; confirm the existing single-currency/exact-full-payment schema contract before enabling checkout.
+5. Reconstruct #200's unique inventory changes on current main; do not merge its divergent branch wholesale.
+6. Keep #227 as provenance until #228–#233 are rebuilt; #250 is already closed as superseded by #255.
+
+
+---
+
+- #218's unique 48-hour auth retention behavior has been ported independently in PR #251 (Draft), HEAD `4a0662346c2a1f95bcf09d815df55755f53686cd`; hourly production-only Cron, preview skip, PostgreSQL old-vs-fresh retention test, runtime DELETE grant assertions, 10/10 PR workflows SUCCESS including `microapp_runtime`. Do not merge until Neon main has the bootstrap table and dedicated runtime role/grants; #218 remains open for other unique authz deltas.
 # Backlog Recovery Ledger — BTF14 / Micro-app
 
 **Snapshot:** 2026-11-06  
@@ -5,6 +29,26 @@
 **Recovery branch:** `feat/recover-inventory-application-20261106`  
 **Observed main baseline:** `38e1d61acc083b3c0b9b73edcb2bc7887ca56872`  
 **Source backlog snapshot:** 25 open source implementation/documentation PRs. PR #242, #243 and #244 merged; the active recovery branch is `feat/inventory-read-ledger-20261106`. **Current open count after opening its PR: 26 (25 source PRs + next recovery PR)**. Re-query GitHub before future reports.
+
+## Live recovery delta — 2026-11-07 UTC
+
+GitHub reports **28 open PRs** and main `fc332946a9128e92ce39a3eb1ef1ee7ebd261598`. This supersedes the 2026-11-06 snapshot count and refs above.
+
+- #200 HEAD `464ca08b9020fad128cc9c8a321568493d484517` is 37 ahead / 14 behind current main and GitHub reports `mergeable=false`. Current main already has canonical migrations 0005–0016; #200 independently assigns inventory migration 0005 and shifts later migrations. Many auth/catalog/tenant/workflow/lockfile paths overlap. Reconstruct unique functionality on current main; do not merge or rebase this branch wholesale.
+- #204 HEAD `07a5a41c0f5f5c36fb89a5c5950796493d56eb20` is 8 ahead / 5 behind current #200 head, with one changed file (`apps/api/src/inventory-counts.integration.test.ts`). Its per-test warehouse/product isolation is already present in stronger form on current main; verify the full diff and close as superseded only if no unique behavior remains.
+- Provenance check adicional: #205 idempotency columns/index, handler y los 21 test names de su rama están en main (main tiene 24 tests). #207 audit append-only SQL blob = main migration 0008; #208 own-shift roles SQL = main 0007; #209 count-ledger validation SQL = main 0009; #210 balance-ledger coupling SQL = main 0010. Las paired assertions solo cambian el comentario del migration filename. Estas PR parecen supersedidas por main; verificar tests/workflows/docs restantes y dependencias downstream antes de cerrar.
+- #227 HEAD `83cf96b7fcb7b0e304f676d21ab721de61364a59` has 13 successful workflow runs, but remains Draft and depends on the older migration/auth stack.
+- #250 is a distinct BCV regression fix stacked on #227: HEAD `081ec1026f4bda889a633bb3fcbe420433e13336`, 9 ahead / 0 behind #227, six exact-HEAD workflow runs success. Its disposable PostgreSQL integration test verifies tomorrow-first/today-second, Caracas effective date and same-date idempotency. It remains Draft with no formal review.
+- #218 was retargeted from closed #215 to active #211 (51 ahead / 0 behind) for provenance audit. #214 was superseded by merged #213; do not restore its competing rate-limit module or HMAC secret dependency. #215's server-side bootstrap handoff is already integrated into main via #240; main migration 0005 is byte-identical to old branch migration 0010, and main `google-auth.ts` implements opaque handle/state hash plus atomic consumption. #218's duplicate authz/handoff/rate-limit code is obsolete. It does contain unique 48-hour scheduled cleanup of `auth_rate_limits` and `auth_bootstrap_attempts`; main currently only opportunistically prunes rate-limit rows older than 7 days. Preserve the 48-hour cleanup by porting it onto canonical #213 rate-limit code with runtime grant tests and preview skip before closing #218.
+- Closed PRs are not discarded: unique work is carried by active branches/comments. Do not close any additional PR until file-level provenance and exact tests confirm the change is preserved.
+- No PR merged during this recovery block. No Neon main, production data, secrets, Cloudflare production settings, DNS, billing or production deployment changed. Production remains NOT READY.
+
+### Current recovery order
+
+1. Reconstruct #200 on current main and reconcile migration definitions/checksums.
+2. Verify #204's fixture isolation is already present in stronger form on main; if full diff confirms no unique behavior, close as superseded with evidence. Audit #205–#211 against current main before porting.
+3. Port #215/#218 bootstrap handoff onto #213's rate limiter and verify migration 0010 runtime grants.
+4. Keep #250's regression intact and rerun all required checks after it is moved to the recovered current-main base.
 
 ## Purpose and operating rules
 
@@ -83,12 +127,14 @@ Changed filenames were fetched from GitHub's paginated PR file listing. These ar
 | #225 | 3 | Atomic migration test helper and workflow changes. |
 | #226 | 3 | Migration runner, its workflow, and operator documentation. |
 
-### Confirmed main-vs-source implementation gap
-- Current `main` does **not** contain `apps/api/src/inventory-counts.ts` or `apps/api/src/inventory-locks.ts`.
-- Current `main` does contain `branch-context.ts`, but it must be diffed against the source branch before reusing assumptions/signatures.
-- Current `main` has `0005_auth_bootstrap_attempts.sql`; it does not have the inventory `0005`.
-- `main` now contains the canonical 0001–0015 sequence, paired assertions, fail-closed runner and PostgreSQL role harness via PR #243. The application handlers/tests are the next recovery front.
-- #200 and #205 both modify the inventory `0005` migration. #205 adds `idempotency_key`, `request_hash`, a paired-nullability constraint, and a partial unique index. #200 contains the distinct balance-version/snapshot logic. These are compatible concepts but require one reviewed merged migration definition and tests.
+### Current main-vs-source implementation status — reconciled 2026-11-07
+
+The earlier statement that main lacked inventory handlers/locks is superseded by the later integration of PR #244 and the canonical migration chain. Live checks on current `main` (`fc332946a9128e92ce39a3eb1ef1ee7ebd261598`) confirmed:
+- `apps/api/src/inventory-counts.ts`, `inventory-locks.ts`, `catalog.ts`, `catalog-write.ts` and `inventory-read.ts` all exist on main.
+- Main's `inventory-counts.integration.test.ts` already uses `beforeEach`, creates a warehouse and product per test, and has `seedInventoryBalanceFor` that records fixture ledger movements. This is stronger/more complete than the old #204 fixture-isolation patch. #204 is likely superseded; compare its full diff before closing.
+- Main's canonical sequence is now 0001–0016: 0005 auth bootstrap, 0006 warehouse inventory, 0007 register-shift roles, 0008 audit append-only, 0009 count-ledger validation, 0010 balance-ledger coupling, 0011 runtime lock helpers, 0012 runtime grants, 0013 BCV precision/grants, 0014–0015 sales, 0016 inventory ledger read.
+- #200 still uses a conflicting sequence (inventory at 0005, roles at 0006, audit at 0007, count ledger at 0008, balance coupling at 0009, auth bootstrap at 0010). Its branch also overlaps current main across auth, catalog, tenant context, workflows, lockfile and inventory code. Do not port old migration files or branch snapshots wholesale.
+- #200/#204/#205/#207–#211 must now be reviewed as possible superseded source PRs against the integrated implementation. Preserve any demonstrably unique behavior/tests/docs; close only after file-level evidence and explicit comments. Do not assume every old PR still represents missing functionality.
 
 ### Integrated recovery PRs
 - PR #242 (backlog ledger) merged to `main` at `7a719d593248341aac86b1ded980d5bb9a6f94e8`.

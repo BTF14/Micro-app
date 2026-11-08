@@ -20,8 +20,8 @@ A handoff that does not match the OAuth state, is expired, is already consumed, 
 
 - The table contains no raw bootstrap token, no raw handoff handle, and no raw OAuth state.
 - `handle_hash` and `state_hash` are fixed-length SHA-256 hashes; the handle itself has 256 bits of randomness.
-- PUBLIC receives no table privileges. The `microapp_runtime` role receives only the table operations needed by the OAuth flow and the explicit DELETE privilege required for retention; migration 0012 asserts this grant.
-- Expired handoff rows are pruned opportunistically when a new handoff is created and by the production Worker Cron every hour once they are more than 48 hours past expiry. Each Cron invocation deletes at most 500 rows per table using row locks with `SKIP LOCKED`; repeated invocations drain any backlog without holding an unbounded delete. Preview invocations return before opening a database connection. The PostgreSQL integration suite verifies the 48-hour cutoff, preservation of recent rows, the 500-row batch cap, preview no-op, and the actual `microapp_runtime` grants.
+- PUBLIC receives no table privileges.
+- Expired handoff rows (older than 48 hours) are pruned best-effort, in bounded batches of 100, each time a new handoff is created.
 - The encrypted database backup explicitly excludes `auth_bootstrap_attempts`, just as it excludes sessions and rate-limit buckets; pending browser authentication flows are not recovery-critical business data.
 - The migration is additive (`0005_auth_bootstrap_attempts.sql`) and has dedicated PostgreSQL assertions plus rollback validation.
 

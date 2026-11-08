@@ -1,8 +1,8 @@
 # Modelo de ventas y checkout transaccional
 
-**Estado:** handler HTTP y pruebas recuperados sobre `main` en PR #258 Draft. Se conserva la migración 0015 canónica; PR #258 añade migración 0017 para alinear la validación SQL de BCV con la regla weekday/weekend. No desplegado ni aprobado para producción.  
+**Estado:** handler HTTP, pruebas unitarias/PostgreSQL y migración 0017 recuperados sobre main en PR #258 Draft. HEAD `31a1d14f1fa85fa826035ea0f10d6db18e93e2fd`: 15/15 check-runs y 13/13 workflows SUCCESS; 141 unit tests, 85 runtime-role tests y 16 checkout PostgreSQL tests. No desplegado ni aprobado para producción.  
 **Fecha:** 2026-11-08 UTC  
-**Dependencias vigentes:** migraciones canónicas 0013–0016 en `main`; motor monetario `@micro-app/money`; autorización tenant/branch; locks de warehouse/balances/turno. El productor/API/Cron BCV sigue en PR #255 Draft y todavía no está integrado en `main`.  
+**Dependencias vigentes:** main `912e4d269de3b7ac2d43632c9bfcdb10041dbae8`; migraciones canónicas 0013–0016; motor monetario `@micro-app/money`; autorización tenant/branch; locks de warehouse/balances/turno. El productor/API/Cron BCV sigue en PR #255 Draft, HEAD `a31892ae74958573a741cb36470182da6bdd529e`, 15/15 check-runs y 13/13 workflows SUCCESS, pero todavía no está integrado en main.  
 **Límites:** este documento no autoriza merge, Neon, Cloudflare, despliegue ni activar checkout.
 
 ## 1. Objetivo y principios
@@ -38,7 +38,7 @@ Reglas ya aprobadas/documentadas:
 
 ### Lo que todavía NO está integrado
 
-- PR #258 registra `POST /api/orgs/:organizationId/branches/:branchId/checkout`, con autorización branch, idempotencia, exact decimals, locks de warehouse/stock/turno, pagos, ledger y audit en una sola transacción. Sigue Draft; el HEAD actual `cc56a1e20a261dc729f828e0edd96312b3d7eb31` pasó 15/15 check-runs y 13/13 workflows. No hay review formal registrada.
+- PR #258 registra `POST /api/orgs/:organizationId/branches/:branchId/checkout`, con autorización branch, idempotencia, exact decimals, locks de warehouse/stock/turno, pagos, ledger y audit en una sola transacción. Sigue Draft; HEAD `31a1d14f1fa85fa826035ea0f10d6db18e93e2fd` pasó 15/15 check-runs y 13/13 workflows; no hay review formal independiente registrada.
 - No hay flujo de carrito/checkout UI integrado.
 - La selección BCV de PR #258 sigue la regla weekday/weekend; el productor y Cron de tasas siguen pendientes de integrar desde PR #255.
 - PR #229–#231 aportan motor monetario/catálogo/formulario que ya están en main en forma igual o más completa. PR #228 comparte la migración 0014 canónica; su handler/tests también son inferiores a la implementación actual. Comparar y cerrar como supersedidas solo después de preservar cambios realmente únicos.
@@ -56,14 +56,14 @@ La API BCV recuperada en PR #255 selecciona:
 
 La migration 0015 de `main` todavía contiene la regla weekday-only. PR #258 añade la migration 0017, que reemplaza únicamente la selección de fecha efectiva del trigger: weekdays exigen hoy; sábado/domingo seleccionan el `MIN(effective_date)` futuro sin filtrar estado, y luego requieren que esa fila exacta sea válida y quede bloqueada `FOR SHARE`. Hasta que #258 se integre, `main` conserva el comportamiento weekday-only.
 
-**Estado del gate en PR #258 (Draft):** la migration 0017 ya está añadida sin modificar retroactivamente 0015. Implementa la regla weekday/weekend, mantiene SECURITY DEFINER/search_path, restringe EXECUTE y añade assertions funcionales con fechas deterministas de sábado, domingo y viernes, incluyendo nearest-future stale. El SHA de implementación `d9ae6cd7f65c99126e7c4e45faa20a1dadaf3cdb` pasó 15/15 check-runs y 13/13 workflows; el HEAD actual `cc56a1e20a261dc729f828e0edd96312b3d7eb31`, ya sincronizado con el merge de CI #259, también pasó 15/15 check-runs y 13/13 workflows. Checkout PostgreSQL 15/15; unitarias 141/141; runtime-role integration 85/85. No se ha aplicado en Neon. Revalidar siempre el SHA final tras cualquier cambio.
+**Estado del gate en PR #258 (Draft):** migration 0017 está añadida sin modificar retroactivamente 0015. Implementa la regla weekday/weekend, mantiene SECURITY DEFINER/search_path, restringe EXECUTE y añade assertions con fechas deterministas de sábado, domingo y viernes, incluyendo nearest-future stale. También añade validación SQL diferida por línea: `line_total_usd = round(quantity * unit_price_usd, 4)` y `line_total_ves = round(line_total_usd * exchange_rate_snapshot, 2)`. Las assertions verifican esas expresiones y el test PostgreSQL de manipulación confirma rechazo y rollback. HEAD exacto `31a1d14f1fa85fa826035ea0f10d6db18e93e2fd`: 15/15 check-runs, 13/13 workflows, 141/141 unit tests, 85/85 runtime-role tests y 16/16 checkout PostgreSQL tests. No se ha aplicado en Neon; cualquier nuevo cambio exige revalidación exact-SHA.
 
 El handler #258 usa la misma selección de fecha efectiva y rechaza la fila nearest-future si está stale. La fuente de datos y Cron BCV siguen dependiendo de la integración pendiente #255. Feriados bancarios entre semana aún no tienen calendario autoritativo; si no hay fila exacta para hoy, checkout falla cerrado. No ejecutar migraciones en Neon main.
 
 ## 4. Brechas de integridad restantes para revisar
 
-1. El trigger 0015 reconcilia sumas de `line_total_usd` y `line_total_ves`, pero no demuestra por sí solo que cada línea cumpla `quantity × unit_price_usd_snapshot` ni que `line_total_ves` sea el redondeo de la línea USD por la tasa snapshot. El handler debe calcularlo con `@micro-app/money`; evaluar una assertion SQL adicional para defensa en profundidad.
-2. El trigger verifica que los equivalentes USD de pagos sumen el total USD y que los pagos VES compartan el snapshot BCV, pero no verifica completamente el algoritmo de asignación proporcional por pago. Revisar el algoritmo del handler y decidir si se añade validación SQL.
+1. **Resuelto en la rama #258 mediante migration 0017:** el trigger diferido ahora valida por línea `quantity × unit_price_usd` redondeado a 4 decimales y `line_total_usd × exchange_rate_snapshot` redondeado a 2 decimales. La assertion SQL comprueba el contrato y el test PostgreSQL manipula el importe antes del COMMIT para demostrar rechazo/rollback. No está todavía en main ni aplicado en Neon.
+2. **Abierto:** el trigger verifica que los equivalentes USD de pagos sumen el total USD y que los pagos VES compartan el snapshot BCV, pero no reproduce completamente el algoritmo de asignación proporcional por pago. El handler ordena los pagos y asigna cocientes enteros BigInt, dejando el residuo al último pago. La base no conserva un ordinal de pago que permita verificar esa distribución de forma independiente; diseñar una extensión de esquema/trigger antes de producción si se exige esta defensa SQL.
 3. `payments` no tiene idempotencia individual; la clave/hash de `sales` debe cubrir el conjunto completo de pagos. No crear endpoint separado de pagos sin diseño de idempotencia.
 4. `products.stock_quantity` es legado. Checkout solo puede consumir `inventory_balances` del warehouse elegido y registrar el movimiento correspondiente; no actualizar ambas representaciones.
 5. La regla de feriados bancarios entre semana no está implementada. La conversión y checkout deben fallar cerrado si falta la fecha efectiva exacta.
@@ -166,17 +166,17 @@ Todas las pruebas usan PostgreSQL efímero; nunca Neon main ni datos reales.
 2. Resolver la confirmación funcional del contrato de pagos antes de activar checkout.
 3. Validar la migration 0017 de PR #258 y sus assertions PostgreSQL/migration-runner en el SHA exacto.
 4. Validar PR #258 sobre la migración 0015 canónica y 0017 nueva; recuperar el productor y Cron BCV de #255 antes de activar checkout. No portar la migration 0015 antigua de #233.
-5. Añadir las assertions de cálculo por línea y asignación de equivalentes si la revisión confirma que el SQL actual no las cubre.
+5. La validación SQL por línea está añadida en migration 0017; queda abierta la validación independiente de la asignación proporcional individual de equivalentes USD por pago VES, que requiere definir/guardar orden de pago o un contrato equivalente.
 6. Ejecutar unitarias, CI, migration runner, PostgreSQL admin/runtime integration, E2E y backup/restore cuando aplique; todos sobre el SHA final exacto.
 7. Solo después implementar UI de checkout; no duplicar cálculos monetarios en React.
 
 ## 10. Estado operativo
 
-- Main actual al redactar: `96e2e2d9f76bc8fcc3bab2fa9503e480545c8869`.
-- PR #251: cleanup auth 48 h, Draft, HEAD `5dec5d5a9025de16b19d0cb7cfeac6585e2ad5d6`; 15/15 check-runs y 13/13 workflows SUCCESS en ese SHA; producción bloqueada por Neon schema/runtime.
-- PR #255: BCV parser/API/UI/Cron y weekend selection, Draft, HEAD `35b9ac6894f79c5760a1f56fb37506ed2278afa0`; 15/15 check-runs y 13/13 workflows SUCCESS en ese SHA; base #251 y sin review formal. No está integrado.
-- PR #258: recuperación del checkout y migration 0017 weekday/weekend, Draft, base main `07b146a3f2b7830bbd328a585535084e57e43c4e`; HEAD `433a1fa1212f610cbb543597e620219bd91327a4` pasó 15/15 check-runs y 13/13 workflows, sin review formal. PR #259 (serialización de la batería PostgreSQL) ya está fusionada en main. La ingesta BCV #255 es prerequisite para activar operaciones con tasa real.
-- PR #259: mergeada en main por squash como `07b146a3f2b7830bbd328a585535084e57e43c4e`; CI runtime-role PostgreSQL serializado para evitar la carrera DDL/DML de triggers temporales.
+- Main actual al redactar: `912e4d269de3b7ac2d43632c9bfcdb10041dbae8` (#257 integrada por squash).
+- PR #251: cleanup auth 48 h, Draft, HEAD `ded2d95681e9a9436fdb2c9630092379a60405cb`; 15/15 check-runs y 13/13 workflows SUCCESS; 26 ahead / 0 behind main; sin review formal.
+- PR #255: BCV parser/API/UI/Cron y weekend selection, Draft, HEAD `a31892ae74958573a741cb36470182da6bdd529e`; 15/15 check-runs y 13/13 workflows SUCCESS; 45 ahead / 0 behind de base #251 `ded2d95681e9a9436fdb2c9630092379a60405cb`; sin review formal. No está integrado.
+- PR #258: recuperación del checkout y migration 0017 weekday/weekend + aritmética SQL por línea, Draft, base main `912e4d269de3b7ac2d43632c9bfcdb10041dbae8`; HEAD `31a1d14f1fa85fa826035ea0f10d6db18e93e2fd` pasó 15/15 check-runs y 13/13 workflows, 141 unit tests, 85 runtime-role tests y 16 checkout PostgreSQL tests. 22 ahead / 0 behind; sin review formal. La ingesta BCV #255 es prerequisite para activar operaciones con tasa real.
+- PR #259: mergeada en main por squash como `07b146a3f2b7830bbd328a585535084e57e43c4e`; CI runtime-role PostgreSQL serializado. PR #257 documentación se integró por squash como main `912e4d269de3b7ac2d43632c9bfcdb10041dbae8`.
 - PR #233 queda como fuente histórica; su handler/tests se recuperaron en #258 sobre main. No fusionar la rama antigua ni reutilizar sus checks.
 - Migration 0015 existe en GitHub main, pero Neon main no ha recibido baseline/migraciones 0003–0016. No asumir que el esquema live tiene checkout listo.
 - Producción **NOT READY**. No Neon main, secretos, Cloudflare productivo, DNS, billing ni datos reales modificados.

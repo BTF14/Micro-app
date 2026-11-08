@@ -1,3 +1,5 @@
+> **Recovery branch status — 2026-11-08:** the post-0019 contract below was ported from PR #262 onto `feat/checkout-ledger-recovered-main-20261108` (initial port HEAD `88e0aab5219810ab24375f8eb947c5ad17aa453b`). The earlier 8/8 validation belongs to #262's historical SHA, not this recovery HEAD. Re-run migration, runtime-login and checkout integration suites on the recovery branch before treating the contract as validated. No Neon branch has received migration 0019.
+
 > **Contrato vigente post-0019 — rama #262, no integrada:** el snapshot histórico de 2026-11-05 que sigue abajo ya no describe los grants previstos tras migration 0019. En el HEAD validado `2ff0c4c63d635fcdf42352b7c2ba16e2ef545c49` (8/8 checks SUCCESS), el runtime conserva SELECT sobre balances, INSERT sobre el ledger y las operaciones de documentos comerciales estrictamente necesarias; la proyección es trigger SECURITY DEFINER del migrator. CI incluyó un LOGIN real `microapp_runtime` y smoke positivo/negativo. Esto no prueba el DATABASE_URL efectivo de Neon/Worker.
 
 | Objeto | Operaciones runtime post-0019 | Frontera |

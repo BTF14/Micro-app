@@ -1,3 +1,14 @@
+# Checkpoint actualizado — 2026-11-08 05:20 UTC
+
+- Estado principal: main `0a9e2f7c0d8b4d68b1efe6b372c10c107b160d67`; no modificar main directamente.
+- PR #258: el HEAD de código `e44b3b606daab7a5470a2315f8545143a9b4dceb` pasó 15/15 check-runs y 13/13 workflows. Se añadieron migration 0018 (asignación SQL individual de pagos VES) y rate limit checkout (60/min/IP, HMAC, 429/Retry-After, fail-closed). CI confirmó 141 unit, 85 runtime-role PostgreSQL y 19 checkout PostgreSQL tests.
+- Este commit actualiza documentación operativa; al cambiar el SHA, exigir revalidación exacta del nuevo HEAD antes de cualquier promoción.
+- PR #255: HEAD `f49fb402f9bd5a40591970c9efe3665a5e212ebb`, 15/15 + 13/13 SUCCESS; incluye rechazo de redirects BCV. Sigue Draft y apilada sobre #251.
+- PR #251: HEAD `30ec0cedafbb8281c7b5ea56572581ddc022a180`, 15/15 + 13/13 SUCCESS; Draft.
+- Ninguna de las tres PR tiene review formal independiente. No fusionar ni activar Cron.
+- Próximo trabajo: review independiente, Neon rehearsal con runner protegido, decisión funcional de pagos, privilegios balances, UI y feriados weekday.
+- No ejecutar cambios en Neon main, secretos, Cloudflare productivo, DNS, billing o datos reales.
+
 ## Checkpoint operativo — 2026-11-08 UTC
 
 ## Estado operativo autoritativo — 2026-11-08 UTC

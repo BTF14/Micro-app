@@ -1,3 +1,20 @@
+## Estado actualizado de controles — 2026-11-08 05:20 UTC
+
+### Implementado en PR #258 (no integrado en main ni aplicado en Neon)
+- **Rate limit checkout:** 60/minuto por IP de Cloudflare; bucket PostgreSQL atómico en `auth_rate_limits`, HMAC con secreto existente, 429/Retry-After; 503 fail-closed si falta IP/pepper o DB.
+- **Asignación individual de pagos VES:** migration 0018 con `allocation_position`, índice único y triggers diferidos SECURITY DEFINER que comprueban cada equivalente USD, el truncamiento y el residuo final.
+- **BCV weekday/weekend:** migration 0017; selección nearest-future en fin de semana y fail-closed en weekday si falta fecha efectiva exacta.
+
+### Gates P1/P2 abiertos
+- Migration 0012 permite INSERT/UPDATE directo a runtime sobre `inventory_balances`; pairing 0010 con ledger no equivale a proyección exclusivamente SECURITY DEFINER.
+- BCV producer/API/Cron sigue en #255 Draft, apilada sobre #251; no activar Cron antes del rehearsal y grants verificados.
+- Feriados bancarios weekday no tienen calendario autoritativo; la tasa no debe inventarse ni reutilizarse como vigente.
+- Política comercial mono-moneda/pago exacto/sin parcial-sobrepago necesita aprobación explícita.
+- Falta UI de checkout y review formal independiente.
+- Neon main no tiene las migraciones de checkout 0017/0018 aplicadas. No ejecutar DDL/DML manual.
+
+---
+
 # Estado de seguridad — 2026-11-08 UTC
 
 ## Estado operativo autoritativo — 2026-11-08 UTC

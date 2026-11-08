@@ -1,3 +1,14 @@
+## 2026-11-08 — checkout SQL allocation + abuse control
+
+- En PR #258 se añadió migration 0018 para validar cada equivalente USD por pago VES en PostgreSQL, con posiciones persistidas, índice único y constraint triggers diferidos. Pagos históricos no se reescriben.
+- Se añadieron pruebas positivas para dos pagos VES y negativas para una alteración compensada (+0.0001/-0.0001) que mantiene la suma total. CI confirmó 19 tests checkout PostgreSQL.
+- Se añadió rate limit de checkout: 60/min/IP desde CF-Connecting-IP, HMAC con GOOGLE_CLIENT_SECRET existente, 429 Retry-After y 503 fail-closed. Prueba endpoint valida 61.º intento.
+- El HEAD de código e44b3b606daab7a5470a2315f8545143a9b4dceb pasó 15/15 check-runs y 13/13 workflows, con 141 unit y 85 runtime-role PostgreSQL tests.
+- En PR #255 se cambió fetch BCV a redirect:error para no seguir destinos externos; HEAD f49fb402f9bd5a40591970c9efe3665a5e212ebb pasó 15/15 + 13/13.
+- Sin escrituras Neon, cambios de secretos, Cloudflare productivo ni despliegues. PR #251/#255/#258 siguen Draft y sin revisión formal independiente.
+
+---
+
 # 2026-11-08 UTC — actualización posterior a la validación exact-SHA
 
 - #251 HEAD `ded2d95681e9a9436fdb2c9630092379a60405cb`: 15/15 check-runs y 13/13 workflows SUCCESS; 26 ahead / 0 behind main.

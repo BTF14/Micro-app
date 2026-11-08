@@ -1,3 +1,13 @@
+## Update de prioridades — 2026-11-08 05:20 UTC
+
+- Checkout API: migration 0017 BCV weekday/weekend, migration 0018 asignación USD por pago VES y rate limit por IP están implementados y validados en PR #258 (HEAD de código e44b3b6, 15/15 + 13/13). No están en main/Neon.
+- BCV producer/API/Cron: PR #255 Draft, apilada sobre #251, 15/15 + 13/13; rechazo de redirects añadido. No integrar/activar Cron antes del Neon rehearsal protegido.
+- Auth retention: PR #251 Draft, 15/15 + 13/13; sin review formal.
+- Gates que siguen bloqueando producción: review formal independiente; Neon rehearsal y runner/ownership/grants; privilegio runtime directo en balances; contrato funcional de pagos pendiente de aprobación; UI; calendario de feriados weekday.
+- Mantener todas las PR Draft hasta revisión y gates; no tocar Neon main ni secretos/Cloudflare productivo.
+
+---
+
 ## Prioridad operativa — 2026-11-08 UTC
 
 ## Estado operativo autoritativo — 2026-11-08 UTC

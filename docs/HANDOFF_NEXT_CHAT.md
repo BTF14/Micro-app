@@ -1,3 +1,35 @@
+# Handoff autoritativo — 2026-11-08 05:20 UTC
+
+Continuar desde la rama `feat/sales-checkout-recovered-main-20261108` y el estado operativo de este documento. Antes de actuar, leer `AGENTS.md`, `docs/CONSTITUTION.md`, `docs/AI_COLLABORATION_AND_PR_POLICY.md`, `docs/CURRENT_STATE.md`, `docs/WORK_CHECKPOINT.md`, `docs/PROJECT_PLAN.md`, `docs/STATE_JOURNAL.md`, `docs/SECURITY_ROADMAP.md` y este handoff. El bloque de estado superior prevalece sobre snapshots históricos inferiores.
+
+## Trabajo ya completado y validado en código
+
+- PR #258 recupera checkout desde #233 sobre main actual, sin portar su migration 0015 antigua.
+- Migration 0017 alinea la selección BCV weekday/weekend en el trigger SQL.
+- Migration 0018 añade `allocation_position`, índice único y constraint triggers diferidos para validar cada equivalente USD por pago VES y el residuo final. Los pagos históricos conservan posición NULL.
+- El endpoint aplica 60 solicitudes/minuto por IP de Cloudflare; HMAC usa `GOOGLE_CLIENT_SECRET` existente. Sin IP/pepper o si falla DB, devuelve 503; exceso devuelve 429 con Retry-After.
+- En el HEAD de código `e44b3b606daab7a5470a2315f8545143a9b4dceb`: 15/15 checks, 13/13 workflows, 141 unit tests, 85 runtime-role PostgreSQL tests y 19 checkout PostgreSQL tests SUCCESS. El refresh documental posterior cambia el SHA y requiere revalidación.
+
+## Pila de PR
+
+- #251 Draft sobre main; #255 Draft sobre #251; #258 Draft sobre main.
+- Todas sin review formal independiente. No confundir CI verde con aprobación.
+- #233 queda como fuente histórica; no fusionar ni cerrar hasta que #258/#255 estén integradas y se confirme que no queda contenido único.
+- #193 no modificar; su base está obsoleta y sigue sin mergeabilidad.
+
+## Siguiente secuencia
+
+1. Verificar CI del nuevo HEAD tras el refresh documental.
+2. Completar revisión independiente de #251, #255 y #258; registrar findings y resolverlos.
+3. Mantener #255 apilada sobre #251. No activar Cron en producción antes del rehearsal y grants.
+4. Ejecutar solo en Neon rehearsal el runner protegido, no SQL manual; verificar roles directos, ownership, grants mínimos, migration ledger y Worker identity. Neon main permanece sin escrituras.
+5. Resolver privilegios directos de runtime en `inventory_balances`; decidir si se migra a proyección solo SECURITY DEFINER.
+6. Obtener aprobación funcional explícita para moneda única por venta, pago exacto y sin parcial/sobrepago; no inferir esa política.
+7. Integrar UI y calendario de feriados weekday; mantener checkout fail-closed si no existe tasa válida.
+8. Solo después de todos los gates, cambiar Draft/merge según policy y comprobar despliegue automático. No deploy manual.
+
+No volver a pedir Build IDs, capturas, terminal, CLI, TinyFish o reconexiones si los datos están en documentación/GitHub. Si falta algo realmente imprescindible, pedirlo una sola vez y aceptar texto.
+
 ## Handoff vigente — 2026-11-08 UTC
 
 ## Estado operativo autoritativo — 2026-11-08 UTC

@@ -1,3 +1,11 @@
+## Estado operativo actualizado — 2026-11-08 05:20 UTC
+
+**NOT READY para producción.** El HEAD de código #258 `e44b3b606daab7a5470a2315f8545143a9b4dceb` pasó 15/15 check-runs y 13/13 workflows, incluyendo 19 checkout PostgreSQL tests. #255 HEAD `f49fb402f9bd5a40591970c9efe3665a5e212ebb` pasó 15/15 + 13/13. #251 HEAD `30ec0cedafbb8281c7b5ea56572581ddc022a180` pasó 15/15 + 13/13. Las tres PR siguen Draft y no tienen review formal independiente.
+
+En #258 se añadieron migration 0018 (validación SQL por pago VES) y rate limit checkout (60/min/IP, HMAC, 429 Retry-After, fail-closed 503). Estos cambios no están en main ni en Neon. Siguen abiertos: Neon rehearsal/runner/grants, privilegio runtime directo en balances, integración BCV #255, aprobación comercial del modelo de pagos, UI y feriados weekday. No hay escrituras en Neon main, cambios de secretos, Cloudflare productivo ni despliegues manuales.
+
+---
+
 ## Readiness de producción — 2026-11-08 UTC
 
 **Resultado: NOT READY.** Los checks exactos de #251, #255 y #258 están verdes, pero ninguna tiene review formal independiente y los gates de Neon/runtime y producto siguen abiertos.

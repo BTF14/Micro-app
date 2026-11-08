@@ -1,3 +1,29 @@
+## Estado operativo autoritativo — 2026-11-08 05:20 UTC
+
+> Este bloque sustituye los snapshots históricos inferiores. Las ramas de PR no equivalen a main ni a Neon.
+
+- **main:** `0a9e2f7c0d8b4d68b1efe6b372c10c107b160d67`.
+- **PR #251 — retención auth:** Draft, HEAD `30ec0cedafbb8281c7b5ea56572581ddc022a180`, base main, 27 ahead / 0 behind; **15/15 check-runs y 13/13 workflows SUCCESS**. Sin review formal independiente.
+- **PR #255 — BCV oficial:** Draft, HEAD `f49fb402f9bd5a40591970c9efe3665a5e212ebb`, base #251 HEAD `30ec0cedafbb8281c7b5ea56572581ddc022a180`, 47 ahead / 0 behind; **15/15 check-runs y 13/13 workflows SUCCESS**. Incluye parser con límite 2 MB, persistencia idempotente, API latest/history, Cron weekday y rechazo de redirects externos. No integrado en main; sin review formal.
+- **PR #258 — checkout atómico:** Draft, rama `feat/sales-checkout-recovered-main-20261108`, base main, 28 ahead / 0 behind. Último HEAD de código `e44b3b606daab7a5470a2315f8545143a9b4dceb`: **15/15 check-runs y 13/13 workflows SUCCESS**, 141 unit tests, 85 runtime-role PostgreSQL tests y 19 checkout PostgreSQL integration tests. Sin review formal independiente.
+- **PR #258 — nuevo alcance validado:** migration 0017 weekday/weekend BCV; migration 0018 valida en PostgreSQL la asignación USD individual por pago VES usando `allocation_position` y triggers diferidos; handler limita checkout a 60 solicitudes/minuto por IP confiada de Cloudflare mediante HMAC con el secreto existente, 429/Retry-After y fail-closed 503. Pruebas positivas/negativas de pagos divididos y rate limit pasan.
+- **PR #233:** fuente histórica Draft; no fusionar su rama antigua. El handler y pruebas fueron recuperados en #258.
+- **PR #193:** sigue abierta, no mergeable y bajo la restricción previa de no modificar su rama. Sus brechas de privilegios directos de balances, referencias sin FK tipada y snapshot legado siguen abiertas.
+- **Reviews:** #251, #255 y #258 no tienen review formal independiente. CI verde no equivale a aprobación.
+- **Producción: NOT READY.** #251/#255/#258 siguen Draft; BCV/Cron no están integrados; migrations 0017/0018 solo existen en #258, no en main ni Neon; no se ha aplicado el runner protegido en Neon rehearsal; faltan revisión formal, UI checkout, aprobación funcional del contrato mono-moneda/pago exacto y resolver privilegios runtime directos sobre `inventory_balances`. El calendario de feriados bancarios weekday también sigue pendiente.
+- **No acciones productivas:** no DDL/DML en Neon main, no cambios de secretos, Cloudflare Worker productivo, DNS, billing, despliegue manual ni datos reales. Los checks Cloudflare de PR son previews de SHA.
+
+### Orden de continuación
+
+1. Revalidar el nuevo HEAD después de este refresh documental; no reutilizar los checks de `e44b3b6` si cambia el SHA.
+2. Obtener review formal independiente de #251, #255 y #258; mantener Draft mientras falte.
+3. Mantener la pila #251 → #255. No retargetear #255 a main antes de integrar #251 y validar Neon.
+4. Completar Neon rehearsal solo con runner protegido; comprobar `current_user`, ownership, grants mínimos y Worker identity. Neon main permanece intocable.
+5. Cerrar los gates de producto/seguridad: aprobación explícita del contrato de pagos, UI, feriados weekday y escritura runtime directa de balances.
+6. Integrar checkout/BCV solo tras las revisiones, pruebas exactas y gates de Neon. No cerrar #233 hasta confirmar que #258/#255 integraron todo su contenido único.
+
+---
+
 ## Estado operativo autoritativo — 2026-11-08 UTC
 
 - **main:** `912e4d269de3b7ac2d43632c9bfcdb10041dbae8`. #259 (serialización CI) y #257 (reconciliación documental) están integradas.

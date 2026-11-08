@@ -1,3 +1,16 @@
+## Delta autoritativo — 2026-11-08 05:20 UTC
+
+> Este delta actualiza el estado de las brechas que se enumeran más abajo. La implementación sigue en PR #258 Draft; no está integrada en main ni aplicada en Neon.
+
+- **Migration 0018 — asignación individual de pagos VES:** añade `payments.allocation_position` nullable (para no reescribir pagos históricos), rango 1..10, índice único por organización/venta/posición y constraint triggers diferidos sobre `sales` y `payments`. La función SECURITY DEFINER, propiedad de `microapp_migrator`, con `search_path=pg_catalog` y sin EXECUTE para PUBLIC/runtime, comprueba posiciones contiguas, equivalentes USD truncados a 4 decimales y residuo del último pago.
+- **Handler:** persiste la posición de cada pago y devuelve pagos en ese orden.
+- **Pruebas PostgreSQL:** caso positivo de pago VES dividido; caso negativo modifica +0.0001/-0.0001 manteniendo el agregado total y demuestra rollback de venta, balance y ledger. Ambas pasan.
+- **Rate limit:** 60 solicitudes/minuto por IP confiada `CF-Connecting-IP`; HMAC con `GOOGLE_CLIENT_SECRET` existente, sin guardar IP cruda; 429 con `Retry-After`, y 503 fail-closed si falta IP/pepper o falla DB. La prueba de integración verifica el 61.º intento.
+- **Validación exacta del HEAD de código e44b3b606daab7a5470a2315f8545143a9b4dceb:** 15/15 check-runs, 13/13 workflows, 141 unit tests, 85 runtime-role PostgreSQL tests y 19 checkout PostgreSQL integration tests SUCCESS.
+- **No equivale a producción:** #258 sigue Draft y sin review formal independiente; falta integrar el productor BCV #255, aprobar el contrato comercial de pagos, resolver escritura directa runtime de balances, UI, calendario weekday y Neon rehearsal protegido.
+
+---
+
 # Modelo de ventas y checkout transaccional
 
 **Estado:** handler HTTP, pruebas unitarias/PostgreSQL y migración 0017 recuperados sobre main en PR #258 Draft. HEAD `31a1d14f1fa85fa826035ea0f10d6db18e93e2fd`: 15/15 check-runs y 13/13 workflows SUCCESS; 141 unit tests, 85 runtime-role tests y 16 checkout PostgreSQL tests. No desplegado ni aprobado para producción.  

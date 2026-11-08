@@ -9,6 +9,26 @@ import { registerCatalogWriteRoutes } from "./catalog-write";
 import { withDatabaseClient } from "./database";
 import { cleanupExpiredAuthRecords } from "./auth-rate-limit";
 import { registerExchangeRateRoutes, syncBcvOfficialRate } from "./exchange-rates";
+
+const SAFE_BCV_SYNC_ERROR_CODES = new Set([
+  "BCV_HTML_SIZE_INVALID",
+  "BCV_HTML_ENCODING_INVALID",
+  "BCV_RATE_FORMAT_INVALID",
+  "BCV_RATE_VALUE_INVALID",
+  "BCV_EFFECTIVE_DATE_MISSING",
+  "BCV_EFFECTIVE_DATE_INVALID",
+  "BCV_EFFECTIVE_DATE_OUT_OF_RANGE",
+  "BCV_SOURCE_HTTP_ERROR",
+  "BCV_SOURCE_REDIRECT_REJECTED",
+  "BCV_SOURCE_CONTENT_TYPE_INVALID",
+  "BCV_USD_RATE_MISSING",
+  "BCV_RATE_CHANGED_FOR_EXISTING_EFFECTIVE_DATE",
+]);
+
+function safeBcvSyncErrorCode(error: unknown): string {
+  if (!(error instanceof Error)) return "UNKNOWN";
+  return SAFE_BCV_SYNC_ERROR_CODES.has(error.message) ? error.message : "UNKNOWN";
+}
 import type { Bindings } from "./bindings";
 
 const app = new Hono<{ Bindings: Bindings }>();
@@ -125,9 +145,11 @@ export default Object.assign(app, {
     if (controller.cron === "0 22 * * 1-5") {
       try {
         await syncBcvOfficialRate(env.DATABASE_URL);
-      } catch {
-        // Never log provider payloads, database URLs, or credentials.
-        console.error("BCV official rate synchronization failed");
+      } catch (error) {
+        // Emit only a whitelisted error code; never log payloads, SQL, URLs or credentials.
+        console.error("BCV_SYNC_FAILED", { code: safeBcvSyncErrorCode(error) });
+        // Let Cloudflare mark the scheduled invocation as failed instead of reporting success.
+        throw new Error("BCV_SYNC_FAILED");
       }
     }
   },

@@ -1,6 +1,6 @@
 # ODD task: inventory ledger-authoritative balance projection
 
-- Status: in progress
+- Status: implementation complete; exact-HEAD validation passed; independent review and Neon rehearsal pending
 - Issue / PR: follow-up to #193 §7.9.H–I; stacked on checkout #258
 - Owner / reviewer: repository owner; technical execution by senior agent
 - Started: 2026-11-08 UTC
@@ -31,16 +31,16 @@ Excluded:
 
 ## Acceptance criteria
 
-- [ ] AC-1 — a runtime login cannot INSERT, UPDATE, DELETE or TRUNCATE `inventory_balances`; it can SELECT and execute only the narrow lock helper.
-- [ ] AC-2 — a valid runtime INSERT into `warehouse_inventory_movements` updates/creates the exact balance atomically through a SECURITY DEFINER trigger owned by the migrator/object owner.
-- [ ] AC-3 — negative movements cannot reduce on-hand below reserved quantity; missing balance/insufficient available stock fails closed.
-- [ ] AC-4 — opening and physical count confirmation produce the same balances and ledger deltas as before, including zero-count/no-op behavior and stale snapshot rejection.
-- [ ] AC-5 — checkout remains atomic, idempotent and concurrency-safe; failed sale rolls back payment, movement, balance projection and audit together.
-- [ ] AC-6 — runtime row locks remain tenant/branch scoped and preserve deterministic lock order without direct UPDATE privilege; every movement INSERT locks its active warehouse before count validation and projection.
-- [ ] AC-7 — migration 0019 applies atomically after 0018, has assertions and injected-failure rollback coverage, and the canonical migration runner succeeds from an empty PostgreSQL database.
-- [ ] AC-8 — full CI, runtime-role smoke and PostgreSQL integration tests pass on the exact final HEAD.
-- [ ] AC-9 — no unrelated code, product policy, Neon, secrets or production configuration changes.
-- [ ] AC-10 — an all-zero opening count is recorded without a synthetic balance/movement row, and a second confirmed opening is rejected by application logic and a unique partial index.
+- [x] AC-1 — a runtime login cannot INSERT, UPDATE, DELETE or TRUNCATE `inventory_balances`; it can SELECT and execute only the narrow lock helper.
+- [x] AC-2 — a valid runtime INSERT into `warehouse_inventory_movements` updates/creates the exact balance atomically through a SECURITY DEFINER trigger owned by the migrator/object owner.
+- [x] AC-3 — negative movements cannot reduce on-hand below reserved quantity; missing balance/insufficient available stock fails closed.
+- [x] AC-4 — opening and physical count confirmation produce the same balances and ledger deltas as before, including zero-count/no-op behavior and stale snapshot rejection.
+- [x] AC-5 — checkout remains atomic, idempotent and concurrency-safe; failed sale rolls back payment, movement, balance projection and audit together.
+- [x] AC-6 — runtime row locks remain tenant/branch scoped and preserve deterministic lock order without direct UPDATE privilege; every movement INSERT locks its active warehouse before count validation and projection.
+- [x] AC-7 — migration 0019 applies atomically after 0018, has assertions and injected-failure rollback coverage, and the canonical migration runner succeeds from an empty PostgreSQL database.
+- [x] AC-8 — full CI, runtime-role smoke and PostgreSQL integration tests pass on the exact final HEAD.
+- [x] AC-9 — no unrelated code, product policy, Neon, secrets or production configuration changes.
+- [x] AC-10 — an all-zero opening count is recorded without a synthetic balance/movement row, and a second confirmed opening is rejected by application logic and a unique partial index.
 
 ## Risks and guardrails
 
@@ -60,10 +60,10 @@ Excluded:
 |---|---|---|---|
 | Reconcile #193 §7.9.H–I against current schema and writers | Accurate implementation plan | GitHub source, migrations 0006/0010/0011/0012, inventory-counts and #258 checkout reviewed | complete |
 | Create durable ODD task before source changes | This file exists on feature branch | GitHub contents API commit | complete |
-| Implement 0019 projection, lock helper and least-privilege grants | Database-enforced ledger projection | Migration assertions + rollback + full PostgreSQL CI | pending |
-| Convert count and checkout writers | Movement-only stock writes; all-zero opening remains one-time | Existing PostgreSQL integration tests | in progress |
-| Harden smoke/CI and document evidence | Runtime principal proves allowed/denied actions | Exact-HEAD CI and smoke | pending |
-| Independent architecture/security/QA review | Review of complete diff | Formal review or recorded independent review evidence | pending |
+| Implement 0019 projection, lock helper and least-privilege grants | Database-enforced ledger projection | Migration assertions + rollback + full PostgreSQL CI | complete — exact HEAD f2fb1f0 |
+| Convert count and checkout writers | Movement-only stock writes; all-zero opening remains one-time | Inventory-count, inventory-read and atomic-checkout PostgreSQL suites | complete — exact HEAD f2fb1f0 |
+| Harden smoke/CI and document evidence | Runtime principal proves allowed/denied actions | 8/8 check-runs; CI, migration validation, runtime smoke, backup/restore, security and secret scans all successful on exact HEAD f2fb1f0 | complete |
+| Independent architecture/security/QA review | Review of complete diff | No formal reviews or review threads exist yet; owner/independent review remains a merge gate | pending |
 
 ## Technical decisions
 
@@ -77,10 +77,10 @@ Excluded:
 
 ## Closure and handoff
 
-- Final commit SHA: pending
-- PR: pending
-- Checks and exact outcomes: pending
-- Acceptance criteria met / unmet: pending
+- Final commit SHA: `f2fb1f0bdb2976050cd69f1689c799c9eb8ac771`
+- PR: #262 Draft, base `feat/sales-checkout-recovered-main-20261108` (PR #258); mergeable=true; branch is one commit behind the current base branch after the CI-trigger improvement.
+- Checks and exact outcomes: 8/8 check-runs successful on the exact HEAD; full CI build/typecheck, unit tests, inventory count/read, atomic checkout and runtime-role API integration all passed. Migration validation passed both PR and push runs, including injected rollback and runtime-role smoke. Backup/restore, Cloudflare Pages, Workers build, Trivy, secret-history and security scans passed.
+- Acceptance criteria met / unmet: AC-1 through AC-10 met in disposable PostgreSQL/CI. Formal independent review and Neon rehearsal are not complete.
 - Limitations not verified: Neon role ownership and Worker DATABASE_URL identity remain unverified; #193's reduced-schema experiments do not prove production Neon behavior.
-- Residual risks: no production readiness claim until Neon rehearsal, runtime identity/grants, backup/restore and end-to-end operational gates are independently verified.
+- Residual risks: CI proves the disposable PostgreSQL contract, not Neon role identity/ownership or the production Worker's actual DATABASE_URL principal. Runtime retains INSERT on the append-only movement table by design; migration 0019 enforces active warehouse locking, count-linked movement validation and balance/reserved-stock projection, but it does not add source-document authorization for future purchase-receipt, transfer, return or reservation movement types. Those endpoints must not be exposed until their per-type source/actor/tenant authorization contracts and tests are implemented. No production readiness claim until Neon rehearsal, runtime identity/grants, backup/restore and end-to-end operational gates are independently verified.
 - Next step: implement migration 0019 and convert both application balance writers.

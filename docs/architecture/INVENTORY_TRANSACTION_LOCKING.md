@@ -1,6 +1,6 @@
 # Inventory transaction locking contract
 
-**Status:** target technical contract implemented on Draft PR #262, stacked on checkout PR #258; not yet merged into `main`.  
+**Status:** target technical contract implemented on PR #262 Ready for review, stacked on checkout PR #258; not yet merged into `main`.  
 **Updated:** 2026-11-08 UTC  
 **Scope:** any transaction that changes warehouse stock, reservations, inventory counts, the warehouse movement ledger, or a document that confirms those changes.  
 **Does not approve:** new commercial rules, reservation/purchase-receipt/return/transfer endpoints, additional DDL, Neon migrations, production deployment or merge of the obsolete PR #200 stack. Atomic sale checkout is implemented on #258/#262 and follows this lock contract, but remains unmerged and subject to independent review/product gates.

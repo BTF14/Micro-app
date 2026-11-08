@@ -1,6 +1,6 @@
 # ODD task: inventory ledger-authoritative balance projection
 
-- Status: implementation complete; exact-HEAD validation passed at `2ff0c4c63d635fcdf42352b7c2ba16e2ef545c49` (8/8 checks); independent review and Neon rehearsal pending
+- Status: implementation complete; exact-HEAD validation passed at `c09bc06a2caa4b99728073bd4acb8063c6187299` (8/8 checks); Ready for independent review and Neon rehearsal
 - Issue / PR: follow-up to #193 §7.9.H–I; stacked on checkout #258
 - Owner / reviewer: repository owner; technical execution by senior agent
 - Started: 2026-11-08 UTC
@@ -77,9 +77,9 @@ Excluded:
 
 ## Closure and handoff
 
-- Final code HEAD validated: `2ff0c4c63d635fcdf42352b7c2ba16e2ef545c49`.
-- PR: #262 remains Draft until this final documentation commit receives fresh exact-HEAD CI; base is `feat/sales-checkout-recovered-main-20261108` (PR #258). The branch contains a merge commit whose first parent is the current #258 checkout HEAD, preserving the stack.
+- Final code HEAD validated: `c09bc06a2caa4b99728073bd4acb8063c6187299`.
+- PR: #262 is Ready for review, not merged; base is `feat/sales-checkout-recovered-main-20261108` (PR #258). The branch contains a merge commit whose first parent is the current #258 checkout HEAD, preserving the stack.
 - Checks on the validated code HEAD: 8/8 check-runs SUCCESS. `verify` completed build/typecheck, unit tests, PostgreSQL auth/branch/register/catalog/count/read/checkout suites and runtime-role API integration. `postgres-migration` completed migrations 0001–0019, rollback assertions, schema contract, and actual `microapp_runtime` LOGIN positive/negative smoke. Backup/restore, Cloudflare Pages, Workers Build, Trivy and secret-history scans passed.
 - Acceptance criteria: AC-1 through AC-10 passed in disposable PostgreSQL/CI. Independent review and Neon rehearsal remain mandatory merge gates.
 - Residual: the database validates the claimed actor role/scope but does not cryptographically bind `actor_user_id` to the HTTP session. The application authorization layer remains mandatory. Neon role ownership and production Worker DATABASE_URL identity are unverified; no production readiness claim.
-- Next step: refresh CI after this documentation update, then mark #262 Ready for review. No merge until independent review and Neon rehearsal are complete.
+- Next step: obtain independent formal review and complete the protected Neon rehearsal. No merge until both gates are complete.

@@ -146,7 +146,7 @@ FOR EACH ROW EXECUTE FUNCTION public.guard_direct_inventory_balance_write();
 
 -- Runtime keeps SELECT but loses every direct balance mutation privilege.
 REVOKE INSERT, UPDATE, DELETE, TRUNCATE, TRIGGER
-  ON TABLE public.inventory_balances FROM microapp_runtime;
+  ON TABLE public.inventory_balances FROM PUBLIC, microapp_runtime;
 REVOKE UPDATE (on_hand_quantity, reserved_quantity, balance_version, updated_at)
   ON TABLE public.inventory_balances FROM microapp_runtime;
 REVOKE INSERT (organization_id, branch_id, warehouse_id, product_id, on_hand_quantity,

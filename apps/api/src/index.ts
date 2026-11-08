@@ -90,7 +90,7 @@ app.get("/health", (c) =>
   c.json({
     status: "ok",
     service: "micro-app-api",
-    stage: "sales-checkout",
+    stage: "catalog-inventory-read",
   }),
 );
 

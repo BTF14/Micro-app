@@ -2055,3 +2055,9 @@ No se tocaron Neon main, datos reales, secretos, Worker productivo, DNS, billing
 - GitHub recalculó mergeability: #269 Open/Draft/mergeable=true (13 ahead/1 behind); #255 Open/Ready/mergeable=true (48 ahead/3 behind). Ambos siguen bloqueados por sus gates técnicos y de producto, no por un estado dirty confirmado.
 - #271 Open/Ready/mergeable=true; HEAD `bf8af19d6f96bfde8df46cef6ccc6abcbc9ff6ba`; compare 12 ahead/1 behind. Runs del HEAD: ODD docs, dependency review, dashboard y un check más completed/success; Semgrep, PostgreSQL migration runner validation, CI, database migration validation, security scan, Playwright E2E y secret history scan pending/in progress al momento de consulta. No merge mientras haya checks pendientes.
 - #255 conserva review COMMENTED (ID 5818042583), sin APPROVE; dos gates P1 anotados.
+
+## 2026-11-08 13:25 UTC — HEAD actualizado de PR #271
+
+- Las últimas actualizaciones de CURRENT_STATE, HANDOFF, WORK_CHECKPOINT y STATE_JOURNAL movieron el HEAD de PR #271 a `c52a334cd651aa7c4352a336a8c5947be65eabde`.
+- GitHub informa PR #271 Open/Ready/mergeable=true, compare 12 ahead/1 behind; el endpoint no devolvió workflow runs para el HEAD actual.
+- Las 10 ejecuciones observadas previamente corresponden al HEAD anterior `bf8af19...` (3 SUCCESS y 7 pending/in_progress); no validan `c52a334...`. No fusionar hasta CI exact-HEAD.

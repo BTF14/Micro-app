@@ -201,7 +201,7 @@ export function registerInventoryCountRoutes(app: Hono<{ Bindings: Bindings }>):
           // returns above without holding stock locks; new documents follow the
           // global warehouse -> document -> balances lock order.
           const capturedBalances = countType === "physical"
-            ? await lockInventoryBalances(tx, tenant.organizationId, [warehouseId], productIds)
+            ? await lockInventoryBalances(tx, tenant.organizationId, [{ warehouseId, branchId: branch.branchId }], productIds)
             : [];
           if (capturedBalances === null) throw new Error("INVENTORY_LOCK_INVALID_SCOPE");
           const capturedByProduct = new Map(capturedBalances.map((balance) => [balance.product_id, balance]));

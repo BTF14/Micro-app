@@ -38,7 +38,7 @@ Reglas ya aprobadas/documentadas:
 
 ### Lo que todavía NO está integrado
 
-- PR #258 registra `POST /api/orgs/:organizationId/branches/:branchId/checkout`, con autorización branch, idempotencia, exact decimals, locks de warehouse/stock/turno, pagos, ledger y audit en una sola transacción. Sigue Draft y requiere CI exact-SHA y revisión independiente.
+- PR #258 registra `POST /api/orgs/:organizationId/branches/:branchId/checkout`, con autorización branch, idempotencia, exact decimals, locks de warehouse/stock/turno, pagos, ledger y audit en una sola transacción. Sigue Draft; el HEAD actual `cc56a1e20a261dc729f828e0edd96312b3d7eb31` pasó 15/15 check-runs y 13/13 workflows. No hay review formal registrada.
 - No hay flujo de carrito/checkout UI integrado.
 - La selección BCV de PR #258 sigue la regla weekday/weekend; el productor y Cron de tasas siguen pendientes de integrar desde PR #255.
 - PR #229–#231 aportan motor monetario/catálogo/formulario que ya están en main en forma igual o más completa. PR #228 comparte la migración 0014 canónica; su handler/tests también son inferiores a la implementación actual. Comparar y cerrar como supersedidas solo después de preservar cambios realmente únicos.
@@ -56,7 +56,7 @@ La API BCV recuperada en PR #255 selecciona:
 
 La migration 0015 de `main` todavía contiene la regla weekday-only. PR #258 añade la migration 0017, que reemplaza únicamente la selección de fecha efectiva del trigger: weekdays exigen hoy; sábado/domingo seleccionan el `MIN(effective_date)` futuro sin filtrar estado, y luego requieren que esa fila exacta sea válida y quede bloqueada `FOR SHARE`. Hasta que #258 se integre, `main` conserva el comportamiento weekday-only.
 
-**Estado del gate en PR #258 (Draft):** la migration 0017 ya está añadida sin modificar retroactivamente 0015. Implementa la regla weekday/weekend, mantiene SECURITY DEFINER/search_path, restringe EXECUTE y añade assertions funcionales con fechas deterministas de sábado, domingo y viernes, incluyendo nearest-future stale. El SHA de implementación `d9ae6cd7f65c99126e7c4e45faa20a1dadaf3cdb` pasó 15/15 check-runs y 13/13 workflows; el checkout PostgreSQL pasó 15/15. No se ha aplicado en Neon. Si cambia el código o las migraciones, las verificaciones deben repetirse en el SHA final.
+**Estado del gate en PR #258 (Draft):** la migration 0017 ya está añadida sin modificar retroactivamente 0015. Implementa la regla weekday/weekend, mantiene SECURITY DEFINER/search_path, restringe EXECUTE y añade assertions funcionales con fechas deterministas de sábado, domingo y viernes, incluyendo nearest-future stale. El SHA de implementación `d9ae6cd7f65c99126e7c4e45faa20a1dadaf3cdb` pasó 15/15 check-runs y 13/13 workflows; el HEAD actual `cc56a1e20a261dc729f828e0edd96312b3d7eb31`, ya sincronizado con el merge de CI #259, también pasó 15/15 check-runs y 13/13 workflows. Checkout PostgreSQL 15/15; unitarias 141/141; runtime-role integration 85/85. No se ha aplicado en Neon. Revalidar siempre el SHA final tras cualquier cambio.
 
 El handler #258 usa la misma selección de fecha efectiva y rechaza la fila nearest-future si está stale. La fuente de datos y Cron BCV siguen dependiendo de la integración pendiente #255. Feriados bancarios entre semana aún no tienen calendario autoritativo; si no hay fila exacta para hoy, checkout falla cerrado. No ejecutar migraciones en Neon main.
 
@@ -175,7 +175,8 @@ Todas las pruebas usan PostgreSQL efímero; nunca Neon main ni datos reales.
 - Main actual al redactar: `96e2e2d9f76bc8fcc3bab2fa9503e480545c8869`.
 - PR #251: cleanup auth 48 h, Draft, HEAD `5dec5d5a9025de16b19d0cb7cfeac6585e2ad5d6`; 15/15 check-runs y 13/13 workflows SUCCESS en ese SHA; producción bloqueada por Neon schema/runtime.
 - PR #255: BCV parser/API/UI/Cron y weekend selection, Draft, HEAD `35b9ac6894f79c5760a1f56fb37506ed2278afa0`; 15/15 check-runs y 13/13 workflows SUCCESS en ese SHA; base #251 y sin review formal. No está integrado.
-- PR #258: recuperación del checkout y migration 0017 weekday/weekend, Draft, base main `96e2e2d9f76bc8fcc3bab2fa9503e480545c8869`; el SHA de implementación `d9ae6cd7f65c99126e7c4e45faa20a1dadaf3cdb` pasó 15/15 check-runs y 13/13 workflows, sin review formal. La ingesta BCV #255 es prerequisite para activar operaciones con tasa real. El siguiente cambio documental hará que el SHA exacto de la rama avance; cualquier modificación posterior debe validar su nuevo SHA.
+- PR #258: recuperación del checkout y migration 0017 weekday/weekend, Draft, base main `07b146a3f2b7830bbd328a585535084e57e43c4e`; HEAD `cc56a1e20a261dc729f828e0edd96312b3d7eb31` pasó 15/15 check-runs y 13/13 workflows, sin review formal. La ingesta BCV #255 es prerequisite para activar operaciones con tasa real.
+- PR #259: mergeada en main por squash como `07b146a3f2b7830bbd328a585535084e57e43c4e`; CI runtime-role PostgreSQL serializado para evitar la carrera DDL/DML de triggers temporales.
 - PR #233 queda como fuente histórica; su handler/tests se recuperaron en #258 sobre main. No fusionar la rama antigua ni reutilizar sus checks.
 - Migration 0015 existe en GitHub main, pero Neon main no ha recibido baseline/migraciones 0003–0016. No asumir que el esquema live tiene checkout listo.
 - Producción **NOT READY**. No Neon main, secretos, Cloudflare productivo, DNS, billing ni datos reales modificados.

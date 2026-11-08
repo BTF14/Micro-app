@@ -91,6 +91,12 @@ SECURITY DEFINER
 SET search_path = pg_catalog
 AS $validate_inventory_movement_source$
 DECLARE
+  count_type text;
+  count_status text;
+  line_expected_on_hand numeric(14,3);
+  line_expected_version bigint;
+  current_on_hand numeric(14,3);
+  current_balance_version bigint;
   sale_branch_id uuid;
   sale_warehouse_id uuid;
   sale_actor_id uuid;
@@ -99,10 +105,80 @@ DECLARE
   sale_unit_cost numeric(14,4);
 BEGIN
   IF NEW.movement_type IN ('opening', 'count_adjustment') THEN
-    IF NEW.reference_type IS NOT NULL OR NEW.reference_id IS NOT NULL THEN
-      RAISE EXCEPTION 'COUNT_MOVEMENT_MUST_NOT_CARRY_EXTERNAL_SOURCE'
+    IF NEW.count_id IS NULL
+      OR NEW.reference_type IS NOT NULL
+      OR NEW.reference_id IS NOT NULL
+    THEN
+      RAISE EXCEPTION 'COUNT_MOVEMENT_MUST_REFERENCE_CONFIRMED_COUNT_ONLY'
         USING ERRCODE = '23514';
     END IF;
+
+    SELECT c.count_type, c.status
+      INTO count_type, count_status
+      FROM public.inventory_counts AS c
+     WHERE c.organization_id = NEW.organization_id
+       AND c.branch_id = NEW.branch_id
+       AND c.warehouse_id = NEW.warehouse_id
+       AND c.id = NEW.count_id
+     FOR SHARE;
+
+    IF NOT FOUND OR count_status <> 'confirmed'
+      OR (NEW.movement_type = 'opening' AND count_type <> 'opening')
+      OR (NEW.movement_type = 'count_adjustment' AND count_type <> 'physical')
+    THEN
+      RAISE EXCEPTION 'INVENTORY_MOVEMENT_REQUIRES_MATCHING_CONFIRMED_COUNT'
+        USING ERRCODE = '23514';
+    END IF;
+
+    SELECT line.expected_on_hand_quantity, line.expected_balance_version
+      INTO line_expected_on_hand, line_expected_version
+      FROM public.inventory_count_lines AS line
+     WHERE line.organization_id = NEW.organization_id
+       AND line.count_id = NEW.count_id
+       AND line.product_id = NEW.product_id
+     FOR SHARE;
+
+    IF NOT FOUND THEN
+      RAISE EXCEPTION 'INVENTORY_MOVEMENT_REQUIRES_COUNT_LINE'
+        USING ERRCODE = '23514';
+    END IF;
+
+    IF NEW.movement_type = 'opening' THEN
+      IF EXISTS (
+        SELECT 1 FROM public.inventory_balances AS balance
+         WHERE balance.organization_id = NEW.organization_id
+           AND balance.branch_id = NEW.branch_id
+           AND balance.warehouse_id = NEW.warehouse_id
+           AND balance.product_id = NEW.product_id
+      ) THEN
+        RAISE EXCEPTION 'INVENTORY_OPENING_MOVEMENT_REQUIRES_EMPTY_PRODUCT_BALANCE'
+          USING ERRCODE = '23514';
+      END IF;
+    ELSE
+      current_on_hand := 0.000;
+      current_balance_version := 0;
+      SELECT balance.on_hand_quantity, balance.balance_version
+        INTO current_on_hand, current_balance_version
+        FROM public.inventory_balances AS balance
+       WHERE balance.organization_id = NEW.organization_id
+         AND balance.branch_id = NEW.branch_id
+         AND balance.warehouse_id = NEW.warehouse_id
+         AND balance.product_id = NEW.product_id
+       FOR UPDATE;
+
+      IF NOT FOUND THEN
+        current_on_hand := 0.000;
+        current_balance_version := 0;
+      END IF;
+
+      IF line_expected_on_hand IS DISTINCT FROM current_on_hand
+        OR line_expected_version IS DISTINCT FROM current_balance_version
+      THEN
+        RAISE EXCEPTION 'INVENTORY_COUNT_SNAPSHOT_STALE'
+          USING ERRCODE = '23514';
+      END IF;
+    END IF;
+
     RETURN NEW;
   END IF;
 
@@ -166,6 +242,96 @@ END;
 $validate_inventory_movement_source$;
 
 REVOKE ALL ON FUNCTION public.validate_inventory_movement_source() FROM PUBLIC, microapp_runtime;
+
+-- A count document is a valid stock source only when its creator and confirmer
+-- are currently authorized for inventory adjustment at this branch. Owner/Admin
+-- have organization-wide branch scope; Inventory must have active branch scope.
+CREATE FUNCTION public.validate_inventory_count_confirmation()
+RETURNS trigger
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = pg_catalog
+AS $validate_inventory_count_confirmation$
+BEGIN
+  IF NEW.status <> 'confirmed' OR OLD.status = 'confirmed' THEN
+    RETURN NEW;
+  END IF;
+
+  PERFORM 1
+    FROM public.organizations AS organization
+    JOIN public.branches AS branch
+      ON branch.organization_id = organization.id
+     AND branch.id = NEW.branch_id
+     AND branch.is_active = true
+    JOIN public.warehouses AS warehouse
+      ON warehouse.organization_id = branch.organization_id
+     AND warehouse.branch_id = branch.id
+     AND warehouse.id = NEW.warehouse_id
+     AND warehouse.is_active = true
+    JOIN public.organization_members AS confirmer
+      ON confirmer.organization_id = organization.id
+     AND confirmer.user_id = NEW.confirmed_by
+     AND confirmer.is_active = true
+     AND confirmer.role IN ('owner', 'admin', 'inventory')
+    JOIN public.app_users AS confirmer_user
+      ON confirmer_user.id = confirmer.user_id
+     AND confirmer_user.is_active = true
+    JOIN public.organization_members AS creator
+      ON creator.organization_id = organization.id
+     AND creator.user_id = NEW.created_by
+     AND creator.is_active = true
+     AND creator.role IN ('owner', 'admin', 'inventory')
+    JOIN public.app_users AS creator_user
+      ON creator_user.id = creator.user_id
+     AND creator_user.is_active = true
+   WHERE organization.id = NEW.organization_id
+     AND organization.is_active = true
+     AND (
+       confirmer.role IN ('owner', 'admin')
+       OR EXISTS (
+         SELECT 1 FROM public.branch_memberships AS membership
+          WHERE membership.organization_id = NEW.organization_id
+            AND membership.branch_id = NEW.branch_id
+            AND membership.user_id = confirmer.user_id
+            AND membership.is_active = true
+       )
+     )
+     AND (
+       creator.role IN ('owner', 'admin')
+       OR EXISTS (
+         SELECT 1 FROM public.branch_memberships AS membership
+          WHERE membership.organization_id = NEW.organization_id
+            AND membership.branch_id = NEW.branch_id
+            AND membership.user_id = creator.user_id
+            AND membership.is_active = true
+       )
+     )
+   FOR SHARE OF organization, branch, warehouse, confirmer, confirmer_user, creator, creator_user;
+
+  IF NOT FOUND THEN
+    RAISE EXCEPTION 'INVENTORY_COUNT_CONFIRMER_NOT_AUTHORIZED'
+      USING ERRCODE = '23514';
+  END IF;
+
+  IF NEW.count_type = 'opening' AND EXISTS (
+    SELECT 1 FROM public.inventory_balances AS balance
+     WHERE balance.organization_id = NEW.organization_id
+       AND balance.branch_id = NEW.branch_id
+       AND balance.warehouse_id = NEW.warehouse_id
+  ) THEN
+    RAISE EXCEPTION 'INVENTORY_OPENING_COUNT_REQUIRES_EMPTY_WAREHOUSE'
+      USING ERRCODE = '23514';
+  END IF;
+
+  RETURN NEW;
+END;
+$validate_inventory_count_confirmation$;
+
+REVOKE ALL ON FUNCTION public.validate_inventory_count_confirmation() FROM PUBLIC, microapp_runtime;
+
+CREATE TRIGGER z_inventory_counts_validate_confirmation
+BEFORE UPDATE OF status ON public.inventory_counts
+FOR EACH ROW EXECUTE FUNCTION public.validate_inventory_count_confirmation();
 
 -- Run after the warehouse mutex but before count validation and balance projection.
 CREATE TRIGGER aab_warehouse_inventory_movements_validate_source

@@ -1,3 +1,16 @@
+## Estado vivo actualizado — 2026-11-08 UTC — checkout recuperado y CI estabilizado
+
+- `main`: `96e2e2d9f76bc8fcc3bab2fa9503e480545c8869`.
+- **PR #251** Draft, HEAD `5dec5d5a9025de16b19d0cb7cfeac6585e2ad5d6`: 15/15 check-runs y 13/13 workflows SUCCESS. Sin review formal; no activar Cron hasta cerrar el gate Neon.
+- **PR #255** Draft, HEAD `35b9ac6894f79c5760a1f56fb37506ed2278afa0`, base #251: 15/15 check-runs y 13/13 workflows SUCCESS. Productor/parser/API/UI/Cron BCV, sin review formal; aún no integrado en main.
+- **PR #258** Draft, rama `feat/sales-checkout-recovered-main-20261108`, base main. Recupera handler/tests de #233 y añade migration 0017 para BCV weekday/weekend, sin reemplazar 0015. SHA de implementación `d9ae6cd7f65c99126e7c4e45faa20a1dadaf3cdb`: 15/15 checks, 13/13 workflows y 15/15 checkout PostgreSQL integration SUCCESS. HEAD actual `9d5ca9298b80038925ee94ed3deb2ce28dd08bb8` incluye seguimiento documental y serialización de la suite runtime; comprobar su propio SHA antes de integrar.
+- **PR #259** Draft, HEAD `98f4a8d662d07400f59bd3e8115f6da5856a4bfe`: cambio aislado de CI para ejecutar secuencialmente los archivos de integración runtime que comparten PostgreSQL. Checks pendientes.
+- **PR #257** Draft, HEAD `a8f7e0385ad7bb65a771e29e576bef8a2905eba9`: 14/15 checks; el único fallo fue `verify` → suite runtime-role, donde `catalog-write.integration.test.ts` falló al hacer DROP del trigger temporal con `XX000: tuple concurrently updated` mientras otras suites escribían `audit_logs`. Es una carrera entre archivos que comparten la misma DB efímera, no un fallo de las migraciones. #259 añade `--no-file-parallelism` para resolverla.
+- PR #233 sigue Draft como fuente histórica, 408 commits ahead / 18 behind y base cerrada antigua. No fusionar su rama; recuperación en #258.
+- PRs abiertas: #193, #233, #251, #255, #257, #258 y #259. #202 y #211 ya están cerradas tras preservar su contenido/hallazgos.
+- Neon main no recibió DDL/DML ni migraciones; no hubo cambios de secretos, Cloudflare manual, DNS, billing ni despliegue productivo.
+- **Producción NOT READY:** #255 aún debe proveer la tasa BCV; falta decisión explícita del propietario sobre el contrato comercial de pagos; falta defensa SQL de cálculo por línea/asignación por pago; sigue abierta la brecha P1 de escritura runtime directa en `inventory_balances`; no existe UI checkout. Migration 0017 solo está en PR #258, no en Neon.
+
 ## Estado vivo autoritativo — 2026-11-08 UTC
 
 > Este bloque reemplaza los snapshots anteriores de estado. GitHub y Neon son las fuentes de verdad; las secciones inferiores son historial y no deben prevalecer sobre este bloque.

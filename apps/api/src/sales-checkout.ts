@@ -293,7 +293,7 @@ async function loadSaleResponse(
             exchange_rate_snapshot::text, reference
        FROM public.payments
       WHERE organization_id = $1 AND sale_id = $2
-      ORDER BY id ASC`,
+      ORDER BY allocation_position ASC`,
     [organizationId, saleId],
   );
   return {
@@ -558,12 +558,13 @@ export function registerSalesCheckoutRoutes(app: Hono<{ Bindings: Bindings }>): 
             await tx.query(
               `INSERT INTO public.payments (
                  organization_id, sale_id, method, currency, amount,
-                 usd_equivalent_snapshot, exchange_rate_snapshot, reference, received_by
-               ) VALUES ($1, $2, $3, $4, $5::numeric, $6::numeric, $7::numeric, $8, $9)`,
+                 usd_equivalent_snapshot, exchange_rate_snapshot, reference, received_by,
+                 allocation_position
+               ) VALUES ($1, $2, $3, $4, $5::numeric, $6::numeric, $7::numeric, $8, $9, $10)`,
               [
                 branch.organizationId, saleId, payment.method, payment.currency,
                 payment.amount, equivalent.usdEquivalent, equivalent.rateSnapshot,
-                payment.reference, branch.userId,
+                payment.reference, branch.userId, index + 1,
               ],
             );
           }

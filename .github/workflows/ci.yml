@@ -70,6 +70,8 @@ jobs:
         run: psql -X -v ON_ERROR_STOP=1 --dbname "$ADMIN_DATABASE_URL" -f apps/api/migrations/0016_runtime_inventory_ledger_read.assertions.sql
       - name: Verify checkout BCV weekday/weekend effective-date contract
         run: psql -X -v ON_ERROR_STOP=1 --dbname "$ADMIN_DATABASE_URL" -f apps/api/migrations/0017_checkout_bcv_weekend_effective_date.assertions.sql
+      - name: Verify checkout per-payment USD allocation contract
+        run: psql -X -v ON_ERROR_STOP=1 --dbname "$ADMIN_DATABASE_URL" -f apps/api/migrations/0018_checkout_payment_allocation.assertions.sql
       - name: Build and typecheck
         run: pnpm build
       - name: Verify Cloudflare Pages preview isolation

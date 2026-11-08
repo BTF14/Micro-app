@@ -1,6 +1,6 @@
 import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 import { Client } from "pg";
-import { convertUsdToVes } from "@micro-app/money";
+import { convertUsdToVes, formatNumeric, parseNumeric } from "@micro-app/money";
 
 vi.mock("@neondatabase/serverless", async () => {
   const postgres = await import("pg");
@@ -535,6 +535,53 @@ describe.skipIf(!isDisposableCheckoutDatabase)("atomic sales checkout PostgreSQL
     } finally {
       await client.query("DROP TRIGGER IF EXISTS zz_test_corrupt_checkout_line ON public.sale_items");
       await client.query("DROP FUNCTION IF EXISTS public.test_corrupt_checkout_line()");
+    }
+  });
+
+  it("rejects a tampered per-payment VES allocation even when the aggregate USD equivalent still reconciles", async () => {
+    await seedBalance("2.000");
+    const key = "payment-allocation-guard-" + crypto.randomUUID();
+    const totalVes = convertUsdToVes("23.8500", "250.12345678");
+    const totalUnits = parseNumeric(totalVes, 16, 2);
+    const firstAmount = formatNumeric(totalUnits / 2n, 16, 2);
+    const secondAmount = formatNumeric(totalUnits - totalUnits / 2n, 16, 2);
+    const body = {
+      warehouse_id: warehouseId,
+      lines: [{ product_id: productId, quantity: "1.000" }],
+      payments: [
+        { method: "cash", currency: "VES", amount: firstAmount },
+        { method: "transfer", currency: "VES", amount: secondAmount },
+      ],
+    };
+    const beforeMovements = await client.query(
+      "SELECT count(*)::int AS count FROM public.warehouse_inventory_movements WHERE organization_id=$1",
+      [organizationId],
+    );
+    await client.query(
+      "CREATE OR REPLACE FUNCTION public.test_corrupt_checkout_payment_allocation() RETURNS trigger LANGUAGE plpgsql SET search_path=pg_catalog AS 'BEGIN IF NEW.allocation_position = 1 THEN NEW.usd_equivalent_snapshot := NEW.usd_equivalent_snapshot + 0.0001; ELSIF NEW.allocation_position = 2 THEN NEW.usd_equivalent_snapshot := NEW.usd_equivalent_snapshot - 0.0001; END IF; RETURN NEW; END;'",
+    );
+    await client.query("GRANT EXECUTE ON FUNCTION public.test_corrupt_checkout_payment_allocation() TO microapp_runtime");
+    await client.query(
+      "CREATE TRIGGER zz_test_corrupt_checkout_payment_allocation BEFORE INSERT ON public.payments FOR EACH ROW EXECUTE FUNCTION public.test_corrupt_checkout_payment_allocation()",
+    );
+    try {
+      const response = await request(body, key);
+      expect(response.status).toBe(409);
+      expect((await response.json() as { error: string }).error).toBe("CHECKOUT_REJECTED");
+      expect((await readBalance()).on_hand_quantity).toBe("2.000");
+      const sales = await client.query(
+        "SELECT count(*)::int AS count FROM public.sales WHERE organization_id=$1 AND idempotency_key=$2",
+        [organizationId, key],
+      );
+      expect(sales.rows[0].count).toBe(0);
+      const afterMovements = await client.query(
+        "SELECT count(*)::int AS count FROM public.warehouse_inventory_movements WHERE organization_id=$1",
+        [organizationId],
+      );
+      expect(afterMovements.rows[0].count).toBe(beforeMovements.rows[0].count);
+    } finally {
+      await client.query("DROP TRIGGER IF EXISTS zz_test_corrupt_checkout_payment_allocation ON public.payments");
+      await client.query("DROP FUNCTION IF EXISTS public.test_corrupt_checkout_payment_allocation()");
     }
   });
 

@@ -1,3 +1,64 @@
+## Prioridad operativa — 2026-11-08 UTC — actualización posterior a #259
+
+## Snapshot operativo autoritativo — 2026-11-08 UTC — sincronización #259 y recuperación de ventas
+
+- **main:** `07b146a3f2b7830bbd328a585535084e57e43c4e`. #259 está fusionada; CI serializa las suites PostgreSQL runtime-role con `--no-file-parallelism`.
+- **PR #251 — retención auth 48 h:** Draft, HEAD `e2015f3742c2fba62bada2468efdb3689e2e1db4`, base main, 25 ahead / 0 behind; **15/15 check-runs y 13/13 workflows SUCCESS**. La prueba ahora verifica límite 500 por tabla y drenaje del remanente en una segunda invocación. Sin review formal. Cron no activar hasta cerrar Neon/runtime.
+- **PR #255 — tasa oficial BCV:** Draft, HEAD `1337d28591673dabfe5c4bf1d5c0d8c03c99162b`, base #251 `e2015f3742c2fba62bada2468efdb3689e2e1db4`, 44 ahead / 0 behind; **15/15 check-runs y 13/13 workflows SUCCESS**. Incluye parser BCV, API/UI, persistencia decimal y Cron. Sin review formal. No se ha hecho smoke test contra BCV/Worker productivo; feriados entre semana siguen fail-closed.
+- **PR #258 — checkout atómico:** Draft, HEAD `313f76c132c61200ed49a7c6e4e01fcf75659bf9`, base main, 13 ahead / 0 behind; **12/15 check-runs y 12/13 workflows SUCCESS**, sin fallos. Pendientes: Workers Builds, verify, Cloudflare Pages y workflow CI. No reutilizar los verdes de SHAs anteriores. La implementación base anterior `d9ae6cd7f65c99126e7c4e45faa20a1dadaf3cdb` pasó 141 unit tests, 85 runtime-role tests y 15 checkout PostgreSQL tests; los cambios posteriores deben revalidarse en el SHA final. Migration 0017 está solo en la PR.
+- **PR #257 — esta reconciliación documental:** Draft, HEAD previo a este refresh `f791b312b53541cacca67161ed1f6e5b9ab54173`, base main, 29 ahead / 0 behind; 6/14 check-runs y 6/13 workflows SUCCESS, el resto pendiente, sin fallos. Este commit documental cambia el SHA y obliga a validar de nuevo.
+- **PR #193:** sigue abierta para revisión técnica de inventario; no modificar su rama ni cerrar. **PR #233:** sigue abierta como fuente histórica; no fusionar su rama antigua. El handler/tests recuperados están en #258. #202 y #211 se cerraron tras preservar sus contenidos/hallazgos en esta rama.
+- **Reviews:** no hay revisión formal independiente registrada para #251, #255 ni #258. CI verde no equivale a aprobación.
+- **Neon:** no se aplicaron migraciones ni se escribieron datos en main o rehearsal. Main sigue sin roles runtime/migrator, ledger y tablas 0003–0016; rehearsal tiene los logins pero runtime carece de grants de tabla y no existe ledger. El runner CI es PostgreSQL efímero, no despliegue a Neon.
+- **Producción: NOT READY.** No se modificaron secretos, configuración manual de Cloudflare, DNS, billing, Worker productivo ni datos reales. Los builds Pages/Workers de PR son previews de rama, no despliegues productivos.
+
+### Gates técnicos que no se deben perder
+
+1. #251/#255: revisión independiente, baseline/migraciones/grants Neon por runner protegido, login runtime real y Cron/Worker identity verificados.
+2. #258: fuente BCV #255 integrada; política de feriados; UI checkout; aprobación funcional explícita de pago en una sola moneda y pago exacto completo; assertions SQL de cálculo por línea y asignación USD equivalente por pago.
+3. #258/#193: migration 0012 concede UPDATE/INSERT directo a runtime en `inventory_balances`; migration 0010 exige pairing con ledger, pero no hace la proyección exclusivamente SECURITY DEFINER. Resolver antes de producción.
+4. El endpoint checkout aún no tiene bucket de rate limiting específico; la idempotencia no sustituye limitación de frecuencia. Resolver antes de exponer POS real.
+5. No activar Cron, aplicar migration 0017 en Neon ni fusionar estas PRs por CI verde solamente.
+
+---
+
+
+## Prioridad operativa actual — 2026-11-08 UTC
+
+1. **CI compartido:** #259 ya está fusionada en main como `07b146a3f2b7830bbd328a585535084e57e43c4e`; serializa runtime-role PostgreSQL y resuelve la carrera de triggers temporales. #257 debe revalidar el HEAD posterior.
+2. **Checkout recuperado:** #258 porta handler/tests desde #233 y añade migration 0017. Implementation SHA `d9ae6cd7f65c99126e7c4e45faa20a1dadaf3cdb` pasó 15/15 checks, 13/13 workflows, 141 unitarias, 85 runtime-role integration y 15 checkout PostgreSQL. HEAD `433a1fa1212f610cbb543597e620219bd91327a4` tiene 13/15 check-runs y 12/13 workflows SUCCESS; 3 verificaciones pendientes, sin fallos.
+3. **Dependencia BCV.** #255 mantiene parser/API/UI/Cron oficial, Draft y no integrado. Resolver la pila #251→#255 y reconciliar sus cambios de Worker/router con #258 antes de activar checkout.
+4. **Gates de producción de checkout:** aprobación explícita del contrato de pagos; assertions SQL de fórmula por línea y equivalentes por pago; resolver privilegio runtime directo sobre balances; calendario de feriados; UI. No fusionar ni activar checkout antes.
+5. **Neon.** Main no tiene roles runtime/migrator ni migraciones 0003–0017. Rehearsal tiene logins pero sin ledger/migraciones. Solo runner protegido y autorización específica; no SQL manual.
+6. **Inventario.** Mantener Kardex/ledger, locks tenant/sucursal, conteos absolutos y transferencias en dos etapas. No alterar PR #193 mientras siga la restricción específica registrada.
+
+Producción **NOT READY**. No tratar CI verde como aprobación; reviews formales y decisiones de producto siguen separadas.
+
+## Prioridad operativa vigente — 2026-11-08 UTC
+
+Este bloque prevalece sobre prioridades históricas inferiores.
+
+### Estado de ejecución
+
+1. **Reconciliación GitHub — completada para la pila auth/BCV.** Main está en `96e2e2d9f76bc8fcc3bab2fa9503e480545c8869`. #251 HEAD `5dec5d5a9025de16b19d0cb7cfeac6585e2ad5d6` y #255 HEAD `35b9ac6894f79c5760a1f56fb37506ed2278afa0` están actualizadas, cero commits detrás de sus bases y con 15/15 check-runs SUCCESS. Ambas siguen Draft por falta de revisión formal y gates Neon.
+2. **BCV — código y regresiones completados; revisión/Neon pendientes.** Parser oficial, precisión exacta, latest/history, fin de semana, UI, no-store, revalidación al cambio de fecha Caracas y Cron laborable. Feriados entre semana siguen fail closed por falta de calendario oficial.
+3. **Neon — gate bloqueante.** Main no tiene roles de aplicación ni migraciones 0003–0016. Rehearsal tiene roles/ownership, pero runtime no tiene grants de tabla. El CI migration runner solo usa PostgreSQL desechable. No ejecutar SQL manual; falta autorización específica para crear/usar el secreto de rehearsal y un runner protegido.
+4. **Checkout — siguiente recuperación técnica.** #233 contiene handler/tests únicos, pero su base y migration 0015 son antiguas. Portar solo el handler/tests a una rama nueva basada en #255, y diseñar migration 0017 para alinear el trigger con la regla de fecha efectiva BCV. Mantener bloqueada la activación hasta aprobación funcional del modelo de pagos.
+5. **Inventario y sucursales.** Mantener el modelo Kardex/ledger, locks por tenant/sucursal, conteos absolutos, idempotencia y transferencias en dos etapas. Reconciliar #193 y documentación restante antes de crear nuevas ramas.
+6. **Documentación.** #257 reúne ODD/locking y el estado de continuidad actual. #202 conserva addenda documentales de 2026-11-05 que todavía deben reconciliarse; no cerrar hasta recuperar lo útil.
+
+### PRs
+
+- Abiertas para trabajo/reconciliación: #193, #202, #211, #233, #251, #255, #257.
+- Cerradas por supersesión verificada sin merge: #200, #204, #205, #207–#210, #227–#232. No reabrirlas ni duplicar sus cambios.
+- No tratar check-runs verdes como aprobación formal.
+
+### Gate de producción
+
+**Producción NOT READY.** No mergear #251/#255 hasta que la rama Neon de ensayo ejecute el runner completo, runtime tenga permisos mínimos comprobados con login directo, backup/restore y smoke autenticado pasen, y exista revisión independiente. No modificar Neon main, secretos, DNS, billing ni Cloudflare production por conveniencia.
+
+---
+
 # Prioridad operativa vigente — Micro app
 
 > **Fuente de verdad del estado vivo:** consultar `docs/CURRENT_STATE.md` y `docs/HANDOFF_NEXT_CHAT.md`, y verificar GitHub antes de actuar. Los snapshots y prioridades históricos que siguen en este archivo pueden estar supersedidos.

@@ -1,3 +1,12 @@
+## Reconciliación de evidencia — 2026-11-08 UTC
+
+- La última restauración de una copia remota concreta documentada sigue siendo la del 2026-10-29: `daily/backup-2026-10-29T17-29-48Z.dump.age`, con checksum, descifrado y restore a PostgreSQL 18 efímero. No se ha demostrado una nueva restauración de un backup remoto posterior.
+- Los check-runs de backup/restore de #251 y #255 son evidencia de CI en sus SHA exactos, pero no sustituyen la restauración de la copia remota más reciente, la reconciliación de conteos/relaciones comerciales, medición RPO/RTO, alerta externa ni verificación de coste $0.
+- No declarar completo el ciclo operativo de backup/restore ni cerrar el gate de Seguridad Nivel 1 solo por CI sintético.
+- No se modificó el repositorio remoto de backups, Neon, secretos, workflows de producción ni datos reales.
+
+---
+
 ## ESTADO OPERATIVO VIGENTE — restauración del backup remoto verificada (2026-10-29 UTC)
 
 - **Prueba real completada:** [run 40955935124](https://github.com/BTF14/Micro-app/actions/runs/40955935124), workflow `.github/workflows/backup-real-restore.yml`, terminó en `success`.

@@ -175,7 +175,7 @@ Todas las pruebas usan PostgreSQL efímero; nunca Neon main ni datos reales.
 - Main actual al redactar: `96e2e2d9f76bc8fcc3bab2fa9503e480545c8869`.
 - PR #251: cleanup auth 48 h, Draft, HEAD `5dec5d5a9025de16b19d0cb7cfeac6585e2ad5d6`; 15/15 check-runs y 13/13 workflows SUCCESS en ese SHA; producción bloqueada por Neon schema/runtime.
 - PR #255: BCV parser/API/UI/Cron y weekend selection, Draft, HEAD `35b9ac6894f79c5760a1f56fb37506ed2278afa0`; 15/15 check-runs y 13/13 workflows SUCCESS en ese SHA; base #251 y sin review formal. No está integrado.
-- PR #258: recuperación del checkout y migration 0017 weekday/weekend, Draft, base main `07b146a3f2b7830bbd328a585535084e57e43c4e`; HEAD `cc56a1e20a261dc729f828e0edd96312b3d7eb31` pasó 15/15 check-runs y 13/13 workflows, sin review formal. La ingesta BCV #255 es prerequisite para activar operaciones con tasa real.
+- PR #258: recuperación del checkout y migration 0017 weekday/weekend, Draft, base main `07b146a3f2b7830bbd328a585535084e57e43c4e`; HEAD `433a1fa1212f610cbb543597e620219bd91327a4` pasó 15/15 check-runs y 13/13 workflows, sin review formal. PR #259 (serialización de la batería PostgreSQL) ya está fusionada en main. La ingesta BCV #255 es prerequisite para activar operaciones con tasa real.
 - PR #259: mergeada en main por squash como `07b146a3f2b7830bbd328a585535084e57e43c4e`; CI runtime-role PostgreSQL serializado para evitar la carrera DDL/DML de triggers temporales.
 - PR #233 queda como fuente histórica; su handler/tests se recuperaron en #258 sobre main. No fusionar la rama antigua ni reutilizar sus checks.
 - Migration 0015 existe en GitHub main, pero Neon main no ha recibido baseline/migraciones 0003–0016. No asumir que el esquema live tiene checkout listo.

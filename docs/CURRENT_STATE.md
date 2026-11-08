@@ -22,8 +22,8 @@
 ### Neon — evidencia viva, solo lectura
 
 - Proyecto `micro-app-db` (`restless-fire-99110035`), base `neondb`.
-- Neon main `br-summer-math-b7297a60`: no existen `microapp_runtime`, `microapp_migrator`, `schema_migrations`, `auth_bootstrap_attempts`, `branches`, `warehouses`, `inventory_balances` ni `register_shifts`. `exchange_rates.rate` sigue en precisión 14,6.
-- Ensayo `rehearsal-baseline-20261107` (`br-curly-poetry-b7dxsddm`): existen los logins `microapp_migrator` y `microapp_runtime`; ambos conectan. Los objetos existentes son propiedad de migrator. Runtime tiene USAGE de schema pero no CREATE ni permisos de tabla SELECT/INSERT/UPDATE/DELETE en las tablas examinadas. No existe ledger ni las tablas de migraciones 0003–0016 que faltan.
+- Neon main `br-summer-math-b7297a60`: no existen `microapp_runtime`, `microapp_migrator`, `app_schema_migrations`/`schema_migrations`, `auth_bootstrap_attempts`, `branches`, `warehouses`, `inventory_balances` ni `register_shifts`. `exchange_rates.rate` sigue en precisión 14,6.
+- Ensayo `rehearsal-baseline-20261107` (`br-curly-poetry-b7dxsddm`): ambos logins conectan y no tienen membresías. `public` concede a PUBLIC solo USAGE; migrator tiene USAGE+CREATE y runtime solo USAGE. Los objetos existentes son propiedad de migrator. Runtime no tiene grants de tabla SELECT/INSERT/UPDATE/DELETE en las tablas examinadas. No existe `app_schema_migrations` ni se han aplicado 0003–0016.
 - El workflow `.github/workflows/migration-runner.yml` valida el runner en PostgreSQL 18 desechable; no es un workflow de release hacia Neon. El plan documenta que falta el secreto de ensayo `NEON_REHEARSAL_DATABASE_URL` y un runner protegido que invoque `adopt-baseline.sh`/ `migrate.sh`. No pegar migraciones en el SQL tool ni ejecutar DDL manualmente.
 - No se escribió en Neon main, no se aplicaron migraciones en rehearsal durante esta sesión y no se modificaron secretos. Para ejecutar el runner real en rehearsal hace falta autorización específica para crear/usar el secreto y el workflow protegido. Neon main y el secreto de producción siguen fuera de autorización.
 

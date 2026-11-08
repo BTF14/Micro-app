@@ -21,8 +21,9 @@ Lee `AGENTS.md`, `docs/CONSTITUTION.md`, `docs/AI_COLLABORATION_AND_PR_POLICY.md
 2. Completar el gate Neon solo mediante runner protegido. El branch de ensayo tiene roles, pero runtime no tiene grants de tabla y no se han aplicado 0003–0016. No usar SQL manual para aplicar migraciones. Antes de ejecutar `adopt-baseline.sh apply`/`migrate.sh` en rehearsal, obtener autorización específica para crear/usar `NEON_REHEARSAL_DATABASE_URL` y el workflow protegido. No tocar Neon main ni secretos de producción.
 3. No fusionar #251 ni #255 hasta verificar esquema, grants, login real de runtime y comportamiento del Cron. Los checks de Cloudflare de PR son checks de preview/build, no evidencia de producción.
 4. Después de cerrar BCV, recuperar #233 en una rama nueva basada en la línea actual #255: portar únicamente handler/tests únicos, no su migration 0015 antigua; preparar migration 0017 para que el trigger use la misma regla de fecha efectiva que BCV latest. Mantener pendiente la aprobación funcional del modelo de pagos.
-5. Continuar auditoría del inventario y aislamiento tenant/sucursal; no reabrir ramas obsoletas. Recuperar cualquier cambio único antes de cerrar PRs.
-6. Mantener actualizados CURRENT_STATE, WORK_CHECKPOINT, PROJECT_PLAN, STATE_JOURNAL y SECURITY_ROADMAP después de cada bloque.
+5. Revisar PR #193 y reconciliar sus diferencias con el código: migration 0012 permite INSERT/UPDATE directo de `inventory_balances` a runtime (0010 obliga a pairing con ledger, pero no reemplaza una proyección estrictamente SECURITY DEFINER); `reference_type/reference_id` siguen sin FK tipada y `legacy_stock_snapshot` no existe. Decidir/implementar el modelo de privilegios y preservación legado antes de producción. Las ocho decisiones de negocio ya aprobadas no se vuelven a preguntar.
+6. Continuar auditoría del inventario y aislamiento tenant/sucursal; no reabrir ramas obsoletas. Recuperar cualquier cambio único antes de cerrar PRs.
+7. Mantener actualizados CURRENT_STATE, WORK_CHECKPOINT, PROJECT_PLAN, STATE_JOURNAL y SECURITY_ROADMAP después de cada bloque.
 
 ## Reglas de colaboración
 

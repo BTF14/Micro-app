@@ -172,7 +172,7 @@ export async function fetchBcvOfficialRate(now = new Date()): Promise<BcvOfficia
   const response = await fetch(BCV_SOURCE_URL, {
     method: "GET",
     headers: { Accept: "text/html,application/xhtml+xml" },
-    redirect: "follow",
+    redirect: "error",
     cache: "no-store",
     signal: AbortSignal.timeout(10_000),
   });

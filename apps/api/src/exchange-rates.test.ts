@@ -177,6 +177,21 @@ describe("BCV effective-date persistence", () => {
 });
 
 describe("BCV official fetch bounds", () => {
+  it("rejects BCV redirects instead of following an untrusted destination", async () => {
+    const fetchMock = vi.fn().mockResolvedValue(new Response(null, {
+      status: 302,
+      headers: { location: "https://example.invalid/redirected" },
+    }));
+    vi.stubGlobal("fetch", fetchMock);
+    try {
+      await expect(fetchBcvOfficialRate(NOW)).rejects.toThrow("BCV_SOURCE_HTTP_ERROR");
+      expect(fetchMock).toHaveBeenCalledTimes(1);
+      expect(fetchMock.mock.calls[0]?.[1]?.redirect).toBe("error");
+    } finally {
+      vi.unstubAllGlobals();
+    }
+  });
+
   it("rejects an oversized Content-Length before parsing the body", async () => {
     vi.stubGlobal("fetch", vi.fn().mockResolvedValue(
       new Response("ignored", {

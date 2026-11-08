@@ -213,6 +213,8 @@ BEGIN
     OR pg_catalog.strpos(warehouse_lock_def,'branch_memberships')=0
     OR pg_catalog.strpos(warehouse_lock_def,'owner')=0
     OR pg_catalog.strpos(warehouse_lock_def,'inventory')=0
+    OR pg_catalog.strpos(warehouse_lock_def,'is_active')=0
+    OR pg_catalog.strpos(warehouse_lock_def,'creator')=0
     OR pg_catalog.strpos(warehouse_lock_def,'INVENTORY_OPENING_COUNT_REQUIRES_EMPTY_WAREHOUSE')=0
   THEN
     RAISE EXCEPTION 'INVENTORY_COUNT_CONFIRMATION_DEFINITION_INVALID';

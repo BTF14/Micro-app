@@ -154,6 +154,7 @@ jobs:
             echo "- Ledger: ${expected_count} contiguous migrations, all applied with checksums."
             echo "- Object ownership: `microapp_migrator`."
             echo "- Runtime role: non-owner, no role memberships, no schema CREATE."
-            echo "- BCV: rate and sales/payment snapshots are NUMERIC(18,8); runtime SELECT/INSERT and column-scoped validation_status UPDATE only; no rate/date/source UPDATE, no DELETE, no migration-ledger access.\n            echo "- Auth cleanup: both hourly-Cron tables exist and runtime has the exact SELECT columns plus DELETE privileges required by the cleanup queries.""
+            echo "- BCV: rate and sales/payment snapshots are NUMERIC(18,8); runtime SELECT/INSERT and column-scoped validation_status UPDATE only; no rate/date/source UPDATE, no DELETE, no migration-ledger access."
+            echo "- Auth cleanup: both hourly-Cron tables exist and runtime has the exact SELECT columns plus DELETE privileges required by the cleanup queries."
             echo "- Neon main, production secrets and Worker configuration were not targeted."
           } >> "${GITHUB_STEP_SUMMARY}"

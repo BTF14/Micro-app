@@ -75,7 +75,7 @@ REVOKE ALL ON FUNCTION public.lock_inventory_movement_warehouse() FROM PUBLIC, m
 
 -- PostgreSQL fires same-event triggers in name order; this prefix guarantees
 -- the warehouse lock precedes validate_count_inventory_movement().
-CREATE TRIGGER warehouse_inventory_movements_00_lock_warehouse
+CREATE TRIGGER aaa_warehouse_inventory_movements_lock_warehouse
 BEFORE INSERT ON public.warehouse_inventory_movements
 FOR EACH ROW EXECUTE FUNCTION public.lock_inventory_movement_warehouse();
 

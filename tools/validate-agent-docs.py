@@ -67,6 +67,14 @@ REQUIRED_CONTENT = {
     ],
 }
 
+REQUIRED_LINKS = {
+    "docs/CONSTITUTION.md": ["../odd/tasks/ai-continuity-and-evidence-contract.md"],
+    "docs/ODD_WORKFLOW.md": ["../odd/tasks/ai-continuity-and-evidence-contract.md"],
+    "odd/tasks/ai-continuity-and-evidence-contract.md": [
+        "../../docs/decisions/ADR_TEMPLATE.md"
+    ],
+}
+
 LINK_SOURCES = [
     "odd/tasks/ai-continuity-and-evidence-contract.md",
     "docs/decisions/ADR_TEMPLATE.md",
@@ -96,6 +104,20 @@ def validate(root: Path = ROOT) -> list[str]:
         for phrase in required:
             if phrase not in content:
                 errors.append(f"{relative}: missing required contract text {phrase!r}")
+
+    # Enforce the exact canonical links that make the contract discoverable.
+    for relative, targets in REQUIRED_LINKS.items():
+        source = root / relative
+        if not source.is_file():
+            continue
+        content = source.read_text(encoding="utf-8")
+        for target in targets:
+            if f"]({target})" not in content:
+                errors.append(f"{relative}: missing required local link {target!r}")
+                continue
+            local_target = (source.parent / target).resolve()
+            if not local_target.is_file():
+                errors.append(f"{relative}: broken required local link {target!r}")
 
     # Check local links in the new contract and shared ADR template only.
     # External URLs, mailto links, and same-document anchors are skipped.

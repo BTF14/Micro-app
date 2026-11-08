@@ -1,3 +1,17 @@
+## Addendum — Neon main confirmado en vivo por SELECT — 2026-11-08 UTC
+
+Lectura directa y de solo lectura sobre Neon main `br-summer-math-b7297a60`, proyecto `restless-fire-99110035`, base `neondb`, sesión `neondb_owner`:
+
+- No existen roles `microapp_runtime` ni `microapp_migrator`.
+- No existen `schema_migrations`, `auth_bootstrap_attempts`, `branches`, `warehouses` ni `inventory_balances`.
+- Sí existe `auth_rate_limits`.
+- `exchange_rates.rate` continúa `NUMERIC(14,6)`.
+- La identidad de la sesión confirmó branch ID `br-summer-math-b7297a60` y project ID `restless-fire-99110035`.
+
+Esto confirma que Neon main sigue en el esquema base 0001–0002, mientras main del repositorio contiene código/migraciones posteriores. El Cron de retención #251 está configurado en el código de main, pero no se ha verificado deployment ni ejecución real. Si está desplegado contra este esquema, la consulta de `auth_bootstrap_attempts` fallará por tabla ausente. No se cambió Neon main; no se ejecutó DDL/DML ni se leyeron filas de negocio.
+
+---
+
 ## Addendum — riesgo operativo del Cron de retención #251 — 2026-11-08 UTC
 
 - `main` contiene `[triggers].crons = ["17 * * * *"]` en `apps/api/wrangler.toml`; el handler `scheduled()` ejecuta `cleanupExpiredAuthRecords()` cuando `APP_ENV === "production"`. Esto confirma configuración de Cron en el código de main, **no** confirma que el Worker de producción haya recibido el despliegue ni que el Cron haya ejecutado.

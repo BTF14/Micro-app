@@ -18,22 +18,22 @@ class ValidateAgentDocsTests(unittest.TestCase):
             path.write_text("", encoding="utf-8")
 
         (root / "odd/TASK_TEMPLATE.md").write_text(
-            "\\n".join(VALIDATOR.REQUIRED_TEMPLATE_HEADINGS), encoding="utf-8"
+            "\n".join(VALIDATOR.REQUIRED_TEMPLATE_HEADINGS), encoding="utf-8"
         )
         for relative, phrases in VALIDATOR.REQUIRED_CONTENT.items():
-            (root / relative).write_text("\\n".join(phrases), encoding="utf-8")
+            (root / relative).write_text("\n".join(phrases), encoding="utf-8")
 
         # A real relative link must resolve from the contract's directory.
         contract = root / "odd/tasks/ai-continuity-and-evidence-contract.md"
         contract.write_text(
-            "[ADR template](../../docs/decisions/ADR_TEMPLATE.md)\\n"
+            "[ADR template](../../docs/decisions/ADR_TEMPLATE.md)\n"
             + contract.read_text(encoding="utf-8"),
             encoding="utf-8",
         )
 
         agent = root / ".github/agents/test.agent.md"
         agent.parent.mkdir(parents=True, exist_ok=True)
-        agent.write_text("---\\nname: test\\ndescription: test profile\\n---\\n", encoding="utf-8")
+        agent.write_text("---\nname: test\ndescription: test profile\n---\n", encoding="utf-8")
 
     def test_valid_contract_and_local_link_pass(self):
         with tempfile.TemporaryDirectory() as directory:

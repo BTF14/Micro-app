@@ -1,25 +1,37 @@
-## Estado vigente — 2026-11-08 (posterior a PR #275)
+## Estado vigente — 2026-11-08 16:30 UTC (verificado contra GitHub)
 
-**Main:** 11ca2b49bfa650066a708d2423cc73cea6c99e2d (protegida). PR #275 se fusionó por squash en este SHA; PR #274 quedó cerrada como supersedida. #275 añadió el workflow manual `.github/workflows/neon-pinned-migration-rehearsal.yml` y el allowlist Gitleaks de un único fingerprint falso positivo. Ninguna migración Neon se ejecutó.
+**Main protegido:** `b10d029061a5258f37e4feba65a30dad683f563f`.
 
-### Estado de integración vivo
-- **#269 checkout + ledger:** Open/Draft; HEAD `bc3939510e132e6f77c751514ff1b7dca58cdd4d`; 15 ahead / 3 behind main; mergeable=false; 11/11 workflows SUCCESS en su HEAD. Mantener Draft: decisión comercial y rehearsal 0017–0019 pendientes.
-- **#255 BCV:** Open/Ready; HEAD `a19a5c61f3f9e878d531ef1150f9c1aa033d6cc7`; 53 ahead / 5 behind main; mergeable=false; 10/10 workflows SUCCESS en su HEAD. Persisten gates P1: política de anomalías, estado persistente/alerta y fixture HTML real BCV.
-- **#258 checkout:** Open/Ready; 35 ahead / 36 behind main; mergeable=false. #262 ledger: Open/Ready, 107 ahead / 36 behind main, apilada sobre #258. #269 conserva el contenido consolidado de ambas; mantener abiertas hasta confirmar integración en main.
-- **#233:** Open/Draft histórica, no fusionar por antigüedad. **#193:** Open; no modificar.
-- PR abiertas actuales: #269, #262, #258, #255, #233 y #193 (6).
+### Integración checkout + ledger
+- **PR #269:** Open/Draft; rama `feat/checkout-ledger-recovered-main-20261108`; HEAD `6227a3a8497f6be94d675b64da5da61530c200fc` (merge commit que incorpora main).
+- Comparación viva `main...HEAD`: **20 ahead / 0 behind**; GitHub `mergeable=true`. Se sincronizó sin force-push. Sigue Draft por los gates de producto/Neon.
+- **16/16 check-runs SUCCESS** y **11/11 workflows pull_request SUCCESS** en el HEAD exacto; además 3/3 workflows push SUCCESS. Incluye CI completo, PostgreSQL migration runner y migraciones/assertions 0001–0019 en PostgreSQL desechable, runtime-role smoke, Playwright E2E, backup/restore, SAST, dependency review, ODD validation, Gitleaks, Trivy y Cloudflare Pages/Workers builds.
+- Se corrigió el caso de escritura directa al ledger después de desactivar una sucursal: `validate_inventory_movement_source()` comprueba y bloquea `branches.is_active` con `FOR SHARE NOWAIT`. Assertion SQL y prueba de integración agregadas. La prueba con login runtime pasó; el log registra `INVENTORY_MOVEMENT_BRANCH_SCOPE_INVALID`.
+- Review thread inline resuelto tras la regresión. Las reviews de GitHub son COMMENTED, no APPROVE; no se afirma aprobación humana independiente.
+- No fusionar mientras la PR siga Draft y no estén cerrados los gates comerciales y de ensayo.
 
-### Neon rehearsal
-- Proyecto `restless-fire-99110035`; branch rehearsal `br-curly-poetry-b7dxsddm`; database segura objetivo `microapp_rehearsal`; rol `microapp_migrator`.
-- El run anterior #42479603848 del workflow antiguo `neon-rehearsal-migrations.yml`, tras la rotación del secreto, finalizó SUCCESS: conexión directa, secreto enmascarado/no vacío, identidad esperada y baseline 0002 verificado; pasos de escritura SKIPPED.
-- SELECT independiente posterior confirmó en `microapp_rehearsal`: current_database/rol/branch/project exactos; schemas solo pg_catalog, information_schema, pg_toast y public; 0 relaciones públicas, 0 funciones públicas y sin ledger. No se modificó la DB.
-- El nuevo workflow fijado está en main, pero **aún no se ha ejecutado**. Su modo predeterminado `verify-empty` es read-only. El conector GitHub disponible no permite iniciar workflow_dispatch; requiere una acción manual del propietario desde Actions.
-- Nunca usar la DB `neondb` de la rama rehearsal: es parent-data clone con filas heredadas. Neon main/producción fuera de alcance.
+### Neon pinned migration rehearsal
+- Workflow run #1: [42498486767](https://github.com/BTF14/Micro-app/actions/runs/42498486767), SUCCESS en main `b10d029061a5258f37e4feba65a30dad683f563f`.
+- Operación efectiva: `verify-empty`. Identidad comprobada: proyecto `restless-fire-99110035`, branch `br-curly-poetry-b7dxsddm`, database `microapp_rehearsal`, login/rol `microapp_migrator`; target vacío y sin relaciones/funciones públicas. No se ejecutó DDL/DML; baseline, migraciones y assertions quedaron SKIPPED.
+- **Pin pendiente:** el workflow de main todavía usa `SOURCE_SHA=bc3939510e132e6f77c751514ff1b7dca58cdd4d`. Run #1 verificó esa fuente anterior, no el HEAD actual `6227a3a8497f6be94d675b64da5da61530c200fc`. Antes de cualquier escritura hay que actualizar el pin al SHA final revisado y recalcular la confirmación exacta. No ejecutar `bootstrap-and-migrate` con el pin actual.
+- La DB `neondb` de la branch rehearsal es parent-data clone y está prohibida para escrituras. Neon main/producción fuera de alcance. No se aplicó ninguna migración remota.
 
-### Verificación post-merge #275
-- GitHub Actions en merge SHA: 9/9 workflow runs SUCCESS; required contexts `verify`, `postgres-migration`, `Chromium authentication smoke tests`, `JavaScript and TypeScript static analysis`, `Scan tracked files and reachable Git history` y `Trivy filesystem and configuration scan` en SUCCESS.
-- Cloudflare Pages y Workers Builds check-runs terminaron SUCCESS en el merge SHA. No se ejecutó smoke test HTTP autenticado contra endpoints productivos; por ello no se declara producción validada.
-- Producción: **NOT READY**. No DDL/DML remoto, no migraciones, no cambios de Neon main, secretos de producción, DNS o billing.
+### Otras PR abiertas (comparación viva contra main)
+- #255 BCV: 53 ahead / 6 behind; sigue separada y conserva gates P1 de anomalías/estado persistente/fixture HTML BCV.
+- #258 checkout: 35 ahead / 37 behind; #262 ledger: 107 ahead / 37 behind, ambas apiladas/antiguas. No fusionar independientemente.
+- #233 histórica Draft: 408 ahead / 58 behind; conservar hasta demostrar que no tiene contenido único.
+- #193 inventario Fase B: 5 ahead / 60 behind; **no modificar**.
+- Total PR abiertas observado: 6 (#269, #262, #258, #255, #233, #193).
+
+### Próximos gates
+1. Mantener #269 Draft hasta aprobar explícitamente el contrato comercial de checkout/pagos.
+2. Actualizar el pin del workflow Neon a la fuente final validada; ejecutar primero otro `verify-empty`.
+3. No ejecutar modo de escritura sin autorización explícita y específica para `microapp_rehearsal`; nunca Neon main, datos heredados ni producción.
+4. Después de la prueba de ensayo, reevaluar mergeabilidad y readiness. CI verde no equivale a producción.
+
+**Producción: NOT READY.** No hubo DDL/DML remoto, cambios de secretos, despliegue manual, DNS ni billing.
+
+---
 
 ## Estado reconciliado — 2026-11-08 (snapshot posterior a CI de PR #274)
 

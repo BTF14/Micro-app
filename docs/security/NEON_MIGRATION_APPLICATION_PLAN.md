@@ -1,3 +1,13 @@
+## Addendum — riesgo operativo del Cron de retención #251 — 2026-11-08 UTC
+
+- `main` contiene `[triggers].crons = ["17 * * * *"]` en `apps/api/wrangler.toml`; el handler `scheduled()` ejecuta `cleanupExpiredAuthRecords()` cuando `APP_ENV === "production"`. Esto confirma configuración de Cron en el código de main, **no** confirma que el Worker de producción haya recibido el despliegue ni que el Cron haya ejecutado.
+- `cleanupExpiredAuthRecords()` ejecuta dos DELETE independientes: primero `auth_rate_limits`, después `auth_bootstrap_attempts`. `withDatabaseClient()` no abre una transacción alrededor de ambas consultas.
+- La última lectura de Neon main documentada en este plan y la rama rehearsal basada en ese snapshot no contienen `auth_bootstrap_attempts`; tampoco están aplicadas las migraciones 0003–0016. Si el Worker con ese Cron ya está desplegado y su `DATABASE_URL` apunta a ese esquema, la segunda consulta fallará por relación ausente; la primera consulta puede haber confirmado por separado. La ejecución real y los logs de Cloudflare siguen sin estar verificados.
+- No se desactivó el Cron ni se tocó Cloudflare. El workflow de rehearsal añade postflight para exigir ambas tablas y los SELECT/DELETE mínimos de `microapp_runtime` que necesitan las dos consultas. La solución estructural es ensayar y validar la cadena de migraciones en rehearsal, y mantener Neon main y secretos fuera de alcance hasta la autorización específica de Fase 2/3.
+- No revertir #251 automáticamente: primero comprobar despliegue/logs mediante un canal autorizado y completar la ruta de migraciones aislada.
+
+---
+
 ## Addendum — runner Neon rehearsal preparado, no activado — 2026-11-08 UTC
 
 - Se preparó en la rama `security/neon-rehearsal-migration-runner-20261108` el workflow `.github/workflows/neon-rehearsal-migrations.yml`.

@@ -1,3 +1,9 @@
+## Snapshot operativo vigente — 2026-11-08 (supersede la tabla histórica inmediatamente inferior)
+
+- main: 33016a2d206c7b8cfc60e53e34a56a26651141d7 (protegida; 6 contextos requeridos expuestos por GitHub).
+- PR abiertas: #274 (workflow de rehearsal, 10/10 workflows SUCCESS en HEAD ee04e6d97b179a86ea842f8a1ae8a03b4c33a134; sin reviews formales), #269 (checkout+ledger Draft; 11/11), #262 (ledger apilada), #258 (checkout), #255 (BCV; 10/10), #233 (histórica Draft), #193 (no modificar).
+- El detalle vivo y los bloqueos están en docs/CURRENT_STATE.md y docs/WORK_CHECKPOINT.md. Las tablas históricas de abajo no representan el estado actual y deben tratarse como historial.
+
 ## Reconciliación operativa posterior al merge #251 — 2026-11-08
 
 **Fuente de verdad:** GitHub en vivo. **main:** `8c13da8b2d55d0a45490b19499b1b7c53e0ec966` (protegida). PR #251 está fusionada en este commit; #257 y #259 también están integradas. El inventario vivo muestra **6 PR abiertas**, no 26.

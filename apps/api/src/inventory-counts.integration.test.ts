@@ -663,10 +663,6 @@ describe.skipIf(!databaseUrl)("warehouse inventory count transactions against Po
         [organizationId, branchId, warehouseId, productId, userId],
       );
       await client.query(
-        "UPDATE inventory_balances SET on_hand_quantity = 8.250 WHERE organization_id = $1 AND warehouse_id = $2 AND product_id = $3",
-        [organizationId, warehouseId, productId],
-      );
-      await client.query(
         `INSERT INTO warehouse_inventory_movements
           (organization_id, branch_id, warehouse_id, product_id, movement_type, quantity_delta, reason, actor_user_id)
          VALUES ($1, $2, $3, $4, 'reversal', -0.250, 'ABA test return to original quantity', $5)`,

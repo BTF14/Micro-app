@@ -2146,3 +2146,14 @@ No se tocaron Neon main, datos reales, secretos, Worker productivo, DNS, billing
 
 - En main 11ca2b49bfa650066a708d2423cc73cea6c99e2d, los check-runs Cloudflare Pages y Workers Builds: micro-app-api finalizaron SUCCESS, al igual que los seis contextos requeridos y el resto de check-runs observados.
 - Esto confirma los checks/builds de Cloudflare asociados al merge, no un smoke test HTTP autenticado ni la validación de flujos reales de producción. Producción sigue NOT READY.
+
+
+## 2026-11-08 — PR #278 integrada: fetch del SHA inmutable para Neon rehearsal
+
+- Run Neon pinned rehearsal #2 `42502075476` falló en `Fetch and verify pinned migration source`: el workflow hacía fetch de la rama mutable `feat/checkout-ledger-recovered-main-20261108` y exigía que su HEAD fuera `6227a3a8497f6be94d675b64da5da61530c200fc`; la rama ya había avanzado a `a750d1868f0ad4ae78b3de197d160d376af688ab` por cambios documentales. Falló antes de extraer SQL, conectar a Neon o ejecutar cualquier migración.
+- PR [#278](https://github.com/BTF14/Micro-app/pull/278), branch `fix/neon-pinned-source-fetch-20261108`, HEAD `b444344543a2edafaa70cf68f8450cade73c9fc4`, se revisó manualmente y fusionó por squash. Merge SHA/main: `209e3fe9f99c96a07546bb87c04b90755257d918`.
+- Diff único en `.github/workflows/neon-pinned-migration-rehearsal.yml`: fetch directo de `SOURCE_SHA`, validación exacta de FETCH_HEAD; conserva pin, DB objetivo `microapp_rehearsal`, verify-empty predeterminado y confirmación separada para escritura.
+- Checks PR exact-HEAD: 9/9 workflow runs SUCCESS. Branch protection de main verificada, seis contextos requeridos. No formal reviews ni hilos; se registró revisión técnica asistida, no aprobación humana independiente.
+- Primera lectura de check-runs post-merge en SHA `209e3fe...`: Chromium queued; Workers Builds, Trivy, migration-runner, postgres-migration, static analysis, dashboard, verify, secret-history y Pages in_progress. Resultado final pendiente.
+- No se despachó workflow de Neon, no hubo conexión Neon, DDL/DML, bootstrap-and-migrate, cambios de secretos ni datos reales. Siguiente acción: propietario ejecuta solo `verify-empty` desde Actions/main; luego revisar logs exactos. Ninguna autorización de escritura remota concedida.
+- Producción continúa NOT READY.

@@ -1,3 +1,162 @@
+## Reconciliación operativa posterior al merge #251 — 2026-11-08
+
+**Fuente de verdad:** GitHub en vivo. **main:** `8c13da8b2d55d0a45490b19499b1b7c53e0ec966` (protegida). PR #251 está fusionada en este commit; #257 y #259 también están integradas. El inventario vivo muestra **6 PR abiertas**, no 26.
+
+| PR | HEAD | Base actual | Estado GitHub | Check-runs exact-HEAD | Decisión |
+|---|---|---|---|---:|---|
+| #255 BCV | `f49fb402f9bd5a40591970c9efe3665a5e212ebb` | `main` | Ready, mergeable clean | 15/15 SUCCESS | Desapilada de #251; no fusionar todavía: faltan gates Neon/runtime/Cron. |
+| #258 checkout | `8935842cab6a7e2b8a6c0aa078e9b3e77866e48c` | `main` | Ready, mergeable=false, dirty | 16/16 SUCCESS | Conflicto de integración; sincronizar y revisar contra main antes de cualquier merge. |
+| #261 documentación | `9b376b23c0c5967210533ab60ce7c968a83a07cb` | `main` | Ready, mergeable clean | 14/14 SUCCESS en el HEAD anterior a esta actualización | Este commit de reconciliación cambia su HEAD; volver a validar CI exact-SHA. |
+| #262 ledger/proyección | `19103c000b354da85c1a478867a6a18e2ec25cd7` | rama #258, base registrada `df1ba996babb859a83da09d72cdec63a69b3965c` | Ready, mergeable clean | 8/8 SUCCESS | Mantener apilada; depende de sincronizar/reconstruir #258. |
+| #233 checkout histórico | `07a13c7eb68e0e933f93f35a1ecd9a22f19bf2d0` | `docs/sales-checkout-design-gates-20261105` | Draft | 9/9 (snapshot previo) | No fusionar; conservar como fuente histórica hasta confirmar que #258 recupera todo lo único. |
+| #193 Fase B inventario | `ac57ab4f3415f82279b8a49c0befe09f8e3aec68` | main histórico | Open, no Draft | 12/12 (snapshot previo) | Restricción expresa: no modificar. |
+
+Los checks indicados son check-runs de los SHA señalados; no deben confundirse con workflow runs, status contexts, aprobación formal o pruebas en producción. El endpoint completo de protección de rama devolvió 403; se conoce la lista de contextos requeridos expuesta por GitHub, pero no se debe inferir desde esa respuesta que no exista una regla adicional de reviews.
+
+### Hallazgo operativo de Neon — solo lectura
+
+Rama de ensayo existente: `rehearsal-baseline-20261107` (`br-curly-poetry-b7dxsddm`), proyecto `restless-fire-99110035`, base `neondb`.
+
+- No existen `schema_migrations` ni `app_schema_migrations`.
+- `exchange_rates.rate`, `sales.exchange_rate_snapshot` y `payments.exchange_rate_snapshot` siguen en `NUMERIC(14,6)`; migration 0013 no está aplicada allí.
+- `microapp_runtime` tiene USAGE en `public`, no CREATE, y no tiene SELECT/INSERT/UPDATE/DELETE en `exchange_rates`.
+- `microapp_migrator` puede iniciar sesión directamente, tiene CREATE en `public` y es owner de `exchange_rates`; la identidad consultada fue `current_user=session_user=microapp_migrator`.
+- La prueba bajo `microapp_runtime` confirmó `current_user=session_user=microapp_runtime` y ausencia de permisos de tabla sobre `exchange_rates`.
+- No se ejecutó DDL/DML ni se modificó Neon. El branch `main` de Neon permanece fuera de alcance.
+
+El workflow `.github/workflows/migration-runner.yml` prueba el runner contra PostgreSQL desechable local de GitHub Actions. No es un runner protegido que aplique migraciones a Neon. No afirmar lo contrario ni usar SQL manual para saltarse el flujo.
+
+### Bloqueos de integración y producción
+
+- **#255:** aunque sus 15 check-runs están verdes y GitHub lo reporta limpio tras retarget a main, su Cron de lunes a viernes a las 22:00 UTC escribirá en `exchange_rates`. No fusionar/activar hasta disponer de una ruta reproducible de baseline/migración en la rama de ensayo, verificar migration 0013 y sus grants con login directo `microapp_migrator`, probar `microapp_runtime` y confirmar el principal/configuración real del Worker sin revelar secretos. La documentación de PR #255 ya registra estos hallazgos.
+- **#258:** el HEAD exacto tiene 16/16 checks verdes, pero GitHub lo reporta `dirty` y la comparación con main muestra 29 commits de retraso. Además, el contrato comercial de pago (una moneda de liquidación por venta, pago exacto completo, sin parcial/sobrepago) debe estar explícitamente aprobado antes de habilitar checkout.
+- **#262:** su base es un HEAD anterior de la rama #258; no integrar independientemente. Su mejora P1 de proyección ledger→balance tiene un residual: el actor declarado en PostgreSQL no queda criptográficamente ligado a la sesión HTTP; `authorizeBranchOperation` sigue siendo obligatorio y otros tipos de movimiento deben permanecer bloqueados.
+- **#261:** el snapshot anterior afirmaba que main era `d28b80e` y que #251 no estaba fusionada; eso ya es falso. Esta actualización reemplaza el encabezado operativo. Las secciones posteriores con snapshots fechados se conservan como historial, no como estado actual.
+- **#193:** no tocar ni cerrar; conservar el alcance y los hallazgos de permisos ya documentados.
+- **Producción: NOT READY.** CI verde y builds Cloudflare de PR son evidencia de CI/preview, no prueba de producción. No se ha demostrado la aplicación de migraciones en Neon main, identidad/grants efectivos del Worker, smoke test autenticado de producción, backup/restore operativo ni readiness end-to-end.
+
+### Proceso de único mantenedor
+
+No crear otra cuenta ni fabricar una aprobación GitHub. Registrar por separado: revisión técnica asistida por IA, resultados CI exact-SHA, hallazgos/resoluciones y autorización del propietario. Una revisión asistida por IA no se denomina aprobación humana independiente. La autorización permanente del propietario del 2026-11-05 permite fusionar PR que superen todos los gates aplicables y contempla el despliegue automático inherente; no amplía permisos para Neon main, migraciones remotas, secretos, datos reales, cambios manuales de Cloudflare, DNS o billing.
+
+### Siguiente secuencia
+
+1. Terminar esta reconciliación documental y validar el nuevo HEAD de #261.
+2. Resolver #258 contra el main actual sin force-push y sin perder cambios únicos; mantener #262 apilada hasta entonces.
+3. Completar el procedimiento reproducible de baseline/migración solo en Neon rehearsal; no tocar Neon main.
+4. Revalidar #255 exact-HEAD y sus gates antes de considerar integración.
+5. Revisar producto, permisos y flujos end-to-end antes de habilitar checkout.
+6. Mantener #193 intacta y cerrar #233 únicamente después de demostrar que no conserva contenido único.
+
+\n## Estado GitHub verificado — 2026-11-08 ~09:20 UTC
+
+**Fuente de verdad:** GitHub API. `main` protegido, HEAD `d28b80edc6b2a63019ded100e46bb4b11e81153a`. No se realizó ningún merge en esta sesión.
+
+| PR | HEAD exacto | Base | Estado | Checks exact-HEAD |
+|---|---|---|---|---:|
+| #251 auth retention | `30ec0cedafbb8281c7b5ea56572581ddc022a180` | main (base snapshot `0a9e2f7...`) | Ready for review | 15/15 SUCCESS |
+| #255 BCV | `f49fb402f9bd5a40591970c9efe3665a5e212ebb` | #251 | Ready for review | 15/15 SUCCESS |
+| #258 atomic checkout | `8935842cab6a7e2b8a6c0aa078e9b3e77866e48c` | main (base snapshot `0a9e2f7...`) | Ready for review | 16/16 SUCCESS |
+| #261 state docs | `dd50e49451febfc9ecf1f9ce850dc6a1d31d41e3` | main | Ready for review | 14/14 SUCCESS |
+| #262 ledger projection | `c09bc06a2caa4b99728073bd4acb8063c6187299` | #258 | Ready for review | 8/8 SUCCESS |
+| #193 Phase B scope | `ac57ab4f3415f82279b8a49c0befe09f8e3aec68` | main snapshot `705d3db...` | Open, not Draft | 12/12 SUCCESS |
+| #233 historical checkout | `07a13c7eb68e0e933f93f35a1ecd9a22f19bf2d0` | historical docs branch | Draft | 9/9 SUCCESS |
+
+**Formal reviews:** #251, #255, #258, #261 and #262 have zero formal reviews and zero unresolved review threads. Green CI is not approval.
+
+### Ledger P1 — remediation verified
+- #262 migration 0019 revokes runtime direct balance writes and projects ledger movements through SECURITY DEFINER triggers.
+- Count movements require a matching confirmed count and line; confirmer must be active owner/admin/inventory, with active branch membership for inventory. Opening count requires an empty warehouse. Physical count movement rechecks expected on-hand quantity and balance_version under the warehouse mutex.
+- Actor role/scope is revalidated at movement insertion with NOWAIT locks; sale movements must match a draft sale and exact sale line. Unsupported purchase/transfer/return/reversal movement types remain blocked.
+- Exact HEAD #262 `c09bc06a2caa4b99728073bd4acb8063c6187299`: 8/8 SUCCESS, including actual `microapp_runtime` login smoke, unauthorized cashier rejection, stale snapshot rejection, PostgreSQL integration and backup/restore. P1 follow-up comment: https://github.com/BTF14/Micro-app/pull/262#issuecomment-6719627864.
+- Residual: shared runtime role validates the claimed actor's role/scope but does not cryptographically bind `actor_user_id` to the HTTP session. Application `authorizeBranchOperation` remains mandatory. No new movement types until their source-document contracts exist.
+
+### Integración ordenada
+1. #251 → #255 (auth retention root, then official BCV ingestion).
+2. #258 (checkout, including 0017 weekend effective date and 0018 payment allocation). After #255 merges, sync/reconcile #258 `index.ts` route registration and `wrangler.toml` Cron configuration, then rerun checks on its new HEAD.
+3. #262 (after #258 merges, retarget its base to main and rerun exact-HEAD checks).
+4. #261 documentation can be merged independently after formal review.
+5. Keep #233 open until #255/#258 are integrated, then close as superseded based on its completed tree/migration audit. Do not modify #193 under the existing constraint; preserve its Phase B design document for separate review.
+
+**Producción: NOT READY.** No Neon main, real data, secrets, production Worker, DNS, billing or manual deployment changed. Neon runtime identity/ownership and protected rehearsal remain unverified. No screenshots, Build IDs, terminal, CLI or TinyFish required from the user.
+
+---
+
+## Seguimiento técnico — 2026-11-08 ~08:55 UTC
+
+### PR #262 — resultado de la última ejecución y corrección siguiente
+- HEAD `440f9c07aa80a980d8bdb7dcb7bbebada4fec0f8`: la migración PostgreSQL, backup/restore, seguridad, build Cloudflare y demás checks pasaron; `verify` falló en una única prueba de inventario (23/24 tests pasaron).
+- Fallo exacto: `CONFIRMED_INVENTORY_COUNT_LINES_IMMUTABLE` durante la limpieza de un fixture, no en el flujo de producción. El test intentaba borrar una línea de conteo ya confirmada.
+- Corrección enviada en HEAD `f22aafa36236e1a49d67e051c2c4ca32c4f180dc`: deshabilita temporalmente triggers USER de `inventory_count_lines` y `inventory_counts` solo durante la limpieza del fixture desechable, y los vuelve a habilitar en `finally`. Check-runs de este SHA quedaron queued/in progress al momento de escribir esta nota. No declarar #262 verde todavía.
+- La prueba ABA ya usa dos conteos físicos confirmados para probar el retorno 8.250 → 8.500 → 8.250; el conteo cero espera ausencia de fila de balance, según el contrato de la migración 0019.
+
+### Auditoría de PR #233 — extracción histórica concluida
+- El compare de #233 contra su base vieja muestra 408 commits ahead / 22 behind y un diff grande; no es una PR de un solo documento.
+- Comparé los árboles completos de #233, main, #258 y #255. Las migraciones históricas de almacenes, roles, audit logs, conteos, ledger y auth bootstrap coinciden byte-a-byte con las migraciones actuales correspondientes, salvo comentarios de numeración en algunos archivos.
+- La antigua migración 0015 de checkout es una versión anterior; la migración actual de main es más completa. El handler/tests de checkout históricos están reemplazados por #258; exchange-rates y documento BCV están reemplazados por #255.
+- El único documento aislado `docs/security/AUTH_RATE_LIMIT_DEPLOYMENT.md` está obsoleto y contradice #251: exige `AUTH_RATE_LIMIT_HMAC_KEY` y prohíbe reutilizar `GOOGLE_CLIENT_SECRET`, mientras #251 reutiliza el secreto OAuth existente como pepper y declara que no agrega un secreto nuevo. No copiarlo.
+- Comentario de auditoría publicado en #233: https://github.com/BTF14/Micro-app/pull/233#issuecomment-6719439571. Mantener #233 abierta como registro hasta integrar y validar #258/#255; después cerrar como supersedida. No se ha perdido una implementación vigente.
+
+### PRs listas para review formal
+- #258 HEAD `8935842cab6a7e2b8a6c0aa078e9b3e77866e48c`: 15/15 SUCCESS; Ready for review.
+- #251 HEAD `30ec0cedafbb8281c7b5ea56572581ddc022a180`: 15/15 SUCCESS; Ready for review.
+- #255 HEAD `f49fb402f9bd5a40591970c9efe3665a5e212ebb`: 15/15 SUCCESS; Ready for review; base #251.
+- Ninguna tiene aprobación formal independiente. No autoaprobar. #258 mantiene pendiente la confirmación funcional final del contrato de pago; #251/#255 conservan los gates de rehearsal y feriados descritos arriba.
+
+No se tocaron Neon main, datos reales, secretos, Worker productivo, DNS, billing ni deploy manual. Producción NOT READY.
+
+---
+
+## Actualización de estado en vivo — 2026-11-08 ~08:50 UTC
+
+- `main` confirmado: `d28b80edc6b2a63019ded100e46bb4b11e81153a`.
+- **#258 checkout:** HEAD `8935842cab6a7e2b8a6c0aa078e9b3e77866e48c`; 15/15 check-runs SUCCESS en ese SHA; mergeable clean; convertido de Draft a Ready for review. Compare con main vivo: 35 ahead / 1 behind. Requiere review formal independiente; sigue pendiente la confirmación funcional final del contrato de liquidación.
+- **#251 retención auth:** HEAD `30ec0cedafbb8281c7b5ea56572581ddc022a180`; 15/15 SUCCESS; mergeable clean; Ready for review. Compare con main: 27 ahead / 1 behind. No activar Cron productivo ni fusionar antes de review y rehearsal de Neon/runtime.
+- **#255 BCV:** HEAD `f49fb402f9bd5a40591970c9efe3665a5e212ebb`; 15/15 SUCCESS; mergeable clean; Ready for review. Apilada sobre #251. Compare con main: 74 ahead / 1 behind. El manejo de feriados bancarios entre semana permanece fail-closed y documentado como limitación.
+- **#262 ledger:** HEAD actual `7204d327cf8c2dbd7648533ec0c351fae042df16`; PR sigue Draft. La ejecución exact-HEAD anterior `7d626512e25dee603429786c53647d401acfb8c3` pasó las pruebas PostgreSQL/migración, pero falló `verify` en TypeScript por la firma nueva de `lockInventoryBalances` en checkout. Se corrigió la llamada pasando el par warehouse/branch; los checks nuevos de 7204 están en ejecución. No considerar P1 cerrado hasta CI verde y revisión final.
+- **#261 documentación:** HEAD observado antes de esta actualización `5d7c0ef985589d0561fb71f5473f56c1dfc44b42`; 14/14 SUCCESS en ese SHA; Draft; mergeable clean. Compare con main: 19 ahead / 1 behind. Esta actualización vuelve a disparar sus checks.
+- **#193 inventario Fase B:** HEAD `ac57ab4f3415f82279b8a49c0befe09f8e3aec68`; compare con main: 5 ahead / 24 behind; el único archivo diferencial contra main es `docs/sdd/PHASE_B_BRANCH_INVENTORY_SCOPE.md` (543 líneas). Mantener y preservar; no cerrar por antigüedad.
+- **#233 checkout histórico:** Draft, HEAD `07a13c7eb68e0e933f93f35a1ecd9a22f19bf2d0`, base antigua `docs/sales-checkout-design-gates-20261105`; compare contra su base: 408 ahead / 22 behind y más de 100 archivos diferenciales. No fusionar ni cerrar; requiere comparación controlada contra main y extracción de aportaciones únicas. No describirlo como una PR de un solo documento.
+- No hay reviews formales independientes registradas en estas PR al momento de esta actualización. Checks verdes no equivalen a aprobación.
+- El hallazgo P1 #262 fue seguido con el comentario #6719397793: el trigger nuevo permite solo conteos confirmados y ventas vinculadas a una venta draft/línea exacta; los demás tipos de movimiento se rechazan hasta existir documentos fuente y flujos autorizados. La corrección sigue pendiente de CI exact-HEAD.
+- No se modificaron Neon main, datos reales, secretos, Worker productivo, DNS, billing ni se ejecutó deploy manual. Producción sigue NOT READY.
+
+### Próxima secuencia
+1. Esperar y resolver los checks exact-HEAD de #262; inspeccionar cualquier fallo, no rerun ciego.
+2. Terminar revisión de #262, confirmar el flujo checkout con proyección y pruebas runtime de movimientos no autorizados.
+3. Obtener review formal de #258, #251 y #255; no autoaprobar trabajo propio. Mantener el gate funcional de checkout y los gates de Neon.
+4. Actualizar esta reconciliación cuando #262 termine; luego preparar #261 para review.
+5. Preservar #193 y hacer extracción controlada de #233 sin descartar contribuciones únicas.
+
+---
+
+## Prioridad operativa — reconciliada 2026-11-08 08:25 UTC
+
+El estado actual de GitHub, la matriz de siete PR abiertas y los bloqueos exactos están en `docs/CURRENT_STATE.md`. Main vivo `d28b80edc6b2a63019ded100e46bb4b11e81153a`. No usar los snapshots históricos inferiores como estado actual.
+
+1. #258/#262: completar revisión de checkout y proyección ledger; resolver el hallazgo P1 #6719238384 antes de exponer movimientos sin documento fuente.
+2. #258: obtener decisión explícita de producto sobre liquidación en una sola moneda, pago exacto, sin parcial ni sobrepago.
+3. #251 → #255: revisar la raíz primero; mantener Cron desactivado hasta rehearsal protegido y verificación de runtime login, ownership y grants.
+4. #261: reconciliación documental en curso; #193 y #233 conservan material que debe revisarse antes de cerrar.
+5. Producción NOT READY: no Neon main, secretos, configuración Cloudflare manual, DNS, billing ni deploy manual.
+
+---
+
+## Prioridad operativa — 2026-11-08 06:45 UTC
+
+El estado vivo de GitHub está registrado en `docs/CURRENT_STATE.md` y el checkpoint de continuidad. Main es `0a9e2f7c0d8b4d68b1efe6b372c10c107b160d67`; hay seis PR abiertas (#193, #233, #251, #255, #258 y #261, esta reconciliación documental). #251, #255 y #258 tienen 15/15 check-runs y 13/13 workflow runs SUCCESS en sus HEADs exactos; siguen Draft y sin review formal independiente.
+
+Orden:
+1. Revisión independiente y gates de integración de #251 → #255.
+2. Revisión completa de #258, incluyendo migrations 0017/0018, checkout transaccional, rate limit y sus 19 pruebas PostgreSQL exact-SHA.
+3. Resolver Neon rehearsal/runner/identidad/grants sin tocar Neon main.
+4. Resolver proyección de balances SECURITY DEFINER, decisión comercial de pago, feriados y UI checkout.
+5. Preservar y revisar el documento único de #193; no cerrar #233 hasta completar provenance del contenido histórico.
+
+No interpretar CI verde como aprobación ni readiness productiva.
+
+---
+
 ## Prioridad operativa — 2026-11-08 UTC
 
 ## Estado operativo autoritativo — 2026-11-08 UTC

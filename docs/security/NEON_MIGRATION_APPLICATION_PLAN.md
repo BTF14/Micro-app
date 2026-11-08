@@ -1,3 +1,39 @@
+## Addendum — Neon main confirmado en vivo por SELECT — 2026-11-08 UTC
+
+Lectura directa y de solo lectura sobre Neon main `br-summer-math-b7297a60`, proyecto `restless-fire-99110035`, base `neondb`, sesión `neondb_owner`:
+
+- No existen roles `microapp_runtime` ni `microapp_migrator`.
+- No existen `schema_migrations`, `auth_bootstrap_attempts`, `branches`, `warehouses` ni `inventory_balances`.
+- Sí existe `auth_rate_limits`.
+- `exchange_rates.rate` continúa `NUMERIC(14,6)`.
+- La identidad de la sesión confirmó branch ID `br-summer-math-b7297a60` y project ID `restless-fire-99110035`.
+
+Esto confirma que Neon main sigue en el esquema base 0001–0002, mientras main del repositorio contiene código/migraciones posteriores. El Cron de retención #251 está configurado en el código de main, pero no se ha verificado deployment ni ejecución real. Si está desplegado contra este esquema, la consulta de `auth_bootstrap_attempts` fallará por tabla ausente. No se cambió Neon main; no se ejecutó DDL/DML ni se leyeron filas de negocio.
+
+---
+
+## Addendum — riesgo operativo del Cron de retención #251 — 2026-11-08 UTC
+
+- `main` contiene `[triggers].crons = ["17 * * * *"]` en `apps/api/wrangler.toml`; el handler `scheduled()` ejecuta `cleanupExpiredAuthRecords()` cuando `APP_ENV === "production"`. Esto confirma configuración de Cron en el código de main, **no** confirma que el Worker de producción haya recibido el despliegue ni que el Cron haya ejecutado.
+- `cleanupExpiredAuthRecords()` ejecuta dos DELETE independientes: primero `auth_rate_limits`, después `auth_bootstrap_attempts`. `withDatabaseClient()` no abre una transacción alrededor de ambas consultas.
+- La última lectura de Neon main documentada en este plan y la rama rehearsal basada en ese snapshot no contienen `auth_bootstrap_attempts`; tampoco están aplicadas las migraciones 0003–0016. Si el Worker con ese Cron ya está desplegado y su `DATABASE_URL` apunta a ese esquema, la segunda consulta fallará por relación ausente; la primera consulta puede haber confirmado por separado. La ejecución real y los logs de Cloudflare siguen sin estar verificados.
+- No se desactivó el Cron ni se tocó Cloudflare. El workflow de rehearsal añade postflight para exigir ambas tablas y los SELECT/DELETE mínimos de `microapp_runtime` que necesitan las dos consultas. La solución estructural es ensayar y validar la cadena de migraciones en rehearsal, y mantener Neon main y secretos fuera de alcance hasta la autorización específica de Fase 2/3.
+- No revertir #251 automáticamente: primero comprobar despliegue/logs mediante un canal autorizado y completar la ruta de migraciones aislada.
+
+---
+
+## Addendum — runner Neon rehearsal preparado, no activado — 2026-11-08 UTC
+
+- Se preparó en la rama `security/neon-rehearsal-migration-runner-20261108` el workflow `.github/workflows/neon-rehearsal-migrations.yml`.
+- El workflow solo admite `workflow_dispatch` desde `main`; el modo predeterminado es `verify`. El modo `adopt-and-migrate` exige escribir la confirmación exacta `APPLY-ONLY-br-curly-poetry-b7dxsddm`.
+- Antes de cualquier operación valida en SQL la base `neondb`, el login directo `microapp_migrator`, el branch ID `br-curly-poetry-b7dxsddm` y el project ID `restless-fire-99110035`. Un destino distinto falla cerrado.
+- Usa exclusivamente el secreto nuevo `NEON_REHEARSAL_DATABASE_URL`, que debe ser una conexión directa/no pooler de `microapp_migrator` a esa rama de ensayo. El mismo URL se usa para `adopt-baseline.sh` y `migrate.sh`; el esquema actual y la huella exacta 0002 ya fueron comprobados.
+- En modo `verify` solo ejecuta `adopt-baseline.sh verify`; en modo `adopt-and-migrate` aplica baseline 0001–0002 y luego la cadena numerada del repositorio mediante `migrate.sh`, seguida de verificaciones de ledger, ownership y grants BCV.
+- **No se creó ni modificó ningún secreto y el workflow no se ha ejecutado.** El PR que contiene el workflow es preparación de repositorio; el propietario debe autorizar explícitamente crear/usar el secreto y activar el modo de escritura. Neon main, secretos de producción y Worker `DATABASE_URL` permanecen fuera de alcance.
+- El workflow no se dispara por push ni por PR y no tiene ruta a Neon main: está diseñado para ejecución manual y destino fijo de rehearsal.
+
+---
+
 # Addendum vivo — 2026-11-08 UTC — estado de PR y gate del runner
 
 - GitHub main `96e2e2d9f76bc8fcc3bab2fa9503e480545c8869`; PR #251 HEAD `5dec5d5a9025de16b19d0cb7cfeac6585e2ad5d6`, 15/15 check-runs SUCCESS; PR #255 HEAD `35b9ac6894f79c5760a1f56fb37506ed2278afa0`, base #251, 13 workflow runs + 15/15 check-runs SUCCESS. Ambas Draft y sin revisión formal.

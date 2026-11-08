@@ -18,6 +18,13 @@ Describe el resultado que necesitas. El agente explora primero y aplica el proce
 6. **Implementar y verificar por unidades.** Resolver tareas en el orden más pequeño que conserve coherencia. Aplicar test-first cuando exista una prueba determinista ejecutable y un resultado esperado claro (RED → GREEN → REFACTOR); explicar excepciones. Cada tarea se cierra con evidencia observada, no con una casilla marcada por intención. Ejecutar validaciones proporcionales al riesgo y revisar el diff completo. Separar revisiones de arquitectura, seguridad/datos, QA y documentación; afirmar delegación solo si el runtime confirma subagentes reales.
 7. **Cerrar y dar continuidad.** Informar qué cambió, SHA/PR, pruebas y resultados exactos, limitaciones, riesgos residuales y siguiente paso. Actualizar `CURRENT_STATE`, `HANDOFF_NEXT_CHAT` y `STATE_JOURNAL` solo cuando el hito lo justifique, sin duplicar contenido. No declarar completo lo que tenga checks pendientes o evidencia insuficiente.
 
+## Continuidad y memoria de trabajo
+
+- Aplica el [contrato de continuidad y evidencia](../odd/tasks/ai-continuity-and-evidence-contract.md) en trabajos sustanciales y al cambiar de chat/agente.
+- El checkpoint es un índice para reanudar, no una fuente de verdad paralela: contrasta sus SHA/estados con GitHub antes de actuar y corrige discrepancias relevantes.
+- Cierra cada bloque sustancial con un handoff reproducible y compacto; marca expresamente qué evidencia pertenece a snapshots históricos.
+- Registra decisiones duraderas en ADR solo cuando afecten arquitectura, seguridad, datos, contratos o integración. Conserva historial y enlaza decisiones sustituidas.
+
 ## Profundidad por riesgo
 
 | Nivel | Aplicación |

@@ -62,6 +62,13 @@ Este archivo es el punto de entrada operativo. La autoridad normativa está en `
 - Si no hay delegación real, realiza pasadas de revisión independientes (arquitectura, seguridad/datos, QA y documentación según corresponda) y dilo con claridad.
 - No habilites hooks, servicios, MCPs o agentes externos sin revisar licencia, coste, permisos, seguridad y procedimiento de desinstalación.
 
+## Continuidad verificable y decisiones
+
+- Aplica `odd/tasks/ai-continuity-and-evidence-contract.md` como contrato transversal para inicio, cierre, handoff, decisiones y evidencia.
+- Antes de actuar, contrasta los checkpoints con GitHub vivo; los snapshots y la memoria del chat nunca sustituyen la verificación de HEAD, base, PR, checks y reviews.
+- Para decisiones de arquitectura, seguridad, datos o integración con efecto duradero, registra un ADR en `docs/decisions/`; no crees ADR para decisiones triviales.
+- Cada bloque sustancial debe dejar rama/PR/HEAD, pruebas exact-SHA, límites, riesgos y siguiente acción reproducible.
+
 ## Evidencia y continuidad
 
 - Registra comandos, entorno, SHA, resultados y límites de las pruebas. No extrapoles evidencia de un commit anterior.

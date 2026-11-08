@@ -1,3 +1,18 @@
+# Estado vivo de seguridad — 2026-11-08 UTC
+
+> Este bloque prevalece sobre snapshots inferiores. No confundir implementación en GitHub con activación en producción.
+
+- Rate limiting OAuth de #213 está integrado en main con UPSERT atómico y pruebas.
+- Cleanup auth de 48 h está implementado en #251, HEAD `5dec5d5a9025de16b19d0cb7cfeac6585e2ad5d6`, 15/15 check-runs SUCCESS. Cron permanece Draft y bloqueado hasta que Neon main tenga el esquema/grants y se verifique el login real `microapp_runtime`.
+- BCV oficial está implementado en #255, HEAD `35b9ac6894f79c5760a1f56fb37506ed2278afa0`, 15/15 check-runs SUCCESS. Latest y cliente usan no-store; el dashboard revalida al cambio de fecha Caracas. No hay calendario oficial de feriados entre semana: fail closed. No fusionar ni activar Cron hasta migration 0013 aplicada mediante runner autorizado y runtime grants verificados.
+- Neon main no tiene `microapp_runtime`, `microapp_migrator`, `schema_migrations` ni `auth_bootstrap_attempts`; rehearsal tiene los logins, pero runtime carece de grants de tabla y no se han aplicado 0003–0016. El workflow de migration runner valida PostgreSQL efímero, no Neon. No usar SQL manual para aplicar migraciones.
+- **Hallazgo de sesión pendiente:** `apps/api/src/google-auth.ts` conserva `SESSION_TTL_SECONDS = 7 * 24 * 60 * 60`. La auditoría histórica #211 recomendó revisar la exposición de una sesión robada durante 7 días. No reducir TTL silenciosamente: documentar el riesgo y obtener decisión de producto/seguridad sobre duración, renovación y revocación antes de cambiar el contrato.
+- Hallazgos históricos de #211: rate limiting ausente ya resuelto por #213; transporte del bootstrap ya corregido (POST, validación Origin, handoff ligado a OAuth state); TTL de sesión sigue abierto; duplicación de validación de origen requiere consolidación/revisión. #211 sigue abierta hasta preservar y disponer estos hallazgos.
+- #200, #204, #205, #207–#210 y #227–#232 cerradas como supersedidas con evidencia; no se descartaron funcionalidades. #257 conserva los ODD de inventario. #193/#202/#211/#233 siguen abiertos para reconciliación.
+- No se modificaron secretos, Neon main, datos reales, Cloudflare production, DNS ni billing. Producción **NOT READY**.
+
+---
+
 # Estado vivo de seguridad — 2026-11-07 UTC (corregido)
 
 > Sustituye los snapshots antiguos de estado que aparecen debajo. Main actual: `a38463ea00415c7601d716132e70a29e381a2e34`.

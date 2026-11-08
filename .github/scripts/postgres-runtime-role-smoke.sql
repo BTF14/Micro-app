@@ -232,7 +232,7 @@ BEGIN
   VALUES ('11111111-1111-4111-8111-111111111111',
           '33333333-3333-4333-8333-333333333333',
           '55555555-5555-4555-8555-555555555555',
-          v_stale_count,v_product,3.000,2.0000,2.000,1);
+          v_stale_count,v_product,2.000,2.0000,1.000,v_balance_version - 1);
   UPDATE public.inventory_counts
      SET status='confirmed',confirmed_by='66666666-6666-4666-8666-666666666666',
          confirmed_at=pg_catalog.now()

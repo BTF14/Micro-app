@@ -31,7 +31,7 @@ jobs:
     timeout-minutes: 20
     env:
       SOURCE_BRANCH: feat/checkout-ledger-recovered-main-20261108
-      SOURCE_SHA: bc3939510e132e6f77c751514ff1b7dca58cdd4d
+      SOURCE_SHA: 6227a3a8497f6be94d675b64da5da61530c200fc
       TARGET_DATABASE: microapp_rehearsal
       EXPECTED_BRANCH_ID: br-curly-poetry-b7dxsddm
       EXPECTED_PROJECT_ID: restless-fire-99110035
@@ -244,7 +244,7 @@ jobs:
           CONFIRMATION: ${{ inputs.confirmation }}
         run: |
           set -euo pipefail
-          expected="APPLY-ONLY-microapp_rehearsal-br-curly-poetry-b7dxsddm-bc3939510e132e6f77c751514ff1b7dca58cdd4d"
+          expected="APPLY-ONLY-microapp_rehearsal-br-curly-poetry-b7dxsddm-6227a3a8497f6be94d675b64da5da61530c200fc"
           test "$CONFIRMATION" = "$expected"
           echo "EXPLICIT_REHEARSAL_WRITE_CONFIRMATION_VERIFIED"
 

@@ -2,7 +2,7 @@
 
 **Estado:** handler HTTP y pruebas recuperados sobre `main` en PR #258 Draft. Se conserva la migración 0015 canónica; PR #258 añade migración 0017 para alinear la validación SQL de BCV con la regla weekday/weekend. No desplegado ni aprobado para producción.  
 **Fecha:** 2026-11-08 UTC  
-**Dependencias vigentes:** migraciones canónicas 0013–0016 en `main`; motor monetario `@micro-app/money`; autorización tenant/branch; locks de warehouse/balances/turno; tasa BCV recuperada en PR #255.  
+**Dependencias vigentes:** migraciones canónicas 0013–0016 en `main`; motor monetario `@micro-app/money`; autorización tenant/branch; locks de warehouse/balances/turno. El productor/API/Cron BCV está en PR #255 Draft y todavía no está integrado en `main`.  
 **Límites:** este documento no autoriza merge, Neon, Cloudflare, despliegue ni activar checkout.
 
 ## 1. Objetivo y principios
@@ -30,7 +30,7 @@ Reglas ya aprobadas/documentadas:
 - `payments_ves_amount_scale_ck`: pagos VES quedan limitados a dos decimales.
 - `lock_open_register_shift`: función SECURITY DEFINER con search_path restringido para bloquear el turno y comprobar organización, sucursal, caja, usuario y membresías activas sin ampliar grants runtime.
 - `0010_inventory_balance_ledger_coupling.sql`: cada cambio no cero en `inventory_balances` genera un intent transaccional que debe consumirse con un movimiento ledger exacto antes del COMMIT.
-- `0013_bcv_official_rate.sql`: tasa BCV con precisión NUMERIC(18,8) y grants runtime column-scoped.
+- `0013_bcv_official_rate_precision_and_grants.sql`: tabla/tasa BCV con precisión NUMERIC(18,8) y grants runtime column-scoped; el parser/API/Cron proveedor está pendiente de PR #255.
 - `0014_sales_without_discounts.sql`: elimina el campo de descuento del modelo comercial; total USD debe ser igual a subtotal.
 - `0015_sales_checkout_atomicity.sql`: guardrails de ciclo de vida y reconciliación para checkout.
 - `@micro-app/money`: motor exacto ya presente en main. `catalog-write.ts` usa validación decimal y el catálogo/UI ya están integrados.
@@ -172,9 +172,10 @@ Todas las pruebas usan PostgreSQL efímero; nunca Neon main ni datos reales.
 
 ## 10. Estado operativo
 
-- Main actual al redactar: `c4be53ea3247c69206a79ebe5fa2f875a4f9aac4`.
-- PR #251: cleanup auth 48 h, Draft, 11/11 workflows PR + 2/2 push security exitosos; producción bloqueada por Neon schema/runtime.
-- PR #255: BCV parser/API/UI/Cron y weekend selection, Draft; exact HEAD `4e9f01ab85fd767736f4f47f3e47ffefbe7efd88`, 10/10 workflows PR + 3/3 push runs exitosos; sin review formal, no merge.
-- PR #233 queda como fuente histórica; su handler/tests se recuperaron en #258 sobre main. #258 incorpora 0017 y pruebas BCV; sigue Draft. #255 aporta el productor/Cron BCV y continúa como dependencia.
+- Main actual al redactar: `96e2e2d9f76bc8fcc3bab2fa9503e480545c8869`.
+- PR #251: cleanup auth 48 h, Draft, HEAD `5dec5d5a9025de16b19d0cb7cfeac6585e2ad5d6`; 15/15 check-runs y 13/13 workflows SUCCESS en ese SHA; producción bloqueada por Neon schema/runtime.
+- PR #255: BCV parser/API/UI/Cron y weekend selection, Draft, HEAD `35b9ac6894f79c5760a1f56fb37506ed2278afa0`; 15/15 check-runs y 13/13 workflows SUCCESS en ese SHA; base #251 y sin review formal. No está integrado.
+- PR #258: recuperación del checkout y migration 0017 weekday/weekend, Draft, base main `96e2e2d9f76bc8fcc3bab2fa9503e480545c8869`, HEAD `c578441fda16f3e06cb0367867eb3136396fdaf3`; checks exact-SHA en curso. La integración BCV #255 es prerequisite para activar operaciones con tasa real.
+- PR #233 queda como fuente histórica; su handler/tests se recuperaron en #258 sobre main. No fusionar la rama antigua ni reutilizar sus checks.
 - Migration 0015 existe en GitHub main, pero Neon main no ha recibido baseline/migraciones 0003–0016. No asumir que el esquema live tiene checkout listo.
 - Producción **NOT READY**. No Neon main, secretos, Cloudflare productivo, DNS, billing ni datos reales modificados.

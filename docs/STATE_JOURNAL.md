@@ -2061,3 +2061,9 @@ No se tocaron Neon main, datos reales, secretos, Worker productivo, DNS, billing
 - Las últimas actualizaciones de CURRENT_STATE, HANDOFF, WORK_CHECKPOINT y STATE_JOURNAL movieron el HEAD de PR #271 a `c52a334cd651aa7c4352a336a8c5947be65eabde`.
 - GitHub informa PR #271 Open/Ready/mergeable=true, compare 12 ahead/1 behind; el endpoint no devolvió workflow runs para el HEAD actual.
 - Las 10 ejecuciones observadas previamente corresponden al HEAD anterior `bf8af19...` (3 SUCCESS y 7 pending/in_progress); no validan `c52a334...`. No fusionar hasta CI exact-HEAD.
+
+## 2026-11-08 13:26 UTC — cierre de actualización documental de continuidad
+
+- CURRENT_STATE, HANDOFF_NEXT_CHAT, WORK_CHECKPOINT y STATE_JOURNAL quedaron reconciliados en la rama documental de PR #271.
+- No se copia un SHA de PR #271 dentro de sus propios documentos porque cada commit documental mueve el HEAD; consultar siempre el HEAD vivo de la PR.
+- Los runs observados en commits anteriores de #271 no validan el HEAD final. Requerido: CI completo en el HEAD final antes de merge.

@@ -28,6 +28,10 @@ REQUIRED_TEMPLATE_HEADINGS = [
 ]
 
 REQUIRED_CONTENT = {
+    "docs/CONSTITUTION.md": [
+        "contrato de continuidad, decisiones y evidencia",
+        "odd/tasks/ai-continuity-and-evidence-contract.md",
+    ],
     "AGENTS.md": [
         "odd/tasks/ai-continuity-and-evidence-contract.md",
         "docs/decisions/",

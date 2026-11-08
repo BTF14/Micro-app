@@ -1,3 +1,24 @@
+# Addendum API vivo — 2026-11-08 UTC
+
+**Código fuente:** main `96e2e2d9f76bc8fcc3bab2fa9503e480545c8869`. Este addendum reemplaza el checkpoint histórico 2026-10-30; los detalles inferiores se conservan como historial.
+
+## Módulos efectivamente registrados en `apps/api/src/index.ts`
+
+- `registerAuthRoutes` y `registerGoogleAuthRoutes`: sesión, OAuth, bootstrap y rate limiting.
+- `registerCatalogRoutes` y `registerCatalogWriteRoutes`: lectura y escritura de catálogo.
+- `registerInventoryCountRoutes` y `registerInventoryReadRoutes`: conteos y lectura de inventario.
+- `/health`: healthcheck público.
+- Middleware global CORS con `FRONTEND_ORIGIN` HTTPS validado; métodos GET/POST/PATCH/DELETE/OPTIONS, headers Content-Type/Authorization/Idempotency-Key y credentials.
+- Middleware API-dark: si `APP_ENV=preview` o el hostname es un Worker `workers.dev` no productivo, solo permite `/health`; las demás rutas responden 503. Wrangler declara `APP_ENV=preview` bajo `[previews.vars]`.
+
+## Límites vigentes
+
+- El código de main no registra rutas BCV; los endpoints `/api/exchange-rates/latest` y `/api/exchange-rates/history` están en #255, aún Draft y no fusionada.
+- Main no registra un handler de checkout/pagos. #233 conserva handler/tests únicos, pero no está integrado.
+- `cashier-open-shift.ts` existe como helper aislado; no está montado como ruta en `index.ts`.
+- La UI `CatalogPanel` soporta conversión decimal y estado BCV, pero la alimentación de tasa oficial desde App llega mediante #255.
+- Los endpoints actuales no equivalen a un MVP POS completo: faltan checkout integrado, pagos, transferencia de inventario en dos etapas y validación E2E contra Neon autorizado.
+
 # Estado actual de integración API — Micro app
 
 **GitHub/PR checkpoint — 2026-10-30 UTC:** `main` = `82386c6e9300e06f8fa209aa52995b939a72442a`; PR #178 OPEN, DRAFT, NOT MERGED, rama `docs/reconcile-role-model-and-cloudflare-20261030`. HEAD verificado antes de esta sincronización: `a45d84eb5f51e50d3a24f9d6858b5d14efb3ce6b`, 68 ahead / 0 behind. En ese SHA se observaron 11/11 workflow runs Actions success (9 PR + 2 push) y previews Cloudflare Pages/Workers exitosas. Este commit documental produce un SHA posterior; revalidar antes de cualquier decisión. No extrapolar checks/previews.

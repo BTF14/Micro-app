@@ -1,12 +1,12 @@
 # Matriz de pruebas de autorización y aislamiento multiempresa
 
-**Estado:** plan de aceptación; no es evidencia de que los controles ya estén implementados.  
-**Fecha de revisión:** 2026-10-18  
-**Rama base revisada:** `main` en `838715d211918f521f5e6401a91dc773236ef3ad`.
+**Estado:** implementación parcial con pruebas de integración existentes; este plan conserva los gates de aceptación que faltan.  
+**Fecha de revisión:** 2026-11-08 UTC.  
+**Rama base revisada:** `main` en `96e2e2d9f76bc8fcc3bab2fa9503e480545c8869`.
 
-## Hallazgo de alcance
+## Hallazgo de alcance actualizado
 
-La API registrada actualmente en `apps/api/src/index.ts` expone las rutas de autenticación registradas por `apps/api/src/auth.ts` y `GET /health`. No hay todavía handlers de negocio para productos, proveedores, ventas, pagos o movimientos de inventario. Por ello no es posible escribir una prueba HTTP real de acceso cruzado a esos recursos sin inventar rutas o interfaces que no existen. Las pruebas de esquema/migración y las de sesión existentes son controles parciales, no sustitutos de las pruebas de autorización por recurso.
+La API registrada expone auth/Google, catálogo read/write, lectura de inventario y conteos. Los handlers de inventario usan `authorizeBranchOperation`, contexto tenant/sucursal y locks. La matriz de permisos fue aprobada el 2026-10-31. Hay pruebas HTTP reales de aislamiento de catálogo, contexto de sucursal y conteos; no hay todavía handlers integrados de checkout/pagos, transferencias ni operaciones de caja/turnos. El plan sigue siendo un gate porque no todas las operaciones de la matriz tienen handlers/pruebas y las migraciones no están aplicadas en Neon.
 
 ## Reglas de seguridad para las pruebas
 
@@ -31,13 +31,17 @@ La API registrada actualmente en `apps/api/src/index.ts` expone las rutas de aut
 | Roles | Cada rol accede solo a las operaciones explícitamente permitidas | `cashier` y `inventory` no adquieren permisos de `admin/owner` por manipular cuerpo, ruta o cabeceras |
 | Membresía/sesión | Membresía activa permite acceso conforme al rol | Membresía revocada, organización inactiva, usuario inactivo o sesión revocada/expirada deniega acceso inmediatamente |
 
-La matriz no asigna todavía permisos detallados por operación; deben definirse a partir de requisitos documentados antes de implementar los handlers. No inventar reglas de identidad, allowlist ni vinculación de cuentas como parte de este trabajo.
+La matriz detallada está aprobada en `docs/sdd/role-permission-decision-matrix.md`. La implementación no cubre todavía todas sus operaciones: checkout/pagos, transferencias, rutas de turnos y administración de miembros/políticas permanecen pendientes.
 
 ## Cobertura existente revisada
 
-- `apps/api/src/auth.integration.test.ts`: registro, duplicado, credenciales incorrectas, consulta de sesión, usuario/membresía inactivos, cierre y revocación, expiración y limpieza de rate limits.
-- `apps/api/migrations/0001_initial.sql`: restricciones compuestas para que productos/proveedores de organizaciones diferentes no puedan vincularse mediante la clave foránea compuesta; revisar también las restricciones de ventas y líneas en la propia migración.
-- Workflows de CI y validación de migración sobre el SHA base revisado terminaron en éxito después de la fusión documental. Eso no prueba las rutas de negocio que todavía no existen.
+- `apps/api/src/auth.integration.test.ts`: sesión, usuario/membresía inactivos, revocación/expiración y rate limits.
+- `apps/api/src/catalog.integration.test.ts`: cashier no recibe costo/stock; organización A no puede leer B; sesión/usuario/membresía/organización inactivos se deniegan.
+- `apps/api/src/catalog-write.integration.test.ts`: tenant A no puede escribir en B; campos de stock/unknown, Origin y precisión se rechazan; rollback de auditoría.
+- `apps/api/src/branch-context.integration.test.ts`: owner/admin, asignación cashier/inventory, revocación concurrente, desactivación de sucursal y rechazo cross-tenant.
+- `apps/api/src/inventory-counts.integration.test.ts`: idempotencia, concurrencia, ledger/audit, conteos stale, reservas, tenant/branch isolation y denegación de cashier.
+- `apps/api/src/authorization.test.ts`: matriz por rol, denegaciones, contexto tenant/sucursal y locks.
+- No se ha demostrado aún la cobertura E2E completa de cada operación aprobada ni la ejecución con el runtime de Neon real.
 
 ## Siguiente paso técnico
 

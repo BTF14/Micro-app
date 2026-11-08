@@ -107,19 +107,61 @@ describe.skipIf(!isDisposableCheckoutDatabase)("atomic sales checkout PostgreSQL
   async function seedBalance(onHand: string, reserved = "0.000"): Promise<void> {
     await client.query("BEGIN");
     try {
-      await client.query(
-        `INSERT INTO public.inventory_balances
-          (organization_id,branch_id,warehouse_id,product_id,on_hand_quantity,reserved_quantity)
-         VALUES ($1,$2,$3,$4,$5::numeric,$6::numeric)`,
-        [organizationId, branchId, warehouseId, productId, onHand, reserved],
+      const projection = await client.query<{ enabled: boolean }>(
+        "SELECT pg_catalog.to_regprocedure('public.project_inventory_movement_to_balance()') IS NOT NULL AS enabled",
       );
-      if (onHand !== "0.000") {
+      if (!projection.rows[0]?.enabled) {
+        // Compatibility path for the pre-0019 checkout branch.
+        await client.query(
+          `INSERT INTO public.inventory_balances
+            (organization_id,branch_id,warehouse_id,product_id,on_hand_quantity,reserved_quantity)
+           VALUES ($1,$2,$3,$4,$5::numeric,$6::numeric)`,
+          [organizationId, branchId, warehouseId, productId, onHand, reserved],
+        );
+        if (onHand !== "0.000") {
+          await client.query(
+            `INSERT INTO public.warehouse_inventory_movements
+              (organization_id,branch_id,warehouse_id,product_id,movement_type,quantity_delta,reason,actor_user_id)
+             VALUES ($1,$2,$3,$4,'purchase_receipt',$5::numeric,'Checkout integration fixture',$6)`,
+            [organizationId, branchId, warehouseId, productId, onHand, userId],
+          );
+        }
+      } else if (onHand !== "0.000") {
+        const reason = "Checkout integration fixture";
+        const count = await client.query<{ id: string }>(
+          `INSERT INTO public.inventory_counts
+            (organization_id,branch_id,warehouse_id,count_type,reason,created_by)
+           VALUES ($1,$2,$3,'physical',$4,$5) RETURNING id`,
+          [organizationId, branchId, warehouseId, reason, userId],
+        );
+        await client.query(
+          `INSERT INTO public.inventory_count_lines
+            (organization_id,branch_id,warehouse_id,count_id,product_id,counted_quantity,unit_cost_usd,
+             expected_on_hand_quantity,expected_balance_version)
+           VALUES ($1,$2,$3,$4,$5,$6::numeric,2.0000,0.000,0)`,
+          [organizationId, branchId, warehouseId, count.rows[0]!.id, productId, onHand],
+        );
+        await client.query(
+          "UPDATE public.inventory_counts SET status='confirmed',confirmed_by=$2,confirmed_at=now() WHERE id=$1",
+          [count.rows[0]!.id, userId],
+        );
         await client.query(
           `INSERT INTO public.warehouse_inventory_movements
-            (organization_id,branch_id,warehouse_id,product_id,movement_type,quantity_delta,reason,actor_user_id)
-           VALUES ($1,$2,$3,$4,'purchase_receipt',$5::numeric,'Checkout integration fixture',$6)`,
-          [organizationId, branchId, warehouseId, productId, onHand, userId],
+            (organization_id,branch_id,warehouse_id,product_id,movement_type,quantity_delta,unit_cost_usd,
+             reason,count_id,actor_user_id)
+           VALUES ($1,$2,$3,$4,'count_adjustment',$5::numeric,2.0000,$6,$7,$8)`,
+          [organizationId, branchId, warehouseId, productId, onHand, reason, count.rows[0]!.id, userId],
         );
+        if (reserved !== "0.000") {
+          // Reservation APIs are not implemented yet; only this disposable
+          // admin fixture bypasses the direct-write guard to seed a reservation.
+          await client.query("ALTER TABLE public.inventory_balances DISABLE TRIGGER inventory_balances_direct_write_guard");
+          await client.query(
+            "UPDATE public.inventory_balances SET reserved_quantity=$4::numeric WHERE organization_id=$1 AND warehouse_id=$2 AND product_id=$3",
+            [organizationId, warehouseId, productId, reserved],
+          );
+          await client.query("ALTER TABLE public.inventory_balances ENABLE TRIGGER inventory_balances_direct_write_guard");
+        }
       }
       await client.query("COMMIT");
     } catch (error) {

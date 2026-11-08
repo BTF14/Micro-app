@@ -150,6 +150,10 @@ jobs:
                 WHERE pronamespace='public'::regnamespace
               )
               AND NOT EXISTS (
+                SELECT 1 FROM pg_catalog.pg_namespace
+                WHERE nspname NOT IN ('pg_catalog','information_schema','pg_toast','public')
+              )
+              AND NOT EXISTS (
                 SELECT 1 FROM pg_catalog.pg_type
                 WHERE typnamespace='public'::regnamespace
                   AND typrelid=0 AND typelem=0
@@ -173,6 +177,8 @@ jobs:
               AND NOT pg_catalog.has_schema_privilege('microapp_runtime','public','CREATE')
               AND pg_catalog.has_database_privilege('microapp_migrator',current_database(),'CONNECT')
               AND pg_catalog.has_database_privilege('microapp_runtime',current_database(),'CONNECT')
+              AND (SELECT pg_catalog.pg_get_userbyid(datdba)='microapp_migrator'
+                   FROM pg_catalog.pg_database WHERE datname=current_database())
               AND NOT EXISTS (
                 SELECT 1 FROM pg_catalog.pg_auth_members
                 WHERE member IN (

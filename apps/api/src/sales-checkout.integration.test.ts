@@ -567,9 +567,9 @@ describe.skipIf(!isDisposableCheckoutDatabase)("atomic sales checkout PostgreSQL
       [organizationId, sale.rows[0]!.id],
     );
     expect(payments.rows.map((row) => row.allocation_position)).toEqual([1, 2]);
-    expect(payments.rows.reduce((sum, row) => sum + parseNumeric(row.amount, 14, 2), 0n)).toBe(totalVesUnits);
+    expect(payments.rows.reduce((sum, row) => sum + parseNumeric(row.amount, 14, 4) / 100n, 0n)).toBe(totalVesUnits);
     const totalUsdUnits = parseNumeric(totalUsd, 14, 4);
-    const firstExpected = parseNumeric(payments.rows[0]!.amount, 14, 2) * totalUsdUnits / totalVesUnits;
+    const firstExpected = (parseNumeric(payments.rows[0]!.amount, 14, 4) / 100n) * totalUsdUnits / totalVesUnits;
     const lastExpected = totalUsdUnits - firstExpected;
     expect(payments.rows.map((row) => row.usd_equivalent_snapshot)).toEqual([
       formatNumeric(firstExpected, 14, 4),

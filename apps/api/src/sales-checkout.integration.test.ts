@@ -14,17 +14,37 @@ const environment = (globalThis as typeof globalThis & {
   process?: { env?: Record<string, string | undefined> };
 }).process?.env;
 const databaseUrl = environment?.DATABASE_URL;
-const databaseUrlAdmin = environment?.DATABASE_URL_ADMIN ?? databaseUrl;
+const databaseUrlAdmin = environment?.DATABASE_URL_ADMIN;
 const isCi = Boolean(environment?.CI);
 
-if (isCi && (!databaseUrl || !databaseUrlAdmin)) {
-  throw new Error("DATABASE_URL and DATABASE_URL_ADMIN are required; refusing to skip checkout integration tests.");
+function isDisposableCheckoutDatabaseUrl(value: string | undefined, expectedRole: string): boolean {
+  if (!value) return false;
+  try {
+    const url = new URL(value);
+    return ["localhost", "127.0.0.1", "[::1]"].includes(url.hostname) &&
+      url.pathname === "/microapp_test" &&
+      url.username === expectedRole &&
+      (url.protocol === "postgres:" || url.protocol === "postgresql:");
+  } catch {
+    return false;
+  }
+}
+
+const isDisposableCheckoutDatabase =
+  isDisposableCheckoutDatabaseUrl(databaseUrl, "microapp_runtime") &&
+  isDisposableCheckoutDatabaseUrl(databaseUrlAdmin, "microapp");
+
+if ((databaseUrl || databaseUrlAdmin) && !isDisposableCheckoutDatabase) {
+  throw new Error("Checkout integration tests require separate localhost microapp_runtime and microapp connections to the disposable microapp_test database; refusing non-disposable targets.");
+}
+if (isCi && !isDisposableCheckoutDatabase) {
+  throw new Error("CI must provide disposable runtime/admin PostgreSQL URLs; refusing to skip checkout integration tests.");
 }
 
 const BCV_SOURCE = "BCV_OFFICIAL_HTML_V1";
 const FRONTEND_ORIGIN = "https://frontend.example";
 
-describe.skipIf(!databaseUrl || !databaseUrlAdmin)("atomic sales checkout PostgreSQL integration", () => {
+describe.skipIf(!isDisposableCheckoutDatabase)("atomic sales checkout PostgreSQL integration", () => {
   let client: Client;
   let organizationId = "";
   let userId = "";

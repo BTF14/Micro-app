@@ -2023,3 +2023,12 @@ No se tocaron Neon main, datos reales, secretos, Worker productivo, DNS, billing
 
 ---
 
+## 2026-11-08 13:15 UTC — reconciliación de PR #269/#270/#255 y Neon rehearsal
+
+- Main verificado: `5f09b87aee09d0746f6ea90f076b4eb81d168daf`; 7 PR abiertas.
+- #269 HEAD `56a5f2ebf4f63c03bc4e50bbf5eb45b6e0aebbde`: Open/Draft/mergeable; 13 ahead/0 behind; 11 workflow runs completed/success; una review COMMENTED, sin APPROVE.
+- #270 HEAD `d3ec41147798ab19ffb74147f319565e8ea31b31`: Open/Draft/mergeable; 1 ahead/0 behind; 9 workflow runs completed/success; diff solo dos líneas de resumen Bash.
+- #255 HEAD `59b6b40ddf30f6711624124b719ef15234ce5fdc`: Open/Ready/no mergeable; base c46ed6f; diverged 48 ahead/2 behind main; 10 workflow runs completed/success; no review formal.
+- Neon rehearsal verificado con SELECT directo: neondb, microapp_migrator, branch ID y project ID esperados, 15 tablas. Sin DDL/DML.
+- El propietario confirmó que actualizó el secreto Actions, pero no hay run posterior que pruebe su consumo. El conector no permite workflow_dispatch; el siguiente paso es lanzar verify manualmente desde main, sin aplicar migraciones.
+- #193 no se modificó. Sin merges, force-push, cambios de secretos/Cloudflare ni escrituras en Neon. Producción NOT READY.

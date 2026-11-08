@@ -30,7 +30,6 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 20
     env:
-      SOURCE_BRANCH: feat/checkout-ledger-recovered-main-20261108
       SOURCE_SHA: 6227a3a8497f6be94d675b64da5da61530c200fc
       TARGET_DATABASE: microapp_rehearsal
       EXPECTED_BRANCH_ID: br-curly-poetry-b7dxsddm
@@ -89,7 +88,10 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          git fetch --no-tags --depth=1 origin "refs/heads/$SOURCE_BRANCH"
+          # Fetch the immutable pinned commit, not the mutable feature-branch tip.
+          # Documentation-only commits may advance SOURCE_BRANCH without changing the
+          # reviewed migration source; the exact SHA remains the authority.
+          git fetch --no-tags --depth=1 origin "$SOURCE_SHA"
           actual_sha="$(git rev-parse FETCH_HEAD)"
           test "$actual_sha" = "$SOURCE_SHA"
 

@@ -1,6 +1,6 @@
 # ODD task: scheduled authentication metadata retention
 
-- Status: implementation and disposable PostgreSQL verification complete; final exact-HEAD CI/review and production activation gates remain open
+- Status: implementation and disposable PostgreSQL verification in progress; production activation blocked on Neon schema/runtime reconciliation
 - PR: #251
 - Branch: `fix/auth-retention-cleanup-20261107`
 - Risk: high (authentication metadata and database privileges)

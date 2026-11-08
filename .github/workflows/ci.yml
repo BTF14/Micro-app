@@ -90,6 +90,8 @@ jobs:
         run: pnpm --filter @micro-app/api exec vitest run src/auth.integration.test.ts
       - name: PostgreSQL auth rate limit integration tests
         run: pnpm --filter @micro-app/api exec vitest run src/auth-rate-limit.integration.test.ts
+      - name: PostgreSQL BCV effective-date integration tests
+        run: pnpm --filter @micro-app/api exec vitest run src/exchange-rates.integration.test.ts
       - name: PostgreSQL branch scope integration tests
         run: pnpm --filter @micro-app/api exec vitest run src/branch-context.integration.test.ts
       - name: PostgreSQL register shift integration tests
@@ -110,4 +112,4 @@ jobs:
         run: pnpm --filter @micro-app/api exec vitest run src/inventory-read.integration.test.ts
       - name: Runtime-role API integration tests
         run: |
-          DATABASE_URL="$RUNTIME_DATABASE_URL" DATABASE_URL_ADMIN="$ADMIN_DATABASE_URL" pnpm --filter @micro-app/api exec vitest run --no-file-parallelism src/auth.integration.test.ts src/auth-rate-limit.integration.test.ts src/branch-context.integration.test.ts src/catalog.integration.test.ts src/catalog-write.integration.test.ts src/catalog-update.integration.test.ts src/inventory-counts.integration.test.ts src/inventory-read.integration.test.ts
+          DATABASE_URL="$RUNTIME_DATABASE_URL" DATABASE_URL_ADMIN="$ADMIN_DATABASE_URL" pnpm --filter @micro-app/api exec vitest run --no-file-parallelism src/auth.integration.test.ts src/auth-rate-limit.integration.test.ts src/exchange-rates.integration.test.ts src/branch-context.integration.test.ts src/catalog.integration.test.ts src/catalog-write.integration.test.ts src/catalog-update.integration.test.ts src/inventory-counts.integration.test.ts src/inventory-read.integration.test.ts

@@ -63,16 +63,16 @@ Objetivo: USD como moneda base del catálogo/contabilidad interna y VES como con
 
 ### Diseño
 
-1. Investigar y validar una fuente BCV fiable. No asumir que existe una API oficial gratuita ni codificar una URL no verificada.
-2. Un Cron Trigger de Cloudflare consulta la fuente en horario programado; convertir correctamente el horario local de Venezuela a UTC y contemplar fines de semana/feriados.
-3. Validar estructura, valor positivo, fecha efectiva, fuente, duplicados y cambios anómalos antes de persistir.
-4. Persistir el histórico en `exchange_rates` (la tabla ya existe en el esquema revisado), con fuente, fecha efectiva, valor y estado de validación.
-5. No escribir filas vacías ni repetir escrituras si no hay tasa nueva. Sin bucles de reintento.
-6. Ante caída o dato inválido, conservar la última tasa válida y exponer su fecha/frescura y estado stale; no sustituirla por cero ni presentar una tasa inventada.
-7. KV puede distribuir una copia de lectura de la tasa, con clave y versión controladas. Neon permanece como fuente persistente de verdad.
-8. Cada venta/línea debe conservar la tasa, moneda, importe original, importe convertido, fecha efectiva y referencia/fuente usados en ese momento. Actualizar la tasa nunca recalcula ventas pasadas.
+1. Fuente primaria: página oficial del BCV `https://www.bcv.org.ve/` consultada por HTTPS. No se asume que exista una API JSON oficial documentada; se usa un extractor HTML controlado y con fixtures.
+2. Un Cron Trigger de Cloudflare consulta una vez cada día hábil a las 18:00 de Venezuela (22:00 UTC). No se consulta en fines de semana; los feriados se manejan conservando la última tasa validada.
+3. La respuesta se limita a 2 MB durante streaming; se valida origen HTTPS, tipo de contenido, UTF-8, USD, valor positivo y "Fecha Valor" explícita. Un fallo conserva la última tasa y no usa terceros como fallback.
+4. Persistir histórico en `exchange_rates` con `NUMERIC(18,8)`, fuente, fecha efectiva y timestamp de captura. La migración 0013 ya está en la secuencia de GitHub; debe aplicarse y verificarse en Neon antes de desplegar este uso.
+5. La idempotencia se basa en `(source, effective_date)`. Una fila futura no bloquea insertar una fecha anterior faltante. En días hábiles, latest selecciona la fecha efectiva de hoy; sábados y domingos selecciona la fecha futura más cercana publicada para el siguiente día hábil. El histórico etiqueta filas futuras como programadas.
+6. Si BCV revisa un valor para la misma fecha, conservar el decimal original, marcarlo stale con el permiso column-scoped y fallar cerrado. No sobrescribir tasas históricas. Los feriados bancarios que caen entre semana aún requieren calendario oficial; hasta integrarlo, se suspende conversión si no existe una fila exacta para ese día.
+7. El dashboard muestra fuente, fecha efectiva y frescura. El catálogo convierte USD→VES solo con tasa vigente y validada usando aritmética decimal exacta; si falta o está stale, suspende la conversión.
+8. Cada venta/pago debe conservar tasa, moneda, importe original, importe convertido, fecha efectiva y fuente usados en ese momento. Actualizar la tasa nunca recalcula operaciones pasadas.
 
-La automatización BCV y la API de consulta no están implementadas por el mero hecho de estar documentadas. El proveedor, la licencia/condiciones de acceso y la estabilidad de extracción son gates previos.
+La implementación se propone en PR #255, apilada sobre la limpieza de retención #251. Sigue sin desplegarse ni verificarse en producción: requiere CI exact-HEAD, revisión independiente, migración 0013 aplicada, login `microapp_runtime` comprobado y Cron/configuración Cloudflare verificados. No se introduce un proveedor pagado ni un secreto nuevo.
 
 ## 5. Buscador de productos y precio vigente
 

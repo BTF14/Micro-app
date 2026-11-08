@@ -135,13 +135,13 @@ const suite = describe.skipIf(!databaseUrl)("authentication rate limiting agains
 
     // Preview invocations must be a no-op and must not open a database client.
     const scheduledApp = app as typeof app & {
-      scheduled: (controller: unknown, env: { APP_ENV?: "production" | "preview"; DATABASE_URL?: string }) => Promise<void>;
+      scheduled: (controller: { cron?: string }, env: { APP_ENV?: "production" | "preview"; DATABASE_URL?: string }) => Promise<void>;
     };
-    await expect(scheduledApp.scheduled({}, { APP_ENV: "preview" })).resolves.toBeUndefined();
+    await expect(scheduledApp.scheduled({ cron: "17 * * * *" }, { APP_ENV: "preview" })).resolves.toBeUndefined();
 
     // Exercise the real Worker scheduled entrypoint with the actual runtime
     // login used by this test invocation, not only the helper function.
-    await scheduledApp.scheduled({}, { APP_ENV: "production", DATABASE_URL: databaseUrl });
+    await scheduledApp.scheduled({ cron: "17 * * * *" }, { APP_ENV: "production", DATABASE_URL: databaseUrl });
     // The scheduled handler intentionally returns no row counts; the rows
     // below prove it invoked the production cleanup against PostgreSQL.
 
@@ -191,7 +191,7 @@ const suite = describe.skipIf(!databaseUrl)("authentication rate limiting agains
     const scheduledApp = app as typeof app & {
       scheduled: (controller: unknown, env: { APP_ENV?: "production" | "preview"; DATABASE_URL?: string }) => Promise<void>;
     };
-    await scheduledApp.scheduled({}, { APP_ENV: "production", DATABASE_URL: databaseUrl });
+    await scheduledApp.scheduled({ cron: "17 * * * *" }, { APP_ENV: "production", DATABASE_URL: databaseUrl });
 
     const remainingRateLimits = await cleanupClient.query<{ count: string }>(
       "SELECT count(*)::text AS count FROM auth_rate_limits WHERE key_hash = ANY($1::char(64)[])",
@@ -204,9 +204,8 @@ const suite = describe.skipIf(!databaseUrl)("authentication rate limiting agains
     expect(Number(remainingRateLimits.rows[0]?.count)).toBe(1);
     expect(Number(remainingBootstrapAttempts.rows[0]?.count)).toBe(1);
 
-    // A later scheduled invocation drains the remaining backlog without
-    // exceeding the per-table cap in either run.
-    await scheduledApp.scheduled({}, { APP_ENV: "production", DATABASE_URL: databaseUrl });
+    // A later hourly retention invocation drains the remaining backlog.
+    await scheduledApp.scheduled({ cron: "17 * * * *" }, { APP_ENV: "production", DATABASE_URL: databaseUrl });
     const drainedRateLimits = await cleanupClient.query<{ count: string }>(
       "SELECT count(*)::text AS count FROM auth_rate_limits WHERE key_hash = ANY($1::char(64)[])",
       [rateHashes],

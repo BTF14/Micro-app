@@ -31,6 +31,7 @@ export async function apiRequest<T>(path: string, init: RequestInit = {}): Promi
   try {
     response = await fetch(`${API_BASE_URL}${path}`, {
       ...init,
+      cache: "no-store",
       headers,
       credentials: "include",
       redirect: "error",

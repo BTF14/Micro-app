@@ -1,42 +1,50 @@
-## Estado operativo vivo — posterior a #261 y preparación del runner Neon — 2026-11-08
+## Estado operativo actual — workflow Neon integrado — 2026-11-08
 
-**main protegido:** `10ed02c6c6d30940ef2e2a75db009f6ea6859bd3`. #251 está fusionada en `8c13da8`; #261 documentación está fusionada en `10ed02c`. El inventario de este snapshot muestra seis PR abiertas:
+**main:** `c46ed6f3e57a12bf92a7f0718435dfff8096b540`. #251, #261 y #264 están fusionadas. #264 pasó 15/15 checks en su HEAD y 11/11 checks post-merge; su workflow está en main, pero **no se ha ejecutado**. Quedan cinco PR técnicas abiertas:
 
-| PR | HEAD conocido | Estado | Próximo paso |
+| PR | HEAD | Estado conocido | Decisión |
 |---|---|---|---|
-| #255 BCV | `f49fb402f9bd5a40591970c9efe3665a5e212ebb` | Ready, 15/15 checks SUCCESS, mergeable clean | No integrar hasta validar baseline/migraciones/grants en Neon rehearsal y Worker/Cron identity. |
-| #258 checkout | `8935842cab6a7e2b8a6c0aa078e9b3e77866e48c` | Ready, 16/16 checks SUCCESS, mergeable dirty, 29 commits detrás de main | Resolver conflicto/sincronizar; requiere aprobación funcional del contrato de pagos. |
-| #262 ledger | `19103c000b354da85c1a478867a6a18e2ec25cd7` | Ready, 8/8 checks SUCCESS; apilada sobre un HEAD anterior de #258 | No integrar por separado; reconstruir base después de resolver #258. |
-| #233 checkout histórico | `07a13c7eb68e0e933f93f35a1ecd9a22f19bf2d0` | Draft | No fusionar; conservar hasta verificar que #258 rescató todo lo único. |
-| #193 inventario Fase B | `ac57ab4f3415f82279b8a49c0befe09f8e3aec68` | Open | Restricción expresa: no modificar. |
-| #264 runner Neon rehearsal | Rama `security/neon-rehearsal-migration-runner-20261108` | PR nueva; CI exact-HEAD en ejecución | Completar CI y revisar el workflow; aún no está fusionada ni ejecutada. |
+| #255 BCV | `f49fb402f9bd5a40591970c9efe3665a5e212ebb` | 15/15 checks SUCCESS; comparación con main: 4 detrás; mergeability recalculándose | No fusionar hasta completar rehearsal, grants, precisión y Worker/Cron identity. |
+| #258 checkout | `8935842cab6a7e2b8a6c0aa078e9b3e77866e48c` | 16/16 checks SUCCESS; 31 detrás de main; último estado confirmado antes del último avance de main: dirty | Resolver conflicto/sincronizar; aprobación funcional del contrato de pagos pendiente. |
+| #262 ledger | `19103c000b354da85c1a478867a6a18e2ec25cd7` | 8/8 checks SUCCESS; base sigue siendo un HEAD antiguo de #258; 31 detrás de main | Mantener apilada; reconstruir base después de #258. |
+| #233 checkout histórico | `07a13c7eb68e0e933f93f35a1ecd9a22f19bf2d0` | Draft, 9/9 checks del snapshot | No fusionar; conservar hasta demostrar que no queda contenido único. |
+| #193 inventario Fase B | `ac57ab4f3415f82279b8a49c0befe09f8e3aec68` | Open, 12/12 checks del snapshot | Restricción expresa: no modificar. |
 
-Los checks indicados pertenecen a los SHA históricos señalados; cada commit nuevo exige volver a validar el SHA exacto. Los previews Cloudflare no son pruebas de producción.
+Los check-runs son de los HEAD indicados; no son aprobaciones formales ni pruebas de producción. La mergeability de #255/#258 debe volver a leerse en GitHub después de que termine el recálculo sobre main `c46ed6f`.
 
-### Neon rehearsal y runner
+### Neon: estado confirmado por SELECT
 
-- Rama: `rehearsal-baseline-20261107` / `br-curly-poetry-b7dxsddm`, proyecto `restless-fire-99110035`.
-- Huella de esquema: 294/294 hechos coinciden exactamente con baseline canónico 0002.
-- 15 tablas y 2 secuencias existentes pertenecen a `microapp_migrator`; roles directos existen; no hay ledger de migraciones.
-- `microapp_runtime` aún no tiene los grants de tabla posteriores a 0002; no se han aplicado migraciones 0003–0016.
-- PR #264 prepara un workflow manual con destino fijo, login directo/no pooler, branch/project identity guard, modo verify predeterminado y confirmación separada para aplicar baseline+migraciones. Requiere el secreto nuevo `NEON_REHEARSAL_DATABASE_URL`; no se ha creado ni cambiado ningún secreto y el workflow no se ha ejecutado.
-- No pegar migraciones en la herramienta SQL ni ejecutar DDL/DML manual. No tocar Neon main.
+- **Neon main:** branch `br-summer-math-b7297a60`, project `restless-fire-99110035`, database `neondb`. No existen `microapp_runtime`, `microapp_migrator`, `schema_migrations`, `auth_bootstrap_attempts`, `branches`, `warehouses` ni `inventory_balances`; sí existe `auth_rate_limits`; `exchange_rates.rate` es `NUMERIC(14,6)`.
+- **Neon rehearsal:** `rehearsal-baseline-20261107` / `br-curly-poetry-b7dxsddm`. Fingerprint 294/294 exacto al baseline 0002; 15 tablas y 2 secuencias propiedad de `microapp_migrator`; no hay ledger; `microapp_runtime` todavía no tiene grants de tabla posteriores a 0002.
+- **No se ejecutó DDL/DML** en ninguna de las dos ramas. No se modificó ni creó ningún secreto.
+
+### Runner Neon — ya disponible en GitHub Actions
+
+PR #264 está fusionada en `c46ed6f`. El workflow `.github/workflows/neon-rehearsal-migrations.yml`:
+- solo se dispara manualmente desde `main`;
+- por defecto ejecuta `verify` de solo lectura;
+- exige `NEON_REHEARSAL_DATABASE_URL` con conexión directa/no pooler de `microapp_migrator`;
+- valida project ID, branch ID, database y sesión antes de operar;
+- el modo de escritura exige la confirmación exacta `APPLY-ONLY-br-curly-poetry-b7dxsddm` y usa `adopt-baseline.sh` + `migrate.sh`;
+- verifica ledger, ownership, roles, precisión NUMERIC(18,8), grants BCV y permisos de row-lock/delete del Cron de retención.
+
+**Siguiente acción del propietario:** crear el secreto Actions `NEON_REHEARSAL_DATABASE_URL` con la conexión directa de `microapp_migrator` a la rama rehearsal y ejecutar primero el workflow en modo `verify`. No pegar el valor del secreto en el chat. Solo después de revisar el resultado se autoriza/ejecuta el modo `adopt-and-migrate`. Esta autorización no incluye Neon main.
 
 ### Riesgo Cron #251
 
-main contiene el Cron horario `17 * * * *` y el handler de retención ejecuta dos DELETE separados: `auth_rate_limits` y `auth_bootstrap_attempts`. El último snapshot de Neon main documentado y la rama rehearsal no contienen `auth_bootstrap_attempts`. Si el Worker con ese Cron ya fue desplegado contra ese esquema, el segundo DELETE fallará; la primera consulta puede haber confirmado por separado. El despliegue/ejecución real y los logs de Cloudflare no están verificados. No desactivar ni cambiar Cloudflare manualmente.
+main contiene el Cron horario `17 * * * *`. El merge #251 generó un Workers Build bajo el servicio `micro-app-api/production/builds` con Version ID `b7a6580c-ec41-4505-8016-0bc895eb66fc`; esto prueba que se creó una versión en el servicio de producción, pero no demuestra que esté sirviendo tráfico ni que el Cron haya ejecutado correctamente. Neon main carece de `auth_bootstrap_attempts`; si esa versión ejecuta el handler contra el esquema actual, la segunda DELETE fallará y la primera puede haber confirmado por separado. No se verificaron rutas/logs de Cloudflare; no cambiar Cloudflare manualmente ni desactivar el Cron sin autorización.
 
-### Límites y siguiente secuencia
+### Próxima secuencia
 
-1. Terminar CI exact-HEAD y revisión del PR #264; fusionarlo solo si todos los gates pasan.
-2. El propietario debe crear explícitamente `NEON_REHEARSAL_DATABASE_URL` con login directo/no pooler `microapp_migrator` para la rama de ensayo. Ejecutar primero `verify`; revisar resultado; después, solo con confirmación expresa en el workflow, `adopt-and-migrate`.
-3. Validar ledger/checksums/ownership, precisión NUMERIC(18,8), grants de BCV y auth cleanup; probar login real de runtime con el conector Neon.
-4. Mantener Neon main y secretos de producción fuera de alcance hasta autorizaciones separadas.
-5. Resolver #255; luego sincronizar #258 y reestablecer #262 sobre su HEAD final.
-6. Obtener aprobación funcional del propietario para una moneda de liquidación por venta, pago exacto completo, sin pagos parciales ni sobrepago.
-7. Mantener #193 intacta; cerrar #233 solo cuando no quede contenido único.
+1. El propietario crea el secreto de rehearsal y ejecuta `verify` (solo lectura).
+2. Revisar el resultado; con autorización expresa, ejecutar `adopt-and-migrate` solo en `br-curly-poetry-b7dxsddm`.
+3. Validar migraciones/checksums/ownership/grants y probar login directo de `microapp_runtime` mediante el conector Neon.
+4. No aplicar nada a Neon main hasta una autorización separada y una decisión de despliegue/rollback.
+5. Resolver #255 tras la rehearsal; luego sincronizar #258 y reestablecer #262 sobre el HEAD final.
+6. Obtener aprobación funcional del propietario para una moneda de liquidación por venta, pago exacto completo, sin parcial ni sobrepago.
+7. Mantener #193 intacta; cerrar #233 solo tras verificar ausencia de contenido único.
 
-**Producción: NOT READY.** La autorización permanente cubre merges elegibles y despliegue automático inherente; no autoriza Neon main, migraciones remotas, secretos, datos reales, Cloudflare manual, DNS ni billing. Single-maintainer: documentar revisión técnica asistida por IA, CI exact-SHA y autorización del propietario por separado; no fabricar una aprobación independiente.
+**Producción: NOT READY.** La autorización permanente permite integrar PR elegibles y el despliegue automático inherente; no autoriza Neon main, migraciones remotas, secretos, datos reales, Cloudflare manual, DNS ni billing. Single-maintainer: registrar revisión técnica asistida por IA, CI exact-SHA y autorización del propietario por separado; nunca fabricar una aprobación humana independiente.
 
 \n## Estado GitHub verificado — 2026-11-08 ~09:20 UTC
 

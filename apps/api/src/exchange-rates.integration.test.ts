@@ -172,6 +172,7 @@ describe.skipIf(!isDisposableCiDatabase)("BCV effective-date persistence against
       { APP_ENV: "production", DATABASE_URL: databaseUrl },
     );
     expect(latestResponse.status).toBe(200);
+    expect(latestResponse.headers.get("Cache-Control")).toBe("no-store");
     await expect(latestResponse.json()).resolves.toMatchObject({
       rate: expectedApplicableRate,
       effectiveDate: expectedApplicableDate,

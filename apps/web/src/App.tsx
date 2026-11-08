@@ -121,6 +121,17 @@ function formatBcvFetchedAt(value: string): string {
   }).format(new Date(value));
 }
 
+function caracasCalendarDate(now = new Date()): string {
+  const parts = new Intl.DateTimeFormat("en-US", {
+    timeZone: "America/Caracas",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).formatToParts(now);
+  const value = (type: string) => parts.find((part) => part.type === type)?.value ?? "";
+  return `${value("year")}-${value("month")}-${value("day")}`;
+}
+
 function HelpLinks({ onOpen }: { onOpen: (kind: HelpModalKind) => void }) {
   return (
     <p className="help-links">
@@ -203,28 +214,55 @@ export default function App() {
   useEffect(() => {
     if (!session) return;
     let active = true;
+    let requestSequence = 0;
+    let observedCaracasDate = caracasCalendarDate();
     const refreshBcvRate = () => {
+      const sequence = ++requestSequence;
+      const requestedDate = caracasCalendarDate();
       setBcvLoading(true);
       apiRequest<BcvRateResponse>("/api/exchange-rates/latest")
         .then((result) => {
-          if (!active) return;
+          if (!active || sequence !== requestSequence) return;
+          const responseDate = caracasCalendarDate();
+          if (responseDate !== requestedDate) {
+            observedCaracasDate = responseDate;
+            setBcvError("La fecha cambió; verificando la tasa BCV aplicable.");
+            refreshBcvRate();
+            return;
+          }
           setBcvRate(result);
           setBcvError("");
         })
         .catch((reason: unknown) => {
-          if (!active) return;
+          if (!active || sequence !== requestSequence) return;
           setBcvError(reason instanceof Error ? reason.message : "No se pudo actualizar la tasa BCV.");
         })
         .finally(() => {
-          if (active) setBcvLoading(false);
+          if (active && sequence === requestSequence) setBcvLoading(false);
         });
     };
     refreshBcvRate();
-    // Refresh hourly so an open POS picks up the new effective rate after the daily BCV publication.
+    // A Friday rate stops being applicable at Caracas midnight on Saturday.
+    // Revalidate on every local-date change and when the tab becomes visible.
+    const dateInterval = window.setInterval(() => {
+      const currentDate = caracasCalendarDate();
+      if (currentDate === observedCaracasDate) return;
+      observedCaracasDate = currentDate;
+      setBcvError("La fecha cambió; verificando la tasa BCV aplicable.");
+      refreshBcvRate();
+    }, 60 * 1000);
+    const refreshOnVisibility = () => {
+      if (document.visibilityState === "visible") refreshBcvRate();
+    };
+    document.addEventListener("visibilitychange", refreshOnVisibility);
+    // Keep a periodic refresh for an open dashboard while also handling midnight exactly.
     const interval = window.setInterval(refreshBcvRate, 60 * 60 * 1000);
     return () => {
       active = false;
+      requestSequence += 1;
+      window.clearInterval(dateInterval);
       window.clearInterval(interval);
+      document.removeEventListener("visibilitychange", refreshOnVisibility);
     };
   }, [session]);
 

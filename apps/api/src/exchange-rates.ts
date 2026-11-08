@@ -319,7 +319,8 @@ export function registerExchangeRateRoutes(app: Hono<{ Bindings: Bindings }>): v
         return c.json({ error: "BCV_RATE_UNAVAILABLE", message: "Todavía no hay una tasa BCV validada." }, 503);
       }
       const isStale = row.validation_status === "stale" || row.effective_date < caracasDate(new Date());
-      c.header("Cache-Control", "public, max-age=3600");
+      // Applicability can change at Caracas midnight without a new database row.
+      c.header("Cache-Control", "no-store");
       return c.json({
         baseCurrency: "USD",
         quoteCurrency: "VES",

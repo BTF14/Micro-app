@@ -39,7 +39,14 @@ Integrate the official BCV USD/VES reference rate at zero additional provider co
 
 - Replaced JavaScript `Number()` range validation with exact `BigInt` comparison so a value just above the `1,000,000,000` ceiling cannot round down and pass.
 - Added a regression test that accepts the exact ceiling and rejects `1.000.000.000,00000001`.
-- Final exact-HEAD CI is pending for this follow-up.
+- Final exact-HEAD CI is pending for the precision-bound and freshness follow-ups.
+
+## Freshness boundary — 2026-11-07
+
+- The latest-rate API response is `Cache-Control: no-store`; the browser API client also disables HTTP caching.
+- The authenticated dashboard revalidates when the Caracas calendar date changes and when the tab becomes visible. It marks the previous rate stale while revalidating and ignores a response that began under a prior Caracas date.
+- UI regression coverage exercises the Friday-to-Saturday midnight transition; PostgreSQL API integration asserts the latest endpoint's no-store header.
+- Final exact-HEAD CI is pending for these freshness changes.
 
 ## Evidence and legal basis
 

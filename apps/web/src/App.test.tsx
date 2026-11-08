@@ -45,6 +45,7 @@ afterEach(async () => {
   await act(async () => { root.unmount(); });
   container.remove();
   vi.unstubAllGlobals();
+  vi.useRealTimers();
   window.history.replaceState({}, "", "/");
 });
 
@@ -133,6 +134,47 @@ describe("Micro app authentication flow", () => {
     expect(panel?.textContent).toContain("noviembre de 2026");
     expect(panel?.textContent).toContain("Vigente");
     expect(panel?.textContent).toContain("Banco Central de Venezuela");
+    expect(vi.mocked(fetch).mock.calls[1]?.[1]?.cache).toBe("no-store");
+  });
+
+  it("revalidates the BCV rate when the Caracas effective date changes at midnight", async () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date("2026-11-07T03:59:00.000Z")); // Friday 23:59 in Caracas.
+    const fridayRate = {
+      ...bcvRateResponse,
+      effectiveDate: "2026-11-06",
+      fetchedAt: "2026-11-07T03:58:00.000Z",
+    };
+    const mondayRate = {
+      ...bcvRateResponse,
+      effectiveDate: "2026-11-09",
+      fetchedAt: "2026-11-07T04:00:00.000Z",
+    };
+    vi.mocked(fetch)
+      .mockResolvedValueOnce(jsonResponse(authResponse))
+      .mockResolvedValueOnce(jsonResponse(fridayRate))
+      .mockResolvedValueOnce(jsonResponse(mondayRate));
+    await renderApp();
+    await act(async () => {
+      await Promise.resolve();
+      await Promise.resolve();
+      await Promise.resolve();
+    });
+    expect(vi.mocked(fetch)).toHaveBeenCalledTimes(2);
+    expect(container.querySelector(".exchange-rate-panel")?.textContent).toContain("6 de noviembre");
+
+    vi.setSystemTime(new Date("2026-11-07T04:00:00.000Z")); // Saturday 00:00 in Caracas.
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(60_000);
+      await Promise.resolve();
+      await Promise.resolve();
+      await Promise.resolve();
+    });
+
+    expect(vi.mocked(fetch)).toHaveBeenCalledTimes(3);
+    expect(vi.mocked(fetch).mock.calls[2]?.[1]?.cache).toBe("no-store");
+    expect(container.querySelector(".exchange-rate-panel")?.textContent).toContain("9 de noviembre");
+    expect(container.querySelector(".exchange-rate-panel")?.textContent).toContain("Vigente");
   });
 
   it("passes the current official BCV rate into the catalog conversion", async () => {

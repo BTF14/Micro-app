@@ -2146,3 +2146,20 @@ No se tocaron Neon main, datos reales, secretos, Worker productivo, DNS, billing
 
 - En main 11ca2b49bfa650066a708d2423cc73cea6c99e2d, los check-runs Cloudflare Pages y Workers Builds: micro-app-api finalizaron SUCCESS, al igual que los seis contextos requeridos y el resto de check-runs observados.
 - Esto confirma los checks/builds de Cloudflare asociados al merge, no un smoke test HTTP autenticado ni la validación de flujos reales de producción. Producción sigue NOT READY.
+
+
+## 2026-11-08 — Neon verify-empty y hardening de checkout/ledger en PR #269
+
+- El workflow pinned Neon run #1 (#42498486767) terminó SUCCESS en main `b10d029061a5258f37e4feba65a30dad683f563f`, operación `verify-empty`. Confirmó la identidad de `microapp_rehearsal` y el target vacío; no ejecutó baseline, migraciones, assertions ni DDL/DML. La fuente fijada era `bc3939510e132e6f77c751514ff1b7dca58cdd4d`.
+- Revisión de #269 encontró que un movimiento directo de conteo podía escribirse después de desactivar la sucursal, si el warehouse seguía activo. Se agregó `branches.is_active` + `FOR SHARE NOWAIT` a `validate_inventory_movement_source()`, assertion SQL y regresión con login runtime. El log del CI confirma el rechazo esperado `INVENTORY_MOVEMENT_BRANCH_SCOPE_INVALID`; thread inline resuelto.
+- La rama #269 se sincronizó sin force-push con main mediante merge commit `6227a3a8497f6be94d675b64da5da61530c200fc`, 20 ahead / 0 behind. Se preservó el workflow pinned y la documentación de main.
+- En ese HEAD exacto: 16/16 check-runs SUCCESS y 11/11 workflows pull_request SUCCESS, incluidos CI verify, runtime-role API integration, migration runner, PostgreSQL migration/assertions, Playwright, backup/restore, SAST, dependency review, ODD, Gitleaks, Trivy y Cloudflare Pages/Workers builds.
+- PR #269 permanece Draft; reviews COMMENTED, no APPROVE. No se fusionó. El workflow Neon sigue fijando el SHA anterior y debe actualizarse antes de cualquier write rehearsal. No hubo escrituras Neon ni cambios de producción.
+
+
+## 2026-11-08 — PR #277 integrada y pin Neon actualizado
+
+- PR #277 se fusionó por squash en main `8a54f6e653d925a280776763bbb6f661e0fd19aa`; 13/13 check-runs y 11/11 workflows pull_request SUCCESS exact-HEAD antes del merge. Post-merge main: 10/10 check-runs y 8/8 workflows SUCCESS.
+- El workflow `.github/workflows/neon-pinned-migration-rehearsal.yml` ahora fija source SHA `6227a3a8497f6be94d675b64da5da61530c200fc`; el token de confirmación se actualizó con el mismo SHA. Default sigue siendo verify-empty.
+- Run #1 `42498486767` sigue siendo evidencia de verify-empty para el pin anterior `bc393...`; run #2 para el nuevo pin aún no se ha despachado. No hay DDL/DML remoto.
+- PR #269 se sincroniza con el nuevo main sin force-push; el código 0017–0019 y la regresión de branch-inactive ya pasaron CI exact-HEAD en el commit `6227a3a...`. PR sigue Draft, producto y ensayo pendientes.

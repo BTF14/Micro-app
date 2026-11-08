@@ -160,17 +160,56 @@ describe.skipIf(!databaseUrl)("warehouse inventory count transactions against Po
   async function seedInventoryBalanceFor(targetProductId: string, onHand: string, reserved = "0.000"): Promise<void> {
     await client.query("BEGIN");
     try {
-      await client.query(
-        "INSERT INTO inventory_balances (organization_id, branch_id, warehouse_id, product_id, on_hand_quantity, reserved_quantity) VALUES ($1, $2, $3, $4, $5::numeric, $6::numeric)",
-        [organizationId, branchId, warehouseId, targetProductId, onHand, reserved],
+      const projection = await client.query<{ enabled: boolean }>(
+        "SELECT pg_catalog.to_regprocedure('public.project_inventory_movement_to_balance()') IS NOT NULL AS enabled",
       );
-      if (Number(onHand) !== 0) {
+      if (!projection.rows[0]?.enabled) {
+        await client.query(
+          "INSERT INTO inventory_balances (organization_id, branch_id, warehouse_id, product_id, on_hand_quantity, reserved_quantity) VALUES ($1, $2, $3, $4, $5::numeric, $6::numeric)",
+          [organizationId, branchId, warehouseId, targetProductId, onHand, reserved],
+        );
+        if (Number(onHand) !== 0) {
+          await client.query(
+            `INSERT INTO warehouse_inventory_movements
+              (organization_id, branch_id, warehouse_id, product_id, movement_type, quantity_delta, reason, actor_user_id)
+             VALUES ($1, $2, $3, $4, 'purchase_receipt', $5::numeric, 'Integration test fixture seed', $6)`,
+            [organizationId, branchId, warehouseId, targetProductId, onHand, userId],
+          );
+        }
+      } else if (Number(onHand) !== 0) {
+        const reason = "Integration test fixture seed";
+        const count = await client.query<{ id: string }>(
+          `INSERT INTO inventory_counts
+            (organization_id,branch_id,warehouse_id,count_type,reason,created_by)
+           VALUES ($1,$2,$3,'physical',$4,$5) RETURNING id`,
+          [organizationId, branchId, warehouseId, reason, userId],
+        );
+        await client.query(
+          `INSERT INTO inventory_count_lines
+            (organization_id,branch_id,warehouse_id,count_id,product_id,counted_quantity,unit_cost_usd,
+             expected_on_hand_quantity,expected_balance_version)
+           VALUES ($1,$2,$3,$4,$5,$6::numeric,NULL,0.000,0)`,
+          [organizationId, branchId, warehouseId, count.rows[0]!.id, targetProductId, onHand],
+        );
+        await client.query(
+          "UPDATE inventory_counts SET status='confirmed',confirmed_by=$2,confirmed_at=now() WHERE id=$1",
+          [count.rows[0]!.id, userId],
+        );
         await client.query(
           `INSERT INTO warehouse_inventory_movements
-            (organization_id, branch_id, warehouse_id, product_id, movement_type, quantity_delta, reason, actor_user_id)
-           VALUES ($1, $2, $3, $4, 'purchase_receipt', $5::numeric, 'Integration test fixture seed', $6)`,
-          [organizationId, branchId, warehouseId, targetProductId, onHand, userId],
+            (organization_id,branch_id,warehouse_id,product_id,movement_type,quantity_delta,unit_cost_usd,
+             reason,count_id,actor_user_id)
+           VALUES ($1,$2,$3,$4,'count_adjustment',$5::numeric,NULL,$6,$7,$8)`,
+          [organizationId, branchId, warehouseId, targetProductId, onHand, reason, count.rows[0]!.id, userId],
         );
+        if (reserved !== "0.000") {
+          await client.query("ALTER TABLE inventory_balances DISABLE TRIGGER inventory_balances_direct_write_guard");
+          await client.query(
+            "UPDATE inventory_balances SET reserved_quantity=$4::numeric WHERE organization_id=$1 AND warehouse_id=$2 AND product_id=$3",
+            [organizationId, warehouseId, targetProductId, reserved],
+          );
+          await client.query("ALTER TABLE inventory_balances ENABLE TRIGGER inventory_balances_direct_write_guard");
+        }
       }
       await client.query("COMMIT");
     } catch (error) {
@@ -514,6 +553,36 @@ describe.skipIf(!databaseUrl)("warehouse inventory count transactions against Po
       await client.query("ALTER TABLE inventory_balances ENABLE TRIGGER USER");
       await client.query("ALTER TABLE warehouse_inventory_movements ENABLE TRIGGER USER");
     }
+    // Ledger-projection fixtures use a confirmed physical count as their source.
+    // Remove that test-only count before deleting its product (the FK is RESTRICT).
+    const fixtureCountIds = await client.query<{ count_id: string }>(
+      "SELECT DISTINCT count_id FROM inventory_count_lines WHERE organization_id=$1 AND product_id=$2",
+      [organizationId, omittedProduct.rows[0]!.id],
+    );
+    await client.query("ALTER TABLE inventory_count_lines DISABLE TRIGGER USER");
+    await client.query("ALTER TABLE inventory_counts DISABLE TRIGGER USER");
+    try {
+      await client.query(
+        "DELETE FROM inventory_count_lines WHERE organization_id=$1 AND product_id=$2",
+        [organizationId, omittedProduct.rows[0]!.id],
+      );
+      if (fixtureCountIds.rows.length) {
+        await client.query(
+          `DELETE FROM inventory_counts c
+            WHERE c.organization_id=$1
+              AND c.id = ANY($2::uuid[])
+              AND NOT EXISTS (
+                SELECT 1 FROM inventory_count_lines remaining
+                 WHERE remaining.organization_id=c.organization_id
+                   AND remaining.count_id=c.id
+              )`,
+          [organizationId, fixtureCountIds.rows.map((row) => row.count_id)],
+        );
+      }
+    } finally {
+      await client.query("ALTER TABLE inventory_counts ENABLE TRIGGER USER");
+      await client.query("ALTER TABLE inventory_count_lines ENABLE TRIGGER USER");
+    }
     await client.query("DELETE FROM products WHERE organization_id = $1 AND id = $2", [organizationId, omittedProduct.rows[0]!.id]);
 
     const opening = await request(root() + "/counts/opening", {
@@ -647,33 +716,26 @@ describe.skipIf(!databaseUrl)("warehouse inventory count transactions against Po
       [organizationId, body.id],
     );
     expect(snapshot.rows[0]).toEqual({ expected: "8.250", version: "1" });
-    await client.query("BEGIN");
-    try {
-      await client.query(
-        "UPDATE inventory_balances SET on_hand_quantity = 8.500 WHERE organization_id = $1 AND warehouse_id = $2 AND product_id = $3",
-        [organizationId, warehouseId, productId],
-      );
-      await client.query(
-        `INSERT INTO warehouse_inventory_movements
-          (organization_id, branch_id, warehouse_id, product_id, movement_type, quantity_delta, reason, actor_user_id)
-         VALUES ($1, $2, $3, $4, 'purchase_receipt', 0.250, 'ABA test intermediate increase', $5)`,
-        [organizationId, branchId, warehouseId, productId, userId],
-      );
-      await client.query(
-        "UPDATE inventory_balances SET on_hand_quantity = 8.250 WHERE organization_id = $1 AND warehouse_id = $2 AND product_id = $3",
-        [organizationId, warehouseId, productId],
-      );
-      await client.query(
-        `INSERT INTO warehouse_inventory_movements
-          (organization_id, branch_id, warehouse_id, product_id, movement_type, quantity_delta, reason, actor_user_id)
-         VALUES ($1, $2, $3, $4, 'reversal', -0.250, 'ABA test return to original quantity', $5)`,
-        [organizationId, branchId, warehouseId, productId, userId],
-      );
-      await client.query("COMMIT");
-    } catch (error) {
-      await client.query("ROLLBACK");
-      throw error;
-    }
+    // Reproduce the ABA sequence through two valid, confirmed count documents:
+    // 8.250 -> 8.500 -> 8.250. The final quantity matches the stale snapshot,
+    // but two ledger projections must advance balance_version twice.
+    const increase = await request(root() + "/counts/physical", {
+      reason: "ABA test intermediate increase",
+      lines: [{ product_id: productId, counted_quantity: "8.500" }],
+    });
+    expect(increase.status).toBe(201);
+    const increaseBody = await increase.json() as { id: string };
+    const increaseConfirmation = await request(root() + "/counts/" + increaseBody.id + "/confirm");
+    expect(increaseConfirmation.status).toBe(200);
+
+    const restore = await request(root() + "/counts/physical", {
+      reason: "ABA test return to original quantity",
+      lines: [{ product_id: productId, counted_quantity: "8.250" }],
+    });
+    expect(restore.status).toBe(201);
+    const restoreBody = await restore.json() as { id: string };
+    const restoreConfirmation = await request(root() + "/counts/" + restoreBody.id + "/confirm");
+    expect(restoreConfirmation.status).toBe(200);
     const confirmation = await request(root() + "/counts/" + body.id + "/confirm");
     expect(confirmation.status).toBe(409);
     expect(await confirmation.json()).toMatchObject({
@@ -764,7 +826,7 @@ describe.skipIf(!databaseUrl)("warehouse inventory count transactions against Po
            AND action = 'inventory.count.confirmed') AS audits`,
       [organizationId, warehouseId, productId, body.id],
     );
-    expect(persisted.rows[0]).toEqual({ balance: "0.000", movements: "0", audits: "1" });
+    expect(persisted.rows[0]).toEqual({ balance: null, movements: "0", audits: "1" });
 
     const secondOpening = await request(root() + "/counts/opening", {
       reason: "A second opening must not overwrite the initial zero balance",
@@ -842,6 +904,61 @@ describe.skipIf(!databaseUrl)("warehouse inventory count transactions against Po
       [organizationId, body.id, warehouseId, productId],
     );
     expect(persisted.rows[0]).toEqual({ count_status: "draft", balance: "8.000", movements: "0", audits: "0" });
+  });
+
+  it("rejects direct count-ledger inserts after the branch is deactivated", async () => {
+    const reason = "Confirmed count cannot write after branch deactivation";
+    const count = await client.query<{ id: string }>(
+      `INSERT INTO inventory_counts
+        (organization_id,branch_id,warehouse_id,count_type,reason,created_by)
+       VALUES ($1,$2,$3,'physical',$4,$5) RETURNING id`,
+      [organizationId, branchId, warehouseId, reason, userId],
+    );
+    await client.query(
+      `INSERT INTO inventory_count_lines
+        (organization_id,branch_id,warehouse_id,count_id,product_id,counted_quantity,unit_cost_usd,
+         expected_on_hand_quantity,expected_balance_version)
+       VALUES ($1,$2,$3,$4,$5,2.000,NULL,0.000,0)`,
+      [organizationId, branchId, warehouseId, count.rows[0]!.id, productId],
+    );
+    await client.query(
+      "UPDATE inventory_counts SET status='confirmed',confirmed_by=$2,confirmed_at=now() WHERE organization_id=$1 AND id=$3",
+      [organizationId, userId, count.rows[0]!.id],
+    );
+
+    const runtime = new Client({ connectionString: databaseUrl! });
+    await runtime.connect();
+    let insertError: unknown;
+    try {
+      await client.query(
+        "UPDATE branches SET is_active=false WHERE organization_id=$1 AND id=$2",
+        [organizationId, branchId],
+      );
+      await runtime.query("BEGIN");
+      try {
+        await runtime.query(
+          `INSERT INTO warehouse_inventory_movements
+            (organization_id,branch_id,warehouse_id,product_id,movement_type,quantity_delta,unit_cost_usd,
+             reason,count_id,actor_user_id)
+           VALUES ($1,$2,$3,$4,'count_adjustment',2.000,NULL,$5,$6,$7)`,
+          [organizationId, branchId, warehouseId, productId, reason, count.rows[0]!.id, userId],
+        );
+      } catch (error) {
+        insertError = error;
+      }
+      await runtime.query("ROLLBACK");
+    } finally {
+      await client.query(
+        "UPDATE branches SET is_active=true WHERE organization_id=$1 AND id=$2",
+        [organizationId, branchId],
+      );
+      await runtime.end();
+    }
+
+    expect(insertError).toBeDefined();
+    expect(insertError).toMatchObject({ code: "23514" });
+    expect(insertError instanceof Error ? insertError.message : String(insertError))
+      .toContain("INVENTORY_MOVEMENT_BRANCH_SCOPE_INVALID");
   });
 
   it("requires an active branch assignment for inventory members and revalidates revocation", async () => {

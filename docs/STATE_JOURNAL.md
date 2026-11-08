@@ -2136,8 +2136,13 @@ No se tocaron Neon main, datos reales, secretos, Worker productivo, DNS, billing
 ## 2026-11-08 — PR #275 integrada y preflight Neon preparado
 
 - PR #275 se fusionó por squash en main 11ca2b49bfa650066a708d2423cc73cea6c99e2d; PR #274 se cerró como supersedida.
-- El commit de merge tiene 9/9 workflow runs SUCCESS y los seis required contexts SUCCESS. Cloudflare Pages y Workers Builds check-runs estaban todavía en progreso en el último chequeo; no se afirma despliegue productivo.
+- El commit de merge tiene 9/9 workflow runs SUCCESS y los seis required contexts SUCCESS. Cloudflare Pages y Workers Builds check-runs finalizaron SUCCESS en el merge SHA; no se ejecutó smoke test HTTP autenticado de producción.
 - El secret NEON_REHEARSAL_DATABASE_URL ya había sido probado por el workflow anterior en run #42479603848 después de la rotación: conexión directa, identidad correcta, baseline 0002 verificado, pasos de escritura skipped.
 - SELECT en microapp_rehearsal confirmó identidad branch/project/database/role exacta, schemas estándar, cero relaciones y funciones públicas, sin schema_migrations. Sin escrituras.
 - El nuevo workflow fijado main-only está disponible con default verify-empty. No se pudo despachar desde el conector GitHub; queda como única acción manual necesaria. No se ejecutó migración.
 - Inventario vivo de PR: #269 15 ahead/3 behind, Draft, mergeable=false; #255 53/5, mergeable=false y gates BCV P1; #258 35/36, mergeable=false; #262 107/36 apilada sobre #258; #233 histórica Draft; #193 no modificar.
+
+## 2026-11-08 — verificación post-merge Cloudflare
+
+- En main 11ca2b49bfa650066a708d2423cc73cea6c99e2d, los check-runs Cloudflare Pages y Workers Builds: micro-app-api finalizaron SUCCESS, al igual que los seis contextos requeridos y el resto de check-runs observados.
+- Esto confirma los checks/builds de Cloudflare asociados al merge, no un smoke test HTTP autenticado ni la validación de flujos reales de producción. Producción sigue NOT READY.

@@ -19,7 +19,7 @@ The runner:
 
 ## Canonical migration order in the recovery branch
 
-The ordered bundle is intended to contain exactly one file for each version from 0001 through 0015:
+The originally documented recovery bundle ended at 0015. The pinned bundle actually rehearsed successfully now contains exactly one numbered migration for each version 0001 through 0019:
 
 1. `0001_initial.sql`
 2. `0002_google_identity.sql`
@@ -36,6 +36,10 @@ The ordered bundle is intended to contain exactly one file for each version from
 13. `0013_bcv_official_rate_precision_and_grants.sql`
 14. `0014_sales_without_discounts.sql`
 15. `0015_sales_checkout_atomicity.sql`
+16. `0016_runtime_inventory_ledger_read.sql`
+17. `0017_checkout_bcv_weekend_effective_date.sql`
+18. `0018_checkout_payment_allocation.sql`
+19. `0019_inventory_ledger_balance_projection.sql`
 
 The old stacked branches used `0005_warehouse_inventory.sql` and duplicated the already-integrated auth migration as `0010_auth_bootstrap_attempts.sql`. The recovery bundle moves warehouse inventory and its dependent migrations forward, keeps the existing auth migration at 0005, and omits the duplicate. Paired assertion files and workflow references must use the same canonical filenames. Migration contents are not rewritten merely to change filenames; the checksums are still computed from exact SQL contents.
 
@@ -71,16 +75,17 @@ For non-transactional historical migrations, the runner wraps the migration and 
 
 ## CI harnesses and release integration
 
-The existing `.github/workflows/ci.yml` and `.github/workflows/migration-check.yml` retain explicit per-file application because they exercise intermediate migration assertions and injected failures at the exact migration boundary. Those sequences are test harnesses, not production deployment entry points. The separate `.github/workflows/migration-runner.yml` job validates this runner as the ordered application path.
+The existing `.github/workflows/ci.yml` and `.github/workflows/migration-check.yml` retain explicit per-file application because they exercise intermediate migration assertions and injected failures at the exact migration boundary. Those sequences are test harnesses, not production deployment entry points. The separate `.github/workflows/migration-runner.yml` job validates this runner as the ordered application path against disposable PostgreSQL. In addition, `.github/workflows/neon-pinned-migration-rehearsal.yml` is a manual, pinned, target-identity-checked workflow. Its `bootstrap-and-migrate` operation was executed successfully on 2026-11-08 against the isolated `microapp_rehearsal` database (run #42507066215); it applied and verified 0001–0019. This is rehearsal evidence only, not a production release workflow.
 
-No release/deployment workflow invokes this runner yet, and no `MIGRATION_DATABASE_URL` production secret has been configured by this change. Before rollout, add a separately gated migration job that runs this script against the approved target using a protected migrator credential, with a reviewed backup/restore and rollback plan. Do not move the migrator credential into the Worker runtime environment.
+No production release/deployment workflow invokes this runner, and no production `MIGRATION_DATABASE_URL` secret was configured by this change. A production rollout still requires a separately approved and gated migration job against the verified target, a reviewed backup/restore and recovery plan, runtime identity/grants verification, and explicit production authorization. Do not move the migrator credential into the Worker runtime environment.
 
 ## What this does not prove
 
 - It does not adopt or reconcile a pre-existing database.
 - It does not detect arbitrary manual schema drift after a migration has been recorded.
-- It does not provision production roles, alter Cloudflare secrets, inspect Neon, or deploy anything.
-- Passing CI against disposable PostgreSQL 18 is not production approval.
+- It does not provision production roles, alter Cloudflare secrets, or deploy anything.
+- The rehearsal workflow has inspected and migrated only the isolated Neon rehearsal target; this does not establish that Neon main has the same schema or grants.
+- Passing CI against disposable PostgreSQL 18 or a successful isolated rehearsal is not production approval.
 
 Before any real rollout, the exact target database must be inspected through an explicitly approved, read-only baseline and role/ownership review. A populated database requires an explicit adoption plan and its own tests.
 

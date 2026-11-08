@@ -1,6 +1,6 @@
 # ODD task: scheduled authentication metadata retention
 
-- Status: implementation and disposable PostgreSQL verification in progress; production activation blocked on Neon schema/runtime reconciliation
+- Status: implementation and disposable PostgreSQL verification complete; final exact-HEAD CI/review and production activation gates remain open
 - PR: #251
 - Branch: `fix/auth-retention-cleanup-20261107`
 - Risk: high (authentication metadata and database privileges)
@@ -25,7 +25,7 @@ Retain only the minimum authentication metadata needed for active requests and s
 - [x] The production scheduled handler invokes cleanup.
 - [x] Preview scheduled handler is a no-op and does not require DATABASE_URL.
 - [x] Runtime DELETE privileges are explicitly asserted by migration 0012.
-- [ ] Each table is capped at 500 deletions per invocation and subsequent hourly runs drain backlog.
+- [x] Each table is capped at 500 deletions per invocation; a second scheduled invocation drains the remaining backlog.
 - [ ] Exact-HEAD CI succeeds for unit, PostgreSQL admin/runtime integration, migration runner, backup restore, security and E2E workflows.
 - [ ] Independent review completed.
 - [ ] Neon schema, dedicated runtime role and grants reconciled under the separate rehearsal/production gates before enabling production Cron.

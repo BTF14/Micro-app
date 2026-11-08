@@ -203,6 +203,20 @@ const suite = describe.skipIf(!databaseUrl)("authentication rate limiting agains
     );
     expect(Number(remainingRateLimits.rows[0]?.count)).toBe(1);
     expect(Number(remainingBootstrapAttempts.rows[0]?.count)).toBe(1);
+
+    // A later scheduled invocation drains the remaining backlog without
+    // exceeding the per-table cap in either run.
+    await scheduledApp.scheduled({}, { APP_ENV: "production", DATABASE_URL: databaseUrl });
+    const drainedRateLimits = await cleanupClient.query<{ count: string }>(
+      "SELECT count(*)::text AS count FROM auth_rate_limits WHERE key_hash = ANY($1::char(64)[])",
+      [rateHashes],
+    );
+    const drainedBootstrapAttempts = await cleanupClient.query<{ count: string }>(
+      "SELECT count(*)::text AS count FROM auth_bootstrap_attempts WHERE handle_hash = ANY($1::char(64)[])",
+      [handleHashes],
+    );
+    expect(Number(drainedRateLimits.rows[0]?.count)).toBe(0);
+    expect(Number(drainedBootstrapAttempts.rows[0]?.count)).toBe(0);
   });
 
   it("enforces the Google OAuth start limit and returns Retry-After", async () => {

@@ -1,3 +1,5 @@
+> **Recovery note — 2026-11-08:** the implementation described below was ported from PR #262 onto `feat/checkout-ledger-recovered-main-20261108` at initial HEAD `88e0aab5219810ab24375f8eb947c5ad17aa453b`. The prior 8/8 checks cited below belong to the original #262 SHA and do not validate the recovery branch. Re-run all exact-HEAD migration/runtime/checkout checks before merge or any Neon rehearsal.
+
 # ODD task: inventory ledger-authoritative balance projection
 
 - Status: implementation complete; exact-HEAD validation passed at `c09bc06a2caa4b99728073bd4acb8063c6187299` (8/8 checks); Ready for independent review and Neon rehearsal

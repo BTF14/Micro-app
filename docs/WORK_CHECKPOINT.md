@@ -1,19 +1,25 @@
-# Work checkpoint — 2026-11-08 (posterior a Neon verify-empty)
+# Work checkpoint — 2026-11-08 UTC (posterior a Neon rehearsal #4)
 
-## Estado verificado
-- Repo: BTF14/Micro-app. Main: `209e3fe9f99c96a07546bb87c04b90755257d918`.
-- PR #278 integrada por squash: https://github.com/BTF14/Micro-app/pull/278. Fix de fetch exacto de SOURCE_SHA integrado.
-- El propietario ejecutó manualmente `Neon pinned migration rehearsal` desde `main`, `operation=verify-empty`; log iniciado 2026-11-08 17:21:02 UTC.
-- Fetch SHA `6227a3a8497f6be94d675b64da5da61530c200fc` confirmado; cadena 0001–0019 y archivos/assertions esperados verificados.
-- Conexión read-only a `microapp_rehearsal`; identidad database/login/session/branch/project, privilegios/membresías de roles y target vacío validados. Resultado explícito: `EMPTY_REHEARSAL_TARGET_VERIFIED`.
-- No se ejecutaron migraciones, DDL, DML ni bootstrap-and-migrate. No se tocó Neon main ni la DB parent-data clone `neondb`.
-- No se dispone del run ID/enlace en el extracto pegado; no inventar uno. El log no muestra fallo, pero metadata final del run queda por confirmar si se requiere registro formal SUCCESS.
+## Estado confirmado
+- Repo: BTF14/Micro-app. GitHub main: `37bf673895a035c84c4c18f837c12694f182a96b`.
+- PR #278 corrigió el fetch del pin inmutable; PR #279 integró reconciliación documental previa.
+- Run [#42507066215](https://github.com/BTF14/Micro-app/actions/runs/42507066215) SUCCESS, workflow `.github/workflows/neon-pinned-migration-rehearsal.yml`, disparado manualmente desde main con `bootstrap-and-migrate`.
+- Fuente exacta: `6227a3a8497f6be94d675b64da5da61530c200fc`. Target: proyecto `restless-fire-99110035`, branch `br-curly-poetry-b7dxsddm`, DB `microapp_rehearsal`, login `microapp_migrator`.
+- Se aplicaron 0001–0019; 19 migraciones únicas en ledger, todas `applied`; fingerprint baseline 0002 verificado; assertions 0017/0018/0019 SUCCESS; ownership y restricciones de roles comprobadas.
+- La migración 0019 ejecutó su DROP condicionado de `inventory_balance_ledger_intents` tras validar que estaba vacía.
+- No se tocó Neon main, `neondb` parent-data clone, secretos, Cloudflare, DNS, billing ni despliegues productivos. Producción sigue NOT READY.
 
-## Próximo paso técnico
-Revisar PR #279 (documentación) en su HEAD exacto, actualizar sus afirmaciones previas de “sin conexión/no dispatch” con la evidencia real del verify-empty y esperar CI exact-HEAD. Después continuar el diagnóstico/rehearsal de migraciones en una rama/DB aislada; no aplicar migraciones todavía.
+## Estado de documentación
+- PR #280: rama `docs/neon-rehearsal-success-20261108`; reconciliación de CURRENT_STATE, HANDOFF, PROJECT_PLAN, STATE_JOURNAL, SECURITY_ROADMAP, PRODUCTION_READINESS, WORKFLOW_AND_DEPLOYMENT_AUDIT, DATABASE_SCHEMA, SCHEMA_REVIEW, NEON_MIGRATION_APPLICATION_PLAN y este checkpoint. Mantener Draft hasta revisar diff completo y CI exact-HEAD.
+- README y documentación de apoyo también deben quedar alineados antes de cerrar la auditoría.
+
+## Próximos pasos
+1. Completar la auditoría cruzada de documentación y corregir afirmaciones históricas presentadas como actuales.
+2. Verificar CI, reviews, threads, base y branch protection de PR #280 en su HEAD final; integrar solo si pasa todos los gates.
+3. Después continuar con revisión técnica funcional sobre rehearsal, sin repetir bootstrap-and-migrate.
+4. Reconciliar PRs activas; mantener #269 Draft, no tocar #193 y no fusionar ramas apiladas con base obsoleta.
 
 ## Límites
-- Ninguna escritura remota Neon autorizada. No elegir `bootstrap-and-migrate` ni ejecutar migraciones sin preflight y autorización explícita independiente.
-- No modificar secretos, Neon main, datos reales, Cloudflare manual, DNS ni billing.
-- Mantener #269 Draft; respetar #193 sin cambios.
-- Producción NOT READY.
+- No repetir escrituras en Neon ni ejecutar SQL manual.
+- No tocar Neon main/producción, secretos, Cloudflare settings, DNS, billing ni despliegues manuales.
+- No pedir al usuario terminal, CLI, TinyFish, Build IDs o capturas si GitHub puede aportar la evidencia.

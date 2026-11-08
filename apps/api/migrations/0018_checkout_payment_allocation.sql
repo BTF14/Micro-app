@@ -59,7 +59,8 @@ BEGIN
     RAISE EXCEPTION 'COMPLETED_SALE_PAYMENT_ALLOCATION_POSITIONS_INVALID' USING ERRCODE = '23514';
   END IF;
 
-  IF sale_row.total_usd <= 0 OR sale_row.total_ves_snapshot <= 0 THEN
+  IF sale_row.total_usd IS NULL OR sale_row.total_usd <= 0
+    OR sale_row.total_ves_snapshot IS NULL OR sale_row.total_ves_snapshot <= 0 THEN
     RAISE EXCEPTION 'COMPLETED_SALE_PAYMENT_ALLOCATION_TOTAL_INVALID' USING ERRCODE = '23514';
   END IF;
 

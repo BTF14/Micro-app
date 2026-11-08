@@ -538,6 +538,46 @@ describe.skipIf(!isDisposableCheckoutDatabase)("atomic sales checkout PostgreSQL
     }
   });
 
+  it("accepts split VES payments and persists independently verifiable allocation positions", async () => {
+    await seedBalance("2.000");
+    const key = "split-ves-payment-" + crypto.randomUUID();
+    const totalUsd = "23.8500";
+    const totalVes = convertUsdToVes(totalUsd, "250.12345678");
+    const totalVesUnits = parseNumeric(totalVes, 16, 2);
+    const firstAmount = formatNumeric(totalVesUnits / 3n, 16, 2);
+    const secondAmount = formatNumeric(totalVesUnits - totalVesUnits / 3n, 16, 2);
+    const body = {
+      warehouse_id: warehouseId,
+      lines: [{ product_id: productId, quantity: "1.000" }],
+      payments: [
+        { method: "cash", currency: "VES", amount: firstAmount },
+        { method: "transfer", currency: "VES", amount: secondAmount },
+      ],
+    };
+    const response = await request(body, key);
+    expect(response.status).toBe(201);
+    const sale = await client.query<{ id: string }>(
+      "SELECT id FROM public.sales WHERE organization_id=$1 AND idempotency_key=$2",
+      [organizationId, key],
+    );
+    const payments = await client.query<{
+      allocation_position: number; amount: string; usd_equivalent_snapshot: string;
+    }>(
+      "SELECT allocation_position,amount::text,usd_equivalent_snapshot::text FROM public.payments WHERE organization_id=$1 AND sale_id=$2 ORDER BY allocation_position",
+      [organizationId, sale.rows[0]!.id],
+    );
+    expect(payments.rows.map((row) => row.allocation_position)).toEqual([1, 2]);
+    expect(payments.rows.reduce((sum, row) => sum + parseNumeric(row.amount, 14, 2), 0n)).toBe(totalVesUnits);
+    const totalUsdUnits = parseNumeric(totalUsd, 14, 4);
+    const firstExpected = parseNumeric(payments.rows[0]!.amount, 14, 2) * totalUsdUnits / totalVesUnits;
+    const lastExpected = totalUsdUnits - firstExpected;
+    expect(payments.rows.map((row) => row.usd_equivalent_snapshot)).toEqual([
+      formatNumeric(firstExpected, 14, 4),
+      formatNumeric(lastExpected, 14, 4),
+    ]);
+    expect((await readBalance()).on_hand_quantity).toBe("1.000");
+  });
+
   it("rejects a tampered per-payment VES allocation even when the aggregate USD equivalent still reconciles", async () => {
     await seedBalance("2.000");
     const key = "payment-allocation-guard-" + crypto.randomUUID();

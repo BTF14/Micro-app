@@ -1,3 +1,28 @@
+## Prioridad operativa vigente — 2026-11-08 UTC
+
+Este bloque prevalece sobre prioridades históricas inferiores.
+
+### Estado de ejecución
+
+1. **Reconciliación GitHub — completada para la pila auth/BCV.** Main está en `96e2e2d9f76bc8fcc3bab2fa9503e480545c8869`. #251 HEAD `5dec5d5a9025de16b19d0cb7cfeac6585e2ad5d6` y #255 HEAD `35b9ac6894f79c5760a1f56fb37506ed2278afa0` están actualizadas, cero commits detrás de sus bases y con 15/15 check-runs SUCCESS. Ambas siguen Draft por falta de revisión formal y gates Neon.
+2. **BCV — código y regresiones completados; revisión/Neon pendientes.** Parser oficial, precisión exacta, latest/history, fin de semana, UI, no-store, revalidación al cambio de fecha Caracas y Cron laborable. Feriados entre semana siguen fail closed por falta de calendario oficial.
+3. **Neon — gate bloqueante.** Main no tiene roles de aplicación ni migraciones 0003–0016. Rehearsal tiene roles/ownership, pero runtime no tiene grants de tabla. El CI migration runner solo usa PostgreSQL desechable. No ejecutar SQL manual; falta autorización específica para crear/usar el secreto de rehearsal y un runner protegido.
+4. **Checkout — siguiente recuperación técnica.** #233 contiene handler/tests únicos, pero su base y migration 0015 son antiguas. Portar solo el handler/tests a una rama nueva basada en #255, y diseñar migration 0017 para alinear el trigger con la regla de fecha efectiva BCV. Mantener bloqueada la activación hasta aprobación funcional del modelo de pagos.
+5. **Inventario y sucursales.** Mantener el modelo Kardex/ledger, locks por tenant/sucursal, conteos absolutos, idempotencia y transferencias en dos etapas. Reconciliar #193 y documentación restante antes de crear nuevas ramas.
+6. **Documentación.** #257 reúne ODD/locking y el estado de continuidad actual. #202 conserva addenda documentales de 2026-11-05 que todavía deben reconciliarse; no cerrar hasta recuperar lo útil.
+
+### PRs
+
+- Abiertas para trabajo/reconciliación: #193, #202, #211, #233, #251, #255, #257.
+- Cerradas por supersesión verificada sin merge: #200, #204, #205, #207–#210, #227–#232. No reabrirlas ni duplicar sus cambios.
+- No tratar check-runs verdes como aprobación formal.
+
+### Gate de producción
+
+**Producción NOT READY.** No mergear #251/#255 hasta que la rama Neon de ensayo ejecute el runner completo, runtime tenga permisos mínimos comprobados con login directo, backup/restore y smoke autenticado pasen, y exista revisión independiente. No modificar Neon main, secretos, DNS, billing ni Cloudflare production por conveniencia.
+
+---
+
 # Prioridad operativa vigente — Micro app
 
 > **Fuente de verdad del estado vivo:** consultar `docs/CURRENT_STATE.md` y `docs/HANDOFF_NEXT_CHAT.md`, y verificar GitHub antes de actuar. Los snapshots y prioridades históricos que siguen en este archivo pueden estar supersedidos.

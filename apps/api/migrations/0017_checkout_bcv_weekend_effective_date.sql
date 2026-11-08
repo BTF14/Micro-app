@@ -91,6 +91,18 @@ BEGIN
   THEN
     RAISE EXCEPTION 'COMPLETED_SALE_LINES_DO_NOT_RECONCILE' USING ERRCODE = '23514';
   END IF;
+  IF EXISTS (
+    SELECT 1
+      FROM public.sale_items si
+     WHERE si.organization_id = target_org
+       AND si.sale_id = target_sale
+       AND (
+         si.line_total_usd <> pg_catalog.round(si.quantity * si.unit_price_usd, 4)
+         OR si.line_total_ves <> pg_catalog.round(si.line_total_usd * sale_row.exchange_rate_snapshot, 2)
+       )
+  ) THEN
+    RAISE EXCEPTION 'COMPLETED_SALE_LINE_ARITHMETIC_INVALID' USING ERRCODE = '23514';
+  END IF;
 
   SELECT count(*),
          count(*) FILTER (WHERE currency <> sale_row.settlement_currency),

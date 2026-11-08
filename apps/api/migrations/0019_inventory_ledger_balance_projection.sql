@@ -149,6 +149,9 @@ REVOKE INSERT, UPDATE, DELETE, TRUNCATE, TRIGGER
   ON TABLE public.inventory_balances FROM microapp_runtime;
 REVOKE UPDATE (on_hand_quantity, reserved_quantity, balance_version, updated_at)
   ON TABLE public.inventory_balances FROM microapp_runtime;
+REVOKE INSERT (organization_id, branch_id, warehouse_id, product_id, on_hand_quantity,
+                reserved_quantity, balance_version, updated_at)
+  ON TABLE public.inventory_balances FROM microapp_runtime;
 
 -- SELECT ... FOR UPDATE requires UPDATE privilege. Expose only this scoped
 -- SECURITY DEFINER helper; it re-locks the warehouse scope and then locks

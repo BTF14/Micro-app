@@ -153,7 +153,7 @@ BEGIN
           '33333333-3333-4333-8333-333333333333',
           '55555555-5555-4555-8555-555555555555',v_product,'opening',2.000,
           2.000,'Runtime role opening count',v_count,
-          '22222222-2222-4222-8222-222222222222');
+          '66666666-6666-4666-8666-666666666666');
 
   SELECT count(*) INTO v_rows
   FROM public.lock_inventory_balances(

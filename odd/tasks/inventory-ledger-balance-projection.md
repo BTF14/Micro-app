@@ -1,8 +1,10 @@
-> **Recovery note — 2026-11-08:** the implementation described below was ported from PR #262 onto `feat/checkout-ledger-recovered-main-20261108` at initial HEAD `88e0aab5219810ab24375f8eb947c5ad17aa453b`. The prior 8/8 checks cited below belong to the original #262 SHA and do not validate the recovery branch. Re-run all exact-HEAD migration/runtime/checkout checks before merge or any Neon rehearsal.
+> **Recovery note — 2026-11-08:** the implementation described below was ported from PR #262 onto `feat/checkout-ledger-recovered-main-20261108`. Historical 8/8 checks belong to the original #262 SHA and do not validate the current branch. Re-run all exact-HEAD migration/runtime/checkout checks after synchronization.
+
+> **Estado autoritativo posterior al rehearsal Neon y PR #282 — 2026-11-08 UTC.** Esta proyección está incluida en PR #269 Draft, que consolida el trabajo de #262. Migration 0019 y sus assertions fueron aplicadas en el rehearsal aislado #42507066215 (source SHA `6227a3a8497f6be94d675b64da5da61530c200fc`); el source SHA pasó 16/16 check-runs y 14/14 workflows con runtime-role/checkout suites en PostgreSQL desechable. El HEAD actual requiere revalidación exact-SHA tras sincronización con main; no reutilizar los checks anteriores. Runtime no puede escribir directamente `inventory_balances`; solo INSERT ledger autorizado y el trigger SECURITY DEFINER proyecta balances. La implementación soporta opening/count_adjustment/sale; transfer dispatch/receipt de dos etapas sigue fuera de este PR y los movimientos no soportados fallan cerrado. No repetir escrituras Neon ni declarar producción lista.
 
 # ODD task: inventory ledger-authoritative balance projection
 
-- Status: implementation complete; exact-HEAD validation passed at `c09bc06a2caa4b99728073bd4acb8063c6187299` (8/8 checks); Ready for independent review and Neon rehearsal
+- Status: migration 0019 implementation included in consolidated PR #269 Draft; Neon rehearsal completed on isolated DB; current exact-HEAD CI pending revalidation after main sync.
 - Issue / PR: follow-up to #193 §7.9.H–I; stacked on checkout #258
 - Owner / reviewer: repository owner; technical execution by senior agent
 - Started: 2026-11-08 UTC

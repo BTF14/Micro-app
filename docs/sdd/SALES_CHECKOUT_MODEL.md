@@ -1,8 +1,21 @@
+## Estado autoritativo posterior al rehearsal Neon y PR #282 — 2026-11-08 UTC
+
+- Main antes de esta sincronización: `9c6b30281ed59726e532da840568fc9e80b528f7`; la implementación consolidada sigue en PR #269 Draft, pre-sync HEAD `14afd5de938a6ff655ecdfc5cb747f0f799290c5` (24 ahead / 5 behind). El merge commit actualiza la base sin force-push; volver a consultar el HEAD vivo y revalidar CI exact-SHA.
+- Neon rehearsal #42507066215 SUCCESS aplicó 0001–0019 desde source `6227a3a8497f6be94d675b64da5da61530c200fc` exclusivamente en `microapp_rehearsal`. Los blobs de 0017–0019 y del código checkout/counts consultado coinciden con el HEAD pre-sync. No hubo escrituras en Neon main.
+- Migration 0018 **resuelve** la antigua brecha de ordinal: `allocation_position`, índice único y constraint triggers diferidos verifican posiciones contiguas, asignación USD por pago, redondeo y residuo final; assertions y test de manipulación/rollback incluidos.
+- Migration 0019 elimina las escrituras runtime directas de `inventory_balances`; el ledger append-only proyecta balances. Los tipos de movimiento soportados por esta implementación son opening, count_adjustment y sale; transfer dispatch/receipt de dos etapas todavía no está implementado y se rechaza.
+- El source SHA 6227 pasó 16/16 check-runs y 14/14 workflows, con pruebas runtime-role/checkout en PostgreSQL desechable. Esto es evidencia histórica del código, no validación exact-HEAD tras sincronizar.
+- **Bloqueos:** contrato comercial checkout sin aprobación explícita; checkout exige actualmente tasa BCV incluso en ventas USD-only (decisión pendiente); freshness no depende de `fetched_at` y este timestamp no se actualiza en sync `unchanged`; #255 no tiene alerta persistente, fixture real BCV ni calendario de feriados; UI checkout pendiente. Producción NOT READY.
+
+Los snapshots de SHA/PR y los estados que siguen en este documento son históricos; prevalece este bloque y el estado vivo de CURRENT_STATE/HANDOFF. No reutilizar checks antiguos ni ejecutar más escrituras Neon.
+
+---
+
 ## Actualización autoritativa de recuperación — 2026-11-08 UTC
 
-Este modelo incorpora el diseño técnico más reciente recuperado de PR #258/#262. La implementación está en PR #269 (`feat/checkout-ledger-recovered-main-20261108`), no en `main`, Neon ni producción. Main al crear esta actualización: `5f09b87aee09d0746f6ea90f076b4eb81d168daf`. La validación inicial de código en HEAD `730bcd32776b76b22d2176fa3d09c5b7035e62a3` pasó 16/16 check-runs y 11/11 workflows; cualquier commit posterior exige revalidación exact-SHA.
+Este modelo incorpora el diseño técnico más reciente recuperado de PR #258/#262. La implementación está en PR #269 (`feat/checkout-ledger-recovered-main-20261108`), no en `main`, Neon ni producción. Main al sincronizar esta rama: `9c6b30281ed59726e532da840568fc9e80b528f7`. La validación inicial de código en HEAD `730bcd32776b76b22d2176fa3d09c5b7035e62a3` pasó 16/16 check-runs y 11/11 workflows; cualquier commit posterior exige revalidación exact-SHA.
 
-**Bloqueos vigentes:** productor/Cron BCV #255 no integrado; ensayo Neon protegido bloqueado por ausencia de `NEON_REHEARSAL_DATABASE_URL`; contrato comercial de pagos pendiente de aprobación; UI de checkout y calendario oficial de feriados weekday pendientes. No declarar checkout listo ni habilitarlo en producción.
+**Bloqueos vigentes:** productor/Cron BCV #255 no integrado; Neon rehearsal #42507066215 completado en `microapp_rehearsal`; no repetir escrituras; contrato comercial de pagos pendiente de aprobación; UI de checkout y calendario oficial de feriados weekday pendientes. No declarar checkout listo ni habilitarlo en producción.
 
 ---
 
@@ -15,7 +28,7 @@ Este modelo incorpora el diseño técnico más reciente recuperado de PR #258/#2
 - **Pruebas PostgreSQL:** caso positivo de pago VES dividido; caso negativo modifica +0.0001/-0.0001 manteniendo el agregado total y demuestra rollback de venta, balance y ledger. Ambas pasan.
 - **Rate limit:** 60 solicitudes/minuto por IP confiada `CF-Connecting-IP`; HMAC con `GOOGLE_CLIENT_SECRET` existente, sin guardar IP cruda; 429 con `Retry-After`, y 503 fail-closed si falta IP/pepper o falla DB. La prueba de integración verifica el 61.º intento.
 - **Validación exacta del HEAD de código e44b3b606daab7a5470a2315f8545143a9b4dceb:** 15/15 check-runs, 13/13 workflows, 141 unit tests, 85 runtime-role PostgreSQL tests y 19 checkout PostgreSQL integration tests SUCCESS.
-- **No equivale a producción:** #258 sigue Draft y sin review formal independiente; falta integrar el productor BCV #255, aprobar el contrato comercial de pagos, resolver escritura directa runtime de balances, UI, calendario weekday y Neon rehearsal protegido.
+- **No equivale a producción:** #258 sigue Draft y sin review formal independiente; falta integrar el productor BCV #255, aprobar el contrato comercial de pagos, mantener la proyección ledger-only de migration 0019 y revalidar permisos runtime en CI exact-HEAD, UI, calendario weekday y Neon rehearsal protegido.
 
 ---
 
@@ -84,7 +97,7 @@ El handler #258 usa la misma selección de fecha efectiva y rechaza la fila near
 ## 4. Brechas de integridad restantes para revisar
 
 1. **Resuelto en la rama #258 mediante migration 0017:** el trigger diferido ahora valida por línea `quantity × unit_price_usd` redondeado a 4 decimales y `line_total_usd × exchange_rate_snapshot` redondeado a 2 decimales. La assertion SQL comprueba el contrato y el test PostgreSQL manipula el importe antes del COMMIT para demostrar rechazo/rollback. No está todavía en main ni aplicado en Neon.
-2. **Abierto:** el trigger verifica que los equivalentes USD de pagos sumen el total USD y que los pagos VES compartan el snapshot BCV, pero no reproduce completamente el algoritmo de asignación proporcional por pago. El handler ordena los pagos y asigna cocientes enteros BigInt, dejando el residuo al último pago. La base no conserva un ordinal de pago que permita verificar esa distribución de forma independiente; diseñar una extensión de esquema/trigger antes de producción si se exige esta defensa SQL.
+2. **Resuelto por migration 0018:** `payments.allocation_position` conserva el ordinal de cada pago; el constraint trigger diferido valida posiciones contiguas, equivalentes USD truncados a cuatro decimales y residuo del último pago. Las assertions SQL y la prueba PostgreSQL de manipulación +0.0001/-0.0001 demuestran rechazo y rollback. No queda abierta la brecha de ordinal descrita en el snapshot histórico.
 3. `payments` no tiene idempotencia individual; la clave/hash de `sales` debe cubrir el conjunto completo de pagos. No crear endpoint separado de pagos sin diseño de idempotencia.
 4. `products.stock_quantity` es legado. Checkout solo puede consumir `inventory_balances` del warehouse elegido y registrar el movimiento correspondiente; no actualizar ambas representaciones.
 5. La regla de feriados bancarios entre semana no está implementada. La conversión y checkout deben fallar cerrado si falta la fecha efectiva exacta.
@@ -187,7 +200,7 @@ Todas las pruebas usan PostgreSQL efímero; nunca Neon main ni datos reales.
 2. Resolver la confirmación funcional del contrato de pagos antes de activar checkout.
 3. Validar la migration 0017 de PR #258 y sus assertions PostgreSQL/migration-runner en el SHA exacto.
 4. Validar PR #258 sobre la migración 0015 canónica y 0017 nueva; recuperar el productor y Cron BCV de #255 antes de activar checkout. No portar la migration 0015 antigua de #233.
-5. La validación SQL por línea está añadida en migration 0017; queda abierta la validación independiente de la asignación proporcional individual de equivalentes USD por pago VES, que requiere definir/guardar orden de pago o un contrato equivalente.
+5. La validación SQL por línea está añadida en migration 0017; queda abierta la validación independiente de la asignación proporcional individual por pago VES, resuelta por migration 0018 y `allocation_position`.
 6. Ejecutar unitarias, CI, migration runner, PostgreSQL admin/runtime integration, E2E y backup/restore cuando aplique; todos sobre el SHA final exacto.
 7. Solo después implementar UI de checkout; no duplicar cálculos monetarios en React.
 

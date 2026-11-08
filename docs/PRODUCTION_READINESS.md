@@ -1,16 +1,12 @@
-## Estado reconciliado de checkout/ledger — 2026-11-08 UTC
+# Estado del repositorio — 2026-11-08 UTC
 
-- Main vigente al crear esta actualización: `5f09b87aee09d0746f6ea90f076b4eb81d168daf`.
-- Recuperación de checkout + ledger: PR #269, rama `feat/checkout-ledger-recovered-main-20261108`; migraciones 0017–0019, route handler, proyección ledger→balance y pruebas portadas desde #258/#262.
-- Validación inicial de código en HEAD `730bcd32776b76b22d2176fa3d09c5b7035e62a3`: 16/16 check-runs y 11/11 workflows SUCCESS, incluidos migration-check, migration-runner, CI (unit, PostgreSQL integration, runtime-role), Playwright, backup/restore, SAST y Workers/Pages builds. Cualquier nuevo commit requiere revalidación exact-SHA.
-- PR #269 permanece Draft y no integrada. No hay review formal independiente registrada.
-- PR #255 sigue siendo dependencia separada para ingesta oficial BCV/API/Cron. No activar checkout con una tasa no disponible o stale.
-- El ensayo protegido Neon `verify` (#42479603848) se detuvo antes de conectar por falta del secreto de repositorio `NEON_REHEARSAL_DATABASE_URL`. No se conectó a Neon ni se aplicaron migraciones. Neon main/rehearsal no se modificaron.
-- El contrato comercial de pagos sigue pendiente de aprobación del propietario. La UI de checkout y el calendario oficial de feriados bancarios weekday tampoco están implementados.
-- Estado de producción: **NOT READY**. CI de PostgreSQL efímero no equivale a esquema/Worker real desplegado.
+El estado vivo de main, PRs, SHA, checks y próximos pasos está centralizado en [CURRENT_STATE.md](CURRENT_STATE.md) y [HANDOFF_NEXT_CHAT.md](HANDOFF_NEXT_CHAT.md). Los snapshots históricos que siguen en este documento son evidencia temporal: no reutilizar SHA ni resultados CI sin comprobar el HEAD exacto.
+
+- GitHub main protegido: `aa2804a0a6e7879f684b3baeb60646e50f1d6419`; PR #280 integrada por squash.
+- Neon rehearsal #42507066215: SUCCESS; migraciones 0001–0019 verificadas únicamente en `microapp_rehearsal`. Neon main no fue modificado.
+- Producción: **NOT READY**; no extrapolar el ensayo ni los builds automáticos a certificación productiva.
 
 ---
-
 ## Readiness de producción — 2026-11-08 UTC
 
 **Resultado: NOT READY.** Los checks exactos de #251, #255 y #258 están verdes, pero ninguna tiene review formal independiente y los gates de Neon/runtime y producto siguen abiertos.

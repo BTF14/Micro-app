@@ -308,6 +308,7 @@ describe.skipIf(!isDisposableCheckoutDatabase)("atomic sales checkout PostgreSQL
         for (const table of [
           "public.sales", "public.sale_items", "public.payments",
           "public.warehouse_inventory_movements", "public.inventory_balances", "public.audit_logs",
+          "public.inventory_count_lines", "public.inventory_counts",
         ]) {
           await client.query("ALTER TABLE " + table + " DISABLE TRIGGER USER");
         }
@@ -316,11 +317,13 @@ describe.skipIf(!isDisposableCheckoutDatabase)("atomic sales checkout PostgreSQL
         await client.query("DELETE FROM public.sale_items WHERE organization_id=$1", [organizationId]);
         await client.query("DELETE FROM public.sales WHERE organization_id=$1", [organizationId]);
         await client.query("DELETE FROM public.warehouse_inventory_movements WHERE organization_id=$1", [organizationId]);
+        await client.query("DELETE FROM public.inventory_count_lines WHERE organization_id=$1", [organizationId]);
+        await client.query("DELETE FROM public.inventory_counts WHERE organization_id=$1", [organizationId]);
         await client.query("DELETE FROM public.inventory_balances WHERE organization_id=$1", [organizationId]);
         for (const table of [
           "public.sales", "public.sale_items", "public.payments",
           "public.warehouse_inventory_movements", "public.inventory_balances", "public.audit_logs",
-          "public.register_shifts",
+          "public.inventory_count_lines", "public.inventory_counts", "public.register_shifts",
         ]) {
           await client.query("ALTER TABLE " + table + " ENABLE TRIGGER USER");
         }

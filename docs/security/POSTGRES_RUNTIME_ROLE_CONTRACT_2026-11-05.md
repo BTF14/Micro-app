@@ -1,3 +1,5 @@
+> **Superseding inventory update — 2026-11-08, PR #262 (Draft, not merged):** This file is a historical runtime-role snapshot from 2026-11-05. Its table below records the then-current direct `inventory_balances` INSERT/UPDATE grants and the migration 0010 intent-pairing model; do not treat those rows as the intended post-0019 contract. On the #262 branch, migration 0019 removes the private intent-pairing table, projects every appended movement into balances through an owner-controlled `SECURITY DEFINER` trigger, revokes all runtime balance mutation privileges, and provides a tenant/branch-scoped `lock_inventory_balances` helper for row locks. Count and checkout handlers append movements only. This state is not yet integrated into main or verified against Neon.
+
 # PostgreSQL runtime role contract — 2026-11-05
 
 ## Status and scope

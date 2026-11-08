@@ -511,7 +511,7 @@ REVOKE ALL ON FUNCTION public.lock_inventory_balances(uuid, uuid[], uuid[], uuid
 GRANT EXECUTE ON FUNCTION public.lock_inventory_balances(uuid, uuid[], uuid[], uuid[]) TO microapp_runtime;
 
 COMMENT ON FUNCTION public.validate_inventory_movement_source() IS
-  'Fail-closed source authorization: count movements use confirmed count validation; sale movements must match a draft sale line and actor; unsupported source types are rejected.';
+  'Fail-closed source authorization: opening/count adjustments require matching confirmed count documents, authorized active actors, branch scope and current physical-count snapshots; sale movements must match a draft sale line and actor; unsupported source types are rejected.';
 
 COMMENT ON FUNCTION public.lock_inventory_movement_warehouse() IS
   'SECURITY DEFINER BEFORE INSERT guard: lock and validate the active tenant/branch warehouse before count validation and balance projection.';

@@ -1,6 +1,6 @@
 # ODD task: inventory ledger-authoritative balance projection
 
-- Status: implementation complete; exact-HEAD validation passed; independent review and Neon rehearsal pending
+- Status: implementation complete; exact-HEAD validation passed at `2ff0c4c63d635fcdf42352b7c2ba16e2ef545c49` (8/8 checks); independent review and Neon rehearsal pending
 - Issue / PR: follow-up to #193 §7.9.H–I; stacked on checkout #258
 - Owner / reviewer: repository owner; technical execution by senior agent
 - Started: 2026-11-08 UTC
@@ -16,7 +16,7 @@
 
 Included:
 - Add migration 0019 and assertions after #258 migrations 0017/0018.
-- Replace balance-first + movement-second application writes with movement-only writes in inventory count confirmation and atomic checkout.
+- Use movement-only writes after migration 0019 is installed; retain a narrowly scoped legacy paired-write fallback only while the projection function is absent, so staged migration rollout remains compatible.
 - Add a narrow SECURITY DEFINER balance-lock helper so runtime can preserve ordered row locking without UPDATE privilege.
 - Revoke runtime INSERT and column-scoped UPDATE on `inventory_balances`; retain SELECT and ledger INSERT.
 - Add defense-in-depth guard against direct balance writes, retaining immutable identity and TRUNCATE protection.
@@ -24,7 +24,7 @@ Included:
 - Update runtime-role smoke, migration-check, CI assertions, integration tests, ODD and continuity evidence.
 
 Excluded:
-- No change to approved inventory business rules, movement semantics, branch/tenant authorization, checkout pricing, payment policy or idempotency contract.
+- No change to approved inventory business rules, movement semantics, application authorization matrix, checkout pricing, payment policy or idempotency contract. Migration 0019 adds database-side defense-in-depth checks for the existing confirmer roles and branch scope.
 - No automatic stock backfill or distribution from `products.stock_quantity`.
 - No Neon main/rehearsal writes, production migration, secret or deployment changes.
 - No direct merge of #258 or this stacked PR without exact-HEAD CI and required independent review.
@@ -60,9 +60,9 @@ Excluded:
 |---|---|---|---|
 | Reconcile #193 §7.9.H–I against current schema and writers | Accurate implementation plan | GitHub source, migrations 0006/0010/0011/0012, inventory-counts and #258 checkout reviewed | complete |
 | Create durable ODD task before source changes | This file exists on feature branch | GitHub contents API commit | complete |
-| Implement 0019 projection, lock helper and least-privilege grants | Database-enforced ledger projection | Migration assertions + rollback + full PostgreSQL CI | complete — exact HEAD ef1e17a01a8361a7c6e8d28454a3e1e30e8cc2eb |
+| Implement 0019 projection, lock helper and least-privilege grants | Database-enforced ledger projection | Migration assertions + rollback + full PostgreSQL CI | complete — exact HEAD `2ff0c4c63d635fcdf42352b7c2ba16e2ef545c49` |
 | Convert count and checkout writers | Movement-only stock writes; all-zero opening remains one-time | Inventory-count, inventory-read and atomic-checkout PostgreSQL suites | complete — exact HEAD ef1e17a01a8361a7c6e8d28454a3e1e30e8cc2eb |
-| Harden smoke/CI and document evidence | Runtime principal proves allowed/denied actions | 8/8 check-runs; 6/6 PR workflow runs successful on exact HEAD ef1e17a01a8361a7c6e8d28454a3e1e30e8cc2eb | complete |
+| Harden smoke/CI and document evidence | Runtime principal proves allowed/denied actions | 8/8 check-runs SUCCESS on exact HEAD `2ff0c4c63d635fcdf42352b7c2ba16e2ef545c49` | complete |
 | Independent architecture/security/QA review | Review of complete diff | No formal reviews or review threads exist yet; owner/independent review remains a merge gate | pending |
 
 ## Technical decisions
@@ -77,10 +77,9 @@ Excluded:
 
 ## Closure and handoff
 
-- Final commit SHA: `ef1e17a01a8361a7c6e8d28454a3e1e30e8cc2ebbdb2976050cd69f1689c799c9eb8ac771`
-- PR: #262 Draft, base `feat/sales-checkout-recovered-main-20261108` (PR #258); mergeable=true; branch is one commit behind the current base branch after the CI-trigger improvement.
-- Checks and exact outcomes: 8/8 check-runs successful on the exact HEAD; full CI build/typecheck, unit tests, inventory count/read, atomic checkout and runtime-role API integration all passed. Migration validation passed both PR and push runs, including injected rollback and runtime-role smoke. Backup/restore, Cloudflare Pages, Workers build, Trivy, secret-history and security scans passed.
-- Acceptance criteria met / unmet: AC-1 through AC-10 met in disposable PostgreSQL/CI. Formal independent review and Neon rehearsal are not complete.
-- Limitations not verified: Neon role ownership and Worker DATABASE_URL identity remain unverified; #193's reduced-schema experiments do not prove production Neon behavior.
-- Residual risks: CI proves the disposable PostgreSQL contract, not Neon role identity/ownership or the production Worker's actual DATABASE_URL principal. Runtime retains INSERT on the append-only movement table by design; migration 0019 enforces active warehouse locking, count-linked movement validation and balance/reserved-stock projection, but it does not add source-document authorization for future purchase-receipt, transfer, return or reservation movement types. Those endpoints must not be exposed until their per-type source/actor/tenant authorization contracts and tests are implemented. No production readiness claim until Neon rehearsal, runtime identity/grants, backup/restore and end-to-end operational gates are independently verified.
-- Next step: implement migration 0019 and convert both application balance writers.
+- Final code HEAD validated: `2ff0c4c63d635fcdf42352b7c2ba16e2ef545c49`.
+- PR: #262 remains Draft until this final documentation commit receives fresh exact-HEAD CI; base is `feat/sales-checkout-recovered-main-20261108` (PR #258). The branch contains a merge commit whose first parent is the current #258 checkout HEAD, preserving the stack.
+- Checks on the validated code HEAD: 8/8 check-runs SUCCESS. `verify` completed build/typecheck, unit tests, PostgreSQL auth/branch/register/catalog/count/read/checkout suites and runtime-role API integration. `postgres-migration` completed migrations 0001–0019, rollback assertions, schema contract, and actual `microapp_runtime` LOGIN positive/negative smoke. Backup/restore, Cloudflare Pages, Workers Build, Trivy and secret-history scans passed.
+- Acceptance criteria: AC-1 through AC-10 passed in disposable PostgreSQL/CI. Independent review and Neon rehearsal remain mandatory merge gates.
+- Residual: the database validates the claimed actor role/scope but does not cryptographically bind `actor_user_id` to the HTTP session. The application authorization layer remains mandatory. Neon role ownership and production Worker DATABASE_URL identity are unverified; no production readiness claim.
+- Next step: refresh CI after this documentation update, then mark #262 Ready for review. No merge until independent review and Neon rehearsal are complete.

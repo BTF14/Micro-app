@@ -1,3 +1,21 @@
+> **Contrato vigente post-0019 — rama #262, no integrada:** el snapshot histórico de 2026-11-05 que sigue abajo ya no describe los grants previstos tras migration 0019. En el HEAD validado `2ff0c4c63d635fcdf42352b7c2ba16e2ef545c49` (8/8 checks SUCCESS), el runtime conserva SELECT sobre balances, INSERT sobre el ledger y las operaciones de documentos comerciales estrictamente necesarias; la proyección es trigger SECURITY DEFINER del migrator. CI incluyó un LOGIN real `microapp_runtime` y smoke positivo/negativo. Esto no prueba el DATABASE_URL efectivo de Neon/Worker.
+
+| Objeto | Operaciones runtime post-0019 | Frontera |
+|---|---|---|
+| `inventory_balances` | SELECT | Sin INSERT/UPDATE/DELETE/TRUNCATE. Los locks usan `lock_inventory_balances` SECURITY DEFINER. |
+| `warehouse_inventory_movements` | INSERT | Solo opening/count_adjustment respaldados por conteo confirmado y sale respaldado por sale draft/línea exacta. Otros tipos (purchase_receipt, customer_return, transfer_in/out, reversal) rechazados. Sin UPDATE/DELETE/TRUNCATE. |
+| `inventory_counts` | SELECT, INSERT, UPDATE | Trigger de confirmación exige organización/sucursal/almacén activos y confirmer activo owner/admin/inventory; inventory requiere branch_membership activo. Opening requiere warehouse vacío. |
+| `inventory_count_lines` | SELECT, INSERT | Inmutables tras confirmar; movimientos físicos revalidan expected quantity y balance_version bajo warehouse mutex. |
+| `sales` | SELECT, INSERT, UPDATE(status, completed_at) | Solo transición draft→completed; reconciliación diferida de líneas, pagos, ledger y audit. |
+| `sale_items` | SELECT, INSERT | Líneas de una venta draft; inmutables tras completar por triggers. |
+| `payments` | SELECT, INSERT | Una moneda de liquidación por venta; total exacto y asignaciones USD verificadas por triggers diferidos. |
+| `exchange_rates` | SELECT, INSERT, UPDATE(validation_status) | Migration 0013; el runtime no puede reescribir rate, effective_date ni borrar historial. |
+| `inventory_balance_ledger_intents` | No existe tras 0019 | La migración elimina la tabla histórica tras verificar que no haya intents pendientes. |
+
+**Límite residual:** el trigger valida el rol y la sucursal del `actor_user_id` declarado, pero el rol PostgreSQL compartido no lo vincula criptográficamente con la sesión HTTP. La autorización de aplicación `authorizeBranchOperation` sigue siendo obligatoria. Ningún endpoint de compra/transferencia/devolución debe habilitarse hasta definir su documento fuente y su autorización por tipo.
+
+---
+
 > **Superseding inventory update — 2026-11-08, PR #262 (Draft, not merged):** This file is a historical runtime-role snapshot from 2026-11-05. Its table below records the then-current direct `inventory_balances` INSERT/UPDATE grants and the migration 0010 intent-pairing model; do not treat those rows as the intended post-0019 contract. On the #262 branch, migration 0019 removes the private intent-pairing table, projects every appended movement into balances through an owner-controlled `SECURITY DEFINER` trigger, revokes all runtime balance mutation privileges, and provides a tenant/branch-scoped `lock_inventory_balances` helper for row locks. Count and checkout handlers append movements only. This state is not yet integrated into main or verified against Neon.
 
 # PostgreSQL runtime role contract — 2026-11-05

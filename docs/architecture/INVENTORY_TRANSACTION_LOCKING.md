@@ -3,7 +3,7 @@
 **Status:** target technical contract implemented on Draft PR #262, stacked on checkout PR #258; not yet merged into `main`.  
 **Updated:** 2026-11-08 UTC  
 **Scope:** any transaction that changes warehouse stock, reservations, inventory counts, the warehouse movement ledger, or a document that confirms those changes.  
-**Does not approve:** new commercial rules, transfer/receipt/return/sales endpoints, additional DDL, Neon migrations, production deployment or merge of the obsolete PR #200 stack.
+**Does not approve:** new commercial rules, reservation/purchase-receipt/return/transfer endpoints, additional DDL, Neon migrations, production deployment or merge of the obsolete PR #200 stack. Atomic sale checkout is implemented on #258/#262 and follows this lock contract, but remains unmerged and subject to independent review/product gates.
 
 ## 1. Implementation represented on PR #262 branch
 
@@ -47,7 +47,7 @@ A row lock on `inventory_balances` protects only rows that already exist. It can
 
 The warehouse row therefore acts as a transaction mutex. Every writer must lock the warehouse before checking, inserting or updating its balances. This serializes creation of previously absent balance rows as well as updates to existing ones. The unique balance key remains an additional database defense; it does not replace the mutex contract.
 
-Application writers still call the warehouse helper before locking balances. Migration 0019 additionally enforces the mutex at the database boundary: a BEFORE INSERT SECURITY DEFINER trigger locks and validates the active tenant/branch warehouse before the existing count validator, and the AFTER INSERT projection trigger applies the movement. Runtime direct balance INSERT/UPDATE/DELETE/TRUNCATE is revoked; a nested-trigger guard is defense in depth. The prior migration 0010 intent-pairing mechanism is removed by 0019 after the projection path is installed.
+Application writers still call the warehouse helper before locking balances. Migration 0019 additionally enforces the mutex at the database boundary: a BEFORE INSERT SECURITY DEFINER trigger locks and validates the active tenant/branch warehouse before the existing count validator, and the AFTER INSERT projection trigger applies the movement. Runtime direct balance INSERT/UPDATE/DELETE/TRUNCATE is revoked; a nested-trigger guard is defense in depth. The prior migration 0010 intent-pairing mechanism is removed by 0019 after the projection path is installed. The same migration validates count confirmer role/scope at confirmation, revalidates the claimed actor at movement insertion using non-blocking scope locks, and checks physical-count quantity plus balance_version against the current projection under the warehouse mutex. Opening counts require an empty warehouse. Sale movements must reference a matching draft sale and exact sale line; unsupported source types fail closed.
 
 ## 4. Current count lifecycle and idempotency
 
@@ -100,7 +100,7 @@ For any future transfer or other multi-warehouse operation:
 
 Reservation and consumption writers must use the same warehouse mutex and balance locks, and must validate availability from the locked snapshot. A future writer must not rely on an unlocked read-then-write sequence. Multi-warehouse deadlock avoidance must be proven with two independent PostgreSQL connections requesting the same warehouses in opposite input order.
 
-No transfer, receipt, reservation, return or sales inventory writer is approved by this document. Their commercial rules, permissions, idempotency, partial operations and reversal semantics require separate design/authorization.
+Atomic sale checkout is implemented on #258/#262: it is the only non-count movement writer currently supported, and each sale movement must match a draft sale, tenant/branch/warehouse, actor, product, quantity and unit cost. It is not yet merged or product-approved for POS use. Reservation, purchase receipt, return and inter-warehouse transfer writers remain unsupported; their commercial rules, permissions, idempotency, partial operations and reversal semantics require separate design/authorization.
 
 ## 7. Required tests for each new writer
 
@@ -135,6 +135,6 @@ A count-vs-count test alone does not prove coordination with future sales, reser
 - `apps/api/migrations/0010_inventory_balance_ledger_coupling.sql`: balance/ledger coupling.
 - `apps/api/migrations/0011_postgres_runtime_lock_helpers.sql`: SECURITY DEFINER lock helpers.
 - `apps/api/migrations/0016_runtime_inventory_ledger_read.sql`: runtime read privileges (its assertions also tolerate the intent table being removed by 0019).
-- `apps/api/migrations/0019_inventory_ledger_balance_projection.sql` and its assertions: ledger projection, warehouse-before-count trigger, scoped balance-lock helper and runtime least privilege.
+- `apps/api/migrations/0019_inventory_ledger_balance_projection.sql` and its assertions: ledger projection, warehouse-before-count trigger, scoped balance-lock helper, count-confirmation actor authorization, stale snapshot revalidation, sale-source validation and runtime least privilege.
 
 This document describes the #262 branch implementation and its tests, not `main` until #258/#262 are integrated. It does not certify that Neon has applied these migrations or that the production Worker uses the intended least-privilege role. Neon rehearsal, runtime identity and production deployment remain separate gates.

@@ -1,18 +1,18 @@
-# Work checkpoint — 2026-11-08
+# Work checkpoint — 2026-11-08 (posterior a PR #278)
 
 ## Estado verificado
-- Repo: BTF14/Micro-app. Main protegido: 11ca2b49bfa650066a708d2423cc73cea6c99e2d.
-- PR #275 merged en main 11ca2b49bfa650066a708d2423cc73cea6c99e2d; PR #274 cerrada como supersedida.
-- PR #275 agregó el workflow manual main-only de ensayo Neon, default read-only verify-empty, y un .gitleaksignore de fingerprint exacto para un falso positivo confirmado de SHA.
-- Post-merge GitHub Actions: 9/9 workflow runs SUCCESS; los seis required contexts de main SUCCESS. Cloudflare Pages y Workers Builds check-runs terminaron SUCCESS en el merge SHA; no hubo smoke test HTTP autenticado de producción.
-- PR abiertas: #269 (Draft; 15 ahead/3 behind; mergeable=false), #255 (53 ahead/5 behind; mergeable=false), #258 (35 ahead/36 behind; mergeable=false), #262 (107 ahead/36 behind, stacked sobre #258), #233 (histórica Draft), #193 (no modificar).
-- Neon: rama rehearsal br-curly-poetry-b7dxsddm; DB neondb es parent-data clone y está prohibida para escrituras. DB microapp_rehearsal fue consultada con SELECT: identidad exacta, schemas estándar, 0 relaciones/funciones públicas, sin schema_migrations.
-- El run anterior #42479603848 del workflow antiguo confirmó que NEON_REHEARSAL_DATABASE_URL funciona después de rotación; conexión directa y baseline 0002 verificado; ningún paso de escritura corrió.
-- El nuevo workflow .github/workflows/neon-pinned-migration-rehearsal.yml está en main pero aún no se ha despachado. El conector GitHub no ofrece workflow_dispatch.
+- Repo: BTF14/Micro-app. Main protegido: `209e3fe9f99c96a07546bb87c04b90755257d918`.
+- PR #278 fusionada por squash: https://github.com/BTF14/Micro-app/pull/278. HEAD de PR `b444344543a2edafaa70cf68f8450cade73c9fc4`; merge SHA `209e3fe9f99c96a07546bb87c04b90755257d918`.
+- Causa: run Neon pinned rehearsal #2 `42502075476` comparó pin inmutable `6227a3a8497f6be94d675b64da5da61530c200fc` con tip de rama fuente mutable `a750d1868f0ad4ae78b3de197d160d376af688ab`; falló antes de conexión/SQL/migraciones.
+- Fix integrado: fetch directo de SOURCE_SHA y comparación exacta FETCH_HEAD. Solo cambió el workflow de rehearsal.
+- PR HEAD: 9/9 workflow runs SUCCESS. Main tiene seis contextos requeridos y branch protection activa. Revisión técnica manual; no hubo review formal ni hilos.
+- Checks post-merge iniciaron; primera lectura tenía 1 queued y 9 in_progress, pendiente reconsulta.
+- No se despachó workflow Neon, no hubo conexión, DDL/DML, migraciones ni bootstrap-and-migrate. Neon main y la DB parent-data clone `neondb` permanecen fuera de alcance.
 
-## Próximo paso exacto
-El propietario debe abrir Actions → “Neon pinned migration rehearsal” → Run workflow, seleccionar branch main y dejar operation en su valor predeterminado verify-empty. No rellenar confirmation. Después compartir únicamente el resultado/resumen del run (no secretos ni URI). Inspeccionar logs; no ejecutar bootstrap-and-migrate todavía. Para cualquier escritura se requerirá autorización explícita adicional tras revisar el preflight.
+## Próximo paso exacto del propietario
+GitHub → Actions → “Neon pinned migration rehearsal” → Run workflow → branch `main` → dejar `operation=verify-empty` → no rellenar confirmation → Run workflow. Compartir solo el enlace/resultado y logs no sensibles. No seleccionar `bootstrap-and-migrate`.
 
 ## Límites
-- No migraciones, DDL/DML remotos, Neon main, producción, Cloudflare manual, DNS ni billing.
+- Ninguna escritura remota Neon autorizada. Para cualquier escritura se requiere autorización explícita adicional tras revisar el preflight.
+- No secretos, datos reales, Cloudflare manual, DNS ni billing.
 - Producción NOT READY.

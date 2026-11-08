@@ -1,28 +1,30 @@
 # Inventory transaction locking contract
 
-**Status:** current technical contract for tenant-scoped inventory operations on `main`.  
-**Updated:** 2026-11-07 UTC  
+**Status:** target technical contract implemented on Draft PR #262, stacked on checkout PR #258; not yet merged into `main`.  
+**Updated:** 2026-11-08 UTC  
 **Scope:** any transaction that changes warehouse stock, reservations, inventory counts, the warehouse movement ledger, or a document that confirms those changes.  
 **Does not approve:** new commercial rules, transfer/receipt/return/sales endpoints, additional DDL, Neon migrations, production deployment or merge of the obsolete PR #200 stack.
 
 ## 1. Current implementation on main
 
-The current API registers:
+The #262 branch (including checkout work from #258) registers:
 
 - tenant-scoped catalog read/write routes;
 - inventory count creation/list/confirmation routes;
 - inventory balance and movement read routes;
+- atomic sales checkout;
 - authentication and register-shift routes.
 
-It does **not** currently register inventory-writing routes for sales checkout, reservations, purchase receipts, returns or inter-warehouse transfers. Those future writers must adopt this contract and pass cross-writer PostgreSQL concurrency tests before implementation is considered complete.
+It does **not** register inventory-writing routes for reservations, purchase receipts, returns or inter-warehouse transfers. Those future writers must adopt this contract and pass cross-writer PostgreSQL concurrency tests before implementation is considered complete. The `main` branch has not yet received the #258/#262 changes.
 
 The current inventory mutation path uses:
 
 - centralized `authorizeBranchOperation` from `apps/api/src/authorization.ts`;
 - SECURITY DEFINER row-lock helpers introduced by migration 0011;
 - shared TypeScript lock helpers in `apps/api/src/inventory-locks.ts`;
-- one PostgreSQL transaction for count/document, balances, ledger and audit writes;
-- migration 0010's deferred balance/ledger pairing guard and migration 0008's append-only audit protection.
+- one PostgreSQL transaction for count/document, ledger movements, projected balances and audit writes;
+- migration 0019's ledger-authoritative SECURITY DEFINER balance projection, direct runtime balance-write revocation and movement warehouse-lock trigger;
+- migration 0008's append-only audit protection.
 
 The older PR #200 branch used direct table-lock queries and a conflicting `0005_warehouse_inventory.sql`. That is not the current implementation. The canonical inventory schema is migration 0006; do not restore or renumber the old 0005 migration.
 
@@ -72,15 +74,15 @@ The confirmation flow:
 4. reads the count lines in product UUID order;
 5. locks the required balances in one batch;
 6. compares both expected on-hand quantity and `balance_version` for physical counts, and checks reserved quantity. The version starts at 1 for an existing balance and uses 0 for an absent row. The trigger increments only when on-hand or reserved quantity changes; metadata-only updates do not increment it. A quantity that changes away and later returns to its original value still invalidates the old snapshot (ABA protection);
-7. updates the count, applies balance changes, inserts any required ledger movements and writes the audit event before commit.
+7. updates the count, appends any required ledger movements (the AFTER INSERT projection trigger applies the balance changes) and writes the audit event before commit.
 
-A confirmed count is immutable and a repeated confirmation is idempotent. Opening counts inspect the complete warehouse balance set and are rejected if any balance already exists. Physical counts cannot reduce on-hand quantity below reserved quantity.
+A confirmed count is immutable and a repeated confirmation is idempotent. Opening counts inspect the complete warehouse balance set and are rejected if any balance already exists. A confirmed opening count remains the one-time initialization marker even when every line is zero: it creates no synthetic balance row or movement, and migration 0019's unique partial index prevents a second confirmed opening for that warehouse. Physical counts cannot reduce on-hand quantity below reserved quantity.
 
 ## 5. Ledger, balance and audit atomicity
 
 - Migration 0006 creates warehouses, counts, count lines, balances and append-only warehouse movements. Its `balance_version` trigger increments only on stock/reservation changes (not metadata-only updates), and balance rows cannot be deleted, so the version cannot be reset by a DELETE/INSERT cycle.
 - Migration 0009 enforces count lifecycle and movement-to-count-line consistency, including physical snapshot/version requirements.
-- Migration 0010 records a private transaction-scoped intent for each non-zero on-hand balance change. A movement must consume the exact matching intent, and a deferred constraint rejects commit if an intent remains unconsumed. Balance identity cannot be re-keyed.
+- Migration 0010's transaction-intent pairing model is historical and is removed by migration 0019 after the replacement projection path is installed. Migration 0019 makes the append-only movement ledger the only runtime-authorized source of on-hand balance changes: a SECURITY DEFINER AFTER INSERT trigger applies positive/negative deltas, enforces the reserved-stock floor, and increments the existing balance version trigger. Runtime has SELECT but no direct INSERT/UPDATE/DELETE/TRUNCATE privilege on balances. A nested-trigger guard is defense in depth; the privilege boundary remains the primary control. Balance identity cannot be re-keyed.
 - Migration 0008 makes audit logs append-only. The inventory count handler inserts its audit event inside the same transaction as the count/balance/ledger writes.
 
 Do not update or delete historical movement rows to correct stock. A correction must be represented by a new, authorized and audited compensating movement under a separately approved business flow.
@@ -132,6 +134,7 @@ A count-vs-count test alone does not prove coordination with future sales, reser
 - `apps/api/migrations/0009_inventory_count_ledger_validation.sql`: count lifecycle and movement validation.
 - `apps/api/migrations/0010_inventory_balance_ledger_coupling.sql`: balance/ledger coupling.
 - `apps/api/migrations/0011_postgres_runtime_lock_helpers.sql`: SECURITY DEFINER lock helpers.
-- `apps/api/migrations/0016_runtime_inventory_ledger_read.sql`: runtime read privileges.
+- `apps/api/migrations/0016_runtime_inventory_ledger_read.sql`: runtime read privileges (its assertions also tolerate the intent table being removed by 0019).
+- `apps/api/migrations/0019_inventory_ledger_balance_projection.sql` and its assertions: ledger projection, warehouse-before-count trigger, scoped balance-lock helper and runtime least privilege.
 
-This document describes the current repository implementation. It does not certify that Neon has applied these migrations or that the production Worker uses the intended least-privilege role. Neon rehearsal, runtime identity and production deployment remain separate gates.
+This document describes the #262 branch implementation and its tests, not `main` until #258/#262 are integrated. It does not certify that Neon has applied these migrations or that the production Worker uses the intended least-privilege role. Neon rehearsal, runtime identity and production deployment remain separate gates.

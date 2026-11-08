@@ -38,7 +38,7 @@ Actualizar `docs/CURRENT_STATE.md`, `docs/WORK_CHECKPOINT.md`, `docs/HANDOFF_NEX
 
 ## Registro de decisiones
 
-Para decisiones que afecten arquitectura, seguridad, datos, contratos, dependencias o estrategia de integración, registrar en `docs/decisions/` un ADR breve con:
+Para decisiones que afecten arquitectura, seguridad, datos, contratos, dependencias o estrategia de integración, registrar en `docs/decisions/` un ADR breve usando [`docs/decisions/ADR_TEMPLATE.md`](../../docs/decisions/ADR_TEMPLATE.md) con:
 
 - contexto y problema;
 - decisión y estado (propuesta/aprobada/implementada/verificada);
@@ -62,6 +62,7 @@ No crear ADR para decisiones triviales o reversibles de implementación local. N
 - [ ] `AGENTS.md` enlaza este contrato desde el inicio de cada tarea.
 - [ ] ODD exige comparar checkpoint/documentación con estado vivo y cerrar con handoff reproducible.
 - [ ] La política de IA/PR define registro de decisiones y evidencia exact-SHA.
+- [ ] Existe una plantilla ADR común para que todos los agentes documenten decisiones con el mismo mínimo de contexto y evidencia.
 - [ ] Los documentos no duplican snapshots ni contradicen los límites de seguridad y producción.
 - [ ] Los cambios se validan con los checks documentales existentes en el SHA final.
 - [ ] No se cambian aplicación, migraciones, secretos, Neon, Cloudflare ni datos reales.

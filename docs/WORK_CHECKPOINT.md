@@ -1,5 +1,7 @@
 # Work checkpoint — 2026-11-08 UTC (posterior a PR #280)
 
+**Regla de validación:** cualquier commit posterior invalida los checks previos; verificar siempre los seis contextos requeridos en el HEAD vivo antes de marcar Ready o fusionar.
+
 ## Estado confirmado
 - Repo: BTF14/Micro-app. Main protegido: `aa2804a0a6e7879f684b3baeb60646e50f1d6419`.
 - PR #280 merged por squash; HEAD revisado `233c1046866c479c1e79d35c8eca0290b09e97b2`; merge SHA `aa2804a0a6e7879f684b3baeb60646e50f1d6419`.

@@ -2126,3 +2126,8 @@ No se tocaron Neon main, datos reales, secretos, Worker productivo, DNS, billing
 - GitHub branch-protection endpoint respondió 403 por permisos del conector; se verificó la lista de seis required status contexts en el recurso de branch y todos están verdes. No se pudo leer el ajuste separado de required approvals.
 - El conector GitHub disponible es GET-only para mcp__GitHub__fetch y no expone workflow_dispatch; por ello no se puede iniciar desde aquí el workflow manual nuevo. El run previo #42479603848 del workflow anterior neon-rehearsal-migrations.yml sí verificó con éxito el secreto rotado y la conexión directa, pero no sustituye el nuevo verify-empty.
 - Ninguna migración, DDL/DML, escritura en Neon ni cambio de producción ejecutado.
+
+## 2026-11-08 — corrección del falso positivo de secret-history scan
+
+- El secret-history scan de PR #274 detectó como generic-api-key una línea de STATE_JOURNAL que contenía la frase "GitHub API:" inmediatamente antes del SHA de main. El log identificó esa única línea; no se mostró ni se identificó ninguna credencial real.
+- Se creó PR #275 desde main para no conservar en su historial el commit señalado. Se preservó el contenido del workflow y de continuidad; solo se reformuló la línea que disparó el patrón. Mantener #274 abierta hasta que #275 pase todos los checks y se integre; luego cerrar #274 como supersedida.

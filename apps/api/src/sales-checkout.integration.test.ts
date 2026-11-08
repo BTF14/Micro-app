@@ -68,6 +68,7 @@ describe.skipIf(!isDisposableCheckoutDatabase)("atomic sales checkout PostgreSQL
     idempotencyKey = "checkout-" + crypto.randomUUID(),
     pathOrganizationId = organizationId,
     pathBranchId = branchId,
+    clientIp = "203.0.113.10",
   ): Promise<Response> {
     return app.fetch(new Request(
       "https://api.example/api/orgs/" + pathOrganizationId + "/branches/" + pathBranchId + "/checkout",
@@ -78,10 +79,15 @@ describe.skipIf(!isDisposableCheckoutDatabase)("atomic sales checkout PostgreSQL
           Origin: FRONTEND_ORIGIN,
           "Content-Type": "application/json",
           "Idempotency-Key": idempotencyKey,
+          "CF-Connecting-IP": clientIp,
         },
         body: JSON.stringify(body),
       },
-    ), { DATABASE_URL: databaseUrl, FRONTEND_ORIGIN });
+    ), {
+      DATABASE_URL: databaseUrl,
+      FRONTEND_ORIGIN,
+      GOOGLE_CLIENT_SECRET: "checkout-integration-test-hmac-pepper-2026",
+    });
   }
 
   function checkoutBody(
@@ -576,6 +582,24 @@ describe.skipIf(!isDisposableCheckoutDatabase)("atomic sales checkout PostgreSQL
       formatNumeric(lastExpected, 14, 4),
     ]);
     expect((await readBalance()).on_hand_quantity).toBe("1.000");
+  });
+
+  it("rate limits checkout by trusted client IP before parsing the request body", async () => {
+    const ip = "203.0.113.250";
+    let lastResponse: Response | null = null;
+    for (let attempt = 1; attempt <= 61; attempt += 1) {
+      lastResponse = await request(
+        null,
+        "checkout-rate-limit-" + attempt,
+        organizationId,
+        branchId,
+        ip,
+      );
+      if (attempt < 61) expect(lastResponse.status).toBe(400);
+    }
+    expect(lastResponse?.status).toBe(429);
+    expect((await lastResponse!.json() as { error: string }).error).toBe("RATE_LIMITED");
+    expect(Number(lastResponse!.headers.get("Retry-After"))).toBeGreaterThan(0);
   });
 
   it("rejects a tampered per-payment VES allocation even when the aggregate USD equivalent still reconciles", async () => {

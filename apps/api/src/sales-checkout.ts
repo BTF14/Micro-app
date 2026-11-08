@@ -9,6 +9,7 @@ import type { Hono } from "hono";
 import { getCookie } from "hono/cookie";
 import type { Bindings } from "./bindings";
 import { isTrustedOrigin } from "./auth";
+import { consumeAuthRateLimit } from "./auth-rate-limit";
 import { authorizeBranchOperation } from "./authorization";
 import { readBodyWithinLimit } from "./bounded-body";
 import { withDatabaseClient, withDatabaseTransaction } from "./database";
@@ -21,6 +22,8 @@ const IDEMPOTENCY_KEY_PATTERN = /^[A-Za-z0-9._:-]{1,128}$/;
 const MAX_BODY_BYTES = 64 * 1024;
 const MAX_LINES = 100;
 const MAX_PAYMENTS = 10;
+const CHECKOUT_RATE_LIMIT_MAX = 60;
+const CHECKOUT_RATE_LIMIT_WINDOW_SECONDS = 60;
 const BCV_SOURCE = "BCV_OFFICIAL_HTML_V1";
 const PAYMENT_METHODS = ["cash", "card", "transfer", "mobile_payment", "other"] as const;
 
@@ -361,6 +364,34 @@ export function registerSalesCheckoutRoutes(app: Hono<{ Bindings: Bindings }>): 
         (!/^\d+$/.test(declaredLength) || Number(declaredLength) > MAX_BODY_BYTES)) {
       return c.json({ error: "PAYLOAD_TOO_LARGE", message: "El cuerpo de la solicitud excede el límite." }, 413);
     }
+
+    // Cloudflare overwrites CF-Connecting-IP at the edge. HMAC the address
+    // before persistence; fail closed if the trusted edge identity or pepper
+    // is missing rather than silently disabling the checkout abuse control.
+    const clientIp = c.req.header("CF-Connecting-IP")?.trim();
+    const rateLimitPepper = c.env.GOOGLE_CLIENT_SECRET;
+    if (!clientIp || clientIp.length > 64 || !rateLimitPepper) {
+      return c.json({ error: "RATE_LIMIT_UNAVAILABLE", message: "No se pudo verificar el límite de solicitudes." }, 503);
+    }
+    let rateLimit;
+    try {
+      rateLimit = await withDatabaseClient(c.env.DATABASE_URL, (client) =>
+        consumeAuthRateLimit(
+          client,
+          `sales-checkout:ip:${clientIp}`,
+          CHECKOUT_RATE_LIMIT_MAX,
+          CHECKOUT_RATE_LIMIT_WINDOW_SECONDS,
+          rateLimitPepper,
+        ),
+      );
+    } catch {
+      return c.json({ error: "RATE_LIMIT_UNAVAILABLE", message: "No se pudo verificar el límite de solicitudes." }, 503);
+    }
+    if (!rateLimit.allowed) {
+      c.header("Retry-After", String(rateLimit.retryAfterSeconds));
+      return c.json({ error: "RATE_LIMITED", message: "Demasiadas solicitudes de checkout. Inténtalo de nuevo más tarde." }, 429);
+    }
+
     const sessionToken = getCookie(c, "microapp_session");
     if (!sessionToken || sessionToken.length > 128) {
       return c.json({ error: "UNAUTHENTICATED", message: "Inicia sesión para continuar." }, 401);

@@ -93,6 +93,7 @@ AS $validate_inventory_movement_source$
 DECLARE
   count_type text;
   count_status text;
+  actor_role text;
   line_expected_on_hand numeric(14,3);
   line_expected_version bigint;
   current_on_hand numeric(14,3);
@@ -128,6 +129,43 @@ BEGIN
     THEN
       RAISE EXCEPTION 'INVENTORY_MOVEMENT_REQUIRES_MATCHING_CONFIRMED_COUNT'
         USING ERRCODE = '23514';
+    END IF;
+
+    -- Revalidate the claimed actor at movement time. NOWAIT prevents a
+    -- warehouse->membership lock inversion from deadlocking an API request
+    -- that already holds branch scope before taking the warehouse mutex.
+    SELECT member.role
+      INTO actor_role
+      FROM public.organizations AS org
+      JOIN public.organization_members AS member
+        ON member.organization_id = org.id
+       AND member.user_id = NEW.actor_user_id
+       AND member.is_active = true
+       AND member.role IN ('owner', 'admin', 'inventory')
+      JOIN public.app_users AS actor_user
+        ON actor_user.id = member.user_id
+       AND actor_user.is_active = true
+     WHERE org.id = NEW.organization_id
+       AND org.is_active = true
+     FOR SHARE OF org, member, actor_user NOWAIT;
+
+    IF NOT FOUND THEN
+      RAISE EXCEPTION 'INVENTORY_MOVEMENT_ACTOR_NOT_AUTHORIZED'
+        USING ERRCODE = '23514';
+    END IF;
+
+    IF actor_role = 'inventory' THEN
+      PERFORM 1
+        FROM public.branch_memberships AS membership
+       WHERE membership.organization_id = NEW.organization_id
+         AND membership.branch_id = NEW.branch_id
+         AND membership.user_id = NEW.actor_user_id
+         AND membership.is_active = true
+       FOR SHARE NOWAIT;
+      IF NOT FOUND THEN
+        RAISE EXCEPTION 'INVENTORY_MOVEMENT_ACTOR_BRANCH_SCOPE_INVALID'
+          USING ERRCODE = '23514';
+      END IF;
     END IF;
 
     SELECT line.expected_on_hand_quantity, line.expected_balance_version

@@ -1,7 +1,7 @@
 ## Estado de seguridad — 2026-11-08 UTC
 
 - Main protegido: `8a54f6e653d925a280776763bbb6f661e0fd19aa`. PR #277 integrada y workflow Neon pinned actualizado a source SHA `6227a3a8497f6be94d675b64da5da61530c200fc`.
-- PR #269 permanece Draft; el código pasó 16/16 check-runs y 14/14 workflow runs exact-HEAD antes de la sincronización más reciente. La nueva sincronización requiere revalidación exact-HEAD.
+- PR #269 permanece Draft; snapshot de código `8ee0c7b82d2f6de597294dacecdb98e222816b7c` pasó 16/16 check-runs y 14/14 workflow runs exact-HEAD. La actualización documental posterior no cambia código.
 - Hardening de migración 0019: movimientos de conteo revalidan y estabilizan `branches.is_active` con `FOR SHARE NOWAIT`; el test runtime confirma rechazo después de desactivar branch. Review thread resuelto.
 - Neon run #1 (`verify-empty`) SUCCESS y read-only; verificó la fuente anterior. Run #2 verify-empty para source SHA `6227a3a8497f6be94d675b64da5da61530c200fc` pendiente de acción manual. No DDL/DML remoto.
 - No habilitar escritura hasta revisar run #2 y obtener autorización explícita para `microapp_rehearsal`. Neon main, base heredada `neondb`, secretos de producción, Cloudflare manual, DNS y billing fuera de alcance. Producción NOT READY.

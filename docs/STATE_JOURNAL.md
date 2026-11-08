@@ -2163,3 +2163,10 @@ No se tocaron Neon main, datos reales, secretos, Worker productivo, DNS, billing
 - El workflow `.github/workflows/neon-pinned-migration-rehearsal.yml` ahora fija source SHA `6227a3a8497f6be94d675b64da5da61530c200fc`; el token de confirmación se actualizó con el mismo SHA. Default sigue siendo verify-empty.
 - Run #1 `42498486767` sigue siendo evidencia de verify-empty para el pin anterior `bc393...`; run #2 para el nuevo pin aún no se ha despachado. No hay DDL/DML remoto.
 - PR #269 se sincroniza con el nuevo main sin force-push; el código 0017–0019 y la regresión de branch-inactive ya pasaron CI exact-HEAD en el commit `6227a3a...`. PR sigue Draft, producto y ensayo pendientes.
+
+
+## 2026-11-08 — Revalidación post-sync y retry de backup/restore
+
+- PR #269 snapshot de código `8ee0c7b82d2f6de597294dacecdb98e222816b7c`: 16/16 check-runs y 14/14 workflow runs SUCCESS exact-HEAD. La regresión runtime para branch inactiva pasó.
+- Backup/restore smoke tuvo un primer fallo de red por EOF al descargar PostgreSQL client; se reintentó únicamente ese job y terminó SUCCESS. El resultado fallido quedó registrado, no se ocultó.
+- PR #277 ya está integrada; main fija Neon source SHA `6227a3a8497f6be94d675b64da5da61530c200fc`. Run #1 fue verify-empty sobre el SHA anterior; run #2 verify-empty pendiente. No DDL/DML remoto.

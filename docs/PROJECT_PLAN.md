@@ -2,8 +2,9 @@
 
 - Main protegido: `8a54f6e653d925a280776763bbb6f661e0fd19aa`; PR #277 integrada por squash.
 - PR #277 actualizó el workflow Neon pinned a source SHA `6227a3a8497f6be94d675b64da5da61530c200fc`; no ejecutó workflow ni tocó Neon. Run #1 verificó el pin anterior; run #2 `verify-empty` pendiente de acción manual del propietario.
-- PR #269 checkout + ledger permanece Draft. El código merge commit `6227a3a8497f6be94d675b64da5da61530c200fc` pasó 16/16 checks y 14/14 workflows exact-HEAD; la rama se sincroniza con main. La nueva sincronización necesita checks exact-HEAD propios.
+- PR #269 checkout + ledger permanece Draft. El snapshot de código `8ee0c7b82d2f6de597294dacecdb98e222816b7c` pasó 16/16 checks y 14/14 workflows exact-HEAD. La actualización documental posterior es docs-only; consultar GitHub vivo para el SHA actual.
 - La migración 0019 revalida branch activo en movimientos de conteo; assertion y prueba con login runtime pasaron. Review thread resuelto.
+- El backup/restore tuvo un fallo transitorio de red al descargar PostgreSQL client; el retry terminó SUCCESS.
 - Otras PR abiertas: #255 53/7, #258 35/38, #262 107/38, #233 408/59, #193 5/61. Mantener #193 intacta; #258/#262 no integrar independientemente.
 - Producción NOT READY; Neon main, datos heredados, secretos, DNS y billing fuera de alcance.
 

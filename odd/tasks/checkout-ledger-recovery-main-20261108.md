@@ -1,6 +1,6 @@
 # ODD task: recover atomic checkout and ledger-authoritative inventory on current main
 
-- Status: implementation, security review and exact-HEAD CI complete; PR remains Draft; Neon pin updated in main; new verify-empty pending
+- Status: implementation, security review, main sync and exact-HEAD CI complete; PR remains Draft; Neon pin updated in main; new verify-empty pending
 - Initial code port commit: `88e0aab5219810ab24375f8eb947c5ad17aa453b`; use the live PR HEAD for current exact-SHA status.
 - Date: 2026-11-08 UTC
 - Source PRs: #258 (checkout, migrations 0017/0018), #262 (ledger projection, migration 0019)
@@ -32,8 +32,9 @@ Recover the unique checkout and inventory-ledger work onto the current main tree
 
 ## Current evidence — 2026-11-08 UTC
 
-- Main actual: `8a54f6e653d925a280776763bbb6f661e0fd19aa`; PR #277 merged y el workflow pinned Neon ahora usa source SHA `6227a3a8497f6be94d675b64da5da61530c200fc`.
-- PR #269 se sincroniza con main sin force-push; exact current HEAD se consulta en GitHub. El código merge commit `6227a3a8497f6be94d675b64da5da61530c200fc` pasó 16/16 check-runs y 14/14 workflow runs; la prueba runtime de branch-inactive confirma `INVENTORY_MOVEMENT_BRANCH_SCOPE_INVALID`.
+- Main actual: `8a54f6e653d925a280776763bbb6f661e0fd19aa`; PR #277 merged y el workflow pinned Neon usa source SHA `6227a3a8497f6be94d675b64da5da61530c200fc`.
+- Snapshot de código PR #269: `8ee0c7b82d2f6de597294dacecdb98e222816b7c`; 16/16 check-runs y 14/14 workflow runs SUCCESS. La prueba runtime de branch-inactive confirma `INVENTORY_MOVEMENT_BRANCH_SCOPE_INVALID`.
+- Backup/restore tuvo un fallo transitorio de red y el retry terminó SUCCESS.
 - Neon run #1 `42498486767` SUCCESS fue verify-empty sobre el source SHA antiguo `bc393...`. El nuevo pin 6227 requiere un segundo verify-empty manual; no se han aplicado migraciones ni realizado DDL/DML remoto.
 - Review thread de branch-inactive resuelto. PR #269 permanece Draft por contrato comercial y ensayo.
 

@@ -3,14 +3,15 @@
 **Main protegido:** `8a54f6e653d925a280776763bbb6f661e0fd19aa`. PR #277 se fusionó por squash y actualizó el workflow pinned Neon a la fuente revisada `6227a3a8497f6be94d675b64da5da61530c200fc`.
 
 ### Integración checkout + ledger
-- **PR #269:** Open/Draft; rama `feat/checkout-ledger-recovered-main-20261108`; contiene el código revisado en merge commit `6227a3a8497f6be94d675b64da5da61530c200fc` y la reconciliación documental posterior. Se sincroniza nuevamente con main `8a54f6e653d925a280776763bbb6f661e0fd19aa` sin force-push; el SHA exacto del nuevo merge commit se consulta en GitHub.
-- El código de #269 pasó 16/16 check-runs y 14/14 workflow runs exact-HEAD en el checkpoint previo. Incluyó CI completo, PostgreSQL migration/assertions 0001–0019 en PostgreSQL desechable, runtime-role smoke, Playwright E2E, backup/restore, SAST, dependency review, ODD, Gitleaks, Trivy y Cloudflare Pages/Workers builds. La nueva sincronización requiere su propia revalidación exact-HEAD.
+- **PR #269:** Open/Draft; rama `feat/checkout-ledger-recovered-main-20261108`. Snapshot de código verificado: merge commit `8ee0c7b82d2f6de597294dacecdb98e222816b7c`; 22 ahead / 0 behind de main en esa consulta. La actualización documental que sigue es docs-only; consultar GitHub vivo para el SHA actual.
+- En ese snapshot exacto: **16/16 check-runs SUCCESS** y **14/14 workflow runs SUCCESS** (11 pull_request + 3 push). Incluye CI completo, PostgreSQL migration/assertions 0001–0019 en PostgreSQL desechable, runtime-role smoke, Playwright E2E, backup/restore, SAST, dependency review, ODD, Gitleaks, Trivy y Cloudflare Pages/Workers builds.
+- El job backup/restore falló inicialmente por EOF de red al descargar PostgreSQL client; se reintentó ese job y terminó SUCCESS. No se ocultó el fallo original.
 - Se corrigió la escritura directa al ledger después de desactivar una sucursal: `validate_inventory_movement_source()` comprueba y bloquea `branches.is_active` con `FOR SHARE NOWAIT`. Assertion SQL y prueba de integración agregadas. La prueba con login runtime pasó; el log registra `INVENTORY_MOVEMENT_BRANCH_SCOPE_INVALID`. Review thread inline resuelto.
 - Reviews GitHub: COMMENTED, no APPROVE; no se afirma aprobación humana independiente. PR permanece Draft por gates de producto y Neon.
 
 ### Neon pinned migration rehearsal
-- Run #1: [42498486767](https://github.com/BTF14/Micro-app/actions/runs/42498486767), SUCCESS en main anterior, operación `verify-empty`. Verificó identidad de proyecto `restless-fire-99110035`, branch `br-curly-poetry-b7dxsddm`, database `microapp_rehearsal`, login/rol `microapp_migrator`, y target vacío. No ejecutó DDL/DML; baseline, migraciones y assertions quedaron SKIPPED.
-- **PR #277 ya está integrada** en main `8a54f6e653d925a280776763bbb6f661e0fd19aa`. El workflow ahora fija `SOURCE_SHA=6227a3a8497f6be94d675b64da5da61530c200fc` y la confirmación de escritura contiene ese mismo SHA.
+- Run #1: [42498486767](https://github.com/BTF14/Micro-app/actions/runs/42498486767), SUCCESS en operación `verify-empty`. Verificó identidad de proyecto `restless-fire-99110035`, branch `br-curly-poetry-b7dxsddm`, database `microapp_rehearsal`, login/rol `microapp_migrator`, y target vacío. No ejecutó DDL/DML; baseline, migraciones y assertions quedaron SKIPPED.
+- **PR #277 integrada** en main `8a54f6e653d925a280776763bbb6f661e0fd19aa`. El workflow ahora fija `SOURCE_SHA=6227a3a8497f6be94d675b64da5da61530c200fc` y la confirmación de escritura contiene ese mismo SHA.
 - Run #1 verificó la fuente anterior `bc3939510e132e6f77c751514ff1b7dca58cdd4d`; queda pendiente que el propietario ejecute un nuevo `verify-empty` (run #2) para verificar el pin actualizado. El conector no dispone de workflow_dispatch.
 - No ejecutar `bootstrap-and-migrate` sin autorización explícita. La DB `neondb` es parent-data clone y está prohibida para escrituras. Neon main/producción fuera de alcance.
 

@@ -28,7 +28,7 @@ La autenticación identifica una sesión; no demuestra por sí sola que el usuar
 
 1. **Denegar por defecto.** Una sesión ausente, inválida, expirada o revocada, un usuario inactivo, una organización inactiva o una membresía inactiva nunca autoriza una operación comercial.
 2. **Identidad desde el servidor.** Obtener el usuario desde la sesión validada. Nunca confiar en `userId`, `role`, `organizationId` ni campos equivalentes enviados por el cliente como prueba de identidad o permiso.
-3. **Contexto de organización validado.** Si la ruta acepta un selector de organización en URL, cabecera o cuerpo, tratarlo solo como una selección solicitada. Comprobar en el servidor que existe una membresía activa de ese usuario para esa organización y que la organización está activa. El mecanismo concreto de selección queda pendiente de decisión de arquitectura; ninguna opción se considera aprobada por este documento.
+3. **Contexto de organización validado.** El mecanismo actual recibe el organizationId como selector de ruta y resuelve sesión, usuario activo, organización activa y membresía activa desde el servidor mediante `resolveTenantContext`. El ID del cliente es solo un selector; nunca prueba identidad ni membresía.
 4. **Permiso por operación.** Después de validar sesión y membresía, comprobar el permiso específico de la acción conforme a una matriz aprobada. No deducir permisos solo del nombre del rol ni de que la UI oculte un botón.
 5. **Ámbito tenant en cada consulta.** Toda lectura, actualización o eliminación de un recurso propiedad de una organización debe limitarse por el identificador de la organización ya autorizado en servidor. No consultar, actualizar ni eliminar un registro tenant-scoped usando únicamente el ID recibido del cliente.
 6. **Escrituras con contexto de servidor.** En las inserciones, asignar el `organization_id` a partir del contexto autorizado, no copiarlo sin validar desde el cuerpo de la petición.
@@ -42,7 +42,7 @@ La autenticación identifica una sesión; no demuestra por sí sola que el usuar
 1. Validar y parsear la entrada.
 2. Resolver la sesión en servidor y confirmar usuario activo.
 3. Resolver el contexto de organización solicitado y verificar organización y membresía activas.
-4. Comprobar el permiso requerido para esa operación, una vez aprobada la matriz de roles.
+4. Comprobar el permiso requerido mediante el mapa aprobado de `authorization.ts` y `authorizeTenantOperation`/`authorizeBranchOperation`.
 5. Ejecutar las consultas con ámbito tenant explícito y validar la pertenencia de cada recurso relacionado.
 6. Para escrituras compuestas, ejecutar las operaciones en una transacción y revertir todo ante cualquier error.
 7. Devolver una respuesta segura y probar que la denegación no produjo escrituras.
@@ -71,7 +71,7 @@ Antes de declarar aislamiento multiempresa listo, las pruebas de integración co
 - Mecanismo de selección de organización y política de respuesta cuando el recurso no pertenece al tenant.
 - Diseño, implementación y pruebas de handlers comerciales reales.
 
-No rellenar estos puntos por inferencia. Hasta que las decisiones necesarias estén aprobadas, mantener las rutas comerciales no implementadas o denegadas por defecto.
+No rellenar estos puntos por inferencia. Mantener habilitadas solo las rutas que ya tienen handler, permiso explícito y pruebas negativas; mantener checkout/pagos, transferencias, operaciones de turnos y administración de miembros/políticas bloqueadas hasta completar su implementación y aceptación.
 
 ## Estado actual verificado en la revisión documental
 

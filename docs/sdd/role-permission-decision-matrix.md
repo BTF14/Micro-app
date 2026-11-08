@@ -105,7 +105,7 @@ Nota: esta decisión es más restrictiva que la propuesta original de "Owner y A
 - No crear endpoints comerciales, middleware de autorización ni mapeos rol→operación sin pruebas automatizadas de aislamiento cross-tenant (organización A nunca ve/escribe datos de organización B, ni manipulando IDs) y de aislamiento de rol (un rol nunca ejecuta una operación fuera de esta tabla), antes de fusionar a `main`.
 - No convertir `branch_memberships` en una tabla de roles por sucursal.
 - Caja conserva modelo de turnos y apertura/cierre ordinario; no introducir cierres de supervisor incompatibles sin una decisión aparte.
-- Inventario por sucursal/almacén no está implementado como stock separado; el stock actual sigue siendo organizacional. La columna "alcance sucursal" de Inventory en esta tabla se refiere a *quién puede operar*, no a que el stock ya esté particionado por sucursal.
+- El inventario por sucursal/almacén ya está implementado en main mediante `warehouses`, `inventory_balances`, ledger y conteos; las rutas de lectura/conteo aplican el ámbito de sucursal. La matriz define quién puede operar, pero la aplicación de migraciones y grants en Neon sigue pendiente.
 - Toda autorización debe implementarse y validarse en el servidor (Hono/Workers), nunca confiar en que el frontend oculte una acción.
 - Cualquier cambio a esta matriz después de esta aprobación requiere de nuevo una decisión explícita del propietario (puede delegarse de nuevo con el mismo criterio, pero debe registrarse aquí igual que esta aprobación).
 

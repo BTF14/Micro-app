@@ -41,7 +41,7 @@ Alcance de PR #165: no creó almacenes, cajas, turnos, stock por almacén ni mig
 5. Para `cashier/inventory`, exige fila `branch_memberships` activa para el usuario y sucursal.
 6. Devuelve solo identidad y scope; no decide permisos de negocio.
 
-`resolveBranchContext` aún no está conectado a middleware ni rutas. PR #169 añade un resolver separado de turno abierto, también aislado. Los futuros handlers deberán llamar ambos resolvers y aplicar autorización por operación antes de leer o escribir datos.
+`resolveBranchContext` está conectado a través de `authorizeBranchOperation` a `inventory-read.ts` y `inventory-counts.ts`. El helper separado `resolveOpenCashierRegisterShift` sigue aislado y no está montado como ruta. Los handlers nuevos deben aplicar autorización por operación y contexto de sucursal antes de leer/escribir.
 
 ## Pruebas requeridas
 
@@ -56,7 +56,7 @@ Alcance de PR #165: no creó almacenes, cajas, turnos, stock por almacén ni mig
 
 - No se ha ejecutado localmente el workspace desde esta conexión; la verificación automatizada depende de GitHub Actions para el HEAD de PR.
 - No se ha ejecutado la migración contra Neon ni se ha creado una sucursal en datos reales.
-- La matriz `docs/sdd/role-permission-decision-matrix.md` continúa NO APROBADA en las operaciones comerciales sensibles.
+- La matriz `docs/sdd/role-permission-decision-matrix.md` está APROBADA desde 2026-10-31. La implementación de handlers sigue parcial: checkout, transferencias, operaciones de turnos y administración de miembros/políticas permanecen pendientes.
 - El modelo estructural de caja/turno está implementado en 0004; siguen abiertas las políticas de ventas fuera de caja, ledger/efectivo esperado, override de supervisor y permisos por operación.
 - No declarar aislamiento comercial completo ni preparación de producción por este cambio.
 
@@ -99,8 +99,8 @@ La integración PostgreSQL ahora cubre además membresía de organización desac
 
 ## Continuidad posterior a PR #165 — PR #167
 
-- La migración 0003 y `resolveBranchContext` siguen siendo el fundamento de organización/sucursal; el helper no está conectado a rutas.
+- La migración 0003 y `resolveBranchContext` siguen siendo el fundamento de organización/sucursal; el helper ya se usa en las rutas de lectura y conteo de inventario a través de `authorizeBranchOperation`.
 - PR #167 fusionó `0004_register_shifts.sql` con `registers`/`register_shifts`, índices de un turno abierto por caja/cajero, FKs compuestas, validación de apertura y lifecycle inmutable. Está en main; no se aplicó a Neon.
 - CI de PR #167 aplica 0001–0004 en PostgreSQL 18 desechable y ejecuta assertions y tests de integración/concurrencia. No confundir la evidencia histórica de PR #165 (0001–0003) con la validación actual de PR #167.
-- La matriz de permisos comerciales sigue NO APROBADA; el helper de sucursal y el esquema de turnos no autorizan ventas, pagos, descuentos, anulaciones ni endpoints de caja.
+- La matriz de permisos comerciales está APROBADA; el helper de sucursal no autoriza por sí solo operaciones. `authorization.ts` aplica la matriz para rutas existentes; ventas/checkout, pagos, transferencias y rutas de caja siguen pendientes.
 

@@ -1,18 +1,19 @@
-# Work checkpoint — 2026-11-08
+# Work checkpoint — 2026-11-08 (posterior a Neon verify-empty)
 
 ## Estado verificado
-- Repo: BTF14/Micro-app. Main protegido: 11ca2b49bfa650066a708d2423cc73cea6c99e2d.
-- PR #275 merged en main 11ca2b49bfa650066a708d2423cc73cea6c99e2d; PR #274 cerrada como supersedida.
-- PR #275 agregó el workflow manual main-only de ensayo Neon, default read-only verify-empty, y un .gitleaksignore de fingerprint exacto para un falso positivo confirmado de SHA.
-- Post-merge GitHub Actions: 9/9 workflow runs SUCCESS; los seis required contexts de main SUCCESS. Cloudflare Pages y Workers Builds check-runs terminaron SUCCESS en el merge SHA; no hubo smoke test HTTP autenticado de producción.
-- PR abiertas: #269 (Draft; 15 ahead/3 behind; mergeable=false), #255 (53 ahead/5 behind; mergeable=false), #258 (35 ahead/36 behind; mergeable=false), #262 (107 ahead/36 behind, stacked sobre #258), #233 (histórica Draft), #193 (no modificar).
-- Neon: rama rehearsal br-curly-poetry-b7dxsddm; DB neondb es parent-data clone y está prohibida para escrituras. DB microapp_rehearsal fue consultada con SELECT: identidad exacta, schemas estándar, 0 relaciones/funciones públicas, sin schema_migrations.
-- El run anterior #42479603848 del workflow antiguo confirmó que NEON_REHEARSAL_DATABASE_URL funciona después de rotación; conexión directa y baseline 0002 verificado; ningún paso de escritura corrió.
-- El nuevo workflow .github/workflows/neon-pinned-migration-rehearsal.yml está en main pero aún no se ha despachado. El conector GitHub no ofrece workflow_dispatch.
+- Repo: BTF14/Micro-app. Main: `209e3fe9f99c96a07546bb87c04b90755257d918`.
+- PR #278 integrada por squash: https://github.com/BTF14/Micro-app/pull/278. Fix de fetch exacto de SOURCE_SHA integrado.
+- El propietario ejecutó manualmente `Neon pinned migration rehearsal` desde `main`, `operation=verify-empty`; log iniciado 2026-11-08 17:21:02 UTC.
+- Fetch SHA `6227a3a8497f6be94d675b64da5da61530c200fc` confirmado; cadena 0001–0019 y archivos/assertions esperados verificados.
+- Conexión read-only a `microapp_rehearsal`; identidad database/login/session/branch/project, privilegios/membresías de roles y target vacío validados. Resultado explícito: `EMPTY_REHEARSAL_TARGET_VERIFIED`.
+- No se ejecutaron migraciones, DDL, DML ni bootstrap-and-migrate. No se tocó Neon main ni la DB parent-data clone `neondb`.
+- No se dispone del run ID/enlace en el extracto pegado; no inventar uno. El log no muestra fallo, pero metadata final del run queda por confirmar si se requiere registro formal SUCCESS.
 
-## Próximo paso exacto
-El propietario debe abrir Actions → “Neon pinned migration rehearsal” → Run workflow, seleccionar branch main y dejar operation en su valor predeterminado verify-empty. No rellenar confirmation. Después compartir únicamente el resultado/resumen del run (no secretos ni URI). Inspeccionar logs; no ejecutar bootstrap-and-migrate todavía. Para cualquier escritura se requerirá autorización explícita adicional tras revisar el preflight.
+## Próximo paso técnico
+Revisar PR #279 (documentación) en su HEAD exacto, actualizar sus afirmaciones previas de “sin conexión/no dispatch” con la evidencia real del verify-empty y esperar CI exact-HEAD. Después continuar el diagnóstico/rehearsal de migraciones en una rama/DB aislada; no aplicar migraciones todavía.
 
 ## Límites
-- No migraciones, DDL/DML remotos, Neon main, producción, Cloudflare manual, DNS ni billing.
+- Ninguna escritura remota Neon autorizada. No elegir `bootstrap-and-migrate` ni ejecutar migraciones sin preflight y autorización explícita independiente.
+- No modificar secretos, Neon main, datos reales, Cloudflare manual, DNS ni billing.
+- Mantener #269 Draft; respetar #193 sin cambios.
 - Producción NOT READY.

@@ -2,7 +2,7 @@
 
 **Micro app** es un proyecto independiente de punto de venta (POS) e inventario para comercios, pensado para PC, tablet y móvil. Su objetivo es ofrecer un flujo fiable para catálogo, existencias, ventas, pagos, caja y trazabilidad, con precios base en USD y equivalentes en VES calculados a partir de una tasa BCV validada.
 
-> **Estado al 8 de noviembre de 2026:** main ya incluye autenticación, catálogo de lectura/escritura, lectura y conteos de inventario con contexto tenant/sucursal, autorización por operación, locks e inventario por almacén/ledger. La integración BCV oficial está en PR #255 (Draft, no fusionada); checkout/pagos y transferencias entre sucursales aún no están integrados. **El producto todavía no está listo para operación comercial ni para datos reales:** el esquema remoto Neon no tiene aplicadas las migraciones 0003–0016 y el runtime carece de grants en rehearsal.
+> **Estado al 30 de octubre de 2026:** existe una base técnica con autenticación Google OAuth y allowlist implementadas en la API, además de automatización de calidad y seguridad. **El producto todavía no está listo para operación comercial ni para datos reales.** La autorización por operación, el aislamiento multi-organización completo y los flujos transaccionales comerciales siguen pendientes.
 
 - **Estado técnico vigente:** [CURRENT_STATE.md](docs/CURRENT_STATE.md) y [handoff de continuidad](docs/HANDOFF_NEXT_CHAT.md).
 - **Plan maestro y prioridades:** [PROJECT_PLAN.md](docs/PROJECT_PLAN.md).
@@ -27,7 +27,7 @@ El alcance del producto incluye:
 
 **Este listado describe el alcance previsto, no afirma que todos los módulos estén terminados.** Consulta los documentos de estado y los criterios de aceptación para distinguir lo implementado, lo probado y lo pendiente.
 
-La dirección de producto aprobada es una plataforma SaaS multi-organización, multi-sucursal y multiusuario. Main incluye migraciones 0001–0016: branches/branch_memberships, registers/register_shifts, warehouses, inventory_balances, movimientos/Kardex, conteos, locks y grants runtime. `resolveBranchContext` está conectado mediante `authorizeBranchOperation` a las rutas de lectura y conteo de inventario; catálogo usa contexto tenant y permisos por operación. La matriz de roles fue aprobada el 2026-10-31. No están integrados todavía checkout/pagos, transferencias de inventario en dos etapas ni rutas operativas de caja/turnos. **Las migraciones 0003–0016 no se han aplicado a Neon main**, cuyo esquema sigue en el baseline heredado.
+La dirección de producto aprobada como arquitectura de referencia es una plataforma SaaS multi-organización, multi-sucursal y multiusuario. Una organización es el tenant y propietario lógico de sus datos; las sucursales son unidades operativas; las cajas y almacenes pertenecen a una sucursal. **Main ya incluye** `branches`/`branch_memberships` y el helper `resolveBranchContext` por PR #165 (0003). **Main incluye ahora** `registers`/`register_shifts` mediante la migración 0004 (PR #167 fusionada). Almacenes, balances por almacén y endpoints comerciales no están implementados; el helper de sucursal no está conectado a rutas. Las migraciones 0003/0004 no se han aplicado a Neon main.
 
 ## Estado actual: qué significa en la práctica
 
@@ -69,12 +69,12 @@ apps/
 ```
 
 - **Frontend:** aplicación web estática con React/Vite/TypeScript.
-- **API:** Hono sobre Cloudflare Workers; main registra auth/Google, catálogo read/write, lectura de inventario y conteos. No registra todavía checkout/pagos ni transferencias. BCV latest/history está en #255, aún Draft.
+- **API:** Hono sobre Cloudflare Workers; hoy expone flujos de autenticación y `GET /health`, no endpoints comerciales de productos, inventario, ventas o pagos.
 - **Persistencia:** PostgreSQL/Neon como destino arquitectónico y Drizzle/SQL versionados. No se debe asumir que las migraciones del repositorio ya estén aplicadas a Neon `main`.
 - **Automatización:** GitHub Actions para build, pruebas y análisis.
 - **Tasa y precios:** la base de datos debe conservar la tasa y los importes aplicados a una venta; cualquier caché es una optimización, no la fuente de verdad de una transacción.
 
-La arquitectura objetivo contempla Cloudflare Pages, Cloudflare Workers y Neon PostgreSQL. Main incluye modelo multi-sucursal y stock por almacén/Kardex; el código de lectura y conteo aplica contexto tenant/sucursal y roles aprobados. La cobertura comercial sigue parcial: no hay checkout/pagos ni transferencias en dos etapas; los helpers de turnos no están montados como rutas. Neon main no tiene aplicadas las migraciones 0003–0016 y no puede considerarse listo para el código actual. El coste objetivo es **$0**: no activar planes pagos, facturación, tarjetas ni cargos automáticos sin autorización explícita. Los niveles gratuitos pueden cambiar y no garantizan capacidad ilimitada ni disponibilidad comercial.
+La arquitectura objetivo contempla Cloudflare Pages para el frontend, Cloudflare Workers para la API y Neon PostgreSQL, sujetos a límites y condiciones vigentes de cada proveedor. El fundamento de sucursales/asignaciones está en main (0003); el aislamiento integral de operaciones, los roles distintos por sucursal, almacenes y stock por almacén siguen pendientes. Main incluye el esquema de cajas/turnos en 0004; almacenes y stock por almacén siguen pendientes. El coste objetivo es **$0**: no activar planes pagos, facturación, tarjetas ni cargos automáticos sin autorización explícita. Los niveles gratuitos pueden cambiar y no garantizan capacidad ilimitada ni disponibilidad comercial.
 
 ## Reglas de ingeniería que no se deben romper
 

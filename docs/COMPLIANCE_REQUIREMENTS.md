@@ -1,17 +1,3 @@
-# Addendum de cumplimiento vivo — 2026-11-08 UTC
-
-La documentación sigue siendo un borrador de requisitos y **no constituye asesoría legal, certificación fiscal ni conformidad demostrada**.
-
-- Main GitHub `96e2e2d9f76bc8fcc3bab2fa9503e480545c8869` contiene migraciones 0001–0016. Esto no demuestra que estén aplicadas en Neon ni que el producto esté habilitado en producción.
-- La integración oficial BCV está en PR #255, Draft y sin revisión formal. Incluye fuente, fecha efectiva, frescura, persistencia decimal y conversión; no se debe anunciar como disponible en producción.
-- Fines de semana usan la fecha futura publicada para el siguiente día hábil. No hay calendario oficial de feriados bancarios entre semana; si falta la fecha exacta, el sistema falla cerrado y bloquea conversión.
-- Checkout/pagos siguen sin handler integrado en main. #233 conserva código único, pero su migration 0015 antigua no debe copiarse. Migration 0017 debe alinear el trigger de ventas con la regla de fecha efectiva BCV.
-- La política técnica de pagos propuesta (una moneda de liquidación, pago exacto completo, sin pagos parciales ni cambio) requiere aprobación funcional explícita antes de habilitar checkout.
-- No afirmar cumplimiento tributario por disponer de una tasa BCV o de una migración. IVA, exenciones, redondeo, comprobantes, libros, devoluciones y reglas por jurisdicción requieren revisión legal/fiscal local y pruebas de aceptación.
-- Privacidad, términos de uso, responsable legal, conservación, proveedores y política de soporte siguen siendo gates de lanzamiento. El objetivo de coste $0 se mantiene; no activar servicios pagos sin autorización.
-
----
-
 # Requisitos de cumplimiento y operación — Micro app
 
 Estado: borrador de requisitos de producto; no constituye asesoría legal ni certificación fiscal.

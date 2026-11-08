@@ -1,12 +1,3 @@
-# Addendum de revisión vigente — 2026-11-08 UTC
-
-- Main GitHub contiene migraciones 0001–0016, incluyendo sucursales, turnos, warehouses, inventory balances/ledger, runtime locks/grants, BCV, ventas sin descuentos y checkout atómico. Esto describe el DDL versionado, no el esquema remoto.
-- Neon main y `rehearsal-baseline-20261107` no tienen todavía `branches`, `register_shifts`, `auth_bootstrap_attempts`, `warehouses`, `inventory_balances` ni `app_schema_migrations`. Main carece de roles runtime/migrator; rehearsal tiene roles/ownership pero runtime no tiene grants de tabla.
-- Por tanto, las pruebas CI en PostgreSQL 18 no demuestran adopción en Neon. No fusionar #251/#255 ni activar sus Crons hasta aplicar el runner completo en rehearsal, comprobar permisos mínimos y probar el login runtime real.
-- #255 implementa BCV latest/history y fin de semana; el trigger de ventas canónico en migration 0015 todavía requiere `effective_date = hoy`. Esto no coincide con la regla de siguiente día hábil durante sábado/domingo. Migration 0017 debe reemplazar esa validación y probar viernes→sábado→domingo→lunes, además de fecha inválida, rate stale y feriado sin calendario.
-- #233 contiene handler/tests únicos de checkout, pero su migration 0015 antigua es inferior a la canónica de main. Portar handler/tests a una rama nueva basada en #255; no copiar su migration 0015. Mantener sin aprobar el modelo de pagos hasta decisión explícita del propietario.
-- No declarar aislamiento tenant/sucursal en producción solo por DDL en Git; se requiere prueba integrada contra el esquema y el login autorizados.
-
 # Revisión del esquema y la API — estado reconciliado post-PR #169 (2026-10-30 UTC)
 
 **Último código/runtime revisado:** PR #169, `be35a0fde3886271b6ed98b7ccc29cc1255d50e5`. PR #170 (`af08cd913a4e0e155b1b74183d8f5a22bc1721af`) fue solo documental; consultar el ref vivo de `main` antes de nuevos cambios.  

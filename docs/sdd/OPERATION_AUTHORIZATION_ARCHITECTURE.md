@@ -1,19 +1,10 @@
 # Server-side operation authorization architecture
 
-## Implementation status update — 2026-11-08 UTC
+## Implementation status update — 2026-11-04 UTC
 
-Main is `96e2e2d9f76bc8fcc3bab2fa9503e480545c8869`. The role/permission decision matrix is **APPROVED** (2026-10-31). Main now contains `tenant-context.ts`, `branch-context.ts`, `authorization.ts`, and route-level authorization in catalog and inventory handlers.
+The role/permission decision matrix is **APPROVED** (2026-10-31). The current `main` HEAD is `2e0f4083ba577de2f301daf8c866bfbdffb5e23f` and does not contain commercial API handlers from PR #196. PR #196 remains open/Draft at `c332e740aff279fb8b22a8879581d4b8a3c7de21`, based on the previous main SHA `705d3db3220894c7d3baca8dc7e7a6b623dfbb94`; it is behind main and must be reconciled before integration. That branch contains tenant-scoped catalog read/create/update/soft-deactivation and warehouse inventory count/list/confirm routes, with PostgreSQL integration coverage including concurrent idempotent count confirmation. This is a partial implementation, not a general authorization layer for all commercial operations. Sales, payments, receipts, reservations, returns and transfers still require their own server-side authorization and tests. Production readiness is not established.
 
-- `resolveTenantContext` validates session, active user, organization and membership.
-- `resolveBranchContext` validates active branch and requires active branch membership for Cashier/Inventory; `lockBranchScopes` serializes branch/membership changes.
-- `authorizeTenantOperation`/`authorizeBranchOperation` enforce the approved operation map.
-- `catalog.ts`/`catalog-write.ts` use tenant scope; `inventory-read.ts` and `inventory-counts.ts` use branch scope, locks and role checks. Tests cover cross-tenant catalog denial, cashier cost hiding, branch assignment/revocation, inventory count idempotency/concurrency and cashier count denial.
-- `resolveOpenCashierRegisterShift` remains an isolated helper; no register-shift HTTP route is mounted. Checkout/payments, inventory transfers, purchase receipts, member/policy administration and reports still need handlers and operation-specific tests.
-- Git main contains migrations 0001–0016; Neon main has not applied 0003–0016, and runtime roles/grants are not production-ready. PostgreSQL 18 CI does not prove Neon integration.
-
-
-
-**Status:** technical authorization architecture; the business role/permission matrix is approved, and implementation is partial. New operations still require explicit handlers, tests and review.  
+**Status:** technical proposal only; not an approved business permission policy and not implementation authorization.  
 **Date:** 2026-10-30 UTC  
 **Base:** `main` at `a6db2dcaf57e2a0bf1735eb282c3ac2256cd314c` when this proposal branch was created.  
 **Related:** [tenant authorization contract](tenant-authorization-contract.md), [role/permission decision matrix](role-permission-decision-matrix.md), [branch scope implementation](BRANCH_SCOPE_CONTEXT_IMPLEMENTATION.md), [register shift model](REGISTER_SHIFT_MODEL.md), [organization commercial policies](ORGANIZATION_COMMERCIAL_POLICY_CONFIGURATION.md), [Constitution](../CONSTITUTION.md).
@@ -27,7 +18,7 @@ This document proposes the server-side shape for authorization when commercial A
 3. **Resource scope:** establish the organization, branch, register, warehouse, or shift to which a request refers.
 4. **Operation authorization:** decide whether that actor may perform this specific action on this specific resource under an explicitly approved policy.
 
-The current `resolveTenantContext` and `resolveBranchContext` helpers address identity and resource scope; `authorization.ts` applies the approved operation map. Catalog and inventory read/count handlers are connected. `resolveOpenCashierRegisterShift` remains isolated, and there are no integrated checkout/payment or transfer handlers.
+The current `resolveTenantContext`, `resolveBranchContext`, and `resolveOpenCashierRegisterShift` helpers address parts of the first three concerns. They do **not** authorize business operations. There are currently no commercial HTTP handlers.
 
 This proposal does not introduce custom roles, choose business thresholds, authorize additional discounts/voids/refunds, define a supervisor override, create endpoints, add schema, or permit migrations. The separate role matrix is **APPROVED** (2026-10-31); this technical proposal does not extend that approval or authorize behavior outside the matrix. No implementation may infer missing decisions from examples in this document.
 
@@ -36,9 +27,9 @@ This proposal does not introduce custom roles, choose business thresholds, autho
 - `resolveTenantContext` derives user, organization, and role from the validated session and active database membership. The requested organization is a selector, not proof of access.
 - `resolveBranchContext` rechecks active organization, user, membership, role, branch, and (for cashier/inventory) active branch assignment. Its documented owner/admin organization-wide branch resolution is an already-approved **scope-resolution** boundary only.
 - `resolveOpenCashierRegisterShift` resolves the authenticated cashier's own open shift and uses `FOR SHARE OF s`. A future caller that depends on the shift remaining open must use the same transaction client through the business operation.
-- Tenant/branch helpers are wired to route-level authorization in catalog and inventory handlers; they are not a global middleware and must be invoked explicitly by each handler. The open-shift resolver remains isolated.
+- These helpers are isolated and are not wired to commercial routes or middleware.
 - `withDatabaseTransaction` exists, but no commercial route currently demonstrates transaction-level authorization or business atomicity.
-- Git main versions migrations 0001–0016. Neon main has not applied migrations 0003–0016; PostgreSQL 18 disposable CI is the current migration/integration test environment, not evidence of Neon adoption.
+- Main versions migrations 0001–0004. Migrations 0003/0004 have not been applied to Neon main; PostgreSQL 18 disposable CI is the current migration/integration test environment.
 
 ## 3. Proposed authorization boundary
 
@@ -63,7 +54,7 @@ The result must never be constructed from request-body fields such as `userId`, 
 
 ### 3.1 No implicit role-to-permission mapping
 
-Use the approved role/permission matrix and stable operation keys in `authorization.ts`. Do not add permissions or change the approved matrix without owner approval. In particular:
+Do not write a production role switch or permission map until the owner has explicitly approved the corresponding matrix decisions. In particular:
 
 - the role names `owner`, `admin`, `cashier`, and `inventory` do not by themselves grant an operation;
 - organization-wide branch scope for owner/admin does not imply permission to perform every operation;
@@ -112,7 +103,7 @@ Composite foreign keys remain an integrity control, not a replacement for author
 
 ## 6. Auditing contract to design before implementation
 
-Audit logs and inventory-count audit events exist, but each future commercial mutation still needs an explicit event contract and tests. Before adding checkout, transfer, refund or member/policy mutations, define at least:
+The schema and semantics of audit records are not yet approved or implemented for commercial operations. Before the first commercial mutation, design an auditable event contract with at least:
 
 - organization and applicable branch/register/shift identifiers;
 - authenticated actor user ID and the role/membership state observed (do not assume a version column exists until the schema is designed);

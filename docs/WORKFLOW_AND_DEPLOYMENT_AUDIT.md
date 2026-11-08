@@ -1,37 +1,3 @@
-# Addendum Cloudflare/CI vigente — 2026-11-08 UTC
-
-## Configuración versionada verificada
-
-- Worker `micro-app-api`, Wrangler `^4.156.1`.
-- `apps/api/wrangler.toml`: `[vars] APP_ENV = "production"`; `[previews.vars] APP_ENV = "preview"`.
-- `apps/api/src/index.ts` bloquea API en preview y hostnames `workers.dev` no productivos; solo `/health` queda disponible.
-- El middleware es una defensa de aplicación; no sustituye aislamiento de secretos, bindings, bases ni recursos externos.
-
-## Distinciones de Cloudflare
-
-- Worker Preview es distinto de Version URL. Previews usan variables/secretos/bindings propios definidos en `previews`; Version URLs no son por sí mismas un entorno aislado de rama.
-- Cloudflare indica que los recursos solo quedan aislados si el Preview usa IDs separados. Service Bindings de un Preview llaman al Worker productivo; Workflow bindings usan Workflows existentes; **Routes y Cron Triggers apuntan a producción**. Las Preview URLs son públicas por defecto y deben protegerse con Cloudflare Access cuando corresponda.
-- No existe prohibición permanente de Worker Previews. La decisión es no cambiar el modo de builds hasta inventariar bindings, secretos, recursos compartidos, acceso y costo; el cambio del modelo anterior es operativo y debe tener aprobación explícita.
-- Última observación documentada del dashboard (2026-11-04): el Worker mostraba “Set up Worker Previews” y el Version command `npx wrangler versions upload`. No se volvió a leer el dashboard autenticado en esta sesión; tratarlo como evidencia histórica, no como estado vivo.
-- Referencias oficiales: [Worker Previews](https://developers.cloudflare.com/workers/previews/), [Cron Triggers](https://developers.cloudflare.com/workers/configuration/cron-triggers/), [Version URLs](https://developers.cloudflare.com/workers/versions-and-deployments/version-urls/).
-
-## Estado de PR y producción
-
-- #251 HEAD `5dec5d5a9025de16b19d0cb7cfeac6585e2ad5d6`: 15/15 check-runs SUCCESS.
-- #255 HEAD `35b9ac6894f79c5760a1f56fb37506ed2278afa0`: 13 workflow runs + 15/15 check-runs SUCCESS.
-- Los check-runs Cloudflare Pages/Workers asociados a estas PR son builds/checks de PR; no prueban un despliegue productivo, aislamiento de Preview ni CORS real.
-- Los Crons de #251/#255 no se han activado en producción; Cloudflare documenta que Routes y Cron Triggers apuntan a producción, no a cada Preview. El guard `APP_ENV` añade fail-closed en el handler.
-- No se modificaron dashboard, Worker mode, variables, secretos, bindings, tráfico, DNS, billing ni producción.
-
-## Evidencia histórica preservada de PR previews (2026-11-04)
-
-Los siguientes destinos son previews/version URLs de PRs antiguas ya cerradas; no son endpoints actuales ni evidencia de producción:
-- PR #200: Pages commit preview `https://6ff8d968.micro-app-63i.pages.dev`; Worker Version URL `https://09254838-micro-app-api.btfcasheb.workers.dev`.
-- PR #204: Pages commit preview `https://12d9c5bc.micro-app-63i.pages.dev`; Worker Version URL `https://8b3b7e8d-micro-app-api.btfcasheb.workers.dev`.
-- PR #205: Pages commit preview `https://9d8491b5.micro-app-63i.pages.dev`; Worker Version URL `https://d4532b6a-micro-app-api.btfcasheb.workers.dev`.
-- PR #202: Pages commit preview `https://aff7f4d7.micro-app-63i.pages.dev`; Worker Version URL `https://df3c17b4-micro-app-api.btfcasheb.workers.dev`.
-- Branch Preview URLs, exact heads and dashboard observations remain in the historical #202 addendum on its branch; no re-authentication or screenshot is required merely to continue code/PR work.
-
 # Auditoría corregida de GitHub Actions y despliegues — 2026-10-30 UTC
 
 ## Addendum vigente — PR #178, SHA exacto y previews Cloudflare

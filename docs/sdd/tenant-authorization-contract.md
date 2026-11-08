@@ -1,22 +1,10 @@
 # Contrato de autorización server-side y aislamiento multiempresa
 
-- Estado: **contrato técnico parcialmente implementado; la matriz de permisos por rol está APROBADA desde 2026-10-31.**
-- Fecha de revisión: 2026-11-08 UTC.
-- Alcance: rutas HTTP comerciales actuales y futuras de Micro app.
+- Estado: **contrato técnico propuesto; no sustituye la aprobación de la matriz de roles**.
+- Fecha: 2026-10-19.
+- Alcance: futuras rutas HTTP comerciales de Micro app.
 - Repositorio: https://github.com/BTF14/Micro-app
 - Relacionados: [Constitución](../CONSTITUTION.md), [integración API/Neon](../API_INTEGRATION.md), [matriz de permisos por rol](role-permission-decision-matrix.md), [preparación para producción](../PRODUCTION_READINESS.md), [bloqueo de identidad #53](https://github.com/BTF14/Micro-app/issues/53).
-
-## Implementación actual verificada en main
-
-- `tenant-context.ts` resuelve sesión, usuario activo, organización activa y membresía activa desde el servidor.
-- `branch-context.ts` resuelve sucursal activa; Cashier/Inventory requieren asignación activa; `lockBranchScopes` serializa revocaciones y desactivaciones.
-- `authorization.ts` implementa el mapa de operaciones aprobado y expone `authorizeTenantOperation`/`authorizeBranchOperation`.
-- `catalog.ts`/`catalog-write.ts` aplican contexto tenant y permisos; `inventory-read.ts` y `inventory-counts.ts` aplican autorización de sucursal, locks y denegación por defecto.
-- Tests de integración cubren acceso cruzado de catálogo, asignación/revocación de sucursal, conteos idempotentes/concurrentes, rechazo de cashier para conteos y rollback de auditoría.
-- No están montados todavía handlers de checkout/pagos, transferencias, gestión de miembros/políticas, ni rutas de caja/turnos. `cashier-open-shift.ts` existe como helper aislado, no como ruta registrada.
-- La implementación en Git no demuestra que Neon main tenga migraciones/grants; producción sigue bloqueada.
-
-## Objetivo y límites
 
 ## Objetivo y límites
 
@@ -28,7 +16,7 @@ La autenticación identifica una sesión; no demuestra por sí sola que el usuar
 
 1. **Denegar por defecto.** Una sesión ausente, inválida, expirada o revocada, un usuario inactivo, una organización inactiva o una membresía inactiva nunca autoriza una operación comercial.
 2. **Identidad desde el servidor.** Obtener el usuario desde la sesión validada. Nunca confiar en `userId`, `role`, `organizationId` ni campos equivalentes enviados por el cliente como prueba de identidad o permiso.
-3. **Contexto de organización validado.** El mecanismo actual recibe el organizationId como selector de ruta y resuelve sesión, usuario activo, organización activa y membresía activa desde el servidor mediante `resolveTenantContext`. El ID del cliente es solo un selector; nunca prueba identidad ni membresía.
+3. **Contexto de organización validado.** Si la ruta acepta un selector de organización en URL, cabecera o cuerpo, tratarlo solo como una selección solicitada. Comprobar en el servidor que existe una membresía activa de ese usuario para esa organización y que la organización está activa. El mecanismo concreto de selección queda pendiente de decisión de arquitectura; ninguna opción se considera aprobada por este documento.
 4. **Permiso por operación.** Después de validar sesión y membresía, comprobar el permiso específico de la acción conforme a una matriz aprobada. No deducir permisos solo del nombre del rol ni de que la UI oculte un botón.
 5. **Ámbito tenant en cada consulta.** Toda lectura, actualización o eliminación de un recurso propiedad de una organización debe limitarse por el identificador de la organización ya autorizado en servidor. No consultar, actualizar ni eliminar un registro tenant-scoped usando únicamente el ID recibido del cliente.
 6. **Escrituras con contexto de servidor.** En las inserciones, asignar el `organization_id` a partir del contexto autorizado, no copiarlo sin validar desde el cuerpo de la petición.
@@ -42,12 +30,12 @@ La autenticación identifica una sesión; no demuestra por sí sola que el usuar
 1. Validar y parsear la entrada.
 2. Resolver la sesión en servidor y confirmar usuario activo.
 3. Resolver el contexto de organización solicitado y verificar organización y membresía activas.
-4. Comprobar el permiso requerido mediante el mapa aprobado de `authorization.ts` y `authorizeTenantOperation`/`authorizeBranchOperation`.
+4. Comprobar el permiso requerido para esa operación, una vez aprobada la matriz de roles.
 5. Ejecutar las consultas con ámbito tenant explícito y validar la pertenencia de cada recurso relacionado.
 6. Para escrituras compuestas, ejecutar las operaciones en una transacción y revertir todo ante cualquier error.
 7. Devolver una respuesta segura y probar que la denegación no produjo escrituras.
 
-Esta secuencia sigue siendo obligatoria para toda ruta nueva. La implementación actual cubre catálogo y lectura/conteos de inventario; no debe interpretarse como cobertura completa de todas las operaciones de la matriz.
+Esta secuencia es un contrato de implementación, no una afirmación de que ya exista middleware o código que la cumpla.
 
 ## Pruebas de aceptación requeridas
 
@@ -71,7 +59,7 @@ Antes de declarar aislamiento multiempresa listo, las pruebas de integración co
 - Mecanismo de selección de organización y política de respuesta cuando el recurso no pertenece al tenant.
 - Diseño, implementación y pruebas de handlers comerciales reales.
 
-No rellenar estos puntos por inferencia. Mantener habilitadas solo las rutas que ya tienen handler, permiso explícito y pruebas negativas; mantener checkout/pagos, transferencias, operaciones de turnos y administración de miembros/políticas bloqueadas hasta completar su implementación y aceptación.
+No rellenar estos puntos por inferencia. Hasta que las decisiones necesarias estén aprobadas, mantener las rutas comerciales no implementadas o denegadas por defecto.
 
 ## Estado actual verificado en la revisión documental
 

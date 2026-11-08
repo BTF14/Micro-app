@@ -1,33 +1,3 @@
-# Addendum esquema vivo — 2026-11-08 UTC
-
-**Código fuente:** main `96e2e2d9f76bc8fcc3bab2fa9503e480545c8869`. La carpeta versionada contiene migraciones 0001–0016:
-
-- 0001 initial
-- 0002 Google identity
-- 0003 branch scope
-- 0004 register shifts
-- 0005 auth bootstrap attempts
-- 0006 warehouse inventory
-- 0007 register shift member roles
-- 0008 audit logs append-only
-- 0009 inventory count ledger validation
-- 0010 inventory balance ledger coupling
-- 0011 PostgreSQL runtime lock helpers
-- 0012 PostgreSQL runtime role grants
-- 0013 BCV official rate precision and grants
-- 0014 sales without discounts
-- 0015 sales checkout atomicity
-- 0016 runtime inventory ledger read
-
-## Neon verificado directamente (solo lectura)
-
-Proyecto `restless-fire-99110035`, base `neondb`.
-
-- Main `br-summer-math-b7297a60`: existen 15 tablas del esquema heredado, pero faltan `branches`, `register_shifts`, `auth_bootstrap_attempts`, `warehouses`, `inventory_balances` y `app_schema_migrations`. No existen `microapp_runtime` ni `microapp_migrator`. `exchange_rates.rate` es NUMERIC(14,6).
-- Rehearsal `br-curly-poetry-b7dxsddm`: los roles LOGIN existen; migrator posee los objetos. Runtime puede conectarse y tiene USAGE en schema public, pero no CREATE ni permisos SELECT/INSERT/UPDATE/DELETE sobre las tablas examinadas. También faltan `app_schema_migrations`, `auth_bootstrap_attempts`, `branches`, `register_shifts`, `warehouses` e `inventory_balances`; exchange_rates sigue NUMERIC(14,6).
-- El branch rehearsal conserva un baseline útil, pero no tiene aplicadas las migraciones 0003–0016 ni el ledger de migraciones. El login probado con el conector Neon no demuestra que Cloudflare Worker use ese mismo login.
-- `.github/workflows/migration-runner.yml` prueba el runner en PostgreSQL 18 desechable; no ejecuta contra Neon. No aplicar SQL manual desde el conector: usar el procedimiento protegido `adopt-baseline.sh`/ `migrate.sh` cuando exista secreto y autorización específica.
-
 # Estado actual del esquema — 2026-10-30 UTC (main post PR #169)
 
 **Último SHA con cambios de esquema/runtime:** PR #169, `be35a0fde3886271b6ed98b7ccc29cc1255d50e5`. PR #170 (`af08cd913a4e0e155b1b74183a71efc51e5d4646`) fue solo documental y no cambió esquema. Consultar el ref vivo de `main` antes de cualquier cambio. Main versiona `0001_initial.sql`, `0002_google_identity.sql`, `0003_branch_scope.sql` y `0004_register_shifts.sql`; las migraciones 0003/0004 no se han aplicado a Neon main.

@@ -1,15 +1,3 @@
-# Addendum vivo — 2026-11-08 UTC — estado de PR y gate del runner
-
-- GitHub main `96e2e2d9f76bc8fcc3bab2fa9503e480545c8869`; PR #251 HEAD `5dec5d5a9025de16b19d0cb7cfeac6585e2ad5d6`, 15/15 check-runs SUCCESS; PR #255 HEAD `35b9ac6894f79c5760a1f56fb37506ed2278afa0`, base #251, 13 workflow runs + 15/15 check-runs SUCCESS. Ambas Draft y sin revisión formal.
-- Lectura directa actual de Neon main `br-summer-math-b7297a60`: no existen roles `microapp_runtime`/`microapp_migrator`, `schema_migrations`, `auth_bootstrap_attempts`, `branches`, `warehouses`, `inventory_balances` ni `register_shifts`; `exchange_rates.rate` es NUMERIC(14,6).
-- Rehearsal `br-curly-poetry-b7dxsddm`: ambos roles LOGIN conectan; objetos existentes pertenecen a migrator; runtime tiene schema USAGE pero no CREATE ni grants de tabla para las tablas comprobadas. No existe ledger ni se han aplicado migraciones 0003–0016.
-- La prueba de login de Neon connector como `microapp_runtime` demuestra que ese rol conecta en rehearsal; **no** demuestra que el Worker de Cloudflare use esa credencial.
-- `.github/workflows/migration-runner.yml` ejecuta `scripts/db/migrate.sh` en PostgreSQL 18 desechable. No es un runner de release para Neon. El plan sigue requiriendo secreto `NEON_REHEARSAL_DATABASE_URL` y workflow protegido para ejecutar `adopt-baseline.sh verify/apply` y `migrate.sh` en rehearsal.
-- No pegar SQL de migraciones en la herramienta Neon: no equivale al runner, omite el ledger/checksums/advisory lock y no demuestra el login directo del migrator. No ejecutar en Neon main. No cambiar secretos.
-- Para avanzar en Fase 1 hace falta autorización específica para crear/usar el secreto de rehearsal y activar el workflow protegido. La Fase 2 (Neon main) y Fase 3 (DATABASE_URL del Worker) requieren autorizaciones separadas.
-
----
-
 # Verificación en vivo adicional — 2026-11-07 UTC (solo lectura)
 
 Proyecto `micro-app-db` (`restless-fire-99110035`), base de datos `neondb`.

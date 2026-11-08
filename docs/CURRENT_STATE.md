@@ -1,3 +1,40 @@
+## Reconciliación viva — 2026-11-08 08:25 UTC (GitHub, fuente de verdad)
+
+- **main:** `d28b80edc6b2a63019ded100e46bb4b11e81153a` (#263 integrado). La rama está protegida; no se ha ejecutado ningún merge en esta sesión.
+- **PR abiertas:** 7 (#193, #233, #251, #255, #258, #261, #262). Las siete continúan abiertas; las siete son Draft salvo #193, que está Open/no Draft.
+- **Reviews formales:** ninguna de las siete tiene una review registrada; tampoco hay review threads abiertos en las consultas actuales. Checks verdes no equivalen a aprobación.
+
+| PR | HEAD actual | Base actual de PR | Checks exact-HEAD | Estado y bloqueo principal |
+|---|---|---|---:|---|
+| #258 checkout | `ebccf88bd87ee47c413158e6cf3417115d5f5235` | main `0a9e2f7c0d8b4d68b1efe6b372c10c107b160d67` | 15/15 SUCCESS | Draft; 30 commits ahead y 1 detrás de main vivo; sin review formal; depende de BCV #255 y de aprobación funcional del modelo de pago |
+| #262 ledger | `dc6d9228224c484a38ac332311cba3c64f876ab7` | #258 `df1ba996babb859a83da09d72cdec63a69b3965c` | 8/8 SUCCESS | Draft; apilada correctamente sobre un ancestro de #258, pero #258 avanzó 1 commit desde esa base; sin review formal; comentario de seguridad P1 registrado (issue comment 6719238384) |
+| #251 retención auth | `30ec0cedafbb8281c7b5ea56572581ddc022a180` | main `0a9e2f7c0d8b4d68b1efe6b372c10c107b160d67` | 15/15 SUCCESS | Draft; base 1 commit detrás de main vivo; sin review formal; Cron no activar hasta rehearsal protegido y verificación runtime/ownership/grants |
+| #255 BCV | `f49fb402f9bd5a40591970c9efe3665a5e212ebb` | #251 `30ec0cedafbb8281c7b5ea56572581ddc022a180` | 15/15 SUCCESS | Draft; dependencia #251 conservada; sin review formal; no activar Cron productivo ni integrar antes de cerrar la cadena de rehearsal |
+| #261 continuidad | `574209b9c6a113577e4ecbd1a5a928727e25014a` | main `0a9e2f7c0d8b4d68b1efe6b372c10c107b160d67` | 13/13 SUCCESS | Draft; su snapshot 06:45 UTC quedó obsoleto por #263 y cambios posteriores; esta reconciliación actualiza los documentos canónicos |
+| #233 checkout histórico | `07a13c7eb68e0e933f93f35a1ecd9a22f19bf2d0` | rama documental `docs/sales-checkout-design-gates-20261105` (`4d12b4e8d2907c41758ff6dfe1d8d66ed3dc16f8`) | 9/9 SUCCESS | Draft; fuente histórica divergida; no fusionar. Comparar y preservar cualquier contribución única después de integrar/verificar #258 |
+| #193 inventario Fase B | `ac57ab4f3415f82279b8a49c0befe09f8e3aec68` | main antiguo `705d3db3220894c7d3baca8dc7e7a6b623dfbb94` | 12/12 SUCCESS | Open/no Draft; 5 commits ahead y 24 detrás del main vivo; el único archivo diferencial es `docs/sdd/PHASE_B_BRANCH_INVENTORY_SCOPE.md` (543 líneas). Preservar y revisar; no cerrar por antigüedad |
+
+### Hallazgos y límites verificados
+
+1. #258: 15 check-runs del HEAD exacto SUCCESS; no hay status contexts combinados reportados ni review formal. El compare con main vivo indica 1 commit de atraso (el merge de #263); no reutilizar checks de SHA anteriores.
+2. #262: 8 check-runs exact-HEAD SUCCESS; no hay review formal. El PR conserva el permiso runtime INSERT sobre el ledger. La validación actual deja pasar cualquier tipo no vinculado a conteo si `count_id IS NULL`; un caller runtime puede por tanto crear movimientos de compra/transferencia/devolución/reversión sin documento fuente y proyectar balances. Hallazgo P1 documentado en #262, comentario 6719238384. Antes de exponer esos tipos, restringirlos o validar fuente/actor/estado en DB con pruebas runtime.
+3. #258 mantiene pendiente la aprobación funcional de una sola moneda de liquidación por venta, pago exacto y prohibición de pago parcial/sobrepago. El historial disponible no contiene aprobación explícita del propietario; no inferirla de la autorización técnica general.
+4. #251/#255: ambos HEADs tienen 15/15 checks SUCCESS; no hay reviews formales. #255 depende exactamente del HEAD actual de #251. No activar Cron ni fusionar antes de validar runner protegido, identidad de login runtime, ownership y grants mínimos.
+5. #261: su snapshot anterior registraba main `0a9e2f7...`; main vivo ya es `d28b80e...`. Este bloque prevalece sobre snapshots históricos inferiores.
+6. #193: compare contra main vivo = 5 commits ahead / 24 behind, un solo documento nuevo de 543 líneas. No modificar su rama ni descartar el documento.
+7. No se hicieron cambios en Neon, datos reales, secretos, Cloudflare manual, DNS, billing ni despliegues manuales. Los checks Cloudflare de PR son checks/previews, no prueba de producción.
+8. **Producción: NOT READY.** Faltan review independiente, gates de producto, rehearsal/roles Neon, integración BCV, UI/E2E operativo y cierre de la autorización de movimientos de inventario.
+
+### Próxima secuencia operativa
+
+1. Completar revisión de #258/#262 y resolver el hallazgo P1 de autorización de movimientos antes de habilitar tipos no cubiertos.
+2. Resolver el gate funcional del modelo de pago de #258; no asumir una decisión de producto.
+3. Revisar #251 como raíz de #255 y confirmar el runner protegido/runtime roles antes de cualquier merge que active Cron.
+4. Actualizar #258/#262 sobre las bases vivas después de integrar la raíz; checks nuevos en SHA final.
+5. Mantener #261 como reconciliación documental, preservar #193 y #233 hasta comprobar sus contribuciones únicas.
+
+---
+
 ## Estado operativo verificado — 2026-11-08 06:45 UTC
 
 - **main:** `0a9e2f7c0d8b4d68b1efe6b372c10c107b160d67`. Repositorio público `BTF14/Micro-app`; rama protegida según metadatos de GitHub.

@@ -265,6 +265,23 @@ describe("Google bootstrap request transport", () => {
     expect(extractCookiePairs(response).microapp_oauth_bootstrap).toBeUndefined();
   });
 
+  it("rejects an oversized bootstrap POST body without Content-Length", async () => {
+    const request = new Request("https://api.example/auth/google", {
+      method: "POST",
+      headers: {
+        Origin: googleOrigin,
+        "Content-Type": "application/x-www-form-urlencoded",
+        "CF-Connecting-IP": nextIntegrationIp(),
+      },
+      body: "x".repeat(4096),
+    });
+    expect(request.headers.get("Content-Length")).toBeNull();
+
+    const response = await app.fetch(request, googleEnv);
+    expect(response.status).toBe(413);
+    expect(response.headers.get("location")).toBeNull();
+    expect(extractCookiePairs(response).microapp_oauth_bootstrap).toBeUndefined();
+  });
   it("rejects duplicate fields and query parameters before redirecting to Google", async () => {
     const response = await app.fetch(new Request(
       "https://api.example/auth/google?unexpected=1",

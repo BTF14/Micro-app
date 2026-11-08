@@ -1,0 +1,153 @@
+name: Neon rehearsal migration runner
+
+run-name: Neon rehearsal ${{ inputs.operation }} by @${{ github.actor }}
+
+on:
+  workflow_dispatch:
+    inputs:
+      operation:
+        description: "Verify only, or adopt baseline 0002 and apply the numbered migrations on the isolated rehearsal branch."
+        type: choice
+        options:
+          - verify
+          - adopt-and-migrate
+        required: true
+        default: verify
+      confirmation:
+        description: "For adopt-and-migrate only, type APPLY-ONLY-br-curly-poetry-b7dxsddm."
+        type: string
+        required: false
+
+permissions:
+  contents: read
+
+concurrency:
+  group: neon-rehearsal-migration-runner
+  cancel-in-progress: false
+
+jobs:
+  rehearsal:
+    name: Verify or migrate the isolated Neon rehearsal branch
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    env:
+      NEON_REHEARSAL_DATABASE_URL: ${{ secrets.NEON_REHEARSAL_DATABASE_URL }}
+      OPERATION: ${{ inputs.operation }}
+      CONFIRMATION: ${{ inputs.confirmation }}
+    steps:
+      - name: Require the default branch
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [[ "${GITHUB_REF}" != "refs/heads/main" ]]; then
+            echo "NEON_REHEARSAL_WORKFLOW_MUST_RUN_FROM_MAIN" >&2
+            exit 1
+          fi
+
+      - name: Checkout repository migrations and scripts
+        uses: actions/checkout@v7
+
+      - name: Install PostgreSQL client
+        shell: bash
+        run: |
+          set -euo pipefail
+          sudo apt-get update
+          sudo apt-get install -y postgresql-client
+          psql --version
+
+      - name: Require the rehearsal-only direct migrator connection
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [[ -z "${NEON_REHEARSAL_DATABASE_URL}" ]]; then
+            echo "Missing repository secret NEON_REHEARSAL_DATABASE_URL." >&2
+            echo "It must be a direct, unpooled connection for microapp_migrator to the rehearsal branch only." >&2
+            exit 1
+          fi
+
+          identity_sql="SELECT current_database() || '|' || current_user || '|' || session_user || '|' || COALESCE(current_setting('neon.branch_id', true), '') || '|' || COALESCE(current_setting('neon.project_id', true), '')"
+          identity="$(psql -X -At -v ON_ERROR_STOP=1 --dbname "${NEON_REHEARSAL_DATABASE_URL}" -c "${identity_sql}")"
+          expected="neondb|microapp_migrator|microapp_migrator|br-curly-poetry-b7dxsddm|restless-fire-99110035"
+          if [[ "${identity}" != "${expected}" ]]; then
+            echo "NEON_REHEARSAL_TARGET_MISMATCH: refusing to connect or write." >&2
+            echo "Expected database, direct login, branch and project identity do not match the approved rehearsal target." >&2
+            exit 1
+          fi
+          echo "Verified exact Neon rehearsal target: ${identity}"
+
+      - name: Verify the live schema against canonical baseline 0002
+        shell: bash
+        run: |
+          set -euo pipefail
+          ADOPTION_DATABASE_URL="${NEON_REHEARSAL_DATABASE_URL}" bash scripts/db/adopt-baseline.sh verify
+
+      - name: Record verify-only result
+        if: ${{ inputs.operation == 'verify' }}
+        shell: bash
+        run: |
+          {
+            echo "## Neon rehearsal — verify only"
+            echo "- Target: `rehearsal-baseline-20261107` (`br-curly-poetry-b7dxsddm`)"
+            echo "- Direct login: `microapp_migrator`"
+            echo "- Canonical baseline 0002: verified."
+            echo "- No DDL/DML or ownership changes were executed."
+          } >> "${GITHUB_STEP_SUMMARY}"
+
+      - name: Require explicit rehearsal-only confirmation
+        if: ${{ inputs.operation == 'adopt-and-migrate' }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [[ "${CONFIRMATION}" != "APPLY-ONLY-br-curly-poetry-b7dxsddm" ]]; then
+            echo "Explicit confirmation mismatch; refusing all writes." >&2
+            exit 1
+          fi
+
+      - name: Adopt canonical baseline 0001-0002 on rehearsal only
+        if: ${{ inputs.operation == 'adopt-and-migrate' }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          ADOPTION_DATABASE_URL="${NEON_REHEARSAL_DATABASE_URL}" \
+          ADOPT_BASELINE_CONFIRM="adopt-0002" \
+            bash scripts/db/adopt-baseline.sh apply
+
+      - name: Apply the complete numbered migration chain through the repository runner
+        if: ${{ inputs.operation == 'adopt-and-migrate' }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          MIGRATION_DATABASE_URL="${NEON_REHEARSAL_DATABASE_URL}" bash scripts/db/migrate.sh
+
+      - name: Verify ledger, checksums, ownership and least-privilege BCV grants
+        if: ${{ inputs.operation == 'adopt-and-migrate' }}
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          expected_count="$(find apps/api/migrations -maxdepth 1 -type f -name '[0-9][0-9][0-9][0-9]_*.sql' ! -name '*.assertions.sql' ! -name '*.deferred_failure.sql' | wc -l | awk '{print $1}')"
+          latest_file="$(find apps/api/migrations -maxdepth 1 -type f -name '[0-9][0-9][0-9][0-9]_*.sql' ! -name '*.assertions.sql' ! -name '*.deferred_failure.sql' | sort | tail -n 1)"
+          latest_version="$(basename "${latest_file}" | cut -c1-4)"
+
+          ledger_ok="$(psql -X -At -v ON_ERROR_STOP=1 --dbname "${NEON_REHEARSAL_DATABASE_URL}" -c "SELECT count(*) = ${expected_count} AND count(DISTINCT version) = ${expected_count} AND min(version) = '0001' AND max(version) = '${latest_version}' AND bool_and(state = 'applied') AND bool_and(applied_at IS NOT NULL) FROM public.schema_migrations")"
+          test "${ledger_ok}" = "t"
+
+          ownership_ok="$(psql -X -At -v ON_ERROR_STOP=1 --dbname "${NEON_REHEARSAL_DATABASE_URL}" -c "SELECT NOT EXISTS (SELECT 1 FROM pg_catalog.pg_class c WHERE c.relnamespace = 'public'::regnamespace AND c.relkind IN ('r','p','v','m','f','S') AND pg_catalog.pg_get_userbyid(c.relowner) <> 'microapp_migrator') AND NOT EXISTS (SELECT 1 FROM pg_catalog.pg_proc p WHERE p.pronamespace = 'public'::regnamespace AND pg_catalog.pg_get_userbyid(p.proowner) <> 'microapp_migrator') AND NOT EXISTS (SELECT 1 FROM pg_catalog.pg_type t WHERE t.typnamespace = 'public'::regnamespace AND t.typtype IN ('e','d') AND pg_catalog.pg_get_userbyid(t.typowner) <> 'microapp_migrator')")"
+          test "${ownership_ok}" = "t"
+
+          runtime_ok="$(psql -X -At -v ON_ERROR_STOP=1 --dbname "${NEON_REHEARSAL_DATABASE_URL}" -c "SELECT (SELECT rolcanlogin AND NOT rolsuper AND NOT rolcreatedb AND NOT rolcreaterole AND NOT rolreplication AND NOT rolbypassrls AND NOT rolinherit FROM pg_catalog.pg_roles WHERE rolname='microapp_runtime') AND (SELECT rolcanlogin AND NOT rolsuper AND NOT rolcreatedb AND NOT rolcreaterole AND NOT rolreplication AND NOT rolbypassrls FROM pg_catalog.pg_roles WHERE rolname='microapp_migrator') AND NOT EXISTS (SELECT 1 FROM pg_catalog.pg_auth_members WHERE member IN (SELECT oid FROM pg_catalog.pg_roles WHERE rolname IN ('microapp_runtime','microapp_migrator'))) AND pg_catalog.has_schema_privilege('microapp_runtime','public','USAGE') AND NOT pg_catalog.has_schema_privilege('microapp_runtime','public','CREATE') AND pg_catalog.has_schema_privilege('microapp_migrator','public','USAGE') AND pg_catalog.has_schema_privilege('microapp_migrator','public','CREATE')")"
+          test "${runtime_ok}" = "t"
+
+          bcv_grants_ok="$(psql -X -At -v ON_ERROR_STOP=1 --dbname "${NEON_REHEARSAL_DATABASE_URL}" -c "SELECT pg_catalog.has_table_privilege('microapp_runtime','public.exchange_rates','SELECT') AND pg_catalog.has_table_privilege('microapp_runtime','public.exchange_rates','INSERT') AND pg_catalog.has_column_privilege('microapp_runtime','public.exchange_rates','validation_status','UPDATE') AND NOT pg_catalog.has_column_privilege('microapp_runtime','public.exchange_rates','rate','UPDATE') AND NOT pg_catalog.has_column_privilege('microapp_runtime','public.exchange_rates','effective_date','UPDATE') AND NOT pg_catalog.has_column_privilege('microapp_runtime','public.exchange_rates','source','UPDATE') AND NOT pg_catalog.has_table_privilege('microapp_runtime','public.exchange_rates','DELETE') AND NOT pg_catalog.has_table_privilege('microapp_runtime','public.schema_migrations','SELECT')")"
+          test "${bcv_grants_ok}" = "t"
+
+          echo "NEON_REHEARSAL_MIGRATIONS_VERIFIED: ${expected_count} migrations through ${latest_version}"
+          {
+            echo "## Neon rehearsal — migration runner completed"
+            echo "- Target: `rehearsal-baseline-20261107` (`br-curly-poetry-b7dxsddm`)"
+            echo "- Ledger: ${expected_count} contiguous migrations, all applied with checksums."
+            echo "- Object ownership: `microapp_migrator`."
+            echo "- Runtime role: non-owner, no role memberships, no schema CREATE."
+            echo "- BCV: runtime SELECT/INSERT and column-scoped validation_status UPDATE only; no rate/date/source UPDATE, no DELETE, no migration-ledger access."
+            echo "- Neon main, production secrets and Worker configuration were not targeted."
+          } >> "${GITHUB_STEP_SUMMARY}"

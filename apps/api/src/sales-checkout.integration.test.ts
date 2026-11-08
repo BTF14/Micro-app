@@ -512,7 +512,7 @@ describe.skipIf(!isDisposableCheckoutDatabase)("atomic sales checkout PostgreSQL
       "SELECT count(*)::int AS count FROM public.warehouse_inventory_movements WHERE organization_id=$1",
       [organizationId],
     );
-    await client.query("CREATE OR REPLACE FUNCTION public.test_corrupt_checkout_line() RETURNS trigger LANGUAGE plpgsql SECURITY DEFINER SET search_path=pg_catalog AS 'BEGIN NEW.line_total_usd := NEW.line_total_usd + 0.0001; RETURN NEW; END;'");
+    await client.query("CREATE OR REPLACE FUNCTION public.test_corrupt_checkout_line() RETURNS trigger LANGUAGE plpgsql SET search_path=pg_catalog AS 'BEGIN NEW.line_total_usd := NEW.line_total_usd + 0.0001; RETURN NEW; END;'");
     await client.query("GRANT EXECUTE ON FUNCTION public.test_corrupt_checkout_line() TO microapp_runtime");
     await client.query(
       "CREATE TRIGGER zz_test_corrupt_checkout_line BEFORE INSERT ON public.sale_items FOR EACH ROW EXECUTE FUNCTION public.test_corrupt_checkout_line()",

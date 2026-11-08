@@ -1,3 +1,18 @@
+## Prioridad operativa — 2026-11-08 06:45 UTC
+
+El estado vivo de GitHub está registrado en `docs/CURRENT_STATE.md` y el checkpoint de continuidad. Main es `0a9e2f7c0d8b4d68b1efe6b372c10c107b160d67`; hay cinco PR abiertas (#193, #233, #251, #255, #258). #251, #255 y #258 tienen 15/15 check-runs y 13/13 workflow runs SUCCESS en sus HEADs exactos; siguen Draft y sin review formal independiente.
+
+Orden:
+1. Revisión independiente y gates de integración de #251 → #255.
+2. Revisión completa de #258, incluyendo migrations 0017/0018, checkout transaccional, rate limit y sus 19 pruebas PostgreSQL exact-SHA.
+3. Resolver Neon rehearsal/runner/identidad/grants sin tocar Neon main.
+4. Resolver proyección de balances SECURITY DEFINER, decisión comercial de pago, feriados y UI checkout.
+5. Preservar y revisar el documento único de #193; no cerrar #233 hasta completar provenance del contenido histórico.
+
+No interpretar CI verde como aprobación ni readiness productiva.
+
+---
+
 ## Prioridad operativa — 2026-11-08 UTC
 
 ## Estado operativo autoritativo — 2026-11-08 UTC

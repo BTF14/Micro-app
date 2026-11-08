@@ -107,12 +107,6 @@ describe.skipIf(!isDisposableCheckoutDatabase)("atomic sales checkout PostgreSQL
   async function seedBalance(onHand: string, reserved = "0.000"): Promise<void> {
     await client.query("BEGIN");
     try {
-      await client.query(
-        `INSERT INTO public.inventory_balances
-          (organization_id,branch_id,warehouse_id,product_id,on_hand_quantity,reserved_quantity)
-         VALUES ($1,$2,$3,$4,$5::numeric,$6::numeric)`,
-        [organizationId, branchId, warehouseId, productId, onHand, reserved],
-      );
       if (onHand !== "0.000") {
         await client.query(
           `INSERT INTO public.warehouse_inventory_movements
@@ -120,6 +114,17 @@ describe.skipIf(!isDisposableCheckoutDatabase)("atomic sales checkout PostgreSQL
            VALUES ($1,$2,$3,$4,'purchase_receipt',$5::numeric,'Checkout integration fixture',$6)`,
           [organizationId, branchId, warehouseId, productId, onHand, userId],
         );
+      }
+      if (reserved !== "0.000") {
+        await client.query("ALTER TABLE public.inventory_balances DISABLE TRIGGER inventory_balances_direct_write_guard");
+        try {
+          await client.query(
+            "UPDATE public.inventory_balances SET reserved_quantity=$4::numeric WHERE organization_id=$1 AND warehouse_id=$2 AND product_id=$3",
+            [organizationId, warehouseId, productId, reserved],
+          );
+        } finally {
+          await client.query("ALTER TABLE public.inventory_balances ENABLE TRIGGER inventory_balances_direct_write_guard");
+        }
       }
       await client.query("COMMIT");
     } catch (error) {

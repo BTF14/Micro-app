@@ -1,3 +1,15 @@
+## Prioridad operativa — reconciliada 2026-11-08 08:25 UTC
+
+El estado actual de GitHub, la matriz de siete PR abiertas y los bloqueos exactos están en `docs/CURRENT_STATE.md`. Main vivo `d28b80edc6b2a63019ded100e46bb4b11e81153a`. No usar los snapshots históricos inferiores como estado actual.
+
+1. #258/#262: completar revisión de checkout y proyección ledger; resolver el hallazgo P1 #6719238384 antes de exponer movimientos sin documento fuente.
+2. #258: obtener decisión explícita de producto sobre liquidación en una sola moneda, pago exacto, sin parcial ni sobrepago.
+3. #251 → #255: revisar la raíz primero; mantener Cron desactivado hasta rehearsal protegido y verificación de runtime login, ownership y grants.
+4. #261: reconciliación documental en curso; #193 y #233 conservan material que debe revisarse antes de cerrar.
+5. Producción NOT READY: no Neon main, secretos, configuración Cloudflare manual, DNS, billing ni deploy manual.
+
+---
+
 ## Prioridad operativa — 2026-11-08 06:45 UTC
 
 El estado vivo de GitHub está registrado en `docs/CURRENT_STATE.md` y el checkpoint de continuidad. Main es `0a9e2f7c0d8b4d68b1efe6b372c10c107b160d67`; hay seis PR abiertas (#193, #233, #251, #255, #258 y #261, esta reconciliación documental). #251, #255 y #258 tienen 15/15 check-runs y 13/13 workflow runs SUCCESS en sus HEADs exactos; siguen Draft y sin review formal independiente.

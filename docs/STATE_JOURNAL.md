@@ -2080,3 +2080,49 @@ No se tocaron Neon main, datos reales, secretos, Worker productivo, DNS, billing
 - La rama anterior de continuidad #271 acumuló commits sucesivos al registrar checkpoints y quedó 1 commit detrás de main; para evitar ruido y conflicto de base, se transfieren sus cuatro archivos finales (CURRENT_STATE, HANDOFF_NEXT_CHAT, WORK_CHECKPOINT y STATE_JOURNAL) a una rama limpia.
 - No se descarta contenido: se copian los blobs finales de los cuatro archivos desde #271. La PR anterior se cerrará como supersedida solo después de verificar que la nueva PR contiene exactamente esos cuatro archivos.
 - La nueva PR será #272; esperar CI exact-HEAD antes de integrar.
+
+## 2026-11-08 13:30 UTC — baseline fingerprint y estado post-merge
+
+- Neon rehearsal verificado por SELECT directo con `microapp_migrator`: identidad de DB/rol/branch/project correcta.
+- Fingerprint live contra baseline canónico 0002: 294/294 líneas idénticas. No DDL/DML.
+- Roles: migrator y runtime sin privilegios elevados; runtime sin INHERIT y sin CREATE en public; 17 relaciones públicas propiedad de migrator.
+- #270 mergeado en `37e8c40d5bacfb71133942d774c3f87d71d61b9e`; #272 documentación mergeada en `33016a2d206c7b8cfc60e53e34a56a26651141d7`, 10/10 workflows SUCCESS exact-HEAD; #271 cerrado como supersedida.
+- #255 revisión COMMENTED ID 5818042583: dos P1 (falta de control de variación anómala de tasas y de señal/alerta fiable ante fallos del Cron). #255 y #269 continúan sin aprobación y no se fusionaron.
+- El propietario confirmó la actualización del secreto Actions, pero no se ejecutó verify posterior; el conector no permite workflow_dispatch. Próximo paso: el propietario dispara verify manualmente en main.
+- Producción NOT READY.
+
+## 2026-11-08 13:34 UTC — GitHub Actions Neon verify SUCCESS tras rotación
+
+- Se reintentó el run #42479603848 (workflow manual, operación verify) usando el action de rerun failed jobs. El job terminó SUCCESS.
+- Los logs mostraron el secreto enmascarado (no vacío), conexión directa, identidad exacta de database/login/branch/project y `BASELINE_VERIFIED` con 294 facts.
+- Los pasos de baseline adoption, migration apply y post-migration assertions quedaron SKIPPED. No hubo DDL/DML ni cambios de ownership.
+- Como rerun, conservó GITHUB_SHA/GITHUB_REF originales; el summary step del SHA antiguo produjo tres `command not found` por quoting, sin fallar el job. PR #270 ya corrigió el summary en main.
+- Confirmado: main tiene migraciones hasta 0016; #269 aporta 0017–0019. El workflow `adopt-and-migrate` desde main no probaría 0017–0019 y no debe ejecutarse para ese objetivo. Diseñar un rehearsal de SHA fijado/revisado antes de cualquier escritura.
+
+## 2026-11-08 13:38 UTC — detección de datos heredados y nueva base vacía
+
+- La rama rehearsal br-curly-poetry-b7dxsddm tiene parent_id br-summer-math-b7297a60 (main), init_source=parent-data. La DB original neondb contiene filas en tablas app_users/auth/org; no se inspeccionó contenido. Se bloquea cualquier escritura/migración sobre ella.
+- Se creó DB vacía microapp_rehearsal (ID 1333740), owner microapp_migrator, en la rama no-primary. SELECT confirmó 0 tablas y target identity exacta; role/schema grants son compatibles con el runner.
+- GitHub Actions rerun #42479603848 verify SUCCESS después de la rotación: secreto enmascarado, conexión directa, identity exacta, baseline 0002 294 facts. Los pasos de escritura quedaron SKIPPED.
+- Main contiene migraciones hasta 0016; #269 contiene 0017–0019. migrate.sh acepta MIGRATIONS_DIR, pero no ejecuta assertion/deferred-failure SQL por sí solo. El nuevo workflow debe fijar el SHA #269, extraer solo SQL y ejecutar assertions expresamente en microapp_rehearsal.
+- #269 HEAD bc3939510e132e6f77c751514ff1b7dca58cdd4d: 11/11 workflows SUCCESS tras endurecer DELETE/TRUNCATE de payments. No merge; PR Draft.
+
+## 2026-11-08 — consolidación de PR de checkout/inventario y observabilidad BCV
+
+- Comparación read-only de PR #258/#262 con #269: 0017 migration/assertions byte-identical; 0019 migration/assertions, inventory-counts.ts, inventory-locks.ts y sus tests byte-identical; 0018 difiere por hardening DELETE/TRUNCATE de payments; sales-checkout.ts en #269 incluye branchId en el lock de warehouse. #269 contiene el stack consolidado sobre main. Comentarios de trazabilidad #6722326651 y #6722327171. No cerrar #258/#262 hasta que #269 se integre y el contenido se confirme en main.
+- PR #255, HEAD a19a5c61f3f9e878d531ef1150f9c1aa033d6cc7: se añadió log de outcome exitoso BCV y error code allowlisted; los errores del Cron se relanzan como BCV_SYNC_FAILED para que la invocación programada falle visiblemente. Tests para éxito, código permitido, sanitización y no-producción. CI exact-HEAD 10/10 SUCCESS. Esto no añade persistencia ni alerta externa; la política de anomalías sigue pendiente.
+- PR #274 workflow: el rehearsal separa baseline 0001–0002 y verifica fingerprint 0002 antes de aplicar 0003–0019. Después ejecuta assertions 0017–0019. Usa solo SQL del SHA fijado de #269 y el runner de main; destino único microapp_rehearsal. La rama clonada neondb sigue prohibida para escrituras.
+- migrate.sh registra state=applying antes de la migración; si una migración falla, el ledger no es auto-resumible. El workflow solo permite ledger con prefijo completo en estado applied; si aparece applying, requiere reconciliación/reset explícito. No se ha ejecutado ninguna migración.
+
+## 2026-11-08 — CI exact-HEAD y estado de integración
+
+- PR #255 HEAD a19a5c61f3f9e878d531ef1150f9c1aa033d6cc7: 10/10 workflow runs SUCCESS. El Cron ahora registra outcome exitoso, código de error permitido y relanza error genérico para que el evento falle visiblemente. No hay persistencia del último intento ni alerta externa; no se considera resuelto el P1 de operación.
+- PR #274 HEAD 5621eaf12744f7cfff34e87ee102d66a90b95f1d: 10/10 workflow runs SUCCESS exact-HEAD, mergeable=true. Incluye workflow de rehearsal y documentación. Aún no integrado; no se ha ejecutado verify-empty desde Actions ni ninguna migración.
+
+## 2026-11-08 — revisión final del workflow fijado #274
+
+- Main HEAD confirmado: 33016a2d206c7b8cfc60e53e34a56a26651141d7; branch protegido. Los seis contextos requeridos expuestos por la respuesta de branches/main están SUCCESS en el HEAD #274.
+- PR #274 HEAD ee04e6d97b179a86ea842f8a1ae8a03b4c33a134, base 33016a2d206c7b8cfc60e53e34a56a26651141d7, mergeable=true; 10/10 workflow runs y 15/15 check-runs SUCCESS exact-HEAD. No formal reviews, no inline threads, no reviewers requested. Revisión técnica manual del diff/workflow; no se atribuye aprobación independiente.
+- GitHub branch-protection endpoint respondió 403 por permisos del conector; se verificó la lista de seis required status contexts en el recurso de branch y todos están verdes. No se pudo leer el ajuste separado de required approvals.
+- El conector GitHub disponible es GET-only para mcp__GitHub__fetch y no expone workflow_dispatch; por ello no se puede iniciar desde aquí el workflow manual nuevo. El run previo #42479603848 del workflow anterior neon-rehearsal-migrations.yml sí verificó con éxito el secreto rotado y la conexión directa, pero no sustituye el nuevo verify-empty.
+- Ninguna migración, DDL/DML, escritura en Neon ni cambio de producción ejecutado.

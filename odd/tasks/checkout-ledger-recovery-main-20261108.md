@@ -1,6 +1,7 @@
 # ODD task: recover atomic checkout and ledger-authoritative inventory on current main
 
-- Status: recovery branch created; implementation not yet ported or validated
+- Status: implementation ported onto recovery branch; exact-HEAD CI and full review pending
+- Recovery branch HEAD: `88e0aab5219810ab24375f8eb947c5ad17aa453b`
 - Date: 2026-11-08 UTC
 - Source PRs: #258 (checkout, migrations 0017/0018), #262 (ledger projection, migration 0019)
 - Base: main `5f09b87aee09d0746f6ea90f076b4eb81d168daf`
@@ -22,8 +23,8 @@ Recover the unique checkout and inventory-ledger work onto the current main tree
 - Keep checkout Draft until the owner approves the commercial payment contract. Do not change the existing database payment constraints to bypass that decision.
 
 ## Acceptance criteria
-1. Port only the relevant source/migration/test changes from #258/#262 onto this current-main base.
-2. Preserve current main versions of auth retention, rate-limit cleanup, Neon rehearsal runner, workflow branch filters, and documentation.
+1. [x] Port relevant source/migration/test changes from #258/#262 onto this current-main base; preserve post-merge main behavior.
+2. [x] Preserve current main auth retention, rate-limit cleanup, Neon rehearsal runner, workflow branch filters and scheduled handler.
 3. Review all migration ordering, object ownership, SECURITY DEFINER/search_path/grants, tenant/branch/role checks, locking order, idempotency, reserved stock and append-only ledger behavior.
 4. Run PostgreSQL migration assertions and full unit/runtime-role/checkout integration suites in disposable PostgreSQL.
 5. Inspect final diff against current main; verify exact-HEAD check-runs and workflow runs. No stale SHA evidence.

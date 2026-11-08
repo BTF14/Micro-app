@@ -1,7 +1,7 @@
 # ODD task: recover atomic checkout and ledger-authoritative inventory on current main
 
 - Status: implementation ported onto recovery branch; exact-HEAD CI and full review pending
-- Recovery branch HEAD: `88e0aab5219810ab24375f8eb947c5ad17aa453b`
+- Initial code port commit: `88e0aab5219810ab24375f8eb947c5ad17aa453b`; use the live PR HEAD for current exact-SHA status.
 - Date: 2026-11-08 UTC
 - Source PRs: #258 (checkout, migrations 0017/0018), #262 (ledger projection, migration 0019)
 - Base: main `5f09b87aee09d0746f6ea90f076b4eb81d168daf`

@@ -1,3 +1,16 @@
+## Revalidación viva de integración — 2026-11-08 UTC
+
+**Precedencia:** este bloque es la lectura más reciente antes del commit documental que lo contiene. Los snapshots inferiores son historial y no deben usarse como estado vivo. Main observado: `594382f6f191f2ea0b55d913683841e51c210e5d`; post-merge CI: 13/13 check-runs y 11/11 workflow runs `push` SUCCESS.
+
+### PRs abiertas relevantes
+- **#286 — reconciliación documental:** OPEN/Draft, docs-only. Snapshot validado antes de este commit: HEAD `3666bc1043733a21f880ca5da68a6be45e59e261`, 25 ahead / 0 behind, GitHub `mergeable=true`; 14/14 check-runs SUCCESS y 12/12 workflow runs SUCCESS (10 `pull_request` + 2 `push`). Sin reviews formales ni threads inline. Este commit cambia la punta de la rama: reconsultar HEAD y ejecutar/validar checks exactos antes de cualquier decisión. Mantener Draft.
+- **#269 — checkout + ledger:** OPEN/Draft, HEAD `0ae7f1d71f9bb2155bddca5b5dcc0a2b7785b089`; base registrada `9c6b30281ed59726e532da840568fc9e80b528f7`. Contra main `594382f...`: 27 ahead / 3 behind; GitHub informa `mergeable=true`. En el HEAD exacto: 16/16 check-runs SUCCESS y 14/14 workflow runs SUCCESS (11 `pull_request` + 3 `push`). Reviews: tres COMMENTED, cero APPROVED; hilo inline de sucursal inactiva RESOLVED. Mantener Draft por contrato comercial checkout aún no aprobado y decisión pendiente sobre dependencia BCV para ventas USD-only.
+- **#255 — BCV:** OPEN/Draft, HEAD `7e43d7fd1519889605174da5818190bb84685059`; base registrada `9c6b30281ed59726e532da840568fc9e80b528f7`. Contra main `594382f...`: 54 ahead / 3 behind; GitHub informa `mergeable=true`. En el HEAD exacto: 15/15 check-runs SUCCESS y 13/13 workflow runs SUCCESS (10 `pull_request` + 3 `push`). Mantener Draft por política de anomalías/freshness, persistencia de último intento/éxito y alerta externa, fixture HTML oficial y calendario de feriados.
+- **#233:** CLOSED como superseded por #269, no merged; conservar rama y commits históricos. **#193:** mantener intacta.
+
+### Neon y producción
+El ensayo #42507066215 aplicó y verificó 0001–0019 únicamente en `microapp_rehearsal`. No repetir escrituras ni migraciones remotas. Esto no certifica identidad del Worker productivo ni preparación comercial. Neon main, parent clone `neondb`, secretos, Cloudflare manual, DNS, billing y datos reales permanecen fuera de alcance. **Producción: NOT READY.**
+
 ## Actualización posterior a PR #285 y cierre de #233 — 2026-11-08 UTC
 
 Esta corrección parte de main `594382f6f191f2ea0b55d913683841e51c210e5d`, merge SHA de PR #285. No etiquetar ese SHA como punta posterior a la integración de esta PR; consultar GitHub tras el merge para la punta nueva.

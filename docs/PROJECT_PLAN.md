@@ -1,3 +1,13 @@
+## Estado de integración actualizado — 2026-11-08 UTC
+
+La matriz viva está en `docs/CURRENT_STATE.md`; este plan evita duplicar sus snapshots completos.
+
+- #269 checkout/ledger: CI exact-HEAD completo en `0ae7f1d...` (16/16 check-runs, 14/14 workflows); mergeable=true pero sigue Draft por decisiones comerciales pendientes. No fusionar por CI verde.
+- #255 BCV: CI exact-HEAD completo en `7e43d7f...` (15/15 check-runs, 13/13 workflows); sigue Draft por gates P1 operativos.
+- #286: actualización documental en curso. El commit que añade este bloque cambia su HEAD y exige nueva validación exact-HEAD; no reutilizar checks del SHA anterior.
+
+Prioridad: cerrar primero los gates explícitos de producto/operación y preservar main/Neon productivo. El ensayo Neon #42507066215 ya verificó 0001–0019 en `microapp_rehearsal`; no repetir escrituras remotas. Producción **NOT READY**.
+
 ## Estado de integración — 2026-11-08 UTC
 
 La reconciliación detallada y los SHA autoritativos se mantienen en `docs/CURRENT_STATE.md`; este plan no replica snapshots de PR.

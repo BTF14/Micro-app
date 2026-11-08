@@ -1,3 +1,12 @@
+## Estado de seguridad e integración — 2026-11-08 UTC
+
+Consultar `docs/CURRENT_STATE.md` para los SHA y estados vivos completos.
+
+- #269 mantiene protecciones de ledger append-only, revocación DELETE/TRUNCATE en payments y revalidación de sucursal activa; 16/16 check-runs y 14/14 workflows SUCCESS en HEAD `0ae7f1d...`. Sigue Draft por contrato comercial checkout y decisión USD-only/BCV; CI no equivale a autorización de merge ni certificación de producción.
+- #255 mantiene bloqueos P1: política de anomalías y freshness, last-attempt/last-success persistente, alerta externa, fixture HTML oficial y calendario de feriados. 15/15 check-runs y 13/13 workflows SUCCESS en HEAD `7e43d7f...`; no activar Cron productivo.
+- #286 es docs-only; el commit de esta actualización cambia su HEAD y necesita CI exact-HEAD nuevo.
+- Neon rehearsal #42507066215 no demuestra identidad/configuración real del Worker. No repetir migraciones ni tocar Neon main, secretos, Cloudflare, DNS, billing o datos reales. Producción **NOT READY**.
+
 ## Estado de gates de seguridad e integración — 2026-11-08 UTC
 
 Consultar `docs/CURRENT_STATE.md` para la matriz viva de PRs y SHAs; evitar replicar su snapshot completo.

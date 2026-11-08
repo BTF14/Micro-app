@@ -1,3 +1,19 @@
+## Revalidación de continuidad — 2026-11-08 UTC
+
+Fuente autoritativa y detalle técnico: `docs/CURRENT_STATE.md`. Main observado: `594382f6f191f2ea0b55d913683841e51c210e5d`; post-merge 13/13 check-runs y 11/11 workflow runs push SUCCESS.
+
+- #269: HEAD `0ae7f1d71f9bb2155bddca5b5dcc0a2b7785b089`; 27 ahead / 3 behind main, mergeable=true; 16/16 check-runs y 14/14 workflow runs SUCCESS exact-HEAD. Sigue Draft por contrato comercial checkout y decisión USD-only/BCV.
+- #255: HEAD `7e43d7fd1519889605174da5818190bb84685059`; 54 ahead / 3 behind main, mergeable=true; 15/15 check-runs y 13/13 workflow runs SUCCESS exact-HEAD. Sigue Draft por gates P1 BCV.
+- #286: snapshot previo al commit actual `3666bc1043733a21f880ca5da68a6be45e59e261`, 14/14 checks y 12/12 workflows SUCCESS, mergeable=true, sin reviews formales ni threads. El commit documental de esta rama cambia el HEAD; consultar nuevo SHA y revalidar CI exact-HEAD.
+
+## Próxima secuencia
+1. Validar el nuevo HEAD y CI de #286; no reutilizar resultados del SHA anterior.
+2. Mantener #269 Draft hasta que se aprueben contrato checkout y decisión BCV USD-only.
+3. Mantener #255 Draft hasta resolver anomalías/freshness, observabilidad, fixture oficial y feriados.
+4. Continuar pruebas PostgreSQL desechables y auditoría técnica; no ejecutar más escrituras Neon.
+
+No pedir terminal, CLI, capturas ni TinyFish salvo necesidad real demostrada. No tocar Neon main, datos reales, secretos, Cloudflare manual, DNS, billing ni despliegues.
+
 # Handoff operativo — BTF14/Micro-app — 2026-11-08 UTC
 
 **Punto de partida verificado:** `main` está en `594382f6f191f2ea0b55d913683841e51c210e5d`, merge SHA de #285 y último commit observado en GitHub. La sección autoritativa y detallada del estado está en `docs/CURRENT_STATE.md`; no duplicarla aquí.

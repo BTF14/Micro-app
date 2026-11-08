@@ -175,6 +175,9 @@ BEGIN
     OR pg_catalog.strpos(warehouse_lock_def,'INVENTORY_COUNT_SNAPSHOT_STALE')=0
     OR pg_catalog.strpos(warehouse_lock_def,'INVENTORY_MOVEMENT_ACTOR_NOT_AUTHORIZED')=0
     OR pg_catalog.strpos(warehouse_lock_def,'INVENTORY_MOVEMENT_ACTOR_BRANCH_SCOPE_INVALID')=0
+    OR pg_catalog.strpos(warehouse_lock_def,'INVENTORY_MOVEMENT_BRANCH_SCOPE_INVALID')=0
+    OR pg_catalog.strpos(warehouse_lock_def,'public.branches')=0
+    OR pg_catalog.strpos(warehouse_lock_def,'FOR SHARE NOWAIT')=0
     OR pg_catalog.strpos(warehouse_lock_def,'branch_memberships')=0
     OR pg_catalog.strpos(warehouse_lock_def,'NOWAIT')=0
     OR pg_catalog.strpos(warehouse_lock_def,'COUNT_MOVEMENT_MUST_REFERENCE_CONFIRMED_COUNT_ONLY')=0

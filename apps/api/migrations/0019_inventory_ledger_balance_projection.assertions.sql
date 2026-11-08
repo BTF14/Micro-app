@@ -110,7 +110,7 @@ BEGIN
   IF NOT EXISTS (
     SELECT 1 FROM pg_catalog.pg_trigger t
      WHERE t.tgrelid='public.warehouse_inventory_movements'::regclass
-       AND t.tgname='warehouse_inventory_movements_00_lock_warehouse'
+       AND t.tgname='aaa_warehouse_inventory_movements_lock_warehouse'
        AND NOT t.tgisinternal AND t.tgenabled='O'
        AND pg_catalog.pg_get_triggerdef(t.oid) ILIKE '%BEFORE INSERT%'
   ) THEN
@@ -155,7 +155,7 @@ BEGIN
        AND pg_catalog.pg_get_triggerdef(t.oid) ILIKE '%BEFORE INSERT%'
      ORDER BY t.tgname COLLATE "C"
      LIMIT 1
-  ) IS DISTINCT FROM 'warehouse_inventory_movements_00_lock_warehouse' THEN
+  ) IS DISTINCT FROM 'aaa_warehouse_inventory_movements_lock_warehouse' THEN
     RAISE EXCEPTION 'INVENTORY_MOVEMENT_WAREHOUSE_LOCK_MUST_RUN_BEFORE_VALIDATION';
   END IF;
 

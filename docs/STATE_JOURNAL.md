@@ -1,3 +1,12 @@
+# 2026-11-08 UTC — PR #266 de sincronización cerrada sin merge; PR #265 documental en CI
+
+- Se creó PR #266 (main hacia la rama de #258) para diagnosticar la sincronización; GitHub reportó `mergeable=false`. Se cerró sin merge.
+- El análisis de archivos detectó solapamiento en nueve rutas: `.github/workflows/ci.yml`, `.github/workflows/migration-check.yml`, `apps/api/src/index.ts`, `docs/CURRENT_STATE.md`, `docs/HANDOFF_NEXT_CHAT.md`, `docs/PROJECT_PLAN.md`, `docs/SECURITY_ROADMAP.md`, `docs/STATE_JOURNAL.md`, `docs/WORK_CHECKPOINT.md`.
+- No se modificó ni forzó la rama de #258. PR #265 contiene reconciliación documental posterior a #264; sus checks exact-HEAD estaban en ejecución al registrar.
+- No se modificaron datos, credenciales, Neon main ni Cloudflare.
+
+---
+
 # 2026-11-08 UTC — PR #264 integrada; reconciliación de documentación posterior
 
 - PR #264 se fusionó por BTF14 a main a las 10:09:33Z, merge commit `c46ed6f3e57a12bf92a7f0718435dfff8096b540`. Su HEAD revisado fue `519d66a8bfab0fc9dc1ebbaeeeb0fc5418da391e`; 15 checks exact-HEAD SUCCESS (la API posteriormente mostró 16 por duplicación de check-runs). Workflow manual integrado.

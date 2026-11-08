@@ -2049,3 +2049,9 @@ No se tocaron Neon main, datos reales, secretos, Worker productivo, DNS, billing
 - El parser se valida con fixtures sintéticos; falta verificar markup real de BCV con fixture revisada.
 - #255 permanece Open/Ready, mergeable=false, 48 ahead/3 behind main. No merge.
 - #271 docs PR: HEAD actual mergeable=false (8 ahead/1 behind) y sin workflow runs reportados; no merge.
+
+## 2026-11-08 13:24 UTC — actualización de mergeability y CI de PR #271
+
+- GitHub recalculó mergeability: #269 Open/Draft/mergeable=true (13 ahead/1 behind); #255 Open/Ready/mergeable=true (48 ahead/3 behind). Ambos siguen bloqueados por sus gates técnicos y de producto, no por un estado dirty confirmado.
+- #271 Open/Ready/mergeable=true; HEAD `bf8af19d6f96bfde8df46cef6ccc6abcbc9ff6ba`; compare 12 ahead/1 behind. Runs del HEAD: ODD docs, dependency review, dashboard y un check más completed/success; Semgrep, PostgreSQL migration runner validation, CI, database migration validation, security scan, Playwright E2E y secret history scan pending/in progress al momento de consulta. No merge mientras haya checks pendientes.
+- #255 conserva review COMMENTED (ID 5818042583), sin APPROVE; dos gates P1 anotados.

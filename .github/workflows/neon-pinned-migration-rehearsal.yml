@@ -124,7 +124,12 @@ jobs:
           baseline_dir="$RUNNER_TEMP/pinned-baseline-migrations"
           mkdir -p "$baseline_dir"
           for version in 0001 0002; do
-            matches=("$migrations_dir"/"${version}"_*.sql)
+            mapfile -t matches < <(
+              find "$migrations_dir" -maxdepth 1 -type f \
+                -name "${version}_*.sql" \
+                ! -name '*.assertions.sql' \
+                ! -name '*.deferred_failure.sql'
+            )
             test "${#matches[@]}" -eq 1
             cp "${matches[0]}" "$baseline_dir/"
           done

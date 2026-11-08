@@ -50,8 +50,10 @@ BEGIN
   IF pg_catalog.strpos(trigger_definition, 'applicable_bcv_effective_date') = 0
     OR pg_catalog.strpos(trigger_definition, 'validation_status = ''valid''') = 0
     OR pg_catalog.strpos(trigger_definition, 'FOR SHARE') = 0
+    OR pg_catalog.strpos(pg_catalog.lower(trigger_definition), 'round(si.quantity * si.unit_price_usd, 4)') = 0
+    OR pg_catalog.strpos(pg_catalog.lower(trigger_definition), 'round(si.line_total_usd * sale_row.exchange_rate_snapshot, 2)') = 0
   THEN
-    RAISE EXCEPTION 'CHECKOUT_BCV_TRIGGER_DATE_OR_LOCK_CONTRACT_INVALID';
+    RAISE EXCEPTION 'CHECKOUT_BCV_TRIGGER_DATE_LOCK_OR_LINE_ARITHMETIC_CONTRACT_INVALID';
   END IF;
 
   INSERT INTO public.exchange_rates

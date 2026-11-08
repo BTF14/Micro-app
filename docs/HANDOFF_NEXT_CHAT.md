@@ -3,14 +3,14 @@
 **Punto de partida verificado:** `main` está en `594382f6f191f2ea0b55d913683841e51c210e5d`, merge SHA de #285 y último commit observado en GitHub. La sección autoritativa y detallada del estado está en `docs/CURRENT_STATE.md`; no duplicarla aquí.
 
 ## Estado vivo
-- **#286 — documentación:** OPEN, docs-only. La rama recibió una depuración de duplicación documental después del HEAD inicial `c034bfe...`; consultar GitHub para el SHA, divergencia y CI exactos actuales. Los 10/10 workflows pull_request SUCCESS de `c034bfe...` no validan commits posteriores. Sin reviews formales ni threads inline en la última consulta. Mergeability y branch protection no verificadas.
+- **#286 — documentación:** OPEN/Draft, docs-only; HEAD `86ad02e426c328cd2bb4a8436d0910b0f06ecd2b`, 17 ahead / 0 behind de main; GitHub `mergeable=true`, `mergeable_state=clean`. En el SHA exacto: 14/14 check-runs y 10/10 workflow runs SUCCESS; los seis checks requeridos de `main` están SUCCESS. `main` aparece protegida; el resumen expone los seis checks, pero el endpoint de reglas detalladas devuelve 403. Sin reviews formales ni threads inline. Mantener Draft; checks verdes no equivalen a aprobación independiente. Cualquier nuevo commit exige revalidación exact-HEAD.
 - **#233:** CLOSED como superseded por #269, no merged. Auditoría semántica: 18/18 paths preservados/evolucionados; 5 idénticos y 13 evolucionados. Conservar la rama y sus 83 commits históricos.
 - **#269 — checkout + ledger:** OPEN/Draft; HEAD `8f05befb7ac1a46d68850b9f89f89edc8cd46283`; frente a main 26 ahead / 3 behind. En el SHA exacto se observaron 11/11 workflow runs pull_request SUCCESS. Mantener Draft por contrato comercial checkout y dependencia BCV para ventas USD-only aún sin decisión.
 - **#255 — BCV:** OPEN/Draft; HEAD `7e43d7fd1519889605174da5818190bb84685059`; frente a main 54 ahead / 3 behind. En el SHA exacto se observaron 10/10 workflow runs pull_request SUCCESS. Mantener Draft por anomalías/freshness, last-attempt/last-success y alertas, fixture HTML oficial y calendario de feriados.
 - **Neon:** rehearsal #42507066215 SUCCESS en `microapp_rehearsal`, migraciones 0001–0019. No repetir escrituras ni migraciones remotas.
 
 ## Próxima secuencia
-1. Terminar la evaluación de merge de #286 solo cuando puedan comprobarse mergeability y los contextos obligatorios; no inferirlos de workflow runs.
+1. #286 ya tiene mergeability `clean` y sus seis checks requeridos pasan en el HEAD observado; no fusionar mientras siga Draft y sin review formal independiente. Si se modifica, repetir validación exact-HEAD.
 2. Revisar el solapamiento documental antes de sincronizar #269 y #255 con main; usar merges no destructivos, nunca force-push, y ejecutar CI en cada HEAD nuevo.
 3. Mantener ambas PR Draft hasta cerrar sus gates de producto/operación.
 4. Continuar validaciones en PostgreSQL desechable. Producción sigue **NOT READY**.

@@ -2132,3 +2132,12 @@ No se tocaron Neon main, datos reales, secretos, Worker productivo, DNS, billing
 - El secret-history scan de PR #274 detectó como generic-api-key una línea de STATE_JOURNAL que contenía la frase "GitHub API:" inmediatamente antes del SHA de main. El log identificó esa única línea; no se mostró ni se identificó ninguna credencial real.
 - Se creó PR #275 desde main para no conservar en su historial el commit señalado. Se preservó el contenido del workflow y de continuidad; solo se reformuló la línea que disparó el patrón. Mantener #274 abierta hasta que #275 pase todos los checks y se integre; luego cerrar #274 como supersedida.
 - El historial de la rama fuente sigue accesible a Gitleaks por refs del repositorio; se añadió `.gitleaksignore` con únicamente el fingerprint exacto `a78bb9699ea00c09f9fae88b964c2aac5a08f337:docs/STATE_JOURNAL.md:generic-api-key:2124`. No se desactiva la regla ni se ignora el archivo.
+
+## 2026-11-08 — PR #275 integrada y preflight Neon preparado
+
+- PR #275 se fusionó por squash en main 11ca2b49bfa650066a708d2423cc73cea6c99e2d; PR #274 se cerró como supersedida.
+- El commit de merge tiene 9/9 workflow runs SUCCESS y los seis required contexts SUCCESS. Cloudflare Pages y Workers Builds check-runs estaban todavía en progreso en el último chequeo; no se afirma despliegue productivo.
+- El secret NEON_REHEARSAL_DATABASE_URL ya había sido probado por el workflow anterior en run #42479603848 después de la rotación: conexión directa, identidad correcta, baseline 0002 verificado, pasos de escritura skipped.
+- SELECT en microapp_rehearsal confirmó identidad branch/project/database/role exacta, schemas estándar, cero relaciones y funciones públicas, sin schema_migrations. Sin escrituras.
+- El nuevo workflow fijado main-only está disponible con default verify-empty. No se pudo despachar desde el conector GitHub; queda como única acción manual necesaria. No se ejecutó migración.
+- Inventario vivo de PR: #269 15 ahead/3 behind, Draft, mergeable=false; #255 53/5, mergeable=false y gates BCV P1; #258 35/36, mergeable=false; #262 107/36 apilada sobre #258; #233 histórica Draft; #193 no modificar.

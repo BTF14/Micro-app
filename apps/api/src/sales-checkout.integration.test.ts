@@ -48,6 +48,7 @@ describe.skipIf(!isDisposableCheckoutDatabase)("atomic sales checkout PostgreSQL
   let client: Client;
   let organizationId = "";
   let userId = "";
+  let inventoryUserId = "";
   let unauthorizedUserId = "";
   let branchId = "";
   let warehouseId = "";
@@ -132,7 +133,7 @@ describe.skipIf(!isDisposableCheckoutDatabase)("atomic sales checkout PostgreSQL
           `INSERT INTO public.inventory_counts
             (organization_id,branch_id,warehouse_id,count_type,reason,created_by)
            VALUES ($1,$2,$3,'physical',$4,$5) RETURNING id`,
-          [organizationId, branchId, warehouseId, reason, userId],
+          [organizationId, branchId, warehouseId, reason, inventoryUserId],
         );
         await client.query(
           `INSERT INTO public.inventory_count_lines
@@ -143,14 +144,14 @@ describe.skipIf(!isDisposableCheckoutDatabase)("atomic sales checkout PostgreSQL
         );
         await client.query(
           "UPDATE public.inventory_counts SET status='confirmed',confirmed_by=$2,confirmed_at=now() WHERE id=$1",
-          [count.rows[0]!.id, userId],
+          [count.rows[0]!.id, inventoryUserId],
         );
         await client.query(
           `INSERT INTO public.warehouse_inventory_movements
             (organization_id,branch_id,warehouse_id,product_id,movement_type,quantity_delta,unit_cost_usd,
              reason,count_id,actor_user_id)
            VALUES ($1,$2,$3,$4,'count_adjustment',$5::numeric,2.0000,$6,$7,$8)`,
-          [organizationId, branchId, warehouseId, productId, onHand, reason, count.rows[0]!.id, userId],
+          [organizationId, branchId, warehouseId, productId, onHand, reason, count.rows[0]!.id, inventoryUserId],
         );
         if (reserved !== "0.000") {
           // Reservation APIs are not implemented yet; only this disposable
@@ -209,6 +210,19 @@ describe.skipIf(!isDisposableCheckoutDatabase)("atomic sales checkout PostgreSQL
     await client.query(
       "INSERT INTO public.branch_memberships(organization_id,branch_id,user_id) VALUES($1,$2,$3)",
       [organizationId, branchId, userId],
+    );
+    const inventoryUser = await client.query<{ id: string }>(
+      "INSERT INTO public.app_users(email,display_name) VALUES($1,$2) RETURNING id",
+      ["checkout-inventory-" + suffix + "@example.test", "Checkout Inventory Member"],
+    );
+    inventoryUserId = inventoryUser.rows[0]!.id;
+    await client.query(
+      "INSERT INTO public.organization_members(organization_id,user_id,role) VALUES($1,$2,'inventory')",
+      [organizationId, inventoryUserId],
+    );
+    await client.query(
+      "INSERT INTO public.branch_memberships(organization_id,branch_id,user_id) VALUES($1,$2,$3)",
+      [organizationId, branchId, inventoryUserId],
     );
 
     const warehouse = await client.query<{ id: string }>(

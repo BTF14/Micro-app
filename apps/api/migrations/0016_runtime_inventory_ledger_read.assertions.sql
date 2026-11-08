@@ -16,7 +16,9 @@ BEGIN
     RAISE EXCEPTION 'RUNTIME_MUST_NOT_MUTATE_INVENTORY_MOVEMENT_LEDGER';
   END IF;
 
-  IF has_table_privilege('microapp_runtime', 'public.inventory_balance_ledger_intents', 'SELECT') THEN
+  IF to_regclass('public.inventory_balance_ledger_intents') IS NOT NULL
+    AND has_table_privilege('microapp_runtime', 'public.inventory_balance_ledger_intents', 'SELECT')
+  THEN
     RAISE EXCEPTION 'RUNTIME_MUST_NOT_READ_PRIVATE_BALANCE_LEDGER_INTENTS';
   END IF;
 

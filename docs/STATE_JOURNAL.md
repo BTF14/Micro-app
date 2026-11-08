@@ -2131,3 +2131,4 @@ No se tocaron Neon main, datos reales, secretos, Worker productivo, DNS, billing
 
 - El secret-history scan de PR #274 detectó como generic-api-key una línea de STATE_JOURNAL que contenía la frase "GitHub API:" inmediatamente antes del SHA de main. El log identificó esa única línea; no se mostró ni se identificó ninguna credencial real.
 - Se creó PR #275 desde main para no conservar en su historial el commit señalado. Se preservó el contenido del workflow y de continuidad; solo se reformuló la línea que disparó el patrón. Mantener #274 abierta hasta que #275 pase todos los checks y se integre; luego cerrar #274 como supersedida.
+- El historial de la rama fuente sigue accesible a Gitleaks por refs del repositorio; se añadió `.gitleaksignore` con únicamente el fingerprint exacto `a78bb9699ea00c09f9fae88b964c2aac5a08f337:docs/STATE_JOURNAL.md:generic-api-key:2124`. No se desactiva la regla ni se ignora el archivo.

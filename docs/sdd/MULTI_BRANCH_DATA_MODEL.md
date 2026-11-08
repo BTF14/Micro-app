@@ -12,11 +12,11 @@ Diseñar la evolución del modelo actual, que solo tiene inventario a nivel orga
 
 Esta especificación separa:
 - **Existente en Git:** esquema base 0001, identidad 0002 y sucursales/asignaciones 0003 (`branches`, `branch_memberships`). La 0003 fue fusionada en PR #165 y validada en PostgreSQL 18 efímero.
-- **Objetivo propuesto:** entidades/relaciones que aún no están implementadas y evolución futura de las ya existentes.
-- **No implementado en main:** almacenes, balances por almacén, compras/recepciones, transferencias y devoluciones. Cajas/turnos están en 0004; `products.stock_quantity` sigue siendo organización-scoped.
-- **Gate de permisos:** la matriz role-permission-decision-matrix.md sigue NO APROBADA. Ninguna recomendación de rol de este documento autoriza permisos comerciales.
+- **Implementado en main:** branches/branch_memberships, registers/register_shifts, warehouses, inventory_balances, inventory_movements/Kardex, conteos, idempotencia, locks y autorización tenant/sucursal para lectura y conteos. La implementación remota Neon aún no está aplicada.
+- **Pendiente en main:** compras/recepciones completas, transferencias entre sucursales en dos etapas, devoluciones y checkout/pagos integrados. El flujo de lectura de inventario usa `inventory_balances` por almacén; no tratar `products.stock_quantity` como fuente de verdad para ese flujo.
+- **Gate de permisos:** la matriz `role-permission-decision-matrix.md` está APROBADA (2026-10-31) y el mapa de operaciones está en `authorization.ts`. Solo están habilitadas las operaciones con handlers y pruebas; no inferir que toda fila de la matriz ya tiene endpoint.
 
-La migración 0003 sí se ejecutó en PostgreSQL 18 desechable mediante CI y sus assertions; no se aplicó a Neon `main`. No hay rutas comerciales ni se ha conectado `resolveBranchContext` a handlers.
+La migración 0003 y las migraciones posteriores se validan en PostgreSQL 18 desechable; no se han aplicado a Neon main. `resolveBranchContext` sí está conectado a las rutas de inventario de lectura y conteos. No hay todavía checkout/pagos ni transferencias entre sucursales.
 
 ## 2. Principios de modelado
 
@@ -87,9 +87,9 @@ La migración 0003 crea `branch_memberships` como asignación explícita de un m
 - Cambiar `organization_members.role` afecta al miembro en toda la organización. Revocar una asignación de sucursal no modifica el rol ni otras asignaciones.
 - La pertenencia organizacional, el rol global y la asignación activa de sucursal son comprobaciones distintas. Ninguna de ellas, aislada o combinada, autoriza una operación comercial sin una regla explícita server-side.
 - No crear migraciones/backfills para roles por sucursal. Cualquier cambio de esta decisión requiere nueva aprobación explícita del propietario.
-- La matriz de permisos por operación sigue **NO APROBADA**. No inferir permisos para ventas, pagos, inventario, anulaciones, caja, supervisión o políticas comerciales a partir del nombre del rol.
+- La matriz de permisos por operación está **APROBADA**. No inferir permisos para ventas, pagos, inventario, anulaciones, caja, supervisión o políticas comerciales a partir del nombre del rol.
 
-Esto describe la estructura implementada y la decisión vigente; no aprueba facultades comerciales. El inventario continúa organizacional mediante `products.stock_quantity`; el inventario por sucursal/almacén no está implementado.
+Esto describe la estructura implementada y la decisión vigente; no aprueba facultades comerciales. El inventario por sucursal/almacén está implementado en el DDL y las rutas de lectura/conteo de main mediante `inventory_balances` y ledger; no está aplicado en Neon.
 
 ## 5. Relaciones e integridad tenant-scoped
 
@@ -140,7 +140,7 @@ La elección final debe probar borrado/reverso, ciclo de vida, integridad y cons
 - Separar orden/compromiso de compra de recepción física. Solo la recepción confirmada aumenta stock.
 - La recepción se asocia a sucursal y almacén; cada línea referencia producto de la misma organización y conserva cantidad/coste recibido.
 - Transferir entre almacenes: crear transferencia, reservar/emitir salida del origen, confirmar recepción en destino. No aumentar destino al crear solicitud.
-- Si la transferencia es entre sucursales, el operador debe tener permiso sobre origen y destino o existir flujo de aprobación explícito; la política de roles permanece pendiente.
+- La matriz aprobada permite transferencias al rol Inventory solo con membresía activa en origen y destino. El modelo elegido es despacho en origen y recepción en destino, con mercancía en tránsito y diferencias enviadas/recibidas; el handler de transferencia aún no está implementado.
 - Cada paso es idempotente, atribuible y auditable. Las diferencias/daños se registran como incidencias/ajustes, no se corrige el historial.
 
 ## 9. Último owner, auditoría e idempotencia

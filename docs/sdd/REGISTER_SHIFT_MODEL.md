@@ -97,3 +97,17 @@ En PostgreSQL 18 efímero, desde una base vacía y aplicando migraciones 0001–
 - Nota histórica: en el HEAD inicial `0b5a9adbdafce25a8483e7ce6953e2d83a826c47`, CI detectó una expectativa SQLSTATE incorrecta. Se corrigió el trigger antes del HEAD final; los 10 workflows del HEAD final terminaron success.
 - No se aplicó 0003 ni 0004 a Neon main. La herramienta de lectura de Neon branches no devolvió un resultado utilizable; no inferir el número actual ni crear una rama por rutina.
 - PostgreSQL efímero de CI es suficiente para la migración y evita consumir ramas Neon.
+
+
+## Addendum — approved own-shift role scope (2026-11-07 reconciliation)
+
+This addendum records the approved role matrix and the current main implementation. It supersedes older sentences above that restrict opening exclusively to `cashier` or state that the role matrix is not approved.
+
+- Owner, Admin and Cashier may open, operate and close **only their own** register shift, provided they have active organization membership and active assignment to the selected branch.
+- Inventory may not open, operate or close register shifts.
+- No role may close another member's shift, change its owner, reopen a closed shift or edit closed-shift history.
+- `cashier_user_id` identifies the member who owns the shift; it does not grant supervisor privileges.
+- PostgreSQL and the API both enforce the eligible role and branch scope. The canonical role migration is `0007_register_shift_member_roles.sql` (not the historical `0005` filename in the old #208 branch).
+- Owner/Admin organization-wide authority for other operations does not create an implicit branch assignment. An active `branch_memberships` row is still required to own a shift in that branch.
+
+Source of truth: `docs/sdd/role-permission-decision-matrix.md` (approved 2026-10-31), `apps/api/src/authorization.ts`, `apps/api/src/cashier-open-shift.ts`, migration 0007 and the register-shift integration tests. This is not approval for supervisor overrides, cash reconciliation, withdrawals, sales, payments or other unimplemented operations.

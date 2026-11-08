@@ -1706,3 +1706,15 @@ CI documental: para HEAD `8c15e13fa001a14a0ddf9f2432bc17efb30d476d`, los 8 workf
 El propietario reiteró que el backlog comunicado es de 26 PR y que deben completarse y fusionarse cuando hayan superado todas las verificaciones y sean seguras para integrarse. Se registra como objetivo operativo: recontar en GitHub en vivo; revisar cada PR y sus dependencias; preservar cambios únicos; integrar raíz primero; máximo dos frentes; no fusionar en bloque ni por CI verde aislado; no retener una PR elegible esperando las demás; usar la autorización permanente de merge sin reconfirmación una vez satisfechos todos los gates; verificar merge SHA, checks post-merge y despliegue; continuar con la siguiente PR desbloqueada.
 
 La preparación global para producción exige pruebas end-to-end y cierre de P0/P1: secuencia/baseline de migraciones, privilegios PostgreSQL efectivos mínimos y separación runtime/migrator/backup, integridad transaccional, auth/autorización, importes decimales exactos sin descuentos, BCV verificable, backup/restore y RPO/RTO, alertas/observabilidad, seguridad, presupuesto $0, despliegue y smoke test autenticado. La autorización de merge no amplía permisos para Neon main, migraciones remotas, roles/grants, datos reales, secretos, Cloudflare manual, DNS ni billing.
+
+
+## 2026-11-08 UTC — reconciliación #251/#255, cierre de PRs supersedidas y auditoría Neon
+
+- GitHub main verificado: `96e2e2d9f76bc8fcc3bab2fa9503e480545c8869`.
+- #251 actualizado con merge commit no destructivo desde main: HEAD `5dec5d5a9025de16b19d0cb7cfeac6585e2ad5d6`, cero commits detrás, 15/15 check-runs SUCCESS.
+- #255 actualizado con merge commit no destructivo desde #251: HEAD `d4326db8e6acf75629e1fca3123885ad160dcbf3`; luego se añadió hardening BCV y UI de frescura, HEAD final `35b9ac6894f79c5760a1f56fb37506ed2278afa0`, base #251 `5dec5d5a9025de16b19d0cb7cfeac6585e2ad5d6`, 13 workflow runs y 15/15 check-runs SUCCESS.
+- Hardening BCV: reemplazada validación de límite con `Number()` por comparación exacta BigInt; latest API y cliente web no-store; dashboard revalida al cambiar fecha de Caracas, al volver a la pestaña y descarta respuestas iniciadas en una fecha anterior; regresión Friday→Saturday midnight y prueba de cabecera no-store.
+- Cerradas sin merge y con comentarios de evidencia: #200, #204, #205, #207, #208, #209, #210, #227, #228, #229, #230, #231 y #232. Sus funcionalidades se verificaron en main/#255; ODD de inventario se preserva en #257.
+- Neon solo lectura: main no tiene `microapp_runtime`, `microapp_migrator`, ledger ni tablas de migraciones posteriores; rehearsal tiene logins/ownership, pero runtime no tiene grants de tabla. No se aplicó DDL ni se ejecutó el runner en Neon.
+- `.github/workflows/migration-runner.yml` valida PostgreSQL 18 desechable; no es runner de release a Neon. El plan documenta falta de secreto `NEON_REHEARSAL_DATABASE_URL` y workflow protegido. No usar SQL manual para aplicar migraciones.
+- #193, #202, #211 y #233 siguen abiertos para reconciliación; #251/#255/#257 siguen Draft. No hubo merges a main ni cambios de secretos/producción.

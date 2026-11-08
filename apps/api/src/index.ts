@@ -6,6 +6,7 @@ import { registerCatalogRoutes } from "./catalog";
 import { registerInventoryCountRoutes } from "./inventory-counts";
 import { registerInventoryReadRoutes } from "./inventory-read";
 import { registerCatalogWriteRoutes } from "./catalog-write";
+import { registerSalesCheckoutRoutes } from "./sales-checkout";
 import type { Bindings } from "./bindings";
 
 const app = new Hono<{ Bindings: Bindings }>();
@@ -83,12 +84,13 @@ registerCatalogRoutes(app);
 registerInventoryCountRoutes(app);
 registerInventoryReadRoutes(app);
 registerCatalogWriteRoutes(app);
+registerSalesCheckoutRoutes(app);
 
 app.get("/health", (c) =>
   c.json({
     status: "ok",
     service: "micro-app-api",
-    stage: "catalog-inventory-read",
+    stage: "sales-checkout",
   }),
 );
 

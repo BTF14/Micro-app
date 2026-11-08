@@ -159,6 +159,44 @@ BEGIN
     RAISE EXCEPTION 'INVENTORY_MOVEMENT_WAREHOUSE_LOCK_MUST_RUN_BEFORE_VALIDATION';
   END IF;
 
+  -- Runtime movement inserts must be source-authorized before projection.
+  SELECT p.oid INTO warehouse_lock_oid
+    FROM pg_catalog.pg_proc p
+   WHERE p.oid='public.validate_inventory_movement_source()'::regprocedure
+     AND p.prosecdef=true
+     AND p.proowner=(SELECT oid FROM pg_catalog.pg_roles WHERE rolname='microapp_migrator')
+     AND p.proconfig @> ARRAY['search_path=pg_catalog'];
+  IF warehouse_lock_oid IS NULL THEN
+    RAISE EXCEPTION 'INVENTORY_MOVEMENT_SOURCE_VALIDATOR_SECURITY_CONTRACT_INVALID';
+  END IF;
+  SELECT pg_catalog.pg_get_functiondef(warehouse_lock_oid) INTO warehouse_lock_def;
+  IF pg_catalog.strpos(warehouse_lock_def,'INVENTORY_MOVEMENT_SOURCE_TYPE_NOT_AUTHORIZED')=0
+    OR pg_catalog.strpos(warehouse_lock_def,'INVENTORY_SALE_MOVEMENT_MUST_MATCH_SALE_LINE')=0
+    OR pg_catalog.strpos(warehouse_lock_def,'FOR UPDATE')=0
+  THEN
+    RAISE EXCEPTION 'INVENTORY_MOVEMENT_SOURCE_VALIDATOR_DEFINITION_INVALID';
+  END IF;
+  IF pg_catalog.has_function_privilege('microapp_runtime',warehouse_lock_oid,'EXECUTE')
+    OR EXISTS (
+      SELECT 1 FROM pg_catalog.aclexplode(
+        COALESCE((SELECT proacl FROM pg_catalog.pg_proc WHERE oid=warehouse_lock_oid),
+                 pg_catalog.acldefault('f',(SELECT proowner FROM pg_catalog.pg_proc WHERE oid=warehouse_lock_oid)))
+      ) acl
+      WHERE acl.grantee=0 AND acl.privilege_type='EXECUTE'
+    )
+  THEN
+    RAISE EXCEPTION 'INVENTORY_MOVEMENT_SOURCE_VALIDATOR_MUST_BE_TRIGGER_ONLY';
+  END IF;
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_catalog.pg_trigger t
+     WHERE t.tgrelid='public.warehouse_inventory_movements'::regclass
+       AND t.tgname='aab_warehouse_inventory_movements_validate_source'
+       AND NOT t.tgisinternal AND t.tgenabled='O'
+       AND pg_catalog.pg_get_triggerdef(t.oid) ILIKE '%BEFORE INSERT%'
+  ) THEN
+    RAISE EXCEPTION 'INVENTORY_MOVEMENT_SOURCE_VALIDATOR_TRIGGER_MISSING';
+  END IF;
+
   IF NOT EXISTS (
     SELECT 1 FROM pg_catalog.pg_trigger t
      WHERE t.tgrelid='public.warehouse_inventory_movements'::regclass

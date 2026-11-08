@@ -1,3 +1,12 @@
+## Hallazgo de seguridad — 2026-11-08 08:25 UTC — PR #262
+
+- **P1, autorización de movimientos ledger:** #262 mantiene INSERT de `microapp_runtime` en `warehouse_inventory_movements`. La validación de conteos retorna sin validar fuente cuando `count_id IS NULL`, por lo que tipos como purchase_receipt/transfer_in/transfer_out/customer_return/reversal pueden ser insertados directamente por el rol runtime sin validar documento fuente, estado, actor ni cantidad; la proyección SECURITY DEFINER altera balances.
+- Hallazgo comunicado en PR #262: https://github.com/BTF14/Micro-app/pull/262#issuecomment-6719238384.
+- **Criterio de cierre:** restringir runtime a tipos cubiertos por flujos transaccionales verificados o añadir validación DB fail-closed de documento fuente/actor/estado/cantidades para cada tipo; añadir assertions SQL y pruebas con login real `microapp_runtime`. No habilitar endpoints de esos tipos antes de cerrar.
+- Estado general, PRs y SHA: consultar `docs/CURRENT_STATE.md`. Producción continúa NOT READY.
+
+---
+
 # Estado de seguridad — 2026-11-08 06:45 UTC
 
 ## Estado operativo verificado — 2026-11-08 06:45 UTC

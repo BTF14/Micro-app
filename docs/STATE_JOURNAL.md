@@ -2032,3 +2032,12 @@ No se tocaron Neon main, datos reales, secretos, Worker productivo, DNS, billing
 - Neon rehearsal verificado con SELECT directo: neondb, microapp_migrator, branch ID y project ID esperados, 15 tablas. Sin DDL/DML.
 - El propietario confirmó que actualizó el secreto Actions, pero no hay run posterior que pruebe su consumo. El conector no permite workflow_dispatch; el siguiente paso es lanzar verify manualmente desde main, sin aplicar migraciones.
 - #193 no se modificó. Sin merges, force-push, cambios de secretos/Cloudflare ni escrituras en Neon. Producción NOT READY.
+
+## 2026-11-08 13:22 UTC — merge #270 y reconciliación posterior
+
+- #270 se marcó Ready y se fusionó con squash tras inspeccionar el diff de un único archivo y confirmar 9 workflow runs SUCCESS en su HEAD exacto. Merge commit/main: `37e8c40d5bacfb71133942d774c3f87d71d61b9e`. El cambio solo corrige quoting del resumen verify; no toca lógica de migraciones.
+- No se obtuvo evidencia de runs post-merge desde el endpoint de runs PR-triggered; no se afirma CI post-merge.
+- #269 pasó a diverged 13 ahead/1 behind y mergeable=false; #255 diverged 48 ahead/3 behind y mergeable=false. No se fusionaron.
+- Neon rehearsal SELECT confirma database/login/session/branch/project y 15 tablas; no DDL/DML.
+- El secreto fue actualizado por el propietario según confirmación en chat; falta run verify posterior desde Actions.
+- PR #271 conserva las actualizaciones de continuidad; #193 no se tocó. Producción NOT READY.

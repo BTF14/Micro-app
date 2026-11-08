@@ -555,22 +555,29 @@ describe.skipIf(!databaseUrl)("warehouse inventory count transactions against Po
     }
     // Ledger-projection fixtures use a confirmed physical count as their source.
     // Remove that test-only count before deleting its product (the FK is RESTRICT).
-    await client.query(
-      `WITH removed_lines AS (
-         DELETE FROM inventory_count_lines
-          WHERE organization_id = $1 AND product_id = $2
-          RETURNING count_id
-       )
-       DELETE FROM inventory_counts c
-        WHERE c.organization_id = $1
-          AND c.id IN (SELECT count_id FROM removed_lines)
-          AND NOT EXISTS (
-            SELECT 1 FROM inventory_count_lines remaining
-             WHERE remaining.organization_id = c.organization_id
-               AND remaining.count_id = c.id
-          )`,
-      [organizationId, omittedProduct.rows[0]!.id],
-    );
+    await client.query("ALTER TABLE inventory_count_lines DISABLE TRIGGER USER");
+    await client.query("ALTER TABLE inventory_counts DISABLE TRIGGER USER");
+    try {
+      await client.query(
+        `WITH removed_lines AS (
+           DELETE FROM inventory_count_lines
+            WHERE organization_id = $1 AND product_id = $2
+            RETURNING count_id
+         )
+         DELETE FROM inventory_counts c
+          WHERE c.organization_id = $1
+            AND c.id IN (SELECT count_id FROM removed_lines)
+            AND NOT EXISTS (
+              SELECT 1 FROM inventory_count_lines remaining
+               WHERE remaining.organization_id = c.organization_id
+                 AND remaining.count_id = c.id
+            )`,
+        [organizationId, omittedProduct.rows[0]!.id],
+      );
+    } finally {
+      await client.query("ALTER TABLE inventory_counts ENABLE TRIGGER USER");
+      await client.query("ALTER TABLE inventory_count_lines ENABLE TRIGGER USER");
+    }
     await client.query("DELETE FROM products WHERE organization_id = $1 AND id = $2", [organizationId, omittedProduct.rows[0]!.id]);
 
     const opening = await request(root() + "/counts/opening", {

@@ -236,6 +236,7 @@ jobs:
             fi
           fi
 
+      # The default path is read-only; the pinned write path is manual and never deploys the Worker.
       - name: Require exact write confirmation
         if: ${{ inputs.operation == 'bootstrap-and-migrate' }}
         shell: bash

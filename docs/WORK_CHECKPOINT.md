@@ -9,7 +9,7 @@
 
 ## PRs activas y bloqueos
 - #269 OPEN/Draft, HEAD `14afd5de938a6ff655ecdfc5cb747f0f799290c5`, 24 ahead / 3 behind main, mergeable=false. Solo 5 check-runs SUCCESS y 3 workflows push SUCCESS en ese HEAD; faltan workflows pull_request y contextos requeridos verify/Chromium/JS-TS. El código SQL 0017–0019 coincide con el source SHA ensayado; cinco commits posteriores solo cambiaron workflow/docs/ODD. Contrato comercial checkout aún no aprobado; mantener Draft.
-- #255 OPEN/Ready, HEAD `a19a5c61f3f9e878d531ef1150f9c1aa033d6cc7`, 53 ahead / 10 behind; 10 workflows SUCCESS en ese HEAD, pero requiere sincronización y revalidación.
+- #255 OPEN/Draft, HEAD `a19a5c61f3f9e878d531ef1150f9c1aa033d6cc7`, 53 ahead / 10 behind; 10 workflows SUCCESS en ese HEAD, pero requiere sincronización y revalidación.
 - #258 OPEN/Ready, 35 ahead / 41 behind; #262 OPEN/Ready, apilada sobre #258 y 107 ahead / 41 behind. No fusionar separadamente ni cerrar sin preservar contenido único.
 - #233 OPEN/Draft histórica; #193 OPEN, no modificar.
 

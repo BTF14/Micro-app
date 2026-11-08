@@ -24,10 +24,11 @@
 
 ### Secreto y GitHub Actions
 - El propietario confirmó que actualizó `NEON_REHEARSAL_DATABASE_URL`; el valor nunca se consultó ni se imprimió.
-- **La conexión directa de Neon no demuestra que Actions use el secreto actualizado.** El último run conocido (#42479603848) falló antes de psql por secreto ausente; no se ha observado un run posterior que valide la rotación.
+- **GitHub Actions ya consumió el secreto actualizado.** Se reintentó el run #42479603848 (operación `verify`); el entorno mostró el secreto enmascarado, no vacío. El paso de conexión confirmó `neondb|microapp_migrator|microapp_migrator|br-curly-poetry-b7dxsddm|restless-fire-99110035` y el paso de baseline terminó `BASELINE_VERIFIED` con 294 facts. Run: https://github.com/BTF14/Micro-app/actions/runs/42479603848.
+- El rerun conservó SHA/ref originales; no valida el resumen nuevo de #270. En el summary step del SHA antiguo aparecieron tres `command not found` por las comillas antiguas, pero el step concluyó success; #270 corrigió eso en main. Un dispatch nuevo desde main actual sería la validación integral de ese resumen.
 - El workflow actual en main exige `workflow_dispatch` desde `main`, conexión directa/no pooler y comprobación exacta de database/login/branch/project.
-- `operation=verify` ejecuta solo SELECT de identidad y fingerprint, y comparación local de archivos temporales; no hace DDL/DML. `adopt-and-migrate` es otra ruta y sí escribe ledger, ownership y migraciones. **No ejecutar esa ruta sin aprobación explícita.**
-- El conector GitHub disponible no expone acción para despachar `workflow_dispatch`; por eso el verify post-rotación sigue pendiente.
+- `operation=verify` ejecuta solo SELECT de identidad y fingerprint, y comparación local de archivos temporales; no hace DDL/DML. Los pasos de adopción y migración quedaron SKIPPED. No se modificaron ownership ni esquema.
+- **No ejecutar todavía `adopt-and-migrate` para probar 0017–0019:** main contiene migraciones hasta 0016; los archivos 0017, 0018 y 0019 existen solo en la rama de #269. El workflow despachado desde main aplicaría como máximo 0016. Hace falta una ruta de rehearsal controlada para el SHA revisado de #269 o integrar esos cambios cuando pasen sus gates.
 
 ### Dictamen
 **Producción: NOT READY.** No se tocó Neon main, no se modificaron datos reales, secretos, Cloudflare, Worker productivo, DNS, billing ni despliegues manuales. No se ejecutaron migraciones en rehearsal.

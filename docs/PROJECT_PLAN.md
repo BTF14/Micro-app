@@ -1,3 +1,14 @@
+## Prioridad operativa actual — 2026-11-08 UTC
+
+1. **Estabilizar CI compartido.** #259 serializa la batería runtime-role PostgreSQL porque las suites crean/eliminan triggers temporales en `audit_logs`; #257 falló con `tuple concurrently updated`. Verificar #259 exact-SHA y luego actualizar/revalidar #257.
+2. **Checkout recuperado.** #258 porta handler/tests desde #233 y añade migration 0017. Implementación SHA `d9ae6cd7f65c99126e7c4e45faa20a1dadaf3cdb` verde (15/15 checks, 13/13 workflows, 141 unitarias, 15 PostgreSQL checkout); HEAD actual `9d5ca9298b80038925ee94ed3deb2ce28dd08bb8` pendiente de revalidación.
+3. **Dependencia BCV.** #255 mantiene parser/API/UI/Cron oficial, Draft y no integrado. Resolver la pila #251→#255 y reconciliar sus cambios de Worker/router con #258 antes de activar checkout.
+4. **Gates de producción de checkout:** aprobación explícita del contrato de pagos; assertions SQL de fórmula por línea y equivalentes por pago; resolver privilegio runtime directo sobre balances; calendario de feriados; UI. No fusionar ni activar checkout antes.
+5. **Neon.** Main no tiene roles runtime/migrator ni migraciones 0003–0017. Rehearsal tiene logins pero sin ledger/migraciones. Solo runner protegido y autorización específica; no SQL manual.
+6. **Inventario.** Mantener Kardex/ledger, locks tenant/sucursal, conteos absolutos y transferencias en dos etapas. No alterar PR #193 mientras siga la restricción específica registrada.
+
+Producción **NOT READY**. No tratar CI verde como aprobación; reviews formales y decisiones de producto siguen separadas.
+
 ## Prioridad operativa vigente — 2026-11-08 UTC
 
 Este bloque prevalece sobre prioridades históricas inferiores.

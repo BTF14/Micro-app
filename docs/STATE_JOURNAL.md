@@ -2118,3 +2118,11 @@ No se tocaron Neon main, datos reales, secretos, Worker productivo, DNS, billing
 
 - PR #255 HEAD a19a5c61f3f9e878d531ef1150f9c1aa033d6cc7: 10/10 workflow runs SUCCESS. El Cron ahora registra outcome exitoso, código de error permitido y relanza error genérico para que el evento falle visiblemente. No hay persistencia del último intento ni alerta externa; no se considera resuelto el P1 de operación.
 - PR #274 HEAD 5621eaf12744f7cfff34e87ee102d66a90b95f1d: 10/10 workflow runs SUCCESS exact-HEAD, mergeable=true. Incluye workflow de rehearsal y documentación. Aún no integrado; no se ha ejecutado verify-empty desde Actions ni ninguna migración.
+
+## 2026-11-08 — revisión final del workflow fijado #274
+
+- Main confirmado por GitHub API: 33016a2d206c7b8cfc60e53e34a56a26651141d7; branch protegido. Los seis contextos requeridos expuestos por la respuesta de branches/main están SUCCESS en el HEAD #274.
+- PR #274 HEAD ee04e6d97b179a86ea842f8a1ae8a03b4c33a134, base 33016a2d206c7b8cfc60e53e34a56a26651141d7, mergeable=true; 10/10 workflow runs y 15/15 check-runs SUCCESS exact-HEAD. No formal reviews, no inline threads, no reviewers requested. Revisión técnica manual del diff/workflow; no se atribuye aprobación independiente.
+- GitHub branch-protection endpoint respondió 403 por permisos del conector; se verificó la lista de seis required status contexts en el recurso de branch y todos están verdes. No se pudo leer el ajuste separado de required approvals.
+- El conector GitHub disponible es GET-only para mcp__GitHub__fetch y no expone workflow_dispatch; por ello no se puede iniciar desde aquí el workflow manual nuevo. El run previo #42479603848 del workflow anterior neon-rehearsal-migrations.yml sí verificó con éxito el secreto rotado y la conexión directa, pero no sustituye el nuevo verify-empty.
+- Ninguna migración, DDL/DML, escritura en Neon ni cambio de producción ejecutado.

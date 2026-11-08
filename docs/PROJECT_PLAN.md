@@ -18,7 +18,7 @@
 
 ### Verificación post-merge #275
 - GitHub Actions en merge SHA: 9/9 workflow runs SUCCESS; required contexts `verify`, `postgres-migration`, `Chromium authentication smoke tests`, `JavaScript and TypeScript static analysis`, `Scan tracked files and reachable Git history` y `Trivy filesystem and configuration scan` en SUCCESS.
-- Al último chequeo, nuevos check-runs de Cloudflare Pages y Workers Builds estaban aún en progreso; no afirmar despliegue productivo ni smoke test de producción.
+- Cloudflare Pages y Workers Builds check-runs terminaron SUCCESS en el merge SHA. No se ejecutó smoke test HTTP autenticado contra endpoints productivos; por ello no se declara producción validada.
 - Producción: **NOT READY**. No DDL/DML remoto, no migraciones, no cambios de Neon main, secretos de producción, DNS o billing.
 
 ## Snapshot operativo vigente — 2026-11-08 (supersede la tabla histórica inmediatamente inferior)

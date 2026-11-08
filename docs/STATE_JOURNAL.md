@@ -1,3 +1,26 @@
+# 2026-11-08 UTC — Neon main schema drift confirmado por SELECT
+
+- Lectura de solo esquema en Neon main `br-summer-math-b7297a60`: no existen `microapp_runtime`, `microapp_migrator`, `schema_migrations`, `auth_bootstrap_attempts`, `branches`, `warehouses` ni `inventory_balances`; sí existe `auth_rate_limits`; `exchange_rates.rate` es `NUMERIC(14,6)`.
+- Identidad consultada: `neondb_owner`, database `neondb`, project `restless-fire-99110035`, branch `br-summer-math-b7297a60`.
+- El resultado confirma que Neon main sigue en baseline 0001–0002, desfasado del main de código. El Cron #251 está configurado en el repositorio; despliegue/ejecución real no verificados y la segunda DELETE fallaría si el Cron ejecuta contra este esquema.
+- Solo SELECT de catálogos/metadatos; no se leyeron filas de negocio, no se ejecutó DDL/DML, no se tocaron secretos ni Cloudflare.
+
+---
+
+# 2026-11-08 UTC — PR #261 integrado; runner Neon de ensayo preparado; riesgo Cron #251 registrado
+
+- PR #261 se fusionó en main mediante squash: merge SHA `10ed02c6c6d30940ef2e2a75db009f6ea6859bd3`. Main quedó protegido en ese SHA; sus 11 check-runs post-merge estaban en progreso al verificar. No se reutilizan como éxito post-merge hasta terminación.
+- PR #264 se abrió desde main para añadir un workflow manual, branch-guarded, de ensayo Neon. HEAD actual de la rama de trabajo al registrar esta entrada: `3fce180afb3ecf174edc927e577185fe0f6723a5`; CI exact-HEAD todavía en progreso. La PR no se ha fusionado ni ejecutado.
+- El workflow exige el secreto nuevo `NEON_REHEARSAL_DATABASE_URL` con login directo/no pooler `microapp_migrator`, y verifica database/project/branch/session identity antes de operar. Modo por defecto `verify`; modo de escritura requiere confirmación exacta del branch. No se creó ni modificó ningún secreto.
+- Rehearsal `br-curly-poetry-b7dxsddm`: fingerprint de 294 hechos coincide exactamente con baseline 0002; 15 tablas y 2 secuencias son propiedad de `microapp_migrator`; no hay ledger. No se ejecutó baseline adoption ni ninguna migración.
+- Se revisó `cleanupExpiredAuthRecords()` de #251: dos DELETE separados (auth_rate_limits y auth_bootstrap_attempts), sin transacción envolvente. El último snapshot de Neon main documentado y la rehearsal no contienen `auth_bootstrap_attempts`; si el Cron horario configurado en main ya fue desplegado contra ese esquema, el segundo DELETE fallará y el primero podría haber confirmado. Despliegue/ejecución real no verificados. No se desactivó el Cron ni se tocó Cloudflare.
+- PR #255 permanece Ready, base main, HEAD `f49fb402f9bd5a40591970c9efe3665a5e212ebb`, 15/15 checks verdes y mergeability clean; no integrar hasta completar rehearsal, grants y verificar principal real del Worker.
+- PR #258 permanece Ready pero dirty, HEAD `8935842cab6a7e2b8a6c0aa078e9b3e77866e48c`, 16/16 checks verdes, 29 commits detrás de main. Contrato de pagos sigue pendiente de aprobación funcional del propietario.
+- PR #262 sigue apilada sobre un HEAD anterior de #258; no integrar independientemente. #193 permanece intacta; #233 sigue como fuente histórica Draft.
+- No se modificó Neon main, secretos, datos reales, configuración Cloudflare, DNS, billing ni se ejecutó despliegue manual.
+
+---
+
 # 2026-11-08 UTC — verificación exacta del baseline Neon rehearsal
 
 - Se ejecutó en modo de solo lectura `scripts/db/schema_fingerprint.sql` sobre `rehearsal-baseline-20261107` y se comparó con `apps/api/migrations/baselines/0002.schema.txt` de main.

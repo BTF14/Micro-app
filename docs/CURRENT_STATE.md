@@ -1,3 +1,41 @@
+## Estado operativo autoritativo — 2026-11-08 UTC
+
+- **main:** `912e4d269de3b7ac2d43632c9bfcdb10041dbae8`. #259 (serialización CI) y #257 (reconciliación documental) están integradas.
+- **PR #251 — retención auth 48 h:** Draft, HEAD `ded2d95681e9a9436fdb2c9630092379a60405cb`, base main, 26 ahead / 0 behind; **15/15 check-runs y 13/13 workflows SUCCESS**. Prueba de cap 500 por tabla y segunda invocación que drena el remanente. Sin review formal independiente.
+- **PR #255 — BCV oficial:** Draft, HEAD `a31892ae74958573a741cb36470182da6bdd529e`, base #251, 45 ahead / 0 behind; **15/15 check-runs y 13/13 workflows SUCCESS**. Parser/productor/API/UI/Cron y selección weekend. Sin review formal independiente; no integrado en main.
+- **PR #258 — checkout atómico:** Draft, HEAD `48eaa489dfc062912871b98594c6db4083812087`, base main, 23 ahead / 0 behind; **15/15 check-runs y 13/13 workflows SUCCESS**. CI exact-SHA: 141 unit tests, 85 runtime-role PostgreSQL tests y 16 checkout PostgreSQL tests. Migration 0017 añade BCV weekday/weekend y validación SQL por línea; no está en main ni Neon. Sin review formal independiente.
+- **PR #260 — este refresh:** HEAD previo `ebfc650954f9a65de0f51d36781605c36c73650c` pasó 13/13 check-runs y 11/11 workflows. Este commit actualiza el snapshot y cambia el SHA; revalidar el nuevo HEAD.
+- **PR #193:** sigue abierta; no modificar la rama. Privilegios directos de runtime sobre balances, referencias sin FK tipada y snapshot legado ausente siguen documentados como gates.
+- **PR #233:** fuente histórica; el checkout fue recuperado en #258. No fusionar la rama antigua ni cerrarla antes de integrar y verificar #258/#255.
+- **PR #202 y #211:** cerradas después de preservar material único/hallazgos en documentación.
+- **Producción: NOT READY.** No hay revisión independiente formal; Neon main/rehearsal no tiene las migraciones 0003–0017 aplicadas mediante runner protegido; falta validar login runtime/ownership/grants. No se ha activado ningún Cron productivo.
+- **Gates checkout:** tasa BCV real #255; política comercial de pago (una moneda, pago exacto, sin parcial/sobrepago) sin aprobación funcional explícita; asignación USD proporcional por pago VES no validada individualmente por SQL; falta rate limit específico de checkout; privilegio directo de escritura de balances; falta UI y calendario oficial de feriados weekday.
+- **No acciones productivas:** sin DDL/DML en Neon, cambios de secretos, configuración manual de Cloudflare, DNS, billing, deploy manual ni datos reales. Builds Cloudflare de PR son previews de rama, no prueba de producción.
+
+### Orden de continuación
+
+1. Esperar/validar los SHA exactos de #251, #255 y #258; no copiar checks de commits anteriores.
+2. Obtener review formal independiente de las tres PR; mantener Draft mientras no exista.
+3. Mantener la pila #251 → #255; no retargetear #255 a main sin reconstruir su base.
+4. Resolver Neon rehearsal por runner protegido, verificar current_user, ownership, grants mínimos y Worker identity; main permanece intocable.
+5. Resolver asignación por pago, rate limit checkout y privilegios de balances antes de producción.
+6. Integrar UI de checkout después de cerrar contrato funcional y API; cerrar #233 solo cuando #258/#255 estén integradas y se confirme que no queda contenido único.
+
+---
+## Estado vivo posterior a #257 — 2026-11-08 UTC
+
+- `main` actual al iniciar esta reconciliación: `912e4d269de3b7ac2d43632c9bfcdb10041dbae8`.
+- **PR #259** fusionada por squash en `07b146a3f2b7830bbd328a585535084e57e43c4e`: serializa la batería de integración runtime-role que comparte PostgreSQL con `--no-file-parallelism`.
+- **PR #257** fusionada en este `main`: reconciliación documental de 30 archivos; preserva los contratos ODD, las ocho decisiones aprobadas de inventario y el informe histórico de autenticación.
+- **PR #258** sigue Draft, base main. HEAD `7cc80b47b39d557c1d1837c3176d97d7d23c8d94`: 15/15 check-runs y 13/13 workflows SUCCESS; 141 unitarias, 85 runtime-role PostgreSQL y 16 checkout PostgreSQL integration tests. Migration 0017 en esta rama añade selección BCV weekday/weekend y guard SQL de aritmética por línea. No está en main ni aplicada en Neon.
+- **PR #251** Draft, HEAD `5dec5d5a9025de16b19d0cb7cfeac6585e2ad5d6`: 15/15 check-runs y 13/13 workflows SUCCESS; sin review formal.
+- **PR #255** Draft, HEAD `35b9ac6894f79c5760a1f56fb37506ed2278afa0`, base #251: 15/15 check-runs y 13/13 workflows SUCCESS; sin review formal. Productor/API/Cron BCV aún no integrado.
+- **PR #193** permanece sin cambios por la restricción previa; brechas de privilegios/snapshot/referencias documentadas en SECURITY_ROADMAP.
+- **PR #233** permanece como fuente histórica Draft; su handler/tests fueron recuperados en #258. No fusionar la rama antigua.
+- PRs abiertas en este snapshot: #193, #233, #251, #255 y #258. #257 y #259 ya están fusionadas.
+- **Producción NOT READY:** falta integrar la ingesta BCV; confirmar política comercial de pagos; validar asignación USD individual por pago en DB; resolver escritura runtime directa en `inventory_balances`; decidir calendario de feriados entre semana; implementar UI checkout. La protección SQL por línea está solo en PR #258.
+- Sin DDL/DML en Neon main, cambios de secretos, configuración Cloudflare manual, DNS, billing ni despliegue manual. Los checks Cloudflare de PR son builds/checks y no prueban por sí solos el estado de producción.
+
 ## Snapshot operativo autoritativo — 2026-11-08 UTC — sincronización #259 y recuperación de ventas
 
 - **main:** `07b146a3f2b7830bbd328a585535084e57e43c4e`. #259 está fusionada; CI serializa las suites PostgreSQL runtime-role con `--no-file-parallelism`.

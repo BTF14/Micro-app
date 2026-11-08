@@ -6,6 +6,21 @@
 **Merge SHA de PR #167 (integró 0004):** `c1cd8650db33aa4a249eaf1f55d321513d576e10`.  
 **Fuentes contrastadas:** apps/api/migrations/0001_initial.sql, docs/SCHEMA_REVIEW.md, docs/DATABASE_SCHEMA.md, docs/SAAS_ARCHITECTURE_DECISIONS.md y docs/sdd/role-permission-decision-matrix.md.
 
+## Decisiones de negocio aprobadas por el propietario — 2026-11-02
+
+Estas ocho decisiones son vinculantes para la implementación de inventario por sucursal. No volver a preguntarlas ni sustituirlas por inferencias:
+
+1. El ledger de movimientos es la fuente de verdad del inventario.
+2. Cada sucursal mantiene existencias independientes.
+3. Las transferencias tienen dos momentos: despacho desde origen y recepción en destino.
+4. El despacho no acredita automáticamente existencias disponibles en destino.
+5. El sistema representa mercancía en tránsito y diferencias entre cantidades enviadas y recibidas.
+6. Los permisos de origen y destino se verifican independientemente.
+7. Los conteos físicos envían cantidades absolutas; el servidor calcula las diferencias.
+8. Cada sucursal inicializa su inventario mediante un primer conteo `opening` registrado y confirmado formalmente. Puede proceder de una verificación física o de cantidades documentadas por el propietario, siempre con actor, fecha y sucursal trazables. No se asigna automáticamente `products.stock_quantity` a ninguna sucursal; no se inventan distribuciones ni se pierde la información histórica.
+
+La migración 0006 y las migraciones 0009/0010 implementan partes sustanciales del ledger, apertura, conteos y acoplamiento de saldos. La implementación en Git no prueba que el esquema se haya aplicado en Neon. Las transferencias en dos etapas siguen siendo un handler pendiente.
+
 ## 1. Propósito y límites
 
 Diseñar la evolución del modelo actual, que solo tiene inventario a nivel organización, hacia una plataforma multi-organización y multi-sucursal sin debilitar el aislamiento ya existente.

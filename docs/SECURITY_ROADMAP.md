@@ -1,3 +1,16 @@
+## Estado reconciliado de checkout/ledger — 2026-11-08 UTC
+
+- Main vigente al crear esta actualización: `5f09b87aee09d0746f6ea90f076b4eb81d168daf`.
+- Recuperación de checkout + ledger: PR #269, rama `feat/checkout-ledger-recovered-main-20261108`; migraciones 0017–0019, route handler, proyección ledger→balance y pruebas portadas desde #258/#262.
+- Validación inicial de código en HEAD `730bcd32776b76b22d2176fa3d09c5b7035e62a3`: 16/16 check-runs y 11/11 workflows SUCCESS, incluidos migration-check, migration-runner, CI (unit, PostgreSQL integration, runtime-role), Playwright, backup/restore, SAST y Workers/Pages builds. Cualquier nuevo commit requiere revalidación exact-SHA.
+- PR #269 permanece Draft y no integrada. No hay review formal independiente registrada.
+- PR #255 sigue siendo dependencia separada para ingesta oficial BCV/API/Cron. No activar checkout con una tasa no disponible o stale.
+- El ensayo protegido Neon `verify` (#42479603848) se detuvo antes de conectar por falta del secreto de repositorio `NEON_REHEARSAL_DATABASE_URL`. No se conectó a Neon ni se aplicaron migraciones. Neon main/rehearsal no se modificaron.
+- El contrato comercial de pagos sigue pendiente de aprobación del propietario. La UI de checkout y el calendario oficial de feriados bancarios weekday tampoco están implementados.
+- Estado de producción: **NOT READY**. CI de PostgreSQL efímero no equivale a esquema/Worker real desplegado.
+
+---
+
 ## Estado operativo actualizado — 2026-11-08 UTC (posterior a PR #264)
 
 **GitHub main:** `c46ed6f3e57a12bf92a7f0718435dfff8096b540`. PR #264 se fusionó en `c46ed6f3e57a12bf92a7f0718435dfff8096b540`; su workflow `.github/workflows/neon-rehearsal-migrations.yml` ya existe en main. En el HEAD de PR #264 los checks finalizaron correctamente (15 check-runs SUCCESS; el recuento API posterior incluyó 16 por checks duplicados). El workflow es manual; no hay evidencia de ejecución del workflow de Neon ni de migraciones remotas.

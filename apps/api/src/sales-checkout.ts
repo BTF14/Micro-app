@@ -510,7 +510,8 @@ export function registerSalesCheckoutRoutes(app: Hono<{ Bindings: Bindings }>): 
           // Lock and validate every required balance before claiming the sale.
           // No early return after the draft row is inserted may commit a draft.
           const balances = await lockInventoryBalances(
-            tx, branch.organizationId, [input.warehouseId], productIds,
+            tx, branch.organizationId,
+            [{ warehouseId: input.warehouseId, branchId: branch.branchId }], productIds,
           );
           if (!balances) throw new Error("INVENTORY_BALANCE_LOCK_FAILED");
           const balanceByProduct = new Map(balances.map((balance) => [balance.product_id, balance]));
@@ -545,17 +546,8 @@ export function registerSalesCheckoutRoutes(app: Hono<{ Bindings: Bindings }>): 
           }
 
           for (const line of computedLines) {
-            const updated = await tx.query<{ on_hand_quantity: string }>(
-              `UPDATE public.inventory_balances
-                  SET on_hand_quantity = on_hand_quantity - $5::numeric,
-                      updated_at = now()
-                WHERE organization_id = $1 AND branch_id = $2
-                  AND warehouse_id = $3 AND product_id = $4
-                  AND on_hand_quantity - reserved_quantity >= $5::numeric
-                RETURNING on_hand_quantity::text`,
-              [branch.organizationId, branch.branchId, input.warehouseId, line.productId, line.quantity],
-            );
-            if (!updated.rows[0]) throw new Error("INVENTORY_BALANCE_UPDATE_FAILED");
+            // The AFTER INSERT ledger trigger applies the balance projection.
+            // No runtime UPDATE privilege on inventory_balances is required.
 
             await tx.query(
               `INSERT INTO public.warehouse_inventory_movements (

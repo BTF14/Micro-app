@@ -1,3 +1,35 @@
+# 2026-11-08 UTC — sincronización de ramas, retención y checkout
+
+- #251 se sincronizó con main mediante merge commit `cb43dfc3b4eced25afafd1813af28629fda48bb8`; después se añadió una regresión que ejecuta dos invocaciones del Cron y prueba el drenaje del backlog de 501 filas por tabla. HEAD final de esa actualización: `e2015f3742c2fba62bada2468efdb3689e2e1db4`, 15/15 check-runs y 13/13 workflows SUCCESS.
+- #255 se sincronizó con la base actualizada #251 mediante merge commit `4d05c38c7dc7623d7c8a94894db022a542fb43b5`; se preservó controller.cron y la regresión de retención. HEAD `1337d28591673dabfe5c4bf1d5c0d8c03c99162b`, 15/15 check-runs y 13/13 workflows SUCCESS.
+- #258 se sincronizó con main #259 y su árbol quedó 13 ahead / 0 behind. HEAD documental `313f76c132c61200ed49a7c6e4e01fcf75659bf9`: 12/15 check-runs y 12/13 workflows SUCCESS, sin fallos; quedan Workers Builds, verify, Pages y CI pendientes.
+- #257 se sincronizó con main mediante merge commit `f791b312b53541cacca67161ed1f6e5b9ab54173`; este refresh de documentación cambia el HEAD y requiere revalidación.
+- No hubo escrituras Neon, cambios de secretos, Cloudflare productivo, DNS, billing, deploy manual ni datos reales.
+- Producción sigue NOT READY por gates de identidad/runtime Neon, review independiente, tasa BCV, pagos, UI, SQL monetary checks y privilegios de balances.
+
+---
+
+# 2026-11-08 UTC — PR #259 integrada y sincronización de ramas dependientes
+
+- PR #259 se fusionó por squash en main como `07b146a3f2b7830bbd328a585535084e57e43c4e`. La batería runtime-role PostgreSQL ahora usa `--no-file-parallelism` para evitar que suites paralelas eliminen triggers temporales mientras otras escriben en `audit_logs`.
+- PR #257 volvió a base `main`; HEAD `2cecf9b6f462d80b38cdb58be09b21dd2f7f4d3b` tenía 12/12 check-runs SUCCESS y 10/13 workflows SUCCESS (CI, Security scan y migration runner pendientes, sin fallos) antes del refresh documental actual.
+- PR #258 volvió a base `main` y sincronizó el merge de #259. HEAD antes del refresh de este journal `433a1fa1212f610cbb543597e620219bd91327a4`: 13/15 check-runs y 12/13 workflows SUCCESS; verify, Cloudflare Pages y CI pendientes, sin fallos. El implementation SHA anterior `d9ae6cd7f65c99126e7c4e45faa20a1dadaf3cdb` ya había pasado 15/15 checks, 13/13 workflows, 141 unitarias, 85 runtime-role tests y 15 checkout PostgreSQL tests.
+- No Neon main, datos reales, secretos, despliegues manuales, DNS ni billing modificados. Producción NOT READY.
+---
+
+# 2026-11-08 UTC — recuperación checkout y estabilización de CI
+
+- #233 se auditó como fuente histórica: 408 commits ahead / 18 behind, base en una PR cerrada; no se fusiona.
+- #258 recuperó handler, unit tests, PostgreSQL integration tests y registro de ruta sobre main, reutilizando migration 0015 canónica y añadiendo 0017 para BCV weekday/weekend. SHA de implementación `d9ae6cd7f65c99126e7c4e45faa20a1dadaf3cdb`: 15/15 check-runs, 13/13 workflows, 141/141 unit tests y 15/15 checkout PostgreSQL integration SUCCESS. HEAD actual posterior a seguimiento documental/CI: `9d5ca9298b80038925ee94ed3deb2ce28dd08bb8`, requiere revalidación exact-SHA.
+- La primera ejecución de #258 falló porque el workflow pasó literalmente `${RUNTIME_DATABASE_URL}`/ `${ADMIN_DATABASE_URL}`; el guard de tests rechazó correctamente los valores no válidos. Se corrigió el comando para expandir variables de entorno reales. La siguiente ejecución pasó.
+- #257 HEAD `a8f7e0385ad7bb65a771e29e576bef8a2905eba9` falló solo en la batería runtime-role: `catalog-write.integration.test.ts` no pudo eliminar su trigger temporal por `XX000: tuple concurrently updated`, mientras otras suites escribían en `audit_logs`.
+- Se abrió #259 para ejecutar secuencialmente los archivos de integración runtime-role mediante `--no-file-parallelism`; HEAD `98f4a8d662d07400f59bd3e8115f6da5856a4bfe`, checks pendientes.
+- #251 y #255 conservan 15/15 check-runs + 13/13 workflows SUCCESS en sus HEADs exactos, siguen Draft y sin review formal.
+- Ningún cambio en Neon, secretos, Cloudflare manual, DNS, billing, despliegue productivo o datos reales.
+- Gaps de checkout: #255 debe proveer filas BCV; pago mono-moneda/no parcial/no sobrepago requiere confirmación explícita; SQL aún no valida fórmula por línea ni asignación por pago; runtime conserva escritura directa de balances; no hay UI; feriados weekday no soportados.
+- Producción NOT READY.
+---
+
 # 2026-11-07 UTC — cierre de verificación post-merge #256
 
 - El merge SHA `a38463ea00415c7601d716132e70a29e381a2e34` quedó verificado: los 10 check-runs de commit y 8 workflows push terminaron SUCCESS.
@@ -1706,3 +1738,15 @@ CI documental: para HEAD `8c15e13fa001a14a0ddf9f2432bc17efb30d476d`, los 8 workf
 El propietario reiteró que el backlog comunicado es de 26 PR y que deben completarse y fusionarse cuando hayan superado todas las verificaciones y sean seguras para integrarse. Se registra como objetivo operativo: recontar en GitHub en vivo; revisar cada PR y sus dependencias; preservar cambios únicos; integrar raíz primero; máximo dos frentes; no fusionar en bloque ni por CI verde aislado; no retener una PR elegible esperando las demás; usar la autorización permanente de merge sin reconfirmación una vez satisfechos todos los gates; verificar merge SHA, checks post-merge y despliegue; continuar con la siguiente PR desbloqueada.
 
 La preparación global para producción exige pruebas end-to-end y cierre de P0/P1: secuencia/baseline de migraciones, privilegios PostgreSQL efectivos mínimos y separación runtime/migrator/backup, integridad transaccional, auth/autorización, importes decimales exactos sin descuentos, BCV verificable, backup/restore y RPO/RTO, alertas/observabilidad, seguridad, presupuesto $0, despliegue y smoke test autenticado. La autorización de merge no amplía permisos para Neon main, migraciones remotas, roles/grants, datos reales, secretos, Cloudflare manual, DNS ni billing.
+
+
+## 2026-11-08 UTC — reconciliación #251/#255, cierre de PRs supersedidas y auditoría Neon
+
+- GitHub main verificado: `96e2e2d9f76bc8fcc3bab2fa9503e480545c8869`.
+- #251 actualizado con merge commit no destructivo desde main: HEAD `5dec5d5a9025de16b19d0cb7cfeac6585e2ad5d6`, cero commits detrás, 15/15 check-runs SUCCESS.
+- #255 actualizado con merge commit no destructivo desde #251: HEAD `d4326db8e6acf75629e1fca3123885ad160dcbf3`; luego se añadió hardening BCV y UI de frescura, HEAD final `35b9ac6894f79c5760a1f56fb37506ed2278afa0`, base #251 `5dec5d5a9025de16b19d0cb7cfeac6585e2ad5d6`, 13 workflow runs y 15/15 check-runs SUCCESS.
+- Hardening BCV: reemplazada validación de límite con `Number()` por comparación exacta BigInt; latest API y cliente web no-store; dashboard revalida al cambiar fecha de Caracas, al volver a la pestaña y descarta respuestas iniciadas en una fecha anterior; regresión Friday→Saturday midnight y prueba de cabecera no-store.
+- Cerradas sin merge y con comentarios de evidencia: #200, #204, #205, #207, #208, #209, #210, #227, #228, #229, #230, #231 y #232. Sus funcionalidades se verificaron en main/#255; ODD de inventario se preserva en #257.
+- Neon solo lectura: main no tiene `microapp_runtime`, `microapp_migrator`, ledger ni tablas de migraciones posteriores; rehearsal tiene logins/ownership, pero runtime no tiene grants de tabla. No se aplicó DDL ni se ejecutó el runner en Neon.
+- `.github/workflows/migration-runner.yml` valida PostgreSQL 18 desechable; no es runner de release a Neon. El plan documenta falta de secreto `NEON_REHEARSAL_DATABASE_URL` y workflow protegido. No usar SQL manual para aplicar migraciones.
+- #193, #202, #211 y #233 siguen abiertos para reconciliación; #251/#255/#257 siguen Draft. No hubo merges a main ni cambios de secretos/producción.

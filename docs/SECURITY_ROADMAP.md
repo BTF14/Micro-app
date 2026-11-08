@@ -1,3 +1,64 @@
+# Estado de seguridad vivo — 2026-11-08 UTC — actualización posterior a #259
+
+## Snapshot operativo autoritativo — 2026-11-08 UTC — sincronización #259 y recuperación de ventas
+
+- **main:** `07b146a3f2b7830bbd328a585535084e57e43c4e`. #259 está fusionada; CI serializa las suites PostgreSQL runtime-role con `--no-file-parallelism`.
+- **PR #251 — retención auth 48 h:** Draft, HEAD `e2015f3742c2fba62bada2468efdb3689e2e1db4`, base main, 25 ahead / 0 behind; **15/15 check-runs y 13/13 workflows SUCCESS**. La prueba ahora verifica límite 500 por tabla y drenaje del remanente en una segunda invocación. Sin review formal. Cron no activar hasta cerrar Neon/runtime.
+- **PR #255 — tasa oficial BCV:** Draft, HEAD `1337d28591673dabfe5c4bf1d5c0d8c03c99162b`, base #251 `e2015f3742c2fba62bada2468efdb3689e2e1db4`, 44 ahead / 0 behind; **15/15 check-runs y 13/13 workflows SUCCESS**. Incluye parser BCV, API/UI, persistencia decimal y Cron. Sin review formal. No se ha hecho smoke test contra BCV/Worker productivo; feriados entre semana siguen fail-closed.
+- **PR #258 — checkout atómico:** Draft, HEAD `313f76c132c61200ed49a7c6e4e01fcf75659bf9`, base main, 13 ahead / 0 behind; **12/15 check-runs y 12/13 workflows SUCCESS**, sin fallos. Pendientes: Workers Builds, verify, Cloudflare Pages y workflow CI. No reutilizar los verdes de SHAs anteriores. La implementación base anterior `d9ae6cd7f65c99126e7c4e45faa20a1dadaf3cdb` pasó 141 unit tests, 85 runtime-role tests y 15 checkout PostgreSQL tests; los cambios posteriores deben revalidarse en el SHA final. Migration 0017 está solo en la PR.
+- **PR #257 — esta reconciliación documental:** Draft, HEAD previo a este refresh `f791b312b53541cacca67161ed1f6e5b9ab54173`, base main, 29 ahead / 0 behind; 6/14 check-runs y 6/13 workflows SUCCESS, el resto pendiente, sin fallos. Este commit documental cambia el SHA y obliga a validar de nuevo.
+- **PR #193:** sigue abierta para revisión técnica de inventario; no modificar su rama ni cerrar. **PR #233:** sigue abierta como fuente histórica; no fusionar su rama antigua. El handler/tests recuperados están en #258. #202 y #211 se cerraron tras preservar sus contenidos/hallazgos en esta rama.
+- **Reviews:** no hay revisión formal independiente registrada para #251, #255 ni #258. CI verde no equivale a aprobación.
+- **Neon:** no se aplicaron migraciones ni se escribieron datos en main o rehearsal. Main sigue sin roles runtime/migrator, ledger y tablas 0003–0016; rehearsal tiene los logins pero runtime carece de grants de tabla y no existe ledger. El runner CI es PostgreSQL efímero, no despliegue a Neon.
+- **Producción: NOT READY.** No se modificaron secretos, configuración manual de Cloudflare, DNS, billing, Worker productivo ni datos reales. Los builds Pages/Workers de PR son previews de rama, no despliegues productivos.
+
+### Gates técnicos que no se deben perder
+
+1. #251/#255: revisión independiente, baseline/migraciones/grants Neon por runner protegido, login runtime real y Cron/Worker identity verificados.
+2. #258: fuente BCV #255 integrada; política de feriados; UI checkout; aprobación funcional explícita de pago en una sola moneda y pago exacto completo; assertions SQL de cálculo por línea y asignación USD equivalente por pago.
+3. #258/#193: migration 0012 concede UPDATE/INSERT directo a runtime en `inventory_balances`; migration 0010 exige pairing con ledger, pero no hace la proyección exclusivamente SECURITY DEFINER. Resolver antes de producción.
+4. El endpoint checkout aún no tiene bucket de rate limiting específico; la idempotencia no sustituye limitación de frecuencia. Resolver antes de exponer POS real.
+5. No activar Cron, aplicar migration 0017 en Neon ni fusionar estas PRs por CI verde solamente.
+
+---
+
+
+### Clasificación de riesgos
+
+- **P0:** identidad efectiva/ownership/grants Neon y runner de migraciones de rehearsal todavía no demostrados en la base objetivo; revisión formal independiente pendiente.
+- **P1:** privilegio directo runtime sobre `inventory_balances`; falta rate limiting específico del checkout; falta defensa SQL de cálculos monetarios; feriados weekday sin calendario; TTL de sesión de 7 días pendiente de decisión del propietario.
+- **P1 funcional:** checkout API no equivale a UI POS integrada; #255 sigue siendo la fuente BCV no fusionada.
+- No cambiar TTL, permisos, secretos ni configuración productiva de forma silenciosa.
+
+---
+# Estado de seguridad actualizado — 2026-11-08 UTC — checkout
+
+- #258 implementa checkout transaccional y migration 0017 weekday/weekend en GitHub, pero no en Neon. El SHA de implementación `d9ae6cd7f65c99126e7c4e45faa20a1dadaf3cdb` pasó 15/15 checks y 13/13 workflows, 141 unitarias, 85 runtime-role tests y 15 checkout PostgreSQL tests. HEAD tras sincronizar main y refresh del modelo `433a1fa1212f610cbb543597e620219bd91327a4`: 13/15 check-runs y 12/13 workflows SUCCESS, sin fallos y con verify/Pages/CI pendientes.
+- **P1 — fuente BCV:** #255 productor/API/Cron sigue Draft y no está integrado en main. Checkout falla cerrado si no existe la fila efectiva validada. No activar hasta integrar y verificar el Worker/runtime.
+- **P1 — aritmética en DB:** trigger 0015 reconcilia sumas, pero no verifica por sí mismo `quantity × unit_price_usd_snapshot`, redondeo de `line_total_ves` ni asignación proporcional individual de `usd_equivalent_snapshot`. Handler calcula con BigInt; falta defensa SQL antes de producción.
+- **P1 — privilegios inventario:** migration 0012 concede a `microapp_runtime` INSERT y UPDATE(on_hand_quantity, updated_at) en `inventory_balances`. 0010 exige pairing con ledger, pero no es una proyección exclusivamente SECURITY DEFINER. Resolver antes de producción.
+- **Decisión de producto pendiente:** la regla SQL actual exige una sola moneda de liquidación y no admite pagos parciales/sobrepago/cambio. No asumir que esto fue aprobado; obtener confirmación explícita antes de activar.
+- **P1 operativo:** no existe UI de checkout; feriados bancarios entre semana no tienen calendario oficial y siguen fail closed.
+- **Pruebas seguras:** checkout integration tests exigen conexiones localhost separadas `microapp_runtime`/`microapp` a `microapp_test`; rechazan cualquier destino no desechable.
+- **CI shared-DB race:** #257 falló por DDL/DML concurrente al eliminar trigger temporal de auditoría. #259 ya está fusionada en main como `07b146a3f2b7830bbd328a585535084e57e43c4e`; #257 y #258 deben verificar sus nuevos HEADs con esa serialización.
+- No Neon main, secretos, Cloudflare productivo, DNS, billing, datos reales ni deploy cambiados.
+
+# Estado vivo de seguridad — 2026-11-08 UTC
+
+> Este bloque prevalece sobre snapshots inferiores. No confundir implementación en GitHub con activación en producción.
+
+- Rate limiting OAuth de #213 está integrado en main con UPSERT atómico y pruebas.
+- Cleanup auth de 48 h está implementado en #251, HEAD `5dec5d5a9025de16b19d0cb7cfeac6585e2ad5d6`, 15/15 check-runs SUCCESS. Cron permanece Draft y bloqueado hasta que Neon main tenga el esquema/grants y se verifique el login real `microapp_runtime`.
+- BCV oficial está implementado en #255, HEAD `35b9ac6894f79c5760a1f56fb37506ed2278afa0`, 15/15 check-runs SUCCESS. Latest y cliente usan no-store; el dashboard revalida al cambio de fecha Caracas. No hay calendario oficial de feriados entre semana: fail closed. No fusionar ni activar Cron hasta migration 0013 aplicada mediante runner autorizado y runtime grants verificados.
+- Neon main no tiene `microapp_runtime`, `microapp_migrator`, `schema_migrations` ni `auth_bootstrap_attempts`; rehearsal tiene los logins, pero runtime carece de grants de tabla y no se han aplicado 0003–0016. El workflow de migration runner valida PostgreSQL efímero, no Neon. No usar SQL manual para aplicar migraciones.
+- **P1 inventario — modelo de privilegios por resolver:** migration 0012 concede a `microapp_runtime` `INSERT` y `UPDATE(on_hand_quantity, updated_at)` sobre `inventory_balances`. Migration 0010 obliga a emparejar cada cambio con un movimiento append-only en la misma transacción, pero no equivale a una proyección de saldos que solo pueda ejecutar una función `SECURITY DEFINER`. El diseño técnico de #193 §7.9.I proponía runtime sin escritura directa de saldos. Resolver/aceptar explícitamente antes de producción; no afirmar que el trigger de pairing impide que un runtime comprometido invente movimientos.
+- **Hallazgo de sesión pendiente:** `apps/api/src/google-auth.ts` conserva `SESSION_TTL_SECONDS = 7 * 24 * 60 * 60`. La auditoría histórica #211 recomendó revisar la exposición de una sesión robada durante 7 días. No reducir TTL silenciosamente: documentar el riesgo y obtener decisión de producto/seguridad sobre duración, renovación y revocación antes de cambiar el contrato.
+- Hallazgos de #211 preservados en `docs/security/AUTHENTICATION_AUDIT_2026-11-05.md`: rate limiting OAuth start/bootstrap/callback implementado por #213 (session endpoints aún sin bucket); bootstrap raw-token cookie corregido mediante handoff opaco; TTL de sesión de 7 días sigue abierto para decisión del propietario; duplicación de validación Origin queda como mantenimiento; PBKDF2 helpers quedan para legacy/test mientras password login siga deshabilitado. #211 se cierra como supersedida tras preservar el informe y su disposición.
+- #200, #204, #205, #207–#210 y #227–#232 cerradas como supersedidas con evidencia; no se descartaron funcionalidades. #257 conserva los ODD de inventario. #193/#202/#211/#233 siguen abiertos para reconciliación.
+- No se modificaron secretos, Neon main, datos reales, Cloudflare production, DNS ni billing. Producción **NOT READY**.
+
+---
+
 # Estado vivo de seguridad — 2026-11-07 UTC (corregido)
 
 > Sustituye los snapshots antiguos de estado que aparecen debajo. Main actual: `a38463ea00415c7601d716132e70a29e381a2e34`.

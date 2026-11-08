@@ -1,11 +1,11 @@
 # Inventory transaction locking contract
 
-**Status:** target technical contract implemented on PR #262 Ready for review, stacked on checkout PR #258; not yet merged into `main`.  
+**Status:** recovered onto `feat/checkout-ledger-recovered-main-20261108` from the former #258/#262 stack; initial port HEAD `88e0aab5219810ab24375f8eb947c5ad17aa453b`. Exact-HEAD CI and full review are pending; not merged into main or applied to Neon.  
 **Updated:** 2026-11-08 UTC  
 **Scope:** any transaction that changes warehouse stock, reservations, inventory counts, the warehouse movement ledger, or a document that confirms those changes.  
 **Does not approve:** new commercial rules, reservation/purchase-receipt/return/transfer endpoints, additional DDL, Neon migrations, production deployment or merge of the obsolete PR #200 stack. Atomic sale checkout is implemented on #258/#262 and follows this lock contract, but remains unmerged and subject to independent review/product gates.
 
-## 1. Implementation represented on PR #262 branch
+## 1. Implementation represented on the recovery branch
 
 The #262 branch (including checkout work from #258) registers:
 

@@ -1,3 +1,16 @@
+# 2026-11-08 UTC — recuperación checkout y estabilización de CI
+
+- #233 se auditó como fuente histórica: 408 commits ahead / 18 behind, base en una PR cerrada; no se fusiona.
+- #258 recuperó handler, unit tests, PostgreSQL integration tests y registro de ruta sobre main, reutilizando migration 0015 canónica y añadiendo 0017 para BCV weekday/weekend. SHA de implementación `d9ae6cd7f65c99126e7c4e45faa20a1dadaf3cdb`: 15/15 check-runs, 13/13 workflows, 141/141 unit tests y 15/15 checkout PostgreSQL integration SUCCESS. HEAD actual posterior a seguimiento documental/CI: `9d5ca9298b80038925ee94ed3deb2ce28dd08bb8`, requiere revalidación exact-SHA.
+- La primera ejecución de #258 falló porque el workflow pasó literalmente `${RUNTIME_DATABASE_URL}`/ `${ADMIN_DATABASE_URL}`; el guard de tests rechazó correctamente los valores no válidos. Se corrigió el comando para expandir variables de entorno reales. La siguiente ejecución pasó.
+- #257 HEAD `a8f7e0385ad7bb65a771e29e576bef8a2905eba9` falló solo en la batería runtime-role: `catalog-write.integration.test.ts` no pudo eliminar su trigger temporal por `XX000: tuple concurrently updated`, mientras otras suites escribían en `audit_logs`.
+- Se abrió #259 para ejecutar secuencialmente los archivos de integración runtime-role mediante `--no-file-parallelism`; HEAD `98f4a8d662d07400f59bd3e8115f6da5856a4bfe`, checks pendientes.
+- #251 y #255 conservan 15/15 check-runs + 13/13 workflows SUCCESS en sus HEADs exactos, siguen Draft y sin review formal.
+- Ningún cambio en Neon, secretos, Cloudflare manual, DNS, billing, despliegue productivo o datos reales.
+- Gaps de checkout: #255 debe proveer filas BCV; pago mono-moneda/no parcial/no sobrepago requiere confirmación explícita; SQL aún no valida fórmula por línea ni asignación por pago; runtime conserva escritura directa de balances; no hay UI; feriados weekday no soportados.
+- Producción NOT READY.
+---
+
 # 2026-11-07 UTC — cierre de verificación post-merge #256
 
 - El merge SHA `a38463ea00415c7601d716132e70a29e381a2e34` quedó verificado: los 10 check-runs de commit y 8 workflows push terminaron SUCCESS.

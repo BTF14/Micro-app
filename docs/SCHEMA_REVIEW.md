@@ -1,3 +1,5 @@
+> **Reconciliación de vigencia — 2026-11-08:** Este documento conserva hallazgos históricos y no debe leerse como snapshot del código de todas las ramas. El `main` verificado está en `0a9e2f7c0d8b4d68b1efe6b372c10c107b160d67` y contiene migraciones 0001–0016. La Draft PR #258, basada en main, añade checkout y migraciones 0017/0018; la Draft PR #262 está apilada sobre #258 y añade migration 0019, proyección ledger→balance y revocación de escrituras runtime directas sobre balances. Ninguna de estas dos ramas está integrada en main. Las afirmaciones antiguas de este documento sobre ausencia de handlers de checkout o inventario describen el snapshot histórico, no la rama #258/#262. El estado de Neon no se revalidó en esta sesión: no inferir que las migraciones estén aplicadas en Neon ni declarar readiness productiva.
+
 # Addendum de revisión vigente — 2026-11-08 UTC
 
 - Main GitHub contiene migraciones 0001–0016, incluyendo sucursales, turnos, warehouses, inventory balances/ledger, runtime locks/grants, BCV, ventas sin descuentos y checkout atómico. Esto describe el DDL versionado, no el esquema remoto.

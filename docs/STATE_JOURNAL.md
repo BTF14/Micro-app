@@ -2204,17 +2204,46 @@ No se tocaron Neon main, datos reales, secretos, Worker productivo, DNS, billing
 - No hubo nuevas escrituras Neon. Producción continúa NOT READY.
 
 
-## 2026-11-08 UTC — PR #282 integrada
+## Estado autoritativo — 2026-11-08 UTC (posterior a PR #280/#282 y recuperación checkout-ledger)
 
-- PR [#282](https://github.com/BTF14/Micro-app/pull/282) se fusionó por squash. HEAD revisado `84cbfe8bf90e3e20678c1ec4bacd3c16807a96c5`; merge SHA `9c6b30281ed59726e532da840568fc9e80b528f7`.
-- Pre-merge: 10/10 workflow runs y 14/14 check-runs SUCCESS; los seis contextos requeridos de main pasaron. No hubo reviews formales ni hilos inline abiertos.
-- Post-merge: 9/9 workflow runs y 11/11 check-runs SUCCESS, incluidos CI, Playwright, PostgreSQL, Security/SAST, secret-history, Pages y Workers Builds.
-- Cambio docs-only para actualizar continuidad tras PR #281; no se tocó código, Neon, secretos ni configuración productiva.
+**Main vivo:** 9c6b30281ed59726e532da840568fc9e80b528f7. PR #280 integrada por squash en aa2804a0a6e7879f684b3baeb60646e50f1d6419; PR #282 integrada en 9c6b30281ed59726e532da840568fc9e80b528f7. La auditoría documental de #280 ya está en main. Consultar la punta viva antes de cualquier operación.
 
+### Estado vivo de PR
+- **#269 checkout + inventory ledger projection:** OPEN/Draft, base main 9c6b30281ed59726e532da840568fc9e80b528f7, HEAD 8f05befb7ac1a46d68850b9f89f89edc8cd46283, 26 ahead / 0 behind, mergeable=true. En ese HEAD exacto: 16/16 check-runs y 14/14 workflow runs SUCCESS. Incluye verify, Chromium, JS/TS, postgres-migration, migration-runner, Trivy, secret-history, ODD, Playwright, Semgrep, backup restore y builds Pages/Workers. Reviews: tres COMMENTED, cero APPROVE; el hilo inline sobre sucursal inactiva está RESOLVED. Mantener Draft: sigue pendiente aprobación explícita del contrato comercial checkout y decisión sobre dependencia BCV en ventas USD-only.
+- **#255 BCV:** OPEN/Draft, base main 9c6b30281ed59726e532da840568fc9e80b528f7, HEAD 7e43d7fd1519889605174da5818190bb84685059, 54 ahead / 0 behind, mergeable=true. En ese HEAD exacto: 15/15 check-runs y 13/13 workflows SUCCESS. Mantener Draft por gates operativos P1: política de anomalías, last-attempt/last-success persistente y alerta externa, freshness real, fixture HTML oficial BCV y calendario oficial de feriados bancarios.
+- **#258 checkout** y **#262 inventory ledger projection:** cerradas como superseded, no merged. Su contenido único fue comparado por paths/blobs y preservado/evolucionado en #269. No borrar sus ramas ni commits históricos.
+- **#233:** OPEN/Draft histórica; no cerrar hasta comparar todo su contenido único contra el conjunto integrado. **#193:** OPEN; mantener sin cambios.
+- #280 y #282: MERGED. No presentar los checks de una PR como aprobación humana independiente.
 
-## 2026-11-08 UTC — PR #269 sincronizada con main y CI exact-HEAD completado
+### Neon rehearsal y alcance real
+Run #42507066215 SUCCESS, operación bootstrap-and-migrate, fuente inmutable 6227a3a8497f6be94d675b64da5da61530c200fc, destino aislado microapp_rehearsal / br-curly-poetry-b7dxsddm. 0001–0019 aplicadas; 19 registros applied; assertions 0017–0019 y ownership/grants verificados. Los seis archivos de migración 0017–0019 y assertions tienen blobs idénticos entre el source ensayado y el HEAD actual #269. No repetir bootstrap-and-migrate ni realizar escrituras Neon adicionales.
+El ensayo verifica el bundle SQL y roles en la base aislada; no prueba el comportamiento HTTP del Worker conectado a Neon ni la identidad real del DATABASE_URL productivo. CI ejecuta pruebas PostgreSQL desechables con login microapp_runtime real. No tocar Neon main, parent clone neondb, datos reales, secretos, Cloudflare productivo, DNS, billing o despliegues.
 
-- La rama de PR [#269](https://github.com/BTF14/Micro-app/pull/269) se sincronizó sin force-push mediante merge commit `8615c75ac8a339f5591ea268e0b6c6d6473ae6d3`, con padres pre-sync `14afd5de938a6ff655ecdfc5cb747f0f799290c5` y main `9c6b30281ed59726e532da840568fc9e80b528f7`. Resultado: 25 ahead / 0 behind, mergeable true.
-- En el HEAD exacto `8615c75...`: 16/16 check-runs y 14/14 workflow runs SUCCESS; los seis contextos requeridos por branch protection pasaron, incluidos verify, Chromium, JS/TS, postgres-migration, Trivy y secret-history.
-- PR #269 permanece Draft: el contrato comercial checkout sigue sin aprobación explícita y hay decisiones BCV pendientes. CI verde no autoriza por sí solo la integración funcional.
-- No se ejecutaron escrituras Neon adicionales. El rehearsal #42507066215 sigue siendo evidencia de la DB aislada; no certifica producción.
+### Revisión de seguridad y cambios consolidados
+- Migration 0018 protege allocation_position y la reconciliación diferida por pago; revoca DELETE/TRUNCATE sobre payments a PUBLIC/runtime y las assertions verifican esos privilegios.
+- Migration 0019 convierte el ledger append-only en única fuente runtime de cambios de stock; runtime no tiene INSERT/UPDATE/DELETE/TRUNCATE sobre inventory_balances. El movimiento vuelve a validar y estabilizar branches.is_active con FOR SHARE NOWAIT; hay regresión PostgreSQL para sucursal desactivada.
+- #269 pasó CI exact-HEAD después de estas correcciones. El resultado de CI no elimina el gate de contrato comercial ni certifica producción.
+- El conector no pudo leer la configuración de branch protection: endpoint devolvió HTTP 403 Resource not accessible by integration. Por ello no afirmar una lectura nueva de la configuración; los check-runs observados sí están verdes.
+
+### Bloqueos de producto / BCV
+- Checkout: no cambiar por inferencia el contrato de una moneda de liquidación por venta, liquidación exacta, sin parciales/sobrepagos/cambio. El propietario aún no ha aprobado explícitamente ese contrato.
+- Checkout exige actualmente una tasa BCV válida incluso para ventas USD-only; decidir si es requisito comercial o dependencia innecesaria antes de modificar.
+- BCV: latest API/checkout usan effective_date + validation_status, no antigüedad de fetched_at. La persistencia unchanged no actualiza fetched_at; no representa last-success. Un Cron fallido o corrección tardía de BCV puede dejar una tasa antigua marcada current.
+- Sin política aprobada de anomalías/freshness, registro persistente de último intento/éxito y alerta, fixture HTML real y calendario oficial de feriados, no activar Cron ni declarar conversión VES lista.
+- **Producción: NOT READY.** No hubo smoke test comercial autenticado en Worker productivo, validación de identidad efectiva del Worker, ni despliegue productivo.
+
+### Próximo orden de trabajo
+1. Mantener #269 Draft hasta resolver contrato comercial checkout y dependencia BCV USD-only; no inventar decisiones.
+2. Cerrar gates P1 de #255 con política aprobada y observabilidad comprobable; no activar Cron en producción.
+3. Revisar #233 para determinar si queda contenido histórico único fuera de #269; no cerrar por antigüedad.
+4. Continuar pruebas aisladas de checkout/pagos/idempotencia/rollback, inventario/concurrencia y runtime role; documentar evidencia.
+5. Mantener main/Neon productivo intactos y actualizar este estado cuando cambie el HEAD o una PR.
+
+---
+
+## Registro de cambios — PR #258/#262 superseded y validación exact-HEAD #269/#255
+
+- #258 y #262 cerradas como superseded después de comparar sus listas completas de archivos y árboles Git contra #269. Los archivos de checkout, ledger, lock helpers, smoke runtime y migraciones están preservados/evolucionados en #269; no se eliminaron ramas ni commits.
+- #269 HEAD 8f05befb7ac1a46d68850b9f89f89edc8cd46283: 16/16 check-runs y 14/14 workflows SUCCESS. #255 HEAD 7e43d7fd1519889605174da5818190bb84685059: 15/15 check-runs y 13/13 workflows SUCCESS.
+- Se verificó que migration 0017–0019 y sus assertions son blob idénticos entre source Neon rehearsal 6227a3a... y el HEAD #269. No se repitió ninguna escritura Neon.
+- Correcciones de integridad incluidas en #269: payments sin DELETE/TRUNCATE para PUBLIC/runtime; movimientos revalidan branch active con lock NOWAIT y test de regresión.

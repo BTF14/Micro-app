@@ -25,6 +25,16 @@ describe("BCV scheduled failure reporting", () => {
     mocks.syncBcvOfficialRate.mockReset();
   });
 
+  it("logs a sanitized successful synchronization outcome", async () => {
+    mocks.syncBcvOfficialRate.mockResolvedValue("inserted");
+    const infoLog = vi.spyOn(console, "info").mockImplementation(() => undefined);
+
+    await app.scheduled(bcvCron, productionEnv);
+    expect(infoLog).toHaveBeenCalledWith("BCV_SYNC_COMPLETED", {
+      outcome: "inserted",
+    });
+  });
+
   it("logs only an allowlisted error code and rejects the Cron invocation", async () => {
     mocks.syncBcvOfficialRate.mockRejectedValue(
       new Error("BCV_RATE_CHANGED_FOR_EXISTING_EFFECTIVE_DATE"),

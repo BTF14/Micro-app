@@ -1,3 +1,13 @@
+## Checkpoint vigente — 2026-11-08 08:25 UTC
+
+Consultar `docs/CURRENT_STATE.md` para el inventario autoritativo, SHA exactos, bases, checks y dependencias. Main vivo: `d28b80edc6b2a63019ded100e46bb4b11e81153a`; 7 PR abiertas (#193, #233, #251, #255, #258, #261, #262). No hay reviews formales registradas. Los checks exactos observados están verdes, pero no sustituyen revisión ni gates de producción.
+
+**Última acción técnica:** revisión de #262; se publicó el hallazgo P1 #6719238384: el runtime conserva INSERT en ledger y el trigger de validación retorna cuando `count_id IS NULL`, permitiendo tipos de movimiento sin documento fuente. Cerrar esa frontera antes de habilitar esos tipos.
+
+**Siguiente:** revisar/cerrar #258 y #262; resolver aprobación de producto para el modelo de pago; auditar #251 como raíz de #255 y no activar Cron hasta rehearsal protegido/runtime grants; preservar #193/#233 hasta recuperar todo trabajo único. Producción sigue NOT READY. No Neon main ni cambios sensibles.
+
+---
+
 ## Checkpoint operativo — 2026-11-08 06:45 UTC
 
 ## Estado operativo verificado — 2026-11-08 06:45 UTC

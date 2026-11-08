@@ -51,6 +51,23 @@ BEGIN
   THEN
     RAISE EXCEPTION 'CHECKOUT_PAYMENT_ALLOCATION_RUNTIME_COLUMN_GRANTS_INVALID';
   END IF;
+
+  IF pg_catalog.has_table_privilege('microapp_runtime','public.payments','DELETE')
+    OR pg_catalog.has_table_privilege('microapp_runtime','public.payments','TRUNCATE')
+  THEN
+    RAISE EXCEPTION 'CHECKOUT_PAYMENT_ALLOCATION_RUNTIME_MUST_NOT_DELETE_OR_TRUNCATE';
+  END IF;
+  IF EXISTS (
+    SELECT 1 FROM pg_catalog.aclexplode(
+      COALESCE(
+        (SELECT relacl FROM pg_catalog.pg_class WHERE oid='public.payments'::regclass),
+        pg_catalog.acldefault('r',(SELECT relowner FROM pg_catalog.pg_class WHERE oid='public.payments'::regclass))
+      )
+    ) acl
+    WHERE acl.grantee=0 AND acl.privilege_type IN ('DELETE','TRUNCATE')
+  ) THEN
+    RAISE EXCEPTION 'CHECKOUT_PAYMENT_ALLOCATION_PUBLIC_MUST_NOT_DELETE_OR_TRUNCATE';
+  END IF;
   IF NOT EXISTS (
     SELECT 1 FROM pg_catalog.pg_trigger
      WHERE tgname='sales_payment_allocation_reconciled'

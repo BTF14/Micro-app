@@ -2,7 +2,7 @@
 
 La reconciliación detallada y los SHA autoritativos se mantienen en `docs/CURRENT_STATE.md`; este plan no replica snapshots de PR.
 
-- #286 mantiene pendiente integrar la actualización documental posterior a #285.
+- #286 mantiene pendiente integrar la actualización documental posterior a #285; HEAD actual `20f28b410367361d7804e5ca3e4e9fd35e84d4e5`, CI exact-HEAD pendiente tras la limpieza de duplicación documental.
 - #269 y #255 siguen Draft y divergidas respecto a main (26/3 y 54/3); los gates de checkout y BCV continúan abiertos.
 - Prioridad: resolver los gates de producto/operación y sincronizar ambas ramas de forma no destructiva antes de considerar su integración.
 - Neon rehearsal #42507066215 ya pasó en entorno aislado; no repetir escrituras remotas. Producción sigue **NOT READY**.

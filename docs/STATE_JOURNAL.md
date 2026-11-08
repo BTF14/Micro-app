@@ -2180,3 +2180,14 @@ No se tocaron Neon main, datos reales, secretos, Worker productivo, DNS, billing
 - Alcance: este fue un ensayo real de escritura/DDL únicamente en la base Neon aislada `microapp_rehearsal`, autorizado expresamente por el propietario. No se tocó Neon main, `neondb` parent-data clone, secretos, Cloudflare, DNS, billing ni despliegues productivos.
 - Warning no bloqueante: deprecación de Node.js 20 en `actions/checkout@v4`; el runner lo fuerza a Node.js 24 y el job finalizó SUCCESS. Registrar actualización de actions como mantenimiento, no como fallo de migración.
 - Dictamen: **migraciones 0001–0019 demostradas en Neon rehearsal con pin inmutable y assertions 0017–0019 satisfactorias**. Esto eleva la confianza en la ruta de migración, pero no equivale a certificación de producción: siguen pendientes validación funcional integrada sobre la DB resultante, smoke tests autenticados, revisión final de permisos/RLS y gates operativos/producto. No promover automáticamente a producción.
+
+
+## 2026-11-08 UTC — PR #280 integrada y verificación post-merge
+
+- PR [#280](https://github.com/BTF14/Micro-app/pull/280) se fusionó por squash. HEAD revisado `233c1046866c479c1e79d35c8eca0290b09e97b2`; merge SHA y main protegido: `aa2804a0a6e7879f684b3baeb60646e50f1d6419`.
+- En el HEAD exacto pre-merge: 10/10 workflow runs y 14/14 check-runs SUCCESS; los seis contextos requeridos por la protección de main pasaron. No hubo reviews formales ni hilos inline abiertos; la revisión técnica del diff fue manual.
+- En el merge SHA: 9/9 workflow runs y 11/11 check-runs SUCCESS; CI, Playwright, PostgreSQL, SAST, secret-history y builds de Pages/Workers completados. Esto no prueba tráfico productivo ni smoke test comercial autenticado.
+- El Neon pinned rehearsal #42507066215 sigue siendo la única escritura remota de este bloque: migraciones 0001–0019 aplicadas y verificadas únicamente en `microapp_rehearsal`; Neon main, parent clone `neondb`, secretos, DNS y billing no fueron tocados.
+- Estado vivo de integración: #269 Draft y divergida (24 ahead / 3 behind), sin workflows pull_request completos en su HEAD actual; #255 53 ahead / 10 behind; #258 35 ahead / 41 behind; #262 apilada sobre #258 (107 ahead / 41 behind). #233 histórica Draft; #193 permanece intacta.
+- #269 conserva el mismo contenido de migraciones 0017–0019 que la fuente ensayada `6227a3a8497f6be94d675b64da5da61530c200fc`; los cinco commits posteriores solo modifican workflow/documentación/ODD. El ensayo no certifica el runtime de la aplicación ni resuelve la aprobación del contrato comercial de checkout.
+- Producción continúa NOT READY. Próxima prioridad: reconciliar #269 sin force-push, completar CI exact-HEAD y mantener Draft hasta aprobación del contrato comercial; revisar #255 por separado.

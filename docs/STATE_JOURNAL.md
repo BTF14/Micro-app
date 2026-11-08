@@ -1781,3 +1781,12 @@ La preparación global para producción exige pruebas end-to-end y cierre de P0/
 - Neon solo lectura: main no tiene `microapp_runtime`, `microapp_migrator`, ledger ni tablas de migraciones posteriores; rehearsal tiene logins/ownership, pero runtime no tiene grants de tabla. No se aplicó DDL ni se ejecutó el runner en Neon.
 - `.github/workflows/migration-runner.yml` valida PostgreSQL 18 desechable; no es runner de release a Neon. El plan documenta falta de secreto `NEON_REHEARSAL_DATABASE_URL` y workflow protegido. No usar SQL manual para aplicar migraciones.
 - #193, #202, #211 y #233 siguen abiertos para reconciliación; #251/#255/#257 siguen Draft. No hubo merges a main ni cambios de secretos/producción.
+
+
+## 2026-11-08 08:25 UTC — Reconciliación viva y revisión #262
+
+- GitHub confirmó main `d28b80edc6b2a63019ded100e46bb4b11e81153a` y 7 PR abiertas: #193, #233, #251, #255, #258, #261 y #262.
+- No se encontraron reviews formales ni review threads en ninguna de las siete PR. Check-runs exact-HEAD observados: #258 15/15, #262 8/8, #251 15/15, #255 15/15, #261 13/13, #193 12/12 y #233 9/9 SUCCESS.
+- #258 y #251/#261 tienen base SHA `0a9e2f7...`, una confirmación detrás del main vivo. #262 se apila sobre un ancestro de #258; #255 se apila sobre el HEAD actual de #251. #193 está 5 ahead/24 behind y conserva un documento único de 543 líneas.
+- Revisión de #262 detectó que el runtime puede insertar movimientos no-count sin documento fuente porque el trigger de conteos retorna cuando `count_id IS NULL`; se publicó comentario P1 #6719238384. No se modificó código ni se aprobó la PR.
+- No se modificó Neon, datos reales, secretos, Cloudflare manual, DNS, billing ni se hizo deploy manual. Producción NOT READY.

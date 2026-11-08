@@ -1,3 +1,15 @@
+## Estado vivo — corrección Neon pinned rehearsal integrada (2026-11-08 UTC)
+
+- Main protegido: `209e3fe9f99c96a07546bb87c04b90755257d918`. PR [#278](https://github.com/BTF14/Micro-app/pull/278) fusionada por squash; HEAD revisado `b444344543a2edafaa70cf68f8450cade73c9fc4`; merge SHA indicado.
+- Causa de Neon rehearsal #2: el workflow comparaba SOURCE_SHA `6227a3a8497f6be94d675b64da5da61530c200fc` contra el tip mutable de la rama, ya avanzado a `a750d1868f0ad4ae78b3de197d160d376af688ab`. Falló antes de extraer migraciones y antes de conectarse a Neon.
+- Corrección integrada: el workflow hace fetch del SHA inmutable directamente y valida FETCH_HEAD exacto. Cambio limitado a `.github/workflows/neon-pinned-migration-rehearsal.yml`.
+- Evidencia PR #278: 9/9 workflow runs SUCCESS en HEAD exacto; main base coincidía, cero commits de divergencia; branch protection activa con seis contextos requeridos. Revisión técnica manual completada; cero reviews formales/hilos, sin presentarla como aprobación humana independiente.
+- Snapshot inmediato post-merge del merge SHA: check-runs automáticos de main iniciaron; en la primera consulta estaban queued/in_progress. Revalidar antes de afirmar éxito post-merge.
+- Pendiente obligatorio: el propietario debe despachar desde GitHub Actions el workflow `Neon pinned migration rehearsal`, branch `main`, operación `verify-empty` por defecto, sin rellenar confirmation. El conector no ofrece workflow_dispatch. Revisar logs del run; nunca elegir `bootstrap-and-migrate` en este paso.
+- Neon: no hubo conexión desde la corrección ni DDL/DML; no se ejecutó migración. No tocar DB `neondb` parent-data clone ni Neon main. Producción sigue NOT READY.
+
+---
+
 ## Estado vigente — 2026-11-08 (posterior a PR #275)
 
 **Main:** 11ca2b49bfa650066a708d2423cc73cea6c99e2d (protegida). PR #275 se fusionó por squash en este SHA; PR #274 quedó cerrada como supersedida. #275 añadió el workflow manual `.github/workflows/neon-pinned-migration-rehearsal.yml` y el allowlist Gitleaks de un único fingerprint falso positivo. Ninguna migración Neon se ejecutó.

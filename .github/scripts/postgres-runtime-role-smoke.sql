@@ -7,6 +7,7 @@ DECLARE
   v_count uuid;
   v_sale uuid;
   v_unauthorized_count uuid;
+  v_stale_count uuid;
   v_balance_version bigint;
   v_token_hash text := pg_catalog.repeat('a',64);
   v_handle_hash text := pg_catalog.repeat('b',64);
@@ -214,6 +215,38 @@ BEGIN
            confirmed_at=pg_catalog.now()
      WHERE id=v_unauthorized_count;
     RAISE EXCEPTION 'RUNTIME_CASHIER_CONFIRMED_INVENTORY_COUNT';
+  EXCEPTION WHEN check_violation THEN NULL; END;
+
+  -- A valid inventory actor cannot apply a physical count captured against
+  -- an earlier balance version, even if the proposed delta would not underflow.
+  INSERT INTO public.inventory_counts
+    (organization_id,branch_id,warehouse_id,count_type,reason,created_by)
+  VALUES ('11111111-1111-4111-8111-111111111111',
+          '33333333-3333-4333-8333-333333333333',
+          '55555555-5555-4555-8555-555555555555',
+          'physical','Stale count snapshot smoke','66666666-6666-4666-8666-666666666666')
+  RETURNING id INTO v_stale_count;
+  INSERT INTO public.inventory_count_lines
+    (organization_id,branch_id,warehouse_id,count_id,product_id,counted_quantity,unit_cost_usd,
+     expected_on_hand_quantity,expected_balance_version)
+  VALUES ('11111111-1111-4111-8111-111111111111',
+          '33333333-3333-4333-8333-333333333333',
+          '55555555-5555-4555-8555-555555555555',
+          v_stale_count,v_product,3.000,2.0000,2.000,1);
+  UPDATE public.inventory_counts
+     SET status='confirmed',confirmed_by='66666666-6666-4666-8666-666666666666',
+         confirmed_at=pg_catalog.now()
+   WHERE id=v_stale_count;
+  BEGIN
+    INSERT INTO public.warehouse_inventory_movements
+      (organization_id,branch_id,warehouse_id,product_id,movement_type,quantity_delta,
+       unit_cost_usd,reason,count_id,actor_user_id)
+    VALUES ('11111111-1111-4111-8111-111111111111',
+            '33333333-3333-4333-8333-333333333333',
+            '55555555-5555-4555-8555-555555555555',v_product,'count_adjustment',1.000,
+            2.0000,'Stale count snapshot smoke',v_stale_count,
+            '66666666-6666-4666-8666-666666666666');
+    RAISE EXCEPTION 'RUNTIME_APPLIED_STALE_INVENTORY_COUNT';
   EXCEPTION WHEN check_violation THEN NULL; END;
 
   -- Source-less purchase receipts and reversals cannot manufacture stock changes.

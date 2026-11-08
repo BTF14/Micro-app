@@ -121,7 +121,16 @@ jobs:
             test -f "${matches[0]}"
           done
 
+          baseline_dir="$RUNNER_TEMP/pinned-baseline-migrations"
+          mkdir -p "$baseline_dir"
+          for version in 0001 0002; do
+            matches=("$migrations_dir"/"${version}"_*.sql)
+            test "${#matches[@]}" -eq 1
+            cp "${matches[0]}" "$baseline_dir/"
+          done
+          test -f "$migrations_dir/baselines/0002.schema.txt"
           printf 'PINNED_MIGRATIONS_DIR=%s\n' "$migrations_dir" >> "$GITHUB_ENV"
+          printf 'PINNED_BASELINE_MIGRATIONS_DIR=%s\n' "$baseline_dir" >> "$GITHUB_ENV"
           echo "PINNED_MIGRATION_SOURCE_VERIFIED=$actual_sha"
           echo "MIGRATION_CHAIN_VERIFIED=0001-0019"
 
@@ -231,12 +240,38 @@ jobs:
           test "$CONFIRMATION" = "$expected"
           echo "EXPLICIT_REHEARSAL_WRITE_CONFIRMATION_VERIFIED"
 
+      - name: Apply baseline 0001-0002 and verify canonical fingerprint
+        if: ${{ inputs.operation == 'bootstrap-and-migrate' }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          TARGET_URL="$NEON_REHEARSAL_TARGET_DATABASE_URL"
+          has_ledger="$(psql -X -A -t -v ON_ERROR_STOP=1 --dbname "$TARGET_URL" -c "
+            SELECT pg_catalog.to_regclass('public.schema_migrations') IS NOT NULL;
+          ")"
+          max_version="0000"
+          if [[ "$has_ledger" == "t" ]]; then
+            max_version="$(psql -X -A -t -v ON_ERROR_STOP=1 --dbname "$TARGET_URL" -c "
+              SELECT COALESCE(max(version),'0000') FROM public.schema_migrations;
+            ")"
+          fi
+
+          if [[ "$max_version" > "0002" ]]; then
+            echo "BASELINE_0002_ALREADY_VERIFIED_BEFORE_LATER_MIGRATIONS"
+          else
+            MIGRATIONS_DIR="$PINNED_BASELINE_MIGRATIONS_DIR" bash scripts/db/migrate.sh
+            psql -X -A -t -v ON_ERROR_STOP=1 --dbname "$TARGET_URL" \
+              --file scripts/db/schema_fingerprint.sql > "$RUNNER_TEMP/live-0002.schema.txt"
+            diff -u "$PINNED_MIGRATIONS_DIR/baselines/0002.schema.txt" "$RUNNER_TEMP/live-0002.schema.txt"
+            echo "BASELINE_0002_FINGERPRINT_VERIFIED"
+          fi
+
       - name: Apply pinned migrations 0001-0019 to the empty rehearsal database
         if: ${{ inputs.operation == 'bootstrap-and-migrate' }}
         shell: bash
         run: |
           set -euo pipefail
-          bash scripts/db/migrate.sh
+          MIGRATIONS_DIR="$PINNED_MIGRATIONS_DIR" bash scripts/db/migrate.sh
 
       - name: Run checkout, payment-allocation and inventory-ledger assertions
         if: ${{ inputs.operation == 'bootstrap-and-migrate' }}
@@ -244,7 +279,7 @@ jobs:
         run: |
           set -euo pipefail
           for version in 0017 0018 0019; do
-            matches=("$MIGRATIONS_DIR"/"${version}"_*.assertions.sql)
+            matches=("$PINNED_MIGRATIONS_DIR"/"${version}"_*.assertions.sql)
             test "${#matches[@]}" -eq 1
             psql -X -v ON_ERROR_STOP=1 --dbname "$MIGRATION_DATABASE_URL" --file "${matches[0]}"
             echo "MIGRATION_ASSERTIONS_PASSED=$version"

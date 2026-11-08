@@ -1,3 +1,18 @@
+## Handoff vigente — 2026-11-08 08:25 UTC
+
+La fuente de estado completa es `docs/CURRENT_STATE.md` (reconciliación GitHub en vivo). Main: `d28b80edc6b2a63019ded100e46bb4b11e81153a`. Hay 7 PR abiertas: #193, #233, #251, #255, #258, #261 y #262. Ninguna tiene review formal registrada. #258/#262/#251/#255/#261/#193/#233 tienen respectivamente 15/8/15/15/13/12/9 check-runs SUCCESS en sus HEADs observados; consultar CURRENT_STATE para SHA, bases y bloqueos exactos.
+
+**Bloqueos que no deben perderse:**
+- #258: aprobación funcional pendiente para una moneda por venta, pago exacto, sin parcial/sobrepago; BCV #255 y rehearsal Neon siguen pendientes.
+- #262: comentario P1 #6719238384 sobre runtime INSERT directo al ledger sin validación DB de documento fuente para tipos no-count. No habilitar esos tipos hasta cerrar.
+- #251 → #255: mantener la pila; no activar Cron productivo antes de rehearsal protegido y verificación de runtime login/ownership/grants.
+- #193: conservar el documento único de 543 líneas; no cerrar ni reescribir la rama sin análisis.
+- #233: no fusionar la rama histórica; preservar contenido único.
+
+No modificar Neon main, datos reales, secretos, Worker productivo, DNS, billing ni hacer deploy manual. No pedir capturas/Build IDs/terminal/CLI/TinyFish. No confundir checks verdes con review ni readiness productiva. Continuar el siguiente paso técnico seguro; actualizar CURRENT_STATE, este handoff, checkpoint y diario al cambiar el estado.
+
+---
+
 ## Estado operativo verificado — 2026-11-08 06:45 UTC
 
 - **main:** `0a9e2f7c0d8b4d68b1efe6b372c10c107b160d67`. Repositorio público `BTF14/Micro-app`; rama protegida según metadatos de GitHub.

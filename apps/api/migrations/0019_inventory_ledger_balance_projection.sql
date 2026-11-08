@@ -243,9 +243,9 @@ $validate_inventory_movement_source$;
 
 REVOKE ALL ON FUNCTION public.validate_inventory_movement_source() FROM PUBLIC, microapp_runtime;
 
--- A count document is a valid stock source only when its creator and confirmer
--- are currently authorized for inventory adjustment at this branch. Owner/Admin
--- have organization-wide branch scope; Inventory must have active branch scope.
+-- A count document may change stock only when its confirmer is currently
+-- authorized for inventory adjustment at this branch. Owner/Admin have
+-- organization-wide branch scope; Inventory must have active branch scope.
 CREATE FUNCTION public.validate_inventory_count_confirmation()
 RETURNS trigger
 LANGUAGE plpgsql
@@ -276,14 +276,6 @@ BEGIN
     JOIN public.app_users AS confirmer_user
       ON confirmer_user.id = confirmer.user_id
      AND confirmer_user.is_active = true
-    JOIN public.organization_members AS creator
-      ON creator.organization_id = org.id
-     AND creator.user_id = NEW.created_by
-     AND creator.is_active = true
-     AND creator.role IN ('owner', 'admin', 'inventory')
-    JOIN public.app_users AS creator_user
-      ON creator_user.id = creator.user_id
-     AND creator_user.is_active = true
    WHERE org.id = NEW.organization_id
      AND org.is_active = true
      AND (
@@ -293,16 +285,6 @@ BEGIN
           WHERE membership.organization_id = NEW.organization_id
             AND membership.branch_id = NEW.branch_id
             AND membership.user_id = confirmer.user_id
-            AND membership.is_active = true
-       )
-     )
-     AND (
-       creator.role IN ('owner', 'admin')
-       OR EXISTS (
-         SELECT 1 FROM public.branch_memberships AS membership
-          WHERE membership.organization_id = NEW.organization_id
-            AND membership.branch_id = NEW.branch_id
-            AND membership.user_id = creator.user_id
             AND membership.is_active = true
        )
      )

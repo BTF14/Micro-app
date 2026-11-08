@@ -32,6 +32,19 @@ BEGIN
     RAISE EXCEPTION 'RUNTIME_MUST_NOT_MUTATE_INVENTORY_BALANCES';
   END IF;
 
+  IF EXISTS (
+    SELECT 1
+      FROM pg_catalog.pg_attribute a
+     WHERE a.attrelid='public.inventory_balances'::regclass
+       AND a.attnum > 0 AND NOT a.attisdropped
+       AND (
+         pg_catalog.has_column_privilege('microapp_runtime',a.attrelid,a.attnum,'INSERT')
+         OR pg_catalog.has_column_privilege('microapp_runtime',a.attrelid,a.attnum,'UPDATE')
+       )
+  ) THEN
+    RAISE EXCEPTION 'RUNTIME_MUST_HAVE_NO_COLUMN_LEVEL_BALANCE_WRITE_PRIVILEGES';
+  END IF;
+
   IF NOT pg_catalog.has_table_privilege('microapp_runtime','public.warehouse_inventory_movements','INSERT') THEN
     RAISE EXCEPTION 'RUNTIME_MUST_APPEND_MOVEMENTS_TO_PROJECT_BALANCES';
   END IF;
@@ -102,6 +115,18 @@ BEGIN
     )
   THEN
     RAISE EXCEPTION 'INVENTORY_BALANCE_PROJECTION_FUNCTION_MUST_NOT_BE_CALLABLE_DIRECTLY';
+  END IF;
+
+  IF (
+    SELECT t.tgname
+      FROM pg_catalog.pg_trigger t
+     WHERE t.tgrelid='public.warehouse_inventory_movements'::regclass
+       AND NOT t.tgisinternal
+       AND pg_catalog.pg_get_triggerdef(t.oid) ILIKE '%BEFORE INSERT%'
+     ORDER BY t.tgname
+     LIMIT 1
+  ) IS DISTINCT FROM 'warehouse_inventory_movements_00_lock_warehouse' THEN
+    RAISE EXCEPTION 'INVENTORY_MOVEMENT_WAREHOUSE_LOCK_MUST_RUN_BEFORE_VALIDATION';
   END IF;
 
   IF NOT EXISTS (

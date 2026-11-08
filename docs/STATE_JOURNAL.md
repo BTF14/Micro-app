@@ -1,3 +1,13 @@
+# 2026-11-08 UTC — verificación exacta del baseline Neon rehearsal
+
+- Se ejecutó en modo de solo lectura `scripts/db/schema_fingerprint.sql` sobre `rehearsal-baseline-20261107` y se comparó con `apps/api/migrations/baselines/0002.schema.txt` de main.
+- Resultado: 294 hechos de esquema en vivo y 294 hechos canónicos; coincidencia exacta, sin diferencias. La rama corresponde al baseline pre-ledger 0002.
+- El procedimiento existente `scripts/db/adopt-baseline.sh` está diseñado para este baseline exacto. El script puede verificar/adoptar 0001-0002 y transferir ownership a `microapp_migrator`; luego `scripts/db/migrate.sh` debe aplicar secuencialmente el resto de migraciones.
+- No se ejecutó `adopt-baseline.sh apply`, no se creó ledger, no se transfirió ownership y no se aplicó ninguna migración. No hay workflow Neon protegido: `migration-runner.yml` solo usa PostgreSQL desechable local. No sustituir el runner por SQL manual ni usar secretos de producción.
+- El hallazgo se añadió a la descripción de PR #255. Neon main no fue consultada ni modificada en esta prueba.
+
+---
+
 # 2026-11-08 UTC — reconciliación posterior al merge #251 y ensayo Neon de solo lectura
 
 - GitHub main confirmado: `8c13da8b2d55d0a45490b19499b1b7c53e0ec966`; PR #251 ya está fusionada. GitHub muestra 6 PR abiertas.

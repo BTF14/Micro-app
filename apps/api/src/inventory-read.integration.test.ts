@@ -140,28 +140,21 @@ describe.skipIf(!databaseUrl)("inventory balance and ledger read APIs against Po
     // Every non-zero balance mutation is paired with one immutable ledger event.
     await admin.query("BEGIN");
     await admin.query(
-      "INSERT INTO inventory_balances (organization_id, branch_id, warehouse_id, product_id, on_hand_quantity) VALUES ($1, $2, $3, $4, 12.000)",
-      [organizationId, branchId, warehouseId, firstProductId],
-    );
-    await admin.query(
       "INSERT INTO warehouse_inventory_movements (organization_id, branch_id, warehouse_id, product_id, movement_type, quantity_delta, unit_cost_usd, reason, actor_user_id, created_at) VALUES ($1, $2, $3, $4, 'purchase_receipt', 12.000, 4.2500, 'Seed receipt', $5, now() - interval '1 minute')",
       [organizationId, branchId, warehouseId, firstProductId, ownerId],
     );
-    await admin.query(
-      "UPDATE inventory_balances SET reserved_quantity = 2.000 WHERE organization_id = $1 AND warehouse_id = $2 AND product_id = $3",
-      [organizationId, warehouseId, firstProductId],
-    );
-    await admin.query(
-      "UPDATE inventory_balances SET on_hand_quantity = 15.000 WHERE organization_id = $1 AND warehouse_id = $2 AND product_id = $3",
-      [organizationId, warehouseId, firstProductId],
-    );
+    await admin.query("ALTER TABLE inventory_balances DISABLE TRIGGER inventory_balances_direct_write_guard");
+    try {
+      await admin.query(
+        "UPDATE inventory_balances SET reserved_quantity = 2.000 WHERE organization_id = $1 AND warehouse_id = $2 AND product_id = $3",
+        [organizationId, warehouseId, firstProductId],
+      );
+    } finally {
+      await admin.query("ALTER TABLE inventory_balances ENABLE TRIGGER inventory_balances_direct_write_guard");
+    }
     await admin.query(
       "INSERT INTO warehouse_inventory_movements (organization_id, branch_id, warehouse_id, product_id, movement_type, quantity_delta, unit_cost_usd, reason, actor_user_id, created_at) VALUES ($1, $2, $3, $4, 'purchase_receipt', 3.000, 4.2500, 'Second seed receipt', $5, now())",
       [organizationId, branchId, warehouseId, firstProductId, ownerId],
-    );
-    await admin.query(
-      "INSERT INTO inventory_balances (organization_id, branch_id, warehouse_id, product_id, on_hand_quantity) VALUES ($1, $2, $3, $4, 1.000)",
-      [organizationId, branchId, warehouseId, inactiveProductId],
     );
     await admin.query(
       "INSERT INTO warehouse_inventory_movements (organization_id, branch_id, warehouse_id, product_id, movement_type, quantity_delta, unit_cost_usd, reason, actor_user_id) VALUES ($1, $2, $3, $4, 'purchase_receipt', 1.000, 2.0000, 'Inactive product stock', $5)",

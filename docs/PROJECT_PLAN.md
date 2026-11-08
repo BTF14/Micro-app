@@ -1,3 +1,24 @@
+## Estado de integración actualizado — 2026-11-08 UTC
+
+La matriz viva está en `docs/CURRENT_STATE.md`; este plan evita duplicar sus snapshots completos.
+
+- #269 checkout/ledger: CI exact-HEAD completo en `0ae7f1d...` (16/16 check-runs, 14/14 workflows); mergeable=true pero sigue Draft por decisiones comerciales pendientes. No fusionar por CI verde.
+- #255 BCV: CI exact-HEAD completo en `7e43d7f...` (15/15 check-runs, 13/13 workflows); sigue Draft por gates P1 operativos.
+- #286: actualización documental en curso. El commit que añade este bloque cambia su HEAD y exige nueva validación exact-HEAD; no reutilizar checks del SHA anterior.
+
+Prioridad: cerrar primero los gates explícitos de producto/operación y preservar main/Neon productivo. El ensayo Neon #42507066215 ya verificó 0001–0019 en `microapp_rehearsal`; no repetir escrituras remotas. Producción **NOT READY**.
+
+## Estado de integración — 2026-11-08 UTC
+
+La reconciliación detallada y los SHA autoritativos se mantienen en `docs/CURRENT_STATE.md`; este plan no replica snapshots de PR.
+
+- #286 contiene la actualización documental posterior a #285; El snapshot previo validó HEAD `9071c492...`, 21 ahead / 0 behind, `mergeable=clean`, 13/13 check-runs y 10/10 workflows SUCCESS exact-HEAD, incluidos los seis checks requeridos de main. El commit documental actual exige nueva validación. Sigue Draft y sin review formal independiente; no fusionar solo por CI verde. Si cambia el SHA, revalidar.
+- #269 y #255 siguen Draft y divergidas respecto a main (26/3 y 54/3); los gates de checkout y BCV continúan abiertos.
+- Prioridad: resolver los gates de producto/operación y sincronizar ambas ramas de forma no destructiva antes de considerar su integración.
+- Neon rehearsal #42507066215 ya pasó en entorno aislado; no repetir escrituras remotas. Producción sigue **NOT READY**.
+
+---
+
 ## Corrección posterior a PR #284 — 2026-11-08 UTC
 
 La sección inmediatamente inferior documenta correctamente la punta que existía **antes** de integrar #284 (`d35946a88ab5c8361307b4503dd7c8a879e90f8f`), pero ya no es la punta actual tras ese merge. PR #284 está MERGED por squash en `b752d69622832e2b4cf341bf695997da4c2612fb`; ese SHA es la base de esta corrección documental, no debe reutilizarse como punta posterior si esta PR también se integra. Consultar GitHub para obtener el nuevo merge SHA.

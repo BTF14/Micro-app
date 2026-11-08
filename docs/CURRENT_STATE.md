@@ -1,3 +1,36 @@
+## Revalidación viva de integración — 2026-11-08 UTC
+
+**Precedencia:** este bloque es la lectura más reciente antes del commit documental que lo contiene. Los snapshots inferiores son historial y no deben usarse como estado vivo. Main observado: `594382f6f191f2ea0b55d913683841e51c210e5d`; post-merge CI: 13/13 check-runs y 11/11 workflow runs `push` SUCCESS.
+
+### PRs abiertas relevantes
+- **#286 — reconciliación documental:** OPEN/Draft, docs-only. Snapshot validado antes de este commit: HEAD `3666bc1043733a21f880ca5da68a6be45e59e261`, 25 ahead / 0 behind, GitHub `mergeable=true`; 14/14 check-runs SUCCESS y 12/12 workflow runs SUCCESS (10 `pull_request` + 2 `push`). Sin reviews formales ni threads inline. Este commit cambia la punta de la rama: reconsultar HEAD y ejecutar/validar checks exactos antes de cualquier decisión. Mantener Draft.
+- **#269 — checkout + ledger:** OPEN/Draft, HEAD `0ae7f1d71f9bb2155bddca5b5dcc0a2b7785b089`; base registrada `9c6b30281ed59726e532da840568fc9e80b528f7`. Contra main `594382f...`: 27 ahead / 3 behind; GitHub informa `mergeable=true`. En el HEAD exacto: 16/16 check-runs SUCCESS y 14/14 workflow runs SUCCESS (11 `pull_request` + 3 `push`). Reviews: tres COMMENTED, cero APPROVED; hilo inline de sucursal inactiva RESOLVED. Mantener Draft por contrato comercial checkout aún no aprobado y decisión pendiente sobre dependencia BCV para ventas USD-only.
+- **#255 — BCV:** OPEN/Draft, HEAD `7e43d7fd1519889605174da5818190bb84685059`; base registrada `9c6b30281ed59726e532da840568fc9e80b528f7`. Contra main `594382f...`: 54 ahead / 3 behind; GitHub informa `mergeable=true`. En el HEAD exacto: 15/15 check-runs SUCCESS y 13/13 workflow runs SUCCESS (10 `pull_request` + 3 `push`). Mantener Draft por política de anomalías/freshness, persistencia de último intento/éxito y alerta externa, fixture HTML oficial y calendario de feriados.
+- **#233:** CLOSED como superseded por #269, no merged; conservar rama y commits históricos. **#193:** mantener intacta.
+
+### Neon y producción
+El ensayo #42507066215 aplicó y verificó 0001–0019 únicamente en `microapp_rehearsal`. No repetir escrituras ni migraciones remotas. Esto no certifica identidad del Worker productivo ni preparación comercial. Neon main, parent clone `neondb`, secretos, Cloudflare manual, DNS, billing y datos reales permanecen fuera de alcance. **Producción: NOT READY.**
+
+## Actualización posterior a PR #285 y cierre de #233 — 2026-11-08 UTC
+
+Esta corrección parte de main `594382f6f191f2ea0b55d913683841e51c210e5d`, merge SHA de PR #285. No etiquetar ese SHA como punta posterior a la integración de esta PR; consultar GitHub tras el merge para la punta nueva.
+
+### Estado reconciliado
+- PR #285 MERGED por squash en `594382f6f191f2ea0b55d913683841e51c210e5d`. Su HEAD exacto `8d7acfa3325f59c79e8c98cebf6e9e60ac0c4500` pasó 14/14 check-runs y 12/12 workflow runs. En el SHA de main `594382f...`, post-merge CI terminó SUCCESS: 13/13 check-runs y 11/11 workflow runs `push` SUCCESS; incluye CI, Playwright, PostgreSQL migration runner, database migration validation, seguridad, secret-history, ODD y SAST.
+- **PR #286 — reconciliación documental:** OPEN/Draft, docs-only, el HEAD validado en el snapshot inicial de esta actualización fue `86ad02e426c328cd2bb4a8436d0910b0f06ecd2b`; el siguiente snapshot registró `9071c4921b38343f934a747bec77841791cfd2d6`, base `594382f6f191f2ea0b55d913683841e51c210e5d`, 21 ahead / 0 behind. En ese SHA: 13/13 check-runs SUCCESS y 10/10 workflow runs SUCCESS; los seis checks requeridos por la protección de `main` (`verify`, `Chromium authentication smoke tests`, `JavaScript and TypeScript static analysis`, `Scan tracked files and reachable Git history`, `Trivy filesystem and configuration scan`, `postgres-migration`) están SUCCESS. La rama `main` aparece protegida; el resumen de branch API expone esos seis checks, pero el endpoint de configuración detallada devuelve 403. Sin reviews formales ni threads inline. Mantener Draft: CI verde no equivale a aprobación independiente ni autoriza merge automático. Este documento se actualizó desde el SHA `9071c492...`; el commit documental resultante cambia la punta. Consultar GitHub para el HEAD posterior y no reutilizar CI de SHAs anteriores.
+- **PR #233 ya está CLOSED como superseded por #269, no merged.** La revisión semántica confirmó que sus 18/18 paths existen en #269; 5 son byte-idénticos y 13 fueron evolucionados. La migración 0015 y sus assertions fueron endurecidas; el endpoint/tests se ampliaron con rate limiting, BCV de fin de semana, allocation_position, ledger 0019, protección de DB desechable y regresiones. La expectativa antigua de descuentos se reemplazó por rechazo explícito acorde con el alcance vigente. El index heredado no se copió: la ruta checkout se conserva sobre el index actualizado de main. La rama y los 83 commits históricos de #233 se conservan; no borrar.
+- **#269:** OPEN/Draft, HEAD `8f05befb7ac1a46d68850b9f89f89edc8cd46283`, base registrada `9c6b30281ed59726e532da840568fc9e80b528f7`; frente a main `594382f...`: 26 ahead / 3 behind, diverged y `mergeable=false`. En su HEAD exacto: 16/16 check-runs y 14/14 workflows SUCCESS. Estos resultados validan ese SHA, no resuelven divergencia ni gates de producto.
+- **#255:** OPEN/Draft, HEAD `7e43d7fd1519889605174da5818190bb84685059`, base registrada `9c6b30281ed59726e532da840568fc9e80b528f7`; frente a main `594382f...`: 54 ahead / 3 behind, diverged y `mergeable=false`. En su HEAD exacto: 15/15 check-runs y 13/13 workflows SUCCESS. Mantener Draft por anomalías/freshness BCV, último intento/éxito y alerta, fixture oficial y calendario de feriados.
+- PR #258/#262 siguen cerradas como superseded; #193 permanece intacta.
+- #269 sigue bloqueada por aprobación del contrato comercial checkout y decisión USD-only/BCV. No inventar decisiones ni force-push. Las dos ramas requieren sincronización no destructiva y CI nuevo en HEAD resultante antes de cualquier merge.
+
+### Límites invariables
+No repetir escrituras Neon ni migraciones remotas. No modificar Neon main/`neondb`, secretos, Cloudflare, DNS, billing o producción. Producción **NOT READY**. La rama `main` aparece protegida y su resumen API expone seis checks requeridos; el endpoint de configuración detallada devuelve HTTP 403, por lo que no se afirman otros requisitos de protección.
+
+**Precedencia:** este bloque es más reciente que los snapshots inferiores; estos se conservan como historial, no como estado vivo.
+
+---
+
 ## Corrección posterior a PR #284 — 2026-11-08 UTC
 
 La sección inmediatamente inferior documenta correctamente la punta que existía **antes** de integrar #284 (`d35946a88ab5c8361307b4503dd7c8a879e90f8f`), pero ya no es la punta actual tras ese merge. PR #284 está MERGED por squash en `b752d69622832e2b4cf341bf695997da4c2612fb`; ese SHA es la base de esta corrección documental, no debe reutilizarse como punta posterior si esta PR también se integra. Consultar GitHub para obtener el nuevo merge SHA.

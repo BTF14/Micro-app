@@ -1,3 +1,41 @@
+## Revalidación de continuidad — 2026-11-08 UTC
+
+Fuente autoritativa y detalle técnico: `docs/CURRENT_STATE.md`. Main observado: `594382f6f191f2ea0b55d913683841e51c210e5d`; post-merge 13/13 check-runs y 11/11 workflow runs push SUCCESS.
+
+- #269: HEAD `0ae7f1d71f9bb2155bddca5b5dcc0a2b7785b089`; 27 ahead / 3 behind main, mergeable=true; 16/16 check-runs y 14/14 workflow runs SUCCESS exact-HEAD. Sigue Draft por contrato comercial checkout y decisión USD-only/BCV.
+- #255: HEAD `7e43d7fd1519889605174da5818190bb84685059`; 54 ahead / 3 behind main, mergeable=true; 15/15 check-runs y 13/13 workflow runs SUCCESS exact-HEAD. Sigue Draft por gates P1 BCV.
+- #286: snapshot previo al commit actual `3666bc1043733a21f880ca5da68a6be45e59e261`, 14/14 checks y 12/12 workflows SUCCESS, mergeable=true, sin reviews formales ni threads. El commit documental de esta rama cambia el HEAD; consultar nuevo SHA y revalidar CI exact-HEAD.
+
+## Próxima secuencia
+1. Validar el nuevo HEAD y CI de #286; no reutilizar resultados del SHA anterior.
+2. Mantener #269 Draft hasta que se aprueben contrato checkout y decisión BCV USD-only.
+3. Mantener #255 Draft hasta resolver anomalías/freshness, observabilidad, fixture oficial y feriados.
+4. Continuar pruebas PostgreSQL desechables y auditoría técnica; no ejecutar más escrituras Neon.
+
+No pedir terminal, CLI, capturas ni TinyFish salvo necesidad real demostrada. No tocar Neon main, datos reales, secretos, Cloudflare manual, DNS, billing ni despliegues.
+
+# Handoff operativo — BTF14/Micro-app — 2026-11-08 UTC
+
+**Punto de partida verificado:** `main` está en `594382f6f191f2ea0b55d913683841e51c210e5d`, merge SHA de #285 y último commit observado en GitHub. La sección autoritativa y detallada del estado está en `docs/CURRENT_STATE.md`; no duplicarla aquí.
+
+## Estado vivo
+- **#286 — documentación:** OPEN/Draft, docs-only; HEAD `86ad02e426c328cd2bb4a8436d0910b0f06ecd2b`, 17 ahead / 0 behind de main; GitHub `mergeable=true`, `mergeable_state=clean`. En el SHA exacto: 14/14 check-runs y 10/10 workflow runs SUCCESS; los seis checks requeridos de `main` están SUCCESS. `main` aparece protegida; el resumen expone los seis checks, pero el endpoint de reglas detalladas devuelve 403. Sin reviews formales ni threads inline. Mantener Draft; checks verdes no equivalen a aprobación independiente. El commit de actualización documental posterior cambia el HEAD: consultar GitHub y revalidar exact-HEAD antes de decidir.
+- **#233:** CLOSED como superseded por #269, no merged. Auditoría semántica: 18/18 paths preservados/evolucionados; 5 idénticos y 13 evolucionados. Conservar la rama y sus 83 commits históricos.
+- **#269 — checkout + ledger:** OPEN/Draft; HEAD `8f05befb7ac1a46d68850b9f89f89edc8cd46283`; frente a main 26 ahead / 3 behind. En el SHA exacto se observaron 11/11 workflow runs pull_request SUCCESS. Mantener Draft por contrato comercial checkout y dependencia BCV para ventas USD-only aún sin decisión.
+- **#255 — BCV:** OPEN/Draft; HEAD `7e43d7fd1519889605174da5818190bb84685059`; frente a main 54 ahead / 3 behind. En el SHA exacto se observaron 10/10 workflow runs pull_request SUCCESS. Mantener Draft por anomalías/freshness, last-attempt/last-success y alertas, fixture HTML oficial y calendario de feriados.
+- **Neon:** rehearsal #42507066215 SUCCESS en `microapp_rehearsal`, migraciones 0001–0019. No repetir escrituras ni migraciones remotas.
+
+## Próxima secuencia
+1. #286 ya tiene mergeability `clean` y sus seis checks requeridos pasan en el HEAD observado; no fusionar mientras siga Draft y sin review formal independiente. Si se modifica, repetir validación exact-HEAD.
+2. Revisar el solapamiento documental antes de sincronizar #269 y #255 con main; usar merges no destructivos, nunca force-push, y ejecutar CI en cada HEAD nuevo.
+3. Mantener ambas PR Draft hasta cerrar sus gates de producto/operación.
+4. Continuar validaciones en PostgreSQL desechable. Producción sigue **NOT READY**.
+
+## Límites
+No tocar Neon main, datos reales, secretos, Cloudflare manual, DNS, billing ni despliegues. No repetir Neon bootstrap-and-migrate. No reutilizar CI de SHAs anteriores.
+
+---
+
 ## Corrección posterior a PR #284 — 2026-11-08 UTC
 
 La sección inmediatamente inferior documenta correctamente la punta que existía **antes** de integrar #284 (`d35946a88ab5c8361307b4503dd7c8a879e90f8f`), pero ya no es la punta actual tras ese merge. PR #284 está MERGED por squash en `b752d69622832e2b4cf341bf695997da4c2612fb`; ese SHA es la base de esta corrección documental, no debe reutilizarse como punta posterior si esta PR también se integra. Consultar GitHub para obtener el nuevo merge SHA.

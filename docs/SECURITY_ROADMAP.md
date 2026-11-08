@@ -1,3 +1,23 @@
+## Estado de seguridad e integración — 2026-11-08 UTC
+
+Consultar `docs/CURRENT_STATE.md` para los SHA y estados vivos completos.
+
+- #269 mantiene protecciones de ledger append-only, revocación DELETE/TRUNCATE en payments y revalidación de sucursal activa; 16/16 check-runs y 14/14 workflows SUCCESS en HEAD `0ae7f1d...`. Sigue Draft por contrato comercial checkout y decisión USD-only/BCV; CI no equivale a autorización de merge ni certificación de producción.
+- #255 mantiene bloqueos P1: política de anomalías y freshness, last-attempt/last-success persistente, alerta externa, fixture HTML oficial y calendario de feriados. 15/15 check-runs y 13/13 workflows SUCCESS en HEAD `7e43d7f...`; no activar Cron productivo.
+- #286 es docs-only; el commit de esta actualización cambia su HEAD y necesita CI exact-HEAD nuevo.
+- Neon rehearsal #42507066215 no demuestra identidad/configuración real del Worker. No repetir migraciones ni tocar Neon main, secretos, Cloudflare, DNS, billing o datos reales. Producción **NOT READY**.
+
+## Estado de gates de seguridad e integración — 2026-11-08 UTC
+
+Consultar `docs/CURRENT_STATE.md` para la matriz viva de PRs y SHAs; evitar replicar su snapshot completo.
+
+- #269 permanece Draft hasta aprobar el contrato comercial checkout y decidir si una venta USD-only depende de BCV.
+- #255 permanece Draft: siguen pendientes política de anomalías/freshness, persistencia de último intento/éxito, alerta externa, fixture oficial BCV y calendario de feriados.
+- La validación de migraciones 0001–0019 ocurrió únicamente en `microapp_rehearsal`; no demuestra identidad/configuración real del Worker.
+- Neon main, datos reales, secretos, Cloudflare manual, DNS y billing permanecen fuera de alcance. Producción **NOT READY**.
+
+---
+
 ## Corrección posterior a PR #284 — 2026-11-08 UTC
 
 La sección inmediatamente inferior documenta correctamente la punta que existía **antes** de integrar #284 (`d35946a88ab5c8361307b4503dd7c8a879e90f8f`), pero ya no es la punta actual tras ese merge. PR #284 está MERGED por squash en `b752d69622832e2b4cf341bf695997da4c2612fb`; ese SHA es la base de esta corrección documental, no debe reutilizarse como punta posterior si esta PR también se integra. Consultar GitHub para obtener el nuevo merge SHA.

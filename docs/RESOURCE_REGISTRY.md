@@ -1,6 +1,8 @@
+> **Reconciliación 2026-11-08 UTC:** GitHub main es `37bf673895a035c84c4c18f837c12694f182a96b`. El ensayo Neon [run #42507066215](https://github.com/BTF14/Micro-app/actions/runs/42507066215) terminó SUCCESS y aplicó las migraciones 0001–0019 exclusivamente en `microapp_rehearsal` (branch `br-curly-poetry-b7dxsddm`, proyecto `restless-fire-99110035`), con assertions 0017–0019 satisfactorias. **Esto no significa que Neon main tenga esas migraciones ni que el producto esté listo para producción.** Neon main no fue modificado. Los detalles y límites están en [CURRENT_STATE](docs/CURRENT_STATE.md), [PRODUCTION_READINESS](docs/PRODUCTION_READINESS.md) y [WORK_CHECKPOINT](docs/WORK_CHECKPOINT.md).
+
 # Registro de herramientas, repositorios y fuentes de Micro app
 
-Actualizado: 2026-11-04. Este registro no sustituye la verificación en vivo: planes gratuitos, documentación y estado de repositorios cambian. Añadir cada fuente consultada con fecha, uso, conclusión y limitaciones. No registrar secretos ni URLs que contengan credenciales.
+Actualizado: 2026-11-08. Estado de Neon contrastado con run #42507066215; los recursos y planes gratuitos deben seguir revalidándose en vivo. Este registro no sustituye la verificación en vivo: planes gratuitos, documentación y estado de repositorios cambian. Añadir cada fuente consultada con fecha, uso, conclusión y limitaciones. No registrar secretos ni URLs que contengan credenciales.
 
 ## Herramientas y servicios del proyecto
 

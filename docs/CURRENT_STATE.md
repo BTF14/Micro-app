@@ -1,3 +1,16 @@
+# Reconciliación documental autoritativa — 2026-11-08 UTC
+
+**Este bloque prevalece sobre los snapshots históricos que siguen en este archivo.** Los estados de PR y SHA cambian; verificar GitHub vivo antes de actuar.
+
+- **GitHub main:** `37bf673895a035c84c4c18f837c12694f182a96b` (PR #279 integrada). PR #280 es la reconciliación documental en curso; no forma parte de main hasta su merge.
+- **Neon rehearsal:** run [#42507066215](https://github.com/BTF14/Micro-app/actions/runs/42507066215), workflow `neon-pinned-migration-rehearsal.yml`, `workflow_dispatch` desde main, `bootstrap-and-migrate`, SUCCESS. Fuente exacta `6227a3a8497f6be94d675b64da5da61530c200fc`; destino aislado proyecto `restless-fire-99110035`, branch `br-curly-poetry-b7dxsddm`, DB `microapp_rehearsal`, login `microapp_migrator`.
+- **Resultado rehearsal:** baseline/fingerprint 0002 validado; migraciones 0001–0019 aplicadas y registradas como `applied`; 19 registros únicos; assertions SQL 0017, 0018 y 0019 pasaron; ownership de objetos por migrator y restricciones de rol verificadas. La migración 0019 eliminó la tabla legacy `inventory_balance_ledger_intents` después de comprobar que estaba vacía. Fue una escritura/DDL autorizada únicamente en `microapp_rehearsal`.
+- **No extrapolar:** Neon main/producción y la DB parent clone `neondb` no fueron destino; no se cambiaron secretos, Cloudflare, DNS, billing ni deployments. Este rehearsal no certifica producción, backups, runtime Worker identity, E2E comercial ni readiness.
+- **PRs abiertas observadas en esta revisión:** #280 (Draft, docs-only); #269 (Draft, HEAD `14afd5de938a6ff655ecdfc5cb747f0f799290c5`, mergeable=false); #262 (Ready, apilada sobre base obsoleta de #258); #258 (Ready, HEAD `8935842cab6a7e2b8a6c0aa078e9b3e77866e48c`, mergeable=false); #255 (Ready, HEAD `a19a5c61f3f9e878d531ef1150f9c1aa033d6cc7`, mergeable=false); #233 (Draft histórica); #193 (abierta, no modificar). Estos son snapshots observados; no reutilizar estados/checks sin reconsulta.
+- **Siguiente foco:** validar PR #280 exact-HEAD y consolidar la documentación; después reconciliar el estado vivo de PRs #269/#255/#258/#262 y comprobar permisos/runtime/flujo funcional sobre el esquema de ensayo. Mantener #269 Draft y no promover a producción.
+
+---
+
 ## Estado vivo — corrección Neon pinned rehearsal integrada (2026-11-08 UTC)
 
 - Main protegido: `209e3fe9f99c96a07546bb87c04b90755257d918`. PR [#278](https://github.com/BTF14/Micro-app/pull/278) fusionada por squash; HEAD revisado `b444344543a2edafaa70cf68f8450cade73c9fc4`; merge SHA indicado.
@@ -2048,3 +2061,16 @@ Esta revisión fue estática de contenidos en GitHub; no se ejecutaron tests des
 - Ampliación de validación: CI aplica también 0003 al PostgreSQL efímero y ejecuta `branch-context.integration.test.ts` contra PostgreSQL real; el workflow `postgres-migration` mantiene assertions SQL específicas. Verificar ambos resultados en el HEAD final de la PR.
 
 - Endurecimiento posterior: `resolveBranchContext` revalida en su propia consulta que organization, app_user y organization_members siguen activos y que el rol actual en DB coincide con el TenantContext; owner/admin se determina desde la fila DB. Se añadieron pruebas PostgreSQL para membresía revocada y rol obsoleto. Esta revisión cambió el HEAD después de los checks previamente documentados; verificar nueva ejecución CI antes de merge.
+
+
+## 2026-11-08 17:51 UTC — Neon pinned rehearsal #4: bootstrap-and-migrate SUCCESS
+
+- Ejecución verificada directamente en GitHub Actions: [run #42507066215](https://github.com/BTF14/Micro-app/actions/runs/42507066215), workflow `.github/workflows/neon-pinned-migration-rehearsal.yml`, event `workflow_dispatch`, branch `main`, checkout/head SHA `37bf673895a035c84c4c18f837c12694f182a96b`, run #4, conclusión `success`; job único `rehearsal` y todos sus pasos completados SUCCESS.
+- Operación registrada en el job: `bootstrap-and-migrate`. SOURCE_SHA inmutable validado: `6227a3a8497f6be94d675b64da5da61530c200fc`. Destino verificado por el workflow: proyecto `restless-fire-99110035`, branch `br-curly-poetry-b7dxsddm`, database `microapp_rehearsal`, login `microapp_migrator`. No se usó `neondb`, la rama primaria ni producción.
+- Preflight confirmó target vacío antes de bootstrap y validó la confirmación exacta de escritura. Baseline 0001–0002 aplicado por el runner; fingerprint canónico 0002 comparado y verificado (`BASELINE_0002_FINGERPRINT_VERIFIED`). Luego el runner aplicó el conjunto fijado 0001–0019; 0001–0002 se reconocieron como ya aplicadas al iniciar el segundo tramo.
+- Assertions SQL post-migración 0017, 0018 y 0019 ejecutadas explícitamente; cada una terminó con `MIGRATION_ASSERTIONS_PASSED`. Verificación final comprobó 19 filas únicas en `public.schema_migrations`, versión máxima 0019, todos los estados `applied`, y ownership de tablas/relaciones y funciones públicas por `microapp_migrator`. Resultado final: `PINNED_REHEARSAL_MIGRATIONS_0001_0019_VERIFIED`.
+- Preflight de roles validó atributos restrictivos de `microapp_migrator` y `microapp_runtime`, grants de conexión/schema esperados y que runtime no es miembro de migrator. No se imprimieron ni se copiaron secretos/URLs.
+- La migración 0019 ejecutó su `DROP TABLE` previsto para `public.inventory_balance_ledger_intents`; el SQL de esa migración exige que la tabla heredada exista en el estado esperado y esté vacía antes de eliminarla. La ejecución completa y las assertions posteriores finalizaron SUCCESS.
+- Alcance: este fue un ensayo real de escritura/DDL únicamente en la base Neon aislada `microapp_rehearsal`, autorizado expresamente por el propietario. No se tocó Neon main, `neondb` parent-data clone, secretos, Cloudflare, DNS, billing ni despliegues productivos.
+- Warning no bloqueante: deprecación de Node.js 20 en `actions/checkout@v4`; el runner lo fuerza a Node.js 24 y el job finalizó SUCCESS. Registrar actualización de actions como mantenimiento, no como fallo de migración.
+- Dictamen: **migraciones 0001–0019 demostradas en Neon rehearsal con pin inmutable y assertions 0017–0019 satisfactorias**. Esto eleva la confianza en la ruta de migración, pero no equivale a certificación de producción: siguen pendientes validación funcional integrada sobre la DB resultante, smoke tests autenticados, revisión final de permisos/RLS y gates operativos/producto. No promover automáticamente a producción.

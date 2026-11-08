@@ -14,4 +14,4 @@
 - No production changes. Production NOT READY.
 
 ## Next step
-Finish exact-HEAD CI for #274. If checks pass, integrate the docs/workflow PR, run its default read-only verify-empty dispatch, then request explicit confirmation before bootstrap-and-migrate. Never target parent-clone neondb.
+Next: merge #274 only after confirming the updated docs commit remains exact-HEAD green; then manually dispatch .github/workflows/neon-pinned-migration-rehearsal.yml from main with default verify-empty (the available GitHub connector cannot dispatch workflows). Inspect run logs. The prior neon-rehearsal-migrations.yml verify after secret rotation succeeded, but this new pinned workflow has not yet been dispatched. Never target parent-clone neondb.

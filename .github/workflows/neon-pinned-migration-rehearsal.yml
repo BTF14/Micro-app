@@ -53,7 +53,7 @@ jobs:
       - name: Derive empty rehearsal database URL without exposing credentials
         shell: bash
         env:
-          NEON_REHEARSAL_DATABASE_URL: \${{ secrets.NEON_REHEARSAL_DATABASE_URL }}
+          NEON_REHEARSAL_DATABASE_URL: ${{ secrets.NEON_REHEARSAL_DATABASE_URL }}
         run: |
           set -euo pipefail
           target_url="$(python3 - <<'PY'
@@ -109,16 +109,16 @@ jobs:
               ! -name '*.deferred_failure.sql' \
               -printf '%f\n' | sed -E 's/^([0-9]{4})_.*/\1/' | sort
           )
-          test "\${#versions[@]}" -eq 19
-          for index in "\${!versions[@]}"; do
+          test "${#versions[@]}" -eq 19
+          for index in "${!versions[@]}"; do
             expected="$(printf '%04d' "$((index + 1))")"
-            test "\${versions[$index]}" = "$expected"
+            test "${versions[$index]}" = "$expected"
           done
 
           for version in 0017 0018 0019; do
-            matches=("$migrations_dir"/"\${version}"_*.assertions.sql)
-            test "\${#matches[@]}" -eq 1
-            test -f "\${matches[0]}"
+            matches=("$migrations_dir"/"${version}"_*.assertions.sql)
+            test "${#matches[@]}" -eq 1
+            test -f "${matches[0]}"
           done
 
           printf 'PINNED_MIGRATIONS_DIR=%s\n' "$migrations_dir" >> "$GITHUB_ENV"
@@ -186,10 +186,10 @@ jobs:
           echo "EMPTY_REHEARSAL_TARGET_VERIFIED"
 
       - name: Require exact write confirmation
-        if: \${{ inputs.operation == 'bootstrap-and-migrate' }}
+        if: ${{ inputs.operation == 'bootstrap-and-migrate' }}
         shell: bash
         env:
-          CONFIRMATION: \${{ inputs.confirmation }}
+          CONFIRMATION: ${{ inputs.confirmation }}
         run: |
           set -euo pipefail
           expected="APPLY-ONLY-microapp_rehearsal-br-curly-poetry-b7dxsddm-bc3939510e132e6f77c751514ff1b7dca58cdd4d"
@@ -197,26 +197,26 @@ jobs:
           echo "EXPLICIT_REHEARSAL_WRITE_CONFIRMATION_VERIFIED"
 
       - name: Apply pinned migrations 0001-0019 to the empty rehearsal database
-        if: \${{ inputs.operation == 'bootstrap-and-migrate' }}
+        if: ${{ inputs.operation == 'bootstrap-and-migrate' }}
         shell: bash
         run: |
           set -euo pipefail
           bash scripts/db/migrate.sh
 
       - name: Run checkout, payment-allocation and inventory-ledger assertions
-        if: \${{ inputs.operation == 'bootstrap-and-migrate' }}
+        if: ${{ inputs.operation == 'bootstrap-and-migrate' }}
         shell: bash
         run: |
           set -euo pipefail
           for version in 0017 0018 0019; do
-            matches=("$MIGRATIONS_DIR"/"\${version}"_*.assertions.sql)
-            test "\${#matches[@]}" -eq 1
-            psql -X -v ON_ERROR_STOP=1 --dbname "$MIGRATION_DATABASE_URL" --file "\${matches[0]}"
+            matches=("$MIGRATIONS_DIR"/"${version}"_*.assertions.sql)
+            test "${#matches[@]}" -eq 1
+            psql -X -v ON_ERROR_STOP=1 --dbname "$MIGRATION_DATABASE_URL" --file "${matches[0]}"
             echo "MIGRATION_ASSERTIONS_PASSED=$version"
           done
 
       - name: Verify complete ledger, ownership and runtime boundaries
-        if: \${{ inputs.operation == 'bootstrap-and-migrate' }}
+        if: ${{ inputs.operation == 'bootstrap-and-migrate' }}
         shell: bash
         run: |
           set -euo pipefail

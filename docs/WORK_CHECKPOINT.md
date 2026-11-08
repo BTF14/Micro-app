@@ -14,8 +14,8 @@
 - README y documentación de apoyo ya quedaron alineados en esta rama. Se inventariaron 102 archivos Markdown/texto del repositorio y se hizo una reconciliación cruzada prioritaria de los documentos de estado, seguridad, readiness, esquema, runner y continuidad; los snapshots antiguos se conservaron como historial y se marcaron como subordinados al bloque autoritativo.
 
 ## Próximos pasos
-1. Terminar CI exact-HEAD de PR #280; última observación antes de esta actualización: Playwright, runner, seguridad, secret-history PR, Semgrep, ODD, dashboard y dependency review SUCCESS; CI in progress; Database migration validation y secret-history push pendientes.
-2. Revisar el HEAD final, diff completo, reviews/threads y branch protection. PR #280 permanece Draft y no se fusiona hasta cerrar los gates.
+1. CI exact-HEAD verificado para `725b05801034dd57f7514718e13b055af1ff8c2a`: 10/10 workflow runs SUCCESS y los seis contextos requeridos por la protección de `main` (`verify`, `postgres-migration`, `Chromium authentication smoke tests`, `JavaScript and TypeScript static analysis`, `Scan tracked files and reachable Git history`, `Trivy filesystem and configuration scan`) figuran SUCCESS en check-runs de ese mismo SHA.
+2. Revisión del diff de los 14 archivos completada; no hay reviews formales ni hilos inline abiertos. La rama `main` aparece protegida y sus seis contextos requeridos están identificados en el resumen de branch; el endpoint detallado de protección devuelve 403 a la integración, por lo que no se afirma haber inspeccionado settings adicionales. PR #280 continúa Draft mientras se resuelve el último detalle de revisión documental y se valida cualquier nuevo HEAD.
 3. Después continuar con revisión técnica funcional sobre rehearsal, sin repetir bootstrap-and-migrate.
 4. Reconciliar PRs activas; mantener #269 Draft, no tocar #193 y no fusionar ramas apiladas con base obsoleta.
 

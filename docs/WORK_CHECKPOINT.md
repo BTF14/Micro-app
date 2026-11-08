@@ -8,10 +8,10 @@
 - #269 Open/Draft, HEAD `56a5f2ebf4f63c03bc4e50bbf5eb45b6e0aebbde`, 13 ahead/2 behind, 11 workflow runs SUCCESS, review COMMENTED.
 - #255 Open/Ready, HEAD `59b6b40ddf30f6711624124b719ef15234ce5fdc`, 48 ahead/4 behind, 10 workflow runs SUCCESS, review COMMENTED. Dos P1 pendientes: anomalías de tasa y observabilidad del Cron. Sin aprobación.
 - Neon rehearsal `br-curly-poetry-b7dxsddm`: SELECT identidad correcta, fingerprint baseline 0002 294/294 exacto, 15 tablas; roles migrator/runtime con atributos restrictivos; 17 objetos públicos propiedad del migrator. No DDL/DML.
-- Usuario confirmó que actualizó `NEON_REHEARSAL_DATABASE_URL`; falta verificarlo desde Actions. Último run conocido #42479603848 falló por secreto ausente antes de conectar.
-- El workflow `verify` es solo SELECT/fingerprint; `adopt-and-migrate` escribe y no está autorizado todavía.
-- El conector no permite workflow_dispatch; requiere ejecución manual desde UI de Actions.
+- GitHub Actions rerun #42479603848 `verify` SUCCESS tras la actualización: secreto enmascarado y no vacío; identidad exacta de rehearsal; `BASELINE_VERIFIED` 294 facts. Pasos de adopción/migración SKIPPED; no DDL/DML.
+- El rerun conservó SHA/ref originales y ejecutó el summary antiguo con tres `command not found`; #270 ya corrigió el summary en main.
+- Main solo contiene migraciones hasta 0016; #269 contiene 0017–0019. No ejecutar `adopt-and-migrate` desde main para este objetivo: no alcanzaría 0017–0019.
 - Producción NOT READY.
 
 ## Siguiente acción exacta
-GitHub Actions → workflow `.github/workflows/neon-rehearsal-migrations.yml` → branch `main` → `operation=verify` solamente. Nunca seleccionar `adopt-and-migrate`; no compartir URI/secret.
+Diseñar una ejecución controlada y fijada al HEAD revisado de #269 para ensayar 0017–0019 sin exponer la credencial a refs no aprobados. No ejecutar `adopt-and-migrate` desde main mientras esos archivos no estén en main. No compartir URI/secret.

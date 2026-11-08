@@ -1,0 +1,125 @@
+BEGIN;
+DO $inventory_ledger_balance_projection_assertions$
+DECLARE
+  projection_oid oid;
+  lock_oid oid;
+  projection_def text;
+  lock_def text;
+  index_predicate text;
+BEGIN
+  IF pg_catalog.to_regclass('public.inventory_balance_ledger_intents') IS NOT NULL
+    OR pg_catalog.to_regprocedure('public.record_inventory_balance_ledger_intent()') IS NOT NULL
+    OR pg_catalog.to_regprocedure('public.consume_inventory_balance_ledger_intent()') IS NOT NULL
+    OR pg_catalog.to_regprocedure('public.assert_inventory_balance_ledger_intent_consumed()') IS NOT NULL
+  THEN
+    RAISE EXCEPTION 'INVENTORY_BALANCE_LEDGER_INTENT_PAIRING_MUST_BE_REPLACED';
+  END IF;
+
+  IF NOT pg_catalog.has_table_privilege('microapp_runtime','public.inventory_balances','SELECT')
+    OR pg_catalog.has_table_privilege('microapp_runtime','public.inventory_balances','INSERT')
+    OR pg_catalog.has_table_privilege('microapp_runtime','public.inventory_balances','UPDATE')
+    OR pg_catalog.has_table_privilege('microapp_runtime','public.inventory_balances','DELETE')
+    OR pg_catalog.has_table_privilege('microapp_runtime','public.inventory_balances','TRUNCATE')
+    OR pg_catalog.has_table_privilege('microapp_runtime','public.inventory_balances','TRIGGER')
+    OR pg_catalog.has_column_privilege('microapp_runtime','public.inventory_balances','on_hand_quantity','INSERT')
+    OR pg_catalog.has_column_privilege('microapp_runtime','public.inventory_balances','on_hand_quantity','UPDATE')
+    OR pg_catalog.has_column_privilege('microapp_runtime','public.inventory_balances','reserved_quantity','UPDATE')
+    OR pg_catalog.has_column_privilege('microapp_runtime','public.inventory_balances','balance_version','UPDATE')
+    OR pg_catalog.has_column_privilege('microapp_runtime','public.inventory_balances','updated_at','UPDATE')
+  THEN
+    RAISE EXCEPTION 'RUNTIME_MUST_NOT_MUTATE_INVENTORY_BALANCES';
+  END IF;
+
+  IF NOT pg_catalog.has_table_privilege('microapp_runtime','public.warehouse_inventory_movements','INSERT') THEN
+    RAISE EXCEPTION 'RUNTIME_MUST_APPEND_MOVEMENTS_TO_PROJECT_BALANCES';
+  END IF;
+
+  SELECT p.oid INTO projection_oid
+    FROM pg_catalog.pg_proc p
+   WHERE p.oid='public.project_inventory_movement_to_balance()'::regprocedure
+     AND p.prosecdef=true
+     AND p.proowner=(SELECT oid FROM pg_catalog.pg_roles WHERE rolname='microapp_migrator')
+     AND p.proconfig @> ARRAY['search_path=pg_catalog'];
+  IF projection_oid IS NULL THEN
+    RAISE EXCEPTION 'INVENTORY_BALANCE_PROJECTION_SECURITY_DEFINER_CONTRACT_INVALID';
+  END IF;
+
+  SELECT pg_catalog.pg_get_functiondef(projection_oid) INTO projection_def;
+  IF pg_catalog.strpos(projection_def,'reserved_quantity')=0
+    OR pg_catalog.strpos(projection_def,'INVENTORY_MOVEMENT_WOULD_BREACH_AVAILABLE_STOCK')=0
+    OR pg_catalog.strpos(projection_def,'ON CONFLICT')=0
+  THEN
+    RAISE EXCEPTION 'INVENTORY_BALANCE_PROJECTION_DEFINITION_INVALID';
+  END IF;
+
+  IF pg_catalog.has_function_privilege('microapp_runtime',projection_oid,'EXECUTE')
+    OR EXISTS (
+      SELECT 1 FROM pg_catalog.aclexplode(
+        COALESCE((SELECT proacl FROM pg_catalog.pg_proc WHERE oid=projection_oid),
+                 pg_catalog.acldefault('f',(SELECT proowner FROM pg_catalog.pg_proc WHERE oid=projection_oid)))
+      ) acl
+      WHERE acl.grantee=0 AND acl.privilege_type='EXECUTE'
+    )
+  THEN
+    RAISE EXCEPTION 'INVENTORY_BALANCE_PROJECTION_FUNCTION_MUST_NOT_BE_CALLABLE_DIRECTLY';
+  END IF;
+
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_catalog.pg_trigger t
+     WHERE t.tgrelid='public.warehouse_inventory_movements'::regclass
+       AND t.tgname='warehouse_inventory_movements_project_balance'
+       AND NOT t.tgisinternal AND t.tgenabled='O'
+       AND pg_catalog.pg_get_triggerdef(t.oid) ILIKE '%AFTER INSERT%'
+  ) THEN
+    RAISE EXCEPTION 'INVENTORY_MOVEMENT_BALANCE_PROJECTION_TRIGGER_MISSING';
+  END IF;
+
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_catalog.pg_trigger t
+     WHERE t.tgrelid='public.inventory_balances'::regclass
+       AND t.tgname='inventory_balances_direct_write_guard'
+       AND NOT t.tgisinternal AND t.tgenabled='O'
+  ) THEN
+    RAISE EXCEPTION 'INVENTORY_BALANCE_DIRECT_WRITE_GUARD_MISSING';
+  END IF;
+
+  SELECT p.oid INTO lock_oid
+    FROM pg_catalog.pg_proc p
+   WHERE p.oid='public.lock_inventory_balances(uuid,uuid[],uuid[],uuid[])'::regprocedure
+     AND p.prosecdef=true
+     AND p.proowner=(SELECT oid FROM pg_catalog.pg_roles WHERE rolname='microapp_migrator')
+     AND p.proconfig @> ARRAY['search_path=pg_catalog'];
+  IF lock_oid IS NULL OR NOT pg_catalog.has_function_privilege('microapp_runtime',lock_oid,'EXECUTE') THEN
+    RAISE EXCEPTION 'INVENTORY_BALANCE_LOCK_HELPER_SECURITY_CONTRACT_INVALID';
+  END IF;
+  IF EXISTS (
+    SELECT 1 FROM pg_catalog.aclexplode(
+      COALESCE((SELECT proacl FROM pg_catalog.pg_proc WHERE oid=lock_oid),
+               pg_catalog.acldefault('f',(SELECT proowner FROM pg_catalog.pg_proc WHERE oid=lock_oid)))
+    ) acl
+    WHERE acl.grantee=0 AND acl.privilege_type='EXECUTE'
+  ) THEN
+    RAISE EXCEPTION 'INVENTORY_BALANCE_LOCK_HELPER_MUST_NOT_BE_PUBLIC';
+  END IF;
+  SELECT pg_catalog.pg_get_functiondef(lock_oid) INTO lock_def;
+  IF pg_catalog.strpos(lock_def,'lock_inventory_warehouses')=0
+    OR pg_catalog.strpos(lock_def,'FOR UPDATE')=0
+    OR pg_catalog.strpos(lock_def,'p_branch_ids')=0
+  THEN
+    RAISE EXCEPTION 'INVENTORY_BALANCE_LOCK_HELPER_DEFINITION_INVALID';
+  END IF;
+
+  SELECT pg_catalog.pg_get_expr(i.indpred,i.indrelid)
+    INTO index_predicate
+    FROM pg_catalog.pg_index i
+   WHERE i.indexrelid='public.inventory_counts_one_confirmed_opening_per_warehouse_uidx'::regclass
+     AND i.indisunique;
+  IF index_predicate IS NULL
+    OR pg_catalog.strpos(index_predicate,'opening')=0
+    OR pg_catalog.strpos(index_predicate,'confirmed')=0
+  THEN
+    RAISE EXCEPTION 'INVENTORY_CONFIRMED_OPENING_COUNT_UNIQUENESS_MISSING';
+  END IF;
+END;
+$inventory_ledger_balance_projection_assertions$;
+ROLLBACK;

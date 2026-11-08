@@ -2098,3 +2098,11 @@ No se tocaron Neon main, datos reales, secretos, Worker productivo, DNS, billing
 - Los pasos de baseline adoption, migration apply y post-migration assertions quedaron SKIPPED. No hubo DDL/DML ni cambios de ownership.
 - Como rerun, conservó GITHUB_SHA/GITHUB_REF originales; el summary step del SHA antiguo produjo tres `command not found` por quoting, sin fallar el job. PR #270 ya corrigió el summary en main.
 - Confirmado: main tiene migraciones hasta 0016; #269 aporta 0017–0019. El workflow `adopt-and-migrate` desde main no probaría 0017–0019 y no debe ejecutarse para ese objetivo. Diseñar un rehearsal de SHA fijado/revisado antes de cualquier escritura.
+
+## 2026-11-08 13:38 UTC — detección de datos heredados y nueva base vacía
+
+- La rama rehearsal br-curly-poetry-b7dxsddm tiene parent_id br-summer-math-b7297a60 (main), init_source=parent-data. La DB original neondb contiene filas en tablas app_users/auth/org; no se inspeccionó contenido. Se bloquea cualquier escritura/migración sobre ella.
+- Se creó DB vacía microapp_rehearsal (ID 1333740), owner microapp_migrator, en la rama no-primary. SELECT confirmó 0 tablas y target identity exacta; role/schema grants son compatibles con el runner.
+- GitHub Actions rerun #42479603848 verify SUCCESS después de la rotación: secreto enmascarado, conexión directa, identity exacta, baseline 0002 294 facts. Los pasos de escritura quedaron SKIPPED.
+- Main contiene migraciones hasta 0016; #269 contiene 0017–0019. migrate.sh acepta MIGRATIONS_DIR, pero no ejecuta assertion/deferred-failure SQL por sí solo. El nuevo workflow debe fijar el SHA #269, extraer solo SQL y ejecutar assertions expresamente en microapp_rehearsal.
+- #269 HEAD bc3939510e132e6f77c751514ff1b7dca58cdd4d: 11/11 workflows SUCCESS tras endurecer DELETE/TRUNCATE de payments. No merge; PR Draft.

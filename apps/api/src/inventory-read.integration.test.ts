@@ -38,6 +38,7 @@ describe.skipIf(!databaseUrl)("inventory balance and ledger read APIs against Po
   let otherWarehouseId = "";
   let ownerToken = "";
   let cashierToken = "";
+  let ownerId = "";
   let firstProductId = "";
   let secondProductId = "";
   let inactiveProductId = "";
@@ -68,7 +69,7 @@ describe.skipIf(!databaseUrl)("inventory balance and ledger read APIs against Po
       "INSERT INTO app_users (email, display_name) VALUES ($1, 'Inventory Owner') RETURNING id",
       ["inventory-read-owner-" + suffix + "@example.test"],
     );
-    const ownerId = owner.rows[0]!.id;
+    ownerId = owner.rows[0]!.id;
     await admin.query(
       "INSERT INTO organization_members (organization_id, user_id, role) VALUES ($1, $2, 'owner')",
       [organizationId, ownerId],
@@ -137,36 +138,90 @@ describe.skipIf(!databaseUrl)("inventory balance and ledger read APIs against Po
     );
     inactiveProductId = inactive.rows[0]!.id;
 
-    // Every non-zero balance mutation is paired with one immutable ledger event.
+    // Seed balances through confirmed count documents when migration 0019
+    // makes the ledger the sole writer. Keep legacy paired-write fixtures only
+    // for the pre-projection migration sequence.
     await admin.query("BEGIN");
-    await admin.query(
-      "INSERT INTO inventory_balances (organization_id, branch_id, warehouse_id, product_id, on_hand_quantity) VALUES ($1, $2, $3, $4, 12.000)",
-      [organizationId, branchId, warehouseId, firstProductId],
+    const projection = await admin.query<{ enabled: boolean }>(
+      "SELECT pg_catalog.to_regprocedure('public.project_inventory_movement_to_balance()') IS NOT NULL AS enabled",
     );
-    await admin.query(
-      "INSERT INTO warehouse_inventory_movements (organization_id, branch_id, warehouse_id, product_id, movement_type, quantity_delta, unit_cost_usd, reason, actor_user_id, created_at) VALUES ($1, $2, $3, $4, 'purchase_receipt', 12.000, 4.2500, 'Seed receipt', $5, now() - interval '1 minute')",
-      [organizationId, branchId, warehouseId, firstProductId, ownerId],
-    );
-    await admin.query(
-      "UPDATE inventory_balances SET reserved_quantity = 2.000 WHERE organization_id = $1 AND warehouse_id = $2 AND product_id = $3",
-      [organizationId, warehouseId, firstProductId],
-    );
-    await admin.query(
-      "UPDATE inventory_balances SET on_hand_quantity = 15.000 WHERE organization_id = $1 AND warehouse_id = $2 AND product_id = $3",
-      [organizationId, warehouseId, firstProductId],
-    );
-    await admin.query(
-      "INSERT INTO warehouse_inventory_movements (organization_id, branch_id, warehouse_id, product_id, movement_type, quantity_delta, unit_cost_usd, reason, actor_user_id, created_at) VALUES ($1, $2, $3, $4, 'purchase_receipt', 3.000, 4.2500, 'Second seed receipt', $5, now())",
-      [organizationId, branchId, warehouseId, firstProductId, ownerId],
-    );
-    await admin.query(
-      "INSERT INTO inventory_balances (organization_id, branch_id, warehouse_id, product_id, on_hand_quantity) VALUES ($1, $2, $3, $4, 1.000)",
-      [organizationId, branchId, warehouseId, inactiveProductId],
-    );
-    await admin.query(
-      "INSERT INTO warehouse_inventory_movements (organization_id, branch_id, warehouse_id, product_id, movement_type, quantity_delta, unit_cost_usd, reason, actor_user_id) VALUES ($1, $2, $3, $4, 'purchase_receipt', 1.000, 2.0000, 'Inactive product stock', $5)",
-      [organizationId, branchId, warehouseId, inactiveProductId, ownerId],
-    );
+    if (!projection.rows[0]?.enabled) {
+      await admin.query(
+        "INSERT INTO inventory_balances (organization_id, branch_id, warehouse_id, product_id, on_hand_quantity) VALUES ($1, $2, $3, $4, 12.000)",
+        [organizationId, branchId, warehouseId, firstProductId],
+      );
+      await admin.query(
+        "INSERT INTO warehouse_inventory_movements (organization_id, branch_id, warehouse_id, product_id, movement_type, quantity_delta, unit_cost_usd, reason, actor_user_id, created_at) VALUES ($1, $2, $3, $4, 'purchase_receipt', 12.000, 4.2500, 'Seed receipt', $5, now() - interval '1 minute')",
+        [organizationId, branchId, warehouseId, firstProductId, ownerId],
+      );
+      await admin.query(
+        "UPDATE inventory_balances SET reserved_quantity = 2.000 WHERE organization_id = $1 AND warehouse_id = $2 AND product_id = $3",
+        [organizationId, warehouseId, firstProductId],
+      );
+      await admin.query(
+        "UPDATE inventory_balances SET on_hand_quantity = 15.000 WHERE organization_id = $1 AND warehouse_id = $2 AND product_id = $3",
+        [organizationId, warehouseId, firstProductId],
+      );
+      await admin.query(
+        "INSERT INTO warehouse_inventory_movements (organization_id, branch_id, warehouse_id, product_id, movement_type, quantity_delta, unit_cost_usd, reason, actor_user_id, created_at) VALUES ($1, $2, $3, $4, 'purchase_receipt', 3.000, 4.2500, 'Second seed receipt', $5, now())",
+        [organizationId, branchId, warehouseId, firstProductId, ownerId],
+      );
+      await admin.query(
+        "INSERT INTO inventory_balances (organization_id, branch_id, warehouse_id, product_id, on_hand_quantity) VALUES ($1, $2, $3, $4, 1.000)",
+        [organizationId, branchId, warehouseId, inactiveProductId],
+      );
+      await admin.query(
+        "INSERT INTO warehouse_inventory_movements (organization_id, branch_id, warehouse_id, product_id, movement_type, quantity_delta, unit_cost_usd, reason, actor_user_id) VALUES ($1, $2, $3, $4, 'purchase_receipt', 1.000, 2.0000, 'Inactive product stock', $5)",
+        [organizationId, branchId, warehouseId, inactiveProductId, ownerId],
+      );
+    } else {
+      const seedCountMovement = async (
+        productId: string, counted: string, expected: string, cost: string,
+        reason: string, createdAt: Date,
+      ): Promise<void> => {
+        const balance = await admin.query<{ balance_version: string }>(
+          "SELECT balance_version::text FROM inventory_balances WHERE organization_id=$1 AND warehouse_id=$2 AND product_id=$3",
+          [organizationId, warehouseId, productId],
+        );
+        const expectedVersion = balance.rows[0]?.balance_version ?? "0";
+        const count = await admin.query<{ id: string }>(
+          `INSERT INTO inventory_counts
+            (organization_id,branch_id,warehouse_id,count_type,reason,created_by)
+           VALUES ($1,$2,$3,'physical',$4,$5) RETURNING id`,
+          [organizationId, branchId, warehouseId, reason, ownerId],
+        );
+        await admin.query(
+          `INSERT INTO inventory_count_lines
+            (organization_id,branch_id,warehouse_id,count_id,product_id,counted_quantity,unit_cost_usd,
+             expected_on_hand_quantity,expected_balance_version)
+           VALUES ($1,$2,$3,$4,$5,$6::numeric,$7::numeric,$8::numeric,$9::bigint)`,
+          [organizationId, branchId, warehouseId, count.rows[0]!.id, productId, counted, cost, expected, expectedVersion],
+        );
+        await admin.query(
+          "UPDATE inventory_counts SET status='confirmed',confirmed_by=$2,confirmed_at=now() WHERE id=$1",
+          [count.rows[0]!.id, ownerId],
+        );
+        await admin.query(
+          `INSERT INTO warehouse_inventory_movements
+            (organization_id,branch_id,warehouse_id,product_id,movement_type,quantity_delta,
+             unit_cost_usd,reason,count_id,actor_user_id,created_at)
+           VALUES ($1,$2,$3,$4,'count_adjustment',$5::numeric,$6::numeric,$7,$8,$9,$10)`,
+          [organizationId, branchId, warehouseId, productId,
+           (Number(counted) - Number(expected)).toFixed(3), cost, reason, count.rows[0]!.id, ownerId, createdAt],
+        );
+      };
+      await seedCountMovement(firstProductId, "12.000", "0.000", "4.2500", "Seed receipt", new Date(Date.now() - 60_000));
+      // Reservation APIs are not implemented; seed the reserved fixture only
+      // in this disposable admin test database, bypassing the direct-write guard.
+      await admin.query("ALTER TABLE inventory_balances DISABLE TRIGGER inventory_balances_direct_write_guard");
+      await admin.query(
+        "UPDATE inventory_balances SET reserved_quantity=2.000 WHERE organization_id=$1 AND warehouse_id=$2 AND product_id=$3",
+        [organizationId, warehouseId, firstProductId],
+      );
+      await admin.query("ALTER TABLE inventory_balances ENABLE TRIGGER inventory_balances_direct_write_guard");
+      await seedCountMovement(firstProductId, "15.000", "12.000", "4.2500", "Second seed receipt", new Date());
+      await seedCountMovement(inactiveProductId, "1.000", "0.000", "2.0000", "Inactive product stock", new Date());
+    }
     await admin.query("COMMIT");
 
     const foreignOrg = await admin.query<{ id: string }>(
@@ -250,7 +305,7 @@ describe.skipIf(!databaseUrl)("inventory balance and ledger read APIs against Po
     expect(firstBody.items).toHaveLength(1);
     expect(firstBody.items[0]).toMatchObject({
       product_id: firstProductId,
-      movement_type: "purchase_receipt",
+      movement_type: "count_adjustment",
       quantity_delta: "3.000",
       unit_cost_usd: "4.2500",
     });
@@ -260,7 +315,7 @@ describe.skipIf(!databaseUrl)("inventory balance and ledger read APIs against Po
     expect(second.status).toBe(200);
     const secondBody = await second.json() as { items: Array<Record<string, unknown>>; nextCursor: string | null };
     expect(secondBody.items).toHaveLength(1);
-    expect(secondBody.items[0]).toMatchObject({ quantity_delta: "12.000" });
+    expect(secondBody.items[0]).toMatchObject({ movement_type: "count_adjustment", quantity_delta: "12.000" });
     expect(secondBody.nextCursor).toBeNull();
 
     const cashierResponse = await get(root() + "/inventory/movements", cashierToken);

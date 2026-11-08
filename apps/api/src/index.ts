@@ -144,7 +144,8 @@ export default Object.assign(app, {
 
     if (controller.cron === "0 22 * * 1-5") {
       try {
-        await syncBcvOfficialRate(env.DATABASE_URL);
+        const outcome = await syncBcvOfficialRate(env.DATABASE_URL);
+        console.info("BCV_SYNC_COMPLETED", { outcome });
       } catch (error) {
         // Emit only a whitelisted error code; never log payloads, SQL, URLs or credentials.
         console.error("BCV_SYNC_FAILED", { code: safeBcvSyncErrorCode(error) });

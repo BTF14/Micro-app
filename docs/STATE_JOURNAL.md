@@ -1875,3 +1875,42 @@ No se tocaron Neon main, datos reales, secretos, Worker productivo, DNS, billing
 
 ---
 
+
+## Reconciliación final de esta sesión — 2026-11-08
+
+**GitHub main:** `d28b80edc6b2a63019ded100e46bb4b11e81153a` (protegido). Ninguna PR se fusionó durante esta sesión. No se modificó Neon ni infraestructura productiva.
+
+| PR | HEAD | Base | Estado | Checks exact-HEAD |
+|---|---|---|---|---:|
+| #251 auth retention | `30ec0cedafbb8281c7b5ea56572581ddc022a180` | main | Ready for review | 15/15 |
+| #255 BCV oficial | `f49fb402f9bd5a40591970c9efe3665a5e212ebb` | #251 | Ready for review | 15/15 |
+| #258 checkout atómico | `8935842cab6a7e2b8a6c0aa078e9b3e77866e48c` | main | Ready for review | 16/16 |
+| #261 reconciliación documental | rama `docs/live-state-reconcile-20261108` | main | Ready for review | 14/14 en el HEAD previo a esta última actualización; esta actualización dispara checks nuevos |
+| #262 ledger autoritativo | `19103c000b354da85c1a478867a6a18e2ec25cd7` | #258 | Ready for review | 8/8 |
+| #193 Fase B inventario | `ac57ab4f3415f82279b8a49c0befe09f8e3aec68` | main histórico | Open, no Draft | 12/12 |
+| #233 checkout histórico | `07a13c7eb68e0e933f93f35a1ecd9a22f19bf2d0` | rama documental histórica | Draft | 9/9 |
+
+**Reviews formales:** ninguna de #251, #255, #258, #261 o #262 tiene review registrada ni threads sin resolver. Los checks verdes no sustituyen la aprobación formal.
+
+### #262 — P1 corregido y verificado
+- Migration 0019 revoca escrituras runtime directas a `inventory_balances` y proyecta movimientos válidos mediante trigger SECURITY DEFINER.
+- Conteos `opening`/`count_adjustment`: documento confirmado y línea coincidente; confirmer activo owner/admin/inventory; inventory requiere branch membership activa; opening exige warehouse vacío.
+- Conteo físico: el movimiento revalida cantidad esperada y `balance_version` contra el balance actual bajo mutex del almacén.
+- El actor/scope se revalida al insertar movimiento con `NOWAIT`; sale requiere venta draft y línea exacta por tenant/sucursal/almacén/actor/producto/cantidad/costo.
+- Purchase receipt, transfer in/out, customer return y reversal siguen bloqueados hasta tener sus documentos fuente y autorización por tipo.
+- HEAD #262 `19103c000b354da85c1a478867a6a18e2ec25cd7`: 8/8 SUCCESS. Pasaron build/typecheck, unit tests, integración PostgreSQL de auth, branches, registers, catalog, counts, reads, checkout, runtime-role API, migraciones 0001–0019, login real `microapp_runtime`, backup/restore, Cloudflare build checks y Trivy.
+- Remediación P1 documentada: https://github.com/BTF14/Micro-app/pull/262#issuecomment-6719627864.
+- Residual explícito: el rol PostgreSQL compartido valida el actor declarado pero no lo vincula criptográficamente a la sesión HTTP; `authorizeBranchOperation` sigue siendo obligatorio. No habilitar otros tipos de movimiento.
+
+### Secuencia de integración segura
+1. #251 → #255: raíz de retención auth y después ingesta oficial BCV.
+2. #258: checkout. Después de #255, sincronizar su rama con el resultado integrado y resolver adiciones de rutas en `apps/api/src/index.ts` y Crons de `apps/api/wrangler.toml`; volver a ejecutar checks exactos.
+3. #262: después de integrar #258, retarget base a main y volver a ejecutar checks exactos.
+4. #261 documentación: merge independiente después de review formal y checks de esta actualización.
+5. #233: mantener abierta hasta integrar #255/#258; después cerrar como supersedida. Su auditoría histórica no encontró implementación vigente única que portar.
+6. #193: no modificar bajo la restricción vigente; conservar su propuesta de Fase B para revisión separada.
+
+**Producción NOT READY:** no se comprobó en esta sesión la identidad/ownership del runtime de Neon ni se hizo rehearsal protegido. No se tocaron Neon main, datos reales, secretos, Worker productivo, DNS, billing ni deploy manual. No solicitar capturas, Build IDs, terminal, CLI o TinyFish.
+
+---
+

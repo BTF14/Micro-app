@@ -23,13 +23,12 @@ class ValidateAgentDocsTests(unittest.TestCase):
         for relative, phrases in VALIDATOR.REQUIRED_CONTENT.items():
             (root / relative).write_text("\n".join(phrases), encoding="utf-8")
 
-        # A real relative link must resolve from the contract's directory.
-        contract = root / "odd/tasks/ai-continuity-and-evidence-contract.md"
-        contract.write_text(
-            "[ADR template](../../docs/decisions/ADR_TEMPLATE.md)\n"
-            + contract.read_text(encoding="utf-8"),
-            encoding="utf-8",
-        )
+        # Materialize each canonical relative link so the validator can test resolution.
+        for relative, targets in VALIDATOR.REQUIRED_LINKS.items():
+            path = root / relative
+            content = path.read_text(encoding="utf-8")
+            links = "\n".join(f"[contract]({target})" for target in targets)
+            path.write_text(links + "\n" + content, encoding="utf-8")
 
         agent = root / ".github/agents/test.agent.md"
         agent.parent.mkdir(parents=True, exist_ok=True)

@@ -51,6 +51,19 @@ BEGIN
 
   IF EXISTS (
     SELECT 1
+      FROM pg_catalog.pg_class c
+      CROSS JOIN LATERAL pg_catalog.aclexplode(
+        COALESCE(c.relacl, pg_catalog.acldefault('r',c.relowner))
+      ) acl
+     WHERE c.oid='public.inventory_balances'::regclass
+       AND acl.grantee=0
+       AND acl.privilege_type IN ('INSERT','UPDATE','DELETE','TRUNCATE','TRIGGER')
+  ) THEN
+    RAISE EXCEPTION 'PUBLIC_MUST_NOT_MUTATE_INVENTORY_BALANCES';
+  END IF;
+
+  IF EXISTS (
+    SELECT 1
       FROM pg_catalog.pg_attribute a
      WHERE a.attrelid='public.inventory_balances'::regclass
        AND a.attnum > 0 AND NOT a.attisdropped

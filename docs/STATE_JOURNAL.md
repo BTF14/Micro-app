@@ -1,3 +1,14 @@
+## 2026-11-08 06:45 UTC — recuperación viva de continuidad
+
+- GitHub confirma main `0a9e2f7c0d8b4d68b1efe6b372c10c107b160d67`; PR abiertas: #193, #233, #251, #255, #258. #257, #259 y #260 están fusionadas.
+- #251 HEAD `30ec0cedafbb8281c7b5ea56572581ddc022a180`, #255 HEAD `f49fb402f9bd5a40591970c9efe3665a5e212ebb`, #258 HEAD `df1ba996babb859a83da09d72cdec63a69b3965c`. Cada una: 15/15 check-runs y 13/13 workflow runs SUCCESS; no se encontraron reviews formales independientes.
+- CI exacto de #258 (run 42450188433) pasó 141 unitarias, 85 runtime-role PostgreSQL y 19 checkout PostgreSQL; assertions de migrations 0017/0018 pasaron.
+- #193 contiene un archivo único aún ausente en main y está 5 ahead / 23 behind; conservar para revisión. #233 sigue siendo fuente histórica divergida; no fusionar.
+- Corrección de continuidad: rate limit específico de checkout y validación SQL por pago individual VES ya están implementados en #258; no deben seguir apareciendo como pendientes. Permanecen los gates Neon, balance projection, decisión comercial, feriados, UI y review independiente.
+- No se hicieron cambios en Neon, secretos, Cloudflare productivo, DNS, billing ni despliegues manuales. Producción continúa NOT READY.
+
+---
+
 # 2026-11-08 UTC — actualización posterior a la validación exact-SHA
 
 - #251 HEAD `ded2d95681e9a9436fdb2c9630092379a60405cb`: 15/15 check-runs y 13/13 workflows SUCCESS; 26 ahead / 0 behind main.

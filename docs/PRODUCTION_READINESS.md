@@ -1,3 +1,29 @@
+## Estado vivo — 2026-11-08 UTC
+
+**Resultado: NOT READY para producción.**
+
+- GitHub main: `96e2e2d9f76bc8fcc3bab2fa9503e480545c8869`.
+- PR #251 (auth retention): HEAD `5dec5d5a9025de16b19d0cb7cfeac6585e2ad5d6`, 15/15 check-runs SUCCESS, Draft y sin revisión formal.
+- PR #255 (BCV): HEAD `35b9ac6894f79c5760a1f56fb37506ed2278afa0`, 13 workflow runs + 15/15 check-runs SUCCESS, Draft y sin revisión formal.
+- Neon main no tiene roles runtime/migrator, `app_schema_migrations`, `auth_bootstrap_attempts`, branches, register_shifts, warehouses ni inventory_balances; exchange_rates sigue NUMERIC(14,6).
+- Rehearsal tiene logins/ownership de roles, pero runtime carece de grants de tabla. No se han aplicado migraciones 0003–0016. El workflow migration-runner valida PostgreSQL 18 desechable, no Neon.
+- Checkout no está integrado; #233 contiene handler/tests únicos y requiere port a rama nueva más migration 0017 para fecha efectiva de fin de semana.
+- Backup/restore: última restauración remota documentada 2026-10-29; los checks recientes son CI, no nueva restauración de esa copia remota. RPO/RTO, alerta y coste total $0 siguen pendientes.
+- No hay revisión formal de #251/#255; CI verde no equivale a aprobación.
+
+### Gates bloqueantes
+
+1. Revisión independiente y exacta de #251/#255.
+2. Runner protegido en Neon rehearsal con autorización específica para crear/usar `NEON_REHEARSAL_DATABASE_URL`; no aplicar SQL manual.
+3. Aplicar y verificar migraciones, ledger/checksums, ownership, grants mínimos y login real `microapp_runtime` en rehearsal. No escribir en Neon main.
+4. Corregir trigger de fecha efectiva con migration 0017 y probar fin de semana/feriados fail-closed.
+5. Integrar checkout, pagos, inventario y transferencias con E2E; aprobar el modelo funcional.
+6. Restaurar un backup remoto reciente y medir RPO/RTO, alerta y coste.
+
+No se cambiaron secretos, Neon main, datos reales, Cloudflare production, DNS ni billing. No se ha hecho despliegue manual.
+
+---
+
 # Micro app — checklist de preparación para producción
 
 ## Estado vivo — 2026-11-04 UTC

@@ -1,7 +1,7 @@
 ## Prioridad operativa actual — 2026-11-08 UTC
 
-1. **Estabilizar CI compartido.** #259 serializa la batería runtime-role PostgreSQL porque las suites crean/eliminan triggers temporales en `audit_logs`; #257 falló con `tuple concurrently updated`. Verificar #259 exact-SHA y luego actualizar/revalidar #257.
-2. **Checkout recuperado.** #258 porta handler/tests desde #233 y añade migration 0017. Implementación SHA `d9ae6cd7f65c99126e7c4e45faa20a1dadaf3cdb` verde (15/15 checks, 13/13 workflows, 141 unitarias, 15 PostgreSQL checkout); HEAD actual `9d5ca9298b80038925ee94ed3deb2ce28dd08bb8` pendiente de revalidación.
+1. **CI compartido:** #259 ya está fusionada en main como `07b146a3f2b7830bbd328a585535084e57e43c4e`; serializa runtime-role PostgreSQL y resuelve la carrera de triggers temporales. #257 debe revalidar el HEAD posterior.
+2. **Checkout recuperado:** #258 porta handler/tests desde #233 y añade migration 0017. Implementation SHA `d9ae6cd7f65c99126e7c4e45faa20a1dadaf3cdb` pasó 15/15 checks, 13/13 workflows, 141 unitarias, 85 runtime-role integration y 15 checkout PostgreSQL. HEAD `433a1fa1212f610cbb543597e620219bd91327a4` tiene 13/15 check-runs y 12/13 workflows SUCCESS; 3 verificaciones pendientes, sin fallos.
 3. **Dependencia BCV.** #255 mantiene parser/API/UI/Cron oficial, Draft y no integrado. Resolver la pila #251→#255 y reconciliar sus cambios de Worker/router con #258 antes de activar checkout.
 4. **Gates de producción de checkout:** aprobación explícita del contrato de pagos; assertions SQL de fórmula por línea y equivalentes por pago; resolver privilegio runtime directo sobre balances; calendario de feriados; UI. No fusionar ni activar checkout antes.
 5. **Neon.** Main no tiene roles runtime/migrator ni migraciones 0003–0017. Rehearsal tiene logins pero sin ledger/migraciones. Solo runner protegido y autorización específica; no SQL manual.

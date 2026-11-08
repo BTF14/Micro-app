@@ -1,3 +1,11 @@
+# 2026-11-08 UTC — PR #259 integrada y sincronización de ramas dependientes
+
+- PR #259 se fusionó por squash en main como `07b146a3f2b7830bbd328a585535084e57e43c4e`. La batería runtime-role PostgreSQL ahora usa `--no-file-parallelism` para evitar que suites paralelas eliminen triggers temporales mientras otras escriben en `audit_logs`.
+- PR #257 volvió a base `main`; HEAD `2cecf9b6f462d80b38cdb58be09b21dd2f7f4d3b` tenía 12/12 check-runs SUCCESS y 10/13 workflows SUCCESS (CI, Security scan y migration runner pendientes, sin fallos) antes del refresh documental actual.
+- PR #258 volvió a base `main` y sincronizó el merge de #259. HEAD antes del refresh de este journal `433a1fa1212f610cbb543597e620219bd91327a4`: 13/15 check-runs y 12/13 workflows SUCCESS; verify, Cloudflare Pages y CI pendientes, sin fallos. El implementation SHA anterior `d9ae6cd7f65c99126e7c4e45faa20a1dadaf3cdb` ya había pasado 15/15 checks, 13/13 workflows, 141 unitarias, 85 runtime-role tests y 15 checkout PostgreSQL tests.
+- No Neon main, datos reales, secretos, despliegues manuales, DNS ni billing modificados. Producción NOT READY.
+---
+
 # 2026-11-08 UTC — recuperación checkout y estabilización de CI
 
 - #233 se auditó como fuente histórica: 408 commits ahead / 18 behind, base en una PR cerrada; no se fusiona.

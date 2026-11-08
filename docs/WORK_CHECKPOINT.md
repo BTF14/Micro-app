@@ -1,9 +1,9 @@
 ## Checkpoint actualizado — 2026-11-08 UTC
 
 - Main: `96e2e2d9f76bc8fcc3bab2fa9503e480545c8869`.
-- #258 checkout: implementation SHA `d9ae6cd7f65c99126e7c4e45faa20a1dadaf3cdb` pasó 15/15 checks, 13/13 workflows, 141 unit tests y 15 checkout PostgreSQL integration tests. HEAD actual `9d5ca9298b80038925ee94ed3deb2ce28dd08bb8`, revalidación exacta pendiente. Migration 0017 está en la rama, no en Neon.
-- #259 CI race fix: HEAD `98f4a8d662d07400f59bd3e8115f6da5856a4bfe`, añade `--no-file-parallelism` a la batería runtime-role que comparte PostgreSQL. Checks pendientes.
-- #257: HEAD `a8f7e0385ad7bb65a771e29e576bef8a2905eba9`, 14/15 checks. Fallo único: `tuple concurrently updated` al hacer DROP del trigger temporal de `catalog-write.integration.test.ts` mientras otras suites escribían `audit_logs`. #259 corrige la serialización.
+- #258 checkout: implementation SHA `d9ae6cd7f65c99126e7c4e45faa20a1dadaf3cdb` pasó 15/15 checks, 13/13 workflows, 141 unit tests, 85 runtime-role integration tests y 15 checkout PostgreSQL integration tests. HEAD actual `433a1fa1212f610cbb543597e620219bd91327a4` tiene 13/15 check-runs y 12/13 workflows SUCCESS; verify, Cloudflare Pages y CI pendientes. Migration 0017 está en la rama, no en Neon.
+- #259 CI race fix fusionada en main como `07b146a3f2b7830bbd328a585535084e57e43c4e`.
+- #257: HEAD previo al refresh `2cecf9b6f462d80b38cdb58be09b21dd2f7f4d3b`, 12/12 check-runs SUCCESS y 10/13 workflows SUCCESS; 3 pendientes sin fallos. El refresh de documentos exige nueva comprobación exact-SHA.
 - #251/#255: Draft; 15/15 check-runs y 13/13 workflows SUCCESS en sus HEADs exactos; sin review formal. #255 sigue dependiendo de #251 y no está en main.
 - #233 no se fusiona: código recuperado en #258; conservar hasta que no quede contenido único.
 - Producción NOT READY. No Neon main, secretos, despliegue ni datos reales modificados.

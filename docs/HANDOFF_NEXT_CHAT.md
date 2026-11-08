@@ -5,15 +5,16 @@ Retoma desde el estado vivo de `docs/CURRENT_STATE.md`. No repitas investigacion
 ### Estado de checkout
 
 - #233 no es integrable: rama antigua divergida y basada en PR cerrada. Se preservó como fuente; no fusionar.
-- #258 recupera handler, unit tests, PostgreSQL integration tests y route registration sobre main. Añade migration 0017, sin tocar migration 0015. El implementation SHA `d9ae6cd7f65c99126e7c4e45faa20a1dadaf3cdb` pasó 15/15 checks, 13/13 workflows, 141/141 unit tests y 15/15 checkout PostgreSQL tests. El HEAD actual es `9d5ca9298b80038925ee94ed3deb2ce28dd08bb8`; revalidar exactamente ese SHA.
+- #258 recupera handler, unit tests, PostgreSQL integration tests y route registration sobre main. Añade migration 0017, sin tocar migration 0015. El implementation SHA `d9ae6cd7f65c99126e7c4e45faa20a1dadaf3cdb` pasó 15/15 checks, 13/13 workflows, 141/141 unit tests y 15/15 checkout PostgreSQL tests. Tras sincronizar el merge #259, el HEAD `433a1fa1212f610cbb543597e620219bd91327a4` tenía 13/15 check-runs y 12/13 workflows SUCCESS; verificar los checks pendientes de ese SHA antes de cualquier integración.
 - #255 contiene el productor y Cron BCV, sigue Draft y no está en main. #258 debe fallar cerrado sin tasa válida; no activar checkout hasta integrar la ingesta BCV y reconciliar `index.ts`, `ci.yml` y `wrangler.toml`.
 - #257 falló en el runtime-role batch por concurrencia DDL/DML entre archivos de test que comparten la misma DB desechable. #259 añade `--no-file-parallelism`; verificar sus checks y luego actualizar/revalidar #257. No etiquetar el fallo como flaky sin resolver la causa.
 
 ### Orden siguiente
 
-1. Verificar checks exactos y diff de #259; mantener Draft hasta revisión.
-2. Verificar el HEAD vivo de #258; revisar handler/migration 0017 y no reutilizar checks de SHA anterior.
-3. Resolver la dependencia #255 (ingesta/Cron BCV) y planificar rebase/merge sin perder cambios de `index.ts`, `ci.yml` ni `wrangler.toml`.
+1. #259 ya está fusionada en main como `07b146a3f2b7830bbd328a585535084e57e43c4e`; no reabrirla.
+2. Verificar los workflows pendientes del HEAD vivo de #258; revisar handler/migration 0017 y no reutilizar checks de SHA anterior.
+3. #257 volvió a basarse en main; verificar su nuevo SHA tras este refresh documental.
+4. Resolver la dependencia #255 (ingesta/Cron BCV) y planificar integración sin perder cambios de `index.ts`, `ci.yml` ni `wrangler.toml`.
 4. Antes de producción, cerrar: aprobación explícita de moneda única/sin pagos parciales/sin sobrepago; assertions SQL de fórmula por línea y asignación USD equivalente por pago; privilegio directo runtime sobre `inventory_balances`; feriados bancarios entre semana; UI checkout.
 5. Actualizar esta documentación y el estado de #233 solo después de preservar y verificar cada cambio único. No cerrar #233 antes de que #258/#255 queden integradas.
 6. Continuar la reconciliación de inventario #193 sin alterar su rama ni su PR mientras siga vigente la restricción documentada.

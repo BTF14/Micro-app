@@ -16,6 +16,7 @@ on:
       - 'odd/**'
       - '.github/agents/**'
       - 'tools/validate-agent-docs.py'
+      - 'tools/tests/test_validate_agent_docs.py'
       - '.github/workflows/odd-docs-validation.yml'
   push:
     branches: [main]
@@ -32,6 +33,7 @@ on:
       - 'odd/**'
       - '.github/agents/**'
       - 'tools/validate-agent-docs.py'
+      - 'tools/tests/test_validate_agent_docs.py'
       - '.github/workflows/odd-docs-validation.yml'
 
 permissions:
@@ -47,3 +49,5 @@ jobs:
           python-version: '3.12'
       - name: Validate ODD, continuity contract, ADR template and agent profiles
         run: python3 tools/validate-agent-docs.py
+      - name: Test governance validator failure modes
+        run: python3 -m unittest discover -s tools/tests -p 'test_validate_agent_docs.py' -v

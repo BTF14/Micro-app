@@ -7,7 +7,7 @@
 - **PR #259** fusionada a main por squash como `07b146a3f2b7830bbd328a585535084e57e43c4e`. Serializa la batería runtime-role PostgreSQL con `--no-file-parallelism` y corrige la carrera DDL/DML sobre triggers temporales de audit_logs.
 - **PR #257** Draft, HEAD `2cecf9b6f462d80b38cdb58be09b21dd2f7f4d3b`, base main `07b146a3f2b7830bbd328a585535084e57e43c4e`: 12/12 check-runs SUCCESS, 10/13 workflows SUCCESS y tres workflows aún pendientes al tomar este snapshot. Sin fallos; #259 ya está integrado. Este refresh documental genera un SHA nuevo y exige revalidación.
 - PR #233 sigue Draft como fuente histórica, 408 commits ahead / 18 behind y base cerrada antigua. No fusionar su rama; recuperación en #258.
-- PRs abiertas: #193, #233, #251, #255, #257, #258 y #259. #202 y #211 ya están cerradas tras preservar su contenido/hallazgos.
+- PRs abiertas: #193, #233, #251, #255, #257 y #258. #259 ya está fusionada en main; #202 y #211 están cerradas tras preservar su contenido/hallazgos.
 - Neon main no recibió DDL/DML ni migraciones; no hubo cambios de secretos, Cloudflare manual, DNS, billing ni despliegue productivo.
 - **Producción NOT READY:** #255 aún debe proveer la tasa BCV; falta decisión explícita del propietario sobre el contrato comercial de pagos; falta defensa SQL de cálculo por línea/asignación por pago; sigue abierta la brecha P1 de escritura runtime directa en `inventory_balances`; no existe UI checkout. Migration 0017 solo está en PR #258, no en Neon.
 

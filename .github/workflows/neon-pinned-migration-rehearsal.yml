@@ -139,6 +139,8 @@ jobs:
           echo "PINNED_MIGRATION_SOURCE_VERIFIED=$actual_sha"
           echo "MIGRATION_CHAIN_VERIFIED=0001-0019"
 
+      # A failed migration may leave state=applying; this workflow rejects automatic retry in that case.
+      # Reconcile or recreate the empty rehearsal database explicitly before another write attempt.
       - name: Verify target identity, role boundaries and safe migration state
         shell: bash
         env:

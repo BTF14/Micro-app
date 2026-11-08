@@ -1,3 +1,7 @@
+## Snapshot de seguridad vigente — 2026-11-08
+
+El encabezado y las tablas históricas de esta hoja quedaron obsoletos tras los merges #270/#272 y la reconciliación de Neon. Estado actual: main 33016a2d206c7b8cfc60e53e34a56a26651141d7; PR #275 añade un workflow manual de rehearsal main-only, default read-only verify-empty; su CI exact-HEAD sigue pendiente. El workflow nuevo aún no se ha despachado. El run previo del workflow anterior confirmó conexión tras rotación del secreto; no ejecutar migraciones hasta verificar el nuevo flujo y obtener confirmación explícita para la ruta de escritura. Neon main/producción fuera de alcance. Para estado vivo, prevalece docs/CURRENT_STATE.md.
+
 ## Estado operativo actualizado — 2026-11-08 UTC (posterior a PR #264)
 
 **GitHub main:** `c46ed6f3e57a12bf92a7f0718435dfff8096b540`. PR #264 se fusionó en `c46ed6f3e57a12bf92a7f0718435dfff8096b540`; su workflow `.github/workflows/neon-rehearsal-migrations.yml` ya existe en main. En el HEAD de PR #264 los checks finalizaron correctamente (15 check-runs SUCCESS; el recuento API posterior incluyó 16 por checks duplicados). El workflow es manual; no hay evidencia de ejecución del workflow de Neon ni de migraciones remotas.

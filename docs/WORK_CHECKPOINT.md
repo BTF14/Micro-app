@@ -3,7 +3,7 @@
 Fuente autoritativa de estado: `docs/CURRENT_STATE.md`. Este checkpoint resume únicamente el punto operativo.
 
 - Main: `594382f6f191f2ea0b55d913683841e51c210e5d` (PR #285).
-- #286: OPEN, docs-only; HEAD `c034bfe5715f01015df3bf530af14353300e168b`; 10/10 workflow runs pull_request SUCCESS en ese SHA. Mergeability y branch protection no confirmadas.
+- #286: OPEN, docs-only; HEAD actual `20f28b410367361d7804e5ca3e4e9fd35e84d4e5`; 9 ahead / 0 behind. El SHA anterior `c034bfe...` pasó 10/10 workflows pull_request, no reutilizables; CI exact-HEAD nuevo aún no observado. Mergeability y branch protection no confirmadas.
 - #233: CLOSED como superseded, no merged; 18/18 paths preservados/evolucionados; conservar rama/83 commits.
 - #269: OPEN/Draft; HEAD `8f05befb7ac1a46d68850b9f89f89edc8cd46283`; 26 ahead / 3 behind; 11/11 PR workflows SUCCESS exact-HEAD; gates comerciales abiertos.
 - #255: OPEN/Draft; HEAD `7e43d7fd1519889605174da5818190bb84685059`; 54 ahead / 3 behind; 10/10 PR workflows SUCCESS exact-HEAD; gates operativos BCV abiertos.

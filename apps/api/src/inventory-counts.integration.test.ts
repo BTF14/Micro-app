@@ -591,45 +591,6 @@ describe.skipIf(!databaseUrl)("warehouse inventory count transactions against Po
     });
   });
 
-  it("records an all-zero opening without a balance row and rejects a second opening", async () => {
-    const first = await request(root() + "/counts/opening", {
-      reason: "All-zero opening must still initialize the warehouse",
-      lines: [{ product_id: productId, counted_quantity: "0.000", unit_cost_usd: "0.0000" }],
-    });
-    expect(first.status).toBe(201);
-    const firstBody = await first.json() as { id: string };
-    const confirmed = await request(root() + "/counts/" + firstBody.id + "/confirm");
-    expect(confirmed.status).toBe(200);
-    expect(await confirmed.json()).toMatchObject({ id: firstBody.id, status: "confirmed" });
-
-    const state = await client.query<{ balances: string; movements: string; confirmed_openings: string }>(
-      `SELECT
-         (SELECT count(*)::text FROM inventory_balances
-           WHERE organization_id=$1 AND warehouse_id=$2 AND product_id=$3) AS balances,
-         (SELECT count(*)::text FROM warehouse_inventory_movements
-           WHERE organization_id=$1 AND count_id=$4) AS movements,
-         (SELECT count(*)::text FROM inventory_counts
-           WHERE organization_id=$1 AND branch_id=$5 AND warehouse_id=$2
-             AND count_type='opening' AND status='confirmed') AS confirmed_openings`,
-      [organizationId, warehouseId, productId, firstBody.id, branchId],
-    );
-    expect(state.rows[0]).toEqual({ balances: "0", movements: "0", confirmed_openings: "1" });
-
-    const second = await request(root() + "/counts/opening", {
-      reason: "A second opening must not overwrite the first",
-      lines: [{ product_id: productId, counted_quantity: "0.000", unit_cost_usd: "0.0000" }],
-    });
-    expect(second.status).toBe(201);
-    const secondBody = await second.json() as { id: string };
-    const secondConfirmation = await request(root() + "/counts/" + secondBody.id + "/confirm");
-    expect(secondConfirmation.status).toBe(409);
-    expect(await secondConfirmation.json()).toMatchObject({ error: "OPENING_ALREADY_EXISTS" });
-    expect((await client.query(
-      "SELECT status FROM inventory_counts WHERE organization_id=$1 AND id=$2",
-      [organizationId, secondBody.id],
-    )).rows[0]).toEqual({ status: "draft" });
-  });
-
   it("rejects an older physical count after a newer count has changed the balance", async () => {
     await seedInventoryBalance("8.250");
     const initial = await client.query<{ version: string }>(
@@ -781,7 +742,7 @@ describe.skipIf(!databaseUrl)("warehouse inventory count transactions against Po
     expect(persisted.rows[0]).toEqual({ status: "confirmed", movements: "1", audits: "1" });
   });
 
-  it("confirms a zero opening balance without a stock movement and still reserves the opening slot", async () => {
+  it("confirms an all-zero opening without a balance row or movement and reserves the opening slot", async () => {
     const opening = await request(root() + "/counts/opening", {
       reason: "Initialize a warehouse with zero stock",
       lines: [{ product_id: productId, counted_quantity: "0.000" }],
@@ -791,7 +752,7 @@ describe.skipIf(!databaseUrl)("warehouse inventory count transactions against Po
     const confirmation = await request(root() + "/counts/" + body.id + "/confirm");
     expect(confirmation.status).toBe(200);
 
-    const persisted = await client.query<{ balance: string; movements: string; audits: string }>(
+    const persisted = await client.query<{ balance: string | null; movements: string; audits: string; confirmed_openings: string }>(
       `SELECT
         (SELECT on_hand_quantity::text FROM inventory_balances
          WHERE organization_id = $1 AND warehouse_id = $2 AND product_id = $3) AS balance,
@@ -799,13 +760,16 @@ describe.skipIf(!databaseUrl)("warehouse inventory count transactions against Po
          WHERE organization_id = $1 AND count_id = $4) AS movements,
         (SELECT count(*)::text FROM audit_logs
          WHERE organization_id = $1 AND entity_id = $4::text
-           AND action = 'inventory.count.confirmed') AS audits`,
-      [organizationId, warehouseId, productId, body.id],
+           AND action = 'inventory.count.confirmed') AS audits,
+        (SELECT count(*)::text FROM inventory_counts
+         WHERE organization_id = $1 AND branch_id = $5 AND warehouse_id = $2
+           AND count_type = 'opening' AND status = 'confirmed') AS confirmed_openings`,
+      [organizationId, warehouseId, productId, body.id, branchId],
     );
-    expect(persisted.rows[0]).toEqual({ balance: "0.000", movements: "0", audits: "1" });
+    expect(persisted.rows[0]).toEqual({ balance: null, movements: "0", audits: "1", confirmed_openings: "1" });
 
     const secondOpening = await request(root() + "/counts/opening", {
-      reason: "A second opening must not overwrite the initial zero balance",
+      reason: "A second opening must not overwrite the initial zero count",
       lines: [{ product_id: productId, counted_quantity: "1.000" }],
     });
     expect(secondOpening.status).toBe(201);
@@ -813,6 +777,10 @@ describe.skipIf(!databaseUrl)("warehouse inventory count transactions against Po
     const secondConfirmation = await request(root() + "/counts/" + secondBody.id + "/confirm");
     expect(secondConfirmation.status).toBe(409);
     expect(await secondConfirmation.json()).toMatchObject({ error: "OPENING_ALREADY_EXISTS" });
+    expect((await client.query(
+      "SELECT status FROM inventory_counts WHERE organization_id=$1 AND id=$2",
+      [organizationId, secondBody.id],
+    )).rows[0]).toEqual({ status: "draft" });
   });
 
   it("records an audited zero-delta physical count without creating a ledger movement", async () => {

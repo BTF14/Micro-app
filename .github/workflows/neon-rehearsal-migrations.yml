@@ -94,8 +94,8 @@ jobs:
         run: |
           {
             echo "## Neon rehearsal — verify only"
-            echo "- Target: `rehearsal-baseline-20261107` (`br-curly-poetry-b7dxsddm`)"
-            echo "- Direct login: `microapp_migrator`"
+            echo '- Target: `rehearsal-baseline-20261107` (`br-curly-poetry-b7dxsddm`)'
+            echo '- Direct login: `microapp_migrator`'
             echo "- Canonical baseline 0002: verified."
             echo "- No DDL/DML or ownership changes were executed."
           } >> "${GITHUB_STEP_SUMMARY}"

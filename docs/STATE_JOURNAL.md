@@ -1,3 +1,25 @@
+# 2026-11-08 UTC — PR #266 de sincronización cerrada sin merge; PR #265 documental en CI
+
+- Se creó PR #266 (main hacia la rama de #258) para diagnosticar la sincronización; GitHub reportó `mergeable=false`. Se cerró sin merge.
+- El análisis de archivos detectó solapamiento en nueve rutas: `.github/workflows/ci.yml`, `.github/workflows/migration-check.yml`, `apps/api/src/index.ts`, `docs/CURRENT_STATE.md`, `docs/HANDOFF_NEXT_CHAT.md`, `docs/PROJECT_PLAN.md`, `docs/SECURITY_ROADMAP.md`, `docs/STATE_JOURNAL.md`, `docs/WORK_CHECKPOINT.md`.
+- No se modificó ni forzó la rama de #258. PR #265 contiene reconciliación documental posterior a #264; sus checks exact-HEAD estaban en ejecución al registrar.
+- No se modificaron datos, credenciales, Neon main ni Cloudflare.
+
+---
+
+# 2026-11-08 UTC — PR #264 integrada; reconciliación de documentación posterior
+
+- PR #264 se fusionó por BTF14 a main a las 10:09:33Z, merge commit `c46ed6f3e57a12bf92a7f0718435dfff8096b540`. Su HEAD revisado fue `519d66a8bfab0fc9dc1ebbaeeeb0fc5418da391e`; 15 checks exact-HEAD SUCCESS (la API posteriormente mostró 16 por duplicación de check-runs). Workflow manual integrado.
+- No se encontró evidencia de workflow_dispatch ni de migraciones remotas. La API de secretos está fuera del alcance del conector GitHub; la existencia del secreto `NEON_REHEARSAL_DATABASE_URL` queda desconocida.
+- Neon main `br-summer-math-b7297a60`, lectura solo de metadatos: no roles runtime/migrator, no schema_migrations, auth_bootstrap_attempts, branches, warehouses, inventory_balances; auth_rate_limits sí existe; exchange_rates.rate NUMERIC(14,6). No se ejecutó DDL/DML.
+- PR #255: 15/15 SUCCESS, mergeable clean, pero base SHA reportada `8c13da8...` anterior a #261/#264. No usar checks antiguos para merge; sincronizar/revalidar.
+- PR #258: 16/16 SUCCESS en HEAD antiguo, dirty; compare contra main diverged 35 ahead / 31 behind. No force-push ni actualización a ciegas.
+- PR #262: 8/8 SUCCESS, stacked sobre HEAD antiguo de #258; no integrar independientemente.
+- Se intentó actualizar documentación directamente en main; GitHub la rechazó por branch protection (6 required checks). Se abrió rama docs dedicada y se preparó PR para reconciliar CURRENT_STATE, HANDOFF_NEXT_CHAT, WORK_CHECKPOINT y SECURITY_ROADMAP. No se cambió branch protection.
+- Ningún secreto, Neon main, Cloudflare manual, DNS, billing ni datos reales fue modificado.
+
+---
+
 # 2026-11-08 UTC — Neon main schema drift confirmado por SELECT
 
 - Lectura de solo esquema en Neon main `br-summer-math-b7297a60`: no existen `microapp_runtime`, `microapp_migrator`, `schema_migrations`, `auth_bootstrap_attempts`, `branches`, `warehouses` ni `inventory_balances`; sí existe `auth_rate_limits`; `exchange_rates.rate` es `NUMERIC(14,6)`.

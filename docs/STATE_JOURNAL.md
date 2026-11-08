@@ -1,3 +1,44 @@
+## Reconciliación operativa — 2026-11-08 UTC (verificación Neon + estado PR)
+
+**Fuente de verdad:** GitHub API y ejecución manual observada de GitHub Actions. Rama documental creada desde main `6f956b2336a70ec7013e20306be59d72db354b01`; este addendum no modifica main.
+
+### Neon rehearsal — evidencia de ejecución
+- Workflow `.github/workflows/neon-rehearsal-migrations.yml`, run [#42479603848](https://github.com/BTF14/Micro-app/actions/runs/42479603848), disparado manualmente desde `main` en modo `verify`.
+- Resultado: **FAIL** en el paso `Require the rehearsal-only direct migrator connection`; log explícito: `Missing repository secret NEON_REHEARSAL_DATABASE_URL.`
+- El job completó la instalación de PostgreSQL client y verificó que el ref es `main`. Se detuvo antes de ejecutar psql; no se conectó a Neon y no se ejecutó baseline verify, DDL, DML ni migración.
+- Conclusión permitida: el secreto no está disponible para este workflow/run. No se inspeccionó ni expuso ningún valor de secreto. No se creó ni modificó secreto.
+- El modo `adopt-and-migrate` no se seleccionó ni ejecutó. Neon `main` permanece fuera de alcance.
+
+### Cron de retención auth — evaluación del riesgo
+- `apps/api/wrangler.toml` declara `crons = ["17 * * * *"]`; `apps/api/src/index.ts` ejecuta `cleanupExpiredAuthRecords()` solo cuando `APP_ENV === "production"`.
+- `apps/api/src/auth-rate-limit.ts` ejecuta dos DELETE secuenciales: `auth_rate_limits` y `auth_bootstrap_attempts`. No los envuelve en una transacción común.
+- `auth_bootstrap_attempts` se crea en la migración `0005_auth_bootstrap_attempts.sql`. La última evidencia documental de Neon main indica que esa tabla y las migraciones posteriores no están aplicadas. Si el Worker productivo ejecuta esta versión con un DATABASE_URL apuntando a ese esquema, la segunda DELETE falla por tabla ausente; la primera puede haber confirmado por separado.
+- El árbol actual de `.github/workflows` no contiene workflow de despliegue de Worker. No se obtuvo evidencia viva del deployment activo ni logs autenticados de Cloudflare. Por tanto, **el incidente no está confirmado** y no se debe afirmar que el Cron esté desplegado/ejecutándose.
+- No cambiar Cloudflare, Worker, secretos ni el Cron sin verificar deployment y seguir el gate de producción.
+
+### Estado vivo de PRs en GitHub
+- `main`: `6f956b2336a70ec7013e20306be59d72db354b01`.
+- #251 auth retention: **merged**; merge commit `8c13da8b2d55d0a45490b19499b1b7c53e0ec966`. El texto histórico del cuerpo de la PR que aún dice Draft no prevalece sobre el estado vivo merged.
+- #255 BCV: open, HEAD `59b6b40ddf30f6711624124b719ef15234ce5fdc`, base main en SHA `c46ed6f3e57a12bf92a7f0718435dfff8096b540`; comparación actual 48 ahead / 1 behind; GitHub informa mergeable. Requiere sincronizar el único commit posterior de main y completar el gate Neon/Worker antes de integrar o activar el Cron BCV.
+- #258 checkout: open, HEAD `8935842cab6a7e2b8a6c0aa078e9b3e77866e48c`; base histórica main SHA `0a9e2f7c0d8b4d68b1efe6b372c10c107b160d67`; comparación actual 35 ahead / 32 behind, diverged; GitHub informa `mergeable=false`. No force-push ni merge de sincronización improvisado.
+- #262 ledger projection: open, HEAD `19103c000b354da85c1a478867a6a18e2ec25cd7`; apilada sobre rama checkout antigua `feat/sales-checkout-recovered-main-20261108`, base SHA `df1ba996babb859a83da09d72cdec63a69b3965c`; comparación contra main 107 ahead / 32 behind. No integrar separada ni asumir que mergeable en su base implica integrable a main.
+- #233 checkout histórico: open/Draft; conservar hasta demostrar que no aporta cambios únicos.
+- #193 inventario Fase B: open; mantener intacta según instrucción expresa.
+- #255/#258/#262 no deben considerarse listas para producción por checks históricos. Revalidar en SHA final y verificar las dependencias del stack.
+
+### Contrato comercial checkout
+- No existe todavía confirmación explícita del propietario sobre moneda única, pago completo, pagos divididos y manejo de sobrepago/cambio.
+- Recomendación técnica provisional: una moneda de liquidación por venta y saldo pendiente cero para completar; permitir múltiples medios de pago dentro de la misma moneda. Modelar por separado importe recibido y cambio devuelto en pagos en efectivo si el negocio lo requiere. No cambiar constraints/migraciones hasta aprobar el comportamiento de producto.
+- Este bloqueo no impide auditoría ni reconstrucción técnica; sí impide cerrar el contrato comercial y declarar checkout listo.
+
+### Acciones realizadas / no realizadas
+- Ejecutado solo el workflow `verify`; falló por secreto ausente antes de conectarse a Neon.
+- No se creó/modificó secreto; no hubo Neon, Cloudflare, deployment, DNS, billing, producción ni datos reales.
+- No hubo merge, force-push ni cambios de código fuente. Esta rama contiene únicamente reconciliación documental.
+- Siguiente paso bloqueado: el propietario debe crear el secreto de repositorio `NEON_REHEARSAL_DATABASE_URL` con conexión directa/no pooler del usuario `microapp_migrator` a la rama rehearsal exacta `br-curly-poetry-b7dxsddm` del proyecto `restless-fire-99110035`. Nunca compartir el valor en chat. Después repetir `verify`; no activar `adopt-and-migrate` sin autorización específica de escritura para rehearsal.
+
+---
+
 # 2026-11-08 UTC — PR #266 de sincronización cerrada sin merge; PR #265 documental en CI
 
 - Se creó PR #266 (main hacia la rama de #258) para diagnosticar la sincronización; GitHub reportó `mergeable=false`. Se cerró sin merge.

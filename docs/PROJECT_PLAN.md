@@ -2,7 +2,7 @@
 
 La reconciliación detallada y los SHA autoritativos se mantienen en `docs/CURRENT_STATE.md`; este plan no replica snapshots de PR.
 
-- #286 contiene la actualización documental posterior a #285; HEAD `86ad02e...`, 17 ahead / 0 behind, `mergeable=clean`, 14/14 check-runs y 10/10 workflows SUCCESS exact-HEAD, incluidos los seis checks requeridos de main. Sigue Draft y sin review formal independiente; no fusionar solo por CI verde. Si cambia el SHA, revalidar.
+- #286 contiene la actualización documental posterior a #285; El snapshot previo validó HEAD `9071c492...`, 21 ahead / 0 behind, `mergeable=clean`, 13/13 check-runs y 10/10 workflows SUCCESS exact-HEAD, incluidos los seis checks requeridos de main. El commit documental actual exige nueva validación. Sigue Draft y sin review formal independiente; no fusionar solo por CI verde. Si cambia el SHA, revalidar.
 - #269 y #255 siguen Draft y divergidas respecto a main (26/3 y 54/3); los gates de checkout y BCV continúan abiertos.
 - Prioridad: resolver los gates de producto/operación y sincronizar ambas ramas de forma no destructiva antes de considerar su integración.
 - Neon rehearsal #42507066215 ya pasó en entorno aislado; no repetir escrituras remotas. Producción sigue **NOT READY**.

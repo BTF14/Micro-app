@@ -60,9 +60,9 @@ Excluded:
 |---|---|---|---|
 | Reconcile #193 §7.9.H–I against current schema and writers | Accurate implementation plan | GitHub source, migrations 0006/0010/0011/0012, inventory-counts and #258 checkout reviewed | complete |
 | Create durable ODD task before source changes | This file exists on feature branch | GitHub contents API commit | complete |
-| Implement 0019 projection, lock helper and least-privilege grants | Database-enforced ledger projection | Migration assertions + rollback + full PostgreSQL CI | complete — exact HEAD f2fb1f0 |
-| Convert count and checkout writers | Movement-only stock writes; all-zero opening remains one-time | Inventory-count, inventory-read and atomic-checkout PostgreSQL suites | complete — exact HEAD f2fb1f0 |
-| Harden smoke/CI and document evidence | Runtime principal proves allowed/denied actions | 8/8 check-runs; CI, migration validation, runtime smoke, backup/restore, security and secret scans all successful on exact HEAD f2fb1f0 | complete |
+| Implement 0019 projection, lock helper and least-privilege grants | Database-enforced ledger projection | Migration assertions + rollback + full PostgreSQL CI | complete — exact HEAD ef1e17a01a8361a7c6e8d28454a3e1e30e8cc2eb |
+| Convert count and checkout writers | Movement-only stock writes; all-zero opening remains one-time | Inventory-count, inventory-read and atomic-checkout PostgreSQL suites | complete — exact HEAD ef1e17a01a8361a7c6e8d28454a3e1e30e8cc2eb |
+| Harden smoke/CI and document evidence | Runtime principal proves allowed/denied actions | 8/8 check-runs; 6/6 PR workflow runs successful on exact HEAD ef1e17a01a8361a7c6e8d28454a3e1e30e8cc2eb | complete |
 | Independent architecture/security/QA review | Review of complete diff | No formal reviews or review threads exist yet; owner/independent review remains a merge gate | pending |
 
 ## Technical decisions
@@ -77,7 +77,7 @@ Excluded:
 
 ## Closure and handoff
 
-- Final commit SHA: `f2fb1f0bdb2976050cd69f1689c799c9eb8ac771`
+- Final commit SHA: `ef1e17a01a8361a7c6e8d28454a3e1e30e8cc2ebbdb2976050cd69f1689c799c9eb8ac771`
 - PR: #262 Draft, base `feat/sales-checkout-recovered-main-20261108` (PR #258); mergeable=true; branch is one commit behind the current base branch after the CI-trigger improvement.
 - Checks and exact outcomes: 8/8 check-runs successful on the exact HEAD; full CI build/typecheck, unit tests, inventory count/read, atomic checkout and runtime-role API integration all passed. Migration validation passed both PR and push runs, including injected rollback and runtime-role smoke. Backup/restore, Cloudflare Pages, Workers build, Trivy, secret-history and security scans passed.
 - Acceptance criteria met / unmet: AC-1 through AC-10 met in disposable PostgreSQL/CI. Formal independent review and Neon rehearsal are not complete.

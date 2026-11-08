@@ -153,7 +153,7 @@ BEGIN
      WHERE t.tgrelid='public.warehouse_inventory_movements'::regclass
        AND NOT t.tgisinternal
        AND pg_catalog.pg_get_triggerdef(t.oid) ILIKE '%BEFORE INSERT%'
-     ORDER BY t.tgname
+     ORDER BY t.tgname COLLATE "C"
      LIMIT 1
   ) IS DISTINCT FROM 'warehouse_inventory_movements_00_lock_warehouse' THEN
     RAISE EXCEPTION 'INVENTORY_MOVEMENT_WAREHOUSE_LOCK_MUST_RUN_BEFORE_VALIDATION';

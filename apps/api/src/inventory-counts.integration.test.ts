@@ -553,6 +553,24 @@ describe.skipIf(!databaseUrl)("warehouse inventory count transactions against Po
       await client.query("ALTER TABLE inventory_balances ENABLE TRIGGER USER");
       await client.query("ALTER TABLE warehouse_inventory_movements ENABLE TRIGGER USER");
     }
+    // Ledger-projection fixtures use a confirmed physical count as their source.
+    // Remove that test-only count before deleting its product (the FK is RESTRICT).
+    await client.query(
+      `WITH removed_lines AS (
+         DELETE FROM inventory_count_lines
+          WHERE organization_id = $1 AND product_id = $2
+          RETURNING count_id
+       )
+       DELETE FROM inventory_counts c
+        WHERE c.organization_id = $1
+          AND c.id IN (SELECT count_id FROM removed_lines)
+          AND NOT EXISTS (
+            SELECT 1 FROM inventory_count_lines remaining
+             WHERE remaining.organization_id = c.organization_id
+               AND remaining.count_id = c.id
+          )`,
+      [organizationId, omittedProduct.rows[0]!.id],
+    );
     await client.query("DELETE FROM products WHERE organization_id = $1 AND id = $2", [organizationId, omittedProduct.rows[0]!.id]);
 
     const opening = await request(root() + "/counts/opening", {
@@ -686,33 +704,26 @@ describe.skipIf(!databaseUrl)("warehouse inventory count transactions against Po
       [organizationId, body.id],
     );
     expect(snapshot.rows[0]).toEqual({ expected: "8.250", version: "1" });
-    await client.query("BEGIN");
-    try {
-      await client.query(
-        "UPDATE inventory_balances SET on_hand_quantity = 8.500 WHERE organization_id = $1 AND warehouse_id = $2 AND product_id = $3",
-        [organizationId, warehouseId, productId],
-      );
-      await client.query(
-        `INSERT INTO warehouse_inventory_movements
-          (organization_id, branch_id, warehouse_id, product_id, movement_type, quantity_delta, reason, actor_user_id)
-         VALUES ($1, $2, $3, $4, 'purchase_receipt', 0.250, 'ABA test intermediate increase', $5)`,
-        [organizationId, branchId, warehouseId, productId, userId],
-      );
-      await client.query(
-        "UPDATE inventory_balances SET on_hand_quantity = 8.250 WHERE organization_id = $1 AND warehouse_id = $2 AND product_id = $3",
-        [organizationId, warehouseId, productId],
-      );
-      await client.query(
-        `INSERT INTO warehouse_inventory_movements
-          (organization_id, branch_id, warehouse_id, product_id, movement_type, quantity_delta, reason, actor_user_id)
-         VALUES ($1, $2, $3, $4, 'reversal', -0.250, 'ABA test return to original quantity', $5)`,
-        [organizationId, branchId, warehouseId, productId, userId],
-      );
-      await client.query("COMMIT");
-    } catch (error) {
-      await client.query("ROLLBACK");
-      throw error;
-    }
+    // Reproduce the ABA sequence through two valid, confirmed count documents:
+    // 8.250 -> 8.500 -> 8.250. The final quantity matches the stale snapshot,
+    // but two ledger projections must advance balance_version twice.
+    const increase = await request(root() + "/counts/physical", {
+      reason: "ABA test intermediate increase",
+      lines: [{ product_id: productId, counted_quantity: "8.500" }],
+    });
+    expect(increase.status).toBe(201);
+    const increaseBody = await increase.json() as { id: string };
+    const increaseConfirmation = await request(root() + "/counts/" + increaseBody.id + "/confirm");
+    expect(increaseConfirmation.status).toBe(200);
+
+    const restore = await request(root() + "/counts/physical", {
+      reason: "ABA test return to original quantity",
+      lines: [{ product_id: productId, counted_quantity: "8.250" }],
+    });
+    expect(restore.status).toBe(201);
+    const restoreBody = await restore.json() as { id: string };
+    const restoreConfirmation = await request(root() + "/counts/" + restoreBody.id + "/confirm");
+    expect(restoreConfirmation.status).toBe(200);
     const confirmation = await request(root() + "/counts/" + body.id + "/confirm");
     expect(confirmation.status).toBe(409);
     expect(await confirmation.json()).toMatchObject({
@@ -803,7 +814,7 @@ describe.skipIf(!databaseUrl)("warehouse inventory count transactions against Po
            AND action = 'inventory.count.confirmed') AS audits`,
       [organizationId, warehouseId, productId, body.id],
     );
-    expect(persisted.rows[0]).toEqual({ balance: "0.000", movements: "0", audits: "1" });
+    expect(persisted.rows[0]).toEqual({ balance: null, movements: "0", audits: "1" });
 
     const secondOpening = await request(root() + "/counts/opening", {
       reason: "A second opening must not overwrite the initial zero balance",

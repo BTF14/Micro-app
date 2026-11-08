@@ -2023,3 +2023,60 @@ No se tocaron Neon main, datos reales, secretos, Worker productivo, DNS, billing
 
 ---
 
+## 2026-11-08 13:15 UTC — reconciliación de PR #269/#270/#255 y Neon rehearsal
+
+- Main verificado: `5f09b87aee09d0746f6ea90f076b4eb81d168daf`; 7 PR abiertas.
+- #269 HEAD `56a5f2ebf4f63c03bc4e50bbf5eb45b6e0aebbde`: Open/Draft/mergeable; 13 ahead/0 behind; 11 workflow runs completed/success; una review COMMENTED, sin APPROVE.
+- #270 HEAD `d3ec41147798ab19ffb74147f319565e8ea31b31`: Open/Draft/mergeable; 1 ahead/0 behind; 9 workflow runs completed/success; diff solo dos líneas de resumen Bash.
+- #255 HEAD `59b6b40ddf30f6711624124b719ef15234ce5fdc`: Open/Ready/no mergeable; base c46ed6f; diverged 48 ahead/2 behind main; 10 workflow runs completed/success; no review formal.
+- Neon rehearsal verificado con SELECT directo: neondb, microapp_migrator, branch ID y project ID esperados, 15 tablas. Sin DDL/DML.
+- El propietario confirmó que actualizó el secreto Actions, pero no hay run posterior que pruebe su consumo. El conector no permite workflow_dispatch; el siguiente paso es lanzar verify manualmente desde main, sin aplicar migraciones.
+- #193 no se modificó. Sin merges, force-push, cambios de secretos/Cloudflare ni escrituras en Neon. Producción NOT READY.
+
+## 2026-11-08 13:22 UTC — merge #270 y reconciliación posterior
+
+- #270 se marcó Ready y se fusionó con squash tras inspeccionar el diff de un único archivo y confirmar 9 workflow runs SUCCESS en su HEAD exacto. Merge commit/main: `37e8c40d5bacfb71133942d774c3f87d71d61b9e`. El cambio solo corrige quoting del resumen verify; no toca lógica de migraciones.
+- No se obtuvo evidencia de runs post-merge desde el endpoint de runs PR-triggered; no se afirma CI post-merge.
+- #269 pasó a diverged 13 ahead/1 behind y mergeable=false; #255 diverged 48 ahead/3 behind y mergeable=false. No se fusionaron.
+- Neon rehearsal SELECT confirma database/login/session/branch/project y 15 tablas; no DDL/DML.
+- El secreto fue actualizado por el propietario según confirmación en chat; falta run verify posterior desde Actions.
+- PR #271 conserva las actualizaciones de continuidad; #193 no se tocó. Producción NOT READY.
+
+## 2026-11-08 13:21 UTC — revisión técnica no aprobatoria de PR #255
+
+- Review formal COMMENTED registrada en el HEAD exacto `59b6b40ddf30f6711624124b719ef15234ce5fdc` (review ID `5818042583`); no es APPROVE.
+- Dos bloqueadores P1 para producción: la tasa de una fecha nueva no tiene política de detección de variaciones anómalas (solo rango máximo 1e9); el Cron captura fallos y solo emite log genérico, sin señal/alerta fiable.
+- El parser se valida con fixtures sintéticos; falta verificar markup real de BCV con fixture revisada.
+- #255 permanece Open/Ready, mergeable=false, 48 ahead/3 behind main. No merge.
+- #271 docs PR: HEAD actual mergeable=false (8 ahead/1 behind) y sin workflow runs reportados; no merge.
+
+## 2026-11-08 13:24 UTC — actualización de mergeability y CI de PR #271
+
+- GitHub recalculó mergeability: #269 Open/Draft/mergeable=true (13 ahead/1 behind); #255 Open/Ready/mergeable=true (48 ahead/3 behind). Ambos siguen bloqueados por sus gates técnicos y de producto, no por un estado dirty confirmado.
+- #271 Open/Ready/mergeable=true; HEAD `bf8af19d6f96bfde8df46cef6ccc6abcbc9ff6ba`; compare 12 ahead/1 behind. Runs del HEAD: ODD docs, dependency review, dashboard y un check más completed/success; Semgrep, PostgreSQL migration runner validation, CI, database migration validation, security scan, Playwright E2E y secret history scan pending/in progress al momento de consulta. No merge mientras haya checks pendientes.
+- #255 conserva review COMMENTED (ID 5818042583), sin APPROVE; dos gates P1 anotados.
+
+## 2026-11-08 13:25 UTC — HEAD actualizado de PR #271
+
+- Las últimas actualizaciones de CURRENT_STATE, HANDOFF, WORK_CHECKPOINT y STATE_JOURNAL movieron el HEAD de PR #271 a `c52a334cd651aa7c4352a336a8c5947be65eabde`.
+- GitHub informa PR #271 Open/Ready/mergeable=true, compare 12 ahead/1 behind; el endpoint no devolvió workflow runs para el HEAD actual.
+- Las 10 ejecuciones observadas previamente corresponden al HEAD anterior `bf8af19...` (3 SUCCESS y 7 pending/in_progress); no validan `c52a334...`. No fusionar hasta CI exact-HEAD.
+
+## 2026-11-08 13:26 UTC — cierre de actualización documental de continuidad
+
+- CURRENT_STATE, HANDOFF_NEXT_CHAT, WORK_CHECKPOINT y STATE_JOURNAL quedaron reconciliados en la rama documental de PR #271.
+- No se copia un SHA de PR #271 dentro de sus propios documentos porque cada commit documental mueve el HEAD; consultar siempre el HEAD vivo de la PR.
+- Los runs observados en commits anteriores de #271 no validan el HEAD final. Requerido: CI completo en el HEAD final antes de merge.
+
+## 2026-11-08 13:27 UTC — reconciliación de estados de mergeability fluctuantes
+
+- En consultas consecutivas GitHub alternó `mergeable` de #269 y #255 entre false y true sin cambios en sus HEADs; última respuesta para ambos: true. Se conserva compare: #269 13 ahead/1 behind; #255 48 ahead/3 behind. No inferir conflicto únicamente de una lectura anterior de mergeable.
+- Para #271, la última lectura devolvió mergeable=false y compare 28 ahead/1 behind; no se han devuelto runs para su última actualización documental.
+- Los gates técnicos/producto de #269/#255 permanecen; mergeable=true no equivale a elegibilidad para fusionar.
+
+## 2026-11-08 13:29 UTC — consolidación de continuidad documental
+
+- Se creó `docs/reconcile-neon-pr-state-clean-20261108` desde main `37e8c40d5bacfb71133942d774c3f87d71d61b9e`.
+- La rama anterior de continuidad #271 acumuló commits sucesivos al registrar checkpoints y quedó 1 commit detrás de main; para evitar ruido y conflicto de base, se transfieren sus cuatro archivos finales (CURRENT_STATE, HANDOFF_NEXT_CHAT, WORK_CHECKPOINT y STATE_JOURNAL) a una rama limpia.
+- No se descarta contenido: se copian los blobs finales de los cuatro archivos desde #271. La PR anterior se cerrará como supersedida solo después de verificar que la nueva PR contiene exactamente esos cuatro archivos.
+- La nueva PR será #272; esperar CI exact-HEAD antes de integrar.

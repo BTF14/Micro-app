@@ -1,6 +1,6 @@
 ## Prioridad operativa — 2026-11-08 06:45 UTC
 
-El estado vivo de GitHub está registrado en `docs/CURRENT_STATE.md` y el checkpoint de continuidad. Main es `0a9e2f7c0d8b4d68b1efe6b372c10c107b160d67`; hay cinco PR abiertas (#193, #233, #251, #255, #258). #251, #255 y #258 tienen 15/15 check-runs y 13/13 workflow runs SUCCESS en sus HEADs exactos; siguen Draft y sin review formal independiente.
+El estado vivo de GitHub está registrado en `docs/CURRENT_STATE.md` y el checkpoint de continuidad. Main es `0a9e2f7c0d8b4d68b1efe6b372c10c107b160d67`; hay seis PR abiertas (#193, #233, #251, #255, #258 y #261, esta reconciliación documental). #251, #255 y #258 tienen 15/15 check-runs y 13/13 workflow runs SUCCESS en sus HEADs exactos; siguen Draft y sin review formal independiente.
 
 Orden:
 1. Revisión independiente y gates de integración de #251 → #255.

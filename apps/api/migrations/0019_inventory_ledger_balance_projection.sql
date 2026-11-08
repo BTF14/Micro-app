@@ -218,10 +218,9 @@ BEGIN
   SELECT balance.warehouse_id, balance.product_id, balance.on_hand_quantity,
          balance.reserved_quantity, balance.balance_version
     FROM public.inventory_balances AS balance
-    JOIN pg_catalog.unnest(p_warehouse_ids, p_branch_ids)
-      AS target(warehouse_id, branch_id)
-      ON target.warehouse_id = balance.warehouse_id
-     AND target.branch_id = balance.branch_id
+    JOIN pg_catalog.generate_subscripts(p_warehouse_ids, 1) AS target(position)
+      ON p_warehouse_ids[target.position] = balance.warehouse_id
+     AND p_branch_ids[target.position] = balance.branch_id
    WHERE balance.organization_id = p_organization_id
      AND (p_product_ids IS NULL OR balance.product_id = ANY(p_product_ids))
    ORDER BY balance.warehouse_id ASC, balance.product_id ASC

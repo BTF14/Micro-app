@@ -1,3 +1,15 @@
+## Addendum — runner Neon rehearsal preparado, no activado — 2026-11-08 UTC
+
+- Se preparó en la rama `security/neon-rehearsal-migration-runner-20261108` el workflow `.github/workflows/neon-rehearsal-migrations.yml`.
+- El workflow solo admite `workflow_dispatch` desde `main`; el modo predeterminado es `verify`. El modo `adopt-and-migrate` exige escribir la confirmación exacta `APPLY-ONLY-br-curly-poetry-b7dxsddm`.
+- Antes de cualquier operación valida en SQL la base `neondb`, el login directo `microapp_migrator`, el branch ID `br-curly-poetry-b7dxsddm` y el project ID `restless-fire-99110035`. Un destino distinto falla cerrado.
+- Usa exclusivamente el secreto nuevo `NEON_REHEARSAL_DATABASE_URL`, que debe ser una conexión directa/no pooler de `microapp_migrator` a esa rama de ensayo. El mismo URL se usa para `adopt-baseline.sh` y `migrate.sh`; el esquema actual y la huella exacta 0002 ya fueron comprobados.
+- En modo `verify` solo ejecuta `adopt-baseline.sh verify`; en modo `adopt-and-migrate` aplica baseline 0001–0002 y luego la cadena numerada del repositorio mediante `migrate.sh`, seguida de verificaciones de ledger, ownership y grants BCV.
+- **No se creó ni modificó ningún secreto y el workflow no se ha ejecutado.** El PR que contiene el workflow es preparación de repositorio; el propietario debe autorizar explícitamente crear/usar el secreto y activar el modo de escritura. Neon main, secretos de producción y Worker `DATABASE_URL` permanecen fuera de alcance.
+- El workflow no se dispara por push ni por PR y no tiene ruta a Neon main: está diseñado para ejecución manual y destino fijo de rehearsal.
+
+---
+
 # Addendum vivo — 2026-11-08 UTC — estado de PR y gate del runner
 
 - GitHub main `96e2e2d9f76bc8fcc3bab2fa9503e480545c8869`; PR #251 HEAD `5dec5d5a9025de16b19d0cb7cfeac6585e2ad5d6`, 15/15 check-runs SUCCESS; PR #255 HEAD `35b9ac6894f79c5760a1f56fb37506ed2278afa0`, base #251, 13 workflow runs + 15/15 check-runs SUCCESS. Ambas Draft y sin revisión formal.

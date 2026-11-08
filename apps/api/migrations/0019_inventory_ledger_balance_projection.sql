@@ -79,6 +79,99 @@ CREATE TRIGGER aaa_warehouse_inventory_movements_lock_warehouse
 BEFORE INSERT ON public.warehouse_inventory_movements
 FOR EACH ROW EXECUTE FUNCTION public.lock_inventory_movement_warehouse();
 
+-- A balance projection is only safe when every movement is backed by a
+-- database-verifiable business document. Counts retain their existing strict
+-- validator; checkout sales must match a draft sale line exactly. Other
+-- movement types remain unavailable until their source-document workflows
+-- and authorization contracts exist.
+CREATE FUNCTION public.validate_inventory_movement_source()
+RETURNS trigger
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = pg_catalog
+AS $validate_inventory_movement_source$
+DECLARE
+  sale_branch_id uuid;
+  sale_warehouse_id uuid;
+  sale_actor_id uuid;
+  sale_status text;
+  sale_quantity numeric(14,3);
+  sale_unit_cost numeric(14,4);
+BEGIN
+  IF NEW.movement_type IN ('opening', 'count_adjustment') THEN
+    IF NEW.reference_type IS NOT NULL OR NEW.reference_id IS NOT NULL THEN
+      RAISE EXCEPTION 'COUNT_MOVEMENT_MUST_NOT_CARRY_EXTERNAL_SOURCE'
+        USING ERRCODE = '23514';
+    END IF;
+    RETURN NEW;
+  END IF;
+
+  IF NEW.movement_type <> 'sale'
+    OR NEW.count_id IS NOT NULL
+    OR NEW.reference_type IS DISTINCT FROM 'sale'
+    OR NEW.reference_id IS NULL
+    OR NEW.quantity_delta >= 0
+  THEN
+    RAISE EXCEPTION 'INVENTORY_MOVEMENT_SOURCE_TYPE_NOT_AUTHORIZED'
+      USING ERRCODE = '23514';
+  END IF;
+
+  SELECT s.branch_id, s.warehouse_id, s.created_by, s.status
+    INTO sale_branch_id, sale_warehouse_id, sale_actor_id, sale_status
+    FROM public.sales AS s
+   WHERE s.organization_id = NEW.organization_id
+     AND s.id = NEW.reference_id
+   FOR UPDATE;
+
+  IF NOT FOUND
+    OR sale_status <> 'draft'
+    OR sale_branch_id IS DISTINCT FROM NEW.branch_id
+    OR sale_warehouse_id IS DISTINCT FROM NEW.warehouse_id
+    OR sale_actor_id IS DISTINCT FROM NEW.actor_user_id
+  THEN
+    RAISE EXCEPTION 'INVENTORY_SALE_MOVEMENT_SOURCE_SCOPE_INVALID'
+      USING ERRCODE = '23514';
+  END IF;
+
+  SELECT item.quantity, item.unit_cost_usd
+    INTO sale_quantity, sale_unit_cost
+    FROM public.sale_items AS item
+   WHERE item.organization_id = NEW.organization_id
+     AND item.sale_id = NEW.reference_id
+     AND item.product_id = NEW.product_id
+   FOR SHARE;
+
+  IF NOT FOUND
+    OR NEW.quantity_delta IS DISTINCT FROM -sale_quantity
+    OR NEW.unit_cost_usd IS DISTINCT FROM sale_unit_cost
+  THEN
+    RAISE EXCEPTION 'INVENTORY_SALE_MOVEMENT_MUST_MATCH_SALE_LINE'
+      USING ERRCODE = '23514';
+  END IF;
+
+  IF EXISTS (
+    SELECT 1 FROM public.warehouse_inventory_movements AS existing
+     WHERE existing.organization_id = NEW.organization_id
+       AND existing.movement_type = 'sale'
+       AND existing.reference_type = 'sale'
+       AND existing.reference_id = NEW.reference_id
+       AND existing.product_id = NEW.product_id
+  ) THEN
+    RAISE EXCEPTION 'INVENTORY_SALE_MOVEMENT_ALREADY_RECORDED'
+      USING ERRCODE = '23514';
+  END IF;
+
+  RETURN NEW;
+END;
+$validate_inventory_movement_source$;
+
+REVOKE ALL ON FUNCTION public.validate_inventory_movement_source() FROM PUBLIC, microapp_runtime;
+
+-- Run after the warehouse mutex but before count validation and balance projection.
+CREATE TRIGGER aab_warehouse_inventory_movements_validate_source
+BEFORE INSERT ON public.warehouse_inventory_movements
+FOR EACH ROW EXECUTE FUNCTION public.validate_inventory_movement_source();
+
 CREATE FUNCTION public.project_inventory_movement_to_balance()
 RETURNS trigger
 LANGUAGE plpgsql
@@ -230,6 +323,9 @@ $lock_inventory_balances$;
 
 REVOKE ALL ON FUNCTION public.lock_inventory_balances(uuid, uuid[], uuid[], uuid[]) FROM PUBLIC;
 GRANT EXECUTE ON FUNCTION public.lock_inventory_balances(uuid, uuid[], uuid[], uuid[]) TO microapp_runtime;
+
+COMMENT ON FUNCTION public.validate_inventory_movement_source() IS
+  'Fail-closed source authorization: count movements use confirmed count validation; sale movements must match a draft sale line and actor; unsupported source types are rejected.';
 
 COMMENT ON FUNCTION public.lock_inventory_movement_warehouse() IS
   'SECURITY DEFINER BEFORE INSERT guard: lock and validate the active tenant/branch warehouse before count validation and balance projection.';

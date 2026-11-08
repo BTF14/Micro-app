@@ -2041,3 +2041,11 @@ No se tocaron Neon main, datos reales, secretos, Worker productivo, DNS, billing
 - Neon rehearsal SELECT confirma database/login/session/branch/project y 15 tablas; no DDL/DML.
 - El secreto fue actualizado por el propietario según confirmación en chat; falta run verify posterior desde Actions.
 - PR #271 conserva las actualizaciones de continuidad; #193 no se tocó. Producción NOT READY.
+
+## 2026-11-08 13:21 UTC — revisión técnica no aprobatoria de PR #255
+
+- Review formal COMMENTED registrada en el HEAD exacto `59b6b40ddf30f6711624124b719ef15234ce5fdc` (review ID `5818042583`); no es APPROVE.
+- Dos bloqueadores P1 para producción: la tasa de una fecha nueva no tiene política de detección de variaciones anómalas (solo rango máximo 1e9); el Cron captura fallos y solo emite log genérico, sin señal/alerta fiable.
+- El parser se valida con fixtures sintéticos; falta verificar markup real de BCV con fixture revisada.
+- #255 permanece Open/Ready, mergeable=false, 48 ahead/3 behind main. No merge.
+- #271 docs PR: HEAD actual mergeable=false (8 ahead/1 behind) y sin workflow runs reportados; no merge.

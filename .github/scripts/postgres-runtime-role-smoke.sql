@@ -171,20 +171,31 @@ BEGIN
 
   INSERT INTO public.warehouse_inventory_movements
     (organization_id,branch_id,warehouse_id,product_id,movement_type,quantity_delta,
-     reason,actor_user_id)
+     unit_cost_usd,reason,reference_type,reference_id,actor_user_id)
   VALUES ('11111111-1111-4111-8111-111111111111',
           '33333333-3333-4333-8333-333333333333',
-          '55555555-5555-4555-8555-555555555555',v_product,'purchase_receipt',1.000,
-          'Runtime ledger projection smoke','22222222-2222-4222-8222-222222222222');
+          '55555555-5555-4555-8555-555555555555',v_product,'sale',-1.000,
+          1.0000,'Runtime ledger projection smoke','sale',v_sale,
+          '22222222-2222-4222-8222-222222222222');
 
   SELECT on_hand_quantity INTO v_quantity
   FROM public.inventory_balances
   WHERE organization_id='11111111-1111-4111-8111-111111111111'
     AND warehouse_id='55555555-5555-4555-8555-555555555555'
     AND product_id=v_product;
-  IF v_quantity <> 3.000 THEN RAISE EXCEPTION 'LEDGER_PROJECTION_INCREMENT_FAILED'; END IF;
+  IF v_quantity <> 1.000 THEN RAISE EXCEPTION 'LEDGER_PROJECTION_SALE_FAILED'; END IF;
 
-  -- A direct negative ledger entry cannot underflow on-hand stock.
+  -- Source-less purchase receipts and reversals cannot manufacture stock changes.
+  BEGIN
+    INSERT INTO public.warehouse_inventory_movements
+      (organization_id,branch_id,warehouse_id,product_id,movement_type,quantity_delta,
+       reason,actor_user_id)
+    VALUES ('11111111-1111-4111-8111-111111111111',
+            '33333333-3333-4333-8333-333333333333',
+            '55555555-5555-4555-8555-555555555555',v_product,'purchase_receipt',4.000,
+            'Runtime unauthorized receipt smoke','22222222-2222-4222-8222-222222222222');
+    RAISE EXCEPTION 'RUNTIME_INSERTED_UNAUTHORIZED_PURCHASE_RECEIPT';
+  EXCEPTION WHEN check_violation THEN NULL; END;
   BEGIN
     INSERT INTO public.warehouse_inventory_movements
       (organization_id,branch_id,warehouse_id,product_id,movement_type,quantity_delta,
@@ -192,8 +203,8 @@ BEGIN
     VALUES ('11111111-1111-4111-8111-111111111111',
             '33333333-3333-4333-8333-333333333333',
             '55555555-5555-4555-8555-555555555555',v_product,'reversal',-4.000,
-            'Runtime underflow rejection smoke','22222222-2222-4222-8222-222222222222');
-    RAISE EXCEPTION 'RUNTIME_LEDGER_MOVEMENT_UNDERFLOWED_BALANCE';
+            'Runtime unauthorized reversal smoke','22222222-2222-4222-8222-222222222222');
+    RAISE EXCEPTION 'RUNTIME_INSERTED_UNAUTHORIZED_REVERSAL';
   EXCEPTION WHEN check_violation THEN NULL; END;
 
   SELECT on_hand_quantity INTO v_quantity
@@ -201,7 +212,7 @@ BEGIN
   WHERE organization_id='11111111-1111-4111-8111-111111111111'
     AND warehouse_id='55555555-5555-4555-8555-555555555555'
     AND product_id=v_product;
-  IF v_quantity <> 3.000 THEN RAISE EXCEPTION 'REJECTED_MOVEMENT_CHANGED_BALANCE'; END IF;
+  IF v_quantity <> 1.000 THEN RAISE EXCEPTION 'REJECTED_MOVEMENT_CHANGED_BALANCE'; END IF;
 
   -- Runtime has no direct INSERT/UPDATE/DELETE/TRUNCATE path to balances.
   BEGIN

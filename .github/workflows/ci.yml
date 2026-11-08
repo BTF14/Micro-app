@@ -4,7 +4,8 @@ on:
   push:
     branches: [main]
   pull_request:
-    branches: [main]
+    # Run the complete suite for stacked implementation PRs as well as main.
+    branches: [main, "feat/**", "fix/**"]
 
 permissions:
   contents: read

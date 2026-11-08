@@ -3,7 +3,7 @@
 Fuente autoritativa de estado: `docs/CURRENT_STATE.md`. Este checkpoint resume únicamente el punto operativo.
 
 - Main: `594382f6f191f2ea0b55d913683841e51c210e5d` (PR #285).
-- #286: OPEN, docs-only; la rama recibió una limpieza de duplicación documental después del HEAD inicial `c034bfe...`. Sus 10/10 workflows pull_request SUCCESS no son reutilizables. Consultar SHA, divergencia y CI exactos actuales; mergeability y branch protection no confirmadas.
+- #286: OPEN/Draft, docs-only; HEAD `86ad02e426c328cd2bb4a8436d0910b0f06ecd2b`; 17 ahead / 0 behind; `mergeable=clean`; 14/14 check-runs y 10/10 workflow runs SUCCESS exact-HEAD. Los seis checks requeridos de main están SUCCESS. Main aparece protegida (el resumen expone esos checks; reglas detalladas 403). Sin reviews formales ni threads; mantener Draft y no fusionar solo por CI.
 - #233: CLOSED como superseded, no merged; 18/18 paths preservados/evolucionados; conservar rama/83 commits.
 - #269: OPEN/Draft; HEAD `8f05befb7ac1a46d68850b9f89f89edc8cd46283`; 26 ahead / 3 behind; 11/11 PR workflows SUCCESS exact-HEAD; gates comerciales abiertos.
 - #255: OPEN/Draft; HEAD `7e43d7fd1519889605174da5818190bb84685059`; 54 ahead / 3 behind; 10/10 PR workflows SUCCESS exact-HEAD; gates operativos BCV abiertos.

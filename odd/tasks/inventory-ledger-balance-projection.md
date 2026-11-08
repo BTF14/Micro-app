@@ -36,10 +36,11 @@ Excluded:
 - [ ] AC-3 — negative movements cannot reduce on-hand below reserved quantity; missing balance/insufficient available stock fails closed.
 - [ ] AC-4 — opening and physical count confirmation produce the same balances and ledger deltas as before, including zero-count/no-op behavior and stale snapshot rejection.
 - [ ] AC-5 — checkout remains atomic, idempotent and concurrency-safe; failed sale rolls back payment, movement, balance projection and audit together.
-- [ ] AC-6 — runtime row locks remain tenant/branch scoped and preserve deterministic lock order without direct UPDATE privilege.
+- [ ] AC-6 — runtime row locks remain tenant/branch scoped and preserve deterministic lock order without direct UPDATE privilege; every movement INSERT locks its active warehouse before count validation and projection.
 - [ ] AC-7 — migration 0019 applies atomically after 0018, has assertions and injected-failure rollback coverage, and the canonical migration runner succeeds from an empty PostgreSQL database.
 - [ ] AC-8 — full CI, runtime-role smoke and PostgreSQL integration tests pass on the exact final HEAD.
 - [ ] AC-9 — no unrelated code, product policy, Neon, secrets or production configuration changes.
+- [ ] AC-10 — an all-zero opening count is recorded without a synthetic balance/movement row, and a second confirmed opening is rejected by application logic and a unique partial index.
 
 ## Risks and guardrails
 
@@ -60,7 +61,7 @@ Excluded:
 | Reconcile #193 §7.9.H–I against current schema and writers | Accurate implementation plan | GitHub source, migrations 0006/0010/0011/0012, inventory-counts and #258 checkout reviewed | complete |
 | Create durable ODD task before source changes | This file exists on feature branch | GitHub contents API commit | complete |
 | Implement 0019 projection, lock helper and least-privilege grants | Database-enforced ledger projection | Migration assertions + rollback + full PostgreSQL CI | pending |
-| Convert count and checkout writers | Movement-only stock writes | Existing PostgreSQL integration tests | pending |
+| Convert count and checkout writers | Movement-only stock writes; all-zero opening remains one-time | Existing PostgreSQL integration tests | in progress |
 | Harden smoke/CI and document evidence | Runtime principal proves allowed/denied actions | Exact-HEAD CI and smoke | pending |
 | Independent architecture/security/QA review | Review of complete diff | Formal review or recorded independent review evidence | pending |
 

@@ -91,6 +91,7 @@ IVA, IGTF, facturación, numeración y conservación documental requieren fuente
 ## 9. IA, herramientas y agentes
 
 - GitHub y documentación versionada son la fuente persistente de verdad; el chat no sustituye el repositorio.
+- Toda IA debe aplicar el [contrato de continuidad, decisiones y evidencia](../odd/tasks/ai-continuity-and-evidence-contract.md): verificar estado vivo antes de actuar, registrar decisiones duraderas y cerrar bloques sustanciales con evidencia exacta y handoff reproducible.
 - `.github/agents/*.agent.md` son perfiles reutilizables, no prueba de subagentes activos.
 - GGA, Ollama, Engram, Gentle-AI y Gentle Shell no se describen como activos sin versión, ejecución y resultado observables.
 - No habilitar hooks automáticamente; validar primero sobre un diff no sensible y documentar desinstalación.

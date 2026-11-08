@@ -7,11 +7,16 @@ on:
       - 'AGENTS.md'
       - 'docs/CONSTITUTION.md'
       - 'docs/ODD_WORKFLOW.md'
-      - 'docs/SDD_WORKFLOW.md'
+      - 'docs/AI_COLLABORATION_AND_PR_POLICY.md'
       - 'docs/AGENT_OPERATING_MODEL.md'
+      - 'docs/decisions/**'
+      - 'docs/CURRENT_STATE.md'
+      - 'docs/HANDOFF_NEXT_CHAT.md'
+      - 'docs/WORK_CHECKPOINT.md'
       - 'odd/**'
       - '.github/agents/**'
       - 'tools/validate-agent-docs.py'
+      - 'tools/tests/test_validate_agent_docs.py'
       - '.github/workflows/odd-docs-validation.yml'
   push:
     branches: [main]
@@ -19,11 +24,16 @@ on:
       - 'AGENTS.md'
       - 'docs/CONSTITUTION.md'
       - 'docs/ODD_WORKFLOW.md'
-      - 'docs/SDD_WORKFLOW.md'
+      - 'docs/AI_COLLABORATION_AND_PR_POLICY.md'
       - 'docs/AGENT_OPERATING_MODEL.md'
+      - 'docs/decisions/**'
+      - 'docs/CURRENT_STATE.md'
+      - 'docs/HANDOFF_NEXT_CHAT.md'
+      - 'docs/WORK_CHECKPOINT.md'
       - 'odd/**'
       - '.github/agents/**'
       - 'tools/validate-agent-docs.py'
+      - 'tools/tests/test_validate_agent_docs.py'
       - '.github/workflows/odd-docs-validation.yml'
 
 permissions:
@@ -37,5 +47,7 @@ jobs:
       - uses: actions/setup-python@v7
         with:
           python-version: '3.12'
-      - name: Validate ODD workflow, task template and agent profiles
+      - name: Validate ODD, continuity contract, ADR template and agent profiles
         run: python3 tools/validate-agent-docs.py
+      - name: Test governance validator failure modes
+        run: python3 -m unittest discover -s tools/tests -p 'test_validate_agent_docs.py' -v

@@ -65,6 +65,13 @@ jobs:
             exit 1
           fi
 
+          authority="${NEON_REHEARSAL_DATABASE_URL#*@}"
+          connection_host="${authority%%[:/?]*}"
+          if [[ "${connection_host}" == *"-pooler"* ]]; then
+            echo "NEON_REHEARSAL_CONNECTION_MUST_BE_DIRECT_NOT_POOLER" >&2
+            exit 1
+          fi
+
           identity_sql="SELECT current_database() || '|' || current_user || '|' || session_user || '|' || COALESCE(current_setting('neon.branch_id', true), '') || '|' || COALESCE(current_setting('neon.project_id', true), '')"
           identity="$(psql -X -At -v ON_ERROR_STOP=1 --dbname "${NEON_REHEARSAL_DATABASE_URL}" -c "${identity_sql}")"
           expected="neondb|microapp_migrator|microapp_migrator|br-curly-poetry-b7dxsddm|restless-fire-99110035"

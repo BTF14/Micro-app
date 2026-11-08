@@ -306,7 +306,7 @@ BEGIN
             AND membership.is_active = true
        )
      )
-   FOR SHARE OF org, branch, warehouse, confirmer, confirmer_user, creator, creator_user;
+   ;
 
   IF NOT FOUND THEN
     RAISE EXCEPTION 'INVENTORY_COUNT_CONFIRMER_NOT_AUTHORIZED'

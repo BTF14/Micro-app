@@ -122,9 +122,8 @@ BEGIN
   PERFORM 1 FROM public.sale_items WHERE sale_id=v_sale;
   PERFORM 1 FROM public.payments WHERE sale_id=v_sale;
 
-  -- Full opening-count transaction: lifecycle trigger, count-line validator,
-  -- balance version trigger, and private balance/ledger pairing all execute
-  -- under the real non-owner runtime login.
+  -- Full opening-count transaction: the append-only movement is the only
+  -- stock write; its SECURITY DEFINER AFTER INSERT trigger creates the balance.
   INSERT INTO public.inventory_counts
     (organization_id,branch_id,warehouse_id,count_type,reason,created_by)
   VALUES ('11111111-1111-4111-8111-111111111111',
@@ -145,12 +144,6 @@ BEGIN
          confirmed_at=pg_catalog.now()
    WHERE id=v_count;
 
-  INSERT INTO public.inventory_balances
-    (organization_id,branch_id,warehouse_id,product_id,on_hand_quantity)
-  VALUES ('11111111-1111-4111-8111-111111111111',
-          '33333333-3333-4333-8333-333333333333',
-          '55555555-5555-4555-8555-555555555555',v_product,2.000);
-
   INSERT INTO public.warehouse_inventory_movements
     (organization_id,branch_id,warehouse_id,product_id,movement_type,quantity_delta,
      unit_cost_usd,reason,count_id,actor_user_id)
@@ -160,25 +153,62 @@ BEGIN
           2.000,'Runtime role opening count',v_count,
           '22222222-2222-4222-8222-222222222222');
 
+  SELECT count(*) INTO v_rows
+  FROM public.lock_inventory_balances(
+    '11111111-1111-4111-8111-111111111111',
+    ARRAY['55555555-5555-4555-8555-555555555555'::uuid],
+    ARRAY['33333333-3333-4333-8333-333333333333'::uuid],
+    ARRAY[v_product]
+  );
+  IF v_rows <> 1 THEN RAISE EXCEPTION 'BALANCE_DEFINER_LOCK_HELPER_FAILED'; END IF;
+
   SELECT on_hand_quantity INTO v_quantity
   FROM public.inventory_balances
   WHERE organization_id='11111111-1111-4111-8111-111111111111'
     AND warehouse_id='55555555-5555-4555-8555-555555555555'
-    AND product_id=v_product
-  FOR UPDATE;
-  IF v_quantity <> 2.000 THEN RAISE EXCEPTION 'BALANCE_READ_OR_LOCK_FAILED'; END IF;
-
-  UPDATE public.inventory_balances SET on_hand_quantity=3.000,updated_at=pg_catalog.now()
-  WHERE organization_id='11111111-1111-4111-8111-111111111111'
-    AND warehouse_id='55555555-5555-4555-8555-555555555555'
     AND product_id=v_product;
+  IF v_quantity <> 2.000 THEN RAISE EXCEPTION 'LEDGER_PROJECTION_OPENING_FAILED'; END IF;
+
   INSERT INTO public.warehouse_inventory_movements
     (organization_id,branch_id,warehouse_id,product_id,movement_type,quantity_delta,
      reason,actor_user_id)
   VALUES ('11111111-1111-4111-8111-111111111111',
           '33333333-3333-4333-8333-333333333333',
           '55555555-5555-4555-8555-555555555555',v_product,'purchase_receipt',1.000,
-          'Runtime balance ledger smoke','22222222-2222-4222-8222-222222222222');
+          'Runtime ledger projection smoke','22222222-2222-4222-8222-222222222222');
+
+  SELECT on_hand_quantity INTO v_quantity
+  FROM public.inventory_balances
+  WHERE organization_id='11111111-1111-4111-8111-111111111111'
+    AND warehouse_id='55555555-5555-4555-8555-555555555555'
+    AND product_id=v_product;
+  IF v_quantity <> 3.000 THEN RAISE EXCEPTION 'LEDGER_PROJECTION_INCREMENT_FAILED'; END IF;
+
+  -- Runtime has no direct INSERT/UPDATE/DELETE/TRUNCATE path to balances.
+  BEGIN
+    INSERT INTO public.inventory_balances
+      (organization_id,branch_id,warehouse_id,product_id,on_hand_quantity)
+    VALUES ('11111111-1111-4111-8111-111111111111',
+            '33333333-3333-4333-8333-333333333333',
+            '55555555-5555-4555-8555-555555555555',v_product,4.000);
+    RAISE EXCEPTION 'RUNTIME_INSERTED_INVENTORY_BALANCE_DIRECTLY';
+  EXCEPTION WHEN insufficient_privilege THEN NULL; END;
+  BEGIN
+    UPDATE public.inventory_balances SET on_hand_quantity=4.000
+     WHERE organization_id='11111111-1111-4111-8111-111111111111'
+       AND warehouse_id='55555555-5555-4555-8555-555555555555' AND product_id=v_product;
+    RAISE EXCEPTION 'RUNTIME_UPDATED_INVENTORY_BALANCE_DIRECTLY';
+  EXCEPTION WHEN insufficient_privilege THEN NULL; END;
+  BEGIN
+    DELETE FROM public.inventory_balances
+     WHERE organization_id='11111111-1111-4111-8111-111111111111'
+       AND warehouse_id='55555555-5555-4555-8555-555555555555' AND product_id=v_product;
+    RAISE EXCEPTION 'RUNTIME_DELETED_INVENTORY_BALANCE_DIRECTLY';
+  EXCEPTION WHEN insufficient_privilege THEN NULL; END;
+  BEGIN
+    EXECUTE 'TRUNCATE public.inventory_balances';
+    RAISE EXCEPTION 'RUNTIME_TRUNCATED_INVENTORY_BALANCES';
+  EXCEPTION WHEN insufficient_privilege THEN NULL; END;
 
   -- Audit identity INSERT works without granting sequence access.
   INSERT INTO public.audit_logs(organization_id,actor_user_id,action,entity_type,entity_id,metadata)
@@ -198,10 +228,9 @@ BEGIN
   EXCEPTION WHEN insufficient_privilege THEN NULL; END;
 
   -- Explicitly deny DDL, privilege escalation, unsupported reads and mutations.
-  BEGIN
-    EXECUTE 'SELECT * FROM public.inventory_balance_ledger_intents';
-    RAISE EXCEPTION 'RUNTIME_READ_PRIVATE_LEDGER_INTENTS';
-  EXCEPTION WHEN insufficient_privilege THEN NULL; END;
+  IF pg_catalog.to_regclass('public.inventory_balance_ledger_intents') IS NOT NULL THEN
+    RAISE EXCEPTION 'OBSOLETE_BALANCE_LEDGER_INTENTS_TABLE_REMAINS';
+  END IF;
   BEGIN
     EXECUTE 'SELECT * FROM public.audit_logs';
     RAISE EXCEPTION 'RUNTIME_READ_AUDIT_LOGS';

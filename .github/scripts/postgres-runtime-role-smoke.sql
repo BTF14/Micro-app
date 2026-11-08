@@ -6,6 +6,8 @@ DECLARE
   v_product uuid;
   v_count uuid;
   v_sale uuid;
+  v_unauthorized_count uuid;
+  v_balance_version bigint;
   v_token_hash text := pg_catalog.repeat('a',64);
   v_handle_hash text := pg_catalog.repeat('b',64);
   v_state_hash text := pg_catalog.repeat('c',64);
@@ -129,7 +131,7 @@ BEGIN
   VALUES ('11111111-1111-4111-8111-111111111111',
           '33333333-3333-4333-8333-333333333333',
           '55555555-5555-4555-8555-555555555555',
-          'opening','Runtime role opening count','22222222-2222-4222-8222-222222222222')
+          'opening','Runtime role opening count','66666666-6666-4666-8666-666666666666')
   RETURNING id INTO v_count;
 
   INSERT INTO public.inventory_count_lines
@@ -140,7 +142,7 @@ BEGIN
           v_count,v_product,2.000,2.000);
 
   UPDATE public.inventory_counts
-     SET status='confirmed',confirmed_by='22222222-2222-4222-8222-222222222222',
+     SET status='confirmed',confirmed_by='66666666-6666-4666-8666-666666666666',
          confirmed_at=pg_catalog.now()
    WHERE id=v_count;
 
@@ -184,6 +186,35 @@ BEGIN
     AND warehouse_id='55555555-5555-4555-8555-555555555555'
     AND product_id=v_product;
   IF v_quantity <> 1.000 THEN RAISE EXCEPTION 'LEDGER_PROJECTION_SALE_FAILED'; END IF;
+
+  -- A cashier may create no inventory adjustment, even by forging a
+  -- confirmed physical-count document directly through the runtime SQL role.
+  SELECT balance_version INTO v_balance_version
+  FROM public.inventory_balances
+  WHERE organization_id='11111111-1111-4111-8111-111111111111'
+    AND warehouse_id='55555555-5555-4555-8555-555555555555'
+    AND product_id=v_product;
+  INSERT INTO public.inventory_counts
+    (organization_id,branch_id,warehouse_id,count_type,reason,created_by)
+  VALUES ('11111111-1111-4111-8111-111111111111',
+          '33333333-3333-4333-8333-333333333333',
+          '55555555-5555-4555-8555-555555555555',
+          'physical','Unauthorized cashier count smoke','66666666-6666-4666-8666-666666666666')
+  RETURNING id INTO v_unauthorized_count;
+  INSERT INTO public.inventory_count_lines
+    (organization_id,branch_id,warehouse_id,count_id,product_id,counted_quantity,unit_cost_usd,
+     expected_on_hand_quantity,expected_balance_version)
+  VALUES ('11111111-1111-4111-8111-111111111111',
+          '33333333-3333-4333-8333-333333333333',
+          '55555555-5555-4555-8555-555555555555',
+          v_unauthorized_count,v_product,1.000,1.0000,1.000,v_balance_version);
+  BEGIN
+    UPDATE public.inventory_counts
+       SET status='confirmed',confirmed_by='22222222-2222-4222-8222-222222222222',
+           confirmed_at=pg_catalog.now()
+     WHERE id=v_unauthorized_count;
+    RAISE EXCEPTION 'RUNTIME_CASHIER_CONFIRMED_INVENTORY_COUNT';
+  EXCEPTION WHEN check_violation THEN NULL; END;
 
   -- Source-less purchase receipts and reversals cannot manufacture stock changes.
   BEGIN

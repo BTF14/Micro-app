@@ -906,6 +906,61 @@ describe.skipIf(!databaseUrl)("warehouse inventory count transactions against Po
     expect(persisted.rows[0]).toEqual({ count_status: "draft", balance: "8.000", movements: "0", audits: "0" });
   });
 
+  it("rejects direct count-ledger inserts after the branch is deactivated", async () => {
+    const reason = "Confirmed count cannot write after branch deactivation";
+    const count = await client.query<{ id: string }>(
+      `INSERT INTO inventory_counts
+        (organization_id,branch_id,warehouse_id,count_type,reason,created_by)
+       VALUES ($1,$2,$3,'physical',$4,$5) RETURNING id`,
+      [organizationId, branchId, warehouseId, reason, userId],
+    );
+    await client.query(
+      `INSERT INTO inventory_count_lines
+        (organization_id,branch_id,warehouse_id,count_id,product_id,counted_quantity,unit_cost_usd,
+         expected_on_hand_quantity,expected_balance_version)
+       VALUES ($1,$2,$3,$4,$5,2.000,NULL,0.000,0)`,
+      [organizationId, branchId, warehouseId, count.rows[0]!.id, productId],
+    );
+    await client.query(
+      "UPDATE inventory_counts SET status='confirmed',confirmed_by=$2,confirmed_at=now() WHERE organization_id=$1 AND id=$3",
+      [organizationId, userId, count.rows[0]!.id],
+    );
+
+    const runtime = new Client({ connectionString: databaseUrl! });
+    await runtime.connect();
+    let insertError: unknown;
+    try {
+      await client.query(
+        "UPDATE branches SET is_active=false WHERE organization_id=$1 AND id=$2",
+        [organizationId, branchId],
+      );
+      await runtime.query("BEGIN");
+      try {
+        await runtime.query(
+          `INSERT INTO warehouse_inventory_movements
+            (organization_id,branch_id,warehouse_id,product_id,movement_type,quantity_delta,unit_cost_usd,
+             reason,count_id,actor_user_id)
+           VALUES ($1,$2,$3,$4,'count_adjustment',2.000,NULL,$5,$6,$7)`,
+          [organizationId, branchId, warehouseId, productId, reason, count.rows[0]!.id, userId],
+        );
+      } catch (error) {
+        insertError = error;
+      }
+      await runtime.query("ROLLBACK");
+    } finally {
+      await client.query(
+        "UPDATE branches SET is_active=true WHERE organization_id=$1 AND id=$2",
+        [organizationId, branchId],
+      );
+      await runtime.end();
+    }
+
+    expect(insertError).toBeDefined();
+    expect(insertError).toMatchObject({ code: "23514" });
+    expect(insertError instanceof Error ? insertError.message : String(insertError))
+      .toContain("INVENTORY_MOVEMENT_BRANCH_SCOPE_INVALID");
+  });
+
   it("requires an active branch assignment for inventory members and revalidates revocation", async () => {
     await client.query(
       "UPDATE organization_members SET role = 'inventory' WHERE organization_id = $1 AND user_id = $2",

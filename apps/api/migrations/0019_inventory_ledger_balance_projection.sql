@@ -44,6 +44,40 @@ CREATE UNIQUE INDEX inventory_counts_one_confirmed_opening_per_warehouse_uidx
   ON public.inventory_counts (organization_id, branch_id, warehouse_id)
   WHERE count_type='opening' AND status='confirmed';
 
+-- Every ledger insert must acquire the warehouse mutex before count-line
+-- validation and balance projection. This makes the application lock order a
+-- database invariant even for direct runtime INSERTs into the append-only ledger.
+CREATE FUNCTION public.lock_inventory_movement_warehouse()
+RETURNS trigger
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = pg_catalog
+AS $lock_inventory_movement_warehouse$
+BEGIN
+  PERFORM 1
+    FROM public.warehouses AS warehouse
+   WHERE warehouse.organization_id = NEW.organization_id
+     AND warehouse.branch_id = NEW.branch_id
+     AND warehouse.id = NEW.warehouse_id
+     AND warehouse.is_active = true
+   FOR UPDATE;
+
+  IF NOT FOUND THEN
+    RAISE EXCEPTION 'INVENTORY_MOVEMENT_WAREHOUSE_SCOPE_INVALID'
+      USING ERRCODE = '23514';
+  END IF;
+  RETURN NEW;
+END;
+$lock_inventory_movement_warehouse$;
+
+REVOKE ALL ON FUNCTION public.lock_inventory_movement_warehouse() FROM PUBLIC, microapp_runtime;
+
+-- PostgreSQL fires same-event triggers in name order; this prefix guarantees
+-- the warehouse lock precedes validate_count_inventory_movement().
+CREATE TRIGGER warehouse_inventory_movements_00_lock_warehouse
+BEFORE INSERT ON public.warehouse_inventory_movements
+FOR EACH ROW EXECUTE FUNCTION public.lock_inventory_movement_warehouse();
+
 CREATE FUNCTION public.project_inventory_movement_to_balance()
 RETURNS trigger
 LANGUAGE plpgsql
@@ -194,6 +228,8 @@ $lock_inventory_balances$;
 REVOKE ALL ON FUNCTION public.lock_inventory_balances(uuid, uuid[], uuid[], uuid[]) FROM PUBLIC;
 GRANT EXECUTE ON FUNCTION public.lock_inventory_balances(uuid, uuid[], uuid[], uuid[]) TO microapp_runtime;
 
+COMMENT ON FUNCTION public.lock_inventory_movement_warehouse() IS
+  'SECURITY DEFINER BEFORE INSERT guard: lock and validate the active tenant/branch warehouse before count validation and balance projection.';
 COMMENT ON FUNCTION public.project_inventory_movement_to_balance() IS
   'SECURITY DEFINER AFTER INSERT projection: append-only inventory movements are the only runtime-authorized source of on-hand balance changes.';
 COMMENT ON FUNCTION public.guard_direct_inventory_balance_write() IS

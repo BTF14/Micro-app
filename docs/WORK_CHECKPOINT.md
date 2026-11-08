@@ -1,25 +1,29 @@
-# Work checkpoint — 2026-11-08 UTC (posterior a Neon rehearsal #4)
+# Work checkpoint — 2026-11-08 UTC (posterior a PR #280)
+
+**Regla de validación:** cualquier commit posterior invalida los checks previos; verificar siempre los seis contextos requeridos en el HEAD vivo antes de marcar Ready o fusionar.
 
 ## Estado confirmado
-- Repo: BTF14/Micro-app. GitHub main: `37bf673895a035c84c4c18f837c12694f182a96b`.
-- PR #278 corrigió el fetch del pin inmutable; PR #279 integró reconciliación documental previa.
-- Run [#42507066215](https://github.com/BTF14/Micro-app/actions/runs/42507066215) SUCCESS, workflow `.github/workflows/neon-pinned-migration-rehearsal.yml`, disparado manualmente desde main con `bootstrap-and-migrate`.
-- Fuente exacta: `6227a3a8497f6be94d675b64da5da61530c200fc`. Target: proyecto `restless-fire-99110035`, branch `br-curly-poetry-b7dxsddm`, DB `microapp_rehearsal`, login `microapp_migrator`.
-- Se aplicaron 0001–0019; 19 migraciones únicas en ledger, todas `applied`; fingerprint baseline 0002 verificado; assertions 0017/0018/0019 SUCCESS; ownership y restricciones de roles comprobadas.
-- La migración 0019 ejecutó su DROP condicionado de `inventory_balance_ledger_intents` tras validar que estaba vacía.
-- No se tocó Neon main, `neondb` parent-data clone, secretos, Cloudflare, DNS, billing ni despliegues productivos. Producción sigue NOT READY.
+- Repo: BTF14/Micro-app. Main protegido: `aa2804a0a6e7879f684b3baeb60646e50f1d6419`.
+- PR #280 merged por squash; HEAD revisado `233c1046866c479c1e79d35c8eca0290b09e97b2`; merge SHA `aa2804a0a6e7879f684b3baeb60646e50f1d6419`.
+- Pre-merge: 10/10 workflows y 14/14 check-runs SUCCESS en el HEAD exacto de PR #280; los seis contextos requeridos de main pasaron.
+- Post-merge: 9/9 workflows y 11/11 check-runs SUCCESS en main, incluidos CI, Playwright, PostgreSQL, Security/SAST, secret-history, Pages y Workers Builds.
+- Neon rehearsal #42507066215 SUCCESS: fuente `6227a3a8497f6be94d675b64da5da61530c200fc`; migraciones 0001–0019 verificadas solo en `microapp_rehearsal`. No repetir escrituras Neon.
 
-## Estado de documentación
-- PR #280: rama `docs/neon-rehearsal-success-20261108`; reconciliación de CURRENT_STATE, HANDOFF, PROJECT_PLAN, STATE_JOURNAL, SECURITY_ROADMAP, PRODUCTION_READINESS, WORKFLOW_AND_DEPLOYMENT_AUDIT, DATABASE_SCHEMA, SCHEMA_REVIEW, NEON_MIGRATION_APPLICATION_PLAN y este checkpoint. Mantener Draft hasta revisar diff completo y CI exact-HEAD.
-- README y documentación de apoyo ya quedaron alineados en esta rama. Se inventariaron 102 archivos Markdown/texto del repositorio y se hizo una reconciliación cruzada prioritaria de los documentos de estado, seguridad, readiness, esquema, runner y continuidad; los snapshots antiguos se conservaron como historial y se marcaron como subordinados al bloque autoritativo.
+## PRs activas y bloqueos
+- #269 OPEN/Draft, HEAD `14afd5de938a6ff655ecdfc5cb747f0f799290c5`, 24 ahead / 3 behind main, mergeable=false. Solo 5 check-runs SUCCESS y 3 workflows push SUCCESS en ese HEAD; faltan workflows pull_request y contextos requeridos verify/Chromium/JS-TS. El código SQL 0017–0019 coincide con el source SHA ensayado; cinco commits posteriores solo cambiaron workflow/docs/ODD. Contrato comercial checkout aún no aprobado; mantener Draft.
+- #255 OPEN/Draft, HEAD `a19a5c61f3f9e878d531ef1150f9c1aa033d6cc7`, 53 ahead / 10 behind; 10 workflows SUCCESS en ese HEAD, pero requiere sincronización y revalidación.
+- #258 OPEN/Ready, 35 ahead / 41 behind; #262 OPEN/Ready, apilada sobre #258 y 107 ahead / 41 behind. No fusionar separadamente ni cerrar sin preservar contenido único.
+- #233 OPEN/Draft histórica; #193 OPEN, no modificar.
 
-## Próximos pasos
-1. CI exact-HEAD verificado para `725b05801034dd57f7514718e13b055af1ff8c2a`: 10/10 workflow runs SUCCESS y los seis contextos requeridos por la protección de `main` (`verify`, `postgres-migration`, `Chromium authentication smoke tests`, `JavaScript and TypeScript static analysis`, `Scan tracked files and reachable Git history`, `Trivy filesystem and configuration scan`) figuran SUCCESS en check-runs de ese mismo SHA.
-2. Revisión del diff de los 14 archivos completada; no hay reviews formales ni hilos inline abiertos. La rama `main` aparece protegida y sus seis contextos requeridos están identificados en el resumen de branch; el endpoint detallado de protección devuelve 403 a la integración, por lo que no se afirma haber inspeccionado settings adicionales. PR #280 continúa Draft mientras se resuelve el último detalle de revisión documental y se valida cualquier nuevo HEAD.
-3. Después continuar con revisión técnica funcional sobre rehearsal, sin repetir bootstrap-and-migrate.
-4. Reconciliar PRs activas; mantener #269 Draft, no tocar #193 y no fusionar ramas apiladas con base obsoleta.
+## Próximas acciones
+1. Reconciliar #269 con main sin force-push; actualizar su descripción con la evidencia Neon ya completada.
+2. Mantener #269 Draft hasta CI exact-HEAD y aprobación del contrato comercial.
+3. Revisar y sincronizar #255 separadamente; validar BCV, fecha efectiva, errores del proveedor y Cron.
+4. Preservar #258/#262 hasta comparar contenido único y dependencias.
+5. Ejecutar pruebas de checkout, pagos, ledger, idempotencia, rollback y permisos runtime en PostgreSQL desechable; no repetir escrituras Neon.
 
 ## Límites
-- No repetir escrituras en Neon ni ejecutar SQL manual.
-- No tocar Neon main/producción, secretos, Cloudflare settings, DNS, billing ni despliegues manuales.
-- No pedir al usuario terminal, CLI, TinyFish, Build IDs o capturas si GitHub puede aportar la evidencia.
+- No mutar Neon main ni ejecutar otra escritura/migración remota.
+- No cambiar secretos, Cloudflare settings, DNS, billing ni realizar despliegues manuales.
+- No aprobar reglas comerciales ni permisos no autorizados.
+- Producción permanece **NOT READY**.

@@ -1,16 +1,12 @@
-# Reconciliación documental autoritativa — 2026-11-08 UTC
+# Estado del repositorio — 2026-11-08 UTC
 
-**Este bloque prevalece sobre los snapshots históricos que siguen en este archivo.** Los estados de PR y SHA cambian; verificar GitHub vivo antes de actuar.
+El estado vivo de main, PRs, SHA, checks y próximos pasos está centralizado en [CURRENT_STATE.md](CURRENT_STATE.md) y [HANDOFF_NEXT_CHAT.md](HANDOFF_NEXT_CHAT.md). Los snapshots históricos que siguen en este documento son evidencia temporal: no reutilizar SHA ni resultados CI sin comprobar el HEAD exacto.
 
-- **GitHub main:** `37bf673895a035c84c4c18f837c12694f182a96b` (PR #279 integrada). PR #280 es la reconciliación documental en curso; no forma parte de main hasta su merge.
-- **Neon rehearsal:** run [#42507066215](https://github.com/BTF14/Micro-app/actions/runs/42507066215), workflow `neon-pinned-migration-rehearsal.yml`, `workflow_dispatch` desde main, `bootstrap-and-migrate`, SUCCESS. Fuente exacta `6227a3a8497f6be94d675b64da5da61530c200fc`; destino aislado proyecto `restless-fire-99110035`, branch `br-curly-poetry-b7dxsddm`, DB `microapp_rehearsal`, login `microapp_migrator`.
-- **Resultado rehearsal:** baseline/fingerprint 0002 validado; migraciones 0001–0019 aplicadas y registradas como `applied`; 19 registros únicos; assertions SQL 0017, 0018 y 0019 pasaron; ownership de objetos por migrator y restricciones de rol verificadas. La migración 0019 eliminó la tabla legacy `inventory_balance_ledger_intents` después de comprobar que estaba vacía. Fue una escritura/DDL autorizada únicamente en `microapp_rehearsal`.
-- **No extrapolar:** Neon main/producción y la DB parent clone `neondb` no fueron destino; no se cambiaron secretos, Cloudflare, DNS, billing ni deployments. Este rehearsal no certifica producción, backups, runtime Worker identity, E2E comercial ni readiness.
-- **PRs abiertas observadas en esta revisión:** #280 (Draft, docs-only); #269 (Draft, HEAD `14afd5de938a6ff655ecdfc5cb747f0f799290c5`, mergeable=false); #262 (Ready, apilada sobre base obsoleta de #258); #258 (Ready, HEAD `8935842cab6a7e2b8a6c0aa078e9b3e77866e48c`, mergeable=false); #255 (Ready, HEAD `a19a5c61f3f9e878d531ef1150f9c1aa033d6cc7`, mergeable=false); #233 (Draft histórica); #193 (abierta, no modificar). Estos son snapshots observados; no reutilizar estados/checks sin reconsulta.
-- **Siguiente foco:** validar PR #280 exact-HEAD y consolidar la documentación; después reconciliar el estado vivo de PRs #269/#255/#258/#262 y comprobar permisos/runtime/flujo funcional sobre el esquema de ensayo. Mantener #269 Draft y no promover a producción.
+- GitHub main protegido: `aa2804a0a6e7879f684b3baeb60646e50f1d6419`; PR #280 integrada por squash.
+- Neon rehearsal #42507066215: SUCCESS; migraciones 0001–0019 verificadas únicamente en `microapp_rehearsal`. Neon main no fue modificado.
+- Producción: **NOT READY**; no extrapolar el ensayo ni los builds automáticos a certificación productiva.
 
 ---
-
 # Addendum esquema vivo — 2026-11-08 UTC
 
 **Código fuente:** main `96e2e2d9f76bc8fcc3bab2fa9503e480545c8869`. La carpeta versionada contiene migraciones 0001–0016:

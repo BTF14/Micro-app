@@ -2090,3 +2090,11 @@ No se tocaron Neon main, datos reales, secretos, Worker productivo, DNS, billing
 - #255 revisión COMMENTED ID 5818042583: dos P1 (falta de control de variación anómala de tasas y de señal/alerta fiable ante fallos del Cron). #255 y #269 continúan sin aprobación y no se fusionaron.
 - El propietario confirmó la actualización del secreto Actions, pero no se ejecutó verify posterior; el conector no permite workflow_dispatch. Próximo paso: el propietario dispara verify manualmente en main.
 - Producción NOT READY.
+
+## 2026-11-08 13:34 UTC — GitHub Actions Neon verify SUCCESS tras rotación
+
+- Se reintentó el run #42479603848 (workflow manual, operación verify) usando el action de rerun failed jobs. El job terminó SUCCESS.
+- Los logs mostraron el secreto enmascarado (no vacío), conexión directa, identidad exacta de database/login/branch/project y `BASELINE_VERIFIED` con 294 facts.
+- Los pasos de baseline adoption, migration apply y post-migration assertions quedaron SKIPPED. No hubo DDL/DML ni cambios de ownership.
+- Como rerun, conservó GITHUB_SHA/GITHUB_REF originales; el summary step del SHA antiguo produjo tres `command not found` por quoting, sin fallar el job. PR #270 ya corrigió el summary en main.
+- Confirmado: main tiene migraciones hasta 0016; #269 aporta 0017–0019. El workflow `adopt-and-migrate` desde main no probaría 0017–0019 y no debe ejecutarse para ese objetivo. Diseñar un rehearsal de SHA fijado/revisado antes de cualquier escritura.

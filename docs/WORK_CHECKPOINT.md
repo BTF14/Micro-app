@@ -11,11 +11,11 @@
 
 ## Estado de documentación
 - PR #280: rama `docs/neon-rehearsal-success-20261108`; reconciliación de CURRENT_STATE, HANDOFF, PROJECT_PLAN, STATE_JOURNAL, SECURITY_ROADMAP, PRODUCTION_READINESS, WORKFLOW_AND_DEPLOYMENT_AUDIT, DATABASE_SCHEMA, SCHEMA_REVIEW, NEON_MIGRATION_APPLICATION_PLAN y este checkpoint. Mantener Draft hasta revisar diff completo y CI exact-HEAD.
-- README y documentación de apoyo también deben quedar alineados antes de cerrar la auditoría.
+- README y documentación de apoyo ya quedaron alineados en esta rama. Se inventariaron 102 archivos Markdown/texto del repositorio y se hizo una reconciliación cruzada prioritaria de los documentos de estado, seguridad, readiness, esquema, runner y continuidad; los snapshots antiguos se conservaron como historial y se marcaron como subordinados al bloque autoritativo.
 
 ## Próximos pasos
-1. Completar la auditoría cruzada de documentación y corregir afirmaciones históricas presentadas como actuales.
-2. Verificar CI, reviews, threads, base y branch protection de PR #280 en su HEAD final; integrar solo si pasa todos los gates.
+1. Terminar CI exact-HEAD de PR #280; última observación antes de esta actualización: Playwright, runner, seguridad, secret-history PR, Semgrep, ODD, dashboard y dependency review SUCCESS; CI in progress; Database migration validation y secret-history push pendientes.
+2. Revisar el HEAD final, diff completo, reviews/threads y branch protection. PR #280 permanece Draft y no se fusiona hasta cerrar los gates.
 3. Después continuar con revisión técnica funcional sobre rehearsal, sin repetir bootstrap-and-migrate.
 4. Reconciliar PRs activas; mantener #269 Draft, no tocar #193 y no fusionar ramas apiladas con base obsoleta.
 

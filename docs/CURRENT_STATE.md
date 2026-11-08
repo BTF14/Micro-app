@@ -1,3 +1,17 @@
+## Estado vivo posterior a #257 — 2026-11-08 UTC
+
+- `main` actual al iniciar esta reconciliación: `912e4d269de3b7ac2d43632c9bfcdb10041dbae8`.
+- **PR #259** fusionada por squash en `07b146a3f2b7830bbd328a585535084e57e43c4e`: serializa la batería de integración runtime-role que comparte PostgreSQL con `--no-file-parallelism`.
+- **PR #257** fusionada en este `main`: reconciliación documental de 30 archivos; preserva los contratos ODD, las ocho decisiones aprobadas de inventario y el informe histórico de autenticación.
+- **PR #258** sigue Draft, base main. HEAD `7cc80b47b39d557c1d1837c3176d97d7d23c8d94`: 15/15 check-runs y 13/13 workflows SUCCESS; 141 unitarias, 85 runtime-role PostgreSQL y 16 checkout PostgreSQL integration tests. Migration 0017 en esta rama añade selección BCV weekday/weekend y guard SQL de aritmética por línea. No está en main ni aplicada en Neon.
+- **PR #251** Draft, HEAD `5dec5d5a9025de16b19d0cb7cfeac6585e2ad5d6`: 15/15 check-runs y 13/13 workflows SUCCESS; sin review formal.
+- **PR #255** Draft, HEAD `35b9ac6894f79c5760a1f56fb37506ed2278afa0`, base #251: 15/15 check-runs y 13/13 workflows SUCCESS; sin review formal. Productor/API/Cron BCV aún no integrado.
+- **PR #193** permanece sin cambios por la restricción previa; brechas de privilegios/snapshot/referencias documentadas en SECURITY_ROADMAP.
+- **PR #233** permanece como fuente histórica Draft; su handler/tests fueron recuperados en #258. No fusionar la rama antigua.
+- PRs abiertas en este snapshot: #193, #233, #251, #255 y #258. #257 y #259 ya están fusionadas.
+- **Producción NOT READY:** falta integrar la ingesta BCV; confirmar política comercial de pagos; validar asignación USD individual por pago en DB; resolver escritura runtime directa en `inventory_balances`; decidir calendario de feriados entre semana; implementar UI checkout. La protección SQL por línea está solo en PR #258.
+- Sin DDL/DML en Neon main, cambios de secretos, configuración Cloudflare manual, DNS, billing ni despliegue manual. Los checks Cloudflare de PR son builds/checks y no prueban por sí solos el estado de producción.
+
 ## Snapshot operativo autoritativo — 2026-11-08 UTC — sincronización #259 y recuperación de ventas
 
 - **main:** `07b146a3f2b7830bbd328a585535084e57e43c4e`. #259 está fusionada; CI serializa las suites PostgreSQL runtime-role con `--no-file-parallelism`.

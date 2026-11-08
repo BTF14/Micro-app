@@ -1,3 +1,12 @@
+## Checkpoint posterior a #257 — 2026-11-08 UTC
+
+- Main: `912e4d269de3b7ac2d43632c9bfcdb10041dbae8`; #257 docs y #259 CI serialization ya integradas.
+- #258 Draft, HEAD `7cc80b47b39d557c1d1837c3176d97d7d23c8d94`: 15/15 check-runs, 13/13 workflows; 141 unitarias, 85 runtime-role y 16 checkout PostgreSQL integration tests. Migration 0017 en la rama, no en main/Neon. Incluye guard SQL por línea.
+- #251 y #255 Draft, ambos con 15/15 check-runs + 13/13 workflows SUCCESS en HEADs registrados; sin review formal. #255 no integrado.
+- #193 sin cambios. #233 fuente histórica recuperada por #258.
+- Producción NOT READY: ingesta BCV, contrato de pagos, asignación por pago en DB, privilegios balances, feriados y UI.
+- Ningún cambio en Neon main, secretos o despliegue manual.
+
 ## Checkpoint vivo — 2026-11-08 UTC
 
 ## Snapshot operativo autoritativo — 2026-11-08 UTC — sincronización #259 y recuperación de ventas

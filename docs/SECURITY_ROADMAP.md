@@ -1,3 +1,13 @@
+# Security state after #257 merge — 2026-11-08 UTC
+
+- #258 checkout is green on HEAD `7cc80b47b39d557c1d1837c3176d97d7d23c8d94` (15/15 checks, 13/13 workflows; 16 PostgreSQL checkout tests). Its migration 0017 adds database validation of per-line USD/VES arithmetic and BCV weekday/weekend date selection. It remains a Draft branch; migration is not in main or Neon.
+- **P1 BCV:** official producer/API/Cron remains Draft in #255 (base #251). No rate ingestion is active in main.
+- **P1 payment allocation:** database still does not verify each individual VES payment's USD-equivalent allocation/residual; handler-only calculation is insufficient defense in depth.
+- **P1 inventory:** migration 0012 still grants runtime direct INSERT/UPDATE to `inventory_balances`; ledger pairing is not equivalent to a SECURITY DEFINER-only balance projection.
+- **Owner decision:** confirm one-currency/no-partial/no-overpayment policy before activation; do not infer approval.
+- **Operational gaps:** no authoritative weekday bank-holiday calendar; no checkout UI.
+- #259 serializes the shared PostgreSQL runtime-role tests and #257 docs are merged. No Neon main, secrets, Cloudflare manual, DNS, billing, real data or manual deploy changed.
+
 # Estado de seguridad vivo — 2026-11-08 UTC — actualización posterior a #259
 
 ## Snapshot operativo autoritativo — 2026-11-08 UTC — sincronización #259 y recuperación de ventas

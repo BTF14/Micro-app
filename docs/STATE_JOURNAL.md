@@ -1,3 +1,12 @@
+# 2026-11-08 UTC — post-merge state refresh (#257/#259)
+
+- #259 CI serialization merged to main as `07b146a3f2b7830bbd328a585535084e57e43c4e`.
+- #257 documentation reconciliation merged to main as `912e4d269de3b7ac2d43632c9bfcdb10041dbae8`.
+- #258 remains Draft, HEAD `7cc80b47b39d557c1d1837c3176d97d7d23c8d94`: 15/15 check-runs and 13/13 workflows SUCCESS; 141 unit tests, 85 runtime-role integration tests, 16 checkout PostgreSQL tests. Migration 0017 now validates per-line arithmetic as well as BCV weekend effective date.
+- #251/#255 remain Draft, green exact SHA, no formal review; #255 is the BCV producer dependency.
+- No Neon main writes, secrets, manual Cloudflare deployment, DNS or billing changes. Production NOT READY.
+---
+
 # 2026-11-08 UTC — sincronización de ramas, retención y checkout
 
 - #251 se sincronizó con main mediante merge commit `cb43dfc3b4eced25afafd1813af28629fda48bb8`; después se añadió una regresión que ejecuta dos invocaciones del Cron y prueba el drenaje del backlog de 501 filas por tabla. HEAD final de esa actualización: `e2015f3742c2fba62bada2468efdb3689e2e1db4`, 15/15 check-runs y 13/13 workflows SUCCESS.

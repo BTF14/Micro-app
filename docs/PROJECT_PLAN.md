@@ -1,3 +1,13 @@
+## Prioridad operativa posterior a #257 — 2026-11-08 UTC
+
+1. **Checkout #258:** implementation/test suite verde en HEAD `7cc80b47b39d557c1d1837c3176d97d7d23c8d94` (15/15 checks, 13/13 workflows, 141 unitarias, 85 runtime-role, 16 checkout PostgreSQL). Sigue Draft por gates de producto/seguridad; migration 0017 aún no está en main/Neon.
+2. **BCV #251 → #255:** ambas Draft y verdes en sus SHA exactos; integrar solo tras revisión y gate Neon, después reconciliar el Cron/router con #258.
+3. **Inventario:** mantener ledger append-only, locks tenant/sucursal, conteos absolutos y transferencias en dos etapas. #193 no modificar por restricción previa; brechas P1 siguen documentadas.
+4. **Neon:** main no tiene el esquema/roles de aplicación ni migraciones 0003–0017. Rehearsal solo mediante runner protegido; no SQL manual.
+5. **Cierre histórico:** #233 no fusionar; cerrar solo después de integrar #258 y confirmar que todo contenido único está recuperado.
+
+Producción **NOT READY**. CI verde no equivale a aprobación ni a evidencia de Neon/Worker desplegado.
+
 ## Prioridad operativa — 2026-11-08 UTC — actualización posterior a #259
 
 ## Snapshot operativo autoritativo — 2026-11-08 UTC — sincronización #259 y recuperación de ventas

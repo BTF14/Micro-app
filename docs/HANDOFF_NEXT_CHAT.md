@@ -1,3 +1,27 @@
+## Handoff vigente posterior a #257 — 2026-11-08 UTC
+
+Empieza leyendo `AGENTS.md`, `docs/CONSTITUTION.md`, `docs/AI_COLLABORATION_AND_PR_POLICY.md`, `docs/CURRENT_STATE.md`, este handoff, `docs/WORK_CHECKPOINT.md`, `docs/PROJECT_PLAN.md`, `docs/STATE_JOURNAL.md`, `docs/SECURITY_ROADMAP.md` y los SDD/ODD aplicables. Usa GitHub como fuente de verdad y comprueba los HEADs actuales antes de actuar.
+
+### Estado exacto de trabajo
+
+- #259 CI serialization y #257 documentación ya están fusionadas en main.
+- #258 Draft: HEAD `7cc80b47b39d557c1d1837c3176d97d7d23c8d94`, 15/15 check-runs y 13/13 workflows SUCCESS; 141 unit tests, 85 runtime-role tests y 16 checkout PostgreSQL tests. Incluye handler transaccional, migration 0017, selección BCV weekday/weekend y defensa SQL de aritmética por línea. No está fusionada ni aplicada en Neon.
+- #255 Draft, base #251: parser/productor/API/Cron BCV; no está en main. #251 también Draft. Sus checks verdes no son review formal ni prueba de despliegue/Neon.
+- #233 es la fuente antigua divergida; no fusionar. El código de checkout se recuperó en #258.
+- #193 no modificar; respetar la restricción previa. Su revisión de privilegios inventario está registrada.
+
+### Próximas acciones
+
+1. Mantener #258 Draft hasta resolver los gates restantes: BCV #255, aprobación explícita de política de pagos, assertion SQL por pago, privilegios de balances, feriados y UI.
+2. Resolver ordenadamente la pila #251 → #255 y después sincronizar #258; revisar conflictos de `index.ts`, `ci.yml` y `wrangler.toml`. No copiar checks de SHA anterior.
+3. Continuar el plan de Neon rehearsal solo con runner protegido y autorización específica; Neon main permanece intocable.
+4. Cerrar #233 solo después de integrar #258/#255 y comprobar que no queda contenido único.
+5. Actualizar documentación viva después de cada cambio sustancial; no dejar HEADs, PRs o gates obsoletos.
+
+### Límites
+
+No Neon main, datos reales, secretos, Cloudflare manual, DNS, billing ni deploy manual. No pedir Build IDs, capturas, terminal, CLI, TinyFish ni reconexiones ya documentadas. No fusionar por CI verde solamente; distinguir check-runs, workflows, status contexts y reviews formales.
+
 ## Handoff vivo — 2026-11-08 UTC — usar este snapshot antes de continuar
 
 ## Snapshot operativo autoritativo — 2026-11-08 UTC — sincronización #259 y recuperación de ventas

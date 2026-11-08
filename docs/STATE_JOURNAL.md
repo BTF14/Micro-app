@@ -1,3 +1,14 @@
+# 2026-11-08 UTC — sincronización de ramas, retención y checkout
+
+- #251 se sincronizó con main mediante merge commit `cb43dfc3b4eced25afafd1813af28629fda48bb8`; después se añadió una regresión que ejecuta dos invocaciones del Cron y prueba el drenaje del backlog de 501 filas por tabla. HEAD final de esa actualización: `e2015f3742c2fba62bada2468efdb3689e2e1db4`, 15/15 check-runs y 13/13 workflows SUCCESS.
+- #255 se sincronizó con la base actualizada #251 mediante merge commit `4d05c38c7dc7623d7c8a94894db022a542fb43b5`; se preservó controller.cron y la regresión de retención. HEAD `1337d28591673dabfe5c4bf1d5c0d8c03c99162b`, 15/15 check-runs y 13/13 workflows SUCCESS.
+- #258 se sincronizó con main #259 y su árbol quedó 13 ahead / 0 behind. HEAD documental `313f76c132c61200ed49a7c6e4e01fcf75659bf9`: 12/15 check-runs y 12/13 workflows SUCCESS, sin fallos; quedan Workers Builds, verify, Pages y CI pendientes.
+- #257 se sincronizó con main mediante merge commit `f791b312b53541cacca67161ed1f6e5b9ab54173`; este refresh de documentación cambia el HEAD y requiere revalidación.
+- No hubo escrituras Neon, cambios de secretos, Cloudflare productivo, DNS, billing, deploy manual ni datos reales.
+- Producción sigue NOT READY por gates de identidad/runtime Neon, review independiente, tasa BCV, pagos, UI, SQL monetary checks y privilegios de balances.
+
+---
+
 # 2026-11-08 UTC — PR #259 integrada y sincronización de ramas dependientes
 
 - PR #259 se fusionó por squash en main como `07b146a3f2b7830bbd328a585535084e57e43c4e`. La batería runtime-role PostgreSQL ahora usa `--no-file-parallelism` para evitar que suites paralelas eliminen triggers temporales mientras otras escriben en `audit_logs`.

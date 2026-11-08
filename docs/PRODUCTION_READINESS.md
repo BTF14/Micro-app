@@ -1,3 +1,20 @@
+## Revisión de readiness — 2026-11-08 UTC
+
+**Resultado: NOT READY para producción.** Estado GitHub y gates:
+
+- Main `07b146a3f2b7830bbd328a585535084e57e43c4e`; #259 fusionada (serialización CI).
+- #251 HEAD `e2015f3742c2fba62bada2468efdb3689e2e1db4`: 15/15 check-runs + 13/13 workflows SUCCESS; Draft, sin review formal.
+- #255 HEAD `1337d28591673dabfe5c4bf1d5c0d8c03c99162b`: 15/15 + 13/13 SUCCESS; Draft, sin review formal, base #251.
+- #258 HEAD `313f76c132c61200ed49a7c6e4e01fcf75659bf9`: 12/15 check-runs + 12/13 workflows SUCCESS, sin fallos; Workers Builds, verify, Pages y CI pendientes. Draft, sin review formal.
+- #257 HEAD `f791b312b53541cacca67161ed1f6e5b9ab54173` antes de este refresh: 6/14 check-runs + 6/13 workflows SUCCESS; restantes pendientes, sin fallos.
+- Neon main no tiene roles runtime/migrator, ledger ni migraciones 0003–0016; rehearsal tiene roles LOGIN pero runtime carece de grants de tabla y no hay ledger. No se aplicó ninguna migración remota.
+- Checkout requiere tasa BCV integrada, aprobación funcional del contrato de pagos, UI, validación SQL de cálculos, rate limiting del endpoint y resolver la escritura directa de balances.
+- Backup remoto: última restauración concreta documentada 2026-10-29; CI sintético reciente no sustituye una restauración remota actual, RPO/RTO, alerta externa y coste $0.
+
+No fusionar ni activar Cron/checkout hasta cerrar revisión independiente, gates Neon, runtime identity/grants y los bloqueos comerciales/de seguridad. No se han cambiado secretos, Neon, Cloudflare productivo, DNS, billing ni datos reales.
+
+---
+
 ## Estado vivo — 2026-11-08 UTC
 
 **Resultado: NOT READY para producción.**

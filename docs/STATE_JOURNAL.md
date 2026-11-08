@@ -1,3 +1,16 @@
+# 2026-11-08 UTC — reconciliación posterior al merge #251 y ensayo Neon de solo lectura
+
+- GitHub main confirmado: `8c13da8b2d55d0a45490b19499b1b7c53e0ec966`; PR #251 ya está fusionada. GitHub muestra 6 PR abiertas.
+- PR #255 fue retargeteada de la rama de #251 a `main`; su descripción se corrigió. HEAD `f49fb402f9bd5a40591970c9efe3665a5e212ebb`, 15/15 check-runs SUCCESS y mergeability clean. No se fusionó porque el Cron nuevo escribiría en `exchange_rates` y los gates de Neon/runtime no están satisfechos.
+- PR #258 HEAD `8935842cab6a7e2b8a6c0aa078e9b3e77866e48c`: 16/16 check-runs SUCCESS, pero GitHub informa `mergeable=false / dirty`; comparación con main: 29 commits detrás. #262 permanece apilada sobre un HEAD anterior de #258.
+- PR #261 tenía un snapshot obsoleto (main `d28b80e`, #251 no fusionada). Se actualizó el encabezado operativo de CURRENT_STATE, HANDOFF_NEXT_CHAT, PROJECT_PLAN, SECURITY_ROADMAP y WORK_CHECKPOINT en su rama. El nuevo HEAD requiere CI exact-SHA.
+- Neon rehearsal `br-curly-poetry-b7dxsddm` inspeccionada en solo lectura. No hay `schema_migrations` ni `app_schema_migrations`; rate y snapshots continúan NUMERIC(14,6); `microapp_runtime` carece de grants en `exchange_rates`; `microapp_migrator` tiene login directo, CREATE en public y ownership de exchange_rates. Se verificó identidad de ambas sesiones. No se ejecutó DDL/DML.
+- `.github/workflows/migration-runner.yml` valida PostgreSQL desechable local; no es un runner de migración Neon. No afirmar que aplica migraciones remotas.
+- No se modificó Neon main, secretos, Worker productivo, DNS, billing ni se ejecutó despliegue manual. Producción sigue NOT READY.
+- Proceso single-maintainer: no inventar review formal ni crear otra cuenta; separar revisión técnica asistida por IA, checks exact-SHA y autorización del propietario. Respetar branch protection y los gates sensibles de producción.
+
+---
+
 ## 2026-11-08 06:45 UTC — recuperación viva de continuidad
 
 - GitHub confirma main `0a9e2f7c0d8b4d68b1efe6b372c10c107b160d67`; PR abiertas: #193, #233, #251, #255, #258 y #261 (reconciliación documental). #257, #259 y #260 están fusionadas.

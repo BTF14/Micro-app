@@ -1,10 +1,22 @@
 # Contrato de autorización server-side y aislamiento multiempresa
 
-- Estado: **contrato técnico propuesto; no sustituye la aprobación de la matriz de roles**.
-- Fecha: 2026-10-19.
-- Alcance: futuras rutas HTTP comerciales de Micro app.
+- Estado: **contrato técnico parcialmente implementado; la matriz de permisos por rol está APROBADA desde 2026-10-31.**
+- Fecha de revisión: 2026-11-08 UTC.
+- Alcance: rutas HTTP comerciales actuales y futuras de Micro app.
 - Repositorio: https://github.com/BTF14/Micro-app
 - Relacionados: [Constitución](../CONSTITUTION.md), [integración API/Neon](../API_INTEGRATION.md), [matriz de permisos por rol](role-permission-decision-matrix.md), [preparación para producción](../PRODUCTION_READINESS.md), [bloqueo de identidad #53](https://github.com/BTF14/Micro-app/issues/53).
+
+## Implementación actual verificada en main
+
+- `tenant-context.ts` resuelve sesión, usuario activo, organización activa y membresía activa desde el servidor.
+- `branch-context.ts` resuelve sucursal activa; Cashier/Inventory requieren asignación activa; `lockBranchScopes` serializa revocaciones y desactivaciones.
+- `authorization.ts` implementa el mapa de operaciones aprobado y expone `authorizeTenantOperation`/`authorizeBranchOperation`.
+- `catalog.ts`/`catalog-write.ts` aplican contexto tenant y permisos; `inventory-read.ts` y `inventory-counts.ts` aplican autorización de sucursal, locks y denegación por defecto.
+- Tests de integración cubren acceso cruzado de catálogo, asignación/revocación de sucursal, conteos idempotentes/concurrentes, rechazo de cashier para conteos y rollback de auditoría.
+- No están montados todavía handlers de checkout/pagos, transferencias, gestión de miembros/políticas, ni rutas de caja/turnos. `cashier-open-shift.ts` existe como helper aislado, no como ruta registrada.
+- La implementación en Git no demuestra que Neon main tenga migraciones/grants; producción sigue bloqueada.
+
+## Objetivo y límites
 
 ## Objetivo y límites
 
@@ -35,7 +47,7 @@ La autenticación identifica una sesión; no demuestra por sí sola que el usuar
 6. Para escrituras compuestas, ejecutar las operaciones en una transacción y revertir todo ante cualquier error.
 7. Devolver una respuesta segura y probar que la denegación no produjo escrituras.
 
-Esta secuencia es un contrato de implementación, no una afirmación de que ya exista middleware o código que la cumpla.
+Esta secuencia sigue siendo obligatoria para toda ruta nueva. La implementación actual cubre catálogo y lectura/conteos de inventario; no debe interpretarse como cobertura completa de todas las operaciones de la matriz.
 
 ## Pruebas de aceptación requeridas
 

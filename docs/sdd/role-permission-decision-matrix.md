@@ -1,6 +1,17 @@
 # Matriz de decisión de permisos comerciales — APROBADA
 
-**Estado: APROBADA (2026-10-31).** El propietario definió explícitamente las decisiones de ventas, devoluciones y gestión de miembros, y delegó explícitamente en la IA ("elige la mejor opción o inspírate en las demás SaaS parecidas... hacerlo con criterio y fundamentos") el resto de las celdas, con el mandato de aplicar criterio técnico fundamentado. Esta matriz documenta ambas fuentes por separado para trazabilidad. **Sigue sin existir ningún endpoint comercial ni middleware de autorización en el código** — esta aprobación habilita, pero no sustituye, su implementación, revisión y pruebas de aislamiento cross-tenant antes de considerarse completa (issue #53 permanece abierta hasta entonces).
+**Estado: APROBADA (2026-10-31).** El propietario definió explícitamente las decisiones de ventas, devoluciones y gestión de miembros, y delegó explícitamente en la IA ("elige la mejor opción o inspírate en las demás SaaS parecidas... hacerlo con criterio y fundamentos") el resto de las celdas, con el mandato de aplicar criterio técnico fundamentado. Esta matriz documenta ambas fuentes por separado para trazabilidad. La implementación de autorización ya existe parcialmente en `authorization.ts` y se usa en catálogo e inventario; todavía no cubre todos los handlers de la matriz ni se ha validado contra Neon autorizado.
+
+## Estado de implementación — 2026-11-08
+
+- `authorization.ts` contiene el mapa `ROLE_OPERATIONS`, `authorizeTenantOperation` y `authorizeBranchOperation`.
+- `catalog.ts` y `catalog-write.ts` usan contexto tenant y permisos por operación.
+- `inventory-read.ts` y `inventory-counts.ts` usan contexto branch, asignación activa para Cashier/Inventory y locks; Cashier puede leer inventario según matriz, pero no crear conteos.
+- Las pruebas cubren denegación cross-tenant, costo oculto a Cashier, branch membership/revocación, conteos idempotentes/concurrentes, denegación de Cashier y rollback de auditoría.
+- Aún no hay handlers integrados para checkout/pagos, transferencias, operaciones de caja/turnos, administración de miembros/políticas ni reportes. Las entradas de la matriz describen el contrato autorizado, no funcionalidades ya disponibles.
+- Las migraciones 0003–0016 no están aplicadas en Neon main; la aprobación de la matriz no autoriza cambios de base de datos ni despliegue.
+
+
 
 ## Decisión estructural ya fijada
 - Cada miembro tiene **un único rol por organización**, guardado en `organization_members.role`: `owner`, `admin`, `cashier` o `inventory`.

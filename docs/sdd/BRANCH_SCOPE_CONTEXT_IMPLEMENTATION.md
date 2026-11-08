@@ -1,8 +1,11 @@
 # Implementación base de alcance por sucursal
 
-**Estado:** implementada y fusionada en PR #165; migración 0003 NO aplicada a Neon main. `resolveBranchContext` sigue aislado y no conectado a rutas comerciales. PR #169 añadió el helper separado `resolveOpenCashierRegisterShift` para turno abierto; tampoco está conectado a rutas ni autoriza operaciones.  
-**Fecha:** 2026-10-30.  
-**Base:** `ce8b0e491fe8b9f6154380cc8b0eea0a19fe8114`.
+**Estado al 2026-11-08:** el helper ya no está aislado. `resolveBranchContext` es llamado por `authorizeBranchOperation` y se usa en `inventory-read.ts` y `inventory-counts.ts`. Owner/Admin resuelven sucursales activas de su organización; Cashier/Inventory requieren `branch_memberships` activa. El acceso de branch se bloquea en orden determinista mediante `lockBranchScopes`. La matriz de permisos fue aprobada el 2026-10-31 y la autorización por operación se implementa en `authorization.ts`. No implica que todos los handlers de la matriz estén implementados: checkout, transferencias y rutas operativas de turnos siguen pendientes. Neon main no tiene aplicada 0003–0016.
+
+**Fecha de revisión:** 2026-11-08 UTC.  
+**Código contrastado:** main `96e2e2d9f76bc8fcc3bab2fa9503e480545c8869`.
+
+**Historial de diseño:** PR #165 implementó la migración 0003; PR #169 añadió el helper separado `resolveOpenCashierRegisterShift`, que sigue sin estar montado como ruta.
 
 ## Decisión autorizada
 

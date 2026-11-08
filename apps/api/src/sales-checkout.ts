@@ -510,7 +510,7 @@ export function registerSalesCheckoutRoutes(app: Hono<{ Bindings: Bindings }>): 
           // Lock and validate every required balance before claiming the sale.
           // No early return after the draft row is inserted may commit a draft.
           const balances = await lockInventoryBalances(
-            tx, branch.organizationId, [input.warehouseId], productIds,
+            tx, branch.organizationId, [{ warehouseId: input.warehouseId, branchId: branch.branchId }], productIds,
           );
           if (!balances) throw new Error("INVENTORY_BALANCE_LOCK_FAILED");
           const balanceByProduct = new Map(balances.map((balance) => [balance.product_id, balance]));

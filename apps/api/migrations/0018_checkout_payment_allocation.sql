@@ -12,6 +12,10 @@ ALTER TABLE public.payments
   ADD CONSTRAINT payments_allocation_position_ck
     CHECK (allocation_position IS NULL OR allocation_position BETWEEN 1 AND 10);
 
+-- Completed-sale payments are append-only; runtime must never erase a payment
+-- and bypass the deferred sale reconciliation constraints.
+REVOKE DELETE, TRUNCATE ON TABLE public.payments FROM PUBLIC, microapp_runtime;
+
 CREATE UNIQUE INDEX payments_checkout_allocation_position_uidx
   ON public.payments (organization_id, sale_id, allocation_position)
   WHERE allocation_position IS NOT NULL;

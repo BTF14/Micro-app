@@ -138,6 +138,9 @@ jobs:
           runtime_ok="$(psql -X -At -v ON_ERROR_STOP=1 --dbname "${NEON_REHEARSAL_DATABASE_URL}" -c "SELECT (SELECT rolcanlogin AND NOT rolsuper AND NOT rolcreatedb AND NOT rolcreaterole AND NOT rolreplication AND NOT rolbypassrls AND NOT rolinherit FROM pg_catalog.pg_roles WHERE rolname='microapp_runtime') AND (SELECT rolcanlogin AND NOT rolsuper AND NOT rolcreatedb AND NOT rolcreaterole AND NOT rolreplication AND NOT rolbypassrls FROM pg_catalog.pg_roles WHERE rolname='microapp_migrator') AND NOT EXISTS (SELECT 1 FROM pg_catalog.pg_auth_members WHERE member IN (SELECT oid FROM pg_catalog.pg_roles WHERE rolname IN ('microapp_runtime','microapp_migrator'))) AND pg_catalog.has_schema_privilege('microapp_runtime','public','USAGE') AND NOT pg_catalog.has_schema_privilege('microapp_runtime','public','CREATE') AND pg_catalog.has_schema_privilege('microapp_migrator','public','USAGE') AND pg_catalog.has_schema_privilege('microapp_migrator','public','CREATE')")"
           test "${runtime_ok}" = "t"
 
+          precision_ok="$(psql -X -At -v ON_ERROR_STOP=1 --dbname "${NEON_REHEARSAL_DATABASE_URL}" -c "SELECT count(*) = 3 FROM information_schema.columns WHERE table_schema='public' AND data_type='numeric' AND numeric_precision=18 AND numeric_scale=8 AND ((table_name='exchange_rates' AND column_name='rate') OR (table_name='sales' AND column_name='exchange_rate_snapshot') OR (table_name='payments' AND column_name='exchange_rate_snapshot'))")"
+          test "${precision_ok}" = "t"
+
           bcv_grants_ok="$(psql -X -At -v ON_ERROR_STOP=1 --dbname "${NEON_REHEARSAL_DATABASE_URL}" -c "SELECT pg_catalog.has_table_privilege('microapp_runtime','public.exchange_rates','SELECT') AND pg_catalog.has_table_privilege('microapp_runtime','public.exchange_rates','INSERT') AND pg_catalog.has_column_privilege('microapp_runtime','public.exchange_rates','validation_status','UPDATE') AND NOT pg_catalog.has_column_privilege('microapp_runtime','public.exchange_rates','rate','UPDATE') AND NOT pg_catalog.has_column_privilege('microapp_runtime','public.exchange_rates','effective_date','UPDATE') AND NOT pg_catalog.has_column_privilege('microapp_runtime','public.exchange_rates','source','UPDATE') AND NOT pg_catalog.has_table_privilege('microapp_runtime','public.exchange_rates','DELETE') AND NOT pg_catalog.has_table_privilege('microapp_runtime','public.schema_migrations','SELECT')")"
           test "${bcv_grants_ok}" = "t"
 
@@ -148,6 +151,6 @@ jobs:
             echo "- Ledger: ${expected_count} contiguous migrations, all applied with checksums."
             echo "- Object ownership: `microapp_migrator`."
             echo "- Runtime role: non-owner, no role memberships, no schema CREATE."
-            echo "- BCV: runtime SELECT/INSERT and column-scoped validation_status UPDATE only; no rate/date/source UPDATE, no DELETE, no migration-ledger access."
+            echo "- BCV: rate and sales/payment snapshots are NUMERIC(18,8); runtime SELECT/INSERT and column-scoped validation_status UPDATE only; no rate/date/source UPDATE, no DELETE, no migration-ledger access."
             echo "- Neon main, production secrets and Worker configuration were not targeted."
           } >> "${GITHUB_STEP_SUMMARY}"

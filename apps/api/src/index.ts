@@ -6,6 +6,8 @@ import { registerCatalogRoutes } from "./catalog";
 import { registerInventoryCountRoutes } from "./inventory-counts";
 import { registerInventoryReadRoutes } from "./inventory-read";
 import { registerCatalogWriteRoutes } from "./catalog-write";
+import { withDatabaseClient } from "./database";
+import { cleanupExpiredAuthRecords } from "./auth-rate-limit";
 import type { Bindings } from "./bindings";
 
 const app = new Hono<{ Bindings: Bindings }>();
@@ -106,4 +108,13 @@ app.onError((_error, c) => {
   );
 });
 
-export default app;
+export default Object.assign(app, {
+  async scheduled(_controller: ScheduledController, env: Bindings): Promise<void> {
+    // Worker previews must never connect to the application database.
+    if (env.APP_ENV !== "production") return;
+
+    await withDatabaseClient(env.DATABASE_URL, (client) =>
+      cleanupExpiredAuthRecords(client),
+    );
+  },
+});

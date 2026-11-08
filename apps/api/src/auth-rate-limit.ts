@@ -104,3 +104,50 @@ export async function consumeAuthRateLimit(
 
   return { allowed: attempts <= maxAttempts, attempts, retryAfterSeconds };
 }
+
+
+/**
+ * Remove expired authentication metadata after its 48-hour retention window.
+ * This runs from the hourly production Worker Cron using least-privilege
+ * runtime DELETE grants established by migration 0012.
+ */
+export async function cleanupExpiredAuthRecords(
+  client: DatabaseClient,
+): Promise<{ rateLimitBucketsDeleted: number; bootstrapAttemptsDeleted: number }> {
+  // Bound each invocation so a backlog cannot hold an unbounded number of
+  // row locks or create a long-running DELETE. The hourly Cron drains older
+  // records over successive runs; SKIP LOCKED permits safe overlap.
+  const rateLimits = await client.query<{ key_hash: string }>(
+    `WITH expired AS (
+       SELECT key_hash
+         FROM auth_rate_limits
+        WHERE updated_at < now() - interval '48 hours'
+        ORDER BY updated_at ASC
+        LIMIT 500
+        FOR UPDATE SKIP LOCKED
+     )
+     DELETE FROM auth_rate_limits AS target
+      USING expired
+      WHERE target.key_hash = expired.key_hash
+      RETURNING target.key_hash`,
+  );
+  const bootstrapAttempts = await client.query<{ handle_hash: string }>(
+    `WITH expired AS (
+       SELECT handle_hash
+         FROM auth_bootstrap_attempts
+        WHERE expires_at < now() - interval '48 hours'
+        ORDER BY expires_at ASC
+        LIMIT 500
+        FOR UPDATE SKIP LOCKED
+     )
+     DELETE FROM auth_bootstrap_attempts AS target
+      USING expired
+      WHERE target.handle_hash = expired.handle_hash
+      RETURNING target.handle_hash`,
+  );
+
+  return {
+    rateLimitBucketsDeleted: rateLimits.rows.length,
+    bootstrapAttemptsDeleted: bootstrapAttempts.rows.length,
+  };
+}

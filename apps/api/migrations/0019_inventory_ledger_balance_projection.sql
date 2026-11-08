@@ -114,6 +114,21 @@ BEGIN
         USING ERRCODE = '23514';
     END IF;
 
+    -- A count can be confirmed while its branch is active and the branch
+    -- deactivated later. Revalidate and stabilize branch state at movement
+    -- time; NOWAIT preserves fail-closed behavior without reversing API locks.
+    PERFORM 1
+      FROM public.branches AS branch
+     WHERE branch.organization_id = NEW.organization_id
+       AND branch.id = NEW.branch_id
+       AND branch.is_active = true
+     FOR SHARE NOWAIT;
+
+    IF NOT FOUND THEN
+      RAISE EXCEPTION 'INVENTORY_MOVEMENT_BRANCH_SCOPE_INVALID'
+        USING ERRCODE = '23514';
+    END IF;
+
     SELECT c.count_type, c.status
       INTO count_type, count_status
       FROM public.inventory_counts AS c

@@ -285,7 +285,7 @@ BEGIN
       ON creator_user.id = creator.user_id
      AND creator_user.is_active = true
    WHERE org.id = NEW.organization_id
-     AND organization.is_active = true
+     AND org.is_active = true
      AND (
        confirmer.role IN ('owner', 'admin')
        OR EXISTS (

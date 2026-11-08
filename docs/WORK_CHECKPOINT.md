@@ -11,7 +11,7 @@
 - #270: merged; HEAD de PR `d3ec41147798ab19ffb74147f319565e8ea31b31`; 9 workflow runs PR-triggered SUCCESS; diff limitado a dos líneas de resumen Bash. No se obtuvo evidencia de workflow post-merge.
 - #269: Open/Draft/mergeable=true; HEAD `56a5f2ebf4f63c03bc4e50bbf5eb45b6e0aebbde`; 13 ahead/1 behind; 11 workflow runs SUCCESS; review COMMENTED, no APPROVE.
 - #255: Open/Ready/mergeable=true; HEAD `59b6b40ddf30f6711624124b719ef15234ce5fdc`; 48 ahead/3 behind; 10 workflow runs SUCCESS; una review COMMENTED (no APPROVE), con dos P1: anomaly guard absent and Cron failure alerting absent.
-- #271: Open/Ready/mergeable=true; documentación de 4 archivos; compare 12 ahead/1 behind; consultar HEAD vivo de #271. No hay evidencia de CI que valide la última actualización; las ejecuciones de HEADs anteriores no se reutilizan.
+- #271: Open/Ready; mergeable=false en última consulta (ha fluctuado); documentación de 4 archivos; compare 28 ahead/1 behind; sin workflow runs para última actualización. No hay evidencia de CI que valide la última actualización; las ejecuciones de HEADs anteriores no se reutilizan.
 - Otras abiertas: #193, #233, #258, #262. Total abierto: 7. #193 intacta.
 - Neon rehearsal SELECT: `neondb`, `microapp_migrator`, branch `br-curly-poetry-b7dxsddm`, project `restless-fire-99110035`, 15 tablas base públicas; roles migrator/runtime presentes.
 - El usuario confirmó actualización de `NEON_REHEARSAL_DATABASE_URL`; no existe aún un run posterior que pruebe el consumo por Actions. El conector no permite workflow_dispatch.
@@ -19,8 +19,8 @@
 
 ## Bloqueos
 - GitHub Actions verify posterior a rotación: pendiente.
-- #255 diverge de main (48/3) y GitHub informa mergeable=false.
-- #269 ahora diverge 13/1 y GitHub informa mergeable=false tras merge #270.
+- #255 diverge de main (48/3); GitHub informó mergeable=true en la última consulta, tras haber devuelto false antes. Gates P1 y Neon siguen abiertos.
+- #269 diverge 13/1; GitHub informó mergeable=true en la última consulta, tras haber devuelto false antes. Sigue Draft y con gates abiertos.
 - #258 sigue conflictiva; #262 apilada sobre base antigua.
 - Producción NOT READY.
 

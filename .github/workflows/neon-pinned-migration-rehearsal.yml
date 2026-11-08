@@ -125,8 +125,10 @@ jobs:
           echo "PINNED_MIGRATION_SOURCE_VERIFIED=$actual_sha"
           echo "MIGRATION_CHAIN_VERIFIED=0001-0019"
 
-      - name: Verify exact empty target and least-privilege roles
+      - name: Verify target identity, role boundaries and safe migration state
         shell: bash
+        env:
+          OPERATION: ${{ inputs.operation }}
         run: |
           set -euo pipefail
           TARGET_URL="$NEON_REHEARSAL_TARGET_DATABASE_URL"
@@ -137,29 +139,6 @@ jobs:
           ")"
           expected="microapp_rehearsal|microapp_migrator|microapp_migrator|$EXPECTED_BRANCH_ID|$EXPECTED_PROJECT_ID"
           test "$identity" = "$expected"
-
-          empty="$(psql -X -A -t -v ON_ERROR_STOP=1 --dbname "$TARGET_URL" -c "
-            SELECT pg_catalog.to_regclass('public.schema_migrations') IS NULL
-              AND NOT EXISTS (
-                SELECT 1 FROM pg_catalog.pg_class
-                WHERE relnamespace='public'::regnamespace
-                  AND relkind IN ('r','p','v','m','S','f')
-              )
-              AND NOT EXISTS (
-                SELECT 1 FROM pg_catalog.pg_proc
-                WHERE pronamespace='public'::regnamespace
-              )
-              AND NOT EXISTS (
-                SELECT 1 FROM pg_catalog.pg_namespace
-                WHERE nspname NOT IN ('pg_catalog','information_schema','pg_toast','public')
-              )
-              AND NOT EXISTS (
-                SELECT 1 FROM pg_catalog.pg_type
-                WHERE typnamespace='public'::regnamespace
-                  AND typrelid=0 AND typelem=0
-              );
-          ")"
-          test "$empty" = "t"
 
           roles="$(psql -X -A -t -v ON_ERROR_STOP=1 --dbname "$TARGET_URL" -c "
             SELECT
@@ -189,7 +168,57 @@ jobs:
               AND NOT pg_catalog.pg_has_role('microapp_runtime','microapp_migrator','MEMBER');
           ")"
           test "$roles" = "t"
-          echo "EMPTY_REHEARSAL_TARGET_VERIFIED"
+
+          empty="$(psql -X -A -t -v ON_ERROR_STOP=1 --dbname "$TARGET_URL" -c "
+            SELECT pg_catalog.to_regclass('public.schema_migrations') IS NULL
+              AND NOT EXISTS (
+                SELECT 1 FROM pg_catalog.pg_class
+                WHERE relnamespace='public'::regnamespace
+                  AND relkind IN ('r','p','v','m','S','f')
+              )
+              AND NOT EXISTS (
+                SELECT 1 FROM pg_catalog.pg_proc
+                WHERE pronamespace='public'::regnamespace
+              )
+              AND NOT EXISTS (
+                SELECT 1 FROM pg_catalog.pg_namespace
+                WHERE nspname NOT IN ('pg_catalog','information_schema','pg_toast','public')
+              )
+              AND NOT EXISTS (
+                SELECT 1 FROM pg_catalog.pg_type
+                WHERE typnamespace='public'::regnamespace
+                  AND typrelid=0 AND typelem=0
+              );
+          ")"
+          has_ledger="$(psql -X -A -t -v ON_ERROR_STOP=1 --dbname "$TARGET_URL" -c "
+            SELECT pg_catalog.to_regclass('public.schema_migrations') IS NOT NULL;
+          ")"
+
+          if [[ "$OPERATION" == "verify-empty" ]]; then
+            test "$empty" = "t"
+            echo "EMPTY_REHEARSAL_TARGET_VERIFIED"
+          else
+            if [[ "$has_ledger" == "t" ]]; then
+              ledger_prefix="$(psql -X -A -t -v ON_ERROR_STOP=1 --dbname "$TARGET_URL" -c "
+                SELECT count(*) <= 19
+                  AND (
+                    count(*) = 0
+                    OR (
+                      min(version)='0001'
+                      AND max(version)=pg_catalog.lpad(count(*)::text,4,'0')
+                      AND count(DISTINCT version)=count(*)
+                      AND pg_catalog.bool_and(state='applied')
+                    )
+                  )
+                FROM public.schema_migrations;
+              ")"
+              test "$ledger_prefix" = "t"
+              echo "APPLIED_MIGRATION_LEDGER_PREFIX_VERIFIED"
+            else
+              test "$empty" = "t"
+              echo "EMPTY_TARGET_VERIFIED_FOR_BOOTSTRAP"
+            fi
+          fi
 
       - name: Require exact write confirmation
         if: ${{ inputs.operation == 'bootstrap-and-migrate' }}

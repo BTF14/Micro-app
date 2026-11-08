@@ -1,3 +1,30 @@
+## Continuidad actualizada — 2026-11-08 UTC
+
+Retoma desde el estado vivo de `docs/CURRENT_STATE.md`. No repitas investigaciones ni vuelvas a preguntar decisiones ya documentadas. Lee primero `AGENTS.md`, `docs/CONSTITUTION.md`, `docs/AI_COLLABORATION_AND_PR_POLICY.md`, `docs/CURRENT_STATE.md`, este handoff, `docs/WORK_CHECKPOINT.md`, `docs/PROJECT_PLAN.md`, `docs/STATE_JOURNAL.md`, `docs/SECURITY_ROADMAP.md` y los SDD/ODD aplicables.
+
+### Estado de checkout
+
+- #233 no es integrable: rama antigua divergida y basada en PR cerrada. Se preservó como fuente; no fusionar.
+- #258 recupera handler, unit tests, PostgreSQL integration tests y route registration sobre main. Añade migration 0017, sin tocar migration 0015. El implementation SHA `d9ae6cd7f65c99126e7c4e45faa20a1dadaf3cdb` pasó 15/15 checks, 13/13 workflows, 141/141 unit tests y 15/15 checkout PostgreSQL tests. El HEAD actual es `9d5ca9298b80038925ee94ed3deb2ce28dd08bb8`; revalidar exactamente ese SHA.
+- #255 contiene el productor y Cron BCV, sigue Draft y no está en main. #258 debe fallar cerrado sin tasa válida; no activar checkout hasta integrar la ingesta BCV y reconciliar `index.ts`, `ci.yml` y `wrangler.toml`.
+- #257 falló en el runtime-role batch por concurrencia DDL/DML entre archivos de test que comparten la misma DB desechable. #259 añade `--no-file-parallelism`; verificar sus checks y luego actualizar/revalidar #257. No etiquetar el fallo como flaky sin resolver la causa.
+
+### Orden siguiente
+
+1. Verificar checks exactos y diff de #259; mantener Draft hasta revisión.
+2. Verificar el HEAD vivo de #258; revisar handler/migration 0017 y no reutilizar checks de SHA anterior.
+3. Resolver la dependencia #255 (ingesta/Cron BCV) y planificar rebase/merge sin perder cambios de `index.ts`, `ci.yml` ni `wrangler.toml`.
+4. Antes de producción, cerrar: aprobación explícita de moneda única/sin pagos parciales/sin sobrepago; assertions SQL de fórmula por línea y asignación USD equivalente por pago; privilegio directo runtime sobre `inventory_balances`; feriados bancarios entre semana; UI checkout.
+5. Actualizar esta documentación y el estado de #233 solo después de preservar y verificar cada cambio único. No cerrar #233 antes de que #258/#255 queden integradas.
+6. Continuar la reconciliación de inventario #193 sin alterar su rama ni su PR mientras siga vigente la restricción documentada.
+
+### Límites operativos
+
+- No Neon main, datos reales, secretos, Cloudflare productivo, DNS, billing, ni deploy manual.
+- Neon rehearsal solo mediante runner protegido y autorización específica documentada; nunca SQL manual.
+- No pedir Build IDs, capturas, terminal, CLI, TinyFish ni reconexiones ya documentadas. Si un dato imprescindible falta, preguntar una sola vez y aceptar texto.
+- No fusionar por CI verde solamente. Distinguir check-runs, workflow runs, status contexts y reviews formales.
+
 # CONTINUIDAD MAESTRA — BTF14/Micro-app — 2026-11-08 UTC
 
 Actúa como Staff Engineer/arquitecto senior. Continúa desde el estado real descrito aquí; no reinicies el proyecto ni repitas investigaciones ya documentadas.

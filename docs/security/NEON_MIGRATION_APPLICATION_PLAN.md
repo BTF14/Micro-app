@@ -1,3 +1,11 @@
+## Reconciliación de PRs de documentación — 2026-11-08 UTC
+
+- PR #265 `docs: reconcile live Neon and integration state after runner merge` mantiene esta reconciliación en una rama protegida y está pendiente de checks exact-HEAD.
+- PR #266 se abrió temporalmente para evaluar la integración de main en la rama de #258. GitHub reportó `mergeable=false`; se cerró sin merge. Los cambios se solapan en nueve archivos: CI/migration workflows, `apps/api/src/index.ts` y cinco documentos de estado/plan. La rama #258 permanece intacta.
+- No se hizo force-push, merge de #266 ni actualización de #258.
+
+---
+
 ## Estado actualizado después de integrar el runner — 2026-11-08 UTC
 
 - PR #264 se fusionó en main mediante commit `c46ed6f3e57a12bf92a7f0718435dfff8096b540`. Workflow manual disponible en `.github/workflows/neon-rehearsal-migrations.yml`.

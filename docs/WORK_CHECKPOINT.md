@@ -1,42 +1,54 @@
-## Reconciliación final de esta sesión — 2026-11-08
+## Reconciliación operativa posterior al merge #251 — 2026-11-08
 
-**GitHub main:** `d28b80edc6b2a63019ded100e46bb4b11e81153a` (protegido). Ninguna PR se fusionó durante esta sesión. No se modificó Neon ni infraestructura productiva.
+**Fuente de verdad:** GitHub en vivo. **main:** `8c13da8b2d55d0a45490b19499b1b7c53e0ec966` (protegida). PR #251 está fusionada en este commit; #257 y #259 también están integradas. El inventario vivo muestra **6 PR abiertas**, no 26.
 
-| PR | HEAD | Base | Estado | Checks exact-HEAD |
-|---|---|---|---|---:|
-| #251 auth retention | `30ec0cedafbb8281c7b5ea56572581ddc022a180` | main | Ready for review | 15/15 |
-| #255 BCV oficial | `f49fb402f9bd5a40591970c9efe3665a5e212ebb` | #251 | Ready for review | 15/15 |
-| #258 checkout atómico | `8935842cab6a7e2b8a6c0aa078e9b3e77866e48c` | main | Ready for review | 16/16 |
-| #261 reconciliación documental | rama `docs/live-state-reconcile-20261108` | main | Ready for review | 14/14 en el HEAD previo a esta última actualización; esta actualización dispara checks nuevos |
-| #262 ledger autoritativo | `19103c000b354da85c1a478867a6a18e2ec25cd7` | #258 | Ready for review | 8/8 |
-| #193 Fase B inventario | `ac57ab4f3415f82279b8a49c0befe09f8e3aec68` | main histórico | Open, no Draft | 12/12 |
-| #233 checkout histórico | `07a13c7eb68e0e933f93f35a1ecd9a22f19bf2d0` | rama documental histórica | Draft | 9/9 |
+| PR | HEAD | Base actual | Estado GitHub | Check-runs exact-HEAD | Decisión |
+|---|---|---|---|---:|---|
+| #255 BCV | `f49fb402f9bd5a40591970c9efe3665a5e212ebb` | `main` | Ready, mergeable clean | 15/15 SUCCESS | Desapilada de #251; no fusionar todavía: faltan gates Neon/runtime/Cron. |
+| #258 checkout | `8935842cab6a7e2b8a6c0aa078e9b3e77866e48c` | `main` | Ready, mergeable=false, dirty | 16/16 SUCCESS | Conflicto de integración; sincronizar y revisar contra main antes de cualquier merge. |
+| #261 documentación | `9b376b23c0c5967210533ab60ce7c968a83a07cb` | `main` | Ready, mergeable clean | 14/14 SUCCESS en el HEAD anterior a esta actualización | Este commit de reconciliación cambia su HEAD; volver a validar CI exact-SHA. |
+| #262 ledger/proyección | `19103c000b354da85c1a478867a6a18e2ec25cd7` | rama #258, base registrada `df1ba996babb859a83da09d72cdec63a69b3965c` | Ready, mergeable clean | 8/8 SUCCESS | Mantener apilada; depende de sincronizar/reconstruir #258. |
+| #233 checkout histórico | `07a13c7eb68e0e933f93f35a1ecd9a22f19bf2d0` | `docs/sales-checkout-design-gates-20261105` | Draft | 9/9 (snapshot previo) | No fusionar; conservar como fuente histórica hasta confirmar que #258 recupera todo lo único. |
+| #193 Fase B inventario | `ac57ab4f3415f82279b8a49c0befe09f8e3aec68` | main histórico | Open, no Draft | 12/12 (snapshot previo) | Restricción expresa: no modificar. |
 
-**Reviews formales:** ninguna de #251, #255, #258, #261 o #262 tiene review registrada ni threads sin resolver. Los checks verdes no sustituyen la aprobación formal.
+Los checks indicados son check-runs de los SHA señalados; no deben confundirse con workflow runs, status contexts, aprobación formal o pruebas en producción. El endpoint completo de protección de rama devolvió 403; se conoce la lista de contextos requeridos expuesta por GitHub, pero no se debe inferir desde esa respuesta que no exista una regla adicional de reviews.
 
-### #262 — P1 corregido y verificado
-- Migration 0019 revoca escrituras runtime directas a `inventory_balances` y proyecta movimientos válidos mediante trigger SECURITY DEFINER.
-- Conteos `opening`/`count_adjustment`: documento confirmado y línea coincidente; confirmer activo owner/admin/inventory; inventory requiere branch membership activa; opening exige warehouse vacío.
-- Conteo físico: el movimiento revalida cantidad esperada y `balance_version` contra el balance actual bajo mutex del almacén.
-- El actor/scope se revalida al insertar movimiento con `NOWAIT`; sale requiere venta draft y línea exacta por tenant/sucursal/almacén/actor/producto/cantidad/costo.
-- Purchase receipt, transfer in/out, customer return y reversal siguen bloqueados hasta tener sus documentos fuente y autorización por tipo.
-- HEAD #262 `19103c000b354da85c1a478867a6a18e2ec25cd7`: 8/8 SUCCESS. Pasaron build/typecheck, unit tests, integración PostgreSQL de auth, branches, registers, catalog, counts, reads, checkout, runtime-role API, migraciones 0001–0019, login real `microapp_runtime`, backup/restore, Cloudflare build checks y Trivy.
-- Remediación P1 documentada: https://github.com/BTF14/Micro-app/pull/262#issuecomment-6719627864.
-- Residual explícito: el rol PostgreSQL compartido valida el actor declarado pero no lo vincula criptográficamente a la sesión HTTP; `authorizeBranchOperation` sigue siendo obligatorio. No habilitar otros tipos de movimiento.
+### Hallazgo operativo de Neon — solo lectura
 
-### Secuencia de integración segura
-1. #251 → #255: raíz de retención auth y después ingesta oficial BCV.
-2. #258: checkout. Después de #255, sincronizar su rama con el resultado integrado y resolver adiciones de rutas en `apps/api/src/index.ts` y Crons de `apps/api/wrangler.toml`; volver a ejecutar checks exactos.
-3. #262: después de integrar #258, retarget base a main y volver a ejecutar checks exactos.
-4. #261 documentación: merge independiente después de review formal y checks de esta actualización.
-5. #233: mantener abierta hasta integrar #255/#258; después cerrar como supersedida. Su auditoría histórica no encontró implementación vigente única que portar.
-6. #193: no modificar bajo la restricción vigente; conservar su propuesta de Fase B para revisión separada.
+Rama de ensayo existente: `rehearsal-baseline-20261107` (`br-curly-poetry-b7dxsddm`), proyecto `restless-fire-99110035`, base `neondb`.
 
-**Producción NOT READY:** no se comprobó en esta sesión la identidad/ownership del runtime de Neon ni se hizo rehearsal protegido. No se tocaron Neon main, datos reales, secretos, Worker productivo, DNS, billing ni deploy manual. No solicitar capturas, Build IDs, terminal, CLI o TinyFish.
+- No existen `schema_migrations` ni `app_schema_migrations`.
+- `exchange_rates.rate`, `sales.exchange_rate_snapshot` y `payments.exchange_rate_snapshot` siguen en `NUMERIC(14,6)`; migration 0013 no está aplicada allí.
+- `microapp_runtime` tiene USAGE en `public`, no CREATE, y no tiene SELECT/INSERT/UPDATE/DELETE en `exchange_rates`.
+- `microapp_migrator` puede iniciar sesión directamente, tiene CREATE en `public` y es owner de `exchange_rates`; la identidad consultada fue `current_user=session_user=microapp_migrator`.
+- La prueba bajo `microapp_runtime` confirmó `current_user=session_user=microapp_runtime` y ausencia de permisos de tabla sobre `exchange_rates`.
+- No se ejecutó DDL/DML ni se modificó Neon. El branch `main` de Neon permanece fuera de alcance.
 
----
+El workflow `.github/workflows/migration-runner.yml` prueba el runner contra PostgreSQL desechable local de GitHub Actions. No es un runner protegido que aplique migraciones a Neon. No afirmar lo contrario ni usar SQL manual para saltarse el flujo.
 
-## Estado GitHub verificado — 2026-11-08 ~09:20 UTC
+### Bloqueos de integración y producción
+
+- **#255:** aunque sus 15 check-runs están verdes y GitHub lo reporta limpio tras retarget a main, su Cron de lunes a viernes a las 22:00 UTC escribirá en `exchange_rates`. No fusionar/activar hasta disponer de una ruta reproducible de baseline/migración en la rama de ensayo, verificar migration 0013 y sus grants con login directo `microapp_migrator`, probar `microapp_runtime` y confirmar el principal/configuración real del Worker sin revelar secretos. La documentación de PR #255 ya registra estos hallazgos.
+- **#258:** el HEAD exacto tiene 16/16 checks verdes, pero GitHub lo reporta `dirty` y la comparación con main muestra 29 commits de retraso. Además, el contrato comercial de pago (una moneda de liquidación por venta, pago exacto completo, sin parcial/sobrepago) debe estar explícitamente aprobado antes de habilitar checkout.
+- **#262:** su base es un HEAD anterior de la rama #258; no integrar independientemente. Su mejora P1 de proyección ledger→balance tiene un residual: el actor declarado en PostgreSQL no queda criptográficamente ligado a la sesión HTTP; `authorizeBranchOperation` sigue siendo obligatorio y otros tipos de movimiento deben permanecer bloqueados.
+- **#261:** el snapshot anterior afirmaba que main era `d28b80e` y que #251 no estaba fusionada; eso ya es falso. Esta actualización reemplaza el encabezado operativo. Las secciones posteriores con snapshots fechados se conservan como historial, no como estado actual.
+- **#193:** no tocar ni cerrar; conservar el alcance y los hallazgos de permisos ya documentados.
+- **Producción: NOT READY.** CI verde y builds Cloudflare de PR son evidencia de CI/preview, no prueba de producción. No se ha demostrado la aplicación de migraciones en Neon main, identidad/grants efectivos del Worker, smoke test autenticado de producción, backup/restore operativo ni readiness end-to-end.
+
+### Proceso de único mantenedor
+
+No crear otra cuenta ni fabricar una aprobación GitHub. Registrar por separado: revisión técnica asistida por IA, resultados CI exact-SHA, hallazgos/resoluciones y autorización del propietario. Una revisión asistida por IA no se denomina aprobación humana independiente. La autorización permanente del propietario del 2026-11-05 permite fusionar PR que superen todos los gates aplicables y contempla el despliegue automático inherente; no amplía permisos para Neon main, migraciones remotas, secretos, datos reales, cambios manuales de Cloudflare, DNS o billing.
+
+### Siguiente secuencia
+
+1. Terminar esta reconciliación documental y validar el nuevo HEAD de #261.
+2. Resolver #258 contra el main actual sin force-push y sin perder cambios únicos; mantener #262 apilada hasta entonces.
+3. Completar el procedimiento reproducible de baseline/migración solo en Neon rehearsal; no tocar Neon main.
+4. Revalidar #255 exact-HEAD y sus gates antes de considerar integración.
+5. Revisar producto, permisos y flujos end-to-end antes de habilitar checkout.
+6. Mantener #193 intacta y cerrar #233 únicamente después de demostrar que no conserva contenido único.
+
+\n## Estado GitHub verificado — 2026-11-08 ~09:20 UTC
 
 **Fuente de verdad:** GitHub API. `main` protegido, HEAD `d28b80edc6b2a63019ded100e46bb4b11e81153a`. No se realizó ningún merge en esta sesión.
 

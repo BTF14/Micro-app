@@ -160,10 +160,6 @@ describe.skipIf(!databaseUrl)("warehouse inventory count transactions against Po
   async function seedInventoryBalanceFor(targetProductId: string, onHand: string, reserved = "0.000"): Promise<void> {
     await client.query("BEGIN");
     try {
-      await client.query(
-        "INSERT INTO inventory_balances (organization_id, branch_id, warehouse_id, product_id, on_hand_quantity, reserved_quantity) VALUES ($1, $2, $3, $4, $5::numeric, $6::numeric)",
-        [organizationId, branchId, warehouseId, targetProductId, onHand, reserved],
-      );
       if (Number(onHand) !== 0) {
         await client.query(
           `INSERT INTO warehouse_inventory_movements
@@ -171,6 +167,17 @@ describe.skipIf(!databaseUrl)("warehouse inventory count transactions against Po
            VALUES ($1, $2, $3, $4, 'purchase_receipt', $5::numeric, 'Integration test fixture seed', $6)`,
           [organizationId, branchId, warehouseId, targetProductId, onHand, userId],
         );
+      }
+      if (Number(reserved) > 0) {
+        await client.query("ALTER TABLE inventory_balances DISABLE TRIGGER inventory_balances_direct_write_guard");
+        try {
+          await client.query(
+            "UPDATE inventory_balances SET reserved_quantity = $4::numeric WHERE organization_id = $1 AND warehouse_id = $2 AND product_id = $3",
+            [organizationId, warehouseId, targetProductId, reserved],
+          );
+        } finally {
+          await client.query("ALTER TABLE inventory_balances ENABLE TRIGGER inventory_balances_direct_write_guard");
+        }
       }
       await client.query("COMMIT");
     } catch (error) {
@@ -649,10 +656,6 @@ describe.skipIf(!databaseUrl)("warehouse inventory count transactions against Po
     expect(snapshot.rows[0]).toEqual({ expected: "8.250", version: "1" });
     await client.query("BEGIN");
     try {
-      await client.query(
-        "UPDATE inventory_balances SET on_hand_quantity = 8.500 WHERE organization_id = $1 AND warehouse_id = $2 AND product_id = $3",
-        [organizationId, warehouseId, productId],
-      );
       await client.query(
         `INSERT INTO warehouse_inventory_movements
           (organization_id, branch_id, warehouse_id, product_id, movement_type, quantity_delta, reason, actor_user_id)

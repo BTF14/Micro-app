@@ -1,4 +1,5 @@
 BEGIN;
+SET LOCAL lock_timeout = '5s';
 
 DO $inventory_projection_preflight$
 BEGIN

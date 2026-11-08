@@ -1,28 +1,17 @@
-# Work checkpoint — 2026-11-08 13:22 UTC
+# Work checkpoint — 2026-11-08 13:30 UTC
 
-## Fuente y alcance
-- Repo: BTF14/Micro-app.
-- Rama documental limpia: `docs/reconcile-neon-pr-state-clean-20261108`, creada desde main `37e8c40d5bacfb71133942d774c3f87d71d61b9e`; reemplaza la rama anterior #271 tras transferir los mismos cuatro archivos finales.
-- Checkpoint canónico: `docs/WORK_CHECKPOINT.md`; no existe `WORK_CHECKPOINT.md` en la raíz.
-- Este bloque: lectura GitHub/Neon, merge de corrección textual #270 y reconciliación documental. No hubo cambios de código comercial, migraciones ni escrituras en Neon.
-
-## Evidencia
-- Main actual: `37e8c40d5bacfb71133942d774c3f87d71d61b9e` (merge #270).
-- #270: merged; HEAD de PR `d3ec41147798ab19ffb74147f319565e8ea31b31`; 9 workflow runs PR-triggered SUCCESS; diff limitado a dos líneas de resumen Bash. No se obtuvo evidencia de workflow post-merge.
-- #269: Open/Draft/mergeable=true; HEAD `56a5f2ebf4f63c03bc4e50bbf5eb45b6e0aebbde`; 13 ahead/1 behind; 11 workflow runs SUCCESS; review COMMENTED, no APPROVE.
-- #255: Open/Ready/mergeable=true; HEAD `59b6b40ddf30f6711624124b719ef15234ce5fdc`; 48 ahead/3 behind; 10 workflow runs SUCCESS; una review COMMENTED (no APPROVE), con dos P1: anomaly guard absent and Cron failure alerting absent.
-- #272: nueva PR documental de 4 archivos, creada desde main actual; CI exact-HEAD pendiente. Reemplaza #271 conservando los cuatro blobs finales. No hay evidencia de CI que valide la última actualización; las ejecuciones de HEADs anteriores no se reutilizan.
-- Otras abiertas: #193, #233, #258, #262, #269, #255 y #272. Total abierto: 7. #193 intacta.
-- Neon rehearsal SELECT: `neondb`, `microapp_migrator`, branch `br-curly-poetry-b7dxsddm`, project `restless-fire-99110035`, 15 tablas base públicas; roles migrator/runtime presentes.
-- El usuario confirmó actualización de `NEON_REHEARSAL_DATABASE_URL`; no existe aún un run posterior que pruebe el consumo por Actions. El conector no permite workflow_dispatch.
-- Workflow revisado: verify no ejecuta DDL/DML; adopt-and-migrate es operación separada de escritura.
-
-## Bloqueos
-- GitHub Actions verify posterior a rotación: pendiente.
-- #255 diverge de main (48/3); GitHub informó mergeable=true en la última consulta, tras haber devuelto false antes. Gates P1 y Neon siguen abiertos.
-- #269 diverge 13/1; GitHub informó mergeable=true en la última consulta, tras haber devuelto false antes. Sigue Draft y con gates abiertos.
-- #258 sigue conflictiva; #262 apilada sobre base antigua.
+## Estado
+- Repo BTF14/Micro-app; main snapshot `33016a2d206c7b8cfc60e53e34a56a26651141d7`.
+- #270 merged: `37e8c40d5bacfb71133942d774c3f87d71d61b9e`; fix textual de quoting; 9 workflow runs SUCCESS exact-HEAD.
+- #272 merged: `33016a2d206c7b8cfc60e53e34a56a26651141d7`; docs-only; 10/10 workflow runs SUCCESS exact-HEAD. #271 closed as superseded.
+- 6 PR abiertas: #193, #233, #255, #258, #262, #269. #193 no modificar.
+- #269 Open/Draft, HEAD `56a5f2ebf4f63c03bc4e50bbf5eb45b6e0aebbde`, 13 ahead/2 behind, 11 workflow runs SUCCESS, review COMMENTED.
+- #255 Open/Ready, HEAD `59b6b40ddf30f6711624124b719ef15234ce5fdc`, 48 ahead/4 behind, 10 workflow runs SUCCESS, review COMMENTED. Dos P1 pendientes: anomalías de tasa y observabilidad del Cron. Sin aprobación.
+- Neon rehearsal `br-curly-poetry-b7dxsddm`: SELECT identidad correcta, fingerprint baseline 0002 294/294 exacto, 15 tablas; roles migrator/runtime con atributos restrictivos; 17 objetos públicos propiedad del migrator. No DDL/DML.
+- Usuario confirmó que actualizó `NEON_REHEARSAL_DATABASE_URL`; falta verificarlo desde Actions. Último run conocido #42479603848 falló por secreto ausente antes de conectar.
+- El workflow `verify` es solo SELECT/fingerprint; `adopt-and-migrate` escribe y no está autorizado todavía.
+- El conector no permite workflow_dispatch; requiere ejecución manual desde UI de Actions.
 - Producción NOT READY.
 
-## Próxima acción
-Ejecutar manualmente workflow Neon desde `main` con `operation=verify` exclusivamente. No seleccionar `adopt-and-migrate`; no compartir secreto/URI.
+## Siguiente acción exacta
+GitHub Actions → workflow `.github/workflows/neon-rehearsal-migrations.yml` → branch `main` → `operation=verify` solamente. Nunca seleccionar `adopt-and-migrate`; no compartir URI/secret.

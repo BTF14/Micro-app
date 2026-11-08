@@ -1,3 +1,12 @@
+# 2026-11-08 UTC — Neon main schema drift confirmado por SELECT
+
+- Lectura de solo esquema en Neon main `br-summer-math-b7297a60`: no existen `microapp_runtime`, `microapp_migrator`, `schema_migrations`, `auth_bootstrap_attempts`, `branches`, `warehouses` ni `inventory_balances`; sí existe `auth_rate_limits`; `exchange_rates.rate` es `NUMERIC(14,6)`.
+- Identidad consultada: `neondb_owner`, database `neondb`, project `restless-fire-99110035`, branch `br-summer-math-b7297a60`.
+- El resultado confirma que Neon main sigue en baseline 0001–0002, desfasado del main de código. El Cron #251 está configurado en el repositorio; despliegue/ejecución real no verificados y la segunda DELETE fallaría si el Cron ejecuta contra este esquema.
+- Solo SELECT de catálogos/metadatos; no se leyeron filas de negocio, no se ejecutó DDL/DML, no se tocaron secretos ni Cloudflare.
+
+---
+
 # 2026-11-08 UTC — PR #261 integrado; runner Neon de ensayo preparado; riesgo Cron #251 registrado
 
 - PR #261 se fusionó en main mediante squash: merge SHA `10ed02c6c6d30940ef2e2a75db009f6ea6859bd3`. Main quedó protegido en ese SHA; sus 11 check-runs post-merge estaban en progreso al verificar. No se reutilizan como éxito post-merge hasta terminación.

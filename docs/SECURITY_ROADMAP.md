@@ -1,3 +1,15 @@
+# Estado de seguridad actualizado — 2026-11-08 UTC — checkout
+
+- #258 implementa checkout transaccional y migration 0017 weekday/weekend en GitHub, pero no en Neon. El SHA de implementación `d9ae6cd7f65c99126e7c4e45faa20a1dadaf3cdb` pasó 15/15 checks y 13/13 workflows; HEAD actual `9d5ca9298b80038925ee94ed3deb2ce28dd08bb8` requiere revalidación exact-SHA.
+- **P1 — fuente BCV:** #255 productor/API/Cron sigue Draft y no está integrado en main. Checkout falla cerrado si no existe la fila efectiva validada. No activar hasta integrar y verificar el Worker/runtime.
+- **P1 — aritmética en DB:** trigger 0015 reconcilia sumas, pero no verifica por sí mismo `quantity × unit_price_usd_snapshot`, redondeo de `line_total_ves` ni asignación proporcional individual de `usd_equivalent_snapshot`. Handler calcula con BigInt; falta defensa SQL antes de producción.
+- **P1 — privilegios inventario:** migration 0012 concede a `microapp_runtime` INSERT y UPDATE(on_hand_quantity, updated_at) en `inventory_balances`. 0010 exige pairing con ledger, pero no es una proyección exclusivamente SECURITY DEFINER. Resolver antes de producción.
+- **Decisión de producto pendiente:** la regla SQL actual exige una sola moneda de liquidación y no admite pagos parciales/sobrepago/cambio. No asumir que esto fue aprobado; obtener confirmación explícita antes de activar.
+- **P1 operativo:** no existe UI de checkout; feriados bancarios entre semana no tienen calendario oficial y siguen fail closed.
+- **Pruebas seguras:** checkout integration tests exigen conexiones localhost separadas `microapp_runtime`/`microapp` a `microapp_test`; rechazan cualquier destino no desechable.
+- **CI shared-DB race:** #257 falló por DDL/DML concurrente al eliminar trigger temporal de auditoría. #259 añade `--no-file-parallelism`; verificar antes de cerrar el hallazgo.
+- No Neon main, secretos, Cloudflare productivo, DNS, billing, datos reales ni deploy cambiados.
+
 # Estado vivo de seguridad — 2026-11-08 UTC
 
 > Este bloque prevalece sobre snapshots inferiores. No confundir implementación en GitHub con activación en producción.

@@ -57,7 +57,7 @@ Excluded:
 |---|---|---|---|
 | Revalidar PR #287 y contratos de DB/checkout | Rama base y transacción identificadas | HEAD `362443524eb45c67da16811d1745d83ddc9bd3a9`; checkout corre dentro de `withDatabaseTransaction` | completed |
 | Registrar decisión A y criterios | Política durable, sin TTL arbitrario | ADR `ADR-20261109-bcv-checkout-last-success.md` | completed |
-| Implementar guard de estado BCV | Estado operativo consumido en checkout | `sales-checkout.ts`: `FOR SHARE`, outcomes `inserted`/`unchanged`, `last_success_at` y `last_effective_date` | implemented; CI pending |
+| Implementar guard de estado BCV | Estado operativo consumido en checkout | `sales-checkout.ts`: `FOR SHARE`, outcomes `inserted`/`unchanged`, `last_success_at` y `last_effective_date` | implemented; CI exact-HEAD SUCCESS |
 | Validar locks y permisos | Sync y venta serializados sin privilegios extra | Test PostgreSQL runtime-role con `FOR SHARE` y `lock_timeout` contra UPDATE concurrente | implemented; CI pending |
 | Ejecutar CI exact-HEAD | Evidencia vinculada al SHA probado | SHA `13c8cd96becc09b0ba9ffad923ea115e5a44dcba`: CI, PostgreSQL checkout/runtime-role, unit, typecheck, migraciones, migration runner, Playwright, Semgrep, Dependency review y ODD docs SUCCESS; 13/13 check-runs SUCCESS. PR Security scan quedó pending, pero Trivy push del mismo SHA SUCCESS. | completed; docs-only commit posterior requiere revalidación exact-HEAD |
 | Actualizar handoff y estado | Continuidad sin snapshots engañosos | CURRENT_STATE, STATE_JOURNAL y handoff actualizados; PR #295 OPEN/Draft | completed |
@@ -75,8 +75,19 @@ Excluded:
 
 - Final tested code SHA: `3a67540c7b079bb11349552ffe92c598f0fad11f`. El checkpoint documental siguiente cambia HEAD y requiere nueva validación exact-HEAD.
 - PR: https://github.com/BTF14/Micro-app/pull/295 (OPEN/Draft; base `integration/bcv-checkout-rehearsal-20261109`).
-- Checks: 14/14 check-runs SUCCESS y 10/10 workflow runs SUCCESS en SHA probado. CI `42625578491`; Database migration validation `42625578392`; PostgreSQL migration runner `42625578739`; Playwright `42625578611`; Semgrep `42625578676`; Dependency review `42625578410`; ODD docs `42625578554`; Project dashboard `42625578403`; Secret history `42625578857`; Security scan `42625578492`.
+- Checks: 14/14 check-runs SUCCESS y 10/10 workflow runs SUCCESS en SHA probado. CI `42626127554`; Database migration validation `42626127525`; PostgreSQL migration runner `42626127563`; Playwright `42626127582`; Semgrep `42626127548`; Dependency review `42626127513`; ODD docs `42626127555`; Project dashboard `42626127547`; Secret history `42626127604`; Security scan `42626127524`.
 - Acceptance criteria met: AC-1–AC-7. CI incluye unit tests, PostgreSQL atomic sales checkout integration y Runtime-role API integration; todos SUCCESS.
 - Limitations not verified: fixture HTML oficial BCV, calendario bancario oficial, revisión legal/contable, alertas/identidad Worker.
 - Residual risks: umbrales parser 10/7 sin aprobación; reglas comerciales de devolución/anulación/cambio siguen pendientes; producción NOT READY.
 - Next step: mantener #295 Draft hasta revisión independiente y decisión de integración en #287; no merge automático.
+
+
+## Revisión técnica independiente — 2026-11-09
+
+- SHA revisado y validado: `32b838c9dd90c7b5c17e359961bd67f48376d1a8`. PR #295 sigue OPEN/Draft, base `integration/bcv-checkout-rehearsal-20261109` (base SHA `362443524eb45c67da16811d1745d83ddc9bd3a9`), mergeable=true; 37 commits ahead / 0 behind. No se fusionó.
+- Verificación viva: 10/10 workflow runs SUCCESS asociados al SHA; la descripción de PR registra 14/14 check-runs SUCCESS. No hay reviews formales ni hilos de revisión.
+- Revisión del flujo: `syncBcvOfficialRate()` reclama el singleton con UPDATE a `running` antes del fetch HTTP; checkout toma `FOR SHARE` en la misma fila dentro de su transacción. Si checkout obtiene primero el lock, el UPDATE de inicio de sync espera hasta el final de la venta; si sync confirma primero `running`, checkout observa ese estado y falla cerrado. La finalización del sync verifica `attempt_id` bajo `FOR UPDATE` y persiste tasa + estado terminal en una transacción, evitando que intentos supersedidos sobrescriban al vigente.
+- Permisos: migración 0021 concede SELECT y UPDATE por columnas a `microapp_runtime`, sin INSERT/DELETE/TRUNCATE; la prueba runtime-role verifica el lock compartido frente a UPDATE concurrente.
+- Dictamen de código: no se encontró un bloqueo de corrección en el flujo revisado de checkout/sync. La validación no equivale a aprobación formal de PR ni a readiness de producción.
+- Riesgo operativo pendiente: el Cron BCV está programado para `0 22 * * 1-5`, exige `APP_ENV=production` y `BCV_SYNC_ENABLED=true`, y permanece deshabilitado por defecto. No se observó un mecanismo de retry inmediato ni alerta operativa en este alcance. Si un intento falla o queda `running`, nuevas ventas siguen bloqueadas hasta el siguiente intento habilitado que finalice con éxito; hace falta definir alertas y recuperación operativa antes de producción.
+- No hubo merge, cambios en main, escrituras Neon, deploy, activación Cron, cambios de secretos/DNS/billing ni uso de datos reales. Producción **NOT READY**.

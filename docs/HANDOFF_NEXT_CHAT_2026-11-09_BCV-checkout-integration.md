@@ -153,3 +153,15 @@ PR #293 se integró con merge commit en la rama de #287 para preservar main como
 - No se ha ejecutado todavía CI exact-HEAD ni se declara que los tests pasen. La apertura de la PR Draft debe disparar los workflows; revisar cada check/run contra el SHA final.
 - No se hicieron escrituras Neon, deploy, activación Cron, ni cambios de Cloudflare/secrets/DNS/billing.
 - Pendientes globales siguen vigentes: fixture HTML oficial BCV, calendario bancario oficial, umbrales parser 10/7 sin aprobación, revisión legal/contable, alertas/identidad Worker y contrato comercial completo. Producción NOT READY.
+
+
+---
+
+## Corrección final de estado — PR #295 y CI exact-HEAD — 2026-11-09
+
+- PR #295 está OPEN/Draft y su base actual es `integration/bcv-checkout-rehearsal-20261109`, no la rama alias. La rama `fix/bcv-checkout-validation-base-20261109` se utilizó temporalmente solo para disparar workflows cuyo filtro excluye bases `integration/**`; después se retargeteó PR #295 a la rama real de integración.
+- HEAD de código probado: `3a67540c7b079bb11349552ffe92c598f0fad11f`. CI `42625578491`, migraciones `42625578392`, migration runner `42625578739`, Playwright `42625578611`, Semgrep `42625578676`, Dependency review `42625578410`, ODD docs `42625578554`, dashboard `42625578403`, secret-history `42625578857` y Security scan `42625578492`: todos SUCCESS. Resultado exacto: **14/14 check-runs SUCCESS y 10/10 workflow runs SUCCESS**.
+- CI verify incluyó build/typecheck, unit tests, PostgreSQL atomic sales checkout integration y Runtime-role API integration; los pasos terminaron SUCCESS. La prueba de checkout incluye estado `failed`, `running`, discrepancia de fecha, recuperación tras éxito, tasa actual durante prepublicación futura y lock `FOR SHARE` frente a UPDATE concurrente.
+- Cloudflare Pages/Workers checks son builds de preview; no hubo deploy productivo. No hubo escrituras Neon, activación Cron ni cambios manuales de Cloudflare.
+- No hay reviews formales ni threads en #295. Se mantiene Draft. #287 también sigue Draft. Producción NOT READY.
+- Este commit documental cambiará el HEAD; ejecutar CI exact-HEAD otra vez antes de cualquier decisión posterior.

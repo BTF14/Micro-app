@@ -2297,3 +2297,8 @@ Consulta del portal oficial SUDEBAN: la página indexada muestra la sección gen
 ## 2026-11-09 — Acceso parcial a página oficial BCV
 
 La apertura web convencional de `https://www.bcv.org.ve/` respondió 502; una extracción independiente por navegador sí recuperó contenido de la página oficial, incluidos bloques de monedas y `Fecha Valor`. El extractor limpió el HTML y no conservó el cuerpo HTTP original, scripts/estilos ni atributos completos. Se registra como evidencia de acceso a contenido oficial, pero no satisface el fixture raw con SHA-256 ni prueba el parser con markup original. No se usaron fuentes espejo ni se cambió la fixture sintética.
+
+
+## 2026-11-09 — Fixture DOM oficial BCV preservada
+
+Se obtuvo `document.documentElement.outerHTML` de la página oficial BCV y se preservó una copia sanitizada en la rama #287, con SHA-256 del DOM original y de la muestra redaccionada documentados. Se añadió prueba del parser sobre USD 897.53830000 y fecha 2026-11-09. La serialización DOM no equivale a bytes HTTP originales; faltan status HTTP numérico y headers, por lo que el fixture raw HTTP continúa pendiente. No se cambió la fuente de runtime ni se habilitó Cron.

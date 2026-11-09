@@ -213,3 +213,18 @@ La documentación actual de Cloudflare distingue CPU de wall time:
 Referencia oficial: https://developers.cloudflare.com/workers/platform/limits/ (consultada 2026-11-09).
 
 El watchdog debe usar un presupuesto interno mucho menor que el techo de 15 minutos, pero no se fija hasta medir latencias y definir margen para registrar el estado final y cerrar el cliente. Medir wall time de conexión DB, cada query, fetch BCV (actual timeout 10 s), persistencia/locks y cleanup por separado; medir CPU por separado. No usar el límite CPU de 10 ms como timeout de conexión/consulta.
+
+
+## Hallazgo de ciclo de vida de conexión — 2026-11-09
+
+La revisión de `syncBcvOfficialRate()` confirma que el flujo actual abre un único `Client`, reclama el intento, mantiene esa conexión abierta mientras espera el fetch HTTP del BCV (timeout 10 s), y luego la reutiliza para persistir el resultado. El fetch externo no necesita una conexión PostgreSQL abierta.
+
+**Diseño candidato para la siguiente implementación:**
+
+1. Fase A — abrir DB, reclamar `attempt_id` y escribir `running`; cerrar la conexión antes del fetch.
+2. Fase B — obtener y validar HTML BCV sin mantener conexión DB abierta.
+3. Fase C — abrir una conexión nueva, iniciar transacción, bloquear `bcv_sync_state` con `FOR UPDATE`, comparar `attempt_id` y solo entonces persistir tasa + estado terminal de forma atómica.
+4. Si falla el fetch, abrir una conexión breve para marcar `failed` solo si el `attempt_id` sigue siendo el vigente. Si la DB no permite registrar el fallo, conservar el error original y dejar `running` detectable por el watchdog.
+5. Si otra ejecución reemplazó el `attempt_id`, la finalización antigua retorna `superseded` y no invalida ni inserta ninguna tasa.
+
+Esto reduce conexiones ociosas durante I/O externo y conserva la protección contra intentos supersedidos. Antes de cambiarlo, añadir pruebas de concurrencia de dos fases, fetch fallido, fallo de DB al marcar terminal, fallo al cerrar cliente y que ningún intento antiguo pueda tocar `exchange_rates`/estado posterior. No cambiar todavía código ni Cron hasta completar el contrato de timeout y las pruebas.

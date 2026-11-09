@@ -1,3 +1,13 @@
+# Objetivo de entrega — 2026-12-01
+
+La prioridad de gestión cambió: entregar un MVP utilizable el 1 de diciembre de 2026 o antes, sin afirmar que todo el SaaS está terminado. Leer primero el plan de entrega y línea base verificada en `docs/WORK_CHECKPOINT.md` (bloque “Plan de entrega MVP — objetivo 2026-12-01”); ese bloque documenta el estado de GitHub, la separación main/PR, el estado real de UI/API, los gates y la secuencia hasta el 1 de diciembre.
+
+**Brecha funcional central confirmada en #287:** el frontend aún deshabilita Caja/Ventas, Inventario y Reportes; checkout solo tiene API y depende de un turno abierto, pero no hay rutas registradas para abrir/cerrar/consultar turnos. No declarar POS end-to-end terminado. El próximo frente de implementación debe ser turno propio + UI de caja/checkout, seguido de UI de inventario/Kardex/conteos.
+
+No repetir la auditoría base de #287/#296/#298. Reconsultar solo cambios desde los SHA documentados. Mantener #287/#296/#298 Draft hasta que cada uno supere sus gates; no usar 10 check-runs SUCCESS como sustituto de los workflow runs fallidos ni de revisión independiente. No tocar Neon main, producción, secretos, DNS, billing, Cron productivo ni datos reales.
+
+---
+
 # Continuidad prioritaria — 2026-11-09 19:25 UTC
 
 **Estado vigente:** main `c5373564413ba086690552c6b7deeab08d7b4a89`. Las fuentes vivas de PR prevalecen sobre snapshots de este archivo.

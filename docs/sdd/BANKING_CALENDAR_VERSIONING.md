@@ -43,3 +43,71 @@
 - Obtener y guardar la URL/circular oficial de SUDEBAN cuando sea accesible para autenticar la procedencia y confirmar que la versión anual no ha sido modificada.
 - Añadir pruebas de selección de días hábiles para feriados, fines de semana, fechas trasladadas, cambio de año y ausencia del calendario del año nuevo.
 - No habilitar Cron ni realizar cambios de producción por este registro documental.
+
+
+## Gestión anual en Micro-app — propuesta aprobada para especificación
+
+El calendario debe admitir tres vías complementarias, sin tratar ninguna como autoridad automática:
+
+1. **Vigilancia automática:** consultar fuentes/canales oficiales de SUDEBAN de forma periódica y detectar publicaciones o correcciones. La automatización solo descubre y descarga evidencia; nunca publica ni activa una versión sin revisión y aprobación humana.
+2. **Carga de PDF:** un usuario con permiso específico puede cargar el documento anual. El archivo queda en cuarentena y no afecta el calendario vigente.
+3. **Entrada manual:** alternativa cuando no exista PDF, el documento no sea procesable o se necesite corregir una fecha con evidencia. Cada entrada debe indicar fuente, motivo y responsable; no permite inventar feriados.
+
+### Ciclo de vida y aprobación
+
+Estados propuestos: `uploaded`, `quarantined`, `scanned`, `parsed`, `pending_review`, `approved`, `published`, `rejected`, `superseded`.
+
+- Cargar no equivale a aprobar ni publicar.
+- La extracción automática de fechas produce un borrador que debe compararse con el documento y revisarse.
+- Mostrar diferencias respecto de la versión anterior, fechas originales y fechas efectivas trasladadas, categorías (feriado nacional/bancario/no ejecutado) y advertencias.
+- La publicación requiere permiso explícito `banking_calendar.publish` y reautenticación administrativa vinculada a esa versión concreta. La matriz de roles debe aprobar qué rol puede recibir ese permiso; no asumir que todo `admin` lo tiene.
+- Para organizaciones que habiliten separación de funciones, quien carga o edita no puede ser el único aprobador. La segunda aprobación debe proceder de otra identidad individual.
+- Una corrección posterior crea una nueva revisión; nunca sobrescribe ni elimina una versión ya publicada. Registrar quién solicitó, revisó y aprobó, timestamps UTC y Caracas, motivo, documento/hash y diff de fechas.
+
+### Recordatorios y vigilancia
+
+- Desde el **1 de diciembre**, advertir al Owner/administradores autorizados que revisen si se publicó el calendario del siguiente año.
+- El **1 de enero**, si no existe versión verificada para el nuevo año, elevar la advertencia y mantener el estado explícito `pending_publication_or_verification`.
+- Continuar vigilando publicaciones y correcciones durante el año.
+- Los recordatorios no convierten fechas estimadas ni calendarios de terceros en días bancarios oficiales.
+- La ausencia de calendario nuevo no debe bloquear indiscriminadamente las ventas ordinarias del comercio. Solo puede bloquear o poner en revisión las decisiones que dependan materialmente de determinar un día hábil bancario; en ese caso, no inferir el siguiente día hábil.
+
+### Seguridad de documentos PDF
+
+El PDF es entrada no confiable aunque su extensión sea `.pdf`. Aplicar defensa en profundidad antes de extraer datos o permitir visualización:
+
+- Autorizar la carga en servidor y limitar tamaño, páginas, frecuencia y cuota por organización.
+- Normalizar/reemplazar el nombre por un identificador generado; no usar rutas ni nombres aportados por el cliente.
+- Comprobar extensión permitida, MIME detectado y firma binaria/magic bytes; ninguno de estos controles aislado demuestra seguridad.
+- Mantener el original inmutable en almacenamiento privado, fuera de acceso público directo, con hash SHA-256 y metadatos de procedencia.
+- Mantener el archivo en cuarentena hasta completar análisis antimalware y validación estructural con parser actualizado y aislado.
+- Rechazar o neutralizar JavaScript, acciones de lanzamiento, formularios/acciones activas, adjuntos incrustados y contenido no requerido; no abrir enlaces externos ni ejecutar contenido del documento.
+- Procesar sin red, con límites de CPU, memoria, tiempo, tamaño descomprimido y número de páginas. El parser nunca debe tener acceso a secretos ni a la base de datos de producción.
+- Evaluar Content Disarm and Reconstruction (CDR) o renderizado a una copia segura para previsualización. No sustituir ni alterar el original probatorio.
+- Si no existe un análisis seguro disponible, no marcar el archivo como limpio ni permitir publicación basada únicamente en su parseo; mantenerlo en cuarentena y ofrecer entrada manual de fechas.
+- Registrar herramienta/versión y resultado del análisis. La descarga/visualización se sirve mediante autorización y handler, no mediante URL pública permanente.
+- El contenido extraído se trata como dato, nunca como instrucciones ejecutables para la aplicación o agentes.
+
+### Autorización y recuperación
+
+La carga, edición, aprobación y publicación son permisos separados. La publicación utiliza el servicio compartido de autorización administrativa definido en `docs/decisions/ADR-20261109-admin-authorization-pin-recovery.md`. La prueba de PIN autoriza únicamente la publicación/revisión identificada por su hash, año, versión y nonce; es de un solo uso y expira rápidamente. El PIN de BCV no concede permiso de calendario, ni viceversa.
+
+La recuperación de PIN exige reautenticación fuerte de la cuenta y MFA o código de recuperación de un solo uso cuando esté configurado; correo por sí solo no basta. La recuperación invalida PIN anterior, sesiones protegidas y autorizaciones pendientes, y genera auditoría/alerta. Para un Owner único debe existir un procedimiento extraordinario con verificación reforzada, sin PIN maestro ni puerta trasera.
+
+### Criterios de aceptación adicionales
+
+- [ ] Vigilancia detecta; no publica automáticamente.
+- [ ] PDF permanece privado/en cuarentena hasta análisis satisfactorio.
+- [ ] El parser está aislado, limitado y no ejecuta contenido activo.
+- [ ] Entrada manual está disponible como alternativa segura.
+- [ ] Comparación visual y aprobación humana antes de publicar.
+- [ ] Permisos de carga, edición y publicación están separados y aprobados.
+- [ ] Recordatorio 1 de diciembre y alerta 1 de enero funcionan con zona horaria definida.
+- [ ] Historial inmutable, hash y procedencia se conservan por cada versión.
+- [ ] Una versión no verificada nunca se presenta como oficial ni alimenta silenciosamente reglas de días hábiles.
+
+**Estado:** diseño documental propuesto; no implementado. La seguridad efectiva del almacenamiento, análisis PDF, recordatorios y autorización debe probarse antes de habilitarlo.
+
+## Historial de cambios
+
+- 2026-11-09 — añadido diseño de carga manual/PDF, vigilancia no publicadora, recordatorios, cuarentena, procesamiento aislado y autorización administrativa compartida.

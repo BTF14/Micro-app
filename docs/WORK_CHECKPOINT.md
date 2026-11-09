@@ -1,3 +1,73 @@
+# Checkpoint operativo vigente — 2026-11-09 19:25 UTC
+
+Este bloque reemplaza como punto de entrada los checkpoints históricos que aparecen debajo. Los registros históricos se conservan por procedencia, pero no deben usarse como estado vivo.
+
+## Reconciliación viva de GitHub — 2026-11-09 19:25 UTC
+
+> Este bloque es el estado operativo vigente observado directamente en GitHub. Prevalece sobre snapshots históricos anteriores de estos archivos. No sustituye una nueva consulta antes de cada merge o acción sensible.
+
+### Fuente y alcance de la comprobación
+- Repositorio: `BTF14/Micro-app`; rama base consultada: `main`.
+- SHA de main: `c5373564413ba086690552c6b7deeab08d7b4a89` (commit `docs(ledger): record closure of PR 255, 269 and 295 as superseded by 287 (#297)`).
+- El commit de main inspeccionado cambia únicamente `docs/BACKLOG_RECOVERY_LEDGER.md`.
+- Se inspeccionaron metadatos y diffs de PR #287/#296, comparaciones contra main, workflow runs del HEAD exacto, reviews formales, review threads y estado combinado legacy.
+
+### PR #287 — integración BCV + checkout
+- URL: https://github.com/BTF14/Micro-app/pull/287
+- Estado vivo: OPEN, Draft, `mergeable=true`; no merged.
+- Rama: `integration/bcv-checkout-rehearsal-20261109`.
+- HEAD: `7df318b233cfb95f7fcc3076d46984a11614a14c`.
+- Base: `main`, base SHA informado por PR: `03442951b2a2f63f5bf4dcf560f2c91be4f6cc71`.
+- Compare actual contra main: 159 ahead / 1 behind; merge base `03442951b2a2f63f5bf4dcf560f2c91be4f6cc71`; status `diverged`.
+- Workflow runs asociados exactamente a este HEAD: 11; 6 SUCCESS y 5 FAILURE. Fallos: ODD and agent documentation validation (run `42674363952`), Dependency review (`42674363725`), Project progress dashboard (`42674364153`), Playwright E2E (`42674364197`) y CI (`42674364170`). Los otros seis workflows terminaron SUCCESS.
+- Para cada uno de los cinco fallos, el endpoint de jobs devolvió `jobs: []`; los cinco endpoints de artifacts devolvieron listas vacías. No se obtuvieron steps, annotations, logs de job ni artifacts que permitan diagnosticar causa. Clasificación: FAILURE confirmado, causa desconocida/no observable con la interfaz consultada. No atribuir a código ni infraestructura sin evidencia.
+- Combined legacy status: lista vacía. No equivale a check-runs ni permite derivar su contador.
+- Reviews formales: 0. Review threads: 0.
+- GitHub metadata devuelve `mergeable=true` en esta consulta, contradiciendo el snapshot previo `mergeable=false`. Mantener Draft: mergeability no es aprobación ni readiness.
+- El diff de la rama no incluye `docs/BACKLOG_RECOVERY_LEDGER.md`, único archivo del commit posterior de main. No hay solapamiento de archivo con ese commit; no se justifica sincronización automática ni force-push.
+
+### PR #296 — documentación de BCV, autorización y calendario
+- URL: https://github.com/BTF14/Micro-app/pull/296
+- Estado vivo: OPEN, Draft, `mergeable=true`; no merged.
+- Rama: `docs/reconcile-bcv-freshness-fx-task-20261109`.
+- HEAD: `73b0b134c14cb30f7c93d038c10acd0da5aa274c`.
+- Compare actual contra main: 63 ahead / 1 behind; merge base `03442951b2a2f63f5bf4dcf560f2c91be4f6cc71`; status `diverged`.
+- Workflow runs asociados exactamente a este HEAD: 10/10 SUCCESS.
+- Combined legacy status: lista vacía. Reviews formales: 0. Review threads: 0.
+- Su diff tampoco incluye `docs/BACKLOG_RECOVERY_LEDGER.md`, por lo que el commit posterior de main no crea solapamiento de archivo con esta rama.
+- Todo lo relativo a PIN, recuperación, calendario, PDF, alertas y recordatorios descrito en esta PR sigue siendo especificación documental, no implementación.
+
+### Diagnóstico de divergencia y decisión
+- Ambas ramas están un commit detrás porque main avanzó con el cambio documental del ledger. Ambas comparaciones devuelven `mergeable=true`; el commit nuevo de main toca un archivo no modificado por ninguna de las dos ramas.
+- No se observa conflicto de archivo con ese único commit. La divergencia de historia no es por sí sola un conflicto textual ni motivo para reescribir ramas.
+- Conservar ambos HEADs y Draft. No hacer force-push, merge ni sincronización solo para eliminar el contador behind.
+- Los workflows de #287 siguen siendo bloqueadores de validación exact-HEAD: no presentar el HEAD como CI completamente verde. La ausencia de jobs/artifacts impide determinar la causa de los cinco fallos.
+- Producción: NOT READY. No merge de #287/#296, deploy productivo, Neon main writes, migraciones remotas, Cron, Cloudflare manual, cambios de secretos/DNS/billing ni datos reales.
+
+### Próximas acciones verificables
+1. Obtener diagnósticos de los cinco workflows fallidos mediante una vía que exponga run-level logs/event details; si GitHub sigue sin jobs/artifacts, registrar el bloqueo como no diagnosticable y pedir re-ejecución desde GitHub solo cuando exista un mecanismo autorizado y útil.
+2. Antes de cualquier merge futuro, reconsultar SHA, compare, mergeability, workflows/check-runs exactos, reviews, threads y branch protection.
+3. Mantener #287 Draft hasta resolver validación exact-HEAD, revisión independiente y gates BCV/checkout; mantener #296 Draft hasta revisión documental y reconciliación final.
+4. Continuar P0/P1 únicamente en ramas aisladas y con pruebas proporcionales al riesgo. No iniciar endpoints comerciales ni permisos sin matriz aprobada.
+
+
+
+## Trabajo técnico inmediato
+1. Los cinco workflow failures de #287 no exponen jobs ni artifacts. No hay diagnóstico demostrable todavía.
+2. #287 incluye código BCV/checkout e inventario; no tocar hasta revisar el diff y confirmar la causa de CI o preparar una corrección delimitada.
+3. #296 es documental; no describir sus propuestas como funcionalidades implementadas.
+4. El único commit de main posterior al merge base afecta solo el ledger de recuperación, sin solapamiento con los paths modificados por #287/#296.
+5. Antes de continuar con implementación, leer el ODD task específico y validar los permisos contra la matriz aprobada; no añadir endpoints ni permisos comerciales por inferencia.
+
+## Restricciones no negociables
+- No Neon main, datos reales, migraciones remotas, Cron productivo, Cloudflare manual, DNS, billing, secretos ni deploy manual.
+- No force-push ni reescritura de historia.
+- No usar CI de SHA anterior como evidencia del HEAD actual.
+- No convertir checks verdes en aprobación formal o readiness.
+- No trasladar al propietario tareas que las herramientas permitan ejecutar directamente.
+
+---
+
 ## Reconciliación posterior a PR #291 — snapshot 2026-11-09 UTC
 
 **Main al iniciar esta reconciliación:** `56ad2b29b994fbad31275c801e8f23a2b9736db2` (merge de PR #291). Post-merge exact-SHA: **11/11 check-runs SUCCESS**. Este snapshot documenta el estado inmediatamente posterior a #291; el PR docs-only que lo contiene volverá a mover main, por lo que reconsultar GitHub después del merge.

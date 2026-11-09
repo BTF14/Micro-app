@@ -191,7 +191,7 @@ function BcvSyncAdminPanel({ organizationId }: { organizationId: string }) {
     void refresh();
     const interval = window.setInterval(() => {
       if (document.visibilityState === "visible") void refresh();
-    }, 60_000);
+    }, 300_000);
     return () => {
       active = false;
       requestSequence += 1;

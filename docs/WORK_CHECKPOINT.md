@@ -208,3 +208,15 @@ El ensayo verifica el bundle SQL y roles en la base aislada; no prueba el compor
 - No cambiar secretos, Cloudflare settings, DNS, billing ni realizar despliegues manuales.
 - No aprobar reglas comerciales ni permisos no autorizados.
 - Producción permanece **NOT READY**.
+
+
+## Checkpoint — 2026-11-09: autorización administrativa y calendario anual
+
+- Trabajo documental añadido a la rama de PR #296: `docs/reconcile-bcv-freshness-fx-task-20261109`.
+- ADR nuevo: `docs/decisions/ADR-20261109-admin-authorization-pin-recovery.md`.
+- Se ampliaron la especificación FX y el versionado de calendario, además del ADR FX y ODD task.
+- Contrato: un servicio común para identidad/reautenticación, rate limit, recuperación, revocación, alertas y auditoría; permisos y autorizaciones no reutilizables entre BCV y calendario.
+- Parámetros de prueba, no definitivos: 5 fallos / 15 min inicial, backoff progresivo; PIN mínimo 8 dígitos en pequeño negocio; Argon2id preferido con benchmark real.
+- Recuperación: restablecer, nunca recuperar el PIN; autenticación fuerte + MFA/código de un solo uso; revocar autorizaciones pendientes/sesiones protegidas; sin PIN maestro ni email-only.
+- Calendario: vigilancia no publicadora, PDF privado en cuarentena, parser aislado, revisión humana, entrada manual alternativa, aprobación y versionado inmutable, recordatorios 1 dic/1 ene.
+- Pendiente: comprobar diff completo y CI exact-HEAD de PR #296 tras estos commits; PR sigue Draft y no se fusiona. No hay implementación ni cambio en PR #287, Neon, Cloudflare o producción.

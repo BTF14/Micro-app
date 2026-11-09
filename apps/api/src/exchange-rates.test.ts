@@ -433,10 +433,74 @@ describe("BCV synchronization failure and cleanup semantics", () => {
       )).rejects.toThrow("Database connection cleanup failed.");
 
       expect(terminalStatements.some((statement) => statement === "COMMIT")).toBe(true);
-      expect(terminalStatements.some((statement) => statement.includes("SET last_outcome = 'failed'"))).toBe(false);
+      const guardedFailureUpdates = terminalStatements.filter((statement) =>
+        statement.includes("SET last_outcome = 'failed'"),
+      );
+      expect(guardedFailureUpdates).toHaveLength(1);
+      expect(guardedFailureUpdates[0]).toContain("AND last_outcome = 'running'");
       expect(terminalStatements.some((statement) => statement.includes("SET last_success_at = now()"))).toBe(true);
+      expect(createClient).toHaveBeenCalledTimes(3);
     } finally {
       vi.unstubAllGlobals();
     }
   });
+
+  it("reconciles an ambiguous COMMIT using a guarded update on a fresh connection", async () => {
+    let attemptId = "";
+    let clientNumber = 0;
+    let commitApplied = false;
+    const statements: Array<{ client: number; sql: string }> = [];
+    const createClient = vi.fn(() => {
+      const number = ++clientNumber;
+      return {
+        connect: vi.fn(async () => undefined),
+        query: vi.fn(async (statement: string, values?: unknown[]) => {
+          const sql = statement.trim();
+          statements.push({ client: number, sql });
+          if (sql.includes("SET attempt_id =")) {
+            attemptId = String(values?.[0]);
+            return { rows: [{ attempt_id: attemptId }] };
+          }
+          if (sql.includes("FOR UPDATE")) return { rows: [{ attempt_id: attemptId }] };
+          if (sql.includes("INSERT INTO public.exchange_rates")) return { rows: [{ id: "rate-row" }] };
+          if (sql === "COMMIT") {
+            // Model PostgreSQL applying COMMIT while the client loses its reply.
+            commitApplied = true;
+            throw new Error("COMMIT_RESPONSE_LOST");
+          }
+          if (sql.includes("SET last_outcome = 'failed'")) {
+            expect(number).toBe(3);
+            expect(values?.[0]).toBe(attemptId);
+            expect(sql).toContain("AND last_outcome = 'running'");
+            // The real row is already terminal after the ambiguous COMMIT,
+            // therefore the guarded UPDATE affects zero rows.
+            return { rows: [] };
+          }
+          return { rows: [] };
+        }),
+        end: vi.fn(async () => undefined),
+      } as unknown as DatabaseClient;
+    });
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(new Response(officialBcvHomepageHtml, {
+      status: 200,
+      headers: { "content-type": "text/html; charset=utf-8" },
+    })));
+
+    try {
+      await expect(syncBcvOfficialRate(
+        "postgresql://user:password@db.example/neondb?sslmode=require",
+        createClient,
+      )).rejects.toThrow("COMMIT_RESPONSE_LOST");
+
+      expect(commitApplied).toBe(true);
+      expect(createClient).toHaveBeenCalledTimes(3);
+      const failureUpdate = statements.find(({ sql }) => sql.includes("SET last_outcome = 'failed'"));
+      expect(failureUpdate?.client).toBe(3);
+      expect(failureUpdate?.sql).toContain("AND last_outcome = 'running'");
+      expect(statements.some(({ client, sql }) => client === 2 && sql === "ROLLBACK")).toBe(true);
+    } finally {
+      vi.unstubAllGlobals();
+    }
+  });
+
 });

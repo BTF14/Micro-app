@@ -71,10 +71,10 @@ Excluded:
 
 ## Closure and handoff
 
-- Final commit SHA: pendiente de la última corrección documental y de CI exact-HEAD.
+- Final commit SHA: consultar HEAD vivo de PR #288; el propio asiento de cierre cambia la punta.
 - PR: #288 OPEN/Draft.
-- Checks and exact outcomes: pendientes en el HEAD actual de PR #288; primer HEAD `53d3d98257abb7deac853599021ebcb438b5ffda` lanzó 13 check-runs y 10 workflow runs, todos IN_PROGRESS al último sondeo.
-- Acceptance criteria met / unmet: AC-1–AC-4 cubiertos; AC-5–AC-7 pendientes.
+- Último HEAD validado antes de este asiento documental: `d6c580dcc63e5bba3147a6660bce2820aa8ca455`; 14/14 check-runs SUCCESS y 10/10 workflow runs SUCCESS (CI, Playwright E2E, migration validation/runner, Security scan, Semgrep, Secret history, Dependency review, ODD docs y dashboard). Este nuevo commit del task log cambia el HEAD y exige revalidación exact-SHA.
+- Acceptance criteria met / unmet: AC-1–AC-4 cubiertos; AC-5–AC-7 pendientes. CI documental pasó en el HEAD anterior; este asiento requiere nueva validación.
 - Limitations not verified: estado exacto de autenticación MFA/PIN y esquema de auditoría; legalidad de tasa manual; capacidad de aceptación digital.
 - Residual risks: la excepción manual no puede habilitarse hasta cerrar gates críticos.
 - Next step: revisar los documentos en la rama, ejecutar validadores documentales/CI y abrir PR Draft docs-only.

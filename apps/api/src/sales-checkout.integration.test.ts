@@ -273,11 +273,9 @@ describe.skipIf(!isDisposableCheckoutDatabase)("atomic sales checkout PostgreSQL
       "SELECT (now() AT TIME ZONE 'America/Caracas')::date::text AS effective_date",
     );
     const today = rateDateResult.rows[0]!.effective_date;
-    const localWeekday = new Intl.DateTimeFormat("en-US", { timeZone: "America/Caracas", weekday: "short" }).format(new Date(`${today}T16:00:00.000Z`));
-    const applicableDate = new Date(`${today}T16:00:00.000Z`);
-    if (localWeekday === "Sat") applicableDate.setUTCDate(applicableDate.getUTCDate() + 2);
-    if (localWeekday === "Sun") applicableDate.setUTCDate(applicableDate.getUTCDate() + 1);
-    rateDate = applicableDate.toISOString().slice(0, 10);
+    // Integration fixtures represent an official row effective on the operation date.
+    // A prepublished next-business-day row must not be used early on weekends.
+    rateDate = today;
     const existingRate = await client.query<{ id: string; rate: string; validation_status: string; fetched_at: string }>(
       "SELECT id,rate::text,validation_status,fetched_at::text FROM public.exchange_rates WHERE source=$1 AND effective_date=$2::date",
       [BCV_SOURCE, rateDate],

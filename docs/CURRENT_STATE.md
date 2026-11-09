@@ -2295,3 +2295,15 @@ Esta revisión fue estática de contenidos en GitHub; no se ejecutaron tests des
 - Gate P1 abierto: `findApplicableCheckoutRate()` no consume `bcv_sync_state.last_success_at`; no hay política aprobada de freshness. Los límites de parser 10/7 días no están aprobados. Fixture oficial BCV y calendario SUDEBAN verificable siguen pendientes.
 - No activar Cron BCV, no desplegar ni ejecutar escrituras Neon. Producción NOT READY.
 
+
+
+## Implementación aislada — gate de último éxito BCV — 2026-11-09
+
+- Rama: `fix/bcv-checkout-last-success-20261109`, creada desde PR #287 HEAD `362443524eb45c67da16811d1745d83ddc9bd3a9`. Trabajo aislado; PR #287 sigue OPEN/Draft y main no se modifica.
+- Decisión A confirmada por el propietario y registrada en [ADR-20261109-bcv-checkout-last-success](decisions/ADR-20261109-bcv-checkout-last-success.md): ante último sync `running` o `failed`, bloquear ventas nuevas hasta sync exitoso.
+- Checkout exige tasa BCV exacta de hoy/Caracas y estado singleton `bcv_sync_state` con `last_success_at`, outcome `inserted`/`unchanged` y `last_effective_date` igual a hoy. Outcomes `running`, `failed`, `older`, ausente/desconocido o inconsistente bloquean.
+- La lectura usa `SELECT ... FOR SHARE` dentro de la transacción de venta para ordenar checkout frente al UPDATE que inicia un nuevo sync. El lock no se mantiene durante el fetch HTTP.
+- No se añade TTL de 24 h, no se usa `fetched_at` como last-success y se conserva la regla de tasa prepublicada solo desde su fecha efectiva. Replays idempotentes de ventas ya completadas devuelven el snapshot previo; la regla aplica a ventas nuevas.
+- Pruebas añadidas: unitarias de estados/fechas/fallos; PostgreSQL runtime-role para failed/running/fecha discrepante, bloqueo sin mutación de venta/stock, recuperación tras éxito y lock compartido frente a UPDATE concurrente. Estado de ejecución: **pendiente de CI exact-HEAD**.
+- PR Draft de esta corrección aún por crear; no se ha ejecutado CI en el SHA final. No declarar ACs verificados todavía.
+- Sin migración nueva, Neon writes, deploy, Cron activation, cambios Cloudflare/secrets/DNS/billing o datos reales. Producción **NOT READY**. Gates oficiales BCV/calendario, umbrales parser 10/7, legal/contable, Worker identity/alertas y contrato comercial siguen pendientes.

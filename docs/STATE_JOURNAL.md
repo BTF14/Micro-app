@@ -2290,3 +2290,6 @@ Se creó `fix/bcv-checkout-last-success-20261109` desde #287 HEAD `362443524eb45
 
 
 - Revalidación de implementación BCV freshness en SHA `13c8cd96becc09b0ba9ffad923ea115e5a44dcba`: CI `42625146214` SUCCESS (incluye unit, PostgreSQL atomic sales checkout integration y Runtime-role API integration); migration validation `42625146320` SUCCESS; migration runner `42625146112` SUCCESS; Playwright `42625146437` SUCCESS; Semgrep `42625146039` SUCCESS; Dependency review `42625146027` SUCCESS; ODD docs `42625145983` SUCCESS; Project dashboard `42625146038` SUCCESS. Check-runs 13/13 SUCCESS. PR Security scan `42625146113` permaneció pending sin jobs; Trivy push `42625138416` en el mismo SHA SUCCESS. PR #295 OPEN/Draft. El siguiente commit documental exige revalidar CI exact-HEAD.
+
+
+- PR #295 retargeteada de la base alias temporal a `integration/bcv-checkout-rehearsal-20261109` después de ejecutar CI. HEAD probado `3a67540c7b079bb11349552ffe92c598f0fad11f`: 14/14 check-runs y 10/10 workflow runs SUCCESS. CI incluyó unit, PostgreSQL checkout integration, runtime-role API integration y typecheck; migraciones, migration runner, Playwright, Semgrep, Dependency review, ODD docs, Secret history y Security scan SUCCESS. PR #295 sigue Draft, sin reviews formales/threads. No merge, main, Neon writes, deploy ni Cron activation.

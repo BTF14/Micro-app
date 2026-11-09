@@ -276,14 +276,16 @@ export async function syncBcvOfficialRate(databaseUrl: string | undefined): Prom
     try {
       rate = await fetchBcvOfficialRate();
     } catch (error) {
-      await client.query(
+      const markedFailed = await client.query<{ attempt_id: string }>(
         `UPDATE public.bcv_sync_state
             SET last_outcome = 'failed',
                 last_error_code = $2,
                 updated_at = now()
-          WHERE singleton = true AND attempt_id = $1::uuid`,
+          WHERE singleton = true AND attempt_id = $1::uuid
+          RETURNING attempt_id::text AS attempt_id`,
         [attemptId, safeBcvSyncErrorCode(error)],
       );
+      if (markedFailed.rows.length === 0) return "superseded";
       throw error;
     }
 

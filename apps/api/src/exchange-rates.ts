@@ -235,38 +235,28 @@ export async function syncBcvOfficialRate(databaseUrl: string | undefined): Prom
   return withDatabaseClient(databaseUrl, (client) => persistBcvOfficialRate(client, rate));
 }
 
-function isCaracasWeekend(now: Date): boolean {
-  const weekday = new Intl.DateTimeFormat("en-US", {
-    timeZone: "America/Caracas",
-    weekday: "short",
-  }).format(now);
-  return weekday === "Sat" || weekday === "Sun";
-}
-
 /**
- * On Saturday/Sunday the applicable BCV rate is the next business-day
- * effective rate published in advance. On weekdays, never substitute a
- * future rate for a missing today's rate; fail closed as stale instead.
- * Weekday bank-holiday calendar support remains a separate acceptance gate.
+ * A BCV rate is usable only on its explicit effective date. A prepublished
+ * next-business-day row is historical/scheduled until that date arrives.
+ * Missing today's row always fails closed; no older or future fallback.
  */
 export async function findApplicableBcvRate(
   client: DatabaseClient,
   now = new Date(),
 ): Promise<(StoredRateRow & { fetched_at: string }) | null> {
-  const isWeekend = isCaracasWeekend(now);
-  const comparison = isWeekend ? ">" : "<=";
-  const ordering = isWeekend ? "ASC" : "DESC";
+  const today = caracasDate(now);
   const result = await client.query<StoredRateRow & { fetched_at: string }>(
     `SELECT rate::text AS rate, effective_date::text AS effective_date,
             to_char(fetched_at AT TIME ZONE 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS.MS"Z"') AS fetched_at, validation_status
        FROM public.exchange_rates
       WHERE source = $1
-        AND effective_date ${comparison} $2::date
-      ORDER BY effective_date ${ordering}, fetched_at DESC
+        AND effective_date = $2::date
+      ORDER BY fetched_at DESC
       LIMIT 1`,
-    [BCV_SOURCE_ID, caracasDate(now)],
+    [BCV_SOURCE_ID, today],
   );
-  return result.rows[0] ?? null;
+  const row = result.rows[0];
+  return row?.effective_date === today ? row : null;
 }
 
 export function registerExchangeRateRoutes(app: Hono<{ Bindings: Bindings }>): void {

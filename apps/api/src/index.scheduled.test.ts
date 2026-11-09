@@ -15,6 +15,7 @@ import app from "./index";
 const productionEnv = {
   APP_ENV: "production",
   DATABASE_URL: "postgresql://localhost/microapp",
+  BCV_SYNC_ENABLED: "true",
 } as unknown as Bindings;
 
 const bcvCron = { cron: "0 22 * * 1-5" } as ScheduledController;
@@ -62,6 +63,12 @@ describe("BCV scheduled failure reporting", () => {
       code: "UNKNOWN",
     });
     expect(JSON.stringify(errorLog.mock.calls)).not.toContain("internal-db-detail-should-not-be-logged");
+  });
+
+  it("keeps the production BCV Cron disabled unless explicitly enabled", async () => {
+    await app.scheduled(bcvCron, { ...productionEnv, BCV_SYNC_ENABLED: "false" });
+    await app.scheduled(bcvCron, { ...productionEnv, BCV_SYNC_ENABLED: undefined });
+    expect(mocks.syncBcvOfficialRate).not.toHaveBeenCalled();
   });
 
   it("does not invoke BCV synchronization outside production", async () => {

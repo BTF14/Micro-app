@@ -2466,3 +2466,8 @@ Rama documental activa: `docs/reconcile-bcv-freshness-fx-task-20261109`, PR #296
 
 
 - **Nuevo gate PIN/runtime:** Cloudflare Workers Free limita CPU a 10 ms por invocación HTTP/Cron (128 MB RAM). Argon2id no está aprobado como implementación hasta benchmark real. No degradar a hash rápido ni exigir plan pago; evaluar WebAuthn/passkeys o aplazar PIN si ninguna KDF segura cabe. Códigos de recuperación: alta entropía, una vez, hashes, uso único. Ver ADR `docs/decisions/ADR-20261109-admin-authorization-pin-recovery.md`.
+
+
+## Actualización de fuente oficial BCV — 2026-11-09
+
+La apertura web convencional de `https://www.bcv.org.ve/` devolvió 502, pero una extracción independiente por navegador alcanzó la página oficial y recuperó los bloques de monedas y `Fecha Valor: Lunes, 09 Noviembre 2026`. La respuesta del extractor es HTML semántico limpiado (sin bytes HTTP originales, scripts/estilos ni atributos completos); **no es fixture raw** y no permite afirmar que el parser ya se probó con el markup original. No sustituir la fixture sintética ni usar mirrors. El raw fixture con status/content-type/capture time/SHA-256 sigue pendiente. Detalle en `odd/tasks/bcv-sync-alerting-recovery.md` de #287.

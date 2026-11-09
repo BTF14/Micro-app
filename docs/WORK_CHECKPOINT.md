@@ -153,3 +153,8 @@ El ensayo verifica el bundle SQL y roles en la base aislada; no prueba el compor
 ## Checkpoint 2026-11-09 — PR #287
 
 Se creó la rama aislada y PR #287 Draft para integrar BCV + checkout. Migración 0021 separa intento/éxito persistente y protege el estado ante sincronizaciones solapadas por `attempt_id`. CI y migration-check incluyen la nueva migración y assertions. Consultar el handoff 2026-11-09 y verificar CI exact-HEAD antes de cualquier conclusión.
+
+
+## Estado de validación 2026-11-09
+
+El código de #287 en `032064cfed018545f0071116a461f21500ee7102` pasó CI completo y validaciones de migraciones, runner, backup/restore y seguridad. Playwright E2E permanecía pending. Los dos fallos previos se corrigieron y el nuevo CI pasó. Cualquier commit posterior requiere nueva validación exact-HEAD.

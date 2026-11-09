@@ -1,5 +1,13 @@
 ## Reconciliación operativa — 2026-11-08 UTC (verificación Neon + estado PR)
 
+## Decisión de alcance MVP — POS de un local / 1.000 productos (2026-11-09)
+
+- El propietario aprobó que la aceptación funcional del MVP objetivo 2026-12-01 sea un comercio pequeño/mediano, un solo local y hasta 1.000 productos, capaz de completar una jornada POS desde la interfaz: login, turno propio, catálogo/carrito, venta y pagos admitidos, BCV válido cuando aplique, comprobante interno, inventario/Kardex, conteo y cierre de caja.
+- Fuente canónica: docs/MVP_SINGLE_STORE_ACCEPTANCE.md. Se enlazó desde CURRENT_STATE, HANDOFF_NEXT_CHAT, WORK_CHECKPOINT y PROJECT_PLAN para reducir divergencias entre sesiones e IAs.
+- Aclaración: esto concreta el resultado P0 y no cambia arquitectura multi-tenant/multi-branch, matriz de permisos, presupuesto $0 ni guardrails de seguridad/producción. No declara ninguna función implementada.
+- Aceptación requiere E2E contra PostgreSQL efímero, idempotencia/concurrencia, aislamiento, jornada completa, catálogo de 1.000 productos, responsive y recuperación. Gate crítico abierto implica NO-GO producción; beta controlada solo con riesgos explícitos y aceptación correspondiente.
+
+
 **Fuente de verdad:** GitHub API y ejecución manual observada de GitHub Actions. Rama documental creada desde main `6f956b2336a70ec7013e20306be59d72db354b01`; este addendum no modifica main.
 
 ### Neon rehearsal — evidencia de ejecución

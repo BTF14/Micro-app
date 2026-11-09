@@ -1,3 +1,49 @@
+# Estado operativo vigente — 9 de noviembre de 2026
+
+> Este bloque es la referencia operativa más reciente. Los snapshots históricos posteriores conservados debajo no deben confundirse con el estado actual. Antes de actuar, volver a consultar GitHub y confirmar el HEAD.
+
+## Integración BCV + checkout
+
+- PR #287: OPEN / Draft, base `main`, HEAD de código validado `12550a3c50212234b39e3e84b45f36a07465abde`, 123 ahead / 0 behind, GitHub `mergeable=true`.
+- CI de ese HEAD exacto: **13/13 workflow runs SUCCESS y 15/15 check-runs SUCCESS**. Los check-runs incluyen CI, PostgreSQL migration runner, database migration validation, Playwright, Semgrep, Trivy, secret-history, backup/restore, dependency review, ODD docs y builds Cloudflare.
+- El endpoint de combined commit status informa `pending` con lista vacía de status contexts; no hay contextos legacy reportados. No confundirlo con los 15 check-runs, que están SUCCESS.
+- PR #287 no tiene aprobación formal APPROVED ni hilos de revisión abiertos. CI verde no es aprobación ni autorización de merge.
+- PR #295 sigue OPEN / Draft, HEAD `213837969375fa87f5edca79e0d752333bc93d8c`; su cambio funcional se integró/reconcilió en #287. Comparación #295 frente al HEAD de #287: 51 ahead / 9 behind, mergeable=false. Mantener como evidencia de procedencia; no fusionar independientemente.
+- PR #255 y #269 siguen OPEN / Draft, ambos mergeable=false. No fusionar.
+- PR #196 aparece actualmente CLOSED y no merged, aunque la restricción histórica lo describía como Draft. No reabrir ni modificar sin autorización. Issue #53 continúa OPEN.
+- Los checks Cloudflare de este HEAD muestran únicamente URLs de preview para Pages y Workers; no muestran promoción a producción. No se ejecutó deploy manual ni se activó Cron de producción. `APP_ENV=preview` y `BCV_SYNC_ENABLED=false` siguen como protección de previews.
+
+## Cambios de código reconciliados
+
+- Checkout exige último sync exitoso (`last_success_at`, outcome `inserted`/`unchanged`, `last_effective_date >= hoy Caracas`) y una tasa BCV validada con fecha efectiva exacta de hoy.
+- Checkout lee el singleton `bcv_sync_state` con `FOR SHARE` dentro de la transacción; no hay fallback a tasa anterior ni TTL arbitrario.
+- Migración 0021 añade además trigger diferido `sales_latest_bcv_sync_success` para validar el mismo estado al completar una venta, incluso en escrituras SQL directas con rol runtime.
+- La función del trigger es `SECURITY DEFINER`, propiedad de `microapp_migrator`, con permisos directos revocados a PUBLIC/runtime. Las aserciones de migración verifican la definición, el lock, los permisos y el trigger.
+- Prueba PostgreSQL usa el rol runtime para intentar completar una venta directamente después de un sync fallido; espera rechazo SQLSTATE 23514.
+- La protección SQL complementa el handler. No prueba resistencia ante compromiso del propio runtime, que conserva permisos column-scoped para que el Worker pueda escribir el estado de sincronización.
+
+## Producción: NOT READY
+
+Gates todavía pendientes:
+1. CI exact-HEAD del commit documental posterior a este snapshot (el HEAD de código anterior está verde; un nuevo commit exige revalidación).
+2. Fixture HTML reproducible de la fuente oficial BCV y pruebas con HTML real. La consulta pública directa a BCV devolvió 502; no hay fixture oficial capturado.
+3. Calendario bancario oficial SUDEBAN verificable. La página pública muestra la sección “Calendario Bancario”, pero no se recuperó un PDF/circular 2027 oficial; no afirmar que no exista ni usar terceros como evidencia primaria.
+4. Justificación/aprobación de límites del parser 10/7.
+5. Alertas y recuperación operativa; identidad efectiva del Worker; revisión legal/contable.
+6. Semántica comercial append-only de cambio, pagos parciales, anulaciones y reembolsos.
+7. Reconciliación final de permisos/runtime identity y ensayo aislado de recuperación/concurrencia.
+
+## Alertas operativas — investigación
+
+Cloudflare documenta Alerts > Monitors con consultas SQL y destinos email/webhook disponibles en todos los planes; consultas, dashboards y alertas no tienen cargo adicional. El modelo Observability que comienza el 1-dic-2026 incluye 0,5 GB/día y 7 días de retención en Free, sujeto a límites del plan. Candidata: monitor sobre `logs.workersLogs` para `BCV_SYNC_FAILED`. Pendiente verificar en la cuenta real que Workers Logs está habilitado, que el dataset y columnas están disponibles y que el volumen cabe en el cupo. `apps/api/wrangler.toml` no declara explícitamente `observability`. No se configuró monitor ni destino.
+El endpoint público `GET /api/exchange-rates/latest` expone la tasa actual, no el estado operativo del singleton. No existe todavía endpoint/panel admin de `last_attempt_at/last_success_at/last_outcome` ni watchdog de `running` estancado. No implementar retries automáticos ni configurar canales externos hasta cerrar diseño y autorización.
+
+## Restricciones vigentes
+
+No merge, no producción deploy, no Neon `main` writes, no migraciones remotas, no activar Cron, no cambios de secretos/DNS/billing, no datos reales. Mantener #287 y #295 Draft. No cerrar issue #53. No pedir al usuario datos ya documentados, terminal, CLI, capturas ni reconexiones innecesarias.
+
+---
+
 ## Reconciliación posterior a PR #291 — snapshot 2026-11-09 UTC
 
 **Main al iniciar esta reconciliación:** `56ad2b29b994fbad31275c801e8f23a2b9736db2` (merge de PR #291). Post-merge exact-SHA: **11/11 check-runs SUCCESS**. Este snapshot documenta el estado inmediatamente posterior a #291; el PR docs-only que lo contiene volverá a mover main, por lo que reconsultar GitHub después del merge.

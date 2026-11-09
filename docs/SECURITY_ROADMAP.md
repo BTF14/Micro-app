@@ -1,3 +1,15 @@
+# Estado de seguridad BCV — 9 de noviembre de 2026
+
+- En el HEAD de código `12550a3c50212234b39e3e84b45f36a07465abde`, PR #287 incluye guard de último éxito BCV en checkout y trigger diferido PostgreSQL `sales_latest_bcv_sync_success`.
+- La función SQL es `SECURITY DEFINER`, propiedad `microapp_migrator`, usa `FOR SHARE`, compara outcome/fecha efectiva y revoca ejecución directa a PUBLIC/runtime. El trigger solo valida nuevas transiciones a venta completada; no bloquea actualizaciones posteriores de ventas ya completadas.
+- CI exact-HEAD anterior al refresh documental: 13/13 workflow runs y 15/15 check-runs SUCCESS. Sin aprobación formal APPROVED. PR #287 continúa OPEN/Draft.
+- Residual: `microapp_runtime` conserva permisos column-scoped para actualizar el estado BCV por necesidad del Worker. El trigger es defensa de integridad ante caminos SQL directos que no manipulen el singleton; no protege contra compromiso del propio runtime capaz de falsificar el estado.
+- Alertas/recuperación siguen pendientes. Cloudflare documenta Monitors con destinos email/webhook en todos los planes y sin cargo adicional por queries/alerts; falta verificar dataset/logs, configuración del Worker, límites de ingesta y monitor en la cuenta real.
+- La tasa manual de contingencia está documentada como propuesta futura no implementada. Requiere autorización, identidad, PIN hash + límites, autenticación reciente, auditoría, caducidad y revisión legal/contable.
+- No activar Cron, no modificar producción, secretos, DNS, billing ni datos reales. **Producción NOT READY.**
+
+---
+
 ## Reconciliación posterior a PR #291 — snapshot 2026-11-09 UTC
 
 **Main al iniciar esta reconciliación:** `56ad2b29b994fbad31275c801e8f23a2b9736db2` (merge de PR #291). Post-merge exact-SHA: **11/11 check-runs SUCCESS**. Este snapshot documenta el estado inmediatamente posterior a #291; el PR docs-only que lo contiene volverá a mover main, por lo que reconsultar GitHub después del merge.

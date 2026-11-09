@@ -8,6 +8,7 @@ const mocks = vi.hoisted(() => ({
 vi.mock("./exchange-rates", () => ({
   registerExchangeRateRoutes: vi.fn(),
   syncBcvOfficialRate: mocks.syncBcvOfficialRate,
+  safeBcvSyncErrorCode: (error: unknown) => error instanceof Error && error.message.startsWith("BCV_") ? error.message : "BCV_SYNC_UNKNOWN",
 }));
 
 import app from "./index";

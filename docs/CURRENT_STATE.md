@@ -2346,3 +2346,11 @@ Esta revisión fue estática de contenidos en GitHub; no se ejecutaron tests des
 - PR #269: OPEN/Draft, HEAD 7fc91b54f869664febb6a7daf1ed05b408bd8430, base main en SHA registrado 9c6b30281ed59726e532da840568fc9e80b528f7, GitHub mergeable=false.
 - No sincronizar #255/#269 de forma automática ni force-push. Primero resolver la integración/reconciliación de #287 y luego revisar cada rama por separado, preservando su contenido y ejecutando CI en el HEAD resultante.
 - PR #295 parte del HEAD exacto de #287 como base de integración; su HEAD actual 20c65e2541f2701347055cd2c2be70240d151362 no tiene workflow runs pull_request ni status contexts visibles. Mantener Draft y no declarar CI exact-HEAD.
+
+
+## Corrección de disparadores CI para PR dirigida a rama de integración — 2026-11-09
+
+- Causa confirmada en YAML: los seis workflows que materializan los checks de validación (CI/verify, migration-check/postgres-migration, Playwright/Chromium, Semgrep/JavaScript-TypeScript, secret-history scan y security-scan/Trivy) limitaban `pull_request.branches` a `main` y/o `fix/**` (migration-check también security/** y feat/**). PR #295 apunta a integration/bcv-checkout-rehearsal-20261109, por lo que esos filtros excluían su base.
+- En la rama base de integración se amplió únicamente `pull_request.branches` para incluir `integration/**` en esos seis workflows. No se alteraron los jobs, permisos, comandos, credenciales ni el evento push. El cambio está en la rama #287, no en main.
+- La actualización de la rama base por sí sola no ha demostrado ejecución CI para #295. Se registra este commit documental en #295 para provocar un evento synchronize después de que los filtros estén disponibles; después consultar runs y check-runs del HEAD exacto. Si GitHub no dispara, no declarar validación: revisar evento/branch filter y ejecutar un workflow_dispatch solo si está expresamente definido y seguro.
+- No se modificó código runtime ni migraciones. #287 y #295 siguen Draft; no merge, no deploy, no Neon writes, no Cron.

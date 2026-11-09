@@ -348,12 +348,12 @@ jobs:
           sed '/^COMMIT;$/i SELECT 1/0;' apps/api/migrations/0021_bcv_sync_state.sql > /tmp/0021-bcv-sync-state-failure.sql
           status=0
           output="$(docker exec -i -e PGPASSWORD=migrator-test-only "${{ job.services.postgres.id }}" psql -h 127.0.0.1 -v ON_ERROR_STOP=1 -U microapp_migrator -d microapp_test -f /dev/stdin < /tmp/0021-bcv-sync-state-failure.sql 2>&1)" || status=$?
-          printf '%s\\n' "$output"
+          printf '%s\n' "$output"
           if [ "$status" -eq 0 ]; then
             echo "Expected BCV sync state migration failure, but psql succeeded."
             exit 1
           fi
-          printf '%s\\n' "$output" | grep -F "division by zero"
+          printf '%s\n' "$output" | grep -F "division by zero"
           remaining="$(docker exec "${{ job.services.postgres.id }}" psql -At -U microapp -d microapp_test -c "SELECT to_regclass('public.bcv_sync_state') IS NULL")"
           test "$remaining" = "t"
       - name: Apply BCV sync state migration

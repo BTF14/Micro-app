@@ -1454,3 +1454,6 @@ No declarar comercial/producción listo hasta completar flujos, seguridad, prueb
 - Añadido ADR propuesto de autorización administrativa compartida para BCV y calendario.
 - La implementación de PIN/recuperación y calendario anual permanece bloqueada hasta revisar autenticación/MFA, controles Nivel 1, matriz de permisos, modelo de auditoría y seguridad del procesamiento PDF.
 - No considerar esta documentación como capacidad entregada. Mantener BCV manual deshabilitado y calendario no oficial/no verificado fuera de decisiones automáticas.
+
+
+- Añadido gate de coste/rendimiento para PIN: benchmark KDF en Cloudflare Workers Free (10 ms CPU). La selección criptográfica y cualquier recuperación quedan bloqueadas hasta superar pruebas de runtime/seguridad; alternativa WebAuthn/passkeys si no cabe una KDF adecuada.

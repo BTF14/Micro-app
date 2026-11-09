@@ -1,7 +1,7 @@
 # ODD task: Gestión de contingencia cambiaria
 
 - Status: proposed
-- Issue / PR: [PR #288](https://github.com/BTF14/Micro-app/pull/288) — Draft docs-only
+- Issue / PR: [PR #288](https://github.com/BTF14/Micro-app/pull/288) — CLOSED/MERGED docs-only into main
 - Owner / reviewer: propietario del producto; revisión técnica/seguridad y contable/legal pendientes
 - Started: 2026-11-09
 - Risk: critical
@@ -71,10 +71,10 @@ Excluded:
 
 ## Closure and handoff
 
-- Final commit SHA: consultar HEAD vivo de PR #288; el propio asiento de cierre cambia la punta.
-- PR: #288 OPEN/Draft.
-- Último HEAD validado antes de este asiento documental: `d6c580dcc63e5bba3147a6660bce2820aa8ca455`; 14/14 check-runs SUCCESS y 10/10 workflow runs SUCCESS (CI, Playwright E2E, migration validation/runner, Security scan, Semgrep, Secret history, Dependency review, ODD docs y dashboard). Este nuevo commit del task log cambia el HEAD y exige revalidación exact-SHA.
-- Acceptance criteria met / unmet: AC-1–AC-4 cubiertos; AC-5–AC-7 pendientes. CI documental pasó en el HEAD anterior; este asiento requiere nueva validación.
+- Merge commit SHA: `bfa7d0047d158d5caae4798337f239e767c30acd` (squash en main).
+- PR: #288 CLOSED/MERGED (docs-only).
+- Merge realizado por squash en `bfa7d0047d158d5caae4798337f239e767c30acd`. Los checks de la PR se validaron antes del merge; este asiento corrige el estado documental, no certifica implementación ni habilitación.
+- Acceptance criteria met / unmet: AC-1–AC-4 cubiertos; AC-5–AC-7 pendientes. La propuesta sigue sin implementación.
 - Limitations not verified: estado exacto de autenticación MFA/PIN y esquema de auditoría; legalidad de tasa manual; capacidad de aceptación digital.
 - Residual risks: la excepción manual no puede habilitarse hasta cerrar gates críticos.
-- Next step: revisar los documentos en la rama, ejecutar validadores documentales/CI y abrir PR Draft docs-only.
+- Next step: cerrar AC-5–AC-7 mediante decisiones de permisos, validación legal/contable y revisión independiente antes de autorizar cualquier implementación.

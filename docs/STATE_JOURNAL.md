@@ -2292,3 +2292,8 @@ Se registró en PR #296 un diseño documental para reutilizar un servicio admini
 ## 2026-11-09 — Vigilancia calendario bancario 2027
 
 Consulta del portal oficial SUDEBAN: la página indexada muestra la sección general de Calendario Bancario, pero no se localizó una publicación identificable 2027 y la recuperación directa expiró. Fuente secundaria actualizada 2026-11-07 también reporta pendiente. Se registra como no localizado/no verificado, sin afirmar ausencia absoluta ni incorporar previsiones de terceros.
+
+
+## 2026-11-09 — Acceso parcial a página oficial BCV
+
+La apertura web convencional de `https://www.bcv.org.ve/` respondió 502; una extracción independiente por navegador sí recuperó contenido de la página oficial, incluidos bloques de monedas y `Fecha Valor`. El extractor limpió el HTML y no conservó el cuerpo HTTP original, scripts/estilos ni atributos completos. Se registra como evidencia de acceso a contenido oficial, pero no satisface el fixture raw con SHA-256 ni prueba el parser con markup original. No se usaron fuentes espejo ni se cambió la fixture sintética.

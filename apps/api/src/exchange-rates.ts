@@ -137,11 +137,13 @@ function validateEffectiveDate(effectiveDate: string, now: Date): void {
     Date.parse(`${effectiveDate}T00:00:00.000Z`) -
     Date.parse(`${today}T00:00:00.000Z`)
   ) / 86_400_000;
-  // BCV can publish tomorrow's effective rate in advance. Reject implausible
-  // future dates and old cached pages rather than presenting them as current.
-  // Friday/holiday publications may carry the next business day's value.
-  // Keep a bounded horizon so legitimate long weekends work without accepting
-  // implausibly distant future dates.
+  // These bounds are parser/source-plausibility guards only: they reject
+  // obviously old cached pages and implausibly distant future dates. They are
+  // not a business-approved freshness policy and do not make an old/future
+  // rate applicable to checkout. Checkout independently requires a valid rate
+  // whose effective_date is exactly today's Caracas date and a successful
+  // latest BCV sync. Keep the 10/7 values unchanged until policy is approved.
+  // BCV may prepublish the next business day's rate before weekends/holidays.
   if (differenceDays > MAX_EFFECTIVE_DATE_FUTURE_DAYS || differenceDays < -MAX_EFFECTIVE_DATE_AGE_DAYS) {
     throw new Error("BCV_EFFECTIVE_DATE_OUT_OF_RANGE");
   }

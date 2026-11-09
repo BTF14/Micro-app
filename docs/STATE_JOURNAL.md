@@ -2381,3 +2381,15 @@ Se creó `fix/bcv-checkout-last-success-20261109` desde #287 HEAD `362443524eb45
 - Investigación operativa: Cloudflare Alerts Monitors ofrece consultas SQL y destinos email/webhook en todos los planes; el coste de queries/alerts no es adicional y el nuevo Free Observability allowance anunciado para 2026-12-01 es 0,5 GB/día + 7 días de retención. Falta comprobar Logs/columns/plan en la cuenta. No se configuró nada.
 - Pendiente: actualizar/revalidar CI tras este commit documental; fixture HTML BCV oficial; calendario bancario oficial SUDEBAN; justificación parser 10/7; alertas/watchdog/recovery; legal/contable; semantics de cambio, pagos parciales, anulaciones y reembolsos. Producción NOT READY.
 - Restricciones respetadas: no merge, no main, no Neon writes, no producción deploy, no Cron, no cambios de secretos/DNS/billing ni datos reales.
+
+
+## 2026-11-09 — Reconciliación de progreso BCV/checkout
+
+- HEAD de código y tests validado antes de la actualización de checklist: `27dab416a92a71f2ccf9b0310f24a80f7f6b4420`. CI terminó SUCCESS; 12/12 workflow runs pull_request y 14/14 check-runs SUCCESS. El workflow push Secret history scan reportó failure con 0 jobs, sin steps/logs; el scan pull_request sí pasó.
+- Corrección de COMMIT ambiguo implementada en `apps/api/src/exchange-rates.ts`: ante error terminal se reconcilia con conexión nueva y solo se marca failed si el mismo `attempt_id` sigue `running`. Se evita sobrescribir un éxito ya confirmado.
+- Tests añadidos: fetch failure; DB unavailable al registrar fallo; cleanup posterior a commit; respuesta COMMIT perdida; fetch fallido de intento supersedido. Unit tests y toda la matriz PostgreSQL pasaron en CI exact-HEAD.
+- `odd/tasks/bcv-sync-alerting-recovery.md` actualizado en commit `afac566848170e117c0afaca63bc7939ed777374` con la corrección, tests, evidencia y pendientes.
+- El artefacto del dashboard del run `42673632481` (HEAD `afac566...`) informó 30,4% implementación (7/23) y 31,8% producción (7/22), pero se detectó que el checklist no reflejaba el vertical slice BCV/checkout recién implementado. Esos porcentajes son una instantánea histórica del checklist anterior, no una medición reconciliada.
+- Se amplió `docs/PRODUCTION_READINESS.md` con criterios separados para los vertical slices implementados y sus gates aún abiertos. Commit: `62f3f3ca16416b3f1130eaf1caa6e910a08c86aa`. El dashboard debe regenerarse y validarse en el nuevo HEAD; no reutilizar los porcentajes previos.
+- Los criterios completos de POS, pagos mixtos, devoluciones, fiscalidad, aislamiento de todas las rutas, RPO/RTO, alertas, capacidad, identidad efectiva y revisión legal/contable permanecen pendientes; producción NOT READY.
+- PR #287 permanece OPEN/Draft; no merge, deploy, Cron, Neon main writes, secretos, DNS, billing ni datos reales.

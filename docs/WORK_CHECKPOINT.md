@@ -220,3 +220,6 @@ El ensayo verifica el bundle SQL y roles en la base aislada; no prueba el compor
 - Recuperación: restablecer, nunca recuperar el PIN; autenticación fuerte + MFA/código de un solo uso; revocar autorizaciones pendientes/sesiones protegidas; sin PIN maestro ni email-only.
 - Calendario: vigilancia no publicadora, PDF privado en cuarentena, parser aislado, revisión humana, entrada manual alternativa, aprobación y versionado inmutable, recordatorios 1 dic/1 ene.
 - Pendiente: comprobar diff completo y CI exact-HEAD de PR #296 tras estos commits; PR sigue Draft y no se fusiona. No hay implementación ni cambio en PR #287, Neon, Cloudflare o producción.
+
+
+- Gate de compatibilidad: Cloudflare Workers Free tiene 10 ms CPU por invocación HTTP/Cron; Argon2id debe medirse en runtime antes de adoptarlo. Si no cabe una KDF segura, no usar SHA rápido ni requerir plan pago; evaluar passkeys/WebAuthn o aplazar PIN. Códigos de recuperación de alta entropía, un solo uso, hash y mostrados una vez. ADR actualizado.

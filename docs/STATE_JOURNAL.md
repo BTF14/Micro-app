@@ -2312,3 +2312,12 @@ Se creó `fix/bcv-checkout-last-success-20261109` desde #287 HEAD `362443524eb45
 - PR #295 en el HEAD anterior a esta actualización (fd4487c4382ecdf90f3b03c485cb34780dc8cd9c) tiene 10/10 workflow runs pull_request SUCCESS. El endpoint de combined status no devolvió status contexts; no convertir esa respuesta en un conteo de check-runs. Sin reviews formales ni threads en la consulta.
 - Los commits documentales nuevos cambian el HEAD de #295; CI exact-HEAD debe reconsultarse antes de declarar validación final. PR sigue OPEN/Draft; no merge.
 - Sin implementación manual FX, sin cambios de código BCV/checkout, main, Neon, deploy o Cron. Producción NOT READY.
+
+
+## Snapshot de ramas de integración — 2026-11-09
+
+- PR #287: OPEN/Draft, HEAD 362443524eb45c67da16811d1745d83ddc9bd3a9, base main, GitHub mergeable=true. Compare main...HEAD: 114 ahead / 0 behind. En ese HEAD exacto se observaron 11/11 workflow runs pull_request SUCCESS; combined status contexts vacío. La rama sigue sin aprobación formal y no se fusiona por CI verde.
+- PR #255: OPEN/Draft, HEAD b0e47205b96f636b2ab270304d2598423a50ccc3, base main en SHA registrado 9c6b30281ed59726e532da840568fc9e80b528f7, GitHub mergeable=false.
+- PR #269: OPEN/Draft, HEAD 7fc91b54f869664febb6a7daf1ed05b408bd8430, base main en SHA registrado 9c6b30281ed59726e532da840568fc9e80b528f7, GitHub mergeable=false.
+- No sincronizar #255/#269 de forma automática ni force-push. Primero resolver la integración/reconciliación de #287 y luego revisar cada rama por separado, preservando su contenido y ejecutando CI en el HEAD resultante.
+- PR #295 parte del HEAD exacto de #287 como base de integración; su HEAD actual 20c65e2541f2701347055cd2c2be70240d151362 no tiene workflow runs pull_request ni status contexts visibles. Mantener Draft y no declarar CI exact-HEAD.

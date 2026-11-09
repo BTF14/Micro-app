@@ -70,6 +70,8 @@ jobs:
         run: psql -X -v ON_ERROR_STOP=1 --dbname "$ADMIN_DATABASE_URL" -f apps/api/migrations/0016_runtime_inventory_ledger_read.assertions.sql
       - name: Verify strict BCV effective-date migration 0020 contract
         run: psql -X -v ON_ERROR_STOP=1 --dbname "$ADMIN_DATABASE_URL" -f apps/api/migrations/0020_bcv_effective_date_strict.assertions.sql
+      - name: Verify BCV sync state migration 0021 contract
+        run: psql -X -v ON_ERROR_STOP=1 --dbname "$ADMIN_DATABASE_URL" -f apps/api/migrations/0021_bcv_sync_state.assertions.sql
       - name: Verify checkout per-payment USD allocation contract
         run: psql -X -v ON_ERROR_STOP=1 --dbname "$ADMIN_DATABASE_URL" -f apps/api/migrations/0018_checkout_payment_allocation.assertions.sql
       - name: Verify ledger-authoritative inventory balance projection contract

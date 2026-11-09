@@ -1,3 +1,58 @@
+# Plan de entrega MVP — objetivo 2026-12-01
+
+**Objetivo de gestión:** llegar al 1 de diciembre con un MVP funcional, demostrable y candidato a producción; no prometer producción comercial hasta cerrar los gates técnicos, de seguridad y operación. Desde el 2026-11-09 quedan 22 días naturales. Se congela el alcance: un frente técnico principal (#287) y un frente documental mínimo (#298); no abrir PRs paralelas por tareas pequeñas.
+
+## Línea base comprobada — no confundir código de rama con producto integrado
+
+- Main observado al crear este checkpoint: `c5373564413ba086690552c6b7deeab08d7b4a89`.
+- #287 sigue OPEN/Draft, HEAD `7df318b233cfb95f7fcc3076d46984a11614a14c`, 159 ahead / 1 behind, `mergeable=true`. No tiene review formal APPROVED ni threads de revisión.
+- #287 incorpora en su rama productor BCV, sync-state/attempt_id, checkout atómico con migraciones 0017–0021, protección PostgreSQL de último éxito, lectura/conteo de inventario y pruebas unitarias/PostgreSQL. No está integrado en main ni desplegado.
+- Distinción CI de #287: la consulta de check-runs devolvió 10 y los 10 están SUCCESS (incluyen previews Cloudflare y checks de seguridad/migración). La consulta de workflow runs devolvió 11: 6 SUCCESS y 5 FAILURE. Los cinco fallos no exponen jobs ni artifacts; no se recuperaron logs de job. No llamar a esto “CI totalmente verde”: CI y Playwright no tienen evidencia de ejecución de jobs en ese snapshot.
+- #298 docs-only sigue OPEN/Draft, HEAD `380ac05343d0fde267b6f7fc6838174c722b5a51`; sus 10/10 workflow runs terminaron SUCCESS en ese SHA.
+- Realidad de UI en #287: autenticación, resumen, catálogo y panel de estado BCV. La navegación “Caja y ventas”, “Inventario” y “Reportes” sigue deshabilitada como “Pronto”. No existe todavía una pantalla de carrito/checkout ni UI operativa de inventario.
+- Realidad de API: checkout está registrado y requiere un turno abierto propio; existe el helper `resolveOpenCashierRegisterShift`, pero `index.ts` no registra rutas para abrir/cerrar/consultar turnos ni administración/listado de cajas. Por tanto el flujo comercial todavía no es utilizable de extremo a extremo.
+- Inventario tiene API de lectura y conteos; la transferencia entre sucursales en dos fases (despacho/recepción) aún no está implementada. No declarar el módulo completo.
+- El fixture BCV existente es serialización DOM sanitizada, no cuerpo HTTP raw con status/headers originales. Alertas/watchdog e identidad efectiva del Worker siguen pendientes. La contingencia manual con PIN está especificada, no implementada. No codificar calendario SUDEBAN 2027 sin circular oficial verificable.
+- El tablero de progreso basado en `PRODUCTION_READINESS.md` cuenta 12/30 criterios de implementación (40 %) y 10/29 gates productivos (34,5 %) en esta rama. Es una cuenta de checklist, no porcentaje real de producto: hay criterios históricos y mezcla de main/PR; no usarla para afirmar “80 % terminado”.
+
+## Alcance prioritario para la entrega
+
+### P0 — imprescindible para un MVP POS utilizable
+1. Cerrar la validación exact-HEAD de #287: resolver los cinco workflow failures a nivel de ejecución, obtener CI y Playwright ejecutados, revisar diff completo y conseguir revisión independiente. No reutilizar checks de SHA anteriores.
+2. Completar el ciclo de turno propio: listar cajas activas por sucursal, abrir turno con efectivo inicial USD/VES, consultar turno propio y cerrar turno propio con conteo final; mantener las restricciones aprobadas (owner/admin/cashier solo su propio turno; inventory sin acceso; nadie cierra turno ajeno).
+3. Completar UI de caja/ventas: seleccionar sucursal/caja/almacén, abrir turno si no existe, buscar/agregar productos, carrito, pagos admitidos por contrato, confirmación idempotente, recibo/snapshot y errores BCV/stock claros. No habilitar ventas hasta tener turno abierto y BCV válido.
+4. Completar UI de inventario: existencias por almacén/sucursal, historial Kardex, creación/confirmación de conteo absoluto y visualización de diferencias; conservar aislamiento tenant/branch y permisos.
+5. E2E real contra API + PostgreSQL desechable para login → turno → checkout → pagos → ledger → inventario, además de conteo y denegaciones cross-tenant/branch/role.
+6. Validar preview aislada, responsive móvil/escritorio, accesibilidad básica, logs sanitizados, restauración de backup con datos sintéticos relacionados y límites de coste $0.
+
+### P1 — cierre antes de producción comercial
+- Fixture HTTP raw BCV reproducible, alertas de fallo y watchdog con umbrales medidos, identidad runtime/Worker y ensayo aislado de recuperación.
+- Revisión legal/contable de tasa efectiva, IVA/IGTF y recibos; no inventar cumplimiento fiscal.
+- Transferencias de inventario en dos fases y conciliación despacho/recepción si la primera entrega promete operación multi-sucursal completa.
+- Política y procedimiento de anulaciones/devoluciones como operaciones compensatorias append-only; no editar ventas ni movimientos completados.
+- Calendario SUDEBAN solo cuando exista fuente oficial verificable; mientras no exista, el sistema no debe inventar feriados ni sustituir la fecha efectiva BCV.
+
+### Fuera del primer corte salvo decisión explícita
+- Contingencia manual de tasa con PIN, recuperación y doble aprobación: mantener especificada y deshabilitada hasta cerrar seguridad/legal/contabilidad.
+- Reportes avanzados, exportaciones amplias y analítica no necesaria para vender/contar stock.
+- Flujos de excepción para que un supervisor cierre el turno de otro cajero.
+
+## Secuencia de trabajo hasta el 1 de diciembre
+
+- **9–11 nov:** resolver diagnóstico de #287 y cerrar revisión de código/migraciones; fijar contrato mínimo de turno y pagos sin ampliar permisos.
+- **12–17 nov:** API de turnos/cajas y flujo de apertura/cierre propio; UI de caja/checkout integrada al backend existente.
+- **18–21 nov:** UI de inventario, conteos y Kardex; cerrar pruebas de aislamiento y concurrencia.
+- **22–26 nov:** E2E reales en PostgreSQL desechable, hardening de errores/rate limits, responsive/accesibilidad, backup/restore y observabilidad.
+- **27–29 nov:** preview aislada, pruebas de aceptación de extremo a extremo y corrección de defectos críticos.
+- **30 nov:** decisión formal GO/NO-GO con evidencia exacta; si queda cualquier gate crítico sin verificar, entregar como beta controlada y no como producción comercial.
+- **1 dic:** fecha objetivo de entrega del MVP, condicionada a todos los gates P0 y a la aprobación final. No prometer que cada módulo futuro del SaaS estará terminado.
+
+## Regla de avance
+
+Cada bloque debe producir código funcional, pruebas y evidencia en el mismo PR. Reducir snapshots y documentos duplicados; actualizar este checkpoint solo ante un cambio de estado/decisión verificable. Si una fuente externa (BCV/SUDEBAN) no está disponible, no simularla: avanzar en los módulos independientes y dejar el gate externo explícito.
+
+---
+
 # Checkpoint operativo vigente — 2026-11-09 19:25 UTC
 
 Este bloque reemplaza como punto de entrada los checkpoints históricos que aparecen debajo. Los registros históricos se conservan por procedencia, pero no deben usarse como estado vivo.

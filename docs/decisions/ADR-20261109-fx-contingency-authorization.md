@@ -76,3 +76,10 @@ Riesgos/obligaciones:
 ## Historial
 
 - 2026-11-09 — creación como propuesta; decisión de producto documentada para evaluación y diseño, no implementada.
+
+
+## Actualización documental — autorización administrativa compartida
+
+El PIN individual descrito en esta propuesta utilizará el servicio transversal definido en `ADR-20261109-admin-authorization-pin-recovery.md`. Se mantienen las restricciones: el PIN es reautenticación, no login ni permiso; el mínimo propuesto es 8 dígitos; la recuperación es un restablecimiento fuerte y auditado, nunca recuperación del secreto. La política inicial de 5 intentos/15 minutos es un valor para validar con pruebas de abuso y capacidad, no una garantía de seguridad aislada.
+
+El servicio común no mezcla permisos: `fx.contingency.authorize` es independiente de los permisos de carga, edición y publicación del calendario. La matriz de roles y la decisión Owner vs Admin delegado siguen siendo gates previos a cualquier implementación.

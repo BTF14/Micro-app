@@ -1,3 +1,13 @@
+# Actualización operativa — backup y fecha obligatoria (2026-11-09 UTC)
+
+**La fecha objetivo no se pierde en ninguna transferencia:** el MVP funcional y estable debe estar listo para aceptación el **1 de diciembre de 2026**. Todo prompt de continuidad, handoff, checkpoint o instrucción a otra IA debe repetir explícitamente esta fecha, el alcance P0 de comercio de un local/hasta 1.000 productos y la regla NO-GO si un gate crítico sigue abierto. No mover la fecha ni redefinir el alcance sin decisión expresa del propietario.
+
+**Backup:** el run [42659924075](https://github.com/BTF14/Micro-app/actions/runs/42659924075) terminó success el 2026-11-09 y se encontraron el objeto cifrado y el sidecar en el repo privado. Ocho ejecuciones programadas del 2 al 9 de noviembre están en success. No obstante, el intervalo entre las copias del 8 y 9 fue 27 h 00 min 16 s; no afirmar RPO ≤24 h. El checksum está disponible en el sidecar, pero esta sesión no recalculó el hash del blob, ni descifró/restauró esa copia. La prueba sintética PG18 pasó en run 41323379454 y en #287; no sustituye una restauración de datos reales. RPO/RTO, prueba controlada de alerta y coste $0 siguen pendientes. Bajo las restricciones vigentes, no restaurar ni manipular backups que contengan datos reales de producción.
+
+**#298:** el nuevo HEAD 9248f370b0d1a0cf6b01be4c0e8ac77935f45a1f tiene 13 workflow runs exact-HEAD, todos todavía en ejecución o cola en la última consulta; volver a validar antes de considerar la PR. Sigue OPEN/Draft, no mergear.
+
+---
+
 # Addendum prioritario — 2026-11-09 UTC
 
 Antes de cualquier implementación comercial, leer el addendum más reciente de `docs/WORK_CHECKPOINT.md` titulado **“gate Nivel 1 y diagnóstico de Actions”**. Hallazgo confirmado: los controles Nivel 1 no están demostrados como cerrados; el backup/restore permanece parcialmente verificado y bloquea reanudar endpoints/funcionalidad comercial. No iniciar turnos, caja ni checkout UI hasta cerrar ese gate.

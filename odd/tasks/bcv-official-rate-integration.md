@@ -1,3 +1,7 @@
+## Corrección de política — tasa futura no aplicable antes de fecha efectiva
+
+La rama #255 ahora selecciona exclusivamente la fila cuya `effective_date` coincide con la fecha Caracas actual. La tasa del lunes publicada el viernes permanece `scheduled` durante viernes, sábado y domingo. Se bloquea checkout si falta la tasa exacta del día, incluso en ventas USD-only. Los tests exact-HEAD deben confirmar esta regla.
+
 # ODD task: official BCV rate integration and effective-date correctness
 
 > **Estado autoritativo posterior a PR #281/#282 y revisión de freshness — 2026-11-08 UTC.** Main antes de sincronizar esta rama: `9c6b30281ed59726e532da840568fc9e80b528f7`. PR #255 pre-sync HEAD `a19a5c61f3f9e878d531ef1150f9c1aa033d6cc7`, 53 ahead / 12 behind; se incorporará main mediante merge commit sin force-push. PR está OPEN/Draft. Los 10 workflows SUCCESS del HEAD anterior no validan el nuevo HEAD; reejecutar todos los contextos exactos tras sincronización. Neon rehearsal #42507066215 SUCCESS aplicó 0001–0019 en `microapp_rehearsal`; no hubo Neon main/production writes ni deben repetirse.
@@ -22,8 +26,8 @@ Integrate the official BCV USD/VES reference rate at zero additional provider co
 - Stream-limit the response to 2 MB, validate content type, final origin, UTF-8, official USD value and explicit effective date.
 - Store decimal strings in PostgreSQL `NUMERIC(18,8)`; use the existing migration 0013 already in main, do not duplicate or renumber it.
 - Use `(source, effective_date)` uniqueness for idempotency. A future row must not prevent inserting a missing earlier date.
-- Expose bounded latest/history endpoints; weekdays select today's effective row, weekends select the nearest next-business-day row, and history labels future rows scheduled.
-- Fail closed on weekday bank holidays until an authoritative Venezuelan bank-holiday calendar is implemented; never guess or apply a future rate to a normal business weekday.
+- Expose bounded latest/history endpoints; all days require an exact `effective_date` match to today's Caracas date, while future rows remain scheduled in history.
+- Fail closed on any day without today's exact official effective date; never apply an older or future rate early. An authoritative Venezuelan bank-holiday calendar remains necessary for polling/operations, not for changing the effective date.
 - Display rate/date/source/freshness in the dashboard; convert catalog prices only with a current validated rate.
 - Add one weekday Cron at 18:00 Caracas (22:00 UTC), preserving #251's hourly auth-retention Cron and preview skip.
 - Test PostgreSQL persistence and API behavior with both admin and the actual disposable `microapp_runtime` login.
@@ -31,7 +35,7 @@ Integrate the official BCV USD/VES reference rate at zero additional provider co
 ## Acceptance criteria
 
 - [x] Historical parser/bounded-streaming tests passed on previous exact HEAD `4e9f01ab85fd767736f4f47f3e47ffefbe7efd88`; current synchronized HEAD must rerun them.
-- [x] Historical PostgreSQL integration verifies next-business-day-first/today-second, same-date idempotency, weekend latest selection, scheduled history status and preview no-op; 2/2 tests passed under admin and 2/2 under disposable `microapp_runtime`. Re-run on the synchronized exact HEAD.
+- [x] Historical PostgreSQL integration verifies future-first/today-second persistence, same-date idempotency, exact-date selection, scheduled history status and preview no-op; the corrected tests require today's exact effective date. Re-run on the current exact HEAD.
 - [ ] Weekday bank-holiday handling has an authoritative calendar before POS conversion is enabled for those dates.
 - [x] Runtime-role integration passes without broadening migration 0013 grants in disposable PostgreSQL CI; production grants remain unverified.
 - [x] Dashboard displays exact decimal/date/freshness and catalog conversion uses shared exact-money arithmetic; UI tests verify exact conversion.
@@ -57,7 +61,7 @@ Integrate the official BCV USD/VES reference rate at zero additional provider co
 
 ## Evidence and legal basis
 
-- BCV non-business-day selection follows Article 25 of Venezuela's VAT Law: the exchange rate for a taxable event on a non-financial business day is the rate in force on the immediately following business day. Reference copy of Official Gazette No. 6,507 Extraordinary (2020-01-29): https://www.ivecofi.net/informacion/legislacion/leyes/ley-impuesto-valor-agregado/titulo-iv. This is a technical reference, not legal/accounting advice.
+- The previously documented interpretation of Article 25 of Venezuela's VAT Law as permitting a next-business-day rate for weekend operations is not sufficient to override the owner's explicit product rule: a prepublished Monday rate is not applied Friday, Saturday or Sunday. The statutory wording and the operational effective-date policy require professional fiscal/legal reconciliation before production. Reference copy of Official Gazette No. 6,507 Extraordinary (2020-01-29): https://www.ivecofi.net/informacion/legislacion/leyes/ley-impuesto-valor-agregado/titulo-iv. This is a technical reference, not legal/accounting advice.
 - Historical exact HEAD `4e9f01ab85fd767736f4f47f3e47ffefbe7efd88`: 10/10 PR workflows and 3/3 push runs SUCCESS; manual review comment on PR #255. No external review or production smoke test; these checks do not validate the synchronized HEAD.
 
 ## Safety

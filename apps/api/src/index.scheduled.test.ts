@@ -32,7 +32,9 @@ describe("BCV scheduled failure reporting", () => {
     const infoLog = vi.spyOn(console, "info").mockImplementation(() => undefined);
 
     await app.scheduled(bcvCron, productionEnv);
-    expect(infoLog).toHaveBeenCalledWith("BCV_SYNC_COMPLETED", {
+    expect(infoLog).toHaveBeenNthCalledWith(1, { event: "BCV_SYNC_STARTED" });
+    expect(infoLog).toHaveBeenNthCalledWith(2, {
+      event: "BCV_SYNC_COMPLETED",
       outcome: "inserted",
     });
   });
@@ -46,7 +48,8 @@ describe("BCV scheduled failure reporting", () => {
     await expect(app.scheduled(bcvCron, productionEnv)).rejects.toThrow(
       "BCV_SYNC_FAILED",
     );
-    expect(errorLog).toHaveBeenCalledWith("BCV_SYNC_FAILED", {
+    expect(errorLog).toHaveBeenCalledWith({
+      event: "BCV_SYNC_FAILED",
       code: "BCV_RATE_CHANGED_FOR_EXISTING_EFFECTIVE_DATE",
     });
   });
@@ -60,7 +63,8 @@ describe("BCV scheduled failure reporting", () => {
     await expect(app.scheduled(bcvCron, productionEnv)).rejects.toThrow(
       "BCV_SYNC_FAILED",
     );
-    expect(errorLog).toHaveBeenCalledWith("BCV_SYNC_FAILED", {
+    expect(errorLog).toHaveBeenCalledWith({
+      event: "BCV_SYNC_FAILED",
       code: "BCV_SYNC_UNKNOWN",
     });
     expect(JSON.stringify(errorLog.mock.calls)).not.toContain("internal-db-detail-should-not-be-logged");

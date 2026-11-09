@@ -105,6 +105,15 @@ describe("BCV official HTML parser", () => {
 
 
 describe("BCV applicable-date selection", () => {
+  it("does not use a Monday-prepublished rate on Friday before its effective date", async () => {
+    const client = {
+      query: async <Row = unknown>() => ({
+        rows: [{ rate: "895.10000000", effective_date: "2026-11-09", fetched_at: "2026-11-06T22:00:00Z", validation_status: "valid" }] as Row[],
+      }),
+    } as unknown as DatabaseClient;
+    await expect(findApplicableBcvRate(client, new Date("2026-11-06T18:00:00-04:00"))).resolves.toBeNull();
+  });
+
   it("does not use a Monday-prepublished rate on Saturday before its effective date", async () => {
     const statements: string[] = [];
     const client = {

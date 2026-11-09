@@ -6,6 +6,13 @@ import type { OrganizationRole } from "./tenant-context";
 const roles: OrganizationRole[] = ["owner", "admin", "inventory", "cashier"];
 
 describe("commercial role authorization", () => {
+  it("allows only owner and admin to read the BCV sync state", () => {
+    expect(authorizeCommercialOperation("owner", "bcv.sync_state.read")).toBe(true);
+    expect(authorizeCommercialOperation("admin", "bcv.sync_state.read")).toBe(true);
+    expect(authorizeCommercialOperation("cashier", "bcv.sync_state.read")).toBe(false);
+    expect(authorizeCommercialOperation("inventory", "bcv.sync_state.read")).toBe(false);
+  });
+
   it("allows catalog reads for every role and cost reads for owner/admin/inventory", () => {
     for (const role of roles) {
       expect(isCommercialOperationAllowed(role, "catalog.read")).toBe(true);

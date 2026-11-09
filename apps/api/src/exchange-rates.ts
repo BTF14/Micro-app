@@ -1,4 +1,6 @@
 import type { Hono } from "hono";
+import { getCookie } from "hono/cookie";
+import { authorizeTenantOperation } from "./authorization";
 import { withDatabaseClient, withDatabaseTransaction, type DatabaseClient } from "./database";
 import type { Bindings } from "./bindings";
 
@@ -384,6 +386,80 @@ export async function findApplicableBcvRate(
 }
 
 export function registerExchangeRateRoutes(app: Hono<{ Bindings: Bindings }>): void {
+
+  app.get("/api/orgs/:organizationId/bcv/sync-state", async (c) => {
+    const organizationId = c.req.param("organizationId");
+    const sessionToken = getCookie(c, "microapp_session");
+    try {
+      const state = await withDatabaseTransaction(c.env.DATABASE_URL, async (client) => {
+        const authorization = await authorizeTenantOperation(
+          client,
+          sessionToken,
+          organizationId,
+          "bcv.sync_state.read",
+        );
+        if (!authorization.allowed) return { denied: authorization.reason } as const;
+
+        const result = await client.query<{
+          last_attempt_at: string | null;
+          last_success_at: string | null;
+          last_outcome: string | null;
+          last_error_code: string | null;
+          last_effective_date: string | null;
+          updated_at: string;
+          attempt_age_seconds: number | null;
+        }>(
+          `SELECT
+             to_char(last_attempt_at AT TIME ZONE 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS.MS"Z"') AS last_attempt_at,
+             to_char(last_success_at AT TIME ZONE 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS.MS"Z"') AS last_success_at,
+             last_outcome,
+             last_error_code,
+             last_effective_date::text AS last_effective_date,
+             to_char(updated_at AT TIME ZONE 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS.MS"Z"') AS updated_at,
+             CASE WHEN last_attempt_at IS NULL THEN NULL
+                  ELSE GREATEST(0, floor(extract(epoch FROM (now() - last_attempt_at))))::int
+              END AS attempt_age_seconds
+           FROM public.bcv_sync_state
+          WHERE singleton = true`,
+        );
+        return { state: result.rows[0] ?? null } as const;
+      });
+
+      c.header("Cache-Control", "no-store");
+      if ("denied" in state) {
+        if (state.denied === "operation_denied") {
+          return c.json({ error: "FORBIDDEN", message: "No tienes permiso para consultar el estado BCV." }, 403);
+        }
+        return c.json({ error: "UNAUTHORIZED", message: "Debes iniciar sesión en esta organización." }, 401);
+      }
+      if (!state.state) {
+        return c.json({ error: "BCV_SYNC_STATE_UNAVAILABLE", message: "El estado operativo BCV no está disponible." }, 503);
+      }
+      const outcome = state.state.last_outcome;
+      const health = outcome === "running"
+        ? "running"
+        : outcome === "failed"
+          ? "failed"
+          : (outcome === "inserted" || outcome === "unchanged") && state.state.last_success_at !== null
+            ? "succeeded"
+            : "attention";
+      return c.json({
+        source: BCV_SOURCE_ID,
+        health,
+        lastAttemptAt: state.state.last_attempt_at,
+        lastSuccessAt: state.state.last_success_at,
+        lastOutcome: outcome,
+        lastErrorCode: state.state.last_error_code,
+        lastEffectiveDate: state.state.last_effective_date,
+        updatedAt: state.state.updated_at,
+        attemptAgeSeconds: state.state.attempt_age_seconds,
+      });
+    } catch {
+      c.header("Cache-Control", "no-store");
+      return c.json({ error: "BCV_SYNC_STATE_LOOKUP_FAILED", message: "No se pudo consultar el estado operativo BCV." }, 503);
+    }
+  });
+
   app.get("/api/exchange-rates/history", async (c) => {
     const rawLimit = c.req.query("limit") ?? "30";
     if (!/^\d{1,3}$/.test(rawLimit)) {

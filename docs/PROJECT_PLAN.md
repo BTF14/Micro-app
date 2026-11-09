@@ -1387,3 +1387,8 @@ No declarar comercial/producción listo hasta completar flujos, seguridad, prueb
 - No ejecutar migraciones en Neon main ni desplegar producción en este bloque.
 
 - Resultado técnico PR #165 (HEAD de implementación `c3ae1192f0841090ee1b3dea71ed803f1d3c1d8b`): checks y pruebas completas en success, incluidas 3 pruebas de resolución contra PostgreSQL efímero y assertions cross-tenant. Revalidar el SHA final tras los commits de sincronización documental antes de integrar.
+
+
+## Prioridad técnica — 2026-11-09
+
+Completar validación de PR #287 (integración BCV + checkout) sin merge. La siguiente tarea técnica es cerrar cualquier fallo de CI exact-HEAD, revisar grants/concurrencia de migración 0021 y mantener abiertos los gates oficiales BCV, legal/contable y operación. Ver `docs/HANDOFF_NEXT_CHAT_2026-11-09_BCV-checkout-integration.md`.

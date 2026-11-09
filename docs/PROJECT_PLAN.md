@@ -1447,3 +1447,10 @@ No declarar comercial/producción listo hasta completar flujos, seguridad, prueb
 - No ejecutar migraciones en Neon main ni desplegar producción en este bloque.
 
 - Resultado técnico PR #165 (HEAD de implementación `c3ae1192f0841090ee1b3dea71ed803f1d3c1d8b`): checks y pruebas completas en success, incluidas 3 pruebas de resolución contra PostgreSQL efímero y assertions cross-tenant. Revalidar el SHA final tras los commits de sincronización documental antes de integrar.
+
+
+## Actualización de diseño — 2026-11-09
+
+- Añadido ADR propuesto de autorización administrativa compartida para BCV y calendario.
+- La implementación de PIN/recuperación y calendario anual permanece bloqueada hasta revisar autenticación/MFA, controles Nivel 1, matriz de permisos, modelo de auditoría y seguridad del procesamiento PDF.
+- No considerar esta documentación como capacidad entregada. Mantener BCV manual deshabilitado y calendario no oficial/no verificado fuera de decisiones automáticas.

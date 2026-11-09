@@ -2223,3 +2223,8 @@ Esta revisión fue estática de contenidos en GitHub; no se ejecutaron tests des
 - Alcance: este fue un ensayo real de escritura/DDL únicamente en la base Neon aislada `microapp_rehearsal`, autorizado expresamente por el propietario. No se tocó Neon main, `neondb` parent-data clone, secretos, Cloudflare, DNS, billing ni despliegues productivos.
 - Warning no bloqueante: deprecación de Node.js 20 en `actions/checkout@v4`; el runner lo fuerza a Node.js 24 y el job finalizó SUCCESS. Registrar actualización de actions como mantenimiento, no como fallo de migración.
 - Dictamen: **migraciones 0001–0019 demostradas en Neon rehearsal con pin inmutable y assertions 0017–0019 satisfactorias**. Esto eleva la confianza en la ruta de migración, pero no equivale a certificación de producción: siguen pendientes validación funcional integrada sobre la DB resultante, smoke tests autenticados, revisión final de permisos/RLS y gates operativos/producto. No promover automáticamente a producción.
+
+
+## Integración aislada BCV + checkout — 2026-11-09
+
+PR #287 ([integración Draft](https://github.com/BTF14/Micro-app/pull/287)) combina el productor BCV de #255 con el checkout/ledger de #269 sin fusionarlos. Añade migración 0021 para estado persistente de sincronización (`last_attempt_at`, `last_success_at`, outcome, error sanitizado, fecha efectiva y `attempt_id` anti-solapamiento). Cron BCV permanece deshabilitado por defecto mediante `BCV_SYNC_ENABLED=false`. Detalle y siguiente orden: `docs/HANDOFF_NEXT_CHAT_2026-11-09_BCV-checkout-integration.md`. Producción NOT READY; no merge, deploy ni Neon writes.

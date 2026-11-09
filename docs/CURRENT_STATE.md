@@ -2310,3 +2310,13 @@ Esta revisión fue estática de contenidos en GitHub; no se ejecutaron tests des
 - Alcance: este fue un ensayo real de escritura/DDL únicamente en la base Neon aislada `microapp_rehearsal`, autorizado expresamente por el propietario. No se tocó Neon main, `neondb` parent-data clone, secretos, Cloudflare, DNS, billing ni despliegues productivos.
 - Warning no bloqueante: deprecación de Node.js 20 en `actions/checkout@v4`; el runner lo fuerza a Node.js 24 y el job finalizó SUCCESS. Registrar actualización de actions como mantenimiento, no como fallo de migración.
 - Dictamen: **migraciones 0001–0019 demostradas en Neon rehearsal con pin inmutable y assertions 0017–0019 satisfactorias**. Esto eleva la confianza en la ruta de migración, pero no equivale a certificación de producción: siguen pendientes validación funcional integrada sobre la DB resultante, smoke tests autenticados, revisión final de permisos/RLS y gates operativos/producto. No promover automáticamente a producción.
+
+
+## 2026-11-09 — Diseño administrativo BCV + calendario (documental, no implementado)
+
+- Se amplió el diseño en PR #296 (rama `docs/reconcile-bcv-freshness-fx-task-20261109`) con un servicio compartido de reautenticación/autorización administrativa y permisos separados por dominio.
+- Nuevos/actualizados: `docs/decisions/ADR-20261109-admin-authorization-pin-recovery.md`, `docs/sdd/FX_CONTINGENCY_MANAGEMENT.md`, `docs/sdd/BANKING_CALENDAR_VERSIONING.md`, ADR FX y ODD task.
+- PIN individual; mínimo documental existente de 8 dígitos para pequeño negocio; Argon2id preferido con parámetros calibrados; propuesta inicial de 5 intentos/15 minutos y backoff, aún sujeta a pruebas; recuperación como reset con MFA/código de un solo uso, nunca revelar PIN ni confiar solo en email.
+- Permisos BCV y calendario separados; carga, edición y publicación de calendario diferenciadas. La matriz de roles, auth/MFA real y controles Nivel 1 siguen siendo gates.
+- PDF anual: cuarentena, validación por capas, análisis/parseo aislado, almacenamiento privado, hash, revisión humana y publicación explícita. Vigilancia automática solo detecta; no publica. Recordatorios propuestos 1 dic y 1 ene.
+- Todo es propuesta documental. No hay código, endpoint, migración, almacenamiento PDF, PIN ni recordatorio implementado. PR #287 permanece Draft; no se modifica su código ni se habilita contingencia.

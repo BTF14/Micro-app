@@ -84,26 +84,18 @@ function caracasDate(now: Date): string {
   const value = (type: string) => parts.find((part) => part.type === type)?.value ?? "";
   return `${value("year")}-${value("month")}-${value("day")}`;
 }
-function isCaracasWeekend(now: Date): boolean {
-  const weekday = new Intl.DateTimeFormat("en-US", { timeZone: "America/Caracas", weekday: "short" }).format(now);
-  return weekday === "Sat" || weekday === "Sun";
-}
-/** Select the same effective date enforced by migration 0017. */
+/** Select only the BCV row whose explicit effective date is today in Caracas. */
 export async function findApplicableCheckoutRate(tx: import("./database").DatabaseClient, now = new Date()): Promise<RateRow | null> {
   const today = caracasDate(now);
-  const weekend = isCaracasWeekend(now);
-  const comparison = weekend ? ">" : "<=";
-  const ordering = weekend ? "ASC" : "DESC";
   const result = await tx.query<RateRow>(
     `SELECT id, rate::text AS rate, effective_date::text AS effective_date, validation_status
        FROM public.exchange_rates
-      WHERE source = $1 AND effective_date ${comparison} $2::date
-      ORDER BY effective_date ${ordering}, fetched_at DESC LIMIT 1`,
+      WHERE source = $1 AND effective_date = $2::date
+      ORDER BY fetched_at DESC LIMIT 1`,
     [BCV_SOURCE, today],
   );
   const row = result.rows[0];
-  if (!row || row.validation_status !== "valid") return null;
-  if (weekend ? row.effective_date <= today : row.effective_date !== today) return null;
+  if (!row || row.validation_status !== "valid" || row.effective_date !== today) return null;
   return row;
 }
 

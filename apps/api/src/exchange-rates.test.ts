@@ -320,3 +320,123 @@ describe("BCV synchronization connection lifecycle", () => {
     }
   });
 });
+
+
+describe("BCV synchronization failure and cleanup semantics", () => {
+  it("records a fetch failure with a separate short-lived DB connection", async () => {
+    const events: string[] = [];
+    let attemptId = "";
+    let clientNumber = 0;
+    const createClient = vi.fn(() => {
+      const number = ++clientNumber;
+      return {
+        connect: vi.fn(async () => { events.push(`connect-${number}`); }),
+        query: vi.fn(async (statement: string, values?: unknown[]) => {
+          events.push(`query-${number}`);
+          if (statement.includes("SET attempt_id =")) {
+            attemptId = String(values?.[0]);
+            return { rows: [{ attempt_id: attemptId }] };
+          }
+          if (statement.includes("SET last_outcome = 'failed'")) {
+            expect(values?.[0]).toBe(attemptId);
+            expect(values?.[1]).toBe("BCV_SOURCE_HTTP_ERROR");
+            return { rows: [{ attempt_id: attemptId }] };
+          }
+          throw new Error("Unexpected query in fetch failure test");
+        }),
+        end: vi.fn(async () => { events.push(`end-${number}`); }),
+      } as unknown as DatabaseClient;
+    });
+    vi.stubGlobal("fetch", vi.fn().mockRejectedValue(new Error("BCV_SOURCE_HTTP_ERROR")));
+
+    try {
+      await expect(syncBcvOfficialRate(
+        "postgresql://user:password@db.example/neondb?sslmode=require",
+        createClient,
+      )).rejects.toThrow("BCV_SOURCE_HTTP_ERROR");
+
+      expect(createClient).toHaveBeenCalledTimes(2);
+      expect(events.indexOf("end-1")).toBeLessThan(events.indexOf("connect-2"));
+      expect(events).toContain("end-2");
+    } finally {
+      vi.unstubAllGlobals();
+    }
+  });
+
+  it("preserves the original BCV error when DB is unavailable while recording failure", async () => {
+    let clientNumber = 0;
+    let attemptId = "";
+    const createClient = vi.fn(() => {
+      const number = ++clientNumber;
+      return {
+        connect: vi.fn(async () => undefined),
+        query: vi.fn(async (statement: string, values?: unknown[]) => {
+          if (statement.includes("SET attempt_id =")) {
+            attemptId = String(values?.[0]);
+            return { rows: [{ attempt_id: attemptId }] };
+          }
+          if (number === 2 && statement.includes("SET last_outcome = 'failed'")) {
+            throw new Error("DATABASE_UNAVAILABLE");
+          }
+          throw new Error("Unexpected query in unavailable DB test");
+        }),
+        end: vi.fn(async () => undefined),
+      } as unknown as DatabaseClient;
+    });
+    vi.stubGlobal("fetch", vi.fn().mockRejectedValue(new Error("BCV_SOURCE_HTTP_ERROR")));
+
+    try {
+      await expect(syncBcvOfficialRate(
+        "postgresql://user:password@db.example/neondb?sslmode=require",
+        createClient,
+      )).rejects.toThrow("BCV_SOURCE_HTTP_ERROR");
+      expect(createClient).toHaveBeenCalledTimes(2);
+      expect(attemptId).toMatch(/^[0-9a-f-]{36}$/i);
+    } finally {
+      vi.unstubAllGlobals();
+    }
+  });
+
+  it("does not rewrite a committed success as failed when client cleanup fails afterward", async () => {
+    let attemptId = "";
+    const terminalStatements: string[] = [];
+    let clientNumber = 0;
+    const createClient = vi.fn(() => {
+      const number = ++clientNumber;
+      return {
+        connect: vi.fn(async () => undefined),
+        query: vi.fn(async (statement: string, values?: unknown[]) => {
+          const normalized = statement.trim();
+          terminalStatements.push(normalized);
+          if (normalized.includes("SET attempt_id =")) {
+            attemptId = String(values?.[0]);
+            return { rows: [{ attempt_id: attemptId }] };
+          }
+          if (normalized.includes("FOR UPDATE")) return { rows: [{ attempt_id: attemptId }] };
+          if (normalized.includes("INSERT INTO public.exchange_rates")) return { rows: [{ id: "rate-row" }] };
+          return { rows: [] };
+        }),
+        end: vi.fn(async () => {
+          if (number === 2) throw new Error("simulated socket cleanup failure");
+        }),
+      } as unknown as DatabaseClient;
+    });
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(new Response(officialBcvHomepageHtml, {
+      status: 200,
+      headers: { "content-type": "text/html; charset=utf-8" },
+    })));
+
+    try {
+      await expect(syncBcvOfficialRate(
+        "postgresql://user:password@db.example/neondb?sslmode=require",
+        createClient,
+      )).rejects.toThrow("Database connection cleanup failed.");
+
+      expect(terminalStatements.some((statement) => statement === "COMMIT")).toBe(true);
+      expect(terminalStatements.some((statement) => statement.includes("SET last_outcome = 'failed'"))).toBe(false);
+      expect(terminalStatements.some((statement) => statement.includes("SET last_success_at = now()"))).toBe(true);
+    } finally {
+      vi.unstubAllGlobals();
+    }
+  });
+});

@@ -168,17 +168,16 @@ describe("sales checkout request contract", () => {
 });
 
 describe("checkout BCV effective-date selection", () => {
-  it("selects the nearest future effective date on a Caracas weekend", async () => {
+  it("rejects a Monday-prepublished rate on Saturday before its effective date", async () => {
     const statements: string[] = [];
     const client = { query: async <Row = unknown>(statement: string) => {
       statements.push(statement);
       return { rows: [{ id: "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa", rate: "895.10000000", effective_date: "2026-11-09", validation_status: "valid" }] as Row[] };
     }} as unknown as import("./database").DatabaseClient;
     const selected = await findApplicableCheckoutRate(client, new Date("2026-11-07T12:00:00-04:00"));
-    expect(selected?.effective_date).toBe("2026-11-09");
-    expect(statements[0]).toContain("effective_date > $2::date");
-    expect(statements[0]).toContain("ORDER BY effective_date ASC");
-    expect(statements[0]).not.toContain("validation_status = 'valid'");
+    expect(selected).toBeNull();
+    expect(statements[0]).toContain("effective_date = $2::date");
+    expect(statements[0]).not.toContain("effective_date >");
   });
   it("does not skip a stale nearest future row to use a later valid rate", async () => {
     const client = { query: async <Row = unknown>() => ({ rows: [{ id: "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa", rate: "895.10000000", effective_date: "2026-11-09", validation_status: "stale" }] as Row[] }) } as unknown as import("./database").DatabaseClient;

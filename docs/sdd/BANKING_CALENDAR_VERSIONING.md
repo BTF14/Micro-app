@@ -15,7 +15,7 @@
 
 ## Regla de vigencia por año
 
-1. Durante 2026, conservar el PDF aportado como referencia documental del proyecto, con la clasificación de procedencia indicada arriba.
+1. Durante 2026, conservar el PDF aportado como **referencia documental provisional**. No automatizar decisiones de días hábiles basándose únicamente en ese archivo mientras la circular oficial no se autentique.
 2. No buscar, exigir ni inventar un calendario 2027 antes de que SUDEBAN lo publique.
 3. Al comenzar 2027, comprobar si SUDEBAN publicó su calendario bancario 2027.
 4. Cuando se publique, incorporar el documento como una **nueva versión anual** y establecer su vigencia desde el año correspondiente, conservando intacta la versión 2026.

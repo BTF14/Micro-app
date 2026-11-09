@@ -105,7 +105,7 @@ describe("BCV official HTML parser", () => {
 
 
 describe("BCV applicable-date selection", () => {
-  it("selects the next effective date on a Caracas weekend", async () => {
+  it("does not use a Monday-prepublished rate on Saturday before its effective date", async () => {
     const statements: string[] = [];
     const client = {
       query: async <Row = unknown>(statement: string) => {
@@ -115,9 +115,9 @@ describe("BCV applicable-date selection", () => {
     } as unknown as DatabaseClient;
 
     const selected = await findApplicableBcvRate(client, new Date("2026-11-07T12:00:00-04:00"));
-    expect(selected?.effective_date).toBe("2026-11-09");
-    expect(statements[0]).toContain("effective_date > $2::date");
-    expect(statements[0]).toContain("ORDER BY effective_date ASC");
+    expect(selected).toBeNull();
+    expect(statements[0]).toContain("effective_date = $2::date");
+    expect(statements[0]).not.toContain("effective_date >");
   });
 
   it("does not skip a stale nearest future rate to select a later date", async () => {
@@ -131,7 +131,7 @@ describe("BCV applicable-date selection", () => {
 
     const selected = await findApplicableBcvRate(client, new Date("2026-11-07T12:00:00-04:00"));
     expect(selected?.validation_status).toBe("stale");
-    expect(statements[0]).not.toContain("validation_status = 'valid'");
+    expect(statements[0]).toContain("effective_date = $2::date");
   });
 
   it("never substitutes a future rate for a missing rate on a weekday", async () => {
@@ -144,8 +144,8 @@ describe("BCV applicable-date selection", () => {
     } as unknown as DatabaseClient;
 
     await findApplicableBcvRate(client, new Date("2026-11-05T12:00:00-04:00"));
-    expect(statements[0]).toContain("effective_date <= $2::date");
-    expect(statements[0]).toContain("ORDER BY effective_date DESC");
+    expect(statements[0]).toContain("effective_date = $2::date");
+    expect(statements[0]).not.toContain("ORDER BY effective_date DESC");
   });
 });
 

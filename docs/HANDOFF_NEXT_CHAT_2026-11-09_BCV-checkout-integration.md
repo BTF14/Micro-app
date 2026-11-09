@@ -145,7 +145,7 @@ PR #293 se integró con merge commit en la rama de #287 para preservar main como
 
 ### Pruebas añadidas; aún sin resultado CI
 - Unitarias: éxito `unchanged` con tasa prepublicada del lunes descargada el viernes; rechazo antes de la fecha efectiva; `failed`, `running`, `older`, last-success ausente, singleton ausente, fecha discrepante, tasa stale y error DB.
-- PostgreSQL integración: tasa same-day válida + estado futuro prepublicado; último intento fallido/running/fecha anterior => HTTP 409, sin venta ni movimiento de stock; recuperación solo tras nuevo éxito.
+- PostgreSQL integración: tasa same-day válida + estado futuro prepublicado permite la fila de hoy; último intento fallido/running/fecha anterior => HTTP 409, sin venta ni movimiento de stock; recuperación solo tras nuevo éxito.
 - PostgreSQL runtime-role: lectura `FOR SHARE` mantiene lock y un UPDATE concurrente de sincronización recibe lock timeout hasta liberar la transacción.
 - Se conserva y restaura el estado singleton previo al terminar el fixture de integración; no hay migración nueva.
 

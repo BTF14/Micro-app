@@ -130,7 +130,7 @@ describe("BCV applicable-date selection", () => {
     } as unknown as DatabaseClient;
 
     const selected = await findApplicableBcvRate(client, new Date("2026-11-07T12:00:00-04:00"));
-    expect(selected?.validation_status).toBe("stale");
+    expect(selected).toBeNull();
     expect(statements[0]).toContain("effective_date = $2::date");
   });
 

@@ -1,3 +1,19 @@
+## Delta operativo — BCV: fecha efectiva estricta — 2026-11-08 UTC
+
+La regla confirmada exige que una tasa futura publicada por adelantado solo pueda utilizarse desde su fecha efectiva. Por ejemplo, una tasa del lunes permanece programada viernes, sábado y domingo; el API no debe devolverla como vigente antes del lunes. Todas las ventas necesitan una tasa BCV exacta y válida, incluso USD-only. Si falta la fila exacta del día, checkout bloquea; no hay fallback anterior ni futuro.
+
+**Implementación en esta rama #255:**
+- `findApplicableBcvRate()` consulta solo `effective_date = fecha Caracas actual` y devuelve unavailable si no existe.
+- El histórico conserva filas futuras etiquetadas `scheduled`.
+- Se actualizaron tests unitarios y de integración para rechazar una tasa efectiva lunes antes del lunes.
+- Commits relevantes: `282fc18` (selector), `bae08a3` (tests), `d5d7aaa` (PostgreSQL integration), `d8fc381` (stale/future regression), `261c6e0` / `306bb69` (documentación).
+
+**Estado:** CI exact-HEAD debe completarse en el nuevo HEAD de esta rama. No se ha probado localmente ni integrado en main. El consumidor #269 y su trigger SQL aplican la misma regla mediante migration 0020; esa rama debe validar el runner y sus assertions por separado.
+
+**Pendiente:** last-attempt/last-success persistente, política de anomalías sin umbral inventado, alerta fiable, fixture HTML real oficial, calendario/procedencia de feriados y guard de Cron por defecto deshabilitado. No activar Cron productivo ni fusionar #255.
+
+---
+
 ## Checkpoint vivo — 2026-11-08 UTC
 
 - Main: `594382f6f191f2ea0b55d913683841e51c210e5d`; post-merge 13/13 check-runs y 11/11 workflows push SUCCESS.

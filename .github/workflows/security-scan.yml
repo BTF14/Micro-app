@@ -3,7 +3,7 @@ name: Security scan
 on:
   push:
   pull_request:
-    branches: [main, "fix/**"]
+    branches: [main, "fix/**", "integration/**"]
 
 permissions:
   contents: read

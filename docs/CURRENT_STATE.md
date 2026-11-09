@@ -2228,3 +2228,8 @@ Esta revisión fue estática de contenidos en GitHub; no se ejecutaron tests des
 ## Integración aislada BCV + checkout — 2026-11-09
 
 PR #287 ([integración Draft](https://github.com/BTF14/Micro-app/pull/287)) combina el productor BCV de #255 con el checkout/ledger de #269 sin fusionarlos. Añade migración 0021 para estado persistente de sincronización (`last_attempt_at`, `last_success_at`, outcome, error sanitizado, fecha efectiva y `attempt_id` anti-solapamiento). Cron BCV permanece deshabilitado por defecto mediante `BCV_SYNC_ENABLED=false`. Detalle y siguiente orden: `docs/HANDOFF_NEXT_CHAT_2026-11-09_BCV-checkout-integration.md`. Producción NOT READY; no merge, deploy ni Neon writes.
+
+
+## Corrección CI Cron — 2026-11-09
+
+El primer ensayo de #287 detectó que el handler combinado enviaba cron desconocidos al cleanup horario. Corregido: cleanup solo para `17 * * * *`; BCV sigue separado y opt-in. Revalidar CI sobre el nuevo HEAD.

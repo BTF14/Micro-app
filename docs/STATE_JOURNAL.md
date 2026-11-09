@@ -2304,3 +2304,11 @@ Se creó `fix/bcv-checkout-last-success-20261109` desde #287 HEAD `362443524eb45
 - Dictamen de código: no se encontró un bloqueo de corrección en el flujo revisado de checkout/sync. La validación no equivale a aprobación formal de PR ni a readiness de producción.
 - Riesgo operativo pendiente: el Cron BCV está programado para `0 22 * * 1-5`, exige `APP_ENV=production` y `BCV_SYNC_ENABLED=true`, y permanece deshabilitado por defecto. No se observó un mecanismo de retry inmediato ni alerta operativa en este alcance. Si un intento falla o queda `running`, nuevas ventas siguen bloqueadas hasta el siguiente intento habilitado que finalice con éxito; hace falta definir alertas y recuperación operativa antes de producción.
 - No hubo merge, cambios en main, escrituras Neon, deploy, activación Cron, cambios de secretos/DNS/billing ni uso de datos reales. Producción **NOT READY**.
+
+
+## 2026-11-09 — Reconciliación contingencia cambiaria y CI #295
+
+- Confirmado en GitHub que PR #288 está MERGED en main. Su SDD, ADR y ODD describen la tasa manual como contingencia temporal futura; no existe implementación ni habilitación. Se corrigió odd/tasks/fx-contingency-management.md en la rama #295 para eliminar la referencia obsoleta a #288 OPEN/Draft y conservar AC-5–AC-7 como pendientes.
+- PR #295 en el HEAD anterior a esta actualización (fd4487c4382ecdf90f3b03c485cb34780dc8cd9c) tiene 10/10 workflow runs pull_request SUCCESS. El endpoint de combined status no devolvió status contexts; no convertir esa respuesta en un conteo de check-runs. Sin reviews formales ni threads en la consulta.
+- Los commits documentales nuevos cambian el HEAD de #295; CI exact-HEAD debe reconsultarse antes de declarar validación final. PR sigue OPEN/Draft; no merge.
+- Sin implementación manual FX, sin cambios de código BCV/checkout, main, Neon, deploy o Cron. Producción NOT READY.

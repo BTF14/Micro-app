@@ -168,7 +168,9 @@ describe("sales checkout request contract", () => {
 });
 
 describe("checkout BCV effective-date and last-success selection", () => {
-  const validState = (date: string, outcome: "inserted" | "unchanged" = "inserted") => ({
+  const validState = (date: string, outcome: "inserted" | "unchanged" = "inserted"): {
+    last_success_at: string | null; last_outcome: string | null; last_effective_date: string | null;
+  } => ({
     last_success_at: "2026-11-06T12:00:00.000Z",
     last_outcome: outcome,
     last_effective_date: date,

@@ -4,7 +4,10 @@ import type { DatabaseClient } from "./database";
 
 const NOW = new Date("2026-11-05T12:00:00-04:00");
 
-const OFFICIAL_PAGE = `
+// Synthetic regression fixture. This is NOT a captured response from bcv.org.ve.
+// Replace/add a separately archived, hash-verified official fixture only after
+// obtaining the real HTML from the canonical BCV HTTPS endpoint.
+const SYNTHETIC_BCV_HTML_FIXTURE = `
 <html><body>
 <p>El tipo de cambio publicado por el BCV es el promedio ponderado.</p>
 <p>EUR</p><p>1.006,03263992</p>
@@ -17,21 +20,21 @@ const OFFICIAL_PAGE = `
 <p>USD Banco Mercantil 895,2581</p>
 </body></html>`;
 
-describe("BCV official HTML parser", () => {
-  it("extracts the official USD rate and explicit effective date without float rounding", () => {
-    expect(parseBcvOfficialRate(OFFICIAL_PAGE, NOW)).toEqual({
+describe("BCV HTML parser — synthetic regression fixtures", () => {
+  it("extracts USD rate and explicit effective date from a synthetic fixture without float rounding", () => {
+    expect(parseBcvOfficialRate(SYNTHETIC_BCV_HTML_FIXTURE, NOW)).toEqual({
       rate: "894.88760000",
       effectiveDate: "2026-11-05",
     });
   });
 
   it("normalizes Spanish thousands and decimal separators", () => {
-    const html = OFFICIAL_PAGE.replace("894,88760000", "1.234,56789012");
+    const html = SYNTHETIC_BCV_HTML_FIXTURE.replace("894,88760000", "1.234,56789012");
     expect(parseBcvOfficialRate(html, NOW).rate).toBe("1234.56789012");
   });
 
   it("parses the full Spanish date form with de and weekday", () => {
-    const html = OFFICIAL_PAGE.replace(
+    const html = SYNTHETIC_BCV_HTML_FIXTURE.replace(
       "Jueves, 05 Noviembre 2026",
       "Lunes, 09 de noviembre de 2026",
     );
@@ -39,7 +42,7 @@ describe("BCV official HTML parser", () => {
   });
 
   it("skips unrelated USD mentions and decodes Spanish date entities", () => {
-    const html = OFFICIAL_PAGE
+    const html = SYNTHETIC_BCV_HTML_FIXTURE
       .replace("<p>USD</p><p>894,88760000</p>", "<p>USD</p><p>referencia general</p><p>USD</p><p>894,88760000</p>")
       .replace("Jueves, 05 Noviembre 2026", "Mi&eacute;rcoles, 04 de noviembre de 2026");
     expect(parseBcvOfficialRate(html, NOW)).toMatchObject({
@@ -49,7 +52,7 @@ describe("BCV official HTML parser", () => {
   });
 
   it("parses a Spanish effective date with weekday but no comma", () => {
-    const html = OFFICIAL_PAGE.replace(
+    const html = SYNTHETIC_BCV_HTML_FIXTURE.replace(
       "Jueves, 05 Noviembre 2026",
       "Lunes 09 de noviembre de 2026",
     );
@@ -57,50 +60,50 @@ describe("BCV official HTML parser", () => {
   });
 
   it("accepts the next effective date when BCV publishes in advance", () => {
-    const html = OFFICIAL_PAGE.replace("05 Noviembre 2026", "06 Noviembre 2026");
+    const html = SYNTHETIC_BCV_HTML_FIXTURE.replace("05 Noviembre 2026", "06 Noviembre 2026");
     expect(parseBcvOfficialRate(html, NOW).effectiveDate).toBe("2026-11-06");
   });
 
   it("rejects a missing USD rate", () => {
-    expect(() => parseBcvOfficialRate(OFFICIAL_PAGE.replace(/USD/g, "GBP"), NOW))
+    expect(() => parseBcvOfficialRate(SYNTHETIC_BCV_HTML_FIXTURE.replace(/USD/g, "GBP"), NOW))
       .toThrow("BCV_USD_RATE_MISSING");
   });
 
   it("rejects a missing or malformed effective date", () => {
-    expect(() => parseBcvOfficialRate(OFFICIAL_PAGE.replace("Fecha Valor:", "Fecha:"), NOW))
+    expect(() => parseBcvOfficialRate(SYNTHETIC_BCV_HTML_FIXTURE.replace("Fecha Valor:", "Fecha:"), NOW))
       .toThrow("BCV_EFFECTIVE_DATE_MISSING");
   });
 
   it("rejects zero, invalid separators and impossible values", () => {
-    expect(() => parseBcvOfficialRate(OFFICIAL_PAGE.replace("894,88760000", "0,00000000"), NOW))
+    expect(() => parseBcvOfficialRate(SYNTHETIC_BCV_HTML_FIXTURE.replace("894,88760000", "0,00000000"), NOW))
       .toThrow("BCV_RATE_VALUE_INVALID");
-    expect(() => parseBcvOfficialRate(OFFICIAL_PAGE.replace("894,88760000", "894.88760000"), NOW))
+    expect(() => parseBcvOfficialRate(SYNTHETIC_BCV_HTML_FIXTURE.replace("894,88760000", "894.88760000"), NOW))
       .toThrow("BCV_RATE_FORMAT_INVALID");
   });
 
   it("enforces the maximum rate without IEEE-754 rounding", () => {
-    const exactMaximum = OFFICIAL_PAGE.replace("894,88760000", "1.000.000.000,00000000");
-    const justAboveMaximum = OFFICIAL_PAGE.replace("894,88760000", "1.000.000.000,00000001");
+    const exactMaximum = SYNTHETIC_BCV_HTML_FIXTURE.replace("894,88760000", "1.000.000.000,00000000");
+    const justAboveMaximum = SYNTHETIC_BCV_HTML_FIXTURE.replace("894,88760000", "1.000.000.000,00000001");
     expect(parseBcvOfficialRate(exactMaximum, NOW).rate).toBe("1000000000.00000000");
     expect(() => parseBcvOfficialRate(justAboveMaximum, NOW)).toThrow("BCV_RATE_VALUE_INVALID");
   });
 
   it("accepts a next-business-day rate published before a weekend", () => {
-    const mondayPage = OFFICIAL_PAGE.replace("05 Noviembre 2026", "09 Noviembre 2026");
+    const mondayPage = SYNTHETIC_BCV_HTML_FIXTURE.replace("05 Noviembre 2026", "09 Noviembre 2026");
     expect(parseBcvOfficialRate(mondayPage, NOW).effectiveDate).toBe("2026-11-09");
   });
 
   it("accepts the inclusive parser sanity-window boundaries without changing checkout applicability", () => {
-    const oldestAllowedPage = OFFICIAL_PAGE.replace("05 Noviembre 2026", "26 Octubre 2026");
-    const furthestAllowedPage = OFFICIAL_PAGE.replace("05 Noviembre 2026", "12 Noviembre 2026");
+    const oldestAllowedPage = SYNTHETIC_BCV_HTML_FIXTURE.replace("05 Noviembre 2026", "26 Octubre 2026");
+    const furthestAllowedPage = SYNTHETIC_BCV_HTML_FIXTURE.replace("05 Noviembre 2026", "12 Noviembre 2026");
 
     expect(parseBcvOfficialRate(oldestAllowedPage, NOW).effectiveDate).toBe("2026-10-26");
     expect(parseBcvOfficialRate(furthestAllowedPage, NOW).effectiveDate).toBe("2026-11-12");
   });
 
   it("rejects dates immediately outside the inclusive parser sanity-window boundaries", () => {
-    const oneDayTooOldPage = OFFICIAL_PAGE.replace("05 Noviembre 2026", "25 Octubre 2026");
-    const oneDayTooFarPage = OFFICIAL_PAGE.replace("05 Noviembre 2026", "13 Noviembre 2026");
+    const oneDayTooOldPage = SYNTHETIC_BCV_HTML_FIXTURE.replace("05 Noviembre 2026", "25 Octubre 2026");
+    const oneDayTooFarPage = SYNTHETIC_BCV_HTML_FIXTURE.replace("05 Noviembre 2026", "13 Noviembre 2026");
 
     expect(() => parseBcvOfficialRate(oneDayTooOldPage, NOW)).toThrow("BCV_EFFECTIVE_DATE_OUT_OF_RANGE");
     expect(() => parseBcvOfficialRate(oneDayTooFarPage, NOW)).toThrow("BCV_EFFECTIVE_DATE_OUT_OF_RANGE");

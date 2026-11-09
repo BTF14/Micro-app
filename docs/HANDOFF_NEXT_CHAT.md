@@ -1,3 +1,12 @@
+## Revalidación CI — fixture de fecha efectiva — 2026-11-08 UTC
+
+- En el HEAD anterior `dd2827564968b0229752b81247c74bbfa4b7cc02`, la migration validation pasó incluyendo 0020, pero el workflow CI falló en `sales-checkout.integration.test.ts`: el fixture de fin de semana creaba deliberadamente una tasa con fecha del siguiente día hábil y esperaba que checkout la usara antes de su `effective_date`.
+- Ese fallo confirmó que el selector estricto bloqueaba correctamente la tasa futura; el fixture de integración estaba desactualizado respecto a la decisión del propietario.
+- Corregido en commit `4ef89bb962c3170b671715ee292dbd6e5dc007c8`: el fixture de checkout usa una tasa sintética cuya fecha efectiva coincide con la fecha de la operación. No se relajó el selector ni la regla de producción.
+- Nuevo CI exact-HEAD pendiente. La migration validation 0020 ya terminó SUCCESS en el HEAD anterior; no reutilizar ese resultado como CI completo del nuevo SHA.
+
+---
+
 ## Delta operativo — corrección de vigencia BCV — 2026-11-08 UTC
 
 **Regla confirmada por el propietario:** una tasa publicada anticipadamente solo se utiliza desde su `effective_date`. Una tasa efectiva lunes no se usa viernes, sábado ni domingo. Todas las ventas exigen una tasa BCV exacta y válida, incluso si se pagan 100 % USD. Si no existe la fila oficial del día, checkout bloquea; se conserva el histórico sin presentarlo como vigente.

@@ -73,10 +73,10 @@ Excluded:
 
 ## Closure and handoff
 
-- Final commit SHA:
-- PR: https://github.com/BTF14/Micro-app/pull/295 (OPEN/Draft; base temporal de validación)
-- Checks and exact outcomes:
-- Acceptance criteria met / unmet:
-- Limitations not verified:
-- Residual risks:
-- Next step:
+- Final tested code SHA: `3a67540c7b079bb11349552ffe92c598f0fad11f`. El checkpoint documental siguiente cambia HEAD y requiere nueva validación exact-HEAD.
+- PR: https://github.com/BTF14/Micro-app/pull/295 (OPEN/Draft; base `integration/bcv-checkout-rehearsal-20261109`).
+- Checks: 14/14 check-runs SUCCESS y 10/10 workflow runs SUCCESS en SHA probado. CI `42625578491`; Database migration validation `42625578392`; PostgreSQL migration runner `42625578739`; Playwright `42625578611`; Semgrep `42625578676`; Dependency review `42625578410`; ODD docs `42625578554`; Project dashboard `42625578403`; Secret history `42625578857`; Security scan `42625578492`.
+- Acceptance criteria met: AC-1–AC-7. CI incluye unit tests, PostgreSQL atomic sales checkout integration y Runtime-role API integration; todos SUCCESS.
+- Limitations not verified: fixture HTML oficial BCV, calendario bancario oficial, revisión legal/contable, alertas/identidad Worker.
+- Residual risks: umbrales parser 10/7 sin aprobación; reglas comerciales de devolución/anulación/cambio siguen pendientes; producción NOT READY.
+- Next step: mantener #295 Draft hasta revisión independiente y decisión de integración en #287; no merge automático.

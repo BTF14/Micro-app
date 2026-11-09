@@ -1,3 +1,11 @@
+## Delta de implementación — selección BCV por fecha efectiva — 2026-11-08
+
+La revisión detectó que la selección anterior podía considerar una tasa prepublicada del lunes durante sábado/domingo, contradiciendo la instrucción expresa del propietario de no utilizarla antes de su `effective_date`. Se corrigió el código en ambas ramas:
+- #255: `findApplicableBcvRate()` consulta únicamente `effective_date = fecha Caracas de hoy`; el histórico puede mostrar tasas futuras como `scheduled`, pero no como aplicables.
+- #269: `findApplicableCheckoutRate()` exige la misma igualdad exacta.
+- La migration 0017 del ensayo se preservó sin cambios de checksum. La corrección SQL se incorpora como migration 0020 y sus assertions.
+- Los tests unitarios/integración se actualizaron para rechazar una tasa efectiva lunes el sábado. CI exact-HEAD de estos commits está pendiente de verificación.
+
 # Continuidad técnica — BTF14/Micro-app
 **Corte:** 2026-11-08 UTC  
 **Objetivo:** continuar auditoría e integración segura del MVP sin empezar de cero, sin gastar dinero y sin comprometer producción.

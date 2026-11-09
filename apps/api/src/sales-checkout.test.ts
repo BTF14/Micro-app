@@ -168,6 +168,12 @@ describe("sales checkout request contract", () => {
 });
 
 describe("checkout BCV effective-date selection", () => {
+  it("rejects a Monday-prepublished rate on Friday before its effective date", async () => {
+    const client = { query: async <Row = unknown>() => ({
+      rows: [{ id: "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa", rate: "895.10000000", effective_date: "2026-11-09", validation_status: "valid" }] as Row[],
+    }) } as unknown as import("./database").DatabaseClient;
+    await expect(findApplicableCheckoutRate(client, new Date("2026-11-06T18:00:00-04:00"))).resolves.toBeNull();
+  });
   it("rejects a Monday-prepublished rate on Saturday before its effective date", async () => {
     const statements: string[] = [];
     const client = { query: async <Row = unknown>(statement: string) => {

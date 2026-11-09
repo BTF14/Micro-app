@@ -148,3 +148,8 @@ El ensayo verifica el bundle SQL y roles en la base aislada; no prueba el compor
 - No cambiar secretos, Cloudflare settings, DNS, billing ni realizar despliegues manuales.
 - No aprobar reglas comerciales ni permisos no autorizados.
 - Producción permanece **NOT READY**.
+
+
+## Checkpoint 2026-11-09 — PR #287
+
+Se creó la rama aislada y PR #287 Draft para integrar BCV + checkout. Migración 0021 separa intento/éxito persistente y protege el estado ante sincronizaciones solapadas por `attempt_id`. CI y migration-check incluyen la nueva migración y assertions. Consultar el handoff 2026-11-09 y verificar CI exact-HEAD antes de cualquier conclusión.

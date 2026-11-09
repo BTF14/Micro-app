@@ -4,8 +4,8 @@
 
 ## PR #287 — integración BCV + checkout
 
-- Estado verificado en GitHub: OPEN / Draft; base `main`; HEAD `c2c65e041b828f2ea2330e9c94a034f55cad86e5`; `mergeable=true`; 147 ahead / 0 behind; 0 reviews formales y 0 review threads.
-- GitHub Actions del HEAD exacto: **11/11 workflow runs SUCCESS** (consulta 2026-11-09). No reutilizar el conteo histórico de check-runs de SHA anteriores; el conector consultado no expuso la lista actual de check-runs. Combined legacy status: sin status contexts.
+- Último HEAD de código verificado antes de la reconciliación documental: `c2c65e041b828f2ea2330e9c94a034f55cad86e5`; sus **11/11 workflow runs** finalizaron SUCCESS. Ese resultado no valida commits posteriores.
+- La reconciliación documental de este archivo genera un nuevo HEAD; comprobar siempre el SHA vivo y sus workflows/check-runs directamente en GitHub. El conector consultado no expone la lista actual de check-runs ni status contexts combinados.
 - No merge, no deploy productivo, no Neon main writes, no migraciones remotas, no activación Cron, no cambios de secretos/DNS/billing ni datos reales.
 
 ## BCV: estado real de implementación

@@ -1,7 +1,7 @@
 # ODD task: Checkout exige último éxito de sincronización BCV
 
 - Status: completed
-- Issue / PR: PR #295 (Draft), contra base temporal de validación idéntica al HEAD de integración #287
+- Issue / PR: PR #295 (OPEN/Draft), base actual `integration/bcv-checkout-rehearsal-20261109`; se usó temporalmente una base alias para disparar CI y luego se retargeteó
 - Owner / reviewer: propietario del producto; revisión técnica/seguridad pendiente
 - Started: 2026-11-09
 - Risk: critical

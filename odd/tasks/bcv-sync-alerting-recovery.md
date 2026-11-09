@@ -184,3 +184,18 @@ La extracción anterior descrita como HTML semántico limpiado fue una primera l
 - Se añadió un test del parser sobre esta muestra DOM: espera USD `897.53830000` y fecha efectiva `2026-11-09`.
 
 **Alcance:** ya hay una muestra oficial del DOM completa y hash-verified, sanitizada y probada como regresión del parser. No es el cuerpo HTTP byte-for-byte; el navegador pudo normalizar/modificar el DOM y no se obtuvieron status/headers HTTP. El gate de captura raw HTTP queda abierto. La muestra es histórica y no es una fuente de tasa en runtime.
+
+
+## Revisión del contrato de timeout del driver Neon — 2026-11-09
+
+La inspección del lockfile confirma `@neondatabase/serverless@1.2.0` (integrity fijada en `pnpm-lock.yaml`). La revisión anterior de `database.ts` era correcta en cuanto a que la aplicación no configura límites, pero no debe interpretarse como que el driver carece de ellos:
+
+- El `ClientConfig` de la versión 1.2.0 expone `connectionTimeoutMillis`, `statement_timeout`, `query_timeout`, `lock_timeout` e `idle_in_transaction_session_timeout` (tipos oficiales: https://github.com/neondatabase/serverless/blob/v1.2.0/index.d.ts).
+- `connectionTimeoutMillis`: limita la fase de conexión del cliente; no limita las consultas posteriores.
+- `statement_timeout`: límite del lado PostgreSQL por sentencia; PostgreSQL cancela la sentencia que excede el tiempo. Es el control servidor-side principal para evitar consultas que sigan ejecutándose indefinidamente (https://www.postgresql.org/docs/17/runtime-config-client.html).
+- `lock_timeout`: limita solo esperas de adquisición de locks; debe ser menor que `statement_timeout` si ambos se configuran.
+- `idle_in_transaction_session_timeout`: limita sesiones que permanecen inactivas dentro de una transacción abierta.
+- `query_timeout`: límite del lado cliente para la llamada query; no asumir que por sí solo cancela el trabajo del servidor ni que garantiza cleanup del WebSocket. Probar desconexión/end y rollback bajo timeout.
+- La opción `fetchOptions.signal` documentada por Neon aplica al cliente HTTP `neon()`, no al `Client` WebSocket que usa este repositorio (https://github.com/neondatabase/serverless/blob/v1.2.0/CONFIG.md).
+
+**Decisión pendiente:** no introducir todavía valores de timeout ni un umbral de watchdog. Diseñar un presupuesto por fase y probar: conexión que no abre; `pg_sleep` con statement timeout; lock contention; transacción idle; timeout durante BEGIN/COMMIT/ROLLBACK; cleanup/end con socket cerrado; y registro del estado terminal cuando DB no responde. Distinguir deadline total de la operación del timeout individual por sentencia. No fijar un timeout global en `Client` sin evaluar todas las rutas de negocio que comparten `withDatabaseClient`.

@@ -2305,5 +2305,5 @@ Esta revisión fue estática de contenidos en GitHub; no se ejecutaron tests des
 - La lectura usa `SELECT ... FOR SHARE` dentro de la transacción de venta para ordenar checkout frente al UPDATE que inicia un nuevo sync. El lock no se mantiene durante el fetch HTTP.
 - No se añade TTL de 24 h, no se usa `fetched_at` como last-success y se conserva la regla de tasa prepublicada solo desde su fecha efectiva. Replays idempotentes de ventas ya completadas devuelven el snapshot previo; la regla aplica a ventas nuevas.
 - Pruebas añadidas: unitarias de estados/fechas/fallos; PostgreSQL runtime-role para failed/running/fecha discrepante, bloqueo sin mutación de venta/stock, recuperación tras éxito y lock compartido frente a UPDATE concurrente. Estado de ejecución: **pendiente de CI exact-HEAD**.
-- PR Draft de esta corrección aún por crear; no se ha ejecutado CI en el SHA final. No declarar ACs verificados todavía.
+- PR #295 OPEN/Draft, con base temporal de validación idéntica al HEAD de integración #287; CI exact-HEAD pendiente. No declarar ACs verificados todavía.
 - Sin migración nueva, Neon writes, deploy, Cron activation, cambios Cloudflare/secrets/DNS/billing o datos reales. Producción **NOT READY**. Gates oficiales BCV/calendario, umbrales parser 10/7, legal/contable, Worker identity/alertas y contrato comercial siguen pendientes.

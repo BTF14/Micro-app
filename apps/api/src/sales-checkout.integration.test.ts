@@ -579,6 +579,25 @@ describe.skipIf(!isDisposableCheckoutDatabase)("atomic sales checkout PostgreSQL
     await setBcvSyncState("unchanged");
   });
 
+  it("keeps today's valid rate usable when the latest successful BCV sync prepublished a future effective date", async () => {
+    await seedBalance("2.000");
+    const futureDate = await client.query<{ effective_date: string }>(
+      "SELECT ($1::date + 3)::text AS effective_date",
+      [rateDate],
+    );
+    try {
+      await setBcvSyncState("unchanged", futureDate.rows[0]!.effective_date);
+      const response = await request(
+        checkoutBody("1.000", "23.8500"),
+        "future-prepublication-" + crypto.randomUUID(),
+      );
+      expect(response.status).toBe(201);
+      expect((await readBalance()).on_hand_quantity).toBe("1.000");
+    } finally {
+      await setBcvSyncState("inserted");
+    }
+  });
+
   it("blocks a new sale after the latest BCV sync attempt fails, despite a valid same-day rate", async () => {
     await seedBalance("2.000");
     const key = "sync-failed-" + crypto.randomUUID();

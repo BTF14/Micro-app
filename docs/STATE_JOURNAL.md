@@ -2287,3 +2287,8 @@ El ensayo verifica el bundle SQL y roles en la base aislada; no prueba el compor
 ## 2026-11-09 — Diseño de PIN compartido y gestión anual del calendario
 
 Se registró en PR #296 un diseño documental para reutilizar un servicio administrativo de reautenticación entre BCV y calendario, sin compartir permisos ni autorizaciones. Se definieron como propuesta PIN individual de 8 dígitos mínimo para pequeño negocio, Argon2id calibrado, límites iniciales 5 intentos/15 minutos con backoff, recuperación mediante reset reforzado con MFA/código de un solo uso, revocación de sesiones/autorizaciones pendientes y auditoría. El calendario ahora contempla vigilancia sin publicación automática, PDF en cuarentena y procesado aislado, entrada manual, revisión humana, versiones inmutables y recordatorios anuales. No se implementó código ni se modificó producción. Pendiente validar diff y CI exact-HEAD de PR #296.
+
+
+## 2026-11-09 — Vigilancia calendario bancario 2027
+
+Consulta del portal oficial SUDEBAN: la página indexada muestra la sección general de Calendario Bancario, pero no se localizó una publicación identificable 2027 y la recuperación directa expiró. Fuente secundaria actualizada 2026-11-07 también reporta pendiente. Se registra como no localizado/no verificado, sin afirmar ausencia absoluta ni incorporar previsiones de terceros.

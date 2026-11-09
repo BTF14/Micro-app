@@ -57,3 +57,7 @@ No se modificó main; no se fusionó ninguna PR; no hubo deploy, escritura Neon,
 5. Solo después de cerrar los gates, preparar un plan explícito de integración; no fusionar ni desplegar automáticamente.
 
 **Estado de producción: NOT READY.**
+
+## Primer CI de integración y corrección
+
+El primer CI completo del checkpoint anterior falló únicamente en la prueba unitaria `ignores unrelated cron expressions`: el handler combinado estaba enviando cualquier Cron no-BCV al cleanup horario. Se corrigió `apps/api/src/index.ts` para que la limpieza se ejecute exclusivamente con `controller.cron === "17 * * * *"`; otros cron no hacen nada. La migración 0021, sus assertions, build/typecheck y validaciones de schema sí pasaron en esa ejecución. El nuevo commit requiere CI exact-HEAD propio; no se reutiliza el fallo ni los éxitos anteriores.

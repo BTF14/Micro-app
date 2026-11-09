@@ -1,7 +1,7 @@
 # ODD task: Gestión de contingencia cambiaria
 
 - Status: proposed
-- Issue / PR: [PR #288](https://github.com/BTF14/Micro-app/pull/288) — Draft docs-only
+- Issue / PR: [PR #288](https://github.com/BTF14/Micro-app/pull/288) — MERGED; documentación integrada en `main`
 - Owner / reviewer: propietario del producto; revisión técnica/seguridad y contable/legal pendientes
 - Started: 2026-11-09
 - Risk: critical
@@ -10,7 +10,7 @@
 
 - Desired outcome: especificar una contingencia cambiaria temporal, autorizada y auditable para permitir operación controlada ante feriados, retrasos de publicación o indisponibilidad del BCV, sin fallback automático ni pérdida de trazabilidad.
 - Authorization boundary: autorizado documentar la propuesta y su diseño. No autorizado por este trabajo crear endpoints, permisos, migraciones, cambiar checkout, modificar PR #255/#269/#287, habilitar feature flags, escribir en Neon, activar Cron, desplegar o alterar Cloudflare/secretos.
-- Relevant original request: el propietario quiere una opción en Configuración para gestionar el modo BCV/tasa manual, restringida a administradores, con PIN al autorizar en pequeños comercios, control empresarial, confirmación explícita y registro completo.
+- Relevant original request: el propietario quiere una opción en Configuración para gestionar una fuente manual de conversión durante contingencias, restringida a actores autorizados, con PIN individual al autorizar en pequeños comercios, control empresarial, confirmación explícita y registro completo.
 
 ## Scope and exclusions
 

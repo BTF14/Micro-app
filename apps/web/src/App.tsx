@@ -102,6 +102,35 @@ type BcvRateResponse = {
   status: "current" | "stale";
 };
 
+type BcvSyncStateResponse = {
+  source: string;
+  health: "succeeded" | "failed" | "running" | "attention";
+  lastAttemptAt: string | null;
+  lastSuccessAt: string | null;
+  lastOutcome: string | null;
+  lastErrorCode: string | null;
+  lastEffectiveDate: string | null;
+  updatedAt: string;
+  attemptAgeSeconds: number | null;
+};
+
+function formatBcvSyncTimestamp(value: string | null): string {
+  if (!value) return "Sin registro";
+  return new Intl.DateTimeFormat("es-VE", {
+    day: "2-digit", month: "short", year: "numeric",
+    hour: "2-digit", minute: "2-digit", timeZone: "America/Caracas",
+  }).format(new Date(value));
+}
+
+function formatBcvAttemptAge(value: number | null): string {
+  if (value === null) return "Sin intentos";
+  if (value < 60) return `${value} s`;
+  const minutes = Math.floor(value / 60);
+  if (minutes < 60) return `${minutes} min`;
+  const hours = Math.floor(minutes / 60);
+  return `${hours} h ${minutes % 60} min`;
+}
+
 // Keep the official decimal string intact; never convert exchange rates to JS floats.
 function formatBcvRate(value: string): string {
   const [integerPart = "0", fractionalPart] = value.split(".");
@@ -130,6 +159,86 @@ function caracasCalendarDate(now = new Date()): string {
   }).formatToParts(now);
   const value = (type: string) => parts.find((part) => part.type === type)?.value ?? "";
   return `${value("year")}-${value("month")}-${value("day")}`;
+}
+
+
+function BcvSyncAdminPanel({ organizationId }: { organizationId: string }) {
+  const [state, setState] = useState<BcvSyncStateResponse | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+  const [refreshVersion, setRefreshVersion] = useState(0);
+
+  useEffect(() => {
+    let active = true;
+    let requestSequence = 0;
+    const refresh = async () => {
+      const sequence = ++requestSequence;
+      setLoading(true);
+      try {
+        const result = await apiRequest<BcvSyncStateResponse>(
+          `/api/orgs/${encodeURIComponent(organizationId)}/bcv/sync-state`,
+        );
+        if (!active || sequence !== requestSequence) return;
+        setState(result);
+        setError("");
+      } catch {
+        if (!active || sequence !== requestSequence) return;
+        setError("No se pudo consultar el estado operativo BCV. Inténtalo nuevamente.");
+      } finally {
+        if (active && sequence === requestSequence) setLoading(false);
+      }
+    };
+    void refresh();
+    const interval = window.setInterval(() => {
+      if (document.visibilityState === "visible") void refresh();
+    }, 60_000);
+    return () => {
+      active = false;
+      requestSequence += 1;
+      window.clearInterval(interval);
+    };
+  }, [organizationId, refreshVersion]);
+
+  const healthLabel = state?.health === "succeeded"
+    ? "Sincronización exitosa"
+    : state?.health === "failed"
+      ? "Último intento fallido"
+      : state?.health === "running"
+        ? "Sincronización en curso"
+        : "Requiere atención";
+
+  return (
+    <section className="bcv-admin-panel" aria-live="polite" aria-label="Estado operativo de sincronización BCV">
+      <div className="bcv-admin-heading">
+        <div>
+          <p className="eyebrow">CONTROL ADMINISTRATIVO</p>
+          <h2>Sincronización BCV</h2>
+          <p>Estado técnico de la última consulta a la fuente oficial. Esta sección es de solo lectura.</p>
+        </div>
+        <button type="button" className="bcv-refresh-button" onClick={() => setRefreshVersion((value) => value + 1)} disabled={loading}>
+          {loading ? "Consultando…" : "Actualizar"}
+        </button>
+      </div>
+      {error && <p className="bcv-admin-error" role="alert">{error}</p>}
+      {state && (
+        <>
+          <div className="bcv-admin-status-row">
+            <span className={`bcv-admin-status ${state.health}`}>{healthLabel}</span>
+            <span className="bcv-admin-outcome">Resultado: {state.lastOutcome ?? "sin intentos"}</span>
+          </div>
+          <dl className="bcv-admin-grid">
+            <div><dt>Último intento</dt><dd>{formatBcvSyncTimestamp(state.lastAttemptAt)}</dd></div>
+            <div><dt>Último éxito</dt><dd>{formatBcvSyncTimestamp(state.lastSuccessAt)}</dd></div>
+            <div><dt>Fecha efectiva reportada</dt><dd>{state.lastEffectiveDate ?? "Sin registro"}</dd></div>
+            <div><dt>Tiempo desde el intento</dt><dd>{formatBcvAttemptAge(state.attemptAgeSeconds)}</dd></div>
+          </dl>
+          {state.lastErrorCode && <p className="bcv-admin-error-code">Código del último error: <code>{state.lastErrorCode}</code></p>}
+        </>
+      )}
+      {!state && !error && <p className="bcv-admin-loading">{loading ? "Cargando estado…" : "No hay estado disponible."}</p>}
+      <p className="bcv-admin-footnote">Un estado fallido o en curso no autoriza utilizar una tasa anterior ni habilita el checkout.</p>
+    </section>
+  );
 }
 
 function HelpLinks({ onOpen }: { onOpen: (kind: HelpModalKind) => void }) {
@@ -399,6 +508,9 @@ export default function App() {
             </span>
             <p className="exchange-rate-source">Fuente: Banco Central de Venezuela (BCV). No se sustituye por tasas de terceros.</p>
           </section>
+          {(organization?.role === "owner" || organization?.role === "admin") && (
+            <BcvSyncAdminPanel organizationId={organization.id} />
+          )}
           <section className="modules-section" aria-labelledby="modules-title"><div className="section-heading"><div><p className="eyebrow">MÓDULOS DEL SISTEMA</p><h2>Herramientas de tu negocio</h2></div><span className="module-count">04 módulos previstos</span></div><div className="module-grid">{modules.map((module) => <article className="module-card" key={module.number}><div className="module-card-top"><span className="module-number">{module.number}</span><span className="module-indicator" aria-hidden="true">↗</span></div><h3>{module.title}</h3><p>{module.description}</p><div className="module-card-bottom"><span className="module-status-dot" aria-hidden="true" /><span>{module.status}</span></div></article>)}</div></section>
           <footer className="main-footer">
             <div className="main-footer-row">

@@ -73,6 +73,7 @@ describe("BCV administrative sync-state endpoint", () => {
       "test-session",
       organizationId,
       "bcv.sync_state.read",
+      false,
     );
     expect(mocks.query).toHaveBeenCalledTimes(1);
   });

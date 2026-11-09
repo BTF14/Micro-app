@@ -2261,3 +2261,15 @@ El ensayo verifica el bundle SQL y roles en la base aislada; no prueba el compor
 - BCV homepage devolvió 502 en la consulta; SUDEBAN calendario no recuperable directamente y no se obtuvo PDF/circular oficial 2027 en búsquedas de dominio oficial. No afirmar inexistencia; no usar terceros como prueba primaria.
 - No merge de #255/#269/#287, no deploy, Neon writes, Cron BCV, Cloudflare manual, secretos, DNS, billing ni datos reales. Producción NOT READY.
 - PR docs-only #291 en preparación desde main para reconciliar CURRENT_STATE/HANDOFF/CHECKPOINT/PLAN/JOURNAL/SECURITY_ROADMAP. Su CI exact-HEAD queda pendiente y los snapshots de GitHub deben reconsultarse antes de actuar.
+
+
+---
+
+## Estado posterior a PR #291 — 2026-11-09 UTC
+
+- Main merge SHA #291: `56ad2b29b994fbad31275c801e8f23a2b9736db2`; post-merge check-runs 11/11 SUCCESS.
+- GitHub marca #255, #269 y #287 `mergeable=false` / `dirty`, con 2 commits detrás de main. No force-push ni sync automático.
+- Intersecciones documentales identificadas y registradas en CURRENT_STATE; son paths modificados en ambos lados, no se presume que todos tengan conflicto textual.
+- #287 exact HEAD `254ebb6e741f7c1b147fbd4880bc188f17204807` sigue con 15/15 checks y 11/11 workflows SUCCESS, pero el branch necesita reconciliar los docs posteriores a #288/#291 antes de futura integración.
+- No merge de código, no deploy, no Neon, no Cron BCV, no cambios Cloudflare manual, secretos, DNS, billing o datos reales. Producción NOT READY.
+- Próximo: reconciliar #287 con main en una rama/PR aislada, preservando docs y CI; luego #255/#269 por separado.

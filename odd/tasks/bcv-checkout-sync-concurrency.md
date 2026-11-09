@@ -1,6 +1,6 @@
 # ODD task: Rehearsal BCV + checkout — concurrencia del sincronizador y freshness
 
-- Status: in progress
+- Status: completed
 - Issue / PR: [PR #287](https://github.com/BTF14/Micro-app/pull/287) — OPEN/Draft
 - Owner / reviewer: propietario del producto; revisión técnica/seguridad pendiente
 - Started: 2026-11-09
@@ -68,10 +68,10 @@ Excluded:
 
 ## Closure and handoff
 
-- Final code SHA validated: `f564c73b1df45fce5c8e5065e2e6f563595e0dfa` (merge de PR #289 en la rama de integración). La documentación posterior se validará en su nuevo HEAD.
+- Final code SHA validated: `cabe98707c6f4c348df23bfcb7c47f5dd9756532` (tras merge de PR #293, main es ancestro).
 - PR: #287 OPEN/Draft.
-- Checks and exact outcomes: en HEAD de código `f564c73b1df45fce5c8e5065e2e6f563595e0dfa`, 15/15 check-runs SUCCESS y 11/11 workflow runs SUCCESS. La siguiente modificación documental requerirá nuevo CI exact-HEAD.
+- Checks and exact outcomes: HEAD `cabe98707c6f4c348df23bfcb7c47f5dd9756532`, 15/15 check-runs SUCCESS y 11/11 workflow runs SUCCESS. Cualquier commit posterior requiere CI exact-HEAD nuevo.
 - Acceptance criteria met / unmet: AC-1–AC-7 cumplidos como tarea de detección/corrección/documentación; la implementación de freshness y aprobación de thresholds son tareas posteriores separadas.
 - Limitations not verified: fixture HTML real BCV, calendario bancario oficial, thresholds de freshness, integración de estado last-success en checkout.
 - Residual risks: no producción, no Cron, checkout puede aceptar una fila same-day `valid` aunque la sincronización posterior falle; sujeto a política freshness.
-- Next step: terminar CI exact-HEAD, inspeccionar logs de cualquier fallo, luego diseñar y probar freshness con decisión de negocio explícita.
+- Next step: diseñar y probar freshness/last-success con decisión de negocio explícita; mantener gates legales y de fuentes oficiales.

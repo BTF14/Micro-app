@@ -1,30 +1,3 @@
-## Revalidación CI — fixture de fecha efectiva — 2026-11-08 UTC
-
-- En el HEAD anterior `dd2827564968b0229752b81247c74bbfa4b7cc02`, la migration validation pasó incluyendo 0020, pero el workflow CI falló en `sales-checkout.integration.test.ts`: el fixture de fin de semana creaba deliberadamente una tasa con fecha del siguiente día hábil y esperaba que checkout la usara antes de su `effective_date`.
-- Ese fallo confirmó que el selector estricto bloqueaba correctamente la tasa futura; el fixture de integración estaba desactualizado respecto a la decisión del propietario.
-- Corregido en commit `4ef89bb962c3170b671715ee292dbd6e5dc007c8`: el fixture de checkout usa una tasa sintética cuya fecha efectiva coincide con la fecha de la operación. No se relajó el selector ni la regla de producción.
-- Nuevo CI exact-HEAD pendiente. La migration validation 0020 ya terminó SUCCESS en el HEAD anterior; no reutilizar ese resultado como CI completo del nuevo SHA.
-
----
-
-## Delta operativo — corrección de vigencia BCV — 2026-11-08 UTC
-
-**Regla confirmada por el propietario:** una tasa publicada anticipadamente solo se utiliza desde su `effective_date`. Una tasa efectiva lunes no se usa viernes, sábado ni domingo. Todas las ventas exigen una tasa BCV exacta y válida, incluso si se pagan 100 % USD. Si no existe la fila oficial del día, checkout bloquea; se conserva el histórico sin presentarlo como vigente.
-
-**Implementación en ramas Draft (no integrada en main):**
-- PR #255: `findApplicableBcvRate()` exige `effective_date = fecha Caracas de hoy`; las filas futuras siguen como `scheduled` en el histórico. Cambios de código y tests: commits `282fc18`, `bae08a3`, `d5d7aaa`; documentación reconciliada en `261c6e0` / `306bb69` en la rama separada de #255.
-- PR #269: `findApplicableCheckoutRate()` exige la misma igualdad exacta. Código/test: `6b4c1d7`, `ee04608`.
-- La migration 0017 que ya se aplicó en el ensayo conserva exactamente su contenido y checksum original. La corrección SQL es una nueva migration 0020 (`0020_bcv_effective_date_strict.sql`) con assertions: `f41d5e7`, `3b0c426`.
-- CI y migration-check incluyen assertions 0020 y prueba de rollback atómico: workflows actualizados en `67abddb` y `eb7c0c9`.
-
-**Validación:** CI exact-HEAD de ambas ramas está en ejecución; todavía no se declara la corrección probada. No se han ejecutado pruebas localmente ni escrituras Neon adicionales. La migration 0020 debe superar el runner PostgreSQL desechable y las assertions antes de considerarse verificada.
-
-**Gates BCV aún abiertos:** estado persistente last-attempt/last-success, política de anomalías sin umbral inventado, alerta operativa fiable, fixture HTML real del BCV y procedencia oficial/calendario de feriados. El Cron de producción permanece prohibido.
-
-**Gates checkout aún abiertos:** contrato comercial de parciales/sobrepago/cambio, anulaciones/devoluciones y auditoría, UI, integración de #255/#269 y revisión de sus archivos compartidos (`apps/api/src/index.ts`, `.github/workflows/ci.yml`). No fusionar ni desplegar.
-
----
-
 ## Reconciliación operativa — 2026-11-08 UTC (verificación Neon + estado PR)
 
 **Fuente de verdad:** GitHub API y ejecución manual observada de GitHub Actions. Rama documental creada desde main `6f956b2336a70ec7013e20306be59d72db354b01`; este addendum no modifica main.
@@ -2276,11 +2249,32 @@ El ensayo verifica el bundle SQL y roles en la base aislada; no prueba el compor
 - Correcciones de integridad incluidas en #269: payments sin DELETE/TRUNCATE para PUBLIC/runtime; movimientos revalidan branch active con lock NOWAIT y test de regresión.
 
 
-## 2026-11-09 — Integración BCV/checkout
+---
 
-Se abrió PR #287 Draft como ensayo aislado. Se combinan BCV + checkout y se añade migración 0021 para last-attempt/last-success y control de concurrencia por attempt_id. Sin cambios en main, Neon, deploy, secretos ni Cron activo. Ver handoff 2026-11-09 para el estado y los gates restantes.
+## Reconciliación de estado vivo y contingencia cambiaria — 2026-11-09 UTC
+
+- Main verificado: `bfa7d0047d158d5caae4798337f239e767c30acd`; post-merge check-runs 11/11 SUCCESS.
+- PR #288 MERGED: propuesta de Gestión de contingencia cambiaria en SDD + ADR + ODD. No implementa ni habilita tasa manual.
+- PRs abiertas y exact-HEAD verificados: #255 `b0e47205b96f636b2ab270304d2598423a50ccc3` (15/15 checks, 10/10 workflows, 88/1); #269 `7fc91b54f869664febb6a7daf1ed05b408bd8430` (18/18, 11/11, 63/1); #287 `254ebb6e741f7c1b147fbd4880bc188f17204807` (15/15, 11/11, 111/1). Todas OPEN/Draft, mergeable true, sin APPROVED formal.
+- #287 corrigió carrera de intentos BCV supersedidos; PR #289 y #290 se integraron solo en esa rama. La prueba PostgreSQL con tasas diferentes y el runtime-role integration pasan en el SHA validado.
+- Freshness sigue P1: checkout no consulta `bcv_sync_state.last_success_at`; 10/7 son umbrales hard-coded no aprobados. No inventar política.
+- BCV homepage devolvió 502 en la consulta; SUDEBAN calendario no recuperable directamente y no se obtuvo PDF/circular oficial 2027 en búsquedas de dominio oficial. No afirmar inexistencia; no usar terceros como prueba primaria.
+- No merge de #255/#269/#287, no deploy, Neon writes, Cron BCV, Cloudflare manual, secretos, DNS, billing ni datos reales. Producción NOT READY.
+- PR docs-only #291 en preparación desde main para reconciliar CURRENT_STATE/HANDOFF/CHECKPOINT/PLAN/JOURNAL/SECURITY_ROADMAP. Su CI exact-HEAD queda pendiente y los snapshots de GitHub deben reconsultarse antes de actuar.
 
 
-## 2026-11-09 — revalidación #287
+---
 
-Código HEAD `032064cfed018545f0071116a461f21500ee7102`: CI SUCCESS; Database migration validation SUCCESS; PostgreSQL migration runner SUCCESS; backup/restore SUCCESS; Semgrep/security/secret history/dependency review/ODD SUCCESS. Playwright E2E pending. Correcciones verificadas: Cron cleanup limitado a su expresión horaria; fixture de concurrencia BCV aislado. El siguiente commit documental requiere CI exact-HEAD nuevo.
+## Estado posterior a PR #291 — 2026-11-09 UTC
+
+- Main merge SHA #291: `56ad2b29b994fbad31275c801e8f23a2b9736db2`; post-merge check-runs 11/11 SUCCESS.
+- GitHub marca #255, #269 y #287 `mergeable=false` / `dirty`, con 2 commits detrás de main. No force-push ni sync automático.
+- Intersecciones documentales identificadas y registradas en CURRENT_STATE; son paths modificados en ambos lados, no se presume que todos tengan conflicto textual.
+- #287 exact HEAD `254ebb6e741f7c1b147fbd4880bc188f17204807` sigue con 15/15 checks y 11/11 workflows SUCCESS, pero el branch necesita reconciliar los docs posteriores a #288/#291 antes de futura integración.
+- No merge de código, no deploy, no Neon, no Cron BCV, no cambios Cloudflare manual, secretos, DNS, billing o datos reales. Producción NOT READY.
+- Próximo: reconciliar #287 con main en una rama/PR aislada, preservando docs y CI; luego #255/#269 por separado.
+
+## 2026-11-09 — Integración BCV/checkout y concurrencia
+
+PR #287 combinó las ramas BCV y checkout en una integración Draft y añadió migración 0021 para estado de sincronización. Se detectó que una respuesta antigua podía marcar stale una tasa nueva de la misma fecha. La corrección usa bloqueo transaccional y verificación del `attempt_id`; se añadió prueba PostgreSQL con dos tasas diferentes. PR #289 corrigió la expectativa del handler `Promise<void>`; PR #290 actualizó handoff/ODD. Ambos se integraron solo en la rama #287. HEAD de código validado antes de sincronización: `254ebb6e741f7c1b147fbd4880bc188f17204807`, 15/15 check-runs y 11/11 workflows SUCCESS. Freshness y fuentes oficiales siguen gates P1.
+

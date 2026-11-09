@@ -367,3 +367,13 @@ El ensayo verifica el bundle SQL y roles en la base aislada; no prueba el compor
 - No cambiar secretos, Cloudflare settings, DNS, billing ni realizar despliegues manuales.
 - No aprobar reglas comerciales ni permisos no autorizados.
 - Producción permanece **NOT READY**.
+
+
+## Reconciliación viva de backup — 2026-11-09 UTC
+
+- Se verificó en GitHub que el backup programado del 2026-11-09 terminó success: [run 42659924075](https://github.com/BTF14/Micro-app/actions/runs/42659924075), 30 segundos de duración total, todos los pasos del job correctos.
+- Se consultaron ocho runs programados consecutivos del 2026-11-02 al 2026-11-09; todos terminaron success. En el repositorio privado existe `daily/backup-2026-11-09T16-57-53Z.dump.age` (42,708 bytes) y su sidecar SHA-256, cuyo valor quedó registrado en `docs/BACKUP_AND_RECOVERY.md`. La sesión no descargó el blob para recalcular el hash ni descifró/restauró esa copia.
+- El intervalo de timestamp UTC entre los backups del 8 y 9 de noviembre fue 27 h 00 min 16 s; no puede afirmarse RPO ≤24 h. El workflow sintético poblado PG18 pasó en run [41323379454](https://github.com/BTF14/Micro-app/actions/runs/41323379454) el 2026-11-01 y en el SHA de #287, pero no valida el backup real.
+- La duración del backup no mide RTO. RPO/RTO, alerta de fallo controlada y coste total $0 siguen pendientes. La restauración de una copia real que pueda contener datos de producción está bloqueada por la restricción vigente de no usar datos reales; no ejecutar ni solicitar credenciales para hacerlo.
+- Se actualizaron `docs/BACKUP_AND_RECOVERY.md` y el punto 2 de `docs/SECURITY_ROADMAP.md` en esta misma rama. El gate Nivel 1 continúa abierto. No se tocaron Neon, datos reales, secretos, el repositorio remoto de backups ni workflows productivos.
+

@@ -120,3 +120,13 @@ La recuperación de PIN exige reautenticación fuerte de la cuenta y MFA o códi
 - Estado operativo correcto: **2027 no localizado / no verificado oficialmente al 2026-11-09**. No cargar fechas bancarias estimadas como oficiales ni derivar reglas de checkout de proyecciones de terceros.
 - Reintentar la comprobación en el portal/canales oficiales durante la vigilancia de diciembre y antes de activar cualquier versión anual.
 
+
+
+### Implementación de recordatorios sin coste ni Cron adicional (v1)
+
+- Evaluar el aviso al cargar el panel administrativo, usando la fecha de `America/Caracas`; no depender del huso horario del navegador ni del país donde esté el usuario.
+- El aviso del 1 de diciembre se refiere al siguiente año calendario; el del 1 de enero solo aparece si no existe una versión aprobada/publicada para ese año.
+- Calcular el estado de forma idempotente por organización y año. No crear una nueva ejecución programada ni activar Cron solo para mostrar el aviso.
+- Mostrarlo únicamente a identidades con permiso de gestión del calendario; no a cajeros.
+- La v1 no promete notificación push/email si nadie inicia sesión. Un canal externo puede añadirse después de verificar destinatario, consentimiento, coste y entrega.
+- El aviso nunca aprueba, publica ni modifica fechas por sí mismo.

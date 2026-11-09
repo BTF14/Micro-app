@@ -112,3 +112,19 @@ Se dejó comentario técnico en PR #287 con el escenario, riesgo y criterios de 
 - La brecha freshness continúa abierta: checkout no consulta `bcv_sync_state.last_success_at`; no se ha aprobado ventana de frescura. Los umbrales de parser 10/7 días siguen sin justificación/aprobación.
 - Gates restantes: fixture HTML real BCV, calendario bancario oficial verificable, política de anomalías/freshness, revisión legal/contable de effective_date y checkout, alertas/identidad Worker y contrato comercial pendiente.
 - El siguiente commit documental cambia el HEAD de la rama; no reutilizar estos checks para ese nuevo SHA. Producción **NOT READY**.
+
+
+---
+
+## Revalidación tras PR #293 — sincronización main — 2026-11-09 UTC
+
+PR #293 se integró con merge commit en la rama de #287 para preservar main como ancestro:
+- Nuevo HEAD: `cabe98707c6f4c348df23bfcb7c47f5dd9756532`.
+- Primer padre: `254ebb6e741f7c1b147fbd4880bc188f17204807` (código de integración previo).
+- Segundo padre/main: `03442951b2a2f63f5bf4dcf560f2c91be4f6cc71`.
+- Comparación: 113 ahead / 0 behind; `mergeable=true`.
+- **CI exact-HEAD: 15/15 check-runs SUCCESS; 11/11 workflow runs SUCCESS**. Runtime-role API integration, PostgreSQL BCV integration, migration validation/runner, Playwright, backup/restore, seguridad, secret-history, dependency review y ODD docs pasaron.
+- La rama #287 sigue OPEN/Draft, sin aprobación formal APPROVED. La sincronización fue documental; no cambió lógica de aplicación ni migraciones.
+- Freshness sigue sin implementación: checkout no consume `bcv_sync_state.last_success_at`. Los umbrales 10/7 no están aprobados. Fixture real BCV, calendario SUDEBAN verificable, legal/contable y Worker runtime identity/alertas siguen pendientes.
+- Producción NOT READY. No activar Cron, no deploy, no Neon writes.
+- Si se añade otro commit, repetir CI exact-HEAD; los resultados anteriores no validan un SHA futuro.

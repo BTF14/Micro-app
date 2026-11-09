@@ -1,3 +1,14 @@
+## PR #287 — estado posterior a sincronización con main — 2026-11-09 UTC
+
+- HEAD exacto: `cabe98707c6f4c348df23bfcb7c47f5dd9756532`.
+- PR #293 integró main mediante merge commit, no squash. Main `03442951b2a2f63f5bf4dcf560f2c91be4f6cc71` quedó como ancestro; primer padre fue el HEAD previo #287 `254ebb6e741f7c1b147fbd4880bc188f17204807`.
+- Comparación: **113 ahead / 0 behind**, GitHub `mergeable=true`.
+- **CI exact-HEAD: 15/15 check-runs SUCCESS y 11/11 workflow runs SUCCESS**, incluidos verify, Playwright, PostgreSQL migration runner, database migration validation, backup/restore, Semgrep, Security, secret-history, dependency review y ODD docs.
+- PR #287 sigue OPEN/Draft; no tiene APPROVED formal. No merge a main.
+- Freshness/last-success sigue P1: checkout no consulta `bcv_sync_state.last_success_at`. Umbrales 10/7 sin aprobación, fixture BCV oficial y calendario SUDEBAN verificable pendientes; revisión legal/contable pendiente.
+- No Neon writes, no deploy, no Cron BCV, no Cloudflare manual, secretos, DNS, billing ni datos reales. Producción NOT READY.
+- Detalle completo en `docs/HANDOFF_NEXT_CHAT_2026-11-09_BCV-checkout-integration.md`.
+
 ## Reconciliación posterior a PR #291 — snapshot 2026-11-09 UTC
 
 **Main al iniciar esta reconciliación:** `56ad2b29b994fbad31275c801e8f23a2b9736db2` (merge de PR #291). Post-merge exact-SHA: **11/11 check-runs SUCCESS**. Este snapshot documenta el estado inmediatamente posterior a #291; el PR docs-only que lo contiene volverá a mover main, por lo que reconsultar GitHub después del merge.

@@ -331,12 +331,12 @@ jobs:
           sed '/^COMMIT;$/i SELECT 1/0;' apps/api/migrations/0020_bcv_effective_date_strict.sql > /tmp/0020-bcv-effective-date-failure.sql
           status=0
           output="$(docker exec -i -e PGPASSWORD=migrator-test-only "${{ job.services.postgres.id }}" psql -h 127.0.0.1 -v ON_ERROR_STOP=1 -U microapp_migrator -d microapp_test -f /dev/stdin < /tmp/0020-bcv-effective-date-failure.sql 2>&1)" || status=$?
-          printf '%s\\n' "$output"
+          printf '%s\n' "$output"
           if [ "$status" -eq 0 ]; then
             echo "Expected strict BCV effective-date migration failure, but psql succeeded."
             exit 1
           fi
-          printf '%s\\n' "$output" | grep -F "division by zero"
+          printf '%s\n' "$output" | grep -F "division by zero"
           unchanged="$(docker exec "${{ job.services.postgres.id }}" psql -At -U microapp -d microapp_test -c "SELECT position('MIN(er.effective_date)' in pg_get_functiondef('public.applicable_bcv_effective_date(timestamptz)'::regprocedure)) > 0")"
           test "$unchanged" = "t"
       - name: Apply strict BCV effective-date migration

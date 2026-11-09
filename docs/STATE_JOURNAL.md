@@ -2279,3 +2279,8 @@ El ensayo verifica el bundle SQL y roles en la base aislada; no prueba el compor
 ## 2026-11-09 — Integración BCV/checkout
 
 Se abrió PR #287 Draft como ensayo aislado. Se combinan BCV + checkout y se añade migración 0021 para last-attempt/last-success y control de concurrencia por attempt_id. Sin cambios en main, Neon, deploy, secretos ni Cron activo. Ver handoff 2026-11-09 para el estado y los gates restantes.
+
+
+## 2026-11-09 — revalidación #287
+
+Código HEAD `032064cfed018545f0071116a461f21500ee7102`: CI SUCCESS; Database migration validation SUCCESS; PostgreSQL migration runner SUCCESS; backup/restore SUCCESS; Semgrep/security/secret history/dependency review/ODD SUCCESS. Playwright E2E pending. Correcciones verificadas: Cron cleanup limitado a su expresión horaria; fixture de concurrencia BCV aislado. El siguiente commit documental requiere CI exact-HEAD nuevo.

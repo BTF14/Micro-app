@@ -2247,3 +2247,17 @@ El ensayo verifica el bundle SQL y roles en la base aislada; no prueba el compor
 - #269 HEAD 8f05befb7ac1a46d68850b9f89f89edc8cd46283: 16/16 check-runs y 14/14 workflows SUCCESS. #255 HEAD 7e43d7fd1519889605174da5818190bb84685059: 15/15 check-runs y 13/13 workflows SUCCESS.
 - Se verificó que migration 0017–0019 y sus assertions son blob idénticos entre source Neon rehearsal 6227a3a... y el HEAD #269. No se repitió ninguna escritura Neon.
 - Correcciones de integridad incluidas en #269: payments sin DELETE/TRUNCATE para PUBLIC/runtime; movimientos revalidan branch active con lock NOWAIT y test de regresión.
+
+
+---
+
+## Reconciliación de estado vivo y contingencia cambiaria — 2026-11-09 UTC
+
+- Main verificado: `bfa7d0047d158d5caae4798337f239e767c30acd`; post-merge check-runs 11/11 SUCCESS.
+- PR #288 MERGED: propuesta de Gestión de contingencia cambiaria en SDD + ADR + ODD. No implementa ni habilita tasa manual.
+- PRs abiertas y exact-HEAD verificados: #255 `b0e47205b96f636b2ab270304d2598423a50ccc3` (15/15 checks, 10/10 workflows, 88/1); #269 `7fc91b54f869664febb6a7daf1ed05b408bd8430` (18/18, 11/11, 63/1); #287 `254ebb6e741f7c1b147fbd4880bc188f17204807` (15/15, 11/11, 111/1). Todas OPEN/Draft, mergeable true, sin APPROVED formal.
+- #287 corrigió carrera de intentos BCV supersedidos; PR #289 y #290 se integraron solo en esa rama. La prueba PostgreSQL con tasas diferentes y el runtime-role integration pasan en el SHA validado.
+- Freshness sigue P1: checkout no consulta `bcv_sync_state.last_success_at`; 10/7 son umbrales hard-coded no aprobados. No inventar política.
+- BCV homepage devolvió 502 en la consulta; SUDEBAN calendario no recuperable directamente y no se obtuvo PDF/circular oficial 2027 en búsquedas de dominio oficial. No afirmar inexistencia; no usar terceros como prueba primaria.
+- No merge de #255/#269/#287, no deploy, Neon writes, Cron BCV, Cloudflare manual, secretos, DNS, billing ni datos reales. Producción NOT READY.
+- PR docs-only #291 en preparación desde main para reconciliar CURRENT_STATE/HANDOFF/CHECKPOINT/PLAN/JOURNAL/SECURITY_ROADMAP. Su CI exact-HEAD queda pendiente y los snapshots de GitHub deben reconsultarse antes de actuar.

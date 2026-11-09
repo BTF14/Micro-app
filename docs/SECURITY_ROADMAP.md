@@ -625,3 +625,7 @@ Snapshot histórico: el manual run [40916692763](https://github.com/BTF14/Micro-
 - No hay evidencia de explotación del hallazgo HTTPS anterior; se corrigió en código main. La corrección no sustituye verificación de configuración productiva.
 
 ---
+
+## Estado de seguridad — 2026-11-09
+
+PR #287 incorpora estado BCV persistente con runtime column-level UPDATE y sin INSERT/DELETE/TRUNCATE; migración 0021 exige migrator directo y valida ownership/ACL. Cron BCV sigue opt-in y apagado por defecto. Esto no acredita identidad real del Worker ni alertas operativas. No activar Cron ni desplegar; producción NOT READY. Ver handoff 2026-11-09.

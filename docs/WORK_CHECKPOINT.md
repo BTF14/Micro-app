@@ -1,3 +1,38 @@
+# Addendum de continuidad — gate Nivel 1 y diagnóstico de Actions (2026-11-09 UTC)
+
+## Resultado de la revisión de seguridad
+
+- Se localizó el criterio normativo exacto en `AGENTS.md`: no reanudar nueva lógica comercial ni añadir endpoints comerciales hasta completar los controles Nivel 1 de `docs/SECURITY_ROADMAP.md`. `docs/ODD_WORKFLOW.md` reitera la misma prohibición.
+- El bloque Nivel 1 está en `docs/SECURITY_ROADMAP.md` (sección a partir de la línea 615 en el SHA de #287). Incluye: (1) protección de `main`, (2) backup/restore independiente, (3) Dependabot y (4) cabeceras de seguridad/CORS.
+- **El gate no está demostrado como cerrado.** El punto 2 de backup/restore sigue explícitamente parcial/abierto en `docs/BACKUP_AND_RECOVERY.md`: la última restauración de un backup remoto concreto documentada es del 2026-10-29; la prueba sintética poblada existe, pero faltan restauración de una copia remota reciente, RPO/RTO medidos, alerta de fallo verificada y confirmación de coste total $0. No usar éxito de CI sintético para declarar cerrado el ciclo operativo.
+- Punto 1: la evidencia documental de branch protection es del 2026-11-01. Se intentó revalidar el endpoint GitHub de protección de `main` el 2026-11-09 y devolvió 403 `Resource not accessible by integration`; estado actual no revalidado por esta sesión.
+- Punto 3: Dependabot figura implementado; el registro de 0 alertas abiertas procede de confirmación manual del propietario el 2026-11-01. La sesión no pudo volver a comprobar el endpoint de alertas con el acceso actual.
+- Punto 4: cabeceras y CORS constan como implementados y verificados en la evidencia del 2026-11-01; no se volvió a ejecutar una comprobación HTTP contra runtime en esta sesión.
+- Conclusión operativa: **mantener bloqueada la nueva lógica comercial** hasta cerrar las evidencias pendientes del Nivel 1. No iniciar endpoints de turnos ni habilitar caja/ventas todavía. Sí se permite investigación, diagnóstico, correcciones de seguridad no relacionadas y trabajo documental necesario.
+
+## Diagnóstico de los cinco workflows fallidos de #287
+
+- PR #287 sigue OPEN/Draft, HEAD `7df318b233cfb95f7fcc3076d46984a11614a14c`, base `main`, base SHA `03442951b2a2f63f5bf4dcf560f2c91be4f6cc71`, `mergeable=true` (dato informativo, no aprobación).
+- En ese SHA hay 11 workflow runs: 6 SUCCESS y 5 FAILURE: ODD docs (run `42674363952`), Dependency review (`42674363725`), Project progress dashboard (`42674364153`), Playwright E2E (`42674364197`) y CI (`42674364170`).
+- Se consultaron de nuevo los cinco endpoints de jobs y artifacts: todos devolvieron listas vacías. La descarga de logs del run CI devolvió contenido vacío; los enlaces de logs de los otros runs tampoco expusieron logs utilizables. La API de GitHub reportó `total_count: 0, jobs: []` para el run CI.
+- Causa raíz: **desconocida/no observable** con las interfaces y permisos disponibles. No atribuir fallos a código, dependencias, infraestructura o tests sin logs/annotations. No reutilizar los 10 check-runs SUCCESS como sustituto de los workflow runs fallidos.
+- No se reintentaron runs: sin job/step diagnóstico, un rerun no identifica ni corrige la causa y puede repetir el mismo fallo opaco. Reconsiderarlo solo si se habilita una vía de lectura de jobs/logs o se justifica una prueba de transitoriedad controlada.
+
+## PR #298 — validación exact-HEAD
+
+- PR #298 sigue OPEN/Draft, rama `docs/reconcile-live-github-state-20261109`, HEAD previo a este addendum `6ae9b985017bd3087ce63c61d65935c833c45421`, base SHA `c5373564413ba086690552c6b7deeab08d7b4a89`; no mergear ni cambiar el estado Draft.
+- Los 10 workflow runs del HEAD anterior finalizaron SUCCESS. Este addendum cambiará el HEAD y requiere volver a validar todos los workflows del SHA nuevo.
+- No se alteran #287, main, Neon, producción, secretos, DNS, billing, datos reales ni despliegues.
+
+## Próxima acción segura
+
+1. Mantener P0 comercial en pausa hasta que el gate Nivel 1 tenga evidencia suficiente.
+2. Resolver el backup/restore pendiente únicamente en PostgreSQL desechable y con datos sintéticos; medir RPO/RTO y verificar alertas/coste sin tocar Neon main ni datos reales.
+3. Conseguir una vía autorizada de lectura de jobs/logs de GitHub Actions; después diagnosticar cada run fallido exacto de #287 y corregir la causa concreta en rama aislada.
+4. Tras cada cambio, revisar diff y workflows del SHA exacto. No declarar producción lista.
+
+---
+
 # Plan de entrega MVP — objetivo 2026-12-01
 
 ## Decisión de aceptación MVP — POS de un local / 1.000 productos

@@ -75,3 +75,18 @@ Excluded:
 - Limitations not verified: fixture HTML real BCV, calendario bancario oficial, thresholds de freshness, integración de estado last-success en checkout.
 - Residual risks: no producción, no Cron, checkout puede aceptar una fila same-day `valid` aunque la sincronización posterior falle; sujeto a política freshness.
 - Next step: diseñar y probar freshness/last-success con decisión de negocio explícita; mantener gates legales y de fuentes oficiales.
+
+
+---
+
+## Reconciliación de freshness/last-success — 2026-11-09 UTC
+
+> Este addendum supersede únicamente las afirmaciones anteriores de que checkout todavía no consumía `bcv_sync_state`. El resto de los gates BCV de esta tarea continúa vigente.
+
+- La brecha de freshness/last-success quedó implementada en la PR apilada **#295** (OPEN/Draft), no en el HEAD aislado de #287.
+- En `apps/api/src/sales-checkout.ts`, `findApplicableCheckoutRate()` consulta `bcv_sync_state` dentro de la transacción de checkout mediante `SELECT ... FOR SHARE`. Solo permite outcomes `inserted`/`unchanged`, `last_success_at` presente, `last_effective_date` no anterior a hoy en Caracas y una fila BCV `valid` con `effective_date` exacta de hoy.
+- Estados `running`, `failed`, `older`, ausentes/incompletos, errores de DB o falta de tasa exacta bloquean ventas nuevas. La regla no usa TTL arbitrario ni `fetched_at` como last-success. Las ventas ya completadas conservan replay idempotente de su snapshot.
+- Evidencia al crear este addendum: PR #295 HEAD `f29de35f90e5bb57ed4f53aa5d8551d1fc8b04e0`; 6/6 workflow runs `pull_request` SUCCESS en ese SHA exacto. Este cambio documental crea un nuevo SHA y requiere CI exact-HEAD propio; no reutilizar esos resultados.
+- PR #295 está 50 commits ahead / 6 behind de la punta actual de su base #287 `a3653df0788b320caa931f2e03a3b42886e0062f`; sincronizar de forma no destructiva y volver a validar antes de integrar.
+- Los umbrales parser 10/7 siguen sin justificación/aprobación. Fixture HTML real BCV, calendario bancario oficial, política de anomalías, alertas/recuperación operativa, revisión legal/contable y Worker runtime identity siguen pendientes.
+- No merge, deploy, Neon writes, activación de Cron ni cambios de configuración productiva. Producción **NOT READY**.

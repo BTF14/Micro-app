@@ -1,3 +1,10 @@
+## Delta — política BCV estricta por fecha efectiva
+
+- #269 `findApplicableCheckoutRate()` ahora exige que `effective_date` sea exactamente la fecha Caracas de la operación; una tasa del lunes no se aplica antes del lunes.
+- La migración 0017 histórica conserva su contenido/checksum. Migration 0020 reemplaza `applicable_bcv_effective_date()` para devolver la fecha local exacta y añade assertions de seguridad/comportamiento.
+- Los workflows CI y migration-check ejecutan assertions de 0020; migration-check prueba rollback atómico.
+- Esta modificación requiere CI exact-HEAD. No ejecutar escrituras Neon adicionales.
+
 # ODD task: recover atomic checkout and ledger-authoritative inventory on current main
 
 > **Estado autoritativo posterior al rehearsal Neon y PR #282 — 2026-11-08 UTC.** Main antes de esta sincronización: `9c6b30281ed59726e532da840568fc9e80b528f7`. PR #269 sincronizada mediante merge commit `8615c75ac8a339f5591ea268e0b6c6d6473ae6d3` (padres: pre-sync HEAD `14afd5de938a6ff655ecdfc5cb747f0f799290c5` y main `9c6b30281ed59726e532da840568fc9e80b528f7`), 25 ahead / 0 behind, sin force-push. El HEAD `8615c75...` pasó 16/16 check-runs y 14/14 workflow runs SUCCESS; los seis contextos requeridos de main pasaron. Cualquier commit posterior invalida estos checks. El source SHA del rehearsal `6227a3a8497f6be94d675b64da5da61530c200fc` aplicó 0001–0019 con 19/19 migrations `applied`, assertions 0017–0019 y ownership/grants verificados en `microapp_rehearsal`. Los cinco commits posteriores de ese source a este pre-sync HEAD solo modificaron workflow/documentación/ODD; migraciones 0017–0019 y los archivos de aplicación consultados conservan los mismos blobs. El source SHA 6227 tuvo 16/16 check-runs y 14/14 workflow runs SUCCESS, incluyendo suites runtime-role/checkout en PostgreSQL desechable; esos resultados son históricos, no CI exact-HEAD para el HEAD actual. Contrato comercial checkout y política BCV de freshness siguen pendientes; mantener Draft. No se ha certificado producción ni se deben repetir escrituras Neon.

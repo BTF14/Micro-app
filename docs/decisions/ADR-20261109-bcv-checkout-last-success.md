@@ -1,6 +1,6 @@
 # ADR-20261109 — Checkout requiere último éxito de sincronización BCV
 
-- **Estado:** decisión de producto aprobada; implementación técnica en curso.
+- **Estado:** decisión de producto aprobada; implementación técnica en curso en `fix/bcv-checkout-last-success-20261109`.
 - **Fecha:** 2026-11-09.
 - **Contexto:** PR #287 integra el productor BCV y checkout. La migración 0021 persiste `bcv_sync_state`, pero checkout solo comprobaba una fila de tasa `valid` para la fecha de Caracas. Un fallo posterior del sincronizador podía dejar una tasa del día habilitada para nuevas ventas.
 - **Decisión aprobada por el propietario:** aplicar opción A. Si el último intento BCV está `running` o `failed`, bloquear nuevas ventas hasta que una sincronización termine exitosamente. No mantener el checkout abierto usando silenciosamente la tasa anterior.

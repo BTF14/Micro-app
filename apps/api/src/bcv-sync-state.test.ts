@@ -1,13 +1,14 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const mocks = vi.hoisted(() => ({
+  withDatabaseClient: vi.fn(),
   withDatabaseTransaction: vi.fn(),
   authorizeTenantOperation: vi.fn(),
   query: vi.fn(),
 }));
 
 vi.mock("./database", () => ({
-  withDatabaseClient: vi.fn(),
+  withDatabaseClient: mocks.withDatabaseClient,
   withDatabaseTransaction: mocks.withDatabaseTransaction,
 }));
 vi.mock("./authorization", () => ({
@@ -29,7 +30,7 @@ function createApp() {
 describe("BCV administrative sync-state endpoint", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    mocks.withDatabaseTransaction.mockImplementation(
+    mocks.withDatabaseClient.mockImplementation(
       async (_url: string, callback: (client: { query: typeof mocks.query }) => Promise<unknown>) =>
         callback({ query: mocks.query }),
     );

@@ -391,12 +391,13 @@ export function registerExchangeRateRoutes(app: Hono<{ Bindings: Bindings }>): v
     const organizationId = c.req.param("organizationId");
     const sessionToken = getCookie(c, "microapp_session");
     try {
-      const state = await withDatabaseTransaction(c.env.DATABASE_URL, async (client) => {
+      const state = await withDatabaseClient(c.env.DATABASE_URL, async (client) => {
         const authorization = await authorizeTenantOperation(
           client,
           sessionToken,
           organizationId,
           "bcv.sync_state.read",
+          false,
         );
         if (!authorization.allowed) return { denied: authorization.reason } as const;
 

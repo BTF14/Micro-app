@@ -174,7 +174,8 @@ describe.skipIf(!isDisposableCiDatabase)("BCV effective-date persistence against
       weekday: "long", day: "2-digit", month: "long", year: "numeric",
       timeZone: "America/Caracas",
     }).format(new Date(`${today}T16:00:00.000Z`));
-    const html = `<html><body><p>USD</p><p>896,10000000</p><p>Fecha Valor: ${dateLabel}</p></body></html>`;
+    const olderHtml = `<html><body><p>USD</p><p>895,10000000</p><p>Fecha Valor: ${dateLabel}</p></body></html>`;
+    const newerHtml = `<html><body><p>USD</p><p>896,10000000</p><p>Fecha Valor: ${dateLabel}</p></body></html>`;
 
     let releaseOlderFetch!: (response: Response) => void;
     let signalOlderFetchStarted!: () => void;
@@ -185,7 +186,7 @@ describe.skipIf(!isDisposableCiDatabase)("BCV effective-date persistence against
         signalOlderFetchStarted();
         return olderFetchResponse;
       })
-      .mockResolvedValueOnce(new Response(html, {
+      .mockResolvedValueOnce(new Response(newerHtml, {
         status: 200,
         headers: { "content-type": "text/html; charset=utf-8" },
       }));
@@ -211,11 +212,17 @@ describe.skipIf(!isDisposableCiDatabase)("BCV effective-date persistence against
       expect(newerState.rows[0]?.last_outcome).toBe("inserted");
       const newerAttemptId = newerState.rows[0]?.attempt_id;
 
-      releaseOlderFetch(new Response(html, {
+      releaseOlderFetch(new Response(olderHtml, {
         status: 200,
         headers: { "content-type": "text/html; charset=utf-8" },
       }));
-      await olderAttempt;
+      await expect(olderAttempt).resolves.toBe("superseded");
+
+      const finalRate = await cleanupClient.query<{ rate: string; validation_status: string }>(
+        "SELECT rate::text, validation_status FROM public.exchange_rates WHERE source = $1 AND effective_date = $2::date",
+        [source, today],
+      );
+      expect(finalRate.rows).toEqual([{ rate: "896.10000000", validation_status: "valid" }]);
 
       const finalState = await cleanupClient.query<{ attempt_id: string; last_outcome: string }>(
         "SELECT attempt_id::text, last_outcome FROM public.bcv_sync_state WHERE singleton = true",

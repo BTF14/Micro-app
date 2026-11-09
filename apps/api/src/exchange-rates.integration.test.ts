@@ -111,6 +111,26 @@ describe.skipIf(!isDisposableCiDatabase)("BCV effective-date persistence against
       expect(stored.rows).toEqual([
         { effective_date: nextEffectiveDate, rate: "895.10000000" },
       ]);
+
+      const syncState = await cleanupClient.query<{
+        last_outcome: string;
+        last_error_code: string | null;
+        last_effective_date: string | null;
+        last_attempt_at: string | null;
+        last_success_at: string | null;
+      }>(
+        `SELECT last_outcome, last_error_code, last_effective_date::text,
+                last_attempt_at::text, last_success_at::text
+           FROM public.bcv_sync_state WHERE singleton = true`,
+      );
+      expect(syncState.rows).toHaveLength(1);
+      expect(syncState.rows[0]).toMatchObject({
+        last_outcome: "inserted",
+        last_error_code: null,
+        last_effective_date: nextEffectiveDate,
+      });
+      expect(syncState.rows[0]?.last_attempt_at).toBeTruthy();
+      expect(syncState.rows[0]?.last_success_at).toBeTruthy();
     } finally {
       vi.unstubAllGlobals();
       await cleanupClient.query("DELETE FROM public.exchange_rates WHERE source = $1", [source]);

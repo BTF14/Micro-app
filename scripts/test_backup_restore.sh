@@ -47,7 +47,9 @@ public_key="$(awk '/^# public key:/ {print $4}' "$tmpdir/age-key.txt")"
 age -r "$public_key" -o "$tmpdir/backup.dump.age" "$tmpdir/backup.dump"
 (cd "$tmpdir" && sha256sum backup.dump.age > backup.dump.age.sha256 && sha256sum --check backup.dump.age.sha256)
 age -d -i "$tmpdir/age-key.txt" -o "$tmpdir/restored.dump" "$tmpdir/backup.dump.age"
+restore_started_at="$SECONDS"
 pg_restore --exit-on-error --no-owner --no-privileges --dbname="$RESTORE_URL" "$tmpdir/restored.dump"
+restore_elapsed_seconds=$((SECONDS - restore_started_at))
 
 manifest() {
   psql "$1" -X -v ON_ERROR_STOP=1 -Atq <<'SQL'
@@ -94,4 +96,5 @@ echo "PASS: encrypted dump checksum and age decryption verified."
 echo "PASS: 13 expected tables and the synthetic source/restore manifests match."
 echo "PASS: sale, payment, stock movement and audit relationships are preserved."
 echo "PASS: auth_sessions, auth_rate_limits and auth_bootstrap_attempts are excluded."
-echo "Synthetic round-trip elapsed seconds: $((SECONDS - started_at))."
+echo "Synthetic pg_restore operation elapsed seconds: ${restore_elapsed_seconds}."
+echo "Synthetic end-to-end round-trip elapsed seconds: $((SECONDS - started_at))."

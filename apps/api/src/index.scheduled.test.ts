@@ -60,7 +60,7 @@ describe("BCV scheduled failure reporting", () => {
       "BCV_SYNC_FAILED",
     );
     expect(errorLog).toHaveBeenCalledWith("BCV_SYNC_FAILED", {
-      code: "UNKNOWN",
+      code: "BCV_SYNC_UNKNOWN",
     });
     expect(JSON.stringify(errorLog.mock.calls)).not.toContain("internal-db-detail-should-not-be-logged");
   });

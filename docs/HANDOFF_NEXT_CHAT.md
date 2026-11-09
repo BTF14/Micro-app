@@ -1,3 +1,21 @@
+## Delta operativo — corrección de vigencia BCV — 2026-11-08 UTC
+
+**Regla confirmada por el propietario:** una tasa publicada anticipadamente solo se utiliza desde su `effective_date`. Una tasa efectiva lunes no se usa viernes, sábado ni domingo. Todas las ventas exigen una tasa BCV exacta y válida, incluso si se pagan 100 % USD. Si no existe la fila oficial del día, checkout bloquea; se conserva el histórico sin presentarlo como vigente.
+
+**Implementación en ramas Draft (no integrada en main):**
+- PR #255: `findApplicableBcvRate()` exige `effective_date = fecha Caracas de hoy`; las filas futuras siguen como `scheduled` en el histórico. Cambios de código y tests: commits `282fc18`, `bae08a3`, `d5d7aaa`; documentación reconciliada en `261c6e0` / `306bb69` en la rama separada de #255.
+- PR #269: `findApplicableCheckoutRate()` exige la misma igualdad exacta. Código/test: `6b4c1d7`, `ee04608`.
+- La migration 0017 que ya se aplicó en el ensayo conserva exactamente su contenido y checksum original. La corrección SQL es una nueva migration 0020 (`0020_bcv_effective_date_strict.sql`) con assertions: `f41d5e7`, `3b0c426`.
+- CI y migration-check incluyen assertions 0020 y prueba de rollback atómico: workflows actualizados en `67abddb` y `eb7c0c9`.
+
+**Validación:** CI exact-HEAD de ambas ramas está en ejecución; todavía no se declara la corrección probada. No se han ejecutado pruebas localmente ni escrituras Neon adicionales. La migration 0020 debe superar el runner PostgreSQL desechable y las assertions antes de considerarse verificada.
+
+**Gates BCV aún abiertos:** estado persistente last-attempt/last-success, política de anomalías sin umbral inventado, alerta operativa fiable, fixture HTML real del BCV y procedencia oficial/calendario de feriados. El Cron de producción permanece prohibido.
+
+**Gates checkout aún abiertos:** contrato comercial de parciales/sobrepago/cambio, anulaciones/devoluciones y auditoría, UI, integración de #255/#269 y revisión de sus archivos compartidos (`apps/api/src/index.ts`, `.github/workflows/ci.yml`). No fusionar ni desplegar.
+
+---
+
 ## Revalidación de continuidad — 2026-11-08 UTC
 
 Fuente autoritativa y detalle técnico: `docs/CURRENT_STATE.md`. Main observado: `594382f6f191f2ea0b55d913683841e51c210e5d`; post-merge 13/13 check-runs y 11/11 workflow runs push SUCCESS.

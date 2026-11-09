@@ -2387,3 +2387,8 @@ Este bloque es más reciente que los snapshots históricos anteriores; si contra
 - Alcance: este fue un ensayo real de escritura/DDL únicamente en la base Neon aislada `microapp_rehearsal`, autorizado expresamente por el propietario. No se tocó Neon main, `neondb` parent-data clone, secretos, Cloudflare, DNS, billing ni despliegues productivos.
 - Warning no bloqueante: deprecación de Node.js 20 en `actions/checkout@v4`; el runner lo fuerza a Node.js 24 y el job finalizó SUCCESS. Registrar actualización de actions como mantenimiento, no como fallo de migración.
 - Dictamen: **migraciones 0001–0019 demostradas en Neon rehearsal con pin inmutable y assertions 0017–0019 satisfactorias**. Esto eleva la confianza en la ruta de migración, pero no equivale a certificación de producción: siguen pendientes validación funcional integrada sobre la DB resultante, smoke tests autenticados, revisión final de permisos/RLS y gates operativos/producto. No promover automáticamente a producción.
+
+
+## Nuevo checkpoint — 2026-11-09
+
+Continuar desde PR #287 Draft y su rama `integration/bcv-checkout-rehearsal-20261109`. Leer `docs/HANDOFF_NEXT_CHAT_2026-11-09_BCV-checkout-integration.md` para alcance integrado, migración 0021, pruebas, restricciones y gates. Revalidar CI solo sobre el HEAD vivo; no asumir resultados previos.

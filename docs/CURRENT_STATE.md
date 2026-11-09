@@ -2328,3 +2328,8 @@ Esta revisión fue estática de contenidos en GitHub; no se ejecutaron tests des
 ## Actualización fuente oficial BCV — 2026-11-09
 
 Una extracción de navegador alcanzó `https://www.bcv.org.ve/` y recuperó los bloques de monedas y la fecha valor del día. Sin embargo, el extractor entrega HTML semántico limpiado, no el cuerpo HTTP original. Es evidencia de acceso/contenido, no fixture raw ni prueba del parser sobre el markup original. Mantener el gate de fixture oficial raw con status, content-type, hora de captura y SHA-256. No usar mirrors ni renombrar el fixture sintético como oficial.
+
+
+### Captura DOM BCV — 2026-11-09
+
+La rama #287 preserva y prueba una serialización completa `document.documentElement.outerHTML` de `https://www.bcv.org.ve/`, con SHA-256 original `97fe86647e11fae932c8f4495524ba0a7ed0a756bea85576079f63ec5333feb9` y fixture sanitizada SHA-256 `a10241b7fab8349aab1e8ba51faacc6501e7af6203cbd391fffd0264de33d36e`. Se redaccionaron valores de formulario Drupal y URL blob efímera; el test espera USD 897.53830000 y fecha 2026-11-09. Es DOM serializado, no cuerpo HTTP raw; código de estado y headers no expuestos. El raw HTTP sigue siendo gate pendiente.

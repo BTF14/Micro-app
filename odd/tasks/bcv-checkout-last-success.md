@@ -1,7 +1,7 @@
 # ODD task: Checkout exige último éxito de sincronización BCV
 
 - Status: in progress
-- Issue / PR: implementación aislada basada en PR #287
+- Issue / PR: PR #295 (Draft), contra base temporal de validación idéntica al HEAD de integración #287
 - Owner / reviewer: propietario del producto; revisión técnica/seguridad pendiente
 - Started: 2026-11-09
 - Risk: critical
@@ -17,7 +17,7 @@
 Included:
 - Checkout valida la tasa de hoy y el estado singleton `bcv_sync_state` en la misma transacción de venta.
 - Solo acepta outcomes exitosos `inserted` o `unchanged`, con `last_success_at` presente y `last_effective_date` igual o posterior a la fecha de operación en Caracas; una publicación futura anticipada no invalida la fila vigente de hoy.
-- Checkout bloquea para `running`, `failed`, `older`, estado ausente/incompleto, fecha discrepante o fila de tasa inválida/ausente.
+- Checkout bloquea para `running`, `failed`, `older`, estado ausente/incompleto, fecha anterior a hoy o fila de tasa inválida/ausente.
 - Serializar la lectura del estado frente al inicio de una nueva sincronización mediante lock compartido de la fila singleton hasta finalizar la transacción de checkout.
 - Pruebas unitarias y PostgreSQL runtime-role para éxito, fallo posterior, intento en curso, fecha anterior/futura, ausencia de estado y recuperación por nuevo éxito.
 - Documentar la decisión de producto/seguridad y actualizar el handoff.
@@ -74,7 +74,7 @@ Excluded:
 ## Closure and handoff
 
 - Final commit SHA:
-- PR:
+- PR: https://github.com/BTF14/Micro-app/pull/295 (OPEN/Draft; base temporal de validación)
 - Checks and exact outcomes:
 - Acceptance criteria met / unmet:
 - Limitations not verified:

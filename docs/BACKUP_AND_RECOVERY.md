@@ -226,3 +226,24 @@ El esquema principal de CI y Neon usa PostgreSQL 18. El workflow `.github/workfl
 - La prueba sintética de backup/restore sigue siendo una evidencia separada: [run 41323379454](https://github.com/BTF14/Micro-app/actions/runs/41323379454) pasó el 2026-11-01 en PostgreSQL 18 efímero; también pasó como workflow asociado al SHA de #287. Valida el fixture sintético y sus relaciones, no una restauración de la copia real del 9 de noviembre.
 - **Pendiente para cerrar Nivel 1:** medir RPO de forma continua y definir cómo cumplir el objetivo aprobado; medir RTO con una restauración completa del fixture sintético (la duración total del smoke test no aísla la fase de restore); validar alerta ante fallo mediante prueba controlada y no productiva; demostrar coste total $0 con límites/cuotas documentados; y ejecutar la restauración reciente permitida solo cuando el destino/alcance no exponga datos reales ni producción. La sesión actual no restauró backups reales ni accedió a Neon.
 - No cambiar secretos, repositorio de backups, archivos remotos, Neon, datos reales, billing ni workflows productivos como parte de esta reconciliación.
+
+
+## Cadencia observada del backup programado — 2026-11-09 UTC
+
+Consulta del historial de GitHub Actions en `main`, filtro `event=schedule`, workflow «Respaldo cifrado de la base de datos»:
+
+| Fecha UTC | Run | Inicio UTC | Resultado |
+|---|---:|---|---|
+| 2026-11-02 | 41483601946 | 16:39:22 | SUCCESS |
+| 2026-11-03 | 41656718748 | 14:44:48 | SUCCESS |
+| 2026-11-04 | 41852537628 | 14:56:07 | SUCCESS |
+| 2026-11-05 | 42050574459 | 15:00:35 | SUCCESS |
+| 2026-11-06 | 42236081293 | 14:40:53 | SUCCESS |
+| 2026-11-07 | 42377860440 | 13:38:07 | SUCCESS |
+| 2026-11-08 | 42487395384 | 13:57:20 | SUCCESS |
+| 2026-11-09 | 42659924075 | 16:57:34 | SUCCESS |
+
+- El workflow configura cron `0 7 * * *` (07:00 UTC), pero las ocho ejecuciones observadas comenzaron entre 13:38 y 16:57 UTC. Esto demuestra que la hora configurada no equivale a la hora real de finalización/inicio del respaldo. No se atribuye la demora a una causa concreta sin evidencia adicional.
+- Entre los inicios del 2026-11-08 13:57:20Z y 2026-11-09 16:57:34Z transcurrieron **27 h 00 min 14 s** (la diferencia entre nombres de archivo previamente registrada fue 27 h 00 min 16 s; usar los timestamps de run para medir la cadencia del workflow y los timestamps de artefacto para medir antigüedad del backup).
+- Aunque las ocho ejecuciones fueron SUCCESS, la cadencia observada **no garantiza RPO <=24 h**. El RPO real requiere medir la antigüedad del último backup válido respecto del incidente y del último dato confirmado, no solo contar ejecuciones exitosas.
+- Acción segura siguiente: diseñar/validar en un entorno no productivo un monitor que detecte y alerte cuando la última copia válida supere el umbral RPO acordado, incluyendo fallo, ausencia y retraso de ejecución. Cualquier cambio al cron o al workflow productivo queda fuera de esta prueba y no se realizó.

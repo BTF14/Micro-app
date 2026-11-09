@@ -140,3 +140,18 @@ No activar Cron de producción, no cambiar secretos/DNS/billing, no crear destin
 3. Crear Monitor de fallos filtrando evento estructurado `BCV_SYNC_FAILED`, enviar correo al destino autorizado y usar Test para confirmar entrega. Aún no se ha creado monitor ni destino.
 4. Diseñar alerta de intento `running` estancado. No asignar umbral hasta medir los timeouts/locks reales y aprobar un SLO operativo.
 5. Añadir una prueba controlada de entrega y una prueba de fallo/recuperación en entorno aislado. No habilitar retry automático antes de cerrar idempotencia y límites.
+
+
+## Hallazgo de revisión estática — límites de tiempo DB (2026-11-09)
+
+La revisión de `apps/api/src/database.ts` confirma que `withDatabaseClient()` conecta, ejecuta la operación y cierra el cliente, pero no configura explícitamente un deadline de conexión/consulta ni un presupuesto temporal global. El fetch HTTP BCV sí tiene timeout de 10 segundos, pero ese límite **no acota** por sí solo la duración total de la operación: las fases DB pueden fallar o quedarse esperando por separado.
+
+Consecuencia para el watchdog:
+
+- No fijar todavía un umbral arbitrario como 30/60 segundos para declarar `running` estancado.
+- Antes, definir y probar límites de conexión/consulta compatibles con la versión y el modo WebSocket de `@neondatabase/serverless`, incluyendo cancelación/cleanup y comportamiento cuando el cliente queda desconectado.
+- Medir el presupuesto completo: inicio de intento, conexión DB, fetch (máximo 10 s), transacción de persistencia/locks y cierre.
+- Separar el umbral de watchdog (operación que no termina) de la política de freshness de tasa (si una tasa puede usarse en checkout).
+- Añadir pruebas de timeout en cada fase, persistencia del estado terminal cuando sea posible y comportamiento fail-closed cuando no pueda registrarse el fallo.
+
+**Estado:** hallazgo de revisión estática; no se cambió el driver ni se asignó un umbral. Referencia: `apps/api/src/database.ts` en el HEAD actual de #287.

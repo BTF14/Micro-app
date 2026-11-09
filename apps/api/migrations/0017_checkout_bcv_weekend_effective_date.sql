@@ -8,9 +8,8 @@ BEGIN
 END;
 $checkout_bcv_migration_preflight$;
 
--- Select the nearest future BCV effective date on Caracas weekends. MIN is
--- intentionally computed without filtering validation_status: if that nearest
--- row is stale, the sale trigger rejects it rather than skipping to a later rate.
+-- A future BCV row is not applicable before its explicit effective date,
+-- including Saturday/Sunday and bank holidays. Missing today's row fails closed.
 CREATE FUNCTION public.applicable_bcv_effective_date(p_now timestamptz)
 RETURNS date
 LANGUAGE sql
@@ -21,15 +20,7 @@ AS $applicable_bcv_effective_date$
   WITH local_clock AS (
     SELECT p_now AT TIME ZONE 'America/Caracas' AS caracas_now
   )
-  SELECT CASE
-    WHEN EXTRACT(ISODOW FROM caracas_now) IN (6, 7) THEN (
-      SELECT MIN(er.effective_date)
-        FROM public.exchange_rates er
-       WHERE er.source = 'BCV_OFFICIAL_HTML_V1'
-         AND er.effective_date > caracas_now::date
-    )
-    ELSE caracas_now::date
-  END
+  SELECT caracas_now::date
     FROM local_clock;
 $applicable_bcv_effective_date$;
 

@@ -2307,3 +2307,11 @@ Esta revisión fue estática de contenidos en GitHub; no se ejecutaron tests des
 - Pruebas añadidas: unitarias de estados/fechas/fallos; PostgreSQL runtime-role para failed/running/fecha discrepante, bloqueo sin mutación de venta/stock, recuperación tras éxito y lock compartido frente a UPDATE concurrente. Estado de ejecución: **pendiente de CI exact-HEAD**.
 - PR #295 OPEN/Draft, con base temporal de validación idéntica al HEAD de integración #287; CI exact-HEAD del código SHA `13c8cd96becc09b0ba9ffad923ea115e5a44dcba` pasó: CI/unit/PostgreSQL checkout/runtime-role, migraciones, migration runner, Playwright, Semgrep, Dependency review y ODD docs SUCCESS; 13/13 check-runs SUCCESS. Security scan PR event quedó pending sin jobs, pero Trivy push del mismo SHA SUCCESS. El commit documental actual requiere CI exact-HEAD nuevo.
 - Sin migración nueva, Neon writes, deploy, Cron activation, cambios Cloudflare/secrets/DNS/billing o datos reales. Producción **NOT READY**. Gates oficiales BCV/calendario, umbrales parser 10/7, legal/contable, Worker identity/alertas y contrato comercial siguen pendientes.
+
+
+## Reconciliación final PR #295 — 2026-11-09
+
+- PR #295 OPEN/Draft; base actual `integration/bcv-checkout-rehearsal-20261109`. La base alias `fix/bcv-checkout-validation-base-20261109` solo se utilizó para activar workflows filtrados por base `fix/**`, y después se restauró la base de integración.
+- HEAD de código probado `3a67540c7b079bb11349552ffe92c598f0fad11f`: 14/14 check-runs SUCCESS y 10/10 workflow runs SUCCESS. CI incluye unit, typecheck, PostgreSQL checkout integration y runtime-role API integration. Migraciones, migration runner, Playwright, Semgrep, Dependency review, ODD docs, Secret history y Security scan también SUCCESS.
+- PR #295 sin reviews formales ni threads; permanece Draft. No se fusionó a #287 ni main. Cloudflare solo preview builds. Sin deploy, Neon writes ni Cron activation. Producción NOT READY.
+- El siguiente commit documental exige nueva validación exact-HEAD.

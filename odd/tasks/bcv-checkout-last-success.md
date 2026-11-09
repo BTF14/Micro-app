@@ -16,7 +16,7 @@
 
 Included:
 - Checkout valida la tasa de hoy y el estado singleton `bcv_sync_state` en la misma transacción de venta.
-- Solo acepta outcomes exitosos `inserted` o `unchanged`, con `last_success_at` presente y `last_effective_date` igual a la fecha de operación en Caracas.
+- Solo acepta outcomes exitosos `inserted` o `unchanged`, con `last_success_at` presente y `last_effective_date` igual o posterior a la fecha de operación en Caracas; una publicación futura anticipada no invalida la fila vigente de hoy.
 - Checkout bloquea para `running`, `failed`, `older`, estado ausente/incompleto, fecha discrepante o fila de tasa inválida/ausente.
 - Serializar la lectura del estado frente al inicio de una nueva sincronización mediante lock compartido de la fila singleton hasta finalizar la transacción de checkout.
 - Pruebas unitarias y PostgreSQL runtime-role para éxito, fallo posterior, intento en curso, fecha discrepante, ausencia de estado y recuperación por nuevo éxito.
@@ -33,7 +33,7 @@ Excluded:
 ## Acceptance criteria
 
 - [ ] AC-1 — Una tasa same-day `valid` no permite una nueva venta si el último outcome es `failed` o `running`.
-- [ ] AC-2 — Checkout acepta únicamente `inserted`/`unchanged` con `last_success_at` no nulo y `last_effective_date` coincidente con hoy en Caracas.
+- [ ] AC-2 — Checkout acepta únicamente `inserted`/`unchanged` con `last_success_at` no nulo y `last_effective_date` no anterior a hoy en Caracas.
 - [ ] AC-3 — La lectura del estado BCV queda protegida contra el inicio concurrente de un sync hasta terminar la transacción de checkout.
 - [ ] AC-4 — Estado ausente, inconsistente, `older`, fecha discrepante o error de DB fallan cerrados sin crear venta ni mover inventario.
 - [ ] AC-5 — Una nueva sincronización exitosa recupera el checkout sin TTL artificial; una tasa prepublicada se acepta solo desde su fecha efectiva.
@@ -67,7 +67,7 @@ Excluded:
 - La decisión A es política de producto aprobada por el propietario para este workstream: si el último intento de sync está `running` o `failed`, checkout bloquea hasta un intento exitoso.
 - Outcome `older` no cuenta como éxito aplicable a hoy: `last_effective_date` no coincide con la fecha de operación, por lo que se bloquea.
 - `inserted` y `unchanged` son los únicos outcomes aceptables, siempre que `last_success_at` no sea nulo y `last_effective_date` coincida con hoy en Caracas.
-- No se exige que `last_success_at` sea de las últimas 24 horas: la prepublicación de lunes descargada el viernes debe seguir siendo válida el lunes si su fecha efectiva es lunes y no existe un intento posterior fallido/en curso.
+- No se exige que `last_success_at` sea de las últimas 24 horas: si el viernes se publica anticipadamente una tasa con fecha efectiva lunes, checkout del viernes sigue usando solo la fila efectiva viernes; el lunes usa la fila efectiva lunes. La fecha devuelta por el último sync puede ser futura, pero nunca anterior a hoy.
 - La lectura de estado toma un lock compartido hasta el commit/rollback del checkout. Un sync que intenta pasar a `running` espera a que termine una venta ya autorizada; si el sync comenzó primero, checkout observa `running` y falla cerrado.
 - Los replays idempotentes de ventas ya completadas pueden devolver el resultado existente sin volver a ejecutar una venta ni consumir inventario; el guard de tasa aplica antes de crear una venta nueva. El handler busca ventas existentes antes del guard de tasa; el replay devuelve el snapshot previo sin crear venta ni consumir inventario. La política aplica a ventas nuevas.
 

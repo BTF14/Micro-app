@@ -1,0 +1,17 @@
+# ADR-20261109 — Checkout requiere último éxito de sincronización BCV
+
+- **Estado:** decisión de producto aprobada; implementación técnica en curso.
+- **Fecha:** 2026-11-09.
+- **Contexto:** PR #287 integra el productor BCV y checkout. La migración 0021 persiste `bcv_sync_state`, pero checkout solo comprobaba una fila de tasa `valid` para la fecha de Caracas. Un fallo posterior del sincronizador podía dejar una tasa del día habilitada para nuevas ventas.
+- **Decisión aprobada por el propietario:** aplicar opción A. Si el último intento BCV está `running` o `failed`, bloquear nuevas ventas hasta que una sincronización termine exitosamente. No mantener el checkout abierto usando silenciosamente la tasa anterior.
+- **Regla de aceptación:** una nueva venta solo puede usar la fila BCV de fecha efectiva exacta de hoy en `America/Caracas`, con `validation_status='valid'`, y el singleton `bcv_sync_state` debe tener `last_outcome` igual a `inserted` o `unchanged`, `last_success_at` no nulo y `last_effective_date` igual a hoy.
+- **Outcomes bloqueantes:** `running`, `failed`, `older`, nulo/desconocido, estado singleton ausente, last-success ausente o fecha efectiva discrepante.
+- **Sin TTL artificial:** no exigir una ventana de 24 horas. Una tasa prepublicada para el lunes, sincronizada correctamente el viernes, puede usarse el lunes si su fecha efectiva es lunes y el estado no ha sido reemplazado por un intento posterior fallido/en curso. Nunca puede usarse antes del lunes.
+- **Concurrencia:** checkout lee la fila singleton con `SELECT ... FOR SHARE` dentro de su transacción y mantiene el lock hasta commit/rollback. Un intento nuevo de sync que actualiza la fila espera a que termine una venta ya autorizada. Si el sync comenzó primero, checkout observa `running` y falla cerrado. Esto establece un orden serializable para el inicio del sync respecto a la decisión de venta, sin mantener locks durante la descarga HTTP.
+- **Idempotencia:** replay de una venta ya completada puede devolver el snapshot existente; no crea una venta nueva ni consume stock. La regla de freshness aplica a toda venta nueva.
+- **Alcance:** aplica al contrato actual de checkout, incluidas ventas liquidadas en USD, que ya exige BCV. Cambiar ese contrato requiere una decisión de producto separada.
+- **Alternativa rechazada:** aceptar la última tasa conocida tras fallo de sincronización. Se rechaza por riesgo de ventas nuevas con una tasa cuya vigencia operativa ya no puede verificarse.
+- **Alternativas no adoptadas:** TTL fijo, usar `fetched_at` como last-success, fallback a fecha anterior/futura o habilitar tasa manual automáticamente.
+- **Seguridad:** la tasa anterior se conserva en el histórico; no se borra ni se modifica una venta completada. Checkout bloquea nuevas ventas hasta un éxito. La contingencia manual es una propuesta independiente y no queda habilitada por esta ADR.
+- **Gates externos no resueltos:** fixture HTML oficial BCV reproducible, calendario bancario oficial, justificación de límites 10/7 del parser, revisión legal/contable, alertas/identidad Worker y decisiones comerciales adicionales del checkout. Esta decisión no certifica readiness de producción.
+- **Consecuencias:** requiere que runtime pueda leer el estado singleton; la migración 0021 ya otorga SELECT y UPDATE column-scoped. Pruebas deben usar PostgreSQL desechable y rol `microapp_runtime`; no ejecutar cambios remotos ni activar Cron.

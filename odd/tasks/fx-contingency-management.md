@@ -1,7 +1,7 @@
 # ODD task: Gestión de contingencia cambiaria
 
 - Status: proposed
-- Issue / PR: pendiente de crear PR documental
+- Issue / PR: [PR #288](https://github.com/BTF14/Micro-app/pull/288) — Draft docs-only
 - Owner / reviewer: propietario del producto; revisión técnica/seguridad y contable/legal pendientes
 - Started: 2026-11-09
 - Risk: critical
@@ -71,9 +71,9 @@ Excluded:
 
 ## Closure and handoff
 
-- Final commit SHA: pendiente.
-- PR: pendiente.
-- Checks and exact outcomes: pendientes; documentación aún no persistida.
+- Final commit SHA: pendiente de la última corrección documental y de CI exact-HEAD.
+- PR: #288 OPEN/Draft.
+- Checks and exact outcomes: pendientes en el HEAD actual de PR #288; primer HEAD `53d3d98257abb7deac853599021ebcb438b5ffda` lanzó 13 check-runs y 10 workflow runs, todos IN_PROGRESS al último sondeo.
 - Acceptance criteria met / unmet: AC-1–AC-4 cubiertos; AC-5–AC-7 pendientes.
 - Limitations not verified: estado exacto de autenticación MFA/PIN y esquema de auditoría; legalidad de tasa manual; capacidad de aceptación digital.
 - Residual risks: la excepción manual no puede habilitarse hasta cerrar gates críticos.

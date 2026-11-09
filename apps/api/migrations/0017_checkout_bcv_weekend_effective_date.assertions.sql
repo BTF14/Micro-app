@@ -20,11 +20,11 @@ BEGIN
     RAISE EXCEPTION 'CHECKOUT_BCV_EFFECTIVE_DATE_HELPER_SECURITY_CONTRACT_INVALID';
   END IF;
   SELECT pg_catalog.pg_get_functiondef(helper_oid) INTO helper_definition;
-  IF pg_catalog.strpos(helper_definition, 'caracas_now::date') = 0
-    OR pg_catalog.strpos(helper_definition, 'MIN(er.effective_date)') > 0
-    OR pg_catalog.strpos(helper_definition, 'effective_date > caracas_now::date') > 0
+  IF pg_catalog.strpos(helper_definition, 'ISODOW') = 0
+    OR pg_catalog.strpos(helper_definition, 'MIN(er.effective_date)') = 0
+    OR pg_catalog.strpos(helper_definition, 'effective_date > caracas_now::date') = 0
   THEN
-    RAISE EXCEPTION 'CHECKOUT_BCV_EXACT_EFFECTIVE_DATE_SELECTION_INVALID';
+    RAISE EXCEPTION 'CHECKOUT_BCV_HELPER_WEEKEND_SELECTION_INVALID';
   END IF;
   IF EXISTS (
     SELECT 1 FROM pg_catalog.aclexplode(
@@ -69,7 +69,7 @@ BEGIN
   SELECT public.applicable_bcv_effective_date('2026-11-08 12:00:00-04'::timestamptz) INTO sunday_date;
   SELECT public.applicable_bcv_effective_date('2026-11-06 12:00:00-04'::timestamptz) INTO weekday_date;
 
-  IF saturday_date <> DATE '2026-11-07' OR sunday_date <> DATE '2026-11-08'
+  IF saturday_date <> DATE '2026-11-09' OR sunday_date <> DATE '2026-11-09'
     OR weekday_date <> DATE '2026-11-06' THEN
     RAISE EXCEPTION 'CHECKOUT_BCV_EFFECTIVE_DATE_BEHAVIOR_INVALID';
   END IF;

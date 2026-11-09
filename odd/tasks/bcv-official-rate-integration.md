@@ -1,3 +1,13 @@
+## Delta de seguridad operativa BCV — 2026-11-08 UTC
+
+**Cron BCV deshabilitado por defecto:** `apps/api/wrangler.toml` declara `BCV_SYNC_ENABLED = "false"`; `index.ts` solo llama al productor cuando `APP_ENV === "production"` y `BCV_SYNC_ENABLED === "true"`. Ausente/false es fail-closed. Se añadió regresión de test para producción deshabilitada. No se modificaron secretos ni configuración manual de Cloudflare. Activación futura requiere un cambio revisado explícito; este PR no debe activar el Cron al desplegarse.
+
+**Regla cambiaria:** el productor selecciona únicamente la fila con `effective_date` igual a la fecha Caracas actual; tasas futuras siguen `scheduled` hasta esa fecha. No se usa tasa futura ni anterior como fallback. La tasa efectiva lunes no se usa viernes/sábado/domingo.
+
+**Commits nuevos:** `2f66e66` binding; `c4220ee` default false en Wrangler; `3c07161` guard runtime; `a330552` tests; `6679b77` documentación. CI exact-HEAD debe ejecutarse en el nuevo SHA. Mantener PR #255 Draft.
+
+---
+
 ## Corrección de política — tasa futura no aplicable antes de fecha efectiva
 
 La rama #255 ahora selecciona exclusivamente la fila cuya `effective_date` coincide con la fecha Caracas actual. La tasa del lunes publicada el viernes permanece `scheduled` durante viernes, sábado y domingo. Se bloquea checkout si falta la tasa exacta del día, incluso en ventas USD-only. Los tests exact-HEAD deben confirmar esta regla.

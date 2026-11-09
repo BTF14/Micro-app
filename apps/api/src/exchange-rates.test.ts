@@ -1,5 +1,5 @@
-import { readFileSync } from "node:fs";
 import { describe, expect, it, vi } from "vitest";
+import officialBcvHomepageHtml from "./fixtures/bcv-homepage-dom-2026-11-09.html?raw";
 import { fetchBcvOfficialRate, findApplicableBcvRate, parseBcvOfficialRate, persistBcvOfficialRate, type BcvOfficialRate } from "./exchange-rates";
 import type { DatabaseClient } from "./database";
 
@@ -260,11 +260,7 @@ describe("BCV official fetch bounds", () => {
 
 describe("BCV official homepage DOM capture", () => {
   it("parses the sanitized browser-captured official DOM snapshot without float rounding", () => {
-    const html = readFileSync(
-      new URL("./fixtures/bcv-homepage-dom-2026-11-09.html", import.meta.url),
-      "utf8",
-    );
-    expect(parseBcvOfficialRate(html, new Date("2026-11-09T12:00:00-04:00"))).toEqual({
+    expect(parseBcvOfficialRate(officialBcvHomepageHtml, new Date("2026-11-09T12:00:00-04:00"))).toEqual({
       rate: "897.53830000",
       effectiveDate: "2026-11-09",
     });

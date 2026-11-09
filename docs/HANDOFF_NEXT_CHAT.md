@@ -2476,3 +2476,8 @@ La apertura web convencional de `https://www.bcv.org.ve/` devolvió 502, pero un
 ### Captura DOM oficial BCV preservada — 2026-11-09
 
 Se completó `document.documentElement.outerHTML` desde `https://www.bcv.org.ve/`. SHA-256 del DOM original (antes de redacción): `97fe86647e11fae932c8f4495524ba0a7ed0a756bea85576079f63ec5333feb9`; fixture sanitizada `apps/api/src/fixtures/bcv-homepage-dom-2026-11-09.html` en #287, SHA-256 `a10241b7fab8349aab1e8ba51faacc6501e7af6203cbd391fffd0264de33d36e`. Se añadieron provenance y prueba parser (USD 897.53830000; effective date 2026-11-09). Es serialización DOM, no HTTP raw; status numérico y headers no expuestos. Por tanto raw HTTP sigue pendiente. No tratarla como fuente live.
+
+
+### Aclaración del driver Neon y timeouts — 2026-11-09
+
+El lockfile fija `@neondatabase/serverless@1.2.0`. El `ClientConfig` sí ofrece `connectionTimeoutMillis`, `statement_timeout`, `query_timeout`, `lock_timeout` e `idle_in_transaction_session_timeout`; el wrapper `database.ts` no configura ninguno. `statement_timeout` es server-side y PostgreSQL cancela la sentencia; `query_timeout` es client-side y no debe asumirse como cancelación server-side ni cleanup garantizado. `fetchOptions.signal` de Neon corresponde al cliente HTTP `neon()`, no al `Client` WebSocket usado aquí. No elegir valores todavía: probar connect, pg_sleep, locks, idle transaction, rollback/end y deadline total. No aplicar timeout global sin evaluar todas las rutas compartidas. Ver ODD `bcv-sync-alerting-recovery.md` en #287.

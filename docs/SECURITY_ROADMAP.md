@@ -703,3 +703,8 @@ Snapshot histórico: el manual run [40916692763](https://github.com/BTF14/Micro-
 - Autorización ligada a acción y payload exactos, nonce/idempotencia, expiración corta y consumo único transaccional.
 - PDF: cuarentena, MIME + firma + límites, almacenamiento privado, análisis/parseo aislado sin red, rechazo de contenido activo/adjuntos y CDR/renderizado seguro; sin scanner confiable, no marcar como limpio ni publicar.
 - Estado: solo diseño. Requiere implementación y pruebas de seguridad antes de reducir riesgos Nivel 1.
+
+
+## Gate de runtime para PIN — 2026-11-09
+
+No seleccionar Argon2id como implementación definitiva sin benchmark. Cloudflare Workers Free documenta 10 ms CPU por invocación HTTP/Cron y 128 MB RAM. Medir KDF real en el runtime y bajo concurrencia; si no cabe una KDF segura, no degradar a hash rápido ni exigir plan pago. Evaluar WebAuthn/passkeys o aplazar PIN. Los códigos de recuperación, si se habilitan, serán aleatorios de alta entropía, de un solo uso, almacenados como hashes y mostrados una vez. Referencia oficial: https://developers.cloudflare.com/workers/platform/limits/.

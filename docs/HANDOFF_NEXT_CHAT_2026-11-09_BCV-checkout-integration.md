@@ -66,3 +66,36 @@ El primer CI completo del checkpoint anterior falló únicamente en la prueba un
 ## Revalidación del código — 2026-11-09
 
 El código HEAD `032064cfed018545f0071116a461f21500ee7102` pasó CI (run 42609557781), Database migration validation (42609557776), PostgreSQL migration runner validation (42609557710), backup/restore (42609557715), Semgrep, Security scan, Secret history, Dependency review y ODD docs. CI incluyó build/typecheck, unit tests, PostgreSQL BCV effective-date integration, checkout integration y runtime-role API integration. Playwright E2E run 42609557746 seguía `pending` en la última consulta; no declarar suite total completa. Dos fallos de CI previos fueron corregidos y no se ocultaron: (1) cleanup horario para cron no reconocido, ahora limitado a `17 * * * *`; (2) fixture de concurrencia BCV contaminaba la prueba siguiente, ahora elimina sus filas de prueba en `finally`. Este registro documental cambia el HEAD; verificar de nuevo CI exact-HEAD antes de cualquier decisión.
+
+
+---
+
+## Revisión adicional — concurrencia de sincronizaciones BCV (2026-11-09)
+
+Se detectó una carrera que el test previo no cubría: dos intentos con valores distintos para la misma `effective_date` podían terminar fuera de orden. El intento antiguo, al terminar después, llamaba a `persistBcvOfficialRate()`, detectaba un valor diferente y marcaba `validation_status='stale'` sobre la fila que había insertado el intento nuevo. La protección original de `attempt_id` solo evitaba sobrescribir el estado terminal; no protegía `exchange_rates`.
+
+### Corrección aplicada en esta rama (pendiente de CI exact-HEAD)
+
+- `syncBcvOfficialRate()` ahora verifica el `attempt_id` vigente bajo `SELECT ... FOR UPDATE` dentro de una transacción antes de persistir.
+- Persistencia de tasa y actualización terminal del estado se realizan en la misma transacción.
+- Un intento supersedido devuelve `superseded` sin insertar ni marcar stale ninguna fila.
+- Un error de fetch de un intento supersedido no sobrescribe el estado más nuevo ni se reporta como fallo vigente.
+- La regresión PostgreSQL ahora fuerza dos respuestas distintas para la misma fecha: B (más nueva) inserta 896.10; A (antigua) termina después con 895.10 y debe descartarse; la fila de B debe seguir `valid`.
+- Commits de implementación/test/corrección: `a2c122cd0a030ff82131a7eb9da0742690bfca84`, `27012594b895abe2aff08ef5ee8fb065321d755a`, `ef21cfca3e18b4a51de9aa7af9c5d26397d7736c`.
+- Tarea ODD: `odd/tasks/bcv-checkout-sync-concurrency.md`.
+
+### Gate P1 separado: freshness todavía no está aplicada
+
+La migración 0021 conserva `last_attempt_at` y `last_success_at`, pero `findApplicableCheckoutRate()` sigue consultando solamente la fila de `exchange_rates` por fecha efectiva y `validation_status='valid'`. No consulta el estado persistente del sincronizador ni aplica una política de last-success. Como `fetched_at` no se actualiza en un resultado `unchanged`, no puede usarse como última sincronización exitosa. Una fila del día puede permanecer `valid` aunque un intento posterior haya fallado.
+
+Además, `MAX_EFFECTIVE_DATE_AGE_DAYS=10` y `MAX_EFFECTIVE_DATE_FUTURE_DAYS=7` son umbrales hard-coded pendientes de justificación y aprobación. No asumir que son política aprobada.
+
+Se dejó comentario técnico en PR #287 con el escenario, riesgo y criterios de cierre. No se modificó código para freshness ni se inventó un umbral.
+
+### Estado y siguiente paso
+
+- Verificar en GitHub el HEAD vivo de #287; los checks anteriores a los tres commits de corrección no validan el nuevo código.
+- Ejecutar/esperar CI exact-HEAD y revisar específicamente PostgreSQL BCV integration bajo `microapp_runtime`.
+- Mantener #287 Draft; no merge, no deploy, no Neon writes, no Cron BCV ni cambios Cloudflare.
+- Después de CI, diseñar la política de freshness y probar: fila válida + fallo de sincronización + last-success fuera de ventana => checkout bloqueado.
+- Producción permanece **NOT READY**.

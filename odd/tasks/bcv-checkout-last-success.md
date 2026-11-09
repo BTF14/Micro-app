@@ -56,7 +56,7 @@ Excluded:
 | Task | Expected result | Validation / evidence | Status |
 |---|---|---|---|
 | Revalidar PR #287 y contratos de DB/checkout | Rama base y transacción identificadas | HEAD `362443524eb45c67da16811d1745d83ddc9bd3a9`; checkout corre dentro de `withDatabaseTransaction` | completed |
-| Registrar decisión A y criterios | Política durable, sin TTL arbitrario | ADR creada: `docs/decisions/ADR-20261109-bcv-checkout-last-success.md` | in progress |
+| Registrar decisión A y criterios | Política durable, sin TTL arbitrario | ADR `ADR-20261109-bcv-checkout-last-success.md` | completed |
 | Implementar guard de estado BCV | Estado operativo consumido en checkout | `sales-checkout.ts`: `FOR SHARE`, outcomes `inserted`/`unchanged`, `last_success_at` y `last_effective_date` | implemented; CI pending |
 | Validar locks y permisos | Sync y venta serializados sin privilegios extra | Test PostgreSQL runtime-role con `FOR SHARE` y `lock_timeout` contra UPDATE concurrente | implemented; CI pending |
 | Ejecutar CI exact-HEAD | Evidencia vinculada al SHA final | Workflows/check-runs del nuevo HEAD | pending |

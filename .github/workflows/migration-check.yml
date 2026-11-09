@@ -343,6 +343,23 @@ jobs:
         run: docker exec -i -e PGPASSWORD=migrator-test-only "${{ job.services.postgres.id }}" psql -h 127.0.0.1 -v ON_ERROR_STOP=1 -U microapp_migrator -d microapp_test -f /dev/stdin < apps/api/migrations/0020_bcv_effective_date_strict.sql
       - name: Verify strict BCV effective-date contract
         run: docker exec -i "${{ job.services.postgres.id }}" psql -v ON_ERROR_STOP=1 -U microapp -d microapp_test -f /dev/stdin < apps/api/migrations/0020_bcv_effective_date_strict.assertions.sql
+      - name: Verify BCV sync state migration rolls back atomically
+        run: |
+          sed '/^COMMIT;$/i SELECT 1/0;' apps/api/migrations/0021_bcv_sync_state.sql > /tmp/0021-bcv-sync-state-failure.sql
+          status=0
+          output="$(docker exec -i -e PGPASSWORD=migrator-test-only "${{ job.services.postgres.id }}" psql -h 127.0.0.1 -v ON_ERROR_STOP=1 -U microapp_migrator -d microapp_test -f /dev/stdin < /tmp/0021-bcv-sync-state-failure.sql 2>&1)" || status=$?
+          printf '%s\\n' "$output"
+          if [ "$status" -eq 0 ]; then
+            echo "Expected BCV sync state migration failure, but psql succeeded."
+            exit 1
+          fi
+          printf '%s\\n' "$output" | grep -F "division by zero"
+          remaining="$(docker exec "${{ job.services.postgres.id }}" psql -At -U microapp -d microapp_test -c "SELECT to_regclass('public.bcv_sync_state') IS NULL")"
+          test "$remaining" = "t"
+      - name: Apply BCV sync state migration
+        run: docker exec -i -e PGPASSWORD=migrator-test-only "${{ job.services.postgres.id }}" psql -h 127.0.0.1 -v ON_ERROR_STOP=1 -U microapp_migrator -d microapp_test -f /dev/stdin < apps/api/migrations/0021_bcv_sync_state.sql
+      - name: Verify BCV sync state ownership and runtime grants
+        run: docker exec -i "${{ job.services.postgres.id }}" psql -v ON_ERROR_STOP=1 -U microapp -d microapp_test -f /dev/stdin < apps/api/migrations/0021_bcv_sync_state.assertions.sql
       - name: Verify application objects are owned by the non-superuser migrator
         run: |
           ownership="$(docker exec "${{ job.services.postgres.id }}" psql -At -U microapp -d microapp_test -c "SELECT NOT EXISTS (SELECT 1 FROM pg_class WHERE relnamespace='public'::regnamespace AND relkind IN ('r','p','S','v','m') AND relowner <> (SELECT oid FROM pg_roles WHERE rolname='microapp_migrator')) AND NOT EXISTS (SELECT 1 FROM pg_proc WHERE pronamespace='public'::regnamespace AND proowner <> (SELECT oid FROM pg_roles WHERE rolname='microapp_migrator'))")"

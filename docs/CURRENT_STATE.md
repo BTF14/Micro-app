@@ -2320,3 +2320,6 @@ Esta revisión fue estática de contenidos en GitHub; no se ejecutaron tests des
 - Permisos BCV y calendario separados; carga, edición y publicación de calendario diferenciadas. La matriz de roles, auth/MFA real y controles Nivel 1 siguen siendo gates.
 - PDF anual: cuarentena, validación por capas, análisis/parseo aislado, almacenamiento privado, hash, revisión humana y publicación explícita. Vigilancia automática solo detecta; no publica. Recordatorios propuestos 1 dic y 1 ene.
 - Todo es propuesta documental. No hay código, endpoint, migración, almacenamiento PDF, PIN ni recordatorio implementado. PR #287 permanece Draft; no se modifica su código ni se habilita contingencia.
+
+
+- **Vigilancia calendario 2027 — 2026-11-09:** no se localizó publicación oficial identificable. SUDEBAN muestra la sección general Calendario Bancario, pero la consulta directa tuvo timeout; una fuente secundaria actualizada 2026-11-07 también la reporta pendiente. Estado: no localizado/no verificado, no ausencia absoluta demostrada. Detalle y fuentes en `docs/sdd/BANKING_CALENDAR_VERSIONING.md`.

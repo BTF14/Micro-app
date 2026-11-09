@@ -228,3 +228,27 @@ La revisión de `syncBcvOfficialRate()` confirma que el flujo actual abre un ún
 5. Si otra ejecución reemplazó el `attempt_id`, la finalización antigua retorna `superseded` y no invalida ni inserta ninguna tasa.
 
 Esto reduce conexiones ociosas durante I/O externo y conserva la protección contra intentos supersedidos. Antes de cambiarlo, añadir pruebas de concurrencia de dos fases, fetch fallido, fallo de DB al marcar terminal, fallo al cerrar cliente y que ningún intento antiguo pueda tocar `exchange_rates`/estado posterior. No cambiar todavía código ni Cron hasta completar el contrato de timeout y las pruebas.
+
+## Implementación del ciclo de conexión BCV — 2026-11-09
+
+Se implementó el diseño de tres fases en `apps/api/src/exchange-rates.ts`:
+
+1. **Claim:** una conexión corta registra `attempt_id` y `running`; `withDatabaseClient` cierra el cliente antes de continuar.
+2. **Fetch/validación:** la consulta HTTPS al BCV y el parseo ocurren sin conexión PostgreSQL abierta.
+3. **Finalización:** se abre un cliente nuevo; la transacción bloquea `bcv_sync_state` con `FOR UPDATE`, compara `attempt_id` y persiste tasa + estado terminal atómicamente.
+
+Manejo de errores:
+- Si falla el fetch, se intenta marcar `failed` con una conexión breve y solo para el `attempt_id` vigente. Si la DB no permite registrar el error, se preserva el error original y el estado `running` queda detectable por watchdog.
+- Si la transacción falla, el rollback se intenta dentro de `withDatabaseTransaction`; se intenta registrar el error con el cliente de esa fase, sin ocultar la causa original.
+- Un intento supersedido no puede insertar ni invalidar una tasa porque la comparación del identificador ocurre bajo el lock de fila antes de persistir.
+
+Pruebas añadidas/existentes:
+- Test unitario que verifica que la conexión de claim se cierra antes del fetch y que la persistencia usa un segundo cliente.
+- Test de integración PostgreSQL existente con dos ejecuciones solapadas: la nueva finaliza primero y la antigua no sobrescribe la tasa ni el estado.
+- CI exact-HEAD del commit de código `dae5173ee4ae7d25659da6e4b034e3e2dbee69bd`: 11/11 workflow runs SUCCESS, incluyendo build/typecheck, unit tests y suite PostgreSQL BCV/checkout.
+
+Pendiente antes de considerar este bloque cerrado:
+- Pruebas dirigidas de fallo de conexión al marcar `failed`, fallo de rollback/cleanup y fallo de cierre del cliente después de commit.
+- Presupuesto medido de timeout por fase y watchdog; no se añadieron valores arbitrarios.
+- Revisión independiente del diff y de las rutas de error antes de retirar Draft.
+- No se habilitó Cron ni se desplegó a producción.

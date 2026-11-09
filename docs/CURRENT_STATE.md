@@ -2338,3 +2338,8 @@ La rama #287 preserva y prueba una serialización completa `document.documentEle
 ### Timeout DB — precisión de la revisión estática (2026-11-09)
 
 `@neondatabase/serverless@1.2.0` sí soporta parámetros `connectionTimeoutMillis`, `statement_timeout`, `query_timeout`, `lock_timeout` e `idle_in_transaction_session_timeout`; el wrapper actual no configura ninguno. El control server-side principal es `statement_timeout`; `query_timeout` es client-side y no debe confundirse con cancelación garantizada en PostgreSQL. `fetchOptions.signal` es solo para `neon()` HTTP, no para el `Client` WebSocket actual. Los valores y watchdog siguen sin definir hasta pruebas por fase y revisión del impacto en todas las rutas compartidas.
+
+
+### Ciclo de vida DB durante BCV sync — hallazgo 2026-11-09
+
+`syncBcvOfficialRate()` mantiene una conexión PostgreSQL abierta mientras espera el fetch HTTP BCV (hasta 10 s). Diseño candidato documentado: separar claim/commit del intento, fetch sin DB abierta y finalize en una nueva transacción con compare de `attempt_id`; registrar fallo con conexión corta y conservar `running` si DB no permite el update. No implementado; pruebas de concurrencia y cleanup pendientes.

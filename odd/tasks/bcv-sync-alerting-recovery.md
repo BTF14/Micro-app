@@ -199,3 +199,17 @@ La inspección del lockfile confirma `@neondatabase/serverless@1.2.0` (integrity
 - La opción `fetchOptions.signal` documentada por Neon aplica al cliente HTTP `neon()`, no al `Client` WebSocket que usa este repositorio (https://github.com/neondatabase/serverless/blob/v1.2.0/CONFIG.md).
 
 **Decisión pendiente:** no introducir todavía valores de timeout ni un umbral de watchdog. Diseñar un presupuesto por fase y probar: conexión que no abre; `pg_sleep` con statement timeout; lock contention; transacción idle; timeout durante BEGIN/COMMIT/ROLLBACK; cleanup/end con socket cerrado; y registro del estado terminal cuando DB no responde. Distinguir deadline total de la operación del timeout individual por sentencia. No fijar un timeout global en `Client` sin evaluar todas las rutas de negocio que comparten `withDatabaseClient`.
+
+
+## Presupuesto de ejecución Cloudflare Free — aclaración oficial (2026-11-09)
+
+La documentación actual de Cloudflare distingue CPU de wall time:
+
+- Workers Free: 10 ms de CPU por invocación HTTP y Cron; 128 MB de memoria.
+- El tiempo esperando I/O de red (fetch, DB) no consume CPU.
+- Cron Triggers tienen un máximo de wall time de 15 minutos por invocación.
+- Por tanto, el límite de 10 ms no significa que toda la sincronización BCV deba finalizar en 10 ms. Sí es un límite estricto para el trabajo de CPU (parser, serialización, hashing, KDF, etc.). El máximo de 15 minutos es un techo de plataforma, no el watchdog de negocio deseable.
+
+Referencia oficial: https://developers.cloudflare.com/workers/platform/limits/ (consultada 2026-11-09).
+
+El watchdog debe usar un presupuesto interno mucho menor que el techo de 15 minutos, pero no se fija hasta medir latencias y definir margen para registrar el estado final y cerrar el cliente. Medir wall time de conexión DB, cada query, fetch BCV (actual timeout 10 s), persistencia/locks y cleanup por separado; medir CPU por separado. No usar el límite CPU de 10 ms como timeout de conexión/consulta.

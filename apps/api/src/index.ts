@@ -143,6 +143,9 @@ export default Object.assign(app, {
     }
 
     if (controller.cron === "0 22 * * 1-5") {
+      // The Cron remains inert after deployment until an explicit reviewed
+      // configuration change opts in. Missing/false values are fail-closed.
+      if (env.BCV_SYNC_ENABLED !== "true") return;
       try {
         const outcome = await syncBcvOfficialRate(env.DATABASE_URL);
         console.info("BCV_SYNC_COMPLETED", { outcome });

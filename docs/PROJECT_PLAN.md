@@ -1,5 +1,13 @@
 ## Reconciliación posterior a PR #291 — snapshot 2026-11-09 UTC
 
+## Decisión de aceptación MVP — POS de un local / 1.000 productos
+
+- Decisión aprobada por el propietario el 2026-11-09: el objetivo de aceptación del 2026-12-01 es que un comercio pequeño/mediano, de un solo local y hasta 1.000 productos, pueda completar desde la UI una jornada POS: login, apertura de turno propio, búsqueda/carrito, venta/pagos admitidos, tasa BCV válida cuando aplique, comprobante interno, descuento y consulta de inventario/Kardex, conteo y cierre de turno.
+- La especificación canónica, con pruebas y límites detallados, es [docs/MVP_SINGLE_STORE_ACCEPTANCE.md](MVP_SINGLE_STORE_ACCEPTANCE.md). Leerla antes de planificar o implementar.
+- Esto concreta el P0; no cambia guardrails, permisos aprobados, presupuesto $0 ni los gates de seguridad/BCV/legal/operación. El MVP de un local no elimina el aislamiento multi-tenant/multi-branch. No afirmar que está implementado hasta probar el recorrido completo en el SHA exacto.
+- Si un gate crítico no está demostrado, NO-GO para producción; como máximo beta controlada con limitaciones explícitas y aceptación correspondiente.
+
+
 **Main al iniciar esta reconciliación:** `56ad2b29b994fbad31275c801e8f23a2b9736db2` (merge de PR #291). Post-merge exact-SHA: **11/11 check-runs SUCCESS**. Este snapshot documenta el estado inmediatamente posterior a #291; el PR docs-only que lo contiene volverá a mover main, por lo que reconsultar GitHub después del merge.
 
 ### PRs de integración y conflictos de sincronización

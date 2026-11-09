@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 import officialBcvHomepageHtml from "./fixtures/bcv-homepage-dom-2026-11-09.html?raw";
-import { fetchBcvOfficialRate, findApplicableBcvRate, parseBcvOfficialRate, persistBcvOfficialRate, type BcvOfficialRate } from "./exchange-rates";
+import { fetchBcvOfficialRate, findApplicableBcvRate, parseBcvOfficialRate, persistBcvOfficialRate, syncBcvOfficialRate, type BcvOfficialRate } from "./exchange-rates";
 import type { DatabaseClient } from "./database";
 
 const NOW = new Date("2026-11-05T12:00:00-04:00");
@@ -264,5 +264,59 @@ describe("BCV official homepage DOM capture", () => {
       rate: "897.53830000",
       effectiveDate: "2026-11-09",
     });
+  });
+});
+
+describe("BCV synchronization connection lifecycle", () => {
+  it("closes the claim connection before fetching and uses a fresh connection to persist", async () => {
+    const events: string[] = [];
+    let attemptId = "";
+    let clientNumber = 0;
+    const createClient = vi.fn(() => {
+      clientNumber += 1;
+      const number = clientNumber;
+      const client = {
+        connect: vi.fn(async () => { events.push(`connect-${number}`); }),
+        query: vi.fn(async (statement: string, values?: unknown[]) => {
+          events.push(`query-${number}:${statement.trim().split(/\\s+/).slice(0, 3).join(" ")}`);
+          if (statement.includes("SET attempt_id =")) {
+            attemptId = String(values?.[0]);
+            return { rows: [{ attempt_id: attemptId }] };
+          }
+          if (statement.includes("FOR UPDATE")) {
+            return { rows: [{ attempt_id: attemptId }] };
+          }
+          if (statement.includes("INSERT INTO public.exchange_rates")) {
+            return { rows: [{ id: "rate-row" }] };
+          }
+          return { rows: [] };
+        }),
+        end: vi.fn(async () => { events.push(`end-${number}`); }),
+      };
+      return client as unknown as DatabaseClient;
+    });
+
+    const fetchMock = vi.fn(async () => {
+      events.push("fetch");
+      expect(events).toContain("end-1");
+      return new Response(officialBcvHomepageHtml, {
+        status: 200,
+        headers: { "content-type": "text/html; charset=utf-8" },
+      });
+    });
+    vi.stubGlobal("fetch", fetchMock);
+    try {
+      await expect(syncBcvOfficialRate(
+        "postgresql://user:password@db.example/neondb?sslmode=require",
+        createClient,
+      )).resolves.toBe("inserted");
+
+      expect(createClient).toHaveBeenCalledTimes(2);
+      expect(events.indexOf("end-1")).toBeLessThan(events.indexOf("fetch"));
+      expect(events.indexOf("fetch")).toBeLessThan(events.indexOf("connect-2"));
+      expect(events).toContain("end-2");
+    } finally {
+      vi.unstubAllGlobals();
+    }
   });
 });

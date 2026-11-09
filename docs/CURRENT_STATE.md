@@ -5,8 +5,8 @@
 ## PR #287 — evidencia de checkout y último sync BCV
 
 - Rama: `integration/bcv-checkout-rehearsal-20261109`; PR #287 OPEN. La documentación/descripcion del PR mantiene el estado Draft; debe seguir Draft.
-- HEAD exacto vigente de la rama, reconsultado en GitHub el 2026-11-09: `91589e9fb05231b517bb293a531a93c2389b44cb`.
-- En ese SHA exacto, la consulta de workflow runs asociadas a PR devolvió **11/11 SUCCESS**. El combined legacy status no devolvió status contexts. No se infieren check-runs a partir de workflow runs; no reutilizar cifras históricas de 14/15 checks como si fueran evidencia del HEAD actual.
+- HEAD exacto vigente de la rama, reconsultado en GitHub el 2026-11-09: `0d6721392691e5388da3386c4e61ee70bd13565a`.
+- En ese SHA exacto, la consulta de workflow runs asociadas a PR devolvió **11/11 SUCCESS**. El fixture HTML de regresión está identificado como sintético; la captura oficial BCV sigue pendiente. El combined legacy status no devolvió status contexts. No se infieren check-runs a partir de workflow runs; no reutilizar cifras históricas de 14/15 checks como si fueran evidencia del HEAD actual.
 - Reviews formales: ninguna registrada. Review threads: ninguno. CI verde no equivale a aprobación formal ni readiness.
 - El guard de freshness **sí está implementado en la rama #287**: `findApplicableCheckoutRate()` consulta `bcv_sync_state` con `FOR SHARE` dentro de la transacción, exige `last_success_at` no nulo, `last_outcome` `inserted` o `unchanged`, `last_effective_date` no anterior a hoy en Caracas, y después exige una fila `exchange_rates` `valid` con `effective_date` exactamente igual a hoy.
 - Fallan cerrados el estado singleton ausente, last-success ausente, outcomes `running`, `failed`, `older` o desconocidos, fecha efectiva anterior, fila ausente/inválida y error de base de datos.

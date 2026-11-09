@@ -39,4 +39,52 @@ GRANT UPDATE (
   updated_at
 ) ON TABLE public.bcv_sync_state TO microapp_runtime;
 
+
+-- Enforce the latest-successful-sync gate at the database boundary as well as
+-- in the API. A runtime SQL writer must not complete a sale using a same-day
+-- rate after a newer BCV attempt has failed or is still running.
+CREATE FUNCTION public.assert_sale_latest_bcv_sync_success()
+RETURNS trigger
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = pg_catalog
+AS $assert_sale_latest_bcv_sync_success$
+DECLARE
+  sync_last_success_at timestamptz;
+  sync_last_outcome text;
+  sync_last_effective_date date;
+  operation_date date := (pg_catalog.now() AT TIME ZONE 'America/Caracas')::date;
+BEGIN
+  IF NEW.status <> 'completed' THEN
+    RETURN NULL;
+  END IF;
+
+  SELECT last_success_at, last_outcome, last_effective_date
+    INTO sync_last_success_at, sync_last_outcome, sync_last_effective_date
+    FROM public.bcv_sync_state
+   WHERE singleton = true
+   FOR SHARE;
+
+  IF NOT FOUND
+    OR sync_last_success_at IS NULL
+    OR sync_last_outcome IS NULL
+    OR sync_last_outcome NOT IN ('inserted', 'unchanged')
+    OR sync_last_effective_date IS NULL
+    OR sync_last_effective_date < operation_date
+  THEN
+    RAISE EXCEPTION 'SALE_REQUIRES_LATEST_SUCCESSFUL_BCV_SYNC'
+      USING ERRCODE = '23514';
+  END IF;
+
+  RETURN NULL;
+END;
+$assert_sale_latest_bcv_sync_success$;
+
+REVOKE ALL ON FUNCTION public.assert_sale_latest_bcv_sync_success() FROM PUBLIC;
+
+CREATE CONSTRAINT TRIGGER sales_latest_bcv_sync_success
+AFTER INSERT OR UPDATE ON public.sales
+DEFERRABLE INITIALLY DEFERRED
+FOR EACH ROW EXECUTE FUNCTION public.assert_sale_latest_bcv_sync_success();
+
 COMMIT;

@@ -91,3 +91,12 @@ Excluded:
 - Dictamen de código: no se encontró un bloqueo de corrección en el flujo revisado de checkout/sync. La validación no equivale a aprobación formal de PR ni a readiness de producción.
 - Riesgo operativo pendiente: el Cron BCV está programado para `0 22 * * 1-5`, exige `APP_ENV=production` y `BCV_SYNC_ENABLED=true`, y permanece deshabilitado por defecto. No se observó un mecanismo de retry inmediato ni alerta operativa en este alcance. Si un intento falla o queda `running`, nuevas ventas siguen bloqueadas hasta el siguiente intento habilitado que finalice con éxito; hace falta definir alertas y recuperación operativa antes de producción.
 - No hubo merge, cambios en main, escrituras Neon, deploy, activación Cron, cambios de secretos/DNS/billing ni uso de datos reales. Producción **NOT READY**.
+
+
+## Defensa de integridad PostgreSQL — 2026-11-09
+
+La revisión de la integración detectó que la regla de último éxito estaba aplicada en el handler, mientras que el trigger diferido previo de reconciliación de ventas solo verificaba tasa BCV válida/fecha efectiva. Como el rol runtime tiene permisos para escribir ventas, un escritor SQL directo podía no pasar por el guard del endpoint.
+
+Se añade a migration 0021 el trigger diferido `sales_latest_bcv_sync_success`, mediante función `SECURITY DEFINER` propiedad de `microapp_migrator`, no ejecutable directamente por PUBLIC/runtime. Al completar una venta, bloquea con `FOR SHARE` el singleton y exige `last_success_at`, outcome `inserted`/`unchanged` y `last_effective_date` igual o posterior a la fecha Caracas actual. La aserción de migración verifica propietario, definición, permisos y trigger; una prueba PostgreSQL usa el login runtime para intentar completar una venta directamente con el último outcome `failed` y espera rechazo SQLSTATE 23514.
+
+Esta defensa de base de datos complementa el guard de API; no demuestra resistencia ante compromiso del propio runtime, que conserva permisos de actualización column-scoped sobre el estado para ejecutar la sincronización. La validación exact-HEAD de esta ampliación queda pendiente hasta que termine CI del nuevo commit.

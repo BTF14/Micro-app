@@ -598,6 +598,48 @@ describe.skipIf(!isDisposableCheckoutDatabase)("atomic sales checkout PostgreSQL
     }
   });
 
+  it("database guard blocks direct runtime sale completion after the latest BCV sync failed", async () => {
+    const runtimeClient = new Client({ connectionString: databaseUrl });
+    await runtimeClient.connect();
+    try {
+      await runtimeClient.query("BEGIN");
+      await runtimeClient.query(
+        "UPDATE public.bcv_sync_state SET last_outcome='failed',last_error_code='BCV_SYNC_UNKNOWN' WHERE singleton=true",
+      );
+      const rate = await runtimeClient.query<{ rate: string }>(
+        "SELECT rate::text AS rate FROM public.exchange_rates WHERE id=$1",
+        [rateId],
+      );
+      expect(rate.rows[0]?.rate).toBeDefined();
+
+      const sale = await runtimeClient.query<{ id: string }>(
+        `INSERT INTO public.sales (
+           organization_id,idempotency_key,status,subtotal_usd,total_usd,
+           exchange_rate_id,exchange_rate_snapshot,total_ves_snapshot,created_by,
+           branch_id,register_shift_id,warehouse_id,settlement_currency,request_hash
+         ) VALUES ($1,$2,'draft',1.0000,1.0000,$3,$4::numeric,1.00,$5,$6,$7,$8,'USD',$9)
+         RETURNING id`,
+        [
+          organizationId, "direct-runtime-" + crypto.randomUUID(), rateId, rate.rows[0]!.rate,
+          userId, branchId, shiftId, warehouseId, "a".repeat(64),
+        ],
+      );
+      await runtimeClient.query(
+        "UPDATE public.sales SET status='completed',completed_at=now() WHERE id=$1",
+        [sale.rows[0]!.id],
+      );
+
+      const guardError = await runtimeClient.query(
+        "SET CONSTRAINTS sales_latest_bcv_sync_success IMMEDIATE",
+      ).then(() => null, (error: { code?: string; message?: string }) => error);
+      expect(guardError).toMatchObject({ code: "23514" });
+      expect(guardError?.message).toContain("SALE_REQUIRES_LATEST_SUCCESSFUL_BCV_SYNC");
+    } finally {
+      await runtimeClient.query("ROLLBACK");
+      await runtimeClient.end();
+    }
+  });
+
   it("blocks a new sale after the latest BCV sync attempt fails, despite a valid same-day rate", async () => {
     await seedBalance("2.000");
     const key = "sync-failed-" + crypto.randomUUID();

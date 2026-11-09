@@ -111,3 +111,12 @@ La recuperación de PIN exige reautenticación fuerte de la cuenta y MFA o códi
 ## Historial de cambios
 
 - 2026-11-09 — añadido diseño de carga manual/PDF, vigilancia no publicadora, recordatorios, cuarentena, procesamiento aislado y autorización administrativa compartida.
+
+## Vigilancia 2027 — consulta del 2026-11-09
+
+- Se consultó el portal oficial [SUDEBAN](https://sudeban.gob.ve/). El contenido indexado muestra la sección general **Calendario Bancario**, pero no se localizó una publicación identificable del calendario 2027.
+- La recuperación directa del portal tuvo timeout en esta sesión; por tanto, la ausencia de un resultado indexado **no demuestra por sí sola** que no exista una publicación accesible desde el sitio.
+- Como corroboración secundaria, una página actualizada el 2026-11-07 indica que el calendario bancario 2027 todavía no había sido publicado: [Cabifinde — Feriados 2027 Venezuela](https://cabifinde.com/feriados-venezuela-2027/). Esta fuente no sustituye a SUDEBAN.
+- Estado operativo correcto: **2027 no localizado / no verificado oficialmente al 2026-11-09**. No cargar fechas bancarias estimadas como oficiales ni derivar reglas de checkout de proyecciones de terceros.
+- Reintentar la comprobación en el portal/canales oficiales durante la vigilancia de diciembre y antes de activar cualquier versión anual.
+

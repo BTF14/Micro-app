@@ -55,7 +55,9 @@ DECLARE
   sync_last_effective_date date;
   operation_date date := (pg_catalog.now() AT TIME ZONE 'America/Caracas')::date;
 BEGIN
-  IF NEW.status <> 'completed' THEN
+  IF NEW.status <> 'completed'
+    OR (TG_OP = 'UPDATE' AND OLD.status = 'completed')
+  THEN
     RETURN NULL;
   END IF;
 

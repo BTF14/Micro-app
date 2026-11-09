@@ -139,7 +139,7 @@ describe("Micro app authentication flow", () => {
     vi.mocked(fetch)
       .mockResolvedValueOnce(jsonResponse(authResponse))
       .mockResolvedValueOnce(jsonResponse(bcvSyncStateResponse))
-      .mockResolvedValueOnce(jsonResponse(bcvRateResponse);
+      .mockResolvedValueOnce(jsonResponse(bcvRateResponse));
     await renderApp();
     await settle();
 

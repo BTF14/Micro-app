@@ -155,3 +155,17 @@ Consecuencia para el watchdog:
 - Añadir pruebas de timeout en cada fase, persistencia del estado terminal cuando sea posible y comportamiento fail-closed cuando no pueda registrarse el fallo.
 
 **Estado:** hallazgo de revisión estática; no se cambió el driver ni se asignó un umbral. Referencia: `apps/api/src/database.ts` en el HEAD actual de #287.
+
+
+## Verificación de fuente oficial — 2026-11-09
+
+Se realizó una nueva consulta directa a `https://www.bcv.org.ve/`:
+
+- La apertura web convencional devolvió HTTP 502 en esta sesión.
+- Una extracción independiente mediante navegador sí alcanzó la página oficial y devolvió contenido con título `Banco Central de Venezuela |`, canonical `https://www.bcv.org.ve/` y los bloques de monedas, seguido de `Fecha Valor: Lunes, 09 Noviembre 2026`.
+- El contenido extraído mostraba USD `897,53830000`, junto con EUR/CNY/TRY/RUB. El valor solo sirve como evidencia de que la página oficial estaba accesible en esa consulta; no se usa como tasa de producción ni como dato contable.
+- **Limitación decisiva:** el extractor devolvió HTML semántico limpiado, no los bytes originales de la respuesta HTTP. Quitó scripts/estilos y atributos/estructura de la página. Por tanto, esto NO satisface el criterio de fixture raw reproducible ni permite calcular un hash del documento original del BCV.
+- No guardar el resultado limpiado bajo el nombre de fixture oficial raw ni cambiar la etiqueta del fixture sintético. No usar mirrors de terceros para completar el HTML faltante.
+- Siguiente paso técnico: conseguir la respuesta HTTP original del host oficial con su cuerpo binario/texto exacto, status, content-type, fecha de captura y SHA-256; luego validar que el fixture está sanitizado de datos no pertinentes, preservar el HTML íntegro y añadir una prueba parser separada que espere USD `897.53830000` y fecha `2026-11-09`. Mantenerlo identificado como muestra histórica de regresión, no como tasa vigente.
+
+**Estado:** acceso al contenido oficial confirmado; fixture raw y validación del parser con markup original siguen pendientes.

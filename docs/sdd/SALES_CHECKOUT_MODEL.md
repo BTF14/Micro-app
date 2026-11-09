@@ -40,7 +40,7 @@ Reglas obligatorias:
 - Migration 0018 **resuelve** la antigua brecha de ordinal: `allocation_position`, índice único y constraint triggers diferidos verifican posiciones contiguas, asignación USD por pago, redondeo y residuo final; assertions y test de manipulación/rollback incluidos.
 - Migration 0019 elimina las escrituras runtime directas de `inventory_balances`; el ledger append-only proyecta balances. Los tipos de movimiento soportados por esta implementación son opening, count_adjustment y sale; transfer dispatch/receipt de dos etapas todavía no está implementado y se rechaza.
 - El source SHA 6227 pasó 16/16 check-runs y 14/14 workflows con pruebas runtime-role/checkout en PostgreSQL desechable; además, el HEAD sincronizado `8615c75...` pasó sus propios 16/16 check-runs y 14/14 workflows. Nuevos commits requieren nueva validación exact-SHA.
-- **Bloqueos:** contrato comercial checkout sin aprobación explícita; checkout exige actualmente tasa BCV incluso en ventas USD-only (decisión pendiente); freshness no depende de `fetched_at` y este timestamp no se actualiza en sync `unchanged`; #255 no tiene alerta persistente, fixture real BCV ni calendario de feriados; UI checkout pendiente. Producción NOT READY.
+- **Bloqueos del snapshot histórico:** la decisión de BCV para ventas USD-only ya fue confirmada después; sigue pendiente el contrato comercial completo de pagos. La política estricta por fecha efectiva está en la rama de trabajo mediante migration 0020 y requiere CI nuevo. Freshness/last-success, alerta persistente, fixture HTML oficial, calendario de feriados, UI de checkout y validación runtime/producción siguen abiertos. Producción NOT READY.
 
 Los snapshots de SHA/PR y los estados que siguen en este documento son históricos; prevalece este bloque y el estado vivo de CURRENT_STATE/HANDOFF. No reutilizar checks antiguos ni ejecutar más escrituras Neon.
 
@@ -117,17 +117,13 @@ Reglas ya aprobadas/documentadas:
 
 **Base normativa:** el artículo 25 de la Ley del IVA dispone que, si el hecho imponible ocurre en un día no hábil para el sector financiero, la equivalencia se calcula con el tipo de cambio vigente el día hábil inmediatamente siguiente. Referencia documental: Gaceta Oficial N.º 6.507 Extraordinario (29-01-2020), artículo 25: <https://www.ivecofi.net/informacion/legislacion/leyes/ley-impuesto-valor-agregado/titulo-iv>. La fecha efectiva del BCV debe corresponder a ese siguiente día hábil. Esto es una referencia normativa para el diseño, no asesoría legal/contable; cualquier caso fiscal especial requiere validación profesional.
 
-La API BCV recuperada en PR #255 selecciona:
-- Lunes–viernes: la fila con fecha efectiva de hoy.
-- Sábado/domingo: la fila válida con la fecha efectiva futura más próxima publicada para el siguiente día hábil.
-- Nunca salta una fila futura más próxima marcada stale para usar otra posterior.
-- Si no hay fila aplicable/validada, falla cerrado.
+La API y el handler de checkout requieren `effective_date = fecha Caracas de hoy` para todos los días, incluidos sábado, domingo y feriados. Una tasa publicada anticipadamente para el lunes permanece `scheduled` hasta el lunes; nunca se usa viernes, sábado ni domingo. Si falta la fila exacta del día o está stale, la API no la presenta como vigente y checkout falla cerrado. No hay fallback a una fecha anterior ni futura.
 
-La migration 0015 de `main` todavía contiene la regla weekday-only. PR #258 añade la migration 0017, que reemplaza únicamente la selección de fecha efectiva del trigger: weekdays exigen hoy; sábado/domingo seleccionan el `MIN(effective_date)` futuro sin filtrar estado, y luego requieren que esa fila exacta sea válida y quede bloqueada `FOR SHARE`. Hasta que #258 se integre, `main` conserva el comportamiento weekday-only.
+La migration 0017 histórica introdujo originalmente selección weekday/weekend y fue aplicada en el ensayo aislado documentado. Su contenido y checksum se preservan. La corrección de política se añade mediante migration 0020 (`0020_bcv_effective_date_strict.sql`), que reemplaza `applicable_bcv_effective_date()` para devolver estrictamente la fecha Caracas de la operación. La migration 0020 tiene assertions de seguridad y de fechas sábado/domingo/lunes; CI y migration-check la ejecutan, y migration-check verifica rollback atómico. Esta nueva migración todavía requiere validación CI exact-HEAD; no se han repetido escrituras Neon.
 
-**Estado del gate en PR #258 (Draft):** migration 0017 está añadida sin modificar retroactivamente 0015. Implementa la regla weekday/weekend, mantiene SECURITY DEFINER/search_path, restringe EXECUTE y añade assertions con fechas deterministas de sábado, domingo y viernes, incluyendo nearest-future stale. También añade validación SQL diferida por línea: `line_total_usd = round(quantity * unit_price_usd, 4)` y `line_total_ves = round(line_total_usd * exchange_rate_snapshot, 2)`. Las assertions verifican esas expresiones y el test PostgreSQL de manipulación confirma rechazo y rollback. HEAD exacto `31a1d14f1fa85fa826035ea0f10d6db18e93e2fd`: 15/15 check-runs, 13/13 workflows, 141/141 unit tests, 85/85 runtime-role tests y 16/16 checkout PostgreSQL tests. No se ha aplicado en Neon; cualquier nuevo cambio exige revalidación exact-SHA.
+Las validaciones SQL diferidas por línea de migration 0017 siguen exigiendo `line_total_usd = round(quantity * unit_price_usd, 4)` y `line_total_ves = round(line_total_usd * exchange_rate_snapshot, 2)`. No se debe modificar retrospectivamente la migration 0017 ni reutilizar sus checks históricos para el nuevo HEAD.
 
-El handler #258 usa la misma selección de fecha efectiva y rechaza la fila nearest-future si está stale. La fuente de datos y Cron BCV siguen dependiendo de la integración pendiente #255. Feriados bancarios entre semana aún no tienen calendario autoritativo; si no hay fila exacta para hoy, checkout falla cerrado. No ejecutar migraciones en Neon main.
+El handler #269 consulta una fila BCV válida con fecha efectiva exactamente igual a la fecha Caracas actual. La fuente de datos/Cron sigue dependiendo de la integración #255. El calendario oficial de feriados continúa siendo un gate operativo para la programación y verificación de publicaciones; no permite anticipar la aplicación de una tasa futura. No ejecutar migraciones en Neon main.
 
 ## 4. Brechas de integridad restantes para revisar
 
@@ -172,7 +168,7 @@ Cualquier error antes de COMMIT produce ROLLBACK total. No ejecutar correos/webh
 
 La migration 0015 ya impone a nivel SQL una sola `settlement_currency` por venta y conciliación exacta del importe pagado con el total de esa moneda; por tanto no admite pagos parciales ni sobrepago/cambio en una venta completada. El handler de PR #233 sigue esa misma forma. No se encontró en el documento original una aprobación funcional explícita de estas reglas.
 
-Antes de activar checkout, el propietario debe confirmar que el contrato ya presente en SQL es el deseado:
+Antes de activar checkout, debe cerrarse la decisión comercial sobre si el contrato ya presente en SQL es el deseado:
 - una sola moneda de liquidación por venta (USD o VES);
 - no pagos parciales;
 - no sobrepago ni cambio;
@@ -185,7 +181,7 @@ Si alguna regla no es la deseada, no se debe eludir el trigger: diseñar una nue
 - Una sola tasa BCV validada por venta.
 - Congelar `exchange_rate_id`, `exchange_rate_snapshot` y `total_ves_snapshot`.
 - No usar tasa de terceros, tasa stale ni tasa aproximada.
-- En fin de semana usar la fecha valor del siguiente día hábil; en feriados entre semana, fail closed hasta tener calendario oficial.
+- Todos los días, usar exclusivamente la tasa con `effective_date` igual a la fecha Caracas de la operación; una tasa futura permanece programada y no se usa antes de su fecha, incluso en fines de semana y feriados.
 
 ## 7. Idempotencia, concurrencia y reversos
 

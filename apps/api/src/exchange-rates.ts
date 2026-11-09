@@ -230,9 +230,75 @@ export async function persistBcvOfficialRate(
   return "older";
 }
 
+const SAFE_BCV_SYNC_ERROR_CODES = new Set([
+  "BCV_HTML_SIZE_INVALID",
+  "BCV_HTML_ENCODING_INVALID",
+  "BCV_RATE_FORMAT_INVALID",
+  "BCV_RATE_VALUE_INVALID",
+  "BCV_EFFECTIVE_DATE_MISSING",
+  "BCV_EFFECTIVE_DATE_INVALID",
+  "BCV_EFFECTIVE_DATE_OUT_OF_RANGE",
+  "BCV_SOURCE_HTTP_ERROR",
+  "BCV_SOURCE_REDIRECT_REJECTED",
+  "BCV_SOURCE_CONTENT_TYPE_INVALID",
+  "BCV_USD_RATE_MISSING",
+  "BCV_RATE_CHANGED_FOR_EXISTING_EFFECTIVE_DATE",
+  "BCV_SYNC_STATE_ROW_MISSING",
+]);
+
+export function safeBcvSyncErrorCode(error: unknown): string {
+  if (!(error instanceof Error)) return "BCV_SYNC_UNKNOWN";
+  return SAFE_BCV_SYNC_ERROR_CODES.has(error.message) ? error.message : "BCV_SYNC_UNKNOWN";
+}
+
+/**
+ * Persist one attempt and its terminal result. Conditional attempt_id updates
+ * prevent a slower overlapping invocation from overwriting a newer attempt.
+ */
 export async function syncBcvOfficialRate(databaseUrl: string | undefined): Promise<"inserted" | "unchanged" | "older"> {
-  const rate = await fetchBcvOfficialRate();
-  return withDatabaseClient(databaseUrl, (client) => persistBcvOfficialRate(client, rate));
+  return withDatabaseClient(databaseUrl, async (client) => {
+    const attemptId = crypto.randomUUID();
+    const started = await client.query<{ attempt_id: string }>(
+      `UPDATE public.bcv_sync_state
+          SET attempt_id = $1::uuid,
+              last_attempt_at = now(),
+              last_outcome = 'running',
+              last_error_code = NULL,
+              updated_at = now()
+        WHERE singleton = true
+        RETURNING attempt_id::text AS attempt_id`,
+      [attemptId],
+    );
+    if (started.rows.length !== 1) throw new Error("BCV_SYNC_STATE_ROW_MISSING");
+
+    try {
+      const rate = await fetchBcvOfficialRate();
+      const outcome = await persistBcvOfficialRate(client, rate);
+      // If another invocation has started since this one, this update is a
+      // deliberate no-op. Never let an older attempt overwrite newer state.
+      await client.query(
+        `UPDATE public.bcv_sync_state
+            SET last_success_at = now(),
+                last_outcome = $2,
+                last_error_code = NULL,
+                last_effective_date = $3::date,
+                updated_at = now()
+          WHERE singleton = true AND attempt_id = $1::uuid`,
+        [attemptId, outcome, rate.effectiveDate],
+      );
+      return outcome;
+    } catch (error) {
+      await client.query(
+        `UPDATE public.bcv_sync_state
+            SET last_outcome = 'failed',
+                last_error_code = $2,
+                updated_at = now()
+          WHERE singleton = true AND attempt_id = $1::uuid`,
+        [attemptId, safeBcvSyncErrorCode(error)],
+      );
+      throw error;
+    }
+  });
 }
 
 /**

@@ -2307,3 +2307,8 @@ Se obtuvo `document.documentElement.outerHTML` de la página oficial BCV y se pr
 ## 2026-11-09 — Precisión del timeout Neon
 
 Se comprobó en el lockfile que la versión es `@neondatabase/serverless@1.2.0`. El driver soporta opciones de conexión, sentencia, query cliente, lock e idle transaction; el wrapper no fija límites. Se corrigió el diagnóstico: no falta capacidad del driver, falta configuración y pruebas. No se adoptaron valores ni se implementó watchdog. El detalle de semántica y plan de pruebas quedó en ODD `bcv-sync-alerting-recovery.md` de #287.
+
+
+## 2026-11-09 — Ciclo de vida DB BCV
+
+Se detectó que la sincronización BCV mantiene una conexión DB abierta durante el fetch externo de hasta 10 s. Se documentó como mejora candidata dividir claim/fetch/finalize en conexiones separadas, manteniendo compare atómico de `attempt_id`. No se modificó código ni Cron; requiere pruebas de superseded, fallos de DB y cleanup.

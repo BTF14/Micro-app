@@ -169,3 +169,18 @@ Se realizó una nueva consulta directa a `https://www.bcv.org.ve/`:
 - Siguiente paso técnico: conseguir la respuesta HTTP original del host oficial con su cuerpo binario/texto exacto, status, content-type, fecha de captura y SHA-256; luego validar que el fixture está sanitizado de datos no pertinentes, preservar el HTML íntegro y añadir una prueba parser separada que espere USD `897.53830000` y fecha `2026-11-09`. Mantenerlo identificado como muestra histórica de regresión, no como tasa vigente.
 
 **Estado:** acceso al contenido oficial confirmado; fixture raw y validación del parser con markup original siguen pendientes.
+
+
+## Corrección y avance — captura DOM oficial preservada (2026-11-09)
+
+La extracción anterior descrita como HTML semántico limpiado fue una primera lectura. Después se completó una captura de navegador de `document.documentElement.outerHTML` de `https://www.bcv.org.ve/`:
+
+- Título: `Banco Central de Venezuela |`; URL final: `https://www.bcv.org.ve/`.
+- El navegador reportó `Page loaded successfully`; no expuso código HTTP numérico ni response headers.
+- Longitud UTF-8 de la serialización DOM original: 93.797 bytes.
+- SHA-256 DOM original (antes de redacción): `97fe86647e11fae932c8f4495524ba0a7ed0a756bea85576079f63ec5333feb9`.
+- Se preservó `apps/api/src/fixtures/bcv-homepage-dom-2026-11-09.html`, redactando solo `form_build_id`, `form_token` del formulario Drupal público y una URL `blob:` efímera. SHA-256 del archivo almacenado: `a10241b7fab8349aab1e8ba51faacc6501e7af6203cbd391fffd0264de33d36e`.
+- Proveniencia y limitaciones: `apps/api/src/fixtures/bcv-homepage-dom-2026-11-09.provenance.md`.
+- Se añadió un test del parser sobre esta muestra DOM: espera USD `897.53830000` y fecha efectiva `2026-11-09`.
+
+**Alcance:** ya hay una muestra oficial del DOM completa y hash-verified, sanitizada y probada como regresión del parser. No es el cuerpo HTTP byte-for-byte; el navegador pudo normalizar/modificar el DOM y no se obtuvieron status/headers HTTP. El gate de captura raw HTTP queda abierto. La muestra es histórica y no es una fuente de tasa en runtime.

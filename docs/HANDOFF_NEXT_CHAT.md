@@ -2447,3 +2447,16 @@ Este bloque es más reciente que los snapshots históricos anteriores; si contra
 - Alcance: este fue un ensayo real de escritura/DDL únicamente en la base Neon aislada `microapp_rehearsal`, autorizado expresamente por el propietario. No se tocó Neon main, `neondb` parent-data clone, secretos, Cloudflare, DNS, billing ni despliegues productivos.
 - Warning no bloqueante: deprecación de Node.js 20 en `actions/checkout@v4`; el runner lo fuerza a Node.js 24 y el job finalizó SUCCESS. Registrar actualización de actions como mantenimiento, no como fallo de migración.
 - Dictamen: **migraciones 0001–0019 demostradas en Neon rehearsal con pin inmutable y assertions 0017–0019 satisfactorias**. Esto eleva la confianza en la ruta de migración, pero no equivale a certificación de producción: siguen pendientes validación funcional integrada sobre la DB resultante, smoke tests autenticados, revisión final de permisos/RLS y gates operativos/producto. No promover automáticamente a producción.
+
+
+## Continuación inmediata — 2026-11-09 — seguridad administrativa y calendario
+
+Rama documental activa: `docs/reconcile-bcv-freshness-fx-task-20261109`, PR #296. Revalidar HEAD/CI/reviews en vivo antes de cualquier acción.
+
+- Leer primero `AGENTS.md`, `docs/CONSTITUTION.md`, `docs/WORK_CHECKPOINT.md` y las secciones recientes de `docs/CURRENT_STATE.md`.
+- Revisar el nuevo ADR `docs/decisions/ADR-20261109-admin-authorization-pin-recovery.md` y las secciones añadidas a `docs/sdd/FX_CONTINGENCY_MANAGEMENT.md` y `docs/sdd/BANKING_CALENDAR_VERSIONING.md`.
+- Se propone servicio compartido de autorización administrativa, con permisos separados `fx.contingency.authorize` y `banking_calendar.*`; no asumir que el rol Admin los incluye. Carga/edición/publicación también son permisos distintos.
+- PIN individual (8 dígitos mínimo propuesto para pequeño negocio), Argon2id preferido con parámetros benchmark, 5 intentos/15 min como punto de partida a probar, backoff progresivo, contadores atómicos server-side. Recuperación es reset con MFA/código de un solo uso; email solo no basta; revocar sesiones/autorizaciones pendientes y auditar.
+- Calendario admite vigilancia automática sin publicación, PDF en cuarentena y procesamiento aislado, entrada manual, revisión humana, historial inmutable y recordatorios 1 diciembre/1 enero.
+- Estado: documentación solamente; no se ha implementado PIN, recuperación, parser/antivirus, almacenamiento, alertas, recordatorios ni endpoints. No habilitar contingencia manual.
+- Próximo paso: validar el diff completo, actualizar descripción PR #296 y ejecutar/verificar workflows exactos del HEAD final. Mantener PR #296 Draft; no fusionar PR #287/#296 por este cambio.

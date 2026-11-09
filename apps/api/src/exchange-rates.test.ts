@@ -503,4 +503,72 @@ describe("BCV synchronization failure and cleanup semantics", () => {
     }
   });
 
+
+  it("does not let a superseded fetch failure overwrite the newer attempt state", async () => {
+    let currentAttemptId = "";
+    let clientNumber = 0;
+    const createClient = vi.fn(() => {
+      ++clientNumber;
+      return {
+        connect: vi.fn(async () => undefined),
+        query: vi.fn(async (statement: string, values?: unknown[]) => {
+          if (statement.includes("SET attempt_id =")) {
+            currentAttemptId = String(values?.[0]);
+            return { rows: [{ attempt_id: currentAttemptId }] };
+          }
+          if (statement.includes("FOR UPDATE")) {
+            return { rows: [{ attempt_id: currentAttemptId }] };
+          }
+          if (statement.includes("INSERT INTO public.exchange_rates")) {
+            return { rows: [{ id: "newer-rate-row" }] };
+          }
+          if (statement.includes("SET last_outcome = 'failed'")) {
+            return values?.[0] === currentAttemptId
+              ? { rows: [{ attempt_id: currentAttemptId }] }
+              : { rows: [] };
+          }
+          return { rows: [] };
+        }),
+        end: vi.fn(async () => undefined),
+      } as unknown as DatabaseClient;
+    });
+
+    let rejectOlderFetch!: (error: Error) => void;
+    let signalOlderFetchStarted!: () => void;
+    const olderFetchStarted = new Promise<void>((resolve) => { signalOlderFetchStarted = resolve; });
+    const olderFetch = new Promise<Response>((_resolve, reject) => { rejectOlderFetch = reject; });
+    const fetchMock = vi.fn()
+      .mockImplementationOnce(() => {
+        signalOlderFetchStarted();
+        return olderFetch;
+      })
+      .mockResolvedValueOnce(new Response(officialBcvHomepageHtml, {
+        status: 200,
+        headers: { "content-type": "text/html; charset=utf-8" },
+      }));
+    vi.stubGlobal("fetch", fetchMock);
+
+    try {
+      const olderAttempt = syncBcvOfficialRate(
+        "postgresql://user:password@db.example/neondb?sslmode=require",
+        createClient,
+      );
+      await olderFetchStarted;
+
+      await expect(syncBcvOfficialRate(
+        "postgresql://user:password@db.example/neondb?sslmode=require",
+        createClient,
+      )).resolves.toBe("inserted");
+
+      const newerAttemptId = currentAttemptId;
+      rejectOlderFetch(new Error("BCV_SOURCE_HTTP_ERROR"));
+      await expect(olderAttempt).resolves.toBe("superseded");
+
+      expect(currentAttemptId).toBe(newerAttemptId);
+      expect(createClient).toHaveBeenCalledTimes(4);
+    } finally {
+      vi.unstubAllGlobals();
+    }
+  });
+
 });

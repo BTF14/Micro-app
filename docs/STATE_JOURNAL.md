@@ -2274,3 +2274,8 @@ El ensayo verifica el bundle SQL y roles en la base aislada; no prueba el compor
 - #269 HEAD 8f05befb7ac1a46d68850b9f89f89edc8cd46283: 16/16 check-runs y 14/14 workflows SUCCESS. #255 HEAD 7e43d7fd1519889605174da5818190bb84685059: 15/15 check-runs y 13/13 workflows SUCCESS.
 - Se verificó que migration 0017–0019 y sus assertions son blob idénticos entre source Neon rehearsal 6227a3a... y el HEAD #269. No se repitió ninguna escritura Neon.
 - Correcciones de integridad incluidas en #269: payments sin DELETE/TRUNCATE para PUBLIC/runtime; movimientos revalidan branch active con lock NOWAIT y test de regresión.
+
+
+## 2026-11-09 — Integración BCV/checkout
+
+Se abrió PR #287 Draft como ensayo aislado. Se combinan BCV + checkout y se añade migración 0021 para last-attempt/last-success y control de concurrencia por attempt_id. Sin cambios en main, Neon, deploy, secretos ni Cron activo. Ver handoff 2026-11-09 para el estado y los gates restantes.

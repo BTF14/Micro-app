@@ -139,7 +139,7 @@ PR #293 se integró con merge commit en la rama de #287 para preservar main como
 ### Rama y alcance
 - Rama nueva: `fix/bcv-checkout-last-success-20261109`, creada desde el HEAD verificado de PR #287: `362443524eb45c67da16811d1745d83ddc9bd3a9`.
 - PR #287 permanece OPEN/Draft; esta rama no modifica #287 ni main. PR de esta corrección aún no creada en el momento de este registro.
-- Implementación: `findApplicableCheckoutRate()` primero lee `bcv_sync_state` con `SELECT ... FOR SHARE` y solo continúa si hay `last_success_at`, outcome `inserted`/ `unchanged` y `last_effective_date` igual a hoy en Caracas. Luego exige la fila BCV same-day `valid`.
+- Implementación: `findApplicableCheckoutRate()` primero lee `bcv_sync_state` con `SELECT ... FOR SHARE` y solo continúa si hay `last_success_at`, outcome `inserted`/ `unchanged` y `last_effective_date` igual o posterior a hoy en Caracas. Luego exige la fila BCV same-day `valid`.
 - El lock compartido permanece durante la transacción del checkout y serializa el inicio de un sync nuevo (UPDATE de la fila singleton). Si sync comenzó primero, checkout ve `running`; si checkout obtuvo el lock primero, la venta autorizada termina antes de que el nuevo intento pase a `running`. El lock no se mantiene durante el fetch HTTP.
 - Replay idempotente de una venta completada puede devolver su snapshot existente; no crea una venta ni consume inventario. La regla aplica a ventas nuevas.
 

@@ -1,3 +1,14 @@
+## Decisión de producto confirmada — 2026-11-08 UTC
+
+- El propietario confirma que **toda venta exige una tasa BCV vigente, incluso si todos los pagos se liquidan exclusivamente en USD**. Esta decisión reemplaza cualquier snapshot histórico de este documento que marque USD-only/BCV como pendiente.
+- El handler de checkout consulta una tasa aplicable antes de crear/finalizar la venta y responde `409 BCV_RATE_NOT_CURRENT` si no existe una tasa aplicable con `validation_status = 'valid'`. La migración 0017 también valida la tasa y su fecha efectiva al reconciliar la venta completada.
+- Los importes y monedas originales de los pagos se conservan. El equivalente USD/VES se registra como snapshot contable de asignación; el total VES derivado de la tasa es referencial para ventas liquidadas en USD y no representa conversión ni cobro adicional.
+- La tasa aplicada queda en `sales.exchange_rate_id` y `sales.exchange_rate_snapshot`; no se debe reescribir retroactivamente una venta al cambiar una tasa posterior.
+- **No queda aprobado por esta decisión:** contrato comercial completo de parciales, sobrepago/cambio, UI/recibos, y flujos de devolución/anulación con su auditoría. Esos puntos requieren revisión y pruebas antes de sacar Draft.
+- La regla de checkout depende de la fiabilidad del productor BCV (#255). No activar su Cron ni desplegarlo como consecuencia de esta decisión.
+
+---
+
 ## Estado autoritativo posterior al rehearsal Neon y PR #282 — 2026-11-08 UTC
 
 - Main usado: `9c6b30281ed59726e532da840568fc9e80b528f7`; PR #269 actual HEAD `8615c75ac8a339f5591ea268e0b6c6d6473ae6d3`, 25 ahead / 0 behind tras merge commit no destructivo. Ese HEAD pasó 16/16 check-runs y 14/14 workflows SUCCESS, incluidos los seis contextos requeridos. Mantener Draft por gates de producto.

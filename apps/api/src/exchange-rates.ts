@@ -1,7 +1,7 @@
 import type { Hono } from "hono";
 import { getCookie } from "hono/cookie";
 import { authorizeTenantOperation } from "./authorization";
-import { withDatabaseClient, withDatabaseTransaction, type DatabaseClient } from "./database";
+import { withDatabaseClient, withDatabaseTransaction, type DatabaseClient, type DatabaseClientFactory } from "./database";
 import type { Bindings } from "./bindings";
 
 const BCV_SOURCE_URL = "https://www.bcv.org.ve/";
@@ -260,10 +260,16 @@ export function safeBcvSyncErrorCode(error: unknown): string {
  * both operational state and exchange_rates: a superseded fetch must not
  * invalidate or insert a rate after a newer attempt has taken ownership.
  */
-export async function syncBcvOfficialRate(databaseUrl: string | undefined): Promise<"inserted" | "unchanged" | "older" | "superseded"> {
-  return withDatabaseClient(databaseUrl, async (client) => {
-    const attemptId = crypto.randomUUID();
-    const started = await client.query<{ attempt_id: string }>(
+export async function syncBcvOfficialRate(
+  databaseUrl: string | undefined,
+  createClient?: DatabaseClientFactory,
+): Promise<"inserted" | "unchanged" | "older" | "superseded"> {
+  const attemptId = crypto.randomUUID();
+
+  // Phase A: claim the singleton attempt, then close the DB connection before
+  // making any external network request.
+  const started = await withDatabaseClient(databaseUrl, async (client) => {
+    return client.query<{ attempt_id: string }>(
       `UPDATE public.bcv_sync_state
           SET attempt_id = $1::uuid,
               last_attempt_at = now(),
@@ -274,72 +280,81 @@ export async function syncBcvOfficialRate(databaseUrl: string | undefined): Prom
         RETURNING attempt_id::text AS attempt_id`,
       [attemptId],
     );
-    if (started.rows.length !== 1) throw new Error("BCV_SYNC_STATE_ROW_MISSING");
+  }, createClient);
+  if (started.rows.length !== 1) throw new Error("BCV_SYNC_STATE_ROW_MISSING");
 
-    let rate: BcvOfficialRate;
+  // Phase B: fetch and validate the official source without holding a DB
+  // connection. A failure is recorded with a short, independent connection.
+  let rate: BcvOfficialRate;
+  try {
+    rate = await fetchBcvOfficialRate();
+  } catch (error) {
     try {
-      rate = await fetchBcvOfficialRate();
-    } catch (error) {
-      const markedFailed = await client.query<{ attempt_id: string }>(
-        `UPDATE public.bcv_sync_state
-            SET last_outcome = 'failed',
-                last_error_code = $2,
-                updated_at = now()
-          WHERE singleton = true AND attempt_id = $1::uuid
-          RETURNING attempt_id::text AS attempt_id`,
-        [attemptId, safeBcvSyncErrorCode(error)],
-      );
-      if (markedFailed.rows.length === 0) return "superseded";
-      throw error;
-    }
-
-    let terminal:
-      | { kind: "superseded" }
-      | { kind: "success"; outcome: "inserted" | "unchanged" | "older" }
-      | { kind: "failed"; errorCode: string };
-    try {
-      terminal = await withDatabaseTransaction(client, async (tx) => {
-      const current = await tx.query<{ attempt_id: string | null }>(
-        `SELECT attempt_id::text AS attempt_id
-           FROM public.bcv_sync_state
-          WHERE singleton = true
-          FOR UPDATE`,
-      );
-      if (current.rows.length !== 1) throw new Error("BCV_SYNC_STATE_ROW_MISSING");
-      if (current.rows[0]?.attempt_id !== attemptId) {
-        return { kind: "superseded" as const };
-      }
-
-      try {
-        const outcome = await persistBcvOfficialRate(tx, rate);
-        await tx.query(
+      const markedFailed = await withDatabaseClient(databaseUrl, async (client) => {
+        return client.query<{ attempt_id: string }>(
           `UPDATE public.bcv_sync_state
-              SET last_success_at = now(),
-                  last_outcome = $2,
-                  last_error_code = NULL,
-                  last_effective_date = $3::date,
+              SET last_outcome = 'failed',
+                  last_error_code = $2,
                   updated_at = now()
-            WHERE singleton = true AND attempt_id = $1::uuid`,
-          [attemptId, outcome, rate.effectiveDate],
+            WHERE singleton = true AND attempt_id = $1::uuid
+            RETURNING attempt_id::text AS attempt_id`,
+          [attemptId, safeBcvSyncErrorCode(error)],
         );
-        return { kind: "success" as const, outcome };
-      } catch (error) {
-        // A changed value for an existing effective date deliberately marks
-        // the row stale. Commit that invalidation and the failed attempt state
-        // together; other errors still abort and roll back the transaction.
-        if (error instanceof Error && error.message === "BCV_RATE_CHANGED_FOR_EXISTING_EFFECTIVE_DATE") {
+      }, createClient);
+      if (markedFailed.rows.length === 0) return "superseded";
+    } catch {
+      // Keep the original BCV error. If DB is unavailable, the watchdog can
+      // detect the still-running attempt without exposing driver details.
+    }
+    throw error;
+  }
+
+  // Phase C: use a fresh connection and one transaction. The row lock and
+  // attemptId comparison prevent a superseded fetch from touching any rate.
+  const terminal = await withDatabaseClient(databaseUrl, async (client) => {
+    try {
+      return await withDatabaseTransaction(client, async (tx) => {
+        const current = await tx.query<{ attempt_id: string | null }>(
+          `SELECT attempt_id::text AS attempt_id
+             FROM public.bcv_sync_state
+            WHERE singleton = true
+            FOR UPDATE`,
+        );
+        if (current.rows.length !== 1) throw new Error("BCV_SYNC_STATE_ROW_MISSING");
+        if (current.rows[0]?.attempt_id !== attemptId) {
+          return { kind: "superseded" as const };
+        }
+
+        try {
+          const outcome = await persistBcvOfficialRate(tx, rate);
           await tx.query(
             `UPDATE public.bcv_sync_state
-                SET last_outcome = 'failed',
-                    last_error_code = $2,
+                SET last_success_at = now(),
+                    last_outcome = $2,
+                    last_error_code = NULL,
+                    last_effective_date = $3::date,
                     updated_at = now()
               WHERE singleton = true AND attempt_id = $1::uuid`,
-            [attemptId, safeBcvSyncErrorCode(error)],
+            [attemptId, outcome, rate.effectiveDate],
           );
-          return { kind: "failed" as const, errorCode: error.message };
+          return { kind: "success" as const, outcome };
+        } catch (error) {
+          // A changed value for an existing effective date deliberately marks
+          // the row stale. Commit that invalidation and the failed attempt state
+          // together; other errors still abort and roll back the transaction.
+          if (error instanceof Error && error.message === "BCV_RATE_CHANGED_FOR_EXISTING_EFFECTIVE_DATE") {
+            await tx.query(
+              `UPDATE public.bcv_sync_state
+                  SET last_outcome = 'failed',
+                      last_error_code = $2,
+                      updated_at = now()
+                WHERE singleton = true AND attempt_id = $1::uuid`,
+              [attemptId, safeBcvSyncErrorCode(error)],
+            );
+            return { kind: "failed" as const, errorCode: error.message };
+          }
+          throw error;
         }
-        throw error;
-      }
       });
     } catch (error) {
       try {
@@ -352,15 +367,15 @@ export async function syncBcvOfficialRate(databaseUrl: string | undefined): Prom
           [attemptId, safeBcvSyncErrorCode(error)],
         );
       } catch {
-        // Preserve the original failure if the connection cannot record it.
+        // Preserve the original failure if this connection cannot record it.
       }
       throw error;
     }
+  }, createClient);
 
-    if (terminal.kind === "superseded") return "superseded";
-    if (terminal.kind === "failed") throw new Error(terminal.errorCode);
-    return terminal.outcome;
-  });
+  if (terminal.kind === "superseded") return "superseded";
+  if (terminal.kind === "failed") throw new Error(terminal.errorCode);
+  return terminal.outcome;
 }
 
 /**

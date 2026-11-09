@@ -2278,3 +2278,12 @@ El ensayo verifica el bundle SQL y roles en la base aislada; no prueba el compor
 
 PR #287 combinó las ramas BCV y checkout en una integración Draft y añadió migración 0021 para estado de sincronización. Se detectó que una respuesta antigua podía marcar stale una tasa nueva de la misma fecha. La corrección usa bloqueo transaccional y verificación del `attempt_id`; se añadió prueba PostgreSQL con dos tasas diferentes. PR #289 corrigió la expectativa del handler `Promise<void>`; PR #290 actualizó handoff/ODD. Ambos se integraron solo en la rama #287. HEAD de código validado antes de sincronización: `254ebb6e741f7c1b147fbd4880bc188f17204807`, 15/15 check-runs y 11/11 workflows SUCCESS. Freshness y fuentes oficiales siguen gates P1.
 
+
+
+---
+
+## 2026-11-09 — Política de freshness BCV aprobada e implementación aislada
+
+El propietario confirmó opción A: si el último intento BCV está `running` o `failed`, bloquear nuevas ventas hasta una sincronización exitosa. Se registró ADR `docs/decisions/ADR-20261109-bcv-checkout-last-success.md`.
+
+Se creó `fix/bcv-checkout-last-success-20261109` desde #287 HEAD `362443524eb45c67da16811d1745d83ddc9bd3a9`. Checkout ahora consulta el singleton con `SELECT ... FOR SHARE`, exige `last_success_at`, outcome `inserted`/`unchanged` y fecha efectiva coincidente antes de leer la tasa same-day. Se añadieron pruebas unitarias y PostgreSQL runtime-role, incluyendo bloqueo de UPDATE concurrente. No se declara validado hasta CI exact-HEAD. No se tocó main, Neon, deploy ni Cron; producción NOT READY.

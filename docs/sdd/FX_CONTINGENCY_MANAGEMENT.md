@@ -320,3 +320,7 @@ Registrar append-only: cambios de PIN, restablecimientos, intentos fallidos, blo
 - Errores de DB, estado de autorización desconocido o verificación incompleta: fail-closed.
 
 Esta sección amplía la propuesta documental de PIN del ADR FX. La decisión transversal y los límites de implementación están en [ADR de autorización administrativa](../decisions/ADR-20261109-admin-authorization-pin-recovery.md). Nada de esto está implementado ni habilitado todavía.
+
+### Compatibilidad con el runtime gratuito y códigos de recuperación
+
+Argon2id es una preferencia criptográfica, no una decisión de implementación cerrada. Cloudflare Workers Free tiene un límite documentado de 10 ms de CPU por invocación HTTP y Cron (128 MB de memoria). Antes de elegir KDF se debe medir el tiempo CPU real y p95/p99 en el runtime objetivo. Si Argon2id o una alternativa segura no cabe en el presupuesto gratuito, no rebajar arbitrariamente los parámetros ni cambiar a SHA-256 rápido: evaluar WebAuthn/passkeys/reautenticación fuerte o aplazar el PIN hasta resolver un runtime seguro sin coste obligatorio. Si se usa pepper, guardarlo como secreto Worker separado de DB y diseñar rotación. Los códigos de recuperación serán aleatorios de alta entropía, de un solo uso, mostrados una vez y almacenados solo como hashes; nunca por email ni logs. Bloquear PINs comunes/secuenciales/repetidos. Referencia: https://developers.cloudflare.com/workers/platform/limits/.

@@ -311,9 +311,10 @@ export async function syncBcvOfficialRate(
 
   // Phase C: use a fresh connection and one transaction. The row lock and
   // attemptId comparison prevent a superseded fetch from touching any rate.
-  const terminal = await withDatabaseClient(databaseUrl, async (client) => {
-    try {
-      return await withDatabaseTransaction(client, async (tx) => {
+  let terminal: { kind: "superseded" } | { kind: "success"; outcome: "inserted" | "unchanged" | "older" } | { kind: "failed"; errorCode: string };
+  try {
+    terminal = await withDatabaseClient(databaseUrl, async (client) => {
+      return withDatabaseTransaction(client, async (tx) => {
         const current = await tx.query<{ attempt_id: string | null }>(
           `SELECT attempt_id::text AS attempt_id
              FROM public.bcv_sync_state
@@ -356,22 +357,30 @@ export async function syncBcvOfficialRate(
           throw error;
         }
       });
-    } catch (error) {
-      try {
+    }, createClient);
+  } catch (error) {
+    // COMMIT can be ambiguous if PostgreSQL committed but its response was
+    // lost. Reconcile through a fresh connection and only mark a still-running
+    // attempt failed; never overwrite a terminal success from an ambiguous
+    // commit. If DB is unavailable, leave running for watchdog reconciliation.
+    try {
+      await withDatabaseClient(databaseUrl, async (client) => {
         await client.query(
           `UPDATE public.bcv_sync_state
               SET last_outcome = 'failed',
                   last_error_code = $2,
                   updated_at = now()
-            WHERE singleton = true AND attempt_id = $1::uuid`,
+            WHERE singleton = true
+              AND attempt_id = $1::uuid
+              AND last_outcome = 'running'`,
           [attemptId, safeBcvSyncErrorCode(error)],
         );
-      } catch {
-        // Preserve the original failure if this connection cannot record it.
-      }
-      throw error;
+      }, createClient);
+    } catch {
+      // Preserve the original terminal-phase failure.
     }
-  }, createClient);
+    throw error;
+  }
 
   if (terminal.kind === "superseded") return "superseded";
   if (terminal.kind === "failed") throw new Error(terminal.errorCode);

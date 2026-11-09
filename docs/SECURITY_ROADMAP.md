@@ -694,3 +694,12 @@ Snapshot histórico: el manual run [40916692763](https://github.com/BTF14/Micro-
 - No hay evidencia de explotación del hallazgo HTTPS anterior; se corrigió en código main. La corrección no sustituye verificación de configuración productiva.
 
 ---
+
+## Diseño añadido — 2026-11-09: reautenticación administrativa y PDF bancario
+
+- Servicio transversal propuesto: PIN individual, Argon2id calibrado, rate limiting atómico, backoff, recuperación reforzada, revocación, alertas y auditoría append-only.
+- Parámetros 5 intentos/15 minutos son iniciales para validación, no garantía final. Evitar lockout permanente y denegación de servicio contra cuentas.
+- Reset nunca revela el PIN; email solo no basta; MFA/código de recuperación de un solo uso; invalidar autorizaciones pendientes y sesiones protegidas.
+- Autorización ligada a acción y payload exactos, nonce/idempotencia, expiración corta y consumo único transaccional.
+- PDF: cuarentena, MIME + firma + límites, almacenamiento privado, análisis/parseo aislado sin red, rechazo de contenido activo/adjuntos y CDR/renderizado seguro; sin scanner confiable, no marcar como limpio ni publicar.
+- Estado: solo diseño. Requiere implementación y pruebas de seguridad antes de reducir riesgos Nivel 1.

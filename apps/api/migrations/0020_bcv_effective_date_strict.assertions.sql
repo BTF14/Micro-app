@@ -5,6 +5,7 @@ DO $checkout_bcv_strict_effective_date_assertions$
 DECLARE
   helper_oid oid;
   helper_definition text;
+  friday_date date;
   saturday_date date;
   sunday_date date;
   monday_date date;
@@ -39,11 +40,13 @@ BEGIN
     RAISE EXCEPTION 'CHECKOUT_BCV_MIGRATOR_HELPER_EXECUTE_MISSING';
   END IF;
 
+  SELECT public.applicable_bcv_effective_date('2026-11-06 12:00:00-04'::timestamptz) INTO friday_date;
   SELECT public.applicable_bcv_effective_date('2026-11-07 12:00:00-04'::timestamptz) INTO saturday_date;
   SELECT public.applicable_bcv_effective_date('2026-11-08 12:00:00-04'::timestamptz) INTO sunday_date;
   SELECT public.applicable_bcv_effective_date('2026-11-09 12:00:00-04'::timestamptz) INTO monday_date;
 
-  IF saturday_date <> DATE '2026-11-07'
+  IF friday_date <> DATE '2026-11-06'
+    OR saturday_date <> DATE '2026-11-07'
     OR sunday_date <> DATE '2026-11-08'
     OR monday_date <> DATE '2026-11-09' THEN
     RAISE EXCEPTION 'CHECKOUT_BCV_RATE_MUST_NOT_BE_USED_BEFORE_EFFECTIVE_DATE';

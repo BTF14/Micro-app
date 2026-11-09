@@ -127,6 +127,8 @@ export default Object.assign(app, {
       }
       return;
     }
+    // Only the explicitly configured hourly retention Cron may run cleanup.
+    if (controller.cron !== "17 * * * *") return;
     // Worker previews must never connect to the application database.
     if (env.APP_ENV !== "production") return;
     await withDatabaseClient(env.DATABASE_URL, (client) =>

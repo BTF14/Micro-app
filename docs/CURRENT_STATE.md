@@ -2333,3 +2333,8 @@ Una extracción de navegador alcanzó `https://www.bcv.org.ve/` y recuperó los 
 ### Captura DOM BCV — 2026-11-09
 
 La rama #287 preserva y prueba una serialización completa `document.documentElement.outerHTML` de `https://www.bcv.org.ve/`, con SHA-256 original `97fe86647e11fae932c8f4495524ba0a7ed0a756bea85576079f63ec5333feb9` y fixture sanitizada SHA-256 `a10241b7fab8349aab1e8ba51faacc6501e7af6203cbd391fffd0264de33d36e`. Se redaccionaron valores de formulario Drupal y URL blob efímera; el test espera USD 897.53830000 y fecha 2026-11-09. Es DOM serializado, no cuerpo HTTP raw; código de estado y headers no expuestos. El raw HTTP sigue siendo gate pendiente.
+
+
+### Timeout DB — precisión de la revisión estática (2026-11-09)
+
+`@neondatabase/serverless@1.2.0` sí soporta parámetros `connectionTimeoutMillis`, `statement_timeout`, `query_timeout`, `lock_timeout` e `idle_in_transaction_session_timeout`; el wrapper actual no configura ninguno. El control server-side principal es `statement_timeout`; `query_timeout` es client-side y no debe confundirse con cancelación garantizada en PostgreSQL. `fetchOptions.signal` es solo para `neon()` HTTP, no para el `Client` WebSocket actual. Los valores y watchdog siguen sin definir hasta pruebas por fase y revisión del impacto en todas las rutas compartidas.

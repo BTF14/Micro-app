@@ -1,3 +1,14 @@
+## Revalidación de evidencia — integración BCV/checkout PR #287 — 2026-11-09 UTC
+
+- Rama: `integration/bcv-checkout-rehearsal-20261109`; HEAD exacto `afac566848170e117c0afaca63bc7939ed777374`; base main `03442951b2a2f63f5bf4dcf560f2c91be4f6cc71`; 157 ahead / 0 behind; PR OPEN/Draft y mergeable=true.
+- CI exact-HEAD terminó SUCCESS: build/typecheck, unit tests y matriz PostgreSQL, incluidos BCV effective-date, checkout atómico, inventario, catálogo y runtime-role API.
+- Check-runs publicados para ese SHA: 9 SUCCESS. Workflow runs: 7 SUCCESS y 6 FAILURE; los seis fallos devolvieron 0 jobs y no exponen steps, annotations ni logs. No se atribuyen al código ni se omiten.
+- No hay reviews formales ni review threads. CI y check-runs no sustituyen aprobación independiente.
+- El trabajo BCV/checkout implementado en esta rama no está en main. Los criterios completos de producto y producción siguen separados de los vertical slices parciales descritos abajo.
+- Producción: **NOT READY**. No merge, deploy productivo, Cron BCV, Neon main writes, secretos, DNS, billing ni datos reales.
+
+---
+
 ## Nota autoritativa — 2026-11-08 UTC
 
 El estado operativo vigente se centraliza en CURRENT_STATE.md y HANDOFF_NEXT_CHAT.md. Main actual: 9c6b30281ed59726e532da840568fc9e80b528f7; #280 y #282 integradas. Neon rehearsal #42507066215 aplicó 0001–0019 solo en microapp_rehearsal. #269 está OPEN/Draft en HEAD 8f05befb7ac1a46d68850b9f89f89edc8cd46283 con 16/16 check-runs y 14/14 workflows SUCCESS; #255 OPEN/Draft en HEAD 7e43d7fd1519889605174da5818190bb84685059 con 15/15 y 13/13 SUCCESS. #258 y #262 se cerraron como superseded tras preservar/evolucionar todo su contenido en #269. #233 sigue histórica abierta; #193 no se modifica. Producción NOT READY: contrato comercial checkout y gates BCV siguen abiertos. No repetir escrituras Neon ni tocar producción. El detalle, SHA y siguientes pasos están en CURRENT_STATE.md.
@@ -144,6 +155,15 @@ Este archivo es la fuente de datos para el panel de avance. Un ítem solo puede 
 - [ ] Integración de tasa BCV validada con fuente, vigencia y fallos.
 - [ ] Tratamiento de IVA/IGTF/documentos fiscales validado por fuentes oficiales y asesoría competente.
 
+### Vertical slice BCV/checkout — evidencia en PR #287 (no equivale a POS completo)
+- [x] Productor BCV implementado: fetch HTTPS acotado, validación de host/content-type/redirect, parser decimal/fecha efectiva y persistencia idempotente; pruebas sintéticas y regresión con DOM oficial sanitizado.
+- [x] Estado persistente de sincronización BCV y checkout fail-closed por último éxito, outcome y fecha efectiva; migration 0021 incluye defensa SQL diferida para nuevas ventas.
+- [x] Ciclo de sincronización en tres fases, claim/attempt_id, bloqueo transaccional y protección frente a intentos supersedidos.
+- [x] Vertical slice de checkout atómico + ledger de inventario integrado en la rama, con migraciones 0017–0021 y pruebas PostgreSQL.
+- [x] Endpoint BCV de solo lectura y panel administrativo owner/admin para consultar el estado operativo; no permite editar tasa ni ejecutar sincronización.
+- [ ] Fixture reproducible del cuerpo HTTP raw del BCV con status, headers y bytes originales; el DOM serializado no satisface este criterio.
+- [ ] Contingencia manual de tasa con PIN, reautenticación, recuperación, permisos y auditoría implementada; por ahora solo está especificada documentalmente.
+
 ## Preparación para producción (gates)
 
 ### P0 — bloqueantes
@@ -171,6 +191,15 @@ Este archivo es la fuente de datos para el panel de avance. Un ítem solo puede 
 - [ ] Monitorización de fallos y procedimiento de soporte documentados.
 - [ ] Límites gratuitos/capacidad y ausencia de cargos automáticos revalidados.
 - [ ] Preview aislada desplegada y verificada, sin datos de producción.
+
+### Controles BCV/checkout — evidencia en PR #287
+- [x] Checkout valida el último éxito BCV con fecha efectiva de hoy y falla cerrado cuando el intento más reciente está running/failed; cobertura de aplicación y trigger diferido con rol runtime.
+- [x] Concurrencia BCV probada: un intento supersedido no puede insertar/inutilizar tasas ni cambiar el estado del intento nuevo.
+- [x] Fallos de sincronización cubiertos por tests: fetch fallido, DB no disponible al registrar fallo, cleanup posterior al commit, respuesta COMMIT ambigua y fetch fallido de intento supersedido.
+- [ ] Fixture HTTP raw oficial del BCV capturado y reproducible con status/headers.
+- [ ] Presupuesto de timeout medido por fase (conexión, statement, lock, transacción y cleanup) y watchdog con umbral basado en datos.
+- [ ] Monitor de fallos y destino de alerta probados de extremo a extremo; no basta con configurar logs estructurados.
+- [ ] Identidad efectiva del Worker y recuperación operativa validadas en entorno aislado con permisos mínimos.
 
 ## Bloqueos conocidos al último análisis documental
 

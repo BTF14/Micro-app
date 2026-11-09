@@ -1,3 +1,11 @@
+## Revalidación CI — fixture de Cron opt-in — 2026-11-08 UTC
+
+- En el HEAD previo `d1053349741d6c1f9135a9b80e5d0106ef1ff717`, el CI falló en `exchange-rates.integration.test.ts`: el test esperaba que el Cron productivo ejecutara sin configurar `BCV_SYNC_ENABLED`, pero el nuevo guard lo deshabilitó correctamente por defecto.
+- Corregido en commit `9af4bc462fe1394348b89dc61d1e88383fd76941`: el fixture de integración opta explícitamente por `BCV_SYNC_ENABLED: "true"` para probar la ruta activa; preview y valores ausentes siguen siendo no-op.
+- No se cambió el default de producción (`false`) ni se activó el Cron real. CI exact-HEAD debe completarse en el nuevo SHA.
+
+---
+
 ## Delta de seguridad operativa BCV — 2026-11-08 UTC
 
 **Cron BCV deshabilitado por defecto:** `apps/api/wrangler.toml` declara `BCV_SYNC_ENABLED = "false"`; `index.ts` solo llama al productor cuando `APP_ENV === "production"` y `BCV_SYNC_ENABLED === "true"`. Ausente/false es fail-closed. Se añadió regresión de test para producción deshabilitada. No se modificaron secretos ni configuración manual de Cloudflare. Activación futura requiere un cambio revisado explícito; este PR no debe activar el Cron al desplegarse.

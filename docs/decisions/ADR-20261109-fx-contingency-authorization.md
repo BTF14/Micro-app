@@ -4,7 +4,7 @@
 - **Estado:** proposed
 - **Fecha:** 2026-11-09
 - **Responsables:** producto, arquitectura, seguridad y asesoría contable/legal
-- **Relacionado:** `odd/tasks/fx-contingency-management.md`, `docs/sdd/FX_CONTINGENCY_MANAGEMENT.md`, PR #255, #269 y #287 (contexto BCV/checkout; no se modifican).
+- **Relacionado:** `odd/tasks/fx-contingency-management.md`, `docs/sdd/FX_CONTINGENCY_MANAGEMENT.md`, PR #255, #269 y #287 (contexto BCV/checkout; no se modifican); PR documental #288.
 
 ## Contexto y problema
 
@@ -68,7 +68,7 @@ Riesgos/obligaciones:
 
 - Repositorio: https://github.com/BTF14/Micro-app
 - Rama documental: `docs/fx-contingency-management-20261109` (creada desde main `9247cb24effd7d98be29aabe8d44c51fbab7a138`).
-- SHA exacto: pendiente del commit de documentación.
+- SHA de la primera versión documental: `53d3d98257abb7deac853599021ebcb438b5ffda` (la corrección de enlaces y el cierre documental se validarán en el HEAD final de PR #288).
 - Archivos: `docs/sdd/FX_CONTINGENCY_MANAGEMENT.md`, `odd/tasks/fx-contingency-management.md`.
 - Fuentes primarias: aún no se ha completado la revisión legal/contable; no se hace afirmación de cumplimiento.
 - Limitaciones: no se ha auditado aún el esquema real de auth/auditoría para seleccionar KDF, MFA ni tablas; no hay implementación.

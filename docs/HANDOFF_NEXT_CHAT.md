@@ -1,5 +1,13 @@
 # Objetivo de entrega — 2026-12-01
 
+## Decisión de aceptación MVP — POS de un local / 1.000 productos
+
+- Decisión aprobada por el propietario el 2026-11-09: el objetivo de aceptación del 2026-12-01 es que un comercio pequeño/mediano, de un solo local y hasta 1.000 productos, pueda completar desde la UI una jornada POS: login, apertura de turno propio, búsqueda/carrito, venta/pagos admitidos, tasa BCV válida cuando aplique, comprobante interno, descuento y consulta de inventario/Kardex, conteo y cierre de turno.
+- La especificación canónica, con pruebas y límites detallados, es [docs/MVP_SINGLE_STORE_ACCEPTANCE.md](MVP_SINGLE_STORE_ACCEPTANCE.md). Leerla antes de planificar o implementar.
+- Esto concreta el P0; no cambia guardrails, permisos aprobados, presupuesto $0 ni los gates de seguridad/BCV/legal/operación. El MVP de un local no elimina el aislamiento multi-tenant/multi-branch. No afirmar que está implementado hasta probar el recorrido completo en el SHA exacto.
+- Si un gate crítico no está demostrado, NO-GO para producción; como máximo beta controlada con limitaciones explícitas y aceptación correspondiente.
+
+
 La prioridad de gestión cambió: entregar un MVP utilizable el 1 de diciembre de 2026 o antes, sin afirmar que todo el SaaS está terminado. Leer primero el plan de entrega y línea base verificada en `docs/WORK_CHECKPOINT.md` (bloque “Plan de entrega MVP — objetivo 2026-12-01”); ese bloque documenta el estado de GitHub, la separación main/PR, el estado real de UI/API, los gates y la secuencia hasta el 1 de diciembre.
 
 **Brecha funcional central confirmada en #287:** el frontend aún deshabilita Caja/Ventas, Inventario y Reportes; checkout solo tiene API y depende de un turno abierto, pero no hay rutas registradas para abrir/cerrar/consultar turnos. No declarar POS end-to-end terminado. El próximo frente de implementación debe ser turno propio + UI de caja/checkout, seguido de UI de inventario/Kardex/conteos.

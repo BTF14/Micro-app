@@ -1,3 +1,7 @@
+## Guard de activación del Cron — 2026-11-08
+
+El Cron BCV queda deshabilitado por defecto mediante `BCV_SYNC_ENABLED = "false"` en `apps/api/wrangler.toml`. El handler solo ejecuta sincronización cuando `APP_ENV === "production"` y `BCV_SYNC_ENABLED === "true"`. Ausente o cualquier otro valor equivale a deshabilitado. No se modifican secretos ni configuración manual de Cloudflare. Activarlo requiere un cambio de configuración revisado y autorización explícita posterior.
+
 ## Corrección de política implementada en rama — 2026-11-08
 
 La tasa se utiliza únicamente cuando `effective_date` coincide con la fecha Caracas de la operación. Una tasa del lunes publicada el viernes permanece programada y no se usa viernes, sábado ni domingo. Si falta la tasa exacta del día, checkout bloquea; no hay fallback anterior ni futuro. Esta corrección está en la rama #255 y exige CI exact-HEAD nuevo.

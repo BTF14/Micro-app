@@ -2471,3 +2471,8 @@ Rama documental activa: `docs/reconcile-bcv-freshness-fx-task-20261109`, PR #296
 ## Actualización de fuente oficial BCV — 2026-11-09
 
 La apertura web convencional de `https://www.bcv.org.ve/` devolvió 502, pero una extracción independiente por navegador alcanzó la página oficial y recuperó los bloques de monedas y `Fecha Valor: Lunes, 09 Noviembre 2026`. La respuesta del extractor es HTML semántico limpiado (sin bytes HTTP originales, scripts/estilos ni atributos completos); **no es fixture raw** y no permite afirmar que el parser ya se probó con el markup original. No sustituir la fixture sintética ni usar mirrors. El raw fixture con status/content-type/capture time/SHA-256 sigue pendiente. Detalle en `odd/tasks/bcv-sync-alerting-recovery.md` de #287.
+
+
+### Captura DOM oficial BCV preservada — 2026-11-09
+
+Se completó `document.documentElement.outerHTML` desde `https://www.bcv.org.ve/`. SHA-256 del DOM original (antes de redacción): `97fe86647e11fae932c8f4495524ba0a7ed0a756bea85576079f63ec5333feb9`; fixture sanitizada `apps/api/src/fixtures/bcv-homepage-dom-2026-11-09.html` en #287, SHA-256 `a10241b7fab8349aab1e8ba51faacc6501e7af6203cbd391fffd0264de33d36e`. Se añadieron provenance y prueba parser (USD 897.53830000; effective date 2026-11-09). Es serialización DOM, no HTTP raw; status numérico y headers no expuestos. Por tanto raw HTTP sigue pendiente. No tratarla como fuente live.

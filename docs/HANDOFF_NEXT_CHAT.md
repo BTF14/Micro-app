@@ -2460,3 +2460,6 @@ Rama documental activa: `docs/reconcile-bcv-freshness-fx-task-20261109`, PR #296
 - Calendario admite vigilancia automática sin publicación, PDF en cuarentena y procesamiento aislado, entrada manual, revisión humana, historial inmutable y recordatorios 1 diciembre/1 enero.
 - Estado: documentación solamente; no se ha implementado PIN, recuperación, parser/antivirus, almacenamiento, alertas, recordatorios ni endpoints. No habilitar contingencia manual.
 - Próximo paso: validar el diff completo, actualizar descripción PR #296 y ejecutar/verificar workflows exactos del HEAD final. Mantener PR #296 Draft; no fusionar PR #287/#296 por este cambio.
+
+
+- **Calendario 2027:** última vigilancia 2026-11-09; no se localizó publicación oficial identificable. El portal SUDEBAN lista la sección general, pero la consulta directa tuvo timeout; no convertir este resultado en afirmación absoluta de que no existe. Reconsultar canales oficiales en diciembre. Ver `docs/sdd/BANKING_CALENDAR_VERSIONING.md`.

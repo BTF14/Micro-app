@@ -1,3 +1,13 @@
+# Addendum prioritario — 2026-11-09 UTC
+
+Antes de cualquier implementación comercial, leer el addendum más reciente de `docs/WORK_CHECKPOINT.md` titulado **“gate Nivel 1 y diagnóstico de Actions”**. Hallazgo confirmado: los controles Nivel 1 no están demostrados como cerrados; el backup/restore permanece parcialmente verificado y bloquea reanudar endpoints/funcionalidad comercial. No iniciar turnos, caja ni checkout UI hasta cerrar ese gate.
+
+#287 sigue OPEN/Draft en HEAD `7df318b233cfb95f7fcc3076d46984a11614a14c`; cinco workflow runs exact-HEAD fallaron y no fue posible recuperar jobs, artifacts ni logs utilizables. La causa permanece desconocida. No atribuirla ni reintentar a ciegas. #298 sigue OPEN/Draft; el addendum recién añadido cambia su HEAD, por lo que deben comprobarse los diez workflows exact-HEAD de nuevo.
+
+Siguiente trabajo: avanzar en el cierre verificable de backup/restore con datos sintéticos en PostgreSQL desechable, medir RPO/RTO y comprobar alerta/coste $0; en paralelo, buscar una vía autorizada para leer jobs/logs de Actions. No pedir al propietario Build IDs, capturas, terminal, CLI, tokens ni reconexiones. Mantener todos los límites de producción y datos reales.
+
+---
+
 # Objetivo de entrega — 2026-12-01
 
 ## Decisión de aceptación MVP — POS de un local / 1.000 productos

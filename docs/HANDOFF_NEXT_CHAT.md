@@ -2481,3 +2481,8 @@ Se completó `document.documentElement.outerHTML` desde `https://www.bcv.org.ve/
 ### Aclaración del driver Neon y timeouts — 2026-11-09
 
 El lockfile fija `@neondatabase/serverless@1.2.0`. El `ClientConfig` sí ofrece `connectionTimeoutMillis`, `statement_timeout`, `query_timeout`, `lock_timeout` e `idle_in_transaction_session_timeout`; el wrapper `database.ts` no configura ninguno. `statement_timeout` es server-side y PostgreSQL cancela la sentencia; `query_timeout` es client-side y no debe asumirse como cancelación server-side ni cleanup garantizado. `fetchOptions.signal` de Neon corresponde al cliente HTTP `neon()`, no al `Client` WebSocket usado aquí. No elegir valores todavía: probar connect, pg_sleep, locks, idle transaction, rollback/end y deadline total. No aplicar timeout global sin evaluar todas las rutas compartidas. Ver ODD `bcv-sync-alerting-recovery.md` en #287.
+
+
+### Diseño BCV: no mantener DB abierta durante fetch externo
+
+La revisión de `syncBcvOfficialRate()` encontró que hoy reclama `attempt_id` y mantiene el mismo `Client` abierto durante el fetch BCV (hasta 10 s), aunque no necesita DB durante esa espera. Próxima mejora candidata: separar claim DB → fetch HTTP sin conexión DB → finalize DB con nueva conexión/transacción y `SELECT FOR UPDATE` + compare `attempt_id`; en fallo fetch, marcar `failed` con conexión corta solo si sigue siendo el intento actual. Mantiene protección superseded y reduce conexiones ociosas. Aún no implementado; requiere pruebas de concurrencia, fallos DB/cleanup y timeouts. Ver ODD en #287.

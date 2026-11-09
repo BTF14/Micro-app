@@ -1,3 +1,12 @@
+## Corrección de estado BCV/FX — 2026-11-09
+
+- La rama de integración #287 está en HEAD `89b4df0c9e9d13c9887106d3b42eefa326ab642a`; GitHub confirmó que este SHA es la punta de la rama. Sus 11 workflow runs de PR consultados terminaron SUCCESS. No se obtuvo detalle independiente de check-runs en esta verificación; no copiar conteos históricos. Sin reviews formales ni review threads.
+- **Corrección P1:** el guard de último éxito BCV sí está implementado en #287: `findApplicableCheckoutRate()` consulta `bcv_sync_state` con `FOR SHARE`, exige `last_success_at`, outcome `inserted/unchanged`, `last_effective_date >= hoy Caracas` y una tasa `valid` con fecha efectiva exacta de hoy. Los tests unitarios cubren failed/running/older/estado ausente/last-success ausente/fecha anterior/tasa stale/fecha prepublicada/error DB; migration 0021 añade trigger diferido para el mismo gate SQL.
+- Los snapshots que afirman que checkout no consulta `bcv_sync_state.last_success_at` son históricos y obsoletos para el HEAD actual de #287. La corrección **no está integrada en main** mientras #287 siga Draft.
+- Siguen abiertos: fixture HTML oficial BCV; justificación/aprobación de límites parser 10/7; calendario SUDEBAN verificable; alertas/watchdog y recuperación; identidad Worker; revisión legal/contable; pagos parciales/cambio/anulaciones/devoluciones.
+- PR #288 está CLOSED/MERGED docs-only en `bfa7d0047d158d5caae4798337f239e767c30acd`. La contingencia manual sigue siendo propuesta; AC-5–AC-7 pendientes.
+- Mantener #287 Draft. No merge, deploy productivo, Neon main writes, migraciones remotas, Cron, secretos/DNS/billing ni datos reales. Producción NOT READY.
+
 ## Reconciliación operativa — 2026-11-08 UTC (verificación Neon + estado PR)
 
 **Fuente de verdad:** GitHub API y ejecución manual observada de GitHub Actions. Rama documental creada desde main `6f956b2336a70ec7013e20306be59d72db354b01`; este addendum no modifica main.

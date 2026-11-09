@@ -1,3 +1,7 @@
+## Corrección de política implementada en rama — 2026-11-08
+
+La tasa se utiliza únicamente cuando `effective_date` coincide con la fecha Caracas de la operación. Una tasa del lunes publicada el viernes permanece programada y no se usa viernes, sábado ni domingo. Si falta la tasa exacta del día, checkout bloquea; no hay fallback anterior ni futuro. Esta corrección está en la rama #255 y exige CI exact-HEAD nuevo.
+
 ## Política de vigencia BCV confirmada por el propietario — 2026-11-08 UTC
 
 **Decisión:** se permite utilizar la tasa del siguiente día hábil cuando el BCV la haya publicado anticipadamente de forma oficial y la propia fuente indique esa fecha efectiva. La tasa no se puede aplicar antes de su `effective_date`.
@@ -51,7 +55,7 @@ The writer uses the least-privilege `microapp_runtime` role. Migration 0013 gran
 
 ## API and UI behavior
 
-- `GET /api/exchange-rates/latest` returns today's effective rate on weekdays. On Saturday/Sunday it selects the nearest future effective date published for the next business day, which is the applicable BCV rate for non-business days.
+- `GET /api/exchange-rates/latest` returns a row only when `effective_date` equals today's Caracas date, on weekdays, weekends and holidays. A future row is `scheduled` in history and is never applied before its effective date. If today's official row is absent or stale, latest is unavailable and checkout blocks.
 - `GET /api/exchange-rates/history?limit=30` returns a bounded history (1–365 rows), including future-dated rows labelled `scheduled`.
 - Weekday bank holidays are not yet backed by an authoritative holiday calendar. On those days, if no row exists for the calendar date, latest remains stale/unavailable and the catalog disables VES conversion rather than guessing. This is a known MVP limitation and must be resolved before POS use on bank holidays.
 - The dashboard displays the official value, effective date, fetch timestamp, source, and freshness.
@@ -60,13 +64,13 @@ The writer uses the least-privilege `microapp_runtime` role. Migration 0013 gran
 
 ## Operational freshness limitation — 2026-11-08
 
-The current implementation does not enforce a maximum age based on `fetched_at`. The latest API and checkout selection use `effective_date` plus `validation_status`. When a successful sync sees the same rate, persistence returns `unchanged` and does not update `fetched_at`; if the Cron fails or BCV corrects a future-published rate, an older row can remain marked valid/current. The UI trusts the API status and does not independently calculate age. The owner must decide the freshness/last-success policy; do not invent a time threshold. Until then, this is a production blocker for VES conversion.
+The current implementation does not enforce a maximum age based on `fetched_at`. The latest API and checkout selection require exact equality between today's Caracas date and `effective_date`, plus `validation_status` = valid. When a successful sync sees the same rate, persistence returns `unchanged` and does not update `fetched_at`; if the Cron fails or BCV corrects a future-published rate, an older row can remain marked valid/current. The UI trusts the API status and does not independently calculate age. The owner must decide the freshness/last-success policy; do not invent a time threshold. Until then, this is a production blocker for VES conversion.
 
 The scheduled handler logs a sanitized `BCV_SYNC_FAILED` and rethrows so the Cron execution fails, but there is no persisted last-attempt/last-success record or external alert. A real official BCV HTML fixture, anomaly policy, and authoritative weekday bank-holiday calendar also remain open gates.
 
 ## Scheduling and cost
 
-The Worker Cron fetches the official page once per weekday at 18:00 Venezuela time (22:00 UTC), after the usual late-afternoon publication window. Friday's publication can carry Monday's effective date; the weekend latest endpoint uses that next-business-day row. The Cron still runs on weekdays that are bank holidays because no authoritative holiday calendar is configured; on those dates, latest fails closed if there is no exact effective-date row until a reviewed calendar/selection policy is implemented. The existing hourly auth-retention Cron remains configured separately. Preview environments are excluded by the Worker scheduled handler.
+The Worker Cron fetches the official page once per weekday at 18:00 Venezuela time (22:00 UTC), after the usual late-afternoon publication window. Friday's publication may carry Monday's effective date, but that row remains scheduled on Friday, Saturday and Sunday; it becomes applicable only on Monday. The same strict rule applies to holidays: a future effective date is never used early, and checkout fails closed when today's exact official row is absent. The missing authoritative bank-holiday calendar remains an operational gate for polling/monitoring, not permission to infer or advance the effective date. The existing hourly auth-retention Cron remains configured separately. Preview environments are excluded by the Worker scheduled handler.
 
 No paid provider, subscription, or new secret is introduced. Cloudflare plan/quotas and the actual deployed Cron configuration still require verification before production rollout.
 

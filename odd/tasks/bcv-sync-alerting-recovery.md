@@ -4,8 +4,8 @@
 
 ## PR #287 — integración BCV + checkout
 
-- Estado: OPEN / Draft; base `main`; HEAD de código actual `3c32b6d46a807a88962de81443af84c4d4fef3e1`; GitHub informa `mergeable=true`. No hay reviews formales ni review threads abiertos.
-- CI del HEAD exacto: **15/15 check-runs SUCCESS y 11/11 workflow runs SUCCESS**. Los 11 workflows de PR incluyen CI, Playwright E2E, validación de migraciones, PostgreSQL migration runner, backup/restore, Semgrep, Security scan, secret-history, dependency review, ODD docs y dashboard. Los builds Cloudflare de la rama son previews, no promoción a producción.
+- Estado verificado en GitHub: OPEN / Draft; base `main`; HEAD `c2c65e041b828f2ea2330e9c94a034f55cad86e5`; `mergeable=true`; 147 ahead / 0 behind; 0 reviews formales y 0 review threads.
+- GitHub Actions del HEAD exacto: **11/11 workflow runs SUCCESS** (consulta 2026-11-09). No reutilizar el conteo histórico de check-runs de SHA anteriores; el conector consultado no expuso la lista actual de check-runs. Combined legacy status: sin status contexts.
 - No merge, no deploy productivo, no Neon main writes, no migraciones remotas, no activación Cron, no cambios de secretos/DNS/billing ni datos reales.
 
 ## BCV: estado real de implementación
@@ -21,7 +21,7 @@
 ## Gates aún abiertos — producción NOT READY
 
 1. CI exact-HEAD del siguiente commit documental/código debe volver a validarse; no reutilizar los resultados de este SHA.
-2. Capturar y conservar fixture reproducible de HTML oficial BCV y probar el parser con respuesta real. La recuperación oficial anterior devolvió 502; no sustituir por copias de terceros.
+2. La captura DOM oficial ya está conservada, sanitizada y probada como regresión; no equivale a los bytes HTTP originales. Sigue pendiente capturar cuerpo HTTP raw, status y headers reproducibles desde el host oficial; no sustituir por mirrors de terceros.
 3. Obtener calendario bancario oficial SUDEBAN verificable. No afirmar que no existe ni codificar fechas desde terceros.
 4. Justificar y aprobar límites del parser `MAX_EFFECTIVE_DATE_AGE_DAYS=10` y `MAX_EFFECTIVE_DATE_FUTURE_DAYS=7`; siguen hard-coded y no aprobados.
 5. Configurar monitor de `BCV_SYNC_FAILED`, destino autorizado y prueba de entrega. Diseñar watchdog de `running` estancado con SLO/umbral medido; no inventar umbral.

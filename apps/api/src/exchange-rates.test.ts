@@ -90,11 +90,20 @@ describe("BCV official HTML parser", () => {
     expect(parseBcvOfficialRate(mondayPage, NOW).effectiveDate).toBe("2026-11-09");
   });
 
-  it("rejects implausibly old or distant future effective dates", () => {
-    const oldPage = OFFICIAL_PAGE.replace("05 Noviembre 2026", "01 Enero 2026");
-    const futurePage = OFFICIAL_PAGE.replace("05 Noviembre 2026", "20 Noviembre 2026");
-    expect(() => parseBcvOfficialRate(oldPage, NOW)).toThrow("BCV_EFFECTIVE_DATE_OUT_OF_RANGE");
-    expect(() => parseBcvOfficialRate(futurePage, NOW)).toThrow("BCV_EFFECTIVE_DATE_OUT_OF_RANGE");
+  it("accepts the inclusive parser sanity-window boundaries without changing checkout applicability", () => {
+    const oldestAllowedPage = OFFICIAL_PAGE.replace("05 Noviembre 2026", "26 Octubre 2026");
+    const furthestAllowedPage = OFFICIAL_PAGE.replace("05 Noviembre 2026", "12 Noviembre 2026");
+
+    expect(parseBcvOfficialRate(oldestAllowedPage, NOW).effectiveDate).toBe("2026-10-26");
+    expect(parseBcvOfficialRate(furthestAllowedPage, NOW).effectiveDate).toBe("2026-11-12");
+  });
+
+  it("rejects dates immediately outside the inclusive parser sanity-window boundaries", () => {
+    const oneDayTooOldPage = OFFICIAL_PAGE.replace("05 Noviembre 2026", "25 Octubre 2026");
+    const oneDayTooFarPage = OFFICIAL_PAGE.replace("05 Noviembre 2026", "13 Noviembre 2026");
+
+    expect(() => parseBcvOfficialRate(oneDayTooOldPage, NOW)).toThrow("BCV_EFFECTIVE_DATE_OUT_OF_RANGE");
+    expect(() => parseBcvOfficialRate(oneDayTooFarPage, NOW)).toThrow("BCV_EFFECTIVE_DATE_OUT_OF_RANGE");
   });
 
   it("rejects oversized or empty source responses", () => {

@@ -179,6 +179,12 @@ describe("checkout BCV effective-date selection", () => {
     expect(statements[0]).toContain("effective_date = $2::date");
     expect(statements[0]).not.toContain("effective_date >");
   });
+  it("rejects a Monday-prepublished rate on Sunday before its effective date", async () => {
+    const client = { query: async <Row = unknown>() => ({
+      rows: [{ id: "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa", rate: "895.10000000", effective_date: "2026-11-09", validation_status: "valid" }] as Row[],
+    }) } as unknown as import("./database").DatabaseClient;
+    await expect(findApplicableCheckoutRate(client, new Date("2026-11-08T12:00:00-04:00"))).resolves.toBeNull();
+  });
   it("does not skip a stale nearest future row to use a later valid rate", async () => {
     const client = { query: async <Row = unknown>() => ({ rows: [{ id: "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa", rate: "895.10000000", effective_date: "2026-11-09", validation_status: "stale" }] as Row[] }) } as unknown as import("./database").DatabaseClient;
     await expect(findApplicableCheckoutRate(client, new Date("2026-11-07T12:00:00-04:00"))).resolves.toBeNull();

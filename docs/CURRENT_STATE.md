@@ -1,3 +1,39 @@
+# Reconciliación autoritativa — freshness BCV y contingencia FX — 2026-11-09
+
+> Este bloque corrige afirmaciones obsoletas de snapshots históricos. No implica que el código de integración esté en `main`, ni autoriza merge, despliegue o activación de servicios.
+
+## PR #287 — evidencia de checkout y último sync BCV
+
+- Rama: `integration/bcv-checkout-rehearsal-20261109`; PR #287 OPEN. La documentación/descripcion del PR mantiene el estado Draft; debe seguir Draft.
+- HEAD exacto de la rama confirmado por comparación GitHub: `89b4df0c9e9d13c9887106d3b42eefa326ab642a` (idéntico a la punta de la rama al consultar).
+- En ese SHA, la consulta de workflow runs asociadas a PR devolvió **11/11 SUCCESS**. El combined legacy status no devolvió status contexts. La herramienta de consulta disponible no expuso el detalle de check-runs en esta verificación; no reutilizar cifras históricas de 14/15 checks como si fueran recién revalidadas.
+- Reviews formales: ninguna registrada. Review threads: ninguno. CI verde no equivale a aprobación formal ni readiness.
+- El guard de freshness **sí está implementado en la rama #287**: `findApplicableCheckoutRate()` consulta `bcv_sync_state` con `FOR SHARE` dentro de la transacción, exige `last_success_at` no nulo, `last_outcome` `inserted` o `unchanged`, `last_effective_date` no anterior a hoy en Caracas, y después exige una fila `exchange_rates` `valid` con `effective_date` exactamente igual a hoy.
+- Fallan cerrados el estado singleton ausente, last-success ausente, outcomes `running`, `failed`, `older` o desconocidos, fecha efectiva anterior, fila ausente/inválida y error de base de datos.
+- Tests unitarios en `apps/api/src/sales-checkout.test.ts` cubren fallo posterior, sync running, last-success ausente, estado singleton ausente, outcome older, fecha anterior, tasa stale, fecha prepublicada antes de su vigencia y error DB. La prueba de integración PostgreSQL en `sales-checkout.integration.test.ts` y migration 0021 cubren la defensa del trigger diferido `sales_latest_bcv_sync_success` frente a completar una venta con el último sync fallido.
+- Por tanto, las menciones históricas que dicen que `findApplicableCheckoutRate()` no consulta `bcv_sync_state.last_success_at` están **obsoletas para el HEAD actual de #287**. La implementación permanece en la rama Draft y todavía no está integrada en `main`.
+
+## Gates que siguen abiertos
+
+1. Fixture reproducible de HTML oficial BCV y prueba del parser con respuesta real; no sustituir la fuente primaria por copias de terceros.
+2. Justificación y aprobación de `MAX_EFFECTIVE_DATE_AGE_DAYS=10` y `MAX_EFFECTIVE_DATE_FUTURE_DAYS=7`; no inventar TTL ni cambiar esos límites sin decisión.
+3. Calendario bancario oficial SUDEBAN verificable.
+4. Monitor de `BCV_SYNC_FAILED`, destino autorizado y prueba de entrega; watchdog para `running` estancado basado en SLO medido.
+5. Identidad efectiva del Worker, recuperación aislada, revisión legal/contable y reglas comerciales de pagos parciales, cambio, anulaciones y devoluciones.
+6. Obtener revisión independiente y aprobación formal antes de promover #287. No merge, deploy, Neon main writes, migraciones remotas ni activación Cron.
+
+## PR #288 — contingencia cambiaria
+
+- PR #288 está **CLOSED/MERGED**, docs-only, incorporada a `main` por squash en `bfa7d0047d158d5caae4798337f239e767c30acd`.
+- La especificación FX continúa como propuesta no implementada. AC-1–AC-4 están documentados; AC-5 (permiso Owner/Admin delegado), AC-6 (validación legal/contable) y AC-7 (revisión independiente de seguridad/datos) siguen pendientes.
+- No crear endpoints, permisos, migraciones ni UI de contingencia hasta cerrar esos gates. El checkout actual de la rama #287 conserva el modo BCV fail-closed.
+
+## Seguridad y estado de producción
+
+**Producción: NOT READY.** No se ha autorizado merge de #255/#269/#287, deploy productivo, escrituras Neon, activación Cron, cambios manuales Cloudflare, secretos, DNS, billing ni uso de datos reales.
+
+---
+
 ## Reconciliación posterior a PR #291 — snapshot 2026-11-09 UTC
 
 **Main al iniciar esta reconciliación:** `56ad2b29b994fbad31275c801e8f23a2b9736db2` (merge de PR #291). Post-merge exact-SHA: **11/11 check-runs SUCCESS**. Este snapshot documenta el estado inmediatamente posterior a #291; el PR docs-only que lo contiene volverá a mover main, por lo que reconsultar GitHub después del merge.

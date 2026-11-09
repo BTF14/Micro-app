@@ -289,7 +289,12 @@ export async function syncBcvOfficialRate(databaseUrl: string | undefined): Prom
       throw error;
     }
 
-    const terminal = await withDatabaseTransaction(client, async (tx) => {
+    let terminal:
+      | { kind: "superseded" }
+      | { kind: "success"; outcome: "inserted" | "unchanged" | "older" }
+      | { kind: "failed"; errorCode: string };
+    try {
+      terminal = await withDatabaseTransaction(client, async (tx) => {
       const current = await tx.query<{ attempt_id: string | null }>(
         `SELECT attempt_id::text AS attempt_id
            FROM public.bcv_sync_state
@@ -331,7 +336,22 @@ export async function syncBcvOfficialRate(databaseUrl: string | undefined): Prom
         }
         throw error;
       }
-    });
+      });
+    } catch (error) {
+      try {
+        await client.query(
+          `UPDATE public.bcv_sync_state
+              SET last_outcome = 'failed',
+                  last_error_code = $2,
+                  updated_at = now()
+            WHERE singleton = true AND attempt_id = $1::uuid`,
+          [attemptId, safeBcvSyncErrorCode(error)],
+        );
+      } catch {
+        // Preserve the original failure if the connection cannot record it.
+      }
+      throw error;
+    }
 
     if (terminal.kind === "superseded") return "superseded";
     if (terminal.kind === "failed") throw new Error(terminal.errorCode);

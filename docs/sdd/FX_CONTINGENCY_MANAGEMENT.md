@@ -266,3 +266,57 @@ Pruebas requeridas antes de implementación:
 ## Historial de cambios
 
 - 2026-11-09 — primera especificación basada en la conversación con el propietario. Propuesta aprobada para documentación; implementación, matriz de permisos, límites legales y habilitación siguen pendientes.
+
+
+## 16. Servicio compartido de autorización administrativa — BCV y calendario
+
+BCV y calendario reutilizan una única infraestructura de identidad, reautenticación, protección contra abuso, recuperación, revocación y auditoría. No reutilizan permisos ni autorizaciones entre dominios:
+
+- BCV exige permiso específico `fx.contingency.authorize`.
+- Calendario exige permisos específicos separados, como `banking_calendar.upload`, `banking_calendar.edit` y `banking_calendar.publish`.
+- La matriz de roles debe aprobar qué identidades reciben cada permiso. No inferir que el rol `admin` tiene automáticamente todos ellos. Owner puede conservar control organizacional; un negocio pequeño puede usar una sola identidad individual Owner/Admin, sin compartir credenciales.
+- El PIN es individual, nunca compartido, y es una reautenticación de una cuenta ya autenticada. Para pequeño negocio se mantiene el mínimo propuesto de **8 dígitos**; para empresas, contraseña reciente + MFA. La doble aprobación es configurable y siempre requiere dos personas distintas.
+- Argon2id es el algoritmo preferido para almacenar el verificador del PIN, con salt aleatorio único y parámetros calibrados/benchmark en el runtime real conforme a OWASP. No guardar PIN reversible, en texto plano, logs, analítica ni auditoría. Si Argon2id no es viable en el runtime, seleccionar una alternativa resistente con revisión de seguridad; no improvisar SHA-256 ni un hash rápido.
+- El PIN no sustituye MFA en escenarios empresariales ni eleva el rol del usuario.
+
+### Intentos fallidos y protección contra abuso
+
+- Política inicial para probar: máximo **5 intentos fallidos** por ventana de autenticación y bloqueo temporal inicial de **15 minutos**; no es un bloqueo permanente ni una decisión de cumplimiento ya validada.
+- El contador y la decisión se calculan atómicamente en servidor/DB, nunca solo en cliente. Aplicar límites combinados por cuenta, organización, dispositivo y señales de red; IP por sí sola no es suficiente.
+- En reincidencia, aplicar espera progresiva y alertas, evitando que un tercero pueda provocar un bloqueo permanente de la cuenta de la víctima.
+- Respuestas de error genéricas; no revelar si un PIN, usuario o cuenta existe. Registrar eventos sin almacenar el secreto ingresado.
+- La verificación debe resistir solicitudes concurrentes, replay, automatización y carreras en el contador. Recuperación legítima disponible sin eliminar el historial de intentos.
+
+### Cambio, olvido y recuperación
+
+- Cambio normal: PIN actual + reautenticación de cuenta; MFA adicional según riesgo/política. El PIN nuevo invalida el anterior.
+- Olvido: no existe recuperación ni visualización del PIN original; solo restablecimiento.
+- Restablecimiento: sesión autenticada de nuevo + MFA o código de recuperación de un solo uso. Un correo o enlace de email por sí solo no basta para operaciones críticas.
+- En empresas, se recomienda aprobación de un segundo Owner/administrador de seguridad independiente cuando exista más de un responsable elegible.
+- En negocio de un solo Owner, definir recuperación extraordinaria con verificación reforzada de propiedad y controles de soporte, sin PIN maestro, acceso oculto ni intervención que permita saltarse la identidad.
+- Tras restablecer: revocar PIN anterior, sesiones administrativas protegidas y autorizaciones pendientes/no consumidas; emitir alerta al Owner y registrar actor, método, fecha y resultado.
+- Pérdida/robo de dispositivo o sospecha de compromiso: revocación inmediata de sesiones/tokens y autorizaciones pendientes; cambio de credenciales y revisión de actividad.
+
+### Autorización vinculada a operación
+
+Cada reautenticación se vincula a una intención exacta: dominio, acción, organización, sucursal/alcance, versión/ID, resumen criptográfico de los datos, nonce y clave de idempotencia. Tiene expiración corta, se consume una sola vez y se valida/consume dentro de la misma transacción que registra la autorización. No se puede reutilizar el PIN verificado para otra tasa, calendario, empresa, sucursal o publicación.
+
+Las operaciones BCV y calendario comparten el mecanismo, no la autoridad: una autorización BCV no permite publicar calendario y una autorización de calendario no permite cambiar tasas. Quien carga un PDF no necesariamente puede aprobar/publicar la misma versión. La revocación de permisos, membresía o sesión invalida nuevas autorizaciones.
+
+### Auditoría, alertas y recuperación
+
+Registrar append-only: cambios de PIN, restablecimientos, intentos fallidos, bloqueos/desbloqueos, MFA/recovery-code utilizado (solo tipo/resultado, nunca el código), revocaciones, aprobaciones y autorizaciones consumidas. No registrar PIN ni códigos secretos. Alertar sobre bloqueo, recuperación, cambio de PIN, actividad anómala y revocación. El servicio debe tener política de retención proporcional y acceso restringido al historial.
+
+### Pruebas obligatorias
+
+- 5 intentos y bloqueo temporal, expiración y backoff progresivo; límites concurrentes y distribución entre cuentas/dispositivos.
+- Ataques de replay, nonce reutilizado, idempotencia y doble consumo.
+- PIN correcto no concede permisos ausentes ni permite cruzar tenant/sucursal/dominio.
+- Recuperación con email solamente denegada; MFA/código de un solo uso validado; código no reutilizable.
+- Reset invalida credenciales y autorizaciones pendientes anteriores.
+- Dos aprobaciones requieren dos identidades distintas.
+- Revocación de sesión/membresía/rol invalida operaciones posteriores.
+- Logs, eventos y errores no contienen PIN ni códigos de recuperación.
+- Errores de DB, estado de autorización desconocido o verificación incompleta: fail-closed.
+
+Esta sección amplía la propuesta documental de PIN del ADR FX. La decisión transversal y los límites de implementación están en [ADR de autorización administrativa](../decisions/ADR-20261109-admin-authorization-pin-recovery.md). Nada de esto está implementado ni habilitado todavía.

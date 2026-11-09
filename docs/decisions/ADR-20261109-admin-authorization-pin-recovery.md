@@ -53,3 +53,21 @@ Crear un único servicio de reautenticación/autorización administrativa con po
 ## Historial
 
 - 2026-11-09 — propuesta transversal derivada de la decisión del propietario de unificar autorización, PIN, recuperación y controles antiabuso para BCV y calendario. No implementada.
+
+
+## Gate adicional — KDF y límites reales de Cloudflare Workers Free
+
+No cerrar Argon2id como implementación hasta medirlo en el runtime desplegado. La documentación oficial de Cloudflare indica que Workers Free limita el CPU a 10 ms por invocación HTTP y por Cron, con 128 MB de memoria. Una KDF memory-hard puede superar el presupuesto de CPU aunque quepa en memoria.
+
+- Benchmark reproducible en Workers Free para Argon2id con parámetros de producción, midiendo CPU real, memoria, latencia p95/p99 y comportamiento bajo concurrencia.
+- Evaluar PBKDF2-HMAC-SHA-256 mediante WebCrypto solo si el benchmark y revisión de seguridad justifican los parámetros. No reducir iteraciones por debajo de la recomendación aplicable para "hacerlo caber".
+- No sustituir por SHA-256 rápido, hash simple ni cifrado reversible.
+- Si ninguna KDF adecuada cabe en el límite gratuito, no habilitar PIN débil ni asumir plan de pago. Evaluar WebAuthn/passkeys o reautenticación fuerte como alternativa, o aplazar la función hasta tener un runtime seguro y presupuestariamente viable.
+- Si se usa pepper, almacenarlo como secreto del Worker separado de la base de datos; nunca en el repositorio, base de datos, logs ni telemetría. Diseñar rotación y recuperación antes de depender de él.
+- Bloquear PINs comunes, secuenciales, repetidos y patrones triviales. No usar fechas de nacimiento ni datos públicos.
+
+## Códigos de recuperación
+
+Si se habilitan códigos de recuperación, deben ser de alta entropía generados por CSPRNG, mostrarse una sola vez, almacenarse solo como verificadores hash, consumirse atómicamente una sola vez y estar sujetos a rate limit. No enviarlos por email ni incluirlos en logs. Generar un nuevo conjunto invalida el anterior y deja auditoría.
+
+Referencia oficial de límites: https://developers.cloudflare.com/workers/platform/limits/ (consulta 2026-11-09; Workers Free: 10 ms CPU por invocación HTTP/Cron, 128 MB RAM).

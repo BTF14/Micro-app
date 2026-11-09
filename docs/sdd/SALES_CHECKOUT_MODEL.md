@@ -109,13 +109,13 @@ Reglas ya aprobadas/documentadas:
 
 - PR #258 registra `POST /api/orgs/:organizationId/branches/:branchId/checkout`, con autorización branch, idempotencia, exact decimals, locks de warehouse/stock/turno, pagos, ledger y audit en una sola transacción. Sigue Draft; HEAD `31a1d14f1fa85fa826035ea0f10d6db18e93e2fd` pasó 15/15 check-runs y 13/13 workflows; no hay review formal independiente registrada.
 - No hay flujo de carrito/checkout UI integrado.
-- La selección BCV de PR #258 sigue la regla weekday/weekend; el productor y Cron de tasas siguen pendientes de integrar desde PR #255.
+- La selección BCV anterior weekday/weekend de migration 0017 es histórica y queda supersedida por migration 0020; el productor/Cron sigue en la rama separada #255.
 - PR #229–#231 aportan motor monetario/catálogo/formulario que ya están en main en forma igual o más completa. PR #228 comparte la migración 0014 canónica; su handler/tests también son inferiores a la implementación actual. Comparar y cerrar como supersedidas solo después de preservar cambios realmente únicos.
 - PR #232 contiene este diseño, pero su texto original quedó obsoleto respecto a las migraciones 0014/0015 y debe mantenerse actualizado.
 
 ## 3. Política BCV estricta por fecha efectiva
 
-**Base normativa:** el artículo 25 de la Ley del IVA dispone que, si el hecho imponible ocurre en un día no hábil para el sector financiero, la equivalencia se calcula con el tipo de cambio vigente el día hábil inmediatamente siguiente. Referencia documental: Gaceta Oficial N.º 6.507 Extraordinario (29-01-2020), artículo 25: <https://www.ivecofi.net/informacion/legislacion/leyes/ley-impuesto-valor-agregado/titulo-iv>. La fecha efectiva del BCV debe corresponder a ese siguiente día hábil. Esto es una referencia normativa para el diseño, no asesoría legal/contable; cualquier caso fiscal especial requiere validación profesional.
+**Base normativa:** el artículo 25 de la Ley del IVA dispone que, si el hecho imponible ocurre en un día no hábil para el sector financiero, la equivalencia se calcula con el tipo de cambio vigente el día hábil inmediatamente siguiente. Referencia documental: Gaceta Oficial N.º 6.507 Extraordinario (29-01-2020), artículo 25: <https://www.ivecofi.net/informacion/legislacion/leyes/ley-impuesto-valor-agregado/titulo-iv>. La fecha efectiva del BCV debe corresponder a ese siguiente día hábil. Esto es una referencia normativa para el diseño, no asesoría legal/contable. La instrucción operativa expresa del propietario es no aplicar una tasa antes de su `effective_date`, incluso en fin de semana; la conciliación jurídica/fiscal de esa política con el artículo 25 requiere validación profesional antes de producción.
 
 La API y el handler de checkout requieren `effective_date = fecha Caracas de hoy` para todos los días, incluidos sábado, domingo y feriados. Una tasa publicada anticipadamente para el lunes permanece `scheduled` hasta el lunes; nunca se usa viernes, sábado ni domingo. Si falta la fila exacta del día o está stale, la API no la presenta como vigente y checkout falla cerrado. No hay fallback a una fecha anterior ni futura.
 
@@ -203,7 +203,7 @@ Si alguna regla no es la deseada, no se debe eludir el trigger: diseñar una nue
 - BCV ocho decimales y VES dos;
 - hash estable ante orden distinto de líneas y normalización decimal;
 - key reutilizada con payload distinto;
-- selección BCV weekday/weekend y rechazo de nearest-future stale.
+- selección BCV por fecha exacta de operación y rechazo de tasas futuras/prepublicadas antes de su `effective_date`.
 
 ### PostgreSQL desechable con migrator/runtime reales
 1. venta completa: sale + líneas + pagos + balance + movimiento + audit en un COMMIT;
@@ -215,7 +215,7 @@ Si alguna regla no es la deseada, no se debe eludir el trigger: diseñar una nue
 7. producto/warehouse/branch/tenant cruzado: rechazo;
 8. turno cerrado, de otro usuario o sucursal: rechazo;
 9. cierre de turno concurrente: nunca venta fuera de turno;
-10. tasa BCV weekday, weekend, nearest-future stale y ausencia de tasa;
+10. tasa BCV exacta para la fecha de operación; rechazo de tasas futuras y de ausencia/stale;
 11. feriado entre semana sin fecha efectiva exacta: fail closed;
 12. pagos con moneda/escala inválida, parcial/excesivo según contrato SQL;
 13. sumas de líneas/pagos/snapshots/ledger reconciliadas;

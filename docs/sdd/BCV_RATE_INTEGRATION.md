@@ -1,3 +1,23 @@
+## Política de vigencia BCV confirmada por el propietario — 2026-11-08 UTC
+
+**Decisión:** se permite utilizar la tasa del siguiente día hábil cuando el BCV la haya publicado anticipadamente de forma oficial y la propia fuente indique esa fecha efectiva. La tasa no se puede aplicar antes de su `effective_date`.
+
+Reglas obligatorias:
+1. La elegibilidad se determina por la fecha efectiva de la operación y la `effective_date` publicada explícitamente por BCV; nunca por la fecha local de descarga ni por una predicción del calendario.
+2. Una tasa futura publicada oficialmente puede cubrir sábados, domingos y feriados únicamente desde la fecha efectiva indicada por BCV. Ejemplo: una tasa publicada el viernes con `effective_date` lunes se puede utilizar el lunes, no el viernes, sábado ni domingo.
+3. Si BCV no publica anticipadamente una tasa aplicable a la fecha efectiva de la operación, no se debe promover silenciosamente la última tasa anterior como vigente: conservarla para auditoría, marcar la fuente/dato como stale o unavailable y bloquear checkout.
+4. Si una sincronización falla, no se borra ni sobrescribe el último dato histórico válido. Sin embargo, su existencia no demuestra frescura ni autoriza su uso para nuevas ventas.
+5. Checkout requiere tasa aplicable para todas las ventas, incluidas las pagadas 100% en USD. El snapshot aplicado es inmutable y los importes/monedas de pago no se convierten ni cobran dos veces.
+6. La fuente debe ser BCV oficial; no se aceptan tasas inferidas, copias de terceros ni fechas supuestas.
+7. La selección debe soportar tasas prepublicadas sin que una fila futura suprima la inserción o selección de una fecha efectiva anterior.
+8. No se fija un umbral arbitrario de minutos/horas para `fetched_at`. La frescura operativa se debe basar en un registro separado de último intento/último éxito, resultado de sincronización y estado del proveedor. Definir y probar una política explícita de degradación; no confundir `fetched_at` de inserción con última comprobación exitosa.
+
+**Ejemplos de aceptación:** viernes con tasa oficial efectiva lunes → el lunes usa esa tasa; sábado sin tasa oficial futura efectiva sábado → checkout bloqueado; tasa efectiva lunes no se usa el domingo; fallo de Cron conserva historial pero no certifica una tasa actual.
+
+**No autoriza:** activar el Cron, desplegar #255, merge a main, escribir en Neon ni relajar gates de producción. PR #255 y #269 permanecen Draft hasta que el comportamiento, pruebas, calendario oficial, observabilidad y despliegue seguro estén revisados.
+
+---
+
 # BCV official exchange-rate integration
 
 **Status:** implementation under review in PR #255; not deployed or production-verified.  

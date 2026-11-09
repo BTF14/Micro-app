@@ -119,10 +119,11 @@ export default Object.assign(app, {
     if (controller.cron === "0 22 * * 1-5") {
       if (env.APP_ENV !== "production" || env.BCV_SYNC_ENABLED !== "true") return;
       try {
+        console.info({ event: "BCV_SYNC_STARTED" });
         const outcome = await syncBcvOfficialRate(env.DATABASE_URL);
-        console.info("BCV_SYNC_COMPLETED", { outcome });
+        console.info({ event: "BCV_SYNC_COMPLETED", outcome });
       } catch (error) {
-        console.error("BCV_SYNC_FAILED", { code: safeBcvSyncErrorCode(error) });
+        console.error({ event: "BCV_SYNC_FAILED", code: safeBcvSyncErrorCode(error) });
         throw new Error("BCV_SYNC_FAILED");
       }
       return;

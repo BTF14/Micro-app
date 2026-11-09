@@ -2,6 +2,17 @@ name = "micro-app-api"
 main = "src/index.ts"
 compatibility_date = "2026-10-17"
 
+# Capture only explicit structured logs (not every request invocation).
+# Query strings are redacted; this keeps operational diagnostics low-volume.
+[observability]
+enabled = true
+redact_query_string = true
+
+[observability.logs]
+enabled = true
+invocation_logs = false
+head_sampling_rate = 1
+
 [vars]
 APP_ENV = "production"
 # Safe default: deploying this branch does not activate BCV ingestion.

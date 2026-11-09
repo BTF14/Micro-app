@@ -69,3 +69,35 @@ No asumir que el nombre/columnas están habilitados en esta cuenta hasta ejecuta
 ## Restricciones
 
 No activar Cron de producción, no cambiar secretos/DNS/billing, no crear destinos externos sin autorización, no usar datos reales y no afirmar que existe alerta hasta probar su entrega.
+
+
+## Implementación incremental — 2026-11-09
+
+### Endpoint y panel administrativo incorporados en la rama de integración
+
+- Endpoint `GET /api/orgs/:organizationId/bcv/sync-state` de solo lectura.
+- Autorización tenant-scoped mediante `bcv.sync_state.read`; solo `owner` y `admin`. Cashier/inventory no tienen permiso.
+- Respuesta con último intento/éxito, outcome, error code sanitizado, fecha efectiva, hora de actualización y segundos desde el último intento. `Cache-Control: no-store`.
+- Panel de administración en dashboard owner/admin, con actualización manual y refresco cada cinco minutos. Muestra la edad del intento sin inventar un umbral de “stale”; no ofrece edición de tasa ni reintentos.
+- Pruebas unitarias de política de roles y endpoint (autorizado, denegado, sin sesión), además de prueba de UI para panel administrativo. CI del HEAD posterior debe terminar antes de considerar validado este bloque.
+
+### Workers Logs — configuración añadida en rama, aún no activada en producción
+
+- `apps/api/wrangler.toml` declara `observability.enabled=true`, redacción de query strings, `logs.enabled=true`, `invocation_logs=false` y `head_sampling_rate=1`.
+- `index.ts` emite logs JSON estructurados y mínimos: `BCV_SYNC_STARTED`, `BCV_SYNC_COMPLETED` y `BCV_SYNC_FAILED` (este último incluye solo código sanitizado). Se deshabilitan invocation logs para evitar almacenar cada request, URL o metadatos de sesión; no se registran payloads, tokens ni datos de clientes.
+- La configuración solo se aplica al desplegar el Worker desde esta rama. Los previews pueden recibirla en su build; no se ha hecho despliegue manual ni promoción a producción. El Cron BCV continúa deshabilitado en preview y por defecto.
+- Query Builder documenta el dataset de Workers como `workers`; la consulta previa `logs.workersLogs` no debe asumirse como la interfaz actual. Confirmar campos reales con el field browser de la cuenta antes de crear un monitor.
+- **Precio y fecha corregidos:** hasta 2026-11-30, Workers Logs Free incluye 200.000 eventos/día y 3 días de retención; Paid incluye 20 millones/mes y luego USD 0,60 por millón adicional. Desde 2026-12-01 aplica el nuevo modelo Observability: Free 0,5 GB/día con 7 días incluidos y se detiene la ingesta al alcanzar el límite; Paid incluye 50 GB por ciclo y 10 GB-mes de almacenamiento, con excedentes de USD 0,25/GB de ingesta y USD 0,10/GB-mes. Queries, dashboards y alerts no tienen cargo adicional. Revisar consumo y plan antes de activar en producción.
+- Fuentes oficiales:
+  - https://developers.cloudflare.com/workers/observability/logs/workers-logs/
+  - https://developers.cloudflare.com/workers/observability/query-builder/
+  - https://developers.cloudflare.com/observability/pricing/
+  - https://developers.cloudflare.com/observability/logs/datasets/
+
+### Pendiente después de la configuración
+
+1. Esperar CI exact-HEAD del commit que incorpora endpoint/panel/logging.
+2. En Cloudflare, confirmar que Workers Logs aparece para `micro-app-api`, seleccionar dataset `workers`, inspeccionar nombres reales de campos y revisar el uso/budget.
+3. Crear Monitor de fallos filtrando evento estructurado `BCV_SYNC_FAILED`, enviar correo al destino autorizado y usar Test para confirmar entrega. Aún no se ha creado monitor ni destino.
+4. Diseñar alerta de intento `running` estancado. No asignar umbral hasta medir los timeouts/locks reales y aprobar un SLO operativo.
+5. Añadir una prueba controlada de entrega y una prueba de fallo/recuperación en entorno aislado. No habilitar retry automático antes de cerrar idempotencia y límites.

@@ -708,3 +708,8 @@ Snapshot histórico: el manual run [40916692763](https://github.com/BTF14/Micro-
 ## Gate de runtime para PIN — 2026-11-09
 
 No seleccionar Argon2id como implementación definitiva sin benchmark. Cloudflare Workers Free documenta 10 ms CPU por invocación HTTP/Cron y 128 MB RAM. Medir KDF real en el runtime y bajo concurrencia; si no cabe una KDF segura, no degradar a hash rápido ni exigir plan pago. Evaluar WebAuthn/passkeys o aplazar PIN. Los códigos de recuperación, si se habilitan, serán aleatorios de alta entropía, de un solo uso, almacenados como hashes y mostrados una vez. Referencia oficial: https://developers.cloudflare.com/workers/platform/limits/.
+
+
+### Aclaración de límites Cloudflare Workers Free — CPU vs wall time (2026-11-09)
+
+La cuota Free es 10 ms de CPU por invocación HTTP/Cron y 128 MB de memoria; el tiempo de espera de I/O de red no cuenta como CPU. Los Cron Triggers tienen hasta 15 minutos de wall time por invocación. Por tanto, 10 ms no es el tiempo máximo total de una sincronización; sí condiciona CPU intensivo (p. ej. KDF). Los 15 minutos son el techo de plataforma, no el watchdog de negocio. Medir CPU y wall time por separado y fijar un presupuesto interno con margen para persistencia final y cleanup. Referencia oficial: https://developers.cloudflare.com/workers/platform/limits/.

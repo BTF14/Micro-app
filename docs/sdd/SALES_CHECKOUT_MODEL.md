@@ -1,3 +1,7 @@
+## Corrección de política BCV — 2026-11-08
+
+**Regla autoritativa:** una tasa publicada anticipadamente solo puede usarse desde su `effective_date`. Una tasa con fecha efectiva lunes no se usa viernes, sábado ni domingo. El API, handler y trigger SQL deben exigir coincidencia exacta con la fecha Caracas de la operación; sin fila oficial exacta y válida, bloquear checkout, también en ventas 100 % USD. Los pagos conservan sus importes/monedas originales y snapshots inmutables.
+
 ## Política de vigencia BCV confirmada por el propietario — 2026-11-08 UTC
 
 **Decisión:** se permite utilizar la tasa del siguiente día hábil cuando el BCV la haya publicado anticipadamente de forma oficial y la propia fuente indique esa fecha efectiva. La tasa no se puede aplicar antes de su `effective_date`.
@@ -109,7 +113,7 @@ Reglas ya aprobadas/documentadas:
 - PR #229–#231 aportan motor monetario/catálogo/formulario que ya están en main en forma igual o más completa. PR #228 comparte la migración 0014 canónica; su handler/tests también son inferiores a la implementación actual. Comparar y cerrar como supersedidas solo después de preservar cambios realmente únicos.
 - PR #232 contiene este diseño, pero su texto original quedó obsoleto respecto a las migraciones 0014/0015 y debe mantenerse actualizado.
 
-## 3. Bloqueador BCV: el trigger SQL de checkout no coincide con la regla de fin de semana
+## 3. Política BCV estricta por fecha efectiva
 
 **Base normativa:** el artículo 25 de la Ley del IVA dispone que, si el hecho imponible ocurre en un día no hábil para el sector financiero, la equivalencia se calcula con el tipo de cambio vigente el día hábil inmediatamente siguiente. Referencia documental: Gaceta Oficial N.º 6.507 Extraordinario (29-01-2020), artículo 25: <https://www.ivecofi.net/informacion/legislacion/leyes/ley-impuesto-valor-agregado/titulo-iv>. La fecha efectiva del BCV debe corresponder a ese siguiente día hábil. Esto es una referencia normativa para el diseño, no asesoría legal/contable; cualquier caso fiscal especial requiere validación profesional.
 

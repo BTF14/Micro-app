@@ -61,3 +61,8 @@ No se modificó main; no se fusionó ninguna PR; no hubo deploy, escritura Neon,
 ## Primer CI de integración y corrección
 
 El primer CI completo del checkpoint anterior falló únicamente en la prueba unitaria `ignores unrelated cron expressions`: el handler combinado estaba enviando cualquier Cron no-BCV al cleanup horario. Se corrigió `apps/api/src/index.ts` para que la limpieza se ejecute exclusivamente con `controller.cron === "17 * * * *"`; otros cron no hacen nada. La migración 0021, sus assertions, build/typecheck y validaciones de schema sí pasaron en esa ejecución. El nuevo commit requiere CI exact-HEAD propio; no se reutiliza el fallo ni los éxitos anteriores.
+
+
+## Revalidación del código — 2026-11-09
+
+El código HEAD `032064cfed018545f0071116a461f21500ee7102` pasó CI (run 42609557781), Database migration validation (42609557776), PostgreSQL migration runner validation (42609557710), backup/restore (42609557715), Semgrep, Security scan, Secret history, Dependency review y ODD docs. CI incluyó build/typecheck, unit tests, PostgreSQL BCV effective-date integration, checkout integration y runtime-role API integration. Playwright E2E run 42609557746 seguía `pending` en la última consulta; no declarar suite total completa. Dos fallos de CI previos fueron corregidos y no se ocultaron: (1) cleanup horario para cron no reconocido, ahora limitado a `17 * * * *`; (2) fixture de concurrencia BCV contaminaba la prueba siguiente, ahora elimina sus filas de prueba en `finally`. Este registro documental cambia el HEAD; verificar de nuevo CI exact-HEAD antes de cualquier decisión.

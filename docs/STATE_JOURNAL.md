@@ -2302,3 +2302,8 @@ La apertura web convencional de `https://www.bcv.org.ve/` respondió 502; una ex
 ## 2026-11-09 — Fixture DOM oficial BCV preservada
 
 Se obtuvo `document.documentElement.outerHTML` de la página oficial BCV y se preservó una copia sanitizada en la rama #287, con SHA-256 del DOM original y de la muestra redaccionada documentados. Se añadió prueba del parser sobre USD 897.53830000 y fecha 2026-11-09. La serialización DOM no equivale a bytes HTTP originales; faltan status HTTP numérico y headers, por lo que el fixture raw HTTP continúa pendiente. No se cambió la fuente de runtime ni se habilitó Cron.
+
+
+## 2026-11-09 — Precisión del timeout Neon
+
+Se comprobó en el lockfile que la versión es `@neondatabase/serverless@1.2.0`. El driver soporta opciones de conexión, sentencia, query cliente, lock e idle transaction; el wrapper no fija límites. Se corrigió el diagnóstico: no falta capacidad del driver, falta configuración y pruebas. No se adoptaron valores ni se implementó watchdog. El detalle de semántica y plan de pruebas quedó en ODD `bcv-sync-alerting-recovery.md` de #287.

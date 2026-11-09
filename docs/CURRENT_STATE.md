@@ -2233,3 +2233,8 @@ PR #287 ([integración Draft](https://github.com/BTF14/Micro-app/pull/287)) comb
 ## Corrección CI Cron — 2026-11-09
 
 El primer ensayo de #287 detectó que el handler combinado enviaba cron desconocidos al cleanup horario. Corregido: cleanup solo para `17 * * * *`; BCV sigue separado y opt-in. Revalidar CI sobre el nuevo HEAD.
+
+
+## Revalidación PR #287 — 2026-11-09
+
+El código de PR #287 en HEAD `032064cfed018545f0071116a461f21500ee7102` pasó CI, migraciones, migration runner, backup/restore y análisis de seguridad; Playwright E2E permanecía pending. Los fallos previos de enrutamiento Cron y aislamiento del fixture BCV fueron corregidos y validados por el CI de ese SHA. Ver handoff 2026-11-09. El cambio documental posterior requiere CI exact-HEAD nuevo.

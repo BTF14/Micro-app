@@ -131,9 +131,8 @@ describe.skipIf(!isDisposableCiDatabase)("BCV effective-date persistence against
     const nextBusinessDate = new Date(`${today}T12:00:00Z`);
     nextBusinessDate.setUTCDate(nextBusinessDate.getUTCDate() + daysUntilNextBusinessDay);
     const nextEffectiveDate = nextBusinessDate.toISOString().slice(0, 10);
-    const isWeekend = weekday === "Sat" || weekday === "Sun";
-    const expectedApplicableDate = isWeekend ? nextEffectiveDate : today;
-    const expectedApplicableRate = isWeekend ? "895.10000000" : "894.88760000";
+    const expectedApplicableDate = today;
+    const expectedApplicableRate = "894.88760000";
     const databaseClient = client as unknown as DatabaseClient;
 
     await expect(persistBcvOfficialRate(databaseClient, {

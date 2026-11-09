@@ -3,7 +3,7 @@
 - **Estado:** propuesta de producto aprobada para especificación; no implementada ni habilitada.
 - **Fecha:** 2026-11-09.
 - **Ámbito:** configuración cambiaria, autorización administrativa, checkout, auditoría y reportes.
-- **Relacionados:** [BCV rate integration](BCV_RATE_INTEGRATION.md) (si está presente en la rama de integración), [matriz de permisos](role-permission-decision-matrix.md), [requisitos de cumplimiento](../COMPLIANCE_REQUIREMENTS.md), [ADR-20261109-fx-contingency-authorization](../decisions/ADR-20261109-fx-contingency-authorization.md), [ODD task](../../odd/tasks/fx-contingency-management.md).
+- **Relacionados:** [PR #255 (productor BCV)](https://github.com/BTF14/Micro-app/pull/255), [PR #287 (rehearsal de integración)](https://github.com/BTF14/Micro-app/pull/287), [matriz de permisos](role-permission-decision-matrix.md), [requisitos de cumplimiento](../COMPLIANCE_REQUIREMENTS.md), [ADR-20261109-fx-contingency-authorization](../decisions/ADR-20261109-fx-contingency-authorization.md), [ODD task](../../odd/tasks/fx-contingency-management.md).
 
 > Esta especificación describe una capacidad futura. No afirma que exista código, endpoints, migraciones, permisos, cumplimiento fiscal ni despliegue. La autorización técnica de una tasa manual no demuestra por sí misma su validez legal o fiscal.
 

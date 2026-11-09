@@ -78,3 +78,12 @@ Excluded:
 - Limitations not verified: estado exacto de autenticación MFA/PIN y esquema de auditoría; legalidad de tasa manual; capacidad de aceptación digital.
 - Residual risks: la excepción manual no puede habilitarse hasta cerrar gates críticos.
 - Next step: cerrar AC-5–AC-7 mediante decisiones de permisos, validación legal/contable y revisión independiente antes de autorizar cualquier implementación.
+
+
+## Actualización de seguridad administrativa — 2026-11-09
+
+- El PIN se gestiona mediante el servicio compartido descrito en `docs/decisions/ADR-20261109-admin-authorization-pin-recovery.md`; no crear mecanismos independientes para BCV y calendario.
+- El mínimo documental existente de PIN para pequeño negocio es 8 dígitos. La propuesta inicial de rate limit es 5 intentos / 15 minutos con backoff progresivo, contadores atómicos server-side y mitigación de bloqueo abusivo; validar con pruebas antes de fijar parámetros.
+- Recuperación significa restablecer, nunca revelar el PIN. Requiere reautenticación + MFA/código de un solo uso; email solo no basta. Revocar sesiones/autorizaciones pendientes y alertar.
+- La autorización debe estar ligada a operación/dominio/tenant/sucursal/datos exactos, nonce, idempotencia y expiración corta; un solo consumo transaccional.
+- Permisos BCV y calendario permanecen separados. No implementar hasta reconciliar matriz de roles, autenticación/MFA real y gates de seguridad Nivel 1.

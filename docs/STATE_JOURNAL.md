@@ -2321,3 +2321,12 @@ Se creó `fix/bcv-checkout-last-success-20261109` desde #287 HEAD `362443524eb45
 - PR #269: OPEN/Draft, HEAD 7fc91b54f869664febb6a7daf1ed05b408bd8430, base main en SHA registrado 9c6b30281ed59726e532da840568fc9e80b528f7, GitHub mergeable=false.
 - No sincronizar #255/#269 de forma automática ni force-push. Primero resolver la integración/reconciliación de #287 y luego revisar cada rama por separado, preservando su contenido y ejecutando CI en el HEAD resultante.
 - PR #295 parte del HEAD exacto de #287 como base de integración; su HEAD actual 20c65e2541f2701347055cd2c2be70240d151362 no tiene workflow runs pull_request ni status contexts visibles. Mantener Draft y no declarar CI exact-HEAD.
+
+
+## Resultado de la corrección de filtros CI — 2026-11-09
+
+- Rama base integration/bcv-checkout-rehearsal-20261109 avanzó seis commits desde 362443524eb45c67da16811d1745d83ddc9bd3a9; el compare confirma que los únicos seis paths modificados son los workflows CI, migration-check, Playwright, Semgrep, secret-history y security-scan. Se añadió integration/** exclusivamente a pull_request.branches; jobs y permisos no cambiaron.
+- La punta de #287 tras los seis cambios es a3653df0788b320caa931f2e03a3b42886e0062f. La punta de #295 tras el asiento documental es 062a5c66f4bbff6fd60a3f88000ee9aab62d721c.
+- GitHub no muestra workflow runs pull_request ni status contexts en ninguno de esos dos HEADs. El commit previo 362443524... de #287 sí tenía 11/11 workflows SUCCESS; esos resultados no se trasladan a a3653df... ni validan la nueva punta. El SHA 556fe481... previo de #295 tampoco tenía runs; no se trasladan resultados a 062a5c...
+- El conector disponible no expone workflow_dispatch; las escrituras hechas mediante la integración GitHub no produjeron ejecuciones visibles. No se puede afirmar por qué GitHub no lanzó los eventos, ni simular éxito. La modificación de filtros está en la rama base de #295 y preparada para futuros eventos de PR hacia integration/**; validación exact-SHA sigue pendiente.
+- #287 y #295 siguen OPEN/Draft. No se cambia base, no se fusiona, no se despliega, no se escribe en Neon ni se activa Cron. Mantener gate hasta que un evento de CI real valide cada HEAD final.

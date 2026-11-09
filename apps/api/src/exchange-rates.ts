@@ -1,5 +1,5 @@
 import type { Hono } from "hono";
-import { withDatabaseClient, type DatabaseClient } from "./database";
+import { withDatabaseClient, withDatabaseTransaction, type DatabaseClient } from "./database";
 import type { Bindings } from "./bindings";
 
 const BCV_SOURCE_URL = "https://www.bcv.org.ve/";
@@ -252,10 +252,11 @@ export function safeBcvSyncErrorCode(error: unknown): string {
 }
 
 /**
- * Persist one attempt and its terminal result. Conditional attempt_id updates
- * prevent a slower overlapping invocation from overwriting a newer attempt.
+ * Persist one attempt and its terminal result. The singleton row lock protects
+ * both operational state and exchange_rates: a superseded fetch must not
+ * invalidate or insert a rate after a newer attempt has taken ownership.
  */
-export async function syncBcvOfficialRate(databaseUrl: string | undefined): Promise<"inserted" | "unchanged" | "older"> {
+export async function syncBcvOfficialRate(databaseUrl: string | undefined): Promise<"inserted" | "unchanged" | "older" | "superseded"> {
   return withDatabaseClient(databaseUrl, async (client) => {
     const attemptId = crypto.randomUUID();
     const started = await client.query<{ attempt_id: string }>(
@@ -271,22 +272,9 @@ export async function syncBcvOfficialRate(databaseUrl: string | undefined): Prom
     );
     if (started.rows.length !== 1) throw new Error("BCV_SYNC_STATE_ROW_MISSING");
 
+    let rate: BcvOfficialRate;
     try {
-      const rate = await fetchBcvOfficialRate();
-      const outcome = await persistBcvOfficialRate(client, rate);
-      // If another invocation has started since this one, this update is a
-      // deliberate no-op. Never let an older attempt overwrite newer state.
-      await client.query(
-        `UPDATE public.bcv_sync_state
-            SET last_success_at = now(),
-                last_outcome = $2,
-                last_error_code = NULL,
-                last_effective_date = $3::date,
-                updated_at = now()
-          WHERE singleton = true AND attempt_id = $1::uuid`,
-        [attemptId, outcome, rate.effectiveDate],
-      );
-      return outcome;
+      rate = await fetchBcvOfficialRate();
     } catch (error) {
       await client.query(
         `UPDATE public.bcv_sync_state
@@ -298,6 +286,54 @@ export async function syncBcvOfficialRate(databaseUrl: string | undefined): Prom
       );
       throw error;
     }
+
+    const terminal = await withDatabaseTransaction(client, async (tx) => {
+      const current = await tx.query<{ attempt_id: string | null }>(
+        `SELECT attempt_id::text AS attempt_id
+           FROM public.bcv_sync_state
+          WHERE singleton = true
+          FOR UPDATE`,
+      );
+      if (current.rows.length !== 1) throw new Error("BCV_SYNC_STATE_ROW_MISSING");
+      if (current.rows[0]?.attempt_id !== attemptId) {
+        return { kind: "superseded" as const };
+      }
+
+      try {
+        const outcome = await persistBcvOfficialRate(tx, rate);
+        await tx.query(
+          `UPDATE public.bcv_sync_state
+              SET last_success_at = now(),
+                  last_outcome = $2,
+                  last_error_code = NULL,
+                  last_effective_date = $3::date,
+                  updated_at = now()
+            WHERE singleton = true AND attempt_id = $1::uuid`,
+          [attemptId, outcome, rate.effectiveDate],
+        );
+        return { kind: "success" as const, outcome };
+      } catch (error) {
+        // A changed value for an existing effective date deliberately marks
+        // the row stale. Commit that invalidation and the failed attempt state
+        // together; other errors still abort and roll back the transaction.
+        if (error instanceof Error && error.message === "BCV_RATE_CHANGED_FOR_EXISTING_EFFECTIVE_DATE") {
+          await tx.query(
+            `UPDATE public.bcv_sync_state
+                SET last_outcome = 'failed',
+                    last_error_code = $2,
+                    updated_at = now()
+              WHERE singleton = true AND attempt_id = $1::uuid`,
+            [attemptId, safeBcvSyncErrorCode(error)],
+          );
+          return { kind: "failed" as const, errorCode: error.message };
+        }
+        throw error;
+      }
+    });
+
+    if (terminal.kind === "superseded") return "superseded";
+    if (terminal.kind === "failed") throw new Error(terminal.errorCode);
+    return terminal.outcome;
   });
 }
 

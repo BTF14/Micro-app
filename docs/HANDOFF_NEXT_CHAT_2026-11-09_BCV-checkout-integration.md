@@ -74,14 +74,14 @@ El código HEAD `032064cfed018545f0071116a461f21500ee7102` pasó CI (run 4260955
 
 Se detectó una carrera que el test previo no cubría: dos intentos con valores distintos para la misma `effective_date` podían terminar fuera de orden. El intento antiguo, al terminar después, llamaba a `persistBcvOfficialRate()`, detectaba un valor diferente y marcaba `validation_status='stale'` sobre la fila que había insertado el intento nuevo. La protección original de `attempt_id` solo evitaba sobrescribir el estado terminal; no protegía `exchange_rates`.
 
-### Corrección aplicada en esta rama (pendiente de CI exact-HEAD)
+### Corrección aplicada y validada en CI exact-HEAD
 
 - `syncBcvOfficialRate()` ahora verifica el `attempt_id` vigente bajo `SELECT ... FOR UPDATE` dentro de una transacción antes de persistir.
 - Persistencia de tasa y actualización terminal del estado se realizan en la misma transacción.
 - Un intento supersedido devuelve `superseded` sin insertar ni marcar stale ninguna fila.
 - Un error de fetch de un intento supersedido no sobrescribe el estado más nuevo ni se reporta como fallo vigente.
 - La regresión PostgreSQL ahora fuerza dos respuestas distintas para la misma fecha: B (más nueva) inserta 896.10; A (antigua) termina después con 895.10 y debe descartarse; la fila de B debe seguir `valid`.
-- Commits de implementación/test/corrección: `a2c122cd0a030ff82131a7eb9da0742690bfca84`, `27012594b895abe2aff08ef5ee8fb065321d755a`, `ef21cfca3e18b4a51de9aa7af9c5d26397d7736c`.
+- Commits de implementación/test/corrección: `a2c122cd0a030ff82131a7eb9da0742690bfca84`, `27012594b895abe2aff08ef5ee8fb065321d755a`, `ef21cfca3e18b4a51de9aa7af9c5d26397d7736c`, `c02bc31a26323384f648dc8e56a782a0394d7b80`; PR #289 integrada por squash en `f564c73b1df45fce5c8e5065e2e6f563595e0dfa`.
 - Tarea ODD: `odd/tasks/bcv-checkout-sync-concurrency.md`.
 
 ### Gate P1 separado: freshness todavía no está aplicada
@@ -97,5 +97,18 @@ Se dejó comentario técnico en PR #287 con el escenario, riesgo y criterios de 
 - Verificar en GitHub el HEAD vivo de #287; los checks anteriores a los tres commits de corrección no validan el nuevo código.
 - Ejecutar/esperar CI exact-HEAD y revisar específicamente PostgreSQL BCV integration bajo `microapp_runtime`.
 - Mantener #287 Draft; no merge, no deploy, no Neon writes, no Cron BCV ni cambios Cloudflare.
-- Después de CI, diseñar la política de freshness y probar: fila válida + fallo de sincronización + last-success fuera de ventana => checkout bloqueado.
+- Siguiente trabajo: diseñar la política de freshness y probar: fila válida + fallo de sincronización + last-success fuera de ventana => checkout bloqueado.
 - Producción permanece **NOT READY**.
+
+
+---
+
+## Revalidación exact-HEAD tras integrar PR #289 — 2026-11-09
+
+- PR #289 corrigió la aserción del test para respetar el contrato `Promise<void>` del handler programado. Se integró por squash **solo en la rama de integración #287**, merge commit/HEAD `f564c73b1df45fce5c8e5065e2e6f563595e0dfa`; no se fusionó a main.
+- La prueba PostgreSQL de concurrencia ahora usa dos valores distintos para la misma fecha. El intento B más nuevo inserta la tasa; A termina después y el handler registra `superseded`. La fila de B permanece `valid`.
+- **CI exact-HEAD:** 15/15 check-runs SUCCESS y 11/11 workflow runs SUCCESS en `f564c73b1df45fce5c8e5065e2e6f563595e0dfa`. Incluye CI/verify, PostgreSQL BCV integration, Runtime-role API integration, migration validation/runner, Playwright E2E, backup/restore, Semgrep, Security scan, Secret history, Dependency review y ODD docs.
+- La PR #287 permanece OPEN/Draft, 110 commits ahead / 0 behind main en la comparación consultada. Sin merge a main, sin deploy, sin Neon writes, sin activación Cron y sin cambios Cloudflare.
+- La brecha freshness continúa abierta: checkout no consulta `bcv_sync_state.last_success_at`; no se ha aprobado ventana de frescura. Los umbrales de parser 10/7 días siguen sin justificación/aprobación.
+- Gates restantes: fixture HTML real BCV, calendario bancario oficial verificable, política de anomalías/freshness, revisión legal/contable de effective_date y checkout, alertas/identidad Worker y contrato comercial pendiente.
+- El siguiente commit documental cambia el HEAD de la rama; no reutilizar estos checks para ese nuevo SHA. Producción **NOT READY**.

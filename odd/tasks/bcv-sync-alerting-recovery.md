@@ -252,3 +252,49 @@ Pendiente antes de considerar este bloque cerrado:
 - Presupuesto medido de timeout por fase y watchdog; no se añadieron valores arbitrarios.
 - Revisión independiente del diff y de las rutas de error antes de retirar Draft.
 - No se habilitó Cron ni se desplegó a producción.
+
+
+## Reconciliación de fallos terminales y pruebas de carreras — 2026-11-09 UTC
+
+### Corrección de resultado ambiguo de COMMIT
+
+La revisión posterior identificó que una respuesta perdida durante `COMMIT` no permite concluir que PostgreSQL haya revertido la transacción. El manejo de error de la fase terminal fue endurecido en `apps/api/src/exchange-rates.ts`:
+
+- La transacción terminal ya no intenta marcar `failed` usando la misma conexión que acaba de fallar.
+- Ante cualquier error terminal, se abre una conexión nueva y se ejecuta una actualización condicional para el mismo `attempt_id`, solo cuando `last_outcome = 'running'`.
+- Si PostgreSQL sí confirmó el éxito y se perdió la respuesta, la fila ya está en estado terminal y la actualización condicional no puede sobrescribirla.
+- Si la transacción se revirtió y el intento sigue `running`, puede registrarse `failed`.
+- Si la DB no está disponible, se conserva el error original y `running` queda detectable para reconciliación/watchdog.
+- Un fallo de cierre posterior al commit tampoco convierte un éxito terminal en `failed`; el cleanup failure se propaga, pero la actualización condicional no cambia la fila exitosa.
+
+### Pruebas añadidas
+
+En `apps/api/src/exchange-rates.test.ts` se añadieron casos para:
+
+1. Fetch BCV fallido: registrar `failed` con conexión separada.
+2. DB no disponible al registrar el fallo: preservar el error BCV original.
+3. Cleanup posterior a commit: no reescribir un éxito confirmado como fallo.
+4. Respuesta de COMMIT perdida: reconciliar con conexión nueva y actualización condicionada a `running`.
+5. Fetch fallido de un intento supersedido: devolver `superseded` sin modificar el estado del intento más nuevo.
+
+Commits relevantes:
+- Código de reconciliación de COMMIT ambiguo: `45fc79125893c6d761ac38a0731143730a221ac3`.
+- Pruebas de fallos/cleanup/COMMIT ambiguo: `2c3c27b4a03179eb3153e5491e2875ff46e50468`.
+- Prueba de fetch fallido supersedido: `27dab416a92a71f2ccf9b0310f24a80f7f6b4420`.
+
+### Validación exact-HEAD
+
+En el HEAD `27dab416a92a71f2ccf9b0310f24a80f7f6b4420`:
+- CI: SUCCESS; build/typecheck, unit tests y toda la matriz PostgreSQL terminaron correctamente, incluidas BCV effective-date, checkout atómico y runtime-role API.
+- Pull request workflows: 12/12 SUCCESS.
+- Check-runs: 14/14 SUCCESS.
+- Un workflow adicional Secret history scan del evento `push` concluyó `failure` pero GitHub devolvió 0 jobs y no expuso steps, annotations ni logs. El mismo scan del evento `pull_request` terminó SUCCESS. Se registra como fallo sin diagnóstico, no como vulnerabilidad confirmada.
+- La validación corresponde solo al SHA indicado; un nuevo commit documental requiere nueva verificación exact-HEAD.
+
+### Pendiente
+
+- Medir y probar timeouts reales de conexión, statement, lock, transacción y cleanup en entorno PostgreSQL/driver aislado; no fijar valores arbitrarios ni un watchdog sin evidencia.
+- Probar entrega de alertas y destino autorizado; no declarar monitor operativo hasta confirmar entrega.
+- Capturar respuesta HTTP raw oficial del BCV con status/headers/cuerpo exacto; la captura DOM existente no la sustituye.
+- Completar identidad efectiva del Worker, recuperación aislada y revisión legal/contable.
+- Mantener Cron desactivado, PR Draft y producción NOT READY.

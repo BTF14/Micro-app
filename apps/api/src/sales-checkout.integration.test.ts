@@ -61,6 +61,11 @@ describe.skipIf(!isDisposableCheckoutDatabase)("atomic sales checkout PostgreSQL
   let rateId = "";
   let rateDate = "";
   let previousRate: { id: string; rate: string; validation_status: string; fetched_at: string } | null = null;
+  let previousBcvSyncState: {
+    attempt_id: string | null; last_attempt_at: Date | null; last_success_at: Date | null;
+    last_outcome: string | null; last_error_code: string | null;
+    last_effective_date: string | null; updated_at: Date;
+  } | null = null;
   let createdRate = false;
   let suffix = "";
 
@@ -181,6 +186,23 @@ describe.skipIf(!isDisposableCheckoutDatabase)("atomic sales checkout PostgreSQL
     return result.rows[0];
   }
 
+  async function setBcvSyncState(
+    outcome: "running" | "inserted" | "unchanged" | "older" | "failed",
+    effectiveDate = rateDate,
+    successfulAtPresent = true,
+  ): Promise<void> {
+    await client.query(
+      `UPDATE public.bcv_sync_state
+          SET last_outcome=$1,
+              last_success_at=CASE WHEN $3 THEN COALESCE(last_success_at, now()) ELSE NULL END,
+              last_effective_date=$2::date,
+              last_error_code=CASE WHEN $1='failed' THEN 'BCV_SYNC_UNKNOWN' ELSE NULL END,
+              updated_at=now()
+        WHERE singleton=true`,
+      [outcome, effectiveDate, successfulAtPresent],
+    );
+  }
+
   beforeAll(async () => {
     client = new Client({ connectionString: databaseUrlAdmin });
     await client.connect();
@@ -276,6 +298,17 @@ describe.skipIf(!isDisposableCheckoutDatabase)("atomic sales checkout PostgreSQL
     // Integration fixtures represent an official row effective on the operation date.
     // A prepublished next-business-day row must not be used early on weekends.
     rateDate = today;
+    const syncState = await client.query<{
+      attempt_id: string | null; last_attempt_at: Date | null; last_success_at: Date | null;
+      last_outcome: string | null; last_error_code: string | null;
+      last_effective_date: string | null; updated_at: Date;
+    }>(
+      `SELECT attempt_id::text AS attempt_id,last_attempt_at,last_success_at,last_outcome,
+              last_error_code,last_effective_date::text AS last_effective_date,updated_at
+         FROM public.bcv_sync_state WHERE singleton=true`,
+    );
+    previousBcvSyncState = syncState.rows[0]!;
+    await setBcvSyncState("inserted", rateDate, true);
     const existingRate = await client.query<{ id: string; rate: string; validation_status: string; fetched_at: string }>(
       "SELECT id,rate::text,validation_status,fetched_at::text FROM public.exchange_rates WHERE source=$1 AND effective_date=$2::date",
       [BCV_SOURCE, rateDate],
@@ -363,6 +396,20 @@ describe.skipIf(!isDisposableCheckoutDatabase)("atomic sales checkout PostgreSQL
           [previousRate.id, previousRate.rate, previousRate.validation_status, previousRate.fetched_at],
         );
       }
+    }
+    if (previousBcvSyncState) {
+      await client.query(
+        `UPDATE public.bcv_sync_state
+            SET attempt_id=$1::uuid,last_attempt_at=$2::timestamptz,last_success_at=$3::timestamptz,
+                last_outcome=$4,last_error_code=$5,last_effective_date=$6::date,updated_at=$7::timestamptz
+          WHERE singleton=true`,
+        [
+          previousBcvSyncState.attempt_id, previousBcvSyncState.last_attempt_at,
+          previousBcvSyncState.last_success_at, previousBcvSyncState.last_outcome,
+          previousBcvSyncState.last_error_code, previousBcvSyncState.last_effective_date,
+          previousBcvSyncState.updated_at,
+        ],
+      );
     }
     await client.end();
   });
@@ -506,6 +553,72 @@ describe.skipIf(!isDisposableCheckoutDatabase)("atomic sales checkout PostgreSQL
       currency: "VES", amount: totalVes + "00", usd_equivalent_snapshot: "23.8500",
       exchange_rate_snapshot: "250.12345678",
     });
+  });
+
+  it("blocks a new sale after the latest BCV sync attempt fails, despite a valid same-day rate", async () => {
+    await seedBalance("2.000");
+    const key = "sync-failed-" + crypto.randomUUID();
+    try {
+      await setBcvSyncState("failed");
+      const response = await request(checkoutBody("1.000", "23.8500"), key);
+      expect(response.status).toBe(409);
+      expect((await response.json() as { error: string }).error).toBe("BCV_RATE_NOT_CURRENT");
+      expect((await readBalance()).on_hand_quantity).toBe("2.000");
+      const sales = await client.query(
+        "SELECT count(*)::int AS count FROM public.sales WHERE organization_id=$1 AND idempotency_key=$2",
+        [organizationId, key],
+      );
+      expect(sales.rows[0].count).toBe(0);
+    } finally {
+      await setBcvSyncState("unchanged");
+    }
+  });
+
+  it("blocks a new sale while the latest BCV sync attempt is running", async () => {
+    await seedBalance("2.000");
+    const key = "sync-running-" + crypto.randomUUID();
+    try {
+      await setBcvSyncState("running");
+      const response = await request(checkoutBody("1.000", "23.8500"), key);
+      expect(response.status).toBe(409);
+      expect((await response.json() as { error: string }).error).toBe("BCV_RATE_NOT_CURRENT");
+      expect((await readBalance()).on_hand_quantity).toBe("2.000");
+    } finally {
+      await setBcvSyncState("inserted");
+    }
+  });
+
+  it("blocks when the last successful sync effective date does not match today", async () => {
+    await seedBalance("2.000");
+    const key = "sync-date-mismatch-" + crypto.randomUUID();
+    try {
+      await setBcvSyncState("unchanged", "1900-01-01");
+      const response = await request(checkoutBody("1.000", "23.8500"), key);
+      expect(response.status).toBe(409);
+      expect((await response.json() as { error: string }).error).toBe("BCV_RATE_NOT_CURRENT");
+      expect((await readBalance()).on_hand_quantity).toBe("2.000");
+    } finally {
+      await setBcvSyncState("unchanged");
+    }
+  });
+
+  it("recovers checkout only after a successful same-day sync", async () => {
+    await seedBalance("2.000");
+    const blockedKey = "sync-recovery-blocked-" + crypto.randomUUID();
+    const acceptedKey = "sync-recovery-accepted-" + crypto.randomUUID();
+    try {
+      await setBcvSyncState("failed");
+      const blocked = await request(checkoutBody("1.000", "23.8500"), blockedKey);
+      expect(blocked.status).toBe(409);
+      expect((await readBalance()).on_hand_quantity).toBe("2.000");
+
+      await setBcvSyncState("unchanged");
+      const accepted = await request(checkoutBody("1.000", "23.8500"), acceptedKey);
+      expect(accepted.status).toBe(201);
+      expect((await readBalance()).on_hand_quantity).toBe("1.000");
+    } finally {
+      await setBcvSyncState("inserted");
+    }
   });
 
   it("fails closed for stale BCV and leaves no sale or stock change", async () => {

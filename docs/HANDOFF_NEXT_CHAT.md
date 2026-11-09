@@ -2463,3 +2463,6 @@ Rama documental activa: `docs/reconcile-bcv-freshness-fx-task-20261109`, PR #296
 
 
 - **Calendario 2027:** última vigilancia 2026-11-09; no se localizó publicación oficial identificable. El portal SUDEBAN lista la sección general, pero la consulta directa tuvo timeout; no convertir este resultado en afirmación absoluta de que no existe. Reconsultar canales oficiales en diciembre. Ver `docs/sdd/BANKING_CALENDAR_VERSIONING.md`.
+
+
+- **Nuevo gate PIN/runtime:** Cloudflare Workers Free limita CPU a 10 ms por invocación HTTP/Cron (128 MB RAM). Argon2id no está aprobado como implementación hasta benchmark real. No degradar a hash rápido ni exigir plan pago; evaluar WebAuthn/passkeys o aplazar PIN si ninguna KDF segura cabe. Códigos de recuperación: alta entropía, una vez, hashes, uso único. Ver ADR `docs/decisions/ADR-20261109-admin-authorization-pin-recovery.md`.

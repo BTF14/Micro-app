@@ -226,6 +226,7 @@ describe.skipIf(!isDisposableCiDatabase)("BCV effective-date persistence against
       });
     } finally {
       vi.unstubAllGlobals();
+      await cleanupClient.query("DELETE FROM public.exchange_rates WHERE source = $1", [source]);
     }
   });
 

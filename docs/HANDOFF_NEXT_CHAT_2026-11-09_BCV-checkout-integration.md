@@ -128,3 +128,50 @@ PR #293 se integró con merge commit en la rama de #287 para preservar main como
 - Freshness sigue sin implementación: checkout no consume `bcv_sync_state.last_success_at`. Los umbrales 10/7 no están aprobados. Fixture real BCV, calendario SUDEBAN verificable, legal/contable y Worker runtime identity/alertas siguen pendientes.
 - Producción NOT READY. No activar Cron, no deploy, no Neon writes.
 - Si se añade otro commit, repetir CI exact-HEAD; los resultados anteriores no validan un SHA futuro.
+
+---
+
+## Implementación aislada de freshness — 2026-11-09
+
+**Decisión confirmada por el propietario:** opción A. Si el último intento de sincronización BCV falla o está en curso, se bloquean nuevas ventas hasta un intento exitoso. La decisión está registrada en [ADR-20261109-bcv-checkout-last-success](decisions/ADR-20261109-bcv-checkout-last-success.md); no introduce TTL arbitrario ni habilita la contingencia manual.
+
+### Rama y alcance
+- Rama nueva: `fix/bcv-checkout-last-success-20261109`, creada desde el HEAD verificado de PR #287: `362443524eb45c67da16811d1745d83ddc9bd3a9`.
+- PR #287 permanece OPEN/Draft; esta rama no modifica #287 ni main. PR de esta corrección aún no creada en el momento de este registro.
+- Implementación: `findApplicableCheckoutRate()` primero lee `bcv_sync_state` con `SELECT ... FOR SHARE` y solo continúa si hay `last_success_at`, outcome `inserted`/ `unchanged` y `last_effective_date` igual o posterior a hoy en Caracas. Luego exige la fila BCV same-day `valid`.
+- El lock compartido permanece durante la transacción del checkout y serializa el inicio de un sync nuevo (UPDATE de la fila singleton). Si sync comenzó primero, checkout ve `running`; si checkout obtuvo el lock primero, la venta autorizada termina antes de que el nuevo intento pase a `running`. El lock no se mantiene durante el fetch HTTP.
+- Replay idempotente de una venta completada puede devolver su snapshot existente; no crea una venta ni consume inventario. La regla aplica a ventas nuevas.
+
+### Pruebas añadidas; aún sin resultado CI
+- Unitarias: éxito `unchanged` con tasa prepublicada del lunes descargada el viernes; rechazo antes de la fecha efectiva; `failed`, `running`, `older`, last-success ausente, singleton ausente, fecha discrepante, tasa stale y error DB.
+- PostgreSQL integración: tasa same-day válida + estado futuro prepublicado permite la fila de hoy; último intento fallido/running/fecha anterior => HTTP 409, sin venta ni movimiento de stock; recuperación solo tras nuevo éxito.
+- PostgreSQL runtime-role: lectura `FOR SHARE` mantiene lock y un UPDATE concurrente de sincronización recibe lock timeout hasta liberar la transacción.
+- Se conserva y restaura el estado singleton previo al terminar el fixture de integración; no hay migración nueva.
+
+### Estado de validación
+- No se ha ejecutado todavía CI exact-HEAD ni se declara que los tests pasen. La apertura de la PR Draft debe disparar los workflows; revisar cada check/run contra el SHA final.
+- No se hicieron escrituras Neon, deploy, activación Cron, ni cambios de Cloudflare/secrets/DNS/billing.
+- Pendientes globales siguen vigentes: fixture HTML oficial BCV, calendario bancario oficial, umbrales parser 10/7 sin aprobación, revisión legal/contable, alertas/identidad Worker y contrato comercial completo. Producción NOT READY.
+
+
+---
+
+## Corrección final de estado — PR #295 y CI exact-HEAD — 2026-11-09
+
+- PR #295 está OPEN/Draft y su base actual es `integration/bcv-checkout-rehearsal-20261109`, no la rama alias. La rama `fix/bcv-checkout-validation-base-20261109` se utilizó temporalmente solo para disparar workflows cuyo filtro excluye bases `integration/**`; después se retargeteó PR #295 a la rama real de integración.
+- HEAD de código probado: `3a67540c7b079bb11349552ffe92c598f0fad11f`. CI `42625578491`, migraciones `42625578392`, migration runner `42625578739`, Playwright `42625578611`, Semgrep `42625578676`, Dependency review `42625578410`, ODD docs `42625578554`, dashboard `42625578403`, secret-history `42625578857` y Security scan `42625578492`: todos SUCCESS. Resultado exacto: **14/14 check-runs SUCCESS y 10/10 workflow runs SUCCESS**.
+- CI verify incluyó build/typecheck, unit tests, PostgreSQL atomic sales checkout integration y Runtime-role API integration; los pasos terminaron SUCCESS. La prueba de checkout incluye estado `failed`, `running`, discrepancia de fecha, recuperación tras éxito, tasa actual durante prepublicación futura y lock `FOR SHARE` frente a UPDATE concurrente.
+- Cloudflare Pages/Workers checks son builds de preview; no hubo deploy productivo. No hubo escrituras Neon, activación Cron ni cambios manuales de Cloudflare.
+- No hay reviews formales ni threads en #295. Se mantiene Draft. #287 también sigue Draft. Producción NOT READY.
+- Este commit documental cambiará el HEAD; ejecutar CI exact-HEAD otra vez antes de cualquier decisión posterior.
+
+
+## Revisión técnica independiente — 2026-11-09
+
+- SHA revisado y validado: `32b838c9dd90c7b5c17e359961bd67f48376d1a8`. PR #295 sigue OPEN/Draft, base `integration/bcv-checkout-rehearsal-20261109` (base SHA `362443524eb45c67da16811d1745d83ddc9bd3a9`), mergeable=true; 37 commits ahead / 0 behind. No se fusionó.
+- Verificación viva: 10/10 workflow runs SUCCESS asociados al SHA; la descripción de PR registra 14/14 check-runs SUCCESS. No hay reviews formales ni hilos de revisión.
+- Revisión del flujo: `syncBcvOfficialRate()` reclama el singleton con UPDATE a `running` antes del fetch HTTP; checkout toma `FOR SHARE` en la misma fila dentro de su transacción. Si checkout obtiene primero el lock, el UPDATE de inicio de sync espera hasta el final de la venta; si sync confirma primero `running`, checkout observa ese estado y falla cerrado. La finalización del sync verifica `attempt_id` bajo `FOR UPDATE` y persiste tasa + estado terminal en una transacción, evitando que intentos supersedidos sobrescriban al vigente.
+- Permisos: migración 0021 concede SELECT y UPDATE por columnas a `microapp_runtime`, sin INSERT/DELETE/TRUNCATE; la prueba runtime-role verifica el lock compartido frente a UPDATE concurrente.
+- Dictamen de código: no se encontró un bloqueo de corrección en el flujo revisado de checkout/sync. La validación no equivale a aprobación formal de PR ni a readiness de producción.
+- Riesgo operativo pendiente: el Cron BCV está programado para `0 22 * * 1-5`, exige `APP_ENV=production` y `BCV_SYNC_ENABLED=true`, y permanece deshabilitado por defecto. No se observó un mecanismo de retry inmediato ni alerta operativa en este alcance. Si un intento falla o queda `running`, nuevas ventas siguen bloqueadas hasta el siguiente intento habilitado que finalice con éxito; hace falta definir alertas y recuperación operativa antes de producción.
+- No hubo merge, cambios en main, escrituras Neon, deploy, activación Cron, cambios de secretos/DNS/billing ni uso de datos reales. Producción **NOT READY**.

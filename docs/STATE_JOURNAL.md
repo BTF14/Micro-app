@@ -2278,3 +2278,54 @@ El ensayo verifica el bundle SQL y roles en la base aislada; no prueba el compor
 
 PR #287 combinó las ramas BCV y checkout en una integración Draft y añadió migración 0021 para estado de sincronización. Se detectó que una respuesta antigua podía marcar stale una tasa nueva de la misma fecha. La corrección usa bloqueo transaccional y verificación del `attempt_id`; se añadió prueba PostgreSQL con dos tasas diferentes. PR #289 corrigió la expectativa del handler `Promise<void>`; PR #290 actualizó handoff/ODD. Ambos se integraron solo en la rama #287. HEAD de código validado antes de sincronización: `254ebb6e741f7c1b147fbd4880bc188f17204807`, 15/15 check-runs y 11/11 workflows SUCCESS. Freshness y fuentes oficiales siguen gates P1.
 
+
+---
+
+## 2026-11-09 — Política de freshness BCV aprobada e implementación aislada
+
+El propietario confirmó opción A: si el último intento BCV está `running` o `failed`, bloquear nuevas ventas hasta una sincronización exitosa. Se registró ADR `docs/decisions/ADR-20261109-bcv-checkout-last-success.md`.
+
+Se creó `fix/bcv-checkout-last-success-20261109` desde #287 HEAD `362443524eb45c67da16811d1745d83ddc9bd3a9`. Checkout ahora consulta el singleton con `SELECT ... FOR SHARE`, exige `last_success_at`, outcome `inserted`/`unchanged` y fecha efectiva no anterior a hoy antes de leer la tasa same-day. Una tasa futura prepublicada nunca sustituye la fila same-day. Se añadieron pruebas unitarias y PostgreSQL runtime-role, incluyendo bloqueo de UPDATE concurrente. No se declara validado hasta CI exact-HEAD. No se tocó main, Neon, deploy ni Cron; producción NOT READY.
+
+
+- Revalidación de implementación BCV freshness en SHA `13c8cd96becc09b0ba9ffad923ea115e5a44dcba`: CI `42625146214` SUCCESS (incluye unit, PostgreSQL atomic sales checkout integration y Runtime-role API integration); migration validation `42625146320` SUCCESS; migration runner `42625146112` SUCCESS; Playwright `42625146437` SUCCESS; Semgrep `42625146039` SUCCESS; Dependency review `42625146027` SUCCESS; ODD docs `42625145983` SUCCESS; Project dashboard `42625146038` SUCCESS. Check-runs 13/13 SUCCESS. PR Security scan `42625146113` permaneció pending sin jobs; Trivy push `42625138416` en el mismo SHA SUCCESS. PR #295 OPEN/Draft. El siguiente commit documental exige revalidar CI exact-HEAD.
+
+
+- PR #295 retargeteada de la base alias temporal a `integration/bcv-checkout-rehearsal-20261109` después de ejecutar CI. HEAD probado `3a67540c7b079bb11349552ffe92c598f0fad11f`: 14/14 check-runs y 10/10 workflow runs SUCCESS. CI incluyó unit, PostgreSQL checkout integration, runtime-role API integration y typecheck; migraciones, migration runner, Playwright, Semgrep, Dependency review, ODD docs, Secret history y Security scan SUCCESS. PR #295 sigue Draft, sin reviews formales/threads. No merge, main, Neon writes, deploy ni Cron activation.
+
+
+## Revisión técnica independiente — 2026-11-09
+
+- SHA revisado y validado: `32b838c9dd90c7b5c17e359961bd67f48376d1a8`. PR #295 sigue OPEN/Draft, base `integration/bcv-checkout-rehearsal-20261109` (base SHA `362443524eb45c67da16811d1745d83ddc9bd3a9`), mergeable=true; 37 commits ahead / 0 behind. No se fusionó.
+- Verificación viva: 10/10 workflow runs SUCCESS asociados al SHA; la descripción de PR registra 14/14 check-runs SUCCESS. No hay reviews formales ni hilos de revisión.
+- Revisión del flujo: `syncBcvOfficialRate()` reclama el singleton con UPDATE a `running` antes del fetch HTTP; checkout toma `FOR SHARE` en la misma fila dentro de su transacción. Si checkout obtiene primero el lock, el UPDATE de inicio de sync espera hasta el final de la venta; si sync confirma primero `running`, checkout observa ese estado y falla cerrado. La finalización del sync verifica `attempt_id` bajo `FOR UPDATE` y persiste tasa + estado terminal en una transacción, evitando que intentos supersedidos sobrescriban al vigente.
+- Permisos: migración 0021 concede SELECT y UPDATE por columnas a `microapp_runtime`, sin INSERT/DELETE/TRUNCATE; la prueba runtime-role verifica el lock compartido frente a UPDATE concurrente.
+- Dictamen de código: no se encontró un bloqueo de corrección en el flujo revisado de checkout/sync. La validación no equivale a aprobación formal de PR ni a readiness de producción.
+- Riesgo operativo pendiente: el Cron BCV está programado para `0 22 * * 1-5`, exige `APP_ENV=production` y `BCV_SYNC_ENABLED=true`, y permanece deshabilitado por defecto. No se observó un mecanismo de retry inmediato ni alerta operativa en este alcance. Si un intento falla o queda `running`, nuevas ventas siguen bloqueadas hasta el siguiente intento habilitado que finalice con éxito; hace falta definir alertas y recuperación operativa antes de producción.
+- No hubo merge, cambios en main, escrituras Neon, deploy, activación Cron, cambios de secretos/DNS/billing ni uso de datos reales. Producción **NOT READY**.
+
+
+## 2026-11-09 — Reconciliación contingencia cambiaria y CI #295
+
+- Confirmado en GitHub que PR #288 está MERGED en main. Su SDD, ADR y ODD describen la tasa manual como contingencia temporal futura; no existe implementación ni habilitación. Se corrigió odd/tasks/fx-contingency-management.md en la rama #295 para eliminar la referencia obsoleta a #288 OPEN/Draft y conservar AC-5–AC-7 como pendientes.
+- PR #295 en el HEAD anterior a esta actualización (fd4487c4382ecdf90f3b03c485cb34780dc8cd9c) tiene 10/10 workflow runs pull_request SUCCESS. El endpoint de combined status no devolvió status contexts; no convertir esa respuesta en un conteo de check-runs. Sin reviews formales ni threads en la consulta.
+- Los commits documentales nuevos cambian el HEAD de #295; CI exact-HEAD debe reconsultarse antes de declarar validación final. PR sigue OPEN/Draft; no merge.
+- Sin implementación manual FX, sin cambios de código BCV/checkout, main, Neon, deploy o Cron. Producción NOT READY.
+
+
+## Snapshot de ramas de integración — 2026-11-09
+
+- PR #287: OPEN/Draft, HEAD 362443524eb45c67da16811d1745d83ddc9bd3a9, base main, GitHub mergeable=true. Compare main...HEAD: 114 ahead / 0 behind. En ese HEAD exacto se observaron 11/11 workflow runs pull_request SUCCESS; combined status contexts vacío. La rama sigue sin aprobación formal y no se fusiona por CI verde.
+- PR #255: OPEN/Draft, HEAD b0e47205b96f636b2ab270304d2598423a50ccc3, base main en SHA registrado 9c6b30281ed59726e532da840568fc9e80b528f7, GitHub mergeable=false.
+- PR #269: OPEN/Draft, HEAD 7fc91b54f869664febb6a7daf1ed05b408bd8430, base main en SHA registrado 9c6b30281ed59726e532da840568fc9e80b528f7, GitHub mergeable=false.
+- No sincronizar #255/#269 de forma automática ni force-push. Primero resolver la integración/reconciliación de #287 y luego revisar cada rama por separado, preservando su contenido y ejecutando CI en el HEAD resultante.
+- PR #295 parte del HEAD exacto de #287 como base de integración; su HEAD actual 20c65e2541f2701347055cd2c2be70240d151362 no tiene workflow runs pull_request ni status contexts visibles. Mantener Draft y no declarar CI exact-HEAD.
+
+
+## Resultado de la corrección de filtros CI — 2026-11-09
+
+- Rama base integration/bcv-checkout-rehearsal-20261109 avanzó seis commits desde 362443524eb45c67da16811d1745d83ddc9bd3a9; el compare confirma que los únicos seis paths modificados son los workflows CI, migration-check, Playwright, Semgrep, secret-history y security-scan. Se añadió integration/** exclusivamente a pull_request.branches; jobs y permisos no cambiaron.
+- La punta de #287 tras los seis cambios es a3653df0788b320caa931f2e03a3b42886e0062f. La punta de #295 tras el asiento documental es 062a5c66f4bbff6fd60a3f88000ee9aab62d721c.
+- GitHub no muestra workflow runs pull_request ni status contexts en ninguno de esos dos HEADs. El commit previo 362443524... de #287 sí tenía 11/11 workflows SUCCESS; esos resultados no se trasladan a a3653df... ni validan la nueva punta. El SHA 556fe481... previo de #295 tampoco tenía runs; no se trasladan resultados a 062a5c...
+- El conector disponible no expone workflow_dispatch; las escrituras hechas mediante la integración GitHub no produjeron ejecuciones visibles. No se puede afirmar por qué GitHub no lanzó los eventos, ni simular éxito. La modificación de filtros está en la rama base de #295 y preparada para futuros eventos de PR hacia integration/**; validación exact-SHA sigue pendiente.
+- #287 y #295 siguen OPEN/Draft. No se cambia base, no se fusiona, no se despliega, no se escribe en Neon ni se activa Cron. Mantener gate hasta que un evento de CI real valide cada HEAD final.

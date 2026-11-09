@@ -84,9 +84,34 @@ function caracasDate(now: Date): string {
   const value = (type: string) => parts.find((part) => part.type === type)?.value ?? "";
   return `${value("year")}-${value("month")}-${value("day")}`;
 }
-/** Select only the BCV row whose explicit effective date is today in Caracas. */
+/**
+ * A new sale requires both today's valid BCV row and a successful latest sync.
+ * FOR SHARE linearizes this decision against the sync worker's UPDATE to the
+ * singleton state row and remains held until the enclosing checkout transaction
+ * commits or rolls back. The lock is not held while BCV HTTP is fetched.
+ */
 export async function findApplicableCheckoutRate(tx: import("./database").DatabaseClient, now = new Date()): Promise<RateRow | null> {
   const today = caracasDate(now);
+  const syncState = await tx.query<{
+    last_success_at: string | null;
+    last_outcome: string | null;
+    last_effective_date: string | null;
+  }>(
+    `SELECT last_success_at,
+            last_outcome,
+            last_effective_date::text AS last_effective_date
+       FROM public.bcv_sync_state
+      WHERE singleton = true
+      FOR SHARE`,
+  );
+  const state = syncState.rows[0];
+  if (
+    !state ||
+    !state.last_success_at ||
+    (state.last_outcome !== "inserted" && state.last_outcome !== "unchanged") ||
+    (state.last_effective_date === null || state.last_effective_date < today)
+  ) return null;
+
   const result = await tx.query<RateRow>(
     `SELECT id, rate::text AS rate, effective_date::text AS effective_date, validation_status
        FROM public.exchange_rates

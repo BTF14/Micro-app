@@ -89,7 +89,7 @@ describe.skipIf(!isDisposableCiDatabase)("BCV effective-date persistence against
       headers: { "content-type": "text/html; charset=utf-8" },
     }));
     const scheduledApp = app as typeof app & {
-      scheduled: (controller: { cron: string }, env: { APP_ENV: "production" | "preview"; DATABASE_URL?: string }) => Promise<void>;
+      scheduled: (controller: { cron: string }, env: { APP_ENV: "production" | "preview"; DATABASE_URL?: string; BCV_SYNC_ENABLED?: string }) => Promise<void>;
     };
 
     await cleanupClient.query("DELETE FROM public.exchange_rates WHERE source = $1", [source]);
@@ -100,7 +100,7 @@ describe.skipIf(!isDisposableCiDatabase)("BCV effective-date persistence against
 
       await scheduledApp.scheduled(
         { cron: "0 22 * * 1-5" },
-        { APP_ENV: "production", DATABASE_URL: databaseUrl },
+        { APP_ENV: "production", DATABASE_URL: databaseUrl, BCV_SYNC_ENABLED: "true" },
       );
       expect(fetchMock).toHaveBeenCalledTimes(1);
 

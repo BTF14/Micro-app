@@ -2323,3 +2323,8 @@ Esta revisión fue estática de contenidos en GitHub; no se ejecutaron tests des
 
 
 - **Vigilancia calendario 2027 — 2026-11-09:** no se localizó publicación oficial identificable. SUDEBAN muestra la sección general Calendario Bancario, pero la consulta directa tuvo timeout; una fuente secundaria actualizada 2026-11-07 también la reporta pendiente. Estado: no localizado/no verificado, no ausencia absoluta demostrada. Detalle y fuentes en `docs/sdd/BANKING_CALENDAR_VERSIONING.md`.
+
+
+## Actualización fuente oficial BCV — 2026-11-09
+
+Una extracción de navegador alcanzó `https://www.bcv.org.ve/` y recuperó los bloques de monedas y la fecha valor del día. Sin embargo, el extractor entrega HTML semántico limpiado, no el cuerpo HTTP original. Es evidencia de acceso/contenido, no fixture raw ni prueba del parser sobre el markup original. Mantener el gate de fixture oficial raw con status, content-type, hora de captura y SHA-256. No usar mirrors ni renombrar el fixture sintético como oficial.

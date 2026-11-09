@@ -2337,3 +2337,12 @@ Esta revisión fue estática de contenidos en GitHub; no se ejecutaron tests des
 - Gates pendientes de contingencia: resolver Owner vs Admin delegado con la matriz de permisos; validar legal/contablemente tasa y aceptación; auditar auth/MFA/PIN y el modelo de auditoría; definir límites y reglas de concurrencia. No implementar hasta cerrar esos gates y aprobar alcance.
 - Gates BCV/producción que permanecen: fixture HTML oficial reproducible, calendario bancario oficial verificable, justificación de límites del parser 10/7, alertas y recuperación operativa, identidad/runtime Worker y revisión legal/contable. Cron permanece deshabilitado por defecto. Producción NOT READY.
 - No merge de #255/#269/#287/#295, no cambios en main, no Neon writes, no deploy, no Cron activation, no secretos/DNS/billing ni datos reales.
+
+
+## Snapshot de ramas de integración — 2026-11-09
+
+- PR #287: OPEN/Draft, HEAD 362443524eb45c67da16811d1745d83ddc9bd3a9, base main, GitHub mergeable=true. Compare main...HEAD: 114 ahead / 0 behind. En ese HEAD exacto se observaron 11/11 workflow runs pull_request SUCCESS; combined status contexts vacío. La rama sigue sin aprobación formal y no se fusiona por CI verde.
+- PR #255: OPEN/Draft, HEAD b0e47205b96f636b2ab270304d2598423a50ccc3, base main en SHA registrado 9c6b30281ed59726e532da840568fc9e80b528f7, GitHub mergeable=false.
+- PR #269: OPEN/Draft, HEAD 7fc91b54f869664febb6a7daf1ed05b408bd8430, base main en SHA registrado 9c6b30281ed59726e532da840568fc9e80b528f7, GitHub mergeable=false.
+- No sincronizar #255/#269 de forma automática ni force-push. Primero resolver la integración/reconciliación de #287 y luego revisar cada rama por separado, preservando su contenido y ejecutando CI en el HEAD resultante.
+- PR #295 parte del HEAD exacto de #287 como base de integración; su HEAD actual 20c65e2541f2701347055cd2c2be70240d151362 no tiene workflow runs pull_request ni status contexts visibles. Mantener Draft y no declarar CI exact-HEAD.

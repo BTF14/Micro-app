@@ -2326,3 +2326,14 @@ Esta revisión fue estática de contenidos en GitHub; no se ejecutaron tests des
 - Dictamen de código: no se encontró un bloqueo de corrección en el flujo revisado de checkout/sync. La validación no equivale a aprobación formal de PR ni a readiness de producción.
 - Riesgo operativo pendiente: el Cron BCV está programado para `0 22 * * 1-5`, exige `APP_ENV=production` y `BCV_SYNC_ENABLED=true`, y permanece deshabilitado por defecto. No se observó un mecanismo de retry inmediato ni alerta operativa en este alcance. Si un intento falla o queda `running`, nuevas ventas siguen bloqueadas hasta el siguiente intento habilitado que finalice con éxito; hace falta definir alertas y recuperación operativa antes de producción.
 - No hubo merge, cambios en main, escrituras Neon, deploy, activación Cron, cambios de secretos/DNS/billing ni uso de datos reales. Producción **NOT READY**.
+
+
+## Reconciliación viva — 2026-11-09 — BCV checkout y contingencia cambiaria
+
+- PR #295 (fix/bcv-checkout-last-success-20261109) permanece OPEN/Draft, base integration/bcv-checkout-rehearsal-20261109, base SHA 362443524eb45c67da16811d1745d83ddc9bd3a9. El HEAD de esta reconciliación documental debe consultarse en GitHub; no reutilizar resultados de un SHA anterior.
+- En el HEAD fd4487c4382ecdf90f3b03c485cb34780dc8cd9c, los 10/10 workflow runs asociados a pull_request terminaron SUCCESS. El endpoint de status contexts no devolvió entradas; esto no debe presentarse como un conteo de check-runs ni como aprobación formal. No había reviews formales ni review threads.
+- La descripción de PR #295 registraba CI exact-HEAD pendiente para ese SHA documental; tras esta actualización documental, volver a comprobar CI en el HEAD nuevo.
+- Contingencia cambiaria manual: la especificación docs/sdd/FX_CONTINGENCY_MANAGEMENT.md, ADR docs/decisions/ADR-20261109-fx-contingency-authorization.md y ODD odd/tasks/fx-contingency-management.md ya se integraron a main mediante PR #288 MERGED. La propuesta está documentada para una fase futura; no hay implementación, endpoint, migración, permiso, feature flag ni habilitación comercial. El ODD se corrigió en esta rama para reflejar que #288 está MERGED, no Draft.
+- Gates pendientes de contingencia: resolver Owner vs Admin delegado con la matriz de permisos; validar legal/contablemente tasa y aceptación; auditar auth/MFA/PIN y el modelo de auditoría; definir límites y reglas de concurrencia. No implementar hasta cerrar esos gates y aprobar alcance.
+- Gates BCV/producción que permanecen: fixture HTML oficial reproducible, calendario bancario oficial verificable, justificación de límites del parser 10/7, alertas y recuperación operativa, identidad/runtime Worker y revisión legal/contable. Cron permanece deshabilitado por defecto. Producción NOT READY.
+- No merge de #255/#269/#287/#295, no cambios en main, no Neon writes, no deploy, no Cron activation, no secretos/DNS/billing ni datos reales.

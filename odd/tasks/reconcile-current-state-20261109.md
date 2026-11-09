@@ -1,7 +1,7 @@
 # ODD task: Reconciliación de estado vivo — 2026-11-09
 
 - Status: in progress
-- PR: docs-only PR #291 (pendiente de creación)
+- PR: [#291](https://github.com/BTF14/Micro-app/pull/291) — docs-only, pendiente de CI/merge
 - Risk: medium (documentation accuracy; no runtime changes)
 
 ## Objective
@@ -25,10 +25,10 @@ Autorizado: lectura GitHub, conciliación de documentos y PR docs-only desde mai
 
 ## Acceptance criteria
 
-- [ ] AC-1 — CURRENT_STATE, HANDOFF_NEXT_CHAT, WORK_CHECKPOINT, PROJECT_PLAN, STATE_JOURNAL y SECURITY_ROADMAP contienen una sección reciente coherente.
-- [ ] AC-2 — Cada PR/HEAD/base/check count está claramente identificado como snapshot, sin reutilizar SHA antiguos.
-- [ ] AC-3 — Se documenta que la contingencia FX está en propuesta y no implementada.
-- [ ] AC-4 — Se documentan gates P1 de freshness, fixture, calendario y validación legal.
+- [x] AC-1 — CURRENT_STATE, HANDOFF_NEXT_CHAT, WORK_CHECKPOINT, PROJECT_PLAN, STATE_JOURNAL y SECURITY_ROADMAP contienen una sección reciente coherente.
+- [x] AC-2 — Cada PR/HEAD/base/check count está claramente identificado como snapshot, sin reutilizar SHA antiguos.
+- [x] AC-3 — Se documenta que la contingencia FX está en propuesta y no implementada.
+- [x] AC-4 — Se documentan gates P1 de freshness, fixture, calendario y validación legal.
 - [ ] AC-5 — CI exact-HEAD del PR documental pasa y se integra solo documentación.
 
 ## Guardrails

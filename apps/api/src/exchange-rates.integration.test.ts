@@ -131,9 +131,101 @@ describe.skipIf(!isDisposableCiDatabase)("BCV effective-date persistence against
       });
       expect(syncState.rows[0]?.last_attempt_at).toBeTruthy();
       expect(syncState.rows[0]?.last_success_at).toBeTruthy();
+
+      const priorSuccessAt = syncState.rows[0]!.last_success_at;
+      vi.stubGlobal("fetch", vi.fn().mockResolvedValue(new Response("unavailable", {
+        status: 503,
+        headers: { "content-type": "text/html" },
+      })));
+      await expect(scheduledApp.scheduled(
+        { cron: "0 22 * * 1-5" },
+        { APP_ENV: "production", DATABASE_URL: databaseUrl, BCV_SYNC_ENABLED: "true" },
+      )).rejects.toThrow("BCV_SYNC_FAILED");
+
+      const failedState = await cleanupClient.query<{
+        last_outcome: string;
+        last_error_code: string | null;
+        last_success_at: string | null;
+      }>(
+        `SELECT last_outcome, last_error_code, last_success_at::text
+           FROM public.bcv_sync_state WHERE singleton = true`,
+      );
+      expect(failedState.rows[0]).toMatchObject({
+        last_outcome: "failed",
+        last_error_code: "BCV_SOURCE_HTTP_ERROR",
+        last_success_at: priorSuccessAt,
+      });
     } finally {
       vi.unstubAllGlobals();
       await cleanupClient.query("DELETE FROM public.exchange_rates WHERE source = $1", [source]);
+    }
+  });
+
+  it("prevents a slower overlapping attempt from overwriting the newer result", async () => {
+    if (!client || !cleanupClient || !databaseUrl) {
+      throw new Error("PostgreSQL integration clients are not connected.");
+    }
+
+    const dates = await cleanupClient.query<{ today: string }>(
+      "SELECT (now() AT TIME ZONE 'America/Caracas')::date::text AS today",
+    );
+    const today = dates.rows[0]!.today;
+    const dateLabel = new Intl.DateTimeFormat("es-VE", {
+      weekday: "long", day: "2-digit", month: "long", year: "numeric",
+      timeZone: "America/Caracas",
+    }).format(new Date(`${today}T16:00:00.000Z`));
+    const html = `<html><body><p>USD</p><p>896,10000000</p><p>Fecha Valor: ${dateLabel}</p></body></html>`;
+
+    let releaseOlderFetch!: (response: Response) => void;
+    let signalOlderFetchStarted!: () => void;
+    const olderFetchStarted = new Promise<void>((resolve) => { signalOlderFetchStarted = resolve; });
+    const olderFetchResponse = new Promise<Response>((resolve) => { releaseOlderFetch = resolve; });
+    const fetchMock = vi.fn()
+      .mockImplementationOnce(() => {
+        signalOlderFetchStarted();
+        return olderFetchResponse;
+      })
+      .mockResolvedValueOnce(new Response(html, {
+        status: 200,
+        headers: { "content-type": "text/html; charset=utf-8" },
+      }));
+    const scheduledApp = app as typeof app & {
+      scheduled: (controller: { cron: string }, env: { APP_ENV: "production" | "preview"; DATABASE_URL?: string; BCV_SYNC_ENABLED?: string }) => Promise<void>;
+    };
+
+    vi.stubGlobal("fetch", fetchMock);
+    try {
+      const olderAttempt = scheduledApp.scheduled(
+        { cron: "0 22 * * 1-5" },
+        { APP_ENV: "production", DATABASE_URL: databaseUrl, BCV_SYNC_ENABLED: "true" },
+      );
+      await olderFetchStarted;
+
+      await scheduledApp.scheduled(
+        { cron: "0 22 * * 1-5" },
+        { APP_ENV: "production", DATABASE_URL: databaseUrl, BCV_SYNC_ENABLED: "true" },
+      );
+      const newerState = await cleanupClient.query<{ attempt_id: string; last_outcome: string }>(
+        "SELECT attempt_id::text, last_outcome FROM public.bcv_sync_state WHERE singleton = true",
+      );
+      expect(newerState.rows[0]?.last_outcome).toBe("inserted");
+      const newerAttemptId = newerState.rows[0]?.attempt_id;
+
+      releaseOlderFetch(new Response(html, {
+        status: 200,
+        headers: { "content-type": "text/html; charset=utf-8" },
+      }));
+      await olderAttempt;
+
+      const finalState = await cleanupClient.query<{ attempt_id: string; last_outcome: string }>(
+        "SELECT attempt_id::text, last_outcome FROM public.bcv_sync_state WHERE singleton = true",
+      );
+      expect(finalState.rows[0]).toEqual({
+        attempt_id: newerAttemptId,
+        last_outcome: "inserted",
+      });
+    } finally {
+      vi.unstubAllGlobals();
     }
   });
 

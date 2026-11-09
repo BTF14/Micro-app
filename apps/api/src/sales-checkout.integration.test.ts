@@ -555,6 +555,30 @@ describe.skipIf(!isDisposableCheckoutDatabase)("atomic sales checkout PostgreSQL
     });
   });
 
+  it("holds a runtime-readable shared lock against a new BCV sync until checkout transaction ends", async () => {
+    const runtimeLockClient = new Client({ connectionString: databaseUrl });
+    await runtimeLockClient.connect();
+    try {
+      await runtimeLockClient.query("BEGIN");
+      await runtimeLockClient.query(
+        "SELECT last_outcome FROM public.bcv_sync_state WHERE singleton=true FOR SHARE",
+      );
+
+      await client.query("SET lock_timeout='250ms'");
+      const blockedUpdate = await client.query(
+        "UPDATE public.bcv_sync_state SET last_outcome='running' WHERE singleton=true",
+      ).then(() => null, (error: { code?: string }) => error);
+      await client.query("RESET lock_timeout");
+      expect(blockedUpdate).toMatchObject({ code: "55P03" });
+    } finally {
+      await runtimeLockClient.query("ROLLBACK");
+      await runtimeLockClient.end();
+    }
+
+    // Once the checkout transaction releases its shared lock, sync can own the row.
+    await setBcvSyncState("unchanged");
+  });
+
   it("blocks a new sale after the latest BCV sync attempt fails, despite a valid same-day rate", async () => {
     await seedBalance("2.000");
     const key = "sync-failed-" + crypto.randomUUID();

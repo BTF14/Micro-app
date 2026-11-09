@@ -99,3 +99,16 @@ Se dejó comentario técnico en PR #287 con el escenario, riesgo y criterios de 
 - Mantener #287 Draft; no merge, no deploy, no Neon writes, no Cron BCV ni cambios Cloudflare.
 - Después de CI, diseñar la política de freshness y probar: fila válida + fallo de sincronización + last-success fuera de ventana => checkout bloqueado.
 - Producción permanece **NOT READY**.
+
+
+---
+
+## Revalidación exact-HEAD tras integrar PR #289 — 2026-11-09
+
+- PR #289 corrigió la aserción del test para respetar el contrato `Promise<void>` del handler programado. Se integró por squash **solo en la rama de integración #287**, merge commit/HEAD `f564c73b1df45fce5c8e5065e2e6f563595e0dfa`; no se fusionó a main.
+- La prueba PostgreSQL de concurrencia ahora usa dos valores distintos para la misma fecha. El intento B más nuevo inserta la tasa; A termina después y el handler registra `superseded`. La fila de B permanece `valid`.
+- **CI exact-HEAD:** 15/15 check-runs SUCCESS y 11/11 workflow runs SUCCESS en `f564c73b1df45fce5c8e5065e2e6f563595e0dfa`. Incluye CI/verify, PostgreSQL BCV integration, Runtime-role API integration, migration validation/runner, Playwright E2E, backup/restore, Semgrep, Security scan, Secret history, Dependency review y ODD docs.
+- La PR #287 permanece OPEN/Draft, 110 commits ahead / 0 behind main en la comparación consultada. Sin merge a main, sin deploy, sin Neon writes, sin activación Cron y sin cambios Cloudflare.
+- La brecha freshness continúa abierta: checkout no consulta `bcv_sync_state.last_success_at`; no se ha aprobado ventana de frescura. Los umbrales de parser 10/7 días siguen sin justificación/aprobación.
+- Gates restantes: fixture HTML real BCV, calendario bancario oficial verificable, política de anomalías/freshness, revisión legal/contable de effective_date y checkout, alertas/identidad Worker y contrato comercial pendiente.
+- El siguiente commit documental cambia el HEAD de la rama; no reutilizar estos checks para ese nuevo SHA. Producción **NOT READY**.

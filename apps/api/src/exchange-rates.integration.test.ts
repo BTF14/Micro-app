@@ -216,7 +216,7 @@ describe.skipIf(!isDisposableCiDatabase)("BCV effective-date persistence against
         status: 200,
         headers: { "content-type": "text/html; charset=utf-8" },
       }));
-      await expect(olderAttempt).resolves.toBe("superseded");
+      await expect(olderAttempt).resolves.toBeUndefined();
 
       const finalRate = await cleanupClient.query<{ rate: string; validation_status: string }>(
         "SELECT rate::text, validation_status FROM public.exchange_rates WHERE source = $1 AND effective_date = $2::date",

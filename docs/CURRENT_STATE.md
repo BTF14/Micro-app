@@ -2354,3 +2354,12 @@ Esta revisión fue estática de contenidos en GitHub; no se ejecutaron tests des
 - En la rama base de integración se amplió únicamente `pull_request.branches` para incluir `integration/**` en esos seis workflows. No se alteraron los jobs, permisos, comandos, credenciales ni el evento push. El cambio está en la rama #287, no en main.
 - La actualización de la rama base por sí sola no ha demostrado ejecución CI para #295. Se registra este commit documental en #295 para provocar un evento synchronize después de que los filtros estén disponibles; después consultar runs y check-runs del HEAD exacto. Si GitHub no dispara, no declarar validación: revisar evento/branch filter y ejecutar un workflow_dispatch solo si está expresamente definido y seguro.
 - No se modificó código runtime ni migraciones. #287 y #295 siguen Draft; no merge, no deploy, no Neon writes, no Cron.
+
+
+## Resultado de la corrección de filtros CI — 2026-11-09
+
+- Rama base integration/bcv-checkout-rehearsal-20261109 avanzó seis commits desde 362443524eb45c67da16811d1745d83ddc9bd3a9; el compare confirma que los únicos seis paths modificados son los workflows CI, migration-check, Playwright, Semgrep, secret-history y security-scan. Se añadió integration/** exclusivamente a pull_request.branches; jobs y permisos no cambiaron.
+- La punta de #287 tras los seis cambios es a3653df0788b320caa931f2e03a3b42886e0062f. La punta de #295 tras el asiento documental es 062a5c66f4bbff6fd60a3f88000ee9aab62d721c.
+- GitHub no muestra workflow runs pull_request ni status contexts en ninguno de esos dos HEADs. El commit previo 362443524... de #287 sí tenía 11/11 workflows SUCCESS; esos resultados no se trasladan a a3653df... ni validan la nueva punta. El SHA 556fe481... previo de #295 tampoco tenía runs; no se trasladan resultados a 062a5c...
+- El conector disponible no expone workflow_dispatch; las escrituras hechas mediante la integración GitHub no produjeron ejecuciones visibles. No se puede afirmar por qué GitHub no lanzó los eventos, ni simular éxito. La modificación de filtros está en la rama base de #295 y preparada para futuros eventos de PR hacia integration/**; validación exact-SHA sigue pendiente.
+- #287 y #295 siguen OPEN/Draft. No se cambia base, no se fusiona, no se despliega, no se escribe en Neon ni se activa Cron. Mantener gate hasta que un evento de CI real valide cada HEAD final.

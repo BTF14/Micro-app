@@ -220,3 +220,17 @@ Verificación local sobre clon de `main` `0344295` y HEADs exactos leídos de Gi
 - #287 (`7df318b`, 10/10 check-runs SUCCESS, Draft, `blocked` por falta de review APPROVED) pasa a ser la única rama de integración BCV + checkout. Sus gates P1 siguen abiertos: fixture HTML oficial BCV, justificación/aprobación de umbrales 10/7 días, calendario SUDEBAN verificable, revisión legal/contable, identidad del Worker y matriz de permisos por rol.
 - #296 (docs, `73b0b13`, 14/14 SUCCESS, Draft) cita `ccb430c` como HEAD de #287; ese commit es ancestro del HEAD vigente `7df318b`, así que el dato está atrasado, no es erróneo.
 - No hubo merge, deploy, Neon, Cloudflare manual, secretos ni datos reales. Producción: NOT READY.
+
+
+### Corrección de estado vivo — 2026-11-09 19:25 UTC
+
+Este addendum supersede cualquier contador o estado anterior de #287/#296 en entradas previas del ledger. No elimina la evidencia histórica de los SHAs antiguos.
+
+- Main consultado: `c5373564413ba086690552c6b7deeab08d7b4a89`.
+- PR #287: OPEN/Draft, HEAD `7df318b233cfb95f7fcc3076d46984a11614a14c`, compare 159 ahead / 1 behind, `mergeable=true`. En ese SHA se consultaron 11 workflow runs: 6 SUCCESS y 5 FAILURE. Los cinco fallos carecen de jobs y artifacts accesibles en la consulta; causa desconocida. No se debe citar como 10/10 check-runs verdes ni como CI completamente verde.
+- PR #296: OPEN/Draft, HEAD `73b0b134c14cb30f7c93d038c10acd0da5aa274c`, compare 63 ahead / 1 behind, `mergeable=true`; 10/10 workflow runs SUCCESS en ese SHA. Esto no cambia que sus propuestas de PIN/calendario sean documentales.
+- Reviews formales y review threads: 0 en ambas PR.
+- Main avanzó con un único commit que modifica `docs/BACKLOG_RECOVERY_LEDGER.md`. El path no está en los diffs de #287 ni #296; no se observa conflicto de archivo con ese commit. No sincronizar automáticamente ni reescribir historia.
+- El contador de workflow runs no es el contador de check-runs. La consulta del combined legacy status devuelve una lista vacía; no derivar un contador de check-runs de ese endpoint.
+- Mantener ambas PR Draft. Producción NOT READY.
+

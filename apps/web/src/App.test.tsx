@@ -198,7 +198,7 @@ describe("Micro app authentication flow", () => {
     vi.mocked(fetch)
       .mockResolvedValueOnce(jsonResponse(authResponse))
       .mockResolvedValueOnce(jsonResponse(bcvSyncStateResponse))
-      .mockResolvedValueOnce(jsonResponse(bcvRateResponse)
+      .mockResolvedValueOnce(jsonResponse(bcvRateResponse))
       .mockResolvedValueOnce(jsonResponse({
         items: [{
           id: "product-2",
@@ -266,7 +266,7 @@ describe("Micro app authentication flow", () => {
     vi.mocked(fetch)
       .mockResolvedValueOnce(jsonResponse(authResponse))
       .mockResolvedValueOnce(jsonResponse(bcvSyncStateResponse))
-      .mockResolvedValueOnce(jsonResponse(bcvRateResponse)
+      .mockResolvedValueOnce(jsonResponse(bcvRateResponse))
       .mockResolvedValueOnce(new Response(null, { status: 204 }));
     await renderApp();
     await settle();

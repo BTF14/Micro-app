@@ -20,15 +20,19 @@ const processEnv = (globalThis as typeof globalThis & {
 }).process?.env;
 // DATABASE_URL is the principal under test (admin in the regular CI job,
  // microapp_runtime in the runtime-role job). Cleanup always uses the admin URL.
-const databaseUrl = processEnv?.DATABASE_URL ?? processEnv?.DATABASE_URL_ADMIN;
-const cleanupDatabaseUrl = processEnv?.DATABASE_URL_ADMIN ?? databaseUrl;
+const producerDatabaseUrl = processEnv?.DATABASE_URL ?? processEnv?.BCV_DATABASE_URL ?? processEnv?.DATABASE_URL_ADMIN;
+const runtimeDatabaseUrl = processEnv?.DATABASE_URL_RUNTIME ?? processEnv?.RUNTIME_DATABASE_URL
+  ?? processEnv?.DATABASE_URL_ADMIN ?? producerDatabaseUrl;
+const cleanupDatabaseUrl = processEnv?.DATABASE_URL_ADMIN ?? producerDatabaseUrl;
 const isCi = Boolean(processEnv?.CI);
 const isDisposableCiDatabase = (() => {
-  if (!isCi || !databaseUrl) return false;
+  if (!isCi || !producerDatabaseUrl || !runtimeDatabaseUrl || !cleanupDatabaseUrl) return false;
   try {
-    const url = new URL(databaseUrl);
-    return (url.hostname === "localhost" || url.hostname === "127.0.0.1") &&
-      url.pathname === "/microapp_test";
+    return [producerDatabaseUrl, runtimeDatabaseUrl, cleanupDatabaseUrl].every((connectionString) => {
+      const url = new URL(connectionString);
+      return (url.hostname === "localhost" || url.hostname === "127.0.0.1") &&
+        url.pathname === "/microapp_test";
+    });
   } catch {
     return false;
   }
@@ -39,16 +43,20 @@ if (isCi && !isDisposableCiDatabase) {
 }
 
 describe.skipIf(!isDisposableCiDatabase)("BCV effective-date persistence against disposable PostgreSQL", () => {
-  let client: Client | undefined;
+  let producerClient: Client | undefined;
+  let runtimeClient: Client | undefined;
   let cleanupClient: Client | undefined;
   const source = "BCV_OFFICIAL_HTML_V1";
 
   beforeAll(async () => {
-    if (!databaseUrl) throw new Error("PostgreSQL integration database is not configured.");
+    if (!producerDatabaseUrl) throw new Error("BCV producer PostgreSQL integration database is not configured.");
+    if (!runtimeDatabaseUrl) throw new Error("PostgreSQL runtime integration database is not configured.");
     if (!cleanupDatabaseUrl) throw new Error("PostgreSQL admin cleanup URL is not configured.");
-    client = new Client({ connectionString: databaseUrl });
+    producerClient = new Client({ connectionString: producerDatabaseUrl });
+    runtimeClient = new Client({ connectionString: runtimeDatabaseUrl });
     cleanupClient = new Client({ connectionString: cleanupDatabaseUrl });
-    await client.connect();
+    await producerClient.connect();
+    await runtimeClient.connect();
     await cleanupClient.connect();
     // This suite runs only against the disposable PostgreSQL service in CI.
     await cleanupClient.query("DELETE FROM public.exchange_rates WHERE source = $1", [source]);
@@ -58,13 +66,13 @@ describe.skipIf(!isDisposableCiDatabase)("BCV effective-date persistence against
     try {
       if (cleanupClient) await cleanupClient.query("DELETE FROM public.exchange_rates WHERE source = $1", [source]);
     } finally {
-      await client?.end();
+      await Promise.all([producerClient?.end(), runtimeClient?.end()]);
       await cleanupClient?.end();
     }
   });
 
-  it("runs BCV synchronization only on the production Cron using the runtime role", async () => {
-    if (!client || !cleanupClient || !databaseUrl) {
+  it("runs BCV synchronization only on the production Cron using the dedicated producer LOGIN", async () => {
+    if (!producerClient || !cleanupClient || !producerDatabaseUrl) {
       throw new Error("PostgreSQL integration clients are not connected.");
     }
 
@@ -100,7 +108,7 @@ describe.skipIf(!isDisposableCiDatabase)("BCV effective-date persistence against
 
       await scheduledApp.scheduled(
         { cron: "0 22 * * 1-5" },
-        { APP_ENV: "production", DATABASE_URL: databaseUrl, BCV_SYNC_ENABLED: "true" },
+        { APP_ENV: "production", DATABASE_URL: producerDatabaseUrl, BCV_SYNC_ENABLED: "true" },
       );
       expect(fetchMock).toHaveBeenCalledTimes(1);
 
@@ -139,7 +147,7 @@ describe.skipIf(!isDisposableCiDatabase)("BCV effective-date persistence against
       })));
       await expect(scheduledApp.scheduled(
         { cron: "0 22 * * 1-5" },
-        { APP_ENV: "production", DATABASE_URL: databaseUrl, BCV_SYNC_ENABLED: "true" },
+        { APP_ENV: "production", DATABASE_URL: producerDatabaseUrl, BCV_SYNC_ENABLED: "true" },
       )).rejects.toThrow("BCV_SYNC_FAILED");
 
       const failedState = await cleanupClient.query<{
@@ -162,7 +170,7 @@ describe.skipIf(!isDisposableCiDatabase)("BCV effective-date persistence against
   });
 
   it("prevents a slower overlapping attempt from overwriting the newer result", async () => {
-    if (!client || !cleanupClient || !databaseUrl) {
+    if (!producerClient || !cleanupClient || !producerDatabaseUrl) {
       throw new Error("PostgreSQL integration clients are not connected.");
     }
 
@@ -198,13 +206,13 @@ describe.skipIf(!isDisposableCiDatabase)("BCV effective-date persistence against
     try {
       const olderAttempt = scheduledApp.scheduled(
         { cron: "0 22 * * 1-5" },
-        { APP_ENV: "production", DATABASE_URL: databaseUrl, BCV_SYNC_ENABLED: "true" },
+        { APP_ENV: "production", DATABASE_URL: producerDatabaseUrl, BCV_SYNC_ENABLED: "true" },
       );
       await olderFetchStarted;
 
       await scheduledApp.scheduled(
         { cron: "0 22 * * 1-5" },
-        { APP_ENV: "production", DATABASE_URL: databaseUrl, BCV_SYNC_ENABLED: "true" },
+        { APP_ENV: "production", DATABASE_URL: producerDatabaseUrl, BCV_SYNC_ENABLED: "true" },
       );
       const newerState = await cleanupClient.query<{ attempt_id: string; last_outcome: string }>(
         "SELECT attempt_id::text, last_outcome FROM public.bcv_sync_state WHERE singleton = true",
@@ -238,7 +246,7 @@ describe.skipIf(!isDisposableCiDatabase)("BCV effective-date persistence against
   });
 
   it("stores today's rate after the next business-day rate and selects the applicable date", async () => {
-    if (!client) throw new Error("PostgreSQL integration client is not connected.");
+    if (!producerClient || !runtimeClient) throw new Error("PostgreSQL integration clients are not connected.");
 
     const dates = await client.query<{ today: string }>(
       "SELECT (now() AT TIME ZONE 'America/Caracas')::date::text AS today",
@@ -253,7 +261,7 @@ describe.skipIf(!isDisposableCiDatabase)("BCV effective-date persistence against
     const nextEffectiveDate = nextBusinessDate.toISOString().slice(0, 10);
     const expectedApplicableDate = today;
     const expectedApplicableRate = "894.88760000";
-    const databaseClient = client as unknown as DatabaseClient;
+    const databaseClient = producerClient as unknown as DatabaseClient;
 
     await expect(persistBcvOfficialRate(databaseClient, {
       rate: "895.10000000",
@@ -280,7 +288,7 @@ describe.skipIf(!isDisposableCiDatabase)("BCV effective-date persistence against
       { effective_date: today, rate: "894.88760000" },
     ]);
 
-    const latest = await findApplicableBcvRate(databaseClient, new Date());
+    const latest = await findApplicableBcvRate(runtimeClient as unknown as DatabaseClient, new Date());
     expect(latest).toMatchObject({
       effective_date: expectedApplicableDate,
       rate: expectedApplicableRate,
@@ -288,7 +296,7 @@ describe.skipIf(!isDisposableCiDatabase)("BCV effective-date persistence against
 
     const latestResponse = await app.fetch(
       new Request("https://api.example/api/exchange-rates/latest"),
-      { APP_ENV: "production", DATABASE_URL: databaseUrl },
+      { APP_ENV: "production", DATABASE_URL: runtimeDatabaseUrl },
     );
     expect(latestResponse.status).toBe(200);
     expect(latestResponse.headers.get("Cache-Control")).toBe("no-store");
@@ -301,7 +309,7 @@ describe.skipIf(!isDisposableCiDatabase)("BCV effective-date persistence against
 
     const historyResponse = await app.fetch(
       new Request("https://api.example/api/exchange-rates/history?limit=10"),
-      { APP_ENV: "production", DATABASE_URL: databaseUrl },
+      { APP_ENV: "production", DATABASE_URL: runtimeDatabaseUrl },
     );
     expect(historyResponse.status).toBe(200);
     await expect(historyResponse.json()).resolves.toMatchObject({
@@ -312,11 +320,11 @@ describe.skipIf(!isDisposableCiDatabase)("BCV effective-date persistence against
       ],
     });
   });
-  it("restores a stale BCV row when runtime confirms the same official value", async () => {
-    if (!client || !cleanupClient) {
+  it("restores a stale BCV row when the dedicated producer confirms the same official value", async () => {
+    if (!producerClient || !cleanupClient) {
       throw new Error("PostgreSQL integration clients are not connected.");
     }
-    const databaseClient = client as unknown as DatabaseClient;
+    const databaseClient = producerClient as unknown as DatabaseClient;
     const dates = await cleanupClient.query<{ today: string }>(
       "SELECT (now() AT TIME ZONE 'America/Caracas')::date::text AS today",
     );
@@ -339,8 +347,8 @@ describe.skipIf(!isDisposableCiDatabase)("BCV effective-date persistence against
     );
     expect(stale.rows).toEqual([{ validation_status: "stale" }]);
 
-    // This call uses DATABASE_URL, which is the actual microapp_runtime LOGIN
-    // in the dedicated runtime-role CI job.
+    // This call uses the dedicated producer LOGIN. Runtime is intentionally
+    // unable to mutate BCV rates or validation_status directly.
     await expect(persistBcvOfficialRate(databaseClient, {
       rate,
       effectiveDate: today,

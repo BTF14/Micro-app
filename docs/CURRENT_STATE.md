@@ -1,3 +1,5 @@
+> **Nota de frescura de PR #298:** el SHA `6b0e51b259e0d59305931a779d52a9ba066cac27` que aparece en el snapshot inferior era el HEAD antes de esta actualización documental. Esta misma rama se ha avanzado con nuevos commits; no reutilizar ese SHA ni sus checks como estado vivo. Reconsultar el HEAD y CI exactos de #298 en GitHub.
+
 ## Bloqueo adicional de contrato de pagos en #287 — 2026-11-10 UTC
 
 La revisión de `apps/api/src/sales-checkout.ts` en la rama #287 detecta que el handler define `PAYMENT_METHODS = cash/card/transfer/mobile_payment/other` y un máximo técnico `MAX_PAYMENTS = 10`. La especificación `docs/sdd/SALES_CHECKOUT_MODEL.md` mantiene expresamente sin aprobación el contrato de métodos de pago, pagos parciales/mixtos, sobrepago/cambio e idempotencia asociada. Las constraints SQL de una moneda de liquidación y conciliación exacta no sustituyen esa aprobación.

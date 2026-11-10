@@ -361,4 +361,16 @@ describe.skipIf(!isDisposableCiDatabase)("BCV effective-date persistence against
     expect(restored.rows).toEqual([{ rate, validation_status: "valid" }]);
   });
 
+
+  it("denies direct BCV persistence from the runtime LOGIN", async () => {
+    if (!runtimeClient) throw new Error("PostgreSQL runtime integration client is not connected.");
+    const today = await cleanupClient!.query<{ today: string }>(
+      "SELECT (now() AT TIME ZONE 'America/Caracas')::date::text AS today",
+    );
+    await expect(persistBcvOfficialRate(runtimeClient as unknown as DatabaseClient, {
+      rate: "897.00000000",
+      effectiveDate: today.rows[0]!.today,
+    })).rejects.toMatchObject({ code: "42501" });
+  });
+
 });

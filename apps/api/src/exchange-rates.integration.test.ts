@@ -18,8 +18,8 @@ vi.mock("@neondatabase/serverless", async () => {
 const processEnv = (globalThis as typeof globalThis & {
   process?: { env?: Record<string, string | undefined> };
 }).process?.env;
-// DATABASE_URL is the principal under test (admin in the regular CI job,
- // microapp_runtime in the runtime-role job). Cleanup always uses the admin URL.
+// DATABASE_URL is the dedicated BCV producer LOGIN. Runtime reads use the
+// separate DATABASE_URL_RUNTIME; cleanup always uses the disposable admin URL.
 const producerDatabaseUrl = processEnv?.DATABASE_URL ?? processEnv?.BCV_DATABASE_URL ?? processEnv?.DATABASE_URL_ADMIN;
 const runtimeDatabaseUrl = processEnv?.DATABASE_URL_RUNTIME ?? processEnv?.RUNTIME_DATABASE_URL
   ?? processEnv?.DATABASE_URL_ADMIN ?? producerDatabaseUrl;
@@ -248,7 +248,7 @@ describe.skipIf(!isDisposableCiDatabase)("BCV effective-date persistence against
   it("stores today's rate after the next business-day rate and selects the applicable date", async () => {
     if (!producerClient || !runtimeClient) throw new Error("PostgreSQL integration clients are not connected.");
 
-    const dates = await client.query<{ today: string }>(
+    const dates = await cleanupClient!.query<{ today: string }>(
       "SELECT (now() AT TIME ZONE 'America/Caracas')::date::text AS today",
     );
     const { today } = dates.rows[0]!;

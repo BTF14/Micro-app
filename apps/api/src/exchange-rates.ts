@@ -229,6 +229,19 @@ export async function persistBcvOfficialRate(
       );
       throw new Error("BCV_RATE_CHANGED_FOR_EXISTING_EFFECTIVE_DATE");
     }
+    if (sameDate.validation_status === "stale") {
+      // A successful BCV confirmation of the exact stored value restores
+      // applicability without rewriting the immutable rate or its history.
+      await client.query(
+        `UPDATE public.exchange_rates
+            SET validation_status = 'valid'
+          WHERE source = $1
+            AND effective_date = $2::date
+            AND rate = $3::numeric
+            AND validation_status = 'stale'`,
+        [BCV_SOURCE_ID, rate.effectiveDate, rate.rate],
+      );
+    }
     return "unchanged";
   }
   return "older";

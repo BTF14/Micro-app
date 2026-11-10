@@ -1,3 +1,22 @@
+## Diagnóstico de fallos repetidos de CI — 2026-11-10 UTC
+
+### Evidencia exacta de PR #287
+
+- PR #287 continúa OPEN/Draft, HEAD `7df318b233cfb95f7fcc3076d46984a11614a14c`, base branch `main`; el SHA de base registrado por la PR en la consulta fue `03442951b2a2f63f5bf4dcf560f2c91be4f6cc71`.
+- La rama main observada en esta revisión es `c5373564413ba086690552c6b7deeab08d7b4a89`. La comparación de HEAD contra ese main devolvió `diverged`, 159 commits ahead y 1 behind. Esto es un dato de divergencia/antigüedad de base, no una explicación demostrada de los fallos.
+- Cinco workflows fallaron para el mismo SHA en una ventana de aproximadamente 90 segundos: ODD/agent docs (run 42674363952), Dependency review (42674363725), Project progress dashboard (42674364153), Playwright E2E (42674364197) y CI (42674364170).
+- Otros controles del mismo SHA sí pasaron: backup/restore sintético (42674363690), Cloudflare Pages preview, Workers build, Trivy, secret-history scan, PostgreSQL migration, migration-runner y análisis JS/TS. La existencia de previews/builds de PR no equivale a despliegue productivo ni a aprobación funcional.
+- Los cinco endpoints de workflow runs devolvieron metadatos con conclusión `failure`, pero el endpoint de jobs devolvió `total_count: 0`/lista vacía y no expuso job IDs ni steps. Por tanto, no se obtuvo evidencia de errores de consola o stack traces. No asignar causas concretas a ODD, Dependency Review, Project Progress, Playwright o CI hasta conseguir logs/steps.
+- La inspección de los YAML confirma que CI ejecuta una cadena extensa de migraciones PostgreSQL, múltiples integraciones auth/branch/register/catalog/inventory/checkout y build/typecheck; Playwright instala runner y comprueba Chromium en contenedor; Dependency Review falla ante vulnerabilidades High/Critical; ODD valida consistencia documental; Project Progress exige salida determinista. Estos son los contratos que cada workflow comprueba, **no causas raíz demostradas**.
+- La configuración CI/Playwright tiene `cancel-in-progress: true`, por lo que cancelaciones de ejecuciones concurrentes pueden ser parte del ruido operativo; no confundir cancelado con failure y no atribuir los cinco fallos observados a cancelación sin logs.
+- No se reintentaron jobs, no se alteró PR #287, no se cambió base/branch, no se mergeó ni desplegó. No hacer rerun ciego: primero obtener logs de job, clasificar cada fallo (producto, fixture/test, dependencia externa, permisos/secretos, workflow/infraestructura), corregir causa raíz y repetir solo los checks afectados en un SHA nuevo.
+
+### Conclusión operativa
+
+No hay evidencia suficiente para decir que todos los fallos provienen de un único defecto. Son cinco gates diferentes que fallaron en el mismo SHA; es posible que haya causas independientes y/o un problema transversal. El patrón revela una debilidad del proceso de diagnóstico: no se conservó o no se pudo recuperar la evidencia job-level necesaria para saber por qué falló cada gate. Hasta obtenerla, el estado de PR #287 es **NO-GO**. Los checks exitosos no neutralizan los fallidos.
+
+---
+
 ## Corrección de precisión: Cron existente vs Cron BCV — 2026-11-09 UTC
 
 - Relectura directa de `apps/api/wrangler.toml` en `main` confirma un trigger versionado `17 * * * *` (cada hora). El comentario y el handler `scheduled()` en `apps/api/src/index.ts` lo destinan exclusivamente a `cleanupExpiredAuthRecords` (limpieza de metadatos de autenticación); el handler retorna sin ejecutar en `APP_ENV !== "production"`.

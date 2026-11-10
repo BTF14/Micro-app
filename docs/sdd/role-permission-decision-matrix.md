@@ -58,18 +58,18 @@ Nota: el costo de producto se considera dato financiero sensible; Cashier ve pre
 **Nadie —ni Owner ni Admin— puede cerrar el turno abierto de otro cajero ni reabrir uno ya cerrado en el modelo base.** Un cajero que no puede cerrar su propio turno (p. ej. se fue sin cerrar caja) requiere una vía de corrección separada, explícitamente fuera del alcance de esta matriz: `docs/sdd/REGISTER_SHIFT_MODEL.md` dice literalmente *"cualquier excepción futura requiere permiso separado, motivo y auditoría aprobados"*. No implementar ese flujo de excepción hasta que el propietario lo apruebe específicamente, con su propio diseño de permiso, motivo obligatorio y registro de auditoría — no asumirlo incluido en la aprobación general de esta matriz.
 
 ## 3. Ventas: creación, descuentos, cambios de precio en el momento de la venta
-**Fuente: decisión explícita del propietario (2026-10-31):** *"Cashier/Admin/Owner crean ventas; cualquier descuento requiere aprobación de Admin/Owner."*
+**Fuente: decisión explícita posterior del propietario (2026-11-05):** Micro-app no tendrá descuentos. Esta decisión supersede la instrucción histórica del 2026-10-31 que contemplaba aprobación de Admin/Owner.
 
-**Límite de implementación y P0 (reconciliación 2026-11-09):** esta fila conserva la decisión de autorización para una capacidad futura; no significa que el descuento esté implementado o habilitado. El modelo de checkout vigente (`docs/sdd/SALES_CHECKOUT_MODEL.md`) y la migración `0014_sales_without_discounts.sql` excluyen descuentos/promociones/override manual. El criterio MVP `docs/MVP_SINGLE_STORE_ACCEPTANCE.md` tampoco los incluye en P0. No implementar ni exponer descuentos en el primer corte; si se retoman después, reconciliar primero modelo, migraciones, auditoría y flujo de aprobación sin borrar esta decisión histórica.
+**Regla vigente:** descuentos y promociones están excluidos del producto, no solo del P0. No crear una capacidad futura ni conservar permisos de aprobación para descuentos. Los cambios manuales de precio también están fuera del checkout P0 y requieren una decisión de producto separada antes de diseñarlos.
 
 | Operación | Owner | Admin | Inventory | Cashier |
 |---|---|---|---|---|
 | Crear venta a precio de lista, turno propio abierto | ✅ propio | ✅ propio | ❌ | ✅ propio |
-| Aplicar descuento (cualquier monto/porcentaje) | ✅ | ✅ | ❌ | ❌ directo — requiere aprobación de Admin/Owner en el momento (ver abajo) |
-| Aprobar un descuento solicitado por Cashier | ✅ | ✅ | ❌ | ❌ |
+| Aplicar descuento (cualquier monto/porcentaje) | ❌ no existe en Micro-app | ❌ no existe en Micro-app | ❌ | ❌ |
+| Aprobar un descuento solicitado por Cashier | ❌ no existe en Micro-app | ❌ no existe en Micro-app | ❌ | ❌ |
 | Cambiar precio unitario en la venta (fuera de lista) | ✅ | ✅ | ❌ | ❌ — mismo flujo de aprobación que descuento |
 
-Implementación futura esperada: la aprobación de Admin/Owner debe quedar registrada contra la venta (quién aprobó, cuándo) antes de confirmar el descuento; no basta con una autorización verbal fuera del sistema.
+No implementar ni exponer un flujo de aprobación de descuentos: no existe esa capacidad en el producto.
 
 ## 4. Devoluciones, anulaciones de venta y reversos
 **Fuente: decisión explícita del propietario (2026-10-31):** *"Cashier puede anular durante el mismo turno abierto; después del cierre solo Admin/Owner."*
@@ -88,7 +88,7 @@ Implementación futura esperada: la aprobación de Admin/Owner debe quedar regis
 | Invitar/desactivar miembros, cambiar rol | ✅ org | ❌ | ❌ | ❌ |
 | Asignar/revocar membresía de sucursal | ✅ org | ❌ | ❌ | ❌ |
 | Configurar políticas comerciales de la organización (p. ej. límites, umbrales futuros) | ✅ org | ❌ | ❌ | ❌ |
-| Ejecutar una excepción puntual ya cubierta en otra sección (p. ej. aprobar descuento) | ✅ | ✅ (ver sección 3, ya autorizado ahí) | ❌ | ❌ |
+| Ejecutar una excepción puntual ya cubierta en otra sección | Solo las excepciones expresamente definidas y aprobadas en su propia sección | Solo las excepciones expresamente definidas y aprobadas en su propia sección | ❌ | ❌ |
 
 Nota: esta decisión es más restrictiva que la propuesta original de "Owner y Admin gestionan por igual"; Admin queda limitado a operar el negocio (ventas, inventario, aprobaciones del día a día) sin tocar personal ni configuración de la organización.
 

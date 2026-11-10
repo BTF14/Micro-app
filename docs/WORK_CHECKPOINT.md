@@ -271,3 +271,26 @@ Límites: no merge, no main, no deploy, no Neon, no secretos, no Cron, no Cloudf
 - Issue #53 sigue OPEN/P0. No se demostró principal efectivo de `DATABASE_URL_BACKUP_RO`, least privilege, restore de artefacto real, RPO/RTO sostenidos, alertas externas ni coste total $0. Producción NOT READY.
 - No merge, no main, no deploy, no Neon writes, no secretos, no Cron, no datos reales. Deadline 2026-12-01.
 - Los commits documentales posteriores cambian el HEAD de la PR: consultar GitHub y revalidar todos los workflows del SHA final; no atribuir automáticamente los 11/11 anteriores a otro SHA.
+
+
+## Reconciliación viva — PR #287/#303 y compatibilidad de perfiles (2026-11-10)
+
+### Estado exact-SHA comprobado
+
+- **PR #287** OPEN/Draft, rama `integration/bcv-checkout-rehearsal-20261109`, HEAD `f33254856e5130acad1cb20423d913e4354e0fc1`, base `main` en `c5373564413ba086690552c6b7deeab08d7b4a89`; mergeable=true. Comparación contra main: diverged, 234 commits ahead / 1 behind; merge base `03442951b2a2f63f5bf4dcf560f2c91be4f6cc71`. El único commit que avanzó main desde ese merge base modifica `docs/BACKLOG_RECOVERY_LEDGER.md`; no se observó cambio de esquema en ese commit. En el HEAD exacto, 11/11 workflow runs `pull_request` terminaron SUCCESS. Backup/restore run `42874207740`, job `130033078108`: aplicó 22 migraciones mediante `scripts/db/migrate.sh`; cifrado age/checksum/restore; ownership, ACL, RLS/policies, role contract y search_path preservados; grafo BCV/checkout/projection-ledger y relaciones PASS; tablas auth efímeras excluidas; regresión legacy PASS. Playwright E2E también SUCCESS. 0 reviews formales y 0 review threads.
+- **PR #303** OPEN/Draft, rama `security/backup-restore-schema-coverage-20261110`, HEAD `afe0a94005854843ead2526b3a5ea18a183f127a`, base main `c5373564413ba086690552c6b7deeab08d7b4a89`; 73 ahead / 0 behind, mergeable=true. 11/11 workflow runs `pull_request` SUCCESS exact-HEAD; 0 legacy status contexts, 0 reviews formales y 0 review threads.
+- Combined legacy status contexts vacíos no son un recuento de check-runs ni una aprobación. Ambos PR permanecen Draft; no cambiar estado automáticamente.
+
+### Riesgo de integración detectado — no fusionar a ciegas
+
+Ambas PR modifican `.github/workflows/backup-restore-smoke.yml` y `docs/BACKUP_AND_RECOVERY.md`. Sus perfiles de fixture representan estados distintos del esquema:
+
+- #303 valida el baseline main 0001–0016 y el ledger paired-intent de migration 0010; su fixture `scripts/backup_restore_fixture_main.sql` utiliza `inventory_balance_ledger_intents`.
+- #287 valida 0001–0022, donde migration 0019 elimina `inventory_balance_ledger_intents` y proyecta balances desde `warehouse_inventory_movements`; usa `scripts/backup_restore_fixture_bcv.sql` y `scripts/test_backup_restore_schema_bcv.sh`.
+- El script de #303 detecta tabla-intents vs función de proyección, pero su fixture main contiene aserciones/insert de intents y no debe ejecutarse sin adaptación sobre el esquema 0017–0022. No ejecutar ambos perfiles secuencialmente sobre una misma DB ni asumir que el workflow de una rama puede reemplazar al otro.
+
+**Decisión de integración:** mantener ambas PR Draft y separadas hasta preparar un contrato de restore compatible con ambos estados o perfiles explícitos sobre bases desechables independientes. Antes de fusionar cualquier PR, resolver el solapamiento de workflow y documentación, comprobar la secuencia de migraciones final, ejecutar el perfil aplicable al HEAD destino y validar todos los checks exact-HEAD. No hacer merge, retarget ni rebase automático en este checkpoint.
+
+### Límites y gates todavía abiertos
+
+La cobertura sintética no restaura el artefacto remoto real ni prueba Neon/producción, identidad efectiva de `DATABASE_URL_BACKUP_RO`, least privilege real, RPO/RTO sostenidos, alertas externas o coste total USD 0. Issue #53 permanece OPEN/P0; producción NOT READY. No leer secretos, no ejecutar backup manual, no modificar Cron, Neon main, roles/grants, Cloudflare, DNS, billing ni datos reales. Deadline MVP: 2026-12-01.

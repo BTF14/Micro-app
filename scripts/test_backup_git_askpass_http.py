@@ -39,10 +39,14 @@ def main() -> int:
 
     with tempfile.TemporaryDirectory(prefix="microapp-askpass-http-") as temp_dir:
         marker = Path(temp_dir) / "authenticated"
+        diagnostic = Path(temp_dir) / "auth-diagnostic"
 
         class Handler(BaseHTTPRequestHandler):
             expected_authorization = ""
             marker: Path
+            diagnostic: Path
+            expected_user = "x-access-token"
+            expected_password = ""
 
             def log_message(self, _format: str, *_args: object) -> None:
                 # Never log Authorization headers or request details.
@@ -51,6 +55,9 @@ def main() -> int:
             def do_GET(self) -> None:
                 authorization = self.headers.get("Authorization")
                 if authorization is None:
+                    self.diagnostic.write_text(
+                        "challenge_sent_without_authorization", encoding="utf-8"
+                    )
                     self.send_response(401)
                     self.send_header(
                         "WWW-Authenticate", 'Basic realm="git-askpass-test"'
@@ -58,6 +65,26 @@ def main() -> int:
                     self.send_header("Content-Length", "0")
                     self.end_headers()
                     return
+
+                try:
+                    scheme, encoded = authorization.split(" ", 1)
+                    decoded = base64.b64decode(encoded).decode("utf-8")
+                    username, separator, password = decoded.partition(":")
+                except Exception:
+                    scheme, username, separator, password = "", "", "", ""
+
+                # Store only booleans; never persist or print the credential.
+                self.diagnostic.write_text(
+                    "scheme_ok="
+                    + str(scheme == "Basic")
+                    + ";username_ok="
+                    + str(username == self.expected_user)
+                    + ";password_ok="
+                    + str(separator == ":" and hmac.compare_digest(
+                        password, self.expected_password
+                    )),
+                    encoding="utf-8",
+                )
 
                 if not hmac.compare_digest(
                     authorization, self.expected_authorization
@@ -67,7 +94,6 @@ def main() -> int:
                     self.end_headers()
                     return
 
-                # Record only success, never the credential itself.
                 self.marker.write_text("authenticated", encoding="utf-8")
                 self.send_response(404)
                 self.send_header("Content-Length", "0")
@@ -75,6 +101,8 @@ def main() -> int:
 
         Handler.expected_authorization = expected_authorization
         Handler.marker = marker
+        Handler.diagnostic = diagnostic
+        Handler.expected_password = test_token
         server = ThreadingHTTPServer(("127.0.0.1", 0), Handler)
         server_thread = threading.Thread(
             target=server.serve_forever, daemon=True
@@ -83,6 +111,14 @@ def main() -> int:
         port = server.server_address[1]
 
         env = os.environ.copy()
+        # Remove any runner-injected Git config so the mock tests only this helper.
+        for key in tuple(env):
+            if (
+                key in {"GIT_CONFIG_PARAMETERS", "GIT_CONFIG_COUNT"}
+                or key.startswith("GIT_CONFIG_KEY_")
+                or key.startswith("GIT_CONFIG_VALUE_")
+            ):
+                env.pop(key, None)
         env.update(
             {
                 "GIT_ASKPASS": str(helper),
@@ -124,8 +160,15 @@ def main() -> int:
             )
             return 1
         if not marker.is_file():
+            details = (
+                diagnostic.read_text(encoding="utf-8")
+                if diagnostic.is_file()
+                else "no_http_request_observed"
+            )
+            safe_stderr = result.stderr.replace(test_token, "[redacted]")[:400]
             print(
-                "FAIL: Git did not send the expected Basic credentials after the 401 challenge",
+                "FAIL: Git did not send the expected Basic credentials after "
+                f"the 401 challenge; diagnostic={details}; git_stderr={safe_stderr!r}",
                 file=sys.stderr,
             )
             return 1

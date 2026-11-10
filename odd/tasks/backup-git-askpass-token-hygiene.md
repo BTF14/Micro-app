@@ -61,3 +61,12 @@ No cambiar el formato, cifrado, retención, calendario, destino ni permisos del 
 - El workflow de CI ejecuta esta prueba sin secretos, repositorio remoto ni red; el workflow de backup instala una copia temporal con modo 700 y la elimina junto con el clon mediante `trap`.
 - Esta prueba verifica el contrato local del helper, **no** demuestra autenticación HTTPS real, push remoto, ni restore de un backup real. No ejecutar el workflow productivo para probarlo.
 - El nuevo HEAD requiere CI exact-HEAD; mantener #302 OPEN/Draft y sin merge hasta revisión independiente y cierre de los gates de backup/Seguridad Nivel 1.
+
+
+## Verificación de integración del transporte HTTP Git — 2026-11-10
+
+- Se añadió `scripts/test_backup_git_askpass_http.py`, usando únicamente la biblioteca estándar de Python y un servidor HTTP loopback efímero.
+- El servidor desafía con HTTP 401 + Basic realm; Git debe invocar el helper real `GIT_ASKPASS`, responder con username `x-access-token` y el token ficticio, y el servidor valida el header Authorization sin registrarlo ni escribir el valor del token.
+- El mock devuelve 404 después de autenticar intencionalmente: el test demuestra que el transporte HTTP de Git invoca askpass y envía credenciales correctas, pero **no** emula Git smart-HTTP, no demuestra clone/push completo, no prueba TLS/GitHub ni usa secretos reales.
+- El test se ejecuta en CI junto al contrato shell previo. No hace conexiones externas ni accede a repositorios reales.
+- La prueba local en el entorno de trabajo pasó. CI del nuevo HEAD de #302 debe verificarse por SHA exacto; mantener Draft y no ejecutar el workflow productivo.

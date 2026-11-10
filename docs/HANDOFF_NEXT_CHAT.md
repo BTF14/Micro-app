@@ -1,3 +1,14 @@
+## Estado exacto de PR #298 antes de este último refresh — 2026-11-10 UTC
+
+- HEAD observado: `7b6dd3824b959786868e09986b7c2cf6be8067d3`.
+- OPEN/Draft; 175 ahead / 0 behind de main.
+- 14/14 check-runs SUCCESS.
+- En la lista de workflows exact-HEAD: 12 SUCCESS y 1 CANCELLED. El run de PR `Secret history scan` fue cancelado por concurrencia; el run push `Secret history scan` del mismo SHA terminó SUCCESS. No describir como 13/13 workflows SUCCESS.
+- Cero reviews formales y cero review threads.
+- Esta actualización documental vuelve a avanzar la misma rama #298; consultar su nuevo HEAD y CI exactos después del commit. No propagar checks de `7b6dd38` al SHA nuevo.
+
+---
+
 ## Hallazgo bloqueante de UI — inspección #287, 2026-11-10
 
 La rama #287 no entrega todavía el recorrido POS completo desde interfaz:

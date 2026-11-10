@@ -2393,3 +2393,29 @@ Se creó `fix/bcv-checkout-last-success-20261109` desde #287 HEAD `362443524eb45
 - Se amplió `docs/PRODUCTION_READINESS.md` con criterios separados para los vertical slices implementados y sus gates aún abiertos. Commit: `62f3f3ca16416b3f1130eaf1caa6e910a08c86aa`. El dashboard debe regenerarse y validarse en el nuevo HEAD; no reutilizar los porcentajes previos.
 - Los criterios completos de POS, pagos mixtos, devoluciones, fiscalidad, aislamiento de todas las rutas, RPO/RTO, alertas, capacidad, identidad efectiva y revisión legal/contable permanecen pendientes; producción NOT READY.
 - PR #287 permanece OPEN/Draft; no merge, deploy, Cron, Neon main writes, secretos, DNS, billing ni datos reales.
+
+## PR #287 — safe default del Cron BCV y validación exact-HEAD — 2026-11-10 UTC
+
+### Cambios
+- Commit `4113e9048d9d28df093134f241ba4aa7f3e2800b`: reconcilia el ADR de last-success con migration 0022. Las afirmaciones sobre UPDATE column-scoped de `microapp_runtime` describen el estado previo a 0022 y quedan supersedidas en la rama de integración.
+- Commit `6902fdf85412938deaac086d34aba0ef267afca3`: cambia `apps/api/wrangler.bcv.toml` de `BCV_SYNC_ENABLED=true` a `false`, manteniendo comentario de habilitación explícita.
+- Commit `20a3801d6a9c27cae0b12098c3bfa9cf82d83d59`: añade prueba de regresión que importa `wrangler.bcv.toml?raw` y comprueba que el valor por defecto sea false y no true.
+- Commit `31c0cf59414871ce6987ef4d1315dd1ded3ad6d1`: registra la reconciliación de estado en CURRENT_STATE.
+
+### Evidencia CI del HEAD de código `20a3801d6a9c27cae0b12098c3bfa9cf82d83d59`
+- 11/11 workflow runs `pull_request` SUCCESS; 0 failure, 0 pending.
+- CI run `42832033772`: SUCCESS. Incluye unit tests, typecheck/build, PostgreSQL auth, BCV effective-date, atomic checkout y Runtime-role API integration.
+- Playwright E2E `42832033722`: SUCCESS.
+- Database migration validation `42832033808`: SUCCESS; migration 0022 y assertions del productor/runtime aprobadas en PostgreSQL desechable.
+- Migration runner `42832033741`: SUCCESS; aplica secuencia, verifica ownership/ledger y denegaciones de runtime.
+- Backup restore smoke sintético `42832033842`: SUCCESS; no es restore productivo.
+- Security `42832033787`, Secret history `42832033903`, Semgrep `42832033221`, ODD `42832033733`, Dependency review `42832033714` y dashboard `42832033817`: SUCCESS.
+- Combined status contexts: lista vacía. No se atribuye a esto un conteo de check-runs.
+- PR #287 sin reviews formales ni threads inline en la consulta posterior al HEAD; permanece OPEN/Draft.
+
+### Resultado y límites
+- El Worker BCV tiene ahora configuración fail-closed por defecto: aunque el trigger Cron esté declarado, el handler retorna sin sincronizar salvo `APP_ENV=production` y `BCV_SYNC_ENABLED=true`. No se desplegó ni activó el Worker.
+- El LOGIN `microapp_bcv_sync`, su secreto y la identidad efectiva del Worker no están provisionados en Neon/Cloudflare. La migración 0022 está probada solo en PostgreSQL efímero.
+- No se tocó main, Neon, Cloudflare, secretos, DNS, billing ni datos reales. Producción NOT READY.
+- El diff comparado con main `c537356...` queda 178 ahead / 1 behind, diverged, merge base `03442951...`; no se hizo sincronización automática ni force-push.
+- La UI del branch mantiene los módulos Caja y ventas, Inventario y Reportes deshabilitados; el checkout API no satisface el P0 de jornada completa desde UI. Issue #53/P0 y el hallazgo de privilegios efectivos del rol `backup_readonly` siguen abiertos.

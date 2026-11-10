@@ -128,3 +128,19 @@ Follow-up evidence was added to issue #53 comment 6772383789. No source changes 
 ## CI revalidation note — 2026-11-10
 
 PR #287 HEAD `9a1792f7449ff83915bcdd672686a4860918028d` has 11/11 pull_request workflow runs SUCCESS, including Backup restore smoke run `42849454438`. This does not satisfy this task: the workflow still runs the old script that applies only 0001/0002/0005 and validates 13 tables. The green job is therefore not evidence for full current main schema recovery (0001–0016), much less the PR branch migrations 0017–0022. Follow-up recorded in issue #53 comment `6772538757`. No source/workflow code has been changed yet.
+
+## Estado de implementación — fase 1 (2026-11-10)
+
+**Implementado en PR #303 Draft:**
+- Nuevo `scripts/test_backup_restore_schema.sh` que usa PostgreSQL 18 desechable y el migration runner oficial para aplicar todas las migraciones numeradas del ref.
+- Crea roles LOGIN sintéticos aislados (migrator/runtime/producer) y bases source/restore fijas.
+- Hace dump custom, age key efímera, checksum SHA-256, descifrado y restore en segunda base.
+- Compara lista de tablas, constraints, índices, triggers, hashes de definiciones de funciones y ledger de migraciones; comprueba tablas core estables y exclusión de tablas efímeras.
+- El workflow ejecuta esta prueba antes del fixture histórico de 13 tablas.
+
+**Pendiente / no aceptar todavía:**
+- CI exact-HEAD de PR #303 debe pasar; el SHA final debe revalidarse después de cualquier commit documental.
+- El nuevo test es schema-only. Falta poblar y comparar el grafo sintético completo de sucursal/turno/warehouse/count/ledger/checkout y relaciones. El test histórico de datos sigue limitado a 13 tablas.
+- Issue #53 no se cierra; identidad efectiva de `DATABASE_URL_BACKUP_RO`, privilegios efectivos least-privilege, RPO/RTO, restore remoto reciente, alerta y coste $0 siguen independientes y pendientes.
+
+No se ha accedido a Neon, secretos, backup remoto ni producción. PR #303 se mantiene Draft y no se fusiona. Fecha límite: 2026-12-01.

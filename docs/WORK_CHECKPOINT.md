@@ -728,3 +728,18 @@ La evidencia de solo lectura registrada en issue #53 (2026-11-06) indica que `ba
 - Se registró evidencia y límites en el comentario del issue #53 (comment ID `6765600704`). Issue #53 permanece OPEN/P0.
 - Gate: verificar de forma autorizada el principal real del Worker/API y del backup, memberships heredadas, ownership y ACL efectivos. Diseñar bootstrap/upgrade least-privilege en PostgreSQL desechable. No cambiar roles/grants en Neon main desde esta tarea; no leer ni imprimir secretos.
 - PR #302 solo elimina el token Git de la URL del remote; no corrige ni prueba los privilegios PostgreSQL. Producción NOT READY.
+
+
+---
+
+## Checkpoint vivo — 2026-11-10 12:29 UTC
+
+**Deadline inamovible: 2026-12-01.**
+
+- main `c5373564413ba086690552c6b7deeab08d7b4a89`, sin cambios.
+- #298 OPEN/Draft HEAD `34ff7c343516ac95220a13d74b91b2a61c0ad80f`; 15/15 check-runs y 11/11 PR workflows SUCCESS; cero reviews formales observadas.
+- #302 OPEN/Draft HEAD `5420896eb591d3ae513254a064c787624678da14`; 14/14 check-runs y 10/10 PR workflows SUCCESS; cero reviews formales observadas. Reemplaza SHA históricos obsoletos.
+- Último backup programado: run #19 `42659924075`, SUCCESS, `2026-11-09T16:57:34Z`; no run #20 a `2026-11-10T12:29Z`. Repo remoto confirma commit `828ef3193f3b8e4935d0e945f504cd81aca4b78e`, dump cifrado y checksum. Límite 24h: `2026-11-10T16:57:34Z`.
+- Issue #53 sigue OPEN/P0; comentario nuevo `6767292787`.
+- RPO sostenido NO-GO por intervalos históricos >24h; RTO integral, restore real actual y alertas externas sin demostrar.
+- No workflow manual, main write, merge, deploy, Neon, secretos, datos reales, Cloudflare manual, DNS o billing. Producción NOT READY.

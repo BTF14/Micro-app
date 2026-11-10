@@ -2931,3 +2931,20 @@ Comparaciones contra `main` y SHA consultados directamente en GitHub:
 - No se ejecutó el workflow real de backup ni se usaron secretos reales. Main sigue usando la URL Git con token hasta que exista una integración segura; PR #302 continúa Draft por falta de review independiente y porque el principal PostgreSQL/RPO/RTO siguen abiertos.
 - Primera pasada estática de PR #301: `branches.ts` reutiliza `authorizeTenantOperation(..., "inventory.read")`, filtra por organization_id y sucursales activas, y limita cashier/inventory a branch_memberships activas; owner/admin reciben sucursales activas de su organización. Tests cubren owner/admin/cashier/inventory, tenant ajeno y sesión ausente. No se observó un bypass directo en esta pasada; el límite `MAX_BRANCHES=100` sin cursor permanece explícito. No equivale a revisión independiente completa ni aprobación; #301 sigue OPEN/no Draft, sin review formal.
 - PR #298, antes de esta nueva actualización, estaba en HEAD `44def211e264fd34d5bef7db5cead8c5fd6d509b`, 223 ahead / 0 behind, 15/15 check-runs y 13/13 workflows SUCCESS. El commit documental actual mueve nuevamente su HEAD y exige CI exact-HEAD nuevo.
+
+
+---
+
+## Reconciliación puntual exact-HEAD y backup — 2026-11-10 12:29 UTC
+
+Este bloque corrige snapshots inferiores que aún muestran HEAD antiguos de #298/#302 y actualiza el estado del respaldo programado. Prevalece sobre registros históricos cuando difieran.
+
+- `main`: `c5373564413ba086690552c6b7deeab08d7b4a89`; no modificado.
+- #298: OPEN/Draft, HEAD `34ff7c343516ac95220a13d74b91b2a61c0ad80f`, base main anterior, 15/15 check-runs SUCCESS y 11/11 workflow runs `pull_request` SUCCESS. Cero reviews formales observadas. Al ser la PR documental, cualquier commit nuevo obliga a refrescar sus checks.
+- #302: OPEN/Draft, HEAD `5420896eb591d3ae513254a064c787624678da14`; 14/14 check-runs SUCCESS y 10/10 workflow runs `pull_request` SUCCESS. Cero reviews formales observadas. Los snapshots inferiores que citan `1b441b3...`, `c6daace...` u otros SHA de #302 están obsoletos.
+- Backup: última ejecución programada continúa siendo run #19, ID `42659924075`, SUCCESS, iniciada `2026-11-09T16:57:34Z`; no aparece run #20 en la consulta `event=schedule` realizada a las `2026-11-10T12:29Z`.
+- El job #19 completó pg_dump PostgreSQL 18.6, cifrado age, checksum SHA256 y push. El repositorio remoto `BTF14/micro-app-backups` confirma HEAD `828ef3193f3b8e4935d0e945f504cd81aca4b78e` (`2026-11-09T16:57:59Z`) y contiene el dump cifrado de 42,708 bytes y checksum de 103 bytes.
+- A `12:29Z`, el run tenía 19 h 31 min desde su inicio; el umbral de 24 h se alcanza `2026-11-10T16:57:34Z`. No declarar aún incumplimiento del intervalo actual antes de ese umbral; RPO≤24h sostenido sigue NO-GO por los gaps históricos (máximo 48 h 03 min 03 s; último gap histórico 27 h 00 min 14 s).
+- Issue #53 permanece OPEN/P0; comentario de seguimiento actualizado en GitHub (`6767292787`).
+- No se ejecutó backup manual, no se leyeron secretos ni contenido del dump, no hubo acceso/cambio a Neon, main, producción, Cloudflare, DNS o billing. Restore real más reciente documentado: 2026-10-29; RTO integral y alertas externas no demostrados.
+- Deadline inamovible: **2026-12-01**. Producción **NOT READY**.

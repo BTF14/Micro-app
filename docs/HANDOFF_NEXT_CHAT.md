@@ -3061,3 +3061,19 @@ No pedir terminal, CLI, Build IDs, capturas, TinyFish, reconexiones, ni datos ya
 - No se ejecutó el workflow real de backup ni se usaron secretos reales. Main sigue usando la URL Git con token hasta que exista una integración segura; PR #302 continúa Draft por falta de review independiente y porque el principal PostgreSQL/RPO/RTO siguen abiertos.
 - Primera pasada estática de PR #301: `branches.ts` reutiliza `authorizeTenantOperation(..., "inventory.read")`, filtra por organization_id y sucursales activas, y limita cashier/inventory a branch_memberships activas; owner/admin reciben sucursales activas de su organización. Tests cubren owner/admin/cashier/inventory, tenant ajeno y sesión ausente. No se observó un bypass directo en esta pasada; el límite `MAX_BRANCHES=100` sin cursor permanece explícito. No equivale a revisión independiente completa ni aprobación; #301 sigue OPEN/no Draft, sin review formal.
 - PR #298, antes de esta nueva actualización, estaba en HEAD `44def211e264fd34d5bef7db5cead8c5fd6d509b`, 223 ahead / 0 behind, 15/15 check-runs y 13/13 workflows SUCCESS. El commit documental actual mueve nuevamente su HEAD y exige CI exact-HEAD nuevo.
+
+
+---
+
+## Handoff vivo — reconciliación exacta 2026-11-10 12:29 UTC
+
+- Deadline inamovible **2026-12-01**.
+- main `c5373564413ba086690552c6b7deeab08d7b4a89`; no modificar.
+- #298 OPEN/Draft, HEAD `34ff7c343516ac95220a13d74b91b2a61c0ad80f`, 15/15 check-runs y 11/11 workflows PR SUCCESS; sin review formal. Si se añade un commit documental, refrescar CI exact-HEAD.
+- #302 OPEN/Draft, HEAD `5420896eb591d3ae513254a064c787624678da14`, 14/14 check-runs y 10/10 workflows PR SUCCESS; sin review formal. Los SHA anteriores que figuran en bloques históricos no describen su HEAD actual.
+- Backup programado: run #19 `42659924075`, SUCCESS `2026-11-09T16:57:34Z`; no run #20 localizado a `12:29Z` del 10-nov. Repositorio remoto confirma commit `828ef3193f3b8e4935d0e945f504cd81aca4b78e` y ambos archivos (dump cifrado + checksum). Umbral de 24h: `2026-11-10T16:57:34Z`.
+- RPO≤24h sostenido NO-GO por gaps históricos. No ejecutar workflow manualmente ni alterar cron/secrets/proveedor. Tras el umbral, reconsultar schedule runs y confirmar copia remota antes de declarar incumplimiento del intervalo actual.
+- Issue #53 OPEN/P0; última nota de seguimiento `6767292787`.
+- No Neon, secretos, datos reales, main writes, merge, deploy, DNS, billing ni Cloudflare manual. No leer contenido del dump.
+- Próximo paso: comprobar run programado después del umbral; en paralelo, revisar discrepancias documentales y exact-HEAD CI sin ampliar a un tercer frente. Restore real y RTO integral continúan pendientes.
+- Producción **NOT READY**; P0 UI 0/1 jornada completa. Mantener estas limitaciones visibles.

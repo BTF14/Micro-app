@@ -393,3 +393,16 @@ Consulta del historial de GitHub Actions en `main`, filtro `event=schedule`, wor
 - No se ejecutó el workflow real de backup ni se usaron secretos reales. Main sigue usando la URL Git con token hasta que exista una integración segura; PR #302 continúa Draft por falta de review independiente y porque el principal PostgreSQL/RPO/RTO siguen abiertos.
 - Primera pasada estática de PR #301: `branches.ts` reutiliza `authorizeTenantOperation(..., "inventory.read")`, filtra por organization_id y sucursales activas, y limita cashier/inventory a branch_memberships activas; owner/admin reciben sucursales activas de su organización. Tests cubren owner/admin/cashier/inventory, tenant ajeno y sesión ausente. No se observó un bypass directo en esta pasada; el límite `MAX_BRANCHES=100` sin cursor permanece explícito. No equivale a revisión independiente completa ni aprobación; #301 sigue OPEN/no Draft, sin review formal.
 - PR #298, antes de esta nueva actualización, estaba en HEAD `44def211e264fd34d5bef7db5cead8c5fd6d509b`, 223 ahead / 0 behind, 15/15 check-runs y 13/13 workflows SUCCESS. El commit documental actual mueve nuevamente su HEAD y exige CI exact-HEAD nuevo.
+
+
+---
+
+## Reconciliación de evidencia remota — 2026-11-10 12:29 UTC
+
+- Último run programado observado: #19, ID `42659924075`, SUCCESS, inicio `2026-11-09T16:57:34Z`; no existe run #20 en la consulta schedule a `2026-11-10T12:29Z`.
+- El job completó los pasos pg_dump 18.6, cifrado age, SHA256 y push. El repositorio remoto `BTF14/micro-app-backups` tiene HEAD `828ef3193f3b8e4935d0e945f504cd81aca4b78e`, timestamp `2026-11-09T16:57:59Z`, con `backup-2026-11-09T16-57-53Z.dump.age` (42,708 bytes) y `.sha256` (103 bytes).
+- A las `12:29Z` del 10-nov habían transcurrido ~19 h 31 min desde el inicio del run; el umbral 24h se alcanza `2026-11-10T16:57:34Z`. Este corte no declara aún incumplimiento del intervalo actual; revalidar después del umbral.
+- Esta evidencia acredita la existencia del objeto remoto y su checksum publicado, no la verificación criptográfica del checksum descargando el artefacto, no una restauración real, ni el RTO.
+- RPO≤24h sostenido sigue NO-GO por gaps históricos: máximo 48 h 03 min 03 s; último intervalo histórico 27 h 00 min 14 s. No atribuir retrasos a GitHub scheduler sin evidencia.
+- No se ejecutó workflow manual, no se accedió a secretos, Neon ni al contenido del dump. No modificar cron, proveedor ni retención en producción.
+- Issue #53 continúa OPEN/P0; restore real fuera de producción, principal efectivo de backup, RTO y alerta externa siguen pendientes. Fecha límite **2026-12-01**.

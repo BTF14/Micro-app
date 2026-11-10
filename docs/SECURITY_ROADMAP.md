@@ -1,3 +1,10 @@
+## Branch protection / rulesets — evidencia GitHub 2026-11-10
+
+- La consulta de repository rulesets devolvió una lista vacía (`[]`) para el repositorio.
+- La consulta de protección de `main` devolvió HTTP 403 `Resource not accessible by integration`.
+- Por tanto, no existe evidencia suficiente en esta sesión para confirmar branch protection efectiva, número de aprobaciones requeridas, checks obligatorios o bypass restrictions. La ausencia de rulesets devueltos no demuestra por sí sola que el endpoint de branch protection no tenga configuración.
+- Gate permanece **ABIERTO**. No modificar configuración ni asumir protección activa. Se requiere lectura autorizada de la configuración de GitHub antes de GO productivo.
+
 # Revalidación Nivel 1 — 2026-11-10 UTC
 
 **Dictamen: Seguridad Nivel 1 ABIERTO; producción NOT READY.**

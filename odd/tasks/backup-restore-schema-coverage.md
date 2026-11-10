@@ -148,3 +148,33 @@ No se ha accedido a Neon, secretos, backup remoto ni producción. PR #303 se man
 ## Exact-HEAD validation status — 2026-11-10
 
 PR #303 HEAD `4e369c25bbd7e43072664c2012f6a196cc21eed1`, 30 ahead / 0 behind main, OPEN/Draft, mergeable=true. The latest exact-SHA query returned 0 pull_request workflow runs and 0 legacy status contexts. This is **not** a passing CI result; keep the PR Draft until the workflow execution is observable and all exact-HEAD checks pass. Issue #53 follow-up: `6772761216`.
+
+
+## Auditoría estática de fase 1 — revisión 2026-11-10
+
+PR #303 HEAD vivo revalidado: `3439c51b5719315e46196f7eca57cffee5a76df2`, OPEN/Draft, 37 ahead / 0 behind main, mergeable=true, 11/11 workflow runs `pull_request` SUCCESS exact-HEAD, 0 legacy status contexts, 0 reviews y 0 threads. La nota histórica de HEAD `4e369c25...` y 0 workflows queda supersedida.
+
+### Cobertura confirmada
+
+- PostgreSQL 18 desechable, bases source/restore fijas, migration runner oficial, ledger, dump custom, age key efímera, SHA-256, descifrado, restore y comparación de tablas/constraints/indexes/triggers/secuencias/extensiones/funciones/ledger.
+- Workflow con `permissions: contents: read`; no consume secretos ni usa Neon.
+- La prueba de fase 1 es schema-only y no sustituye el fixture poblado.
+
+### Límites detectados
+
+- `pg_dump` y `pg_restore` usan `--no-owner --no-privileges`: no preservan ni demuestran ownership/ACL/grants del origen.
+- El manifest no compara RLS activado/forzado ni `pg_policies`, ACL/grants efectivos, atributos/membresías de roles, `pg_default_acl` o `search_path` efectivo.
+- El runner comprueba atributos/memberships de `microapp_migrator` y `microapp_runtime`; el rol sintético `microapp_bcv_sync` creado por el smoke no queda validado por esas aserciones en el baseline main.
+- Estos son límites de evidencia detectados por lectura estática; no se han observado fallos de ejecución ni se ha demostrado una vulnerabilidad explotable.
+
+### Diseño de fase 2: perfiles por ref
+
+No mezclar main 0001–0016 con PR #287 0017–0022. En main, `sales` no contiene todavía `branch_id`, `register_shift_id` ni `warehouse_id`; esas columnas aparecen en el checkout branch-aware de #287. Por tanto:
+
+1. Perfil main: organización/usuario/membresía, branch/branch membership, register/shift, supplier/product/rate, warehouse, count/lines, movimiento/ledger/balance, venta/pago legacy y audit; verificar conteos y relaciones antes/después del restore.
+2. Perfil #287 separado: checkout branch-aware, payment allocation, ledger projection, BCV sync state y rol productor, ejecutado solo contra el HEAD/ref que realmente contiene 0017–0022.
+3. Cada perfil deriva su secuencia de migraciones del ref probado; no importa migraciones desde otra rama ni asume columnas ausentes.
+
+### Estado
+
+No se ha implementado todavía la fase 2 ni se ha ejecutado una restauración con el nuevo grafo poblado. No se ha tocado Neon, secretos, backup remoto, producción, Cron, Cloudflare o datos reales. Issue #53 OPEN/P0; producción NOT READY; deadline 2026-12-01. Siguiente acción: inspeccionar íntegramente las migraciones y fixtures del ref exacto, en particular la variante de ledger de main, antes de escribir el SQL del fixture.

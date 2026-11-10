@@ -42,7 +42,7 @@ Main observado: `c5373564413ba086690552c6b7deeab08d7b4a89`.
 | PR | Estado | HEAD | Workflow runs exact-HEAD | Check-runs exact-HEAD | Decisión |
 |---|---|---|---:|---:|---|
 | [#287](https://github.com/BTF14/Micro-app/pull/287) | OPEN / Draft | `7df318b233cfb95f7fcc3076d46984a11614a14c` | 13: 8 SUCCESS, 5 FAILURE | 10/10 SUCCESS | Bloqueada; no declarar CI completamente verde |
-| [#296](https://github.com/BTF14/Micro-app/pull/296) | OPEN / Draft | `73b0b134c14cb30f7c93d038c10acd0da5aa274c` | 10/10 SUCCESS | No usar status legacy vacío como contador | Documental; no declarar PIN/calendario implementados |
+| [#296](https://github.com/BTF14/Micro-app/pull/296) | OPEN / Draft | `73b0b134c14cb30f7c93d038c10acd0da5aa274c` | 12/12 SUCCESS | 14/14 SUCCESS | Documental; no declarar PIN/calendario implementados |
 | [#298](https://github.com/BTF14/Micro-app/pull/298) | OPEN / Draft | `98675da595b0c20906f2674ba3dd9d9fba677a63` | 13/13 SUCCESS | 15/15 SUCCESS | Docs-only; no merge |
 | [#299](https://github.com/BTF14/Micro-app/pull/299) | OPEN / Draft | `c82b0a10f85b59e1f81ac0ca2d439b6286558751` | 12/12 SUCCESS | 14/14 SUCCESS | Medición de pg_restore sintético; no merge |
 

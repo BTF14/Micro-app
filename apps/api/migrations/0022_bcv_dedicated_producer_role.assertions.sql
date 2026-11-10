@@ -8,6 +8,8 @@ BEGIN
     OR pg_catalog.has_table_privilege('microapp_runtime','public.bcv_sync_state','UPDATE')
     OR pg_catalog.has_table_privilege('microapp_runtime','public.bcv_sync_state','DELETE')
     OR pg_catalog.has_table_privilege('microapp_runtime','public.bcv_sync_state','TRUNCATE')
+    OR pg_catalog.has_table_privilege('microapp_runtime','public.bcv_sync_state','REFERENCES')
+    OR pg_catalog.has_table_privilege('microapp_runtime','public.bcv_sync_state','TRIGGER')
     OR EXISTS (
       SELECT 1 FROM pg_catalog.pg_attribute a
       WHERE a.attrelid='public.bcv_sync_state'::regclass
@@ -22,6 +24,8 @@ BEGIN
     OR pg_catalog.has_table_privilege('microapp_runtime','public.exchange_rates','UPDATE')
     OR pg_catalog.has_table_privilege('microapp_runtime','public.exchange_rates','DELETE')
     OR pg_catalog.has_table_privilege('microapp_runtime','public.exchange_rates','TRUNCATE')
+    OR pg_catalog.has_table_privilege('microapp_runtime','public.exchange_rates','REFERENCES')
+    OR pg_catalog.has_table_privilege('microapp_runtime','public.exchange_rates','TRIGGER')
     OR EXISTS (
       SELECT 1 FROM pg_catalog.pg_attribute a
       WHERE a.attrelid='public.exchange_rates'::regclass
@@ -38,6 +42,8 @@ BEGIN
     OR pg_catalog.has_table_privilege('microapp_bcv_sync','public.bcv_sync_state','UPDATE')
     OR pg_catalog.has_table_privilege('microapp_bcv_sync','public.bcv_sync_state','DELETE')
     OR pg_catalog.has_table_privilege('microapp_bcv_sync','public.bcv_sync_state','TRUNCATE')
+    OR pg_catalog.has_table_privilege('microapp_bcv_sync','public.bcv_sync_state','REFERENCES')
+    OR pg_catalog.has_table_privilege('microapp_bcv_sync','public.bcv_sync_state','TRIGGER')
     OR NOT pg_catalog.has_column_privilege('microapp_bcv_sync','public.bcv_sync_state','singleton','SELECT')
     OR NOT pg_catalog.has_column_privilege('microapp_bcv_sync','public.bcv_sync_state','attempt_id','SELECT')
     OR NOT pg_catalog.has_column_privilege('microapp_bcv_sync','public.bcv_sync_state','last_outcome','SELECT')
@@ -67,6 +73,8 @@ BEGIN
     OR pg_catalog.has_table_privilege('microapp_bcv_sync','public.exchange_rates','UPDATE')
     OR pg_catalog.has_table_privilege('microapp_bcv_sync','public.exchange_rates','DELETE')
     OR pg_catalog.has_table_privilege('microapp_bcv_sync','public.exchange_rates','TRUNCATE')
+    OR pg_catalog.has_table_privilege('microapp_bcv_sync','public.exchange_rates','REFERENCES')
+    OR pg_catalog.has_table_privilege('microapp_bcv_sync','public.exchange_rates','TRIGGER')
     OR NOT pg_catalog.has_column_privilege('microapp_bcv_sync','public.exchange_rates','id','SELECT')
     OR NOT pg_catalog.has_column_privilege('microapp_bcv_sync','public.exchange_rates','rate','SELECT')
     OR NOT pg_catalog.has_column_privilege('microapp_bcv_sync','public.exchange_rates','source','SELECT')

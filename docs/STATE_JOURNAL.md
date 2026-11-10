@@ -1,3 +1,17 @@
+## Revalidación de continuidad y correcciones de seguridad — 2026-11-10 UTC
+
+- GitHub revalidado: main `c5373564413ba086690552c6b7deeab08d7b4a89`; PR #287/#298/#299/#300/#302 OPEN/Draft y sin reviews formales. CI exact-HEAD de las cinco PR: #287 15/15 checks + 11/11 workflows; #298 15/15 + 11/11; #299 14/14 + 10/10; #300 13/13 + 9/9; #302 14/14 + 10/10.
+- #287 corrigió la recuperación de tasa BCV stale tras confirmación oficial idéntica. La primera regresión unitaria falló por una aserción que esperaba AND en lugar de WHERE; se corrigió. El CI final incluye ejecución PostgreSQL con LOGIN microapp_runtime y pasó.
+- #300 retiró sales.price.override de las allowlists y del contrato de autorización; rechazo probado para todos los roles.
+- #302 sustituyó token embebido en URL Git por GIT_ASKPASS temporal y limpieza del clon/helper. No se ejecutó el backup real.
+- #299 separa duración pg_restore de duración total del round-trip sintético; no mide RTO integral.
+- El único commit de main ausente en #287 es #297, modificación documental de docs/BACKLOG_RECOVERY_LEDGER.md. No se sincronizó/rebasó #287.
+- No hubo main writes, merge, deploy, migraciones remotas, Neon main, datos reales ni cambios de secretos/DNS/billing.
+- Seguridad Nivel 1 sigue ABIERTO y producción NOT READY; P0 UI 0/1 jornadas completas demostradas. Fecha límite inamovible: 2026-12-01.
+
+
+---
+
 ## Corrección de precisión: Cron existente vs Cron BCV — 2026-11-09 UTC
 
 - Relectura directa de `apps/api/wrangler.toml` en `main` confirma un trigger versionado `17 * * * *` (cada hora). El comentario y el handler `scheduled()` en `apps/api/src/index.ts` lo destinan exclusivamente a `cleanupExpiredAuthRecords` (limpieza de metadatos de autenticación); el handler retorna sin ejecutar en `APP_ENV !== "production"`.

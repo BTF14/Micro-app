@@ -1,3 +1,7 @@
+## Corrección de decisión comercial — 2026-11-10
+
+La decisión vigente del propietario es que **Micro-app no tendrá descuentos ni promociones**. No existe una fase futura aprobada para descuentos, cupones, aprobaciones de descuento ni overrides manuales de precio. Las propuestas históricas que sugieren configurarlos por organización quedan supersedidas y no son una hoja de ruta. La matriz `docs/sdd/role-permission-decision-matrix.md` debe leerse con su sección de ventas actualizada, no con los snapshots históricos de 2026-10-31.
+
 # Reconciliación de decisiones vigentes — 2026-11-09 UTC
 
 **Corrección importante:** la matriz `docs/sdd/role-permission-decision-matrix.md` fue **APROBADA por el propietario el 2026-10-31**. Las frases de este documento que la llaman “NO APROBADA” pertenecen a snapshots anteriores o quedaron desactualizadas; no deben usarse como estado vigente. La aprobación autoriza el contrato de permisos documentado, pero **no significa que todos los handlers/endpoints estén implementados**.
@@ -7,7 +11,7 @@
 - La nueva lógica comercial sigue bloqueada por Seguridad Nivel 1 según `AGENTS.md`; la aprobación de la matriz no elimina ese gate.
 - La rama activa de integración BCV + checkout es PR #287, OPEN/Draft. PR #255 fue cerrada como supersedida por #287; no referirla como PR activa.
 - Mantener la decisión de un único rol organizacional en `organization_members.role`; `branch_memberships` solo concede acceso a sucursales.
-- El primer MVP para el **2026-12-01** es un local y hasta 1.000 productos. Descuentos quedan fuera de P0; la matriz conserva su decisión de aprobación Admin/Owner para una futura capacidad, pero el checkout/schema actual no los habilita.
+- El primer MVP para el **2026-12-01** es un local y hasta 1.000 productos. La decisión posterior del propietario (2026-11-05) excluye descuentos, promociones y aprobaciones de descuentos del producto, no solo de P0; no existe una fase futura aprobada. La matriz de permisos se ha actualizado para reflejarlo.
 
 Los bloques con fechas anteriores se conservan como historia. Esta corrección prevalece cuando describan la matriz como pendiente de aprobación o a #255 como rama activa.
 
@@ -171,7 +175,7 @@ La matriz de permisos por operación está aprobada, pero los endpoints comercia
 - ERD de organización/sucursal/almacén/caja documentado en `docs/sdd/MULTI_BRANCH_DATA_MODEL.md`; sucursales/asignaciones en 0003 y cajas/turnos en 0004 (PR #167 fusionada). Almacenes y stock por almacén siguen pendientes.
 - Matriz de permisos por operación y ámbito del recurso (organización, sucursal, caja/turno), **APROBADA el 2026-10-31**. La autoridad de rol sigue siendo un único `organization_members.role` por miembro/organización; `branch_memberships` solo concede asignación/acceso a sucursales. La matriz define operaciones y recursos por rol, incluida la configuración de políticas comerciales y excepciones. La implementación de handlers sigue parcial; no confundir aprobación con disponibilidad funcional.
 - Método de valoración de inventario y política de costo/margen.
-- Capacidades y permisos para descuentos, cancelación/devolución y aprobaciones; cada organización configura sus propios límites comerciales.
+- Propuesta histórica: capacidades y permisos para descuentos, cancelación/devolución y aprobaciones. La propuesta de descuentos queda supersedida por la decisión del propietario del 2026-11-05 y no debe implementarse. Cualquier trabajo futuro de cancelación/devolución requiere decisión separada.
 - Estrategia de caché de catálogo solo tras benchmark.
 - Pruebas de capacidad de Neon y Cloudflare, cuotas y coste total.
 - RPO/RTO, retención/alertas y validación de integridad del backup.
@@ -235,7 +239,7 @@ El modelo detallado propuesto está en docs/sdd/MULTI_BRANCH_DATA_MODEL.md. Resu
 - La migración versionada 0003 añade `branches` y `branch_memberships`; PR #165 está fusionada. Esta migración todavía no se ha aplicado a Neon main.
 - `resolveBranchContext` está implementado y probado en PostgreSQL efímero, pero no está conectado a rutas ni concede permisos por operación.
 - Decisión de diseño para caja: cada register pertenece a una sucursal. Un register_shift abierto pertenece a un único cajero y una única caja; no se comparte ni se transfiere. Cambio de cajero requiere cierre con conteo y nueva apertura. Máximo un turno abierto por caja y por cajero dentro de la organización, protegido por índices únicos parciales.
-- Owner/admin pueden tener alcance organizacional para resolver sucursales, pero eso no les concede operar el turno de otro cajero. Los overrides requieren permiso separado, motivo y auditoría; siguen pendientes de matriz aprobada.
+- Owner/Admin pueden tener alcance organizacional para resolver sucursales, pero eso no les concede operar el turno de otro cajero. Los overrides de turno u otras excepciones operativas requieren permiso separado, motivo y auditoría; no implican overrides de precios. Los descuentos y cambios manuales de precio permanecen excluidos del producto.
 - Especificación: `docs/sdd/REGISTER_SHIFT_MODEL.md`. PR #167 fusionó `0004_register_shifts.sql`, assertions y pruebas de integración en main. No se aplicó a Neon. No hay endpoints comerciales.
 - Entorno: PostgreSQL 18 desechable de CI para migraciones desde cero. Neon branches son opcionales para pruebas que CI no cubra; evitar su creación rutinaria y establecer expiración/limpieza. Neon main no es entorno de desarrollo.
 

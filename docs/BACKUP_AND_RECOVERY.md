@@ -215,3 +215,12 @@ El esquema principal de CI y Neon usa PostgreSQL 18. El workflow `.github/workfl
 - Log evidence: PostgreSQL client `pg_dump 18.6`; dump created and checked non-empty; age encryption succeeded; SHA-256 sidecar created; both files committed in the private backup repository as commit `2b038bd`; push to remote `main` succeeded; retention reported `deleted 0 file(s)`.
 - Persisted objects: `daily/backup-2026-10-29T17-29-48Z.dump.age` and `daily/backup-2026-10-29T17-29-48Z.dump.age.sha256`.
 - Status: **encrypted backup upload verified**. Not yet verified by this run: decrypting this exact backup, restoring it into a disposable PostgreSQL target, measured RPO/RTO, failure notification delivery, or total cost. Keep the age private key outside chat and source control.
+
+ 
+## Perfil sintético de restauración PR #287 — 2026-11-10
+
+PR #287 incorpora `scripts/test_backup_restore_schema_bcv.sh` y `scripts/backup_restore_fixture_bcv.sql` para probar su cadena 0001–0022, incluyendo el ledger de proyección, el estado BCV, checkout y permisos por columna del productor. Exact-HEAD `7746e86140cdf3a98911665f6955e57a256bfd4b`: 11/11 workflows SUCCESS. Job `42872318369` SUCCESS; 22 migraciones, dump cifrado age, checksum, descifrado, restore en PostgreSQL 18 desechable, ACL/owners/RLS/roles/search_path/column grants preservados, grafo BCV/checkout PASS, 3 s.
+
+**Diferencia con producción:** el test sintético usa pg_dump/pg_restore por defecto y por tanto preserva owners y ACL. El workflow productivo `.github/workflows/backup.yml` usa `--no-owner --no-privileges`; por ello este test no demuestra que el artefacto productivo pueda restaurar ownership/grants operativos. Falta diseñar y probar el procedimiento de bootstrap/reasignación de ownership y grants después de un restore con esos flags. No modificar todavía el workflow productivo ni ejecutar backup manual.
+
+La tasa del fixture es sintética; no es una cotización BCV. El test no restaura el artefacto remoto, no demuestra identidad efectiva de `DATABASE_URL_BACKUP_RO`, least privilege, RPO/RTO, alertas ni coste $0. Issue #53 OPEN/P0; producción NOT READY.

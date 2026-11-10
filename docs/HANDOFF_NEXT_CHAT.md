@@ -2662,6 +2662,6 @@ Se agregó `scripts/backup_restore_fixture_bcv.sql`, `scripts/test_backup_restor
 4. Mantener #53 OPEN/P0. No leer secretos ni inferir identidad del principal `DATABASE_URL_BACKUP_RO`; no ejecutar workflow_dispatch ni backup manual.
 5. Separar perfil #303 main 0001–0016 (ledger intents) del perfil #287 0001–0022 (ledger projection + BCV). Nunca combinar fixtures/modelos.
 
-#303: código validado en SHA `f0dc1f90043eff4270d86f461a2dfc07187aa814`; HEAD documental `afe0a94005854843ead2526b3a5ea18a183f127a` terminó 11/11 workflows SUCCESS, 73 ahead / 0 behind, OPEN/Draft, 0 status contexts, 0 reviews y 0 threads. #287 HEAD documental antes de este handoff update: `4f67b46d988e5fed617d0e9603d74df27ffd2b87`, 10/11 SUCCESS y Playwright E2E PENDING; este commit documental cambiará el HEAD y exige revalidación exact-HEAD.
+#303: código validado en SHA `f0dc1f90043eff4270d86f461a2dfc07187aa814`; HEAD documental `afe0a94005854843ead2526b3a5ea18a183f127a` terminó 11/11 workflows SUCCESS, 73 ahead / 0 behind, OPEN/Draft, 0 status contexts, 0 reviews y 0 threads. #287 HEAD antes de esta actualización documental: `802a6d09a9f9681ccb79e727ed64714ef9ab1a48`, 11/11 workflows SUCCESS, 232 ahead / 1 behind, OPEN/Draft, mergeable=true, 0 status contexts, 0 reviews y 0 threads. Este commit documental cambiará el HEAD; revalidar el SHA resultante antes de afirmar CI exact-HEAD.
 
 Issue #53 OPEN/P0, producción NOT READY. Sin main, merge, deploy, Neon writes, secretos, Cron, DNS/billing ni datos reales. Deadline 2026-12-01.

@@ -8,7 +8,7 @@ El documento original puede seguir sirviendo como referencia histórica para pri
 
 # Diseño: políticas comerciales configurables por organización
 
-**Estado vigente (reconciliación 2026-11-09):** propuesta futura, no implementada; no autoriza migraciones ni endpoints. La matriz de permisos está APROBADA desde 2026-10-31. Esta nota supersede las frases posteriores de este documento que aún la describen como pendiente de aprobación. Los descuentos y promociones están fuera del P0 del 1 de diciembre de 2026 y no forman parte del checkout actual.  
+**Estado vigente (reconciliación 2026-11-10):** este documento es un diseño histórico no aprobado para implementación. La matriz de permisos está APROBADA desde 2026-10-31. La decisión del propietario del 2026-11-05 es que Micro-app no tendrá descuentos ni promociones; no son solo una exclusión del P0, sino una capacidad descartada del producto. Cualquier mención inferior a descuentos, aprobaciones, porcentajes, excepciones o una futura habilitación se conserva únicamente como historial de la propuesta y no es requisito, roadmap ni autorización.  
 **Fecha del diseño original:** 2026-10-30 UTC  
 **Base verificada:** `main` en `4ab229296d8858c8c553e00a633a762b9c26a81b`.  
 **Relacionado:** `docs/SAAS_ARCHITECTURE_DECISIONS.md`, `docs/sdd/role-permission-decision-matrix.md`, `docs/SCHEMA_REVIEW.md`.
@@ -17,12 +17,12 @@ El documento original puede seguir sirviendo como referencia histórica para pri
 
 Micro app es una plataforma para que cada organización gestione su operación. La plataforma no debe imponer una política comercial universal sobre descuentos ni decidir cómo una empresa vende.
 
-- Cada organización podrá tener políticas comerciales propias cuando esa capacidad futura se diseñe y habilite.
+- El diseño original contempló políticas comerciales configurables por organización; esa propuesta no está aprobada ni implementada. No inferir que se habilitará en el futuro.
 - Solo Owner administra la configuración de políticas de la organización; Admin opera el negocio y no obtiene permisos de administración de políticas.
-- Cualquier descuento futuro requiere aprobación de Admin u Owner conforme a la decisión explícita del propietario del 2026-10-31; el cajero no puede aprobar su propio descuento.
-- No se codifican porcentajes ni umbrales universales. Los parámetros concretos de una capacidad futura deben respetar la política configurada por Owner y la aprobación requerida.
+- La frase original sobre aprobación de descuentos (2026-10-31) quedó supersedida el 2026-11-05: Micro-app no tendrá descuentos ni flujo de aprobación de descuentos.
+- No se codifican porcentajes, umbrales ni parámetros de descuento. No diseñar parámetros de descuento para una capacidad futura no aprobada.
 - Las capacidades disponibles en la plataforma no equivalen a una política activa ni a una función implementada.
-- **Límite P0:** no implementar ni exponer descuentos, promociones o override manual de precio en el MVP; el checkout vigente y la migración `0014_sales_without_discounts.sql` los excluyen.
+- **Regla vigente de producto:** no implementar ni exponer descuentos, promociones, cupones, aprobaciones de descuentos ni override manual de precio. La exclusión no se limita al MVP/P0; cualquier cambio exigiría una nueva decisión explícita del propietario.
 
 Esta decisión sustituye cualquier sugerencia previa de un porcentaje fijo (incluido el 10 %) o de un umbral de descuento común a todas las organizaciones. Las menciones históricas se conservan como historial, no como requisito.
 
@@ -60,7 +60,7 @@ No es una migración aprobada. Es el contrato conceptual para el futuro diseño 
 
 ## 4. Comportamiento seguro
 
-- **Sin configuración activa:** no inventar una regla ni asumir permiso. La operación se comporta según una política explícita de fallback que se definirá en el contrato de ventas antes de habilitar descuentos; hasta entonces, no se implementa el flujo.
+- **Nota histórica:** el diseño original proponía fallback para descuentos. Como los descuentos están descartados, no implementar ni definir un fallback de descuento. Para otras políticas no relacionadas con descuentos, cualquier capacidad requiere un contrato de producto separado y aprobado.
 - **Política inválida, expirada o inconsistente:** denegar la operación afectada de forma segura y devolver un error de dominio no sensible.
 - **Cambio concurrente de política:** la venta debe evaluar una versión consistente y registrar exactamente esa versión.
 - **Aprobación:** si una organización configura aprobación, debe quedar vinculada a la venta, al aprobador autenticado, a la política/version y al importe; no aceptar una marca booleana enviada por el frontend.
@@ -78,7 +78,7 @@ La dirección de arquitectura mantiene:
 - Caja/turno: el ámbito de turno se resuelve por separado; no autoriza por sí solo operaciones.
 - Políticas comerciales: pertenecen a la organización; la facultad de configurarlas no se deduce automáticamente del rol. La matriz aprobada debe definir quién administra configuración y quién puede ejecutar excepciones.
 
-La matriz `docs/sdd/role-permission-decision-matrix.md` está APROBADA desde 2026-10-31. Su decisión vigente establece que solo Owner administra miembros y políticas de la organización; Admin se limita a operar el negocio. La matriz también conserva que cualquier descuento futuro requiere aprobación de Admin/Owner. Esta especificación no habilita descuentos ni amplía la matriz.
+La matriz `docs/sdd/role-permission-decision-matrix.md` está APROBADA desde 2026-10-31. Su decisión vigente establece que solo Owner administra miembros y políticas de la organización; Admin se limita a operar el negocio. La decisión posterior del 2026-11-05 excluye descuentos y promociones del producto, por lo que no existe permiso de aprobación de descuentos ni una capacidad futura aprobada. Esta especificación histórica no habilita políticas comerciales ni amplía la matriz.
 
 ## 6. Pruebas obligatorias antes de exponer funcionalidad
 
@@ -108,7 +108,7 @@ No se ejecutaron estas pruebas en este bloque porque no se ha implementado esque
 
 ## 8. Próximos gates
 
-1. Mantener este contrato subordinado a la matriz aprobada: Owner configura políticas; cualquier descuento futuro requiere aprobación Admin/Owner; descuentos fuera del P0.
+1. Mantener cualquier futuro diseño de políticas no relacionadas con descuentos subordinado a una decisión explícita de producto y a la matriz aprobada. No diseñar ni implementar descuentos, promociones ni sus aprobaciones.
 2. Cerrar el ERD completo organización → sucursal → almacén/caja/turno, con claves tenant-scoped.
 3. Diseñar las excepciones futuras que sigan sin decisión explícita, sin reabrir las facultades ya aprobadas.
 4. Revisar la arquitectura del ledger de inventario, integridad venta/líneas/pagos, idempotencia y auditoría.

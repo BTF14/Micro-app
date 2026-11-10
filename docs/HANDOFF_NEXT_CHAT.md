@@ -1,3 +1,12 @@
+## Hallazgo bloqueante de UI — inspección #287, 2026-11-10
+
+La rama #287 no entrega todavía el recorrido POS completo desde interfaz:
+- `apps/web/src/App.tsx` declara “Caja y ventas” e “Inventario” como pendientes y solo muestra `CatalogPanel` para la vista autenticada.
+- No existe componente de carrito/checkout/recibo en `apps/web/src`.
+- `apps/api/src/index.ts` registra checkout, pero no rutas HTTP de apertura/cierre de turnos; `cashier-open-shift.ts` es solo un helper.
+- Las pruebas de checkout son API/PostgreSQL, no E2E de venta desde navegador.
+- P0 continúa 0/1 jornadas completas. Tras cerrar Seguridad Nivel 1 y aprobar el contrato de pagos, la UI de caja, turnos, carrito, checkout y comprobante será trabajo de implementación obligatorio, no se debe dar por cubierto por #287.
+
 # Handoff vivo — 2026-11-10 UTC
 
 **Deadline inamovible: 2026-12-01.** Un comercio, un local, hasta 1.000 productos, jornada completa desde UI, persistencia/conciliación demostradas. Sin descuentos ni promociones.

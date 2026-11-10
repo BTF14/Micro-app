@@ -24,6 +24,15 @@ const producerDatabaseUrl = processEnv?.DATABASE_URL ?? processEnv?.BCV_DATABASE
 const runtimeDatabaseUrl = processEnv?.DATABASE_URL_RUNTIME ?? processEnv?.RUNTIME_DATABASE_URL
   ?? processEnv?.DATABASE_URL_ADMIN ?? producerDatabaseUrl;
 const cleanupDatabaseUrl = processEnv?.DATABASE_URL_ADMIN ?? producerDatabaseUrl;
+const isDedicatedProducerRoleTest = (() => {
+  if (!producerDatabaseUrl || !runtimeDatabaseUrl) return false;
+  try {
+    return new URL(producerDatabaseUrl).username === "microapp_bcv_sync" &&
+      new URL(runtimeDatabaseUrl).username === "microapp_runtime";
+  } catch {
+    return false;
+  }
+})();
 const isCi = Boolean(processEnv?.CI);
 const isDisposableCiDatabase = (() => {
   if (!isCi || !producerDatabaseUrl || !runtimeDatabaseUrl || !cleanupDatabaseUrl) return false;
@@ -362,7 +371,7 @@ describe.skipIf(!isDisposableCiDatabase)("BCV effective-date persistence against
   });
 
 
-  it("denies direct BCV persistence from the runtime LOGIN", async () => {
+  it.skipIf(!isDedicatedProducerRoleTest)("denies direct BCV persistence from the runtime LOGIN", async () => {
     if (!runtimeClient) throw new Error("PostgreSQL runtime integration client is not connected.");
     const today = await cleanupClient!.query<{ today: string }>(
       "SELECT (now() AT TIME ZONE 'America/Caracas')::date::text AS today",

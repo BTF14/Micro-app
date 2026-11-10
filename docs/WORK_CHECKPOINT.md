@@ -1,3 +1,24 @@
+# Checkpoint exact-HEAD — 2026-11-10 UTC
+
+- Deadline **2026-12-01**; objetivo P0: un local, hasta 1.000 productos, jornada completa desde UI. Sin descuentos/promociones.
+- main `c5373564413ba086690552c6b7deeab08d7b4a89`, sin modificación.
+- #287 `2e7cdd44f89a3b3765a0c69ad23bdb87faacf99c`: Draft, 167/1, 15/15 checks + 13/13 workflows SUCCESS. El único commit behind es #297, solo ledger documental. No sync/rebase.
+- #298 Draft, PR documental existente; esta actualización mueve su propio HEAD. Antes de este refresh: 15/15 checks + 13/13 workflows SUCCESS; reconsultar el SHA final.
+- #299 `c82b0a10f85b59e1f81ac0ca2d439b6286558751`: 14/14 + 12/12 SUCCESS.
+- #300 `97fa79e643d5e7b32ebf86958bd0ba9211e1fc95`: 14/14 + 12/12 SUCCESS.
+- #302 `1b441b3dc9e65e2cb89d765f9aff084b474dd90d`: 14/14 + 12/12 SUCCESS.
+- Cinco PR OPEN/Draft; cero reviews formales/threads. No merge.
+- #287 incluye BCV stale recovery con prueba PostgreSQL runtime y prueba checkout API 409→recovery→201; no UI E2E/live BCV. Métodos de pago branch-only sin aprobación; no activar.
+- Backup: 13 schedule runs, 12 SUCCESS/1 FAILURE; gap máximo entre éxitos 48h03m03; RPO≤24h NO. 10/29 fallo por falta de actions/checkout en ese SHA; ya corregido en main. #299 pg_restore 1s sintético, no RTO.
+- CORS OPTIONS y bundle API canónico verificados read-only; CSRF mutativo no demostrado. Daily pnpm audit high pasó sin vulnerabilidades conocidas; Dependabot alerts actuales no verificadas.
+- Seguridad Nivel 1 ABIERTO, producción NOT READY. P0 UI 0/1 jornadas.
+- Guardrails: no main writes, merge, deploy, migraciones remotas, Neon main/lab, datos reales, secretos, DNS, billing o Cron productivo.
+
+**Siguiente acción:** terminar validación exact-HEAD de #298 y continuar gates Nivel 1; fecha 2026-12-01 siempre presente.
+
+
+---
+
 > **Nota de frescura de PR #298:** el SHA `6b0e51b259e0d59305931a779d52a9ba066cac27` que aparece en el snapshot inferior era el HEAD antes de esta actualización documental. Esta misma rama se ha avanzado con nuevos commits; no reutilizar ese SHA ni sus checks como estado vivo. Reconsultar el HEAD y CI exactos de #298 en GitHub.
 
 ## Checkpoint vigente — 2026-11-10 UTC

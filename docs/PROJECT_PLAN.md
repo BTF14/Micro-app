@@ -7,6 +7,8 @@
 - No confundir objetivo con funcionalidad implementada, aceptación probada ni autorización de producción. No mover fecha ni alcance sin decisión expresa.
 - El MVP de un local conserva aislamiento multi-tenant/multi-branch, permisos aprobados, presupuesto objetivo $0 y guardrails. Si un gate crítico sigue abierto el 30 nov, NO-GO para producción; beta controlada solo con riesgos explícitos y aceptación correspondiente.
 
+> **Vigencia específica de PR #298:** la fila de la tabla que indica HEAD `98675da595b0c20906f2674ba3dd9d9fba677a63` y CI 13/13 + 15/15 corresponde exclusivamente a ese SHA anterior a la auditoría documental. Los commits posteriores de esta misma rama cambiaron el HEAD; esos resultados no validan los commits nuevos. Consultar siempre el HEAD vivo y su CI exacto en GitHub antes de decidir. No reutilizar los contadores históricos como estado actual.
+
 ### Estado GitHub revalidado por SHA exacto
 Main observado: `c5373564413ba086690552c6b7deeab08d7b4a89`.
 

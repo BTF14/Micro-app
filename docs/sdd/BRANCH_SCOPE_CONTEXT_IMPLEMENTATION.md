@@ -65,7 +65,7 @@ Alcance de PR #165: no creó almacenes, cajas, turnos, stock por almacén ni mig
 1. Verificar checks y revisión del diff de esta PR.
 2. Integrar únicamente si migración, tests y checks obligatorios pasan.
 3. Completar la revisión/CI del esquema de caja/turnos 0004 sin activar handlers comerciales.
-4. Resolver la matriz de permisos sensibles con decisiones explícitas.
+4. Aplicar la matriz de permisos APROBADA (2026-10-31) mediante autorización server-side por operación; no inferir que operaciones sin handler estén habilitadas.
 5. Diseñar stock por almacén, ledger/balance y migración con backfill/reconciliación.
 6. Solo después implementar handlers comerciales con pruebas PostgreSQL cross-tenant/cross-branch, concurrencia, rollback e idempotencia.
 

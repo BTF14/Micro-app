@@ -489,9 +489,9 @@ Este bloque prevalece sobre prioridades históricas inferiores.
 
 ---
 
-# Prioridad operativa vigente — Micro app
+# Snapshot histórico de prioridades — 2026-10-30
 
-> **Fuente de verdad del estado vivo:** consultar `docs/CURRENT_STATE.md` y `docs/HANDOFF_NEXT_CHAT.md`, y verificar GitHub antes de actuar. Los snapshots y prioridades históricos que siguen en este archivo pueden estar supersedidos.
+> Esta sección conserva el plan operativo de su fecha y no es el orden de trabajo actual. La referencia vigente está al principio de este archivo y en `docs/CURRENT_STATE.md` / `docs/HANDOFF_NEXT_CHAT.md`; verificar GitHub antes de actuar.
 
 ## Estándar frontend aprobado — 2026-11-01
 

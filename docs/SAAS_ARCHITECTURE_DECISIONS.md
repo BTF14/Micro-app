@@ -154,7 +154,7 @@ Definir umbrales conservadores, alertas, cuotas server-side y política de degra
 
 1. Reconciliar documentación y estado vivo de GitHub.
 2. Completar auditoría read-only de esquema, rutas, índices, constraints, consultas y límites.
-3. Aprobar el modelo de sucursal/almacén/caja y la matriz de permisos por operación y ámbito del recurso, manteniendo un único rol organizacional; dibujar ERD y reglas de integridad.
+3. Revalidar la cobertura de implementación del modelo de sucursal/almacén/caja y de la matriz de permisos **ya aprobada el 2026-10-31**, manteniendo un único rol organizacional; completar ERD y reglas de integridad sin pedir una nueva aprobación general.
 4. Diseñar migraciones compatibles y pruebas cross-tenant/cross-branch en PostgreSQL efímero.
 5. Implementar por etapas: catálogo/búsqueda → inventario → compras/recepciones → caja/turnos → ventas/pagos → devoluciones/transferencias/reportes.
 6. Investigar fuente BCV y automatización en paralelo documental; implementar después de contrato y pruebas de frescura/fallback.

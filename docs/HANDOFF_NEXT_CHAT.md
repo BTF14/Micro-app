@@ -1,3 +1,29 @@
+## Punto de entrada vigente — revalidado 2026-11-10 UTC
+
+**Fecha límite inamovible: 2026-12-01.** Objetivo: un comercio piloto, un local, hasta 1.000 productos, una jornada POS completa desde UI; persistencia y conciliación verificadas. Sin descuentos ni promociones.
+
+- `main`: `c5373564413ba086690552c6b7deeab08d7b4a89`.
+- #287 OPEN/Draft, HEAD `25e0de8c0236880febaad9a14a47d5ec55931641`, 164 ahead/1 behind; el único commit faltante en main es #297 y modifica solo `docs/BACKLOG_RECOVERY_LEDGER.md`. No sincronizar/rebasar automáticamente. CI exact-HEAD: 15/15 check-runs y 11/11 workflows SUCCESS. Contiene la recuperación BCV stale→valid bajo confirmación oficial idéntica y regresiones unitarias/PostgreSQL, incluyendo ejecución con LOGIN runtime en el workflow de CI.
+- #298 OPEN/Draft, HEAD `6b0e51b259e0d59305931a779d52a9ba066cac27`, 148 ahead/0 behind; 15/15 check-runs y 11/11 workflows SUCCESS. Es la PR documental existente; no crear otra duplicada.
+- #299 OPEN/Draft, HEAD `c82b0a10f85b59e1f81ac0ca2d439b6286558751`, 14/14 checks y 10/10 workflows SUCCESS. Mide duración de `pg_restore` sintético y round-trip; no RTO integral.
+- #300 OPEN/Draft, HEAD `f4c98f3971463e54370b5af3a0633ab434d9ad90`, 13/13 checks y 9/9 workflows SUCCESS. Retira `sales.price.override` de autorización; sin cambios de endpoint/UI/migración.
+- #302 OPEN/Draft, HEAD `c6daacee7825f3e2d3dd9de031fd5c3e33fc9320`, 14/14 checks y 10/10 workflows SUCCESS. Cambia autenticación Git del backup a helper temporal GIT_ASKPASS; no se ejecutó backup real.
+- No hay reviews formales registradas en esas cinco PR. Mantenerlas Draft; el usuario ha prohibido merge/main writes/despliegues durante esta fase.
+
+**Bloqueo principal:** Seguridad Nivel 1 ABIERTO / producción NOT READY. Branch protection API 403; aprobación requerida actual no verificada. Dependabot alerts y principal/grants efectivos en producción no verificados. CI runtime roles es PostgreSQL 18 sintético, no prueba Neon/Worker productivo. Backup RPO ≤24h, RTO integral, alertas externas y coste $0 no cerrados. No describir grants/helpers como RLS.
+
+**Siguiente secuencia senior:**
+1. Mantener las correcciones #287/#300/#302 en Draft y revisar sus diffs finales; no ampliar lógica comercial.
+2. Completar los gates Nivel 1 con evidencia aislada: privilegios y secuencia de migraciones en PostgreSQL efímero; inventario de grants; revisión de CORS/CSRF/cookies; backups/RPO/RTO/alertas; branch protection/Dependabot por vía autorizada.
+3. Resolver solo con decisión/evidencia los gates que requieren configuración productiva o revisión humana; no inventar resultados ni pedir capturas/CLI si existe alternativa.
+4. Solo después de cerrar seguridad, habilitar checkout/turnos/UI y E2E de jornada con 1.000 productos sintéticos.
+5. Mantener fecha **2026-12-01** en todos los planes y checkpoints.
+
+No tocar main, merge, deploy manual, migraciones remotas, Neon main, datos reales, secretos, DNS, billing, Cloudflare manual ni Cron BCV/de negocio. No pedir al propietario terminal, tokens, Build IDs o capturas ya documentadas.
+
+
+---
+
 ## Punto de entrada vigente — estado verificado 2026-11-10 UTC
 
 > Este snapshot describe el estado justo antes de esta actualización documental. El commit que lo contiene mueve el HEAD de #298; volver a consultar el SHA y sus checks antes de cualquier acción. Las secciones inferiores conservan evidencia histórica y addenda; este punto de entrada prevalece.

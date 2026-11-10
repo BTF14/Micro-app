@@ -1,3 +1,14 @@
+## Estado exacto de PR #298 antes de este último refresh — 2026-11-10 UTC
+
+- HEAD observado: `7b6dd3824b959786868e09986b7c2cf6be8067d3`.
+- OPEN/Draft; 175 ahead / 0 behind de main.
+- 14/14 check-runs SUCCESS.
+- En la lista de workflows exact-HEAD: 12 SUCCESS y 1 CANCELLED. El run de PR `Secret history scan` fue cancelado por concurrencia; el run push `Secret history scan` del mismo SHA terminó SUCCESS. No describir como 13/13 workflows SUCCESS.
+- Cero reviews formales y cero review threads.
+- Esta actualización documental vuelve a avanzar la misma rama #298; consultar su nuevo HEAD y CI exactos después del commit. No propagar checks de `7b6dd38` al SHA nuevo.
+
+---
+
 ## Bloqueo funcional confirmado — 2026-11-10
 
 La inspección del código de #287 confirma que el frontend no implementa caja/ventas: `App.tsx` sigue etiquetando el módulo como pendiente y renderiza `CatalogPanel`; no hay carrito, checkout UI, recibo ni vistas de turnos. El backend de checkout y las pruebas PostgreSQL no equivalen a E2E desde navegador. Además, `index.ts` no registra endpoints de apertura/cierre de turno; el helper `cashier-open-shift.ts` no es un router. Tras Seguridad Nivel 1 y aprobación del contrato de pagos, estos componentes siguen pendientes. **P0 = 0/1 jornadas completas; fecha límite 2026-12-01.**

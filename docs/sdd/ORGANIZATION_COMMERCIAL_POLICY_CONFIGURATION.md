@@ -1,7 +1,7 @@
 # Diseño: políticas comerciales configurables por organización
 
-**Estado:** propuesta técnica para revisión; no implementada y no autoriza migraciones ni endpoints comerciales.  
-**Fecha:** 2026-10-30 UTC  
+**Estado vigente (reconciliación 2026-11-09):** propuesta futura, no implementada; no autoriza migraciones ni endpoints. La matriz de permisos está APROBADA desde 2026-10-31. Esta nota supersede las frases posteriores de este documento que aún la describen como pendiente de aprobación. Los descuentos y promociones están fuera del P0 del 1 de diciembre de 2026 y no forman parte del checkout actual.  
+**Fecha del diseño original:** 2026-10-30 UTC  
 **Base verificada:** `main` en `4ab229296d8858c8c553e00a633a762b9c26a81b`.  
 **Relacionado:** `docs/SAAS_ARCHITECTURE_DECISIONS.md`, `docs/sdd/role-permission-decision-matrix.md`, `docs/SCHEMA_REVIEW.md`.
 
@@ -9,12 +9,12 @@
 
 Micro app es una plataforma para que cada organización gestione su operación. La plataforma no debe imponer una política comercial universal sobre descuentos ni decidir cómo una empresa vende.
 
-- Cada organización define y administra sus propias políticas comerciales mediante configuración propia.
-- Micro app aporta mecanismos seguros para almacenar, versionar, aplicar y auditar esa configuración.
-- No se codifican porcentajes, importes máximos, umbrales de aprobación ni permisos de descuento universales.
-- Una organización puede decidir no permitir descuentos, permitirlos bajo sus propias condiciones o delegar autorizaciones según su gobierno interno.
-- Las capacidades disponibles en la plataforma no equivalen a una política activa: la organización debe configurarla explícitamente.
-- Los roles autorizados para crear/cambiar esa configuración se determinarán en la matriz de permisos aprobada. No se presume que un rol tenga permiso hasta cerrar esa matriz.
+- Cada organización podrá tener políticas comerciales propias cuando esa capacidad futura se diseñe y habilite.
+- Solo Owner administra la configuración de políticas de la organización; Admin opera el negocio y no obtiene permisos de administración de políticas.
+- Cualquier descuento futuro requiere aprobación de Admin u Owner conforme a la decisión explícita del propietario del 2026-10-31; el cajero no puede aprobar su propio descuento.
+- No se codifican porcentajes ni umbrales universales. Los parámetros concretos de una capacidad futura deben respetar la política configurada por Owner y la aprobación requerida.
+- Las capacidades disponibles en la plataforma no equivalen a una política activa ni a una función implementada.
+- **Límite P0:** no implementar ni exponer descuentos, promociones o override manual de precio en el MVP; el checkout vigente y la migración `0014_sales_without_discounts.sql` los excluyen.
 
 Esta decisión sustituye cualquier sugerencia previa de un porcentaje fijo (incluido el 10 %) o de un umbral de descuento común a todas las organizaciones. Las menciones históricas se conservan como historial, no como requisito.
 
@@ -70,7 +70,7 @@ La dirección de arquitectura mantiene:
 - Caja/turno: el ámbito de turno se resuelve por separado; no autoriza por sí solo operaciones.
 - Políticas comerciales: pertenecen a la organización; la facultad de configurarlas no se deduce automáticamente del rol. La matriz aprobada debe definir quién administra configuración y quién puede ejecutar excepciones.
 
-La matriz `docs/sdd/role-permission-decision-matrix.md` continúa sin aprobación. Antes de implementar autorización comercial, el propietario debe aprobar o corregir las facultades de roles y alcances. Esta especificación no transforma recomendaciones de permisos en política aprobada.
+La matriz `docs/sdd/role-permission-decision-matrix.md` está APROBADA desde 2026-10-31. Su decisión vigente establece que solo Owner administra miembros y políticas de la organización; Admin se limita a operar el negocio. La matriz también conserva que cualquier descuento futuro requiere aprobación de Admin/Owner. Esta especificación no habilita descuentos ni amplía la matriz.
 
 ## 6. Pruebas obligatorias antes de exponer funcionalidad
 
@@ -100,9 +100,9 @@ No se ejecutaron estas pruebas en este bloque porque no se ha implementado esque
 
 ## 8. Próximos gates
 
-1. Reconciliar este contrato con la matriz de roles y eliminar de ella cualquier umbral comercial universal sugerido.
+1. Mantener este contrato subordinado a la matriz aprobada: Owner configura políticas; cualquier descuento futuro requiere aprobación Admin/Owner; descuentos fuera del P0.
 2. Cerrar el ERD completo organización → sucursal → almacén/caja/turno, con claves tenant-scoped.
-3. Aprobar explícitamente las facultades de roles y excepciones operativas pendientes.
+3. Diseñar las excepciones futuras que sigan sin decisión explícita, sin reabrir las facultades ya aprobadas.
 4. Revisar la arquitectura del ledger de inventario, integridad venta/líneas/pagos, idempotencia y auditoría.
 5. Solo entonces implementar una PR de código/migración/tests en una rama aislada; ejecutar migraciones y pruebas exclusivamente en PostgreSQL efímero.
 6. Verificar todos los checks obligatorios sobre el SHA exacto y revisar el diff completo antes de cualquier merge.

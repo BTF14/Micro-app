@@ -1,3 +1,18 @@
+# Reconciliación de decisiones vigentes — 2026-11-09 UTC
+
+**Corrección importante:** la matriz `docs/sdd/role-permission-decision-matrix.md` fue **APROBADA por el propietario el 2026-10-31**. Las frases de este documento que la llaman “NO APROBADA” pertenecen a snapshots anteriores o quedaron desactualizadas; no deben usarse como estado vigente. La aprobación autoriza el contrato de permisos documentado, pero **no significa que todos los handlers/endpoints estén implementados**.
+
+- Implementación parcial en main: autorización usada por catálogo e inventario; rutas de lectura/escritura de catálogo y lectura/conteos de inventario.
+- Siguen sin estar integrados en main checkout/pagos, operaciones HTTP de turnos/caja completas, transferencias y reportes. No asumir que la matriz ya está aplicada a cada ruta.
+- La nueva lógica comercial sigue bloqueada por Seguridad Nivel 1 según `AGENTS.md`; la aprobación de la matriz no elimina ese gate.
+- La rama activa de integración BCV + checkout es PR #287, OPEN/Draft. PR #255 fue cerrada como supersedida por #287; no referirla como PR activa.
+- Mantener la decisión de un único rol organizacional en `organization_members.role`; `branch_memberships` solo concede acceso a sucursales.
+- El primer MVP para el **2026-12-01** es un local y hasta 1.000 productos. Descuentos quedan fuera de P0; la matriz conserva su decisión de aprobación Admin/Owner para una futura capacidad, pero el checkout/schema actual no los habilita.
+
+Los bloques con fechas anteriores se conservan como historia. Esta corrección prevalece cuando describan la matriz como pendiente de aprobación o a #255 como rama activa.
+
+---
+
 # Arquitectura SaaS de Micro app — decisiones y criterios de evolución
 
 **Fecha:** 2026-10-30  

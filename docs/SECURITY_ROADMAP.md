@@ -685,3 +685,11 @@ Snapshot histórico: el manual run [40916692763](https://github.com/BTF14/Micro-
 - No hay evidencia de explotación del hallazgo HTTPS anterior; se corrigió en código main. La corrección no sustituye verificación de configuración productiva.
 
 ---
+
+## Corrección de evidencia — backup role y cobertura de restauración (2026-11-10)
+
+Las notas históricas de la sección 2 que describen `backup_readonly` como SELECT-only reflejan una comprobación anterior de grants visibles en tablas; no demuestran sus privilegios efectivos actuales. La consulta posterior documentada en CURRENT_STATE/issue #53 detectó que el rol observado hereda capacidades de escritura por membresías (`neon_superuser` / `pg_write_all_data`). No asumir que el secreto `DATABASE_URL_BACKUP_RO` autentica como `backup_readonly`: el principal efectivo del secreto sigue sin demostrarse. Mantener el punto P0 abierto y no tocar roles/grants de Neon main sin procedimiento y autorización específicos.
+
+La prueba sintética `backup-restore-smoke.yml` tampoco cubre el esquema vigente: aplica solo 0001, 0002 y 0005, y valida 13 tablas, mientras main versiona 0001–0016. Quedan fuera tablas de sucursales, turnos, warehouses, inventory counts, balances, ledger y el ledger de migraciones. Ver `odd/tasks/backup-restore-schema-coverage.md` y issue #53 comentarios 6772340874/6772383789. No marcar backup/restore como cerrado por un smoke test histórico o un run SUCCESS.
+
+Fecha límite inamovible: **2026-12-01**. Producción NOT READY.

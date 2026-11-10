@@ -25,7 +25,7 @@ Los bloques con fechas anteriores se conservan como historia. Esta corrección p
 Este documento conserva decisiones y criterios para que cualquier chat, agente o desarrollador pueda continuar sin reconstruir conversaciones. El repositorio es la fuente de continuidad. Distinguir siempre:
 
 - **Dirección adoptada para diseño:** guía técnica recomendada por el propietario al delegar criterio arquitectónico.
-- **Propuesta pendiente de aprobación:** especialmente permisos detallados, límites comerciales, descuentos, excepciones operativas y políticas financieras.
+- **Propuesta pendiente de aprobación:** políticas comerciales futuras, límites, descuentos, excepciones operativas y políticas financieras que no estén cubiertas por decisiones aprobadas. La matriz de permisos por operación fue aprobada el 2026-10-31; su implementación sigue parcial.
 - **Implementado y verificado:** solo cuando existe código y evidencia identificable.
 - **Pendiente:** no presentarlo como funcionalidad existente.
 
@@ -70,7 +70,7 @@ Roles base de la organización: `owner`, `admin`, `cashier`, `inventory`. La dec
 
 **Reglas de diseño obligatorias:** autorización server-side por operación y recurso; denegar por defecto; validar organización y sucursal en cada consulta; no confiar en IDs del cliente; evitar que una organización quede sin owner activo; revocar sesiones al desactivar membresía/usuario; auditar cambios de rol y acciones sensibles.
 
-La matriz `docs/sdd/role-permission-decision-matrix.md` sigue **NO APROBADA**. La decisión estructural anterior no aprueba qué operaciones puede realizar cada rol. Cada organización define sus políticas comerciales, incluidos descuentos, límites y aprobaciones; quién puede configurarlas y quién puede ejecutar excepciones debe quedar definido en la matriz aprobada. Ver `docs/sdd/ORGANIZATION_COMMERCIAL_POLICY_CONFIGURATION.md`. No implementar permisos comerciales basándose solo en este apartado.
+La matriz `docs/sdd/role-permission-decision-matrix.md` está **APROBADA desde 2026-10-31** y define los permisos por operación/ámbito. La implementación en handlers sigue parcial: no asumir que todas las operaciones estén disponibles. Cada organización conserva sus políticas comerciales dentro del contrato aprobado. Ver `docs/sdd/ORGANIZATION_COMMERCIAL_POLICY_CONFIGURATION.md`. No implementar rutas fuera de la matriz ni antes del cierre de Seguridad Nivel 1.
 
 ## 4. BCV y conversión USD/VES
 
@@ -161,7 +161,7 @@ Definir umbrales conservadores, alertas, cuotas server-side y política de degra
 7. Medir carga/coste y definir límites comerciales después de tener flujos reales.
 8. Validar producción, backups, observabilidad, seguridad y recuperación antes de declarar readiness.
 
-No habilitar endpoints comerciales mientras la matriz de permisos por operación siga sin aprobarse. Las migraciones estructurales pueden avanzar en una PR aislada cuando el modelo de datos esté definido, con pruebas PostgreSQL efímeras y sin aplicar cambios a Neon main.
+La matriz de permisos por operación está aprobada, pero los endpoints comerciales nuevos siguen sujetos al gate de Seguridad Nivel 1, a la implementación server-side de cada permiso y a pruebas PostgreSQL efímeras. Las migraciones estructurales pueden avanzar en una PR aislada cuando el modelo esté definido; no aplicar cambios a Neon main.
 
 ## 10. Pendientes explícitos
 
@@ -169,7 +169,7 @@ No habilitar endpoints comerciales mientras la matriz de permisos por operación
 - Contrato API para consulta de tasa y buscador de productos.
 - Política de frescura/TTL de tasa y manejo de feriados/fuente caída.
 - ERD de organización/sucursal/almacén/caja documentado en `docs/sdd/MULTI_BRANCH_DATA_MODEL.md`; sucursales/asignaciones en 0003 y cajas/turnos en 0004 (PR #167 fusionada). Almacenes y stock por almacén siguen pendientes.
-- Matriz de permisos por operación y ámbito del recurso (organización, sucursal, caja/turno), sin crear roles por sucursal. La autoridad de rol sigue siendo un único `organization_members.role` por miembro/organización; `branch_memberships` solo concede asignación/acceso a sucursales. Definir qué operaciones y recursos puede administrar o ejecutar cada rol, incluidas la configuración de políticas comerciales de la organización y la ejecución de excepciones. Los valores y límites comerciales los define cada organización, no la plataforma. La matriz permanece **NO APROBADA** hasta aprobación explícita.
+- Matriz de permisos por operación y ámbito del recurso (organización, sucursal, caja/turno), **APROBADA el 2026-10-31**. La autoridad de rol sigue siendo un único `organization_members.role` por miembro/organización; `branch_memberships` solo concede asignación/acceso a sucursales. La matriz define operaciones y recursos por rol, incluida la configuración de políticas comerciales y excepciones. La implementación de handlers sigue parcial; no confundir aprobación con disponibilidad funcional.
 - Método de valoración de inventario y política de costo/margen.
 - Capacidades y permisos para descuentos, cancelación/devolución y aprobaciones; cada organización configura sus propios límites comerciales.
 - Estrategia de caché de catálogo solo tras benchmark.

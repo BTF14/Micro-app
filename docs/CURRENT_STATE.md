@@ -1,3 +1,25 @@
+## Reconciliación exact-HEAD más reciente — 2026-11-10 UTC
+
+> Este bloque supersede las tablas y snapshots inferiores de esta misma página cuando difieran. Se consultaron los HEAD y resultados de cada PR directamente en GitHub. La rama #298 es la propia PR documental: cualquier nuevo commit en ella vuelve obsoleto su SHA y obliga a consultar GitHub otra vez.
+
+**Main:** `c5373564413ba086690552c6b7deeab08d7b4a89`. No se modificó main.
+
+| PR | HEAD observado | Estado | Ahead/behind | Check-runs exact-HEAD | Workflows exact-HEAD |
+|---|---|---|---:|---:|---:|
+| #287 BCV/checkout | `2e7cdd44f89a3b3765a0c69ad23bdb87faacf99c` | OPEN/Draft | 167 / 1 | 15 SUCCESS | 11 SUCCESS |
+| #298 docs | `7f6d85ece7002e8af4218403ed92c84be42997b6` | OPEN/Draft | 186 / 0 | 4 SUCCESS, 9 IN_PROGRESS | 3 SUCCESS, 7 IN_PROGRESS, 1 PENDING |
+| #299 backup/restore | `c82b0a10f85b59e1f81ac0ca2d439b6286558751` | OPEN/Draft | 1 / 0 | 14 SUCCESS | 10 SUCCESS |
+| #300 autorización/precios | `97fa79e643d5e7b32ebf86958bd0ba9211e1fc95` | OPEN/Draft | 3 / 0 | 14 SUCCESS | 10 SUCCESS |
+| #302 backup GIT_ASKPASS | `1b441b3dc9e65e2cb89d765f9aff084b474dd90d` | OPEN/Draft | 4 / 0 | 14 SUCCESS | 10 SUCCESS |
+
+No hay reviews formales en estas cinco PR. #287 tiene un commit de main pendiente de incorporación: #297, que solo modifica `docs/BACKLOG_RECOVERY_LEDGER.md`. No sincronizar ni rebasar automáticamente. #298 está en ejecución por los cambios documentales recientes; no considerar sus checks completos hasta que el SHA exacto final termine.
+
+**GitHub protection:** repository rulesets devolvió `[]`; el endpoint de branch protection de `main` devolvió 403 `Resource not accessible by integration`. La protección efectiva, approvals requeridas y checks obligatorios no están demostrados. Seguridad Nivel 1 ABIERTO; producción NOT READY.
+
+**P0:** la inspección de #287 confirma backend de checkout API y pruebas PostgreSQL, pero no carrito/checkout/recibo UI ni endpoints HTTP de apertura/cierre de turnos. `App.tsx` mantiene Caja y ventas como pendiente. El contrato de pagos sigue sin aprobación funcional. Aceptación: 0/1 jornadas completas demostradas. Fecha límite inamovible: **2026-12-01**, un local, hasta 1.000 productos, sin descuentos ni promociones.
+
+---
+
 ## Estado exacto de PR #298 antes de este último refresh — 2026-11-10 UTC
 
 - HEAD observado: `7b6dd3824b959786868e09986b7c2cf6be8067d3`.

@@ -299,41 +299,79 @@ SELECT 'database_acl|' || pg_catalog.pg_get_userbyid(d.datdba) || ':' || COALESC
   FROM pg_catalog.pg_database d WHERE d.datname = pg_catalog.current_database();
 
 -- Synthetic business graph: counts, ledger movements, balance, checkout and audit.
-SELECT 'fixture_organization|' || count(*)::text
-  FROM public.organizations WHERE id = '11111111-1111-4111-8111-111111111111';
-SELECT 'fixture_branch_membership|' || count(*)::text
-  FROM public.branch_memberships
- WHERE organization_id = '11111111-1111-4111-8111-111111111111'
-   AND branch_id = '33333333-3333-4333-8333-333333333333'
-   AND user_id = '22222222-2222-4222-8222-222222222222' AND is_active;
+SELECT 'fixture_organizations|' || count(*)::text
+  FROM public.organizations
+ WHERE id IN ('11111111-1111-4111-8111-111111111111','14141414-1414-4414-8414-141414141414');
+SELECT 'fixture_organization_members|' || count(*)::text
+  FROM public.organization_members
+ WHERE (organization_id = '11111111-1111-4111-8111-111111111111' AND user_id = '22222222-2222-4222-8222-222222222222' AND role = 'owner')
+    OR (organization_id = '14141414-1414-4414-8414-141414141414' AND user_id = '15151515-1515-4515-8515-151515151515' AND role = 'owner');
+SELECT 'fixture_auth_allowlist|' || count(*)::text
+  FROM public.auth_allowlist
+ WHERE email IN ('backup-restore@example.invalid','backup-restore-tenant-b@example.invalid');
+SELECT 'fixture_branch_memberships|' || count(*)::text
+  FROM public.branch_memberships bm
+  JOIN public.organization_members om
+    ON om.organization_id=bm.organization_id AND om.user_id=bm.user_id
+  JOIN public.branches b
+    ON b.organization_id=bm.organization_id AND b.id=bm.branch_id
+ WHERE bm.is_active
+   AND ((bm.organization_id='11111111-1111-4111-8111-111111111111' AND bm.branch_id='33333333-3333-4333-8333-333333333333' AND bm.user_id='22222222-2222-4222-8222-222222222222')
+     OR (bm.organization_id='14141414-1414-4414-8414-141414141414' AND bm.branch_id='16161616-1616-4616-8616-161616161616' AND bm.user_id='15151515-1515-4515-8515-151515151515'));
+SELECT 'fixture_supplier_products|' || count(*)::text
+  FROM public.products p
+  JOIN public.suppliers s ON s.organization_id=p.organization_id AND s.id=p.supplier_id
+ WHERE p.id IN ('77777777-7777-4777-8777-777777777777','18181818-1818-4818-8818-181818181818');
+SELECT 'fixture_products_legacy_stock|' || COALESCE(string_agg(id::text || ':' || stock_quantity::text, ';' ORDER BY id), '')
+  FROM public.products
+ WHERE id IN ('77777777-7777-4777-8777-777777777777','18181818-1818-4818-8818-181818181818');
+SELECT 'fixture_tenant_b_graph|' || count(*)::text
+  FROM public.organizations o
+  JOIN public.branches b ON b.organization_id=o.id
+  JOIN public.branch_memberships bm ON bm.organization_id=o.id AND bm.branch_id=b.id
+  JOIN public.warehouses w ON w.organization_id=o.id AND w.branch_id=b.id
+  JOIN public.products p ON p.organization_id=o.id
+  JOIN public.inventory_balances ib ON ib.organization_id=o.id AND ib.warehouse_id=w.id AND ib.product_id=p.id
+ WHERE o.id='14141414-1414-4414-8414-141414141414'
+   AND b.id='16161616-1616-4616-8616-161616161616'
+   AND bm.user_id='15151515-1515-4515-8515-151515151515'
+   AND w.id='19191919-1919-4919-8919-191919191919'
+   AND p.id='18181818-1818-4818-8818-181818181818'
+   AND ib.on_hand_quantity=5.000 AND ib.balance_version=1;
+SELECT 'fixture_cross_tenant_links|' || count(*)::text
+  FROM public.inventory_balances ib
+  JOIN public.warehouses w ON w.id=ib.warehouse_id
+  JOIN public.products p ON p.id=ib.product_id
+ WHERE ib.organization_id <> w.organization_id
+    OR ib.organization_id <> p.organization_id
+    OR ib.branch_id <> w.branch_id;
 SELECT 'fixture_register_shift|' || count(*)::text
   FROM public.register_shifts
  WHERE id = '55555555-5555-4555-8555-555555555555' AND closed_at IS NULL;
 SELECT 'fixture_counts|' || count(*)::text
   FROM public.inventory_counts
- WHERE id IN ('aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa','cccccccc-cccc-4ccc-8ccc-cccccccccccc')
+ WHERE id IN ('aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa','cccccccc-cccc-4ccc-8ccc-cccccccccccc','20202020-2020-4020-8020-202020202020')
    AND status = 'confirmed';
 SELECT 'fixture_count_lines|' || count(*)::text
   FROM public.inventory_count_lines
- WHERE count_id IN ('aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa','cccccccc-cccc-4ccc-8ccc-cccccccccccc');
-SELECT 'fixture_balance|' || COALESCE(string_agg(
-    on_hand_quantity::text || ':' || reserved_quantity::text || ':' || balance_version::text,
+ WHERE count_id IN ('aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa','cccccccc-cccc-4ccc-8ccc-cccccccccccc','20202020-2020-4020-8020-202020202020');
+SELECT 'fixture_balances|' || COALESCE(string_agg(
+    organization_id::text || ':' || on_hand_quantity::text || ':' || reserved_quantity::text || ':' || balance_version::text,
     ';' ORDER BY organization_id, warehouse_id, product_id
   ), '')
   FROM public.inventory_balances
- WHERE organization_id = '11111111-1111-4111-8111-111111111111'
-   AND warehouse_id = '99999999-9999-4999-8999-999999999999'
-   AND product_id = '77777777-7777-4777-8777-777777777777';
+ WHERE (organization_id = '11111111-1111-4111-8111-111111111111' AND warehouse_id = '99999999-9999-4999-8999-999999999999' AND product_id = '77777777-7777-4777-8777-777777777777')
+    OR (organization_id = '14141414-1414-4414-8414-141414141414' AND warehouse_id = '19191919-1919-4919-8919-191919191919' AND product_id = '18181818-1818-4818-8818-181818181818');
 SELECT 'fixture_movements|' || COALESCE(string_agg(
-    movement_type || ':' || quantity_delta::text || ':' || COALESCE(reference_type, '') || ':' || COALESCE(reference_id::text, ''),
+    organization_id::text || ':' || movement_type || ':' || quantity_delta::text || ':' || COALESCE(reference_type, '') || ':' || COALESCE(reference_id::text, ''),
     ';' ORDER BY created_at, id
   ), '')
   FROM public.warehouse_inventory_movements
- WHERE organization_id = '11111111-1111-4111-8111-111111111111'
-   AND product_id = '77777777-7777-4777-8777-777777777777';
+ WHERE (organization_id = '11111111-1111-4111-8111-111111111111' AND product_id = '77777777-7777-4777-8777-777777777777')
+    OR (organization_id = '14141414-1414-4414-8414-141414141414' AND product_id = '18181818-1818-4818-8818-181818181818');
 SELECT 'fixture_pending_ledger_intents|' || count(*)::text
   FROM public.inventory_balance_ledger_intents
- WHERE organization_id = '11111111-1111-4111-8111-111111111111';
+ WHERE organization_id IN ('11111111-1111-4111-8111-111111111111','14141414-1414-4414-8414-141414141414');
 SELECT 'fixture_completed_sale|' || count(*)::text
   FROM public.sales
  WHERE id = 'eeeeeeee-eeee-4eee-8eee-eeeeeeeeeeee'

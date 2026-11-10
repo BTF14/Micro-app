@@ -367,6 +367,7 @@ describe.skipIf(!isDisposableCiDatabase)("BCV effective-date persistence against
     const today = await cleanupClient!.query<{ today: string }>(
       "SELECT (now() AT TIME ZONE 'America/Caracas')::date::text AS today",
     );
+    await cleanupClient!.query("DELETE FROM public.exchange_rates WHERE source = $1", [source]);
     await expect(persistBcvOfficialRate(runtimeClient as unknown as DatabaseClient, {
       rate: "897.00000000",
       effectiveDate: today.rows[0]!.today,

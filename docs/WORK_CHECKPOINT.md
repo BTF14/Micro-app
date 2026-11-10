@@ -1,3 +1,28 @@
+## Revalidación viva para continuidad — 2026-11-10 03:20 UTC
+
+**Esta sección sustituye cualquier snapshot anterior de estado vivo dentro de este documento.** Los bloques inferiores son historia; no reutilizar sus SHA, contadores ni estados dinámicos.
+
+### GitHub comprobado
+- `main`: `c5373564413ba086690552c6b7deeab08d7b4a89` (sin cambio).
+- [PR #287](https://github.com/BTF14/Micro-app/pull/287): OPEN/Draft, rama `integration/bcv-checkout-rehearsal-20261109`, HEAD `7df318b233cfb95f7fcc3076d46984a11614a14c`; 13 workflow runs = 8 SUCCESS / 5 FAILURE; 10/10 check-runs SUCCESS. Los cinco workflows fallidos siguen sin jobs/logs/artifacts accesibles; causa raíz desconocida. Mantener Draft.
+- [PR #296](https://github.com/BTF14/Micro-app/pull/296): OPEN/Draft, HEAD `73b0b134c14cb30f7c93d038c10acd0da5aa274c`; 12/12 workflow runs y 14/14 check-runs SUCCESS. Documentación, no funcionalidad implementada.
+- [PR #298](https://github.com/BTF14/Micro-app/pull/298): OPEN/Draft, rama `docs/reconcile-live-github-state-20261109`, HEAD actual `fd69566be9dfbb9729e46ff234979c011e402bc6`; 101 commits ahead / 0 behind, merge base `c5373564413ba086690552c6b7deeab08d7b4a89`, `mergeable=true`. En este SHA exacto: 13/13 workflow runs SUCCESS y 15/15 check-runs SUCCESS; sin reviews formales ni review threads. Contiene 37 archivos, todos documentación. Los previews automáticos de Cloudflare Pages y Workers reportaron éxito para este SHA; son previews de rama, no producción ni despliegue manual.
+- [PR #299](https://github.com/BTF14/Micro-app/pull/299): OPEN/Draft, HEAD `c82b0a10f85b59e1f81ac0ca2d439b6286558751`; 12/12 workflow runs y 14/14 check-runs SUCCESS. Solo mide `pg_restore` sintético; no representa RTO completo.
+- Las cuatro PR siguen Draft y sin aprobación formal. Mergeability y CI verde no equivalen a aprobación, aceptación end-to-end ni readiness productiva.
+
+### Procedencia y supersesión que debe conservarse
+- [PR #255](https://github.com/BTF14/Micro-app/pull/255), [#269](https://github.com/BTF14/Micro-app/pull/269) y [#295](https://github.com/BTF14/Micro-app/pull/295) están CLOSED, no merged, como supersedidas por [#287](https://github.com/BTF14/Micro-app/pull/287); las ramas históricas se conservan.
+- #295 HEAD de cierre: `213837969375fa87f5edca79e0d752333bc93d8c`. La auditoría registrada en `docs/BACKLOG_RECOVERY_LEDGER.md` confirma que no queda código único de sus directorios de runtime fuera de #287; el guard de freshness `bcv_sync_state ... FOR SHARE` está en #287. No reabrir ni eliminar su rama automáticamente.
+- PR #297 registró esta disposición en main. Este punto debe figurar en cada continuidad para evitar tratar #295 como trabajo pendiente.
+
+### Guardrails y fecha
+- Objetivo inamovible: **2026-12-01**; P0: un comercio pequeño/mediano, un local, hasta 1.000 productos y jornada POS completa desde la UI. Ver `docs/MVP_SINGLE_STORE_ACCEPTANCE.md`.
+- Producción sigue **NOT READY**: Seguridad Nivel 1 abierto, checkout/turnos/UI todavía no demostrados end-to-end y BCV conserva hallazgos por resolver.
+- No merge, no cambiar main, no despliegue manual/productivo, no migraciones remotas, no Neon main, no datos reales, secretos, DNS, billing ni Cron productivo. Mantener #287/#296/#298/#299 Draft.
+- No solicitar al propietario Build IDs, capturas, terminal, CLI, credenciales o reconexiones ya documentadas. Si falta un dato realmente imprescindible, investigar alternativas y preguntar una sola vez, aceptando texto.
+
+---
+
 ## Última lectura de GitHub antes de esta actualización de continuidad — 2026-11-10 02:50 UTC
 
 - `main` observado: `c5373564413ba086690552c6b7deeab08d7b4a89`.

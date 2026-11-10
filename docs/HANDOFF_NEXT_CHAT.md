@@ -2567,3 +2567,32 @@ La integración aislada permanece en [PR #287](https://github.com/BTF14/Micro-ap
 
 ### Restricciones
 No `main`, Neon main, datos reales, secretos, Cloudflare manual, DNS, billing, despliegue manual ni activación Cron. No pedir Build IDs, capturas, terminal, CLI, TinyFish, reconexiones ni datos ya documentados. Si surge un bloqueo real que requiera al propietario, preguntar una sola vez y aceptar respuesta textual.
+## Continuidad vigente — 2026-11-10 14:38 UTC — ACL BCV endurecidas
+
+**Rama:** `integration/bcv-checkout-rehearsal-20261109`, PR #287 OPEN/Draft. Último HEAD con cambios de código y validación completa: `24bcf66c0c570ec76566de03a70b2443e64fc69f` (11/11 workflows SUCCESS). Los commits posteriores son solo documentación (ODD, ADR, CURRENT_STATE, STATE_JOURNAL y este handoff); consultar HEAD vivo en GitHub y validar workflows de esa punta antes de cualquier acción.
+
+### Resultado nuevo
+- Migration 0022 ya no asume ACL vacía: elimina privilegios table-level y column-level del producer preexistente y ACLs PUBLIC en las dos tablas BCV. Reotorga permisos column-level estrictamente necesarios.
+- Runtime tiene SELECT para checkout/lectura y ningún INSERT/UPDATE efectivo en tablas/columnas BCV. Producer tiene SELECT/INSERT/UPDATE column-level limitado; no table-level SELECT/INSERT/UPDATE, DELETE, TRUNCATE, REFERENCES ni TRIGGER.
+- El preflight exige USAGE y rechaza CREATE en schema `public`; no intenta revocar permisos de schema que no controla el migrator.
+- La migration-check siembra grants deliberadamente amplios al productor y PUBLIC, verifica que 0022 los elimina y prueba el fallo cerrado ante schema CREATE. Las assertions inspeccionan ACLs `relacl`/`attacl` y privilegios efectivos por columna.
+- El test de integración ahora separa producer/runtime/admin. El primer intento falló porque un test ejecutaba una lectura runtime con el producer; se corrigió la conexión del test, sin relajar permisos. Se verifica que runtime no puede persistir (SQLSTATE 42501).
+- CI final de código `24bcf66...`: 11/11 SUCCESS. Runs: CI `42834223332`; DB migration `42834223191`; migration runner `42834223048`; Playwright `42834223393`; backup smoke `42834223426`; Security `42834223440`; Secret history `42834223064`; Semgrep `42834223348`; ODD `42834223489`; Dependency review `42834223323`; dashboard `42834223080`.
+
+### Estado de merge y bloqueos
+- PR #287 sin reviews formales ni threads. En el HEAD de código comparado contra main `c537356...`: 199 ahead / 1 behind, diverged, merge base `03442951...`. No force-push, no sincronización automática y no merge por CI verde.
+- `microapp_bcv_sync`/secreto remoto no provisionados; Worker no desplegado; Cron no activado. Migration probada solo en PostgreSQL disposable.
+- Issue #53 sigue OPEN/P0. `backup_readonly` conserva privilegios efectivos de escritura por memberships en Neon main; principal real de `DATABASE_URL_BACKUP_RO` aún no demostrado.
+- UI no completa jornada POS: Caja y ventas, Inventario y Reportes siguen deshabilitados en `App.tsx`. Checkout API no satisface aceptación desde UI. PR #298 Draft contiene la aceptación de un local/1.000 productos/jornada completa.
+- Producción NOT READY. Fecha de entrega **2026-12-01 inamovible**.
+
+### Próximos pasos, en orden
+1. Verificar HEAD documental vivo, PR #287 Draft, compare con main, workflows exactos y reviews; mantener sin merge.
+2. Continuar issue #53 / Seguridad Nivel 1: auditar backup_readonly y verificar el principal de backup sin exponer ni solicitar secretos; solo PostgreSQL disposable para pruebas. No mutar Neon main.
+3. Verificar el siguiente backup programado y RPO de 24 h; último éxito documentado `42659924075` (`2026-11-09T16:57:34Z`) requiere revalidación.
+4. Revisar #301 como cambio preexistente de lectura de inventario; no fusionar por CI verde ni abrir nuevas superficies comerciales antes de cerrar gates.
+5. Tras seguridad/backup, cerrar UI P0 desde jornada completa: turno, 1.000 productos, carrito, checkout/pagos BCV, recibo, Kardex/inventario, conteo y reintentos; E2E desde UI.
+6. Mantener política BCV/SUDEBAN: sitios oficiales inestables, usar terceros trazables cuando sea necesario sin llamarlos oficiales; calendario 2026 aportado por el propietario es SECUNDARIO_PROVISIONAL / NO OFICIAL. No re-pedir calendario ni insistir con búsqueda 2027 improductiva.
+
+### Restricciones
+No main, Neon main, datos reales, secretos, Cloudflare manual, DNS, billing, despliegue manual ni activación Cron. No pedir Build IDs, capturas, terminal, CLI, TinyFish, reconexiones ni datos ya documentados. Si aparece un bloqueo real que requiere al propietario, preguntar una sola vez y aceptar respuesta textual.

@@ -1,3 +1,19 @@
+# Plan P0 actualizado — 2026-11-10 UTC
+
+**Fecha límite inamovible: 2026-12-01.** Entregar un comercio pequeño/mediano, un local, hasta 1.000 productos, una jornada POS completa desde UI y consistencia demostrada. Sin descuentos ni promociones. La aceptación detallada vive en [MVP_SINGLE_STORE_ACCEPTANCE.md](MVP_SINGLE_STORE_ACCEPTANCE.md).
+
+## Orden operativo actual
+
+1. Seguridad Nivel 1 permanece ABIERTO; no iniciar nuevos endpoints/UI/lógica comercial hasta cerrar los gates.
+2. Mantener en Draft y revisar exact-HEAD #287 (BCV), #299 (backup restore), #300 (autorización) y #302 (GIT_ASKPASS). No merge/main writes/despliegues durante esta fase.
+3. Completar evidencia de branch protection, Dependabot, runtime DB productivo y backup/RPO/RTO/alertas sin acceder a datos reales ni modificar producción.
+4. Después de cerrar seguridad, completar contrato de pagos aprobado, checkout transaccional, turnos de caja y UI operativa.
+5. Ejecutar E2E de jornada completa con hasta 1.000 productos sintéticos, concurrencia y conciliación; preparar GO/NO-GO antes del 2026-12-01.
+
+**Estado demostrado al 2026-11-10:** P0 UI 0/1 jornadas completas. Producción NOT READY. Checks de PR no equivalen a validación productiva.
+
+---
+
 ## Corrección de precisión: Cron existente vs Cron BCV — 2026-11-09 UTC
 
 - Relectura directa de `apps/api/wrangler.toml` en `main` confirma un trigger versionado `17 * * * *` (cada hora). El comentario y el handler `scheduled()` en `apps/api/src/index.ts` lo destinan exclusivamente a `cleanupExpiredAuthRecords` (limpieza de metadatos de autenticación); el handler retorna sin ejecutar en `APP_ENV !== "production"`.

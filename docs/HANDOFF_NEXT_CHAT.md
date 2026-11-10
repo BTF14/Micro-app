@@ -2458,3 +2458,11 @@ Reconsulta posterior confirma que el HEAD exacto 9a1792f7449ff83915bcdd672686a48
 ## Nota de CI para la tarea de backup/restore
 
 PR #287 HEAD `9a1792f7449ff83915bcdd672686a4860918028d` tiene 11/11 workflow runs pull_request SUCCESS, incluido Backup restore smoke `42849454438`. No cerrar el gate por ese resultado: el workflow sigue ejecutando el script histórico (migraciones 0001/0002/0005, 13 tablas). No cubre las migraciones 0003–0016 de main ni 0017–0022 de la PR. Ver issue #53 comentario `6772538757`; ODD task en `security/backup-restore-schema-coverage-20261110`. No se ha modificado script/workflow. Deadline inamovible: 2026-12-01.
+
+## Continuidad — PR #303 fase 1 de cobertura backup/restore
+
+Rama `security/backup-restore-schema-coverage-20261110`; PR #303 OPEN/Draft, sin merge. Se añadió `scripts/test_backup_restore_schema.sh` al workflow `backup-restore-smoke.yml`. La prueba provisiona roles aislados de CI, aplica todas las migraciones numeradas del ref con `scripts/db/migrate.sh`, genera dump PostgreSQL 18, cifra con age efímera, verifica checksum, descifra/restaura en segunda DB desechable y compara nombres de tablas, constraints, índices, triggers, hashes de funciones y ledger. Verifica las 23 tablas core estables y excluye `auth_sessions`, `auth_rate_limits`, `auth_bootstrap_attempts`; admite tabla `inventory_balance_ledger_intents` o función de proyección según el ref, y BCV sync state opcional.
+
+**No está terminado:** la prueba añadida es de esquema/objetos sin grafo de datos comerciales poblados. El smoke test histórico de datos aún cubre solo 13 tablas. Próxima fase: fixture poblado con sucursal, branch membership, register/shift, warehouse, inventory count/ledger/balance, venta completada/pagos/audit y reconciliación de relaciones; adaptar columnas/triggers condicionalmente a migraciones del ref. Revalidar todos los workflows del HEAD final exacto de #303 antes de continuar o declarar éxito. Mantener Draft.
+
+Issue #53 OPEN/P0; no tocar Neon, secretos, datos reales, backup remoto, Cloudflare ni producción. Producción NOT READY. Fecha límite inamovible: **2026-12-01**.

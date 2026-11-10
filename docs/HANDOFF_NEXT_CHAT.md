@@ -1,3 +1,41 @@
+# Handoff vivo — 2026-11-10 UTC
+
+**Deadline inamovible: 2026-12-01.** Un comercio, un local, hasta 1.000 productos, jornada completa desde UI, persistencia/conciliación demostradas. Sin descuentos ni promociones.
+
+## Estado exact-HEAD
+
+- main `c5373564413ba086690552c6b7deeab08d7b4a89`; sin cambios.
+- #287 `2e7cdd44f89a3b3765a0c69ad23bdb87faacf99c`, OPEN/Draft, 167 ahead/1 behind, 15/15 check-runs y 13/13 workflows SUCCESS. El único commit behind es #297, documental. No rebase/sync.
+- #298 OPEN/Draft, PR documental única. El refresh actual avanza su HEAD; consultar SHA/checks exactos después del commit. Antes del refresh: 15/15 checks y 13/13 workflows SUCCESS.
+- #299 `c82b0a10f85b59e1f81ac0ca2d439b6286558751`, 14/14 checks y 12/12 workflows SUCCESS.
+- #300 `97fa79e643d5e7b32ebf86958bd0ba9211e1fc95`, 14/14 y 12/12 SUCCESS.
+- #302 `1b441b3dc9e65e2cb89d765f9aff084b474dd90d`, 14/14 y 12/12 SUCCESS.
+- Las cinco PR siguen OPEN/Draft, sin reviews formales ni threads. No merge.
+
+## Bloqueos que no se deben ocultar
+
+1. Seguridad Nivel 1 abierta; producción NOT READY. Branch protection legacy API 403; rulesets [] y requerimientos actuales de aprobación/checks no verificados. Dependabot alerts no accesibles, aunque daily pnpm audit del 9 nov pasó sin vulnerabilidades conocidas de nivel high.
+2. Backup: 13 ejecuciones programadas (12 success, 1 failure), máximo 48 h 03 min 03 s entre backups exitosos; RPO ≤24 h no cumplido. Fallo 29 oct: faltaba actions/checkout en ese SHA; ya corregido en main con checkout + ruta absoluta. #299 solo mide pg_restore sintético 1 s, no RTO integral. Ver BACKUP_AND_RECOVERY.md.
+3. #287 checkout contiene métodos hardcodeados cash/card/transfer/mobile_payment/other y MAX_PAYMENTS=10; el contrato de pagos permanece sin aprobación en SDD. No activar esos defaults. Ventanas parser BCV 10 días pasados/7 futuros no justificadas; no convertirlas en TTL/freshness.
+4. #287 BCV stale recovery y checkout API integration pasan CI sintético/runtime-role, pero no hay E2E UI ni BCV live.
+5. #300 elimina override solo en branch; #302 elimina token URL solo en branch. Ninguno integrado en main.
+6. CORS OPTIONS público y bundle API canónico pasaron verificación read-only; no equivale a CSRF de mutaciones ni jornada POS.
+7. P0 UI: 0/1 jornadas completas demostradas.
+
+## Siguiente trabajo
+
+- Esperar/validar CI exact-HEAD de la actualización documental #298.
+- Mantener #287/#299/#300/#302 Draft y sin merge.
+- Continuar auditoría de Seguridad Nivel 1 con evidencia aislada; no iniciar nueva lógica comercial.
+- Resolver contracto de pagos antes de habilitar checkout; no inferir métodos.
+- Evaluar estrategia gratuita de backup que reduzca gaps y mida RTO integral; no tocar secretos/cron productivo ni datos reales.
+- Mantener **2026-12-01** en todo plan/checkpoint futuro.
+
+No pedir terminal, CLI, tokens, Build IDs, capturas o reconexiones ya documentadas.
+
+
+---
+
 ## Bloqueo de recuperación — RPO
 
 La revisión de 13 ejecuciones programadas encontró un gap de **48 h 03 min 03 s** entre backups exitosos; RPO ≤24 h no se cumple. #299 midió 1 s de pg_restore sintético, no RTO integral. Consultar [BACKUP_AND_RECOVERY.md](BACKUP_AND_RECOVERY.md); no modificar cron/secretos/proveedor sin estrategia segura y sin coste.

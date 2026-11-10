@@ -67,7 +67,7 @@ Nota: el costo de producto se considera dato financiero sensible; Cashier ve pre
 | Crear venta a precio de lista, turno propio abierto | ✅ propio | ✅ propio | ❌ | ✅ propio |
 | Aplicar descuento (cualquier monto/porcentaje) | ❌ no existe en Micro-app | ❌ no existe en Micro-app | ❌ | ❌ |
 | Aprobar un descuento solicitado por Cashier | ❌ no existe en Micro-app | ❌ no existe en Micro-app | ❌ | ❌ |
-| Cambiar precio unitario en la venta (fuera de lista) | ✅ | ✅ | ❌ | ❌ — mismo flujo de aprobación que descuento |
+| Cambiar precio unitario en la venta (fuera de lista) | ❌ fuera del checkout P0; requiere decisión de producto separada | ❌ fuera del checkout P0; requiere decisión de producto separada | ❌ | ❌ |
 
 No implementar ni exponer un flujo de aprobación de descuentos: no existe esa capacidad en el producto.
 

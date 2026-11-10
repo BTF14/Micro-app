@@ -1,3 +1,40 @@
+# Reconciliación de Seguridad Nivel 1 — 2026-11-10 UTC
+
+> **Esta reconciliación prevalece sobre los estados históricos inferiores.** Separa inspección estática del código, pruebas automatizadas, estado remoto y evidencia de producción. No declarar un control “cerrado” por existir en el código.
+
+## Dictamen
+
+**Seguridad Nivel 1: ABIERTO. Producción: NOT READY.** La inspección estática de los handlers actuales no ha demostrado un bypass de autenticación/autorización en las rutas revisadas, pero no es una auditoría exhaustiva ni una prueba del Worker desplegado. No iniciar nuevos endpoints/UI comerciales hasta cerrar los gates de seguridad y de base de datos.
+
+## Hallazgos positivos confirmados en código de `main`
+
+1. **CORS y previews:** `apps/api/src/index.ts` limita CORS al `FRONTEND_ORIGIN` canónico, falla cerrado si falta o es inválido y bloquea la API de previews salvo `/health`. Añade `nosniff`, `no-referrer`, `DENY` y `no-store` en rutas `/auth/`. Esto es inspección del código; no prueba las cabeceras ni la configuración del Worker en producción.
+2. **Origen/CSRF en mutaciones revisadas:** `/auth/register`, `/auth/login`, `/auth/logout`, bootstrap Google, escrituras de catálogo y creación/confirmación de conteos verifican el Origin exacto. Las rutas JSON exigen Content-Type y límites de cuerpo. La cookie de sesión es HttpOnly y Secure bajo HTTPS; usa `SameSite=None` para el flujo Pages↔Worker cross-site, por lo que la validación exacta de Origin en cada mutación es una defensa crítica que debe mantenerse al añadir handlers.
+3. **Google OAuth:** el flujo usa state aleatorio, PKCE S256, cookies OAuth HttpOnly de corta duración, callback que compara state, consulta de userinfo del proveedor, comprobación `email_verified`, allowlist activa y bloqueo de enlace implícito cuando el Google `sub` no coincide. El bootstrap inicial requiere POST, Origin exacto, token secreto, cuerpo acotado y handoff opaco/expirable consumido dentro de una transacción con bloqueo.
+4. **Abuso de autenticación:** los endpoints Google start/bootstrap/callback aplican rate limiting por IP Cloudflare. La clave se almacena como HMAC, no IP en claro; ausencia de IP o caída del almacén DB produce fail-closed. El login por contraseña y el registro público permanecen deshabilitados.
+5. **Autorización y aislamiento:** los handlers revisados llaman explícitamente a autorización tenant/branch y a una matriz allowlist de operaciones; Cashier/Inventory requieren asignación activa de sucursal. Los helpers SQL de bloqueo de identidad/sucursal/almacén son `SECURITY DEFINER` con `search_path=pg_catalog`, con assertions de privilegios. El modelo observado usa grants mínimos y helpers SQL; **no describirlo como RLS**.
+6. **Superficie funcional actual:** `apps/api/src/index.ts` registra auth, catálogo e inventario (lectura/conteos). No registra checkout/ventas ni apertura/cierre de turnos HTTP; la existencia de helpers, migraciones o pruebas aisladas no equivale a endpoints operativos.
+
+## Discrepancias y gates que siguen abiertos
+
+- **Branch protection:** la subsección histórica de este documento dice que el 2026-11-01 se observó `required_approving_review_count=0` y seis checks requeridos. Es evidencia histórica de esa fecha, no una lectura actual. En la revisión más reciente, el endpoint de detalle de branch protection no pudo revalidarse por respuesta 403. Por tanto, no afirmar hoy el número de aprobaciones requerido ni que todos los settings siguen iguales. Mantener los seis contextos como último snapshot conocido, no como prueba actual.
+- **Identidad/privilegios de DB en producción:** los grants y logins se prueban en PostgreSQL desechable y hubo un rehearsal Neon aislado. Eso no acredita que el Worker productivo use `microapp_runtime`, que el rol tenga solo los privilegios esperados en la base de producción ni que la cadena de migraciones esté aplicada allí. Los datos conocidos de Neon main y rehearsal deben seguir distinguiéndose; no ejecutar DDL/DML remoto como parte de esta auditoría.
+- **Runtime HTTP:** no hay prueba autenticada reciente del Worker productivo que valide CORS, cookies, cabeceras, rutas y rol efectivo. No inferirlo desde Pages/Workers preview builds.
+- **Dependencias:** Dependabot semanal está versionado, pero el estado actual de alertas no se pudo consultar por la limitación API ya documentada. No afirmar cero vulnerabilidades activas.
+- **Backup/recuperación:** la prueba actual de backup/restore es parcial; el alcance exacto, RPO/RTO, alertas y coste $0 siguen abiertos en `docs/BACKUP_AND_RECOVERY.md`. No ejecutar restore remoto manual.
+- **CI #287:** sus cinco fallos exact-HEAD siguen sin jobs/logs/artifacts recuperables. Causa raíz desconocida; no atribuirlos a un defecto de seguridad ni rerun a ciegas.
+
+## Secuencia senior obligatoria
+
+1. Mantener bloqueada la ampliación comercial hasta que los controles de seguridad estén verificados, no solo codificados.
+2. Obtener evidencia de configuración de branch protection y de checks requeridos por una vía autorizada; no cambiar el mínimo de aprobación ni relajar protecciones por inferencia.
+3. Validar el contrato de runtime DB y el esquema/privilegios en un entorno aislado, y documentar aparte lo que no se puede probar sin acceso al runtime productivo.
+4. Preparar un smoke test autenticado de producción solo después de que exista autorización de despliegue y una ventana segura; no desplegar ahora.
+5. Mantener #287 y #298 Draft; revisar CI únicamente por SHA exacto. No merge, deploy, migraciones remotas, cambios de secretos/Cloudflare/DNS/billing ni nuevos Cron de negocio.
+6. Fecha límite inamovible: **2026-12-01** — un comercio piloto, un local, hasta 1.000 productos y una jornada completa desde UI lista para operar en producción. Sin descuentos ni promociones.
+
+---
+
 ## Corrección de precisión: Cron existente vs Cron BCV — 2026-11-09 UTC
 
 - Relectura directa de `apps/api/wrangler.toml` en `main` confirma un trigger versionado `17 * * * *` (cada hora). El comentario y el handler `scheduled()` en `apps/api/src/index.ts` lo destinan exclusivamente a `cleanupExpiredAuthRecords` (limpieza de metadatos de autenticación); el handler retorna sin ejecutar en `APP_ENV !== "production"`.

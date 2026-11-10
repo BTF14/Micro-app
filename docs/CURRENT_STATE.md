@@ -1,3 +1,11 @@
+## Revalidación adicional tras reconciliación de grants — 2026-11-10 UTC
+
+- La punta observada de #298 antes de este registro fue `3c9c02fe94a9a6406fdf8862e9064257e76781bd`, commit documental de reconciliación del contrato PostgreSQL runtime.
+- #298: 14/15 check-runs SUCCESS/IN_PROGRESS; 12/13 workflow runs SUCCESS/IN_PROGRESS (11 eventos `pull_request` y 2 eventos `push`; no contar solo la lista de workflow runs PR). Sin fallos observados. Este nuevo commit de CURRENT_STATE vuelve a mover el HEAD de #298: consultar GitHub y esperar sus nuevos checks; no reutilizar los anteriores.
+- #287: 15/15 check-runs SUCCESS; 13/13 workflow runs SUCCESS (11 `pull_request` + 2 `push`). #299: 14/14 checks y 12/12 workflow runs SUCCESS (10 PR + 2 push). #300: 14/14 checks y 12/12 workflows SUCCESS (10 PR + 2 push). #302: 14/14 checks y 12/12 workflows SUCCESS (10 PR + 2 push).
+- La sección añadida a `POSTGRES_RUNTIME_ROLE_CONTRACT_2026-11-05.md` reconcilia grants 0015 y 0017–0021, distingue el runtime sintético de producción y registra que no hay router de turnos ni UI POS completa. No convierte los grants en RLS.
+- No se hicieron cambios a main, producción, migraciones remotas, secretos ni datos reales.
+
 ## Reconciliación exact-HEAD más reciente — 2026-11-10 UTC
 
 > Este bloque supersede las tablas y snapshots inferiores de esta misma página cuando difieran. Se consultaron los HEAD y resultados de cada PR directamente en GitHub. La rama #298 es la propia PR documental: cualquier nuevo commit en ella vuelve obsoleto su SHA y obliga a consultar GitHub otra vez.

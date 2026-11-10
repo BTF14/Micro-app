@@ -30,7 +30,7 @@ Excluded:
 - [x] AC-3 — otro tenant y petición sin sesión devuelven 401; respuestas con `Cache-Control: private, no-store`.
 - [x] AC-4 — la integración PostgreSQL se ejecuta tanto con conexión administrativa para fixtures como con el rol runtime `microapp_runtime` para atender la API.
 - [x] AC-5 — el panel renderiza cantidades exactas, muestra costo solo si viene en la respuesta, y maneja sin sucursal / sin almacén / 503 `INVENTORY_READ_NOT_ENABLED`.
-- [x] AC-6 — CI exact-SHA verde en el HEAD final `99ec165cc6edd239405f481bcc864a582bfaf61e`.
+- [x] AC-6 — CI exact-SHA verde en el HEAD final `d7af46c4738e61311a90404c786c539bbb1cdcfd`.
 
 ## Risks and guardrails
 
@@ -49,7 +49,7 @@ Excluded:
 | Typecheck API y web | Evidencia local registrada por la implementación; Node local v22 (el repo pide 24) | complete |
 | Unit + componente | API 133/133, web 19 pasados (1 skipped preexistente), según evidencia local de implementación | complete |
 | Integración PostgreSQL | PostgreSQL local desechable: branches 4/4, inventory-read 5/5, catalog 8/8; CI exact-HEAD vuelve a validar la ruta bajo runtime | complete |
-| CI exact-HEAD | SHA `99ec165cc6edd239405f481bcc864a582bfaf61e`: **10/10 workflow runs pull_request SUCCESS y 15/15 check-runs SUCCESS**. CI run `42795860898`: pasos "PostgreSQL branch list integration tests" y "Runtime-role API integration tests" SUCCESS. Los otros tres workflows push se mantienen separados del contador PR | complete |
+| CI exact-HEAD | SHA `d7af46c4738e61311a90404c786c539bbb1cdcfd`: **10/10 workflow runs pull_request SUCCESS y 15/15 check-runs SUCCESS**. CI run `42795860898`: pasos "PostgreSQL branch list integration tests" y "Runtime-role API integration tests" SUCCESS. Los otros tres workflows push se mantienen separados del contador PR | complete |
 
 ## Technical decisions
 
@@ -59,8 +59,8 @@ Excluded:
 
 ## Closure and handoff
 
-- Final commit SHA: `99ec165cc6edd239405f481bcc864a582bfaf61e`.
-- Checks: 10/10 PR workflows SUCCESS; 15/15 check-runs SUCCESS en el SHA exacto.
+- Final implementation SHA revisado: `d7af46c4738e61311a90404c786c539bbb1cdcfd`.
+- Checks: 10/10 PR workflows SUCCESS; 15/15 check-runs SUCCESS en ese SHA exacto. La corrección documental de este ODD genera un nuevo SHA y debe volver a validarse antes de considerar cerrada la PR.
 - No hay reviews formales ni review threads en la consulta actual. PR #301 permanece OPEN, no fusionada y no aprobada.
 - Limitations not verified: ejecución local en Node 24; comportamiento contra Neon (no tocado); accesibilidad con lector de pantalla.
 - Residual risks: sucursales y asignaciones siguen sin gestión por API/UI; branch discovery requiere paginación si el negocio supera 100 sucursales; movimientos/Kardex y conteos siguen sin UI.

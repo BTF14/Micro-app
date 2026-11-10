@@ -2528,3 +2528,16 @@ Este test usa bases sintéticas del mismo PostgreSQL service; no restaura el art
 **Ruta canónica de checkpoint:** `docs/WORK_CHECKPOINT.md`. No existe un `WORK_CHECKPOINT.md` en la raíz del repo; no volver a pedir ese path ni asumirlo. No pedir terminal, CLI, capturas, Build IDs, TinyFish o reconexiones si no son imprescindibles.
 
 Restricciones: no main, no merge, no deploy, no Neon writes, no migraciones remotas, no secretos, no Cron, no Cloudflare/DNS/billing ni datos reales. Deadline inamovible 2026-12-01.
+
+
+## Hallazgo P0 adicional — identidad del backup real (2026-11-10)
+
+El backup programado #20 `42842855127` fue SUCCESS y publicó `backup-2026-11-10T15-18-11Z.dump.age` + sidecar en el repo remoto; commit `485412b612849a888bccc5858a5272bb7400de76`. No descargar/descifrar/restaurar el artefacto real bajo las restricciones actuales.
+
+La inspección de `.github/workflows/backup.yml` muestra `DATABASE_URL_BACKUP_RO` y `pg_dump --no-owner --no-privileges`, pero no una consulta de identidad ni grants efectivos. Los logs no demuestran `current_user`/principal. El rol conocido `backup_readonly` hereda `pg_write_all_data` mediante `neon_superuser`; no asumir que sea la identidad del secreto. No leer ni publicar secretos.
+
+El workflow manual `.github/workflows/backup-real-restore.yml` verifica checksum, descifra y restaura a PG18 efímero, pero restaura sin owner/privileges y solo valida que existan tablas públicas. No se ejecutó porque contiene datos reales. No hacer workflow_dispatch de backup ni modificar Cron.
+
+**Siguiente gate seguro:** diseñar una auditoría read-only y no secreta de `current_user`, `session_user`, membresía en `neon_superuser`/`pg_write_all_data` y privilegios efectivos, sin consultar filas de negocio ni imprimir connection strings. Debe quedar en PR separada y ejecutarse solo por el ciclo programado autorizado; no lanzar backup manual. Después, decidir provisioning de roles/ACL y RPO/RTO. Issue #53 continúa OPEN/P0.
+
+La prueba sintética de PR #303 conserva ownership/ACL, pero no equivale al artefacto real, que usa `--no-owner --no-privileges`.

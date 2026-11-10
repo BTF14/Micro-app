@@ -2347,3 +2347,16 @@ La fixture main prueba datos sintéticos y restricciones del esquema; no es una 
 - Issue #53 permanece OPEN/P0. No se ha demostrado la identidad efectiva del secreto de backup, RPO/RTO sostenidos, restore de artefacto remoto reciente, alertas externas, coste total $0 ni revisión de seguridad final.
 
 No se accedió a Neon, secretos, backups remotos ni datos reales. No se ejecutó backup manual, no se cambió Cron, no se desplegó ni se modificó main. Producción NOT READY; deadline 2026-12-01.
+
+
+## Auditoría adicional del backup real — 2026-11-10
+
+El run programado #20 `42842855127` terminó SUCCESS (evento `schedule`). El artefacto `backup-2026-11-10T15-18-11Z.dump.age` y su sidecar SHA-256 están presentes en el repositorio remoto de backups; commit remoto `485412b612849a888bccc5858a5272bb7400de76`. No se descargaron los bytes, no se contrastó el sidecar contra el artefacto y no se restauró este backup real.
+
+La revisión estática de `.github/workflows/backup.yml` confirma que usa `DATABASE_URL_BACKUP_RO` y `pg_dump --no-owner --no-privileges`; no ejecuta ni registra `current_user`/`session_user`, ni demuestra los grants efectivos del principal. Los logs del run tampoco identifican el principal. El hallazgo conocido de Neon es que el rol `backup_readonly` hereda `pg_write_all_data` por su membresía en `neon_superuser`; **no está demostrado que el secreto `DATABASE_URL_BACKUP_RO` utilice ese rol**. No inferir identidad.
+
+`.github/workflows/backup-real-restore.yml` es `workflow_dispatch`; si se ejecuta, descarga el artefacto real, verifica el sidecar, descifra y restaura en PostgreSQL 18 efímero. Sin embargo, restaura con `--no-owner --no-privileges` y su validación final solo exige al menos una tabla pública. No se ejecutó: el artefacto contiene datos reales y las restricciones prohíben usarlos en pruebas. No se ejecutó backup manual ni se modificó Cron.
+
+**Diferencia crítica:** la prueba sintética de PR #303 conserva ownership/ACL para probar metadatos; el backup real actual los omite deliberadamente con `--no-owner --no-privileges`. Por ello, el resultado sintético no demuestra que el artefacto real preserve propietarios o grants. La recuperación real necesita un contrato separado de provisioning de roles/ACL.
+
+PR #303 está actualmente validada en HEAD `3c7a7250163f6655e6078085c4b45e6efacba432`: 11/11 workflow runs exact-HEAD SUCCESS, OPEN/Draft, sin reviews formales ni threads. Issue #53 sigue OPEN/P0; producción NOT READY.

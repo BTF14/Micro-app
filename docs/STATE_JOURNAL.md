@@ -2321,3 +2321,10 @@ El smoke de PostgreSQL 18 pasó cifrado age, checksum, descifrado, restore y com
 CI completo exact-HEAD de PR #303 HEAD `87ca92a25538b1b1217cb78b10a6db2fd7726ef0`: 11/11 workflow runs SUCCESS; 0 status contexts, 0 reviews y 0 threads. PR sigue OPEN/Draft, 61 ahead / 0 behind, mergeable=true. No merge.
 
 La fixture no restaura el artefacto remoto ni prueba Neon/producción, RPO/RTO, alertas, coste $0, identidad efectiva del principal backup ni autorización API multi-tenant. Issue #53 OPEN/P0; producción NOT READY. #287 0017–0022 requiere perfil de restore separado. No se accedió a secretos, Neon, datos reales ni Cron.
+
+
+## 2026-11-10 — auditoría read-only de workflow de backup real
+
+Verificado run programado #20 `42842855127` SUCCESS y presencia de artefacto/sidecar en el repo remoto; commit `485412b612849a888bccc5858a5272bb7400de76`. No se descargaron bytes ni se ejecutó restore. El workflow `backup.yml` usa `DATABASE_URL_BACKUP_RO` y `pg_dump --no-owner --no-privileges`, pero no registra identidad ni privilegios efectivos; los logs no prueban principal. No leer secretos. El rol conocido `backup_readonly` hereda `pg_write_all_data` vía `neon_superuser`, pero su uso por el secreto no está demostrado.
+
+El workflow manual `backup-real-restore.yml` verifica checksum y restaura en PostgreSQL 18 efímero, pero usa `--no-owner --no-privileges` y valida solo existencia de tablas. No se ejecutó por la restricción de no usar datos reales en pruebas. La prueba sintética #303 conserva ownership/ACL y valida grafo poblado, pero no demuestra metadatos del artefacto real. No backup manual ni cambio de Cron. Issue #53 sigue OPEN/P0.

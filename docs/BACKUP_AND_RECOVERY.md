@@ -267,3 +267,16 @@ El workflow `Backup restore smoke test` y los 11 workflow runs de PR #303 pasaro
 Esto prueba un round-trip poblado sintético dentro del mismo PostgreSQL service; **no** restaura el artefacto remoto del backup programado, no demuestra la identidad del principal `DATABASE_URL_BACKUP_RO`, no mide RPO/RTO, alertas externas ni coste $0 y no certifica recuperación de producción. La fixture SQL no sustituye pruebas API de aislamiento tenant/branch/role. Issue #53 sigue OPEN/P0.
 
 PR #287 0017–0022 (BCV effective date weekend, payment allocation, ledger projection, BCV sync state y producer role) requiere perfil de fixture/restore separado sobre su ref exacto; no mezclar esas migraciones con main 0016.
+
+
+## Diferencia entre el round-trip sintético y el backup real — 2026-11-10
+
+El run programado #20 `42842855127` terminó SUCCESS. El artefacto `backup-2026-11-10T15-18-11Z.dump.age` y su sidecar SHA-256 están presentes en el repo remoto, commit `485412b612849a888bccc5858a5272bb7400de76`. Los bytes no se descargaron, el checksum no se contrastó con el dump y no se realizó restore real.
+
+La prueba sintética fase 2 de PR #303 usa `pg_dump` sin `--no-owner --no-privileges`, por lo que comprueba restauración de owners/ACL en un PostgreSQL 18 desechable. En cambio, el workflow real `.github/workflows/backup.yml` utiliza `pg_dump --no-owner --no-privileges`; el artefacto real no preserva esa metadata de ownership/ACL. Esto exige un proceso explícito de provisioning de roles y grants en recuperación.
+
+La revisión del workflow confirma que consume `DATABASE_URL_BACKUP_RO`, pero no registra `current_user`, `session_user` ni privilegios efectivos. Los logs del run no permiten identificar el principal. El hallazgo conocido es que `backup_readonly` hereda `pg_write_all_data` mediante `neon_superuser`; no está demostrado que el secreto use esa identidad.
+
+El workflow manual `.github/workflows/backup-real-restore.yml` verifica el sidecar contra bytes descargados, descifra y restaura a PostgreSQL 18 efímero, pero usa `pg_restore --no-owner --no-privileges` y solo valida que exista al menos una tabla pública. No se ejecutó porque el artefacto contiene datos reales y no están permitidos en pruebas bajo las restricciones actuales.
+
+Pendientes P0: identidad efectiva del principal, least privilege real, provisioning de owners/ACL, restore reproducible de artefacto bajo manejo de datos autorizado, RPO/RTO medidos, alertas externas y coste total $0. Issue #53 permanece OPEN. No ejecutar backup manual ni cambiar Cron.

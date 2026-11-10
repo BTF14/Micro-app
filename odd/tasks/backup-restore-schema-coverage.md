@@ -208,3 +208,10 @@ La restauración conserva owners/ACL y compara privilegios efectivos, roles/memb
 - Issue #53 sigue OPEN/P0. Producción NOT READY.
 
 No merge, no main, no deploy, no Neon, no secretos, no Cron, no datos reales. Próxima tarea: fixture de restore separada sobre #287 y continuar gates P0 de #53.
+
+
+## Límite del backup real y siguiente gate P0 — 2026-11-10
+
+El run programado #20 `42842855127` terminó SUCCESS y publicó artefacto + sidecar (commit remoto `485412b612849a888bccc5858a5272bb7400de76`). No se descargó ni restauró el artefacto real. El workflow `backup.yml` usa `pg_dump --no-owner --no-privileges` y no registra identidad efectiva de `DATABASE_URL_BACKUP_RO`. El workflow manual `backup-real-restore.yml` verifica bytes/checksum y restaura a PG18 efímero, pero usa `--no-owner --no-privileges` y solo comprueba que haya tablas; no se ejecutó por contener datos reales.
+
+La fixture sintética de esta tarea conserva owners/ACL y prueba dos tenants, pero no es evidencia de metadata ni restauración del artefacto real. El rol `backup_readonly` conocido hereda `pg_write_all_data` vía `neon_superuser`; no asumir que sea el principal del secreto. Próxima tarea separada: obtener identidad y privilegios efectivos con consulta read-only no secreta, sin datos de negocio; luego resolver provisioning/restore real, RPO/RTO, alertas y coste. Issue #53 sigue OPEN/P0. No backup manual, no Cron, no secretos.

@@ -245,3 +245,14 @@ Preparar perfil de restore separado sobre #287 0017–0022 y revisar el contrato
 Checkpoint canónico en `docs/WORK_CHECKPOINT.md`; no existe archivo raíz `WORK_CHECKPOINT.md`.
 
 Límites: no merge, no main, no deploy, no Neon, no secretos, no Cron, no Cloudflare/DNS/billing, no datos reales. Deadline 2026-12-01.
+
+
+## Auditoría del backup real — checkpoint 2026-11-10
+
+- Run programado #20 `42842855127`: SUCCESS; artefacto `backup-2026-11-10T15-18-11Z.dump.age` + sidecar SHA-256 presentes; commit remoto `485412b612849a888bccc5858a5272bb7400de76`.
+- No descargado, no checksum contrastado con bytes, no restore real. No backup manual ni cambios a Cron.
+- `.github/workflows/backup.yml`: usa `DATABASE_URL_BACKUP_RO`, `pg_dump --no-owner --no-privileges`; no registra `current_user` ni privileges. La identidad efectiva del secreto sigue sin demostrarse.
+- `backup_readonly` conocido hereda `pg_write_all_data` vía `neon_superuser`, pero no asumir que el secreto usa ese rol.
+- `.github/workflows/backup-real-restore.yml`: manual; verifica checksum, descifra y restaura en PG18 efímero; usa `--no-owner --no-privileges` y solo comprueba existencia de tablas. No ejecutar por contener datos reales.
+- La fase 2 sintética de #303 preserva owner/ACL; no representa la política de metadatos del backup real.
+- Próximo gate: auditoría read-only del principal y grants efectivos, sin mostrar secretos ni datos de negocio; luego plan de role/ACL provisioning, restore seguro, RPO/RTO, alertas y coste. Issue #53 OPEN/P0.

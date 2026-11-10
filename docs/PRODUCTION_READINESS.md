@@ -193,3 +193,12 @@ La política está documentada en `docs/BACKUP_AND_RECOVERY.md`. La subida cifra
 PR #303 HEAD `87ca92a25538b1b1217cb78b10a6db2fd7726ef0` pasó 11/11 workflow runs `pull_request` exact-HEAD. El workflow de backup/restore ahora prueba un grafo de negocio sintético de dos tenants en PostgreSQL 18, cifrado, checksum, restauración, ownership/ACL, grants efectivos, roles, search_path, RLS/policies, secuencias, conteos, ledger, checkout y auditoría. PR #303 permanece OPEN/Draft, sin review formal; CI verde no es aprobación.
 
 **Readiness continúa NOT READY.** No se restauró un artefacto remoto reciente; no se demostraron principal efectivo de backup, RPO/RTO sostenidos, alertas externas, coste total $0 ni revisión de seguridad final. Issue #53 sigue OPEN/P0. La prueba sintética no es despliegue ni aceptación funcional del MVP; el flujo completo desde UI y el catálogo de 1.000 productos siguen sujetos a `docs/MVP_SINGLE_STORE_ACCEPTANCE.md`. No se accedió a Neon, secretos ni producción.
+
+
+## Evidencia del backup real y limitaciones — 2026-11-10
+
+El run programado #20 `42842855127` terminó SUCCESS y publicó el artefacto cifrado `backup-2026-11-10T15-18-11Z.dump.age` más sidecar SHA-256 (commit remoto `485412b612849a888bccc5858a5272bb7400de76`). No se descargó, no se comparó el sidecar contra sus bytes y no se restauró.
+
+El workflow de backup no demuestra la identidad del principal `DATABASE_URL_BACKUP_RO`; no registra `current_user` ni grants. Además, el backup real utiliza `--no-owner --no-privileges`. El workflow manual de restore también omite owners/ACL y solo valida existencia de tablas; no se ejecutó por la restricción de no utilizar datos reales en pruebas. La prueba sintética de PR #303 no reemplaza esta evidencia.
+
+**Readiness sigue NOT READY:** issue #53 OPEN/P0; principal efectivo y least privilege sin demostrar; backup real no restaurado; RPO/RTO, alertas externas y coste $0 sin evidencia; no hay aprobación formal. No se modificó Cron ni se ejecutó backup/restore manual.

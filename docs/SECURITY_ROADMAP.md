@@ -697,3 +697,14 @@ Fecha límite inamovible: **2026-12-01**. Producción NOT READY.
 ## Actualización — cobertura de esquema en restore smoke (PR #303, 2026-11-10)
 
 La fase 1 de hardening añade un round-trip sintético de esquema completo a `backup-restore-smoke.yml`: migration runner oficial, PostgreSQL 18 desechable, dump/age/checksum/restore y comparación de nombres/definiciones de objetos y ledger. Se mantiene separada de la prueba de datos histórica. No cierra el gate de backup: siguen pendientes el fixture comercial poblado completo, identidad efectiva de `DATABASE_URL_BACKUP_RO`, privilegios least-privilege, RPO/RTO, restore de copia remota reciente, alerta y coste $0. PR #303 OPEN/Draft, sin merge. Issue #53 OPEN/P0; producción NOT READY; deadline 2026-12-01.
+
+
+## Issue #53 — evidencia adicional 2026-11-10
+
+- Backup programado #20 `42842855127` SUCCESS; artefacto cifrado y sidecar presentes en el repo remoto (commit `485412b612849a888bccc5858a5272bb7400de76`). Sin descarga, verificación del sidecar contra bytes ni restore real.
+- `.github/workflows/backup.yml` usa `DATABASE_URL_BACKUP_RO` pero no registra `current_user`, `session_user` ni privilegios efectivos. La identidad del secreto sigue UNKNOWN; no asumir `backup_readonly`.
+- Hallazgo de rol conocido: `backup_readonly` hereda `pg_write_all_data` vía `neon_superuser`. No está probado que sea el principal del secreto.
+- Backup real usa `pg_dump --no-owner --no-privileges`; restore manual usa `pg_restore --no-owner --no-privileges` y solo verifica existencia de tablas. Workflow manual no ejecutado por restricción de datos reales.
+- PR #303 fase 2 sintética valida grafo poblado y metadata ownership/ACL en PG18 desechable; no cierra identidad/least privilege, RPO/RTO, alertas, coste ni recuperación del artefacto real.
+
+Issue #53 permanece OPEN/P0. Próximo gate: evidencia read-only del principal y privilegios efectivos sin imprimir secretos ni filas de negocio; no ejecutar backup manual ni cambiar Cron.

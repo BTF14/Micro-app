@@ -549,3 +549,13 @@ El ensayo verifica el bundle SQL y roles en la base aislada; no prueba el compor
 - PR #287 continúa OPEN/Draft, HEAD `7df318b233cfb95f7fcc3076d46984a11614a14c`; **13 workflows exact-HEAD: 8 SUCCESS, 5 FAILURE**. Fallan ODD docs, Dependency review, Project dashboard, Playwright E2E y CI. Los jobs/logs de estos cinco runs no son accesibles por las vías consultadas; la causa raíz sigue desconocida. No rerun ciego.
 - La revalidación de PRs no cierra Seguridad Nivel 1. El endpoint de branch protection y la API de alertas Dependabot no han sido revalidados con la conexión actual; las respuestas de permisos anteriores fueron 403. No inferir configuración actual a partir de un estado histórico. Backup RPO/RTO/alerta/coste siguen abiertos según la sección de backup.
 - **Objetivo obligatorio: MVP funcional y estable para el 1 de diciembre de 2026**, P0: un comercio pequeño/mediano, un solo local, hasta 1.000 productos, flujo end-to-end desde UI. Mantener Draft #287/#296/#298 y no fusionar #299. No abrir endpoints comerciales ni Caja/Ventas hasta cierre demostrado del gate Nivel 1.
+
+
+## Checkpoint vigente — 2026-11-10 UTC
+
+- PR #298 Draft, HEAD previo a esta actualización `7dbcdf1d9c8339d524140d09ab0cf446460a0a9b`: 11/11 workflow runs SUCCESS; 37 archivos documentales; sin reviews ni threads. No equivale a aprobación ni a merge.
+- PR #287 Draft, HEAD `7df318b233cfb95f7fcc3076d46984a11614a14c`: compare contra main `c5373564413ba086690552c6b7deeab08d7b4a89` = 159 ahead / 1 behind, diverged, 65 archivos. Consulta exact-HEAD: 6/11 workflows SUCCESS y 5/11 FAILURE. Jobs vacíos y cero artifacts para los cinco fallos; causa raíz desconocida.
+- No hacer rerun ciego, rebase, cambio de base, merge ni deploy. El defecto stale→unchanged de BCV sigue pendiente de corrección aislada con regresión; no tocar lógica comercial antes de cerrar Seguridad Nivel 1.
+- Seguridad Nivel 1: ABIERTO. Producción: NOT READY. P0 UI jornada completa: 0/1 demostrada.
+- Fecha límite obligatoria **2026-12-01**: un comercio piloto, un local, hasta 1.000 productos, jornada POS completa desde UI y listo para producción. Sin descuentos ni promociones.
+- Guardrails: no main writes, no merge, no deploy, no migraciones remotas, no Neon main, no datos reales, no secretos, DNS, billing ni Cron BCV/de negocio.

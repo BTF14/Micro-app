@@ -215,3 +215,13 @@ El esquema principal de CI y Neon usa PostgreSQL 18. El workflow `.github/workfl
 - Log evidence: PostgreSQL client `pg_dump 18.6`; dump created and checked non-empty; age encryption succeeded; SHA-256 sidecar created; both files committed in the private backup repository as commit `2b038bd`; push to remote `main` succeeded; retention reported `deleted 0 file(s)`.
 - Persisted objects: `daily/backup-2026-10-29T17-29-48Z.dump.age` and `daily/backup-2026-10-29T17-29-48Z.dump.age.sha256`.
 - Status: **encrypted backup upload verified**. Not yet verified by this run: decrypting this exact backup, restoring it into a disposable PostgreSQL target, measured RPO/RTO, failure notification delivery, or total cost. Keep the age private key outside chat and source control.
+
+## Brecha vigente de cobertura sintética — 2026-11-10
+
+La auditoría del script ejecutado por `.github/workflows/backup-restore-smoke.yml` encontró que `scripts/test_backup_restore.sh` aplica solo migraciones 0001, 0002 y 0005 y compara 13 tablas. Esto no cubre el esquema completo versionado en main (0001–0016): faltan `branches`, `branch_memberships`, `registers`, `register_shifts`, `warehouses`, `inventory_counts`, `inventory_count_lines`, `inventory_balances`, `warehouse_inventory_movements` e `inventory_balance_ledger_intents`; tampoco se valida `schema_migrations` porque el script no usa el migration runner oficial.
+
+**Interpretación:** el round-trip sintético anterior sigue siendo evidencia de cifrado/checksum/restore para su fixture limitado, pero no demuestra recuperación del esquema actual completo ni de las relaciones nuevas de sucursal, turno, warehouse, conteo, ledger y checkout. No invalida automáticamente los backups reales; limita lo que podemos afirmar sobre su cobertura y restaurabilidad.
+
+**Acción abierta:** ampliar el smoke test en una rama separada para aplicar todas las migraciones del ref mediante `scripts/db/migrate.sh`, poblar un grafo comercial sintético coherente y comparar manifiestos antes/después de restaurar en PostgreSQL 18 efímero. Mantener exclusión de `auth_sessions`, `auth_rate_limits` y `auth_bootstrap_attempts`. La tarea está en `odd/tasks/backup-restore-schema-coverage.md`; hallazgo en issue #53 comentarios 6772340874/6772383789. Las migraciones 0017–0022 pertenecen a PR #287 OPEN/Draft y no deben atribuirse a main.
+
+No se ha ejecutado un restore nuevo, leído secretos ni accedido a Neon/producción. Mantener el gate P0 abierto.

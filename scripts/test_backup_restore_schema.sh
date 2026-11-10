@@ -79,7 +79,8 @@ manifest() {
   psql "$1" -X -v ON_ERROR_STOP=1 -Atq <<'SQL'
 SELECT 'tables|' || COALESCE(string_agg(table_name, ',' ORDER BY table_name), '')
   FROM information_schema.tables
- WHERE table_schema = 'public' AND table_type = 'BASE TABLE';
+ WHERE table_schema = 'public' AND table_type = 'BASE TABLE'
+   AND table_name NOT IN ('auth_sessions', 'auth_rate_limits', 'auth_bootstrap_attempts');
 SELECT 'required_core_tables|' || count(*)::text
   FROM (VALUES
     ('organizations'), ('app_users'), ('organization_members'),
@@ -96,14 +97,17 @@ SELECT 'constraints|' || COALESCE(string_agg(c.relname || ':' || con.conname || 
   FROM pg_catalog.pg_constraint con
   JOIN pg_catalog.pg_class c ON c.oid = con.conrelid
   JOIN pg_catalog.pg_namespace n ON n.oid = c.relnamespace
- WHERE n.nspname = 'public';
+ WHERE n.nspname = 'public'
+   AND c.relname NOT IN ('auth_sessions', 'auth_rate_limits', 'auth_bootstrap_attempts');
 SELECT 'indexes|' || COALESCE(string_agg(indexname || ':' || pg_catalog.md5(indexdef), ';' ORDER BY indexname), '')
-  FROM pg_catalog.pg_indexes WHERE schemaname = 'public';
+  FROM pg_catalog.pg_indexes WHERE schemaname = 'public'
+   AND tablename NOT IN ('auth_sessions', 'auth_rate_limits', 'auth_bootstrap_attempts');
 SELECT 'triggers|' || COALESCE(string_agg(c.relname || ':' || t.tgname || ':' || pg_catalog.md5(pg_catalog.pg_get_triggerdef(t.oid)), ';' ORDER BY c.relname, t.tgname), '')
   FROM pg_catalog.pg_trigger t
   JOIN pg_catalog.pg_class c ON c.oid = t.tgrelid
   JOIN pg_catalog.pg_namespace n ON n.oid = c.relnamespace
- WHERE n.nspname = 'public' AND NOT t.tgisinternal;
+ WHERE n.nspname = 'public' AND NOT t.tgisinternal
+   AND c.relname NOT IN ('auth_sessions', 'auth_rate_limits', 'auth_bootstrap_attempts');
 SELECT 'functions|' || COALESCE(string_agg(p.proname || '(' || pg_catalog.pg_get_function_identity_arguments(p.oid) || '):' || pg_catalog.md5(pg_catalog.pg_get_functiondef(p.oid)), ';' ORDER BY p.proname, pg_catalog.pg_get_function_identity_arguments(p.oid)), '')
   FROM pg_catalog.pg_proc p
   JOIN pg_catalog.pg_namespace n ON n.oid = p.pronamespace

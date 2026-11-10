@@ -1,8 +1,49 @@
+## Corrección de consistencia y estado vivo — 2026-11-09 UTC
+
+> Este bloque es la referencia operativa más reciente de esta rama. Los snapshots posteriores/anteriores que sigan debajo se conservan como historial fechado; no deben reutilizarse como estado vivo. Revalidar GitHub antes de cualquier acción sensible.
+
+### Objetivo y aceptación que no cambian
+- **Fecha objetivo obligatoria: 2026-12-01.** P0: comercio pequeño/mediano, un solo local y catálogo de hasta 1.000 productos, jornada completa desde la UI según `docs/MVP_SINGLE_STORE_ACCEPTANCE.md`.
+- No confundir objetivo con funcionalidad implementada, aceptación probada ni autorización de producción. No mover fecha ni alcance sin decisión expresa.
+- El MVP de un local conserva aislamiento multi-tenant/multi-branch, permisos aprobados, presupuesto objetivo $0 y guardrails. Si un gate crítico sigue abierto el 30 nov, NO-GO para producción; beta controlada solo con riesgos explícitos y aceptación correspondiente.
+
+### Estado GitHub revalidado por SHA exacto
+Main observado: `c5373564413ba086690552c6b7deeab08d7b4a89`.
+
+| PR | Estado | HEAD | Workflow runs exact-HEAD | Check-runs exact-HEAD | Decisión |
+|---|---|---|---:|---:|---|
+| [#287](https://github.com/BTF14/Micro-app/pull/287) | OPEN / Draft | `7df318b233cfb95f7fcc3076d46984a11614a14c` | 13: 8 SUCCESS, 5 FAILURE | 10/10 SUCCESS | Bloqueada; no declarar CI completamente verde |
+| [#296](https://github.com/BTF14/Micro-app/pull/296) | OPEN / Draft | `73b0b134c14cb30f7c93d038c10acd0da5aa274c` | 10/10 SUCCESS | No usar status legacy vacío como contador | Documental; no declarar PIN/calendario implementados |
+| [#298](https://github.com/BTF14/Micro-app/pull/298) | OPEN / Draft | `98675da595b0c20906f2674ba3dd9d9fba677a63` | 13/13 SUCCESS | 15/15 SUCCESS | Docs-only; no merge |
+| [#299](https://github.com/BTF14/Micro-app/pull/299) | OPEN / Draft | `c82b0a10f85b59e1f81ac0ca2d439b6286558751` | 12/12 SUCCESS | 14/14 SUCCESS | Medición de pg_restore sintético; no merge |
+
+- #287 mantiene cinco fallos: ODD documentation, Dependency Review, Project progress dashboard, Playwright E2E y CI. Jobs/artifacts/logs no fueron accesibles por las interfaces consultadas; causa raíz desconocida. Los 10 check-runs SUCCESS no anulan los cinco workflow FAILURE.
+- Las cuatro PR siguen Draft y sin aprobación formal. `mergeable=true`, cuando aparece, no es review APPROVED ni readiness.
+- En #298 los bots de Cloudflare reportaron éxito de **previews automáticos de PR** para Pages y Workers en el commit `98675da`, con URLs identificadas como Commit Preview/Branch Preview. Esto sí es un despliegue de preview automatizado; no fue un despliegue manual ni demuestra promoción a producción, merge a main o smoke test autenticado de producción. Los snapshots que dicen “no deploy” describen el momento previo o la ausencia de despliegue productivo/manual; no deben interpretarse como ausencia de preview.
+- No se fusionó ninguna de estas PR ni se modificó main en esta reconciliación.
+
+### Seguridad Nivel 1 y backups
+- **Gate Nivel 1 sigue ABIERTO**: protección de main no revalidada (API 403); Dependabot figura implementado pero las alertas no se pudieron revalidar (confirmación manual histórica de cero alertas); cabeceras/CORS verificados históricamente el 1 nov sin nueva prueba HTTP; backup/restore parcialmente verificado.
+- Backup automático: ocho ejecuciones programadas del 2 al 9 nov SUCCESS. Run más reciente `42659924075`, 30 s de workflow; objeto cifrado y sidecar existen. El blob no se descargó, su hash no se recalculó independientemente, ni se descifró/restauró en esta sesión.
+- La separación entre inicios de workflow del 8 y 9 nov fue 27 h 00 min 14 s; entre timestamps de nombres de backup, 27 h 00 min 16 s. No se garantiza RPO <=24 h. Los 30 s del workflow no son RTO.
+- #299 mide únicamente el tiempo de `pg_restore` en un fixture PostgreSQL 18 desechable, no RTO operativo completo.
+- Siguen pendientes RPO continuo/alerta, RTO end-to-end con fixture sintético poblado, prueba controlada de alerta, coste total $0 y revisión de los controles de acceso/seguridad. No restaurar ni manipular copias que puedan contener datos reales; solo fixture sintético en destino desechable salvo autorización nueva, explícita y acotada.
+
+### Hallazgo BCV que debe conservarse
+En el código de #287, si una tasa para una fecha ya almacenada cambia, la fila se marca `stale` y la sincronización registra fallo. Si una sincronización posterior recibe exactamente el valor previamente almacenado, `persistBcvOfficialRate` devuelve `unchanged` sin restaurar `validation_status='valid'`. Como checkout exige estado `valid`, la fecha podría seguir bloqueada aunque BCV vuelva a confirmar el valor original. Es un hallazgo estático de revisión, no una prueba runtime ni autorización para reactivar automáticamente tasas. Diseñar recuperación explícita y auditable antes de cerrar BCV.
+
+### Secuencia y límites
+1. No iniciar endpoints comerciales ni UI de Caja/Ventas mientras Nivel 1 siga abierto.
+2. Continuar auditoría/correcciones documentales y pruebas de seguridad/backup sintéticas, sin duplicar PRs documentales.
+3. Diagnosticar #287 solo si aparece una vía nueva de logs/annotations; no rerun ciego.
+4. Mantener #287/#296/#298/#299 Draft; no merge, main writes, despliegue manual/productivo, Neon main, migraciones remotas, Cron productivo, secretos, DNS, billing ni datos reales.
+5. Toda IA debe distinguir decisión, especificación, código en rama, código en main, preview, producción y aceptación probada.
+
 ## Reconciliación viva de GitHub — 2026-11-09 19:25 UTC
 
 ## Decisión de aceptación MVP — POS de un local / 1.000 productos
 
-- Decisión aprobada por el propietario el 2026-11-09: el objetivo de aceptación del 2026-12-01 es que un comercio pequeño/mediano, de un solo local y hasta 1.000 productos, pueda completar desde la UI una jornada POS: login, apertura de turno propio, búsqueda/carrito, venta/pagos admitidos, tasa BCV válida cuando aplique, comprobante interno, descuento y consulta de inventario/Kardex, conteo y cierre de turno.
+- Decisión aprobada por el propietario el 2026-11-09: el objetivo de aceptación del 2026-12-01 es que un comercio pequeño/mediano, de un solo local y hasta 1.000 productos, pueda completar desde la UI una jornada POS: login, apertura de turno propio, búsqueda/carrito, venta/pagos admitidos, tasa BCV válida cuando aplique, comprobante interno, consistencia de venta/pagos/inventario y consulta de inventario/Kardex, conteo y cierre de turno.
 - La especificación canónica, con pruebas y límites detallados, es [docs/MVP_SINGLE_STORE_ACCEPTANCE.md](MVP_SINGLE_STORE_ACCEPTANCE.md). Leerla antes de planificar o implementar.
 - Esto concreta el P0; no cambia guardrails, permisos aprobados, presupuesto $0 ni los gates de seguridad/BCV/legal/operación. El MVP de un local no elimina el aislamiento multi-tenant/multi-branch. No afirmar que está implementado hasta probar el recorrido completo en el SHA exacto.
 - Si un gate crítico no está demostrado, NO-GO para producción; como máximo beta controlada con limitaciones explícitas y aceptación correspondiente.

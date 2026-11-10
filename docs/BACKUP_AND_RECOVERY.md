@@ -231,3 +231,14 @@ No se ha ejecutado un restore nuevo, leído secretos ni accedido a Neon/producci
 La rama `security/backup-restore-schema-coverage-20261110` añade `scripts/test_backup_restore_schema.sh` al workflow de smoke. Este test aplica todas las migraciones numeradas del ref con el runner oficial en PostgreSQL 18 desechable; verifica el ledger; hace dump, cifrado age efímero, checksum, descifrado y restore; compara nombres de tablas, constraints, índices, triggers, hashes de funciones y ledger; y confirma exclusión de las tres tablas efímeras.
 
 Este avance valida **estructura de esquema**, no la recuperación de datos poblados para todas las nuevas tablas. El script de fixture de datos existente sigue aplicando 0001/0002/0005 y verificando 13 tablas. Por tanto, el ciclo backup/restore continúa incompleto: falta fixture sintético coherente de sucursal/turno/warehouse/count/ledger/checkout y relaciones, además de identidad efectiva del principal de backup, least-privilege, RPO/RTO, restauración remota reciente, alerta y coste $0. PR #303 OPEN/Draft, no fusionada; no cerrar issue #53.
+
+
+## Auditoría de alcance — PR #303 fase 1 (2026-11-10)
+
+La prueba de esquema en #303 valida la creación del esquema desde migraciones y el round-trip cifrado en bases PostgreSQL 18 desechables. No debe describirse como validación de permisos/ownership completos: el comando usa `--no-owner --no-privileges` tanto en dump como restore, de modo que los propietarios y ACL no se conservan ni comparan. El manifiesto actual tampoco inspecciona RLS/policies, grants efectivos, memberships/atributos de roles, default privileges ni `search_path` efectivo.
+
+Para la recuperación operativa, estos controles requieren un contrato explícito: qué roles se provisionan antes/después del restore, qué grants se reaplican desde migraciones/infraestructura, qué objetos deben pertenecer a migrator/runtime y cómo se verifica que RLS y políticas permanecen activas. No inferirlos a partir de que `pg_restore` termine SUCCESS.
+
+La fase 2 de datos debe usar fixtures distintos según el ref. Main 0001–0016 permite comprobar el grafo de sucursal/turno/warehouse/count/ledger y las ventas del esquema legacy; checkout branch-aware pertenece a #287 0017–0022 y debe probarse sobre esa rama/ref separada. No mezclar migraciones ni llamar a la fixture main una prueba de checkout completo.
+
+Issue #53 permanece OPEN/P0. No se ha accedido a Neon, secretos, backup remoto ni datos reales. Producción NOT READY.

@@ -1,9 +1,18 @@
+## Reconciliación de estado BCV y permisos — 2026-11-09 UTC
+
+- La matriz de permisos comerciales está **APROBADA desde 2026-10-31**; su implementación en handlers sigue parcial. No confundir aprobación de matriz con readiness.
+- La rama activa que contiene la integración BCV + checkout es PR #287, OPEN/Draft. PR #255 fue cerrada como supersedida por #287. La integración no está en main ni disponible para producción.
+- Los requisitos legales/fiscales y la revisión venezolana siguen pendientes; la matriz y los cambios de código no constituyen asesoría ni certificación.
+- El primer corte P0 para **2026-12-01** es un local y hasta 1.000 productos. No declarar factura fiscal ni cumplimiento tributario sin validación competente.
+
+---
+
 # Addendum de cumplimiento vivo — 2026-11-08 UTC
 
 La documentación sigue siendo un borrador de requisitos y **no constituye asesoría legal, certificación fiscal ni conformidad demostrada**.
 
 - Main GitHub `96e2e2d9f76bc8fcc3bab2fa9503e480545c8869` contiene migraciones 0001–0016. Esto no demuestra que estén aplicadas en Neon ni que el producto esté habilitado en producción.
-- La integración oficial BCV está en PR #255, Draft y sin revisión formal. Incluye fuente, fecha efectiva, frescura, persistencia decimal y conversión; no se debe anunciar como disponible en producción.
+- La integración oficial BCV está en PR #287, OPEN/Draft y no fusionada. PR #255 fue cerrada como supersedida por #287. El código de la rama incluye fuente, fecha efectiva, frescura, persistencia decimal y conversión; no se debe anunciar como disponible en main ni producción.
 - Fines de semana usan la fecha futura publicada para el siguiente día hábil. No hay calendario oficial de feriados bancarios entre semana; si falta la fecha exacta, el sistema falla cerrado y bloquea conversión.
 - Checkout/pagos siguen sin handler integrado en main. #233 conserva código único, pero su migration 0015 antigua no debe copiarse. Migration 0017 debe alinear el trigger de ventas con la regla de fecha efectiva BCV.
 - La política técnica de pagos propuesta (una moneda de liquidación, pago exacto completo, sin pagos parciales ni cambio) requiere aprobación funcional explícita antes de habilitar checkout.

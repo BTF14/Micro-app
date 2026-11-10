@@ -350,6 +350,21 @@ jobs:
           test "$(docker exec "${{ job.services.postgres.id }}" psql -At -U microapp -d microapp_test -c "SELECT to_regclass('public.bcv_sync_state') IS NULL")" = "t"
       - name: Apply BCV sync state migration
         run: docker exec -i -e PGPASSWORD=migrator-test-only "${{ job.services.postgres.id }}" psql -h 127.0.0.1 -v ON_ERROR_STOP=1 -U microapp_migrator -d microapp_test -f /dev/stdin < apps/api/migrations/0021_bcv_sync_state.sql
+      - name: Seed deliberately overprivileged BCV producer ACL fixture
+        run: |
+          docker exec -i -e PGPASSWORD=migrator-test-only "${{ job.services.postgres.id }}" psql -h 127.0.0.1 -v ON_ERROR_STOP=1 -U microapp_migrator -d microapp_test <<'SQL'
+          GRANT ALL PRIVILEGES ON TABLE public.bcv_sync_state, public.exchange_rates TO microapp_bcv_sync;
+          GRANT SELECT (last_attempt_at,last_success_at,last_error_code,last_effective_date,updated_at)
+            ON TABLE public.bcv_sync_state TO microapp_bcv_sync;
+          GRANT INSERT (singleton) ON TABLE public.bcv_sync_state TO microapp_bcv_sync;
+          GRANT UPDATE (singleton) ON TABLE public.bcv_sync_state TO microapp_bcv_sync;
+          GRANT SELECT (base_currency,quote_currency,fetched_at,created_at)
+            ON TABLE public.exchange_rates TO microapp_bcv_sync;
+          GRANT INSERT (id,created_at) ON TABLE public.exchange_rates TO microapp_bcv_sync;
+          GRANT UPDATE (rate,effective_date,source,created_at)
+            ON TABLE public.exchange_rates TO microapp_bcv_sync;
+          GRANT CREATE ON SCHEMA public TO microapp_bcv_sync;
+          SQL
       - name: Verify dedicated BCV producer role migration rolls back atomically
         run: |
           sed '/^COMMIT;$/i SELECT 1/0;' apps/api/migrations/0022_bcv_dedicated_producer_role.sql > /tmp/0022-bcv-failure.sql

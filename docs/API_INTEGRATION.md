@@ -1,3 +1,16 @@
+# Reconciliación de API y permisos vigentes — 2026-11-09 UTC
+
+Main observado: `c5373564413ba086690552c6b7deeab08d7b4a89`.
+
+- La matriz `docs/sdd/role-permission-decision-matrix.md` está **APROBADA desde 2026-10-31**. Su aprobación define el contrato de autorización, pero no implica que todos los handlers estén implementados. Las menciones inferiores “NO APROBADA” corresponden a snapshots históricos anteriores y quedan supersedidas.
+- Rutas registradas en main: autenticación/identidad, catálogo lectura/escritura, lectura de inventario y conteos, además de `/health`. La autorización se aplica parcialmente a catálogo e inventario.
+- Main no registra todavía checkout/pagos ni rutas HTTP completas de apertura/consulta/cierre de turnos; el helper de turno no equivale a esos endpoints.
+- BCV + checkout están en PR #287 OPEN/Draft, HEAD `7df318b233cfb95f7fcc3076d46984a11614a14c`. PR #255 fue cerrada como supersedida por #287; no presentarla como rama activa.
+- #287 tiene 13 workflow runs exact-HEAD: 8 SUCCESS y 5 FAILURE; los 10 check-runs son SUCCESS, pero no anulan los fallos de workflows. No declarar integración lista.
+- El objetivo P0 es un local y hasta 1.000 productos para el **2026-12-01**. Seguridad Nivel 1 sigue abierta; no iniciar nueva lógica comercial hasta su cierre demostrado.
+
+---
+
 # Addendum API vivo — 2026-11-08 UTC
 
 **Código fuente:** main `96e2e2d9f76bc8fcc3bab2fa9503e480545c8869`. Este addendum reemplaza el checkpoint histórico 2026-10-30; los detalles inferiores se conservan como historial.
@@ -13,7 +26,7 @@
 
 ## Límites vigentes
 
-- El código de main no registra rutas BCV; los endpoints `/api/exchange-rates/latest` y `/api/exchange-rates/history` están en #255, aún Draft y no fusionada.
+- El código de main no registra rutas BCV; los endpoints `/api/exchange-rates/latest` y `/api/exchange-rates/history` están en #287, OPEN/Draft y no fusionada. PR #255 fue cerrada como supersedida por #287.
 - Main no registra un handler de checkout/pagos. #233 conserva handler/tests únicos, pero no está integrado.
 - `cashier-open-shift.ts` existe como helper aislado; no está montado como ruta en `index.ts`.
 - La UI `CatalogPanel` soporta conversión decimal y estado BCV, pero la alimentación de tasa oficial desde App llega mediante #255.
@@ -26,7 +39,7 @@
 **Estado de hosting en main:** PR #177 fusionada; `main` observado en `82386c6e9300e06f8fa209aa52995b939a72442a`. La validación post-merge de #177 observó 9/9 check-runs success y seis contextos requeridos success; ese resultado es histórico y no valida PR #178 ni commits posteriores.
 
 ## Límite actual de API
-No hay handlers comerciales ni autorización por operación demostrada. La matriz `docs/sdd/role-permission-decision-matrix.md` sigue **NO APROBADA**. La estructura vigente es un único rol por miembro/organización en `organization_members.role`; `branch_memberships` solo asigna acceso a sucursales, no define roles por sucursal. Los resolvers de tenant/branch/turno resuelven contexto/ámbito; no autorizan operaciones. No añadir endpoints, middleware ni role-switches comerciales antes de aprobación explícita. No afirmar ledger/auditoría comercial implementados.
+No hay handlers comerciales ni autorización por operación demostrada. La matriz `docs/sdd/role-permission-decision-matrix.md` está **APROBADA desde 2026-10-31**, pero su implementación sigue parcial. La estructura vigente es un único rol por miembro/organización en `organization_members.role`; `branch_memberships` solo asigna acceso a sucursales, no define roles por sucursal. Los resolvers de tenant/branch/turno resuelven contexto/ámbito; no sustituyen autorización por operación. No afirmar ledger/auditoría comercial completos ni que todos los handlers estén implementados. La nueva lógica comercial sigue bloqueada por Seguridad Nivel 1.
 
 ## CORS y Cloudflare
 Issue #78 sigue abierta. En `apps/api/src/index.ts`, Hono CORS compara el Origin con `FRONTEND_ORIGIN` validado y declara métodos GET/POST/PATCH/DELETE/OPTIONS, headers Content-Type/Authorization/Idempotency-Key, credenciales y max-age 600. `apps/api/src/index.test.ts` prueba preflight simulado autorizado y origen externo no autorizado; no valida el Worker desplegado.

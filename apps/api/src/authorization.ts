@@ -8,7 +8,7 @@ export type CommercialOperation =
   | "register.shift.open_own" | "register.shift.close_own" | "register.shift.operate_own"
   | "register.shift.read_all" | "register.shift.read_own"
   | "sales.create_list_price"
-  | "sales.price.override" | "sales.void_own_open_shift" | "sales.void_after_shift" | "sales.void_other"
+  | "sales.void_own_open_shift" | "sales.void_after_shift" | "sales.void_other"
   | "members.manage" | "branch_memberships.manage" | "organization_policy.manage"
   | "reports.sales.organization" | "reports.sales.own_shift" | "reports.inventory"
   | "exports.allowed_data" | "audit.read";
@@ -18,7 +18,7 @@ const ROLE_OPERATIONS: Readonly<Record<OrganizationRole, ReadonlySet<CommercialO
     "catalog.read", "catalog.read_costs", "catalog.product.manage",
     "inventory.read", "inventory.management.read", "inventory.receive", "inventory.adjust", "inventory.transfer",
     "register.shift.open_own", "register.shift.close_own", "register.shift.operate_own", "register.shift.read_all",
-    "sales.create_list_price", "sales.price.override",
+    "sales.create_list_price",
     "sales.void_own_open_shift", "sales.void_after_shift", "sales.void_other",
     "members.manage", "branch_memberships.manage", "organization_policy.manage",
     "reports.sales.organization", "reports.sales.own_shift", "reports.inventory", "exports.allowed_data", "audit.read",
@@ -27,7 +27,7 @@ const ROLE_OPERATIONS: Readonly<Record<OrganizationRole, ReadonlySet<CommercialO
     "catalog.read", "catalog.read_costs", "catalog.product.manage",
     "inventory.read", "inventory.management.read", "inventory.receive", "inventory.adjust", "inventory.transfer",
     "register.shift.open_own", "register.shift.close_own", "register.shift.operate_own", "register.shift.read_all",
-    "sales.create_list_price", "sales.price.override",
+    "sales.create_list_price",
     "sales.void_own_open_shift", "sales.void_after_shift", "sales.void_other",
     "reports.sales.organization", "reports.sales.own_shift", "reports.inventory", "exports.allowed_data", "audit.read",
   ]),
@@ -57,7 +57,7 @@ function isCommercialOperation(value: string): value is CommercialOperation {
     "inventory.read", "inventory.management.read", "inventory.receive", "inventory.adjust", "inventory.transfer",
     "register.shift.open_own", "register.shift.close_own", "register.shift.operate_own",
     "register.shift.read_all", "register.shift.read_own",
-    "sales.create_list_price", "sales.price.override",
+    "sales.create_list_price",
     "sales.void_own_open_shift", "sales.void_after_shift", "sales.void_other",
     "members.manage", "branch_memberships.manage", "organization_policy.manage",
     "reports.sales.organization", "reports.sales.own_shift", "reports.inventory", "exports.allowed_data", "audit.read",

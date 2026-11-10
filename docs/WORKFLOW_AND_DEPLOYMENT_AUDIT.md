@@ -1,3 +1,15 @@
+## Reconciliación de previews y estado operativo — 2026-11-09 UTC
+
+El encabezado histórico inferior contiene estados de PR/main de snapshots anteriores; consultar `docs/CURRENT_STATE.md` para el estado vivo.
+
+- En PR #298, GitHub recibió comentarios automáticos de Cloudflare para el HEAD `98675da595b0c20906f2674ba3dd9d9fba677a63`: Pages preview `https://f59f954b.micro-app-63i.pages.dev` y Worker commit/branch previews `https://e2050911-micro-app-api.btfcasheb.workers.dev` y `https://docs-reconcile-live-github-state-20261109-micro-app-api.btfcasheb.workers.dev`.
+- Estos eventos confirman que las integraciones Git de Cloudflare generaron previews automáticamente para esa PR. No son un despliegue manual, no demuestran promoción a producción, no acreditan tráfico productivo ni smoke tests autenticados de producción.
+- La URL de logs del Worker contiene una ruta de dashboard llamada `production/builds`, pero el comentario identifica expresamente las URLs entregadas como Commit Preview y Branch Preview. No inferir producción a partir del path del dashboard.
+- Los builds/previews no prueban por sí solos que todos los bindings, secretos, datos y recursos estén aislados. Mantener la regla de no conectar previews a datos reales y verificar la configuración antes de usarlos.
+- No se cambió configuración de Cloudflare ni se ejecutó un deploy manual en esta reconciliación.
+
+---
+
 ## Nota autoritativa — 2026-11-08 UTC
 
 El estado operativo vigente se centraliza en CURRENT_STATE.md y HANDOFF_NEXT_CHAT.md. Main actual: 9c6b30281ed59726e532da840568fc9e80b528f7; #280 y #282 integradas. Neon rehearsal #42507066215 aplicó 0001–0019 solo en microapp_rehearsal. #269 está OPEN/Draft en HEAD 8f05befb7ac1a46d68850b9f89f89edc8cd46283 con 16/16 check-runs y 14/14 workflows SUCCESS; #255 OPEN/Draft en HEAD 7e43d7fd1519889605174da5818190bb84685059 con 15/15 y 13/13 SUCCESS. #258 y #262 se cerraron como superseded tras preservar/evolucionar todo su contenido en #269. #233 sigue histórica abierta; #193 no se modifica. Producción NOT READY: contrato comercial checkout y gates BCV siguen abiertos. No repetir escrituras Neon ni tocar producción. El detalle, SHA y siguientes pasos están en CURRENT_STATE.md.

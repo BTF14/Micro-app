@@ -1,5 +1,7 @@
 # Tasks: Google Sign-In y allowlist
 
+**Estado vigente (2026-11-09):** tablero de tareas histórico. D1–D8 están aprobadas y la implementación Google OAuth/allowlist ya existe en main (`apps/api/src/google-auth.ts`). No ejecutar T1/T2/T4 como tareas abiertas sin antes contrastar el código actual; quedan por verificar los criterios de revisión independiente, integración real/configuración por entorno y readiness. El estado de cierre histórico de abajo no representa el estado actual del repositorio.
+
 - Spec: [google-signin-allowlist-spec.md](google-signin-allowlist-spec.md)
 - Plan: [google-signin-allowlist-plan.md](google-signin-allowlist-plan.md)
 

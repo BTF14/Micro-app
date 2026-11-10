@@ -60,6 +60,8 @@ Nota: el costo de producto se considera dato financiero sensible; Cashier ve pre
 ## 3. Ventas: creación, descuentos, cambios de precio en el momento de la venta
 **Fuente: decisión explícita del propietario (2026-10-31):** *"Cashier/Admin/Owner crean ventas; cualquier descuento requiere aprobación de Admin/Owner."*
 
+**Límite de implementación y P0 (reconciliación 2026-11-09):** esta fila conserva la decisión de autorización para una capacidad futura; no significa que el descuento esté implementado o habilitado. El modelo de checkout vigente (`docs/sdd/SALES_CHECKOUT_MODEL.md`) y la migración `0014_sales_without_discounts.sql` excluyen descuentos/promociones/override manual. El criterio MVP `docs/MVP_SINGLE_STORE_ACCEPTANCE.md` tampoco los incluye en P0. No implementar ni exponer descuentos en el primer corte; si se retoman después, reconciliar primero modelo, migraciones, auditoría y flujo de aprobación sin borrar esta decisión histórica.
+
 | Operación | Owner | Admin | Inventory | Cashier |
 |---|---|---|---|---|
 | Crear venta a precio de lista, turno propio abierto | ✅ propio | ✅ propio | ❌ | ✅ propio |

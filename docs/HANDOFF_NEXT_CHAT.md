@@ -2470,3 +2470,32 @@ Issue #53 OPEN/P0; no tocar Neon, secretos, datos reales, backup remoto, Cloudfl
 ## Revalidación pendiente PR #303
 
 HEAD exacto `4e369c25bbd7e43072664c2012f6a196cc21eed1`; 30 ahead / 0 behind main; OPEN/Draft, mergeable=true. GitHub no devolvió workflow runs pull_request ni status contexts para ese SHA en la última consulta (0/0). No declarar CI PASS. Mantener Draft. Issue #53 comentario `6772761216`. El test añadido es schema-only; fixture poblado completo sigue pendiente.
+
+
+## Handoff vigente — revisión de PR #303, 2026-11-10
+
+**Este bloque prevalece sobre los snapshots históricos anteriores de este archivo.** Rama de trabajo: `security/backup-restore-schema-coverage-20261110`. PR #303 OPEN/Draft, HEAD `3439c51b5719315e46196f7eca57cffee5a76df2`, base main `c5373564413ba086690552c6b7deeab08d7b4a89`, 37 ahead / 0 behind, mergeable=true, 11/11 workflow runs `pull_request` SUCCESS en ese SHA exacto, 0 legacy status contexts, 0 reviews y 0 threads.
+
+### Resultado de auditoría
+
+El script `scripts/test_backup_restore_schema.sh` aplica migraciones del ref mediante el runner oficial y realiza round-trip cifrado en dos bases desechables PostgreSQL 18. La revisión estática no encontró acceso a Neon/secretos ni permisos de escritura en el workflow. No obstante, el uso de `--no-owner --no-privileges` elimina del round-trip la evidencia de ownership y ACL; además, no hay comparación explícita de RLS/policies, grants efectivos, atributos/membresías de roles, default privileges ni search_path efectivo. No declarar cubiertos esos controles.
+
+### Decisión de fixture fase 2
+
+No mezclar main 0001–0016 con PR #287 0017–0022. En main, la tabla `sales` aún no incorpora las columnas branch/register_shift/warehouse que aparecen en el checkout integrado de #287. El fixture de #303 debe probar el grafo real de main (organización, sucursal/membresía, register/shift, warehouse, count/lines, movimiento/ledger/balance y venta/pago legacy con auditoría). La prueba de checkout atómico debe ejecutarse como perfil separado sobre la rama/ref #287, donde esas columnas, triggers y asignaciones existen. No declarar checkout cubierto por el fixture main.
+
+### Estado de PRs relacionadas
+
+- #287: OPEN/Draft, HEAD `9a1792f7449ff83915bcdd672686a4860918028d`, 219 ahead / 1 behind main, mergeable=true, 11/11 workflow runs exact-HEAD SUCCESS, sin reviews ni threads. GitHub devuelve base SHA `03442951b2a2f63f5bf4dcf560f2c91be4f6cc71`; no cambiar base automáticamente.
+- #298: OPEN/Draft, HEAD `c9e65a8f0378b2b9740e91df68f39909967eed26`, 231 ahead / 0 behind, 11/11 workflow runs exact-HEAD SUCCESS, sin reviews ni threads.
+- #53: OPEN/P0.
+
+### Próxima acción reproducible
+
+1. Inspeccionar todas las migraciones 0001–0016 y los fixtures de integración existentes en el ref exacto antes de escribir SQL de fixture; confirmar lifecycle y triggers del ledger 0010.
+2. Implementar el fixture main sin introducir columnas de #287; comparar conteos, filas sintéticas identificadas y relaciones/FKs source vs restore.
+3. Preparar la variante #287 como ejecución separada sobre su ref exacto; validar checkout, payments allocation, ledger projection, BCV sync y roles de productor sin trasplantar migraciones a main.
+4. Añadir pruebas de metadatos RLS/policies y documentar explícitamente el modelo de provisión/reaplicación de ownership y grants si se conserva `--no-owner --no-privileges`.
+5. Ejecutar CI y verificar el HEAD exacto final; mantener Draft y #53 OPEN/P0.
+
+No merge, no cambio de base, no deploy, no Neon writes, no migraciones remotas, no Cron, no secretos, no Cloudflare/DNS/billing ni datos reales. Producción NOT READY. Fecha límite: 2026-12-01.

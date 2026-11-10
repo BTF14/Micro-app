@@ -1,3 +1,19 @@
+## Cierre de auditoría documental — 2026-11-09 UTC
+
+Se revisaron los puntos de entrada y documentos operativos principales: `AGENTS.md`, Constitución, política de colaboración/PR, ODD, CURRENT_STATE, HANDOFF, WORK_CHECKPOINT, PROJECT_PLAN, SECURITY_ROADMAP, BACKUP_AND_RECOVERY, MVP acceptance, STATE_JOURNAL, BACKLOG_RECOVERY_LEDGER, PRODUCTION_READINESS y WORKFLOW_AND_DEPLOYMENT_AUDIT.
+
+Se corrigieron/añadieron aclaraciones en nueve documentos de continuidad/readiness/backup:
+- CURRENT_STATE, HANDOFF_NEXT_CHAT, WORK_CHECKPOINT, PROJECT_PLAN, SECURITY_ROADMAP, STATE_JOURNAL, BACKUP_AND_RECOVERY, PRODUCTION_READINESS y WORKFLOW_AND_DEPLOYMENT_AUDIT.
+- Se corrigió además la frase ambigua que podía interpretarse como que el alcance P0 incluía descuentos. La aceptación canónica no aprueba descuentos ni reglas comerciales no definidas.
+- Se separó explícitamente preview automático de Cloudflare, despliegue manual y producción.
+- Se marcaron snapshots antiguos como históricos frente a la evidencia nueva. No se borró historia ni se reescribieron decisiones aprobadas.
+
+**Importante sobre el CI documental:** antes de esta última actualización, PR #298 estaba en HEAD `e0a8eb1c4b248e649426aa096ef506720fd17fa8`; su workflow `Security scan` seguía pending y los check-runs `Trivy filesystem and configuration scan` (queued) y `Cloudflare Pages` (in_progress). Esta actualización de CURRENT_STATE crea un SHA nuevo. Los resultados de `e0a8eb1` no validan el nuevo HEAD; verificar nuevamente CI exact-HEAD. No declarar la PR verde por resultados previos.
+
+El resto de los documentos de arquitectura/SDD/checkpoints históricos no se modificó indiscriminadamente: sus decisiones siguen siendo fuente de dominio, mientras los estados dinámicos de PR/CI se centralizan en CURRENT_STATE. Una auditoría semántica exhaustiva de los 76 Markdown del árbol no debe confundirse con esta reconciliación focalizada de documentos operativos críticos.
+
+---
+
 ## Corrección de consistencia y estado vivo — 2026-11-09 UTC
 
 > Este bloque es la referencia operativa más reciente de esta rama. Los snapshots posteriores/anteriores que sigan debajo se conservan como historial fechado; no deben reutilizarse como estado vivo. Revalidar GitHub antes de cualquier acción sensible.

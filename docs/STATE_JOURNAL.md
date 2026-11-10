@@ -2285,3 +2285,7 @@ Hallazgo documentado en issue #53 comentarios 6772340874 y 6772383789. Se abrió
 ## 2026-11-10 — corrección posterior de CI exact-HEAD de PR #287
 
 La primera lectura de HEAD 9a1792f7449ff83915bcdd672686a4860918028d no encontró aún workflow runs pull_request. Una reconsulta posterior encontró 11/11 workflows asociados exactamente a ese SHA, todos SUCCESS: 42849454422, 42849454398, 42849454373, 42849454527, 42849454401, 42849454436, 42849454382, 42849454438, 42849454392, 42849454399 y 42849453701. La observación anterior de 0 runs quedó superada. Combined legacy status no presenta contexts; no convertirlo en recuento de check-runs. PR #287 sigue OPEN/Draft, mergeable=true, 219 ahead / 1 behind, sin reviews formales ni threads. No se fusionó ni se desplegó; 11/11 CI no cierra gates productivos.
+
+## 2026-11-10 — CI verde de smoke no cierra cobertura completa
+
+PR #287 HEAD `9a1792f7449ff83915bcdd672686a4860918028d` completó 11/11 workflow runs pull_request SUCCESS, incluido Backup restore smoke `42849454438`. El job usa el script antiguo que aplica solo 0001/0002/0005 y verifica 13 tablas; por eso su SUCCESS no prueba restauración del esquema main 0001–0016 ni las migraciones 0017–0022 de la rama. Aclaración añadida a issue #53 comentario `6772538757`. La tarea de ampliar el smoke test sigue solo en documentación/ODD, sin cambios de código. #53 OPEN/P0; producción NOT READY; deadline 2026-12-01.

@@ -2518,3 +2518,14 @@ La consulta posterior encontró una nueva ejecución que no estaba publicada en 
 ## Corrección de validación exact-HEAD — 2026-11-10
 
 Tras registrar la auditoría P0 del workflow de backup, la punta verificada fue `7500ac66c17b193c053c075bd694d57370cab03b` (216 ahead / 1 behind de main; merge base `03442951b2a2f63f5bf4dcf560f2c91be4f6cc71`). Para ese SHA exacto GitHub no reportó workflow runs pull_request ni status contexts. Los 11/11 SUCCESS del SHA padre `515f85260d9ae0381eb4c4de64cd0f87ac6201da` no se heredan. La documentación de auditoría requiere CI exact-HEAD antes de promover. PR #287 continúa OPEN/Draft, sin reviews formales ni review threads. Issue #53 OPEN/P0; producción NOT READY. Deadline 2026-12-01.
+
+ 
+## Reconciliación viva — restore profile de PR #287 (2026-11-10)
+
+PR #287 ahora contiene un perfil de backup/restore específico para sus migraciones 0001–0022 y su ledger de proyección. Código validado en SHA `7746e86140cdf3a98911665f6955e57a256bfd4b`: 11/11 workflows exact-HEAD SUCCESS, 0 status contexts, 0 reviews y 0 threads. PR OPEN/Draft, 224 ahead / 1 behind main (merge base `03442951b2a2f63f5bf4dcf560f2c91be4f6cc71`), mergeable=true.
+
+El fixture usa dos tenants sintéticos, conteos de apertura/físico y movimientos que proyectan balances; no escribe directamente `inventory_balances`. También prueba tasa sintética con fecha efectiva exacta Caracas, `bcv_sync_state` con último sync exitoso, venta completada, allocation_position, pagos y auditoría. El manifiesto preserva schema/owners/ACL/RLS/roles/search_path y compara ACL/privilegios efectivos por columna del productor `microapp_bcv_sync`. Job `42872318369` SUCCESS; 22 migraciones por runner oficial, round-trip 3 s, exclusión auth efímera.
+
+Limitación: el perfil usa pg_dump/pg_restore por defecto para preservar ownership y ACL; el workflow productivo usa `--no-owner --no-privileges`. La restauración operativa con flags productivos y reaplicación de permisos/ownership sigue sin demostrar. No confundir el perfil sintético con restore del artefacto real.
+
+La fixture usa una tasa fabricada; source marker BCV no implica cotización oficial. Issue #53 OPEN/P0; identidad efectiva del secreto, least privilege, restore real, RPO/RTO, alertas y coste $0 pendientes. Producción NOT READY. No manual backup, no secretos, no Neon, no Cron, no main, no deploy. Deadline 2026-12-01.

@@ -2640,3 +2640,9 @@ Hallazgo de código en .github/workflows/backup.yml de main (blob 5df408788b9053
 PR #287: OPEN/Draft, HEAD documental conocido 515f85260d9ae0381eb4c4de64cd0f87ac6201da, 11/11 workflows pull_request SUCCESS en ese SHA; combined legacy status sin contexts. No reviews formales ni review threads. Revalidar HEAD/checks antes de continuar si hay nuevos commits. Mantener #53 OPEN/P0, producción NOT READY y no fusionar.
 
 Fecha límite del MVP: 1 de diciembre de 2026 — INAMOVIBLE.
+
+## Reconciliación de CI después de la auditoría backup — 2026-11-10
+
+La punta verificada inmediatamente antes de esta corrección fue `7500ac66c17b193c053c075bd694d57370cab03b`, 216 ahead / 1 behind de main, merge base `03442951b2a2f63f5bf4dcf560f2c91be4f6cc71`. En ese SHA exacto GitHub devolvió 0 workflow runs pull_request y 0 status contexts. No reutilizar 11/11 SUCCESS del padre `515f85260d9ae0381eb4c4de64cd0f87ac6201da`. Esta corrección es documental; la punta que produzca debe validarse en su SHA exacto antes de cualquier promoción. PR #287 OPEN/Draft, sin reviews formales ni review threads; issue #53 OPEN/P0; producción NOT READY.
+
+Fecha límite del MVP: **1 de diciembre de 2026 — INAMOVIBLE**.

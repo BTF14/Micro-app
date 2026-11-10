@@ -2380,3 +2380,14 @@ El ensayo verifica el bundle SQL y roles en la base aislada; no prueba el compor
 3. Mantener #287 Draft hasta resolver validación exact-HEAD, revisión independiente y gates BCV/checkout; mantener #296 Draft hasta revisión documental y reconciliación final.
 4. Continuar P0/P1 únicamente en ramas aisladas y con pruebas proporcionales al riesgo. No iniciar endpoints comerciales ni permisos sin matriz aprobada.
 
+
+## 2026-11-10 03:35 UTC — reconciliación P0, BCV y estado vivo
+
+- Revalidado main `c5373564413ba086690552c6b7deeab08d7b4a89`; PR #287, #296, #298 y #299 con SHA exactos, workflow runs, check-runs, reviews y threads.
+- #298 antes de esta actualización: `5259153367a9228a5c5b5fd83427065c4f0610e4`, 13 workflows (7 SUCCESS / 6 IN_PROGRESS) y 14 check-runs (7 SUCCESS / 7 IN_PROGRESS). La actualización documental posterior requiere nueva validación exact-HEAD.
+- Se corrigió el criterio P0 para exigir tasa BCV vigente en toda venta, incluso USD-only; se hizo explícito que el objetivo del 2026-12-01 es producción para un local piloto y 1.000 productos tras cerrar todos los gates.
+- Se aclaró que Micro-app no tendrá descuentos ni promociones; se retiró la aprobación futura de descuentos de la matriz y se mantuvo el override manual fuera del checkout P0.
+- Se alineó SALES_CHECKOUT_MODEL con las migrations reales de #287: 0017 fue provisional, 0020 exige fecha efectiva exacta y 0021 exige último sync exitoso. Fines de semana/feriados sin tasa exacta fallan cerrado; la tensión legal/contable queda abierta.
+- Los métodos/reglas de pago aún no aprobados permanecen explícitamente bloqueados; no se interpretan las constraints SQL como decisión comercial.
+- Se detectó que #296 y #298 modifican seis documentos de continuidad en paralelo. No se fusionó ninguna PR; la futura integración exige reconciliación por archivo.
+- Sin cambios en main, código de aplicación, migraciones, Neon, producción, secretos, DNS, billing ni datos reales. Sin pruebas locales declaradas; CI de cada nuevo SHA documental debe completarse.

@@ -2,7 +2,7 @@
 
 - Estado: **D1–D8 aprobadas por el propietario el 2026-10-24**; revisar la tabla de aprobación al final para los valores vigentes.
 - Fecha de decisión: 2026-10-24; la matriz de propuesta original se conserva como historial de deliberación.
-- Relacionado: `docs/sdd/google-signin-allowlist-spec.md` (D1–D8); permisos por rol, documento independiente y todavía no aprobado: [`role-permission-decision-matrix.md`](role-permission-decision-matrix.md).
+- Relacionado: `docs/sdd/google-signin-allowlist-spec.md` (D1–D8); matriz de permisos por rol, documento independiente, APROBADA el 2026-10-31: [`role-permission-decision-matrix.md`](role-permission-decision-matrix.md).
 - Riesgo: alto.
 - Propósito: registrar decisiones aprobadas de identidad y enlazarlas con la implementación y sus pruebas, sin inventar correos, dominios ni administradores.
 
@@ -50,7 +50,7 @@ Las preguntas de esta sección fueron planteadas antes de la decisión del 2026-
 
 ## Estado de implementación (no equivale a preparación para producción)
 
-D1–D8 fueron aprobadas el 2026-10-24 y la migración `apps/api/migrations/0002_google_identity.sql` registra esa aprobación. La implementación Google OAuth/allowlist está en `apps/api/src/google-auth.ts`; el registro público y login por contraseña permanecen fail-closed en `apps/api/src/auth.ts`. Esto no significa que el producto esté listo para usuarios reales: seguir `docs/PRODUCTION_READINESS.md`, verificar la configuración de entornos y mantener la matriz de permisos por rol como decisión separada pendiente de aprobación.
+D1–D8 fueron aprobadas el 2026-10-24 y la migración `apps/api/migrations/0002_google_identity.sql` registra esa aprobación. La implementación Google OAuth/allowlist está en `apps/api/src/google-auth.ts`; el registro público y login por contraseña permanecen fail-closed en `apps/api/src/auth.ts`. Esto no significa que el producto esté listo para usuarios reales: seguir `docs/PRODUCTION_READINESS.md`, verificar la configuración de entornos y mantener la matriz de permisos por rol como decisión separada ya aprobada el 2026-10-31; su implementación por handlers sigue siendo parcial.
 
 ## Aprobación del propietario — 2026-10-24
 

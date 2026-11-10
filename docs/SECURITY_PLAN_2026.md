@@ -1,5 +1,7 @@
 # Plan de ciberseguridad para Micro app — 2026
 
+> **Reconciliación de estado 2026-11-09:** Google OAuth/allowlist y las decisiones D1–D8 están implementadas/aprobadas según `docs/sdd/auth-policy-decision-record.md`; la matriz de permisos por rol está APROBADA desde 2026-10-31. `resolveBranchContext` está conectado a las rutas actuales de inventario mediante autorización por operación; no es middleware global. No hay todavía checkout/pagos ni rutas HTTP completas de turnos, compras/recepciones o transferencias. Descuentos están fuera del P0 del 2026-12-01. Seguridad Nivel 1 sigue abierta, por lo que no se inicia nueva lógica comercial. Las tareas inferiores que digan que identidad/decisiones siguen pendientes o que branch scope no está conectado son snapshots históricos, no estado actual.
+
 **Estado:** plan de hardening parcialmente ejecutado; no es certificación ni prueba de readiness. Stack actual: React/Vite, Hono en Cloudflare Workers, PostgreSQL/Neon y Google OAuth con allowlist/sesiones implementados en la API.
 
 ## Límites de seguridad

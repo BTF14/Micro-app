@@ -140,7 +140,7 @@ Si alguna regla no es la deseada, no se debe eludir el trigger: diseñar una nue
 - BCV ocho decimales y VES dos;
 - hash estable ante orden distinto de líneas y normalización decimal;
 - key reutilizada con payload distinto;
-- selección BCV weekday/weekend y rechazo de nearest-future stale.
+- BCV exacta por fecha Caracas todos los días; rechazo de tasas futuras antes de su fecha efectiva y fail-closed si no existe fila exacta.
 
 ### PostgreSQL desechable con migrator/runtime reales
 1. venta completa: sale + líneas + pagos + balance + movimiento + audit en un COMMIT;
@@ -152,7 +152,7 @@ Si alguna regla no es la deseada, no se debe eludir el trigger: diseñar una nue
 7. producto/warehouse/branch/tenant cruzado: rechazo;
 8. turno cerrado, de otro usuario o sucursal: rechazo;
 9. cierre de turno concurrente: nunca venta fuera de turno;
-10. tasa BCV weekday, weekend, nearest-future stale y ausencia de tasa;
+10. tasa BCV exacta para fecha de operación, tasa futura prepublicada aún no efectiva, fines de semana/feriados sin fila exacta y ausencia de tasa;
 11. feriado entre semana sin fecha efectiva exacta: fail closed;
 12. pagos con moneda/escala inválida, parcial/excesivo según contrato SQL;
 13. sumas de líneas/pagos/snapshots/ledger reconciliadas;

@@ -1,3 +1,9 @@
+## Estado vigente de permisos — 2026-11-09 UTC
+
+La matriz `docs/sdd/role-permission-decision-matrix.md` está **APROBADA desde 2026-10-31**. Las frases anteriores de este documento que dicen “NO APROBADA” son snapshots previos y quedan supersedidas por el addendum de alcance de turno propio al final. La matriz aprobada permite a Owner/Admin/Cashier abrir y cerrar únicamente su propio turno bajo asignación activa; no permite cierre de turno ajeno, reapertura ni overrides de supervisor. La aprobación de matriz no implica que existan rutas HTTP completas de turnos ni autoriza nuevas rutas mientras Seguridad Nivel 1 siga abierta.
+
+---
+
 # Modelo de cajas y turnos — decisión de arquitectura
 
 **Estado:** migración 0004, assertions y pruebas de integración implementadas en main mediante PR #167; helper aislado de turno abierto implementado mediante PR #169. 0003/0004 no aplicadas a Neon main; esto no equivale a aprobación de la matriz comercial completa.  

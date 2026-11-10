@@ -740,3 +740,11 @@ Snapshot histórico: el manual run [40916692763](https://github.com/BTF14/Micro-
 
 La migración 0021 registra el estado operativo del sincronizador y aplica grants de mínimo privilegio para el runtime; la rama #287 añade serialización de `attempt_id` para impedir que una respuesta supersedida altere `exchange_rates`. Esto no cierra freshness: checkout todavía no consulta `last_success_at`. Requiere pruebas fail-closed, análisis de concurrencia, fixture oficial BCV, política aprobada y verificación de identidad del Worker. Cron permanece deshabilitado por defecto; no habilitar producción.
 
+ 
+## Reconciliación de seguridad BCV y backup — PR #287 (2026-11-10)
+
+La rama #287 contiene migraciones 0019–0022: ledger de proyección, fecha BCV estricta, gate de último sync exitoso y producer LOGIN separado con grants por columna. El nuevo perfil de backup/restore sintético aplica las 22 migraciones y compara ACL por columna/privilegios efectivos del producer; CI exact-HEAD en SHA `7746e86140cdf3a98911665f6955e57a256bfd4b`: 11/11 workflows SUCCESS.
+
+Esto no prueba identidad del Worker ni de `DATABASE_URL_BACKUP_RO` en producción. Tampoco cierra least privilege de backup: el workflow productivo usa `--no-owner --no-privileges`, mientras el perfil sintético preserva owners/ACL para probar ese modo. Se requiere un procedimiento de recuperación que reconstituya roles, ownership y grants bajo los flags productivos.
+
+No ejecutar workflow_dispatch de backup, no leer secretos, no tocar Neon main ni datos reales. Issue #53 OPEN/P0; producción NOT READY.

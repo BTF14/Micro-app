@@ -1,3 +1,14 @@
+## Reconciliación de política de descuentos — 2026-11-09 UTC
+
+Se detectó y aclaró una discrepancia aparente entre la matriz de permisos y el modelo de checkout:
+- La matriz conserva la decisión del 2026-10-31 de que cualquier descuento futuro requiere aprobación de Admin/Owner.
+- El modelo de checkout vigente y la migración `0014_sales_without_discounts.sql` excluyen descuentos, promociones y override manual.
+- El criterio P0 aprobado el 2026-11-09 no incluye descuentos. Por tanto, la decisión de autorización de la matriz se conserva como regla para una capacidad futura; **no habilita descuentos en el MVP ni demuestra que estén implementados**.
+- Se actualizaron `docs/MVP_SINGLE_STORE_ACCEPTANCE.md`, `docs/sdd/role-permission-decision-matrix.md` y `docs/sdd/SALES_CHECKOUT_MODEL.md` para explicitar esta precedencia y evitar que una IA añada descuentos al primer corte o elimine la decisión histórica.
+- Si se retoma después, requiere reconciliar contrato comercial, schema/migraciones, auditoría y flujo de aprobación.
+
+---
+
 ## Cierre de auditoría documental — 2026-11-09 UTC
 
 Se revisaron los puntos de entrada y documentos operativos principales: `AGENTS.md`, Constitución, política de colaboración/PR, ODD, CURRENT_STATE, HANDOFF, WORK_CHECKPOINT, PROJECT_PLAN, SECURITY_ROADMAP, BACKUP_AND_RECOVERY, MVP acceptance, STATE_JOURNAL, BACKLOG_RECOVERY_LEDGER, PRODUCTION_READINESS y WORKFLOW_AND_DEPLOYMENT_AUDIT.

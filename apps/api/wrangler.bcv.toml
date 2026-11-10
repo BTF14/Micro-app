@@ -1,0 +1,23 @@
+name = "micro-app-bcv-sync"
+main = "src/index.ts"
+compatibility_date = "2026-10-17"
+workers_dev = false
+
+# Isolated Cron-only Worker. No workers.dev endpoint and no route bindings.
+# Its DATABASE_URL must be provisioned as a separate encrypted secret using
+# the microapp_bcv_sync PostgreSQL LOGIN; never copy the API Worker credential.
+[observability]
+enabled = true
+redact_query_string = true
+
+[observability.logs]
+enabled = true
+invocation_logs = false
+head_sampling_rate = 1
+
+[vars]
+APP_ENV = "production"
+BCV_SYNC_ENABLED = "true"
+
+[triggers]
+crons = ["0 22 * * 1-5"]

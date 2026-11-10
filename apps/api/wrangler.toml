@@ -15,8 +15,6 @@ head_sampling_rate = 1
 
 [vars]
 APP_ENV = "production"
-# Safe default: deploying this branch does not activate BCV ingestion.
-BCV_SYNC_ENABLED = "false"
 # These plain (non-secret) config values are safe to commit: a Google OAuth
 # client ID is designed to be public (it's exposed in the browser redirect
 # URL anyway), and the other two are just this deployment's own URLs.
@@ -39,4 +37,4 @@ APP_ENV = "preview"
 
 # Prune expired authentication metadata hourly; preview environments are skipped in index.ts.
 [triggers]
-crons = ["17 * * * *", "0 22 * * 1-5"]
+crons = ["17 * * * *"]

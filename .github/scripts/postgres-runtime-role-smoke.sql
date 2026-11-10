@@ -304,6 +304,12 @@ BEGIN
     RAISE EXCEPTION 'RUNTIME_TRUNCATED_INVENTORY_BALANCES';
   EXCEPTION WHEN insufficient_privilege THEN NULL; END;
 
+  PERFORM 1 FROM public.bcv_sync_state WHERE singleton = true;
+  PERFORM 1 FROM public.exchange_rates LIMIT 1;
+  BEGIN UPDATE public.bcv_sync_state SET last_success_at=pg_catalog.now(), last_outcome='unchanged' WHERE singleton=true; RAISE EXCEPTION 'RUNTIME_FORGED_BCV_SYNC_SUCCESS'; EXCEPTION WHEN insufficient_privilege THEN NULL; END;
+  BEGIN UPDATE public.exchange_rates SET validation_status='valid' WHERE source='BCV_OFFICIAL_HTML_V1'; RAISE EXCEPTION 'RUNTIME_CHANGED_BCV_RATE_APPLICABILITY'; EXCEPTION WHEN insufficient_privilege THEN NULL; END;
+  BEGIN INSERT INTO public.exchange_rates(base_currency,quote_currency,rate,source,effective_date) VALUES ('USD','VES',1,'RUNTIME_FORGED_BCV','2026-11-10'); RAISE EXCEPTION 'RUNTIME_INSERTED_BCV_RATE'; EXCEPTION WHEN insufficient_privilege THEN NULL; END;
+
   -- Audit identity INSERT works without granting sequence access.
   INSERT INTO public.audit_logs(organization_id,actor_user_id,action,entity_type,entity_id,metadata)
   VALUES ('11111111-1111-4111-8111-111111111111',

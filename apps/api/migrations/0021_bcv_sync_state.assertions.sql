@@ -24,19 +24,12 @@ BEGIN
   END IF;
 
   IF NOT pg_catalog.has_table_privilege('microapp_runtime', 'public.bcv_sync_state', 'SELECT')
-    OR NOT pg_catalog.has_column_privilege('microapp_runtime', 'public.bcv_sync_state', 'attempt_id', 'UPDATE')
-    OR NOT pg_catalog.has_column_privilege('microapp_runtime', 'public.bcv_sync_state', 'last_success_at', 'UPDATE')
-  THEN
-    RAISE EXCEPTION 'BCV_SYNC_STATE_RUNTIME_MINIMUM_PRIVILEGES_MISSING';
-  END IF;
-
-  IF pg_catalog.has_table_privilege('microapp_runtime', 'public.bcv_sync_state', 'INSERT')
+    OR pg_catalog.has_table_privilege('microapp_runtime', 'public.bcv_sync_state', 'INSERT')
+    OR pg_catalog.has_table_privilege('microapp_runtime', 'public.bcv_sync_state', 'UPDATE')
     OR pg_catalog.has_table_privilege('microapp_runtime', 'public.bcv_sync_state', 'DELETE')
     OR pg_catalog.has_table_privilege('microapp_runtime', 'public.bcv_sync_state', 'TRUNCATE')
-    OR pg_catalog.has_column_privilege('microapp_runtime', 'public.bcv_sync_state', 'singleton', 'UPDATE')
-  THEN
-    RAISE EXCEPTION 'BCV_SYNC_STATE_RUNTIME_PRIVILEGES_TOO_BROAD';
-  END IF;
+    OR pg_catalog.has_column_privilege('microapp_runtime', 'public.bcv_sync_state', 'last_success_at', 'UPDATE')
+  THEN RAISE EXCEPTION 'BCV_SYNC_STATE_RUNTIME_MUST_BE_READ_ONLY'; END IF;
 
   IF EXISTS (
     SELECT 1

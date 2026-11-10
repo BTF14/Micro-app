@@ -2391,3 +2391,11 @@ El ensayo verifica el bundle SQL y roles en la base aislada; no prueba el compor
 - Los métodos/reglas de pago aún no aprobados permanecen explícitamente bloqueados; no se interpretan las constraints SQL como decisión comercial.
 - Se detectó que #296 y #298 modifican seis documentos de continuidad en paralelo. No se fusionó ninguna PR; la futura integración exige reconciliación por archivo.
 - Sin cambios en main, código de aplicación, migraciones, Neon, producción, secretos, DNS, billing ni datos reales. Sin pruebas locales declaradas; CI de cada nuevo SHA documental debe completarse.
+
+## 2026-11-10 03:40 UTC — verificación directa del P0 en main
+
+- Inspeccionado `apps/web/src/App.tsx` en main SHA `c5373564413ba086690552c6b7deeab08d7b4a89`: Caja/Ventas e Inventario aparecen como pendientes y las entradas Caja/Ventas, Inventario y Reportes están deshabilitadas.
+- Inspeccionado `apps/api/src/index.ts` en el mismo main: solo registra auth, Google auth, catálogo e inventario; no registra routers HTTP de ventas/checkout ni apertura/cierre de turnos.
+- `cashier-open-shift.ts` es un helper aislado, no un endpoint ni un recorrido de UI.
+- Conclusión de aceptación: no se ha demostrado el recorrido P0 completo desde UI; 0/1 jornada end-to-end aceptada. Esto no significa que no existan componentes parciales.
+- No se ejecutó la aplicación ni se modificó código de aplicación. Se documentó la evidencia en CURRENT_STATE, HANDOFF_NEXT_CHAT, WORK_CHECKPOINT y PROJECT_PLAN.

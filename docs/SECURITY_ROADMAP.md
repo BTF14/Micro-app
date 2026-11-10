@@ -1,3 +1,60 @@
+# Evidencia reciente de backup/RPO y medición pg_restore — 2026-11-10 UTC
+
+> Snapshot basado en metadatos de GitHub Actions y logs del job sintético. No se accedió a Neon, secretos, datos reales ni al repositorio remoto de backups.
+
+## Ejecuciones programadas de backup
+
+Consulta de `GET /repos/BTF14/Micro-app/actions/runs?per_page=100&event=schedule`, filtrada por workflow `Respaldo cifrado de la base de datos`: 13 ejecuciones entre 2026-10-28 y 2026-11-09; 12 SUCCESS y 1 FAILURE.
+
+| Inicio UTC | Run | Resultado |
+|---|---:|---|
+| 2026-10-28 13:39:19 | 40698423050 | SUCCESS |
+| 2026-10-29 13:48:47 | 40885390988 | FAILURE |
+| 2026-10-30 13:42:22 | 41065429695 | SUCCESS |
+| 2026-10-31 13:10:48 | 41204388856 | SUCCESS |
+| 2026-11-01 13:53:45 | 41313453993 | SUCCESS |
+| 2026-11-02 16:39:22 | 41483601946 | SUCCESS |
+| 2026-11-03 14:44:48 | 41656718748 | SUCCESS |
+| 2026-11-04 14:56:07 | 41852537628 | SUCCESS |
+| 2026-11-05 15:00:35 | 42050574459 | SUCCESS |
+| 2026-11-06 14:40:53 | 42236081293 | SUCCESS |
+| 2026-11-07 13:38:07 | 42377860440 | SUCCESS |
+| 2026-11-08 13:57:20 | 42487395384 | SUCCESS |
+| 2026-11-09 16:57:34 | 42659924075 | SUCCESS |
+
+**Intervalos entre inicios de backups exitosos:**
+- Máximo observado: **48 h 03 min 03 s**, del 2026-10-28 13:39:19Z al 2026-10-30 13:42:22Z; el run intermedio del 29 de octubre falló.
+- Último intervalo observado: **27 h 00 min 14 s**, del 8 al 9 de noviembre.
+- Siete intervalos entre backups exitosos superaron 24 horas.
+
+**Conclusión:** RPO ≤24 h NO demostrado y contradicho por los intervalos observados. No basta con que la mayoría de ejecuciones terminen SUCCESS. La ejecución fallida y los retrasos entre inicios elevan la ventana potencial de pérdida. No atribuir causa a GitHub scheduler sin evidencia adicional.
+
+No modificar cron, secretos ni proveedor durante esta revisión. Evaluar una estrategia sin coste que reduzca los intervalos y produzca evidencia verificable; un cron más frecuente por sí solo tampoco garantiza puntualidad si el scheduler retrasa/omite ejecuciones.
+
+## Medición sintética de pg_restore — PR #299
+
+- HEAD probado: `c82b0a10f85b59e1f81ac0ca2d439b6286558751`.
+- Workflow run: [42692246875](https://github.com/BTF14/Micro-app/actions/runs/42692246875).
+- Job: `129414700645`, `Synthetic encrypted backup and restore`, SUCCESS.
+- Logs: checksum age y descifrado correctos; manifiesto de 13 tablas y relaciones sintéticas coincidente; tablas efímeras de auth excluidas.
+- `Synthetic pg_restore operation elapsed seconds: 1`.
+- `Synthetic end-to-end round-trip elapsed seconds: 1`.
+
+La medición usa el contador Bash `SECONDS` (resolución de segundos enteros) en PostgreSQL 18 desechable. Es una muestra sintética pequeña, no benchmark representativo, no RTO integral, no tiempo de detección/decisión/preparación/descifrado/verificación/recuperación funcional y no restauración de una copia real. No extrapolar el segundo observado a producción.
+
+## Estado de recuperación
+
+- Backup cifrado histórico: subidas reales exitosas documentadas; esta consulta solo inspecciona metadatos de ejecuciones.
+- RPO ≤24 h: **NO-GO** por gaps observados.
+- RTO integral: no medido.
+- Restauración independiente completa de una copia actual real: no verificada en esta sesión.
+- Alertas externas: no demostradas; el resumen de GitHub Actions no equivale a una alerta externa.
+- Coste $0: no confirmado integralmente.
+- Mantener backups existentes; no borrar ni alterar copias.
+- Fecha de entrega P0: **2026-12-01**, inamovible.
+
+---
+
 # Revalidación de Seguridad Nivel 1 — 2026-11-10 UTC (continuación)
 
 > Esta entrada prevalece sobre snapshots inferiores. No declara producción segura: distingue CI sintético, inspección de código y evidencia productiva.

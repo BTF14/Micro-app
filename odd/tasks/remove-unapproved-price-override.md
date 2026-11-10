@@ -19,8 +19,17 @@ El checkout P0 no admite descuentos, promociones, cupones ni modificaciones manu
 
 - `apps/api/src/authorization.ts`: permiso eliminado del contrato, allowlists Owner/Admin y parser.
 - `apps/api/src/authorization.test.ts`: todos los roles deben rechazar el permiso; se conservan las aserciones válidas de anulación de ventas.
+- El diff de #287 no contiene callsites de `sales.price.override` fuera de la definición/autorización; la retirada elimina un permiso residual, no cambia un flujo de checkout activo.
 - La misma corrección aislada existe en PR #300; se incorpora aquí porque #287 integra el checkout y no debe reintroducir el permiso al llegar a main.
-- La validación debe ejecutarse en CI exact-HEAD de #287. No se reutilizan resultados de PR #300.
+
+## Validación
+
+- Código y prueba ejecutados en CI exact-HEAD `61d6ed64127ce8e8684617dff1c75a4773a7d363`.
+- GitHub Actions pull_request: **11/11 workflows SUCCESS**.
+- Check-runs publicados: **15/15 SUCCESS**.
+- El workflow `CI` completó build/typecheck, unit tests, matriz PostgreSQL, checkout atómico y Runtime-role API integration en SUCCESS.
+- Los resultados anteriores corresponden al SHA de implementación indicado; cualquier commit posterior requiere revalidación exact-HEAD.
+- PR #287 permanece OPEN/Draft, sin aprobación formal ni merge.
 
 ## Exclusiones y límites
 

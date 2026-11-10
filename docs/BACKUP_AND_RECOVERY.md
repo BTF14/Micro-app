@@ -347,3 +347,15 @@ Consulta del historial de GitHub Actions en `main`, filtro `event=schedule`, wor
 - Entre los inicios del 2026-11-08 13:57:20Z y 2026-11-09 16:57:34Z transcurrieron **27 h 00 min 14 s** (la diferencia entre nombres de archivo previamente registrada fue 27 h 00 min 16 s; usar los timestamps de run para medir la cadencia del workflow y los timestamps de artefacto para medir antigüedad del backup).
 - Aunque las ocho ejecuciones fueron SUCCESS, la cadencia observada **no garantiza RPO <=24 h**. El RPO real requiere medir la antigüedad del último backup válido respecto del incidente y del último dato confirmado, no solo contar ejecuciones exitosas.
 - Acción segura siguiente: diseñar/validar en un entorno no productivo un monitor que detecte y alerte cuando la última copia válida supere el umbral RPO acordado, incluyendo fallo, ausencia y retraso de ejecución. Cualquier cambio al cron o al workflow productivo queda fuera de esta prueba y no se realizó.
+
+
+## Corrección crítica: privilegios efectivos del principal de backup — 2026-11-10
+
+> Esta entrada prevalece sobre cualquier descripción histórica de `backup_readonly` como rol efectivamente de solo lectura.
+
+- El snapshot del 2026-10-26 verificó grants directos de tabla SELECT, pero no demuestra privilegios efectivos si existen membresías heredadas.
+- En la auditoría de solo lectura registrada en el issue #53 el 2026-11-06 se observó que `backup_readonly`, `neon_service` y `neondb_owner` eran miembros de `neon_superuser`, que hereda `pg_write_all_data`; además `cloud_admin` tenía `rolsuper=true`.
+- Por tanto, **no afirmar que `backup_readonly` es de solo lectura en términos efectivos** ni que el secreto `DATABASE_URL_BACKUP_RO` usa un principal de mínimo privilegio. No se ha demostrado qué principal utiliza realmente ese secreto.
+- El gate P0 requiere, mediante procedimiento autorizado y sin exponer secretos, identificar `current_user` del proceso de backup y comprobar memberships heredadas, ownership, ACL de base/esquema/tablas/secuencias y privilegios efectivos. Cualquier corrección de roles/grants requiere plan separado, pruebas en entorno aislado y autorización explícita; no cambiar Neon main desde esta tarea.
+- PR #302 solo elimina el token Git de la URL/remote mediante GIT_ASKPASS; **no corrige ni valida los privilegios de PostgreSQL**. Su CI tampoco demuestra ejecución real del backup con el secreto.
+- Issue #53 permanece OPEN/P0. Hasta cerrar este punto, el backup no puede describirse como ejecutado con identidad least-privilege, aunque el workflow termine SUCCESS.

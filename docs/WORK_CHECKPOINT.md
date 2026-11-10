@@ -1,3 +1,7 @@
+## Bloqueo funcional confirmado — 2026-11-10
+
+La inspección del código de #287 confirma que el frontend no implementa caja/ventas: `App.tsx` sigue etiquetando el módulo como pendiente y renderiza `CatalogPanel`; no hay carrito, checkout UI, recibo ni vistas de turnos. El backend de checkout y las pruebas PostgreSQL no equivalen a E2E desde navegador. Además, `index.ts` no registra endpoints de apertura/cierre de turno; el helper `cashier-open-shift.ts` no es un router. Tras Seguridad Nivel 1 y aprobación del contrato de pagos, estos componentes siguen pendientes. **P0 = 0/1 jornadas completas; fecha límite 2026-12-01.**
+
 # Checkpoint exact-HEAD — 2026-11-10 UTC
 
 - Deadline **2026-12-01**; objetivo P0: un local, hasta 1.000 productos, jornada completa desde UI. Sin descuentos/promociones.

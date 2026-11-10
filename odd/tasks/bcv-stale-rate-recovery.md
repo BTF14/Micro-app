@@ -37,10 +37,22 @@ No añadir TTL, freshness arbitraria, umbrales nuevos, tasa manual, cambios de p
 - La primera ejecución de CI encontró una aserción unitaria incorrecta (`AND source` en vez de `WHERE source`); se corrigió en un commit posterior y el HEAD final pasó.
 - No se añadió TTL, freshness arbitraria ni umbrales. No se ejecutó PostgreSQL remoto ni se tocó Neon main.
 
+## Integración de recuperación de checkout — 2026-11-10
+
+Se reforzó `apps/api/src/sales-checkout.integration.test.ts` para probar el ciclo completo de recuperación a nivel API/PostgreSQL:
+
+1. La fila BCV del día se marca `stale` y el último sync queda `failed`.
+2. Checkout devuelve 409 y no consume existencias.
+3. `persistBcvOfficialRate()` recibe la misma tasa/fecha efectiva ya parseada y se ejecuta con conexión LOGIN `microapp_runtime`.
+4. La función devuelve `unchanged` y restaura únicamente el estado de la fila a `valid`.
+5. Se registra el resultado de sync exitoso en el fixture; checkout devuelve 201 y el saldo baja exactamente una unidad.
+
+**CI exact-HEAD anterior a este registro:** SHA `43e920297cfbc08b248ab95bee8f3d202891e3c8`; 15/15 check-runs SUCCESS y 11/11 workflows SUCCESS. El workflow `CI` (run `42788781507`) terminó SUCCESS; la suite PostgreSQL atomic checkout y el paso runtime-role completaron correctamente. El test usa PostgreSQL 18 desechable y una tasa sintética; no prueba captura live del sitio BCV ni recorrido UI.
+
 ## Pendiente residual
 
-- La regresión nueva demuestra recuperación de persistencia bajo runtime role; no constituye por sí sola una prueba E2E del recorrido de checkout desde UI.
-- Mantener verificación de que checkout rechaza stale antes de recuperación y que el gate `bcv_sync_state` permanece fail-closed cuando el último intento no tuvo éxito.
-- La política de frescura no recibe TTL arbitrario. La secuencia de intentos concurrentes sigue protegida por el `attempt_id` existente.
+- Ejecutar el recorrido E2E desde la UI y una validación productiva controlada autorizada después de cerrar Seguridad Nivel 1.
+- Mantener fail-closed ante stale, ausencia de tasa y último sync fallido/running.
+- No añadir TTL ni umbral de frescura arbitrario. La secuencia concurrente de intentos sigue protegida por `attempt_id`.
 
-**Limitación de estado:** el SHA y CI aquí citados son los observados antes de este commit documental; consultar el HEAD exacto posterior. PR #287 permanece OPEN/Draft.
+**Limitación de estado:** el SHA/CI citados son los observados antes de este commit documental; consultar el HEAD exacto posterior. PR #287 permanece OPEN/Draft.

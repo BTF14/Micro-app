@@ -256,3 +256,18 @@ Límites: no merge, no main, no deploy, no Neon, no secretos, no Cron, no Cloudf
 - `.github/workflows/backup-real-restore.yml`: manual; verifica checksum, descifra y restaura en PG18 efímero; usa `--no-owner --no-privileges` y solo comprueba existencia de tablas. No ejecutar por contener datos reales.
 - La fase 2 sintética de #303 preserva owner/ACL; no representa la política de metadatos del backup real.
 - Próximo gate: auditoría read-only del principal y grants efectivos, sin mostrar secretos ni datos de negocio; luego plan de role/ACL provisioning, restore seguro, RPO/RTO, alertas y coste. Issue #53 OPEN/P0.
+
+ 
+## Checkpoint técnico — PR #303, manifiesto ampliado y grafo poblado (2026-11-10)
+
+- Código validado en SHA `f0dc1f90043eff4270d86f461a2dfc07187aa814`; PR #303 OPEN/Draft, base `main` en `c5373564413ba086690552c6b7deeab08d7b4a89`, 67 ahead / 0 behind, mergeable=true.
+- En ese SHA exacto: 11/11 workflow runs `pull_request` SUCCESS; 0 status contexts tradicionales; 0 reviews formales; 0 review threads.
+- `scripts/test_backup_restore_schema.sh` amplía el manifiesto para columnas (orden lógico, no attnum físico), definiciones de vistas/materializadas, relaciones/particiones, tipos/domain/enum, labels, event triggers, estado de índices, constraints y triggers habilitados.
+- Las aserciones del fixture verifican conteos absolutos, que balance = suma del ledger de movimientos por tenant/sucursal/almacén/producto, que cada movimiento tiene balance y que el total de venta coincide con sus líneas, pagos y snapshot de tasa.
+- Job PostgreSQL 18 `42870784682`: SUCCESS. Aplicó 16 migraciones con el runner oficial; cifrado age, checksum, restore, ownership/ACL, RLS/policies, roles y search_path PASS; grafo sintético poblado PASS; tablas auth efímeras excluidas PASS. Round-trip medido: 2 s.
+- Se corrigieron dos fallos reales detectados por las pruebas: concatenación SQL de campos internos `char` (casts explícitos) y comparación incorrecta de `attnum` tras restaurar tablas con columnas históricamente eliminadas (comparar orden lógico de columnas). No se relajaron controles.
+- Alcance de este fixture: main 0001–0016. No cubre migraciones 0017–0022 de #287; requieren perfil separado, sin mezclar secuencias.
+- #287: OPEN/Draft, HEAD `9a1792f7449ff83915bcdd672686a4860918028d`, 219 ahead / 1 behind main, merge base `03442951b2a2f63f5bf4dcf560f2c91be4f6cc71`, 11/11 workflows exact-HEAD SUCCESS. #298: OPEN/Draft, HEAD `c9e65a8f0378b2b9740e91df68f39909967eed26`, 231 ahead / 0 behind, 11/11 workflows SUCCESS.
+- Issue #53 sigue OPEN/P0. No se demostró principal efectivo de `DATABASE_URL_BACKUP_RO`, least privilege, restore de artefacto real, RPO/RTO sostenidos, alertas externas ni coste total $0. Producción NOT READY.
+- No merge, no main, no deploy, no Neon writes, no secretos, no Cron, no datos reales. Deadline 2026-12-01.
+- Los commits documentales posteriores cambian el HEAD de la PR: consultar GitHub y revalidar todos los workflows del SHA final; no atribuir automáticamente los 11/11 anteriores a otro SHA.

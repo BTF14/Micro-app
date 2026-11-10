@@ -239,6 +239,6 @@ La prueba de esquema en #303 valida la creación del esquema desde migraciones y
 
 Para la recuperación operativa, estos controles requieren un contrato explícito: qué roles se provisionan antes/después del restore, qué grants se reaplican desde migraciones/infraestructura, qué objetos deben pertenecer a migrator/runtime y cómo se verifica que RLS y políticas permanecen activas. No inferirlos a partir de que `pg_restore` termine SUCCESS.
 
-La fase 2 de datos debe usar fixtures distintos según el ref. Main 0001–0016 permite comprobar el grafo de sucursal/turno/warehouse/count/ledger y las ventas del esquema legacy; checkout branch-aware pertenece a #287 0017–0022 y debe probarse sobre esa rama/ref separada. No mezclar migraciones ni llamar a la fixture main una prueba de checkout completo.
+La fase 2 debe ser acumulativa y version-aware. Main 0001–0016 ya contiene checkout branch-aware por migration 0015 y pairing de balance/ledger por migration 0010. PR #287 añade 0017–0022 (BCV weekday/weekend, allocation, projection, sync state y rol productor); esas extensiones se prueban solo sobre el ref que las contiene. No mezclar secuencias ni omitir checkout de la fixture main.
 
 Issue #53 permanece OPEN/P0. No se ha accedido a Neon, secretos, backup remoto ni datos reales. Producción NOT READY.

@@ -703,8 +703,6 @@ describe.skipIf(!isDisposableCheckoutDatabase || !isDisposableBcvProducerDatabas
     await seedBalance("2.000");
     const blockedKey = "sync-recovery-blocked-" + crypto.randomUUID();
     const acceptedKey = "sync-recovery-accepted-" + crypto.randomUUID();
-    const runtimeClient = new Client({ connectionString: databaseUrl });
-    await runtimeClient.connect();
     try {
       await setBcvSyncState("failed");
       await client.query(
@@ -721,7 +719,7 @@ describe.skipIf(!isDisposableCheckoutDatabase || !isDisposableBcvProducerDatabas
         [rateId],
       );
       await expect(persistBcvOfficialRate(
-        runtimeClient as unknown as DatabaseClient,
+        producerClient as unknown as DatabaseClient,
         { rate: storedRate.rows[0]!.rate, effectiveDate: rateDate },
       )).resolves.toBe("unchanged");
 
@@ -740,7 +738,6 @@ describe.skipIf(!isDisposableCheckoutDatabase || !isDisposableBcvProducerDatabas
       expect(accepted.status).toBe(201);
       expect((await readBalance()).on_hand_quantity).toBe("1.000");
     } finally {
-      await runtimeClient.end();
       await client.query(
         "UPDATE public.exchange_rates SET validation_status='valid' WHERE id=$1",
         [rateId],

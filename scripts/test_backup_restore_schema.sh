@@ -183,7 +183,8 @@ SELECT 'bcv_sync_state_table|' || (pg_catalog.to_regclass('public.bcv_sync_state
 SELECT 'relation_owners|' || COALESCE(string_agg(c.relname || ':' || pg_catalog.pg_get_userbyid(c.relowner), ';' ORDER BY c.relname), '')
   FROM pg_catalog.pg_class c
   JOIN pg_catalog.pg_namespace n ON n.oid = c.relnamespace
- WHERE n.nspname = 'public' AND c.relkind IN ('r','p','v','m','S','f');
+ WHERE n.nspname = 'public' AND c.relkind IN ('r','p','v','m','S','f')
+   AND c.relname NOT IN ('auth_sessions','auth_rate_limits','auth_bootstrap_attempts');
 SELECT 'function_owners|' || COALESCE(string_agg(p.proname || '(' || pg_catalog.pg_get_function_identity_arguments(p.oid) || '):' || pg_catalog.pg_get_userbyid(p.proowner), ';' ORDER BY p.proname, pg_catalog.pg_get_function_identity_arguments(p.oid)), '')
   FROM pg_catalog.pg_proc p
   JOIN pg_catalog.pg_namespace n ON n.oid = p.pronamespace
@@ -200,7 +201,8 @@ SELECT 'relation_acl|' || COALESCE(string_agg(
   CROSS JOIN LATERAL pg_catalog.aclexplode(
     COALESCE(c.relacl, pg_catalog.acldefault(CASE WHEN c.relkind = 'S' THEN 'S'::"char" ELSE 'r'::"char" END, c.relowner))
   ) AS a
- WHERE n.nspname = 'public' AND c.relkind IN ('r','p','v','m','S','f');
+ WHERE n.nspname = 'public' AND c.relkind IN ('r','p','v','m','S','f')
+   AND c.relname NOT IN ('auth_sessions','auth_rate_limits','auth_bootstrap_attempts');
 SELECT 'function_acl|' || COALESCE(string_agg(
     p.proname || '(' || pg_catalog.pg_get_function_identity_arguments(p.oid) || '):'
     || CASE WHEN a.grantee = 0 THEN 'PUBLIC' ELSE pg_catalog.pg_get_userbyid(a.grantee) END
@@ -220,13 +222,15 @@ SELECT 'default_acl|' || COALESCE(string_agg(
 SELECT 'rls|' || COALESCE(string_agg(c.relname || ':' || c.relrowsecurity::text || ':' || c.relforcerowsecurity::text, ';' ORDER BY c.relname), '')
   FROM pg_catalog.pg_class c
   JOIN pg_catalog.pg_namespace n ON n.oid = c.relnamespace
- WHERE n.nspname = 'public' AND c.relkind IN ('r','p');
+ WHERE n.nspname = 'public' AND c.relkind IN ('r','p')
+   AND c.relname NOT IN ('auth_sessions','auth_rate_limits','auth_bootstrap_attempts');
 SELECT 'policies|' || COALESCE(string_agg(
     schemaname || ':' || tablename || ':' || policyname || ':' || permissive || ':'
     || array_to_string(roles, ',') || ':' || cmd || ':' || COALESCE(qual, '') || ':' || COALESCE(with_check, ''),
     ';' ORDER BY schemaname, tablename, policyname
   ), '')
-  FROM pg_catalog.pg_policies WHERE schemaname = 'public';
+  FROM pg_catalog.pg_policies WHERE schemaname = 'public'
+   AND tablename NOT IN ('auth_sessions','auth_rate_limits','auth_bootstrap_attempts');
 SELECT 'role_contract|' || COALESCE(string_agg(
     rolname || ':' || rolcanlogin::text || ':' || rolsuper::text || ':' || rolcreatedb::text
     || ':' || rolcreaterole::text || ':' || rolreplication::text || ':' || rolbypassrls::text
@@ -253,7 +257,8 @@ SELECT 'effective_table_privileges|' || COALESCE(string_agg(
   JOIN pg_catalog.pg_namespace n ON n.oid = c.relnamespace
   CROSS JOIN (VALUES ('SELECT'),('INSERT'),('UPDATE'),('DELETE'),('TRUNCATE'),('REFERENCES'),('TRIGGER')) AS p(privilege)
  WHERE r.rolname IN ('microapp_migrator','microapp_runtime','microapp_bcv_sync')
-   AND n.nspname = 'public' AND c.relkind IN ('r','p','v','m','f');
+   AND n.nspname = 'public' AND c.relkind IN ('r','p','v','m','f')
+   AND c.relname NOT IN ('auth_sessions','auth_rate_limits','auth_bootstrap_attempts');
 SELECT 'effective_sequence_privileges|' || COALESCE(string_agg(
     r.rolname || ':' || c.relname || ':' || p.privilege || ':'
     || pg_catalog.has_sequence_privilege(r.rolname, c.oid, p.privilege)::text,

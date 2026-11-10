@@ -36,7 +36,7 @@ Esta es la opción base más simple de auditar: cada venta/pago asociado a caja 
 
 ### register_shifts
 - UUID, `organization_id`, `branch_id`, `register_id` y `cashier_user_id` obligatorios.
-- El cajero debe pertenecer a la organización y tener asignación de sucursal. La FK garantiza pertenencia estructural; el runtime debe volver a validar que membresía y asignación sigan activas y que el rol actual sea `cashier`.
+- El miembro debe pertenecer a la organización y tener asignación activa a la sucursal. La FK garantiza pertenencia estructural; el runtime debe volver a validar membresía, asignación y rol. Según la matriz aprobada y la migración 0007, `owner`, `admin` y `cashier` pueden abrir/operar/cerrar únicamente su propio turno; `inventory` no puede hacerlo.
 - Apertura con `opening_cash_usd NUMERIC(14,4)` y `opening_cash_ves NUMERIC(16,2)`, ambos no negativos y con valor inicial cero permitido; `opened_at` usa `timestamptz`.
 - Cierre con `closing_cash_usd NUMERIC(14,4)`, `closing_cash_ves NUMERIC(16,2)`, `closed_at` y `closed_by_user_id`; ambos conteos de cierre son obligatorios y no negativos. El cierre se escribe en una sola transición atómica o el turno permanece abierto.
 - USD y VES se guardan por separado porque el esquema de pagos admite ambas monedas. No usar un campo genérico sin moneda ni sumar importes de monedas distintas.
@@ -53,7 +53,7 @@ Esta es la opción base más simple de auditar: cada venta/pago asociado a caja 
 
 ## 3. Reglas de aplicación futuras
 
-1. Abrir: validar sesión, tenant, branch context, rol cashier, asignación activa, caja activa y ausencia de turno abierto del cajero/caja; insertar apertura en transacción.
+1. Abrir: validar sesión, tenant, branch context, rol elegible (`owner`, `admin` o `cashier`), asignación activa, caja activa y ausencia de turno abierto del miembro/caja; insertar apertura en transacción.
 2. Operar: cada operación de caja debe comprobar en servidor el turno abierto, cajero autenticado y caja/sucursal correctas dentro de la misma transacción que la operación financiera. PR #169 implementa el lookup aislado; el futuro caller debe usar el mismo transaction client y añadir autorización por operación.
 3. Cerrar: capturar conteo real separado en USD y VES, registrar actor y hora; no calcular diferencia contra un efectivo esperado hasta que exista un ledger de caja completo. Bloquear modificaciones posteriores.
 4. Cambio de cajero: cerrar el turno actual; abrir uno nuevo para el siguiente cajero. Si el cierre falla, no abrir el siguiente turno.
@@ -62,11 +62,11 @@ Esta es la opción base más simple de auditar: cada venta/pago asociado a caja 
 
 ## 4. Autorización y límites
 
-- `resolveBranchContext` ya existe, pero no está conectado a rutas.
-- PR #169 implementó `resolveOpenCashierRegisterShift(client, branchContext)` como helper aislado: rol cashier, scope org/user/branch, revalidación de estados activos y lock `FOR SHARE`; no está conectado a rutas ni autoriza operaciones.
+- `resolveBranchContext` está conectado mediante `authorizeBranchOperation` a las rutas de lectura y conteo de inventario; no es middleware global y cada handler debe invocarlo explícitamente.
+- `resolveOpenCashierRegisterShift(client, branchContext)` sigue siendo un helper aislado, sin ruta HTTP de turnos; el helper no sustituye autorización por operación ni el uso del mismo cliente transaccional.
 - Un contexto owner/admin de alcance organizacional no significa que puedan operar como cajero en un turno ajeno.
 - No aprobar aquí permisos de apertura/cierre por supervisor, arqueo, diferencias, retiros, ingresos, anulaciones ni reportes financieros.
-- La matriz `docs/sdd/role-permission-decision-matrix.md` sigue NO APROBADA. Antes de endpoints, debe aprobarse o sustituirse por una matriz corregida con autorización server-side por operación.
+- La matriz `docs/sdd/role-permission-decision-matrix.md` está APROBADA desde 2026-10-31. Lo pendiente son los handlers HTTP completos de turnos, las pruebas de aceptación de extremo a extremo y el cierre de Seguridad Nivel 1 antes de iniciar nueva lógica comercial.
 - Este diseño no implementa endpoints, pagos, ventas, ledger de caja, ni autoriza operaciones comerciales.
 
 ## 5. Pruebas de aceptación para 0004
@@ -93,7 +93,7 @@ En PostgreSQL 18 efímero, desde una base vacía y aplicando migraciones 0001–
 2. **Hecho en PR #167:** workflows CI/migration-check aplican 0001–0004 desde cero en PostgreSQL 18 efímero.
 3. **Hecho en PR #167:** tests de integración para scope, lifecycle, desactivación y concurrencia del modelo de datos.
 4. **Hecho en PR #169:** helper aislado de lookup del turno abierto del cajero autenticado; 6 pruebas unitarias y 7 de integración PG18, incluida concurrencia de cierre. No crea endpoints ni autoriza operaciones.
-5. **Pendiente:** aprobación de matriz de permisos y diseño de autorización server-side por operación antes de handlers comerciales.
+5. **Hecho:** matriz de permisos aprobada el 2026-10-31 y mapa de operaciones implementado parcialmente en `authorization.ts`. **Pendiente:** rutas HTTP de turnos, integración transaccional y pruebas completas; no iniciar mientras Seguridad Nivel 1 siga abierta.
 6. No aplicar 0004 a Neon main ni conectar rutas comerciales en esta fase.
 
 ## 7. Estado actual de infraestructura de pruebas

@@ -1,3 +1,35 @@
+# Revalidación Nivel 1 — 2026-11-10 UTC
+
+**Dictamen: Seguridad Nivel 1 ABIERTO; producción NOT READY.**
+
+## Evidencia nueva
+
+- **CORS público:** run `42685081861`, job `129389572909`, SUCCESS. Preflight OPTIONS del origen Pages permitido devolvió ACAO exacto, credentials=true y métodos/headers esperados. `https://attacker.example` no recibió Access-Control-Allow-Origin. Prueba anónima sin cookies/tokens; no valida CSRF en POST/PATCH/DELETE.
+- **Bundle Pages:** run `42684612024`, job `129387951499`, SUCCESS. Bundle publicado contiene API base canónica `https://micro-app-api.btfcasheb.workers.dev`.
+- **Dependencias:** daily watch `42676391365`, SUCCESS; `pnpm audit --audit-level high`: no known vulnerabilities. Esto no demuestra que Dependabot alerts esté vacío; el endpoint de alertas no fue accesible.
+- **Branch protection:** API legacy devolvió 403; repository rulesets devolvió `[]`. No afirmar branch protection/approval requirements actuales sin evidencia.
+- **Backup:** 13 ejecuciones programadas, 12 SUCCESS y 1 FAILURE; gap máximo entre backups exitosos 48 h 03 min 03 s. RPO≤24h NO cumplido. El fallo 29 oct se debió a que ese SHA no tenía `actions/checkout`; main actual ya incluye checkout y ruta absoluta de `prune_backups.py`. #299 mide pg_restore sintético 1s, no RTO integral.
+- **#300:** elimina `sales.price.override` en branch Draft; no integrado.
+- **#302:** GIT_ASKPASS y remote limpio en branch Draft; no integrado. El riesgo del workflow en main persiste hasta integración autorizada.
+- **#287:** stale recovery y checkout API test pasan en PostgreSQL sintético/runtime-role. No es validación UI/productiva.
+
+## Gates aún abiertos
+
+1. Branch protection legacy, approvals y required checks actuales.
+2. Dependabot alerts actuales.
+3. Identidad/grants efectivos PostgreSQL del Worker productivo.
+4. Backup independiente, RPO≤24h, RTO integral, restore independiente y alertas externas.
+5. CORS/Origin/CSRF/cookies en mutaciones autenticadas del runtime.
+6. Aislamiento tenant/sucursal en rutas comerciales reales; inspección estática no es auditoría exhaustiva.
+7. Pago checkout: métodos y reglas parciales/mixtas/sobrepago/cambio no aprobados; no activar métodos hardcodeados de #287.
+8. Parser BCV: ventanas de sanity 10 días pasados/7 futuros sin justificación aprobada; no tratarlas como TTL/freshness.
+9. Producción: no hay demostración de una jornada completa de comercio desde UI.
+
+No iniciar nuevos endpoints/UI/lógica comercial mientras el gate permanezca abierto. No relajar controles para alcanzar el **2026-12-01**.
+
+
+---
+
 ## Evidencia backup/RPO — 2026-11-10 UTC
 
 13 ejecuciones programadas: 12 SUCCESS y 1 FAILURE; máximo entre backups exitosos **48 h 03 min 03 s**. RPO ≤24 h no cumplido. #299: pg_restore sintético 1 s, no RTO integral. Ver detalle y run IDs en [BACKUP_AND_RECOVERY.md](BACKUP_AND_RECOVERY.md). Seguridad Nivel 1 permanece ABIERTO.

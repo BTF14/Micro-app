@@ -1,3 +1,7 @@
+> **Regla de vigencia y lectura:** este handoff conserva snapshots append-only para trazabilidad. Los bloques antiguos con fechas, HEADs o estados de PR previos son históricos y no deben reutilizarse como estado actual. La sección `Handoff vivo` / `Handoff vivo —` con el timestamp más reciente al final del documento, contrastada con GitHub en vivo, es la referencia operativa. Para PRs, commits, bases, checks, reviews y estado de merge, GitHub vivo prevalece siempre. No asumir que un bloque superior es más reciente solo por su posición.
+
+---
+
 ## Estado exacto de PR #298 antes de este último refresh — 2026-11-10 UTC
 
 - HEAD observado: `7b6dd3824b959786868e09986b7c2cf6be8067d3`.

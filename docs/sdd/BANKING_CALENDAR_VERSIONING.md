@@ -3,6 +3,8 @@
 **Estado:** regla documental aprobada por el propietario del producto; el PDF 2026 fue aportado en la conversación el 2026-11-09.  
 **Alcance:** referencia para determinar días hábiles bancarios venezolanos en la integración BCV. No cambia por sí sola la política de aceptación de tasas en checkout.
 
+> **Aclaración del propietario — 2026-11-10 (prevalece sobre snapshots inferiores):** SUDEBAN y BCV presentan inestabilidad web. El calendario 2026 aportado por el propietario no es oficial, pero es la mejor información disponible hasta el momento y debe conservarse como referencia provisional. No insistir en búsquedas repetidas de un calendario 2027 que no está disponible de forma verificable; cuando sea necesario, usar terceros con trazabilidad y etiqueta no oficial.
+
 ## Fuente recibida y verificación de procedencia
 
 - Archivo recibido: `bcv_calendario_2026.pdf`.
@@ -15,11 +17,11 @@
 
 ## Regla de vigencia por año
 
-1. Durante 2026, conservar el PDF aportado como **referencia documental provisional**. No automatizar decisiones de días hábiles basándose únicamente en ese archivo mientras la circular oficial no se autentique.
-2. No buscar, exigir ni inventar un calendario 2027 antes de que SUDEBAN lo publique.
-3. Al comenzar 2027, comprobar si SUDEBAN publicó su calendario bancario 2027.
-4. Cuando se publique, incorporar el documento como una **nueva versión anual** y establecer su vigencia desde el año correspondiente, conservando intacta la versión 2026.
-5. Si el calendario del nuevo año aún no está publicado, conservar como referencia el último calendario cuya autoridad esté verificada y marcar el año nuevo como **pendiente de publicación/verificación**. No inferir feriados, traslados ni días bancarios especiales.
+1. Durante 2026, conservar el PDF aportado como **referencia provisional NO OFICIAL / SECUNDARIO_PROVISIONAL**. Puede orientar planificación operativa, documentación y pruebas, siempre mostrando esa condición; no lo describir como circular oficial de SUDEBAN.
+2. A fecha 2026-11-10, el propietario indica que no hay un calendario bancario 2027 disponible para el proyecto. No repetir búsquedas directas fallidas ni bloquear el trabajo esperando un documento oficial no disponible.
+3. Si el producto necesita fechas de 2027, consultar fuentes secundarias reconocibles (bancos, asociaciones o medios especializados), registrar URL, fecha de consulta y periodo, y corroborar con otra fuente independiente cuando sea posible.
+4. Cuando una fuente primaria o secundaria nueva aporte evidencia verificable, incorporarla como una **nueva versión anual**, conservando intacto el histórico y clasificando su procedencia.
+5. Si no hay fechas fiables para algún día, marcarlo como no verificado; no inventar feriados, traslados ni días bancarios especiales. No convertir una proyección en una fecha oficial.
 6. Cada versión debe conservar año, título, fecha de incorporación, URL/circular oficial cuando exista, hash del archivo fuente y estado de verificación. Las sustituciones son aditivas: nunca sobrescribir el histórico.
 
 ## Uso en la integración BCV
@@ -28,7 +30,7 @@
 - El calendario no crea una tasa, no autoriza a reutilizar una tasa anterior y no sustituye la fecha efectiva publicada por BCV.
 - Una fecha prepublicada solo puede utilizarse cuando llegue su fecha efectiva, de acuerdo con la validación fail-closed ya definida para checkout.
 - No asumir que sábado, domingo o un feriado nacional/bancario tienen idéntico tratamiento: respetar las categorías y notas explícitas de cada calendario anual.
-- Si el documento vigente falta, es ambiguo o no está verificado para el año consultado, no inventar el próximo día hábil. Registrar el bloqueo y mantener la operación conforme a las reglas fail-closed de BCV/checkout.
+- Si no hay calendario verificable, usar la mejor fuente secundaria disponible solo como referencia provisional para planificación; si la fecha es material para una operación financiera/legal, no inferir el siguiente día hábil ni alterar el gate fail-closed de BCV/checkout.
 - Cualquier excepción, cierre extraordinario o modificación posterior de SUDEBAN debe incorporarse como nueva evidencia/versionado, sin editar retroactivamente el archivo histórico.
 
 ## Separación de responsabilidades
@@ -118,7 +120,7 @@ La recuperación de PIN exige reautenticación fuerte de la cuenta y MFA o códi
 - La recuperación directa del portal tuvo timeout en esta sesión; por tanto, la ausencia de un resultado indexado **no demuestra por sí sola** que no exista una publicación accesible desde el sitio.
 - Como corroboración secundaria, una página actualizada el 2026-11-07 indica que el calendario bancario 2027 todavía no había sido publicado: [Cabifinde — Feriados 2027 Venezuela](https://cabifinde.com/feriados-venezuela-2027/). Esta fuente no sustituye a SUDEBAN.
 - Estado operativo correcto: **2027 no localizado / no verificado oficialmente al 2026-11-09**. No cargar fechas bancarias estimadas como oficiales ni derivar reglas de checkout de proyecciones de terceros.
-- Reintentar la comprobación en el portal/canales oficiales durante la vigilancia de diciembre y antes de activar cualquier versión anual.
+- No repetir la búsqueda oficial de forma periódica sin una señal concreta de nueva publicación. Si surge evidencia nueva, verificarla; mientras tanto, utilizar fuentes secundarias con etiqueta provisional y trazabilidad.
 
 
 

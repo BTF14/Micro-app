@@ -559,3 +559,15 @@ El ensayo verifica el bundle SQL y roles en la base aislada; no prueba el compor
 - Seguridad Nivel 1: ABIERTO. Producción: NOT READY. P0 UI jornada completa: 0/1 demostrada.
 - Fecha límite obligatoria **2026-12-01**: un comercio piloto, un local, hasta 1.000 productos, jornada POS completa desde UI y listo para producción. Sin descuentos ni promociones.
 - Guardrails: no main writes, no merge, no deploy, no migraciones remotas, no Neon main, no datos reales, no secretos, DNS, billing ni Cron BCV/de negocio.
+
+
+## Corrección vigente del checkpoint — 2026-11-10 UTC
+
+La sección de reconciliación anterior registraba el HEAD inmediatamente anterior a tres commits documentales. No trasladar el resultado 11/11 SUCCESS del SHA `7dbcdf1d9c8339d524140d09ab0cf446460a0a9b` al SHA nuevo.
+
+- HEAD inmediatamente antes de esta corrección: `7902acbfa9184b4cb4213b7fda60b10d1ece5b1b`.
+- Para ese SHA, la consulta de workflow runs exactos devolvió 0 y el estado combinado legacy devolvió 0 status contexts. Esto significa **sin evidencia CI/status disponible en esa consulta**, no que los checks hayan pasado ni fallado.
+- PR #298: OPEN/Draft, 37 archivos documentales, 140 commits ahead / 0 behind de main `c5373564413ba086690552c6b7deeab08d7b4a89`, `mergeable=true` en la última relectura; 0 reviews formales y 0 review threads. No convertir `mergeable=true` en aprobación.
+- Este commit de corrección vuelve a mover el HEAD. Consultar el SHA resultante y sus workflows antes de cualquier decisión posterior; no crear más commits de estado si no hay un hallazgo material nuevo.
+- PR #287 permanece OPEN/Draft, HEAD `7df318b233cfb95f7fcc3076d46984a11614a14c`, 159 ahead / 1 behind, 6/11 workflow runs SUCCESS y 5/11 FAILURE; jobs vacíos y cero artifacts para los cinco fallos, causa raíz desconocida.
+- Seguridad Nivel 1 ABIERTO; producción NOT READY; aceptación P0 end-to-end 0/1. Fecha límite inamovible **2026-12-01**: un comercio piloto, un local, hasta 1.000 productos y jornada completa desde UI en producción. Sin descuentos ni promociones. Mantener todos los guardrails vigentes.

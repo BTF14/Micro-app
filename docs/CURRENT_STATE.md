@@ -1,3 +1,14 @@
+## Última lectura de GitHub antes de esta sincronización documental final — 2026-11-10 02:48 UTC
+
+- `main` observado: `c5373564413ba086690552c6b7deeab08d7b4a89`.
+- PR #298: OPEN/Draft, HEAD observado `84f840f74134bd3394e5fae9e29f2468d5b8e630`, 29 archivos modificados y todos son documentación; comparación con main: 83 commits ahead / 0 behind. GitHub indicó `mergeable=true` en la última lectura; esto no es aprobación ni autorización para fusionar.
+- En ese SHA exacto: 11 workflow runs (1 SUCCESS, 5 PENDING, 5 IN_PROGRESS) y 8 check-runs (1 SUCCESS, 7 IN_PROGRESS). No había reviews formales ni threads inline.
+- **Esta actualización documental crea commits posteriores y cambia el HEAD.** Los contadores anteriores son solo la fotografía de `84f840f74134bd3394e5fae9e29f2468d5b8e630`; no validan el HEAD resultante. Reconsultar PR #298 y todos los checks del SHA final. Mantener Draft y no fusionar.
+- Revalidación de protección de `main`: `GET /branches/main` confirma `protected=true` y seis contextos requeridos; el endpoint detallado de protección sigue devolviendo 403, por lo que el número actual de approvals y opciones adicionales permanece desconocido.
+- No se modificaron `main`, runtime, migraciones, Neon, producción, secretos, DNS, billing ni datos reales.
+
+---
+
 ## Reconciliación de política de descuentos — 2026-11-09 UTC
 
 Se detectó y aclaró una discrepancia aparente entre la matriz de permisos y el modelo de checkout:
@@ -43,7 +54,7 @@ Main observado: `c5373564413ba086690552c6b7deeab08d7b4a89`.
 |---|---|---|---:|---:|---|
 | [#287](https://github.com/BTF14/Micro-app/pull/287) | OPEN / Draft | `7df318b233cfb95f7fcc3076d46984a11614a14c` | 13: 8 SUCCESS, 5 FAILURE | 10/10 SUCCESS | Bloqueada; no declarar CI completamente verde |
 | [#296](https://github.com/BTF14/Micro-app/pull/296) | OPEN / Draft | `73b0b134c14cb30f7c93d038c10acd0da5aa274c` | 12/12 SUCCESS | 14/14 SUCCESS | Documental; no declarar PIN/calendario implementados |
-| [#298](https://github.com/BTF14/Micro-app/pull/298) | OPEN / Draft | `98675da595b0c20906f2674ba3dd9d9fba677a63` | 13/13 SUCCESS | 15/15 SUCCESS | Docs-only; no merge |
+| [#298](https://github.com/BTF14/Micro-app/pull/298) | OPEN / Draft | `84f840f74134bd3394e5fae9e29f2468d5b8e630` (snapshot previo) | 11: 1 SUCCESS, 5 PENDING, 5 IN_PROGRESS | 8: 1 SUCCESS, 7 IN_PROGRESS | Docs-only; CI pendiente del HEAD posterior; no merge |
 | [#299](https://github.com/BTF14/Micro-app/pull/299) | OPEN / Draft | `c82b0a10f85b59e1f81ac0ca2d439b6286558751` | 12/12 SUCCESS | 14/14 SUCCESS | Medición de pg_restore sintético; no merge |
 
 - #287 mantiene cinco fallos: ODD documentation, Dependency Review, Project progress dashboard, Playwright E2E y CI. Jobs/artifacts/logs no fueron accesibles por las interfaces consultadas; causa raíz desconocida. Los 10 check-runs SUCCESS no anulan los cinco workflow FAILURE.

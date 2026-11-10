@@ -81,7 +81,7 @@ SELECT 'tables|' || COALESCE(string_agg(table_name, ',' ORDER BY table_name), ''
   FROM information_schema.tables
  WHERE table_schema = 'public' AND table_type = 'BASE TABLE'
    AND table_name NOT IN ('auth_sessions', 'auth_rate_limits', 'auth_bootstrap_attempts');
-SELECT 'required_core_tables|' || count(*)::text
+SELECT 'required_core_objects|' || count(*)::text
   FROM (VALUES
     ('organizations'), ('app_users'), ('organization_members'),
     ('auth_allowlist'), ('auth_bootstrap'), ('suppliers'), ('products'),
@@ -138,7 +138,7 @@ restored_ledger_ok="$(psql "$schema_restore_url" -X -v ON_ERROR_STOP=1 -Atqc "SE
 [[ "$restored_ledger_ok" == "t" ]] || { echo "Restored migration ledger is incomplete." >&2; exit 1; }
 
 echo "PASS: all $expected_migrations numbered migrations applied through scripts/db/migrate.sh."
-echo "PASS: 23 stable core tables, migration ledger, constraints, indexes, triggers and functions survived encrypted restore."
+echo "PASS: 22 stable application tables plus schema_migrations, constraints, indexes, triggers and function definitions survived encrypted restore."
 echo "PASS: inventory ledger mode and optional BCV sync schema match between source and restore."
 echo "PASS: auth_sessions, auth_rate_limits and auth_bootstrap_attempts are excluded."
 echo "Schema round-trip elapsed seconds: $((SECONDS - started_at))."

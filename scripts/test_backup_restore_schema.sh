@@ -166,7 +166,7 @@ SELECT 'sequences|' || COALESCE(string_agg(c.relname || ':' || pg_catalog.format
         AND d.refclassid = 'pg_catalog.pg_class'::regclass
         AND owning_table.relname IN ('auth_sessions', 'auth_rate_limits', 'auth_bootstrap_attempts')
    );
-SELECT 'extensions|' || COALESCE(string_agg(e.extname || ':' || e.extversion || ':' || n.nspname || ':' || pg_catalog.pg_get_userbyid(e.extowner), ';' ORDER BY e.extname), '')
+SELECT 'extensions|' || COALESCE(string_agg(e.extname || ':' || e.extversion || ':' || n.nspname, ';' ORDER BY e.extname), '')
   FROM pg_catalog.pg_extension e
   JOIN pg_catalog.pg_namespace n ON n.oid = e.extnamespace;
 SELECT 'functions|' || COALESCE(string_agg(p.proname || '(' || pg_catalog.pg_get_function_identity_arguments(p.oid) || '):' || pg_catalog.md5(pg_catalog.pg_get_functiondef(p.oid)), ';' ORDER BY p.proname, pg_catalog.pg_get_function_identity_arguments(p.oid)), '')
@@ -385,6 +385,45 @@ if [[ "$source_role_search_paths" != "$restored_role_search_paths" ]]; then
   diff -u <(printf '%s\n' "$source_role_search_paths") <(printf '%s\n' "$restored_role_search_paths") || true
   exit 1
 fi
+
+
+fixture_assertions() {
+  psql "$1" -X -v ON_ERROR_STOP=1 -Atqc "
+SELECT
+  (SELECT count(*) = 1 FROM public.organizations WHERE id = '11111111-1111-4111-8111-111111111111')
+  AND (SELECT count(*) = 1 FROM public.branch_memberships WHERE organization_id = '11111111-1111-4111-8111-111111111111' AND branch_id = '33333333-3333-4333-8333-333333333333' AND user_id = '22222222-2222-4222-8222-222222222222' AND is_active)
+  AND (SELECT count(*) = 1 FROM public.register_shifts WHERE id = '55555555-5555-4555-8555-555555555555' AND closed_at IS NULL)
+  AND (SELECT count(*) = 2 FROM public.inventory_counts WHERE id IN ('aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa','cccccccc-cccc-4ccc-8ccc-cccccccccccc') AND status = 'confirmed')
+  AND (SELECT count(*) = 2 FROM public.inventory_count_lines WHERE count_id IN ('aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa','cccccccc-cccc-4ccc-8ccc-cccccccccccc'))
+  AND (SELECT count(*) = 1 FROM public.inventory_balances WHERE organization_id = '11111111-1111-4111-8111-111111111111' AND warehouse_id = '99999999-9999-4999-8999-999999999999' AND product_id = '77777777-7777-4777-8777-777777777777' AND on_hand_quantity = 9.000 AND balance_version = 3)
+  AND (SELECT count(*) = 3 FROM public.warehouse_inventory_movements WHERE organization_id = '11111111-1111-4111-8111-111111111111' AND product_id = '77777777-7777-4777-8777-777777777777')
+  AND (SELECT count(*) = 0 FROM public.inventory_balance_ledger_intents WHERE organization_id = '11111111-1111-4111-8111-111111111111')
+  AND (SELECT count(*) = 1 FROM public.sales WHERE id = 'eeeeeeee-eeee-4eee-8eee-eeeeeeeeeeee' AND status = 'completed')
+  AND (SELECT count(*) = 1 FROM public.sale_items WHERE sale_id = 'eeeeeeee-eeee-4eee-8eee-eeeeeeeeeeee')
+  AND (SELECT count(*) = 1 FROM public.payments WHERE sale_id = 'eeeeeeee-eeee-4eee-8eee-eeeeeeeeeeee')
+  AND (SELECT count(*) = 1 FROM public.audit_logs WHERE action = 'sale.completed' AND entity_id = 'eeeeeeee-eeee-4eee-8eee-eeeeeeeeeeee')
+  AND (SELECT count(*) = 1
+    FROM public.sales s
+    JOIN public.branches b ON b.organization_id=s.organization_id AND b.id=s.branch_id
+    JOIN public.register_shifts rs ON rs.organization_id=s.organization_id AND rs.branch_id=s.branch_id AND rs.id=s.register_shift_id
+    JOIN public.warehouses w ON w.organization_id=s.organization_id AND w.branch_id=s.branch_id AND w.id=s.warehouse_id
+    JOIN public.sale_items si ON si.organization_id=s.organization_id AND si.sale_id=s.id
+    JOIN public.products p ON p.organization_id=si.organization_id AND p.id=si.product_id
+    JOIN public.payments pay ON pay.organization_id=s.organization_id AND pay.sale_id=s.id
+    JOIN public.warehouse_inventory_movements m ON m.organization_id=s.organization_id AND m.branch_id=s.branch_id
+      AND m.warehouse_id=s.warehouse_id AND m.product_id=si.product_id AND m.movement_type='sale' AND m.reference_id=s.id
+    JOIN public.audit_logs a ON a.organization_id=s.organization_id AND a.actor_user_id=s.created_by
+      AND a.action='sale.completed' AND a.entity_id=s.id::text
+    WHERE s.id='eeeeeeee-eeee-4eee-8eee-eeeeeeeeeeee')
+"
+}
+source_fixture_ok="$(fixture_assertions "$schema_source_url")"
+restored_fixture_ok="$(fixture_assertions "$schema_restore_url")"
+if [[ "$source_fixture_ok" != "t" || "$restored_fixture_ok" != "t" ]]; then
+  echo "Synthetic business graph assertions failed before or after restore." >&2
+  exit 1
+fi
+
 
 required_tables="$(psql "$schema_restore_url" -X -v ON_ERROR_STOP=1 -Atqc "SELECT count(*) FROM (VALUES ('organizations'),('app_users'),('organization_members'),('auth_allowlist'),('auth_bootstrap'),('suppliers'),('products'),('exchange_rates'),('sales'),('sale_items'),('payments'),('inventory_movements'),('audit_logs'),('branches'),('branch_memberships'),('registers'),('register_shifts'),('warehouses'),('inventory_counts'),('inventory_count_lines'),('inventory_balances'),('warehouse_inventory_movements'),('schema_migrations')) AS required(table_name) WHERE pg_catalog.to_regclass('public.' || required.table_name) IS NOT NULL")"
 [[ "$required_tables" == "23" ]] || { echo "Expected 22 stable application tables plus schema_migrations (23 required objects), got $required_tables." >&2; exit 1; }

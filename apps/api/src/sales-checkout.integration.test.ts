@@ -1,6 +1,8 @@
 import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 import { Client } from "pg";
 import { convertUsdToVes, formatNumeric, parseNumeric } from "@micro-app/money";
+import { persistBcvOfficialRate } from "./exchange-rates";
+import type { DatabaseClient } from "./database";
 
 vi.mock("@neondatabase/serverless", async () => {
   const postgres = await import("pg");
@@ -687,21 +689,52 @@ describe.skipIf(!isDisposableCheckoutDatabase)("atomic sales checkout PostgreSQL
     }
   });
 
-  it("recovers checkout only after a successful same-day sync", async () => {
+  it("recovers checkout only after an identical official confirmation restores a stale row", async () => {
     await seedBalance("2.000");
     const blockedKey = "sync-recovery-blocked-" + crypto.randomUUID();
     const acceptedKey = "sync-recovery-accepted-" + crypto.randomUUID();
+    const runtimeClient = new Client({ connectionString: databaseUrl });
+    await runtimeClient.connect();
     try {
       await setBcvSyncState("failed");
+      await client.query(
+        "UPDATE public.exchange_rates SET validation_status='stale' WHERE id=$1",
+        [rateId],
+      );
+
       const blocked = await request(checkoutBody("1.000", "23.8500"), blockedKey);
       expect(blocked.status).toBe(409);
       expect((await readBalance()).on_hand_quantity).toBe("2.000");
 
+      const storedRate = await client.query<{ rate: string }>(
+        "SELECT rate::text AS rate FROM public.exchange_rates WHERE id=$1",
+        [rateId],
+      );
+      await expect(persistBcvOfficialRate(
+        runtimeClient as unknown as DatabaseClient,
+        { rate: storedRate.rows[0]!.rate, effectiveDate: rateDate },
+      )).resolves.toBe("unchanged");
+
+      const recoveredRate = await client.query<{ validation_status: string }>(
+        "SELECT validation_status FROM public.exchange_rates WHERE id=$1",
+        [rateId],
+      );
+      expect(recoveredRate.rows[0]?.validation_status).toBe("valid");
+
       await setBcvSyncState("unchanged");
+      await client.query(
+        "UPDATE public.bcv_sync_state SET last_success_at=now(),last_outcome='unchanged',last_effective_date=$1::date WHERE singleton=true",
+        [rateDate],
+      );
       const accepted = await request(checkoutBody("1.000", "23.8500"), acceptedKey);
       expect(accepted.status).toBe(201);
       expect((await readBalance()).on_hand_quantity).toBe("1.000");
     } finally {
+      await runtimeClient.end();
+      await client.query(
+        "UPDATE public.exchange_rates SET validation_status='valid' WHERE id=$1",
+        [rateId],
+      );
       await setBcvSyncState("inserted");
     }
   });

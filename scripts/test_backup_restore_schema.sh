@@ -134,7 +134,7 @@ required_tables="$(psql "$schema_restore_url" -X -v ON_ERROR_STOP=1 -Atqc "SELEC
 ephemeral="$(psql "$schema_restore_url" -X -v ON_ERROR_STOP=1 -Atqc "SELECT (pg_catalog.to_regclass('public.auth_sessions') IS NULL AND pg_catalog.to_regclass('public.auth_rate_limits') IS NULL AND pg_catalog.to_regclass('public.auth_bootstrap_attempts') IS NULL)")"
 [[ "$ephemeral" == "t" ]] || { echo "Ephemeral auth tables were unexpectedly restored." >&2; exit 1; }
 
-restored_ledger_ok="$(psql "$schema_restore_url" -X -v ON_ERROR_STOP=1 -Atqc "SELECT count(*) = $expected_migrations AND bool_and(state = 'applied') AND bool_and(length(checksum) = 64) FROM public.schema_migrations")"
+restored_ledger_ok="$(psql "$schema_restore_url" -X -v ON_ERROR_STOP=1 -Atqc "SELECT count(*) = $expected_migrations AND bool_and(state = 'applied') AND bool_and(length(checksum) = 64) AND bool_and(applied_at IS NOT NULL) FROM public.schema_migrations")"
 [[ "$restored_ledger_ok" == "t" ]] || { echo "Restored migration ledger is incomplete." >&2; exit 1; }
 
 echo "PASS: all $expected_migrations numbered migrations applied through scripts/db/migrate.sh."

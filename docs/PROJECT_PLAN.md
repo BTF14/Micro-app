@@ -1,3 +1,9 @@
+## Contrato de pagos — gate explícito del checkout P0
+
+La rama #287 contiene métodos `cash/card/transfer/mobile_payment/other` y un límite técnico de diez entradas de pago, pero `docs/sdd/SALES_CHECKOUT_MODEL.md` no registra aprobación del propietario para los métodos, pagos parciales/mixtos, sobrepago o cambio. Las constraints actuales describen integridad SQL, no aceptación comercial. No activar checkout ni convertir esos defaults de código en decisiones de producto. Resolver y documentar el contrato antes de habilitar ventas; mantener fecha de entrega **2026-12-01** y el gate de Seguridad Nivel 1.
+
+---
+
 # Plan P0 actualizado — 2026-11-10 UTC
 
 **Fecha límite inamovible: 2026-12-01.** Entregar un comercio pequeño/mediano, un local, hasta 1.000 productos, una jornada POS completa desde UI y consistencia demostrada. Sin descuentos ni promociones. La aceptación detallada vive en [MVP_SINGLE_STORE_ACCEPTANCE.md](MVP_SINGLE_STORE_ACCEPTANCE.md).

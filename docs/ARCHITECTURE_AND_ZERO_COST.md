@@ -1,6 +1,8 @@
 # Arquitectura y política de costo cero
 
-Fecha: 2026-10-17
+> **Reconciliación vigente 2026-11-09:** la frase histórica sobre conservar la última tasa BCV válida no autoriza usar una tasa `stale` para una venta. Solo puede mostrarse como información desactualizada; checkout debe usar una tasa aplicable `valid` y fallar cerrado si falta. La integración BCV está en PR #287 OPEN/Draft, no en `main`. La caché Cloudflare KV mencionada en documentos históricos no está aprobada para P0 ni es fuente de verdad; no introducirla sin medición y autorización de alcance.
+
+Fecha del documento original: 2026-10-17
 
 ## Decisión
 

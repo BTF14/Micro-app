@@ -2948,3 +2948,13 @@ Este bloque corrige snapshots inferiores que aún muestran HEAD antiguos de #298
 - Issue #53 permanece OPEN/P0; comentario de seguimiento actualizado en GitHub (`6767292787`).
 - No se ejecutó backup manual, no se leyeron secretos ni contenido del dump, no hubo acceso/cambio a Neon, main, producción, Cloudflare, DNS o billing. Restore real más reciente documentado: 2026-10-29; RTO integral y alertas externas no demostrados.
 - Deadline inamovible: **2026-12-01**. Producción **NOT READY**.
+
+
+---
+
+## Reconciliación de cierres superseded — 2026-11-10 12:35 UTC
+
+- Se atendió la observación pendiente en la conversación de PR #298: incorporar explícitamente PR #295 al checkpoint. El ledger autoritativo ya presente en `main` `c5373564413ba086690552c6b7deeab08d7b4a89`, `docs/BACKLOG_RECOVERY_LEDGER.md`, registra #295 (HEAD `213837969375fa87f5edca79e0d752333bc93d8c`) como CLOSED/superseded por #287. La revisión de ese ledger confirma que no falta en #287 código de las áreas `apps/`, `packages/`, `scripts/`, `tools/` añadido por #295; el guard `findApplicableCheckoutRate()` con `bcv_sync_state ... FOR SHARE` ya está en #287.
+- El mismo ledger registra #255 (HEAD `b0e47205b96f636b2ab270304d2598423a50ccc3`) y #269 (HEAD `7fc91b54f869664febb6a7daf1ed05b408bd8430`) como CLOSED/superseded por #287, con análisis de recuperación/no pérdida de funcionalidad. No reabrir ni fusionar ramas superseded sin nueva evidencia.
+- Fuente contrastada directamente: `docs/BACKLOG_RECOVERY_LEDGER.md` en main, filas 215–217. Esta nota actualiza el checkpoint de continuidad; no modifica main ni el ledger autoritativo.
+- PR #298 permanece OPEN/Draft; este commit documental requiere volver a validar CI en el nuevo HEAD. Deadline inamovible **2026-12-01**.

@@ -3077,3 +3077,16 @@ No pedir terminal, CLI, Build IDs, capturas, TinyFish, reconexiones, ni datos ya
 - No Neon, secretos, datos reales, main writes, merge, deploy, DNS, billing ni Cloudflare manual. No leer contenido del dump.
 - Próximo paso: comprobar run programado después del umbral; en paralelo, revisar discrepancias documentales y exact-HEAD CI sin ampliar a un tercer frente. Restore real y RTO integral continúan pendientes.
 - Producción **NOT READY**; P0 UI 0/1 jornada completa. Mantener estas limitaciones visibles.
+
+
+---
+
+## Corrección de checkpoint: #295/#255/#269 — 2026-11-10 12:35 UTC
+
+La observación de la conversación de PR #298 sobre la omisión de #295 queda resuelta en este checkpoint. El registro autoritativo ya integrado en `main` `c5373564413ba086690552c6b7deeab08d7b4a89`, `docs/BACKLOG_RECOVERY_LEDGER.md` (filas 215–217), confirma:
+
+- #295, HEAD `213837969375fa87f5edca79e0d752333bc93d8c`: CLOSED/superseded por #287. No falta código añadido por #295 en `apps/`, `packages/`, `scripts/` o `tools/`; el guard de freshness `findApplicableCheckoutRate()` con `bcv_sync_state ... FOR SHARE` está ya en #287.
+- #255, HEAD `b0e47205b96f636b2ab270304d2598423a50ccc3`: CLOSED/superseded por #287; el ledger documenta que las diferencias restantes son refactors de funciones ya recuperadas, sin funcionalidad perdida detectada.
+- #269, HEAD `7fc91b54f869664febb6a7daf1ed05b408bd8430`: CLOSED/superseded por #287; su HEAD es ancestro de #287 y no tiene commits propios fuera de esa rama.
+
+No reabrir ni fusionar estas ramas superseded sin nueva evidencia. Esta corrección solo actualiza el checkpoint en esta PR documental; no cambia main. Cualquier nuevo commit exige CI exact-HEAD nuevo. **Deadline inamovible: 2026-12-01.**

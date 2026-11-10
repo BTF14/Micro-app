@@ -693,3 +693,7 @@ Las notas históricas de la sección 2 que describen `backup_readonly` como SELE
 La prueba sintética `backup-restore-smoke.yml` tampoco cubre el esquema vigente: aplica solo 0001, 0002 y 0005, y valida 13 tablas, mientras main versiona 0001–0016. Quedan fuera tablas de sucursales, turnos, warehouses, inventory counts, balances, ledger y el ledger de migraciones. Ver `odd/tasks/backup-restore-schema-coverage.md` y issue #53 comentarios 6772340874/6772383789. No marcar backup/restore como cerrado por un smoke test histórico o un run SUCCESS.
 
 Fecha límite inamovible: **2026-12-01**. Producción NOT READY.
+
+## Actualización — cobertura de esquema en restore smoke (PR #303, 2026-11-10)
+
+La fase 1 de hardening añade un round-trip sintético de esquema completo a `backup-restore-smoke.yml`: migration runner oficial, PostgreSQL 18 desechable, dump/age/checksum/restore y comparación de nombres/definiciones de objetos y ledger. Se mantiene separada de la prueba de datos histórica. No cierra el gate de backup: siguen pendientes el fixture comercial poblado completo, identidad efectiva de `DATABASE_URL_BACKUP_RO`, privilegios least-privilege, RPO/RTO, restore de copia remota reciente, alerta y coste $0. PR #303 OPEN/Draft, sin merge. Issue #53 OPEN/P0; producción NOT READY; deadline 2026-12-01.

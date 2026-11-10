@@ -216,7 +216,7 @@ El ensayo verifica el bundle SQL y roles en la base aislada; no prueba el compor
 
 La fase 1 de #303 verifica esquema, ledger y round-trip cifrado, pero no prueba ownership/ACL porque dump/restore usan `--no-owner --no-privileges`. Tampoco compara RLS/policies, grants efectivos, atributos/membresías/default privileges de roles ni search_path efectivo. Son límites estáticos pendientes, no fallos de CI.
 
-La fase 2 debe separar perfiles por ref: main 0001–0016 (tenant/sucursal/turno/warehouse/count/ledger y venta legacy) frente a #287 0017–0022 (checkout branch-aware, allocation, projection y BCV sync). No combinar esquemas ni atribuir checkout integrado a main.
+La fase 2 debe usar perfiles acumulativos por ref: main 0001–0016 ya contiene checkout branch-aware por migration 0015 y ledger paired-intent por 0010; PR #287 añade 0017–0022 (regla BCV de fin de semana, allocation, projection, sync state y producer role). No mezclar migraciones ni atribuir a main las extensiones 0017–0022.
 
 ## Próximo trabajo
 

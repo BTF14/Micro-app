@@ -1,5 +1,6 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import type { Bindings } from "./bindings";
+import bcvWorkerConfig from "../wrangler.bcv.toml?raw";
 
 const mocks = vi.hoisted(() => ({
   syncBcvOfficialRate: vi.fn(),
@@ -22,6 +23,11 @@ const productionEnv = {
 const bcvCron = { cron: "0 22 * * 1-5" } as ScheduledController;
 
 describe("BCV scheduled failure reporting", () => {
+  it("ships the isolated BCV Worker with synchronization disabled by default", () => {
+    expect(bcvWorkerConfig).toContain('BCV_SYNC_ENABLED = "false"');
+    expect(bcvWorkerConfig).not.toContain('BCV_SYNC_ENABLED = "true"');
+  });
+
   afterEach(() => {
     vi.restoreAllMocks();
     mocks.syncBcvOfficialRate.mockReset();

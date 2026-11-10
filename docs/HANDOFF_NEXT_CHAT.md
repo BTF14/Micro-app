@@ -2599,7 +2599,7 @@ No main, Neon main, datos reales, secretos, Cloudflare manual, DNS, billing, des
 
 ## Handoff vigente — 2026-11-10 14:35:49 UTC
 
-**Estado GitHub revalidado:** PR #287 OPEN/Draft, HEAD documental `225dba37812112f3669af3dffa79b04ec6a8762f`, 11/11 workflow runs `pull_request` SUCCESS; PostgreSQL migration runner `42834658189` dejó de estar pendiente y terminó SUCCESS. No reviews formales ni review threads. Mantener Draft; no merge ni sync automático.
+**Estado GitHub revalidado:** PR #287 OPEN/Draft. El HEAD documental anterior `225dba37812112f3669af3dffa79b04ec6a8762f` quedó con 11/11 workflows `pull_request` SUCCESS, incluido PostgreSQL migration runner `42834658189` SUCCESS. Los commits documentales añadidos después avanzan la punta y no heredan esos checks: verificar el SHA vivo y sus ejecuciones exactas antes de afirmar CI. No reviews formales ni review threads. Mantener Draft; no merge ni sync automático.
 
 **P0 backup/RPO — atención inmediata:**
 - `.github/workflows/backup.yml` declara cron diario 07:00 UTC.

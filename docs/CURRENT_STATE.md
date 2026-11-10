@@ -1,3 +1,13 @@
+## Bloqueo adicional de contrato de pagos en #287 — 2026-11-10 UTC
+
+La revisión de `apps/api/src/sales-checkout.ts` en la rama #287 detecta que el handler define `PAYMENT_METHODS = cash/card/transfer/mobile_payment/other` y un máximo técnico `MAX_PAYMENTS = 10`. La especificación `docs/sdd/SALES_CHECKOUT_MODEL.md` mantiene expresamente sin aprobación el contrato de métodos de pago, pagos parciales/mixtos, sobrepago/cambio e idempotencia asociada. Las constraints SQL de una moneda de liquidación y conciliación exacta no sustituyen esa aprobación.
+
+**Decisión operativa:** esto es código exclusivo de una PR Draft, no está integrado en main. No activar ni integrar checkout basándose en esos métodos/cap. Antes de habilitar ventas, el contrato de pagos debe quedar aprobado y el handler/schema/tests deben reflejarlo. No inferir decisiones de producto. El límite de 10 pagos también debe justificarse como protección técnica o ajustarse antes de aceptación. El límite de 100 líneas es técnico, distinto de la capacidad de catálogo de 1.000 productos.
+
+La rama #287 continúa 164 ahead / 1 behind de main; el único commit ausente es #297, que solo modifica `docs/BACKLOG_RECOVERY_LEDGER.md`. No sincronizar/rebasar automáticamente.
+
+---
+
 # Revalidación operativa exact-HEAD — 2026-11-10 UTC (continuación)
 
 > Este bloque prevalece sobre snapshots inferiores. Fuente de verdad: GitHub API y contenido exacto de ramas. No se modificó `main`; los cambios BCV/backup/autorización descritos siguen en PR Draft.

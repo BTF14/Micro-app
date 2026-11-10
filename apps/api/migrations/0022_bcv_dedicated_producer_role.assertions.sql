@@ -1,6 +1,23 @@
 BEGIN;
 DO $assertions$
 BEGIN
+  IF EXISTS (
+    SELECT 1
+    FROM pg_catalog.pg_class c
+    CROSS JOIN LATERAL pg_catalog.aclexplode(
+      COALESCE(c.relacl, pg_catalog.acldefault('r',c.relowner))
+    ) acl
+    WHERE c.oid IN ('public.bcv_sync_state'::regclass,'public.exchange_rates'::regclass)
+      AND acl.grantee=0
+  ) OR EXISTS (
+    SELECT 1
+    FROM pg_catalog.pg_attribute a
+    CROSS JOIN LATERAL pg_catalog.aclexplode(a.attacl) acl
+    WHERE a.attrelid IN ('public.bcv_sync_state'::regclass,'public.exchange_rates'::regclass)
+      AND a.attnum > 0 AND NOT a.attisdropped
+      AND acl.grantee=0
+  )
+  THEN RAISE EXCEPTION 'BCV_TABLE_PUBLIC_ACL_FORBIDDEN'; END IF;
   -- Runtime keeps table-level read access but no effective table- or
   -- column-level INSERT/UPDATE privileges on either BCV table.
   IF NOT pg_catalog.has_table_privilege('microapp_runtime','public.bcv_sync_state','SELECT')

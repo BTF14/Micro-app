@@ -280,3 +280,12 @@ La revisión del workflow confirma que consume `DATABASE_URL_BACKUP_RO`, pero no
 El workflow manual `.github/workflows/backup-real-restore.yml` verifica el sidecar contra bytes descargados, descifra y restaura a PostgreSQL 18 efímero, pero usa `pg_restore --no-owner --no-privileges` y solo valida que exista al menos una tabla pública. No se ejecutó porque el artefacto contiene datos reales y no están permitidos en pruebas bajo las restricciones actuales.
 
 Pendientes P0: identidad efectiva del principal, least privilege real, provisioning de owners/ACL, restore reproducible de artefacto bajo manejo de datos autorizado, RPO/RTO medidos, alertas externas y coste total $0. Issue #53 permanece OPEN. No ejecutar backup manual ni cambiar Cron.
+
+ 
+## Revalidación de fase 2 y manifiesto ampliado — 2026-11-10
+
+Código validado en PR #303 SHA `f0dc1f90043eff4270d86f461a2dfc07187aa814`; 11/11 workflow runs exact-HEAD SUCCESS. PostgreSQL 18 aplicó main migrations 0001–0016 mediante el runner oficial, generó dump, cifró con age, verificó SHA-256, descifró y restauró a una segunda DB desechable. Job `42870784682` SUCCESS; round-trip 2 s.
+
+El manifiesto compara columnas/defaults, vistas/materialized views, particiones, tipos/domains/enums y labels, event triggers, constraints y validación, índices y estado de validez, triggers y estado habilitado, funciones, extensiones, secuencias/estado, ledger, RLS/policies, owners/ACL, grants efectivos, roles/memberships, default ACL y search_path efectivo. El fixture poblado valida dos tenants, relaciones, conteos, balances y ledger, venta completada, líneas, pagos, tasa snapshot y auditoría; se comprueba que balance coincide con suma de movimientos y que total de venta coincide con líneas y pagos. Las tres tablas efímeras auth se sembraron en source y quedaron excluidas en restore.
+
+El resultado es evidencia sintética de recuperación de main 0001–0016, no del artefacto remoto ni de producción. PR #287 0017–0022 requiere fixture/perfil separado. El backup real sigue usando `--no-owner --no-privileges`; el principal efectivo de `DATABASE_URL_BACKUP_RO` y least privilege no están demostrados. Run #20 `42842855127` tiene artefacto y sidecar, pero no se descargó ni se contrastó checksum con bytes ni se restauró. Issue #53 OPEN/P0; RPO/RTO sostenidos, alertas y coste $0 pendientes. Producción NOT READY.

@@ -77,7 +77,7 @@ A missing, unknown, unapproved, inactive, or inconsistent rule must deny by defa
 
 Keep platform-supported capabilities separate from each organization's active commercial configuration. The authorization layer answers whether the actor may attempt an operation. A domain-policy layer answers whether the operation complies with the organization's current configured rules. Both must pass.
 
-For example, a discount operation would require (a) approved actor permission, (b) an active and valid organization policy that permits the requested discount and any required approval, and (c) server-side recomputation and validation of the amounts. The platform must not introduce a universal percentage or monetary threshold. The exact no-policy fallback and approval semantics remain undecided and must be specified before a discount flow exists.
+Discounts are excluded from the MVP (1 December 2026) and from the current checkout/schema. Any future discount flow must preserve the approved rule that every discount requires Admin/Owner approval, plus Owner-managed organization policy and server-side recomputation. No discount endpoint or schema change is authorized by this illustrative architecture; future fallback details must be specified before implementation.
 
 ## 4. Transaction and time-of-check/time-of-use rules
 
@@ -181,13 +181,10 @@ Each denial test must assert that no business side effect occurred. Concurrency 
 
 The following are deliberately unresolved and must not be filled by implementation assumptions:
 
-- final role/operation allow-deny matrix and scope exceptions;
 - whether only the four fixed roles remain or a later custom-role model is needed;
-- who may manage user lifecycle, role assignment, and branch assignments;
-- exact delegation and multi-branch behavior;
+- exact future delegation and multi-branch behavior not already covered by the approved matrix;
 - whether any cashier void/refund/discount exception exists and its approval flow;
-- who may configure and activate organization commercial policies;
-- no-active-policy behavior for discounts and other configurable rules;
+- technical versioning, audit retention/export and fallback behavior for future configurable capabilities;
 - audit visibility, retention, export, and any immutable-storage requirements;
 - resource-not-found versus forbidden response semantics where existence could leak;
 - session revocation guarantees and the concurrency boundary for in-flight operations.

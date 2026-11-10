@@ -215,3 +215,12 @@ No merge, no main, no deploy, no Neon, no secretos, no Cron, no datos reales. Pr
 El run programado #20 `42842855127` terminó SUCCESS y publicó artefacto + sidecar (commit remoto `485412b612849a888bccc5858a5272bb7400de76`). No se descargó ni restauró el artefacto real. El workflow `backup.yml` usa `pg_dump --no-owner --no-privileges` y no registra identidad efectiva de `DATABASE_URL_BACKUP_RO`. El workflow manual `backup-real-restore.yml` verifica bytes/checksum y restaura a PG18 efímero, pero usa `--no-owner --no-privileges` y solo comprueba que haya tablas; no se ejecutó por contener datos reales.
 
 La fixture sintética de esta tarea conserva owners/ACL y prueba dos tenants, pero no es evidencia de metadata ni restauración del artefacto real. El rol `backup_readonly` conocido hereda `pg_write_all_data` vía `neon_superuser`; no asumir que sea el principal del secreto. Próxima tarea separada: obtener identidad y privilegios efectivos con consulta read-only no secreta, sin datos de negocio; luego resolver provisioning/restore real, RPO/RTO, alertas y coste. Issue #53 sigue OPEN/P0. No backup manual, no Cron, no secretos.
+
+ 
+## Estado de revisión — fase 2 y manifiesto ampliado (2026-11-10)
+
+El código de esta tarea quedó validado en PR #303 SHA `f0dc1f90043eff4270d86f461a2dfc07187aa814`, con 11/11 workflows exact-HEAD SUCCESS. El manifiesto incluye columnas/defaults, vistas, particiones, tipos y enum labels, event triggers, estado de constraints/índices/triggers, funciones, extensiones, secuencias, roles, ACL, RLS/policies y search_path. Las aserciones del fixture verifican balances contra suma del ledger, integridad de movimientos, conteos absolutos y reconciliación venta/líneas/pagos.
+
+Se corrigieron dos defectos detectados por CI: concatenación text/char mediante casts explícitos y normalización de attnum tras restore (comparar orden lógico porque pg_dump compacta columnas eliminadas). La ejecución posterior pasó. Job PostgreSQL 18 `42870784682` SUCCESS, 16 migraciones, fixture poblada, age/checksum/restore, 2 s.
+
+La cobertura se limita a main 0001–0016. La variante PR #287 0017–0022 queda fuera y requiere prueba separada. La tarea de fase 2 para main queda completada técnicamente, pero no cierra issue #53 ni readiness productiva: falta principal efectivo/least privilege, restore de artefacto remoto, RPO/RTO, alertas y coste $0. Issue #53 OPEN/P0. No merge, no deploy, no Neon, no secretos, no Cron ni datos reales.

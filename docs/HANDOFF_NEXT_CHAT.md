@@ -25,6 +25,14 @@
 - Previews Pages/Workers reportados para SHA anterior `98675da` no son producción ni evidencia de preview en el HEAD actual.
 - El handoff anterior registra que Caja/Ventas, Inventario y Reportes no completan todavía el recorrido de UI y que no hay apertura/cierre de turnos demostrados end-to-end. Revalidar al cerrar Nivel 1.
 
+### Evidencia directa del P0 en main — comprobada en este turno
+- En main `c5373564413ba086690552c6b7deeab08d7b4a89`, `apps/web/src/App.tsx` (blob `90d43a3cb6ba79a7a26b980084c7aec96d0be824`) marca “Caja y ventas” e “Inventario” como “Pendiente de implementación” y presenta Caja/Ventas, Inventario y Reportes como navegación deshabilitada (“Pronto”).
+- `apps/api/src/index.ts` (blob `8c962b92e448dfea735301274efaa81a70ad2097`) registra autenticación, Google auth, catálogo y rutas de inventario; no registra rutas HTTP de checkout/ventas ni de apertura/cierre de turnos.
+- Existe el helper `apps/api/src/cashier-open-shift.ts`, pero un helper no equivale a endpoints ni a un flujo de UI.
+- PR #287 contiene checkout/BCV y migrations 0017–0021 en una rama Draft, pero no está integrada en main; tampoco se encontró en esa rama un router HTTP de turnos. Sus cinco workflow failures siguen sin causa raíz observable.
+- Conclusión: main **no puede completar hoy el P0**. No se ha demostrado ninguna jornada completa desde UI ni una venta real de prueba end-to-end. No calcular porcentaje de implementación a partir de archivos o endpoints aislados; aceptación P0 demostrada: **0/1 recorrido completo**.
+- Esta comprobación es de código fuente en GitHub; no ejecuta la aplicación ni sustituye una prueba autenticada de UI.
+
 ### Restricciones y siguiente orden
 - No merge ni cambios en main en esta fase; no deploy manual/productivo, Neon main, migraciones remotas, Cron productivo, datos reales, secretos, DNS ni billing.
 - No iniciar nueva lógica comercial ni UI de Caja/Ventas mientras Seguridad Nivel 1 siga abierto.

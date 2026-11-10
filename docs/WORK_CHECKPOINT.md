@@ -743,3 +743,16 @@ La evidencia de solo lectura registrada en issue #53 (2026-11-06) indica que `ba
 - Issue #53 sigue OPEN/P0; comentario nuevo `6767292787`.
 - RPO sostenido NO-GO por intervalos históricos >24h; RTO integral, restore real actual y alertas externas sin demostrar.
 - No workflow manual, main write, merge, deploy, Neon, secretos, datos reales, Cloudflare manual, DNS o billing. Producción NOT READY.
+
+
+---
+
+## Checkpoint vivo — 2026-11-10 12:57:55 UTC
+
+- Deadline **2026-12-01** inamovible; producción NOT READY.
+- #298: OPEN/Draft, HEAD `1e7d656c8e054fc6e88d0f4148c39e4823f59d04`, 226 ahead / 0 behind, 42 docs files, 11/11 workflows PR + 15/15 checks SUCCESS, cero reviews formales. El commit documental siguiente invalidará esos contadores y requiere CI exact-HEAD nuevo.
+- #302: OPEN/Draft, HEAD `5420896eb591d3ae513254a064c787624678da14`, 10/10 workflows PR + 14/14 checks SUCCESS, cero reviews formales.
+- Último dump: #19, artefacto `2026-11-09T16:57:53Z`; remoto `828ef319...`. A `12:57:55Z` edad 20h00m02s, sin #20 ni objeto del 10-nov; umbral exacto `16:57:53Z`, margen 3h59m58s. Ciclo actual todavía dentro de 24h; RPO sostenido NO-GO por gaps históricos.
+- Issue #53 OPEN/P0. Comentario `6767940665` corregido para retractar declaración prematura basada en zona horaria mal interpretada.
+- No backup manual, Neon, secretos, producción, main writes, merge, deploy, DNS, billing ni Cloudflare manual.
+- Siguiente: reconsultar después del umbral y verificar tanto run como artefacto; restauración real reciente, RTO, alertas y principal DB siguen pendientes.

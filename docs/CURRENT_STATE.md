@@ -2958,3 +2958,28 @@ Este bloque corrige snapshots inferiores que aún muestran HEAD antiguos de #298
 - El mismo ledger registra #255 (HEAD `b0e47205b96f636b2ab270304d2598423a50ccc3`) y #269 (HEAD `7fc91b54f869664febb6a7daf1ed05b408bd8430`) como CLOSED/superseded por #287, con análisis de recuperación/no pérdida de funcionalidad. No reabrir ni fusionar ramas superseded sin nueva evidencia.
 - Fuente contrastada directamente: `docs/BACKLOG_RECOVERY_LEDGER.md` en main, filas 215–217. Esta nota actualiza el checkpoint de continuidad; no modifica main ni el ledger autoritativo.
 - PR #298 permanece OPEN/Draft; este commit documental requiere volver a validar CI en el nuevo HEAD. Deadline inamovible **2026-12-01**.
+
+
+---
+
+## Revalidación de backup y CI — 2026-11-10 12:57:55 UTC
+
+- Main observado: `c5373564413ba086690552c6b7deeab08d7b4a89`; no modificado.
+- Última copia programada: run #19 `42659924075`, SUCCESS, inicio `2026-11-09T16:57:34Z`; artefacto `backup-2026-11-09T16-57-53Z.dump.age`; commit remoto `828ef3193f3b8e4935d0e945f504cd81aca4b78e` a `2026-11-09T16:57:59Z`.
+- A `2026-11-10T12:57:55Z` no aparece run #20 en eventos `schedule`, tampoco ejecución posterior por `workflow_dispatch`; el repositorio remoto conserva como HEAD `828ef319...` y no lista artefactos del 10-nov.
+- Edad del dump: 20 h 00 min 02 s. Umbral estricto de 24 h desde el timestamp del artefacto: `2026-11-10T16:57:53Z` (12:57:53 UTC−4); margen al corte: 3 h 59 min 58 s. **El ciclo actual aún NO ha superado 24 h.** No declarar incidente de RPO de este ciclo antes de ese instante y de una reconsulta posterior.
+- RPO≤24 h sostenido continúa **NO-GO** por intervalos históricos entre artefactos superiores a 24 h (incluido #18→#19, 27 h 00 min 16 s; máximo histórico documentado 48 h 03 min 03 s). Una nueva copia a tiempo no borra esas brechas históricas.
+- Run #19 completó pg_dump PostgreSQL 18.6, cifrado age, SHA-256 y push. Existencia del dump y sidecar confirmada en destino; no se descargó, descifró ni restauró el archivo en esta revisión.
+- No se lanzó ejecución manual, no se leyeron secretos, no se accedió a Neon ni se modificaron cron, retención, Cloudflare, DNS, billing o producción. Issue #53 continúa OPEN/P0; la corrección de hora publicada en el comentario `6767940665` retracta una declaración prematura y deja claro que el umbral aún no se había alcanzado.
+- Restauración real más reciente documentada: 2026-10-29. RTO integral, restore de la copia del 9-nov, alertas externas y principal PostgreSQL efectivo de mínimo privilegio siguen sin demostrarse.
+- Deadline inamovible: **2026-12-01**. Producción **NOT READY**.
+
+
+## Reconciliación de PR documental y fuentes — 2026-11-10 12:57:55 UTC
+
+- PR #298 HEAD `1e7d656c8e054fc6e88d0f4148c39e4823f59d04`, OPEN/Draft, base main `c5373564413ba086690552c6b7deeab08d7b4a89`; compare: 226 commits ahead / 0 behind; 42 archivos modificados, todos documentación. No reviews formales ni review comments inline.
+- En ese SHA exacto: 11/11 workflow runs `pull_request` SUCCESS y 15/15 check-runs SUCCESS. Los dos workflows de evento `push` se mantienen separados. El combined legacy status devolvió `pending` con cero contextos; no es un check fallido ni una aprobación.
+- PR #302 HEAD `5420896eb591d3ae513254a064c787624678da14`, OPEN/Draft: 10/10 workflows `pull_request` y 14/14 check-runs SUCCESS; sin review formal. GIT_ASKPASS sigue siendo prueba contractual con token ficticio, no autenticación real ni backup productivo.
+- La PR #298 no se fusiona: permanece Draft, sin aprobación formal, y el volumen de historia (226 commits) aconseja preservar revisión de diff y procedencia. No force-push ni rebase.
+- Correcciones documentales preparadas en este commit: el prompt aclara que el checkpoint está en `docs/WORK_CHECKPOINT.md`; el plan marca como históricas las propuestas del 30-oct superadas por aprobación de matriz (31-oct) y decisión de no descuentos/promociones (5-nov).
+- La descripción de PR #298 aún contiene snapshots históricos; usar HEAD vivo y esta última sección, no contadores de SHA anteriores.

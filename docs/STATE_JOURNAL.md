@@ -2560,3 +2560,25 @@ El ensayo verifica el bundle SQL y roles en la base aislada; no prueba el compor
 - No se ejecutó el workflow real de backup ni se usaron secretos reales. Main sigue usando la URL Git con token hasta que exista una integración segura; PR #302 continúa Draft por falta de review independiente y porque el principal PostgreSQL/RPO/RTO siguen abiertos.
 - Primera pasada estática de PR #301: `branches.ts` reutiliza `authorizeTenantOperation(..., "inventory.read")`, filtra por organization_id y sucursales activas, y limita cashier/inventory a branch_memberships activas; owner/admin reciben sucursales activas de su organización. Tests cubren owner/admin/cashier/inventory, tenant ajeno y sesión ausente. No se observó un bypass directo en esta pasada; el límite `MAX_BRANCHES=100` sin cursor permanece explícito. No equivale a revisión independiente completa ni aprobación; #301 sigue OPEN/no Draft, sin review formal.
 - PR #298, antes de esta nueva actualización, estaba en HEAD `44def211e264fd34d5bef7db5cead8c5fd6d509b`, 223 ahead / 0 behind, 15/15 check-runs y 13/13 workflows SUCCESS. El commit documental actual mueve nuevamente su HEAD y exige CI exact-HEAD nuevo.
+
+
+---
+
+## Revalidación de backup y CI — 2026-11-10 12:57:55 UTC
+
+- Main observado: `c5373564413ba086690552c6b7deeab08d7b4a89`; no modificado.
+- Última copia programada: run #19 `42659924075`, SUCCESS, inicio `2026-11-09T16:57:34Z`; artefacto `backup-2026-11-09T16-57-53Z.dump.age`; commit remoto `828ef3193f3b8e4935d0e945f504cd81aca4b78e` a `2026-11-09T16:57:59Z`.
+- A `2026-11-10T12:57:55Z` no aparece run #20 en eventos `schedule`, tampoco ejecución posterior por `workflow_dispatch`; el repositorio remoto conserva como HEAD `828ef319...` y no lista artefactos del 10-nov.
+- Edad del dump: 20 h 00 min 02 s. Umbral estricto de 24 h desde el timestamp del artefacto: `2026-11-10T16:57:53Z` (12:57:53 UTC−4); margen al corte: 3 h 59 min 58 s. **El ciclo actual aún NO ha superado 24 h.** No declarar incidente de RPO de este ciclo antes de ese instante y de una reconsulta posterior.
+- RPO≤24 h sostenido continúa **NO-GO** por intervalos históricos entre artefactos superiores a 24 h (incluido #18→#19, 27 h 00 min 16 s; máximo histórico documentado 48 h 03 min 03 s). Una nueva copia a tiempo no borra esas brechas históricas.
+- Run #19 completó pg_dump PostgreSQL 18.6, cifrado age, SHA-256 y push. Existencia del dump y sidecar confirmada en destino; no se descargó, descifró ni restauró el archivo en esta revisión.
+- No se lanzó ejecución manual, no se leyeron secretos, no se accedió a Neon ni se modificaron cron, retención, Cloudflare, DNS, billing o producción. Issue #53 continúa OPEN/P0; la corrección de hora publicada en el comentario `6767940665` retracta una declaración prematura y deja claro que el umbral aún no se había alcanzado.
+- Restauración real más reciente documentada: 2026-10-29. RTO integral, restore de la copia del 9-nov, alertas externas y principal PostgreSQL efectivo de mínimo privilegio siguen sin demostrarse.
+- Deadline inamovible: **2026-12-01**. Producción **NOT READY**.
+
+
+## Correcciones de coherencia documental — 2026-11-10 12:57:55 UTC
+
+- Se confirmó que el checkpoint existe en `docs/WORK_CHECKPOINT.md`; la ruta raíz `WORK_CHECKPOINT.md` no es la ruta canónica.
+- En `docs/PROJECT_PLAN.md`, los estados del 2026-10-30 sobre matriz de roles pendiente y posible configuración de descuentos/promociones se conservan como historial, pero quedan explícitamente superados por aprobación de la matriz el 2026-10-31 y decisión del 2026-11-05 de no ofrecer descuentos ni promociones.
+- Se corrigió en issue #53 el comentario `6767940665`: a las 12:57:55Z aún faltaban ~4 horas para el umbral del dump (16:57:53Z); no hubo brecha del ciclo actual en ese corte.

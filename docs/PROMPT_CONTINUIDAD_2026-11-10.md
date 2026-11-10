@@ -20,7 +20,7 @@ Actúa como ingeniero/a principal sénior y continúa el trabajo real desde GitH
 7. `docs/SECURITY_ROADMAP.md`
 8. `docs/EXTERNAL_SOURCE_RELIABILITY_BCV_SUDEBAN.md`
 
-La ruta `WORK_CHECKPOINT.md` no fue encontrada en la rama documental al último corte; no asumir que existe. Localizar el checkpoint real desde docs/AGENTS si hace falta.
+El checkpoint vigente está en `docs/WORK_CHECKPOINT.md` (no en la raíz). Consultarlo junto con CURRENT_STATE/HANDOFF cuando corresponda; no asumir que exista una ruta raíz `WORK_CHECKPOINT.md`.
 
 ## Corte GitHub observado el 2026-11-10 11:37 UTC
 
@@ -90,3 +90,27 @@ La ruta `WORK_CHECKPOINT.md` no fue encontrada en la rama documental al último 
 - No se ejecutó el workflow real de backup ni se usaron secretos reales. Main sigue usando la URL Git con token hasta que exista una integración segura; PR #302 continúa Draft por falta de review independiente y porque el principal PostgreSQL/RPO/RTO siguen abiertos.
 - Primera pasada estática de PR #301: `branches.ts` reutiliza `authorizeTenantOperation(..., "inventory.read")`, filtra por organization_id y sucursales activas, y limita cashier/inventory a branch_memberships activas; owner/admin reciben sucursales activas de su organización. Tests cubren owner/admin/cashier/inventory, tenant ajeno y sesión ausente. No se observó un bypass directo en esta pasada; el límite `MAX_BRANCHES=100` sin cursor permanece explícito. No equivale a revisión independiente completa ni aprobación; #301 sigue OPEN/no Draft, sin review formal.
 - PR #298, antes de esta nueva actualización, estaba en HEAD `44def211e264fd34d5bef7db5cead8c5fd6d509b`, 223 ahead / 0 behind, 15/15 check-runs y 13/13 workflows SUCCESS. El commit documental actual mueve nuevamente su HEAD y exige CI exact-HEAD nuevo.
+
+
+---
+
+## Revalidación de backup y CI — 2026-11-10 12:57:55 UTC
+
+- Main observado: `c5373564413ba086690552c6b7deeab08d7b4a89`; no modificado.
+- Última copia programada: run #19 `42659924075`, SUCCESS, inicio `2026-11-09T16:57:34Z`; artefacto `backup-2026-11-09T16-57-53Z.dump.age`; commit remoto `828ef3193f3b8e4935d0e945f504cd81aca4b78e` a `2026-11-09T16:57:59Z`.
+- A `2026-11-10T12:57:55Z` no aparece run #20 en eventos `schedule`, tampoco ejecución posterior por `workflow_dispatch`; el repositorio remoto conserva como HEAD `828ef319...` y no lista artefactos del 10-nov.
+- Edad del dump: 20 h 00 min 02 s. Umbral estricto de 24 h desde el timestamp del artefacto: `2026-11-10T16:57:53Z` (12:57:53 UTC−4); margen al corte: 3 h 59 min 58 s. **El ciclo actual aún NO ha superado 24 h.** No declarar incidente de RPO de este ciclo antes de ese instante y de una reconsulta posterior.
+- RPO≤24 h sostenido continúa **NO-GO** por intervalos históricos entre artefactos superiores a 24 h (incluido #18→#19, 27 h 00 min 16 s; máximo histórico documentado 48 h 03 min 03 s). Una nueva copia a tiempo no borra esas brechas históricas.
+- Run #19 completó pg_dump PostgreSQL 18.6, cifrado age, SHA-256 y push. Existencia del dump y sidecar confirmada en destino; no se descargó, descifró ni restauró el archivo en esta revisión.
+- No se lanzó ejecución manual, no se leyeron secretos, no se accedió a Neon ni se modificaron cron, retención, Cloudflare, DNS, billing o producción. Issue #53 continúa OPEN/P0; la corrección de hora publicada en el comentario `6767940665` retracta una declaración prematura y deja claro que el umbral aún no se había alcanzado.
+- Restauración real más reciente documentada: 2026-10-29. RTO integral, restore de la copia del 9-nov, alertas externas y principal PostgreSQL efectivo de mínimo privilegio siguen sin demostrarse.
+- Deadline inamovible: **2026-12-01**. Producción **NOT READY**.
+
+
+## Reconciliación de documentación y CI — 2026-11-10 12:57:55 UTC
+
+- #298 OPEN/Draft, HEAD `1e7d656c8e054fc6e88d0f4148c39e4823f59d04`, 226 ahead / 0 behind, 42 archivos documentales, 11/11 workflows PR y 15/15 check-runs SUCCESS; no reviews formales. Cualquier commit nuevo requiere revalidar el SHA final.
+- #302 OPEN/Draft, HEAD `5420896eb591d3ae513254a064c787624678da14`, 10/10 workflows PR y 14/14 checks SUCCESS; prueba de askpass no demuestra autenticación real ni backup real.
+- El checkpoint está en `docs/WORK_CHECKPOINT.md`. Las propuestas de descuentos y la aprobación de matriz descritas como pendientes en bloques fechados 2026-10-30 son históricas; matriz aprobada 2026-10-31 y no descuentos/promociones desde 2026-11-05.
+- El último dump es de `2026-11-09T16:57:53Z`; a `12:57:55Z` aún faltaban ~4h para el umbral de 24h. No declarar incumplimiento actual. Revalidar después de `16:57:53Z`.
+- Fecha límite inamovible **2026-12-01**. Producción **NOT READY**.

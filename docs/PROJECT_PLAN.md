@@ -1567,23 +1567,27 @@ Dirección de producto: una plataforma multi-organización, multi-sucursal y mul
 No declarar comercial/producción listo hasta completar flujos, seguridad, pruebas, backups, observabilidad y capacidad.
 
 
-## Arquitectura comercial configurable por organización — 2026-10-30
+## Arquitectura comercial configurable por organización — registro histórico 2026-10-30
 
-- La plataforma no impone reglas universales de descuentos ni límites comerciales. Cada organización define si los permite y sus condiciones.
-- La capacidad técnica prevista incluye configuración versionada por organización, evaluación server-side, aislamiento tenant-scoped, snapshots históricos y auditoría.
+> Este bloque conserva la exploración de diseño de esa fecha. Las decisiones posteriores indicadas abajo prevalecen sobre cualquier propuesta incompatible.
+
+- La propuesta original exploró políticas comerciales configurables por organización, incluidos descuentos. **Quedó superada por la decisión explícita del propietario del 2026-11-05: Micro-app no tendrá descuentos ni promociones.** No implementar configuración, endpoints, UI ni permisos de descuentos/promociones.
+- La capacidad técnica prevista de configuración versionada, evaluación server-side, aislamiento tenant-scoped, snapshots históricos y auditoría queda como referencia general de diseño, no como autorización para introducir descuentos ni como alcance P0 aprobado.
 - Diseño de referencia: `docs/sdd/ORGANIZATION_COMMERCIAL_POLICY_CONFIGURATION.md`.
-- Estado: diseño documental; no implementado. La matriz de roles sigue pendiente de aprobación y bloquea la implementación de autorización comercial.
-- Criterios previos a código: ERD multi-sucursal; alcance de roles y asignaciones aprobado; integridad venta/líneas/pagos/stock; idempotencia y auditoría; pruebas PostgreSQL efímeras cross-tenant/cross-branch, concurrencia y rollback.
+- Estado original al 2026-10-30: diseño documental; en esa fecha la matriz de roles seguía pendiente. **La matriz fue aprobada por el propietario el 2026-10-31**; esa aprobación del contrato no significa que todos los handlers comerciales estén implementados.
+- Criterios técnicos de integridad, idempotencia, auditoría y pruebas PostgreSQL siguen siendo relevantes para los flujos comerciales que sí se aprueben.
 
 
-## ERD multi-sucursal — 2026-10-30
+## ERD multi-sucursal — registro histórico 2026-10-30
 
-- Diseño de referencia: docs/sdd/MULTI_BRANCH_DATA_MODEL.md.
+> El estado de esta sección corresponde al diseño conocido el 2026-10-30; no describe por sí solo la implementación actual.
+
+- Diseño de referencia: `docs/sdd/MULTI_BRANCH_DATA_MODEL.md`.
 - Objetivo: organización como tenant; sucursal como unidad operativa; almacén como ámbito de stock; caja/turno como ámbito de cobro; asignaciones de usuario por sucursal.
 - Stock objetivo: ledger de movimientos + balance transaccional por almacén/producto; migración desde products.stock_quantity solo con backfill y reconciliación.
 - Operaciones: venta/pago/recepción/transferencia con claves tenant-scoped, FKs compuestas, transacciones, idempotencia y auditoría.
-- Estado: propuesta documental, no implementada. La matriz de roles sigue pendiente de aprobación; no crear handlers comerciales ni migraciones hasta cerrar contratos.
-- Criterios previos a implementación: decidir ventas fuera de caja, flujo de recepción/transferencias, referencia tipada de movimientos, pagos/reversos y matriz de permisos; diseñar migración aditiva y pruebas PostgreSQL efímeras cross-tenant/cross-branch, concurrencia, rollback y reconciliación.
+- Estado original al 2026-10-30: propuesta documental; la matriz de roles estaba entonces pendiente y fue aprobada el 2026-10-31. Desde entonces se implementaron piezas de sucursales e inventario en ramas/PRs; consultar `docs/CURRENT_STATE.md` y los HEAD vivos para distinguir main de trabajo no integrado.
+- Los criterios de integridad, pruebas PostgreSQL efímeras cross-tenant/cross-branch, concurrencia, rollback y reconciliación siguen vigentes para cualquier writer nuevo.
 
 
 ## Estado vivo — 2026-10-30 UTC — fundamento de alcance por sucursal

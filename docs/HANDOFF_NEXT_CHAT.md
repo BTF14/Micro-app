@@ -3090,3 +3090,18 @@ La observación de la conversación de PR #298 sobre la omisión de #295 queda r
 - #269, HEAD `7fc91b54f869664febb6a7daf1ed05b408bd8430`: CLOSED/superseded por #287; su HEAD es ancestro de #287 y no tiene commits propios fuera de esa rama.
 
 No reabrir ni fusionar estas ramas superseded sin nueva evidencia. Esta corrección solo actualiza el checkpoint en esta PR documental; no cambia main. Cualquier nuevo commit exige CI exact-HEAD nuevo. **Deadline inamovible: 2026-12-01.**
+
+
+---
+
+## Handoff vivo — 2026-11-10 12:57:55 UTC
+
+- Fecha límite inamovible: **2026-12-01**. Producción **NOT READY**; P0 UI 0/1 jornada completa.
+- Main: `c5373564413ba086690552c6b7deeab08d7b4a89`, sin cambios.
+- #298 OPEN/Draft, HEAD `1e7d656c8e054fc6e88d0f4148c39e4823f59d04`, 226 ahead / 0 behind, 42 archivos documentales, 11/11 workflows PR y 15/15 check-runs SUCCESS; sin reviews formales ni inline threads. Mantener Draft; no force-push/rebase.
+- #302 OPEN/Draft, HEAD `5420896eb591d3ae513254a064c787624678da14`, 10/10 workflows PR y 14/14 checks SUCCESS; helper askpass validado con token ficticio, no push real.
+- Backup: última copia #19 `42659924075`, artefacto `2026-11-09T16:57:53Z`, repo remoto HEAD `828ef319...`. A `12:57:55Z` no hay #20 ni artifacto del 10-nov; edad 20h00m02s; umbral de 24h `16:57:53Z` (12:57:53 UTC−4), restan 3h59m58s. El ciclo actual aún no ha incumplido el plazo. Reconsultar después del umbral; no ejecutar manualmente.
+- RPO sostenido sigue NO-GO por gaps históricos >24h; RTO, restore de copia reciente, alertas externas y principal efectivo backup siguen pendientes. Issue #53 OPEN/P0.
+- Hallazgos documentales corregidos: checkpoint en `docs/WORK_CHECKPOINT.md`; propuestas de descuentos/matriz del 30-oct quedan etiquetadas como históricas y superadas.
+- No Neon main, secretos, datos reales, deploy, Cloudflare manual, DNS, billing, merge ni cambios a main.
+- Siguiente: revalidar run #20 y el objeto remoto después de `16:57:53Z`; si el dump supera 24h sin nueva copia, documentar el incidente P0 con timestamps de datos y commit remoto. En paralelo, dejar terminar CI exact-HEAD del commit documental nuevo.

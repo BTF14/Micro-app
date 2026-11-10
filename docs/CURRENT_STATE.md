@@ -2482,7 +2482,7 @@ Esta revisión fue estática de contenidos en GitHub; no se ejecutaron tests des
 
 ## Revalidación operativa — 2026-11-10 14:35:49 UTC — backup/RPO
 
-- PR #287 HEAD documental `225dba37812112f3669af3dffa79b04ec6a8762f`: 11/11 workflow runs `pull_request` SUCCESS; el PostgreSQL migration runner `42834658189`, previamente pendiente, terminó SUCCESS. Combined status contexts vacío; 0 reviews formales y 0 review threads. PR sigue OPEN/Draft.
+- En el HEAD documental anterior `225dba37812112f3669af3dffa79b04ec6a8762f`, el PostgreSQL migration runner `42834658189` terminó SUCCESS y el conjunto exact-HEAD fue 11/11 workflows `pull_request` SUCCESS. Los commits documentales añadidos en esta reconciliación avanzaron después la rama; el HEAD vivo debe verificarse aparte y no hereda esos checks.
 - Backup programado: workflow `.github/workflows/backup.yml` declara cron diario 07:00 UTC. La consulta actual de todas las ejecuciones del workflow solo encuentra como más reciente run `42659924075`, SUCCESS, 2026-11-09 16:57:34Z; artefacto timestamp 16:57:53Z. No aparece ejecución posterior ni del 10-nov a las 07:00Z.
 - A 2026-11-10 14:35:49Z faltaban ~2h22m para el umbral de 24h del artefacto (16:57:53Z). No declarar aún breach del ciclo actual; la ejecución diaria esperada no aparece y el RPO sostenido sigue NO DEMOSTRADO por gaps históricos.
 - El workflow asigna `DATABASE_URL_BACKUP_RO` a `DATABASE_URL`; el principal efectivo de ese secreto no está demostrado. El rol `backup_readonly` observado en Neon main hereda `neon_superuser`/`pg_write_all_data`; no asumir que es el principal del secreto.

@@ -363,8 +363,16 @@ jobs:
           GRANT INSERT (id,created_at) ON TABLE public.exchange_rates TO microapp_bcv_sync;
           GRANT UPDATE (rate,effective_date,source,created_at)
             ON TABLE public.exchange_rates TO microapp_bcv_sync;
-          GRANT CREATE ON SCHEMA public TO microapp_bcv_sync;
           SQL
+      - name: Verify BCV producer schema CREATE is rejected before migration
+        run: |
+          docker exec "${{ job.services.postgres.id }}" psql -v ON_ERROR_STOP=1 -U microapp -d microapp_test -c "GRANT CREATE ON SCHEMA public TO microapp_bcv_sync;"
+          status=0
+          output="$(docker exec -i -e PGPASSWORD=migrator-test-only "${{ job.services.postgres.id }}" psql -h 127.0.0.1 -v ON_ERROR_STOP=1 -U microapp_migrator -d microapp_test -f /dev/stdin < apps/api/migrations/0022_bcv_dedicated_producer_role.sql 2>&1)" || status=$?
+          printf '%s\\n' "$output"
+          test "$status" -ne 0
+          printf '%s\\n' "$output" | grep -F "MICROAPP_BCV_SYNC_SCHEMA_PRIVILEGES_INVALID"
+          docker exec "${{ job.services.postgres.id }}" psql -v ON_ERROR_STOP=1 -U microapp -d microapp_test -c "REVOKE CREATE ON SCHEMA public FROM microapp_bcv_sync;"
       - name: Verify dedicated BCV producer role migration rolls back atomically
         run: |
           sed '/^COMMIT;$/i SELECT 1/0;' apps/api/migrations/0022_bcv_dedicated_producer_role.sql > /tmp/0022-bcv-failure.sql

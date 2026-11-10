@@ -303,3 +303,17 @@ El ensayo verifica el bundle SQL y roles en la base aislada; no prueba el compor
 - La sincronización de main produce una nueva punta: revalidar todos los checks exact-HEAD antes de cualquier decisión.
 - Freshness/last-success, fixture BCV, calendario oficial, permisos/identidad Worker y revisión legal/contable siguen pendientes. Producción NOT READY.
 
+ 
+## Checkpoint — perfil de backup/restore BCV + ledger projection de PR #287 (2026-11-10)
+
+- Implementado en `integration/bcv-checkout-rehearsal-20261109`; código validado en SHA `7746e86140cdf3a98911665f6955e57a256bfd4b`.
+- PR #287 OPEN/Draft, mergeable=true, 224 ahead / 1 behind del main actual `c5373564413ba086690552c6b7deeab08d7b4a89`; merge base `03442951b2a2f63f5bf4dcf560f2c91be4f6cc71`. No sincronizar base automáticamente.
+- Exact-HEAD: 11/11 workflow runs pull_request SUCCESS; 0 status contexts; 0 reviews formales; 0 review threads.
+- Job backup restore `42872318369`: 22 migraciones aplicadas con `scripts/db/migrate.sh`; PostgreSQL 18, dump age/checksum/decrypt/restore; schema, ownership, ACL, RLS/policies, roles, search_path y ACL por columna preservados; grafo BCV/checkout/ledger projection PASS; tablas auth efímeras excluidas; round-trip 3 s.
+- Fixture `scripts/backup_restore_fixture_bcv.sql` no escribe directamente `inventory_balances`; genera proyección mediante movimientos. Comprueba apertura y conteo físico, balances/versiones, tasa sintética con fecha Caracas exacta, `bcv_sync_state` latest-success, checkout completado, payment allocation_position y auditoría.
+- `scripts/test_backup_restore_schema_bcv.sh` compara también `pg_attribute.attacl` y privilegios efectivos por columna de `microapp_bcv_sync`, además de ACL de tabla/función, roles/memberships y search_path.
+- La tasa BCV de fixture es sintética; el marker `BCV_OFFICIAL_HTML_V1` solo satisface el contrato de DB. No es cotización oficial ni debe mostrarse como dato real.
+- Task ODD: `odd/tasks/backup-restore-pr287-projection-profile.md`.
+- Limitación material: test sintético usa pg_dump/pg_restore por defecto para preservar ownership/ACL; producción usa `--no-owner --no-privileges`. No es reproducción exacta del restore de artefacto productivo. Falta diseñar/probar bootstrap de ownership y grants para ese modo.
+- Issue #53 sigue OPEN/P0; principal efectivo `DATABASE_URL_BACKUP_RO`, least privilege, restore del artefacto remoto, RPO/RTO, alertas externas y coste total $0 siguen pendientes. No ejecutar workflow_dispatch/backup real, no leer secretos ni acceder a Neon.
+- No merge, no main, no deploy, no Cron, no datos reales. Producción NOT READY. Deadline 2026-12-01.

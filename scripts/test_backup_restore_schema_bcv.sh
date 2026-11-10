@@ -197,7 +197,7 @@ SELECT 'required_core_objects|' || count(*)::text
     ('inventory_movements'), ('audit_logs'), ('branches'),
     ('branch_memberships'), ('registers'), ('register_shifts'),
     ('warehouses'), ('inventory_counts'), ('inventory_count_lines'),
-    ('inventory_balances'), ('warehouse_inventory_movements'),
+    ('inventory_balances'), ('warehouse_inventory_movements'), ('bcv_sync_state'),
     ('schema_migrations')
   ) AS required(table_name)
  WHERE pg_catalog.to_regclass('public.' || required.table_name) IS NOT NULL;

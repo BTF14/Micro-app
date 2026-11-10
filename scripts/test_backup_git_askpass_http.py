@@ -106,6 +106,7 @@ def main() -> int:
                     f"http://127.0.0.1:{port}/repo.git",
                 ],
                 env=env,
+                cwd=temp_dir,
                 capture_output=True,
                 text=True,
                 timeout=15,

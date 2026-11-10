@@ -1,3 +1,7 @@
+> **Regla de vigencia:** este documento conserva checkpoints y propuestas fechadas como historial. El plan P0 actualizado más reciente al inicio y los addenda fechados más recientes son la referencia operativa; los bloques anteriores, especialmente los de octubre, no representan el estado actual. No reutilizar sus pendientes de D1–D8, matriz de roles o políticas de descuentos como instrucciones vigentes. Para aprobaciones y estado de implementación, contrastar `docs/CURRENT_STATE.md`, `docs/sdd/role-permission-decision-matrix.md` y GitHub en vivo.
+
+---
+
 ## Contrato de pagos — gate explícito del checkout P0
 
 La rama #287 contiene métodos `cash/card/transfer/mobile_payment/other` y un límite técnico de diez entradas de pago, pero `docs/sdd/SALES_CHECKOUT_MODEL.md` no registra aprobación del propietario para los métodos, pagos parciales/mixtos, sobrepago o cambio. Las constraints actuales describen integridad SQL, no aceptación comercial. No activar checkout ni convertir esos defaults de código en decisiones de producto. Resolver y documentar el contrato antes de habilitar ventas; mantener fecha de entrega **2026-12-01** y el gate de Seguridad Nivel 1.

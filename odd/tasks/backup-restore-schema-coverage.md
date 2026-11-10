@@ -124,3 +124,7 @@ The current manifest's 13 persistent tables plus these ten tables equals 23 appl
 The PR #287 branch has one additional table from migration 0021: `bcv_sync_state`. It is not part of the main baseline at this task's base SHA and must only be included when testing that branch/ref.
 
 Follow-up evidence was added to issue #53 comment 6772383789. No source changes or CI executions have been made.
+
+## CI revalidation note — 2026-11-10
+
+PR #287 HEAD `9a1792f7449ff83915bcdd672686a4860918028d` has 11/11 pull_request workflow runs SUCCESS, including Backup restore smoke run `42849454438`. This does not satisfy this task: the workflow still runs the old script that applies only 0001/0002/0005 and validates 13 tables. The green job is therefore not evidence for full current main schema recovery (0001–0016), much less the PR branch migrations 0017–0022. Follow-up recorded in issue #53 comment `6772538757`. No source/workflow code has been changed yet.

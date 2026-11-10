@@ -2442,7 +2442,7 @@ Se creó `fix/bcv-checkout-last-success-20261109` desde #287 HEAD `362443524eb45
 
 ## 2026-11-10 14:35:49 UTC — revalidación exact-HEAD y backup/RPO
 
-- En PR #287, el run PostgreSQL migration runner `42834658189` ya completó SUCCESS. La punta documental `225dba37812112f3669af3dffa79b04ec6a8762f` tiene 11/11 workflows `pull_request` SUCCESS; PR sigue OPEN/Draft, sin reviews formales ni threads.
+- En PR #287, el run PostgreSQL migration runner `42834658189` ya completó SUCCESS. En el HEAD anterior `225dba37812112f3669af3dffa79b04ec6a8762f` había 11/11 workflows `pull_request` SUCCESS. Los commits documentales de esta reconciliación avanzaron después la punta y no heredan esas validaciones; consultar el HEAD vivo y sus runs exactos.
 - Consulta de todas las ejecuciones del workflow de backup: última ejecución sigue siendo run `42659924075` (schedule, SUCCESS, 2026-11-09T16:57:34Z); artefacto timestamp 16:57:53Z. El cron declarado es diario a las 07:00 UTC y no aparece la ejecución del 10-nov a esa hora.
 - A las 14:35:49Z del 10-nov aún no se alcanzaba el umbral de 24h del artefacto; faltaban ~2h22m. No declarar incumplimiento actual hasta superar 16:57:53Z sin nueva copia válida. RPO sostenido continúa NO DEMOSTRADO por gaps históricos.
 - El principal efectivo de `DATABASE_URL_BACKUP_RO` sigue sin demostrarse; no inferir que sea `backup_readonly`. No leer secretos, no ejecutar backup manual, no tocar Neon/main/cron ni producción.

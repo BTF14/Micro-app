@@ -2328,3 +2328,14 @@ La fixture no restaura el artefacto remoto ni prueba Neon/producción, RPO/RTO, 
 Verificado run programado #20 `42842855127` SUCCESS y presencia de artefacto/sidecar en el repo remoto; commit `485412b612849a888bccc5858a5272bb7400de76`. No se descargaron bytes ni se ejecutó restore. El workflow `backup.yml` usa `DATABASE_URL_BACKUP_RO` y `pg_dump --no-owner --no-privileges`, pero no registra identidad ni privilegios efectivos; los logs no prueban principal. No leer secretos. El rol conocido `backup_readonly` hereda `pg_write_all_data` vía `neon_superuser`, pero su uso por el secreto no está demostrado.
 
 El workflow manual `backup-real-restore.yml` verifica checksum y restaura en PostgreSQL 18 efímero, pero usa `--no-owner --no-privileges` y valida solo existencia de tablas. No se ejecutó por la restricción de no usar datos reales en pruebas. La prueba sintética #303 conserva ownership/ACL y valida grafo poblado, pero no demuestra metadatos del artefacto real. No backup manual ni cambio de Cron. Issue #53 sigue OPEN/P0.
+
+ 
+## 2026-11-10 — ampliación y validación del manifiesto de backup/restore
+
+En PR #303 se reforzó `scripts/test_backup_restore_schema.sh` para comparar columnas (orden lógico, sin attnum físico), vistas, particiones, tipos/domain/enum, labels, event triggers, estado de constraints, validez de índices y estado de triggers. El fixture añade aserciones para balance vs suma de movimientos, movimientos con balance asociado, conteos esperados y reconciliación de total de venta con líneas, pagos y tasa snapshot.
+
+La primera ejecución detectó una concatenación SQL inválida entre `text` y `char`; se corrigió mediante casts explícitos. La segunda reveló que pg_dump/restore compacta los huecos de attnum de columnas previamente eliminadas; se corrigió el manifiesto para comparar orden lógico, no números físicos. La siguiente ejecución pasó íntegramente.
+
+Job `42870784682` SUCCESS en PostgreSQL 18: 16 migraciones por runner oficial, dump age/checksum/restore, ownership/ACL, RLS/policies, roles/search_path, fixture poblada y exclusión auth efímera. Tiempo de round-trip 2 s. Código validado en SHA `f0dc1f90043eff4270d86f461a2dfc07187aa814`, 11/11 workflow runs exact-HEAD SUCCESS.
+
+PR #303 continúa OPEN/Draft; #53 OPEN/P0. No se tocó main, Neon, secretos, Cron, backup remoto ni producción. La cobertura solo es para main 0001–0016; perfil #287 0017–0022 separado. Producción NOT READY.

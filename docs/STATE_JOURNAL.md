@@ -2466,3 +2466,17 @@ El ensayo verifica el bundle SQL y roles en la base aislada; no prueba el compor
 - PR #287 permanece OPEN/Draft sin aprobación. Issue #53 sigue OPEN/P0. No Neon, secretos, despliegue ni Cron productivo tocados. Comparada contra `main` actual, la rama #287 diverge **175 ahead / 1 behind** con merge base `03442951b2a2f63f5bf4dcf560f2c91be4f6cc71`; el único commit ausente es `docs/BACKLOG_RECOVERY_LEDGER.md` (15 líneas añadidas en `c537356...`), sin cambios de código. No se ha actualizado la rama ni hecho merge.
 - Backup programado más reciente visible: run #19 `42659924075`, éxito 2026-11-09 16:57:34 UTC; a 10:28 UTC del 10 nov, RPO 24h aún no vencido, sin ejecución posterior visible.
 - Siguiente: revisión independiente; provisionar productor y secreto solo en entorno no productivo autorizado; verificar aislamiento de Worker y observabilidad antes de considerar activar BCV. Continuar POS/UI y piloto 1 local/1.000 productos. Fecha límite fija: 2026-12-01.
+
+
+## Reconciliación de continuidad y fuentes externas — 2026-11-10 10:55 UTC
+
+- Política de fuentes: leer también `docs/EXTERNAL_SOURCE_RELIABILITY_BCV_SUDEBAN.md`. SUDEBAN y BCV presentan inestabilidad; no insistir en una búsqueda oficial que no arroje evidencia nueva. Usar terceros con procedencia/fecha/corroboración, sin presentarlos como fuente oficial. El calendario 2026 aportado por el propietario se conserva como referencia NO OFICIAL / SECUNDARIO_PROVISIONAL. Para 2027 no se ha verificado un calendario oficial disponible; recurrir a fuentes secundarias si el producto lo necesita.
+- PR #298 HEAD `4a7a578ac6fbc6b2fd9e116d5243f06e09b2c009`: revalidación exacta terminada con 11/11 workflows `pull_request` SUCCESS y 15/15 check-runs SUCCESS. Sigue OPEN/Draft; no merge.
+- PR #287 HEAD `dd587308f85f42f8019d5fc74e7f8e296229ead8`: 11/11 workflows `pull_request` SUCCESS y 15/15 check-runs SUCCESS. El recuento anterior de 10/10 workflows queda supersedido. Sigue OPEN/Draft; no merge.
+- PR #301: el ODD contenía un SHA de implementación obsoleto (`99ec165...`) aunque el HEAD real era `d7af46c...`. Se corrigió el ODD; nuevo HEAD documental `ce43ab2cff91cd07e7ca2b91635b8e27a02b11c8`, con 8/10 workflows PR SUCCESS y 2 en ejecución al último sondeo. No usar los checks verdes del SHA anterior como validación del nuevo HEAD. PR abierta, sin review formal; revisión independiente pendiente.
+- PR #299: 10/10 workflows PR SUCCESS en HEAD `c82b0a10f85b59e1f81ac0ca2d439b6286558751`; mide restauración sintética de PostgreSQL, no RTO operativo completo.
+- PR #300: 10/10 workflows PR SUCCESS en HEAD `97fa79e643d5e7b32ebf86958bd0ba9211e1fc95`; su corrección de precio está incorporada en #287 según los artefactos, por lo que no integrar ambas independientemente sin reconciliar historial.
+- PR #302: 10/10 workflows PR SUCCESS en HEAD `1b441b3dc9e65e2cb89d765f9aff084b474dd90d`; cambio de askpass sigue en Draft y CI no demuestra ejecución real del backup con token.
+- Issue #53 permanece OPEN/P0. Producción NOT READY. No Neon writes, secretos, deploy, Cron ni datos reales.
+- Backup: la última ejecución programada exitosa verificada sigue siendo run #19 `42659924075` (2026-11-09 16:57:34 UTC). En el último sondeo no se pudo confirmar una ejecución programada posterior del 10 nov; no declarar RPO cumplido hasta comprobarla. No ejecutar backup manual ni tocar secretos.
+- Fecha límite inamovible: **2026-12-01**. Aceptación P0: un comercio, una sucursal, hasta 1.000 productos y una jornada completa de UI, además de todos los gates de seguridad/recuperación.

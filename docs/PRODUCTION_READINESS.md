@@ -1,3 +1,16 @@
+## Reconciliación de readiness — 2026-11-09 UTC
+
+El resumen histórico que sigue conserva un snapshot de PRs/main anterior y no representa el estado vivo. Para el estado vigente, consultar primero `docs/CURRENT_STATE.md` y `docs/SECURITY_ROADMAP.md`.
+
+- Main observado en la reconciliación: `c5373564413ba086690552c6b7deeab08d7b4a89`.
+- PR #287 sigue OPEN/Draft y bloqueada: 13 workflow runs exact-HEAD, 8 SUCCESS y 5 FAILURE; los 10 check-runs SUCCESS no anulan esos fallos.
+- PR #296, #298 y #299 siguen OPEN/Draft. #298 recibió previews automáticos de Pages y Workers; son previews de rama/commit, no producción ni smoke test productivo.
+- Backup programado reciente: ocho runs del 2 al 9 nov SUCCESS, pero la cadencia observada superó 24 h en un intervalo. No declarar RPO <=24 h. No se restauró la copia del 9 nov; la restauración remota concreta demostrada sigue siendo la copia del 29 oct.
+- Seguridad Nivel 1 sigue abierto. Producción NOT READY. La fecha objetivo de aceptación P0 es **2026-12-01**, un local y hasta 1.000 productos; ver `docs/MVP_SINGLE_STORE_ACCEPTANCE.md`.
+- No usar esta documentación como autorización para Neon main, datos reales, cambios sensibles ni despliegues manuales.
+
+---
+
 ## Nota autoritativa — 2026-11-08 UTC
 
 El estado operativo vigente se centraliza en CURRENT_STATE.md y HANDOFF_NEXT_CHAT.md. Main actual: 9c6b30281ed59726e532da840568fc9e80b528f7; #280 y #282 integradas. Neon rehearsal #42507066215 aplicó 0001–0019 solo en microapp_rehearsal. #269 está OPEN/Draft en HEAD 8f05befb7ac1a46d68850b9f89f89edc8cd46283 con 16/16 check-runs y 14/14 workflows SUCCESS; #255 OPEN/Draft en HEAD 7e43d7fd1519889605174da5818190bb84685059 con 15/15 y 13/13 SUCCESS. #258 y #262 se cerraron como superseded tras preservar/evolucionar todo su contenido en #269. #233 sigue histórica abierta; #193 no se modifica. Producción NOT READY: contrato comercial checkout y gates BCV siguen abiertos. No repetir escrituras Neon ni tocar producción. El detalle, SHA y siguientes pasos están en CURRENT_STATE.md.

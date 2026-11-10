@@ -1,3 +1,20 @@
+## Causa raíz histórica del fallo del 2026-10-29 — corregida en main
+
+Run programado fallido: `40885390988`, commit `872d5e54786fa6df4121c97d5e130e9b7599f8ca`, job `123487597573`.
+
+- pg_dump completó correctamente.
+- Cifrado age completó correctamente.
+- El job clonó el repositorio de backups y creó un commit local del archivo cifrado.
+- Falló el paso de retención con `python3: can't open file .../backups-repo/../scripts/prune_backups.py`.
+- La inspección del workflow en ese SHA confirmó que no tenía paso `actions/checkout`; por tanto `$GITHUB_WORKSPACE/scripts/prune_backups.py` no estaba disponible. Al fallar con `set -e`, el `git push` posterior no se ejecutó. El backup de esa ejecución no llegó al repositorio remoto.
+- El workflow actual de main incluye `Checkout repository` y ejecuta `python3 "$GITHUB_WORKSPACE/scripts/prune_backups.py"`; el defecto histórico está corregido. No crear una PR duplicada.
+- El fallo sigue contando para la ventana real de recuperación y explica parte del gap de 48 h 03 min 03 s entre backups exitosos.
+
+Este defecto es distinto del riesgo de credencial Git persistente corregido únicamente en PR #302 Draft. No se ejecutó el workflow productivo durante esta revisión.
+
+
+---
+
 # Evidencia reciente de backup/RPO y medición pg_restore — 2026-11-10 UTC
 
 > Snapshot basado en metadatos de GitHub Actions y logs del job sintético. No se accedió a Neon, secretos, datos reales ni al repositorio remoto de backups.

@@ -51,7 +51,7 @@ No iniciar nuevos endpoints/UI/lógica comercial mientras el gate permanezca abi
 
 - **#300 autorización:** en HEAD `f4c98f3971463e54370b5af3a0633ab434d9ad90`, `sales.price.override` se elimina del contrato de operaciones, allowlists Owner/Admin y parser. Prueba negativa para Owner, Admin, Inventory y Cashier. 13/13 check-runs y 9/9 workflows SUCCESS. Sin review formal; Draft.
 - **#302 backup Git:** en HEAD `c6daacee7825f3e2d3dd9de031fd5c3e33fc9320`, el workflow utiliza GIT_ASKPASS temporal en vez de insertar token en la URL del remote; URL limpia, helper con permisos 700, prompts interactivos desactivados y trap de limpieza del helper/clon. 14/14 check-runs y 10/10 workflows SUCCESS. No se ejecutó el workflow real ni se verificó subida/restauración real con este cambio; Draft.
-- **#287 BCV:** en HEAD `25e0de8c0236880febaad9a14a47d5ec55931641`, confirmación oficial idéntica recupera una fila stale solo si source/date/rate coinciden, cambiando únicamente validation_status. Regresiones unitarias y PostgreSQL; el workflow de runtime-role ejecuta exchange-rates.integration.test.ts con LOGIN microapp_runtime y conexión admin separada para preparación/limpieza. 15/15 checks y 11/11 workflows SUCCESS. Draft; no merge.
+- **#287 BCV:** en HEAD `2e7cdd44f89a3b3765a0c69ad23bdb87faacf99c`, confirmación oficial idéntica recupera una fila stale solo si source/date/rate coinciden, cambiando únicamente validation_status. Regresiones unitarias y PostgreSQL; el workflow de runtime-role ejecuta exchange-rates.integration.test.ts con LOGIN microapp_runtime y conexión admin separada para preparación/limpieza. 15/15 checks y 11/11 workflows SUCCESS. Draft; no merge.
 
 ## Gates aún abiertos
 

@@ -225,3 +225,9 @@ La auditoría del script ejecutado por `.github/workflows/backup-restore-smoke.y
 **Acción abierta:** ampliar el smoke test en una rama separada para aplicar todas las migraciones del ref mediante `scripts/db/migrate.sh`, poblar un grafo comercial sintético coherente y comparar manifiestos antes/después de restaurar en PostgreSQL 18 efímero. Mantener exclusión de `auth_sessions`, `auth_rate_limits` y `auth_bootstrap_attempts`. La tarea está en `odd/tasks/backup-restore-schema-coverage.md`; hallazgo en issue #53 comentarios 6772340874/6772383789. Las migraciones 0017–0022 pertenecen a PR #287 OPEN/Draft y no deben atribuirse a main.
 
 No se ha ejecutado un restore nuevo, leído secretos ni accedido a Neon/producción. Mantener el gate P0 abierto.
+
+## Avance parcial — prueba de esquema completo en CI (PR #303, 2026-11-10)
+
+La rama `security/backup-restore-schema-coverage-20261110` añade `scripts/test_backup_restore_schema.sh` al workflow de smoke. Este test aplica todas las migraciones numeradas del ref con el runner oficial en PostgreSQL 18 desechable; verifica el ledger; hace dump, cifrado age efímero, checksum, descifrado y restore; compara nombres de tablas, constraints, índices, triggers, hashes de funciones y ledger; y confirma exclusión de las tres tablas efímeras.
+
+Este avance valida **estructura de esquema**, no la recuperación de datos poblados para todas las nuevas tablas. El script de fixture de datos existente sigue aplicando 0001/0002/0005 y verificando 13 tablas. Por tanto, el ciclo backup/restore continúa incompleto: falta fixture sintético coherente de sucursal/turno/warehouse/count/ledger/checkout y relaciones, además de identidad efectiva del principal de backup, least-privilege, RPO/RTO, restauración remota reciente, alerta y coste $0. PR #303 OPEN/Draft, no fusionada; no cerrar issue #53.

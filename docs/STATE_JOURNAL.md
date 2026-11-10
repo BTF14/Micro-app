@@ -2273,3 +2273,11 @@ El ensayo verifica el bundle SQL y roles en la base aislada; no prueba el compor
 - #287 exact HEAD `254ebb6e741f7c1b147fbd4880bc188f17204807` sigue con 15/15 checks y 11/11 workflows SUCCESS, pero el branch necesita reconciliar los docs posteriores a #288/#291 antes de futura integración.
 - No merge de código, no deploy, no Neon, no Cron BCV, no cambios Cloudflare manual, secretos, DNS, billing o datos reales. Producción NOT READY.
 - Próximo: reconciliar #287 con main en una rama/PR aislada, preservando docs y CI; luego #255/#269 por separado.
+
+## 2026-11-10 — hallazgo P0 de cobertura obsoleta en backup/restore
+
+Auditoría estática de main `c5373564413ba086690552c6b7deeab08d7b4a89`: el workflow `.github/workflows/backup-restore-smoke.yml` ejecuta `scripts/test_backup_restore.sh`, que solo aplica 0001, 0002 y 0005 y compara 13 tablas. Main versiona 0001–0016; quedan fuera diez tablas añadidas por 0003/0004/0006/0010: branches, branch_memberships, registers, register_shifts, warehouses, inventory_counts, inventory_count_lines, inventory_balances, warehouse_inventory_movements e inventory_balance_ledger_intents. El script tampoco usa `scripts/db/migrate.sh` ni comprueba `schema_migrations`. El éxito de esta prueba no demuestra restauración del esquema actual completo.
+
+PR #287 conserva migraciones 0017–0022 en una rama separada, no fusionada. Su HEAD vivo consultado es `9a1792f7449ff83915bcdd672686a4860918028d`, OPEN/Draft, 219 ahead / 1 behind, mergeable=true; 0 workflow runs pull_request y 0 status contexts en ese SHA exacto. No trasladar CI histórico. El ensayo Neon rehearsal 0001–0019 no equivale a que main contenga esas migraciones ni a que el smoke test las cubra.
+
+Hallazgo documentado en issue #53 comentarios 6772340874 y 6772383789. Se abrió ODD task `odd/tasks/backup-restore-schema-coverage.md` en rama separada `security/backup-restore-schema-coverage-20261110`. No hubo cambios de código/workflow ni acceso a Neon, secretos, datos reales o repositorio remoto de backups. Mantener #53 OPEN/P0 y producción NOT READY. Fecha límite inamovible: **2026-12-01**.

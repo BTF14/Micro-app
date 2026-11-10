@@ -2286,3 +2286,7 @@ Esta revisión fue estática de contenidos en GitHub; no se ejecutaron tests des
 - No se modificó el workflow ni el script, no se ejecutó un backup/restore nuevo, no se leyeron secretos ni datos reales, y no se accedió a Neon. Issue #53 permanece OPEN/P0. Producción NOT READY.
 - Próximo: usar el migration runner oficial en PostgreSQL 18 desechable; crear fixture coherente de sucursal/turno/warehouse/count/ledger/checkout; validar todas las tablas, constraints y relaciones tras cifrar/restaurar; extender cobertura para 0017–0022 solo en el ref que realmente las contenga.
 - Fecha límite inamovible: **2026-12-01**.
+
+## Corrección de validación PR #287 — 2026-11-10
+
+La consulta inicial de HEAD 9a1792f7449ff83915bcdd672686a4860918028d no devolvió todavía ejecuciones pull_request; una reconsulta posterior encontró las 11 ejecuciones exactas asociadas a ese SHA completadas en SUCCESS (runs 42849454422, 42849454398, 42849454373, 42849454527, 42849454401, 42849454436, 42849454382, 42849454438, 42849454392, 42849454399 y 42849453701). Por tanto, la nota previa de 0 workflow runs queda supersedida. Combined legacy status sigue sin contexts; no inferir un recuento de check-runs desde esa respuesta. PR #287 continúa OPEN/Draft, mergeable=true, 219 ahead / 1 behind, sin reviews formales ni review threads. Los 11/11 workflows SUCCESS validan ese SHA, no los cambios futuros ni readiness productiva. Las migraciones 0017–0022 siguen en la rama y no en main.

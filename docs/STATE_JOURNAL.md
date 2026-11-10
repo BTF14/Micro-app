@@ -2289,3 +2289,9 @@ La primera lectura de HEAD 9a1792f7449ff83915bcdd672686a4860918028d no encontró
 ## 2026-11-10 — CI verde de smoke no cierra cobertura completa
 
 PR #287 HEAD `9a1792f7449ff83915bcdd672686a4860918028d` completó 11/11 workflow runs pull_request SUCCESS, incluido Backup restore smoke `42849454438`. El job usa el script antiguo que aplica solo 0001/0002/0005 y verifica 13 tablas; por eso su SUCCESS no prueba restauración del esquema main 0001–0016 ni las migraciones 0017–0022 de la rama. Aclaración añadida a issue #53 comentario `6772538757`. La tarea de ampliar el smoke test sigue solo en documentación/ODD, sin cambios de código. #53 OPEN/P0; producción NOT READY; deadline 2026-12-01.
+
+## 2026-11-10 — PR #303: primera fase de restore de esquema completo
+
+Se implementó en la rama `security/backup-restore-schema-coverage-20261110` un test separado `scripts/test_backup_restore_schema.sh` y se conectó al workflow `backup-restore-smoke.yml`. Aplica el conjunto numerado completo del ref mediante `scripts/db/migrate.sh` en PostgreSQL 18 desechable, valida ledger, dump cifrado age, SHA-256, descifrado y restore a una segunda DB desechable. Compara tablas, constraints, índices, triggers, hashes de definiciones de funciones, filas/checksums del ledger y modo de ledger inventario; excluye las tres tablas efímeras. Se creó PR #303 OPEN/Draft; no merge.
+
+Es fase 1 de esquema. El fixture de datos sintéticos histórico sigue en 13 tablas y aún no existe grafo poblado completo de sucursal/turno/warehouse/count/ledger/checkout. CI exact-HEAD de PR #303 está pendiente de revalidación; no declarar PASS hasta observar los workflows del SHA final. Issue #53 OPEN/P0, producción NOT READY, deadline 2026-12-01. Sin Neon, secretos, datos reales ni workflow_dispatch.

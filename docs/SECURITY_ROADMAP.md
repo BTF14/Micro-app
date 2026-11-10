@@ -1,3 +1,38 @@
+## Reconciliación viva de continuidad — 2026-11-10 03:35 UTC
+
+> Este bloque sustituye como referencia operativa a los snapshots anteriores de este documento. El SHA de #298 que se muestra es el HEAD consultado inmediatamente antes de este commit documental; este mismo cambio mueve la rama. Reconsultar GitHub para el HEAD y CI posteriores. Nunca reutilizar contadores de otro SHA.
+
+### GitHub verificado
+- `main`: `c5373564413ba086690552c6b7deeab08d7b4a89`; `protected=true`, seis checks requeridos. La configuración detallada de approvals no quedó accesible/verificada.
+- PR #287: OPEN/Draft, HEAD `7df318b233cfb95f7fcc3076d46984a11614a14c`; 13 workflow runs exact-HEAD: 8 SUCCESS / 5 FAILURE; 10/10 check-runs SUCCESS. Fallan ODD docs, Dependency review, Project dashboard, Playwright E2E y CI. Los cinco endpoints de jobs devolvieron listas vacías; causa desconocida, sin atribuir a código o infraestructura. Sin reviews formales ni review threads.
+- PR #296: OPEN/Draft, HEAD `73b0b134c14cb30f7c93d038c10acd0da5aa274c`; 12/12 workflows y 14/14 check-runs SUCCESS. Especificaciones documentales; PIN/calendario no implementados. Sin reviews formales ni threads.
+- PR #298: OPEN/Draft, HEAD pre-actualización `5259153367a9228a5c5b5fd83427065c4f0610e4`; 13 workflows exact-HEAD: 7 SUCCESS / 6 IN_PROGRESS; 14 check-runs: 7 SUCCESS / 7 IN_PROGRESS. 110 commits ahead / 0 behind, 37 archivos Markdown. Sin reviews formales ni threads. Los resultados no validan el commit creado por esta actualización.
+- PR #299: OPEN/Draft, HEAD `c82b0a10f85b59e1f81ac0ca2d439b6286558751`; 12/12 workflows y 14/14 check-runs SUCCESS. Mide solo `pg_restore` sintético, no RTO completo.
+- PR #255, #269 y #295: CLOSED, no merged, supersedidas por #287; ramas históricas conservadas. #297 registró la disposición en main.
+
+### Decisiones P0 vigentes
+- Fecha límite inamovible: **2026-12-01**.
+- Objetivo de producción: un comercio piloto, un solo local y capacidad verificada de hasta 1.000 productos, con jornada POS completa desde la UI. Una demo, preview o beta parcial no cumple el objetivo.
+- No hay descuentos ni promociones en Micro-app. No crear campos, endpoints, UI ni autorizaciones de descuento. Cambios manuales de precio fuera del checkout P0.
+- Toda venta exige tasa BCV válida con fecha efectiva exacta de la operación, incluso 100 % USD. Una tasa futura no se usa antes de su fecha efectiva; fines de semana/feriados sin fila exacta fallan cerrado, pendiente revisión legal/contable.
+- Se conserva aislamiento multi-tenant/multi-branch aunque la aceptación inicial use un local.
+- Los métodos y reglas comerciales de pagos que no tienen aprobación explícita (parciales, mixtos, sobrepago/cambio y catálogo final de métodos) no se infieren de las constraints SQL.
+
+### Estado de producto y seguridad
+- Producción: **NOT READY**. La aceptación P0 completa desde UI no está demostrada; no publicar porcentajes de implementación como porcentaje de aceptación end-to-end.
+- Seguridad Nivel 1 sigue ABIERTO: Dependabot alertas no revalidadas; cabeceras/CORS solo tienen evidencia histórica; backup/restore parcialmente probado. Se observó un intervalo de backup de 27 h, por lo que no se garantiza RPO <=24 h; RTO integral, alerta controlada y coste $0 siguen pendientes.
+- En #287, migration 0017 fue provisional; 0020 impone fecha efectiva exacta todos los días y 0021 exige último sync exitoso. Se conserva el hallazgo: una tasa marcada stale puede permanecer stale cuando una sincronización posterior confirma exactamente el valor original y devuelve unchanged.
+- Previews Pages/Workers reportados para SHA anterior `98675da` no son producción ni evidencia de preview en el HEAD actual.
+- El handoff anterior registra que Caja/Ventas, Inventario y Reportes no completan todavía el recorrido de UI y que no hay apertura/cierre de turnos demostrados end-to-end. Revalidar al cerrar Nivel 1.
+
+### Restricciones y siguiente orden
+- No merge ni cambios en main en esta fase; no deploy manual/productivo, Neon main, migraciones remotas, Cron productivo, datos reales, secretos, DNS ni billing.
+- No iniciar nueva lógica comercial ni UI de Caja/Ventas mientras Seguridad Nivel 1 siga abierto.
+- Priorizar cierre demostrable de Nivel 1 con pruebas sintéticas, diagnóstico de los cinco fallos #287 solo si aparece evidencia nueva y reconciliación de los contratos BCV/pagos antes de habilitar checkout.
+- PR #296 y #298 modifican seis archivos de continuidad en paralelo. Antes de cualquier futura integración, reconciliar sus diffs por archivo para preservar el contenido único de PIN/calendario y evitar sobrescrituras; no fusionar ni cerrar ninguna en este bloque.
+
+---
+
 ## Corrección de consistencia y estado vivo — 2026-11-09 UTC
 
 > Este bloque es la referencia operativa más reciente de esta rama. Los snapshots posteriores/anteriores que sigan debajo se conservan como historial fechado; no deben reutilizarse como estado vivo. Revalidar GitHub antes de cualquier acción sensible.

@@ -2295,3 +2295,7 @@ PR #287 HEAD `9a1792f7449ff83915bcdd672686a4860918028d` completó 11/11 workflow
 Se implementó en la rama `security/backup-restore-schema-coverage-20261110` un test separado `scripts/test_backup_restore_schema.sh` y se conectó al workflow `backup-restore-smoke.yml`. Aplica el conjunto numerado completo del ref mediante `scripts/db/migrate.sh` en PostgreSQL 18 desechable, valida ledger, dump cifrado age, SHA-256, descifrado y restore a una segunda DB desechable. Compara tablas, constraints, índices, triggers, hashes de definiciones de funciones, filas/checksums del ledger y modo de ledger inventario; excluye las tres tablas efímeras. Se creó PR #303 OPEN/Draft; no merge.
 
 Es fase 1 de esquema. El fixture de datos sintéticos histórico sigue en 13 tablas y aún no existe grafo poblado completo de sucursal/turno/warehouse/count/ledger/checkout. CI exact-HEAD de PR #303 está pendiente de revalidación; no declarar PASS hasta observar los workflows del SHA final. Issue #53 OPEN/P0, producción NOT READY, deadline 2026-12-01. Sin Neon, secretos, datos reales ni workflow_dispatch.
+
+## 2026-11-10 — estado exact-SHA inicial de PR #303
+
+PR #303 HEAD `4e369c25bbd7e43072664c2012f6a196cc21eed1`, 30 ahead / 0 behind main, OPEN/Draft, mergeable=true. La consulta de workflow runs pull_request y combined status para ese SHA devolvió 0/0; no hay validación exact-HEAD publicada. Issue #53 comentario `6772761216`. No marcar verde ni fusionar por ausencia de fallos.

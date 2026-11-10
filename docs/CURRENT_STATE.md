@@ -2830,3 +2830,46 @@ La evidencia de solo lectura registrada en issue #53 (2026-11-06) indica que `ba
 - Se registró evidencia y límites en el comentario del issue #53 (comment ID `6765600704`). Issue #53 permanece OPEN/P0.
 - Gate: verificar de forma autorizada el principal real del Worker/API y del backup, memberships heredadas, ownership y ACL efectivos. Diseñar bootstrap/upgrade least-privilege en PostgreSQL desechable. No cambiar roles/grants en Neon main desde esta tarea; no leer ni imprimir secretos.
 - PR #302 solo elimina el token Git de la URL del remote; no corrige ni prueba los privilegios PostgreSQL. Producción NOT READY.
+
+
+## Continuidad verificada — 2026-11-10 11:37 UTC (07:37 UTC-04:00)
+
+### Fuente de verdad y corte GitHub
+- Repositorio: `BTF14/Micro-app`; `main` observado: `c5373564413ba086690552c6b7deeab08d7b4a89`.
+- PR abiertas encontradas en la consulta: #302, #301, #300, #299, #298, #296, #287 y #193. No asumir que la lista histórica de PR 287/298/299/300/301/302 sea exhaustiva: #296 y #193 siguen abiertas y requieren triage.
+- #302 OPEN/Draft, HEAD `1b441b3dc9e65e2cb89d765f9aff084b474dd90d`; 10/10 workflows PR SUCCESS y 14/14 check-runs SUCCESS. Diff acotado a autenticación Git de backup vía GIT_ASKPASS. No ejecutó backup real ni prueba subida/restauración; sigue Draft.
+- #301 OPEN, no Draft, HEAD `ce43ab2cff91cd07e7ca2b91635b8e27a02b11c8`; 10/10 workflows PR SUCCESS y 15/15 check-runs SUCCESS; sin reviews formales ni review threads. Añade GET de sucursales y pruebas. CI verde no sustituye revisión de autorización; revisar especialmente la ruta, la autorización `inventory.read`, scope owner/admin/cashier/inventory, tenant isolation, branch memberships y fixtures DB antes de aprobar o fusionar.
+- #300 OPEN/Draft, HEAD `97fa79e643d5e7b32ebf86958bd0ba9211e1fc95`; 10/10 workflows y 14/14 checks SUCCESS. Revisar que el permiso de override se retire sin romper los flujos autorizados ni contradecir la matriz aprobada.
+- #299 OPEN/Draft, HEAD `c82b0a10f85b59e1f81ac0ca2d439b6286558751`; pendiente revisar alcance, aislamiento de restore sintético y métricas RTO; no inferir que prueba restauración real.
+- #298 OPEN/Draft, HEAD observado antes de este commit documental `6a455b092c43e808c9f409ae10a6206f52c7a562`; 11/11 workflows y 15/15 checks SUCCESS. Este commit generará un SHA nuevo y requiere validación exact-HEAD.
+- #296 OPEN/Draft, HEAD `62dde66355a937a4f6fa4efb8d9cfdf856d7ac0f`; 10/10 workflows y 14/14 checks SUCCESS. Su base SHA es antigua `03442951b2a2f63f5bf4dcf560f2c91be4f6cc71`; no actualizarla sin comparar diff y revisar impacto.
+- #287 OPEN/Draft, HEAD `dd587308f85f42f8019d5fc74e7f8e296229ead8`; 11/11 workflows y 15/15 checks SUCCESS. Base SHA antigua `03442951b2a2f63f5bf4dcf560f2c91be4f6cc71`; el aislamiento BCV y el helper de lock están probados en CI, pero el rol/secreto productor, Worker dedicado y Cron siguen sin provisionar/activar.
+- #193 OPEN/no Draft, HEAD `ac57ab4f3415f82279b8a49c0befe09f8e3aec68`, base SHA antigua `705d3db3220894c7d3baca8dc7e7a6b623dfbb94`; su alcance de Fase B debe reconciliarse con el inventario/branches ya implementado en ramas recientes. No fusionar sin revisar duplicidad y vigencia.
+
+### Backup y P0
+- Último workflow programado de backup identificado: run `42659924075`, SUCCESS, `2026-11-09T16:57:34Z`; a este corte han transcurrido ~18h40m, por debajo del RPO de 24h pero con margen restante ~5h20m. No hay ejecución posterior de backup en los runs programados consultados. Prioridad inmediata: vigilar la próxima ejecución y no confundir CORS/bundle/dependency workflows con backup.
+- Issue #53 sigue OPEN con labels `security` y `P0`: identidad, sesiones y aislamiento tenant.
+- #302 mejora higiene del token Git, pero no demuestra permisos PostgreSQL ni recuperación. #299 es restore sintético; tampoco sustituye un restore operativo autorizado.
+
+### BCV / SUDEBAN: decisión del propietario, no reabrir búsqueda improductiva
+- Leer siempre `docs/EXTERNAL_SOURCE_RELIABILITY_BCV_SUDEBAN.md`.
+- SUDEBAN y BCV tienen webs inestables. Si el origen oficial no es accesible, continuar con terceros trazables, fecha/URL/procedencia y corroboración cuando sea posible. Distinguir OFICIAL, SECUNDARIO_CORROBORADO, SECUNDARIO_PROVISIONAL y NO_VERIFICADO.
+- El calendario 2026 entregado por el propietario se conserva como mejor información disponible, NO OFICIAL / SECUNDARIO_PROVISIONAL. No volver a pedirlo.
+- No insistir buscando un calendario oficial 2027 que no está disponible de forma verificable. Usar fuentes secundarias si el producto lo necesita; nunca etiquetarlas como oficiales. Un error web no demuestra inexistencia ni falta de publicación.
+- BCV: no bloquear la integración por indisponibilidad web; usar fuente alternativa con trazabilidad y controles. No convertir dato secundario en dato oficial ni permitir tasa stale en checkout.
+
+### Restricciones y decisiones
+- Fecha límite del MVP: **2026-12-01, inamovible**. Objetivo P0: un local y hasta 1.000 productos, estable y probado.
+- Máximo dos frentes activos. Prioridad sugerida: (1) seguridad Nivel 1 / issue #53 / autorización y sesión; (2) backup/RPO y recuperación. Después POS end-to-end, caja/ventas, pagos, turnos y UX para piloto.
+- No tocar Neon `main`, datos reales, roles/grants remotos, secretos, Cloudflare manual, DNS, billing ni producción. No desplegar Worker ni activar Cron BCV sin gate explícito, pruebas no productivas y evidencia.
+- No fusionar por CI verde solamente. Revisar diff, approvals formales, threads, checks del SHA exacto, base divergence, migration ordering, tests de integración y riesgo operacional.
+- No pedir al propietario Build IDs, capturas, terminal, CLI, TinyFish, reconexiones ni el calendario 2026 ya entregado. Si un dato verdaderamente bloqueante falta, preguntar una sola vez y aceptar texto.
+
+### Próximas acciones del siguiente chat
+1. Leer `AGENTS.md`, `docs/CONSTITUTION.md`, `docs/CURRENT_STATE.md`, `docs/HANDOFF_NEXT_CHAT.md`, `docs/PROJECT_PLAN.md`, `docs/STATE_JOURNAL.md`, `docs/SECURITY_ROADMAP.md` y `docs/EXTERNAL_SOURCE_RELIABILITY_BCV_SUDEBAN.md` desde la rama correcta; `WORK_CHECKPOINT.md` no existe en esa rama consultada, no asumir que existe ni recrearlo sin comprobar la estructura.
+2. Reconciliar #301 con revisión completa de su diff (es la única PR abierta no Draft) y verificar exact-HEAD CI/approvals/threads; no aprobar hasta revisar authorization/tenant/branch semantics.
+3. Revisar próximo backup programado y RPO/RTO; si el backup no se ejecuta dentro del RPO, tratarlo como incidente P0 y diagnosticar workflow/secret sin exponer valores ni cambiar secretos.
+4. Triage #300/#299/#296/#287/#193; cerrar duplicidades solo con evidencia, mantener drafts cuando falte aprobación.
+5. Validar el nuevo SHA de #298 generado por este commit documental; actualizar PR description y los contadores solo tras consultar GitHub.
+
+**Estado de producto al corte:** NO READY FOR PRODUCTION. Checks verdes de PR no equivalen a aprobación, integración en main, despliegue ni aceptación piloto.

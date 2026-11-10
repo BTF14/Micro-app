@@ -2456,3 +2456,11 @@ La nueva consulta posterior a la nota de 10:35 UTC−4 encuentra el workflow pro
 El intervalo entre el backup previo (2026-11-09T16:57:53Z) y el nuevo (2026-11-10T15:18:11Z) es ~22h20m18s: el ciclo actual permanece dentro del límite de 24h. La ausencia del run del 10-nov observada a las 10:35 quedó superada por esta ejecución posterior. No declarar breach actual. RPO sostenido y restaurabilidad siguen NO DEMOSTRADOS; principal efectivo de `DATABASE_URL_BACKUP_RO` no probado. Issue #53 sigue OPEN/P0. Se añadió comentario con evidencia en el issue.
 
 No se ejecutó backup manual ni se tocaron secretos, dump, Neon, roles/grants, Cron o producción. Producción NOT READY. Fecha límite inamovible: **2026-12-01**.
+
+## 2026-11-10 — auditoría estática del workflow de backup (P0)
+
+Revisado en solo lectura .github/workflows/backup.yml de main (blob 5df408788b9053709261ada3aa22dd73b85d5691). El preflight solo comprueba que DATABASE_URL_BACKUP_RO no esté vacío y luego pasa el secreto a pg_dump; no verifica current_user, superuser, bypass RLS, memberships ni privilegios efectivos. Por ello, SUCCESS no demuestra identidad ni least-privilege.
+
+Además, aunque el comentario superior dice “solo tablas de negocio”, el comando no aplica allowlist de esquemas/tablas; únicamente excluye tres tablas de autenticación efímera. El dump incluye el resto de objetos/datos que pg_dump recoja por defecto. No se afirma que hoy haya otra tabla sensible: el riesgo es que la política no se hace cumplir explícitamente y puede ampliarse inadvertidamente con futuras tablas.
+
+Decisión: no modificar workflow ni grants hasta inventariar el alcance de recuperación, acordar allowlist completa y diseñar una comprobación fail-closed de identidad/privilegios que no imprima DSN ni secretos. No ejecutar workflow_dispatch, no leer secretos, no operar Neon main ni datos reales. Hallazgo registrado en issue #53, comentario 6772087455. Backup 10-nov run 42842855127 acredita ejecución y artefacto cifrado, no principal least-privilege ni restore reciente. Mantener #53 OPEN/P0 y producción NOT READY. Fecha límite inamovible: 2026-12-01.

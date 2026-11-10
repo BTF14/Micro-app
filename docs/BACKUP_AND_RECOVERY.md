@@ -1,3 +1,19 @@
+## Reconciliación crítica del alcance actual — 2026-11-10 UTC
+
+Esta sección sustituye cualquier descripción histórica que atribuya al smoke test vigente una cobertura que su script actual ya no ejecuta.
+
+- **Script y workflow revisados en `main` y en esta rama:** `scripts/test_backup_restore.sh` y `.github/workflows/backup-restore-smoke.yml`. El script actual aplica únicamente `0001_initial.sql`, `0002_google_identity.sql` y `0005_auth_bootstrap_attempts.sql`; no aplica la cadena completa vigente de migraciones `0001`–`0016`. Por tanto, el smoke test actual es una restauración sintética poblada de un subconjunto del esquema base, no una prueba integral del esquema vigente.
+- El fixture compara filas sintéticas y algunas relaciones en 13 tablas base. La aserción de constraints exige únicamente que exista al menos una constraint; **no exige 186**, ni compara el catálogo completo de constraints, índices, funciones, triggers, grants o políticas de runtime. No atribuir esos controles al script actual.
+- En consecuencia, las descripciones históricas de los runs 40849167225, 40849605695 y otras pruebas antiguas que mencionan cadena de migraciones actual, 186 constraints o cobertura completa deben leerse como evidencia de la versión de script ejecutada entonces, no como cobertura de la implementación actual. Los runs históricos no prueban por sí solos el comportamiento del script actual.
+- El workflow `backup-real-restore.yml` es una comprobación separada: valida el checksum del objeto remoto, descifra y restaura en PostgreSQL 18 efímero, pero su validación final solo exige que exista al menos una tabla base en `public`. No compara filas, relaciones, constraints ni integridad funcional de los datos restaurados. La última restauración remota concreta documentada sigue siendo la del 2026-10-29; no se ha ejecutado una nueva en esta revisión.
+- El workflow principal `backup.yml` usa `actions/checkout@v4` sin fijar SHA completo. Además, el token de `BACKUP_REPO_TOKEN` se incorpora a la URL HTTPS de `git clone`; eso puede dejar la credencial en la configuración local del remote dentro del runner mientras exista el workspace. Es una oportunidad concreta de hardening: fijar la acción a SHA verificado y usar un credential helper/header temporal sin incluir el token en la URL. **No se modificó el workflow ni se rotó ningún secreto** en esta revisión.
+- El smoke test usa `actions/checkout@v7` sin SHA completo, otra referencia mutable que debe fijarse a un commit verificado antes de cerrar el hardening de cadena de suministro.
+- **Estado del gate:** backup/restore sigue parcialmente verificado. No se declara RPO ≤24 h (se observó un intervalo superior a 27 h), RTO integral, alerta externa ni coste total $0. No se ejecutó la restauración remota manual ni se accedió a Neon/producción.
+
+No confundir: (1) smoke test sintético parcial actual, (2) restauración técnica remota histórica de un archivo concreto y (3) restauración integral del esquema vigente con datos sintéticos representativos. Son evidencias distintas y ninguna debe sustituir a las otras.
+
+---
+
 ## Aclaración vigente de alcance — 2026-11-09 UTC
 
 - La ejecución programada SUCCESS y la existencia del objeto cifrado/sidecar no demuestran por sí solas que el blob se pueda descifrar/restaurar; esta sesión no descargó ni restauró el backup del 2026-11-09.

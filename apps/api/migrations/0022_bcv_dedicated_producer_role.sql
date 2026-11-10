@@ -14,6 +14,11 @@ BEGIN
   THEN RAISE EXCEPTION 'MICROAPP_BCV_SYNC_ROLE_ATTRIBUTES_INVALID'; END IF;
   IF EXISTS (SELECT 1 FROM pg_catalog.pg_auth_members WHERE roleid=producer.oid OR member=producer.oid)
   THEN RAISE EXCEPTION 'MICROAPP_BCV_SYNC_ROLE_MEMBERSHIP_FORBIDDEN'; END IF;
+  -- Schema ACLs are provisioned by the schema owner, not this migration role.
+  -- Fail closed rather than pretending the table owner can revoke schema grants.
+  IF NOT pg_catalog.has_schema_privilege('microapp_bcv_sync','public','USAGE')
+    OR pg_catalog.has_schema_privilege('microapp_bcv_sync','public','CREATE')
+  THEN RAISE EXCEPTION 'MICROAPP_BCV_SYNC_SCHEMA_PRIVILEGES_INVALID'; END IF;
 END;
 $preflight$;
 
@@ -50,8 +55,6 @@ REVOKE INSERT (id,base_currency,quote_currency,rate,source,effective_date,fetche
   ON TABLE public.exchange_rates FROM microapp_bcv_sync;
 REVOKE UPDATE (id,base_currency,quote_currency,rate,source,effective_date,fetched_at,validation_status,created_at)
   ON TABLE public.exchange_rates FROM microapp_bcv_sync;
-REVOKE CREATE ON SCHEMA public FROM microapp_bcv_sync;
-GRANT USAGE ON SCHEMA public TO microapp_bcv_sync;
 
 -- Grant only columns actually read/written by syncBcvOfficialRate() and
 -- persistBcvOfficialRate(). RETURNING id and ON CONFLICT require SELECT on

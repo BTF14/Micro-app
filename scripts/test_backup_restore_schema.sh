@@ -92,23 +92,23 @@ SELECT 'required_core_tables|' || count(*)::text
     ('schema_migrations')
   ) AS required(table_name)
  WHERE pg_catalog.to_regclass('public.' || required.table_name) IS NOT NULL;
-SELECT 'constraints|' || count(*)::text
-  FROM pg_catalog.pg_constraint c
-  JOIN pg_catalog.pg_class t ON t.oid = c.conrelid
-  JOIN pg_catalog.pg_namespace n ON n.oid = t.relnamespace
+SELECT 'constraints|' || COALESCE(string_agg(c.relname || ':' || con.conname || ':' || pg_catalog.md5(pg_catalog.pg_get_constraintdef(con.oid)), ';' ORDER BY c.relname, con.conname), '')
+  FROM pg_catalog.pg_constraint con
+  JOIN pg_catalog.pg_class c ON c.oid = con.conrelid
+  JOIN pg_catalog.pg_namespace n ON n.oid = c.relnamespace
  WHERE n.nspname = 'public';
-SELECT 'indexes|' || count(*)::text
+SELECT 'indexes|' || COALESCE(string_agg(indexname || ':' || pg_catalog.md5(indexdef), ';' ORDER BY indexname), '')
   FROM pg_catalog.pg_indexes WHERE schemaname = 'public';
-SELECT 'triggers|' || count(*)::text
+SELECT 'triggers|' || COALESCE(string_agg(c.relname || ':' || t.tgname || ':' || pg_catalog.md5(pg_catalog.pg_get_triggerdef(t.oid)), ';' ORDER BY c.relname, t.tgname), '')
   FROM pg_catalog.pg_trigger t
   JOIN pg_catalog.pg_class c ON c.oid = t.tgrelid
   JOIN pg_catalog.pg_namespace n ON n.oid = c.relnamespace
  WHERE n.nspname = 'public' AND NOT t.tgisinternal;
-SELECT 'functions|' || count(*)::text
+SELECT 'functions|' || COALESCE(string_agg(p.proname || '(' || pg_catalog.pg_get_function_identity_arguments(p.oid) || '):' || pg_catalog.md5(pg_catalog.pg_get_functiondef(p.oid)), ';' ORDER BY p.proname, pg_catalog.pg_get_function_identity_arguments(p.oid)), '')
   FROM pg_catalog.pg_proc p
   JOIN pg_catalog.pg_namespace n ON n.oid = p.pronamespace
  WHERE n.nspname = 'public' AND p.prokind IN ('f', 'p');
-SELECT 'migration_ledger|' || count(*)::text || ':' || COALESCE(max(version), 'none')
+SELECT 'migration_ledger|' || COALESCE(string_agg(version || ':' || filename || ':' || checksum || ':' || state, ';' ORDER BY version), '')
   FROM public.schema_migrations;
 SELECT 'intent_table|' || (pg_catalog.to_regclass('public.inventory_balance_ledger_intents') IS NOT NULL)::text;
 SELECT 'projection_function|' || (pg_catalog.to_regprocedure('public.project_inventory_movement_to_balance()') IS NOT NULL)::text;

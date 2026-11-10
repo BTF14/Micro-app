@@ -1,3 +1,13 @@
+## Aclaración vigente de alcance — 2026-11-09 UTC
+
+- La ejecución programada SUCCESS y la existencia del objeto cifrado/sidecar no demuestran por sí solas que el blob se pueda descifrar/restaurar; esta sesión no descargó ni restauró el backup del 2026-11-09.
+- La prueba sintética de PostgreSQL 18 y la medición aislada de `pg_restore` en #299 son pruebas de fixture desechable. No son restauración de una copia real ni RTO completo.
+- Se observaron 27 h 00 min 14 s entre inicios de workflows del 8 y 9 nov (27 h 00 min 16 s entre nombres de archivo). Por tanto, el workflow diario actual no garantiza RPO <=24 h. La duración de 30 s del run 42659924075 mide el workflow de backup, no restore ni recuperación.
+- La expresión histórica “restauración reciente permitida” solo puede referirse a un fixture sintético en PostgreSQL desechable. **No restaurar, descargar, descifrar ni manipular copias que puedan contener datos reales de producción** bajo los guardrails actuales. Una restauración real requiere autorización nueva, explícita y acotada y un procedimiento que no exponga producción ni datos reales.
+- Seguridad Nivel 1 sigue abierto hasta demostrar RPO/alerta, RTO de fixture sintético poblado, coste $0 y el resto de controles. No declarar RPO <=24 h ni RTO cumplido.
+
+---
+
 ## Reconciliación de evidencia — 2026-11-08 UTC
 
 - La última restauración de una copia remota concreta documentada sigue siendo la del 2026-10-29: `daily/backup-2026-10-29T17-29-48Z.dump.age`, con checksum, descifrado y restore a PostgreSQL 18 efímero. No se ha demostrado una nueva restauración de un backup remoto posterior.

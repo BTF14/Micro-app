@@ -2419,3 +2419,23 @@ Se creó `fix/bcv-checkout-last-success-20261109` desde #287 HEAD `362443524eb45
 - No se tocó main, Neon, Cloudflare, secretos, DNS, billing ni datos reales. Producción NOT READY.
 - El diff comparado con main `c537356...` queda 178 ahead / 1 behind, diverged, merge base `03442951...`; no se hizo sincronización automática ni force-push.
 - La UI del branch mantiene los módulos Caja y ventas, Inventario y Reportes deshabilitados; el checkout API no satisface el P0 de jornada completa desde UI. Issue #53/P0 y el hallazgo de privilegios efectivos del rol `backup_readonly` siguen abiertos.
+## 2026-11-10 — Migration 0022 ACL normalization, producer/runtime test split
+
+### Hallazgo y decisión
+- Una segunda revisión detectó que la migración 0022 no debía asumir ACL vacía en un LOGIN producer preexistente. `REVOKE ALL ON TABLE` no basta para borrar ACLs independientes por columna. También se debía proteger contra ACLs concedidas a PUBLIC.
+- Se normalizó la migración: revoca ACLs table-level y column-level del productor en `bcv_sync_state`/`exchange_rates`, limpia ACLs table/column de PUBLIC, y vuelve a otorgar un allowlist column-level. Runtime mantiene lectura table-level y no tiene INSERT/UPDATE efectivo en ninguna columna BCV.
+- El productor recibe SELECT solo en `singleton`, `attempt_id`, `last_outcome` del estado; UPDATE solo en los campos de sincronización; SELECT de `id`, `rate`, `source`, `effective_date`, `validation_status`; INSERT solo en columnas usadas por el INSERT; UPDATE solo en `validation_status`. No recibe table-level SELECT/INSERT/UPDATE, DELETE, TRUNCATE, REFERENCES ni TRIGGER.
+- El migrator no es propietario del schema `public`; por eso no intenta revocar CREATE. El preflight exige USAGE y rechaza CREATE. El workflow prueba esta condición otorgando CREATE con el administrador, ejecutando la migración como migrator, verificando el error `MICROAPP_BCV_SYNC_SCHEMA_PRIVILEGES_INVALID` y retirando el grant como propietario.
+
+### Pruebas de regresión
+- `migration-check.yml` siembra privilegios table-level amplios al productor y PUBLIC y añade ACLs column-level específicas antes de 0022; la migración debe eliminarlos. Las assertions inspeccionan `pg_class.relacl`, `pg_attribute.attacl`, privilegios efectivos enumerando columnas, memberships y el contrato de `lock_bcv_sync_state()`.
+- La primera ejecución con SHA `380bf757...` falló en `findApplicableBcvRate`: el test usaba el LOGIN producer para una lectura que pertenece al runtime. Se corrigió el test, no los grants: `producerClient` sincroniza/persiste; `runtimeClient` lee tasas y checkout; `cleanupClient` admin solo limpia el PostgreSQL disposable.
+- La integración incluye una prueba dedicada que confirma que `microapp_runtime` no puede persistir tasas (SQLSTATE `42501`) y que el productor sí puede sincronizar.
+
+### Validación final de código
+- HEAD de código `24bcf66c0c570ec76566de03a70b2443e64fc69f`: 11/11 workflows SUCCESS.
+- CI `42834223332` SUCCESS, incluyendo migration 0022 contract, BCV effective-date integration con producer LOGIN, runtime-role API integration y atomic sales checkout.
+- Database migration validation `42834223191` SUCCESS: dirty producer ACL fixture, dirty PUBLIC ACL fixture, schema CREATE fail-closed, rollback atómico, apply migration, assertions y SQL operations/denials con runtime LOGIN.
+- Migration runner `42834223048`, Playwright `42834223393`, backup smoke `42834223426`, Security `42834223440`, Secret history `42834223064`, Semgrep `42834223348`, ODD `42834223489`, Dependency review `42834223323`, dashboard `42834223080`: SUCCESS.
+- PR #287 permanece OPEN/Draft, sin reviews ni threads. Comparación del HEAD de código con main `c537356...`: 199 ahead / 1 behind, diverged. Los commits de documentación posteriores no cambian código; comprobar CI exact-HEAD antes de actuar.
+- Sin cambios en main, Neon, Cloudflare, secretos, DNS, billing ni datos reales. Worker/Cron BCV no desplegado/activado. Producción NOT READY.

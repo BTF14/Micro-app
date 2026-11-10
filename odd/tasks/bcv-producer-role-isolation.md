@@ -64,3 +64,12 @@ Migration 0022 checked producer role attributes and membership isolation, but it
 ### Scope and safety
 
 This is a correction inside the unmerged integration branch. Migration 0022 has not been applied to Neon or production. No role, grant, password, secret, Worker, Cron or real data is changed remotely. PostgreSQL 18 disposable CI is the acceptance environment.
+### Implementación y evidencia — 2026-11-10
+
+- Migration 0022 elimina ACLs de tabla y de columna para PUBLIC en `bcv_sync_state` y `exchange_rates`, antes de otorgar permisos nominales. Las assertions inspeccionan `pg_class.relacl` y `pg_attribute.attacl` para impedir ACLs PUBLIC residuales.
+- El LOGIN productor recibe privilegios por columna: SELECT de `singleton`, `attempt_id`, `last_outcome`; UPDATE de los campos de sincronización; SELECT de `id`, `rate`, `source`, `effective_date`, `validation_status`; INSERT solo de las columnas que escribe el sincronizador; UPDATE únicamente de `validation_status`. No tiene SELECT/INSERT/UPDATE table-level, DELETE, TRUNCATE, REFERENCES ni TRIGGER.
+- `microapp_runtime` conserva SELECT table-level para checkout/lectura, pero las assertions enumeran todas las columnas y rechazan cualquier INSERT/UPDATE efectivo a nivel de columna o tabla.
+- `public` schema: el migrator no es propietario del esquema y no intenta revocar grants ajenos. El preflight exige USAGE y rechaza CREATE para el productor antes de cambiar ACLs.
+- `migration-check.yml` siembra grants deliberadamente amplios de tabla y columna al productor y a PUBLIC; después verifica que migration 0022 los elimina. También concede CREATE al productor como admin, comprueba que el preflight falle con `MICROAPP_BCV_SYNC_SCHEMA_PRIVILEGES_INVALID` y revoca el grant con el propietario.
+- La prueba de integración BCV separa los clientes producer/runtime/admin: sincronización e INSERT con producer, lectura/checkout con runtime, limpieza solo con admin. Incluye una prueba que confirma que runtime recibe SQLSTATE `42501` al intentar persistir una tasa.
+- SHA `24bcf66c0c570ec76566de03a70b2443e64fc69f`: 11/11 workflows `pull_request` SUCCESS; migration validation, migration runner, CI, BCV effective-date integration con producer LOGIN, runtime-role API integration, Playwright, backup smoke, security scans, dependency review y ODD validation SUCCESS.

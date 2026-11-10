@@ -232,7 +232,7 @@ describe("BCV effective-date persistence", () => {
 
     const restore = statements.find(({ sql }) => sql.includes("UPDATE public.exchange_rates"));
     expect(restore?.sql).toContain("SET validation_status = 'valid'");
-    expect(restore?.sql).toContain("AND source = $1");
+    expect(restore?.sql).toContain("WHERE source = $1");
     expect(restore?.sql).toContain("AND effective_date = $2::date");
     expect(restore?.sql).toContain("AND rate = $3::numeric");
     expect(restore?.sql).toContain("AND validation_status = 'stale'");

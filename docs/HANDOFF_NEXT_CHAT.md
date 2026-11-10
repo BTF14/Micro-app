@@ -2626,3 +2626,17 @@ Intervalo entre artefactos: ~22h20m18s, inferior a 24h. El ciclo actual NO incum
 **Próximo trabajo:** continuar auditoría del principal efectivo y permisos del backup de forma segura, sin leer secretos ni operar Neon main. Revalidar la siguiente ejecución programada y preparar prueba de restauración controlada fuera de producción. No hacer workflow_dispatch/manual, no tocar roles/grants, secretos, Cron ni producción. Producción NOT READY.
 
 Fecha límite de MVP: **1 de diciembre de 2026 — INAMOVIBLE**.
+
+## Continuidad — auditoría P0 del workflow de backup (2026-11-10)
+
+Hallazgo de código en .github/workflows/backup.yml de main (blob 5df408788b9053709261ada3aa22dd73b85d5691), registrado en issue #53 comentario 6772087455:
+
+- El preflight solo comprueba que DATABASE_URL_BACKUP_RO no esté vacío. El mismo secreto se pasa a pg_dump; no hay comprobación SQL de current_user, superuser, bypass RLS, memberships ni privilegios efectivos. Un backup SUCCESS no demuestra qué principal conectó ni que sea read-only.
+- El comentario “solo tablas de negocio” no está respaldado por una allowlist: pg_dump solo excluye auth_sessions, auth_rate_limits y auth_bootstrap_attempts, sin allowlist --schema/--table. No se afirma que hoy haya otra tabla sensible; falta hacer cumplir el alcance de forma explícita.
+- No modificar todavía workflow/grants. Primero inventariar todas las tablas necesarias para restauración, definir allowlist que preserve integridad y diseñar aserción fail-closed del principal/privilegios sin imprimir secretos ni DSN. No lanzar workflow manual, no leer secretos, no tocar Neon main ni datos reales.
+- El run programado 42842855127 y su artefacto del 10-nov siguen siendo evidencia de ejecución/subida; no demuestran identidad least-privilege, hash recalculado sobre bytes, RPO sostenido ni restore reciente.
+- backup_readonly conserva el hallazgo de membresías con privilegios efectivos de escritura; no asumir que DATABASE_URL_BACKUP_RO usa ese rol.
+
+PR #287: OPEN/Draft, HEAD documental conocido 515f85260d9ae0381eb4c4de64cd0f87ac6201da, 11/11 workflows pull_request SUCCESS en ese SHA; combined legacy status sin contexts. No reviews formales ni review threads. Revalidar HEAD/checks antes de continuar si hay nuevos commits. Mantener #53 OPEN/P0, producción NOT READY y no fusionar.
+
+Fecha límite del MVP: 1 de diciembre de 2026 — INAMOVIBLE.

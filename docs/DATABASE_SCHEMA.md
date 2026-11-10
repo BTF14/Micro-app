@@ -1,3 +1,13 @@
+## Reconciliación de esquema y autorización — 2026-11-09 UTC
+
+- Main observado: `c5373564413ba086690552c6b7deeab08d7b4a89`. Las migraciones versionadas en Git no demuestran que estén aplicadas en Neon main; no ejecutar DDL/DML remoto.
+- La matriz de permisos comerciales está **APROBADA desde 2026-10-31**. Los textos inferiores que dicen “NO APROBADA” son snapshots históricos y no describen el estado vigente.
+- La implementación de autorización en main es parcial; catálogo e inventario tienen handlers, pero checkout/pagos y rutas completas de caja/turnos no están integrados.
+- BCV + checkout están en PR #287 OPEN/Draft; #255 fue cerrada como supersedida.
+- Producción NOT READY. Ver `docs/CURRENT_STATE.md` para estado de PRs/CI y `docs/SECURITY_ROADMAP.md` para gates.
+
+---
+
 # Estado del repositorio — 2026-11-08 UTC
 
 El estado vivo de main, PRs, SHA, checks y próximos pasos está centralizado en [CURRENT_STATE.md](CURRENT_STATE.md) y [HANDOFF_NEXT_CHAT.md](HANDOFF_NEXT_CHAT.md). Los snapshots históricos que siguen en este documento son evidencia temporal: no reutilizar SHA ni resultados CI sin comprobar el HEAD exacto.

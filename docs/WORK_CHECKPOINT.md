@@ -199,3 +199,27 @@ El ensayo verifica el bundle SQL y roles en la base aislada; no prueba el compor
 - No cambiar secretos, Cloudflare settings, DNS, billing ni realizar despliegues manuales.
 - No aprobar reglas comerciales ni permisos no autorizados.
 - Producción permanece **NOT READY**.
+
+
+---
+
+# Checkpoint vigente — 2026-11-10, revisión PR #303
+
+- Rama activa: `security/backup-restore-schema-coverage-20261110`.
+- PR #303 OPEN/Draft; HEAD `3439c51b5719315e46196f7eca57cffee5a76df2`; base main `c5373564413ba086690552c6b7deeab08d7b4a89`; 37 ahead / 0 behind; mergeable=true.
+- Validación exact-HEAD: 11/11 workflow runs `pull_request` SUCCESS; 0 legacy status contexts; 0 reviews formales; 0 review threads.
+- PR #287 OPEN/Draft; HEAD `9a1792f7449ff83915bcdd672686a4860918028d`; 219 ahead / 1 behind; 11/11 workflows exact-HEAD SUCCESS; 0 reviews/threads. Base SHA reportado por GitHub `03442951b2a2f63f5bf4dcf560f2c91be4f6cc71`; no retarget automático.
+- PR #298 OPEN/Draft; HEAD `c9e65a8f0378b2b9740e91df68f39909967eed26`; 231 ahead / 0 behind; 11/11 workflows exact-HEAD SUCCESS; 0 reviews/threads.
+- Issue #53 OPEN/P0.
+
+## Hallazgos de auditoría
+
+La fase 1 de #303 verifica esquema, ledger y round-trip cifrado, pero no prueba ownership/ACL porque dump/restore usan `--no-owner --no-privileges`. Tampoco compara RLS/policies, grants efectivos, atributos/membresías/default privileges de roles ni search_path efectivo. Son límites estáticos pendientes, no fallos de CI.
+
+La fase 2 debe separar perfiles por ref: main 0001–0016 (tenant/sucursal/turno/warehouse/count/ledger y venta legacy) frente a #287 0017–0022 (checkout branch-aware, allocation, projection y BCV sync). No combinar esquemas ni atribuir checkout integrado a main.
+
+## Próximo trabajo
+
+Inspeccionar migraciones y triggers de ledger 0010; implementar fixture sintético coherente para main; comparar filas, conteos y relaciones source/restore; añadir verificación RLS/policies y decidir cómo comprobar ownership/ACL sin falsear el contrato de restore. Después preparar perfil de checkout sobre ref #287 y ejecutar CI exact-HEAD.
+
+Límites: no merge, no retarget, no deploy, no Neon, no secretos, no Cron, no datos reales, no Cloudflare/DNS/billing. Producción NOT READY. Deadline 2026-12-01.

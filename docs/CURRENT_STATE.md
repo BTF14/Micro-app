@@ -2479,3 +2479,14 @@ Esta revisión fue estática de contenidos en GitHub; no se ejecutaron tests des
 **Riesgos P0 todavía abiertos:** issue #53; `backup_readonly` en Neon main conserva privilegios efectivos de escritura por memberships; principal efectivo de `DATABASE_URL_BACKUP_RO` aún no demostrado. La UI de esta rama sigue sin recorrido de caja/ventas: esos módulos aparecen deshabilitados. El checkout API no equivale a aceptación POS desde UI. La aceptación de un local/1.000 productos/jornada completa sigue en PR #298 Draft.
 
 **Límites:** no se modificó main, Neon, Cloudflare, secretos, DNS, billing ni datos reales. Worker BCV no desplegado, Cron no activado, LOGIN/secreto productor remoto no provisionado. Producción NOT READY. Fecha límite inamovible: **2026-12-01**.
+
+## Revalidación operativa — 2026-11-10 14:35:49 UTC — backup/RPO
+
+- PR #287 HEAD documental `225dba37812112f3669af3dffa79b04ec6a8762f`: 11/11 workflow runs `pull_request` SUCCESS; el PostgreSQL migration runner `42834658189`, previamente pendiente, terminó SUCCESS. Combined status contexts vacío; 0 reviews formales y 0 review threads. PR sigue OPEN/Draft.
+- Backup programado: workflow `.github/workflows/backup.yml` declara cron diario 07:00 UTC. La consulta actual de todas las ejecuciones del workflow solo encuentra como más reciente run `42659924075`, SUCCESS, 2026-11-09 16:57:34Z; artefacto timestamp 16:57:53Z. No aparece ejecución posterior ni del 10-nov a las 07:00Z.
+- A 2026-11-10 14:35:49Z faltaban ~2h22m para el umbral de 24h del artefacto (16:57:53Z). No declarar aún breach del ciclo actual; la ejecución diaria esperada no aparece y el RPO sostenido sigue NO DEMOSTRADO por gaps históricos.
+- El workflow asigna `DATABASE_URL_BACKUP_RO` a `DATABASE_URL`; el principal efectivo de ese secreto no está demostrado. El rol `backup_readonly` observado en Neon main hereda `neon_superuser`/`pg_write_all_data`; no asumir que es el principal del secreto.
+- Se registró el snapshot en issue #53. No se disparó backup manual, no se leyeron secretos ni dumps, no se accedió/escribió en Neon ni se cambiaron roles, cron, main o producción.
+- Próximo gate: comprobar después de 16:57:53Z si aparece una nueva ejecución programada exitosa y verificar metadatos/checksum del artefacto sin leer su contenido; mantener #53 OPEN/P0 y producción NOT READY.
+
+**Fecha límite inamovible: 2026-12-01.**

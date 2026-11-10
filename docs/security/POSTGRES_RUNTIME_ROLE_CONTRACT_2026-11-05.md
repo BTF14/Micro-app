@@ -147,3 +147,38 @@ Historical baseline verified at #221 HEAD `18dfc33525c792802c296469ee6140d3b5f64
 - Issue #53 remains OPEN/P0.
 
 Residual risk: the effective production DATABASE_URL principal, role membership, object ownership, grants, Cloudflare bindings and actual deployed migration order remain unverified. No production readiness claim is made.
+
+
+
+# Reconciliación del contrato runtime — 2026-11-10 (rama propuesta #287)
+
+> La matriz y el inventario de callsites anteriores son un snapshot histórico del 2026-11-05. Esta sección documenta cambios posteriores en main y en la rama Draft #287. No afirma que #287 esté integrado ni que el Worker productivo use actualmente el principal esperado.
+
+## Secuencia de migraciones y privilegios
+
+- main actual contiene migraciones hasta `0016`; #287 añade `0017`–`0021`. No hay colisión de numeración. El único commit de main ausente en #287 es #297, exclusivamente documental.
+- **0015 (main):** habilita los callsites de ventas que antes no existían: `microapp_runtime` recibe SELECT/INSERT en `sales`, `sale_items` y `payments`; UPDATE solo de `sales.status` y `sales.completed_at`; EXECUTE de `lock_open_register_shift()`. No se otorga UPDATE general de importes ni DELETE/TRUNCATE de ventas/pagos.
+- **0013 (main):** runtime puede leer/insertar tasas y actualizar únicamente `exchange_rates.validation_status`; no puede cambiar rate, source ni effective_date. Esto permite la recuperación stale→valid condicionada por mismo valor oficial.
+- **0017 / 0020 (#287):** agregan y luego endurecen la regla de fecha efectiva BCV; funciones invocadas por triggers `SECURITY DEFINER`, sin grants de ejecución general a runtime.
+- **0018 (#287):** agrega `allocation_position` y triggers de reconciliación; revoca DELETE/TRUNCATE de `payments`. Los permisos SELECT/INSERT vienen de 0015; no se concede una vía de escritura destructiva.
+- **0019 (#287):** cambia la proyección de stock a ledger/trigger. Revoca a PUBLIC y `microapp_runtime` INSERT/UPDATE/DELETE/TRUNCATE/TRIGGER directos sobre `inventory_balances`; runtime conserva SELECT. `lock_inventory_balances(...)` es `SECURITY DEFINER` y tiene EXECUTE explícito para runtime. Los movimientos se insertan en `warehouse_inventory_movements`; el trigger `warehouse_inventory_movements_project_balance` actualiza la proyección. El preflight aborta si `inventory_balance_ledger_intents` no está vacío; no elimina silenciosamente intents pendientes.
+- **0021 (#287):** runtime recibe SELECT en `bcv_sync_state` y UPDATE solo de `attempt_id`, `last_attempt_at`, `last_success_at`, `last_outcome`, `last_error_code`, `last_effective_date`, `updated_at`. No INSERT/DELETE. El trigger de venta latest-success es `SECURITY DEFINER`.
+- Ninguna de estas migraciones convierte el modelo en RLS. El aislamiento usa grants mínimos, funciones SECURITY DEFINER y validación explícita de tenant/branch.
+
+## Call sites y pruebas runtime añadidos en #287
+
+- `sales-checkout.ts`: INSERT en sales/sale_items/payments/movimientos/audit; UPDATE limitado al estado/completed_at de sale; lectura de inventario y sync state. No tiene permisos para actualizar directamente la proyección de stock tras 0019.
+- `exchange-rates.ts`: persistencia de tasa y recuperación stale con UPDATE limitado de validation_status; actualización de bcv_sync_state con columnas concedidas.
+- `cashier-open-shift.ts`: resolución/lectura del turno abierto; es helper, no router ni escritor de turnos. No hay `register-shifts.ts` router en la rama.
+- `sales-checkout.ts` conserva una rama de compatibilidad que intenta paired-write directo solo si `to_regprocedure('public.project_inventory_movement_to_balance()')` no existe. En el esquema completo 0019 el trigger existe y la ruta ledger proyecta el saldo. La aserción de 0019 exige que `warehouse_inventory_movements_project_balance` esté habilitado. El runtime no tiene ALTER TABLE; el estado del trigger en producción sigue sin evidencia actual.
+- CI #287 ejecuta PostgreSQL 18 desechable. `sales-checkout.integration.test.ts` se ejecuta con `DATABASE_URL=$RUNTIME_DATABASE_URL` y `DATABASE_URL_ADMIN` separado; el paso `Runtime-role API integration tests` ejecuta nueve suites con LOGIN runtime; `cashier-open-shift.integration.test.ts` recibe `DATABASE_URL_RUNTIME`. El CI exact-HEAD `2e7cdd44f89a3b3765a0c69ad23bdb87faacf99c` terminó 15/15 check-runs y 13/13 workflow runs SUCCESS.
+- Estas pruebas validan grants/flows en PostgreSQL 18 sintético. No demuestran el DATABASE_URL ni grants efectivos del Worker productivo.
+
+## Limitaciones y riesgos residuales
+
+1. El contrato de métodos de pago del handler #287 (`cash/card/transfer/mobile_payment/other`) permanece sin aprobación; no activar checkout con esos defaults.
+2. La detección de proyección por existencia de función no equivale a verificación runtime continua de trigger. La migración y sus assertions comprueban el trigger en el proceso de migración; un drift administrativo posterior no se ha probado en producción.
+3. No existe router HTTP de apertura/cierre de turnos ni UI POS completa en la rama revisada.
+4. El principal efectivo del Worker productivo sigue sin ser verificable en esta revisión. No afirmar que producción usa `microapp_runtime`.
+5. Seguridad Nivel 1 sigue abierta y producción NOT READY.
+

@@ -17,18 +17,54 @@ BEGIN
 END;
 $preflight$;
 
+-- Runtime can read the BCV state/rates, but all direct table- and
+-- column-level writes are removed. The checkout lock is exposed separately.
 REVOKE ALL ON TABLE public.bcv_sync_state FROM microapp_runtime;
-REVOKE UPDATE (attempt_id,last_attempt_at,last_success_at,last_outcome,last_error_code,last_effective_date,updated_at)
+REVOKE INSERT (singleton,attempt_id,last_attempt_at,last_success_at,last_outcome,last_error_code,last_effective_date,updated_at)
+  ON TABLE public.bcv_sync_state FROM microapp_runtime;
+REVOKE UPDATE (singleton,attempt_id,last_attempt_at,last_success_at,last_outcome,last_error_code,last_effective_date,updated_at)
   ON TABLE public.bcv_sync_state FROM microapp_runtime;
 GRANT SELECT ON TABLE public.bcv_sync_state TO microapp_runtime;
-REVOKE INSERT, UPDATE, DELETE, TRUNCATE ON TABLE public.exchange_rates FROM microapp_runtime;
-REVOKE UPDATE (validation_status) ON TABLE public.exchange_rates FROM microapp_runtime;
 
-GRANT SELECT, INSERT ON TABLE public.exchange_rates TO microapp_bcv_sync;
-GRANT UPDATE (validation_status) ON TABLE public.exchange_rates TO microapp_bcv_sync;
-GRANT SELECT ON TABLE public.bcv_sync_state TO microapp_bcv_sync;
+REVOKE INSERT, UPDATE, DELETE, TRUNCATE ON TABLE public.exchange_rates FROM microapp_runtime;
+REVOKE INSERT (id,base_currency,quote_currency,rate,source,effective_date,fetched_at,validation_status,created_at)
+  ON TABLE public.exchange_rates FROM microapp_runtime;
+REVOKE UPDATE (id,base_currency,quote_currency,rate,source,effective_date,fetched_at,validation_status,created_at)
+  ON TABLE public.exchange_rates FROM microapp_runtime;
+
+-- Normalize a pre-existing producer LOGIN before granting the narrow contract.
+-- Table-level REVOKE does not remove independent column ACLs, so reset those
+-- explicitly as well. The producer never needs table-level SELECT/INSERT.
+REVOKE ALL ON TABLE public.bcv_sync_state FROM microapp_bcv_sync;
+REVOKE SELECT (last_attempt_at,last_success_at,last_error_code,last_effective_date,updated_at)
+  ON TABLE public.bcv_sync_state FROM microapp_bcv_sync;
+REVOKE INSERT (singleton,attempt_id,last_attempt_at,last_success_at,last_outcome,last_error_code,last_effective_date,updated_at)
+  ON TABLE public.bcv_sync_state FROM microapp_bcv_sync;
+REVOKE UPDATE (singleton,attempt_id,last_attempt_at,last_success_at,last_outcome,last_error_code,last_effective_date,updated_at)
+  ON TABLE public.bcv_sync_state FROM microapp_bcv_sync;
+
+REVOKE ALL ON TABLE public.exchange_rates FROM microapp_bcv_sync;
+REVOKE SELECT (base_currency,quote_currency,fetched_at,created_at)
+  ON TABLE public.exchange_rates FROM microapp_bcv_sync;
+REVOKE INSERT (id,base_currency,quote_currency,rate,source,effective_date,fetched_at,validation_status,created_at)
+  ON TABLE public.exchange_rates FROM microapp_bcv_sync;
+REVOKE UPDATE (id,base_currency,quote_currency,rate,source,effective_date,fetched_at,validation_status,created_at)
+  ON TABLE public.exchange_rates FROM microapp_bcv_sync;
+REVOKE CREATE ON SCHEMA public FROM microapp_bcv_sync;
+GRANT USAGE ON SCHEMA public TO microapp_bcv_sync;
+
+-- Grant only columns actually read/written by syncBcvOfficialRate() and
+-- persistBcvOfficialRate(). RETURNING id and ON CONFLICT require SELECT on
+-- id/source/effective_date; no other rate metadata is needed by the producer.
+GRANT SELECT (singleton,attempt_id,last_outcome)
+  ON TABLE public.bcv_sync_state TO microapp_bcv_sync;
 GRANT UPDATE (attempt_id,last_attempt_at,last_success_at,last_outcome,last_error_code,last_effective_date,updated_at)
   ON TABLE public.bcv_sync_state TO microapp_bcv_sync;
+GRANT SELECT (id,rate,source,effective_date,validation_status)
+  ON TABLE public.exchange_rates TO microapp_bcv_sync;
+GRANT INSERT (base_currency,quote_currency,rate,source,effective_date,fetched_at,validation_status)
+  ON TABLE public.exchange_rates TO microapp_bcv_sync;
+GRANT UPDATE (validation_status) ON TABLE public.exchange_rates TO microapp_bcv_sync;
 
 -- PostgreSQL requires UPDATE privilege to take FOR SHARE locks. Expose only
 -- the read-and-lock operation to the API runtime, not direct row mutation.

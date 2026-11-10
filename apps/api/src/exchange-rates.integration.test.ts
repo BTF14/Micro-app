@@ -312,4 +312,45 @@ describe.skipIf(!isDisposableCiDatabase)("BCV effective-date persistence against
       ],
     });
   });
+  it("restores a stale BCV row when runtime confirms the same official value", async () => {
+    if (!client || !cleanupClient) {
+      throw new Error("PostgreSQL integration clients are not connected.");
+    }
+    const databaseClient = client as unknown as DatabaseClient;
+    const dates = await cleanupClient.query<{ today: string }>(
+      "SELECT (now() AT TIME ZONE 'America/Caracas')::date::text AS today",
+    );
+    const today = dates.rows[0]!.today;
+    const rate = "894.88760000";
+
+    await cleanupClient.query("DELETE FROM public.exchange_rates WHERE source = $1", [source]);
+    await expect(persistBcvOfficialRate(databaseClient, {
+      rate,
+      effectiveDate: today,
+    })).resolves.toBe("inserted");
+
+    await cleanupClient.query(
+      "UPDATE public.exchange_rates SET validation_status = 'stale' WHERE source = $1 AND effective_date = $2::date",
+      [source, today],
+    );
+    const stale = await cleanupClient.query<{ validation_status: string }>(
+      "SELECT validation_status FROM public.exchange_rates WHERE source = $1 AND effective_date = $2::date",
+      [source, today],
+    );
+    expect(stale.rows).toEqual([{ validation_status: "stale" }]);
+
+    // This call uses DATABASE_URL, which is the actual microapp_runtime LOGIN
+    // in the dedicated runtime-role CI job.
+    await expect(persistBcvOfficialRate(databaseClient, {
+      rate,
+      effectiveDate: today,
+    })).resolves.toBe("unchanged");
+
+    const restored = await cleanupClient.query<{ rate: string; validation_status: string }>(
+      "SELECT rate::text, validation_status FROM public.exchange_rates WHERE source = $1 AND effective_date = $2::date",
+      [source, today],
+    );
+    expect(restored.rows).toEqual([{ rate, validation_status: "valid" }]);
+  });
+
 });

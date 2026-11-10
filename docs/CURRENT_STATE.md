@@ -2503,3 +2503,14 @@ La consulta posterior encontró una nueva ejecución que no estaba publicada en 
 - No hubo workflow manual, lectura de secretos/dump, operación en Neon, ni cambios de permisos o producción.
 
 **Producción NOT READY. Fecha límite inamovible: 2026-12-01.**
+
+## Auditoría estática del backup workflow — 2026-11-10 (P0)
+
+- Fuente revisada en main: .github/workflows/backup.yml, blob 5df408788b9053709261ada3aa22dd73b85d5691.
+- El preflight de DATABASE_URL_BACKUP_RO solo comprueba que el secreto no esté vacío. La siguiente etapa lo pasa directamente a pg_dump; no ejecuta SELECT current_user ni verifica rolsuper, rolbypassrls, memberships o privilegios efectivos. Un run exitoso acredita que la conexión pudo hacer el dump, no la identidad ni el mínimo privilegio.
+- El encabezado del workflow describe “solo tablas de negocio”, pero la invocación de pg_dump no usa allowlist --schema/--table; solo excluye auth_sessions, auth_rate_limits y auth_bootstrap_attempts. Por tanto, el resto del contenido incluido por defecto puede entrar al backup. No se afirma que exista hoy otra tabla sensible; falta enforcement de una allowlist explícita.
+- Decisión: no cambiar workflow ni grants hasta inventariar las tablas que deben recuperarse, diseñar una allowlist completa y definir una aserción de identidad/privilegios fail-closed que no exponga DSN/secrets. No disparar workflow manual ni operar Neon main/datos reales.
+- Se añadió evidencia y el plan seguro al issue #53, comentario 6772087455.
+- El run programado 42842855127 sigue demostrando ejecución/subida del artefacto del 10-nov, no principal least-privilege ni restaurabilidad reciente. backup_readonly tiene privilegios heredados de escritura; no se ha demostrado que DATABASE_URL_BACKUP_RO use ese rol.
+- Issue #53 permanece OPEN/P0; RPO sostenido, principal efectivo, least-privilege y restore controlado reciente siguen pendientes. Producción NOT READY.
+- PR #287 se mantiene OPEN/Draft. Fecha límite inamovible: 2026-12-01.

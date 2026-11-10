@@ -2450,3 +2450,7 @@ Este bloque es más reciente que los snapshots históricos anteriores; si contra
 Hallazgo registrado en issue #53 comentarios 6772340874 y 6772383789. No hubo cambio del workflow/script, CI nuevo, backup manual, acceso a Neon, secretos ni datos reales. Issue #53 OPEN/P0; producción NOT READY.
 
 Fecha límite del MVP: **1 de diciembre de 2026 — INAMOVIBLE**.
+
+## Corrección de estado vivo PR #287 — CI completado
+
+Reconsulta posterior confirma que el HEAD exacto 9a1792f7449ff83915bcdd672686a4860918028d ya tiene 11/11 workflow runs pull_request SUCCESS: 42849454422, 42849454398, 42849454373, 42849454527, 42849454401, 42849454436, 42849454382, 42849454438, 42849454392, 42849454399 y 42849453701. La observación previa de cero ejecuciones quedó supersedida. Combined legacy status sin contexts; no inferir check-run count. PR OPEN/Draft, mergeable=true, 219 ahead / 1 behind, 0 reviews formales y 0 review threads. Las migraciones 0017–0022 siguen fuera de main. No merge, no deploy, producción NOT READY.

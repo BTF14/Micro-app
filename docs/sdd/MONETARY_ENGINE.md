@@ -52,7 +52,7 @@ El paquete valida tanto la escala fraccionaria como la precisión total de cada 
 
 ## 5. Tasa BCV y snapshots
 
-- Fuente primaria propuesta: publicación oficial del BCV en PR #227. No está integrada en main ni habilitada en producción; corregir primero el bug de orden de fechas efectivas.
+- Fuente de conversión: publicación oficial del BCV. La integración/parser y la selección de fecha efectiva se están reconciliando en PR #287 OPEN/Draft; PR #255 fue cerrada como supersedida por #287. La integración de ingestión/Worker/Cron no está en `main` ni habilitada en producción. `main` contiene el esquema de tasas/migración 0013, lo cual no demuestra que la fuente esté operativa.
 - La tasa conserva sus ocho decimales como cadena decimal y PostgreSQL NUMERIC(18,8).
 - Una operación utiliza una sola tasa de referencia durante todo el checkout.
 - Guardar en la venta la tasa, fecha efectiva, identificador de tasa y total VES capturados.
@@ -112,7 +112,7 @@ La suite debe cubrir, como mínimo:
 
 - Catálogo API: lectura paginada y escrituras POST/PATCH tenant-scoped incluidas en PR #244, ya fusionada; pruebas PostgreSQL admin/runtime exitosas.
 - Esquema base: cantidades con tres decimales y snapshots comerciales previstos.
-- PR #227: integración BCV propuesta; no afirmar despliegue de Worker/Cron ni tasa en producción.
+- PR #287: integración BCV + checkout en rama OPEN/Draft; PR #255 está supersedida. No afirmar despliegue de Worker/Cron ni tasa operativa en producción.
 - PR #228: migración propuesta para retirar el campo de descuentos.
 - Paquete interno compartido de aritmética BigInt y límites NUMERIC: recuperado e integrado en PR #244, ya fusionada; validado por build, unit tests y pruebas de catálogo.
 - Los cambios únicos de #229, #230 y #231 se están consolidando en PR #244; las PR fuente siguen abiertas hasta completar el rescate de sus demás cambios únicos.

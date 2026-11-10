@@ -118,7 +118,7 @@ Si alguna regla no es la deseada, no se debe eludir el trigger: diseñar una nue
 - Una sola tasa BCV validada por venta.
 - Congelar `exchange_rate_id`, `exchange_rate_snapshot` y `total_ves_snapshot`.
 - No usar tasa de terceros, tasa stale ni tasa aproximada.
-- En fin de semana usar la fecha valor del siguiente día hábil; en feriados entre semana, fail closed hasta tener calendario oficial.
+- En fines de semana y feriados, exigir una tasa oficial con `effective_date` exactamente igual a la fecha local de operación; no usar anticipadamente la tasa del siguiente día hábil. Si no existe, fail closed. Cualquier excepción requiere revisión legal/contable y decisión explícita del propietario.
 
 ## 7. Idempotencia, concurrencia y reversos
 
@@ -158,7 +158,7 @@ Si alguna regla no es la deseada, no se debe eludir el trigger: diseñar una nue
 13. sumas de líneas/pagos/snapshots/ledger reconciliadas;
 14. ningún UPDATE/DELETE del ledger ni edición de venta completada;
 15. roles owner/admin/cashier/inventory y permisos runtime;
-16. migration 0017 reemplaza solo la regla BCV y conserva todos los demás guardrails 0015.
+16. migration 0020 impone fecha efectiva exacta todos los días y 0021 exige último éxito de sincronización; 0017 es una etapa histórica provisional y no debe recrearse ni restaurarse.
 
 Todas las pruebas usan PostgreSQL efímero; nunca Neon main ni datos reales.
 
@@ -166,7 +166,7 @@ Todas las pruebas usan PostgreSQL efímero; nunca Neon main ni datos reales.
 
 1. Mantener esta especificación alineada con el esquema actual; no usar el texto histórico de 2026-11-05.
 2. Mantener bloqueado el checkout hasta que el contrato de pagos no definido (métodos, parcial/mixto, sobrepago/cambio) tenga una decisión explícita; no inferirla de las constraints SQL.
-3. Crear y probar migration 0017 para que el trigger de checkout use la misma regla BCV weekday/weekend que la API.
+3. Validar en la rama #287 las migrations 0020/0021 y sus assertions: fecha efectiva exacta, fail-closed en fines de semana/feriados sin fila exacta, y último sync exitoso. No crear una migration 0017 duplicada.
 4. Portar el handler de PR #233 sobre una rama basada en #255, usando `findApplicableBcvRate(tx)`, helpers canónicos y migration 0015 actual; no portar su migration 0015 antigua.
 5. Añadir las assertions de cálculo por línea y asignación de equivalentes si la revisión confirma que el SQL actual no las cubre.
 6. Ejecutar unitarias, CI, migration runner, PostgreSQL admin/runtime integration, E2E y backup/restore cuando aplique; todos sobre el SHA final exacto.

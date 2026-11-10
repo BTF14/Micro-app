@@ -108,6 +108,23 @@ SELECT 'triggers|' || COALESCE(string_agg(c.relname || ':' || t.tgname || ':' ||
   JOIN pg_catalog.pg_namespace n ON n.oid = c.relnamespace
  WHERE n.nspname = 'public' AND NOT t.tgisinternal
    AND c.relname NOT IN ('auth_sessions', 'auth_rate_limits', 'auth_bootstrap_attempts');
+SELECT 'sequences|' || COALESCE(string_agg(c.relname || ':' || pg_catalog.format_type(s.seqtypid, NULL) || ':' || s.seqstart::text || ':' || s.seqincrement::text || ':' || s.seqmin::text || ':' || s.seqmax::text || ':' || s.seqcache::text || ':' || s.seqcycle::text, ';' ORDER BY c.relname), '')
+  FROM pg_catalog.pg_class c
+  JOIN pg_catalog.pg_namespace n ON n.oid = c.relnamespace
+  JOIN pg_catalog.pg_sequence s ON s.seqrelid = c.oid
+ WHERE n.nspname = 'public'
+   AND NOT EXISTS (
+     SELECT 1
+       FROM pg_catalog.pg_depend d
+       JOIN pg_catalog.pg_class owning_table ON owning_table.oid = d.refobjid
+      WHERE d.classid = 'pg_catalog.pg_class'::regclass
+        AND d.objid = c.oid
+        AND d.refclassid = 'pg_catalog.pg_class'::regclass
+        AND owning_table.relname IN ('auth_sessions', 'auth_rate_limits', 'auth_bootstrap_attempts')
+   );
+SELECT 'extensions|' || COALESCE(string_agg(e.extname || ':' || e.extversion || ':' || n.nspname, ';' ORDER BY e.extname), '')
+  FROM pg_catalog.pg_extension e
+  JOIN pg_catalog.pg_namespace n ON n.oid = e.extnamespace;
 SELECT 'functions|' || COALESCE(string_agg(p.proname || '(' || pg_catalog.pg_get_function_identity_arguments(p.oid) || '):' || pg_catalog.md5(pg_catalog.pg_get_functiondef(p.oid)), ';' ORDER BY p.proname, pg_catalog.pg_get_function_identity_arguments(p.oid)), '')
   FROM pg_catalog.pg_proc p
   JOIN pg_catalog.pg_namespace n ON n.oid = p.pronamespace

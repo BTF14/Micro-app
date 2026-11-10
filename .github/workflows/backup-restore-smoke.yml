@@ -8,6 +8,8 @@ on:
     paths:
       - ".github/workflows/backup-restore-smoke.yml"
       - "scripts/test_backup_restore.sh"
+      - "scripts/test_backup_restore_schema_bcv.sh"
+      - "scripts/backup_restore_fixture_bcv.sql"
       - "apps/api/migrations/**"
       - "docs/BACKUP_AND_RECOVERY.md"
 
@@ -53,6 +55,9 @@ jobs:
             | sudo tee /etc/apt/sources.list.d/pgdg.list
           sudo apt-get update
           sudo apt-get install -y postgresql-client-18
-      - name: Run isolated synthetic backup/restore round trip
+      - name: Run full-schema and populated BCV/projection-ledger restore smoke
+        shell: bash
+        run: bash scripts/test_backup_restore_schema_bcv.sh
+      - name: Run isolated legacy synthetic backup/restore regression
         shell: bash
         run: bash scripts/test_backup_restore.sh

@@ -1,3 +1,12 @@
+## Corrección de precisión: Cron existente vs Cron BCV — 2026-11-09 UTC
+
+- Relectura directa de `apps/api/wrangler.toml` en `main` confirma un trigger versionado `17 * * * *` (cada hora). El comentario y el handler `scheduled()` en `apps/api/src/index.ts` lo destinan exclusivamente a `cleanupExpiredAuthRecords` (limpieza de metadatos de autenticación); el handler retorna sin ejecutar en `APP_ENV !== "production"`.
+- Por tanto, no debe afirmarse que el repositorio carece de cualquier Cron. La formulación correcta es: **existe configuración de Cron para limpieza de autenticación en el Worker de producción; no se ha activado ni demostrado ningún Cron BCV**. Esta inspección estática no confirma el estado del trigger en el dashboard ni su ejecución efectiva reciente.
+- No modificar ni desactivar el Cron de limpieza existente como parte de esta tarea. No activar Cron BCV, Cron de negocio ni nuevos triggers productivos mientras los gates sigan abiertos.
+- Esta precisión corrige cualquier frase anterior que dijera genéricamente “no hay Cron productivo”; no cambia los guardrails de no deploy ni la conclusión **NO-GO**.
+
+---
+
 ## Revalidación de CI exact-HEAD — 2026-11-09 UTC
 
 > Actualización posterior a la lectura del bloque anterior. Este bloque registra resultados del HEAD indicado; cualquier commit posterior requiere otra consulta exacta.

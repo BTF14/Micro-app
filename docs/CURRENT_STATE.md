@@ -2301,3 +2301,9 @@ La consulta inicial de HEAD 9a1792f7449ff83915bcdd672686a4860918028d no devolvi�
 - PR #303 OPEN/Draft, base main `c5373564413ba086690552c6b7deeab08d7b4a89`; mantener sin merge. HEAD exacto y CI se revalidarán después de completar esta reconciliación documental.
 - **Limitación deliberada:** esta primera fase valida esquema/objetos, no un grafo de datos poblados de sucursal/turno/warehouse/count/ledger/checkout. El smoke test anterior sigue cubriendo datos sintéticos de solo 13 tablas. No declarar cerrado issue #53 ni cobertura de recuperación integral hasta completar la fase 2 y los gates de identidad/privilegios/RPO/RTO/restore operativo.
 - Sin acceso a Neon, secretos, datos reales, workflow_dispatch del backup real ni producción. Issue #53 OPEN/P0. Producción NOT READY. Deadline inamovible **2026-12-01**.
+
+## Estado exact-HEAD de PR #303 — 2026-11-10
+
+- HEAD: `4e369c25bbd7e43072664c2012f6a196cc21eed1`; comparación main: 30 ahead / 0 behind; PR #303 OPEN/Draft, mergeable=true.
+- En la última consulta exact-SHA GitHub devolvió 0 workflow runs pull_request y 0 status contexts. No declarar CI PASS; el estado queda pendiente de publicación/ejecución verificable.
+- Issue #53 recibió comentario `6772761216` con alcance, limitaciones y estado de esta implementación.

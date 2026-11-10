@@ -902,3 +902,11 @@ Snapshot histórico: el manual run [40916692763](https://github.com/BTF14/Micro-
 - No hay evidencia de explotación del hallazgo HTTPS anterior; se corrigió en código main. La corrección no sustituye verificación de configuración productiva.
 
 ---
+
+## Actualización 2026-11-10 — separación de identidad BCV (PR #287)
+
+- Se eliminó la capacidad de escritura BCV del runtime público mediante migration 0022; `microapp_runtime` conserva SELECT y EXECUTE únicamente sobre `public.lock_bcv_sync_state()` para mantener el lock de checkout. El helper es SECURITY DEFINER propiedad del migrador, `search_path=pg_catalog`, sin EXECUTE para PUBLIC ni para el productor.
+- `microapp_bcv_sync` es un LOGIN separado, NOINHERIT y sin memberships. Solo inserta tasas oficiales, actualiza `validation_status` y modifica columnas necesarias de `bcv_sync_state`; no puede alterar rate/effective_date ni borrar/truncar tasas.
+- CI exact-HEAD `dd587308f85f42f8019d5fc74e7f8e296229ead8`: 10/10 PR workflows y 15/15 checks SUCCESS. Checkout integration pasa como runtime y el sync integration como productor separado.
+- Configuración separada en `apps/api/wrangler.bcv.toml`; no se provisionó aún el secreto dedicado, no se desplegó el Worker ni se activó Cron. Neon/main no fue tocado.
+- Estado del gate: **implementación y pruebas sintéticas completadas en Draft; provisión de identidad, secret, deploy aislado, observabilidad y validación no productiva pendientes**. Issue #53 permanece OPEN/P0. Producción NOT READY.

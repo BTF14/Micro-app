@@ -672,3 +672,27 @@ No modificar main; no merge; no deploy manual; no migraciones remotas; no Neon m
 6. Cada avance debe registrar qué cambió realmente, pruebas realmente ejecutadas, qué está en main vs Draft, bloqueos, riesgo a 2026-12-01 y siguiente acción concreta.
 
 No crear otra PR documental duplicada. Si se modifica esta rama documental, volver a consultar el nuevo HEAD y su CI exacto; no propagar resultados de SHA anteriores.
+
+
+## Reconciliación técnica BCV — 2026-11-10 10:26–10:28 UTC
+
+**Fuente de verdad:** GitHub, PR #287, SHA exacto `dd587308f85f42f8019d5fc74e7f8e296229ead8`. La rama `integration/bcv-checkout-rehearsal-20261109` está 175 commits ahead / 0 behind de su base `03442951b2a2f63f5bf4dcf560f2c91be4f6cc71`. `main` permanece en `c5373564413ba086690552c6b7deeab08d7b4a89`; nada de este trabajo está en main.
+
+### Cambio y validación
+
+- Migration 0022 separa `microapp_runtime` (lectura de estado/tasas BCV) de `microapp_bcv_sync` (escritura de estado y tasas oficiales con privilegios de columna mínimos). El productor es LOGIN directo, NOINHERIT y sin memberships.
+- `public.lock_bcv_sync_state()` es SECURITY DEFINER, propiedad de `microapp_migrator`, con `search_path=pg_catalog`; runtime tiene EXECUTE y PUBLIC/productor no. Checkout mantiene el bloqueo FOR SHARE sin UPDATE directo del runtime.
+- `apps/api/wrangler.toml` ya no declara el Cron BCV. `apps/api/wrangler.bcv.toml` define un Worker separado, sin workers.dev ni rutas, con su propio secreto `DATABASE_URL` que deberá corresponder al LOGIN productor.
+- Pruebas de integración BCV usan el LOGIN productor; checkout HTTP y sus operaciones de negocio usan runtime. El test de concurrencia confirma que el lock de checkout bloquea el UPDATE del productor hasta terminar la transacción.
+- **HEAD exacto #287:** 10/10 workflows pull_request SUCCESS y 15/15 check-runs SUCCESS. Incluye CI, migration validation, migration runner, backup smoke, Playwright, Semgrep, security scan, secret history, dependency review y ODD validation.
+- Fallos de iteraciones previas no se heredan: faltaba crear el rol productor en migration-runner harness y dos tests aún intentaban escribir/usar FOR SHARE directo con runtime. Ambos se corrigieron; solo el SHA indicado arriba es evidencia final.
+
+### Límites que siguen abiertos
+
+- PR #287 sigue OPEN/Draft, sin review formal ni merge. Issue #53 sigue OPEN/P0.
+- El rol `microapp_bcv_sync` y su contraseña aún no están provisionados en Neon ni como secreto de Cloudflare; el Worker separado no está desplegado y el Cron no está activado. No afirmar que la sincronización BCV productiva esté operativa.
+- No hubo conexión/escritura a Neon, rotación de secretos, cambio de binding ni deploy.
+- Backup programado: último éxito verificado run #19 (`42659924075`), 2026-11-09 16:57:34 UTC, en SHA main `03442951b2a2f63f5bf4dcf560f2c91be4f6cc71`. A las 10:28 UTC del 10 nov habían transcurrido ~17h30; RPO 24h no estaba excedido, pero no había run posterior visible.
+- Producción continúa NOT READY. El 1 de diciembre de 2026 sigue siendo fecha límite inamovible. Siguientes gates: revisión independiente #287, provisión separada de identidad/secretos solo en entorno autorizado no productivo, aceptación BCV y alertas, luego recorrido POS/UI y jornada piloto 1 local/1.000 productos.
+
+No fusionar ni activar el Worker/Cron por el mero hecho de que CI esté verde. No reutilizar resultados de SHAs anteriores.

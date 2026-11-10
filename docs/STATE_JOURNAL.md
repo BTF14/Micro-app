@@ -2455,3 +2455,14 @@ El ensayo verifica el bundle SQL y roles en la base aislada; no prueba el compor
 - `cashier-open-shift.ts` es un helper aislado, no un endpoint ni un recorrido de UI.
 - Conclusión de aceptación: no se ha demostrado el recorrido P0 completo desde UI; 0/1 jornada end-to-end aceptada. Esto no significa que no existan componentes parciales.
 - No se ejecutó la aplicación ni se modificó código de aplicación. Se documentó la evidencia en CURRENT_STATE, HANDOFF_NEXT_CHAT, WORK_CHECKPOINT y PROJECT_PLAN.
+
+
+## 2026-11-10 — aislamiento BCV y checkout con runtime read-only
+
+- Detectado que #287/0021 permitía a `microapp_runtime` falsificar `last_success_at`, `last_outcome` y `last_effective_date`. Se creó migration 0022 con productor `microapp_bcv_sync` y se revocó escritura BCV al runtime.
+- El primer CI detectó que PostgreSQL exige UPDATE para `SELECT ... FOR SHARE`; se añadió `lock_bcv_sync_state()` SECURITY DEFINER, propiedad del migrador y con search_path fijado, para conservar el lock de checkout sin ampliar grants.
+- Se alinearon los harnesses de CI/migration-runner, los fixtures de checkout y la configuración de Cron separada. Las primeras iteraciones de CI fallaron por rol no provisionado y tests antiguos que escribían con runtime; los fallos se corrigieron, no se ocultaron.
+- Evidencia final: PR #287 HEAD `dd587308f85f42f8019d5fc74e7f8e296229ead8`, 10/10 workflows pull_request y 15/15 check-runs SUCCESS. CI incluye BCV integration con productor, checkout integration con runtime, migration validation/runner, backup smoke, Playwright y escaneos.
+- PR #287 permanece OPEN/Draft sin aprobación. Issue #53 sigue OPEN/P0. No Neon, secretos, despliegue ni Cron productivo tocados.
+- Backup programado más reciente visible: run #19 `42659924075`, éxito 2026-11-09 16:57:34 UTC; a 10:28 UTC del 10 nov, RPO 24h aún no vencido, sin ejecución posterior visible.
+- Siguiente: revisión independiente; provisionar productor y secreto solo en entorno no productivo autorizado; verificar aislamiento de Worker y observabilidad antes de considerar activar BCV. Continuar POS/UI y piloto 1 local/1.000 productos. Fecha límite fija: 2026-12-01.

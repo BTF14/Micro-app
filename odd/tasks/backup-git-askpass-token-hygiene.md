@@ -33,5 +33,22 @@ No cambiar el formato, cifrado, retención, calendario, destino ni permisos del 
 - No afirmar que el backup remoto se probó: el cambio solo afecta autenticación Git y no ejecuta el workflow productivo.
 - Cualquier verificación de ejecución del job real requiere un procedimiento autorizado separado.
 
-## Siguiente paso
-Actualizar únicamente `.github/workflows/backup.yml`, inspeccionar diff, abrir PR Draft y verificar todos los checks del SHA exacto.
+## Implementación y evidencia — 2026-11-10
+
+**Estado:** cambio implementado en PR #302; CI exact-HEAD previo a este registro: 14/14 check-runs SUCCESS y 10/10 workflows SUCCESS.
+
+- `.github/workflows/backup.yml` crea un helper askpass bajo `$RUNNER_TEMP`, con `umask 077` y modo 700.
+- El helper responde al prompt Username con `x-access-token` y al prompt Password con `GH_TOKEN`, sin imprimir el valor.
+- `git clone` usa URL HTTPS limpia; el remote `origin` no incorpora el token.
+- `GIT_TERMINAL_PROMPT=0` impide fallback interactivo; el mismo entorno askpass cubre clone y push.
+- Un `trap` elimina helper y clon temporal mediante ruta absoluta, incluso después del `cd` al repositorio.
+- No se escribe token en git config, argumentos ni URL. La identidad git local usa solo nombre/email no secretos.
+- Se revisó el workflow completo y el diff. No se ejecutó el workflow real de backup, no se usaron secretos reales, no se accedió al repositorio de backups ni se modificó retención/cifrado/destino.
+
+## Pendiente residual
+
+- CI verde valida el workflow y sus checks, pero no demuestra una subida real con el secreto ni restauración.
+- La comprobación dinámica del comportamiento Git con askpass y un token de prueba requiere un repositorio sintético y secreto efímero en un entorno aislado; no se ejecutó en esta fase.
+- El RPO, RTO integral, alertas externas y coste $0 permanecen abiertos.
+
+**Limitación de estado:** SHA/CI citados son los observados antes de este commit documental; consultar el HEAD exacto posterior. PR #302 permanece OPEN/Draft.

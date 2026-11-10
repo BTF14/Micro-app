@@ -40,8 +40,8 @@ La inspección del código de #287 confirma que el frontend no implementa caja/v
 
 - Objetivo no negociable: **2026-12-01**, comercio piloto de un local y hasta 1.000 productos, jornada completa POS desde UI. Sin descuentos/promociones.
 - main: `c5373564413ba086690552c6b7deeab08d7b4a89`; no se modificó.
-- #287 `25e0de8c0236880febaad9a14a47d5ec55931641`: OPEN/Draft, 164 ahead/1 behind (único commit faltante #297, solo ledger documental), 15/15 check-runs y 11/11 workflows SUCCESS. Fix BCV stale recovery con confirmación idéntica, unit + PostgreSQL runtime-role regression. No rebase/sync.
-- #298 `6b0e51b259e0d59305931a779d52a9ba066cac27`: OPEN/Draft, 148/0, 15/15 checks y 11/11 workflows. PR documental existente.
+- #287 `2e7cdd44f89a3b3765a0c69ad23bdb87faacf99c`: OPEN/Draft, 167 ahead/1 behind (el único commit de main ausente en la rama es #297, solo ledger documental), 15/15 check-runs y 11/11 workflows SUCCESS. Fix BCV stale recovery con confirmación idéntica, unit + PostgreSQL runtime-role regression. No rebase/sync.
+- #298 OPEN/Draft, 177/0. HEAD se debe consultar en vivo; último SHA antes de este update `09bbe3d2d38494eebe68333fd3bdc38edbe5c576` tenía 10 checks in_progress/4 success y 7 workflows in_progress/3 success/1 pending. No reutilizar checks de SHA anteriores. PR documental existente.
 - #299 `c82b0a10f85b59e1f81ac0ca2d439b6286558751`: OPEN/Draft, 1/0, 14/14 checks y 10/10 workflows; pg_restore sintético, no RTO completo.
 - #300 `f4c98f3971463e54370b5af3a0633ab434d9ad90`: OPEN/Draft, 2/0, 13/13 checks y 9/9 workflows; permiso sales.price.override retirado y prueba negativa para todos los roles.
 - #302 `c6daacee7825f3e2d3dd9de031fd5c3e33fc9320`: OPEN/Draft, 3/0, 14/14 checks y 10/10 workflows; GIT_ASKPASS temporal, remote sin token, limpieza con trap. No backup real ejecutado.

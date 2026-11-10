@@ -144,3 +144,7 @@ PR #287 HEAD `9a1792f7449ff83915bcdd672686a4860918028d` has 11/11 pull_request w
 - Issue #53 no se cierra; identidad efectiva de `DATABASE_URL_BACKUP_RO`, privilegios efectivos least-privilege, RPO/RTO, restore remoto reciente, alerta y coste $0 siguen independientes y pendientes.
 
 No se ha accedido a Neon, secretos, backup remoto ni producción. PR #303 se mantiene Draft y no se fusiona. Fecha límite: 2026-12-01.
+
+## Exact-HEAD validation status — 2026-11-10
+
+PR #303 HEAD `4e369c25bbd7e43072664c2012f6a196cc21eed1`, 30 ahead / 0 behind main, OPEN/Draft, mergeable=true. The latest exact-SHA query returned 0 pull_request workflow runs and 0 legacy status contexts. This is **not** a passing CI result; keep the PR Draft until the workflow execution is observable and all exact-HEAD checks pass. Issue #53 follow-up: `6772761216`.

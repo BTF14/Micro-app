@@ -45,7 +45,7 @@ echo "== Apply every numbered migration using the official migration runner"
 MIGRATION_DATABASE_URL="$migration_url" bash scripts/db/migrate.sh
 
 expected_migrations="$(find apps/api/migrations -maxdepth 1 -type f -name '[0-9][0-9][0-9][0-9]_*.sql' ! -name '*.assertions.sql' ! -name '*.deferred_failure.sql' | wc -l | awk '{print $1}')"
-ledger_ok="$(psql "$schema_source_url" -X -v ON_ERROR_STOP=1 -Atqc "SELECT count(*) = $expected_migrations AND bool_and(state = 'applied') AND bool_and(length(checksum) = 64) FROM public.schema_migrations")"
+ledger_ok="$(psql "$schema_source_url" -X -v ON_ERROR_STOP=1 -Atqc "SELECT count(*) = $expected_migrations AND bool_and(state = 'applied') AND bool_and(length(checksum) = 64) AND bool_and(applied_at IS NOT NULL) FROM public.schema_migrations")"
 if [[ "$ledger_ok" != "t" ]]; then
   echo "Migration ledger does not match the complete checked-out migration bundle." >&2
   exit 1
@@ -53,8 +53,8 @@ fi
 
 intent_table="$(psql "$schema_source_url" -X -v ON_ERROR_STOP=1 -Atqc "SELECT to_regclass('public.inventory_balance_ledger_intents') IS NOT NULL")"
 projection_function="$(psql "$schema_source_url" -X -v ON_ERROR_STOP=1 -Atqc "SELECT to_regprocedure('public.project_inventory_movement_to_balance()') IS NOT NULL")"
-if [[ "$intent_table" != "t" && "$projection_function" != "t" ]]; then
-  echo "Neither the legacy balance-ledger intent table nor the projected-ledger function exists." >&2
+if [[ "$intent_table" == "$projection_function" ]]; then
+  echo "Expected exactly one inventory ledger implementation (intent table or projection function)." >&2
   exit 1
 fi
 

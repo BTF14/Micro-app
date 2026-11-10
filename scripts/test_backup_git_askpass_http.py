@@ -41,8 +41,8 @@ def main() -> int:
         marker = Path(temp_dir) / "authenticated"
 
         class Handler(BaseHTTPRequestHandler):
-            expected_authorization = expected_authorization
-            marker = marker
+            expected_authorization = ""
+            marker: Path
 
             def log_message(self, _format: str, *_args: object) -> None:
                 # Never log Authorization headers or request details.
@@ -73,6 +73,8 @@ def main() -> int:
                 self.send_header("Content-Length", "0")
                 self.end_headers()
 
+        Handler.expected_authorization = expected_authorization
+        Handler.marker = marker
         server = ThreadingHTTPServer(("127.0.0.1", 0), Handler)
         server_thread = threading.Thread(
             target=server.serve_forever, daemon=True

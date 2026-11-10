@@ -47,15 +47,12 @@ describe("commercial role authorization", () => {
     expect(isCommercialOperationAllowed("inventory", "register.shift.operate_own")).toBe(false);
   });
 
-  it("rejects all discount operations because discounts are not part of the product", () => {
+  it("rejects discounts and manual price overrides for every role", () => {
     for (const role of roles) {
       expect(authorizeCommercialOperation(role, "sales.discount.apply")).toBe(false);
       expect(authorizeCommercialOperation(role, "sales.discount.approve")).toBe(false);
+      expect(authorizeCommercialOperation(role, "sales.price.override")).toBe(false);
     }
-    expect(isCommercialOperationAllowed("owner", "sales.price.override")).toBe(true);
-    expect(isCommercialOperationAllowed("admin", "sales.price.override")).toBe(true);
-    expect(isCommercialOperationAllowed("cashier", "sales.price.override")).toBe(false);
-    expect(isCommercialOperationAllowed("inventory", "sales.price.override")).toBe(false);
     expect(isCommercialOperationAllowed("cashier", "sales.void_own_open_shift")).toBe(true);
     expect(isCommercialOperationAllowed("cashier", "sales.void_after_shift")).toBe(false);
     expect(isCommercialOperationAllowed("cashier", "sales.void_other")).toBe(false);

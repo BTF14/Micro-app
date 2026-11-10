@@ -1,3 +1,20 @@
+## Revalidación de CI exact-HEAD — 2026-11-09 UTC
+
+> Actualización posterior a la lectura del bloque anterior. Este bloque registra resultados del HEAD indicado; cualquier commit posterior requiere otra consulta exacta.
+
+- PR #298 continúa OPEN/Draft en `2e5b5745f4cc2023b7f64436e93cd15261f932e8`, base `c5373564413ba086690552c6b7deeab08d7b4a89` (`main` observado). Comparación: 122 commits ahead / 0 behind; 37 archivos modificados, todos Markdown/documentación.
+- Los **11 workflow runs** asociados exactamente a ese HEAD terminaron SUCCESS, incluido Semgrep SAST (antes IN_PROGRESS). No se observaron workflow failures en ese SHA.
+- La interfaz de status combinado legacy devolvió una lista vacía; no se debe convertir eso en un contador de check-runs ni afirmar que se consultaron todos los check-runs formales. La lista de workflow runs sí está completa en la consulta realizada.
+- PR #298 sigue sin reviews formales ni review threads. `mergeable=true` no equivale a aprobación, autorización de merge, aceptación funcional ni readiness productiva. Mantener Draft.
+- PR #287 continúa OPEN/Draft en `7df318b233cfb95f7fcc3076d46984a11614a14c`: 11 workflows exact-HEAD, 6 SUCCESS y 5 FAILURE (ODD docs, Dependency review, Project dashboard, Playwright E2E y CI). La causa raíz sigue sin evidencia accesible; no inferirla.
+- `main` no cambió. No se hicieron modificaciones de aplicación, migraciones, Neon, producción, secretos, DNS, billing ni datos reales.
+- La revisión de los archivos de configuración en main confirma CORS fail-closed, bloqueo de rutas de preview, cabeceras de seguridad, Dependabot semanal y workflow de backup cifrado. Esto es evidencia estática de configuración, no prueba HTTP/runtime actual, estado de alertas Dependabot, RPO/RTO completos ni coste total.
+- El acceso web de esta sesión no pudo recuperar `/health` del Worker ni el frontend Pages; por tanto no se declara smoke test HTTP ni se infieren headers reales desde el código.
+- Seguridad Nivel 1 permanece ABIERTO y producción **NOT READY**. La aceptación P0 desde UI continúa sin demostración completa (0/1 jornada). La fecha límite sigue siendo **2026-12-01**, inamovible.
+- Mantener todas las restricciones: no merge, no main writes, no deploy manual/productivo, no migraciones remotas, no Cron productivo, no datos reales, no cambios de secretos/DNS/billing. No iniciar lógica comercial ni UI de caja mientras Seguridad Nivel 1 siga abierta.
+
+---
+
 ## Corrección de consistencia y estado vivo — 2026-11-09 UTC
 
 > Este bloque es la referencia operativa más reciente de esta rama. Los snapshots posteriores/anteriores que sigan debajo se conservan como historial fechado; no deben reutilizarse como estado vivo. Revalidar GitHub antes de cualquier acción sensible.

@@ -166,6 +166,9 @@ SELECT 'sequences|' || COALESCE(string_agg(c.relname || ':' || pg_catalog.format
         AND d.refclassid = 'pg_catalog.pg_class'::regclass
         AND owning_table.relname IN ('auth_sessions', 'auth_rate_limits', 'auth_bootstrap_attempts')
    );
+SELECT 'sequence_state|' || COALESCE(string_agg(sequencename || ':' || COALESCE(last_value::text, 'NULL'), ';' ORDER BY sequencename), '')
+  FROM pg_catalog.pg_sequences
+ WHERE schemaname = 'public';
 SELECT 'extensions|' || COALESCE(string_agg(e.extname || ':' || e.extversion || ':' || n.nspname, ';' ORDER BY e.extname), '')
   FROM pg_catalog.pg_extension e
   JOIN pg_catalog.pg_namespace n ON n.oid = e.extnamespace;
@@ -202,7 +205,8 @@ SELECT 'relation_acl|' || COALESCE(string_agg(
     COALESCE(c.relacl, pg_catalog.acldefault(CASE WHEN c.relkind = 'S' THEN 'S'::"char" ELSE 'r'::"char" END, c.relowner))
   ) AS a
  WHERE n.nspname = 'public' AND c.relkind IN ('r','p','v','m','S','f')
-   AND c.relname NOT IN ('auth_sessions','auth_rate_limits','auth_bootstrap_attempts');
+   AND c.relname NOT IN ('auth_sessions','auth_rate_limits','auth_bootstrap_attempts')
+   AND a.grantee <> c.relowner;
 SELECT 'function_acl|' || COALESCE(string_agg(
     p.proname || '(' || pg_catalog.pg_get_function_identity_arguments(p.oid) || '):'
     || CASE WHEN a.grantee = 0 THEN 'PUBLIC' ELSE pg_catalog.pg_get_userbyid(a.grantee) END
@@ -212,7 +216,8 @@ SELECT 'function_acl|' || COALESCE(string_agg(
   FROM pg_catalog.pg_proc p
   JOIN pg_catalog.pg_namespace n ON n.oid = p.pronamespace
   CROSS JOIN LATERAL pg_catalog.aclexplode(COALESCE(p.proacl, pg_catalog.acldefault('f'::"char", p.proowner))) AS a
- WHERE n.nspname = 'public' AND p.prokind IN ('f','p');
+ WHERE n.nspname = 'public' AND p.prokind IN ('f','p')
+   AND a.grantee <> p.proowner;
 SELECT 'default_acl|' || COALESCE(string_agg(
     pg_catalog.pg_get_userbyid(d.defaclrole) || ':' || COALESCE(n.nspname, '*') || ':' || d.defaclobjtype::text || ':' || COALESCE(d.defaclacl::text, ''),
     ';' ORDER BY d.defaclrole, d.defaclnamespace, d.defaclobjtype
@@ -255,7 +260,7 @@ SELECT 'effective_table_privileges|' || COALESCE(string_agg(
   FROM pg_catalog.pg_roles r
   CROSS JOIN pg_catalog.pg_class c
   JOIN pg_catalog.pg_namespace n ON n.oid = c.relnamespace
-  CROSS JOIN (VALUES ('SELECT'),('INSERT'),('UPDATE'),('DELETE'),('TRUNCATE'),('REFERENCES'),('TRIGGER')) AS p(privilege)
+  CROSS JOIN (VALUES ('SELECT'),('INSERT'),('UPDATE'),('DELETE'),('TRUNCATE'),('REFERENCES'),('TRIGGER'),('MAINTAIN')) AS p(privilege)
  WHERE r.rolname IN ('microapp_migrator','microapp_runtime','microapp_bcv_sync')
    AND n.nspname = 'public' AND c.relkind IN ('r','p','v','m','f')
    AND c.relname NOT IN ('auth_sessions','auth_rate_limits','auth_bootstrap_attempts');

@@ -126,7 +126,7 @@ SELECT 'tables|' || COALESCE(string_agg(table_name, ',' ORDER BY table_name), ''
  WHERE table_schema = 'public' AND table_type = 'BASE TABLE'
    AND table_name NOT IN ('auth_sessions', 'auth_rate_limits', 'auth_bootstrap_attempts');
 SELECT 'columns|' || COALESCE(string_agg(
-     c.relname || ':' || a.attnum::text || ':' || a.attname || ':'
+     c.relname || ':' || a.attname || ':'
      || pg_catalog.format_type(a.atttypid, a.atttypmod) || ':'
      || a.attnotnull::text || ':' || a.attidentity::text || ':' || a.attgenerated::text || ':'
      || COALESCE(coll_ns.nspname || '.' || coll.collname, '') || ':'

@@ -13,7 +13,7 @@ Un comercio pequeño o mediano, con **una sola sucursal/local y un catálogo de 
 3. Abrir su propio turno de caja con fondo inicial.
 4. Localizar productos y agregarlos al carrito.
 5. Registrar una venta y sus pagos admitidos.
-6. Aplicar la tasa BCV válida que corresponda a la fecha de la operación cuando la venta requiera conversión.
+6. Exigir y guardar una tasa BCV vigente y válida para la fecha efectiva de cada venta, incluso si el pago es 100 % en USD. En pagos VES, usar esa misma tasa para la conversión y conservar el snapshot; en pagos USD-only, la tasa sigue siendo obligatoria y auditable aunque no convierta el importe.
 7. Mostrar el comprobante interno con el detalle y snapshots de la operación.
 8. Reflejar venta, pagos e inventario de forma consistente.
 9. Consultar existencias y Kardex.
@@ -26,7 +26,7 @@ El flujo debe completarse desde la interfaz, sin intervención manual en la base
 ## 2. Alcance y límites
 
 - **Primer corte funcional:** un local/sucursal, catálogo de hasta 1.000 productos, operación diaria de caja, ventas, pagos, consulta de inventario, Kardex y conteos.
-- **Descuentos y cambios manuales de precio no forman parte de la aceptación P0.** El checkout documentado en `docs/sdd/SALES_CHECKOUT_MODEL.md` opera a precio de lista y la migración `0014_sales_without_discounts.sql` elimina el descuento del modelo actual. La matriz de permisos conserva una decisión previa sobre quién podría aprobar descuentos si se diseñan en una fase posterior; esa autorización de roles no habilita la función ni cambia el esquema actual.
+- **Descuentos y promociones no existen en el producto Micro-app y no forman parte del MVP ni de una fase futura aprobada.** No crear campos, endpoints, UI, cálculos, promociones ni flujos de aprobación de descuentos. La decisión histórica de autorización del 2026-10-31 queda supersedida por la instrucción explícita del propietario del 2026-11-05. Los cambios manuales de precio también permanecen fuera del checkout P0; no habilitarlos sin una decisión separada.
 - La arquitectura y las reglas de aislamiento multi-tenant/multi-branch siguen siendo obligatorias. Limitar el primer flujo de usuario a un local no autoriza eliminar tenant_id/branch_id, controles de pertenencia, autorización de servidor ni pruebas negativas de aislamiento.
 - Los 1.000 productos son una capacidad mínima de aceptación del catálogo, no un límite artificial de base de datos ni una afirmación de rendimiento ya medido.
 - No se exige para este primer corte completar toda la visión SaaS ni todas las funciones multi-sucursal avanzadas.
@@ -53,7 +53,7 @@ El flujo debe completarse desde la interfaz, sin intervención manual en la base
 
 ### BCV
 - Mostrar tasa, fecha efectiva, fuente/estado y momento de última sincronización de forma comprensible.
-- Aplicar la tasa efectiva válida correspondiente a la fecha de venta según la política aprobada.
+- Exigir una tasa BCV vigente y válida en **toda venta**, incluso cuando todos los pagos se reciban en USD. La fecha efectiva debe corresponder a la operación según la política BCV aprobada; nunca usar una tasa futura antes de su fecha efectiva ni una tasa stale.
 - Fallar de forma cerrada cuando no exista tasa válida o la política de freshness no permita usarla.
 - No usar valores de ejemplo, tasas manuales ni datos de terceros como si fueran BCV oficial.
 - Los gates pendientes de freshness/last-success, umbrales, fixture oficial, identidad del Worker y revisión legal/contable siguen siendo bloqueos explícitos; este criterio de MVP no los elimina.
@@ -86,7 +86,7 @@ El flujo debe completarse desde la interfaz, sin intervención manual en la base
 
 ## 5. Criterio de salida y GO/NO-GO
 
-El MVP solo puede declararse **aceptado para beta controlada** cuando:
+La aceptación funcional P0 exige que:
 - el flujo completo de extremo a extremo funciona desde la UI;
 - todas las pruebas P0 aplicables pasan en el SHA exacto que se evalúa;
 - no quedan defectos críticos/altos que comprometan ventas, dinero, inventario, aislamiento o recuperación;
@@ -94,7 +94,7 @@ El MVP solo puede declararse **aceptado para beta controlada** cuando:
 - backup/restore, observabilidad y límites de coste están evaluados;
 - el propietario puede completar la jornada de aceptación sin consola, SQL ni intervención técnica.
 
-La etiqueta **producción comercial lista** exige además cerrar los gates legales/fiscales, operativos, de identidad/runtime, respaldo/recuperación y despliegue que la Constitución y los documentos de readiness definan. Si un gate crítico no está demostrado el 30 de noviembre, la decisión es **NO-GO para producción**; puede considerarse beta controlada solo si sus riesgos y limitaciones están explícitos y aceptados. La fecha del 1 de diciembre es un objetivo condicionado, no permiso para rebajar controles.
+**Objetivo de entrega:** no basta una demo, un preview, un entorno de pruebas ni una beta que no complete el recorrido. Para cumplir el 2026-12-01, el P0 debe estar desplegado y demostrado en producción para al menos un comercio piloto de un solo local, con capacidad verificada para 1.000 productos y una jornada completa desde la UI. Esto solo se autoriza después de cerrar todos los gates legales/fiscales, seguridad, identidad/runtime, BCV, backup/restore, observabilidad, coste $0 y despliegue. Si cualquier gate crítico sigue sin evidencia el 30 de noviembre, el dictamen es **NO-GO para producción**. Una beta controlada solo puede ser alternativa si el propietario la autoriza expresamente y no cuenta como cumplimiento del objetivo de producción. La fecha no autoriza rebajar controles.
 
 ## 6. Reglas de continuidad para todas las IAs y sesiones
 

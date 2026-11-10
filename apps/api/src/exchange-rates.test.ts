@@ -207,6 +207,38 @@ describe("BCV effective-date persistence", () => {
   });
 });
 
+  it("restores a stale row when BCV confirms the exact same effective-date value", async () => {
+    const statements: Array<{ sql: string; values?: unknown[] }> = [];
+    const client = {
+      query: async <Row = unknown>(sql: string, values?: unknown[]) => {
+        statements.push({ sql, values });
+        if (sql.includes("INSERT INTO public.exchange_rates")) return { rows: [] as Row[] };
+        if (sql.includes("SELECT rate::text AS rate")) {
+          return { rows: [{
+            rate: "894.88760000",
+            effective_date: "2026-11-05",
+            validation_status: "stale",
+          }] as Row[] };
+        }
+        if (sql.includes("UPDATE public.exchange_rates")) return { rows: [] as Row[] };
+        throw new Error("Unexpected query in stale BCV recovery regression test");
+      },
+    } as unknown as DatabaseClient;
+
+    await expect(persistBcvOfficialRate(client, {
+      rate: "894.88760000",
+      effectiveDate: "2026-11-05",
+    })).resolves.toBe("unchanged");
+
+    const restore = statements.find(({ sql }) => sql.includes("UPDATE public.exchange_rates"));
+    expect(restore?.sql).toContain("SET validation_status = 'valid'");
+    expect(restore?.sql).toContain("AND source = $1");
+    expect(restore?.sql).toContain("AND effective_date = $2::date");
+    expect(restore?.sql).toContain("AND rate = $3::numeric");
+    expect(restore?.sql).toContain("AND validation_status = 'stale'");
+    expect(restore?.values).toEqual(["BCV_OFFICIAL_HTML_V1", "2026-11-05", "894.88760000"]);
+  });
+
 describe("BCV official fetch bounds", () => {
   it("rejects BCV redirects instead of following an untrusted destination", async () => {
     const fetchMock = vi.fn().mockResolvedValue(new Response(null, {

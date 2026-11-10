@@ -11,7 +11,7 @@
 
 ## Criterios funcionales convertidos en pruebas
 
-- [ ] Venta con múltiples líneas, cantidades, descuentos autorizados y cálculo monetario decimal.
+- [ ] Venta con múltiples líneas, cantidades y cálculo monetario decimal. Los descuentos solo podrán probarse en una fase futura si se aprueba e implementa esa capacidad; están fuera del P0 del 2026-12-01 y el checkout actual los excluye.
 - [ ] Reintento de venta con la misma clave idempotente no duplica el cobro ni el movimiento de stock.
 - [ ] Stock concurrente no cae por debajo de cero.
 - [ ] Devolución crea movimientos reversos y conserva la venta original y su auditoría.

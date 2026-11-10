@@ -29,4 +29,20 @@ GRANT UPDATE (validation_status) ON TABLE public.exchange_rates TO microapp_bcv_
 GRANT SELECT ON TABLE public.bcv_sync_state TO microapp_bcv_sync;
 GRANT UPDATE (attempt_id,last_attempt_at,last_success_at,last_outcome,last_error_code,last_effective_date,updated_at)
   ON TABLE public.bcv_sync_state TO microapp_bcv_sync;
+
+-- PostgreSQL requires UPDATE privilege to take FOR SHARE locks. Expose only
+-- the read-and-lock operation to the API runtime, not direct row mutation.
+CREATE FUNCTION public.lock_bcv_sync_state()
+RETURNS TABLE (last_success_at timestamptz, last_outcome text, last_effective_date date)
+LANGUAGE sql
+SECURITY DEFINER
+SET search_path = pg_catalog
+AS $lock_bcv_sync_state$
+  SELECT state.last_success_at, state.last_outcome, state.last_effective_date
+    FROM public.bcv_sync_state AS state
+   WHERE state.singleton = true
+   FOR SHARE;
+$lock_bcv_sync_state$;
+REVOKE ALL ON FUNCTION public.lock_bcv_sync_state() FROM PUBLIC;
+GRANT EXECUTE ON FUNCTION public.lock_bcv_sync_state() TO microapp_runtime;
 COMMIT;

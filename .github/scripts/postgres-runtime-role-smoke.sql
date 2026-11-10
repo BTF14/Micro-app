@@ -305,6 +305,7 @@ BEGIN
   EXCEPTION WHEN insufficient_privilege THEN NULL; END;
 
   PERFORM 1 FROM public.bcv_sync_state WHERE singleton = true;
+  PERFORM 1 FROM public.lock_bcv_sync_state();
   PERFORM 1 FROM public.exchange_rates LIMIT 1;
   BEGIN UPDATE public.bcv_sync_state SET last_success_at=pg_catalog.now(), last_outcome='unchanged' WHERE singleton=true; RAISE EXCEPTION 'RUNTIME_FORGED_BCV_SYNC_SUCCESS'; EXCEPTION WHEN insufficient_privilege THEN NULL; END;
   BEGIN UPDATE public.exchange_rates SET validation_status='valid' WHERE source='BCV_OFFICIAL_HTML_V1'; RAISE EXCEPTION 'RUNTIME_CHANGED_BCV_RATE_APPLICABILITY'; EXCEPTION WHEN insufficient_privilege THEN NULL; END;

@@ -100,9 +100,7 @@ export async function findApplicableCheckoutRate(tx: import("./database").Databa
     `SELECT last_success_at,
             last_outcome,
             last_effective_date::text AS last_effective_date
-       FROM public.bcv_sync_state
-      WHERE singleton = true
-      FOR SHARE`,
+       FROM public.lock_bcv_sync_state()`,
   );
   const state = syncState.rows[0];
   if (

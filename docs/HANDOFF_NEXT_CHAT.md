@@ -1,3 +1,11 @@
+## Bloqueo comercial que no debe inferirse — pagos checkout
+
+La inspección de #287 encontró métodos hardcodeados `cash/card/transfer/mobile_payment/other` y `MAX_PAYMENTS=10`. El SDD mantiene sin aprobación los métodos y las reglas de pagos parciales/mixtos/sobrepago/cambio. No exponer ni integrar el handler con esas suposiciones; la decisión de pagos es un bloqueo de producto pendiente, no una tarea que deba resolverse inventando defaults. La capacidad de catálogo de 1.000 productos no implica 1.000 líneas por venta; #287 tiene límite técnico de 100 líneas.
+
+La PR #298 es esta misma rama documental y se ha actualizado durante la sesión; cualquier SHA anotado antes de estas actualizaciones es histórico. Consultar su HEAD/checks en vivo.
+
+---
+
 ## Punto de entrada vigente — revalidado 2026-11-10 UTC
 
 **Fecha límite inamovible: 2026-12-01.** Objetivo: un comercio piloto, un local, hasta 1.000 productos, una jornada POS completa desde UI; persistencia y conciliación verificadas. Sin descuentos ni promociones.

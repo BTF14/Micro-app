@@ -2463,3 +2463,19 @@ Esta revisión fue estática de contenidos en GitHub; no se ejecutaron tests des
 - Issue #53 sigue OPEN/P0. El hallazgo read-only de Neon `main` sobre `backup_readonly` (membresía `neon_superuser`/`pg_write_all_data`, UPDATE/DELETE efectivos) permanece sin corregir; no se demostró que `DATABASE_URL_BACKUP_RO` use ese LOGIN. Los roles `microapp_runtime`, `microapp_migrator` y `microapp_bcv_sync` tampoco están provisionados en Neon `main`.
 
 **Límites:** no se modificó `main`, Neon, Cloudflare, secretos, DNS, billing ni datos reales. No se desplegó Worker ni se activó Cron. Producción **NOT READY**. Fecha P0 inamovible: **2026-12-01**.
+## Reconciliación de seguridad BCV — 2026-11-10 14:35 UTC
+
+**Último HEAD con cambios de código completamente validado:** `24bcf66c0c570ec76566de03a70b2443e64fc69f`. **11/11 workflows SUCCESS**, 0 failure, 0 pending. Los commits posteriores de ADR/ODD/estado son solo documentación; consultar HEAD vivo en GitHub y validar los workflows de esa punta antes de cualquier decisión.
+
+- Migration 0022 normaliza ACLs table-level y column-level del productor preexistente; elimina ACLs de PUBLIC en `bcv_sync_state` y `exchange_rates`; concede solo permisos column-level requeridos por el sincronizador. Runtime mantiene SELECT table-level pero ningún INSERT/UPDATE efectivo en tabla/columnas.
+- El preflight exige `USAGE` y rechaza `CREATE` en schema `public` para `microapp_bcv_sync`; no intenta revocar privilegios de schema que no pertenecen al migrator.
+- Assertions revisan `relacl`, `attacl`, grants efectivos por cada columna, ACLs PUBLIC, memberships y el helper `lock_bcv_sync_state()`.
+- Migration-check siembra grants amplios a producer y PUBLIC, verifica que 0022 los limpia, y prueba que schema CREATE provoca fallo cerrado. PostgreSQL disposable aprobó todos esos pasos y el ejercicio de operaciones/denegaciones con runtime LOGIN.
+- La integración BCV separa producer/runtime/admin: sync con producer, lectura/checkout con runtime, limpieza con admin. Se prueba que runtime no puede persistir una tasa (SQLSTATE 42501).
+- Un intento previo de CI en SHA `380bf757...` falló porque un test invocaba `findApplicableBcvRate` con el LOGIN producer. Se corrigió el test para usar runtime; no se relajaron los permisos. El SHA final `24bcf66...` pasó el suite completo.
+- Workflow IDs en `24bcf66...`: CI `42834223332`; migration validation `42834223191`; migration runner `42834223048`; Playwright `42834223393`; backup smoke `42834223426`; Security `42834223440`; Secret history `42834223064`; Semgrep `42834223348`; ODD `42834223489`; Dependency review `42834223323`; dashboard `42834223080`. Todos SUCCESS.
+- PR #287 sigue OPEN/Draft, sin reviews formales ni review threads. En el HEAD de código comparado contra main `c537356...`: 199 ahead / 1 behind, diverged, merge base `03442951...`. Los asientos documentales posteriores cambian el contador; no sincronizar automáticamente ni hacer force-push.
+
+**Riesgos P0 todavía abiertos:** issue #53; `backup_readonly` en Neon main conserva privilegios efectivos de escritura por memberships; principal efectivo de `DATABASE_URL_BACKUP_RO` aún no demostrado. La UI de esta rama sigue sin recorrido de caja/ventas: esos módulos aparecen deshabilitados. El checkout API no equivale a aceptación POS desde UI. La aceptación de un local/1.000 productos/jornada completa sigue en PR #298 Draft.
+
+**Límites:** no se modificó main, Neon, Cloudflare, secretos, DNS, billing ni datos reales. Worker BCV no desplegado, Cron no activado, LOGIN/secreto productor remoto no provisionado. Producción NOT READY. Fecha límite inamovible: **2026-12-01**.

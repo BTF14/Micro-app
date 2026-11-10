@@ -76,7 +76,7 @@ La PR #298 es esta misma rama documental y se ha actualizado durante la sesión;
 
 - `main`: `c5373564413ba086690552c6b7deeab08d7b4a89`.
 - #287 OPEN/Draft, HEAD `25e0de8c0236880febaad9a14a47d5ec55931641`, 164 ahead/1 behind; el único commit faltante en main es #297 y modifica solo `docs/BACKLOG_RECOVERY_LEDGER.md`. No sincronizar/rebasar automáticamente. CI exact-HEAD: 15/15 check-runs y 11/11 workflows SUCCESS. Contiene la recuperación BCV stale→valid bajo confirmación oficial idéntica y regresiones unitarias/PostgreSQL, incluyendo ejecución con LOGIN runtime en el workflow de CI.
-- #298 OPEN/Draft, HEAD `6b0e51b259e0d59305931a779d52a9ba066cac27`, 148 ahead/0 behind; 15/15 check-runs y 11/11 workflows SUCCESS. Es la PR documental existente; no crear otra duplicada.
+- #298 OPEN/Draft, 177 ahead/0 behind. Su HEAD cambia con esta reconciliación documental; el último SHA observado antes de este update fue `09bbe3d2d38494eebe68333fd3bdc38edbe5c576` con CI aún en ejecución (10 check-runs in_progress, 4 success; 7 workflows in_progress, 3 success, 1 pending). No reutilizar checks de HEAD anteriores. Es la PR documental existente; no crear otra duplicada.
 - #299 OPEN/Draft, HEAD `c82b0a10f85b59e1f81ac0ca2d439b6286558751`, 14/14 checks y 10/10 workflows SUCCESS. Mide duración de `pg_restore` sintético y round-trip; no RTO integral.
 - #300 OPEN/Draft, HEAD `f4c98f3971463e54370b5af3a0633ab434d9ad90`, 13/13 checks y 9/9 workflows SUCCESS. Retira `sales.price.override` de autorización; sin cambios de endpoint/UI/migración.
 - #302 OPEN/Draft, HEAD `c6daacee7825f3e2d3dd9de031fd5c3e33fc9320`, 14/14 checks y 10/10 workflows SUCCESS. Cambia autenticación Git del backup a helper temporal GIT_ASKPASS; no se ejecutó backup real.

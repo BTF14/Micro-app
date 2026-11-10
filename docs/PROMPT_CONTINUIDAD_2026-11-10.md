@@ -68,3 +68,15 @@ La ruta `WORK_CHECKPOINT.md` no fue encontrada en la rama documental al último 
 7. Antes de terminar, valida SHA exacto y deja instrucciones concretas para el siguiente turno.
 
 **Estado de producto al corte: NOT READY FOR PRODUCTION.** Fecha límite **2026-12-01**, inamovible. No declarar MVP listo hasta superar seguridad, backup/restore, flujo POS realista, pruebas E2E y piloto controlado.
+
+ 
+## Addendum de continuidad — corte vivo 2026-11-10 11:59 UTC
+
+- Main confirmado: `c5373564413ba086690552c6b7deeab08d7b4a89`.
+- Último backup programado: run #19 `42659924075`, SUCCESS; job `129308412112` verificó pg_dump 18.6, age, checksum, push remoto commit `828ef31` y retención sin borrados. No había ejecución programada posterior al corte.
+- Edad de copia ~19 h al corte; el ciclo actual no había superado 24 h. Sin embargo, el intervalo entre #18 y #19 fue 27h00m14s y el máximo histórico documentado 48h03m03s: RPO≤24 h sostenido NO cumplido. El último restore remoto documentado es del 29 oct, no de la copia más reciente.
+- #302 corrige en rama el token Git persistido en URL mediante GIT_ASKPASS; sigue Draft, sin review, CI 10/10 workflows y 14/14 check-runs, sin prueba real con credencial.
+- Riesgo P0: `backup_readonly` hereda `pg_write_all_data` según evidencia read-only previa; no se demostró que el secreto `DATABASE_URL_BACKUP_RO` use ese usuario. No tocar Neon main ni leer secretos.
+- PR exact-HEAD, ahead/behind y reviews están consolidados en CURRENT_STATE.md y HANDOFF_NEXT_CHAT.md. Todos los ocho PRs (#287/#296/#298/#299/#300/#301/#302/#193) siguen OPEN; no hay reviews formales ni threads. #301 y #193 no son Draft; #193 está 74 commits detrás.
+- Issue #53 permanece OPEN/P0. Seguridad Nivel 1 ABIERTO. P0 UI sigue 0/1 jornadas completas. No desplegar ni declarar producción lista.
+- Fecha límite absoluta: **2026-12-01**.

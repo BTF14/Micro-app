@@ -372,3 +372,14 @@ Consulta del historial de GitHub Actions en `main`, filtro `event=schedule`, wor
 - Se registró evidencia y límites en el comentario del issue #53 (comment ID `6765600704`). Issue #53 permanece OPEN/P0.
 - Gate: verificar de forma autorizada el principal real del Worker/API y del backup, memberships heredadas, ownership y ACL efectivos. Diseñar bootstrap/upgrade least-privilege en PostgreSQL desechable. No cambiar roles/grants en Neon main desde esta tarea; no leer ni imprimir secretos.
 - PR #302 solo elimina el token Git de la URL del remote; no corrige ni prueba los privilegios PostgreSQL. Producción NOT READY.
+
+ 
+## Revalidación del ciclo de backup — 2026-11-10 11:59 UTC
+
+- Último backup programado: run #19 `42659924075`, SUCCESS, iniciado 2026-11-09 16:57:34 UTC. Job `129308412112` completó `pg_dump 18.6`, cifrado age, SHA-256, subida al repositorio privado de backups (commit remoto `828ef31`) y retención sin archivos eliminados.
+- No había run programado posterior al corte del 2026-11-10 11:59 UTC. Antigüedad aproximada: 19 h; el ciclo actual aún no superaba el RPO provisional de 24 h.
+- **RPO sostenido no cumplido:** el intervalo entre runs programados #18 (2026-11-08 13:57:20 UTC) y #19 (2026-11-09 16:57:34 UTC) fue de 27 h 00 min 14 s. El historial anterior registró un máximo de 48 h 03 min 03 s entre backups exitosos. Un backup reciente dentro de 24 h no borra esos incumplimientos.
+- La última restauración remota de una copia específica sigue siendo la del 2026-10-29 (run `40955935124`), no la copia del 2026-11-09. El workflow de restauración real usa credenciales protegidas y PostgreSQL efímero; no se ha repetido para el archivo más reciente.
+- El run #19 usa el workflow de main que aún interpola `GH_TOKEN` en la URL Git. PR #302 propone GIT_ASKPASS temporal, pero está Draft y no se ha probado con credencial real. No ejecutar manualmente el workflow ni usar secretos reales para validar el cambio.
+- Evidencia de permisos: documentación de Seguridad Nivel 1/issue #53 registra que el rol denominado `backup_readonly` hereda `pg_write_all_data`. No se ha demostrado que el secreto `DATABASE_URL_BACKUP_RO` utilice ese principal. El workflow no revela el usuario efectivo; no asumirlo por el nombre del secreto. No cambiar roles/grants ni tocar Neon main.
+- Criterios abiertos: RPO ≤24 h sostenido, RTO integral, restauración de la copia más reciente, alertas externas, coste $0 demostrado y principal PostgreSQL efectivo de mínimo privilegio. El backup no está listo para producción.

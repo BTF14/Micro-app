@@ -2873,3 +2873,51 @@ La evidencia de solo lectura registrada en issue #53 (2026-11-06) indica que `ba
 5. Validar el nuevo SHA de #298 generado por este commit documental; actualizar PR description y los contadores solo tras consultar GitHub.
 
 **Estado de producto al corte:** NO READY FOR PRODUCTION. Checks verdes de PR no equivalen a aprobación, integración en main, despliegue ni aceptación piloto.
+
+ 
+## Revalidación operativa y GitHub vivo — 2026-11-10 11:59 UTC
+
+**Main confirmado:** `c5373564413ba086690552c6b7deeab08d7b4a89`. GitHub devuelve `protected=true` para la rama. La lectura de reglas/rulesets y de la configuración detallada de branch protection continúa limitada: rulesets `[]` y endpoint de protección 403 en la consulta documentada; no inferir número de approvals ni checks obligatorios.
+
+### Backup y RPO
+
+- Última ejecución programada consultada: run #19 `42659924075`, SUCCESS, iniciado 2026-11-09 16:57:34 UTC. No hay run programado posterior en la consulta en vivo del 2026-11-10 11:59 UTC.
+- Job `129308412112`: `pg_dump 18.6`, cifrado age, SHA-256, push remoto confirmado al repositorio privado de backups (commit remoto `828ef31`), retención completada con 0 archivos eliminados.
+- Antigüedad de la última copia al corte: aproximadamente 19 h; el ciclo actual aún no había excedido el RPO provisional de 24 h.
+- Esto NO demuestra cumplimiento sostenido: entre runs programados #18 (2026-11-08 13:57:20 UTC) y #19 (2026-11-09 16:57:34 UTC) transcurrieron 27 h 00 min 14 s; el historial anterior ya registró un máximo de 48 h 03 min 03 s entre copias exitosas. RPO ≤24 h sigue incumplido históricamente.
+- La restauración remota más reciente documentada sigue siendo la del archivo del 2026-10-29 (run `40955935124`), no la copia del 2026-11-09. #299 solo mide `pg_restore` sintético.
+- El workflow de `main` aún interpola `GH_TOKEN` en la URL Git. #302 propone GIT_ASKPASS temporal; no está integrado ni ejecutado con credencial real.
+- La auditoría read-only documentada en issue #53/SECURITY_ROADMAP confirmó que el rol llamado `backup_readonly` hereda `pg_write_all_data`; no se demostró que `DATABASE_URL_BACKUP_RO` use ese principal. No inferirlo por el nombre del secreto ni cambiar Neon main.
+
+### PRs: estado vivo y evidencia exact-HEAD
+
+Comparaciones contra `main` y SHA consultados directamente en GitHub:
+
+| PR | HEAD | Estado | Ahead / behind | Check-runs | Workflows pull_request |
+|---|---|---|---:|---:|---:|
+| #287 | `dd587308f85f42f8019d5fc74e7f8e296229ead8` | OPEN/Draft | 175 / 1 | 15/15 SUCCESS | 11/11 SUCCESS |
+| #296 | `62dde66355a937a4f6fa4efb8d9cfdf856d7ac0f` | OPEN/Draft | 64 / 1 | 14/14 SUCCESS | 10/10 SUCCESS |
+| #298 | `385af0d1fe427e17e384b86982fd4733088d7297` | OPEN/Draft | 222 / 0 | 15/15 SUCCESS | 11/11 SUCCESS |
+| #299 | `c82b0a10f85b59e1f81ac0ca2d439b6286558751` | OPEN/Draft | 1 / 0 | 14/14 SUCCESS | 10/10 SUCCESS |
+| #300 | `97fa79e643d5e7b32ebf86958bd0ba9211e1fc95` | OPEN/Draft | 3 / 0 | 14/14 SUCCESS | 10/10 SUCCESS |
+| #301 | `ce43ab2cff91cd07e7ca2b91635b8e27a02b11c8` | OPEN, no Draft | 5 / 0 | 15/15 SUCCESS | 10/10 SUCCESS |
+| #302 | `1b441b3dc9e65e2cb89d765f9aff084b474dd90d` | OPEN/Draft | 4 / 0 | 14/14 SUCCESS | 10/10 SUCCESS |
+| #193 | `ac57ab4f3415f82279b8a49c0befe09f8e3aec68` | OPEN, no Draft | 5 / 74 | 12/12 SUCCESS | 8/8 SUCCESS |
+
+- Merge bases: #287/#296 `03442951b2a2f63f5bf4dcf560f2c91be4f6cc71`; #193 `705d3db3220894c7d3baca8dc7e7a6b623dfbb94`; the remaining PRs above use current main as merge base.
+- Formal reviews and inline review threads: none on #287, #296, #298, #299, #300, #301, #302 or #193 in the live review/thread queries. Do not count CI as approval.
+- Combined legacy status endpoint returned no status contexts for #287–#301; check-runs and workflow runs were queried separately. No check-runs are inferred from the empty legacy status list.
+- #301 remains the only non-Draft implementation PR in this set. Its exact HEAD CI is green, but there is no formal review; Security Level 1 remains open. Do not approve/merge solely on CI.
+- #193 is a documentation-only proposal (one added file), now 5 ahead / 74 behind main and divergent from merge base 705d3db. Preserve it for reconciliation; do not merge or close by age.
+- Issue #53 remains OPEN/P0 (updated 2026-11-10 11:00 UTC).
+
+### Límites de producto y seguridad
+
+- Seguridad Nivel 1 permanece ABIERTO; producción NOT READY.
+- #287 sigue sin provisionamiento de identidad/secret dedicado del productor BCV ni Worker/Cron BCV aislado. No desplegar ni activar.
+- #287 incluye backend checkout API, no una jornada POS completa de UI. No se ha demostrado carrito, cobro, recibo y apertura/cierre de turnos desde navegador.
+- #301 es lectura de sucursales/inventario; límite de 100 sucursales sin cursor documentado.
+- #300 elimina `sales.price.override` solo en su rama y su corrección está incorporada en #287; no fusionar ambas ramas independientemente sin reconciliar.
+- #302 mejora higiene del token Git, pero no prueba el principal PostgreSQL del backup.
+- #299 no mide RTO integral ni restaura el backup remoto más reciente.
+- Fecha límite P0 inamovible: **2026-12-01**. Máximo dos frentes. No tocar Neon main, datos reales, roles/grants remotos, secretos, Cloudflare manual, DNS, billing ni despliegues productivos.

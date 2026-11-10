@@ -2536,3 +2536,17 @@ El ensayo verifica el bundle SQL y roles en la base aislada; no prueba el compor
 5. Validar el nuevo SHA de #298 generado por este commit documental; actualizar PR description y los contadores solo tras consultar GitHub.
 
 **Estado de producto al corte:** NO READY FOR PRODUCTION. Checks verdes de PR no equivalen a aprobación, integración en main, despliegue ni aceptación piloto.
+
+ 
+## Trabajo de continuidad — revalidación GitHub y backup — 2026-11-10 11:59 UTC
+
+- Main revalidado en vivo: `c5373564413ba086690552c6b7deeab08d7b4a89`; rama reportada como protegida por GitHub. Configuración detallada de branch protection continúa sin lectura (403); no inferir reglas.
+- Consultados ocho PR (#287, #296, #298, #299, #300, #301, #302, #193), sus HEAD/base, comparaciones, workflows exact-HEAD, check-runs, reviews y threads. Tabla consolidada añadida a CURRENT_STATE/HANDOFF.
+- Check-runs/workflows exact-HEAD: #287 15/15 y 11/11 SUCCESS; #296 14/14 y 10/10; #298 15/15 y 11/11; #299 14/14 y 10/10; #300 14/14 y 10/10; #301 15/15 y 10/10; #302 14/14 y 10/10; #193 12/12 y 8/8. No hay reviews formales ni threads en las ocho PR. No se equiparan workflows, check-runs, legacy statuses o reviews.
+- #287 y #296 tienen base SHA antigua 0344295 y están 1 commit detrás; #193 está divergida, 5 ahead/74 behind de main, merge base 705d3db. No se rebasó ni sincronizó ninguna rama.
+- Run programado #19 `42659924075` y job `129308412112` inspeccionados: pg_dump 18.6, cifrado age, checksum, push remoto commit 828ef31, retención 0 eliminaciones. No hay run programado posterior a las 11:59 UTC del 10 nov.
+- El ciclo actual del backup tenía ~19 h y aún no había excedido 24 h; no obstante, el intervalo #18→#19 fue 27h00m14s y el máximo histórico documentado 48h03m03s. RPO ≤24 h no está sostenido. Último restore remoto documentado: copia 29 oct, no la copia 9 nov.
+- Confirmado por lectura de main que el workflow sigue interpolando el token Git en la URL; #302 contiene GIT_ASKPASS temporal pero permanece Draft. Su CI no prueba ejecución real con secreto.
+- Issue #53 sigue OPEN/P0. La evidencia registrada indica que el rol llamado backup_readonly hereda pg_write_all_data, pero el principal del secreto DATABASE_URL_BACKUP_RO no está demostrado.
+- No se modificó main, código funcional, Neon, datos reales, roles/grants, secretos, Cloudflare, DNS, billing, Cron ni despliegues. Esta actualización es documental en la rama #298 únicamente.
+- Próximo: vigilar el siguiente ciclo; trabajar en prueba aislada GIT_ASKPASS y diseño de verificación de identidad/privilegios sin exponer secretos ni mutar Neon main. Fecha límite 2026-12-01.

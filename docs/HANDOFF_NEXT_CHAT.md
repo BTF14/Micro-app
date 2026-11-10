@@ -3012,3 +3012,42 @@ La evidencia de solo lectura registrada en issue #53 (2026-11-06) indica que `ba
 5. Validar el nuevo SHA de #298 generado por este commit documental; actualizar PR description y los contadores solo tras consultar GitHub.
 
 **Estado de producto al corte:** NO READY FOR PRODUCTION. Checks verdes de PR no equivalen a aprobación, integración en main, despliegue ni aceptación piloto.
+
+ 
+## Reanudación prioritaria — 2026-11-10 11:59 UTC
+
+**Deadline inamovible: 2026-12-01. Estado: NOT READY FOR PRODUCTION.**
+
+- Main confirmado: `c5373564413ba086690552c6b7deeab08d7b4a89` (`protected=true` según objeto branch; configuración detallada de approvals/checks no legible por 403).
+- Último backup programado: run #19 `42659924075`, SUCCESS, 2026-11-09 16:57:34 UTC; job `129308412112` confirma pg_dump 18.6, cifrado, checksum, push remoto commit `828ef31` y retención sin borrados. A las 11:59 UTC del 10 nov tenía ~19 h.
+- El ciclo actual todavía no supera 24 h, pero RPO ≤24 h no está demostrado: #18→#19 tardó 27 h 00 min 14 s y el máximo histórico registrado fue 48 h 03 min 03 s. Si la copia siguiente no se completa antes de 24 h desde #19, escalar como incidente P0.
+- La última restauración remota documentada sigue siendo la copia del 29 oct (run `40955935124`); no se restauró la copia del 9 nov. #299 es solo restore sintético.
+- #302: main todavía usa token en URL Git; la corrección GIT_ASKPASS está Draft, HEAD `1b441b3dc9e65e2cb89d765f9aff084b474dd90d`, 10/10 workflows y 14/14 check-runs SUCCESS; sin review formal/thread y sin prueba dinámica con token efímero.
+- Riesgo separado: `backup_readonly` tiene membresía heredada de `pg_write_all_data` según evidencia read-only ya registrada; no está probado que el secreto `DATABASE_URL_BACKUP_RO` use ese usuario. No inspeccionar secretos ni cambiar Neon main.
+
+### Estado exact-HEAD de PR
+
+| PR | HEAD | Estado | Ahead/behind | Workflows / checks |
+|---|---|---|---:|---:|
+| #287 | `dd587308f85f42f8019d5fc74e7f8e296229ead8` | OPEN/Draft | 175/1 | 11/11 + 15/15 SUCCESS |
+| #296 | `62dde66355a937a4f6fa4efb8d9cfdf856d7ac0f` | OPEN/Draft | 64/1 | 10/10 + 14/14 SUCCESS |
+| #298 | `385af0d1fe427e17e384b86982fd4733088d7297` | OPEN/Draft | 222/0 | 11/11 + 15/15 SUCCESS |
+| #299 | `c82b0a10f85b59e1f81ac0ca2d439b6286558751` | OPEN/Draft | 1/0 | 10/10 + 14/14 SUCCESS |
+| #300 | `97fa79e643d5e7b32ebf86958bd0ba9211e1fc95` | OPEN/Draft | 3/0 | 10/10 + 14/14 SUCCESS |
+| #301 | `ce43ab2cff91cd07e7ca2b91635b8e27a02b11c8` | OPEN, no Draft | 5/0 | 10/10 + 15/15 SUCCESS |
+| #302 | `1b441b3dc9e65e2cb89d765f9aff084b474dd90d` | OPEN/Draft | 4/0 | 10/10 + 14/14 SUCCESS |
+| #193 | `ac57ab4f3415f82279b8a49c0befe09f8e3aec68` | OPEN, no Draft | 5/74 | 8/8 + 12/12 SUCCESS |
+
+No formal reviews or inline review threads were returned for these PRs. #287/#296 are each one commit behind main from merge base 0344295; #193 is 74 behind with merge base 705d3db. No automatic rebase/sync. Combined legacy statuses are empty where queried; check-runs and workflow runs remain separate evidence.
+
+### Próximos pasos obligatorios
+
+1. Mantener el foco en backup/RPO y seguridad Nivel 1; comprobar la siguiente ejecución programada y medir el gap real, sin lanzar backup manual ni cambiar secretos.
+2. Diseñar un procedimiento aislado y autorizado para identificar el principal real del backup y validar privilegios efectivos; no leer secretos ni mutar Neon main.
+3. Revisar dinámicamente GIT_ASKPASS en repositorio sintético y secreto efímero, si puede añadirse al CI sin tocar credenciales reales.
+4. Completar revisión independiente de #301 (ruta, autorización, aislamiento tenant/branch, límite 100 y UI); no aprobar solo por CI.
+5. Mantener #287/#296/#298/#299/#300/#302 Draft y #193 abierta mientras falten revisión/decisiones/gates. No fusionar #300 y #287 independientemente.
+6. Solo después de cerrar Seguridad Nivel 1 avanzar a UI POS completa, turnos, pagos aprobados y E2E de jornada.
+7. Mantener BCV/SUDEBAN según `docs/EXTERNAL_SOURCE_RELIABILITY_BCV_SUDEBAN.md`; no volver a pedir calendario 2026 ni insistir con calendario oficial 2027 no verificable.
+
+No pedir terminal, CLI, Build IDs, capturas, TinyFish, reconexiones, ni datos ya documentados.

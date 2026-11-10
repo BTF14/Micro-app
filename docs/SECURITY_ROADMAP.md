@@ -935,3 +935,16 @@ Snapshot histórico: el manual run [40916692763](https://github.com/BTF14/Micro-
 - Se registró evidencia y límites en el comentario del issue #53 (comment ID `6765600704`). Issue #53 permanece OPEN/P0.
 - Gate: verificar de forma autorizada el principal real del Worker/API y del backup, memberships heredadas, ownership y ACL efectivos. Diseñar bootstrap/upgrade least-privilege en PostgreSQL desechable. No cambiar roles/grants en Neon main desde esta tarea; no leer ni imprimir secretos.
 - PR #302 solo elimina el token Git de la URL del remote; no corrige ni prueba los privilegios PostgreSQL. Producción NOT READY.
+
+ 
+## Revalidación de Seguridad Nivel 1 — 2026-11-10 11:59 UTC
+
+**Estado: ABIERTO / NOT READY FOR PRODUCTION.**
+
+- Main reportado `protected=true`; el endpoint de configuración de branch protection devolvió 403 y rulesets [] en la consulta documentada. No se conocen approvals requeridas ni checks obligatorios actuales.
+- Backup run #19 `42659924075` SUCCESS (2026-11-09 16:57:34 UTC), job `129308412112`: pg_dump 18.6, age, SHA-256, push remoto commit 828ef31 y retención sin eliminaciones. Antigüedad ~19 h al 2026-11-10 11:59 UTC; el ciclo actual no había superado 24 h.
+- RPO sostenido sigue NO CUMPLIDO: intervalo #18→#19 = 27h00m14s; máximo histórico registrado = 48h03m03s. Última restauración de copia remota concreta sigue siendo la del 2026-10-29; no se restauró la copia más reciente del 9 nov. #299 solo mide pg_restore sintético.
+- El workflow de main aún usa token en URL Git; #302 propone GIT_ASKPASS temporal (HEAD 1b441b3..., 10/10 workflows + 14/14 checks), pero permanece Draft, sin review y sin prueba real con credencial.
+- Evidencia previa read-only: `backup_readonly` hereda `pg_write_all_data`; no se ha demostrado que el secreto `DATABASE_URL_BACKUP_RO` utilice ese principal. El nombre del secreto no demuestra identidad. No leer secretos ni modificar grants remotos.
+- La próxima tarea P0 de backup es definir prueba dinámica aislada de askpass y procedimiento autorizado para identificar el principal real y medir RPO/RTO end-to-end; conservar los backups actuales y no cambiar retención/cron sin evidencia.
+- Issue #53 continúa OPEN/P0. No se cierra Seguridad Nivel 1 ni se declara least privilege, restauración reciente o recuperación operativa completa.

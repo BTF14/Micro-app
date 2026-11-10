@@ -1,13 +1,16 @@
-## Continuidad inmediata y diagnóstico de CI — 2026-11-10 UTC
+## Punto de entrada vigente — estado verificado 2026-11-10 UTC
 
-- PR #298 sigue OPEN/Draft, sin merge. HEAD documental actualizado en esta sesión: `0561deccff00d9fbda638ebe49be2bb6621264f2` (actualización de alcance backup/restore) y luego `70a5e4672344b98f95493c7c5346dbe346082133` (diagnóstico CI en CURRENT_STATE). Verificar el HEAD vivo antes de actuar.
-- Se documentó que el smoke test actual de backup/restore aplica solo migraciones 0001, 0002 y 0005, no toda la cadena 0001–0016; la restauración remota manual tiene validación final mínima. No ejecutar restore remoto manual.
-- PR #287 HEAD `7df318b233cfb95f7fcc3076d46984a11614a14c`: cinco workflows fallidos en ese SHA (ODD docs, Dependency Review, Project Progress, Playwright E2E, CI); otros controles incluidos backup sintético, scans, migration checks y preview builds pasaron. GitHub devolvió metadatos de runs pero cero jobs para los cinco fallos; no hay causas raíz confirmadas. No reintentar a ciegas.
-- La rama de PR #287 se comparó con main observado `c5373564413ba086690552c6b7deeab08d7b4a89`: 159 commits ahead / 1 behind, estado diverged. Mantener PR Draft; no rebase/merge automático ni cambio de base sin revisar el diff completo y la secuencia de integración.
-- Los workflows de CI y Playwright contienen numerosas pruebas de integración y tienen `cancel-in-progress: true`; es un posible origen de cancelaciones concurrentes, no una explicación probada de los fallos observados.
-- Siguiente acción senior: conseguir job-level logs/steps de cada run fallido; clasificar causa raíz antes de editar; corregir cada causa en rama aislada y comprobar SHA exacto. No mezclar arreglos de workflow con cambios funcionales BCV/checkout.
-- Mantener todos los guardrails vigentes: no tocar main, no merge, no producción, no Neon main, no migraciones remotas, no nuevos Cron de negocio, no secretos/Cloudflare dashboard. No iniciar UI/lógica comercial hasta cerrar Seguridad Nivel 1.
-- Fecha objetivo inamovible: **1 de diciembre de 2026** para demostrar una jornada real end-to-end de un comercio piloto, un local, hasta 1.000 productos; cero descuentos/promociones.
+> Este snapshot describe el estado justo antes de esta actualización documental. El commit que lo contiene mueve el HEAD de #298; volver a consultar el SHA y sus checks antes de cualquier acción. Las secciones inferiores conservan evidencia histórica y addenda; este punto de entrada prevalece.
+
+- **Objetivo inamovible: 2026-12-01.** Producción para un comercio piloto, un local, hasta 1.000 productos y una jornada POS completa desde UI. Demo/preview/beta parcial no cumple. No hay descuentos ni promociones.
+- **main:** `c5373564413ba086690552c6b7deeab08d7b4a89`.
+- **PR #298:** OPEN/Draft, rama `docs/reconcile-live-github-state-20261109`, HEAD `ce762467024ca2794db96f90ed10b15a2341c6ca`, 37 archivos documentales, 143 ahead / 0 behind de main, `mergeable=true`; sin reviews formales ni review threads. Para este HEAD, la consulta de workflow runs exactos y el combined legacy status devolvieron listas vacías: **CI no verificado en el HEAD actual**. Los 11/11 workflow runs SUCCESS pertenecen al HEAD anterior `7dbcdf1d9c8339d524140d09ab0cf446460a0a9b`, no reutilizarlos.
+- **PR #287:** OPEN/Draft, HEAD `7df318b233cfb95f7fcc3076d46984a11614a14c`; compare con main: diverged, 159 ahead / 1 behind, 65 archivos (10.208 adiciones / 232 eliminaciones). La consulta exact-HEAD devolvió 11 workflow runs: 6 SUCCESS y 5 FAILURE. Fallos: ODD docs `42674363952`, Dependency Review `42674363725`, Project Progress `42674364153`, Playwright E2E `42674364197`, CI `42674364170`. Jobs vacíos y cero artifacts en los cinco; causa raíz desconocida. No rerun ciego, rebase, cambio de base ni merge automático.
+- Revisión estática de Playwright/CI aporta contexto, no root cause. El workflow Playwright usa imagen `v1.55.0-noble` y verifica el browser path; CI agrupa muchas migraciones e integraciones en un job. Sin logs no atribuir fallos.
+- Defecto BCV pendiente en #287: una fila `stale` con mismo valor y fecha puede seguir `stale` cuando la sincronización devuelve `unchanged`. Requiere corrección aislada y regresión; no iniciar lógica comercial mientras Seguridad Nivel 1 esté abierta.
+- **Seguridad Nivel 1: ABIERTO. Producción: NOT READY. P0 UI: 0/1 jornadas completas demostradas.** Backup/restore parcial; RPO ≤24 h, RTO integral, alertas, Dependabot y comprobaciones runtime no cerrados.
+- Guardrails: no tocar main, no merge, no deploy, no migraciones remotas, no Neon main, no datos reales, no secretos, DNS, billing, Cloudflare manual ni Cron BCV/de negocio. No tocar el Cron horario existente de limpieza de autenticación.
+- Siguiente paso: auditar el alcance de integración y compatibilidad de #287 sin modificarlo; recuperar evidencia de CI si la plataforma vuelve a exponer jobs/logs; cerrar Seguridad Nivel 1 antes de habilitar caja/UI.
 
 ---
 

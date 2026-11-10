@@ -438,18 +438,28 @@ fi
 fixture_assertions() {
   psql "$1" -X -v ON_ERROR_STOP=1 -Atqc "
 SELECT
-  (SELECT count(*) = 1 FROM public.organizations WHERE id = '11111111-1111-4111-8111-111111111111')
-  AND (SELECT count(*) = 1 FROM public.branch_memberships WHERE organization_id = '11111111-1111-4111-8111-111111111111' AND branch_id = '33333333-3333-4333-8333-333333333333' AND user_id = '22222222-2222-4222-8222-222222222222' AND is_active)
+  (SELECT count(*) = 2 FROM public.organizations WHERE id IN ('11111111-1111-4111-8111-111111111111','14141414-1414-4414-8414-141414141414'))
+  AND (SELECT count(*) = 2 FROM public.organization_members WHERE (organization_id='11111111-1111-4111-8111-111111111111' AND user_id='22222222-2222-4222-8222-222222222222' AND role='owner') OR (organization_id='14141414-1414-4414-8414-141414141414' AND user_id='15151515-1515-4515-8515-151515151515' AND role='owner'))
+  AND (SELECT count(*) = 2 FROM public.auth_allowlist WHERE email IN ('backup-restore@example.invalid','backup-restore-tenant-b@example.invalid'))
+  AND (SELECT count(*) = 2 FROM public.branch_memberships bm JOIN public.organization_members om ON om.organization_id=bm.organization_id AND om.user_id=bm.user_id JOIN public.branches b ON b.organization_id=bm.organization_id AND b.id=bm.branch_id WHERE bm.is_active AND ((bm.organization_id='11111111-1111-4111-8111-111111111111' AND bm.branch_id='33333333-3333-4333-8333-333333333333' AND bm.user_id='22222222-2222-4222-8222-222222222222') OR (bm.organization_id='14141414-1414-4414-8414-141414141414' AND bm.branch_id='16161616-1616-4616-8616-161616161616' AND bm.user_id='15151515-1515-4515-8515-151515151515')))
+  AND (SELECT count(*) = 2 FROM public.products p JOIN public.suppliers s ON s.organization_id=p.organization_id AND s.id=p.supplier_id WHERE p.id IN ('77777777-7777-4777-8777-777777777777','18181818-1818-4818-8818-181818181818'))
+  AND (SELECT count(*) = 2 FROM public.products WHERE id IN ('77777777-7777-4777-8777-777777777777','18181818-1818-4818-8818-181818181818') AND stock_quantity=0.000)
+  AND (SELECT count(*) = 2 FROM public.warehouses WHERE id IN ('99999999-9999-4999-8999-999999999999','19191919-1919-4919-8919-191919191919'))
   AND (SELECT count(*) = 1 FROM public.register_shifts WHERE id = '55555555-5555-4555-8555-555555555555' AND closed_at IS NULL)
-  AND (SELECT count(*) = 2 FROM public.inventory_counts WHERE id IN ('aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa','cccccccc-cccc-4ccc-8ccc-cccccccccccc') AND status = 'confirmed')
-  AND (SELECT count(*) = 2 FROM public.inventory_count_lines WHERE count_id IN ('aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa','cccccccc-cccc-4ccc-8ccc-cccccccccccc'))
-  AND (SELECT count(*) = 1 FROM public.inventory_balances WHERE organization_id = '11111111-1111-4111-8111-111111111111' AND warehouse_id = '99999999-9999-4999-8999-999999999999' AND product_id = '77777777-7777-4777-8777-777777777777' AND on_hand_quantity = 9.000 AND balance_version = 3)
-  AND (SELECT count(*) = 3 FROM public.warehouse_inventory_movements WHERE organization_id = '11111111-1111-4111-8111-111111111111' AND product_id = '77777777-7777-4777-8777-777777777777')
-  AND (SELECT count(*) = 0 FROM public.inventory_balance_ledger_intents WHERE organization_id = '11111111-1111-4111-8111-111111111111')
-  AND (SELECT count(*) = 1 FROM public.sales WHERE id = 'eeeeeeee-eeee-4eee-8eee-eeeeeeeeeeee' AND status = 'completed')
-  AND (SELECT count(*) = 1 FROM public.sale_items WHERE sale_id = 'eeeeeeee-eeee-4eee-8eee-eeeeeeeeeeee')
-  AND (SELECT count(*) = 1 FROM public.payments WHERE sale_id = 'eeeeeeee-eeee-4eee-8eee-eeeeeeeeeeee')
-  AND (SELECT count(*) = 1 FROM public.audit_logs WHERE action = 'sale.completed' AND entity_id = 'eeeeeeee-eeee-4eee-8eee-eeeeeeeeeeee')
+  AND (SELECT count(*) = 3 FROM public.inventory_counts WHERE id IN ('aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa','cccccccc-cccc-4ccc-8ccc-cccccccccccc','20202020-2020-4020-8020-202020202020') AND status='confirmed')
+  AND (SELECT count(*) = 3 FROM public.inventory_count_lines WHERE count_id IN ('aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa','cccccccc-cccc-4ccc-8ccc-cccccccccccc','20202020-2020-4020-8020-202020202020'))
+  AND (SELECT count(*) = 1 FROM public.inventory_balances WHERE organization_id='11111111-1111-4111-8111-111111111111' AND warehouse_id='99999999-9999-4999-8999-999999999999' AND product_id='77777777-7777-4777-8777-777777777777' AND on_hand_quantity=9.000 AND balance_version=3)
+  AND (SELECT count(*) = 1 FROM public.inventory_balances WHERE organization_id='14141414-1414-4414-8414-141414141414' AND warehouse_id='19191919-1919-4919-8919-191919191919' AND product_id='18181818-1818-4818-8818-181818181818' AND on_hand_quantity=5.000 AND balance_version=1)
+  AND (SELECT count(*) = 4 FROM public.warehouse_inventory_movements WHERE organization_id IN ('11111111-1111-4111-8111-111111111111','14141414-1414-4414-8414-141414141414') AND product_id IN ('77777777-7777-4777-8777-777777777777','18181818-1818-4818-8818-181818181818'))
+  AND (SELECT count(*) = 0 FROM public.inventory_balance_ledger_intents WHERE organization_id IN ('11111111-1111-4111-8111-111111111111','14141414-1414-4414-8414-141414141414'))
+  AND (SELECT count(*) = 1 FROM public.organizations o JOIN public.branches b ON b.organization_id=o.id JOIN public.branch_memberships bm ON bm.organization_id=o.id AND bm.branch_id=b.id JOIN public.warehouses w ON w.organization_id=o.id AND w.branch_id=b.id JOIN public.products p ON p.organization_id=o.id JOIN public.inventory_balances ib ON ib.organization_id=o.id AND ib.warehouse_id=w.id AND ib.product_id=p.id WHERE o.id='14141414-1414-4414-8414-141414141414' AND b.id='16161616-1616-4616-8616-161616161616' AND bm.user_id='15151515-1515-4515-8515-151515151515' AND w.id='19191919-1919-4919-8919-191919191919' AND p.id='18181818-1818-4818-8818-181818181818' AND ib.on_hand_quantity=5.000 AND ib.balance_version=1)
+  AND (SELECT count(*) = 0 FROM public.inventory_balances ib JOIN public.warehouses w ON w.id=ib.warehouse_id JOIN public.products p ON p.id=ib.product_id WHERE ib.organization_id<>w.organization_id OR ib.organization_id<>p.organization_id OR ib.branch_id<>w.branch_id)
+  AND (SELECT count(*) = 1 FROM public.auth_bootstrap WHERE id=true AND consumed_at IS NOT NULL AND created_organization_id='11111111-1111-4111-8111-111111111111')
+  AND (SELECT count(*) = 1 FROM public.exchange_rates WHERE id='88888888-8888-4888-8888-888888888888' AND source='BCV_OFFICIAL_HTML_V1' AND validation_status='valid')
+  AND (SELECT count(*) = 1 FROM public.sales WHERE id='eeeeeeee-eeee-4eee-8eee-eeeeeeeeeeee' AND status='completed' AND settlement_currency='USD' AND branch_id='33333333-3333-4333-8333-333333333333' AND register_shift_id='55555555-5555-4555-8555-555555555555' AND warehouse_id='99999999-9999-4999-8999-999999999999' AND total_usd=10.0000 AND total_ves_snapshot=2501.23)
+  AND (SELECT count(*) = 1 FROM public.sale_items WHERE sale_id='eeeeeeee-eeee-4eee-8eee-eeeeeeeeeeee' AND product_id='77777777-7777-4777-8777-777777777777' AND quantity=2.000 AND line_total_usd=10.0000 AND line_total_ves=2501.23)
+  AND (SELECT count(*) = 1 FROM public.payments WHERE sale_id='eeeeeeee-eeee-4eee-8eee-eeeeeeeeeeee' AND currency='USD' AND amount=10.0000 AND usd_equivalent_snapshot=10.0000)
+  AND (SELECT count(*) = 1 FROM public.audit_logs WHERE action='sale.completed' AND entity_id='eeeeeeee-eeee-4eee-8eee-eeeeeeeeeeee')
   AND (SELECT count(*) = 1
     FROM public.sales s
     JOIN public.branches b ON b.organization_id=s.organization_id AND b.id=s.branch_id
@@ -458,10 +468,8 @@ SELECT
     JOIN public.sale_items si ON si.organization_id=s.organization_id AND si.sale_id=s.id
     JOIN public.products p ON p.organization_id=si.organization_id AND p.id=si.product_id
     JOIN public.payments pay ON pay.organization_id=s.organization_id AND pay.sale_id=s.id
-    JOIN public.warehouse_inventory_movements m ON m.organization_id=s.organization_id AND m.branch_id=s.branch_id
-      AND m.warehouse_id=s.warehouse_id AND m.product_id=si.product_id AND m.movement_type='sale' AND m.reference_id=s.id
-    JOIN public.audit_logs a ON a.organization_id=s.organization_id AND a.actor_user_id=s.created_by
-      AND a.action='sale.completed' AND a.entity_id=s.id::text
+    JOIN public.warehouse_inventory_movements m ON m.organization_id=s.organization_id AND m.branch_id=s.branch_id AND m.warehouse_id=s.warehouse_id AND m.product_id=si.product_id AND m.movement_type='sale' AND m.reference_id=s.id
+    JOIN public.audit_logs a ON a.organization_id=s.organization_id AND a.actor_user_id=s.created_by AND a.action='sale.completed' AND a.entity_id=s.id::text
     WHERE s.id='eeeeeeee-eeee-4eee-8eee-eeeeeeeeeeee')
 "
 }

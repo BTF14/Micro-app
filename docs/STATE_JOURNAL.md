@@ -2500,3 +2500,36 @@ Ambas PR modifican `.github/workflows/backup-restore-smoke.yml` y `docs/BACKUP_A
 ### Gates abiertos
 
 La cobertura sintética no restaura el artefacto remoto real ni prueba Neon/producción, identidad efectiva de `DATABASE_URL_BACKUP_RO`, least privilege real, RPO/RTO sostenidos, alertas externas o coste total USD 0. Issue #53 OPEN/P0; producción NOT READY. No leer secretos, ejecutar backup manual, modificar Cron, Neon main, roles/grants, Cloudflare, DNS, billing ni datos reales. Deadline MVP: 2026-12-01.
+
+
+## CHECKPOINT VIGENTE — 2026-11-10 — PR #287/#303 y continuidad entre chats
+
+Este bloque supersede los snapshots anteriores de #287/#303 que mencionen HEADs `f332548...`, `afe0a940...` u otros SHAs previos. GitHub fue consultado en vivo; volver a verificar antes de actuar.
+
+### Estado exact-SHA verificado
+
+- **PR #287** OPEN / Draft / mergeable=true, rama `integration/bcv-checkout-rehearsal-20261109`, base `main`; HEAD `414547da05a3a6676f4610ff7a2f2c0b66e0403e`; base SHA `c5373564413ba086690552c6b7deeab08d7b4a89`. Comparación main...HEAD: `diverged`, 238 ahead / 1 behind; merge-base `03442951b2a2f63f5bf4dcf560f2c91be4f6cc71`. 11/11 workflow runs `pull_request` SUCCESS en ese HEAD: ODD docs, Dependency review, dashboard, Secret history, Security, Backup restore, Semgrep, PostgreSQL migration runner, Database migration validation, CI y Playwright E2E. 0 reviews formales y 0 review threads.
+- **PR #303** OPEN / Draft / mergeable=true, rama `security/backup-restore-schema-coverage-20261110`, base `main`; HEAD `d527ae79cd566945cd9bdb3e1475d53b31d3923a`; base SHA `c5373564413ba086690552c6b7deeab08d7b4a89`. Comparación main...HEAD: `ahead`, 77 ahead / 0 behind; merge-base igual a main. 11/11 workflow runs `pull_request` SUCCESS en ese HEAD. 0 reviews formales y 0 review threads.
+- Ambos PR permanecen Draft. Los workflows son runs de GitHub Actions; no inferir aprobación humana ni status contexts/branch protection a partir de ellos. Revalidar los SHA antes de toda acción.
+
+### Decisión de integración — no mezclar fixtures ni fusionar a ciegas
+
+Ambas ramas cambian `.github/workflows/backup-restore-smoke.yml` y `docs/BACKUP_AND_RECOVERY.md`, pero prueban estados de esquema incompatibles:
+
+- #303 representa el baseline de main con migraciones 0001–0016 y ledger paired-intent (`inventory_balance_ledger_intents`); usa `scripts/backup_restore_fixture_main.sql` y `scripts/test_backup_restore_schema.sh`.
+- #287 representa la cadena 0001–0022, donde migration 0019 sustituye/elimina el ledger intents por proyección desde `warehouse_inventory_movements`; usa `scripts/backup_restore_fixture_bcv.sql` y `scripts/test_backup_restore_schema_bcv.sh`.
+- En HEAD #287, el workflow ejecuta el perfil BCV/projection y la regresión legacy. En HEAD #303, ejecuta el perfil main/paired-intent y la regresión legacy. No ejecutar ambos fixtures contra la misma DB ni copiar un workflow sobre el otro sin diseñar dos bases/targets aislados o un harness explícito que aplique cada cadena de migración por separado.
+- El perfil #287 añade reintentos acotados a la descarga de la llave PostgreSQL. Su CI exact-HEAD pasa. El test sintético conserva owners/ACL mediante pg_dump/pg_restore por defecto; el backup productivo usa `--no-owner --no-privileges`. El bootstrap de ownership/grants y restore operacional con esos flags aún no está demostrado.
+
+### Prioridades y límites
+
+1. No retarget, rebase, sync de base, merge ni cerrar PRs todavía. Primero inspeccionar diffs completos, confirmar dependencias de migraciones y diseñar una estrategia de coexistencia de perfiles de backup en DBs efímeras separadas. Mantener ambas Draft.
+2. Resolver el hallazgo P0 de issue #53: principal efectivo de `DATABASE_URL_BACKUP_RO`, privilegios reales/least privilege, allowlist explícita del dump, restore de artefacto remoto reciente, RPO/RTO sostenidos y alerta externa. No leer secretos ni dumps, no lanzar workflow_dispatch/backup manual, no tocar roles/grants ni Neon.
+3. La prueba sintética CI no equivale a restore operacional de backup remoto reciente ni prueba producción. Producción **NOT READY**.
+4. No mutar Neon `main`, datos reales, secretos, roles/grants, Cron, Cloudflare manual, DNS, billing ni despliegues manuales. Presupuesto USD 0. No pedir Build IDs, capturas, terminal, CLI, TinyFish ni reconexiones; usar GitHub/docs y aceptar texto si un bloqueo real requiere al propietario.
+5. Tras resolver gates de seguridad Nivel 1, continuar la UI POS P0 de jornada completa y E2E real; no abrir superficies comerciales nuevas antes de cumplir la política del repositorio.
+6. Deadline del MVP: **2026-12-01 — INAMOVIBLE**.
+
+### Próxima acción reproducible
+
+Releer `AGENTS.md`, `docs/CONSTITUTION.md`, este checkpoint, `docs/AI_COLLABORATION_AND_PR_POLICY.md`, `docs/ODD_WORKFLOW.md`, `docs/BACKUP_AND_RECOVERY.md`, `docs/SECURITY_ROADMAP.md` y `odd/tasks/backup-restore-pr287-projection-profile.md`. Consultar GitHub en vivo; inspeccionar el diff completo de #287 y #303, incluyendo workflow, fixtures, scripts y documentación; crear una matriz de compatibilidad de perfiles y propuesta de secuencia. No tocar main ni producción. Después de cualquier commit, validar todos los checks en el SHA exacto nuevo.

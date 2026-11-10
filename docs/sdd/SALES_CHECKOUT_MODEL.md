@@ -14,6 +14,8 @@ El backend es autoridad de precios, permisos, stock, tasa BCV, importes y snapsh
 Reglas ya aprobadas/documentadas:
 - USD es la moneda base del catálogo.
 - Sin descuentos, promociones ni override manual del precio de lista.
+- Sin descuentos, promociones ni override manual del precio de lista en el modelo/checkout actual.
+- La matriz de permisos conserva una decisión previa sobre autorización de descuentos por Admin/Owner (`docs/sdd/role-permission-decision-matrix.md` §3), pero es una regla de autorización futura, no una capacidad habilitada. Los descuentos están fuera del P0 y no se pueden introducir sin reconciliar este modelo, la migración 0014 y el criterio MVP.
 - Aritmética monetaria con BigInt y strings decimales mediante `@micro-app/money`.
 - Cantidad: NUMERIC(14,3); precio/costo USD: NUMERIC(14,4); BCV: NUMERIC(18,8); VES: NUMERIC(16,2).
 - Redondeo half-away-from-zero donde corresponda, igual que PostgreSQL `numeric round`.

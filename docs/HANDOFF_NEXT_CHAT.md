@@ -2454,3 +2454,7 @@ Fecha límite del MVP: **1 de diciembre de 2026 — INAMOVIBLE**.
 ## Corrección de estado vivo PR #287 — CI completado
 
 Reconsulta posterior confirma que el HEAD exacto 9a1792f7449ff83915bcdd672686a4860918028d ya tiene 11/11 workflow runs pull_request SUCCESS: 42849454422, 42849454398, 42849454373, 42849454527, 42849454401, 42849454436, 42849454382, 42849454438, 42849454392, 42849454399 y 42849453701. La observación previa de cero ejecuciones quedó supersedida. Combined legacy status sin contexts; no inferir check-run count. PR OPEN/Draft, mergeable=true, 219 ahead / 1 behind, 0 reviews formales y 0 review threads. Las migraciones 0017–0022 siguen fuera de main. No merge, no deploy, producción NOT READY.
+
+## Nota de CI para la tarea de backup/restore
+
+PR #287 HEAD `9a1792f7449ff83915bcdd672686a4860918028d` tiene 11/11 workflow runs pull_request SUCCESS, incluido Backup restore smoke `42849454438`. No cerrar el gate por ese resultado: el workflow sigue ejecutando el script histórico (migraciones 0001/0002/0005, 13 tablas). No cubre las migraciones 0003–0016 de main ni 0017–0022 de la PR. Ver issue #53 comentario `6772538757`; ODD task en `security/backup-restore-schema-coverage-20261110`. No se ha modificado script/workflow. Deadline inamovible: 2026-12-01.

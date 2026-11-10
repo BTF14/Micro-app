@@ -2817,3 +2817,16 @@ No fusionar ni activar el Worker/Cron por el mero hecho de que CI esté verde. N
 ## Bloqueo de privilegios efectivos del backup — 2026-11-10
 
 La evidencia de solo lectura registrada en issue #53 (2026-11-06) indica que `backup_readonly`, `neon_service` y `neondb_owner` eran miembros de `neon_superuser`, que hereda `pg_write_all_data`; `cloud_admin` tenía `rolsuper=true`. Los grants directos SELECT observados en octubre no bastan para demostrar privilegios efectivos. No afirmar que `DATABASE_URL_BACKUP_RO` usa un principal least-privilege ni que el nombre `backup_readonly` refleja su poder real. Falta verificar sin revelar secretos el `current_user` efectivo del workflow, membresías heredadas, ownership y ACL efectivos. PR #302 solo corrige exposición del token Git; no soluciona este riesgo DB. Issue #53 sigue OPEN/P0. No tocar roles/grants en Neon main desde esta tarea.
+
+
+## Neon main — revalidación directa de privilegios efectivos (2026-11-10 UTC)
+
+**Solo lectura.** Proyecto `restless-fire-99110035`, rama `main`, base `neondb`. No se leyeron secretos/connection strings y no hubo DDL/DML.
+
+- Con LOGIN `backup_readonly`: `current_user = session_user = backup_readonly`; membresía efectiva en `neon_superuser` y `pg_write_all_data`; `has_table_privilege` confirmó UPDATE y DELETE sobre `public.products`. El rol además tiene LOGIN, INHERIT, CREATEDB y CREATEROLE. **No es least-privilege ni readonly efectivo.**
+- `neon_service` y `neondb_owner` también heredan `pg_write_all_data` vía `neon_superuser`; `cloud_admin` tiene `rolsuper=true`.
+- No aparecen `microapp_runtime`, `microapp_migrator` ni `microapp_bcv_sync` en `pg_roles` del branch consultado.
+- **No se demostró que el secreto GitHub `DATABASE_URL_BACKUP_RO` utilice `backup_readonly`**; el workflow no revela el principal. No inferir identidad del secreto por su nombre.
+- Se registró evidencia y límites en el comentario del issue #53 (comment ID `6765600704`). Issue #53 permanece OPEN/P0.
+- Gate: verificar de forma autorizada el principal real del Worker/API y del backup, memberships heredadas, ownership y ACL efectivos. Diseñar bootstrap/upgrade least-privilege en PostgreSQL desechable. No cambiar roles/grants en Neon main desde esta tarea; no leer ni imprimir secretos.
+- PR #302 solo elimina el token Git de la URL del remote; no corrige ni prueba los privilegios PostgreSQL. Producción NOT READY.

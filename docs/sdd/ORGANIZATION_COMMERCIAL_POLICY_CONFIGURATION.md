@@ -1,3 +1,11 @@
+# Estado de producto vigente — supersede el diseño histórico de descuentos (2026-11-10)
+
+**Decisión posterior y autoritativa del propietario:** Micro-app no tendrá descuentos ni promociones. No existe capacidad futura aprobada para descuentos, promociones, cupones, aprobaciones de descuentos ni overrides manuales de precio. Cualquier texto inferior que describa su configuración o aprobación futura se conserva únicamente como historial de una propuesta anterior y no es un requisito ni una hoja de ruta. No implementar campos, políticas, endpoints, permisos, UI ni flujos para esas funciones. La decisión vigente está reflejada en `docs/sdd/role-permission-decision-matrix.md`, `docs/sdd/SALES_CHECKOUT_MODEL.md` y la aceptación P0 del 2026-12-01.
+
+El documento original puede seguir sirviendo como referencia histórica para principios generales de aislamiento y administración de políticas no relacionadas con descuentos, pero no autoriza una política comercial de descuentos.
+
+---
+
 # Diseño: políticas comerciales configurables por organización
 
 **Estado vigente (reconciliación 2026-11-09):** propuesta futura, no implementada; no autoriza migraciones ni endpoints. La matriz de permisos está APROBADA desde 2026-10-31. Esta nota supersede las frases posteriores de este documento que aún la describen como pendiente de aprobación. Los descuentos y promociones están fuera del P0 del 1 de diciembre de 2026 y no forman parte del checkout actual.  

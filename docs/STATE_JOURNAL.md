@@ -2468,3 +2468,12 @@ Decisión: no modificar workflow ni grants hasta inventariar el alcance de recup
 ## 2026-11-10 — no heredar CI al actualizar documentación
 
 La punta verificada después de registrar el hallazgo de backup fue `7500ac66c17b193c053c075bd694d57370cab03b`, con 216 ahead / 1 behind de main y merge base `03442951b2a2f63f5bf4dcf560f2c91be4f6cc71`. GitHub devolvió 0 workflow runs pull_request y 0 status contexts para ese SHA. El padre `515f85260d9ae0381eb4c4de64cd0f87ac6201da` sí tenía 11/11 workflows SUCCESS, pero esos resultados no se trasladan a la nueva punta. No hay reviews formales ni review threads. Cualquier nuevo commit documental requiere revalidación exact-SHA; PR #287 sigue OPEN/Draft, #53 OPEN/P0, producción NOT READY. Deadline 2026-12-01.
+
+ 
+## 2026-11-10 — perfil de restore separado para PR #287
+
+Se creó un perfil independiente para la cadena de migraciones 0001–0022 de PR #287. La variante de ledger de esta rama elimina `inventory_balance_ledger_intents` y proyecta balances desde movimientos; por eso no se reutiliza el fixture de main ni se escribe directamente en `inventory_balances`. La fixture agrega además una tasa BCV sintética con fecha efectiva exacta de Caracas, `bcv_sync_state` latest-success, checkout completado, allocation_position y auditoría.
+
+El manifiesto verifica ACLs de columna y privilegios efectivos para `microapp_bcv_sync`, además de ownership/ACL de tabla/función, roles, memberships, RLS/policies y search_path. Workflow `42872318369` SUCCESS: 22 migraciones por runner oficial, age/checksum/decrypt/restore, grafo poblado y exclusión de tablas auth efímeras; round-trip 3 s. SHA validado `7746e86140cdf3a98911665f6955e57a256bfd4b`, 11/11 workflows exact-HEAD SUCCESS.
+
+Se registra limitación: el test usa pg_dump/pg_restore por defecto, mientras el backup productivo usa `--no-owner --no-privileges`; el restore operacional bajo esos flags no está probado. Issue #53 sigue OPEN/P0. No se ejecutó backup real, no se leyeron secretos, no hubo Neon, main, deploy ni Cron.

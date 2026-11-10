@@ -66,6 +66,7 @@ Micro app es un POS e inventario web para PC, tablet y móvil: catálogo/código
 - Validar estructura, rango, fecha y discrepancias antes de aceptar la tasa.
 - BCV Today, DolarVZLA, pyDolarVenezuela y tasa-bcv-api fueron investigadas como candidatas; no etiquetarlas como oficiales sin verificar origen. Priorizar una fuente oficial verificable.
 - Si la actualización falla, conservar la última tasa válida y marcarla desactualizada; nunca reemplazar una tasa válida con datos inválidos.
+- Si BCV/SUDEBAN resultan inaccesibles o inestables, aplicar `docs/EXTERNAL_SOURCE_RELIABILITY_BCV_SUDEBAN.md`: recurrir a fuentes secundarias con procedencia y confianza explícitas para investigación/calendarios, sin presentarlas como oficiales. Una tasa de terceros no satisface automáticamente el requisito de tasa BCV del checkout; respetar el fail-closed del criterio P0.
 - Guardar la tasa aplicada a cada operación; los cambios posteriores no reescriben ventas históricas.
 - Referencias: [plan](PROJECT_PLAN.md), [recursos](RESOURCE_REGISTRY.md), [cumplimiento](COMPLIANCE_REQUIREMENTS.md).
 

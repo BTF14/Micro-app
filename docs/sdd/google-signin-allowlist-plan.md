@@ -1,11 +1,12 @@
 # Plan: Google Sign-In y allowlist
 
 - Spec: [google-signin-allowlist-spec.md](google-signin-allowlist-spec.md)
-- Estado: propuesta
+- Estado vigente (reconciliación 2026-11-09): plan histórico de diseño; D1–D8 fueron aprobadas el 2026-10-24 y la implementación Google OAuth/allowlist está en `apps/api/src/google-auth.ts`. No tratar las instrucciones previas de “no implementar hasta resolver D1–D8” ni la lista de decisiones pendientes como estado actual. La implementación y su preparación para producción deben verificarse por separado conforme a `docs/PRODUCTION_READINESS.md`.
+- Estado original: propuesta
 
 ## Diseño y decisiones
 
-Esta fase es únicamente de diseño. No implementar hasta resolver D1–D8 de la spec. Mantener autenticación y autorización separadas; identidad externa estable basada en issuer + subject; política de acceso evaluada en servidor; fallo cerrado si falta configuración; operaciones de usuario/membresía/sesión consistentes y transaccionales.
+Nota histórica: esta sección describía la fase previa a la aprobación de D1–D8. Las decisiones ya fueron aprobadas y la implementación de Google OAuth/allowlist existe en main. Los principios técnicos aquí enumerados siguen siendo criterios de revisión, no una orden de mantener la funcionalidad sin implementar.
 
 ### Alternativas de allowlist a evaluar
 
@@ -67,10 +68,10 @@ Ninguna alternativa se selecciona aquí. El primer administrador/bootstrap debe 
 
 Desplegar solo tras definir cómo desactivar el flujo OAuth sin dejar registro abierto. Mantener contratos actuales durante la transición si no se ha aprobado su retirada. La reversión no debe crear cuentas/membresías parciales ni invalidar datos de identidad; cualquier migración debe tener estrategia de compatibilidad y rollback probada en DB efímera.
 
-## Bloqueos / decisiones pendientes
+## Estado de seguimiento — reconciliación 2026-11-09
 
-- D1–D8 en la spec.
-- No hay credenciales OAuth ni política de allowlist verificadas; no inventarlas.
-- No se ha confirmado la biblioteca final ni su compatibilidad con la versión de Hono/Workers del repositorio.
-- No hay prueba de integración real Google OAuth; los E2E actuales usan API simulada.
-- La implementación requiere revisión de autorización/tenant y decisión explícita sobre cuentas existentes.
+- D1–D8 ya están aprobadas; consultar `auth-policy-decision-record.md`.
+- No inferir ni copiar credenciales OAuth desde este documento. La configuración real por entorno debe comprobarse mediante los mecanismos autorizados y nunca exponerse en documentación.
+- La implementación usa OAuth 2.0/OIDC con `fetch` nativo y Web Crypto; la decisión D6 y sus límites están registrados en el decision record.
+- La existencia del código no demuestra configuración correcta de todos los entornos, revisión independiente ni readiness de producción. Mantener esos gates abiertos hasta contar con evidencia vigente.
+- La matriz de permisos por rol es independiente y está aprobada desde 2026-10-31; los handlers que falten siguen sujetos a su implementación y pruebas.

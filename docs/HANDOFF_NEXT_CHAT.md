@@ -1,3 +1,9 @@
+## Aclaración de permisos aprobados — 2026-11-09 UTC
+
+La matriz `docs/sdd/role-permission-decision-matrix.md` está **APROBADA desde 2026-10-31**. No volver a pedir aprobación general ni describirla como pendiente. La implementación en handlers sigue parcial; la aprobación no significa que checkout, pagos o todas las operaciones de caja estén disponibles. El bloqueo actual para nueva lógica comercial es Seguridad Nivel 1, no la falta de aprobación de la matriz. Mantener la matriz sin cambios salvo nueva decisión explícita del propietario.
+
+---
+
 ## Corrección de consistencia y estado vivo — 2026-11-09 UTC
 
 > Este bloque es la referencia operativa más reciente de esta rama. Los snapshots posteriores/anteriores que sigan debajo se conservan como historial fechado; no deben reutilizarse como estado vivo. Revalidar GitHub antes de cualquier acción sensible.

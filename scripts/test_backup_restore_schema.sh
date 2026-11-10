@@ -125,6 +125,70 @@ SELECT 'tables|' || COALESCE(string_agg(table_name, ',' ORDER BY table_name), ''
   FROM information_schema.tables
  WHERE table_schema = 'public' AND table_type = 'BASE TABLE'
    AND table_name NOT IN ('auth_sessions', 'auth_rate_limits', 'auth_bootstrap_attempts');
+SELECT 'columns|' || COALESCE(string_agg(
+     c.relname || ':' || a.attnum::text || ':' || a.attname || ':'
+     || pg_catalog.format_type(a.atttypid, a.atttypmod) || ':'
+     || a.attnotnull::text || ':' || a.attidentity || ':' || a.attgenerated || ':'
+     || COALESCE(coll_ns.nspname || '.' || coll.collname, '') || ':'
+     || COALESCE(pg_catalog.md5(pg_catalog.pg_get_expr(ad.adbin, ad.adrelid)), ''),
+     ';' ORDER BY c.relname, a.attnum
+   ), '')
+   FROM pg_catalog.pg_attribute a
+   JOIN pg_catalog.pg_class c ON c.oid = a.attrelid
+   JOIN pg_catalog.pg_namespace n ON n.oid = c.relnamespace
+   LEFT JOIN pg_catalog.pg_attrdef ad ON ad.adrelid = a.attrelid AND ad.adnum = a.attnum
+   LEFT JOIN pg_catalog.pg_collation coll ON coll.oid = a.attcollation AND a.attcollation <> 0
+   LEFT JOIN pg_catalog.pg_namespace coll_ns ON coll_ns.oid = coll.collnamespace
+  WHERE n.nspname = 'public' AND c.relkind IN ('r','p','v','m','f')
+    AND a.attnum > 0 AND NOT a.attisdropped
+    AND c.relname NOT IN ('auth_sessions','auth_rate_limits','auth_bootstrap_attempts');
+ SELECT 'relation_definitions|' || COALESCE(string_agg(
+     c.relname || ':' || c.relkind || ':' || c.relpersistence || ':'
+     || c.relispartition::text || ':' || c.relreplident || ':'
+     || COALESCE(array_to_string(c.reloptions, ','), '') || ':'
+     || CASE WHEN c.relkind IN ('v','m')
+          THEN pg_catalog.md5(pg_catalog.pg_get_viewdef(c.oid, true)) ELSE '' END,
+     ';' ORDER BY c.relname
+   ), '')
+   FROM pg_catalog.pg_class c
+   JOIN pg_catalog.pg_namespace n ON n.oid = c.relnamespace
+  WHERE n.nspname = 'public' AND c.relkind IN ('r','p','v','m','f')
+    AND c.relname NOT IN ('auth_sessions','auth_rate_limits','auth_bootstrap_attempts');
+ SELECT 'partition_tree|' || COALESCE(string_agg(
+     parent.relname || ':' || child.relname || ':'
+     || COALESCE(pg_catalog.pg_get_expr(child.relpartbound, child.oid), ''),
+     ';' ORDER BY parent.relname, child.relname
+   ), '')
+   FROM pg_catalog.pg_inherits inh
+   JOIN pg_catalog.pg_class parent ON parent.oid = inh.inhparent
+   JOIN pg_catalog.pg_class child ON child.oid = inh.inhrelid
+   JOIN pg_catalog.pg_namespace n ON n.oid = parent.relnamespace
+  WHERE n.nspname = 'public';
+ SELECT 'types|' || COALESCE(string_agg(
+     t.typname || ':' || t.typtype || ':'
+     || CASE WHEN t.typtype = 'd'
+          THEN pg_catalog.format_type(t.typbasetype, t.typtypmod) ELSE '' END
+     || ':' || t.typnotnull::text || ':' || COALESCE(t.typdefault, ''),
+     ';' ORDER BY t.typname
+   ), '')
+   FROM pg_catalog.pg_type t
+   JOIN pg_catalog.pg_namespace n ON n.oid = t.typnamespace
+  WHERE n.nspname = 'public' AND t.typtype IN ('d','e','r','m') AND t.typisdefined;
+ SELECT 'enum_labels|' || COALESCE(string_agg(
+     t.typname || ':' || e.enumlabel || ':' || e.enumsortorder::text,
+     ';' ORDER BY t.typname, e.enumsortorder
+   ), '')
+   FROM pg_catalog.pg_enum e
+   JOIN pg_catalog.pg_type t ON t.oid = e.enumtypid
+   JOIN pg_catalog.pg_namespace n ON n.oid = t.typnamespace
+  WHERE n.nspname = 'public';
+ SELECT 'event_triggers|' || COALESCE(string_agg(
+     e.evtname || ':' || e.evtevent || ':' || e.evtenabled || ':'
+     || COALESCE(array_to_string(e.evttags, ','), '') || ':'
+     || pg_catalog.md5(pg_catalog.pg_get_functiondef(e.evtfoid)),
+     ';' ORDER BY e.evtname
+   ), '')
+   FROM pg_catalog.pg_event_trigger e;
 SELECT 'required_core_objects|' || count(*)::text
   FROM (VALUES
     ('organizations'), ('app_users'), ('organization_members'),
@@ -137,16 +201,31 @@ SELECT 'required_core_objects|' || count(*)::text
     ('schema_migrations')
   ) AS required(table_name)
  WHERE pg_catalog.to_regclass('public.' || required.table_name) IS NOT NULL;
-SELECT 'constraints|' || COALESCE(string_agg(c.relname || ':' || con.conname || ':' || pg_catalog.md5(pg_catalog.pg_get_constraintdef(con.oid)), ';' ORDER BY c.relname, con.conname), '')
+SELECT 'constraints|' || COALESCE(string_agg(
+     c.relname || ':' || con.conname || ':' || pg_catalog.md5(pg_catalog.pg_get_constraintdef(con.oid))
+     || ':' || con.convalidated::text || ':' || con.condeferrable::text
+     || ':' || con.condeferred::text || ':' || con.connoinherit::text,
+     ';' ORDER BY c.relname, con.conname
+   ), '')
   FROM pg_catalog.pg_constraint con
   JOIN pg_catalog.pg_class c ON c.oid = con.conrelid
   JOIN pg_catalog.pg_namespace n ON n.oid = c.relnamespace
  WHERE n.nspname = 'public'
    AND c.relname NOT IN ('auth_sessions', 'auth_rate_limits', 'auth_bootstrap_attempts');
-SELECT 'indexes|' || COALESCE(string_agg(indexname || ':' || pg_catalog.md5(indexdef), ';' ORDER BY indexname), '')
-  FROM pg_catalog.pg_indexes WHERE schemaname = 'public'
-   AND tablename NOT IN ('auth_sessions', 'auth_rate_limits', 'auth_bootstrap_attempts');
-SELECT 'triggers|' || COALESCE(string_agg(c.relname || ':' || t.tgname || ':' || pg_catalog.md5(pg_catalog.pg_get_triggerdef(t.oid)), ';' ORDER BY c.relname, t.tgname), '')
+SELECT 'indexes|' || COALESCE(string_agg(
+     tbl.relname || ':' || idx.relname || ':' || pg_catalog.md5(pg_catalog.pg_get_indexdef(idx.oid))
+     || ':' || ix.indisvalid::text || ':' || ix.indisready::text || ':' || ix.indislive::text
+     || ':' || ix.indisunique::text || ':' || ix.indisprimary::text || ':' || ix.indisexclusion::text
+     || ':' || ix.indisreplident::text || ':' || ix.indnullsnotdistinct::text,
+     ';' ORDER BY tbl.relname, idx.relname
+   ), '')
+   FROM pg_catalog.pg_index ix
+   JOIN pg_catalog.pg_class idx ON idx.oid = ix.indexrelid
+   JOIN pg_catalog.pg_class tbl ON tbl.oid = ix.indrelid
+   JOIN pg_catalog.pg_namespace n ON n.oid = tbl.relnamespace
+  WHERE n.nspname = 'public'
+    AND tbl.relname NOT IN ('auth_sessions','auth_rate_limits','auth_bootstrap_attempts');
+SELECT 'triggers|' || COALESCE(string_agg(c.relname || ':' || t.tgname || ':' || t.tgenabled || ':' || pg_catalog.md5(pg_catalog.pg_get_triggerdef(t.oid)), ';' ORDER BY c.relname, t.tgname), '')
   FROM pg_catalog.pg_trigger t
   JOIN pg_catalog.pg_class c ON c.oid = t.tgrelid
   JOIN pg_catalog.pg_namespace n ON n.oid = c.relnamespace
@@ -470,7 +549,34 @@ SELECT
     JOIN public.payments pay ON pay.organization_id=s.organization_id AND pay.sale_id=s.id
     JOIN public.warehouse_inventory_movements m ON m.organization_id=s.organization_id AND m.branch_id=s.branch_id AND m.warehouse_id=s.warehouse_id AND m.product_id=si.product_id AND m.movement_type='sale' AND m.reference_id=s.id
     JOIN public.audit_logs a ON a.organization_id=s.organization_id AND a.actor_user_id=s.created_by AND a.action='sale.completed' AND a.entity_id=s.id::text
+    JOIN public.exchange_rates er ON er.id=s.exchange_rate_id AND er.rate=s.exchange_rate_snapshot
     WHERE s.id='eeeeeeee-eeee-4eee-8eee-eeeeeeeeeeee')
+  AND (SELECT count(*) = 1 FROM public.inventory_count_lines
+       WHERE count_id='aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa' AND counted_quantity=10.000)
+  AND (SELECT count(*) = 1 FROM public.inventory_count_lines
+       WHERE count_id='cccccccc-cccc-4ccc-8ccc-cccccccccccc'
+         AND counted_quantity=11.000 AND expected_on_hand_quantity=10.000
+         AND expected_balance_version=1)
+  AND (SELECT count(*) = 0
+       FROM public.inventory_balances b
+       WHERE b.organization_id IN ('11111111-1111-4111-8111-111111111111','14141414-1414-4414-8414-141414141414')
+         AND b.on_hand_quantity <> COALESCE((
+           SELECT sum(m.quantity_delta)
+           FROM public.warehouse_inventory_movements m
+           WHERE m.organization_id=b.organization_id AND m.branch_id=b.branch_id
+             AND m.warehouse_id=b.warehouse_id AND m.product_id=b.product_id
+         ), 0))
+  AND (SELECT count(*) = 0
+       FROM public.warehouse_inventory_movements m
+       LEFT JOIN public.inventory_balances b
+         ON b.organization_id=m.organization_id AND b.branch_id=m.branch_id
+        AND b.warehouse_id=m.warehouse_id AND b.product_id=m.product_id
+       WHERE m.organization_id IN ('11111111-1111-4111-8111-111111111111','14141414-1414-4414-8414-141414141414')
+         AND b.product_id IS NULL)
+  AND (SELECT count(*) = 1 FROM public.sales s
+       WHERE s.id='eeeeeeee-eeee-4eee-8eee-eeeeeeeeeeee'
+         AND s.total_usd=(SELECT sum(si.line_total_usd) FROM public.sale_items si WHERE si.sale_id=s.id)
+         AND s.total_usd=(SELECT sum(pay.usd_equivalent_snapshot) FROM public.payments pay WHERE pay.sale_id=s.id))
 "
 }
 source_fixture_ok="$(fixture_assertions "$schema_source_url")"

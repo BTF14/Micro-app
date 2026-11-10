@@ -2812,3 +2812,8 @@ No fusionar ni activar el Worker/Cron por el mero hecho de que CI esté verde. N
 - Issue #53 permanece OPEN/P0. Producción NOT READY. No Neon writes, secretos, deploy, Cron ni datos reales.
 - Backup: la última ejecución programada exitosa verificada sigue siendo run #19 `42659924075` (2026-11-09 16:57:34 UTC). En el último sondeo no se pudo confirmar una ejecución programada posterior del 10 nov; no declarar RPO cumplido hasta comprobarla. No ejecutar backup manual ni tocar secretos.
 - Fecha límite inamovible: **2026-12-01**. Aceptación P0: un comercio, una sucursal, hasta 1.000 productos y una jornada completa de UI, además de todos los gates de seguridad/recuperación.
+
+
+## Bloqueo de privilegios efectivos del backup — 2026-11-10
+
+La evidencia de solo lectura registrada en issue #53 (2026-11-06) indica que `backup_readonly`, `neon_service` y `neondb_owner` eran miembros de `neon_superuser`, que hereda `pg_write_all_data`; `cloud_admin` tenía `rolsuper=true`. Los grants directos SELECT observados en octubre no bastan para demostrar privilegios efectivos. No afirmar que `DATABASE_URL_BACKUP_RO` usa un principal least-privilege ni que el nombre `backup_readonly` refleja su poder real. Falta verificar sin revelar secretos el `current_user` efectivo del workflow, membresías heredadas, ownership y ACL efectivos. PR #302 solo corrige exposición del token Git; no soluciona este riesgo DB. Issue #53 sigue OPEN/P0. No tocar roles/grants en Neon main desde esta tarea.

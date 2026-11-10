@@ -354,6 +354,9 @@ jobs:
         run: |
           docker exec -i -e PGPASSWORD=migrator-test-only "${{ job.services.postgres.id }}" psql -h 127.0.0.1 -v ON_ERROR_STOP=1 -U microapp_migrator -d microapp_test <<'SQL'
           GRANT ALL PRIVILEGES ON TABLE public.bcv_sync_state, public.exchange_rates TO microapp_bcv_sync;
+          GRANT ALL PRIVILEGES ON TABLE public.bcv_sync_state, public.exchange_rates TO PUBLIC;
+          GRANT SELECT (last_success_at) ON TABLE public.bcv_sync_state TO PUBLIC;
+          GRANT UPDATE (rate,effective_date) ON TABLE public.exchange_rates TO PUBLIC;
           GRANT SELECT (last_attempt_at,last_success_at,last_error_code,last_effective_date,updated_at)
             ON TABLE public.bcv_sync_state TO microapp_bcv_sync;
           GRANT INSERT (singleton) ON TABLE public.bcv_sync_state TO microapp_bcv_sync;

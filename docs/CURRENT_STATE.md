@@ -1,3 +1,12 @@
+## Evidencia funcional adicional — inspección de UI/API de #287 (2026-11-10)
+
+- En la rama #287, `apps/web/src/App.tsx` mantiene los módulos **Caja y ventas** e **Inventario** como “Pendiente de implementación”; la navegación autenticada renderiza `CatalogPanel`, no un flujo de carrito/checkout.
+- El directorio `apps/web/src` contiene `App`, `CatalogPanel`, `ProductForm` y utilidades de autenticación/dinero; no contiene componente de checkout, carrito, apertura/cierre de caja ni comprobante.
+- `apps/api/src/index.ts` registra `registerSalesCheckoutRoutes`, pero no registra rutas HTTP de apertura/cierre de turnos. `cashier-open-shift.ts` es un helper de contexto, no un router.
+- `sales-checkout.ts` y su suite PostgreSQL prueban un endpoint de checkout con sesión, tasa, stock, idempotencia y pagos; eso es API/integración, no UI E2E de jornada.
+- Por tanto, #287 aporta backend de checkout y una UI de catálogo/BCV, pero **no completa el recorrido POS desde UI**. La aceptación P0 sigue **0/1 jornadas completas**.
+- El contrato de métodos de pago sigue sin aprobación documentada: no convertir los métodos `cash/card/transfer/mobile_payment/other` ni el máximo técnico de 10 pagos en decisión comercial. No activar checkout hasta resolver este gate y Seguridad Nivel 1.
+
 # Revalidación viva final — 2026-11-10 UTC
 
 **Fecha límite P0 inamovible: 2026-12-01.** Objetivo: comercio pequeño/mediano, un local, hasta 1.000 productos, una jornada completa desde UI, persistencia/conciliación demostradas. Sin descuentos ni promociones.

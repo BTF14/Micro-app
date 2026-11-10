@@ -49,3 +49,15 @@ En el HEAD `dd587308f85f42f8019d5fc74e7f8e296229ead8` de PR #287:
 - La configuración separada `apps/api/wrangler.bcv.toml` define el Worker Cron aislado; su secreto/LOGIN aún no está provisionado en Neon/Cloudflare y no se ha desplegado ni activado.
 
 La evidencia de CI exact-HEAD acredita las pruebas PostgreSQL desechables y los contratos declarados, no la existencia de esos roles/secretos en el entorno remoto ni el despliegue del Worker. No se realizaron cambios en Neon, Cloudflare, secretos o producción. PR #287 permanece Draft y producción NOT READY.
+## ACL mínimo del productor BCV — validación 2026-11-10
+
+La identidad `microapp_bcv_sync` se trata como potencialmente preexistente y sobreprivilegiada; no se asume que crear un LOGIN nuevo equivale a ACL vacía.
+
+- Migration 0022 elimina ACLs table-level del productor y ACLs independientes por columna antes de conceder el allowlist. Elimina también ACLs table/column-level de PUBLIC en `bcv_sync_state` y `exchange_rates`.
+- El productor usa privilegios column-level para las columnas que realmente consume `syncBcvOfficialRate()`/`persistBcvOfficialRate()`: SELECT limitado de state/rate, UPDATE de state y `validation_status`, INSERT limitado de los campos de tasa. No recibe permisos table-level SELECT/INSERT/UPDATE ni DELETE/TRUNCATE/REFERENCES/TRIGGER.
+- Runtime conserva SELECT table-level para checkout, sin INSERT/UPDATE efectivo a nivel tabla ni columna. El helper `lock_bcv_sync_state()` sigue siendo la única vía runtime para tomar el lock compartido del estado.
+- El preflight requiere `USAGE` y prohíbe `CREATE` sobre schema `public`; no intenta revocar un privilegio de schema que pertenece al owner del schema.
+- Assertions verifican ACLs `relacl`/`attacl`, grants efectivos enumerando columnas, ausencia de ACLs PUBLIC, memberships y configuración del helper.
+- Migration-check prueba una identidad deliberadamente sobreprivilegiada y una condición de schema CREATE prohibida en PostgreSQL desechable. La integración separa producer/runtime/admin y prueba que runtime no puede persistir una tasa (SQLSTATE 42501).
+
+Validado en el HEAD de código `24bcf66c0c570ec76566de03a70b2443e64fc69f` con 11/11 workflows SUCCESS. No se aplicó a Neon ni a producción; PR #287 continúa Draft y sin review formal.

@@ -182,7 +182,7 @@ No se ha implementado todavía la fase 2 ni se ha ejecutado una restauración co
 
 ## Estado final de fase 2 — 2026-11-10
 
-<badge>Implementada y CI verificada en PR #303</badge>
+**Estado: implementada y CI verificada en PR #303.**
 
 HEAD `87ca92a25538b1b1217cb78b10a6db2fd7726ef0`, OPEN/Draft, 61 ahead / 0 behind main, mergeable=true. 11/11 workflow runs `pull_request` SUCCESS exact-HEAD; 0 legacy status contexts, 0 reviews formales y 0 threads.
 

@@ -46,3 +46,21 @@ No Neon/production role creation, password rotation, Cloudflare secret change, W
 - Independent review of migration 0022, helper function, Worker isolation and grants.
 - Separate producer LOGIN/secret provisioned and verified in the intended non-production environment before any activation.
 - Formal acceptance of the BCV freshness policy and source/alerting controls.
+
+## Hardening review — 2026-11-10
+
+### Finding
+
+Migration 0022 checked producer role attributes and membership isolation, but it did not normalize pre-existing direct ACLs on the BCV tables. Table-level REVOKE statements do not clear independent column-level ACLs. The assertions covered selected columns and did not prove that every non-required producer privilege was absent. A pre-existing `microapp_bcv_sync` LOGIN could therefore retain direct grants not created by the migration.
+
+### Decision
+
+- Treat the producer LOGIN as potentially pre-granted/dirty. Reset its table-level privileges and every relevant column-level INSERT/UPDATE/SELECT grant before applying the required grants.
+- Narrow producer access to the actual SQL callsites: read only the state columns needed to claim/reconcile an attempt; update only the synchronization columns; read only BCV columns used by `persistBcvOfficialRate`; insert only the columns written by that function; update only `validation_status`.
+- Deny producer CREATE on schema `public`; require USAGE only. Keep no role memberships, no INHERIT, no elevated role attributes.
+- Expand migration assertions to enumerate table columns and reject any effective producer/runtime INSERT or UPDATE privilege outside the allowlist, as well as DELETE/TRUNCATE and schema CREATE.
+- Seed deliberately overprivileged direct table/column grants in the disposable migration-check harness before migration 0022, then prove the migration removes them. Do not test or repair this against Neon.
+
+### Scope and safety
+
+This is a correction inside the unmerged integration branch. Migration 0022 has not been applied to Neon or production. No role, grant, password, secret, Worker, Cron or real data is changed remotely. PostgreSQL 18 disposable CI is the acceptance environment.

@@ -4,7 +4,7 @@
 
 # Registro de herramientas, repositorios y fuentes de Micro app
 
-Actualizado: 2026-11-08. Estado de Neon contrastado con run #42507066215; los recursos y planes gratuitos deben seguir revalidándose en vivo. Este registro no sustituye la verificación en vivo: planes gratuitos, documentación y estado de repositorios cambian. Añadir cada fuente consultada con fecha, uso, conclusión y limitaciones. No registrar secretos ni URLs que contengan credenciales.
+Actualizado: 2026-11-09. Estado de Neon contrastado con run #42507066215; los recursos y planes gratuitos deben seguir revalidándose en vivo. Este registro no sustituye la verificación en vivo: planes gratuitos, documentación y estado de repositorios cambian. Añadir cada fuente consultada con fecha, uso, conclusión y limitaciones. No registrar secretos ni URLs que contengan credenciales.
 
 ## Herramientas y servicios del proyecto
 

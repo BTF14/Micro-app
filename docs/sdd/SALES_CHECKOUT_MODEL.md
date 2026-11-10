@@ -15,11 +15,11 @@ Reglas ya aprobadas/documentadas:
 - USD es la moneda base del catálogo.
 - Sin descuentos, promociones ni override manual del precio de lista.
 - Sin descuentos, promociones ni override manual del precio de lista en el modelo/checkout actual.
-- La matriz de permisos conserva una decisión previa sobre autorización de descuentos por Admin/Owner (`docs/sdd/role-permission-decision-matrix.md` §3), pero es una regla de autorización futura, no una capacidad habilitada. Los descuentos están fuera del P0 y no se pueden introducir sin reconciliar este modelo, la migración 0014 y el criterio MVP.
+- El propietario decidió el 2026-11-05 que Micro-app no tendrá descuentos. La decisión histórica del 2026-10-31 sobre quién podría aprobarlos queda supersedida; no implementar descuentos, promociones, campos, endpoints, UI ni flujos de autorización. La migración `0014_sales_without_discounts.sql` y este modelo deben permanecer sin descuentos.
 - Aritmética monetaria con BigInt y strings decimales mediante `@micro-app/money`.
 - Cantidad: NUMERIC(14,3); precio/costo USD: NUMERIC(14,4); BCV: NUMERIC(18,8); VES: NUMERIC(16,2).
 - Redondeo half-away-from-zero donde corresponda, igual que PostgreSQL `numeric round`.
-- La tasa y los importes históricos se congelan en la venta; nunca se recalculan con la tasa actual.
+- Toda venta requiere una tasa BCV vigente y válida para su fecha efectiva, incluso si el cliente paga 100 % en USD. Los pagos USD-only no convierten importe, pero sí deben guardar el snapshot BCV obligatorio. Los pagos VES usan esa tasa para la conversión. La tasa y los importes históricos se congelan en la venta; nunca se recalculan con la tasa actual.
 
 ## 2. Evidencia real del esquema y código en main
 
@@ -50,7 +50,7 @@ Reglas ya aprobadas/documentadas:
 
 **Base normativa:** el artículo 25 de la Ley del IVA dispone que, si el hecho imponible ocurre en un día no hábil para el sector financiero, la equivalencia se calcula con el tipo de cambio vigente el día hábil inmediatamente siguiente. Referencia documental: Gaceta Oficial N.º 6.507 Extraordinario (29-01-2020), artículo 25: <https://www.ivecofi.net/informacion/legislacion/leyes/ley-impuesto-valor-agregado/titulo-iv>. La fecha efectiva del BCV debe corresponder a ese siguiente día hábil. Esto es una referencia normativa para el diseño, no asesoría legal/contable; cualquier caso fiscal especial requiere validación profesional.
 
-La API BCV que se está validando en PR #287 selecciona:
+La API BCV que se está validando en PR #287 selecciona la tasa obligatoria de toda venta, también USD-only:
 - Lunes–viernes: la fila con fecha efectiva de hoy.
 - Sábado/domingo: la fila válida con la fecha efectiva futura más próxima publicada para el siguiente día hábil.
 - Nunca salta una fila futura más próxima marcada stale para usar otra posterior.
@@ -112,7 +112,7 @@ Cualquier error antes de COMMIT produce ROLLBACK total. No ejecutar correos/webh
 
 La migration 0015 ya impone a nivel SQL una sola `settlement_currency` por venta y conciliación exacta del importe pagado con el total de esa moneda; por tanto no admite pagos parciales ni sobrepago/cambio en una venta completada. El handler de PR #233 sigue esa misma forma. No se encontró en el documento original una aprobación funcional explícita de estas reglas.
 
-Antes de activar checkout, el propietario debe confirmar que el contrato ya presente en SQL es el deseado:
+Antes de activar checkout, el contrato comercial de pagos sigue **sin aprobación explícita**. Las constraints actuales de SQL son límites técnicos existentes, no una decisión de producto. No ampliar el contrato ni habilitar el checkout hasta definir y documentar los métodos de pago admitidos, pagos parciales/mixtos, sobrepago/cambio y la idempotencia correspondiente. No pedir de nuevo decisiones ya aprobadas sobre BCV ni descuentos.
 - una sola moneda de liquidación por venta (USD o VES);
 - no pagos parciales;
 - no sobrepago ni cambio;
@@ -172,7 +172,7 @@ Todas las pruebas usan PostgreSQL efímero; nunca Neon main ni datos reales.
 ## 9. Secuencia de recuperación
 
 1. Mantener esta especificación alineada con el esquema actual; no usar el texto histórico de 2026-11-05.
-2. Resolver la confirmación funcional del contrato de pagos antes de activar checkout.
+2. Mantener bloqueado el checkout hasta que el contrato de pagos no definido (métodos, parcial/mixto, sobrepago/cambio) tenga una decisión explícita; no inferirla de las constraints SQL.
 3. Crear y probar migration 0017 para que el trigger de checkout use la misma regla BCV weekday/weekend que la API.
 4. Portar el handler de PR #233 sobre una rama basada en #255, usando `findApplicableBcvRate(tx)`, helpers canónicos y migration 0015 actual; no portar su migration 0015 antigua.
 5. Añadir las assertions de cálculo por línea y asignación de equivalentes si la revisión confirma que el SQL actual no las cubre.

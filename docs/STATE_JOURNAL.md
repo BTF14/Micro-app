@@ -2299,3 +2299,14 @@ Es fase 1 de esquema. El fixture de datos sintéticos histórico sigue en 13 tab
 ## 2026-11-10 — estado exact-SHA inicial de PR #303
 
 PR #303 HEAD `4e369c25bbd7e43072664c2012f6a196cc21eed1`, 30 ahead / 0 behind main, OPEN/Draft, mergeable=true. La consulta de workflow runs pull_request y combined status para ese SHA devolvió 0/0; no hay validación exact-HEAD publicada. Issue #53 comentario `6772761216`. No marcar verde ni fusionar por ausencia de fallos.
+
+
+## 2026-11-10 — auditoría estática de fase 1 y separación de perfiles de restore
+
+Se revalidó PR #303 directamente en GitHub: HEAD `3439c51b5719315e46196f7eca57cffee5a76df2`, OPEN/Draft, 37 ahead / 0 behind main, mergeable=true, 11/11 workflow runs `pull_request` SUCCESS exact-HEAD, 0 legacy status contexts, 0 reviews y 0 threads. #287 HEAD `9a1792f7449ff83915bcdd672686a4860918028d`, 219 ahead / 1 behind, 11/11 workflows SUCCESS, 0 reviews/threads; base SHA reportado `03442951b2a2f63f5bf4dcf560f2c91be4f6cc71`. #298 HEAD `c9e65a8f0378b2b9740e91df68f39909967eed26`, 231 ahead / 0 behind, 11/11 workflows SUCCESS, 0 reviews/threads. Issue #53 sigue OPEN/P0.
+
+Auditoría estática del script de fase 1: `pg_dump`/ `pg_restore` usan `--no-owner --no-privileges`, por lo que ownership y ACL/grants no quedan probados. El manifest no compara RLS/policies, grants efectivos, atributos/membresías/default privileges de roles ni search_path efectivo. El workflow conserva `contents: read`; no se accedió a secretos ni Neon.
+
+Decisión técnica: fixture de fase 2 version-aware y sin mezclar esquemas. Main 0001–0016 aún no tiene las columnas branch/register_shift/warehouse en `sales`; #287 0017–0022 sí incorpora checkout branch-aware y asignación/ledger/BCV. El perfil main cubrirá sucursal/turno/warehouse/count/ledger y venta legacy; el perfil #287 deberá ejecutarse separadamente sobre ese ref para demostrar checkout. No atribuir migraciones 0017–0022 a main.
+
+No se ha implementado todavía el fixture fase 2 ni se ha ejecutado un restore poblado nuevo. No merge/deploy, Neon, secretos, backup real ni datos reales. Producción NOT READY; #53 OPEN/P0; deadline 2026-12-01.

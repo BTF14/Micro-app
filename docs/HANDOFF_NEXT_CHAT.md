@@ -2438,3 +2438,15 @@ Este bloque es más reciente que los snapshots históricos anteriores; si contra
 - Alcance: este fue un ensayo real de escritura/DDL únicamente en la base Neon aislada `microapp_rehearsal`, autorizado expresamente por el propietario. No se tocó Neon main, `neondb` parent-data clone, secretos, Cloudflare, DNS, billing ni despliegues productivos.
 - Warning no bloqueante: deprecación de Node.js 20 en `actions/checkout@v4`; el runner lo fuerza a Node.js 24 y el job finalizó SUCCESS. Registrar actualización de actions como mantenimiento, no como fallo de migración.
 - Dictamen: **migraciones 0001–0019 demostradas en Neon rehearsal con pin inmutable y assertions 0017–0019 satisfactorias**. Esto eleva la confianza en la ruta de migración, pero no equivale a certificación de producción: siguen pendientes validación funcional integrada sobre la DB resultante, smoke tests autenticados, revisión final de permisos/RLS y gates operativos/producto. No promover automáticamente a producción.
+
+## Continuidad prioritaria — cobertura completa de backup/restore (2026-11-10)
+
+**Hallazgo:** el smoke test sintético actual no valida el esquema versionado completo. En main `c5373564413ba086690552c6b7deeab08d7b4a89`, `.github/workflows/backup-restore-smoke.yml` ejecuta `scripts/test_backup_restore.sh`, que solo aplica 0001, 0002 y 0005 y compara 13 tablas. Main tiene migraciones 0001–0016; quedan fuera diez tablas de 0003/0004/0006/0010: branches, branch_memberships, registers, register_shifts, warehouses, inventory_counts, inventory_count_lines, inventory_balances, warehouse_inventory_movements e inventory_balance_ledger_intents. Tampoco se usa el migration runner ni se valida `schema_migrations`.
+
+**Trabajo abierto:** rama `security/backup-restore-schema-coverage-20261110`, ODD task `odd/tasks/backup-restore-schema-coverage.md`. Implementar solo contra PostgreSQL 18 desechable; usar `scripts/db/migrate.sh`; poblar escenario sintético consistente de sucursal/turno/warehouse/count/ledger/checkout; verificar manifiesto, relaciones, constraints, cifrado/checksum/restore y exclusión de las tres tablas efímeras. Mantener el cambio separado de PR #287.
+
+**No confundir refs:** PR #287 permanece OPEN/Draft, HEAD vivo `9a1792f7449ff83915bcdd672686a4860918028d`, 219 ahead / 1 behind, mergeable=true. En ese SHA exacto no hay workflow runs pull_request ni status contexts. Sus migraciones 0017–0022 no están en main. El ensayo Neon rehearsal 0001–0019 no cambia este hecho ni demuestra cobertura del backup smoke.
+
+Hallazgo registrado en issue #53 comentarios 6772340874 y 6772383789. No hubo cambio del workflow/script, CI nuevo, backup manual, acceso a Neon, secretos ni datos reales. Issue #53 OPEN/P0; producción NOT READY.
+
+Fecha límite del MVP: **1 de diciembre de 2026 — INAMOVIBLE**.

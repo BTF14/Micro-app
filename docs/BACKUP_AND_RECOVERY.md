@@ -421,3 +421,15 @@ Consulta del historial de GitHub Actions en `main`, filtro `event=schedule`, wor
 - No se lanzó ejecución manual, no se leyeron secretos, no se accedió a Neon ni se modificaron cron, retención, Cloudflare, DNS, billing o producción. Issue #53 continúa OPEN/P0; la corrección de hora publicada en el comentario `6767940665` retracta una declaración prematura y deja claro que el umbral aún no se había alcanzado.
 - Restauración real más reciente documentada: 2026-10-29. RTO integral, restore de la copia del 9-nov, alertas externas y principal PostgreSQL efectivo de mínimo privilegio siguen sin demostrarse.
 - Deadline inamovible: **2026-12-01**. Producción **NOT READY**.
+
+
+---
+
+## Revalidación RPO — 2026-11-10T13:15:32Z (09:15:32 UTC−4)
+
+- Último artefacto remoto sigue siendo `backup-2026-11-09T16-57-53Z.dump.age`, run programado #19 `42659924075` SUCCESS; commit remoto `828ef3193f3b8e4935d0e945f504cd81aca4b78e` (`2026-11-09T16:57:59Z`).
+- La consulta de Actions `event=schedule` sigue mostrando #19 como último run; no aparece #20. La consulta `event=workflow_dispatch` no muestra ejecución posterior del workflow. El repo remoto no cambió y `daily/` no lista artefactos del 10-nov.
+- Edad exacta del dump al corte: **20 h 17 min 39 s**. Umbral estricto de 24 h desde el timestamp del dump: `2026-11-10T16:57:53Z` (12:57:53 UTC−4); restan **3 h 42 min 21 s**. El ciclo actual continúa dentro de la ventana; no declarar breach aún.
+- RPO sostenido sigue **NO-GO** por brechas históricas entre artefactos superiores a 24 h. La restauración real de la copia del 9-nov, RTO integral, alertas externas y principal PostgreSQL efectivo siguen sin demostrarse.
+- No se lanzó workflow manual, no se usaron/leyeron secretos, no se accedió a Neon, no se descargó/descifró/restauró el dump y no se cambió cron, retención ni producción. Issue #53 OPEN/P0; comentario `6767940665` contiene la corrección de zona horaria y no declara brecha en el corte previo.
+- Deadline inamovible **2026-12-01**. Producción **NOT READY**.

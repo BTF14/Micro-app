@@ -2582,3 +2582,29 @@ El ensayo verifica el bundle SQL y roles en la base aislada; no prueba el compor
 - Se confirmó que el checkpoint existe en `docs/WORK_CHECKPOINT.md`; la ruta raíz `WORK_CHECKPOINT.md` no es la ruta canónica.
 - En `docs/PROJECT_PLAN.md`, los estados del 2026-10-30 sobre matriz de roles pendiente y posible configuración de descuentos/promociones se conservan como historial, pero quedan explícitamente superados por aprobación de la matriz el 2026-10-31 y decisión del 2026-11-05 de no ofrecer descuentos ni promociones.
 - Se corrigió en issue #53 el comentario `6767940665`: a las 12:57:55Z aún faltaban ~4 horas para el umbral del dump (16:57:53Z); no hubo brecha del ciclo actual en ese corte.
+
+
+---
+
+## Revalidación RPO — 2026-11-10T13:15:32Z (09:15:32 UTC−4)
+
+- Último artefacto remoto sigue siendo `backup-2026-11-09T16-57-53Z.dump.age`, run programado #19 `42659924075` SUCCESS; commit remoto `828ef3193f3b8e4935d0e945f504cd81aca4b78e` (`2026-11-09T16:57:59Z`).
+- La consulta de Actions `event=schedule` sigue mostrando #19 como último run; no aparece #20. La consulta `event=workflow_dispatch` no muestra ejecución posterior del workflow. El repo remoto no cambió y `daily/` no lista artefactos del 10-nov.
+- Edad exacta del dump al corte: **20 h 17 min 39 s**. Umbral estricto de 24 h desde el timestamp del dump: `2026-11-10T16:57:53Z` (12:57:53 UTC−4); restan **3 h 42 min 21 s**. El ciclo actual continúa dentro de la ventana; no declarar breach aún.
+- RPO sostenido sigue **NO-GO** por brechas históricas entre artefactos superiores a 24 h. La restauración real de la copia del 9-nov, RTO integral, alertas externas y principal PostgreSQL efectivo siguen sin demostrarse.
+- No se lanzó workflow manual, no se usaron/leyeron secretos, no se accedió a Neon, no se descargó/descifró/restauró el dump y no se cambió cron, retención ni producción. Issue #53 OPEN/P0; comentario `6767940665` contiene la corrección de zona horaria y no declara brecha en el corte previo.
+- Deadline inamovible **2026-12-01**. Producción **NOT READY**.
+
+
+## Estado de PRs exact-HEAD — 2026-11-10T13:15:32Z (09:15:32 UTC−4)
+
+- PR #302 OPEN/Draft, HEAD `a8ee511ae87fdeb5cc86081449ee407dda45b121`, base main `c5373564413ba086690552c6b7deeab08d7b4a89`; 14/14 check-runs SUCCESS y 10/10 workflows `pull_request` SUCCESS; cero reviews formales. El test HTTP loopback de askpass pasó en CI; no demuestra push real, TLS/GitHub ni backup real. Comentario de evidencia en PR #302: `6768302795`.
+- PR #298 antes de este commit: HEAD `aee9feac49c389c217c511c03c798b0474145ee5`, OPEN/Draft, 230 commits ahead / 0 behind, 42 archivos documentales, 15/15 check-runs y 11/11 workflows PR SUCCESS, cero reviews formales. **Este commit cambia su HEAD e invalida esos resultados para el SHA nuevo**; volver a consultar checks/workflows exactos antes de cualquier decisión.
+- No mergear #298 ni #302. Mantener Draft; no force-push/rebase. Legacy combined status puede devolver pending con cero contextos; no tratarlo como check ni aprobación.
+
+
+## GIT_ASKPASS: prueba HTTP sintética — 2026-11-10T13:15:32Z (09:15:32 UTC−4)
+
+- Se añadió a PR #302 un test de integración local con servidor HTTP loopback y desafío Basic 401. El helper se copia a temp y se instala con modo 700, sin cambiar el modo del archivo fuente.
+- CI exact-HEAD `a8ee511ae87fdeb5cc86081449ee407dda45b121`: 14/14 checks y 10/10 workflows PR SUCCESS. Las ejecuciones anteriores fallaron por defectos del harness y fueron corregidas; no eran fallos del workflow de backup.
+- Alcance: invocación de askpass por Git y envío de Basic credentials ficticias. No cubre TLS, Git smart-HTTP, clone/push completo, GitHub ni credenciales reales.

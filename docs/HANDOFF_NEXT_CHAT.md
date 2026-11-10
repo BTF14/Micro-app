@@ -2539,3 +2539,31 @@ Este bloque es más reciente que los snapshots históricos anteriores; si contra
 
 La integración aislada permanece en [PR #287](https://github.com/BTF14/Micro-app/pull/287), OPEN/Draft. Su HEAD de código previamente validado fue `254ebb6e741f7c1b147fbd4880bc188f17204807` (15/15 check-runs y 11/11 workflows SUCCESS); la sincronización de esta rama con main crea un HEAD nuevo y exige revalidación exact-SHA. Leer `docs/HANDOFF_NEXT_CHAT_2026-11-09_BCV-checkout-integration.md` para migración 0021, Cron, pruebas, corrección de concurrencia y gates P1. No reutilizar checks de SHAs anteriores.
 
+
+## Handoff vigente — 2026-11-10 14:16 UTC — PR #287
+
+**Rama activa:** `integration/bcv-checkout-rehearsal-20261109` / **PR:** #287 (OPEN/Draft). Último HEAD de código con validación completa: `20a3801d6a9c27cae0b12098c3bfa9cf82d83d59`; 11/11 workflows pull_request SUCCESS. Los commits documentales posteriores de esta reconciliación cambian el HEAD; comprobar CI exact-HEAD antes de cualquier otra decisión.
+
+### Trabajo recién terminado
+- Se corrigió el valor por defecto del Worker BCV: `apps/api/wrangler.bcv.toml` usa `BCV_SYNC_ENABLED=false`. El Cron sigue declarado, pero permanece inerte salvo habilitación explícita. No desplegar ni activar.
+- Se añadió test que protege el valor por defecto del TOML; CI exact-HEAD de código lo validó junto con migration 0022, PostgreSQL runtime/producer integration, checkout y Playwright.
+- Se actualizó el ADR de last-success para que las notas antiguas de permisos 0021 no contradigan la separación vigente de migration 0022.
+- CURRENT_STATE y STATE_JOURNAL registran evidencia, límites y riesgos. El presente handoff añade la secuencia inmediata.
+
+### Estado y bloqueos que no deben darse por cerrados
+- #287 sigue Draft y no tiene review formal ni threads. Comparación contra main `c5373564413ba086690552c6b7deeab08d7b4a89`: 178 ahead / 1 behind, diverged; no force-push ni sincronización automática.
+- `microapp_bcv_sync` y su secreto no están provisionados; el Worker dedicado no está desplegado. Migration 0022 solo está probada en PostgreSQL desechable.
+- Issue #53 continúa OPEN/P0. En Neon main, `backup_readonly` hereda `neon_superuser`/`pg_write_all_data` y tiene UPDATE/DELETE efectivos; no se ha demostrado qué principal utiliza `DATABASE_URL_BACKUP`. No cambiar roles/grants ni leer secretos desde esta tarea.
+- La UI aún muestra Caja y ventas, Inventario y Reportes como “Pronto”; checkout API no es una jornada POS completa desde UI. La aceptación aprobada de un local, 1.000 productos y jornada completa está en PR #298 Draft, no en main.
+- Producción NOT READY. La fecha límite de entrega **2026-12-01 es inamovible**.
+
+### Próxima secuencia sénior
+1. Revalidar branch, HEAD, main, PR #287, workflows y reviews exactos; mantener Draft y no mezclar la rama con main mientras no exista revisión independiente.
+2. Priorizar Seguridad Nivel 1 / issue #53: documentar y probar en PostgreSQL desechable el modelo least-privilege de backup/runtime; identificar el principal real del backup sin revelar ni pedir secretos. No mutar Neon main.
+3. Verificar la próxima ejecución programada de backup y el RPO de 24 h; el último éxito documentado era run `42659924075` (`2026-11-09T16:57:34Z`), por lo que esa evidencia ya requiere revalidación temporal. No ejecutar backup manual ni cambiar secretos.
+4. Revisar #301 como cambio preexistente de lectura de inventario, pero no fusionar por CI verde ni iniciar más superficies comerciales antes de cerrar gates de seguridad.
+5. Después de los gates, completar UI P0: apertura/cierre de turno, catálogo de 1.000 productos, carrito, checkout/pagos BCV, recibo interno, inventario/Kardex, conteo y recuperación de reintentos; E2E de jornada completa desde UI.
+6. Mantener la política de fuentes `docs/EXTERNAL_SOURCE_RELIABILITY_BCV_SUDEBAN.md`: BCV/SUDEBAN son inestables; usar terceros trazables cuando haga falta, sin llamarlos oficiales. El calendario 2026 aportado por el propietario es SECUNDARIO_PROVISIONAL / NO OFICIAL; no volver a pedirlo ni insistir con una búsqueda 2027 improductiva.
+
+### Restricciones
+No `main`, Neon main, datos reales, secretos, Cloudflare manual, DNS, billing, despliegue manual ni activación Cron. No pedir Build IDs, capturas, terminal, CLI, TinyFish, reconexiones ni datos ya documentados. Si surge un bloqueo real que requiera al propietario, preguntar una sola vez y aceptar respuesta textual.

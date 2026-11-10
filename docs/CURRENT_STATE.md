@@ -1,3 +1,44 @@
+# Revalidación operativa exact-HEAD — 2026-11-10 UTC (continuación)
+
+> Este bloque prevalece sobre snapshots inferiores. Fuente de verdad: GitHub API y contenido exacto de ramas. No se modificó `main`; los cambios BCV/backup/autorización descritos siguen en PR Draft.
+
+## Estado vivo
+
+**main:** `c5373564413ba086690552c6b7deeab08d7b4a89`. El commit que lo introdujo es `docs(ledger): record closure of PR 255, 269 and 295 as superseded by 287 (#297)`; su único archivo modificado es `docs/BACKLOG_RECOVERY_LEDGER.md`. Es el único commit de main que falta en la rama #287; no altera código/migraciones. No sincronizar ni rebasar #287 automáticamente.
+
+| PR | HEAD exacto | Estado | Ahead/behind main | Check-runs | Workflows |
+|---|---|---|---:|---:|---:|
+| #287 BCV/checkout | `25e0de8c0236880febaad9a14a47d5ec55931641` | OPEN/Draft | 164 / 1 | 15/15 SUCCESS | 11/11 SUCCESS |
+| #298 continuidad documental | `6b0e51b259e0d59305931a779d52a9ba066cac27` | OPEN/Draft | 148 / 0 | 15/15 SUCCESS | 11/11 SUCCESS |
+| #299 backup/restore | `c82b0a10f85b59e1f81ac0ca2d439b6286558751` | OPEN/Draft | 1 / 0 | 14/14 SUCCESS | 10/10 SUCCESS |
+| #300 autorización/precios | `f4c98f3971463e54370b5af3a0633ab434d9ad90` | OPEN/Draft | 2 / 0 | 13/13 SUCCESS | 9/9 SUCCESS |
+| #302 backup GIT_ASKPASS | `c6daacee7825f3e2d3dd9de031fd5c3e33fc9320` | OPEN/Draft | 3 / 0 | 14/14 SUCCESS | 10/10 SUCCESS |
+
+Todos los contadores corresponden al HEAD exacto indicado. No se detectaron workflows fallidos ni ejecuciones pendientes en la última consulta. No hay reviews formales registradas para #287/#298/#299/#300/#302; CI verde no es aprobación.
+
+## Correcciones verificadas
+
+- **#287 — BCV stale recovery:** si la respuesta oficial confirma exactamente la misma fuente, fecha efectiva y tasa que una fila marcada `stale`, el código restaura únicamente `validation_status='valid'`. No reescribe tasa ni fecha. Se añadieron regresiones unitaria y PostgreSQL. La integración PostgreSQL se ejecuta también en el paso CI que configura `DATABASE_URL` con el LOGIN `microapp_runtime` y `DATABASE_URL_ADMIN` para preparación/limpieza. El fallo inicial de la aserción unitaria se debió a esperar `AND source` en lugar de `WHERE source`; se corrigió. El CI final exact-HEAD pasó 15/15 y 11/11.
+- **#300 — precio:** elimina `sales.price.override` del tipo de operaciones, allowlists Owner/Admin y parser de operaciones; añade rechazo para todos los roles. El diff solo modifica autorización y sus pruebas. No cambia precios de catálogo, endpoints, UI ni migraciones.
+- **#302 — credencial backup:** reemplaza token embebido en URL Git por helper temporal `GIT_ASKPASS`; remote limpio, prompts interactivos desactivados, helper modo 700 y limpieza con `trap` del helper y clon temporal. No se ejecutó el workflow real ni se accedió a copias reales.
+- **#299:** separa tiempo de operación `pg_restore` de tiempo sintético end-to-end. No representa RTO integral.
+
+## Seguridad y producto
+
+- Seguridad Nivel 1 sigue **ABIERTO**; producción **NOT READY**. El endpoint de branch protection devolvió 403 en esta revisión; no afirmar configuración/approval count actual. Alertas Dependabot y privilegios efectivos del Worker en producción tampoco quedaron revalidados.
+- PostgreSQL runtime roles y grants se validan en PostgreSQL 18 desechable. Eso no prueba que el Worker productivo use `microapp_runtime`. El modelo usa grants mínimos y helpers `SECURITY DEFINER`; no describirlo como RLS.
+- Backup independiente: carga cifrada histórica verificada, pero RPO ≤24 h, RTO integral, restauración operativa independiente, alertas externas y coste $0 siguen abiertos. #299 mide solo `pg_restore` sintético.
+- En la superficie HTTP de main revisada no están registrados checkout/ventas ni apertura/cierre de turnos. La existencia de migraciones/helpers/tests no demuestra el recorrido desde UI.
+- P0 UI: **0/1 jornadas completas demostradas**. Objetivo inamovible **2026-12-01**: comercio piloto, un local, hasta 1.000 productos, jornada completa desde UI, persistencia/conciliación verificadas. Sin descuentos ni promociones.
+- No crear nueva lógica comercial/UI mientras Seguridad Nivel 1 permanezca abierta. Las correcciones de seguridad/defectos BCV acotadas sí pueden continuar en sus PR existentes.
+
+## Límites aplicados
+
+No main writes, merge, deploy manual, migraciones remotas, Neon main como laboratorio, datos reales, secretos, DNS, billing, cambios manuales Cloudflare ni activación de Cron BCV/de negocio. PR #287 permanece Draft y sin sincronización automática. PR #298 es la PR documental existente: no abrir duplicada.
+
+
+---
+
 ## Diagnóstico de fallos repetidos de CI — 2026-11-10 UTC
 
 ### Evidencia exacta de PR #287

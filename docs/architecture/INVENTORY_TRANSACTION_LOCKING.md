@@ -12,7 +12,9 @@ The current API registers:
 - tenant-scoped catalog read/write routes;
 - inventory count creation/list/confirmation routes;
 - inventory balance and movement read routes;
-- authentication and register-shift routes.
+- authentication routes.
+
+**Correction verified against `main` `c5373564413ba086690552c6b7deeab08d7b4a89`:** register-shift HTTP routes are not registered. `apps/api/src/cashier-open-shift.ts` contains an isolated own-shift resolver helper; `apps/api/src/index.ts` registers no shift route. The helper must not be described as an operational route.
 
 It does **not** currently register inventory-writing routes for sales checkout, reservations, purchase receipts, returns or inter-warehouse transfers. Those future writers must adopt this contract and pass cross-writer PostgreSQL concurrency tests before implementation is considered complete.
 

@@ -203,7 +203,7 @@ Ejecutar contra PostgreSQL efímero con fixtures sintéticas, no Neon main. Las 
 
 ## 12. Decisiones abiertas y gates
 
-1. Aprobar/corregir la estructura de membresía organizacional y asignación de sucursal; el propietario debe resolver la matriz de permisos sensibles antes de implementar autorizaciones.
+1. Mantener la estructura aprobada de membresía organizacional y asignación de sucursal; la matriz de permisos está APROBADA desde 2026-10-31. Implementar únicamente operaciones con handler, autorización y pruebas completas.
 2. Definir si todas las ventas requieren turno o si habrá ventas no asociadas a caja (por ejemplo ventas online/facturación externa).
 3. Cerrar el flujo de recepción y transferencia, especialmente transferencias inter-sucursal.
 4. Elegir el diseño de referencia tipada para movimientos, tras prueba de integridad y consultas.

@@ -571,3 +571,47 @@ La sección de reconciliación anterior registraba el HEAD inmediatamente anteri
 - Este commit de corrección vuelve a mover el HEAD. Consultar el SHA resultante y sus workflows antes de cualquier decisión posterior; no crear más commits de estado si no hay un hallazgo material nuevo.
 - PR #287 permanece OPEN/Draft, HEAD `7df318b233cfb95f7fcc3076d46984a11614a14c`, 159 ahead / 1 behind, 6/11 workflow runs SUCCESS y 5/11 FAILURE; jobs vacíos y cero artifacts para los cinco fallos, causa raíz desconocida.
 - Seguridad Nivel 1 ABIERTO; producción NOT READY; aceptación P0 end-to-end 0/1. Fecha límite inamovible **2026-12-01**: un comercio piloto, un local, hasta 1.000 productos y jornada completa desde UI en producción. Sin descuentos ni promociones. Mantener todos los guardrails vigentes.
+
+
+## Handoff de continuidad — 2026-11-10 UTC (revalidación final)
+
+### Objetivo y criterio de aceptación no negociables
+- Fecha límite: **2026-12-01**.
+- Aceptación P0: un comercio pequeño/mediano, un solo local, hasta 1.000 productos, jornada real completa desde la interfaz y preparado para operar en producción.
+- Recorrido requerido: autenticación; tenant/sucursal; apertura de caja; búsqueda; carrito; checkout; tasa BCV vigente; pagos; venta/comprobante; descuento de inventario; existencias/Kardex; conteos; cierre de turno; consistencia posterior.
+- **Sin descuentos, promociones ni override manual del precio de lista.** No añadir esta capacidad al P0 ni inferirla de permisos históricos. PR #300 elimina el permiso residual `sales.price.override`.
+- El objetivo de aceptación sigue **0/1 jornadas end-to-end demostradas**; producción **NOT READY**. No declarar progreso porcentual sin evidencia de ejecución desde UI.
+
+### Estado vivo de PRs — consulta 2026-11-10 UTC
+| PR | Estado | HEAD | Workflows exact-HEAD | Decisión |
+|---|---|---|---:|---|
+| #287 | OPEN / Draft | `7df318b233cfb95f7fcc3076d46984a11614a14c` | 6 SUCCESS / 5 FAILURE de 11 | Mantener Draft. Los cinco fallos no exponen jobs/logs; causa raíz desconocida. 159 ahead / 1 behind en comparación previamente consultada. |
+| #298 | OPEN / Draft | `10df34082e9270fdaa4b2ac838c0b1fc4da85bbc` | 11/11 SUCCESS | Reconciliación documental; no merge automático. |
+| #299 | OPEN / Draft | `c82b0a10f85b59e1f81ac0ca2d439b6286558751` | 10/10 SUCCESS | Rehearsal de duración de pg_restore sintético; no demuestra RTO integral. |
+| #300 | OPEN / Draft | `f4c98f3971463e54370b5af3a0633ab434d9ad90` | 9/9 SUCCESS | Elimina `sales.price.override` de allowlists y prueba que todos los roles lo rechazan. Sin merge. |
+
+Los cuatro PR permanecen Draft; no hay autorización para fusionar durante esta fase. Workflow SUCCESS no equivale a aprobación formal, review, runtime, preview productivo ni GO.
+
+### Hallazgo nuevo de backup pendiente
+- Inspección de `.github/workflows/backup.yml` en `main`: el paso de subida hace `git clone https://x-access-token:${GH_TOKEN}@github.com/...`.
+- Esto puede persistir la credencial en la configuración local del checkout clonado durante el job. No se ha demostrado exposición externa ni fuga en logs; clasificar como hardening de manejo de credenciales, no como incidente confirmado.
+- Próxima tarea: rama aislada para reemplazar autenticación embebida en URL por `GIT_ASKPASS`/mecanismo temporal, revisar logs/configuración y probar sin secretos reales. No cambiar el workflow productivo hasta CI/review completos.
+
+### Seguridad y backup
+- Seguridad Nivel 1 permanece ABIERTO; producción NOT READY. No iniciar nuevas rutas/UI/lógica comercial hasta cerrar los gates.
+- Backup: ocho ejecuciones programadas SUCCESS históricas no garantizan RPO <=24 h; entre dos inicios observados hubo 27 h 00 min 14 s. RPO/RTO integral, restauración independiente completa y alerta externa siguen abiertos.
+- #299 mide únicamente duración de restauración PostgreSQL sintética y tiene límites de alcance documentados.
+- No confundir grants/helpers con RLS; no afirmar privilegios productivos efectivos sin evidencia autorizada del runtime.
+
+### Guardrails
+No modificar main; no merge; no deploy manual; no migraciones remotas; no Neon main como laboratorio; no datos reales; no secretos, DNS, billing, Cron productivo ni force-push. Usar PostgreSQL efímero y datos sintéticos. No pedir al propietario terminal/CLI, Build IDs, capturas o reconexiones ya documentadas; investigar primero por GitHub y herramientas disponibles.
+
+### Primera secuencia para el siguiente chat
+1. Leer `AGENTS.md`, `docs/CONSTITUTION.md`, `docs/AI_COLLABORATION_AND_PR_POLICY.md`, `docs/CURRENT_STATE.md`, `docs/HANDOFF_NEXT_CHAT.md`, `docs/WORK_CHECKPOINT.md`, `docs/PROJECT_PLAN.md`, `docs/STATE_JOURNAL.md`, `docs/SECURITY_ROADMAP.md`, `docs/ODD_WORKFLOW.md`, `docs/MVP_SINGLE_STORE_ACCEPTANCE.md`, `docs/BACKUP_AND_RECOVERY.md` y `docs/BACKLOG_RECOVERY_LEDGER.md`; revisar también SDD de BCV, checkout, turnos, inventario y calendario bancario.
+2. Consultar GitHub de nuevo y validar HEAD + workflows exact-HEAD de #287, #298, #299 y #300; no reutilizar snapshots de esta sección como estado vivo.
+3. Inspeccionar diff, reviews, threads y branch/base divergence de #300; no fusionar sin política aplicable y aprobación formal.
+4. Preparar hardening aislado de `GIT_ASKPASS` para backup, sin tocar producción ni exponer secretos.
+5. Continuar Seguridad Nivel 1 con evidencia; después integrar BCV/checkout, caja y UI, y diseñar E2E de la jornada completa con 1.000 productos sintéticos.
+6. Cada avance debe registrar qué cambió realmente, pruebas realmente ejecutadas, qué está en main vs Draft, bloqueos, riesgo a 2026-12-01 y siguiente acción concreta.
+
+No crear otra PR documental duplicada. Si se modifica esta rama documental, volver a consultar el nuevo HEAD y su CI exacto; no propagar resultados de SHA anteriores.

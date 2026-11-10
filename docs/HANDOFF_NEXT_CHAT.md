@@ -2466,3 +2466,7 @@ Rama `security/backup-restore-schema-coverage-20261110`; PR #303 OPEN/Draft, sin
 **No está terminado:** la prueba añadida es de esquema/objetos sin grafo de datos comerciales poblados. El smoke test histórico de datos aún cubre solo 13 tablas. Próxima fase: fixture poblado con sucursal, branch membership, register/shift, warehouse, inventory count/ledger/balance, venta completada/pagos/audit y reconciliación de relaciones; adaptar columnas/triggers condicionalmente a migraciones del ref. Revalidar todos los workflows del HEAD final exacto de #303 antes de continuar o declarar éxito. Mantener Draft.
 
 Issue #53 OPEN/P0; no tocar Neon, secretos, datos reales, backup remoto, Cloudflare ni producción. Producción NOT READY. Fecha límite inamovible: **2026-12-01**.
+
+## Revalidación pendiente PR #303
+
+HEAD exacto `4e369c25bbd7e43072664c2012f6a196cc21eed1`; 30 ahead / 0 behind main; OPEN/Draft, mergeable=true. GitHub no devolvió workflow runs pull_request ni status contexts para ese SHA en la última consulta (0/0). No declarar CI PASS. Mantener Draft. Issue #53 comentario `6772761216`. El test añadido es schema-only; fixture poblado completo sigue pendiente.

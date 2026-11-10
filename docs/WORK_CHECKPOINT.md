@@ -1,3 +1,5 @@
+> **Nota de frescura de PR #298:** el SHA `6b0e51b259e0d59305931a779d52a9ba066cac27` que aparece en el snapshot inferior era el HEAD antes de esta actualización documental. Esta misma rama se ha avanzado con nuevos commits; no reutilizar ese SHA ni sus checks como estado vivo. Reconsultar el HEAD y CI exactos de #298 en GitHub.
+
 ## Checkpoint vigente — 2026-11-10 UTC
 
 - Objetivo no negociable: **2026-12-01**, comercio piloto de un local y hasta 1.000 productos, jornada completa POS desde UI. Sin descuentos/promociones.

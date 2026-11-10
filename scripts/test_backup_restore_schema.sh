@@ -128,7 +128,7 @@ SELECT 'tables|' || COALESCE(string_agg(table_name, ',' ORDER BY table_name), ''
 SELECT 'columns|' || COALESCE(string_agg(
      c.relname || ':' || a.attnum::text || ':' || a.attname || ':'
      || pg_catalog.format_type(a.atttypid, a.atttypmod) || ':'
-     || a.attnotnull::text || ':' || a.attidentity || ':' || a.attgenerated || ':'
+     || a.attnotnull::text || ':' || a.attidentity::text || ':' || a.attgenerated::text || ':'
      || COALESCE(coll_ns.nspname || '.' || coll.collname, '') || ':'
      || COALESCE(pg_catalog.md5(pg_catalog.pg_get_expr(ad.adbin, ad.adrelid)), ''),
      ';' ORDER BY c.relname, a.attnum
@@ -143,8 +143,8 @@ SELECT 'columns|' || COALESCE(string_agg(
     AND a.attnum > 0 AND NOT a.attisdropped
     AND c.relname NOT IN ('auth_sessions','auth_rate_limits','auth_bootstrap_attempts');
  SELECT 'relation_definitions|' || COALESCE(string_agg(
-     c.relname || ':' || c.relkind || ':' || c.relpersistence || ':'
-     || c.relispartition::text || ':' || c.relreplident || ':'
+     c.relname || ':' || c.relkind::text || ':' || c.relpersistence::text || ':'
+     || c.relispartition::text || ':' || c.relreplident::text || ':'
      || COALESCE(array_to_string(c.reloptions, ','), '') || ':'
      || CASE WHEN c.relkind IN ('v','m')
           THEN pg_catalog.md5(pg_catalog.pg_get_viewdef(c.oid, true)) ELSE '' END,
@@ -165,7 +165,7 @@ SELECT 'columns|' || COALESCE(string_agg(
    JOIN pg_catalog.pg_namespace n ON n.oid = parent.relnamespace
   WHERE n.nspname = 'public';
  SELECT 'types|' || COALESCE(string_agg(
-     t.typname || ':' || t.typtype || ':'
+     t.typname || ':' || t.typtype::text || ':'
      || CASE WHEN t.typtype = 'd'
           THEN pg_catalog.format_type(t.typbasetype, t.typtypmod) ELSE '' END
      || ':' || t.typnotnull::text || ':' || COALESCE(t.typdefault, ''),
@@ -183,7 +183,7 @@ SELECT 'columns|' || COALESCE(string_agg(
    JOIN pg_catalog.pg_namespace n ON n.oid = t.typnamespace
   WHERE n.nspname = 'public';
  SELECT 'event_triggers|' || COALESCE(string_agg(
-     e.evtname || ':' || e.evtevent || ':' || e.evtenabled || ':'
+     e.evtname || ':' || e.evtevent::text || ':' || e.evtenabled::text || ':'
      || COALESCE(array_to_string(e.evttags, ','), '') || ':'
      || pg_catalog.md5(pg_catalog.pg_get_functiondef(e.evtfoid)),
      ';' ORDER BY e.evtname
@@ -225,7 +225,7 @@ SELECT 'indexes|' || COALESCE(string_agg(
    JOIN pg_catalog.pg_namespace n ON n.oid = tbl.relnamespace
   WHERE n.nspname = 'public'
     AND tbl.relname NOT IN ('auth_sessions','auth_rate_limits','auth_bootstrap_attempts');
-SELECT 'triggers|' || COALESCE(string_agg(c.relname || ':' || t.tgname || ':' || t.tgenabled || ':' || pg_catalog.md5(pg_catalog.pg_get_triggerdef(t.oid)), ';' ORDER BY c.relname, t.tgname), '')
+SELECT 'triggers|' || COALESCE(string_agg(c.relname || ':' || t.tgname || ':' || t.tgenabled::text || ':' || pg_catalog.md5(pg_catalog.pg_get_triggerdef(t.oid)), ';' ORDER BY c.relname, t.tgname), '')
   FROM pg_catalog.pg_trigger t
   JOIN pg_catalog.pg_class c ON c.oid = t.tgrelid
   JOIN pg_catalog.pg_namespace n ON n.oid = c.relnamespace

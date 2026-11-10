@@ -1,6 +1,7 @@
 # Spec: Google Sign-In y allowlist
 
-- Estado: propuesta
+- Estado vigente (reconciliación 2026-11-09): especificación histórica; D1–D8 están APROBADAS desde 2026-10-24 según `auth-policy-decision-record.md`, y la implementación Google OAuth/allowlist existe en `apps/api/src/google-auth.ts`. Las secciones “decisiones pendientes” y “fuera de alcance” describen la etapa original de diseño y no deben usarse como estado actual. Esto no certifica configuración de todos los entornos ni readiness de producción.
+- Estado original: propuesta
 - Issue/PR: PR #12 (propuesta documental)
 - Responsable/revisor: coordinador; revisión independiente de seguridad pendiente
 - Fecha: 2026-10-18
@@ -61,7 +62,9 @@ Fuera de alcance:
 - No enviar emails sin autorización expresa.
 - Cumplir política de cookies, CORS, CSRF, sesiones y tenant según la constitución y checklist ASVS.
 
-## Decisiones pendientes — bloquean implementación
+## Decisiones originales de diseño — ya resueltas en el decision record
+
+Las preguntas D1–D8 siguientes son el registro de deliberación del 2026-10-18. No están pendientes: las decisiones aprobadas y su fundamento están en `auth-policy-decision-record.md` (2026-10-24).
 
 - D1: fuente de allowlist: variable/secret de entorno, tabla administrada por operadores, invitaciones u otro mecanismo. Definir quién la administra y cómo se audita.
 - D2: alcance de la allowlist: emails exactos, dominios, usuarios invitados, o combinación; reglas de normalización y revocación.
@@ -74,7 +77,7 @@ Fuera de alcance:
 
 ## Criterios de aceptación verificables
 
-- [ ] CA-1: decisiones D1–D8 documentadas y aprobadas antes de implementar.
+- [x] CA-1: decisiones D1–D8 documentadas y aprobadas en `auth-policy-decision-record.md` el 2026-10-24. Los demás criterios siguen requiriendo evidencia actual y revisión independiente.
 - [ ] CA-2: identidad Google se valida en servidor y pruebas cubren issuer, audience, expiración, state/nonce y redirect URI.
 - [ ] CA-3: identidad no permitida no obtiene sesión ni provoca creación parcial de usuario/organización/membresía.
 - [ ] CA-4: las rutas protegidas validan autorización y tenant en servidor; las pruebas negativas verifican aislamiento cross-tenant.

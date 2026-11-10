@@ -2665,3 +2665,26 @@ Se agregó `scripts/backup_restore_fixture_bcv.sql`, `scripts/test_backup_restor
 #303: código validado en SHA `f0dc1f90043eff4270d86f461a2dfc07187aa814`; HEAD documental `afe0a94005854843ead2526b3a5ea18a183f127a` terminó 11/11 workflows SUCCESS, 73 ahead / 0 behind, OPEN/Draft, 0 status contexts, 0 reviews y 0 threads. #287 HEAD antes de esta actualización documental: `802a6d09a9f9681ccb79e727ed64714ef9ab1a48`, 11/11 workflows SUCCESS, 232 ahead / 1 behind, OPEN/Draft, mergeable=true, 0 status contexts, 0 reviews y 0 threads. Este commit documental cambiará el HEAD; revalidar el SHA resultante antes de afirmar CI exact-HEAD.
 
 Issue #53 OPEN/P0, producción NOT READY. Sin main, merge, deploy, Neon writes, secretos, Cron, DNS/billing ni datos reales. Deadline 2026-12-01.
+
+
+## Reconciliación viva — PR #287/#303 y compatibilidad de perfiles (2026-11-10)
+
+### Estado exact-SHA comprobado antes de este bloque documental
+
+- **PR #287** OPEN/Draft, HEAD de código `f33254856e5130acad1cb20423d913e4354e0fc1`, base main actual `c5373564413ba086690552c6b7deeab08d7b4a89`; mergeable=true. Comparación: diverged, 234 commits ahead / 1 behind; merge base `03442951b2a2f63f5bf4dcf560f2c91be4f6cc71`. El único commit que avanzó main desde ese merge base modifica `docs/BACKLOG_RECOVERY_LEDGER.md`, sin cambio de esquema observado. En ese HEAD exacto, 11/11 workflow runs `pull_request` SUCCESS. Backup/restore run `42874207740`, job `130033078108`: 22 migraciones por runner oficial; cifrado age/checksum/restore; ownership, ACL, RLS/policies, role contract y search_path preservados; grafo BCV/checkout/projection-ledger PASS; auth efímero excluido; regresión legacy PASS. Playwright E2E SUCCESS. 0 reviews formales y 0 review threads.
+- **PR #303** OPEN/Draft, HEAD `afe0a94005854843ead2526b3a5ea18a183f127a`, base main `c5373564413ba086690552c6b7deeab08d7b4a89`; 73 ahead / 0 behind, mergeable=true. 11/11 workflow runs `pull_request` SUCCESS exact-HEAD; 0 legacy status contexts, 0 reviews y 0 threads.
+- Estos datos describen los SHAs previos a este bloque documental. Cada commit nuevo exige revalidar el SHA final; no heredar CI. Ambos PR siguen Draft.
+
+### Riesgo de integración detectado — no fusionar a ciegas
+
+Ambas PR modifican `.github/workflows/backup-restore-smoke.yml` y `docs/BACKUP_AND_RECOVERY.md`. Los perfiles representan estados incompatibles del ledger:
+
+- #303 valida baseline main 0001–0016 y el ledger paired-intent de migration 0010; su fixture `scripts/backup_restore_fixture_main.sql` utiliza `inventory_balance_ledger_intents`.
+- #287 valida 0001–0022; migration 0019 elimina `inventory_balance_ledger_intents` y proyecta balances desde `warehouse_inventory_movements`. Su fixture es `scripts/backup_restore_fixture_bcv.sql` y su runner `scripts/test_backup_restore_schema_bcv.sh`.
+- El script de #303 detecta tabla-intents vs función de proyección, pero su fixture main contiene operaciones/aserciones sobre intents y no debe ejecutarse sin adaptación sobre 0017–0022. No ejecutar ambos perfiles sobre una misma DB ni asumir que el workflow de una rama reemplaza al otro.
+
+**Decisión de integración:** mantener ambas PR Draft y separadas hasta preparar perfiles explícitos en bases desechables independientes o una fixture adaptativa validada para ambos estados. Resolver el solapamiento de workflow/documentación, confirmar la secuencia de migraciones del destino y ejecutar los tests exactos del HEAD final antes de cualquier merge. No retarget, rebase ni merge automático en este checkpoint.
+
+### Gates abiertos
+
+La cobertura sintética no restaura el artefacto remoto real ni prueba Neon/producción, identidad efectiva de `DATABASE_URL_BACKUP_RO`, least privilege real, RPO/RTO sostenidos, alertas externas o coste total USD 0. Issue #53 OPEN/P0; producción NOT READY. No leer secretos, ejecutar backup manual, modificar Cron, Neon main, roles/grants, Cloudflare, DNS, billing ni datos reales. Deadline MVP: 2026-12-01.

@@ -1,3 +1,19 @@
+## Revalidación exact-HEAD, backup y gates — 2026-11-10 UTC
+
+- main permanece `c5373564413ba086690552c6b7deeab08d7b4a89`; no main writes/merge/deploy/migraciones remotas.
+- #287 HEAD `2e7cdd44f89a3b3765a0c69ad23bdb87faacf99c`: 15/15 checks, 13/13 workflow runs SUCCESS; 167 ahead/1 behind por #297, que solo cambia el ledger documental. Draft, sin review.
+- #298 es la PR documental única y esta actualización mueve su propio HEAD; antes del refresh 15/15 checks y 13/13 workflows SUCCESS. Consultar el SHA final después de este commit.
+- #299 `c82b0a10f85b59e1f81ac0ca2d439b6286558751`: 14/14 checks, 12/12 workflows SUCCESS; pg_restore sintético 1s, round-trip 1s, no RTO integral.
+- #300 `97fa79e643d5e7b32ebf86958bd0ba9211e1fc95`: 14/14 + 12/12 SUCCESS; retira price override en branch, sin merge.
+- #302 `1b441b3dc9e65e2cb89d765f9aff084b474dd90d`: 14/14 + 12/12 SUCCESS; GIT_ASKPASS temporal en branch, sin merge.
+- Historial de 13 backups programados: 12 SUCCESS/1 FAILURE; máximo entre éxitos 48h03m03; RPO≤24h no cumplido. Causa del fallo 29 oct: falta de checkout en aquel SHA; corregido en main. No confundirlo con token URL #302.
+- CORS OPTIONS público y bundle API canónico pasaron verificaciones read-only; no prueba CSRF de mutaciones.
+- Métodos de pago en #287 sin aprobación; no activar. Seguridad Nivel 1 ABIERTO; P0 UI 0/1 jornadas; producción NOT READY.
+- Fecha límite inamovible: **2026-12-01**.
+
+
+---
+
 ## Revalidación de continuidad y correcciones de seguridad — 2026-11-10 UTC
 
 - GitHub revalidado: main `c5373564413ba086690552c6b7deeab08d7b4a89`; PR #287/#298/#299/#300/#302 OPEN/Draft y sin reviews formales. CI exact-HEAD de las cinco PR: #287 15/15 checks + 11/11 workflows; #298 15/15 + 11/11; #299 14/14 + 10/10; #300 13/13 + 9/9; #302 14/14 + 10/10.

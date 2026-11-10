@@ -474,9 +474,10 @@ SELECT 'fixture_movements|' || COALESCE(string_agg(
   FROM public.warehouse_inventory_movements
  WHERE (organization_id = '11111111-1111-4111-8111-111111111111' AND product_id = '77777777-7777-4777-8777-777777777777')
     OR (organization_id = '14141414-1414-4414-8414-141414141414' AND product_id = '18181818-1818-4818-8818-181818181818');
-SELECT 'fixture_pending_ledger_intents|' || count(*)::text
-  FROM public.inventory_balance_ledger_intents
- WHERE organization_id IN ('11111111-1111-4111-8111-111111111111','14141414-1414-4414-8414-141414141414');
+SELECT 'fixture_ledger_projection|' || (
+     pg_catalog.to_regclass('public.inventory_balance_ledger_intents') IS NULL
+     AND pg_catalog.to_regprocedure('public.project_inventory_movement_to_balance()') IS NOT NULL
+   )::text;
 SELECT 'fixture_completed_sale|' || count(*)::text
   FROM public.sales
  WHERE id = 'eeeeeeee-eeee-4eee-8eee-eeeeeeeeeeee'

@@ -1,3 +1,22 @@
+## Checkpoint vigente — 2026-11-10 UTC
+
+- Objetivo no negociable: **2026-12-01**, comercio piloto de un local y hasta 1.000 productos, jornada completa POS desde UI. Sin descuentos/promociones.
+- main: `c5373564413ba086690552c6b7deeab08d7b4a89`; no se modificó.
+- #287 `25e0de8c0236880febaad9a14a47d5ec55931641`: OPEN/Draft, 164 ahead/1 behind (único commit faltante #297, solo ledger documental), 15/15 check-runs y 11/11 workflows SUCCESS. Fix BCV stale recovery con confirmación idéntica, unit + PostgreSQL runtime-role regression. No rebase/sync.
+- #298 `6b0e51b259e0d59305931a779d52a9ba066cac27`: OPEN/Draft, 148/0, 15/15 checks y 11/11 workflows. PR documental existente.
+- #299 `c82b0a10f85b59e1f81ac0ca2d439b6286558751`: OPEN/Draft, 1/0, 14/14 checks y 10/10 workflows; pg_restore sintético, no RTO completo.
+- #300 `f4c98f3971463e54370b5af3a0633ab434d9ad90`: OPEN/Draft, 2/0, 13/13 checks y 9/9 workflows; permiso sales.price.override retirado y prueba negativa para todos los roles.
+- #302 `c6daacee7825f3e2d3dd9de031fd5c3e33fc9320`: OPEN/Draft, 3/0, 14/14 checks y 10/10 workflows; GIT_ASKPASS temporal, remote sin token, limpieza con trap. No backup real ejecutado.
+- Ninguna de esas PR tiene review formal registrada. No merge por instrucción vigente.
+- Seguridad Nivel 1 **ABIERTO** / producción **NOT READY**. Branch protection API 403; approvals actuales no confirmados. Dependabot alerts, principal DB efectivo en Worker productivo, RPO/RTO integral y alertas externas siguen sin evidencia actual.
+- P0 desde UI: **0/1 jornadas completas demostradas**. No endpoints de checkout/ventas ni turnos HTTP registrados en main inspeccionado.
+- Guardrails: no main writes, merge, deploy, Neon main/lab, migraciones remotas, datos reales, secretos, DNS, billing, Cloudflare manual ni Cron BCV/de negocio.
+
+**Siguiente acción:** continuar la auditoría Nivel 1 sin abrir nueva lógica comercial; comprobar contratos de runtime PostgreSQL y migraciones en entorno efímero, revisar evidencia de backup/RPO/RTO y dejar documentados los bloqueos que exigen acceso/validación productiva. Mantener **2026-12-01** en toda continuidad.
+
+
+---
+
 ## Corrección de precisión: Cron existente vs Cron BCV — 2026-11-09 UTC
 
 - Relectura directa de `apps/api/wrangler.toml` en `main` confirma un trigger versionado `17 * * * *` (cada hora). El comentario y el handler `scheduled()` en `apps/api/src/index.ts` lo destinan exclusivamente a `cleanupExpiredAuthRecords` (limpieza de metadatos de autenticación); el handler retorna sin ejecutar en `APP_ENV !== "production"`.

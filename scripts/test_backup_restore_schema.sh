@@ -198,7 +198,7 @@ SELECT 'relation_acl|' || COALESCE(string_agg(
   FROM pg_catalog.pg_class c
   JOIN pg_catalog.pg_namespace n ON n.oid = c.relnamespace
   CROSS JOIN LATERAL pg_catalog.aclexplode(
-    COALESCE(c.relacl, pg_catalog.acldefault(CASE WHEN c.relkind = 'S' THEN 'S'::\"char\" ELSE 'r'::\"char\" END, c.relowner))
+    COALESCE(c.relacl, pg_catalog.acldefault(CASE WHEN c.relkind = 'S' THEN 'S'::"char" ELSE 'r'::"char" END, c.relowner))
   ) AS a
  WHERE n.nspname = 'public' AND c.relkind IN ('r','p','v','m','S','f');
 SELECT 'function_acl|' || COALESCE(string_agg(
@@ -209,7 +209,7 @@ SELECT 'function_acl|' || COALESCE(string_agg(
   ), '')
   FROM pg_catalog.pg_proc p
   JOIN pg_catalog.pg_namespace n ON n.oid = p.pronamespace
-  CROSS JOIN LATERAL pg_catalog.aclexplode(COALESCE(p.proacl, pg_catalog.acldefault('f'::\"char\", p.proowner))) AS a
+  CROSS JOIN LATERAL pg_catalog.aclexplode(COALESCE(p.proacl, pg_catalog.acldefault('f'::"char", p.proowner))) AS a
  WHERE n.nspname = 'public' AND p.prokind IN ('f','p');
 SELECT 'default_acl|' || COALESCE(string_agg(
     pg_catalog.pg_get_userbyid(d.defaclrole) || ':' || COALESCE(n.nspname, '*') || ':' || d.defaclobjtype || ':' || COALESCE(d.defaclacl::text, ''),

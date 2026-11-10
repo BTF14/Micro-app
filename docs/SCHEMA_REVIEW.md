@@ -1,3 +1,13 @@
+## Reconciliación de autorización y estado de esquema — 2026-11-09 UTC
+
+- La matriz `docs/sdd/role-permission-decision-matrix.md` está **APROBADA desde 2026-10-31**. Las frases inferiores que la llaman NO APROBADA son históricas y quedan supersedidas.
+- La aprobación de matriz no implica que todos los handlers existan. Main tiene rutas de catálogo y de lectura/conteos de inventario; checkout/pagos y endpoints HTTP completos de turnos/caja siguen pendientes.
+- El helper de turno y los permisos SQL no sustituyen las rutas de apertura/consulta/cierre ni las pruebas end-to-end.
+- Main SHA observado: `c5373564413ba086690552c6b7deeab08d7b4a89`. No inferir esquema remoto ni aplicar migraciones a Neon main.
+- PR #287 es la rama de integración BCV + checkout; #255 fue cerrada como supersedida.
+
+---
+
 # Estado del repositorio — 2026-11-08 UTC
 
 El estado vivo de main, PRs, SHA, checks y próximos pasos está centralizado en [CURRENT_STATE.md](CURRENT_STATE.md) y [HANDOFF_NEXT_CHAT.md](HANDOFF_NEXT_CHAT.md). Los snapshots históricos que siguen en este documento son evidencia temporal: no reutilizar SHA ni resultados CI sin comprobar el HEAD exacto.

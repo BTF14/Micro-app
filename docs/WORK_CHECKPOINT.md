@@ -676,7 +676,7 @@ No crear otra PR documental duplicada. Si se modifica esta rama documental, volv
 
 ## Reconciliación técnica BCV — 2026-11-10 10:26–10:28 UTC
 
-**Fuente de verdad:** GitHub, PR #287, SHA exacto `dd587308f85f42f8019d5fc74e7f8e296229ead8`. La rama `integration/bcv-checkout-rehearsal-20261109` está 175 commits ahead / 0 behind de su base `03442951b2a2f63f5bf4dcf560f2c91be4f6cc71`. `main` permanece en `c5373564413ba086690552c6b7deeab08d7b4a89`; nada de este trabajo está en main.
+**Fuente de verdad:** GitHub, PR #287, SHA exacto `dd587308f85f42f8019d5fc74e7f8e296229ead8`. La rama `integration/bcv-checkout-rehearsal-20261109` está 175 commits ahead / 0 behind de su base `03442951b2a2f63f5bf4dcf560f2c91be4f6cc71`. `main` permanece en `c5373564413ba086690552c6b7deeab08d7b4a89`; nada de este trabajo está en main. Comparada contra `main` actual, la rama #287 diverge **175 ahead / 1 behind** con merge base `03442951b2a2f63f5bf4dcf560f2c91be4f6cc71`; el único commit ausente es `docs/BACKLOG_RECOVERY_LEDGER.md` (15 líneas añadidas en `c537356...`), sin cambios de código. No se ha actualizado la rama ni hecho merge.
 
 ### Cambio y validación
 

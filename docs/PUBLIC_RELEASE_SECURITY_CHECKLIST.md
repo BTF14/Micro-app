@@ -1,5 +1,7 @@
 # Revisión de exposición y seguridad del repositorio
 
+> **Reconciliación 2026-11-09:** la API de GitHub confirmó `main` como `protected=true` y seis checks requeridos. El endpoint detallado de branch protection sigue devolviendo 403, por lo que no se confirma el requisito actual de approvals ni las opciones adicionales de push protection/secret scanning. La mención inferior a 78 ramas sin protección es un inventario histórico; no describe el estado actual de `main`. No asumir que todas las ramas están protegidas.
+
 **Estado:** repositorio público; tratar ramas e historial accesibles como contenido expuesto. Este documento no autoriza un cambio de visibilidad.
 
 ## Evidencia y límites

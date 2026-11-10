@@ -1,6 +1,8 @@
 # Evaluación de Google Drive como destino de backups
 
-**Fecha de evaluación:** 2026-10-18  
+> **Estado vigente — reconciliación 2026-11-09:** Google Drive no fue seleccionado ni configurado. El destino de backup actual es el repositorio privado `BTF14/micro-app-backups`; el workflow automático está activo y su estado, RPO/RTO y limitaciones están en `docs/BACKUP_AND_RECOVERY.md`. Esta evaluación es histórica y no debe tratarse como tarea abierta para configurar Drive ni crear credenciales OAuth.
+
+**Fecha de evaluación original:** 2026-10-18  
 **Estado:** candidato técnicamente viable; no configurado ni aprobado como destino definitivo.  
 **Restricción obligatoria:** coste total $0, sin tarjeta, facturación ni cargos automáticos.
 

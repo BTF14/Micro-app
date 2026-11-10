@@ -2360,3 +2360,18 @@ La revisión estática de `.github/workflows/backup.yml` confirma que usa `DATAB
 **Diferencia crítica:** la prueba sintética de PR #303 conserva ownership/ACL para probar metadatos; el backup real actual los omite deliberadamente con `--no-owner --no-privileges`. Por ello, el resultado sintético no demuestra que el artefacto real preserve propietarios o grants. La recuperación real necesita un contrato separado de provisioning de roles/ACL.
 
 PR #303 está actualmente validada en HEAD `3c7a7250163f6655e6078085c4b45e6efacba432`: 11/11 workflow runs exact-HEAD SUCCESS, OPEN/Draft, sin reviews formales ni threads. Issue #53 sigue OPEN/P0; producción NOT READY.
+
+ 
+## Reconciliación viva — PR #303 manifiesto y fixture poblada (2026-11-10)
+
+El código de PR #303 quedó validado en SHA `f0dc1f90043eff4270d86f461a2dfc07187aa814`: OPEN/Draft, base main `c5373564413ba086690552c6b7deeab08d7b4a89`, 67 ahead / 0 behind, mergeable=true, 11/11 workflow runs exact-HEAD SUCCESS, 0 legacy status contexts, 0 reviews y 0 threads.
+
+La prueba PostgreSQL 18 aplica las 16 migraciones main mediante `scripts/db/migrate.sh`, realiza dump cifrado age, checksum, descifrado y restore en otra DB desechable. El manifiesto compara columnas y defaults, relaciones/particiones, vistas, tipos, constraints/validación, índices/validez, triggers/estado, funciones, extensiones, secuencias/estado, RLS/policies, ownership/ACL, grants efectivos, roles/memberships, default ACL, search_path efectivo y ledger.
+
+El fixture sintético comprueba dos tenants y sus relaciones de sucursal/miembros, almacenes, conteos, balances, movimientos, turno de caja, venta, pagos, tasa snapshot y auditoría. Aserta la igualdad entre balance y suma del ledger, conteos esperados y total de venta frente a líneas y pagos. Job `42870784682` SUCCESS; round-trip 2 s. Las tres tablas efímeras auth se sembraron en source y se excluyeron del restore.
+
+Se corrigieron dos errores detectados por CI sin relajar la prueba: casts explícitos para concatenar campos PostgreSQL `char`; y exclusión de attnum físico porque pg_dump/restore compacta posiciones de columnas eliminadas. La comparación preserva el orden lógico de columnas.
+
+Esta cobertura es específica de main 0001–0016. PR #287 mantiene 0017–0022 en su propia rama y necesita perfil de restauración independiente. #287 y #298 siguen OPEN/Draft y sus 11/11 workflows exact-HEAD están SUCCESS en los SHAs indicados en WORK_CHECKPOINT.md.
+
+Issue #53 permanece OPEN/P0. La prueba sintética no demuestra la identidad del principal `DATABASE_URL_BACKUP_RO`, least privilege, restauración del artefacto remoto, RPO/RTO, alertas, coste $0 ni recuperación operativa de producción. No se accedió a Neon, secretos ni datos reales. Producción NOT READY; deadline 2026-12-01.

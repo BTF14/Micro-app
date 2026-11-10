@@ -2541,3 +2541,20 @@ El workflow manual `.github/workflows/backup-real-restore.yml` verifica checksum
 **Siguiente gate seguro:** diseñar una auditoría read-only y no secreta de `current_user`, `session_user`, membresía en `neon_superuser`/`pg_write_all_data` y privilegios efectivos, sin consultar filas de negocio ni imprimir connection strings. Debe quedar en PR separada y ejecutarse solo por el ciclo programado autorizado; no lanzar backup manual. Después, decidir provisioning de roles/ACL y RPO/RTO. Issue #53 continúa OPEN/P0.
 
 La prueba sintética de PR #303 conserva ownership/ACL, pero no equivale al artefacto real, que usa `--no-owner --no-privileges`.
+
+ 
+## Handoff vigente — PR #303 validada con manifiesto reforzado (2026-11-10)
+
+Continuar desde la rama `security/backup-restore-schema-coverage-20261110`, no empezar desde cero. El código de PR #303 fue validado en SHA `f0dc1f90043eff4270d86f461a2dfc07187aa814`, OPEN/Draft, 67 ahead / 0 behind main `c5373564413ba086690552c6b7deeab08d7b4a89`, mergeable=true, 11/11 workflows exact-HEAD SUCCESS, 0 status contexts, 0 reviews y 0 threads.
+
+La prueba de restore ahora compara también columnas y defaults, vistas, particiones, tipos, event triggers, estado de constraints/índices/triggers, y verifica coherencia del ledger con balances y de venta con líneas/pagos. Job `42870784682` SUCCESS en PostgreSQL 18; 16 migraciones, dump age/checksum/restore, owners/ACL, roles, RLS/policies y search_path preservados; fixture poblada main pasó; 2 s. El fixture usa main 0001–0016 únicamente.
+
+### Siguientes pasos técnicos
+
+1. Revalidar el HEAD vivo y CI exact-HEAD de #303 después de los commits documentales; mantener Draft.
+2. Preparar auditoría de restore separada para PR #287 0017–0022. No reutilizar la fixture de ledger-intents de main sobre el ledger projection de #287 ni mezclar migraciones.
+3. Continuar issue #53 con evidencia read-only y no secreta del principal efectivo de `DATABASE_URL_BACKUP_RO`, sus membresías y privilegios efectivos. No inferir identidad por nombre, no imprimir secretos y no leer filas de negocio.
+4. Mantener separados el backup sintético y el artefacto remoto real. El run #20 `42842855127` produjo artefacto + sidecar, pero no se descargó ni verificó contra bytes ni se restauró; el backup real usa `--no-owner --no-privileges`.
+5. Medir RPO/RTO, probar alertas externas y coste $0 solo con un procedimiento seguro y evidencia. No lanzar backup manual ni modificar Cron.
+
+Issue #53 OPEN/P0; producción NOT READY. No main, merge, deploy, Neon writes, migraciones remotas, secretos, Cron, Cloudflare/DNS/billing ni datos reales. Deadline inamovible 2026-12-01. No pedir terminal, CLI, capturas, Build IDs ni TinyFish si no son imprescindibles.

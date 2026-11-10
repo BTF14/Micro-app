@@ -46,28 +46,21 @@ Reglas ya aprobadas/documentadas:
 - PR #229–#231 aportan motor monetario/catálogo/formulario que ya están en main en forma igual o más completa. PR #228 comparte la migración 0014 canónica; su handler/tests también son inferiores a la implementación actual. Comparar y cerrar como supersedidas solo después de preservar cambios realmente únicos.
 - PR #232 contiene este diseño, pero su texto original quedó obsoleto respecto a las migraciones 0014/0015 y debe mantenerse actualizado.
 
-## 3. Bloqueador BCV: el trigger SQL de checkout no coincide con la regla de fin de semana
+## 3. Política BCV estricta y bloqueo de fines de semana/feriados
 
-**Base normativa:** el artículo 25 de la Ley del IVA dispone que, si el hecho imponible ocurre en un día no hábil para el sector financiero, la equivalencia se calcula con el tipo de cambio vigente el día hábil inmediatamente siguiente. Referencia documental: Gaceta Oficial N.º 6.507 Extraordinario (29-01-2020), artículo 25: <https://www.ivecofi.net/informacion/legislacion/leyes/ley-impuesto-valor-agregado/titulo-iv>. La fecha efectiva del BCV debe corresponder a ese siguiente día hábil. Esto es una referencia normativa para el diseño, no asesoría legal/contable; cualquier caso fiscal especial requiere validación profesional.
+**Decisiones de producto vigentes:** toda venta requiere una tasa BCV válida cuya `effective_date` coincida exactamente con la fecha de operación en `America/Caracas`, incluso si el cliente paga 100 % en USD. Una tasa publicada anticipadamente solo puede usarse desde su fecha efectiva; nunca antes. Si no existe una fila oficial válida para la fecha exacta, el checkout falla cerrado.
 
-La API BCV que se está validando en PR #287 selecciona la tasa obligatoria de toda venta, también USD-only:
-- Lunes–viernes: la fila con fecha efectiva de hoy.
-- Sábado/domingo: la fila válida con la fecha efectiva futura más próxima publicada para el siguiente día hábil.
-- Nunca salta una fila futura más próxima marcada stale para usar otra posterior.
-- Si no hay fila aplicable/validada, falla cerrado.
+**Estado real de migraciones en PR #287 (OPEN/Draft; no integrado en main):**
+- Migration `0017_checkout_bcv_weekend_effective_date.sql` introdujo inicialmente una selección de la siguiente fecha efectiva futura en fines de semana. Es una etapa histórica/provisional de la rama, no la política final.
+- Migration `0020_bcv_effective_date_strict.sql` reemplaza esa función para devolver siempre la fecha local de Caracas de la operación, cualquier día de la semana. Su comentario establece expresamente que no se sustituye por una tasa anterior ni futura.
+- Migration `0021_bcv_sync_state.sql` añade el estado persistente de sincronización y un trigger diferido que exige el último éxito de sincronización al completar una venta.
+- Las assertions de `0020` y `0021` forman parte de la validación de la rama #287. No crear otra migration `0017` ni volver a introducir la selección de una fecha futura en fin de semana.
 
-Sin embargo, la función `public.assert_completed_sale_reconciled()` de migration 0015 todavía exige `exchange_rates.effective_date = fecha de hoy en Caracas`. Esto rechazaría una venta de sábado/domingo aunque la API haya seleccionado correctamente la tasa del lunes.
+**Consecuencia operativa:** sábado, domingo y feriado no reciben una excepción implícita. Si BCV no tiene una tasa con fecha efectiva exactamente igual al día de operación, el checkout queda bloqueado, aunque exista una tasa prepublicada para el siguiente día hábil. Esto respeta la prohibición de usar tasas futuras antes de su fecha efectiva.
 
-**Gate obligatorio antes de checkout:** crear una nueva migration 0017, sin modificar retroactivamente 0015, que reemplace de forma segura `assert_completed_sale_reconciled()` para aplicar la misma regla de fecha efectiva que la API:
-- weekdays → fecha de hoy;
-- weekends → MIN(effective_date) futura para source `BCV_OFFICIAL_HTML_V1`, sin filtrar validation_status en el MIN;
-- la fila seleccionada debe seguir siendo `validation_status = 'valid'`, misma tasa/snapshot/source y bloqueada FOR SHARE;
-- si la fila futura más próxima está stale, no se permite usar una posterior;
-- feriados bancarios entre semana aún no tienen calendario autoritativo; por tanto se falla cerrado si no hay fila exacta para hoy.
+**Riesgo legal/contable pendiente:** la referencia histórica al artículo 25 de la Ley del IVA indica que para hechos imponibles en días no hábiles del sector financiero puede corresponder el tipo de cambio del siguiente día hábil. Esa regla puede entrar en tensión con la decisión de no utilizar una tasa antes de su `effective_date`. No resolver esta tensión inventando una excepción ni cambiando la política en código: mantener el checkout bloqueado en esos días y obtener revisión legal/contable y una decisión explícita antes de habilitar operación de fines de semana/feriados.
 
-La migration 0017 debe exigir login directo `microapp_migrator`, preservar SECURITY DEFINER/search_path, tener assertions sobre `pg_get_functiondef` y probarse con PostgreSQL desechable y el runner real. No ejecutar en Neon main.
-
-El handler histórico #233 también consulta `effective_date = today`; al recuperarlo debe usar el helper compartido `findApplicableBcvRate(tx)` de la integración BCV vigente en PR #287 y exigir `validation_status = 'valid'`. La API y el trigger SQL deben implementar exactamente la misma selección.
+**Regla de latest-success:** además de la fila exacta `validation_status='valid'`, checkout exige que `bcv_sync_state` exista, que el último outcome sea `inserted` o `unchanged`, que `last_success_at` no sea nulo y que `last_effective_date` no sea anterior a hoy. Los estados `running`, `failed`, `older`, ausentes o incompletos bloquean nuevas ventas. La lectura `FOR SHARE` serializa checkout frente al inicio de una nueva sincronización.
 
 ## 4. Brechas de integridad restantes para revisar
 

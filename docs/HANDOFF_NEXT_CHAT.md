@@ -2596,3 +2596,23 @@ No `main`, Neon main, datos reales, secretos, Cloudflare manual, DNS, billing, d
 
 ### Restricciones
 No main, Neon main, datos reales, secretos, Cloudflare manual, DNS, billing, despliegue manual ni activación Cron. No pedir Build IDs, capturas, terminal, CLI, TinyFish, reconexiones ni datos ya documentados. Si aparece un bloqueo real que requiere al propietario, preguntar una sola vez y aceptar respuesta textual.
+
+## Handoff vigente — 2026-11-10 14:35:49 UTC
+
+**Estado GitHub revalidado:** PR #287 OPEN/Draft, HEAD documental `225dba37812112f3669af3dffa79b04ec6a8762f`, 11/11 workflow runs `pull_request` SUCCESS; PostgreSQL migration runner `42834658189` dejó de estar pendiente y terminó SUCCESS. No reviews formales ni review threads. Mantener Draft; no merge ni sync automático.
+
+**P0 backup/RPO — atención inmediata:**
+- `.github/workflows/backup.yml` declara cron diario 07:00 UTC.
+- Último backup programado localizado: run `42659924075`, SUCCESS, iniciado 2026-11-09 16:57:34Z; artefacto timestamp 16:57:53Z. No aparece otra ejecución posterior ni la ejecución programada del 10-nov a las 07:00Z.
+- En la última consulta (2026-11-10 14:35:49Z), el umbral de 24h del artefacto todavía no se había alcanzado; faltaban ~2h22m. **No afirmar breach todavía.** Revalidar después de 16:57:53Z y comprobar run programado y metadatos/checksum del artefacto sin leer su contenido.
+- RPO 24h sostenido sigue NO DEMOSTRADO por gaps históricos; último restore real documentado 2026-10-29. El smoke test sintético no lo sustituye.
+- El principal efectivo de `DATABASE_URL_BACKUP_RO` no está demostrado. No asumir que sea `backup_readonly`, que hereda `neon_superuser`/`pg_write_all_data` y no es read-only.
+- No lanzar backup manual, no leer secretos/dumps, no modificar roles/grants, cron, Neon main, main branch ni producción.
+
+**Orden de continuación:**
+1. Después del umbral 16:57:53Z, consultar nuevamente ejecuciones del workflow y confirmar nueva copia exitosa con checksum/metadatos. Si no existe, registrar el incumplimiento sin intentar ocultarlo ni lanzar una copia manual.
+2. Mantener #53 OPEN/P0 hasta demostrar principal efectivo y privilegios least-privilege del backup, RPO/RTO y restore real controlado fuera de producción.
+3. Mantener PR #287 Draft; no confundir 11/11 CI con revisión independiente o readiness productiva.
+4. No iniciar nuevas superficies comerciales hasta cerrar los gates de Seguridad Nivel 1; luego completar UI POS y E2E de jornada completa.
+
+Fecha límite de MVP: **1 de diciembre de 2026 — INAMOVIBLE**. Producción **NOT READY**.

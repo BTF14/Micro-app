@@ -2326,3 +2326,24 @@ La fase 1 valida migraciones, ledger, dump cifrado, checksum, restore y metadato
 El baseline main de #303 contiene migraciones 0001–0016. La migración 0015 de main ya añade `branch_id`, `register_shift_id`, `warehouse_id`, `settlement_currency` y `request_hash` a `sales`, y contiene los guardrails iniciales de checkout atómico. PR #287 no introduce por primera vez el checkout branch-aware: sus migraciones 0017–0022 evolucionan la regla de fecha BCV, payment allocation, proyección del ledger, estado de sync y rol productor. El fixture main debe cubrir checkout atómico conforme al contrato 0015 (incluida su regla BCV exact-date y pago completo en una moneda); el perfil #287 debe extender esa prueba con los contratos adicionales de sus migraciones, sin mezclar secuencias.
 
 No se ha hecho merge, deploy, escritura Neon, lectura de secretos, ejecución del backup real ni uso de datos reales. Producción NOT READY; #53 OPEN/P0; deadline 2026-12-01.
+
+
+## Reconciliación viva — backup/restore fase 2, 2026-11-10
+
+**PR #303:** OPEN/Draft, rama `security/backup-restore-schema-coverage-20261110`, HEAD `87ca92a25538b1b1217cb78b10a6db2fd7726ef0`, base main `c5373564413ba086690552c6b7deeab08d7b4a89`, 61 ahead / 0 behind, mergeable=true. En ese SHA exacto: 11/11 workflow runs `pull_request` SUCCESS; combined legacy status contexts 0; reviews formales 0; review threads 0. No equivale a aprobación. Mantener Draft y no fusionar.
+
+### Fase 2 sintética — resultado verificado
+
+Se añadió `scripts/backup_restore_fixture_main.sql` y se amplió `scripts/test_backup_restore_schema.sh`. La fixture se ejecuta después de las migraciones main 0001–0016 y usa dos organizaciones sintéticas independientes, dos usuarios propietarios, membresías, sucursales, proveedores, productos, almacenes, conteos, balances y movimientos. Para tenant A cubre apertura 10, conteo físico 10→11 y venta de 2 unidades; balance final 9 y versión 3. Para tenant B cubre un almacén y apertura de 5 unidades; balance final 5 y versión 1. Se conserva `products.stock_quantity=0`; el stock del almacén se representa en el balance y el ledger. La venta tiene contexto de sucursal/turno/almacén, pago íntegro USD, tasa BCV sintética del día, movimiento y auditoría. Registros efímeros auth se insertan en source y se excluyen del restore.
+
+El dump/restore ya no utiliza `--no-owner --no-privileges`: conserva ownership/ACL. El manifest compara propietarios de relaciones/funciones, ACL no implícitas del owner, grants efectivos, atributos/membresías de roles, `search_path` efectivo por login, RLS/policies, default ACL, secuencias/estado, migraciones y el grafo sintético. El test de backup/restore PostgreSQL 18 pasó SUCCESS; CI exact-HEAD completo 11/11 SUCCESS en el SHA anterior.
+
+La fixture main prueba datos sintéticos y restricciones del esquema; no es una prueba API de autorización multi-tenant. Las pruebas independientes de branch scope y runtime-role API también pasaron en el mismo HEAD. No se probaron las migraciones adicionales 0017–0022 de #287 mediante este fixture.
+
+### PRs e issue relacionados revalidados
+
+- #287 OPEN/Draft, HEAD `9a1792f7449ff83915bcdd672686a4860918028d`, base SHA reportado `03442951b2a2f63f5bf4dcf560f2c91be4f6cc71`, 219 ahead / 1 behind main, 11/11 workflow runs exact-HEAD SUCCESS, 0 reviews/threads. No retarget automático.
+- #298 OPEN/Draft, HEAD `c9e65a8f0378b2b9740e91df68f39909967eed26`, base main `c5373564413ba086690552c6b7deeab08d7b4a89`, 231 ahead / 0 behind, 11/11 workflow runs exact-HEAD SUCCESS, 0 reviews/threads. Sus criterios de aceptación P0 siguen siendo el resultado de producto canónico; este test cubre solo el gate de backup/restore poblado.
+- Issue #53 permanece OPEN/P0. No se ha demostrado la identidad efectiva del secreto de backup, RPO/RTO sostenidos, restore de artefacto remoto reciente, alertas externas, coste total $0 ni revisión de seguridad final.
+
+No se accedió a Neon, secretos, backups remotos ni datos reales. No se ejecutó backup manual, no se cambió Cron, no se desplegó ni se modificó main. Producción NOT READY; deadline 2026-12-01.

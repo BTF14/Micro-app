@@ -186,3 +186,10 @@ Actualiza este checklist solo junto con evidencia y una entrada en `docs/STATE_J
 ## Respaldo y recuperación
 
 La política está documentada en `docs/BACKUP_AND_RECOVERY.md`. La subida cifrada está verificada y la copia remota exacta se restauró técnicamente en PostgreSQL 18 desechable (run 40955935124). El control compuesto permanece incompleto hasta validar datos comerciales/conteos/relaciones, medir RPO/RTO y comprobar alertas y coste total.
+
+
+## Actualización de evidencia — backup/restore fase 2, 2026-11-10
+
+PR #303 HEAD `87ca92a25538b1b1217cb78b10a6db2fd7726ef0` pasó 11/11 workflow runs `pull_request` exact-HEAD. El workflow de backup/restore ahora prueba un grafo de negocio sintético de dos tenants en PostgreSQL 18, cifrado, checksum, restauración, ownership/ACL, grants efectivos, roles, search_path, RLS/policies, secuencias, conteos, ledger, checkout y auditoría. PR #303 permanece OPEN/Draft, sin review formal; CI verde no es aprobación.
+
+**Readiness continúa NOT READY.** No se restauró un artefacto remoto reciente; no se demostraron principal efectivo de backup, RPO/RTO sostenidos, alertas externas, coste total $0 ni revisión de seguridad final. Issue #53 sigue OPEN/P0. La prueba sintética no es despliegue ni aceptación funcional del MVP; el flujo completo desde UI y el catálogo de 1.000 productos siguen sujetos a `docs/MVP_SINGLE_STORE_ACCEPTANCE.md`. No se accedió a Neon, secretos ni producción.

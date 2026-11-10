@@ -223,3 +223,25 @@ La fase 2 debe usar perfiles acumulativos por ref: main 0001–0016 ya contiene 
 Inspeccionar migraciones y triggers de ledger 0010; implementar fixture sintético coherente para main; comparar filas, conteos y relaciones source/restore; añadir verificación RLS/policies y decidir cómo comprobar ownership/ACL sin falsear el contrato de restore. Después preparar perfil de checkout sobre ref #287 y ejecutar CI exact-HEAD.
 
 Límites: no merge, no retarget, no deploy, no Neon, no secretos, no Cron, no datos reales, no Cloudflare/DNS/billing. Producción NOT READY. Deadline 2026-12-01.
+
+
+---
+
+# Checkpoint vigente — 2026-11-10, fase 2 backup/restore
+
+- Rama: `security/backup-restore-schema-coverage-20261110`.
+- PR #303 OPEN/Draft, HEAD `87ca92a25538b1b1217cb78b10a6db2fd7726ef0`, base main `c5373564413ba086690552c6b7deeab08d7b4a89`, 61 ahead / 0 behind, mergeable=true.
+- CI exact-HEAD: **11/11 workflow runs SUCCESS**; 0 legacy status contexts; 0 formal reviews; 0 review threads. Mantener Draft; no merge.
+- Fase 2 implementada: `scripts/backup_restore_fixture_main.sql`; dos tenants sintéticos; branch/membership, caja/turno, almacenes, productos/proveedores, opening + physical counts, balances, ledger, checkout completado con pago USD, auditoría; auth efímero sembrado y excluido.
+- Resultado: tenant A 10→11 por conteo y 11→9 por venta de 2; balance 9/version 3. Tenant B balance 5/version 1. Cuatro movimientos, cero ledger intents pendientes. `products.stock_quantity` se mantiene 0.
+- Dump/restore preserva ownership/ACL y compara roles/memberships, grants efectivos, search_path, RLS/policies, default ACL, secuencias/estado, migraciones y datos sintéticos. PostgreSQL 18 backup restore smoke SUCCESS.
+- #287 OPEN/Draft, HEAD `9a1792f7449ff83915bcdd672686a4860918028d`, 219 ahead / 1 behind main, 11/11 workflows exact-HEAD SUCCESS; base SHA reportado `03442951b2a2f63f5bf4dcf560f2c91be4f6cc71`. #298 OPEN/Draft, HEAD `c9e65a8f0378b2b9740e91df68f39909967eed26`, 231 ahead / 0 behind, 11/11 workflows SUCCESS.
+- Issue #53 OPEN/P0. No restore del artefacto remoto, RPO/RTO, alertas, coste $0 ni principal efectivo de backup demostrado. Producción NOT READY.
+
+## Siguiente paso
+
+Preparar perfil de restore separado sobre #287 0017–0022 y revisar el contrato de issue #53 sin leer secretos ni tocar Neon main. Preservar el criterio P0 del MVP en `docs/MVP_SINGLE_STORE_ACCEPTANCE.md`; el restore test no demuestra jornada UI ni catálogo de 1.000 productos.
+
+Checkpoint canónico en `docs/WORK_CHECKPOINT.md`; no existe archivo raíz `WORK_CHECKPOINT.md`.
+
+Límites: no merge, no main, no deploy, no Neon, no secretos, no Cron, no Cloudflare/DNS/billing, no datos reales. Deadline 2026-12-01.

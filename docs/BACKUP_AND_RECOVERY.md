@@ -242,3 +242,28 @@ Para la recuperación operativa, estos controles requieren un contrato explícit
 La fase 2 debe ser acumulativa y version-aware. Main 0001–0016 ya contiene checkout branch-aware por migration 0015 y pairing de balance/ledger por migration 0010. PR #287 añade 0017–0022 (BCV weekday/weekend, allocation, projection, sync state y rol productor); esas extensiones se prueban solo sobre el ref que las contiene. No mezclar secuencias ni omitir checkout de la fixture main.
 
 Issue #53 permanece OPEN/P0. No se ha accedido a Neon, secretos, backup remoto ni datos reales. Producción NOT READY.
+
+
+## Fase 2 — restore con grafo de datos poblado (2026-11-10)
+
+**Implementado y verificado en PR #303 HEAD `87ca92a25538b1b1217cb78b10a6db2fd7726ef0`.** La prueba usa main migrations 0001–0016, incluyendo checkout branch-aware de migration 0015 y paired ledger intents de migration 0010.
+
+### Fixture y verificaciones
+
+- Dos tenants sintéticos independientes, dos usuarios owner, dos organization memberships, dos branches y branch memberships, dos suppliers/products/warehouses.
+- Tenant A: apertura 10; conteo físico absoluto 11 con expected quantity 10 y balance version 1; venta completada de 2 unidades; balance final 9, version 3.
+- Tenant B: apertura de 5 unidades; balance final 5, version 1.
+- Cuatro movimientos inmutables (dos opening, un count adjustment y una salida sale), cero intents pendientes al commit. `products.stock_quantity` permanece 0 para ambos productos; el balance de almacén y el ledger son la fuente probada.
+- Venta asociada a branch/register shift/warehouse, tasa BCV sintética con fecha efectiva Caracas del día, pago completo en USD, line snapshots y evento `sale.completed`.
+- Source contiene filas sintéticas en `auth_sessions`, `auth_rate_limits` y `auth_bootstrap_attempts`; las tres tablas se excluyen del restore y se comprueba su ausencia.
+- Dump custom, cifrado age con clave efímera, SHA-256, descifrado y restore en otra base PostgreSQL 18 desechable.
+
+Se eliminaron `--no-owner --no-privileges` para que el test restaure owners y ACL. El manifest compara owners de relaciones/funciones, ACL no implícitas del owner, grants efectivos de migrator/runtime/producer, atributos y memberships, search_path efectivo por login, RLS/policies, default ACL, secuencias y estado, extensiones, funciones, triggers, constraints, indexes y ledger. La prueba usa roles cluster-globales preprovisionados en el servicio desechable; no exporta global roles como parte del dump.
+
+### Resultado y alcance
+
+El workflow `Backup restore smoke test` y los 11 workflow runs de PR #303 pasaron SUCCESS en el HEAD exacto. También pasaron pruebas de migration runner, branch scope, register shift, permisos de miembros, inventario, runtime-role API, Playwright, SAST, secret scan, dependency review y validación ODD.
+
+Esto prueba un round-trip poblado sintético dentro del mismo PostgreSQL service; **no** restaura el artefacto remoto del backup programado, no demuestra la identidad del principal `DATABASE_URL_BACKUP_RO`, no mide RPO/RTO, alertas externas ni coste $0 y no certifica recuperación de producción. La fixture SQL no sustituye pruebas API de aislamiento tenant/branch/role. Issue #53 sigue OPEN/P0.
+
+PR #287 0017–0022 (BCV effective date weekend, payment allocation, ledger projection, BCV sync state y producer role) requiere perfil de fixture/restore separado sobre su ref exacto; no mezclar esas migraciones con main 0016.

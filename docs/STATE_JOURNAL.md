@@ -2310,3 +2310,14 @@ Auditoría estática del script de fase 1: `pg_dump`/ `pg_restore` usan `--no-ow
 Decisión técnica corregida tras inspeccionar `docs/sdd/SALES_CHECKOUT_MODEL.md` y la secuencia de migraciones: main 0001–0016 ya contiene checkout branch-aware en migration 0015. PR #287 0017–0022 añade BCV effective-date, payment allocation, ledger projection, sync state y producer role. La fixture fase 2 debe validar el checkout de main y ampliar el perfil sobre #287; no mezclar ni atribuir migraciones 0017–0022 a main.
 
 No se ha implementado todavía el fixture fase 2 ni se ha ejecutado un restore poblado nuevo. No merge/deploy, Neon, secretos, backup real ni datos reales. Producción NOT READY; #53 OPEN/P0; deadline 2026-12-01.
+
+
+## 2026-11-10 — fase 2 backup/restore poblado verificada
+
+En PR #303 se añadió `scripts/backup_restore_fixture_main.sql` y se amplió `scripts/test_backup_restore_schema.sh`. La fixture se ejecuta sobre main 0001–0016 (incluye checkout branch-aware migration 0015 y pairing ledger migration 0010). Incluye dos organizaciones sintéticas, usuarios owner, membresías, sucursales, proveedores/productos/almacenes; tres conteos (dos opening y uno physical), dos balances, cuatro movimientos, una venta completada con pago USD, rate sintética BCV del día y auditoría. Tenant A termina en 9 unidades/version 3; tenant B en 5/version 1. Legacy `products.stock_quantity` permanece en 0. Los intents del ledger se consumen antes del commit.
+
+El smoke de PostgreSQL 18 pasó cifrado age, checksum, descifrado, restore y comparación de esquema/datos. Se quitó `--no-owner --no-privileges` para probar ownership y ACL reales del dump; el manifest normaliza privilegios implícitos del owner y compara grants efectivos, atributos/membresías de roles, search_path, RLS/policies, default ACL y secuencias/estado. Los tres registros auth efímeros se sembraron en source y se verificó que no aparecen en restore.
+
+CI completo exact-HEAD de PR #303 HEAD `87ca92a25538b1b1217cb78b10a6db2fd7726ef0`: 11/11 workflow runs SUCCESS; 0 status contexts, 0 reviews y 0 threads. PR sigue OPEN/Draft, 61 ahead / 0 behind, mergeable=true. No merge.
+
+La fixture no restaura el artefacto remoto ni prueba Neon/producción, RPO/RTO, alertas, coste $0, identidad efectiva del principal backup ni autorización API multi-tenant. Issue #53 OPEN/P0; producción NOT READY. #287 0017–0022 requiere perfil de restore separado. No se accedió a secretos, Neon, datos reales ni Cron.

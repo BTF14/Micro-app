@@ -2499,3 +2499,32 @@ No mezclar main 0001–0016 con PR #287 0017–0022. Main 0001–0016 ya contien
 5. Ejecutar CI y verificar el HEAD exacto final; mantener Draft y #53 OPEN/P0.
 
 No merge, no cambio de base, no deploy, no Neon writes, no migraciones remotas, no Cron, no secretos, no Cloudflare/DNS/billing ni datos reales. Producción NOT READY. Fecha límite: 2026-12-01.
+
+
+## Handoff vigente — backup/restore fase 2 verificada, 2026-11-10
+
+Este bloque es el snapshot operativo más reciente y prevalece sobre los estados históricos anteriores. Rama activa: `security/backup-restore-schema-coverage-20261110`. PR #303 OPEN/Draft, HEAD `87ca92a25538b1b1217cb78b10a6db2fd7726ef0`, base main `c5373564413ba086690552c6b7deeab08d7b4a89`, 61 ahead / 0 behind, mergeable=true, 11/11 workflow runs exact-HEAD SUCCESS, 0 legacy status contexts, 0 reviews formales, 0 threads. No merge.
+
+### Trabajo completado y evidencia
+
+- Fixture poblada main: `scripts/backup_restore_fixture_main.sql`; runner de restore: `scripts/test_backup_restore_schema.sh`; workflow: `.github/workflows/backup-restore-smoke.yml`.
+- La fixture se ejecuta con main migrations 0001–0016. Main ya contiene checkout branch-aware en migration 0015 y pairing de balance/ledger por migration 0010. No afirmar que checkout solo exista en #287.
+- Dos organizaciones sintéticas, dos propietarios/membresías, dos sucursales, dos proveedores/productos/almacenes. Tenant A: opening count 10, physical count 11 (expected 10/version 1), checkout de 2, pago USD completo, auditoría; balance final 9/version 3. Tenant B: opening count 5; balance 5/version 1. Cuatro movimientos y cero intents pendientes al commit. `products.stock_quantity` permanece en 0.
+- Se insertan filas sintéticas en `auth_sessions`, `auth_rate_limits`, `auth_bootstrap_attempts` en source y se verifica su exclusión en restore.
+- Dump custom cifrado con age, checksum SHA-256, descifrado y restore en otra DB PostgreSQL 18 desechable. Se preservan owners y ACL (no usar `--no-owner --no-privileges`). Manifest compara esquema, owners, ACL, grants efectivos, roles/memberships, search_path, RLS/policies, default ACL, secuencias/estado, ledger y relaciones de datos. Backup restore smoke SUCCESS.
+- En el mismo HEAD pasaron CI, migraciones, migration runner, branch scope, turnos/roles, catalog, inventory counts/read, runtime-role API, Playwright, SAST, secret scan, dependency review, ODD y dashboard: 11/11 workflow runs SUCCESS exact-HEAD.
+
+### Límites que permanecen
+
+Este test usa bases sintéticas del mismo PostgreSQL service; no restaura el artefacto remoto programado ni prueba Neon/producción. No mide RPO/RTO, no prueba alertas externas ni coste $0, y no demuestra la identidad efectiva del principal `DATABASE_URL_BACKUP_RO`. La fixture de datos no sustituye pruebas API de autorización tenant/branch/role. Issue #53 sigue OPEN/P0; producción NOT READY.
+
+### Próximas acciones
+
+1. Preparar perfil de backup/restore separado para PR #287 sobre su HEAD exacto y migraciones 0017–0022: BCV weekday/weekend, payment allocation, ledger projection, sync state y rol productor. No trasplantar esas migraciones a main ni asumir que la fixture de intents funciona sobre el ledger projection.
+2. Continuar issue #53 con evidencia read-only: identidad real de `DATABASE_URL_BACKUP_RO` sin revelar secreto, privilegios efectivos del principal, herencia `backup_readonly`, identidad runtime y alertas. No leer/imprimir secretos ni escribir en Neon main.
+3. Planificar restore de un artefacto remoto solo en entorno desechable aislado cuando exista un método seguro y autorizado; medir RPO/RTO y coste real. No ejecutar backup manual ni modificar Cron.
+4. Mantener P0 UI según `docs/MVP_SINGLE_STORE_ACCEPTANCE.md`: el test de restore no implica jornada completa desde UI, 1.000 productos ni aceptación comercial.
+
+**Ruta canónica de checkpoint:** `docs/WORK_CHECKPOINT.md`. No existe un `WORK_CHECKPOINT.md` en la raíz del repo; no volver a pedir ese path ni asumirlo. No pedir terminal, CLI, capturas, Build IDs, TinyFish o reconexiones si no son imprescindibles.
+
+Restricciones: no main, no merge, no deploy, no Neon writes, no migraciones remotas, no secretos, no Cron, no Cloudflare/DNS/billing ni datos reales. Deadline inamovible 2026-12-01.

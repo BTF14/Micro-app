@@ -178,3 +178,33 @@ No mezclar main 0001–0016 con PR #287 0017–0022. Main 0001–0016 ya contien
 ### Estado
 
 No se ha implementado todavía la fase 2 ni se ha ejecutado una restauración con el nuevo grafo poblado. No se ha tocado Neon, secretos, backup remoto, producción, Cron, Cloudflare o datos reales. Issue #53 OPEN/P0; producción NOT READY; deadline 2026-12-01. Siguiente acción: inspeccionar íntegramente las migraciones y fixtures del ref exacto, en particular la variante de ledger de main, antes de escribir el SQL del fixture.
+
+
+## Estado final de fase 2 — 2026-11-10
+
+<badge>Implementada y CI verificada en PR #303</badge>
+
+HEAD `87ca92a25538b1b1217cb78b10a6db2fd7726ef0`, OPEN/Draft, 61 ahead / 0 behind main, mergeable=true. 11/11 workflow runs `pull_request` SUCCESS exact-HEAD; 0 legacy status contexts, 0 reviews formales y 0 threads.
+
+### Entregables
+
+- `scripts/backup_restore_fixture_main.sql`: grafo sintético de dos tenants, usuarios/roles/membresías, sucursales, proveedores/productos/almacenes, conteos opening/physical, balances, ledger, checkout branch-aware, pagos y auditoría.
+- `scripts/test_backup_restore_schema.sh`: ejecuta migraciones 0001–0016 mediante runner oficial, fixture, dump cifrado, checksum, descifrado, restore y comparaciones.
+- `.github/workflows/backup-restore-smoke.yml`: ejecuta el perfil de esquema/datos y la regresión histórica en PR.
+
+### Resultado probado
+
+Tenant A: apertura 10, conteo físico 11 (expected 10/version 1), venta de 2; balance final 9/version 3. Tenant B: apertura 5; balance 5/version 1. Cuatro movimientos, cero intents pendientes. Dos productos mantienen `stock_quantity=0`; existencias por almacén y ledger son los datos comprobados. Venta: sucursal/turno/almacén, BCV sintético con fecha efectiva actual, pago íntegro USD, movimiento y auditoría.
+
+La restauración conserva owners/ACL y compara privilegios efectivos, roles/memberships, search_path, RLS/policies, default ACL, secuencias/estado, migraciones y grafo de datos. Los tres tipos de tabla auth efímera se siembran en source y se excluyen de restore. PostgreSQL 18 backup restore smoke SUCCESS; 11/11 workflow runs exact-HEAD SUCCESS.
+
+### Gates que siguen abiertos
+
+- No se restauró el artefacto remoto real ni se midieron RPO/RTO.
+- No se probó la identidad efectiva del secreto de backup; no leer secretos.
+- No hay evidencia final de alertas externas ni coste operativo $0.
+- La fixture SQL no prueba autorización API multi-tenant/branch/role; eso requiere tests específicos y review.
+- PR #287 0017–0022 necesita perfil separado para BCV weekend, allocation, ledger projection, sync state y producer role.
+- Issue #53 sigue OPEN/P0. Producción NOT READY.
+
+No merge, no main, no deploy, no Neon, no secretos, no Cron, no datos reales. Próxima tarea: fixture de restore separada sobre #287 y continuar gates P0 de #53.

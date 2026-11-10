@@ -212,7 +212,7 @@ SELECT 'function_acl|' || COALESCE(string_agg(
   CROSS JOIN LATERAL pg_catalog.aclexplode(COALESCE(p.proacl, pg_catalog.acldefault('f'::"char", p.proowner))) AS a
  WHERE n.nspname = 'public' AND p.prokind IN ('f','p');
 SELECT 'default_acl|' || COALESCE(string_agg(
-    pg_catalog.pg_get_userbyid(d.defaclrole) || ':' || COALESCE(n.nspname, '*') || ':' || d.defaclobjtype || ':' || COALESCE(d.defaclacl::text, ''),
+    pg_catalog.pg_get_userbyid(d.defaclrole) || ':' || COALESCE(n.nspname, '*') || ':' || d.defaclobjtype::text || ':' || COALESCE(d.defaclacl::text, ''),
     ';' ORDER BY d.defaclrole, d.defaclnamespace, d.defaclobjtype
   ), '')
   FROM pg_catalog.pg_default_acl d

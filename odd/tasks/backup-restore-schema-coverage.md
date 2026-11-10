@@ -169,10 +169,10 @@ PR #303 HEAD vivo revalidado: `3439c51b5719315e46196f7eca57cffee5a76df2`, OPEN/D
 
 ### Diseño de fase 2: perfiles por ref
 
-No mezclar main 0001–0016 con PR #287 0017–0022. En main, `sales` no contiene todavía `branch_id`, `register_shift_id` ni `warehouse_id`; esas columnas aparecen en el checkout branch-aware de #287. Por tanto:
+No mezclar main 0001–0016 con PR #287 0017–0022. Main 0001–0016 ya contiene checkout branch-aware en migration 0015 (`branch_id`, `register_shift_id`, `warehouse_id`, `settlement_currency`, `request_hash`) y pairing de balance/ledger por migration 0010. Por tanto:
 
-1. Perfil main: organización/usuario/membresía, branch/branch membership, register/shift, supplier/product/rate, warehouse, count/lines, movimiento/ledger/balance, venta/pago legacy y audit; verificar conteos y relaciones antes/después del restore.
-2. Perfil #287 separado: checkout branch-aware, payment allocation, ledger projection, BCV sync state y rol productor, ejecutado solo contra el HEAD/ref que realmente contiene 0017–0022.
+1. Perfil main: organización/usuario/membresía, branch/branch membership, register/shift, supplier/product/rate, warehouse, count/lines, movimiento/ledger/balance, venta completada/pagos de una moneda y auditoría, con reconciliación de todas las relaciones.
+2. Perfil #287 acumulativo: mismo grafo base más BCV effective-date weekday/weekend, payment allocation, ledger projection, BCV sync state y rol productor, ejecutado solo contra el HEAD/ref que realmente contiene 0017–0022.
 3. Cada perfil deriva su secuencia de migraciones del ref probado; no importa migraciones desde otra rama ni asume columnas ausentes.
 
 ### Estado

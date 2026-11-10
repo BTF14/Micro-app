@@ -1,3 +1,40 @@
+# Revalidación viva final — 2026-11-10 UTC
+
+**Fecha límite P0 inamovible: 2026-12-01.** Objetivo: comercio pequeño/mediano, un local, hasta 1.000 productos, una jornada completa desde UI, persistencia/conciliación demostradas. Sin descuentos ni promociones.
+
+## GitHub exact-HEAD
+
+`main`: `c5373564413ba086690552c6b7deeab08d7b4a89`. No se modificó.
+
+| PR | HEAD | Estado | Ahead/behind main | Check-runs | Workflow runs |
+|---|---|---|---:|---:|---:|
+| #287 BCV/checkout | `2e7cdd44f89a3b3765a0c69ad23bdb87faacf99c` | OPEN/Draft | 167 / 1 | 15/15 SUCCESS | 13/13 SUCCESS |
+| #298 docs | el refresh de esta PR mueve su propio HEAD; reconsultar | OPEN/Draft | 166 / 0 antes de este refresh | 15/15 SUCCESS antes del refresh | 13/13 SUCCESS antes del refresh |
+| #299 backup restore | `c82b0a10f85b59e1f81ac0ca2d439b6286558751` | OPEN/Draft | 1 / 0 | 14/14 SUCCESS | 12/12 SUCCESS |
+| #300 autorización/precio | `97fa79e643d5e7b32ebf86958bd0ba9211e1fc95` | OPEN/Draft | 3 / 0 | 14/14 SUCCESS | 12/12 SUCCESS |
+| #302 backup GIT_ASKPASS | `1b441b3dc9e65e2cb89d765f9aff084b474dd90d` | OPEN/Draft | 4 / 0 | 14/14 SUCCESS | 12/12 SUCCESS |
+
+No hay reviews formales ni threads de revisión en esas cinco PR. CI verde no equivale a aprobación. #287 está 1 commit behind; el único commit faltante de main es `c537356` (#297), que modifica exclusivamente `docs/BACKLOG_RECOVERY_LEDGER.md`. No sincronizar ni rebasar automáticamente.
+
+## Cambios y bloqueos confirmados
+
+- **#287:** recupera tasa BCV stale si la fuente oficial confirma exactamente la misma fecha y valor; añade regresión unitaria, PostgreSQL runtime-role y checkout API. La prueba de checkout verifica 409/stock intacto antes de recuperación y 201/stock decrementado después de persistencia runtime + sync exitoso. Sigue siendo prueba sintética/API, no UI ni fuente BCV live.
+- **#287 — contrato de pagos:** handler branch-only define `cash/card/transfer/mobile_payment/other`, máximo técnico 10 pagos y 100 líneas. El SDD mantiene métodos y reglas parciales/mixtas/sobrepago/cambio sin aprobación. No integrar/activar checkout con esos defaults. `MAX_EFFECTIVE_DATE_AGE_DAYS=10` y `MAX_EFFECTIVE_DATE_FUTURE_DAYS=7` son ventanas de validación del parser sin justificación aprobada; no convertirlas en política de frescura ni añadir TTL.
+- **#300:** retira `sales.price.override` del contrato/allowlists/parser y prueba rechazo para todos los roles. Solo rama; no integrado en main.
+- **#302:** GIT_ASKPASS temporal, remote Git limpio y limpieza con trap. Solo rama; el riesgo de URL con token permanece en main hasta una integración autorizada.
+- **#299:** run `42692246875`, job `129414700645`: PostgreSQL 18 sintético, 13 tablas/relaciones verificadas, `pg_restore=1 s`, round-trip sintético=1 s. Resolución de segundos enteros; no es RTO integral ni restauración real.
+- **Backup RPO:** 13 ejecuciones programadas, 12 SUCCESS y 1 FAILURE. Máximo entre backups exitosos 48 h 03 min 03 s; último intervalo 27 h 00 min 14 s. RPO ≤24 h NO cumplido. La falla 2026-10-29 se debió a que ese SHA del workflow no tenía `actions/checkout`; el script de retención estaba en el repo pero no en el workspace. main ya contiene Checkout repository y ruta absoluta; no crear PR duplicada por ese defecto. Ver [BACKUP_AND_RECOVERY.md](BACKUP_AND_RECOVERY.md).
+- **CORS/runtime público:** run `42685081861`/job `129389572909` verificó preflight OPTIONS: origen Pages permitido recibe CORS/credentials; `attacker.example` no recibe allow-origin; Authorization/Content-Type se permiten al origen válido. Sin cookies/tokens ni mutaciones. Run `42684612024` verificó bundle Pages con API base canónica. Esto no prueba CSRF en mutaciones ni recorrido funcional.
+- **Dependencias:** daily dependency watch run `42676391365` terminó SUCCESS; `pnpm audit --audit-level high`: no known vulnerabilities. La lista actual de alertas Dependabot no fue accesible; no afirmar cero alertas.
+- **Branch protection:** API de protección legacy devuelve 403; rulesets de repositorio devolvió lista vacía. Approval/check requirements actuales siguen no verificados.
+- **Seguridad Nivel 1:** ABIERTO; producción NOT READY. Identidad/grants efectivos del Worker en producción, backup independiente/RPO/RTO/alertas y controles HTTP mutativos aún no demostrados.
+- **P0 desde UI:** 0/1 jornadas completas demostradas. No confundir endpoints, migraciones, fixtures, PostgreSQL sintético, previews o CI con aceptación del comercio.
+
+No main writes, merge, deploy, migraciones remotas, Neon main como laboratorio, datos reales, cambios de secretos/DNS/billing ni Cron productivo. PR #298 es la PR documental existente; no abrir otra duplicada.
+
+
+---
+
 ## Evidencia de backup y RPO — 2026-11-10 UTC
 
 El historial de 13 ejecuciones programadas del backup cifrado (12 SUCCESS, 1 FAILURE) muestra un máximo de **48 h 03 min 03 s entre backups exitosos**; el último intervalo fue 27 h 00 min 14 s. **RPO ≤24 h NO cumplido**. PR #299 midió 1 s de `pg_restore` sintético PostgreSQL 18, no RTO integral. Detalle y run IDs en [BACKUP_AND_RECOVERY.md](BACKUP_AND_RECOVERY.md).

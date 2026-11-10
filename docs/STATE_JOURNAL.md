@@ -2480,3 +2480,16 @@ El ensayo verifica el bundle SQL y roles en la base aislada; no prueba el compor
 - Issue #53 permanece OPEN/P0. Producción NOT READY. No Neon writes, secretos, deploy, Cron ni datos reales.
 - Backup: la última ejecución programada exitosa verificada sigue siendo run #19 `42659924075` (2026-11-09 16:57:34 UTC). En el último sondeo no se pudo confirmar una ejecución programada posterior del 10 nov; no declarar RPO cumplido hasta comprobarla. No ejecutar backup manual ni tocar secretos.
 - Fecha límite inamovible: **2026-12-01**. Aceptación P0: un comercio, una sucursal, hasta 1.000 productos y una jornada completa de UI, además de todos los gates de seguridad/recuperación.
+
+
+## Neon main — revalidación directa de privilegios efectivos (2026-11-10 UTC)
+
+**Solo lectura.** Proyecto `restless-fire-99110035`, rama `main`, base `neondb`. No se leyeron secretos/connection strings y no hubo DDL/DML.
+
+- Con LOGIN `backup_readonly`: `current_user = session_user = backup_readonly`; membresía efectiva en `neon_superuser` y `pg_write_all_data`; `has_table_privilege` confirmó UPDATE y DELETE sobre `public.products`. El rol además tiene LOGIN, INHERIT, CREATEDB y CREATEROLE. **No es least-privilege ni readonly efectivo.**
+- `neon_service` y `neondb_owner` también heredan `pg_write_all_data` vía `neon_superuser`; `cloud_admin` tiene `rolsuper=true`.
+- No aparecen `microapp_runtime`, `microapp_migrator` ni `microapp_bcv_sync` en `pg_roles` del branch consultado.
+- **No se demostró que el secreto GitHub `DATABASE_URL_BACKUP_RO` utilice `backup_readonly`**; el workflow no revela el principal. No inferir identidad del secreto por su nombre.
+- Se registró evidencia y límites en el comentario del issue #53 (comment ID `6765600704`). Issue #53 permanece OPEN/P0.
+- Gate: verificar de forma autorizada el principal real del Worker/API y del backup, memberships heredadas, ownership y ACL efectivos. Diseñar bootstrap/upgrade least-privilege en PostgreSQL desechable. No cambiar roles/grants en Neon main desde esta tarea; no leer ni imprimir secretos.
+- PR #302 solo elimina el token Git de la URL del remote; no corrige ni prueba los privilegios PostgreSQL. Producción NOT READY.

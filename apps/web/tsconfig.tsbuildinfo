@@ -1,1 +1,0 @@
-{"root":["./src/App.test.tsx","./src/App.tsx","./src/CatalogPanel.test.tsx","./src/CatalogPanel.tsx","./src/InventoryPanel.test.tsx","./src/InventoryPanel.tsx","./src/Preview.test.tsx","./src/ProductForm.test.tsx","./src/ProductForm.tsx","./src/auth.ts","./src/main.tsx","./src/money.test.ts","./src/vite-env.d.ts","./vite.config.ts"],"version":"5.9.3"}

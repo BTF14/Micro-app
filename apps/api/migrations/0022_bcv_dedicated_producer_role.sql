@@ -24,6 +24,26 @@ $preflight$;
 
 -- Runtime can read the BCV state/rates, but all direct table- and
 -- column-level writes are removed. The checkout lock is exposed separately.
+-- These are private application tables. Remove any accidental PUBLIC
+-- table ACLs and independent column ACLs before granting named principals.
+REVOKE ALL ON TABLE public.bcv_sync_state, public.exchange_rates FROM PUBLIC;
+REVOKE SELECT (singleton,attempt_id,last_attempt_at,last_success_at,last_outcome,last_error_code,last_effective_date,updated_at)
+  ON TABLE public.bcv_sync_state FROM PUBLIC;
+REVOKE INSERT (singleton,attempt_id,last_attempt_at,last_success_at,last_outcome,last_error_code,last_effective_date,updated_at)
+  ON TABLE public.bcv_sync_state FROM PUBLIC;
+REVOKE UPDATE (singleton,attempt_id,last_attempt_at,last_success_at,last_outcome,last_error_code,last_effective_date,updated_at)
+  ON TABLE public.bcv_sync_state FROM PUBLIC;
+REVOKE REFERENCES (singleton,attempt_id,last_attempt_at,last_success_at,last_outcome,last_error_code,last_effective_date,updated_at)
+  ON TABLE public.bcv_sync_state FROM PUBLIC;
+REVOKE SELECT (id,base_currency,quote_currency,rate,source,effective_date,fetched_at,validation_status,created_at)
+  ON TABLE public.exchange_rates FROM PUBLIC;
+REVOKE INSERT (id,base_currency,quote_currency,rate,source,effective_date,fetched_at,validation_status,created_at)
+  ON TABLE public.exchange_rates FROM PUBLIC;
+REVOKE UPDATE (id,base_currency,quote_currency,rate,source,effective_date,fetched_at,validation_status,created_at)
+  ON TABLE public.exchange_rates FROM PUBLIC;
+REVOKE REFERENCES (id,base_currency,quote_currency,rate,source,effective_date,fetched_at,validation_status,created_at)
+  ON TABLE public.exchange_rates FROM PUBLIC;
+
 REVOKE ALL ON TABLE public.bcv_sync_state FROM microapp_runtime;
 REVOKE INSERT (singleton,attempt_id,last_attempt_at,last_success_at,last_outcome,last_error_code,last_effective_date,updated_at)
   ON TABLE public.bcv_sync_state FROM microapp_runtime;

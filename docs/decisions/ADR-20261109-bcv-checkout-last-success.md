@@ -1,6 +1,6 @@
 # ADR-20261109 — Checkout requiere último éxito de sincronización BCV
 
-- **Estado:** decisión de producto aprobada e implementación completada en PR #295 (OPEN/Draft); revisión técnica independiente sin bloqueo de código identificado, aprobación formal pendiente.
+- **Estado:** decisión de producto aprobada; implementación incorporada a la rama de integración PR #287 (OPEN/Draft). CI exact-HEAD verde al SHA `dd587308f85f42f8019d5fc74e7f8e296229ead8`; revisión/aprobación formal independiente pendiente.
 - **Fecha:** 2026-11-09.
 - **Contexto:** PR #287 integra el productor BCV y checkout. La migración 0021 persiste `bcv_sync_state`, pero checkout solo comprobaba una fila de tasa `valid` para la fecha de Caracas. Un fallo posterior del sincronizador podía dejar una tasa del día habilitada para nuevas ventas.
 - **Decisión aprobada por el propietario:** aplicar opción A. Si el último intento BCV está `running` o `failed`, bloquear nuevas ventas hasta que una sincronización termine exitosamente. No mantener el checkout abierto usando silenciosamente la tasa anterior.
@@ -14,7 +14,7 @@
 - **Alternativas no adoptadas:** TTL fijo, usar `fetched_at` como last-success, fallback a fecha anterior/futura o habilitar tasa manual automáticamente.
 - **Seguridad:** la tasa anterior se conserva en el histórico; no se borra ni se modifica una venta completada. Checkout bloquea nuevas ventas hasta un éxito. La contingencia manual es una propuesta independiente y no queda habilitada por esta ADR.
 - **Gates externos no resueltos:** fixture HTML oficial BCV reproducible, calendario bancario oficial, justificación de límites 10/7 del parser, revisión legal/contable, alertas/identidad Worker y decisiones comerciales adicionales del checkout. Esta decisión no certifica readiness de producción.
-- **Consecuencias:** requiere que runtime pueda leer el estado singleton; la migración 0021 ya otorga SELECT y UPDATE column-scoped. Pruebas deben usar PostgreSQL desechable y rol `microapp_runtime`; no ejecutar cambios remotos ni activar Cron.
+- **Consecuencias:** runtime debe leer y bloquear el estado singleton sin poder modificarlo directamente. La migración 0021 fue el diseño inicial y concedía UPDATE column-scoped; esa concesión queda revocada por la migración 0022 en la rama #287. La implementación vigente expone `public.lock_bcv_sync_state()` como función `SECURITY DEFINER`, propiedad de `microapp_migrator`, con `search_path=pg_catalog`, EXECUTE solo para `microapp_runtime` y sin EXECUTE para PUBLIC ni `microapp_bcv_sync`. El productor dedicado recibe las escrituras BCV necesarias. Pruebas deben usar PostgreSQL desechable y los tres LOGIN separados; no ejecutar cambios remotos ni activar Cron.
 
 
 ## Revisión técnica independiente — 2026-11-09
@@ -35,3 +35,17 @@ La revisión de la integración detectó que la regla de último éxito estaba a
 Se añade a migration 0021 el trigger diferido `sales_latest_bcv_sync_success`, mediante función `SECURITY DEFINER` propiedad de `microapp_migrator`, no ejecutable directamente por PUBLIC/runtime. Al completar una venta, bloquea con `FOR SHARE` el singleton y exige `last_success_at`, outcome `inserted`/`unchanged` y `last_effective_date` igual o posterior a la fecha Caracas actual. La aserción de migración verifica propietario, definición, permisos y trigger; una prueba PostgreSQL usa el login runtime para intentar completar una venta directamente con el último outcome `failed` y espera rechazo SQLSTATE 23514.
 
 Esta defensa de base de datos complementa el guard de API; no demuestra resistencia ante compromiso del propio runtime, que conserva permisos de actualización column-scoped sobre el estado para ejecutar la sincronización. La validación exact-HEAD de esta ampliación queda pendiente hasta que termine CI del nuevo commit.
+
+## Reconciliación de permisos — 2026-11-10 (migration 0022)
+
+La descripción de permisos incluida en la revisión técnica del 2026-11-09 corresponde al estado anterior a migration 0022 y queda supersedida para la rama de integración actual. No debe interpretarse como el contrato vigente.
+
+En el HEAD `dd587308f85f42f8019d5fc74e7f8e296229ead8` de PR #287:
+
+- `microapp_runtime` conserva SELECT sobre `bcv_sync_state` y `exchange_rates`, pero migration 0022 revoca sus permisos directos de INSERT/UPDATE/DELETE/TRUNCATE y el UPDATE column-scoped previo.
+- `microapp_runtime` ejecuta `public.lock_bcv_sync_state()` para leer y mantener `FOR SHARE` dentro de la transacción de checkout. La función es propiedad de `microapp_migrator`, usa `SECURITY DEFINER` y `search_path=pg_catalog`; PUBLIC y `microapp_bcv_sync` no tienen EXECUTE.
+- `microapp_bcv_sync` es un LOGIN independiente, sin memberships ni herencia, con los permisos limitados para insertar tasas, cambiar únicamente `validation_status` y actualizar el estado de sincronización.
+- Las assertions 0022 verifican los permisos positivos y negativos, el propietario/configuración de la función y la ausencia de privilegios directos de escritura BCV en runtime.
+- La configuración separada `apps/api/wrangler.bcv.toml` define el Worker Cron aislado; su secreto/LOGIN aún no está provisionado en Neon/Cloudflare y no se ha desplegado ni activado.
+
+La evidencia de CI exact-HEAD acredita las pruebas PostgreSQL desechables y los contratos declarados, no la existencia de esos roles/secretos en el entorno remoto ni el despliegue del Worker. No se realizaron cambios en Neon, Cloudflare, secretos o producción. PR #287 permanece Draft y producción NOT READY.

@@ -38,6 +38,91 @@ VALUES
   (repeat('c', 64), repeat('d', 64), 'Synthetic Pending Bootstrap',
    'synthetic-pending-bootstrap', now() + interval '10 minutes');
 
+-- A second independent tenant proves the restored fixture is not a single-tenant sample.
+INSERT INTO public.organizations (id, name, slug)
+VALUES ('14141414-1414-4414-8414-141414141414', 'Synthetic Restore Tenant B', 'synthetic-restore-tenant-b');
+
+INSERT INTO public.app_users (id, email, display_name, google_sub, email_verified_at)
+VALUES ('15151515-1515-4515-8515-151515151515',
+        'backup-restore-tenant-b@example.invalid', 'Synthetic Tenant B Owner',
+        'synthetic-backup-restore-sub-b', now());
+
+INSERT INTO public.organization_members (organization_id, user_id, role)
+VALUES ('14141414-1414-4414-8414-141414141414',
+        '15151515-1515-4515-8515-151515151515', 'owner');
+
+INSERT INTO public.auth_allowlist (email, added_by, note)
+VALUES ('backup-restore-tenant-b@example.invalid', 'synthetic-test', 'second synthetic tenant');
+
+INSERT INTO public.branches (id, organization_id, name, slug)
+VALUES ('16161616-1616-4616-8616-161616161616',
+        '14141414-1414-4414-8414-141414141414',
+        'Synthetic Tenant B Branch', 'synthetic-tenant-b-branch');
+
+INSERT INTO public.branch_memberships (organization_id, branch_id, user_id)
+VALUES ('14141414-1414-4414-8414-141414141414',
+        '16161616-1616-4616-8616-161616161616',
+        '15151515-1515-4515-8515-151515151515');
+
+INSERT INTO public.suppliers (id, organization_id, name)
+VALUES ('17171717-1717-4717-8717-171717171717',
+        '14141414-1414-4414-8414-141414141414', 'Synthetic Tenant B Supplier');
+
+INSERT INTO public.products
+  (id, organization_id, sku, name, cost_usd, price_usd, stock_quantity, minimum_stock, supplier_id)
+VALUES ('18181818-1818-4818-8818-181818181818',
+        '14141414-1414-4414-8414-141414141414',
+        'SYN-RESTORE-B-001', 'Synthetic Tenant B Product', 2.0000, 5.0000, 0.000, 1.000,
+        '17171717-1717-4717-8717-171717171717');
+
+INSERT INTO public.warehouses (id, organization_id, branch_id, code, name)
+VALUES ('19191919-1919-4919-8919-191919191919',
+        '14141414-1414-4414-8414-141414141414',
+        '16161616-1616-4616-8616-161616161616',
+        'synthetic-tenant-b-main', 'Synthetic Tenant B Warehouse');
+
+INSERT INTO public.inventory_counts
+  (id, organization_id, branch_id, warehouse_id, count_type, reason, created_by)
+VALUES ('20202020-2020-4020-8020-202020202020',
+        '14141414-1414-4414-8414-141414141414',
+        '16161616-1616-4616-8616-161616161616',
+        '19191919-1919-4919-8919-191919191919',
+        'opening', 'Synthetic Tenant B opening count',
+        '15151515-1515-4515-8515-151515151515');
+
+INSERT INTO public.inventory_count_lines
+  (organization_id, branch_id, warehouse_id, count_id, product_id,
+   counted_quantity, unit_cost_usd)
+VALUES ('14141414-1414-4414-8414-141414141414',
+        '16161616-1616-4616-8616-161616161616',
+        '19191919-1919-4919-8919-191919191919',
+        '20202020-2020-4020-8020-202020202020',
+        '18181818-1818-4818-8818-181818181818', 5.000, 2.0000);
+
+UPDATE public.inventory_counts
+   SET status = 'confirmed', confirmed_by = '15151515-1515-4515-8515-151515151515',
+       confirmed_at = now()
+ WHERE id = '20202020-2020-4020-8020-202020202020';
+
+INSERT INTO public.inventory_balances
+  (organization_id, branch_id, warehouse_id, product_id, on_hand_quantity, reserved_quantity)
+VALUES ('14141414-1414-4414-8414-141414141414',
+        '16161616-1616-4616-8616-161616161616',
+        '19191919-1919-4919-8919-191919191919',
+        '18181818-1818-4818-8818-181818181818', 5.000, 0.000);
+
+INSERT INTO public.warehouse_inventory_movements
+  (id, organization_id, branch_id, warehouse_id, product_id, movement_type,
+   quantity_delta, unit_cost_usd, reason, count_id, actor_user_id)
+VALUES ('21212121-2121-4121-8121-212121212121',
+        '14141414-1414-4414-8414-141414141414',
+        '16161616-1616-4616-8616-161616161616',
+        '19191919-1919-4919-8919-191919191919',
+        '18181818-1818-4818-8818-181818181818', 'opening',
+        5.000, 2.0000, 'Synthetic Tenant B opening count',
+        '20202020-2020-4020-8020-202020202020',
+        '15151515-1515-4515-8515-151515151515');
+
 INSERT INTO public.branches (id, organization_id, name, slug)
 VALUES ('33333333-3333-4333-8333-333333333333',
         '11111111-1111-4111-8111-111111111111',

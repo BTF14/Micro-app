@@ -2490,3 +2490,16 @@ Esta revisión fue estática de contenidos en GitHub; no se ejecutaron tests des
 - Próximo gate: comprobar después de 16:57:53Z si aparece una nueva ejecución programada exitosa y verificar metadatos/checksum del artefacto sin leer su contenido; mantener #53 OPEN/P0 y producción NOT READY.
 
 **Fecha límite inamovible: 2026-12-01.**
+
+## Corrección de estado — backup programado recibido 2026-11-10 11:43 UTC−4
+
+La consulta posterior encontró una nueva ejecución que no estaba publicada en la revisión anterior:
+- Run programado `42842855127`, evento `schedule`, SUCCESS; iniciado `2026-11-10T15:17:48Z`, completado `15:18:19Z`. https://github.com/BTF14/Micro-app/actions/runs/42842855127
+- En `BTF14/Micro-app-backups` aparecen `daily/backup-2026-11-10T15-18-11Z.dump.age` (42,708 bytes) y el sidecar `.sha256` (103 bytes).
+- El sidecar contiene SHA-256 `68bf4409fea85aac11a3671f9ef966079bacd49bfbab052d7a1a5c819ce1a1c5`. Se comprobó su existencia/contenido, pero no se descargó el dump ni se recalculó el hash sobre los bytes cifrados.
+- Intervalo entre timestamps de artefactos 2026-11-09T16:57:53Z y 2026-11-10T15:18:11Z: ~22h20m18s. **El ciclo actual queda dentro de 24h; no hubo breach en este ciclo.**
+- La nota previa que indicaba que no aparecía run del 10-nov era correcta para la hora de aquella consulta (10:35 UTC−4) pero quedó superada por la ejecución posterior (11:17 UTC−4). No tratarla como estado actual.
+- No queda demostrado RPO sostenido ni restore. Principal efectivo de `DATABASE_URL_BACKUP_RO` sigue sin demostrarse; el riesgo de grants heredados en `backup_readonly` sigue abierto. Issue #53 continúa OPEN/P0.
+- No hubo workflow manual, lectura de secretos/dump, operación en Neon, ni cambios de permisos o producción.
+
+**Producción NOT READY. Fecha límite inamovible: 2026-12-01.**

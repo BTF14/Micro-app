@@ -66,7 +66,7 @@ Antes de declarar aislamiento multiempresa listo, las pruebas de integración co
 
 ## Decisiones todavía pendientes
 
-- Aprobación de la matriz de permisos por rol y organización: [role-permission-decision-matrix.md](role-permission-decision-matrix.md).
+- La matriz de permisos por rol y organización está APROBADA desde 2026-10-31: [role-permission-decision-matrix.md](role-permission-decision-matrix.md). La implementación sigue parcial; los handlers que faltan no se habilitan por la aprobación documental.
 - Resolución de identidad y alta segura: decisiones D1–D8 de [auth-policy-decision-record.md](auth-policy-decision-record.md) y seguimiento en [issue #53](https://github.com/BTF14/Micro-app/issues/53).
 - Mecanismo de selección de organización y política de respuesta cuando el recurso no pertenece al tenant.
 - Diseño, implementación y pruebas de handlers comerciales reales.
@@ -75,4 +75,4 @@ No rellenar estos puntos por inferencia. Mantener habilitadas solo las rutas que
 
 ## Estado actual verificado en la revisión documental
 
-La API tiene rutas de autenticación, pero no handlers HTTP comerciales para catálogo, proveedores, ventas, pagos ni movimientos de inventario. Por ello, este contrato prepara futuras implementaciones; no demuestra aislamiento efectivo de rutas comerciales ni cambia el estado de preparación para producción.
+Main registra rutas de autenticación/identidad, catálogo de lectura y escritura, lectura de inventario y conteos. La autorización tenant/branch está aplicada parcialmente a esos handlers y cuenta con pruebas negativas e integración. Aún no están registrados checkout/pagos, transferencias, compras/recepciones completas, ni rutas HTTP de apertura/consulta/cierre de turnos; `cashier-open-shift.ts` sigue siendo un helper aislado. La cobertura parcial no demuestra aislamiento de todas las operaciones de la matriz ni readiness de producción.

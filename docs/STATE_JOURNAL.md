@@ -2550,3 +2550,13 @@ El ensayo verifica el bundle SQL y roles en la base aislada; no prueba el compor
 - Issue #53 sigue OPEN/P0. La evidencia registrada indica que el rol llamado backup_readonly hereda pg_write_all_data, pero el principal del secreto DATABASE_URL_BACKUP_RO no está demostrado.
 - No se modificó main, código funcional, Neon, datos reales, roles/grants, secretos, Cloudflare, DNS, billing, Cron ni despliegues. Esta actualización es documental en la rama #298 únicamente.
 - Próximo: vigilar el siguiente ciclo; trabajar en prueba aislada GIT_ASKPASS y diseño de verificación de identidad/privilegios sin exponer secretos ni mutar Neon main. Fecha límite 2026-12-01.
+
+ 
+## Revalidación posterior — PR #302 GIT_ASKPASS y revisión inicial #301 — 2026-11-10
+
+- PR #302 nuevo HEAD: `5420896eb591d3ae513254a064c787624678da14`, OPEN/Draft, 5 ahead / 0 behind de main, 14/14 check-runs SUCCESS y 12/12 workflow runs SUCCESS. Sin reviews formales ni threads.
+- Se extrajo `scripts/backup_git_askpass.sh`; el workflow copia el helper a `$RUNNER_TEMP` con modo 700 y lo elimina con el clon temporal. `scripts/test_backup_git_askpass.sh` comprueba con token ficticio las respuestas Username/Password, rechazo de prompts desconocidos, fallo por GH_TOKEN ausente y ausencia del token en el archivo helper.
+- La prueba aislada local pasó. En CI exact-HEAD, el paso **Test backup Git askpass contract** terminó SUCCESS dentro del workflow CI run `42813175458`; el SHA final de PR #302 pasó 14/14 checks y 12/12 workflows. Esto valida el contrato local del helper, no autenticación HTTPS real, push remoto, backup productivo ni restore.
+- No se ejecutó el workflow real de backup ni se usaron secretos reales. Main sigue usando la URL Git con token hasta que exista una integración segura; PR #302 continúa Draft por falta de review independiente y porque el principal PostgreSQL/RPO/RTO siguen abiertos.
+- Primera pasada estática de PR #301: `branches.ts` reutiliza `authorizeTenantOperation(..., "inventory.read")`, filtra por organization_id y sucursales activas, y limita cashier/inventory a branch_memberships activas; owner/admin reciben sucursales activas de su organización. Tests cubren owner/admin/cashier/inventory, tenant ajeno y sesión ausente. No se observó un bypass directo en esta pasada; el límite `MAX_BRANCHES=100` sin cursor permanece explícito. No equivale a revisión independiente completa ni aprobación; #301 sigue OPEN/no Draft, sin review formal.
+- PR #298, antes de esta nueva actualización, estaba en HEAD `44def211e264fd34d5bef7db5cead8c5fd6d509b`, 223 ahead / 0 behind, 15/15 check-runs y 13/13 workflows SUCCESS. El commit documental actual mueve nuevamente su HEAD y exige CI exact-HEAD nuevo.

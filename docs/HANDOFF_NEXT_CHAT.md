@@ -3031,11 +3031,11 @@ La evidencia de solo lectura registrada en issue #53 (2026-11-06) indica que `ba
 |---|---|---|---:|---:|
 | #287 | `dd587308f85f42f8019d5fc74e7f8e296229ead8` | OPEN/Draft | 175/1 | 11/11 + 15/15 SUCCESS |
 | #296 | `62dde66355a937a4f6fa4efb8d9cfdf856d7ac0f` | OPEN/Draft | 64/1 | 10/10 + 14/14 SUCCESS |
-| #298 | `385af0d1fe427e17e384b86982fd4733088d7297` | OPEN/Draft | 222/0 | 11/11 + 15/15 SUCCESS |
+| #298 | `44def211e264fd34d5bef7db5cead8c5fd6d509b` | OPEN/Draft | 223/0 | 13/13 + 15/15 SUCCESS |
 | #299 | `c82b0a10f85b59e1f81ac0ca2d439b6286558751` | OPEN/Draft | 1/0 | 10/10 + 14/14 SUCCESS |
 | #300 | `97fa79e643d5e7b32ebf86958bd0ba9211e1fc95` | OPEN/Draft | 3/0 | 10/10 + 14/14 SUCCESS |
 | #301 | `ce43ab2cff91cd07e7ca2b91635b8e27a02b11c8` | OPEN, no Draft | 5/0 | 10/10 + 15/15 SUCCESS |
-| #302 | `1b441b3dc9e65e2cb89d765f9aff084b474dd90d` | OPEN/Draft | 4/0 | 10/10 + 14/14 SUCCESS |
+| #302 | `5420896eb591d3ae513254a064c787624678da14` | OPEN/Draft | 5/0 | 12/12 + 14/14 SUCCESS |
 | #193 | `ac57ab4f3415f82279b8a49c0befe09f8e3aec68` | OPEN, no Draft | 5/74 | 8/8 + 12/12 SUCCESS |
 
 No formal reviews or inline review threads were returned for these PRs. #287/#296 are each one commit behind main from merge base 0344295; #193 is 74 behind with merge base 705d3db. No automatic rebase/sync. Combined legacy statuses are empty where queried; check-runs and workflow runs remain separate evidence.
@@ -3051,3 +3051,13 @@ No formal reviews or inline review threads were returned for these PRs. #287/#29
 7. Mantener BCV/SUDEBAN según `docs/EXTERNAL_SOURCE_RELIABILITY_BCV_SUDEBAN.md`; no volver a pedir calendario 2026 ni insistir con calendario oficial 2027 no verificable.
 
 No pedir terminal, CLI, Build IDs, capturas, TinyFish, reconexiones, ni datos ya documentados.
+
+ 
+## Revalidación posterior — PR #302 GIT_ASKPASS y revisión inicial #301 — 2026-11-10
+
+- PR #302 nuevo HEAD: `5420896eb591d3ae513254a064c787624678da14`, OPEN/Draft, 5 ahead / 0 behind de main, 14/14 check-runs SUCCESS y 12/12 workflow runs SUCCESS. Sin reviews formales ni threads.
+- Se extrajo `scripts/backup_git_askpass.sh`; el workflow copia el helper a `$RUNNER_TEMP` con modo 700 y lo elimina con el clon temporal. `scripts/test_backup_git_askpass.sh` comprueba con token ficticio las respuestas Username/Password, rechazo de prompts desconocidos, fallo por GH_TOKEN ausente y ausencia del token en el archivo helper.
+- La prueba aislada local pasó. En CI exact-HEAD, el paso **Test backup Git askpass contract** terminó SUCCESS dentro del workflow CI run `42813175458`; el SHA final de PR #302 pasó 14/14 checks y 12/12 workflows. Esto valida el contrato local del helper, no autenticación HTTPS real, push remoto, backup productivo ni restore.
+- No se ejecutó el workflow real de backup ni se usaron secretos reales. Main sigue usando la URL Git con token hasta que exista una integración segura; PR #302 continúa Draft por falta de review independiente y porque el principal PostgreSQL/RPO/RTO siguen abiertos.
+- Primera pasada estática de PR #301: `branches.ts` reutiliza `authorizeTenantOperation(..., "inventory.read")`, filtra por organization_id y sucursales activas, y limita cashier/inventory a branch_memberships activas; owner/admin reciben sucursales activas de su organización. Tests cubren owner/admin/cashier/inventory, tenant ajeno y sesión ausente. No se observó un bypass directo en esta pasada; el límite `MAX_BRANCHES=100` sin cursor permanece explícito. No equivale a revisión independiente completa ni aprobación; #301 sigue OPEN/no Draft, sin review formal.
+- PR #298, antes de esta nueva actualización, estaba en HEAD `44def211e264fd34d5bef7db5cead8c5fd6d509b`, 223 ahead / 0 behind, 15/15 check-runs y 13/13 workflows SUCCESS. El commit documental actual mueve nuevamente su HEAD y exige CI exact-HEAD nuevo.

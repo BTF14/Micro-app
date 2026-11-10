@@ -2448,3 +2448,11 @@ Se creó `fix/bcv-checkout-last-success-20261109` desde #287 HEAD `362443524eb45
 - El principal efectivo de `DATABASE_URL_BACKUP_RO` sigue sin demostrarse; no inferir que sea `backup_readonly`. No leer secretos, no ejecutar backup manual, no tocar Neon/main/cron ni producción.
 - Issue #53 recibió una nota de revalidación con timestamp, evidencia, umbral y límites. Próximo paso: reconsultar después del umbral y comprobar run programado + metadatos/checksum, sin descargar ni leer el dump.
 - Fecha límite inamovible: **2026-12-01**. Producción **NOT READY**.
+
+## 2026-11-10 11:43 UTC−4 — resultado de revalidación backup
+
+La nueva consulta posterior a la nota de 10:35 UTC−4 encuentra el workflow programado run `42842855127` SUCCESS (schedule), iniciado 15:17:48Z y completado 15:18:19Z. El repositorio de respaldos contiene `backup-2026-11-10T15-18-11Z.dump.age` (42,708 bytes) y sidecar SHA-256 (103 bytes). El sidecar declara hash `68bf4409fea85aac11a3671f9ef966079bacd49bfbab052d7a1a5c819ce1a1c5`; no se descargó el dump ni se verificó ese hash contra sus bytes.
+
+El intervalo entre el backup previo (2026-11-09T16:57:53Z) y el nuevo (2026-11-10T15:18:11Z) es ~22h20m18s: el ciclo actual permanece dentro del límite de 24h. La ausencia del run del 10-nov observada a las 10:35 quedó superada por esta ejecución posterior. No declarar breach actual. RPO sostenido y restaurabilidad siguen NO DEMOSTRADOS; principal efectivo de `DATABASE_URL_BACKUP_RO` no probado. Issue #53 sigue OPEN/P0. Se añadió comentario con evidencia en el issue.
+
+No se ejecutó backup manual ni se tocaron secretos, dump, Neon, roles/grants, Cron o producción. Producción NOT READY. Fecha límite inamovible: **2026-12-01**.

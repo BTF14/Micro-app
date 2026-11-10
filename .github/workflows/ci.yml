@@ -102,7 +102,7 @@ jobs:
       - name: PostgreSQL auth rate limit integration tests
         run: pnpm --filter @micro-app/api exec vitest run src/auth-rate-limit.integration.test.ts
       - name: PostgreSQL BCV effective-date integration tests (dedicated producer LOGIN)
-        run: DATABASE_URL="$BCV_DATABASE_URL" DATABASE_URL_ADMIN="$ADMIN_DATABASE_URL" pnpm --filter @micro-app/api exec vitest run src/exchange-rates.integration.test.ts
+        run: DATABASE_URL="$BCV_DATABASE_URL" DATABASE_URL_RUNTIME="$RUNTIME_DATABASE_URL" DATABASE_URL_ADMIN="$ADMIN_DATABASE_URL" pnpm --filter @micro-app/api exec vitest run src/exchange-rates.integration.test.ts
       - name: PostgreSQL branch scope integration tests
         run: pnpm --filter @micro-app/api exec vitest run src/branch-context.integration.test.ts
       - name: PostgreSQL register shift integration tests

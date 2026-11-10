@@ -1,3 +1,5 @@
+> **Reconciliación 2026-11-09:** este registro conserva referencias históricas. D1–D8 de identidad están APROBADAS desde 2026-10-24 e implementadas parcialmente en `apps/api/src/google-auth.ts`; la matriz de permisos por rol está APROBADA desde 2026-10-31. No usar las filas fechadas 2026-10-18 como estado actual. El estado vivo de GitHub/PR/CI y los gates se encuentra en `docs/CURRENT_STATE.md` y `docs/SECURITY_ROADMAP.md`.
+
 > **Checkpoint 2026-11-08 UTC:** PR #280 y PR #281 están integradas. Último main verificado antes de este checkpoint: `e6f0c6021d82cfffce12f4c1d5283f657dc74c64` (merge SHA PR #281); consultar GitHub para la punta viva. PR #281 post-merge: 9/9 workflows y 11/11 check-runs SUCCESS. Neon rehearsal #42507066215 verificó 0001–0019 únicamente en `microapp_rehearsal`; Neon main no fue modificado. **Producción continúa NOT READY.** Estado operativo: [CURRENT_STATE](docs/CURRENT_STATE.md) y [HANDOFF](docs/HANDOFF_NEXT_CHAT.md).
 
 # Registro de herramientas, repositorios y fuentes de Micro app

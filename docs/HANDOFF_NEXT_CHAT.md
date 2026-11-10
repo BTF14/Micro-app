@@ -2646,3 +2646,22 @@ Fecha límite del MVP: 1 de diciembre de 2026 — INAMOVIBLE.
 La punta verificada inmediatamente antes de esta corrección fue `7500ac66c17b193c053c075bd694d57370cab03b`, 216 ahead / 1 behind de main, merge base `03442951b2a2f63f5bf4dcf560f2c91be4f6cc71`. En ese SHA exacto GitHub devolvió 0 workflow runs pull_request y 0 status contexts. No reutilizar 11/11 SUCCESS del padre `515f85260d9ae0381eb4c4de64cd0f87ac6201da`. Esta corrección es documental; la punta que produzca debe validarse en su SHA exacto antes de cualquier promoción. PR #287 OPEN/Draft, sin reviews formales ni review threads; issue #53 OPEN/P0; producción NOT READY.
 
 Fecha límite del MVP: **1 de diciembre de 2026 — INAMOVIBLE**.
+
+ 
+## Handoff — PR #287 backup/restore projection + BCV (2026-11-10)
+
+Continuar desde `integration/bcv-checkout-rehearsal-20261109`. Código validado en SHA `7746e86140cdf3a98911665f6955e57a256bfd4b`, 11/11 workflows exact-HEAD SUCCESS. PR #287 OPEN/Draft, 224 ahead / 1 behind main, mergeable=true, 0 reviews y 0 threads. No merge ni base sync.
+
+Se agregó `scripts/backup_restore_fixture_bcv.sql`, `scripts/test_backup_restore_schema_bcv.sh`, y el workflow ahora ejecuta el perfil completo más la regresión histórica. El fixture respeta migration 0019: no muta balances directamente; los movimientos los proyectan. Incluye la tasa BCV sintética con fecha exacta, estado latest-success, venta completada y payment allocation; compara ACL/privilegios efectivos por columna del producer. Job `42872318369` SUCCESS; 22 migraciones, 3 s, age/checksum/restore y auth ephemeral exclusions PASS. ODD: `odd/tasks/backup-restore-pr287-projection-profile.md`.
+
+### Próximos pasos
+
+1. Revalidar HEAD y CI exact-HEAD después de los commits documentales; no reutilizar 11/11 del SHA anterior.
+2. Revisar el diff completo del perfil #287 y los logs exactos; mantener Draft.
+3. Resolver la diferencia entre el test sintético (pg_dump/restore default, preserva owners/ACL) y el workflow productivo (`--no-owner --no-privileges`). Diseñar un bootstrap de recuperación explícito antes de afirmar restauración operativa.
+4. Mantener #53 OPEN/P0. No leer secretos ni inferir identidad del principal `DATABASE_URL_BACKUP_RO`; no ejecutar workflow_dispatch ni backup manual.
+5. Separar perfil #303 main 0001–0016 (ledger intents) del perfil #287 0001–0022 (ledger projection + BCV). Nunca combinar fixtures/modelos.
+
+#303: código validado en SHA `f0dc1f90043eff4270d86f461a2dfc07187aa814` 11/11; HEAD documental posterior `afe0a94005854843ead2526b3a5ea18a183f127a` tenía 10/11 y PostgreSQL migration runner PENDING sin jobs al último sondeo. Revalidar antes de afirmar CI completo en #303.
+
+Issue #53 OPEN/P0, producción NOT READY. Sin main, merge, deploy, Neon writes, secretos, Cron, DNS/billing ni datos reales. Deadline 2026-12-01.

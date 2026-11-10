@@ -112,7 +112,7 @@ SELECT 'functions|' || COALESCE(string_agg(p.proname || '(' || pg_catalog.pg_get
   FROM pg_catalog.pg_proc p
   JOIN pg_catalog.pg_namespace n ON n.oid = p.pronamespace
  WHERE n.nspname = 'public' AND p.prokind IN ('f', 'p');
-SELECT 'migration_ledger|' || COALESCE(string_agg(version || ':' || filename || ':' || checksum || ':' || state, ';' ORDER BY version), '')
+SELECT 'migration_ledger|' || COALESCE(string_agg(version || ':' || filename || ':' || checksum || ':' || state || ':' || extract(epoch FROM applied_at)::text, ';' ORDER BY version), '')
   FROM public.schema_migrations;
 SELECT 'intent_table|' || (pg_catalog.to_regclass('public.inventory_balance_ledger_intents') IS NOT NULL)::text;
 SELECT 'projection_function|' || (pg_catalog.to_regprocedure('public.project_inventory_movement_to_balance()') IS NOT NULL)::text;
@@ -129,7 +129,7 @@ if [[ "$source_manifest" != "$restored_manifest" ]]; then
 fi
 
 required_tables="$(psql "$schema_restore_url" -X -v ON_ERROR_STOP=1 -Atqc "SELECT count(*) FROM (VALUES ('organizations'),('app_users'),('organization_members'),('auth_allowlist'),('auth_bootstrap'),('suppliers'),('products'),('exchange_rates'),('sales'),('sale_items'),('payments'),('inventory_movements'),('audit_logs'),('branches'),('branch_memberships'),('registers'),('register_shifts'),('warehouses'),('inventory_counts'),('inventory_count_lines'),('inventory_balances'),('warehouse_inventory_movements'),('schema_migrations')) AS required(table_name) WHERE pg_catalog.to_regclass('public.' || required.table_name) IS NOT NULL")"
-[[ "$required_tables" == "23" ]] || { echo "Expected all 23 stable core tables, got $required_tables." >&2; exit 1; }
+[[ "$required_tables" == "23" ]] || { echo "Expected 22 stable application tables plus schema_migrations (23 required objects), got $required_tables." >&2; exit 1; }
 
 ephemeral="$(psql "$schema_restore_url" -X -v ON_ERROR_STOP=1 -Atqc "SELECT (pg_catalog.to_regclass('public.auth_sessions') IS NULL AND pg_catalog.to_regclass('public.auth_rate_limits') IS NULL AND pg_catalog.to_regclass('public.auth_bootstrap_attempts') IS NULL)")"
 [[ "$ephemeral" == "t" ]] || { echo "Ephemeral auth tables were unexpectedly restored." >&2; exit 1; }

@@ -2482,7 +2482,7 @@ El script `scripts/test_backup_restore_schema.sh` aplica migraciones del ref med
 
 ### Decisión de fixture fase 2
 
-No mezclar main 0001–0016 con PR #287 0017–0022. En main, la tabla `sales` aún no incorpora las columnas branch/register_shift/warehouse que aparecen en el checkout integrado de #287. El fixture de #303 debe probar el grafo real de main (organización, sucursal/membresía, register/shift, warehouse, count/lines, movimiento/ledger/balance y venta/pago legacy con auditoría). La prueba de checkout atómico debe ejecutarse como perfil separado sobre la rama/ref #287, donde esas columnas, triggers y asignaciones existen. No declarar checkout cubierto por el fixture main.
+No mezclar main 0001–0016 con PR #287 0017–0022. Main 0001–0016 ya contiene checkout branch-aware mediante migration 0015 (`branch_id`, `register_shift_id`, `warehouse_id`, `settlement_currency`, `request_hash`) y sus guardrails originales. El fixture de #303 debe probar el grafo main completo, incluida una venta completada con pago y referencias de sucursal/turno/almacén, respetando la regla BCV exact-date y el pago completo en una moneda. PR #287 0017–0022 es una extensión: debe probarse como perfil/ref adicional para BCV weekday/weekend, allocation, ledger projection, sync state y rol productor.
 
 ### Estado de PRs relacionadas
 

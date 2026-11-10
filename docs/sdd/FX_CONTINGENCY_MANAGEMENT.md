@@ -1,3 +1,9 @@
+# Límite P0 vigente — 2026-11-10
+
+**Para la entrega del 2026-12-01, el checkout es BCV-only y fail-closed.** Cada venta exige tasa BCV válida para su fecha efectiva; si falta, está stale o el último intento de sincronización no fue exitoso, se bloquea la venta, incluso en USD-only. No usar tasa manual, fallback automático, última tasa antigua ni proveedor alternativo. Esta especificación y su ADR tienen estado de propuesta, no autorización de producto/implementación; no habilitan excepciones en P0, endpoints, permisos, UI, migraciones ni feature flags. Cualquier reconsideración futura requiere una decisión explícita nueva y revisión legal/contable/seguridad.
+
+---
+
 # Gestión de contingencia cambiaria — especificación funcional y técnica
 
 - **Estado:** propuesta de producto aprobada para especificación; no implementada ni habilitada.

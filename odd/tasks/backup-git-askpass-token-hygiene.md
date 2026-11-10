@@ -52,3 +52,12 @@ No cambiar el formato, cifrado, retención, calendario, destino ni permisos del 
 - El RPO, RTO integral, alertas externas y coste $0 permanecen abiertos.
 
 **Limitación de estado:** SHA/CI citados son los observados antes de este commit documental; consultar el HEAD exacto posterior. PR #302 permanece OPEN/Draft.
+
+
+## Verificación aislada del contrato askpass — 2026-11-10
+
+- Se extrajo el helper a `scripts/backup_git_askpass.sh` para que el mismo archivo probado por CI sea el que el workflow copia temporalmente a `$RUNNER_TEMP`.
+- `scripts/test_backup_git_askpass.sh` usa un token ficticio efímero y comprueba las respuestas Username/Password, el rechazo de prompts desconocidos, el fallo cerrado si falta GH_TOKEN y que el valor ficticio no esté incrustado en el helper.
+- El workflow de CI ejecuta esta prueba sin secretos, repositorio remoto ni red; el workflow de backup instala una copia temporal con modo 700 y la elimina junto con el clon mediante `trap`.
+- Esta prueba verifica el contrato local del helper, **no** demuestra autenticación HTTPS real, push remoto, ni restore de un backup real. No ejecutar el workflow productivo para probarlo.
+- El nuevo HEAD requiere CI exact-HEAD; mantener #302 OPEN/Draft y sin merge hasta revisión independiente y cierre de los gates de backup/Seguridad Nivel 1.

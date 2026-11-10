@@ -2514,3 +2514,7 @@ La consulta posterior encontró una nueva ejecución que no estaba publicada en 
 - El run programado 42842855127 sigue demostrando ejecución/subida del artefacto del 10-nov, no principal least-privilege ni restaurabilidad reciente. backup_readonly tiene privilegios heredados de escritura; no se ha demostrado que DATABASE_URL_BACKUP_RO use ese rol.
 - Issue #53 permanece OPEN/P0; RPO sostenido, principal efectivo, least-privilege y restore controlado reciente siguen pendientes. Producción NOT READY.
 - PR #287 se mantiene OPEN/Draft. Fecha límite inamovible: 2026-12-01.
+
+## Corrección de validación exact-HEAD — 2026-11-10
+
+Tras registrar la auditoría P0 del workflow de backup, la punta verificada fue `7500ac66c17b193c053c075bd694d57370cab03b` (216 ahead / 1 behind de main; merge base `03442951b2a2f63f5bf4dcf560f2c91be4f6cc71`). Para ese SHA exacto GitHub no reportó workflow runs pull_request ni status contexts. Los 11/11 SUCCESS del SHA padre `515f85260d9ae0381eb4c4de64cd0f87ac6201da` no se heredan. La documentación de auditoría requiere CI exact-HEAD antes de promover. PR #287 continúa OPEN/Draft, sin reviews formales ni review threads. Issue #53 OPEN/P0; producción NOT READY. Deadline 2026-12-01.

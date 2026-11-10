@@ -110,3 +110,17 @@ PR #287 has migrations 0017–0022 on its own branch. Do not include them in thi
 ## Current state
 
 Task opened after a static audit on 2026-11-10. The finding is recorded in issue #53 comment 6772340874. No code or workflow changes have been made yet. The next action is implementation design against the exact current migrations and existing checkout/inventory integration fixtures, then a disposable CI run.
+## Exact schema delta confirmed during follow-up
+
+The current main migration sequence 0001–0016 adds ten persistent tables beyond the old 13-table fixture:
+
+- 0003: `branches`, `branch_memberships`
+- 0004: `registers`, `register_shifts`
+- 0006: `warehouses`, `inventory_counts`, `inventory_count_lines`, `inventory_balances`, `warehouse_inventory_movements`
+- 0010: `inventory_balance_ledger_intents`
+
+The current manifest's 13 persistent tables plus these ten tables equals 23 application tables in the main baseline. The migration runner additionally creates `schema_migrations`; the test must explicitly verify whether this metadata table is included in the dump/restore contract and include it if the intended recovery procedure relies on it. The three ephemeral tables remain excluded: `auth_sessions`, `auth_rate_limits`, `auth_bootstrap_attempts`.
+
+The PR #287 branch has one additional table from migration 0021: `bcv_sync_state`. It is not part of the main baseline at this task's base SHA and must only be included when testing that branch/ref.
+
+Follow-up evidence was added to issue #53 comment 6772383789. No source changes or CI executions have been made.

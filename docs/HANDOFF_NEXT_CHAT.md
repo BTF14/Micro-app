@@ -2616,3 +2616,13 @@ No main, Neon main, datos reales, secretos, Cloudflare manual, DNS, billing, des
 4. No iniciar nuevas superficies comerciales hasta cerrar los gates de Seguridad Nivel 1; luego completar UI POS y E2E de jornada completa.
 
 Fecha límite de MVP: **1 de diciembre de 2026 — INAMOVIBLE**. Producción **NOT READY**.
+
+## Handoff — corrección backup/RPO (2026-11-10 11:43 UTC−4)
+
+**Estado más reciente del backup:** el workflow diario ejecutó run `42842855127` (schedule, SUCCESS; 2026-11-10T15:17:48Z–15:18:19Z). En `BTF14/Micro-app-backups` están `daily/backup-2026-11-10T15-18-11Z.dump.age` (42,708 bytes) y sidecar `.sha256` (103 bytes). Hash declarado por el sidecar: `68bf4409fea85aac11a3671f9ef966079bacd49bfbab052d7a1a5c819ce1a1c5`. El sidecar se leyó; el dump no se descargó ni se abrió, por lo que no se recalculó el hash sobre sus bytes.
+
+Intervalo entre artefactos: ~22h20m18s, inferior a 24h. El ciclo actual NO incumplió el umbral. La observación anterior (10:35 UTC−4) de que aún no aparecía la ejecución quedó superada por el run posterior. No declarar RPO sostenido: gaps históricos, restore real, y principal efectivo de `DATABASE_URL_BACKUP_RO` siguen sin quedar resueltos. `backup_readonly` continúa cuestionado por grants heredados. Issue #53 OPEN/P0.
+
+**Próximo trabajo:** continuar auditoría del principal efectivo y permisos del backup de forma segura, sin leer secretos ni operar Neon main. Revalidar la siguiente ejecución programada y preparar prueba de restauración controlada fuera de producción. No hacer workflow_dispatch/manual, no tocar roles/grants, secretos, Cron ni producción. Producción NOT READY.
+
+Fecha límite de MVP: **1 de diciembre de 2026 — INAMOVIBLE**.

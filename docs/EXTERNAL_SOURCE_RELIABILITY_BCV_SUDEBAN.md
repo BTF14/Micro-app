@@ -23,14 +23,14 @@
    - NO_VERIFICADO: información contradictoria, incompleta o sin fuente trazable.
 6. **No convertir terceros en fuente oficial.** Una fecha tomada de un banco o medio no debe describirse como “calendario oficial de SUDEBAN/BCV”.
 7. **Registrar fallos de acceso como fallos de acceso.** Guardar URL, fecha/hora y error observado si se conoce. No inferir que el dato no existe, que fue retirado o que el organismo no lo publicó.
-8. **BCV y tasas de cambio:** distinguir la publicación primaria del BCV, una reproducción de terceros y cualquier dato no confirmado. No inventar tasas, fechas efectivas ni disponibilidad de endpoints. Si la fuente oficial falla, utilizar un tercero únicamente con trazabilidad, atribución explícita y controles de consistencia; no etiquetar ese dato como respuesta oficial del BCV.
+8. **BCV y tasas de cambio:** distinguir la publicación primaria del BCV, una reproducción de terceros y cualquier dato no confirmado. No inventar tasas, fechas efectivas ni disponibilidad de endpoints. Si la fuente oficial falla, utilizar un tercero para descubrimiento, contraste o referencia provisional únicamente con trazabilidad, atribución explícita y controles de consistencia; no etiquetar ese dato como respuesta oficial del BCV. **Una tasa de terceros no satisface por sí sola el requisito P0 de tasa BCV válida para checkout**: hasta que exista una decisión funcional/legal explícita y una fuente aceptada, el checkout debe seguir fallando cerrado si no puede verificarse la tasa oficial exigida.
 9. **Calendario 2026 aportado por el propietario:** mantenerlo etiquetado como SECUNDARIO_PROVISIONAL / NO OFICIAL salvo que una publicación primaria posterior permita verificarlo. No reemplazarlo por una búsqueda repetida que no aporte evidencia nueva.
 10. **Calendario 2027:** no bloquear el desarrollo por la ausencia de un PDF o circular oficial accesible. Usar fuentes secundarias según las reglas anteriores y actualizar la clasificación cuando aparezca evidencia nueva.
 
 ## Implicaciones de producto y seguridad
 
 - Los calendarios son datos de referencia sujetos a actualización; no deben codificarse como verdades inmutables sin procedencia y fecha de revisión.
-- La incertidumbre sobre un feriado no debe resolverse silenciosamente. Si afecta una operación financiera, vencimiento o cálculo sensible, mostrar/registrar la procedencia y aplicar la política de negocio aprobada.
+- La incertidumbre sobre un feriado no debe resolverse silenciosamente. Si afecta una operación financiera, vencimiento o cálculo sensible, mostrar/registrar la procedencia y aplicar la política de negocio aprobada. El calendario 2026 provisional puede orientar planificación operativa, pero no demostrar por sí solo cumplimiento legal/fiscal ni determinar una obligación financiera sensible.
 - Esta política de fuentes no autoriza a alterar la lógica de conversión, la política de frescura BCV, los controles de checkout ni los criterios contables. Esos cambios requieren sus decisiones funcionales y técnicas correspondientes.
 - No usar una fecha de calendario secundaria para inferir por sí sola que el BCV no publicará una tasa ese día. Calendario bancario y publicación de tasa son hechos relacionados, pero no equivalentes.
 

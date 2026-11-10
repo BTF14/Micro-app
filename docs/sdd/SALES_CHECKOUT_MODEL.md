@@ -2,7 +2,7 @@
 
 **Estado:** la base de datos ya contiene parte importante del contrato de checkout; el handler HTTP no está integrado en `main`. El código de PR #233 es una fuente de recuperación, no una implementación aprobada para producción.  
 **Fecha:** 2026-11-07 UTC  
-**Dependencias vigentes:** migraciones canónicas 0013–0016 en `main`; motor monetario `@micro-app/money`; autorización tenant/branch; locks de warehouse/balances/turno; tasa BCV recuperada en PR #255.  
+**Dependencias vigentes:** migraciones canónicas 0013–0016 en `main`; motor monetario `@micro-app/money`; autorización tenant/branch; locks de warehouse/balances/turno; integración BCV en la rama PR #287 OPEN/Draft. PR #255 fue cerrada como supersedida por #287; ninguna de estas ramas está integrada en `main`.  
 **Límites:** este documento no autoriza merge, Neon, Cloudflare, despliegue ni activar checkout.
 
 ## 1. Objetivo y principios
@@ -50,7 +50,7 @@ Reglas ya aprobadas/documentadas:
 
 **Base normativa:** el artículo 25 de la Ley del IVA dispone que, si el hecho imponible ocurre en un día no hábil para el sector financiero, la equivalencia se calcula con el tipo de cambio vigente el día hábil inmediatamente siguiente. Referencia documental: Gaceta Oficial N.º 6.507 Extraordinario (29-01-2020), artículo 25: <https://www.ivecofi.net/informacion/legislacion/leyes/ley-impuesto-valor-agregado/titulo-iv>. La fecha efectiva del BCV debe corresponder a ese siguiente día hábil. Esto es una referencia normativa para el diseño, no asesoría legal/contable; cualquier caso fiscal especial requiere validación profesional.
 
-La API BCV recuperada en PR #255 selecciona:
+La API BCV que se está validando en PR #287 selecciona:
 - Lunes–viernes: la fila con fecha efectiva de hoy.
 - Sábado/domingo: la fila válida con la fecha efectiva futura más próxima publicada para el siguiente día hábil.
 - Nunca salta una fila futura más próxima marcada stale para usar otra posterior.
@@ -67,7 +67,7 @@ Sin embargo, la función `public.assert_completed_sale_reconciled()` de migratio
 
 La migration 0017 debe exigir login directo `microapp_migrator`, preservar SECURITY DEFINER/search_path, tener assertions sobre `pg_get_functiondef` y probarse con PostgreSQL desechable y el runner real. No ejecutar en Neon main.
 
-El handler #233 también consulta actualmente `effective_date = today`; al recuperarlo debe usar el helper compartido `findApplicableBcvRate(tx)` de PR #255 y exigir `validation_status = 'valid'`. La API y el trigger SQL deben implementar exactamente la misma selección.
+El handler histórico #233 también consulta `effective_date = today`; al recuperarlo debe usar el helper compartido `findApplicableBcvRate(tx)` de la integración BCV vigente en PR #287 y exigir `validation_status = 'valid'`. La API y el trigger SQL deben implementar exactamente la misma selección.
 
 ## 4. Brechas de integridad restantes para revisar
 
@@ -183,7 +183,8 @@ Todas las pruebas usan PostgreSQL efímero; nunca Neon main ni datos reales.
 
 - Main actual al redactar: `c4be53ea3247c69206a79ebe5fa2f875a4f9aac4`.
 - PR #251: cleanup auth 48 h, Draft, 11/11 workflows PR + 2/2 push security exitosos; producción bloqueada por Neon schema/runtime.
-- PR #255: BCV parser/API/UI/Cron y weekend selection, Draft; exact HEAD `4e9f01ab85fd767736f4f47f3e47ffefbe7efd88`, 10/10 workflows PR + 3/3 push runs exitosos; sin review formal, no merge.
+- PR #255: cerrada como supersedida por PR #287; su snapshot de HEAD/checks es histórico y no debe reutilizarse como validación actual.
+- PR #287: integración BCV + checkout, OPEN/Draft; consultar `docs/CURRENT_STATE.md` para HEAD y checks exactos. No está integrada en `main`.
 - PR #227/#228–#233 son ramas fuente históricas. #229–#231 están mayormente supersedidas por código ya integrado; #232 aporta este diseño; #233 aporta handler/tests únicos que requieren adaptación.
 - Migration 0015 existe en GitHub main, pero Neon main no ha recibido baseline/migraciones 0003–0016. No asumir que el esquema live tiene checkout listo.
 - Producción **NOT READY**. No Neon main, secretos, Cloudflare productivo, DNS, billing ni datos reales modificados.

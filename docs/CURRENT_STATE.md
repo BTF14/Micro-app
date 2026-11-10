@@ -2307,3 +2307,22 @@ La consulta inicial de HEAD 9a1792f7449ff83915bcdd672686a4860918028d no devolvi�
 - HEAD: `4e369c25bbd7e43072664c2012f6a196cc21eed1`; comparación main: 30 ahead / 0 behind; PR #303 OPEN/Draft, mergeable=true.
 - En la última consulta exact-SHA GitHub devolvió 0 workflow runs pull_request y 0 status contexts. No declarar CI PASS; el estado queda pendiente de publicación/ejecución verificable.
 - Issue #53 recibió comentario `6772761216` con alcance, limitaciones y estado de esta implementación.
+
+
+## Reconciliación viva — PR #303 / backup-restore, 2026-11-10
+
+Fuente: consultas GitHub directas al cierre de esta revisión. PR #303 está OPEN/Draft, HEAD `3439c51b5719315e46196f7eca57cffee5a76df2`, base `main` en `c5373564413ba086690552c6b7deeab08d7b4a89`, 37 ahead / 0 behind, mergeable=true. Los 11 workflow runs `pull_request` asociados exactamente a ese SHA terminaron SUCCESS. Combined legacy status contexts: 0. Reviews formales: 0; review threads: 0. No confundir estos recuentos ni CI con aprobación.
+
+PR #287 permanece OPEN/Draft, HEAD `9a1792f7449ff83915bcdd672686a4860918028d`, 219 ahead / 1 behind de main, mergeable=true. El base SHA devuelto por GitHub para la PR es `03442951b2a2f63f5bf4dcf560f2c91be4f6cc71`, distinto del base SHA actual registrado en #303 (`c5373564413ba086690552c6b7deeab08d7b4a89`); no cambiar base automáticamente. Tiene 11/11 workflow runs exact-HEAD SUCCESS, 0 legacy status contexts, 0 reviews y 0 threads.
+
+PR #298 permanece OPEN/Draft, HEAD `c9e65a8f0378b2b9740e91df68f39909967eed26`, base `c5373564413ba086690552c6b7deeab08d7b4a89`, 231 ahead / 0 behind, mergeable=true, 11/11 workflow runs exact-HEAD SUCCESS, 0 legacy status contexts, 0 reviews y 0 threads. Issue #53 continúa OPEN/P0.
+
+### Auditoría estática adicional de PR #303
+
+La fase 1 valida migraciones, ledger, dump cifrado, checksum, restore y metadatos seleccionados. Sin embargo, `pg_dump` y `pg_restore` usan `--no-owner --no-privileges`; por tanto, el round-trip no demuestra conservación de ownership ni ACL/grants. El manifiesto tampoco compara estado/policies RLS, grants efectivos, atributos/membresías de roles, privilegios por defecto ni identidad/search_path efectivo. El runner valida atributos y memberships de migrator/runtime, pero el rol sintético `microapp_bcv_sync` creado por el smoke no queda cubierto por esas aserciones en el baseline main. Estos son límites de cobertura, no fallos de CI demostrados.
+
+### Separación obligatoria de fixtures por ref
+
+El baseline main de #303 contiene migraciones 0001–0016. En el esquema base `sales` no tiene todavía las columnas de checkout por sucursal/turno/almacén. La rama #287 incorpora 0017–0022 y sus pruebas usan `branch_id`, `register_shift_id`, `warehouse_id` y políticas BCV/checkout. No crear una fixture que mezcle esas dos formas de esquema ni declarar que el fixture main prueba checkout integrado. La fase 2 debe validar el grafo realmente disponible en cada ref: perfil main para tenant/sucursal/turno/warehouse/count/ledger y venta histórica; perfil #287 separado para checkout reconciliado cuando se ejecute sobre ese ref.
+
+No se ha hecho merge, deploy, escritura Neon, lectura de secretos, ejecución del backup real ni uso de datos reales. Producción NOT READY; #53 OPEN/P0; deadline 2026-12-01.

@@ -26,6 +26,7 @@ El flujo debe completarse desde la interfaz, sin intervención manual en la base
 ## 2. Alcance y límites
 
 - **Primer corte funcional:** un local/sucursal, catálogo de hasta 1.000 productos, operación diaria de caja, ventas, pagos, consulta de inventario, Kardex y conteos.
+- **Descuentos y cambios manuales de precio no forman parte de la aceptación P0.** El checkout documentado en `docs/sdd/SALES_CHECKOUT_MODEL.md` opera a precio de lista y la migración `0014_sales_without_discounts.sql` elimina el descuento del modelo actual. La matriz de permisos conserva una decisión previa sobre quién podría aprobar descuentos si se diseñan en una fase posterior; esa autorización de roles no habilita la función ni cambia el esquema actual.
 - La arquitectura y las reglas de aislamiento multi-tenant/multi-branch siguen siendo obligatorias. Limitar el primer flujo de usuario a un local no autoriza eliminar tenant_id/branch_id, controles de pertenencia, autorización de servidor ni pruebas negativas de aislamiento.
 - Los 1.000 productos son una capacidad mínima de aceptación del catálogo, no un límite artificial de base de datos ni una afirmación de rendimiento ya medido.
 - No se exige para este primer corte completar toda la visión SaaS ni todas las funciones multi-sucursal avanzadas.

@@ -40,6 +40,11 @@ def main() -> int:
     with tempfile.TemporaryDirectory(prefix="microapp-askpass-http-") as temp_dir:
         marker = Path(temp_dir) / "authenticated"
         diagnostic = Path(temp_dir) / "auth-diagnostic"
+        # The production workflow installs the source helper with mode 700.
+        # Mirror that behavior without changing the checkout's file mode.
+        temp_helper = Path(temp_dir) / "git-askpass"
+        temp_helper.write_bytes(helper.read_bytes())
+        temp_helper.chmod(0o700)
 
         class Handler(BaseHTTPRequestHandler):
             expected_authorization = ""
@@ -121,7 +126,7 @@ def main() -> int:
                 env.pop(key, None)
         env.update(
             {
-                "GIT_ASKPASS": str(helper),
+                "GIT_ASKPASS": str(temp_helper),
                 "GIT_ASKPASS_REQUIRE": "force",
                 "GIT_TERMINAL_PROMPT": "0",
                 "GH_TOKEN": test_token,

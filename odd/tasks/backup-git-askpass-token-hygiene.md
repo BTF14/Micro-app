@@ -70,3 +70,10 @@ No cambiar el formato, cifrado, retención, calendario, destino ni permisos del 
 - El mock devuelve 404 después de autenticar intencionalmente: el test demuestra que el transporte HTTP de Git invoca askpass y envía credenciales correctas, pero **no** emula Git smart-HTTP, no demuestra clone/push completo, no prueba TLS/GitHub ni usa secretos reales.
 - El test se ejecuta en CI junto al contrato shell previo. No hace conexiones externas ni accede a repositorios reales.
 - La prueba local en el entorno de trabajo pasó. CI del nuevo HEAD de #302 debe verificarse por SHA exacto; mantener Draft y no ejecutar el workflow productivo.
+
+
+### Ajuste del modo ejecutable del helper en el test
+
+- La primera ejecución del test HTTP en GitHub Actions falló por `Permission denied`: el archivo fuente en el checkout tiene modo 100644, mientras que el workflow de producción lo instala explícitamente con `install -m 700`.
+- El test ahora copia el helper fuente a su directorio temporal y aplica modo 700 antes de entregarlo a Git, reproduciendo el contrato real de instalación sin mutar el checkout.
+- El fallo era del harness de prueba; no demuestra un fallo del workflow productivo. El nuevo SHA debe volver a ejecutar CI exact-HEAD.

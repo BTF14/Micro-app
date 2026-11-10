@@ -2307,6 +2307,6 @@ Se revalidó PR #303 directamente en GitHub: HEAD `3439c51b5719315e46196f7eca57c
 
 Auditoría estática del script de fase 1: `pg_dump`/ `pg_restore` usan `--no-owner --no-privileges`, por lo que ownership y ACL/grants no quedan probados. El manifest no compara RLS/policies, grants efectivos, atributos/membresías/default privileges de roles ni search_path efectivo. El workflow conserva `contents: read`; no se accedió a secretos ni Neon.
 
-Decisión técnica: fixture de fase 2 version-aware y sin mezclar esquemas. Main 0001–0016 aún no tiene las columnas branch/register_shift/warehouse en `sales`; #287 0017–0022 sí incorpora checkout branch-aware y asignación/ledger/BCV. El perfil main cubrirá sucursal/turno/warehouse/count/ledger y venta legacy; el perfil #287 deberá ejecutarse separadamente sobre ese ref para demostrar checkout. No atribuir migraciones 0017–0022 a main.
+Decisión técnica corregida tras inspeccionar `docs/sdd/SALES_CHECKOUT_MODEL.md` y la secuencia de migraciones: main 0001–0016 ya contiene checkout branch-aware en migration 0015. PR #287 0017–0022 añade BCV effective-date, payment allocation, ledger projection, sync state y producer role. La fixture fase 2 debe validar el checkout de main y ampliar el perfil sobre #287; no mezclar ni atribuir migraciones 0017–0022 a main.
 
 No se ha implementado todavía el fixture fase 2 ni se ha ejecutado un restore poblado nuevo. No merge/deploy, Neon, secretos, backup real ni datos reales. Producción NOT READY; #53 OPEN/P0; deadline 2026-12-01.

@@ -129,7 +129,7 @@ No basta con UUID globales. Las FKs compuestas son defensa en profundidad; la AP
 - El saldo se puede reconstruir/reconciliar sumando movimientos; una tarea de reconciliación detecta diferencias, no las corrige silenciosamente.
 - Restricciones: cantidades con NUMERIC; no aceptar saldo disponible negativo; reserved_quantity >= 0 y reserved_quantity <= on_hand_quantity si se separan ambas magnitudes.
 - Para consumo concurrente, actualizar condicionalmente la fila de balance (on_hand - reserved >= requested) o bloquearla con SELECT ... FOR UPDATE; nunca leer y luego escribir sin protección.
-- No borrar products.stock_quantity en el primer cambio. Migrar con backfill y comparación por organización/producto; mantener compatibilidad temporal, cortar escrituras antiguas y eliminar el campo solo en una migración posterior tras reconciliación demostrada.
+- `products.stock_quantity` es legado y no es fuente para asignar existencias por sucursal. No copiarlo automáticamente ni repartirlo entre sucursales/almacenes. Cada sucursal debe iniciar mediante un conteo `opening` con cantidades absolutas, actor, fecha y confirmación formal, usando verificación física o cantidades documentadas por el propietario. Conservar el valor legado como evidencia histórica hasta que exista un plan explícito de retirada; no eliminarlo ni reinterpretarlo silenciosamente.
 
 ### Movimientos y referencias
 
@@ -173,7 +173,7 @@ No ejecutar hasta que exista un SDD de migración, revisión y autorización de 
 2. Crear branch_memberships; definir y revisar backfill de miembros existentes. No inferir asignaciones sensibles automáticamente sin una política aprobada.
 3. Crear warehouses, al menos un almacén predeterminado por sucursal.
 4. Crear registers y turnos sin inventar caja abierta ni saldos iniciales.
-5. Crear inventory_balances y poblar desde products.stock_quantity en almacén predeterminado, conservando evidencia de origen; comparar totales antes de cortar.
+5. Crear `inventory_balances` sin backfill automático desde `products.stock_quantity`. Para cada sucursal, registrar un conteo inicial `opening` con cantidades absolutas confirmadas, actor, fecha y sucursal trazables; no inventar distribución entre sucursales. Conservar `products.stock_quantity` como dato legado hasta un plan de reconciliación/retirada separado.
 6. Añadir branch_id/FKs compuestas a ventas y operaciones, con estrategia nullable/backfill/NOT NULL por fases y pruebas de compatibilidad.
 7. Añadir idempotencia de pagos, hash de payload, referencias de inventario tipadas y controles de auditoría.
 8. Activar escrituras nuevas solo después de tests de lectura dual/reconciliación; eliminar campos legacy únicamente en migración posterior.

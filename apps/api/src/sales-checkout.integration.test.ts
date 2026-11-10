@@ -17,6 +17,7 @@ const environment = (globalThis as typeof globalThis & {
 }).process?.env;
 const databaseUrl = environment?.DATABASE_URL;
 const databaseUrlAdmin = environment?.DATABASE_URL_ADMIN;
+const databaseUrlBcv = environment?.BCV_DATABASE_URL;
 const isCi = Boolean(environment?.CI);
 
 function isDisposableCheckoutDatabaseUrl(value: string | undefined, expectedRole: string): boolean {
@@ -35,19 +36,21 @@ function isDisposableCheckoutDatabaseUrl(value: string | undefined, expectedRole
 const isDisposableCheckoutDatabase =
   isDisposableCheckoutDatabaseUrl(databaseUrl, "microapp_runtime") &&
   isDisposableCheckoutDatabaseUrl(databaseUrlAdmin, "microapp");
+const isDisposableBcvProducerDatabase = isDisposableCheckoutDatabaseUrl(databaseUrlBcv, "microapp_bcv_sync");
 
 if ((databaseUrl || databaseUrlAdmin) && !isDisposableCheckoutDatabase) {
   throw new Error("Checkout integration tests require separate localhost microapp_runtime and microapp connections to the disposable microapp_test database; refusing non-disposable targets.");
 }
-if (isCi && !isDisposableCheckoutDatabase) {
-  throw new Error("CI must provide disposable runtime/admin PostgreSQL URLs; refusing to skip checkout integration tests.");
+if (isCi && (!isDisposableCheckoutDatabase || !isDisposableBcvProducerDatabase)) {
+  throw new Error("CI must provide disposable runtime/admin/BCV-producer PostgreSQL LOGIN URLs; refusing to skip checkout integration tests.");
 }
 
 const BCV_SOURCE = "BCV_OFFICIAL_HTML_V1";
 const FRONTEND_ORIGIN = "https://frontend.example";
 
-describe.skipIf(!isDisposableCheckoutDatabase)("atomic sales checkout PostgreSQL integration", () => {
+describe.skipIf(!isDisposableCheckoutDatabase || !isDisposableBcvProducerDatabase)("atomic sales checkout PostgreSQL integration", () => {
   let client: Client;
+  let producerClient: Client;
   let organizationId = "";
   let userId = "";
   let inventoryUserId = "";
@@ -207,7 +210,9 @@ describe.skipIf(!isDisposableCheckoutDatabase)("atomic sales checkout PostgreSQL
 
   beforeAll(async () => {
     client = new Client({ connectionString: databaseUrlAdmin });
+    producerClient = new Client({ connectionString: databaseUrlBcv });
     await client.connect();
+    await producerClient.connect();
     suffix = crypto.randomUUID().replace(/-/g, "").slice(0, 12);
 
     const org = await client.query<{ id: string }>(
@@ -413,6 +418,7 @@ describe.skipIf(!isDisposableCheckoutDatabase)("atomic sales checkout PostgreSQL
         ],
       );
     }
+    await producerClient.end();
     await client.end();
   });
 
@@ -562,15 +568,13 @@ describe.skipIf(!isDisposableCheckoutDatabase)("atomic sales checkout PostgreSQL
     await runtimeLockClient.connect();
     try {
       await runtimeLockClient.query("BEGIN");
-      await runtimeLockClient.query(
-        "SELECT last_outcome FROM public.bcv_sync_state WHERE singleton=true FOR SHARE",
-      );
+      await runtimeLockClient.query("SELECT * FROM public.lock_bcv_sync_state()");
 
-      await client.query("SET lock_timeout='250ms'");
-      const blockedUpdate = await client.query(
+      await producerClient.query("SET lock_timeout='250ms'");
+      const blockedUpdate = await producerClient.query(
         "UPDATE public.bcv_sync_state SET last_outcome='running' WHERE singleton=true",
       ).then(() => null, (error: { code?: string }) => error);
-      await client.query("RESET lock_timeout");
+      await producerClient.query("RESET lock_timeout");
       expect(blockedUpdate).toMatchObject({ code: "55P03" });
     } finally {
       await runtimeLockClient.query("ROLLBACK");
@@ -604,10 +608,10 @@ describe.skipIf(!isDisposableCheckoutDatabase)("atomic sales checkout PostgreSQL
     const runtimeClient = new Client({ connectionString: databaseUrl });
     await runtimeClient.connect();
     try {
-      await runtimeClient.query("BEGIN");
-      await runtimeClient.query(
+      await producerClient.query(
         "UPDATE public.bcv_sync_state SET last_outcome='failed',last_error_code='BCV_SYNC_UNKNOWN' WHERE singleton=true",
       );
+      await runtimeClient.query("BEGIN");
       const rate = await runtimeClient.query<{ rate: string }>(
         "SELECT rate::text AS rate FROM public.exchange_rates WHERE id=$1",
         [rateId],
@@ -638,8 +642,14 @@ describe.skipIf(!isDisposableCheckoutDatabase)("atomic sales checkout PostgreSQL
       expect(guardError?.message).toContain("SALE_REQUIRES_LATEST_SUCCESSFUL_BCV_SYNC");
     } finally {
       await runtimeClient.query("ROLLBACK");
-      await runtimeClient.end();
     }
+
+    const runtimeWrite = await runtimeClient.query(
+      "UPDATE public.bcv_sync_state SET last_success_at=now(),last_outcome='unchanged' WHERE singleton=true",
+    ).then(() => null, (error: { code?: string }) => error);
+    expect(runtimeWrite).toMatchObject({ code: "42501" });
+    await runtimeClient.end();
+    await setBcvSyncState("unchanged");
   });
 
   it("blocks a new sale after the latest BCV sync attempt fails, despite a valid same-day rate", async () => {

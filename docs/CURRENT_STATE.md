@@ -2682,3 +2682,7 @@ No remote backup artifact or age key was accessed; `.github/workflows/backup-rea
 - Decisión sénior: no publicar aún un SLO RPO/RTO. Una frecuencia diaria no garantiza 24h y el tiempo de restore SQL no equivale al RTO completo. Medir con timestamps desde detección hasta recuperación verificada.
 - Sin dispatch manual de backup ni remote restore, sin acceso a secreto/artefacto/llave age, sin operaciones Neon ni cutover. El siguiente backup programado natural sigue siendo necesario para verificar los seis booleanos de DATABASE_URL_BACKUP_RO.
 - HEAD de código no cambió por este trabajo; commits nuevos son documentación ODD/runbook. Issue #53 OPEN/P0; producción NOT READY.
+
+### Reconciliación live del principal backup — 2026-11-11
+
+main sigue en c5373564413ba086690552c6b7deeab08d7b4a89. Su .github/workflows/backup.yml (blob 5df408788b9053709261ada3aa22dd73b85d5691) todavía no contiene el diagnóstico de seis booleanos implementado en la rama de PR #287. Últimos runs schedule de main: 42842855127 (2026-11-10 SUCCESS) y 42659924075 (2026-11-09 SUCCESS); ambos ejecutaron una revisión anterior al diagnóstico. Identidad efectiva y least privilege reales continúan NO VERIFICADOS. Próxima evidencia válida: primer run schedule natural después de integrar la versión con diagnóstico; no dispatch manual.

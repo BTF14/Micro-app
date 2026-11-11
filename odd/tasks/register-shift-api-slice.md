@@ -89,3 +89,13 @@ CI at documentation HEAD `9f1f0b981fe2149ddbbc8b8e73ab5a763fddedaa` passed TypeS
 ### Corrección del diagnóstico de test — 2026-11-11
 
 La hipótesis anterior de que el helper de espera era la causa no era correcta. El log completo mostró que el mock de `fetch` construía `new URL()` sin base, pero el API base del test puede ser una ruta relativa; eso lanzaba antes de evaluar el endpoint y producía el estado de error/carga observado. Se corrigió el mock usando una base de test explícita (`https://micro-app.test`) en `apps/web/src/RegisterShiftsPanel.test.tsx`, commit `98b24eca568dd148b50da70e0d558e996a2739a0`. La espera ampliada se mantiene inocua. Este diagnóstico reemplaza la explicación anterior; exigir CI exact-SHA para verificar el arreglo.
+
+
+## Validación final UI turnos — 2026-11-11
+
+- Código final de la UI/test: `98b24eca568dd148b50da70e0d558e996a2739a0`. HEAD documental exacto probado en GitHub: `f33f423116f2e88be6927745dd119e253025f827` (posterior al código, solo docs).
+- CI `43014361783` SUCCESS: Build/typecheck SUCCESS, suite web 88/88 tests SUCCESS, API 198/198 SUCCESS, Playwright Chromium SUCCESS. PostgreSQL own register-shift API integration: 4/4 tests SUCCESS en el mismo job.
+- Backup restore smoke `43014361711` SUCCESS: main 0001–0016 y BCV 0001–0023. PostgreSQL migration runner `43014361883` SUCCESS. ODD docs, Secret History, Security, Semgrep, Dependency Review y Project dashboard SUCCESS.
+- Excepción pendiente: workflow `Database migration validation` run `43014361738` permanece `pending` y su consulta de jobs devuelve lista vacía; no contarlo como SUCCESS ni como fallo. Reconciliarlo antes de marcar el conjunto total como completo. No hay status contexts adicionales (`combined status` vacío).
+- El CI inicial que falló en test UI se corrigió: el mock de fetch ahora resuelve URLs relativas con base `https://micro-app.test`. El CI posterior del HEAD documental f33 valida la corrección. La explicación anterior de que solo era un problema de espera fue corregida en este documento.
+

@@ -137,6 +137,11 @@ echo "== Encrypt, checksum, decrypt and restore into a second disposable databas
 age-keygen -o "$tmpdir/age-key.txt" >/dev/null 2>"$tmpdir/age-keygen.log"
 public_key="$(awk '/^# public key:/ {print $4}' "$tmpdir/age-key.txt")"
 [[ "$public_key" =~ ^age1[[:alnum:]]+$ ]] || { echo "Temporary age public key invalid." >&2; exit 1; }
+# Mirror the remote workflow's single-line Actions secret serialization.
+private_identity="$(awk '/^AGE-SECRET-KEY-/ {print; exit}' "$tmpdir/age-key.txt")"
+printf '%s\n' "$private_identity" > "$tmpdir/identity-from-secret.txt"
+derived_public_key="$(age-keygen -y "$tmpdir/identity-from-secret.txt")"
+[[ "$derived_public_key" == "$public_key" ]] || { echo "Serialized age identity does not match its public key." >&2; exit 1; }
 age -r "$public_key" -o "$tmpdir/schema.dump.age" "$tmpdir/schema.dump"
 (cd "$tmpdir" && sha256sum schema.dump.age > schema.dump.age.sha256 && sha256sum --check schema.dump.age.sha256)
 age -d -i "$tmpdir/age-key.txt" -o "$tmpdir/schema.restored.dump" "$tmpdir/schema.dump.age"

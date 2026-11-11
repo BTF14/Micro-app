@@ -455,3 +455,5 @@ No remote backup artifact or age key was accessed; `.github/workflows/backup-rea
 - PR #287 OPEN/Draft; issue #53 OPEN/P0; PR #303 OPEN/Draft. No merge. No declarar producción lista.
 - El workflow remoto real sigue manual y no se ejecutó. No leer backups reales ni usar la llave age real. Esperar el backup programado natural para el diagnóstico real de `DATABASE_URL_BACKUP_RO`, una vez que el workflow correspondiente llegue a main.
 - Próximo paso: reconsultar el HEAD actual y workflows exact-HEAD antes de cualquier decisión; continuar con gates operativos de #53 (principal efectivo, provisioning seguro, integridad/restore remoto, alertas, RPO/RTO y coste $0). No repetir las investigaciones de roles/ACL ya documentadas.
+
+Follow-up: remote restore harness additionally tests actual runtime organization read and schema CREATE denial; BCV profile tests producer's narrow state/rate writes in a rolled-back transaction. Exact HEAD `f6c453d928ffaef4ab15efc5733bd3c7001089e3`: 13/13 PR workflows SUCCESS; backup smoke `42997279023`, Playwright `42997278934`, CI `42997279209` SUCCESS. Actual remote workflow remains unexecuted; issue #53 OPEN/P0; production NOT READY.

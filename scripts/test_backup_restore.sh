@@ -101,7 +101,7 @@ if [[ "$source_manifest" != "$restored_manifest" ]]; then
 fi
 schema_manifest() {
   psql "$1" -X -v ON_ERROR_STOP=1 -Atq <<'SQL'
-SELECT 'table|' || c.relname || '|' || c.relkind || '|' || c.relpersistence
+SELECT 'table|' || c.relname || '|' || c.relkind::text || '|' || c.relpersistence::text
   || '|' || c.relispartition::text || '|' || c.relrowsecurity::text
   || '|' || c.relforcerowsecurity::text || '|' || COALESCE(array_to_string(c.reloptions, ','), '')
 FROM pg_class c JOIN pg_namespace n ON n.oid=c.relnamespace

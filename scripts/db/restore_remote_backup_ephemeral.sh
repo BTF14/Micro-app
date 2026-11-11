@@ -17,7 +17,7 @@ command -v tar >/dev/null 2>&1 || { echo "tar is required." >&2; exit 2; }
 pg_restore --list "$BACKUP_DUMP" >/dev/null
 
 admin_identity="$(psql "$RESTORE_ADMIN_URL" -X -v ON_ERROR_STOP=1 -Atqc "SELECT current_user || ':' || session_user || ':' || (SELECT rolsuper FROM pg_catalog.pg_roles WHERE rolname=current_user)")"
-[[ "$admin_identity" == "microapp:microapp:t" ]] || {
+[[ "$admin_identity" == "microapp:microapp:true" ]] || {
   echo "Refusing role bootstrap: only the disposable microapp PostgreSQL service administrator is accepted." >&2
   exit 2
 }

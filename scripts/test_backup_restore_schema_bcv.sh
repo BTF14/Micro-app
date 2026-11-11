@@ -123,7 +123,7 @@ manifest() {
   psql "$1" -X -v ON_ERROR_STOP=1 -Atq <<'SQL'
 SELECT 'tables|' || COALESCE(string_agg(table_name, ',' ORDER BY table_name), '')
   FROM information_schema.tables
- WHERE table_schema = 'public' AND table_type = 'BASE TABLE'
+ WHERE table_schema = 'public' AND table_type = 'BASE TABLE';
 
 SELECT 'columns|' || COALESCE(string_agg(
      c.relname || ':' || a.attname || ':'
@@ -140,7 +140,7 @@ SELECT 'columns|' || COALESCE(string_agg(
    LEFT JOIN pg_catalog.pg_collation coll ON coll.oid = a.attcollation AND a.attcollation <> 0
    LEFT JOIN pg_catalog.pg_namespace coll_ns ON coll_ns.oid = coll.collnamespace
   WHERE n.nspname = 'public' AND c.relkind IN ('r','p','v','m','f')
-    AND a.attnum > 0 AND NOT a.attisdropped
+    AND a.attnum > 0 AND NOT a.attisdropped;
 
  SELECT 'relation_definitions|' || COALESCE(string_agg(
      c.relname || ':' || c.relkind::text || ':' || c.relpersistence::text || ':'
@@ -152,7 +152,7 @@ SELECT 'columns|' || COALESCE(string_agg(
    ), '')
    FROM pg_catalog.pg_class c
    JOIN pg_catalog.pg_namespace n ON n.oid = c.relnamespace
-  WHERE n.nspname = 'public' AND c.relkind IN ('r','p','v','m','f')
+  WHERE n.nspname = 'public' AND c.relkind IN ('r','p','v','m','f');
 
  SELECT 'partition_tree|' || COALESCE(string_agg(
      parent.relname || ':' || child.relname || ':'
@@ -210,7 +210,7 @@ SELECT 'constraints|' || COALESCE(string_agg(
   FROM pg_catalog.pg_constraint con
   JOIN pg_catalog.pg_class c ON c.oid = con.conrelid
   JOIN pg_catalog.pg_namespace n ON n.oid = c.relnamespace
- WHERE n.nspname = 'public'
+ WHERE n.nspname = 'public';
 
 SELECT 'indexes|' || COALESCE(string_agg(
      tbl.relname || ':' || idx.relname || ':' || pg_catalog.md5(pg_catalog.pg_get_indexdef(idx.oid))
@@ -223,13 +223,13 @@ SELECT 'indexes|' || COALESCE(string_agg(
    JOIN pg_catalog.pg_class idx ON idx.oid = ix.indexrelid
    JOIN pg_catalog.pg_class tbl ON tbl.oid = ix.indrelid
    JOIN pg_catalog.pg_namespace n ON n.oid = tbl.relnamespace
-  WHERE n.nspname = 'public'
+  WHERE n.nspname = 'public';
 
 SELECT 'triggers|' || COALESCE(string_agg(c.relname || ':' || t.tgname || ':' || t.tgenabled::text || ':' || pg_catalog.md5(pg_catalog.pg_get_triggerdef(t.oid)), ';' ORDER BY c.relname, t.tgname), '')
   FROM pg_catalog.pg_trigger t
   JOIN pg_catalog.pg_class c ON c.oid = t.tgrelid
   JOIN pg_catalog.pg_namespace n ON n.oid = c.relnamespace
- WHERE n.nspname = 'public' AND NOT t.tgisinternal
+ WHERE n.nspname = 'public' AND NOT t.tgisinternal;
 
 SELECT 'sequences|' || COALESCE(string_agg(c.relname || ':' || pg_catalog.format_type(s.seqtypid, NULL) || ':' || s.seqstart::text || ':' || s.seqincrement::text || ':' || s.seqmin::text || ':' || s.seqmax::text || ':' || s.seqcache::text || ':' || s.seqcycle::text, ';' ORDER BY c.relname), '')
   FROM pg_catalog.pg_class c
@@ -256,7 +256,7 @@ SELECT 'bcv_sync_state_table|' || (pg_catalog.to_regclass('public.bcv_sync_state
 SELECT 'relation_owners|' || COALESCE(string_agg(c.relname || ':' || pg_catalog.pg_get_userbyid(c.relowner), ';' ORDER BY c.relname), '')
   FROM pg_catalog.pg_class c
   JOIN pg_catalog.pg_namespace n ON n.oid = c.relnamespace
- WHERE n.nspname = 'public' AND c.relkind IN ('r','p','v','m','S','f')
+ WHERE n.nspname = 'public' AND c.relkind IN ('r','p','v','m','S','f');
 
 SELECT 'function_owners|' || COALESCE(string_agg(p.proname || '(' || pg_catalog.pg_get_function_identity_arguments(p.oid) || '):' || pg_catalog.pg_get_userbyid(p.proowner), ';' ORDER BY p.proname, pg_catalog.pg_get_function_identity_arguments(p.oid)), '')
   FROM pg_catalog.pg_proc p
@@ -310,14 +310,14 @@ SELECT 'default_acl|' || COALESCE(string_agg(
 SELECT 'rls|' || COALESCE(string_agg(c.relname || ':' || c.relrowsecurity::text || ':' || c.relforcerowsecurity::text, ';' ORDER BY c.relname), '')
   FROM pg_catalog.pg_class c
   JOIN pg_catalog.pg_namespace n ON n.oid = c.relnamespace
- WHERE n.nspname = 'public' AND c.relkind IN ('r','p')
+ WHERE n.nspname = 'public' AND c.relkind IN ('r','p');
 
 SELECT 'policies|' || COALESCE(string_agg(
     schemaname || ':' || tablename || ':' || policyname || ':' || permissive || ':'
     || array_to_string(roles, ',') || ':' || cmd || ':' || COALESCE(qual, '') || ':' || COALESCE(with_check, ''),
     ';' ORDER BY schemaname, tablename, policyname
   ), '')
-  FROM pg_catalog.pg_policies WHERE schemaname = 'public'
+  FROM pg_catalog.pg_policies WHERE schemaname = 'public';
 
 SELECT 'role_contract|' || COALESCE(string_agg(
     rolname || ':' || rolcanlogin::text || ':' || rolsuper::text || ':' || rolcreatedb::text
@@ -345,7 +345,7 @@ SELECT 'effective_table_privileges|' || COALESCE(string_agg(
   JOIN pg_catalog.pg_namespace n ON n.oid = c.relnamespace
   CROSS JOIN (VALUES ('SELECT'),('INSERT'),('UPDATE'),('DELETE'),('TRUNCATE'),('REFERENCES'),('TRIGGER'),('MAINTAIN')) AS p(privilege)
  WHERE r.rolname IN ('microapp_migrator','microapp_runtime','microapp_bcv_sync')
-   AND n.nspname = 'public' AND c.relkind IN ('r','p','v','m','f')
+   AND n.nspname = 'public' AND c.relkind IN ('r','p','v','m','f');
 
 SELECT 'effective_column_privileges|' || COALESCE(string_agg(
     r.rolname || ':' || c.relname || ':' || a.attname || ':' || p.privilege || ':'

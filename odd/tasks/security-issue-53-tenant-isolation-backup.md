@@ -136,3 +136,12 @@ Excluded:
 
 - PostgreSQL 18 run [43103214571](https://github.com/BTF14/Micro-app/actions/runs/43103214571) passed all privilege assertions and archive inspection, then failed while concatenating PostgreSQL internal `"char"` values (`pg_class.relkind` / `relpersistence`) in the expanded schema manifest. The metadata comparison had not completed.
 - Corrective commit `f17b8609e92f392f8879f91bd3b8e6dae90380a5` explicitly casts both relation flags to text. A new exact-HEAD run is required before claiming full schema metadata verification.
+
+
+## Expanded PostgreSQL 18 schema/privilege contract PASS — 2026-11-11 UTC
+
+- Run [43103354436](https://github.com/BTF14/Micro-app/actions/runs/43103354436) passed on exact test SHA `e2275e58d2cb280ffa14abc74e693a945caf133c`.
+- All synthetic privilege assertions passed, including database CONNECT without CREATE, schema USAGE without CREATE, SELECT on every public table/sequence, no column-level INSERT/UPDATE/REFERENCES grants, no table/sequence writes, no ownership, no direct/transitive membership, no RLS requiring BYPASSRLS, and actual denial of DML/DDL/sequence/role operations.
+- The archive retained DDL entries for the three ephemeral auth tables. Restore retained their columns and zero rows. Business data manifest and relations matched. Schema metadata comparison (table properties, columns, sequences, constraints, indexes, non-internal triggers, policies) matched source to restore.
+- This remains a disposable synthetic test. It does not verify `DATABASE_URL_BACKUP_RO` identity, production grants, real backup/restore, RPO/RTO, external alerting or production readiness.
+- Current branch HEAD before this task-file update: `e2275e58d2cb280ffa14abc74e693a945caf133c`.

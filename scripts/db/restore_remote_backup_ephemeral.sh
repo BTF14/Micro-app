@@ -1,0 +1,142 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+: "${BACKUP_DUMP:?Set BACKUP_DUMP to the decrypted custom-format archive}"
+: "${RESTORE_ADMIN_URL:?Set RESTORE_ADMIN_URL to the disposable PostgreSQL admin connection}"
+: "${RESTORE_MIGRATOR_URL:?Set RESTORE_MIGRATOR_URL to the direct microapp_migrator connection}"
+: "${MIGRATIONS_DIR:?Set MIGRATIONS_DIR to the checked-out migration bundle}"
+command -v psql >/dev/null 2>&1 || { echo "psql is required." >&2; exit 2; }
+command -v pg_restore >/dev/null 2>&1 || { echo "pg_restore is required." >&2; exit 2; }
+
+[[ -s "$BACKUP_DUMP" ]] || { echo "Backup archive is missing or empty." >&2; exit 2; }
+pg_restore --list "$BACKUP_DUMP" >/dev/null
+
+admin_identity="$(psql "$RESTORE_ADMIN_URL" -X -v ON_ERROR_STOP=1 -Atqc "SELECT current_user || ':' || session_user || ':' || (SELECT rolsuper FROM pg_catalog.pg_roles WHERE rolname=current_user)")"
+[[ "$admin_identity" == "microapp:microapp:t" ]] || {
+  echo "Refusing role bootstrap: only the disposable microapp PostgreSQL service administrator is accepted." >&2
+  exit 2
+}
+target_db="$(psql "$RESTORE_ADMIN_URL" -X -v ON_ERROR_STOP=1 -Atqc "SELECT current_database()")"
+[[ "$target_db" == "microapp_restore" ]] || { echo "Refusing restore outside microapp_restore." >&2; exit 2; }
+
+echo "== Provision isolated application roles in disposable PostgreSQL"
+psql "$RESTORE_ADMIN_URL" -X -v ON_ERROR_STOP=1 <<'SQL'
+CREATE ROLE microapp_migrator LOGIN PASSWORD 'migrator-restore-test-only'
+  NOSUPERUSER NOCREATEDB NOCREATEROLE NOREPLICATION NOBYPASSRLS;
+CREATE ROLE microapp_runtime LOGIN PASSWORD 'runtime-restore-test-only'
+  NOSUPERUSER NOCREATEDB NOCREATEROLE NOREPLICATION NOBYPASSRLS NOINHERIT;
+CREATE ROLE microapp_bcv_sync LOGIN PASSWORD 'bcv-sync-restore-test-only'
+  NOSUPERUSER NOCREATEDB NOCREATEROLE NOREPLICATION NOBYPASSRLS NOINHERIT;
+GRANT CONNECT ON DATABASE microapp_restore TO microapp_migrator, microapp_runtime, microapp_bcv_sync;
+REVOKE CREATE ON SCHEMA public FROM PUBLIC;
+GRANT USAGE, CREATE ON SCHEMA public TO microapp_migrator;
+GRANT USAGE ON SCHEMA public TO microapp_runtime, microapp_bcv_sync;
+SQL
+
+migrator_identity="$(psql "$RESTORE_MIGRATOR_URL" -X -v ON_ERROR_STOP=1 -Atqc "SELECT current_user || ':' || session_user")"
+[[ "$migrator_identity" == "microapp_migrator:microapp_migrator" ]] || {
+  echo "Restore connection is not a direct microapp_migrator LOGIN." >&2
+  exit 2
+}
+
+echo "== Restore encrypted-backup payload as microapp_migrator with owner/ACL replay disabled"
+pg_restore --exit-on-error --single-transaction --no-owner --no-privileges \
+  --dbname="$RESTORE_MIGRATOR_URL" "$BACKUP_DUMP"
+
+ledger_profile="$(psql "$RESTORE_MIGRATOR_URL" -X -v ON_ERROR_STOP=1 -Atqc "
+SELECT CASE
+  WHEN count(*) = 16 AND min(version) = 1 AND max(version) = 16
+       AND count(DISTINCT version) = 16 AND bool_and(state = 'applied') THEN 'main'
+  WHEN count(*) = 22 AND min(version) = 1 AND max(version) = 22
+       AND count(DISTINCT version) = 22 AND bool_and(state = 'applied') THEN 'bcv'
+  ELSE 'unsupported'
+END
+FROM public.schema_migrations")"
+case "$ledger_profile" in
+  main) expected=16 ;;
+  bcv) expected=22 ;;
+  *) echo "Backup migration ledger is not a complete supported 16- or 22-migration profile; refusing ACL reconstruction." >&2; exit 1 ;;
+esac
+
+mapfile -t available_migrations < <(find "$MIGRATIONS_DIR" -maxdepth 1 -type f -name '[0-9][0-9][0-9][0-9]_*.sql' ! -name '*.assertions.sql' ! -name '*.deferred_failure.sql' | sort)
+if (( ${#available_migrations[@]} < expected )); then
+  echo "Checked-out migration bundle is older than the backup ledger." >&2
+  exit 1
+fi
+
+tmpdir="$(mktemp -d)"
+trap 'rm -rf "$tmpdir"' EXIT
+profile_dir="$tmpdir/migrations"
+mkdir -p "$profile_dir"
+for ((i=0; i<expected; i++)); do
+  file="${available_migrations[$i]}"
+  expected_prefix="$(printf '%04d_' "$((i+1))")"
+  [[ "$(basename "$file")" == "$expected_prefix"* ]] || {
+    echo "Migration bundle is not contiguous at version $((i+1)); refusing ACL replay." >&2
+    exit 1
+  }
+  cp "$file" "$profile_dir/"
+done
+
+echo "== Reconstruct the final ACL history from the backup's own migration profile ($ledger_profile)"
+MIGRATION_DATABASE_URL="$RESTORE_MIGRATOR_URL" \
+MIGRATIONS_DIR="$profile_dir" \
+RESTORE_GRANTS_PROFILE="$ledger_profile" \
+  bash scripts/db/reapply_restore_role_grants.sh
+
+echo "== Validate restored application identity, ownership, least privilege and ephemeral auth state"
+role_contract="$(psql "$RESTORE_MIGRATOR_URL" -X -v ON_ERROR_STOP=1 -Atqc "
+SELECT count(*) = 3 AND bool_and(
+  rolcanlogin AND NOT rolsuper AND NOT rolcreatedb AND NOT rolcreaterole
+  AND NOT rolreplication AND NOT rolbypassrls
+  AND ((rolname='microapp_migrator' AND rolinherit)
+    OR (rolname IN ('microapp_runtime','microapp_bcv_sync') AND NOT rolinherit))
+)
+FROM pg_catalog.pg_roles
+WHERE rolname IN ('microapp_migrator','microapp_runtime','microapp_bcv_sync')")"
+[[ "$role_contract" == "t" ]] || { echo "Restored role contract is invalid." >&2; exit 1; }
+
+membership_count="$(psql "$RESTORE_MIGRATOR_URL" -X -v ON_ERROR_STOP=1 -Atqc "
+SELECT count(*) FROM pg_catalog.pg_auth_members m
+JOIN pg_catalog.pg_roles r ON r.oid IN (m.roleid,m.member)
+WHERE r.rolname IN ('microapp_migrator','microapp_runtime','microapp_bcv_sync')")"
+[[ "$membership_count" == "0" ]] || { echo "Unexpected application-role membership found." >&2; exit 1; }
+
+owner_contract="$(psql "$RESTORE_MIGRATOR_URL" -X -v ON_ERROR_STOP=1 -Atqc "
+SELECT
+  NOT EXISTS (
+    SELECT 1 FROM pg_catalog.pg_class c
+    JOIN pg_catalog.pg_namespace n ON n.oid=c.relnamespace
+    WHERE n.nspname='public' AND c.relkind IN ('r','p','v','m','S','f')
+      AND pg_catalog.pg_get_userbyid(c.relowner) <> 'microapp_migrator'
+  )
+  AND NOT EXISTS (
+    SELECT 1 FROM pg_catalog.pg_proc p
+    JOIN pg_catalog.pg_namespace n ON n.oid=p.pronamespace
+    WHERE n.nspname='public' AND p.prokind IN ('f','p')
+      AND pg_catalog.pg_get_userbyid(p.proowner) <> 'microapp_migrator'
+  )")"
+[[ "$owner_contract" == "t" ]] || { echo "Not all restored public application objects are owned by microapp_migrator." >&2; exit 1; }
+
+auth_contract="$(psql "$RESTORE_MIGRATOR_URL" -X -v ON_ERROR_STOP=1 -Atqc "
+SELECT
+  to_regclass('public.auth_sessions') IS NOT NULL
+  AND to_regclass('public.auth_rate_limits') IS NOT NULL
+  AND to_regclass('public.auth_bootstrap_attempts') IS NOT NULL
+  AND (SELECT count(*)=0 FROM public.auth_sessions)
+  AND (SELECT count(*)=0 FROM public.auth_rate_limits)
+  AND (SELECT count(*)=0 FROM public.auth_bootstrap_attempts)
+  AND to_regclass('public.schema_migrations') IS NOT NULL")"
+[[ "$auth_contract" == "t" ]] || { echo "Ephemeral auth schema/empty-data contract or migration ledger is invalid." >&2; exit 1; }
+
+runtime_identity="$(psql "postgresql://microapp_runtime:runtime-restore-test-only@127.0.0.1:5432/microapp_restore" -X -v ON_ERROR_STOP=1 -Atqc "SELECT current_user || ':' || session_user")"
+[[ "$runtime_identity" == "microapp_runtime:microapp_runtime" ]] || { echo "Runtime LOGIN verification failed." >&2; exit 1; }
+producer_identity="$(psql "postgresql://microapp_bcv_sync:bcv-sync-restore-test-only@127.0.0.1:5432/microapp_restore" -X -v ON_ERROR_STOP=1 -Atqc "SELECT current_user || ':' || session_user")"
+[[ "$producer_identity" == "microapp_bcv_sync:microapp_bcv_sync" ]] || { echo "BCV producer LOGIN verification failed." >&2; exit 1; }
+
+public_tables="$(psql "$RESTORE_MIGRATOR_URL" -X -v ON_ERROR_STOP=1 -Atqc "SELECT count(*) FROM information_schema.tables WHERE table_schema='public' AND table_type='BASE TABLE'")"
+(( public_tables > 0 )) || { echo "No public application tables were restored." >&2; exit 1; }
+
+echo "PASS: remote archive restored as microapp_migrator using the $ledger_profile ($expected migration) ACL profile."
+echo "PASS: application roles, object ownership, empty ephemeral auth tables and migration ledger validated."
+echo "PASS: runtime and BCV producer LOGIN identities connect independently; public table count=$public_tables."

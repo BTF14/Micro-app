@@ -178,7 +178,7 @@ jobs:
           export GIT_ASKPASS="$askpass"
           export GIT_ASKPASS_REQUIRE=force
           export GIT_TERMINAL_PROMPT=0
-          git clone --depth 1 "https://github.com/${BACKUP_REPO}.git" "$backup_repo_dir"
+          git -c credential.helper= clone --depth 1 "https://github.com/${BACKUP_REPO}.git" "$backup_repo_dir"
           mkdir -p "$backup_repo_dir/daily"
           mv "backup-${STAMP}.dump.age" "backup-${STAMP}.dump.age.sha256" "$backup_repo_dir/daily/"
           cd "$backup_repo_dir"
@@ -189,7 +189,7 @@ jobs:
           python3 "$GITHUB_WORKSPACE/scripts/prune_backups.py" daily --retention-days "$RETENTION_DAYS"
           git add -A
           git diff --cached --quiet || git commit -m "retention: prune backups older than ${RETENTION_DAYS} days"
-          git push origin HEAD:main
+          git -C "$backup_repo_dir" -c credential.helper= push origin HEAD:main
 
       - name: Publicar resumen visible si falla el respaldo
         if: failure()

@@ -2555,3 +2555,11 @@ Releer `AGENTS.md`, `docs/CONSTITUTION.md`, este checkpoint, `docs/AI_COLLABORAT
 - **Identidad backup:** workflow añade diagnóstico read-only no bloqueante que publica solo booleanos (identidad esperada `backup_readonly`, atributos, membresías, DML, secuencias y CREATE). No imprime DSN, host, usuario real, secretos ni filas. Falta observar el próximo run programado natural; no hacer workflow_dispatch/manual backup ni modificar roles/grants. ODD task: `odd/tasks/backup-principal-least-privilege-audit.md`.
 - **Issue #53:** permanece OPEN/P0. Pendientes: confirmar el principal real y least privilege en ejecución programada, bootstrap de ownership/grants bajo `--no-owner --no-privileges`, restauración operativa de artefacto remoto, RPO/RTO, alerta externa y coste $0; además de gates comerciales/autorización aún abiertos. Producción NOT READY.
 - No se tocó Neon, datos reales, secretos, roles/grants remotos, Cron, DNS, Cloudflare sensible, billing, ni se ejecutó backup manual o despliegue.
+
+## 2026-11-11 — restore no-owner/no-privileges reproducible en CI
+
+Se implementó un ensayo de restauración alineado con los flags del backup productivo. `pg_restore --no-owner --no-privileges` se conecta directamente como `microapp_migrator`; las tablas y funciones quedan bajo ese owner y el helper reproduce en orden únicamente comandos ACL del bundle exacto de migraciones. No se reejecuta DDL/datos ni se altera el ledger. El replay histórico completo es esencial: repetir solo grants 0012 devolvía INSERT en `inventory_balances`, que 0019 había revocado. El perfil BCV omite solo ACL históricos de paired-intent eliminados por la proyección.
+
+Evidencia exact-HEAD `0ddd0da742b474b7256675b9c32292d7750fc2b0`: backup restore run `42989180384`, main job `130417569364` SUCCESS, BCV job `130417569035` SUCCESS y legacy regression SUCCESS; CI `42989180406` SUCCESS; workflows restantes también SUCCESS (11/11 pull_request). Los primeros intentos fallidos se conservaron como evidencia de regresiones del propio ensayo y se corrigieron antes de aceptar el resultado.
+
+La prueba sigue siendo sintética: no aprovisiona credenciales de producción, no restaura artefacto remoto y no mide RPO/RTO ni alertas externas. Issue #53 OPEN/P0; producción NOT READY. Detalle en `odd/tasks/backup-restore-no-owner-no-privileges.md`.

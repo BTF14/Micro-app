@@ -542,3 +542,11 @@ La validación sintética main 0001–0016 y BCV 0001–0022 pasó, pero no exis
 - Los artefactos antiguos no satisfacen el contrato nuevo porque carecen del esquema de auth efímera que ahora se conserva vacío. Esperar backup natural posterior a la integración antes de cualquier ensayo remoto.
 - Issue #53 OPEN/P0; producción NOT READY. Pendientes: principal efectivo/least privilege real, restore remoto real aislado, provisioning provider-specific, simulacro de aplicación, alerta externa, RPO/RTO medidos y coste $0.
 - No Neon main, datos reales, secretos/age, grants remotos, Cloudflare/DNS sensibles, deploy, Cron, billing, force-push ni merge de Draft.
+
+
+## UI de turnos añadida — 2026-11-11
+
+- Nuevo `RegisterShiftsPanel.tsx` + `register-shifts.css`, integrado en App como vista Caja y turnos para roles owner/admin/cashier.
+- Permite listar sucursales asignadas y cajas activas, consultar el turno propio, abrir con fondo inicial USD/VES y cerrar con conteos físicos ingresados nuevamente. La sucursal queda fija durante un turno abierto y el cierre exige revisión/confirmación explícita.
+- Prueba nueva de componente para apertura/cierre y denegación 403. El CI sobre SHA `8da81f1...` falló solo en Build and typecheck por import `Root` no utilizado; corregido y además estrechado el acceso a índices de inputs en `a8148f94...`. Confirmar CI del HEAD final antes de aceptar.
+- No se prellenan conteos finales con el fondo inicial; no se calculan diferencias ni efectivo esperado. No hay checkout, pagos, recibos o UI de ventas.

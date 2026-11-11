@@ -2616,3 +2616,12 @@ Releer `AGENTS.md`, `docs/CONSTITUTION.md`, este checkpoint, `docs/AI_COLLABORAT
 - PR #287 continúa OPEN/Draft, HEAD de implementación arriba, base `03442951b2a2f63f5bf4dcf560f2c91be4f6cc71`, mergeable/clean pero sin reviews ni threads. PR #303 OPEN/Draft en `d527ae79cd566945cd9bdb3e1475d53b31d3923a`, sin reviews ni threads. Issue #53 OPEN/P0.
 - Límite restante: el laboratorio crea roles LOGIN sintéticos; no aprovisiona roles/credenciales de producción ni restaura el artefacto remoto. Faltan identidad real del backup en ejecución natural, runbook de llaves/artefacto, RPO/RTO, alertas y coste $0. Producción NOT READY.
 - No hubo acceso/modificación de Neon, secretos, roles/grants remotos, Cron, DNS, Cloudflare sensible, billing, datos reales, backup manual ni deploy. ODD: `odd/tasks/backup-restore-no-owner-no-privileges.md`.
+
+## Reconciliación — remote restore con roles de aplicación — 2026-11-11
+
+- Se añadió `scripts/db/restore_remote_backup_ephemeral.sh` y se actualizó `.github/workflows/backup-real-restore.yml`. El restore remoto ahora se diseña para ejecutarse en PostgreSQL desechable con roles LOGIN separados; ya no restaura como administrador.
+- El script selecciona main 0001–0016 o BCV 0001–0022 a partir del ledger restaurado; fija el bundle main al commit `c5373564413ba086690552c6b7deeab08d7b4a89`, usa el bundle BCV de la rama y exige filename + SHA-256 exactos del ledger antes de replay ACL. Restore bajo `microapp_migrator`, sin repetir DDL/datos.
+- Ambos perfiles sintéticos invocan el mismo script sobre una segunda base desechable. Run `42991705366`: main job `130425902535` SUCCESS; BCV job `130425902488` SUCCESS y legacy regression SUCCESS. Playwright `42991705336` SUCCESS; migration runner `42991705483` SUCCESS; database validation `42991705628` SUCCESS; Semgrep `42991705476` SUCCESS. HEAD de implementación antes de esta actualización documental: `f259b65175711d66f398486bcb80765dfe7aea77`.
+- **No se ejecutó** el workflow remoto manual ni se accedió al backup remoto/llave age. La validación es sintética. El diagnóstico real de `DATABASE_URL_BACKUP_RO` no ha corrido: su workflow actualizado todavía no está en main.
+- Issue #53 OPEN/P0; PR #287 OPEN/Draft. No tocar Neon, secretos, roles/grants remotos, Cron, Cloudflare sensible, DNS, billing, backups manuales ni deploy. Producción NOT READY.
+- Detalle: `odd/tasks/backup-remote-restore-app-role-validation.md`.

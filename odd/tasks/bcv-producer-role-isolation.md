@@ -92,14 +92,17 @@ That intermediate state is incompatible with the approved isolated-producer arch
 
 ### Acceptance criteria
 
-- [ ] AC-1 — 0021 SQL grants no runtime UPDATE/INSERT on `bcv_sync_state`; runtime retains SELECT only.
-- [ ] AC-2 — 0021 assertions pass immediately after 0021, before migration 0022.
-- [ ] AC-3 — Injected 0022 transaction failure preserves the deliberately seeded PUBLIC ACL fixture but adds no direct runtime UPDATE ACL; the clean 0021 state is separately proven read-only before the fixture.
-- [ ] AC-4 — 0022 still grants the exact producer column allowlist and the runtime lock helper remains callable.
+- [x] AC-1 — 0021 SQL grants no runtime UPDATE/INSERT on `bcv_sync_state`; runtime retains SELECT only.
+- [x] AC-2 — 0021 assertions pass immediately after 0021, before migration 0022.
+- [x] AC-3 — Injected 0022 transaction failure preserves the deliberately seeded PUBLIC ACL fixture but adds no direct runtime UPDATE ACL; the clean 0021 state is separately proven read-only before the fixture.
+- [x] AC-4 — 0022 still grants the exact producer column allowlist and the runtime lock helper remains callable.
 - [ ] AC-5 — BCV integration tests continue to use the isolated producer LOGIN; runtime direct writes fail with SQLSTATE 42501.
 - [ ] AC-6 — Full migration-check, migration-runner, CI and exact-HEAD check-runs pass.
-- [ ] AC-7 — No Neon/main role/grant changes, secrets, Cron activation, Worker deploy or real data are used.
+- [x] AC-7 — No Neon/main role/grant changes, secrets, Cron activation, Worker deploy or real data are used.
 
 ### Scope and safety
 
 This is an integration-branch-only SQL/CI/ODD correction. No production or Neon database has been touched. Do not add remote role provisioning or activate the isolated BCV Worker as part of this task. Preserve the existing separate Worker configuration and its disabled-by-default setting.
+
+
+Validation note 2026-11-11: AC-1 through AC-4 and AC-7 are complete on the evaluated code SHA; the dedicated migration-check passed. AC-5 and AC-6 remain open because CI, migration runner and restore smoke could not reach their test steps while Ubuntu apt mirrors failed DNS resolution.

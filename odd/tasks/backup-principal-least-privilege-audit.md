@@ -35,3 +35,8 @@ It never prints DSN, host, username, credentials, row contents, or secret values
 ## Limitations
 
 The synthetic CI profile cannot prove the real secret identity or remote privilege state. This diagnostic does not measure RPO/RTO, test remote artifact restoration, prove external alert delivery, or certify cost $0. Issue #53 remains OPEN/P0; production NOT READY.
+
+
+## Coverage limitation — 2026-11-11
+
+The six-boolean diagnostic in `.github/workflows/backup.yml` currently evaluates `has_membership` only when the backup principal is the `member` in `pg_auth_members`. It does not detect other roles that are members of `backup_readonly` (`roleid = principal.oid`) and may be able to `SET ROLE` to it. Therefore this boolean does not yet prove absence of all role-membership edges. Keep the least-privilege gate open until the predicate checks both directions and a synthetic test covers both membership orientations. Do not infer effective identity or least privilege from backup success alone.

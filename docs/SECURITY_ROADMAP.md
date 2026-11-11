@@ -824,3 +824,12 @@ RPO/RTO permanecen sin objetivo aprobado ni medición. Se definió la instrument
 - Los artefactos antiguos no satisfacen el contrato nuevo porque carecen del esquema de auth efímera que ahora se conserva vacío. Esperar backup natural posterior a la integración antes de cualquier ensayo remoto.
 - Issue #53 OPEN/P0; producción NOT READY. Pendientes: principal efectivo/least privilege real, restore remoto real aislado, provisioning provider-specific, simulacro de aplicación, alerta externa, RPO/RTO medidos y coste $0.
 - No Neon main, datos reales, secretos/age, grants remotos, Cloudflare/DNS sensibles, deploy, Cron, billing, force-push ni merge de Draft.
+
+
+## 2026-11-11 — BCV runtime boundary and current evidence
+
+- Migration 0021 in #287 now leaves `microapp_runtime` SELECT-only on `bcv_sync_state`; no runtime column-level INSERT/UPDATE. The migration-check workflow executes 0021 assertions and a real runtime LOGIN UPDATE denial immediately after 0021, before migration 0022.
+- Migration 0022 remains the transition that grants the isolated `microapp_bcv_sync` producer and removes legacy runtime writes on `exchange_rates`. The separate BCV Worker configuration uses its own `DATABASE_URL`; it remains disabled by default. No role provisioning, Neon/main mutation, Cron activation or deploy was performed.
+- Exact code SHA `b7079224e3469900170994a2dacdd889b342c171`: migration validation and Playwright SUCCESS. CI, migration runner and both restore smoke profiles failed before their tests because GitHub Actions could not resolve Ubuntu apt mirrors. This is infrastructure-blocked, not a green release gate.
+- Backup principal diagnostic still needs a symmetric role-membership predicate: current `has_membership` detects the principal as a member of other roles, but not other roles granted the principal and able to `SET ROLE`. Do not claim absence of all memberships until corrected and evidenced.
+- Issue #53 remains OPEN/P0. Effective backup identity/least privilege, natural post-integration backup, remote encrypted restore, application recovery, alerts, RPO/RTO and USD 0 remain unverified.

@@ -3072,40 +3072,45 @@ La hipótesis anterior de que el helper de espera era la causa no era correcta. 
 
 
 
-## Reconciliación y continuidad — 2026-11-11 14:42 UTC (10:42 UTC−4)
+## Handoff vivo — 2026-11-11 14:49 UTC
 
-### Fuente de verdad viva
-- Repositorio `BTF14/Micro-app`; rama `integration/bcv-checkout-rehearsal-20261109`; PR #287 OPEN/Draft; HEAD actual de esta reconciliación `cef227524d5d97191f0232188cd3e5063cf2d851`; main `c5373564413ba086690552c6b7deeab08d7b4a89`; merge base `03442951b2a2f63f5bf4dcf560f2c91be4f6cc71`; 492 commits ahead / 1 behind; 113 archivos; mergeable=true. El único commit exclusivo de main ya identificado es documental (+15 líneas en `docs/BACKLOG_RECOVERY_LEDGER.md`). No rebasear, sincronizar ni fusionar automáticamente.
-- En #287 se corrigió ODD `odd/tasks/bcv-producer-role-isolation.md` y se modificaron `apps/api/migrations/0021_bcv_sync_state.sql`, su assertions y `.github/workflows/migration-check.yml`. Runtime queda SELECT-only sobre `bcv_sync_state` desde 0021; el producer aislado escribe mediante su propio Worker/LOGIN. CI ahora comprueba 0021 antes de 0022, prueba UPDATE con el LOGIN runtime y separa ACL preexistentes de fixture PUBLIC del rollback. No se tocaron bases remotas.
-- Importante: primer intento de prueba falló porque el test de rollback esperaba borrar ACL PUBLIC deliberadamente sembradas. Ese test expectation era erróneo; fue corregido para verificar atomicidad y ausencia de grants directos nuevos al runtime, sin afirmar que el fixture PUBLIC desaparece. Los tres errores restantes del ciclo anterior correspondían a indisponibilidad de runners/descargas Ubuntu/PostgreSQL/age. El HEAD anterior `a22df611...` queda supersedido.
+### Estado reconciliado en GitHub
+- PR #287 OPEN/Draft, rama `integration/bcv-checkout-rehearsal-20261109`. Código revisado hasta HEAD `b7079224e3469900170994a2dacdd889b342c171`; PR tiene 496 commits ahead / 1 behind, 113 archivos, mergeable=true. Main `c5373564413ba086690552c6b7deeab08d7b4a89`; merge base `03442951b2a2f63f5bf4dcf560f2c91be4f6cc71`. El único commit exclusivo de main es documental (+15 líneas en `docs/BACKLOG_RECOVERY_LEDGER.md`). No sincronizar, rebasear ni fusionar automáticamente.
+- Esta actualización es documental y avanza el tip de la rama; al reanudar, consultar PR #287 en vivo y no reutilizar `b7079224e3469900170994a2dacdd889b342c171` como HEAD si GitHub ya muestra el commit de documentación posterior.
+- En el SHA de código `b7079224e3469900170994a2dacdd889b342c171`: 11 workflow runs pull_request = 8 SUCCESS / 3 FAILURE; 2 workflow runs push = 2 SUCCESS. 16 check-runs = 12 SUCCESS / 4 FAILURE. Legacy status contexts = 0 (combined state pending, total_count=0). PR #287 tiene 0 reviews formales y 0 review threads.
+- SUCCESS exactos: Database migration validation (run 43041250138), Playwright E2E (43041250586), ODD docs, Semgrep, Security scan, Dependency review, Secret history y Project progress dashboard; también los 2 push scans.
+- Los 4 check-runs fallidos pertenecen a CI, migration runner y los dos perfiles de Backup restore smoke. Los logs demuestran fallo previo a las pruebas en `sudo apt-get update/install`, por resolución DNS fallida de `archive.ubuntu.com`, `security.ubuntu.com` y `azure.archive.ubuntu.com`. No se ejecutaron los pasos de pruebas que dependen de esos paquetes. No clasificarlo como fallo funcional del código ni como SUCCESS. El HEAD exacto no está verde.
+- La migración-validation exact-HEAD sí pasó: ejecutó el contrato 0021 inmediatamente después de aplicarlo, comprobó que el LOGIN runtime no puede actualizar `bcv_sync_state`, probó rollback de 0022 con fixture PUBLIC deliberadamente sucio y verificó que no se agregan grants UPDATE directos al runtime; después completó assertions de 0022.
+- PR #303 OPEN/Draft: 11 workflows y 17 checks SUCCESS, sin reviews/threads; fixture principal y script full-schema restore están portados a #287. No fusionar independientemente.
+- PR #302 OPEN/Draft: 10 workflows y 14 checks SUCCESS, sin reviews/threads; helper askpass y prueba HTTP son idénticos en #287, pero workflow/test contract aún difieren. Mantener abierta.
+- PR #301 OPEN/no Draft: 15 checks SUCCESS, sin reviews/threads. La revisión Codex previa falló por límite de uso; no es aprobación. Hallazgo manual: endpoint de sucursales limita a 100 sin cursor; posible truncamiento en organizaciones mayores. No integrar sin paginación o máximo de negocio aprobado.
+- Issue #53 sigue OPEN/P0.
 
-### CI exacto de #287 — SHA `cef227524d5d97191f0232188cd3e5063cf2d851`
-- Workflow runs pull_request: 11 totales; 8 SUCCESS, 3 IN_PROGRESS (PostgreSQL migration runner validation run `43040000155`, CI run `43039999681`, Backup restore smoke test run `43039999598`).
-- Workflow runs push: 2/2 SUCCESS (Security scan `43039992386`, Secret history scan `43039992515`).
-- Check-runs: 16 total, 12 completed, 4 in progress, 0 queued, 0 failed hasta la consulta de 14:37 UTC. Los tres workflow runs PR in-progress se corresponden con la validación en curso; no atribuir resultado final hasta reconsultar exact SHA.
-- SUCCESS ya observado en exact SHA: Playwright E2E, Database migration validation, Security scan, Semgrep, Dependency review, Secret history scan, ODD docs validation y dashboard. Combined legacy status: `pending` con 0 contexts individuales; no inventar status contexts.
-- Reviews formales #287: 0; review threads: 0.
+### Corrección BCV aplicada en #287
+- ODD actualizado antes de la corrección.
+- `0021_bcv_sync_state.sql`: `microapp_runtime` recibe SELECT, no INSERT/UPDATE sobre el singleton de sincronización.
+- `0021_bcv_sync_state.assertions.sql`: valida ausencia de escrituras table-level y column-level para runtime.
+- `migration-check.yml`: prueba assertions y UPDATE real con LOGIN runtime inmediatamente después de 0021; en el fixture sucio de rollback distingue PUBLIC grants deliberados de grants directos al runtime.
+- El Worker BCV es aislado y tiene su propio `DATABASE_URL` en `apps/api/wrangler.bcv.toml`; el secreto no se mezcla con el Worker API. Su sincronización permanece deshabilitada por defecto. No activar Cron ni desplegar.
+- El test migration-check pasó en el SHA de código `b7079224e3469900170994a2dacdd889b342c171`; AC-1 a AC-4 y AC-7 del addendum ODD están cumplidos. AC-5 (integración completa con LOGIN producer) y AC-6 (todos los workflows exact-HEAD) siguen pendientes.
+- `main` no contiene esta corrección, askpass ni diagnóstico de seis booleanos. No atribuir controles de #287 a main.
 
-### Backup programado natural — revisión 2026-11-11
-- No aparece todavía un run `schedule` del workflow de backup para 2026-11-11 en la consulta viva. Último backup programado observado: run `42842855127`, 2026-11-10 15:17:48 UTC, SUCCESS sobre main SHA `c537356...`.
-- Ese run antecede a los cambios de askpass/diagnóstico de #287 y NO demuestra identidad efectiva ni least privilege. No ejecutar dispatch/manual backup para fabricar evidencia. Revisar de nuevo el schedule natural mañana/tras el horario programado.
+### Backup / recuperación
+- Último backup programado observado: run `42842855127`, 2026-11-10 15:17:48 UTC, SUCCESS en main SHA `c537356...`; anterior a los diagnósticos de #287. No demuestra identidad efectiva ni least privilege.
+- `main` mantiene el clone Git con token en URL; #287 incorpora askpass temporal, URL limpia, helper explícito vacío y limpieza trap.
+- El diagnóstico de seis booleanos aún no se ha observado en un backup natural posterior en main. No ejecutar workflow manual.
+- Limitación detectada: el booleano `has_membership` del diagnóstico solo detecta cuando el principal es miembro de otros roles; no detecta otros roles que sean miembros de `backup_readonly` y puedan hacer SET ROLE. Por ello todavía no demuestra ausencia simétrica de memberships. Mantener el gate de least privilege abierto.
+- Identidad real de `DATABASE_URL_BACKUP_RO`, memberships/grants efectivos, restore remoto cifrado aislado, provisioning, simulacro de aplicación, alertas efectivas, RPO/RTO y coste total USD 0 siguen NO VERIFICADOS. Restore CI es sintético.
 
-### PRs relacionadas y reviews
-- #301 OPEN/no Draft, HEAD `ce43ab2cff91cd07e7ca2b91635b8e27a02b11c8`, 15/15 check-runs SUCCESS; 0 reviews y 0 threads. Hallazgo pendiente: branch-list limita a `MAX_BRANCHES=100` sin cursor/paginación; posible truncamiento. Codex review anterior incompleta por límite de uso; no es aprobación.
-- #302 OPEN/Draft, HEAD `a8ee511ae87fdeb5cc86081449ee407dda45b121`, 14/14 check-runs SUCCESS; 0 reviews/threads. Askpass helper y prueba HTTP idénticos en #287; workflow/test contract aún difieren. No cerrar sin revisar diferencias restantes.
-- #303 OPEN/Draft, HEAD `d527ae79cd566945cd9bdb3e1475d53b31d3923a`, 17/17 check-runs SUCCESS; 0 reviews/threads. Script restore schema y fixture principal idénticos por blob SHA en #287; aún verificar todo el diff y documentos únicos antes de decidir.
-- #287 sigue OPEN/Draft. Issue #53 sigue OPEN/P0. No hay aprobaciones formales en las cuatro PR.
+### Otros contratos pendientes
+- `docs/sdd/SALES_CHECKOUT_MODEL.md` no aprueba todavía pagos parciales, sobrepagos, cambio, pagos mixtos, descuentos, promociones, devoluciones ni anulaciones. El checkout actual exige liquidación exacta y una sola moneda; no habilitarlo en producción sin aprobación explícita.
+- Hallazgo P2 de precisión: parser VES admite hasta 12 dígitos enteros (14,2), pero `payments.amount` es NUMERIC(14,4), con máximo 10 enteros. Alinear validación con el esquema y probar límites antes de activar checkout.
+- No expandir operaciones comerciales hasta cerrar Seguridad Nivel 1 y aprobar contratos.
 
-### Prioridad y siguiente ejecución
-1. En el siguiente chat, primera acción: consultar de nuevo PR #287 HEAD y workflow/check-runs/status/reviews/threads; comprobar si runs `43040000155`, `43039999681`, `43039999598` terminaron y revisar logs si fallan. No usar checks de otro SHA.
-2. Consultar el workflow de backup natural del 11/11; hasta ahora no hay ejecución programada observada. No dispatch manual.
-3. Si CI exact-HEAD termina verde, no equivale a aprobación: continuar auditoría estática de tenant/branch/role, migraciones 0017–0023 y callers; revisar especialmente SECURITY DEFINER/ownership/grants y checkout/ledger/turnos. No añadir nuevas operaciones comerciales hasta cerrar Seguridad Nivel 1.
-4. Completar preservación de cambios únicos #302/#303 y corregir/justificar el límite 100 de #301; no fusionar ni cerrar PR sin revisión.
-5. Issue #53/P0: identidad efectiva del principal backup, least privilege real, backup natural posterior a integración segura en main, restore remoto cifrado en entorno aislado con autorización específica, provisioning seguro, simulacro de recuperación app, alertas efectivas, RPO/RTO con timestamps y coste total USD 0 siguen NO VERIFICADOS. CI restore es sintético.
-6. Producción NOT READY / NO-GO mientras quede cualquier gate crítico. MVP deadline inamovible 2026-12-01; evaluación GO/NO-GO 2026-11-30.
+### Siguiente ejecución
+1. Esperar recuperación DNS de GitHub Actions y reintentar únicamente los jobs apt-dependientes fallidos; no hacer workflow_dispatch de backup ni restore remoto.
+2. Completar auditoría estática de aislamiento tenant/branch/role y migraciones 0017–0023; revisar checkout/ledger y runner restore.
+3. Cerrar evidencia del principal de backup y corregir cobertura simétrica de memberships antes de declarar least privilege.
+4. Mantener #287/#303 Draft y #301/#302 abiertas; sin merge, force-push ni sincronización.
+5. Issue #53 P0 abierto; producción NOT READY. MVP 2026-12-01; GO/NO-GO 2026-11-30. Cualquier gate crítico pendiente = NO-GO.
 
-### Restricciones que el siguiente chat debe respetar
-- No Neon main, datos reales, secretos/credenciales/llaves age, lectura/impresión de secretos, roles/grants remotos, deploy manual, Cron, DNS/Cloudflare sensible, billing, force-push, rebase/sync automático ni restore remoto real sin gates y autorización específica.
-- Máximo dos frentes simultáneos. Preservar cambios únicos de otras ramas. No cerrar/degradar #53. No tratar workflow success como review formal ni como readiness productiva.
-- No pedir al propietario terminal/CLI, screenshots, Build IDs, TinyFish ni reconexiones; usar GitHub y documentación existente. Si falta un dato esencial no documentado, preguntar una sola vez y aceptar texto.
-- Mantener distinción: implementado / probado / validado / pendiente / bloqueado / no verificado. Actualizar estos cuatro documentos al cambiar el estado real, sin duplicar el diario en todos.

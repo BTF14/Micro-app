@@ -391,8 +391,12 @@ jobs:
           output="$(docker exec -i -e PGPASSWORD=migrator-test-only "${{ job.services.postgres.id }}" psql -h 127.0.0.1 -v ON_ERROR_STOP=1 -U microapp_migrator -d microapp_test -f /dev/stdin < /tmp/0022-bcv-failure.sql 2>&1)" || status=$?
           if [ "$status" -eq 0 ]; then exit 1; fi
           printf '%s\\n' "$output" | grep -F "division by zero"
-          safe_runtime="$(docker exec "${{ job.services.postgres.id }}" psql -At -U microapp -d microapp_test -c "SELECT has_table_privilege('microapp_runtime','public.bcv_sync_state','SELECT') AND NOT has_table_privilege('microapp_runtime','public.bcv_sync_state','UPDATE') AND NOT EXISTS (SELECT 1 FROM pg_attribute a WHERE a.attrelid='public.bcv_sync_state'::regclass AND a.attnum > 0 AND NOT a.attisdropped AND (has_column_privilege('microapp_runtime',a.attrelid,a.attname::text,'INSERT') OR has_column_privilege('microapp_runtime',a.attrelid,a.attname::text,'UPDATE')))")"
-          test "$safe_runtime" = "t"
+          # PUBLIC write grants are intentionally seeded above to prove 0022 rollback atomicity.
+          # After rollback they must remain; the clean 0021 state was already tested before this fixture.
+          fixture_acl_preserved="$(docker exec "${{ job.services.postgres.id }}" psql -At -U microapp -d microapp_test -c "SELECT has_column_privilege('microapp_runtime','public.bcv_sync_state','last_success_at','UPDATE')")"
+          test "$fixture_acl_preserved" = "t"
+          direct_runtime_update="$(docker exec "${{ job.services.postgres.id }}" psql -At -U microapp -d microapp_test -c "SELECT NOT EXISTS (SELECT 1 FROM pg_class c CROSS JOIN LATERAL aclexplode(COALESCE(c.relacl,acldefault('r',c.relowner))) acl WHERE c.oid='public.bcv_sync_state'::regclass AND acl.grantee=(SELECT oid FROM pg_roles WHERE rolname='microapp_runtime') AND acl.privilege_type='UPDATE') AND NOT EXISTS (SELECT 1 FROM pg_attribute a CROSS JOIN LATERAL aclexplode(a.attacl) acl WHERE a.attrelid='public.bcv_sync_state'::regclass AND a.attnum>0 AND NOT a.attisdropped AND acl.grantee=(SELECT oid FROM pg_roles WHERE rolname='microapp_runtime') AND acl.privilege_type='UPDATE')")"
+          test "$direct_runtime_update" = "t"
       - name: Apply dedicated BCV producer role grants
         run: docker exec -i -e PGPASSWORD=migrator-test-only "${{ job.services.postgres.id }}" psql -h 127.0.0.1 -v ON_ERROR_STOP=1 -U microapp_migrator -d microapp_test -f /dev/stdin < apps/api/migrations/0022_bcv_dedicated_producer_role.sql
       - name: Verify final BCV producer and runtime privilege contracts

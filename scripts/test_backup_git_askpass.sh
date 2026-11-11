@@ -36,7 +36,7 @@ if grep -F 'https://x-access-token:' "$workflow" >/dev/null || grep -F '${GH_TOK
 fi
 grep -F 'export GIT_ASKPASS=' "$workflow" >/dev/null || { echo "FAIL: backup workflow does not configure GIT_ASKPASS"; exit 1; }
 grep -F 'export GIT_ASKPASS_REQUIRE=force' "$workflow" >/dev/null || { echo "FAIL: backup workflow does not require askpass"; exit 1; }
-grep -F 'git clone --depth 1 "https://github.com/${BACKUP_REPO}.git"' "$workflow" >/dev/null || { echo "FAIL: backup workflow clone URL is not credential-free"; exit 1; }
+grep -F 'git -c credential.helper= clone --depth 1 "https://github.com/${BACKUP_REPO}.git"' "$workflow" >/dev/null || { echo "FAIL: backup workflow clone URL is not credential-free"; exit 1; }
 grep -F 'trap ' "$workflow" | grep -F 'rm -f "$askpass"' >/dev/null || { echo "FAIL: backup workflow does not clean up the temporary helper"; exit 1; }
 
 echo "PASS: backup workflow does not persist Git credentials in remote URLs"

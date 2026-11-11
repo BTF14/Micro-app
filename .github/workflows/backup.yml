@@ -97,7 +97,7 @@ jobs:
               SELECT 1
                 FROM pg_catalog.pg_auth_members m
                 JOIN pg_catalog.pg_roles principal_role
-                  ON principal_role.oid = m.member OR principal_role.oid = m.roleid
+                  ON principal_role.oid = m.member
                WHERE principal_role.rolname = current_user
             ),
             EXISTS (
@@ -156,9 +156,9 @@ jobs:
           "$PG_DUMP" --version | grep -Eq "pg_dump \(PostgreSQL\) 18\."
           "$PG_DUMP" "$DATABASE_URL" \
             --no-owner --no-privileges --format=custom \
-            --exclude-table-data=auth_sessions \
-            --exclude-table-data=auth_rate_limits \
-            --exclude-table-data=auth_bootstrap_attempts \
+            --exclude-table-data=public.auth_sessions \
+            --exclude-table-data=public.auth_rate_limits \
+            --exclude-table-data=public.auth_bootstrap_attempts \
             --file="backup-${STAMP}.dump"
           test -s "backup-${STAMP}.dump"
 

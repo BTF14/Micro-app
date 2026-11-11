@@ -1,3 +1,13 @@
+# Estado de seguridad reconciliado — Turno 5 — 2026-11-11 UTC
+
+- PR #304 y PR #305 están MERGED en main; PR #306 documental también está MERGED.
+- El workflow de backup conserva DDL y excluye únicamente filas efímeras de las tres tablas auth mediante `--exclude-table-data=public.<tabla>`.
+- Las pruebas sintéticas PostgreSQL 18 verifican el contrato de privilegios y restauración; no certifican el principal efectivo de `DATABASE_URL_BACKUP_RO` en Neon.
+- Issue #53 permanece OPEN/P0: principal efectivo, aislamiento tenant/sesiones y evidencia operativa RPO/RTO siguen pendientes. Producción: **NOT READY**.
+- No inspeccionar secretos, ni mutar Neon, roles/grants remotos, datos reales, Cron, Cloudflare manual, DNS o billing por esta reconciliación.
+
+---
+
 # Reconciliación exact-HEAD — 2026-11-11 — PR #287 / principal de backup
 
 > Este bloque prevalece sobre snapshots anteriores. SHA verificado directamente en GitHub: `e5f956271f723bfa00da2ab527c35ac422cf6d2d`. No reutilizar checks de otros SHA.

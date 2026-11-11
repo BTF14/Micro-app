@@ -272,6 +272,40 @@ describe.skipIf(!databaseUrl)("inventory balance and ledger read APIs against Po
     const cashierBody = await cashierResponse.json() as { items: Array<Record<string, unknown>> };
     expect(cashierBody.items).toHaveLength(3);
     expect(cashierBody.items.every((item) => !("cost_usd" in item))).toBe(true);
+
+    // Exercise the complete cashier read path with the same branch membership.
+    const branchList = await get(`/api/orgs/${organizationId}/branches`, cashierToken);
+    expect(branchList.status).toBe(200);
+    const branchBody = await branchList.json() as { branches: Array<{ id: string }> };
+    expect(branchBody.branches.map((item) => item.id)).toContain(branchId);
+
+    const warehouseList = await get(`/api/orgs/${organizationId}/branches/${branchId}/warehouses`, cashierToken);
+    expect(warehouseList.status).toBe(200);
+    const warehouseBody = await warehouseList.json() as { warehouses: Array<{ id: string }> };
+    expect(warehouseBody.warehouses.map((item) => item.id)).toContain(warehouseId);
+
+    const unassignedWarehouseList = await get(`/api/orgs/${organizationId}/branches/${otherBranchId}/warehouses`, cashierToken);
+    expect(unassignedWarehouseList.status).toBe(403);
+
+    // A syntactically valid, trusted-origin count request must be rejected
+    // because cashier has inventory.read, not inventory.adjust.
+    const countDenied = await app.fetch(new Request(
+      `https://api.example/api/orgs/${organizationId}/branches/${branchId}/warehouses/${warehouseId}/counts/physical`,
+      {
+        method: "POST",
+        headers: {
+          Cookie: "microapp_session=" + cashierToken,
+          Origin: "https://frontend.example",
+          "Content-Type": "application/json",
+          "Idempotency-Key": "cashier-denied-" + crypto.randomUUID(),
+        },
+        body: JSON.stringify({
+          reason: "Authorization regression test",
+          lines: [{ product_id: firstProductId, counted_quantity: "15.000" }],
+        }),
+      },
+    ), { DATABASE_URL: databaseUrl, FRONTEND_ORIGIN: "https://frontend.example" });
+    expect(countDenied.status).toBe(403);
   });
 
   it("paginates inventory balances with a stable product cursor", async () => {

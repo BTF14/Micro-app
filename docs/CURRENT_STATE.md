@@ -1,6 +1,53 @@
-# Reconciliación exact-HEAD — 2026-11-11 — PR #287 / principal de backup
+# Reconciliación de seguridad de backups — 2026-11-11 UTC
 
-> Este bloque prevalece sobre snapshots anteriores. SHA verificado directamente en GitHub: `e5f956271f723bfa00da2ab527c35ac422cf6d2d`. No reutilizar checks de otros SHA.
+**Línea base de esta reconciliación:** `main` en `a3966a95a97486da18fae568a9c87bac8f2772e6`, posterior a los merges secuenciales de PR #304 y #305. Este encabezado es la fuente temporal más reciente; los snapshots históricos que siguen debajo se conservan como historial y no describen el estado vivo actual.
+
+## Merges confirmados
+
+- **PR #304 — merged por squash.** HEAD exact-SHA validado: `b20ade030c9dc29f7689afc3ce6c1a096fe7f0ab`; 12/12 workflow runs y 14/14 check-runs SUCCESS. Merge commit en `main`: `e428a25824d48d1a6391f564c05d0287abf7d329`. Incluye hardening de diagnóstico de principal, comprobación estricta de membresía sobre `pg_auth_members.member`, helper temporal `GIT_ASKPASS`, pruebas de contrato HTTP 401 y reintentos APT.
+- **PR #302 — CLOSED / superseded, no merged.** Se publicó el comentario de absorción en el hilo de PR antes del cierre. La rama histórica se conserva.
+- **PR #305 — merged por squash.** Tras sincronizar con el nuevo main, el HEAD exact-SHA fue `d1e008a3df1e99f64c4efce20306a798351f6a43`; 16/16 workflow runs y 18/18 check-runs SUCCESS. Merge commit final en `main`: `a3966a95a97486da18fae568a9c87bac8f2772e6`. La combinación conserva íntegramente las mejoras de #304 y añade `--exclude-table-data=public.auth_sessions`, `public.auth_rate_limits` y `public.auth_bootstrap_attempts`, además de pruebas sintéticas PostgreSQL 18 y restauración con DDL preservado.
+
+## Estado vivo de PRs consultado tras los merges
+
+| PR | Estado observado | HEAD |
+|---|---|---|
+| #303 — backup restore smoke de esquema completo | OPEN / Draft | `d527ae79cd566945cd9bdb3e1475d53b31d3923a` |
+| #300 — permiso de override manual de precio | OPEN / Draft | `97fa79e643d5e7b32ebf86958bd0ba9211e1fc95` |
+| #299 — medir duración de restore PostgreSQL aislado | OPEN / Draft | `c82b0a10f85b59e1f81ac0ca2d439b6286558751` |
+| #298 — reconciliación documental previa | OPEN / Draft | `ce398214c55ba5f3d4d6caeaf683dbfea041b6a7` |
+| #296 — documentación de seguridad BCV y controles admin/calendario | OPEN / Draft | `62dde66355a937a4f6fa4efb8d9cfdf856d7ac0f` |
+| #287 — BCV + checkout integration rehearsal | OPEN / Draft | `fe73180dc9f2039c2a025b8d3b7700230080e19d` |
+| #193 — inventario por sucursal Fase B | OPEN / Ready for review | `ac57ab4f3415f82279b8a49c0befe09f8e3aec68` |
+
+No reducir esta lista a #303 y #287: GitHub reportó además #300, #299, #298, #296 y #193 abiertas. No alterar #193. PRs #255 y #269 permanecen CLOSED sin merge; #233 permanece cerrada como superseded. #302 está cerrada como absorbida; #304 y #305 están MERGED.
+
+## Issue P0 #53 y readiness
+
+- Issue #53 permanece **OPEN / P0**.
+- Completado: contrato sintético de privilegios mínimos, denegación de escritura/DDL en el rol sintético, prueba de dump/restauración, preservación del DDL de tablas auth y exclusión de sus filas efímeras.
+- Sigue abierto: identidad efectiva y privilegios reales del secreto `DATABASE_URL_BACKUP_RO` en Neon; cobertura demostrada de aislamiento tenant/sesiones; evidencia de restore operativo y RPO/RTO. El diagnóstico agregado al workflow es no sensible y no bloqueante: un resultado no conforme no bloquea el backup ni certifica el principal.
+- No se inspeccionaron secretos ni se conectó o modificó Neon. No se ejecutó un backup productivo ni restore con datos reales.
+- **Producción: NOT READY.** Los checks sintéticos verdes no cierran la identidad real, aislamiento ni recuperación productiva.
+
+## Siguiente frente — PR #287
+
+Continuar la revisión técnica de #287 en HEAD `fe73180dc9f2039c2a025b8d3b7700230080e19d`, manteniéndola Draft:
+
+1. Resolver el gate P1 de freshness: `findApplicableCheckoutRate` debe considerar `bcv_sync_state.last_success_at` y fallar cerrado cuando la sincronización relevante no tenga éxito reciente, con ventana definida por decisión explícita y pruebas PostgreSQL para fallos, concurrencia y datos obsoletos.
+2. Formalizar política USD-only: determinar si se permite checkout en USD sin conversión a VES cuando BCV no está disponible, y qué ocurre con ventas VES, recibos, totales, pagos parciales y auditoría. No inventar una política de negocio ni habilitar contingencia manual por inferencia.
+3. No mergear #287 sin revalidar su base/HEAD, exact-SHA CI, revisión formal requerida y gates comerciales/legales.
+
+## Límites operativos mantenidos
+
+No Neon main, secretos, datos reales, cambios de roles/grants, backup operativo, despliegue manual, activación de Cron, Cloudflare manual, DNS ni billing. Branch-protection API devolvió 403 al conector durante la auditoría; GitHub aceptó los dos merges, pero esta reconciliación no atribuye una lectura independiente de la configuración administrativa de protección.
+
+
+---
+
+## Snapshot histórico de PR #287 — previo a Turno 6
+
+> Snapshot histórico anterior a la reconciliación de Turno 6; los SHA y estados aquí descritos no sustituyen la consulta viva actual. SHA de aquella captura: `e5f956271f723bfa00da2ab527c35ac422cf6d2d`. No reutilizar checks de otros SHA.
 
 ## GitHub / PR #287
 

@@ -205,3 +205,18 @@ For each PR, record: live head/base SHA; changed file list; unique changes retai
 ### Next recovery front — inventory read/kardex
 - Branch `feat/inventory-read-ledger-20261106` adds balances and append-only movement read APIs with pagination and role-based cost visibility. Draft PR and exact-SHA checks pending.
 - Transfer dispatch/receipt must be designed as a persisted two-stage lifecycle before implementation.
+
+### Cierre de PR superseded por #287 — 2026-11-09 UTC
+
+Verificación local sobre clon de `main` `0344295` y HEADs exactos leídos de GitHub el 2026-11-09:
+
+| PR | HEAD | Resultado | Evidencia |
+|---|---|---|---|
+| #269 checkout + ledger | `7fc91b54f869664febb6a7daf1ed05b408bd8430` | CLOSED (superseded) | Es ancestro de #287 (`git merge-base` = su propio HEAD; 0 commits propios fuera de #287). |
+| #295 freshness BCV | `213837969375fa87f5edca79e0d752333bc93d8c` | CLOSED (superseded) | Ninguna línea de código en `apps/`, `packages/`, `scripts/`, `tools/` añadida por la rama falta en #287; el guard `findApplicableCheckoutRate()` con `bcv_sync_state ... FOR SHARE` ya está en #287. Estaba `dirty` contra su base. |
+| #255 BCV | `b0e47205b96f636b2ab270304d2598423a50ccc3` | CLOSED (superseded) | Las líneas de #255 ausentes en #287 son refactors de las mismas funciones (firma de `syncBcvOfficialRate`, logging con whitelist `safeBcvSyncErrorCode`, flag `BCV_SYNC_ENABLED`, que en #287 además exige `APP_ENV=production`). No se detectó funcionalidad perdida. |
+
+- Las ramas NO se eliminaron; las PR pueden reabrirse si se detecta contenido faltante.
+- #287 (`7df318b`, 10/10 check-runs SUCCESS, Draft, `blocked` por falta de review APPROVED) pasa a ser la única rama de integración BCV + checkout. Sus gates P1 siguen abiertos: fixture HTML oficial BCV, justificación/aprobación de umbrales 10/7 días, calendario SUDEBAN verificable, revisión legal/contable, identidad del Worker y matriz de permisos por rol.
+- #296 (docs, `73b0b13`, 14/14 SUCCESS, Draft) cita `ccb430c` como HEAD de #287; ese commit es ancestro del HEAD vigente `7df318b`, así que el dato está atrasado, no es erróneo.
+- No hubo merge, deploy, Neon, Cloudflare manual, secretos ni datos reales. Producción: NOT READY.

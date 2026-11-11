@@ -47,3 +47,13 @@ fi
 [[ "$(cat "$APT_RETRY_TEST_STATE_FILE")" == "3" ]]
 
 echo "PASS: apt retries are bounded, update is strict, and persistent failure remains non-zero."
+
+
+# Assert that the scheduled backup workflow actually uses the tested helper.
+backup_workflow="$repo_root/.github/workflows/backup.yml"
+grep -F 'bash scripts/ci/apt-retry.sh update' "$backup_workflow" >/dev/null
+grep -F 'bash scripts/ci/apt-retry.sh install -y' "$backup_workflow" >/dev/null
+grep -F 'curl --fail --show-error --location' "$backup_workflow" >/dev/null
+grep -F -- '--retry 5 --retry-all-errors --retry-delay 2' "$backup_workflow" >/dev/null
+
+echo "PASS: scheduled backup workflow uses bounded APT and PGDG download retries."

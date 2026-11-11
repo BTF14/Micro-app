@@ -1,6 +1,17 @@
-# Reconciliación exact-HEAD — 2026-11-11 — PR #287 / principal de backup
+## Reconciliación del contrato de exclusión y mínimo privilegio — 2026-11-11 UTC
 
-> Este bloque prevalece sobre snapshots anteriores. SHA verificado directamente en GitHub: `e5f956271f723bfa00da2ab527c35ac422cf6d2d`. No reutilizar checks de otros SHA.
+- **Corrección propuesta en PR #305:** `.github/workflows/backup.yml` sustituye las exclusiones completas `--exclude-table` por `--exclude-table-data=public.<tabla>` para `auth_sessions`, `auth_rate_limits` y `auth_bootstrap_attempts`. El objetivo es conservar DDL/estructura e índices, omitiendo únicamente sus filas.
+- **Prueba sintética PostgreSQL 18 aprobada:** run [43102529147](https://github.com/BTF14/Micro-app/actions/runs/43102529147), código de prueba en el HEAD `2b52bcaaa575c7f4d50f2ba13982041f2b3353f7`. El rol sintético `microapp_backup` completó `pg_dump` con grants de lectura; las pruebas negativas rechazaron DML, DDL, mutación de secuencias y administración de roles. El archive/restauración conservaron las tres tablas efímeras con cero filas y el manifiesto sintético de negocio coincidió.
+- Esta evidencia es de PostgreSQL 18 desechable y **no** verifica el principal efectivo del secreto `DATABASE_URL_BACKUP_RO`, los grants/membresías reales en Neon ni una restauración de una copia productiva. No declarar cerrado Issue #53 ni listo producción.
+- Las notas históricas posteriores que describen que las tablas efímeras no aparecen en la restauración documentan el comportamiento anterior de `--exclude-table`; no deben interpretarse como el nuevo contrato. No se reescriben esos registros históricos.
+- La modificación del workflow sigue pendiente de revisión y merge de PR #305. No se ejecutó manualmente el backup operativo, no se leyeron secretos y no se conectó ni mutó Neon `main`.
+
+
+---
+
+## Snapshot histórico de PR #287 — previo a Turno 6
+
+> Snapshot histórico anterior a la reconciliación de Turno 6; los SHA y estados aquí descritos no sustituyen la consulta viva actual. SHA de aquella captura: `e5f956271f723bfa00da2ab527c35ac422cf6d2d`. No reutilizar checks de otros SHA.
 
 ## GitHub / PR #287
 

@@ -2625,3 +2625,7 @@ Releer `AGENTS.md`, `docs/CONSTITUTION.md`, este checkpoint, `docs/AI_COLLABORAT
 - **No se ejecutó** el workflow remoto manual ni se accedió al backup remoto/llave age. La validación es sintética. El diagnóstico real de `DATABASE_URL_BACKUP_RO` no ha corrido: su workflow actualizado todavía no está en main.
 - Issue #53 OPEN/P0; PR #287 OPEN/Draft. No tocar Neon, secretos, roles/grants remotos, Cron, Cloudflare sensible, DNS, billing, backups manuales ni deploy. Producción NOT READY.
 - Detalle: `odd/tasks/backup-remote-restore-app-role-validation.md`.
+
+### Validación posterior del runner remoto — 2026-11-11
+
+El runner añade un probe de lectura real de `public.organizations` como `microapp_runtime` y verifica SELECT permitido / CREATE de schema denegado. Run exact-HEAD de implementación `7b4fdebe846952f1099a4fde323be2dc0f5ce0e8`: backup restore `42992354071`, main `130428038679` SUCCESS, BCV `130428038320` SUCCESS y legacy regression SUCCESS. Los otros 10 workflows pull_request también SUCCESS; CI `42992353978` seguía pendiente en la última lectura. El workflow remoto real no se ejecutó. Producción NOT READY.

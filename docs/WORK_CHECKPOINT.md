@@ -467,3 +467,11 @@ No se fijan objetivos RPO/RTO sin medición y aceptación de negocio. El backup 
 ### Gate de principal backup — estado actual de main — 2026-11-11
 
 Se verificó main live: HEAD c5373564413ba086690552c6b7deeab08d7b4a89; .github/workflows/backup.yml blob 5df408788b9053709261ada3aa22dd73b85d5691 no contiene todavía el diagnóstico de identidad. Los últimos runs schedule (42842855127 el 2026-11-10 y 42659924075 el 2026-11-09) son SUCCESS, pero anteriores al cambio y no sirven para demostrar los seis booleanos. No declarar identidad ni least privilege verificados. Esperar el primer run programado natural después de que el diagnóstico alcance main; no ejecutar workflow_dispatch.
+
+
+
+## 2026-11-11 — checkpoint de continuidad tras validación exact-HEAD
+
+GitHub live confirma rama `integration/bcv-checkout-rehearsal-20261109` en HEAD `3e00d2c1512e1d0c3c0acc84bcdf4663e4976296`. En ese SHA: 13/13 workflows pull_request SUCCESS, 2/2 workflows push SUCCESS y 16/16 check-runs SUCCESS. IDs de workflows y distinción de evidencias están registrados en `docs/HANDOFF_NEXT_CHAT.md`. PR #287 OPEN/Draft, #303 OPEN/Draft, issue #53 OPEN/P0. PR #287 no tiene reviews formales ni review comments; CI verde no es aprobación.
+
+La validación sintética main 0001–0016 y BCV 0001–0022 pasó, pero no existe restore remoto real ni ensayo completo de recuperación. El diagnóstico de seis booleanos aún no está en main; los runs schedule previos no prueban identidad efectiva ni least privilege. Próximo paso: revisión técnica independiente del diff y compatibilidad #287/#303; después decidir integración segura, sin merge automático ni cambio de Draft por CI. No dispatch manual, no secretos/artefactos reales/llave age, no Neon/producción. #53 permanece OPEN/P0; producción NOT READY.

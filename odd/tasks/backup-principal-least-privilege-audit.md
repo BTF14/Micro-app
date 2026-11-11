@@ -9,7 +9,7 @@
 
 The production workflow consumes `DATABASE_URL_BACKUP_RO` but has not recorded `current_user`, `session_user`, effective role attributes, memberships, or write privileges. Documentation records a possible `backup_readonly` → `neon_superuser` → `pg_write_all_data` membership path, but does not prove that the secret resolves to that principal.
 
-Do not inspect, print, decode, copy, or otherwise reveal the secret value. Do not connect manually to production, inspect Neon, or mutate remote roles/grants.
+Do not inspect, print, decode, copy, or otherwise reveal the secret value. Do not connect manually to production or mutate remote roles/grants. Read-only catalog metadata queries are permitted only when explicitly authorized; the 2026-11-11 SELECT-only review is recorded below.
 
 ## Implemented diagnostic
 
@@ -61,3 +61,15 @@ The six-boolean diagnostic in `.github/workflows/backup.yml` currently evaluates
 
 - Run `43047173060` passed on SHA `53894254c26838dd56f5a39764fedf4cf1d64067`; the disposable PostgreSQL 18 membership regression passed for both directions and the empty baseline.
 - This is CI predicate evidence only. The natural main backup `43041961402` failed before DB connection while installing age due Ubuntu DNS, so it produced no artifact and did not execute the six-boolean diagnostic. Effective production identity and least privilege remain unverified; issue #53 stays OPEN/P0.
+
+
+## Read-only Neon catalog verification — 2026-11-11
+
+- Scope: project `micro-app-db` (`restless-fire-99110035`), primary/default branch `main` (`br-summer-math-b7297a60`), database `neondb`.
+- Queries: SELECT only against `pg_roles`, `pg_auth_members`, and PostgreSQL privilege predicates. No business rows, secrets, connection strings or credentials were read.
+- Role `backup_readonly`: LOGIN true, SUPERUSER false, INHERIT true, CREATEROLE true, CREATEDB true, REPLICATION true, BYPASSRLS true.
+- Direct membership: `backup_readonly` is a member of `neon_superuser`. Effective membership: `pg_has_role` returns true for `pg_write_all_data` and `pg_read_all_data`.
+- Effective privilege predicates: SELECT/INSERT/UPDATE/DELETE on `public.products` all true; TRUNCATE false; CREATE on current database true; CREATE on public schema false.
+- Conclusion: the role named `backup_readonly` is not read-only and is materially overprivileged. If the backup secret uses it, least privilege is violated.
+- Limit: the secret value was not read; actual `current_user` / `session_user` used by `DATABASE_URL_BACKUP_RO` remains unknown. The natural scheduled diagnostic after integration is still required.
+- No role, membership, grant, password, secret, database, workflow or production state was modified. Issue #53 remains OPEN/P0. Evidence comment: `6802571142`.

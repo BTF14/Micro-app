@@ -1,3 +1,30 @@
+# Reconciliación viva — 2026-11-11 — P0 principal de backup
+
+# Hallazgo P0 — rol backup_readonly con privilegios excesivos (2026-11-11)
+
+> Verificación SELECT-only de catálogos PostgreSQL. No se consultaron filas comerciales ni secretos. No se modificó Neon.
+
+- Proyecto Neon `micro-app-db` (`restless-fire-99110035`), branch primary/default `main` (`br-summer-math-b7297a60`), database `neondb`.
+- El rol LOGIN `backup_readonly` tiene `rolsuper=false`, `rolinherit=true`, pero **`rolcreaterole=true`, `rolcreatedb=true`, `rolreplication=true`, `rolbypassrls=true`**.
+- `pg_auth_members`: miembro directo de `neon_superuser`; `pg_has_role` confirma membresía efectiva en `pg_write_all_data` y `pg_read_all_data`.
+- `has_table_privilege('backup_readonly','public.products',...)`: SELECT, INSERT, UPDATE y DELETE = true; TRUNCATE = false.
+- `has_database_privilege(...,'CREATE')=true`; `has_schema_privilege(...,'public','CREATE')=false`.
+- **Conclusión:** el rol llamado `backup_readonly` no es de solo lectura. Si `DATABASE_URL_BACKUP_RO` utiliza este principal, su privilegio efectivo viola mínimo privilegio.
+- **Límite:** no se leyó el secreto ni se conoce el usuario efectivo que resuelve. No afirmar que el workflow lo utiliza hasta observar el diagnóstico de seis booleanos en un backup natural de main posterior a integrar el cambio.
+- **Prohibido sin autorización específica:** revocar membresías, cambiar atributos/grants, rotar contraseñas/secreto o alterar workflows productivos. La remediación requiere un plan revisado que preserve continuidad de backup y valide `pg_dump` en entorno aislado.
+- Issue #53 permanece OPEN/P0; producción NOT READY. Comentario con evidencia: `6802571142`.
+
+---
+
+- HEAD de código validado de PR #287: `f0d9f9ad6ad995dc837a4e6cef6564fc9947676d`; 11/11 workflows PR, 2/2 push y 16/16 check-runs SUCCESS. PR #287 OPEN/Draft, mergeable clean, sin reviews formales ni threads.
+- main GitHub `c5373564413ba086690552c6b7deeab08d7b4a89`; rama 513 ahead / 1 behind, merge base `03442951b2a2f63f5bf4dcf560f2c91be4f6cc71`.
+- La identidad efectiva de `DATABASE_URL_BACKUP_RO` sigue desconocida; no se leyó el secreto. El diagnóstico de backup está solo en la rama y requiere ejecución programada natural posterior a integrarlo en main; no hacer workflow_dispatch.
+- La identidad efectiva del Worker `DATABASE_URL`, CORS, alertas externas, RPO/RTO y coste total USD 0 también siguen pendientes.
+- No se cambió Neon, roles, membresías, grants, contraseñas, secretos, datos reales, Cron, DNS, billing ni producción. Todas las consultas Neon fueron SELECT sobre catálogos/privilegios.
+- Próximo: mantener #287 Draft; diseñar remediación con mínimo privilegio y continuidad, pero no aplicar cambios remotos sin autorización específica.
+
+---
+
 # Reconciliación viva — 2026-11-11 — autorización de lectura Cashier
 
 > Prevalece sobre snapshots históricos. HEAD de código validado: `f0d9f9ad6ad995dc837a4e6cef6564fc9947676d`. El commit documental posterior no cambia código y requiere validación exact-HEAD propia.

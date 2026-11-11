@@ -1,3 +1,25 @@
+# Addendum crítico — 2026-11-11 — rol backup_readonly no es read-only
+
+# Hallazgo P0 — rol backup_readonly con privilegios excesivos (2026-11-11)
+
+> Verificación SELECT-only de catálogos PostgreSQL. No se consultaron filas comerciales ni secretos. No se modificó Neon.
+
+- Proyecto Neon `micro-app-db` (`restless-fire-99110035`), branch primary/default `main` (`br-summer-math-b7297a60`), database `neondb`.
+- El rol LOGIN `backup_readonly` tiene `rolsuper=false`, `rolinherit=true`, pero **`rolcreaterole=true`, `rolcreatedb=true`, `rolreplication=true`, `rolbypassrls=true`**.
+- `pg_auth_members`: miembro directo de `neon_superuser`; `pg_has_role` confirma membresía efectiva en `pg_write_all_data` y `pg_read_all_data`.
+- `has_table_privilege('backup_readonly','public.products',...)`: SELECT, INSERT, UPDATE y DELETE = true; TRUNCATE = false.
+- `has_database_privilege(...,'CREATE')=true`; `has_schema_privilege(...,'public','CREATE')=false`.
+- **Conclusión:** el rol llamado `backup_readonly` no es de solo lectura. Si `DATABASE_URL_BACKUP_RO` utiliza este principal, su privilegio efectivo viola mínimo privilegio.
+- **Límite:** no se leyó el secreto ni se conoce el usuario efectivo que resuelve. No afirmar que el workflow lo utiliza hasta observar el diagnóstico de seis booleanos en un backup natural de main posterior a integrar el cambio.
+- **Prohibido sin autorización específica:** revocar membresías, cambiar atributos/grants, rotar contraseñas/secreto o alterar workflows productivos. La remediación requiere un plan revisado que preserve continuidad de backup y valide `pg_dump` en entorno aislado.
+- Issue #53 permanece OPEN/P0; producción NOT READY. Comentario con evidencia: `6802571142`.
+
+---
+
+**Remediación no autorizada todavía:** no revocar membresías, cambiar atributos/grants, resetear contraseñas ni modificar `DATABASE_URL_BACKUP_RO` desde este flujo. Primero diseñar un principal dedicado sin privilegios de creación/escalada ni memberships privilegiadas, con permisos explícitos mínimos de lectura requeridos por `pg_dump`; probarlo en rama/base desechable, validar dump cifrado y restauración, y documentar rollback/continuidad. Cualquier cambio en Neon main o secreto requiere autorización específica.
+
+---
+
 ## Reconciliación de evidencia — 2026-11-08 UTC
 
 - La última restauración de una copia remota concreta documentada sigue siendo la del 2026-10-29: `daily/backup-2026-10-29T17-29-48Z.dump.age`, con checksum, descifrado y restore a PostgreSQL 18 efímero. No se ha demostrado una nueva restauración de un backup remoto posterior.

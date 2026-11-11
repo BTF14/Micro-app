@@ -1,3 +1,17 @@
+# Checkpoint P0 — 2026-11-11 — backup principal privilegiado
+
+**Hallazgo nuevo y confirmado por SELECT-only:** el rol Neon `backup_readonly` no es read-only. Tiene CREATEROLE, CREATEDB, REPLICATION y BYPASSRLS; es miembro directo de `neon_superuser` y miembro efectivo de `pg_write_all_data`; puede INSERT/UPDATE/DELETE en `public.products`. Evidencia completa en `odd/tasks/backup-principal-least-privilege-audit.md` y comentario #53 `6802571142`.
+
+**Caveat obligatorio:** no se leyó `DATABASE_URL_BACKUP_RO`; no está demostrado que el secreto use `backup_readonly`. El nombre del rol no demuestra identidad efectiva. El diagnóstico de seis booleanos está en PR #287 pero aún no se ha observado en un backup natural de main posterior a integrarlo.
+
+- Consultas realizadas solo sobre `pg_roles`, `pg_auth_members` y predicates `has_*_privilege` / `pg_has_role`. Sin datos comerciales ni secretos. Sin writes.
+- No revocar membresías, cambiar atributos/grants ni rotar secretos sin autorización específica y plan de continuidad de backup.
+- Issue #53 OPEN/P0; producción NOT READY.
+
+**Código de referencia:** PR #287 HEAD validado `f0d9f9ad6ad995dc837a4e6cef6564fc9947676d`, 11/11 workflows PR + 2/2 push + 16/16 check-runs SUCCESS. PR sigue Draft.
+
+---
+
 # Checkpoint — 2026-11-11: Cashier movement-read authorization
 
 **Último HEAD de código validado:** `f0d9f9ad6ad995dc837a4e6cef6564fc9947676d`. **11/11 PR workflows + 2/2 push + 16/16 check-runs SUCCESS.**

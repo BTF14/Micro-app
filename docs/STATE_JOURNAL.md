@@ -2768,3 +2768,14 @@ La hipótesis anterior de que el helper de espera era la causa no era correcta. 
 - Exact SHA: 11/11 workflows PR, 2/2 push, 16/16 check-runs SUCCESS; CI `43066606680` incluye PostgreSQL inventory read integration SUCCESS.
 - Rate limiting OAuth y authorization helpers ya tienen callsites en la rama; comentario issue #53 `6802473182` actualiza el estado histórico. Issue #53 permanece OPEN/P0 por identidad efectiva backup/Worker, grants remotos, CORS y operación backup.
 - PR #287 Draft; main `c5373564413ba086690552c6b7deeab08d7b4a89`; 512 ahead / 1 behind; no merge/rebase. Producción NOT READY.
+
+
+## 2026-11-11 — Neon main backup role privilege evidence (SELECT-only)
+
+- Enumerated Neon project `micro-app-db` (`restless-fire-99110035`) and confirmed `br-summer-math-b7297a60` is primary/default main. No connection string or secret value was requested or read.
+- Read-only catalog query against `pg_roles` found LOGIN `backup_readonly` with `rolcreaterole=true`, `rolcreatedb=true`, `rolreplication=true`, `rolbypassrls=true`, `rolinherit=true`, `rolsuper=false`.
+- `pg_auth_members` shows direct membership `backup_readonly -> neon_superuser`; `pg_has_role` confirms effective membership in `pg_write_all_data` and `pg_read_all_data`.
+- Effective privilege predicates show SELECT/INSERT/UPDATE/DELETE on `public.products`, CREATE on current database, no CREATE on public schema, and no TRUNCATE on products. This is enough to establish that the role named `backup_readonly` is not read-only.
+- Critical caveat: `DATABASE_URL_BACKUP_RO` was not read; the effective secret principal remains unknown. Do not claim the scheduled workflow uses this role until its branch-only diagnostic runs on a natural main backup after integration.
+- No Neon writes, role/membership/grant/password/secret changes, business-row reads, data changes, workflow_dispatch or production operations. Issue #53 remains OPEN/P0; comment `6802571142` records evidence and caveat.
+- Next: design and test a least-privilege backup role and continuity plan on disposable resources; require separate explicit authorization before remote changes.

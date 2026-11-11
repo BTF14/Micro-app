@@ -1,3 +1,12 @@
+# Addendum P0 — 2026-11-11 — evidencia de rol backup
+
+- SELECT-only en Neon main confirmó que el rol LOGIN `backup_readonly` tiene CREATEROLE, CREATEDB, REPLICATION y BYPASSRLS, membership directa en `neon_superuser` y membership efectiva en `pg_write_all_data`; tiene INSERT/UPDATE/DELETE sobre `public.products`.
+- El rol llamado `backup_readonly` no es read-only. No está demostrado que el secreto `DATABASE_URL_BACKUP_RO` lo use; no se leyó el secreto ni se infirió su usuario.
+- No hubo writes ni cambios remotos. Issue #53 OPEN/P0; comentario de evidencia `6802571142`. La remediación exige diseño least-privilege, prueba desechable de pg_dump/restore, continuidad del backup y autorización específica antes de tocar roles/secreto.
+- Producción NOT READY.
+
+---
+
 # Addendum vivo — 2026-11-11 — permisos Cashier y P0
 
 - P1 de lectura de movimientos corregido en PR #287: GET movements usa `inventory.read`, Cashier queda branch-scoped y no recibe costos. `inventory.management.read` permanece reservado para warehouse/count management. Prueba PostgreSQL exact-HEAD valida acceso permitido y denegaciones branch/tenant.

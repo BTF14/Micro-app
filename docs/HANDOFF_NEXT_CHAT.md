@@ -1,3 +1,18 @@
+# Handoff P0 — 11 de noviembre de 2026 — principal de backup privilegiado
+
+> Este hallazgo prevalece sobre notas históricas que describan `backup_readonly` como una identidad de solo lectura.
+
+- Neon project `micro-app-db` / `restless-fire-99110035`; primary/default branch `main` / `br-summer-math-b7297a60`; DB `neondb`.
+- SELECT-only sobre catálogos confirmó que `backup_readonly` tiene CREATEROLE, CREATEDB, REPLICATION y BYPASSRLS; es miembro directo de `neon_superuser` y miembro efectivo de `pg_write_all_data`; tiene INSERT/UPDATE/DELETE en `public.products`.
+- Por tanto, **el rol llamado backup_readonly no es read-only**. Si el secreto `DATABASE_URL_BACKUP_RO` utiliza ese usuario, el principal es excesivamente privilegiado.
+- No se leyó el secreto y no se conoce su usuario efectivo. No inferirlo por el nombre. La prueba definitiva requiere el diagnóstico de seis booleanos en un backup natural de main tras integrar el workflow; no ejecutar dispatch manual.
+- No se cambió Neon, ningún rol/grant/password/secret, datos reales ni workflow de producción. No aplicar remedios remotos sin autorización específica y plan revisado de continuidad.
+- Issue #53 OPEN/P0; comentario de evidencia `6802571142`; producción NOT READY.
+- PR #287 sigue OPEN/Draft; código SHA validado `f0d9f9ad6ad995dc837a4e6cef6564fc9947676d`, 11/11 PR + 2/2 push + 16/16 check-runs SUCCESS. Mantener Draft.
+- Siguiente: diseñar least-privilege principal y grants mínimos para pg_dump en una rama desechable; validar backup/restore; solicitar autorización específica antes de cualquier cambio real. El secreto no debe pegarse ni revelarse.
+
+---
+
 # Handoff — 2026-11-11 — permisos Cashier y P0
 
 > Este bloque prevalece sobre snapshots históricos. Verificar HEAD/checks vivos antes de continuar.

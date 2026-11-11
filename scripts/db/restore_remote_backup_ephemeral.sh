@@ -7,6 +7,8 @@ set -euo pipefail
 : "${MIGRATIONS_DIR:?Set MIGRATIONS_DIR to the checked-out migration bundle}"
 command -v psql >/dev/null 2>&1 || { echo "psql is required." >&2; exit 2; }
 command -v pg_restore >/dev/null 2>&1 || { echo "pg_restore is required." >&2; exit 2; }
+command -v git >/dev/null 2>&1 || { echo "git is required." >&2; exit 2; }
+command -v tar >/dev/null 2>&1 || { echo "tar is required." >&2; exit 2; }
 
 [[ -s "$BACKUP_DUMP" ]] || { echo "Backup archive is missing or empty." >&2; exit 2; }
 pg_restore --list "$BACKUP_DUMP" >/dev/null
@@ -45,9 +47,9 @@ pg_restore --exit-on-error --single-transaction --no-owner --no-privileges \
 
 ledger_profile="$(psql "$RESTORE_MIGRATOR_URL" -X -v ON_ERROR_STOP=1 -Atqc "
 SELECT CASE
-  WHEN count(*) = 16 AND min(version) = 1 AND max(version) = 16
+  WHEN count(*) = 16 AND min(version) = '0001' AND max(version) = '0016'
        AND count(DISTINCT version) = 16 AND bool_and(state = 'applied') THEN 'main'
-  WHEN count(*) = 22 AND min(version) = 1 AND max(version) = 22
+  WHEN count(*) = 22 AND min(version) = '0001' AND max(version) = '0022'
        AND count(DISTINCT version) = 22 AND bool_and(state = 'applied') THEN 'bcv'
   ELSE 'unsupported'
 END
@@ -58,14 +60,31 @@ case "$ledger_profile" in
   *) echo "Backup migration ledger is not a complete supported 16- or 22-migration profile; refusing ACL reconstruction." >&2; exit 1 ;;
 esac
 
-mapfile -t available_migrations < <(find "$MIGRATIONS_DIR" -maxdepth 1 -type f -name '[0-9][0-9][0-9][0-9]_*.sql' ! -name '*.assertions.sql' ! -name '*.deferred_failure.sql' | sort)
-if (( ${#available_migrations[@]} < expected )); then
-  echo "Checked-out migration bundle is older than the backup ledger." >&2
+tmpdir="$(mktemp -d)"
+trap 'rm -rf "$tmpdir"' EXIT
+
+# Main/paired-intent backups must use the immutable migration bundle from the
+# exact main baseline; BCV projection backups use the current checked-out 22-file
+# bundle. The helper below independently verifies every file checksum against
+# the restored schema_migrations ledger before extracting any ACL statement.
+if [[ "$ledger_profile" == "main" ]]; then
+  main_profile_ref="${MAIN_PROFILE_REF:-c5373564413ba086690552c6b7deeab08d7b4a89}"
+  if ! git cat-file -e "${main_profile_ref}^{commit}" 2>/dev/null; then
+    git fetch --no-tags origin "$main_profile_ref" --depth=1
+  fi
+  mkdir -p "$tmpdir/main-profile"
+  git archive "$main_profile_ref" apps/api/migrations | tar -x -C "$tmpdir/main-profile"
+  source_migrations_dir="$tmpdir/main-profile/apps/api/migrations"
+else
+  source_migrations_dir="$MIGRATIONS_DIR"
+fi
+
+mapfile -t available_migrations < <(find "$source_migrations_dir" -maxdepth 1 -type f -name '[0-9][0-9][0-9][0-9]_*.sql' ! -name '*.assertions.sql' ! -name '*.deferred_failure.sql' | sort)
+if (( ${#available_migrations[@]} != expected )); then
+  echo "Pinned migration bundle does not contain exactly $expected migrations for profile $ledger_profile." >&2
   exit 1
 fi
 
-tmpdir="$(mktemp -d)"
-trap 'rm -rf "$tmpdir"' EXIT
 profile_dir="$tmpdir/migrations"
 mkdir -p "$profile_dir"
 for ((i=0; i<expected; i++)); do

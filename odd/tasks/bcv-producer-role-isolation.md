@@ -94,7 +94,7 @@ That intermediate state is incompatible with the approved isolated-producer arch
 
 - [ ] AC-1 — 0021 SQL grants no runtime UPDATE/INSERT on `bcv_sync_state`; runtime retains SELECT only.
 - [ ] AC-2 — 0021 assertions pass immediately after 0021, before migration 0022.
-- [ ] AC-3 — Injected 0022 preflight/transaction failure leaves runtime BCV state read-only.
+- [ ] AC-3 — Injected 0022 transaction failure preserves the deliberately seeded PUBLIC ACL fixture but adds no direct runtime UPDATE ACL; the clean 0021 state is separately proven read-only before the fixture.
 - [ ] AC-4 — 0022 still grants the exact producer column allowlist and the runtime lock helper remains callable.
 - [ ] AC-5 — BCV integration tests continue to use the isolated producer LOGIN; runtime direct writes fail with SQLSTATE 42501.
 - [ ] AC-6 — Full migration-check, migration-runner, CI and exact-HEAD check-runs pass.

@@ -170,28 +170,33 @@ runtime_acl_probe="$(psql "$RESTORE_MIGRATOR_URL" -X -v ON_ERROR_STOP=1 -Atqc "S
 producer_identity="$(psql "$RESTORE_PRODUCER_URL" -X -v ON_ERROR_STOP=1 -Atqc "SELECT current_user || ':' || session_user")"
 [[ "$producer_identity" == "microapp_bcv_sync:microapp_bcv_sync" ]] || { echo "BCV producer LOGIN verification failed." >&2; exit 1; }
 
-# Exercise the dedicated producer's real column-level write contract only
-# inside a transaction that is always rolled back. The unique source prevents
-# collisions with fixture/production-shaped synthetic rows in this disposable DB.
-sync_state_rows="$(psql "$RESTORE_PRODUCER_URL" -X -v ON_ERROR_STOP=1 -Atqc "SELECT count(*) FROM public.bcv_sync_state WHERE singleton=true")"
-[[ "$sync_state_rows" == "1" ]] || { echo "BCV producer cannot read the expected singleton sync-state row." >&2; exit 1; }
-psql "$RESTORE_PRODUCER_URL" -X -v ON_ERROR_STOP=1 <<'SQL'
-BEGIN;
-UPDATE public.bcv_sync_state
-   SET attempt_id=gen_random_uuid(), last_attempt_at=clock_timestamp(),
-       last_outcome='running', updated_at=clock_timestamp()
- WHERE singleton=true;
-INSERT INTO public.exchange_rates
-  (base_currency,quote_currency,rate,source,effective_date,fetched_at,validation_status)
-VALUES
-  ('USD','VES',1,'RESTORE_ROLE_SMOKE_' || gen_random_uuid()::text,
-   CURRENT_DATE,clock_timestamp(),'valid')
-RETURNING id AS restore_smoke_rate_id \\gset
-UPDATE public.exchange_rates
-   SET validation_status='stale'
- WHERE id=:'restore_smoke_rate_id';
-ROLLBACK;
-SQL
+if [[ "$ledger_profile" == "bcv" ]]; then
+  # Exercise the dedicated producer's real column-level write contract only
+  # inside a transaction that is always rolled back. The unique source prevents
+  # collisions with fixture/production-shaped synthetic rows in this disposable DB.
+  sync_state_rows="$(psql "$RESTORE_PRODUCER_URL" -X -v ON_ERROR_STOP=1 -Atqc "SELECT count(*) FROM public.bcv_sync_state WHERE singleton=true")"
+  [[ "$sync_state_rows" == "1" ]] || { echo "BCV producer cannot read the expected singleton sync-state row." >&2; exit 1; }
+  psql "$RESTORE_PRODUCER_URL" -X -v ON_ERROR_STOP=1 <<'SQL'
+  BEGIN;
+  UPDATE public.bcv_sync_state
+     SET attempt_id=gen_random_uuid(), last_attempt_at=clock_timestamp(),
+         last_outcome='running', updated_at=clock_timestamp()
+   WHERE singleton=true;
+  INSERT INTO public.exchange_rates
+    (base_currency,quote_currency,rate,source,effective_date,fetched_at,validation_status)
+  VALUES
+    ('USD','VES',1,'RESTORE_ROLE_SMOKE_' || gen_random_uuid()::text,
+     CURRENT_DATE,clock_timestamp(),'valid')
+  RETURNING id AS restore_smoke_rate_id \\gset
+  UPDATE public.exchange_rates
+     SET validation_status='stale'
+   WHERE id=:'restore_smoke_rate_id';
+  ROLLBACK;
+  SQL
+  
+else
+  echo "Main paired-intent profile predates the dedicated BCV producer contract; LOGIN existence only."
+fi
 
 public_tables="$(psql "$RESTORE_MIGRATOR_URL" -X -v ON_ERROR_STOP=1 -Atqc "SELECT count(*) FROM information_schema.tables WHERE table_schema='public' AND table_type='BASE TABLE'")"
 (( public_tables > 0 )) || { echo "No public application tables were restored." >&2; exit 1; }

@@ -3,7 +3,7 @@ import type { Context, Hono } from "hono";
 import { formatNumeric, parseNumeric } from "@micro-app/money";
 import type { Bindings } from "./bindings";
 import { isTrustedOrigin } from "./auth";
-import { authorizeBranchOperation } from "./authorization";
+import { authorizeBranchOperation, authorizeTenantOperation } from "./authorization";
 import type { BranchContext } from "./branch-context";
 import { readBodyWithinLimit } from "./bounded-body";
 import { withDatabaseClient, withDatabaseTransaction } from "./database";
@@ -14,6 +14,7 @@ const MAX_BODY_BYTES = 4 * 1024;
 
 type ShiftBranch = BranchContext;
 type RegisterRow = { id: string; name: string; code: string };
+type BranchRow = { id: string; name: string; slug: string };
 type ShiftRow = {
   id: string; organization_id: string; branch_id: string; register_id: string;
   cashier_user_id: string; opened_at: Date; opening_cash_usd: string; opening_cash_ves: string;
@@ -129,6 +130,36 @@ function sessionToken(c: Context<{ Bindings: Bindings }>): string | null {
 }
 
 export function registerRegisterShiftRoutes(app: Hono<{ Bindings: Bindings }>): void {
+  app.get("/api/orgs/:organizationId/branches", async (c) => {
+    c.header("Cache-Control", "private, no-store");
+    const { organizationId } = c.req.param();
+    if (!UUID_PATTERN.test(organizationId)) return c.json({ error: "INVALID_RESOURCE", message: "El identificador de la organización no es válido." }, 400);
+    const token = sessionToken(c);
+    if (!token) return c.json({ error: "UNAUTHENTICATED", message: "Inicia sesión para continuar." }, 401);
+    try {
+      const result = await withDatabaseClient(c.env.DATABASE_URL, (client) => withDatabaseTransaction(client, async (tx) => {
+        const authorization = await authorizeTenantOperation(tx, token, organizationId, "register.shift.read_own", false);
+        if (!authorization.allowed) {
+          if (authorization.reason === "unauthenticated_or_out_of_scope") return { kind: "unauthenticated" as const };
+          return { kind: "forbidden" as const };
+        }
+        const rows = await tx.query<BranchRow>(
+          `SELECT b.id, b.name, b.slug
+             FROM public.branches b
+             JOIN public.branch_memberships bm
+               ON bm.organization_id = b.organization_id AND bm.branch_id = b.id
+            WHERE b.organization_id = $1 AND bm.user_id = $2
+              AND b.is_active = true AND bm.is_active = true
+            ORDER BY lower(b.name), b.id`,
+          [authorization.context.organizationId, authorization.context.userId],
+        );
+        return { kind: "ok" as const, items: rows.rows };
+      }));
+      if (result.kind === "unauthenticated") return c.json({ error: "UNAUTHENTICATED", message: "Inicia sesión para continuar." }, 401);
+      if (result.kind === "forbidden") return c.json({ error: "FORBIDDEN", message: "No tienes permiso para gestionar turnos de caja." }, 403);
+      return c.json({ items: result.items }, 200);
+    } catch (error) { return readFailure(c, error); }
+  });
   app.get("/api/orgs/:organizationId/branches/:branchId/registers", async (c) => {
     c.header("Cache-Control", "private, no-store");
     const { organizationId, branchId } = c.req.param();

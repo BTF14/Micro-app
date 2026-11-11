@@ -97,7 +97,7 @@ jobs:
               SELECT 1
                 FROM pg_catalog.pg_auth_members m
                 JOIN pg_catalog.pg_roles principal_role
-                  ON principal_role.oid = m.member OR principal_role.oid = m.roleid
+                  ON principal_role.oid = m.member
                WHERE principal_role.rolname = current_user
             ),
             EXISTS (

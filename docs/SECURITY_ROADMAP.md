@@ -752,3 +752,11 @@ No ejecutar workflow_dispatch de backup, no leer secretos, no tocar Neon main ni
 ## Backup principal identity diagnostic — 2026-11-11
 
 The scheduled backup workflow now has a non-blocking, read-only diagnostic that emits only booleans for expected `backup_readonly` identity, safe role attributes, role-membership absence, table/column write absence, sequence mutation absence, and schema/database CREATE absence. It does not print or expose the secret, DSN, host, actual username, or row data. A diagnostic failure does not block backup generation. Evidence is pending the next naturally scheduled run; do not dispatch manually or modify remote roles/grants. See `odd/tasks/backup-principal-least-privilege-audit.md`. Issue #53 remains OPEN/P0; production NOT READY.
+
+## Restore no-owner/no-privileges — evidencia sintética — 2026-11-11
+
+La nota anterior que pedía diseñar el bootstrap de ownership/grants queda parcialmente supersedida por el ensayo implementado en `scripts/db/reapply_restore_role_grants.sh` y los runners main/BCV. Ambos perfiles restauran con `--no-owner --no-privileges` bajo LOGIN directo `microapp_migrator`, reconstruyen ownership por el usuario restaurador y reproducen en orden todos los comandos ACL top-level del bundle exacto de migraciones, sin reejecutar DDL ni datos. La secuencia completa es necesaria: reejecutar solo grants de 0012 reintroducía INSERT en `inventory_balances`, revocado por 0019.
+
+Validación exact-HEAD de implementación `0ddd0da742b474b7256675b9c32292d7750fc2b0`: 11/11 workflows pull_request SUCCESS; backup restore `42989180384` con ambos perfiles SUCCESS; CI `42989180406` SUCCESS. Detalle y límites en `odd/tasks/backup-restore-no-owner-no-privileges.md`.
+
+No es aún una recuperación productiva completa: falta runbook probado para aprovisionar target y roles LOGIN con credenciales seguras, restaurar artefacto remoto y recuperar la llave age. La identidad efectiva de `DATABASE_URL_BACKUP_RO` sigue pendiente del próximo backup naturalmente programado. Issue #53 OPEN/P0; producción NOT READY.

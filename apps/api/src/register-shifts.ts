@@ -61,7 +61,9 @@ function postgresErrorCode(error: unknown): string | undefined {
 async function authorizeOwnShift(
   tx: import("./database").DatabaseClient, token: string, organizationId: string, branchId: string, operation: string,
 ): Promise<{ kind: "ok"; branch: ShiftBranch } | { kind: AuthKind }> {
-  // Do not pre-lock scope rows here: register_shifts opening triggers acquire exclusive locks in their canonical order.\n  // The SQL write functions repeat the active-scope checks under those locks.\n  const authorization = await authorizeBranchOperation(tx, token, organizationId, branchId, operation, false);
+  // Do not pre-lock scope rows here: register_shifts opening triggers acquire exclusive locks in their canonical order.
+  // The SQL write functions repeat the active-scope checks under those locks.
+  const authorization = await authorizeBranchOperation(tx, token, organizationId, branchId, operation, false);
   if (!authorization.allowed) {
     if (authorization.reason === "unauthenticated_or_out_of_scope") return { kind: "unauthenticated" };
     if (authorization.reason === "branch_out_of_scope") return { kind: "branch_denied" };

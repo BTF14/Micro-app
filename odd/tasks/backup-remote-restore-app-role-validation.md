@@ -25,15 +25,15 @@ The synthetic main and BCV restore runners now invoke this same remote-restore r
 
 ## Verified evidence
 
-At HEAD `f259b65175711d66f398486bcb80765dfe7aea77`:
-- Backup restore smoke run `42991705366`: main paired-intent job `130425902535` SUCCESS; BCV projection job `130425902488` SUCCESS, including the legacy regression.
+At HEAD `7b4fdebe846952f1099a4fde323be2dc0f5ce0e8`:
+- Backup restore smoke run `42992354071`: main paired-intent job `130428038679` SUCCESS; BCV projection job `130428038320` SUCCESS, including the legacy regression. The remote-restore harness additionally connected independently as runtime and producer; it executed a real `SELECT` against `public.organizations` as `microapp_runtime` and verified runtime SELECT plus absence of schema CREATE.
 - Playwright `42991705336` SUCCESS.
 - PostgreSQL migration runner `42991705483` SUCCESS.
 - Database migration validation `42991705628` SUCCESS.
 - Semgrep `42991705476` SUCCESS.
 - CI `42991705339` was still running at the time of this note; the remaining workflows must be rechecked on the final documentation HEAD.
 
-An earlier iteration failed closed because the runner compared PostgreSQL's textual boolean `true` against `t`. This was corrected and the full main + BCV smoke run above passed. The failure is retained as evidence of the regression caught during implementation.
+Earlier iterations failed closed on the administrator boolean-text comparison and were corrected before the successful runs. The final runtime read probe also passed in both profiles.
 
 ## Explicit limits
 

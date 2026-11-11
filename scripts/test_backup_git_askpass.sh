@@ -27,3 +27,17 @@ if grep -F "$test_token" "$helper" >/dev/null; then
 fi
 
 echo "PASS: GIT_ASKPASS username/password contract and fail-closed behavior"
+
+workflow="$script_dir/../.github/workflows/backup.yml"
+[[ -s "$workflow" ]] || { echo "FAIL: backup workflow not found"; exit 1; }
+if grep -F 'https://x-access-token:' "$workflow" >/dev/null || grep -F '${GH_TOKEN}' "$workflow" >/dev/null; then
+  echo "FAIL: backup workflow embeds GH_TOKEN in a Git URL or command"
+  exit 1
+fi
+grep -F 'export GIT_ASKPASS=' "$workflow" >/dev/null || { echo "FAIL: backup workflow does not configure GIT_ASKPASS"; exit 1; }
+grep -F 'export GIT_ASKPASS_REQUIRE=force' "$workflow" >/dev/null || { echo "FAIL: backup workflow does not require askpass"; exit 1; }
+grep -F 'git clone --depth 1 "https://github.com/${BACKUP_REPO}.git"' "$workflow" >/dev/null || { echo "FAIL: backup workflow clone URL is not credential-free"; exit 1; }
+grep -F 'trap ' "$workflow" | grep -F 'rm -f "$askpass"' >/dev/null || { echo "FAIL: backup workflow does not clean up the temporary helper"; exit 1; }
+
+echo "PASS: backup workflow does not persist Git credentials in remote URLs"
+

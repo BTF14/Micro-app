@@ -2753,3 +2753,11 @@ Releer `AGENTS.md`, `docs/CONSTITUTION.md`, este checkpoint, `docs/AI_COLLABORAT
 **Gates abiertos:** restore real del artefacto remoto y llave age; bootstrap seguro de roles LOGIN en target; identidad/least privilege real del backup; RPO/RTO; alerta externa; coste $0. Issue #53 OPEN/P0. PR #287 OPEN/Draft; #303 OPEN/Draft. No merge, deploy, Neon writes, cambios de roles/grants remotos, secretos, Cron, DNS, billing, backup manual ni datos reales. Producción NOT READY.
 
 Ver `odd/tasks/backup-restore-no-owner-no-privileges.md`.
+
+## Handoff — remote restore con roles de aplicación — 2026-11-11
+
+**Nuevo runner:** `scripts/db/restore_remote_backup_ephemeral.sh`; workflow `.github/workflows/backup-real-restore.yml` actualizado para restaurar en PG18 desechable como LOGIN `microapp_migrator`, no admin. Selecciona perfil main 0001–0016 / BCV 0001–0022 por ledger; valida filenames y SHA-256 exactos antes de replay ACL; comprueba ownership, roles, auth efímero vacío y logins runtime/producer. El main bundle está fijado al commit `c5373564413ba086690552c6b7deeab08d7b4a89`.
+
+**Evidencia sintética:** run `42991705366`: main job `130425902535` SUCCESS; BCV job `130425902488` SUCCESS y legacy regression SUCCESS. Playwright `42991705336` SUCCESS; migrator validation `42991705483` SUCCESS; DB validation `42991705628` SUCCESS; Semgrep `42991705476` SUCCESS. Revisar workflows restantes exact-HEAD tras los commits docs.
+
+**No hacer:** no ejecutar workflow_dispatch remoto ni backup manual; no usar llave age real, tocar Neon/roles/grants remotos, secretos, Cron, DNS, Cloudflare sensible, billing, deploy ni datos reales. El diagnóstico `DATABASE_URL_BACKUP_RO` sigue pendiente porque el workflow aún no está en main. Issue #53 OPEN/P0; PR #287 Draft; producción NOT READY.

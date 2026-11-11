@@ -329,3 +329,13 @@ Este cambio no cierra los gates de identidad/least privilege de `DATABASE_URL_BA
 El workflow programado ahora ejecuta una consulta read-only y no bloqueante a través de `DATABASE_URL_BACKUP_RO`. Publica únicamente seis resultados booleanos: coincidencia con la identidad esperada `backup_readonly` (`current_user` y `session_user`), atributos seguros del rol, ausencia de membresías, ausencia de escritura en tablas/columnas, ausencia de mutación de secuencias y ausencia de CREATE en schema/database. No imprime DSN, host, usuario real, credenciales ni datos. Si el diagnóstico falla, el backup continúa y el gate queda abierto.
 
 No ejecutar manualmente el workflow para obtener evidencia. Revisar el próximo run naturalmente programado. Un resultado distinto del esperado requiere una revisión separada de identidad/least privilege; no modificar roles/grants remotos desde el workflow. Ver `odd/tasks/backup-principal-least-privilege-audit.md`. Issue #53 OPEN/P0; producción NOT READY.
+
+## Ensayo de restore con flags productivos — 2026-11-11
+
+Se cerró en CI la brecha de prueba del modo `pg_dump --no-owner --no-privileges`. Los dos perfiles full-schema ahora restauran con esos flags en bases PostgreSQL 18 independientes y usando conexión directa `microapp_migrator`. El restore reconstruye ownership de objetos/funciones bajo el migrator y después reproduce, en orden, únicamente los `GRANT`, `REVOKE` y `ALTER DEFAULT PRIVILEGES` del bundle exacto de migraciones. No vuelve a ejecutar DDL ni datos; el ledger de migraciones permanece intacto. La comparación de manifiestos verifica owners, ACL de tabla/columna/función, default ACL, RLS/policies, privilegios efectivos, search_path, datos y tablas efímeras vacías.
+
+La primera prueba detectó que repetir solo los grants de 0012 reintroducía INSERT sobre `inventory_balances`, retirado después por 0019. Se corrigió reproduciendo la secuencia ACL completa; en el perfil BCV se omiten solo los ACL históricos de objetos paired-intent que 0019 elimina.
+
+Evidencia en HEAD de implementación `0ddd0da742b474b7256675b9c32292d7750fc2b0`: backup restore run `42989180384` (main job `130417569364` y BCV job `130417569035`) SUCCESS; CI `42989180406` SUCCESS y los otros 9 workflows pull_request también SUCCESS. Ver `odd/tasks/backup-restore-no-owner-no-privileges.md`.
+
+Límite: es una prueba sintética del procedimiento de ownership/ACL, no una restauración del artefacto remoto ni un runbook productivo completo. El aprovisionamiento de cluster/database y roles LOGIN con credenciales seguras, identidad real de `DATABASE_URL_BACKUP_RO`, custodia de age, RPO/RTO, alertas externas y coste $0 siguen pendientes. Issue #53 OPEN/P0; producción NOT READY.

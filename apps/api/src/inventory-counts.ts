@@ -401,7 +401,7 @@ export function registerInventoryCountRoutes(app: Hono<{ Bindings: Bindings }>):
     try {
       const result = await withDatabaseClient(c.env.DATABASE_URL, (db) =>
         withDatabaseTransaction(db, async (tx) => {
-          const authorization = await authorizeBranchOperation(tx, token, organizationId, branchId, "inventory.management.read");
+          const authorization = await authorizeBranchOperation(tx, token, organizationId, branchId, "inventory.read");
           if (!authorization.allowed) {
             if (authorization.reason === "unauthenticated_or_out_of_scope") return { kind: "unauthenticated" as const };
             if (authorization.reason === "branch_out_of_scope") return { kind: "branch_denied" as const };

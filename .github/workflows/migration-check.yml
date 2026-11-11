@@ -350,6 +350,14 @@ jobs:
           test "$(docker exec "${{ job.services.postgres.id }}" psql -At -U microapp -d microapp_test -c "SELECT to_regclass('public.bcv_sync_state') IS NULL")" = "t"
       - name: Apply BCV sync state migration
         run: docker exec -i -e PGPASSWORD=migrator-test-only "${{ job.services.postgres.id }}" psql -h 127.0.0.1 -v ON_ERROR_STOP=1 -U microapp_migrator -d microapp_test -f /dev/stdin < apps/api/migrations/0021_bcv_sync_state.sql
+      - name: Verify BCV runtime is read-only immediately after migration 0021
+        run: docker exec -i "${{ job.services.postgres.id }}" psql -v ON_ERROR_STOP=1 -U microapp -d microapp_test -f /dev/stdin < apps/api/migrations/0021_bcv_sync_state.assertions.sql
+      - name: Verify actual runtime LOGIN cannot mutate BCV state after migration 0021
+        run: |
+          status=0
+          output="$(docker exec -i -e PGPASSWORD=runtime-test-only "${{ job.services.postgres.id }}" psql -h 127.0.0.1 -v ON_ERROR_STOP=1 -U microapp_runtime -d microapp_test -c "UPDATE public.bcv_sync_state SET last_outcome='failed' WHERE singleton=true" 2>&1)" || status=$?
+          test "$status" -ne 0
+          printf '%s\\n' "$output" | grep -E "permission denied|insufficient privilege"
       - name: Seed deliberately overprivileged BCV producer ACL fixture
         run: |
           docker exec -i -e PGPASSWORD=migrator-test-only "${{ job.services.postgres.id }}" psql -h 127.0.0.1 -v ON_ERROR_STOP=1 -U microapp_migrator -d microapp_test <<'SQL'
@@ -383,7 +391,8 @@ jobs:
           output="$(docker exec -i -e PGPASSWORD=migrator-test-only "${{ job.services.postgres.id }}" psql -h 127.0.0.1 -v ON_ERROR_STOP=1 -U microapp_migrator -d microapp_test -f /dev/stdin < /tmp/0022-bcv-failure.sql 2>&1)" || status=$?
           if [ "$status" -eq 0 ]; then exit 1; fi
           printf '%s\\n' "$output" | grep -F "division by zero"
-          test "$(docker exec "${{ job.services.postgres.id }}" psql -At -U microapp -d microapp_test -c "SELECT has_column_privilege('microapp_runtime','public.bcv_sync_state','last_success_at','UPDATE')")" = "t"
+          safe_runtime="$(docker exec "${{ job.services.postgres.id }}" psql -At -U microapp -d microapp_test -c "SELECT has_table_privilege('microapp_runtime','public.bcv_sync_state','SELECT') AND NOT has_table_privilege('microapp_runtime','public.bcv_sync_state','UPDATE') AND NOT EXISTS (SELECT 1 FROM pg_attribute a WHERE a.attrelid='public.bcv_sync_state'::regclass AND a.attnum > 0 AND NOT a.attisdropped AND (has_column_privilege('microapp_runtime',a.attrelid,a.attname::text,'INSERT') OR has_column_privilege('microapp_runtime',a.attrelid,a.attname::text,'UPDATE')))")"
+          test "$safe_runtime" = "t"
       - name: Apply dedicated BCV producer role grants
         run: docker exec -i -e PGPASSWORD=migrator-test-only "${{ job.services.postgres.id }}" psql -h 127.0.0.1 -v ON_ERROR_STOP=1 -U microapp_migrator -d microapp_test -f /dev/stdin < apps/api/migrations/0022_bcv_dedicated_producer_role.sql
       - name: Verify final BCV producer and runtime privilege contracts

@@ -18,10 +18,11 @@
 - `--exclude-table-data` preserva DDL auth; destino comprueba las tres tablas presentes con cero filas.
 - Perfil paired-intent 0001–0016 se mantiene separado. No se mezclan los dos modelos de ledger.
 
-## Censo de PRs abiertas (3)
+## Censo de PRs abiertas (4: tres backlog + docs-only #309)
 - #303 Ready — HEAD `97ac8e53cbd85a928f7b89f9f89f7ebeaf83e0f2`.
 - #296 Draft — HEAD `62dde66355a937a4f6fa4efb8d9cfdf856d7ac0f`, base antigua `03442951b2a2f63f5bf4dcf560f2c91be4f6cc71`.
 - #193 Ready — HEAD `ac57ab4f3415f82279b8a49c0befe09f8e3aec68`, base antigua `705d3db3220894c7d3baca8dc7e7a6b623dfbb94`.
+- #309 Ready — docs-only Turno 10 checkpoint; CI exact-HEAD pendiente.
 
 ## Siguiente acción
 Obtener revisión formal independiente/code-owner de #303 y comprobar branch protection; no mergear solo por CI verde. Después triage #296/#193 con bases actuales.

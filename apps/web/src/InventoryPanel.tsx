@@ -150,22 +150,30 @@ export default function InventoryPanel({ organizationId }: { organizationId: str
           <p className="catalog-intro">Consulta de existencias por sucursal y almacén. Es una vista de solo lectura: las cantidades provienen del libro de movimientos.</p>
         </div>
         <div className="catalog-heading-actions">
-          {branches && branches.length > 1 && (
+          {branches && branches.length > 1 ? (
             <label>
               <span className="product-field-hint">Sucursal </span>
               <select value={branchId} onChange={(event) => { setWarehouseId(""); setBranchId(event.target.value); }} aria-label="Sucursal">
                 {branches.map((branch) => <option key={branch.id} value={branch.id}>{branch.name}</option>)}
               </select>
             </label>
-          )}
-          {warehouses && warehouses.length > 1 && (
+          ) : branches && branches.length === 1 ? (
+            <span className="product-field-hint" aria-label={`Sucursal: ${branches[0]?.name}`}>
+              Sucursal: <strong>{branches[0]?.name}</strong>
+            </span>
+          ) : null}
+          {warehouses && warehouses.length > 1 ? (
             <label>
               <span className="product-field-hint">Almacén </span>
               <select value={warehouseId} onChange={(event) => setWarehouseId(event.target.value)} aria-label="Almacén">
                 {warehouses.map((warehouse) => <option key={warehouse.id} value={warehouse.id}>{warehouse.name}</option>)}
               </select>
             </label>
-          )}
+          ) : warehouses && warehouses.length === 1 ? (
+            <span className="product-field-hint" aria-label={`Almacén: ${warehouses[0]?.name}`}>
+              Almacén: <strong>{warehouses[0]?.name}</strong>
+            </span>
+          ) : null}
           <button className="catalog-refresh" type="button" onClick={() => void fetchBalances()} disabled={loading || !warehouseId}>
             {loading ? "Actualizando…" : "Actualizar"}
           </button>

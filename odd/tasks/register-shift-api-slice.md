@@ -84,3 +84,8 @@ Se agregó `RegisterShiftsPanel.test.tsx` con escenario de carga → apertura �
 ### CI feedback — 2026-11-11
 
 CI at documentation HEAD `9f1f0b981fe2149ddbbc8b8e73ab5a763fddedaa` passed TypeScript build/typecheck, but the new component tests failed because their settle helper returned before the component's nested branch/register requests completed. Both assertions therefore observed the loading state. The helper now advances the event loop across eight turns in `apps/web/src/RegisterShiftsPanel.test.tsx` (commit `30d7368c05055c543171cadf7d4d103d650536d5`). This is a test synchronization fix, not a production-code assertion change. Await exact-HEAD CI to confirm.
+
+
+### Corrección del diagnóstico de test — 2026-11-11
+
+La hipótesis anterior de que el helper de espera era la causa no era correcta. El log completo mostró que el mock de `fetch` construía `new URL()` sin base, pero el API base del test puede ser una ruta relativa; eso lanzaba antes de evaluar el endpoint y producía el estado de error/carga observado. Se corrigió el mock usando una base de test explícita (`https://micro-app.test`) en `apps/web/src/RegisterShiftsPanel.test.tsx`, commit `98b24eca568dd148b50da70e0d558e996a2739a0`. La espera ampliada se mantiene inocua. Este diagnóstico reemplaza la explicación anterior; exigir CI exact-SHA para verificar el arreglo.

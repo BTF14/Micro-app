@@ -94,7 +94,7 @@ function readFailure(c: Context<{ Bindings: Bindings }>, error: unknown) {
   return c.json({ error: "REGISTER_SHIFT_OPERATION_FAILED", message: "No se pudo completar la operación de caja." }, 500);
 }
 
-async function parseJsonBody(request: Request): Promise<{ kind: "ok"; value: unknown } | { kind: "invalid" | "too_large" }> {
+async function parseJsonBody(request: Request): Promise<{ kind: "ok"; value: unknown } | { kind: "invalid" } | { kind: "too_large" }> {
   const length = request.headers.get("Content-Length");
   if (length !== null && (!/^\d+$/.test(length) || Number(length) > MAX_BODY_BYTES)) return { kind: "too_large" };
   const body = await readBodyWithinLimit(request.body, MAX_BODY_BYTES);

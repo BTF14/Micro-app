@@ -103,15 +103,15 @@ ledger_profile="$(psql "$RESTORE_MIGRATOR_URL" -X -v ON_ERROR_STOP=1 -Atqc "
 SELECT CASE
   WHEN count(*) = 16 AND min(version) = '0001' AND max(version) = '0016'
        AND count(DISTINCT version) = 16 AND bool_and(state = 'applied') THEN 'main'
-  WHEN count(*) = 22 AND min(version) = '0001' AND max(version) = '0022'
-       AND count(DISTINCT version) = 22 AND bool_and(state = 'applied') THEN 'bcv'
+  WHEN count(*) = 23 AND min(version) = '0001' AND max(version) = '0023'
+       AND count(DISTINCT version) = 23 AND bool_and(state = 'applied') THEN 'bcv'
   ELSE 'unsupported'
 END
 FROM public.schema_migrations")"
 case "$ledger_profile" in
   main) expected=16 ;;
-  bcv) expected=22 ;;
-  *) echo "Backup migration ledger is not a complete supported 16- or 22-migration profile; refusing ACL reconstruction." >&2; exit 1 ;;
+  bcv) expected=23 ;;
+  *) echo "Backup migration ledger is not a complete supported 16- or 23-migration profile; refusing ACL reconstruction." >&2; exit 1 ;;
 esac
 
 tmpdir="$(mktemp -d)"
@@ -162,6 +162,7 @@ if [[ "$ledger_profile" == "main" ]]; then
   psql "$RESTORE_MIGRATOR_URL" -X -v ON_ERROR_STOP=1 -f scripts/db/restore_role_assertions_main.sql
 else
   psql "$RESTORE_MIGRATOR_URL" -X -v ON_ERROR_STOP=1 -f "$source_migrations_dir/0022_bcv_dedicated_producer_role.assertions.sql"
+  psql "$RESTORE_MIGRATOR_URL" -X -v ON_ERROR_STOP=1 -f "$source_migrations_dir/0023_register_shift_runtime_operations.assertions.sql"
 fi
 
 echo "== Validate restored application identity, ownership, least privilege and ephemeral auth state"

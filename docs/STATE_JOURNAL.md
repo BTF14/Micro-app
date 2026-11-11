@@ -2650,3 +2650,13 @@ La prueba de restore es sintética y cubre perfiles main/BCV; no se ejecutó wor
 - Los artefactos antiguos no satisfacen el contrato nuevo porque carecen del esquema de auth efímera que ahora se conserva vacío. Esperar backup natural posterior a la integración antes de cualquier ensayo remoto.
 - Issue #53 OPEN/P0; producción NOT READY. Pendientes: principal efectivo/least privilege real, restore remoto real aislado, provisioning provider-specific, simulacro de aplicación, alerta externa, RPO/RTO medidos y coste $0.
 - No Neon main, datos reales, secretos/age, grants remotos, Cloudflare/DNS sensibles, deploy, Cron, billing, force-push ni merge de Draft.
+
+## 2026-11-11 — API de turnos y perfil restore BCV 0023
+
+- Código validado en PR #287 HEAD `0ca91ff51ec545278ceb8eabd3929083aae9022e`: 11/11 workflows PR SUCCESS, CI `43009163637` SUCCESS.
+- Migración 0023: funciones SECURITY DEFINER open/close de turno propio; runtime EXECUTE limitado, sin escritura directa en register_shifts; search_path `pg_catalog, public` protegido por assertions.
+- API: GET registers, GET current shift, POST open, POST close. Owner/Admin/Cashier con branch membership activa, solo propio. Eventos append-only en audit_logs atómicos.
+- Tests API PostgreSQL 18 runtime login: 4/4. Prueba de concurrencia primero reveló deadlock por lock-upgrade; se cambió a preflight sin locks y trigger DB con lock order canónico; prueba posterior SUCCESS.
+- Restore smoke main 0001–0016 y BCV 0001–0023 SUCCESS. Se actualizó el runner de 22 a 23 migraciones para BCV.
+- No merge/deploy/restore remoto real/Neon main/datos reales/secrets/Cloudflare sensible. #53 OPEN/P0; producción NOT READY.
+- Siguiente: UI de sucursal/turno + Playwright; definir contrato de pagos; jornada completa E2E. No declarar POS terminado con API-only.

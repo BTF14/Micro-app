@@ -121,8 +121,8 @@ describe.skipIf(!adminUrl || !runtimeUrl)("own register-shift API against Postgr
     expect(response.status).toBe(403);
     const listedBranches = await request(owner, "GET", "/api/orgs/" + owner.organizationId + "/register-shifts/branches");
     expect((await listedBranches.json() as { items: Array<{ id: string }> }).items.map((x) => x.id)).toEqual([owner.branchId]);
-    const inventoryBranches = await request(owner, "GET", "/api/orgs/" + owner.organizationId + "/branches");
-    expect((await inventoryBranches.json() as { branches: Array<{ id: string }> }).branches.map((x) => x.id)).toEqual([owner.branchId, otherBranchId]);
+    const ownerInventoryBranches = await request(owner, "GET", "/api/orgs/" + owner.organizationId + "/branches");
+    expect((await ownerInventoryBranches.json() as { branches: Array<{ id: string }> }).branches.map((x) => x.id)).toEqual([owner.branchId, otherBranchId]);
   });
 
   it("does not allow a member to close a shift owned by another cashier", async () => {

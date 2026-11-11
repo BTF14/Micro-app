@@ -2803,3 +2803,9 @@ No remote backup artifact or age key was accessed; `.github/workflows/backup-rea
 - PR #287 OPEN/Draft; issue #53 OPEN/P0; PR #303 OPEN/Draft. No merge. No declarar producción lista.
 - El workflow remoto real sigue manual y no se ejecutó. No leer backups reales ni usar la llave age real. Esperar el backup programado natural para el diagnóstico real de `DATABASE_URL_BACKUP_RO`, una vez que el workflow correspondiente llegue a main.
 - Próximo paso: reconsultar el HEAD actual y workflows exact-HEAD antes de cualquier decisión; continuar con gates operativos de #53 (principal efectivo, provisioning seguro, integridad/restore remoto, alertas, RPO/RTO y coste $0). No repetir las investigaciones de roles/ACL ya documentadas.
+
+## Superseding continuity snapshot — 2026-11-11
+
+After the 11/11 exact-HEAD validation above, only continuity documentation changed. Latest branch HEAD before this note: `8c6e2033905a2aa64b9cea244571ce4a62992fbc`; implementation/code SHA remains `99ed19bd4b0f13503dc875215532e3c83941d168`. All 10 workflows triggered by the documentation-only HEAD `8c6e2033905a2aa64b9cea244571ce4a62992fbc` are SUCCESS: ODD `42996086874`, dependency `42996087280`, dashboard `42996086826`, PostgreSQL migration runner `42996086864`, database migration validation `42996086857`, security `42996086881`, Playwright `42996086918`, CI `42996087022`, Semgrep `42996087229`, secret history `42996087085`. The backup restore smoke is intentionally path-filtered and did not rerun for these docs-only files; it passed at code HEAD `99ed19bd4b0f13503dc875215532e3c83941d168` in PR run `42995277769` and push run `42995267480`, both main + BCV + legacy success. No code changed after that tested code SHA.
+
+Always re-read live branch HEAD and exact-HEAD workflow runs before acting. PR #287 remains OPEN/Draft, issue #53 OPEN/P0, and production NOT READY.

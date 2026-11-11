@@ -82,9 +82,9 @@ jobs:
           "$PG_DUMP" --version | grep -Eq "pg_dump \(PostgreSQL\) 18\."
           "$PG_DUMP" "$DATABASE_URL" \
             --no-owner --no-privileges --format=custom \
-            --exclude-table=auth_sessions \
-            --exclude-table=auth_rate_limits \
-            --exclude-table=auth_bootstrap_attempts \
+            --exclude-table-data=auth_sessions \
+            --exclude-table-data=auth_rate_limits \
+            --exclude-table-data=auth_bootstrap_attempts \
             --file="backup-${STAMP}.dump"
           test -s "backup-${STAMP}.dump"
 

@@ -8,6 +8,7 @@ on:
       - ".github/scripts/test-apt-retry.sh"
       - "scripts/backup_git_askpass.sh"
       - "scripts/test_backup_git_askpass.sh"
+      - "scripts/test_backup_git_askpass_http.py"
       - "scripts/ci/apt-retry.sh"
 
 permissions:
@@ -24,3 +25,5 @@ jobs:
         run: bash .github/scripts/test-apt-retry.sh
       - name: Test GIT_ASKPASS credential hygiene
         run: bash scripts/test_backup_git_askpass.sh
+      - name: Test GIT_ASKPASS HTTP Basic challenge transport
+        run: python3 scripts/test_backup_git_askpass_http.py scripts/backup_git_askpass.sh

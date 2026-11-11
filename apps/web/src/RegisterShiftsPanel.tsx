@@ -16,6 +16,15 @@ function dateTime(value: string): string {
   return new Intl.DateTimeFormat("es-VE", { dateStyle: "medium", timeStyle: "short", timeZone: "America/Caracas" }).format(new Date(value));
 }
 
+function normalizeOpenedShift(value: Record<string, unknown>): Shift {
+  return {
+    id: String(value.id), organizationId: String(value.organization_id ?? value.organizationId),
+    branchId: String(value.branch_id ?? value.branchId), registerId: String(value.register_id ?? value.registerId),
+    cashierUserId: String(value.cashier_user_id ?? value.cashierUserId), openedAt: String(value.opened_at ?? value.openedAt),
+    openingCashUsd: String(value.opening_cash_usd ?? value.openingCashUsd), openingCashVes: String(value.opening_cash_ves ?? value.openingCashVes),
+  };
+}
+
 export default function RegisterShiftsPanel({ organizationId, userName }: RegisterShiftsPanelProps) {
   const [branches, setBranches] = useState<Branch[]>([]);
   const [branchId, setBranchId] = useState("");
@@ -78,11 +87,12 @@ export default function RegisterShiftsPanel({ organizationId, userName }: Regist
     if (!branchId || !registerId) return;
     setSaving(true); setError(""); setNotice("");
     try {
-      const response = await apiRequest<{ shift: Shift }>(
+      const response = await apiRequest<{ shift: Record<string, unknown> }>(
         `/api/orgs/${encodeURIComponent(organizationId)}/branches/${encodeURIComponent(branchId)}/register-shifts`,
         { method: "POST", body: JSON.stringify({ register_id: registerId, opening_cash_usd: openingUsd, opening_cash_ves: openingVes }) },
       );
-      setShift(response.shift); setClosingUsd(response.shift.openingCashUsd); setClosingVes(response.shift.openingCashVes);
+      const openedShift = normalizeOpenedShift(response.shift);
+      setShift(openedShift); setClosingUsd(openedShift.openingCashUsd); setClosingVes(openedShift.openingCashVes);
       setNotice("Turno abierto correctamente. La apertura quedó registrada en auditoría.");
     } catch (reason) { setError(reason instanceof Error ? reason.message : "No se pudo abrir el turno."); }
     finally { setSaving(false); }

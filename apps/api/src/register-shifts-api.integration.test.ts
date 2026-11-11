@@ -87,6 +87,8 @@ describe.skipIf(!adminUrl || !runtimeUrl)("own register-shift API against Postgr
         [f.organizationId, f.userId, openedBody.shift.id],
       );
       expect(openAudit.rows.map((row) => row.action)).toEqual(["register_shift.opened"]);
+      const orgCurrent = await request(f, "GET", "/api/orgs/" + f.organizationId + "/register-shifts/current");
+      expect((await orgCurrent.json() as { shift: { branch_id: string; register_id: string } }).shift).toMatchObject({ branch_id: f.branchId, register_id: f.registerId });
       const closed = await close(f, openedBody.shift.id);
       expect(closed.status).toBe(200);
       expect((await closed.json() as { replayed: boolean }).replayed).toBe(false);
@@ -98,6 +100,7 @@ describe.skipIf(!adminUrl || !runtimeUrl)("own register-shift API against Postgr
         [f.organizationId, f.userId, openedBody.shift.id],
       );
       expect(auditAfterReplay.rows.map((row) => row.action)).toEqual(["register_shift.closed", "register_shift.opened"]);
+      await expect((await request(f, "GET", "/api/orgs/" + f.organizationId + "/register-shifts/current")).json()).resolves.toMatchObject({ shift: null });
       expect((await close(f, openedBody.shift.id, "13.0000", "130.00")).status).toBe(409);
       await expect((await current(f)).json()).resolves.toMatchObject({ shift: null });
     }

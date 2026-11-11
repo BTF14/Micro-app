@@ -2851,3 +2851,9 @@ Prioridad inmediata: revisar el diff completo de #287 y compatibilidad de #303 c
 Preserva todas las prohibiciones y la política de máximo dos frentes activos. No repitas preguntas de Build IDs, capturas, terminal, CLI, TinyFish, reconexiones ni pidas screenshots si la evidencia está en GitHub/docs. Si un dato esencial realmente falta, pregunta una sola vez y acepta respuesta textual. El propietario trabaja desde teléfono. No solicites acciones manuales salvo que sean imprescindibles y no puedas ejecutarlas de forma segura.
 
 **Orden de trabajo:** (1) revisar y reconciliar documentación/estado; (2) revisión técnica independiente de PR #287/#303 y riesgos de combinación de workflows/migraciones; (3) gates de seguridad P0 #53; (4) volver al MVP POS funcional antes del 1 de diciembre de 2026 sin degradar seguridad. No introducir alcance nuevo ni gastar dinero.
+
+
+
+### Última sincronización documental — 2026-11-11
+
+Después del snapshot principal se sincronizaron también `docs/WORK_CHECKPOINT.md`, `docs/CURRENT_STATE.md` y `docs/STATE_JOURNAL.md`. El HEAD de rama inmediatamente anterior a esta última actualización fue `a59cdb9144f38af61252d31458d4407a8fe52a9d`. Los checks disparados por esa sincronización documental estaban todavía abiertos al cierre: check-runs 3 (2 queued: Scan tracked files/reachable history y Trivy; 1 in_progress: Cloudflare Pages); workflows push Security scan y Secret history scan pending. No atribuirles resultado. Reconsultar branch HEAD y exact-HEAD checks al abrir el siguiente chat; no reutilizar la validación completa de `3e00d2c1512e1d0c3c0acc84bcdf4663e4976296` como si fuera del nuevo HEAD. Los cambios desde ese SHA son solo documentación, pero deben validarse en el HEAD exacto.

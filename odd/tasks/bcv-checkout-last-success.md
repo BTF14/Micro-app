@@ -135,3 +135,9 @@ The exact-HEAD CI rerun exposed two failures in `src/register-shifts-api.integra
 ## Superseding Turn 6 — distinct branch discovery contracts
 
 The general inventory branch endpoint remains `GET /api/orgs/:organizationId/branches` and returns all active branches to Owner/Admin, or active assigned branches to Inventory/Cashier. Register-shift UI must not use that broader discovery result because opening/operating a shift requires an explicit active branch membership even for Owner/Admin. A distinct `GET /api/orgs/:organizationId/register-shifts/branches` endpoint now returns only active branch memberships under `register.shift.read_own`. This removes the duplicate-route shadowing while keeping Inventory branch visibility and denying Inventory access to shift-specific branch discovery and shift operations.
+
+
+## Inventory-read integration duplicate assertion — 2026-11-11
+
+The CI failure at `inventory-read.integration.test.ts:366` is a stale duplicate assertion: the same test already verifies earlier (lines 282–285) that a Cashier can list only the assigned branch's warehouses with HTTP 200 and receives only warehouse metadata. The later 403 assertion contradicts that test and the existing `inventory.read` role contract. Remove the duplicate contradictory 403 assertion; retain the separate 403 checks for count management, unassigned branch warehouse listing, and cross-tenant movement reads. No API authorization relaxation is required.
+

@@ -1,3 +1,27 @@
+# Checkpoint vivo — 2026-11-11
+
+## Seguridad backup — trabajo realizado
+- Se portó a PR #287 el fix de autenticación Git de PR #302, manteniendo separado el historial de procedencia.
+- `.github/workflows/backup.yml` usa helper temporal `GIT_ASKPASS` con `umask 077`, permisos 700, `GIT_ASKPASS_REQUIRE=force`, `GIT_TERMINAL_PROMPT=0`, URL HTTPS limpia, `credential.helper=` explícito en clone/push y `trap` de limpieza.
+- `GH_TOKEN` se copia a variable de shell no exportada y se inyecta solo en los procesos Git que requieren autenticación; se elimina del entorno general antes de ejecutar `prune_backups.py`.
+- Tests shell y HTTP loopback validan prompts, fallo cerrado, ausencia de token en URL, remote limpio, limpieza y autenticación Basic invocada por Git. El servidor de prueba no almacena el token ni emula GitHub smart-HTTP/push.
+- Exact code HEAD `efb7f8a0b8731fd1805beedd8b8a5af10261d271`: 11/11 workflows PR SUCCESS; CI `43004836986` SUCCESS y paso askpass SUCCESS. Una versión intermedia del matcher estático falló; corregida y revalidada en el SHA final.
+- La corrección sigue solo en #287 Draft; main conserva el patrón anterior. No backup dispatch ni uso de secretos reales.
+
+## Estado y prioridad P0
+- main `c5373564413ba086690552c6b7deeab08d7b4a89`; issue #53 OPEN/P0; producción NOT READY.
+- #287 OPEN/Draft; #303 y #302 OPEN/Draft; #301 OPEN/no Draft pero no integrable mientras Seguridad Nivel 1 esté abierta.
+- No merge, deploy, Neon, datos reales, secrets, DNS, Cloudflare sensible, billing, Cron ni restore remoto.
+- El criterio de aceptación aprobado para 2026-12-01 es un comercio piloto, un local, hasta 1.000 productos y jornada completa desde UI. La rama actual aún no ofrece UI de caja/ventas/checkout/recibo ni endpoints HTTP de turnos.
+- No asumir que los métodos de pago hardcodeados equivalen a política aprobada. SDD mantiene pendiente el contrato completo de pagos, parciales, sobrepago/cambio, recibos y anulaciones/devoluciones.
+
+## Próximo paso sénior
+1. Revalidar en vivo el HEAD actual y CI después de este commit documental.
+2. Cerrar revisión independiente de seguridad Nivel 1 y mantener los gates de backup/restore real, principal efectivo, alertas, RPO/RTO y coste $0 explícitos.
+3. Cambiar el foco a la jornada P0: primero contrato de turnos y pagos sin inventar decisiones; después endpoints/UI/E2E de login → apertura → venta → pago → recibo → inventario/Kardex → conteo → cierre.
+4. No declarar MVP listo si la jornada completa no se completa desde UI y los gates críticos no están demostrados.
+
+---
 # Actualización de continuidad — 9 de noviembre de 2026
 
 > Esta actualización prevalece sobre snapshots históricos que indiquen otro HEAD o describan como pendientes capacidades ya implementadas. Verificar siempre el SHA vivo en GitHub antes de nuevas acciones.

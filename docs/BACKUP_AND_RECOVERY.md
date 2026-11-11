@@ -1,3 +1,13 @@
+## Reconciliación del contrato de exclusión y mínimo privilegio — 2026-11-11 UTC
+
+- **Corrección propuesta en PR #305:** `.github/workflows/backup.yml` sustituye las exclusiones completas `--exclude-table` por `--exclude-table-data=public.<tabla>` para `auth_sessions`, `auth_rate_limits` y `auth_bootstrap_attempts`. El objetivo es conservar DDL/estructura e índices, omitiendo únicamente sus filas.
+- **Prueba sintética PostgreSQL 18 aprobada:** run [43102529147](https://github.com/BTF14/Micro-app/actions/runs/43102529147), código de prueba en el HEAD `2b52bcaaa575c7f4d50f2ba13982041f2b3353f7`. El rol sintético `microapp_backup` completó `pg_dump` con grants de lectura; las pruebas negativas rechazaron DML, DDL, mutación de secuencias y administración de roles. El archive/restauración conservaron las tres tablas efímeras con cero filas y el manifiesto sintético de negocio coincidió.
+- Esta evidencia es de PostgreSQL 18 desechable y **no** verifica el principal efectivo del secreto `DATABASE_URL_BACKUP_RO`, los grants/membresías reales en Neon ni una restauración de una copia productiva. No declarar cerrado Issue #53 ni listo producción.
+- Las notas históricas posteriores que describen que las tablas efímeras no aparecen en la restauración documentan el comportamiento anterior de `--exclude-table`; no deben interpretarse como el nuevo contrato. No se reescriben esos registros históricos.
+- La modificación del workflow sigue pendiente de revisión y merge de PR #305. No se ejecutó manualmente el backup operativo, no se leyeron secretos y no se conectó ni mutó Neon `main`.
+
+---
+
 ## Reconciliación de evidencia — 2026-11-08 UTC
 
 - La última restauración de una copia remota concreta documentada sigue siendo la del 2026-10-29: `daily/backup-2026-10-29T17-29-48Z.dump.age`, con checksum, descifrado y restore a PostgreSQL 18 efímero. No se ha demostrado una nueva restauración de un backup remoto posterior.

@@ -1,3 +1,14 @@
+# Checkpoint — 2026-11-11 — HEAD 4b2aec7
+
+- PR #287 OPEN/Draft; HEAD documental `4b2aec73a26a52e4f5270ade6149752160084cf3`; exact-HEAD 16/16 check-runs, 11/11 PR workflows, 2/2 push workflows SUCCESS. Código validado en `9101ab502d5c52c86a8b8d01a3a79487dd07e5e8` (18/18 checks). mergeable=true/clean; 0 reviews y 0 threads. No merge.
+- 123 archivos, 19,233 adiciones, 307 eliminaciones; 524 ahead / 1 behind main; único commit ausente es ledger documental. No sync/rebase.
+- Backup workflow usa APT retry bounded/strict y curl retry/timeouts; no manual backup. Restore runner 16-migration main y 23-migration BCV; ambos synthetic smoke SUCCESS.
+- Neon main SELECT-only: `backup_readonly` es privilegiado (CREATEROLE/CREATEDB/REPLICATION/BYPASSRLS, membership neon_superuser/pg_write_all_data, INSERT/UPDATE/DELETE products). Default ACL tablas futuras SELECT; sin default ACL secuencias futuras. Secret `DATABASE_URL_BACKUP_RO` no leído; identidad efectiva desconocida.
+- Contrato candidato least-privilege pasa en PostgreSQL 18 desechable. No cambios Neon.
+- Issue #53 OPEN/P0; producción NOT READY. No merge, deploy, secrets, roles/grants remotos, datos reales, Cron, DNS o billing. Mantener Draft y revisar 123 archivos independientemente.
+
+---
+
 # Checkpoint — 2026-11-11 — exact HEAD 9101ab5
 
 - PR #287 OPEN/Draft; HEAD `9101ab502d5c52c86a8b8d01a3a79487dd07e5e8`; 18/18 check-runs SUCCESS, 11/11 PR workflows + 3/3 push workflows SUCCESS. PR mergeable=true/clean, 0 reviews formales y 0 threads. No merge.

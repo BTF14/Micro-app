@@ -1,3 +1,25 @@
+# Handoff — 11 de noviembre de 2026 — HEAD documental 4b2aec7
+
+> Prevalece sobre snapshots históricos. Revalidar el HEAD vivo antes de continuar.
+
+# Reconciliación viva — 2026-11-11 — HEAD documental 4b2aec7 exact-HEAD CI
+
+> Prevalece sobre snapshots históricos inferiores. El código más reciente se modificó en `9101ab502d5c52c86a8b8d01a3a79487dd07e5e8`; el HEAD actual `4b2aec73a26a52e4f5270ade6149752160084cf3` añade solo documentación y tiene validación propia.
+
+- PR #287 OPEN/Draft; branch `integration/bcv-checkout-rehearsal-20261109`; HEAD `4b2aec73a26a52e4f5270ade6149752160084cf3`.
+- Exact HEAD actual: **16/16 check-runs SUCCESS**, 11/11 workflows pull_request SUCCESS, 2/2 workflows push SUCCESS. CI principal 43/43 steps; migration runner 21/21; restore smoke main 0001–0016 (11/11) y BCV 0001–0023 (10/10).
+- PR metadata: `mergeable=true`, `mergeable_state=clean`; sigue Draft. Reviews formales 0; review threads 0. No merge.
+- PR: 123 archivos, 19,233 adiciones, 307 eliminaciones. Main `c5373564413ba086690552c6b7deeab08d7b4a89`; merge base `03442951b2a2f63f5bf4dcf560f2c91be4f6cc71`; rama 524 ahead / 1 behind. Único commit exclusivo de main: adición documental a `docs/BACKLOG_RECOVERY_LEDGER.md`; no sync/rebase.
+- Backup: se corrigió el comentario del principal para no afirmar least privilege; se implementó retry APT acotado/estricto en workflow programado, test aislado del helper y curl retry/timeouts para PGDG. No hubo workflow_dispatch ni backup manual. El último backup natural documentado falló por DNS antes de conectar; la corrección no demuestra un backup real exitoso.
+- Restore runner comenta correctamente 23 migraciones BCV (0001–0023) y 16 main (0001–0016); ambos perfiles sintéticos pasaron.
+- Neon main SELECT-only: `backup_readonly` tiene CREATEROLE/CREATEDB/REPLICATION/BYPASSRLS, membership directa `neon_superuser`, efectiva `pg_write_all_data`, e INSERT/UPDATE/DELETE sobre products. Default ACL de `neondb_owner`: SELECT para futuras tablas, ninguno para secuencias; secuencias existentes otorgan SELECT+UPDATE. No RLS en 15 tablas públicas.
+- No se leyó `DATABASE_URL_BACKUP_RO`, Worker `DATABASE_URL` ni secretos; identidad efectiva desconocida. No hubo cambios Neon, roles, grants, passwords, secrets, datos reales, Cron, DNS, billing o producción.
+- Contrato candidato PostgreSQL 18 desechable valida grants explícitos y default SELECT para tablas/secuencias futuras, pg_dump/pg_restore-list y denegación de escrituras/escalada/membresías. Es evidencia sintética, no producción.
+- Issue #53 OPEN/P0; producción NOT READY. Mantener Draft; revisión independiente de los 123 archivos. Gates Worker identity, CORS efectivo, alertas externas, RPO/RTO, coste USD 0 y aceptación funcional/comercial checkout/UI pendientes.
+- MVP 2026-12-01; GO/NO-GO 2026-11-30.
+
+---
+
 # Handoff — 11 de noviembre de 2026 — estado reconciliado HEAD 9101ab5
 
 > Prevalece sobre snapshots históricos. Verificar siempre HEAD/CI actuales antes de continuar.

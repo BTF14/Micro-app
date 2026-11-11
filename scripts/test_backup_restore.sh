@@ -99,6 +99,51 @@ if [[ "$source_manifest" != "$restored_manifest" ]]; then
   diff -u <(printf '%s\n' "$source_manifest") <(printf '%s\n' "$restored_manifest") || true
   exit 1
 fi
+schema_manifest() {
+  psql "$1" -X -v ON_ERROR_STOP=1 -Atq <<'SQL'
+SELECT 'column|' || table_name || '|' || column_name || '|' || ordinal_position::text
+  || '|' || data_type || '|' || is_nullable || '|' || COALESCE(column_default, '')
+  || '|' || COALESCE(character_maximum_length::text, '')
+  || '|' || COALESCE(numeric_precision::text, '') || '|' || COALESCE(numeric_scale::text, '')
+FROM information_schema.columns
+WHERE table_schema='public'
+  AND table_name=ANY(ARRAY[
+    'organizations','app_users','organization_members','auth_sessions','auth_rate_limits',
+    'suppliers','products','exchange_rates','sales','sale_items','payments',
+    'inventory_movements','audit_logs','auth_allowlist','auth_bootstrap','auth_bootstrap_attempts'
+  ]::text[])
+UNION ALL
+SELECT 'constraint|' || tc.table_name || '|' || tc.constraint_name || '|' || tc.constraint_type
+  || '|' || COALESCE(pg_get_constraintdef(con.oid), '')
+FROM information_schema.table_constraints tc
+JOIN pg_constraint con ON con.conname=tc.constraint_name
+JOIN pg_namespace ns ON ns.oid=con.connamespace AND ns.nspname=tc.constraint_schema
+WHERE tc.constraint_schema='public'
+  AND tc.table_name=ANY(ARRAY[
+    'organizations','app_users','organization_members','auth_sessions','auth_rate_limits',
+    'suppliers','products','exchange_rates','sales','sale_items','payments',
+    'inventory_movements','audit_logs','auth_allowlist','auth_bootstrap','auth_bootstrap_attempts'
+  ]::text[])
+UNION ALL
+SELECT 'index|' || tablename || '|' || indexname || '|' || indexdef
+FROM pg_indexes
+WHERE schemaname='public'
+  AND tablename=ANY(ARRAY[
+    'organizations','app_users','organization_members','auth_sessions','auth_rate_limits',
+    'suppliers','products','exchange_rates','sales','sale_items','payments',
+    'inventory_movements','audit_logs','auth_allowlist','auth_bootstrap','auth_bootstrap_attempts'
+  ]::text[])
+ORDER BY 1;
+SQL
+}
+source_schema_manifest="$(schema_manifest "$SOURCE_URL")"
+restored_schema_manifest="$(schema_manifest "$RESTORE_URL")"
+[[ "$source_schema_manifest" == "$restored_schema_manifest" ]] || {
+  echo "Restored business/auth schema metadata differs from source." >&2
+  diff -u <(printf '%s\\n' "$source_schema_manifest") <(printf '%s\\n' "$restored_schema_manifest") || true
+  exit 1
+}
+echo "PASS: business and ephemeral auth columns, constraints and indexes match source."
 ephemeral_schema_count="$(psql "$RESTORE_URL" -X -v ON_ERROR_STOP=1 -Atqc "SELECT count(*) FROM information_schema.tables WHERE table_schema='public' AND table_type='BASE TABLE' AND table_name=ANY(ARRAY['auth_sessions','auth_rate_limits','auth_bootstrap_attempts']::text[])")"
 [[ "$ephemeral_schema_count" == "3" ]] || { echo "Expected all 3 ephemeral auth table definitions, got $ephemeral_schema_count." >&2; exit 1; }
 ephemeral_rows="$(psql "$RESTORE_URL" -X -v ON_ERROR_STOP=1 -Atq -F '|' -c 'SELECT (SELECT count(*) FROM auth_sessions), (SELECT count(*) FROM auth_rate_limits), (SELECT count(*) FROM auth_bootstrap_attempts)')"

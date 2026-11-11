@@ -3022,3 +3022,5 @@ La rama #287 incorpora ahora una UI básica de turnos:
 - Test de componente cubre flujo apertura/revisión/cierre y 403. El CI en SHA `8da81f1...` detectó import `Root` sin uso; corregido en `a8148f94...`. Reconciliar runs exact-SHA del HEAD más reciente, no reutilizar el resultado del SHA anterior.
 - No es un POS completo: no hay UI de ventas, carrito, checkout, cobros, recibos, arqueo, expected cash, diferencias, retiros, devoluciones o anulaciones. No inventar reglas de pago.
 - Mantener PR #287 OPEN/Draft hasta validación exact-SHA, revisión formal y cierre de Seguridad Nivel 1. No merge/deploy/producción; issue #53 OPEN/P0.
+
+- Follow-up CI detail: on SHA `9f1f0b981fe2149ddbbc8b8e73ab5a763fddedaa`, TypeScript build passed; both new component tests failed because the helper did not wait for nested requests. Updated helper to wait eight event-loop turns in `30d7368c05055c543171cadf7d4d103d650536d5`. Verify exact-HEAD CI and fix any remaining failures before calling this complete.

@@ -1,3 +1,30 @@
+# Readiness reconciliada — 2026-11-11 — PR #287
+
+> Estado vigente verificado en GitHub. Prevalece sobre snapshots históricos inferiores.
+
+- PR #287 OPEN / Draft; HEAD actual `2b57e61ea96795f18b95e9072775ead9e351cc14`; commit inmediatamente anterior `e5f956271f723bfa00da2ab527c35ac422cf6d2d` contiene el estado de implementación revisado. El commit `2b57e61ea96795f18b95e9072775ead9e351cc14` actualiza documentación de continuidad.
+- En el HEAD de código `e5f9562`: 16/16 check-runs SUCCESS; 11/11 workflows PR y 2/2 push SUCCESS. CI 43/43, PostgreSQL migration validation 86/86, migration runner 21/21, restore smoke main 11/11 y BCV 10/10.
+- En el HEAD documental actual `2b57e61ea96795f18b95e9072775ead9e351cc14`: **16/16 check-runs SUCCESS**, 11/11 workflows PR y 2/2 push SUCCESS. Incluye Workers Builds y Cloudflare Pages como previews, no despliegue productivo.
+- Comparación con main `c5373564413ba086690552c6b7deeab08d7b4a89`: 528 ahead / 1 behind; merge base `03442951b2a2f63f5bf4dcf560f2c91be4f6cc71`. PR 123 archivos; reviews formales 0; review threads 0. Mantener Draft; no merge automático.
+- CI sintético PostgreSQL 18 demuestra contrato de backup mínimo: SELECT explícito en objetos existentes y default SELECT para futuras tablas/secuencias; pg_dump/pg_restore-list; deniega escrituras, sequence USAGE/UPDATE, CREATE, SET ROLE y membresías. No cambia Neon.
+- Neon main SELECT-only: `backup_readonly` es privilegiado y tiene write privileges; no se leyó `DATABASE_URL_BACKUP_RO`; identidad efectiva desconocida. `microapp_runtime` y `microapp_migrator` ausentes del catálogo observado. Identidad del Worker `DATABASE_URL` también desconocida.
+- Issue #53 OPEN/P0. Producción **NOT READY**. No se modificaron Neon, roles, grants, contraseñas, secretos, datos reales, Cron, DNS, billing ni producción.
+
+## Gates bloqueantes para producción
+
+1. Revisión independiente completa de los 123 archivos de PR #287 y aprobación formal; checks verdes no son review.
+2. Verificar principal efectivo de backup y Worker sin revelar secretos; diseñar y probar transición de roles/grants con continuidad, rollback y backup/restore.
+3. Provisionar y validar roles de runtime/migrator/BCV producer en entorno autorizado, no inferir que CI los ha desplegado.
+4. Confirmar CORS/headers efectivos, observabilidad, alertas externas y watchdog BCV.
+5. Ejecutar backup natural posterior a una integración autorizada y medir RPO/RTO; restauración sintética no equivale a restore real.
+6. Completar jornada funcional desde UI. La E2E de turnos usa mocks de red; no prueba backend real. Checkout API tiene pruebas PostgreSQL, pero no hay aceptación completa de caja/ventas/pagos/recibos.
+7. Aprobar reglas comerciales y legales de pagos parciales, cambio/sobrepago, recibos, anulaciones y devoluciones antes de ampliar la lógica financiera.
+8. Demostrar coste total USD 0, revisión final y aceptación del propietario.
+
+**Decisión:** no promover PR #287 a Ready ni fusionar hasta cerrar los gates anteriores. Issue #53 permanece OPEN/P0. MVP objetivo 2026-12-01; GO/NO-GO 2026-11-30.
+
+---
+
 ## Revalidación de readiness — 2026-11-11 — resiliencia backup / PR #287
 
 - Último HEAD con código y comentarios operativos validados: `9101ab502d5c52c86a8b8d01a3a79487dd07e5e8`; 18/18 check-runs, 11/11 PR workflows, 3/3 push workflows SUCCESS. Restore smoke main 0001–0016 y BCV 0001–0023 SUCCESS; CI 43/43; migration runner 21/21.

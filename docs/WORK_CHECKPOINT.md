@@ -1,3 +1,15 @@
+# Checkpoint — 2026-11-11 — exact HEAD 9101ab5
+
+- PR #287 OPEN/Draft; HEAD `9101ab502d5c52c86a8b8d01a3a79487dd07e5e8`; 18/18 check-runs SUCCESS, 11/11 PR workflows + 3/3 push workflows SUCCESS. PR mergeable=true/clean, 0 reviews formales y 0 threads. No merge.
+- 123 archivos, 19,233 adiciones, 307 eliminaciones; 524 ahead / 1 behind main; único commit ausente = ledger documental. No sync/rebase.
+- Backup workflow corregido: reintentos APT acotados y estrictos, test helper sin red, retries/timeouts de curl PGDG; el restore runner comenta correctamente perfil BCV de 23 migraciones. Restore smoke main 16 y BCV 23 SUCCESS.
+- Neon main SELECT-only confirmó que `backup_readonly` es privilegiado (CREATEROLE/CREATEDB/REPLICATION/BYPASSRLS, membership neon_superuser/pg_write_all_data, INSERT/UPDATE/DELETE products). Default ACL para tablas futuras SELECT; sin default ACL de secuencias futuras. Identidad del secreto `DATABASE_URL_BACKUP_RO` sigue desconocida; no se leyó.
+- Contrato candidato de least privilege pasa en PostgreSQL 18 desechable, incluido pg_dump/pg_restore-list y default SELECT de futuras tablas/secuencias.
+- Issue #53 OPEN/P0; producción NOT READY. No Neon writes, roles/grants/passwords/secrets, datos reales, deploy, Cron, DNS o billing.
+- Siguiente: revisión independiente de los 123 archivos; mantener Draft; observar identidad solo en backup natural de main tras integración autorizada; preparar continuidad/rollback antes de cualquier cambio remoto.
+
+---
+
 # Checkpoint actualizado — 2026-11-11 — default ACL de backup probado
 
 **HEAD PR #287:** `cb81ecdf6bb5fe2c0d7806f6d744925300c8ba7a`; 16/16 check-runs, 11/11 workflows PR, 2/2 push SUCCESS. PR OPEN/Draft; mergeable=true, mergeable_state=blocked; 0 reviews formales, 0 threads. No merge.

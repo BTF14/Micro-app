@@ -1,3 +1,39 @@
+# Handoff — 11 de noviembre de 2026 — estado reconciliado HEAD 9101ab5
+
+> Prevalece sobre snapshots históricos. Verificar siempre HEAD/CI actuales antes de continuar.
+
+# Reconciliación viva — 2026-11-11 14:39 EDT — resiliencia del backup y exact-HEAD CI
+
+> Prevalece sobre snapshots históricos inferiores. No reutilizar checks de SHAs anteriores.
+
+## GitHub / PR #287
+
+- HEAD: `9101ab502d5c52c86a8b8d01a3a79487dd07e5e8`; PR OPEN/Draft; branch `integration/bcv-checkout-rehearsal-20261109`.
+- Exact HEAD: **18/18 check-runs SUCCESS**; 11/11 workflows `pull_request` SUCCESS y 3/3 workflows `push` SUCCESS (incluye backup restore smoke en push). CI principal: 43/43 steps SUCCESS; PostgreSQL migration runner: 21/21; restore smoke: main 0001–0016 (11/11) y BCV 0001–0023 (10/10).
+- GitHub PR metadata: `mergeable=true`, `mergeable_state=clean`; Draft permanece. Reviews formales: 0; review threads: 0.
+- PR: 123 archivos, 19,233 adiciones, 307 eliminaciones. Comparación con main `c5373564413ba086690552c6b7deeab08d7b4a89`: 524 ahead / 1 behind; merge base `03442951b2a2f63f5bf4dcf560f2c91be4f6cc71`. El único commit exclusivo de main añade el registro de cierres superseded en `docs/BACKLOG_RECOVERY_LEDGER.md`; no se sincronizó/rebasó.
+- No merge ni deploy. La magnitud de 123 archivos exige revisión independiente del diff; Draft se mantiene.
+
+## Backup / P0
+
+- Neon main fue consultado solo mediante SELECT de catálogos. El rol `backup_readonly` tiene CREATEROLE/CREATEDB/REPLICATION/BYPASSRLS, membership directa en `neon_superuser`, efectiva en `pg_write_all_data`, y INSERT/UPDATE/DELETE sobre `public.products`. 15 tablas y 2 secuencias pertenecen a `neondb_owner`; tablas sin RLS; default ACL de tablas futuras = SELECT; no existe default ACL de secuencias futuras; secuencias actuales otorgan SELECT+UPDATE al rol observado.
+- Nunca se leyó `DATABASE_URL_BACKUP_RO` ni `DATABASE_URL` del Worker. La identidad efectiva de ambos sigue desconocida; no atribuir el rol observado a ningún secreto.
+- Contrato candidato PostgreSQL 18 desechable: commit `cb81ecdf6bb5fe2c0d7806f6d744925300c8ba7a`; verifica grants explícitos y default SELECT para futuras tablas/secuencias, no escrituras/sequence USAGE-UPDATE/escalada/membresías y pg_dump/pg_restore-list. Exact-HEAD posterior SUCCESS.
+- Workflow `.github/workflows/backup.yml`: comentario corregido para no afirmar que el principal configurado es read-only; ahora excluye solo filas efímeras y preserva tablas/constraints/indexes/triggers.
+- Resiliencia APT: commit `7155e3684aaef49e0879a46c54c60f4850a0fc37` aplica `scripts/ci/apt-retry.sh` al backup programado, prueba helper sin red, usa refresh estricto y curl con reintentos/timeouts para PGDG. Un backup natural previo falló por DNS antes de conectar; esta corrección no equivale a un backup real exitoso. No hubo workflow_dispatch.
+- Corrección documental de perfil BCV: el restore runner usa 23 migraciones (no 22); commit `9101ab502d5c52c86a8b8d01a3a79487dd07e5e8`; restore smoke exact-HEAD main y BCV SUCCESS.
+
+## Límites / siguientes pasos
+
+1. Issue #53 sigue OPEN/P0; producción NOT READY. No tocar Neon, roles, grants, passwords, secrets, datos reales, Cron, DNS, billing ni producción.
+2. Mantener #287 Draft y solicitar revisión independiente; CI verde no equivale a aprobación.
+3. Verificar principal backup únicamente en un backup natural de main después de una integración de release aprobada; no disparar manualmente.
+4. Diseñar cualquier cambio remoto con plan probado de backup/restore, ownership/default ACL, continuidad y rollback, y autorización específica.
+5. Identidad Worker, CORS efectivo, alertas externas, RPO/RTO, coste total USD 0 y validación funcional/comercial de checkout/UI continúan pendientes.
+6. MVP 2026-12-01; GO/NO-GO 2026-11-30.
+
+---
+
 # Handoff actualizado — 11 de noviembre de 2026 — PR #287 / backup principal
 
 > Este bloque prevalece sobre snapshots históricos. Revalidar siempre el HEAD exacto.

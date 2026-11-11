@@ -2750,3 +2750,5 @@ main sigue en c5373564413ba086690552c6b7deeab08d7b4a89. Su .github/workflows/bac
 - El selector de sucursal se bloquea mientras hay turno abierto, respetando el índice único por cajero/organización. Los importes finales se inicializan vacíos, no se copian del fondo inicial.
 - Test nuevo cubre carga, apertura, revisión y cierre, además de 403 por falta de acceso. CI exact SHA `8da81f1...` encontró un import de tipo sin uso; corregido en `a8148f94f2ae1abd8d12f6aeb187ff1ddcdf9951`. Revalidar los workflows exact-SHA después de esa corrección antes de declarar verde.
 - La UI no implementa ventas ni cobros. La jornada POS completa sigue NO READY. No cambiar la clasificación de producción ni cerrar #53.
+
+- **CI feedback UI:** exact SHA `9f1f0b981fe2149ddbbc8b8e73ab5a763fddedaa` passed Build and typecheck but the new `RegisterShiftsPanel` tests failed because the test settle helper did not wait for nested async API calls. Updated helper to wait eight event-loop turns in commit `30d7368c05055c543171cadf7d4d103d650536d5`; latest exact HEAD must be revalidated.

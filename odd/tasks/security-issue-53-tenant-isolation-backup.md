@@ -108,3 +108,6 @@ Excluded:
 - It then failed because `assert_true` submitted a bare expression (`NOT pg_has_role(...)`) instead of a SQL statement. This was a test harness defect, not a `pg_dump` result.
 - Corrected `assert_true` to execute `SELECT <expression>` consistently. The first expression was normalized to avoid a duplicate SELECT.
 - Re-run all assertions on the new final HEAD before changing the operational workflow.
+
+
+- Additional PostgreSQL 18 test-harness correction: sequence privilege assertions now use a CASE guard on `relkind='S'`. This prevents planner predicate reordering from invoking `has_sequence_privilege` with an index OID. The previous failure was in the test assertion, before the dump operation.

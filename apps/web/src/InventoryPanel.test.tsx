@@ -74,6 +74,8 @@ describe("inventory panel", () => {
     expect(urls[0]).toContain(`/api/orgs/${ORG}/branches`);
     expect(urls[1]).toContain(`/branches/${BRANCH_A}/warehouses`);
     expect(urls[2]).toContain(`/warehouses/${WAREHOUSE}/inventory?limit=100`);
+    expect(container.textContent).toContain("Sucursal: Central");
+    expect(container.textContent).toContain("Almacén: Principal");
     expect(container.textContent).toContain("Harina");
     expect(container.textContent).toContain("15");
     expect(container.textContent).toContain("13");

@@ -3132,3 +3132,21 @@ La hipótesis anterior de que el helper de espera era la causa no era correcta. 
 5. Issue #53 OPEN/P0; producción NOT READY / NO-GO con cualquier gate crítico pendiente.
 
 Restricciones: no Neon main, datos reales, secretos/age, grants remotos, deploy manual, Cron, Cloudflare sensible, DNS, billing, force-push ni rebase/sync automático. No pedir terminal, CLI, capturas, Build IDs ni TinyFish.
+
+
+## Handoff vigente — 2026-11-11 (HEAD 5389425)
+
+- Reanudar desde `integration/bcv-checkout-rehearsal-20261109`, PR #287 OPEN/Draft, HEAD `53894254c26838dd56f5a39764fedf4cf1d64067`. Main `c5373564413ba086690552c6b7deeab08d7b4a89`; merge base `03442951b2a2f63f5bf4dcf560f2c91be4f6cc71`; 503 ahead / 1 behind; 114 archivos; mergeable=true. No rebase/sync automático.
+- Exact HEAD: 16 checks = 12 SUCCESS / 4 IN_PROGRESS / 0 FAILURE. Los cuatro pendientes: CI `43047172608`, migration runner `43047173013`, restore smoke `43047172753` con dos perfiles. Todos estaban detenidos en instalación apt de PostgreSQL client/age. Revisar logs y distinguir infraestructura de pruebas no ejecutadas; no usar SHA anterior.
+- Migration validation `43047173060` SUCCESS en el HEAD exacto. Incluye regresión de membership bidirectional, 0021 runtime SELECT-only, UPDATE denegado mediante LOGIN runtime, fixture de grants excesivos incluidos REFERENCES column-level para runtime/producer/PUBLIC, rollback de 0022 y assertions finales. Playwright, Semgrep, Security, ODD, dependency review, secret history, dashboard y Cloudflare SUCCESS.
+- Backup natural 11/11 `43041961402` en main falló instalando age por DNS; no conexión a PostgreSQL, secret check, pg_dump, cifrado, upload, diagnóstico ni artefacto. Último schedule SUCCESS `42842855127` del 10/11. No workflow_dispatch.
+- Código de #287 ya corrige membership predicate en ambas direcciones y normaliza REFERENCES ACLs. Migration validation pasó; CI integral y restore siguen sin cerrar. Mantener #287 Draft y no merge.
+- #301 OPEN/no Draft 15/15 checks, sin reviews; límite 100 sin cursor sigue pendiente. #302 OPEN/Draft 14/14; #303 OPEN/Draft 17/17. #53 OPEN/P0.
+
+### Próximas acciones
+1. Reconsultar los cuatro checks pendientes del SHA 5389425 y descargar logs si fallan; no reutilizar resultados de SHA anteriores.
+2. Continuar frente de recuperación: principal efectivo/least privilege, próximo backup natural tras integración, restore remoto real aislado, simulacro, alertas y RPO/RTO. No fabricar evidencia.
+3. Continuar auditoría de aislamiento tenant/branch/role y migraciones 0017–0023, manteniendo máximo dos frentes.
+4. Preservar PR #287 Draft; no fusionar PRs incompletas ni #302/#303 independientemente. Issue #53 sigue OPEN/P0.
+
+Restricciones: no Neon main, datos reales, secretos/age, roles/grants remotos, despliegues manuales, Cron, DNS/Cloudflare sensible, billing, restore remoto sin gates, force-push, rebase/sync automático. No pedir terminal, CLI, capturas, Build IDs ni TinyFish.

@@ -422,3 +422,12 @@ GitHub live muestra main en c5373564413ba086690552c6b7deeab08d7b4a89. El archivo
 La rama de integración #287 ahora contiene 23 migraciones numeradas. El perfil sintético de restore BCV se actualizó de 0001–0022 a **0001–0023** en `scripts/db/restore_remote_backup_ephemeral.sh` y `scripts/db/reapply_restore_role_grants.sh`; tras restaurar, ejecuta también `0023_register_shift_runtime_operations.assertions.sql`. El perfil histórico main permanece fijado en 0001–0016 mediante el bundle inmutable `c5373564413ba086690552c6b7deeab08d7b4a89`.
 
 En el HEAD de código `0ca91ff51ec545278ceb8eabd3929083aae9022e`, el smoke test sintético PostgreSQL 18 para main 0001–0016 y BCV 0001–0023 terminó SUCCESS. El perfil BCV incluye ahora ownership/ACL de las funciones de apertura/cierre de turno y su `search_path` restringido. Esto no es restore de artefacto remoto ni demuestra el principal efectivo de backup en producción. No se ejecutó workflow manual ni se leyeron secretos/age. Issue #53 sigue OPEN/P0; producción NOT READY.
+
+
+## Incidente de backup programado — 2026-11-11
+
+- Run natural `43041961402`, evento schedule, main SHA `c5373564413ba086690552c6b7deeab08d7b4a89`: FAILURE durante instalación de `age` por `Temporary failure resolving` en mirrors Ubuntu (`azure.archive.ubuntu.com`, `archive.ubuntu.com`, `security.ubuntu.com`).
+- La ejecución no llegó a comprobar `DATABASE_URL_BACKUP_RO`, conectarse a PostgreSQL, ejecutar pg_dump, cifrar, subir ni publicar el diagnóstico de identidad. No produjo artefacto nuevo; no contarla como backup del día.
+- Último schedule SUCCESS observado: `42842855127`, 2026-11-10 15:17:48 UTC. No se hizo workflow_dispatch ni re-run manual.
+- El diagnóstico de seis booleanos y askpass mejorado existen solo en la rama de integración #287; main sigue con el mecanismo anterior. Esperar integración segura y un nuevo schedule natural antes de afirmar evidencia operativa.
+- Issue #53 permanece OPEN/P0. No restore remoto real, no secretos/age, no Neon/main, no cambios de roles/grants remotos. Producción NOT READY.

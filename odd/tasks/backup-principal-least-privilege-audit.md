@@ -55,3 +55,9 @@ The six-boolean diagnostic in `.github/workflows/backup.yml` currently evaluates
 - The bidirectional membership predicate is now implemented in the integration-branch backup diagnostic.
 - Disposable PostgreSQL 18 regression test passed in `migration-check` run `43044533159` on code SHA `373dbc177fc6d9876112eb57cedc21db8dd31dd7`: principal-as-member, principal-as-granted-role, and no-membership baseline.
 - This proves the SQL predicate regression in CI only. It does not prove the production backup secret identity, remote grants, absence of all privileges outside the diagnostic's inspected scope, or backup artifact recovery. Keep issue #53 OPEN/P0 and production NOT READY.
+
+
+## Exact-HEAD regression confirmation — 2026-11-11
+
+- Run `43047173060` passed on SHA `53894254c26838dd56f5a39764fedf4cf1d64067`; the disposable PostgreSQL 18 membership regression passed for both directions and the empty baseline.
+- This is CI predicate evidence only. The natural main backup `43041961402` failed before DB connection while installing age due Ubuntu DNS, so it produced no artifact and did not execute the six-boolean diagnostic. Effective production identity and least privilege remain unverified; issue #53 stays OPEN/P0.

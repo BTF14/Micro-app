@@ -2722,3 +2722,15 @@ La hipótesis anterior de que el helper de espera era la causa no era correcta. 
 - Backup schedule natural `43041961402` de main falló instalando age por DNS de Azure Ubuntu. No conexión a DB ni dump; no nuevo artefacto ni seis booleanos. Issue #53 continúa OPEN/P0.
 - #301 15/15 checks, 10/10 workflows, sin review; límite 100 sin cursor explícitamente documentado pero aún no aprobado como límite general. #302 14/14 y #303 17/17, ambos Draft y sin reviews.
 - No merges/deploys, Neon, datos reales, secretos/age, grants remotos, Cron, Cloudflare sensible, DNS ni billing. Producción NOT READY.
+
+
+## 2026-11-11 — ACL BCV y backup natural: evidencia exacta
+
+- Código final evaluado: `53894254c26838dd56f5a39764fedf4cf1d64067`, PR #287 OPEN/Draft, 503 ahead / 1 behind main, 114 archivos, mergeable=true.
+- `migration-check` run `43047173060` SUCCESS sobre el SHA exacto. Pasaron: test de membresías de backup en ambas direcciones; assertions 0021 inmediatamente tras esa migración; rechazo de UPDATE con LOGIN runtime; fixture de ACL excesivas; rollback 0022; assertions finales runtime/producer. La fixture sembró REFERENCES column-level para runtime, producer y PUBLIC; 0021/0022 las revocaron y las assertions las rechazaron si persistían.
+- Hallazgo de seguridad corregido: 0021 no establecía explícitamente el estado SELECT-only frente a ACLs de columna preexistentes/default; ahora revoca ALL table-level y INSERT/UPDATE/REFERENCES column-level antes de conceder SELECT. 0022 normaliza runtime a SELECT-only en ambas tablas y revoca REFERENCES column-level de runtime/producer. Assertions ampliadas.
+- Exact-HEAD 5389425: 16 check-runs, 12 SUCCESS y 4 IN_PROGRESS (CI `43047172608`, migration runner `43047173013`, restore smoke `43047172753` dos perfiles). Los cuatro seguían en apt install; no declarar fallos ni pruebas omitidas como ejecutadas hasta finalización. Anterior SHA 373dbc tuvo fallos apt por DNS; sus resultados no se trasladan al HEAD nuevo.
+- Playwright `43047172725`, Semgrep `43047172900`, Security `43047172742`, ODD `43047172710`, Dependency review `43047173111`, Secret history `43047174161`, dashboard `43047173173`, Cloudflare Pages/Workers: SUCCESS.
+- Backup natural 11/11 `43041961402` en main `c537356...` falló al instalar age por DNS de Ubuntu. No conexión a DB, secreto, pg_dump, cifrado, upload, diagnóstico ni artefacto. Último schedule SUCCESS `42842855127` del 10/11. No dispatch manual.
+- Main todavía no contiene el diagnóstico ni el nuevo askpass. La prueba de membresías demuestra solo la consulta en PostgreSQL desechable; identidad/least privilege reales siguen NO VERIFICADOS.
+- #301 15/15 checks y #302 14/14 / #303 17/17 checks SUCCESS, todos sin reviews/threads; #301 mantiene MAX_BRANCHES=100 sin cursor. #53 OPEN/P0. Producción NOT READY; no merges/deploys ni operaciones remotas.

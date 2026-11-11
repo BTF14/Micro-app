@@ -604,3 +604,13 @@ No merge/rebase/force-push; no Neon main, roles/grants remotos, datos reales, se
 - Backup natural `43041961402` falló en main por DNS durante instalación de age, antes de conexión/dump. Sin artefacto ni diagnóstico; no re-run manual.
 - Diagnóstico backup ahora detecta ambos sentidos de `pg_auth_members`; test PostgreSQL desechable pasó. #301 15/15 + 10/10, sin review, MAX_BRANCHES 100 sin cursor documentado; #302 14/14 Draft; #303 17/17 Draft; #53 OPEN/P0.
 - Próximo: cerrar workflows pendientes exact-HEAD y continuar auditoría de seguridad/recuperación. No operaciones comerciales nuevas hasta cerrar Seguridad Nivel 1. Producción NOT READY. MVP 01/12/2026; GO/NO-GO 30/11/2026.
+
+
+## Checkpoint vigente — 2026-11-11 (código 5389425)
+
+- #287 OPEN/Draft, HEAD `53894254c26838dd56f5a39764fedf4cf1d64067`; main `c5373564413ba086690552c6b7deeab08d7b4a89`; 503 ahead / 1 behind, 114 archivos, mergeable=true. No sync/rebase/merge.
+- Exact SHA: 16 checks, 12 SUCCESS / 4 IN_PROGRESS / 0 FAILURE. CI `43047172608`, migration runner `43047173013`, restore smoke `43047172753` (dos perfiles) siguen en apt install; no afirmar que las pruebas posteriores corrieron. Migration validation `43047173060` SUCCESS, Playwright `43047172725` SUCCESS.
+- Migration validation demuestra 0021 runtime SELECT-only, rechazo de UPDATE por LOGIN real, limpieza de ACL de columna REFERENCES para runtime/producer/PUBLIC, rollback 0022 y contrato final de grants. Prueba de membresías backup bidireccional también SUCCESS.
+- Backup natural `43041961402` (11/11, main) FAILURE durante instalación de age por DNS; no conexión, dump, cifrado, upload ni artefacto. Último backup SUCCESS `42842855127` (10/11). No re-run/dispatch manual.
+- Próximo: revisar finalización/logs de los cuatro checks pendientes del SHA actual; luego continuar auditoría de recuperación y aislamiento tenant/branch/role. Máximo dos frentes.
+- #53 OPEN/P0; producción NOT READY. No Neon main, datos reales, secretos/age, grants remotos, deploy, Cron, Cloudflare/DNS sensible, billing, restore remoto, force-push ni rebase/sync automático. MVP 01/12/2026; GO/NO-GO 30/11/2026.

@@ -124,8 +124,15 @@ Migration 0022 checks table-level REFERENCES privileges and normalizes column-le
 
 ### Acceptance criteria
 
-- [ ] 0021 intermediate runtime state is SELECT-only with no table/column INSERT, UPDATE, REFERENCES, DELETE, TRUNCATE or TRIGGER.
-- [ ] 0022 removes dirty column-level REFERENCES for runtime and producer while preserving only the intended SELECT and producer column allowlists.
-- [ ] PostgreSQL assertions enumerate and reject residual column-level REFERENCES.
-- [ ] Disposable fixture proves cleanup for both runtime and producer and PUBLIC.
-- [ ] Migration validation passes on the exact final SHA; full CI limitations remain classified separately.
+- [x] 0021 intermediate runtime state is SELECT-only with no table/column INSERT, UPDATE, REFERENCES, DELETE, TRUNCATE or TRIGGER.
+- [x] 0022 removes dirty column-level REFERENCES for runtime and producer while preserving only the intended SELECT and producer column allowlists.
+- [x] PostgreSQL assertions enumerate and reject residual column-level REFERENCES.
+- [x] Disposable fixture proves cleanup for both runtime and producer and PUBLIC.
+- [x] Migration validation passes on the exact final SHA; full CI limitations remain classified separately.
+
+
+### Validation evidence — 2026-11-11
+
+- Migration validation run `43047173060` passed on exact code SHA `53894254c26838dd56f5a39764fedf4cf1d64067`.
+- The disposable fixture seeded column-level REFERENCES for `microapp_runtime`, `microapp_bcv_sync` and PUBLIC on both BCV tables; 0021/0022 removed them and all runtime/producer assertions passed.
+- The run also passed the immediate 0021 runtime LOGIN write-denial check, 0022 rollback, final grants contract and backup membership regression. Full CI and both restore profiles remain pending separately; no remote roles/grants or secrets were touched.

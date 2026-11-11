@@ -833,3 +833,11 @@ RPO/RTO permanecen sin objetivo aprobado ni medición. Se definió la instrument
 - Exact code SHA `b7079224e3469900170994a2dacdd889b342c171`: migration validation and Playwright SUCCESS. CI, migration runner and both restore smoke profiles failed before their tests because GitHub Actions could not resolve Ubuntu apt mirrors. This is infrastructure-blocked, not a green release gate.
 - Backup principal diagnostic still needs a symmetric role-membership predicate: current `has_membership` detects the principal as a member of other roles, but not other roles granted the principal and able to `SET ROLE`. Do not claim absence of all memberships until corrected and evidenced.
 - Issue #53 remains OPEN/P0. Effective backup identity/least privilege, natural post-integration backup, remote encrypted restore, application recovery, alerts, RPO/RTO and USD 0 remain unverified.
+
+
+## Reconciliación de gates — 2026-11-11
+
+- El backup programado natural `43041961402` en main falló durante instalación de age por DNS de Ubuntu, antes de conexión a DB o ejecución del dump. No verificó identidad efectiva, least privilege ni generó artefacto. Último schedule SUCCESS `42842855127` del 10/11. No dispatch manual.
+- La rama #287 incorpora el diagnóstico no sensible de seis booleanos con detección de membresías en ambas direcciones; regresión PostgreSQL desechable pasó en `43047173060` sobre SHA `53894254c26838dd56f5a39764fedf4cf1d64067`.
+- El mismo migration-check exact-HEAD probó 0021 runtime SELECT-only, rechazo real de UPDATE con LOGIN runtime, grants de columna REFERENCES deliberadamente sembrados para runtime/producer/PUBLIC, limpieza 0022 y assertions finales SUCCESS. No equivale a provisionar/verificar el principal remoto.
+- PR #287 sigue OPEN/Draft; exact HEAD 16 checks: 12 SUCCESS / 4 IN_PROGRESS (CI, migration runner y dos perfiles restore, en apt install). Issue #53 OPEN/P0; identidad backup, backup natural posterior a integración, restore remoto aislado, provisioning, simulacro, alertas, RPO/RTO y USD 0 permanecen abiertos. Producción NOT READY.

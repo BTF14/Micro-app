@@ -34,7 +34,7 @@ beforeEach(() => {
   document.body.appendChild(container);
   root = createRoot(container);
   vi.stubGlobal("fetch", vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
-    const url = new URL(String(input));
+    const url = new URL(String(input), "https://micro-app.test");
     const method = init?.method ?? "GET";
     if (url.pathname.endsWith("/register-shifts/current") && url.pathname.includes("/branches/")) return jsonResponse({ shift: activeShift && { id: shiftId, organizationId, branchId, registerId, cashierUserId: openedShift.cashier_user_id, openedAt: openedShift.opened_at, openingCashUsd: "20.0000", openingCashVes: "500.00" } });
     if (url.pathname.endsWith("/register-shifts/current")) return jsonResponse({ shift: activeShift ? { branch_id: branchId } : null });

@@ -14,6 +14,9 @@ on:
       - "scripts/test_backup_restore_schema_bcv.sh"
       - "scripts/backup_restore_fixture_bcv.sql"
       - "scripts/db/migrate.sh"
+      - "scripts/db/reapply_restore_role_grants.sh"
+      - "scripts/db/restore_remote_backup_ephemeral.sh"
+      - ".github/workflows/backup-real-restore.yml"
       - "apps/api/migrations/**"
       - "docs/BACKUP_AND_RECOVERY.md"
 

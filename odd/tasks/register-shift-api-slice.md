@@ -79,3 +79,8 @@ Se añadió `apps/web/src/RegisterShiftsPanel.tsx` y su hoja responsive `registe
 Se agregó `RegisterShiftsPanel.test.tsx` con escenario de carga → apertura → revisión/cierre → confirmación y escenario de denegación de acceso. El primer CI de UI en SHA `8da81f1a6178b7fba69bf56f717954ac8d00f1cd` detectó un import `Root` sin uso en el test. Se eliminó y se estrechó el tipado de los inputs; SHA posterior `a8148f94f2ae1abd8d12f6aeb187ff1ddcdf9951`. Los workflows para ese SHA final aún deben confirmarse; no afirmar build/test verde hasta ver runs exact-SHA.
 
 **Límite funcional:** esto habilita únicamente apertura/cierre del turno propio. No incluye UI de ventas, checkout, cobros, recibos, arqueo, efectivo esperado, diferencias, retiros, devoluciones ni anulaciones. No se añadió ledger financiero ni reglas de pago.
+
+
+### CI feedback — 2026-11-11
+
+CI at documentation HEAD `9f1f0b981fe2149ddbbc8b8e73ab5a763fddedaa` passed TypeScript build/typecheck, but the new component tests failed because their settle helper returned before the component's nested branch/register requests completed. Both assertions therefore observed the loading state. The helper now advances the event loop across eight turns in `apps/web/src/RegisterShiftsPanel.test.tsx` (commit `30d7368c05055c543171cadf7d4d103d650536d5`). This is a test synchronization fix, not a production-code assertion change. Await exact-HEAD CI to confirm.

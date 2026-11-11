@@ -93,3 +93,12 @@ The live Neon catalog review found that the role named `backup_readonly` is over
 - Current Neon main has 15 application base tables in `public`, with neither RLS nor FORCE RLS enabled. This supports testing an explicit-SELECT role without BYPASSRLS for the currently observed schema; re-evaluate if RLS is introduced.
 - This test validates a candidate role contract and `pg_dump` compatibility only. It does not prove which user `DATABASE_URL_BACKUP_RO` uses and does not authorize remote role/grant/password/secret changes.
 - Status: planned; implementation pending. Issue #53 remains OPEN/P0 and production NOT READY.
+
+
+## Default sequence privileges gap — 2026-11-11
+
+- All 15 application base tables in Neon main `public` are owned by `neondb_owner`; both existing public sequences (`audit_logs_id_seq`, `sales_sale_number_seq`) are also owned by `neondb_owner`.
+- `pg_default_acl` for `neondb_owner` in `public` contains only object type `r` (tables): `{backup_readonly=r/neondb_owner}`. No default ACL for sequences (`defaclobjtype='S'`) was found.
+- Existing sequences have effective SELECT and UPDATE for `backup_readonly`, with USAGE false. The role's elevated memberships/attributes must not be relied on for this access.
+- A replacement role contract must grant SELECT on existing sequences and add default SELECT on future sequences, without USAGE/UPDATE. Future tables also need default SELECT grants owned by `neondb_owner`.
+- Extend the disposable PostgreSQL contract test to prove both explicit grants on existing objects and default SELECT grants on future tables/sequences. This remains CI-only; no Neon default ACL or role was modified.

@@ -169,3 +169,22 @@ Historical baseline verified at #221 HEAD `18dfc33525c792802c296469ee6140d3b5f64
 - Issue #53 remains OPEN/P0.
 
 Residual risk: the effective production DATABASE_URL principal, role membership, object ownership, grants, Cloudflare bindings and actual deployed migration order remain unverified. No production readiness claim is made.
+
+
+---
+
+## Branch implementation addendum — register shifts, PR #287 (2026-11-11)
+
+The table above remains a historical snapshot of main's runtime callsites at the time of the original contract. The following implementation exists only on `integration/bcv-checkout-rehearsal-20261109` in PR #287; do not attribute it to main or production:
+
+| Object | Runtime access on PR #287 branch | Enforcement |
+|---|---|---|
+| `registers` | SELECT | API lists active registers only after tenant/role/branch assignment preflight. No direct writes. |
+| `register_shifts` | SELECT; no direct INSERT/UPDATE/DELETE/TRUNCATE | `open_register_shift(...)` and `close_register_shift(...)` SECURITY DEFINER functions, owned by `microapp_migrator`; EXECUTE granted to `microapp_runtime`, PUBLIC revoked. |
+| `audit_logs` | Existing SELECT/INSERT contract unchanged | Shift open/close events are inserted atomically by the SECURITY DEFINER functions; append-only triggers remain enabled. Runtime has no SELECT grant. |
+
+Migration 0023 pins `search_path=pg_catalog, public`. This is accepted only with the existing schema contract that neither `microapp_runtime` nor PUBLIC can CREATE in `public`; the new assertions verify that invariant. The API uses session-derived user identity, an active branch membership check, and the existing 0004/0007 trigger locks. No table-level write grant is added to runtime.
+
+Exact code HEAD `0ca91ff51ec545278ceb8eabd3929083aae9022e` passed 11/11 PR workflows; the direct runtime-login API suite passed 4/4 tests, including direct table-write denial and concurrent-open serialization. The BCV restore profile now recognizes 0001–0023 and its synthetic PostgreSQL 18 restore passed.
+
+This remains branch-only. The effective `DATABASE_URL` principal and grants in the deployed Worker/Neon project have not been inspected; no production migration or grant was applied. The branch does not yet expose the register-shift UI or complete POS journey.

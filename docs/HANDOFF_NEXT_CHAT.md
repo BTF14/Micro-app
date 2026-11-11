@@ -2813,3 +2813,11 @@ Always re-read live branch HEAD and exact-HEAD workflow runs before acting. PR #
 ### Handoff addendum — effective role probes — 2026-11-11
 
 Latest exact-HEAD validation at `f6c453d928ffaef4ab15efc5733bd3c7001089e3`: PR workflows 13/13 SUCCESS; backup restore smoke `42997279023`, Playwright `42997278934`, CI `42997279209` SUCCESS; push backup smoke `42997267912` SUCCESS. Runner additionally proves runtime organization read + no schema CREATE, and BCV producer's narrow state/rate write path inside ROLLBACK. No actual remote archive workflow_dispatch. PR #287 and #303 remain Draft; issue #53 OPEN/P0; production NOT READY.
+
+## Handoff addendum — operational recovery runbook — 2026-11-11
+
+Live branch HEAD before this documentation addendum: e0236c93b7deecaac118992734428db105377801. At that exact SHA, 11/11 pull_request workflows SUCCESS and two push security workflows SUCCESS (run IDs listed in the current session evidence). PR #287 OPEN/Draft at that HEAD; PR #303 OPEN/Draft; issue #53 OPEN/P0.
+
+Added odd/tasks/backup-operational-recovery-runbook.md. It distinguishes isolated Neon PITR/branch inspection from encrypted-artifact recovery; documents checksum/age handling, disposable PG18 restore, no production cutover, provider-plan verification, RPO/RTO timestamp methodology, alerting and $0 constraints. Official Neon branching/PITR reference: https://neon.com/docs/introduction/branching.
+
+No new RPO/RTO SLA is declared. Next safe action: validate the latest doc-only HEAD and checks; then wait for a naturally scheduled backup after the backup-principal diagnostic reaches default branch. Do not manually dispatch backup/restore, inspect secrets, access remote artifact/key, mutate Neon roles/grants, promote a branch, or deploy. The actual remote restore remains a separately gated operator rehearsal. Production NOT READY.

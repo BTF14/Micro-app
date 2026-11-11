@@ -59,7 +59,7 @@ export default function RegisterShiftsPanel({ organizationId, userName }: Regist
     setLoading(true); setError("");
     try {
       const [branchResult, currentResult] = await Promise.all([
-        apiRequest<{ items: Branch[] }>(`/api/orgs/${encodeURIComponent(organizationId)}/branches`),
+        apiRequest<{ items: Branch[] }>(`/api/orgs/${encodeURIComponent(organizationId)}/register-shifts/branches`),
         apiRequest<{ shift: { branch_id: string } | null }>(`/api/orgs/${encodeURIComponent(organizationId)}/register-shifts/current`),
       ]);
       setBranches(branchResult.items);

@@ -130,3 +130,8 @@ The exact-HEAD CI rerun exposed two failures in `src/register-shifts-api.integra
 - `register-shifts.ts` redundantly registered the same GET branch-list path with a conflicting response shape and narrower policy. Remove this duplicate route and its now-unused `BranchRow` type; keep the canonical branch list route as the single source of truth. Update the register-shift integration test to assert the established response and role scope contract, while preserving the 403 for Inventory attempting to open a shift and for Owner attempting a register operation in an unassigned branch.
 - The test failures were: TypeError reading `items.map`, and expected 403 / received 200. The API behavior is consistent with the existing branch authorization contract; the duplicate route and test assumptions were the defects.
 
+
+
+## Superseding Turn 6 — distinct branch discovery contracts
+
+The general inventory branch endpoint remains `GET /api/orgs/:organizationId/branches` and returns all active branches to Owner/Admin, or active assigned branches to Inventory/Cashier. Register-shift UI must not use that broader discovery result because opening/operating a shift requires an explicit active branch membership even for Owner/Admin. A distinct `GET /api/orgs/:organizationId/register-shifts/branches` endpoint now returns only active branch memberships under `register.shift.read_own`. This removes the duplicate-route shadowing while keeping Inventory branch visibility and denying Inventory access to shift-specific branch discovery and shift operations.

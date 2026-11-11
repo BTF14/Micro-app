@@ -106,3 +106,26 @@ This is an integration-branch-only SQL/CI/ODD correction. No production or Neon 
 
 
 Validation note 2026-11-11: AC-1 through AC-4 and AC-7 are complete on the evaluated code SHA; the dedicated migration-check passed. AC-5 and AC-6 remain open because CI, migration runner and restore smoke could not reach their test steps while Ubuntu apt mirrors failed DNS resolution.
+
+
+## Follow-up hardening — column-level REFERENCES ACL normalization — 2026-11-11
+
+### Finding
+
+Migration 0022 checks table-level REFERENCES privileges and normalizes column-level SELECT/INSERT/UPDATE ACLs, but it does not revoke or assert column-level REFERENCES for the runtime and producer roles. A pre-existing direct column REFERENCES ACL can therefore survive the normalization without being detected by the final assertions. This is not evidence that a remote role currently has such a grant; the migration remains unmerged and remote roles were not inspected.
+
+### Decision
+
+- Normalize the runtime table ACLs to SELECT-only on both BCV tables, then explicitly revoke column-level INSERT/UPDATE/REFERENCES.
+- Explicitly revoke column-level REFERENCES from microapp_bcv_sync on both BCV tables before applying the existing narrow allowlist.
+- Extend final assertions to reject column-level REFERENCES for runtime and producer, in addition to the existing table-level checks.
+- Extend the disposable PostgreSQL 18 fixture with deliberately seeded column-level REFERENCES for runtime, producer and PUBLIC, then prove migration 0022 removes them. Extend the immediate 0021 intermediate-state assertion to cover REFERENCES as well.
+- Do not modify remote roles/grants or use Neon.
+
+### Acceptance criteria
+
+- [ ] 0021 intermediate runtime state is SELECT-only with no table/column INSERT, UPDATE, REFERENCES, DELETE, TRUNCATE or TRIGGER.
+- [ ] 0022 removes dirty column-level REFERENCES for runtime and producer while preserving only the intended SELECT and producer column allowlists.
+- [ ] PostgreSQL assertions enumerate and reject residual column-level REFERENCES.
+- [ ] Disposable fixture proves cleanup for both runtime and producer and PUBLIC.
+- [ ] Migration validation passes on the exact final SHA; full CI limitations remain classified separately.

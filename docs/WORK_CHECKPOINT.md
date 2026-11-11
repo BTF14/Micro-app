@@ -413,3 +413,7 @@ No confundir este ensayo con restore productivo: faltan aprovisionamiento seguro
 ## Checkpoint — restore remoto con roles de aplicación — 2026-11-11
 
 El restore remoto ya no se valida como administrador: `scripts/db/restore_remote_backup_ephemeral.sh` restaura como LOGIN `microapp_migrator`, detecta el perfil main/BCV desde `schema_migrations`, comprueba el checksum y filename de cada migración y reproduce solo ACL ordenados. Se valida ownership, atributos/membresías de roles, auth efímero vacío y conexión runtime/producer. Los dos perfiles sintéticos ejecutaron el mismo script en una segunda DB desechable: run `42991705366`, main `130425902535` SUCCESS y BCV `130425902488` SUCCESS (incluida regresión legacy). El workflow de artefacto remoto sigue manual y NO se ejecutó; no se afirma restore remoto nuevo. Issue #53 OPEN/P0; producción NOT READY. Ver ODD `odd/tasks/backup-remote-restore-app-role-validation.md`.
+
+### Revalidación del runner remoto — 2026-11-11
+
+En HEAD de implementación `7b4fdebe846952f1099a4fde323be2dc0f5ce0e8`, run backup restore `42992354071`: main `130428038679` y BCV `130428038320` SUCCESS, legacy regression SUCCESS. El runner valida ahora lectura efectiva de `microapp_runtime` sobre `public.organizations` y ausencia de CREATE en public. CI `42992353978` pendiente al último chequeo; los otros workflows pull_request SUCCESS. El workflow de archivo remoto real no se ha ejecutado. Issue #53 OPEN/P0.

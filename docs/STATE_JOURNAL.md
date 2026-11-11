@@ -2604,3 +2604,12 @@ The BCV restore probe also performs the producer's permitted state update, synth
 The earlier failed run `42994254096` is a retained test-oracle failure, not hidden: it caught that the historical 0012 assertion was being applied at the final schema point. The profile-specific final assertion replaced it and the corrected main + BCV restore passed.
 
 No remote backup artifact or age key was accessed; `.github/workflows/backup-real-restore.yml` remains manual and was not dispatched. No production, Neon, remote role/grant, secrets, Cron, DNS, Cloudflare sensitive setting, billing or deployment was changed.
+
+## Snapshot de HEAD y validación para continuidad — 2026-11-11
+
+- HEAD de rama al escribir este snapshot: `2db970c88eca2fb599ca3ad48860c140f9da46bb`; los commits posteriores a la implementación `99ed19bd4b0f13503dc875215532e3c83941d168` son solo documentación.
+- En el HEAD `2db970c88eca2fb599ca3ad48860c140f9da46bb`, los 11 workflows de PR terminaron SUCCESS: CI `42995670374`; DB migration `42995670345`; PostgreSQL migration runner `42995670226`; backup restore `42995670206`; Playwright `42995670377`; dependency `42995670690`; ODD docs `42995670385`; Semgrep `42995670143`; security `42995670133`; secret history `42995670458`; dashboard `42995670122`.
+- El restore sintético independiente por push `42995267480` también SUCCESS: main `130437669142`, BCV `130437668885`, incluyendo regresión legacy.
+- PR #287 OPEN/Draft; issue #53 OPEN/P0; PR #303 OPEN/Draft. No merge. No declarar producción lista.
+- El workflow remoto real sigue manual y no se ejecutó. No leer backups reales ni usar la llave age real. Esperar el backup programado natural para el diagnóstico real de `DATABASE_URL_BACKUP_RO`, una vez que el workflow correspondiente llegue a main.
+- Próximo paso: reconsultar el HEAD actual y workflows exact-HEAD antes de cualquier decisión; continuar con gates operativos de #53 (principal efectivo, provisioning seguro, integridad/restore remoto, alertas, RPO/RTO y coste $0). No repetir las investigaciones de roles/ACL ya documentadas.

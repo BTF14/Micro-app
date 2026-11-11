@@ -1,6 +1,6 @@
 # ODD — API de apertura/cierre del turno propio
 
-**Estado:** tarea de implementación acotada; no afirma que los endpoints existan ni que estén integrados.
+**Estado:** IMPLEMENTADO en PR #287; validado en PostgreSQL 18 efímero en el SHA de código `0ca91ff51ec545278ceb8eabd3929083aae9022e`.
 **Fecha:** 2026-11-11
 **Deadline del MVP:** 2026-12-01.
 
@@ -56,3 +56,17 @@ Los conteos USD y VES son efectivo físico contado, no saldo esperado. No calcul
 ## Criterio de salida
 
 La tarea solo se considera completa cuando migration, assertions, API, pruebas PostgreSQL y CI exact-HEAD pasan. Esto no equivale a UI de caja ni jornada POS completa, y no cierra el contrato comercial de pagos ni los gates de Seguridad Nivel 1.
+
+
+## Resultado de implementación — 2026-11-11
+
+- Migración `0023_register_shift_runtime_operations.sql` y assertions: funciones `open_register_shift` y `close_register_shift` SECURITY DEFINER, propiedad del migrator, `search_path=pg_catalog, public`, con PUBLIC schema CREATE prohibido para runtime/PUBLIC.
+- `microapp_runtime` conserva SELECT en `register_shifts` y `registers`; no recibe INSERT/UPDATE/DELETE/TRUNCATE directo. Solo EXECUTE sobre las funciones estrechas.
+- API registrada en `apps/api/src/register-shifts.ts`: GET cajas activas, GET turno propio, POST apertura y POST cierre. La identidad `user_id` se deriva de la sesión; el body no admite user_id.
+- Owner/Admin/Cashier pueden gestionar solo su turno propio con branch membership activa. Inventory, otra sucursal, otro usuario y cross-tenant quedan denegados.
+- Apertura: trigger de migración 0004/0007 bloquea scope en orden canónico; autorización de aplicación usa preflight sin locks para evitar lock-upgrade/deadlock. Índices únicos son la última defensa de concurrencia.
+- Cierre: fila bloqueada, solo cierre completo USD/VES por el propietario; reintento idéntico devuelve replay y no duplica audit event; importes distintos después del cierre se rechazan.
+- Cada apertura/cierre crea evento append-only en `audit_logs` dentro de la misma transacción.
+- CI exact code HEAD `0ca91ff51ec545278ceb8eabd3929083aae9022e`: 11/11 workflows SUCCESS; CI `43009163637` SUCCESS; 4/4 pruebas API runtime-login SUCCESS, incluyendo concurrencia, ownership, replay, audit y denegación de escritura directa. Backup restore main 0001–0016 y BCV 0001–0023 SUCCESS.
+
+**Límites:** esto implementa la API de turnos, no la UI de caja ni checkout de ventas. No calcula saldo esperado, diferencias, retiros, arqueo financiero ni ledger de caja. No cierra la política comercial de pagos ni Seguridad Nivel 1. La implementación permanece en #287 OPEN/Draft; no está en main ni en producción.

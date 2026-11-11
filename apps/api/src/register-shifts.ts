@@ -4,7 +4,7 @@ import { formatNumeric, parseNumeric } from "@micro-app/money";
 import type { Bindings } from "./bindings";
 import { isTrustedOrigin } from "./auth";
 import { authorizeBranchOperation } from "./authorization";
-import { lockBranchScopes, type BranchContext } from "./branch-context";
+import type { BranchContext } from "./branch-context";
 import { readBodyWithinLimit } from "./bounded-body";
 import { withDatabaseClient, withDatabaseTransaction } from "./database";
 import { resolveOpenCashierRegisterShift } from "./cashier-open-shift";
@@ -61,7 +61,7 @@ function postgresErrorCode(error: unknown): string | undefined {
 async function authorizeOwnShift(
   tx: import("./database").DatabaseClient, token: string, organizationId: string, branchId: string, operation: string,
 ): Promise<{ kind: "ok"; branch: ShiftBranch } | { kind: AuthKind }> {
-  const authorization = await authorizeBranchOperation(tx, token, organizationId, branchId, operation);
+  // Do not pre-lock scope rows here: register_shifts opening triggers acquire exclusive locks in their canonical order.\n  // The SQL write functions repeat the active-scope checks under those locks.\n  const authorization = await authorizeBranchOperation(tx, token, organizationId, branchId, operation, false);
   if (!authorization.allowed) {
     if (authorization.reason === "unauthenticated_or_out_of_scope") return { kind: "unauthenticated" };
     if (authorization.reason === "branch_out_of_scope") return { kind: "branch_denied" };
@@ -69,11 +69,16 @@ async function authorizeOwnShift(
   }
   const branch = authorization.context;
   // Owner/Admin have organization-wide branch scope, but owning a shift always
-  // requires an explicit active branch assignment just like Cashier.
-  const assigned = await lockBranchScopes(tx, branch.organizationId, [{
-    branchId: branch.branchId, userId: branch.userId, requiresMembership: true,
-  }]);
-  if (!assigned) return { kind: "branch_denied" };
+  // requires an explicit active branch assignment just like Cashier. This is a
+  // read-only preflight; opening/closing SQL revalidates under its own locks.
+  const assignment = await tx.query<{ active: boolean }>(
+    `SELECT EXISTS (
+       SELECT 1 FROM public.branch_memberships
+        WHERE organization_id = $1 AND branch_id = $2 AND user_id = $3 AND is_active
+     ) AS active`,
+    [branch.organizationId, branch.branchId, branch.userId],
+  );
+  if (!assignment.rows[0]?.active) return { kind: "branch_denied" };
   return { kind: "ok", branch };
 }
 

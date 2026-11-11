@@ -166,10 +166,8 @@ jobs:
           GH_TOKEN: ${{ secrets.BACKUP_REPO_TOKEN }}
         run: |
           set -euo pipefail
-          if [ -z "${GH_TOKEN:-}" ]; then
-            echo "::error::Falta el secreto BACKUP_REPO_TOKEN en este repositorio. Ver docs/SECURITY_ROADMAP.md punto 2."
-            exit 1
-          fi
+          backup_token="${GH_TOKEN:?Falta el secreto BACKUP_REPO_TOKEN}"
+          unset GH_TOKEN
           askpass="$RUNNER_TEMP/git-askpass-backup.sh"
           backup_repo_dir="$RUNNER_TEMP/backups-repo"
           umask 077
@@ -178,7 +176,7 @@ jobs:
           export GIT_ASKPASS="$askpass"
           export GIT_ASKPASS_REQUIRE=force
           export GIT_TERMINAL_PROMPT=0
-          git -c credential.helper= clone --depth 1 "https://github.com/${BACKUP_REPO}.git" "$backup_repo_dir"
+          GH_TOKEN="$backup_token" git -c credential.helper= clone --depth 1 "https://github.com/${BACKUP_REPO}.git" "$backup_repo_dir"
           mkdir -p "$backup_repo_dir/daily"
           mv "backup-${STAMP}.dump.age" "backup-${STAMP}.dump.age.sha256" "$backup_repo_dir/daily/"
           cd "$backup_repo_dir"
@@ -189,7 +187,8 @@ jobs:
           python3 "$GITHUB_WORKSPACE/scripts/prune_backups.py" daily --retention-days "$RETENTION_DAYS"
           git add -A
           git diff --cached --quiet || git commit -m "retention: prune backups older than ${RETENTION_DAYS} days"
-          git -C "$backup_repo_dir" -c credential.helper= push origin HEAD:main
+          GH_TOKEN="$backup_token" git -C "$backup_repo_dir" -c credential.helper= push origin HEAD:main
+          unset backup_token
 
       - name: Publicar resumen visible si falla el respaldo
         if: failure()

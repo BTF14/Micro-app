@@ -51,8 +51,8 @@ export default function RegisterShiftsPanel({ organizationId, userName }: Regist
     setRegisters(registerResult.items);
     setShift(shiftResult.shift);
     setRegisterId(registerResult.items[0]?.id ?? "");
-    setClosingUsd(shiftResult.shift?.openingCashUsd ?? "");
-    setClosingVes(shiftResult.shift?.openingCashVes ?? "");
+    setClosingUsd("");
+    setClosingVes("");
   }, [organizationId]);
 
   const load = useCallback(async () => {
@@ -93,7 +93,7 @@ export default function RegisterShiftsPanel({ organizationId, userName }: Regist
         { method: "POST", body: JSON.stringify({ register_id: registerId, opening_cash_usd: openingUsd, opening_cash_ves: openingVes }) },
       );
       const openedShift = normalizeOpenedShift(response.shift);
-      setShift(openedShift); setClosingUsd(openedShift.openingCashUsd); setClosingVes(openedShift.openingCashVes);
+      setShift(openedShift); setClosingUsd(""); setClosingVes("");
       setNotice("Turno abierto correctamente. La apertura quedó registrada en auditoría.");
     } catch (reason) { setError(reason instanceof Error ? reason.message : "No se pudo abrir el turno."); }
     finally { setSaving(false); }

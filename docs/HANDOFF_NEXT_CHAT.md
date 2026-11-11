@@ -2743,3 +2743,13 @@ Releer `AGENTS.md`, `docs/CONSTITUTION.md`, este checkpoint, `docs/AI_COLLABORAT
 - **Identidad backup:** workflow añade diagnóstico read-only no bloqueante que publica solo booleanos (identidad esperada `backup_readonly`, atributos, membresías, DML, secuencias y CREATE). No imprime DSN, host, usuario real, secretos ni filas. Falta observar el próximo run programado natural; no hacer workflow_dispatch/manual backup ni modificar roles/grants. ODD task: `odd/tasks/backup-principal-least-privilege-audit.md`.
 - **Issue #53:** permanece OPEN/P0. Pendientes: confirmar el principal real y least privilege en ejecución programada, bootstrap de ownership/grants bajo `--no-owner --no-privileges`, restauración operativa de artefacto remoto, RPO/RTO, alerta externa y coste $0; además de gates comerciales/autorización aún abiertos. Producción NOT READY.
 - No se tocó Neon, datos reales, secretos, roles/grants remotos, Cron, DNS, Cloudflare sensible, billing, ni se ejecutó backup manual o despliegue.
+
+## Handoff — siguiente frente de backup/restore — 2026-11-11
+
+**Implementación validada:** `0ddd0da742b474b7256675b9c32292d7750fc2b0`. Los runners main 0001–0016 y BCV 0001–0022 prueban ahora el modo real de dump `--no-owner --no-privileges`, restaurando como LOGIN directo `microapp_migrator` y reconstituyendo los ACL mediante replay ordenado de comandos ACL top-level de las migraciones exactas. No repiten DDL ni datos. El replay completo evita reintroducir privilegios que una migración posterior revocó. Backup restore run `42989180384`: main `130417569364` SUCCESS; BCV `130417569035` SUCCESS y legacy regression SUCCESS. CI `42989180406` SUCCESS; 11/11 workflows pull_request SUCCESS.
+
+**Continuar sin rehacer:** revisar el helper y los manifests, mantener main y BCV en bases desechables independientes, y convertir el aprovisionamiento de target/roles en un runbook provider-specific sin gestionar credenciales desde el dump. Esperar el siguiente backup programado natural para evaluar los seis booleanos del diagnóstico de `DATABASE_URL_BACKUP_RO`; no dispatch manual.
+
+**Gates abiertos:** restore real del artefacto remoto y llave age; bootstrap seguro de roles LOGIN en target; identidad/least privilege real del backup; RPO/RTO; alerta externa; coste $0. Issue #53 OPEN/P0. PR #287 OPEN/Draft; #303 OPEN/Draft. No merge, deploy, Neon writes, cambios de roles/grants remotos, secretos, Cron, DNS, billing, backup manual ni datos reales. Producción NOT READY.
+
+Ver `odd/tasks/backup-restore-no-owner-no-privileges.md`.

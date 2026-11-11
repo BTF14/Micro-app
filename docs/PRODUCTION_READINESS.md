@@ -1,3 +1,62 @@
+# Readiness reconciliada — 2026-11-11 — PR #287
+
+> Estado vigente verificado en GitHub. Prevalece sobre snapshots históricos inferiores.
+
+- PR #287 OPEN / Draft; HEAD actual `2b57e61ea96795f18b95e9072775ead9e351cc14`; commit inmediatamente anterior `e5f956271f723bfa00da2ab527c35ac422cf6d2d` contiene el estado de implementación revisado. El commit `2b57e61ea96795f18b95e9072775ead9e351cc14` actualiza documentación de continuidad.
+- En el HEAD de código `e5f9562`: 16/16 check-runs SUCCESS; 11/11 workflows PR y 2/2 push SUCCESS. CI 43/43, PostgreSQL migration validation 86/86, migration runner 21/21, restore smoke main 11/11 y BCV 10/10.
+- En el HEAD documental actual `2b57e61ea96795f18b95e9072775ead9e351cc14`: **16/16 check-runs SUCCESS**, 11/11 workflows PR y 2/2 push SUCCESS. Incluye Workers Builds y Cloudflare Pages como previews, no despliegue productivo.
+- Comparación con main `c5373564413ba086690552c6b7deeab08d7b4a89`: 528 ahead / 1 behind; merge base `03442951b2a2f63f5bf4dcf560f2c91be4f6cc71`. PR 123 archivos; reviews formales 0; review threads 0. Mantener Draft; no merge automático.
+- CI sintético PostgreSQL 18 demuestra contrato de backup mínimo: SELECT explícito en objetos existentes y default SELECT para futuras tablas/secuencias; pg_dump/pg_restore-list; deniega escrituras, sequence USAGE/UPDATE, CREATE, SET ROLE y membresías. No cambia Neon.
+- Neon main SELECT-only: `backup_readonly` es privilegiado y tiene write privileges; no se leyó `DATABASE_URL_BACKUP_RO`; identidad efectiva desconocida. `microapp_runtime` y `microapp_migrator` ausentes del catálogo observado. Identidad del Worker `DATABASE_URL` también desconocida.
+- Issue #53 OPEN/P0. Producción **NOT READY**. No se modificaron Neon, roles, grants, contraseñas, secretos, datos reales, Cron, DNS, billing ni producción.
+
+## Gates bloqueantes para producción
+
+1. Revisión independiente completa de los 123 archivos de PR #287 y aprobación formal; checks verdes no son review.
+2. Verificar principal efectivo de backup y Worker sin revelar secretos; diseñar y probar transición de roles/grants con continuidad, rollback y backup/restore.
+3. Provisionar y validar roles de runtime/migrator/BCV producer en entorno autorizado, no inferir que CI los ha desplegado.
+4. Confirmar CORS/headers efectivos, observabilidad, alertas externas y watchdog BCV.
+5. Ejecutar backup natural posterior a una integración autorizada y medir RPO/RTO; restauración sintética no equivale a restore real.
+6. Completar jornada funcional desde UI. La E2E de turnos usa mocks de red; no prueba backend real. Checkout API tiene pruebas PostgreSQL, pero no hay aceptación completa de caja/ventas/pagos/recibos.
+7. Aprobar reglas comerciales y legales de pagos parciales, cambio/sobrepago, recibos, anulaciones y devoluciones antes de ampliar la lógica financiera.
+8. Demostrar coste total USD 0, revisión final y aceptación del propietario.
+
+**Decisión:** no promover PR #287 a Ready ni fusionar hasta cerrar los gates anteriores. Issue #53 permanece OPEN/P0. MVP objetivo 2026-12-01; GO/NO-GO 2026-11-30.
+
+---
+
+## Revalidación de readiness — 2026-11-11 — resiliencia backup / PR #287
+
+- Último HEAD con código y comentarios operativos validados: `9101ab502d5c52c86a8b8d01a3a79487dd07e5e8`; 18/18 check-runs, 11/11 PR workflows, 3/3 push workflows SUCCESS. Restore smoke main 0001–0016 y BCV 0001–0023 SUCCESS; CI 43/43; migration runner 21/21.
+- Commit documental posterior `e5dbb497fbb2779f8fc1581880dc5d8c9ed00b65` actualiza continuidad y necesita su propia validación exact-HEAD.
+- Backup programado: se sustituyeron llamadas APT directas por reintentos acotados/estrictos y curl retry/timeouts; no se ejecutó backup manual. El run natural anterior falló antes de conectar por DNS; aún no existe evidencia de un backup natural exitoso posterior.
+- PR #287 OPEN/Draft; 123 archivos, 19,233 adiciones, 307 eliminaciones; 524 ahead / 1 behind main; 0 reviews formales / 0 threads; mergeable clean. No merge.
+- Neon backup role sigue P0: rol `backup_readonly` observado privilegiado; secreto efectivo no leído/desconocido. Candidate least-privilege contract sintético pasa, no sustituye producción.
+- Issue #53 OPEN/P0; producción **NOT READY**. No merge/deploy/Neon mutation/secret change/Cron/DNS/billing.
+
+---
+
+## Revalidación — 2026-11-11 — PR #287 / backup principal
+
+- PR #287 OPEN/Draft; último HEAD de código con validación exacta `cb81ecdf6bb5fe2c0d7806f6d744925300c8ba7a`: 16/16 check-runs, 11/11 workflows PR y 2/2 push SUCCESS. Posteriores commits documentales `9114b11` y `6f7dbac` necesitan checks propios. No merge.
+- 123 archivos, 19,109 adiciones y 297 eliminaciones; rama 518 ahead / 1 behind main (único commit ausente: ledger documental). Reviews formales 0; review threads 0; mergeable=true, mergeable_state=blocked.
+- Neon main SELECT-only: `backup_readonly` tiene CREATEROLE/CREATEDB/REPLICATION/BYPASSRLS, membership en `neondb_superuser` y `pg_write_all_data`, INSERT/UPDATE/DELETE sobre products. La identidad efectiva de `DATABASE_URL_BACKUP_RO` sigue desconocida; no se leyó el secreto.
+- El test candidate de PostgreSQL 18 prueba grants y default SELECT para tablas/secuencias futuras, pg_dump/restore-list y denegaciones de escritura/escalada. Es evidencia sintética, no producción.
+- Issue #53 OPEN/P0; producción **NOT READY**. No merge/deploy/Neon mutation/secrets/Cron/DNS/billing.
+
+---
+
+## Revalidación de evidencia — integración BCV/checkout PR #287 — 2026-11-09 UTC
+
+- Rama: `integration/bcv-checkout-rehearsal-20261109`; HEAD exacto `afac566848170e117c0afaca63bc7939ed777374`; base main `03442951b2a2f63f5bf4dcf560f2c91be4f6cc71`; 157 ahead / 0 behind; PR OPEN/Draft y mergeable=true.
+- CI exact-HEAD terminó SUCCESS: build/typecheck, unit tests y matriz PostgreSQL, incluidos BCV effective-date, checkout atómico, inventario, catálogo y runtime-role API.
+- Check-runs publicados para ese SHA: 9 SUCCESS. Workflow runs: 7 SUCCESS y 6 FAILURE; los seis fallos devolvieron 0 jobs y no exponen steps, annotations ni logs. No se atribuyen al código ni se omiten.
+- No hay reviews formales ni review threads. CI y check-runs no sustituyen aprobación independiente.
+- El trabajo BCV/checkout implementado en esta rama no está en main. Los criterios completos de producto y producción siguen separados de los vertical slices parciales descritos abajo.
+- Producción: **NOT READY**. No merge, deploy productivo, Cron BCV, Neon main writes, secretos, DNS, billing ni datos reales.
+
+---
+
 ## Nota autoritativa — 2026-11-08 UTC
 
 El estado operativo vigente se centraliza en CURRENT_STATE.md y HANDOFF_NEXT_CHAT.md. Main actual: 9c6b30281ed59726e532da840568fc9e80b528f7; #280 y #282 integradas. Neon rehearsal #42507066215 aplicó 0001–0019 solo en microapp_rehearsal. #269 está OPEN/Draft en HEAD 8f05befb7ac1a46d68850b9f89f89edc8cd46283 con 16/16 check-runs y 14/14 workflows SUCCESS; #255 OPEN/Draft en HEAD 7e43d7fd1519889605174da5818190bb84685059 con 15/15 y 13/13 SUCCESS. #258 y #262 se cerraron como superseded tras preservar/evolucionar todo su contenido en #269. #233 sigue histórica abierta; #193 no se modifica. Producción NOT READY: contrato comercial checkout y gates BCV siguen abiertos. No repetir escrituras Neon ni tocar producción. El detalle, SHA y siguientes pasos están en CURRENT_STATE.md.
@@ -144,6 +203,15 @@ Este archivo es la fuente de datos para el panel de avance. Un ítem solo puede 
 - [ ] Integración de tasa BCV validada con fuente, vigencia y fallos.
 - [ ] Tratamiento de IVA/IGTF/documentos fiscales validado por fuentes oficiales y asesoría competente.
 
+### Vertical slice BCV/checkout — evidencia en PR #287 (no equivale a POS completo)
+- [x] Productor BCV implementado: fetch HTTPS acotado, validación de host/content-type/redirect, parser decimal/fecha efectiva y persistencia idempotente; pruebas sintéticas y regresión con DOM oficial sanitizado.
+- [x] Estado persistente de sincronización BCV y checkout fail-closed por último éxito, outcome y fecha efectiva; migration 0021 incluye defensa SQL diferida para nuevas ventas.
+- [x] Ciclo de sincronización en tres fases, claim/attempt_id, bloqueo transaccional y protección frente a intentos supersedidos.
+- [x] Vertical slice de checkout atómico + ledger de inventario integrado en la rama, con migraciones 0017–0021 y pruebas PostgreSQL.
+- [x] Endpoint BCV de solo lectura y panel administrativo owner/admin para consultar el estado operativo; no permite editar tasa ni ejecutar sincronización.
+- [ ] Fixture reproducible del cuerpo HTTP raw del BCV con status, headers y bytes originales; el DOM serializado no satisface este criterio.
+- [ ] Contingencia manual de tasa con PIN, reautenticación, recuperación, permisos y auditoría implementada; por ahora solo está especificada documentalmente.
+
 ## Preparación para producción (gates)
 
 ### P0 — bloqueantes
@@ -171,6 +239,15 @@ Este archivo es la fuente de datos para el panel de avance. Un ítem solo puede 
 - [ ] Monitorización de fallos y procedimiento de soporte documentados.
 - [ ] Límites gratuitos/capacidad y ausencia de cargos automáticos revalidados.
 - [ ] Preview aislada desplegada y verificada, sin datos de producción.
+
+### Controles BCV/checkout — evidencia en PR #287
+- [x] Checkout valida el último éxito BCV con fecha efectiva de hoy y falla cerrado cuando el intento más reciente está running/failed; cobertura de aplicación y trigger diferido con rol runtime.
+- [x] Concurrencia BCV probada: un intento supersedido no puede insertar/inutilizar tasas ni cambiar el estado del intento nuevo.
+- [x] Fallos de sincronización cubiertos por tests: fetch fallido, DB no disponible al registrar fallo, cleanup posterior al commit, respuesta COMMIT ambigua y fetch fallido de intento supersedido.
+- [ ] Fixture HTTP raw oficial del BCV capturado y reproducible con status/headers.
+- [ ] Presupuesto de timeout medido por fase (conexión, statement, lock, transacción y cleanup) y watchdog con umbral basado en datos.
+- [ ] Monitor de fallos y destino de alerta probados de extremo a extremo; no basta con configurar logs estructurados.
+- [ ] Identidad efectiva del Worker y recuperación operativa validadas en entorno aislado con permisos mínimos.
 
 ## Bloqueos conocidos al último análisis documental
 

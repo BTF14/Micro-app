@@ -23,6 +23,7 @@ jobs:
       ADMIN_DATABASE_URL: postgres://microapp:microapp-test-only@localhost:5432/microapp_test
       MIGRATION_DATABASE_URL: postgres://microapp_migrator:migrator-test-only@localhost:5432/microapp_test
       RUNTIME_DATABASE_URL: postgres://microapp_runtime:runtime-test-only@localhost:5432/microapp_test
+      BCV_DATABASE_URL: postgres://microapp_bcv_sync:bcv-test-only@localhost:5432/microapp_test
     services:
       postgres:
         image: postgres:18
@@ -63,11 +64,23 @@ jobs:
           psql --version
       - name: Provision isolated migrator and runtime roles
         run: |
-          psql -X -v ON_ERROR_STOP=1 --dbname "$ADMIN_DATABASE_URL" -c "CREATE ROLE microapp_migrator LOGIN PASSWORD 'migrator-test-only' NOSUPERUSER NOCREATEDB NOCREATEROLE NOREPLICATION NOBYPASSRLS; CREATE ROLE microapp_runtime LOGIN PASSWORD 'runtime-test-only' NOSUPERUSER NOCREATEDB NOCREATEROLE NOREPLICATION NOBYPASSRLS NOINHERIT; REVOKE CREATE ON SCHEMA public FROM PUBLIC; GRANT USAGE, CREATE ON SCHEMA public TO microapp_migrator; GRANT USAGE ON SCHEMA public TO microapp_runtime; GRANT CONNECT ON DATABASE microapp_test TO microapp_migrator, microapp_runtime;"
+          psql -X -v ON_ERROR_STOP=1 --dbname "$ADMIN_DATABASE_URL" -c "CREATE ROLE microapp_migrator LOGIN PASSWORD 'migrator-test-only' NOSUPERUSER NOCREATEDB NOCREATEROLE NOREPLICATION NOBYPASSRLS; CREATE ROLE microapp_runtime LOGIN PASSWORD 'runtime-test-only' NOSUPERUSER NOCREATEDB NOCREATEROLE NOREPLICATION NOBYPASSRLS NOINHERIT; CREATE ROLE microapp_bcv_sync LOGIN PASSWORD 'bcv-test-only' NOSUPERUSER NOCREATEDB NOCREATEROLE NOREPLICATION NOBYPASSRLS NOINHERIT; REVOKE CREATE ON SCHEMA public FROM PUBLIC; GRANT USAGE, CREATE ON SCHEMA public TO microapp_migrator; GRANT USAGE ON SCHEMA public TO microapp_runtime, microapp_bcv_sync; GRANT CONNECT ON DATABASE microapp_test TO microapp_migrator, microapp_runtime, microapp_bcv_sync;"
       - name: Apply canonical schema through the fail-closed migration runner
         run: bash scripts/db/migrate.sh
       - name: Verify final PostgreSQL schema contract
         run: psql -X -v ON_ERROR_STOP=1 --dbname "$ADMIN_DATABASE_URL" -f apps/api/migrations/0016_runtime_inventory_ledger_read.assertions.sql
+      - name: Verify checkout per-payment USD allocation migration 0018 contract
+        run: psql -X -v ON_ERROR_STOP=1 --dbname "$ADMIN_DATABASE_URL" -f apps/api/migrations/0018_checkout_payment_allocation.assertions.sql
+      - name: Verify ledger-authoritative inventory balance projection migration 0019 contract
+        run: psql -X -v ON_ERROR_STOP=1 --dbname "$ADMIN_DATABASE_URL" -f apps/api/migrations/0019_inventory_ledger_balance_projection.assertions.sql
+      - name: Verify strict BCV effective-date migration 0020 contract
+        run: psql -X -v ON_ERROR_STOP=1 --dbname "$ADMIN_DATABASE_URL" -f apps/api/migrations/0020_bcv_effective_date_strict.assertions.sql
+      - name: Verify BCV sync state migration 0021 contract
+        run: psql -X -v ON_ERROR_STOP=1 --dbname "$ADMIN_DATABASE_URL" -f apps/api/migrations/0021_bcv_sync_state.assertions.sql
+      - name: Verify dedicated BCV producer role migration 0022 contract
+        run: psql -X -v ON_ERROR_STOP=1 --dbname "$ADMIN_DATABASE_URL" -f apps/api/migrations/0022_bcv_dedicated_producer_role.assertions.sql
+      - name: Verify own register-shift runtime operations migration 0023 contract
+        run: psql -X -v ON_ERROR_STOP=1 --dbname "$ADMIN_DATABASE_URL" -f apps/api/migrations/0023_register_shift_runtime_operations.assertions.sql
       - name: Build and typecheck
         run: pnpm build
       - name: Verify Cloudflare Pages preview isolation
@@ -90,12 +103,16 @@ jobs:
         run: pnpm --filter @micro-app/api exec vitest run src/auth.integration.test.ts
       - name: PostgreSQL auth rate limit integration tests
         run: pnpm --filter @micro-app/api exec vitest run src/auth-rate-limit.integration.test.ts
+      - name: PostgreSQL BCV effective-date integration tests (dedicated producer LOGIN)
+        run: DATABASE_URL="$BCV_DATABASE_URL" DATABASE_URL_RUNTIME="$RUNTIME_DATABASE_URL" DATABASE_URL_ADMIN="$ADMIN_DATABASE_URL" pnpm --filter @micro-app/api exec vitest run src/exchange-rates.integration.test.ts
       - name: PostgreSQL branch scope integration tests
         run: pnpm --filter @micro-app/api exec vitest run src/branch-context.integration.test.ts
       - name: PostgreSQL register shift integration tests
         run: pnpm --filter @micro-app/api exec vitest run src/register-shifts.integration.test.ts
       - name: PostgreSQL authenticated cashier open-shift integration tests
         run: DATABASE_URL_RUNTIME="$RUNTIME_DATABASE_URL" pnpm --filter @micro-app/api exec vitest run src/cashier-open-shift.integration.test.ts
+      - name: PostgreSQL own register-shift API integration tests (runtime LOGIN)
+        run: DATABASE_URL_RUNTIME="$RUNTIME_DATABASE_URL" DATABASE_URL_ADMIN="$ADMIN_DATABASE_URL" pnpm --filter @micro-app/api exec vitest run src/register-shifts-api.integration.test.ts
       - name: PostgreSQL register-shift member role integration tests
         run: pnpm --filter @micro-app/api exec vitest run src/register-shift-member-roles.integration.test.ts
       - name: PostgreSQL catalog integration tests
@@ -108,6 +125,8 @@ jobs:
         run: pnpm --filter @micro-app/api exec vitest run src/inventory-counts.integration.test.ts
       - name: PostgreSQL inventory read integration tests
         run: pnpm --filter @micro-app/api exec vitest run src/inventory-read.integration.test.ts
+      - name: PostgreSQL atomic sales checkout integration tests
+        run: DATABASE_URL="$RUNTIME_DATABASE_URL" DATABASE_URL_ADMIN="$ADMIN_DATABASE_URL" pnpm --filter @micro-app/api exec vitest run src/sales-checkout.integration.test.ts
       - name: PostgreSQL branch list integration tests
         run: pnpm --filter @micro-app/api exec vitest run src/branches.integration.test.ts
       - name: Runtime-role API integration tests

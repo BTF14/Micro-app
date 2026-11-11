@@ -58,36 +58,43 @@ jobs:
           mapfile -t files < <(find "$RUNNER_TEMP/backups-repo/daily" -maxdepth 1 -type f -name 'backup-*.dump.age' -printf '%f\n' | sort)
           (("${#files[@]}" > 0)) || { echo "::error::No encrypted backup found"; exit 1; }
           filename="${files[${#files[@]}-1]}"
-          cd "$RUNNER_TEMP/backups-repo/daily"
-          test -s "$filename"
-          test -s "$filename.sha256"
-          sha256sum --check "$filename.sha256"
-          echo "filename=$filename" >> "$GITHUB_OUTPUT"
-      - name: Decrypt and restore into ephemeral PostgreSQL
+          bash scripts/db/verify_backup_artifact.sh "$RUNNER_TEMP/backups-repo/daily" "$filename"
+          printf 'filename=%s\n' "$filename" >> "$GITHUB_OUTPUT"
+      - name: Decrypt and restore with application roles into ephemeral PostgreSQL
         env:
           AGE_PRIVATE_KEY: ${{ secrets.AGE_PRIVATE_KEY }}
+          AGE_PUBLIC_KEY: age1t04pgcguy87u99r4stlm0gcjsk9dj2s34jsmymw55vlarfteuakse8jmfk
           BACKUP_FILENAME: ${{ steps.backup.outputs.filename }}
+          RESTORE_ADMIN_URL: postgresql://microapp:microapp-restore-test-only@127.0.0.1:5432/microapp_restore
+          RESTORE_MIGRATOR_URL: postgresql://microapp_migrator:migrator-restore-test-only@127.0.0.1:5432/microapp_restore
+          RESTORE_RUNTIME_URL: postgresql://microapp_runtime:runtime-restore-test-only@127.0.0.1:5432/microapp_restore
+          RESTORE_PRODUCER_URL: postgresql://microapp_bcv_sync:bcv-sync-restore-test-only@127.0.0.1:5432/microapp_restore
+          RESTORE_DATABASE_NAME: microapp_restore
+          MIGRATIONS_DIR: ${{ github.workspace }}/apps/api/migrations
         run: |
           set -euo pipefail
           umask 077
           identity="$RUNNER_TEMP/age-identity.txt"
           plaintext="$RUNNER_TEMP/backup.dump"
           printf '%s\n' "$AGE_PRIVATE_KEY" > "$identity"
-          trap 'rm -f "$identity" "$plaintext"' EXIT
+          trap 'rm -f "$identity" "$plaintext" "$RUNNER_TEMP/archive.list" "$RUNNER_TEMP/age-public-key.txt"' EXIT
+          age-keygen -y "$identity" > "$RUNNER_TEMP/age-public-key.txt"
+          if [[ "$(cat "$RUNNER_TEMP/age-public-key.txt")" != "$AGE_PUBLIC_KEY" ]]; then
+            echo "::error::AGE_PRIVATE_KEY does not match the repository backup public key."
+            exit 1
+          fi
           age --decrypt --identity "$identity" --output "$plaintext" "$RUNNER_TEMP/backups-repo/daily/$BACKUP_FILENAME"
           test -s "$plaintext"
           /usr/lib/postgresql/18/bin/pg_restore --list "$plaintext" > "$RUNNER_TEMP/archive.list"
           test -s "$RUNNER_TEMP/archive.list"
-          /usr/lib/postgresql/18/bin/pg_restore --exit-on-error --no-owner --no-privileges --dbname="$PGDATABASE" "$plaintext"
-      - name: Validate restored schema without printing business data
+          bash scripts/db/restore_remote_backup_ephemeral.sh
+      - name: Publish remote restore evidence without business data
+        env:
+          REMOTE_BACKUP_FILENAME: ${{ steps.backup.outputs.filename }}
         run: |
           set -euo pipefail
-          table_count="$(psql -X -A -t -v ON_ERROR_STOP=1 -c "SELECT count(*) FROM information_schema.tables WHERE table_schema = 'public' AND table_type = 'BASE TABLE';")"
-          if ! [[ "$table_count" =~ ^[0-9]+$ ]] || (( table_count < 1 )); then
-            echo "::error::Restore completed but no public tables were found"; exit 1
-          fi
-          echo "Remote object: ${{ steps.backup.outputs.filename }}" >> "$GITHUB_STEP_SUMMARY"
-          echo "Checksum verified; decryption and restore succeeded in ephemeral PostgreSQL 18. Public tables: $table_count. No business rows printed." >> "$GITHUB_STEP_SUMMARY"
+          echo "Remote object: ${REMOTE_BACKUP_FILENAME}" >> "$GITHUB_STEP_SUMMARY"
+          echo "Checksum verified; encrypted remote archive decrypted and restored as microapp_migrator in disposable PostgreSQL 18. The migration-ledger profile, application roles, ownership, empty ephemeral-auth tables and independent runtime/producer logins were validated. No business rows printed." >> "$GITHUB_STEP_SUMMARY"
       - name: Remove decrypted files
         if: always()
         run: |

@@ -7,8 +7,12 @@ import { registerCatalogRoutes } from "./catalog";
 import { registerInventoryCountRoutes } from "./inventory-counts";
 import { registerInventoryReadRoutes } from "./inventory-read";
 import { registerCatalogWriteRoutes } from "./catalog-write";
+import { registerSalesCheckoutRoutes } from "./sales-checkout";
+import { registerRegisterShiftRoutes } from "./register-shifts";
 import { withDatabaseClient } from "./database";
 import { cleanupExpiredAuthRecords } from "./auth-rate-limit";
+import { registerExchangeRateRoutes, safeBcvSyncErrorCode, syncBcvOfficialRate } from "./exchange-rates";
+
 import type { Bindings } from "./bindings";
 
 const app = new Hono<{ Bindings: Bindings }>();
@@ -87,6 +91,9 @@ registerCatalogRoutes(app);
 registerInventoryCountRoutes(app);
 registerInventoryReadRoutes(app);
 registerCatalogWriteRoutes(app);
+registerSalesCheckoutRoutes(app);
+registerRegisterShiftRoutes(app);
+registerExchangeRateRoutes(app);
 
 app.get("/health", (c) =>
   c.json({
@@ -111,10 +118,24 @@ app.onError((_error, c) => {
 });
 
 export default Object.assign(app, {
-  async scheduled(_controller: ScheduledController, env: Bindings): Promise<void> {
+  async scheduled(controller: ScheduledController, env: Bindings): Promise<void> {
+    // BCV ingestion is a separately gated Cron; it remains inert unless explicitly enabled.
+    if (controller.cron === "0 22 * * 1-5") {
+      if (env.APP_ENV !== "production" || env.BCV_SYNC_ENABLED !== "true") return;
+      try {
+        console.info({ event: "BCV_SYNC_STARTED" });
+        const outcome = await syncBcvOfficialRate(env.DATABASE_URL);
+        console.info({ event: "BCV_SYNC_COMPLETED", outcome });
+      } catch (error) {
+        console.error({ event: "BCV_SYNC_FAILED", code: safeBcvSyncErrorCode(error) });
+        throw new Error("BCV_SYNC_FAILED");
+      }
+      return;
+    }
+    // Only the explicitly configured hourly retention Cron may run cleanup.
+    if (controller.cron !== "17 * * * *") return;
     // Worker previews must never connect to the application database.
     if (env.APP_ENV !== "production") return;
-
     await withDatabaseClient(env.DATABASE_URL, (client) =>
       cleanupExpiredAuthRecords(client),
     );

@@ -9,9 +9,25 @@ if [[ "${SOURCE_URL:-}" != "$expected_source_url" ]]; then
 fi
 
 psql "$SOURCE_URL" -X -v ON_ERROR_STOP=1 <<'SQL'
-CREATE ROLE microapp_migrator NOLOGIN NOSUPERUSER NOCREATEDB NOCREATEROLE NOINHERIT NOREPLICATION NOBYPASSRLS;
-CREATE ROLE microapp_runtime NOLOGIN NOSUPERUSER NOCREATEDB NOCREATEROLE NOINHERIT NOREPLICATION NOBYPASSRLS;
-CREATE ROLE microapp_backup LOGIN PASSWORD 'backup-test-only'
+DO $roles$
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_catalog.pg_roles WHERE rolname='microapp_migrator') THEN
+    CREATE ROLE microapp_migrator;
+  END IF;
+  IF NOT EXISTS (SELECT 1 FROM pg_catalog.pg_roles WHERE rolname='microapp_runtime') THEN
+    CREATE ROLE microapp_runtime;
+  END IF;
+  IF NOT EXISTS (SELECT 1 FROM pg_catalog.pg_roles WHERE rolname='microapp_backup') THEN
+    CREATE ROLE microapp_backup;
+  END IF;
+END;
+$roles$;
+
+-- The BCV restore profile may already have provisioned the shared cluster roles.
+-- Normalize them explicitly so this legacy fixture is repeatable in the same service.
+ALTER ROLE microapp_migrator NOLOGIN NOSUPERUSER NOCREATEDB NOCREATEROLE NOINHERIT NOREPLICATION NOBYPASSRLS;
+ALTER ROLE microapp_runtime NOLOGIN NOSUPERUSER NOCREATEDB NOCREATEROLE NOINHERIT NOREPLICATION NOBYPASSRLS;
+ALTER ROLE microapp_backup LOGIN PASSWORD 'backup-test-only'
   NOSUPERUSER NOCREATEDB NOCREATEROLE NOINHERIT NOREPLICATION NOBYPASSRLS;
 
 GRANT CONNECT ON DATABASE microapp_source TO microapp_backup;

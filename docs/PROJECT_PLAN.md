@@ -1,3 +1,88 @@
+# Actualización de continuidad — 9 de noviembre de 2026
+
+> Esta actualización prevalece sobre snapshots históricos que indiquen otro HEAD o describan como pendientes capacidades ya implementadas. Verificar siempre el SHA vivo en GitHub antes de nuevas acciones.
+
+## PR #287 — integración BCV + checkout
+
+- Estado: OPEN / Draft; base `main`; HEAD de código actual `3c32b6d46a807a88962de81443af84c4d4fef3e1`; GitHub informa `mergeable=true`. No hay reviews formales ni review threads abiertos.
+- CI del HEAD exacto: **15/15 check-runs SUCCESS y 11/11 workflow runs SUCCESS**. Los 11 workflows de PR incluyen CI, Playwright E2E, validación de migraciones, PostgreSQL migration runner, backup/restore, Semgrep, Security scan, secret-history, dependency review, ODD docs y dashboard. Los builds Cloudflare de la rama son previews, no promoción a producción.
+- No merge, no deploy productivo, no Neon main writes, no migraciones remotas, no activación Cron, no cambios de secretos/DNS/billing ni datos reales.
+
+## BCV: estado real de implementación
+
+- Checkout **sí consume** `bcv_sync_state`: lee `last_success_at`, exige `last_outcome` = `inserted` o `unchanged`, exige `last_effective_date >= hoy Caracas`, y además una tasa `valid` con fecha efectiva exactamente igual a hoy. Usa `FOR SHARE` dentro de la transacción; no hay fallback a tasa vieja ni TTL arbitrario.
+- La migración 0021 añade defensa SQL mediante trigger diferido para validar el estado al completar una venta, también frente a escrituras directas del rol runtime.
+- La carrera de intentos supersedidos está corregida con `attempt_id` y bloqueo/validación atómica antes de persistir. La prueba PostgreSQL cubre dos respuestas diferentes para la misma fecha y verifica que el intento antiguo no invalide la tasa del nuevo.
+- Existe endpoint `GET /api/orgs/:organizationId/bcv/sync-state`, solo lectura y tenant-scoped, permiso `bcv.sync_state.read` exclusivo de owner/admin. Cashier e inventory no tienen acceso. Respuesta `no-store`, errores sanitizados.
+- El dashboard muestra un panel BCV solo a owner/admin, con último intento/éxito, outcome, fecha efectiva, edad del intento, error code sanitizado, actualización manual y refresco automático cada cinco minutos. No permite editar tasa ni ejecutar sincronizaciones.
+- Wrangler ya declara Workers Observability/Logs: redacción de query strings, `invocation_logs=false`, logs estructurados explícitos con sampling 1. El Cron registra `BCV_SYNC_STARTED`, `BCV_SYNC_COMPLETED` y `BCV_SYNC_FAILED`; el error solo expone código sanitizado.
+- No se ha creado Monitor, destino de correo ni watchdog; no se ha probado entrega de alertas. Inspeccionar dataset/campos reales y consumo de cuenta antes de configurar monitor.
+
+## Gates aún abiertos — producción NOT READY
+
+1. CI exact-HEAD del siguiente commit documental/código debe volver a validarse; no reutilizar los resultados de este SHA.
+2. Capturar y conservar fixture reproducible de HTML oficial BCV y probar el parser con respuesta real. La recuperación oficial anterior devolvió 502; no sustituir por copias de terceros.
+3. Obtener calendario bancario oficial SUDEBAN verificable. No afirmar que no existe ni codificar fechas desde terceros.
+4. Justificar y aprobar límites del parser `MAX_EFFECTIVE_DATE_AGE_DAYS=10` y `MAX_EFFECTIVE_DATE_FUTURE_DAYS=7`; siguen hard-coded y no aprobados.
+5. Configurar monitor de `BCV_SYNC_FAILED`, destino autorizado y prueba de entrega. Diseñar watchdog de `running` estancado con SLO/umbral medido; no inventar umbral.
+6. Cerrar identidad efectiva del Worker, pruebas aisladas de recuperación, revisión legal/contable y semántica append-only de cambios, pagos parciales, anulaciones y reembolsos.
+7. La contingencia de tasa manual por owner/admin sigue siendo una propuesta documentada, no una función activa. Mantener el diseño de autorización reforzada (PIN secreto verificado en servidor, límites/rate-limit, auditoría, caducidad y separación de funciones); no implementar ni permitir edición directa hasta cerrar revisión legal/contable y especificación.
+
+## Reglas de continuidad
+
+- No pedir otra vez Build IDs, capturas, terminal, CLI, TinyFish ni reconexiones si el dato está en GitHub o documentación. Si falta un dato imprescindible, pedirlo una sola vez y aceptar texto.
+- Leer primero `AGENTS.md`, `WORK_CHECKPOINT.md`, `docs/CONSTITUTION.md`, `docs/CURRENT_STATE.md`, `docs/HANDOFF_NEXT_CHAT.md`, `docs/PROJECT_PLAN.md`, `docs/STATE_JOURNAL.md` y `docs/SECURITY_ROADMAP.md`.
+- Mantener #287 Draft. CI verde no equivale a aprobación. No fusionar PR de procedencia por separado si su cambio ya está integrado.
+- Actualizar este estado documental cuando haya una decisión, hallazgo o discrepancia nueva; después revalidar CI exact-HEAD.
+
+---
+
+# Estado operativo vigente — 9 de noviembre de 2026
+
+> Este bloque es la referencia operativa más reciente. Los snapshots históricos posteriores conservados debajo no deben confundirse con el estado actual. Antes de actuar, volver a consultar GitHub y confirmar el HEAD.
+
+## Integración BCV + checkout
+
+- PR #287: OPEN / Draft, base `main`, HEAD de código validado `12550a3c50212234b39e3e84b45f36a07465abde`, 123 ahead / 0 behind, GitHub `mergeable=true`.
+- CI de ese HEAD exacto: **13/13 workflow runs SUCCESS y 15/15 check-runs SUCCESS**. Los check-runs incluyen CI, PostgreSQL migration runner, database migration validation, Playwright, Semgrep, Trivy, secret-history, backup/restore, dependency review, ODD docs y builds Cloudflare.
+- El endpoint de combined commit status informa `pending` con lista vacía de status contexts; no hay contextos legacy reportados. No confundirlo con los 15 check-runs, que están SUCCESS.
+- PR #287 no tiene aprobación formal APPROVED ni hilos de revisión abiertos. CI verde no es aprobación ni autorización de merge.
+- PR #295 sigue OPEN / Draft, HEAD `213837969375fa87f5edca79e0d752333bc93d8c`; su cambio funcional se integró/reconcilió en #287. Comparación #295 frente al HEAD de #287: 51 ahead / 9 behind, mergeable=false. Mantener como evidencia de procedencia; no fusionar independientemente.
+- PR #255 y #269 siguen OPEN / Draft, ambos mergeable=false. No fusionar.
+- PR #196 aparece actualmente CLOSED y no merged, aunque la restricción histórica lo describía como Draft. No reabrir ni modificar sin autorización. Issue #53 continúa OPEN.
+- Los checks Cloudflare de este HEAD muestran únicamente URLs de preview para Pages y Workers; no muestran promoción a producción. No se ejecutó deploy manual ni se activó Cron de producción. `APP_ENV=preview` y `BCV_SYNC_ENABLED=false` siguen como protección de previews.
+
+## Cambios de código reconciliados
+
+- Checkout exige último sync exitoso (`last_success_at`, outcome `inserted`/`unchanged`, `last_effective_date >= hoy Caracas`) y una tasa BCV validada con fecha efectiva exacta de hoy.
+- Checkout lee el singleton `bcv_sync_state` con `FOR SHARE` dentro de la transacción; no hay fallback a tasa anterior ni TTL arbitrario.
+- Migración 0021 añade además trigger diferido `sales_latest_bcv_sync_success` para validar el mismo estado al completar una venta, incluso en escrituras SQL directas con rol runtime.
+- La función del trigger es `SECURITY DEFINER`, propiedad de `microapp_migrator`, con permisos directos revocados a PUBLIC/runtime. Las aserciones de migración verifican la definición, el lock, los permisos y el trigger.
+- Prueba PostgreSQL usa el rol runtime para intentar completar una venta directamente después de un sync fallido; espera rechazo SQLSTATE 23514.
+- La protección SQL complementa el handler. No prueba resistencia ante compromiso del propio runtime, que conserva permisos column-scoped para que el Worker pueda escribir el estado de sincronización.
+
+## Producción: NOT READY
+
+Gates todavía pendientes:
+1. CI exact-HEAD del commit documental posterior a este snapshot (el HEAD de código anterior está verde; un nuevo commit exige revalidación).
+2. Fixture HTML reproducible de la fuente oficial BCV y pruebas con HTML real. La consulta pública directa a BCV devolvió 502; no hay fixture oficial capturado.
+3. Calendario bancario oficial SUDEBAN verificable. La página pública muestra la sección “Calendario Bancario”, pero no se recuperó un PDF/circular 2027 oficial; no afirmar que no exista ni usar terceros como evidencia primaria.
+4. Justificación/aprobación de límites del parser 10/7.
+5. Alertas y recuperación operativa; identidad efectiva del Worker; revisión legal/contable.
+6. Semántica comercial append-only de cambio, pagos parciales, anulaciones y reembolsos.
+7. Reconciliación final de permisos/runtime identity y ensayo aislado de recuperación/concurrencia.
+
+## Alertas operativas — investigación
+
+Cloudflare documenta Alerts > Monitors con consultas SQL y destinos email/webhook disponibles en todos los planes; consultas, dashboards y alertas no tienen cargo adicional. El modelo Observability que comienza el 1-dic-2026 incluye 0,5 GB/día y 7 días de retención en Free, sujeto a límites del plan. Candidata: monitor sobre `logs.workersLogs` para `BCV_SYNC_FAILED`. Pendiente verificar en la cuenta real que Workers Logs está habilitado, que el dataset y columnas están disponibles y que el volumen cabe en el cupo. `apps/api/wrangler.toml` no declara explícitamente `observability`. No se configuró monitor ni destino.
+El endpoint público `GET /api/exchange-rates/latest` expone la tasa actual, no el estado operativo del singleton. No existe todavía endpoint/panel admin de `last_attempt_at/last_success_at/last_outcome` ni watchdog de `running` estancado. No implementar retries automáticos ni configurar canales externos hasta cerrar diseño y autorización.
+
+## Restricciones vigentes
+
+No merge, no producción deploy, no Neon `main` writes, no migraciones remotas, no activar Cron, no cambios de secretos/DNS/billing, no datos reales. Mantener #287 y #295 Draft. No cerrar issue #53. No pedir al usuario datos ya documentados, terminal, CLI, capturas ni reconexiones innecesarias.
+
+---
+
 ## Reconciliación posterior a PR #291 — snapshot 2026-11-09 UTC
 
 **Main al iniciar esta reconciliación:** `56ad2b29b994fbad31275c801e8f23a2b9736db2` (merge de PR #291). Post-merge exact-SHA: **11/11 check-runs SUCCESS**. Este snapshot documenta el estado inmediatamente posterior a #291; el PR docs-only que lo contiene volverá a mover main, por lo que reconsultar GitHub después del merge.
@@ -1438,3 +1523,11 @@ No declarar comercial/producción listo hasta completar flujos, seguridad, prueb
 - No ejecutar migraciones en Neon main ni desplegar producción en este bloque.
 
 - Resultado técnico PR #165 (HEAD de implementación `c3ae1192f0841090ee1b3dea71ed803f1d3c1d8b`): checks y pruebas completas en success, incluidas 3 pruebas de resolución contra PostgreSQL efímero y assertions cross-tenant. Revalidar el SHA final tras los commits de sincronización documental antes de integrar.
+
+## Prioridad técnica #287 — después de sincronización no destructiva
+
+1. Validar CI exact-HEAD de la nueva punta de #287 después de reconciliar main.
+2. Diseñar freshness/last-success sin inventar TTL: la tasa prepublicada del siguiente día hábil solo es aplicable desde su `effective_date`; fines de semana/feriados exigen calendario oficial y política aprobada.
+3. Cerrar fixture HTML oficial BCV, calendario bancario SUDEBAN, alertas/identidad real del Worker y revisión legal/contable.
+4. Mantener #255/#269/#287 Draft; no activar Cron ni desplegar hasta cerrar gates P1.
+

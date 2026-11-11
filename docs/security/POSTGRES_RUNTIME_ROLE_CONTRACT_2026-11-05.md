@@ -1,3 +1,25 @@
+> **Recovery branch status — 2026-11-08:** the post-0019 contract below was ported from PR #262 onto `feat/checkout-ledger-recovered-main-20261108` (initial port HEAD `88e0aab5219810ab24375f8eb947c5ad17aa453b`). The earlier 8/8 validation belongs to #262's historical SHA, not this recovery HEAD. Re-run migration, runtime-login and checkout integration suites on the recovery branch before treating the contract as validated. No Neon branch has received migration 0019.
+
+> **Contrato vigente post-0019 — rama #262, no integrada:** el snapshot histórico de 2026-11-05 que sigue abajo ya no describe los grants previstos tras migration 0019. En el HEAD validado `2ff0c4c63d635fcdf42352b7c2ba16e2ef545c49` (8/8 checks SUCCESS), el runtime conserva SELECT sobre balances, INSERT sobre el ledger y las operaciones de documentos comerciales estrictamente necesarias; la proyección es trigger SECURITY DEFINER del migrator. CI incluyó un LOGIN real `microapp_runtime` y smoke positivo/negativo. Esto no prueba el DATABASE_URL efectivo de Neon/Worker.
+
+| Objeto | Operaciones runtime post-0019 | Frontera |
+|---|---|---|
+| `inventory_balances` | SELECT | Sin INSERT/UPDATE/DELETE/TRUNCATE. Los locks usan `lock_inventory_balances` SECURITY DEFINER. |
+| `warehouse_inventory_movements` | INSERT | Solo opening/count_adjustment respaldados por conteo confirmado y sale respaldado por sale draft/línea exacta. Otros tipos (purchase_receipt, customer_return, transfer_in/out, reversal) rechazados. Sin UPDATE/DELETE/TRUNCATE. |
+| `inventory_counts` | SELECT, INSERT, UPDATE(status, confirmed_by, confirmed_at) | Trigger de confirmación exige organización/sucursal/almacén activos y confirmer activo owner/admin/inventory; inventory requiere branch_membership activo. Opening requiere warehouse vacío. |
+| `inventory_count_lines` | SELECT, INSERT | Inmutables tras confirmar; movimientos físicos revalidan expected quantity y balance_version bajo warehouse mutex. |
+| `sales` | SELECT, INSERT, UPDATE(status, completed_at) | Solo transición draft→completed; reconciliación diferida de líneas, pagos, ledger y audit. |
+| `sale_items` | SELECT, INSERT | Líneas de una venta draft; inmutables tras completar por triggers. |
+| `payments` | SELECT, INSERT | Una moneda de liquidación por venta; total exacto y asignaciones USD verificadas por triggers diferidos. |
+| `exchange_rates` | SELECT, INSERT, UPDATE(validation_status) | Migration 0013; el runtime no puede reescribir rate, effective_date ni borrar historial. |
+| `inventory_balance_ledger_intents` | No existe tras 0019 | La migración elimina la tabla histórica tras verificar que no haya intents pendientes. |
+
+**Límite residual:** el trigger valida el rol y la sucursal del `actor_user_id` declarado, pero el rol PostgreSQL compartido no lo vincula criptográficamente con la sesión HTTP. La autorización de aplicación `authorizeBranchOperation` sigue siendo obligatoria. Ningún endpoint de compra/transferencia/devolución debe habilitarse hasta definir su documento fuente y su autorización por tipo.
+
+---
+
+> **Superseding inventory update — 2026-11-08, PR #262 (Draft, not merged):** This file is a historical runtime-role snapshot from 2026-11-05. Its table below records the then-current direct `inventory_balances` INSERT/UPDATE grants and the migration 0010 intent-pairing model; do not treat those rows as the intended post-0019 contract. On the #262 branch, migration 0019 removes the private intent-pairing table, projects every appended movement into balances through an owner-controlled `SECURITY DEFINER` trigger, revokes all runtime balance mutation privileges, and provides a tenant/branch-scoped `lock_inventory_balances` helper for row locks. Count and checkout handlers append movements only. This state is not yet integrated into main or verified against Neon.
+
 # PostgreSQL runtime role contract — 2026-11-05
 
 ## Status and scope
@@ -147,3 +169,22 @@ Historical baseline verified at #221 HEAD `18dfc33525c792802c296469ee6140d3b5f64
 - Issue #53 remains OPEN/P0.
 
 Residual risk: the effective production DATABASE_URL principal, role membership, object ownership, grants, Cloudflare bindings and actual deployed migration order remain unverified. No production readiness claim is made.
+
+
+---
+
+## Branch implementation addendum — register shifts, PR #287 (2026-11-11)
+
+The table above remains a historical snapshot of main's runtime callsites at the time of the original contract. The following implementation exists only on `integration/bcv-checkout-rehearsal-20261109` in PR #287; do not attribute it to main or production:
+
+| Object | Runtime access on PR #287 branch | Enforcement |
+|---|---|---|
+| `registers` | SELECT | API lists active registers only after tenant/role/branch assignment preflight. No direct writes. |
+| `register_shifts` | SELECT; no direct INSERT/UPDATE/DELETE/TRUNCATE | `open_register_shift(...)` and `close_register_shift(...)` SECURITY DEFINER functions, owned by `microapp_migrator`; EXECUTE granted to `microapp_runtime`, PUBLIC revoked. |
+| `audit_logs` | Existing SELECT/INSERT contract unchanged | Shift open/close events are inserted atomically by the SECURITY DEFINER functions; append-only triggers remain enabled. Runtime has no SELECT grant. |
+
+Migration 0023 pins `search_path=pg_catalog, public`. This is accepted only with the existing schema contract that neither `microapp_runtime` nor PUBLIC can CREATE in `public`; the new assertions verify that invariant. The API uses session-derived user identity, an active branch membership check, and the existing 0004/0007 trigger locks. No table-level write grant is added to runtime.
+
+Exact code HEAD `0ca91ff51ec545278ceb8eabd3929083aae9022e` passed 11/11 PR workflows; the direct runtime-login API suite passed 4/4 tests, including direct table-write denial and concurrent-open serialization. The BCV restore profile now recognizes 0001–0023 and its synthetic PostgreSQL 18 restore passed.
+
+This remains branch-only. The effective `DATABASE_URL` principal and grants in the deployed Worker/Neon project have not been inspected; no production migration or grant was applied. The branch does not yet expose the register-shift UI or complete POS journey.

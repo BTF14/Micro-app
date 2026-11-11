@@ -5,6 +5,10 @@ INSERT INTO public.app_users (id,email,display_name)
 VALUES ('22222222-2222-4222-8222-222222222222','runtime-fixture@example.invalid','Runtime Role Fixture');
 INSERT INTO public.organization_members (organization_id,user_id,role)
 VALUES ('11111111-1111-4111-8111-111111111111','22222222-2222-4222-8222-222222222222','cashier');
+INSERT INTO public.app_users (id,email,display_name)
+VALUES ('66666666-6666-4666-8666-666666666666','runtime-inventory@example.invalid','Runtime Inventory Fixture');
+INSERT INTO public.organization_members (organization_id,user_id,role)
+VALUES ('11111111-1111-4111-8111-111111111111','66666666-6666-4666-8666-666666666666','inventory');
 INSERT INTO public.branches (id,organization_id,name,slug)
 VALUES ('33333333-3333-4333-8333-333333333333','11111111-1111-4111-8111-111111111111','Runtime Branch','runtime-branch');
 INSERT INTO public.warehouses (id,organization_id,branch_id,code,name)
@@ -16,6 +20,10 @@ INSERT INTO public.branch_memberships (organization_id,branch_id,user_id)
 VALUES ('11111111-1111-4111-8111-111111111111',
         '33333333-3333-4333-8333-333333333333',
         '22222222-2222-4222-8222-222222222222');
+INSERT INTO public.branch_memberships (organization_id,branch_id,user_id)
+VALUES ('11111111-1111-4111-8111-111111111111',
+        '33333333-3333-4333-8333-333333333333',
+        '66666666-6666-4666-8666-666666666666');
 INSERT INTO public.registers (id,organization_id,branch_id,name,code)
 VALUES ('44444444-4444-4444-8444-444444444444',
         '11111111-1111-4111-8111-111111111111',

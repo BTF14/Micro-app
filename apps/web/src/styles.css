@@ -238,6 +238,23 @@ h1 { margin: 0; font-size: clamp(2.2rem, 4.2vw, 3.6rem); font-weight: 550; lette
 .art-card-line.short { width: 65%; margin-top: 0.4rem; background: rgba(255,255,255,0.25); }
 .art-card-foot { margin-top: auto; color: #b9cdc3; font-size: 0.43rem; letter-spacing: 0.07em; }
 
+
+.exchange-rate-panel {
+  display: flex; align-items: center; justify-content: space-between; gap: 1rem; flex-wrap: wrap;
+  margin-top: 1.25rem; padding: 1.15rem 1.3rem; border: 1px solid #dfe8e1;
+  border-radius: 1rem; background: #fff;
+}
+.exchange-rate-main { min-width: 0; }
+.exchange-rate-main .eyebrow { margin-bottom: 0.45rem; color: #7a8a80; }
+.exchange-rate-main h2 { margin: 0; color: var(--petrol-dark); font-size: clamp(1.25rem, 2.2vw, 1.7rem); font-weight: 650; letter-spacing: -0.04em; }
+.exchange-rate-main h2 span { color: #8b9c91; font-weight: 400; }
+.exchange-rate-meta { margin: 0.45rem 0 0; color: #78837c; font-size: 0.72rem; }
+.exchange-rate-error { margin: 0.35rem 0 0; color: #8a6136; font-size: 0.7rem; }
+.exchange-rate-status { flex: 0 0 auto; padding: 0.42rem 0.7rem; border-radius: 999px; color: #426a58; background: #edf4ef; font-size: 0.68rem; font-weight: 650; }
+.exchange-rate-status.stale, .exchange-rate-status.unavailable { color: #866737; background: #f4ead7; }
+.exchange-rate-source { width: 100%; margin: 0; color: #929b94; font-size: 0.62rem; }
+
+
 .setup-banner {
   display: flex;
   align-items: center;
@@ -345,6 +362,8 @@ h1 { margin: 0; font-size: clamp(2.2rem, 4.2vw, 3.6rem); font-weight: 550; lette
   .welcome { min-height: 0; padding: 1.5rem; }
   .welcome-art { display: none; }
   .welcome-copy { font-size: 0.84rem; }
+  .exchange-rate-panel { align-items: flex-start; padding: 0.95rem; }
+  .exchange-rate-status { margin-left: auto; }
   .setup-banner { align-items: flex-start; padding: 0.9rem; }
   .setup-icon { width: 2rem; height: 2rem; }
   .setup-text h2 { font-size: 0.8rem; }
@@ -367,3 +386,31 @@ h1 { margin: 0; font-size: clamp(2.2rem, 4.2vw, 3.6rem); font-weight: 550; lette
 
 .nav-item-button { width: 100%; border: 0; background: transparent; text-align: left; cursor: pointer; font: inherit; color: inherit; }
 .nav-item-button:hover:not(.active) { color: #fff; background: rgba(255,255,255,0.06); }
+
+
+/* Owner/admin-only, read-only operational BCV status panel. */
+.bcv-admin-panel { margin-top: 1rem; padding: 1.2rem 1.3rem; border: 1px solid #e1e8e2; border-radius: 1rem; background: #fbfcfa; }
+.bcv-admin-heading { display: flex; align-items: flex-start; justify-content: space-between; gap: 1rem; }
+.bcv-admin-heading .eyebrow { margin: 0 0 0.4rem; color: #7a8a80; }
+.bcv-admin-heading h2 { margin: 0; color: var(--petrol-dark); font-size: 1rem; font-weight: 650; }
+.bcv-admin-heading p:not(.eyebrow) { margin: 0.35rem 0 0; color: #78837c; font-size: 0.72rem; line-height: 1.5; }
+.bcv-refresh-button { flex: 0 0 auto; padding: 0.5rem 0.75rem; border: 1px solid #d6e0d8; border-radius: 0.65rem; color: #365b4c; background: #fff; font: inherit; font-size: 0.7rem; font-weight: 650; cursor: pointer; }
+.bcv-refresh-button:disabled { cursor: wait; opacity: 0.6; }
+.bcv-admin-status-row { display: flex; align-items: center; flex-wrap: wrap; gap: 0.7rem; margin-top: 1rem; }
+.bcv-admin-status { padding: 0.35rem 0.65rem; border-radius: 999px; font-size: 0.68rem; font-weight: 700; }
+.bcv-admin-status.succeeded { color: #426a58; background: #edf4ef; }
+.bcv-admin-status.failed, .bcv-admin-status.attention { color: #855b35; background: #f5eadb; }
+.bcv-admin-status.running { color: #536d8c; background: #eaf0f7; }
+.bcv-admin-outcome { color: #78837c; font-size: 0.68rem; }
+.bcv-admin-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.85rem 1.25rem; margin: 1rem 0 0; }
+.bcv-admin-grid div { min-width: 0; }
+.bcv-admin-grid dt { color: #87918a; font-size: 0.65rem; }
+.bcv-admin-grid dd { margin: 0.25rem 0 0; color: #344b40; font-size: 0.75rem; font-weight: 600; overflow-wrap: anywhere; }
+.bcv-admin-error, .bcv-admin-error-code { margin: 0.8rem 0 0; color: #865638; font-size: 0.7rem; }
+.bcv-admin-error-code code { font-size: 0.68rem; }
+.bcv-admin-loading, .bcv-admin-footnote { margin: 0.8rem 0 0; color: #87918a; font-size: 0.65rem; line-height: 1.5; }
+@media (max-width: 560px) {
+  .bcv-admin-heading { flex-direction: column; }
+  .bcv-refresh-button { align-self: flex-start; }
+  .bcv-admin-grid { grid-template-columns: minmax(0, 1fr); }
+}

@@ -38,14 +38,16 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v7
+      - name: Test bounded apt retry helper
+        run: bash .github/scripts/test-apt-retry.sh
       - name: Install PostgreSQL client
         run: |
-          sudo apt-get update
-          sudo apt-get install -y postgresql-client
+          bash scripts/ci/apt-retry.sh update
+          bash scripts/ci/apt-retry.sh install -y postgresql-client
           psql --version
       - name: Provision isolated migrator and runtime LOGIN roles
         run: |
-          psql -X -v ON_ERROR_STOP=1 --dbname "$ADMIN_DATABASE_URL" -c "CREATE ROLE microapp_migrator LOGIN PASSWORD 'migrator-test-only' NOSUPERUSER NOCREATEDB NOCREATEROLE NOREPLICATION NOBYPASSRLS; CREATE ROLE microapp_runtime LOGIN PASSWORD 'runtime-test-only' NOSUPERUSER NOCREATEDB NOCREATEROLE NOREPLICATION NOBYPASSRLS NOINHERIT; REVOKE CREATE ON SCHEMA public FROM PUBLIC; GRANT USAGE, CREATE ON SCHEMA public TO microapp_migrator; GRANT USAGE ON SCHEMA public TO microapp_runtime; GRANT CONNECT ON DATABASE microapp_test TO microapp_migrator, microapp_runtime;"
+          psql -X -v ON_ERROR_STOP=1 --dbname "$ADMIN_DATABASE_URL" -c "CREATE ROLE microapp_migrator LOGIN PASSWORD 'migrator-test-only' NOSUPERUSER NOCREATEDB NOCREATEROLE NOREPLICATION NOBYPASSRLS; CREATE ROLE microapp_runtime LOGIN PASSWORD 'runtime-test-only' NOSUPERUSER NOCREATEDB NOCREATEROLE NOREPLICATION NOBYPASSRLS NOINHERIT; CREATE ROLE microapp_bcv_sync LOGIN PASSWORD 'bcv-test-only' NOSUPERUSER NOCREATEDB NOCREATEROLE NOREPLICATION NOBYPASSRLS NOINHERIT; REVOKE CREATE ON SCHEMA public FROM PUBLIC; GRANT USAGE, CREATE ON SCHEMA public TO microapp_migrator; GRANT USAGE ON SCHEMA public TO microapp_runtime, microapp_bcv_sync; GRANT CONNECT ON DATABASE microapp_test TO microapp_migrator, microapp_runtime, microapp_bcv_sync;"
       - name: Validate migration runner shell syntax
         run: bash -n scripts/db/migrate.sh
       - name: Apply clean schema through the migration runner
@@ -113,7 +115,7 @@ jobs:
           psql -X -v ON_ERROR_STOP=1 --dbname "$ADMIN_DATABASE_URL" -c "CREATE DATABASE microapp_legacy_test;"
           legacy_admin="postgres://microapp:microapp-test-only@localhost:5432/microapp_legacy_test"
           legacy_migrator="postgres://microapp_migrator:migrator-test-only@localhost:5432/microapp_legacy_test"
-          psql -X -v ON_ERROR_STOP=1 --dbname "$legacy_admin" -c "REVOKE CREATE ON SCHEMA public FROM PUBLIC; GRANT USAGE, CREATE ON SCHEMA public TO microapp_migrator; GRANT USAGE ON SCHEMA public TO microapp_runtime; GRANT CONNECT ON DATABASE microapp_legacy_test TO microapp_migrator, microapp_runtime; CREATE TABLE public.preexisting_table(id integer);"
+          psql -X -v ON_ERROR_STOP=1 --dbname "$legacy_admin" -c "REVOKE CREATE ON SCHEMA public FROM PUBLIC; GRANT USAGE, CREATE ON SCHEMA public TO microapp_migrator; GRANT USAGE ON SCHEMA public TO microapp_runtime, microapp_bcv_sync; GRANT CONNECT ON DATABASE microapp_legacy_test TO microapp_migrator, microapp_runtime, microapp_bcv_sync; CREATE TABLE public.preexisting_table(id integer);"
           status=0
           output="$(MIGRATION_DATABASE_URL="$legacy_migrator" bash scripts/db/migrate.sh 2>&1)" || status=$?
           if [ "$status" -eq 0 ]; then
@@ -129,7 +131,7 @@ jobs:
           psql -X -v ON_ERROR_STOP=1 --dbname "$ADMIN_DATABASE_URL" -c "CREATE DATABASE microapp_adopt_test;"
           adopt_admin="postgres://microapp:microapp-test-only@localhost:5432/microapp_adopt_test"
           adopt_migrator="postgres://microapp_migrator:migrator-test-only@localhost:5432/microapp_adopt_test"
-          psql -X -v ON_ERROR_STOP=1 --dbname "$adopt_admin" -c "REVOKE CREATE ON SCHEMA public FROM PUBLIC; GRANT USAGE, CREATE ON SCHEMA public TO microapp_migrator; GRANT USAGE ON SCHEMA public TO microapp_runtime; GRANT CONNECT ON DATABASE microapp_adopt_test TO microapp_migrator, microapp_runtime;"
+          psql -X -v ON_ERROR_STOP=1 --dbname "$adopt_admin" -c "REVOKE CREATE ON SCHEMA public FROM PUBLIC; GRANT USAGE, CREATE ON SCHEMA public TO microapp_migrator; GRANT USAGE ON SCHEMA public TO microapp_runtime, microapp_bcv_sync; GRANT CONNECT ON DATABASE microapp_adopt_test TO microapp_migrator, microapp_runtime, microapp_bcv_sync;"
           for f in 0001_initial 0002_google_identity; do
             psql -X -v ON_ERROR_STOP=1 --dbname "$adopt_admin" -f "apps/api/migrations/$f.sql" >/dev/null
           done
@@ -199,7 +201,7 @@ jobs:
           test "$(psql -X -At --dbname "$owner_url" -c "SELECT to_regclass('public.schema_migrations') IS NULL")" = "t"
 
           echo "== adoption succeeds with only ADMIN OPTION and leaves no SET membership behind"
-          psql -X -v ON_ERROR_STOP=1 --dbname "$owner_url" -c "REVOKE CREATE ON SCHEMA public FROM PUBLIC; GRANT USAGE, CREATE ON SCHEMA public TO microapp_migrator; GRANT USAGE ON SCHEMA public TO microapp_runtime; GRANT CONNECT ON DATABASE microapp_adopt_owner_test TO microapp_migrator, microapp_runtime;"
+          psql -X -v ON_ERROR_STOP=1 --dbname "$owner_url" -c "REVOKE CREATE ON SCHEMA public FROM PUBLIC; GRANT USAGE, CREATE ON SCHEMA public TO microapp_migrator; GRANT USAGE ON SCHEMA public TO microapp_runtime, microapp_bcv_sync; GRANT CONNECT ON DATABASE microapp_adopt_owner_test TO microapp_migrator, microapp_runtime, microapp_bcv_sync;"
           ADOPT_BASELINE_CONFIRM=adopt-0002 bash scripts/db/adopt-baseline.sh apply | grep -F "BASELINE_ADOPTED"
           test "$(psql -X -At --dbname "$ADMIN_DATABASE_URL" -c "SELECT pg_has_role('legacy_owner','microapp_migrator','SET')")" = "f"
           test "$(psql -X -At --dbname "$ADMIN_DATABASE_URL" -c "SELECT count(*) FROM pg_auth_members WHERE member IN (SELECT oid FROM pg_roles WHERE rolname IN ('microapp_migrator','microapp_runtime'))")" = "0"

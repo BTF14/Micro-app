@@ -4,10 +4,33 @@ on:
   schedule:
     - cron: "0 9 1 * *"
   workflow_dispatch: {}
+  push:
+    branches:
+      - "integration/bcv-checkout-rehearsal-20261109"
+    paths:
+      - ".github/workflows/backup-restore-smoke.yml"
+      - "scripts/db/reapply_restore_role_grants.sh"
+      - "scripts/db/restore_remote_backup_ephemeral.sh"
+      - "scripts/db/test_restore_remote_backup_target_guard.sh"
+      - "scripts/db/verify_backup_artifact.sh"
+      - "scripts/db/test_verify_backup_artifact.sh"
+      - "scripts/db/restore_role_assertions_main.sql"
+      - "scripts/test_backup_restore_schema.sh"
+      - "scripts/test_backup_restore_schema_bcv.sh"
   pull_request:
     paths:
       - ".github/workflows/backup-restore-smoke.yml"
+      - ".github/workflows/backup.yml"
       - "scripts/test_backup_restore.sh"
+      - "scripts/test_backup_restore_schema.sh"
+      - "scripts/backup_restore_fixture_main.sql"
+      - "scripts/test_backup_restore_schema_bcv.sh"
+      - "scripts/backup_restore_fixture_bcv.sql"
+      - "scripts/db/migrate.sh"
+      - "scripts/db/reapply_restore_role_grants.sh"
+      - "scripts/db/restore_remote_backup_ephemeral.sh"
+      - "scripts/db/restore_role_assertions_main.sql"
+      - ".github/workflows/backup-real-restore.yml"
       - "apps/api/migrations/**"
       - "docs/BACKUP_AND_RECOVERY.md"
 
@@ -15,8 +38,58 @@ permissions:
   contents: read
 
 jobs:
+  restore-main-profile:
+    name: Synthetic encrypted restore — main paired-intent (0001–0016)
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      SOURCE_URL: postgresql://microapp:microapp-test-only@localhost:5432/microapp_source
+    services:
+      postgres:
+        image: postgres:18
+        env:
+          POSTGRES_DB: microapp_source
+          POSTGRES_USER: microapp
+          POSTGRES_PASSWORD: microapp-test-only
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U microapp -d microapp_source"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+      - name: Test bounded apt retry helper
+        run: bash .github/scripts/test-apt-retry.sh
+      - name: Install age and PostgreSQL 18 client
+        shell: bash
+        run: |
+          set -euo pipefail
+          bash scripts/ci/apt-retry.sh update
+          bash scripts/ci/apt-retry.sh install -y curl ca-certificates gnupg age
+          sudo install -d /usr/share/postgresql-common/pgdg
+          sudo curl --fail --show-error --location \
+            --retry 5 --retry-all-errors --retry-delay 2 --connect-timeout 15 --max-time 90 \
+            https://www.postgresql.org/media/keys/ACCC4CF8.asc \
+            -o /usr/share/postgresql-common/pgdg/apt.postgresql.org.asc
+          echo "deb [signed-by=/usr/share/postgresql-common/pgdg/apt.postgresql.org.asc] https://apt.postgresql.org/pub/repos/apt $(. /etc/os-release && echo "$VERSION_CODENAME")-pgdg main" \
+            | sudo tee /etc/apt/sources.list.d/pgdg.list
+          bash scripts/ci/apt-retry.sh update
+          bash scripts/ci/apt-retry.sh install -y postgresql-client-18
+      - name: Run isolated main paired-intent schema and populated-graph restore
+        shell: bash
+        run: bash scripts/test_backup_restore_schema.sh
+      - name: Prove remote restore target guard fails closed
+        shell: bash
+        run: bash scripts/db/test_restore_remote_backup_target_guard.sh
+      - name: Prove backup artifact name and checksum validation
+        shell: bash
+        run: bash scripts/db/test_verify_backup_artifact.sh
+
   restore-smoke:
-    name: Synthetic encrypted backup and restore
+    name: Synthetic encrypted restore — BCV projection (0001–0023)
     runs-on: ubuntu-latest
     timeout-minutes: 15
     env:
@@ -40,19 +113,69 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v7
+      - name: Test bounded apt retry helper
+        run: bash .github/scripts/test-apt-retry.sh
       - name: Install age and PostgreSQL 18 client
         shell: bash
         run: |
           set -euo pipefail
-          sudo apt-get update
-          sudo apt-get install -y curl ca-certificates gnupg age
+          bash scripts/ci/apt-retry.sh update
+          bash scripts/ci/apt-retry.sh install -y curl ca-certificates gnupg age
           sudo install -d /usr/share/postgresql-common/pgdg
-          sudo curl -fsSL https://www.postgresql.org/media/keys/ACCC4CF8.asc \
+          sudo curl --fail --show-error --location \
+            --retry 5 --retry-all-errors --retry-delay 2 --connect-timeout 15 --max-time 90 \
+            https://www.postgresql.org/media/keys/ACCC4CF8.asc \
             -o /usr/share/postgresql-common/pgdg/apt.postgresql.org.asc
           echo "deb [signed-by=/usr/share/postgresql-common/pgdg/apt.postgresql.org.asc] https://apt.postgresql.org/pub/repos/apt $(. /etc/os-release && echo "$VERSION_CODENAME")-pgdg main" \
             | sudo tee /etc/apt/sources.list.d/pgdg.list
-          sudo apt-get update
-          sudo apt-get install -y postgresql-client-18
-      - name: Run isolated synthetic backup/restore round trip
+          bash scripts/ci/apt-retry.sh update
+          bash scripts/ci/apt-retry.sh install -y postgresql-client-18
+      - name: Run full-schema and populated BCV/projection-ledger restore smoke
+        shell: bash
+        run: bash scripts/test_backup_restore_schema_bcv.sh
+
+  restore-legacy-regression:
+    name: Synthetic encrypted restore — legacy backup contract
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      SOURCE_URL: postgresql://microapp:microapp-test-only@localhost:5432/microapp_source
+      RESTORE_URL: postgresql://microapp:microapp-test-only@localhost:5432/microapp_restore
+      RESTORE_DB_NAME: microapp_restore
+    services:
+      postgres:
+        image: postgres:18
+        env:
+          POSTGRES_DB: microapp_source
+          POSTGRES_USER: microapp
+          POSTGRES_PASSWORD: microapp-test-only
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U microapp -d microapp_source"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+      - name: Test bounded apt retry helper
+        run: bash .github/scripts/test-apt-retry.sh
+      - name: Install age and PostgreSQL 18 client
+        shell: bash
+        run: |
+          set -euo pipefail
+          bash scripts/ci/apt-retry.sh update
+          bash scripts/ci/apt-retry.sh install -y curl ca-certificates gnupg age
+          sudo install -d /usr/share/postgresql-common/pgdg
+          sudo curl --fail --show-error --location \
+            --retry 5 --retry-all-errors --retry-delay 2 --connect-timeout 15 --max-time 90 \
+            https://www.postgresql.org/media/keys/ACCC4CF8.asc \
+            -o /usr/share/postgresql-common/pgdg/apt.postgresql.org.asc
+          echo "deb [signed-by=/usr/share/postgresql-common/pgdg/apt.postgresql.org.asc] https://apt.postgresql.org/pub/repos/apt $(. /etc/os-release && echo "$VERSION_CODENAME")-pgdg main" \
+            | sudo tee /etc/apt/sources.list.d/pgdg.list
+          bash scripts/ci/apt-retry.sh update
+          bash scripts/ci/apt-retry.sh install -y postgresql-client-18
+      - name: Run isolated legacy synthetic backup/restore regression
         shell: bash
         run: bash scripts/test_backup_restore.sh

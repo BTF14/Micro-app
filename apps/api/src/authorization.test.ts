@@ -6,6 +6,13 @@ import type { OrganizationRole } from "./tenant-context";
 const roles: OrganizationRole[] = ["owner", "admin", "inventory", "cashier"];
 
 describe("commercial role authorization", () => {
+  it("allows only owner and admin to read the BCV sync state", () => {
+    expect(authorizeCommercialOperation("owner", "bcv.sync_state.read")).toBe(true);
+    expect(authorizeCommercialOperation("admin", "bcv.sync_state.read")).toBe(true);
+    expect(authorizeCommercialOperation("cashier", "bcv.sync_state.read")).toBe(false);
+    expect(authorizeCommercialOperation("inventory", "bcv.sync_state.read")).toBe(false);
+  });
+
   it("allows catalog reads for every role and cost reads for owner/admin/inventory", () => {
     for (const role of roles) {
       expect(isCommercialOperationAllowed(role, "catalog.read")).toBe(true);
@@ -47,15 +54,12 @@ describe("commercial role authorization", () => {
     expect(isCommercialOperationAllowed("inventory", "register.shift.operate_own")).toBe(false);
   });
 
-  it("rejects all discount operations because discounts are not part of the product", () => {
+  it("rejects discounts and manual price overrides for every role", () => {
     for (const role of roles) {
       expect(authorizeCommercialOperation(role, "sales.discount.apply")).toBe(false);
       expect(authorizeCommercialOperation(role, "sales.discount.approve")).toBe(false);
+      expect(authorizeCommercialOperation(role, "sales.price.override")).toBe(false);
     }
-    expect(isCommercialOperationAllowed("owner", "sales.price.override")).toBe(true);
-    expect(isCommercialOperationAllowed("admin", "sales.price.override")).toBe(true);
-    expect(isCommercialOperationAllowed("cashier", "sales.price.override")).toBe(false);
-    expect(isCommercialOperationAllowed("inventory", "sales.price.override")).toBe(false);
     expect(isCommercialOperationAllowed("cashier", "sales.void_own_open_shift")).toBe(true);
     expect(isCommercialOperationAllowed("cashier", "sales.void_after_shift")).toBe(false);
     expect(isCommercialOperationAllowed("cashier", "sales.void_other")).toBe(false);

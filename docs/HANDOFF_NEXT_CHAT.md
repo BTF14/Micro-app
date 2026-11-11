@@ -3010,3 +3010,15 @@ Después del snapshot principal se sincronizaron también `docs/WORK_CHECKPOINT.
 2. Implementar panel UI de selección de sucursal/caja, apertura y cierre del turno usando las rutas nuevas; añadir Playwright E2E.
 3. Obtener/definir el contrato comercial de pagos antes de completar checkout; no añadir métodos/reglas por suposición.
 4. Completar jornada E2E y Seguridad Nivel 1; mantener Draft hasta revisión formal.
+
+
+---
+
+# Handoff UI de turnos — 2026-11-11
+
+La rama #287 incorpora ahora una UI básica de turnos:
+- `apps/web/src/RegisterShiftsPanel.tsx` y `register-shifts.css`; navegación **Caja y turnos** solo para owner/admin/cashier.
+- Lista sucursales asignadas, detecta el turno propio abierto en cualquier sucursal, lista cajas activas, abre con fondo USD/VES y cierra con conteos físicos USD/VES. El selector queda bloqueado con turno abierto; conteos finales vacíos y confirmación explícita evitan cierres accidentales o copiar apertura como cierre.
+- Test de componente cubre flujo apertura/revisión/cierre y 403. El CI en SHA `8da81f1...` detectó import `Root` sin uso; corregido en `a8148f94...`. Reconciliar runs exact-SHA del HEAD más reciente, no reutilizar el resultado del SHA anterior.
+- No es un POS completo: no hay UI de ventas, carrito, checkout, cobros, recibos, arqueo, expected cash, diferencias, retiros, devoluciones o anulaciones. No inventar reglas de pago.
+- Mantener PR #287 OPEN/Draft hasta validación exact-SHA, revisión formal y cierre de Seguridad Nivel 1. No merge/deploy/producción; issue #53 OPEN/P0.

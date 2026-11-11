@@ -5,10 +5,11 @@ name: Respaldo cifrado de la base de datos
 # este workflow.
 #
 # Qué hace, en orden:
-# 1. Vuelca (pg_dump) solo las tablas de negocio de Neon, usando un rol de
-#    solo lectura dedicado (backup_readonly). Excluye explícitamente
-#    auth_sessions, auth_rate_limits y auth_bootstrap_attempts (datos
-#    efímeros de autenticación, no hacen falta para reconstruir el negocio).
+# 1. Vuelca (pg_dump) el esquema y los datos de la base usando el principal
+#    configurado en DATABASE_URL_BACKUP_RO. Su identidad efectiva y mínimo
+#    privilegio NO están certificados; ver issue #53 (P0). Excluye solo las
+#    filas de auth_sessions, auth_rate_limits y auth_bootstrap_attempts:
+#    conserva sus tablas, constraints, índices y triggers para restauración.
 # 2. Cifra el volcado con la llave pública age del proyecto (no es secreta,
 #    por eso vive directo en este archivo) antes de que salga del runner.
 #    El volcado SIN cifrar nunca se sube a ningún lado ni queda en el runner

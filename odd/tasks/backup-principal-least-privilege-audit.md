@@ -92,7 +92,7 @@ The live Neon catalog review found that the role named `backup_readonly` is over
 
 - Current Neon main has 15 application base tables in `public`, with neither RLS nor FORCE RLS enabled. This supports testing an explicit-SELECT role without BYPASSRLS for the currently observed schema; re-evaluate if RLS is introduced.
 - This test validates a candidate role contract and `pg_dump` compatibility only. It does not prove which user `DATABASE_URL_BACKUP_RO` uses and does not authorize remote role/grant/password/secret changes.
-- Status: planned; implementation pending. Issue #53 remains OPEN/P0 and production NOT READY.
+- Status: implemented in commit `cb81ecdf6bb5fe2c0d7806f6d744925300c8ba7a`; exact-HEAD CI passed 16/16 check-runs, 11/11 PR workflows and 2/2 push workflows. Issue #53 remains OPEN/P0 and production NOT READY.
 
 
 ## Default sequence privileges gap — 2026-11-11

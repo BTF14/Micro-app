@@ -1,3 +1,13 @@
+## Revalidación — 2026-11-11 — PR #287 / backup principal
+
+- PR #287 OPEN/Draft; último HEAD de código con validación exacta `cb81ecdf6bb5fe2c0d7806f6d744925300c8ba7a`: 16/16 check-runs, 11/11 workflows PR y 2/2 push SUCCESS. Posteriores commits documentales `9114b11` y `6f7dbac` necesitan checks propios. No merge.
+- 123 archivos, 19,109 adiciones y 297 eliminaciones; rama 518 ahead / 1 behind main (único commit ausente: ledger documental). Reviews formales 0; review threads 0; mergeable=true, mergeable_state=blocked.
+- Neon main SELECT-only: `backup_readonly` tiene CREATEROLE/CREATEDB/REPLICATION/BYPASSRLS, membership en `neondb_superuser` y `pg_write_all_data`, INSERT/UPDATE/DELETE sobre products. La identidad efectiva de `DATABASE_URL_BACKUP_RO` sigue desconocida; no se leyó el secreto.
+- El test candidate de PostgreSQL 18 prueba grants y default SELECT para tablas/secuencias futuras, pg_dump/restore-list y denegaciones de escritura/escalada. Es evidencia sintética, no producción.
+- Issue #53 OPEN/P0; producción **NOT READY**. No merge/deploy/Neon mutation/secrets/Cron/DNS/billing.
+
+---
+
 ## Revalidación de evidencia — integración BCV/checkout PR #287 — 2026-11-09 UTC
 
 - Rama: `integration/bcv-checkout-rehearsal-20261109`; HEAD exacto `afac566848170e117c0afaca63bc7939ed777374`; base main `03442951b2a2f63f5bf4dcf560f2c91be4f6cc71`; 157 ahead / 0 behind; PR OPEN/Draft y mergeable=true.

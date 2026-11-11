@@ -79,12 +79,22 @@ describe.skipIf(!adminUrl || !runtimeUrl)("own register-shift API against Postgr
       expect(openedBody.shift.cashier_user_id).toBe(f.userId);
       expect(openedBody.shift.opening_cash_usd).toBe("10.0000");
       expect(openedBody.shift.opening_cash_ves).toBe("100.00");
+      const openAudit = await admin.query<{ action: string }>(
+        "SELECT action FROM public.audit_logs WHERE organization_id = $1 AND actor_user_id = $2 AND entity_type = 'register_shift' AND entity_id = $3",
+        [f.organizationId, f.userId, openedBody.shift.id],
+      );
+      expect(openAudit.rows.map((row) => row.action)).toEqual(["register_shift.opened"]);
       const closed = await close(f, openedBody.shift.id);
       expect(closed.status).toBe(200);
       expect((await closed.json() as { replayed: boolean }).replayed).toBe(false);
       const replay = await close(f, openedBody.shift.id);
       expect(replay.status).toBe(200);
       expect((await replay.json() as { replayed: boolean }).replayed).toBe(true);
+      const auditAfterReplay = await admin.query<{ action: string }>(
+        "SELECT action FROM public.audit_logs WHERE organization_id = $1 AND actor_user_id = $2 AND entity_type = 'register_shift' AND entity_id = $3 ORDER BY action",
+        [f.organizationId, f.userId, openedBody.shift.id],
+      );
+      expect(auditAfterReplay.rows.map((row) => row.action)).toEqual(["register_shift.closed", "register_shift.opened"]);
       expect((await close(f, openedBody.shift.id, "13.0000", "130.00")).status).toBe(409);
       await expect((await current(f)).json()).resolves.toMatchObject({ shift: null });
     }

@@ -2617,3 +2617,11 @@ No remote backup artifact or age key was accessed; `.github/workflows/backup-rea
 ### 2026-11-11 — runtime and producer effective probes
 
 Se amplió el restore harness para probar runtime read de organizaciones y denegación de CREATE en public; BCV producer hace update de singleton + insert/update de tasa sintética dentro de ROLLBACK. Main no afirma test de productor dedicado. En HEAD `f6c453d928ffaef4ab15efc5733bd3c7001089e3`, workflows PR 13/13 SUCCESS (backup smoke `42997279023`, Playwright `42997278934`, CI `42997279209`); push backup smoke `42997267912` SUCCESS. Remote workflow sigue sin ejecutarse. Issue #53 OPEN/P0; producción NOT READY.
+
+## 2026-11-11 — runbook operativo de recuperación
+
+Se añadió odd/tasks/backup-operational-recovery-runbook.md. Formaliza dos rutas separadas: Neon PITR mediante una rama aislada (solo si el historial/plan vigente lo permite y se confirma coste) y recuperación independiente del artefacto cifrado age. Define verificación SHA-256 antes de descifrar, custodia externa de la llave, restore PostgreSQL 18 desechable, comprobaciones de roles/perfiles, límites de cutover y bitácora UTC para medir edad del último backup válido y RTO operativo completo.
+
+No se inventaron SLO: frecuencia diaria no demuestra RPO <=24h; tiempo pg_restore no representa RTO. Los objetivos se proponen después de ensayo real y simulacro completo. La guía oficial de Neon usada como referencia es https://neon.com/docs/introduction/branching.
+
+No se ejecutó workflow_dispatch ni se accedió a secreto, backup remoto, llave age, Neon o datos reales. El diagnóstico real de DATABASE_URL_BACKUP_RO sigue pendiente del próximo run programado natural en default branch. Issue #53 OPEN/P0; producción NOT READY.

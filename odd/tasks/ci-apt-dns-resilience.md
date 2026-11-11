@@ -1,6 +1,6 @@
 # ODD task: CI package-install resilience for PostgreSQL and backup tests
 
-- Status: in progress
+- Status: completed
 - Issue / PR: PR #287
 - Owner / reviewer: BTF14 / independent technical review pending
 - Started: 2026-11-11
@@ -27,11 +27,11 @@ Excluded:
 
 ## Acceptance criteria
 
-- [ ] AC-1 — All affected apt operations use bounded retries and explicit network timeouts.
-- [ ] AC-2 — Persistent DNS/package errors still fail the job; downstream tests remain skipped rather than falsely passed.
-- [ ] AC-3 — Workflow YAML and shell syntax validate.
-- [ ] AC-4 — CI, PostgreSQL migration runner, and both synthetic restore profiles execute successfully on the final exact HEAD.
-- [ ] AC-5 — Any tests not executed are explicitly reported as pending, with cause and exact SHA.
+- [x] AC-1 — All affected apt operations use bounded retries and explicit network timeouts.
+- [x] AC-2 — Persistent DNS/package errors still fail the job; downstream tests remain skipped rather than falsely passed.
+- [x] AC-3 — Workflow YAML and shell syntax validate.
+- [x] AC-4 — CI, PostgreSQL migration runner, and both synthetic restore profiles execute successfully on the final exact HEAD.
+- [x] AC-5 — Any tests not executed are explicitly reported as pending, with cause and exact SHA.
 
 ## Risks and guardrails
 
@@ -47,9 +47,9 @@ Excluded:
 | Task | Expected result | Validation / evidence | Status |
 |---|---|---|---|
 | Inspect exact-HEAD failures | Identify failing step and root cause | HEAD `9bdb6aff8358409a715b8b440b30c3577b16dc32`; Ubuntu 26.04 apt logs show temporary DNS failures for Ubuntu archive/security hosts | completed |
-| Update affected workflows | Bounded apt retries without bypass | CI, migration-runner, backup-restore-smoke | in progress |
-| Re-run exact-HEAD CI | All relevant test stages execute | GitHub Actions run IDs and job-step conclusions | pending |
-| Update continuity docs | Preserve live state and next action | CURRENT_STATE, STATE_JOURNAL, HANDOFF | pending |
+| Update affected workflows | Bounded apt retries without bypass | Commit `5ef21974725b91649705ed1bf6e9ae3019ca8e85`; three workflows use the helper | completed |
+| Re-run exact-HEAD CI | All relevant test stages execute | 11/11 PR workflows, 3/3 push workflows, 18/18 check-runs SUCCESS on `5ef21974725b91649705ed1bf6e9ae3019ca8e85` | completed |
+| Update continuity docs | Preserve live state and next action | CURRENT_STATE, WORK_CHECKPOINT, HANDOFF, STATE_JOURNAL updated in follow-up documentation commit | completed |
 
 ## Technical decisions
 
@@ -58,10 +58,10 @@ Excluded:
 
 ## Closure and handoff
 
-- Final commit SHA: pending
+- Final tested code commit SHA: `5ef21974725b91649705ed1bf6e9ae3019ca8e85`
 - PR: https://github.com/BTF14/Micro-app/pull/287
-- Checks and exact outcomes: pending
-- Acceptance criteria met / unmet: pending
-- Limitations not verified: pending
-- Residual risks: Ubuntu mirror/network outages can still persist beyond the bounded retry window.
-- Next step: implement workflow changes, validate the diff, then inspect exact-HEAD job steps after CI.
+- Checks and exact outcomes: 11/11 PR workflows SUCCESS; 3/3 push workflows SUCCESS; 18/18 check-runs SUCCESS. CI `43065209868`; migration runner `43065209778`; database migration validation `43065209826`; backup restore `43065209708`; Playwright `43065209886`.
+- Acceptance criteria met / unmet: AC-1 through AC-5 met for the tested code SHA.
+- Limitations not verified: APT retries cannot recover from an outage that persists beyond the bounded attempts; no production service was touched.
+- Residual risks: Ubuntu mirror/network outages can still persist beyond the bounded retry window. Issue #53 remains OPEN/P0; backup production identity is not verified.
+- Next step: keep PR #287 Draft and continue the independent Security Level 1/P0 audit; do not use CI success as production readiness.

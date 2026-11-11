@@ -1,3 +1,29 @@
+# Reconciliación viva — 2026-11-11 17:08 UTC — CI package install
+
+> Este bloque prevalece sobre los snapshots históricos inferiores. El estado de código se validó en el SHA exacto indicado; el commit documental posterior no cambia código y debe tener su propia ejecución exact-HEAD antes de reutilizar sus checks.
+
+- Repositorio: `BTF14/Micro-app`.
+- `main`: `c5373564413ba086690552c6b7deeab08d7b4a89`.
+- Rama #287: `integration/bcv-checkout-rehearsal-20261109`.
+- PR #287: OPEN / Draft / `mergeable=true`; base registrada `03442951b2a2f63f5bf4dcf560f2c91be4f6cc71`.
+- **Último HEAD de código validado:** `5ef21974725b91649705ed1bf6e9ae3019ca8e85`.
+- Comparación del HEAD de código contra main vivo: **509 ahead / 1 behind**, merge base `03442951b2a2f63f5bf4dcf560f2c91be4f6cc71`. No se sincronizó ni rebasó la rama.
+- **Validación exacta de 5ef2197:** 11/11 workflows `pull_request` SUCCESS; 3/3 workflows `push` SUCCESS; 18/18 check-runs SUCCESS. Combined legacy status contexts: 0.
+- Runs PR: CI `43065209868`, database migration validation `43065209826`, PostgreSQL migration runner `43065209778`, backup restore smoke `43065209708`, Playwright `43065209886`, Semgrep `43065209696`, Security `43065209724`, Secret history `43065209885`, Dependency Review `43065210237`, ODD docs `43065209813`, dashboard `43065209825`.
+- Runs push: backup restore `43065198737`, Secret history `43065198895`, Security `43065198707`; todos SUCCESS en el mismo SHA.
+- El CI principal ejecutó unit tests, auth/rate-limit, BCV effective-date, branch scope, register shifts, cashier open-shift, catálogo, inventario, checkout atómico y runtime-role API integration. Todos los pasos terminaron SUCCESS.
+- Backup restore smoke ejecutó ambos perfiles: main 0001–0016 y BCV 0001–0023; ambos SUCCESS. La prueba de membresías del principal de backup en PostgreSQL desechable pasó ambas orientaciones y el baseline vacío.
+- **Causa de fallos del HEAD anterior** `9bdb6aff8358409a715b8b440b30c3577b16dc32`: los tres workflows fallaron antes de ejecutar pruebas por resolución DNS temporal de `azure.archive.ubuntu.com`, `archive.ubuntu.com` y `security.ubuntu.com` durante APT. No fueron fallos funcionales demostrados; tampoco se atribuyeron tests no ejecutados como aprobados.
+- **Corrección persistida:** commit `5ef21974725b91649705ed1bf6e9ae3019ca8e85`; helper `scripts/ci/apt-retry.sh`, test `.github/scripts/test-apt-retry.sh`, integración en CI, migration-runner y backup-restore-smoke. Reintentos acotados, timeouts, update estricto y fallo no-cero ante error persistente. Prueba local de simulación y CI exact-HEAD SUCCESS.
+- Cloudflare Workers Builds y Pages publicaron checks SUCCESS asociados a la rama; son validaciones/builds de rama, no evidencia de promoción a producción.
+- Reviews formales: 0. Review threads: 0. No hay aprobación formal de #287.
+- Issue #53 sigue OPEN/P0. La identidad efectiva del secreto `DATABASE_URL_BACKUP_RO` y sus privilegios reales no están verificados. El diagnóstico de seis booleanos está solo en la rama; no se ha ejecutado en un backup natural de main posterior a su integración. No se ejecutó `workflow_dispatch`.
+- **Producción: NOT READY.** No merge, no Neon writes, no datos reales, no cambios remotos de roles/grants, secretos, Cron, DNS, billing ni despliegue manual.
+- Continuidad: `docs/WORK_CHECKPOINT.md` es el checkpoint canónico según `AGENTS.md`. El archivo raíz `WORK_CHECKPOINT.md` solicitado en algunos handoffs no existe; no crear una copia duplicada.
+- Próximo paso: mantener #287 Draft; continuar auditoría Nivel 1/P0 y revisar los gates de identidad backup/runtime. No iniciar nueva lógica comercial hasta cerrar los controles críticos. Revalidar siempre el HEAD vivo antes de actuar.
+
+---
+
 # Estado vivo — 2026-11-11: API de turnos y restore profile 23
 
 - `main`: `c5373564413ba086690552c6b7deeab08d7b4a89`, sin cambios.

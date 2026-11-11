@@ -2744,3 +2744,16 @@ La hipótesis anterior de que el helper de espera era la causa no era correcta. 
 - En el mismo SHA, Database migration validation `43048869994` SUCCESS; Secret history `43048870732` SUCCESS; ODD/docs `43048869895` SUCCESS; Security `43048869156` SUCCESS; Dependency review `43048869639` SUCCESS; dashboard `43048869221` SUCCESS; Semgrep `43048869247` SUCCESS; Playwright `43048869269` SUCCESS.
 - Próximo trabajo prioritario: resolver la fragilidad de dependencias apt en CI con estrategia reproducible, pinning y verificación de procedencia (p.ej. imágenes/containers con herramientas ya instaladas o setup action confiable y versionada), sin saltarse tests ni descargar binarios sin validar. Luego reejecutar los jobs afectados en un nuevo SHA y verificar todos los pasos reales. Mantener #287 Draft hasta cierre integral.
 - Issue #53 sigue OPEN/P0. Producción NOT READY. No Neon main, secretos, roles/grants remotos, deploy, restore real, Cron, billing, force-push ni rebase/sync automático. MVP 01/12/2026; GO/NO-GO 30/11/2026.
+
+
+## 2026-11-11 — CI APT resilience and exact-HEAD recovery (#287)
+
+- Investigated exact-HEAD failures on `9bdb6aff8358409a715b8b440b30c3577b16dc32`: CI, PostgreSQL migration runner and both backup restore profiles stopped during apt package installation. Job logs showed temporary DNS resolution failures for Ubuntu archive/security mirrors. Downstream migration, restore and test steps were skipped; no code failure was established and no skipped test was marked passed.
+- Added ODD task `odd/tasks/ci-apt-dns-resilience.md` (commit `0949825d58b76b0bf66d472651add314973666eb`).
+- Implemented bounded APT retry helper and regression test in commit `5ef21974725b91649705ed1bf6e9ae3019ca8e85`; wired it into CI, PostgreSQL migration runner and backup restore smoke. Retries are bounded, index refresh is strict, and persistent failures remain non-zero. No tests/assertions were removed or bypassed.
+- Local shell simulation passed: transient failures recover within the configured attempt limit; persistent failures remain failures.
+- Exact code SHA `5ef21974725b91649705ed1bf6e9ae3019ca8e85`: 11/11 PR workflows SUCCESS, 3/3 push workflows SUCCESS, 18/18 check-runs SUCCESS. CI included unit tests and PostgreSQL integration suites; migration runner, database migration validation, Playwright and both synthetic backup restore profiles passed.
+- The database migration validation also passed the backup membership regression for principal-as-member, principal-as-granted-role and no-membership baseline.
+- PR #287 remains OPEN/Draft, with no formal reviews or review threads. Current main `c5373564413ba086690552c6b7deeab08d7b4a89`; comparison 509 ahead / 1 behind, merge base `03442951b2a2f63f5bf4dcf560f2c91be4f6cc71`. No sync/rebase/merge was performed.
+- Issue #53 remains OPEN/P0. The effective production backup principal and remote least-privilege state remain unverified; the new diagnostic is branch-only and has not run on a natural scheduled backup after reaching main. No secret, Neon, real data, remote role/grant, Cron, DNS, billing or production changes.
+- Production remains NOT READY. Next priority: continue Security Level 1/P0 verification, then revisit product UI work after critical security gates.

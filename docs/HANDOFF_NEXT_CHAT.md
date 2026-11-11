@@ -1,3 +1,57 @@
+# Handoff operativo — 11 de noviembre de 2026 — CI y P0
+
+> Este bloque prevalece sobre todos los snapshots inferiores. Verificar el estado vivo antes de continuar; no reutilizar checks de un SHA anterior.
+
+## Fuente de verdad
+
+- Repo: `BTF14/Micro-app`.
+- Rama: `integration/bcv-checkout-rehearsal-20261109`.
+- PR #287: OPEN / Draft / mergeable=true.
+- main: `c5373564413ba086690552c6b7deeab08d7b4a89`.
+- Último HEAD de código validado: `5ef21974725b91649705ed1bf6e9ae3019ca8e85`.
+- Comparación contra main: 509 ahead / 1 behind; merge base `03442951b2a2f63f5bf4dcf560f2c91be4f6cc71`.
+- CI exacto: 11/11 workflows PR SUCCESS, 3/3 workflows push SUCCESS, 18/18 check-runs SUCCESS; combined legacy statuses 0.
+- Reviews formales: 0. Threads: 0. Issue #53 OPEN/P0.
+- El archivo raíz `WORK_CHECKPOINT.md` no existe; el canónico es `docs/WORK_CHECKPOINT.md` según AGENTS.md.
+
+## Trabajo concreto completado
+
+Commit `5ef21974725b91649705ed1bf6e9ae3019ca8e85` agrega retries APT acotados y estrictos para evitar que un DNS temporal de Ubuntu impida instalar PostgreSQL client/age antes de las pruebas. Helper: `scripts/ci/apt-retry.sh`; prueba: `.github/scripts/test-apt-retry.sh`. Cambios aplicados a CI, migration-runner y backup-restore-smoke.
+
+Resultados exact-HEAD:
+- CI `43065209868`: SUCCESS, incluidas unit tests, typecheck/build y las integraciones PostgreSQL.
+- Database migration validation `43065209826`: SUCCESS; regresión de membresías backup en ambas direcciones.
+- PostgreSQL migration runner `43065209778`: SUCCESS.
+- Backup restore smoke `43065209708`: SUCCESS para main 0001–0016 y BCV 0001–0023.
+- Playwright `43065209886`: SUCCESS.
+- Security `43065209724`, Semgrep `43065209696`, Secret history `43065209885`, Dependency Review `43065210237`, ODD docs `43065209813`, dashboard `43065209825`: SUCCESS.
+- Push scans/backup: `43065198737`, `43065198895`, `43065198707`: SUCCESS.
+
+Los 3 fallos del HEAD anterior `9bdb6aff...` se localizaron antes de tests, en apt/DNS. No eran defectos de aplicación demostrados y no se reutilizaron resultados de pruebas skipped.
+
+## P0 que permanece abierto
+
+Issue #53 sigue OPEN/P0. El diagnóstico de `DATABASE_URL_BACKUP_RO`:
+- Está implementado solo en la rama #287.
+- Es read-only, no imprime DSN/usuario/credenciales/datos y no bloquea el backup.
+- Comprueba identidad, atributos de rol, membresías, escrituras en tablas/columnas, secuencias y CREATE.
+- La prueba sintética verifica ambas orientaciones de `pg_auth_members`.
+- **No demuestra todavía la identidad real del secreto ni los privilegios efectivos en el entorno productivo.** Requiere una ejecución programada natural después de que el workflow llegue a main; no hacer dispatch manual ni modificar Neon/secretos/roles para acelerar.
+
+Producción sigue NOT READY. No merge de #287 mientras permanezca Draft y gates sin cerrar. No Neon writes, datos reales, cambios de secretos/roles/grants, Cron, DNS, billing ni deploy manual.
+
+## Próxima secuencia
+
+1. Revalidar el HEAD vivo de PR #287 y sus checks exactos.
+2. Mantener #287 Draft; no rebase ni force-push por rutina.
+3. Continuar Seguridad Nivel 1: identidad efectiva de backup/Worker, grants/ownership, auth/sesiones, aislamiento tenant/branch y cobertura de permisos.
+4. No abrir nuevos frentes funcionales hasta resolver los bloqueadores críticos.
+5. Después de seguridad, avanzar jornada UI de caja/checkout y E2E; el contrato de pagos (parciales, cambio, recibos, anulaciones y devoluciones) sigue pendiente de aprobación.
+
+No pedir otra vez Build IDs, capturas, terminal, CLI, TinyFish o reconexiones cuando GitHub/documentos ya contienen la evidencia. Si falta algo imprescindible, pedirlo una sola vez y aceptar texto.
+
+---
+
 # Reconciliación viva — 11 de noviembre de 2026
 
 > **Este bloque prevalece sobre todos los snapshots históricos inferiores.** Antes de actuar, volver a consultar el HEAD y los checks exactos de GitHub. No reutilizar validaciones de SHA anteriores.

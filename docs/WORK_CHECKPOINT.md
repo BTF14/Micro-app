@@ -1,3 +1,43 @@
+# Checkpoint — 2026-11-11: CI APT resilience and security P0
+
+**Último HEAD de código validado:** `5ef21974725b91649705ed1bf6e9ae3019ca8e85`, PR #287. **11/11 workflows pull_request + 3/3 push + 18/18 check-runs SUCCESS**. Los documentos que siguen a este bloque son snapshots históricos; no reutilizar sus SHA.
+
+## Bloque completado — resiliencia de CI
+
+- ODD: `odd/tasks/ci-apt-dns-resilience.md`.
+- Commit de implementación: `5ef21974725b91649705ed1bf6e9ae3019ca8e85`.
+- Archivos: `.github/workflows/ci.yml`, `.github/workflows/migration-runner.yml`, `.github/workflows/backup-restore-smoke.yml`, `scripts/ci/apt-retry.sh`, `.github/scripts/test-apt-retry.sh`.
+- Root cause confirmado en los logs del SHA anterior `9bdb6aff...`: DNS temporal falló para mirrors Ubuntu; apt no pudo instalar `postgresql-client` ni `age`; las pruebas downstream fueron skipped.
+- Solución: helper APT compartido con máximo 3 intentos, backoff progresivo, Acquire::Retries, timeouts HTTP/HTTPS, `APT::Update::Error-Mode=any`; no oculta fallos persistentes.
+- Prueba local: simulación de 2 fallos y recuperación en el tercer intento; fallo persistente conserva exit code no-cero. Shell syntax y test del helper SUCCESS.
+- CI exact-HEAD: CI `43065209868` SUCCESS; migration runner `43065209778` SUCCESS; database migration validation `43065209826` SUCCESS; backup restore `43065209708` SUCCESS (main + BCV); Playwright `43065209886` SUCCESS; Security/Semgrep/secret history/dependency review/ODD/dashboard SUCCESS.
+- No se redujeron aserciones ni se saltaron suites.
+
+## Seguridad P0 — no cerrado
+
+- Issue #53 OPEN/P0.
+- `odd/tasks/backup-principal-least-privilege-audit.md` registra el diagnóstico de identidad y privilegios en `.github/workflows/backup.yml`.
+- La regresión de membresías de PostgreSQL ahora detecta ambas direcciones de `pg_auth_members`; prueba desechable pasó en database migration validation.
+- Sigue sin demostrarse qué identidad efectiva usa el secreto real `DATABASE_URL_BACKUP_RO`, ni sus grants remotos. El diagnóstico no bloquea backup y no se ha ejecutado en una corrida natural posterior en main.
+- No leer secreto, no ejecutar workflow_dispatch, no conectar manualmente a Neon, no cambiar roles/grants remotos.
+- Producción NOT READY.
+
+## Estado GitHub y límites
+
+- PR #287 OPEN/Draft, `mergeable=true`, sin reviews formales ni review threads.
+- main `c5373564413ba086690552c6b7deeab08d7b4a89`; comparación de #287: 509 ahead / 1 behind, merge base `03442951b2a2f63f5bf4dcf560f2c91be4f6cc71`.
+- No sincronizar/rebase/force-push por rutina. Mantener Draft.
+- No merge, deploy productivo, Neon writes, datos reales, secretos, roles/grants, Cron, DNS, billing ni Cloudflare manual.
+
+## Siguiente acción
+
+1. Mantener #287 Draft y revalidar GitHub exact-HEAD.
+2. Continuar auditoría de Seguridad Nivel 1: identidad efectiva Worker/backup, permisos efectivos, aislamiento tenant/branch y sesión.
+3. Resolver gates P0/P1 con pruebas; no declarar cierre por CI verde.
+4. Después de seguridad, priorizar UI de jornada de caja/checkout, sujeto al contrato comercial de pagos pendiente de aprobación.
+
+---
+
 # Checkpoint — 2026-11-11: API de turnos
 
 **Código validado:** `0ca91ff51ec545278ceb8eabd3929083aae9022e` en PR #287; 11/11 workflows PR SUCCESS, CI `43009163637` SUCCESS. Los cuatro commits documentales posteriores no modifican código y requieren revalidación del HEAD exacto.

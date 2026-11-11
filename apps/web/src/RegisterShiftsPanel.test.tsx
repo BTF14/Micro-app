@@ -63,12 +63,14 @@ describe("Register shifts workspace", () => {
 
     const closeInputs = [...container.querySelectorAll<HTMLInputElement>(".register-shift-form input")];
     const valueSetter = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, "value")?.set;
-    if (closeInputs.length !== 2 || !valueSetter) throw new Error("Closing count inputs not found");
+    const usdInput = closeInputs[0];
+    const vesInput = closeInputs[1];
+    if (!usdInput || !vesInput || !valueSetter) throw new Error("Closing count inputs not found");
     await act(async () => {
-      valueSetter.call(closeInputs[0], "21.0000");
-      closeInputs[0].dispatchEvent(new Event("input", { bubbles: true }));
-      valueSetter.call(closeInputs[1], "510.00");
-      closeInputs[1].dispatchEvent(new Event("input", { bubbles: true }));
+      valueSetter.call(usdInput, "21.0000");
+      usdInput.dispatchEvent(new Event("input", { bubbles: true }));
+      valueSetter.call(vesInput, "510.00");
+      vesInput.dispatchEvent(new Event("input", { bubbles: true }));
     });
     const reviewButton = [...container.querySelectorAll("button")].find((button) => button.textContent === "Revisar cierre");
     if (!reviewButton) throw new Error("Review close button not found");

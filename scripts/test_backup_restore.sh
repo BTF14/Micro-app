@@ -39,7 +39,7 @@ SQL
 ephemeral="$(psql "$SOURCE_URL" -X -v ON_ERROR_STOP=1 -Atq -F '|' -c 'SELECT (SELECT count(*) FROM auth_sessions), (SELECT count(*) FROM auth_rate_limits), (SELECT count(*) FROM auth_bootstrap_attempts)')"
 [[ "$ephemeral" == "1|1|1" ]] || { echo "Synthetic ephemeral auth fixture missing." >&2; exit 1; }
 psql "$SOURCE_URL" -X -v ON_ERROR_STOP=1 -c 'CREATE DATABASE microapp_restore' >/dev/null
-pg_dump "$SOURCE_URL" --no-owner --no-privileges --format=custom --exclude-table=public.auth_sessions --exclude-table=public.auth_rate_limits --exclude-table=public.auth_bootstrap_attempts --file="$tmpdir/backup.dump"
+pg_dump "$SOURCE_URL" --no-owner --no-privileges --format=custom --exclude-table-data=public.auth_sessions --exclude-table-data=public.auth_rate_limits --exclude-table-data=public.auth_bootstrap_attempts --file="$tmpdir/backup.dump"
 
 age-keygen -o "$tmpdir/age-key.txt" >/dev/null 2>"$tmpdir/age-keygen.log"
 public_key="$(awk '/^# public key:/ {print $4}' "$tmpdir/age-key.txt")"
@@ -66,6 +66,7 @@ SELECT 'inventory_movements|' || count(*)::text FROM inventory_movements WHERE i
 SELECT 'audit_logs|' || count(*)::text FROM audit_logs WHERE organization_id='11111111-1111-4111-8111-111111111111' AND actor_user_id='22222222-2222-4222-8222-222222222222' AND action='synthetic.sale.completed' AND entity_id='66666666-6666-4666-8666-666666666666';
 SELECT 'constraint_count|' || count(*)::text FROM information_schema.table_constraints WHERE table_schema='public' AND table_name=ANY(ARRAY['organizations','app_users','organization_members','auth_allowlist','auth_bootstrap','suppliers','products','exchange_rates','sales','sale_items','payments','inventory_movements','audit_logs']::text[]);
 SELECT 'schema_table_count|' || count(*)::text FROM information_schema.tables WHERE table_schema='public' AND table_type='BASE TABLE' AND table_name=ANY(ARRAY['organizations','app_users','organization_members','auth_allowlist','auth_bootstrap','suppliers','products','exchange_rates','sales','sale_items','payments','inventory_movements','audit_logs']::text[]);
+SELECT 'ephemeral_schema_count|' || count(*)::text FROM information_schema.tables WHERE table_schema='public' AND table_type='BASE TABLE' AND table_name=ANY(ARRAY['auth_sessions','auth_rate_limits','auth_bootstrap_attempts']::text[]);
 SELECT 'sale_item_relationship|' || count(*)::text FROM sale_items i JOIN sales s ON s.organization_id=i.organization_id AND s.id=i.sale_id JOIN products p ON p.organization_id=i.organization_id AND p.id=i.product_id WHERE i.id='77777777-7777-4777-8777-777777777777' AND s.total_usd=10.0000 AND p.stock_quantity=8.000;
 SELECT 'payment_relationship|' || count(*)::text FROM payments p JOIN sales s ON s.organization_id=p.organization_id AND s.id=p.sale_id JOIN organization_members m ON m.organization_id=p.organization_id AND m.user_id=p.received_by WHERE p.id='88888888-8888-4888-8888-888888888888';
 SELECT 'movement_relationship|' || count(*)::text FROM inventory_movements im JOIN products p ON p.organization_id=im.organization_id AND p.id=im.product_id JOIN organization_members m ON m.organization_id=im.organization_id AND m.user_id=im.created_by WHERE im.id='99999999-9999-4999-8999-999999999999';
@@ -77,6 +78,8 @@ restored_manifest="$(manifest "$RESTORE_URL")"
 while IFS='|' read -r label count; do
   if [[ "$label" == "schema_table_count" ]]; then
     [[ "$count" == "13" ]] || { echo "Expected 13 schema tables, got $count." >&2; exit 1; }
+  elif [[ "$label" == "ephemeral_schema_count" ]]; then
+    [[ "$count" == "3" ]] || { echo "Expected all 3 ephemeral auth table schemas, got $count." >&2; exit 1; }
   elif [[ "$label" == "constraint_count" ]]; then
     [[ "$count" =~ ^[0-9]+$ ]] && (( count > 0 )) || { echo "No schema constraints found." >&2; exit 1; }
   else
@@ -88,10 +91,10 @@ if [[ "$source_manifest" != "$restored_manifest" ]]; then
   diff -u <(printf '%s\n' "$source_manifest") <(printf '%s\n' "$restored_manifest") || true
   exit 1
 fi
-excluded="$(psql "$RESTORE_URL" -X -v ON_ERROR_STOP=1 -Atqc "SELECT (to_regclass('public.auth_sessions') IS NULL AND to_regclass('public.auth_rate_limits') IS NULL AND to_regclass('public.auth_bootstrap_attempts') IS NULL)")"
-[[ "$excluded" == "t" ]] || { echo "Ephemeral auth tables were unexpectedly restored." >&2; exit 1; }
+excluded="$(psql "$RESTORE_URL" -X -v ON_ERROR_STOP=1 -Atqc "SELECT (to_regclass('public.auth_sessions') IS NOT NULL AND to_regclass('public.auth_rate_limits') IS NOT NULL AND to_regclass('public.auth_bootstrap_attempts') IS NOT NULL AND (SELECT count(*) = 0 FROM auth_sessions) AND (SELECT count(*) = 0 FROM auth_rate_limits) AND (SELECT count(*) = 0 FROM auth_bootstrap_attempts))")"
+[[ "$excluded" == "t" ]] || { echo "Ephemeral auth table schema missing or ephemeral rows were restored." >&2; exit 1; }
 echo "PASS: encrypted dump checksum and age decryption verified."
 echo "PASS: 13 expected tables and the synthetic source/restore manifests match."
 echo "PASS: sale, payment, stock movement and audit relationships are preserved."
-echo "PASS: auth_sessions, auth_rate_limits and auth_bootstrap_attempts are excluded."
+echo "PASS: auth_sessions, auth_rate_limits and auth_bootstrap_attempts schemas are preserved with zero restored rows."
 echo "Synthetic round-trip elapsed seconds: $((SECONDS - started_at))."

@@ -140,6 +140,18 @@ public_key="$(awk '/^# public key:/ {print $4}' "$tmpdir/age-key.txt")"
 age -r "$public_key" -o "$tmpdir/schema.dump.age" "$tmpdir/schema.dump"
 (cd "$tmpdir" && sha256sum schema.dump.age > schema.dump.age.sha256 && sha256sum --check schema.dump.age.sha256)
 age -d -i "$tmpdir/age-key.txt" -o "$tmpdir/schema.restored.dump" "$tmpdir/schema.dump.age"
+# Exercise the same least-privilege remote-archive restore runner against a second
+# disposable database. The first restore below remains the detailed manifest oracle.
+psql "$SOURCE_URL" -X -v ON_ERROR_STOP=1 -c 'CREATE DATABASE microapp_remote_restore' >/dev/null
+BACKUP_DUMP="$tmpdir/schema.restored.dump" \
+RESTORE_ADMIN_URL="postgresql://microapp:microapp-test-only@localhost:5432/microapp_remote_restore" \
+RESTORE_MIGRATOR_URL="postgresql://microapp_migrator:migrator-test-only@localhost:5432/microapp_remote_restore" \
+RESTORE_RUNTIME_URL="postgresql://microapp_runtime:runtime-test-only@localhost:5432/microapp_remote_restore" \
+RESTORE_PRODUCER_URL="postgresql://microapp_bcv_sync:bcv-sync-test-only@localhost:5432/microapp_remote_restore" \
+RESTORE_DATABASE_NAME="microapp_remote_restore" \
+MIGRATIONS_DIR="$main_migrations_dir" \
+  bash scripts/db/restore_remote_backup_ephemeral.sh
+
 pg_restore --exit-on-error --single-transaction --no-owner --no-privileges --dbname="$migration_restore_url" "$tmpdir/schema.restored.dump"
 
 MIGRATION_DATABASE_URL="$migration_restore_url" MIGRATIONS_DIR="$main_migrations_dir" RESTORE_GRANTS_PROFILE=main \

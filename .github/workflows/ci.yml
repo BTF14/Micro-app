@@ -95,6 +95,10 @@ jobs:
           CF_PAGES_BRANCH=preview pnpm --filter @micro-app/web exec vitest run src/Preview.test.tsx
       - name: Test backup retention policy
         run: python3 -m unittest discover -s scripts/tests -p 'test_*.py'
+      - name: Test backup Git askpass contract
+        run: |
+          bash scripts/test_backup_git_askpass.sh
+          python3 scripts/test_backup_git_askpass_http.py scripts/backup_git_askpass.sh
       - name: Unit tests
         run: pnpm test
       - name: PostgreSQL auth integration tests

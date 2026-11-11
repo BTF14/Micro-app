@@ -177,22 +177,22 @@ if [[ "$ledger_profile" == "bcv" ]]; then
   sync_state_rows="$(psql "$RESTORE_PRODUCER_URL" -X -v ON_ERROR_STOP=1 -Atqc "SELECT count(*) FROM public.bcv_sync_state WHERE singleton=true")"
   [[ "$sync_state_rows" == "1" ]] || { echo "BCV producer cannot read the expected singleton sync-state row." >&2; exit 1; }
   psql "$RESTORE_PRODUCER_URL" -X -v ON_ERROR_STOP=1 <<'SQL'
-  BEGIN;
-  UPDATE public.bcv_sync_state
-     SET attempt_id=gen_random_uuid(), last_attempt_at=clock_timestamp(),
-         last_outcome='running', updated_at=clock_timestamp()
-   WHERE singleton=true;
-  INSERT INTO public.exchange_rates
-    (base_currency,quote_currency,rate,source,effective_date,fetched_at,validation_status)
-  VALUES
-    ('USD','VES',1,'RESTORE_ROLE_SMOKE_' || gen_random_uuid()::text,
-     CURRENT_DATE,clock_timestamp(),'valid')
-  RETURNING id AS restore_smoke_rate_id \\gset
-  UPDATE public.exchange_rates
-     SET validation_status='stale'
-   WHERE id=:'restore_smoke_rate_id';
-  ROLLBACK;
-  SQL
+BEGIN;
+UPDATE public.bcv_sync_state
+   SET attempt_id=gen_random_uuid(), last_attempt_at=clock_timestamp(),
+       last_outcome='running', updated_at=clock_timestamp()
+ WHERE singleton=true;
+INSERT INTO public.exchange_rates
+  (base_currency,quote_currency,rate,source,effective_date,fetched_at,validation_status)
+VALUES
+  ('USD','VES',1,'RESTORE_ROLE_SMOKE_' || gen_random_uuid()::text,
+   CURRENT_DATE,clock_timestamp(),'valid')
+RETURNING id AS restore_smoke_rate_id \gset
+UPDATE public.exchange_rates
+   SET validation_status='stale'
+ WHERE id=:'restore_smoke_rate_id';
+ROLLBACK;
+SQL
   
 else
   echo "Main paired-intent profile predates the dedicated BCV producer contract; LOGIN existence only."

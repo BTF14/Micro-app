@@ -1,3 +1,14 @@
+## Revalidación de readiness — 2026-11-11 — resiliencia backup / PR #287
+
+- Último HEAD con código y comentarios operativos validados: `9101ab502d5c52c86a8b8d01a3a79487dd07e5e8`; 18/18 check-runs, 11/11 PR workflows, 3/3 push workflows SUCCESS. Restore smoke main 0001–0016 y BCV 0001–0023 SUCCESS; CI 43/43; migration runner 21/21.
+- Commit documental posterior `e5dbb497fbb2779f8fc1581880dc5d8c9ed00b65` actualiza continuidad y necesita su propia validación exact-HEAD.
+- Backup programado: se sustituyeron llamadas APT directas por reintentos acotados/estrictos y curl retry/timeouts; no se ejecutó backup manual. El run natural anterior falló antes de conectar por DNS; aún no existe evidencia de un backup natural exitoso posterior.
+- PR #287 OPEN/Draft; 123 archivos, 19,233 adiciones, 307 eliminaciones; 524 ahead / 1 behind main; 0 reviews formales / 0 threads; mergeable clean. No merge.
+- Neon backup role sigue P0: rol `backup_readonly` observado privilegiado; secreto efectivo no leído/desconocido. Candidate least-privilege contract sintético pasa, no sustituye producción.
+- Issue #53 OPEN/P0; producción **NOT READY**. No merge/deploy/Neon mutation/secret change/Cron/DNS/billing.
+
+---
+
 ## Revalidación — 2026-11-11 — PR #287 / backup principal
 
 - PR #287 OPEN/Draft; último HEAD de código con validación exacta `cb81ecdf6bb5fe2c0d7806f6d744925300c8ba7a`: 16/16 check-runs, 11/11 workflows PR y 2/2 push SUCCESS. Posteriores commits documentales `9114b11` y `6f7dbac` necesitan checks propios. No merge.

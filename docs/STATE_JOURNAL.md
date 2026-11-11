@@ -2789,3 +2789,13 @@ La hipótesis anterior de que el helper de espera era la causa no era correcta. 
 - Disposable PostgreSQL 18 candidate test extended in commit `cb81ecdf6bb5fe2c0d7806f6d744925300c8ba7a`: explicit and default SELECT for existing/future tables and sequences; no writes, sequence USAGE/UPDATE, CREATE DATABASE/ROLE, SET ROLE or membership; pg_dump and pg_restore-list success.
 - PR #287 remains OPEN/Draft; 123 files, 19,109 additions, 297 deletions; 518 ahead / 1 behind main, only missing main commit is a backlog-ledger documentation entry. 0 formal reviews / 0 review threads; mergeable=true but mergeable_state=blocked.
 - Issue #53 OPEN/P0; production NOT READY. No merge, deploy, Neon mutation, secret changes, Cron, DNS or billing.
+
+
+## 2026-11-11 — scheduled backup package resilience and BCV restore profile correction
+
+- Backup workflow now reuses the tested bounded APT retry helper for strict index refresh and installs, runs its isolated helper test, and retries the PGDG key download with bounded attempts/timeouts. Prior natural scheduled backup failed before DB connection due Ubuntu DNS during age install; no manual dispatch was run to retest.
+- Commit `7155e3684aaef49e0879a46c54c60f4850a0fc37` implements the backup workflow retry integration; commit `4b80e576f95ff1f6204e2cece564fd61e2de3e62` records the runbook; commit `9101ab502d5c52c86a8b8d01a3a79487dd07e5e8` corrects a stale comment from 22 to 23 BCV migrations.
+- On HEAD `9101ab502d5c52c86a8b8d01a3a79487dd07e5e8`: 18/18 check-runs, 11/11 PR workflows and 3/3 push workflows SUCCESS; CI 43/43 steps; migration runner 21/21; synthetic restore main 16-migration 11/11 and BCV 23-migration 10/10.
+- Documentation-only commit `e5dbb497fbb2779f8fc1581880dc5d8c9ed00b65` updates current state/checkpoint/handoff; its exact-HEAD checks must be independently revalidated.
+- PR #287 OPEN/Draft, 123 files, 19,233 additions, 307 deletions; 524 ahead / 1 behind main; mergeable=true/clean; no formal reviews or threads. Issue #53 OPEN/P0; production NOT READY.
+- No secret, connection string or business row was read; no Neon writes, remote role/grant/password/secret changes, manual backup, deploy, Cron, DNS or billing changes.

@@ -1,3 +1,12 @@
+# Addendum — 2026-11-11 — package resilience / 23-migration BCV profile
+
+- The scheduled backup workflow previously had direct `apt-get update/install` calls; a natural scheduled backup had failed before DB connection due Ubuntu DNS during package installation. PR #287 now uses the bounded `scripts/ci/apt-retry.sh` helper, strict update semantics, isolated helper regression test, and curl retries/timeouts for the PostgreSQL PGDG key.
+- This is a code-level resilience improvement only. No manual backup was run; the next natural scheduled run is the only production evidence after a separately approved integration.
+- Restore runner documentation corrected to match code: BCV projection profile contains 23 migrations (0001–0023), main profile 16 (0001–0016). Exact-head restore smoke on `9101ab502d5c52c86a8b8d01a3a79487dd07e5e8` passed both profiles.
+- Current PR #287 HEAD after state documentation: `e5dbb497fbb2779f8fc1581880dc5d8c9ed00b65`; revalidate exact-head CI before relying on it. PR remains Draft, issue #53 OPEN/P0, production NOT READY.
+
+---
+
 # Addendum — 2026-11-11 — default ACL y contrato candidato de backup
 
 - SELECT-only en Neon main confirmó que `backup_readonly` no es read-only: CREATEROLE/CREATEDB/REPLICATION/BYPASSRLS, membership en `neon_superuser` y `pg_write_all_data`, e INSERT/UPDATE/DELETE sobre `public.products`.

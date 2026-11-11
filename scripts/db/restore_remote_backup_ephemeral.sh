@@ -11,7 +11,7 @@ set -euo pipefail
 assert_loopback_connection_url() {
   local connection="$1"
   local expected_user="$2"
-  local pattern="^postgresql://${expected_user}:[A-Za-z0-9._%+-]+@127\\.0\\.0\\.1:5432/${RESTORE_DATABASE_NAME}$"
+  local pattern="^postgresql://${expected_user}:[A-Za-z0-9._%+-]+@127\.0\.0\.1:5432/${RESTORE_DATABASE_NAME}$"
   [[ "$connection" =~ $pattern ]] || {
     echo "Refusing restore: $expected_user connection URL must use the fixed loopback PostgreSQL endpoint 127.0.0.1:5432 without query overrides." >&2
     exit 2

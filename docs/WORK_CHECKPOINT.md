@@ -550,3 +550,5 @@ La validación sintética main 0001–0016 y BCV 0001–0022 pasó, pero no exis
 - Permite listar sucursales asignadas y cajas activas, consultar el turno propio, abrir con fondo inicial USD/VES y cerrar con conteos físicos ingresados nuevamente. La sucursal queda fija durante un turno abierto y el cierre exige revisión/confirmación explícita.
 - Prueba nueva de componente para apertura/cierre y denegación 403. El CI sobre SHA `8da81f1...` falló solo en Build and typecheck por import `Root` no utilizado; corregido y además estrechado el acceso a índices de inputs en `a8148f94...`. Confirmar CI del HEAD final antes de aceptar.
 - No se prellenan conteos finales con el fondo inicial; no se calculan diferencias ni efectivo esperado. No hay checkout, pagos, recibos o UI de ventas.
+
+- CI `9f1f0b9...`: Build and typecheck SUCCESS; unit tests exposed two new component-test assertions running while nested async requests were still loading. The test helper now waits eight event-loop turns (`30d7368...`). Re-run and inspect exact current SHA; do not classify UI tests green yet.

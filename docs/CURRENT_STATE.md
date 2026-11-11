@@ -1,3 +1,19 @@
+# Reconciliación viva — 2026-11-11
+
+- `main`: `c5373564413ba086690552c6b7deeab08d7b4a89` (sin cambios).
+- PR #287: OPEN/Draft, base `main`, rama `integration/bcv-checkout-rehearsal-20261109`; último HEAD de código validado `efb7f8a0b8731fd1805beedd8b8a5af10261d271`.
+- CI exact-HEAD del SHA de código: 11/11 workflows `pull_request` SUCCESS; CI run `43004836986` y `Test backup Git askpass contract` SUCCESS. Combined legacy status contexts: 0.
+- Se integró en #287 el endurecimiento de autenticación Git del backup procedente de #302: helper temporal GIT_ASKPASS, remote limpio, helpers heredados desactivados, token no exportado globalmente y entregado solo a procesos Git; pruebas shell + HTTP loopback.
+- La primera prueba estática falló porque esperaba el texto antiguo de `git clone`; se corrigió el matcher, y el nuevo HEAD exacto `efb7f8a...` pasó. No ocultar el intento fallido intermedio.
+- La mejora permanece solo en #287 Draft. `main` sigue con la URL antigua con token en `.github/workflows/backup.yml`; no declarar que producción ya está corregida.
+- PR #303 continúa OPEN/Draft como procedencia del restore smoke main; no fusionar por separado. #301 OPEN/no Draft, pero su gate de integración documenta que Seguridad Nivel 1 debe cerrarse antes. #302 sigue OPEN/Draft como origen del askpass.
+- Issue #53 continúa OPEN/P0. Producción NOT READY.
+- No se ejecutó backup manual ni restore remoto real; no se leyeron secretos, no se accedió al repositorio privado de backups, Neon, datos reales, Cloudflare sensible, DNS ni billing.
+- El siguiente foco funcional P0 está claro: el frontend todavía marca Caja/ventas e Inventario como pendientes y solo expone catálogo/BCV; no hay UI de carrito/checkout/recibo ni endpoints HTTP de apertura/cierre de turnos. El backend checkout y sus pruebas PostgreSQL no equivalen a jornada desde UI.
+- No inventar métodos ni reglas de pago: el modelo permite cash/card/transfer/mobile_payment/other en el handler, pero SDD deja sin aprobar el contrato comercial completo de pagos, parciales, sobrepago/cambio, recibos y devoluciones/anulaciones.
+- Mantener fecha límite 2026-12-01 y el criterio P0 de un comercio, un local y hasta 1.000 productos. Antes de implementar UI, cerrar explícitamente los contratos bloqueantes sin rebajar controles.
+
+---
 # Actualización de continuidad — 9 de noviembre de 2026
 
 > Esta actualización prevalece sobre snapshots históricos que indiquen otro HEAD o describan como pendientes capacidades ya implementadas. Verificar siempre el SHA vivo en GitHub antes de nuevas acciones.

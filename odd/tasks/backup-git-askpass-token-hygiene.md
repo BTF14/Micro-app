@@ -77,3 +77,18 @@ No cambiar el formato, cifrado, retención, calendario, destino ni permisos del 
 - La primera ejecución del test HTTP en GitHub Actions falló por `Permission denied`: el archivo fuente en el checkout tiene modo 100644, mientras que el workflow de producción lo instala explícitamente con `install -m 700`.
 - El test ahora copia el helper fuente a su directorio temporal y aplica modo 700 antes de entregarlo a Git, reproduciendo el contrato real de instalación sin mutar el checkout.
 - El fallo era del harness de prueba; no demuestra un fallo del workflow productivo. El nuevo SHA debe volver a ejecutar CI exact-HEAD.
+
+## Integración y validación en PR #287 — 2026-11-11
+
+El endurecimiento fue trasladado a la rama de integración #287 para que no quede aislado en la PR de procedencia #302:
+
+- `backup.yml` instala el helper en `$RUNNER_TEMP` con modo 700 y `umask 077`; la limpieza del helper y del clon usa `trap`.
+- `GIT_ASKPASS_REQUIRE=force` y `GIT_TERMINAL_PROMPT=0` evitan prompts interactivos.
+- `git -c credential.helper= clone` y `git -C ... -c credential.helper= push` desactivan helpers de credenciales heredados; el remote queda sin credenciales.
+- El token se captura en una variable de shell no exportada, se retira `GH_TOKEN` del entorno general y solo se inyecta como variable de entorno del proceso Git que necesita autenticar. El helper hijo recibe ese entorno; `prune_backups.py` y los pasos posteriores no reciben el token.
+- `scripts/test_backup_git_askpass.sh` valida contrato del helper, prompts desconocidos, ausencia de token incrustado, URL limpia, askpass obligatorio, limpieza y exposición acotada.
+- `scripts/test_backup_git_askpass_http.py` prueba el desafío HTTP Basic real de Git contra un servidor loopback efímero; el servidor guarda solo booleanos y devuelve 404 después de autenticar. No emula GitHub smart-HTTP ni ejecuta push real.
+
+**Validación exacta del código:** SHA `efb7f8a0b8731fd1805beedd8b8a5af10261d271`; 11/11 workflows `pull_request` SUCCESS, incluido CI `43004836986` y el paso `Test backup Git askpass contract` SUCCESS. El test aislado local también pasó. Los commits posteriores de continuidad, si los hay, requieren revalidación exact-SHA.
+
+**Límite:** la solución existe en #287 OPEN/Draft, no en `main`. El workflow de backup en `main` todavía conserva la URL con token hasta una integración autorizada y revisada. No se ejecutó backup manual, no se usó el secreto real ni se accedió al repositorio privado de backups. Issue #53 permanece OPEN/P0; producción NOT READY.

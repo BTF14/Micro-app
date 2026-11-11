@@ -15,48 +15,42 @@ SH
 cat > "$tmpdir/bin/psql" <<'SH'
 #!/usr/bin/env bash
 set -euo pipefail
-last_arg="${!#}"
-printf '%s\n' "$last_arg" >> "$PSQL_CALL_LOG"
-case "$last_arg" in
-  *"current_user || ':' || session_user || ':'"*)
-    printf '%s\n' "microapp:microapp:true"
-    ;;
-  *"SELECT current_database()"*)
-    printf '%s\n' "microapp_restore"
-    ;;
-  *"inet_server_addr"*)
-    printf '%s\n' "10.20.30.40:5432:microapp_restore"
-    ;;
-  *)
-    echo "Unexpected psql call in non-loopback guard test." >&2
-    exit 90
-    ;;
-esac
+echo "Unexpected database connection: URL guard should reject before psql." >&2
+exit 90
 SH
 chmod +x "$tmpdir/bin/pg_restore" "$tmpdir/bin/psql"
 
 export PATH="$tmpdir/bin:$PATH"
 export PSQL_CALL_LOG="$tmpdir/psql-calls.log"
 export BACKUP_DUMP="$tmpdir/archive.dump"
-export RESTORE_ADMIN_URL="postgresql://microapp:test-only@127.0.0.1:5432/microapp_restore"
-export RESTORE_MIGRATOR_URL="postgresql://microapp_migrator:test-only@127.0.0.1:5432/microapp_restore"
-export RESTORE_RUNTIME_URL="postgresql://microapp_runtime:test-only@127.0.0.1:5432/microapp_restore"
-export RESTORE_PRODUCER_URL="postgresql://microapp_bcv_sync:test-only@127.0.0.1:5432/microapp_restore"
-export RESTORE_DATABASE_NAME="microapp_restore"
+export RESTORE_ADMIN_URL="postgresql://microapp:test-only@127.0.0.1:5432/microapp_remote_restore"
+export RESTORE_MIGRATOR_URL="postgresql://microapp_migrator:test-only@127.0.0.1:5432/microapp_remote_restore"
+export RESTORE_RUNTIME_URL="postgresql://microapp_runtime:test-only@127.0.0.1:5432/microapp_remote_restore"
+export RESTORE_PRODUCER_URL="postgresql://microapp_bcv_sync:test-only@127.0.0.1:5432/microapp_remote_restore"
+export RESTORE_DATABASE_NAME="microapp_remote_restore"
 export MIGRATIONS_DIR="$repo_root/apps/api/migrations"
 
-if output="$(bash "$repo_root/scripts/db/restore_remote_backup_ephemeral.sh" 2>&1)"; then
-  echo "Expected non-loopback restore target to be refused." >&2
-  exit 1
-fi
-if ! grep -q "loopback PostgreSQL" <<< "$output"; then
-  printf '%s\n' "$output" >&2
-  echo "Restore runner did not fail at the loopback target guard." >&2
-  exit 1
-fi
-call_count="$(wc -l < "$PSQL_CALL_LOG" | tr -d ' ')"
-[[ "$call_count" == "3" ]] || {
-  echo "Expected refusal before role bootstrap; observed $call_count psql calls." >&2
-  exit 1
+expect_url_refusal() {
+  local description="$1"
+  shift
+  : > "$PSQL_CALL_LOG"
+  if output="$(env "$@" bash "$repo_root/scripts/db/restore_remote_backup_ephemeral.sh" 2>&1)"; then
+    echo "Expected non-loopback restore target to be refused: $description" >&2
+    exit 1
+  fi
+  if ! grep -q "must use the fixed loopback PostgreSQL endpoint" <<< "$output"; then
+    printf '%s\n' "$output" >&2
+    echo "Restore runner did not fail at the URL target guard: $description" >&2
+    exit 1
+  fi
+  if [[ -s "$PSQL_CALL_LOG" ]]; then
+    echo "Restore runner attempted a database connection before rejecting $description." >&2
+    exit 1
+  fi
 }
-echo "PASS: remote/non-loopback restore targets are rejected before role bootstrap."
+
+expect_url_refusal "administrator URL" RESTORE_ADMIN_URL="postgresql://microapp:test-only@10.20.30.40:5432/microapp_remote_restore"
+expect_url_refusal "runtime URL" RESTORE_RUNTIME_URL="postgresql://microapp_runtime:test-only@remote.example:5432/microapp_remote_restore"
+expect_url_refusal "query override" RESTORE_PRODUCER_URL="postgresql://microapp_bcv_sync:test-only@127.0.0.1:5432/microapp_remote_restore?host=remote.example"
+
+echo "PASS: non-loopback and query-overridden restore URLs are rejected before any database connection."

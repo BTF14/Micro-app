@@ -8,6 +8,25 @@ set -euo pipefail
 : "${RESTORE_PRODUCER_URL:?Set RESTORE_PRODUCER_URL to the direct microapp_bcv_sync connection}"
 : "${RESTORE_DATABASE_NAME:?Set RESTORE_DATABASE_NAME to the disposable target database name}"
 : "${MIGRATIONS_DIR:?Set MIGRATIONS_DIR to the checked-out migration bundle}"
+assert_loopback_connection_url() {
+  local connection="$1"
+  local expected_user="$2"
+  local pattern="^postgresql://${expected_user}:[A-Za-z0-9._%+-]+@127\\.0\\.0\\.1:5432/${RESTORE_DATABASE_NAME}$"
+  [[ "$connection" =~ $pattern ]] || {
+    echo "Refusing restore: $expected_user connection URL must use the fixed loopback PostgreSQL endpoint 127.0.0.1:5432 without query overrides." >&2
+    exit 2
+  }
+}
+
+[[ "$RESTORE_DATABASE_NAME" == "microapp_restore" || "$RESTORE_DATABASE_NAME" == "microapp_remote_restore" ]] || {
+  echo "Refusing restore: target database name is not an approved disposable restore database." >&2
+  exit 2
+}
+assert_loopback_connection_url "$RESTORE_ADMIN_URL" microapp
+assert_loopback_connection_url "$RESTORE_MIGRATOR_URL" microapp_migrator
+assert_loopback_connection_url "$RESTORE_RUNTIME_URL" microapp_runtime
+assert_loopback_connection_url "$RESTORE_PRODUCER_URL" microapp_bcv_sync
+
 command -v psql >/dev/null 2>&1 || { echo "psql is required." >&2; exit 2; }
 command -v pg_restore >/dev/null 2>&1 || { echo "pg_restore is required." >&2; exit 2; }
 command -v git >/dev/null 2>&1 || { echo "git is required." >&2; exit 2; }
@@ -24,9 +43,10 @@ admin_identity="$(psql "$RESTORE_ADMIN_URL" -X -v ON_ERROR_STOP=1 -Atqc "SELECT 
 target_db="$(psql "$RESTORE_ADMIN_URL" -X -v ON_ERROR_STOP=1 -Atqc "SELECT current_database()")"
 [[ "$target_db" == "$RESTORE_DATABASE_NAME" ]] || { echo "Refusing restore outside the declared disposable target database." >&2; exit 2; }
 
-admin_target="$(psql "$RESTORE_ADMIN_URL" -X -v ON_ERROR_STOP=1 -Atqc "SELECT COALESCE(inet_server_addr()::text, '') || ':' || COALESCE(inet_server_port()::text, '') || ':' || current_database()")"
-[[ "$admin_target" == "127.0.0.1:5432:$RESTORE_DATABASE_NAME" ]] || {
-  echo "Refusing restore: administrator connection must terminate at the declared loopback PostgreSQL 127.0.0.1:5432 target." >&2
+admin_target="$(psql "$RESTORE_ADMIN_URL" -X -v ON_ERROR_STOP=1 -Atqc "SELECT COALESCE(inet_server_addr()::text, '') || '|' || COALESCE(inet_server_port()::text, '') || '|' || current_database()")"
+IFS='|' read -r admin_server_addr admin_server_port admin_server_db <<< "$admin_target"
+[[ -n "$admin_server_addr" && "$admin_server_port" == "5432" && "$admin_server_db" == "$RESTORE_DATABASE_NAME" ]] || {
+  echo "Refusing restore: administrator connection did not resolve to a PostgreSQL 5432 session on the declared disposable database." >&2
   exit 2
 }
 
@@ -64,7 +84,7 @@ assert_local_login_target() {
     echo "Restore connection is not a direct $expected_login LOGIN." >&2
     exit 2
   }
-  target="$(psql "$connection" -X -v ON_ERROR_STOP=1 -Atqc "SELECT COALESCE(inet_server_addr()::text, '') || ':' || COALESCE(inet_server_port()::text, '') || ':' || current_database()")"
+  target="$(psql "$connection" -X -v ON_ERROR_STOP=1 -Atqc "SELECT COALESCE(inet_server_addr()::text, '') || '|' || COALESCE(inet_server_port()::text, '') || '|' || current_database()")"
   [[ "$target" == "$admin_target" ]] || {
     echo "Refusing restore: $expected_login connection does not reach the same disposable loopback database." >&2
     exit 2

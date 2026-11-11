@@ -30,8 +30,8 @@ BEGIN
   IF NOT pg_catalog.has_function_privilege('microapp_runtime', open_oid, 'EXECUTE')    OR NOT pg_catalog.has_function_privilege('microapp_runtime', close_oid, 'EXECUTE') THEN
     RAISE EXCEPTION 'REGISTER_SHIFT_RUNTIME_FUNCTION_EXECUTE_MISSING';
   END IF;
-  IF pg_catalog.position('register_shift.opened' IN pg_catalog.pg_get_functiondef(open_oid)) = 0
-    OR pg_catalog.position('register_shift.closed' IN pg_catalog.pg_get_functiondef(close_oid)) = 0
+  IF pg_catalog.strpos(pg_catalog.pg_get_functiondef(open_oid), 'register_shift.opened') = 0
+    OR pg_catalog.strpos(pg_catalog.pg_get_functiondef(close_oid), 'register_shift.closed') = 0
     OR NOT pg_catalog.has_table_privilege('microapp_migrator', 'public.audit_logs', 'INSERT')
     OR pg_catalog.has_table_privilege('microapp_runtime', 'public.audit_logs', 'SELECT') THEN
     RAISE EXCEPTION 'REGISTER_SHIFT_AUDIT_EVENT_CONTRACT_INVALID';

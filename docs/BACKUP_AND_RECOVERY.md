@@ -384,3 +384,7 @@ The BCV restore probe also performs the producer's permitted state update, synth
 The earlier failed run `42994254096` is a retained test-oracle failure, not hidden: it caught that the historical 0012 assertion was being applied at the final schema point. The profile-specific final assertion replaced it and the corrected main + BCV restore passed.
 
 No remote backup artifact or age key was accessed; `.github/workflows/backup-real-restore.yml` remains manual and was not dispatched. No production, Neon, remote role/grant, secrets, Cron, DNS, Cloudflare sensitive setting, billing or deployment was changed.
+
+### Follow-up: effective role probes
+
+The shared ephemeral runner now proves actual direct-login behavior, not merely role existence: runtime reads `public.organizations` and cannot CREATE in schema `public`; for the BCV profile, the dedicated producer reads its singleton, updates only its narrow state columns, inserts a synthetic rate and updates only its validation status, with the entire transaction rolled back. Main profile does not claim a producer operation test because it predates the dedicated producer migration. At HEAD `f6c453d928ffaef4ab15efc5733bd3c7001089e3`, exact-HEAD PR workflows 13/13 SUCCESS, including backup smoke `42997279023` and Playwright `42997278934`; CI `42997279209` SUCCESS. Remote archive workflow itself remains manual and unexecuted.

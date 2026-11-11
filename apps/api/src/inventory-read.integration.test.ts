@@ -35,6 +35,7 @@ describe.skipIf(!databaseUrl)("inventory balance and ledger read APIs against Po
   let organizationId = "";
   let branchId = "";
   let warehouseId = "";
+  let otherBranchId = "";
   let otherWarehouseId = "";
   let ownerToken = "";
   let cashierToken = "";
@@ -117,9 +118,10 @@ describe.skipIf(!databaseUrl)("inventory balance and ledger read APIs against Po
       "INSERT INTO branches (organization_id, name, slug) VALUES ($1, 'Other Inventory Branch', $2) RETURNING id",
       [organizationId, "inventory-read-other-" + suffix],
     );
+    otherBranchId = otherBranch.rows[0]!.id;
     const otherWarehouse = await admin.query<{ id: string }>(
       "INSERT INTO warehouses (organization_id, branch_id, code, name) VALUES ($1, $2, $3, 'Other Branch Warehouse') RETURNING id",
-      [organizationId, otherBranch.rows[0]!.id, "other-" + suffix],
+      [organizationId, otherBranchId, "other-" + suffix],
     );
     otherWarehouseId = otherWarehouse.rows[0]!.id;
 
@@ -321,7 +323,26 @@ describe.skipIf(!databaseUrl)("inventory balance and ledger read APIs against Po
     expect(secondBody.nextCursor).toBeNull();
 
     const cashierResponse = await get(root() + "/inventory/movements", cashierToken);
-    expect(cashierResponse.status).toBe(403);
+    expect(cashierResponse.status).toBe(200);
+    const cashierBody = await cashierResponse.json() as { items: Array<Record<string, unknown>> };
+    expect(cashierBody.items.length).toBeGreaterThan(0);
+    expect(cashierBody.items.every((item) => !("unit_cost_usd" in item))).toBe(true);
+
+    // Cashier receives read-only movement access, not warehouse/count management.
+    expect((await get(`/api/orgs/${organizationId}/branches/${branchId}/warehouses`, cashierToken)).status).toBe(403);
+    expect((await get(root() + "/counts", cashierToken)).status).toBe(403);
+
+    // The same role remains confined to its active branch membership and tenant.
+    const unassignedBranchMovements = await get(
+      `/api/orgs/${organizationId}/branches/${otherBranchId}/warehouses/${otherWarehouseId}/inventory/movements`,
+      cashierToken,
+    );
+    expect(unassignedBranchMovements.status).toBe(403);
+    const crossTenantMovements = await get(
+      `/api/orgs/${foreignOrganizationId}/branches/${foreignBranchId}/warehouses/${foreignWarehouseId}/inventory/movements`,
+      cashierToken,
+    );
+    expect(crossTenantMovements.status).toBe(401);
   });
 
   it("rejects invalid selectors, cursors and pagination values before returning inventory", async () => {

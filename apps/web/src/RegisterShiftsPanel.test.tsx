@@ -22,7 +22,11 @@ let activeShift: Record<string, unknown> | null;
 function jsonResponse(body: unknown, status = 200) {
   return new Response(JSON.stringify(body), { status, headers: { "Content-Type": "application/json" } });
 }
-async function settle() { await act(async () => { await new Promise((resolve) => setTimeout(resolve, 0)); }); }
+async function settle() {
+  for (let attempt = 0; attempt < 8; attempt += 1) {
+    await act(async () => { await new Promise((resolve) => setTimeout(resolve, 0)); });
+  }
+}
 
 beforeEach(() => {
   activeShift = null;

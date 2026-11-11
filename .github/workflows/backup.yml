@@ -170,10 +170,18 @@ jobs:
             echo "::error::Falta el secreto BACKUP_REPO_TOKEN en este repositorio. Ver docs/SECURITY_ROADMAP.md punto 2."
             exit 1
           fi
-          git clone --depth 1 "https://x-access-token:${GH_TOKEN}@github.com/${BACKUP_REPO}.git" backups-repo
-          mkdir -p backups-repo/daily
-          mv "backup-${STAMP}.dump.age" "backup-${STAMP}.dump.age.sha256" backups-repo/daily/
-          cd backups-repo
+          askpass="$RUNNER_TEMP/git-askpass-backup.sh"
+          backup_repo_dir="$RUNNER_TEMP/backups-repo"
+          umask 077
+          install -m 700 "$GITHUB_WORKSPACE/scripts/backup_git_askpass.sh" "$askpass"
+          trap 'rm -f "$askpass"; rm -rf "$backup_repo_dir"' EXIT
+          export GIT_ASKPASS="$askpass"
+          export GIT_ASKPASS_REQUIRE=force
+          export GIT_TERMINAL_PROMPT=0
+          git clone --depth 1 "https://github.com/${BACKUP_REPO}.git" "$backup_repo_dir"
+          mkdir -p "$backup_repo_dir/daily"
+          mv "backup-${STAMP}.dump.age" "backup-${STAMP}.dump.age.sha256" "$backup_repo_dir/daily/"
+          cd "$backup_repo_dir"
           git config user.email "backups-bot@micro-app.invalid"
           git config user.name "Micro app backups bot"
           git add daily/

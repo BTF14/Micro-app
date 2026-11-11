@@ -4,7 +4,7 @@ import { formatNumeric, parseNumeric } from "@micro-app/money";
 import type { Bindings } from "./bindings";
 import { isTrustedOrigin } from "./auth";
 import { authorizeBranchOperation } from "./authorization";
-import { lockBranchScopes } from "./branch-context";
+import { lockBranchScopes, type BranchContext } from "./branch-context";
 import { readBodyWithinLimit } from "./bounded-body";
 import { withDatabaseClient, withDatabaseTransaction } from "./database";
 import { resolveOpenCashierRegisterShift } from "./cashier-open-shift";
@@ -12,7 +12,7 @@ import { resolveOpenCashierRegisterShift } from "./cashier-open-shift";
 const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const MAX_BODY_BYTES = 4 * 1024;
 
-type ShiftBranch = { userId: string; organizationId: string; branchId: string; organizationRole: string };
+type ShiftBranch = BranchContext;
 type RegisterRow = { id: string; name: string; code: string };
 type ShiftRow = {
   id: string; organization_id: string; branch_id: string; register_id: string;

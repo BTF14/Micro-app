@@ -48,7 +48,16 @@ trap 'rm -f "$tmp_sql"' EXIT
         statement = statement "\n" $0
         if ($0 ~ /;[[:space:]]*$/) { print statement; capture = 0; statement = "" }
       }
-    ' "$file"
+    ' "$file" | {
+      if [[ "$profile" == "bcv" ]]; then
+        # The projection profile deliberately drops the paired-intent table,
+        # sequence and helper functions introduced by migration 0010. Their
+        # historical ACL statements must not be replayed against absent objects.
+        grep -Ev 'inventory_balance_ledger_intents|record_inventory_balance_ledger_intent|consume_inventory_balance_ledger_intent|assert_inventory_balance_ledger_intent_consumed' || true
+      else
+        cat
+      fi
+    }
   done
   echo "COMMIT;"
 } > "$tmp_sql"

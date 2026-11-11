@@ -68,8 +68,8 @@ Excluded:
 | Reconciliar workflow y documentación de backup | Inventario exacto de opciones pg_dump, exclusiones y permisos requeridos | Main blob `5df4087`; líneas 83–87 excluyen tablas completas; docs contienen referencias históricas distintas | in progress |
 | Modelar privilegios PostgreSQL mínimos | Matriz de grants/denies por objeto y rol | Docs PostgreSQL + tests en instancia efímera | pending |
 | Diseñar contrato de identidad efectiva | Procedimiento no sensible para confirmar principal real | Output booleano/identificador no secreto; ejecución real aún no autorizada | pending |
-| Construir pruebas de roles sintéticos | Assertions de lectura, escritura denegada, memberships y RLS | PostgreSQL desechable y CI | pending |
-| Verificar exclusión de datos efímeros | DDL conservado, cero filas exportadas para las tres tablas | pg_dump archive inspection + restore sintético | pending |
+| Construir pruebas de roles sintéticos | Assertions de lectura, escritura denegada, memberships y RLS | `scripts/tests/test_backup_role_privileges.sh` agregado; ejecución PostgreSQL 18 pendiente en CI | implemented / CI pending |
+| Verificar exclusión de datos efímeros | DDL conservado, cero filas exportadas para las tres tablas | `scripts/test_backup_restore.sh` usa `--exclude-table-data`, inspecciona archive entries, compara columnas y exige cero filas; ejecución PostgreSQL 18 pendiente | implemented / CI pending |
 | Separar gates tenant/sesión | Lista de criterios de aislamiento y autorización no cubiertos por backup | Revisión de código, callers y pruebas cross-tenant | pending |
 | Revisar y cerrar issue | Evidencia completa, riesgos y remediación priorizada | PR, exact-SHA CI, revisión y decisión de seguridad | pending |
 
@@ -91,3 +91,12 @@ Excluded:
 - Limitations not verified: effective production backup identity, live role attributes/memberships/grants, RLS behavior and production restore
 - Residual risks: Issue #53 remains OPEN/P0; production NOT READY
 - Next step: complete the static workflow/privilege matrix, then implement only synthetic PostgreSQL tests on this branch; no remote role/secret/database changes.
+
+
+## Implementation update — synthetic PostgreSQL 18 contract (2026-11-11 UTC)
+
+- Added `scripts/tests/test_backup_role_privileges.sh`: creates disposable `microapp_migrator`, `microapp_runtime` and `microapp_backup` roles; configures only CONNECT, schema USAGE, table SELECT and sequence SELECT; checks non-admin attributes, absence of direct/transitive membership in migrator/runtime, positive read grants, and absence of table/sequence write privileges.
+- The role test attempts INSERT, UPDATE, DELETE, TRUNCATE, CREATE/ALTER/DROP objects and schema, sequence mutation, ALTER ROLE and GRANT membership. Each negative test must fail specifically with a permission/ownership error.
+- Updated `scripts/test_backup_restore.sh` to run the role matrix and generate its synthetic dump as `microapp_backup`, using the three `--exclude-table-data=public.<table>` options.
+- The archive is inspected for all three table-definition entries. The restored database must contain all three tables, matching column metadata, and zero rows in each. The existing 13-table business manifest still compares source and restore.
+- This is implementation only. PostgreSQL 18 execution has not yet occurred; do not mark these ACs verified until the CI run completes. The operational `.github/workflows/backup.yml` remains unchanged pending that proof.

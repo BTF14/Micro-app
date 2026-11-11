@@ -73,3 +73,33 @@ This is a correction inside the unmerged integration branch. Migration 0022 has 
 - `migration-check.yml` siembra grants deliberadamente amplios de tabla y columna al productor y a PUBLIC; después verifica que migration 0022 los elimina. También concede CREATE al productor como admin, comprueba que el preflight falle con `MICROAPP_BCV_SYNC_SCHEMA_PRIVILEGES_INVALID` y revoca el grant con el propietario.
 - La prueba de integración BCV separa los clientes producer/runtime/admin: sincronización e INSERT con producer, lectura/checkout con runtime, limpieza solo con admin. Incluye una prueba que confirma que runtime recibe SQLSTATE `42501` al intentar persistir una tasa.
 - SHA `24bcf66c0c570ec76566de03a70b2443e64fc69f`: 11/11 workflows `pull_request` SUCCESS; migration validation, migration runner, CI, BCV effective-date integration con producer LOGIN, runtime-role API integration, Playwright, backup smoke, security scans, dependency review y ODD validation SUCCESS.
+
+## Critical sequencing hardening — 2026-11-11
+
+### New finding
+
+The live migration-check workflow applies 0021, then deliberately tests a failed/rolled-back 0022 and currently expects `microapp_runtime` to retain UPDATE on `bcv_sync_state.last_success_at`. Migration 0021 itself grants runtime column-level UPDATE on all synchronization fields. Because each numbered migration commits independently, a missing/misconfigured `microapp_bcv_sync` LOGIN or any 0022 preflight failure leaves the database at the 0021 state.
+
+That intermediate state is incompatible with the approved isolated-producer architecture: the public API runtime can forge `last_success_at`, `last_outcome` and `last_effective_date`, undermining the database-enforced checkout freshness gate. The 0021 assertion file currently runs only after 0022 in the workflow, so it does not validate the state immediately after 0021.
+
+### Decision
+
+- Migration 0021 must grant `microapp_runtime` SELECT only on `bcv_sync_state`; it must never grant runtime INSERT/UPDATE on that table.
+- The isolated BCV Worker remains the only writer and uses its own encrypted `DATABASE_URL` under `microapp_bcv_sync`, as declared in `apps/api/wrangler.bcv.toml`. Do not merge the BCV Worker credential into the API Worker.
+- Keep migration 0022 responsible for normalizing any pre-existing PUBLIC/producer ACLs and granting the dedicated producer allowlist. If 0022 fails, the prior 0021 state must remain safe and checkout must fail closed.
+- Run `0021_bcv_sync_state.assertions.sql` immediately after applying 0021, before seeding producer ACL fixtures or attempting 0022.
+- Change the 0022 rollback test: after its injected failure, prove runtime still has SELECT but no table- or column-level UPDATE on BCV state. Never encode the unsafe intermediate privilege as an expected result.
+
+### Acceptance criteria
+
+- [ ] AC-1 — 0021 SQL grants no runtime UPDATE/INSERT on `bcv_sync_state`; runtime retains SELECT only.
+- [ ] AC-2 — 0021 assertions pass immediately after 0021, before migration 0022.
+- [ ] AC-3 — Injected 0022 preflight/transaction failure leaves runtime BCV state read-only.
+- [ ] AC-4 — 0022 still grants the exact producer column allowlist and the runtime lock helper remains callable.
+- [ ] AC-5 — BCV integration tests continue to use the isolated producer LOGIN; runtime direct writes fail with SQLSTATE 42501.
+- [ ] AC-6 — Full migration-check, migration-runner, CI and exact-HEAD check-runs pass.
+- [ ] AC-7 — No Neon/main role/grant changes, secrets, Cron activation, Worker deploy or real data are used.
+
+### Scope and safety
+
+This is an integration-branch-only SQL/CI/ODD correction. No production or Neon database has been touched. Do not add remote role provisioning or activate the isolated BCV Worker as part of this task. Preserve the existing separate Worker configuration and its disabled-by-default setting.

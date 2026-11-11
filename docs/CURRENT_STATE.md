@@ -2686,3 +2686,13 @@ No remote backup artifact or age key was accessed; `.github/workflows/backup-rea
 ### Reconciliación live del principal backup — 2026-11-11
 
 main sigue en c5373564413ba086690552c6b7deeab08d7b4a89. Su .github/workflows/backup.yml (blob 5df408788b9053709261ada3aa22dd73b85d5691) todavía no contiene el diagnóstico de seis booleanos implementado en la rama de PR #287. Últimos runs schedule de main: 42842855127 (2026-11-10 SUCCESS) y 42659924075 (2026-11-09 SUCCESS); ambos ejecutaron una revisión anterior al diagnóstico. Identidad efectiva y least privilege reales continúan NO VERIFICADOS. Próxima evidencia válida: primer run schedule natural después de integrar la versión con diagnóstico; no dispatch manual.
+
+
+
+## Snapshot vivo de continuidad — 2026-11-11
+
+- Rama `integration/bcv-checkout-rehearsal-20261109`, HEAD `3e00d2c1512e1d0c3c0acc84bcdf4663e4976296`; validación exact-HEAD: 13/13 workflows PR SUCCESS, 2/2 push SUCCESS, 16/16 check-runs SUCCESS.
+- PR #287 OPEN/Draft, mergeable clean, cero reviews formales y cero review comments; PR #303 OPEN/Draft en HEAD `d527ae79cd566945cd9bdb3e1475d53b31d3923a`; issue #53 OPEN/P0.
+- CI y restore sintético pasan, pero esto no prueba recuperación de un backup real, identidad efectiva del principal, alertas externas ni RPO/RTO. El diagnóstico de seis booleanos sigue ausente de main; runs schedule previos no sirven como evidencia posterior al cambio.
+- No merge/deploy/Neon main writes/remote grants/secrets/Cron/DNS/Cloudflare sensitive changes/billing/datos reales. Producción NOT READY.
+- Siguiente frente: revisión independiente de #287 y compatibilidad #303; luego resolver el rollout seguro del diagnóstico a main y esperar schedule natural. Mantener issue #53 abierto hasta cerrar gates P0.

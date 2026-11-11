@@ -8,7 +8,7 @@
 - **#300 CLOSED / ABSORBED:** permiso `sales.price.override` ya está retirado en main; prueba negativa y tarea ODD presentes. Rama histórica conservada.
 - **#298 CLOSED / SUPERSEDED:** snapshots absorbidos/reconciliados por #306/#307/#308. Rama histórica conservada.
 - **#303 OPEN / Ready for review:** HEAD `97ac8e53cbd85a928f7b89f9f89f7ebeaf83e0f2`; base main `90b0bdd9c856e92c05141b19b48ac5d1bd7f2eec`; compare 82 ahead / 0 behind; diff neto 3 archivos. Exact-HEAD: **19/19 check-runs SUCCESS y 11/11 pull_request workflows SUCCESS**. Backup smoke PostgreSQL 18 pasó en BCV projection 0001–0023, main paired-intent 0001–0016 y legacy. Review COMMENT `5866941549`; no formal code-owner APPROVE.
-- **Censo:** 3 PR abiertas (#303 Ready, #296 Draft, #193 Ready). Verificar HEAD/base/checks antes de cada acción.
+- **Censo:** 4 PR abiertas en total: tres de backlog (#303 Ready, #296 Draft, #193 Ready) y esta PR documental #309 (Ready, CI pendiente). Verificar HEAD/base/checks antes de cada acción.
 - **#303:** usa fixture BCV 0001–0023 y `microapp_backup` sintético; concede temporalmente CONNECT/USAGE/SELECT para pg_dump y revoca grants al terminar. `--exclude-table-data` conserva DDL auth y omite filas. No prueba identidad efectiva del secreto productivo.
 - **Issue #53 OPEN/P0. PRODUCTION: NOT READY.** Falta identidad efectiva de backup en runtime/Neon, privilegios reales, restauración del artefacto remoto, RPO/RTO, alertas y evidencia operativa de coste $0.
 - Presupuesto USD 0. No Neon main, secretos, datos reales, grants remotos, backup remoto, Cron, Cloudflare manual, DNS, billing ni deploy manual.

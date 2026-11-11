@@ -760,3 +760,11 @@ La nota anterior que pedía diseñar el bootstrap de ownership/grants queda parc
 Validación exact-HEAD de implementación `0ddd0da742b474b7256675b9c32292d7750fc2b0`: 11/11 workflows pull_request SUCCESS; backup restore `42989180384` con ambos perfiles SUCCESS; CI `42989180406` SUCCESS. Detalle y límites en `odd/tasks/backup-restore-no-owner-no-privileges.md`.
 
 No es aún una recuperación productiva completa: falta runbook probado para aprovisionar target y roles LOGIN con credenciales seguras, restaurar artefacto remoto y recuperar la llave age. La identidad efectiva de `DATABASE_URL_BACKUP_RO` sigue pendiente del próximo backup naturalmente programado. Issue #53 OPEN/P0; producción NOT READY.
+
+## Restauración remota bajo roles de aplicación — 2026-11-11
+
+El antiguo restore remoto ejecutaba `pg_restore` como administrador `microapp`; su validación de existencia de tablas no probaba que el servicio recuperado pudiera operar con permisos mínimos. Se reforzó `.github/workflows/backup-real-restore.yml` para usar `scripts/db/restore_remote_backup_ephemeral.sh`: bootstrap solo de roles sintéticos ausentes, restore como LOGIN `microapp_migrator`, selección de perfil main/BCV por el ledger y verificación SHA-256 de cada archivo de migración antes del ACL replay. Se valida owner de tablas/funciones, roles y membresías, auth efímero vacío y LOGIN runtime/producer.
+
+Ambos perfiles ejercitan el mismo script en bases desechables en el smoke test: run `42991705366`, main `130425902535` y BCV `130425902488` SUCCESS, incluida regresión legacy. Detalle en `odd/tasks/backup-remote-restore-app-role-validation.md`.
+
+El workflow que accede al artefacto remoto sigue sin ejecutarse (workflow_dispatch); no se descargó ni descifró una copia real en esta tarea. El diagnóstico de `DATABASE_URL_BACKUP_RO` sigue pendiente hasta que su versión alcance main y corra naturalmente. Issue #53 OPEN/P0; producción NOT READY.

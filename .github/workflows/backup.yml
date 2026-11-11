@@ -77,7 +77,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          if ! diagnostic="$(psql "$DATABASE_URL" -X -v ON_ERROR_STOP=1 -Atq -F '|' <<'SQL'
+          if ! diagnostic="$(psql "$DATABASE_URL" -X -v ON_ERROR_STOP=1 -Atq -F '|' 2>/dev/null <<'SQL'
           SELECT
             (current_user = 'backup_readonly' AND session_user = 'backup_readonly'),
             EXISTS (

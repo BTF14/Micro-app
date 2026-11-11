@@ -88,7 +88,7 @@ test("owner can open and explicitly close their own register shift from the work
   await page.getByRole("button", { name: /caja y turnos/i }).click();
 
   await expect(page.getByRole("heading", { name: "Turnos de caja" })).toBeVisible();
-  await expect(page.getByText("Sucursal Centro")).toBeVisible();
+  await expect(page.getByLabel("Sucursal")).toHaveValue(branchId);
   await page.getByLabel("Fondo inicial USD").fill("50.0000");
   await page.getByLabel("Fondo inicial VES").fill("1000.00");
   await page.getByRole("button", { name: "Abrir turno" }).click();

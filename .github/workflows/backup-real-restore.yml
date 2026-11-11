@@ -69,6 +69,9 @@ jobs:
           BACKUP_FILENAME: ${{ steps.backup.outputs.filename }}
           RESTORE_ADMIN_URL: postgresql://microapp:microapp-restore-test-only@127.0.0.1:5432/microapp_restore
           RESTORE_MIGRATOR_URL: postgresql://microapp_migrator:migrator-restore-test-only@127.0.0.1:5432/microapp_restore
+          RESTORE_RUNTIME_URL: postgresql://microapp_runtime:runtime-restore-test-only@127.0.0.1:5432/microapp_restore
+          RESTORE_PRODUCER_URL: postgresql://microapp_bcv_sync:bcv-sync-restore-test-only@127.0.0.1:5432/microapp_restore
+          RESTORE_DATABASE_NAME: microapp_restore
           MIGRATIONS_DIR: ${{ github.workspace }}/apps/api/migrations
         run: |
           set -euo pipefail

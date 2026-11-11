@@ -62,7 +62,7 @@ Respect trigger ordering and deferred constraints. For checkout, create the draf
 - Compare important FK relationships across tenant, branch, warehouse, register shift, sale, payment, inventory movement, balance and audit.
 - Verify schema objects needed for restore (constraints, indexes, triggers and functions) using deterministic metadata checks that do not print row data.
 - Verify the migration ledger contains every migration in the tested ref with state `applied` and valid checksums.
-- Assert the three ephemeral auth tables are absent from the restored dump.
+- Assert the three ephemeral auth table definitions are present in the restored schema, while all synthetic source rows are absent after restore (use `--exclude-table-data`, never `--exclude-table`).
 - Do not hardcode a stale total such as 13 as a proxy for schema completeness. Derive the required numbered migration sequence from the checked-out ref and keep the business-table manifest explicit and reviewable.
 
 ### 4. Verify encrypted round-trip and recovery evidence
@@ -230,3 +230,8 @@ La cobertura se limita a main 0001–0016. La variante PR #287 0017–0022 queda
 ## Superseding correction — ephemeral auth schema (2026-11-11)
 
 The earlier acceptance wording that required the three ephemeral auth tables to be absent from the restored schema is superseded. The production workflow's intent is to exclude ephemeral **rows**, not the table definitions required by the running application. Use `--exclude-table-data`, keep the three table schemas and metadata in the archive, and assert that all three target tables exist with zero rows. See `odd/tasks/backup-ephemeral-auth-schema-retention.md`.
+
+
+## Superseding current implementation target — 2026-11-11
+
+The active full-schema profile is now the integrated BCV/projection chain 0001–0023, with `scripts/backup_restore_fixture_bcv.sql` and `scripts/test_backup_restore_schema_bcv.sh`. The historical paired-intent 0001–0016 profile remains an independent regression job. The active BCV dump uses the disposable direct-login `microapp_backup` principal with read-only table/sequence access; the principal has no DML/DDL, sequence-write, ownership, elevated role attributes or role memberships. PostgreSQL `pg_dump` requires SELECT to acquire ACCESS SHARE locks even on tables whose rows are excluded, so the synthetic role retains SELECT on the ephemeral auth tables; their rows are nevertheless excluded from the archive using `--exclude-table-data` and the restored tables must exist empty. This CI role does not prove production `DATABASE_URL_BACKUP_RO` identity or Neon privileges.

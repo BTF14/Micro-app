@@ -23,6 +23,7 @@ if [[ "$(psql "$SOURCE_URL" -X -v ON_ERROR_STOP=1 -Atqc 'SELECT current_database
 fi
 
 started_at=$SECONDS
+repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 tmpdir="$(mktemp -d)"
 trap 'rm -rf "$tmpdir"' EXIT
 
@@ -100,6 +101,13 @@ role_search_path_manifest() {
 }
 source_role_search_paths="$(role_search_path_manifest "$migration_url" "$runtime_url" "$producer_url")"
 
+echo "== Bootstrap restore target schema privileges before no-ACL restore"
+psql "$schema_restore_url" -X -v ON_ERROR_STOP=1 <<'SQL'
+REVOKE CREATE ON SCHEMA public FROM PUBLIC;
+GRANT USAGE, CREATE ON SCHEMA public TO microapp_migrator;
+GRANT USAGE ON SCHEMA public TO microapp_runtime, microapp_bcv_sync;
+SQL
+
 echo "== Dump complete schema and populated synthetic graph; exclude ephemeral auth data only"
 # Preserve ownership and ACLs. All required synthetic roles already exist in
 # the disposable PostgreSQL cluster and are verified above.
@@ -117,7 +125,10 @@ public_key="$(awk '/^# public key:/ {print $4}' "$tmpdir/age-key.txt")"
 age -r "$public_key" -o "$tmpdir/schema.dump.age" "$tmpdir/schema.dump"
 (cd "$tmpdir" && sha256sum schema.dump.age > schema.dump.age.sha256 && sha256sum --check schema.dump.age.sha256)
 age -d -i "$tmpdir/age-key.txt" -o "$tmpdir/schema.restored.dump" "$tmpdir/schema.dump.age"
-pg_restore --exit-on-error --dbname="$schema_restore_url" "$tmpdir/schema.restored.dump"
+pg_restore --exit-on-error --single-transaction --no-owner --no-privileges --dbname="$migration_restore_url" "$tmpdir/schema.restored.dump"
+
+MIGRATION_DATABASE_URL="$migration_restore_url" MIGRATIONS_DIR="$repo_root/apps/api/migrations" RESTORE_GRANTS_PROFILE=bcv \
+  bash scripts/db/reapply_restore_role_grants.sh
 
 manifest() {
   psql "$1" -X -v ON_ERROR_STOP=1 -Atq <<'SQL'

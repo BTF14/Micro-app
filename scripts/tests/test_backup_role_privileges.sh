@@ -61,6 +61,13 @@ assert_true "backup role has SELECT on every public sequence" "
       AND NOT has_sequence_privilege('microapp_backup', c.oid, 'SELECT')
   )
 "
+assert_true "current public dump scope has no RLS-protected tables requiring BYPASSRLS" "
+  NOT EXISTS (
+    SELECT 1 FROM pg_class c JOIN pg_namespace n ON n.oid=c.relnamespace
+    WHERE n.nspname='public' AND c.relkind IN ('r','p')
+      AND (c.relrowsecurity OR c.relforcerowsecurity)
+  )
+"
 assert_true "backup role has no table write privileges" "
   NOT EXISTS (
     SELECT 1 FROM pg_class c JOIN pg_namespace n ON n.oid=c.relnamespace

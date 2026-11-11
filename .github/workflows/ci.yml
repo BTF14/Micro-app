@@ -75,6 +75,8 @@ jobs:
         run: psql -X -v ON_ERROR_STOP=1 --dbname "$ADMIN_DATABASE_URL" -f apps/api/migrations/0021_bcv_sync_state.assertions.sql
       - name: Verify dedicated BCV producer role migration 0022 contract
         run: psql -X -v ON_ERROR_STOP=1 --dbname "$ADMIN_DATABASE_URL" -f apps/api/migrations/0022_bcv_dedicated_producer_role.assertions.sql
+      - name: Verify own register-shift runtime operations migration 0023 contract
+        run: psql -X -v ON_ERROR_STOP=1 --dbname "$ADMIN_DATABASE_URL" -f apps/api/migrations/0023_register_shift_runtime_operations.assertions.sql
       - name: Verify checkout per-payment USD allocation contract
         run: psql -X -v ON_ERROR_STOP=1 --dbname "$ADMIN_DATABASE_URL" -f apps/api/migrations/0018_checkout_payment_allocation.assertions.sql
       - name: Verify ledger-authoritative inventory balance projection contract
@@ -113,6 +115,8 @@ jobs:
         run: pnpm --filter @micro-app/api exec vitest run src/register-shifts.integration.test.ts
       - name: PostgreSQL authenticated cashier open-shift integration tests
         run: DATABASE_URL_RUNTIME="$RUNTIME_DATABASE_URL" pnpm --filter @micro-app/api exec vitest run src/cashier-open-shift.integration.test.ts
+      - name: PostgreSQL own register-shift API integration tests (runtime LOGIN)
+        run: DATABASE_URL_RUNTIME="$RUNTIME_DATABASE_URL" DATABASE_URL_ADMIN="$ADMIN_DATABASE_URL" pnpm --filter @micro-app/api exec vitest run src/register-shifts-api.integration.test.ts
       - name: PostgreSQL register-shift member role integration tests
         run: pnpm --filter @micro-app/api exec vitest run src/register-shift-member-roles.integration.test.ts
       - name: PostgreSQL catalog integration tests

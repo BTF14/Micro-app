@@ -68,8 +68,8 @@ Excluded:
 | Reconciliar workflow y documentación de backup | Inventario exacto de opciones pg_dump, exclusiones y permisos requeridos | Main blob `5df4087`; líneas 83–87 excluyen tablas completas; docs contienen referencias históricas distintas | in progress |
 | Modelar privilegios PostgreSQL mínimos | Matriz de grants/denies por objeto y rol | Docs PostgreSQL + tests en instancia efímera | pending |
 | Diseñar contrato de identidad efectiva | Procedimiento no sensible para confirmar principal real | Output booleano/identificador no secreto; ejecución real aún no autorizada | pending |
-| Construir pruebas de roles sintéticos | Assertions de lectura, escritura denegada, memberships y RLS | `scripts/tests/test_backup_role_privileges.sh` agregado; ejecución PostgreSQL 18 pendiente en CI | implemented / CI pending |
-| Verificar exclusión de datos efímeros | DDL conservado, cero filas exportadas para las tres tablas | `scripts/test_backup_restore.sh` usa `--exclude-table-data`, inspecciona archive entries, compara columnas y exige cero filas; ejecución PostgreSQL 18 pendiente | implemented / CI pending |
+| Construir pruebas de roles sintéticos | Assertions de lectura, escritura denegada, memberships y RLS | PostgreSQL 18 run [43102529147](https://github.com/BTF14/Micro-app/actions/runs/43102529147) pasó todas las aserciones del principal sintético | verified at test SHA |
+| Verificar exclusión de datos efímeros | DDL conservado, cero filas exportadas para las tres tablas | PostgreSQL 18 run [43102529147](https://github.com/BTF14/Micro-app/actions/runs/43102529147): archive DDL, columnas/constraints/índices, cero filas y manifiesto de negocio coincidente | verified at test SHA |
 | Separar gates tenant/sesión | Lista de criterios de aislamiento y autorización no cubiertos por backup | Revisión de código, callers y pruebas cross-tenant | pending |
 | Revisar y cerrar issue | Evidencia completa, riesgos y remediación priorizada | PR, exact-SHA CI, revisión y decisión de seguridad | pending |
 
@@ -111,3 +111,11 @@ Excluded:
 
 
 - Additional PostgreSQL 18 test-harness correction: sequence privilege assertions now use a CASE guard on `relkind='S'`. This prevents planner predicate reordering from invoking `has_sequence_privilege` with an index OID. The previous failure was in the test assertion, before the dump operation.
+
+
+## Operational workflow correction after synthetic proof — 2026-11-11 UTC
+
+- After PostgreSQL 18 run `43102529147` passed, `.github/workflows/backup.yml` was updated on this branch to replace the three `--exclude-table` flags with `--exclude-table-data=public.<table>`. The adjacent comment now states that DDL is preserved and only ephemeral rows are excluded.
+- Added an additive dated reconciliation to `docs/BACKUP_AND_RECOVERY.md` and `docs/SECURITY_ROADMAP.md`. Historical records were not rewritten.
+- The operational workflow change is still unmerged and has not been executed against Neon. The exact final branch SHA must pass CI independently; the earlier PostgreSQL 18 run validates the test contract, not later workflow/doc commits.
+- Current branch HEAD before this task-file update: `815d2cb3e666f2c514107bed408a09afa468f6dc`.

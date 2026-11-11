@@ -80,6 +80,7 @@ source_ephemeral="$(psql "$schema_source_url" -X -v ON_ERROR_STOP=1 -Atq -F '|' 
 psql "$schema_source_url" -X -v ON_ERROR_STOP=1 <<'SQL'
 GRANT USAGE ON SCHEMA public TO microapp_backup;
 GRANT SELECT ON ALL TABLES IN SCHEMA public TO microapp_backup;
+REVOKE SELECT ON TABLE public.auth_sessions, public.auth_rate_limits, public.auth_bootstrap_attempts FROM microapp_backup;
 GRANT SELECT ON ALL SEQUENCES IN SCHEMA public TO microapp_backup;
 SQL
 
@@ -134,18 +135,42 @@ SELECT rolcanlogin AND NOT rolsuper AND NOT rolcreatedb AND NOT rolcreaterole
   AND NOT EXISTS (
     SELECT 1 FROM pg_catalog.pg_class c JOIN pg_catalog.pg_namespace n ON n.oid=c.relnamespace
     WHERE n.nspname='public' AND c.relkind IN ('r','p')
+      AND c.relname NOT IN ('auth_sessions','auth_rate_limits','auth_bootstrap_attempts')
+      AND NOT has_table_privilege('microapp_backup',c.oid,'SELECT'))
+  AND NOT EXISTS (
+    SELECT 1 FROM pg_catalog.pg_class c JOIN pg_catalog.pg_namespace n ON n.oid=c.relnamespace
+    WHERE n.nspname='public' AND c.relname IN ('auth_sessions','auth_rate_limits','auth_bootstrap_attempts')
+      AND has_table_privilege('microapp_backup',c.oid,'SELECT'))
+  AND NOT EXISTS (
+    SELECT 1 FROM pg_catalog.pg_class c JOIN pg_catalog.pg_namespace n ON n.oid=c.relnamespace
+    WHERE n.nspname='public' AND c.relkind IN ('r','p')
       AND (has_table_privilege('microapp_backup',c.oid,'INSERT')
         OR has_table_privilege('microapp_backup',c.oid,'UPDATE')
         OR has_table_privilege('microapp_backup',c.oid,'DELETE')
-        OR has_table_privilege('microapp_backup',c.oid,'TRUNCATE')))
+        OR has_table_privilege('microapp_backup',c.oid,'TRUNCATE')
+        OR has_table_privilege('microapp_backup',c.oid,'REFERENCES')
+        OR has_table_privilege('microapp_backup',c.oid,'TRIGGER')
+        OR has_table_privilege('microapp_backup',c.oid,'MAINTAIN')))
+  AND NOT EXISTS (
+    SELECT 1 FROM pg_catalog.pg_class c JOIN pg_catalog.pg_namespace n ON n.oid=c.relnamespace
+    WHERE n.nspname='public' AND c.relkind IN ('r','p')
+      AND EXISTS (SELECT 1 FROM pg_catalog.pg_attribute a WHERE a.attrelid=c.oid AND a.attnum>0 AND NOT a.attisdropped
+        AND (has_column_privilege('microapp_backup',c.oid,a.attname,'INSERT')
+          OR has_column_privilege('microapp_backup',c.oid,a.attname,'UPDATE')
+          OR has_column_privilege('microapp_backup',c.oid,a.attname,'REFERENCES'))))
   AND NOT EXISTS (
     SELECT 1 FROM pg_catalog.pg_class c JOIN pg_catalog.pg_namespace n ON n.oid=c.relnamespace
     WHERE n.nspname='public' AND c.relkind='S'
       AND (has_sequence_privilege('microapp_backup',c.oid,'USAGE')
         OR has_sequence_privilege('microapp_backup',c.oid,'UPDATE')))
+  AND NOT EXISTS (SELECT 1 FROM pg_catalog.pg_database WHERE datdba=(SELECT oid FROM pg_catalog.pg_roles WHERE rolname='microapp_backup'))
+  AND NOT EXISTS (SELECT 1 FROM pg_catalog.pg_namespace WHERE nspname='public' AND nspowner=(SELECT oid FROM pg_catalog.pg_roles WHERE rolname='microapp_backup'))
   AND NOT EXISTS (
     SELECT 1 FROM pg_catalog.pg_class c JOIN pg_catalog.pg_namespace n ON n.oid=c.relnamespace
     WHERE n.nspname='public' AND c.relowner=(SELECT oid FROM pg_catalog.pg_roles WHERE rolname='microapp_backup'))
+  AND NOT EXISTS (
+    SELECT 1 FROM pg_catalog.pg_class c JOIN pg_catalog.pg_namespace n ON n.oid=c.relnamespace
+    WHERE n.nspname='public' AND c.relkind IN ('r','p') AND (c.relrowsecurity OR c.relforcerowsecurity))
   AND NOT pg_catalog.pg_has_role('microapp_backup','microapp_migrator','MEMBER')
   AND NOT pg_catalog.pg_has_role('microapp_backup','microapp_runtime','MEMBER')
   AND NOT pg_catalog.pg_has_role('microapp_backup','microapp_bcv_sync','MEMBER')

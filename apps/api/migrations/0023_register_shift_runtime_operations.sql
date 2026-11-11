@@ -30,7 +30,7 @@ RETURNS TABLE (
 )
 LANGUAGE plpgsql
 SECURITY DEFINER
-SET search_path = pg_catalog
+SET search_path = pg_catalog, public
 AS $open_register_shift$
 BEGIN
   IF p_organization_id IS NULL OR p_branch_id IS NULL OR p_register_id IS NULL OR p_user_id IS NULL
@@ -73,7 +73,7 @@ RETURNS TABLE (
 )
 LANGUAGE plpgsql
 SECURITY DEFINER
-SET search_path = pg_catalog
+SET search_path = pg_catalog, public
 AS $close_register_shift$
 DECLARE
   target_shift_id uuid;

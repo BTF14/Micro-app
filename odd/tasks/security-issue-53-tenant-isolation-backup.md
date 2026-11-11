@@ -65,11 +65,11 @@ Excluded:
 
 | Task | Expected result | Validation / evidence | Status |
 |---|---|---|---|
-| Reconciliar workflow y documentación de backup | Inventario exacto de opciones pg_dump, exclusiones y permisos requeridos | Main blob `5df4087`; líneas 83–87 excluyen tablas completas; docs contienen referencias históricas distintas | in progress |
-| Modelar privilegios PostgreSQL mínimos | Matriz de grants/denies por objeto y rol | Docs PostgreSQL + tests en instancia efímera | pending |
+| Reconciliar workflow y documentación de backup | Inventario exacto de opciones pg_dump, exclusiones y permisos requeridos | PR #305 cambia a `--exclude-table-data=public.*`, corrige la identidad no verificada y actualiza BACKUP_AND_RECOVERY/SECURITY_ROADMAP; exact-SHA CI pendiente tras último ajuste documental | implemented / CI pending |
+| Modelar privilegios PostgreSQL mínimos | Matriz de grants/denies por objeto y rol | PostgreSQL 18 run [43103806966](https://github.com/BTF14/Micro-app/actions/runs/43103806966) pasó matriz sintética completa | verified synthetically |
 | Diseñar contrato de identidad efectiva | Procedimiento no sensible para confirmar principal real | Output booleano/identificador no secreto; ejecución real aún no autorizada | pending |
-| Construir pruebas de roles sintéticos | Assertions de lectura, escritura denegada, memberships y RLS | PostgreSQL 18 run [43102529147](https://github.com/BTF14/Micro-app/actions/runs/43102529147) pasó todas las aserciones del principal sintético | verified at test SHA |
-| Verificar exclusión de datos efímeros | DDL conservado, cero filas exportadas para las tres tablas | PostgreSQL 18 run [43102529147](https://github.com/BTF14/Micro-app/actions/runs/43102529147): archive DDL, columnas/constraints/índices, cero filas y manifiesto de negocio coincidente | verified at test SHA |
+| Construir pruebas de roles sintéticos | Assertions de lectura, escritura denegada, memberships y RLS | PostgreSQL 18 run [43103806966](https://github.com/BTF14/Micro-app/actions/runs/43103806966) pasó atributos, memberships, ownership, DB/schema/table/column/sequence ACL, RLS guard y denegaciones | verified synthetically |
+| Verificar exclusión de datos efímeros | DDL conservado, cero filas exportadas para las tres tablas | PostgreSQL 18 run [43103806966](https://github.com/BTF14/Micro-app/actions/runs/43103806966): DDL, cero filas, manifiesto de negocio y metadatos de tablas/columnas/secuencias/constraints/índices/triggers/policies coincidentes | verified synthetically |
 | Separar gates tenant/sesión | Lista de criterios de aislamiento y autorización no cubiertos por backup | Revisión de código, callers y pruebas cross-tenant | pending |
 | Revisar y cerrar issue | Evidencia completa, riesgos y remediación priorizada | PR, exact-SHA CI, revisión y decisión de seguridad | pending |
 
@@ -156,3 +156,12 @@ Excluded:
 - PR #302 remains OPEN/Draft, not merged. Do not close it until #304 is actually merged and the canonical supersession comment is posted.
 - Branch-protection endpoint for `main` returned 403 `Resource not accessible by integration`; required branch-protection contexts cannot be independently reverified from this integration. No merge is authorized on that evidence.
 - Main remains `797b56a23547b6bfc8c255cab5637755c7eeb0bd`; no production/main changes were made by this task.
+
+
+## Documentation reconciliation — 2026-11-11 UTC
+
+- Refreshed the privilege matrix task table and closure snapshot to reflect the successful PostgreSQL 18 run [43103806966] on SHA `59d159125c245aa173dfd87f341059915f4cc277`.
+- The test run verifies the synthetic role and extended restore schema comparison. It does not certify production identity or grants.
+- The subsequent commit(s) only refine the ODD status snapshot, the workflow comment/message and evidence wording. The resulting new HEAD must complete its own exact-SHA CI before merge.
+- PR #304 remains blocked by 10 queued workflows; PR #302 remains OPEN/Draft. Branch-protection API access remains 403.
+- Branch HEAD before this task-file update: `74796f110e6a22a0727ddc56e25b730321ecea7f`.

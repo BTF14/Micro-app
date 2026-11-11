@@ -141,3 +141,14 @@ The general inventory branch endpoint remains `GET /api/orgs/:organizationId/bra
 
 The CI failure at `inventory-read.integration.test.ts:366` is a stale duplicate assertion: the same test already verifies earlier (lines 282–285) that a Cashier can list only the assigned branch's warehouses with HTTP 200 and receives only warehouse metadata. The later 403 assertion contradicts that test and the existing `inventory.read` role contract. Remove the duplicate contradictory 403 assertion; retain the separate 403 checks for count management, unassigned branch warehouse listing, and cross-tenant movement reads. No API authorization relaxation is required.
 
+
+
+## Shift-specific branch discovery assertions — 2026-11-11
+
+The CI run after introducing the distinct `/register-shifts/branches` route exposed two remaining stale test expectations in `register-shifts-api.integration.test.ts`:
+
+- The route intentionally returns `{ items }`, but the test read `{ branches }`; align the response assertion with the actual route contract.
+- The route authorizes `register.shift.read_own`; Inventory does not hold that operation, so it must receive 403 (not 200). Owner/Admin/Cashier with active branch assignments receive only their assigned branches from this shift-specific endpoint. The general `/branches` endpoint remains separate and follows the broader inventory.read branch-discovery policy.
+
+Do not relax the API authorization to make the test pass. Correct the assertions only.
+

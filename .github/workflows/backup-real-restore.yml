@@ -66,6 +66,7 @@ jobs:
       - name: Decrypt and restore with application roles into ephemeral PostgreSQL
         env:
           AGE_PRIVATE_KEY: ${{ secrets.AGE_PRIVATE_KEY }}
+          AGE_PUBLIC_KEY: age1t04pgcguy87u99r4stlm0gcjsk9dj2s34jsmymw55vlarfteuakse8jmfk
           BACKUP_FILENAME: ${{ steps.backup.outputs.filename }}
           RESTORE_ADMIN_URL: postgresql://microapp:microapp-restore-test-only@127.0.0.1:5432/microapp_restore
           RESTORE_MIGRATOR_URL: postgresql://microapp_migrator:migrator-restore-test-only@127.0.0.1:5432/microapp_restore
@@ -78,8 +79,13 @@ jobs:
           umask 077
           identity="$RUNNER_TEMP/age-identity.txt"
           plaintext="$RUNNER_TEMP/backup.dump"
-          printf '%s\\n' "$AGE_PRIVATE_KEY" > "$identity"
-          trap 'rm -f "$identity" "$plaintext" "$RUNNER_TEMP/archive.list"' EXIT
+          printf '%s\n' "$AGE_PRIVATE_KEY" > "$identity"
+          trap 'rm -f "$identity" "$plaintext" "$RUNNER_TEMP/archive.list" "$RUNNER_TEMP/age-public-key.txt"' EXIT
+          age-keygen -y "$identity" > "$RUNNER_TEMP/age-public-key.txt"
+          if [[ "$(cat "$RUNNER_TEMP/age-public-key.txt")" != "$AGE_PUBLIC_KEY" ]]; then
+            echo "::error::AGE_PRIVATE_KEY does not match the repository backup public key."
+            exit 1
+          fi
           age --decrypt --identity "$identity" --output "$plaintext" "$RUNNER_TEMP/backups-repo/daily/$BACKUP_FILENAME"
           test -s "$plaintext"
           /usr/lib/postgresql/18/bin/pg_restore --list "$plaintext" > "$RUNNER_TEMP/archive.list"

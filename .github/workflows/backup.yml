@@ -87,9 +87,11 @@ jobs:
                 AND NOT r.rolreplication AND NOT r.rolbypassrls
             ),
             EXISTS (
-              SELECT 1 FROM pg_catalog.pg_auth_members m
-              JOIN pg_catalog.pg_roles member_role ON member_role.oid = m.member
-              WHERE member_role.rolname = current_user
+              SELECT 1
+                FROM pg_catalog.pg_auth_members m
+                JOIN pg_catalog.pg_roles principal_role
+                  ON principal_role.oid = m.member OR principal_role.oid = m.roleid
+               WHERE principal_role.rolname = current_user
             ),
             EXISTS (
               SELECT 1 FROM pg_catalog.pg_class c

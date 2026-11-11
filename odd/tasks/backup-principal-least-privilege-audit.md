@@ -40,3 +40,11 @@ The synthetic CI profile cannot prove the real secret identity or remote privile
 ## Coverage limitation — 2026-11-11
 
 The six-boolean diagnostic in `.github/workflows/backup.yml` currently evaluates `has_membership` only when the backup principal is the `member` in `pg_auth_members`. It does not detect other roles that are members of `backup_readonly` (`roleid = principal.oid`) and may be able to `SET ROLE` to it. Therefore this boolean does not yet prove absence of all role-membership edges. Keep the least-privilege gate open until the predicate checks both directions and a synthetic test covers both membership orientations. Do not infer effective identity or least privilege from backup success alone.
+
+
+## Predicate correction — 2026-11-11
+
+- Finding: the original membership boolean joined `pg_auth_members.member` only, detecting roles that the backup principal belongs to but not other roles that belong to `backup_readonly`.
+- Change on the integration branch: the diagnostic now matches the principal OID against both `pg_auth_members.member` and `pg_auth_members.roleid`. Any membership edge in either direction makes the boolean true and keeps the expected-false gate open.
+- Regression test: `.github/scripts/test-backup-principal-membership.sql` creates disposable roles and independently tests (1) principal-as-member, (2) principal-as-granted-role, and (3) no-membership baseline. It runs only against the CI PostgreSQL service through `ADMIN_DATABASE_URL`; it does not connect to Neon or inspect repository secrets.
+- Status: implementation committed to the integration branch; exact-HEAD CI and the new regression test must pass before this correction is considered validated. No remote roles/grants or secrets changed.

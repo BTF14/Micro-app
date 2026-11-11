@@ -2752,3 +2752,8 @@ main sigue en c5373564413ba086690552c6b7deeab08d7b4a89. Su .github/workflows/bac
 - La UI no implementa ventas ni cobros. La jornada POS completa sigue NO READY. No cambiar la clasificación de producción ni cerrar #53.
 
 - **CI feedback UI:** exact SHA `9f1f0b981fe2149ddbbc8b8e73ab5a763fddedaa` passed Build and typecheck but the new `RegisterShiftsPanel` tests failed because the test settle helper did not wait for nested async API calls. Updated helper to wait eight event-loop turns in commit `30d7368c05055c543171cadf7d4d103d650536d5`; latest exact HEAD must be revalidated.
+
+
+### Corrección del diagnóstico de test — 2026-11-11
+
+La hipótesis anterior de que el helper de espera era la causa no era correcta. El log completo mostró que el mock de `fetch` construía `new URL()` sin base, pero el API base del test puede ser una ruta relativa; eso lanzaba antes de evaluar el endpoint y producía el estado de error/carga observado. Se corrigió el mock usando una base de test explícita (`https://micro-app.test`) en `apps/web/src/RegisterShiftsPanel.test.tsx`, commit `98b24eca568dd148b50da70e0d558e996a2739a0`. La espera ampliada se mantiene inocua. Este diagnóstico reemplaza la explicación anterior; exigir CI exact-SHA para verificar el arreglo.

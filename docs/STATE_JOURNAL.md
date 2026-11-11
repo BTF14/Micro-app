@@ -2668,3 +2668,5 @@ La prueba de restore es sintética y cubre perfiles main/BCV; no se ejecutó wor
 - Se bloquea cambio de sucursal mientras el usuario mantiene turno abierto; el conteo final se deja vacío y no se infiere desde el fondo inicial.
 - Test de componente cubre flujo y acceso denegado. Primer CI de UI en SHA `8da81f1...` detectó import `Root` sin uso; corregido en `a8148f94...`. Pendiente confirmar checks del HEAD actual exacto.
 - Scope excluye ventas, cobros, recibos, arqueo y ledger de caja; producción NOT READY y #53 OPEN/P0.
+
+- CI on `9f1f0b9...`: typecheck passed; component tests failed from premature assertion during nested async loading. Updated test wait helper to eight event-loop turns in `30d7368...`; exact-HEAD revalidation required.

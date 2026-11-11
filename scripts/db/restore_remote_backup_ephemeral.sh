@@ -116,6 +116,13 @@ MIGRATIONS_DIR="$profile_dir" \
 RESTORE_GRANTS_PROFILE="$ledger_profile" \
   bash scripts/db/reapply_restore_role_grants.sh
 
+echo "== Run profile-specific effective ACL assertions against restored roles"
+if [[ "$ledger_profile" == "main" ]]; then
+  psql "$RESTORE_MIGRATOR_URL" -X -v ON_ERROR_STOP=1 -f "$source_migrations_dir/0012_postgres_runtime_role_grants.assertions.sql"
+else
+  psql "$RESTORE_MIGRATOR_URL" -X -v ON_ERROR_STOP=1 -f "$source_migrations_dir/0022_bcv_dedicated_producer_role.assertions.sql"
+fi
+
 echo "== Validate restored application identity, ownership, least privilege and ephemeral auth state"
 role_contract="$(psql "$RESTORE_MIGRATOR_URL" -X -v ON_ERROR_STOP=1 -Atqc "
 SELECT count(*) = 3 AND bool_and(

@@ -748,3 +748,7 @@ La rama #287 contiene migraciones 0019–0022: ledger de proyección, fecha BCV 
 Esto no prueba identidad del Worker ni de `DATABASE_URL_BACKUP_RO` en producción. Tampoco cierra least privilege de backup: el workflow productivo usa `--no-owner --no-privileges`, mientras el perfil sintético preserva owners/ACL para probar ese modo. Se requiere un procedimiento de recuperación que reconstituya roles, ownership y grants bajo los flags productivos.
 
 No ejecutar workflow_dispatch de backup, no leer secretos, no tocar Neon main ni datos reales. Issue #53 OPEN/P0; producción NOT READY.
+
+## Backup principal identity diagnostic — 2026-11-11
+
+The scheduled backup workflow now has a non-blocking, read-only diagnostic that emits only booleans for expected `backup_readonly` identity, safe role attributes, role-membership absence, table/column write absence, sequence mutation absence, and schema/database CREATE absence. It does not print or expose the secret, DSN, host, actual username, or row data. A diagnostic failure does not block backup generation. Evidence is pending the next naturally scheduled run; do not dispatch manually or modify remote roles/grants. See `odd/tasks/backup-principal-least-privilege-audit.md`. Issue #53 remains OPEN/P0; production NOT READY.

@@ -463,3 +463,7 @@ Follow-up: remote restore harness additionally tests actual runtime organization
 Se añadió odd/tasks/backup-operational-recovery-runbook.md. Documenta dos rutas de recuperación (branch PITR aislado si la ventana Neon vigente lo permite; artefacto age cifrado en repositorio privado para recuperación independiente), integridad checksum, custodia de llave, restore desechable con roles de aplicación, restricciones de cutover, timestamps de incidente y cálculo de RPO/RTO, alertas y límites $0.
 
 No se fijan objetivos RPO/RTO sin medición y aceptación de negocio. El backup diario no prueba por sí solo RPO de 24h; pg_restore duration no equivale a RTO. No se ejecutó workflow_dispatch, no se accedió a secretos/artefactos reales/llave age, no hubo Neon ni producción. Próximo gate externo: observar backup programado natural y sus seis booleanos, después de que el workflow actualizado alcance default branch. Issue #53 OPEN/P0; producción NOT READY.
+
+### Gate de principal backup — estado actual de main — 2026-11-11
+
+Se verificó main live: HEAD c5373564413ba086690552c6b7deeab08d7b4a89; .github/workflows/backup.yml blob 5df408788b9053709261ada3aa22dd73b85d5691 no contiene todavía el diagnóstico de identidad. Los últimos runs schedule (42842855127 el 2026-11-10 y 42659924075 el 2026-11-09) son SUCCESS, pero anteriores al cambio y no sirven para demostrar los seis booleanos. No declarar identidad ni least privilege verificados. Esperar el primer run programado natural después de que el diagnóstico alcance main; no ejecutar workflow_dispatch.

@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { apiRequest, ApiError, googleLoginUrl, type AuthResponse } from "./auth";
 import "./auth.css";
 import CatalogPanel from "./CatalogPanel";
+import RegisterShiftsPanel from "./RegisterShiftsPanel";
 
 // WhatsApp number format (no "+", no spaces) per https://faq.whatsapp.com/general/chats/how-to-use-click-to-chat.
 function whatsappUrl(message: string): string {
@@ -61,7 +62,7 @@ const PRIVACY_SECTIONS: { heading: string; body: string }[] = [
 ];
 
 const modules = [
-  { number: "01", title: "Caja y ventas", description: "Flujo de venta, cobro y comprobante.", status: "Pendiente de implementación" },
+  { number: "01", title: "Caja y ventas", description: "Turnos de caja disponibles; ventas y cobros en preparación.", status: "Disponible · apertura y cierre de turnos" },
   { number: "02", title: "Inventario", description: "Existencias, movimientos y alertas de stock.", status: "Pendiente de implementación" },
   { number: "03", title: "Productos", description: "Catálogo y precios exactos en USD.", status: "Disponible · catálogo en USD" },
   { number: "04", title: "Tasa BCV", description: "Conversión a VES con fuente y fecha verificables.", status: "Disponible · fuente oficial" },
@@ -297,7 +298,7 @@ export default function App() {
   const [error, setError] = useState(() => readAuthErrorFromUrl());
   const [notice, setNotice] = useState("");
   const [helpModal, setHelpModal] = useState<HelpModalKind | null>(null);
-  const [activeView, setActiveView] = useState<"overview" | "catalog">("overview");
+  const [activeView, setActiveView] = useState<"overview" | "catalog" | "register-shifts">("overview");
   const [bcvRate, setBcvRate] = useState<BcvRateResponse | null>(null);
   const [bcvLoading, setBcvLoading] = useState(false);
   const [bcvError, setBcvError] = useState("");
@@ -465,7 +466,8 @@ export default function App() {
         <nav className="side-nav">
           <a className={`nav-item ${activeView === "overview" ? "active" : ""}`} href="#inicio" onClick={() => setActiveView("overview")} aria-current={activeView === "overview" ? "page" : undefined}><span className="nav-symbol" aria-hidden="true">⌂</span> Resumen</a>
           <button className={`nav-item nav-item-button ${activeView === "catalog" ? "active" : ""}`} type="button" onClick={() => setActiveView("catalog")} aria-current={activeView === "catalog" ? "page" : undefined}><span className="nav-symbol" aria-hidden="true">▦</span>Productos</button>
-          {["Caja y ventas", "Inventario", "Reportes"].map((label) => <span className="nav-item disabled" aria-disabled="true" key={label}><span className="nav-symbol" aria-hidden="true">▦</span>{label}<span className="nav-lock">Pronto</span></span>)}
+          {(organization?.role === "owner" || organization?.role === "admin" || organization?.role === "cashier") ? (<button className={`nav-item nav-item-button ${activeView === "register-shifts" ? "active" : ""}`} type="button" onClick={() => setActiveView("register-shifts")} aria-current={activeView === "register-shifts" ? "page" : undefined}><span className="nav-symbol" aria-hidden="true">▣</span>Caja y turnos</button>) : (<span className="nav-item disabled" aria-disabled="true"><span className="nav-symbol" aria-hidden="true">▣</span>Caja y turnos<span className="nav-lock">Sin acceso</span></span>)}
+          {["Inventario", "Reportes"].map((label) => <span className="nav-item disabled" aria-disabled="true" key={label}><span className="nav-symbol" aria-hidden="true">▦</span>{label}<span className="nav-lock">Pronto</span></span>)}
         </nav>
         <div className="sidebar-bottom">
           <div className="connection-indicator"><span className="connection-dot" aria-hidden="true" /><span><strong>Sesión activa</strong><small>{user.email}</small></span></div>
@@ -475,7 +477,7 @@ export default function App() {
       </aside>
       <section className="main-panel" id="inicio">
         <header className="topbar">
-          <div className="breadcrumb">{organization?.name ?? "Mi negocio"} <span>/</span> {activeView === "catalog" ? "Productos" : "Resumen"}</div>
+          <div className="breadcrumb">{organization?.name ?? "Mi negocio"} <span>/</span> {activeView === "catalog" ? "Productos" : activeView === "register-shifts" ? "Caja y turnos" : "Resumen"}</div>
           <div className="topbar-end">
             <div className="account-chip"><span>{user.display_name.slice(0, 1).toUpperCase()}</span><div><strong>{user.display_name}</strong><small>{user.email}</small></div></div>
             {/* The sidebar's own logout button (.sidebar-bottom) is hidden on narrow screens
@@ -520,13 +522,15 @@ export default function App() {
             <HelpLinks onOpen={setHelpModal} />
           </footer>
           </>
-          ) : (
+          ) : activeView === "catalog" ? (
             <CatalogPanel
               organizationId={organization?.id ?? ""}
               exchangeRate={bcvRate?.rate ?? null}
               exchangeRateStatus={bcvRate ? (bcvError ? "stale" : bcvRate.status) : "unavailable"}
               canManage={organization?.role === "owner" || organization?.role === "admin"}
             />
+          ) : (
+            <RegisterShiftsPanel organizationId={organization?.id ?? ""} userName={user.display_name} />
           )}
         </div>
       </section>

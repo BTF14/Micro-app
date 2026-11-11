@@ -2670,3 +2670,8 @@ La prueba de restore es sintética y cubre perfiles main/BCV; no se ejecutó wor
 - Scope excluye ventas, cobros, recibos, arqueo y ledger de caja; producción NOT READY y #53 OPEN/P0.
 
 - CI on `9f1f0b9...`: typecheck passed; component tests failed from premature assertion during nested async loading. Updated test wait helper to eight event-loop turns in `30d7368...`; exact-HEAD revalidation required.
+
+
+### Corrección del diagnóstico de test — 2026-11-11
+
+La hipótesis anterior de que el helper de espera era la causa no era correcta. El log completo mostró que el mock de `fetch` construía `new URL()` sin base, pero el API base del test puede ser una ruta relativa; eso lanzaba antes de evaluar el endpoint y producía el estado de error/carga observado. Se corrigió el mock usando una base de test explícita (`https://micro-app.test`) en `apps/web/src/RegisterShiftsPanel.test.tsx`, commit `98b24eca568dd148b50da70e0d558e996a2739a0`. La espera ampliada se mantiene inocua. Este diagnóstico reemplaza la explicación anterior; exigir CI exact-SHA para verificar el arreglo.

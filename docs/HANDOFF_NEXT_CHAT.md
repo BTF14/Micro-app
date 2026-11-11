@@ -1,3 +1,25 @@
+# Handoff actualizado — 11 de noviembre de 2026 — PR #287 / backup principal
+
+> Este bloque prevalece sobre snapshots históricos. Revalidar siempre el HEAD exacto.
+
+# Reconciliación viva — 2026-11-11 14:20 EDT — default ACL de backup validado en CI
+
+> Este bloque prevalece sobre snapshots históricos inferiores. No reutilizar SHAs ni resultados CI de commits anteriores.
+
+- Repo `BTF14/Micro-app`; PR #287 OPEN/Draft; branch `integration/bcv-checkout-rehearsal-20261109`; HEAD `cb81ecdf6bb5fe2c0d7806f6d744925300c8ba7a`.
+- HEAD exacto: 16/16 check-runs SUCCESS; 11/11 workflows pull_request SUCCESS; 2/2 workflows push SUCCESS. Restore smoke main (0001–0016) y BCV (0001–0023) SUCCESS; migration validation, migration runner, CI, Playwright, Semgrep, Security, secret-history, dependency review, ODD y dashboard SUCCESS.
+- GitHub indica `mergeable=true`, `mergeable_state=blocked`; PR continúa Draft. Reviews formales 0; review threads 0. No merge.
+- Main `c5373564413ba086690552c6b7deeab08d7b4a89`; merge base `03442951b2a2f63f5bf4dcf560f2c91be4f6cc71`. Rama 518 ahead / 1 behind; el único commit de main ausente agrega el registro de cierres superseded a `docs/BACKLOG_RECOVERY_LEDGER.md`. No sync/rebase automático.
+- PR: 123 archivos, 19,109 adiciones y 297 eliminaciones. Es una integración amplia; requiere revisión independiente completa y permanece Draft.
+- Neon main, SELECT-only: `backup_readonly` tiene CREATEROLE, CREATEDB, REPLICATION y BYPASSRLS; membership directa `neon_superuser`, membership efectiva `pg_write_all_data`, INSERT/UPDATE/DELETE sobre `public.products`. 15 tablas de aplicación y dos secuencias pertenecen a `neondb_owner`; ninguna tabla tiene RLS. Default ACL público de `neondb_owner`: SELECT para futuras tablas, ningún default ACL para secuencias; las dos secuencias actuales tienen SELECT+UPDATE para el rol observado.
+- No se leyó `DATABASE_URL_BACKUP_RO`, Worker `DATABASE_URL` ni secretos. La identidad efectiva de ambos sigue desconocida; no atribuir el rol observado a un secreto sin diagnóstico natural. No se modificaron Neon, roles, grants, passwords, secrets, datos reales, Cron, DNS, billing ni producción.
+- Commit `cb81ecdf6bb5fe2c0d7806f6d744925300c8ba7a` amplió el contrato candidato en PostgreSQL 18 desechable: permisos explícitos y default SELECT para futuras tablas/secuencias; denegación de escrituras, sequence USAGE/UPDATE, CREATE DATABASE/ROLE, SET ROLE y membresías; `pg_dump` y `pg_restore --list`. Exact-HEAD CI SUCCESS. No es prueba del secreto real ni de grants remotos.
+- El comentario de `.github/workflows/backup.yml` se debe interpretar con cuidado: el principal configurado no tiene identidad ni mínimo privilegio certificados; el workflow excluye filas efímeras de auth, no las estructuras.
+- Issue #53 OPEN/P0; producción NOT READY. Mantener #287 Draft. Próximo: revisión independiente de los 123 archivos; no merge/deploy; diseñar continuidad/rollback antes de cualquier DDL/grant/password/secret en Neon. Verificar identidad de backup solo en un backup natural de main tras una integración de release aprobada.
+- MVP 2026-12-01; GO/NO-GO 2026-11-30. Worker identity, CORS, alertas externas, RPO/RTO, coste total USD 0 y validación funcional/comercial checkout/UI siguen pendientes.
+
+---
+
 # Handoff P0 — 11 de noviembre de 2026 — principal de backup privilegiado
 
 > Este hallazgo prevalece sobre notas históricas que describan `backup_readonly` como una identidad de solo lectura.

@@ -1,3 +1,17 @@
+# Checkpoint actualizado — 2026-11-11 — default ACL de backup probado
+
+**HEAD PR #287:** `cb81ecdf6bb5fe2c0d7806f6d744925300c8ba7a`; 16/16 check-runs, 11/11 workflows PR, 2/2 push SUCCESS. PR OPEN/Draft; mergeable=true, mergeable_state=blocked; 0 reviews formales, 0 threads. No merge.
+
+**Neon main, SELECT-only:** `backup_readonly` tiene CREATEROLE/CREATEDB/REPLICATION/BYPASSRLS, membership directa en `neon_superuser`, membership efectiva en `pg_write_all_data`, INSERT/UPDATE/DELETE sobre `public.products`. 15 tablas y dos secuencias pertenecen a `neondb_owner`; sin RLS en las tablas. Default ACL para futuras tablas = SELECT; no hay default ACL para secuencias. Las dos secuencias existentes tienen SELECT+UPDATE para el rol observado. El rol no es read-only.
+
+**No asumir identidad:** no se leyó `DATABASE_URL_BACKUP_RO` ni Worker `DATABASE_URL`; no se sabe qué principal utiliza cada secreto. Nunca revelar/copiar secretos.
+
+**Contrato candidato:** test PostgreSQL 18 desechable ampliado a grants explícitos y default SELECT para futuras tablas/secuencias; prueba pg_dump/pg_restore-list y niega escritura/escalada/membresías. Exact-head CI SUCCESS. No hubo cambios Neon.
+
+**Estado:** issue #53 OPEN/P0; producción NOT READY. PR #287 Draft, 123 archivos; rama 518 ahead / 1 behind (único commit ausente: ledger documental). No sync/rebase automático. Próximo: revisión independiente completa y plan de continuidad/rollback antes de cualquier cambio remoto.
+
+---
+
 # Checkpoint P0 — 2026-11-11 — backup principal privilegiado
 
 **Hallazgo nuevo y confirmado por SELECT-only:** el rol Neon `backup_readonly` no es read-only. Tiene CREATEROLE, CREATEDB, REPLICATION y BYPASSRLS; es miembro directo de `neon_superuser` y miembro efectivo de `pg_write_all_data`; puede INSERT/UPDATE/DELETE en `public.products`. Evidencia completa en `odd/tasks/backup-principal-least-privilege-audit.md` y comentario #53 `6802571142`.

@@ -123,7 +123,7 @@ export default function RegisterShiftsPanel({ organizationId, userName }: Regist
       {notice && <p className="register-shifts-alert success" role="status">{notice}</p>}
       {loading ? <p className="register-shifts-loading">Consultando sucursales y estado del turno…</p> : (
         <>
-          {branches.length > 0 && <label className="register-shifts-field"><span>Sucursal</span><select value={branchId} onChange={(event) => void changeBranch(event.target.value)} disabled={saving}>{branches.map((branch) => <option value={branch.id} key={branch.id}>{branch.name}</option>)}</select></label>}
+          {branches.length > 0 && <label className="register-shifts-field"><span>Sucursal</span><select value={branchId} onChange={(event) => void changeBranch(event.target.value)} disabled={saving || Boolean(shift)}>{branches.map((branch) => <option value={branch.id} key={branch.id}>{branch.name}</option>)}</select></label>}
           {branches.length === 0 && !error && <p className="register-shifts-empty">No hay sucursales activas asignadas a tu usuario.</p>}
           {branchId && !error && (shift ? (
             <div className="register-shift-card">

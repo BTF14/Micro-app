@@ -80,7 +80,6 @@ source_ephemeral="$(psql "$schema_source_url" -X -v ON_ERROR_STOP=1 -Atq -F '|' 
 psql "$schema_source_url" -X -v ON_ERROR_STOP=1 <<'SQL'
 GRANT USAGE ON SCHEMA public TO microapp_backup;
 GRANT SELECT ON ALL TABLES IN SCHEMA public TO microapp_backup;
-REVOKE SELECT ON TABLE public.auth_sessions, public.auth_rate_limits, public.auth_bootstrap_attempts FROM microapp_backup;
 GRANT SELECT ON ALL SEQUENCES IN SCHEMA public TO microapp_backup;
 SQL
 
@@ -135,12 +134,7 @@ SELECT rolcanlogin AND NOT rolsuper AND NOT rolcreatedb AND NOT rolcreaterole
   AND NOT EXISTS (
     SELECT 1 FROM pg_catalog.pg_class c JOIN pg_catalog.pg_namespace n ON n.oid=c.relnamespace
     WHERE n.nspname='public' AND c.relkind IN ('r','p')
-      AND c.relname NOT IN ('auth_sessions','auth_rate_limits','auth_bootstrap_attempts')
       AND NOT has_table_privilege('microapp_backup',c.oid,'SELECT'))
-  AND NOT EXISTS (
-    SELECT 1 FROM pg_catalog.pg_class c JOIN pg_catalog.pg_namespace n ON n.oid=c.relnamespace
-    WHERE n.nspname='public' AND c.relname IN ('auth_sessions','auth_rate_limits','auth_bootstrap_attempts')
-      AND has_table_privilege('microapp_backup',c.oid,'SELECT'))
   AND NOT EXISTS (
     SELECT 1 FROM pg_catalog.pg_class c JOIN pg_catalog.pg_namespace n ON n.oid=c.relnamespace
     WHERE n.nspname='public' AND c.relkind IN ('r','p')

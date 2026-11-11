@@ -2563,3 +2563,11 @@ Se implementó un ensayo de restauración alineado con los flags del backup prod
 Evidencia exact-HEAD `0ddd0da742b474b7256675b9c32292d7750fc2b0`: backup restore run `42989180384`, main job `130417569364` SUCCESS, BCV job `130417569035` SUCCESS y legacy regression SUCCESS; CI `42989180406` SUCCESS; workflows restantes también SUCCESS (11/11 pull_request). Los primeros intentos fallidos se conservaron como evidencia de regresiones del propio ensayo y se corrigieron antes de aceptar el resultado.
 
 La prueba sigue siendo sintética: no aprovisiona credenciales de producción, no restaura artefacto remoto y no mide RPO/RTO ni alertas externas. Issue #53 OPEN/P0; producción NOT READY. Detalle en `odd/tasks/backup-restore-no-owner-no-privileges.md`.
+
+## 2026-11-11 — remote restore ya no valida como administrador
+
+Se encontró que el antiguo workflow remoto restauraba como admin `microapp` y solo contaba tablas. Se añadió `scripts/db/restore_remote_backup_ephemeral.sh` y se conectó al workflow manual. Ahora se restauraría bajo LOGIN `microapp_migrator`, con roles sintéticos separados, perfil de migración derivado del ledger y comprobación de filename/SHA-256 de todas las migraciones antes de replay ACL. El script valida ownership, atributos/membresías de roles, auth efímero vacío y logins runtime/producer. Los runners main y BCV invocan el mismo script en bases desechables independientes.
+
+Evidencia exact-HEAD de implementación `f259b65175711d66f398486bcb80765dfe7aea77`: backup restore run `42991705366`, main `130425902535` SUCCESS, BCV `130425902488` SUCCESS, legacy regression SUCCESS; Playwright, migrator validation, database validation y Semgrep también SUCCESS. Un primer intento falló por comparar boolean `true` con `t`; corregido y la siguiente ejecución completa pasó.
+
+El workflow que descarga/restaura el artefacto remoto no se ejecutó. No se tocó repositorio de backups, Neon, secretos ni datos reales. Issue #53 OPEN/P0; producción NOT READY.

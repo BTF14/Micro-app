@@ -803,3 +803,11 @@ The earlier failed run `42994254096` is a retained test-oracle failure, not hidd
 No remote backup artifact or age key was accessed; `.github/workflows/backup-real-restore.yml` remains manual and was not dispatched. No production, Neon, remote role/grant, secrets, Cron, DNS, Cloudflare sensitive setting, billing or deployment was changed.
 
 Follow-up: the restore runner now executes a direct runtime read against `public.organizations` and confirms schema CREATE is denied. BCV profile also executes the dedicated producer's column-limited state/rate write path inside a rolled-back transaction. At exact HEAD `f6c453d928ffaef4ab15efc5733bd3c7001089e3`, PR workflows 13/13 SUCCESS (backup restore `42997279023`, Playwright `42997278934`, CI `42997279209`). The remote-archive workflow remains manual/unexecuted; no production readiness claim.
+
+## Runbook de recuperación y medición — 2026-11-11
+
+Se añadió odd/tasks/backup-operational-recovery-runbook.md. Separa (1) recuperación lógica mediante branch PITR aislado de Neon, si la ventana del plan lo permite, de (2) recuperación independiente desde artefacto cifrado age en el repositorio privado. Ninguna ruta autoriza modificar Neon main, cambiar endpoints, promover ramas o hacer cutover.
+
+La documentación oficial vigente de Neon sobre branching/PITR es https://neon.com/docs/introduction/branching; comprobar ventana, límites y costes reales antes de usarla. No inferir cobertura PITR ni coste cero a partir de la existencia del proveedor.
+
+RPO/RTO permanecen sin objetivo aprobado ni medición. Se definió la instrumentación temporal para calcular edad del último backup completo verificado y duración operativa total (incidente a servicio validado), sin confundirla con duración de pg_restore. Alertas externas y responsable de guardia siguen sin evidencia. Issue #53 OPEN/P0; producción NOT READY.

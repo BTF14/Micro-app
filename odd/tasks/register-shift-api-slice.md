@@ -70,3 +70,12 @@ La tarea solo se considera completa cuando migration, assertions, API, pruebas P
 - CI exact code HEAD `0ca91ff51ec545278ceb8eabd3929083aae9022e`: 11/11 workflows SUCCESS; CI `43009163637` SUCCESS; 4/4 pruebas API runtime-login SUCCESS, incluyendo concurrencia, ownership, replay, audit y denegación de escritura directa. Backup restore main 0001–0016 y BCV 0001–0023 SUCCESS.
 
 **Límites:** esto implementa la API de turnos, no la UI de caja ni checkout de ventas. No calcula saldo esperado, diferencias, retiros, arqueo financiero ni ledger de caja. No cierra la política comercial de pagos ni Seguridad Nivel 1. La implementación permanece en #287 OPEN/Draft; no está en main ni en producción.
+
+
+## UI de turnos — 2026-11-11
+
+Se añadió `apps/web/src/RegisterShiftsPanel.tsx` y su hoja responsive `register-shifts.css`, integrado en la navegación como **Caja y turnos** para Owner/Admin/Cashier. La pantalla lista sucursales asignadas, detecta el turno abierto del usuario, permite seleccionar caja y abrir turno con fondos USD/VES, y registrar conteos físicos USD/VES al cierre. El selector de sucursal queda bloqueado mientras exista turno abierto, por el índice único por cajero/organización. El cierre exige revisión y confirmación explícita; los conteos se dejan vacíos deliberadamente para evitar copiar el fondo inicial como conteo final.
+
+Se agregó `RegisterShiftsPanel.test.tsx` con escenario de carga → apertura → revisión/cierre → confirmación y escenario de denegación de acceso. El primer CI de UI en SHA `8da81f1a6178b7fba69bf56f717954ac8d00f1cd` detectó un import `Root` sin uso en el test. Se eliminó y se estrechó el tipado de los inputs; SHA posterior `a8148f94f2ae1abd8d12f6aeb187ff1ddcdf9951`. Los workflows para ese SHA final aún deben confirmarse; no afirmar build/test verde hasta ver runs exact-SHA.
+
+**Límite funcional:** esto habilita únicamente apertura/cierre del turno propio. No incluye UI de ventas, checkout, cobros, recibos, arqueo, efectivo esperado, diferencias, retiros, devoluciones ni anulaciones. No se añadió ledger financiero ni reglas de pago.

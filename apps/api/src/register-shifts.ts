@@ -92,7 +92,9 @@ function authFailure(c: Context<{ Bindings: Bindings }>, kind: AuthKind) {
 
 function readFailure(c: Context<{ Bindings: Bindings }>, error: unknown) {
   const code = postgresErrorCode(error);
-  if (code) console.error({ event: "REGISTER_SHIFT_DATABASE_FAILURE", code });
+  if (!code || !["22023", "23503", "23505", "23514"].includes(code)) {
+    console.error({ event: "REGISTER_SHIFT_DATABASE_FAILURE", code: code ?? "UNKNOWN" });
+  }
   if (code && ["42P01", "42883", "42703", "42501"].includes(code)) {
     return c.json({ error: "REGISTER_SHIFT_NOT_ENABLED", message: "La operación de turnos todavía no está habilitada en esta base de datos." }, 503);
   }

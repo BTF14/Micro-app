@@ -768,3 +768,7 @@ El antiguo restore remoto ejecutaba `pg_restore` como administrador `microapp`; 
 Ambos perfiles ejercitan el mismo script en bases desechables en el smoke test: run `42991705366`, main `130425902535` y BCV `130425902488` SUCCESS, incluida regresión legacy. Detalle en `odd/tasks/backup-remote-restore-app-role-validation.md`.
 
 El workflow que accede al artefacto remoto sigue sin ejecutarse (workflow_dispatch); no se descargó ni descifró una copia real en esta tarea. El diagnóstico de `DATABASE_URL_BACKUP_RO` sigue pendiente hasta que su versión alcance main y corra naturalmente. Issue #53 OPEN/P0; producción NOT READY.
+
+### Evidencia adicional — runtime read probe en restore — 2026-11-11
+
+El runner remoto ahora comprueba una consulta real de lectura como `microapp_runtime` (`public.organizations`) y confirma SELECT sin CREATE en schema public. Run `42992354071`: main `130428038679` SUCCESS, BCV `130428038320` SUCCESS, legacy regression SUCCESS; implementación HEAD `7b4fdebe846952f1099a4fde323be2dc0f5ce0e8`. Sigue siendo sintético; el workflow remoto manual no se ejecutó, ni se usó el artefacto/llave age reales.

@@ -22,7 +22,8 @@
 1. #303 — Ready; backup restore sintético; CI exact-SHA completo.
 2. #296 — Draft; HEAD `62dde66355a937a4f6fa4efb8d9cfdf856d7ac0f`, base antigua `03442951b2a2f63f5bf4dcf560f2c91be4f6cc71`.
 3. #193 — Ready; HEAD `ac57ab4f3415f82279b8a49c0befe09f8e3aec68`, base antigua `705d3db3220894c7d3baca8dc7e7a6b623dfbb94`.
-**Total: 3 abiertas.** Revalidar en GitHub antes de actuar.
+4. #309 — Ready; docs-only checkpoint de Turno 10, CI exact-HEAD pendiente.
+**Total: 4 abiertas (3 backlog + 1 docs-only).** Revalidar en GitHub antes de actuar.
 
 **Issue #53 OPEN/P0. PRODUCTION: NOT READY. Presupuesto USD 0.** No Neon main, secretos, datos reales, roles/grants remotos, backup remoto, Cron, Cloudflare manual, DNS, billing ni despliegues manuales.
 

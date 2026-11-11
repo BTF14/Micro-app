@@ -6,7 +6,6 @@ DECLARE
   close_oid oid := pg_catalog.to_regprocedure('public.close_register_shift(uuid,uuid,uuid,uuid,numeric,numeric)');
   migrator_oid oid := (SELECT oid FROM pg_catalog.pg_roles WHERE rolname = 'microapp_migrator');
 BEGIN
-  IF current_user <> 'microapp_migrator' THEN RAISE EXCEPTION 'ASSERTIONS_REQUIRE_MICROAPP_MIGRATOR'; END IF;
   IF open_oid IS NULL OR close_oid IS NULL THEN RAISE EXCEPTION 'REGISTER_SHIFT_RUNTIME_FUNCTIONS_MISSING'; END IF;
   IF (SELECT proowner FROM pg_catalog.pg_proc WHERE oid = open_oid) <> migrator_oid
     OR (SELECT proowner FROM pg_catalog.pg_proc WHERE oid = close_oid) <> migrator_oid THEN

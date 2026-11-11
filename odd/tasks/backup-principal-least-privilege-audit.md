@@ -73,3 +73,23 @@ The six-boolean diagnostic in `.github/workflows/backup.yml` currently evaluates
 - Conclusion: the role named `backup_readonly` is not read-only and is materially overprivileged. If the backup secret uses it, least privilege is violated.
 - Limit: the secret value was not read; actual `current_user` / `session_user` used by `DATABASE_URL_BACKUP_RO` remains unknown. The natural scheduled diagnostic after integration is still required.
 - No role, membership, grant, password, secret, database, workflow or production state was modified. Issue #53 remains OPEN/P0. Evidence comment: `6802571142`.
+
+
+## Disposable least-privilege pg_dump contract test — planned 2026-11-11
+
+The live Neon catalog review found that the role named `backup_readonly` is overprivileged. Before any remote remediation is considered, validate a replacement permission contract using only the disposable PostgreSQL 18 service in CI.
+
+### Proposed contract
+
+- Create a disposable LOGIN role with `NOSUPERUSER NOCREATEDB NOCREATEROLE NOREPLICATION NOBYPASSRLS NOINHERIT` and no memberships.
+- Grant only database CONNECT, schema USAGE, table SELECT and sequence SELECT needed by `pg_dump`; do not grant CREATE, INSERT, UPDATE, DELETE, TRUNCATE, role memberships or role-administration attributes.
+- Verify the role can read a synthetic fixture and complete `pg_dump` plus `pg_restore --list`.
+- Verify it cannot INSERT/UPDATE/DELETE, CREATE DATABASE, CREATE ROLE or `SET ROLE` to an elevated role.
+- Verify role attributes and absence of membership edges in both directions.
+- Cleanup all fixture objects and the test role. This test runs only inside the ephemeral CI PostgreSQL 18 service; it never connects to Neon and uses no repository secrets.
+
+### Evidence and limits
+
+- Current Neon main has 15 application base tables in `public`, with neither RLS nor FORCE RLS enabled. This supports testing an explicit-SELECT role without BYPASSRLS for the currently observed schema; re-evaluate if RLS is introduced.
+- This test validates a candidate role contract and `pg_dump` compatibility only. It does not prove which user `DATABASE_URL_BACKUP_RO` uses and does not authorize remote role/grant/password/secret changes.
+- Status: planned; implementation pending. Issue #53 remains OPEN/P0 and production NOT READY.

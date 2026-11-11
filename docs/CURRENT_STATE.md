@@ -1,3 +1,20 @@
+# Estado vivo — 2026-11-11: API de turnos y restore profile 23
+
+- `main`: `c5373564413ba086690552c6b7deeab08d7b4a89`, sin cambios.
+- PR #287: OPEN/Draft, rama `integration/bcv-checkout-rehearsal-20261109`. Código validado en `0ca91ff51ec545278ceb8eabd3929083aae9022e`; después se añadieron cuatro commits exclusivamente documentales (`odd/tasks/register-shift-api-slice.md`, `docs/sdd/REGISTER_SHIFT_MODEL.md`, contrato runtime y `BACKUP_AND_RECOVERY.md`). Revalidar el HEAD documental exacto antes de considerar CI vigente.
+- Exact code SHA: 11/11 workflows PR SUCCESS; CI `43009163637` SUCCESS. La prueba API PostgreSQL runtime-login pasó 4/4; migration validation/runner, SAST, Security, Secret History, Playwright, ODD y restore smoke también pasaron.
+- Se añadió migración 0023 con `open_register_shift`/`close_register_shift` SECURITY DEFINER, propietario `microapp_migrator`, `search_path=pg_catalog, public`, EXECUTE solo para runtime y sin grants directos de escritura sobre `register_shifts`.
+- API `apps/api/src/register-shifts.ts`: GET cajas activas, GET turno propio, POST apertura y POST cierre. Owner/Admin/Cashier, siempre con branch membership activa, solo pueden operar su turno propio. Inventory y scopes ajenos se deniegan.
+- Apertura/cierre registran `register_shift.opened` y `register_shift.closed` en `audit_logs` atómicamente. Reintento de cierre idéntico devuelve replay sin duplicar auditoría; distinto conteo no altera el turno cerrado.
+- El primer test de concurrencia detectó deadlock por lock-upgrade entre el preflight de autorización y triggers de apertura. Se corrigió: preflight `lockRows=false`; trigger de BD conserva el bloqueo exclusivo y validación final. La prueba concurrente quedó verde. No ocultar ese fallo intermedio.
+- Restore runner BCV se amplió de 22 a 23 migraciones; perfil main permanece inmutable 0001–0016. Smoke restore sintético PostgreSQL 18 main 0001–0016 y BCV 0001–0023 SUCCESS. No se probó artefacto remoto real.
+- El fix GIT_ASKPASS de backup sigue solo en #287; `main` aún conserva el patrón anterior con token en URL. No se ejecutó backup manual ni se leyeron secretos/age.
+- Issue #53 permanece OPEN/P0. PR #303 y #302 OPEN/Draft; #301 OPEN/no Draft pero condicionado a cerrar Seguridad Nivel 1. No fusionar por CI verde.
+- Producción NOT READY. No se ejecutó merge, deploy, Neon, datos reales, grants remotos, Cloudflare sensible, DNS, billing ni Cron.
+- **Bloqueo funcional restante:** la UI sigue sin jornada de caja/ventas. Esta entrega añade API de turnos, no panel de apertura/cierre, carrito, cobros, recibos ni checkout desde navegador. El contrato de pagos (parciales, cambio/sobrepago, recibos, devoluciones/anulaciones) sigue sin aprobación explícita.
+- Mantener MVP 2026-12-01: un comercio piloto, un local, hasta 1.000 productos, sin descuentos/promociones. Siguiente frente: UI de sucursal/turno y E2E; después cerrar contrato de pagos y jornada completa.
+
+---
 # Reconciliación viva — 2026-11-11
 
 - `main`: `c5373564413ba086690552c6b7deeab08d7b4a89` (sin cambios).

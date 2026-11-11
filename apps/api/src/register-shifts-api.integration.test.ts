@@ -71,7 +71,7 @@ describe.skipIf(!adminUrl || !runtimeUrl)("own register-shift API against Postgr
       const f = await seed(role);
       const branches = await request(f, "GET", "/api/orgs/" + f.organizationId + "/register-shifts/branches");
       expect(branches.status).toBe(200);
-      expect((await branches.json() as { branches: Array<{ id: string }> }).branches.map((x) => x.id)).toContain(f.branchId);
+      expect((await branches.json() as { items: Array<{ id: string }> }).items.map((x) => x.id)).toContain(f.branchId);
       const registers = await request(f, "GET", root(f) + "/registers");
       expect(registers.status).toBe(200);
       expect((await registers.json() as { items: Array<{ id: string }> }).items.map((x) => x.id)).toContain(f.registerId);
@@ -110,8 +110,7 @@ describe.skipIf(!adminUrl || !runtimeUrl)("own register-shift API against Postgr
     const inventory = await seed("inventory");
     expect((await open(inventory)).status).toBe(403);
     const inventoryBranches = await request(inventory, "GET", "/api/orgs/" + inventory.organizationId + "/register-shifts/branches");
-    expect(inventoryBranches.status).toBe(200);
-    expect((await inventoryBranches.json() as { branches: Array<{ id: string }> }).branches.map((x) => x.id)).toEqual([inventory.branchId]);
+    expect(inventoryBranches.status).toBe(403);
     const owner = await seed("owner");
     const suffix = crypto.randomUUID().replace(/-/g, "").slice(0, 8);
     const unassigned = await admin.query<{ id: string }>("INSERT INTO branches (organization_id, name, slug) VALUES ($1, $2, $3) RETURNING id", [owner.organizationId, "Unassigned", "unassigned-" + suffix]);

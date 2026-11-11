@@ -388,3 +388,13 @@ No remote backup artifact or age key was accessed; `.github/workflows/backup-rea
 ### Follow-up: effective role probes
 
 The shared ephemeral runner now proves actual direct-login behavior, not merely role existence: runtime reads `public.organizations` and cannot CREATE in schema `public`; for the BCV profile, the dedicated producer reads its singleton, updates only its narrow state columns, inserts a synthetic rate and updates only its validation status, with the entire transaction rolled back. Main profile does not claim a producer operation test because it predates the dedicated producer migration. At HEAD `f6c453d928ffaef4ab15efc5733bd3c7001089e3`, exact-HEAD PR workflows 13/13 SUCCESS, including backup smoke `42997279023` and Playwright `42997278934`; CI `42997279209` SUCCESS. Remote archive workflow itself remains manual and unexecuted.
+
+## Runbook operativo de recuperación — 2026-11-11
+
+Se creó odd/tasks/backup-operational-recovery-runbook.md para separar recuperación por PITR/branching de Neon frente a recuperación desde el artefacto cifrado independiente. Define verificación del archivo y sidecar SHA-256, custodia age fuera de Git, restore aislado PostgreSQL 18, comprobaciones de perfil/migraciones/ACL/roles, límites de cutover, bitácora UTC para medir RPO/RTO y gates de coste/alertas.
+
+La documentación oficial de Neon describe branching y recuperación desde historial dentro de la ventana configurada: https://neon.com/docs/introduction/branching. La ventana, límites y coste deben comprobarse en el plan real al momento del incidente; no se asume que exista retención gratuita suficiente. La rama recuperada se debe mantener aislada para inspección, nunca promover ni conectar a producción por este runbook.
+
+Decisión: no fijar todavía objetivos RPO/RTO. La cadencia diaria no demuestra un RPO <=24h y el tiempo de pg_restore no es el RTO operativo. Registrar timestamps de incidente, último backup íntegro, provisioning, restore, smoke y recuperación; proponer objetivos solo tras una prueba remota real y un simulacro completo.
+
+Límites: el workflow remoto sigue manual y no fue despachado; el backup programado natural aún debe producir evidencia del diagnóstico de seis booleanos de DATABASE_URL_BACKUP_RO. El resumen de GitHub Actions no prueba alerta externa. No se accedió a secretos, archivo remoto, llave age ni Neon. Issue #53 OPEN/P0; producción NOT READY.

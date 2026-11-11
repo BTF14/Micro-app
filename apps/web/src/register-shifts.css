@@ -1,0 +1,39 @@
+.register-shifts-panel { display: flex; flex-direction: column; gap: 1.1rem; }
+.register-shifts-heading { display: flex; align-items: flex-start; justify-content: space-between; gap: 1rem; }
+.register-shifts-heading .eyebrow { margin: 0 0 .4rem; color: #7a8a80; }
+.register-shifts-heading h1 { margin: 0; color: var(--petrol-dark); font-size: 1.65rem; font-weight: 650; letter-spacing: -.035em; }
+.register-shifts-heading p:not(.eyebrow) { max-width: 620px; margin: .45rem 0 0; color: #78837c; font-size: .82rem; line-height: 1.6; }
+.register-shifts-refresh { flex: 0 0 auto; padding: .6rem .85rem; border: 1px solid #d6e0d8; border-radius: .65rem; color: #365b4c; background: #fff; font: inherit; font-size: .75rem; font-weight: 650; cursor: pointer; }
+.register-shifts-refresh:disabled { opacity: .55; cursor: wait; }
+.register-shifts-field { display: flex; flex-direction: column; gap: .4rem; min-width: 0; color: #56675d; font-size: .72rem; font-weight: 650; }
+.register-shifts-field select, .register-shifts-field input { width: 100%; min-height: 2.75rem; padding: .65rem .75rem; border: 1px solid #dce4de; border-radius: .65rem; color: #243b32; background: #fff; font: inherit; font-size: .85rem; }
+.register-shifts-field select:focus, .register-shifts-field input:focus { outline: 3px solid rgba(74,112,100,.14); border-color: #6c9282; }
+.register-shifts-alert { margin: 0; padding: .8rem .9rem; border-radius: .7rem; font-size: .76rem; line-height: 1.5; }
+.register-shifts-alert.error { color: #87523b; background: #fbf0e8; border: 1px solid #f0ddcf; }
+.register-shifts-alert.success { color: #3e6a54; background: #edf5ef; border: 1px solid #dceade; }
+.register-shifts-loading, .register-shifts-empty { margin: 0; padding: 1rem; color: #77847b; font-size: .8rem; line-height: 1.6; }
+.register-shift-card { max-width: 760px; padding: 1.3rem; border: 1px solid #e1e8e2; border-radius: 1rem; background: #fff; box-shadow: 0 8px 24px rgba(26,53,42,.035); }
+.register-shift-card-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 1rem; }
+.register-shift-state { display: inline-flex; padding: .35rem .65rem; border-radius: 999px; font-size: .67rem; font-weight: 700; }
+.register-shift-state.open { color: #3e6a54; background: #edf5ef; }
+.register-shift-state.closed { color: #596c78; background: #eef2f4; }
+.register-shift-card h2 { margin: .65rem 0 0; color: var(--petrol-dark); font-size: 1.1rem; font-weight: 650; }
+.register-shift-time { color: #87918a; font-size: .68rem; text-align: right; }
+.register-shift-values { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: .8rem; margin: 1rem 0; padding: .9rem 0; border-top: 1px solid #edf0ec; border-bottom: 1px solid #edf0ec; }
+.register-shift-values dt { color: #87918a; font-size: .66rem; }
+.register-shift-values dd { margin: .25rem 0 0; color: #344b40; font-size: .9rem; font-weight: 700; }
+.register-shift-form { display: flex; flex-direction: column; gap: .85rem; margin-top: 1rem; }
+.register-shift-form h3 { margin: 0; color: #344b40; font-size: .88rem; }
+.register-shift-form > p { margin: -.5rem 0 .1rem; color: #87918a; font-size: .7rem; line-height: 1.5; }
+.register-shift-form-grid { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: .8rem; }
+.register-shifts-primary { align-self: flex-start; min-height: 2.75rem; padding: .65rem 1.15rem; border: 0; border-radius: .65rem; color: #fff; background: #285b4b; font: inherit; font-size: .78rem; font-weight: 700; cursor: pointer; }
+.register-shifts-primary:hover:not(:disabled) { background: #1f4a3c; }
+.register-shifts-primary:disabled { opacity: .55; cursor: wait; }
+.register-shifts-footnote { margin: .2rem 0 0; color: #87918a; font-size: .67rem; line-height: 1.6; }
+@media (max-width: 560px) {
+ .register-shifts-heading { flex-direction: column; }
+ .register-shift-card-head { flex-direction: column; }
+ .register-shift-time { text-align: left; }
+ .register-shift-form-grid, .register-shift-values { grid-template-columns: 1fr; }
+ .register-shifts-primary { width: 100%; }
+}

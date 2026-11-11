@@ -33,26 +33,25 @@ trap 'rm -f "$tmp_sql"' EXIT
   echo "BEGIN;"
   # Replay only top-level ACL statements in migration order. Never rerun table,
   # index, function, trigger, or data DDL: schema_migrations already records
-  # those changes as applied. This reconstructs the *final* privilege state,
-  # including later REVOKEs that supersede earlier GRANTs.
+  # those changes as applied. Later REVOKEs therefore supersede old GRANTs.
   for file in "${migration_files[@]}"; do
     awk '
       BEGIN { capture = 0; statement = "" }
+      capture {
+        statement = statement "\\n" $0
+        if ($0 ~ /;[[:space:]]*$/) { print statement; capture = 0; statement = "" }
+        next
+      }
       /^[[:space:]]*(GRANT|REVOKE|ALTER DEFAULT PRIVILEGES)[[:space:]]/ {
         capture = 1
         statement = $0
         if ($0 ~ /;[[:space:]]*$/) { print statement; capture = 0; statement = "" }
         next
       }
-      capture {
-        statement = statement "\n" $0
-        if ($0 ~ /;[[:space:]]*$/) { print statement; capture = 0; statement = "" }
-      }
     ' "$file" | {
       if [[ "$profile" == "bcv" ]]; then
-        # The projection profile deliberately drops the paired-intent table,
-        # sequence and helper functions introduced by migration 0010. Their
-        # historical ACL statements must not be replayed against absent objects.
+        # Projection migration 0019 removes these paired-intent objects. Skip
+        # only their now-inapplicable historical ACL statements.
         grep -Ev 'inventory_balance_ledger_intents|record_inventory_balance_ledger_intent|consume_inventory_balance_ledger_intent|assert_inventory_balance_ledger_intent_consumed' || true
       else
         cat

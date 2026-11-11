@@ -1,3 +1,21 @@
+# Hito — PR #299 integrada y auditoría inicial de #303 (2026-11-11 UTC)
+
+**Checkpoint vivo — 2026-11-11 UTC**
+**main:** `7d79621926dd256542e43dc08ec20539ad91cf03` (squash merge de PR #299).
+**PR #307:** MERGED; squash commit `98998cf4c13a7d13a1941b776911cc8f2df1b2db`.
+**PR #299:** MERGED; validated HEAD `56286a4943bba6e7e1180205964eb353165af3ee`; squash commit `7d79621926dd256542e43dc08ec20539ad91cf03`. Antes del merge: 16/16 check-runs SUCCESS y 12/12 workflow runs SUCCESS, todos en el HEAD exacto; el smoke de backup pasó en los tres perfiles PostgreSQL 18 (BCV 0001–0023, paired-intent 0001–0016 y legacy backup contract). Review COMMENT `5866699291` (no formal code-owner APPROVE). La rama se sincronizó sin force-push; diff neto 1 archivo.
+**PR abiertas:** 5 (#303, #300, #298, #296, #193). Censo: #303 Draft; #300 Draft; #298 Draft; #296 Draft; #193 Ready for review. Revalidar HEAD/base/checks vivos antes de actuar.
+**PR #303:** HEAD `d527ae79cd566945cd9bdb3e1475d53b31d3923a`; 77 ahead / 7 behind de main. No sincronizar a ciegas: el script usa `--exclude-table` (elimina DDL, no solo filas), hace dump con conexión admin en vez de `microapp_backup`, y su fixture/documentación todavía presupone 0001–0016 mientras main contiene 0001–0023. Debe adaptarse antes de promover.
+**Post-merge CI de main:** al checkpoint se observan 12 check-runs (5 SUCCESS, 7 pendientes) y 10 workflow runs (3 SUCCESS, 7 pendientes), sin fallos observados. No presentar como post-merge CI completo; volver a consultar.
+**Issue #53:** OPEN/P0. **Producción: NOT READY.** No se ha verificado la identidad efectiva del backup en runtime/Neon, backup remoto ni recuperación real.
+**Límites respetados:** cero acceso/escritura a Neon main, secretos, datos reales, roles/grants remotos, despliegue manual, Cloudflare manual, DNS o billing. Presupuesto $0.
+
+**Decisión técnica:** se aceptó `SECONDS` como temporizador de `pg_restore` porque es Bash builtin, no añade dependencias y la limitación de resolución de segundos está documentada. Se preservó el indicador separado de duración end-to-end. La medición no equivale a RTO operacional.
+
+**Hallazgo #303:** no promover ni sincronizar sin adaptar. `--exclude-table` excluye DDL; `pg_dump` usa admin y no `microapp_backup`; la rama solo tiene migraciones 0001–0016. Requiere corrección y nueva validación completa.
+
+---
+
 # Hito de checkout/BCV — 2026-11-11 UTC
 
 **Línea base viva de main:** `425186301473a5acb9b4133c18247bc6fff58e56` (squash merge de PR #287).

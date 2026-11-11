@@ -129,10 +129,10 @@ age -d -i "$tmpdir/age-key.txt" -o "$tmpdir/schema.restored.dump" "$tmpdir/schem
 # disposable database. The first restore below remains the detailed manifest oracle.
 psql "$SOURCE_URL" -X -v ON_ERROR_STOP=1 -c 'CREATE DATABASE microapp_remote_restore' >/dev/null
 BACKUP_DUMP="$tmpdir/schema.restored.dump" \
-RESTORE_ADMIN_URL="postgresql://microapp:microapp-test-only@localhost:5432/microapp_remote_restore" \
-RESTORE_MIGRATOR_URL="postgresql://microapp_migrator:migrator-test-only@localhost:5432/microapp_remote_restore" \
-RESTORE_RUNTIME_URL="postgresql://microapp_runtime:runtime-test-only@localhost:5432/microapp_remote_restore" \
-RESTORE_PRODUCER_URL="postgresql://microapp_bcv_sync:bcv-sync-test-only@localhost:5432/microapp_remote_restore" \
+RESTORE_ADMIN_URL="postgresql://microapp:microapp-test-only@127.0.0.1:5432/microapp_remote_restore" \
+RESTORE_MIGRATOR_URL="postgresql://microapp_migrator:migrator-test-only@127.0.0.1:5432/microapp_remote_restore" \
+RESTORE_RUNTIME_URL="postgresql://microapp_runtime:runtime-test-only@127.0.0.1:5432/microapp_remote_restore" \
+RESTORE_PRODUCER_URL="postgresql://microapp_bcv_sync:bcv-sync-test-only@127.0.0.1:5432/microapp_remote_restore" \
 RESTORE_DATABASE_NAME="microapp_remote_restore" \
 MIGRATIONS_DIR="$repo_root/apps/api/migrations" \
   bash scripts/db/restore_remote_backup_ephemeral.sh

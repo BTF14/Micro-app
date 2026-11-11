@@ -19,7 +19,7 @@ BEGIN
   )
   THEN RAISE EXCEPTION 'BCV_TABLE_PUBLIC_ACL_FORBIDDEN'; END IF;
   -- Runtime keeps table-level read access but no effective table- or
-  -- column-level INSERT/UPDATE privileges on either BCV table.
+  -- column-level INSERT/UPDATE/REFERENCES privileges on either BCV table.
   IF NOT pg_catalog.has_table_privilege('microapp_runtime','public.bcv_sync_state','SELECT')
     OR pg_catalog.has_table_privilege('microapp_runtime','public.bcv_sync_state','INSERT')
     OR pg_catalog.has_table_privilege('microapp_runtime','public.bcv_sync_state','UPDATE')
@@ -33,7 +33,6 @@ BEGIN
         AND a.attnum > 0 AND NOT a.attisdropped
         AND (pg_catalog.has_column_privilege('microapp_runtime',a.attrelid,a.attname::text,'INSERT')
           OR pg_catalog.has_column_privilege('microapp_runtime',a.attrelid,a.attname::text,'UPDATE')
-          OR pg_catalog.has_column_privilege('microapp_runtime',a.attrelid,a.attname::text,'REFERENCES')
           OR pg_catalog.has_column_privilege('microapp_runtime',a.attrelid,a.attname::text,'REFERENCES'))
     )
   THEN RAISE EXCEPTION 'BCV_RUNTIME_SYNC_STATE_MUST_BE_READ_ONLY'; END IF;
@@ -50,7 +49,8 @@ BEGIN
       WHERE a.attrelid='public.exchange_rates'::regclass
         AND a.attnum > 0 AND NOT a.attisdropped
         AND (pg_catalog.has_column_privilege('microapp_runtime',a.attrelid,a.attname::text,'INSERT')
-          OR pg_catalog.has_column_privilege('microapp_runtime',a.attrelid,a.attname::text,'UPDATE'))
+          OR pg_catalog.has_column_privilege('microapp_runtime',a.attrelid,a.attname::text,'UPDATE')
+          OR pg_catalog.has_column_privilege('microapp_runtime',a.attrelid,a.attname::text,'REFERENCES'))
     )
   THEN RAISE EXCEPTION 'BCV_RUNTIME_RATES_MUST_BE_READ_ONLY'; END IF;
 

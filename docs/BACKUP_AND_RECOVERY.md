@@ -323,3 +323,9 @@ Razón: si se excluye la tabla completa, el dump conserva `schema_migrations` in
 Los perfiles main 0001–0016 y BCV 0001–0022 ahora deben demostrar: una fila sintética por tabla en el origen, estructura presente en destino y cero filas efímeras restauradas. La regresión legacy hace la misma comprobación. El workflow de smoke se activa también ante cambios en `.github/workflows/backup.yml`.
 
 Este cambio no cierra los gates de identidad/least privilege de `DATABASE_URL_BACKUP_RO`, ownership/grants operativos cuando el dump productivo usa `--no-owner --no-privileges`, restore del artefacto remoto, RPO/RTO, alertas externas ni coste $0. Issue #53 sigue OPEN/P0; producción NOT READY. Ver `odd/tasks/backup-ephemeral-auth-schema-retention.md`.
+
+## Diagnóstico del principal efectivo de backup — 2026-11-11
+
+El workflow programado ahora ejecuta una consulta read-only y no bloqueante a través de `DATABASE_URL_BACKUP_RO`. Publica únicamente seis resultados booleanos: coincidencia con la identidad esperada `backup_readonly` (`current_user` y `session_user`), atributos seguros del rol, ausencia de membresías, ausencia de escritura en tablas/columnas, ausencia de mutación de secuencias y ausencia de CREATE en schema/database. No imprime DSN, host, usuario real, credenciales ni datos. Si el diagnóstico falla, el backup continúa y el gate queda abierto.
+
+No ejecutar manualmente el workflow para obtener evidencia. Revisar el próximo run naturalmente programado. Un resultado distinto del esperado requiere una revisión separada de identidad/least privilege; no modificar roles/grants remotos desde el workflow. Ver `odd/tasks/backup-principal-least-privilege-audit.md`. Issue #53 OPEN/P0; producción NOT READY.

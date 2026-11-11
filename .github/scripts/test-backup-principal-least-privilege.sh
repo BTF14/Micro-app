@@ -8,7 +8,7 @@ password="backup-contract-test-only"
 cleanup() {
   docker exec "$container_id" rm -f "$dump_path" >/dev/null 2>&1 || true
   docker exec "$container_id" psql -v ON_ERROR_STOP=1 -U microapp -d microapp_test -c \
-    "REVOKE CONNECT ON DATABASE microapp_test FROM backup_contract_test; DROP SCHEMA IF EXISTS backup_contract_fixture CASCADE; DROP ROLE IF EXISTS backup_contract_test;" \
+    "REVOKE CONNECT ON DATABASE microapp_test FROM backup_contract_test; DROP SCHEMA IF EXISTS backup_contract_fixture CASCADE; DROP ROLE IF EXISTS backup_contract_test; DROP ROLE IF EXISTS backup_contract_owner;" \
     >/dev/null 2>&1 || true
 }
 trap cleanup EXIT
@@ -24,7 +24,7 @@ docker exec "$container_id" pg_restore --list "$dump_path" >/dev/null
 
 docker exec -e "PGPASSWORD=$password" "$container_id" psql \
   -h 127.0.0.1 -U backup_contract_test -d microapp_test -v ON_ERROR_STOP=1 \
-  -c "SELECT count(*) FROM backup_contract_fixture.sample" >/dev/null
+  -c "SELECT count(*) FROM backup_contract_fixture.existing_sample" >/dev/null
 
 expect_denied() {
   local operation="$1"
@@ -37,11 +37,13 @@ expect_denied() {
   fi
 }
 
-expect_denied "INSERT" "INSERT INTO backup_contract_fixture.sample (payload) VALUES ('forbidden')"
-expect_denied "UPDATE" "UPDATE backup_contract_fixture.sample SET payload='forbidden'"
-expect_denied "DELETE" "DELETE FROM backup_contract_fixture.sample"
+expect_denied "INSERT" "INSERT INTO backup_contract_fixture.existing_sample (payload) VALUES ('forbidden')"
+expect_denied "UPDATE" "UPDATE backup_contract_fixture.existing_sample SET payload='forbidden'"
+expect_denied "DELETE" "DELETE FROM backup_contract_fixture.existing_sample"
 expect_denied "CREATE DATABASE" "CREATE DATABASE backup_contract_forbidden"
 expect_denied "CREATE ROLE" "CREATE ROLE backup_contract_forbidden"
-expect_denied "SET ROLE" "SET ROLE microapp"
+expect_denied "SET ROLE" "SET ROLE backup_contract_owner"
+expect_denied "sequence nextval" "SELECT nextval('backup_contract_fixture.future_sequence')"
+expect_denied "sequence setval" "SELECT setval('backup_contract_fixture.future_sequence', 9)"
 
-echo "PASS: least-privilege role can pg_dump/pg_restore-list, read fixture data, and cannot write or escalate."
+echo "PASS: least-privilege role can pg_dump existing/future tables and sequences, has default SELECT only, and cannot write or escalate."

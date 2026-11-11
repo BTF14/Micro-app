@@ -102,3 +102,17 @@ The live Neon catalog review found that the role named `backup_readonly` is over
 - Existing sequences have effective SELECT and UPDATE for `backup_readonly`, with USAGE false. The role's elevated memberships/attributes must not be relied on for this access.
 - A replacement role contract must grant SELECT on existing sequences and add default SELECT on future sequences, without USAGE/UPDATE. Future tables also need default SELECT grants owned by `neondb_owner`.
 - Extend the disposable PostgreSQL contract test to prove both explicit grants on existing objects and default SELECT grants on future tables/sequences. This remains CI-only; no Neon default ACL or role was modified.
+
+
+## Default ACL regression implemented — 2026-11-11
+
+The disposable PostgreSQL 18 contract test now exercises the exact missing sequence-default case observed in Neon main:
+
+- Creates a synthetic object owner and backup login with no memberships or elevated role attributes.
+- Adds default `SELECT` privileges for future tables and future sequences, scoped to the synthetic schema.
+- Creates pre-existing and future tables/identity sequences plus a standalone future sequence as the object owner.
+- Grants explicit SELECT on all existing objects, then asserts SELECT-only access to existing and future tables/sequences.
+- Asserts no INSERT/UPDATE/DELETE/TRUNCATE, no sequence USAGE/UPDATE, no database/schema CREATE, no membership edges, and exact default ACL entries for both table and sequence object classes.
+- Exercises `pg_dump` and `pg_restore --list` as the backup login; negative tests include sequence `nextval` and `setval` denial.
+
+This is an isolated candidate contract only. It does not alter Neon default ACLs, roles, grants, passwords, secrets or production workflows. The live secret identity remains unknown; issue #53 remains OPEN/P0.

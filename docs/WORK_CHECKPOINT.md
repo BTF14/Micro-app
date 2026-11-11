@@ -1,3 +1,33 @@
+# Checkpoint — 2026-11-11: API de turnos
+
+**Código validado:** `0ca91ff51ec545278ceb8eabd3929083aae9022e` en PR #287; 11/11 workflows PR SUCCESS, CI `43009163637` SUCCESS. Los cuatro commits documentales posteriores no modifican código y requieren revalidación del HEAD exacto.
+
+## Implementado
+- Migración 0023 crea `public.open_register_shift(...)` y `public.close_register_shift(...)` SECURITY DEFINER, `microapp_migrator` owner, `search_path=pg_catalog, public`; runtime solo EXECUTE, sin escritura directa en `register_shifts`.
+- API propia de turnos: lista cajas activas, consulta turno actual, apertura y cierre. User ID derivado de sesión; Owner/Admin/Cashier solo con branch membership activa y solo su propio turno.
+- Eventos de auditoría `register_shift.opened` y `.closed` insertados en la misma transacción. Cierre idéntico es replay; cierre con importes distintos devuelve conflicto.
+- Tests PostgreSQL 18 con runtime login directo: 4/4 API tests SUCCESS; incluye roles, scope, cross-user, concurrencia, audit y ACL de tabla.
+- Restore runner reconoce BCV 0001–0023 y main histórico 0001–0016; ambos smoke restore sintéticos SUCCESS.
+
+## Fallos intermedios corregidos y que deben conservarse en el historial
+- Primera llamada API devolvió error de esquema por search_path de funciones SECURITY DEFINER; fijado a `pg_catalog, public` y protegido por la aserción de que runtime/PUBLIC no pueden CREATE en `public`.
+- Primera prueba de concurrencia detectó deadlock por lock-upgrade; se quitó el prelock del handler (`lockRows=false`) y se dejó el bloqueo canónico al trigger de apertura. Re-test concurrente SUCCESS.
+- Un matcher estático anterior falló por expectativa obsoleta; corregido y revalidado.
+
+## No completado / no inferir
+- La UI todavía no puede abrir/cerrar turnos ni completar una venta. No hay jornada POS completa desde navegador.
+- No se definió por inferencia la política de pagos, parciales, cambio, recibos ni devoluciones. No calcular efectivo esperado ni diferencias: no existe ledger aprobado.
+- GIT_ASKPASS y restore profile 23 están en la rama Draft; nada de esto está en main ni en producción.
+- Issue #53 OPEN/P0; producción NOT READY. No merge/deploy/Neon main/datos reales/secrets/Cloudflare sensible/DNS/billing/Cron.
+
+## Próximo paso
+1. Revalidar HEAD documental actual y PR/issue state en GitHub.
+2. Implementar UI de sucursal/turno con las nuevas rutas, pruebas Playwright y manejo de sesión/roles.
+3. Resolver contrato comercial de pagos con el propietario del producto antes de finalizar checkout UI.
+4. Ejecutar jornada E2E login → apertura → venta → pago → recibo → Kardex → conteo → cierre, con pruebas de aislamiento tenant/branch/role.
+5. Mantener GO/NO-GO: no producción mientras falte cualquier gate crítico.
+
+---
 # Checkpoint vivo — 2026-11-11
 
 ## Seguridad backup — trabajo realizado

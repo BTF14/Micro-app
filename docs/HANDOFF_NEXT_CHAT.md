@@ -2952,3 +2952,30 @@ Después del snapshot principal se sincronizaron también `docs/WORK_CHECKPOINT.
 - Los artefactos antiguos no satisfacen el contrato nuevo porque carecen del esquema de auth efímera que ahora se conserva vacío. Esperar backup natural posterior a la integración antes de cualquier ensayo remoto.
 - Issue #53 OPEN/P0; producción NOT READY. Pendientes: principal efectivo/least privilege real, restore remoto real aislado, provisioning provider-specific, simulacro de aplicación, alerta externa, RPO/RTO medidos y coste $0.
 - No Neon main, datos reales, secretos/age, grants remotos, Cloudflare/DNS sensibles, deploy, Cron, billing, force-push ni merge de Draft.
+
+---
+
+# Handoff vivo — 2026-11-11
+
+**Deadline inamovible: 2026-12-01.** Objetivo: un comercio piloto, un local, hasta 1.000 productos y jornada completa desde UI. Sin descuentos ni promociones.
+
+## Última ejecución
+- Rama #287 `integration/bcv-checkout-rehearsal-20261109`; código validado en SHA `efb7f8a0b8731fd1805beedd8b8a5af10261d271`.
+- Exact SHA: 11/11 workflows PR SUCCESS. CI `43004836986` SUCCESS; `Test backup Git askpass contract` SUCCESS. Status contexts legacy: 0.
+- Se portó a #287 el fix askpass de la PR #302. El backup usa helper temporal con modo 700, URL sin credenciales, `credential.helper=` en clone/push, token solo en procesos Git y limpieza mediante trap. Tests shell + HTTP loopback pasan.
+- Un matcher estático intermedio falló por buscar el texto antiguo de `git clone`; se corrigió y se reejecutó todo en el SHA final. Conservar este antecedente; no afirmar que todos los intentos pasaron.
+- #287 permanece OPEN/Draft. La corrección no está en main; main todavía contiene la URL antigua con token. #302 queda OPEN/Draft como procedencia, no fusionar por separado.
+- #303 sigue OPEN/Draft como procedencia del restore main-only. #301 está OPEN/no Draft pero su cuerpo bloquea integración hasta cerrar Seguridad Nivel 1. Issue #53 OPEN/P0.
+
+## Límites no superados
+- No se ejecutó backup manual, workflow real de restore, ni descarga/descifrado de artefactos reales. No se leyeron secretos ni se tocó repositorio privado de backups, Neon, datos reales, roles/grants remotos, Cloudflare sensible, DNS, billing o Cron.
+- El fix askpass es solo branch-level; no atribuirlo a main ni a producción.
+- Producción NOT READY. No declarar RPO/RTO, alertas externas, identidad real de backup/Worker ni coste total $0 como verificados.
+
+## Siguiente trabajo
+1. Consultar GitHub en vivo y validar el SHA exacto después de la actualización documental.
+2. Completar revisión de seguridad Nivel 1 y gates de backup sin repetir investigaciones ya documentadas.
+3. Priorizar la aceptación P0 funcional: la UI actual marca Caja/ventas e Inventario como pendientes; no existe aún jornada de checkout completa desde navegador ni rutas HTTP para abrir/cerrar turnos.
+4. No inventar política de pagos: cash/card/transfer/mobile_payment/other están codificados en el handler, pero el contrato comercial de parciales, sobrepago/cambio, recibos y devoluciones/anulaciones sigue sin aprobación explícita en SDD.
+5. Diseñar e implementar turnos, carrito/checkout UI y E2E solo después de cerrar los contratos bloqueantes, manteniendo aislamiento tenant/branch/role e idempotencia.
+6. No rebajar el GO/NO-GO: si cualquier gate crítico permanece abierto el 30 de noviembre, NO-GO para producción.

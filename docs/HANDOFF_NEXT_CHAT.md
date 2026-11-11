@@ -1,3 +1,85 @@
+# Reconciliación viva — 11 de noviembre de 2026
+
+> **Este bloque prevalece sobre todos los snapshots históricos inferiores.** Antes de actuar, volver a consultar el HEAD y los checks exactos de GitHub. No reutilizar validaciones de SHA anteriores.
+
+## Fuente de verdad y ramas
+
+- Rama de continuidad: `integration/bcv-checkout-rehearsal-20261109`.
+- HEAD de código validado: `94f3e3afd561f517301175751a8b7feaf640b2b9`.
+- `main`: `c5373564413ba086690552c6b7deeab08d7b4a89`.
+- Comparación rama #287 vs main: **377 ahead / 1 behind**, merge base `03442951b2a2f63f5bf4dcf560f2c91be4f6cc71`. El único commit que main tiene y la rama no es `c537356`, modificación documental de 15 líneas en `docs/BACKLOG_RECOVERY_LEDGER.md`; no hay código nuevo de main que exija sincronización inmediata.
+- PR #287: OPEN / Draft / mergeable=true. Sin reviews formales ni review threads. No merge por CI verde.
+- En el HEAD exacto #287: **11/11 workflows pull_request SUCCESS, 3/3 workflows push SUCCESS y 18/18 check-runs SUCCESS**. Combined status contexts: 0. Los resultados de push y PR se distinguen; todos corresponden al SHA exacto.
+- PR #303: OPEN / Draft, HEAD `d527ae79cd566945cd9bdb3e1475d53b31d3923a`, 77 ahead / 0 behind main; 11/11 workflows y 17/17 check-runs SUCCESS. Sin reviews formales ni threads.
+- Issue #53 permanece OPEN / P0. Producción NOT READY.
+
+### Evidencia exact-HEAD de #287
+
+Workflows PR:
+- CI `43002919106`
+- Database migration validation `43002918982`
+- PostgreSQL migration runner `43002919093`
+- Backup restore smoke `43002919167`
+- Playwright E2E `43002919089`
+- Dependency review `43002919139`
+- ODD docs `43002919333`
+- Semgrep `43002919213`
+- Security scan `43002919126`
+- Secret history `43002919317`
+- Project dashboard `43002919399`
+
+Workflows push: Security scan `43002910471`, Secret history scan `43002910292`, Backup restore smoke `43002910346`. El push backup smoke pasó ambos perfiles y las dos pruebas nuevas de guard.
+
+### Compatibilidad #287 / #303
+
+#287 ya contiene el fixture principal de #303 con el mismo blob SHA `9fe78ef137fb24ce00b567a960a7c091ec036537`. La versión de #287 de `scripts/test_backup_restore_schema.sh` fija el perfil histórico main 0001–0016 al baseline `c537356`, incorpora el perfil BCV 0001–0022 y usa el runner de roles de aplicación. El workflow de #287 ejecuta dos jobs separados (main y BCV); #303 contiene una versión main-only anterior del mismo flujo.
+
+**Decisión:** no fusionar #303 independientemente ni descartar su trabajo. Mantenerla OPEN/Draft como procedencia y conservar la implementación dual y ampliada en #287. Fusionar ambas versiones por separado crearía solapamiento en workflow, script y documentación.
+
+## Correcciones de seguridad implementadas en #287
+
+1. `scripts/db/restore_remote_backup_ephemeral.sh` ahora exige URLs PostgreSQL canónicas con host `127.0.0.1`, puerto 5432, base desechable permitida, sin query overrides. Comprueba identidad directa de los cuatro logins y que todos llegan al mismo servidor/puerto/base antes de restaurar.
+2. `scripts/db/test_restore_remote_backup_target_guard.sh` comprueba que URLs externas y query overrides se rechazan antes de cualquier conexión a PostgreSQL.
+3. `scripts/db/verify_backup_artifact.sh` valida nombre UTC canónico, archivo/sidecar regulares no simbólicos, sidecar de una línea, digest SHA-256 y nombre exacto. Su test cubre nombre inválido, digest incorrecto, filename distinto, líneas extra y bytes alterados.
+4. `.github/workflows/backup-real-restore.yml` pasa el nombre a shell mediante variable de entorno; no interpola directamente el output no confiable en código shell.
+5. El diagnóstico de seis booleanos del principal backup suprime stderr de psql para evitar que errores de conexión filtren host/usuario. Sigue siendo diagnóstico no bloqueante: un fallo o booleano inesperado mantiene abierto el gate P0.
+
+En el run de prueba intermedio del SHA `1112791bfd0d6972a2d9c1b27307d0569cd35852`, la primera versión del guard asumía que `inet_server_addr()` sería `127.0.0.1`. CI demostró que el servicio PostgreSQL de Actions informa su IP interna de contenedor. Se corrigió: la URL se valida antes de conectar y la identidad real del servidor se compara entre las conexiones. La prueba no tocó ningún destino externo ni producción.
+
+En el HEAD final `94f3e3afd561f517301175751a8b7feaf640b2b9`, el run `43002910346` (push) y el run `43002919167` (PR) terminaron SUCCESS. El perfil main 0001–0016, el perfil BCV 0001–0022, la regresión legacy, el rechazo de URLs externas y la validación de artefactos pasaron.
+
+## Backup real: gate y compatibilidad de artefactos
+
+- El `.github/workflows/backup.yml` de main **todavía no contiene** el diagnóstico de seis booleanos; solo está en la rama #287.
+- El backup de main aún usa `--exclude-table` para las tres tablas efímeras de auth (excluye también su esquema). La versión de #287 usa `--exclude-table-data`, conservando el esquema vacío.
+- El runner remoto nuevo exige que `auth_sessions`, `auth_rate_limits` y `auth_bootstrap_attempts` existan y estén vacías. Por tanto, **no usar un artefacto generado por el workflow antiguo** para probar el runner nuevo: no cumple ese contrato.
+- Último backup schedule de main observado: run `42842855127`, 2026-11-10, SUCCESS, SHA main `c537356`. En la consulta del 2026-11-11 no había un run schedule posterior visible. Ese run es anterior al diagnóstico y a la exclusión solo de datos; no demuestra principal efectivo ni es el artefacto correcto para el nuevo restore runner.
+- Próxima evidencia válida: solo después de que el workflow actualizado llegue de forma segura a main, observar un backup schedule natural y usar su artefacto para un ensayo aislado aprobado. No ejecutar workflow_dispatch para producir evidencia.
+
+## Gates P0 que siguen abiertos
+
+1. Identidad efectiva de `DATABASE_URL_BACKUP_RO` y least privilege real: pendiente del primer schedule natural después de integrar el diagnóstico.
+2. Integridad/descifrado/restauración de un artefacto remoto real nuevo en entorno aislado. No se accedió al repositorio privado de backups ni a la llave age real.
+3. Aprovisionamiento seguro provider-specific de roles/ACL y verificación remota de permisos.
+4. Simulacro completo de recuperación de aplicación, no solo restore de PostgreSQL.
+5. Entrega efectiva de alertas; el resumen de Actions no equivale a alerta externa.
+6. RPO/RTO con timestamps reales desde incidente hasta servicio recuperado; no hay SLO aprobado ni medición.
+7. Confirmación verificable de coste total USD 0.
+
+No cerrar ni degradar issue #53. No declarar producción lista.
+
+## Restricciones que siguen vigentes
+
+No Neon main ni datos reales; no secretos/llaves age; no roles/grants remotos; no DNS ni Cloudflare sensible; no despliegues manuales; no Cron; no billing; no force-push; no merge de PR Draft; no cierres de issues para ocultar pendientes.
+
+## Próxima secuencia
+
+1. Mantener #287 Draft y terminar revisión formal de seguridad/integración; #303 queda como procedencia, no merge separado.
+2. No usar backups anteriores al cambio de exclusión de auth; esperar artefacto nuevo generado naturalmente después de integrar el workflow actualizado.
+3. Cerrar los gates operativos P0 sin repetir investigaciones ACL/roles ya documentadas.
+4. Evitar que los gates auxiliares consuman el plazo: retomar la aceptación end-to-end del MVP POS (auth, tenant/branch, catálogo, inventario, kardex, conteos, transferencias, checkout, BCV USD/VES, caja, reportes y auditoría) antes del 2026-12-01.
+
+---
 # Actualización de continuidad — 9 de noviembre de 2026
 
 > Esta actualización prevalece sobre snapshots históricos que indiquen otro HEAD o describan como pendientes capacidades ya implementadas. Verificar siempre el SHA vivo en GitHub antes de nuevas acciones.
@@ -2857,3 +2939,16 @@ Preserva todas las prohibiciones y la política de máximo dos frentes activos. 
 ### Última sincronización documental — 2026-11-11
 
 Después del snapshot principal se sincronizaron también `docs/WORK_CHECKPOINT.md`, `docs/CURRENT_STATE.md` y `docs/STATE_JOURNAL.md`. El HEAD de rama inmediatamente anterior a esta última actualización fue `a59cdb9144f38af61252d31458d4407a8fe52a9d`. Los checks disparados por esa sincronización documental estaban todavía abiertos al cierre: check-runs 3 (2 queued: Scan tracked files/reachable history y Trivy; 1 in_progress: Cloudflare Pages); workflows push Security scan y Secret history scan pending. No atribuirles resultado. Reconsultar branch HEAD y exact-HEAD checks al abrir el siguiente chat; no reutilizar la validación completa de `3e00d2c1512e1d0c3c0acc84bcdf4663e4976296` como si fuera del nuevo HEAD. Los cambios desde ese SHA son solo documentación, pero deben validarse en el HEAD exacto.
+
+
+## Reconciliación viva — 2026-11-11 — HEAD `94f3e3afd561f517301175751a8b7feaf640b2b9`
+
+- #287: OPEN/Draft, mergeable=true, 377 ahead / 1 behind main; el único commit detrás es documental (`docs/BACKLOG_RECOVERY_LEDGER.md`, +15 líneas). No hay reviews formales ni review threads.
+- Exact SHA: 11/11 workflows PR SUCCESS, 3/3 workflows push SUCCESS, 18/18 check-runs SUCCESS; 0 status contexts legacy. CI, migration validation, migration runner, Playwright, backup restore, Semgrep, Security, Secret history, dependency, ODD y dashboard pasaron.
+- El smoke exacto ejecutó main 0001–0016 y BCV 0001–0022, regresión legacy, guard de destino y validador de artefactos. Runs: PR backup smoke `43002919167`; push backup smoke `43002910346`.
+- #303 permanece OPEN/Draft, HEAD `d527ae79cd566945cd9bdb3e1475d53b31d3923a`, 77 ahead / 0 behind, 11/11 workflows y 17/17 checks SUCCESS, sin reviews/threads. Su fixture main ya está incorporado y ampliado en #287; no fusionar #303 por separado.
+- Se endureció el runner remoto para aceptar solo URLs de loopback explícitas y mismas sesiones/DB; se añadieron tests negativos. Se añadió validación estricta de filename/sidecar SHA-256 y se eliminó la interpolación de filename no confiable en shell. El diagnóstico del backup oculta stderr de psql.
+- Main sigue en `c5373564413ba086690552c6b7deeab08d7b4a89`; no contiene el diagnóstico ni la exclusión solo de datos. Último schedule observado `42842855127` (2026-11-10 SUCCESS), anterior a ambos cambios. No hay run natural posterior observado; no dispatch manual.
+- Los artefactos antiguos no satisfacen el contrato nuevo porque carecen del esquema de auth efímera que ahora se conserva vacío. Esperar backup natural posterior a la integración antes de cualquier ensayo remoto.
+- Issue #53 OPEN/P0; producción NOT READY. Pendientes: principal efectivo/least privilege real, restore remoto real aislado, provisioning provider-specific, simulacro de aplicación, alerta externa, RPO/RTO medidos y coste $0.
+- No Neon main, datos reales, secretos/age, grants remotos, Cloudflare/DNS sensibles, deploy, Cron, billing, force-push ni merge de Draft.

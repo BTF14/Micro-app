@@ -475,3 +475,16 @@ Se verificó main live: HEAD c5373564413ba086690552c6b7deeab08d7b4a89; .github/w
 GitHub live confirma rama `integration/bcv-checkout-rehearsal-20261109` en HEAD `3e00d2c1512e1d0c3c0acc84bcdf4663e4976296`. En ese SHA: 13/13 workflows pull_request SUCCESS, 2/2 workflows push SUCCESS y 16/16 check-runs SUCCESS. IDs de workflows y distinción de evidencias están registrados en `docs/HANDOFF_NEXT_CHAT.md`. PR #287 OPEN/Draft, #303 OPEN/Draft, issue #53 OPEN/P0. PR #287 no tiene reviews formales ni review comments; CI verde no es aprobación.
 
 La validación sintética main 0001–0016 y BCV 0001–0022 pasó, pero no existe restore remoto real ni ensayo completo de recuperación. El diagnóstico de seis booleanos aún no está en main; los runs schedule previos no prueban identidad efectiva ni least privilege. Próximo paso: revisión técnica independiente del diff y compatibilidad #287/#303; después decidir integración segura, sin merge automático ni cambio de Draft por CI. No dispatch manual, no secretos/artefactos reales/llave age, no Neon/producción. #53 permanece OPEN/P0; producción NOT READY.
+
+
+## Reconciliación viva — 2026-11-11 — HEAD `94f3e3afd561f517301175751a8b7feaf640b2b9`
+
+- #287: OPEN/Draft, mergeable=true, 377 ahead / 1 behind main; el único commit detrás es documental (`docs/BACKLOG_RECOVERY_LEDGER.md`, +15 líneas). No hay reviews formales ni review threads.
+- Exact SHA: 11/11 workflows PR SUCCESS, 3/3 workflows push SUCCESS, 18/18 check-runs SUCCESS; 0 status contexts legacy. CI, migration validation, migration runner, Playwright, backup restore, Semgrep, Security, Secret history, dependency, ODD y dashboard pasaron.
+- El smoke exacto ejecutó main 0001–0016 y BCV 0001–0022, regresión legacy, guard de destino y validador de artefactos. Runs: PR backup smoke `43002919167`; push backup smoke `43002910346`.
+- #303 permanece OPEN/Draft, HEAD `d527ae79cd566945cd9bdb3e1475d53b31d3923a`, 77 ahead / 0 behind, 11/11 workflows y 17/17 checks SUCCESS, sin reviews/threads. Su fixture main ya está incorporado y ampliado en #287; no fusionar #303 por separado.
+- Se endureció el runner remoto para aceptar solo URLs de loopback explícitas y mismas sesiones/DB; se añadieron tests negativos. Se añadió validación estricta de filename/sidecar SHA-256 y se eliminó la interpolación de filename no confiable en shell. El diagnóstico del backup oculta stderr de psql.
+- Main sigue en `c5373564413ba086690552c6b7deeab08d7b4a89`; no contiene el diagnóstico ni la exclusión solo de datos. Último schedule observado `42842855127` (2026-11-10 SUCCESS), anterior a ambos cambios. No hay run natural posterior observado; no dispatch manual.
+- Los artefactos antiguos no satisfacen el contrato nuevo porque carecen del esquema de auth efímera que ahora se conserva vacío. Esperar backup natural posterior a la integración antes de cualquier ensayo remoto.
+- Issue #53 OPEN/P0; producción NOT READY. Pendientes: principal efectivo/least privilege real, restore remoto real aislado, provisioning provider-specific, simulacro de aplicación, alerta externa, RPO/RTO medidos y coste $0.
+- No Neon main, datos reales, secretos/age, grants remotos, Cloudflare/DNS sensibles, deploy, Cron, billing, force-push ni merge de Draft.

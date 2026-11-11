@@ -20,7 +20,7 @@ Harden only the integration branch's synthetic/manual restore tooling. No dispat
 
 ## Required changes
 
-- Require the admin restore connection to report a loopback server address and port 5432, with the exact declared disposable database.
+- Require all four connection URLs to use the exact loopback endpoint 127.0.0.1:5432, an allowlisted disposable database, and no query overrides; compare the actual PostgreSQL server/port/database across all sessions.
 - Require migrator, runtime and producer direct LOGIN connections to resolve to the same loopback server, port and database.
 - Validate artifact filenames against the exact generated timestamp format before writing GitHub outputs or using them in paths.
 - Validate the checksum sidecar as one digest plus the exact expected filename; verify the downloaded artifact bytes without trusting a sidecar-supplied path.
@@ -30,10 +30,27 @@ Harden only the integration branch's synthetic/manual restore tooling. No dispat
 
 ## Acceptance and limits
 
-- The guard test rejects a non-loopback PostgreSQL server.
+- The guard test rejects non-loopback URLs and query overrides before any database connection.
 - All four connections must identify the same local target and expected LOGIN roles.
 - A malformed filename or sidecar fails closed.
 - Existing synthetic restore manifests, ownership/ACL assertions and role probes remain passing.
 - The real remote-archive workflow remains unexecuted. These changes do not prove real artifact recoverability, backup principal identity, least privilege on Neon, RPO/RTO, alert delivery or cost $0.
 
 Issue #53 remains OPEN/P0; production remains NOT READY.
+
+
+## Implementación y validación — 2026-11-11
+
+**Implementado en la rama de continuidad:**
+- URLs canónicas de loopback verificadas antes de cualquier conexión; solo bases desechables permitidas y sin query overrides.
+- Identidad directa de admin/migrator/runtime/producer y mismo servidor, puerto y base comprobados.
+- Test negativo con URL externa, URL runtime externa y query override; rechazo antes de ejecutar psql.
+- Validador dedicado de artefactos: timestamp UTC, archivo y sidecar regulares no simbólicos, una sola línea, digest SHA-256 y filename exacto. Tests negativos de filename, digest, sidecar, líneas extra y bytes alterados.
+- Filename del artefacto se transmite a shell mediante env, no interpolación en código.
+- El diagnóstico del principal backup redirige stderr de psql a /dev/null; el diagnóstico sigue siendo no bloqueante y no demuestra permisos si falla.
+
+**Evidencia exacta:** HEAD `94f3e3afd561f517301175751a8b7feaf640b2b9`; 11/11 workflows PR, 3/3 push, 18/18 check-runs SUCCESS. Backup smoke PR `43002919167` y push `43002910346` SUCCESS; ambos perfiles main/BCV pasaron junto con los nuevos guards y la regresión legacy.
+
+**Límite:** no se ejecutó el workflow manual de artefacto remoto, no se descargó backup real, no se usó llave age real ni se accedió a Neon/roles/grants remotos. Los artefactos antiguos de main excluyen las tablas auth completas y no son compatibles con el nuevo contrato que requiere esas tablas presentes y vacías. Esperar un backup natural posterior a que el nuevo workflow llegue a main.
+
+Issue #53 permanece OPEN/P0; producción NOT READY.

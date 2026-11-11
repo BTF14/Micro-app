@@ -6,6 +6,7 @@ DECLARE
   helper_oid oid;
   trigger_oid oid;
   helper_definition text;
+  helper_definition_lower text;
   trigger_definition text;
   saturday_date date;
   sunday_date date;
@@ -20,9 +21,12 @@ BEGIN
     RAISE EXCEPTION 'CHECKOUT_BCV_EFFECTIVE_DATE_HELPER_SECURITY_CONTRACT_INVALID';
   END IF;
   SELECT pg_catalog.pg_get_functiondef(helper_oid) INTO helper_definition;
-  IF pg_catalog.strpos(helper_definition, 'ISODOW') = 0
-    OR pg_catalog.strpos(helper_definition, 'MIN(er.effective_date)') = 0
-    OR pg_catalog.strpos(helper_definition, 'effective_date > caracas_now::date') = 0
+  -- pg_get_functiondef may normalize SQL keywords while deparsing the stored body.
+  -- Compare a lowercase representation so this contract checks semantics, not casing.
+  helper_definition_lower := pg_catalog.lower(helper_definition);
+  IF pg_catalog.strpos(helper_definition_lower, 'isodow') = 0
+    OR pg_catalog.strpos(helper_definition_lower, 'min(er.effective_date)') = 0
+    OR pg_catalog.strpos(helper_definition_lower, 'effective_date > caracas_now::date') = 0
   THEN
     RAISE EXCEPTION 'CHECKOUT_BCV_HELPER_WEEKEND_SELECTION_INVALID';
   END IF;

@@ -37,6 +37,10 @@ fi
 grep -F 'export GIT_ASKPASS=' "$workflow" >/dev/null || { echo "FAIL: backup workflow does not configure GIT_ASKPASS"; exit 1; }
 grep -F 'export GIT_ASKPASS_REQUIRE=force' "$workflow" >/dev/null || { echo "FAIL: backup workflow does not require askpass"; exit 1; }
 grep -F 'git -c credential.helper= clone --depth 1 "https://github.com/${BACKUP_REPO}.git"' "$workflow" >/dev/null || { echo "FAIL: backup workflow clone URL is not credential-free"; exit 1; }
+grep -F 'backup_token="${GH_TOKEN:?Falta el secreto BACKUP_REPO_TOKEN}"' "$workflow" >/dev/null || { echo "FAIL: backup token is not captured with fail-closed validation"; exit 1; }
+grep -F 'unset GH_TOKEN' "$workflow" >/dev/null || { echo "FAIL: backup token remains globally exported to subsequent commands"; exit 1; }
+grep -F 'GH_TOKEN="$backup_token" git -c credential.helper= clone' "$workflow" >/dev/null || { echo "FAIL: clone does not receive a command-scoped token"; exit 1; }
+grep -F 'GH_TOKEN="$backup_token" git -C "$backup_repo_dir" -c credential.helper= push' "$workflow" >/dev/null || { echo "FAIL: push does not receive a command-scoped token"; exit 1; }
 grep -F 'trap ' "$workflow" | grep -F 'rm -f "$askpass"' >/dev/null || { echo "FAIL: backup workflow does not clean up the temporary helper"; exit 1; }
 
 echo "PASS: backup workflow does not persist Git credentials in remote URLs"

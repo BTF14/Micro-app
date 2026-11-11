@@ -103,7 +103,7 @@ expect_denied "INSERT" "INSERT INTO public.products (organization_id, sku, name,
 expect_denied "UPDATE" "UPDATE public.products SET name='must fail' WHERE sku='SYN-RESTORE-001'"
 expect_denied "DELETE" "DELETE FROM public.products WHERE sku='SYN-RESTORE-001'"
 expect_denied "TRUNCATE" "TRUNCATE TABLE public.products"
-expect_denied "CREATE object in public" "CREATE TABLE public.backup_role_must_not_create (id integer)"
+expect_denied "CREATE schema" "CREATE SCHEMA backup_role_must_not_create"\nexpect_denied "CREATE object in public" "CREATE TABLE public.backup_role_must_not_create (id integer)"
 expect_denied "ALTER object" "ALTER TABLE public.products ADD COLUMN backup_role_must_not_alter integer"
 expect_denied "DROP object" "DROP TABLE public.products"
 expect_denied "ALTER schema" "ALTER SCHEMA public OWNER TO microapp_backup"

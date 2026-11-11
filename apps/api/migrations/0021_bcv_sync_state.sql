@@ -29,15 +29,9 @@ INSERT INTO public.bcv_sync_state (singleton) VALUES (true);
 
 REVOKE ALL ON TABLE public.bcv_sync_state FROM PUBLIC;
 GRANT SELECT ON TABLE public.bcv_sync_state TO microapp_runtime;
-GRANT UPDATE (
-  attempt_id,
-  last_attempt_at,
-  last_success_at,
-  last_outcome,
-  last_error_code,
-  last_effective_date,
-  updated_at
-) ON TABLE public.bcv_sync_state TO microapp_runtime;
+-- Runtime is read-only. The isolated BCV producer LOGIN (migration 0022)
+-- owns synchronization writes; a partially applied migration bundle must
+-- never let the API runtime forge the last-success checkout gate.
 
 
 -- Enforce the latest-successful-sync gate at the database boundary as well as

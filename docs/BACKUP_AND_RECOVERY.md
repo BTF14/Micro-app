@@ -415,3 +415,10 @@ GitHub live muestra main en c5373564413ba086690552c6b7deeab08d7b4a89. El archivo
 - Los artefactos antiguos no satisfacen el contrato nuevo porque carecen del esquema de auth efímera que ahora se conserva vacío. Esperar backup natural posterior a la integración antes de cualquier ensayo remoto.
 - Issue #53 OPEN/P0; producción NOT READY. Pendientes: principal efectivo/least privilege real, restore remoto real aislado, provisioning provider-specific, simulacro de aplicación, alerta externa, RPO/RTO medidos y coste $0.
 - No Neon main, datos reales, secretos/age, grants remotos, Cloudflare/DNS sensibles, deploy, Cron, billing, force-push ni merge de Draft.
+
+
+## Reconciliación del perfil BCV — 2026-11-11
+
+La rama de integración #287 ahora contiene 23 migraciones numeradas. El perfil sintético de restore BCV se actualizó de 0001–0022 a **0001–0023** en `scripts/db/restore_remote_backup_ephemeral.sh` y `scripts/db/reapply_restore_role_grants.sh`; tras restaurar, ejecuta también `0023_register_shift_runtime_operations.assertions.sql`. El perfil histórico main permanece fijado en 0001–0016 mediante el bundle inmutable `c5373564413ba086690552c6b7deeab08d7b4a89`.
+
+En el HEAD de código `0ca91ff51ec545278ceb8eabd3929083aae9022e`, el smoke test sintético PostgreSQL 18 para main 0001–0016 y BCV 0001–0023 terminó SUCCESS. El perfil BCV incluye ahora ownership/ACL de las funciones de apertura/cierre de turno y su `search_path` restringido. Esto no es restore de artefacto remoto ni demuestra el principal efectivo de backup en producción. No se ejecutó workflow manual ni se leyeron secretos/age. Issue #53 sigue OPEN/P0; producción NOT READY.

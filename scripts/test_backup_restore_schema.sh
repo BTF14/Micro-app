@@ -116,13 +116,13 @@ role_search_path_manifest() {
 }
 source_role_search_paths="$(role_search_path_manifest "$migration_url" "$runtime_url" "$producer_url")"
 
-echo "== Dump complete schema and populated synthetic graph; exclude ephemeral auth tables"
+echo "== Dump complete schema and populated synthetic graph; exclude ephemeral auth data only"
 # Preserve ownership and ACLs. All required synthetic roles already exist in
 # the disposable PostgreSQL cluster and are verified above.
 pg_dump "$schema_source_url" --format=custom \
-  --exclude-table=public.auth_sessions \
-  --exclude-table=public.auth_rate_limits \
-  --exclude-table=public.auth_bootstrap_attempts \
+  --exclude-table-data=public.auth_sessions \
+  --exclude-table-data=public.auth_rate_limits \
+  --exclude-table-data=public.auth_bootstrap_attempts \
   --file="$tmpdir/schema.dump"
 test -s "$tmpdir/schema.dump"
 
@@ -140,7 +140,7 @@ manifest() {
 SELECT 'tables|' || COALESCE(string_agg(table_name, ',' ORDER BY table_name), '')
   FROM information_schema.tables
  WHERE table_schema = 'public' AND table_type = 'BASE TABLE'
-   AND table_name NOT IN ('auth_sessions', 'auth_rate_limits', 'auth_bootstrap_attempts');
+
 SELECT 'columns|' || COALESCE(string_agg(
      c.relname || ':' || a.attname || ':'
      || pg_catalog.format_type(a.atttypid, a.atttypmod) || ':'
@@ -157,7 +157,7 @@ SELECT 'columns|' || COALESCE(string_agg(
    LEFT JOIN pg_catalog.pg_namespace coll_ns ON coll_ns.oid = coll.collnamespace
   WHERE n.nspname = 'public' AND c.relkind IN ('r','p','v','m','f')
     AND a.attnum > 0 AND NOT a.attisdropped
-    AND c.relname NOT IN ('auth_sessions','auth_rate_limits','auth_bootstrap_attempts');
+
  SELECT 'relation_definitions|' || COALESCE(string_agg(
      c.relname || ':' || c.relkind::text || ':' || c.relpersistence::text || ':'
      || c.relispartition::text || ':' || c.relreplident::text || ':'
@@ -169,7 +169,7 @@ SELECT 'columns|' || COALESCE(string_agg(
    FROM pg_catalog.pg_class c
    JOIN pg_catalog.pg_namespace n ON n.oid = c.relnamespace
   WHERE n.nspname = 'public' AND c.relkind IN ('r','p','v','m','f')
-    AND c.relname NOT IN ('auth_sessions','auth_rate_limits','auth_bootstrap_attempts');
+
  SELECT 'partition_tree|' || COALESCE(string_agg(
      parent.relname || ':' || child.relname || ':'
      || COALESCE(pg_catalog.pg_get_expr(child.relpartbound, child.oid), ''),
@@ -227,7 +227,7 @@ SELECT 'constraints|' || COALESCE(string_agg(
   JOIN pg_catalog.pg_class c ON c.oid = con.conrelid
   JOIN pg_catalog.pg_namespace n ON n.oid = c.relnamespace
  WHERE n.nspname = 'public'
-   AND c.relname NOT IN ('auth_sessions', 'auth_rate_limits', 'auth_bootstrap_attempts');
+
 SELECT 'indexes|' || COALESCE(string_agg(
      tbl.relname || ':' || idx.relname || ':' || pg_catalog.md5(pg_catalog.pg_get_indexdef(idx.oid))
      || ':' || ix.indisvalid::text || ':' || ix.indisready::text || ':' || ix.indislive::text
@@ -240,27 +240,18 @@ SELECT 'indexes|' || COALESCE(string_agg(
    JOIN pg_catalog.pg_class tbl ON tbl.oid = ix.indrelid
    JOIN pg_catalog.pg_namespace n ON n.oid = tbl.relnamespace
   WHERE n.nspname = 'public'
-    AND tbl.relname NOT IN ('auth_sessions','auth_rate_limits','auth_bootstrap_attempts');
+
 SELECT 'triggers|' || COALESCE(string_agg(c.relname || ':' || t.tgname || ':' || t.tgenabled::text || ':' || pg_catalog.md5(pg_catalog.pg_get_triggerdef(t.oid)), ';' ORDER BY c.relname, t.tgname), '')
   FROM pg_catalog.pg_trigger t
   JOIN pg_catalog.pg_class c ON c.oid = t.tgrelid
   JOIN pg_catalog.pg_namespace n ON n.oid = c.relnamespace
  WHERE n.nspname = 'public' AND NOT t.tgisinternal
-   AND c.relname NOT IN ('auth_sessions', 'auth_rate_limits', 'auth_bootstrap_attempts');
+
 SELECT 'sequences|' || COALESCE(string_agg(c.relname || ':' || pg_catalog.format_type(s.seqtypid, NULL) || ':' || s.seqstart::text || ':' || s.seqincrement::text || ':' || s.seqmin::text || ':' || s.seqmax::text || ':' || s.seqcache::text || ':' || s.seqcycle::text, ';' ORDER BY c.relname), '')
   FROM pg_catalog.pg_class c
   JOIN pg_catalog.pg_namespace n ON n.oid = c.relnamespace
   JOIN pg_catalog.pg_sequence s ON s.seqrelid = c.oid
- WHERE n.nspname = 'public'
-   AND NOT EXISTS (
-     SELECT 1
-       FROM pg_catalog.pg_depend d
-       JOIN pg_catalog.pg_class owning_table ON owning_table.oid = d.refobjid
-      WHERE d.classid = 'pg_catalog.pg_class'::regclass
-        AND d.objid = c.oid
-        AND d.refclassid = 'pg_catalog.pg_class'::regclass
-        AND owning_table.relname IN ('auth_sessions', 'auth_rate_limits', 'auth_bootstrap_attempts')
-   );
+ WHERE n.nspname = 'public';
 SELECT 'sequence_state|' || COALESCE(string_agg(sequencename || ':' || COALESCE(last_value::text, 'NULL'), ';' ORDER BY sequencename), '')
   FROM pg_catalog.pg_sequences
  WHERE schemaname = 'public';
@@ -282,7 +273,7 @@ SELECT 'relation_owners|' || COALESCE(string_agg(c.relname || ':' || pg_catalog.
   FROM pg_catalog.pg_class c
   JOIN pg_catalog.pg_namespace n ON n.oid = c.relnamespace
  WHERE n.nspname = 'public' AND c.relkind IN ('r','p','v','m','S','f')
-   AND c.relname NOT IN ('auth_sessions','auth_rate_limits','auth_bootstrap_attempts');
+
 SELECT 'function_owners|' || COALESCE(string_agg(p.proname || '(' || pg_catalog.pg_get_function_identity_arguments(p.oid) || '):' || pg_catalog.pg_get_userbyid(p.proowner), ';' ORDER BY p.proname, pg_catalog.pg_get_function_identity_arguments(p.oid)), '')
   FROM pg_catalog.pg_proc p
   JOIN pg_catalog.pg_namespace n ON n.oid = p.pronamespace
@@ -300,7 +291,7 @@ SELECT 'relation_acl|' || COALESCE(string_agg(
     COALESCE(c.relacl, pg_catalog.acldefault(CASE WHEN c.relkind = 'S' THEN 'S'::"char" ELSE 'r'::"char" END, c.relowner))
   ) AS a
  WHERE n.nspname = 'public' AND c.relkind IN ('r','p','v','m','S','f')
-   AND c.relname NOT IN ('auth_sessions','auth_rate_limits','auth_bootstrap_attempts')
+
    AND a.grantee <> c.relowner;
 SELECT 'function_acl|' || COALESCE(string_agg(
     p.proname || '(' || pg_catalog.pg_get_function_identity_arguments(p.oid) || '):'
@@ -323,14 +314,14 @@ SELECT 'rls|' || COALESCE(string_agg(c.relname || ':' || c.relrowsecurity::text 
   FROM pg_catalog.pg_class c
   JOIN pg_catalog.pg_namespace n ON n.oid = c.relnamespace
  WHERE n.nspname = 'public' AND c.relkind IN ('r','p')
-   AND c.relname NOT IN ('auth_sessions','auth_rate_limits','auth_bootstrap_attempts');
+
 SELECT 'policies|' || COALESCE(string_agg(
     schemaname || ':' || tablename || ':' || policyname || ':' || permissive || ':'
     || array_to_string(roles, ',') || ':' || cmd || ':' || COALESCE(qual, '') || ':' || COALESCE(with_check, ''),
     ';' ORDER BY schemaname, tablename, policyname
   ), '')
   FROM pg_catalog.pg_policies WHERE schemaname = 'public'
-   AND tablename NOT IN ('auth_sessions','auth_rate_limits','auth_bootstrap_attempts');
+
 SELECT 'role_contract|' || COALESCE(string_agg(
     rolname || ':' || rolcanlogin::text || ':' || rolsuper::text || ':' || rolcreatedb::text
     || ':' || rolcreaterole::text || ':' || rolreplication::text || ':' || rolbypassrls::text
@@ -358,7 +349,7 @@ SELECT 'effective_table_privileges|' || COALESCE(string_agg(
   CROSS JOIN (VALUES ('SELECT'),('INSERT'),('UPDATE'),('DELETE'),('TRUNCATE'),('REFERENCES'),('TRIGGER'),('MAINTAIN')) AS p(privilege)
  WHERE r.rolname IN ('microapp_migrator','microapp_runtime','microapp_bcv_sync')
    AND n.nspname = 'public' AND c.relkind IN ('r','p','v','m','f')
-   AND c.relname NOT IN ('auth_sessions','auth_rate_limits','auth_bootstrap_attempts');
+
 SELECT 'effective_sequence_privileges|' || COALESCE(string_agg(
     r.rolname || ':' || c.relname || ':' || p.privilege || ':'
     || pg_catalog.has_sequence_privilege(r.rolname, c.oid, p.privilege)::text,
@@ -603,11 +594,11 @@ if [[ "$source_fixture_ok" != "t" || "$restored_fixture_ok" != "t" ]]; then
 fi
 
 
-required_tables="$(psql "$schema_restore_url" -X -v ON_ERROR_STOP=1 -Atqc "SELECT count(*) FROM (VALUES ('organizations'),('app_users'),('organization_members'),('auth_allowlist'),('auth_bootstrap'),('suppliers'),('products'),('exchange_rates'),('sales'),('sale_items'),('payments'),('inventory_movements'),('audit_logs'),('branches'),('branch_memberships'),('registers'),('register_shifts'),('warehouses'),('inventory_counts'),('inventory_count_lines'),('inventory_balances'),('warehouse_inventory_movements'),('schema_migrations')) AS required(table_name) WHERE pg_catalog.to_regclass('public.' || required.table_name) IS NOT NULL")"
-[[ "$required_tables" == "23" ]] || { echo "Expected 22 stable application tables plus schema_migrations (23 required objects), got $required_tables." >&2; exit 1; }
+required_tables="$(psql "$schema_restore_url" -X -v ON_ERROR_STOP=1 -Atqc "SELECT count(*) FROM (VALUES ('organizations'),('app_users'),('organization_members'),('auth_allowlist'),('auth_bootstrap'),('suppliers'),('products'),('exchange_rates'),('sales'),('sale_items'),('payments'),('inventory_movements'),('audit_logs'),('branches'),('branch_memberships'),('registers'),('register_shifts'),('warehouses'),('inventory_counts'),('inventory_count_lines'),('inventory_balances'),('warehouse_inventory_movements'),('auth_sessions'),('auth_rate_limits'),('auth_bootstrap_attempts'),('schema_migrations')) AS required(table_name) WHERE pg_catalog.to_regclass('public.' || required.table_name) IS NOT NULL")"
+[[ "$required_tables" == "26" ]] || { echo "Expected 22 stable application tables, 3 empty ephemeral auth tables and schema_migrations (26 required objects), got $required_tables." >&2; exit 1; }
 
-ephemeral="$(psql "$schema_restore_url" -X -v ON_ERROR_STOP=1 -Atqc "SELECT (pg_catalog.to_regclass('public.auth_sessions') IS NULL AND pg_catalog.to_regclass('public.auth_rate_limits') IS NULL AND pg_catalog.to_regclass('public.auth_bootstrap_attempts') IS NULL)")"
-[[ "$ephemeral" == "t" ]] || { echo "Ephemeral auth tables were unexpectedly restored." >&2; exit 1; }
+ephemeral="$(psql "$schema_restore_url" -X -v ON_ERROR_STOP=1 -Atqc "SELECT (pg_catalog.to_regclass('public.auth_sessions') IS NOT NULL AND pg_catalog.to_regclass('public.auth_rate_limits') IS NOT NULL AND pg_catalog.to_regclass('public.auth_bootstrap_attempts') IS NOT NULL AND (SELECT count(*) = 0 FROM public.auth_sessions) AND (SELECT count(*) = 0 FROM public.auth_rate_limits) AND (SELECT count(*) = 0 FROM public.auth_bootstrap_attempts))")"
+[[ "$ephemeral" == "t" ]] || { echo "Ephemeral auth table schema missing or ephemeral rows were restored." >&2; exit 1; }
 
 restored_ledger_ok="$(psql "$schema_restore_url" -X -v ON_ERROR_STOP=1 -Atqc "SELECT count(*) = $expected_migrations AND bool_and(state = 'applied') AND bool_and(length(checksum) = 64) AND bool_and(applied_at IS NOT NULL) FROM public.schema_migrations")"
 [[ "$restored_ledger_ok" == "t" ]] || { echo "Restored migration ledger is incomplete." >&2; exit 1; }
@@ -615,5 +606,5 @@ restored_ledger_ok="$(psql "$schema_restore_url" -X -v ON_ERROR_STOP=1 -Atqc "SE
 echo "PASS: all $expected_migrations numbered migrations applied through scripts/db/migrate.sh."
 echo "PASS: encrypted restore preserved schema, ownership, ACLs, RLS/policies, role contract and effective search_path."
 echo "PASS: populated main-ref tenant/branch/shift/warehouse/count/ledger/checkout graph and cross-table relationships survived restore."
-echo "PASS: auth_sessions, auth_rate_limits and auth_bootstrap_attempts contained synthetic source rows and were excluded from restore."
+echo "PASS: auth_sessions, auth_rate_limits and auth_bootstrap_attempts preserved their schema while all synthetic source rows were excluded from restore."
 echo "Schema/data round-trip elapsed seconds: $((SECONDS - started_at))."

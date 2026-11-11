@@ -101,6 +101,32 @@ if [[ "$source_manifest" != "$restored_manifest" ]]; then
 fi
 schema_manifest() {
   psql "$1" -X -v ON_ERROR_STOP=1 -Atq <<'SQL'
+SELECT 'table|' || c.relname || '|' || c.relkind || '|' || c.relpersistence
+  || '|' || c.relispartition::text || '|' || c.relrowsecurity::text
+  || '|' || c.relforcerowsecurity::text || '|' || COALESCE(array_to_string(c.reloptions, ','), '')
+FROM pg_class c JOIN pg_namespace n ON n.oid=c.relnamespace
+WHERE n.nspname='public' AND c.relkind IN ('r','p','v','m','f')
+UNION ALL
+SELECT 'sequence|' || c.relname || '|' || format_type(s.seqtypid, NULL)
+  || '|' || s.seqstart::text || '|' || s.seqincrement::text || '|' || s.seqmin::text
+  || '|' || s.seqmax::text || '|' || s.seqcache::text || '|' || s.seqcycle::text
+FROM pg_class c
+JOIN pg_namespace n ON n.oid=c.relnamespace
+JOIN pg_sequence s ON s.seqrelid=c.oid
+WHERE n.nspname='public'
+UNION ALL
+SELECT 'trigger|' || c.relname || '|' || t.tgname || '|' || pg_get_triggerdef(t.oid)
+FROM pg_trigger t
+JOIN pg_class c ON c.oid=t.tgrelid
+JOIN pg_namespace n ON n.oid=c.relnamespace
+WHERE n.nspname='public' AND NOT t.tgisinternal
+UNION ALL
+SELECT 'policy|' || schemaname || '|' || tablename || '|' || policyname
+  || '|' || permissive || '|' || roles::text || '|' || cmd
+  || '|' || COALESCE(qual, '') || '|' || COALESCE(with_check, '')
+FROM pg_policies
+WHERE schemaname='public'
+UNION ALL
 SELECT 'column|' || table_name || '|' || column_name || '|' || ordinal_position::text
   || '|' || data_type || '|' || is_nullable || '|' || COALESCE(column_default, '')
   || '|' || COALESCE(character_maximum_length::text, '')

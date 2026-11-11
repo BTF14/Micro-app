@@ -4,6 +4,9 @@ set -euo pipefail
 : "${BACKUP_DUMP:?Set BACKUP_DUMP to the decrypted custom-format archive}"
 : "${RESTORE_ADMIN_URL:?Set RESTORE_ADMIN_URL to the disposable PostgreSQL admin connection}"
 : "${RESTORE_MIGRATOR_URL:?Set RESTORE_MIGRATOR_URL to the direct microapp_migrator connection}"
+: "${RESTORE_RUNTIME_URL:?Set RESTORE_RUNTIME_URL to the direct microapp_runtime connection}"
+: "${RESTORE_PRODUCER_URL:?Set RESTORE_PRODUCER_URL to the direct microapp_bcv_sync connection}"
+: "${RESTORE_DATABASE_NAME:?Set RESTORE_DATABASE_NAME to the disposable target database name}"
 : "${MIGRATIONS_DIR:?Set MIGRATIONS_DIR to the checked-out migration bundle}"
 command -v psql >/dev/null 2>&1 || { echo "psql is required." >&2; exit 2; }
 command -v pg_restore >/dev/null 2>&1 || { echo "pg_restore is required." >&2; exit 2; }
@@ -19,17 +22,27 @@ admin_identity="$(psql "$RESTORE_ADMIN_URL" -X -v ON_ERROR_STOP=1 -Atqc "SELECT 
   exit 2
 }
 target_db="$(psql "$RESTORE_ADMIN_URL" -X -v ON_ERROR_STOP=1 -Atqc "SELECT current_database()")"
-[[ "$target_db" == "microapp_restore" ]] || { echo "Refusing restore outside microapp_restore." >&2; exit 2; }
+[[ "$target_db" == "$RESTORE_DATABASE_NAME" ]] || { echo "Refusing restore outside the declared disposable target database." >&2; exit 2; }
 
 echo "== Provision isolated application roles in disposable PostgreSQL"
-psql "$RESTORE_ADMIN_URL" -X -v ON_ERROR_STOP=1 <<'SQL'
-CREATE ROLE microapp_migrator LOGIN PASSWORD 'migrator-restore-test-only'
-  NOSUPERUSER NOCREATEDB NOCREATEROLE NOREPLICATION NOBYPASSRLS;
-CREATE ROLE microapp_runtime LOGIN PASSWORD 'runtime-restore-test-only'
-  NOSUPERUSER NOCREATEDB NOCREATEROLE NOREPLICATION NOBYPASSRLS NOINHERIT;
-CREATE ROLE microapp_bcv_sync LOGIN PASSWORD 'bcv-sync-restore-test-only'
-  NOSUPERUSER NOCREATEDB NOCREATEROLE NOREPLICATION NOBYPASSRLS NOINHERIT;
-GRANT CONNECT ON DATABASE microapp_restore TO microapp_migrator, microapp_runtime, microapp_bcv_sync;
+psql "$RESTORE_ADMIN_URL" -X -v ON_ERROR_STOP=1 -v restore_database="$RESTORE_DATABASE_NAME" <<'SQL'
+DO $bootstrap_roles$
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_catalog.pg_roles WHERE rolname='microapp_migrator') THEN
+    CREATE ROLE microapp_migrator LOGIN PASSWORD 'migrator-restore-test-only'
+      NOSUPERUSER NOCREATEDB NOCREATEROLE NOREPLICATION NOBYPASSRLS;
+  END IF;
+  IF NOT EXISTS (SELECT 1 FROM pg_catalog.pg_roles WHERE rolname='microapp_runtime') THEN
+    CREATE ROLE microapp_runtime LOGIN PASSWORD 'runtime-restore-test-only'
+      NOSUPERUSER NOCREATEDB NOCREATEROLE NOREPLICATION NOBYPASSRLS NOINHERIT;
+  END IF;
+  IF NOT EXISTS (SELECT 1 FROM pg_catalog.pg_roles WHERE rolname='microapp_bcv_sync') THEN
+    CREATE ROLE microapp_bcv_sync LOGIN PASSWORD 'bcv-sync-restore-test-only'
+      NOSUPERUSER NOCREATEDB NOCREATEROLE NOREPLICATION NOBYPASSRLS NOINHERIT;
+  END IF;
+END
+$bootstrap_roles$;
+GRANT CONNECT ON DATABASE :"restore_database" TO microapp_migrator, microapp_runtime, microapp_bcv_sync;
 REVOKE CREATE ON SCHEMA public FROM PUBLIC;
 GRANT USAGE, CREATE ON SCHEMA public TO microapp_migrator;
 GRANT USAGE ON SCHEMA public TO microapp_runtime, microapp_bcv_sync;
@@ -148,9 +161,9 @@ SELECT
   AND to_regclass('public.schema_migrations') IS NOT NULL")"
 [[ "$auth_contract" == "t" ]] || { echo "Ephemeral auth schema/empty-data contract or migration ledger is invalid." >&2; exit 1; }
 
-runtime_identity="$(psql "postgresql://microapp_runtime:runtime-restore-test-only@127.0.0.1:5432/microapp_restore" -X -v ON_ERROR_STOP=1 -Atqc "SELECT current_user || ':' || session_user")"
+runtime_identity="$(psql "$RESTORE_RUNTIME_URL" -X -v ON_ERROR_STOP=1 -Atqc "SELECT current_user || ':' || session_user")"
 [[ "$runtime_identity" == "microapp_runtime:microapp_runtime" ]] || { echo "Runtime LOGIN verification failed." >&2; exit 1; }
-producer_identity="$(psql "postgresql://microapp_bcv_sync:bcv-sync-restore-test-only@127.0.0.1:5432/microapp_restore" -X -v ON_ERROR_STOP=1 -Atqc "SELECT current_user || ':' || session_user")"
+producer_identity="$(psql "$RESTORE_PRODUCER_URL" -X -v ON_ERROR_STOP=1 -Atqc "SELECT current_user || ':' || session_user")"
 [[ "$producer_identity" == "microapp_bcv_sync:microapp_bcv_sync" ]] || { echo "BCV producer LOGIN verification failed." >&2; exit 1; }
 
 public_tables="$(psql "$RESTORE_MIGRATOR_URL" -X -v ON_ERROR_STOP=1 -Atqc "SELECT count(*) FROM information_schema.tables WHERE table_schema='public' AND table_type='BASE TABLE'")"

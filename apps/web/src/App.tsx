@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { apiRequest, ApiError, googleLoginUrl, type AuthResponse } from "./auth";
 import "./auth.css";
 import CatalogPanel from "./CatalogPanel";
+import InventoryPanel from "./InventoryPanel";
 
 // WhatsApp number format (no "+", no spaces) per https://faq.whatsapp.com/general/chats/how-to-use-click-to-chat.
 function whatsappUrl(message: string): string {
@@ -62,7 +63,7 @@ const PRIVACY_SECTIONS: { heading: string; body: string }[] = [
 
 const modules = [
   { number: "01", title: "Caja y ventas", description: "Flujo de venta, cobro y comprobante.", status: "Pendiente de implementación" },
-  { number: "02", title: "Inventario", description: "Existencias, movimientos y alertas de stock.", status: "Pendiente de implementación" },
+  { number: "02", title: "Inventario", description: "Consulta de existencias por sucursal y almacén.", status: "Disponible · solo lectura" },
   { number: "03", title: "Productos", description: "Catálogo y precios exactos en USD.", status: "Disponible · catálogo en USD" },
   { number: "04", title: "Tasa BCV", description: "Conversión a VES con fuente y fecha verificables.", status: "Pendiente de integración" },
 ];
@@ -150,7 +151,7 @@ export default function App() {
   const [error, setError] = useState(() => readAuthErrorFromUrl());
   const [notice, setNotice] = useState("");
   const [helpModal, setHelpModal] = useState<HelpModalKind | null>(null);
-  const [activeView, setActiveView] = useState<"overview" | "catalog">("overview");
+  const [activeView, setActiveView] = useState<"overview" | "catalog" | "inventory">("overview");
 
   useEffect(() => {
     let active = true;
@@ -257,8 +258,8 @@ export default function App() {
         </div>
         <nav className="side-nav">
           <a className={`nav-item ${activeView === "overview" ? "active" : ""}`} href="#inicio" onClick={() => setActiveView("overview")} aria-current={activeView === "overview" ? "page" : undefined}><span className="nav-symbol" aria-hidden="true">⌂</span> Resumen</a>
-          <button className={`nav-item nav-item-button ${activeView === "catalog" ? "active" : ""}`} type="button" onClick={() => setActiveView("catalog")} aria-current={activeView === "catalog" ? "page" : undefined}><span className="nav-symbol" aria-hidden="true">▦</span>Productos</button>
-          {["Caja y ventas", "Inventario", "Reportes"].map((label) => <span className="nav-item disabled" aria-disabled="true" key={label}><span className="nav-symbol" aria-hidden="true">▦</span>{label}<span className="nav-lock">Pronto</span></span>)}
+          <button className={`nav-item nav-item-button ${activeView === "catalog" ? "active" : ""}`} type="button" onClick={() => setActiveView("catalog")} aria-current={activeView === "catalog" ? "page" : undefined}><span className="nav-symbol" aria-hidden="true">▦</span>Productos</button><button className={`nav-item nav-item-button ${activeView === "inventory" ? "active" : ""}`} type="button" onClick={() => setActiveView("inventory")} aria-current={activeView === "inventory" ? "page" : undefined}><span className="nav-symbol" aria-hidden="true">▤</span>Inventario</button>
+          {["Caja y ventas", "Reportes"].map((label) => <span className="nav-item disabled" aria-disabled="true" key={label}><span className="nav-symbol" aria-hidden="true">▦</span>{label}<span className="nav-lock">Pronto</span></span>)}
         </nav>
         <div className="sidebar-bottom">
           <div className="connection-indicator"><span className="connection-dot" aria-hidden="true" /><span><strong>Sesión activa</strong><small>{user.email}</small></span></div>
@@ -268,7 +269,7 @@ export default function App() {
       </aside>
       <section className="main-panel" id="inicio">
         <header className="topbar">
-          <div className="breadcrumb">{organization?.name ?? "Mi negocio"} <span>/</span> {activeView === "catalog" ? "Productos" : "Resumen"}</div>
+          <div className="breadcrumb">{organization?.name ?? "Mi negocio"} <span>/</span> {activeView === "catalog" ? "Productos" : activeView === "inventory" ? "Inventario" : "Resumen"}</div>
           <div className="topbar-end">
             <div className="account-chip"><span>{user.display_name.slice(0, 1).toUpperCase()}</span><div><strong>{user.display_name}</strong><small>{user.email}</small></div></div>
             {/* The sidebar's own logout button (.sidebar-bottom) is hidden on narrow screens
@@ -285,8 +286,8 @@ export default function App() {
           )}
           {activeView === "overview" ? (
           <>
-          <section className="welcome"><div><p className="eyebrow">TU NEGOCIO, EN UN SOLO LUGAR</p><h1>Hola, {user.display_name.split(" ")[0]}.</h1><p className="welcome-copy">Tu espacio de trabajo ya está listo. El catálogo de productos está disponible; seguimos preparando las herramientas de ventas e inventario.</p></div><div className="welcome-art" aria-hidden="true"><div className="art-ring ring-one" /><div className="art-ring ring-two" /><div className="art-card"><span className="art-card-label">MICRO APP</span><span className="art-card-line" /><span className="art-card-line short" /><span className="art-card-foot">GESTIÓN · CONTROL · CLARIDAD</span></div></div></section>
-          <section className="setup-banner"><div className="setup-icon" aria-hidden="true">↗</div><div className="setup-text"><h2>Cuenta conectada</h2><p>Tu sesión está activa. Las funciones de ventas e inventario se habilitarán en próximas fases.</p></div><span className="setup-status">Acceso seguro</span></section>
+          <section className="welcome"><div><p className="eyebrow">TU NEGOCIO, EN UN SOLO LUGAR</p><h1>Hola, {user.display_name.split(" ")[0]}.</h1><p className="welcome-copy">Tu espacio de trabajo ya está listo. El catálogo y la consulta de existencias por sucursal están disponibles; seguimos preparando las operaciones de venta y los movimientos de inventario.</p></div><div className="welcome-art" aria-hidden="true"><div className="art-ring ring-one" /><div className="art-ring ring-two" /><div className="art-card"><span className="art-card-label">MICRO APP</span><span className="art-card-line" /><span className="art-card-line short" /><span className="art-card-foot">GESTIÓN · CONTROL · CLARIDAD</span></div></div></section>
+          <section className="setup-banner"><div className="setup-icon" aria-hidden="true">↗</div><div className="setup-text"><h2>Cuenta conectada</h2><p>Tu sesión está activa. Ya puedes consultar existencias por sucursal y almacén; las operaciones de venta y los movimientos de inventario siguen en preparación.</p></div><span className="setup-status">Acceso seguro</span></section>
           <section className="modules-section" aria-labelledby="modules-title"><div className="section-heading"><div><p className="eyebrow">MÓDULOS DEL SISTEMA</p><h2>Herramientas de tu negocio</h2></div><span className="module-count">04 módulos previstos</span></div><div className="module-grid">{modules.map((module) => <article className="module-card" key={module.number}><div className="module-card-top"><span className="module-number">{module.number}</span><span className="module-indicator" aria-hidden="true">↗</span></div><h3>{module.title}</h3><p>{module.description}</p><div className="module-card-bottom"><span className="module-status-dot" aria-hidden="true" /><span>{module.status}</span></div></article>)}</div></section>
           <footer className="main-footer">
             <div className="main-footer-row">
@@ -296,6 +297,8 @@ export default function App() {
             <HelpLinks onOpen={setHelpModal} />
           </footer>
           </>
+          ) : activeView === "inventory" ? (
+            <InventoryPanel organizationId={organization?.id ?? ""} />
           ) : (
             <CatalogPanel
               organizationId={organization?.id ?? ""}

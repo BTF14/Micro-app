@@ -2,6 +2,7 @@ import { Hono } from "hono";
 import { cors } from "hono/cors";
 import { registerAuthRoutes } from "./auth";
 import { registerGoogleAuthRoutes } from "./google-auth";
+import { registerBranchRoutes } from "./branches";
 import { registerCatalogRoutes } from "./catalog";
 import { registerInventoryCountRoutes } from "./inventory-counts";
 import { registerInventoryReadRoutes } from "./inventory-read";
@@ -81,6 +82,7 @@ app.use("*", async (c, next) => {
 
 registerAuthRoutes(app);
 registerGoogleAuthRoutes(app);
+registerBranchRoutes(app);
 registerCatalogRoutes(app);
 registerInventoryCountRoutes(app);
 registerInventoryReadRoutes(app);

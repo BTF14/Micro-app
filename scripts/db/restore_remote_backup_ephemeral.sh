@@ -118,6 +118,12 @@ RESTORE_GRANTS_PROFILE="$ledger_profile" \
 
 echo "== Run profile-specific effective ACL assertions against restored roles"
 if [[ "$ledger_profile" == "main" ]]; then
+  psql "$RESTORE_MIGRATOR_URL" -X -v ON_ERROR_STOP=1 -At -F '|' -c "
+    SELECT 'intent_select', has_table_privilege('microapp_runtime','public.inventory_balance_ledger_intents','SELECT')
+    UNION ALL SELECT 'intent_insert', has_table_privilege('microapp_runtime','public.inventory_balance_ledger_intents','INSERT')
+    UNION ALL SELECT 'sales_select', has_table_privilege('microapp_runtime','public.sales','SELECT')
+    UNION ALL SELECT 'payments_select', has_table_privilege('microapp_runtime','public.payments','SELECT')
+  "
   psql "$RESTORE_MIGRATOR_URL" -X -v ON_ERROR_STOP=1 -f "$source_migrations_dir/0012_postgres_runtime_role_grants.assertions.sql"
 else
   psql "$RESTORE_MIGRATOR_URL" -X -v ON_ERROR_STOP=1 -f "$source_migrations_dir/0022_bcv_dedicated_producer_role.assertions.sql"

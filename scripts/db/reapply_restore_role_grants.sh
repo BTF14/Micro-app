@@ -42,7 +42,7 @@ while IFS='|' read -r version filename checksum; do
     echo "Migration ledger is not contiguous at $expected_version." >&2
     exit 1
   }
-  [[ "$filename" =~ ^${expected_version}_[A-Za-z0-9_-]+\\.sql$ ]] || {
+  [[ "$filename" =~ ^${expected_version}_[A-Za-z0-9_-]+\.sql$ ]] || {
     echo "Migration ledger filename is not a safe numbered SQL basename." >&2
     exit 1
   }

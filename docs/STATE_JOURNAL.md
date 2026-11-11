@@ -2757,3 +2757,14 @@ La hipótesis anterior de que el helper de espera era la causa no era correcta. 
 - PR #287 remains OPEN/Draft, with no formal reviews or review threads. Current main `c5373564413ba086690552c6b7deeab08d7b4a89`; comparison 509 ahead / 1 behind, merge base `03442951b2a2f63f5bf4dcf560f2c91be4f6cc71`. No sync/rebase/merge was performed.
 - Issue #53 remains OPEN/P0. The effective production backup principal and remote least-privilege state remain unverified; the new diagnostic is branch-only and has not run on a natural scheduled backup after reaching main. No secret, Neon, real data, remote role/grant, Cron, DNS, billing or production changes.
 - Production remains NOT READY. Next priority: continue Security Level 1/P0 verification, then revisit product UI work after critical security gates.
+
+
+## 2026-11-11 — Cashier inventory movement read authorization (#287)
+
+- La matriz aprobada permite a Cashier leer existencias y movimientos de su sucursal. GET movements usaba `inventory.management.read`, causando 403 indebido.
+- ODD `odd/tasks/cashier-inventory-movement-read.md` creado antes del cambio de código (task commit `844b9cdd0a2115f077e77787d4188c135ec4e80f`).
+- Implementación `f0d9f9ad6ad995dc837a4e6cef6564fc9947676d`: GET movements reutiliza `inventory.read`; no se añadió permiso, rol, grant, migración ni write path.
+- Prueba PostgreSQL: Cashier 200 en branch asignada, sin `unit_cost_usd`; warehouse/count management 403; branch sin membership 403; cross-tenant 401.
+- Exact SHA: 11/11 workflows PR, 2/2 push, 16/16 check-runs SUCCESS; CI `43066606680` incluye PostgreSQL inventory read integration SUCCESS.
+- Rate limiting OAuth y authorization helpers ya tienen callsites en la rama; comentario issue #53 `6802473182` actualiza el estado histórico. Issue #53 permanece OPEN/P0 por identidad efectiva backup/Worker, grants remotos, CORS y operación backup.
+- PR #287 Draft; main `c5373564413ba086690552c6b7deeab08d7b4a89`; 512 ahead / 1 behind; no merge/rebase. Producción NOT READY.

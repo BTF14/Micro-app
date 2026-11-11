@@ -1,3 +1,13 @@
+# Addendum vivo — 2026-11-11 — permisos Cashier y P0
+
+- P1 de lectura de movimientos corregido en PR #287: GET movements usa `inventory.read`, Cashier queda branch-scoped y no recibe costos. `inventory.management.read` permanece reservado para warehouse/count management. Prueba PostgreSQL exact-HEAD valida acceso permitido y denegaciones branch/tenant.
+- OAuth Google rate limiting existe en `google-auth.ts` / `auth-rate-limit.ts`; authorization helpers tienen callsites actuales en catálogo, inventario, turnos y checkout. La descripción histórica del issue #53 del 5/11 está desactualizada en esos puntos; comentario de reconciliación `6802473182`.
+- HEAD de código `f0d9f9ad6ad995dc837a4e6cef6564fc9947676d`: 11/11 PR workflows, 2/2 push workflows, 16/16 check-runs SUCCESS. PR #287 permanece Draft y no está integrada.
+- Issue #53 OPEN/P0: identidad efectiva backup/Worker, ownership/memberships/grants remotos, CORS, alertas, RPO/RTO y coste total USD 0 siguen sin demostrar. Producción NOT READY.
+- No se leyeron secretos ni se modificaron Neon, datos reales, roles/grants remotos, Cron, DNS, billing o producción.
+
+---
+
 # Actualización de continuidad — 9 de noviembre de 2026
 
 > Esta actualización prevalece sobre snapshots históricos que indiquen otro HEAD o describan como pendientes capacidades ya implementadas. Verificar siempre el SHA vivo en GitHub antes de nuevas acciones.

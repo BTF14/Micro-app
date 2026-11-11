@@ -1,3 +1,26 @@
+# Checkpoint — 2026-11-11: Cashier movement-read authorization
+
+**Último HEAD de código validado:** `f0d9f9ad6ad995dc837a4e6cef6564fc9947676d`. **11/11 PR workflows + 2/2 push + 16/16 check-runs SUCCESS.**
+
+## P1 completado
+- ODD: `odd/tasks/cashier-inventory-movement-read.md`; task commit `844b9cdd0a2115f077e77787d4188c135ec4e80f`.
+- Implementación: `f0d9f9ad6ad995dc837a4e6cef6564fc9947676d`.
+- La matriz permite a Cashier leer existencias y movimientos en sucursales asignadas. GET movements usaba erróneamente `inventory.management.read`; ahora reutiliza `inventory.read`.
+- Cashier recibe 200 y no recibe `unit_cost_usd`; warehouses/counts siguen 403; branch sin membership 403; cross-tenant 401.
+- PostgreSQL inventory read integration SUCCESS; CI `43066606680`; 11/11 PR, 2/2 push, 16/16 check-runs SUCCESS. Sin cambios de schema, roles, grants o writes.
+- OAuth rate limiting y callsites del helper central ya existen en la rama; issue #53 tiene comentario de reconciliación `6802473182`.
+
+## P0 abierto
+Issue #53 OPEN/P0. Principal efectivo de backup/Worker, ownership/grants/memberships remotos, CORS, alertas, RPO/RTO y coste operativo USD 0 siguen sin demostrarse. Producción NOT READY; no secretos, Neon, datos reales, roles/grants remotos ni despliegues.
+
+## GitHub
+PR #287 OPEN/Draft, sin reviews ni threads. main `c5373564413ba086690552c6b7deeab08d7b4a89`; 512 ahead / 1 behind; merge base `03442951b2a2f63f5bf4dcf560f2c91be4f6cc71`. No rebase/sync/merge por rutina.
+
+## Siguiente
+Mantener Draft; continuar Seguridad Nivel 1/P0. Solo después de cerrar gates críticos, avanzar UI de caja/checkout.
+
+---
+
 # Checkpoint — 2026-11-11: CI APT resilience and security P0
 
 **Último HEAD de código validado:** `5ef21974725b91649705ed1bf6e9ae3019ca8e85`, PR #287. **11/11 workflows pull_request + 3/3 push + 18/18 check-runs SUCCESS**. Los documentos que siguen a este bloque son snapshots históricos; no reutilizar sus SHA.

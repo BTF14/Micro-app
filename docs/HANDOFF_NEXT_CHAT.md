@@ -1,3 +1,20 @@
+# Handoff — 2026-11-11 — permisos Cashier y P0
+
+> Este bloque prevalece sobre snapshots históricos. Verificar HEAD/checks vivos antes de continuar.
+
+- Repo `BTF14/Micro-app`; rama `integration/bcv-checkout-rehearsal-20261109`.
+- PR #287 OPEN/Draft, mergeable clean; HEAD de código validado `f0d9f9ad6ad995dc837a4e6cef6564fc9947676d`.
+- main `c5373564413ba086690552c6b7deeab08d7b4a89`; 512 ahead / 1 behind; merge base `03442951b2a2f63f5bf4dcf560f2c91be4f6cc71`.
+- 11/11 workflows PR SUCCESS, 2/2 push SUCCESS, 16/16 check-runs SUCCESS. Reviews formales 0; review threads 0.
+- P1 implementado: historial de movimientos usa `inventory.read` y Cashier lee solo sucursales asignadas, sin costos. Warehouses/counts permanecen denegados. Prueba PostgreSQL cubre éxito, cost redaction, branch 403 y tenant 401. Commit `f0d9f9a`; ODD `odd/tasks/cashier-inventory-movement-read.md`.
+- Rate limiting OAuth y authorization helper tienen callsites actuales; comentario de issue #53 `6802473182` corrige contexto histórico. Issue sigue OPEN/P0.
+- P0: identidad real de backup/Worker, grants/ownership/memberships remotos, CORS efectivo, alertas externas, RPO/RTO y coste $0 siguen sin probar. No usar workflow_dispatch ni tocar secretos/Neon.
+- Producción NOT READY. No merge/deploy/Neon writes/datos reales/cambios remotos.
+- Próximo: mantener Draft; continuar P0 de identidad/operación; luego UI caja/checkout.
+- `docs/WORK_CHECKPOINT.md` es el checkpoint canónico; root `WORK_CHECKPOINT.md` no existe.
+
+---
+
 # Handoff operativo — 11 de noviembre de 2026 — CI y P0
 
 > Este bloque prevalece sobre todos los snapshots inferiores. Verificar el estado vivo antes de continuar; no reutilizar checks de un SHA anterior.

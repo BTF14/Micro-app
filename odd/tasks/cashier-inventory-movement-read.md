@@ -1,6 +1,6 @@
 # ODD task: align cashier inventory movement reads with approved role matrix
 
-- Status: in progress
+- Status: completed
 - Issue: #53 (security / P0 umbrella); subtask priority: P1
 - PR: #287
 - Started: 2026-11-11
@@ -39,22 +39,22 @@ Excluded:
 
 ## Acceptance criteria
 
-- [ ] AC-1 — Movement history authorizes with the existing `inventory.read` operation.
-- [ ] AC-2 — Cashier can read movements only in a branch with active membership.
-- [ ] AC-3 — Cashier responses omit `unit_cost_usd`; Owner/Admin/Inventory cost visibility remains unchanged.
-- [ ] AC-4 — Cashier remains denied warehouse/count management reads and all inventory write operations.
-- [ ] AC-5 — Cross-tenant and unassigned-branch requests remain denied.
-- [ ] AC-6 — Unit, PostgreSQL integration, CI, ODD and security checks pass on the final exact HEAD.
+- [x] AC-1 — Movement history authorizes with the existing `inventory.read` operation.
+- [x] AC-2 — Cashier can read movements only in a branch with active membership.
+- [x] AC-3 — Cashier responses omit `unit_cost_usd`; Owner/Admin/Inventory cost visibility remains unchanged.
+- [x] AC-4 — Cashier remains denied warehouse/count management reads and all inventory write operations.
+- [x] AC-5 — Cross-tenant and unassigned-branch requests remain denied.
+- [x] AC-6 — Unit, PostgreSQL integration, CI, ODD and security checks pass on the final exact HEAD.
 
 ## Tasks and evidence
 
 | Task | Expected result | Validation / evidence | Status |
 |---|---|---|---|
 | Confirm approved policy and current mismatch | Exact mismatch identified | Role matrix section 1; route and integration test show movement 403 for Cashier | completed |
-| Change route authorization | Reuse `inventory.read` | `apps/api/src/inventory-read.ts` | pending |
-| Add regression tests | Positive cashier read + cost redaction; negative management and cross-scope checks | `authorization.test.ts`, `inventory-read.integration.test.ts` | pending |
-| Run full exact-HEAD validation | No regression or bypass | GitHub PR workflows and check-runs | pending |
-| Update continuity and issue evidence | Keep #53 accurate and open | CURRENT_STATE, WORK_CHECKPOINT, HANDOFF, STATE_JOURNAL | pending |
+| Change route authorization | Reuse `inventory.read` | Commit `f0d9f9ad6ad995dc837a4e6cef6564fc9947676d` | completed |
+| Add regression tests | Positive cashier read + cost redaction; negative management and cross-scope checks | `inventory-read.integration.test.ts` exact-HEAD PostgreSQL test SUCCESS | completed |
+| Run full exact-HEAD validation | No regression or bypass | 11/11 PR workflows, 2/2 push workflows, 16/16 check-runs SUCCESS on `f0d9f9ad6ad995dc837a4e6cef6564fc9947676d` | completed |
+| Update continuity and issue evidence | Keep #53 accurate and open | Current state/checkpoint/handoff/journal updated; issue #53 comment `6802473182`; issue remains OPEN/P0 | completed |
 
 ## Risks and guardrails
 
@@ -67,9 +67,9 @@ Excluded:
 
 ## Closure
 
-- Implementation SHA: pending
-- Exact-HEAD CI: pending
-- Acceptance criteria: pending
-- Residual risks: pending
-- Next step: implement the minimal permission correction and run exact-HEAD validation.
+- Implementation SHA: `f0d9f9ad6ad995dc837a4e6cef6564fc9947676d`
+- Exact-HEAD CI: 11/11 PR workflows, 2/2 push workflows and 16/16 check-runs SUCCESS; CI run `43066606680` includes PostgreSQL inventory read integration SUCCESS.
+- Acceptance criteria: AC-1 through AC-6 met.
+- Residual risks: PR #287 is still Draft and main is unchanged; production DB identity and issue #53 P0 gates remain open.
+- Next step: keep PR #287 Draft and continue the independent issue #53 P0 audit.
 

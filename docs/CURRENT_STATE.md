@@ -1,3 +1,21 @@
+# Reconciliación viva — 2026-11-11 — autorización de lectura Cashier
+
+> Prevalece sobre snapshots históricos. HEAD de código validado: `f0d9f9ad6ad995dc837a4e6cef6564fc9947676d`. El commit documental posterior no cambia código y requiere validación exact-HEAD propia.
+
+- Repo `BTF14/Micro-app`; rama `integration/bcv-checkout-rehearsal-20261109`.
+- PR #287 OPEN/Draft, mergeable=true, mergeable_state=clean en el SHA indicado. Reviews formales 0; review threads 0.
+- main `c5373564413ba086690552c6b7deeab08d7b4a89`; rama 512 ahead / 1 behind; merge base `03442951b2a2f63f5bf4dcf560f2c91be4f6cc71`. No se sincronizó ni rebasó.
+- Exact HEAD: 11/11 workflows pull_request SUCCESS; 2/2 push SUCCESS; 16/16 check-runs SUCCESS. CI `43066606680`; database migration validation `43066606555`; migration runner `43066606549`; backup restore `43066606479`; Playwright `43066606528`; Semgrep `43066606667`; Security `43066606526`; secret history `43066606635`; Dependency Review `43066606338`; ODD `43066606425`; dashboard `43066606463`. Push: Security `43066594523`, secret history `43066594363`.
+- P1 corregido en `f0d9f9a`: GET movimientos usa `inventory.read`, alineado con la matriz aprobada. Cashier puede leer movimientos de sucursal asignada, sin `unit_cost_usd`; warehouse/count management sigue usando `inventory.management.read` y permanece denegado a Cashier.
+- PostgreSQL inventory read integration test: Cashier 200 en sucursal asignada; sin costo; warehouse/count GET 403; sucursal sin membership 403; otra organización 401. Sin nuevo permiso, migración, grant, rol ni writer.
+- OAuth Google rate limiting existe en `google-auth.ts`/`auth-rate-limit.ts`; los helpers centrales tienen callsites en catálogo, inventario, conteos, turnos y checkout. Issue #53 recibió comentario de reconciliación `6802473182`; esos puntos del body del 5/11 son históricos, no estado actual de la rama.
+- Issue #53 sigue OPEN/P0: identidad efectiva de backup/Worker, ownership/memberships/grants remotos, CORS efectivo, alertas externas, RPO/RTO y coste USD 0 no demostrados. Diagnóstico backup branch-only; no se ha observado en un backup natural de main.
+- Producción NOT READY. No merge, Neon writes, datos reales, secretos, roles/grants remotos, Cron, DNS, billing ni deploy manual.
+- `docs/WORK_CHECKPOINT.md` es canónico según `AGENTS.md`; el archivo raíz `WORK_CHECKPOINT.md` no existe. No crear duplicado.
+- Próximo paso: mantener #287 Draft y continuar gates P0 de identidad/operación; revalidar siempre el HEAD vivo.
+
+---
+
 # Reconciliación viva — 2026-11-11 17:08 UTC — CI package install
 
 > Este bloque prevalece sobre los snapshots históricos inferiores. El estado de código se validó en el SHA exacto indicado; el commit documental posterior no cambia código y debe tener su propia ejecución exact-HEAD antes de reutilizar sus checks.

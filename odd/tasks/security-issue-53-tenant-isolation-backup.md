@@ -118,7 +118,7 @@ Excluded:
 - After PostgreSQL 18 run `43102529147` passed, `.github/workflows/backup.yml` was updated on this branch to replace the three `--exclude-table` flags with `--exclude-table-data=public.<table>`. The adjacent comment now states that DDL is preserved and only ephemeral rows are excluded.
 - Added an additive dated reconciliation to `docs/BACKUP_AND_RECOVERY.md` and `docs/SECURITY_ROADMAP.md`. Historical records were not rewritten.
 - The operational workflow change is still unmerged and has not been executed against Neon. The exact final branch SHA must pass CI independently; the earlier PostgreSQL 18 run validates the test contract, not later workflow/doc commits.
-- Current branch HEAD before this task-file update: `c731052b06935d5174ef082e3efdbc8aa07abcd2`.
+- Current branch HEAD before this task-file update: `0a8b96d1bd4a87bb57c6aae8e8d65d9393b033e8`.
 
 
 ## Integration dependency — PR #304 overlap (2026-11-11 UTC)
@@ -129,3 +129,6 @@ Excluded:
 
 
 - Ampliación final de la matriz sintética: se agregaron aserciones explícitas de CONNECT sin CREATE a nivel database y ausencia de grants de INSERT/UPDATE/REFERENCES a nivel columna. Esta ampliación está incluida en el nuevo HEAD `c731052b06935d5174ef082e3efdbc8aa07abcd2`; requiere su propia ejecución PostgreSQL 18 exact-SHA.
+
+
+- Se amplió la comparación del esquema para incluir propiedades de tablas, secuencias (tipo, start/increment/min/max/cache/cycle), triggers no internos y políticas RLS, además de columnas, constraints e índices. Esto cubre los objetos adicionales del esquema inicial que deben sobrevivir al round-trip; la suite debe pasar de nuevo en el HEAD final.

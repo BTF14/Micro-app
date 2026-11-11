@@ -2629,3 +2629,11 @@ No se ejecutó workflow_dispatch ni se accedió a secreto, backup remoto, llave 
 ## 2026-11-11 — el diagnóstico de backup aún no alcanza main
 
 Consulta GitHub live: main HEAD c5373564413ba086690552c6b7deeab08d7b4a89 y backup.yml blob 5df408788b9053709261ada3aa22dd73b85d5691 todavía sin el diagnóstico de seis booleanos que existe en la rama de integración. Runs schedule recientes de main 42842855127 (2026-11-10 SUCCESS) y 42659924075 (2026-11-09 SUCCESS) son previos al cambio y no demuestran identidad efectiva. La siguiente evidencia válida solo será un run natural después de que el cambio llegue a main. Sin dispatch manual. Least privilege permanece no verificado.
+
+
+
+## 2026-11-11 — reconciliación exact-HEAD antes de cambio de chat
+
+Consulta GitHub live: rama `integration/bcv-checkout-rehearsal-20261109` HEAD `3e00d2c1512e1d0c3c0acc84bcdf4663e4976296`; 13/13 workflows pull_request SUCCESS, 2/2 push SUCCESS y 16/16 check-runs SUCCESS. PR #287 OPEN/Draft, mergeable clean; no reviews formales ni review comments. PR #303 OPEN/Draft; issue #53 OPEN/P0. No se interpreta estado clean ni CI verde como aprobación.
+
+La prueba de restore es sintética y cubre perfiles main/BCV; no se ejecutó workflow_dispatch remoto ni se accedió a backup/llave age reales. Main aún no contiene el diagnóstico de seis booleanos para el principal backup; identidad y least privilege permanecen sin verificar. No se alteró producción, Neon, secretos, Cron, DNS, Cloudflare sensible ni billing. Producción NOT READY.

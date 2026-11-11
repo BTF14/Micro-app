@@ -24,6 +24,12 @@ admin_identity="$(psql "$RESTORE_ADMIN_URL" -X -v ON_ERROR_STOP=1 -Atqc "SELECT 
 target_db="$(psql "$RESTORE_ADMIN_URL" -X -v ON_ERROR_STOP=1 -Atqc "SELECT current_database()")"
 [[ "$target_db" == "$RESTORE_DATABASE_NAME" ]] || { echo "Refusing restore outside the declared disposable target database." >&2; exit 2; }
 
+admin_target="$(psql "$RESTORE_ADMIN_URL" -X -v ON_ERROR_STOP=1 -Atqc "SELECT COALESCE(inet_server_addr()::text, '') || ':' || COALESCE(inet_server_port()::text, '') || ':' || current_database()")"
+[[ "$admin_target" == "127.0.0.1:5432:$RESTORE_DATABASE_NAME" ]] || {
+  echo "Refusing restore: administrator connection must terminate at the declared loopback PostgreSQL 127.0.0.1:5432 target." >&2
+  exit 2
+}
+
 echo "== Provision isolated application roles in disposable PostgreSQL"
 psql "$RESTORE_ADMIN_URL" -X -v ON_ERROR_STOP=1 -v restore_database="$RESTORE_DATABASE_NAME" <<'SQL'
 DO $bootstrap_roles$
@@ -48,11 +54,26 @@ GRANT USAGE, CREATE ON SCHEMA public TO microapp_migrator;
 GRANT USAGE ON SCHEMA public TO microapp_runtime, microapp_bcv_sync;
 SQL
 
-migrator_identity="$(psql "$RESTORE_MIGRATOR_URL" -X -v ON_ERROR_STOP=1 -Atqc "SELECT current_user || ':' || session_user")"
-[[ "$migrator_identity" == "microapp_migrator:microapp_migrator" ]] || {
-  echo "Restore connection is not a direct microapp_migrator LOGIN." >&2
-  exit 2
+assert_local_login_target() {
+  local connection="$1"
+  local expected_login="$2"
+  local identity target
+
+  identity="$(psql "$connection" -X -v ON_ERROR_STOP=1 -Atqc "SELECT current_user || ':' || session_user")"
+  [[ "$identity" == "$expected_login:$expected_login" ]] || {
+    echo "Restore connection is not a direct $expected_login LOGIN." >&2
+    exit 2
+  }
+  target="$(psql "$connection" -X -v ON_ERROR_STOP=1 -Atqc "SELECT COALESCE(inet_server_addr()::text, '') || ':' || COALESCE(inet_server_port()::text, '') || ':' || current_database()")"
+  [[ "$target" == "$admin_target" ]] || {
+    echo "Refusing restore: $expected_login connection does not reach the same disposable loopback database." >&2
+    exit 2
+  }
 }
+
+assert_local_login_target "$RESTORE_MIGRATOR_URL" microapp_migrator
+assert_local_login_target "$RESTORE_RUNTIME_URL" microapp_runtime
+assert_local_login_target "$RESTORE_PRODUCER_URL" microapp_bcv_sync
 
 echo "== Restore encrypted-backup payload as microapp_migrator with owner/ACL replay disabled"
 pg_restore --exit-on-error --single-transaction --no-owner --no-privileges \

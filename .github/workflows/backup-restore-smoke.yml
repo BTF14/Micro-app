@@ -11,6 +11,7 @@ on:
       - ".github/workflows/backup-restore-smoke.yml"
       - "scripts/db/reapply_restore_role_grants.sh"
       - "scripts/db/restore_remote_backup_ephemeral.sh"
+      - "scripts/db/test_restore_remote_backup_target_guard.sh"
       - "scripts/db/restore_role_assertions_main.sql"
       - "scripts/test_backup_restore_schema.sh"
       - "scripts/test_backup_restore_schema_bcv.sh"
@@ -76,6 +77,9 @@ jobs:
       - name: Run isolated main paired-intent schema and populated-graph restore
         shell: bash
         run: bash scripts/test_backup_restore_schema.sh
+      - name: Prove remote restore target guard fails closed
+        shell: bash
+        run: bash scripts/db/test_restore_remote_backup_target_guard.sh
 
   restore-smoke:
     name: Synthetic encrypted restore — BCV projection (0001–0022)

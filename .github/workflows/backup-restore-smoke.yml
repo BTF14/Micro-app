@@ -4,6 +4,15 @@ on:
   schedule:
     - cron: "0 9 1 * *"
   workflow_dispatch: {}
+  push:
+    branches:
+      - "integration/bcv-checkout-rehearsal-20261109"
+    paths:
+      - ".github/workflows/backup-restore-smoke.yml"
+      - "scripts/db/reapply_restore_role_grants.sh"
+      - "scripts/db/restore_remote_backup_ephemeral.sh"
+      - "scripts/test_backup_restore_schema.sh"
+      - "scripts/test_backup_restore_schema_bcv.sh"
   pull_request:
     paths:
       - ".github/workflows/backup-restore-smoke.yml"

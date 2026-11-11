@@ -169,7 +169,7 @@ restored_schema_manifest="$(schema_manifest "$RESTORE_URL")"
   diff -u <(printf '%s\\n' "$source_schema_manifest") <(printf '%s\\n' "$restored_schema_manifest") || true
   exit 1
 }
-echo "PASS: business and ephemeral auth columns, constraints and indexes match source."
+echo "PASS: table, column, sequence, constraint, index, trigger and policy metadata match source."
 ephemeral_schema_count="$(psql "$RESTORE_URL" -X -v ON_ERROR_STOP=1 -Atqc "SELECT count(*) FROM information_schema.tables WHERE table_schema='public' AND table_type='BASE TABLE' AND table_name=ANY(ARRAY['auth_sessions','auth_rate_limits','auth_bootstrap_attempts']::text[])")"
 [[ "$ephemeral_schema_count" == "3" ]] || { echo "Expected all 3 ephemeral auth table definitions, got $ephemeral_schema_count." >&2; exit 1; }
 ephemeral_rows="$(psql "$RESTORE_URL" -X -v ON_ERROR_STOP=1 -Atq -F '|' -c 'SELECT (SELECT count(*) FROM auth_sessions), (SELECT count(*) FROM auth_rate_limits), (SELECT count(*) FROM auth_bootstrap_attempts)')"

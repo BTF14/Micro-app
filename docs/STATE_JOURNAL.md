@@ -1,3 +1,148 @@
+# Hito — PR #299 integrada y auditoría inicial de #303 (2026-11-11 UTC)
+
+**Checkpoint vivo — 2026-11-11 UTC**
+**main:** `7d79621926dd256542e43dc08ec20539ad91cf03` (squash merge de PR #299).
+**PR #307:** MERGED; squash commit `98998cf4c13a7d13a1941b776911cc8f2df1b2db`.
+**PR #299:** MERGED; validated HEAD `56286a4943bba6e7e1180205964eb353165af3ee`; squash commit `7d79621926dd256542e43dc08ec20539ad91cf03`. Antes del merge: 16/16 check-runs SUCCESS y 12/12 workflow runs SUCCESS, todos en el HEAD exacto; el smoke de backup pasó en los tres perfiles PostgreSQL 18 (BCV 0001–0023, paired-intent 0001–0016 y legacy backup contract). Review COMMENT `5866699291` (no formal code-owner APPROVE). La rama se sincronizó sin force-push; diff neto 1 archivo.
+**PR abiertas:** 6 en total: cinco PR de backlog (#303, #300, #298, #296, #193) más esta PR documental #308. Censo de backlog: #303 Draft; #300 Draft; #298 Draft; #296 Draft; #193 Ready for review. #308 es docs-only, Ready; validar su HEAD/checks exactos antes de merge.
+**PR #303:** HEAD `d527ae79cd566945cd9bdb3e1475d53b31d3923a`; 77 ahead / 7 behind de main. No sincronizar a ciegas: el script usa `--exclude-table` (elimina DDL, no solo filas), hace dump con conexión admin en vez de `microapp_backup`, y su fixture/documentación todavía presupone 0001–0016 mientras main contiene 0001–0023. Debe adaptarse antes de promover.
+**Post-merge CI de main:** reconsulta completada; 12/12 check-runs SUCCESS y 10/10 workflow runs SUCCESS en el SHA `7d79621926dd256542e43dc08ec20539ad91cf03`. Sin fallos ni pendientes en esa consulta.
+**Issue #53:** OPEN/P0. **Producción: NOT READY.** No se ha verificado la identidad efectiva del backup en runtime/Neon, backup remoto ni recuperación real.
+**Límites respetados:** cero acceso/escritura a Neon main, secretos, datos reales, roles/grants remotos, despliegue manual, Cloudflare manual, DNS o billing. Presupuesto $0.
+
+**Decisión técnica:** se aceptó `SECONDS` como temporizador de `pg_restore` porque es Bash builtin, no añade dependencias y la limitación de resolución de segundos está documentada. Se preservó el indicador separado de duración end-to-end. La medición no equivale a RTO operacional.
+
+**Hallazgo #303:** no promover ni sincronizar sin adaptar. `--exclude-table` excluye DDL; `pg_dump` usa admin y no `microapp_backup`; la rama solo tiene migraciones 0001–0016. Requiere corrección y nueva validación completa.
+
+---
+
+# Hito de checkout/BCV — 2026-11-11 UTC
+
+**Línea base viva de main:** `425186301473a5acb9b4133c18247bc6fff58e56` (squash merge de PR #287).
+**PR #287:** MERGED; HEAD validado `c44c6d9b7f3d0d09c80c4873e09c55ab6ce709b9`; commit de merge `425186301473a5acb9b4133c18247bc6fff58e56`.
+**Evidencia previa al merge, exact-SHA:** 17/17 check-runs SUCCESS y 11/11 workflow runs pull_request SUCCESS; mergeable=true. Se registró review COMMENT #5866603820 (no se presentó como aprobación de code owner). PR pasó de Draft a Ready for review y GitHub aceptó el squash merge con expected_head_sha exacto.
+**Protección de rama:** el conector recibió 403 al leer `/branches/main/protection`; no se afirma inspección administrativa independiente. El endpoint de merge de GitHub aceptó la operación y reportó `merged=true`. No se atribuye al 403 un fallo ni una excepción de protección.
+
+## Hito comercial integrado
+
+- PR #287 integra checkout/ventas, freshness BCV y ledger comercial sobre main `06e50defb2b684684262f79cf2318dcf6d32e9b1`.
+- La secuencia de migraciones versionadas en la rama integrada llega de 0001 a 0023; incluye 0017 (fin de semana/fecha efectiva), 0018 (allocation de pagos) y 0021 (freshness/trigger), además de las migraciones 0022–0023.
+- Se preservó el contrato de producto de la ADR: no hay bypass USD-only; la exigencia BCV aplica a todas las ventas.
+- La revisión COMMENT cubrió idempotencia por organización/clave, dinero escalado con `@micro-app/money`, asignación VES proporcional con residuo determinista, bloqueo `lock_bcv_sync_state()`, validación BCV y separación de permisos para sucursales de inventario/caja. Esta nota no equivale a aprobación formal de code owner ni a prueba productiva.
+- Cron BCV continúa desactivado por defecto; no se activó ni desplegó.
+
+## Estado vivo de PRs (consulta GitHub posterior al merge)
+
+| PR | Estado | HEAD |
+|---|---|---|
+| #303 — full-schema encrypted backup restore smoke | OPEN / Draft | `d527ae79cd566945cd9bdb3e1475d53b31d3923a` |
+| #300 — manual price override permission | OPEN / Draft | `97fa79e643d5e7b32ebf86958bd0ba9211e1fc95` |
+| #299 — isolated PostgreSQL restore duration / RTO | OPEN / Draft | `c82b0a10f85b59e1f81ac0ca2d439b6286558751` |
+| #298 — prior documentation reconciliation | OPEN / Draft | `ce398214c55ba5f3d4d6caeaf683dbfea041b6a7` |
+| #296 — BCV security/admin/calendar docs | OPEN / Draft | `62dde66355a937a4f6fa4efb8d9cfdf856d7ac0f` |
+| #193 — branch inventory Phase B | OPEN / Ready for review | `ac57ab4f3415f82279b8a49c0befe09f8e3aec68` |
+
+#287 está cerrada como MERGED. #304, #305 y #306 siguen MERGED; #302 CLOSED/superseded; #255 y #269 CLOSED sin merge; #233 CLOSED/superseded. No se alteraron #193 ni las otras PR abiertas.
+
+## Issue P0 #53 / readiness
+
+Issue #53 permanece OPEN/P0. El contrato sintético de mínimo privilegio, preservación de DDL y exclusión de filas efímeras está integrado. Continúan pendientes la identidad efectiva de `DATABASE_URL_BACKUP_RO` en Neon, aislamiento tenant/sesiones demostrado y evidencia operativa de restore/RPO/RTO. **Producción: NOT READY.** También permanecen gates de smoke tests autenticados en entorno productivo y revisión legal/fiscal/contable. No se accedió ni modificó Neon, secretos, roles/grants remotos, datos reales, Cron, Cloudflare manual, DNS o billing.
+
+## Siguiente frente recomendado
+
+Priorizar resiliencia de backup en entorno efímero y coste $0:
+1. #299: auditar medición de duración/RTO de restore PostgreSQL aislado, validez de la métrica, límites y ausencia de recursos facturables.
+2. #303: auditar restore smoke de esquema completo 0001–0023, cifrado, integridad y exclusión de datos efímeros de auth aprobada en #305.
+No promover ninguna sin reconciliar base, revisar diff completo y validar exact-SHA CI. Mantener #53 P0 y producción NOT READY.
+
+---
+
+# Reconciliación de seguridad de backups — 2026-11-11 UTC
+
+**Línea base de esta reconciliación:** `main` en `a3966a95a97486da18fae568a9c87bac8f2772e6`, posterior a los merges secuenciales de PR #304 y #305. Este encabezado es la fuente temporal más reciente; los snapshots históricos que siguen debajo se conservan como historial y no describen el estado vivo actual.
+
+## Merges confirmados
+
+- **PR #304 — merged por squash.** HEAD exact-SHA validado: `b20ade030c9dc29f7689afc3ce6c1a096fe7f0ab`; 12/12 workflow runs y 14/14 check-runs SUCCESS. Merge commit en `main`: `e428a25824d48d1a6391f564c05d0287abf7d329`. Incluye hardening de diagnóstico de principal, comprobación estricta de membresía sobre `pg_auth_members.member`, helper temporal `GIT_ASKPASS`, pruebas de contrato HTTP 401 y reintentos APT.
+- **PR #302 — CLOSED / superseded, no merged.** Se publicó el comentario de absorción en el hilo de PR antes del cierre. La rama histórica se conserva.
+- **PR #305 — merged por squash.** Tras sincronizar con el nuevo main, el HEAD exact-SHA fue `d1e008a3df1e99f64c4efce20306a798351f6a43`; 16/16 workflow runs y 18/18 check-runs SUCCESS. Merge commit final en `main`: `a3966a95a97486da18fae568a9c87bac8f2772e6`. La combinación conserva íntegramente las mejoras de #304 y añade `--exclude-table-data=public.auth_sessions`, `public.auth_rate_limits` y `public.auth_bootstrap_attempts`, además de pruebas sintéticas PostgreSQL 18 y restauración con DDL preservado.
+
+## Estado vivo de PRs consultado tras los merges
+
+| PR | Estado observado | HEAD |
+|---|---|---|
+| #303 — backup restore smoke de esquema completo | OPEN / Draft | `d527ae79cd566945cd9bdb3e1475d53b31d3923a` |
+| #300 — permiso de override manual de precio | OPEN / Draft | `97fa79e643d5e7b32ebf86958bd0ba9211e1fc95` |
+| #299 — medir duración de restore PostgreSQL aislado | OPEN / Draft | `c82b0a10f85b59e1f81ac0ca2d439b6286558751` |
+| #298 — reconciliación documental previa | OPEN / Draft | `ce398214c55ba5f3d4d6caeaf683dbfea041b6a7` |
+| #296 — documentación de seguridad BCV y controles admin/calendario | OPEN / Draft | `62dde66355a937a4f6fa4efb8d9cfdf856d7ac0f` |
+| #287 — BCV + checkout integration rehearsal | OPEN / Draft | `fe73180dc9f2039c2a025b8d3b7700230080e19d` |
+| #193 — inventario por sucursal Fase B | OPEN / Ready for review | `ac57ab4f3415f82279b8a49c0befe09f8e3aec68` |
+
+No reducir esta lista a #303 y #287: GitHub reportó además #300, #299, #298, #296 y #193 abiertas. No alterar #193. PRs #255 y #269 permanecen CLOSED sin merge; #233 permanece cerrada como superseded. #302 está cerrada como absorbida; #304 y #305 están MERGED.
+
+## Issue P0 #53 y readiness
+
+- Issue #53 permanece **OPEN / P0**.
+- Completado: contrato sintético de privilegios mínimos, denegación de escritura/DDL en el rol sintético, prueba de dump/restauración, preservación del DDL de tablas auth y exclusión de sus filas efímeras.
+- Sigue abierto: identidad efectiva y privilegios reales del secreto `DATABASE_URL_BACKUP_RO` en Neon; cobertura demostrada de aislamiento tenant/sesiones; evidencia de restore operativo y RPO/RTO. El diagnóstico agregado al workflow es no sensible y no bloqueante: un resultado no conforme no bloquea el backup ni certifica el principal.
+- No se inspeccionaron secretos ni se conectó o modificó Neon. No se ejecutó un backup productivo ni restore con datos reales.
+- **Producción: NOT READY.** Los checks sintéticos verdes no cierran la identidad real, aislamiento ni recuperación productiva.
+
+## Siguiente frente — PR #287
+
+Continuar la revisión técnica de #287 en HEAD `fe73180dc9f2039c2a025b8d3b7700230080e19d`, manteniéndola Draft:
+
+1. Resolver el gate P1 de freshness: `findApplicableCheckoutRate` debe considerar `bcv_sync_state.last_success_at` y fallar cerrado cuando la sincronización relevante no tenga éxito reciente, con ventana definida por decisión explícita y pruebas PostgreSQL para fallos, concurrencia y datos obsoletos.
+2. Formalizar política USD-only: determinar si se permite checkout en USD sin conversión a VES cuando BCV no está disponible, y qué ocurre con ventas VES, recibos, totales, pagos parciales y auditoría. No inventar una política de negocio ni habilitar contingencia manual por inferencia.
+3. No mergear #287 sin revalidar su base/HEAD, exact-SHA CI, revisión formal requerida y gates comerciales/legales.
+
+## Límites operativos mantenidos
+
+No Neon main, secretos, datos reales, cambios de roles/grants, backup operativo, despliegue manual, activación de Cron, Cloudflare manual, DNS ni billing. Branch-protection API devolvió 403 al conector durante la auditoría; GitHub aceptó los dos merges, pero esta reconciliación no atribuye una lectura independiente de la configuración administrativa de protección.
+
+
+---
+
+# Actualización de continuidad — 9 de noviembre de 2026
+
+> Esta actualización prevalece sobre snapshots históricos que indiquen otro HEAD o describan como pendientes capacidades ya implementadas. Verificar siempre el SHA vivo en GitHub antes de nuevas acciones.
+
+## PR #287 — integración BCV + checkout
+
+- Estado: OPEN / Draft; base `main`; HEAD de código actual `3c32b6d46a807a88962de81443af84c4d4fef3e1`; GitHub informa `mergeable=true`. No hay reviews formales ni review threads abiertos.
+- CI del HEAD exacto: **15/15 check-runs SUCCESS y 11/11 workflow runs SUCCESS**. Los 11 workflows de PR incluyen CI, Playwright E2E, validación de migraciones, PostgreSQL migration runner, backup/restore, Semgrep, Security scan, secret-history, dependency review, ODD docs y dashboard. Los builds Cloudflare de la rama son previews, no promoción a producción.
+- No merge, no deploy productivo, no Neon main writes, no migraciones remotas, no activación Cron, no cambios de secretos/DNS/billing ni datos reales.
+
+## BCV: estado real de implementación
+
+- Checkout **sí consume** `bcv_sync_state`: lee `last_success_at`, exige `last_outcome` = `inserted` o `unchanged`, exige `last_effective_date >= hoy Caracas`, y además una tasa `valid` con fecha efectiva exactamente igual a hoy. Usa `FOR SHARE` dentro de la transacción; no hay fallback a tasa vieja ni TTL arbitrario.
+- La migración 0021 añade defensa SQL mediante trigger diferido para validar el estado al completar una venta, también frente a escrituras directas del rol runtime.
+- La carrera de intentos supersedidos está corregida con `attempt_id` y bloqueo/validación atómica antes de persistir. La prueba PostgreSQL cubre dos respuestas diferentes para la misma fecha y verifica que el intento antiguo no invalide la tasa del nuevo.
+- Existe endpoint `GET /api/orgs/:organizationId/bcv/sync-state`, solo lectura y tenant-scoped, permiso `bcv.sync_state.read` exclusivo de owner/admin. Cashier e inventory no tienen acceso. Respuesta `no-store`, errores sanitizados.
+- El dashboard muestra un panel BCV solo a owner/admin, con último intento/éxito, outcome, fecha efectiva, edad del intento, error code sanitizado, actualización manual y refresco automático cada cinco minutos. No permite editar tasa ni ejecutar sincronizaciones.
+- Wrangler ya declara Workers Observability/Logs: redacción de query strings, `invocation_logs=false`, logs estructurados explícitos con sampling 1. El Cron registra `BCV_SYNC_STARTED`, `BCV_SYNC_COMPLETED` y `BCV_SYNC_FAILED`; el error solo expone código sanitizado.
+- No se ha creado Monitor, destino de correo ni watchdog; no se ha probado entrega de alertas. Inspeccionar dataset/campos reales y consumo de cuenta antes de configurar monitor.
+
+## Gates aún abiertos — producción NOT READY
+
+1. CI exact-HEAD del siguiente commit documental/código debe volver a validarse; no reutilizar los resultados de este SHA.
+2. Capturar y conservar fixture reproducible de HTML oficial BCV y probar el parser con respuesta real. La recuperación oficial anterior devolvió 502; no sustituir por copias de terceros.
+3. Obtener calendario bancario oficial SUDEBAN verificable. No afirmar que no existe ni codificar fechas desde terceros.
+4. Justificar y aprobar límites del parser `MAX_EFFECTIVE_DATE_AGE_DAYS=10` y `MAX_EFFECTIVE_DATE_FUTURE_DAYS=7`; siguen hard-coded y no aprobados.
+5. Configurar monitor de `BCV_SYNC_FAILED`, destino autorizado y prueba de entrega. Diseñar watchdog de `running` estancado con SLO/umbral medido; no inventar umbral.
+6. Cerrar identidad efectiva del Worker, pruebas aisladas de recuperación, revisión legal/contable y semántica append-only de cambios, pagos parciales, anulaciones y reembolsos.
+7. La contingencia de tasa manual por owner/admin sigue siendo una propuesta documentada, no una función activa. Mantener el diseño de autorización reforzada (PIN secreto verificado en servidor, límites/rate-limit, auditoría, caducidad y separación de funciones); no implementar ni permitir edición directa hasta cerrar revisión legal/contable y especificación.
+
+## Reglas de continuidad
+
+- No pedir otra vez Build IDs, capturas, terminal, CLI, TinyFish ni reconexiones si el dato está en GitHub o documentación. Si falta un dato imprescindible, pedirlo una sola vez y aceptar texto.
+- Leer primero `AGENTS.md`, `WORK_CHECKPOINT.md`, `docs/CONSTITUTION.md`, `docs/CURRENT_STATE.md`, `docs/HANDOFF_NEXT_CHAT.md`, `docs/PROJECT_PLAN.md`, `docs/STATE_JOURNAL.md` y `docs/SECURITY_ROADMAP.md`.
+- Mantener #287 Draft. CI verde no equivale a aprobación. No fusionar PR de procedencia por separado si su cambio ya está integrado.
+- Actualizar este estado documental cuando haya una decisión, hallazgo o discrepancia nueva; después revalidar CI exact-HEAD.
+
+---
+
 ## Reconciliación operativa — 2026-11-08 UTC (verificación Neon + estado PR)
 
 **Fuente de verdad:** GitHub API y ejecución manual observada de GitHub Actions. Rama documental creada desde main `6f956b2336a70ec7013e20306be59d72db354b01`; este addendum no modifica main.
@@ -2274,91 +2419,499 @@ El ensayo verifica el bundle SQL y roles en la base aislada; no prueba el compor
 - No merge de código, no deploy, no Neon, no Cron BCV, no cambios Cloudflare manual, secretos, DNS, billing o datos reales. Producción NOT READY.
 - Próximo: reconciliar #287 con main en una rama/PR aislada, preservando docs y CI; luego #255/#269 por separado.
 
-## 2026-11-10 — hallazgo P0 de cobertura obsoleta en backup/restore
+## 2026-11-09 — Integración BCV/checkout y concurrencia
 
-Auditoría estática de main `c5373564413ba086690552c6b7deeab08d7b4a89`: el workflow `.github/workflows/backup-restore-smoke.yml` ejecuta `scripts/test_backup_restore.sh`, que solo aplica 0001, 0002 y 0005 y compara 13 tablas. Main versiona 0001–0016; quedan fuera diez tablas añadidas por 0003/0004/0006/0010: branches, branch_memberships, registers, register_shifts, warehouses, inventory_counts, inventory_count_lines, inventory_balances, warehouse_inventory_movements e inventory_balance_ledger_intents. El script tampoco usa `scripts/db/migrate.sh` ni comprueba `schema_migrations`. El éxito de esta prueba no demuestra restauración del esquema actual completo.
-
-PR #287 conserva migraciones 0017–0022 en una rama separada, no fusionada. Su HEAD vivo consultado es `9a1792f7449ff83915bcdd672686a4860918028d`, OPEN/Draft, 219 ahead / 1 behind, mergeable=true; 0 workflow runs pull_request y 0 status contexts en ese SHA exacto. No trasladar CI histórico. El ensayo Neon rehearsal 0001–0019 no equivale a que main contenga esas migraciones ni a que el smoke test las cubra.
-
-Hallazgo documentado en issue #53 comentarios 6772340874 y 6772383789. Se abrió ODD task `odd/tasks/backup-restore-schema-coverage.md` en rama separada `security/backup-restore-schema-coverage-20261110`. No hubo cambios de código/workflow ni acceso a Neon, secretos, datos reales o repositorio remoto de backups. Mantener #53 OPEN/P0 y producción NOT READY. Fecha límite inamovible: **2026-12-01**.
-
-## 2026-11-10 — corrección posterior de CI exact-HEAD de PR #287
-
-La primera lectura de HEAD 9a1792f7449ff83915bcdd672686a4860918028d no encontró aún workflow runs pull_request. Una reconsulta posterior encontró 11/11 workflows asociados exactamente a ese SHA, todos SUCCESS: 42849454422, 42849454398, 42849454373, 42849454527, 42849454401, 42849454436, 42849454382, 42849454438, 42849454392, 42849454399 y 42849453701. La observación anterior de 0 runs quedó superada. Combined legacy status no presenta contexts; no convertirlo en recuento de check-runs. PR #287 sigue OPEN/Draft, mergeable=true, 219 ahead / 1 behind, sin reviews formales ni threads. No se fusionó ni se desplegó; 11/11 CI no cierra gates productivos.
-
-## 2026-11-10 — CI verde de smoke no cierra cobertura completa
-
-PR #287 HEAD `9a1792f7449ff83915bcdd672686a4860918028d` completó 11/11 workflow runs pull_request SUCCESS, incluido Backup restore smoke `42849454438`. El job usa el script antiguo que aplica solo 0001/0002/0005 y verifica 13 tablas; por eso su SUCCESS no prueba restauración del esquema main 0001–0016 ni las migraciones 0017–0022 de la rama. Aclaración añadida a issue #53 comentario `6772538757`. La tarea de ampliar el smoke test sigue solo en documentación/ODD, sin cambios de código. #53 OPEN/P0; producción NOT READY; deadline 2026-12-01.
-
-## 2026-11-10 — PR #303: primera fase de restore de esquema completo
-
-Se implementó en la rama `security/backup-restore-schema-coverage-20261110` un test separado `scripts/test_backup_restore_schema.sh` y se conectó al workflow `backup-restore-smoke.yml`. Aplica el conjunto numerado completo del ref mediante `scripts/db/migrate.sh` en PostgreSQL 18 desechable, valida ledger, dump cifrado age, SHA-256, descifrado y restore a una segunda DB desechable. Compara tablas, constraints, índices, triggers, hashes de definiciones de funciones, filas/checksums del ledger y modo de ledger inventario; excluye las tres tablas efímeras. Se creó PR #303 OPEN/Draft; no merge.
-
-Es fase 1 de esquema. El fixture de datos sintéticos histórico sigue en 13 tablas y aún no existe grafo poblado completo de sucursal/turno/warehouse/count/ledger/checkout. CI exact-HEAD de PR #303 está pendiente de revalidación; no declarar PASS hasta observar los workflows del SHA final. Issue #53 OPEN/P0, producción NOT READY, deadline 2026-12-01. Sin Neon, secretos, datos reales ni workflow_dispatch.
-
-## 2026-11-10 — estado exact-SHA inicial de PR #303
-
-PR #303 HEAD `4e369c25bbd7e43072664c2012f6a196cc21eed1`, 30 ahead / 0 behind main, OPEN/Draft, mergeable=true. La consulta de workflow runs pull_request y combined status para ese SHA devolvió 0/0; no hay validación exact-HEAD publicada. Issue #53 comentario `6772761216`. No marcar verde ni fusionar por ausencia de fallos.
+PR #287 combinó las ramas BCV y checkout en una integración Draft y añadió migración 0021 para estado de sincronización. Se detectó que una respuesta antigua podía marcar stale una tasa nueva de la misma fecha. La corrección usa bloqueo transaccional y verificación del `attempt_id`; se añadió prueba PostgreSQL con dos tasas diferentes. PR #289 corrigió la expectativa del handler `Promise<void>`; PR #290 actualizó handoff/ODD. Ambos se integraron solo en la rama #287. HEAD de código validado antes de sincronización: `254ebb6e741f7c1b147fbd4880bc188f17204807`, 15/15 check-runs y 11/11 workflows SUCCESS. Freshness y fuentes oficiales siguen gates P1.
 
 
-## 2026-11-10 — auditoría estática de fase 1 y separación de perfiles de restore
+---
 
-Se revalidó PR #303 directamente en GitHub: HEAD `3439c51b5719315e46196f7eca57cffee5a76df2`, OPEN/Draft, 37 ahead / 0 behind main, mergeable=true, 11/11 workflow runs `pull_request` SUCCESS exact-HEAD, 0 legacy status contexts, 0 reviews y 0 threads. #287 HEAD `9a1792f7449ff83915bcdd672686a4860918028d`, 219 ahead / 1 behind, 11/11 workflows SUCCESS, 0 reviews/threads; base SHA reportado `03442951b2a2f63f5bf4dcf560f2c91be4f6cc71`. #298 HEAD `c9e65a8f0378b2b9740e91df68f39909967eed26`, 231 ahead / 0 behind, 11/11 workflows SUCCESS, 0 reviews/threads. Issue #53 sigue OPEN/P0.
+## 2026-11-09 — Política de freshness BCV aprobada e implementación aislada
 
-Auditoría estática del script de fase 1: `pg_dump`/ `pg_restore` usan `--no-owner --no-privileges`, por lo que ownership y ACL/grants no quedan probados. El manifest no compara RLS/policies, grants efectivos, atributos/membresías/default privileges de roles ni search_path efectivo. El workflow conserva `contents: read`; no se accedió a secretos ni Neon.
+El propietario confirmó opción A: si el último intento BCV está `running` o `failed`, bloquear nuevas ventas hasta una sincronización exitosa. Se registró ADR `docs/decisions/ADR-20261109-bcv-checkout-last-success.md`.
 
-Decisión técnica corregida tras inspeccionar `docs/sdd/SALES_CHECKOUT_MODEL.md` y la secuencia de migraciones: main 0001–0016 ya contiene checkout branch-aware en migration 0015. PR #287 0017–0022 añade BCV effective-date, payment allocation, ledger projection, sync state y producer role. La fixture fase 2 debe validar el checkout de main y ampliar el perfil sobre #287; no mezclar ni atribuir migraciones 0017–0022 a main.
-
-No se ha implementado todavía el fixture fase 2 ni se ha ejecutado un restore poblado nuevo. No merge/deploy, Neon, secretos, backup real ni datos reales. Producción NOT READY; #53 OPEN/P0; deadline 2026-12-01.
+Se creó `fix/bcv-checkout-last-success-20261109` desde #287 HEAD `362443524eb45c67da16811d1745d83ddc9bd3a9`. Checkout ahora consulta el singleton con `SELECT ... FOR SHARE`, exige `last_success_at`, outcome `inserted`/`unchanged` y fecha efectiva no anterior a hoy antes de leer la tasa same-day. Una tasa futura prepublicada nunca sustituye la fila same-day. Se añadieron pruebas unitarias y PostgreSQL runtime-role, incluyendo bloqueo de UPDATE concurrente. No se declara validado hasta CI exact-HEAD. No se tocó main, Neon, deploy ni Cron; producción NOT READY.
 
 
-## 2026-11-10 — fase 2 backup/restore poblado verificada
-
-En PR #303 se añadió `scripts/backup_restore_fixture_main.sql` y se amplió `scripts/test_backup_restore_schema.sh`. La fixture se ejecuta sobre main 0001–0016 (incluye checkout branch-aware migration 0015 y pairing ledger migration 0010). Incluye dos organizaciones sintéticas, usuarios owner, membresías, sucursales, proveedores/productos/almacenes; tres conteos (dos opening y uno physical), dos balances, cuatro movimientos, una venta completada con pago USD, rate sintética BCV del día y auditoría. Tenant A termina en 9 unidades/version 3; tenant B en 5/version 1. Legacy `products.stock_quantity` permanece en 0. Los intents del ledger se consumen antes del commit.
-
-El smoke de PostgreSQL 18 pasó cifrado age, checksum, descifrado, restore y comparación de esquema/datos. Se quitó `--no-owner --no-privileges` para probar ownership y ACL reales del dump; el manifest normaliza privilegios implícitos del owner y compara grants efectivos, atributos/membresías de roles, search_path, RLS/policies, default ACL y secuencias/estado. Los tres registros auth efímeros se sembraron en source y se verificó que no aparecen en restore.
-
-CI completo exact-HEAD de PR #303 HEAD `87ca92a25538b1b1217cb78b10a6db2fd7726ef0`: 11/11 workflow runs SUCCESS; 0 status contexts, 0 reviews y 0 threads. PR sigue OPEN/Draft, 61 ahead / 0 behind, mergeable=true. No merge.
-
-La fixture no restaura el artefacto remoto ni prueba Neon/producción, RPO/RTO, alertas, coste $0, identidad efectiva del principal backup ni autorización API multi-tenant. Issue #53 OPEN/P0; producción NOT READY. #287 0017–0022 requiere perfil de restore separado. No se accedió a secretos, Neon, datos reales ni Cron.
+- Revalidación de implementación BCV freshness en SHA `13c8cd96becc09b0ba9ffad923ea115e5a44dcba`: CI `42625146214` SUCCESS (incluye unit, PostgreSQL atomic sales checkout integration y Runtime-role API integration); migration validation `42625146320` SUCCESS; migration runner `42625146112` SUCCESS; Playwright `42625146437` SUCCESS; Semgrep `42625146039` SUCCESS; Dependency review `42625146027` SUCCESS; ODD docs `42625145983` SUCCESS; Project dashboard `42625146038` SUCCESS. Check-runs 13/13 SUCCESS. PR Security scan `42625146113` permaneció pending sin jobs; Trivy push `42625138416` en el mismo SHA SUCCESS. PR #295 OPEN/Draft. El siguiente commit documental exige revalidar CI exact-HEAD.
 
 
-## 2026-11-10 — auditoría read-only de workflow de backup real
+- PR #295 retargeteada de la base alias temporal a `integration/bcv-checkout-rehearsal-20261109` después de ejecutar CI. HEAD probado `3a67540c7b079bb11349552ffe92c598f0fad11f`: 14/14 check-runs y 10/10 workflow runs SUCCESS. CI incluyó unit, PostgreSQL checkout integration, runtime-role API integration y typecheck; migraciones, migration runner, Playwright, Semgrep, Dependency review, ODD docs, Secret history y Security scan SUCCESS. PR #295 sigue Draft, sin reviews formales/threads. No merge, main, Neon writes, deploy ni Cron activation.
 
-Verificado run programado #20 `42842855127` SUCCESS y presencia de artefacto/sidecar en el repo remoto; commit `485412b612849a888bccc5858a5272bb7400de76`. No se descargaron bytes ni se ejecutó restore. El workflow `backup.yml` usa `DATABASE_URL_BACKUP_RO` y `pg_dump --no-owner --no-privileges`, pero no registra identidad ni privilegios efectivos; los logs no prueban principal. No leer secretos. El rol conocido `backup_readonly` hereda `pg_write_all_data` vía `neon_superuser`, pero su uso por el secreto no está demostrado.
 
-El workflow manual `backup-real-restore.yml` verifica checksum y restaura en PostgreSQL 18 efímero, pero usa `--no-owner --no-privileges` y valida solo existencia de tablas. No se ejecutó por la restricción de no usar datos reales en pruebas. La prueba sintética #303 conserva ownership/ACL y valida grafo poblado, pero no demuestra metadatos del artefacto real. No backup manual ni cambio de Cron. Issue #53 sigue OPEN/P0.
+## Revisión técnica independiente — 2026-11-09
+
+- SHA revisado y validado: `32b838c9dd90c7b5c17e359961bd67f48376d1a8`. PR #295 sigue OPEN/Draft, base `integration/bcv-checkout-rehearsal-20261109` (base SHA `362443524eb45c67da16811d1745d83ddc9bd3a9`), mergeable=true; 37 commits ahead / 0 behind. No se fusionó.
+- Verificación viva: 10/10 workflow runs SUCCESS asociados al SHA; la descripción de PR registra 14/14 check-runs SUCCESS. No hay reviews formales ni hilos de revisión.
+- Revisión del flujo: `syncBcvOfficialRate()` reclama el singleton con UPDATE a `running` antes del fetch HTTP; checkout toma `FOR SHARE` en la misma fila dentro de su transacción. Si checkout obtiene primero el lock, el UPDATE de inicio de sync espera hasta el final de la venta; si sync confirma primero `running`, checkout observa ese estado y falla cerrado. La finalización del sync verifica `attempt_id` bajo `FOR UPDATE` y persiste tasa + estado terminal en una transacción, evitando que intentos supersedidos sobrescriban al vigente.
+- Permisos: migración 0021 concede SELECT y UPDATE por columnas a `microapp_runtime`, sin INSERT/DELETE/TRUNCATE; la prueba runtime-role verifica el lock compartido frente a UPDATE concurrente.
+- Dictamen de código: no se encontró un bloqueo de corrección en el flujo revisado de checkout/sync. La validación no equivale a aprobación formal de PR ni a readiness de producción.
+- Riesgo operativo pendiente: el Cron BCV está programado para `0 22 * * 1-5`, exige `APP_ENV=production` y `BCV_SYNC_ENABLED=true`, y permanece deshabilitado por defecto. No se observó un mecanismo de retry inmediato ni alerta operativa en este alcance. Si un intento falla o queda `running`, nuevas ventas siguen bloqueadas hasta el siguiente intento habilitado que finalice con éxito; hace falta definir alertas y recuperación operativa antes de producción.
+- No hubo merge, cambios en main, escrituras Neon, deploy, activación Cron, cambios de secretos/DNS/billing ni uso de datos reales. Producción **NOT READY**.
+
+
+## 2026-11-09 — Reconciliación contingencia cambiaria y CI #295
+
+- Confirmado en GitHub que PR #288 está MERGED en main. Su SDD, ADR y ODD describen la tasa manual como contingencia temporal futura; no existe implementación ni habilitación. Se corrigió odd/tasks/fx-contingency-management.md en la rama #295 para eliminar la referencia obsoleta a #288 OPEN/Draft y conservar AC-5–AC-7 como pendientes.
+- PR #295 en el HEAD anterior a esta actualización (fd4487c4382ecdf90f3b03c485cb34780dc8cd9c) tiene 10/10 workflow runs pull_request SUCCESS. El endpoint de combined status no devolvió status contexts; no convertir esa respuesta en un conteo de check-runs. Sin reviews formales ni threads en la consulta.
+- Los commits documentales nuevos cambian el HEAD de #295; CI exact-HEAD debe reconsultarse antes de declarar validación final. PR sigue OPEN/Draft; no merge.
+- Sin implementación manual FX, sin cambios de código BCV/checkout, main, Neon, deploy o Cron. Producción NOT READY.
+
+
+## Snapshot de ramas de integración — 2026-11-09
+
+- PR #287: OPEN/Draft, HEAD 362443524eb45c67da16811d1745d83ddc9bd3a9, base main, GitHub mergeable=true. Compare main...HEAD: 114 ahead / 0 behind. En ese HEAD exacto se observaron 11/11 workflow runs pull_request SUCCESS; combined status contexts vacío. La rama sigue sin aprobación formal y no se fusiona por CI verde.
+- PR #255: OPEN/Draft, HEAD b0e47205b96f636b2ab270304d2598423a50ccc3, base main en SHA registrado 9c6b30281ed59726e532da840568fc9e80b528f7, GitHub mergeable=false.
+- PR #269: OPEN/Draft, HEAD 7fc91b54f869664febb6a7daf1ed05b408bd8430, base main en SHA registrado 9c6b30281ed59726e532da840568fc9e80b528f7, GitHub mergeable=false.
+- No sincronizar #255/#269 de forma automática ni force-push. Primero resolver la integración/reconciliación de #287 y luego revisar cada rama por separado, preservando su contenido y ejecutando CI en el HEAD resultante.
+- PR #295 parte del HEAD exacto de #287 como base de integración; su HEAD actual 20c65e2541f2701347055cd2c2be70240d151362 no tiene workflow runs pull_request ni status contexts visibles. Mantener Draft y no declarar CI exact-HEAD.
+
+
+## Resultado de la corrección de filtros CI — 2026-11-09
+
+- Rama base integration/bcv-checkout-rehearsal-20261109 avanzó seis commits desde 362443524eb45c67da16811d1745d83ddc9bd3a9; el compare confirma que los únicos seis paths modificados son los workflows CI, migration-check, Playwright, Semgrep, secret-history y security-scan. Se añadió integration/** exclusivamente a pull_request.branches; jobs y permisos no cambiaron.
+- La punta de #287 tras los seis cambios es a3653df0788b320caa931f2e03a3b42886e0062f. La punta de #295 tras el asiento documental es 062a5c66f4bbff6fd60a3f88000ee9aab62d721c.
+- GitHub no muestra workflow runs pull_request ni status contexts en ninguno de esos dos HEADs. El commit previo 362443524... de #287 sí tenía 11/11 workflows SUCCESS; esos resultados no se trasladan a a3653df... ni validan la nueva punta. El SHA 556fe481... previo de #295 tampoco tenía runs; no se trasladan resultados a 062a5c...
+- El conector disponible no expone workflow_dispatch; las escrituras hechas mediante la integración GitHub no produjeron ejecuciones visibles. No se puede afirmar por qué GitHub no lanzó los eventos, ni simular éxito. La modificación de filtros está en la rama base de #295 y preparada para futuros eventos de PR hacia integration/**; validación exact-SHA sigue pendiente.
+- #287 y #295 siguen OPEN/Draft. No se cambia base, no se fusiona, no se despliega, no se escribe en Neon ni se activa Cron. Mantener gate hasta que un evento de CI real valide cada HEAD final.
+
+
+## 2026-11-09 — Integración segura de freshness BCV y defensa PostgreSQL
+
+- PR #287 recibió la integración de los cambios funcionales de #295 mediante commit fast-forward sobre la rama de integración; no se fusionó PR ni se tocó main. La reconciliación preservó los seis commits exclusivos de #287 (filtros `integration/**`) y combinó append-only los documentos compartidos.
+- Se añadió el guard de último éxito BCV en `findApplicableCheckoutRate()`: `last_success_at` presente, outcome `inserted`/`unchanged`, fecha efectiva no anterior a hoy Caracas y tasa válida con fecha exacta de hoy; lectura `FOR SHARE` en la transacción.
+- La auditoría detectó que el trigger SQL de ventas previo no verificaba `bcv_sync_state`. Se reforzó migración 0021 con trigger diferido `sales_latest_bcv_sync_success`, función `SECURITY DEFINER` propiedad del migrator, permisos directos revocados y prueba PostgreSQL de escritura directa con rol runtime tras fallo. El trigger solo controla nuevas finalizaciones, no mutaciones posteriores de ventas ya completadas.
+- HEAD de código validado: `12550a3c50212234b39e3e84b45f36a07465abde`. GitHub: 13/13 workflow runs SUCCESS, 15/15 check-runs SUCCESS. Combined status legacy: `pending` con lista vacía de status contexts; no se interpreta como fallo de check-runs ni como aprobación formal. PR #287 OPEN/Draft, sin APPROVED formal.
+- Cloudflare check-runs muestran Pages/Workers preview URLs y alias; no hay evidencia de promoción a producción. No se realizó deploy manual ni se activó Cron.
+- PR #295 permanece OPEN/Draft como procedencia, 51 ahead / 9 behind respecto a #287, mergeable=false; no debe fusionarse independientemente. PR #255/#269 siguen OPEN/Draft y mergeable=false. PR #196 se observó CLOSED/no merged; no se reabrió. Issue #53 sigue OPEN.
+- Investigación operativa: Cloudflare Alerts Monitors ofrece consultas SQL y destinos email/webhook en todos los planes; el coste de queries/alerts no es adicional y el nuevo Free Observability allowance anunciado para 2026-12-01 es 0,5 GB/día + 7 días de retención. Falta comprobar Logs/columns/plan en la cuenta. No se configuró nada.
+- Pendiente: actualizar/revalidar CI tras este commit documental; fixture HTML BCV oficial; calendario bancario oficial SUDEBAN; justificación parser 10/7; alertas/watchdog/recovery; legal/contable; semantics de cambio, pagos parciales, anulaciones y reembolsos. Producción NOT READY.
+- Restricciones respetadas: no merge, no main, no Neon writes, no producción deploy, no Cron, no cambios de secretos/DNS/billing ni datos reales.
+
+
+## 2026-11-09 — Reconciliación de progreso BCV/checkout
+
+- HEAD de código y tests validado antes de la actualización de checklist: `27dab416a92a71f2ccf9b0310f24a80f7f6b4420`. CI terminó SUCCESS; 12/12 workflow runs pull_request y 14/14 check-runs SUCCESS. El workflow push Secret history scan reportó failure con 0 jobs, sin steps/logs; el scan pull_request sí pasó.
+- Corrección de COMMIT ambiguo implementada en `apps/api/src/exchange-rates.ts`: ante error terminal se reconcilia con conexión nueva y solo se marca failed si el mismo `attempt_id` sigue `running`. Se evita sobrescribir un éxito ya confirmado.
+- Tests añadidos: fetch failure; DB unavailable al registrar fallo; cleanup posterior a commit; respuesta COMMIT perdida; fetch fallido de intento supersedido. Unit tests y toda la matriz PostgreSQL pasaron en CI exact-HEAD.
+- `odd/tasks/bcv-sync-alerting-recovery.md` actualizado en commit `afac566848170e117c0afaca63bc7939ed777374` con la corrección, tests, evidencia y pendientes.
+- El artefacto del dashboard del run `42673632481` (HEAD `afac566...`) informó 30,4% implementación (7/23) y 31,8% producción (7/22), pero se detectó que el checklist no reflejaba el vertical slice BCV/checkout recién implementado. Esos porcentajes son una instantánea histórica del checklist anterior, no una medición reconciliada.
+- Se amplió `docs/PRODUCTION_READINESS.md` con criterios separados para los vertical slices implementados y sus gates aún abiertos. Commit: `62f3f3ca16416b3f1130eaf1caa6e910a08c86aa`. El dashboard debe regenerarse y validarse en el nuevo HEAD; no reutilizar los porcentajes previos.
+- Los criterios completos de POS, pagos mixtos, devoluciones, fiscalidad, aislamiento de todas las rutas, RPO/RTO, alertas, capacidad, identidad efectiva y revisión legal/contable permanecen pendientes; producción NOT READY.
+- PR #287 permanece OPEN/Draft; no merge, deploy, Cron, Neon main writes, secretos, DNS, billing ni datos reales.
+
+## PR #287 — safe default del Cron BCV y validación exact-HEAD — 2026-11-10 UTC
+
+### Cambios
+- Commit `4113e9048d9d28df093134f241ba4aa7f3e2800b`: reconcilia el ADR de last-success con migration 0022. Las afirmaciones sobre UPDATE column-scoped de `microapp_runtime` describen el estado previo a 0022 y quedan supersedidas en la rama de integración.
+- Commit `6902fdf85412938deaac086d34aba0ef267afca3`: cambia `apps/api/wrangler.bcv.toml` de `BCV_SYNC_ENABLED=true` a `false`, manteniendo comentario de habilitación explícita.
+- Commit `20a3801d6a9c27cae0b12098c3bfa9cf82d83d59`: añade prueba de regresión que importa `wrangler.bcv.toml?raw` y comprueba que el valor por defecto sea false y no true.
+- Commit `31c0cf59414871ce6987ef4d1315dd1ded3ad6d1`: registra la reconciliación de estado en CURRENT_STATE.
+
+### Evidencia CI del HEAD de código `20a3801d6a9c27cae0b12098c3bfa9cf82d83d59`
+- 11/11 workflow runs `pull_request` SUCCESS; 0 failure, 0 pending.
+- CI run `42832033772`: SUCCESS. Incluye unit tests, typecheck/build, PostgreSQL auth, BCV effective-date, atomic checkout y Runtime-role API integration.
+- Playwright E2E `42832033722`: SUCCESS.
+- Database migration validation `42832033808`: SUCCESS; migration 0022 y assertions del productor/runtime aprobadas en PostgreSQL desechable.
+- Migration runner `42832033741`: SUCCESS; aplica secuencia, verifica ownership/ledger y denegaciones de runtime.
+- Backup restore smoke sintético `42832033842`: SUCCESS; no es restore productivo.
+- Security `42832033787`, Secret history `42832033903`, Semgrep `42832033221`, ODD `42832033733`, Dependency review `42832033714` y dashboard `42832033817`: SUCCESS.
+- Combined status contexts: lista vacía. No se atribuye a esto un conteo de check-runs.
+- PR #287 sin reviews formales ni threads inline en la consulta posterior al HEAD; permanece OPEN/Draft.
+
+### Resultado y límites
+- El Worker BCV tiene ahora configuración fail-closed por defecto: aunque el trigger Cron esté declarado, el handler retorna sin sincronizar salvo `APP_ENV=production` y `BCV_SYNC_ENABLED=true`. No se desplegó ni activó el Worker.
+- El LOGIN `microapp_bcv_sync`, su secreto y la identidad efectiva del Worker no están provisionados en Neon/Cloudflare. La migración 0022 está probada solo en PostgreSQL efímero.
+- No se tocó main, Neon, Cloudflare, secretos, DNS, billing ni datos reales. Producción NOT READY.
+- El diff comparado con main `c537356...` queda 178 ahead / 1 behind, diverged, merge base `03442951...`; no se hizo sincronización automática ni force-push.
+- La UI del branch mantiene los módulos Caja y ventas, Inventario y Reportes deshabilitados; el checkout API no satisface el P0 de jornada completa desde UI. Issue #53/P0 y el hallazgo de privilegios efectivos del rol `backup_readonly` siguen abiertos.
+## 2026-11-10 — Migration 0022 ACL normalization, producer/runtime test split
+
+### Hallazgo y decisión
+- Una segunda revisión detectó que la migración 0022 no debía asumir ACL vacía en un LOGIN producer preexistente. `REVOKE ALL ON TABLE` no basta para borrar ACLs independientes por columna. También se debía proteger contra ACLs concedidas a PUBLIC.
+- Se normalizó la migración: revoca ACLs table-level y column-level del productor en `bcv_sync_state`/`exchange_rates`, limpia ACLs table/column de PUBLIC, y vuelve a otorgar un allowlist column-level. Runtime mantiene lectura table-level y no tiene INSERT/UPDATE efectivo en ninguna columna BCV.
+- El productor recibe SELECT solo en `singleton`, `attempt_id`, `last_outcome` del estado; UPDATE solo en los campos de sincronización; SELECT de `id`, `rate`, `source`, `effective_date`, `validation_status`; INSERT solo en columnas usadas por el INSERT; UPDATE solo en `validation_status`. No recibe table-level SELECT/INSERT/UPDATE, DELETE, TRUNCATE, REFERENCES ni TRIGGER.
+- El migrator no es propietario del schema `public`; por eso no intenta revocar CREATE. El preflight exige USAGE y rechaza CREATE. El workflow prueba esta condición otorgando CREATE con el administrador, ejecutando la migración como migrator, verificando el error `MICROAPP_BCV_SYNC_SCHEMA_PRIVILEGES_INVALID` y retirando el grant como propietario.
+
+### Pruebas de regresión
+- `migration-check.yml` siembra privilegios table-level amplios al productor y PUBLIC y añade ACLs column-level específicas antes de 0022; la migración debe eliminarlos. Las assertions inspeccionan `pg_class.relacl`, `pg_attribute.attacl`, privilegios efectivos enumerando columnas, memberships y el contrato de `lock_bcv_sync_state()`.
+- La primera ejecución con SHA `380bf757...` falló en `findApplicableBcvRate`: el test usaba el LOGIN producer para una lectura que pertenece al runtime. Se corrigió el test, no los grants: `producerClient` sincroniza/persiste; `runtimeClient` lee tasas y checkout; `cleanupClient` admin solo limpia el PostgreSQL disposable.
+- La integración incluye una prueba dedicada que confirma que `microapp_runtime` no puede persistir tasas (SQLSTATE `42501`) y que el productor sí puede sincronizar.
+
+### Validación final de código
+- HEAD de código `24bcf66c0c570ec76566de03a70b2443e64fc69f`: 11/11 workflows SUCCESS.
+- CI `42834223332` SUCCESS, incluyendo migration 0022 contract, BCV effective-date integration con producer LOGIN, runtime-role API integration y atomic sales checkout.
+- Database migration validation `42834223191` SUCCESS: dirty producer ACL fixture, dirty PUBLIC ACL fixture, schema CREATE fail-closed, rollback atómico, apply migration, assertions y SQL operations/denials con runtime LOGIN.
+- Migration runner `42834223048`, Playwright `42834223393`, backup smoke `42834223426`, Security `42834223440`, Secret history `42834223064`, Semgrep `42834223348`, ODD `42834223489`, Dependency review `42834223323`, dashboard `42834223080`: SUCCESS.
+- PR #287 permanece OPEN/Draft, sin reviews ni threads. Comparación del HEAD de código con main `c537356...`: 199 ahead / 1 behind, diverged. Los commits de documentación posteriores no cambian código; comprobar CI exact-HEAD antes de actuar.
+- Sin cambios en main, Neon, Cloudflare, secretos, DNS, billing ni datos reales. Worker/Cron BCV no desplegado/activado. Producción NOT READY.
+
+## 2026-11-10 14:35:49 UTC — revalidación exact-HEAD y backup/RPO
+
+- En PR #287, el run PostgreSQL migration runner `42834658189` ya completó SUCCESS. En el HEAD anterior `225dba37812112f3669af3dffa79b04ec6a8762f` había 11/11 workflows `pull_request` SUCCESS. Los commits documentales de esta reconciliación avanzaron después la punta y no heredan esas validaciones; consultar el HEAD vivo y sus runs exactos.
+- Consulta de todas las ejecuciones del workflow de backup: última ejecución sigue siendo run `42659924075` (schedule, SUCCESS, 2026-11-09T16:57:34Z); artefacto timestamp 16:57:53Z. El cron declarado es diario a las 07:00 UTC y no aparece la ejecución del 10-nov a esa hora.
+- A las 14:35:49Z del 10-nov aún no se alcanzaba el umbral de 24h del artefacto; faltaban ~2h22m. No declarar incumplimiento actual hasta superar 16:57:53Z sin nueva copia válida. RPO sostenido continúa NO DEMOSTRADO por gaps históricos.
+- El principal efectivo de `DATABASE_URL_BACKUP_RO` sigue sin demostrarse; no inferir que sea `backup_readonly`. No leer secretos, no ejecutar backup manual, no tocar Neon/main/cron ni producción.
+- Issue #53 recibió una nota de revalidación con timestamp, evidencia, umbral y límites. Próximo paso: reconsultar después del umbral y comprobar run programado + metadatos/checksum, sin descargar ni leer el dump.
+- Fecha límite inamovible: **2026-12-01**. Producción **NOT READY**.
+
+## 2026-11-10 11:43 UTC−4 — resultado de revalidación backup
+
+La nueva consulta posterior a la nota de 10:35 UTC−4 encuentra el workflow programado run `42842855127` SUCCESS (schedule), iniciado 15:17:48Z y completado 15:18:19Z. El repositorio de respaldos contiene `backup-2026-11-10T15-18-11Z.dump.age` (42,708 bytes) y sidecar SHA-256 (103 bytes). El sidecar declara hash `68bf4409fea85aac11a3671f9ef966079bacd49bfbab052d7a1a5c819ce1a1c5`; no se descargó el dump ni se verificó ese hash contra sus bytes.
+
+El intervalo entre el backup previo (2026-11-09T16:57:53Z) y el nuevo (2026-11-10T15:18:11Z) es ~22h20m18s: el ciclo actual permanece dentro del límite de 24h. La ausencia del run del 10-nov observada a las 10:35 quedó superada por esta ejecución posterior. No declarar breach actual. RPO sostenido y restaurabilidad siguen NO DEMOSTRADOS; principal efectivo de `DATABASE_URL_BACKUP_RO` no probado. Issue #53 sigue OPEN/P0. Se añadió comentario con evidencia en el issue.
+
+No se ejecutó backup manual ni se tocaron secretos, dump, Neon, roles/grants, Cron o producción. Producción NOT READY. Fecha límite inamovible: **2026-12-01**.
+
+## 2026-11-10 — auditoría estática del workflow de backup (P0)
+
+Revisado en solo lectura .github/workflows/backup.yml de main (blob 5df408788b9053709261ada3aa22dd73b85d5691). El preflight solo comprueba que DATABASE_URL_BACKUP_RO no esté vacío y luego pasa el secreto a pg_dump; no verifica current_user, superuser, bypass RLS, memberships ni privilegios efectivos. Por ello, SUCCESS no demuestra identidad ni least-privilege.
+
+Además, aunque el comentario superior dice “solo tablas de negocio”, el comando no aplica allowlist de esquemas/tablas; únicamente excluye tres tablas de autenticación efímera. El dump incluye el resto de objetos/datos que pg_dump recoja por defecto. No se afirma que hoy haya otra tabla sensible: el riesgo es que la política no se hace cumplir explícitamente y puede ampliarse inadvertidamente con futuras tablas.
+
+Decisión: no modificar workflow ni grants hasta inventariar el alcance de recuperación, acordar allowlist completa y diseñar una comprobación fail-closed de identidad/privilegios que no imprima DSN ni secretos. No ejecutar workflow_dispatch, no leer secretos, no operar Neon main ni datos reales. Hallazgo registrado en issue #53, comentario 6772087455. Backup 10-nov run 42842855127 acredita ejecución y artefacto cifrado, no principal least-privilege ni restore reciente. Mantener #53 OPEN/P0 y producción NOT READY. Fecha límite inamovible: 2026-12-01.
+
+## 2026-11-10 — no heredar CI al actualizar documentación
+
+La punta verificada después de registrar el hallazgo de backup fue `7500ac66c17b193c053c075bd694d57370cab03b`, con 216 ahead / 1 behind de main y merge base `03442951b2a2f63f5bf4dcf560f2c91be4f6cc71`. GitHub devolvió 0 workflow runs pull_request y 0 status contexts para ese SHA. El padre `515f85260d9ae0381eb4c4de64cd0f87ac6201da` sí tenía 11/11 workflows SUCCESS, pero esos resultados no se trasladan a la nueva punta. No hay reviews formales ni review threads. Cualquier nuevo commit documental requiere revalidación exact-SHA; PR #287 sigue OPEN/Draft, #53 OPEN/P0, producción NOT READY. Deadline 2026-12-01.
 
  
-## 2026-11-10 — ampliación y validación del manifiesto de backup/restore
+## 2026-11-10 — perfil de restore separado para PR #287
 
-En PR #303 se reforzó `scripts/test_backup_restore_schema.sh` para comparar columnas (orden lógico, sin attnum físico), vistas, particiones, tipos/domain/enum, labels, event triggers, estado de constraints, validez de índices y estado de triggers. El fixture añade aserciones para balance vs suma de movimientos, movimientos con balance asociado, conteos esperados y reconciliación de total de venta con líneas, pagos y tasa snapshot.
+Se creó un perfil independiente para la cadena de migraciones 0001–0022 de PR #287. La variante de ledger de esta rama elimina `inventory_balance_ledger_intents` y proyecta balances desde movimientos; por eso no se reutiliza el fixture de main ni se escribe directamente en `inventory_balances`. La fixture agrega además una tasa BCV sintética con fecha efectiva exacta de Caracas, `bcv_sync_state` latest-success, checkout completado, allocation_position y auditoría.
 
-La primera ejecución detectó una concatenación SQL inválida entre `text` y `char`; se corrigió mediante casts explícitos. La segunda reveló que pg_dump/restore compacta los huecos de attnum de columnas previamente eliminadas; se corrigió el manifiesto para comparar orden lógico, no números físicos. La siguiente ejecución pasó íntegramente.
+El manifiesto verifica ACLs de columna y privilegios efectivos para `microapp_bcv_sync`, además de ownership/ACL de tabla/función, roles, memberships, RLS/policies y search_path. Workflow `42872318369` SUCCESS: 22 migraciones por runner oficial, age/checksum/decrypt/restore, grafo poblado y exclusión de tablas auth efímeras; round-trip 3 s. SHA validado `7746e86140cdf3a98911665f6955e57a256bfd4b`, 11/11 workflows exact-HEAD SUCCESS.
 
-Job `42870784682` SUCCESS en PostgreSQL 18: 16 migraciones por runner oficial, dump age/checksum/restore, ownership/ACL, RLS/policies, roles/search_path, fixture poblada y exclusión auth efímera. Tiempo de round-trip 2 s. Código validado en SHA `f0dc1f90043eff4270d86f461a2dfc07187aa814`, 11/11 workflow runs exact-HEAD SUCCESS.
-
-PR #303 continúa OPEN/Draft; #53 OPEN/P0. No se tocó main, Neon, secretos, Cron, backup remoto ni producción. La cobertura solo es para main 0001–0016; perfil #287 0017–0022 separado. Producción NOT READY.
+Se registra limitación: el test usa pg_dump/pg_restore por defecto, mientras el backup productivo usa `--no-owner --no-privileges`; el restore operacional bajo esos flags no está probado. Issue #53 sigue OPEN/P0. No se ejecutó backup real, no se leyeron secretos, no hubo Neon, main, deploy ni Cron.
 
 
 ## Reconciliación viva — PR #287/#303 y compatibilidad de perfiles (2026-11-10)
 
-### Estado exact-SHA comprobado
+### Estado exact-SHA comprobado antes de este bloque documental
 
-- **PR #287** OPEN/Draft, rama `integration/bcv-checkout-rehearsal-20261109`, HEAD `f33254856e5130acad1cb20423d913e4354e0fc1`, base `main` en `c5373564413ba086690552c6b7deeab08d7b4a89`; mergeable=true. Comparación contra main: diverged, 234 commits ahead / 1 behind; merge base `03442951b2a2f63f5bf4dcf560f2c91be4f6cc71`. El único commit que avanzó main desde ese merge base modifica `docs/BACKLOG_RECOVERY_LEDGER.md`; no se observó cambio de esquema en ese commit. En el HEAD exacto, 11/11 workflow runs `pull_request` terminaron SUCCESS. Backup/restore run `42874207740`, job `130033078108`: aplicó 22 migraciones mediante `scripts/db/migrate.sh`; cifrado age/checksum/restore; ownership, ACL, RLS/policies, role contract y search_path preservados; grafo BCV/checkout/projection-ledger y relaciones PASS; tablas auth efímeras excluidas; regresión legacy PASS. Playwright E2E también SUCCESS. 0 reviews formales y 0 review threads.
-- **PR #303** OPEN/Draft, rama `security/backup-restore-schema-coverage-20261110`, HEAD `afe0a94005854843ead2526b3a5ea18a183f127a`, base main `c5373564413ba086690552c6b7deeab08d7b4a89`; 73 ahead / 0 behind, mergeable=true. 11/11 workflow runs `pull_request` SUCCESS exact-HEAD; 0 legacy status contexts, 0 reviews formales y 0 review threads.
-- Combined legacy status contexts vacíos no son un recuento de check-runs ni una aprobación. Ambos PR permanecen Draft; no cambiar estado automáticamente.
+- **PR #287** OPEN/Draft, HEAD de código `f33254856e5130acad1cb20423d913e4354e0fc1`, base main actual `c5373564413ba086690552c6b7deeab08d7b4a89`; mergeable=true. Comparación: diverged, 234 commits ahead / 1 behind; merge base `03442951b2a2f63f5bf4dcf560f2c91be4f6cc71`. El único commit que avanzó main desde ese merge base modifica `docs/BACKLOG_RECOVERY_LEDGER.md`, sin cambio de esquema observado. En ese HEAD exacto, 11/11 workflow runs `pull_request` SUCCESS. Backup/restore run `42874207740`, job `130033078108`: 22 migraciones por runner oficial; cifrado age/checksum/restore; ownership, ACL, RLS/policies, role contract y search_path preservados; grafo BCV/checkout/projection-ledger PASS; auth efímero excluido; regresión legacy PASS. Playwright E2E SUCCESS. 0 reviews formales y 0 review threads.
+- **PR #303** OPEN/Draft, HEAD `afe0a94005854843ead2526b3a5ea18a183f127a`, base main `c5373564413ba086690552c6b7deeab08d7b4a89`; 73 ahead / 0 behind, mergeable=true. 11/11 workflow runs `pull_request` SUCCESS exact-HEAD; 0 legacy status contexts, 0 reviews y 0 threads.
+- Estos datos describen los SHAs previos a este bloque documental. Cada commit nuevo exige revalidar el SHA final; no heredar CI. Ambos PR siguen Draft.
 
 ### Riesgo de integración detectado — no fusionar a ciegas
 
-Ambas PR modifican `.github/workflows/backup-restore-smoke.yml` y `docs/BACKUP_AND_RECOVERY.md`. Sus perfiles de fixture representan estados distintos del esquema:
+Ambas PR modifican `.github/workflows/backup-restore-smoke.yml` y `docs/BACKUP_AND_RECOVERY.md`. Los perfiles representan estados incompatibles del ledger:
 
-- #303 valida el baseline main 0001–0016 y el ledger paired-intent de migration 0010; su fixture `scripts/backup_restore_fixture_main.sql` utiliza `inventory_balance_ledger_intents`.
-- #287 valida 0001–0022, donde migration 0019 elimina `inventory_balance_ledger_intents` y proyecta balances desde `warehouse_inventory_movements`; usa `scripts/backup_restore_fixture_bcv.sql` y `scripts/test_backup_restore_schema_bcv.sh`.
-- El script de #303 detecta tabla-intents vs función de proyección, pero su fixture main contiene aserciones/insert de intents y no debe ejecutarse sin adaptación sobre el esquema 0017–0022. No ejecutar ambos perfiles secuencialmente sobre una misma DB ni asumir que el workflow de una rama puede reemplazar al otro.
+- #303 valida baseline main 0001–0016 y el ledger paired-intent de migration 0010; su fixture `scripts/backup_restore_fixture_main.sql` utiliza `inventory_balance_ledger_intents`.
+- #287 valida 0001–0022; migration 0019 elimina `inventory_balance_ledger_intents` y proyecta balances desde `warehouse_inventory_movements`. Su fixture es `scripts/backup_restore_fixture_bcv.sql` y su runner `scripts/test_backup_restore_schema_bcv.sh`.
+- El script de #303 detecta tabla-intents vs función de proyección, pero su fixture main contiene operaciones/aserciones sobre intents y no debe ejecutarse sin adaptación sobre 0017–0022. No ejecutar ambos perfiles sobre una misma DB ni asumir que el workflow de una rama reemplaza al otro.
 
-**Decisión de integración:** mantener ambas PR Draft y separadas hasta preparar un contrato de restore compatible con ambos estados o perfiles explícitos sobre bases desechables independientes. Antes de fusionar cualquier PR, resolver el solapamiento de workflow y documentación, comprobar la secuencia de migraciones final, ejecutar el perfil aplicable al HEAD destino y validar todos los checks exact-HEAD. No hacer merge, retarget ni rebase automático en este checkpoint.
+**Decisión de integración:** mantener ambas PR Draft y separadas hasta preparar perfiles explícitos en bases desechables independientes o una fixture adaptativa validada para ambos estados. Resolver el solapamiento de workflow/documentación, confirmar la secuencia de migraciones del destino y ejecutar los tests exactos del HEAD final antes de cualquier merge. No retarget, rebase ni merge automático en este checkpoint.
 
-### Límites y gates todavía abiertos
+### Gates abiertos
 
-La cobertura sintética no restaura el artefacto remoto real ni prueba Neon/producción, identidad efectiva de `DATABASE_URL_BACKUP_RO`, least privilege real, RPO/RTO sostenidos, alertas externas o coste total USD 0. Issue #53 permanece OPEN/P0; producción NOT READY. No leer secretos, no ejecutar backup manual, no modificar Cron, Neon main, roles/grants, Cloudflare, DNS, billing ni datos reales. Deadline MVP: 2026-12-01.
+La cobertura sintética no restaura el artefacto remoto real ni prueba Neon/producción, identidad efectiva de `DATABASE_URL_BACKUP_RO`, least privilege real, RPO/RTO sostenidos, alertas externas o coste total USD 0. Issue #53 OPEN/P0; producción NOT READY. No leer secretos, ejecutar backup manual, modificar Cron, Neon main, roles/grants, Cloudflare, DNS, billing ni datos reales. Deadline MVP: 2026-12-01.
+
+
+## CHECKPOINT VIGENTE — 2026-11-10 — PR #287/#303 y continuidad entre chats
+
+Este bloque supersede los snapshots anteriores de #287/#303 que mencionen HEADs `f332548...`, `afe0a940...` u otros SHAs previos. GitHub fue consultado en vivo; volver a verificar antes de actuar.
+
+### Estado exact-SHA verificado
+
+- **PR #287** OPEN / Draft / mergeable=true, rama `integration/bcv-checkout-rehearsal-20261109`, base `main`; HEAD `414547da05a3a6676f4610ff7a2f2c0b66e0403e`; base SHA `c5373564413ba086690552c6b7deeab08d7b4a89`. Comparación main...HEAD: `diverged`, 238 ahead / 1 behind; merge-base `03442951b2a2f63f5bf4dcf560f2c91be4f6cc71`. 11/11 workflow runs `pull_request` SUCCESS en ese HEAD: ODD docs, Dependency review, dashboard, Secret history, Security, Backup restore, Semgrep, PostgreSQL migration runner, Database migration validation, CI y Playwright E2E. 0 reviews formales y 0 review threads.
+- **PR #303** OPEN / Draft / mergeable=true, rama `security/backup-restore-schema-coverage-20261110`, base `main`; HEAD `d527ae79cd566945cd9bdb3e1475d53b31d3923a`; base SHA `c5373564413ba086690552c6b7deeab08d7b4a89`. Comparación main...HEAD: `ahead`, 77 ahead / 0 behind; merge-base igual a main. 11/11 workflow runs `pull_request` SUCCESS en ese HEAD. 0 reviews formales y 0 review threads.
+- Ambos PR permanecen Draft. Los workflows son runs de GitHub Actions; no inferir aprobación humana ni status contexts/branch protection a partir de ellos. Revalidar los SHA antes de toda acción.
+
+### Decisión de integración — no mezclar fixtures ni fusionar a ciegas
+
+Ambas ramas cambian `.github/workflows/backup-restore-smoke.yml` y `docs/BACKUP_AND_RECOVERY.md`, pero prueban estados de esquema incompatibles:
+
+- #303 representa el baseline de main con migraciones 0001–0016 y ledger paired-intent (`inventory_balance_ledger_intents`); usa `scripts/backup_restore_fixture_main.sql` y `scripts/test_backup_restore_schema.sh`.
+- #287 representa la cadena 0001–0022, donde migration 0019 sustituye/elimina el ledger intents por proyección desde `warehouse_inventory_movements`; usa `scripts/backup_restore_fixture_bcv.sql` y `scripts/test_backup_restore_schema_bcv.sh`.
+- En HEAD #287, el workflow ejecuta el perfil BCV/projection y la regresión legacy. En HEAD #303, ejecuta el perfil main/paired-intent y la regresión legacy. No ejecutar ambos fixtures contra la misma DB ni copiar un workflow sobre el otro sin diseñar dos bases/targets aislados o un harness explícito que aplique cada cadena de migración por separado.
+- El perfil #287 añade reintentos acotados a la descarga de la llave PostgreSQL. Su CI exact-HEAD pasa. El test sintético conserva owners/ACL mediante pg_dump/pg_restore por defecto; el backup productivo usa `--no-owner --no-privileges`. El bootstrap de ownership/grants y restore operacional con esos flags aún no está demostrado.
+
+### Prioridades y límites
+
+1. No retarget, rebase, sync de base, merge ni cerrar PRs todavía. Primero inspeccionar diffs completos, confirmar dependencias de migraciones y diseñar una estrategia de coexistencia de perfiles de backup en DBs efímeras separadas. Mantener ambas Draft.
+2. Resolver el hallazgo P0 de issue #53: principal efectivo de `DATABASE_URL_BACKUP_RO`, privilegios reales/least privilege, allowlist explícita del dump, restore de artefacto remoto reciente, RPO/RTO sostenidos y alerta externa. No leer secretos ni dumps, no lanzar workflow_dispatch/backup manual, no tocar roles/grants ni Neon.
+3. La prueba sintética CI no equivale a restore operacional de backup remoto reciente ni prueba producción. Producción **NOT READY**.
+4. No mutar Neon `main`, datos reales, secretos, roles/grants, Cron, Cloudflare manual, DNS, billing ni despliegues manuales. Presupuesto USD 0. No pedir Build IDs, capturas, terminal, CLI, TinyFish ni reconexiones; usar GitHub/docs y aceptar texto si un bloqueo real requiere al propietario.
+5. Tras resolver gates de seguridad Nivel 1, continuar la UI POS P0 de jornada completa y E2E real; no abrir superficies comerciales nuevas antes de cumplir la política del repositorio.
+6. Deadline del MVP: **2026-12-01 — INAMOVIBLE**.
+
+### Próxima acción reproducible
+
+Releer `AGENTS.md`, `docs/CONSTITUTION.md`, este checkpoint, `docs/AI_COLLABORATION_AND_PR_POLICY.md`, `docs/ODD_WORKFLOW.md`, `docs/BACKUP_AND_RECOVERY.md`, `docs/SECURITY_ROADMAP.md` y `odd/tasks/backup-restore-pr287-projection-profile.md`. Consultar GitHub en vivo; inspeccionar el diff completo de #287 y #303, incluyendo workflow, fixtures, scripts y documentación; crear una matriz de compatibilidad de perfiles y propuesta de secuencia. No tocar main ni producción. Después de cualquier commit, validar todos los checks en el SHA exacto nuevo.
+
+
+## Checkpoint — 2026-11-11: dual restore profiles
+
+- Branch: `integration/bcv-checkout-rehearsal-20261109`; PR #287 OPEN/Draft; final HEAD `0b9996f91679ce63578237c4d5e4dd9192a1c5da`; base ref `main`, PR base SHA `03442951b2a2f63f5bf4dcf560f2c91be4f6cc71`. Compare against main baseline `c5373564413ba086690552c6b7deeab08d7b4a89`: 248 ahead / 1 behind; merge base remains `03442951b2a2f63f5bf4dcf560f2c91be4f6cc71`. PR API reports mergeable=true / clean at this observation; it remains Draft and is not eligible for merge solely from CI.
+- PR #287 exact-HEAD workflows: 11/11 SUCCESS. Backup restore run `42983608139`: BCV projection job SUCCESS (runner + legacy regression) and main paired-intent job SUCCESS, each in its own PostgreSQL 18 service. CI `42983607801`, Playwright `42983607747`, DB migration validation `42983607700`, migration runner `42983608098`, Security scan `42983607882`, dashboard `42983607995`, ODD validation `42983608036`, dependency review `42983607658`, secret history `42983607805`, Semgrep `42983607768`: SUCCESS.
+- PR #303 remains OPEN/Draft at `d527ae79cd566945cd9bdb3e1475d53b31d3923a`, base `c5373564413ba086690552c6b7deeab08d7b4a89`, 11/11 exact-HEAD workflows SUCCESS; no formal reviews or review threads observed on either PR.
+- Implementation on #287 branch: separate main (0001–0016 paired-intent) and BCV (0001–0022 projection) restore jobs with independent PostgreSQL services; main fixture + runner imported; main migration bundle pinned to immutable baseline `c5373564413ba086690552c6b7deeab08d7b4a89` via `git archive` and runner `MIGRATIONS_DIR`; BCV runner remains checked-out-ref; legacy 13-table regression retained once. Path filters cover both profiles and migration runner. Added ODD design task and reconciled backup docs/task history.
+- Validation: exact-HEAD workflow is green after final workflow shell-continuation correction. Main profile verifies 16-migration manifest and paired-intent-vs-projection exclusivity; BCV profile verifies 22-migration projection schema and BCV producer; both restore jobs ran separately. No local execution claimed.
+- Open risks: synthetic restore does not prove remote scheduled artifact recovery, actual identity/least privilege of `DATABASE_URL_BACKUP_RO`, restore bootstrap with `--no-owner --no-privileges`, operational RPO/RTO, alert delivery, or total $0 cost. Issue #53 remains OPEN/P0. Production remains NOT READY. Do not merge #287/#303 or change base until full combined diff, security gates, and integration sequence are independently reviewed.
+- Next action: audit both restore scripts and workflow semantics for hidden assumptions; verify #53 status and security evidence; then assess whether the dual-profile design has complete independent restore assertions. Keep max two active fronts. No production/Neon/secrets/roles/grants/Cron/deploy/billing/manual backup/real data.
+
+## Reconciliación de continuidad — 2026-11-11 (backup restore y P0)
+
+- **HEAD de código y workflows validado:** `f08be467d73954ca00df4314dcc18f53637da723` en `integration/bcv-checkout-rehearsal-20261109` / PR #287. GitHub: 11/11 workflows SUCCESS exact-SHA; backup restore run `42986231217`: main paired-intent job `130407943736` SUCCESS y BCV projection job `130407944272` SUCCESS, ambos con PostgreSQL 18 independiente. CI `42986231101`, DB migrations `42986231023`, migration runner `42986231220`, Playwright `42986231140`, Semgrep `42986231572`, Security `42986231107`, secret history `42986231372`, dependency review `42986231402`, ODD validation `42986231125`, dashboard `42986231038`: SUCCESS.
+- **PR #287:** OPEN/Draft, head `f08be467d73954ca00df4314dcc18f53637da723`, base SHA `03442951b2a2f63f5bf4dcf560f2c91be4f6cc71`, 269 ahead / 1 behind, merge base `03442951b2a2f63f5bf4dcf560f2c91be4f6cc71`, mergeable=true/clean en la consulta. No merge: sigue Draft y sin reviews formales/threads observados.
+- **PR #303:** OPEN/Draft, head `d527ae79cd566945cd9bdb3e1475d53b31d3923a`, base `c5373564413ba086690552c6b7deeab08d7b4a89`, 11/11 workflows SUCCESS exact-SHA; sin reviews formales/threads observados. No fusionar ni combinar a ciegas.
+- **Perfiles restore:** jobs separados main 0001–0016 paired-intent y BCV 0001–0022 projection; ambos conservan sus fixtures/manifiestos/ACL/RLS/roles y cifrado/checksum/restore; regresión legacy también pasa.
+- **Corrección crítica auth efímera:** production `.github/workflows/backup.yml` y tres smoke runners usan `--exclude-table-data`, no `--exclude-table`. El esquema de `auth_sessions`, `auth_rate_limits`, `auth_bootstrap_attempts` se conserva; sus filas no. Main, BCV y legacy ahora verifican tablas presentes y vacías tras restore. ODD task: `odd/tasks/backup-ephemeral-auth-schema-retention.md`.
+- **Identidad backup:** workflow añade diagnóstico read-only no bloqueante que publica solo booleanos (identidad esperada `backup_readonly`, atributos, membresías, DML, secuencias y CREATE). No imprime DSN, host, usuario real, secretos ni filas. Falta observar el próximo run programado natural; no hacer workflow_dispatch/manual backup ni modificar roles/grants. ODD task: `odd/tasks/backup-principal-least-privilege-audit.md`.
+- **Issue #53:** permanece OPEN/P0. Pendientes: confirmar el principal real y least privilege en ejecución programada, bootstrap de ownership/grants bajo `--no-owner --no-privileges`, restauración operativa de artefacto remoto, RPO/RTO, alerta externa y coste $0; además de gates comerciales/autorización aún abiertos. Producción NOT READY.
+- No se tocó Neon, datos reales, secretos, roles/grants remotos, Cron, DNS, Cloudflare sensible, billing, ni se ejecutó backup manual o despliegue.
+
+## 2026-11-11 — restore no-owner/no-privileges reproducible en CI
+
+Se implementó un ensayo de restauración alineado con los flags del backup productivo. `pg_restore --no-owner --no-privileges` se conecta directamente como `microapp_migrator`; las tablas y funciones quedan bajo ese owner y el helper reproduce en orden únicamente comandos ACL del bundle exacto de migraciones. No se reejecuta DDL/datos ni se altera el ledger. El replay histórico completo es esencial: repetir solo grants 0012 devolvía INSERT en `inventory_balances`, que 0019 había revocado. El perfil BCV omite solo ACL históricos de paired-intent eliminados por la proyección.
+
+Evidencia exact-HEAD `0ddd0da742b474b7256675b9c32292d7750fc2b0`: backup restore run `42989180384`, main job `130417569364` SUCCESS, BCV job `130417569035` SUCCESS y legacy regression SUCCESS; CI `42989180406` SUCCESS; workflows restantes también SUCCESS (11/11 pull_request). Los primeros intentos fallidos se conservaron como evidencia de regresiones del propio ensayo y se corrigieron antes de aceptar el resultado.
+
+La prueba sigue siendo sintética: no aprovisiona credenciales de producción, no restaura artefacto remoto y no mide RPO/RTO ni alertas externas. Issue #53 OPEN/P0; producción NOT READY. Detalle en `odd/tasks/backup-restore-no-owner-no-privileges.md`.
+
+## 2026-11-11 — remote restore ya no valida como administrador
+
+Se encontró que el antiguo workflow remoto restauraba como admin `microapp` y solo contaba tablas. Se añadió `scripts/db/restore_remote_backup_ephemeral.sh` y se conectó al workflow manual. Ahora se restauraría bajo LOGIN `microapp_migrator`, con roles sintéticos separados, perfil de migración derivado del ledger y comprobación de filename/SHA-256 de todas las migraciones antes de replay ACL. El script valida ownership, atributos/membresías de roles, auth efímero vacío y logins runtime/producer. Los runners main y BCV invocan el mismo script en bases desechables independientes.
+
+Evidencia exact-HEAD de implementación `f259b65175711d66f398486bcb80765dfe7aea77`: backup restore run `42991705366`, main `130425902535` SUCCESS, BCV `130425902488` SUCCESS, legacy regression SUCCESS; Playwright, migrator validation, database validation y Semgrep también SUCCESS. Un primer intento falló por comparar boolean `true` con `t`; corregido y la siguiente ejecución completa pasó.
+
+El workflow que descarga/restaura el artefacto remoto no se ejecutó. No se tocó repositorio de backups, Neon, secretos ni datos reales. Issue #53 OPEN/P0; producción NOT READY.
+
+### 2026-11-11 — runtime SELECT en ensayo de restore remoto
+
+Se añadió al runner una consulta real como `microapp_runtime` sobre `public.organizations` y una comprobación explícita de SELECT permitido / CREATE en public denegado. Ambos perfiles pasaron en run `42992354071`: main job `130428038679`, BCV job `130428038320`, además de regresión legacy. Implementación HEAD `7b4fdebe846952f1099a4fde323be2dc0f5ce0e8`. CI seguía pending en la lectura; los demás workflows pull_request estaban SUCCESS. Sigue sin ejecutarse el workflow de restauración del artefacto remoto real.
+
+## Addendum — actual producer write probe, rollback-only — 2026-11-11
+
+A second review identified that checking only the producer LOGIN was weaker than the claim "producer permissions usable". The restore runner now performs an effective write-path probe **only for the BCV 0001–0022 profile**, where migration 0022 defines the dedicated producer contract:
+- verifies the singleton `bcv_sync_state` row is readable;
+- updates only the granted producer columns (`attempt_id`, timestamps, `last_outcome`, `updated_at`);
+- inserts a uniquely tagged synthetic `exchange_rates` row using only the granted insert columns and reads its returned UUID using the permitted `id` column privilege;
+- updates only `validation_status`;
+- rolls the entire transaction back unconditionally.
+
+The main 0001–0016 paired-intent profile predates migrations 0021/0022 and therefore intentionally does **not** run the BCV table write probe; it verifies only the synthetic producer LOGIN exists, not that it has BCV grants. This prevents incorrectly applying the later profile's permission contract to the historical schema.
+
+The probe was corrected after inspection found an indented heredoc terminator in the first draft; the corrected shell block is what the passing workflow exercised. The complete main + BCV smoke run at HEAD `3e6f6f508af316ab102ac0d7fcb7c56bcb65d8eb` is `42993480715`: main job `130431717359` SUCCESS; BCV job `130431717962` SUCCESS, including the legacy regression. All 11 PR workflows at that exact HEAD passed: CI `42993480688`, migration validation `42993480726`, PostgreSQL migration runner `42993480716`, backup restore `42993480715`, Playwright `42993480670`, dependency review `42993480700`, ODD docs `42993480705`, Semgrep `42993480727`, security scan `42993480720`, secret history `42993480721`, project dashboard `42993480717`.
+
+This remains synthetic evidence only. The remote artifact workflow was not dispatched and no remote backup/age key was accessed.
+
+## Addendum — final-profile ACL oracle and hardened ledger parsing — 2026-11-11
+
+The restore grant helper now rejects migration-ledger filenames unless they are safe numbered SQL basenames matching the contiguous version, and rejects checksums unless they are 64-character lowercase SHA-256 digests. It still verifies each exact file's checksum before replaying ACL statements.
+
+A strict post-restore check initially reused migration 0012's historical assertion file after all 16 migrations had been replayed. That test failed because migrations 0013 and 0015 legitimately grant the runtime role access to BCV rates and checkout sales/payments; those are final-profile permissions, not security regressions. The historical migration assertion is valid at migration 0012's point in time, not as the final 0016 oracle. It was not weakened. Instead, added `scripts/db/restore_role_assertions_main.sql`, which validates the final main 0001–0016 runtime contract: required checkout/rate access is present; intent-table access, branch/warehouse mutations, audit reads/mutations and unsafe default ACLs remain absent. The BCV 0001–0022 profile continues to run migration 0022's full producer/runtime effective-privilege assertions.
+
+The BCV restore probe also performs the producer's permitted state update, synthetic rate insert and validation-status update in a single transaction that is rolled back. It is intentionally not run for the main 0001–0016 profile, which predates migrations 0021/0022. The synthetic restore workflow now also runs on pushes to the integration branch, in addition to PR path-filtered runs, so this profile gate cannot silently remain unexecuted on an integration-only update.
+
+**Validated exact HEAD:** `99ed19bd4b0f13503dc875215532e3c83941d168`. PR workflow runs 11/11 SUCCESS: CI `42995277583`; database migration validation `42995277784`; PostgreSQL migration runner `42995277586`; backup restore smoke `42995277769`; Playwright `42995277707`; dependency review `42995277737`; ODD docs `42995278007`; Semgrep `42995277801`; security scan `42995277685`; secret history `42995277589`; project dashboard `42995278070`. Independent push backup smoke `42995267480` also SUCCESS: main job `130437669142`, BCV job `130437668885`, legacy regression included.
+
+The earlier failed run `42994254096` is a retained test-oracle failure, not hidden: it caught that the historical 0012 assertion was being applied at the final schema point. The profile-specific final assertion replaced it and the corrected main + BCV restore passed.
+
+No remote backup artifact or age key was accessed; `.github/workflows/backup-real-restore.yml` remains manual and was not dispatched. No production, Neon, remote role/grant, secrets, Cron, DNS, Cloudflare sensitive setting, billing or deployment was changed.
+
+## Snapshot de HEAD y validación para continuidad — 2026-11-11
+
+- HEAD de rama al escribir este snapshot: `2db970c88eca2fb599ca3ad48860c140f9da46bb`; los commits posteriores a la implementación `99ed19bd4b0f13503dc875215532e3c83941d168` son solo documentación.
+- En el HEAD `2db970c88eca2fb599ca3ad48860c140f9da46bb`, los 11 workflows de PR terminaron SUCCESS: CI `42995670374`; DB migration `42995670345`; PostgreSQL migration runner `42995670226`; backup restore `42995670206`; Playwright `42995670377`; dependency `42995670690`; ODD docs `42995670385`; Semgrep `42995670143`; security `42995670133`; secret history `42995670458`; dashboard `42995670122`.
+- El restore sintético independiente por push `42995267480` también SUCCESS: main `130437669142`, BCV `130437668885`, incluyendo regresión legacy.
+- PR #287 OPEN/Draft; issue #53 OPEN/P0; PR #303 OPEN/Draft. No merge. No declarar producción lista.
+- El workflow remoto real sigue manual y no se ejecutó. No leer backups reales ni usar la llave age real. Esperar el backup programado natural para el diagnóstico real de `DATABASE_URL_BACKUP_RO`, una vez que el workflow correspondiente llegue a main.
+- Próximo paso: reconsultar el HEAD actual y workflows exact-HEAD antes de cualquier decisión; continuar con gates operativos de #53 (principal efectivo, provisioning seguro, integridad/restore remoto, alertas, RPO/RTO y coste $0). No repetir las investigaciones de roles/ACL ya documentadas.
+
+### 2026-11-11 — runtime and producer effective probes
+
+Se amplió el restore harness para probar runtime read de organizaciones y denegación de CREATE en public; BCV producer hace update de singleton + insert/update de tasa sintética dentro de ROLLBACK. Main no afirma test de productor dedicado. En HEAD `f6c453d928ffaef4ab15efc5733bd3c7001089e3`, workflows PR 13/13 SUCCESS (backup smoke `42997279023`, Playwright `42997278934`, CI `42997279209`); push backup smoke `42997267912` SUCCESS. Remote workflow sigue sin ejecutarse. Issue #53 OPEN/P0; producción NOT READY.
+
+## 2026-11-11 — runbook operativo de recuperación
+
+Se añadió odd/tasks/backup-operational-recovery-runbook.md. Formaliza dos rutas separadas: Neon PITR mediante una rama aislada (solo si el historial/plan vigente lo permite y se confirma coste) y recuperación independiente del artefacto cifrado age. Define verificación SHA-256 antes de descifrar, custodia externa de la llave, restore PostgreSQL 18 desechable, comprobaciones de roles/perfiles, límites de cutover y bitácora UTC para medir edad del último backup válido y RTO operativo completo.
+
+No se inventaron SLO: frecuencia diaria no demuestra RPO <=24h; tiempo pg_restore no representa RTO. Los objetivos se proponen después de ensayo real y simulacro completo. La guía oficial de Neon usada como referencia es https://neon.com/docs/introduction/branching.
+
+No se ejecutó workflow_dispatch ni se accedió a secreto, backup remoto, llave age, Neon o datos reales. El diagnóstico real de DATABASE_URL_BACKUP_RO sigue pendiente del próximo run programado natural en default branch. Issue #53 OPEN/P0; producción NOT READY.
+
+## 2026-11-11 — el diagnóstico de backup aún no alcanza main
+
+Consulta GitHub live: main HEAD c5373564413ba086690552c6b7deeab08d7b4a89 y backup.yml blob 5df408788b9053709261ada3aa22dd73b85d5691 todavía sin el diagnóstico de seis booleanos que existe en la rama de integración. Runs schedule recientes de main 42842855127 (2026-11-10 SUCCESS) y 42659924075 (2026-11-09 SUCCESS) son previos al cambio y no demuestran identidad efectiva. La siguiente evidencia válida solo será un run natural después de que el cambio llegue a main. Sin dispatch manual. Least privilege permanece no verificado.
+
+
+
+## 2026-11-11 — reconciliación exact-HEAD antes de cambio de chat
+
+Consulta GitHub live: rama `integration/bcv-checkout-rehearsal-20261109` HEAD `3e00d2c1512e1d0c3c0acc84bcdf4663e4976296`; 13/13 workflows pull_request SUCCESS, 2/2 push SUCCESS y 16/16 check-runs SUCCESS. PR #287 OPEN/Draft, mergeable clean; no reviews formales ni review comments. PR #303 OPEN/Draft; issue #53 OPEN/P0. No se interpreta estado clean ni CI verde como aprobación.
+
+La prueba de restore es sintética y cubre perfiles main/BCV; no se ejecutó workflow_dispatch remoto ni se accedió a backup/llave age reales. Main aún no contiene el diagnóstico de seis booleanos para el principal backup; identidad y least privilege permanecen sin verificar. No se alteró producción, Neon, secretos, Cron, DNS, Cloudflare sensible ni billing. Producción NOT READY.
+
+
+## Reconciliación viva — 2026-11-11 — HEAD `94f3e3afd561f517301175751a8b7feaf640b2b9`
+
+- #287: OPEN/Draft, mergeable=true, 377 ahead / 1 behind main; el único commit detrás es documental (`docs/BACKLOG_RECOVERY_LEDGER.md`, +15 líneas). No hay reviews formales ni review threads.
+- Exact SHA: 11/11 workflows PR SUCCESS, 3/3 workflows push SUCCESS, 18/18 check-runs SUCCESS; 0 status contexts legacy. CI, migration validation, migration runner, Playwright, backup restore, Semgrep, Security, Secret history, dependency, ODD y dashboard pasaron.
+- El smoke exacto ejecutó main 0001–0016 y BCV 0001–0022, regresión legacy, guard de destino y validador de artefactos. Runs: PR backup smoke `43002919167`; push backup smoke `43002910346`.
+- #303 permanece OPEN/Draft, HEAD `d527ae79cd566945cd9bdb3e1475d53b31d3923a`, 77 ahead / 0 behind, 11/11 workflows y 17/17 checks SUCCESS, sin reviews/threads. Su fixture main ya está incorporado y ampliado en #287; no fusionar #303 por separado.
+- Se endureció el runner remoto para aceptar solo URLs de loopback explícitas y mismas sesiones/DB; se añadieron tests negativos. Se añadió validación estricta de filename/sidecar SHA-256 y se eliminó la interpolación de filename no confiable en shell. El diagnóstico del backup oculta stderr de psql.
+- Main sigue en `c5373564413ba086690552c6b7deeab08d7b4a89`; no contiene el diagnóstico ni la exclusión solo de datos. Último schedule observado `42842855127` (2026-11-10 SUCCESS), anterior a ambos cambios. No hay run natural posterior observado; no dispatch manual.
+- Los artefactos antiguos no satisfacen el contrato nuevo porque carecen del esquema de auth efímera que ahora se conserva vacío. Esperar backup natural posterior a la integración antes de cualquier ensayo remoto.
+- Issue #53 OPEN/P0; producción NOT READY. Pendientes: principal efectivo/least privilege real, restore remoto real aislado, provisioning provider-specific, simulacro de aplicación, alerta externa, RPO/RTO medidos y coste $0.
+- No Neon main, datos reales, secretos/age, grants remotos, Cloudflare/DNS sensibles, deploy, Cron, billing, force-push ni merge de Draft.
+
+## 2026-11-11 — API de turnos y perfil restore BCV 0023
+
+- Código validado en PR #287 HEAD `0ca91ff51ec545278ceb8eabd3929083aae9022e`: 11/11 workflows PR SUCCESS, CI `43009163637` SUCCESS.
+- Migración 0023: funciones SECURITY DEFINER open/close de turno propio; runtime EXECUTE limitado, sin escritura directa en register_shifts; search_path `pg_catalog, public` protegido por assertions.
+- API: GET registers, GET current shift, POST open, POST close. Owner/Admin/Cashier con branch membership activa, solo propio. Eventos append-only en audit_logs atómicos.
+- Tests API PostgreSQL 18 runtime login: 4/4. Prueba de concurrencia primero reveló deadlock por lock-upgrade; se cambió a preflight sin locks y trigger DB con lock order canónico; prueba posterior SUCCESS.
+- Restore smoke main 0001–0016 y BCV 0001–0023 SUCCESS. Se actualizó el runner de 22 a 23 migraciones para BCV.
+- No merge/deploy/restore remoto real/Neon main/datos reales/secrets/Cloudflare sensible. #53 OPEN/P0; producción NOT READY.
+- Siguiente: UI de sucursal/turno + Playwright; definir contrato de pagos; jornada completa E2E. No declarar POS terminado con API-only.
+
+
+## 2026-11-11 — UI de apertura/cierre de turnos
+
+- Se añadió vista web Caja y turnos para owner/admin/cashier, consumiendo las rutas de turno propio de PR #287. Incluye selector de sucursal/caja, apertura con fondos USD/VES y cierre con conteos físicos explícitos y confirmación.
+- Se bloquea cambio de sucursal mientras el usuario mantiene turno abierto; el conteo final se deja vacío y no se infiere desde el fondo inicial.
+- Test de componente cubre flujo y acceso denegado. Primer CI de UI en SHA `8da81f1...` detectó import `Root` sin uso; corregido en `a8148f94...`. Pendiente confirmar checks del HEAD actual exacto.
+- Scope excluye ventas, cobros, recibos, arqueo y ledger de caja; producción NOT READY y #53 OPEN/P0.
+
+- CI on `9f1f0b9...`: typecheck passed; component tests failed from premature assertion during nested async loading. Updated test wait helper to eight event-loop turns in `30d7368...`; exact-HEAD revalidation required.
+
+
+### Corrección del diagnóstico de test — 2026-11-11
+
+La hipótesis anterior de que el helper de espera era la causa no era correcta. El log completo mostró que el mock de `fetch` construía `new URL()` sin base, pero el API base del test puede ser una ruta relativa; eso lanzaba antes de evaluar el endpoint y producía el estado de error/carga observado. Se corrigió el mock usando una base de test explícita (`https://micro-app.test`) en `apps/web/src/RegisterShiftsPanel.test.tsx`, commit `98b24eca568dd148b50da70e0d558e996a2739a0`. La espera ampliada se mantiene inocua. Este diagnóstico reemplaza la explicación anterior; exigir CI exact-SHA para verificar el arreglo.
+
+
+## Validación final UI turnos — 2026-11-11
+
+- Código final de la UI/test: `98b24eca568dd148b50da70e0d558e996a2739a0`. HEAD documental exacto probado en GitHub: `f33f423116f2e88be6927745dd119e253025f827` (posterior al código, solo docs).
+- CI `43014361783` SUCCESS: Build/typecheck SUCCESS, suite web 88/88 tests SUCCESS, API 198/198 SUCCESS, Playwright Chromium SUCCESS. PostgreSQL own register-shift API integration: 4/4 tests SUCCESS en el mismo job.
+- Backup restore smoke `43014361711` SUCCESS: main 0001–0016 y BCV 0001–0023. PostgreSQL migration runner `43014361883` SUCCESS. ODD docs, Secret History, Security, Semgrep, Dependency Review y Project dashboard SUCCESS.
+- Excepción pendiente: workflow `Database migration validation` run `43014361738` permanece `pending` y su consulta de jobs devuelve lista vacía; no contarlo como SUCCESS ni como fallo. Reconciliarlo antes de marcar el conjunto total como completo. No hay status contexts adicionales (`combined status` vacío).
+- El CI inicial que falló en test UI se corrigió: el mock de fetch ahora resuelve URLs relativas con base `https://micro-app.test`. El CI posterior del HEAD documental f33 valida la corrección. La explicación anterior de que solo era un problema de espera fue corregida en este documento.
+
+
+
+## 2026-11-11 14:07 UTC — reconciliación viva y validación exact-HEAD
+
+- Reconciliado GitHub en vivo: #287 OPEN/Draft, HEAD `4197dbc77b2c6893abc8bb22e764e14ddf2fe8f3`, 482 commits, 113 archivos, mergeable=true. Main `c5373564413ba086690552c6b7deeab08d7b4a89`; merge base `03442951b2a2f63f5bf4dcf560f2c91be4f6cc71`; 482 ahead / 1 behind. El único commit exclusivo de main modifica solo `docs/BACKLOG_RECOVERY_LEDGER.md` (+15 líneas). No se sincronizó.
+- Para SHA exacto 4197dbc: 11/11 workflow runs pull_request SUCCESS; 2/2 push SUCCESS; 16/16 check-runs SUCCESS. Combined status devolvió 0 contextos (state pending, total_count 0). #287 sin reviews formales ni review threads.
+- Logs exactos CI: build/typecheck SUCCESS, 88/88 tests web, 198/198 API; Playwright 5/5, incluida jornada parcial de apertura/cierre de turno propio. Backup smoke sintético main 0001–0016 y BCV 0001–0023 SUCCESS. No equivale a jornada POS completa ni restore remoto.
+- #303 OPEN/Draft, 11 workflow runs y 17 check-runs SUCCESS; script `scripts/test_backup_restore_schema.sh` y fixture principal `scripts/backup_restore_fixture_main.sql` tienen blob SHA idéntico en #287. #302 OPEN/Draft, 10 workflow runs y 14 check-runs SUCCESS; helper `scripts/backup_git_askpass.sh` y prueba `scripts/test_backup_git_askpass_http.py` son idénticos en #287; workflow y test contract presentan diferencias. No se cerraron PRs.
+- #301 OPEN/no Draft, 15 check-runs SUCCESS, 0 reviews/threads. El intento Codex previo falló por límite de uso en SHA anterior; no es revisión completa. Revisión manual encontró `MAX_BRANCHES=100` en branch-list sin cursor/paginación, riesgo de truncamiento si hay más de 100 sucursales activas. Requiere corrección o límite de negocio documentado antes de integrar.
+- Inspección comparativa de `.github/workflows/backup.yml`: main sigue usando token embebido en URL y no tiene diagnóstico de seis booleanos; #287 sí tiene askpass temporal y diagnóstico no sensible. Último schedule observado `42842855127`, 2026-11-10 15:17:48 UTC, SUCCESS sobre main SHA c537356, anterior a dichos controles. No prueba identidad/least privilege. No dispatch manual.
+- Issue #53 permanece OPEN/P0; identidad efectiva backup, grants/memberships reales, backup natural post-integración, restore remoto aislado, provisioning, simulacro de aplicación, alertas, RPO/RTO y coste USD 0 pendientes. No acceso a Neon main, datos reales, secretos/age, roles/grants remotos ni artefactos remotos.
+- Sin cambios de código, merge, deploy, Cron, DNS/Cloudflare sensible o billing. Producción NOT READY. Siguiente foco: auditoría estática tenant/branch/role, migraciones 0017–0023, checkout/ledger y runner restore; no ampliar lógica comercial hasta cerrar Seguridad Nivel 1.
+
+
+## 2026-11-11 14:49 UTC — BCV ACL correction and exact-HEAD reconciliation
+
+- Live PR #287 code baseline `b7079224e3469900170994a2dacdd889b342c171`, OPEN/Draft, 496 ahead / 1 behind main, 113 files, mergeable=true. Main `c5373564413ba086690552c6b7deeab08d7b4a89`; merge base `03442951b2a2f63f5bf4dcf560f2c91be4f6cc71`; main-only commit adds 15 documentation lines to BACKLOG_RECOVERY_LEDGER. No sync/merge.
+- Exact SHA `b7079224e3469900170994a2dacdd889b342c171`: 11 PR workflows (8 success, 3 failure), 2 push workflows success, 16 check-runs (12 success, 4 failure), 0 legacy status contexts, 0 formal reviews and 0 review threads.
+- Migration validation run 43041250138 SUCCESS. It verifies 0021 assertions immediately after applying 0021, then performs an actual UPDATE with microapp_runtime LOGIN and expects permission denial; it injects a 0022 schema-privilege preflight failure and a transaction failure, verifies rollback does not introduce direct runtime UPDATE ACLs, then validates the final 0022 producer grants/lock helper. This is synthetic PostgreSQL evidence only.
+- Playwright run 43041250586 SUCCESS; ODD docs, Semgrep, Security scan, Dependency review, Secret history and dashboard SUCCESS. CI run 43041249895, migration runner 43041250049 and backup restore run 43041250238 failed before tests because apt could not resolve azure.archive.ubuntu.com, archive.ubuntu.com or security.ubuntu.com. Both restore profiles failed while installing age/PostgreSQL client. Do not attribute these failures to application code; exact SHA still not green.
+- ODD task bcv-producer-role-isolation updated before source edits. Migration 0021 now grants runtime SELECT only on bcv_sync_state; removed column-level runtime UPDATE. 0021 assertion now enumerates all columns for INSERT/UPDATE. migration-check executes assertions and real runtime LOGIN write denial immediately after 0021. Its rollback fixture deliberately seeds PUBLIC grants; rollback is expected to preserve that fixture while no direct runtime grant is introduced. Migration validation passed.
+- Confirmed isolated BCV Worker config apps/api/wrangler.bcv.toml uses a separate DATABASE_URL under producer LOGIN; no missing-binding defect. No Cron activation or Worker deploy.
+- Main remains on legacy backup Git URL token and has no six-boolean diagnostic or BCV producer migration. Last observed natural backup run 42842855127 (2026-11-10 15:17:48 UTC) succeeded on main c537356, before diagnostic. No manual backup dispatch.
+- Residual backup evidence gap: six-boolean has_membership predicate checks only member=current_user; it does not detect other roles granted backup_readonly (roleid=current_user). Least-privilege gate stays open.
+- PR #303 OPEN/Draft, 11 workflows/17 checks success; main fixture/full-schema script are ported to #287. #302 OPEN/Draft, 10 workflows/14 checks success; askpass helper and HTTP test are identical in #287 but workflow/test contract differs. #301 OPEN/no Draft, 15 checks success, Codex review incomplete; manual review found MAX_BRANCHES=100 without cursor. No PRs closed/merged.
+- Checkout SDD explicitly leaves partials, overpayments, change, mixed tenders, returns, voids, discounts and promotions unapproved. Existing API exact-settlement behavior is not production-approved. P2 precision mismatch: VES parser accepts 14,2 (12 integer digits), DB payments.amount NUMERIC(14,4) permits 10 integer digits; align before activation.
+- Issue #53 OPEN/P0. Identity and effective least privilege of DATABASE_URL_BACKUP_RO, natural backup after main integration, encrypted remote restore in isolation, role provisioning, full application recovery, alert delivery, measured RPO/RTO and total USD 0 remain pending. Production NOT READY.
+
+
+## 2026-11-11 — corregir cobertura de membresías y revalidar backup
+
+- Exact code SHA `373dbc177fc6d9876112eb57cedc21db8dd31dd7`: PR #287 11 workflows PR (8 SUCCESS, 3 IN_PROGRESS), 2 push SUCCESS, 16 checks (12 SUCCESS, 4 IN_PROGRESS, 0 FAILURE). Los tres workflows restantes están en instalación apt; no contar sus pruebas posteriores.
+- `migration-check` run `43044533159` SUCCESS: la prueba nueva de membresías en ambas direcciones pasó, así como las assertions de migraciones 0021/0022 y el runner de migración. Playwright run `43044533360` SUCCESS.
+- Hallazgo de ODD: el indicador previo solo miraba `pg_auth_members.member`. Corregido en workflow de backup para incluir `member` y `roleid`; se añadió prueba PostgreSQL desechable para ambos sentidos y baseline sin relaciones. Código en #287; no producción.
+- Backup schedule natural `43041961402` de main falló instalando age por DNS de Azure Ubuntu. No conexión a DB ni dump; no nuevo artefacto ni seis booleanos. Issue #53 continúa OPEN/P0.
+- #301 15/15 checks, 10/10 workflows, sin review; límite 100 sin cursor explícitamente documentado pero aún no aprobado como límite general. #302 14/14 y #303 17/17, ambos Draft y sin reviews.
+- No merges/deploys, Neon, datos reales, secretos/age, grants remotos, Cron, Cloudflare sensible, DNS ni billing. Producción NOT READY.
+
+
+## 2026-11-11 — ACL BCV y backup natural: evidencia exacta
+
+- Código final evaluado: `53894254c26838dd56f5a39764fedf4cf1d64067`, PR #287 OPEN/Draft, 503 ahead / 1 behind main, 114 archivos, mergeable=true.
+- `migration-check` run `43047173060` SUCCESS sobre el SHA exacto. Pasaron: test de membresías de backup en ambas direcciones; assertions 0021 inmediatamente tras esa migración; rechazo de UPDATE con LOGIN runtime; fixture de ACL excesivas; rollback 0022; assertions finales runtime/producer. La fixture sembró REFERENCES column-level para runtime, producer y PUBLIC; 0021/0022 las revocaron y las assertions las rechazaron si persistían.
+- Hallazgo de seguridad corregido: 0021 no establecía explícitamente el estado SELECT-only frente a ACLs de columna preexistentes/default; ahora revoca ALL table-level y INSERT/UPDATE/REFERENCES column-level antes de conceder SELECT. 0022 normaliza runtime a SELECT-only en ambas tablas y revoca REFERENCES column-level de runtime/producer. Assertions ampliadas.
+- Exact-HEAD 5389425: 16 check-runs, 12 SUCCESS y 4 IN_PROGRESS (CI `43047172608`, migration runner `43047173013`, restore smoke `43047172753` dos perfiles). Los cuatro seguían en apt install; no declarar fallos ni pruebas omitidas como ejecutadas hasta finalización. Anterior SHA 373dbc tuvo fallos apt por DNS; sus resultados no se trasladan al HEAD nuevo.
+- Playwright `43047172725`, Semgrep `43047172900`, Security `43047172742`, ODD `43047172710`, Dependency review `43047173111`, Secret history `43047174161`, dashboard `43047173173`, Cloudflare Pages/Workers: SUCCESS.
+- Backup natural 11/11 `43041961402` en main `c537356...` falló al instalar age por DNS de Ubuntu. No conexión a DB, secreto, pg_dump, cifrado, upload, diagnóstico ni artefacto. Último schedule SUCCESS `42842855127` del 10/11. No dispatch manual.
+- Main todavía no contiene el diagnóstico ni el nuevo askpass. La prueba de membresías demuestra solo la consulta en PostgreSQL desechable; identidad/least privilege reales siguen NO VERIFICADOS.
+- #301 15/15 checks y #302 14/14 / #303 17/17 checks SUCCESS, todos sin reviews/threads; #301 mantiene MAX_BRANCHES=100 sin cursor. #53 OPEN/P0. Producción NOT READY; no merges/deploys ni operaciones remotas.
+
+
+## Actualización de evidencia — 2026-11-11, SHA `8fdc2e668bf3995d3c202b3023c59bc83ab9e0da`
+
+- Reconsulta final exact-HEAD: 16 check-runs = 12 SUCCESS / 4 FAILURE; ya no hay pendientes. PR #287 continúa OPEN/Draft, mergeable=true; sin reviews ni review threads. No merge ni rebase.
+- Las cuatro fallas son de infraestructura en la instalación de dependencias, no fallos de assertions: CI `43048869588` job `130620377176` y PostgreSQL migration runner `43048869251` job `130620375849` fallaron instalando `postgresql-client`; backup restore smoke `43048869891` jobs `130620211411` y `130620211753` fallaron instalando `age`/PostgreSQL 18 client. Los logs muestran `Temporary failure resolving` para `azure.archive.ubuntu.com`, `archive.ubuntu.com` y `security.ubuntu.com`, terminando apt con exit code 100.
+- Por lo anterior, en CI y migration-runner no se ejecutaron pasos posteriores a la instalación; en ambos perfiles de restore no se ejecutó la restauración ni los guards posteriores. No describir esos suites como pasados. No hay evidencia de un fallo de lógica de aplicación en estos cuatro jobs.
+- En el mismo SHA, Database migration validation `43048869994` SUCCESS; Secret history `43048870732` SUCCESS; ODD/docs `43048869895` SUCCESS; Security `43048869156` SUCCESS; Dependency review `43048869639` SUCCESS; dashboard `43048869221` SUCCESS; Semgrep `43048869247` SUCCESS; Playwright `43048869269` SUCCESS.
+- Próximo trabajo prioritario: resolver la fragilidad de dependencias apt en CI con estrategia reproducible, pinning y verificación de procedencia (p.ej. imágenes/containers con herramientas ya instaladas o setup action confiable y versionada), sin saltarse tests ni descargar binarios sin validar. Luego reejecutar los jobs afectados en un nuevo SHA y verificar todos los pasos reales. Mantener #287 Draft hasta cierre integral.
+- Issue #53 sigue OPEN/P0. Producción NOT READY. No Neon main, secretos, roles/grants remotos, deploy, restore real, Cron, billing, force-push ni rebase/sync automático. MVP 01/12/2026; GO/NO-GO 30/11/2026.
+
+
+## 2026-11-11 — CI APT resilience and exact-HEAD recovery (#287)
+
+- Investigated exact-HEAD failures on `9bdb6aff8358409a715b8b440b30c3577b16dc32`: CI, PostgreSQL migration runner and both backup restore profiles stopped during apt package installation. Job logs showed temporary DNS resolution failures for Ubuntu archive/security mirrors. Downstream migration, restore and test steps were skipped; no code failure was established and no skipped test was marked passed.
+- Added ODD task `odd/tasks/ci-apt-dns-resilience.md` (commit `0949825d58b76b0bf66d472651add314973666eb`).
+- Implemented bounded APT retry helper and regression test in commit `5ef21974725b91649705ed1bf6e9ae3019ca8e85`; wired it into CI, PostgreSQL migration runner and backup restore smoke. Retries are bounded, index refresh is strict, and persistent failures remain non-zero. No tests/assertions were removed or bypassed.
+- Local shell simulation passed: transient failures recover within the configured attempt limit; persistent failures remain failures.
+- Exact code SHA `5ef21974725b91649705ed1bf6e9ae3019ca8e85`: 11/11 PR workflows SUCCESS, 3/3 push workflows SUCCESS, 18/18 check-runs SUCCESS. CI included unit tests and PostgreSQL integration suites; migration runner, database migration validation, Playwright and both synthetic backup restore profiles passed.
+- The database migration validation also passed the backup membership regression for principal-as-member, principal-as-granted-role and no-membership baseline.
+- PR #287 remains OPEN/Draft, with no formal reviews or review threads. Current main `c5373564413ba086690552c6b7deeab08d7b4a89`; comparison 509 ahead / 1 behind, merge base `03442951b2a2f63f5bf4dcf560f2c91be4f6cc71`. No sync/rebase/merge was performed.
+- Issue #53 remains OPEN/P0. The effective production backup principal and remote least-privilege state remain unverified; the new diagnostic is branch-only and has not run on a natural scheduled backup after reaching main. No secret, Neon, real data, remote role/grant, Cron, DNS, billing or production changes.
+- Production remains NOT READY. Next priority: continue Security Level 1/P0 verification, then revisit product UI work after critical security gates.
+
+
+## 2026-11-11 — Cashier inventory movement read authorization (#287)
+
+- La matriz aprobada permite a Cashier leer existencias y movimientos de su sucursal. GET movements usaba `inventory.management.read`, causando 403 indebido.
+- ODD `odd/tasks/cashier-inventory-movement-read.md` creado antes del cambio de código (task commit `844b9cdd0a2115f077e77787d4188c135ec4e80f`).
+- Implementación `f0d9f9ad6ad995dc837a4e6cef6564fc9947676d`: GET movements reutiliza `inventory.read`; no se añadió permiso, rol, grant, migración ni write path.
+- Prueba PostgreSQL: Cashier 200 en branch asignada, sin `unit_cost_usd`; warehouse/count management 403; branch sin membership 403; cross-tenant 401.
+- Exact SHA: 11/11 workflows PR, 2/2 push, 16/16 check-runs SUCCESS; CI `43066606680` incluye PostgreSQL inventory read integration SUCCESS.
+- Rate limiting OAuth y authorization helpers ya tienen callsites en la rama; comentario issue #53 `6802473182` actualiza el estado histórico. Issue #53 permanece OPEN/P0 por identidad efectiva backup/Worker, grants remotos, CORS y operación backup.
+- PR #287 Draft; main `c5373564413ba086690552c6b7deeab08d7b4a89`; 512 ahead / 1 behind; no merge/rebase. Producción NOT READY.
+
+
+## 2026-11-11 — Neon main backup role privilege evidence (SELECT-only)
+
+- Enumerated Neon project `micro-app-db` (`restless-fire-99110035`) and confirmed `br-summer-math-b7297a60` is primary/default main. No connection string or secret value was requested or read.
+- Read-only catalog query against `pg_roles` found LOGIN `backup_readonly` with `rolcreaterole=true`, `rolcreatedb=true`, `rolreplication=true`, `rolbypassrls=true`, `rolinherit=true`, `rolsuper=false`.
+- `pg_auth_members` shows direct membership `backup_readonly -> neon_superuser`; `pg_has_role` confirms effective membership in `pg_write_all_data` and `pg_read_all_data`.
+- Effective privilege predicates show SELECT/INSERT/UPDATE/DELETE on `public.products`, CREATE on current database, no CREATE on public schema, and no TRUNCATE on products. This is enough to establish that the role named `backup_readonly` is not read-only.
+- Critical caveat: `DATABASE_URL_BACKUP_RO` was not read; the effective secret principal remains unknown. Do not claim the scheduled workflow uses this role until its branch-only diagnostic runs on a natural main backup after integration.
+- No Neon writes, role/membership/grant/password/secret changes, business-row reads, data changes, workflow_dispatch or production operations. Issue #53 remains OPEN/P0; comment `6802571142` records evidence and caveat.
+- Next: design and test a least-privilege backup role and continuity plan on disposable resources; require separate explicit authorization before remote changes.
+
+
+## 2026-11-11 — default ACL candidate backup principal contract validated
+
+- PR #287 branch HEAD at this evidence point: `cb81ecdf6bb5fe2c0d7806f6d744925300c8ba7a`; 16/16 check-runs, 11/11 pull_request workflows and 2/2 push workflows SUCCESS. Subsequent documentation-only commit `9114b11eeae8745690afed50c095a8888a58f04c` reconciled CURRENT_STATE, WORK_CHECKPOINT and HANDOFF; its new HEAD needs its own exact-SHA checks.
+- Neon main SELECT-only metadata: `backup_readonly` has CREATEROLE/CREATEDB/REPLICATION/BYPASSRLS, direct membership in `neon_superuser`, effective membership in `pg_write_all_data`, and INSERT/UPDATE/DELETE on `public.products`. 15 public application tables and two sequences are owned by `neondb_owner`; public default ACL grants SELECT on future tables but no default ACL for sequences; existing sequences have SELECT+UPDATE for the observed role.
+- No secret or connection string was read. Effective principal for `DATABASE_URL_BACKUP_RO` remains unknown. No remote role/grant/password/secret changes or business data reads.
+- Disposable PostgreSQL 18 candidate test extended in commit `cb81ecdf6bb5fe2c0d7806f6d744925300c8ba7a`: explicit and default SELECT for existing/future tables and sequences; no writes, sequence USAGE/UPDATE, CREATE DATABASE/ROLE, SET ROLE or membership; pg_dump and pg_restore-list success.
+- PR #287 remains OPEN/Draft; 123 files, 19,109 additions, 297 deletions; 518 ahead / 1 behind main, only missing main commit is a backlog-ledger documentation entry. 0 formal reviews / 0 review threads; mergeable=true but mergeable_state=blocked.
+- Issue #53 OPEN/P0; production NOT READY. No merge, deploy, Neon mutation, secret changes, Cron, DNS or billing.
+
+
+## 2026-11-11 — scheduled backup package resilience and BCV restore profile correction
+
+- Backup workflow now reuses the tested bounded APT retry helper for strict index refresh and installs, runs its isolated helper test, and retries the PGDG key download with bounded attempts/timeouts. Prior natural scheduled backup failed before DB connection due Ubuntu DNS during age install; no manual dispatch was run to retest.
+- Commit `7155e3684aaef49e0879a46c54c60f4850a0fc37` implements the backup workflow retry integration; commit `4b80e576f95ff1f6204e2cece564fd61e2de3e62` records the runbook; commit `9101ab502d5c52c86a8b8d01a3a79487dd07e5e8` corrects a stale comment from 22 to 23 BCV migrations.
+- On HEAD `9101ab502d5c52c86a8b8d01a3a79487dd07e5e8`: 18/18 check-runs, 11/11 PR workflows and 3/3 push workflows SUCCESS; CI 43/43 steps; migration runner 21/21; synthetic restore main 16-migration 11/11 and BCV 23-migration 10/10.
+- Documentation-only commit `e5dbb497fbb2779f8fc1581880dc5d8c9ed00b65` updates current state/checkpoint/handoff; its exact-HEAD checks must be independently revalidated.
+- PR #287 OPEN/Draft, 123 files, 19,233 additions, 307 deletions; 524 ahead / 1 behind main; mergeable=true/clean; no formal reviews or threads. Issue #53 OPEN/P0; production NOT READY.
+- No secret, connection string or business row was read; no Neon writes, remote role/grant/password/secret changes, manual backup, deploy, Cron, DNS or billing changes.
+
+
+## 2026-11-11 — exact HEAD e5f9562 / least-privilege backup candidate
+
+- Reconciled PR #287 at exact HEAD `e5f956271f723bfa00da2ab527c35ac422cf6d2d`: 16/16 check-runs SUCCESS; 11/11 pull_request workflow runs and 2/2 push workflow runs SUCCESS.
+- CI 43/43 steps; PostgreSQL migration validation 86/86; migration runner 21/21; encrypted synthetic restore main 0001–0016 11/11 and BCV 0001–0023 10/10. Secret history, ODD docs, dashboard, dependency review, Semgrep, Security and Playwright all SUCCESS.
+- Expanded disposable PostgreSQL 18 backup principal test validates explicit SELECT on existing tables/sequences and default SELECT-only ACLs for future tables/sequences, pg_dump/pg_restore-list, and denial of writes, sequence USAGE/UPDATE, CREATE DATABASE/ROLE, SET ROLE and memberships.
+- Neon main catalog findings remain unchanged and SELECT-only: `backup_readonly` is privileged and writable; 15 public tables and 2 sequences owned by `neondb_owner`; default ACL only for future tables; no RLS on 15 tables; `microapp_runtime` and `microapp_migrator` absent. Actual backup/Worker secret identities remain unknown because no secrets were read.
+- PR #287 remains OPEN/Draft, mergeable clean, 0 formal reviews, 0 review threads; 527 ahead / 1 behind main. No merge/rebase/sync. Issue #53 OPEN/P0; production NOT READY.
+- No Neon, secret, role, grant, password, business data, Cron, DNS, billing or production changes.

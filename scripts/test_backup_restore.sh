@@ -39,7 +39,18 @@ SQL
 ephemeral="$(psql "$SOURCE_URL" -X -v ON_ERROR_STOP=1 -Atq -F '|' -c 'SELECT (SELECT count(*) FROM auth_sessions), (SELECT count(*) FROM auth_rate_limits), (SELECT count(*) FROM auth_bootstrap_attempts)')"
 [[ "$ephemeral" == "1|1|1" ]] || { echo "Synthetic ephemeral auth fixture missing." >&2; exit 1; }
 psql "$SOURCE_URL" -X -v ON_ERROR_STOP=1 -c 'CREATE DATABASE microapp_restore' >/dev/null
-pg_dump "$SOURCE_URL" --no-owner --no-privileges --format=custom --exclude-table=public.auth_sessions --exclude-table=public.auth_rate_limits --exclude-table=public.auth_bootstrap_attempts --file="$tmpdir/backup.dump"
+bash scripts/tests/test_backup_role_privileges.sh
+backup_url="postgresql://microapp_backup:backup-test-only@localhost:5432/microapp_source"
+pg_dump "$backup_url" --no-owner --no-privileges --format=custom --exclude-table-data=public.auth_sessions --exclude-table-data=public.auth_rate_limits --exclude-table-data=public.auth_bootstrap_attempts --file="$tmpdir/backup.dump"
+
+archive_list="$(pg_restore --list "$tmpdir/backup.dump")"
+for table in auth_sessions auth_rate_limits auth_bootstrap_attempts; do
+  grep -Eq "TABLE public ${table} " <<<"$archive_list" || {
+    echo "Missing table definition for public.${table} in backup archive." >&2
+    exit 1
+  }
+done
+echo "PASS: archive contains DDL entries for all three ephemeral auth tables."
 
 age-keygen -o "$tmpdir/age-key.txt" >/dev/null 2>"$tmpdir/age-keygen.log"
 public_key="$(awk '/^# public key:/ {print $4}' "$tmpdir/age-key.txt")"
@@ -47,7 +58,9 @@ public_key="$(awk '/^# public key:/ {print $4}' "$tmpdir/age-key.txt")"
 age -r "$public_key" -o "$tmpdir/backup.dump.age" "$tmpdir/backup.dump"
 (cd "$tmpdir" && sha256sum backup.dump.age > backup.dump.age.sha256 && sha256sum --check backup.dump.age.sha256)
 age -d -i "$tmpdir/age-key.txt" -o "$tmpdir/restored.dump" "$tmpdir/backup.dump.age"
+restore_started_at="$SECONDS"
 pg_restore --exit-on-error --no-owner --no-privileges --dbname="$RESTORE_URL" "$tmpdir/restored.dump"
+restore_elapsed_seconds=$((SECONDS - restore_started_at))
 
 manifest() {
   psql "$1" -X -v ON_ERROR_STOP=1 -Atq <<'SQL'
@@ -88,10 +101,102 @@ if [[ "$source_manifest" != "$restored_manifest" ]]; then
   diff -u <(printf '%s\n' "$source_manifest") <(printf '%s\n' "$restored_manifest") || true
   exit 1
 fi
-excluded="$(psql "$RESTORE_URL" -X -v ON_ERROR_STOP=1 -Atqc "SELECT (to_regclass('public.auth_sessions') IS NULL AND to_regclass('public.auth_rate_limits') IS NULL AND to_regclass('public.auth_bootstrap_attempts') IS NULL)")"
-[[ "$excluded" == "t" ]] || { echo "Ephemeral auth tables were unexpectedly restored." >&2; exit 1; }
+schema_manifest() {
+  psql "$1" -X -v ON_ERROR_STOP=1 -Atq <<'SQL'
+SELECT 'table|' || c.relname || '|' || c.relkind::text || '|' || c.relpersistence::text
+  || '|' || c.relispartition::text || '|' || c.relrowsecurity::text
+  || '|' || c.relforcerowsecurity::text || '|' || COALESCE(array_to_string(c.reloptions, ','), '')
+FROM pg_class c JOIN pg_namespace n ON n.oid=c.relnamespace
+WHERE n.nspname='public' AND c.relkind IN ('r','p','v','m','f')
+UNION ALL
+SELECT 'sequence|' || c.relname || '|' || format_type(s.seqtypid, NULL)
+  || '|' || s.seqstart::text || '|' || s.seqincrement::text || '|' || s.seqmin::text
+  || '|' || s.seqmax::text || '|' || s.seqcache::text || '|' || s.seqcycle::text
+FROM pg_class c
+JOIN pg_namespace n ON n.oid=c.relnamespace
+JOIN pg_sequence s ON s.seqrelid=c.oid
+WHERE n.nspname='public'
+UNION ALL
+SELECT 'trigger|' || c.relname || '|' || t.tgname || '|' || pg_get_triggerdef(t.oid)
+FROM pg_trigger t
+JOIN pg_class c ON c.oid=t.tgrelid
+JOIN pg_namespace n ON n.oid=c.relnamespace
+WHERE n.nspname='public' AND NOT t.tgisinternal
+UNION ALL
+SELECT 'policy|' || schemaname || '|' || tablename || '|' || policyname
+  || '|' || permissive || '|' || roles::text || '|' || cmd
+  || '|' || COALESCE(qual, '') || '|' || COALESCE(with_check, '')
+FROM pg_policies
+WHERE schemaname='public'
+UNION ALL
+SELECT 'column|' || table_name || '|' || column_name || '|' || ordinal_position::text
+  || '|' || data_type || '|' || is_nullable || '|' || COALESCE(column_default, '')
+  || '|' || COALESCE(character_maximum_length::text, '')
+  || '|' || COALESCE(numeric_precision::text, '') || '|' || COALESCE(numeric_scale::text, '')
+FROM information_schema.columns
+WHERE table_schema='public'
+  AND table_name=ANY(ARRAY[
+    'organizations','app_users','organization_members','auth_sessions','auth_rate_limits',
+    'suppliers','products','exchange_rates','sales','sale_items','payments',
+    'inventory_movements','audit_logs','auth_allowlist','auth_bootstrap','auth_bootstrap_attempts'
+  ]::text[])
+UNION ALL
+SELECT 'constraint|' || tc.table_name || '|' || tc.constraint_name || '|' || tc.constraint_type
+  || '|' || COALESCE(pg_get_constraintdef(con.oid), '')
+FROM information_schema.table_constraints tc
+JOIN pg_constraint con ON con.conname=tc.constraint_name
+JOIN pg_namespace ns ON ns.oid=con.connamespace AND ns.nspname=tc.constraint_schema
+WHERE tc.constraint_schema='public'
+  AND tc.table_name=ANY(ARRAY[
+    'organizations','app_users','organization_members','auth_sessions','auth_rate_limits',
+    'suppliers','products','exchange_rates','sales','sale_items','payments',
+    'inventory_movements','audit_logs','auth_allowlist','auth_bootstrap','auth_bootstrap_attempts'
+  ]::text[])
+UNION ALL
+SELECT 'index|' || tablename || '|' || indexname || '|' || indexdef
+FROM pg_indexes
+WHERE schemaname='public'
+  AND tablename=ANY(ARRAY[
+    'organizations','app_users','organization_members','auth_sessions','auth_rate_limits',
+    'suppliers','products','exchange_rates','sales','sale_items','payments',
+    'inventory_movements','audit_logs','auth_allowlist','auth_bootstrap','auth_bootstrap_attempts'
+  ]::text[])
+ORDER BY 1;
+SQL
+}
+source_schema_manifest="$(schema_manifest "$SOURCE_URL")"
+restored_schema_manifest="$(schema_manifest "$RESTORE_URL")"
+[[ "$source_schema_manifest" == "$restored_schema_manifest" ]] || {
+  echo "Restored business/auth schema metadata differs from source." >&2
+  diff -u <(printf '%s\\n' "$source_schema_manifest") <(printf '%s\\n' "$restored_schema_manifest") || true
+  exit 1
+}
+echo "PASS: table, column, sequence, constraint, index, trigger and policy metadata match source."
+ephemeral_schema_count="$(psql "$RESTORE_URL" -X -v ON_ERROR_STOP=1 -Atqc "SELECT count(*) FROM information_schema.tables WHERE table_schema='public' AND table_type='BASE TABLE' AND table_name=ANY(ARRAY['auth_sessions','auth_rate_limits','auth_bootstrap_attempts']::text[])")"
+[[ "$ephemeral_schema_count" == "3" ]] || { echo "Expected all 3 ephemeral auth table definitions, got $ephemeral_schema_count." >&2; exit 1; }
+ephemeral_rows="$(psql "$RESTORE_URL" -X -v ON_ERROR_STOP=1 -Atq -F '|' -c 'SELECT (SELECT count(*) FROM auth_sessions), (SELECT count(*) FROM auth_rate_limits), (SELECT count(*) FROM auth_bootstrap_attempts)')"
+[[ "$ephemeral_rows" == "0|0|0" ]] || { echo "Ephemeral auth rows were unexpectedly restored: $ephemeral_rows" >&2; exit 1; }
+ephemeral_columns() {
+  psql "$1" -X -v ON_ERROR_STOP=1 -Atq -F '|' -c "
+    SELECT table_name, column_name, ordinal_position, data_type, is_nullable, COALESCE(column_default, '')
+    FROM information_schema.columns
+    WHERE table_schema='public'
+      AND table_name=ANY(ARRAY['auth_sessions','auth_rate_limits','auth_bootstrap_attempts']::text[])
+    ORDER BY table_name, ordinal_position
+  "
+}
+source_ephemeral_columns="$(ephemeral_columns "$SOURCE_URL")"
+restored_ephemeral_columns="$(ephemeral_columns "$RESTORE_URL")"
+[[ "$source_ephemeral_columns" == "$restored_ephemeral_columns" ]] || {
+  echo "Ephemeral auth table column definitions differ after restore." >&2
+  diff -u <(printf '%s\\n' "$source_ephemeral_columns") <(printf '%s\\n' "$restored_ephemeral_columns") || true
+  exit 1
+}
+echo "PASS: all three ephemeral auth table definitions and columns are preserved."
+echo "PASS: auth_sessions, auth_rate_limits and auth_bootstrap_attempts restore with zero rows."
 echo "PASS: encrypted dump checksum and age decryption verified."
 echo "PASS: 13 expected tables and the synthetic source/restore manifests match."
 echo "PASS: sale, payment, stock movement and audit relationships are preserved."
 echo "PASS: auth_sessions, auth_rate_limits and auth_bootstrap_attempts are excluded."
-echo "Synthetic round-trip elapsed seconds: $((SECONDS - started_at))."
+echo "Synthetic pg_restore operation elapsed seconds: ${restore_elapsed_seconds}."
+echo "Synthetic end-to-end round-trip elapsed seconds: $((SECONDS - started_at))."

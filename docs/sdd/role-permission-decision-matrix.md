@@ -7,6 +7,7 @@
 - `authorization.ts` contiene el mapa `ROLE_OPERATIONS`, `authorizeTenantOperation` y `authorizeBranchOperation`.
 - `catalog.ts` y `catalog-write.ts` usan contexto tenant y permisos por operación.
 - `inventory-read.ts` y `inventory-counts.ts` usan contexto branch, asignación activa para Cashier/Inventory y locks; Cashier puede leer inventario según matriz, pero no crear conteos.
+- Implementation mapping (2026-11-11): the approved row **Leer existencias y movimientos** is enforced by `inventory.read` for both balance and movement-history GET endpoints. `inventory.management.read` remains restricted to Owner/Admin/Inventory for warehouse/count management; do not use it to gate read-only movement history.
 - Las pruebas cubren denegación cross-tenant, costo oculto a Cashier, branch membership/revocación, conteos idempotentes/concurrentes, denegación de Cashier y rollback de auditoría.
 - Aún no hay handlers integrados para checkout/pagos, transferencias, operaciones de caja/turnos, administración de miembros/políticas ni reportes. Las entradas de la matriz describen el contrato autorizado, no funcionalidades ya disponibles.
 - Las migraciones 0003–0016 no están aplicadas en Neon main; la aprobación de la matriz no autoriza cambios de base de datos ni despliegue.

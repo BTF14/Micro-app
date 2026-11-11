@@ -59,40 +59,64 @@ describe("inventory transaction lock helpers", () => {
     expect(calls).toHaveLength(0);
   });
 
-  it("locks balances in warehouse/product order and sorts requested product IDs", async () => {
+  it("locks balances through the scoped definer helper in warehouse/product order", async () => {
     const warehouseA = "00000000-0000-4000-8000-000000000001";
     const warehouseB = "00000000-0000-4000-8000-000000000002";
+    const branchA = "11111111-1111-4111-8111-111111111111";
+    const branchB = "22222222-2222-4222-8222-222222222222";
     const productA = "10000000-0000-4000-8000-000000000001";
     const productB = "10000000-0000-4000-8000-000000000002";
     const rows = [{ warehouse_id: warehouseA, product_id: productA, on_hand_quantity: "2.000", reserved_quantity: "0.000", balance_version: "1" }];
     const organization = "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa";
     const { tx, calls } = fakeTransaction([rows]);
 
-    await expect(lockInventoryBalances(tx, organization, [warehouseB, warehouseA], [productB, productA]))
-      .resolves.toEqual(rows);
+    await expect(lockInventoryBalances(tx, organization, [
+      { warehouseId: warehouseB, branchId: branchB },
+      { warehouseId: warehouseA, branchId: branchA },
+    ], [productB, productA])).resolves.toEqual(rows);
 
-    expect(calls[0]!.values).toEqual([organization, [warehouseA, warehouseB], [productA, productB]]);
-    expect(calls[0]!.statement).toMatch(/ORDER BY warehouse_id ASC, product_id ASC\s+FOR UPDATE/);
+    expect(calls[0]!.values).toEqual([
+      organization, [warehouseA, warehouseB], [branchA, branchB], [productA, productB],
+    ]);
+    expect(calls[0]!.statement).toContain("public.lock_inventory_balances");
   });
 
   it("locks every existing balance when product IDs are omitted", async () => {
     const warehouse = "00000000-0000-4000-8000-000000000001";
+    const branch = "11111111-1111-4111-8111-111111111111";
     const organization = "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa";
     const { tx, calls } = fakeTransaction([[]]);
 
-    await expect(lockInventoryBalances(tx, organization, [warehouse])).resolves.toEqual([]);
+    await expect(lockInventoryBalances(tx, organization, [{ warehouseId: warehouse, branchId: branch }]))
+      .resolves.toEqual([]);
 
-    expect(calls[0]!.values).toEqual([organization, [warehouse]]);
-    expect(calls[0]!.statement).not.toContain("product_id = ANY");
-    expect(calls[0]!.statement).toMatch(/ORDER BY warehouse_id ASC, product_id ASC\s+FOR UPDATE/);
+    expect(calls[0]!.values).toEqual([organization, [warehouse], [branch], null]);
+    expect(calls[0]!.statement).toContain("public.lock_inventory_balances");
   });
 
   it("does not issue a query for an empty warehouse or product set", async () => {
     const { tx, calls } = fakeTransaction([]);
-
     const organization = "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa";
+    const warehouse = "00000000-0000-4000-8000-000000000001";
+    const branch = "11111111-1111-4111-8111-111111111111";
+
     await expect(lockInventoryBalances(tx, organization, [])).resolves.toEqual([]);
-    await expect(lockInventoryBalances(tx, organization, ["00000000-0000-4000-8000-000000000001"], [])).resolves.toEqual([]);
+    await expect(lockInventoryBalances(tx, organization, [{ warehouseId: warehouse, branchId: branch }], []))
+      .resolves.toEqual([]);
+    expect(calls).toHaveLength(0);
+  });
+
+  it("rejects conflicting branch scopes for the same balance-lock warehouse", async () => {
+    const warehouse = "00000000-0000-4000-8000-000000000001";
+    const branchA = "11111111-1111-4111-8111-111111111111";
+    const branchB = "22222222-2222-4222-8222-222222222222";
+    const organization = "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa";
+    const { tx, calls } = fakeTransaction([]);
+
+    await expect(lockInventoryBalances(tx, organization, [
+      { warehouseId: warehouse, branchId: branchA },
+      { warehouseId: warehouse, branchId: branchB },
+    ])).resolves.toBeNull();
     expect(calls).toHaveLength(0);
   });
 
@@ -118,11 +142,13 @@ describe("inventory transaction lock helpers", () => {
   it("rejects invalid balance lock identifiers without querying PostgreSQL", async () => {
     const validOrganization = "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa";
     const validWarehouse = "00000000-0000-4000-8000-000000000001";
+    const validBranch = "11111111-1111-4111-8111-111111111111";
     const { tx, calls } = fakeTransaction([]);
 
-    await expect(lockInventoryBalances(tx, "not-a-uuid", [validWarehouse])).resolves.toBeNull();
-    await expect(lockInventoryBalances(tx, validOrganization, ["not-a-uuid"])).resolves.toBeNull();
-    await expect(lockInventoryBalances(tx, validOrganization, [validWarehouse], ["not-a-uuid"])).resolves.toBeNull();
+    await expect(lockInventoryBalances(tx, "not-a-uuid", [{ warehouseId: validWarehouse, branchId: validBranch }])).resolves.toBeNull();
+    await expect(lockInventoryBalances(tx, validOrganization, [{ warehouseId: "not-a-uuid", branchId: validBranch }])).resolves.toBeNull();
+    await expect(lockInventoryBalances(tx, validOrganization, [{ warehouseId: validWarehouse, branchId: "not-a-uuid" }])).resolves.toBeNull();
+    await expect(lockInventoryBalances(tx, validOrganization, [{ warehouseId: validWarehouse, branchId: validBranch }], ["not-a-uuid"])).resolves.toBeNull();
 
     expect(calls).toHaveLength(0);
   });

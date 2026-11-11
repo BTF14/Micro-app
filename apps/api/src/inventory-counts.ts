@@ -201,7 +201,7 @@ export function registerInventoryCountRoutes(app: Hono<{ Bindings: Bindings }>):
           // returns above without holding stock locks; new documents follow the
           // global warehouse -> document -> balances lock order.
           const capturedBalances = countType === "physical"
-            ? await lockInventoryBalances(tx, tenant.organizationId, [warehouseId], productIds)
+            ? await lockInventoryBalances(tx, tenant.organizationId, [{ warehouseId, branchId: branch.branchId }], productIds)
             : [];
           if (capturedBalances === null) throw new Error("INVENTORY_LOCK_INVALID_SCOPE");
           const capturedByProduct = new Map(capturedBalances.map((balance) => [balance.product_id, balance]));
@@ -298,13 +298,25 @@ export function registerInventoryCountRoutes(app: Hono<{ Bindings: Bindings }>):
           const existingBalances = await lockInventoryBalances(
             tx,
             tenant.organizationId,
-            [warehouseId],
+            [{ warehouseId, branchId: branch.branchId }],
             balanceProductIds,
           );
           if (existingBalances === null) return { kind: "invalid_lock_scope" as const };
           const balanceByProduct = new Map(existingBalances.map((balance) => [balance.product_id, balance]));
-          if (count.count_type === "opening" && existingBalances.length) {
-            return { kind: "opening_balance_exists" as const };
+          if (count.count_type === "opening") {
+            const priorOpening = await tx.query<{ exists: boolean }>(
+              `SELECT EXISTS (
+                 SELECT 1 FROM public.inventory_counts
+                  WHERE organization_id = $1 AND branch_id = $2 AND warehouse_id = $3
+                    AND count_type = 'opening' AND status = 'confirmed'
+               ) AS exists`,
+              [tenant.organizationId, branch.branchId, warehouseId],
+            );
+            // An all-zero opening count has no balance row; the confirmed
+            // opening document is therefore the durable one-time marker.
+            if (existingBalances.length || priorOpening.rows[0]?.exists) {
+              return { kind: "opening_balance_exists" as const };
+            }
           }
           if (count.count_type === "physical") {
             for (const line of lines.rows) {
@@ -334,14 +346,6 @@ export function registerInventoryCountRoutes(app: Hono<{ Bindings: Bindings }>):
             const previous = balanceByProduct.get(line.product_id)?.on_hand_quantity ?? "0.000";
             const deltaUnits = milliUnits(line.counted_quantity) - milliUnits(previous);
             const delta = formatMilliUnits(deltaUnits);
-            await tx.query(
-              `INSERT INTO inventory_balances
-                (organization_id, branch_id, warehouse_id, product_id, on_hand_quantity)
-               VALUES ($1, $2, $3, $4, $5::numeric)
-               ON CONFLICT (organization_id, warehouse_id, product_id)
-               DO UPDATE SET on_hand_quantity = EXCLUDED.on_hand_quantity, updated_at = now()`,
-              [tenant.organizationId, branch.branchId, warehouseId, line.product_id, line.counted_quantity],
-            );
             if ((count.count_type === "opening" && milliUnits(line.counted_quantity) > 0n) || (count.count_type === "physical" && deltaUnits !== 0n)) {
               const movementType = count.count_type === "opening" ? "opening" : "count_adjustment";
               await tx.query(
@@ -401,7 +405,7 @@ export function registerInventoryCountRoutes(app: Hono<{ Bindings: Bindings }>):
     try {
       const result = await withDatabaseClient(c.env.DATABASE_URL, (db) =>
         withDatabaseTransaction(db, async (tx) => {
-          const authorization = await authorizeBranchOperation(tx, token, organizationId, branchId, "inventory.management.read");
+          const authorization = await authorizeBranchOperation(tx, token, organizationId, branchId, "inventory.read");
           if (!authorization.allowed) {
             if (authorization.reason === "unauthenticated_or_out_of_scope") return { kind: "unauthenticated" as const };
             if (authorization.reason === "branch_out_of_scope") return { kind: "branch_denied" as const };

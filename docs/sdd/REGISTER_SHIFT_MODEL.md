@@ -111,3 +111,20 @@ This addendum records the approved role matrix and the current main implementati
 - Owner/Admin organization-wide authority for other operations does not create an implicit branch assignment. An active `branch_memberships` row is still required to own a shift in that branch.
 
 Source of truth: `docs/sdd/role-permission-decision-matrix.md` (approved 2026-10-31), `apps/api/src/authorization.ts`, `apps/api/src/cashier-open-shift.ts`, migration 0007 and the register-shift integration tests. This is not approval for supervisor overrides, cash reconciliation, withdrawals, sales, payments or other unimplemented operations.
+
+
+## 8. Implementación API de turno propio — PR #287 (2026-11-11)
+
+La implementación actual en la rama `integration/bcv-checkout-rehearsal-20261109` supersede las frases históricas de las secciones 1, 4 y 6 que decían que no existían endpoints o que faltaba aprobar la matriz. La matriz de Owner/Admin/Cashier own-shift fue aprobada en el addendum 2026-11-07.
+
+- Migración 0023 añade `public.open_register_shift(...)` y `public.close_register_shift(...)` como SECURITY DEFINER, propiedad de `microapp_migrator`, con `search_path=pg_catalog, public`. `public` no admite CREATE por runtime ni PUBLIC; assertions lo verifican.
+- `microapp_runtime` no recibe escritura directa sobre `register_shifts`; únicamente EXECUTE de esas funciones. Las lecturas de `registers`/`register_shifts` siguen SELECT.
+- `apps/api/src/register-shifts.ts` expone GET cajas activas, GET turno propio, POST apertura y POST cierre. La autorización HTTP deriva user_id de la sesión; branch membership activa es obligatoria también para Owner/Admin.
+- La apertura delega el bloqueo exclusivo y la validación final del scope a los triggers existentes 0004/0007; el preflight de autorización usa `lockRows=false` para no mantener locks compartidos que pudieran provocar upgrades/deadlocks antes del trigger.
+- El cierre bloquea la fila de turno, verifica pertenencia/estado/branch/rol, realiza una única transición completa y permite replay idéntico sin duplicar eventos.
+- Apertura y cierre escriben eventos `register_shift.opened` / `register_shift.closed` en `audit_logs` dentro de la misma transacción; la tabla permanece append-only.
+- Pruebas PostgreSQL 18 con login directo runtime verifican Owner/Admin/Cashier, Inventory denegado, branch sin asignación, turno de otro cajero, concurrencia de apertura, replay de cierre, audit events y denegación de INSERT/UPDATE directos.
+
+**Validación de código:** SHA `0ca91ff51ec545278ceb8eabd3929083aae9022e`; 11/11 workflows PR SUCCESS, incluido CI `43009163637`, migration validation/runner, restore smoke main 0001–0016 y BCV 0001–0023, Playwright, SAST, Security y Secret History. La prueba API nueva pasó 4/4 tests.
+
+**No implica:** UI de caja, carrito, ventas, cobros, recibos, arqueo, expected cash, reportes ni jornada POS completa. La política de pagos y los controles de Seguridad Nivel 1 siguen abiertos. La rama es Draft y no se integró a main.

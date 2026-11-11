@@ -2,6 +2,8 @@ import { useEffect, useState } from "react";
 import { apiRequest, ApiError, googleLoginUrl, type AuthResponse } from "./auth";
 import "./auth.css";
 import CatalogPanel from "./CatalogPanel";
+import InventoryPanel from "./InventoryPanel";
+import RegisterShiftsPanel from "./RegisterShiftsPanel";
 
 // WhatsApp number format (no "+", no spaces) per https://faq.whatsapp.com/general/chats/how-to-use-click-to-chat.
 function whatsappUrl(message: string): string {
@@ -61,10 +63,10 @@ const PRIVACY_SECTIONS: { heading: string; body: string }[] = [
 ];
 
 const modules = [
-  { number: "01", title: "Caja y ventas", description: "Flujo de venta, cobro y comprobante.", status: "Pendiente de implementación" },
-  { number: "02", title: "Inventario", description: "Existencias, movimientos y alertas de stock.", status: "Pendiente de implementación" },
+  { number: "01", title: "Caja y ventas", description: "Turnos de caja disponibles; ventas y cobros en preparación.", status: "Disponible · apertura y cierre de turnos" },
+  { number: "02", title: "Inventario", description: "Consulta de existencias por sucursal y almacén.", status: "Disponible · solo lectura" },
   { number: "03", title: "Productos", description: "Catálogo y precios exactos en USD.", status: "Disponible · catálogo en USD" },
-  { number: "04", title: "Tasa BCV", description: "Conversión a VES con fuente y fecha verificables.", status: "Pendiente de integración" },
+  { number: "04", title: "Tasa BCV", description: "Conversión a VES con fuente y fecha verificables.", status: "Disponible · fuente oficial" },
 ];
 
 // Shown after a failed GET /auth/google/callback redirect (see apps/api/src/google-auth.ts).
@@ -93,6 +95,153 @@ function readAuthErrorFromUrl(): string {
 }
 
 type HelpModalKind = "faq" | "privacy";
+
+type BcvRateResponse = {
+  rate: string;
+  effectiveDate: string;
+  fetchedAt: string;
+  source: string;
+  status: "current" | "stale";
+};
+
+type BcvSyncStateResponse = {
+  source: string;
+  health: "succeeded" | "failed" | "running" | "attention";
+  lastAttemptAt: string | null;
+  lastSuccessAt: string | null;
+  lastOutcome: string | null;
+  lastErrorCode: string | null;
+  lastEffectiveDate: string | null;
+  updatedAt: string;
+  attemptAgeSeconds: number | null;
+};
+
+function formatBcvSyncTimestamp(value: string | null): string {
+  if (!value) return "Sin registro";
+  return new Intl.DateTimeFormat("es-VE", {
+    day: "2-digit", month: "short", year: "numeric",
+    hour: "2-digit", minute: "2-digit", timeZone: "America/Caracas",
+  }).format(new Date(value));
+}
+
+function formatBcvAttemptAge(value: number | null): string {
+  if (value === null) return "Sin intentos";
+  if (value < 60) return `${value} s`;
+  const minutes = Math.floor(value / 60);
+  if (minutes < 60) return `${minutes} min`;
+  const hours = Math.floor(minutes / 60);
+  return `${hours} h ${minutes % 60} min`;
+}
+
+// Keep the official decimal string intact; never convert exchange rates to JS floats.
+function formatBcvRate(value: string): string {
+  const [integerPart = "0", fractionalPart] = value.split(".");
+  const grouped = integerPart.replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+  return fractionalPart ? `${grouped},${fractionalPart}` : grouped;
+}
+
+function formatBcvEffectiveDate(value: string): string {
+  return new Intl.DateTimeFormat("es-VE", {
+    day: "numeric", month: "long", year: "numeric", timeZone: "America/Caracas",
+  }).format(new Date(`${value}T12:00:00Z`));
+}
+
+function formatBcvFetchedAt(value: string): string {
+  return new Intl.DateTimeFormat("es-VE", {
+    day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit", timeZone: "America/Caracas",
+  }).format(new Date(value));
+}
+
+function caracasCalendarDate(now = new Date()): string {
+  const parts = new Intl.DateTimeFormat("en-US", {
+    timeZone: "America/Caracas",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).formatToParts(now);
+  const value = (type: string) => parts.find((part) => part.type === type)?.value ?? "";
+  return `${value("year")}-${value("month")}-${value("day")}`;
+}
+
+
+function BcvSyncAdminPanel({ organizationId }: { organizationId: string }) {
+  const [state, setState] = useState<BcvSyncStateResponse | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+  const [refreshVersion, setRefreshVersion] = useState(0);
+
+  useEffect(() => {
+    let active = true;
+    let requestSequence = 0;
+    const refresh = async () => {
+      const sequence = ++requestSequence;
+      setLoading(true);
+      try {
+        const result = await apiRequest<BcvSyncStateResponse>(
+          `/api/orgs/${encodeURIComponent(organizationId)}/bcv/sync-state`,
+        );
+        if (!active || sequence !== requestSequence) return;
+        setState(result);
+        setError("");
+      } catch {
+        if (!active || sequence !== requestSequence) return;
+        setError("No se pudo consultar el estado operativo BCV. Inténtalo nuevamente.");
+      } finally {
+        if (active && sequence === requestSequence) setLoading(false);
+      }
+    };
+    void refresh();
+    const interval = window.setInterval(() => {
+      if (document.visibilityState === "visible") void refresh();
+    }, 300_000);
+    return () => {
+      active = false;
+      requestSequence += 1;
+      window.clearInterval(interval);
+    };
+  }, [organizationId, refreshVersion]);
+
+  const healthLabel = state?.health === "succeeded"
+    ? "Sincronización exitosa"
+    : state?.health === "failed"
+      ? "Último intento fallido"
+      : state?.health === "running"
+        ? "Sincronización en curso"
+        : "Requiere atención";
+
+  return (
+    <section className="bcv-admin-panel" aria-live="polite" aria-label="Estado operativo de sincronización BCV">
+      <div className="bcv-admin-heading">
+        <div>
+          <p className="eyebrow">CONTROL ADMINISTRATIVO</p>
+          <h2>Sincronización BCV</h2>
+          <p>Estado técnico de la última consulta a la fuente oficial. Esta sección es de solo lectura.</p>
+        </div>
+        <button type="button" className="bcv-refresh-button" onClick={() => setRefreshVersion((value) => value + 1)} disabled={loading}>
+          {loading ? "Consultando…" : "Actualizar"}
+        </button>
+      </div>
+      {error && <p className="bcv-admin-error" role="alert">{error}</p>}
+      {state && (
+        <>
+          <div className="bcv-admin-status-row">
+            <span className={`bcv-admin-status ${state.health}`}>{healthLabel}</span>
+            <span className="bcv-admin-outcome">Resultado: {state.lastOutcome ?? "sin intentos"}</span>
+          </div>
+          <dl className="bcv-admin-grid">
+            <div><dt>Último intento</dt><dd>{formatBcvSyncTimestamp(state.lastAttemptAt)}</dd></div>
+            <div><dt>Último éxito</dt><dd>{formatBcvSyncTimestamp(state.lastSuccessAt)}</dd></div>
+            <div><dt>Fecha efectiva reportada</dt><dd>{state.lastEffectiveDate ?? "Sin registro"}</dd></div>
+            <div><dt>Tiempo desde el intento</dt><dd>{formatBcvAttemptAge(state.attemptAgeSeconds)}</dd></div>
+          </dl>
+          {state.lastErrorCode && <p className="bcv-admin-error-code">Código del último error: <code>{state.lastErrorCode}</code></p>}
+        </>
+      )}
+      {!state && !error && <p className="bcv-admin-loading">{loading ? "Cargando estado…" : "No hay estado disponible."}</p>}
+      <p className="bcv-admin-footnote">Un estado fallido o en curso no autoriza utilizar una tasa anterior ni habilita el checkout.</p>
+    </section>
+  );
+}
 
 function HelpLinks({ onOpen }: { onOpen: (kind: HelpModalKind) => void }) {
   return (
@@ -150,7 +299,10 @@ export default function App() {
   const [error, setError] = useState(() => readAuthErrorFromUrl());
   const [notice, setNotice] = useState("");
   const [helpModal, setHelpModal] = useState<HelpModalKind | null>(null);
-  const [activeView, setActiveView] = useState<"overview" | "catalog">("overview");
+  const [activeView, setActiveView] = useState<"overview" | "catalog" | "inventory" | "register-shifts">("overview");
+  const [bcvRate, setBcvRate] = useState<BcvRateResponse | null>(null);
+  const [bcvLoading, setBcvLoading] = useState(false);
+  const [bcvError, setBcvError] = useState("");
 
   useEffect(() => {
     let active = true;
@@ -170,12 +322,69 @@ export default function App() {
     return () => { active = false; };
   }, []);
 
+  useEffect(() => {
+    if (!session) return;
+    let active = true;
+    let requestSequence = 0;
+    let observedCaracasDate = caracasCalendarDate();
+    const refreshBcvRate = () => {
+      const sequence = ++requestSequence;
+      const requestedDate = caracasCalendarDate();
+      setBcvLoading(true);
+      apiRequest<BcvRateResponse>("/api/exchange-rates/latest")
+        .then((result) => {
+          if (!active || sequence !== requestSequence) return;
+          const responseDate = caracasCalendarDate();
+          if (responseDate !== requestedDate) {
+            observedCaracasDate = responseDate;
+            setBcvError("La fecha cambió; verificando la tasa BCV aplicable.");
+            refreshBcvRate();
+            return;
+          }
+          setBcvRate(result);
+          setBcvError("");
+        })
+        .catch((reason: unknown) => {
+          if (!active || sequence !== requestSequence) return;
+          setBcvError(reason instanceof Error ? reason.message : "No se pudo actualizar la tasa BCV.");
+        })
+        .finally(() => {
+          if (active && sequence === requestSequence) setBcvLoading(false);
+        });
+    };
+    refreshBcvRate();
+    // A Friday rate stops being applicable at Caracas midnight on Saturday.
+    // Revalidate on every local-date change and when the tab becomes visible.
+    const dateInterval = window.setInterval(() => {
+      const currentDate = caracasCalendarDate();
+      if (currentDate === observedCaracasDate) return;
+      observedCaracasDate = currentDate;
+      setBcvError("La fecha cambió; verificando la tasa BCV aplicable.");
+      refreshBcvRate();
+    }, 60 * 1000);
+    const refreshOnVisibility = () => {
+      if (document.visibilityState === "visible") refreshBcvRate();
+    };
+    document.addEventListener("visibilitychange", refreshOnVisibility);
+    // Keep a periodic refresh for an open dashboard while also handling midnight exactly.
+    const interval = window.setInterval(refreshBcvRate, 60 * 60 * 1000);
+    return () => {
+      active = false;
+      requestSequence += 1;
+      window.clearInterval(dateInterval);
+      window.clearInterval(interval);
+      document.removeEventListener("visibilitychange", refreshOnVisibility);
+    };
+  }, [session]);
+
   async function handleLogout() {
     setBusy(true);
     setError("");
     try {
       await apiRequest<void>("/auth/logout", { method: "POST" });
       setSession(null);
+      setBcvRate(null);
+      setBcvError("");
       setActiveView("overview");
       setNotice("Has cerrado la sesión de forma segura.");
     } catch (reason) {
@@ -258,7 +467,9 @@ export default function App() {
         <nav className="side-nav">
           <a className={`nav-item ${activeView === "overview" ? "active" : ""}`} href="#inicio" onClick={() => setActiveView("overview")} aria-current={activeView === "overview" ? "page" : undefined}><span className="nav-symbol" aria-hidden="true">⌂</span> Resumen</a>
           <button className={`nav-item nav-item-button ${activeView === "catalog" ? "active" : ""}`} type="button" onClick={() => setActiveView("catalog")} aria-current={activeView === "catalog" ? "page" : undefined}><span className="nav-symbol" aria-hidden="true">▦</span>Productos</button>
-          {["Caja y ventas", "Inventario", "Reportes"].map((label) => <span className="nav-item disabled" aria-disabled="true" key={label}><span className="nav-symbol" aria-hidden="true">▦</span>{label}<span className="nav-lock">Pronto</span></span>)}
+          <button className={`nav-item nav-item-button ${activeView === "inventory" ? "active" : ""}`} type="button" onClick={() => setActiveView("inventory")} aria-current={activeView === "inventory" ? "page" : undefined}><span className="nav-symbol" aria-hidden="true">▤</span>Inventario</button>
+          {(organization?.role === "owner" || organization?.role === "admin" || organization?.role === "cashier") ? (<button className={`nav-item nav-item-button ${activeView === "register-shifts" ? "active" : ""}`} type="button" onClick={() => setActiveView("register-shifts")} aria-current={activeView === "register-shifts" ? "page" : undefined}><span className="nav-symbol" aria-hidden="true">▣</span>Caja y turnos</button>) : (<span className="nav-item disabled" aria-disabled="true"><span className="nav-symbol" aria-hidden="true">▣</span>Caja y turnos<span className="nav-lock">Sin acceso</span></span>)}
+          {["Reportes"].map((label) => <span className="nav-item disabled" aria-disabled="true" key={label}><span className="nav-symbol" aria-hidden="true">▦</span>{label}<span className="nav-lock">Pronto</span></span>)}
         </nav>
         <div className="sidebar-bottom">
           <div className="connection-indicator"><span className="connection-dot" aria-hidden="true" /><span><strong>Sesión activa</strong><small>{user.email}</small></span></div>
@@ -268,7 +479,7 @@ export default function App() {
       </aside>
       <section className="main-panel" id="inicio">
         <header className="topbar">
-          <div className="breadcrumb">{organization?.name ?? "Mi negocio"} <span>/</span> {activeView === "catalog" ? "Productos" : "Resumen"}</div>
+          <div className="breadcrumb">{organization?.name ?? "Mi negocio"} <span>/</span> {activeView === "catalog" ? "Productos" : activeView === "inventory" ? "Inventario" : activeView === "register-shifts" ? "Caja y turnos" : "Resumen"}</div>
           <div className="topbar-end">
             <div className="account-chip"><span>{user.display_name.slice(0, 1).toUpperCase()}</span><div><strong>{user.display_name}</strong><small>{user.email}</small></div></div>
             {/* The sidebar's own logout button (.sidebar-bottom) is hidden on narrow screens
@@ -285,8 +496,25 @@ export default function App() {
           )}
           {activeView === "overview" ? (
           <>
-          <section className="welcome"><div><p className="eyebrow">TU NEGOCIO, EN UN SOLO LUGAR</p><h1>Hola, {user.display_name.split(" ")[0]}.</h1><p className="welcome-copy">Tu espacio de trabajo ya está listo. El catálogo de productos está disponible; seguimos preparando las herramientas de ventas e inventario.</p></div><div className="welcome-art" aria-hidden="true"><div className="art-ring ring-one" /><div className="art-ring ring-two" /><div className="art-card"><span className="art-card-label">MICRO APP</span><span className="art-card-line" /><span className="art-card-line short" /><span className="art-card-foot">GESTIÓN · CONTROL · CLARIDAD</span></div></div></section>
-          <section className="setup-banner"><div className="setup-icon" aria-hidden="true">↗</div><div className="setup-text"><h2>Cuenta conectada</h2><p>Tu sesión está activa. Las funciones de ventas e inventario se habilitarán en próximas fases.</p></div><span className="setup-status">Acceso seguro</span></section>
+          <section className="welcome"><div><p className="eyebrow">TU NEGOCIO, EN UN SOLO LUGAR</p><h1>Hola, {user.display_name.split(" ")[0]}.</h1><p className="welcome-copy">Tu espacio de trabajo ya está listo. El catálogo y la consulta de existencias por sucursal están disponibles; seguimos preparando las operaciones de venta y los movimientos de inventario.</p></div><div className="welcome-art" aria-hidden="true"><div className="art-ring ring-one" /><div className="art-ring ring-two" /><div className="art-card"><span className="art-card-label">MICRO APP</span><span className="art-card-line" /><span className="art-card-line short" /><span className="art-card-foot">GESTIÓN · CONTROL · CLARIDAD</span></div></div></section>
+          <section className="setup-banner"><div className="setup-icon" aria-hidden="true">↗</div><div className="setup-text"><h2>Cuenta conectada</h2><p>Tu sesión está activa. Ya puedes consultar existencias por sucursal y almacén; las operaciones de venta y los movimientos de inventario siguen en preparación.</p></div><span className="setup-status">Acceso seguro</span></section>
+          <section className="exchange-rate-panel" aria-live="polite" aria-label="Tasa oficial del Banco Central de Venezuela">
+            <div className="exchange-rate-main">
+              <p className="eyebrow">TIPO DE CAMBIO OFICIAL</p>
+              <h2>{bcvRate ? <>1 USD <span>=</span> Bs. {formatBcvRate(bcvRate.rate)}</> : "Tasa BCV no disponible"}</h2>
+              <p className="exchange-rate-meta">
+                {bcvRate ? `Fecha valor: ${formatBcvEffectiveDate(bcvRate.effectiveDate)} · Actualizada: ${formatBcvFetchedAt(bcvRate.fetchedAt)}` : "La equivalencia en bolívares aparecerá cuando exista una tasa oficial validada."}
+              </p>
+              {bcvError && <p className="exchange-rate-error" role="status">{bcvError}</p>}
+            </div>
+            <span className={`exchange-rate-status ${bcvRate && (bcvError || bcvRate.status === "stale") ? "stale" : !bcvRate ? "unavailable" : ""}`}>
+              {bcvLoading ? "Actualizando…" : bcvError && bcvRate ? "Sin actualizar" : bcvRate?.status === "current" ? "Vigente" : bcvRate?.status === "stale" ? "Desactualizada" : "No disponible"}
+            </span>
+            <p className="exchange-rate-source">Fuente: Banco Central de Venezuela (BCV). No se sustituye por tasas de terceros.</p>
+          </section>
+          {(organization?.role === "owner" || organization?.role === "admin") && (
+            <BcvSyncAdminPanel organizationId={organization.id} />
+          )}
           <section className="modules-section" aria-labelledby="modules-title"><div className="section-heading"><div><p className="eyebrow">MÓDULOS DEL SISTEMA</p><h2>Herramientas de tu negocio</h2></div><span className="module-count">04 módulos previstos</span></div><div className="module-grid">{modules.map((module) => <article className="module-card" key={module.number}><div className="module-card-top"><span className="module-number">{module.number}</span><span className="module-indicator" aria-hidden="true">↗</span></div><h3>{module.title}</h3><p>{module.description}</p><div className="module-card-bottom"><span className="module-status-dot" aria-hidden="true" /><span>{module.status}</span></div></article>)}</div></section>
           <footer className="main-footer">
             <div className="main-footer-row">
@@ -296,13 +524,17 @@ export default function App() {
             <HelpLinks onOpen={setHelpModal} />
           </footer>
           </>
-          ) : (
+          ) : activeView === "inventory" ? (
+            <InventoryPanel organizationId={organization?.id ?? ""} />
+          ) : activeView === "catalog" ? (
             <CatalogPanel
               organizationId={organization?.id ?? ""}
-              exchangeRate={null}
-              exchangeRateStatus="unavailable"
+              exchangeRate={bcvRate?.rate ?? null}
+              exchangeRateStatus={bcvRate ? (bcvError ? "stale" : bcvRate.status) : "unavailable"}
               canManage={organization?.role === "owner" || organization?.role === "admin"}
             />
+          ) : (
+            <RegisterShiftsPanel organizationId={organization?.id ?? ""} userName={user.display_name} />
           )}
         </div>
       </section>

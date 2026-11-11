@@ -54,11 +54,18 @@ Excluded:
 | ACL de columna/secuencia deja una vía de escritura | High | Probar `has_table_privilege`, `has_column_privilege`, `has_sequence_privilege`, `has_schema_privilege` y operaciones negativas |
 | Confundir prueba sintética con identidad/seguridad de producción | Critical | Etiquetar claramente entorno y alcance; no cerrar #53 ni readiness por CI sintético |
 
+## Initial findings — static inspection (2026-11-11 UTC)
+
+- **Verified in main workflow:** `.github/workflows/backup.yml` invokes PostgreSQL 18 `pg_dump` with `--exclude-table=auth_sessions`, `--exclude-table=auth_rate_limits` and `--exclude-table=auth_bootstrap_attempts` (main blob SHA `5df408788b9053709261ada3aa22dd73b85d5691`, lines 83–87).
+- **Technical consequence:** `--exclude-table` excludes each matching table from the archive, including its table definition; it is not a data-only exclusion. This conflicts with the requested contract to preserve DDL while omitting ephemeral rows. The intended candidate is `--exclude-table-data=<table>`, but it must first be validated against PostgreSQL 18 archive contents and an isolated restore test.
+- This is a static finding only. No backup was run, no archive was accessed, and no secret or database connection was used. Do not change the live workflow until the isolated contract test is designed and passes.
+- The workflow currently names three ephemeral tables; older policy text in `docs/BACKUP_AND_RECOVERY.md` mentions only two in some historical sections. Reconcile the policy to the actual intended three-table contract without rewriting historical evidence.
+
 ## Tasks and evidence
 
 | Task | Expected result | Validation / evidence | Status |
 |---|---|---|---|
-| Reconciliar workflow y documentación de backup | Inventario exacto de opciones pg_dump, exclusiones y permisos requeridos | Inspección estática de `.github/workflows/backup.yml` y docs; sin secretos | in progress |
+| Reconciliar workflow y documentación de backup | Inventario exacto de opciones pg_dump, exclusiones y permisos requeridos | Main blob `5df4087`; líneas 83–87 excluyen tablas completas; docs contienen referencias históricas distintas | in progress |
 | Modelar privilegios PostgreSQL mínimos | Matriz de grants/denies por objeto y rol | Docs PostgreSQL + tests en instancia efímera | pending |
 | Diseñar contrato de identidad efectiva | Procedimiento no sensible para confirmar principal real | Output booleano/identificador no secreto; ejecución real aún no autorizada | pending |
 | Construir pruebas de roles sintéticos | Assertions de lectura, escritura denegada, memberships y RLS | PostgreSQL desechable y CI | pending |

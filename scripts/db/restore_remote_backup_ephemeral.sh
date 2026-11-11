@@ -118,7 +118,7 @@ tmpdir="$(mktemp -d)"
 trap 'rm -rf "$tmpdir"' EXIT
 
 # Main/paired-intent backups must use the immutable migration bundle from the
-# exact main baseline; BCV projection backups use the current checked-out 22-file
+# exact main baseline; BCV projection backups use the current checked-out 23-file
 # bundle. The helper below independently verifies every file checksum against
 # the restored schema_migrations ledger before extracting any ACL statement.
 if [[ "$ledger_profile" == "main" ]]; then

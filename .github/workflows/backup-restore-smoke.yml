@@ -8,8 +8,11 @@ on:
     paths:
       - ".github/workflows/backup-restore-smoke.yml"
       - "scripts/test_backup_restore.sh"
+      - "scripts/test_backup_restore_schema.sh"
+      - "scripts/backup_restore_fixture_main.sql"
       - "scripts/test_backup_restore_schema_bcv.sh"
       - "scripts/backup_restore_fixture_bcv.sql"
+      - "scripts/db/migrate.sh"
       - "apps/api/migrations/**"
       - "docs/BACKUP_AND_RECOVERY.md"
 
@@ -17,8 +20,50 @@ permissions:
   contents: read
 
 jobs:
+  restore-main-profile:
+    name: Synthetic encrypted restore — main paired-intent (0001–0016)
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      SOURCE_URL: postgresql://microapp:microapp-test-only@localhost:5432/microapp_source
+    services:
+      postgres:
+        image: postgres:18
+        env:
+          POSTGRES_DB: microapp_source
+          POSTGRES_USER: microapp
+          POSTGRES_PASSWORD: microapp-test-only
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U microapp -d microapp_source"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+      - name: Install age and PostgreSQL 18 client
+        shell: bash
+        run: |
+          set -euo pipefail
+          sudo apt-get update
+          sudo apt-get install -y curl ca-certificates gnupg age
+          sudo install -d /usr/share/postgresql-common/pgdg
+          sudo curl --fail --show-error --location \\
+            --retry 5 --retry-all-errors --retry-delay 2 --connect-timeout 15 --max-time 90 \\
+            https://www.postgresql.org/media/keys/ACCC4CF8.asc \\
+            -o /usr/share/postgresql-common/pgdg/apt.postgresql.org.asc
+          echo "deb [signed-by=/usr/share/postgresql-common/pgdg/apt.postgresql.org.asc] https://apt.postgresql.org/pub/repos/apt $(. /etc/os-release && echo "$VERSION_CODENAME")-pgdg main" \\
+            | sudo tee /etc/apt/sources.list.d/pgdg.list
+          sudo apt-get update
+          sudo apt-get install -y postgresql-client-18
+      - name: Run isolated main paired-intent schema and populated-graph restore
+        shell: bash
+        run: bash scripts/test_backup_restore_schema.sh
+
   restore-smoke:
-    name: Synthetic encrypted backup and restore
+    name: Synthetic encrypted restore — BCV projection (0001–0022)
     runs-on: ubuntu-latest
     timeout-minutes: 15
     env:

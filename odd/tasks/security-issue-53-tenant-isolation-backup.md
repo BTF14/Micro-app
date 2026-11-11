@@ -96,7 +96,7 @@ Excluded:
 ## Implementation update — synthetic PostgreSQL 18 contract (2026-11-11 UTC)
 
 - Added `scripts/tests/test_backup_role_privileges.sh`: creates disposable `microapp_migrator`, `microapp_runtime` and `microapp_backup` roles; configures only CONNECT, schema USAGE, table SELECT and sequence SELECT; checks non-admin attributes, absence of direct/transitive membership in migrator/runtime, positive read grants, and absence of table/sequence write privileges.
-- The role test attempts INSERT, UPDATE, DELETE, TRUNCATE, CREATE/ALTER/DROP objects and schema, sequence mutation, ALTER ROLE and GRANT membership. Each negative test must fail specifically with a permission/ownership error.
+- The role test attempts INSERT, UPDATE, DELETE, TRUNCATE, CREATE/ALTER/DROP objects and schema, sequence mutation, ALTER ROLE and GRANT membership. Each negative test must fail specifically with a permission/ownership error. It also asserts that the principal owns no database/schema/public object and fails closed if any table in the current dump scope has RLS enabled, rather than granting BYPASSRLS.
 - Updated `scripts/test_backup_restore.sh` to run the role matrix and generate its synthetic dump as `microapp_backup`, using the three `--exclude-table-data=public.<table>` options.
 - The archive is inspected for all three table-definition entries. The restored database must contain all three tables, matching column metadata, and zero rows in each. The existing 13-table business manifest still compares source and restore.
 - This is implementation only. PostgreSQL 18 execution has not yet occurred; do not mark these ACs verified until the CI run completes. The operational `.github/workflows/backup.yml` remains unchanged pending that proof.

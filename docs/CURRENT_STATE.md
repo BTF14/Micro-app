@@ -2674,3 +2674,11 @@ No remote backup artifact or age key was accessed; `.github/workflows/backup-rea
 - BCV profile verifies the producer's actual narrow write behavior: singleton state update, synthetic exchange-rate insert and validation-status update, entirely rolled back. Main profile is not represented as testing BCV producer operations because it predates that migration.
 - Exact-HEAD branch `f6c453d928ffaef4ab15efc5733bd3c7001089e3`: PR workflows 13/13 SUCCESS; backup restore smoke `42997279023`, Playwright `42997278934`, CI `42997279209` all SUCCESS. Push backup smoke `42997267912` SUCCESS.
 - PR #287 OPEN/Draft, PR #303 OPEN/Draft, issue #53 OPEN/P0. No remote workflow_dispatch; production NOT READY.
+
+## Runbook de recuperación operacional — 2026-11-11
+
+- Añadido odd/tasks/backup-operational-recovery-runbook.md: decisión PITR aislado vs artefacto cifrado independiente, validación checksum/age, restore en PostgreSQL 18 desechable, límites de provisioning/cutover, medición UTC RPO/RTO, alertas y control de coste cero.
+- La documentación oficial de Neon confirma branching/PITR como capacidad basada en historial; la ventana y coste dependen de configuración/plan y deben comprobarse en el momento del incidente: https://neon.com/docs/introduction/branching.
+- Decisión sénior: no publicar aún un SLO RPO/RTO. Una frecuencia diaria no garantiza 24h y el tiempo de restore SQL no equivale al RTO completo. Medir con timestamps desde detección hasta recuperación verificada.
+- Sin dispatch manual de backup ni remote restore, sin acceso a secreto/artefacto/llave age, sin operaciones Neon ni cutover. El siguiente backup programado natural sigue siendo necesario para verificar los seis booleanos de DATABASE_URL_BACKUP_RO.
+- HEAD de código no cambió por este trabajo; commits nuevos son documentación ODD/runbook. Issue #53 OPEN/P0; producción NOT READY.

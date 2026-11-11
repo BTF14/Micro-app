@@ -33,9 +33,7 @@ Verify against the workflow before each incident:
 5. Switching application traffic, changing a connection string, promoting a branch, or modifying Neon main is a separate production change requiring its own approval and recovery point. This runbook does not authorize it.
 
 Provider references (recheck current behavior/plan at incident time):
-- https://neon.com/docs/introduction/branching
-- https://neon.com/docs/guides/branching
-- https://neon.com/docs/introduction/point-in-time-restore
+- https://neon.com/docs/introduction/branching (branching and point-in-time recovery entry point)
 
 ### B. Provider loss, corruption outside the PITR window, or independent copy required
 

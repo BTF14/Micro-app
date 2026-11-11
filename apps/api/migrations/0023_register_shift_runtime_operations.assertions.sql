@@ -19,8 +19,15 @@ BEGIN
     OR NOT (SELECT proconfig @> ARRAY['search_path=pg_catalog, public'] FROM pg_catalog.pg_proc WHERE oid = close_oid) THEN
     RAISE EXCEPTION 'REGISTER_SHIFT_RUNTIME_FUNCTION_SEARCH_PATH_INVALID';
   END IF;
-  IF NOT pg_catalog.has_function_privilege('microapp_runtime', open_oid, 'EXECUTE')
-    OR NOT pg_catalog.has_function_privilege('microapp_runtime', close_oid, 'EXECUTE') THEN
+  IF pg_catalog.has_schema_privilege('microapp_runtime', 'public', 'CREATE')
+    OR EXISTS (
+      SELECT 1 FROM pg_catalog.pg_namespace n
+      CROSS JOIN LATERAL pg_catalog.aclexplode(COALESCE(n.nspacl, pg_catalog.acldefault('n', n.nspowner))) a
+      WHERE n.nspname = 'public' AND a.grantee = 0 AND a.privilege_type = 'CREATE'
+    ) THEN
+    RAISE EXCEPTION 'REGISTER_SHIFT_SECURITY_DEFINER_PUBLIC_SCHEMA_MUST_BE_TRUSTED';
+  END IF;
+  IF NOT pg_catalog.has_function_privilege('microapp_runtime', open_oid, 'EXECUTE')    OR NOT pg_catalog.has_function_privilege('microapp_runtime', close_oid, 'EXECUTE') THEN
     RAISE EXCEPTION 'REGISTER_SHIFT_RUNTIME_FUNCTION_EXECUTE_MISSING';
   END IF;
   IF pg_catalog.has_table_privilege('microapp_runtime', 'public.register_shifts', 'INSERT')

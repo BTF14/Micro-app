@@ -775,3 +775,28 @@ La evidencia de solo lectura registrada en issue #53 (2026-11-06) indica que `ba
 - PR #302 OPEN/Draft, HEAD `a8ee511ae87fdeb5cc86081449ee407dda45b121`, base main `c5373564413ba086690552c6b7deeab08d7b4a89`; 14/14 check-runs SUCCESS y 10/10 workflows `pull_request` SUCCESS; cero reviews formales. El test HTTP loopback de askpass pasó en CI; no demuestra push real, TLS/GitHub ni backup real. Comentario de evidencia en PR #302: `6768302795`.
 - PR #298 antes de este commit: HEAD `aee9feac49c389c217c511c03c798b0474145ee5`, OPEN/Draft, 230 commits ahead / 0 behind, 42 archivos documentales, 15/15 check-runs y 11/11 workflows PR SUCCESS, cero reviews formales. **Este commit cambia su HEAD e invalida esos resultados para el SHA nuevo**; volver a consultar checks/workflows exactos antes de cualquier decisión.
 - No mergear #298 ni #302. Mantener Draft; no force-push/rebase. Legacy combined status puede devolver pending con cero contextos; no tratarlo como check ni aprobación.
+
+
+## Reconciliación viva de avance — 2026-11-11
+
+Este addendum supersede los snapshots anteriores de PRs que indiquen SHAs/estados inferiores. Fuente: GitHub API consultada en vivo; no se infieren despliegues productivos a partir de CI.
+
+### Main y avance funcional
+
+- `main` observado: `c5373564413ba086690552c6b7deeab08d7b4a89`.
+- **PR #301 — listado de sucursales + panel de inventario de solo lectura:** OPEN, no Draft, HEAD `ce43ab2cff91cd07e7ca2b91635b8e27a02b11c8`, 5 commits ahead / 0 behind main, `mergeable=true`. Exact-HEAD: **15/15 check-runs SUCCESS; 10/10 workflows pull_request SUCCESS** (3 workflows push SUCCESS, contabilizados aparte). No reviews formales ni review threads. Entrega funcional real: endpoint tenant-scoped de descubrimiento de sucursales y UI sucursal → almacén → balances exactos, sin escritura ni migraciones. Límite explícito: máximo 100 sucursales sin cursor. ODD: `odd/tasks/branch-list-and-inventory-panel.md`. No mergear todavía: el propio ODD conserva el gate de Seguridad Nivel 1 y revisión independiente; no declarar esta feature desplegada.
+- **PR #287 — integración BCV + checkout/ledger:** OPEN/Draft, HEAD vivo `fe73180dc9f2039c2a025b8d3b7700230080e19d`, 529 ahead / 1 behind main, merge base `03442951b2a2f63f5bf4dcf560f2c91be4f6cc71`, `mergeable=true`. Exact-HEAD: **16/16 check-runs SUCCESS; 11/11 workflows pull_request SUCCESS** (2 push SUCCESS aparte). No reviews formales ni review threads. La rama conserva migraciones 0017–0023, checkout/ledger, BCV fail-closed/last-success, turnos de caja y pruebas PostgreSQL/restore. Es una rama de ensayo muy amplia y divergente: no fusionar ni sincronizar automáticamente; resolver primero su solapamiento documental/operativo y obtener revisión independiente. El ODD de backup en esta rama documenta el contrato de rol least-privilege probado en PostgreSQL 18 desechable; esto no cambia Neon.
+- **PR #304 — hardening aislado de backup:** OPEN/Draft, HEAD `e8baeb2ddac7ad6e9c2257382a22f3b76988cba1`, 2 commits, 6 archivos, `mergeable=true`. Exact-HEAD: **14/14 check-runs SUCCESS; 12/12 workflows pull_request SUCCESS** (2 push SUCCESS aparte). Añade diagnóstico no sensible de privilegios efectivos, corrección de exclusión de datos auth preservando esquema, GIT_ASKPASS temporal y reintentos acotados APT/PGDG con tests contractuales. No ejecuta backup programado ni accede a secretos/Neon; por diseño requiere observar un backup natural después de integración autorizada. Mantener Draft hasta revisión independiente.
+- **Solapamiento a controlar:** #287 ya contiene cambios de backup (incluidos scripts/diagnósticos y modificaciones del workflow) que se extrajeron parcialmente a #304. Antes de integrar cualquiera, comparar rutas y commits para evitar aplicar dos veces o perder correcciones. No asumir que #304 es independiente solo por su rama.
+- **Issue #53:** sigue OPEN/P0. El principal efectivo de `DATABASE_URL_BACKUP_RO` y el principal efectivo del Worker siguen sin demostrarse. La consulta de Neon main no encontró `microapp_runtime` ni `microapp_migrator`; no se modificaron roles, grants, contraseñas ni secretos. La prueba PostgreSQL 18 demuestra un contrato candidato, no la identidad de producción.
+- **PR #298 (este documento):** OPEN/Draft, branch `docs/reconcile-live-github-state-20261109`. Este addendum cambia su HEAD y exige CI exact-HEAD nuevo; no reutilizar checks de `c9e65a8...`.
+
+### Decisión operativa
+
+1. Priorizar revisión técnica independiente de #304 como corrección acotada del P0 de backup; revisar el solapamiento con #287 antes de cualquier integración.
+2. Mantener #301 como feature funcional completada y CI-validada, pendiente de revisión independiente y del gate de Seguridad Nivel 1. No iniciar otra UI que duplique su alcance.
+3. Mantener #287 como integración de ensayo; no promover por volumen de checks ni por `mergeable=true`.
+4. No convertir documentación ni pruebas sintéticas en evidencia de backup remoto, identidad Worker o readiness productiva.
+5. Fecha objetivo MVP: **2026-12-01, inamovible**. Producción continúa **NOT READY** hasta cerrar aceptación de un local/jornada completa, seguridad/runtime, backup/RPO/RTO, revisión independiente y validación operativa.
+
+No se ejecutó merge, deploy, workflow manual, backup real, DDL/DML remoto ni modificación de secretos/Cloudflare/Neon main en esta reconciliación.

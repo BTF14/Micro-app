@@ -5,10 +5,11 @@ name: Respaldo cifrado de la base de datos
 # este workflow.
 #
 # Qué hace, en orden:
-# 1. Vuelca (pg_dump) solo las tablas de negocio de Neon, usando un rol de
-#    solo lectura dedicado (backup_readonly). Excluye explícitamente
-#    auth_sessions, auth_rate_limits y auth_bootstrap_attempts (datos
-#    efímeros de autenticación, no hacen falta para reconstruir el negocio).
+# 1. Vuelca (pg_dump) el esquema y los datos de la base usando el principal
+#    configurado en DATABASE_URL_BACKUP_RO. Su identidad efectiva y mínimo
+#    privilegio NO están certificados; ver issue #53 (P0). Excluye solo las
+#    filas de auth_sessions, auth_rate_limits y auth_bootstrap_attempts:
+#    conserva sus tablas, constraints, índices y triggers para restauración.
 # 2. Cifra el volcado con la llave pública age del proyecto (no es secreta,
 #    por eso vive directo en este archivo) antes de que salga del runner.
 #    El volcado SIN cifrar nunca se sube a ningún lado ni queda en el runner
@@ -48,18 +49,24 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Instalar pg_dump (versión reciente) y age
+      - name: Probar helper de reintentos APT sin red
+        run: bash .github/scripts/test-apt-retry.sh
+
+      - name: Instalar pg_dump (versión reciente) y age con reintentos acotados
+        shell: bash
         run: |
           set -euo pipefail
-          sudo apt-get update
-          sudo apt-get install -y curl ca-certificates gnupg age
+          bash scripts/ci/apt-retry.sh update
+          bash scripts/ci/apt-retry.sh install -y curl ca-certificates gnupg age
           sudo install -d /usr/share/postgresql-common/pgdg
-          sudo curl -fsSL https://www.postgresql.org/media/keys/ACCC4CF8.asc \
+          sudo curl --fail --show-error --location \
+            --retry 5 --retry-all-errors --retry-delay 2 --connect-timeout 15 --max-time 90 \
+            https://www.postgresql.org/media/keys/ACCC4CF8.asc \
             -o /usr/share/postgresql-common/pgdg/apt.postgresql.org.asc
           echo "deb [signed-by=/usr/share/postgresql-common/pgdg/apt.postgresql.org.asc] https://apt.postgresql.org/pub/repos/apt $(. /etc/os-release && echo "$VERSION_CODENAME")-pgdg main" \
             | sudo tee /etc/apt/sources.list.d/pgdg.list
-          sudo apt-get update
-          sudo apt-get install -y postgresql-client-18
+          bash scripts/ci/apt-retry.sh update
+          bash scripts/ci/apt-retry.sh install -y postgresql-client-18
 
       - name: Verificar que la llave de la base de datos está configurada
         run: |
@@ -69,6 +76,73 @@ jobs:
           fi
         env:
           DATABASE_URL_BACKUP_RO: ${{ secrets.DATABASE_URL_BACKUP_RO }}
+
+      - name: Diagnóstico no sensible de identidad y privilegios efectivos del backup
+        continue-on-error: true
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL_BACKUP_RO }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          if ! diagnostic="$(psql "$DATABASE_URL" -X -v ON_ERROR_STOP=1 -Atq -F '|' 2>/dev/null <<'SQL'
+          SELECT
+            (current_user = 'backup_readonly' AND session_user = 'backup_readonly'),
+            EXISTS (
+              SELECT 1 FROM pg_catalog.pg_roles r
+              WHERE r.rolname = current_user AND r.rolcanlogin
+                AND NOT r.rolsuper AND NOT r.rolcreatedb AND NOT r.rolcreaterole
+                AND NOT r.rolreplication AND NOT r.rolbypassrls
+            ),
+            EXISTS (
+              SELECT 1
+                FROM pg_catalog.pg_auth_members m
+                JOIN pg_catalog.pg_roles principal_role
+                  ON principal_role.oid = m.member OR principal_role.oid = m.roleid
+               WHERE principal_role.rolname = current_user
+            ),
+            EXISTS (
+              SELECT 1 FROM pg_catalog.pg_class c
+              JOIN pg_catalog.pg_namespace n ON n.oid = c.relnamespace
+              CROSS JOIN (VALUES ('INSERT'),('UPDATE'),('DELETE'),('TRUNCATE')) p(privilege)
+              WHERE n.nspname = 'public' AND c.relkind IN ('r','p')
+                AND pg_catalog.has_table_privilege(current_user, c.oid, p.privilege)
+            ) OR EXISTS (
+              SELECT 1 FROM pg_catalog.pg_class c
+              JOIN pg_catalog.pg_namespace n ON n.oid = c.relnamespace
+              CROSS JOIN (VALUES ('INSERT'),('UPDATE'),('REFERENCES')) p(privilege)
+              WHERE n.nspname = 'public' AND c.relkind IN ('r','p')
+                AND pg_catalog.has_any_column_privilege(current_user, c.oid, p.privilege)
+            ),
+            EXISTS (
+              SELECT 1 FROM pg_catalog.pg_class c
+              JOIN pg_catalog.pg_namespace n ON n.oid = c.relnamespace
+              WHERE n.nspname = 'public' AND c.relkind = 'S'
+                AND (pg_catalog.has_sequence_privilege(current_user, c.oid, 'USAGE')
+                  OR pg_catalog.has_sequence_privilege(current_user, c.oid, 'UPDATE'))
+            ),
+            pg_catalog.has_schema_privilege(current_user, 'public', 'CREATE')
+            OR pg_catalog.has_database_privilege(current_user, current_database(), 'CREATE');
+          SQL
+          )"; then
+            echo "::warning::No se pudo verificar el principal efectivo del backup; el backup continuará, pero el gate P0 sigue abierto."
+            exit 0
+          fi
+          IFS='|' read -r identity_ok role_safe has_membership table_writes sequence_writes create_privilege <<< "$diagnostic"
+          {
+            echo "### Diagnóstico no sensible del principal de backup"
+            echo
+            echo "- Identidad efectiva esperada (`backup_readonly`): `$identity_ok`"
+            echo "- Atributos de rol no privilegiados: `$role_safe`"
+            echo "- Membresías de roles: `$has_membership` (esperado: `f`)"
+            echo "- Privilegios de escritura sobre tablas: `$table_writes` (esperado: `f`)"
+            echo "- Privilegios de mutación de secuencias: `$sequence_writes` (esperado: `f`)"
+            echo "- CREATE en schema/database: `$create_privilege` (esperado: `f`)"
+            echo
+            echo "Este diagnóstico no imprime DSN, usuario real, credenciales ni datos. No bloquea la generación de la copia; cualquier resultado distinto al esperado mantiene abierto el gate P0."
+          } >> "$GITHUB_STEP_SUMMARY"
+          if [[ "$identity_ok" != "t" || "$role_safe" != "t" || "$has_membership" != "f" || "$table_writes" != "f" || "$sequence_writes" != "f" || "$create_privilege" != "f" ]]; then
+            echo "::warning::El contrato least-privilege del principal de backup no está demostrado; revisar issue #53 sin cambiar roles desde este workflow."
+          fi
 
       - name: Generar el volcado
         env:
@@ -82,9 +156,9 @@ jobs:
           "$PG_DUMP" --version | grep -Eq "pg_dump \(PostgreSQL\) 18\."
           "$PG_DUMP" "$DATABASE_URL" \
             --no-owner --no-privileges --format=custom \
-            --exclude-table=auth_sessions \
-            --exclude-table=auth_rate_limits \
-            --exclude-table=auth_bootstrap_attempts \
+            --exclude-table-data=auth_sessions \
+            --exclude-table-data=auth_rate_limits \
+            --exclude-table-data=auth_bootstrap_attempts \
             --file="backup-${STAMP}.dump"
           test -s "backup-${STAMP}.dump"
 
@@ -101,14 +175,20 @@ jobs:
           GH_TOKEN: ${{ secrets.BACKUP_REPO_TOKEN }}
         run: |
           set -euo pipefail
-          if [ -z "${GH_TOKEN:-}" ]; then
-            echo "::error::Falta el secreto BACKUP_REPO_TOKEN en este repositorio. Ver docs/SECURITY_ROADMAP.md punto 2."
-            exit 1
-          fi
-          git clone --depth 1 "https://x-access-token:${GH_TOKEN}@github.com/${BACKUP_REPO}.git" backups-repo
-          mkdir -p backups-repo/daily
-          mv "backup-${STAMP}.dump.age" "backup-${STAMP}.dump.age.sha256" backups-repo/daily/
-          cd backups-repo
+          backup_token="${GH_TOKEN:?Falta el secreto BACKUP_REPO_TOKEN}"
+          unset GH_TOKEN
+          askpass="$RUNNER_TEMP/git-askpass-backup.sh"
+          backup_repo_dir="$RUNNER_TEMP/backups-repo"
+          umask 077
+          install -m 700 "$GITHUB_WORKSPACE/scripts/backup_git_askpass.sh" "$askpass"
+          trap 'rm -f "$askpass"; rm -rf "$backup_repo_dir"' EXIT
+          export GIT_ASKPASS="$askpass"
+          export GIT_ASKPASS_REQUIRE=force
+          export GIT_TERMINAL_PROMPT=0
+          GH_TOKEN="$backup_token" git -c credential.helper= clone --depth 1 "https://github.com/${BACKUP_REPO}.git" "$backup_repo_dir"
+          mkdir -p "$backup_repo_dir/daily"
+          mv "backup-${STAMP}.dump.age" "backup-${STAMP}.dump.age.sha256" "$backup_repo_dir/daily/"
+          cd "$backup_repo_dir"
           git config user.email "backups-bot@micro-app.invalid"
           git config user.name "Micro app backups bot"
           git add daily/
@@ -116,7 +196,8 @@ jobs:
           python3 "$GITHUB_WORKSPACE/scripts/prune_backups.py" daily --retention-days "$RETENTION_DAYS"
           git add -A
           git diff --cached --quiet || git commit -m "retention: prune backups older than ${RETENTION_DAYS} days"
-          git push origin HEAD:main
+          GH_TOKEN="$backup_token" git -C "$backup_repo_dir" -c credential.helper= push origin HEAD:main
+          unset backup_token
 
       - name: Publicar resumen visible si falla el respaldo
         if: failure()

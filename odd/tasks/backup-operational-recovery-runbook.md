@@ -100,3 +100,11 @@ No manual backup dispatch, no manual remote-restore dispatch under this task, no
 ## Current status
 
 The synthetic main and BCV restore profiles, ordered ACL reconstruction, runtime read/no-CREATE probe and BCV producer rollback-only write probe are validated in CI. The live branch HEAD at task creation is recorded in the handoff. No real remote archive or age private key has been accessed, and no manual workflow was dispatched.
+
+
+## Package-install resilience correction — 2026-11-11
+
+- A prior natural scheduled backup run failed before database connection while installing age because Ubuntu package mirrors could not resolve DNS. The backup workflow had retained direct `apt-get update/install` calls even though the synthetic restore workflow already used the bounded retry helper.
+- PR #287 now runs `.github/scripts/test-apt-retry.sh` before package installation and uses `scripts/ci/apt-retry.sh` for both strict package-index updates and package installs. PostgreSQL PGDG key download also uses bounded curl retries and explicit timeouts.
+- The helper has bounded attempts, strict `APT::Update::Error-Mode=any`, transport retries/timeouts, and returns non-zero after persistent failure. This improves transient mirror resilience without masking persistent dependency failure.
+- No workflow_dispatch, real backup, secret access, Neon connection, or production operation was performed. Exact-HEAD CI for the resulting commit is pending; do not claim the production scheduled backup succeeded from this change alone.

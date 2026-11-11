@@ -463,3 +463,10 @@ En el HEAD de código `0ca91ff51ec545278ceb8eabd3929083aae9022e`, el smoke test 
 - Último schedule SUCCESS observado: `42842855127`, 2026-11-10 15:17:48 UTC. No se hizo workflow_dispatch ni re-run manual.
 - El diagnóstico de seis booleanos y askpass mejorado existen solo en la rama de integración #287; main sigue con el mecanismo anterior. Esperar integración segura y un nuevo schedule natural antes de afirmar evidencia operativa.
 - Issue #53 permanece OPEN/P0. No restore remoto real, no secretos/age, no Neon/main, no cambios de roles/grants remotos. Producción NOT READY.
+
+
+## 2026-11-11 — resilience of scheduled backup package installation
+
+A prior natural scheduled backup failed before connecting to Neon because Ubuntu package mirror DNS resolution failed while installing age. The scheduled backup workflow previously used direct `apt-get update/install` calls, unlike the synthetic restore workflow.
+
+PR #287 now reuses the tested bounded helper `scripts/ci/apt-retry.sh` for strict package-index refreshes and installs, runs its isolated regression test, and adds bounded retry/timeouts for fetching the PostgreSQL PGDG signing key. Persistent failures remain non-zero; this does not hide a broken package source. This is a code-level resilience change only: no backup was manually dispatched, no secret or Neon data was accessed, and no real backup success is inferred. Revalidate the exact HEAD and await the next natural scheduled run after any authorized release integration.

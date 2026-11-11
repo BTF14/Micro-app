@@ -2761,3 +2761,7 @@ Ver `odd/tasks/backup-restore-no-owner-no-privileges.md`.
 **Evidencia sintética:** run `42991705366`: main job `130425902535` SUCCESS; BCV job `130425902488` SUCCESS y legacy regression SUCCESS. Playwright `42991705336` SUCCESS; migrator validation `42991705483` SUCCESS; DB validation `42991705628` SUCCESS; Semgrep `42991705476` SUCCESS. Revisar workflows restantes exact-HEAD tras los commits docs.
 
 **No hacer:** no ejecutar workflow_dispatch remoto ni backup manual; no usar llave age real, tocar Neon/roles/grants remotos, secretos, Cron, DNS, Cloudflare sensible, billing, deploy ni datos reales. El diagnóstico `DATABASE_URL_BACKUP_RO` sigue pendiente porque el workflow aún no está en main. Issue #53 OPEN/P0; PR #287 Draft; producción NOT READY.
+
+### Último estado verificado — runtime probe — 2026-11-11
+
+Implementación HEAD `7b4fdebe846952f1099a4fde323be2dc0f5ce0e8`. Backup restore run `42992354071`: main `130428038679` SUCCESS, BCV `130428038320` SUCCESS y legacy regression SUCCESS. El script prueba conexión runtime/producer y ejecuta SELECT real de `public.organizations` bajo runtime, comprobando ausencia de CREATE en schema public. En esa lectura los otros 10 workflows pull_request estaban SUCCESS y CI `42992353978` pending. No ejecutar restore remoto manual ni backup dispatch; no se accedió a artefacto real ni a llave age.

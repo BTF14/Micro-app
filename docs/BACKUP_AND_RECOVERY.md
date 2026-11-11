@@ -1,3 +1,13 @@
+# Addendum — 2026-11-11 — default ACL y contrato candidato de backup
+
+- SELECT-only en Neon main confirmó que `backup_readonly` no es read-only: CREATEROLE/CREATEDB/REPLICATION/BYPASSRLS, membership en `neon_superuser` y `pg_write_all_data`, e INSERT/UPDATE/DELETE sobre `public.products`.
+- 15 tablas de aplicación y dos secuencias públicas pertenecen a `neondb_owner`. Su default ACL público concede SELECT a futuras tablas, pero no hay default ACL para secuencias. Las dos secuencias actuales conceden SELECT+UPDATE al rol observado.
+- No se leyó `DATABASE_URL_BACKUP_RO`; su identidad efectiva permanece desconocida. El diagnóstico de identidad/privilegios sigue siendo branch-only hasta una integración separada y un backup natural posterior. No ejecutar dispatch manual para fabricar evidencia.
+- Contrato candidato probado en PostgreSQL 18 desechable: permisos explícitos existentes + default SELECT para futuras tablas/secuencias; no table writes, sequence USAGE/UPDATE, CREATE DATABASE/ROLE, SET ROLE ni memberships; pg_dump y pg_restore --list. Commit de test `cb81ecdf6bb5fe2c0d7806f6d744925300c8ba7a`, 16/16 checks exact-HEAD.
+- Ningún cambio remoto. Issue #53 OPEN/P0; producción NOT READY.
+
+---
+
 # Addendum crítico — 2026-11-11 — rol backup_readonly no es read-only
 
 # Hallazgo P0 — rol backup_readonly con privilegios excesivos (2026-11-11)

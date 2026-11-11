@@ -2779,3 +2779,13 @@ La hipótesis anterior de que el helper de espera era la causa no era correcta. 
 - Critical caveat: `DATABASE_URL_BACKUP_RO` was not read; the effective secret principal remains unknown. Do not claim the scheduled workflow uses this role until its branch-only diagnostic runs on a natural main backup after integration.
 - No Neon writes, role/membership/grant/password/secret changes, business-row reads, data changes, workflow_dispatch or production operations. Issue #53 remains OPEN/P0; comment `6802571142` records evidence and caveat.
 - Next: design and test a least-privilege backup role and continuity plan on disposable resources; require separate explicit authorization before remote changes.
+
+
+## 2026-11-11 — default ACL candidate backup principal contract validated
+
+- PR #287 branch HEAD at this evidence point: `cb81ecdf6bb5fe2c0d7806f6d744925300c8ba7a`; 16/16 check-runs, 11/11 pull_request workflows and 2/2 push workflows SUCCESS. Subsequent documentation-only commit `9114b11eeae8745690afed50c095a8888a58f04c` reconciled CURRENT_STATE, WORK_CHECKPOINT and HANDOFF; its new HEAD needs its own exact-SHA checks.
+- Neon main SELECT-only metadata: `backup_readonly` has CREATEROLE/CREATEDB/REPLICATION/BYPASSRLS, direct membership in `neon_superuser`, effective membership in `pg_write_all_data`, and INSERT/UPDATE/DELETE on `public.products`. 15 public application tables and two sequences are owned by `neondb_owner`; public default ACL grants SELECT on future tables but no default ACL for sequences; existing sequences have SELECT+UPDATE for the observed role.
+- No secret or connection string was read. Effective principal for `DATABASE_URL_BACKUP_RO` remains unknown. No remote role/grant/password/secret changes or business data reads.
+- Disposable PostgreSQL 18 candidate test extended in commit `cb81ecdf6bb5fe2c0d7806f6d744925300c8ba7a`: explicit and default SELECT for existing/future tables and sequences; no writes, sequence USAGE/UPDATE, CREATE DATABASE/ROLE, SET ROLE or membership; pg_dump and pg_restore-list success.
+- PR #287 remains OPEN/Draft; 123 files, 19,109 additions, 297 deletions; 518 ahead / 1 behind main, only missing main commit is a backlog-ledger documentation entry. 0 formal reviews / 0 review threads; mergeable=true but mergeable_state=blocked.
+- Issue #53 OPEN/P0; production NOT READY. No merge, deploy, Neon mutation, secret changes, Cron, DNS or billing.

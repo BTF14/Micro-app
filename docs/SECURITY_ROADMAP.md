@@ -1,3 +1,11 @@
+# Addendum P0 — 2026-11-11 — default ACL y prueba de principal candidato
+
+Neon main, SELECT-only: rol `backup_readonly` con atributos CREATEROLE/CREATEDB/REPLICATION/BYPASSRLS, membresía `neon_superuser` y `pg_write_all_data`, y privilegios INSERT/UPDATE/DELETE sobre products. Las 15 tablas y dos secuencias públicas pertenecen a `neondb_owner`; default ACL solo SELECT para tablas futuras y ninguno para secuencias futuras. Las secuencias actuales conceden SELECT+UPDATE al rol observado.
+
+El test PostgreSQL 18 desechable ahora valida explícitamente grants y default ACL SELECT sobre tablas/secuencias futuras, pg_dump/restore-list, y ausencia de escritura/escalada/membresías. Commit `cb81ecdf6bb5fe2c0d7806f6d744925300c8ba7a`, exact-HEAD CI 16/16. La identidad del secreto `DATABASE_URL_BACKUP_RO` no fue consultada. No hay remediación remota. Issue #53 OPEN/P0; producción NOT READY.
+
+---
+
 # Addendum P0 — 2026-11-11 — evidencia de rol backup
 
 - SELECT-only en Neon main confirmó que el rol LOGIN `backup_readonly` tiene CREATEROLE, CREATEDB, REPLICATION y BYPASSRLS, membership directa en `neon_superuser` y membership efectiva en `pg_write_all_data`; tiene INSERT/UPDATE/DELETE sobre `public.products`.

@@ -24,7 +24,7 @@ assert_true() {
   local label="$1"
   local sql="$2"
   local actual
-  actual="$(psql "$SOURCE_URL" -X -v ON_ERROR_STOP=1 -Atqc "$sql")"
+  actual="$(psql "$SOURCE_URL" -X -v ON_ERROR_STOP=1 -Atqc "SELECT $sql")"
   if [[ "$actual" != "t" ]]; then
     echo "FAIL: $label (expected true, got: $actual)" >&2
     exit 1
@@ -33,7 +33,7 @@ assert_true() {
 }
 
 assert_true "backup role has only the required non-admin role attributes" "
-  SELECT rolcanlogin AND NOT rolsuper AND NOT rolcreatedb AND NOT rolcreaterole
+  rolcanlogin AND NOT rolsuper AND NOT rolcreatedb AND NOT rolcreaterole
     AND NOT rolreplication AND NOT rolbypassrls AND NOT rolinherit
   FROM pg_roles WHERE rolname='microapp_backup'
 "

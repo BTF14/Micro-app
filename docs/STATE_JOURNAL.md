@@ -2571,3 +2571,7 @@ Se encontró que el antiguo workflow remoto restauraba como admin `microapp` y s
 Evidencia exact-HEAD de implementación `f259b65175711d66f398486bcb80765dfe7aea77`: backup restore run `42991705366`, main `130425902535` SUCCESS, BCV `130425902488` SUCCESS, legacy regression SUCCESS; Playwright, migrator validation, database validation y Semgrep también SUCCESS. Un primer intento falló por comparar boolean `true` con `t`; corregido y la siguiente ejecución completa pasó.
 
 El workflow que descarga/restaura el artefacto remoto no se ejecutó. No se tocó repositorio de backups, Neon, secretos ni datos reales. Issue #53 OPEN/P0; producción NOT READY.
+
+### 2026-11-11 — runtime SELECT en ensayo de restore remoto
+
+Se añadió al runner una consulta real como `microapp_runtime` sobre `public.organizations` y una comprobación explícita de SELECT permitido / CREATE en public denegado. Ambos perfiles pasaron en run `42992354071`: main job `130428038679`, BCV job `130428038320`, además de regresión legacy. Implementación HEAD `7b4fdebe846952f1099a4fde323be2dc0f5ce0e8`. CI seguía pending en la lectura; los demás workflows pull_request estaban SUCCESS. Sigue sin ejecutarse el workflow de restauración del artefacto remoto real.

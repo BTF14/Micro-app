@@ -2825,3 +2825,29 @@ No new RPO/RTO SLA is declared. Next safe action: validate the latest doc-only H
 ### Live check — scheduled backup principal diagnostic not yet on default branch — 2026-11-11
 
 main HEAD remains c5373564413ba086690552c6b7deeab08d7b4a89. Its .github/workflows/backup.yml blob 5df408788b9053709261ada3aa22dd73b85d5691 does not yet include the six-boolean identity/least-privilege diagnostic present on the integration PR branch. Latest main scheduled runs are 42842855127 (2026-11-10 SUCCESS) and 42659924075 (2026-11-09 SUCCESS); both predate the diagnostic and cannot prove the real principal. Wait for a natural scheduled run only after the diagnostic reaches main. Do not dispatch manually. Real identity and least privilege remain UNVERIFIED.
+
+
+
+## Cambio de chat — snapshot vivo definitivo — 2026-11-11
+
+**Fuente de verdad:** GitHub live, no snapshots antiguos. Reconsultado en esta sesión.
+
+- Rama de trabajo: `integration/bcv-checkout-rehearsal-20261109`; HEAD exacto `3e00d2c1512e1d0c3c0acc84bcdf4663e4976296` (commit documental `docs(backup): clarify main backup diagnostic rollout gate`, 2026-11-11 09:53:05Z).
+- PR #287: OPEN, Draft, base main `03442951b2a2f63f5bf4dcf560f2c91be4f6cc71`, HEAD exacto anterior, mergeable=true / mergeable_state=clean. Sin reviews formales ni review comments registrados. No mergear mientras siga Draft y falten gates operativos P0.
+- PR #303: OPEN, Draft, HEAD `d527ae79cd566945cd9bdb3e1475d53b31d3923a`, base `c5373564413ba086690552c6b7deeab08d7b4a89`, mergeable=true / clean. Sin reviews formales ni review comments registrados. Mantener separada; no asumir que sus checks o perfil reemplazan los de #287.
+- Issue #53: OPEN, etiquetas security/P0. No cerrar ni degradar.
+- Validación exact-HEAD #287 en `3e00d2c1512e1d0c3c0acc84bcdf4663e4976296`: 13/13 workflow runs pull_request SUCCESS (CI `42998923532`; DB migration `42998923348`; PostgreSQL migration runner `42998923501`; backup restore smoke `42998923541`; Playwright `42998924730`; dependency review `42998923563`; ODD docs `42998923507`; Semgrep `42998923333`; security scan `42998923382`; secret history `42998923575`; dashboard `42998923725`) y 2/2 workflow runs push SUCCESS (security `42998916654`, secret history `42998916430`). Check-runs: 16/16 SUCCESS. Ambos perfiles sintéticos de restore (main 0001–0016 y BCV 0001–0022) pasaron; Chromium, migraciones, SAST, Trivy, Pages/Workers builds y validación ODD pasaron.
+- No hay review formal aunque CI está verde. GitHub muestra rama no protegida; no confundir mergeable/clean con aprobación o readiness.
+- Hallazgo operativo sigue abierto: main HEAD `c5373564413ba086690552c6b7deeab08d7b4a89`; `.github/workflows/backup.yml` blob `5df408788b9053709261ada3aa22dd73b85d5691` no contiene diagnóstico de seis booleanos. Runs schedule main `42842855127` y `42659924075` preceden al diagnóstico. Identidad efectiva y least privilege del principal de backup NO VERIFICADOS. No dispatch manual; esperar run schedule natural después de integrar de forma segura el diagnóstico.
+- No se ejecutó restore remoto real, no se accedió a artefacto real ni llave age, no se midió RPO/RTO real, no se validó alerta externa. Synthetic restore no equivale a recuperación operativa.
+- Producción: NOT READY. Sin merge, deploy, Neon main writes, roles/grants remotos, secretos, DNS, Cloudflare sensible, Cron, billing ni datos reales.
+
+### Instrucción para el siguiente chat
+
+Actúa como responsable técnico sénior de BTF14/Micro-app. Continúa desde este snapshot y desde los documentos obligatorios del repo; no reinicies trabajo ni pidas al propietario datos ya documentados. Primero vuelve a leer `AGENTS.md`, `docs/CONSTITUTION.md`, `docs/AI_COLLABORATION_AND_PR_POLICY.md`, `docs/ODD_WORKFLOW.md`, `docs/BACKUP_AND_RECOVERY.md`, `docs/SECURITY_ROADMAP.md`, `docs/CURRENT_STATE.md`, `docs/WORK_CHECKPOINT.md`, `docs/HANDOFF_NEXT_CHAT.md`, `docs/STATE_JOURNAL.md` y `odd/tasks/backup-operational-recovery-runbook.md`; comprueba la rama y HEAD vivos antes de operar.
+
+Prioridad inmediata: revisar el diff completo de #287 y compatibilidad de #303 con enfoque independiente; confirmar que la nueva evidencia 16/16 check-runs + 13/13 PR workflows exact-HEAD no deja fallos ocultos; distinguir workflow runs, check-runs, status contexts, formal reviews y review threads. No hacer merge solo por CI verde ni quitar Draft sin haber cerrado la revisión de seguridad/alcance. Después, resolver de forma segura cómo llevar el diagnóstico del principal backup a main y esperar un schedule natural. Mantén #53 OPEN/P0 hasta verificar principal real, artefacto remoto cifrado, restore aislado completo, bootstrap/provisioning, alertas entregadas, RPO/RTO medidos y coste $0.
+
+Preserva todas las prohibiciones y la política de máximo dos frentes activos. No repitas preguntas de Build IDs, capturas, terminal, CLI, TinyFish, reconexiones ni pidas screenshots si la evidencia está en GitHub/docs. Si un dato esencial realmente falta, pregunta una sola vez y acepta respuesta textual. El propietario trabaja desde teléfono. No solicites acciones manuales salvo que sean imprescindibles y no puedas ejecutarlas de forma segura.
+
+**Orden de trabajo:** (1) revisar y reconciliar documentación/estado; (2) revisión técnica independiente de PR #287/#303 y riesgos de combinación de workflows/migraciones; (3) gates de seguridad P0 #53; (4) volver al MVP POS funcional antes del 1 de diciembre de 2026 sin degradar seguridad. No introducir alcance nuevo ni gastar dinero.

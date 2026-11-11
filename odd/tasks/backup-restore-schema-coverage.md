@@ -226,3 +226,7 @@ El código de esta tarea quedó validado en PR #303 SHA `f0dc1f90043eff4270d86f4
 Se corrigieron dos defectos detectados por CI: concatenación text/char mediante casts explícitos y normalización de attnum tras restore (comparar orden lógico porque pg_dump compacta columnas eliminadas). La ejecución posterior pasó. Job PostgreSQL 18 `42870784682` SUCCESS, 16 migraciones, fixture poblada, age/checksum/restore, 2 s.
 
 La cobertura se limita a main 0001–0016. La variante PR #287 0017–0022 queda fuera y requiere prueba separada. La tarea de fase 2 para main queda completada técnicamente, pero no cierra issue #53 ni readiness productiva: falta principal efectivo/least privilege, restore de artefacto remoto, RPO/RTO, alertas y coste $0. Issue #53 OPEN/P0. No merge, no deploy, no Neon, no secretos, no Cron ni datos reales.
+
+## Superseding correction — ephemeral auth schema (2026-11-11)
+
+The earlier acceptance wording that required the three ephemeral auth tables to be absent from the restored schema is superseded. The production workflow's intent is to exclude ephemeral **rows**, not the table definitions required by the running application. Use `--exclude-table-data`, keep the three table schemas and metadata in the archive, and assert that all three target tables exist with zero rows. See `odd/tasks/backup-ephemeral-auth-schema-retention.md`.

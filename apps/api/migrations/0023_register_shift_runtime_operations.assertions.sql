@@ -15,8 +15,8 @@ BEGIN
     OR NOT (SELECT prosecdef FROM pg_catalog.pg_proc WHERE oid = close_oid) THEN
     RAISE EXCEPTION 'REGISTER_SHIFT_RUNTIME_FUNCTION_MUST_BE_SECURITY_DEFINER';
   END IF;
-  IF NOT (SELECT proconfig @> ARRAY['search_path=pg_catalog'] FROM pg_catalog.pg_proc WHERE oid = open_oid)
-    OR NOT (SELECT proconfig @> ARRAY['search_path=pg_catalog'] FROM pg_catalog.pg_proc WHERE oid = close_oid) THEN
+  IF NOT (SELECT proconfig @> ARRAY['search_path=pg_catalog, public'] FROM pg_catalog.pg_proc WHERE oid = open_oid)
+    OR NOT (SELECT proconfig @> ARRAY['search_path=pg_catalog, public'] FROM pg_catalog.pg_proc WHERE oid = close_oid) THEN
     RAISE EXCEPTION 'REGISTER_SHIFT_RUNTIME_FUNCTION_SEARCH_PATH_INVALID';
   END IF;
   IF NOT pg_catalog.has_function_privilege('microapp_runtime', open_oid, 'EXECUTE')

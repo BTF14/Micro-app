@@ -32,6 +32,8 @@ LANGUAGE plpgsql
 SECURITY DEFINER
 SET search_path = pg_catalog, public
 AS $open_register_shift$
+DECLARE
+  created_shift public.register_shifts%ROWTYPE;
 BEGIN
   IF p_organization_id IS NULL OR p_branch_id IS NULL OR p_register_id IS NULL OR p_user_id IS NULL
     OR p_opening_cash_usd IS NULL OR p_opening_cash_ves IS NULL
@@ -41,7 +43,6 @@ BEGIN
 
   -- The 0004/0007 trigger locks and validates active org/branch/register/user
   -- plus eligible owner/admin/cashier role and active branch membership.
-  RETURN QUERY
   INSERT INTO public.register_shifts (
     organization_id, branch_id, register_id, cashier_user_id,
     opening_cash_usd, opening_cash_ves
@@ -49,10 +50,25 @@ BEGIN
     p_organization_id, p_branch_id, p_register_id, p_user_id,
     p_opening_cash_usd, p_opening_cash_ves
   )
-  RETURNING register_shifts.id, register_shifts.organization_id,
-    register_shifts.branch_id, register_shifts.register_id,
-    register_shifts.cashier_user_id, register_shifts.opened_at,
-    register_shifts.opening_cash_usd, register_shifts.opening_cash_ves;
+  RETURNING * INTO created_shift;
+
+  INSERT INTO public.audit_logs (
+    organization_id, actor_user_id, action, entity_type, entity_id, metadata
+  ) VALUES (
+    created_shift.organization_id, p_user_id, 'register_shift.opened',
+    'register_shift', created_shift.id::text,
+    pg_catalog.jsonb_build_object(
+      'branch_id', created_shift.branch_id,
+      'register_id', created_shift.register_id,
+      'opening_cash_usd', created_shift.opening_cash_usd,
+      'opening_cash_ves', created_shift.opening_cash_ves
+    )
+  );
+
+  RETURN QUERY SELECT created_shift.id, created_shift.organization_id,
+    created_shift.branch_id, created_shift.register_id,
+    created_shift.cashier_user_id, created_shift.opened_at,
+    created_shift.opening_cash_usd, created_shift.opening_cash_ves;
 END;
 $open_register_shift$;
 
@@ -77,6 +93,7 @@ SET search_path = pg_catalog, public
 AS $close_register_shift$
 DECLARE
   target_shift_id uuid;
+  closed_shift public.register_shifts%ROWTYPE;
 BEGIN
   IF p_organization_id IS NULL OR p_branch_id IS NULL OR p_shift_id IS NULL OR p_user_id IS NULL
     OR p_closing_cash_usd IS NULL OR p_closing_cash_ves IS NULL
@@ -111,16 +128,34 @@ BEGIN
        AND m.role IN ('owner', 'admin', 'cashier') AND bm.is_active
   ) THEN RETURN; END IF;
 
-  RETURN QUERY
   UPDATE public.register_shifts s
      SET closed_at = pg_catalog.clock_timestamp(),
          closing_cash_usd = p_closing_cash_usd,
          closing_cash_ves = p_closing_cash_ves,
          closed_by_user_id = p_user_id
    WHERE s.id = target_shift_id AND s.closed_at IS NULL
-  RETURNING s.id, s.organization_id, s.branch_id, s.register_id,
-    s.cashier_user_id, s.opened_at, s.opening_cash_usd, s.opening_cash_ves,
-    s.closed_at, s.closing_cash_usd, s.closing_cash_ves, s.closed_by_user_id;
+  RETURNING s.* INTO closed_shift;
+  IF NOT FOUND THEN RETURN; END IF;
+
+  INSERT INTO public.audit_logs (
+    organization_id, actor_user_id, action, entity_type, entity_id, metadata
+  ) VALUES (
+    closed_shift.organization_id, p_user_id, 'register_shift.closed',
+    'register_shift', closed_shift.id::text,
+    pg_catalog.jsonb_build_object(
+      'branch_id', closed_shift.branch_id,
+      'register_id', closed_shift.register_id,
+      'closing_cash_usd', closed_shift.closing_cash_usd,
+      'closing_cash_ves', closed_shift.closing_cash_ves
+    )
+  );
+
+  RETURN QUERY SELECT closed_shift.id, closed_shift.organization_id,
+    closed_shift.branch_id, closed_shift.register_id,
+    closed_shift.cashier_user_id, closed_shift.opened_at,
+    closed_shift.opening_cash_usd, closed_shift.opening_cash_ves,
+    closed_shift.closed_at, closed_shift.closing_cash_usd,
+    closed_shift.closing_cash_ves, closed_shift.closed_by_user_id;
 END;
 $close_register_shift$;
 

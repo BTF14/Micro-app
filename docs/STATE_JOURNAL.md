@@ -2660,3 +2660,11 @@ La prueba de restore es sintética y cubre perfiles main/BCV; no se ejecutó wor
 - Restore smoke main 0001–0016 y BCV 0001–0023 SUCCESS. Se actualizó el runner de 22 a 23 migraciones para BCV.
 - No merge/deploy/restore remoto real/Neon main/datos reales/secrets/Cloudflare sensible. #53 OPEN/P0; producción NOT READY.
 - Siguiente: UI de sucursal/turno + Playwright; definir contrato de pagos; jornada completa E2E. No declarar POS terminado con API-only.
+
+
+## 2026-11-11 — UI de apertura/cierre de turnos
+
+- Se añadió vista web Caja y turnos para owner/admin/cashier, consumiendo las rutas de turno propio de PR #287. Incluye selector de sucursal/caja, apertura con fondos USD/VES y cierre con conteos físicos explícitos y confirmación.
+- Se bloquea cambio de sucursal mientras el usuario mantiene turno abierto; el conteo final se deja vacío y no se infiere desde el fondo inicial.
+- Test de componente cubre flujo y acceso denegado. Primer CI de UI en SHA `8da81f1...` detectó import `Root` sin uso; corregido en `a8148f94...`. Pendiente confirmar checks del HEAD actual exacto.
+- Scope excluye ventas, cobros, recibos, arqueo y ledger de caja; producción NOT READY y #53 OPEN/P0.

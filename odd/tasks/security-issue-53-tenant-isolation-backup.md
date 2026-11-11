@@ -100,3 +100,11 @@ Excluded:
 - Updated `scripts/test_backup_restore.sh` to run the role matrix and generate its synthetic dump as `microapp_backup`, using the three `--exclude-table-data=public.<table>` options.
 - The archive is inspected for all three table-definition entries. The restored database must contain all three tables, matching column metadata, and zero rows in each. The existing 13-table business manifest still compares source and restore.
 - This is implementation only. PostgreSQL 18 execution has not yet occurred; do not mark these ACs verified until the CI run completes. The operational `.github/workflows/backup.yml` remains unchanged pending that proof.
+
+
+## CI feedback and correction — 2026-11-11 UTC
+
+- PostgreSQL 18 run `43102153381` reached the disposable database, applied migrations, seeded synthetic fixtures, created the three roles and grants, and passed the first role-attribute assertion.
+- It then failed because `assert_true` submitted a bare expression (`NOT pg_has_role(...)`) instead of a SQL statement. This was a test harness defect, not a `pg_dump` result.
+- Corrected `assert_true` to execute `SELECT <expression>` consistently. The first expression was normalized to avoid a duplicate SELECT.
+- Re-run all assertions on the new final HEAD before changing the operational workflow.

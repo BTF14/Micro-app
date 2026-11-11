@@ -12,6 +12,8 @@ on:
       - "scripts/db/reapply_restore_role_grants.sh"
       - "scripts/db/restore_remote_backup_ephemeral.sh"
       - "scripts/db/test_restore_remote_backup_target_guard.sh"
+      - "scripts/db/verify_backup_artifact.sh"
+      - "scripts/db/test_verify_backup_artifact.sh"
       - "scripts/db/restore_role_assertions_main.sql"
       - "scripts/test_backup_restore_schema.sh"
       - "scripts/test_backup_restore_schema_bcv.sh"
@@ -80,6 +82,9 @@ jobs:
       - name: Prove remote restore target guard fails closed
         shell: bash
         run: bash scripts/db/test_restore_remote_backup_target_guard.sh
+      - name: Prove backup artifact name and checksum validation
+        shell: bash
+        run: bash scripts/db/test_verify_backup_artifact.sh
 
   restore-smoke:
     name: Synthetic encrypted restore — BCV projection (0001–0022)

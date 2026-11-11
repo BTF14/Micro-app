@@ -145,3 +145,14 @@ Excluded:
 - The archive retained DDL entries for the three ephemeral auth tables. Restore retained their columns and zero rows. Business data manifest and relations matched. Schema metadata comparison (table properties, columns, sequences, constraints, indexes, non-internal triggers, policies) matched source to restore.
 - This remains a disposable synthetic test. It does not verify `DATABASE_URL_BACKUP_RO` identity, production grants, real backup/restore, RPO/RTO, external alerting or production readiness.
 - Current branch HEAD before this task-file update: `e2275e58d2cb280ffa14abc74e693a945caf133c`.
+
+
+## Exact-HEAD CI and integration status — 2026-11-11 UTC
+
+- Fully green PR #305 HEAD: `20c5d012a1a52856b3d09c32fe6f707688fa4b98`.
+- Exact-HEAD check-runs: 17/17 `completed: success`, including `verify`, Chromium authentication smoke, JS/TS static analysis, secret-history scan, Trivy, dependency review, migration checks, synthetic PostgreSQL 18 backup/restore, Cloudflare Pages and Workers Builds.
+- PostgreSQL 18 synthetic test run: [43103522446](https://github.com/BTF14/Micro-app/actions/runs/43103522446), SUCCESS.
+- PR #305 remains Draft and unmerged because PR #304 also changes `.github/workflows/backup.yml` and has not completed CI. At the latest check, all 10 PR #304 workflow runs remained `queued`; its two Cloudflare check-runs were `success`.
+- PR #302 remains OPEN/Draft, not merged. Do not close it until #304 is actually merged and the canonical supersession comment is posted.
+- Branch-protection endpoint for `main` returned 403 `Resource not accessible by integration`; required branch-protection contexts cannot be independently reverified from this integration. No merge is authorized on that evidence.
+- Main remains `797b56a23547b6bfc8c255cab5637755c7eeb0bd`; no production/main changes were made by this task.

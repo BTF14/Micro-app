@@ -41,3 +41,7 @@ Add an isolated encrypted backup/restore test for the actual migration model in 
 - It does not restore the real remote backup artifact, prove the effective principal behind `DATABASE_URL_BACKUP_RO`, or prove least privilege, RPO/RTO, external alerts or total cost USD 0.
 - Issue #53 remains OPEN/P0. Production NOT READY.
 - No manual backup, no workflow_dispatch against production, no Neon access, no secrets, no Cron, no main changes, no deploy, no real data.
+
+## Superseding correction — ephemeral auth schema (2026-11-11)
+
+The BCV profile must preserve the schema of `auth_sessions`, `auth_rate_limits`, and `auth_bootstrap_attempts` while excluding their source rows using `--exclude-table-data`. The restore assertions require all three tables to exist and be empty. This supersedes the earlier shorthand that the tables themselves are excluded.

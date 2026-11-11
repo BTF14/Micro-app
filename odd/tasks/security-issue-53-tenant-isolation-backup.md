@@ -118,7 +118,7 @@ Excluded:
 - After PostgreSQL 18 run `43102529147` passed, `.github/workflows/backup.yml` was updated on this branch to replace the three `--exclude-table` flags with `--exclude-table-data=public.<table>`. The adjacent comment now states that DDL is preserved and only ephemeral rows are excluded.
 - Added an additive dated reconciliation to `docs/BACKUP_AND_RECOVERY.md` and `docs/SECURITY_ROADMAP.md`. Historical records were not rewritten.
 - The operational workflow change is still unmerged and has not been executed against Neon. The exact final branch SHA must pass CI independently; the earlier PostgreSQL 18 run validates the test contract, not later workflow/doc commits.
-- Current branch HEAD before this task-file update: `0a8b96d1bd4a87bb57c6aae8e8d65d9393b033e8`.
+- Current branch HEAD before this task-file update: `f17b8609e92f392f8879f91bd3b8e6dae90380a5`.
 
 
 ## Integration dependency — PR #304 overlap (2026-11-11 UTC)
@@ -132,3 +132,7 @@ Excluded:
 
 
 - Se amplió la comparación del esquema para incluir propiedades de tablas, secuencias (tipo, start/increment/min/max/cache/cycle), triggers no internos y políticas RLS, además de columnas, constraints e índices. Esto cubre los objetos adicionales del esquema inicial que deben sobrevivir al round-trip; la suite debe pasar de nuevo en el HEAD final.
+
+
+- PostgreSQL 18 run [43103214571](https://github.com/BTF14/Micro-app/actions/runs/43103214571) passed all privilege assertions and archive inspection, then failed while concatenating PostgreSQL internal `"char"` values (`pg_class.relkind` / `relpersistence`) in the expanded schema manifest. The metadata comparison had not completed.
+- Corrective commit `f17b8609e92f392f8879f91bd3b8e6dae90380a5` explicitly casts both relation flags to text. A new exact-HEAD run is required before claiming full schema metadata verification.

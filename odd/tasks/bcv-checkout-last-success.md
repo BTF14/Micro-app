@@ -105,3 +105,17 @@ Esta defensa de base de datos complementa el guard de API y separa el principal 
 ## Superseding permissions note — 2026-11-11
 
 The earlier statements in this task that migration 0021 grants column-scoped UPDATE to `microapp_runtime` are superseded. The current #287 migration 0021 grants runtime SELECT only on `bcv_sync_state`; migration 0022 gives the isolated producer LOGIN the write allowlist and exposes the SECURITY DEFINER row-lock helper to runtime. The API runtime cannot directly UPDATE the singleton. Exact-HEAD migration validation confirms the 0021 intermediate state and 0022 final contract. Full CI remains infrastructure-blocked by Ubuntu apt DNS failures, so do not mark the entire release gate complete.
+
+
+## Reconciliation against main — 2026-11-11
+
+- Main baseline: `06e50defb2b684684262f79cf2318dcf6d32e9b1`.
+- Live PR #287 HEAD observed: `3f3a769ebd521ddd1cdba290971657f0055de116`; PR base is already the stated main baseline. The branch contains main as its merge base and is 0 commits behind; no additional merge commit is needed. Do not recreate the stale `fe73180...` synchronization.
+- `.github/workflows/backup.yml` is byte-identical to main (blob `26e29557c5c68af52d405afb9961e9c7c666215a`): APT retries, temporary GIT_ASKPASS and all three `--exclude-table-data=public.*` flags are preserved.
+- `.github/workflows/ci.yml` adds only the isolated BCV producer role/connection, migration contract assertions 0017–0023, BCV effective-date integration, own register-shift runtime integration, and atomic checkout integration to main's existing CI structure.
+- `apps/api/src/index.ts` preserves main's app setup and existing route registrations, adding checkout, register-shift and BCV route registration plus a separately gated BCV Cron branch; the existing hourly cleanup Cron remains explicitly gated.
+- `apps/api/src/inventory-counts.ts` preserves the warehouse/document/balance lock sequence and idempotency path; the feature branch adds branch-scoped balance locking, durable one-time opening-count detection (including all-zero opening documents), stale count/version checks and ledger movement writes instead of direct balance mutation. Full PostgreSQL integration must pass before acceptance.
+- Migrations are sequential after main's 0016: 0017 weekend BCV effective date, 0018 per-payment allocation, 0019 inventory ledger balance projection, 0020 strict effective date, 0021 BCV sync state, 0022 dedicated producer role, 0023 register-shift runtime operations. The migration runner and 0016 baseline remain unchanged; no migration was renumbered.
+- Exact-HEAD checks for the initial reconciliation failed in two places: (1) migration 0017 contract assertion compared the case-sensitive token `ISODOW` against PostgreSQL's deparsed function definition; (2) the legacy synthetic restore test tried to create `microapp_migrator` and `microapp_runtime` a second time after the full BCV restore profile had already created them in the same PostgreSQL service. These are test harness defects, not reasons to weaken the BCV or backup contracts.
+- Corrective work: make the SQL contract assertion case-insensitive without changing migration DDL; make the isolated backup role fixture idempotent while preserving exact role attributes and privilege-denial assertions. Re-run exact-HEAD CI, all restore profiles and integration tests; do not close this task until all required checks pass.
+

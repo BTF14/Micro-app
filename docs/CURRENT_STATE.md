@@ -2742,3 +2742,11 @@ main sigue en c5373564413ba086690552c6b7deeab08d7b4a89. Su .github/workflows/bac
 - Los artefactos antiguos no satisfacen el contrato nuevo porque carecen del esquema de auth efímera que ahora se conserva vacío. Esperar backup natural posterior a la integración antes de cualquier ensayo remoto.
 - Issue #53 OPEN/P0; producción NOT READY. Pendientes: principal efectivo/least privilege real, restore remoto real aislado, provisioning provider-specific, simulacro de aplicación, alerta externa, RPO/RTO medidos y coste $0.
 - No Neon main, datos reales, secretos/age, grants remotos, Cloudflare/DNS sensibles, deploy, Cron, billing, force-push ni merge de Draft.
+
+
+## Adenda UI turnos — 2026-11-11
+
+- PR #287 rama `integration/bcv-checkout-rehearsal-20261109`: UI de turnos añadida en `RegisterShiftsPanel.tsx` con navegación Caja y turnos para Owner/Admin/Cashier; branches/cajas asignadas, apertura USD/VES, consulta del turno y cierre con conteos físicos explícitos y confirmación irreversible.
+- El selector de sucursal se bloquea mientras hay turno abierto, respetando el índice único por cajero/organización. Los importes finales se inicializan vacíos, no se copian del fondo inicial.
+- Test nuevo cubre carga, apertura, revisión y cierre, además de 403 por falta de acceso. CI exact SHA `8da81f1...` encontró un import de tipo sin uso; corregido en `a8148f94f2ae1abd8d12f6aeb187ff1ddcdf9951`. Revalidar los workflows exact-SHA después de esa corrección antes de declarar verde.
+- La UI no implementa ventas ni cobros. La jornada POS completa sigue NO READY. No cambiar la clasificación de producción ni cerrar #53.

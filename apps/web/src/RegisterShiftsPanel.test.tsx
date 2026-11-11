@@ -61,6 +61,15 @@ describe("Register shifts workspace", () => {
     expect(container.textContent).toContain("Turno abierto");
     expect(container.textContent).toContain("$ 20,0000");
 
+    const closeInputs = [...container.querySelectorAll<HTMLInputElement>(".register-shift-form input")];
+    const valueSetter = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, "value")?.set;
+    if (closeInputs.length !== 2 || !valueSetter) throw new Error("Closing count inputs not found");
+    await act(async () => {
+      valueSetter.call(closeInputs[0], "21.0000");
+      closeInputs[0].dispatchEvent(new Event("input", { bubbles: true }));
+      valueSetter.call(closeInputs[1], "510.00");
+      closeInputs[1].dispatchEvent(new Event("input", { bubbles: true }));
+    });
     const reviewButton = [...container.querySelectorAll("button")].find((button) => button.textContent === "Revisar cierre");
     if (!reviewButton) throw new Error("Review close button not found");
     await act(async () => { reviewButton.click(); });

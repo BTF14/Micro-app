@@ -133,6 +133,49 @@ jobs:
       - name: Run full-schema and populated BCV/projection-ledger restore smoke
         shell: bash
         run: bash scripts/test_backup_restore_schema_bcv.sh
+
+  restore-legacy-regression:
+    name: Synthetic encrypted restore — legacy backup contract
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      SOURCE_URL: postgresql://microapp:microapp-test-only@localhost:5432/microapp_source
+      RESTORE_URL: postgresql://microapp:microapp-test-only@localhost:5432/microapp_restore
+      RESTORE_DB_NAME: microapp_restore
+    services:
+      postgres:
+        image: postgres:18
+        env:
+          POSTGRES_DB: microapp_source
+          POSTGRES_USER: microapp
+          POSTGRES_PASSWORD: microapp-test-only
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U microapp -d microapp_source"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+      - name: Test bounded apt retry helper
+        run: bash .github/scripts/test-apt-retry.sh
+      - name: Install age and PostgreSQL 18 client
+        shell: bash
+        run: |
+          set -euo pipefail
+          bash scripts/ci/apt-retry.sh update
+          bash scripts/ci/apt-retry.sh install -y curl ca-certificates gnupg age
+          sudo install -d /usr/share/postgresql-common/pgdg
+          sudo curl --fail --show-error --location \
+            --retry 5 --retry-all-errors --retry-delay 2 --connect-timeout 15 --max-time 90 \
+            https://www.postgresql.org/media/keys/ACCC4CF8.asc \
+            -o /usr/share/postgresql-common/pgdg/apt.postgresql.org.asc
+          echo "deb [signed-by=/usr/share/postgresql-common/pgdg/apt.postgresql.org.asc] https://apt.postgresql.org/pub/repos/apt $(. /etc/os-release && echo "$VERSION_CODENAME")-pgdg main" \
+            | sudo tee /etc/apt/sources.list.d/pgdg.list
+          bash scripts/ci/apt-retry.sh update
+          bash scripts/ci/apt-retry.sh install -y postgresql-client-18
       - name: Run isolated legacy synthetic backup/restore regression
         shell: bash
         run: bash scripts/test_backup_restore.sh

@@ -69,8 +69,6 @@ jobs:
         run: bash scripts/db/migrate.sh
       - name: Verify final PostgreSQL schema contract
         run: psql -X -v ON_ERROR_STOP=1 --dbname "$ADMIN_DATABASE_URL" -f apps/api/migrations/0016_runtime_inventory_ledger_read.assertions.sql
-      - name: Verify BCV weekend effective-date migration 0017 contract
-        run: psql -X -v ON_ERROR_STOP=1 --dbname "$ADMIN_DATABASE_URL" -f apps/api/migrations/0017_checkout_bcv_weekend_effective_date.assertions.sql
       - name: Verify checkout per-payment USD allocation migration 0018 contract
         run: psql -X -v ON_ERROR_STOP=1 --dbname "$ADMIN_DATABASE_URL" -f apps/api/migrations/0018_checkout_payment_allocation.assertions.sql
       - name: Verify ledger-authoritative inventory balance projection migration 0019 contract

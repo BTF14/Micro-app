@@ -1,3 +1,50 @@
+# Reconciliación exact-HEAD — 2026-11-11 — PR #287 / principal de backup
+
+> Este bloque prevalece sobre snapshots anteriores. SHA verificado directamente en GitHub: `e5f956271f723bfa00da2ab527c35ac422cf6d2d`. No reutilizar checks de otros SHA.
+
+## GitHub / PR #287
+
+- PR #287: OPEN / Draft / mergeable=true / mergeable_state=clean. HEAD `e5f956271f723bfa00da2ab527c35ac422cf6d2d`; branch `integration/bcv-checkout-rehearsal-20261109`.
+- Exact-HEAD CI: **16/16 check-runs SUCCESS**, **11/11 workflow runs pull_request SUCCESS** y **2/2 workflow runs push SUCCESS**.
+- CI principal: 43/43 pasos SUCCESS.
+- PostgreSQL migration validation: 86/86 pasos SUCCESS, incluidos los tests de membresías y el contrato least-privilege del principal de backup.
+- PostgreSQL migration runner: 21/21 pasos SUCCESS.
+- Backup restore smoke: main paired-intent (migrations 0001–0016) 11/11 pasos SUCCESS; BCV projection (0001–0023) 10/10 pasos SUCCESS.
+- También SUCCESS en exact HEAD: Secret history scan, ODD docs, dashboard, dependency review, Semgrep, Security y Playwright.
+- Reviews formales: 0. Review threads: 0. No aprobación independiente; mantener Draft y no fusionar.
+- Comparación con main `c5373564413ba086690552c6b7deeab08d7b4a89`: 527 ahead / 1 behind; merge base `03442951b2a2f63f5bf4dcf560f2c91be4f6cc71`. Divergencia exclusiva de main es documental; no hacer sync/rebase automático.
+- PR: 123 archivos, 19,394 adiciones y 307 eliminaciones. Requiere revisión independiente completa antes de promover a Ready.
+
+## Hallazgo P0 Neon main — solo lectura
+
+- Proyecto `micro-app-db` (`restless-fire-99110035`), branch primary/default `main` (`br-summer-math-b7297a60`), DB `neondb`.
+- Rol LOGIN `backup_readonly`: `rolcreaterole=true`, `rolcreatedb=true`, `rolreplication=true`, `rolbypassrls=true`, INHERIT true, SUPERUSER false.
+- Membresía directa `backup_readonly -> neon_superuser`; membresía efectiva `pg_write_all_data` y `pg_read_all_data`; INSERT/UPDATE/DELETE efectivos en `public.products`. El rol llamado backup_readonly no es read-only.
+- Las 15 tablas base públicas y 2 secuencias observadas pertenecen a `neondb_owner`. No RLS en las 15 tablas. Default ACL de `neondb_owner`: SELECT para futuras tablas, ningún default ACL para secuencias; secuencias existentes dan SELECT+UPDATE a `backup_readonly`.
+- `microapp_runtime` y `microapp_migrator` no aparecen en el catálogo de roles consultado en Neon main.
+- **No se leyó ningún secreto ni connection string.** La identidad efectiva de `DATABASE_URL_BACKUP_RO` y la del Worker `DATABASE_URL` siguen sin verificar. No afirmar que el backup use `backup_readonly` ni que el Worker use `neondb_owner`.
+- No se modificaron roles, membresías, grants, passwords, secrets, datos reales, Cron, DNS, billing ni producción. Todas las consultas Neon fueron SELECT sobre catálogos y predicados de privilegio.
+
+## Contrato candidato de backup least-privilege — CI desechable
+
+- En PostgreSQL 18 efímero se crea LOGIN sin SUPERUSER/CREATEDB/CREATEROLE/REPLICATION/BYPASSRLS, NOINHERIT y sin membresías; owner sintético NOLOGIN.
+- Se comprueban grants explícitos para objetos existentes y default ACL SELECT-only para futuras tablas y secuencias.
+- Se comprueba pg_dump y pg_restore --list con el login backup.
+- Se rechazan INSERT/UPDATE/DELETE/TRUNCATE, sequence USAGE/UPDATE (incluidos nextval/setval), CREATE de database/schema, CREATE ROLE y SET ROLE.
+- Exact HEAD e2e CI validó el test: step `Test least-privilege backup principal can pg_dump without write access` SUCCESS dentro de PostgreSQL migration validation (86/86 pasos).
+- Esto valida una propuesta de permisos y compatibilidad pg_dump en CI; no provisiona ni cambia Neon y no identifica el principal del secreto.
+
+## Estado operativo y decisiones
+
+- Issue #53 permanece OPEN/P0; comentario de evidencia inicial `6802571142`, actualización exact-HEAD `6804382288`.
+- Producción **NOT READY**. No integrar PR #287 solo por checks verdes. Mantener Draft.
+- Próximo trabajo: revisión independiente de los 123 archivos y del checkout/BCV/roles; preparar plan de reemplazo del principal backup con continuidad, prueba dump/restore y rollback. Cualquier cambio en Neon main o secreto requiere autorización específica y un plan revisado.
+- Después de integración autorizada, observar únicamente el siguiente backup natural de main y su diagnóstico seguro de `current_user` / `session_user` y booleanos de privilegio; no ejecutar workflow_dispatch para fabricar evidencia.
+- Gates pendientes: identidad efectiva del Worker y backup; provisioning real de roles y grants; CORS efectivo; alertas externas; RPO/RTO medidos; coste total USD 0; aceptación funcional/comercial de jornada POS/checkout y revisión formal.
+- MVP objetivo 2026-12-01; GO/NO-GO 2026-11-30.
+
+---
+
 # Addendum P0 — 2026-11-11 — default ACL y prueba de principal candidato
 
 Neon main, SELECT-only: rol `backup_readonly` con atributos CREATEROLE/CREATEDB/REPLICATION/BYPASSRLS, membresía `neon_superuser` y `pg_write_all_data`, y privilegios INSERT/UPDATE/DELETE sobre products. Las 15 tablas y dos secuencias públicas pertenecen a `neondb_owner`; default ACL solo SELECT para tablas futuras y ninguno para secuencias futuras. Las secuencias actuales conceden SELECT+UPDATE al rol observado.

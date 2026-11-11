@@ -116,3 +116,11 @@ The disposable PostgreSQL 18 contract test now exercises the exact missing seque
 - Exercises `pg_dump` and `pg_restore --list` as the backup login; negative tests include sequence `nextval` and `setval` denial.
 
 This is an isolated candidate contract only. It does not alter Neon default ACLs, roles, grants, passwords, secrets or production workflows. The live secret identity remains unknown; issue #53 remains OPEN/P0.
+
+
+## Exact-HEAD validation — 2026-11-11 — PR #287 HEAD `e5f956271f723bfa00da2ab527c35ac422cf6d2d`
+
+- Exact HEAD: 16/16 check-runs SUCCESS; 11/11 PR workflows and 2/2 push workflows SUCCESS.
+- PostgreSQL migration validation 86/86 steps SUCCESS, including this test; migration runner 21/21; backup restore main 11/11 and BCV 10/10; CI main 43/43.
+- Formal reviews 0, review threads 0. PR remains OPEN/Draft. Issue #53 OPEN/P0; production NOT READY.
+- Live secret principal remains unknown; this test is disposable CI only. No Neon role/grant/secret changes were made.

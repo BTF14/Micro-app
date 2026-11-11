@@ -2799,3 +2799,13 @@ La hipótesis anterior de que el helper de espera era la causa no era correcta. 
 - Documentation-only commit `e5dbb497fbb2779f8fc1581880dc5d8c9ed00b65` updates current state/checkpoint/handoff; its exact-HEAD checks must be independently revalidated.
 - PR #287 OPEN/Draft, 123 files, 19,233 additions, 307 deletions; 524 ahead / 1 behind main; mergeable=true/clean; no formal reviews or threads. Issue #53 OPEN/P0; production NOT READY.
 - No secret, connection string or business row was read; no Neon writes, remote role/grant/password/secret changes, manual backup, deploy, Cron, DNS or billing changes.
+
+
+## 2026-11-11 — exact HEAD e5f9562 / least-privilege backup candidate
+
+- Reconciled PR #287 at exact HEAD `e5f956271f723bfa00da2ab527c35ac422cf6d2d`: 16/16 check-runs SUCCESS; 11/11 pull_request workflow runs and 2/2 push workflow runs SUCCESS.
+- CI 43/43 steps; PostgreSQL migration validation 86/86; migration runner 21/21; encrypted synthetic restore main 0001–0016 11/11 and BCV 0001–0023 10/10. Secret history, ODD docs, dashboard, dependency review, Semgrep, Security and Playwright all SUCCESS.
+- Expanded disposable PostgreSQL 18 backup principal test validates explicit SELECT on existing tables/sequences and default SELECT-only ACLs for future tables/sequences, pg_dump/pg_restore-list, and denial of writes, sequence USAGE/UPDATE, CREATE DATABASE/ROLE, SET ROLE and memberships.
+- Neon main catalog findings remain unchanged and SELECT-only: `backup_readonly` is privileged and writable; 15 public tables and 2 sequences owned by `neondb_owner`; default ACL only for future tables; no RLS on 15 tables; `microapp_runtime` and `microapp_migrator` absent. Actual backup/Worker secret identities remain unknown because no secrets were read.
+- PR #287 remains OPEN/Draft, mergeable clean, 0 formal reviews, 0 review threads; 527 ahead / 1 behind main. No merge/rebase/sync. Issue #53 OPEN/P0; production NOT READY.
+- No Neon, secret, role, grant, password, business data, Cron, DNS, billing or production changes.

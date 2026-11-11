@@ -457,3 +457,9 @@ No remote backup artifact or age key was accessed; `.github/workflows/backup-rea
 - Próximo paso: reconsultar el HEAD actual y workflows exact-HEAD antes de cualquier decisión; continuar con gates operativos de #53 (principal efectivo, provisioning seguro, integridad/restore remoto, alertas, RPO/RTO y coste $0). No repetir las investigaciones de roles/ACL ya documentadas.
 
 Follow-up: remote restore harness additionally tests actual runtime organization read and schema CREATE denial; BCV profile tests producer's narrow state/rate writes in a rolled-back transaction. Exact HEAD `f6c453d928ffaef4ab15efc5733bd3c7001089e3`: 13/13 PR workflows SUCCESS; backup smoke `42997279023`, Playwright `42997278934`, CI `42997279209` SUCCESS. Actual remote workflow remains unexecuted; issue #53 OPEN/P0; production NOT READY.
+
+## Checkpoint — runbook operacional de backup/restore — 2026-11-11
+
+Se añadió odd/tasks/backup-operational-recovery-runbook.md. Documenta dos rutas de recuperación (branch PITR aislado si la ventana Neon vigente lo permite; artefacto age cifrado en repositorio privado para recuperación independiente), integridad checksum, custodia de llave, restore desechable con roles de aplicación, restricciones de cutover, timestamps de incidente y cálculo de RPO/RTO, alertas y límites $0.
+
+No se fijan objetivos RPO/RTO sin medición y aceptación de negocio. El backup diario no prueba por sí solo RPO de 24h; pg_restore duration no equivale a RTO. No se ejecutó workflow_dispatch, no se accedió a secretos/artefactos reales/llave age, no hubo Neon ni producción. Próximo gate externo: observar backup programado natural y sus seis booleanos, después de que el workflow actualizado alcance default branch. Issue #53 OPEN/P0; producción NOT READY.

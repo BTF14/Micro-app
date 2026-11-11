@@ -119,3 +119,14 @@ The earlier statements in this task that migration 0021 grants column-scoped UPD
 - Exact-HEAD checks for the initial reconciliation failed in two places: (1) migration 0017 contract assertion compared the case-sensitive token `ISODOW` against PostgreSQL's deparsed function definition; (2) the legacy synthetic restore test tried to create `microapp_migrator` and `microapp_runtime` a second time after the full BCV restore profile had already created them in the same PostgreSQL service. These are test harness defects, not reasons to weaken the BCV or backup contracts.
 - Corrective work: make the SQL contract assertion case-insensitive without changing migration DDL; make the isolated backup role fixture idempotent while preserving exact role attributes and privilege-denial assertions. Re-run exact-HEAD CI, all restore profiles and integration tests; do not close this task until all required checks pass.
 
+
+
+## Register-shift API integration findings — 2026-11-11
+
+The exact-HEAD CI rerun exposed two failures in `src/register-shifts-api.integration.test.ts`, not in the BCV checkout guard:
+
+- The test expected `{ items }` from `GET /api/orgs/:organizationId/branches`, but the canonical `registerBranchRoutes` endpoint returns `{ branches }`. The branch module is registered before register-shift routes.
+- The test expected an Inventory member with an active branch assignment to receive 403 from branch discovery. This contradicts the existing branch-list contract and `branches.integration.test.ts`: any role with `inventory.read` may list scope; Inventory sees only active assigned branches. Owner/Admin see all active branches, so an Owner's unassigned branch is intentionally visible in discovery while branch-scoped register operations remain denied without an active membership.
+- `register-shifts.ts` redundantly registered the same GET branch-list path with a conflicting response shape and narrower policy. Remove this duplicate route and its now-unused `BranchRow` type; keep the canonical branch list route as the single source of truth. Update the register-shift integration test to assert the established response and role scope contract, while preserving the 403 for Inventory attempting to open a shift and for Owner attempting a register operation in an unassigned branch.
+- The test failures were: TypeError reading `items.map`, and expected 403 / received 200. The API behavior is consistent with the existing branch authorization contract; the duplicate route and test assumptions were the defects.
+

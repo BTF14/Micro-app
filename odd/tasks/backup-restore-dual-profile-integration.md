@@ -41,3 +41,6 @@ The current integration target is the checked-out BCV/projection profile, which 
 
 
 **CI correction note:** PostgreSQL 18 `pg_dump` locks every selected relation in `ACCESS SHARE` mode even when `--exclude-table-data` skips its rows. Therefore the synthetic backup principal retains read-only `SELECT` on the three ephemeral auth tables to permit the dump lock; no DML/DDL/sequence-write privileges are granted, and their data remains excluded from the archive and absent after restore.
+
+
+**Grant lifecycle:** the temporary `microapp_backup` CONNECT/USAGE/SELECT grants exist only for the dump window. Immediately after `pg_dump` completes, the script revokes table/sequence SELECT, schema USAGE and database CONNECT before producing source/restore ACL manifests. This prevents the test-only principal from polluting the restored-application ACL comparison or retaining access after the archive is generated.

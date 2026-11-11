@@ -180,6 +180,15 @@ pg_dump "$backup_url" --format=custom \
   --file="$tmpdir/schema.dump"
 test -s "$tmpdir/schema.dump"
 
+# The temporary dump grants are revoked before source/restore ACL manifests are
+# compared. The test-only principal never retains access beyond pg_dump.
+psql "$schema_source_url" -X -v ON_ERROR_STOP=1 <<'SQL'
+REVOKE SELECT ON ALL TABLES IN SCHEMA public FROM microapp_backup;
+REVOKE SELECT ON ALL SEQUENCES IN SCHEMA public FROM microapp_backup;
+REVOKE USAGE ON SCHEMA public FROM microapp_backup;
+SQL
+psql "$SOURCE_URL" -X -v ON_ERROR_STOP=1 -c 'REVOKE CONNECT ON DATABASE microapp_schema_source FROM microapp_backup' >/dev/null
+
 echo "== Encrypt, checksum, decrypt and restore into a second disposable database"
 age-keygen -o "$tmpdir/age-key.txt" >/dev/null 2>"$tmpdir/age-keygen.log"
 public_key="$(awk '/^# public key:/ {print $4}' "$tmpdir/age-key.txt")"

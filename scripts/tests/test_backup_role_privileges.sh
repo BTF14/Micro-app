@@ -33,7 +33,7 @@ assert_true() {
 }
 
 assert_true "backup role has only the required non-admin role attributes" "
-  SELECT NOT rolsuper AND NOT rolcreatedb AND NOT rolcreaterole
+  SELECT rolcanlogin AND NOT rolsuper AND NOT rolcreatedb AND NOT rolcreaterole
     AND NOT rolreplication AND NOT rolbypassrls AND NOT rolinherit
   FROM pg_roles WHERE rolname='microapp_backup'
 "
@@ -42,6 +42,15 @@ assert_true "backup role is not a member, directly or transitively, of migrator"
 "
 assert_true "backup role is not a member, directly or transitively, of runtime" "
   NOT pg_has_role('microapp_backup', 'microapp_runtime', 'MEMBER')
+"
+assert_true "backup role owns no database, schema or public objects" "
+  NOT EXISTS (SELECT 1 FROM pg_database WHERE datdba=(SELECT oid FROM pg_roles WHERE rolname='microapp_backup'))
+  AND NOT EXISTS (SELECT 1 FROM pg_namespace WHERE nspowner=(SELECT oid FROM pg_roles WHERE rolname='microapp_backup'))
+  AND NOT EXISTS (
+    SELECT 1 FROM pg_class
+    WHERE relnamespace='public'::regnamespace
+      AND relowner=(SELECT oid FROM pg_roles WHERE rolname='microapp_backup')
+  )
 "
 assert_true "backup role has schema USAGE but not CREATE" "
   has_schema_privilege('microapp_backup', 'public', 'USAGE')

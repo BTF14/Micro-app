@@ -362,8 +362,8 @@ describe.skipIf(!databaseUrl)("inventory balance and ledger read APIs against Po
     expect(cashierBody.items.length).toBeGreaterThan(0);
     expect(cashierBody.items.every((item) => !("unit_cost_usd" in item))).toBe(true);
 
-    // Cashier receives read-only movement access, not warehouse/count management.
-    expect((await get(`/api/orgs/${organizationId}/branches/${branchId}/warehouses`, cashierToken)).status).toBe(403);
+    // Cashier may read movements and warehouses, but cannot manage counts.
+    // Branch-scoped warehouse visibility was asserted above; keep count management denied.
     expect((await get(root() + "/counts", cashierToken)).status).toBe(403);
 
     // The same role remains confined to its active branch membership and tenant.

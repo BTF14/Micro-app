@@ -7,6 +7,7 @@ profile="${RESTORE_GRANTS_PROFILE:-}"
 case "$profile" in main|bcv) ;; *) echo "RESTORE_GRANTS_PROFILE must be main or bcv." >&2; exit 2;; esac
 command -v psql >/dev/null 2>&1 || { echo "psql is required." >&2; exit 2; }
 command -v awk >/dev/null 2>&1 || { echo "awk is required." >&2; exit 2; }
+command -v sha256sum >/dev/null 2>&1 || { echo "sha256sum is required." >&2; exit 2; }
 
 identity="$(psql "$MIGRATION_DATABASE_URL" -X -v ON_ERROR_STOP=1 -Atqc "SELECT current_user || ':' || session_user")"
 [[ "$identity" == "microapp_migrator:microapp_migrator" ]] || {
@@ -25,6 +26,38 @@ expected=16
 [[ "${#migration_files[@]}" -eq "$expected" ]] || {
   echo "Refusing ACL replay: profile $profile requires exactly $expected numbered migrations; found ${#migration_files[@]}." >&2
   exit 2
+}
+
+# The restored ledger, not the current branch name or migration count alone,
+# identifies the exact schema history. Never replay ACL from a drifted bundle.
+ledger_count=0
+while IFS='|' read -r version filename checksum; do
+  [[ -n "$version" && -n "$filename" && -n "$checksum" ]] || {
+    echo "Migration ledger contains an incomplete row; refusing ACL replay." >&2
+    exit 1
+  }
+  ledger_count=$((ledger_count + 1))
+  expected_version="$(printf '%04d' "$ledger_count")"
+  [[ "$version" == "$expected_version" ]] || {
+    echo "Migration ledger is not contiguous at $expected_version." >&2
+    exit 1
+  }
+  migration_path="$MIGRATIONS_DIR/$filename"
+  [[ -s "$migration_path" ]] || {
+    echo "Exact migration file from ledger is missing: $filename" >&2
+    exit 1
+  }
+  actual_checksum="$(sha256sum "$migration_path" | awk '{print $1}')"
+  [[ "$actual_checksum" == "$checksum" ]] || {
+    echo "Migration checksum mismatch for $filename; refusing ACL replay." >&2
+    exit 1
+  }
+done < <(psql "$MIGRATION_DATABASE_URL" -X -v ON_ERROR_STOP=1 -At -F '|' \
+  -c "SELECT version, filename, checksum FROM public.schema_migrations ORDER BY version")
+
+[[ "$ledger_count" -eq "$expected" ]] || {
+  echo "Restored migration ledger has $ledger_count rows; expected $expected." >&2
+  exit 1
 }
 
 tmp_sql="$(mktemp)"

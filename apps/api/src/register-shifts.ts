@@ -15,6 +15,7 @@ const MAX_BODY_BYTES = 4 * 1024;
 type ShiftBranch = BranchContext;
 type RegisterRow = { id: string; name: string; code: string };
 type BranchRow = { id: string; name: string; slug: string };
+type OrganizationShiftRow = { shift_id: string; branch_id: string; branch_name: string; register_id: string; register_name: string; opened_at: Date; opening_cash_usd: string; opening_cash_ves: string };
 type ShiftRow = {
   id: string; organization_id: string; branch_id: string; register_id: string;
   cashier_user_id: string; opened_at: Date; opening_cash_usd: string; opening_cash_ves: string;
@@ -130,6 +131,42 @@ function sessionToken(c: Context<{ Bindings: Bindings }>): string | null {
 }
 
 export function registerRegisterShiftRoutes(app: Hono<{ Bindings: Bindings }>): void {
+  app.get("/api/orgs/:organizationId/register-shifts/current", async (c) => {
+    c.header("Cache-Control", "private, no-store");
+    const { organizationId } = c.req.param();
+    if (!UUID_PATTERN.test(organizationId)) return c.json({ error: "INVALID_RESOURCE", message: "El identificador de la organización no es válido." }, 400);
+    const token = sessionToken(c);
+    if (!token) return c.json({ error: "UNAUTHENTICATED", message: "Inicia sesión para continuar." }, 401);
+    try {
+      const result = await withDatabaseClient(c.env.DATABASE_URL, (client) => withDatabaseTransaction(client, async (tx) => {
+        const authorization = await authorizeTenantOperation(tx, token, organizationId, "register.shift.read_own", false);
+        if (!authorization.allowed) {
+          if (authorization.reason === "unauthenticated_or_out_of_scope") return { kind: "unauthenticated" as const };
+          return { kind: "forbidden" as const };
+        }
+        const rows = await tx.query<OrganizationShiftRow>(
+          `SELECT s.id AS shift_id, s.branch_id, b.name AS branch_name,
+                  s.register_id, r.name AS register_name, s.opened_at,
+                  s.opening_cash_usd::text AS opening_cash_usd,
+                  s.opening_cash_ves::text AS opening_cash_ves
+             FROM public.register_shifts s
+             JOIN public.branches b ON b.organization_id = s.organization_id AND b.id = s.branch_id
+             JOIN public.registers r ON r.organization_id = s.organization_id AND r.branch_id = s.branch_id AND r.id = s.register_id
+             JOIN public.branch_memberships bm ON bm.organization_id = s.organization_id AND bm.branch_id = s.branch_id AND bm.user_id = s.cashier_user_id
+            WHERE s.organization_id = $1 AND s.cashier_user_id = $2
+              AND s.closed_at IS NULL AND b.is_active AND r.is_active AND bm.is_active
+            ORDER BY s.opened_at DESC
+            LIMIT 1`,
+          [authorization.context.organizationId, authorization.context.userId],
+        );
+        return { kind: "ok" as const, shift: rows.rows[0] ?? null };
+      }));
+      if (result.kind === "unauthenticated") return c.json({ error: "UNAUTHENTICATED", message: "Inicia sesión para continuar." }, 401);
+      if (result.kind === "forbidden") return c.json({ error: "FORBIDDEN", message: "No tienes permiso para consultar tu turno." }, 403);
+      return c.json({ shift: result.shift }, 200);
+    } catch (error) { return readFailure(c, error); }
+  });
+
   app.get("/api/orgs/:organizationId/branches", async (c) => {
     c.header("Cache-Control", "private, no-store");
     const { organizationId } = c.req.param();

@@ -61,7 +61,11 @@ describe("Register shifts workspace", () => {
     expect(container.textContent).toContain("Turno abierto");
     expect(container.textContent).toContain("$ 20,0000");
 
-    const closeButton = [...container.querySelectorAll("button")].find((button) => button.textContent === "Cerrar turno");
+    const reviewButton = [...container.querySelectorAll("button")].find((button) => button.textContent === "Revisar cierre");
+    if (!reviewButton) throw new Error("Review close button not found");
+    await act(async () => { reviewButton.click(); });
+    expect(container.textContent).toContain("no se puede editar después");
+    const closeButton = [...container.querySelectorAll("button")].find((button) => button.textContent === "Confirmar cierre");
     if (!closeButton) throw new Error("Close shift button not found");
     await act(async () => { closeButton.click(); });
     await settle();

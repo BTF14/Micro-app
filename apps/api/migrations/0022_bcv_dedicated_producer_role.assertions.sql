@@ -32,7 +32,9 @@ BEGIN
       WHERE a.attrelid='public.bcv_sync_state'::regclass
         AND a.attnum > 0 AND NOT a.attisdropped
         AND (pg_catalog.has_column_privilege('microapp_runtime',a.attrelid,a.attname::text,'INSERT')
-          OR pg_catalog.has_column_privilege('microapp_runtime',a.attrelid,a.attname::text,'UPDATE'))
+          OR pg_catalog.has_column_privilege('microapp_runtime',a.attrelid,a.attname::text,'UPDATE')
+          OR pg_catalog.has_column_privilege('microapp_runtime',a.attrelid,a.attname::text,'REFERENCES')
+          OR pg_catalog.has_column_privilege('microapp_runtime',a.attrelid,a.attname::text,'REFERENCES'))
     )
   THEN RAISE EXCEPTION 'BCV_RUNTIME_SYNC_STATE_MUST_BE_READ_ONLY'; END IF;
 
@@ -81,6 +83,7 @@ BEGIN
           OR pg_catalog.has_column_privilege('microapp_bcv_sync',a.attrelid,a.attname::text,'INSERT')
           OR (a.attname::text <> ALL(ARRAY['attempt_id','last_attempt_at','last_success_at','last_outcome','last_error_code','last_effective_date','updated_at']::text[])
             AND pg_catalog.has_column_privilege('microapp_bcv_sync',a.attrelid,a.attname::text,'UPDATE'))
+          OR pg_catalog.has_column_privilege('microapp_bcv_sync',a.attrelid,a.attname::text,'REFERENCES')
         )
     )
   THEN RAISE EXCEPTION 'BCV_PRODUCER_SYNC_STATE_GRANTS_INVALID'; END IF;
@@ -116,6 +119,7 @@ BEGIN
             AND pg_catalog.has_column_privilege('microapp_bcv_sync',a.attrelid,a.attname::text,'INSERT'))
           OR (a.attname::text <> 'validation_status'
             AND pg_catalog.has_column_privilege('microapp_bcv_sync',a.attrelid,a.attname::text,'UPDATE'))
+          OR pg_catalog.has_column_privilege('microapp_bcv_sync',a.attrelid,a.attname::text,'REFERENCES')
         )
     )
     OR pg_catalog.has_schema_privilege('microapp_bcv_sync','public','CREATE')

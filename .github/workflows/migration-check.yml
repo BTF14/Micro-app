@@ -376,6 +376,8 @@ jobs:
           GRANT INSERT (id,created_at) ON TABLE public.exchange_rates TO microapp_bcv_sync;
           GRANT UPDATE (rate,effective_date,source,created_at)
             ON TABLE public.exchange_rates TO microapp_bcv_sync;
+          GRANT REFERENCES (last_success_at) ON TABLE public.bcv_sync_state TO microapp_runtime, microapp_bcv_sync, PUBLIC;
+          GRANT REFERENCES (rate) ON TABLE public.exchange_rates TO microapp_runtime, microapp_bcv_sync, PUBLIC;
           SQL
       - name: Verify BCV producer schema CREATE is rejected before migration
         run: |

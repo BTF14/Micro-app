@@ -28,6 +28,8 @@ BEGIN
     OR pg_catalog.has_table_privilege('microapp_runtime', 'public.bcv_sync_state', 'UPDATE')
     OR pg_catalog.has_table_privilege('microapp_runtime', 'public.bcv_sync_state', 'DELETE')
     OR pg_catalog.has_table_privilege('microapp_runtime', 'public.bcv_sync_state', 'TRUNCATE')
+    OR pg_catalog.has_table_privilege('microapp_runtime', 'public.bcv_sync_state', 'REFERENCES')
+    OR pg_catalog.has_table_privilege('microapp_runtime', 'public.bcv_sync_state', 'TRIGGER')
     OR EXISTS (
       SELECT 1 FROM pg_catalog.pg_attribute a
       WHERE a.attrelid = 'public.bcv_sync_state'::regclass
@@ -35,6 +37,7 @@ BEGIN
         AND (
           pg_catalog.has_column_privilege('microapp_runtime', a.attrelid, a.attname::text, 'INSERT')
           OR pg_catalog.has_column_privilege('microapp_runtime', a.attrelid, a.attname::text, 'UPDATE')
+          OR pg_catalog.has_column_privilege('microapp_runtime', a.attrelid, a.attname::text, 'REFERENCES')
         )
     )
   THEN RAISE EXCEPTION 'BCV_SYNC_STATE_RUNTIME_MUST_BE_READ_ONLY'; END IF;

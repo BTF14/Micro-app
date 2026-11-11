@@ -28,6 +28,11 @@ CREATE TABLE public.bcv_sync_state (
 INSERT INTO public.bcv_sync_state (singleton) VALUES (true);
 
 REVOKE ALL ON TABLE public.bcv_sync_state FROM PUBLIC;
+-- Establish a SELECT-only intermediate state even if the migrator has dirty default ACLs.
+REVOKE ALL ON TABLE public.bcv_sync_state FROM microapp_runtime;
+REVOKE INSERT (singleton,attempt_id,last_attempt_at,last_success_at,last_outcome,last_error_code,last_effective_date,updated_at) ON TABLE public.bcv_sync_state FROM microapp_runtime;
+REVOKE UPDATE (singleton,attempt_id,last_attempt_at,last_success_at,last_outcome,last_error_code,last_effective_date,updated_at) ON TABLE public.bcv_sync_state FROM microapp_runtime;
+REVOKE REFERENCES (singleton,attempt_id,last_attempt_at,last_success_at,last_outcome,last_error_code,last_effective_date,updated_at) ON TABLE public.bcv_sync_state FROM microapp_runtime;
 GRANT SELECT ON TABLE public.bcv_sync_state TO microapp_runtime;
 -- Runtime is read-only. The isolated BCV producer LOGIN (migration 0022)
 -- owns synchronization writes; a partially applied migration bundle must

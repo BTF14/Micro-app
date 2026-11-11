@@ -49,12 +49,17 @@ REVOKE INSERT (singleton,attempt_id,last_attempt_at,last_success_at,last_outcome
   ON TABLE public.bcv_sync_state FROM microapp_runtime;
 REVOKE UPDATE (singleton,attempt_id,last_attempt_at,last_success_at,last_outcome,last_error_code,last_effective_date,updated_at)
   ON TABLE public.bcv_sync_state FROM microapp_runtime;
+REVOKE REFERENCES (singleton,attempt_id,last_attempt_at,last_success_at,last_outcome,last_error_code,last_effective_date,updated_at)
+  ON TABLE public.bcv_sync_state FROM microapp_runtime;
 GRANT SELECT ON TABLE public.bcv_sync_state TO microapp_runtime;
 
-REVOKE INSERT, UPDATE, DELETE, TRUNCATE ON TABLE public.exchange_rates FROM microapp_runtime;
+REVOKE ALL ON TABLE public.exchange_rates FROM microapp_runtime;
+GRANT SELECT ON TABLE public.exchange_rates TO microapp_runtime;
 REVOKE INSERT (id,base_currency,quote_currency,rate,source,effective_date,fetched_at,validation_status,created_at)
   ON TABLE public.exchange_rates FROM microapp_runtime;
 REVOKE UPDATE (id,base_currency,quote_currency,rate,source,effective_date,fetched_at,validation_status,created_at)
+  ON TABLE public.exchange_rates FROM microapp_runtime;
+REVOKE REFERENCES (id,base_currency,quote_currency,rate,source,effective_date,fetched_at,validation_status,created_at)
   ON TABLE public.exchange_rates FROM microapp_runtime;
 
 -- Normalize a pre-existing producer LOGIN before granting the narrow contract.
@@ -67,6 +72,8 @@ REVOKE INSERT (singleton,attempt_id,last_attempt_at,last_success_at,last_outcome
   ON TABLE public.bcv_sync_state FROM microapp_bcv_sync;
 REVOKE UPDATE (singleton,attempt_id,last_attempt_at,last_success_at,last_outcome,last_error_code,last_effective_date,updated_at)
   ON TABLE public.bcv_sync_state FROM microapp_bcv_sync;
+REVOKE REFERENCES (singleton,attempt_id,last_attempt_at,last_success_at,last_outcome,last_error_code,last_effective_date,updated_at)
+  ON TABLE public.bcv_sync_state FROM microapp_bcv_sync;
 
 REVOKE ALL ON TABLE public.exchange_rates FROM microapp_bcv_sync;
 REVOKE SELECT (base_currency,quote_currency,fetched_at,created_at)
@@ -74,6 +81,8 @@ REVOKE SELECT (base_currency,quote_currency,fetched_at,created_at)
 REVOKE INSERT (id,base_currency,quote_currency,rate,source,effective_date,fetched_at,validation_status,created_at)
   ON TABLE public.exchange_rates FROM microapp_bcv_sync;
 REVOKE UPDATE (id,base_currency,quote_currency,rate,source,effective_date,fetched_at,validation_status,created_at)
+  ON TABLE public.exchange_rates FROM microapp_bcv_sync;
+REVOKE REFERENCES (id,base_currency,quote_currency,rate,source,effective_date,fetched_at,validation_status,created_at)
   ON TABLE public.exchange_rates FROM microapp_bcv_sync;
 
 -- Grant only columns actually read/written by syncBcvOfficialRate() and

@@ -2712,3 +2712,13 @@ La hipótesis anterior de que el helper de espera era la causa no era correcta. 
 - PR #303 OPEN/Draft, 11 workflows/17 checks success; main fixture/full-schema script are ported to #287. #302 OPEN/Draft, 10 workflows/14 checks success; askpass helper and HTTP test are identical in #287 but workflow/test contract differs. #301 OPEN/no Draft, 15 checks success, Codex review incomplete; manual review found MAX_BRANCHES=100 without cursor. No PRs closed/merged.
 - Checkout SDD explicitly leaves partials, overpayments, change, mixed tenders, returns, voids, discounts and promotions unapproved. Existing API exact-settlement behavior is not production-approved. P2 precision mismatch: VES parser accepts 14,2 (12 integer digits), DB payments.amount NUMERIC(14,4) permits 10 integer digits; align before activation.
 - Issue #53 OPEN/P0. Identity and effective least privilege of DATABASE_URL_BACKUP_RO, natural backup after main integration, encrypted remote restore in isolation, role provisioning, full application recovery, alert delivery, measured RPO/RTO and total USD 0 remain pending. Production NOT READY.
+
+
+## 2026-11-11 — corregir cobertura de membresías y revalidar backup
+
+- Exact code SHA `373dbc177fc6d9876112eb57cedc21db8dd31dd7`: PR #287 11 workflows PR (8 SUCCESS, 3 IN_PROGRESS), 2 push SUCCESS, 16 checks (12 SUCCESS, 4 IN_PROGRESS, 0 FAILURE). Los tres workflows restantes están en instalación apt; no contar sus pruebas posteriores.
+- `migration-check` run `43044533159` SUCCESS: la prueba nueva de membresías en ambas direcciones pasó, así como las assertions de migraciones 0021/0022 y el runner de migración. Playwright run `43044533360` SUCCESS.
+- Hallazgo de ODD: el indicador previo solo miraba `pg_auth_members.member`. Corregido en workflow de backup para incluir `member` y `roleid`; se añadió prueba PostgreSQL desechable para ambos sentidos y baseline sin relaciones. Código en #287; no producción.
+- Backup schedule natural `43041961402` de main falló instalando age por DNS de Azure Ubuntu. No conexión a DB ni dump; no nuevo artefacto ni seis booleanos. Issue #53 continúa OPEN/P0.
+- #301 15/15 checks, 10/10 workflows, sin review; límite 100 sin cursor explícitamente documentado pero aún no aprobado como límite general. #302 14/14 y #303 17/17, ambos Draft y sin reviews.
+- No merges/deploys, Neon, datos reales, secretos/age, grants remotos, Cron, Cloudflare sensible, DNS ni billing. Producción NOT READY.

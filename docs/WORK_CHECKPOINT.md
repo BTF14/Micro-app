@@ -595,3 +595,12 @@ La hipótesis anterior de que el helper de espera era la causa no era correcta. 
 **Bloqueos:** #53 OPEN/P0; identidad backup y least privilege reales, backup natural posterior a integración, restore remoto aislado, provisioning, simulacro, alertas, RPO/RTO, coste $0 pendientes. Backup diagnostic has_membership solo detecta una dirección. #301 branch-list cap 100 sin cursor. Checkout payment contract no aprobado y precisión VES vs NUMERIC(14,4) no alineada.
 
 No merge/rebase/force-push; no Neon main, roles/grants remotos, datos reales, secretos/age, deploy, Cron, Cloudflare/DNS sensible, billing o restore remoto. MVP 2026-12-01; GO/NO-GO 2026-11-30.
+
+
+## Checkpoint vigente — 2026-11-11 (código 373dbc1)
+
+- #287 OPEN/Draft; código `373dbc177fc6d9876112eb57cedc21db8dd31dd7`; main `c5373564413ba086690552c6b7deeab08d7b4a89`; 499 ahead / 1 behind; mergeable=true. No sync/rebase.
+- Exact SHA: 11 PR workflows 8 SUCCESS / 3 IN_PROGRESS; 2 push SUCCESS; 16 checks 12 SUCCESS / 4 IN_PROGRESS / 0 FAILURE. Pendientes: CI `43044532860`, runner `43044532931`, restore `43044532854` (dos perfiles), todos en apt install. Migration validation `43044533159` SUCCESS; nueva prueba membership bidirectional SUCCESS; Playwright SUCCESS.
+- Backup natural `43041961402` falló en main por DNS durante instalación de age, antes de conexión/dump. Sin artefacto ni diagnóstico; no re-run manual.
+- Diagnóstico backup ahora detecta ambos sentidos de `pg_auth_members`; test PostgreSQL desechable pasó. #301 15/15 + 10/10, sin review, MAX_BRANCHES 100 sin cursor documentado; #302 14/14 Draft; #303 17/17 Draft; #53 OPEN/P0.
+- Próximo: cerrar workflows pendientes exact-HEAD y continuar auditoría de seguridad/recuperación. No operaciones comerciales nuevas hasta cerrar Seguridad Nivel 1. Producción NOT READY. MVP 01/12/2026; GO/NO-GO 30/11/2026.

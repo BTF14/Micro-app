@@ -48,3 +48,10 @@ The six-boolean diagnostic in `.github/workflows/backup.yml` currently evaluates
 - Change on the integration branch: the diagnostic now matches the principal OID against both `pg_auth_members.member` and `pg_auth_members.roleid`. Any membership edge in either direction makes the boolean true and keeps the expected-false gate open.
 - Regression test: `.github/scripts/test-backup-principal-membership.sql` creates disposable roles and independently tests (1) principal-as-member, (2) principal-as-granted-role, and (3) no-membership baseline. It runs only against the disposable PostgreSQL 18 service in `migration-check.yml`, using `docker exec` and no external database connection; it does not connect to Neon or inspect repository secrets.
 - Status: implementation committed to the integration branch; exact-HEAD CI and the new regression test must pass before this correction is considered validated. No remote roles/grants or secrets changed.
+
+
+## Regression execution — 2026-11-11
+
+- The bidirectional membership predicate is now implemented in the integration-branch backup diagnostic.
+- Disposable PostgreSQL 18 regression test passed in `migration-check` run `43044533159` on code SHA `373dbc177fc6d9876112eb57cedc21db8dd31dd7`: principal-as-member, principal-as-granted-role, and no-membership baseline.
+- This proves the SQL predicate regression in CI only. It does not prove the production backup secret identity, remote grants, absence of all privileges outside the diagnostic's inspected scope, or backup artifact recovery. Keep issue #53 OPEN/P0 and production NOT READY.

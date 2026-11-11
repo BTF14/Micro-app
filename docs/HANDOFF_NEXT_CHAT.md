@@ -3114,3 +3114,21 @@ La hipótesis anterior de que el helper de espera era la causa no era correcta. 
 4. Mantener #287/#303 Draft y #301/#302 abiertas; sin merge, force-push ni sincronización.
 5. Issue #53 P0 abierto; producción NOT READY. MVP 2026-12-01; GO/NO-GO 2026-11-30. Cualquier gate crítico pendiente = NO-GO.
 
+
+
+## Handoff vivo — 2026-11-11 (posterior a la corrección de membresías)
+
+- Último SHA de código: `373dbc177fc6d9876112eb57cedc21db8dd31dd7`; PR #287 OPEN/Draft, 499 ahead / 1 behind main, 114 archivos, mergeable=true. Main `c5373564413ba086690552c6b7deeab08d7b4a89`; merge base `03442951b2a2f63f5bf4dcf560f2c91be4f6cc71`. No rebase/sync automático.
+- En ese SHA: PR workflows 8 SUCCESS / 3 IN_PROGRESS; push 2/2 SUCCESS; check-runs 12 SUCCESS / 4 IN_PROGRESS / 0 FAILURE. Pendientes: CI `43044532860`, migration runner `43044532931`, backup restore `43044532854` (dos jobs), todos en apt install PostgreSQL client/age. No marcar verde ni inventar fallo funcional.
+- Migration validation `43044533159` SUCCESS, incluye prueba nueva de membresía bidireccional y toda la suite de migraciones 0001–0023. Playwright `43044533360` SUCCESS. Nueva corrección: el diagnóstico de backup comprueba ambos lados de `pg_auth_members`; prueba SQL desechable valida cada orientación y ausencia de membresías.
+- Backup natural 11/11 `43041961402` en main falló antes de conectarse a DB por DNS al instalar age. No secret check, pg_dump, cifrado, upload ni diagnóstico. No hay artefacto. Main sigue sin askpass/diagnóstico; no ejecutar workflow_dispatch.
+- PR #301 no Draft, 15/15 checks y 10/10 workflows, sin reviews; MAX_BRANCHES=100 sin cursor documentado como limitación, pendiente aceptación formal o paginación. #302 Draft 14/14 checks, #303 Draft 17/17; ambos sin reviews/threads. #53 OPEN/P0.
+
+### Próximos pasos
+1. Consultar finalización de los 3 workflows pendientes del SHA actual; si fallan, revisar logs y clasificar infraestructura vs pruebas omitidas. No reutilizar SHA anterior.
+2. No re-run manual ni dispatch de backup. Observar próximo schedule natural, después de que el workflow actualizado llegue a main mediante proceso seguro.
+3. Continuar auditoría estática de SECURITY DEFINER, ownership/grants, callers y aislamiento tenant/branch/role; máximo dos frentes.
+4. Mantener #287 Draft; #301 no integrar sin gate P0 y decisión de límite 100; conservar #302/#303 sin fusionar por separado.
+5. Issue #53 OPEN/P0; producción NOT READY / NO-GO con cualquier gate crítico pendiente.
+
+Restricciones: no Neon main, datos reales, secretos/age, grants remotos, deploy manual, Cron, Cloudflare sensible, DNS, billing, force-push ni rebase/sync automático. No pedir terminal, CLI, capturas, Build IDs ni TinyFish.

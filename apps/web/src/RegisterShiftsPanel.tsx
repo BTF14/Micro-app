@@ -35,6 +35,7 @@ export default function RegisterShiftsPanel({ organizationId, userName }: Regist
   const [openingVes, setOpeningVes] = useState("0.00");
   const [closingUsd, setClosingUsd] = useState("");
   const [closingVes, setClosingVes] = useState("");
+  const [confirmClose, setConfirmClose] = useState(false);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
@@ -100,6 +101,7 @@ export default function RegisterShiftsPanel({ organizationId, userName }: Regist
 
   async function closeShift(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    if (!confirmClose) { setConfirmClose(true); return; }
     if (!branchId || !shift) return;
     setSaving(true); setError(""); setNotice("");
     try {
@@ -107,7 +109,7 @@ export default function RegisterShiftsPanel({ organizationId, userName }: Regist
         `/api/orgs/${encodeURIComponent(organizationId)}/branches/${encodeURIComponent(branchId)}/register-shifts/${encodeURIComponent(shift.id)}/close`,
         { method: "POST", body: JSON.stringify({ closing_cash_usd: closingUsd, closing_cash_ves: closingVes }) },
       );
-      setShift(null); setNotice("Turno cerrado y registrado en auditoría.");
+      setShift(null); setConfirmClose(false); setNotice("Turno cerrado y registrado en auditoría.");
       await loadBranchState(branchId);
     } catch (reason) { setError(reason instanceof Error ? reason.message : "No se pudo cerrar el turno."); }
     finally { setSaving(false); }
@@ -131,9 +133,10 @@ export default function RegisterShiftsPanel({ organizationId, userName }: Regist
               <dl className="register-shift-values"><div><dt>Fondo inicial USD</dt><dd>$ {money(shift.openingCashUsd)}</dd></div><div><dt>Fondo inicial VES</dt><dd>Bs. {money(shift.openingCashVes)}</dd></div></dl>
               <form className="register-shift-form" onSubmit={closeShift}>
                 <h3>Cierre de turno</h3><p>Introduce el efectivo contado al cierre en cada moneda. Este registro no calcula diferencias ni efectivo esperado.</p>
-                <label className="register-shifts-field"><span>Conteo final USD</span><input inputMode="decimal" required value={closingUsd} onChange={(event) => setClosingUsd(event.target.value)} /></label>
-                <label className="register-shifts-field"><span>Conteo final VES</span><input inputMode="decimal" required value={closingVes} onChange={(event) => setClosingVes(event.target.value)} /></label>
-                <button className="register-shifts-primary" type="submit" disabled={saving}>{saving ? "Guardando…" : "Cerrar turno"}</button>
+                <label className="register-shifts-field"><span>Conteo final USD</span><input inputMode="decimal" required value={closingUsd} onChange={(event) => { setClosingUsd(event.target.value); setConfirmClose(false); }} /></label>
+                <label className="register-shifts-field"><span>Conteo final VES</span><input inputMode="decimal" required value={closingVes} onChange={(event) => { setClosingVes(event.target.value); setConfirmClose(false); }} /></label>
+                {confirmClose && <p className="register-shifts-confirm" role="status">Confirma que ambos importes corresponden al conteo físico final. El cierre no se puede editar después.</p>}
+                <button className="register-shifts-primary" type="submit" disabled={saving}>{saving ? "Guardando…" : confirmClose ? "Confirmar cierre" : "Revisar cierre"}</button>
               </form>
             </div>
           ) : (

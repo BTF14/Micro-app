@@ -552,3 +552,8 @@ La validación sintética main 0001–0016 y BCV 0001–0022 pasó, pero no exis
 - No se prellenan conteos finales con el fondo inicial; no se calculan diferencias ni efectivo esperado. No hay checkout, pagos, recibos o UI de ventas.
 
 - CI `9f1f0b9...`: Build and typecheck SUCCESS; unit tests exposed two new component-test assertions running while nested async requests were still loading. The test helper now waits eight event-loop turns (`30d7368...`). Re-run and inspect exact current SHA; do not classify UI tests green yet.
+
+
+### Corrección del diagnóstico de test — 2026-11-11
+
+La hipótesis anterior de que el helper de espera era la causa no era correcta. El log completo mostró que el mock de `fetch` construía `new URL()` sin base, pero el API base del test puede ser una ruta relativa; eso lanzaba antes de evaluar el endpoint y producía el estado de error/carga observado. Se corrigió el mock usando una base de test explícita (`https://micro-app.test`) en `apps/web/src/RegisterShiftsPanel.test.tsx`, commit `98b24eca568dd148b50da70e0d558e996a2739a0`. La espera ampliada se mantiene inocua. Este diagnóstico reemplaza la explicación anterior; exigir CI exact-SHA para verificar el arreglo.

@@ -2575,3 +2575,18 @@ El workflow que descarga/restaura el artefacto remoto no se ejecutó. No se toc�
 ### 2026-11-11 — runtime SELECT en ensayo de restore remoto
 
 Se añadió al runner una consulta real como `microapp_runtime` sobre `public.organizations` y una comprobación explícita de SELECT permitido / CREATE en public denegado. Ambos perfiles pasaron en run `42992354071`: main job `130428038679`, BCV job `130428038320`, además de regresión legacy. Implementación HEAD `7b4fdebe846952f1099a4fde323be2dc0f5ce0e8`. CI seguía pending en la lectura; los demás workflows pull_request estaban SUCCESS. Sigue sin ejecutarse el workflow de restauración del artefacto remoto real.
+
+## Addendum — actual producer write probe, rollback-only — 2026-11-11
+
+A second review identified that checking only the producer LOGIN was weaker than the claim "producer permissions usable". The restore runner now performs an effective write-path probe **only for the BCV 0001–0022 profile**, where migration 0022 defines the dedicated producer contract:
+- verifies the singleton `bcv_sync_state` row is readable;
+- updates only the granted producer columns (`attempt_id`, timestamps, `last_outcome`, `updated_at`);
+- inserts a uniquely tagged synthetic `exchange_rates` row using only the granted insert columns and reads its returned UUID using the permitted `id` column privilege;
+- updates only `validation_status`;
+- rolls the entire transaction back unconditionally.
+
+The main 0001–0016 paired-intent profile predates migrations 0021/0022 and therefore intentionally does **not** run the BCV table write probe; it verifies only the synthetic producer LOGIN exists, not that it has BCV grants. This prevents incorrectly applying the later profile's permission contract to the historical schema.
+
+The probe was corrected after inspection found an indented heredoc terminator in the first draft; the corrected shell block is what the passing workflow exercised. The complete main + BCV smoke run at HEAD `3e6f6f508af316ab102ac0d7fcb7c56bcb65d8eb` is `42993480715`: main job `130431717359` SUCCESS; BCV job `130431717962` SUCCESS, including the legacy regression. All 11 PR workflows at that exact HEAD passed: CI `42993480688`, migration validation `42993480726`, PostgreSQL migration runner `42993480716`, backup restore `42993480715`, Playwright `42993480670`, dependency review `42993480700`, ODD docs `42993480705`, Semgrep `42993480727`, security scan `42993480720`, secret history `42993480721`, project dashboard `42993480717`.
+
+This remains synthetic evidence only. The remote artifact workflow was not dispatched and no remote backup/age key was accessed.

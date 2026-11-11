@@ -1,0 +1,26 @@
+name: Backup workflow contract tests
+
+on:
+  pull_request:
+    paths:
+      - ".github/workflows/backup.yml"
+      - ".github/workflows/backup-workflow-contract.yml"
+      - ".github/scripts/test-apt-retry.sh"
+      - "scripts/backup_git_askpass.sh"
+      - "scripts/test_backup_git_askpass.sh"
+      - "scripts/ci/apt-retry.sh"
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+      - name: Test bounded APT retry helper and workflow integration
+        run: bash .github/scripts/test-apt-retry.sh
+      - name: Test GIT_ASKPASS credential hygiene
+        run: bash scripts/test_backup_git_askpass.sh

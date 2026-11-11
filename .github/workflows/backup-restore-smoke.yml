@@ -11,6 +11,7 @@ on:
       - ".github/workflows/backup-restore-smoke.yml"
       - "scripts/db/reapply_restore_role_grants.sh"
       - "scripts/db/restore_remote_backup_ephemeral.sh"
+      - "scripts/db/restore_role_assertions_main.sql"
       - "scripts/test_backup_restore_schema.sh"
       - "scripts/test_backup_restore_schema_bcv.sh"
   pull_request:
@@ -25,6 +26,7 @@ on:
       - "scripts/db/migrate.sh"
       - "scripts/db/reapply_restore_role_grants.sh"
       - "scripts/db/restore_remote_backup_ephemeral.sh"
+      - "scripts/db/restore_role_assertions_main.sql"
       - ".github/workflows/backup-real-restore.yml"
       - "apps/api/migrations/**"
       - "docs/BACKUP_AND_RECOVERY.md"

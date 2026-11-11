@@ -398,3 +398,7 @@ La documentación oficial de Neon describe branching y recuperación desde histo
 Decisión: no fijar todavía objetivos RPO/RTO. La cadencia diaria no demuestra un RPO <=24h y el tiempo de pg_restore no es el RTO operativo. Registrar timestamps de incidente, último backup íntegro, provisioning, restore, smoke y recuperación; proponer objetivos solo tras una prueba remota real y un simulacro completo.
 
 Límites: el workflow remoto sigue manual y no fue despachado; el backup programado natural aún debe producir evidencia del diagnóstico de seis booleanos de DATABASE_URL_BACKUP_RO. El resumen de GitHub Actions no prueba alerta externa. No se accedió a secretos, archivo remoto, llave age ni Neon. Issue #53 OPEN/P0; producción NOT READY.
+
+### Verificación de rama por defecto — diagnóstico aún no desplegado — 2026-11-11
+
+GitHub live muestra main en c5373564413ba086690552c6b7deeab08d7b4a89. El archivo .github/workflows/backup.yml de main (blob 5df408788b9053709261ada3aa22dd73b85d5691) todavía no contiene el paso de diagnóstico de identidad/privilegios; ese cambio está solo en la rama de integración/PR #287. Los runs programados más recientes de main son 42842855127 (2026-11-10, SUCCESS) y 42659924075 (2026-11-09, SUCCESS), ambos anteriores al diagnóstico. Por tanto, no existe aún evidencia real de los seis booleanos; no inferir least privilege desde el éxito del backup. El siguiente run natural solo será válido después de que la versión que contiene el diagnóstico llegue a main. No hacer dispatch manual.

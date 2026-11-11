@@ -74,3 +74,12 @@ The BCV restore probe also performs the producer's permitted state update, synth
 The earlier failed run `42994254096` is a retained test-oracle failure, not hidden: it caught that the historical 0012 assertion was being applied at the final schema point. The profile-specific final assertion replaced it and the corrected main + BCV restore passed.
 
 No remote backup artifact or age key was accessed; `.github/workflows/backup-real-restore.yml` remains manual and was not dispatched. No production, Neon, remote role/grant, secrets, Cron, DNS, Cloudflare sensitive setting, billing or deployment was changed.
+
+## Follow-up — effective role probes
+
+A follow-up hardening added live connection/privilege probes to the shared runner:
+- `microapp_runtime` connects directly, reads `public.organizations`, and is explicitly denied schema CREATE.
+- BCV profile: `microapp_bcv_sync` reads its singleton state, updates only its narrow status columns, inserts one synthetic exchange-rate row and changes its validation status, all inside a transaction that is rolled back.
+- Main profile intentionally does not pretend to exercise the BCV producer contract because that historical schema predates the dedicated producer migration.
+
+At branch HEAD `f6c453d928ffaef4ab15efc5733bd3c7001089e3`, the exact-HEAD PR workflows are 13/13 SUCCESS, including backup restore smoke `42997279023` and Playwright `42997278934`. CI `42997279209` completed SUCCESS. The push-triggered backup smoke `42997267912` also succeeded. PR #287 remains OPEN/Draft; issue #53 remains OPEN/P0.

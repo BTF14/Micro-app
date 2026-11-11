@@ -2625,3 +2625,7 @@ Se añadió odd/tasks/backup-operational-recovery-runbook.md. Formaliza dos ruta
 No se inventaron SLO: frecuencia diaria no demuestra RPO <=24h; tiempo pg_restore no representa RTO. Los objetivos se proponen después de ensayo real y simulacro completo. La guía oficial de Neon usada como referencia es https://neon.com/docs/introduction/branching.
 
 No se ejecutó workflow_dispatch ni se accedió a secreto, backup remoto, llave age, Neon o datos reales. El diagnóstico real de DATABASE_URL_BACKUP_RO sigue pendiente del próximo run programado natural en default branch. Issue #53 OPEN/P0; producción NOT READY.
+
+## 2026-11-11 — el diagnóstico de backup aún no alcanza main
+
+Consulta GitHub live: main HEAD c5373564413ba086690552c6b7deeab08d7b4a89 y backup.yml blob 5df408788b9053709261ada3aa22dd73b85d5691 todavía sin el diagnóstico de seis booleanos que existe en la rama de integración. Runs schedule recientes de main 42842855127 (2026-11-10 SUCCESS) y 42659924075 (2026-11-09 SUCCESS) son previos al cambio y no demuestran identidad efectiva. La siguiente evidencia válida solo será un run natural después de que el cambio llegue a main. Sin dispatch manual. Least privilege permanece no verificado.

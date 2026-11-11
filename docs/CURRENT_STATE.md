@@ -2767,3 +2767,30 @@ La hipótesis anterior de que el helper de espera era la causa no era correcta. 
 - Excepción pendiente: workflow `Database migration validation` run `43014361738` permanece `pending` y su consulta de jobs devuelve lista vacía; no contarlo como SUCCESS ni como fallo. Reconciliarlo antes de marcar el conjunto total como completo. No hay status contexts adicionales (`combined status` vacío).
 - El CI inicial que falló en test UI se corrigió: el mock de fetch ahora resuelve URLs relativas con base `https://micro-app.test`. El CI posterior del HEAD documental f33 valida la corrección. La explicación anterior de que solo era un problema de espera fue corregida en este documento.
 
+
+
+## Reconciliación viva y handoff — 2026-11-11 13:33 UTC (09:33 UTC−4)
+
+### Estado GitHub verificado
+- PR #287 sigue OPEN / Draft / mergeable=true; rama `integration/bcv-checkout-rehearsal-20261109`; HEAD vivo: `85e6fba6b6c7c22042706add8f3389cae5017171`; base `main` en `c5373564413ba086690552c6b7deeab08d7b4a89`; 478 commits, 113 archivos. Compare contra main: diverged, 478 ahead / 1 behind; merge base `03442951b2a2f63f5bf4dcf560f2c91be4f6cc71`. No sincronizar ni rebasear automáticamente; el único commit detrás se debe inspeccionar por contenido y dependencia antes de cualquier integración.
+- PR #287 exact-HEAD `85e6fba...`: 11/11 workflows pull_request SUCCESS: Security scan `43023089499`, Dependency review `43023089516`, ODD docs `43023089630`, Project dashboard `43023089753`, Database migration validation `43023089438`, Backup restore smoke `43023089870`, CI `43023089464`, Semgrep `43023089602`, Playwright `43023089490`, Secret history `43023089427`, PostgreSQL migration runner `43023089635`. Combined legacy status contexts: 0. No extrapolation from prior SHAs.
+- Reviews formales #287: 0. Review threads: 0. #303 sigue OPEN/Draft, HEAD `d527ae79cd566945cd9bdb3e1475d53b31d3923a`, base main `c537356...`, 77 commits; su perfil main 0001–0016 es complementario/histórico, pero no fusionar por separado sin análisis de dependencias y revisión. #301 OPEN/no Draft, HEAD `ce43ab2cff91cd07e7ca2b91635b8e27a02b11c8`; #302 OPEN/Draft, HEAD `a8ee511ae87fdeb5cc86081449ee407dda45b121`. #302 askpass ya fue portado a #287 según el historial y el workflow actual de la rama; preservar #302 hasta comprobar diff único y procedencia. Issue #53 sigue OPEN/P0.
+
+### Corrección importante: backup main vs branch
+- Inspección directa de `.github/workflows/backup.yml` en `main` confirma que **main todavía NO contiene** el diagnóstico de seis booleanos ni el helper askpass: sigue usando clone con URL `x-access-token` y token en la URL. No afirmar lo contrario por búsquedas parciales de nombres de secretos.
+- La rama #287 sí contiene el diagnóstico de seis booleanos y helper askpass temporal (permisos 700, URL sin credenciales, `credential.helper=`, token solo en proceso Git, trap de limpieza). Esto es solo branch-level; no está en main ni producción. La identidad/least privilege real aún no se puede afirmar hasta observar un backup natural tras la integración segura en main. No dispatch manual.
+- El runbook de recuperación no prueba un artefacto remoto real. No se descargó/descifró backup real ni se leyó llave age; no se mutaron Neon/roles/grants ni se ejecutó restore remoto.
+
+### Estado funcional y puertas de seguridad
+- La UI de turnos añadida recientemente en la rama ofrece apertura/cierre de turno propio y test de componente; el snapshot previo registró 88 tests web, 198 API, 4 tests PostgreSQL de API de turnos y Playwright. El HEAD actual 85e6 tiene Playwright SUCCESS y CI SUCCESS, pero antes de afirmar conteos de suite en este SHA, inspeccionar logs del run CI exacto `43023089464` y el job Playwright exacto `43023089490`.
+- No hay jornada POS completa. No implementar aún ventas/cobros ni nuevas operaciones comerciales: AGENTS.md prohíbe nueva lógica comercial hasta completar controles Security Level 1 y aprobar la matriz de permisos. El contrato de pagos/parciales/sobrepago/cambio/recibos/devoluciones/anulaciones continúa sin aprobación.
+- Producción NOT READY. Issue #53 OPEN/P0: identidad efectiva del principal backup y least privilege, backup natural post-merge, restore remoto real aislado, provisioning provider-specific, simulacro de recuperación de aplicación, alertas efectivas, RPO/RTO medidos y coste total USD 0 siguen abiertos.
+
+### Decisión de continuidad
+1. Mantener #287 y #303 Draft; no merge solo por 11/11 verde. #287 contiene 478 commits y 113 archivos: la revisión manual del diff completo y su compatibilidad con main es obligatoria antes de marcar ready.
+2. No implementar checkout comercial hasta cerrar Security Level 1 y matriz de permisos. Mientras tanto, priorizar revisión estática/read-only de seguridad, diff, migraciones, restore runner, aislamiento tenant/branch/role y documentación.
+3. Reconciliar el único commit behind de main y las PR #301/#302/#303 por contenido, preservando cambios únicos; no cerrar ni fusionar ninguna por apariencia.
+4. Próximo chat debe leer primero AGENTS.md, CONSTITUTION.md, HANDOFF_NEXT_CHAT.md (este último bloque), CURRENT_STATE.md (último bloque), SECURITY_ROADMAP.md, AI_COLLABORATION_AND_PR_POLICY.md, BACKUP_AND_RECOVERY.md, ODD_WORKFLOW.md y el runbook; después consultar GitHub vivo y logs exactos de CI/Playwright.
+5. Fecha límite MVP: 2026-12-01; el 2026-11-30, cualquier gate crítico abierto implica NO-GO de producción. Presupuesto USD 0.
+
+No se modificaron fuentes en esta reconciliación; este bloque es documental. No hubo merge, deploy, workflow_dispatch, acceso a secretos/age/artefactos remotos, Neon, datos reales, roles/grants remotos, Cloudflare sensible, DNS, Cron ni billing.

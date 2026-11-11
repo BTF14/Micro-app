@@ -163,6 +163,10 @@ SELECT
 
 runtime_identity="$(psql "$RESTORE_RUNTIME_URL" -X -v ON_ERROR_STOP=1 -Atqc "SELECT current_user || ':' || session_user")"
 [[ "$runtime_identity" == "microapp_runtime:microapp_runtime" ]] || { echo "Runtime LOGIN verification failed." >&2; exit 1; }
+runtime_read_probe="$(psql "$RESTORE_RUNTIME_URL" -X -v ON_ERROR_STOP=1 -Atqc "SELECT count(*) >= 0 FROM public.organizations")"
+[[ "$runtime_read_probe" == "t" ]] || { echo "Runtime role cannot perform its required organization read." >&2; exit 1; }
+runtime_acl_probe="$(psql "$RESTORE_MIGRATOR_URL" -X -v ON_ERROR_STOP=1 -Atqc "SELECT pg_catalog.has_table_privilege('microapp_runtime','public.organizations','SELECT') AND NOT pg_catalog.has_schema_privilege('microapp_runtime','public','CREATE')")"
+[[ "$runtime_acl_probe" == "t" ]] || { echo "Runtime SELECT/schema least-privilege contract is invalid." >&2; exit 1; }
 producer_identity="$(psql "$RESTORE_PRODUCER_URL" -X -v ON_ERROR_STOP=1 -Atqc "SELECT current_user || ':' || session_user")"
 [[ "$producer_identity" == "microapp_bcv_sync:microapp_bcv_sync" ]] || { echo "BCV producer LOGIN verification failed." >&2; exit 1; }
 

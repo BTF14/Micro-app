@@ -311,3 +311,15 @@ Los perfiles deben terminar con sus manifiestos y assertions independientes. Un 
 La coexistencia en CI **no** demuestra restore del artefacto remoto, identidad efectiva ni least privilege de `DATABASE_URL_BACKUP_RO`, RPO/RTO sostenidos, entrega de alertas, ni coste total $0. Issue #53 permanece OPEN/P0. No leer secretos, no ejecutar backup manual, no modificar Neon/roles/grants/Cron ni producción. Producción NOT READY.
 
 **Estado de implementación:** scripts, fixture y workflow de doble job añadidos en la rama de integración; el resultado CI del nuevo HEAD queda pendiente de comprobación exact-SHA.
+
+## Corrección de exclusión de autenticación efímera — 2026-11-11
+
+**Esta decisión supersede las notas históricas anteriores que afirmaban que las tablas efímeras debían estar ausentes del esquema restaurado.**
+
+El workflow productivo y los tres smoke runners deben usar `pg_dump --exclude-table-data=` para `auth_sessions`, `auth_rate_limits` y `auth_bootstrap_attempts`, no `--exclude-table=`. La política de seguridad excluye los registros efímeros (sesiones, ventanas de rate-limit y bootstrap pendiente), pero conserva las definiciones de tablas, constraints, índices, triggers y secuencias necesarias para que la aplicación vuelva a operar tras la restauración.
+
+Razón: si se excluye la tabla completa, el dump conserva `schema_migrations` indicando que las migraciones de autenticación ya fueron aplicadas, aunque falten las tablas. Un rerun idempotente del migrator no recrearía esos objetos y podría dejar autenticación rota tras recovery.
+
+Los perfiles main 0001–0016 y BCV 0001–0022 ahora deben demostrar: una fila sintética por tabla en el origen, estructura presente en destino y cero filas efímeras restauradas. La regresión legacy hace la misma comprobación. El workflow de smoke se activa también ante cambios en `.github/workflows/backup.yml`.
+
+Este cambio no cierra los gates de identidad/least privilege de `DATABASE_URL_BACKUP_RO`, ownership/grants operativos cuando el dump productivo usa `--no-owner --no-privileges`, restore del artefacto remoto, RPO/RTO, alertas externas ni coste $0. Issue #53 sigue OPEN/P0; producción NOT READY. Ver `odd/tasks/backup-ephemeral-auth-schema-retention.md`.

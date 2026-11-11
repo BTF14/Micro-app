@@ -39,7 +39,18 @@ SQL
 ephemeral="$(psql "$SOURCE_URL" -X -v ON_ERROR_STOP=1 -Atq -F '|' -c 'SELECT (SELECT count(*) FROM auth_sessions), (SELECT count(*) FROM auth_rate_limits), (SELECT count(*) FROM auth_bootstrap_attempts)')"
 [[ "$ephemeral" == "1|1|1" ]] || { echo "Synthetic ephemeral auth fixture missing." >&2; exit 1; }
 psql "$SOURCE_URL" -X -v ON_ERROR_STOP=1 -c 'CREATE DATABASE microapp_restore' >/dev/null
-pg_dump "$SOURCE_URL" --no-owner --no-privileges --format=custom --exclude-table=public.auth_sessions --exclude-table=public.auth_rate_limits --exclude-table=public.auth_bootstrap_attempts --file="$tmpdir/backup.dump"
+bash scripts/tests/test_backup_role_privileges.sh
+backup_url="postgresql://microapp_backup:backup-test-only@localhost:5432/microapp_source"
+pg_dump "$backup_url" --no-owner --no-privileges --format=custom --exclude-table-data=public.auth_sessions --exclude-table-data=public.auth_rate_limits --exclude-table-data=public.auth_bootstrap_attempts --file="$tmpdir/backup.dump"
+
+archive_list="$(pg_restore --list "$tmpdir/backup.dump")"
+for table in auth_sessions auth_rate_limits auth_bootstrap_attempts; do
+  grep -Eq "TABLE public ${table} " <<<"$archive_list" || {
+    echo "Missing table definition for public.${table} in backup archive." >&2
+    exit 1
+  }
+done
+echo "PASS: archive contains DDL entries for all three ephemeral auth tables."
 
 age-keygen -o "$tmpdir/age-key.txt" >/dev/null 2>"$tmpdir/age-keygen.log"
 public_key="$(awk '/^# public key:/ {print $4}' "$tmpdir/age-key.txt")"
@@ -88,8 +99,28 @@ if [[ "$source_manifest" != "$restored_manifest" ]]; then
   diff -u <(printf '%s\n' "$source_manifest") <(printf '%s\n' "$restored_manifest") || true
   exit 1
 fi
-excluded="$(psql "$RESTORE_URL" -X -v ON_ERROR_STOP=1 -Atqc "SELECT (to_regclass('public.auth_sessions') IS NULL AND to_regclass('public.auth_rate_limits') IS NULL AND to_regclass('public.auth_bootstrap_attempts') IS NULL)")"
-[[ "$excluded" == "t" ]] || { echo "Ephemeral auth tables were unexpectedly restored." >&2; exit 1; }
+ephemeral_schema_count="$(psql "$RESTORE_URL" -X -v ON_ERROR_STOP=1 -Atqc "SELECT count(*) FROM information_schema.tables WHERE table_schema='public' AND table_type='BASE TABLE' AND table_name=ANY(ARRAY['auth_sessions','auth_rate_limits','auth_bootstrap_attempts']::text[])")"
+[[ "$ephemeral_schema_count" == "3" ]] || { echo "Expected all 3 ephemeral auth table definitions, got $ephemeral_schema_count." >&2; exit 1; }
+ephemeral_rows="$(psql "$RESTORE_URL" -X -v ON_ERROR_STOP=1 -Atq -F '|' -c 'SELECT (SELECT count(*) FROM auth_sessions), (SELECT count(*) FROM auth_rate_limits), (SELECT count(*) FROM auth_bootstrap_attempts)')"
+[[ "$ephemeral_rows" == "0|0|0" ]] || { echo "Ephemeral auth rows were unexpectedly restored: $ephemeral_rows" >&2; exit 1; }
+ephemeral_columns() {
+  psql "$1" -X -v ON_ERROR_STOP=1 -Atq -F '|' -c "
+    SELECT table_name, column_name, ordinal_position, data_type, is_nullable, COALESCE(column_default, '')
+    FROM information_schema.columns
+    WHERE table_schema='public'
+      AND table_name=ANY(ARRAY['auth_sessions','auth_rate_limits','auth_bootstrap_attempts']::text[])
+    ORDER BY table_name, ordinal_position
+  "
+}
+source_ephemeral_columns="$(ephemeral_columns "$SOURCE_URL")"
+restored_ephemeral_columns="$(ephemeral_columns "$RESTORE_URL")"
+[[ "$source_ephemeral_columns" == "$restored_ephemeral_columns" ]] || {
+  echo "Ephemeral auth table column definitions differ after restore." >&2
+  diff -u <(printf '%s\\n' "$source_ephemeral_columns") <(printf '%s\\n' "$restored_ephemeral_columns") || true
+  exit 1
+}
+echo "PASS: all three ephemeral auth table definitions and columns are preserved."
+echo "PASS: auth_sessions, auth_rate_limits and auth_bootstrap_attempts restore with zero rows."
 echo "PASS: encrypted dump checksum and age decryption verified."
 echo "PASS: 13 expected tables and the synthetic source/restore manifests match."
 echo "PASS: sale, payment, stock movement and audit relationships are preserved."

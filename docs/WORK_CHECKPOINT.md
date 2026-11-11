@@ -1,3 +1,44 @@
+# Reconciliación de checkout/BCV — 2026-11-11 UTC
+
+**Línea base viva de main:** `425186301473a5acb9b4133c18247bc6fff58e56` (squash merge de PR #287).
+**PR #287:** MERGED; HEAD validado `c44c6d9b7f3d0d09c80c4873e09c55ab6ce709b9`; commit de merge `425186301473a5acb9b4133c18247bc6fff58e56`.
+**Evidencia previa al merge, exact-SHA:** 17/17 check-runs SUCCESS y 11/11 workflow runs pull_request SUCCESS; mergeable=true. Se registró review COMMENT #5866603820 (no se presentó como aprobación de code owner). PR pasó de Draft a Ready for review y GitHub aceptó el squash merge con expected_head_sha exacto.
+**Protección de rama:** el conector recibió 403 al leer `/branches/main/protection`; no se afirma inspección administrativa independiente. El endpoint de merge de GitHub aceptó la operación y reportó `merged=true`. No se atribuye al 403 un fallo ni una excepción de protección.
+
+## Hito comercial integrado
+
+- PR #287 integra checkout/ventas, freshness BCV y ledger comercial sobre main `06e50defb2b684684262f79cf2318dcf6d32e9b1`.
+- La secuencia de migraciones versionadas en la rama integrada llega de 0001 a 0023; incluye 0017 (fin de semana/fecha efectiva), 0018 (allocation de pagos) y 0021 (freshness/trigger), además de las migraciones 0022–0023.
+- Se preservó el contrato de producto de la ADR: no hay bypass USD-only; la exigencia BCV aplica a todas las ventas.
+- La revisión COMMENT cubrió idempotencia por organización/clave, dinero escalado con `@micro-app/money`, asignación VES proporcional con residuo determinista, bloqueo `lock_bcv_sync_state()`, validación BCV y separación de permisos para sucursales de inventario/caja. Esta nota no equivale a aprobación formal de code owner ni a prueba productiva.
+- Cron BCV continúa desactivado por defecto; no se activó ni desplegó.
+
+## Estado vivo de PRs (consulta GitHub posterior al merge)
+
+| PR | Estado | HEAD |
+|---|---|---|
+| #303 — full-schema encrypted backup restore smoke | OPEN / Draft | `d527ae79cd566945cd9bdb3e1475d53b31d3923a` |
+| #300 — manual price override permission | OPEN / Draft | `97fa79e643d5e7b32ebf86958bd0ba9211e1fc95` |
+| #299 — isolated PostgreSQL restore duration / RTO | OPEN / Draft | `c82b0a10f85b59e1f81ac0ca2d439b6286558751` |
+| #298 — prior documentation reconciliation | OPEN / Draft | `ce398214c55ba5f3d4d6caeaf683dbfea041b6a7` |
+| #296 — BCV security/admin/calendar docs | OPEN / Draft | `62dde66355a937a4f6fa4efb8d9cfdf856d7ac0f` |
+| #193 — branch inventory Phase B | OPEN / Ready for review | `ac57ab4f3415f82279b8a49c0befe09f8e3aec68` |
+
+#287 está cerrada como MERGED. #304, #305 y #306 siguen MERGED; #302 CLOSED/superseded; #255 y #269 CLOSED sin merge; #233 CLOSED/superseded. No se alteraron #193 ni las otras PR abiertas.
+
+## Issue P0 #53 / readiness
+
+Issue #53 permanece OPEN/P0. El contrato sintético de mínimo privilegio, preservación de DDL y exclusión de filas efímeras está integrado. Continúan pendientes la identidad efectiva de `DATABASE_URL_BACKUP_RO` en Neon, aislamiento tenant/sesiones demostrado y evidencia operativa de restore/RPO/RTO. **Producción: NOT READY.** También permanecen gates de smoke tests autenticados en entorno productivo y revisión legal/fiscal/contable. No se accedió ni modificó Neon, secretos, roles/grants remotos, datos reales, Cron, Cloudflare manual, DNS o billing.
+
+## Siguiente frente recomendado
+
+Priorizar resiliencia de backup en entorno efímero y coste $0:
+1. #299: auditar medición de duración/RTO de restore PostgreSQL aislado, validez de la métrica, límites y ausencia de recursos facturables.
+2. #303: auditar restore smoke de esquema completo 0001–0023, cifrado, integridad y exclusión de datos efímeros de auth aprobada en #305.
+No promover ninguna sin reconciliar base, revisar diff completo y validar exact-SHA CI. Mantener #53 P0 y producción NOT READY.
+
+---
+
 # Reconciliación de seguridad de backups — 2026-11-11 UTC
 
 **Línea base de esta reconciliación:** `main` en `a3966a95a97486da18fae568a9c87bac8f2772e6`, posterior a los merges secuenciales de PR #304 y #305. Este encabezado es la fuente temporal más reciente; los snapshots históricos que siguen debajo se conservan como historial y no describen el estado vivo actual.

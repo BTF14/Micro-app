@@ -61,12 +61,14 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v7
+      - name: Test bounded apt retry helper
+        run: bash .github/scripts/test-apt-retry.sh
       - name: Install age and PostgreSQL 18 client
         shell: bash
         run: |
           set -euo pipefail
-          sudo apt-get update
-          sudo apt-get install -y curl ca-certificates gnupg age
+          bash scripts/ci/apt-retry.sh update
+          bash scripts/ci/apt-retry.sh install -y curl ca-certificates gnupg age
           sudo install -d /usr/share/postgresql-common/pgdg
           sudo curl --fail --show-error --location \
             --retry 5 --retry-all-errors --retry-delay 2 --connect-timeout 15 --max-time 90 \
@@ -74,8 +76,8 @@ jobs:
             -o /usr/share/postgresql-common/pgdg/apt.postgresql.org.asc
           echo "deb [signed-by=/usr/share/postgresql-common/pgdg/apt.postgresql.org.asc] https://apt.postgresql.org/pub/repos/apt $(. /etc/os-release && echo "$VERSION_CODENAME")-pgdg main" \
             | sudo tee /etc/apt/sources.list.d/pgdg.list
-          sudo apt-get update
-          sudo apt-get install -y postgresql-client-18
+          bash scripts/ci/apt-retry.sh update
+          bash scripts/ci/apt-retry.sh install -y postgresql-client-18
       - name: Run isolated main paired-intent schema and populated-graph restore
         shell: bash
         run: bash scripts/test_backup_restore_schema.sh
@@ -111,12 +113,14 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v7
+      - name: Test bounded apt retry helper
+        run: bash .github/scripts/test-apt-retry.sh
       - name: Install age and PostgreSQL 18 client
         shell: bash
         run: |
           set -euo pipefail
-          sudo apt-get update
-          sudo apt-get install -y curl ca-certificates gnupg age
+          bash scripts/ci/apt-retry.sh update
+          bash scripts/ci/apt-retry.sh install -y curl ca-certificates gnupg age
           sudo install -d /usr/share/postgresql-common/pgdg
           sudo curl --fail --show-error --location \
             --retry 5 --retry-all-errors --retry-delay 2 --connect-timeout 15 --max-time 90 \
@@ -124,8 +128,8 @@ jobs:
             -o /usr/share/postgresql-common/pgdg/apt.postgresql.org.asc
           echo "deb [signed-by=/usr/share/postgresql-common/pgdg/apt.postgresql.org.asc] https://apt.postgresql.org/pub/repos/apt $(. /etc/os-release && echo "$VERSION_CODENAME")-pgdg main" \
             | sudo tee /etc/apt/sources.list.d/pgdg.list
-          sudo apt-get update
-          sudo apt-get install -y postgresql-client-18
+          bash scripts/ci/apt-retry.sh update
+          bash scripts/ci/apt-retry.sh install -y postgresql-client-18
       - name: Run full-schema and populated BCV/projection-ledger restore smoke
         shell: bash
         run: bash scripts/test_backup_restore_schema_bcv.sh

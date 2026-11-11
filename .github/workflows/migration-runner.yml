@@ -38,10 +38,12 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v7
+      - name: Test bounded apt retry helper
+        run: bash .github/scripts/test-apt-retry.sh
       - name: Install PostgreSQL client
         run: |
-          sudo apt-get update
-          sudo apt-get install -y postgresql-client
+          bash scripts/ci/apt-retry.sh update
+          bash scripts/ci/apt-retry.sh install -y postgresql-client
           psql --version
       - name: Provision isolated migrator and runtime LOGIN roles
         run: |

@@ -41,6 +41,8 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v7
+      - name: Test bounded apt retry helper
+        run: bash .github/scripts/test-apt-retry.sh
       - name: Setup Node.js
         uses: actions/setup-node@v7
         with:
@@ -59,8 +61,8 @@ jobs:
           ln -s /tmp/micro-app-test-deps/node_modules/@types/pg node_modules/@types/pg
       - name: Install PostgreSQL client
         run: |
-          sudo apt-get update
-          sudo apt-get install -y postgresql-client
+          bash scripts/ci/apt-retry.sh update
+          bash scripts/ci/apt-retry.sh install -y postgresql-client
           psql --version
       - name: Provision isolated migrator and runtime roles
         run: |

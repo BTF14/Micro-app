@@ -118,7 +118,7 @@ Excluded:
 - After PostgreSQL 18 run `43102529147` passed, `.github/workflows/backup.yml` was updated on this branch to replace the three `--exclude-table` flags with `--exclude-table-data=public.<table>`. The adjacent comment now states that DDL is preserved and only ephemeral rows are excluded.
 - Added an additive dated reconciliation to `docs/BACKUP_AND_RECOVERY.md` and `docs/SECURITY_ROADMAP.md`. Historical records were not rewritten.
 - The operational workflow change is still unmerged and has not been executed against Neon. The exact final branch SHA must pass CI independently; the earlier PostgreSQL 18 run validates the test contract, not later workflow/doc commits.
-- Current branch HEAD before this task-file update: `b69fc422f7995d826347a14571e96dbfb387fdee`.
+- Current branch HEAD before this task-file update: `c731052b06935d5174ef082e3efdbc8aa07abcd2`.
 
 
 ## Integration dependency — PR #304 overlap (2026-11-11 UTC)
@@ -126,3 +126,6 @@ Excluded:
 - PR #304 also modifies `.github/workflows/backup.yml`, including the same data-only exclusion behavior, while adding the effective-principal diagnostic, bounded APT retries and temporary Git askpass flow.
 - PR #304 remains open with its 10 GitHub Actions workflow runs queued and two Cloudflare check-runs successful at HEAD `82099e6f54377b734a6f34ee281d069e11efd423`. It has not been merged.
 - PR #305 is intentionally not merged. If #304 merges first, reconcile this branch against the new `main` and preserve all #304 hardening; do not overwrite or regress its diagnostic/credential/retry changes. Revalidate the resulting exact HEAD before any merge.
+
+
+- Ampliación final de la matriz sintética: se agregaron aserciones explícitas de CONNECT sin CREATE a nivel database y ausencia de grants de INSERT/UPDATE/REFERENCES a nivel columna. Esta ampliación está incluida en el nuevo HEAD `c731052b06935d5174ef082e3efdbc8aa07abcd2`; requiere su propia ejecución PostgreSQL 18 exact-SHA.

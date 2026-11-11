@@ -349,3 +349,9 @@ Ahora usa `scripts/db/restore_remote_backup_ephemeral.sh`: aprovisiona roles sin
 Los runners sintéticos main y BCV llaman al mismo script en una segunda base de datos desechable, además de mantener la comparación completa de manifiestos. Evidencia: run [42991705366](https://github.com/BTF14/Micro-app/actions/runs/42991705366), main job `130425902535` SUCCESS, BCV job `130425902488` SUCCESS (incluida regresión legacy), HEAD de implementación `f259b65175711d66f398486bcb80765dfe7aea77`.
 
 **Límite:** el workflow de archivo remoto sigue siendo manual y no se ejecutó. La prueba es sintética y no descargó backup remoto ni usó la llave age real. No afirmar que se restauró una copia remota nueva. El diagnóstico del principal de backup continúa pendiente hasta que su workflow actualizado llegue a main y se ejecute naturalmente. RPO/RTO, alerta externa, aprovisionamiento provider-specific y coste $0 siguen abiertos. Issue #53 OPEN/P0; producción NOT READY. Ver `odd/tasks/backup-remote-restore-app-role-validation.md`.
+
+### Evidencia posterior — runtime LOGIN probado — 2026-11-11
+
+Se amplió el runner remoto para no limitarse a probar la conexión del runtime: también ejecuta un `SELECT` real sobre `public.organizations` como `microapp_runtime` y verifica que conserva SELECT mientras carece de CREATE en `public`. Los perfiles main y BCV pasan este probe además de validar ownership, ledger/checksums, auth efímero vacío y logins runtime/producer.
+
+Run [42992354071](https://github.com/BTF14/Micro-app/actions/runs/42992354071): main job `130428038679` SUCCESS; BCV job `130428038320` SUCCESS (incluida regresión legacy), HEAD de implementación `7b4fdebe846952f1099a4fde323be2dc0f5ce0e8`. La restauración de un artefacto remoto real sigue sin ejecutarse; no usar workflow_dispatch sin nueva autorización.

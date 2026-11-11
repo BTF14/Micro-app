@@ -38,7 +38,7 @@ trap 'rm -f "$tmp_sql"' EXIT
     awk '
       BEGIN { capture = 0; statement = "" }
       capture {
-        statement = statement "\\n" $0
+        statement = statement "\n" $0
         if ($0 ~ /;[[:space:]]*$/) { print statement; capture = 0; statement = "" }
         next
       }

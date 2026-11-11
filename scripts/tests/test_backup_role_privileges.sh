@@ -52,6 +52,10 @@ assert_true "backup role owns no database, schema or public objects" "
       AND relowner=(SELECT oid FROM pg_roles WHERE rolname='microapp_backup')
   )
 "
+assert_true "backup role has database CONNECT but not CREATE" "
+  has_database_privilege('microapp_backup', 'microapp_source', 'CONNECT')
+  AND NOT has_database_privilege('microapp_backup', 'microapp_source', 'CREATE')
+"
 assert_true "backup role has schema USAGE but not CREATE" "
   has_schema_privilege('microapp_backup', 'public', 'USAGE')
   AND NOT has_schema_privilege('microapp_backup', 'public', 'CREATE')
@@ -71,6 +75,17 @@ assert_true "backup role has SELECT on every public sequence" "
         THEN NOT has_sequence_privilege('microapp_backup', c.oid, 'SELECT')
         ELSE false
       END
+  )
+"
+assert_true "backup role has no column-level write or reference grants" "
+  NOT EXISTS (
+    SELECT 1 FROM pg_class c JOIN pg_namespace n ON n.oid=c.relnamespace
+    WHERE n.nspname='public'
+      AND CASE WHEN c.relkind IN ('r','p') THEN (
+        has_any_column_privilege('microapp_backup', c.oid, 'INSERT')
+        OR has_any_column_privilege('microapp_backup', c.oid, 'UPDATE')
+        OR has_any_column_privilege('microapp_backup', c.oid, 'REFERENCES')
+      ) ELSE false END
   )
 "
 assert_true "current public dump scope has no RLS-protected tables requiring BYPASSRLS" "

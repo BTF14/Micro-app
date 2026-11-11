@@ -2979,3 +2979,34 @@ Después del snapshot principal se sincronizaron también `docs/WORK_CHECKPOINT.
 4. No inventar política de pagos: cash/card/transfer/mobile_payment/other están codificados en el handler, pero el contrato comercial de parciales, sobrepago/cambio, recibos y devoluciones/anulaciones sigue sin aprobación explícita en SDD.
 5. Diseñar e implementar turnos, carrito/checkout UI y E2E solo después de cerrar los contratos bloqueantes, manteniendo aislamiento tenant/branch/role e idempotencia.
 6. No rebajar el GO/NO-GO: si cualquier gate crítico permanece abierto el 30 de noviembre, NO-GO para producción.
+
+---
+
+# Handoff vivo — 2026-11-11: API de turnos implementada
+
+**Rama:** `integration/bcv-checkout-rehearsal-20261109` / PR #287 OPEN/Draft.
+**Código exacto validado:** `0ca91ff51ec545278ceb8eabd3929083aae9022e` (11/11 workflows PR SUCCESS; CI `43009163637`). Cuatro commits documentales después de ese código no cambian fuentes; el siguiente chat debe revalidar el HEAD actual exacto.
+
+## Trabajo nuevo
+- Migración 0023 añade `open_register_shift` y `close_register_shift` como SECURITY DEFINER, propiedad de `microapp_migrator`, `search_path=pg_catalog, public`; PUBLIC revocado, runtime EXECUTE únicamente y sin INSERT/UPDATE/DELETE/TRUNCATE directo en `register_shifts`.
+- `apps/api/src/register-shifts.ts` expone GET cajas, GET turno actual, POST apertura y POST cierre. La identidad viene de `microapp_session`, nunca de `user_id` del body. Owner/Admin/Cashier con branch membership activa, solo turno propio; Inventory denegado.
+- Apertura y cierre registran auditoría append-only en la misma transacción. Replay idéntico de cierre no duplica evento; cierre diferente después del cierre se rechaza.
+- Pruebas PostgreSQL 18 con runtime login directo pasaron 4/4. La concurrencia se serializa en los triggers con lock order canónico; handler usa `authorizeBranchOperation(..., lockRows=false)` para no provocar lock upgrades.
+- Backup restore smoke: perfil main 0001–0016 y BCV 0001–0023 SUCCESS. Restore runner y ACL reapplication actualizados para 23 migraciones.
+
+## Incidentes intermedios conocidos
+- `SECURITY DEFINER` con `search_path=pg_catalog` inicialmente no resolvía tablas usadas por triggers existentes; se corrigió con `pg_catalog, public` y assertion de no-CREATE para runtime/PUBLIC.
+- Primera concurrencia API tuvo deadlock por lock-upgrade; se quitó el prelock en autorización y el trigger quedó como autoridad final del lock. Test concurrente posterior SUCCESS.
+- Primer CI de la API reportó 503; no se debe presentar ese intento como exitoso. El test final de 4/4 pasó tras los cambios.
+
+## Restricciones
+- No se hizo merge ni deploy. La implementación es solo #287 Draft; `main` sigue en `c537356...` y no tiene estas rutas/migración.
+- No se usó backup remoto real, secrets/age, Neon main, datos reales, roles/grants remotos, Cloudflare sensible, DNS, billing o Cron.
+- Issue #53 sigue OPEN/P0. Producción NOT READY.
+- La UI aún no tiene panel de turnos, carrito, pagos, recibos ni jornada POS completa. El contrato de pagos sigue pendiente; no inventar parciales, cambio, recibos, devoluciones o anulaciones.
+
+## Siguiente acción
+1. Reconciliar PR #287, main, checks exact-SHA, PR #301/#302/#303 y issue #53.
+2. Implementar panel UI de selección de sucursal/caja, apertura y cierre del turno usando las rutas nuevas; añadir Playwright E2E.
+3. Obtener/definir el contrato comercial de pagos antes de completar checkout; no añadir métodos/reglas por suposición.
+4. Completar jornada E2E y Seguridad Nivel 1; mantener Draft hasta revisión formal.

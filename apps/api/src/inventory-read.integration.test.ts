@@ -35,6 +35,7 @@ describe.skipIf(!databaseUrl)("inventory balance and ledger read APIs against Po
   let organizationId = "";
   let branchId = "";
   let warehouseId = "";
+  let otherBranchId = "";
   let otherWarehouseId = "";
   let ownerToken = "";
   let cashierToken = "";
@@ -115,9 +116,10 @@ describe.skipIf(!databaseUrl)("inventory balance and ledger read APIs against Po
       "INSERT INTO branches (organization_id, name, slug) VALUES ($1, 'Other Inventory Branch', $2) RETURNING id",
       [organizationId, "inventory-read-other-" + suffix],
     );
+    otherBranchId = otherBranch.rows[0]!.id;
     const otherWarehouse = await admin.query<{ id: string }>(
       "INSERT INTO warehouses (organization_id, branch_id, code, name) VALUES ($1, $2, $3, 'Other Branch Warehouse') RETURNING id",
-      [organizationId, otherBranch.rows[0]!.id, "other-" + suffix],
+      [organizationId, otherBranchId, "other-" + suffix],
     );
     otherWarehouseId = otherWarehouse.rows[0]!.id;
 

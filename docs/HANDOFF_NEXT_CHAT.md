@@ -2,7 +2,7 @@
 
 - PR #319 MERGED; main `fc1a599a4d78350d3af2f239390459e168e3ff14`.
 - Rama activa: `security/issue-53-tenant-session-isolation-20261112`; PR #320 OPEN / Draft.
-- El code HEAD `9714b5848532d555ff3e552e40ffb3dfcbb873410` (hash verificado: `9714b5848532d55593e552e40ffb3dfcbb873410`) obtuvo 15/15 check-runs SUCCESS. CI ejecutó root `pnpm test`, PostgreSQL 18, integración de auth/branch/catalog/inventory/checkout/register shifts, Playwright, ODD docs, Semgrep, Trivy, secret scan, dependency review y Cloudflare Pages preview.
+- El code HEAD `9714b5848532d55593e552e40ffb3dfcbb873410` (hash verificado: `9714b5848532d55593e552e40ffb3dfcbb873410`) obtuvo 15/15 check-runs SUCCESS. CI ejecutó root `pnpm test`, PostgreSQL 18, integración de auth/branch/catalog/inventory/checkout/register shifts, Playwright, ODD docs, Semgrep, Trivy, secret scan, dependency review y Cloudflare Pages preview.
 - Se añadió después una reconciliación documental (ODD route inventory + evidencia exact-HEAD + continuidad); el HEAD de PR cambió por docs-only commit. **Reconsultar el HEAD actual y exigir CI exact-SHA completo antes de Ready/merge.**
 - Archivos clave: `odd/tasks/security-tenant-session-isolation.md`, `apps/api/src/tenant-isolation.test.ts`; hardening de cookie shape inválida en rutas protegidas.
 - No RLS/Drizzle; raw SQL parametrizado + autorización server-side + scoped SQL + composite FKs + locks + triggers. Mantener esa limitación explícita.

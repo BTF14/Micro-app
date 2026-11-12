@@ -7,6 +7,7 @@ command -v psql >/dev/null 2>&1 || { echo "psql is required." >&2; exit 2; }
 
 database="microapp_role_membership_test"
 owner_url="postgres://legacy_owner:legacy-owner-test-only@localhost:5432/${database}"
+target_admin_url="postgres://microapp:microapp-test-only@localhost:5432/${database}"
 migrator_url="${MIGRATION_DATABASE_URL}"
 
 psql -X -v ON_ERROR_STOP=1 --dbname "$ADMIN_DATABASE_URL" -c \
@@ -76,7 +77,7 @@ expect_failure() {
   printf 'PASS: %s\n' "$label"
 }
 admin_sql() {
-  psql -X -v ON_ERROR_STOP=1 --dbname "$ADMIN_DATABASE_URL" -c "$1" >/dev/null
+  psql -X -v ON_ERROR_STOP=1 --dbname "$target_admin_url" -c "$1" >/dev/null
 }
 expect_producer_migration_rejection() {
   expect_failure "$1 / 0022 preflight" "MICROAPP_BCV_SYNC_ROLE_MEMBERSHIP_FORBIDDEN" \

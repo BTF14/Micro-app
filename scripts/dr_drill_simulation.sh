@@ -70,7 +70,7 @@ PY
   echo "- Synthetic RPO fixture lag: 0s (operational RPO not measured)"
   echo "- Encrypted dump SHA-256: ${artifact_sha:-missing}"
   echo "- Source/restore manifest SHA-256: ${source_manifest_sha:-missing} / ${restored_manifest_sha:-missing}"
-  echo "- Report: `dr-drill-report/report.json`"
+  echo "- Report: dr-drill-report/report.json"
 } >> "${GITHUB_STEP_SUMMARY:-/dev/null}"
 
 if [[ "$drill_status" != "0" ]]; then exit "$drill_status"; fi

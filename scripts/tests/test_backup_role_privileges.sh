@@ -3,11 +3,13 @@ set -euo pipefail
 
 expected_source_url="postgresql://microapp:microapp-test-only@localhost:5432/microapp_source"
 backup_url="postgresql://microapp_backup:backup-test-only@localhost:5432/microapp_source"
-if [[ "${SOURCE_URL:-}" != "$expected_source_url" ]]; then
+if [[ "\${SOURCE_URL:-}" != "$expected_source_url" ]]; then
   echo "Refusing to run: SOURCE_URL must target the fixed disposable PostgreSQL CI database." >&2
   exit 2
 fi
 
+# Synthetic-only role setup. The production provisioning SQL is executed below;
+# only its password prompt is replaced by the documented CI-only env path.
 psql "$SOURCE_URL" -X -v ON_ERROR_STOP=1 <<'SQL'
 DO $roles$
 BEGIN
@@ -17,26 +19,34 @@ BEGIN
   IF NOT EXISTS (SELECT 1 FROM pg_catalog.pg_roles WHERE rolname='microapp_runtime') THEN
     CREATE ROLE microapp_runtime;
   END IF;
-  IF NOT EXISTS (SELECT 1 FROM pg_catalog.pg_roles WHERE rolname='microapp_backup') THEN
-    CREATE ROLE microapp_backup;
-  END IF;
 END;
 $roles$;
 
--- The BCV restore profile may already have provisioned the shared cluster roles.
--- Normalize them explicitly so this legacy fixture is repeatable in the same service.
 ALTER ROLE microapp_migrator NOLOGIN NOSUPERUSER NOCREATEDB NOCREATEROLE NOINHERIT NOREPLICATION NOBYPASSRLS;
 ALTER ROLE microapp_runtime NOLOGIN NOSUPERUSER NOCREATEDB NOCREATEROLE NOINHERIT NOREPLICATION NOBYPASSRLS;
-ALTER ROLE microapp_backup LOGIN PASSWORD 'backup-test-only'
-  NOSUPERUSER NOCREATEDB NOCREATEROLE NOINHERIT NOREPLICATION NOBYPASSRLS;
 
-GRANT CONNECT ON DATABASE microapp_source TO microapp_backup;
-GRANT USAGE ON SCHEMA public TO microapp_backup;
-GRANT SELECT ON ALL TABLES IN SCHEMA public TO microapp_backup;
-GRANT SELECT ON ALL SEQUENCES IN SCHEMA public TO microapp_backup;
+-- Add non-table relation kinds and a security-definer mutation routine so the
+-- audit covers views, sequences, ownership and callable administrative code.
+CREATE OR REPLACE VIEW public.backup_role_audit_view AS
+  SELECT id, sku FROM public.products;
+CREATE SEQUENCE IF NOT EXISTS public.backup_role_audit_sequence;
+CREATE OR REPLACE FUNCTION public.backup_role_mutation_probe()
+RETURNS void
+LANGUAGE plpgsql
+SECURITY DEFINER
+AS $function$
+BEGIN
+  UPDATE public.products SET name = 'must-not-run' WHERE sku = 'SYN-RESTORE-001';
+END;
+$function$;
+REVOKE ALL ON FUNCTION public.backup_role_mutation_probe() FROM PUBLIC;
 SQL
 
-# Execute the independent fail-closed audit through the backup LOGIN itself.
+BACKUP_ROLE_TEST_PASSWORD="backup-test-only" \
+  psql "$SOURCE_URL" -X -v ON_ERROR_STOP=1 -v backup_role_test_mode=1 \
+  -f scripts/provision_neon_backup_role.sql
+
+# The independent audit must pass when connected as the provisioned backup LOGIN.
 psql "$backup_url" -X -v ON_ERROR_STOP=1 -f scripts/audit_database_roles.sql
 
 assert_true() {
@@ -140,6 +150,35 @@ assert_true "backup role cannot use or update sequences" "
   )
 "
 
+assert_true "backup role has no default privileges beyond sequence SELECT" "
+  EXISTS (
+    SELECT 1
+    FROM pg_default_acl d
+    CROSS JOIN LATERAL aclexplode(d.defaclacl) a
+    WHERE a.grantee=(SELECT oid FROM pg_roles WHERE rolname='microapp_backup')
+      AND d.defaclobjtype='S'
+      AND a.privilege_type='SELECT'
+      AND NOT a.is_grantable
+  )
+  AND NOT EXISTS (
+    SELECT 1
+    FROM pg_default_acl d
+    CROSS JOIN LATERAL aclexplode(d.defaclacl) a
+    WHERE a.grantee=(SELECT oid FROM pg_roles WHERE rolname='microapp_backup')
+      AND (d.defaclobjtype NOT IN ('r','S')
+        OR a.privilege_type <> 'SELECT' OR a.is_grantable)
+  )
+"
+assert_true "backup role owns no view or sequence" "
+  NOT EXISTS (
+    SELECT 1 FROM pg_class
+    WHERE relnamespace='public'::regnamespace
+      AND relkind IN ('r','p','v','m','f','S')
+      AND relowner=(SELECT oid FROM pg_roles WHERE rolname='microapp_backup')
+  )
+"
+
+
 expect_denied() {
   local label="$1"
   local sql="$2"
@@ -186,5 +225,17 @@ expect_audit_denied "CREATEDB" "ALTER ROLE microapp_backup CREATEDB"
 expect_audit_denied "CREATEROLE" "ALTER ROLE microapp_backup CREATEROLE"
 expect_audit_denied "BYPASSRLS" "ALTER ROLE microapp_backup BYPASSRLS"
 expect_audit_denied "SUPERUSER" "ALTER ROLE microapp_backup SUPERUSER"
+
+# Validate a complete custom-format dump as the backup principal. The parent
+# restore harness performs the age encryption/decryption round-trip immediately
+# after this test, using only a disposable synthetic key.
+dump_dir="$(mktemp -d)"
+trap 'rm -rf "$dump_dir"' EXIT
+pg_dump "$backup_url" --no-owner --no-privileges --format=custom --file="$dump_dir/backup.dump"
+test -s "$dump_dir/backup.dump"
+archive_list="$(pg_restore --list "$dump_dir/backup.dump")"
+grep -Eq 'TABLE public products ' <<<"$archive_list"
+grep -Eq 'SEQUENCE public backup_role_audit_sequence ' <<<"$archive_list"
+echo "PASS: backup LOGIN produced an intact custom-format pg_dump archive."
 
 echo "PASS: synthetic backup principal privilege matrix and effective-principal audit."

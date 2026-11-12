@@ -8,7 +8,7 @@ Cambios solo documentales en cinco archivos: `CLAUDE.md`, `AGENTS.md`, `docs/CON
 
 ---
 
-**Estado vigente — Turno 20 / 2026-11-12:** PR #326 squash-merged en `c061a888e882b96a9691d8a77c3ed9c03d59122d`. Base verificada: `0ff826673f779c53ec2dd16bbd083d8fd6f2d2e0`. PR #326 HEAD exacto `92401163501846b704626878961a22980c150224`: **19/19 check-runs y 15/15 workflow runs SUCCESS**; sin reviews ni threads. CI post-merge en el merge SHA: **13/13 check-runs y 11/11 workflow runs SUCCESS**.
+**Snapshot histórico — Turno 20 / 2026-11-12 (superseded by Turno 21):** PR #326 squash-merged en `c061a888e882b96a9691d8a77c3ed9c03d59122d`. Base verificada: `0ff826673f779c53ec2dd16bbd083d8fd6f2d2e0`. PR #326 HEAD exacto `92401163501846b704626878961a22980c150224`: **19/19 check-runs y 15/15 workflow runs SUCCESS**; sin reviews ni threads. CI post-merge en el merge SHA: **13/13 check-runs y 11/11 workflow runs SUCCESS**.
 
 **Fase 5A — simulacro DR sintético:** tarea `odd/tasks/security-dr-drill-and-smoke.md`, wrapper `scripts/dr_drill_simulation.sh`, exportación de evidencia en `scripts/test_backup_restore_schema_bcv.sh`, fixture de cierre de caja en `scripts/backup_restore_fixture_bcv.sql`. Run PostgreSQL 18: https://github.com/BTF14/Micro-app/actions/runs/43248087845. RTO sintético medido **3.953 s** (<900 s); dump cifrado SHA-256 `7dc22baa65d8fab9122135e4794c23540ea926c2f8b0506bfad63ea50fdf6a97`; manifiestos source/restore coincidentes `eefbe43d3ee45151d3fea53b1363641c49f557264ce351eb616a3b77f54cdb58`. [Artefacto de informe](https://github.com/BTF14/Micro-app/actions/runs/43247681064/artifacts/13957401778). El RPO de 0 s es solo la antigüedad del fixture sintético; **RPO operativo y RTO real no medidos**.
 

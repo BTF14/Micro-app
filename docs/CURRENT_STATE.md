@@ -1,3 +1,9 @@
+## Estado vigente — Turno 12 / rescate documental #296 (2026-11-12 UTC)
+
+**main:** `dae88d14b69f274b0aac6c3dbd9de960ea0feb62` (#311 merged). **PR #312:** OPEN / Ready; rescata los cinco artefactos de diseño de #296 sobre main sin importar snapshots históricos. Solo dos archivos aparecen como nuevos en el diff porque los otros tres ya están presentes en main. **PR #296:** pendiente de cierre tras confirmar #312. **PR #193:** OPEN / Ready; conservar intacta. **Issue #53:** OPEN / P0. **PRODUCTION: NOT READY**; falta certificación del principal efectivo/roles en Neon, aislamiento tenant/sesiones y recuperación real. Presupuesto USD 0; cero escrituras en Neon main, sin despliegues manuales.
+
+---
+
 ## Checkpoint Turno 11 — merges #310/#303 y triage de backlog (2026-11-12 UTC)
 
 **Main:** `6343761b601d3a3e7373ab00fb9b580b3ae09e0c`.

@@ -92,10 +92,14 @@ expect_producer_migration_rejection() {
       --file "apps/api/migrations/0022_bcv_dedicated_producer_role.assertions.sql"
 }
 
+# Use a third role as the granted role to avoid creating a circular membership
+# (legacy_owner is already an incoming ADMIN-only member of both application roles).
+bcv_admin_sql "CREATE ROLE outgoing_target NOLOGIN"
+
 # Producer: outgoing membership and an unexpected incoming member must fail closed.
-bcv_admin_sql "GRANT legacy_owner TO microapp_bcv_sync"
+bcv_admin_sql "GRANT outgoing_target TO microapp_bcv_sync"
 expect_producer_migration_rejection "producer outgoing membership"
-bcv_admin_sql "REVOKE legacy_owner FROM microapp_bcv_sync"
+bcv_admin_sql "REVOKE outgoing_target FROM microapp_bcv_sync"
 bcv_admin_sql "CREATE ROLE unexpected_member NOLOGIN"
 bcv_admin_sql "GRANT microapp_bcv_sync TO unexpected_member"
 expect_producer_migration_rejection "producer unexpected incoming member"
@@ -151,9 +155,9 @@ expect_runtime_assertion_rejection() {
       --file "scripts/db/restore_role_assertions_main.sql"
 }
 # Runtime: outgoing membership and a non-owner incoming member must fail closed.
-main_admin_sql "GRANT legacy_owner TO microapp_runtime"
+main_admin_sql "GRANT outgoing_target TO microapp_runtime"
 expect_runtime_assertion_rejection "runtime outgoing membership"
-main_admin_sql "REVOKE legacy_owner FROM microapp_runtime"
+main_admin_sql "REVOKE outgoing_target FROM microapp_runtime"
 main_admin_sql "GRANT microapp_runtime TO unexpected_member"
 expect_runtime_assertion_rejection "runtime unexpected incoming member"
 main_admin_sql "REVOKE microapp_runtime FROM unexpected_member"

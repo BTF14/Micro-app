@@ -1,3 +1,15 @@
+## Addendum — Turno 22: blindaje local de Claude Code (2026-11-12 UTC)
+
+- PR #332 squash-merged; nuevo main: `87e6ed69c683f66281dd816ec9041a80d232ab13`.
+- PR #332 checks: 11/11 workflow runs SUCCESS en exact HEAD `35404c614e4269d751702252146fb63ed4ff6a03` (CI, Chromium E2E, PostgreSQL migration runner, database migration validation, backup restore smoke, ODD docs, Semgrep, security, secret-history, dependency review y dashboard). La comprobación independiente confirmó 11 workflows completos; no se confunden con el total de check-runs indicado en la directiva.
+- Rama `security/claude-ignore-hardening-20261112`: `.gitignore` excluye `.claude/` y `.claude.json`. Es prevención; no demuestra que credenciales o historiales hayan estado trackeados.
+- Se conserva `CLAUDE.md` raíz como archivo versionado; no queda excluido por el patrón `.claude/`.
+- Censo previo a PR #333: #193, #314, #315, #316; #332 MERGED, #331 CLOSED. Revalidar tras abrir y fusionar #333.
+- Issue #53 OPEN/P0; **PRODUCTION: NOT READY**. Checklist de operador sigue siendo condición obligatoria; RTO sintético 3.953 s no acredita recuperación real.
+- Sin Neon DDL/DML, secretos, datos reales, despliegues, Cloudflare/DNS ni billing. Presupuesto USD 0.
+
+---
+
 **Estado vigente — post-merge PR #330 / Turno 21 / 2026-11-12.** GitHub confirma `main` en `3a955763f5d259fbedbf4d714a048b04b9a69a8a`, commit de squash de PR #330. La base pre-merge `01a1b178e041128cfc1a98ab4955132368387523` tenía 11/11 check-runs SUCCESS; esa evidencia pertenece a la base, no al SHA de merge. Para `3a955763f5d259fbedbf4d714a048b04b9a69a8a`, el conector consultado no devuelve status contexts ni workflow runs PR-triggered; no se afirma CI post-merge ni se atribuyen checks no observados. La integración documental no certifica producción ni sustituye los gates de Issue #53.
 
 **Censo vivo de PR abiertas (4):**

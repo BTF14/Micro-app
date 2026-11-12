@@ -12,7 +12,7 @@
 
 ---
 
-## Handoff vigente — Turno 20 post-merge (2026-11-12 UTC)
+## Snapshot histórico — Turno 20 post-merge (superseded by Turno 21; 2026-11-12 UTC)
 
 - Main verificado tras PR #326: `c061a888e882b96a9691d8a77c3ed9c03d59122d`. PR #326 squash-merged; base `0ff826673f779c53ec2dd16bbd083d8fd6f2d2e0`.
 - PR #326: https://github.com/BTF14/Micro-app/pull/326. HEAD exacto `92401163501846b704626878961a22980c150224`; **19/19 check-runs + 15/15 workflow runs SUCCESS**, sin reviews ni threads. Merge SHA / main `c061a888e882b96a9691d8a77c3ed9c03d59122d`.

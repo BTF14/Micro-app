@@ -1,3 +1,15 @@
+## Turno 17 — PR #319 integrada; fase tenant/sesión iniciada (2026-11-12 UTC)
+
+- PR #319 squash-merged; nuevo main `fc1a599a4d78350d3af2f239390459e168e3ff14`.
+- Creada rama `security/issue-53-tenant-session-isolation-20261112` desde ese main; creada tarea ODD antes de cambios de runtime.
+- PR #320 abierta Draft para aislamiento tenant/branch y limpieza de cookie inválida; HEAD inicial `942ef584b4732848a990ea1f7d9c9b9a5584418d`; CI exact-HEAD pendiente al corte.
+- Suite `tenant-isolation.test.ts` cubre denegaciones de selector cross-tenant, scope de cashier cross-branch, contexto concurrente por cliente y cookie inválida/no-store.
+- Se amplió `clearSessionCookie` a rutas protegidas. No se cambia matriz de permisos.
+- Auditoría estática: raw SQL parametrizado, sin Drizzle ni RLS/policies; la defensa se apoya en autorización server-side, predicates SQL, FKs compuestas, locks y triggers. Se documenta como limitación, no como certificación de aislamiento a nivel RLS.
+- CI y revisión exact-HEAD pendientes. No se accedió a Neon ni secrets; USD 0. Issue #53 OPEN/P0; PRODUCTION NOT READY.
+
+---
+
 - PR #318 MERGED por squash en main SHA `3ac66a180fcf23421b546140a419a45062e633dd`; 15/15 workflow runs y 19/19 check-runs SUCCESS exact-HEAD. Post-merge main CI: 11/11 workflows y 13/13 check-runs SUCCESS. PR #319 OPEN / Draft para runbook. Issue #53 OPEN/P0; PRODUCTION: NOT READY; no Neon writes; USD 0.
 
 ## Snapshot histórico — Journal Turno 14 (2026-11-12 UTC)

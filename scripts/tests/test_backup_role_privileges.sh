@@ -115,6 +115,12 @@ assert_true() {
   echo "PASS: $label"
 }
 
+assert_true "provisioner is a non-superuser CREATEROLE database owner" "
+  r.rolcanlogin AND NOT r.rolsuper AND r.rolcreaterole
+  AND d.datdba=r.oid
+  FROM pg_roles r CROSS JOIN pg_database d
+  WHERE r.rolname='backup_role_provisioner' AND d.datname='microapp_source'
+"
 assert_true "backup role has only the required non-admin role attributes" "
   rolcanlogin AND NOT rolsuper AND NOT rolcreatedb AND NOT rolcreaterole
     AND NOT rolreplication AND NOT rolbypassrls AND NOT rolinherit
@@ -302,6 +308,15 @@ echo "PASS: identity transition rejects SET ROLE"
 for elevated_attribute in SUPERUSER CREATEDB CREATEROLE REPLICATION BYPASSRLS INHERIT; do
   psql "$SOURCE_URL" -X -v ON_ERROR_STOP=1 -c "ALTER ROLE microapp_backup $elevated_attribute" >/dev/null
   assert_identity_result "identity transition rejects $elevated_attribute" "$backup_url" "f"
+  if [[ "$elevated_attribute" == "SUPERUSER" ]]; then
+    if BACKUP_ROLE_TEST_PASSWORD="backup-test-only" \
+      psql "$provisioner_url" -X -v ON_ERROR_STOP=1 -v backup_role_test_mode=1 \
+        -f scripts/provision_neon_backup_role.sql >/dev/null 2>&1; then
+      echo "FAIL: provisioning did not fail closed for a pre-existing SUPERUSER backup role" >&2
+      exit 1
+    fi
+    echo "PASS: provisioning fails closed for a pre-existing SUPERUSER backup role"
+  fi
   psql "$SOURCE_URL" -X -v ON_ERROR_STOP=1 -c "ALTER ROLE microapp_backup NOSUPERUSER NOCREATEDB NOCREATEROLE NOREPLICATION NOBYPASSRLS NOINHERIT" >/dev/null
 done
 

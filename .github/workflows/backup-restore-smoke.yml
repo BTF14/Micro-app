@@ -66,6 +66,9 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v7
+      - name: Test remote encrypted backup readback checksum and tamper rejection
+        shell: bash
+        run: bash scripts/tests/test_backup_git_remote.sh
       - name: Test bounded apt retry helper
         run: bash .github/scripts/test-apt-retry.sh
       - name: Install age and PostgreSQL 18 client

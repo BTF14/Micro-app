@@ -12,7 +12,7 @@ La misma semántica de PostgreSQL 16+ aplica a los roles de aplicación creados 
 
 La comprobación efectiva se condiciona a que el database owner no sea superuser porque el superuser tiene bypass inherente de privilegios de membresía; la arista Neon relevante es la concedida a un owner administrado no-superuser. La comprobación explícita de flags de `pg_auth_members` se mantiene en todos los casos.
 
-La implementación y prueba PostgreSQL 18 se encuentran en la PR #337 y `odd/tasks/neon-runtime-bcv-role-membership-20261112.md`. La validación real Neon posterior al merge sigue siendo un gate separado y requiere autorización específica; no se muta Neon ni secretos en Turno 32.
+La implementación y prueba PostgreSQL 18 se encuentran en la PR #337 y `odd/tasks/neon-runtime-bcv-role-membership-20261112.md`. El harness mantiene separados los perfiles BCV (0001–0023) y main (0001–0016), porque sus assertions de grants son distintas; la misma invariante de membresía se prueba en cada perfil. La validación real Neon posterior al merge sigue siendo un gate separado y requiere autorización específica; no se muta Neon ni secretos en Turno 32.
 
 - 2026-11-12 — ampliación aprobada para runtime/BCV; PR #337 y CI exact-HEAD pendientes.
 # ADR — Principal de backup Neon y contrato de mínimo privilegio

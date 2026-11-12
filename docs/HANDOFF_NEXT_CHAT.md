@@ -1,3 +1,20 @@
+## Handoff vigente — Turno 20 post-merge (2026-11-12 UTC)
+
+- Main verificado tras PR #326: `c061a888e882b96a9691d8a77c3ed9c03d59122d`. PR #326 squash-merged; base `0ff826673f779c53ec2dd16bbd083d8fd6f2d2e0`.
+- PR #326: https://github.com/BTF14/Micro-app/pull/326. HEAD exacto `92401163501846b704626878961a22980c150224`; **19/19 check-runs + 15/15 workflow runs SUCCESS**, sin reviews ni threads. Merge SHA / main `c061a888e882b96a9691d8a77c3ed9c03d59122d`.
+- CI post-merge exact-SHA en main `c061a888e882b96a9691d8a77c3ed9c03d59122d`: **13/13 check-runs SUCCESS y 11/11 workflow runs SUCCESS**, incluidos CI, PostgreSQL migration/runner, Playwright, Semgrep, Trivy, secret-history, ODD docs, Pages y Workers.
+- Tarea ODD integrada: `odd/tasks/security-dr-drill-and-smoke.md`. Rama de implementación `security/issue-53-dr-drill-and-smoke-20261112`.
+- DR run: https://github.com/BTF14/Micro-app/actions/runs/43248087845. PostgreSQL 18, 23 migraciones, fixture de dos tenants, catálogo/ventas/pagos, ledger/balances, shift de caja cerrado, relaciones y auth ephemeral tables vacías. RTO sintético **3.953 s** (<900 s). Dump SHA-256 `7dc22baa65d8fab9122135e4794c23540ea926c2f8b0506bfad63ea50fdf6a97`; source/restore manifest SHA-256 `eefbe43d3ee45151d3fea53b1363641c49f557264ce351eb616a3b77f54cdb58`. Informe: https://github.com/BTF14/Micro-app/actions/runs/43247681064/artifacts/13957401778.
+- RPO sintético fixture lag 0 s; **no demuestra cadencia/disponibilidad del backup ni mide RPO operativo**. RTO 3.953 s es solo CI sintético, no recuperación real.
+- Smoke/auth: `apps/api/src/smoke-readiness.test.ts`; auth integration Google OAuth cashier login con provider mock, invalid identity, expired/revoked session; register-shift integration cashier/cross-branch. Password login remains disabled. Chromium E2E SUCCESS.
+- Primera ejecución del fixture falló correctamente porque el trigger de checkout exige shift abierto al commit; se corrigió el fixture para cerrar el shift después del commit de venta. La ejecución final exact-HEAD pasó; el intento fallido no cuenta como evidencia de éxito.
+- Issue #53 sigue OPEN/P0; **PRODUCTION: NOT READY**. Pendientes: verificación operador de identidad/grants en Neon; backup natural y restore de artefacto real; RPO operativo y DR real; entrega/ack de alerta; smoke autenticado staging/preprod; revisión legal/fiscal/contable.
+- Mantener USD 0. No Neon main, datos reales, secretos, DDL/DML remoto, backup dispatch manual, deploy manual, DNS ni billing.
+- PRs abiertas que preservar: #314–#316 Dependabot major y #193 Fase B intacta.
+- Siguiente paso: avanzar únicamente los gates operator-run de Issue #53 con evidencia real autorizada. No repetir el DR sintético salvo cambios relevantes de código; no cerrar #53 ni declarar producción lista.
+
+---
+
 ## Handoff vigente — Turno 19 post-merge (2026-11-12 UTC)
 
 - Main actual: `9238f73462c9b2685465e33ed7081a1ff37757a8`; PR #324 squash-merged. PR #323 fue integrada previamente en `22d71ef03cce2e629137dbc2f83c48ee2c99e640`.

@@ -99,6 +99,8 @@ jobs:
         run: python3 -m unittest discover -s scripts/tests -p 'test_*.py'
       - name: Unit tests
         run: pnpm test
+      - name: Pre-go-live API smoke readiness contract
+        run: pnpm --filter @micro-app/api exec vitest run src/smoke-readiness.test.ts
       - name: PostgreSQL auth integration tests
         run: pnpm --filter @micro-app/api exec vitest run src/auth.integration.test.ts
       - name: PostgreSQL auth rate limit integration tests

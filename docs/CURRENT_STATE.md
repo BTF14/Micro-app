@@ -1,3 +1,21 @@
+**Estado vigente — Turno 19 / 2026-11-12:** PR #323 y PR #324 squash-merged. Main actual: `9238f73462c9b2685465e33ed7081a1ff37757a8`. PR #323 se integró en `22d71ef03cce2e629137dbc2f83c48ee2c99e640`; su HEAD real fue `ddaf52a0ab8035be82440e138e4cf3fb2d8f30ce` (14/14 check-runs SUCCESS; el SHA distinto copiado en la directiva no existía). PR #324 HEAD exacto `eade8fb44f4da3eaf9807c491e3725bec88d14d4`: **19/19 check-runs y 12/12 workflow runs SUCCESS**; merge SHA `9238f73462c9b2685465e33ed7081a1ff37757a8`.
+
+**Fase 4 — alertas de backup:** integrada tarea ODD `odd/tasks/security-backup-alerting.md`, helper `scripts/backup_failure_alert.sh`, test sintético `scripts/test_backup_failure_alert.sh` y cambios en `.github/workflows/backup.yml` / `.github/workflows/backup-workflow-contract.yml`. El workflow usa `GITHUB_TOKEN` efímero con `issues: write` + `contents: read`, step `if: failure()` y `continue-on-error: true`. En fallo, asegura label `P0: Backup Failure`, crea un issue abierto o comenta el existente; incluye Run ID, hora America/Caracas, categoría genérica y URL directa. CI contract verificó no-op en éxito, create/update y cableado estático. No se indujo fallo real ni se probó notificación humana; GitHub issue es alerta interna, no pager externo.
+
+**Gate Issue #53 OPEN/P0 — PRODUCTION: NOT READY:**
+1. Identidad efectiva del backup y 2. grants/ownership reales: código/matriz listos; verificación operator-run en Neon sigue pendiente.
+3. Aislamiento tenant/sesiones: hardening de API y CI integrados; no afirmar RLS; no acceso a Neon.
+4. Backup cifrado + checksum SHA-256 de readback Git y anti-tamper sintético implementados; el destino actual sigue siendo repo Git privado. Backup natural reciente/disponibilidad operativa aún requieren evidencia.
+5. Runbook DR y restore PostgreSQL 18 sintético integrados; DR drill real, reconciliación de datos y RPO/RTO medidos pendientes.
+6. Alerta de fallo GitHub issue implementada y probada sintéticamente; fallo real/entrega/acknowledgement pendiente.
+7. Playwright smoke en CI; smoke autenticado contra staging/preproducción sigue pendiente.
+8. Revisión legal/fiscal/contable final sigue pendiente.
+USD 0. Sin Neon `main`, secrets, datos reales, DDL/DML remoto, backup dispatch, billing ni despliegue manual. No cerrar Issue #53 ni declarar producción lista.
+
+PRs abiertas que deben conservarse: #314, #315, #316 (Dependabot major, aisladas) y #193 (preservar intacta).
+
+---
+
 **Estado vigente — Turno 18 / 2026-11-12:** PR #322 squash-merged; main `a44fe44bd72b1e72cc461c4edb92b2b9c1f20724`. PR #322 HEAD exacto `944711e4a3d95b542d846cc76dc3002a016de290`: 16/16 workflow runs y 20/20 check-runs SUCCESS; tres perfiles de restore PostgreSQL 18, test de readback SHA-256/tamper, backup contract tests, CI, Playwright, Semgrep, Trivy, migraciones y Pages/Workers SUCCESS. CI post-merge verificado en SHA `a44fe44bd72b1e72cc461c4edb92b2b9c1f20724`: 11/11 workflow runs y 13/13 check-runs SUCCESS, incluidos CI, Playwright, migraciones, seguridad y Pages/Workers.
 
 **Fase 3 backup/DR:** integrado `docs/DISASTER_RECOVERY_RUNBOOK.md`, tarea ODD `odd/tasks/security-remote-backup-and-dr.md`, verificación local/remota de SHA-256 con reintentos de transporte acotados y test sintético anti-tamper. Destino activo sigue siendo `BTF14/micro-app-backups`; R2/S3 es solo contrato condicional, no activado. Los perfiles CI prueban restauración sintética en PostgreSQL 18; no demuestran DR real, RPO/RTO ni disponibilidad actual de backup remoto.

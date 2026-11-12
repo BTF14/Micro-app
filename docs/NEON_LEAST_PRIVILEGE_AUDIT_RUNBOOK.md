@@ -42,7 +42,7 @@ Si cualquiera de estas condiciones falta, detener el procedimiento. No improvisa
 Usar el entorno seguro donde ya está disponible DATABASE_URL_BACKUP_RO; no escribir el DSN en el comando ni en un archivo versionado:
 
     set +x
-    : "\${DATABASE_URL_BACKUP_RO:?La conexión de backup debe estar provisionada en el entorno seguro}"
+    : "${DATABASE_URL_BACKUP_RO:?La conexión de backup debe estar provisionada en el entorno seguro}"
     psql "$DATABASE_URL_BACKUP_RO" -X -v ON_ERROR_STOP=1 \
       -f scripts/audit_database_roles.sql
 
@@ -78,7 +78,7 @@ Este paso cambia roles y ACLs en la base objetivo. No ejecutarlo como parte de C
 Conectar directamente con el usuario autorizado que administra los objetos (normalmente el migrador real) y confirmar primero current_user, session_user, current_database() y el destino. No usar un usuario superuser si existe un migrador no-superuser autorizado.
 
     set +x
-    : "\${APP_MIGRATOR_DATABASE_URL:?Falta la conexión directa autorizada del migrador}"
+    : "${APP_MIGRATOR_DATABASE_URL:?Falta la conexión directa autorizada del migrador}"
     psql "$APP_MIGRATOR_DATABASE_URL" -X -v ON_ERROR_STOP=1 \
       -f scripts/provision_neon_backup_role.sql
 
@@ -105,7 +105,7 @@ Actualizar el gestor de secretos solo mediante el proceso autorizado de cambios 
 Cuando el secreto apunte al nuevo LOGIN, ejecutar la auditoría directamente por esa conexión (no mediante SET ROLE):
 
     set +x
-    : "\${DATABASE_URL_BACKUP_RO:?Falta el secreto ya aprobado y actualizado}"
+    : "${DATABASE_URL_BACKUP_RO:?Falta el secreto ya aprobado y actualizado}"
     psql "$DATABASE_URL_BACKUP_RO" -X -v ON_ERROR_STOP=1 \
       -f scripts/audit_database_roles.sql
 

@@ -5,7 +5,7 @@
 - Hallazgo adicional en la base: 0022 assertions y `scripts/db/restore_role_assertions_main.sql` también rechazaban toda membresía sin distinguir dirección ni database owner.
 - Corrección en esta PR: outgoing siempre prohibidas; incoming solo `pg_database.datdba`, ADMIN OPTION=true, INHERIT=false, SET=false; `pg_has_role(...,'USAGE'/'SET')` bloquea capacidades efectivas del owner no-superuser. El bypass inherente de superuser se documenta para evitar falsos positivos en pruebas cuyo owner sea superuser.
 - Añadido job PostgreSQL 18 aislado: crea runtime/producer como propietario no-superuser CREATEROLE, ejecuta adopt-baseline y migraciones 0001–0023, ambas assertions y pruebas negativas para outgoing/incoming rogue/owner SET/INHERIT en producer y runtime.
-- **Estado:** implementación en rama; PR, checks exact-HEAD y merge pendientes. No afirmar CI aprobado hasta observar SHA final.
+- **Estado:** PR #337 abierta (HEAD `ba70faff30ca579f6b3cbee9142c6d69b907d69a`); checks exact-HEAD en ejecución; merge pendiente. No afirmar CI aprobado hasta observar SHA final.
 - Sin Neon, Secrets, Cloudflare, despliegue manual, PRs #193/#314/#315/#316 ni Issue #53. Issue #53 OPEN/P0; **PRODUCTION: NOT READY**.
 
 ---

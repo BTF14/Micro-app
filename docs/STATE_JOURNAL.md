@@ -6,10 +6,10 @@
 - #300 cerrada como ABSORBED: la eliminación de `sales.price.override`, la prueba negativa por rol y la tarea ODD ya están en main. No se integró una segunda vez; rama preservada.
 - #298 cerrada como SUPERSEDED/ABSORBED por #306/#307/#308; rama preservada.
 - #303 sincronizada inicialmente sin force-push con main; HEAD `97ac8e53cbd85a928f7b89f9f89f7ebeaf83e0f2`. Diff neto: runner BCV + dos tareas ODD. Fixture vigente 0001–0023; paired-intent 0001–0016 permanece en job separado.
-- Tras integrar #309, se re-sincronizó #303 sin force-push con main `d2761437fa624e8eed70023ded0fd7533569e96e`; nuevo HEAD `8535f1daa6b3616fc5ff77ef82f195b01a1f91b6`, 83 ahead / 0 behind, mismo diff efectivo. Se volvió a Draft y el CI del HEAD nuevo está pendiente; los checks verdes del HEAD anterior no se reutilizan.
+- Tras integrar #309, se re-sincronizó #303 sin force-push con main `d2761437fa624e8eed70023ded0fd7533569e96e`; nuevo HEAD `8535f1daa6b3616fc5ff77ef82f195b01a1f91b6`, 83 ahead / 0 behind, mismo diff efectivo. Se volvió temporalmente a Draft; el CI exact-HEAD completó 19/19 check-runs y 11/11 workflows SUCCESS, con los tres perfiles de restore SUCCESS. Se publicó Review COMMENT `5867016714` y se volvió a Ready for review.
 - El runner de restore ejecuta pg_dump como LOGIN sintético `microapp_backup`, valida ausencia de privilegios de escritura/escalada/ownership/membership y revoca los grants temporales tras el dump. PostgreSQL 18 demostró que SELECT es necesario para los ACCESS SHARE locks, incluso para tablas cuyo contenido se excluye. Las tablas auth mantienen DDL y sus filas se excluyen con `--exclude-table-data`.
 - Dos iteraciones de CI detectaron (1) falta de SELECT para locks y (2) grants temporales presentes en el manifiesto ACL. Ambos problemas se corrigieron. En HEAD final: 19/19 check-runs y 11/11 workflows pull_request SUCCESS; tres perfiles de restore SUCCESS.
-- Review #303 COMMENT `5866941549` anclado al HEAD anterior `97ac8e5`; no equivale a code-owner APPROVE. PR #303 queda OPEN/Draft mientras valida el HEAD nuevo, no mergeada.
+- Review #303 COMMENT `5867016714` anclado al HEAD actual; no equivale a code-owner APPROVE. PR #303 queda OPEN/Ready, no mergeada.
 - Censo abierto: #303 Ready, #296 Draft, #193 Ready (3 en total). #309 MERGED.
 - Issue #53 continúa OPEN/P0; producción NOT READY. No acceso a Neon, secretos, datos reales, backup remoto ni infraestructura productiva.
 

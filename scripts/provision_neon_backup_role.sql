@@ -3,7 +3,8 @@
 -- No password is stored in this file or supplied as a command-line argument.
 -- Run interactively with psql as the authorized schema/role administrator:
 --   psql "$APP_MIGRATOR_DATABASE_URL" -X -v ON_ERROR_STOP=1 -f scripts/provision_neon_backup_role.sql
--- psql will request the password interactively via \\password.
+-- psql requests the password securely via \password. Synthetic CI may opt into
+-- the non-secret test-only environment variable using -v backup_role_test_mode=1.
 
 \set ON_ERROR_STOP on
 SELECT current_database() AS target_database \gset
@@ -40,10 +41,21 @@ GRANT CONNECT ON DATABASE :"target_database" TO microapp_backup;
 GRANT USAGE ON SCHEMA public TO microapp_backup;
 GRANT SELECT ON ALL TABLES IN SCHEMA public TO microapp_backup;
 
--- The dump excludes auth rows with --exclude-table-data; pg_dump still needs
--- SELECT to inspect/dump those table definitions under the tested contract.
--- Default privileges are owner-specific. Configure separately for every actual
--- table/sequence owner after inspecting ownership; do not guess the owner here.
+-- SELECT alone permits reading last_value for pg_dump; USAGE permits nextval()
+-- and would violate the read-only contract. Default ACLs are owner-specific:
+-- this statement applies to objects subsequently created by the role executing
+-- this script, which must be verified as the actual schema/object owner.
+GRANT SELECT ON ALL SEQUENCES IN SCHEMA public TO microapp_backup;
+ALTER DEFAULT PRIVILEGES IN SCHEMA public
+  GRANT SELECT ON SEQUENCES TO microapp_backup;
 
-\password microapp_backup
+-- CI-only escape hatch: the password is read from the environment, never argv.
+-- Normal operator execution takes the secure interactive psql \password path.
+\if :{?backup_role_test_mode}
+  \getenv backup_role_test_password BACKUP_ROLE_TEST_PASSWORD
+  ALTER ROLE microapp_backup PASSWORD :'backup_role_test_password';
+  \unset backup_role_test_password
+\else
+  \password microapp_backup
+\endif
 ALTER ROLE microapp_backup LOGIN;

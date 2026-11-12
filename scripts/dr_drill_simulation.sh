@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# This drill is deliberately pinned to the disposable PostgreSQL 18 service
-# declared by backup-restore-smoke.yml. Never accept arbitrary DB targets.
+# Pinned to the disposable PostgreSQL 18 service in backup-restore-smoke.yml.
+# Never accept arbitrary DB targets, Neon, staging or production.
 expected_source_url="postgresql://microapp:microapp-test-only@localhost:5432/microapp_source"
 if [[ "${SOURCE_URL:-}" != "$expected_source_url" ]]; then
   echo "Refusing DR drill: SOURCE_URL must be the fixed disposable CI PostgreSQL 18 URL." >&2
@@ -25,7 +25,7 @@ drill_status=${PIPESTATUS[0]}
 set -e
 end_ns="$(python3 -c 'import time; print(time.monotonic_ns())')"
 rto_ms="$(( (end_ns - start_ns) / 1000000 ))"
-rto_seconds="$(python3 -c 'print(f"{int("'"$rto_ms"'") / 1000:.3f}')')"
+rto_seconds="$(python3 -c 'import sys; print(f"{int(sys.argv[1]) / 1000:.3f}")' "$rto_ms")"
 log_sha="$(sha256sum "$log_file" | awk '{print $1}')"
 script_sha="$(sha256sum scripts/test_backup_restore_schema_bcv.sh | awk '{print $1}')"
 fixture_sha="$(sha256sum scripts/backup_restore_fixture_bcv.sql | awk '{print $1}')"

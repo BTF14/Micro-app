@@ -30,7 +30,7 @@ Excluded:
 - [ ] AC1 — 0022 preflight y assertions rechazan toda membresía saliente y toda entrante distinta de `datdba`; la entrante permitida exige ADMIN OPTION=true, INHERIT=false, SET=false y ausencia de USAGE/SET efectivos.
 - [ ] AC2 — restore_role_assertions_main aplica idéntica invariante a `microapp_runtime`.
 - [ ] AC3 — PostgreSQL 18 crea runtime y producer desde LOGIN propietario no-superuser CREATEROLE y demuestra la arista automática ADMIN-only.
-- [ ] AC4 — adopt-baseline + migrate 0001–0023 + ambas assertions pasan con la arista legítima.
+- [ ] AC4 — perfil BCV: adopt-baseline + migrate 0001–0023 + 0022 assertions; perfil main: adopt-baseline + migrate 0001–0016 + restore_role_assertions_main; ambos pasan con la arista legítima.
 - [ ] AC5 — pruebas negativas demuestran fail-closed para outgoing, incoming rogue, owner SET e INHERIT, para producer y runtime.
 - [ ] AC6 — no hay SHA literal fijado para 0022 ni cambios ajenos; diff completo y CI exact-HEAD pasan.
 - [ ] AC7 — docs de estado, diario, handoff, tarea ODD y ADR quedan reconciliados.

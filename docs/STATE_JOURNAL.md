@@ -1,3 +1,13 @@
+## Journal — Turno 13 (2026-11-12 UTC)
+
+- PR #312 squash-merged a `main`; HEAD validado `bf5919e3ec80523a0d9d2c40602c3e5749fde05e`; 14/14 check-runs SUCCESS exact-SHA; merge/main SHA `dbeb21d97a5c738043f61629d3f0e3d25a4ea772`.
+- Diff neto de #312: cuatro archivos documentales; se integran dos artefactos nuevos y se actualizan CURRENT_STATE/STATE_JOURNAL. La revisión Codex quedó incompleta por cuota; revisión manual del diff documental realizada. Sin cambios runtime, migraciones ni infraestructura.
+- Censo consultado tras el merge: 5 PR abiertas: #193 y #313–#316 (cuatro Dependabot). Todas OPEN/no Draft; API reportó mergeable=false al corte. El número #313 no está disponible para el checkpoint solicitado; se usó #317.
+- PR #317 creada desde `dbeb21d97a5c738043f61629d3f0e3d25a4ea772` para checkpoint de continuidad y readiness de producción.
+- Issue #53 continúa OPEN/P0; **PRODUCTION: NOT READY**. Presupuesto USD 0. No Neon main, secretos, datos reales, roles/grants remotos, despliegues manuales, DNS ni billing.
+
+---
+
 ## Journal — Turno 12 (2026-11-12 UTC)
 
 - PR #311 integrada por squash; commit `dae88d14b69f274b0aac6c3dbd9de960ea0feb62`.

@@ -1,3 +1,16 @@
+## Journal — Turno 14 (2026-11-12 UTC)
+
+- PR #317 squash-merged; HEAD validado `870a35ac4a0190b80f31c0cf0590a759195f60dc`, 14/14 check-runs SUCCESS; nuevo main `bd9af0cc5b92858fd5063b3d8d102dbc327469ac`.
+- PR #313 revalidada: 14/14 SUCCESS en HEAD `c0895153da60845582911271e3f8f45a21a7dd53`, pero 1 ahead / 2 behind y diverged frente al nuevo main. No fusionada; requiere sincronización sin force-push y nueva CI.
+- Creada rama `security/issue-53-neon-role-matrix-20261112` desde el nuevo main.
+- Añadidos ODD task y ADR propuesto para la matriz Neon. Añadidos `scripts/audit_database_roles.sql` y `scripts/provision_neon_backup_role.sql`; ampliado `scripts/tests/test_backup_role_privileges.sh` para invocar la auditoría como principal sintético y comprobar rechazo de atributos administrativos.
+- Hallazgo histórico de SECURITY_ROADMAP: `backup_readonly` tenía atributos administrativos, memberships privilegiadas y DML; la identidad efectiva de DATABASE_URL_BACKUP_RO sigue desconocida. No se leyeron secretos ni se consultó Neon en este turno.
+- La auditoría exige SELECT-only en secuencias porque el dump completo debe preservar valores; niega USAGE/UPDATE. Conflicto con la instrucción literal de cero permisos en secuencias documentado en ADR; requiere resolución de contrato antes de certificar.
+- No se ejecutó CI ni pruebas PostgreSQL local por no disponer de checkout/servidor en este entorno. No Neon main, secretos, roles/grants remotos, datos reales, deploy ni billing.
+- Issue #53 OPEN/P0; PRODUCTION NOT READY; presupuesto USD 0.
+
+---
+
 ## Journal — Turno 13 (2026-11-12 UTC)
 
 - PR #312 squash-merged a `main`; HEAD validado `bf5919e3ec80523a0d9d2c40602c3e5749fde05e`; 14/14 check-runs SUCCESS exact-SHA; merge/main SHA `dbeb21d97a5c738043f61629d3f0e3d25a4ea772`.

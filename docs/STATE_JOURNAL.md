@@ -1,3 +1,17 @@
+- PR #318 creada Draft desde la rama de seguridad. HEAD al corte `fa5bd1710452d24974a208659209f4b0526f204e`; CI exact-HEAD en curso: 5/16 SUCCESS, 11 pendientes, 0 fallos. Se añadió auditoría de auth ephemeral: no conceder SELECT sobre auth_sessions/auth_rate_limits/auth_bootstrap_attempts; preservar DDL y excluir filas. No fusionar antes de CI completo y revisión.
+## Journal — Turno 14 (2026-11-12 UTC)
+
+- PR #317 squash-merged; HEAD validado `870a35ac4a0190b80f31c0cf0590a759195f60dc`, 14/14 check-runs SUCCESS; nuevo main `bd9af0cc5b92858fd5063b3d8d102dbc327469ac`.
+- PR #313 se fusionó por squash después de que GitHub reportara `mergeable=true`, `mergeable_state=clean` y 14/14 check-runs SUCCESS en HEAD `c0895153da60845582911271e3f8f45a21a7dd53`; merge SHA `a0d6d801128b3e3aa6543796436abf348c645e8f`.
+- Creada rama `security/issue-53-neon-role-matrix-20261112` desde el nuevo main.
+- Añadidos ODD task y ADR propuesto para la matriz Neon. Añadidos `scripts/audit_database_roles.sql` y `scripts/provision_neon_backup_role.sql`; ampliado `scripts/tests/test_backup_role_privileges.sh` para invocar la auditoría como principal sintético y comprobar rechazo de atributos administrativos.
+- Hallazgo histórico de SECURITY_ROADMAP: `backup_readonly` tenía atributos administrativos, memberships privilegiadas y DML; la identidad efectiva de DATABASE_URL_BACKUP_RO sigue desconocida. No se leyeron secretos ni se consultó Neon en este turno.
+- La auditoría exige SELECT-only en secuencias porque el dump completo debe preservar valores; niega USAGE/UPDATE. Conflicto con la instrucción literal de cero permisos en secuencias documentado en ADR; requiere resolución de contrato antes de certificar.
+- No se ejecutó CI ni pruebas PostgreSQL local por no disponer de checkout/servidor en este entorno. No Neon main, secretos, roles/grants remotos, datos reales, deploy ni billing.
+- Issue #53 OPEN/P0; PRODUCTION NOT READY; presupuesto USD 0.
+
+---
+
 ## Journal — Turno 13 (2026-11-12 UTC)
 
 - PR #312 squash-merged a `main`; HEAD validado `bf5919e3ec80523a0d9d2c40602c3e5749fde05e`; 14/14 check-runs SUCCESS exact-SHA; merge/main SHA `dbeb21d97a5c738043f61629d3f0e3d25a4ea772`.
@@ -2982,3 +2996,12 @@ La hipótesis anterior de que el helper de espera era la causa no era correcta. 
 - Neon main catalog findings remain unchanged and SELECT-only: `backup_readonly` is privileged and writable; 15 public tables and 2 sequences owned by `neondb_owner`; default ACL only for future tables; no RLS on 15 tables; `microapp_runtime` and `microapp_migrator` absent. Actual backup/Worker secret identities remain unknown because no secrets were read.
 - PR #287 remains OPEN/Draft, mergeable clean, 0 formal reviews, 0 review threads; 527 ahead / 1 behind main. No merge/rebase/sync. Issue #53 OPEN/P0; production NOT READY.
 - No Neon, secret, role, grant, password, business data, Cron, DNS, billing or production changes.
+
+
+## 2026-11-12 — Turno 16: corrección y prueba sintética de roles Neon
+
+- Confirmada divergencia de #318: 33 commits ahead / 1 behind; \`main\` en \`a0d6d801128b3e3aa6543796436abf348c645e8f\`. Rama sincronizada con merge commit de dos padres, sin force-push.
+- Decisión de seguridad: no aplicar literalmente \`GRANT USAGE, SELECT\` pedido en la directiva; \`USAGE\` permite \`nextval()\` y por tanto muta secuencias. Se mantiene SELECT-only, coherente con el dump y el requisito read-only.
+- Ampliados provisioning y auditoría; test ejecuta provisioning/audit como LOGIN sintético y verifica DML/DDL/sequence mutation/routine EXECUTE denegados, pg_dump custom y cifrado/descifrado/restauración age.
+- Primer fallo CI: el guard Bash de \`SOURCE_URL\` contenía un escape literal; corregido. En el SHA posterior \`071b7c599f602034b7b5b353573cc65e6b8ddadf\`, el job PostgreSQL 18 legacy backup/restore terminó SUCCESS.
+- CI global todavía en ejecución al registrar esta nota; no se declara elegibilidad de merge. Neon no fue contactado ni modificado. Issue #53 OPEN; \`PRODUCTION: NOT READY\`; USD 0.

@@ -1,3 +1,21 @@
+**PR #318:** OPEN / Draft; revalidar HEAD/checks en GitHub. La rama está 1 commit detrás del main actualizado por #313; mergeability reportada true pero `mergeable_state: unstable` mientras CI termina. Último HEAD antes de reconciliar este bloque documental: `f80da3d20162a2beb9dd22e9166a924aff4b51f0`; 16/18 check-runs SUCCESS, 2 pendientes, 0 fallos. La actualización documental generará un HEAD nuevo y exige CI exact-SHA nuevo; no promover ni fusionar.
+
+## Estado vigente — Turno 14 / auditoría de roles Neon (2026-11-12 UTC)
+
+**main:** `a0d6d801128b3e3aa6543796436abf348c645e8f` tras PR #313 (squash), precedida por #317. **PR #317:** MERGED; HEAD exact-SHA `870a35ac4a0190b80f31c0cf0590a759195f60dc`, 14/14 check-runs SUCCESS; merge SHA `bd9af0cc5b92858fd5063b3d8d102dbc327469ac`.
+
+**PR #313:** MERGED por squash; HEAD `c0895153da60845582911271e3f8f45a21a7dd53`, 14/14 check-runs SUCCESS exact-HEAD; merge SHA `a0d6d801128b3e3aa6543796436abf348c645e8f`. PR #314–#316 siguen abiertas; mantener los majors en espera. #193 permanece abierta e intacta.
+
+**Issue #53 / Turno 14:** rama `security/issue-53-neon-role-matrix-20261112` creada desde el main anterior a este trabajo. Se añadieron la tarea ODD, ADR propuesto, auditoría SQL read-only del principal conectado y plantilla de aprovisionamiento operator-run; la matriz sintética existente ahora invoca la auditoría y prueba rechazos de SUPERUSER/CREATEDB/CREATEROLE/BYPASSRLS. No se ha ejecutado CI todavía. La auditoría usa `current_user` y `session_user`; no se presume que coincidan con el nombre del secreto.
+
+**Hallazgo previo crítico:** `docs/SECURITY_ROADMAP.md` documenta una consulta SELECT-only histórica en Neon donde el rol `backup_readonly` tenía atributos administrativos, membresías privilegiadas y grants de escritura. No está demostrado que ese rol sea el usado por `DATABASE_URL_BACKUP_RO`. No se consultaron secretos ni se realizaron consultas nuevas a Neon en este turno.
+
+**Decisión técnica pendiente:** el dump completo necesita SELECT de lectura sobre secuencias para preservar su estado; el contrato sintético #303/#305 concede SELECT y niega USAGE/UPDATE. Esto contradice la exigencia literal de cero permisos de secuencia. La propuesta documenta la incompatibilidad y mantiene SELECT-only; no se afirma equivalencia con cero privilegios. Default privileges deben inventariarse por cada owner real.
+
+**PRODUCTION: NOT READY.** Issue #53 OPEN/P0. USD 0. Sin DDL/DML ni conexión operativa a Neon main, sin lectura de secretos, cambios remotos de roles/grants, datos reales, despliegues manuales ni billing.
+
+---
+
 ## Estado vigente — Turno 13 / cierre de #312 (2026-11-12 UTC)
 
 **main:** `dbeb21d97a5c738043f61629d3f0e3d25a4ea772` (squash merge de PR #312). **PR #312:** MERGED; HEAD validado `bf5919e3ec80523a0d9d2c40602c3e5749fde05e`; 14/14 check-runs SUCCESS exact-SHA. Merge commit: `dbeb21d97a5c738043f61629d3f0e3d25a4ea772`. La integración incorpora los artefactos de autorización administrativa/PIN y contingencia FX/calendario bancario rescatados de #296. La revisión automática Codex no se completó por cuota; se hizo inspección manual del diff documental. No equivale a aprobación de code owner.
@@ -3183,3 +3201,17 @@ La hipótesis anterior de que el helper de espera era la causa no era correcta. 
 - En el mismo SHA, Database migration validation `43048869994` SUCCESS; Secret history `43048870732` SUCCESS; ODD/docs `43048869895` SUCCESS; Security `43048869156` SUCCESS; Dependency review `43048869639` SUCCESS; dashboard `43048869221` SUCCESS; Semgrep `43048869247` SUCCESS; Playwright `43048869269` SUCCESS.
 - Próximo trabajo prioritario: resolver la fragilidad de dependencias apt en CI con estrategia reproducible, pinning y verificación de procedencia (p.ej. imágenes/containers con herramientas ya instaladas o setup action confiable y versionada), sin saltarse tests ni descargar binarios sin validar. Luego reejecutar los jobs afectados en un nuevo SHA y verificar todos los pasos reales. Mantener #287 Draft hasta cierre integral.
 - Issue #53 sigue OPEN/P0. Producción NOT READY. No Neon main, secretos, roles/grants remotos, deploy, restore real, Cron, billing, force-push ni rebase/sync automático. MVP 01/12/2026; GO/NO-GO 30/11/2026.
+
+
+## Turno 16 — PR \`#318\` / auditoría de roles Neon (2026-11-12 UTC)
+
+- \`main\` verificado: \`a0d6d801128b3e3aa6543796436abf348c645e8f\`.
+- Rama \`security/issue-53-neon-role-matrix-20261112\` sincronizada mediante commit de dos padres; comparación posterior: 0 commits detrás de \`main\`.
+- Correcciones implementadas:
+  - Provisioning: \`GRANT SELECT ON ALL SEQUENCES\` y default privileges \`SELECT\` para secuencias creadas por el owner que ejecuta el script. No se concede \`USAGE\` ni \`UPDATE\`, porque \`USAGE\` habilita \`nextval()\` y contradice el contrato read-only.
+  - Auditoría: \`routine_privileges\`, permisos efectivos de rutinas públicas no asociadas exclusivamente a triggers, privilegios de tablas/vistas, secuencias, ownership mediante \`pg_shdepend\` y default ACLs limitadas a \`public\`.
+  - Test sintético: ejecuta el provisioning real con contraseña sintética solo por variable de entorno CI, conecta como \`microapp_backup\`, ejecuta auditoría, prueba DML/DDL/nextval/setval/EXECUTE, verifica grants negativos y genera \`pg_dump\` custom.
+- Evidencia PostgreSQL 18 desechable en HEAD \`071b7c599f602034b7b5b353573cc65e6b8ddadf\`: el perfil legado de backup/restore completó correctamente, incluida auditoría, denegaciones, dump íntegro, cifrado age, checksum, descifrado y restauración.
+- En la última consulta exact-SHA, 17/19 check-runs SUCCESS y 2 seguían en progreso; revalidar todos en el HEAD posterior a la actualización documental antes de promover.
+- PR \`#318\` sigue OPEN / Draft; sin reviews formales. Issue \`#53\` sigue OPEN. **PRODUCTION: NOT READY**.
+- Sin conexión, DDL ni escrituras en Neon; presupuesto USD 0. PR \`#319\` runbook queda condicionado al merge seguro de \`#318\`.

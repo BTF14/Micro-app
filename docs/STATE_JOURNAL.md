@@ -1,3 +1,14 @@
+## Turno 21 — addendum de auditoría documental y gobernanza (2026-11-12 UTC)
+
+- Main verificado: 01a1b178e041128cfc1a98ab4955132368387523; 11/11 check-runs completed/success, asociados exactamente a ese SHA.
+- Censo vivo: cuatro PR abiertas (#193, #314, #315, #316); #193 Ready preservada; #314–#316 Dependabot major con bases anteriores a main.
+- CLAUDE.md importa AGENTS.md; Constitución autoridad normativa; política y contrato continuidad no duplican reglas. 11 perfiles agent describen roles; no se afirma ejecución sin runtime confirmado.
+- Constitución armonizada: autorización Neon explícita específica por operación; autorización permanente de merge no cubre DDL/DML, roles/grants, ownership ni secretos Neon.
+- Issue #53 OPEN/P0, PRODUCTION NOT READY. RTO sintético 3.953 s no demuestra RPO/RTO operativos. Principal efectivo/grants Neon pendientes del operador.
+- Checklist de sign-off creado: auditoría read-only, backup natural/readback .age/.sha256 en repositorio privado separado, smoke staging y gates operacionales/humanos.
+- Sin cambios app/workflows/migraciones/secretos/Neon/Cloudflare/datos/billing/deploy. Diario conserva entradas anteriores; addendum nuevo al inicio.
+
+---
 ## Turno 21 — entrada Claude Code y protocolo de comunicación entre agentes (2026-11-12 UTC)
 
 - Main base verificado: `938401a891216448b7de78f20dfa3adb53a82cbf`. Rama documental: `docs/ai-agent-communication-claude-entry-20261112`.

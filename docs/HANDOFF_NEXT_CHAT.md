@@ -1,18 +1,18 @@
-## Handoff vigente — Turno 21 post-merge: protocolo de agentes (2026-11-12 UTC)
+## Handoff vigente — Auditoría documental Turno 21 (2026-11-12 UTC)
 
-- PR #328: https://github.com/BTF14/Micro-app/pull/328 — MERGED por squash.
-- Base: `938401a891216448b7de78f20dfa3adb53a82cbf`. HEAD validado de PR: `11c0e6c14c0d62222ae5fc32ffe798edd9179266`; **10/10 workflow runs SUCCESS** exact-HEAD. No reviews ni threads pendientes.
-- Merge SHA y main actual: `fbefadcfa75952cc0f737eecb1bf444da488d117`. Confirmado como commit más reciente y como `main` mediante compare (identical, ahead 0 / behind 0).
-- El conector de workflow runs consultado filtra eventos `pull_request`; no devolvió runs asociados al merge SHA. No afirmar CI post-merge sobre `fbefadc...` con esa evidencia. Los 10/10 corresponden exclusivamente al HEAD pre-merge de la PR.
-- Archivos integrados: `CLAUDE.md` (en español; importa `AGENTS.md` con `@AGENTS.md`), `AGENTS.md`, `docs/CONSTITUTION.md`, `docs/AI_COLLABORATION_AND_PR_POLICY.md`, `odd/tasks/ai-continuity-and-evidence-contract.md`.
-- Convención: el propietario puede usar texto normal en solicitudes sencillas y Markdown en directivas largas; los agentes usan Markdown conciso por defecto en trabajo Micro-app, con profundidad proporcional al riesgo. Modos CONSULTA/DIRECTIVA/REPORTE; etiquetas VERIFICADO/REPORTADO/INFERIDO/PENDIENTE/BLOQUEADO/NO VERIFICADO. `CLAUDE.md` es índice específico de Claude Code, no una política paralela.
-- Solo documentación; no aplicación, migraciones, workflows, secretos, Neon, Cloudflare, datos reales ni billing.
-- Issue #53 permanece bajo el estado previo OPEN/P0 y PRODUCTION: NOT READY; esta PR no satisface gates operacionales ni los cambia.
-- Próximo paso: consultar GitHub vivo para censo de PR/Issues y checks antes de elegir trabajo. Para post-merge CI, usar una fuente que incluya eventos push; el endpoint consultado filtra PR runs.
+- Base GitHub main: 01a1b178e041128cfc1a98ab4955132368387523; 11/11 check-runs completed/success exact-SHA.
+- Rama: docs/issue-53-full-documentation-audit-20261112, creada desde esa base.
+- Censo vivo: #193 OPEN/Ready (intacta), #314 jsdom major, #315 Vite major, #316 plugin-react major. Total 4; sus bases registradas son anteriores a main.
+- #328 y #329 ya están integradas. No esperar CI de ellas ni repetir su verificación. Snapshots inferiores son históricos.
+- CLAUDE.md importa AGENTS.md; Constitución autoridad normativa; perfiles .github/agents describen roles, no subagentes activos salvo confirmación runtime.
+- Se armonizó la discrepancia constitucional: Neon main requiere autorización explícita específica por operación; autorización de merge no autoriza Neon. Sin acceso a Neon en esta rama.
+- Issue #53 OPEN/P0; **PRODUCTION: NOT READY**. RTO sintético 3.953 s no equivale a RTO real ni RPO operativo.
+- Próximo paso: docs/PRODUCTION_SIGN_OFF_CHECKLIST.md. Auditoría read-only, backup natural en BTF14/micro-app-backups, .age + .sha256/readback, smoke autenticado staging y subgates operacionales/legal/fiscal/coste. No cerrar #53 sin evidencia/aceptación.
+- No Neon DDL/DML, secretos, datos reales, deploy manual, Cloudflare/DNS ni billing. USD 0.
 
 ---
 
-## Snapshot histórico — Turno 20 post-merge (superseded by Turno 21; 2026-11-12 UTC)
+## Snapshot histórico — Turno 20 post-merge (superseded by auditoría Turno 21; 2026-11-12 UTC)
 
 - Main verificado tras PR #326: `c061a888e882b96a9691d8a77c3ed9c03d59122d`. PR #326 squash-merged; base `0ff826673f779c53ec2dd16bbd083d8fd6f2d2e0`.
 - PR #326: https://github.com/BTF14/Micro-app/pull/326. HEAD exacto `92401163501846b704626878961a22980c150224`; **19/19 check-runs + 15/15 workflow runs SUCCESS**, sin reviews ni threads. Merge SHA / main `c061a888e882b96a9691d8a77c3ed9c03d59122d`.

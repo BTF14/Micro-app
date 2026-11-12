@@ -1,3 +1,22 @@
+## Addendum — auditoría documental y gobernanza del Turno 21 (2026-11-12 UTC)
+
+- Main verificado: 01a1b178e041128cfc1a98ab4955132368387523; 11/11 check-runs completed/success, asociados exactamente a ese SHA.
+- Censo vivo: cuatro PR abiertas (#193, #314, #315, #316); #193 Ready preservada; #314–#316 Dependabot major con bases anteriores a main.
+- CLAUDE.md importa AGENTS.md; Constitución autoridad normativa; política y contrato continuidad no duplican reglas. 11 perfiles agent describen roles; no se afirma ejecución sin runtime confirmado.
+- Constitución armonizada: autorización Neon explícita específica por operación; autorización permanente de merge no cubre DDL/DML, roles/grants, ownership ni secretos Neon.
+- Issue #53 OPEN/P0, PRODUCTION NOT READY. RTO sintético 3.953 s no demuestra RPO/RTO operativos. Principal efectivo/grants Neon pendientes del operador.
+- Checklist de sign-off creado: auditoría read-only, backup natural/readback .age/.sha256 en repositorio privado separado, smoke staging y gates operacionales/humanos.
+- Sin cambios app/workflows/migraciones/secretos/Neon/Cloudflare/datos/billing/deploy. Diario conserva entradas anteriores; addendum nuevo al inicio.
+
+---
+
+## Nota de integridad cronológica
+
+- Los encabezados numerados disponibles abarcan Turnos 10–21; no existe encabezado Turno 15 en la versión actual.
+- El historial Git más antiguo del archivo contiene una entrada fechada 2026-10-18, pero sin número de turno; por tanto, no permite reconstruir con rigor los Turnos 1–9.
+- Los registros adicionales del Turno 17 se conservan como addenda bajo su mismo turno; no se eliminó ni fusionó contenido histórico.
+- No inventar entradas para los huecos. Si aparece una fuente primaria que permita numerarlos, añadir una referencia cruzada sin reescribir la historia.
+
 ## Turno 21 — entrada Claude Code y protocolo de comunicación entre agentes (2026-11-12 UTC)
 
 - Main base verificado: `938401a891216448b7de78f20dfa3adb53a82cbf`. Rama documental: `docs/ai-agent-communication-claude-entry-20261112`.
@@ -64,7 +83,7 @@
 
 ---
 
-## Turno 17 — cierre de auditoría tenant/session (2026-11-12 UTC)
+### Addendum Turno 17 — cierre de auditoría tenant/session (2026-11-12 UTC)
 
 - PR #319 MERGED; main `fc1a599a4d78350d3af2f239390459e168e3ff14`.
 - PR #320 pasó a Ready for review; HEAD `6443a39cbb415dd993025ba9ee137cd3e636acef`, 16/16 check-runs SUCCESS exact-SHA. CI `43184248762`, Playwright `43184248758`, ODD docs `43184248675`, Semgrep `43184248844`, migration validation `43184248838`, migration runner `43184248810`, security scan `43184248987`, secret scan `43184248729`, dependency review `43184248899`, project dashboard `43184248724`, Pages/Workers checks success.
@@ -74,7 +93,7 @@
 
 ---
 
-## Turno 17 — evidencia exact-HEAD y reconciliación documental
+### Addendum Turno 17 — evidencia exact-HEAD y reconciliación documental
 
 - PR #319 MERGED; main `fc1a599a4d78350d3af2f239390459e168e3ff14`.
 - PR #320 Draft; code HEAD `9714b5848532d55593e552e40ffb3dfcbb873410` obtuvo 15/15 check-runs SUCCESS: `pnpm test`, PostgreSQL 18, integración auth/branch/catalog/inventory/checkout/register-shifts, Playwright, ODD docs, Semgrep, Trivy, secret history, dependency review y Pages.
@@ -84,7 +103,7 @@
 
 ---
 
-## Turno 17 — PR #319 integrada; fase tenant/sesión iniciada (2026-11-12 UTC)
+### Addendum Turno 17 — PR #319 integrada; fase tenant/sesión iniciada (2026-11-12 UTC)
 
 - PR #319 squash-merged; nuevo main `fc1a599a4d78350d3af2f239390459e168e3ff14`.
 - Creada rama `security/issue-53-tenant-session-isolation-20261112` desde ese main; creada tarea ODD antes de cambios de runtime.

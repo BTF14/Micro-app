@@ -1,4 +1,18 @@
-> **Estado vigente 2026-11-12:** PR #318 MERGED en main SHA `3ac66a180fcf23421b546140a419a45062e633dd`; exact-HEAD pre-merge 19/19 checks SUCCESS y post-merge 13/13 checks SUCCESS. PR #319 OPEN / Draft contiene el runbook de operador. Issue #53 continúa OPEN/P0; principal real de DATABASE_URL_BACKUP_RO no verificado; PRODUCTION: NOT READY. Sin cambios remotos en Neon, sin lectura/rotación de secrets, USD 0.
+> **Estado vigente — auditoría Turno 21 / 2026-11-12:** main 01a1b178e041128cfc1a98ab4955132368387523; 11/11 check-runs SUCCESS exact-SHA. PR abiertas #193/#314/#315/#316. Issue #53 OPEN/P0; **PRODUCTION: NOT READY**. Sin mutaciones Neon, secretos ni despliegues. USD 0.
+>
+
+> **Fases de seguridad — evidencia y límites:**
+> - **Roles/mínimo privilegio:** contrato y pruebas de principal backup sin escalada/membresías y lectura limitada probados en PostgreSQL 18 desechable. Identidad efectiva DATABASE_URL_BACKUP_RO y grants/ownership reales pendientes de auditoría del operador. El rol histórico backup_readonly tuvo privilegios elevados; no está demostrado que sea el principal del secreto.
+> - **Auditoría/integridad:** controles append-only y assertions de actor/ledger probados en CI/fixtures; no certifican permisos efectivos Neon.
+> - **Sesiones/aislamiento:** auth, expiración/revocación y denegación cross-branch/tenant probados con identidades y PostgreSQL sintéticos; no son smoke autenticado staging ni certificación productiva.
+> - **Backup cifrado:** workflow programado implementa pg_dump, age, SHA-256 sidecar y readback al repositorio privado BTF14/micro-app-backups. Código/CI no demuestra copia natural reciente restaurable.
+> - **DR:** PR #326, simulacro sintético PostgreSQL 18, 23 migraciones, dump cifrado/manifiestos coincidentes, RTO sintético **3.953 s**. RPO operativo, RTO real y restore de copia natural real no medidos.
+>
+
+> **Bloqueos P0:** principal/grants/ownership efectivos; backup natural y restore independiente; RPO/RTO operativos; entrega/ack de alertas; smoke staging; coste USD 0 y aceptación legal/fiscal/contable. No cerrar #53 ni marcar READY hasta todos los gates.
+>
+
+> Los snapshots inferiores son históricos, no estado vivo. Prevalecen CURRENT_STATE.md y HANDOFF_NEXT_CHAT.md contrastados con GitHub.
 
 # Estado de seguridad reconciliado — Turno 5 — 2026-11-11 UTC
 

@@ -1,4 +1,16 @@
-> **Estado vigente 2026-11-12:** PR #318 MERGED en main SHA `3ac66a180fcf23421b546140a419a45062e633dd`; 19/19 check-runs pre-merge y 13/13 check-runs post-merge SUCCESS. PR #319 OPEN / Draft prepara el runbook. El principal real de DATABASE_URL_BACKUP_RO sigue sin verificarse; el workflow conserva el diagnóstico heredado `backup_readonly`. Issue #53 OPEN/P0; PRODUCTION: NOT READY; no Neon writes; USD 0.
+> **Estado vigente — auditoría Turno 21 / 2026-11-12:** Issue #53 OPEN/P0; **PRODUCTION: NOT READY**. Main 01a1b178e041128cfc1a98ab4955132368387523, 11/11 checks SUCCESS exact-SHA. USD 0; no Neon main DDL/DML, roles/grants, secretos ni deploy manual.
+>
+
+> **Contrato implementado:** .github/workflows/backup.yml programa pg_dump, age, SHA-256 y publica .age + .sha256 en el repositorio privado separado BTF14/micro-app-backups; el workflow verifica readback. Código/CI no demuestra backup natural reciente ni restore real posterior.
+>
+
+> **DR sintético:** PR #326 probó restore PostgreSQL 18 con 23 migraciones, dump cifrado/manifiestos coincidentes; RTO sintético **3.953 s**. No es RTO operacional; RPO operativo no medido.
+>
+
+> **Bloqueos P0:** operador ejecuta auditoría read-only scripts/audit_database_roles.sql; identidad efectiva del secreto no certificada y rol histórico backup_readonly privilegiado, sin demostrar que sea principal efectivo. Observar backup natural programado, confirmar .age + .sha256/readback y restaurar copia concreta en PostgreSQL aislado. Pendientes RPO/RTO, alerta/ack, smoke staging, coste USD 0 y aprobación legal/fiscal/contable.
+>
+
+> **No ejecutar** workflow_dispatch para fabricar evidencia; no usar Neon main como laboratorio, compartir secretos ni cambiar roles/grants sin autorización específica. Seguir docs/PRODUCTION_SIGN_OFF_CHECKLIST.md; no cerrar #53 ni declarar READY antes de todos los gates.
 
 ## Reconciliación del contrato de exclusión y mínimo privilegio — 2026-11-11 UTC
 

@@ -30,7 +30,7 @@ La convención de comunicación entre propietario y agentes está definida en `o
 - Esta autorización **no** permite despliegues manuales, cambios directos de Cloudflare, secretos/variables, DNS, billing, Neon `main`, migraciones remotas, escrituras/datos reales ni otras operaciones sensibles. Para ellas siguen siendo necesarios los permisos y gates específicos.
 - Antes de cualquier migración con datos reales, operación destructiva o cambio sensible a producción, lee `docs/BACKUP_AND_RECOVERY.md` y verifica una ruta real de recuperación; no supongas que los backups funcionan.
 - No habilites GGA, Engram, Gentle-AI, Gentle Shell ni hooks de Git sin revisar primero `docs/GENTLEMAN_IMPLEMENTATION.md`, coste, permisos, seguridad y desinstalación. Nunca actives hooks automáticamente.
-- No mutar Neon `main` sin autorización específica y posterior al análisis, prueba aislada y gate de recuperación de `docs/CONSTITUTION.md`. PostgreSQL desechable es el entorno primario de pruebas.
+- Neon main permanece sin DDL/DML, escrituras, cambios de roles/grants, ownership o credenciales salvo autorización explícita y específica del propietario para cada operación, posterior al análisis, prueba aislada y gate de recuperación de la Constitución. La autorización permanente de merge no cubre Neon. PostgreSQL desechable es el entorno primario de pruebas.
 - No conectar previews a producción ni a datos reales por conveniencia. Usa datos sintéticos y verifica aislamiento.
 - No expongas, registres ni versionees secretos, credenciales, tokens, cadenas de conexión o datos de clientes.
 - No envíes correos ni realices acciones externas en nombre del propietario sin autorización expresa.

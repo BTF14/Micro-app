@@ -7,7 +7,7 @@
 - Contrato: membresías salientes prohibidas; entrantes solo desde `pg_database.datdba` con ADMIN OPTION=true / INHERIT=false / SET=false; owner no-superuser sin USAGE/SET efectivo. Grants funcionales permanecen sin cambios.
 - Harness: PostgreSQL 18 en job independiente y dos bases del mismo cluster. Perfil BCV: adopt-baseline + 0001–0023 + 0022 assertions, con pruebas negativas del producer. Perfil main: adopt-baseline + 0001–0016 + restore_role_assertions_main, con pruebas negativas del runtime. Separación necesaria porque el script restore_role_assertions_main valida los grants del perfil main y no es intercambiable con el perfil BCV.
 - No Neon, secrets, Cloudflare, despliegue manual, PRs #193/#314/#315/#316 ni Issue #53.
-- **Estado:** PR #337 abierta (HEAD `ba70faff30ca579f6b3cbee9142c6d69b907d69a`); checks exact-HEAD en ejecución; merge pendiente. Antes de merge: comprobar búsqueda SHA literal 0022, diff completo, branch protection, review threads/reviews, conflictos y todos los check-runs exact-SHA. Después del merge: verificar nuevo main y checks post-merge; restablecer Code Freeze; solicitar ventana nueva para Fase 2 definitiva Neon.
+- **Estado:** PR #337 abierta (HEAD `e767474c5bd8942176007bcf51a7aa99ff43faf0`); checks exact-HEAD en ejecución; merge pendiente. Antes de merge: comprobar búsqueda SHA literal 0022, diff completo, branch protection, review threads/reviews, conflictos y todos los check-runs exact-SHA. Después del merge: verificar nuevo main y checks post-merge; restablecer Code Freeze; solicitar ventana nueva para Fase 2 definitiva Neon.
 - Issue #53 OPEN/P0; **PRODUCTION: NOT READY**; USD 0.
 
 ---

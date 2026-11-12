@@ -132,12 +132,12 @@ jobs:
           {
             echo "### Diagnóstico no sensible del principal de backup"
             echo
-            echo "- Identidad efectiva esperada (`backup_readonly`): `$identity_ok`"
-            echo "- Atributos de rol no privilegiados: `$role_safe`"
-            echo "- Membresías de roles: `$has_membership` (esperado: `f`)"
-            echo "- Privilegios de escritura sobre tablas: `$table_writes` (esperado: `f`)"
-            echo "- Privilegios de mutación de secuencias: `$sequence_writes` (esperado: `f`)"
-            echo "- CREATE en schema/database: `$create_privilege` (esperado: `f`)"
+            echo "- Identidad efectiva esperada (\`backup_readonly\`): \`${identity_ok}\`"
+            echo "- Atributos de rol no privilegiados: \`${role_safe}\`"
+            echo "- Membresías de roles: \`${has_membership}\` (esperado: \`f\`)"
+            echo "- Privilegios de escritura sobre tablas: \`${table_writes}\` (esperado: \`f\`)"
+            echo "- Privilegios de mutación de secuencias: \`${sequence_writes}\` (esperado: \`f\`)"
+            echo "- CREATE en schema/database: \`${create_privilege}\` (esperado: \`f\`)"
             echo
             echo "Este diagnóstico no imprime DSN, usuario real, credenciales ni datos. No bloquea la generación de la copia; cualquier resultado distinto al esperado mantiene abierto el gate P0."
           } >> "$GITHUB_STEP_SUMMARY"

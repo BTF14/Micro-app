@@ -1,3 +1,12 @@
+## Turno 26 — corrección del resumen de diagnóstico de backup (2026-11-12 UTC)
+
+- Rama quirúrgica: `fix/backup-diagnostic-backtick-escaping-20261112`, creada desde main `066aaa1ee9599e6c34d264929dafb7a0734cca71`.
+- Se escapan los backticks Markdown y se preserva la expansión de las seis variables Bash en el Step Summary; evita que Bash intente ejecutar `backup_readonly`, `t` o `f` como comandos.
+- Alcance: solo `.github/workflows/backup.yml` y reconciliación de estos cuatro documentos. No se modifica el SQL, el secreto, los roles ni la base Neon.
+- El diagnóstico del workflow sigue siendo parcial y `continue-on-error: true`: sus seis booleanos no sustituyen `scripts/audit_database_roles.sql`, no cubren ownership/default ACLs/rutinas completos y no certifican por sí solos least privilege ni readiness.
+- `workflow_dispatch` ejecuta el workflow de backup completo: además de conectar a Neon para `pg_dump`, cifra y escribe el artefacto en el repositorio privado de backups. No es una auditoría aislada ni una operación sin escrituras externas. Solo ejecutar tras revisar explícitamente ese efecto.
+- En esta nota no se afirma que PR #334 exista, que CI haya pasado, que haya merge ni que se haya ejecutado un nuevo dispatch. Issue #53 OPEN/P0; **PRODUCTION: NOT READY**; USD 0; no Neon DDL/DML.
+
 ## Addendum — Turno 22: blindaje local de Claude Code (2026-11-12 UTC)
 
 - PR #332 squash-merged; nuevo main: `87e6ed69c683f66281dd816ec9041a80d232ab13`.

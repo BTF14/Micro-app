@@ -1,7 +1,7 @@
 # Política de colaboración de IA, PR y verificación
 
 **Estado:** política del repositorio; los cambios de esta revisión se aplican al fusionarse en `main`.  
-**Última actualización:** 2026-11-05.  
+**Última actualización:** 2026-11-12.  
 **Aplicación:** toda IA, agente, sesión o chat que trabaje en Micro app, independientemente del proveedor (ChatGPT, Claude, Codex u otro).
 
 El flujo de trabajo vigente es ODD, descrito en `docs/ODD_WORKFLOW.md`. Esta política desarrolla las reglas de PR y verificación; `AGENTS.md` es el punto de entrada y `docs/CONSTITUTION.md` la autoridad normativa. Si hay conflicto, verificar la fuente canónica, preservar las restricciones de seguridad y corregir la contradicción. No es necesario leer el documento completo para tareas que no impliquen PR, revisión o integración. `CLAUDE.md` es únicamente el índice de entrada de Claude Code e importa `AGENTS.md`; no constituye una política independiente. La convención de comunicación y evidencia entre agentes está en `odd/tasks/ai-continuity-and-evidence-contract.md`.

@@ -91,6 +91,8 @@ IVA, IGTF, facturación, numeración y conservación documental requieren fuente
 ## 9. IA, herramientas y agentes
 
 - GitHub y documentación versionada son la fuente persistente de verdad; el chat no sustituye el repositorio.
+- `AGENTS.md` es el contrato común de instrucciones; `CLAUDE.md` solo es el índice de entrada de Claude Code e importa `AGENTS.md`. No puede contradecir ni sustituir esta Constitución. Otros agentes siguen el contrato común directamente.
+- El propietario puede comunicarse en texto normal para peticiones sencillas y usar Markdown para directivas largas o informes de otros agentes. Los agentes deben responder en Markdown conciso por defecto cuando trabajen en Micro-app; la profundidad del informe debe ser proporcional al riesgo y alcance.
 - Toda IA debe aplicar el [contrato de continuidad, decisiones y evidencia](../odd/tasks/ai-continuity-and-evidence-contract.md): verificar estado vivo antes de actuar, registrar decisiones duraderas y cerrar bloques sustanciales con evidencia exacta y handoff reproducible.
 - `.github/agents/*.agent.md` son perfiles reutilizables, no prueba de subagentes activos.
 - GGA, Ollama, Engram, Gentle-AI y Gentle Shell no se describen como activos sin versión, ejecución y resultado observables.

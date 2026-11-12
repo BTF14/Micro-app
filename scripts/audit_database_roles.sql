@@ -218,7 +218,8 @@ BEGIN
     CROSS JOIN LATERAL aclexplode(d.defaclacl) a
     WHERE a.grantee=v_role
       AND (
-        d.defaclobjtype NOT IN ('r','S')
+        d.defaclnamespace <> 'public'::regnamespace
+        OR d.defaclobjtype NOT IN ('r','S')
         OR a.privilege_type <> 'SELECT'
         OR a.is_grantable
       )

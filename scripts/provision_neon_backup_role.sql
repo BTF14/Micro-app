@@ -38,19 +38,10 @@ REVOKE ALL PRIVILEGES ON ALL SEQUENCES IN SCHEMA public FROM microapp_backup;
 
 GRANT CONNECT ON DATABASE :"target_database" TO microapp_backup;
 GRANT USAGE ON SCHEMA public TO microapp_backup;
-DO $table_grants$
-DECLARE r record;
-BEGIN
-  FOR r IN SELECT tablename FROM pg_catalog.pg_tables WHERE schemaname='public' AND tablename NOT IN ('auth_sessions','auth_rate_limits','auth_bootstrap_attempts') LOOP
-    EXECUTE format('GRANT SELECT ON TABLE public.%I TO microapp_backup', r.tablename);
-  END LOOP;
-END
-$table_grants$;
-REVOKE SELECT ON TABLE public.auth_sessions, public.auth_rate_limits, public.auth_bootstrap_attempts FROM microapp_backup;
+GRANT SELECT ON ALL TABLES IN SCHEMA public TO microapp_backup;
 
--- SELECT preserves sequence state in a complete pg_dump; USAGE/UPDATE are denied.
-GRANT SELECT ON ALL SEQUENCES IN SCHEMA public TO microapp_backup;
-
+-- The dump excludes auth rows with --exclude-table-data; pg_dump still needs
+-- SELECT to inspect/dump those table definitions under the tested contract.
 -- Default privileges are owner-specific. Configure separately for every actual
 -- table/sequence owner after inspecting ownership; do not guess the owner here.
 

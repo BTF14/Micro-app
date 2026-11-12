@@ -33,7 +33,6 @@ ALTER ROLE microapp_backup LOGIN PASSWORD 'backup-test-only'
 GRANT CONNECT ON DATABASE microapp_source TO microapp_backup;
 GRANT USAGE ON SCHEMA public TO microapp_backup;
 GRANT SELECT ON ALL TABLES IN SCHEMA public TO microapp_backup;
-REVOKE SELECT ON TABLE public.auth_sessions, public.auth_rate_limits, public.auth_bootstrap_attempts FROM microapp_backup;
 GRANT SELECT ON ALL SEQUENCES IN SCHEMA public TO microapp_backup;
 SQL
 
@@ -84,7 +83,6 @@ assert_true "backup role has SELECT on every public table" "
   NOT EXISTS (
     SELECT 1 FROM pg_class c JOIN pg_namespace n ON n.oid=c.relnamespace
     WHERE n.nspname='public' AND c.relkind IN ('r','p')
-      AND c.relname NOT IN ('auth_sessions','auth_rate_limits','auth_bootstrap_attempts')
       AND NOT has_table_privilege('microapp_backup', c.oid, 'SELECT')
   )
 "

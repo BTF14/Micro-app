@@ -112,9 +112,29 @@ BEGIN
     JOIN pg_catalog.pg_database d
       ON d.datname = current_database()
     WHERE m.roleid = v_role
-      AND m.member <> d.datdba
+      AND (
+        m.member <> d.datdba
+        OR NOT m.admin_option
+        OR m.inherit_option
+        OR m.set_option
+      )
   ) THEN
-    RAISE EXCEPTION 'FAIL: backup principal % has an incoming member other than the direct owner of the current database', v_role_name;
+    RAISE EXCEPTION 'FAIL: backup principal % has a non-owner or non-ADMIN-only incoming membership', v_role_name;
+  END IF;
+
+  IF EXISTS (
+    SELECT 1
+    FROM pg_catalog.pg_database d
+    JOIN pg_catalog.pg_roles database_owner
+      ON database_owner.oid = d.datdba
+    WHERE d.datname = current_database()
+      AND NOT database_owner.rolsuper
+      AND (
+        pg_catalog.pg_has_role(d.datdba, v_role, 'USAGE')
+        OR pg_catalog.pg_has_role(d.datdba, v_role, 'SET')
+      )
+  ) THEN
+    RAISE EXCEPTION 'FAIL: direct database owner has effective USAGE or SET on backup principal %', v_role_name;
   END IF;
 
   -- pg_shdepend covers ownership dependencies beyond ordinary tables; the

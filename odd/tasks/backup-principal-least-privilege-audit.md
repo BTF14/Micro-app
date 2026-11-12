@@ -124,3 +124,35 @@ This is an isolated candidate contract only. It does not alter Neon default ACLs
 - PostgreSQL migration validation 86/86 steps SUCCESS, including this test; migration runner 21/21; backup restore main 11/11 and BCV 10/10; CI main 43/43.
 - Formal reviews 0, review threads 0. PR remains OPEN/Draft. Issue #53 OPEN/P0; production NOT READY.
 - Live secret principal remains unknown; this test is disposable CI only. No Neon role/grant/secret changes were made.
+
+
+## Turno 35 — direct database-owner ADMIN-only exception
+
+**Authorization:** PR #338 only, based on main SHA `3b0b8d0ce24ab823ff41b84cd56a48b36dedae88`. No Neon, GitHub Secrets, Cloudflare manual settings, backup dispatch, or remote backup repository writes are authorized in this change.
+
+### Finding and correction
+
+- The live `.github/workflows/backup.yml` diagnostic rejected every membership edge. After the owner-confirmed Fase 3A rotation, the backup login is expected to be `microapp_backup`; PostgreSQL 16+ can retain an incoming creator edge from `pg_database.datdba` with ADMIN=true, INHERIT=false, SET=false. Rejecting that exact edge would be a false positive.
+- The prior `scripts/audit_database_roles.sql` rejected outgoing edges and non-owner incoming members but did not validate the ADMIN/INHERIT/SET flags or effective owner USAGE/SET. This discrepancy is corrected in the same PR; do not describe the previous script as already enforcing the full contract.
+- The diagnostic now sets `has_membership=t` for every outgoing edge; any incoming member other than `d.datdba`; any owner edge without ADMIN or with INHERIT/SET; or effective owner USAGE/SET when the database owner is not a superuser.
+- The sole accepted edge is `m.member=d.datdba AND m.admin_option AND NOT m.inherit_option AND NOT m.set_option`, with effective owner USAGE/SET absent for a non-superuser owner. The six-boolean output, non-blocking diagnostic behavior, and temporary identity allowlist `backup_readonly` / `microapp_backup` remain unchanged.
+
+### Regression coverage
+
+- PostgreSQL 18 disposable CI test provisions a non-superuser database owner with CREATEROLE, creates the backup principal under that owner, and verifies the real direct-owner ADMIN-only edge exists.
+- It asserts the accepted edge yields `has_membership=f`; outgoing, rogue incoming, owner SET=true, owner INHERIT=true, and owner ADMIN=false each yield `t`. The owner is non-superuser so the effective `pg_has_role(..., 'USAGE'/'SET')` checks are exercised rather than bypassed.
+- `.github/workflows/migration-check.yml` already runs this test against its ephemeral PostgreSQL 18 service. No Neon connection or repository secret is used.
+- The read-only operator audit now enforces the same membership contract.
+
+### Fase 3A / owner-confirmed facts
+
+- The owner reports Fase 3A complete on Neon main: baseline 0002 adopted; migrations 0001–0023 applied; least-privilege roles/default privileges established; audit and rollback assertions passed; 11/11 rows intact; snapshot `pre-phase3-main-snapshot` / `br-nameless-poetry-b7au2w0s` preserved; `backup_readonly` retained temporarily.
+- The owner confirms `DATABASE_URL_BACKUP_RO` has been rotated to `microapp_backup` using a direct (non-pooler) connection. `AGE_PRIVATE_KEY` and `BACKUP_REPO_TOKEN` are present. No agent inspected or changed any secret.
+- These are owner-confirmed operational facts, not independently re-read by this PR. No Neon operation is performed here.
+
+### Gates / limits
+
+- PR #338 exact-HEAD CI, full diff review, review threads, branch protection, squash merge, and post-merge main checks remain mandatory.
+- After integration, observe only the next natural 07:00 UTC scheduled backup. Never use `workflow_dispatch` to manufacture evidence. Verify the six booleans, encrypted artifact and sidecar, and remote readback SHA-256 before the separate real-restore gate.
+- Issue #53 remains OPEN/P0 and production remains NOT READY until the natural backup, isolated encrypted restore, and all remaining Security Level 1 gates are evidenced.
+- PRs #193/#314/#315/#316 and Issue #53 are outside scope and remain untouched. No Neon, secrets, Cloudflare manual settings, billing, DNS, or deployment operations.

@@ -102,13 +102,43 @@ jobs:
             ),
             EXISTS (
               SELECT 1
-                FROM pg_catalog.pg_auth_members m
-                JOIN pg_catalog.pg_roles member_role
-                  ON member_role.oid = m.member
-                JOIN pg_catalog.pg_roles granted_role
-                  ON granted_role.oid = m.roleid
-               WHERE member_role.rolname = current_user
-                  OR granted_role.rolname = current_user
+              FROM pg_catalog.pg_auth_members m
+              WHERE m.member = (
+                SELECT oid FROM pg_catalog.pg_roles WHERE rolname = current_user
+              )
+            ) OR EXISTS (
+              SELECT 1
+              FROM pg_catalog.pg_auth_members m
+              JOIN pg_catalog.pg_database d
+                ON d.datname = current_database()
+              WHERE m.roleid = (
+                SELECT oid FROM pg_catalog.pg_roles WHERE rolname = current_user
+              )
+                AND (
+                  m.member <> d.datdba
+                  OR NOT m.admin_option
+                  OR m.inherit_option
+                  OR m.set_option
+                )
+            ) OR EXISTS (
+              SELECT 1
+              FROM pg_catalog.pg_database d
+              JOIN pg_catalog.pg_roles database_owner
+                ON database_owner.oid = d.datdba
+              WHERE d.datname = current_database()
+                AND NOT database_owner.rolsuper
+                AND (
+                  pg_catalog.pg_has_role(
+                    d.datdba,
+                    (SELECT oid FROM pg_catalog.pg_roles WHERE rolname = current_user),
+                    'USAGE'
+                  )
+                  OR pg_catalog.pg_has_role(
+                    d.datdba,
+                    (SELECT oid FROM pg_catalog.pg_roles WHERE rolname = current_user),
+                    'SET'
+                  )
+                )
             ),
             EXISTS (
               SELECT 1 FROM pg_catalog.pg_class c

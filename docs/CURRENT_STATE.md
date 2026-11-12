@@ -3324,3 +3324,14 @@ La hipótesis anterior de que el helper de espera era la causa no era correcta. 
 
 
 Post-merge CI verificado en main SHA 3ac66a180fcf23421b546140a419a45062e633dd: 11/11 workflow runs y 13/13 check-runs SUCCESS.
+
+
+## Turno 35 — Fase 3A y PR #338 (2026-11-12)
+
+- **Main verificado:** `3b0b8d0ce24ab823ff41b84cd56a48b36dedae88`, resultado del squash merge de PR #337. PR #337 está MERGED. Rama de corrección: `fix/backup-owner-admin-membership-20261112`; PR #338 concentra exclusivamente el contrato de membresías del diagnóstico de backup, su test PostgreSQL 18 y continuidad documental.
+- **Fase 3A — confirmación del propietario:** baseline `0002` adoptado; migraciones `0001–0023` aplicadas; roles mínimos y `ALTER DEFAULT PRIVILEGES` configurados; `audit_database_roles.sql` PASS como `microapp_backup`; assertions `0022/0023` PASS en ROLLBACK; 11/11 filas intactas; snapshot `pre-phase3-main-snapshot` (`br-nameless-poetry-b7au2w0s`) preservado y `backup_readonly` retenido temporalmente. No se repitió ninguna operación Neon para esta PR.
+- **Rotación — confirmación del propietario:** `DATABASE_URL_BACKUP_RO` apunta ahora a `microapp_backup` con conexión directa sin pooler. `AGE_PRIVATE_KEY` y `BACKUP_REPO_TOKEN` están presentes. El agente no leyó, mostró ni modificó GitHub Secrets.
+- **Hallazgo corregido:** el workflow anterior marcaba como membresía prohibida toda arista entrante, incluyendo la arista administrativa pura que PostgreSQL 16+ crea para el owner directo. Además, el auditor SQL no verificaba flags ADMIN/INHERIT/SET ni USAGE/SET efectivo del owner. PR #338 armoniza ambos validadores: únicamente admite `member=d.datdba`, ADMIN=true, INHERIT=false, SET=false y ausencia de USAGE/SET efectivo para owner no-superuser. Toda salida, miembro entrante ajeno o flag/capacidad adicional produce `has_membership=t`.
+- **Pruebas añadidas:** el test de PostgreSQL 18 usa un database owner no-superuser CREATEROLE y verifica la arista ADMIN-only real; comprueba `f` para esa excepción y `t` para salientes, entrantes ajenas, SET, INHERIT y ausencia de ADMIN. Está conectado al job PostgreSQL efímero de `migration-check.yml`. Resultados CI del HEAD final se registrarán solo después de ejecutarse.
+- **Límites:** ningún cambio a Neon, snapshot, ramas Neon, secretos, Cloudflare manual, backup dispatch, repositorio remoto de backups, PRs #193/#314/#315/#316 o Issue #53. Issue #53 continúa OPEN/P0; **PRODUCTION: NOT READY**.
+- **Siguiente gate:** tras merge elegible y checks post-merge, observar el próximo schedule natural 07:00 UTC sin `workflow_dispatch`; verificar seis booleanos, `.dump.age`, `.sha256` y readback SHA-256. Solo después avanzar al restore real cifrado aislado y Fase 3B.

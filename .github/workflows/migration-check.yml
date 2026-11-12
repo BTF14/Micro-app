@@ -37,7 +37,7 @@ jobs:
       - name: Provision isolated migrator and runtime LOGIN roles
         run: |
           docker exec "${{ job.services.postgres.id }}" psql -v ON_ERROR_STOP=1 -U microapp -d microapp_test -c "CREATE ROLE microapp_migrator LOGIN PASSWORD 'migrator-test-only' NOSUPERUSER NOCREATEDB NOCREATEROLE NOREPLICATION NOBYPASSRLS; CREATE ROLE microapp_runtime LOGIN PASSWORD 'runtime-test-only' NOSUPERUSER NOCREATEDB NOCREATEROLE NOREPLICATION NOBYPASSRLS NOINHERIT; CREATE ROLE microapp_bcv_sync LOGIN PASSWORD 'bcv-test-only' NOSUPERUSER NOCREATEDB NOCREATEROLE NOREPLICATION NOBYPASSRLS NOINHERIT; REVOKE CREATE ON SCHEMA public FROM PUBLIC; GRANT USAGE, CREATE ON SCHEMA public TO microapp_migrator; GRANT USAGE ON SCHEMA public TO microapp_runtime, microapp_bcv_sync; GRANT CONNECT ON DATABASE microapp_test TO microapp_migrator, microapp_runtime, microapp_bcv_sync;"
-      - name: Test backup principal membership diagnostic in both directions
+      - name: Test backup principal owner ADMIN-only membership and fail-closed options
         run: docker exec -i "${{ job.services.postgres.id }}" psql -v ON_ERROR_STOP=1 -U microapp -d microapp_test -f /dev/stdin < .github/scripts/test-backup-principal-membership.sql
       - name: Test least-privilege backup principal can pg_dump without write access
         run: bash .github/scripts/test-backup-principal-least-privilege.sh "${{ job.services.postgres.id }}"

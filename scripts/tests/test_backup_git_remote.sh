@@ -19,15 +19,16 @@ git -C "$tmp/work" commit -m "synthetic backup" >/dev/null
 git -C "$tmp/work" push -u origin HEAD:main >/dev/null 2>&1
 git -C "$tmp/work" fetch origin main >/dev/null 2>&1
 
-"$helper" "$tmp/work/daily/backup-2026-11-12T00-00-00Z.dump.age" "$tmp/work" "daily/backup-2026-11-12T00-00-00Z.dump.age"
+bash "$helper" "$tmp/work/daily/backup-2026-11-12T00-00-00Z.dump.age" "$tmp/work" "daily/backup-2026-11-12T00-00-00Z.dump.age"
 
-# Replace the remote object bytes without changing the expected local sidecar.
+# Replace only the remote object; restore the verified local copy before readback.
 printf 'tampered ciphertext\n' >"$tmp/work/daily/backup-2026-11-12T00-00-00Z.dump.age"
 git -C "$tmp/work" add daily/backup-2026-11-12T00-00-00Z.dump.age
 git -C "$tmp/work" commit -m "tamper fixture" >/dev/null
 git -C "$tmp/work" push origin HEAD:main >/dev/null 2>&1
 git -C "$tmp/work" fetch origin main >/dev/null 2>&1
-if "$helper" "$tmp/work/daily/backup-2026-11-12T00-00-00Z.dump.age" "$tmp/work" "daily/backup-2026-11-12T00-00-00Z.dump.age" >/dev/null 2>&1; then
+printf 'synthetic encrypted artifact bytes\n' >"$tmp/work/daily/backup-2026-11-12T00-00-00Z.dump.age"
+if bash "$helper" "$tmp/work/daily/backup-2026-11-12T00-00-00Z.dump.age" "$tmp/work" "daily/backup-2026-11-12T00-00-00Z.dump.age" >/dev/null 2>&1; then
   echo "FAIL: remote tampering was not detected." >&2
   exit 1
 fi

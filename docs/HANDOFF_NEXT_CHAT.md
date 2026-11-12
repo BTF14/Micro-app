@@ -11,16 +11,16 @@
 - #298 CLOSED/SUPERSEDED por #306/#307/#308; conservar rama histórica.
 
 ## PR #303 — siguiente foco
-- Estado OPEN, Draft tras re-sincronización; rama `security/backup-restore-schema-coverage-20261110`.
+- Estado OPEN, Ready for review; rama `security/backup-restore-schema-coverage-20261110`.
 - HEAD `8535f1daa6b3616fc5ff77ef82f195b01a1f91b6`; base `d2761437fa624e8eed70023ded0fd7533569e96e`; compare 83 ahead / 0 behind; diff efectivo: 3 archivos.
-- CI del HEAD actual está en ejecución. El HEAD anterior `97ac8e5` había pasado 19/19 check-runs y 11/11 pull_request workflows; los tres perfiles de restore SUCCESS. No reutilizar esa evidencia para el HEAD nuevo. Review COMMENT `5866941549` estaba anclado al HEAD anterior; volver a revisar después de CI.
+- Exact HEAD CI: 19/19 check-runs SUCCESS y 11/11 pull_request workflows SUCCESS. Los tres perfiles de restore SUCCESS. Review COMMENT `5867016714` anclado al HEAD actual; no formal APPROVE.
 - Script activo `scripts/test_backup_restore_schema_bcv.sh` usa `backup_restore_fixture_bcv.sql` y el migration runner para 0001–0023. El perfil paired-intent 0001–0016 queda aislado en su job histórico.
 - `microapp_backup` es LOGIN sintético sin atributos elevados/memberships/ownership ni DML/DDL/sequence writes. CONNECT/USAGE/SELECT se conceden temporalmente para pg_dump y se revocan al terminar. PostgreSQL exige SELECT para ACCESS SHARE locks incluso en tablas excluidas; las tres tablas auth mantienen DDL, pero `--exclude-table-data` excluye sus filas y el restore valida cero filas.
 - No se ha demostrado identidad efectiva de `DATABASE_URL_BACKUP_RO`, ni se ha restaurado artefacto remoto real. No cerrar #53 ni declarar producción lista.
 - **Acción siguiente:** solicitar/esperar revisión formal independiente/code-owner y comprobar branch protection. No mergear por CI solamente.
 
 ## Censo vivo de PR abiertas
-1. #303 — Draft; backup restore sintético; sincronizada con main d276, CI exact-SHA pendiente.
+1. #303 — Ready; backup restore sintético; sincronizada con main d276 y CI exact-SHA completo.
 2. #296 — Draft; HEAD `62dde66355a937a4f6fa4efb8d9cfdf856d7ac0f`, base antigua `03442951b2a2f63f5bf4dcf560f2c91be4f6cc71`.
 3. #193 — Ready; HEAD `ac57ab4f3415f82279b8a49c0befe09f8e3aec68`, base antigua `705d3db3220894c7d3baca8dc7e7a6b623dfbb94`.
 **Total: 3 PR de backlog abiertas** (#303, #296, #193); #310 es el checkpoint docs-only abierto. #309 ya está MERGED. Revalidar en GitHub antes de actuar.

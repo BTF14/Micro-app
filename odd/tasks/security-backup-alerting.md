@@ -1,6 +1,6 @@
 # ODD task: Issue #53 — zero-cost backup failure alerting (Turno 19)
 
-- Status: in progress
+- Status: implementation complete; PR validation pending
 - Issue: #53 (OPEN / P0)
 - Branch: `security/issue-53-backup-alerting-20261112`
 - Base: `main` at `22d71ef03cce2e629137dbc2f83c48ee2c99e640` (squash merge of PR #323)
@@ -53,11 +53,11 @@ Excluded:
 | Task | Expected result | Validation | Status |
 |---|---|---|---|
 | Verify post-#323 main and repository policy | Exact base and ODD/PR constraints | GitHub API and canonical docs | completed |
-| Create ODD task and isolated branch | Durable task before source edits | GitHub branch/file SHA | in progress |
-| Implement sanitized failure notifier | Idempotent issue/comment behavior | Shell helper review | pending |
-| Add deterministic mocked-CLI tests | No-op/create/update coverage | Local shell test | pending |
-| Wire failure-only workflow step | Native token, least privilege | Workflow contract test + CI | pending |
-| Open and validate PR #324 | Exact-HEAD required checks green | Check-runs and PR metadata | pending |
+| Create ODD task and isolated branch | Durable task before source edits | Branch and ODD file commit `3fab84af655b6d9e0cfb19c9ae628724ef575fb7` | completed |
+| Implement sanitized failure notifier | Idempotent issue/comment behavior | `scripts/backup_failure_alert.sh` reviewed; uses only generic failure text and GitHub context | completed |
+| Add deterministic mocked-CLI tests | No-op/create/update coverage | `bash scripts/test_backup_failure_alert.sh` PASS (success no-op, issue create, existing issue comment) | completed |
+| Wire failure-only workflow step | Native token, least privilege | `issues: write` + `contents: read`; `if: failure()`; `continue-on-error`; contract workflow invokes mocked test | implemented; CI pending |
+| Open and validate PR #324 | Exact-HEAD required checks green | PR creation and exact-HEAD check-runs pending | pending |
 
 ## Production gate and handoff
 

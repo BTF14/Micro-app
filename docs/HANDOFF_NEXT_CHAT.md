@@ -3,6 +3,7 @@
 **main:** `dbeb21d97a5c738043f61629d3f0e3d25a4ea772` (PR #312 squash-merged). PR #312 quedó MERGED con HEAD exact-SHA `bf5919e3ec80523a0d9d2c40602c3e5749fde05e`, 14/14 check-runs SUCCESS; merge SHA `dbeb21d97a5c738043f61629d3f0e3d25a4ea772`.
 
 ### Estado de PRs
+- #317 OPEN / Ready: checkpoint documental de Turno 13; validar checks exact-SHA antes del merge.
 - #312 MERGED: rescate documental de ADRs/SDDs de autorización administrativa, PIN, calendario bancario y contingencia FX.
 - #193 OPEN / Ready: propuesta conceptual Fase B; mantener intacta, sin implementar ni sincronizar automáticamente.
 - #313, #314, #315 y #316 OPEN: actualizaciones Dependabot separadas; no asumir compatibilidad por título. Revisar cada diff, matriz de dependencias, changelog, CI exact-SHA y riesgos de Vite/jsdom/plugin antes de integrar.

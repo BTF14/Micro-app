@@ -181,13 +181,29 @@ jobs:
           backup_repo_dir="$RUNNER_TEMP/backups-repo"
           umask 077
           install -m 700 "$GITHUB_WORKSPACE/scripts/backup_git_askpass.sh" "$askpass"
-          trap 'rm -f "$askpass"; rm -rf "$backup_repo_dir"' EXIT
+          push_log="$RUNNER_TEMP/backup-push.log"
+          fetch_log="$RUNNER_TEMP/backup-fetch.log"
+          clone_log="$RUNNER_TEMP/backup-clone.log"
+          trap 'rm -f "$askpass" "${push_log:-}" "${fetch_log:-}" "${clone_log:-}"; rm -rf "$backup_repo_dir"' EXIT
           export GIT_ASKPASS="$askpass"
           export GIT_ASKPASS_REQUIRE=force
           export GIT_TERMINAL_PROMPT=0
-          GH_TOKEN="$backup_token" git -c credential.helper= clone --depth 1 "https://github.com/${BACKUP_REPO}.git" "$backup_repo_dir"
+          cloned=0
+          for attempt in 1 2 3; do
+            if GH_TOKEN="$backup_token" git -c credential.helper= -c http.lowSpeedLimit=1000 -c http.lowSpeedTime=30 clone --depth 1 "https://github.com/${BACKUP_REPO}.git" "$backup_repo_dir" >"$clone_log" 2>&1; then
+              cloned=1
+              break
+            fi
+            rm -rf "$backup_repo_dir"
+            sleep "$((attempt * 3))"
+          done
+          if [[ "$cloned" != "1" ]]; then
+            echo "::error::Private backup repository could not be cloned after bounded retries; raw transport output was suppressed."
+            exit 1
+          fi
           mkdir -p "$backup_repo_dir/daily"
           mv "backup-${STAMP}.dump.age" "backup-${STAMP}.dump.age.sha256" "$backup_repo_dir/daily/"
+          (cd "$backup_repo_dir/daily" && sha256sum --check --strict "backup-${STAMP}.dump.age.sha256")
           cd "$backup_repo_dir"
           git config user.email "backups-bot@micro-app.invalid"
           git config user.name "Micro app backups bot"
@@ -196,8 +212,32 @@ jobs:
           python3 "$GITHUB_WORKSPACE/scripts/prune_backups.py" daily --retention-days "$RETENTION_DAYS"
           git add -A
           git diff --cached --quiet || git commit -m "retention: prune backups older than ${RETENTION_DAYS} days"
-          GH_TOKEN="$backup_token" git -C "$backup_repo_dir" -c credential.helper= push origin HEAD:main
-          unset backup_token
+          pushed=0
+          for attempt in 1 2 3; do
+            if GH_TOKEN="$backup_token" git -C "$backup_repo_dir" -c credential.helper= -c http.lowSpeedLimit=1000 -c http.lowSpeedTime=30 push origin HEAD:main >"$push_log" 2>&1; then
+              pushed=1
+              break
+            fi
+            sleep "$((attempt * 3))"
+          done
+          if [[ "$pushed" != "1" ]]; then
+            echo "::error::Encrypted backup transfer failed after bounded retries; raw transport output was suppressed."
+            exit 1
+          fi
+          fetched=0
+          for attempt in 1 2 3; do
+            if GH_TOKEN="$backup_token" git -C "$backup_repo_dir" -c credential.helper= -c http.lowSpeedLimit=1000 -c http.lowSpeedTime=30 fetch --no-tags origin main >"$fetch_log" 2>&1; then
+              fetched=1
+              break
+            fi
+            sleep "$((attempt * 3))"
+          done
+          if [[ "$fetched" != "1" ]]; then
+            echo "::error::Remote backup readback failed after bounded retries; raw transport output was suppressed."
+            exit 1
+          fi
+          bash "$GITHUB_WORKSPACE/scripts/verify_backup_git_remote.sh" "$backup_repo_dir/daily/backup-${STAMP}.dump.age" "$backup_repo_dir" "daily/backup-${STAMP}.dump.age"
+          unset backup_token GH_TOKEN
 
       - name: Publicar resumen visible si falla el respaldo
         if: failure()

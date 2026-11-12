@@ -146,6 +146,7 @@ assert_true "only the current database owner may be an incoming member of backup
     SELECT 1 FROM pg_auth_members m
     WHERE m.roleid=(SELECT oid FROM pg_roles WHERE rolname='microapp_backup')
       AND m.member=(SELECT datdba FROM pg_database WHERE datname=current_database())
+      AND m.admin_option
   )
 "
 

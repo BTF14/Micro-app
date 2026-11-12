@@ -2,6 +2,8 @@
 
 Este archivo es el punto de entrada operativo. La autoridad normativa está en `docs/CONSTITUTION.md`; los procedimientos detallados se cargan según la tarea. No conviertas la lectura de documentación en un requisito ceremonial.
 
+La convención de comunicación entre propietario y agentes está definida en `odd/tasks/ai-continuity-and-evidence-contract.md`: el propietario puede escribir en texto normal para tareas sencillas o enviar directivas extensas en Markdown; los agentes usarán Markdown conciso por defecto para el trabajo de Micro-app, sin convertir cada consulta simple en un informe formal. Claude Code tiene además `CLAUDE.md` como índice de entrada, que importa este archivo y no crea una autoridad paralela.
+
 ## Inicio de cada tarea
 
 1. Verifica en vivo el repositorio, rama, HEAD, base, PR relacionadas y checks pertinentes. No confíes en SHA o estados copiados de snapshots.

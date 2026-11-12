@@ -1,3 +1,16 @@
+## Turno 19 — alertas de fallo de backup (2026-11-12 UTC)
+
+- PR #323 squash-merged a main `22d71ef03cce2e629137dbc2f83c48ee2c99e640`. El HEAD real de la PR fue `ddaf52a0ab8035be82440e138e4cf3fb2d8f30ce`, no el SHA transcrito en la directiva; 14/14 check-runs SUCCESS exact-HEAD. Merge se protegió con expected_head_sha.
+- Rama `security/issue-53-backup-alerting-20261112` creada desde ese main. Tarea ODD creada antes de editar código.
+- PR #324 integró notificación $0 con GitHub Actions native token. Permisos explícitos: contents read + issues write. Failure step `if: failure()`, `continue-on-error: true`, usa helper con `BACKUP_JOB_STATUS` guard.
+- El helper garantiza label `P0: Backup Failure`; crea issue si no existe uno abierto o agrega comentario al existente. Incluye Run ID, hora Caracas, categoría genérica y run URL; excluye raw logs, tokens, DSN, age private key y datos de clientes.
+- Tests mock cubren éxito/no-op, creación de issue y comentario en issue existente; assertions estáticas cubren permisos/token/guard/wiring. Workflow `Backup workflow contract tests` SUCCESS.
+- PR #324 HEAD final `eade8fb44f4da3eaf9807c491e3725bec88d14d4`: 19/19 check-runs y 12/12 workflow runs SUCCESS, sin reviews ni threads; squash merge SHA / main `9238f73462c9b2685465e33ed7081a1ff37757a8`.
+- No se provocó fallo real, no se dispatchó backup, no se probó entrega/acknowledgement humano. GitHub issue es alerta interna; notificación depende de settings del operador.
+- Issue #53 OPEN/P0; PRODUCTION NOT READY. Identidad/grants reales, backup natural, DR drill, RPO/RTO, alert delivery real, staging smoke y revisión legal/fiscal/contable permanecen pendientes. USD 0; sin Neon, secrets, datos reales, billing, DNS ni deploy manual.
+- Próxima acción: validar post-merge CI exact-SHA en `9238f73462c9b2685465e33ed7081a1ff37757a8`; los checks de PR son evidencia pre-merge, no post-merge.
+
+---
 ## Turno 18 — backup remoto y Disaster Recovery (2026-11-12 UTC)
 
 - PR #322 squash-merged; merge SHA / main `a44fe44bd72b1e72cc461c4edb92b2b9c1f20724`. Base de la PR `27c10a5230a095778d692fba1439e0da63a99625`.

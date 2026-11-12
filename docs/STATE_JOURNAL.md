@@ -1,3 +1,13 @@
+## Turno 17 — cierre de auditoría tenant/session (2026-11-12 UTC)
+
+- PR #319 MERGED; main `fc1a599a4d78350d3af2f239390459e168e3ff14`.
+- PR #320 pasó a Ready for review; HEAD `6443a39cbb415dd993025ba9ee137cd3e636acef`, 16/16 check-runs SUCCESS exact-SHA. CI `43184248762`, Playwright `43184248758`, ODD docs `43184248675`, Semgrep `43184248844`, migration validation `43184248838`, migration runner `43184248810`, security scan `43184248987`, secret scan `43184248729`, dependency review `43184248899`, project dashboard `43184248724`, Pages/Workers checks success.
+- Suite `tenant-isolation.test.ts` y las integraciones PostgreSQL 18 validan auth, branch, catalog, inventory, checkout y register shifts. Cookie malformada se limpia en rutas protegidas; los fallos ambiguos de tenant no borran cookies de sesiones válidas.
+- La revisión estática confirma raw SQL parametrizado y no Drizzle/RLS. La ausencia de RLS queda como riesgo de defensa en profundidad; Issue #53 continúa OPEN/P0. PRODUCTION NOT READY.
+- No Neon, secrets, datos reales, DDL/DML remoto ni deploy manual; USD 0.
+
+---
+
 ## Turno 17 — evidencia exact-HEAD y reconciliación documental
 
 - PR #319 MERGED; main `fc1a599a4d78350d3af2f239390459e168e3ff14`.

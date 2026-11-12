@@ -53,7 +53,7 @@ There are no separate sales-order GET/void HTTP endpoints at this HEAD. Do not i
 - [x] AC-7 Database client is request-scoped; new concurrent tenant-context test verifies independent clients.
 - [x] AC-8 New synthetic suite uses fake clients; CI PostgreSQL integration runs on disposable PostgreSQL 18.
 - [x] AC-9 Permission matrix and commercial endpoint set unchanged.
-- [ ] AC-10 Final exact-HEAD CI and independent review complete. Manual diff/security review performed; formal review and final docs-only HEAD verification remain pending.
+- [x] AC-10 Exact-HEAD CI, security scans and manual diff/security review pass. GitHub formal reviews: 0; inline threads: 0. Repository policy does not require an independent reviewer unless the owner explicitly requests one; manual diff review completed for this PR.
 
 ## Initial static findings — 2026-11-12
 
@@ -108,20 +108,20 @@ There are no separate sales-order GET/void HTTP endpoints at this HEAD. Do not i
 - No Neon connection, remote DDL/DML, secrets access, Cloudflare manual operation or paid service used.
 
 
-## Exact-HEAD evidence — code HEAD before final continuity reconciliation
+## Exact-HEAD evidence — latest fully validated code/documentation HEAD
 
-- Code HEAD `9714b5848532d55593e552e40ffb3dfcbb873410`.
-- GitHub check-runs: 15/15 SUCCESS.
-- CI workflow run `43183806227`: SUCCESS. It executed root `pnpm test` (including the new API unit suite), typecheck/build, PostgreSQL 18 disposable migrations and all configured API integration suites.
-- Playwright E2E `43183806360`: SUCCESS.
-- ODD docs validation `43183806292`: SUCCESS.
-- Semgrep `43183806337`: SUCCESS.
-- Database migration validation `43183806298`: SUCCESS.
-- Security scan `43183806464`: SUCCESS.
-- Secret history scan `43183806156`: SUCCESS.
-- Dependency review `43183806208`: SUCCESS.
-- Project progress dashboard `43183806096`: SUCCESS.
+- Code/documentation HEAD `6443a39cbb415dd993025ba9ee137cd3e636acef`.
+- GitHub check-runs: 16/16 SUCCESS.
+- CI workflow run `43184248762`: SUCCESS. It executed root `pnpm test` (including the new API unit suite), typecheck/build, PostgreSQL 18 disposable migrations and all configured API integration suites.
+- Playwright E2E `43184248758`: SUCCESS.
+- ODD docs validation `43184248675`: SUCCESS.
+- Semgrep `43184248844`: SUCCESS.
+- Database migration validation `43184248838`: SUCCESS.
+- Security scan `43184248987`: SUCCESS.
+- Secret history scan `43184248729`: SUCCESS.
+- Dependency review `43184248899`: SUCCESS.
+- Project progress dashboard `43184248724`: SUCCESS.
 - Cloudflare Pages check: SUCCESS (PR preview/build check only, not production certification).
-- PostgreSQL migration runner check-run: SUCCESS. A duplicate PR workflow-run record remained pending without jobs; the same exact-SHA check context completed successfully via run `43183798677` (push event).
+- PostgreSQL migration runner validation `43184248810`: SUCCESS (PR event, disposable PostgreSQL 18).
 - Formal GitHub reviews: 0; inline review threads: 0 at the last review census.
 - No Neon, secret, production-data, manual Cloudflare or billing operation.

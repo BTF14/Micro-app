@@ -1,4 +1,8 @@
-**Checkpoint vigente — Turno 17:** PR #319 y #320 MERGED. Main `a058ef4461355c99540285022b4a8ef05d9ee202`; #320 pre-merge exact HEAD `35ac17ce6061b075d24af93957046344ab36575c`, 16/16 check-runs SUCCESS. Post-merge CI en curso al corte. Fase 2 tenant/session audit, tests y cookie hardening integrados. RLS/Drizzle no existen; riesgo de defensa en profundidad documentado. Issue #53 OPEN/P0; PRODUCTION: NOT READY; USD 0; no Neon writes/secrets.
+**Checkpoint vigente — Turno 18:** PR #322 MERGED por squash; main `a44fe44bd72b1e72cc461c4edb92b2b9c1f20724`. Pre-merge HEAD `944711e4a3d95b542d846cc76dc3002a016de290`: 16/16 workflow runs y 20/20 check-runs SUCCESS; base `27c10a5230a095778d692fba1439e0da63a99625`, 0 behind / 6 commits ahead. Test de transferencia remota anti-tamper y los tres perfiles restore PostgreSQL 18 SUCCESS. CI post-merge en main aún pendiente al corte.
+
+Fase 3 de código/documentación integrada: runbook DR, contrato R2/S3 condicional, checksum antes/después del transporte y retries/log redaction. El repositorio privado GitHub sigue siendo el destino activo. RPO <24h y RTO <15m son objetivos no medidos. Issue #53 OPEN/P0; **PRODUCTION: NOT READY**; USD 0; no Neon ni secretos.
+
+Siguiente: cerrar CI post-merge exact-SHA; después mantener #314–#316 Dependabot y #193 intactas. Próximo gate operativo requiere backup remoto reciente, DR drill real, medición RPO/RTO, alertas y verificación de coste $0.
 
 ---
 

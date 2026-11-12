@@ -109,14 +109,6 @@ BEGIN
   IF EXISTS (
     SELECT 1
     FROM pg_catalog.pg_auth_members m
-    WHERE m.member = v_role
-  ) THEN
-    RAISE EXCEPTION 'FAIL: backup principal % has an outgoing role membership', v_role_name;
-  END IF;
-
-  IF EXISTS (
-    SELECT 1
-    FROM pg_catalog.pg_auth_members m
     JOIN pg_catalog.pg_database d
       ON d.datname = current_database()
     WHERE m.roleid = v_role

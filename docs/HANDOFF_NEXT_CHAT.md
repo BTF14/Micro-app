@@ -1,18 +1,17 @@
-## Handoff vigente — Turno 17 post-merge (2026-11-12 UTC)
+## Handoff vigente — Turno 18 post-merge (2026-11-12 UTC)
 
-- PR #319 MERGED; main intermedio `fc1a599a4d78350d3af2f239390459e168e3ff14`.
-- PR #320 MERGED por squash; nuevo main `a058ef4461355c99540285022b4a8ef05d9ee202`.
-- PR #320 HEAD pre-merge `35ac17ce6061b075d24af93957046344ab36575c`: 16/16 check-runs SUCCESS; CI incluyó `pnpm test`, PostgreSQL 18, integración auth/branch/catalog/inventory/checkout/register shifts, Playwright, ODD docs, Semgrep, Trivy, secret scan, dependency review, migration runner y Cloudflare Pages/Workers checks.
-- CI post-merge del nuevo main está en curso al corte; consultar el SHA exacto antes de declarar post-merge CI terminado.
-- Tarea ODD integrada: `odd/tasks/security-tenant-session-isolation.md`; suite `apps/api/src/tenant-isolation.test.ts`. Cookies ausentes/sobredimensionadas se limpian en early token validation; no se borran cookies en denegaciones ambiguas de tenant para preservar sesiones válidas.
-- No RLS ni Drizzle: raw SQL parametrizado + authz server-side + SQL scope + composite FKs + lock helpers + triggers. Riesgo de defensa en profundidad explícito; no inventar RLS sin diseño.
-- No hay endpoints HTTP separados de lectura/void de ventas; checkout es el endpoint de mutación. Cash shifts en `register-shifts.ts`.
-- Censo abierto al corte: #314, #315, #316 (Dependabot; base antigua a0d6d8, divergencia 1 ahead/2 behind) y #193 (documental; base 705d3d, 5 ahead/91 behind). Mantener #193 intacta; majors Dependabot en espera.
-- Issue #53 OPEN/P0. **PRODUCTION: NOT READY**: falta ejecución operador del runbook Neon, identidad real/grants/ownership, decisión RLS, restore real y demás gates. No Neon, secrets, datos reales, DDL/DML remoto, deploy manual, DNS ni billing. USD 0.
+- Main actual: `a44fe44bd72b1e72cc461c4edb92b2b9c1f20724`; PR #322 squash-merged. Base anterior: `27c10a5230a095778d692fba1439e0da63a99625`.
+- PR #322 pre-merge HEAD `944711e4a3d95b542d846cc76dc3002a016de290`: 16/16 workflow runs y 20/20 check-runs SUCCESS. Incluye 3 perfiles PostgreSQL 18 restore, remote checksum/tamper fixture, backup workflow contract tests, root CI, Playwright, Semgrep, Trivy, dependency review, migration runner, Pages y Workers checks.
+- Archivos integrados: `docs/DISASTER_RECOVERY_RUNBOOK.md`, `odd/tasks/security-remote-backup-and-dr.md`, `scripts/verify_backup_git_remote.sh`, `scripts/tests/test_backup_git_remote.sh`, cambios a `.github/workflows/backup.yml`, `.github/workflows/backup-restore-smoke.yml` y `scripts/test_backup_git_askpass.sh`.
+- Workflow backup mantiene como destino el repo privado `BTF14/micro-app-backups`; el flujo verifica SHA-256 local antes de transferir y vuelve a verificar bytes recuperados de `origin/main` después del push. Clone/push/fetch tienen reintentos acotados y los logs crudos de transporte se suprimen.
+- R2/S3 solo queda documentado como opción condicional. No se creó bucket/token ni se configuró billing. El nivel gratuito R2 no es un tope duro de coste.
+- El runbook usa PostgreSQL 18 limpio, libpq service file/pgpass, `age` streaming y `pg_restore`; valida cero filas en auth efímero y relaciones ventas/pagos/inventario. No usar Neon main ni restaurar sobre una base existente.
+- CI sintético no equivale a restauración real ni certifica RPO/RTO. Issue #53 OPEN/P0; falta identidad/grants reales del backup, backup remoto reciente, DR drill real, RPO/RTO medidos, alertas y coste total $0. **PRODUCTION: NOT READY**.
+- No Neon, secrets, datos reales, DDL/DML remoto, backup dispatch manual, deploy manual, DNS ni billing. USD 0.
+- CI post-merge de main estaba en curso al crear este handoff; revalidar el SHA exacto `a44fe44bd72b1e72cc461c4edb92b2b9c1f20724` antes de declararlo cerrado.
+- PRs abiertas ajenas al turno: #314, #315, #316 (Dependabot major, mantener aisladas) y #193 (preservar intacta).
 
 ---
-
-- **Estado vigente 2026-11-12:** PR #318 MERGED; main `3ac66a180fcf23421b546140a419a45062e633dd`. PR #319 OPEN / Draft con runbook de operador; HEAD exacto en la metadata de GitHub. Issue #53 OPEN/P0; no Neon writes; PRODUCTION: NOT READY; USD 0.
 
 ## Snapshot histórico — Handoff Turno 14 (superseded by Turno 16)
 

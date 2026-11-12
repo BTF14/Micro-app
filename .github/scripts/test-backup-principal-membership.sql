@@ -66,6 +66,23 @@ REVOKE backup_diag_principal FROM backup_diag_owner;
 GRANT backup_diag_principal TO backup_diag_owner
   WITH ADMIN OPTION, INHERIT FALSE, SET FALSE;
 
+DO $owner_admin_edge_exists$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1
+    FROM pg_catalog.pg_auth_members m
+    JOIN pg_catalog.pg_database d ON d.datname = current_database()
+    WHERE m.roleid = 'backup_diag_principal'::regrole
+      AND m.member = d.datdba
+      AND m.admin_option
+      AND NOT m.inherit_option
+      AND NOT m.set_option
+  ) THEN
+    RAISE EXCEPTION 'BACKUP_MEMBERSHIP_EXPECTED_OWNER_ADMIN_ONLY_EDGE_MISSING';
+  END IF;
+END;
+$owner_admin_edge_exists$;
+
 SET ROLE backup_diag_principal;
 DO $owner_admin_only_is_allowed$
 BEGIN

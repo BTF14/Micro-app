@@ -7,7 +7,7 @@
 - Contrato: membresías salientes prohibidas; entrantes solo desde `pg_database.datdba` con ADMIN OPTION=true / INHERIT=false / SET=false; owner no-superuser sin USAGE/SET efectivo. Grants funcionales permanecen sin cambios.
 - Harness: PostgreSQL 18 en job independiente; crea runtime y BCV producer bajo un database owner no-superuser CREATEROLE; adopta baseline; migra 0001–0023; ejecuta assertions; fuerza fallos outgoing, incoming rogue, owner SET e INHERIT para ambos roles.
 - No Neon, secrets, Cloudflare, despliegue manual, PRs #193/#314/#315/#316 ni Issue #53.
-- **Estado:** PR/checks/merge pendientes. Antes de merge: comprobar búsqueda SHA literal 0022, diff completo, branch protection, review threads/reviews, conflictos y todos los check-runs exact-SHA. Después del merge: verificar nuevo main y checks post-merge; restablecer Code Freeze; solicitar ventana nueva para Fase 2 definitiva Neon.
+- **Estado:** PR #337 abierta (HEAD `ba70faff30ca579f6b3cbee9142c6d69b907d69a`); checks exact-HEAD en ejecución; merge pendiente. Antes de merge: comprobar búsqueda SHA literal 0022, diff completo, branch protection, review threads/reviews, conflictos y todos los check-runs exact-SHA. Después del merge: verificar nuevo main y checks post-merge; restablecer Code Freeze; solicitar ventana nueva para Fase 2 definitiva Neon.
 - Issue #53 OPEN/P0; **PRODUCTION: NOT READY**; USD 0.
 
 ---

@@ -151,7 +151,7 @@ describe("invalid session cookie handling on protected routes", () => {
     ["/api/orgs/" + tenantA + "/branches/" + branchOne + "/register-shifts/current", "register shifts"],
   ])("clears an absent/invalid session cookie and disables shared caching for %s", async (path) => {
     const response = await app.fetch(
-      new Request("https://api.example" + path, { headers: { Cookie: "microapp_session=invalid" } }),
+      new Request("https://api.example" + path, { headers: { Cookie: "microapp_session=" + "x".repeat(129) } }),
       { FRONTEND_ORIGIN: "https://frontend.example" } as Bindings,
     );
 

@@ -1,4 +1,5 @@
 
+
 ## Addendum — contrato de roles runtime y productor BCV (Turno 32)
 
 La misma semántica de PostgreSQL 16+ aplica a los roles de aplicación creados por el database owner no-superuser. Se extiende la invariante a `microapp_runtime` y `microapp_bcv_sync`:

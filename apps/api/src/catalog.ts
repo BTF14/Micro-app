@@ -3,6 +3,7 @@ import type { Hono } from "hono";
 import type { Bindings } from "./bindings";
 import { withDatabaseClient, withDatabaseTransaction } from "./database";
 import { authorizeCommercialOperation, authorizeTenantOperation } from "./authorization";
+import { clearSessionCookie } from "./auth";
 import type { OrganizationRole } from "./tenant-context";
 
 const SESSION_COOKIE = "microapp_session";
@@ -92,6 +93,7 @@ export function registerCatalogRoutes(app: Hono<{ Bindings: Bindings }>): void {
 
     const sessionToken = getCookie(c, SESSION_COOKIE);
     if (!sessionToken || sessionToken.length > 128) {
+      clearSessionCookie(c);
       return c.json(
         { error: "UNAUTHENTICATED", message: "Inicia sesión para continuar." },
         401,
@@ -144,6 +146,7 @@ export function registerCatalogRoutes(app: Hono<{ Bindings: Bindings }>): void {
       );
 
       if (result.kind === "unauthenticated") {
+        clearSessionCookie(c);
         return c.json(
           { error: "UNAUTHENTICATED", message: "Inicia sesión para continuar." },
           401,

@@ -1,6 +1,6 @@
 # ODD task: Issue #53 — zero-cost backup failure alerting (Turno 19)
 
-- Status: implementation complete; PR validation pending
+- Status: **completed and integrated**
 - Issue: #53 (OPEN / P0)
 - Branch: `security/issue-53-backup-alerting-20261112`
 - Base: `main` at `22d71ef03cce2e629137dbc2f83c48ee2c99e640` (squash merge of PR #323)
@@ -29,13 +29,13 @@ Excluded:
 
 ## Acceptance criteria
 
-- [ ] AC-1 Alert step runs only when the backup job has failed; a successful job performs no GitHub issue API action.
-- [ ] AC-2 Workflow uses only the ephemeral `GITHUB_TOKEN` with `issues: write` and existing read-only contents permission.
-- [ ] AC-3 An open issue with label `P0: Backup Failure` is reused; otherwise create one with that label.
-- [ ] AC-4 Alert includes run ID, Caracas-local timestamp, generic sanitized failure description and run URL.
-- [ ] AC-5 No raw logs, credentials, DSNs, age keys, response bodies or customer data enter the issue or console output.
-- [ ] AC-6 Alert failure does not hide or convert the original backup job failure into success.
-- [ ] AC-7 Synthetic tests cover success/no-op, create and update paths without network or secrets.
+- [x] AC-1 Alert step runs only when the backup job has failed; a successful job performs no GitHub issue API action.
+- [x] AC-2 Workflow uses only the ephemeral `GITHUB_TOKEN` with `issues: write` and existing read-only contents permission.
+- [x] AC-3 An open issue with label `P0: Backup Failure` is reused; otherwise create one with that label.
+- [x] AC-4 Alert includes run ID, Caracas-local timestamp, generic sanitized failure description and run URL.
+- [x] AC-5 No raw logs, credentials, DSNs, age keys, response bodies or customer data enter the issue or console output.
+- [x] AC-6 Alert failure does not hide or convert the original backup job failure into success.
+- [x] AC-7 Synthetic tests cover success/no-op, create and update paths without network or secrets.
 - [ ] AC-8 Issue #53 remains OPEN/P0; `PRODUCTION: NOT READY`.
 
 ## Implementation decisions
@@ -56,8 +56,16 @@ Excluded:
 | Create ODD task and isolated branch | Durable task before source edits | Branch and ODD file commit `3fab84af655b6d9e0cfb19c9ae628724ef575fb7` | completed |
 | Implement sanitized failure notifier | Idempotent issue/comment behavior | `scripts/backup_failure_alert.sh` reviewed; uses only generic failure text and GitHub context | completed |
 | Add deterministic mocked-CLI tests | No-op/create/update coverage | `bash scripts/test_backup_failure_alert.sh` PASS (success no-op, issue create, existing issue comment); static assertions verify failure guard, `continue-on-error`, native token and `issues: write` wiring | completed |
-| Wire failure-only workflow step | Native token, least privilege | `issues: write` + `contents: read`; `if: failure()`; `continue-on-error`; contract workflow invokes mocked test and static wiring assertions | implemented; CI pending |
-| Open and validate PR #324 | Exact-HEAD required checks green | PR creation and exact-HEAD check-runs pending | pending |
+| Wire failure-only workflow step | Native token, least privilege | `issues: write` + `contents: read`; `if: failure()`; `continue-on-error`; contract workflow invokes mocked test and static wiring assertions | completed |
+| Open and validate PR #324 | Exact-HEAD required checks green | PR #324 merged; HEAD `eade8fb44f4da3eaf9807c491e3725bec88d14d4`: 19/19 check-runs and 12/12 workflow runs SUCCESS; merge SHA `9238f73462c9b2685465e33ed7081a1ff37757a8` | completed |
+
+## Integration evidence
+
+- PR #324: https://github.com/BTF14/Micro-app/pull/324 — squash-merged.
+- PR HEAD: `eade8fb44f4da3eaf9807c491e3725bec88d14d4`; exact-HEAD CI: **19/19 check-runs SUCCESS** and **12/12 workflow runs SUCCESS**.
+- Merge commit / current main at integration: `9238f73462c9b2685465e33ed7081a1ff37757a8`.
+- Backup workflow contract test passed, including the success no-op, failure create/update paths and static workflow wiring assertions.
+- No real backup failure was induced and no production backup was dispatched; human notification delivery is not proven.
 
 ## Production gate and handoff
 

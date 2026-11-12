@@ -1,3 +1,17 @@
+## Handoff vigente — Turno 19 post-merge (2026-11-12 UTC)
+
+- Main actual: `9238f73462c9b2685465e33ed7081a1ff37757a8`; PR #324 squash-merged. PR #323 fue integrada previamente en `22d71ef03cce2e629137dbc2f83c48ee2c99e640`.
+- PR #323 discrepancia resuelta: el SHA citado en la directiva (`66ef3c1...`) no existía. GitHub devolvió HEAD real `ddaf52a0ab8035be82440e138e4cf3fb2d8f30ce`, 14/14 checks SUCCESS, mergeable clean; squash SHA `22d71ef03cce2e629137dbc2f83c48ee2c99e640`.
+- PR #324: https://github.com/BTF14/Micro-app/pull/324. Rama `security/issue-53-backup-alerting-20261112`. HEAD exacto `eade8fb44f4da3eaf9807c491e3725bec88d14d4`: 19/19 check-runs y 12/12 workflow runs SUCCESS; sin reviews ni threads pendientes; squash merge SHA `9238f73462c9b2685465e33ed7081a1ff37757a8`.
+- Implementación: `odd/tasks/security-backup-alerting.md`, `scripts/backup_failure_alert.sh`, `scripts/test_backup_failure_alert.sh`, cambios en `.github/workflows/backup.yml` y `.github/workflows/backup-workflow-contract.yml`. Token nativo efímero `github.token`, permisos `contents: read` + `issues: write`; alerta failure-only y `continue-on-error`; crea o comenta issue con label `P0: Backup Failure`, Run ID, timestamp America/Caracas, texto genérico y URL del run.
+- Pruebas mocked CLI y assertions estáticas pasaron en local y en el workflow contract. No se indujo fallo real, no se ejecutó el backup programado y no se probó entrega/acknowledgement humano.
+- Issue #53 sigue OPEN/P0; **PRODUCTION: NOT READY**. Pendientes: identidad efectiva/grants reales de backup en Neon; backup natural reciente y disponibilidad remota; DR drill real y RPO/RTO medidos; alert delivery real; smoke autenticado en staging/preproducción; revisión legal/fiscal/contable.
+- Mantener USD 0. No Neon main, secrets, datos reales, DDL/DML remoto, backup dispatch manual, deploy manual, DNS ni billing.
+- PRs abiertas que preservar: #314–#316 Dependabot major aisladas y #193 intacta.
+- Próximo paso: verificar CI post-merge sobre main `9238f73462c9b2685465e33ed7081a1ff37757a8`; no reutilizar los 19/19 checks pre-merge como evidencia post-merge.
+
+---
+
 ## Handoff vigente — Turno 18 post-merge (2026-11-12 UTC)
 
 - Main actual: `a44fe44bd72b1e72cc461c4edb92b2b9c1f20724`; PR #322 squash-merged. Base anterior: `27c10a5230a095778d692fba1439e0da63a99625`.

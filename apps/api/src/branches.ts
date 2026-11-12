@@ -68,7 +68,6 @@ export function registerBranchRoutes(app: Hono<{ Bindings: Bindings }>): void {
       );
 
       if (result.kind === "unauthenticated") {
-        clearSessionCookie(c);
         return c.json({ error: "UNAUTHENTICATED", message: "Inicia sesión para continuar." }, 401);
       }
       if (result.kind === "forbidden") {

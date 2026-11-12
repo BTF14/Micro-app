@@ -1,6 +1,8 @@
-**PR #318:** OPEN / Draft; revalidar HEAD/checks en GitHub. La rama está 1 commit detrás del main actualizado por #313; mergeability reportada true pero `mergeable_state: unstable` mientras CI termina. Último HEAD antes de reconciliar este bloque documental: `f80da3d20162a2beb9dd22e9166a924aff4b51f0`; 16/18 check-runs SUCCESS, 2 pendientes, 0 fallos. La actualización documental generará un HEAD nuevo y exige CI exact-SHA nuevo; no promover ni fusionar.
+**Estado vigente — 2026-11-12:** PR #318 MERGED por squash; main `3ac66a180fcf23421b546140a419a45062e633dd`. Pre-merge exact HEAD 19/19 check-runs SUCCESS; post-merge main 13/13 check-runs SUCCESS. PR #319 OPEN / Draft, runbook en revisión documental. Issue #53 OPEN/P0; principal efectivo de DATABASE_URL_BACKUP_RO aún no verificado. PRODUCTION: NOT READY; no Neon writes; USD 0.
 
-## Estado vigente — Turno 14 / auditoría de roles Neon (2026-11-12 UTC)
+
+
+## Snapshot histórico — Turno 14 / auditoría de roles Neon (superseded by Turno 16) (2026-11-12 UTC)
 
 **main:** `a0d6d801128b3e3aa6543796436abf348c645e8f` tras PR #313 (squash), precedida por #317. **PR #317:** MERGED; HEAD exact-SHA `870a35ac4a0190b80f31c0cf0590a759195f60dc`, 14/14 check-runs SUCCESS; merge SHA `bd9af0cc5b92858fd5063b3d8d102dbc327469ac`.
 

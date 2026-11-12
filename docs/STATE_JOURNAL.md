@@ -1,5 +1,6 @@
-- PR #318 creada Draft desde la rama de seguridad. HEAD al corte `fa5bd1710452d24974a208659209f4b0526f204e`; CI exact-HEAD en curso: 5/16 SUCCESS, 11 pendientes, 0 fallos. Se añadió auditoría de auth ephemeral: no conceder SELECT sobre auth_sessions/auth_rate_limits/auth_bootstrap_attempts; preservar DDL y excluir filas. No fusionar antes de CI completo y revisión.
-## Journal — Turno 14 (2026-11-12 UTC)
+- PR #318 MERGED por squash en main SHA `3ac66a180fcf23421b546140a419a45062e633dd`; 15/15 workflow runs y 19/19 check-runs SUCCESS exact-HEAD. Post-merge main CI: 11/11 workflows y 13/13 check-runs SUCCESS. PR #319 OPEN / Draft para runbook. Issue #53 OPEN/P0; PRODUCTION: NOT READY; no Neon writes; USD 0.
+
+## Snapshot histórico — Journal Turno 14 (2026-11-12 UTC)
 
 - PR #317 squash-merged; HEAD validado `870a35ac4a0190b80f31c0cf0590a759195f60dc`, 14/14 check-runs SUCCESS; nuevo main `bd9af0cc5b92858fd5063b3d8d102dbc327469ac`.
 - PR #313 se fusionó por squash después de que GitHub reportara `mergeable=true`, `mergeable_state=clean` y 14/14 check-runs SUCCESS en HEAD `c0895153da60845582911271e3f8f45a21a7dd53`; merge SHA `a0d6d801128b3e3aa6543796436abf348c645e8f`.

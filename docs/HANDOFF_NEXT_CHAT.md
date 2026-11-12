@@ -1,5 +1,6 @@
-- **PR #318 OPEN / Draft:** HEAD `fa5bd1710452d24974a208659209f4b0526f204e`; base `bd9af0cc5b92858fd5063b3d8d102dbc327469ac`; 5/16 check-runs SUCCESS, 11 pendientes, 0 fallos en la última consulta. Si hay commits posteriores, descartar esta evidencia y consultar el HEAD nuevo.
-## Handoff vigente — Turno 14 / Issue #53, identidad y grants Neon
+- **Estado vigente 2026-11-12:** PR #318 MERGED; main `3ac66a180fcf23421b546140a419a45062e633dd`. PR #319 OPEN / Draft con runbook de operador; HEAD exacto en la metadata de GitHub. Issue #53 OPEN/P0; no Neon writes; PRODUCTION: NOT READY; USD 0.
+
+## Snapshot histórico — Handoff Turno 14 (superseded by Turno 16)
 
 **main:** `a0d6d801128b3e3aa6543796436abf348c645e8f` (PR #317 y #313 MERGED). **Rama activa:** `security/issue-53-neon-role-matrix-20261112`. **PR #318:** OPEN / Draft. La rama parte del main previo a #313 y está 1 commit detrás; no hay conflicto reportado, pero debe reconciliarse antes del merge. Último HEAD validado `f80da3d20162a2beb9dd22e9166a924aff4b51f0`: 16/18 checks SUCCESS, 2 pendientes; la actualización documental requiere nuevo CI exact-SHA.
 

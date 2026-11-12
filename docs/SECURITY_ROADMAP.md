@@ -1,3 +1,5 @@
+> **Estado vigente 2026-11-12:** PR #318 MERGED en main SHA `3ac66a180fcf23421b546140a419a45062e633dd`; exact-HEAD pre-merge 19/19 checks SUCCESS y post-merge 13/13 checks SUCCESS. PR #319 OPEN / Draft contiene el runbook de operador. Issue #53 continúa OPEN/P0; principal real de DATABASE_URL_BACKUP_RO no verificado; PRODUCTION: NOT READY. Sin cambios remotos en Neon, sin lectura/rotación de secrets, USD 0.
+
 # Estado de seguridad reconciliado — Turno 5 — 2026-11-11 UTC
 
 - PR #304 y PR #305 están MERGED en main; PR #306 documental también está MERGED.

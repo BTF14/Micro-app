@@ -1,6 +1,8 @@
-**PR #318:** OPEN / Draft; HEAD `fa5bd1710452d24974a208659209f4b0526f204e`; 5/16 check-runs SUCCESS, 11 pendientes, 0 fallos al corte. Cambios recientes aún en ejecución de CI; volver a consultar exact-HEAD.
+**Checkpoint vigente — 2026-11-12:** PR #318 merged; main `3ac66a180fcf23421b546140a419a45062e633dd`; pre-merge 19/19 checks and post-merge 13/13 checks SUCCESS. PR #319 OPEN / Draft for operator runbook. Issue #53 OPEN/P0; PRODUCTION: NOT READY; no Neon writes; USD 0.
 
-## Checkpoint Turno 14 — PR #317 integrada; matriz de roles P0 en construcción (2026-11-12 UTC)
+
+
+## Snapshot histórico — Checkpoint Turno 14 (superseded by Turno 16) (2026-11-12 UTC)
 
 **main:** `a0d6d801128b3e3aa6543796436abf348c645e8f` (PR #317 y #313 MERGED). PR #317 HEAD `870a35ac4a0190b80f31c0cf0590a759195f60dc`; 14/14 check-runs SUCCESS exact-SHA.
 

@@ -27,6 +27,10 @@ DECLARE
   v_role_name name := current_user;
   v_problem text;
 BEGIN
+  IF session_user <> current_user THEN
+    RAISE EXCEPTION 'FAIL: SET ROLE detected (session_user %, current_user %); audit the login principal directly', session_user, current_user;
+  END IF;
+
   SELECT oid INTO v_role FROM pg_catalog.pg_roles WHERE rolname = v_role_name;
   IF v_role IS NULL THEN
     RAISE EXCEPTION 'FAIL: connected principal % is not present in pg_roles', v_role_name;
@@ -68,7 +72,7 @@ BEGIN
   IF NOT has_database_privilege(v_role_name, current_database(), 'CONNECT')
      OR has_database_privilege(v_role_name, current_database(), 'CREATE')
  THEN
-    RAISE EXCEPTION 'FAIL: database privileges must be CONNECT only (no CREATE/TEMP)';
+    RAISE EXCEPTION 'FAIL: database requires CONNECT and must deny CREATE';
   END IF;
 
   IF NOT has_schema_privilege(v_role_name, 'public', 'USAGE')

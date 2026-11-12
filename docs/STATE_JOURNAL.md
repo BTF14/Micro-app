@@ -1,3 +1,13 @@
+## Addendum — reconciliación post-merge de PR #330 (2026-11-12 UTC)
+
+- GitHub confirma PR #330 MERGED por squash; main actual `3a955763f5d259fbedbf4d714a048b04b9a69a8a`.
+- Los 11/11 check-runs documentados pertenecen a la base pre-merge `01a1b178e041128cfc1a98ab4955132368387523`, no al merge SHA. La consulta de status contexts y workflow runs PR-triggered para `3a955763f5d259fbedbf4d714a048b04b9a69a8a` no devolvió resultados; no se infiere CI post-merge.
+- PR #331 se creó por detección tardía del merge concurrente de #330; se cerró sin merge por duplicación.
+- Censo abierto posterior: #193, #314, #315 y #316. Issue #53 OPEN/P0; PRODUCTION NOT READY.
+- No se accedió a Neon, secretos, datos reales, Cloudflare, billing ni deploy. USD 0.
+
+---
+
 ## Addendum — auditoría documental y gobernanza del Turno 21 (2026-11-12 UTC)
 
 - Main verificado: 01a1b178e041128cfc1a98ab4955132368387523; 11/11 check-runs completed/success, asociados exactamente a ese SHA.

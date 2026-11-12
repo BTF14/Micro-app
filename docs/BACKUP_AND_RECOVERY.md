@@ -1,4 +1,4 @@
-> **Estado vigente — auditoría Turno 21 / 2026-11-12:** Issue #53 OPEN/P0; **PRODUCTION: NOT READY**. Main 01a1b178e041128cfc1a98ab4955132368387523, 11/11 checks SUCCESS exact-SHA. USD 0; no Neon main DDL/DML, roles/grants, secretos ni deploy manual.
+> **Estado vigente — post-merge PR #330 / Turno 21 / 2026-11-12:** Issue #53 OPEN/P0; **PRODUCTION: NOT READY**. Main `3a955763f5d259fbedbf4d714a048b04b9a69a8a` (squash merge #330). La base pre-merge `01a1b178e041128cfc1a98ab4955132368387523` tenía 11/11 checks SUCCESS; no atribuirlos al merge SHA. No se obtuvo evidencia de CI post-merge para `3a955763f5d259fbedbf4d714a048b04b9a69a8a`. USD 0; no Neon main DDL/DML, roles/grants, secretos ni deploy manual.
 >
 
 > **Contrato implementado:** .github/workflows/backup.yml programa pg_dump, age, SHA-256 y publica .age + .sha256 en el repositorio privado separado BTF14/micro-app-backups; el workflow verifica readback. Código/CI no demuestra backup natural reciente ni restore real posterior.

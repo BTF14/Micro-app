@@ -1,14 +1,14 @@
-## Handoff vigente — Auditoría documental Turno 21 (2026-11-12 UTC)
+## Handoff vigente — post-merge PR #330 y reconciliación de SHA (2026-11-12 UTC)
 
-- Base GitHub main: 01a1b178e041128cfc1a98ab4955132368387523; 11/11 check-runs completed/success exact-SHA.
-- Rama: docs/issue-53-full-documentation-audit-20261112, creada desde esa base.
-- Censo vivo: #193 OPEN/Ready (intacta), #314 jsdom major, #315 Vite major, #316 plugin-react major. Total 4; sus bases registradas son anteriores a main.
-- #328 y #329 ya están integradas. No esperar CI de ellas ni repetir su verificación. Snapshots inferiores son históricos.
-- CLAUDE.md importa AGENTS.md; Constitución autoridad normativa; perfiles .github/agents describen roles, no subagentes activos salvo confirmación runtime.
-- Se armonizó la discrepancia constitucional: Neon main requiere autorización explícita específica por operación; autorización de merge no autoriza Neon. Sin acceso a Neon en esta rama.
+- GitHub main actual: `3a955763f5d259fbedbf4d714a048b04b9a69a8a`; commit squash de PR #330.
+- PR #330: MERGED; incorporó la auditoría documental, la armonización de Neon y `docs/PRODUCTION_SIGN_OFF_CHECKLIST.md`.
+- Base pre-merge #330: `01a1b178e041128cfc1a98ab4955132368387523`; 11/11 check-runs SUCCESS documentados para esa base. No trasladar ese conteo al merge SHA. La consulta disponible no confirma checks post-merge en `3a955763f5d259fbedbf4d714a048b04b9a69a8a`.
+- PR #331 fue abierta por duplicación durante la detección del merge concurrente y cerrada sin merge; no forma parte del censo abierto.
+- Censo abierto: #193 OPEN/Ready (preservar intacta), #314 jsdom major, #315 Vite major, #316 plugin-react major. Total 4.
+- Gobernanza integrada: `CLAUDE.md` importa `AGENTS.md`; Constitución autoridad normativa; 11 perfiles `.github/agents/*.agent.md` son descripciones, no runtime confirmado.
 - Issue #53 OPEN/P0; **PRODUCTION: NOT READY**. RTO sintético 3.953 s no equivale a RTO real ni RPO operativo.
-- Próximo paso: docs/PRODUCTION_SIGN_OFF_CHECKLIST.md. Auditoría read-only, backup natural en BTF14/micro-app-backups, .age + .sha256/readback, smoke autenticado staging y subgates operacionales/legal/fiscal/coste. No cerrar #53 sin evidencia/aceptación.
-- No Neon DDL/DML, secretos, datos reales, deploy manual, Cloudflare/DNS ni billing. USD 0.
+- Próximo paso operativo: seguir `docs/PRODUCTION_SIGN_OFF_CHECKLIST.md`; operador verifica Neon read-only, backup natural .age/.sha256 y restore aislado, smoke autenticado staging y subgates humanos/coste. No cerrar #53 sin evidencia y aceptación.
+- Restricciones: USD 0; no Neon DDL/DML, secretos, datos reales, deploy manual, Cloudflare/DNS ni billing.
 
 ---
 

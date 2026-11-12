@@ -69,4 +69,4 @@ Excluded:
 - **Acceptance criteria met / unmet:** pending
 - **Limitations not verified:** Neon real no se reensaya en este turno.
 - **Residual risks:** requiere nueva autorización/ventana para Fase 2 definitiva Neon tras merge.
-- **Next step:** abrir PR #337 y completar CI exact-HEAD antes de merge.
+- **Next step:** completar CI exact-HEAD, revisar diff/reviews/threads/conflictos y fusionar solo si todos los gates pasan.

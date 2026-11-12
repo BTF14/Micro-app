@@ -1,3 +1,19 @@
+## Turno 20 — simulacro DR sintético y smoke de autenticación/autorización (2026-11-12 UTC)
+
+- Base de trabajo verificada: main `0ff826673f779c53ec2dd16bbd083d8fd6f2d2e0`.
+- Rama `security/issue-53-dr-drill-and-smoke-20261112`; ODD creada antes de cambios fuente: `odd/tasks/security-dr-drill-and-smoke.md`.
+- Implementación: `scripts/dr_drill_simulation.sh` envuelve el harness de restore completo PostgreSQL 18; exporta SHA-256 del dump cifrado y manifiestos source/restore; usa reloj monotónico y falla si RTO >=900 s. `scripts/test_backup_restore_schema_bcv.sh` conserva el hash del archive y manifiestos antes de limpiar temporales. `scripts/backup_restore_fixture_bcv.sql` incluye transición de cierre de caja posterior al commit de venta; assertions verifican importes/actor restaurados.
+- Smoke: `apps/api/src/smoke-readiness.test.ts` cubre health/security headers y fail-closed de password login/registro; `apps/api/src/auth.integration.test.ts` cubre login cashier vía Google OAuth mock tras bootstrap, identidad inválida y sesiones expiradas/revocadas. Suites register-shift existentes prueban cashier y denegación cross-branch. Password login sigue deshabilitado.
+- Primera ejecución CI falló por cerrar el register shift antes de que el trigger de reconciliación de venta validara el checkout; el fixture se corrigió para cerrar el turno tras COMMIT. También se eliminó una sustitución de comando accidental en el resumen. No se contabilizó el intento fallido como evidencia.
+- PR #326: HEAD final `92401163501846b704626878961a22980c150224`; **19/19 check-runs y 15/15 workflow runs SUCCESS**; sin reviews/threads; squash merge SHA `c061a888e882b96a9691d8a77c3ed9c03d59122d`.
+- DR run https://github.com/BTF14/Micro-app/actions/runs/43248087845: 23 migraciones, restore cifrado PostgreSQL 18, auth ephemeral tables con 0 filas, catálogo/venta/pago/ledger/balance/cash-close y relaciones; RTO sintético **3.953 s** (<900 s). Dump SHA-256 `7dc22baa65d8fab9122135e4794c23540ea926c2f8b0506bfad63ea50fdf6a97`; manifests source/restore coinciden en `eefbe43d3ee45151d3fea53b1363641c49f557264ce351eb616a3b77f54cdb58`; log SHA-256 `335782e652256572d4c896b72e0b4a68e68f73e01b90a72a6b0b068c0ef67a9e`.
+- CI post-merge exact-SHA sobre main `c061a888e882b96a9691d8a77c3ed9c03d59122d`: **13/13 check-runs y 11/11 workflow runs SUCCESS**.
+- RPO 0 s solo es snapshot lag de fixture sintético; RPO operativo, disponibilidad de backup natural y RTO real siguen sin medirse. No se descargó/restauró backup remoto ni se conectó Neon.
+- Issue #53 sigue OPEN/P0; PRODUCTION NOT READY. Pendientes operator-run de identidad/grants, backup natural/restore real, RPO/DR operacional, entrega real de alertas, staging smoke y revisión legal/fiscal/contable. USD 0.
+- PRs abiertas preservadas: #314, #315, #316 y #193.
+
+---
+
 ## Turno 19 — alertas de fallo de backup (2026-11-12 UTC)
 
 - PR #323 squash-merged a main `22d71ef03cce2e629137dbc2f83c48ee2c99e640`. El HEAD real de la PR fue `ddaf52a0ab8035be82440e138e4cf3fb2d8f30ce`, no el SHA transcrito en la directiva; 14/14 check-runs SUCCESS exact-HEAD. Merge se protegió con expected_head_sha.

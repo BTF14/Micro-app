@@ -2996,3 +2996,12 @@ La hipótesis anterior de que el helper de espera era la causa no era correcta. 
 - Neon main catalog findings remain unchanged and SELECT-only: `backup_readonly` is privileged and writable; 15 public tables and 2 sequences owned by `neondb_owner`; default ACL only for future tables; no RLS on 15 tables; `microapp_runtime` and `microapp_migrator` absent. Actual backup/Worker secret identities remain unknown because no secrets were read.
 - PR #287 remains OPEN/Draft, mergeable clean, 0 formal reviews, 0 review threads; 527 ahead / 1 behind main. No merge/rebase/sync. Issue #53 OPEN/P0; production NOT READY.
 - No Neon, secret, role, grant, password, business data, Cron, DNS, billing or production changes.
+
+
+## 2026-11-12 — Turno 16: corrección y prueba sintética de roles Neon
+
+- Confirmada divergencia de #318: 33 commits ahead / 1 behind; \`main\` en \`a0d6d801128b3e3aa6543796436abf348c645e8f\`. Rama sincronizada con merge commit de dos padres, sin force-push.
+- Decisión de seguridad: no aplicar literalmente \`GRANT USAGE, SELECT\` pedido en la directiva; \`USAGE\` permite \`nextval()\` y por tanto muta secuencias. Se mantiene SELECT-only, coherente con el dump y el requisito read-only.
+- Ampliados provisioning y auditoría; test ejecuta provisioning/audit como LOGIN sintético y verifica DML/DDL/sequence mutation/routine EXECUTE denegados, pg_dump custom y cifrado/descifrado/restauración age.
+- Primer fallo CI: el guard Bash de \`SOURCE_URL\` contenía un escape literal; corregido. En el SHA posterior \`071b7c599f602034b7b5b353573cc65e6b8ddadf\`, el job PostgreSQL 18 legacy backup/restore terminó SUCCESS.
+- CI global todavía en ejecución al registrar esta nota; no se declara elegibilidad de merge. Neon no fue contactado ni modificado. Issue #53 OPEN; \`PRODUCTION: NOT READY\`; USD 0.

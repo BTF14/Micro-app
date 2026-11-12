@@ -1015,3 +1015,13 @@ No merge/rebase/force-push; no Neon main, roles/grants remotos, datos reales, se
 - En el mismo SHA, Database migration validation `43048869994` SUCCESS; Secret history `43048870732` SUCCESS; ODD/docs `43048869895` SUCCESS; Security `43048869156` SUCCESS; Dependency review `43048869639` SUCCESS; dashboard `43048869221` SUCCESS; Semgrep `43048869247` SUCCESS; Playwright `43048869269` SUCCESS.
 - Próximo trabajo prioritario: resolver la fragilidad de dependencias apt en CI con estrategia reproducible, pinning y verificación de procedencia (p.ej. imágenes/containers con herramientas ya instaladas o setup action confiable y versionada), sin saltarse tests ni descargar binarios sin validar. Luego reejecutar los jobs afectados en un nuevo SHA y verificar todos los pasos reales. Mantener #287 Draft hasta cierre integral.
 - Issue #53 sigue OPEN/P0. Producción NOT READY. No Neon main, secretos, roles/grants remotos, deploy, restore real, Cron, billing, force-push ni rebase/sync automático. MVP 01/12/2026; GO/NO-GO 30/11/2026.
+
+
+## Checkpoint — Turno 16 / PR \`#318\`
+
+Rama: \`security/issue-53-neon-role-matrix-20261112\`.
+Main base verificada: \`a0d6d801128b3e3aa6543796436abf348c645e8f\`.
+Sincronización: commit merge de dos padres, sin force-push; la rama quedó 0 detrás de main.
+Cambios de seguridad: provisioning concede SELECT-only en secuencias (sin USAGE/UPDATE); auditoría extendida a rutinas, tablas/vistas, ownership y default ACLs; test ejecuta provisioning + auditoría por LOGIN real sintético y prueba dump custom + restore cifrado en el harness.
+Evidencia: PostgreSQL 18 efímero, perfil legado pasó en SHA \`071b7c599f602034b7b5b353573cc65e6b8ddadf\`. CI global exact-SHA aún debe completarse para el HEAD final de este checkpoint.
+No tocar Neon, no secrets, no deploy manual, USD 0. Mantener #318 Draft hasta todos los checks y revisión completa; \`PRODUCTION: NOT READY\`.

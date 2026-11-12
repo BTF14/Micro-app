@@ -3595,3 +3595,18 @@ Restricciones: no Neon main, datos reales, secretos/age, roles/grants remotos, d
 - En el mismo SHA, Database migration validation `43048869994` SUCCESS; Secret history `43048870732` SUCCESS; ODD/docs `43048869895` SUCCESS; Security `43048869156` SUCCESS; Dependency review `43048869639` SUCCESS; dashboard `43048869221` SUCCESS; Semgrep `43048869247` SUCCESS; Playwright `43048869269` SUCCESS.
 - Próximo trabajo prioritario: resolver la fragilidad de dependencias apt en CI con estrategia reproducible, pinning y verificación de procedencia (p.ej. imágenes/containers con herramientas ya instaladas o setup action confiable y versionada), sin saltarse tests ni descargar binarios sin validar. Luego reejecutar los jobs afectados en un nuevo SHA y verificar todos los pasos reales. Mantener #287 Draft hasta cierre integral.
 - Issue #53 sigue OPEN/P0. Producción NOT READY. No Neon main, secretos, roles/grants remotos, deploy, restore real, Cron, billing, force-push ni rebase/sync automático. MVP 01/12/2026; GO/NO-GO 30/11/2026.
+
+
+## Continuidad más reciente — Turno 16 / PR \`#318\` (2026-11-12 UTC)
+
+Continuar directamente en \`security/issue-53-neon-role-matrix-20261112\`; no volver a pedir datos ya documentados ni solicitar Build IDs, terminal, CLI, TinyFish o reconexiones.
+
+- \`main\`: \`a0d6d801128b3e3aa6543796436abf348c645e8f\`.
+- Rama sincronizada con main mediante commit de dos padres; 0 detrás.
+- PR \`#318\` OPEN / Draft. No fusionar hasta verificar todos los checks exactos del HEAD final, diff completo y gates.
+- P1 resuelto en código: \`SELECT\` en secuencias para preservar estado de pg_dump; nunca conceder \`USAGE\` (permite \`nextval\`) ni \`UPDATE\`.
+- P2 implementado: auditoría de \`routine_privileges\`, ACLs efectivas de rutinas, grants de tablas/vistas, secuencias, ownership con \`pg_shdepend\`, y \`pg_default_acl\` acotado a \`public\`.
+- Test integrado en el perfil PostgreSQL 18: provisioning real con contraseña sintética por variable de entorno de CI, audit con el LOGIN backup, DML/DDL/nextval/setval/EXECUTE denegados, \`pg_dump\` custom y cifrado/restore age del harness.
+- El primer intento falló solo por un escape en el guard Bash de \`SOURCE_URL\`; corregido. El siguiente HEAD \`071b7c599f602034b7b5b353573cc65e6b8ddadf\` pasó el perfil legado completo. No reutilizar el resto de checks de SHA anteriores.
+- Antes de merge: revalidar exact-HEAD CI completo y PR review state; conservar \`PRODUCTION: NOT READY\`, Issue #53 OPEN, USD 0 y cero operaciones en Neon.
+- Después de un merge válido, crear PR \`#319\` para \`docs/NEON_LEAST_PRIVILEGE_AUDIT_RUNBOOK.md\`; no crearla antes.

@@ -3201,3 +3201,17 @@ La hipótesis anterior de que el helper de espera era la causa no era correcta. 
 - En el mismo SHA, Database migration validation `43048869994` SUCCESS; Secret history `43048870732` SUCCESS; ODD/docs `43048869895` SUCCESS; Security `43048869156` SUCCESS; Dependency review `43048869639` SUCCESS; dashboard `43048869221` SUCCESS; Semgrep `43048869247` SUCCESS; Playwright `43048869269` SUCCESS.
 - Próximo trabajo prioritario: resolver la fragilidad de dependencias apt en CI con estrategia reproducible, pinning y verificación de procedencia (p.ej. imágenes/containers con herramientas ya instaladas o setup action confiable y versionada), sin saltarse tests ni descargar binarios sin validar. Luego reejecutar los jobs afectados en un nuevo SHA y verificar todos los pasos reales. Mantener #287 Draft hasta cierre integral.
 - Issue #53 sigue OPEN/P0. Producción NOT READY. No Neon main, secretos, roles/grants remotos, deploy, restore real, Cron, billing, force-push ni rebase/sync automático. MVP 01/12/2026; GO/NO-GO 30/11/2026.
+
+
+## Turno 16 — PR \`#318\` / auditoría de roles Neon (2026-11-12 UTC)
+
+- \`main\` verificado: \`a0d6d801128b3e3aa6543796436abf348c645e8f\`.
+- Rama \`security/issue-53-neon-role-matrix-20261112\` sincronizada mediante commit de dos padres; comparación posterior: 0 commits detrás de \`main\`.
+- Correcciones implementadas:
+  - Provisioning: \`GRANT SELECT ON ALL SEQUENCES\` y default privileges \`SELECT\` para secuencias creadas por el owner que ejecuta el script. No se concede \`USAGE\` ni \`UPDATE\`, porque \`USAGE\` habilita \`nextval()\` y contradice el contrato read-only.
+  - Auditoría: \`routine_privileges\`, permisos efectivos de rutinas públicas no asociadas exclusivamente a triggers, privilegios de tablas/vistas, secuencias, ownership mediante \`pg_shdepend\` y default ACLs limitadas a \`public\`.
+  - Test sintético: ejecuta el provisioning real con contraseña sintética solo por variable de entorno CI, conecta como \`microapp_backup\`, ejecuta auditoría, prueba DML/DDL/nextval/setval/EXECUTE, verifica grants negativos y genera \`pg_dump\` custom.
+- Evidencia PostgreSQL 18 desechable en HEAD \`071b7c599f602034b7b5b353573cc65e6b8ddadf\`: el perfil legado de backup/restore completó correctamente, incluida auditoría, denegaciones, dump íntegro, cifrado age, checksum, descifrado y restauración.
+- En la última consulta exact-SHA, 17/19 check-runs SUCCESS y 2 seguían en progreso; revalidar todos en el HEAD posterior a la actualización documental antes de promover.
+- PR \`#318\` sigue OPEN / Draft; sin reviews formales. Issue \`#53\` sigue OPEN. **PRODUCTION: NOT READY**.
+- Sin conexión, DDL ni escrituras en Neon; presupuesto USD 0. PR \`#319\` runbook queda condicionado al merge seguro de \`#318\`.

@@ -2,7 +2,7 @@
 
 Fase 3 de código/documentación integrada: runbook DR, contrato R2/S3 condicional, checksum antes/después del transporte y retries/log redaction. El repositorio privado GitHub sigue siendo el destino activo. RPO <24h y RTO <15m son objetivos no medidos. Issue #53 OPEN/P0; **PRODUCTION: NOT READY**; USD 0; no Neon ni secretos.
 
-Siguiente: cerrar CI post-merge exact-SHA; después mantener #314–#316 Dependabot y #193 intactas. Próximo gate operativo requiere backup remoto reciente, DR drill real, medición RPO/RTO, alertas y verificación de coste $0.
+Siguiente: mantener #314–#316 Dependabot y #193 intactas; después completar el backup remoto reciente, el DR drill real, RPO/RTO, alertas y coste $0. Próximo gate operativo requiere backup remoto reciente, DR drill real, medición RPO/RTO, alertas y verificación de coste $0.
 
 ---
 

@@ -2,7 +2,7 @@ import { getCookie } from "hono/cookie";
 import type { Context, Hono } from "hono";
 import { formatNumeric, parseNumeric } from "@micro-app/money";
 import type { Bindings } from "./bindings";
-import { isTrustedOrigin } from "./auth";
+import { clearSessionCookie, isTrustedOrigin } from "./auth";
 import { authorizeBranchOperation, authorizeTenantOperation } from "./authorization";
 import type { BranchContext } from "./branch-context";
 import { readBodyWithinLimit } from "./bounded-body";
@@ -87,7 +87,7 @@ async function authorizeOwnShift(
 }
 
 function authFailure(c: Context<{ Bindings: Bindings }>, kind: AuthKind) {
-  if (kind === "unauthenticated") return c.json({ error: "UNAUTHENTICATED", message: "Inicia sesión para continuar." }, 401);
+  if (kind === "unauthenticated") { clearSessionCookie(c); return c.json({ error: "UNAUTHENTICATED", message: "Inicia sesión para continuar." }, 401); }
   if (kind === "branch_denied") return c.json({ error: "BRANCH_FORBIDDEN", message: "No tienes una asignación activa para operar en esta sucursal." }, 403);
   return c.json({ error: "FORBIDDEN", message: "No tienes permiso para operar tu turno de caja." }, 403);
 }
@@ -136,7 +136,7 @@ export function registerRegisterShiftRoutes(app: Hono<{ Bindings: Bindings }>): 
     const { organizationId } = c.req.param();
     if (!UUID_PATTERN.test(organizationId)) return c.json({ error: "INVALID_RESOURCE", message: "El identificador de la organización no es válido." }, 400);
     const token = sessionToken(c);
-    if (!token) return c.json({ error: "UNAUTHENTICATED", message: "Inicia sesión para continuar." }, 401);
+    if (!token) { clearSessionCookie(c); return c.json({ error: "UNAUTHENTICATED", message: "Inicia sesión para continuar." }, 401); }
     try {
       const result = await withDatabaseClient(c.env.DATABASE_URL, (client) => withDatabaseTransaction(client, async (tx) => {
         const authorization = await authorizeTenantOperation(tx, token, organizationId, "register.shift.read_own", false);
@@ -161,7 +161,7 @@ export function registerRegisterShiftRoutes(app: Hono<{ Bindings: Bindings }>): 
         );
         return { kind: "ok" as const, shift: rows.rows[0] ?? null };
       }));
-      if (result.kind === "unauthenticated") return c.json({ error: "UNAUTHENTICATED", message: "Inicia sesión para continuar." }, 401);
+      if (result.kind === "unauthenticated") { clearSessionCookie(c); return c.json({ error: "UNAUTHENTICATED", message: "Inicia sesión para continuar." }, 401); }
       if (result.kind === "forbidden") return c.json({ error: "FORBIDDEN", message: "No tienes permiso para consultar tu turno." }, 403);
       return c.json({ shift: result.shift }, 200);
     } catch (error) { return readFailure(c, error); }

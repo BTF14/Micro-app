@@ -1,6 +1,8 @@
-**PR #318:** OPEN / Draft; revalidar HEAD/checks en GitHub. La rama está 1 commit detrás del main actualizado por #313; mergeability reportada true pero `mergeable_state: unstable` mientras CI termina. Último HEAD antes de reconciliar este bloque documental: `f80da3d20162a2beb9dd22e9166a924aff4b51f0`; 16/18 check-runs SUCCESS, 2 pendientes, 0 fallos. La actualización documental generará un HEAD nuevo y exige CI exact-SHA nuevo; no promover ni fusionar.
+**Estado vigente — 2026-11-12:** PR #318 MERGED por squash; main `3ac66a180fcf23421b546140a419a45062e633dd`. Pre-merge exact HEAD 19/19 check-runs SUCCESS; post-merge main 13/13 check-runs SUCCESS. PR #319 OPEN / Draft, runbook en revisión documental. Issue #53 OPEN/P0; principal efectivo de DATABASE_URL_BACKUP_RO aún no verificado. PRODUCTION: NOT READY; no Neon writes; USD 0.
 
-## Estado vigente — Turno 14 / auditoría de roles Neon (2026-11-12 UTC)
+
+
+## Snapshot histórico — Turno 14 / auditoría de roles Neon (superseded by Turno 16) (2026-11-12 UTC)
 
 **main:** `a0d6d801128b3e3aa6543796436abf348c645e8f` tras PR #313 (squash), precedida por #317. **PR #317:** MERGED; HEAD exact-SHA `870a35ac4a0190b80f31c0cf0590a759195f60dc`, 14/14 check-runs SUCCESS; merge SHA `bd9af0cc5b92858fd5063b3d8d102dbc327469ac`.
 
@@ -3215,3 +3217,17 @@ La hipótesis anterior de que el helper de espera era la causa no era correcta. 
 - En la última consulta exact-SHA, 17/19 check-runs SUCCESS y 2 seguían en progreso; revalidar todos en el HEAD posterior a la actualización documental antes de promover.
 - PR \`#318\` sigue OPEN / Draft; sin reviews formales. Issue \`#53\` sigue OPEN. **PRODUCTION: NOT READY**.
 - Sin conexión, DDL ni escrituras en Neon; presupuesto USD 0. PR \`#319\` runbook queda condicionado al merge seguro de \`#318\`.
+
+
+## Turno 16 — PR #318 integrado / siguiente gate operativo
+
+- PR #318 squash-merged en main: merge commit 3ac66a180fcf23421b546140a419a45062e633dd.
+- main confirmado en ese SHA inmediatamente después del merge.
+- CI exact-HEAD pre-merge del HEAD 1b27478fc1fe4a0584b8d5622e6c48acc87a6a95: 15/15 workflow runs y 19/19 check-runs SUCCESS.
+- El perfil PostgreSQL 18 desechable verificó provisioning, auditoría read-only, privilegios negativos, pg_dump custom y cifrado/checksum/restore age.
+- PR #319 se prepara para el runbook de operador; su existencia no significa que se haya ejecutado en Neon.
+- Issue #53 permanece OPEN/P0; principal efectivo de DATABASE_URL_BACKUP_RO aún no verificado ni rotado. **PRODUCTION: NOT READY**.
+- Cero escrituras/DDL en Neon, sin lectura de secretos, USD 0.
+
+
+Post-merge CI verificado en main SHA 3ac66a180fcf23421b546140a419a45062e633dd: 11/11 workflow runs y 13/13 check-runs SUCCESS.

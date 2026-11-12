@@ -1,5 +1,6 @@
-- **PR #318 OPEN / Draft:** HEAD `fa5bd1710452d24974a208659209f4b0526f204e`; base `bd9af0cc5b92858fd5063b3d8d102dbc327469ac`; 5/16 check-runs SUCCESS, 11 pendientes, 0 fallos en la última consulta. Si hay commits posteriores, descartar esta evidencia y consultar el HEAD nuevo.
-## Handoff vigente — Turno 14 / Issue #53, identidad y grants Neon
+- **Estado vigente 2026-11-12:** PR #318 MERGED; main `3ac66a180fcf23421b546140a419a45062e633dd`. PR #319 OPEN / Draft con runbook de operador; HEAD exacto en la metadata de GitHub. Issue #53 OPEN/P0; no Neon writes; PRODUCTION: NOT READY; USD 0.
+
+## Snapshot histórico — Handoff Turno 14 (superseded by Turno 16)
 
 **main:** `a0d6d801128b3e3aa6543796436abf348c645e8f` (PR #317 y #313 MERGED). **Rama activa:** `security/issue-53-neon-role-matrix-20261112`. **PR #318:** OPEN / Draft. La rama parte del main previo a #313 y está 1 commit detrás; no hay conflicto reportado, pero debe reconciliarse antes del merge. Último HEAD validado `f80da3d20162a2beb9dd22e9166a924aff4b51f0`: 16/18 checks SUCCESS, 2 pendientes; la actualización documental requiere nuevo CI exact-SHA.
 
@@ -3610,3 +3611,16 @@ Continuar directamente en \`security/issue-53-neon-role-matrix-20261112\`; no vo
 - El primer intento falló solo por un escape en el guard Bash de \`SOURCE_URL\`; corregido. El siguiente HEAD \`071b7c599f602034b7b5b353573cc65e6b8ddadf\` pasó el perfil legado completo. No reutilizar el resto de checks de SHA anteriores.
 - Antes de merge: revalidar exact-HEAD CI completo y PR review state; conservar \`PRODUCTION: NOT READY\`, Issue #53 OPEN, USD 0 y cero operaciones en Neon.
 - Después de un merge válido, crear PR \`#319\` para \`docs/NEON_LEAST_PRIVILEGE_AUDIT_RUNBOOK.md\`; no crearla antes.
+
+
+## Continuidad más reciente — Turno 16 / después del merge #318
+
+- PR #318 está MERGED por squash. Main SHA: 3ac66a180fcf23421b546140a419a45062e633dd.
+- Exact-HEAD pre-merge 1b27478fc1fe4a0584b8d5622e6c48acc87a6a95: 15/15 workflow runs y 19/19 check-runs SUCCESS; el perfil backup/restore PostgreSQL 18 también SUCCESS.
+- La rama de #318 fue sincronizada con main sin force-push; compare final 0 behind.
+- Próximo objetivo: crear/terminar PR #319 con docs/NEON_LEAST_PRIVILEGE_AUDIT_RUNBOOK.md y actualizar ADR/continuidad. Runbook debe explicar identidad efectiva, owner-specific default ACLs, secuencias SELECT-only (no USAGE), workflow heredado que espera backup_readonly, rotación coordinada del secreto y verificación del siguiente backup natural.
+- Issue #53 sigue OPEN/P0; no está verificado el principal real de DATABASE_URL_BACKUP_RO, no se ha ejecutado el runbook en Neon. **PRODUCTION: NOT READY**.
+- No solicitar datos ya documentados ni Build IDs, terminal, CLI, TinyFish o reconexiones. No ejecutar cambios remotos. Presupuesto USD 0.
+
+
+Post-merge CI del SHA 3ac66a180fcf23421b546140a419a45062e633dd ya fue verificado: 11/11 workflows y 13/13 check-runs SUCCESS. PR #319 sigue siendo documental y no autoriza operaciones en Neon.

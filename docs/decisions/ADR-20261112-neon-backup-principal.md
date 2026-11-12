@@ -1,7 +1,7 @@
 # ADR — Principal de backup Neon y contrato de mínimo privilegio
 
 - **ID:** ADR-20261112-neon-backup-principal
-- **Estado:** proposed
+- **Estado:** accepted
 - **Fecha:** 2026-11-12
 - **Responsables:** Arquitectura / Seguridad
 - **Relacionado:** Issue #53, `odd/tasks/security-issue-53-neon-role-matrix.md`, PR #318, PRs #303/#305
@@ -46,3 +46,13 @@ No se aplica DDL remoto. En pruebas sintéticas, recrear la base desechable. Ant
 ## Historial
 
 - 2026-11-12 — propuesta creada a partir de la evidencia histórica y el contrato sintético existente.
+
+
+## Aceptación e implementación — Turno 16 (2026-11-12)
+
+- PR #318 squash-merged en main: 3ac66a180fcf23421b546140a419a45062e633dd.
+- Exact-HEAD pre-merge: 15/15 workflows y 19/19 check-runs SUCCESS.
+- El test PostgreSQL 18 desechable verificó provisioning, auditoría, rechazo de DML/DDL/nextval/setval/EXECUTE, pg_dump custom y cifrado/restore age.
+- Se conserva SELECT-only en secuencias; no se concede USAGE ni UPDATE.
+- Esta aceptación cubre el diseño/código y la evidencia sintética. No certifica Neon real, no identifica el principal efectivo de DATABASE_URL_BACKUP_RO y no autoriza cambiar secrets o grants remotos.
+- Issue #53 permanece OPEN/P0 hasta la ejecución documentada del runbook y evidencia de backup natural + restore. **PRODUCTION: NOT READY**.

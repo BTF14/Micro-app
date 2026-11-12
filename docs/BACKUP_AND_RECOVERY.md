@@ -1,10 +1,12 @@
+> **Estado vigente 2026-11-12:** PR #318 MERGED en main SHA `3ac66a180fcf23421b546140a419a45062e633dd`; 19/19 check-runs pre-merge y 13/13 check-runs post-merge SUCCESS. PR #319 OPEN / Draft prepara el runbook. El principal real de DATABASE_URL_BACKUP_RO sigue sin verificarse; el workflow conserva el diagnóstico heredado `backup_readonly`. Issue #53 OPEN/P0; PRODUCTION: NOT READY; no Neon writes; USD 0.
+
 ## Reconciliación del contrato de exclusión y mínimo privilegio — 2026-11-11 UTC
 
-- **Corrección propuesta en PR #305:** `.github/workflows/backup.yml` sustituye las exclusiones completas `--exclude-table` por `--exclude-table-data=public.<tabla>` para `auth_sessions`, `auth_rate_limits` y `auth_bootstrap_attempts`. El objetivo es conservar DDL/estructura e índices, omitiendo únicamente sus filas.
+- **Corrección integrada en PR #305:** `.github/workflows/backup.yml` sustituye las exclusiones completas `--exclude-table` por `--exclude-table-data=public.<tabla>` para `auth_sessions`, `auth_rate_limits` y `auth_bootstrap_attempts`. El objetivo es conservar DDL/estructura e índices, omitiendo únicamente sus filas.
 - **Prueba sintética PostgreSQL 18 aprobada:** run [43102529147](https://github.com/BTF14/Micro-app/actions/runs/43102529147), código de prueba en el HEAD `2b52bcaaa575c7f4d50f2ba13982041f2b3353f7`. El rol sintético `microapp_backup` completó `pg_dump` con grants de lectura; las pruebas negativas rechazaron DML, DDL, mutación de secuencias y administración de roles. El archive/restauración conservaron las tres tablas efímeras con cero filas y el manifiesto sintético de negocio coincidió.
 - Esta evidencia es de PostgreSQL 18 desechable y **no** verifica el principal efectivo del secreto `DATABASE_URL_BACKUP_RO`, los grants/membresías reales en Neon ni una restauración de una copia productiva. No declarar cerrado Issue #53 ni listo producción.
 - Las notas históricas posteriores que describen que las tablas efímeras no aparecen en la restauración documentan el comportamiento anterior de `--exclude-table`; no deben interpretarse como el nuevo contrato. No se reescriben esos registros históricos.
-- La modificación del workflow sigue pendiente de revisión y merge de PR #305. No se ejecutó manualmente el backup operativo, no se leyeron secretos y no se conectó ni mutó Neon `main`.
+- PR #305 se fusionó; este snapshot histórico no sustituye la evidencia más reciente de Turno 16. No se ejecutó manualmente el backup operativo, no se leyeron secretos y no se conectó ni mutó Neon `main`.
 
 
 ---
@@ -537,3 +539,16 @@ En el HEAD de código `0ca91ff51ec545278ceb8eabd3929083aae9022e`, el smoke test 
 A prior natural scheduled backup failed before connecting to Neon because Ubuntu package mirror DNS resolution failed while installing age. The scheduled backup workflow previously used direct `apt-get update/install` calls, unlike the synthetic restore workflow.
 
 PR #287 now reuses the tested bounded helper `scripts/ci/apt-retry.sh` for strict package-index refreshes and installs, runs its isolated regression test, and adds bounded retry/timeouts for fetching the PostgreSQL PGDG signing key. Persistent failures remain non-zero; this does not hide a broken package source. This is a code-level resilience change only: no backup was manually dispatched, no secret or Neon data was accessed, and no real backup success is inferred. Revalidate the exact HEAD and await the next natural scheduled run after any authorized release integration.
+
+
+---
+
+# Addendum — Turno 16 — contrato de backup least-privilege (2026-11-12 UTC)
+
+- PR #318 se integró por squash en main, SHA 3ac66a180fcf23421b546140a419a45062e633dd. Exact-HEAD pre-merge: 19/19 check-runs SUCCESS; post-merge main: 13/13 check-runs SUCCESS.
+- El principal candidato microapp_backup recibe SELECT en tablas/vistas y secuencias de public. SELECT en secuencias preserva last_value en pg_dump; USAGE (nextval) y UPDATE (setval/nextval) quedan prohibidos.
+- Auditoría read-only fail-closed incorpora routine_privileges, ACLs efectivas de rutinas públicas, ownership y pg_default_acl; default ACLs son específicas del owner creador.
+- PostgreSQL 18 desechable probó provisioning, auditoría por LOGIN, denegaciones de DML/DDL/nextval/setval/EXECUTE, pg_dump custom y cifrado/checksum/descifrado/restore age.
+- El diagnóstico de .github/workflows/backup.yml todavía espera el nombre histórico backup_readonly. No se ha cambiado DATABASE_URL_BACKUP_RO ni se ha demostrado su principal efectivo. No rotar el secreto hasta una actualización coordinada y revisada del workflow/diagnóstico.
+- --exclude-table-data excluye filas auth del artefacto, pero no impide leerlas en origen durante el dump single-pass.
+- PR #319 prepara el runbook del operador. No se ejecutó Neon ni se mutaron datos, roles, grants, passwords o secrets. Issue #53 OPEN/P0; **PRODUCTION: NOT READY**; USD 0.

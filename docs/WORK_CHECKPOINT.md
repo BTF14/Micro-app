@@ -1,6 +1,8 @@
-**PR #318:** OPEN / Draft; HEAD `fa5bd1710452d24974a208659209f4b0526f204e`; 5/16 check-runs SUCCESS, 11 pendientes, 0 fallos al corte. Cambios recientes aún en ejecución de CI; volver a consultar exact-HEAD.
+**Checkpoint vigente — 2026-11-12:** PR #318 merged; main `3ac66a180fcf23421b546140a419a45062e633dd`; pre-merge 19/19 checks and post-merge 13/13 checks SUCCESS. PR #319 OPEN / Draft for operator runbook. Issue #53 OPEN/P0; PRODUCTION: NOT READY; no Neon writes; USD 0.
 
-## Checkpoint Turno 14 — PR #317 integrada; matriz de roles P0 en construcción (2026-11-12 UTC)
+
+
+## Snapshot histórico — Checkpoint Turno 14 (superseded by Turno 16) (2026-11-12 UTC)
 
 **main:** `a0d6d801128b3e3aa6543796436abf348c645e8f` (PR #317 y #313 MERGED). PR #317 HEAD `870a35ac4a0190b80f31c0cf0590a759195f60dc`; 14/14 check-runs SUCCESS exact-SHA.
 
@@ -1025,3 +1027,14 @@ Sincronización: commit merge de dos padres, sin force-push; la rama quedó 0 de
 Cambios de seguridad: provisioning concede SELECT-only en secuencias (sin USAGE/UPDATE); auditoría extendida a rutinas, tablas/vistas, ownership y default ACLs; test ejecuta provisioning + auditoría por LOGIN real sintético y prueba dump custom + restore cifrado en el harness.
 Evidencia: PostgreSQL 18 efímero, perfil legado pasó en SHA \`071b7c599f602034b7b5b353573cc65e6b8ddadf\`. CI global exact-SHA aún debe completarse para el HEAD final de este checkpoint.
 No tocar Neon, no secrets, no deploy manual, USD 0. Mantener #318 Draft hasta todos los checks y revisión completa; \`PRODUCTION: NOT READY\`.
+
+
+## Checkpoint — Turno 16 completado en código; runbook pendiente
+
+PR #318 squash-merged. Merge commit / main SHA: 3ac66a180fcf23421b546140a419a45062e633dd.
+Pre-merge exact HEAD 1b27478fc1fe4a0584b8d5622e6c48acc87a6a95: 15/15 workflows SUCCESS y 19/19 check-runs SUCCESS.
+Post-merge CI de main se inició; verificar su cierre exact-SHA en 3ac66a180fcf23421b546140a419a45062e633dd.
+Siguiente paso: PR #319 para docs/NEON_LEAST_PRIVILEGE_AUDIT_RUNBOOK.md, instrucciones operator-run. No conectar ni mutar Neon. Issue #53 OPEN/P0; PRODUCTION: NOT READY; USD 0.
+
+
+Post-merge CI de main SHA 3ac66a180fcf23421b546140a419a45062e633dd terminó SUCCESS: 11/11 workflows y 13/13 check-runs.

@@ -17,7 +17,7 @@
 Included:
 - Preflight y assertions de 0022: prohibir toda membresía saliente; permitir únicamente la arista entrante de `pg_database.datdba` con ADMIN puro; rechazar USAGE/SET efectivos para propietarios no-superuser.
 - Restore assertions del runtime con la misma invariante.
-- Test PostgreSQL 18 separado, con roles creados por un propietario no-superuser CREATEROLE; migraciones 0001–0023, assertions y escenarios fail-closed.
+- Test PostgreSQL 18 separado con dos perfiles: BCV 0001–0023 + 0022 assertions; main 0001–0016 + restore_role_assertions_main; roles creados por propietario no-superuser CREATEROLE y escenarios fail-closed.
 - Registrar evidencia, ADR y continuidad.
 
 Excluded:

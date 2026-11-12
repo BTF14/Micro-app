@@ -146,7 +146,6 @@ export function registerCatalogRoutes(app: Hono<{ Bindings: Bindings }>): void {
       );
 
       if (result.kind === "unauthenticated") {
-        clearSessionCookie(c);
         return c.json(
           { error: "UNAUTHENTICATED", message: "Inicia sesión para continuar." },
           401,

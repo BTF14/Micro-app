@@ -1,3 +1,5 @@
+**PR #318:** OPEN / Draft; HEAD actual al corte `fa5bd1710452d24974a208659209f4b0526f204e`, base `bd9af0cc5b92858fd5063b3d8d102dbc327469ac`; 5/16 check-runs SUCCESS y 11 pendientes, 0 fallos al corte. El CI exact-HEAD sigue en curso; no promover ni fusionar.
+
 ## Estado vigente — Turno 14 / auditoría de roles Neon (2026-11-12 UTC)
 
 **main:** `bd9af0cc5b92858fd5063b3d8d102dbc327469ac` tras PR #317 (squash). **PR #317:** MERGED; HEAD exact-SHA `870a35ac4a0190b80f31c0cf0590a759195f60dc`, 14/14 check-runs SUCCESS; merge SHA `bd9af0cc5b92858fd5063b3d8d102dbc327469ac`.

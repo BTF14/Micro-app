@@ -1,3 +1,16 @@
+## Turno 21 — entrada Claude Code y protocolo de comunicación entre agentes (2026-11-12 UTC)
+
+- Main base verificado: `938401a891216448b7de78f20dfa3adb53a82cbf`. Rama documental: `docs/ai-agent-communication-claude-entry-20261112`.
+- PR #328 squash-merged: https://github.com/BTF14/Micro-app/pull/328. HEAD PR `11c0e6c14c0d62222ae5fc32ffe798edd9179266`, **10/10 workflow runs SUCCESS** exact-HEAD, sin reviews/threads. Merge SHA/main `fbefadcfa75952cc0f737eecb1bf444da488d117`.
+- Añadido `CLAUDE.md` en español con importación `@AGENTS.md`, orden de lectura selectiva, comunicación, continuidad y límites. Reforzados `AGENTS.md`, Constitución, política de colaboración y contrato de continuidad.
+- Decisión de gobernanza: no crear `docs/AI_COMMUNICATION_PROTOCOL.md` adicional porque el contrato de continuidad existente ya es el lugar canónico para modos, evidencia y handoffs. Evitar duplicación de instrucciones.
+- Convención aceptada: solicitudes sencillas del propietario pueden ser texto normal; directivas largas pueden ser Markdown; agentes usan Markdown conciso por defecto en trabajo Micro-app. Los informes formales son proporcionales al riesgo/alcance.
+- No se modificó aplicación, base de datos, migraciones, workflows, secretos, Neon, Cloudflare, datos reales ni billing.
+- Límite de evidencia: el endpoint de runs disponible devuelve solo eventos `pull_request`; no devolvió ejecuciones asociadas al merge SHA. Los 10/10 son pre-merge exact-SHA, no CI post-merge.
+- Issue #53 no cambia de estado por este trabajo; conservar OPEN/P0 y PRODUCTION: NOT READY según la última evidencia vigente hasta revalidación.
+
+---
+
 ## Turno 20 — simulacro DR sintético y smoke de autenticación/autorización (2026-11-12 UTC)
 
 - Base de trabajo verificada: main `0ff826673f779c53ec2dd16bbd083d8fd6f2d2e0`.

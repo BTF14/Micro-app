@@ -80,4 +80,13 @@ grep -q '^issue comment 123 ' "$GH_MOCK_LOG"
 ! grep -q '^issue create ' "$GH_MOCK_LOG"
 grep -q '987654321' "$GH_MOCK_BODY"
 
+# Verify that the workflow actually wires the helper with the required guard and token scope.
+workflow="$repo_root/.github/workflows/backup.yml"
+grep -Fq '  issues: write' "$workflow"
+grep -Fq '        if: failure()' "$workflow"
+grep -Fq '        continue-on-error: true' "$workflow"
+grep -Fq '          GH_TOKEN: ${{ github.token }}' "$workflow"
+grep -Fq '          BACKUP_JOB_STATUS: ${{ job.status }}' "$workflow"
+grep -Fq '        run: bash scripts/backup_failure_alert.sh' "$workflow"
+
 echo "PASS: success no-op, failed-run issue creation, and existing-issue update."

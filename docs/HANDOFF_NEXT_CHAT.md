@@ -1,3 +1,17 @@
+## Turno 32 — PR #337: contrato de membresías PostgreSQL 16+ / Neon
+
+- Base: `main` SHA `908a01fd891a83bfd8c2d605a37ba91fa62e3db0`.
+- Rama: `fix/neon-compatible-bcv-and-runtime-role-membership-20261112`; PR #337 autorizada exclusivamente para corregir la arista entrante de propietario directo en `microapp_bcv_sync` y `microapp_runtime`.
+- Hallazgo Turno 31: la migración 0022 detuvo con P0001 porque `pg_auth_members` contenía `roleid=microapp_bcv_sync`, `member=neondb_owner`, grantor `cloud_admin`, ADMIN OPTION=true. Neon branch temporal se eliminó; main no recibió SQL.
+- Archivos de alcance: 0022 preflight, 0022 assertions, restore runtime assertions, migration-runner workflow, harness PostgreSQL 18, task ODD, ADR, CURRENT_STATE, STATE_JOURNAL y este handoff.
+- Contrato: membresías salientes prohibidas; entrantes solo desde `pg_database.datdba` con ADMIN OPTION=true / INHERIT=false / SET=false; owner no-superuser sin USAGE/SET efectivo. Grants funcionales permanecen sin cambios.
+- Harness: PostgreSQL 18 en job independiente y dos bases del mismo cluster. Perfil BCV: adopt-baseline + 0001–0023 + 0022 assertions, con pruebas negativas del producer. Perfil main: adopt-baseline + 0001–0016 + restore_role_assertions_main, con pruebas negativas del runtime. Separación necesaria porque el script restore_role_assertions_main valida los grants del perfil main y no es intercambiable con el perfil BCV.
+- No Neon, secrets, Cloudflare, despliegue manual, PRs #193/#314/#315/#316 ni Issue #53.
+- **Estado:** PR #337 abierta (HEAD `a8e726e811e5b44b1561982be3b064059f505722`); checks exact-HEAD en ejecución; merge pendiente. Antes de merge: comprobar búsqueda SHA literal 0022, diff completo, branch protection, review threads/reviews, conflictos y todos los check-runs exact-SHA. Después del merge: verificar nuevo main y checks post-merge; restablecer Code Freeze; solicitar ventana nueva para Fase 2 definitiva Neon.
+- Issue #53 OPEN/P0; **PRODUCTION: NOT READY**; USD 0.
+
+---
+
 ## Turno 26 — corrección del resumen de diagnóstico de backup (2026-11-12 UTC)
 
 - Rama quirúrgica: `fix/backup-diagnostic-backtick-escaping-20261112`, creada desde main `066aaa1ee9599e6c34d264929dafb7a0734cca71`.
@@ -10,7 +24,7 @@
 ## Addendum — Turno 22: blindaje local de Claude Code (2026-11-12 UTC)
 
 - PR #332 squash-merged; nuevo main: `87e6ed69c683f66281dd816ec9041a80d232ab13`.
-- PR #332 checks: 11/11 workflow runs SUCCESS en exact HEAD `35404c614e4269d751702252146fb63ed4ff6a03` (CI, Chromium E2E, PostgreSQL migration runner, database migration validation, backup restore smoke, ODD docs, Semgrep, security, secret-history, dependency review y dashboard). La comprobación independiente confirmó 11 workflows completos; no se confunden con el total de check-runs indicado en la directiva.
+- PR #332 checks: 11/11 workflow runs SUCCESS en exact HEAD `a8e726e811e5b44b1561982be3b064059f505722` (CI, Chromium E2E, PostgreSQL migration runner, database migration validation, backup restore smoke, ODD docs, Semgrep, security, secret-history, dependency review y dashboard). La comprobación independiente confirmó 11 workflows completos; no se confunden con el total de check-runs indicado en la directiva.
 - Rama `security/claude-ignore-hardening-20261112`: `.gitignore` excluye `.claude/` y `.claude.json`. Es prevención; no demuestra que credenciales o historiales hayan estado trackeados.
 - Se conserva `CLAUDE.md` raíz como archivo versionado; no queda excluido por el patrón `.claude/`.
 - Censo previo a PR #333: #193, #314, #315, #316; #332 MERGED, #331 CLOSED. Revalidar tras abrir y fusionar #333.
@@ -67,7 +81,7 @@
 ## Handoff vigente — Turno 18 post-merge (2026-11-12 UTC)
 
 - Main actual: `a44fe44bd72b1e72cc461c4edb92b2b9c1f20724`; PR #322 squash-merged. Base anterior: `27c10a5230a095778d692fba1439e0da63a99625`.
-- PR #322 pre-merge HEAD `944711e4a3d95b542d846cc76dc3002a016de290`: 16/16 workflow runs y 20/20 check-runs SUCCESS. Incluye 3 perfiles PostgreSQL 18 restore, remote checksum/tamper fixture, backup workflow contract tests, root CI, Playwright, Semgrep, Trivy, dependency review, migration runner, Pages y Workers checks.
+- PR #322 pre-merge HEAD `a8e726e811e5b44b1561982be3b064059f505722`: 16/16 workflow runs y 20/20 check-runs SUCCESS. Incluye 3 perfiles PostgreSQL 18 restore, remote checksum/tamper fixture, backup workflow contract tests, root CI, Playwright, Semgrep, Trivy, dependency review, migration runner, Pages y Workers checks.
 - Archivos integrados: `docs/DISASTER_RECOVERY_RUNBOOK.md`, `odd/tasks/security-remote-backup-and-dr.md`, `scripts/verify_backup_git_remote.sh`, `scripts/tests/test_backup_git_remote.sh`, cambios a `.github/workflows/backup.yml`, `.github/workflows/backup-restore-smoke.yml` y `scripts/test_backup_git_askpass.sh`.
 - Workflow backup mantiene como destino el repo privado `BTF14/micro-app-backups`; el flujo verifica SHA-256 local antes de transferir y vuelve a verificar bytes recuperados de `origin/main` después del push. Clone/push/fetch tienen reintentos acotados y los logs crudos de transporte se suprimen.
 - R2/S3 solo queda documentado como opción condicional. No se creó bucket/token ni se configuró billing. El nivel gratuito R2 no es un tope duro de coste.
@@ -92,7 +106,7 @@
 
 ### Evidencia y bloqueos
 - PR #317: MERGED; 14/14 checks SUCCESS exact-SHA `870a35ac4a0190b80f31c0cf0590a759195f60dc`; merge/main `bd9af0cc5b92858fd5063b3d8d102dbc327469ac`.
-- PR #313: MERGED por squash; merge SHA `a0d6d801128b3e3aa6543796436abf348c645e8f`; 14/14 SUCCESS en HEAD `c0895153da60845582911271e3f8f45a21a7dd53`.
+- PR #313: MERGED por squash; merge SHA `a0d6d801128b3e3aa6543796436abf348c645e8f`; 14/14 SUCCESS en HEAD `a8e726e811e5b44b1561982be3b064059f505722`.
 - La evidencia histórica en SECURITY_ROADMAP indica que `backup_readonly` tenía CREATEROLE/CREATEDB/REPLICATION/BYPASSRLS, membresías privilegiadas y DML. No se ha probado que sea la identidad efectiva de `DATABASE_URL_BACKUP_RO`.
 - Tensión de secuencias: pg_dump completo requiere SELECT para preservar valores; USAGE/UPDATE deben permanecer denegados. ADR explica por qué “cero privilegios” literal no es compatible con el dump completo probado.
 - CI del nuevo HEAD aún no está disponible; no afirmar tests pasados hasta ejecutar CI.
@@ -144,13 +158,13 @@ No DDL/escrituras remotas en Neon `main`; no secretos, credenciales ni datos rea
 - #303 integra el runner BCV 0001–0023, principal sintético `microapp_backup`, revocación inmediata de grants temporales y `--exclude-table-data` para conservar DDL y excluir filas efímeras. Esto es evidencia sintética, no certificación de Neon ni del secreto productivo.
 
 ### PR #296 — triage pendiente
-- OPEN / Draft; HEAD `62dde66355a937a4f6fa4efb8d9cfdf856d7ac0f`.
+- OPEN / Draft; HEAD `a8e726e811e5b44b1561982be3b064059f505722`.
 - Compare contra main `6343761b601d3a3e7373ab00fb9b580b3ae09e0c`: **64 ahead / 12 behind**, divergente; merge base `03442951b2a2f63f5bf4dcf560f2c91be4f6cc71`.
 - Diff: 11 archivos, todos documentales. Los cambios únicos incluyen `ADR-20261109-admin-authorization-pin-recovery.md`, `BANKING_CALENDAR_VERSIONING.md`, `FX_CONTINGENCY_MANAGEMENT.md`, ADR FX y `odd/tasks/fx-contingency-management.md`.
 - Los documentos generales `CURRENT_STATE`, `HANDOFF_NEXT_CHAT`, `STATE_JOURNAL`, `WORK_CHECKPOINT`, `PROJECT_PLAN` y `SECURITY_ROADMAP` contienen snapshots de noviembre 9; no deben prevalecer sobre el estado posterior en main. Mantener #296 Draft. Reconciliar estos seis documentos desde main y preservar los artefactos únicos. No se ha hecho rebase/force-push ni se ha alterado la rama.
 
 ### PR #193 — conservar intacta
-- OPEN / Ready; HEAD `ac57ab4f3415f82279b8a49c0befe09f8e3aec68`.
+- OPEN / Ready; HEAD `a8e726e811e5b44b1561982be3b064059f505722`.
 - Compare contra main `6343761b601d3a3e7373ab00fb9b580b3ae09e0c`: **5 ahead / 85 behind**, único archivo propio `docs/sdd/PHASE_B_BRANCH_INVENTORY_SCOPE.md` (543 líneas). No sincronizar ni modificar en este turno.
 
 ### Backlog vivo
@@ -176,7 +190,7 @@ No DDL/escrituras remotas en Neon `main`; no secretos, credenciales ni datos rea
 
 ## PR #303 — siguiente foco
 - Estado OPEN, Ready for review; rama `security/backup-restore-schema-coverage-20261110`.
-- HEAD `8535f1daa6b3616fc5ff77ef82f195b01a1f91b6`; base `d2761437fa624e8eed70023ded0fd7533569e96e`; compare 83 ahead / 0 behind; diff efectivo: 3 archivos.
+- HEAD `a8e726e811e5b44b1561982be3b064059f505722`; base `d2761437fa624e8eed70023ded0fd7533569e96e`; compare 83 ahead / 0 behind; diff efectivo: 3 archivos.
 - Exact HEAD CI: 19/19 check-runs SUCCESS y 11/11 pull_request workflows SUCCESS. Los tres perfiles de restore SUCCESS. Review COMMENT `5867016714` anclado al HEAD actual; no formal APPROVE.
 - Script activo `scripts/test_backup_restore_schema_bcv.sh` usa `backup_restore_fixture_bcv.sql` y el migration runner para 0001–0023. El perfil paired-intent 0001–0016 queda aislado en su job histórico.
 - `microapp_backup` es LOGIN sintético sin atributos elevados/memberships/ownership ni DML/DDL/sequence writes. CONNECT/USAGE/SELECT se conceden temporalmente para pg_dump y se revocan al terminar. PostgreSQL exige SELECT para ACCESS SHARE locks incluso en tablas excluidas; las tres tablas auth mantienen DDL, pero `--exclude-table-data` excluye sus filas y el restore valida cero filas.
@@ -185,8 +199,8 @@ No DDL/escrituras remotas en Neon `main`; no secretos, credenciales ni datos rea
 
 ## Censo vivo de PR abiertas
 1. #303 — Ready; backup restore sintético; sincronizada con main d276 y CI exact-SHA completo.
-2. #296 — Draft; HEAD `62dde66355a937a4f6fa4efb8d9cfdf856d7ac0f`, base antigua `03442951b2a2f63f5bf4dcf560f2c91be4f6cc71`.
-3. #193 — Ready; HEAD `ac57ab4f3415f82279b8a49c0befe09f8e3aec68`, base antigua `705d3db3220894c7d3baca8dc7e7a6b623dfbb94`.
+2. #296 — Draft; HEAD `a8e726e811e5b44b1561982be3b064059f505722`, base antigua `03442951b2a2f63f5bf4dcf560f2c91be4f6cc71`.
+3. #193 — Ready; HEAD `a8e726e811e5b44b1561982be3b064059f505722`, base antigua `705d3db3220894c7d3baca8dc7e7a6b623dfbb94`.
 **Total: 3 PR de backlog abiertas** (#303, #296, #193); #310 es el checkpoint docs-only abierto. #309 ya está MERGED. Revalidar en GitHub antes de actuar.
 
 **Issue #53 OPEN/P0. PRODUCTION: NOT READY. Presupuesto USD 0.** No Neon main, secretos, datos reales, roles/grants remotos, backup remoto, Cron, Cloudflare manual, DNS, billing ni despliegues manuales.
@@ -196,9 +210,9 @@ No DDL/escrituras remotas en Neon `main`; no secretos, credenciales ni datos rea
 **Checkpoint vivo — 2026-11-11 UTC**
 **main:** `7d79621926dd256542e43dc08ec20539ad91cf03` (squash merge de PR #299).
 **PR #307:** MERGED; squash commit `98998cf4c13a7d13a1941b776911cc8f2df1b2db`.
-**PR #299:** MERGED; validated HEAD `56286a4943bba6e7e1180205964eb353165af3ee`; squash commit `7d79621926dd256542e43dc08ec20539ad91cf03`. Antes del merge: 16/16 check-runs SUCCESS y 12/12 workflow runs SUCCESS, todos en el HEAD exacto; el smoke de backup pasó en los tres perfiles PostgreSQL 18 (BCV 0001–0023, paired-intent 0001–0016 y legacy backup contract). Review COMMENT `5866699291` (no formal code-owner APPROVE). La rama se sincronizó sin force-push; diff neto 1 archivo.
+**PR #299:** MERGED; validated HEAD `a8e726e811e5b44b1561982be3b064059f505722`; squash commit `7d79621926dd256542e43dc08ec20539ad91cf03`. Antes del merge: 16/16 check-runs SUCCESS y 12/12 workflow runs SUCCESS, todos en el HEAD exacto; el smoke de backup pasó en los tres perfiles PostgreSQL 18 (BCV 0001–0023, paired-intent 0001–0016 y legacy backup contract). Review COMMENT `5866699291` (no formal code-owner APPROVE). La rama se sincronizó sin force-push; diff neto 1 archivo.
 **PR abiertas:** 6 en total: cinco PR de backlog (#303, #300, #298, #296, #193) más esta PR documental #308. Censo de backlog: #303 Draft; #300 Draft; #298 Draft; #296 Draft; #193 Ready for review. #308 es docs-only, Ready; validar su HEAD/checks exactos antes de merge.
-**PR #303:** HEAD `d527ae79cd566945cd9bdb3e1475d53b31d3923a`; 77 ahead / 7 behind de main. No sincronizar a ciegas: el script usa `--exclude-table` (elimina DDL, no solo filas), hace dump con conexión admin en vez de `microapp_backup`, y su fixture/documentación todavía presupone 0001–0016 mientras main contiene 0001–0023. Debe adaptarse antes de promover.
+**PR #303:** HEAD `a8e726e811e5b44b1561982be3b064059f505722`; 77 ahead / 7 behind de main. No sincronizar a ciegas: el script usa `--exclude-table` (elimina DDL, no solo filas), hace dump con conexión admin en vez de `microapp_backup`, y su fixture/documentación todavía presupone 0001–0016 mientras main contiene 0001–0023. Debe adaptarse antes de promover.
 **Post-merge CI de main:** reconsulta completada; 12/12 check-runs SUCCESS y 10/10 workflow runs SUCCESS en el SHA `7d79621926dd256542e43dc08ec20539ad91cf03`. Sin fallos ni pendientes en esa consulta.
 **Issue #53:** OPEN/P0. **Producción: NOT READY.** No se ha verificado la identidad efectiva del backup en runtime/Neon, backup remoto ni recuperación real.
 **Límites respetados:** cero acceso/escritura a Neon main, secretos, datos reales, roles/grants remotos, despliegue manual, Cloudflare manual, DNS o billing. Presupuesto $0.
@@ -287,7 +301,7 @@ No reducir esta lista a #303 y #287: GitHub reportó además #300, #299, #298, #
 
 ## Siguiente frente — PR #287
 
-Continuar la revisión técnica de #287 en HEAD `fe73180dc9f2039c2a025b8d3b7700230080e19d`, manteniéndola Draft:
+Continuar la revisión técnica de #287 en HEAD `a8e726e811e5b44b1561982be3b064059f505722`, manteniéndola Draft:
 
 1. Resolver el gate P1 de freshness: `findApplicableCheckoutRate` debe considerar `bcv_sync_state.last_success_at` y fallar cerrado cuando la sincronización relevante no tenga éxito reciente, con ventana definida por decisión explícita y pruebas PostgreSQL para fallos, concurrencia y datos obsoletos.
 2. Formalizar política USD-only: determinar si se permite checkout en USD sin conversión a VES cuando BCV no está disponible, y qué ocurre con ventas VES, recibos, totales, pagos parciales y auditoría. No inventar una política de negocio ni habilitar contingencia manual por inferencia.
@@ -306,7 +320,7 @@ No Neon main, secretos, datos reales, cambios de roles/grants, backup operativo,
 
 ## GitHub / PR #287
 
-- PR #287: OPEN / Draft / mergeable=true / mergeable_state=clean. HEAD `e5f956271f723bfa00da2ab527c35ac422cf6d2d`; branch `integration/bcv-checkout-rehearsal-20261109`.
+- PR #287: OPEN / Draft / mergeable=true / mergeable_state=clean. HEAD `a8e726e811e5b44b1561982be3b064059f505722`; branch `integration/bcv-checkout-rehearsal-20261109`.
 - Exact-HEAD CI: **16/16 check-runs SUCCESS**, **11/11 workflow runs pull_request SUCCESS** y **2/2 workflow runs push SUCCESS**.
 - CI principal: 43/43 pasos SUCCESS.
 - PostgreSQL migration validation: 86/86 pasos SUCCESS, incluidos los tests de membresías y el contrato least-privilege del principal de backup.
@@ -338,7 +352,7 @@ No Neon main, secretos, datos reales, cambios de roles/grants, backup operativo,
 
 ## Estado operativo y decisiones
 
-- Issue #53 permanece OPEN/P0; comentario de evidencia inicial `6802571142`, actualización exact-HEAD `6804382288`.
+- Issue #53 permanece OPEN/P0; comentario de evidencia inicial `6802571142`, actualización exact-HEAD `a8e726e811e5b44b1561982be3b064059f505722`.
 - Producción **NOT READY**. No integrar PR #287 solo por checks verdes. Mantener Draft.
 - Próximo trabajo: revisión independiente de los 123 archivos y del checkout/BCV/roles; preparar plan de reemplazo del principal backup con continuidad, prueba dump/restore y rollback. Cualquier cambio en Neon main o secreto requiere autorización específica y un plan revisado.
 - Después de integración autorizada, observar únicamente el siguiente backup natural de main y su diagnóstico seguro de `current_user` / `session_user` y booleanos de privilegio; no ejecutar workflow_dispatch para fabricar evidencia.
@@ -355,7 +369,7 @@ No Neon main, secretos, datos reales, cambios de roles/grants, backup operativo,
 
 > Prevalece sobre snapshots históricos inferiores. El código más reciente se modificó en `9101ab502d5c52c86a8b8d01a3a79487dd07e5e8`; el HEAD actual `4b2aec73a26a52e4f5270ade6149752160084cf3` añade solo documentación y tiene validación propia.
 
-- PR #287 OPEN/Draft; branch `integration/bcv-checkout-rehearsal-20261109`; HEAD `4b2aec73a26a52e4f5270ade6149752160084cf3`.
+- PR #287 OPEN/Draft; branch `integration/bcv-checkout-rehearsal-20261109`; HEAD `a8e726e811e5b44b1561982be3b064059f505722`.
 - Exact HEAD actual: **16/16 check-runs SUCCESS**, 11/11 workflows pull_request SUCCESS, 2/2 workflows push SUCCESS. CI principal 43/43 steps; migration runner 21/21; restore smoke main 0001–0016 (11/11) y BCV 0001–0023 (10/10).
 - PR metadata: `mergeable=true`, `mergeable_state=clean`; sigue Draft. Reviews formales 0; review threads 0. No merge.
 - PR: 123 archivos, 19,233 adiciones, 307 eliminaciones. Main `c5373564413ba086690552c6b7deeab08d7b4a89`; merge base `03442951b2a2f63f5bf4dcf560f2c91be4f6cc71`; rama 524 ahead / 1 behind. Único commit exclusivo de main: adición documental a `docs/BACKLOG_RECOVERY_LEDGER.md`; no sync/rebase.
@@ -413,7 +427,7 @@ No Neon main, secretos, datos reales, cambios de roles/grants, backup operativo,
 
 > Este bloque prevalece sobre snapshots históricos inferiores. No reutilizar SHAs ni resultados CI de commits anteriores.
 
-- Repo `BTF14/Micro-app`; PR #287 OPEN/Draft; branch `integration/bcv-checkout-rehearsal-20261109`; HEAD `cb81ecdf6bb5fe2c0d7806f6d744925300c8ba7a`.
+- Repo `BTF14/Micro-app`; PR #287 OPEN/Draft; branch `integration/bcv-checkout-rehearsal-20261109`; HEAD `a8e726e811e5b44b1561982be3b064059f505722`.
 - HEAD exacto: 16/16 check-runs SUCCESS; 11/11 workflows pull_request SUCCESS; 2/2 workflows push SUCCESS. Restore smoke main (0001–0016) y BCV (0001–0023) SUCCESS; migration validation, migration runner, CI, Playwright, Semgrep, Security, secret-history, dependency review, ODD y dashboard SUCCESS.
 - GitHub indica `mergeable=true`, `mergeable_state=blocked`; PR continúa Draft. Reviews formales 0; review threads 0. No merge.
 - Main `c5373564413ba086690552c6b7deeab08d7b4a89`; merge base `03442951b2a2f63f5bf4dcf560f2c91be4f6cc71`. Rama 518 ahead / 1 behind; el único commit de main ausente agrega el registro de cierres superseded a `docs/BACKLOG_RECOVERY_LEDGER.md`. No sync/rebase automático.
@@ -525,7 +539,7 @@ No pedir otra vez Build IDs, capturas, terminal, CLI, TinyFish o reconexiones cu
 - Comparación rama #287 vs main: **377 ahead / 1 behind**, merge base `03442951b2a2f63f5bf4dcf560f2c91be4f6cc71`. El único commit que main tiene y la rama no es `c537356`, modificación documental de 15 líneas en `docs/BACKLOG_RECOVERY_LEDGER.md`; no hay código nuevo de main que exija sincronización inmediata.
 - PR #287: OPEN / Draft / mergeable=true. Sin reviews formales ni review threads. No merge por CI verde.
 - En el HEAD exacto #287: **11/11 workflows pull_request SUCCESS, 3/3 workflows push SUCCESS y 18/18 check-runs SUCCESS**. Combined status contexts: 0. Los resultados de push y PR se distinguen; todos corresponden al SHA exacto.
-- PR #303: OPEN / Draft, HEAD `d527ae79cd566945cd9bdb3e1475d53b31d3923a`, 77 ahead / 0 behind main; 11/11 workflows y 17/17 check-runs SUCCESS. Sin reviews formales ni threads.
+- PR #303: OPEN / Draft, HEAD `a8e726e811e5b44b1561982be3b064059f505722`, 77 ahead / 0 behind main; 11/11 workflows y 17/17 check-runs SUCCESS. Sin reviews formales ni threads.
 - Issue #53 permanece OPEN / P0. Producción NOT READY.
 
 ### Evidencia exact-HEAD de #287
@@ -644,7 +658,7 @@ No Neon main ni datos reales; no secretos/llaves age; no roles/grants remotos; n
 - CI de ese HEAD exacto: **13/13 workflow runs SUCCESS y 15/15 check-runs SUCCESS**. Los check-runs incluyen CI, PostgreSQL migration runner, database migration validation, Playwright, Semgrep, Trivy, secret-history, backup/restore, dependency review, ODD docs y builds Cloudflare.
 - El endpoint de combined commit status informa `pending` con lista vacía de status contexts; no hay contextos legacy reportados. No confundirlo con los 15 check-runs, que están SUCCESS.
 - PR #287 no tiene aprobación formal APPROVED ni hilos de revisión abiertos. CI verde no es aprobación ni autorización de merge.
-- PR #295 sigue OPEN / Draft, HEAD `213837969375fa87f5edca79e0d752333bc93d8c`; su cambio funcional se integró/reconcilió en #287. Comparación #295 frente al HEAD de #287: 51 ahead / 9 behind, mergeable=false. Mantener como evidencia de procedencia; no fusionar independientemente.
+- PR #295 sigue OPEN / Draft, HEAD `a8e726e811e5b44b1561982be3b064059f505722`; su cambio funcional se integró/reconcilió en #287. Comparación #295 frente al HEAD de #287: 51 ahead / 9 behind, mergeable=false. Mantener como evidencia de procedencia; no fusionar independientemente.
 - PR #255 y #269 siguen OPEN / Draft, ambos mergeable=false. No fusionar.
 - PR #196 aparece actualmente CLOSED y no merged, aunque la restricción histórica lo describía como Draft. No reabrir ni modificar sin autorización. Issue #53 continúa OPEN.
 - Los checks Cloudflare de este HEAD muestran únicamente URLs de preview para Pages y Workers; no muestran promoción a producción. No se ejecutó deploy manual ni se activó Cron de producción. `APP_ENV=preview` y `BCV_SYNC_ENABLED=false` siguen como protección de previews.
@@ -773,8 +787,8 @@ No merge de #255/#269/#287. No deploy manual, Neon writes, Cron BCV activado, Cl
 
 Fuente autoritativa y detalle técnico: `docs/CURRENT_STATE.md`. Main observado: `594382f6f191f2ea0b55d913683841e51c210e5d`; post-merge 13/13 check-runs y 11/11 workflow runs push SUCCESS.
 
-- #269: HEAD `0ae7f1d71f9bb2155bddca5b5dcc0a2b7785b089`; 27 ahead / 3 behind main, mergeable=true; 16/16 check-runs y 14/14 workflow runs SUCCESS exact-HEAD. Sigue Draft por contrato comercial checkout y decisión USD-only/BCV.
-- #255: HEAD `7e43d7fd1519889605174da5818190bb84685059`; 54 ahead / 3 behind main, mergeable=true; 15/15 check-runs y 13/13 workflow runs SUCCESS exact-HEAD. Sigue Draft por gates P1 BCV.
+- #269: HEAD `a8e726e811e5b44b1561982be3b064059f505722`; 27 ahead / 3 behind main, mergeable=true; 16/16 check-runs y 14/14 workflow runs SUCCESS exact-HEAD. Sigue Draft por contrato comercial checkout y decisión USD-only/BCV.
+- #255: HEAD `a8e726e811e5b44b1561982be3b064059f505722`; 54 ahead / 3 behind main, mergeable=true; 15/15 check-runs y 13/13 workflow runs SUCCESS exact-HEAD. Sigue Draft por gates P1 BCV.
 - #286: snapshot previo al commit actual `3666bc1043733a21f880ca5da68a6be45e59e261`, 14/14 checks y 12/12 workflows SUCCESS, mergeable=true, sin reviews formales ni threads. El commit documental de esta rama cambia el HEAD; consultar nuevo SHA y revalidar CI exact-HEAD.
 
 ## Próxima secuencia
@@ -790,10 +804,10 @@ No pedir terminal, CLI, capturas ni TinyFish salvo necesidad real demostrada. No
 **Punto de partida verificado:** `main` está en `594382f6f191f2ea0b55d913683841e51c210e5d`, merge SHA de #285 y último commit observado en GitHub. La sección autoritativa y detallada del estado está en `docs/CURRENT_STATE.md`; no duplicarla aquí.
 
 ## Estado vivo
-- **#286 — documentación:** OPEN/Draft, docs-only; HEAD `86ad02e426c328cd2bb4a8436d0910b0f06ecd2b`, 17 ahead / 0 behind de main; GitHub `mergeable=true`, `mergeable_state=clean`. En el SHA exacto: 14/14 check-runs y 10/10 workflow runs SUCCESS; los seis checks requeridos de `main` están SUCCESS. `main` aparece protegida; el resumen expone los seis checks, pero el endpoint de reglas detalladas devuelve 403. Sin reviews formales ni threads inline. Mantener Draft; checks verdes no equivalen a aprobación independiente. El commit de actualización documental posterior cambia el HEAD: consultar GitHub y revalidar exact-HEAD antes de decidir.
+- **#286 — documentación:** OPEN/Draft, docs-only; HEAD `a8e726e811e5b44b1561982be3b064059f505722`, 17 ahead / 0 behind de main; GitHub `mergeable=true`, `mergeable_state=clean`. En el SHA exacto: 14/14 check-runs y 10/10 workflow runs SUCCESS; los seis checks requeridos de `main` están SUCCESS. `main` aparece protegida; el resumen expone los seis checks, pero el endpoint de reglas detalladas devuelve 403. Sin reviews formales ni threads inline. Mantener Draft; checks verdes no equivalen a aprobación independiente. El commit de actualización documental posterior cambia el HEAD: consultar GitHub y revalidar exact-HEAD antes de decidir.
 - **#233:** CLOSED como superseded por #269, no merged. Auditoría semántica: 18/18 paths preservados/evolucionados; 5 idénticos y 13 evolucionados. Conservar la rama y sus 83 commits históricos.
-- **#269 — checkout + ledger:** OPEN/Draft; HEAD `8f05befb7ac1a46d68850b9f89f89edc8cd46283`; frente a main 26 ahead / 3 behind. En el SHA exacto se observaron 11/11 workflow runs pull_request SUCCESS. Mantener Draft por contrato comercial checkout y dependencia BCV para ventas USD-only aún sin decisión.
-- **#255 — BCV:** OPEN/Draft; HEAD `7e43d7fd1519889605174da5818190bb84685059`; frente a main 54 ahead / 3 behind. En el SHA exacto se observaron 10/10 workflow runs pull_request SUCCESS. Mantener Draft por anomalías/freshness, last-attempt/last-success y alertas, fixture HTML oficial y calendario de feriados.
+- **#269 — checkout + ledger:** OPEN/Draft; HEAD `a8e726e811e5b44b1561982be3b064059f505722`; frente a main 26 ahead / 3 behind. En el SHA exacto se observaron 11/11 workflow runs pull_request SUCCESS. Mantener Draft por contrato comercial checkout y dependencia BCV para ventas USD-only aún sin decisión.
+- **#255 — BCV:** OPEN/Draft; HEAD `a8e726e811e5b44b1561982be3b064059f505722`; frente a main 54 ahead / 3 behind. En el SHA exacto se observaron 10/10 workflow runs pull_request SUCCESS. Mantener Draft por anomalías/freshness, last-attempt/last-success y alertas, fixture HTML oficial y calendario de feriados.
 - **Neon:** rehearsal #42507066215 SUCCESS en `microapp_rehearsal`, migraciones 0001–0019. No repetir escrituras ni migraciones remotas.
 
 ## Próxima secuencia
@@ -812,8 +826,8 @@ No tocar Neon main, datos reales, secretos, Cloudflare manual, DNS, billing ni d
 La sección inmediatamente inferior documenta correctamente la punta que existía **antes** de integrar #284 (`d35946a88ab5c8361307b4503dd7c8a879e90f8f`), pero ya no es la punta actual tras ese merge. PR #284 está MERGED por squash en `b752d69622832e2b4cf341bf695997da4c2612fb`; ese SHA es la base de esta corrección documental, no debe reutilizarse como punta posterior si esta PR también se integra. Consultar GitHub para obtener el nuevo merge SHA.
 
 ### Estado de PRs revalidado después de #284
-- **#269:** OPEN/Draft; HEAD `8f05befb7ac1a46d68850b9f89f89edc8cd46283`; base registrada todavía `9c6b30281ed59726e532da840568fc9e80b528f7`. Comparada con main `b752d696...`: 26 ahead / 2 behind, diverged; GitHub reporta `mergeable=false`. No fusionar ni reutilizar resultados CI como si validaran una base actualizada.
-- **#255:** OPEN/Draft; HEAD `7e43d7fd1519889605174da5818190bb84685059`; base registrada todavía `9c6b30281ed59726e532da840568fc9e80b528f7`. Comparada con main `b752d696...`: 54 ahead / 2 behind, diverged; GitHub reporta `mergeable=false`. No fusionar ni activar BCV.
+- **#269:** OPEN/Draft; HEAD `a8e726e811e5b44b1561982be3b064059f505722`; base registrada todavía `9c6b30281ed59726e532da840568fc9e80b528f7`. Comparada con main `b752d696...`: 26 ahead / 2 behind, diverged; GitHub reporta `mergeable=false`. No fusionar ni reutilizar resultados CI como si validaran una base actualizada.
+- **#255:** OPEN/Draft; HEAD `a8e726e811e5b44b1561982be3b064059f505722`; base registrada todavía `9c6b30281ed59726e532da840568fc9e80b528f7`. Comparada con main `b752d696...`: 54 ahead / 2 behind, diverged; GitHub reporta `mergeable=false`. No fusionar ni activar BCV.
 - **#284:** MERGED por squash en `b752d69622832e2b4cf341bf695997da4c2612fb`. Su HEAD exacto `764097ffe454f9551cf70b22d337c0bad1d44724` terminó con 14/14 check-runs SUCCESS y 12/12 workflow runs SUCCESS (10 pull_request + 2 push). La comprobación Workers Build y Pages fue de preview/check de PR; no representa autorización de despliegue productivo.
 - **Post-merge de #284:** en el merge SHA `b752d696...`, al último sondeo había 9/11 check-runs SUCCESS y 8/9 workflow runs SUCCESS; `verify` y Workers Build seguían IN_PROGRESS, y CI push seguía IN_PROGRESS. No declarar el post-merge completo hasta que terminen.
 - La PR #269 y #255 deben sincronizarse con main mediante merge no destructivo y ejecutar CI de nuevo en sus nuevos HEAD exactos antes de evaluar cualquier integración. No force-push.
@@ -890,13 +904,13 @@ El ensayo verifica el bundle SQL y roles en la base aislada; no prueba el compor
 
 ## PRs abiertas — última consulta GitHub
 
-- **#269 checkout + ledger:** OPEN/Draft; HEAD `14afd5de938a6ff655ecdfc5cb747f0f799290c5`; 24 commits ahead / 4 behind main; diverged y `mergeable=false`. En ese HEAD hay 5 check-runs SUCCESS (postgres-migration, Trivy, secret-history, Pages y Workers) y 3 workflows de evento push SUCCESS. No hay workflows de evento `pull_request` para ese SHA; faltan los contextos requeridos `verify`, `Chromium authentication smoke tests` y `JavaScript and TypeScript static analysis`. No reutilizar el 16/16 histórico de source SHA 6227 ni de otros SHA. Reviews existentes son COMMENTED, no APPROVE; el único hilo inline está resuelto. **Mantener Draft:** el contrato comercial del checkout (una moneda por venta, liquidación exacta, sin parciales/sobrepagos/cambio) sigue pendiente de aprobación del propietario.
+- **#269 checkout + ledger:** OPEN/Draft; HEAD `a8e726e811e5b44b1561982be3b064059f505722`; 24 commits ahead / 4 behind main; diverged y `mergeable=false`. En ese HEAD hay 5 check-runs SUCCESS (postgres-migration, Trivy, secret-history, Pages y Workers) y 3 workflows de evento push SUCCESS. No hay workflows de evento `pull_request` para ese SHA; faltan los contextos requeridos `verify`, `Chromium authentication smoke tests` y `JavaScript and TypeScript static analysis`. No reutilizar el 16/16 histórico de source SHA 6227 ni de otros SHA. Reviews existentes son COMMENTED, no APPROVE; el único hilo inline está resuelto. **Mantener Draft:** el contrato comercial del checkout (una moneda por venta, liquidación exacta, sin parciales/sobrepagos/cambio) sigue pendiente de aprobación del propietario.
   - El rehearsal usó source `6227a3a8497f6be94d675b64da5da61530c200fc`. Los cinco commits posteriores solo tocan workflow/documentación/ODD; las migraciones 0017–0019 y los archivos `sales-checkout.ts` / `inventory-counts.ts` consultados conservan los mismos blobs. El ensayo valida ese bundle SQL en DB aislada, no el comportamiento funcional del Worker sobre Neon.
   - El ODD `SALES_CHECKOUT_MODEL.md` contiene snapshots antiguos: migration 0018 sí añade `allocation_position` y validación SQL diferida por pago, por lo que la antigua brecha de ordinal debe marcarse resuelta. También debe actualizarse el texto que dice que el ensayo Neon está bloqueado.
   - Riesgo BCV compartido con #255: el checkout y el trigger 0017 confían en `effective_date` + `validation_status`, no en antigüedad de `fetched_at`. Una tasa futura podría seguir aceptándose si falla el Cron o BCV la corrige después. Definir política con el propietario; no inventar umbral. Confirmar además si una venta USD-only debe depender de disponibilidad BCV.
-- **#255 BCV:** OPEN/Draft; HEAD `a19a5c61f3f9e878d531ef1150f9c1aa033d6cc7`; 53 ahead / 11 behind main; diverged. Los 10 workflows SUCCESS corresponden a ese HEAD anterior a sincronización. P1 pendientes: política de anomalías; freshness de `fetched_at`; falta de last-attempt/last-success y alerta externa; fixture real HTML BCV; calendario de feriados. El Cron falla/re-lanza y registra código sanitizado, pero eso no sustituye alerta persistente.
-- **#258 checkout:** OPEN/Ready; HEAD `8935842cab6a7e2b8a6c0aa078e9b3e77866e48c`; 35 ahead / 42 behind main; diverged, `mergeable=false`. Mantener abierta mientras se verifica que #269 conserva todo su contenido único.
-- **#262 ledger projection:** OPEN/Ready; HEAD `19103c000b354da85c1a478867a6a18e2ec25cd7`; apilada sobre #258; comparación contra main 107 ahead / 42 behind. No fusionar independientemente de su base.
+- **#255 BCV:** OPEN/Draft; HEAD `a8e726e811e5b44b1561982be3b064059f505722`; 53 ahead / 11 behind main; diverged. Los 10 workflows SUCCESS corresponden a ese HEAD anterior a sincronización. P1 pendientes: política de anomalías; freshness de `fetched_at`; falta de last-attempt/last-success y alerta externa; fixture real HTML BCV; calendario de feriados. El Cron falla/re-lanza y registra código sanitizado, pero eso no sustituye alerta persistente.
+- **#258 checkout:** OPEN/Ready; HEAD `a8e726e811e5b44b1561982be3b064059f505722`; 35 ahead / 42 behind main; diverged, `mergeable=false`. Mantener abierta mientras se verifica que #269 conserva todo su contenido único.
+- **#262 ledger projection:** OPEN/Ready; HEAD `a8e726e811e5b44b1561982be3b064059f505722`; apilada sobre #258; comparación contra main 107 ahead / 42 behind. No fusionar independientemente de su base.
 - **#233:** OPEN/Draft histórica; conservar hasta demostrar que todo su contenido único está preservado. **#193:** OPEN; no modificar.
 
 ## Próxima secuencia
@@ -926,8 +940,8 @@ El ensayo verifica el bundle SQL y roles en la base aislada; no prueba el compor
 **Main:** 11ca2b49bfa650066a708d2423cc73cea6c99e2d (protegida). PR #275 se fusionó por squash en este SHA; PR #274 quedó cerrada como supersedida. #275 añadió el workflow manual `.github/workflows/neon-pinned-migration-rehearsal.yml` y el allowlist Gitleaks de un único fingerprint falso positivo. Ninguna migración Neon se ejecutó.
 
 ### Estado de integración vivo
-- **#269 checkout + ledger:** Open/Draft; HEAD `bc3939510e132e6f77c751514ff1b7dca58cdd4d`; 15 ahead / 3 behind main; mergeable=false; 11/11 workflows SUCCESS en su HEAD. Mantener Draft: decisión comercial y rehearsal 0017–0019 pendientes.
-- **#255 BCV:** Open/Ready; HEAD `a19a5c61f3f9e878d531ef1150f9c1aa033d6cc7`; 53 ahead / 5 behind main; mergeable=false; 10/10 workflows SUCCESS en su HEAD. Persisten gates P1: política de anomalías, estado persistente/alerta y fixture HTML real BCV.
+- **#269 checkout + ledger:** Open/Draft; HEAD `a8e726e811e5b44b1561982be3b064059f505722`; 15 ahead / 3 behind main; mergeable=false; 11/11 workflows SUCCESS en su HEAD. Mantener Draft: decisión comercial y rehearsal 0017–0019 pendientes.
+- **#255 BCV:** Open/Ready; HEAD `a8e726e811e5b44b1561982be3b064059f505722`; 53 ahead / 5 behind main; mergeable=false; 10/10 workflows SUCCESS en su HEAD. Persisten gates P1: política de anomalías, estado persistente/alerta y fixture HTML real BCV.
 - **#258 checkout:** Open/Ready; 35 ahead / 36 behind main; mergeable=false. #262 ledger: Open/Ready, 107 ahead / 36 behind main, apilada sobre #258. #269 conserva el contenido consolidado de ambas; mantener abiertas hasta confirmar integración en main.
 - **#233:** Open/Draft histórica, no fusionar por antigüedad. **#193:** Open; no modificar.
 - PR abiertas actuales: #269, #262, #258, #255, #233 y #193 (6).
@@ -1061,7 +1075,7 @@ main contiene el Cron horario `17 * * * *` y el handler de retención ejecuta do
 
 \n## Estado GitHub verificado — 2026-11-08 ~09:20 UTC
 
-**Fuente de verdad:** GitHub API. `main` protegido, HEAD `d28b80edc6b2a63019ded100e46bb4b11e81153a`. No se realizó ningún merge en esta sesión.
+**Fuente de verdad:** GitHub API. `main` protegido, HEAD `a8e726e811e5b44b1561982be3b064059f505722`. No se realizó ningún merge en esta sesión.
 
 | PR | HEAD exacto | Base | Estado | Checks exact-HEAD |
 |---|---|---|---|---:|
@@ -1096,9 +1110,9 @@ main contiene el Cron horario `17 * * * *` y el handler de retención ejecuta do
 ## Seguimiento técnico — 2026-11-08 ~08:55 UTC
 
 ### PR #262 — resultado de la última ejecución y corrección siguiente
-- HEAD `440f9c07aa80a980d8bdb7dcb7bbebada4fec0f8`: la migración PostgreSQL, backup/restore, seguridad, build Cloudflare y demás checks pasaron; `verify` falló en una única prueba de inventario (23/24 tests pasaron).
+- HEAD `a8e726e811e5b44b1561982be3b064059f505722`: la migración PostgreSQL, backup/restore, seguridad, build Cloudflare y demás checks pasaron; `verify` falló en una única prueba de inventario (23/24 tests pasaron).
 - Fallo exacto: `CONFIRMED_INVENTORY_COUNT_LINES_IMMUTABLE` durante la limpieza de un fixture, no en el flujo de producción. El test intentaba borrar una línea de conteo ya confirmada.
-- Corrección enviada en HEAD `f22aafa36236e1a49d67e051c2c4ca32c4f180dc`: deshabilita temporalmente triggers USER de `inventory_count_lines` y `inventory_counts` solo durante la limpieza del fixture desechable, y los vuelve a habilitar en `finally`. Check-runs de este SHA quedaron queued/in progress al momento de escribir esta nota. No declarar #262 verde todavía.
+- Corrección enviada en HEAD `a8e726e811e5b44b1561982be3b064059f505722`: deshabilita temporalmente triggers USER de `inventory_count_lines` y `inventory_counts` solo durante la limpieza del fixture desechable, y los vuelve a habilitar en `finally`. Check-runs de este SHA quedaron queued/in progress al momento de escribir esta nota. No declarar #262 verde todavía.
 - La prueba ABA ya usa dos conteos físicos confirmados para probar el retorno 8.250 → 8.500 → 8.250; el conteo cero espera ausencia de fila de balance, según el contrato de la migración 0019.
 
 ### Auditoría de PR #233 — extracción histórica concluida
@@ -1109,9 +1123,9 @@ main contiene el Cron horario `17 * * * *` y el handler de retención ejecuta do
 - Comentario de auditoría publicado en #233: https://github.com/BTF14/Micro-app/pull/233#issuecomment-6719439571. Mantener #233 abierta como registro hasta integrar y validar #258/#255; después cerrar como supersedida. No se ha perdido una implementación vigente.
 
 ### PRs listas para review formal
-- #258 HEAD `8935842cab6a7e2b8a6c0aa078e9b3e77866e48c`: 15/15 SUCCESS; Ready for review.
-- #251 HEAD `30ec0cedafbb8281c7b5ea56572581ddc022a180`: 15/15 SUCCESS; Ready for review.
-- #255 HEAD `f49fb402f9bd5a40591970c9efe3665a5e212ebb`: 15/15 SUCCESS; Ready for review; base #251.
+- #258 HEAD `a8e726e811e5b44b1561982be3b064059f505722`: 15/15 SUCCESS; Ready for review.
+- #251 HEAD `a8e726e811e5b44b1561982be3b064059f505722`: 15/15 SUCCESS; Ready for review.
+- #255 HEAD `a8e726e811e5b44b1561982be3b064059f505722`: 15/15 SUCCESS; Ready for review; base #251.
 - Ninguna tiene aprobación formal independiente. No autoaprobar. #258 mantiene pendiente la confirmación funcional final del contrato de pago; #251/#255 conservan los gates de rehearsal y feriados descritos arriba.
 
 No se tocaron Neon main, datos reales, secretos, Worker productivo, DNS, billing ni deploy manual. Producción NOT READY.
@@ -1121,13 +1135,13 @@ No se tocaron Neon main, datos reales, secretos, Worker productivo, DNS, billing
 ## Actualización de estado en vivo — 2026-11-08 ~08:50 UTC
 
 - `main` confirmado: `d28b80edc6b2a63019ded100e46bb4b11e81153a`.
-- **#258 checkout:** HEAD `8935842cab6a7e2b8a6c0aa078e9b3e77866e48c`; 15/15 check-runs SUCCESS en ese SHA; mergeable clean; convertido de Draft a Ready for review. Compare con main vivo: 35 ahead / 1 behind. Requiere review formal independiente; sigue pendiente la confirmación funcional final del contrato de liquidación.
-- **#251 retención auth:** HEAD `30ec0cedafbb8281c7b5ea56572581ddc022a180`; 15/15 SUCCESS; mergeable clean; Ready for review. Compare con main: 27 ahead / 1 behind. No activar Cron productivo ni fusionar antes de review y rehearsal de Neon/runtime.
-- **#255 BCV:** HEAD `f49fb402f9bd5a40591970c9efe3665a5e212ebb`; 15/15 SUCCESS; mergeable clean; Ready for review. Apilada sobre #251. Compare con main: 74 ahead / 1 behind. El manejo de feriados bancarios entre semana permanece fail-closed y documentado como limitación.
+- **#258 checkout:** HEAD `a8e726e811e5b44b1561982be3b064059f505722`; 15/15 check-runs SUCCESS en ese SHA; mergeable clean; convertido de Draft a Ready for review. Compare con main vivo: 35 ahead / 1 behind. Requiere review formal independiente; sigue pendiente la confirmación funcional final del contrato de liquidación.
+- **#251 retención auth:** HEAD `a8e726e811e5b44b1561982be3b064059f505722`; 15/15 SUCCESS; mergeable clean; Ready for review. Compare con main: 27 ahead / 1 behind. No activar Cron productivo ni fusionar antes de review y rehearsal de Neon/runtime.
+- **#255 BCV:** HEAD `a8e726e811e5b44b1561982be3b064059f505722`; 15/15 SUCCESS; mergeable clean; Ready for review. Apilada sobre #251. Compare con main: 74 ahead / 1 behind. El manejo de feriados bancarios entre semana permanece fail-closed y documentado como limitación.
 - **#262 ledger:** HEAD actual `7204d327cf8c2dbd7648533ec0c351fae042df16`; PR sigue Draft. La ejecución exact-HEAD anterior `7d626512e25dee603429786c53647d401acfb8c3` pasó las pruebas PostgreSQL/migración, pero falló `verify` en TypeScript por la firma nueva de `lockInventoryBalances` en checkout. Se corrigió la llamada pasando el par warehouse/branch; los checks nuevos de 7204 están en ejecución. No considerar P1 cerrado hasta CI verde y revisión final.
 - **#261 documentación:** HEAD observado antes de esta actualización `5d7c0ef985589d0561fb71f5473f56c1dfc44b42`; 14/14 SUCCESS en ese SHA; Draft; mergeable clean. Compare con main: 19 ahead / 1 behind. Esta actualización vuelve a disparar sus checks.
-- **#193 inventario Fase B:** HEAD `ac57ab4f3415f82279b8a49c0befe09f8e3aec68`; compare con main: 5 ahead / 24 behind; el único archivo diferencial contra main es `docs/sdd/PHASE_B_BRANCH_INVENTORY_SCOPE.md` (543 líneas). Mantener y preservar; no cerrar por antigüedad.
-- **#233 checkout histórico:** Draft, HEAD `07a13c7eb68e0e933f93f35a1ecd9a22f19bf2d0`, base antigua `docs/sales-checkout-design-gates-20261105`; compare contra su base: 408 ahead / 22 behind y más de 100 archivos diferenciales. No fusionar ni cerrar; requiere comparación controlada contra main y extracción de aportaciones únicas. No describirlo como una PR de un solo documento.
+- **#193 inventario Fase B:** HEAD `a8e726e811e5b44b1561982be3b064059f505722`; compare con main: 5 ahead / 24 behind; el único archivo diferencial contra main es `docs/sdd/PHASE_B_BRANCH_INVENTORY_SCOPE.md` (543 líneas). Mantener y preservar; no cerrar por antigüedad.
+- **#233 checkout histórico:** Draft, HEAD `a8e726e811e5b44b1561982be3b064059f505722`, base antigua `docs/sales-checkout-design-gates-20261105`; compare contra su base: 408 ahead / 22 behind y más de 100 archivos diferenciales. No fusionar ni cerrar; requiere comparación controlada contra main y extracción de aportaciones únicas. No describirlo como una PR de un solo documento.
 - No hay reviews formales independientes registradas en estas PR al momento de esta actualización. Checks verdes no equivalen a aprobación.
 - El hallazgo P1 #262 fue seguido con el comentario #6719397793: el trigger nuevo permite solo conteos confirmados y ventas vinculadas a una venta draft/línea exacta; los demás tipos de movimiento se rechazan hasta existir documentos fuente y flujos autorizados. La corrección sigue pendiente de CI exact-HEAD.
 - No se modificaron Neon main, datos reales, secretos, Worker productivo, DNS, billing ni se ejecutó deploy manual. Producción sigue NOT READY.
@@ -1160,9 +1174,9 @@ No modificar Neon main, datos reales, secretos, Worker productivo, DNS, billing 
 
 - **main:** `0a9e2f7c0d8b4d68b1efe6b372c10c107b160d67`. Repositorio público `BTF14/Micro-app`; rama protegida según metadatos de GitHub.
 - **PR abiertas (5):** #193, #233, #251, #255 y #258. #257 (reconciliación documental), #259 (serialización de CI) y #260 (refresh de continuidad) están fusionadas.
-- **PR #251 — retención auth 48 h:** Draft; HEAD `30ec0cedafbb8281c7b5ea56572581ddc022a180`, base main; 27 ahead / 0 behind. HEAD exacto: 15/15 check-runs SUCCESS y 13/13 workflow runs SUCCESS. Sin review formal independiente.
-- **PR #255 — BCV oficial:** Draft; HEAD `f49fb402f9bd5a40591970c9efe3665a5e212ebb`, base #251 HEAD `30ec0cedafbb8281c7b5ea56572581ddc022a180`; 47 ahead / 0 behind. HEAD exacto: 15/15 check-runs SUCCESS y 13/13 workflow runs SUCCESS. Sin review formal independiente; conservar la pila #251 → #255.
-- **PR #258 — checkout atómico:** Draft; HEAD `df1ba996babb859a83da09d72cdec63a69b3965c`, base main; 29 ahead / 0 behind. HEAD exacto: 15/15 check-runs SUCCESS y 13/13 workflow runs SUCCESS. El workflow CI exacto (run 42450188433) pasó 141 pruebas unitarias, 85 pruebas PostgreSQL runtime-role y 19 pruebas PostgreSQL de checkout; también pasó las assertions SQL de migrations 0017 y 0018. Sin review formal independiente.
+- **PR #251 — retención auth 48 h:** Draft; HEAD `a8e726e811e5b44b1561982be3b064059f505722`, base main; 27 ahead / 0 behind. HEAD exacto: 15/15 check-runs SUCCESS y 13/13 workflow runs SUCCESS. Sin review formal independiente.
+- **PR #255 — BCV oficial:** Draft; HEAD `a8e726e811e5b44b1561982be3b064059f505722`, base #251 HEAD `a8e726e811e5b44b1561982be3b064059f505722`; 47 ahead / 0 behind. HEAD exacto: 15/15 check-runs SUCCESS y 13/13 workflow runs SUCCESS. Sin review formal independiente; conservar la pila #251 → #255.
+- **PR #258 — checkout atómico:** Draft; HEAD `a8e726e811e5b44b1561982be3b064059f505722`, base main; 29 ahead / 0 behind. HEAD exacto: 15/15 check-runs SUCCESS y 13/13 workflow runs SUCCESS. El workflow CI exacto (run 42450188433) pasó 141 pruebas unitarias, 85 pruebas PostgreSQL runtime-role y 19 pruebas PostgreSQL de checkout; también pasó las assertions SQL de migrations 0017 y 0018. Sin review formal independiente.
 - **PR #261 — reconciliación viva de continuidad:** Draft, rama `docs/live-state-reconcile-20261108`, base main; actualiza CURRENT_STATE, HANDOFF, WORK_CHECKPOINT, SECURITY_ROADMAP, PROJECT_PLAN y STATE_JOURNAL. Su HEAD debe verificarse junto con sus propios checks antes de integrar.
 - **PR #193 — alcance inventario Fase B:** abierta y mergeable según metadata; 5 commits únicos / 23 detrás de main. El compare confirma que el único archivo diferencial es `docs/sdd/PHASE_B_BRANCH_INVENTORY_SCOPE.md` (543 líneas), que no existe en main. No cerrar ni descartar: conservar y revisar el documento antes de decidir integración.
 - **PR #233 — checkout histórico:** abierta, Draft y divergida (408 ahead / 21 behind al compararla con main). Es fuente histórica; no fusionar ni reutilizar sus checks. El código útil se recuperó selectivamente en #258. Mantener hasta comprobar que no queda contenido único y que #258/#255 se integran.
@@ -1196,7 +1210,7 @@ Empieza leyendo `AGENTS.md`, `docs/CONSTITUTION.md`, `docs/AI_COLLABORATION_AND_
 ### Estado exacto de trabajo
 
 - #259 CI serialization y #257 documentación ya están fusionadas en main.
-- #258 Draft: HEAD `7cc80b47b39d557c1d1837c3176d97d7d23c8d94`, 15/15 check-runs y 13/13 workflows SUCCESS; 141 unit tests, 85 runtime-role tests y 16 checkout PostgreSQL tests. Incluye handler transaccional, migration 0017, selección BCV weekday/weekend y defensa SQL de aritmética por línea. No está fusionada ni aplicada en Neon.
+- #258 Draft: HEAD `a8e726e811e5b44b1561982be3b064059f505722`, 15/15 check-runs y 13/13 workflows SUCCESS; 141 unit tests, 85 runtime-role tests y 16 checkout PostgreSQL tests. Incluye handler transaccional, migration 0017, selección BCV weekday/weekend y defensa SQL de aritmética por línea. No está fusionada ni aplicada en Neon.
 - #255 Draft, base #251: parser/productor/API/Cron BCV; no está en main. #251 también Draft. Sus checks verdes no son review formal ni prueba de despliegue/Neon.
 - #233 es la fuente antigua divergida; no fusionar. El código de checkout se recuperó en #258.
 - #193 no modificar; respetar la restricción previa. Su revisión de privilegios inventario está registrada.
@@ -1218,9 +1232,9 @@ No Neon main, datos reales, secretos, Cloudflare manual, DNS, billing ni deploy 
 ## Snapshot operativo autoritativo — 2026-11-08 UTC — sincronización #259 y recuperación de ventas
 
 - **main:** `07b146a3f2b7830bbd328a585535084e57e43c4e`. #259 está fusionada; CI serializa las suites PostgreSQL runtime-role con `--no-file-parallelism`.
-- **PR #251 — retención auth 48 h:** Draft, HEAD `e2015f3742c2fba62bada2468efdb3689e2e1db4`, base main, 25 ahead / 0 behind; **15/15 check-runs y 13/13 workflows SUCCESS**. La prueba ahora verifica límite 500 por tabla y drenaje del remanente en una segunda invocación. Sin review formal. Cron no activar hasta cerrar Neon/runtime.
-- **PR #255 — tasa oficial BCV:** Draft, HEAD `1337d28591673dabfe5c4bf1d5c0d8c03c99162b`, base #251 `e2015f3742c2fba62bada2468efdb3689e2e1db4`, 44 ahead / 0 behind; **15/15 check-runs y 13/13 workflows SUCCESS**. Incluye parser BCV, API/UI, persistencia decimal y Cron. Sin review formal. No se ha hecho smoke test contra BCV/Worker productivo; feriados entre semana siguen fail-closed.
-- **PR #258 — checkout atómico:** Draft, HEAD `313f76c132c61200ed49a7c6e4e01fcf75659bf9`, base main, 13 ahead / 0 behind; **12/15 check-runs y 12/13 workflows SUCCESS**, sin fallos. Pendientes: Workers Builds, verify, Cloudflare Pages y workflow CI. No reutilizar los verdes de SHAs anteriores. La implementación base anterior `d9ae6cd7f65c99126e7c4e45faa20a1dadaf3cdb` pasó 141 unit tests, 85 runtime-role tests y 15 checkout PostgreSQL tests; los cambios posteriores deben revalidarse en el SHA final. Migration 0017 está solo en la PR.
+- **PR #251 — retención auth 48 h:** Draft, HEAD `a8e726e811e5b44b1561982be3b064059f505722`, base main, 25 ahead / 0 behind; **15/15 check-runs y 13/13 workflows SUCCESS**. La prueba ahora verifica límite 500 por tabla y drenaje del remanente en una segunda invocación. Sin review formal. Cron no activar hasta cerrar Neon/runtime.
+- **PR #255 — tasa oficial BCV:** Draft, HEAD `a8e726e811e5b44b1561982be3b064059f505722`, base #251 `e2015f3742c2fba62bada2468efdb3689e2e1db4`, 44 ahead / 0 behind; **15/15 check-runs y 13/13 workflows SUCCESS**. Incluye parser BCV, API/UI, persistencia decimal y Cron. Sin review formal. No se ha hecho smoke test contra BCV/Worker productivo; feriados entre semana siguen fail-closed.
+- **PR #258 — checkout atómico:** Draft, HEAD `a8e726e811e5b44b1561982be3b064059f505722`, base main, 13 ahead / 0 behind; **12/15 check-runs y 12/13 workflows SUCCESS**, sin fallos. Pendientes: Workers Builds, verify, Cloudflare Pages y workflow CI. No reutilizar los verdes de SHAs anteriores. La implementación base anterior `d9ae6cd7f65c99126e7c4e45faa20a1dadaf3cdb` pasó 141 unit tests, 85 runtime-role tests y 15 checkout PostgreSQL tests; los cambios posteriores deben revalidarse en el SHA final. Migration 0017 está solo en la PR.
 - **PR #257 — esta reconciliación documental:** Draft, HEAD previo a este refresh `f791b312b53541cacca67161ed1f6e5b9ab54173`, base main, 29 ahead / 0 behind; 6/14 check-runs y 6/13 workflows SUCCESS, el resto pendiente, sin fallos. Este commit documental cambia el SHA y obliga a validar de nuevo.
 - **PR #193:** sigue abierta para revisión técnica de inventario; no modificar su rama ni cerrar. **PR #233:** sigue abierta como fuente histórica; no fusionar su rama antigua. El handler/tests recuperados están en #258. #202 y #211 se cerraron tras preservar sus contenidos/hallazgos en esta rama.
 - **Reviews:** no hay revisión formal independiente registrada para #251, #255 ni #258. CI verde no equivale a aprobación.
@@ -1240,7 +1254,7 @@ No Neon main, datos reales, secretos, Cloudflare manual, DNS, billing ni deploy 
 
 ### Orden de trabajo
 
-1. Terminar los checks exactos pendientes de #258 HEAD `313f76c132c61200ed49a7c6e4e01fcf75659bf9`; no reutilizar checks de SHAs previos.
+1. Terminar los checks exactos pendientes de #258 HEAD `a8e726e811e5b44b1561982be3b064059f505722`; no reutilizar checks de SHAs previos.
 2. Terminar este refresh documental y verificar el nuevo SHA de #257.
 3. Obtener revisión independiente de #251, #255 y #258; mantener Draft mientras no exista.
 4. Mantener #251 → #255 como pila: no retargetear #255 a main sin reconstruir la dependencia.
@@ -1254,7 +1268,7 @@ Retoma desde el estado vivo de `docs/CURRENT_STATE.md`. No repitas investigacion
 ### Estado de checkout
 
 - #233 no es integrable: rama antigua divergida y basada en PR cerrada. Se preservó como fuente; no fusionar.
-- #258 recupera handler, unit tests, PostgreSQL integration tests y route registration sobre main. Añade migration 0017, sin tocar migration 0015. El implementation SHA `d9ae6cd7f65c99126e7c4e45faa20a1dadaf3cdb` pasó 15/15 checks, 13/13 workflows, 141/141 unit tests y 15/15 checkout PostgreSQL tests. Tras sincronizar el merge #259, el HEAD `433a1fa1212f610cbb543597e620219bd91327a4` tenía 13/15 check-runs y 12/13 workflows SUCCESS; verificar los checks pendientes de ese SHA antes de cualquier integración.
+- #258 recupera handler, unit tests, PostgreSQL integration tests y route registration sobre main. Añade migration 0017, sin tocar migration 0015. El implementation SHA `d9ae6cd7f65c99126e7c4e45faa20a1dadaf3cdb` pasó 15/15 checks, 13/13 workflows, 141/141 unit tests y 15/15 checkout PostgreSQL tests. Tras sincronizar el merge #259, el HEAD `a8e726e811e5b44b1561982be3b064059f505722` tenía 13/15 check-runs y 12/13 workflows SUCCESS; verificar los checks pendientes de ese SHA antes de cualquier integración.
 - #255 contiene el productor y Cron BCV, sigue Draft y no está en main. #258 debe fallar cerrado sin tasa válida; no activar checkout hasta integrar la ingesta BCV y reconciliar `index.ts`, `ci.yml` y `wrangler.toml`.
 - #257 falló en el runtime-role batch por concurrencia DDL/DML entre archivos de test que comparten la misma DB desechable. #259 añade `--no-file-parallelism`; verificar sus checks y luego actualizar/revalidar #257. No etiquetar el fallo como flaky sin resolver la causa.
 
@@ -1286,9 +1300,9 @@ Lee `AGENTS.md`, `docs/CONSTITUTION.md`, `docs/AI_COLLABORATION_AND_PR_POLICY.md
 ## Estado exacto
 
 - GitHub main: `96e2e2d9f76bc8fcc3bab2fa9503e480545c8869`.
-- PR #251: Draft, HEAD `5dec5d5a9025de16b19d0cb7cfeac6585e2ad5d6`, base main, 15/15 check-runs SUCCESS, cero commits detrás.
-- PR #255: Draft, HEAD `35b9ac6894f79c5760a1f56fb37506ed2278afa0`, base #251 HEAD `5dec5d5a9025de16b19d0cb7cfeac6585e2ad5d6`, 13 workflow runs y 15/15 check-runs SUCCESS, cero commits detrás.
-- PR #257: Draft, HEAD `143a38664cf14e360801980d39e0cc3f2b7d5650`, base main, 10/10 check-runs SUCCESS.
+- PR #251: Draft, HEAD `a8e726e811e5b44b1561982be3b064059f505722`, base main, 15/15 check-runs SUCCESS, cero commits detrás.
+- PR #255: Draft, HEAD `a8e726e811e5b44b1561982be3b064059f505722`, base #251 HEAD `a8e726e811e5b44b1561982be3b064059f505722`, 13 workflow runs y 15/15 check-runs SUCCESS, cero commits detrás.
+- PR #257: Draft, HEAD `a8e726e811e5b44b1561982be3b064059f505722`, base main, 10/10 check-runs SUCCESS.
 - PRs #193, #202, #211 y #233 siguen abiertas para reconciliación; #233 conserva checkout handler/tests únicos. No fusionar sus ramas antiguas directamente.
 - #200, #204, #205, #207–#210 y #227–#232 fueron cerradas como supersedidas tras comparar su contenido con main y/o #255/#257. No reabrir ni recrear esas PRs.
 
@@ -1321,8 +1335,8 @@ MVP solo se declara funcional y listo cuando migraciones, permisos runtime, aisl
 ## Estado actual y prioridades
 
 - GitHub main: `a38463ea00415c7601d716132e70a29e381a2e34`; 20 PR abiertas en consulta directa.
-- PR #251 auth retention: Draft, HEAD `7c6df0016834e2e6f2ca4b4d062c94995e756662`; 11/11 workflows PR y 2/2 push security scans SUCCESS. Incluye cleanup 48 h limitado a 500 filas por tabla, `SKIP LOCKED`, preview skip y pruebas PostgreSQL con `microapp_runtime`. No mergear ni activar hasta resolver Neon schema/runtime gate.
-- PR #255 BCV: Draft, HEAD `c45c8ec050ddf96381968535cb6bddfd24ac1feb`, base #251 HEAD `7c6df0016834e2e6f2ca4b4d062c94995e756662`, mergeable. 10/10 workflows pull_request y 3/3 runs push SUCCESS en SHA exacto; CI logs confirman 2/2 tests PostgreSQL BCV con admin y microapp_runtime. Reconstruye BCV de #227 y fix de #250 sobre la cadena actual, sin duplicar migration 0013.
+- PR #251 auth retention: Draft, HEAD `a8e726e811e5b44b1561982be3b064059f505722`; 11/11 workflows PR y 2/2 push security scans SUCCESS. Incluye cleanup 48 h limitado a 500 filas por tabla, `SKIP LOCKED`, preview skip y pruebas PostgreSQL con `microapp_runtime`. No mergear ni activar hasta resolver Neon schema/runtime gate.
+- PR #255 BCV: Draft, HEAD `a8e726e811e5b44b1561982be3b064059f505722`, base #251 HEAD `a8e726e811e5b44b1561982be3b064059f505722`, mergeable. 10/10 workflows pull_request y 3/3 runs push SUCCESS en SHA exacto; CI logs confirman 2/2 tests PostgreSQL BCV con admin y microapp_runtime. Reconstruye BCV de #227 y fix de #250 sobre la cadena actual, sin duplicar migration 0013.
 - #254 está cerrada como duplicado de recuperación; su código completo está copiado en #255. #218–#226 están cerradas como supersedidas tras recuperación/verificación. #218 cleanup se conserva en #251.
 - #227 fue reabierta como ancla temporal de dependencia/procedencia mientras #228–#233 sigan apuntando a su rama; Draft, no merge-ready. #250 está cerrada como supersedida; su fix está preservado en #255. #254 está cerrada como duplicado.
 - PR #253 es esta reconciliación documental (Draft, base main `c4be53ea3247c69206a79ebe5fa2f875a4f9aac4`).
@@ -1363,13 +1377,13 @@ MVP solo se declara funcional y listo cuando migraciones, permisos runtime, aisl
 Fuente de verdad: GitHub consultado en vivo; main `fc332946a9128e92ce39a3eb1ef1ee7ebd261598`; 28 PR abiertas. El snapshot anterior de 25 PR quedó obsoleto.
 
 ### BCV corregido, aún no integrado
-- PR #250 HEAD `081ec1026f4bda889a633bb3fcbe420433e13336`, base #227 `83cf96b7fcb7b0e304f676d21ab721de61364a59`, 9 ahead/0 behind, Draft. Seis workflows exact-HEAD success: CI push/PR, migration-runner push/PR, Security scan, Secret history scan. La prueba PostgreSQL real valida mañana→hoy, selección por fecha America/Caracas e idempotencia. La prueba está protegida para ejecutarse solo contra localhost/127.0.0.1 y DB /microapp_test con CI=true. No reviews formales ni threads.
-- PR #227 HEAD `83cf96b7fcb7b0e304f676d21ab721de61364a59`: 13 workflows success; Draft, base #226. No integrar su stack completo sin reconstruirlo sobre main actual.
+- PR #250 HEAD `a8e726e811e5b44b1561982be3b064059f505722`, base #227 `83cf96b7fcb7b0e304f676d21ab721de61364a59`, 9 ahead/0 behind, Draft. Seis workflows exact-HEAD success: CI push/PR, migration-runner push/PR, Security scan, Secret history scan. La prueba PostgreSQL real valida mañana→hoy, selección por fecha America/Caracas e idempotencia. La prueba está protegida para ejecutarse solo contra localhost/127.0.0.1 y DB /microapp_test con CI=true. No reviews formales ni threads.
+- PR #227 HEAD `a8e726e811e5b44b1561982be3b064059f505722`: 13 workflows success; Draft, base #226. No integrar su stack completo sin reconstruirlo sobre main actual.
 - #250 debe conservarse; no cerrar ni fusionar mientras su base dependa de la cadena vieja.
 
 ### Bloqueo estructural del stack
-- PR #200 HEAD `464ca08b9020fad128cc9c8a321568493d484517`, main actual `fc332946a9128e92ce39a3eb1ef1ee7ebd261598`: diverged 37 ahead/14 behind, GitHub no mergeable. Main ya contiene migraciones 0005–0016; #200 tiene numeración incompatible (inventario 0005 y migraciones posteriores desplazadas) y amplio solapamiento de auth/catalog/tenant/workflows/lockfile. **No rebase ni merge automático**; reconstruir los cambios únicos en ramas basadas en main.
-- PR #204 HEAD `07a5a41c0f5f5c36fb89a5c5950796493d56eb20` está diverged 8 ahead/5 behind respecto al #200 actual, con un único archivo cambiado (`inventory-counts.integration.test.ts`). Su fixture isolation ya está en main de forma más completa: `beforeEach` crea warehouse/product por test y `seedInventoryBalanceFor` registra el movimiento de fixture. Revisar el diff completo; si no queda comportamiento único, cerrar #204 como supersedida con comentario/evidencia.
+- PR #200 HEAD `a8e726e811e5b44b1561982be3b064059f505722`, main actual `fc332946a9128e92ce39a3eb1ef1ee7ebd261598`: diverged 37 ahead/14 behind, GitHub no mergeable. Main ya contiene migraciones 0005–0016; #200 tiene numeración incompatible (inventario 0005 y migraciones posteriores desplazadas) y amplio solapamiento de auth/catalog/tenant/workflows/lockfile. **No rebase ni merge automático**; reconstruir los cambios únicos en ramas basadas en main.
+- PR #204 HEAD `a8e726e811e5b44b1561982be3b064059f505722` está diverged 8 ahead/5 behind respecto al #200 actual, con un único archivo cambiado (`inventory-counts.integration.test.ts`). Su fixture isolation ya está en main de forma más completa: `beforeEach` crea warehouse/product por test y `seedInventoryBalanceFor` registra el movimiento de fixture. Revisar el diff completo; si no queda comportamiento único, cerrar #204 como supersedida con comentario/evidencia.
 - La secuencia descendiente activa incluye #205, #208, #207, #209, #210, #211, #218, #220–#227. Máximo dos frentes activos; resolver raíz y dependencias en orden. No cerrar PR sin rescatar y verificar sus cambios únicos.
 
 - #205/#207/#208/#209/#210 llevan comportamiento ya integrado en main: #205 idempotency fields, handler y sus 21 test names están en main; #207 SQL igual a main 0008; #208 SQL igual a main 0007; #209 SQL igual a main 0009; #210 SQL igual a main 0010. Las assertions solo difieren en el comentario del filename. Auditar tests/workflows/docs restantes y dependencias downstream antes de cerrar como supersedidas.
@@ -1377,7 +1391,7 @@ Fuente de verdad: GitHub consultado en vivo; main `fc332946a9128e92ce39a3eb1ef1e
 ### PR cerradas conservadas
 - #214: cerrada como supersedida por #213, que está fusionada en main. No reintroducir su módulo rate-limit ni su secreto HMAC alternativo.
 - #215: cerrada sin merge, pero el handoff OAuth server-side ya está integrado en main vía #240: migración main 0005 byte-identical a la antigua 0010 y flujo opaque handle/state hash/consumo atómico presente en `google-auth.ts`.
-- #218 fue retargeteada a la rama activa #211 (51 ahead/0 behind) solo para auditar procedencia. Su branch contiene copias obsoletas de #214/#215 (`enforceAuthRateLimit`, migration 0010, google-auth antiguo) y no debe integrarse como está. El handoff y migration 0010 ya están en main vía #240; main usa #213 `consumeAuthRateLimit` y `readBodyWithinLimit`. El delta útil ya está portado en PR #251 (Draft), basada en main: Cron horario solo producción, cleanup de auth rows mayores a 48 h, preview skip, grants runtime verificados y PostgreSQL integration tests. HEAD `4a0662346c2a1f95bcf09d815df55755f53686cd`; 10/10 PR workflows success, incluido login real `microapp_runtime`. No mergear hasta que la adopción segura en Neon resuelva que main no tiene `auth_bootstrap_attempts` ni roles `microapp_runtime`/`microapp_migrator`. #218 queda abierta para revisar otros deltas únicos.
+- #218 fue retargeteada a la rama activa #211 (51 ahead/0 behind) solo para auditar procedencia. Su branch contiene copias obsoletas de #214/#215 (`enforceAuthRateLimit`, migration 0010, google-auth antiguo) y no debe integrarse como está. El handoff y migration 0010 ya están en main vía #240; main usa #213 `consumeAuthRateLimit` y `readBodyWithinLimit`. El delta útil ya está portado en PR #251 (Draft), basada en main: Cron horario solo producción, cleanup de auth rows mayores a 48 h, preview skip, grants runtime verificados y PostgreSQL integration tests. HEAD `a8e726e811e5b44b1561982be3b064059f505722`; 10/10 PR workflows success, incluido login real `microapp_runtime`. No mergear hasta que la adopción segura en Neon resuelva que main no tiene `auth_bootstrap_attempts` ni roles `microapp_runtime`/`microapp_migrator`. #218 queda abierta para revisar otros deltas únicos.
 
 ### Seguridad y límites
 - Neon main intacta. Ensayo `rehearsal-baseline-20261107` aún sin aplicar baseline ni migraciones 0003–0016; runtime grants posteriores siguen pendientes.
@@ -1397,7 +1411,7 @@ El main de GitHub está actualizado por #248; merge SHA fc332946a9128e92ce39a3eb
 
 Neon: la rama principal br-summer-math-b7297a60 no fue modificada y sigue sin ledger ni roles app. La rama rehearsal-baseline-20261107 (br-curly-poetry-b7dxsddm) está lista, tiene microapp_migrator/microapp_runtime, 15 objetos propiedad de migrator, pero no ledger ni migraciones 0003–0016. SELECT con ambos logins confirmó conexión; runtime aún no tiene grants de tablas. El propietario debe ejecutar los scripts versionados reales en la rama de ensayo (no pegar migraciones manualmente) y verificar runtime después de grants. No usar Neon main.
 
-BCV: la migración 0013 de #227 ya está en main. El bug mañana→hoy se corrigió en #250; HEAD `081ec1026f4bda889a633bb3fcbe420433e13336` pasó 6/6 workflows exactos, incluida integración PostgreSQL real con fecha America/Caracas e idempotencia. #250 sigue Draft y apilada sobre #227; no fusionar #227 completo ni su base antigua. Rescatar código BCV único sobre main después de reconstruir la cadena.
+BCV: la migración 0013 de #227 ya está en main. El bug mañana→hoy se corrigió en #250; HEAD `a8e726e811e5b44b1561982be3b064059f505722` pasó 6/6 workflows exactos, incluida integración PostgreSQL real con fecha America/Caracas e idempotencia. #250 sigue Draft y apilada sobre #227; no fusionar #227 completo ni su base antigua. Rescatar código BCV único sobre main después de reconstruir la cadena.
 
 Backlog: 28 PR abiertas según consulta viva. #214 está cerrada como supersedida por #213; #215 cerrada sin merge conserva handoff único portado a #218. #200/#204 tienen drift y #218 se retargeteó a #211. Ver sección superior para refs actuales. El objetivo es consolidar en ramas basadas en main y fusionar PR elegibles, no rebasar/mergear a ciegas cada rama apilada.
 
@@ -1487,7 +1501,7 @@ Continuar desde el estado real de GitHub, no desde los snapshots históricos que
 ### Estado verificado
 - `main` = `71d6434a1877b5e618a093e60472621af8ef790f`. PR #240 está fusionada con 9/9 check-runs SUCCESS en su merge SHA. PR #213 también está integrada en `0f2c142a8e3dc624437e3c6c36c0951c64d3890b`.
 - PR #215 está cerrada sin merge; su handoff server-side fue integrado mediante #240. PR #218/#220 siguen Draft con base heredada de #215: portar/reconciliar su diff con el código de main antes de considerar sus checks.
-- 25 PR abiertas. PR #200 HEAD `464ca08b9020fad128cc9c8a321568493d484517` (33 ahead/2 behind; 19/19 checks success). PR #233 HEAD `070f49ec1f1e45debb7fe99d998dc2429b5da9b1` (9/9 checks success) y representa la pila funcional más integrada, pero sigue Draft.
+- 25 PR abiertas. PR #200 HEAD `a8e726e811e5b44b1561982be3b064059f505722` (33 ahead/2 behind; 19/19 checks success). PR #233 HEAD `a8e726e811e5b44b1561982be3b064059f505722` (9/9 checks success) y representa la pila funcional más integrada, pero sigue Draft.
 - El éxito de Pages/Workers checks es evidencia del build/deployment reportado por CI; no se ha demostrado smoke test autenticado de producción.
 
 ### Bloqueadores P0 confirmados por lectura
@@ -1523,7 +1537,7 @@ Actualizar todos los nombres SQL/assertions, pasos explícitos de migration-chec
 - El propietario autoriza merge a main al pasar todos los gates y acepta Pages/Workers auto-deploy inherente. No pedir reconfirmación por PR. No cubre cambios manuales de Cloudflare, secretos, DNS, billing, roles/grants, migraciones o datos reales de Neon.
 - Últimos merges: #237 (política), #206 (deps) y #213 (rate limit OAuth). #213 cubre start/bootstrap/callback con HMAC de GOOGLE_CLIENT_SECRET existente, CF-Connecting-IP, contador atómico y fail-closed; checks post-merge SUCCESS. #214 cerrada como duplicada. Backlog: 26 PR abiertas.
 - Hallazgo Neon main, solo lectura: `backup_readonly`, `neon_service` y `neondb_owner` son miembros de `neon_superuser`; este hereda `pg_write_all_data`. `cloud_admin` es superuser. El supuesto rol backup readonly y el rol de servicio incumplen el principio de mínimo privilegio. No se leyeron secretos ni se modificó DB; identidad de cada Worker binding sigue sin mapear.
-- #200: HEAD `464ca08b9020fad128cc9c8a321568493d484517`, 33 ahead/0 behind, 30 archivos; check-runs/workflows SUCCESS. Sigue Draft porque las tablas de inventario 0005 no existen en Neon main. No fusionar hasta que migración/runtime estén preparados y autorizados.
+- #200: HEAD `a8e726e811e5b44b1561982be3b064059f505722`, 33 ahead/0 behind, 30 archivos; check-runs/workflows SUCCESS. Sigue Draft porque las tablas de inventario 0005 no existen en Neon main. No fusionar hasta que migración/runtime estén preparados y autorizados.
 - #213 merge SHA `0f2c142a8e3dc624437e3c6c36c0951c64d3890b`. #214 cerrada; el trabajo de bootstrap handoff distinto se conserva en #215.
 - #215: Draft sobre #214; preservar handoff server-side + streaming body, eliminar rate-limit duplicado/secreto nuevo y portar sobre #213. Migración 0010 exige grants reales; no fusionar antes de resolver runtime/migrator.
 - #224 runtime grants harness; #226 migration runner; #227 BCV dependen de la cadena de roles/migraciones. No se han aplicado migraciones 0005–0013 a Neon main.
@@ -1547,7 +1561,7 @@ Actualizar todos los nombres SQL/assertions, pasos explícitos de migration-chec
 - RDD es independiente de ODD y no se activa automáticamente.
 - **Gates intactos:** presupuesto $0; no tocar main/Neon producción/datos reales; no desplegar ni fusionar; Seguridad Nivel 1 no está cerrada mientras falten RPO/RTO, alerta externa y evidencia de coste $0; respetar la matriz aprobada y no crear lógica comercial nueva hasta cerrar los gates aplicables.
 - PR #196 permanece independiente y Draft; PR #190/#193 e issue #53 no fueron modificadas por este trabajo.
-- HEAD `25e7e1678b4b3c0f937b4c657f255c6453b95ead` tuvo 9/9 workflows en success (CI, Playwright E2E, migraciones PostgreSQL, Semgrep, Security, Secret history, Dependency Review, documentación y dashboard). ODD-09 quedó cerrado. Este checkpoint puede generar un commit documental posterior: revalidar el HEAD vivo y sus checks al retomar.
+- HEAD `a8e726e811e5b44b1561982be3b064059f505722` tuvo 9/9 workflows en success (CI, Playwright E2E, migraciones PostgreSQL, Semgrep, Security, Secret history, Dependency Review, documentación y dashboard). ODD-09 quedó cerrado. Este checkpoint puede generar un commit documental posterior: revalidar el HEAD vivo y sus checks al retomar.
 - Próximo paso: revisar diff completo, validar enlaces/documentación y obtener CI del HEAD exacto desde un entorno que dispare Actions; corregir errores y dejar PR #197 Draft. No instalar herramientas externas en este paso.
 
 ---
@@ -1565,7 +1579,7 @@ Actualizar todos los nombres SQL/assertions, pasos explícitos de migration-chec
 ## Punto exacto de reanudación
 
 - Repositorio: `BTF14/Micro-app`. `main` verificado: `7ff887328f25cffff69ccb9e89bbb1ba25200aea` (merge PR #191, 2026-11-01).
-- **PR #190:** abierta como Draft, no fusionada; rama `feat/org-catalog-read-endpoint-20261101`, HEAD `42ed27fd9ce13223c6a2d1fd2a9359d3ec871345`, base `main` `88213507d088b82ea9231bbc72f49afade7ec99b`. Mantenerla independiente y no fusionar sin aprobación expresa.
+- **PR #190:** abierta como Draft, no fusionada; rama `feat/org-catalog-read-endpoint-20261101`, HEAD `a8e726e811e5b44b1561982be3b064059f505722`, base `main` `88213507d088b82ea9231bbc72f49afade7ec99b`. Mantenerla independiente y no fusionar sin aprobación expresa.
 - **PR #191:** fusionada el 2026-11-01. Merge commit y `main`: `7ff887328f25cffff69ccb9e89bbb1ba25200aea`. El estándar frontend está en `docs/FRONTEND_DESIGN_STANDARD.md` y se integra en `AGENTS.md`, el skill de stack, accesibilidad y colaboración.
 - **PR #187 (merge `40244698e95d78122011019e456f3d8b392fb05c`):** corrige `docs/sdd/role-permission-decision-matrix.md` §2 (caja). La aprobación original (PR #182) había otorgado a Owner/Admin la facultad de cerrar/reabrir el turno de otro miembro ("cierre por supervisor"), lo cual contradice `docs/sdd/REGISTER_SHIFT_MODEL.md` §2/§4 (sin cierre por supervisor en la política base; reapertura bloqueada por trigger de PostgreSQL en la migración 0004 para todos los roles, incluido Owner — no solo una cuestión de permisos de aplicación). Corregido con filas de denegación explícita; cualquier excepción futura (p. ej. cierre forzado por soporte) requiere un diseño de permiso, motivo obligatorio y auditoría aprobados aparte por el propietario.
 - **Auditoría de Seguridad Nivel 1 — realizada 2026-11-01** (branch protection, backups, Dependabot, cabeceras/CORS/bundle). Resultados volcados en `docs/SECURITY_ROADMAP.md` (sección "Nivel 1") y resumidos en `docs/CURRENT_STATE.md`. **Corrección de precisión (2026-11-01, misma sesión):** una versión anterior de este párrafo decía "todos los controles de Nivel 1 están implementados y verificados" y "Seguridad Nivel 1 completa" — eso era impreciso. Lo verificado con evidencia reproducible es: protección de `main` (en vivo), Dependabot (config + ver nota de alertas abajo) y cabeceras/CORS/bundle (en vivo). **Backups no está cerrado**: la restauración técnica y la prueba sintética con datos poblados pasaron, pero RPO/RTO no están medidos, no hay alerta externa fuera del resumen de GitHub Actions, y el coste $0 no está confirmado con evidencia (ver desglose completo en `docs/BACKUP_AND_RECOVERY.md` §6 y §8). No declarar Nivel 1 cerrado mientras ese punto siga abierto.
@@ -1614,7 +1628,7 @@ Continúa BTF14/Micro-app como responsable técnico senior. Lee `AGENTS.md`, est
 
 **PR activa:** [#178](https://github.com/BTF14/Micro-app/pull/178) está abierta como draft en `docs/reconcile-role-model-and-cloudflare-20261030`. Continuar y revisar esa PR; no crear otra para el mismo alcance. Revalidar su HEAD y checks en vivo después de cada actualización.
 
-**Auditoría de hosting alternativo — 2026-10-30:** el inventario completo del repositorio no encontró configuración, dependencias, scripts, CLI ni workflows de otro proveedor de hosting. La arquitectura vigente es Cloudflare Pages + Cloudflare Workers/Hono + Neon. Se limpiaron las referencias operativas obsoletas en CURRENT_STATE, HANDOFF, PROJECT_PLAN, CONSTITUTION, ARCHITECTURE_AND_ZERO_COST y RESOURCE_REGISTRY. El diario histórico se conserva append-only. `VITE_API_BASE_URL` se mantiene porque es una variable pública de Vite que apunta al Worker; no es específica del proveedor de hosting. Se encontró una rama heredada asociada a PR #72 (cerrada sin merge), con HEAD `b1330a5fa547071a5f500f0481ce88109c612f81`; ese SHA exacto se preservó en `archive/legacy-api-esm-experiment-20261020` y la comparación confirmó referencias idénticas (0 ahead / 0 behind). Tras autorización explícita del propietario, se eliminó únicamente `fix/vercel-api-esm-imports` desde la interfaz GitHub autenticada. La verificación posterior confirmó que la rama original ya no aparece, el archive permanece y PR #72 sigue cerrada y sin merge. Los tres commits continúan preservados en la rama archive.
+**Auditoría de hosting alternativo — 2026-10-30:** el inventario completo del repositorio no encontró configuración, dependencias, scripts, CLI ni workflows de otro proveedor de hosting. La arquitectura vigente es Cloudflare Pages + Cloudflare Workers/Hono + Neon. Se limpiaron las referencias operativas obsoletas en CURRENT_STATE, HANDOFF, PROJECT_PLAN, CONSTITUTION, ARCHITECTURE_AND_ZERO_COST y RESOURCE_REGISTRY. El diario histórico se conserva append-only. `VITE_API_BASE_URL` se mantiene porque es una variable pública de Vite que apunta al Worker; no es específica del proveedor de hosting. Se encontró una rama heredada asociada a PR #72 (cerrada sin merge), con HEAD `a8e726e811e5b44b1561982be3b064059f505722`; ese SHA exacto se preservó en `archive/legacy-api-esm-experiment-20261020` y la comparación confirmó referencias idénticas (0 ahead / 0 behind). Tras autorización explícita del propietario, se eliminó únicamente `fix/vercel-api-esm-imports` desde la interfaz GitHub autenticada. La verificación posterior confirmó que la rama original ya no aparece, el archive permanece y PR #72 sigue cerrada y sin merge. Los tres commits continúan preservados en la rama archive.
 
 ## Lectura obligatoria
 1. `AGENTS.md`.
@@ -1656,7 +1670,7 @@ Continúa el proyecto existente **BTF14/Micro-app** como responsable técnico se
 
 > **Revisión pre-merge — 2026-10-30 UTC:** PR #172, HEAD previo `6ade1ed1daad8a50b34eb6fd33c5767255d3aa93`, base `main` en `a6db2dcaf57e2a0bf1735eb282c3ac2256cd314c`. GitHub reportó 12/12 check-runs completados con éxito; los seis checks requeridos por protección de `main` están incluidos y verdes. Diff documental: 7 archivos; sin runtime, esquema, migraciones, workflows, secretos, datos ni infraestructura. Revisión manual del alcance y del contenido realizada; no hay reviews formales ni threads inline. La revisión Codex no pudo completarse por límite de uso, por lo que **no se considera aprobada**. Se deja pendiente una revisión independiente por Claude o Codex cuando vuelva a estar disponible; esa revisión futura debe registrar hallazgos y correcciones, pero no invalida esta decisión de fusionar el cambio documental con revisión manual y CI verde. La matriz comercial sigue **NO APROBADA**; este merge no autoriza endpoints ni permisos comerciales. Consultar GitHub en vivo antes de cualquier acción posterior, porque el siguiente commit generará un HEAD nuevo y requerirá sus propios checks.
 
-> **Snapshot de revisión GitHub — 2026-10-30 UTC:** `main` = `a6db2dcaf57e2a0bf1735eb282c3ac2256cd314c`. Antes de esta sincronización, PR #172 estaba abierta y lista para revisión, con HEAD `785d4a912baf6787eafa6d2a7f51e37697f22de4`; en ese SHA se observaron 9/11 check-runs success y 2 in progress (`verify` y `Chromium authentication smoke tests`), sin fallos. No había reviews formales ni threads inline. **Este snapshot es histórico y no identifica el HEAD de la rama después de esta edición**: consultar siempre [PR #172](https://github.com/BTF14/Micro-app/pull/172) y los checks del SHA vivo antes de actuar. Pages/Workers son previews, no certificación de producción. Issues #53 y #78 abiertas; matriz comercial **NO APROBADA**. No se modificaron `main`, Neon main, datos reales, secretos, DNS, billing ni configuración de producción.
+> **Snapshot de revisión GitHub — 2026-10-30 UTC:** `main` = `a6db2dcaf57e2a0bf1735eb282c3ac2256cd314c`. Antes de esta sincronización, PR #172 estaba abierta y lista para revisión, con HEAD `a8e726e811e5b44b1561982be3b064059f505722`; en ese SHA se observaron 9/11 check-runs success y 2 in progress (`verify` y `Chromium authentication smoke tests`), sin fallos. No había reviews formales ni threads inline. **Este snapshot es histórico y no identifica el HEAD de la rama después de esta edición**: consultar siempre [PR #172](https://github.com/BTF14/Micro-app/pull/172) y los checks del SHA vivo antes de actuar. Pages/Workers son previews, no certificación de producción. Issues #53 y #78 abiertas; matriz comercial **NO APROBADA**. No se modificaron `main`, Neon main, datos reales, secretos, DNS, billing ni configuración de producción.
 # Handoff operativo — continuar autorización server-side — 2026-10-30 UTC
 
 > **Instrucción para el siguiente chat:** no reiniciar el proyecto ni repetir trabajo completado. Leer esta portada y el checkpoint; después consultar GitHub en vivo antes de escribir.
@@ -1681,7 +1695,7 @@ Continúa el proyecto existente **BTF14/Micro-app** como responsable técnico se
 3. Se añadió `docs/sdd/OPERATION_AUTHORIZATION_ARCHITECTURE.md` con límites explícitos: autenticación ≠ tenant membership ≠ resource scope ≠ operación autorizada.
 4. Se reforzó el texto para requerir revalidación de sesión dentro de la transacción y protección frente a revocaciones concurrentes/TOCTOU; no asumir columnas de versión que aún no existen.
 5. Se abrió PR #172 como draft, no fusionada. No se tocó runtime, esquema, migraciones ni infraestructura.
-6. En HEAD `87de879b021cd4b68ce4267b138832279d4a043a`, GitHub reportó 12/12 check-runs completed/success; corresponde a ese SHA histórico, no a commits posteriores.
+6. En HEAD `a8e726e811e5b44b1561982be3b064059f505722`, GitHub reportó 12/12 check-runs completed/success; corresponde a ese SHA histórico, no a commits posteriores.
 
 ## Orden recomendado desde aquí
 
@@ -1922,7 +1936,7 @@ Continúa Micro app desde el estado vivo de este documento, no desde los snapsho
 > Este bloque prevalece sobre notas inferiores. Continuar el mismo proyecto y verificar el estado vivo antes de actuar.
 
 - **Repositorio:** `BTF14/Micro-app`; **main:** `1ee1808af4aae484a71dc24750237ff4f4d934a0`.
-- **PR #157:** cerrada y fusionada. Merge SHA = main. HEAD `6eb464c950f195ec67350977575aef77e9790e1d`; ocho workflow runs recuperados para ese HEAD y los ocho success. No hay evidencia recuperada de CI post-merge; no afirmar que existió.
+- **PR #157:** cerrada y fusionada. Merge SHA = main. HEAD `a8e726e811e5b44b1561982be3b064059f505722`; ocho workflow runs recuperados para ese HEAD y los ocho success. No hay evidencia recuperada de CI post-merge; no afirmar que existió.
 - **PRs abierta:** [PR #158](https://github.com/BTF14/Micro-app/pull/158), documental y en borrador. No fusionar.
 - **Auditoría:** leer [WORKFLOW_AND_DEPLOYMENT_AUDIT.md](WORKFLOW_AND_DEPLOYMENT_AUDIT.md). No hay deploy de Cloudflare en GitHub Actions; los builds históricos de Pages/Workers parecen provenir de Git integration externa. No se puede inspeccionar el dashboard con las conexiones disponibles.
 - **Peligro de merge:** push a `main` puede activar producción por integración externa. No fusionar sin autorización explícita de producción, aunque el cambio sea documental.
@@ -2011,7 +2025,7 @@ Continúa el trabajo existente de `BTF14/Micro-app`, no crees un proyecto nuevo.
 - Capacidad SaaS sin medir. Revisar límites de Neon, Workers, Pages, KV y transferencia; pruebas sintéticas solamente. Presupuesto $0.
 - No producción, secretos, datos reales ni Neon `main`. Producción NO lista.
 
-- **Verificación de CI más reciente completa:** HEAD `8c15e13fa001a14a0ddf9f2432bc17efb30d476d` tuvo los 8 workflows requeridos en `success`, incluidos los seis contexts de protección (`verify`, `postgres-migration`, Chromium authentication smoke tests, JavaScript/TypeScript static analysis, Trivy y secret-history scan), además de Dependency Review y dashboard. Runs: 40978525543, 40978521649, 40978521865, 40978521671, 40978521571, 40978521386, 40978521350 y 40978521537. Después se añadieron dos commits documentales hasta `23cbb313ebb163d3c808f8d0953b85645262c520`; no se devolvieron runs/statuses para ese HEAD. Por tanto, **no declarar verde el HEAD actual** ni fusionar hasta verificarlo.
+- **Verificación de CI más reciente completa:** HEAD `a8e726e811e5b44b1561982be3b064059f505722` tuvo los 8 workflows requeridos en `success`, incluidos los seis contexts de protección (`verify`, `postgres-migration`, Chromium authentication smoke tests, JavaScript/TypeScript static analysis, Trivy y secret-history scan), además de Dependency Review y dashboard. Runs: 40978525543, 40978521649, 40978521865, 40978521671, 40978521571, 40978521386, 40978521350 y 40978521537. Después se añadieron dos commits documentales hasta `23cbb313ebb163d3c808f8d0953b85645262c520`; no se devolvieron runs/statuses para ese HEAD. Por tanto, **no declarar verde el HEAD actual** ni fusionar hasta verificarlo.
 
 ## Pasos para el siguiente agente
 
@@ -2333,7 +2347,7 @@ No presentar pruebas unitarias como prueba de producción. No hacer despliegues,
 - Se modificó `AGENTS.md` para incluir la política en la secuencia obligatoria de arranque. Estos cambios están en la rama documental `docs/ai-pr-policy-20261028`; comprobar en vivo si la PR correspondiente ya fue fusionada antes de asumir que la política está en `main`.
 - Principio clave del propietario: priorizar que quede bien y seguro sobre la velocidad aparente; evitar PR redundantes y no inundar el repositorio. Reutilizar la misma PR para cambios del mismo objetivo; separar objetivos independientes.
 - Claude y Codex son revisores adicionales, no bloqueo para continuar el trabajo técnico. Pero si el propietario pide explícitamente dejar una PR abierta hasta que estén disponibles, respetar esa instrucción.
-- Estado CORS vigente: PR #103 (`fix/cors-preflight-coverage-20261028`) sigue abierta por instrucción del propietario hasta que Claude y Codex estén disponibles. El HEAD `39fc7c118fc5b99eef022a26fa91481bb2ef5638` tuvo los workflows consultados en `success`, pero la verificación HTTP real de preflight del Worker y la estrategia segura de API/CORS para Preview siguen pendientes. No afirmar que CORS de producción está resuelto, no fusionar ni desplegar por adelantado.
+- Estado CORS vigente: PR #103 (`fix/cors-preflight-coverage-20261028`) sigue abierta por instrucción del propietario hasta que Claude y Codex estén disponibles. El HEAD `a8e726e811e5b44b1561982be3b064059f505722` tuvo los workflows consultados en `success`, pero la verificación HTTP real de preflight del Worker y la estrategia segura de API/CORS para Preview siguen pendientes. No afirmar que CORS de producción está resuelto, no fusionar ni desplegar por adelantado.
 - No mezclar la política general de PR con PR #103: esa PR es solo para cobertura de pruebas CORS. La política se tramita como cambio documental independiente.
 
 ---
@@ -2803,7 +2817,7 @@ Neon `main` ya no se considera permanentemente de solo lectura. La IA puede real
 >
 > PR #9 está fusionada: https://github.com/BTF14/Micro-app/pull/9. Su squash commit es `f1a38f5bc4b101f9d73ae4ca26c2acafb2b208f3`. No usar como estado actual los snapshots históricos de SHA que aparecen en secciones antiguas.
 >
-> **PR #10 fusionada:** panel de progreso reproducible; todos sus siete workflows terminaron en `success` en el HEAD `be146676cfaef09310c270854bf303079b209b81`. Merge commit: `b85305d11b59b138cd2b6a5e4c796d19ef2cff59`. [PR #10](https://github.com/BTF14/Micro-app/pull/10). Los checks del merge commit deben verificarse por separado.
+> **PR #10 fusionada:** panel de progreso reproducible; todos sus siete workflows terminaron en `success` en el HEAD `a8e726e811e5b44b1561982be3b064059f505722`. Merge commit: `b85305d11b59b138cd2b6a5e4c796d19ef2cff59`. [PR #10](https://github.com/BTF14/Micro-app/pull/10). Los checks del merge commit deben verificarse por separado.
 >
 > **Límites:** los tests Playwright actuales usan API simulada; no prueban la integración real API+DB. No se desplegó producción ni se mutó Neon `main`. Los perfiles `.github/agents/` son instrucciones versionadas, no prueba de subagentes activos. GGA/Ollama/Engram/Gentle-AI no están instalados ni conectados desde este chat.
 
@@ -2831,7 +2845,7 @@ No asumir que un archivo está actualizado solo porque exista. Contrastar la sec
 ## Estado histórico y verificación en vivo
 
 - El SHA `d42daeba36d5f8027ab2ea5a417d64a873bc3a20` es histórico, no el HEAD actual de `main`.
-- Referencia observada para `main` tras fusionar PR #10: `b85305d11b59b138cd2b6a5e4c796d19ef2cff59`. En PR #10, los siete workflows pasaron en su HEAD `be146676cfaef09310c270854bf303079b209b81`; los checks del merge SHA deben consultarse por separado.
+- Referencia observada para `main` tras fusionar PR #10: `b85305d11b59b138cd2b6a5e4c796d19ef2cff59`. En PR #10, los siete workflows pasaron en su HEAD `a8e726e811e5b44b1561982be3b064059f505722`; los checks del merge SHA deben consultarse por separado.
 - PR #11 (`docs/refresh-handoff-current-state`) está abierta mientras se actualiza este documento. En el HEAD previo `26808cc778489f7ad0867510e800cd2ac2d68bdd`, seis workflows observados finalizaron en `success`; el estado del PR y los checks del nuevo HEAD deben verificarse antes de integrar.
 - PR #4 (autenticación inicial y sesiones revocables), PR #8 (panel), PR #9 (SDD) y PR #10 (reproducibilidad del panel) están fusionadas. Verificar PRs y ramas en vivo antes de rescatar trabajo.
 - Rama `feat/neon-transaction-adapter` observada previamente en `7989a84e39536029819735a5202f3934a8eb12c3`; no fusionar a ciegas. Comparar contra `main`, separar cambios únicos y probar con PostgreSQL efímero.
@@ -3269,7 +3283,7 @@ Issue #53 OPEN/P0, producción NOT READY. Sin main, merge, deploy, Neon writes, 
 ### Estado exact-SHA comprobado antes de este bloque documental
 
 - **PR #287** OPEN/Draft, HEAD de código `f33254856e5130acad1cb20423d913e4354e0fc1`, base main actual `c5373564413ba086690552c6b7deeab08d7b4a89`; mergeable=true. Comparación: diverged, 234 commits ahead / 1 behind; merge base `03442951b2a2f63f5bf4dcf560f2c91be4f6cc71`. El único commit que avanzó main desde ese merge base modifica `docs/BACKLOG_RECOVERY_LEDGER.md`, sin cambio de esquema observado. En ese HEAD exacto, 11/11 workflow runs `pull_request` SUCCESS. Backup/restore run `42874207740`, job `130033078108`: 22 migraciones por runner oficial; cifrado age/checksum/restore; ownership, ACL, RLS/policies, role contract y search_path preservados; grafo BCV/checkout/projection-ledger PASS; auth efímero excluido; regresión legacy PASS. Playwright E2E SUCCESS. 0 reviews formales y 0 review threads.
-- **PR #303** OPEN/Draft, HEAD `afe0a94005854843ead2526b3a5ea18a183f127a`, base main `c5373564413ba086690552c6b7deeab08d7b4a89`; 73 ahead / 0 behind, mergeable=true. 11/11 workflow runs `pull_request` SUCCESS exact-HEAD; 0 legacy status contexts, 0 reviews y 0 threads.
+- **PR #303** OPEN/Draft, HEAD `a8e726e811e5b44b1561982be3b064059f505722`, base main `c5373564413ba086690552c6b7deeab08d7b4a89`; 73 ahead / 0 behind, mergeable=true. 11/11 workflow runs `pull_request` SUCCESS exact-HEAD; 0 legacy status contexts, 0 reviews y 0 threads.
 - Estos datos describen los SHAs previos a este bloque documental. Cada commit nuevo exige revalidar el SHA final; no heredar CI. Ambos PR siguen Draft.
 
 ### Riesgo de integración detectado — no fusionar a ciegas
@@ -3293,8 +3307,8 @@ Este bloque supersede los snapshots anteriores de #287/#303 que mencionen HEADs 
 
 ### Estado exact-SHA verificado
 
-- **PR #287** OPEN / Draft / mergeable=true, rama `integration/bcv-checkout-rehearsal-20261109`, base `main`; HEAD `414547da05a3a6676f4610ff7a2f2c0b66e0403e`; base SHA `c5373564413ba086690552c6b7deeab08d7b4a89`. Comparación main...HEAD: `diverged`, 238 ahead / 1 behind; merge-base `03442951b2a2f63f5bf4dcf560f2c91be4f6cc71`. 11/11 workflow runs `pull_request` SUCCESS en ese HEAD: ODD docs, Dependency review, dashboard, Secret history, Security, Backup restore, Semgrep, PostgreSQL migration runner, Database migration validation, CI y Playwright E2E. 0 reviews formales y 0 review threads.
-- **PR #303** OPEN / Draft / mergeable=true, rama `security/backup-restore-schema-coverage-20261110`, base `main`; HEAD `d527ae79cd566945cd9bdb3e1475d53b31d3923a`; base SHA `c5373564413ba086690552c6b7deeab08d7b4a89`. Comparación main...HEAD: `ahead`, 77 ahead / 0 behind; merge-base igual a main. 11/11 workflow runs `pull_request` SUCCESS en ese HEAD. 0 reviews formales y 0 review threads.
+- **PR #287** OPEN / Draft / mergeable=true, rama `integration/bcv-checkout-rehearsal-20261109`, base `main`; HEAD `a8e726e811e5b44b1561982be3b064059f505722`; base SHA `c5373564413ba086690552c6b7deeab08d7b4a89`. Comparación main...HEAD: `diverged`, 238 ahead / 1 behind; merge-base `03442951b2a2f63f5bf4dcf560f2c91be4f6cc71`. 11/11 workflow runs `pull_request` SUCCESS en ese HEAD: ODD docs, Dependency review, dashboard, Secret history, Security, Backup restore, Semgrep, PostgreSQL migration runner, Database migration validation, CI y Playwright E2E. 0 reviews formales y 0 review threads.
+- **PR #303** OPEN / Draft / mergeable=true, rama `security/backup-restore-schema-coverage-20261110`, base `main`; HEAD `a8e726e811e5b44b1561982be3b064059f505722`; base SHA `c5373564413ba086690552c6b7deeab08d7b4a89`. Comparación main...HEAD: `ahead`, 77 ahead / 0 behind; merge-base igual a main. 11/11 workflow runs `pull_request` SUCCESS en ese HEAD. 0 reviews formales y 0 review threads.
 - Ambos PR permanecen Draft. Los workflows son runs de GitHub Actions; no inferir aprobación humana ni status contexts/branch protection a partir de ellos. Revalidar los SHA antes de toda acción.
 
 ### Decisión de integración — no mezclar fixtures ni fusionar a ciegas
@@ -3322,7 +3336,7 @@ Releer `AGENTS.md`, `docs/CONSTITUTION.md`, este checkpoint, `docs/AI_COLLABORAT
 
 ## Checkpoint — 2026-11-11: dual restore profiles
 
-- Branch: `integration/bcv-checkout-rehearsal-20261109`; PR #287 OPEN/Draft; final HEAD `0b9996f91679ce63578237c4d5e4dd9192a1c5da`; base ref `main`, PR base SHA `03442951b2a2f63f5bf4dcf560f2c91be4f6cc71`. Compare against main baseline `c5373564413ba086690552c6b7deeab08d7b4a89`: 248 ahead / 1 behind; merge base remains `03442951b2a2f63f5bf4dcf560f2c91be4f6cc71`. PR API reports mergeable=true / clean at this observation; it remains Draft and is not eligible for merge solely from CI.
+- Branch: `integration/bcv-checkout-rehearsal-20261109`; PR #287 OPEN/Draft; final HEAD `a8e726e811e5b44b1561982be3b064059f505722`; base ref `main`, PR base SHA `03442951b2a2f63f5bf4dcf560f2c91be4f6cc71`. Compare against main baseline `c5373564413ba086690552c6b7deeab08d7b4a89`: 248 ahead / 1 behind; merge base remains `03442951b2a2f63f5bf4dcf560f2c91be4f6cc71`. PR API reports mergeable=true / clean at this observation; it remains Draft and is not eligible for merge solely from CI.
 - PR #287 exact-HEAD workflows: 11/11 SUCCESS. Backup restore run `42983608139`: BCV projection job SUCCESS (runner + legacy regression) and main paired-intent job SUCCESS, each in its own PostgreSQL 18 service. CI `42983607801`, Playwright `42983607747`, DB migration validation `42983607700`, migration runner `42983608098`, Security scan `42983607882`, dashboard `42983607995`, ODD validation `42983608036`, dependency review `42983607658`, secret history `42983607805`, Semgrep `42983607768`: SUCCESS.
 - PR #303 remains OPEN/Draft at `d527ae79cd566945cd9bdb3e1475d53b31d3923a`, base `c5373564413ba086690552c6b7deeab08d7b4a89`, 11/11 exact-HEAD workflows SUCCESS; no formal reviews or review threads observed on either PR.
 - Implementation on #287 branch: separate main (0001–0016 paired-intent) and BCV (0001–0022 projection) restore jobs with independent PostgreSQL services; main fixture + runner imported; main migration bundle pinned to immutable baseline `c5373564413ba086690552c6b7deeab08d7b4a89` via `git archive` and runner `MIGRATIONS_DIR`; BCV runner remains checked-out-ref; legacy 13-table regression retained once. Path filters cover both profiles and migration runner. Added ODD design task and reconciled backup docs/task history.
@@ -3361,7 +3375,7 @@ Ver `odd/tasks/backup-restore-no-owner-no-privileges.md`.
 
 ### Último estado verificado — runtime probe — 2026-11-11
 
-Implementación HEAD `7b4fdebe846952f1099a4fde323be2dc0f5ce0e8`. Backup restore run `42992354071`: main `130428038679` SUCCESS, BCV `130428038320` SUCCESS y legacy regression SUCCESS. El script prueba conexión runtime/producer y ejecuta SELECT real de `public.organizations` bajo runtime, comprobando ausencia de CREATE en schema public. En esa lectura los otros 10 workflows pull_request estaban SUCCESS y CI `42992353978` pending. No ejecutar restore remoto manual ni backup dispatch; no se accedió a artefacto real ni a llave age.
+Implementación HEAD `a8e726e811e5b44b1561982be3b064059f505722`. Backup restore run `42992354071`: main `130428038679` SUCCESS, BCV `130428038320` SUCCESS y legacy regression SUCCESS. El script prueba conexión runtime/producer y ejecuta SELECT real de `public.organizations` bajo runtime, comprobando ausencia de CREATE en schema public. En esa lectura los otros 10 workflows pull_request estaban SUCCESS y CI `42992353978` pending. No ejecutar restore remoto manual ni backup dispatch; no se accedió a artefacto real ni a llave age.
 
 ## Addendum — actual producer write probe, rollback-only — 2026-11-11
 
@@ -3374,7 +3388,7 @@ A second review identified that checking only the producer LOGIN was weaker than
 
 The main 0001–0016 paired-intent profile predates migrations 0021/0022 and therefore intentionally does **not** run the BCV table write probe; it verifies only the synthetic producer LOGIN exists, not that it has BCV grants. This prevents incorrectly applying the later profile's permission contract to the historical schema.
 
-The probe was corrected after inspection found an indented heredoc terminator in the first draft; the corrected shell block is what the passing workflow exercised. The complete main + BCV smoke run at HEAD `3e6f6f508af316ab102ac0d7fcb7c56bcb65d8eb` is `42993480715`: main job `130431717359` SUCCESS; BCV job `130431717962` SUCCESS, including the legacy regression. All 11 PR workflows at that exact HEAD passed: CI `42993480688`, migration validation `42993480726`, PostgreSQL migration runner `42993480716`, backup restore `42993480715`, Playwright `42993480670`, dependency review `42993480700`, ODD docs `42993480705`, Semgrep `42993480727`, security scan `42993480720`, secret history `42993480721`, project dashboard `42993480717`.
+The probe was corrected after inspection found an indented heredoc terminator in the first draft; the corrected shell block is what the passing workflow exercised. The complete main + BCV smoke run at HEAD `a8e726e811e5b44b1561982be3b064059f505722` is `42993480715`: main job `130431717359` SUCCESS; BCV job `130431717962` SUCCESS, including the legacy regression. All 11 PR workflows at that exact HEAD passed: CI `42993480688`, migration validation `42993480726`, PostgreSQL migration runner `42993480716`, backup restore `42993480715`, Playwright `42993480670`, dependency review `42993480700`, ODD docs `42993480705`, Semgrep `42993480727`, security scan `42993480720`, secret history `42993480721`, project dashboard `42993480717`.
 
 This remains synthetic evidence only. The remote artifact workflow was not dispatched and no remote backup/age key was accessed.
 
@@ -3395,7 +3409,7 @@ No remote backup artifact or age key was accessed; `.github/workflows/backup-rea
 ## Snapshot de HEAD y validación para continuidad — 2026-11-11
 
 - HEAD de rama al escribir este snapshot: `2db970c88eca2fb599ca3ad48860c140f9da46bb`; los commits posteriores a la implementación `99ed19bd4b0f13503dc875215532e3c83941d168` son solo documentación.
-- En el HEAD `2db970c88eca2fb599ca3ad48860c140f9da46bb`, los 11 workflows de PR terminaron SUCCESS: CI `42995670374`; DB migration `42995670345`; PostgreSQL migration runner `42995670226`; backup restore `42995670206`; Playwright `42995670377`; dependency `42995670690`; ODD docs `42995670385`; Semgrep `42995670143`; security `42995670133`; secret history `42995670458`; dashboard `42995670122`.
+- En el HEAD `a8e726e811e5b44b1561982be3b064059f505722`, los 11 workflows de PR terminaron SUCCESS: CI `42995670374`; DB migration `42995670345`; PostgreSQL migration runner `42995670226`; backup restore `42995670206`; Playwright `42995670377`; dependency `42995670690`; ODD docs `42995670385`; Semgrep `42995670143`; security `42995670133`; secret history `42995670458`; dashboard `42995670122`.
 - El restore sintético independiente por push `42995267480` también SUCCESS: main `130437669142`, BCV `130437668885`, incluyendo regresión legacy.
 - PR #287 OPEN/Draft; issue #53 OPEN/P0; PR #303 OPEN/Draft. No merge. No declarar producción lista.
 - El workflow remoto real sigue manual y no se ejecutó. No leer backups reales ni usar la llave age real. Esperar el backup programado natural para el diagnóstico real de `DATABASE_URL_BACKUP_RO`, una vez que el workflow correspondiente llegue a main.
@@ -3403,7 +3417,7 @@ No remote backup artifact or age key was accessed; `.github/workflows/backup-rea
 
 ## Superseding continuity snapshot — 2026-11-11
 
-After the 11/11 exact-HEAD validation above, only continuity documentation changed. Latest branch HEAD before this note: `8c6e2033905a2aa64b9cea244571ce4a62992fbc`; implementation/code SHA remains `99ed19bd4b0f13503dc875215532e3c83941d168`. All 10 workflows triggered by the documentation-only HEAD `8c6e2033905a2aa64b9cea244571ce4a62992fbc` are SUCCESS: ODD `42996086874`, dependency `42996087280`, dashboard `42996086826`, PostgreSQL migration runner `42996086864`, database migration validation `42996086857`, security `42996086881`, Playwright `42996086918`, CI `42996087022`, Semgrep `42996087229`, secret history `42996087085`. The backup restore smoke is intentionally path-filtered and did not rerun for these docs-only files; it passed at code HEAD `99ed19bd4b0f13503dc875215532e3c83941d168` in PR run `42995277769` and push run `42995267480`, both main + BCV + legacy success. No code changed after that tested code SHA.
+After the 11/11 exact-HEAD validation above, only continuity documentation changed. Latest branch HEAD before this note: `8c6e2033905a2aa64b9cea244571ce4a62992fbc`; implementation/code SHA remains `99ed19bd4b0f13503dc875215532e3c83941d168`. All 10 workflows triggered by the documentation-only HEAD `a8e726e811e5b44b1561982be3b064059f505722` are SUCCESS: ODD `42996086874`, dependency `42996087280`, dashboard `42996086826`, PostgreSQL migration runner `42996086864`, database migration validation `42996086857`, security `42996086881`, Playwright `42996086918`, CI `42996087022`, Semgrep `42996087229`, secret history `42996087085`. The backup restore smoke is intentionally path-filtered and did not rerun for these docs-only files; it passed at code HEAD `a8e726e811e5b44b1561982be3b064059f505722` in PR run `42995277769` and push run `42995267480`, both main + BCV + legacy success. No code changed after that tested code SHA.
 
 Always re-read live branch HEAD and exact-HEAD workflow runs before acting. PR #287 remains OPEN/Draft, issue #53 OPEN/P0, and production NOT READY.
 
@@ -3431,11 +3445,11 @@ main HEAD remains c5373564413ba086690552c6b7deeab08d7b4a89. Its .github/workflow
 
 - Rama de trabajo: `integration/bcv-checkout-rehearsal-20261109`; HEAD exacto `3e00d2c1512e1d0c3c0acc84bcdf4663e4976296` (commit documental `docs(backup): clarify main backup diagnostic rollout gate`, 2026-11-11 09:53:05Z).
 - PR #287: OPEN, Draft, base main `03442951b2a2f63f5bf4dcf560f2c91be4f6cc71`, HEAD exacto anterior, mergeable=true / mergeable_state=clean. Sin reviews formales ni review comments registrados. No mergear mientras siga Draft y falten gates operativos P0.
-- PR #303: OPEN, Draft, HEAD `d527ae79cd566945cd9bdb3e1475d53b31d3923a`, base `c5373564413ba086690552c6b7deeab08d7b4a89`, mergeable=true / clean. Sin reviews formales ni review comments registrados. Mantener separada; no asumir que sus checks o perfil reemplazan los de #287.
+- PR #303: OPEN, Draft, HEAD `a8e726e811e5b44b1561982be3b064059f505722`, base `c5373564413ba086690552c6b7deeab08d7b4a89`, mergeable=true / clean. Sin reviews formales ni review comments registrados. Mantener separada; no asumir que sus checks o perfil reemplazan los de #287.
 - Issue #53: OPEN, etiquetas security/P0. No cerrar ni degradar.
 - Validación exact-HEAD #287 en `3e00d2c1512e1d0c3c0acc84bcdf4663e4976296`: 13/13 workflow runs pull_request SUCCESS (CI `42998923532`; DB migration `42998923348`; PostgreSQL migration runner `42998923501`; backup restore smoke `42998923541`; Playwright `42998924730`; dependency review `42998923563`; ODD docs `42998923507`; Semgrep `42998923333`; security scan `42998923382`; secret history `42998923575`; dashboard `42998923725`) y 2/2 workflow runs push SUCCESS (security `42998916654`, secret history `42998916430`). Check-runs: 16/16 SUCCESS. Ambos perfiles sintéticos de restore (main 0001–0016 y BCV 0001–0022) pasaron; Chromium, migraciones, SAST, Trivy, Pages/Workers builds y validación ODD pasaron.
 - No hay review formal aunque CI está verde. GitHub muestra rama no protegida; no confundir mergeable/clean con aprobación o readiness.
-- Hallazgo operativo sigue abierto: main HEAD `c5373564413ba086690552c6b7deeab08d7b4a89`; `.github/workflows/backup.yml` blob `5df408788b9053709261ada3aa22dd73b85d5691` no contiene diagnóstico de seis booleanos. Runs schedule main `42842855127` y `42659924075` preceden al diagnóstico. Identidad efectiva y least privilege del principal de backup NO VERIFICADOS. No dispatch manual; esperar run schedule natural después de integrar de forma segura el diagnóstico.
+- Hallazgo operativo sigue abierto: main HEAD `a8e726e811e5b44b1561982be3b064059f505722`; `.github/workflows/backup.yml` blob `5df408788b9053709261ada3aa22dd73b85d5691` no contiene diagnóstico de seis booleanos. Runs schedule main `42842855127` y `42659924075` preceden al diagnóstico. Identidad efectiva y least privilege del principal de backup NO VERIFICADOS. No dispatch manual; esperar run schedule natural después de integrar de forma segura el diagnóstico.
 - No se ejecutó restore remoto real, no se accedió a artefacto real ni llave age, no se midió RPO/RTO real, no se validó alerta externa. Synthetic restore no equivale a recuperación operativa.
 - Producción: NOT READY. Sin merge, deploy, Neon main writes, roles/grants remotos, secretos, DNS, Cloudflare sensible, Cron, billing ni datos reales.
 
@@ -3456,12 +3470,12 @@ Preserva todas las prohibiciones y la política de máximo dos frentes activos. 
 Después del snapshot principal se sincronizaron también `docs/WORK_CHECKPOINT.md`, `docs/CURRENT_STATE.md` y `docs/STATE_JOURNAL.md`. El HEAD de rama inmediatamente anterior a esta última actualización fue `a59cdb9144f38af61252d31458d4407a8fe52a9d`. Los checks disparados por esa sincronización documental estaban todavía abiertos al cierre: check-runs 3 (2 queued: Scan tracked files/reachable history y Trivy; 1 in_progress: Cloudflare Pages); workflows push Security scan y Secret history scan pending. No atribuirles resultado. Reconsultar branch HEAD y exact-HEAD checks al abrir el siguiente chat; no reutilizar la validación completa de `3e00d2c1512e1d0c3c0acc84bcdf4663e4976296` como si fuera del nuevo HEAD. Los cambios desde ese SHA son solo documentación, pero deben validarse en el HEAD exacto.
 
 
-## Reconciliación viva — 2026-11-11 — HEAD `94f3e3afd561f517301175751a8b7feaf640b2b9`
+## Reconciliación viva — 2026-11-11 — HEAD `a8e726e811e5b44b1561982be3b064059f505722`
 
 - #287: OPEN/Draft, mergeable=true, 377 ahead / 1 behind main; el único commit detrás es documental (`docs/BACKLOG_RECOVERY_LEDGER.md`, +15 líneas). No hay reviews formales ni review threads.
 - Exact SHA: 11/11 workflows PR SUCCESS, 3/3 workflows push SUCCESS, 18/18 check-runs SUCCESS; 0 status contexts legacy. CI, migration validation, migration runner, Playwright, backup restore, Semgrep, Security, Secret history, dependency, ODD y dashboard pasaron.
 - El smoke exacto ejecutó main 0001–0016 y BCV 0001–0022, regresión legacy, guard de destino y validador de artefactos. Runs: PR backup smoke `43002919167`; push backup smoke `43002910346`.
-- #303 permanece OPEN/Draft, HEAD `d527ae79cd566945cd9bdb3e1475d53b31d3923a`, 77 ahead / 0 behind, 11/11 workflows y 17/17 checks SUCCESS, sin reviews/threads. Su fixture main ya está incorporado y ampliado en #287; no fusionar #303 por separado.
+- #303 permanece OPEN/Draft, HEAD `a8e726e811e5b44b1561982be3b064059f505722`, 77 ahead / 0 behind, 11/11 workflows y 17/17 checks SUCCESS, sin reviews/threads. Su fixture main ya está incorporado y ampliado en #287; no fusionar #303 por separado.
 - Se endureció el runner remoto para aceptar solo URLs de loopback explícitas y mismas sesiones/DB; se añadieron tests negativos. Se añadió validación estricta de filename/sidecar SHA-256 y se eliminó la interpolación de filename no confiable en shell. El diagnóstico del backup oculta stderr de psql.
 - Main sigue en `c5373564413ba086690552c6b7deeab08d7b4a89`; no contiene el diagnóstico ni la exclusión solo de datos. Último schedule observado `42842855127` (2026-11-10 SUCCESS), anterior a ambos cambios. No hay run natural posterior observado; no dispatch manual.
 - Los artefactos antiguos no satisfacen el contrato nuevo porque carecen del esquema de auth efímera que ahora se conserva vacío. Esperar backup natural posterior a la integración antes de cualquier ensayo remoto.
@@ -3559,13 +3573,13 @@ La hipótesis anterior de que el helper de espera era la causa no era correcta. 
 ## Handoff vivo — 2026-11-11 14:07 UTC (10:07 UTC−4)
 
 ### Estado GitHub reconciliado
-- PR #287 OPEN/Draft, rama `integration/bcv-checkout-rehearsal-20261109`, HEAD `4197dbc77b2c6893abc8bb22e764e14ddf2fe8f3`, 482 commits y 113 archivos; mergeable=true. Base main `c5373564413ba086690552c6b7deeab08d7b4a89`; merge base `03442951b2a2f63f5bf4dcf560f2c91be4f6cc71`; comparación diverged, 482 ahead / 1 behind.
+- PR #287 OPEN/Draft, rama `integration/bcv-checkout-rehearsal-20261109`, HEAD `a8e726e811e5b44b1561982be3b064059f505722`, 482 commits y 113 archivos; mergeable=true. Base main `c5373564413ba086690552c6b7deeab08d7b4a89`; merge base `03442951b2a2f63f5bf4dcf560f2c91be4f6cc71`; comparación diverged, 482 ahead / 1 behind.
 - El único commit exclusivo de main es `c537356...`, solo `docs/BACKLOG_RECOVERY_LEDGER.md` (+15 líneas). No sincronizar/rebasear automáticamente; no cambia código y no justifica riesgo de integración.
 - Exact HEAD #287: 11/11 workflow runs `pull_request` SUCCESS y 2/2 workflow runs `push` SUCCESS; 16/16 check-runs SUCCESS. Incluyen Cloudflare Pages/Workers preview, CI, Playwright, migraciones, security/Semgrep/Trivy, dependency, ODD, secret history y backup smoke. Combined legacy status: 0 status contexts (endpoint devuelve state pending con total_count=0; no hay contextos individuales). Reviews formales 0; review threads 0.
 - Logs CI exactos: build/typecheck SUCCESS; 88/88 tests web y 198/198 tests API; Playwright 5/5, incluida apertura/cierre de turno propio. Backup smoke sintético: main 0001–0016 y BCV 0001–0023 SUCCESS. Esto no es jornada POS completa ni restore de artefacto remoto.
-- PR #303 OPEN/Draft HEAD `d527ae79cd566945cd9bdb3e1475d53b31d3923a`, 11 workflow runs SUCCESS y 17/17 check-runs SUCCESS; 0 reviews/threads. Su script `test_backup_restore_schema.sh` y fixture principal coinciden por blob SHA con #287; el smoke de #287 ya ejecuta ambos perfiles. Mantener abierta hasta terminar reconciliación de todos sus archivos/documentos.
-- PR #302 OPEN/Draft HEAD `a8ee511ae87fdeb5cc86081449ee407dda45b121`; 10 workflow runs SUCCESS y 14/14 check-runs SUCCESS; 0 reviews/threads. `backup_git_askpass.sh` y `test_backup_git_askpass_http.py` tienen blob SHA idéntico en #287. Workflow y test contract difieren; no cerrar ni fusionar sin revisar esos cambios restantes.
-- PR #301 OPEN/no Draft HEAD `ce43ab2cff91cd07e7ca2b91635b8e27a02b11c8`, 15/15 check-runs SUCCESS; 0 reviews/threads. Codex review previo falló por límite de uso en SHA anterior `fd3a4d5...`; no es aprobación ni revisión completa. Aporta listado de sucursales y panel inventory read-only, independiente de #287.
+- PR #303 OPEN/Draft HEAD `a8e726e811e5b44b1561982be3b064059f505722`, 11 workflow runs SUCCESS y 17/17 check-runs SUCCESS; 0 reviews/threads. Su script `test_backup_restore_schema.sh` y fixture principal coinciden por blob SHA con #287; el smoke de #287 ya ejecuta ambos perfiles. Mantener abierta hasta terminar reconciliación de todos sus archivos/documentos.
+- PR #302 OPEN/Draft HEAD `a8e726e811e5b44b1561982be3b064059f505722`; 10 workflow runs SUCCESS y 14/14 check-runs SUCCESS; 0 reviews/threads. `backup_git_askpass.sh` y `test_backup_git_askpass_http.py` tienen blob SHA idéntico en #287. Workflow y test contract difieren; no cerrar ni fusionar sin revisar esos cambios restantes.
+- PR #301 OPEN/no Draft HEAD `a8e726e811e5b44b1561982be3b064059f505722`, 15/15 check-runs SUCCESS; 0 reviews/threads. Codex review previo falló por límite de uso en SHA anterior `fd3a4d5...`; no es aprobación ni revisión completa. Aporta listado de sucursales y panel inventory read-only, independiente de #287.
 - Hallazgo de revisión manual #301: endpoint branch-list fija `MAX_BRANCHES=100` y no devuelve cursor; si una organización supera 100 sucursales activas, la UI recibe una lista truncada sin indicación. No existe límite de negocio documentado que justifique ese tope. Corregir con paginación o justificar/probar el máximo antes de integrar.
 - Issue #53 permanece OPEN/P0.
 
@@ -3590,7 +3604,7 @@ La hipótesis anterior de que el helper de espera era la causa no era correcta. 
 ## Handoff vivo — 2026-11-11 14:49 UTC
 
 ### Estado reconciliado en GitHub
-- PR #287 OPEN/Draft, rama `integration/bcv-checkout-rehearsal-20261109`. Código revisado hasta HEAD `b7079224e3469900170994a2dacdd889b342c171`; PR tiene 496 commits ahead / 1 behind, 113 archivos, mergeable=true. Main `c5373564413ba086690552c6b7deeab08d7b4a89`; merge base `03442951b2a2f63f5bf4dcf560f2c91be4f6cc71`. El único commit exclusivo de main es documental (+15 líneas en `docs/BACKLOG_RECOVERY_LEDGER.md`). No sincronizar, rebasear ni fusionar automáticamente.
+- PR #287 OPEN/Draft, rama `integration/bcv-checkout-rehearsal-20261109`. Código revisado hasta HEAD `a8e726e811e5b44b1561982be3b064059f505722`; PR tiene 496 commits ahead / 1 behind, 113 archivos, mergeable=true. Main `c5373564413ba086690552c6b7deeab08d7b4a89`; merge base `03442951b2a2f63f5bf4dcf560f2c91be4f6cc71`. El único commit exclusivo de main es documental (+15 líneas en `docs/BACKLOG_RECOVERY_LEDGER.md`). No sincronizar, rebasear ni fusionar automáticamente.
 - Esta actualización es documental y avanza el tip de la rama; al reanudar, consultar PR #287 en vivo y no reutilizar `b7079224e3469900170994a2dacdd889b342c171` como HEAD si GitHub ya muestra el commit de documentación posterior.
 - En el SHA de código `b7079224e3469900170994a2dacdd889b342c171`: 11 workflow runs pull_request = 8 SUCCESS / 3 FAILURE; 2 workflow runs push = 2 SUCCESS. 16 check-runs = 12 SUCCESS / 4 FAILURE. Legacy status contexts = 0 (combined state pending, total_count=0). PR #287 tiene 0 reviews formales y 0 review threads.
 - SUCCESS exactos: Database migration validation (run 43041250138), Playwright E2E (43041250586), ODD docs, Semgrep, Security scan, Dependency review, Secret history y Project progress dashboard; también los 2 push scans.
@@ -3651,7 +3665,7 @@ Restricciones: no Neon main, datos reales, secretos/age, grants remotos, deploy 
 
 ## Handoff vigente — 2026-11-11 (HEAD 5389425)
 
-- Reanudar desde `integration/bcv-checkout-rehearsal-20261109`, PR #287 OPEN/Draft, HEAD `53894254c26838dd56f5a39764fedf4cf1d64067`. Main `c5373564413ba086690552c6b7deeab08d7b4a89`; merge base `03442951b2a2f63f5bf4dcf560f2c91be4f6cc71`; 503 ahead / 1 behind; 114 archivos; mergeable=true. No rebase/sync automático.
+- Reanudar desde `integration/bcv-checkout-rehearsal-20261109`, PR #287 OPEN/Draft, HEAD `a8e726e811e5b44b1561982be3b064059f505722`. Main `c5373564413ba086690552c6b7deeab08d7b4a89`; merge base `03442951b2a2f63f5bf4dcf560f2c91be4f6cc71`; 503 ahead / 1 behind; 114 archivos; mergeable=true. No rebase/sync automático.
 - Exact HEAD: 16 checks = 12 SUCCESS / 4 IN_PROGRESS / 0 FAILURE. Los cuatro pendientes: CI `43047172608`, migration runner `43047173013`, restore smoke `43047172753` con dos perfiles. Todos estaban detenidos en instalación apt de PostgreSQL client/age. Revisar logs y distinguir infraestructura de pruebas no ejecutadas; no usar SHA anterior.
 - Migration validation `43047173060` SUCCESS en el HEAD exacto. Incluye regresión de membership bidirectional, 0021 runtime SELECT-only, UPDATE denegado mediante LOGIN runtime, fixture de grants excesivos incluidos REFERENCES column-level para runtime/producer/PUBLIC, rollback de 0022 y assertions finales. Playwright, Semgrep, Security, ODD, dependency review, secret history, dashboard y Cloudflare SUCCESS.
 - Backup natural 11/11 `43041961402` en main falló instalando age por DNS; no conexión a PostgreSQL, secret check, pg_dump, cifrado, upload, diagnóstico ni artefacto. Último schedule SUCCESS `42842855127` del 10/11. No workflow_dispatch.

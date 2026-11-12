@@ -12,7 +12,37 @@ BEGIN
     OR producer.rolcreatedb OR producer.rolcreaterole OR producer.rolreplication
     OR producer.rolbypassrls OR producer.rolinherit OR runtime_oid IS NULL
   THEN RAISE EXCEPTION 'MICROAPP_BCV_SYNC_ROLE_ATTRIBUTES_INVALID'; END IF;
-  IF EXISTS (SELECT 1 FROM pg_catalog.pg_auth_members WHERE roleid=producer.oid OR member=producer.oid)
+  -- PostgreSQL 16+ can grant the role creator ADMIN OPTION on a role it creates.
+  -- Permit only the current database's direct owner as an incoming member, and
+  -- only with ADMIN OPTION (no inheritance and no SET ROLE). All outgoing
+  -- memberships remain forbidden. Superusers inherently bypass role membership
+  -- checks, so effective USAGE/SET checks apply to non-superuser database owners.
+  IF EXISTS (
+    SELECT 1
+    FROM pg_catalog.pg_auth_members m
+    WHERE m.member = producer.oid
+  ) OR EXISTS (
+    SELECT 1
+    FROM pg_catalog.pg_auth_members m
+    JOIN pg_catalog.pg_database d ON d.datname = current_database()
+    WHERE m.roleid = producer.oid
+      AND (
+        m.member <> d.datdba
+        OR NOT m.admin_option
+        OR m.inherit_option
+        OR m.set_option
+      )
+  ) OR EXISTS (
+    SELECT 1
+    FROM pg_catalog.pg_database d
+    JOIN pg_catalog.pg_roles database_owner ON database_owner.oid = d.datdba
+    WHERE d.datname = current_database()
+      AND NOT database_owner.rolsuper
+      AND (
+        pg_catalog.pg_has_role(d.datdba, producer.oid, 'USAGE')
+        OR pg_catalog.pg_has_role(d.datdba, producer.oid, 'SET')
+      )
+  )
   THEN RAISE EXCEPTION 'MICROAPP_BCV_SYNC_ROLE_MEMBERSHIP_FORBIDDEN'; END IF;
   -- Schema ACLs are provisioned by the schema owner, not this migration role.
   -- Fail closed rather than pretending the table owner can revoke schema grants.

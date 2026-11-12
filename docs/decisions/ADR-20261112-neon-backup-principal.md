@@ -28,7 +28,7 @@ La prueba también rechazó `ALTER ROLE ... NOSUPERUSER` bajo `neondb_owner` con
 - `NOSUPERUSER` se establece en `CREATE ROLE`.
 - El provisioning falla cerrado si el rol ya existe con `rolsuper=true`.
 - El `ALTER ROLE` posterior no intenta reafirmar `NOSUPERUSER`.
-- El preflight y la auditoría permiten solo membresías entrantes cuyo miembro sea el propietario directo de la base (`pg_database.datdba)); cualquier membresía saliente o cualquier otro miembro es FAIL.
+- El preflight y la auditoría permiten solo membresías entrantes cuyo miembro sea el propietario directo de la base (`pg_database.datdba`); cualquier membresía saliente o cualquier otro miembro es FAIL.
 - La prueba PostgreSQL 18 debe ejecutar el provisioning desde un LOGIN no-superuser con `CREATEROLE` que sea propietario de la base, validar la arista automática, comprobar que el audit pasa y verificar que miembros adicionales y membresías salientes hacen fallar la auditoría.
 
 Esta enmienda adapta el control al modelo administrado sin relajar la separación de privilegios. No certifica por sí sola Neon real tras el cambio; requiere el ensayo aislado post-merge. Neon `main`, GitHub Secrets y el principal efectivo del secreto permanecen fuera de alcance.

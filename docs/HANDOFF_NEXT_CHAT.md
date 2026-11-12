@@ -1,3 +1,17 @@
+## Turno 32 — PR #337: contrato de membresías PostgreSQL 16+ / Neon
+
+- Base: `main` SHA `908a01fd891a83bfd8c2d605a37ba91fa62e3db0`.
+- Rama: `fix/neon-compatible-bcv-and-runtime-role-membership-20261112`; PR #337 autorizada exclusivamente para corregir la arista entrante de propietario directo en `microapp_bcv_sync` y `microapp_runtime`.
+- Hallazgo Turno 31: la migración 0022 detuvo con P0001 porque `pg_auth_members` contenía `roleid=microapp_bcv_sync`, `member=neondb_owner`, grantor `cloud_admin`, ADMIN OPTION=true. Neon branch temporal se eliminó; main no recibió SQL.
+- Archivos de alcance: 0022 preflight, 0022 assertions, restore runtime assertions, migration-runner workflow, harness PostgreSQL 18, task ODD, ADR, CURRENT_STATE, STATE_JOURNAL y este handoff.
+- Contrato: membresías salientes prohibidas; entrantes solo desde `pg_database.datdba` con ADMIN OPTION=true / INHERIT=false / SET=false; owner no-superuser sin USAGE/SET efectivo. Grants funcionales permanecen sin cambios.
+- Harness: PostgreSQL 18 en job independiente; crea runtime y BCV producer bajo un database owner no-superuser CREATEROLE; adopta baseline; migra 0001–0023; ejecuta assertions; fuerza fallos outgoing, incoming rogue, owner SET e INHERIT para ambos roles.
+- No Neon, secrets, Cloudflare, despliegue manual, PRs #193/#314/#315/#316 ni Issue #53.
+- **Estado:** PR/checks/merge pendientes. Antes de merge: comprobar búsqueda SHA literal 0022, diff completo, branch protection, review threads/reviews, conflictos y todos los check-runs exact-SHA. Después del merge: verificar nuevo main y checks post-merge; restablecer Code Freeze; solicitar ventana nueva para Fase 2 definitiva Neon.
+- Issue #53 OPEN/P0; **PRODUCTION: NOT READY**; USD 0.
+
+---
+
 ## Turno 26 — corrección del resumen de diagnóstico de backup (2026-11-12 UTC)
 
 - Rama quirúrgica: `fix/backup-diagnostic-backtick-escaping-20261112`, creada desde main `066aaa1ee9599e6c34d264929dafb7a0734cca71`.

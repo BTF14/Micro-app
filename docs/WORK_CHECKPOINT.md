@@ -1,3 +1,7 @@
+**Checkpoint vigente — Turno 17:** PR #319 MERGED; main `fc1a599a4d78350d3af2f239390459e168e3ff14`. PR #320 OPEN / Draft, HEAD `942ef584b4732848a990ea1f7d9c9b9a5584418d`; CI inicial pendiente/en curso. Tarea ODD y suite sintética tenant/branch creadas. Hardening de cookie inválida aplicado a rutas protegidas. Sin RLS/Drizzle en la arquitectura actual; aislamiento por authz, SQL scoped, composite FKs, locks y triggers. Issue #53 OPEN/P0; PRODUCTION: NOT READY; USD 0; no Neon writes/secrets.
+
+---
+
 **Checkpoint vigente — 2026-11-12:** PR #318 merged; main `3ac66a180fcf23421b546140a419a45062e633dd`; pre-merge 19/19 checks and post-merge 13/13 checks SUCCESS. PR #319 OPEN / Draft for operator runbook. Issue #53 OPEN/P0; PRODUCTION: NOT READY; no Neon writes; USD 0.
 
 

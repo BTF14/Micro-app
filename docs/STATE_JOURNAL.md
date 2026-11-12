@@ -1,3 +1,4 @@
+- PR #318 creada Draft desde la rama de seguridad. HEAD al corte `fa5bd1710452d24974a208659209f4b0526f204e`; CI exact-HEAD en curso: 5/16 SUCCESS, 11 pendientes, 0 fallos. Se añadió auditoría de auth ephemeral: no conceder SELECT sobre auth_sessions/auth_rate_limits/auth_bootstrap_attempts; preservar DDL y excluir filas. No fusionar antes de CI completo y revisión.
 ## Journal — Turno 14 (2026-11-12 UTC)
 
 - PR #317 squash-merged; HEAD validado `870a35ac4a0190b80f31c0cf0590a759195f60dc`, 14/14 check-runs SUCCESS; nuevo main `bd9af0cc5b92858fd5063b3d8d102dbc327469ac`.

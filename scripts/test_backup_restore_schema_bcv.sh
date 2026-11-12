@@ -9,6 +9,7 @@ schema_restore_url="postgresql://microapp:microapp-test-only@localhost:5432/micr
 migration_url="postgresql://microapp_migrator:migrator-test-only@localhost:5432/microapp_schema_source"
 runtime_url="postgresql://microapp_runtime:runtime-test-only@localhost:5432/microapp_schema_source"
 producer_url="postgresql://microapp_bcv_sync:bcv-sync-test-only@localhost:5432/microapp_schema_source"
+backup_url="postgresql://microapp_backup:backup-test-only@localhost:5432/microapp_schema_source"
 migration_restore_url="postgresql://microapp_migrator:migrator-test-only@localhost:5432/microapp_schema_restore"
 runtime_restore_url="postgresql://microapp_runtime:runtime-test-only@localhost:5432/microapp_schema_restore"
 producer_restore_url="postgresql://microapp_bcv_sync:bcv-sync-test-only@localhost:5432/microapp_schema_restore"
@@ -35,9 +36,11 @@ CREATE ROLE microapp_runtime LOGIN PASSWORD 'runtime-test-only'
   NOSUPERUSER NOCREATEDB NOCREATEROLE NOREPLICATION NOBYPASSRLS NOINHERIT;
 CREATE ROLE microapp_bcv_sync LOGIN PASSWORD 'bcv-sync-test-only'
   NOSUPERUSER NOCREATEDB NOCREATEROLE NOREPLICATION NOBYPASSRLS NOINHERIT;
+CREATE ROLE microapp_backup LOGIN PASSWORD 'backup-test-only'
+  NOSUPERUSER NOCREATEDB NOCREATEROLE NOREPLICATION NOBYPASSRLS NOINHERIT;
 CREATE DATABASE microapp_schema_source;
 CREATE DATABASE microapp_schema_restore;
-GRANT CONNECT ON DATABASE microapp_schema_source TO microapp_migrator, microapp_runtime, microapp_bcv_sync;
+GRANT CONNECT ON DATABASE microapp_schema_source TO microapp_migrator, microapp_runtime, microapp_bcv_sync, microapp_backup;
 GRANT CONNECT ON DATABASE microapp_schema_restore TO microapp_migrator, microapp_runtime, microapp_bcv_sync;
 SQL
 
@@ -73,23 +76,30 @@ source_ephemeral="$(psql "$schema_source_url" -X -v ON_ERROR_STOP=1 -Atq -F '|' 
   exit 1
 }
 
+# Grant only the read scope needed by pg_dump on this disposable source.
+psql "$schema_source_url" -X -v ON_ERROR_STOP=1 <<'SQL'
+GRANT USAGE ON SCHEMA public TO microapp_backup;
+GRANT SELECT ON ALL TABLES IN SCHEMA public TO microapp_backup;
+GRANT SELECT ON ALL SEQUENCES IN SCHEMA public TO microapp_backup;
+SQL
+
 role_contract_ok="$(psql "$schema_source_url" -X -v ON_ERROR_STOP=1 -Atqc "
-SELECT count(*) = 3 AND COALESCE(bool_and(
+SELECT count(*) = 4 AND COALESCE(bool_and(
   rolcanlogin AND NOT rolsuper AND NOT rolcreatedb AND NOT rolcreaterole
   AND NOT rolreplication AND NOT rolbypassrls
   AND ((rolname = 'microapp_migrator' AND rolinherit)
-    OR (rolname IN ('microapp_runtime','microapp_bcv_sync') AND NOT rolinherit))
+    OR (rolname IN ('microapp_runtime','microapp_bcv_sync','microapp_backup') AND NOT rolinherit))
 ), false)
 FROM pg_catalog.pg_roles
-WHERE rolname IN ('microapp_migrator','microapp_runtime','microapp_bcv_sync')")"
+WHERE rolname IN ('microapp_migrator','microapp_runtime','microapp_bcv_sync','microapp_backup')")"
 [[ "$role_contract_ok" == "t" ]] || { echo "Synthetic role attributes violate the expected least-privilege contract." >&2; exit 1; }
 
 role_memberships="$(psql "$schema_source_url" -X -v ON_ERROR_STOP=1 -Atqc "
 SELECT count(*)
 FROM pg_catalog.pg_auth_members m
 JOIN pg_catalog.pg_roles r ON r.oid IN (m.roleid, m.member)
-WHERE r.rolname IN ('microapp_migrator','microapp_runtime','microapp_bcv_sync')")"
-[[ "$role_memberships" == "0" ]] || { echo "Synthetic migrator/runtime/producer roles unexpectedly have memberships." >&2; exit 1; }
+WHERE r.rolname IN ('microapp_migrator','microapp_runtime','microapp_bcv_sync','microapp_backup')")"
+[[ "$role_memberships" == "0" ]] || { echo "Synthetic migrator/runtime/producer/backup roles unexpectedly have memberships." >&2; exit 1; }
 
 role_search_path_manifest() {
   local migrator_connection="$1"
@@ -108,15 +118,76 @@ GRANT USAGE, CREATE ON SCHEMA public TO microapp_migrator;
 GRANT USAGE ON SCHEMA public TO microapp_runtime, microapp_bcv_sync;
 SQL
 
-echo "== Dump complete schema and populated synthetic graph; exclude ephemeral auth data only"
-# Preserve ownership and ACLs. All required synthetic roles already exist in
-# the disposable PostgreSQL cluster and are verified above.
-pg_dump "$schema_source_url" --format=custom \
+echo "== Dump complete schema as the isolated read-only backup principal"
+backup_identity="$(psql "$backup_url" -X -v ON_ERROR_STOP=1 -Atqc "SELECT current_user || ':' || session_user || ':' || current_database()")"
+[[ "$backup_identity" == "microapp_backup:microapp_backup:microapp_schema_source" ]] || {
+  echo "Backup dump did not use the expected direct microapp_backup LOGIN." >&2
+  exit 1
+}
+backup_privileges_ok="$(psql "$schema_source_url" -X -v ON_ERROR_STOP=1 -Atqc "
+SELECT rolcanlogin AND NOT rolsuper AND NOT rolcreatedb AND NOT rolcreaterole
+  AND NOT rolreplication AND NOT rolbypassrls AND NOT rolinherit
+  AND has_database_privilege('microapp_backup', current_database(), 'CONNECT')
+  AND NOT has_database_privilege('microapp_backup', current_database(), 'CREATE')
+  AND has_schema_privilege('microapp_backup', 'public', 'USAGE')
+  AND NOT has_schema_privilege('microapp_backup', 'public', 'CREATE')
+  AND NOT EXISTS (
+    SELECT 1 FROM pg_catalog.pg_class c JOIN pg_catalog.pg_namespace n ON n.oid=c.relnamespace
+    WHERE n.nspname='public' AND c.relkind IN ('r','p')
+      AND NOT has_table_privilege('microapp_backup',c.oid,'SELECT'))
+  AND NOT EXISTS (
+    SELECT 1 FROM pg_catalog.pg_class c JOIN pg_catalog.pg_namespace n ON n.oid=c.relnamespace
+    WHERE n.nspname='public' AND c.relkind IN ('r','p')
+      AND (has_table_privilege('microapp_backup',c.oid,'INSERT')
+        OR has_table_privilege('microapp_backup',c.oid,'UPDATE')
+        OR has_table_privilege('microapp_backup',c.oid,'DELETE')
+        OR has_table_privilege('microapp_backup',c.oid,'TRUNCATE')
+        OR has_table_privilege('microapp_backup',c.oid,'REFERENCES')
+        OR has_table_privilege('microapp_backup',c.oid,'TRIGGER')
+        OR has_table_privilege('microapp_backup',c.oid,'MAINTAIN')))
+  AND NOT EXISTS (
+    SELECT 1 FROM pg_catalog.pg_class c JOIN pg_catalog.pg_namespace n ON n.oid=c.relnamespace
+    WHERE n.nspname='public' AND c.relkind IN ('r','p')
+      AND EXISTS (SELECT 1 FROM pg_catalog.pg_attribute a WHERE a.attrelid=c.oid AND a.attnum>0 AND NOT a.attisdropped
+        AND (has_column_privilege('microapp_backup',c.oid,a.attname,'INSERT')
+          OR has_column_privilege('microapp_backup',c.oid,a.attname,'UPDATE')
+          OR has_column_privilege('microapp_backup',c.oid,a.attname,'REFERENCES'))))
+  AND NOT EXISTS (
+    SELECT 1 FROM pg_catalog.pg_class c JOIN pg_catalog.pg_namespace n ON n.oid=c.relnamespace
+    WHERE n.nspname='public' AND c.relkind='S'
+      AND (has_sequence_privilege('microapp_backup',c.oid,'USAGE')
+        OR has_sequence_privilege('microapp_backup',c.oid,'UPDATE')))
+  AND NOT EXISTS (SELECT 1 FROM pg_catalog.pg_database WHERE datdba=(SELECT oid FROM pg_catalog.pg_roles WHERE rolname='microapp_backup'))
+  AND NOT EXISTS (SELECT 1 FROM pg_catalog.pg_namespace WHERE nspname='public' AND nspowner=(SELECT oid FROM pg_catalog.pg_roles WHERE rolname='microapp_backup'))
+  AND NOT EXISTS (
+    SELECT 1 FROM pg_catalog.pg_class c JOIN pg_catalog.pg_namespace n ON n.oid=c.relnamespace
+    WHERE n.nspname='public' AND c.relowner=(SELECT oid FROM pg_catalog.pg_roles WHERE rolname='microapp_backup'))
+  AND NOT EXISTS (
+    SELECT 1 FROM pg_catalog.pg_class c JOIN pg_catalog.pg_namespace n ON n.oid=c.relnamespace
+    WHERE n.nspname='public' AND c.relkind IN ('r','p') AND (c.relrowsecurity OR c.relforcerowsecurity))
+  AND NOT pg_catalog.pg_has_role('microapp_backup','microapp_migrator','MEMBER')
+  AND NOT pg_catalog.pg_has_role('microapp_backup','microapp_runtime','MEMBER')
+  AND NOT pg_catalog.pg_has_role('microapp_backup','microapp_bcv_sync','MEMBER')
+FROM pg_catalog.pg_roles WHERE rolname='microapp_backup'")"
+[[ "$backup_privileges_ok" == "t" ]] || {
+  echo "Synthetic microapp_backup role violates the read-only least-privilege contract." >&2
+  exit 1
+}
+pg_dump "$backup_url" --format=custom \
   --exclude-table-data=public.auth_sessions \
   --exclude-table-data=public.auth_rate_limits \
   --exclude-table-data=public.auth_bootstrap_attempts \
   --file="$tmpdir/schema.dump"
 test -s "$tmpdir/schema.dump"
+
+# The temporary dump grants are revoked before source/restore ACL manifests are
+# compared. The test-only principal never retains access beyond pg_dump.
+psql "$schema_source_url" -X -v ON_ERROR_STOP=1 <<'SQL'
+REVOKE SELECT ON ALL TABLES IN SCHEMA public FROM microapp_backup;
+REVOKE SELECT ON ALL SEQUENCES IN SCHEMA public FROM microapp_backup;
+REVOKE USAGE ON SCHEMA public FROM microapp_backup;
+SQL
+psql "$SOURCE_URL" -X -v ON_ERROR_STOP=1 -c 'REVOKE CONNECT ON DATABASE microapp_schema_source FROM microapp_backup' >/dev/null
 
 echo "== Encrypt, checksum, decrypt and restore into a second disposable database"
 age-keygen -o "$tmpdir/age-key.txt" >/dev/null 2>"$tmpdir/age-keygen.log"

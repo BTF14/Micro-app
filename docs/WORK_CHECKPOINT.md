@@ -13,7 +13,7 @@
 
 ---
 
-**Checkpoint vigente — 2026-11-12:** PR #318 merged; main `3ac66a180fcf23421b546140a419a45062e633dd`; pre-merge 19/19 checks and post-merge 13/13 checks SUCCESS. PR #319 OPEN / Draft for operator runbook. Issue #53 OPEN/P0; PRODUCTION: NOT READY; no Neon writes; USD 0.
+**Snapshot histórico — Checkpoint previo a Turno 21 (PR #318):** PR #318 merged; main `3ac66a180fcf23421b546140a419a45062e633dd`; pre-merge 19/19 checks and post-merge 13/13 checks SUCCESS. PR #319 OPEN / Draft for operator runbook. Issue #53 OPEN/P0; PRODUCTION: NOT READY; no Neon writes; USD 0.
 
 
 

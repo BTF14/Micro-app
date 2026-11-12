@@ -4,6 +4,7 @@
 -- effective pg_has_role(USAGE/SET) checks are exercised, not bypassed.
 CREATE ROLE backup_diag_owner NOLOGIN CREATEROLE
   NOSUPERUSER NOCREATEDB NOREPLICATION NOBYPASSRLS NOINHERIT;
+GRANT CREATE ON DATABASE microapp_test TO backup_diag_owner;
 ALTER DATABASE microapp_test OWNER TO backup_diag_owner;
 SET ROLE backup_diag_owner;
 CREATE ROLE backup_diag_principal NOLOGIN;
@@ -60,8 +61,8 @@ AS $predicate$
     );
 $predicate$;
 
--- The CI database owner is the disposable "microapp" role. Remove any
--- creator edge and add the exact owner ADMIN-only edge accepted by contract.
+-- The disposable non-superuser database owner has the PostgreSQL 18 creator
+-- edge. Recreate it explicitly to pin the expected ADMIN-only options.
 REVOKE backup_diag_principal FROM backup_diag_owner;
 GRANT backup_diag_principal TO backup_diag_owner
   WITH ADMIN OPTION, INHERIT FALSE, SET FALSE;
@@ -172,5 +173,6 @@ RESET ROLE;
 REVOKE backup_diag_principal FROM backup_diag_owner;
 DROP FUNCTION pg_temp.backup_has_membership();
 DROP ROLE backup_diag_child, backup_diag_parent, backup_diag_principal;
+REVOKE CREATE ON DATABASE microapp_test FROM backup_diag_owner;
 ALTER DATABASE microapp_test OWNER TO microapp;
 DROP ROLE backup_diag_owner;

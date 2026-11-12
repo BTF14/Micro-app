@@ -51,7 +51,15 @@ Audit and prove tenant and branch isolation for commercial API paths and session
 - `inventory-read.ts` uses `authorizeBranchOperation`, and observed product/balance/movement queries include organization and branch/warehouse predicates.
 - `sales-checkout.ts` uses `authorizeBranchOperation`; observed sales/product/inventory writes are parameterized with server-derived organization and branch IDs. Full route/SQL/call graph review remains required.
 - `register-shifts.ts` contains register/cash-shift routes (the repository does not have a `cash_shifts.ts` module); route-by-route branch assignment and SQL scope audit remains required.
-- No conclusion of complete isolation is made from these partial observations. Inspect all SQL and database-side functions before closing the audit.
+- `database.ts` explicitly creates and closes a separate database client per operation; no shared connection or mutable tenant context is cached at module scope.
+- The repository uses parameterized raw SQL with `@neondatabase/serverless`; GitHub code search found no Drizzle ORM imports, no `ENABLE ROW LEVEL SECURITY`, and no `CREATE POLICY`. Tenant isolation is therefore enforced by server-side authorization/scoped SQL, composite tenant/branch foreign keys, row-lock helpers and database triggers/functions — not by PostgreSQL RLS. This is a defense-in-depth limitation that must remain explicit.
+- Existing disposable-PostgreSQL integration suites already cover cross-tenant inventory reads, cross-branch warehouse denial, cross-tenant count creation/confirmation without writes, and checkout rejection for a foreign-tenant product / foreign-branch warehouse. Existing register-shift API tests cover unauthorized branch operations and closing another cashier's shift.
+- `auth.integration.test.ts` already verifies expired and revoked sessions are rejected at `/auth/me`; the route clears the invalid cookie. However, protected commercial endpoints previously returned 401 without clearing a malformed/stale cookie. Turno 17 now exports the canonical cookie-clearing helper and applies it to protected catalog, inventory, checkout, branch and register-shift routes; a no-external-DB unit test covers malformed-cookie rejection and `private, no-store`.
+- The scheduled retention worker deletes old `auth_rate_limits` and `auth_bootstrap_attempts`, but not expired `auth_sessions`. Expiration is enforced at lookup; physical session-row retention is a separate hygiene/retention decision, not an authorization bypass.
+- There is no separate sales read/void HTTP module at this HEAD. The exposed sales mutation route is checkout; do not claim that nonexistent sales-order endpoints were tested. Cash-shift routes live in `register-shifts.ts`.
+- Full SQL review confirms inventory balance/movement/count paths bind server-derived organization and branch identifiers; checkout binds server-derived organization/branch and scopes products, sales, balance changes, movements and payments; shift reads/writes scope organization + branch + user and delegate open/close to narrowly granted SQL functions.
+- The register-shift opening trigger's eligible role list was corrected by migration 0007 to owner/admin/cashier; the earlier 0004 cashier-only definition is superseded, not a current mismatch.
+- No conclusion of complete isolation is made solely from source inspection. RLS absence remains an explicit architectural limitation; the test suite and disposable PostgreSQL CI evidence are required before considering this work complete.
 
 ## Risks / review gates
 
@@ -72,3 +80,17 @@ Audit and prove tenant and branch isolation for commercial API paths and session
 - Static review and tests: in progress.
 - External database / Neon: not accessed.
 - Production: **NOT READY**.
+
+
+## Implementation update — Turno 17
+
+- Added `apps/api/src/tenant-isolation.test.ts` with synthetic authorization tests:
+  - Tenant A cannot select Tenant B for inventory read or checkout mutation; the helper returns before any business SQL.
+  - A cashier assigned to Branch 1 cannot resolve Branch 2 inventory or close a Branch 2 shift; the branch lock rejects before business SQL.
+  - Concurrent requests use distinct DB clients and retain their own tenant/user contexts.
+  - The unlocked tenant resolver SQL includes active session, revocation, expiry, active user/membership/organization and requested organization predicates.
+  - Malformed session cookie is cleared on protected inventory and register-shift responses; authenticated responses remain private/no-store.
+- Exported the canonical `clearSessionCookie` helper and applied it to invalid/missing-session denials in catalog, inventory reads/counts, checkout, branch discovery and register-shift routes. This does not change authorization policy or grant new permissions.
+- Existing integration suites remain the authoritative HTTP/PostgreSQL cross-tenant coverage. The new test file is an additional unit-level guard, not a substitute for the PostgreSQL 18 integration tests.
+- CI exact-HEAD: pending.
+- No Neon connection, remote DDL/DML, secrets access, Cloudflare manual operation or paid service used.

@@ -133,7 +133,7 @@ export function isTrustedOrigin(origin: string | undefined, configuredOrigin: st
   }
 }
 
-function clearSessionCookie(c: AppContext): void {
+export function clearSessionCookie(c: AppContext): void {
   const isHttps = new URL(c.req.url).protocol === "https:";
   deleteCookie(c, SESSION_COOKIE, {
     path: "/",

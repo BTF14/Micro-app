@@ -3610,3 +3610,13 @@ Continuar directamente en \`security/issue-53-neon-role-matrix-20261112\`; no vo
 - El primer intento falló solo por un escape en el guard Bash de \`SOURCE_URL\`; corregido. El siguiente HEAD \`071b7c599f602034b7b5b353573cc65e6b8ddadf\` pasó el perfil legado completo. No reutilizar el resto de checks de SHA anteriores.
 - Antes de merge: revalidar exact-HEAD CI completo y PR review state; conservar \`PRODUCTION: NOT READY\`, Issue #53 OPEN, USD 0 y cero operaciones en Neon.
 - Después de un merge válido, crear PR \`#319\` para \`docs/NEON_LEAST_PRIVILEGE_AUDIT_RUNBOOK.md\`; no crearla antes.
+
+
+## Continuidad más reciente — Turno 16 / después del merge #318
+
+- PR #318 está MERGED por squash. Main SHA: 3ac66a180fcf23421b546140a419a45062e633dd.
+- Exact-HEAD pre-merge 1b27478fc1fe4a0584b8d5622e6c48acc87a6a95: 15/15 workflow runs y 19/19 check-runs SUCCESS; el perfil backup/restore PostgreSQL 18 también SUCCESS.
+- La rama de #318 fue sincronizada con main sin force-push; compare final 0 behind.
+- Próximo objetivo: crear/terminar PR #319 con docs/NEON_LEAST_PRIVILEGE_AUDIT_RUNBOOK.md y actualizar ADR/continuidad. Runbook debe explicar identidad efectiva, owner-specific default ACLs, secuencias SELECT-only (no USAGE), workflow heredado que espera backup_readonly, rotación coordinada del secreto y verificación del siguiente backup natural.
+- Issue #53 sigue OPEN/P0; no está verificado el principal real de DATABASE_URL_BACKUP_RO, no se ha ejecutado el runbook en Neon. **PRODUCTION: NOT READY**.
+- No solicitar datos ya documentados ni Build IDs, terminal, CLI, TinyFish o reconexiones. No ejecutar cambios remotos. Presupuesto USD 0.

@@ -3005,3 +3005,11 @@ La hipótesis anterior de que el helper de espera era la causa no era correcta. 
 - Ampliados provisioning y auditoría; test ejecuta provisioning/audit como LOGIN sintético y verifica DML/DDL/sequence mutation/routine EXECUTE denegados, pg_dump custom y cifrado/descifrado/restauración age.
 - Primer fallo CI: el guard Bash de \`SOURCE_URL\` contenía un escape literal; corregido. En el SHA posterior \`071b7c599f602034b7b5b353573cc65e6b8ddadf\`, el job PostgreSQL 18 legacy backup/restore terminó SUCCESS.
 - CI global todavía en ejecución al registrar esta nota; no se declara elegibilidad de merge. Neon no fue contactado ni modificado. Issue #53 OPEN; \`PRODUCTION: NOT READY\`; USD 0.
+
+
+## 2026-11-12 — PR #318 integrado
+
+- PR #318 squash-merged tras 15/15 workflows y 19/19 check-runs SUCCESS en exact HEAD 1b27478fc1fe4a0584b8d5622e6c48acc87a6a95.
+- Nuevo SHA de main: 3ac66a180fcf23421b546140a419a45062e633dd.
+- Código integrado: provisioning SELECT-only para secuencias, auditoría de rutinas/ownership/default ACLs y test PostgreSQL 18 con pg_dump custom + cifrado/restore age.
+- Preparar PR #319 para runbook de operador. No se ejecutó contra Neon ni se leyó/rotó ningún secreto. Issue #53 OPEN/P0; PRODUCTION: NOT READY; USD 0.

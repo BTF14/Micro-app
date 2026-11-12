@@ -3215,3 +3215,14 @@ La hipótesis anterior de que el helper de espera era la causa no era correcta. 
 - En la última consulta exact-SHA, 17/19 check-runs SUCCESS y 2 seguían en progreso; revalidar todos en el HEAD posterior a la actualización documental antes de promover.
 - PR \`#318\` sigue OPEN / Draft; sin reviews formales. Issue \`#53\` sigue OPEN. **PRODUCTION: NOT READY**.
 - Sin conexión, DDL ni escrituras en Neon; presupuesto USD 0. PR \`#319\` runbook queda condicionado al merge seguro de \`#318\`.
+
+
+## Turno 16 — PR #318 integrado / siguiente gate operativo
+
+- PR #318 squash-merged en main: merge commit 3ac66a180fcf23421b546140a419a45062e633dd.
+- main confirmado en ese SHA inmediatamente después del merge.
+- CI exact-HEAD pre-merge del HEAD 1b27478fc1fe4a0584b8d5622e6c48acc87a6a95: 15/15 workflow runs y 19/19 check-runs SUCCESS.
+- El perfil PostgreSQL 18 desechable verificó provisioning, auditoría read-only, privilegios negativos, pg_dump custom y cifrado/checksum/restore age.
+- PR #319 se prepara para el runbook de operador; su existencia no significa que se haya ejecutado en Neon.
+- Issue #53 permanece OPEN/P0; principal efectivo de DATABASE_URL_BACKUP_RO aún no verificado ni rotado. **PRODUCTION: NOT READY**.
+- Cero escrituras/DDL en Neon, sin lectura de secretos, USD 0.

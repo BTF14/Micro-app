@@ -24,6 +24,19 @@ WHERE routine_schema='public'
   AND grantee IN (current_user, 'PUBLIC')
 ORDER BY routine_schema, routine_name, grantee, privilege_type;
 
+SELECT granted_role.rolname AS granted_role,
+       member_role.rolname AS member_role,
+       grantor_role.rolname AS grantor_role,
+       m.admin_option
+FROM pg_catalog.pg_auth_members m
+JOIN pg_catalog.pg_roles granted_role ON granted_role.oid = m.roleid
+JOIN pg_catalog.pg_roles member_role ON member_role.oid = m.member
+LEFT JOIN pg_catalog.pg_roles grantor_role ON grantor_role.oid = m.grantor
+WHERE m.member = (SELECT oid FROM pg_catalog.pg_roles WHERE rolname=current_user)
+   OR m.roleid = (SELECT oid FROM pg_catalog.pg_roles WHERE rolname=current_user)
+ORDER BY granted_role.rolname, member_role.rolname;
+
+
 SELECT n.nspname AS sequence_schema, c.relname AS sequence_name,
        pg_get_userbyid(c.relowner) AS sequence_owner,
        c.relacl
@@ -79,23 +92,29 @@ BEGIN
     RAISE EXCEPTION 'FAIL: principal % has forbidden role attributes: %', v_role_name, v_problem;
   END IF;
 
-  -- No memberships in either direction; this also explicitly excludes the
-  -- database owner, Neon owner and application runtime principals.
+  -- PostgreSQL 16+ can automatically grant the role creator ADMIN OPTION
+  -- on a role created by a non-superuser. In pg_auth_members this is an
+  -- INCOMING edge (roleid = backup role, member = creator). It does not make
+  -- the backup LOGIN inherit the creator's privileges. Permit only the direct
+  -- owner of the current database; reject every other incoming member.
+  -- Any OUTGOING edge (member = backup role) remains an unconditional FAIL.
   IF EXISTS (
     SELECT 1
     FROM pg_catalog.pg_auth_members m
-    WHERE m.member=v_role OR m.roleid=v_role
+    WHERE m.member = v_role
   ) THEN
-    RAISE EXCEPTION 'FAIL: principal % has role memberships (including possible pg_database_owner/neondb_owner/runtime membership)', v_role_name;
+    RAISE EXCEPTION 'FAIL: backup principal % has an outgoing role membership', v_role_name;
   END IF;
+
   IF EXISTS (
     SELECT 1
     FROM pg_catalog.pg_auth_members m
-    JOIN pg_catalog.pg_roles granted_role ON granted_role.oid=m.roleid
-    WHERE m.member=v_role
-      AND granted_role.rolname IN ('pg_database_owner','neondb_owner','microapp_runtime')
+    JOIN pg_catalog.pg_database d
+      ON d.datname = current_database()
+    WHERE m.roleid = v_role
+      AND m.member <> d.datdba
   ) THEN
-    RAISE EXCEPTION 'FAIL: backup principal is a member of a prohibited owner/runtime role';
+    RAISE EXCEPTION 'FAIL: backup principal % has an incoming member other than the direct owner of the current database', v_role_name;
   END IF;
 
   -- pg_shdepend covers ownership dependencies beyond ordinary tables; the

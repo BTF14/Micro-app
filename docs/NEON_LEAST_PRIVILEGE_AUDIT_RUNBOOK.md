@@ -13,7 +13,7 @@ El principal dedicado se denomina microapp_backup. Debe conectarse directamente 
 
 - rolsuper, rolcreatedb, rolcreaterole, rolreplication, rolbypassrls = false.
 - rolinherit = false; rolcanlogin = true.
-- Cero membresías de roles, tanto concedidas como recibidas; no pertenecer a pg_database_owner, neondb_owner ni al rol runtime.
+- Cero membresías salientes (el principal de backup no puede ser miembro de ningún rol). Las membresías entrantes se permiten únicamente cuando el único miembro es el propietario directo de la base actual (`pg_database.datdba`), relación administrativa que PostgreSQL 16+ puede crear automáticamente cuando un rol no-superuser con `CREATEROLE` crea el principal. Ningún runtime, migrator, backup antiguo ni otro rol puede asumir la identidad de backup.
 - Cero ownership de base, schemas, tablas, vistas, secuencias, rutinas u otros objetos.
 - Base: CONNECT, sin CREATE. Schema public: USAGE, sin CREATE.
 - Tablas y vistas de public: SELECT solamente; sin DML, TRUNCATE, REFERENCES, TRIGGER, grants de columna ni grant option.
@@ -50,7 +50,7 @@ La primera salida identifica current_user, session_user, database y versión de 
 
 - No asumir que el secreto usa backup_readonly ni que el nombre del secreto identifica al rol.
 - Si current_user difiere de session_user, hay SET ROLE o proxy/intermediación: detener y resolver la identidad antes de seguir.
-- Si hay memberships, ownership, atributos administrativos, grants de escritura, USAGE/UPDATE de secuencias o EXECUTE de rutinas, detener. No revocar automáticamente.
+- Si hay membresías salientes, membresías entrantes de cualquier rol distinto del propietario directo de la base, ownership, atributos administrativos, grants de escritura, USAGE/UPDATE de secuencias o EXECUTE de rutinas, detener. No revocar automáticamente. La única arista entrante permitida no es herencia del propietario hacia backup: `pg_auth_members.roleid` apunta a `microapp_backup` y `member` al database owner; `microapp_backup` no hereda los privilegios del owner.
 - Si la auditoría falla por EXECUTE efectivo vía PUBLIC, identificar la rutina y sus callsites. No ejecutar REVOKE EXECUTE ON ALL FUNCTIONS ... FROM PUBLIC de forma masiva: podría romper funciones de la aplicación.
 - La auditoría de ACLs de tablas, vistas, secuencias y rutinas está acotada al schema public; no interpretarla como una certificación de ACLs de todos los schemas.
 
@@ -100,6 +100,18 @@ El script:
 El modo backup_role_test_mode y BACKUP_ROLE_TEST_PASSWORD existen exclusivamente para el fixture sintético de CI. **No utilizarlos en Neon real.** En producción usar el prompt interactivo seguro; nunca incluir una contraseña en SQL versionado, argumentos, logs o shell history.
 
 El script no corrige ownership ni memberships preexistentes: si falla el preflight, detener y preparar una remediación separada, revisada y con rollback.
+
+### Compatibilidad de membresías PostgreSQL 16+ / Neon
+
+Cuando un rol no-superuser con `CREATEROLE` crea otro rol, PostgreSQL 16+ puede registrar automáticamente al creador como miembro administrador del rol recién creado. En `pg_auth_members` la dirección es:
+
+- `roleid = microapp_backup` (rol concedido).
+- `member = pg_database.datdba` (propietario directo de la base).
+- El creador puede aparecer con `ADMIN OPTION = true`.
+
+Esta es una **membresía entrante** al rol de backup. No convierte a `microapp_backup` en miembro del database owner, no le hace heredar privilegios del owner y no permite asumir las identidades runtime/migrator. Se acepta solo si el miembro es exactamente el propietario de la base conectada. Toda membresía saliente del backup y toda membresía entrante de otro rol siguen siendo FAIL.
+
+La prueba aislada de Neon del 2026-11-12 observó esta arista con `neondb_owner` como miembro y `cloud_admin` como grantor. También observó que `ALTER ROLE ... NOSUPERUSER` fue rechazado con SQLSTATE 42501 bajo `neondb_owner`. Por eso el script establece NOSUPERUSER al crear el rol, rechaza roles preexistentes con `rolsuper=true` y no incluye NOSUPERUSER en el ALTER ROLE posterior. La corrección debe volver a probarse en una rama temporal Neon después de integrarse; esta evidencia no certifica aún el principal real de backup.
 
 ## 6. Verificación posterior con el LOGIN de backup
 

@@ -1,3 +1,14 @@
+## Turno 17 — integración de aislamiento tenant/sesión (2026-11-12 UTC)
+
+- PR #319 squash-merged; main intermedio `fc1a599a4d78350d3af2f239390459e168e3ff14`.
+- PR #320 squash-merged; merge/new main `a058ef4461355c99540285022b4a8ef05d9ee202`.
+- PR #320 HEAD pre-merge `35ac17ce6061b075d24af93957046344ab36575c`: 16/16 check-runs SUCCESS. CI incluyó unit tests, PostgreSQL 18 integration, Playwright, ODD docs, Semgrep, Trivy, secret scan, dependency review, migration runner, Pages/Workers checks.
+- Integrados ODD tenant/session task y `tenant-isolation.test.ts`; hardening de cookies inválidas en rutas protegidas. No se amplió matriz de permisos.
+- Hallazgo: raw SQL, no Drizzle/RLS. La defensa depende de server authz, SQL scoping, composite FKs, locks y triggers; la ausencia de RLS permanece como riesgo de defensa en profundidad.
+- Post-merge CI del nuevo main en curso al corte. Issue #53 OPEN/P0; PRODUCTION NOT READY; no Neon writes/secrets; USD 0.
+
+---
+
 ## Turno 17 — cierre de auditoría tenant/session (2026-11-12 UTC)
 
 - PR #319 MERGED; main `fc1a599a4d78350d3af2f239390459e168e3ff14`.

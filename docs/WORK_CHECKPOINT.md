@@ -1,4 +1,6 @@
-**Checkpoint vigente — Turno 17:** PR #319 MERGED; main `fc1a599a4d78350d3af2f239390459e168e3ff14`. PR #320 OPEN / Draft. HEAD `6443a39cbb415dd993025ba9ee137cd3e636acef`: 16/16 check-runs SUCCESS (unit, PostgreSQL 18, integration, Playwright, security, migration runner, ODD docs, Pages). PR #320 Ready for review, mergeable clean; revalidar GitHub live antes de merge. Issue #53 OPEN/P0; PRODUCTION: NOT READY; USD 0; no Neon writes/secrets.
+**Checkpoint vigente — Turno 17:** PR #319 y #320 MERGED. Main `a058ef4461355c99540285022b4a8ef05d9ee202`; #320 pre-merge exact HEAD `35ac17ce6061b075d24af93957046344ab36575c`, 16/16 check-runs SUCCESS. Post-merge CI en curso al corte. Fase 2 tenant/session audit, tests y cookie hardening integrados. RLS/Drizzle no existen; riesgo de defensa en profundidad documentado. Issue #53 OPEN/P0; PRODUCTION: NOT READY; USD 0; no Neon writes/secrets.
+
+---
 
 ---
 

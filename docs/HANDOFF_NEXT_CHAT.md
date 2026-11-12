@@ -1,14 +1,13 @@
 ## Handoff vigente — Turno 17 (2026-11-12 UTC)
 
-- PR #319 MERGED por squash; nuevo `main`: `fc1a599a4d78350d3af2f239390459e168e3ff14`.
-- Rama activa: `security/issue-53-tenant-session-isolation-20261112`.
-- PR #320 OPEN / Draft: https://github.com/BTF14/Micro-app/pull/320.
-- HEAD al abrir PR: `942ef584b4732848a990ea1f7d9c9b9a5584418d`; CI exact-HEAD pendiente/en curso al último corte. Reconsultar GitHub antes de cualquier promoción.
-- Artefactos: `odd/tasks/security-tenant-session-isolation.md`, `apps/api/src/tenant-isolation.test.ts`; rutas protegidas limpian cookie inválida y mantienen `private, no-store`.
-- Hallazgo arquitectónico: el repositorio usa raw SQL parametrizado; no se encontró Drizzle, `ENABLE ROW LEVEL SECURITY` ni `CREATE POLICY`. El aislamiento actual es server-side authz + SQL scoping + composite FKs + lock helpers + triggers. Mantener RLS ausente como limitación explícita; no introducir RLS sin diseño/compatibilidad con SECURITY DEFINER.
-- Pruebas de integración preexistentes cubren inventario cross-tenant/branch, conteos, checkout con producto extranjero/almacén ajeno y turnos de caja. No existe endpoint separado de lectura/void de ventas en este HEAD; solo checkout.
-- Issue #53 OPEN/P0; **PRODUCTION: NOT READY**. No Neon main, secretos, datos reales, DDL/DML remoto, deploy manual, DNS ni billing. USD 0.
-- Siguiente paso: terminar CI exact-HEAD de #320; corregir fallos si aparecen, revisar diff completo y censo vivo de PRs. No retirar Draft ni fusionar hasta todos los gates.
+- PR #319 MERGED; main `fc1a599a4d78350d3af2f239390459e168e3ff14`.
+- Rama activa: `security/issue-53-tenant-session-isolation-20261112`; PR #320 OPEN / Draft.
+- El code HEAD `9714b5848532d555ff3e552e40ffb3dfcbb873410` (hash verificado: `9714b5848532d55593e552e40ffb3dfcbb873410`) obtuvo 15/15 check-runs SUCCESS. CI ejecutó root `pnpm test`, PostgreSQL 18, integración de auth/branch/catalog/inventory/checkout/register shifts, Playwright, ODD docs, Semgrep, Trivy, secret scan, dependency review y Cloudflare Pages preview.
+- Se añadió después una reconciliación documental (ODD route inventory + evidencia exact-HEAD + continuidad); el HEAD de PR cambió por docs-only commit. **Reconsultar el HEAD actual y exigir CI exact-SHA completo antes de Ready/merge.**
+- Archivos clave: `odd/tasks/security-tenant-session-isolation.md`, `apps/api/src/tenant-isolation.test.ts`; hardening de cookie shape inválida en rutas protegidas.
+- No RLS/Drizzle; raw SQL parametrizado + autorización server-side + scoped SQL + composite FKs + locks + triggers. Mantener esa limitación explícita.
+- Sesiones expiradas/revocadas se rechazan y se limpian en `/auth/me`; no borrar cookies en denegaciones ambiguas de tenant para no cerrar una sesión multi-tenant válida.
+- Issue #53 OPEN/P0; **PRODUCTION: NOT READY**. USD 0. No Neon, secrets, real data, remote DDL/DML, manual deploy, DNS or billing.
 
 ---
 

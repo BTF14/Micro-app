@@ -1,3 +1,13 @@
+## Turno 17 — evidencia exact-HEAD y reconciliación documental
+
+- PR #319 MERGED; main `fc1a599a4d78350d3af2f239390459e168e3ff14`.
+- PR #320 Draft; code HEAD `9714b5848532d55593e552e40ffb3dfcbb873410` obtuvo 15/15 check-runs SUCCESS: `pnpm test`, PostgreSQL 18, integración auth/branch/catalog/inventory/checkout/register-shifts, Playwright, ODD docs, Semgrep, Trivy, secret history, dependency review y Pages.
+- Se completó route inventory ODD y se registró la limitación sin RLS/Drizzle. Después de la validación se hizo un commit documental; revalidar nuevo HEAD exact-SHA antes de Ready/merge.
+- Cookie invalid-shape clearing solo en early token validation; no borrar cookie ante el motivo ambiguo `unauthenticated_or_out_of_scope`; `/auth/me` limpia sesiones expiradas/revocadas.
+- No Neon, secrets, datos reales ni despliegues manuales; USD 0. Issue #53 OPEN/P0; PRODUCTION NOT READY.
+
+---
+
 ## Turno 17 — PR #319 integrada; fase tenant/sesión iniciada (2026-11-12 UTC)
 
 - PR #319 squash-merged; nuevo main `fc1a599a4d78350d3af2f239390459e168e3ff14`.

@@ -1,4 +1,6 @@
-**Checkpoint vigente — Turno 17:** PR #319 MERGED; main `fc1a599a4d78350d3af2f239390459e168e3ff14`. PR #320 OPEN / Draft, HEAD `942ef584b4732848a990ea1f7d9c9b9a5584418d`; CI inicial pendiente/en curso. Tarea ODD y suite sintética tenant/branch creadas. Hardening de cookie inválida aplicado a rutas protegidas. Sin RLS/Drizzle en la arquitectura actual; aislamiento por authz, SQL scoped, composite FKs, locks y triggers. Issue #53 OPEN/P0; PRODUCTION: NOT READY; USD 0; no Neon writes/secrets.
+**Checkpoint vigente — Turno 17:** PR #319 MERGED; main `fc1a599a4d78350d3af2f239390459e168e3ff14`. PR #320 OPEN / Draft. Code HEAD `9714b5848532d55593e552e40ffb3dfcbb873410`: 15/15 check-runs SUCCESS (unit, PostgreSQL 18, integration, Playwright, security). Se incorporó un commit documental de route inventory y continuidad después de esa validación; revalidar el nuevo HEAD exacto antes de Ready/merge. Issue #53 OPEN/P0; PRODUCTION: NOT READY; USD 0; no Neon writes/secrets.
+
+---
 
 ---
 

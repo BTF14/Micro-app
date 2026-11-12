@@ -1,4 +1,6 @@
-**Estado vigente — Turno 17 / 2026-11-12:** PR #319 MERGED por squash; nuevo main `fc1a599a4d78350d3af2f239390459e168e3ff14`. PR #320 OPEN / Draft, rama `security/issue-53-tenant-session-isolation-20261112`, HEAD `942ef584b4732848a990ea1f7d9c9b9a5584418d`; CI inicial en curso (no declarar PASS hasta exact-HEAD). ODD `odd/tasks/security-tenant-session-isolation.md` y suite `apps/api/src/tenant-isolation.test.ts` añadidas. Refuerzo: rutas protegidas limpian cookie inválida. Aislamiento usa authz server-side + SQL scoping + FKs/locks/triggers; RLS y Drizzle no existen en este repo. Issue #53 OPEN/P0; **PRODUCTION: NOT READY**; USD 0; sin Neon writes ni secrets.
+**Estado vigente — Turno 17 / 2026-11-12:** PR #319 MERGED por squash; main `fc1a599a4d78350d3af2f239390459e168e3ff14`. PR #320 OPEN / Draft, rama `security/issue-53-tenant-session-isolation-20261112`. El HEAD de código `9714b5848532d55593e552e40ffb3dfcbb873410` obtuvo 15/15 check-runs SUCCESS, incluyendo `pnpm test`, PostgreSQL 18 e2e/integrations, Playwright, Semgrep, Trivy, secret scan y Pages. Se añadió después una reconciliación documental (route inventory, ODD y continuidad); el nuevo HEAD documental debe volver a verificarse en CI exact-SHA antes de promover PR. Issue #53 OPEN/P0; **PRODUCTION: NOT READY**; USD 0; sin Neon writes ni secrets.
+
+---
 
 ---
 

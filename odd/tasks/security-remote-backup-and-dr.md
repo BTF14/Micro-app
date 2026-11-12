@@ -75,4 +75,4 @@ Excluded:
 - Acceptance criteria: repository implementation AC-1–AC-8 met; real remote backup/DR/RPO/RTO/alerts remain operational gates.
 - Limitations not verified: live R2 account/billing, remote backup schedule, real backup identity, real DR drill, RPO/RTO, alerts
 - Residual risks: Issue #53 P0 remains open
-- Next step: verify post-merge CI on main SHA; then complete operator-led remote backup and DR drill without using Neon main under this task.
+- Next step: complete operator-led remote backup and DR drill, measure RPO/RTO and configure passive alerts only after cost/security gates; never use Neon main under this task.

@@ -1,3 +1,16 @@
+## Handoff vigente — Turno 17 (2026-11-12 UTC)
+
+- PR #319 MERGED; main `fc1a599a4d78350d3af2f239390459e168e3ff14`.
+- Rama activa: `security/issue-53-tenant-session-isolation-20261112`; PR #320 OPEN / Ready for review.
+- El HEAD `6443a39cbb415dd993025ba9ee137cd3e636acef` obtuvo 16/16 check-runs SUCCESS. CI ejecutó root `pnpm test`, PostgreSQL 18, integración de auth/branch/catalog/inventory/checkout/register shifts, Playwright, ODD docs, Semgrep, Trivy, secret scan, dependency review, migration runner y Cloudflare Pages preview.
+- PR #320 está Ready for review y mergeable clean. Reconsultar GitHub live antes del merge.
+- Archivos clave: `odd/tasks/security-tenant-session-isolation.md`, `apps/api/src/tenant-isolation.test.ts`; hardening de cookie shape inválida en rutas protegidas.
+- No RLS/Drizzle; raw SQL parametrizado + autorización server-side + scoped SQL + composite FKs + locks + triggers. Mantener esa limitación explícita.
+- Sesiones expiradas/revocadas se rechazan y se limpian en `/auth/me`; no borrar cookies en denegaciones ambiguas de tenant para no cerrar una sesión multi-tenant válida.
+- Issue #53 OPEN/P0; **PRODUCTION: NOT READY**. USD 0. No Neon, secrets, real data, remote DDL/DML, manual deploy, DNS or billing.
+
+---
+
 - **Estado vigente 2026-11-12:** PR #318 MERGED; main `3ac66a180fcf23421b546140a419a45062e633dd`. PR #319 OPEN / Draft con runbook de operador; HEAD exacto en la metadata de GitHub. Issue #53 OPEN/P0; no Neon writes; PRODUCTION: NOT READY; USD 0.
 
 ## Snapshot histórico — Handoff Turno 14 (superseded by Turno 16)

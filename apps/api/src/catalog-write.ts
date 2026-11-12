@@ -2,7 +2,7 @@ import { parseNumeric } from "@micro-app/money";
 import type { Hono } from "hono";
 import { getCookie } from "hono/cookie";
 import type { Bindings } from "./bindings";
-import { isTrustedOrigin } from "./auth";
+import { clearSessionCookie, isTrustedOrigin } from "./auth";
 import { withDatabaseClient, withDatabaseTransaction } from "./database";
 import { authorizeTenantOperation } from "./authorization";
 import { readBodyWithinLimit } from "./bounded-body";
@@ -189,6 +189,7 @@ export function registerCatalogWriteRoutes(app: Hono<{ Bindings: Bindings }>): v
 
     const sessionToken = getCookie(c, "microapp_session");
     if (!sessionToken || sessionToken.length > 128) {
+      clearSessionCookie(c);
       return c.json({ error: "UNAUTHENTICATED", message: "Inicia sesión para continuar." }, 401);
     }
 
@@ -291,6 +292,7 @@ export function registerCatalogWriteRoutes(app: Hono<{ Bindings: Bindings }>): v
     }
     const sessionToken = getCookie(c, "microapp_session");
     if (!sessionToken || sessionToken.length > 128) {
+      clearSessionCookie(c);
       return c.json({ error: "UNAUTHENTICATED", message: "Inicia sesión para continuar." }, 401);
     }
 

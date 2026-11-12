@@ -1,6 +1,7 @@
 import { getCookie } from "hono/cookie";
 import type { Context, Hono } from "hono";
 import type { Bindings } from "./bindings";
+import { clearSessionCookie } from "./auth";
 import { authorizeBranchOperation, authorizeCommercialOperation } from "./authorization";
 import { withDatabaseClient, withDatabaseTransaction } from "./database";
 import { lockInventoryWarehouses } from "./inventory-locks";
@@ -88,6 +89,7 @@ export function registerInventoryReadRoutes(app: Hono<{ Bindings: Bindings }>): 
 
     const token = getCookie(c, "microapp_session");
     if (!token || token.length > 128) {
+      clearSessionCookie(c);
       return c.json({ error: "UNAUTHENTICATED", message: "Inicia sesión para continuar." }, 401);
     }
 
@@ -191,6 +193,7 @@ export function registerInventoryReadRoutes(app: Hono<{ Bindings: Bindings }>): 
 
     const token = getCookie(c, "microapp_session");
     if (!token || token.length > 128) {
+      clearSessionCookie(c);
       return c.json({ error: "UNAUTHENTICATED", message: "Inicia sesión para continuar." }, 401);
     }
 

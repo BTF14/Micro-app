@@ -1,3 +1,35 @@
+## Turno 17 — cierre de auditoría tenant/session (2026-11-12 UTC)
+
+- PR #319 MERGED; main `fc1a599a4d78350d3af2f239390459e168e3ff14`.
+- PR #320 pasó a Ready for review; HEAD `6443a39cbb415dd993025ba9ee137cd3e636acef`, 16/16 check-runs SUCCESS exact-SHA. CI `43184248762`, Playwright `43184248758`, ODD docs `43184248675`, Semgrep `43184248844`, migration validation `43184248838`, migration runner `43184248810`, security scan `43184248987`, secret scan `43184248729`, dependency review `43184248899`, project dashboard `43184248724`, Pages/Workers checks success.
+- Suite `tenant-isolation.test.ts` y las integraciones PostgreSQL 18 validan auth, branch, catalog, inventory, checkout y register shifts. Cookie malformada se limpia en rutas protegidas; los fallos ambiguos de tenant no borran cookies de sesiones válidas.
+- La revisión estática confirma raw SQL parametrizado y no Drizzle/RLS. La ausencia de RLS queda como riesgo de defensa en profundidad; Issue #53 continúa OPEN/P0. PRODUCTION NOT READY.
+- No Neon, secrets, datos reales, DDL/DML remoto ni deploy manual; USD 0.
+
+---
+
+## Turno 17 — evidencia exact-HEAD y reconciliación documental
+
+- PR #319 MERGED; main `fc1a599a4d78350d3af2f239390459e168e3ff14`.
+- PR #320 Draft; code HEAD `9714b5848532d55593e552e40ffb3dfcbb873410` obtuvo 15/15 check-runs SUCCESS: `pnpm test`, PostgreSQL 18, integración auth/branch/catalog/inventory/checkout/register-shifts, Playwright, ODD docs, Semgrep, Trivy, secret history, dependency review y Pages.
+- Se completó route inventory ODD y se registró la limitación sin RLS/Drizzle. Después de la validación se hizo un commit documental; revalidar nuevo HEAD exact-SHA antes de Ready/merge.
+- Cookie invalid-shape clearing solo en early token validation; no borrar cookie ante el motivo ambiguo `unauthenticated_or_out_of_scope`; `/auth/me` limpia sesiones expiradas/revocadas.
+- No Neon, secrets, datos reales ni despliegues manuales; USD 0. Issue #53 OPEN/P0; PRODUCTION NOT READY.
+
+---
+
+## Turno 17 — PR #319 integrada; fase tenant/sesión iniciada (2026-11-12 UTC)
+
+- PR #319 squash-merged; nuevo main `fc1a599a4d78350d3af2f239390459e168e3ff14`.
+- Creada rama `security/issue-53-tenant-session-isolation-20261112` desde ese main; creada tarea ODD antes de cambios de runtime.
+- PR #320 abierta Draft para aislamiento tenant/branch y limpieza de cookie inválida; HEAD inicial `942ef584b4732848a990ea1f7d9c9b9a5584418d`; CI exact-HEAD pendiente al corte.
+- Suite `tenant-isolation.test.ts` cubre denegaciones de selector cross-tenant, scope de cashier cross-branch, contexto concurrente por cliente y cookie inválida/no-store.
+- Se amplió `clearSessionCookie` a rutas protegidas. No se cambia matriz de permisos.
+- Auditoría estática: raw SQL parametrizado, sin Drizzle ni RLS/policies; la defensa se apoya en autorización server-side, predicates SQL, FKs compuestas, locks y triggers. Se documenta como limitación, no como certificación de aislamiento a nivel RLS.
+- CI y revisión exact-HEAD pendientes. No se accedió a Neon ni secrets; USD 0. Issue #53 OPEN/P0; PRODUCTION NOT READY.
+
+---
+
 - PR #318 MERGED por squash en main SHA `3ac66a180fcf23421b546140a419a45062e633dd`; 15/15 workflow runs y 19/19 check-runs SUCCESS exact-HEAD. Post-merge main CI: 11/11 workflows y 13/13 check-runs SUCCESS. PR #319 OPEN / Draft para runbook. Issue #53 OPEN/P0; PRODUCTION: NOT READY; no Neon writes; USD 0.
 
 ## Snapshot histórico — Journal Turno 14 (2026-11-12 UTC)

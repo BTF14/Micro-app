@@ -1,7 +1,7 @@
 import { getCookie } from "hono/cookie";
 import type { Hono } from "hono";
 import type { Bindings } from "./bindings";
-import { isTrustedOrigin } from "./auth";
+import { clearSessionCookie, isTrustedOrigin } from "./auth";
 import { authorizeBranchOperation } from "./authorization";
 import { withDatabaseClient, withDatabaseTransaction } from "./database";
 import { lockInventoryBalances, lockInventoryWarehouses } from "./inventory-locks";
@@ -131,7 +131,7 @@ export function registerInventoryCountRoutes(app: Hono<{ Bindings: Bindings }>):
       return c.json({ error: "PAYLOAD_TOO_LARGE", message: "El cuerpo excede el límite permitido." }, 413);
     }
     const token = getCookie(c, "microapp_session");
-    if (!token || token.length > 128) return c.json({ error: "UNAUTHENTICATED", message: "Inicia sesión para continuar." }, 401);
+    if (!token || token.length > 128) { clearSessionCookie(c); return c.json({ error: "UNAUTHENTICATED", message: "Inicia sesión para continuar." }, 401); }
     const raw = await readBoundedBody(c.req.raw);
     if (raw === null) return c.json({ error: "INVALID_OR_TOO_LARGE_BODY", message: "El cuerpo no es válido o excede el límite." }, 400);
     let parsed: unknown;
@@ -250,7 +250,7 @@ export function registerInventoryCountRoutes(app: Hono<{ Bindings: Bindings }>):
     }
     if (!isTrustedOrigin(c.req.header("Origin"), c.env.FRONTEND_ORIGIN)) return c.json({ error: "ORIGIN_NOT_ALLOWED", message: "Origen no autorizado." }, 403);
     const token = getCookie(c, "microapp_session");
-    if (!token || token.length > 128) return c.json({ error: "UNAUTHENTICATED", message: "Inicia sesión para continuar." }, 401);
+    if (!token || token.length > 128) { clearSessionCookie(c); return c.json({ error: "UNAUTHENTICATED", message: "Inicia sesión para continuar." }, 401); }
 
     try {
       const result = await withDatabaseClient(c.env.DATABASE_URL, (client) =>
@@ -396,7 +396,7 @@ export function registerInventoryCountRoutes(app: Hono<{ Bindings: Bindings }>):
       return c.json({ error: "INVALID_RESOURCE", message: "Los identificadores no son válidos." }, 400);
     }
     const token = getCookie(c, "microapp_session");
-    if (!token || token.length > 128) return c.json({ error: "UNAUTHENTICATED", message: "Inicia sesión para continuar." }, 401);
+    if (!token || token.length > 128) { clearSessionCookie(c); return c.json({ error: "UNAUTHENTICATED", message: "Inicia sesión para continuar." }, 401); }
     const limitValue = c.req.query("limit");
     const limit = limitValue === undefined ? 50 : Number(limitValue);
     if (!Number.isInteger(limit) || limit < 1 || limit > 100) {
@@ -441,7 +441,7 @@ export function registerInventoryCountRoutes(app: Hono<{ Bindings: Bindings }>):
       return c.json({ error: "INVALID_RESOURCE", message: "Los identificadores no son válidos." }, 400);
     }
     const token = getCookie(c, "microapp_session");
-    if (!token || token.length > 128) return c.json({ error: "UNAUTHENTICATED", message: "Inicia sesión para continuar." }, 401);
+    if (!token || token.length > 128) { clearSessionCookie(c); return c.json({ error: "UNAUTHENTICATED", message: "Inicia sesión para continuar." }, 401); }
     const limitValue = c.req.query("limit");
     const limit = limitValue === undefined ? 50 : Number(limitValue);
     if (!Number.isInteger(limit) || limit < 1 || limit > 100) {

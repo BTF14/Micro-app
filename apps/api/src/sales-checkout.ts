@@ -8,7 +8,7 @@ import {
 import type { Hono } from "hono";
 import { getCookie } from "hono/cookie";
 import type { Bindings } from "./bindings";
-import { isTrustedOrigin } from "./auth";
+import { clearSessionCookie, isTrustedOrigin } from "./auth";
 import { consumeAuthRateLimit } from "./auth-rate-limit";
 import { authorizeBranchOperation } from "./authorization";
 import { readBodyWithinLimit } from "./bounded-body";
@@ -409,6 +409,7 @@ export function registerSalesCheckoutRoutes(app: Hono<{ Bindings: Bindings }>): 
 
     const sessionToken = getCookie(c, "microapp_session");
     if (!sessionToken || sessionToken.length > 128) {
+      clearSessionCookie(c);
       return c.json({ error: "UNAUTHENTICATED", message: "Inicia sesión para continuar." }, 401);
     }
     const idempotencyKey = c.req.header("Idempotency-Key");

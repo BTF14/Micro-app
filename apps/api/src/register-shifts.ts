@@ -2,7 +2,7 @@ import { getCookie } from "hono/cookie";
 import type { Context, Hono } from "hono";
 import { formatNumeric, parseNumeric } from "@micro-app/money";
 import type { Bindings } from "./bindings";
-import { isTrustedOrigin } from "./auth";
+import { clearSessionCookie, isTrustedOrigin } from "./auth";
 import { authorizeBranchOperation, authorizeTenantOperation } from "./authorization";
 import type { BranchContext } from "./branch-context";
 import { readBodyWithinLimit } from "./bounded-body";
@@ -136,7 +136,7 @@ export function registerRegisterShiftRoutes(app: Hono<{ Bindings: Bindings }>): 
     const { organizationId } = c.req.param();
     if (!UUID_PATTERN.test(organizationId)) return c.json({ error: "INVALID_RESOURCE", message: "El identificador de la organización no es válido." }, 400);
     const token = sessionToken(c);
-    if (!token) return c.json({ error: "UNAUTHENTICATED", message: "Inicia sesión para continuar." }, 401);
+    if (!token) { clearSessionCookie(c); return c.json({ error: "UNAUTHENTICATED", message: "Inicia sesión para continuar." }, 401); }
     try {
       const result = await withDatabaseClient(c.env.DATABASE_URL, (client) => withDatabaseTransaction(client, async (tx) => {
         const authorization = await authorizeTenantOperation(tx, token, organizationId, "register.shift.read_own", false);
@@ -172,7 +172,7 @@ export function registerRegisterShiftRoutes(app: Hono<{ Bindings: Bindings }>): 
     const { organizationId } = c.req.param();
     if (!UUID_PATTERN.test(organizationId)) return c.json({ error: "INVALID_RESOURCE", message: "El identificador de la organización no es válido." }, 400);
     const token = sessionToken(c);
-    if (!token) return c.json({ error: "UNAUTHENTICATED", message: "Inicia sesión para continuar." }, 401);
+    if (!token) { clearSessionCookie(c); return c.json({ error: "UNAUTHENTICATED", message: "Inicia sesión para continuar." }, 401); }
     try {
       const result = await withDatabaseClient(c.env.DATABASE_URL, (client) => withDatabaseTransaction(client, async (tx) => {
         const authorization = await authorizeTenantOperation(tx, token, organizationId, "register.shift.read_own", false);
@@ -202,7 +202,7 @@ export function registerRegisterShiftRoutes(app: Hono<{ Bindings: Bindings }>): 
     const { organizationId, branchId } = c.req.param();
     if (!UUID_PATTERN.test(organizationId) || !UUID_PATTERN.test(branchId)) return c.json({ error: "INVALID_RESOURCE", message: "Los identificadores no son válidos." }, 400);
     const token = sessionToken(c);
-    if (!token) return c.json({ error: "UNAUTHENTICATED", message: "Inicia sesión para continuar." }, 401);
+    if (!token) { clearSessionCookie(c); return c.json({ error: "UNAUTHENTICATED", message: "Inicia sesión para continuar." }, 401); }
     try {
       const result = await withDatabaseClient(c.env.DATABASE_URL, (client) => withDatabaseTransaction(client, async (tx) => {
         const auth = await authorizeOwnShift(tx, token, organizationId, branchId, "register.shift.open_own");
@@ -225,7 +225,7 @@ export function registerRegisterShiftRoutes(app: Hono<{ Bindings: Bindings }>): 
     const { organizationId, branchId } = c.req.param();
     if (!UUID_PATTERN.test(organizationId) || !UUID_PATTERN.test(branchId)) return c.json({ error: "INVALID_RESOURCE", message: "Los identificadores no son válidos." }, 400);
     const token = sessionToken(c);
-    if (!token) return c.json({ error: "UNAUTHENTICATED", message: "Inicia sesión para continuar." }, 401);
+    if (!token) { clearSessionCookie(c); return c.json({ error: "UNAUTHENTICATED", message: "Inicia sesión para continuar." }, 401); }
     try {
       const result = await withDatabaseClient(c.env.DATABASE_URL, (client) => withDatabaseTransaction(client, async (tx) => {
         const auth = await authorizeOwnShift(tx, token, organizationId, branchId, "register.shift.read_own");
@@ -245,7 +245,7 @@ export function registerRegisterShiftRoutes(app: Hono<{ Bindings: Bindings }>): 
     const { organizationId, branchId } = c.req.param();
     if (!UUID_PATTERN.test(organizationId) || !UUID_PATTERN.test(branchId)) return c.json({ error: "INVALID_RESOURCE", message: "Los identificadores no son válidos." }, 400);
     const token = sessionToken(c);
-    if (!token) return c.json({ error: "UNAUTHENTICATED", message: "Inicia sesión para continuar." }, 401);
+    if (!token) { clearSessionCookie(c); return c.json({ error: "UNAUTHENTICATED", message: "Inicia sesión para continuar." }, 401); }
     const body = await parseJsonBody(c.req.raw);
     if (body.kind === "too_large") return c.json({ error: "PAYLOAD_TOO_LARGE", message: "El cuerpo excede el límite permitido." }, 413);
     if (body.kind === "invalid") return c.json({ error: "INVALID_JSON", message: "El cuerpo JSON no es válido." }, 400);
@@ -277,7 +277,7 @@ export function registerRegisterShiftRoutes(app: Hono<{ Bindings: Bindings }>): 
     const { organizationId, branchId, shiftId } = c.req.param();
     if (![organizationId, branchId, shiftId].every((id) => UUID_PATTERN.test(id))) return c.json({ error: "INVALID_RESOURCE", message: "Los identificadores no son válidos." }, 400);
     const token = sessionToken(c);
-    if (!token) return c.json({ error: "UNAUTHENTICATED", message: "Inicia sesión para continuar." }, 401);
+    if (!token) { clearSessionCookie(c); return c.json({ error: "UNAUTHENTICATED", message: "Inicia sesión para continuar." }, 401); }
     const body = await parseJsonBody(c.req.raw);
     if (body.kind === "too_large") return c.json({ error: "PAYLOAD_TOO_LARGE", message: "El cuerpo excede el límite permitido." }, 413);
     if (body.kind === "invalid") return c.json({ error: "INVALID_JSON", message: "El cuerpo JSON no es válido." }, 400);

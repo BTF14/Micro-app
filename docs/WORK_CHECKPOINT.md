@@ -1,3 +1,9 @@
+**Checkpoint vigente — Turno 17:** PR #319 MERGED; main `fc1a599a4d78350d3af2f239390459e168e3ff14`. PR #320 OPEN / Draft. HEAD `6443a39cbb415dd993025ba9ee137cd3e636acef`: 16/16 check-runs SUCCESS (unit, PostgreSQL 18, integration, Playwright, security, migration runner, ODD docs, Pages). PR #320 Ready for review, mergeable clean; revalidar GitHub live antes de merge. Issue #53 OPEN/P0; PRODUCTION: NOT READY; USD 0; no Neon writes/secrets.
+
+---
+
+---
+
 **Checkpoint vigente — 2026-11-12:** PR #318 merged; main `3ac66a180fcf23421b546140a419a45062e633dd`; pre-merge 19/19 checks and post-merge 13/13 checks SUCCESS. PR #319 OPEN / Draft for operator runbook. Issue #53 OPEN/P0; PRODUCTION: NOT READY; no Neon writes; USD 0.
 
 

@@ -47,12 +47,57 @@ $function$;
 REVOKE ALL ON FUNCTION public.backup_role_mutation_probe() FROM PUBLIC;
 SQL
 
+# Reproduce a managed-Postgres creator instead of relying on the local
+# PostgreSQL service superuser: the provisioner owns the database and all
+# existing public objects, has CREATEROLE, and creates microapp_backup itself.
+# PostgreSQL 16+ records the creator as an incoming ADMIN member of the new role.
+provisioner_url="postgresql://backup_role_provisioner:provisioner-test-only@localhost:5432/microapp_source"
+psql "$SOURCE_URL" -X -v ON_ERROR_STOP=1 <<'SQL'
+CREATE ROLE backup_role_provisioner LOGIN CREATEROLE
+  NOSUPERUSER NOCREATEDB NOREPLICATION NOBYPASSRLS NOINHERIT
+  PASSWORD 'provisioner-test-only';
+ALTER DATABASE microapp_source OWNER TO backup_role_provisioner;
+
+DO $transfer$
+DECLARE r record;
+BEGIN
+  FOR r IN
+    SELECT c.relname, c.relkind
+    FROM pg_catalog.pg_class c
+    JOIN pg_catalog.pg_namespace n ON n.oid=c.relnamespace
+    WHERE n.nspname='public'
+      AND c.relkind IN ('r','p','v','m','f','S')
+      AND NOT (c.relkind='S' AND EXISTS (
+        SELECT 1 FROM pg_catalog.pg_depend d
+        WHERE d.objid=c.oid AND d.deptype IN ('a','i')
+          AND d.refobjid <> 0 AND d.classid='pg_catalog.pg_class'::regclass
+      ))
+  LOOP
+    EXECUTE pg_catalog.format('ALTER %s public.%I OWNER TO backup_role_provisioner',
+      CASE r.relkind WHEN 'S' THEN 'SEQUENCE' WHEN 'v' THEN 'VIEW'
+        WHEN 'm' THEN 'MATERIALIZED VIEW' WHEN 'f' THEN 'FOREIGN TABLE'
+        ELSE 'TABLE' END, r.relname);
+  END LOOP;
+
+  FOR r IN
+    SELECT p.oid::regprocedure AS signature
+    FROM pg_catalog.pg_proc p
+    JOIN pg_catalog.pg_namespace n ON n.oid=p.pronamespace
+    WHERE n.nspname='public'
+  LOOP
+    EXECUTE pg_catalog.format('ALTER FUNCTION %s OWNER TO backup_role_provisioner', r.signature);
+  END LOOP;
+END;
+$transfer$;
+SQL
+
 BACKUP_ROLE_TEST_PASSWORD="backup-test-only" \
-  psql "$SOURCE_URL" -X -v ON_ERROR_STOP=1 -v backup_role_test_mode=1 \
+  psql "$provisioner_url" -X -v ON_ERROR_STOP=1 -v backup_role_test_mode=1 \
   -f scripts/provision_neon_backup_role.sql
 
-# Model an object created after provisioning by the current object owner.
-psql "$SOURCE_URL" -X -v ON_ERROR_STOP=1 -c \
+# Model a future object created by the same non-superuser owner whose
+# owner-specific default ACLs were configured by the provisioning script.
+psql "$provisioner_url" -X -v ON_ERROR_STOP=1 -c \
   "CREATE TABLE public.backup_role_default_acl_probe (id integer PRIMARY KEY, payload text NOT NULL); INSERT INTO public.backup_role_default_acl_probe VALUES (1, 'synthetic-default-acl');"
 
 # The independent audit must pass when connected as the provisioned backup LOGIN.
@@ -81,6 +126,42 @@ assert_true "backup role is not a member, directly or transitively, of migrator"
 assert_true "backup role is not a member, directly or transitively, of runtime" "
   NOT pg_has_role('microapp_backup', 'microapp_runtime', 'MEMBER')
 "
+assert_true "only the current database owner may be an incoming member of backup" "
+  NOT EXISTS (
+    SELECT 1 FROM pg_auth_members m
+    WHERE m.roleid=(SELECT oid FROM pg_roles WHERE rolname='microapp_backup')
+      AND m.member<>(SELECT datdba FROM pg_database WHERE datname=current_database())
+  )
+  AND NOT EXISTS (
+    SELECT 1 FROM pg_auth_members m
+    WHERE m.member=(SELECT oid FROM pg_roles WHERE rolname='microapp_backup')
+  )
+  AND EXISTS (
+    SELECT 1 FROM pg_auth_members m
+    WHERE m.roleid=(SELECT oid FROM pg_roles WHERE rolname='microapp_backup')
+      AND m.member=(SELECT datdba FROM pg_database WHERE datname=current_database())
+  )
+"
+
+# The creator/database-owner edge is the sole accepted incoming membership.
+# Any other incoming member or any outgoing membership must make the audit fail.
+psql "$SOURCE_URL" -X -v ON_ERROR_STOP=1 -c \
+  "CREATE ROLE backup_role_forbidden_member NOLOGIN; GRANT microapp_backup TO backup_role_forbidden_member" >/dev/null
+if psql "$backup_url" -X -v ON_ERROR_STOP=1 -f scripts/audit_database_roles.sql >/dev/null 2>&1; then
+  echo "FAIL: role audit accepted a non-owner incoming member" >&2; exit 1
+fi
+echo "PASS: role audit rejects non-owner incoming membership"
+psql "$SOURCE_URL" -X -v ON_ERROR_STOP=1 -c \
+  "REVOKE microapp_backup FROM backup_role_forbidden_member; DROP ROLE backup_role_forbidden_member" >/dev/null
+
+psql "$SOURCE_URL" -X -v ON_ERROR_STOP=1 -c \
+  "CREATE ROLE backup_role_forbidden_parent NOLOGIN; GRANT backup_role_forbidden_parent TO microapp_backup" >/dev/null
+if psql "$backup_url" -X -v ON_ERROR_STOP=1 -f scripts/audit_database_roles.sql >/dev/null 2>&1; then
+  echo "FAIL: role audit accepted an outgoing membership" >&2; exit 1
+fi
+echo "PASS: role audit rejects outgoing membership"
+psql "$SOURCE_URL" -X -v ON_ERROR_STOP=1 -c \
+  "REVOKE backup_role_forbidden_parent FROM microapp_backup; DROP ROLE backup_role_forbidden_parent" >/dev/null
 assert_true "backup role owns no database, schema or public objects" "
   NOT EXISTS (SELECT 1 FROM pg_database WHERE datdba=(SELECT oid FROM pg_roles WHERE rolname='microapp_backup'))
   AND NOT EXISTS (SELECT 1 FROM pg_namespace WHERE nspowner=(SELECT oid FROM pg_roles WHERE rolname='microapp_backup'))

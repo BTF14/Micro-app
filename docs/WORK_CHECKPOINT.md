@@ -1,8 +1,8 @@
 # Checkpoint operativo — Turno 10
 
 **main:** `d2761437fa624e8eed70023ded0fd7533569e96e` (#309 squash merge).  
-**PR #303:** OPEN / Ready for review. HEAD `97ac8e53cbd85a928f7b89f9f89f7ebeaf83e0f2`; base `90b0bdd9c856e92c05141b19b48ac5d1bd7f2eec`; respecto a main actual, 82 ahead / 1 behind (solo el commit docs #309); diff efectivo 3 archivos. Re-sincronizar antes de merge y repetir CI.  
-**Exact-HEAD CI:** 19/19 check-runs SUCCESS; 11/11 pull_request workflows SUCCESS. Backup restore smoke PostgreSQL 18: BCV 0001–0023 SUCCESS, paired-intent 0001–0016 SUCCESS, legacy contract SUCCESS. Review COMMENT `5866941549`, no formal APPROVE.
+**PR #303:** OPEN / Draft. HEAD `8535f1daa6b3616fc5ff77ef82f195b01a1f91b6`; base `d2761437fa624e8eed70023ded0fd7533569e96e`; 83 ahead / 0 behind; diff efectivo 3 archivos. CI exact-HEAD en ejecución.  
+**HEAD anterior `97ac8e5`:** 19/19 check-runs SUCCESS; 11/11 pull_request workflows SUCCESS. Backup restore smoke PostgreSQL 18: BCV 0001–0023 SUCCESS, paired-intent 0001–0016 SUCCESS, legacy contract SUCCESS. El HEAD actual `8535f1d` debe completar CI; Review COMMENT `5866941549` está anclado al HEAD anterior.
 
 ## Integraciones y limpieza
 - #307 MERGED: `98998cf4c13a7d13a1941b776911cc8f2df1b2db`.
@@ -20,7 +20,7 @@
 - Perfil paired-intent 0001–0016 se mantiene separado. No se mezclan los dos modelos de ledger.
 
 ## Censo de PRs abiertas (3)
-- #303 Ready — HEAD `97ac8e53cbd85a928f7b89f9f89f7ebeaf83e0f2`.
+- #303 Draft — HEAD `8535f1daa6b3616fc5ff77ef82f195b01a1f91b6`; CI pendiente.
 - #296 Draft — HEAD `62dde66355a937a4f6fa4efb8d9cfdf856d7ac0f`, base antigua `03442951b2a2f63f5bf4dcf560f2c91be4f6cc71`.
 - #193 Ready — HEAD `ac57ab4f3415f82279b8a49c0befe09f8e3aec68`, base antigua `705d3db3220894c7d3baca8dc7e7a6b623dfbb94`.
 ## Siguiente acción

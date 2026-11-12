@@ -83,6 +83,16 @@ BEGIN
   IF EXISTS (
     SELECT 1 FROM pg_class c JOIN pg_namespace n ON n.oid=c.relnamespace
     WHERE n.nspname='public' AND c.relkind IN ('r','p')
+      AND c.relname IN ('auth_sessions','auth_rate_limits','auth_bootstrap_attempts')
+      AND has_table_privilege(v_role_name,c.oid,'SELECT')
+  ) THEN
+    RAISE EXCEPTION 'FAIL: backup principal must not read ephemeral authentication table data';
+  END IF;
+
+  IF EXISTS (
+    SELECT 1 FROM pg_class c JOIN pg_namespace n ON n.oid=c.relnamespace
+    WHERE n.nspname='public' AND c.relkind IN ('r','p')
+      AND c.relname NOT IN ('auth_sessions','auth_rate_limits','auth_bootstrap_attempts')
       AND (
         NOT has_table_privilege(v_role_name,c.oid,'SELECT')
         OR has_table_privilege(v_role_name,c.oid,'INSERT')

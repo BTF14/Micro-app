@@ -53,8 +53,8 @@ SQL
 # PostgreSQL 16+ records the creator as an incoming ADMIN member of the new role.
 provisioner_url="postgresql://backup_role_provisioner:provisioner-test-only@localhost:5432/microapp_source"
 psql "$SOURCE_URL" -X -v ON_ERROR_STOP=1 <<'SQL'
-CREATE ROLE backup_role_provisioner LOGIN CREATEROLE
-  NOSUPERUSER NOCREATEDB NOREPLICATION NOBYPASSRLS NOINHERIT
+CREATE ROLE backup_role_provisioner LOGIN CREATEROLE CREATEDB
+  NOSUPERUSER NOREPLICATION NOBYPASSRLS NOINHERIT
   PASSWORD 'provisioner-test-only';
 ALTER DATABASE microapp_source OWNER TO backup_role_provisioner;
 

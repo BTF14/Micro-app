@@ -64,7 +64,7 @@ Excluded:
 ## Closure and handoff
 
 - **Final commit SHA:** pending
-- **PR:** #337 pending creation
+- **PR:** https://github.com/BTF14/Micro-app/pull/337 (OPEN)
 - **Checks and exact outcomes:** pending
 - **Acceptance criteria met / unmet:** pending
 - **Limitations not verified:** Neon real no se reensaya en este turno.

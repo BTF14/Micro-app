@@ -12,8 +12,9 @@
 | #314 | OPEN / Ready; mergeable=false | Dependabot jsdom 26.1.0 → 31.0.0; revisar breaking changes |
 | #315 | OPEN / Ready; mergeable=false | Dependabot Vite 7.3.7 → 8.3.6; revisar compatibilidad/toolchain |
 | #316 | OPEN / Ready; mergeable=false | Dependabot plugin-react 5.2.0 → 6.2.1; revisar peer deps |
+| #317 | OPEN / Ready; checks en curso | Checkpoint Turno 13; no fusionar hasta completar gates |
 
-**Total: 5 PR abiertas.** El checkpoint solicitado como #313 no puede usar ese número porque GitHub ya lo asignó a Dependabot; la PR de continuidad se abrió como #317.
+**Total: 6 PR abiertas.** El checkpoint solicitado como #313 no puede usar ese número porque GitHub ya lo asignó a Dependabot; la PR de continuidad se abrió como #317.
 
 ### Gate global
 Issue #53 OPEN/P0. **PRODUCTION: NOT READY.** Pendiente certificación del principal efectivo de backup/runtime en Neon, grants reales, aislamiento tenant/sesiones, restauración remota, RPO/RTO, alertas y smoke tests autenticados en producción; también revisión legal/fiscal/contable. Presupuesto USD 0. Neon main sin DDL/escrituras remotas; sin secretos/datos reales, despliegues manuales, DNS ni billing.

@@ -9,6 +9,8 @@ on:
       - "scripts/backup_git_askpass.sh"
       - "scripts/test_backup_git_askpass.sh"
       - "scripts/test_backup_git_askpass_http.py"
+      - "scripts/backup_failure_alert.sh"
+      - "scripts/test_backup_failure_alert.sh"
       - "scripts/ci/apt-retry.sh"
 
 permissions:
@@ -27,3 +29,5 @@ jobs:
         run: bash scripts/test_backup_git_askpass.sh
       - name: Test GIT_ASKPASS HTTP Basic challenge transport
         run: python3 scripts/test_backup_git_askpass_http.py scripts/backup_git_askpass.sh
+      - name: Test sanitized zero-cost backup failure issue alert
+        run: bash scripts/test_backup_failure_alert.sh

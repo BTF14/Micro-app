@@ -195,6 +195,14 @@ public_key="$(awk '/^# public key:/ {print $4}' "$tmpdir/age-key.txt")"
 [[ "$public_key" =~ ^age1[[:alnum:]]+$ ]] || { echo "Temporary age public key invalid." >&2; exit 1; }
 age -r "$public_key" -o "$tmpdir/schema.dump.age" "$tmpdir/schema.dump"
 (cd "$tmpdir" && sha256sum schema.dump.age > schema.dump.age.sha256 && sha256sum --check schema.dump.age.sha256)
+
+# Optional evidence export for the DR drill wrapper. Keep the encrypted archive
+# and its sidecar out of the repository; export only its SHA-256 metadata.
+if [[ -n "${DR_DRILL_REPORT_DIR:-}" ]]; then
+  mkdir -p "$DR_DRILL_REPORT_DIR"
+  cp "$tmpdir/schema.dump.age.sha256" "$DR_DRILL_REPORT_DIR/backup-artifact.sha256"
+  sha256sum "$tmpdir/schema.dump.age" | awk '{print $1}' > "$DR_DRILL_REPORT_DIR/backup-artifact.sha256.value"
+fi
 age -d -i "$tmpdir/age-key.txt" -o "$tmpdir/schema.restored.dump" "$tmpdir/schema.dump.age"
 # Exercise the same least-privilege remote-archive restore runner against a second
 # disposable database. The first restore below remains the detailed manifest oracle.
@@ -620,6 +628,11 @@ SQL
 
 source_manifest="$(manifest "$schema_source_url")"
 restored_manifest="$(manifest "$schema_restore_url")"
+
+if [[ -n "${DR_DRILL_REPORT_DIR:-}" ]]; then
+  printf '%s\\n' "$source_manifest" | sha256sum | awk '{print $1}' > "$DR_DRILL_REPORT_DIR/source-manifest.sha256"
+  printf '%s\\n' "$restored_manifest" | sha256sum | awk '{print $1}' > "$DR_DRILL_REPORT_DIR/restored-manifest.sha256"
+fi
 if [[ "$source_manifest" != "$restored_manifest" ]]; then
   echo "Restored schema/data manifest differs from source:" >&2
   diff -u <(printf '%s\n' "$source_manifest") <(printf '%s\n' "$restored_manifest") || true

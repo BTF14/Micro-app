@@ -1,7 +1,7 @@
 import { getCookie } from "hono/cookie";
 import type { Hono } from "hono";
 import type { Bindings } from "./bindings";
-import { isTrustedOrigin } from "./auth";
+import { clearSessionCookie, isTrustedOrigin } from "./auth";
 import { authorizeBranchOperation } from "./authorization";
 import { withDatabaseClient, withDatabaseTransaction } from "./database";
 import { lockInventoryBalances, lockInventoryWarehouses } from "./inventory-locks";
@@ -131,7 +131,7 @@ export function registerInventoryCountRoutes(app: Hono<{ Bindings: Bindings }>):
       return c.json({ error: "PAYLOAD_TOO_LARGE", message: "El cuerpo excede el límite permitido." }, 413);
     }
     const token = getCookie(c, "microapp_session");
-    if (!token || token.length > 128) return c.json({ error: "UNAUTHENTICATED", message: "Inicia sesión para continuar." }, 401);
+    if (!token || token.length > 128) { clearSessionCookie(c); return c.json({ error: "UNAUTHENTICATED", message: "Inicia sesión para continuar." }, 401); }
     const raw = await readBoundedBody(c.req.raw);
     if (raw === null) return c.json({ error: "INVALID_OR_TOO_LARGE_BODY", message: "El cuerpo no es válido o excede el límite." }, 400);
     let parsed: unknown;
@@ -229,7 +229,7 @@ export function registerInventoryCountRoutes(app: Hono<{ Bindings: Bindings }>):
           return { kind: "created" as const, countId, lineCount: input.lines.length };
         }),
       );
-      if (result.kind === "unauthenticated") return c.json({ error: "UNAUTHENTICATED", message: "Inicia sesión para continuar." }, 401);
+      if (result.kind === "unauthenticated") { clearSessionCookie(c); return c.json({ error: "UNAUTHENTICATED", message: "Inicia sesión para continuar." }, 401); }
       if (result.kind === "forbidden") return c.json({ error: "FORBIDDEN", message: "No tienes permiso para operar inventario." }, 403);
       if (result.kind === "branch_denied") return c.json({ error: "BRANCH_FORBIDDEN", message: "No tienes acceso a esta sucursal." }, 403);
       if (result.kind === "not_found") return c.json({ error: "WAREHOUSE_NOT_FOUND", message: "El almacén no existe o está inactivo." }, 404);

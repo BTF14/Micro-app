@@ -92,7 +92,7 @@ assert_true "backup role has schema USAGE but not CREATE" "
 assert_true "backup role has SELECT on every public table" "
   NOT EXISTS (
     SELECT 1 FROM pg_class c JOIN pg_namespace n ON n.oid=c.relnamespace
-    WHERE n.nspname='public' AND c.relkind IN ('r','p')
+    WHERE n.nspname='public' AND c.relkind IN ('r','p','v','m','f')
       AND NOT has_table_privilege('microapp_backup', c.oid, 'SELECT')
   )
 "
@@ -156,6 +156,7 @@ assert_true "backup role has no default privileges beyond sequence SELECT" "
     FROM pg_default_acl d
     CROSS JOIN LATERAL aclexplode(d.defaclacl) a
     WHERE a.grantee=(SELECT oid FROM pg_roles WHERE rolname='microapp_backup')
+      AND d.defaclnamespace='public'::regnamespace
       AND d.defaclobjtype='S'
       AND a.privilege_type='SELECT'
       AND NOT a.is_grantable
@@ -165,7 +166,8 @@ assert_true "backup role has no default privileges beyond sequence SELECT" "
     FROM pg_default_acl d
     CROSS JOIN LATERAL aclexplode(d.defaclacl) a
     WHERE a.grantee=(SELECT oid FROM pg_roles WHERE rolname='microapp_backup')
-      AND (d.defaclobjtype NOT IN ('r','S')
+      AND (d.defaclnamespace <> 'public'::regnamespace
+        OR d.defaclobjtype NOT IN ('r','S')
         OR a.privilege_type <> 'SELECT' OR a.is_grantable)
   )
 "

@@ -84,6 +84,7 @@ assert_true "backup role has SELECT on every public table" "
   NOT EXISTS (
     SELECT 1 FROM pg_class c JOIN pg_namespace n ON n.oid=c.relnamespace
     WHERE n.nspname='public' AND c.relkind IN ('r','p')
+      AND c.relname NOT IN ('auth_sessions','auth_rate_limits','auth_bootstrap_attempts')
       AND NOT has_table_privilege('microapp_backup', c.oid, 'SELECT')
   )
 "

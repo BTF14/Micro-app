@@ -34,3 +34,7 @@ test-results/
 .dev.vars.local
 
 *.tsbuildinfo
+
+# Claude Code / Claude CLI local sessions, memory, and settings
+.claude/
+.claude.json

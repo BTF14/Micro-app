@@ -1,10 +1,10 @@
-**PR #318:** OPEN / Draft; HEAD actual al corte `fa5bd1710452d24974a208659209f4b0526f204e`, base `bd9af0cc5b92858fd5063b3d8d102dbc327469ac`; 5/16 check-runs SUCCESS y 11 pendientes, 0 fallos al corte. El CI exact-HEAD sigue en curso; no promover ni fusionar.
+**PR #318:** OPEN / Draft; revalidar HEAD/checks en GitHub. La rama está 1 commit detrás del main actualizado por #313; mergeability reportada true pero `mergeable_state: unstable` mientras CI termina. Último HEAD antes de reconciliar este bloque documental: `f80da3d20162a2beb9dd22e9166a924aff4b51f0`; 16/18 check-runs SUCCESS, 2 pendientes, 0 fallos. La actualización documental generará un HEAD nuevo y exige CI exact-SHA nuevo; no promover ni fusionar.
 
 ## Estado vigente — Turno 14 / auditoría de roles Neon (2026-11-12 UTC)
 
-**main:** `bd9af0cc5b92858fd5063b3d8d102dbc327469ac` tras PR #317 (squash). **PR #317:** MERGED; HEAD exact-SHA `870a35ac4a0190b80f31c0cf0590a759195f60dc`, 14/14 check-runs SUCCESS; merge SHA `bd9af0cc5b92858fd5063b3d8d102dbc327469ac`.
+**main:** `a0d6d801128b3e3aa6543796436abf348c645e8f` tras PR #313 (squash), precedida por #317. **PR #317:** MERGED; HEAD exact-SHA `870a35ac4a0190b80f31c0cf0590a759195f60dc`, 14/14 check-runs SUCCESS; merge SHA `bd9af0cc5b92858fd5063b3d8d102dbc327469ac`.
 
-**PR #313:** OPEN / Ready; HEAD `c0895153da60845582911271e3f8f45a21a7dd53`; 14/14 check-runs SUCCESS exact-HEAD, pero comparación contra el nuevo main: 1 ahead / 2 behind, diverged (merge-base `dae88d14b69f274b0aac6c3dbd9de960ea0feb62`). No fusionar hasta sincronizar sin force-push y volver a validar CI exact-SHA. PR #314–#316 siguen abiertas; mantener los majors en espera. #193 permanece abierta e intacta.
+**PR #313:** MERGED por squash; HEAD `c0895153da60845582911271e3f8f45a21a7dd53`, 14/14 check-runs SUCCESS exact-HEAD; merge SHA `a0d6d801128b3e3aa6543796436abf348c645e8f`. PR #314–#316 siguen abiertas; mantener los majors en espera. #193 permanece abierta e intacta.
 
 **Issue #53 / Turno 14:** rama `security/issue-53-neon-role-matrix-20261112` creada desde el main anterior a este trabajo. Se añadieron la tarea ODD, ADR propuesto, auditoría SQL read-only del principal conectado y plantilla de aprovisionamiento operator-run; la matriz sintética existente ahora invoca la auditoría y prueba rechazos de SUPERUSER/CREATEDB/CREATEROLE/BYPASSRLS. No se ha ejecutado CI todavía. La auditoría usa `current_user` y `session_user`; no se presume que coincidan con el nombre del secreto.
 

@@ -10,6 +10,17 @@ SELECT current_database() AS database_name,
        session_user AS session_login,
        current_setting('server_version') AS server_version;
 
+-- Human-readable, non-secret evidence from the requested catalog surfaces.
+SELECT grantee, table_schema, table_name, privilege_type, is_grantable
+FROM information_schema.table_privileges
+WHERE grantee = current_user
+ORDER BY table_schema, table_name, privilege_type;
+
+SELECT schemaname, tablename, tableowner, rowsecurity
+FROM pg_catalog.pg_tables
+WHERE schemaname='public'
+ORDER BY tablename;
+
 DO $audit$
 DECLARE
   v_role oid;

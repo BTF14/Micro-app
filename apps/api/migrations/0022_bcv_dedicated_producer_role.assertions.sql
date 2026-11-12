@@ -126,10 +126,35 @@ BEGIN
     OR NOT pg_catalog.has_schema_privilege('microapp_bcv_sync','public','USAGE')
   THEN RAISE EXCEPTION 'BCV_PRODUCER_RATE_GRANTS_INVALID'; END IF;
 
+  -- Match the migration preflight: no outgoing edge; only the current
+  -- database owner may be an incoming member, and that edge must be ADMIN-only.
+  -- Effective checks are meaningful for non-superuser owners (superusers bypass
+  -- membership checks by definition).
   IF EXISTS (
-    SELECT 1 FROM pg_catalog.pg_auth_members
-    WHERE roleid=(SELECT oid FROM pg_catalog.pg_roles WHERE rolname='microapp_bcv_sync')
-       OR member=(SELECT oid FROM pg_catalog.pg_roles WHERE rolname='microapp_bcv_sync')
+    SELECT 1
+    FROM pg_catalog.pg_auth_members m
+    WHERE m.member=(SELECT oid FROM pg_catalog.pg_roles WHERE rolname='microapp_bcv_sync')
+  ) OR EXISTS (
+    SELECT 1
+    FROM pg_catalog.pg_auth_members m
+    JOIN pg_catalog.pg_database d ON d.datname=current_database()
+    WHERE m.roleid=(SELECT oid FROM pg_catalog.pg_roles WHERE rolname='microapp_bcv_sync')
+      AND (
+        m.member <> d.datdba
+        OR NOT m.admin_option
+        OR m.inherit_option
+        OR m.set_option
+      )
+  ) OR EXISTS (
+    SELECT 1
+    FROM pg_catalog.pg_database d
+    JOIN pg_catalog.pg_roles database_owner ON database_owner.oid=d.datdba
+    WHERE d.datname=current_database()
+      AND NOT database_owner.rolsuper
+      AND (
+        pg_catalog.pg_has_role(d.datdba,(SELECT oid FROM pg_catalog.pg_roles WHERE rolname='microapp_bcv_sync'),'USAGE')
+        OR pg_catalog.pg_has_role(d.datdba,(SELECT oid FROM pg_catalog.pg_roles WHERE rolname='microapp_bcv_sync'),'SET')
+      )
   )
   THEN RAISE EXCEPTION 'BCV_PRODUCER_ROLE_MEMBERSHIP_FORBIDDEN'; END IF;
 

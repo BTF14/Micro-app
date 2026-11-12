@@ -308,3 +308,13 @@ UPDATE public.sales
    AND id = 'eeeeeeee-eeee-4eee-8eee-eeeeeeeeeeee';
 
 COMMIT;
+
+-- Close the synthetic cashier shift only after the completed sale transaction
+-- commits: the sale reconciliation trigger requires the shift to be open.
+UPDATE public.register_shifts
+   SET closed_at = now(),
+       closing_cash_usd = 30.0000,
+       closing_cash_ves = 0.00,
+       closed_by_user_id = '22222222-2222-4222-8222-222222222222'
+ WHERE organization_id = '11111111-1111-4111-8111-111111111111'
+   AND id = '55555555-5555-4555-8555-555555555555';

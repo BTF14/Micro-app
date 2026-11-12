@@ -195,6 +195,14 @@ public_key="$(awk '/^# public key:/ {print $4}' "$tmpdir/age-key.txt")"
 [[ "$public_key" =~ ^age1[[:alnum:]]+$ ]] || { echo "Temporary age public key invalid." >&2; exit 1; }
 age -r "$public_key" -o "$tmpdir/schema.dump.age" "$tmpdir/schema.dump"
 (cd "$tmpdir" && sha256sum schema.dump.age > schema.dump.age.sha256 && sha256sum --check schema.dump.age.sha256)
+
+# Optional evidence export for the DR drill wrapper. Keep the encrypted archive
+# and its sidecar out of the repository; export only its SHA-256 metadata.
+if [[ -n "${DR_DRILL_REPORT_DIR:-}" ]]; then
+  mkdir -p "$DR_DRILL_REPORT_DIR"
+  cp "$tmpdir/schema.dump.age.sha256" "$DR_DRILL_REPORT_DIR/backup-artifact.sha256"
+  sha256sum "$tmpdir/schema.dump.age" | awk '{print $1}' > "$DR_DRILL_REPORT_DIR/backup-artifact.sha256.value"
+fi
 age -d -i "$tmpdir/age-key.txt" -o "$tmpdir/schema.restored.dump" "$tmpdir/schema.dump.age"
 # Exercise the same least-privilege remote-archive restore runner against a second
 # disposable database. The first restore below remains the detailed manifest oracle.
@@ -537,7 +545,7 @@ SELECT 'fixture_cross_tenant_links|' || count(*)::text
     OR ib.branch_id <> w.branch_id;
 SELECT 'fixture_register_shift|' || count(*)::text
   FROM public.register_shifts
- WHERE id = '55555555-5555-4555-8555-555555555555' AND closed_at IS NULL;
+ WHERE id = '55555555-5555-4555-8555-555555555555' AND closed_at IS NOT NULL AND closing_cash_usd = 30.0000 AND closing_cash_ves = 0.00 AND closed_by_user_id = cashier_user_id;
 SELECT 'fixture_counts|' || count(*)::text
   FROM public.inventory_counts
  WHERE id IN ('aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa','cccccccc-cccc-4ccc-8ccc-cccccccccccc','20202020-2020-4020-8020-202020202020')
@@ -620,6 +628,11 @@ SQL
 
 source_manifest="$(manifest "$schema_source_url")"
 restored_manifest="$(manifest "$schema_restore_url")"
+
+if [[ -n "${DR_DRILL_REPORT_DIR:-}" ]]; then
+  printf '%s\\n' "$source_manifest" | sha256sum | awk '{print $1}' > "$DR_DRILL_REPORT_DIR/source-manifest.sha256"
+  printf '%s\\n' "$restored_manifest" | sha256sum | awk '{print $1}' > "$DR_DRILL_REPORT_DIR/restored-manifest.sha256"
+fi
 if [[ "$source_manifest" != "$restored_manifest" ]]; then
   echo "Restored schema/data manifest differs from source:" >&2
   diff -u <(printf '%s\n' "$source_manifest") <(printf '%s\n' "$restored_manifest") || true
@@ -644,7 +657,7 @@ SELECT
   AND (SELECT count(*) = 2 FROM public.products p JOIN public.suppliers s ON s.organization_id=p.organization_id AND s.id=p.supplier_id WHERE p.id IN ('77777777-7777-4777-8777-777777777777','18181818-1818-4818-8818-181818181818'))
   AND (SELECT count(*) = 2 FROM public.products WHERE id IN ('77777777-7777-4777-8777-777777777777','18181818-1818-4818-8818-181818181818') AND stock_quantity=0.000)
   AND (SELECT count(*) = 2 FROM public.warehouses WHERE id IN ('99999999-9999-4999-8999-999999999999','19191919-1919-4919-8919-191919191919'))
-  AND (SELECT count(*) = 1 FROM public.register_shifts WHERE id = '55555555-5555-4555-8555-555555555555' AND closed_at IS NULL)
+  AND (SELECT count(*) = 1 FROM public.register_shifts WHERE id = '55555555-5555-4555-8555-555555555555' AND closed_at IS NOT NULL AND closing_cash_usd = 30.0000 AND closing_cash_ves = 0.00 AND closed_by_user_id = cashier_user_id AND closed_by_user_id = '22222222-2222-4222-8222-222222222222')
   AND (SELECT count(*) = 3 FROM public.inventory_counts WHERE id IN ('aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa','cccccccc-cccc-4ccc-8ccc-cccccccccccc','20202020-2020-4020-8020-202020202020') AND status='confirmed')
   AND (SELECT count(*) = 3 FROM public.inventory_count_lines WHERE count_id IN ('aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa','cccccccc-cccc-4ccc-8ccc-cccccccccccc','20202020-2020-4020-8020-202020202020'))
   AND (SELECT count(*) = 1 FROM public.inventory_balances WHERE organization_id='11111111-1111-4111-8111-111111111111' AND warehouse_id='99999999-9999-4999-8999-999999999999' AND product_id='77777777-7777-4777-8777-777777777777' AND on_hand_quantity=9.000 AND balance_version=3)

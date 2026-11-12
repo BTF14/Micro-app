@@ -545,23 +545,57 @@ const suiteGoogle = describe.skipIf(!databaseAvailable)("Google OAuth routes aga
     await cleanupClient.query("DELETE FROM organizations WHERE name = $1", [secondOrgName]);
   });
 
-  it("logs an existing allowlisted, active member back in without creating a second user row", async () => {
-    const { cookieHeader, state } = await startGoogleFlow();
-    mockGoogleIdentity("sub-bootstrap-owner", true);
+  it("logs an existing allowlisted cashier back in through Google OAuth after clean bootstrap", async () => {
+    const member = await cleanupClient.query<{ organization_id: string; user_id: string }>(
+      `SELECT om.organization_id, om.user_id
+         FROM organization_members om
+         JOIN app_users u ON u.id = om.user_id
+        WHERE lower(u.email) = lower($1) AND om.organization_id = (
+          SELECT id FROM organizations WHERE name = $2
+        )`,
+      [googleEmail, bootstrapOrgName],
+    );
+    expect(member.rows).toHaveLength(1);
+    await cleanupClient.query(
+      "UPDATE organization_members SET role = 'cashier' WHERE organization_id = $1 AND user_id = $2",
+      [member.rows[0]!.organization_id, member.rows[0]!.user_id],
+    );
 
-    const callback = await app.fetch(new Request(
-      `https://api.example/auth/google/callback?code=test-code&state=${state}`,
-      { headers: { Cookie: cookieHeader, "CF-Connecting-IP": nextIntegrationIp() } },
-    ), googleEnv);
+    try {
+      const { cookieHeader, state } = await startGoogleFlow();
+      mockGoogleIdentity("sub-bootstrap-owner", true);
+      const callback = await app.fetch(new Request(
+        `https://api.example/auth/google/callback?code=test-code&state=${state}`,
+        { headers: { Cookie: cookieHeader, "CF-Connecting-IP": nextIntegrationIp() } },
+      ), googleEnv);
 
-    expect(callback.status).toBe(302);
-    expect(callback.headers.get("location")).toBe(`${googleOrigin}/`);
-    const sessionCookies = extractCookiePairs(callback);
-    expect(sessionCookies.microapp_session).toBeTruthy();
-    fetchSpy.mockRestore();
+      expect(callback.status).toBe(302);
+      expect(callback.headers.get("location")).toBe(`${googleOrigin}/`);
+      const sessionToken = extractCookiePairs(callback).microapp_session;
+      expect(sessionToken).toBeTruthy();
 
-    const users = await cleanupClient.query("SELECT count(*)::text AS total FROM app_users WHERE email = $1", [googleEmail]);
-    expect(users.rows[0]).toEqual({ total: "1" });
+      const me = await app.fetch(new Request("https://api.example/auth/me", {
+        headers: { Cookie: `microapp_session=${sessionToken}` },
+      }), googleEnv);
+      expect(me.status).toBe(200);
+      const payload = await me.json() as { organizations: Array<{ id: string; role: string }> };
+      expect(payload.organizations).toContainEqual(expect.objectContaining({
+        id: member.rows[0]!.organization_id,
+        role: "cashier",
+      }));
+
+      const users = await cleanupClient.query(
+        "SELECT count(*)::text AS total FROM app_users WHERE email = $1",
+        [googleEmail],
+      );
+      expect(users.rows[0]).toEqual({ total: "1" });
+    } finally {
+      fetchSpy?.mockRestore();
+      await cleanupClient.query(
+        "UPDATE organization_members SET role = 'owner' WHERE organization_id = $1 AND user_id = $2",
+        [member.rows[0]!.organization_id, member.rows[0]!.user_id],
+      );
+    }
   });
 
   it("rejects a Google subject that does not match the subject already linked to the email", async () => {

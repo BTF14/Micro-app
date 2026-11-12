@@ -1,3 +1,15 @@
+## Turno 32 — contrato de membresías Neon para runtime/BCV (2026-11-12 UTC)
+
+- PR #337 autorizada quirúrgicamente desde main base `908a01fd891a83bfd8c2d605a37ba91fa62e3db0`; rama `fix/neon-compatible-bcv-and-runtime-role-membership-20261112`.
+- Hallazgo Turno 31: PostgreSQL 18/Neon generó una arista entrante `microapp_bcv_sync <- neondb_owner` con ADMIN OPTION, INHERIT=false, SET=false. El preflight antiguo rechazaba cualquier arista y detenía 0022. No se modificó Neon main.
+- Hallazgo adicional en la base: 0022 assertions y `scripts/db/restore_role_assertions_main.sql` también rechazaban toda membresía sin distinguir dirección ni database owner.
+- Corrección en esta PR: outgoing siempre prohibidas; incoming solo `pg_database.datdba`, ADMIN OPTION=true, INHERIT=false, SET=false; `pg_has_role(...,'USAGE'/'SET')` bloquea capacidades efectivas del owner no-superuser. El bypass inherente de superuser se documenta para evitar falsos positivos en pruebas cuyo owner sea superuser.
+- Añadido job PostgreSQL 18 aislado: crea runtime/producer como propietario no-superuser CREATEROLE, ejecuta adopt-baseline y migraciones 0001–0023, ambas assertions y pruebas negativas para outgoing/incoming rogue/owner SET/INHERIT en producer y runtime.
+- **Estado:** implementación en rama; PR, checks exact-HEAD y merge pendientes. No afirmar CI aprobado hasta observar SHA final.
+- Sin Neon, Secrets, Cloudflare, despliegue manual, PRs #193/#314/#315/#316 ni Issue #53. Issue #53 OPEN/P0; **PRODUCTION: NOT READY**.
+
+---
+
 ## Turno 26 — corrección del resumen de diagnóstico de backup (2026-11-12 UTC)
 
 - Rama quirúrgica: `fix/backup-diagnostic-backtick-escaping-20261112`, creada desde main `066aaa1ee9599e6c34d264929dafb7a0734cca71`.

@@ -205,6 +205,8 @@ expect_denied "DROP object" "DROP TABLE public.products"
 expect_denied "ALTER schema" "ALTER SCHEMA public OWNER TO microapp_backup"
 expect_denied "DROP schema" "DROP SCHEMA public"
 expect_denied "sequence mutation" "SELECT setval(pg_get_serial_sequence('public.sales', 'sale_number'), 1, false)"
+expect_denied "sequence nextval" "SELECT nextval('public.backup_role_audit_sequence')" 
+expect_denied "security-definer mutation routine" "SELECT public.backup_role_mutation_probe()"
 expect_denied "ALTER sequence" "ALTER SEQUENCE public.sales_sale_number_seq RESTART WITH 1"
 expect_denied "role administration" "ALTER ROLE microapp_runtime NOLOGIN"
 expect_denied "role membership administration" "GRANT microapp_migrator TO microapp_backup"
@@ -224,7 +226,31 @@ expect_audit_denied() {
 expect_audit_denied "CREATEDB" "ALTER ROLE microapp_backup CREATEDB"
 expect_audit_denied "CREATEROLE" "ALTER ROLE microapp_backup CREATEROLE"
 expect_audit_denied "BYPASSRLS" "ALTER ROLE microapp_backup BYPASSRLS"
+
 expect_audit_denied "SUPERUSER" "ALTER ROLE microapp_backup SUPERUSER"
+
+# Prove the audit catches newly introduced table, sequence and routine grants.
+psql "$SOURCE_URL" -X -v ON_ERROR_STOP=1 -c "GRANT UPDATE ON public.products TO microapp_backup" >/dev/null
+if psql "$backup_url" -X -v ON_ERROR_STOP=1 -f scripts/audit_database_roles.sql >/dev/null 2>&1; then
+  echo "FAIL: role audit accepted UPDATE on a table" >&2; exit 1
+fi
+psql "$SOURCE_URL" -X -v ON_ERROR_STOP=1 -c "REVOKE UPDATE ON public.products FROM microapp_backup" >/dev/null
+echo "PASS: role audit rejects table UPDATE"
+
+psql "$SOURCE_URL" -X -v ON_ERROR_STOP=1 -c "GRANT USAGE ON SEQUENCE public.backup_role_audit_sequence TO microapp_backup" >/dev/null
+if psql "$backup_url" -X -v ON_ERROR_STOP=1 -f scripts/audit_database_roles.sql >/dev/null 2>&1; then
+  echo "FAIL: role audit accepted sequence USAGE" >&2; exit 1
+fi
+psql "$SOURCE_URL" -X -v ON_ERROR_STOP=1 -c "REVOKE USAGE ON SEQUENCE public.backup_role_audit_sequence FROM microapp_backup" >/dev/null
+echo "PASS: role audit rejects sequence USAGE"
+
+psql "$SOURCE_URL" -X -v ON_ERROR_STOP=1 -c "GRANT EXECUTE ON FUNCTION public.backup_role_mutation_probe() TO microapp_backup" >/dev/null
+if psql "$backup_url" -X -v ON_ERROR_STOP=1 -f scripts/audit_database_roles.sql >/dev/null 2>&1; then
+  echo "FAIL: role audit accepted EXECUTE on a security-definer mutation routine" >&2; exit 1
+fi
+psql "$SOURCE_URL" -X -v ON_ERROR_STOP=1 -c "REVOKE EXECUTE ON FUNCTION public.backup_role_mutation_probe() FROM microapp_backup" >/dev/null
+echo "PASS: role audit rejects EXECUTE on security-definer mutation routine"
+
 
 # Validate a complete custom-format dump as the backup principal. The parent
 # restore harness performs the age encryption/decryption round-trip immediately

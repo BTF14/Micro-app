@@ -2,6 +2,10 @@ import { describe, expect, it, vi } from "vitest";
 import type { DatabaseClient } from "./database";
 import { authorizeBranchOperation, authorizeTenantOperation } from "./authorization";
 import { resolveTenantContext } from "./tenant-context";
+import { Hono } from "hono";
+import type { Bindings } from "./bindings";
+import { clearSessionCookie } from "./auth";
+import app from "./index";
 
 const tenantA = "11111111-1111-4111-8111-111111111111";
 const tenantB = "22222222-2222-4222-8222-222222222222";
@@ -100,8 +104,10 @@ describe("tenant and branch isolation authorization boundary", () => {
 
   it("keeps concurrent tenant contexts isolated to their own request-scoped database clients", async () => {
     const makeTenantClient = (token: string, organizationId: string, userId: string) =>
-      clientWith(async (sql) => {
+      clientWith(async (sql, values) => {
         if (!sql.includes("public.lock_tenant_context")) throw new Error("Unexpected cross-request query");
+        expect(values?.[1]).toBe(organizationId);
+        expect(values?.[0]).not.toBe(token); // only the SHA-256 token hash reaches SQL
         return { rows: [{ user_id: userId, organization_id: organizationId, role: "owner" }] };
       });
 
@@ -135,5 +141,40 @@ describe("tenant and branch isolation authorization boundary", () => {
     expect(sql).toContain("o.is_active = true");
     expect(sql).toContain("o.id = $2");
     expect(query.mock.calls[0]?.[1]?.[1]).toBe(tenantA);
+  });
+});
+
+
+describe("invalid session cookie handling on protected routes", () => {
+  it.each([
+    ["/api/orgs/" + tenantA + "/branches/" + branchOne + "/warehouses/" + "55555555-5555-4555-8555-555555555555" + "/inventory", "inventory"],
+    ["/api/orgs/" + tenantA + "/branches/" + branchOne + "/register-shifts/current", "register shifts"],
+  ])("clears an absent/invalid session cookie and disables shared caching for %s", async (path) => {
+    const response = await app.fetch(
+      new Request("https://api.example" + path, { headers: { Cookie: "microapp_session=invalid" } }),
+      { FRONTEND_ORIGIN: "https://frontend.example" } as Bindings,
+    );
+
+    expect(response.status).toBe(401);
+    expect(response.headers.get("Cache-Control")).toContain("private");
+    expect(response.headers.get("Cache-Control")).toContain("no-store");
+    expect(response.headers.get("Set-Cookie")).toContain("microapp_session=");
+    expect(response.headers.get("Set-Cookie")).toMatch(/Max-Age=0|Expires=/i);
+  });
+
+  it("uses matching secure cookie attributes when clearing an HTTPS session", async () => {
+    const cookieApp = new Hono<{ Bindings: Bindings }>();
+    cookieApp.get("/clear", (c) => {
+      clearSessionCookie(c);
+      return c.body(null, 204);
+    });
+
+    const response = await cookieApp.request("https://api.example/clear", {}, {} as Bindings);
+    const cookie = response.headers.get("Set-Cookie") ?? "";
+    expect(cookie).toContain("microapp_session=");
+    expect(cookie).toContain("Path=/");
+    expect(cookie).toContain("Secure");
+    expect(cookie).toContain("SameSite=None");
+    expect(cookie).toMatch(/Max-Age=0|Expires=/i);
   });
 });

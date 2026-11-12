@@ -8,7 +8,7 @@
 - El runbook usa PostgreSQL 18 limpio, libpq service file/pgpass, `age` streaming y `pg_restore`; valida cero filas en auth efímero y relaciones ventas/pagos/inventario. No usar Neon main ni restaurar sobre una base existente.
 - CI sintético no equivale a restauración real ni certifica RPO/RTO. Issue #53 OPEN/P0; falta identidad/grants reales del backup, backup remoto reciente, DR drill real, RPO/RTO medidos, alertas y coste total $0. **PRODUCTION: NOT READY**.
 - No Neon, secrets, datos reales, DDL/DML remoto, backup dispatch manual, deploy manual, DNS ni billing. USD 0.
-- CI post-merge de main estaba en curso al crear este handoff; revalidar el SHA exacto `a44fe44bd72b1e72cc461c4edb92b2b9c1f20724` antes de declararlo cerrado.
+- CI post-merge verificado en main SHA `a44fe44bd72b1e72cc461c4edb92b2b9c1f20724`: 11/11 workflow runs y 13/13 check-runs SUCCESS, incluidos Pages/Workers.
 - PRs abiertas ajenas al turno: #314, #315, #316 (Dependabot major, mantener aisladas) y #193 (preservar intacta).
 
 ---

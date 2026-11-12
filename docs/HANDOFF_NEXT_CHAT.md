@@ -1,13 +1,14 @@
-## Handoff vigente — Turno 17 (2026-11-12 UTC)
+## Handoff vigente — Turno 17 post-merge (2026-11-12 UTC)
 
-- PR #319 MERGED; main `fc1a599a4d78350d3af2f239390459e168e3ff14`.
-- Rama activa: `security/issue-53-tenant-session-isolation-20261112`; PR #320 OPEN / Ready for review.
-- El HEAD `6443a39cbb415dd993025ba9ee137cd3e636acef` obtuvo 16/16 check-runs SUCCESS. CI ejecutó root `pnpm test`, PostgreSQL 18, integración de auth/branch/catalog/inventory/checkout/register shifts, Playwright, ODD docs, Semgrep, Trivy, secret scan, dependency review, migration runner y Cloudflare Pages preview.
-- PR #320 está Ready for review y mergeable clean. Reconsultar GitHub live antes del merge.
-- Archivos clave: `odd/tasks/security-tenant-session-isolation.md`, `apps/api/src/tenant-isolation.test.ts`; hardening de cookie shape inválida en rutas protegidas.
-- No RLS/Drizzle; raw SQL parametrizado + autorización server-side + scoped SQL + composite FKs + locks + triggers. Mantener esa limitación explícita.
-- Sesiones expiradas/revocadas se rechazan y se limpian en `/auth/me`; no borrar cookies en denegaciones ambiguas de tenant para no cerrar una sesión multi-tenant válida.
-- Issue #53 OPEN/P0; **PRODUCTION: NOT READY**. USD 0. No Neon, secrets, real data, remote DDL/DML, manual deploy, DNS or billing.
+- PR #319 MERGED; main intermedio `fc1a599a4d78350d3af2f239390459e168e3ff14`.
+- PR #320 MERGED por squash; nuevo main `a058ef4461355c99540285022b4a8ef05d9ee202`.
+- PR #320 HEAD pre-merge `35ac17ce6061b075d24af93957046344ab36575c`: 16/16 check-runs SUCCESS; CI incluyó `pnpm test`, PostgreSQL 18, integración auth/branch/catalog/inventory/checkout/register shifts, Playwright, ODD docs, Semgrep, Trivy, secret scan, dependency review, migration runner y Cloudflare Pages/Workers checks.
+- CI post-merge del nuevo main está en curso al corte; consultar el SHA exacto antes de declarar post-merge CI terminado.
+- Tarea ODD integrada: `odd/tasks/security-tenant-session-isolation.md`; suite `apps/api/src/tenant-isolation.test.ts`. Cookies ausentes/sobredimensionadas se limpian en early token validation; no se borran cookies en denegaciones ambiguas de tenant para preservar sesiones válidas.
+- No RLS ni Drizzle: raw SQL parametrizado + authz server-side + SQL scope + composite FKs + lock helpers + triggers. Riesgo de defensa en profundidad explícito; no inventar RLS sin diseño.
+- No hay endpoints HTTP separados de lectura/void de ventas; checkout es el endpoint de mutación. Cash shifts en `register-shifts.ts`.
+- Censo abierto al corte: #314, #315, #316 (Dependabot; base antigua a0d6d8, divergencia 1 ahead/2 behind) y #193 (documental; base 705d3d, 5 ahead/91 behind). Mantener #193 intacta; majors Dependabot en espera.
+- Issue #53 OPEN/P0. **PRODUCTION: NOT READY**: falta ejecución operador del runbook Neon, identidad real/grants/ownership, decisión RLS, restore real y demás gates. No Neon, secrets, datos reales, DDL/DML remoto, deploy manual, DNS ni billing. USD 0.
 
 ---
 

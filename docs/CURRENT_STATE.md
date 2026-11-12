@@ -1,4 +1,6 @@
-**Estado vigente — Turno 17 / 2026-11-12:** PR #319 MERGED por squash; main `fc1a599a4d78350d3af2f239390459e168e3ff14`. PR #320 OPEN / Draft, rama `security/issue-53-tenant-session-isolation-20261112`. El HEAD `6443a39cbb415dd993025ba9ee137cd3e636acef` obtuvo 16/16 check-runs SUCCESS, incluyendo `pnpm test`, PostgreSQL 18 e2e/integrations, Playwright, Semgrep, Trivy, secret scan, migration runner y Pages. PR #320 fue promovida a Ready for review; su último cierre documental registra evidencia exact-SHA. Revalidar GitHub live antes del merge. Issue #53 OPEN/P0; **PRODUCTION: NOT READY**; USD 0; sin Neon writes ni secrets.
+**Estado vigente — Turno 17 / 2026-11-12:** PR #319 MERGED; merge/main anterior `fc1a599a4d78350d3af2f239390459e168e3ff14`. PR #320 MERGED por squash; nuevo `main` `a058ef4461355c99540285022b4a8ef05d9ee202`. HEAD pre-merge `35ac17ce6061b075d24af93957046344ab36575c`: 16/16 check-runs SUCCESS. CI post-merge en el nuevo main está en curso al corte. La tarea ODD `security-tenant-session-isolation.md` queda integrada; suite sintética y hardening de cookies integrados. Issue #53 OPEN/P0. No Drizzle/RLS; aislamiento actual por autorización server-side, SQL scoped, FKs compuestas, locks y triggers. **PRODUCTION: NOT READY**; USD 0; sin Neon writes ni secrets.
+
+---
 
 ---
 

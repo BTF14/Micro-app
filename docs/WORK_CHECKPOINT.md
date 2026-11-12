@@ -1,3 +1,32 @@
+## Checkpoint Turno 13 — #312 integrada; transición a Issue #53 (2026-11-12 UTC)
+
+**main:** `dbeb21d97a5c738043f61629d3f0e3d25a4ea772`  
+**PR #312:** MERGED por squash. HEAD previo: `bf5919e3ec80523a0d9d2c40602c3e5749fde05e`; 14/14 check-runs SUCCESS exact-SHA. Merge SHA: `dbeb21d97a5c738043f61629d3f0e3d25a4ea772`.  
+**Cambios:** documentación de ADR/SDD de autorización administrativa/PIN, calendario bancario y contingencia FX; sin runtime/DDL. Codex no pudo completar revisión por cuota; diff documental revisado manualmente.
+
+### Censo abierto verificado
+| PR | Estado | Acción |
+|---|---|---|
+| #193 | OPEN / Ready; mergeable=false | Preservar intacta; propuesta conceptual Fase B |
+| #313 | OPEN / Ready; mergeable=false | Dependabot minor/patch group; revisar diff y CI |
+| #314 | OPEN / Ready; mergeable=false | Dependabot jsdom 26.1.0 → 31.0.0; revisar breaking changes |
+| #315 | OPEN / Ready; mergeable=false | Dependabot Vite 7.3.7 → 8.3.6; revisar compatibilidad/toolchain |
+| #316 | OPEN / Ready; mergeable=false | Dependabot plugin-react 5.2.0 → 6.2.1; revisar peer deps |
+| #317 | OPEN / Ready; checks en curso | Checkpoint Turno 13; no fusionar hasta completar gates |
+
+**Total: 6 PR abiertas.** El checkpoint solicitado como #313 no puede usar ese número porque GitHub ya lo asignó a Dependabot; la PR de continuidad se abrió como #317.
+
+### Gate global
+Issue #53 OPEN/P0. **PRODUCTION: NOT READY.** Pendiente certificación del principal efectivo de backup/runtime en Neon, grants reales, aislamiento tenant/sesiones, restauración remota, RPO/RTO, alertas y smoke tests autenticados en producción; también revisión legal/fiscal/contable. Presupuesto USD 0. Neon main sin DDL/escrituras remotas; sin secretos/datos reales, despliegues manuales, DNS ni billing.
+
+### Continuidad inmediata
+1. Confirmar HEAD/checks/mergeability de PR #317 y fusionarla solo con gates completos.
+2. Hacer triage individual de #313–#316; no integrar actualizaciones mayores sin pruebas de compatibilidad.
+3. Mantener #193 intacta.
+4. Preparar auditoría de producción estrictamente read-only y lista de evidencias que el propietario deberá certificar externamente.
+
+---
+
 ## Checkpoint Turno 11 — merges #310/#303 y triage de backlog (2026-11-12 UTC)
 
 **Main:** `6343761b601d3a3e7373ab00fb9b580b3ae09e0c`.

@@ -1,3 +1,29 @@
+## Handoff vigente — Turno 13 / siguiente etapa: readiness de producción
+
+**main:** `dbeb21d97a5c738043f61629d3f0e3d25a4ea772` (PR #312 squash-merged). PR #312 quedó MERGED con HEAD exact-SHA `bf5919e3ec80523a0d9d2c40602c3e5749fde05e`, 14/14 check-runs SUCCESS; merge SHA `dbeb21d97a5c738043f61629d3f0e3d25a4ea772`.
+
+### Estado de PRs
+- #317 OPEN / Ready: checkpoint documental de Turno 13; validar checks exact-SHA antes del merge.
+- #312 MERGED: rescate documental de ADRs/SDDs de autorización administrativa, PIN, calendario bancario y contingencia FX.
+- #193 OPEN / Ready: propuesta conceptual Fase B; mantener intacta, sin implementar ni sincronizar automáticamente.
+- #313, #314, #315 y #316 OPEN: actualizaciones Dependabot separadas; no asumir compatibilidad por título. Revisar cada diff, matriz de dependencias, changelog, CI exact-SHA y riesgos de Vite/jsdom/plugin antes de integrar.
+- **Checkpoint Turno 13:** PR #317 (el número #313 ya estaba asignado a Dependabot). Rama `docs/turno-12-backlog-zero-production-gate-20261112`; revisar CI exact-SHA y mergeability después de abrirse.
+
+### Siguiente misión — Issue #53 / producción
+Issue #53 sigue OPEN/P0. Mantener **PRODUCTION: NOT READY**. Preparar una auditoría de prerrequisitos, solo lectura, para:
+1. Identidad efectiva del principal runtime, migrator y backup; no leer ni exponer secretos.
+2. Grants/ownership/membership mínimos y verificables, sin mutar Neon `main`.
+3. Configuración efectiva de `DATABASE_URL_BACKUP_RO` y demostración de que el backup remoto excluye filas efímeras de auth sin perder DDL.
+4. Restauración del artefacto remoto en PostgreSQL desechable, verificación de integridad y medición de RPO/RTO; no usar Neon main como laboratorio.
+5. Aislamiento cross-tenant/cross-branch, sesiones, autorización y smoke tests autenticados.
+6. Alertas, observabilidad, procedimiento de recuperación y coste total USD 0.
+7. Revisión legal/fiscal/contable y aceptación explícita del propietario antes de cualquier liberación.
+
+### Límites permanentes
+No DDL/escrituras remotas en Neon `main`; no secretos, credenciales ni datos reales; no despliegue manual, DNS, billing ni activación de servicios de pago. La autorización permanente cubre únicamente merges que superen íntegramente los gates y el despliegue automático inherente. No cerrar Issue #53 ni declarar producción lista por CI verde.
+
+---
+
 ## Checkpoint Turno 11 — merges #310/#303 y triage de backlog (2026-11-12 UTC)
 
 **Main:** `6343761b601d3a3e7373ab00fb9b580b3ae09e0c`.

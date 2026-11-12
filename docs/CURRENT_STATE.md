@@ -1,3 +1,13 @@
+## Estado vigente — Turno 13 / cierre de #312 (2026-11-12 UTC)
+
+**main:** `dbeb21d97a5c738043f61629d3f0e3d25a4ea772` (squash merge de PR #312). **PR #312:** MERGED; HEAD validado `bf5919e3ec80523a0d9d2c40602c3e5749fde05e`; 14/14 check-runs SUCCESS exact-SHA. Merge commit: `dbeb21d97a5c738043f61629d3f0e3d25a4ea772`. La integración incorpora los artefactos de autorización administrativa/PIN y contingencia FX/calendario bancario rescatados de #296. La revisión automática Codex no se completó por cuota; se hizo inspección manual del diff documental. No equivale a aprobación de code owner.
+
+**Censo vivo:** 6 PR abiertas al corte: #193 (propuesta Fase B, conservar intacta), #313–#316 (cuatro actualizaciones Dependabot) y #317 (este checkpoint documental). Importante: el número #313 ya está ocupado por una PR Dependabot; por eso el checkpoint de Turno 13 se abrió como PR #317, no #313. Las cinco PR consultadas están OPEN y no Draft; GitHub reportó `mergeable=false` al momento de la consulta. Revalidar antes de cualquier integración. No se consideran “cero PR pendientes” mientras existan estas PR abiertas.
+
+**Issue #53:** OPEN / P0. Pruebas sintéticas de backup/restore y mínimo privilegio integradas, pero siguen pendientes identidad efectiva de `DATABASE_URL_BACKUP_RO`/principal runtime en Neon, grants reales, aislamiento tenant/sesiones, restore remoto, RPO/RTO y alertas. **PRODUCTION: NOT READY.** Presupuesto USD 0. Sin escrituras/DDL en Neon `main`, sin cambios de secretos, roles/grants remotos, datos reales, billing ni despliegues manuales. El check/deployment de Cloudflare en la PR #312 fue preview asociado al HEAD, no certificación de producción.
+
+---
+
 ## Estado vigente — Turno 12 / rescate documental #296 (2026-11-12 UTC)
 
 **main:** `dae88d14b69f274b0aac6c3dbd9de960ea0feb62` (#311 merged). **PR #312:** OPEN / Ready; rescata los cinco artefactos de diseño de #296 sobre main sin importar snapshots históricos. Solo dos archivos aparecen como nuevos en el diff porque los otros tres ya están presentes en main. **PR #296:** pendiente de cierre tras confirmar #312. **PR #193:** OPEN / Ready; conservar intacta. **Issue #53:** OPEN / P0. **PRODUCTION: NOT READY**; falta certificación del principal efectivo/roles en Neon, aislamiento tenant/sesiones y recuperación real. Presupuesto USD 0; cero escrituras en Neon main, sin despliegues manuales.

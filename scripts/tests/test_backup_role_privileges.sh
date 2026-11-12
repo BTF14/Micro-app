@@ -36,6 +36,9 @@ GRANT SELECT ON ALL TABLES IN SCHEMA public TO microapp_backup;
 GRANT SELECT ON ALL SEQUENCES IN SCHEMA public TO microapp_backup;
 SQL
 
+# Execute the independent fail-closed audit through the backup LOGIN itself.
+psql "$backup_url" -X -v ON_ERROR_STOP=1 -f scripts/audit_database_roles.sql
+
 assert_true() {
   local label="$1"
   local sql="$2"
@@ -167,4 +170,21 @@ expect_denied "ALTER sequence" "ALTER SEQUENCE public.sales_sale_number_seq REST
 expect_denied "role administration" "ALTER ROLE microapp_runtime NOLOGIN"
 expect_denied "role membership administration" "GRANT microapp_migrator TO microapp_backup"
 
-echo "PASS: synthetic backup principal privilege matrix."
+expect_audit_denied() {
+  local label="$1"
+  local alteration="$2"
+  psql "$SOURCE_URL" -X -v ON_ERROR_STOP=1 -c "$alteration" >/dev/null
+  if psql "$backup_url" -X -v ON_ERROR_STOP=1 -f scripts/audit_database_roles.sql >/dev/null 2>&1; then
+    echo "FAIL: role audit accepted forbidden attribute: $label" >&2
+    exit 1
+  fi
+  echo "PASS: role audit rejects $label"
+  psql "$SOURCE_URL" -X -v ON_ERROR_STOP=1 -c "ALTER ROLE microapp_backup NOCREATEDB NOCREATEROLE NOBYPASSRLS NOSUPERUSER" >/dev/null
+}
+
+expect_audit_denied "CREATEDB" "ALTER ROLE microapp_backup CREATEDB"
+expect_audit_denied "CREATEROLE" "ALTER ROLE microapp_backup CREATEROLE"
+expect_audit_denied "BYPASSRLS" "ALTER ROLE microapp_backup BYPASSRLS"
+expect_audit_denied "SUPERUSER" "ALTER ROLE microapp_backup SUPERUSER"
+
+echo "PASS: synthetic backup principal privilege matrix and effective-principal audit."

@@ -2,12 +2,11 @@
 
 ## Checkpoint Turno 14 — PR #317 integrada; matriz de roles P0 en construcción (2026-11-12 UTC)
 
-**main:** `bd9af0cc5b92858fd5063b3d8d102dbc327469ac` (PR #317 MERGED). PR #317 HEAD `870a35ac4a0190b80f31c0cf0590a759195f60dc`; 14/14 check-runs SUCCESS exact-SHA.
+**main:** `a0d6d801128b3e3aa6543796436abf348c645e8f` (PR #317 y #313 MERGED). PR #317 HEAD `870a35ac4a0190b80f31c0cf0590a759195f60dc`; 14/14 check-runs SUCCESS exact-SHA.
 
 ### PR #313
-- OPEN / Ready; HEAD `c0895153da60845582911271e3f8f45a21a7dd53`.
-- 14/14 check-runs SUCCESS exact-HEAD.
-- Compare contra main: 1 ahead / 2 behind; diverged. **No merge** hasta sincronizar y volver a probar.
+- MERGED por squash; HEAD `c0895153da60845582911271e3f8f45a21a7dd53`.
+- 14/14 check-runs SUCCESS exact-HEAD; merge SHA `a0d6d801128b3e3aa6543796436abf348c645e8f`.
 
 ### Rama activa
 `security/issue-53-neon-role-matrix-20261112` — ODD task, ADR propuesto, auditoría read-only, plantilla de provisioning y extensión del test sintético de privilegios. CI pendiente; los scripts aún requieren ejecución/verificación PostgreSQL 18.

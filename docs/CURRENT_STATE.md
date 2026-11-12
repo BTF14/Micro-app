@@ -1,3 +1,21 @@
+**PR #318:** OPEN / Draft; revalidar HEAD/checks en GitHub. La rama está 1 commit detrás del main actualizado por #313; mergeability reportada true pero `mergeable_state: unstable` mientras CI termina. Último HEAD antes de reconciliar este bloque documental: `f80da3d20162a2beb9dd22e9166a924aff4b51f0`; 16/18 check-runs SUCCESS, 2 pendientes, 0 fallos. La actualización documental generará un HEAD nuevo y exige CI exact-SHA nuevo; no promover ni fusionar.
+
+## Estado vigente — Turno 14 / auditoría de roles Neon (2026-11-12 UTC)
+
+**main:** `a0d6d801128b3e3aa6543796436abf348c645e8f` tras PR #313 (squash), precedida por #317. **PR #317:** MERGED; HEAD exact-SHA `870a35ac4a0190b80f31c0cf0590a759195f60dc`, 14/14 check-runs SUCCESS; merge SHA `bd9af0cc5b92858fd5063b3d8d102dbc327469ac`.
+
+**PR #313:** MERGED por squash; HEAD `c0895153da60845582911271e3f8f45a21a7dd53`, 14/14 check-runs SUCCESS exact-HEAD; merge SHA `a0d6d801128b3e3aa6543796436abf348c645e8f`. PR #314–#316 siguen abiertas; mantener los majors en espera. #193 permanece abierta e intacta.
+
+**Issue #53 / Turno 14:** rama `security/issue-53-neon-role-matrix-20261112` creada desde el main anterior a este trabajo. Se añadieron la tarea ODD, ADR propuesto, auditoría SQL read-only del principal conectado y plantilla de aprovisionamiento operator-run; la matriz sintética existente ahora invoca la auditoría y prueba rechazos de SUPERUSER/CREATEDB/CREATEROLE/BYPASSRLS. No se ha ejecutado CI todavía. La auditoría usa `current_user` y `session_user`; no se presume que coincidan con el nombre del secreto.
+
+**Hallazgo previo crítico:** `docs/SECURITY_ROADMAP.md` documenta una consulta SELECT-only histórica en Neon donde el rol `backup_readonly` tenía atributos administrativos, membresías privilegiadas y grants de escritura. No está demostrado que ese rol sea el usado por `DATABASE_URL_BACKUP_RO`. No se consultaron secretos ni se realizaron consultas nuevas a Neon en este turno.
+
+**Decisión técnica pendiente:** el dump completo necesita SELECT de lectura sobre secuencias para preservar su estado; el contrato sintético #303/#305 concede SELECT y niega USAGE/UPDATE. Esto contradice la exigencia literal de cero permisos de secuencia. La propuesta documenta la incompatibilidad y mantiene SELECT-only; no se afirma equivalencia con cero privilegios. Default privileges deben inventariarse por cada owner real.
+
+**PRODUCTION: NOT READY.** Issue #53 OPEN/P0. USD 0. Sin DDL/DML ni conexión operativa a Neon main, sin lectura de secretos, cambios remotos de roles/grants, datos reales, despliegues manuales ni billing.
+
+---
+
 ## Estado vigente — Turno 13 / cierre de #312 (2026-11-12 UTC)
 
 **main:** `dbeb21d97a5c738043f61629d3f0e3d25a4ea772` (squash merge de PR #312). **PR #312:** MERGED; HEAD validado `bf5919e3ec80523a0d9d2c40602c3e5749fde05e`; 14/14 check-runs SUCCESS exact-SHA. Merge commit: `dbeb21d97a5c738043f61629d3f0e3d25a4ea772`. La integración incorpora los artefactos de autorización administrativa/PIN y contingencia FX/calendario bancario rescatados de #296. La revisión automática Codex no se completó por cuota; se hizo inspección manual del diff documental. No equivale a aprobación de code owner.

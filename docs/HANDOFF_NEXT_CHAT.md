@@ -1,3 +1,33 @@
+- **PR #318 OPEN / Draft:** HEAD `fa5bd1710452d24974a208659209f4b0526f204e`; base `bd9af0cc5b92858fd5063b3d8d102dbc327469ac`; 5/16 check-runs SUCCESS, 11 pendientes, 0 fallos en la última consulta. Si hay commits posteriores, descartar esta evidencia y consultar el HEAD nuevo.
+## Handoff vigente — Turno 14 / Issue #53, identidad y grants Neon
+
+**main:** `a0d6d801128b3e3aa6543796436abf348c645e8f` (PR #317 y #313 MERGED). **Rama activa:** `security/issue-53-neon-role-matrix-20261112`. **PR #318:** OPEN / Draft. La rama parte del main previo a #313 y está 1 commit detrás; no hay conflicto reportado, pero debe reconciliarse antes del merge. Último HEAD validado `f80da3d20162a2beb9dd22e9166a924aff4b51f0`: 16/18 checks SUCCESS, 2 pendientes; la actualización documental requiere nuevo CI exact-SHA.
+
+### Trabajo persistido
+- `odd/tasks/security-issue-53-neon-role-matrix.md`
+- `docs/decisions/ADR-20261112-neon-backup-principal.md` (proposed)
+- `scripts/audit_database_roles.sql` (read-only, fail-closed, inspecciona current_user/session_user, atributos, memberships, ownership, grants y RLS)
+- `scripts/provision_neon_backup_role.sql` (operator-run, sin contraseña versionada; NO ejecutar automáticamente)
+- `scripts/tests/test_backup_role_privileges.sh` (invoca la auditoría como el LOGIN sintético y prueba atributos prohibidos)
+
+### Evidencia y bloqueos
+- PR #317: MERGED; 14/14 checks SUCCESS exact-SHA `870a35ac4a0190b80f31c0cf0590a759195f60dc`; merge/main `bd9af0cc5b92858fd5063b3d8d102dbc327469ac`.
+- PR #313: MERGED por squash; merge SHA `a0d6d801128b3e3aa6543796436abf348c645e8f`; 14/14 SUCCESS en HEAD `c0895153da60845582911271e3f8f45a21a7dd53`.
+- La evidencia histórica en SECURITY_ROADMAP indica que `backup_readonly` tenía CREATEROLE/CREATEDB/REPLICATION/BYPASSRLS, membresías privilegiadas y DML. No se ha probado que sea la identidad efectiva de `DATABASE_URL_BACKUP_RO`.
+- Tensión de secuencias: pg_dump completo requiere SELECT para preservar valores; USAGE/UPDATE deben permanecer denegados. ADR explica por qué “cero privilegios” literal no es compatible con el dump completo probado.
+- CI del nuevo HEAD aún no está disponible; no afirmar tests pasados hasta ejecutar CI.
+
+### Próximos pasos
+1. Revisar el diff completo, corregir SQL si hace falta y validar shell/SQL en PostgreSQL 18 desechable.
+2. Confirmar que el restore smoke ejecuta `scripts/test_backup_role_privileges.sh` (el runner `scripts/test_backup_restore.sh` lo invoca) y que CI cubre el cambio.
+3. Abrir PR #318 y comprobar todos los checks exact-HEAD.
+4. Mantener PR #313 sin merge hasta sincronizar y revalidar; majors #314–#316 en espera; #193 intacta.
+5. Solo tras autorización específica, ejecutar la auditoría de forma read-only con la conexión real; nunca mostrar ni leer el secreto desde herramientas. No ejecutar provisioning en Neon main.
+
+**PRODUCTION: NOT READY.** Issue #53 OPEN/P0. Presupuesto USD 0. Neon main sin escrituras/DDL; sin secretos, datos reales ni despliegues manuales.
+
+---
+
 ## Handoff vigente — Turno 13 / siguiente etapa: readiness de producción
 
 **main:** `dbeb21d97a5c738043f61629d3f0e3d25a4ea772` (PR #312 squash-merged). PR #312 quedó MERGED con HEAD exact-SHA `bf5919e3ec80523a0d9d2c40602c3e5749fde05e`, 14/14 check-runs SUCCESS; merge SHA `dbeb21d97a5c738043f61629d3f0e3d25a4ea772`.

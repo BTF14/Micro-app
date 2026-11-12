@@ -3,7 +3,7 @@ set -euo pipefail
 
 expected_source_url="postgresql://microapp:microapp-test-only@localhost:5432/microapp_source"
 backup_url="postgresql://microapp_backup:backup-test-only@localhost:5432/microapp_source"
-if [[ "\${SOURCE_URL:-}" != "$expected_source_url" ]]; then
+if [[ "${SOURCE_URL:-}" != "$expected_source_url" ]]; then
   echo "Refusing to run: SOURCE_URL must target the fixed disposable PostgreSQL CI database." >&2
   exit 2
 fi

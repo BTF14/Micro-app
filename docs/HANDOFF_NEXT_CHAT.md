@@ -1,3 +1,17 @@
+## Handoff vigente — Turno 17 (2026-11-12 UTC)
+
+- PR #319 MERGED por squash; nuevo `main`: `fc1a599a4d78350d3af2f239390459e168e3ff14`.
+- Rama activa: `security/issue-53-tenant-session-isolation-20261112`.
+- PR #320 OPEN / Draft: https://github.com/BTF14/Micro-app/pull/320.
+- HEAD al abrir PR: `942ef584b4732848a990ea1f7d9c9b9a5584418d`; CI exact-HEAD pendiente/en curso al último corte. Reconsultar GitHub antes de cualquier promoción.
+- Artefactos: `odd/tasks/security-tenant-session-isolation.md`, `apps/api/src/tenant-isolation.test.ts`; rutas protegidas limpian cookie inválida y mantienen `private, no-store`.
+- Hallazgo arquitectónico: el repositorio usa raw SQL parametrizado; no se encontró Drizzle, `ENABLE ROW LEVEL SECURITY` ni `CREATE POLICY`. El aislamiento actual es server-side authz + SQL scoping + composite FKs + lock helpers + triggers. Mantener RLS ausente como limitación explícita; no introducir RLS sin diseño/compatibilidad con SECURITY DEFINER.
+- Pruebas de integración preexistentes cubren inventario cross-tenant/branch, conteos, checkout con producto extranjero/almacén ajeno y turnos de caja. No existe endpoint separado de lectura/void de ventas en este HEAD; solo checkout.
+- Issue #53 OPEN/P0; **PRODUCTION: NOT READY**. No Neon main, secretos, datos reales, DDL/DML remoto, deploy manual, DNS ni billing. USD 0.
+- Siguiente paso: terminar CI exact-HEAD de #320; corregir fallos si aparecen, revisar diff completo y censo vivo de PRs. No retirar Draft ni fusionar hasta todos los gates.
+
+---
+
 - **Estado vigente 2026-11-12:** PR #318 MERGED; main `3ac66a180fcf23421b546140a419a45062e633dd`. PR #319 OPEN / Draft con runbook de operador; HEAD exacto en la metadata de GitHub. Issue #53 OPEN/P0; no Neon writes; PRODUCTION: NOT READY; USD 0.
 
 ## Snapshot histórico — Handoff Turno 14 (superseded by Turno 16)

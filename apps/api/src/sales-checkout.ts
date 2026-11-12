@@ -664,7 +664,7 @@ export function registerSalesCheckoutRoutes(app: Hono<{ Bindings: Bindings }>): 
       );
 
       switch (result.kind) {
-        case "unauthenticated": clearSessionCookie(c); return c.json({ error: "UNAUTHENTICATED", message: "Inicia sesión para continuar." }, 401);
+        case "unauthenticated": return c.json({ error: "UNAUTHENTICATED", message: "Inicia sesión para continuar." }, 401);
         case "forbidden": return c.json({ error: "FORBIDDEN", message: "No tienes permiso para registrar ventas." }, 403);
         case "branch_denied": return c.json({ error: "BRANCH_FORBIDDEN", message: "No tienes acceso a esta sucursal." }, 403);
         case "warehouse_not_found": return c.json({ error: "WAREHOUSE_NOT_FOUND", message: "El almacén no existe o no pertenece a esta sucursal." }, 404);

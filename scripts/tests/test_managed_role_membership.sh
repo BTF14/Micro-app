@@ -46,7 +46,7 @@ export MIGRATION_DATABASE_URL="$migrator_url"
 bash scripts/db/migrate.sh
 
 # Confirm all 23 migrations are applied and both creator edges are ADMIN-only.
-test "$(psql -X -At -v ON_ERROR_STOP=1 --dbname "$owner_url" -c \
+test "$(psql -X -At -v ON_ERROR_STOP=1 --dbname "$target_admin_url" -c \
   "SELECT count(*)=23 AND bool_and(state='applied') FROM public.schema_migrations")" = "t"
 test "$(psql -X -At -v ON_ERROR_STOP=1 --dbname "$owner_url" -c \
   "SELECT count(*)=2 FROM pg_catalog.pg_auth_members m
@@ -129,7 +129,7 @@ psql -X -v ON_ERROR_STOP=1 --dbname "$owner_url" \
   --file "apps/api/migrations/0022_bcv_dedicated_producer_role.assertions.sql"
 psql -X -v ON_ERROR_STOP=1 --dbname "$owner_url" \
   --file "scripts/db/restore_role_assertions_main.sql"
-test "$(psql -X -At -v ON_ERROR_STOP=1 --dbname "$owner_url" -c \
+test "$(psql -X -At -v ON_ERROR_STOP=1 --dbname "$target_admin_url" -c \
   "SELECT count(*)=23 AND bool_and(state='applied') FROM public.schema_migrations")" = "t"
 test "$(psql -X -At -v ON_ERROR_STOP=1 --dbname "$owner_url" -c \
   "SELECT count(*) FROM organizations WHERE slug='membership-sentinel'")" = "1"

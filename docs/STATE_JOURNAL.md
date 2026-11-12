@@ -3013,3 +3013,6 @@ La hipótesis anterior de que el helper de espera era la causa no era correcta. 
 - Nuevo SHA de main: 3ac66a180fcf23421b546140a419a45062e633dd.
 - Código integrado: provisioning SELECT-only para secuencias, auditoría de rutinas/ownership/default ACLs y test PostgreSQL 18 con pg_dump custom + cifrado/restore age.
 - Preparar PR #319 para runbook de operador. No se ejecutó contra Neon ni se leyó/rotó ningún secreto. Issue #53 OPEN/P0; PRODUCTION: NOT READY; USD 0.
+
+
+- CI posterior al merge en main SHA 3ac66a180fcf23421b546140a419a45062e633dd: 11/11 workflow runs y 13/13 check-runs SUCCESS.

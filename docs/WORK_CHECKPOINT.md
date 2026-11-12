@@ -1033,3 +1033,6 @@ PR #318 squash-merged. Merge commit / main SHA: 3ac66a180fcf23421b546140a419a450
 Pre-merge exact HEAD 1b27478fc1fe4a0584b8d5622e6c48acc87a6a95: 15/15 workflows SUCCESS y 19/19 check-runs SUCCESS.
 Post-merge CI de main se inició; verificar su cierre exact-SHA en 3ac66a180fcf23421b546140a419a45062e633dd.
 Siguiente paso: PR #319 para docs/NEON_LEAST_PRIVILEGE_AUDIT_RUNBOOK.md, instrucciones operator-run. No conectar ni mutar Neon. Issue #53 OPEN/P0; PRODUCTION: NOT READY; USD 0.
+
+
+Post-merge CI de main SHA 3ac66a180fcf23421b546140a419a45062e633dd terminó SUCCESS: 11/11 workflows y 13/13 check-runs.

@@ -537,3 +537,16 @@ En el HEAD de código `0ca91ff51ec545278ceb8eabd3929083aae9022e`, el smoke test 
 A prior natural scheduled backup failed before connecting to Neon because Ubuntu package mirror DNS resolution failed while installing age. The scheduled backup workflow previously used direct `apt-get update/install` calls, unlike the synthetic restore workflow.
 
 PR #287 now reuses the tested bounded helper `scripts/ci/apt-retry.sh` for strict package-index refreshes and installs, runs its isolated regression test, and adds bounded retry/timeouts for fetching the PostgreSQL PGDG signing key. Persistent failures remain non-zero; this does not hide a broken package source. This is a code-level resilience change only: no backup was manually dispatched, no secret or Neon data was accessed, and no real backup success is inferred. Revalidate the exact HEAD and await the next natural scheduled run after any authorized release integration.
+
+
+---
+
+# Addendum — Turno 16 — contrato de backup least-privilege (2026-11-12 UTC)
+
+- PR #318 se integró por squash en main, SHA 3ac66a180fcf23421b546140a419a45062e633dd. Exact-HEAD pre-merge: 19/19 check-runs SUCCESS; post-merge main: 13/13 check-runs SUCCESS.
+- El principal candidato microapp_backup recibe SELECT en tablas/vistas y secuencias de public. SELECT en secuencias preserva last_value en pg_dump; USAGE (nextval) y UPDATE (setval/nextval) quedan prohibidos.
+- Auditoría read-only fail-closed incorpora routine_privileges, ACLs efectivas de rutinas públicas, ownership y pg_default_acl; default ACLs son específicas del owner creador.
+- PostgreSQL 18 desechable probó provisioning, auditoría por LOGIN, denegaciones de DML/DDL/nextval/setval/EXECUTE, pg_dump custom y cifrado/checksum/descifrado/restore age.
+- El diagnóstico de .github/workflows/backup.yml todavía espera el nombre histórico backup_readonly. No se ha cambiado DATABASE_URL_BACKUP_RO ni se ha demostrado su principal efectivo. No rotar el secreto hasta una actualización coordinada y revisada del workflow/diagnóstico.
+- --exclude-table-data excluye filas auth del artefacto, pero no impide leerlas en origen durante el dump single-pass.
+- PR #319 prepara el runbook del operador. No se ejecutó Neon ni se mutaron datos, roles, grants, passwords o secrets. Issue #53 OPEN/P0; **PRODUCTION: NOT READY**; USD 0.

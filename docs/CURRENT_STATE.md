@@ -3226,3 +3226,6 @@ La hipótesis anterior de que el helper de espera era la causa no era correcta. 
 - PR #319 se prepara para el runbook de operador; su existencia no significa que se haya ejecutado en Neon.
 - Issue #53 permanece OPEN/P0; principal efectivo de DATABASE_URL_BACKUP_RO aún no verificado ni rotado. **PRODUCTION: NOT READY**.
 - Cero escrituras/DDL en Neon, sin lectura de secretos, USD 0.
+
+
+Post-merge CI verificado en main SHA 3ac66a180fcf23421b546140a419a45062e633dd: 11/11 workflow runs y 13/13 check-runs SUCCESS.

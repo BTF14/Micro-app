@@ -935,3 +935,16 @@ RPO/RTO permanecen sin objetivo aprobado ni medición. Se definió la instrument
 - En el mismo SHA, Database migration validation `43048869994` SUCCESS; Secret history `43048870732` SUCCESS; ODD/docs `43048869895` SUCCESS; Security `43048869156` SUCCESS; Dependency review `43048869639` SUCCESS; dashboard `43048869221` SUCCESS; Semgrep `43048869247` SUCCESS; Playwright `43048869269` SUCCESS.
 - Próximo trabajo prioritario: resolver la fragilidad de dependencias apt en CI con estrategia reproducible, pinning y verificación de procedencia (p.ej. imágenes/containers con herramientas ya instaladas o setup action confiable y versionada), sin saltarse tests ni descargar binarios sin validar. Luego reejecutar los jobs afectados en un nuevo SHA y verificar todos los pasos reales. Mantener #287 Draft hasta cierre integral.
 - Issue #53 sigue OPEN/P0. Producción NOT READY. No Neon main, secretos, roles/grants remotos, deploy, restore real, Cron, billing, force-push ni rebase/sync automático. MVP 01/12/2026; GO/NO-GO 30/11/2026.
+
+
+---
+
+# Addendum — Turno 16 — PR #318 integrado / runbook de operador pendiente (2026-11-12 UTC)
+
+- PR #318 fue squash-merged en main: 3ac66a180fcf23421b546140a419a45062e633dd.
+- Exact HEAD pre-merge 1b27478fc1fe4a0584b8d5622e6c48acc87a6a95: 15/15 workflow runs y 19/19 check-runs SUCCESS.
+- CI posterior al merge en main 3ac66a180fcf23421b546140a419a45062e633dd: 11/11 workflow runs y 13/13 check-runs SUCCESS.
+- El contrato integrado usa SELECT-only en secuencias para pg_dump; USAGE/UPDATE están prohibidos. La auditoría cubre tablas/vistas, secuencias, rutinas, ownership y default ACLs.
+- La evidencia es sintética PostgreSQL 18. No identifica el principal efectivo de DATABASE_URL_BACKUP_RO ni certifica grants/ownership reales de Neon.
+- PR #319 prepara docs/NEON_LEAST_PRIVILEGE_AUDIT_RUNBOOK.md. El workflow de backup conserva un diagnóstico heredado que espera backup_readonly; no rotar el secreto a microapp_backup hasta coordinar un cambio separado del workflow/diagnóstico.
+- Issue #53 OPEN/P0. Producción **NOT READY**. Cero operaciones remotas en Neon, sin lectura/rotación de secrets, USD 0.

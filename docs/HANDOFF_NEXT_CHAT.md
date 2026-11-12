@@ -3620,3 +3620,6 @@ Continuar directamente en \`security/issue-53-neon-role-matrix-20261112\`; no vo
 - Próximo objetivo: crear/terminar PR #319 con docs/NEON_LEAST_PRIVILEGE_AUDIT_RUNBOOK.md y actualizar ADR/continuidad. Runbook debe explicar identidad efectiva, owner-specific default ACLs, secuencias SELECT-only (no USAGE), workflow heredado que espera backup_readonly, rotación coordinada del secreto y verificación del siguiente backup natural.
 - Issue #53 sigue OPEN/P0; no está verificado el principal real de DATABASE_URL_BACKUP_RO, no se ha ejecutado el runbook en Neon. **PRODUCTION: NOT READY**.
 - No solicitar datos ya documentados ni Build IDs, terminal, CLI, TinyFish o reconexiones. No ejecutar cambios remotos. Presupuesto USD 0.
+
+
+Post-merge CI del SHA 3ac66a180fcf23421b546140a419a45062e633dd ya fue verificado: 11/11 workflows y 13/13 check-runs SUCCESS. PR #319 sigue siendo documental y no autoriza operaciones en Neon.

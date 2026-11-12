@@ -61,7 +61,7 @@ A failed checksum is a hard stop. Do not decrypt or restore a checksum-mismatche
 
 ## 5. Restore into a clean PostgreSQL 18 database
 
-Set `RESTORE_URL` to the connection string for the newly created, isolated recovery database through a protected environment variable or secret manager. Never use Neon main. Do not echo the value or enable shell tracing (`set -x`).
+Configure a libpq service entry (for example, `microapp-dr`) in a private `pg_service.conf` file and a matching `.pgpass` entry with mode `0600`. Keep host, database, user and password out of command arguments and logs. Set `PGSERVICEFILE`, `PGSERVICE=microapp-dr` and `PGDATABASE` in the protected operator environment. Never use Neon main. Do not echo connection details or enable shell tracing (`set -x`).
 
 First confirm server major version and that the target database is empty/clean. Create a fresh database rather than dropping or overwriting an existing database. Apply no application writes until the restore is validated.
 
@@ -71,10 +71,10 @@ For a streaming restore (no plaintext dump file on disk):
 set -euo pipefail
 age --version
 pg_restore --version
-psql "$RESTORE_URL" -X -v ON_ERROR_STOP=1 -Atqc 'SHOW server_version_num' |
+psql -X -v ON_ERROR_STOP=1 -d "$PGDATABASE" -Atqc 'SHOW server_version_num' |
   awk '$1 >= 180000 && $1 < 190000 { ok=1 } END { exit !ok }'
 age -d -i "$AGE_IDENTITY_FILE" < "$ARTIFACT" |
-  pg_restore --exit-on-error --no-owner --no-privileges --dbname="$RESTORE_URL" -
+  pg_restore --exit-on-error --no-owner --no-privileges --dbname="$PGDATABASE"
 ```
 
 The `AGE_IDENTITY_FILE` path points to the offline private key file and must have restrictive permissions. The private key is read by age; it is not an argument value. The pipe must run with `pipefail` so decryption or restore errors fail the procedure. If your installed pg_restore does not support reading the custom archive from stdin, stop and use a private temporary directory on encrypted ephemeral storage; restrict permissions, verify disk cleanup, and securely remove the plaintext dump immediately after restore.
@@ -83,7 +83,7 @@ Do not use `--clean` or `--create` against an existing database. If restore fail
 
 ## 6. Post-restore validation
 
-Run validation queries through a protected connection environment; output only counts and pass/fail status.
+Run validation queries through the same protected libpq service environment (`PGSERVICEFILE`, `PGSERVICE`, `PGDATABASE`); output only counts and pass/fail status.
 
 ### Ephemeral authentication state
 

@@ -1,3 +1,16 @@
+## Turno 18 — backup remoto y Disaster Recovery (2026-11-12 UTC)
+
+- PR #322 squash-merged; merge SHA / main `a44fe44bd72b1e72cc461c4edb92b2b9c1f20724`. Base de la PR `27c10a5230a095778d692fba1439e0da63a99625`.
+- Pre-merge exact HEAD `944711e4a3d95b542d846cc76dc3002a016de290`: 16/16 workflow runs y 20/20 check-runs SUCCESS. Tres perfiles restore PostgreSQL 18 SUCCESS; el perfil principal ejecutó test remoto de SHA-256/tamper; backup contract, ODD docs, CI, Playwright, Semgrep, Trivy, secret scan, dependency review, migration validation/runner y Cloudflare Pages/Workers SUCCESS.
+- Cambios: runbook DR PostgreSQL 18, ODD task, helper de readback Git SHA-256, test sintético que acepta el blob íntegro y rechaza tampering, retry bounded + log redaction para clone/push/fetch, checksum local previo a transferencia y remote readback post-push.
+- El destino actual sigue siendo `BTF14/micro-app-backups`; R2/S3 no fue activado. La cuota gratuita R2 es mensual y puede generar coste al excederse; no se activó billing ni se crearon credenciales.
+- El runbook mantiene credenciales fuera de argv mediante libpq service file/pgpass; el restore stream `age` → `pg_restore` apunta a DB PostgreSQL 18 limpia. Los tests verifican cero filas en auth efímero y relaciones sintéticas ventas/pagos/inventario.
+- No se verificó un backup remoto nuevo, no se hizo DR drill real, no se midieron RPO/RTO, no se configuraron alertas y no se probó coste total. Issue #53 OPEN/P0; **PRODUCTION: NOT READY**.
+- No Neon, secretos, roles/grants remotos, datos reales, backup dispatch manual, deploy manual, DNS o billing. USD 0.
+- CI post-merge en main `a44fe44bd72b1e72cc461c4edb92b2b9c1f20724` estaba en curso al registrar este hito; verificar resultado exact-SHA en el siguiente checkpoint.
+
+---
+
 ## Turno 17 — integración de aislamiento tenant/sesión (2026-11-12 UTC)
 
 - PR #319 squash-merged; main intermedio `fc1a599a4d78350d3af2f239390459e168e3ff14`.

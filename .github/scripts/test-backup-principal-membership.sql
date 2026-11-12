@@ -1,8 +1,13 @@
 -- Disposable PostgreSQL 18 regression test for the backup principal membership contract.
 -- Run only against the CI PostgreSQL service. No external connection or secrets.
-BEGIN;
-
+-- Convert only this disposable CI database to a non-superuser owner so the
+-- effective pg_has_role(USAGE/SET) checks are exercised, not bypassed.
+CREATE ROLE backup_diag_owner NOLOGIN CREATEROLE
+  NOSUPERUSER NOCREATEDB NOREPLICATION NOBYPASSRLS NOINHERIT;
+ALTER DATABASE microapp_test OWNER TO backup_diag_owner;
+SET ROLE backup_diag_owner;
 CREATE ROLE backup_diag_principal NOLOGIN;
+RESET ROLE;
 CREATE ROLE backup_diag_parent NOLOGIN;
 CREATE ROLE backup_diag_child NOLOGIN;
 
@@ -57,8 +62,8 @@ $predicate$;
 
 -- The CI database owner is the disposable "microapp" role. Remove any
 -- creator edge and add the exact owner ADMIN-only edge accepted by contract.
-REVOKE backup_diag_principal FROM microapp;
-GRANT backup_diag_principal TO microapp
+REVOKE backup_diag_principal FROM backup_diag_owner;
+GRANT backup_diag_principal TO backup_diag_owner
   WITH ADMIN OPTION, INHERIT FALSE, SET FALSE;
 
 SET ROLE backup_diag_principal;
@@ -98,7 +103,7 @@ RESET ROLE;
 REVOKE backup_diag_principal FROM backup_diag_child;
 
 -- The owner edge is accepted only with ADMIN=true, INHERIT=false, SET=false.
-GRANT backup_diag_principal TO microapp
+GRANT backup_diag_principal TO backup_diag_owner
   WITH ADMIN OPTION, INHERIT FALSE, SET TRUE;
 SET ROLE backup_diag_principal;
 DO $owner_set_option_is_rejected$
@@ -110,7 +115,7 @@ END;
 $owner_set_option_is_rejected$;
 RESET ROLE;
 
-GRANT backup_diag_principal TO microapp
+GRANT backup_diag_principal TO backup_diag_owner
   WITH ADMIN OPTION, INHERIT TRUE, SET FALSE;
 SET ROLE backup_diag_principal;
 DO $owner_inherit_option_is_rejected$
@@ -122,7 +127,7 @@ END;
 $owner_inherit_option_is_rejected$;
 RESET ROLE;
 
-GRANT backup_diag_principal TO microapp
+GRANT backup_diag_principal TO backup_diag_owner
   WITH ADMIN FALSE, INHERIT FALSE, SET FALSE;
 SET ROLE backup_diag_principal;
 DO $owner_without_admin_option_is_rejected$
@@ -135,7 +140,7 @@ $owner_without_admin_option_is_rejected$;
 RESET ROLE;
 
 -- Restore the allowed edge and prove the final state is accepted.
-GRANT backup_diag_principal TO microapp
+GRANT backup_diag_principal TO backup_diag_owner
   WITH ADMIN OPTION, INHERIT FALSE, SET FALSE;
 SET ROLE backup_diag_principal;
 DO $final_owner_admin_only_is_allowed$
@@ -147,7 +152,8 @@ END;
 $final_owner_admin_only_is_allowed$;
 RESET ROLE;
 
-REVOKE backup_diag_principal FROM microapp;
+REVOKE backup_diag_principal FROM backup_diag_owner;
 DROP FUNCTION pg_temp.backup_has_membership();
 DROP ROLE backup_diag_child, backup_diag_parent, backup_diag_principal;
-COMMIT;
+ALTER DATABASE microapp_test OWNER TO microapp;
+DROP ROLE backup_diag_owner;

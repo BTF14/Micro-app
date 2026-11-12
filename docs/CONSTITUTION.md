@@ -1,7 +1,7 @@
 # Constitución del proyecto Micro app
 
 **Estado:** norma rectora del proyecto.  
-**Última revisión documental:** 2026-10-30.  
+**Última revisión documental:** 2026-11-12.  
 **Repositorio canónico:** https://github.com/BTF14/Micro-app  
 **Plan operativo:** [PROJECT_PLAN.md](PROJECT_PLAN.md).  
 **Continuidad:** [HANDOFF_NEXT_CHAT.md](HANDOFF_NEXT_CHAT.md).

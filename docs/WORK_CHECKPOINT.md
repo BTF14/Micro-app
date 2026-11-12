@@ -1,3 +1,22 @@
+## Checkpoint Turno 14 — PR #317 integrada; matriz de roles P0 en construcción (2026-11-12 UTC)
+
+**main:** `bd9af0cc5b92858fd5063b3d8d102dbc327469ac` (PR #317 MERGED). PR #317 HEAD `870a35ac4a0190b80f31c0cf0590a759195f60dc`; 14/14 check-runs SUCCESS exact-SHA.
+
+### PR #313
+- OPEN / Ready; HEAD `c0895153da60845582911271e3f8f45a21a7dd53`.
+- 14/14 check-runs SUCCESS exact-HEAD.
+- Compare contra main: 1 ahead / 2 behind; diverged. **No merge** hasta sincronizar y volver a probar.
+
+### Rama activa
+`security/issue-53-neon-role-matrix-20261112` — ODD task, ADR propuesto, auditoría read-only, plantilla de provisioning y extensión del test sintético de privilegios. CI pendiente; los scripts aún requieren ejecución/verificación PostgreSQL 18.
+
+### Gate P0
+Issue #53 OPEN. Evidencia histórica muestra que `backup_readonly` tenía privilegios peligrosos, pero no se sabe si es el principal efectivo de `DATABASE_URL_BACKUP_RO`. El script identifica el principal por `current_user`/ `session_user`, no por alias. El provisioning es manual/operator-run y no se ejecutó.
+
+**PRODUCTION: NOT READY.** USD 0. Sin DDL/escrituras en Neon main, sin secretos ni datos reales.
+
+---
+
 ## Checkpoint Turno 13 — #312 integrada; transición a Issue #53 (2026-11-12 UTC)
 
 **main:** `dbeb21d97a5c738043f61629d3f0e3d25a4ea772`  

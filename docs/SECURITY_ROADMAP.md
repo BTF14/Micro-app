@@ -1,4 +1,4 @@
-> **Estado vigente — auditoría Turno 21 / 2026-11-12:** main 01a1b178e041128cfc1a98ab4955132368387523; 11/11 check-runs SUCCESS exact-SHA. PR abiertas #193/#314/#315/#316. Issue #53 OPEN/P0; **PRODUCTION: NOT READY**. Sin mutaciones Neon, secretos ni despliegues. USD 0.
+> **Estado vigente — post-merge PR #330 / Turno 21 / 2026-11-12:** main `3a955763f5d259fbedbf4d714a048b04b9a69a8a`; PR #330 MERGED. La base pre-merge `01a1b178e041128cfc1a98ab4955132368387523` tenía 11/11 check-runs SUCCESS; no atribuirlos al merge SHA. La consulta no confirmó checks post-merge. PR abiertas #193/#314/#315/#316. Issue #53 OPEN/P0; **PRODUCTION: NOT READY**. Sin mutaciones Neon, secretos ni despliegues. USD 0.
 >
 
 > **Fases de seguridad — evidencia y límites:**

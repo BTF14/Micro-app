@@ -85,21 +85,30 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          if ! diagnostic="$(psql "$DATABASE_URL" -X -v ON_ERROR_STOP=1 -Atq -F '|' 2>/dev/null <<'SQL'
+          diagnostic=""
+          if [[ -z "${DATABASE_URL:-}" ]]; then
+            echo "::warning::No se pudo verificar el principal efectivo del backup: DATABASE_URL no está disponible; el gate P0 sigue abierto."
+            exit 0
+          fi
+          if diagnostic="$(psql "$DATABASE_URL" -X -v ON_ERROR_STOP=1 -Atq -F '|' 2>/dev/null <<'SQL'
           SELECT
-            (current_user = 'backup_readonly' AND session_user = 'backup_readonly'),
+            (current_user IN ('backup_readonly', 'microapp_backup') AND session_user = current_user),
             EXISTS (
               SELECT 1 FROM pg_catalog.pg_roles r
               WHERE r.rolname = current_user AND r.rolcanlogin
                 AND NOT r.rolsuper AND NOT r.rolcreatedb AND NOT r.rolcreaterole
                 AND NOT r.rolreplication AND NOT r.rolbypassrls
+                AND NOT r.rolinherit
             ),
             EXISTS (
               SELECT 1
                 FROM pg_catalog.pg_auth_members m
-                JOIN pg_catalog.pg_roles principal_role
-                  ON principal_role.oid = m.member
-               WHERE principal_role.rolname = current_user
+                JOIN pg_catalog.pg_roles member_role
+                  ON member_role.oid = m.member
+                JOIN pg_catalog.pg_roles granted_role
+                  ON granted_role.oid = m.roleid
+               WHERE member_role.rolname = current_user
+                  OR granted_role.rolname = current_user
             ),
             EXISTS (
               SELECT 1 FROM pg_catalog.pg_class c
@@ -125,14 +134,20 @@ jobs:
             OR pg_catalog.has_database_privilege(current_user, current_database(), 'CREATE');
           SQL
           )"; then
+            :
+          else
             echo "::warning::No se pudo verificar el principal efectivo del backup; el backup continuará, pero el gate P0 sigue abierto."
+            exit 0
+          fi
+          if [[ ! "$diagnostic" =~ ^[tf]\|[tf]\|[tf]\|[tf]\|[tf]\|[tf]$ ]]; then
+            echo "::warning::El diagnóstico del principal de backup devolvió un formato inesperado; el gate P0 sigue abierto."
             exit 0
           fi
           IFS='|' read -r identity_ok role_safe has_membership table_writes sequence_writes create_privilege <<< "$diagnostic"
           {
             echo "### Diagnóstico no sensible del principal de backup"
             echo
-            echo "- Identidad efectiva esperada (\`backup_readonly\`): \`${identity_ok}\`"
+            echo "- Identidad efectiva esperada (\`backup_readonly o microapp_backup\`): \`${identity_ok}\`"
             echo "- Atributos de rol no privilegiados: \`${role_safe}\`"
             echo "- Membresías de roles: \`${has_membership}\` (esperado: \`f\`)"
             echo "- Privilegios de escritura sobre tablas: \`${table_writes}\` (esperado: \`f\`)"

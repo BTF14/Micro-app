@@ -58,18 +58,23 @@ La primera salida identifica current_user, session_user, database y versión de 
 
 Antes de aprovisionar, obtener una lista de owners de objetos y default ACLs con consultas de catálogo SELECT-only. Confirmar qué rol crea realmente tablas y secuencias en futuras migraciones.
 
-La sentencia incluida en scripts/provision_neon_backup_role.sql:
+El script configura los defaults de tablas/vistas y secuencias únicamente para el rol que ejecuta el script:
 
+    ALTER DEFAULT PRIVILEGES IN SCHEMA public
+      GRANT SELECT ON TABLES TO microapp_backup;
     ALTER DEFAULT PRIVILEGES IN SCHEMA public
       GRANT SELECT ON SEQUENCES TO microapp_backup;
 
-se aplica **solo al rol que ejecuta el script**. No configura automáticamente defaults de otros owners. Si hay varios owners, el DBA debe configurar y verificar cada owner real por separado, por ejemplo:
+Esto **no configura automáticamente los defaults de otros owners**. Primero inventariar con consultas SELECT-only todos los owners reales que crean tablas, vistas y secuencias. Para cada owner adicional verificado, un administrador autorizado debe ejecutar y comprobar ambas sentencias:
 
+    ALTER DEFAULT PRIVILEGES FOR ROLE <owner_verificado>
+      IN SCHEMA public
+      GRANT SELECT ON TABLES TO microapp_backup;
     ALTER DEFAULT PRIVILEGES FOR ROLE <owner_verificado>
       IN SCHEMA public
       GRANT SELECT ON SEQUENCES TO microapp_backup;
 
-No sustituir <owner_verificado> por un nombre supuesto. Ejecutar esta operación únicamente con la autoridad/membresía requerida y después de documentar el owner. No conceder USAGE ni UPDATE.
+No sustituir <owner_verificado> por un nombre supuesto (incluido neondb_owner). No conceder USAGE ni UPDATE sobre secuencias. Si no se dispone de autoridad/membresía para modificar los defaults de un owner, detener el provisioning y documentar el bloqueo; no cambiar ownership para sortearlo. Verificar los registros resultantes en pg_default_acl y ejecutar la auditoría desde el LOGIN de backup.
 
 ## 5. Aprovisionar microapp_backup (DDL; solo tras aprobación)
 
@@ -89,7 +94,7 @@ El script:
 3. Fija atributos no administrativos, NOINHERIT y NOBYPASSRLS.
 4. Revoca los privilegios previos directos sobre la base, schema public, tablas y secuencias.
 5. Concede CONNECT, USAGE del schema, SELECT de tablas/vistas y SELECT de secuencias.
-6. Configura default SELECT de secuencias para objetos creados por el rol que ejecuta el script.
+6. Configura default SELECT de tablas/vistas y secuencias para objetos creados por el rol que ejecuta el script. Los demás owners requieren las sentencias FOR ROLE de la sección 4, ejecutadas solo después de inventariarlos y confirmar autoridad.
 7. Solicita la contraseña con psql \password y habilita LOGIN al final.
 
 El modo backup_role_test_mode y BACKUP_ROLE_TEST_PASSWORD existen exclusivamente para el fixture sintético de CI. **No utilizarlos en Neon real.** En producción usar el prompt interactivo seguro; nunca incluir una contraseña en SQL versionado, argumentos, logs o shell history.
@@ -100,7 +105,7 @@ El script no corrige ownership ni memberships preexistentes: si falla el preflig
 
 Actualizar el gestor de secretos solo mediante el proceso autorizado de cambios de secretos. Antes de sustituir DATABASE_URL_BACKUP_RO, comprobar que el workflow de backup y su diagnóstico de identidad estén coordinados con el nombre de rol real.
 
-**Advertencia de compatibilidad actual:** .github/workflows/backup.yml contiene un diagnóstico heredado que espera backup_readonly. PR #318 crea y prueba microapp_backup, pero no cambia el secreto ni ese diagnóstico. No rotar el secreto a microapp_backup hasta que el workflow/diagnóstico y la conexión hayan sido actualizados mediante un cambio separado, revisado y aprobado.
+**Contrato de transición temporal:** la PR #335 actualiza el diagnóstico para aceptar únicamente una conexión directa cuyo current_user y session_user coincidan y cuyo nombre sea backup_readonly o microapp_backup. La allowlist dual existe solo para permitir una transición controlada; no convierte backup_readonly en un principal certificado ni corrige sus privilegios. No rotar DATABASE_URL_BACKUP_RO hasta que la PR #335 esté integrada, el provisioning de microapp_backup haya sido ejecutado y auditado en la ventana autorizada, y la nueva conexión directa haya pasado scripts/audit_database_roles.sql. Después de observar el backup natural y completar restore, una PR posterior debe retirar backup_readonly de la allowlist.
 
 Cuando el secreto apunte al nuevo LOGIN, ejecutar la auditoría directamente por esa conexión (no mediante SET ROLE):
 
@@ -138,10 +143,13 @@ Solo después de reunir esa evidencia se puede proponer cerrar el P0. La fusión
 
 ## 9. Rollback y respuesta a fallos
 
-- Si la auditoría no pasa: no continuar con rotación de secreto ni con el siguiente backup natural; conservar el principal anterior hasta que el problema esté entendido.
-- Si el backup natural falla: conservar el artefacto previo válido, revertir solo el cambio de secreto/workflow aprobado y restaurar el camino de backup anterior. No borrar roles ni grants como reacción automática.
-- Si la restauración falla: mantener el estado PRODUCTION: NOT READY, conservar logs no sensibles y abrir seguimiento; no probar restauración sobre Neon main.
-- Cualquier DROP ROLE, transferencia de ownership, revocación de grants a otros principals o cambio de password requiere un plan de reversión específico, revisión y aprobación independiente.
+- Antes de rotar DATABASE_URL_BACKUP_RO, el propietario debe conservar el valor anterior en un gestor de contraseñas seguro bajo su control. GitHub no permite recuperar el valor anterior de un Secret después de sobrescribirlo. Nunca copiarlo a issues, comentarios, logs, archivos versionados o esta conversación.
+- Validar la nueva credencial/conexión de forma segura antes de modificar el Secret. La rotación solo ocurre después de que el workflow dual esté integrado y el provisioning/auditoría de microapp_backup haya pasado en la ventana autorizada.
+- Si la nueva conexión o el backup natural falla, restaurar DATABASE_URL_BACKUP_RO desde la copia segura del propietario y verificar el workflow de respaldo. No asumir que el valor anterior es least-privilege: este rollback recupera continuidad, no certifica seguridad; mantener Issue #53 OPEN/P0 y PRODUCTION: NOT READY.
+- No retirar ni borrar automáticamente backup_readonly, microapp_backup, grants ni ownership como reacción a un fallo. Cualquier revocación, DROP ROLE, transferencia de ownership o cambio de password requiere un plan de reversión específico, revisión y aprobación independiente.
+- Conservar el último artefacto cifrado válido y su checksum. No ejecutar workflow_dispatch como sustituto de un backup natural de producción.
+- Si la restauración falla, mantener PRODUCTION: NOT READY, conservar logs no sensibles y abrir seguimiento; nunca probar restauración sobre Neon main.
+- Tras un backup natural correcto y una restauración fría satisfactoria, preparar un cambio separado para retirar la identidad heredada de la allowlist; no mantener la compatibilidad dual indefinidamente.
 
 ## 10. Registro de ejecución del operador
 

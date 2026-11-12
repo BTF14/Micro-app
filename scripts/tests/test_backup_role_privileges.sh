@@ -19,9 +19,14 @@ BEGIN
   IF NOT EXISTS (SELECT 1 FROM pg_catalog.pg_roles WHERE rolname='microapp_runtime') THEN
     CREATE ROLE microapp_runtime;
   END IF;
+  IF NOT EXISTS (SELECT 1 FROM pg_catalog.pg_roles WHERE rolname='backup_readonly') THEN
+    CREATE ROLE backup_readonly;
+  END IF;
 END;
 $roles$;
 
+ALTER ROLE backup_readonly LOGIN PASSWORD 'backup-readonly-test-only'
+  NOSUPERUSER NOCREATEDB NOCREATEROLE NOREPLICATION NOBYPASSRLS NOINHERIT;
 ALTER ROLE microapp_migrator NOLOGIN NOSUPERUSER NOCREATEDB NOCREATEROLE NOINHERIT NOREPLICATION NOBYPASSRLS;
 ALTER ROLE microapp_runtime NOLOGIN NOSUPERUSER NOCREATEDB NOCREATEROLE NOINHERIT NOREPLICATION NOBYPASSRLS;
 
@@ -45,6 +50,10 @@ SQL
 BACKUP_ROLE_TEST_PASSWORD="backup-test-only" \
   psql "$SOURCE_URL" -X -v ON_ERROR_STOP=1 -v backup_role_test_mode=1 \
   -f scripts/provision_neon_backup_role.sql
+
+# Model an object created after provisioning by the current object owner.
+psql "$SOURCE_URL" -X -v ON_ERROR_STOP=1 -c \
+  "CREATE TABLE public.backup_role_default_acl_probe (id integer PRIMARY KEY, payload text NOT NULL); INSERT INTO public.backup_role_default_acl_probe VALUES (1, 'synthetic-default-acl');"
 
 # The independent audit must pass when connected as the provisioned backup LOGIN.
 psql "$backup_url" -X -v ON_ERROR_STOP=1 -f scripts/audit_database_roles.sql
@@ -150,20 +159,23 @@ assert_true "backup role cannot use or update sequences" "
   )
 "
 
-assert_true "backup role has no default privileges beyond sequence SELECT" "
+assert_true "backup role has default SELECT only for future tables and sequences" "
   EXISTS (
-    SELECT 1
-    FROM pg_default_acl d
+    SELECT 1 FROM pg_default_acl d
     CROSS JOIN LATERAL aclexplode(d.defaclacl) a
     WHERE a.grantee=(SELECT oid FROM pg_roles WHERE rolname='microapp_backup')
       AND d.defaclnamespace='public'::regnamespace
-      AND d.defaclobjtype='S'
-      AND a.privilege_type='SELECT'
-      AND NOT a.is_grantable
+      AND d.defaclobjtype='r' AND a.privilege_type='SELECT' AND NOT a.is_grantable
+  )
+  AND EXISTS (
+    SELECT 1 FROM pg_default_acl d
+    CROSS JOIN LATERAL aclexplode(d.defaclacl) a
+    WHERE a.grantee=(SELECT oid FROM pg_roles WHERE rolname='microapp_backup')
+      AND d.defaclnamespace='public'::regnamespace
+      AND d.defaclobjtype='S' AND a.privilege_type='SELECT' AND NOT a.is_grantable
   )
   AND NOT EXISTS (
-    SELECT 1
-    FROM pg_default_acl d
+    SELECT 1 FROM pg_default_acl d
     CROSS JOIN LATERAL aclexplode(d.defaclacl) a
     WHERE a.grantee=(SELECT oid FROM pg_roles WHERE rolname='microapp_backup')
       AND (d.defaclnamespace <> 'public'::regnamespace
@@ -171,6 +183,51 @@ assert_true "backup role has no default privileges beyond sequence SELECT" "
         OR a.privilege_type <> 'SELECT' OR a.is_grantable)
   )
 "
+# The transition accepts only direct sessions for either explicitly allowlisted
+# LOGIN. The same predicate rejects SET ROLE and every elevated role attribute.
+identity_contract_sql="(
+  current_user IN ('backup_readonly', 'microapp_backup')
+  AND session_user = current_user
+  AND EXISTS (
+    SELECT 1 FROM pg_catalog.pg_roles r
+    WHERE r.rolname=current_user AND r.rolcanlogin
+      AND NOT r.rolsuper AND NOT r.rolcreatedb AND NOT r.rolcreaterole
+      AND NOT r.rolreplication AND NOT r.rolbypassrls AND NOT r.rolinherit
+  )
+)"
+assert_identity_result() {
+  local label="$1"
+  local connection="$2"
+  local expected="$3"
+  local actual
+  actual="$(psql "$connection" -X -v ON_ERROR_STOP=1 -Atq -c "SELECT $identity_contract_sql")"
+  if [[ "$actual" != "$expected" ]]; then
+    echo "FAIL: $label (expected $expected, got $actual)" >&2
+    exit 1
+  fi
+  echo "PASS: $label"
+}
+
+legacy_url="postgresql://backup_readonly:backup-readonly-test-only@localhost:5432/microapp_source"
+assert_identity_result "legacy backup_readonly LOGIN remains temporarily accepted" "$legacy_url" "t"
+assert_identity_result "new microapp_backup LOGIN is accepted" "$backup_url" "t"
+set_role_result="$(psql "$SOURCE_URL" -X -v ON_ERROR_STOP=1 -Atq -c "SET ROLE backup_readonly; SELECT $identity_contract_sql")"
+if [[ "$set_role_result" != "f" ]]; then
+  echo "FAIL: identity transition accepted SET ROLE (got $set_role_result)" >&2
+  exit 1
+fi
+echo "PASS: identity transition rejects SET ROLE"
+
+for elevated_attribute in SUPERUSER CREATEDB CREATEROLE REPLICATION BYPASSRLS INHERIT; do
+  psql "$SOURCE_URL" -X -v ON_ERROR_STOP=1 -c "ALTER ROLE microapp_backup $elevated_attribute" >/dev/null
+  assert_identity_result "identity transition rejects $elevated_attribute" "$backup_url" "f"
+  psql "$SOURCE_URL" -X -v ON_ERROR_STOP=1 -c "ALTER ROLE microapp_backup NOSUPERUSER NOCREATEDB NOCREATEROLE NOREPLICATION NOBYPASSRLS NOINHERIT" >/dev/null
+done
+
+assert_true "backup role can read a table created after provisioning" "
+  has_table_privilege('microapp_backup', 'public.backup_role_default_acl_probe', 'SELECT')
+"
+
 assert_true "backup role owns no view or sequence" "
   NOT EXISTS (
     SELECT 1 FROM pg_class
@@ -263,6 +320,7 @@ pg_dump "$backup_url" --no-owner --no-privileges --format=custom --file="$dump_d
 test -s "$dump_dir/backup.dump"
 archive_list="$(pg_restore --list "$dump_dir/backup.dump")"
 grep -Eq 'TABLE public products ' <<<"$archive_list"
+grep -Eq 'TABLE public backup_role_default_acl_probe ' <<<"$archive_list"
 grep -Eq 'SEQUENCE public backup_role_audit_sequence ' <<<"$archive_list"
 echo "PASS: backup LOGIN produced an intact custom-format pg_dump archive."
 

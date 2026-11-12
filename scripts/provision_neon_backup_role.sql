@@ -42,12 +42,27 @@ GRANT USAGE ON SCHEMA public TO microapp_backup;
 GRANT SELECT ON ALL TABLES IN SCHEMA public TO microapp_backup;
 
 -- SELECT alone permits reading last_value for pg_dump; USAGE permits nextval()
--- and would violate the read-only contract. Default ACLs are owner-specific:
--- this statement applies to objects subsequently created by the role executing
--- this script, which must be verified as the actual schema/object owner.
+-- and would violate the read-only contract. Grant future table/view and sequence
+-- SELECT for objects created by the role executing this script.
 GRANT SELECT ON ALL SEQUENCES IN SCHEMA public TO microapp_backup;
 ALTER DEFAULT PRIVILEGES IN SCHEMA public
+  GRANT SELECT ON TABLES TO microapp_backup;
+ALTER DEFAULT PRIVILEGES IN SCHEMA public
   GRANT SELECT ON SEQUENCES TO microapp_backup;
+
+-- IMPORTANT: ALTER DEFAULT PRIVILEGES is owner-specific. The two statements
+-- above affect only the current_user (the role executing this script). After a
+-- SELECT-only owner inventory, apply these statements for EACH additional
+-- verified owner that creates objects, using an authorized role administrator:
+--
+-- ALTER DEFAULT PRIVILEGES FOR ROLE <owner_verificado>
+--   IN SCHEMA public GRANT SELECT ON TABLES TO microapp_backup;
+-- ALTER DEFAULT PRIVILEGES FOR ROLE <owner_verificado>
+--   IN SCHEMA public GRANT SELECT ON SEQUENCES TO microapp_backup;
+--
+-- Never guess an owner name (including neondb_owner), never grant USAGE/UPDATE
+-- on sequences, and stop if the operator lacks authority to alter that owner's
+-- defaults. Verify the resulting pg_default_acl entries with the audit.
 
 -- CI-only escape hatch: the password is read from the environment, never argv.
 -- Normal operator execution takes the secure interactive psql \password path.

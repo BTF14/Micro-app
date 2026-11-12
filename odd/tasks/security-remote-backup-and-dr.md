@@ -1,6 +1,6 @@
 # ODD task: Issue #53 — remote encrypted backup contract and disaster recovery (Turno 18)
 
-- Status: in progress
+- Status: completed (repository implementation; operational DR drill remains pending)
 - Issue: #53 (OPEN / P0)
 - Branch: `security/issue-53-remote-backup-dr-contract-20261112`
 - Base: `main` at `27c10a5230a095778d692fba1439e0da63a99625`
@@ -31,14 +31,14 @@ Excluded:
 
 ## Acceptance criteria
 
-- [ ] AC-1 Current and proposed storage paths are distinguished; R2 free-tier limits and overage risk are explicit.
-- [ ] AC-2 Backup workflow verifies the local ciphertext checksum before transfer and remote object bytes after push.
-- [ ] AC-3 Transport retries are bounded and raw logs cannot disclose credentials or server response bodies.
-- [ ] AC-4 Synthetic test proves remote bytes match expected SHA-256 and rejects tampering.
-- [ ] AC-5 PostgreSQL 18 synthetic backup/restore validates the full encrypted round-trip and business relationships.
-- [ ] AC-6 DR runbook gives safe operator steps and never asks for private age keys in chat or Git.
-- [ ] AC-7 RPO <24h and RTO <15m remain targets only until a real timed drill and monitoring prove them.
-- [ ] AC-8 Issue #53 remains OPEN/P0 and PRODUCTION remains NOT READY.
+- [x] AC-1 Current and proposed storage paths are distinguished; R2 free-tier limits and overage risk are explicit.
+- [x] AC-2 Backup workflow verifies the local ciphertext checksum before transfer and remote object bytes after push.
+- [x] AC-3 Transport retries are bounded and raw logs cannot disclose credentials or server response bodies.
+- [x] AC-4 Synthetic test proves remote bytes match expected SHA-256 and rejects tampering.
+- [x] AC-5 PostgreSQL 18 synthetic backup/restore validates the full encrypted round-trip and business relationships.
+- [x] AC-6 DR runbook gives safe operator steps and never asks for private age keys in chat or Git.
+- [x] AC-7 RPO <24h and RTO <15m remain targets only until a real timed drill and monitoring prove them.
+- [x] AC-8 Issue #53 remains OPEN/P0 and PRODUCTION remains NOT READY.
 
 ## Risks and guardrails
 
@@ -55,10 +55,10 @@ Excluded:
 | Task | Expected result | Validation / evidence | Status |
 |---|---|---|---|
 | Inspect current backup workflow, restore tests and policy | Accurate baseline | GitHub source at base SHA | completed |
-| Define storage contract and DR procedure | Operator runbook | Review against current workflow and vendor docs | in progress |
-| Add remote checksum verification and bounded transport retry | Fail-closed transfer | Synthetic Git remote test | in progress |
-| Verify full synthetic restore | PostgreSQL 18 CI | Exact-HEAD workflow | pending |
-| Reconcile PR and production gate | Reproducible handoff | GitHub PR/check-runs and docs | pending |
+| Define storage contract and DR procedure | Operator runbook | PR #322 merged; R2 vendor terms documented | completed |
+| Add remote checksum verification and bounded transport retry | Fail-closed transfer | Backup contract tests + remote tamper test SUCCESS in exact HEAD | completed |
+| Verify full synthetic restore | PostgreSQL 18 CI | 3 restore profiles SUCCESS in exact HEAD | completed |
+| Reconcile PR and production gate | Reproducible handoff | PR #322 MERGED; Issue #53 remains OPEN/P0 | completed |
 
 ## Technical decisions
 
@@ -69,10 +69,10 @@ Excluded:
 
 ## Closure and handoff
 
-- Final commit SHA: pending
-- PR: #322 expected
-- Checks and exact outcomes: pending
-- Acceptance criteria met / unmet: pending
+- Final PR HEAD: `944711e4a3d95b542d846cc76dc3002a016de290`; merge/main SHA: `a44fe44bd72b1e72cc461c4edb92b2b9c1f20724`
+- PR: #322 MERGED (squash)
+- Checks: 16/16 workflow runs and 20/20 check-runs SUCCESS on exact PR HEAD; 3 PostgreSQL 18 restore profiles and remote tamper fixture SUCCESS.
+- Acceptance criteria: repository implementation AC-1–AC-8 met; real remote backup/DR/RPO/RTO/alerts remain operational gates.
 - Limitations not verified: live R2 account/billing, remote backup schedule, real backup identity, real DR drill, RPO/RTO, alerts
 - Residual risks: Issue #53 P0 remains open
-- Next step: verify exact-HEAD CI and manually review the PR diff before any merge
+- Next step: complete operator-led remote backup and DR drill, measure RPO/RTO and configure passive alerts only after cost/security gates; never use Neon main under this task.

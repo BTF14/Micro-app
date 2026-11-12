@@ -2,7 +2,7 @@
 ## Journal — Turno 14 (2026-11-12 UTC)
 
 - PR #317 squash-merged; HEAD validado `870a35ac4a0190b80f31c0cf0590a759195f60dc`, 14/14 check-runs SUCCESS; nuevo main `bd9af0cc5b92858fd5063b3d8d102dbc327469ac`.
-- PR #313 revalidada: 14/14 SUCCESS en HEAD `c0895153da60845582911271e3f8f45a21a7dd53`, pero 1 ahead / 2 behind y diverged frente al nuevo main. No fusionada; requiere sincronización sin force-push y nueva CI.
+- PR #313 se fusionó por squash después de que GitHub reportara `mergeable=true`, `mergeable_state=clean` y 14/14 check-runs SUCCESS en HEAD `c0895153da60845582911271e3f8f45a21a7dd53`; merge SHA `a0d6d801128b3e3aa6543796436abf348c645e8f`.
 - Creada rama `security/issue-53-neon-role-matrix-20261112` desde el nuevo main.
 - Añadidos ODD task y ADR propuesto para la matriz Neon. Añadidos `scripts/audit_database_roles.sql` y `scripts/provision_neon_backup_role.sql`; ampliado `scripts/tests/test_backup_role_privileges.sh` para invocar la auditoría como principal sintético y comprobar rechazo de atributos administrativos.
 - Hallazgo histórico de SECURITY_ROADMAP: `backup_readonly` tenía atributos administrativos, memberships privilegiadas y DML; la identidad efectiva de DATABASE_URL_BACKUP_RO sigue desconocida. No se leyeron secretos ni se consultó Neon en este turno.

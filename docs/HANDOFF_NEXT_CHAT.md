@@ -1,3 +1,32 @@
+## Handoff vigente — Turno 14 / Issue #53, identidad y grants Neon
+
+**main:** `bd9af0cc5b92858fd5063b3d8d102dbc327469ac` (PR #317 MERGED). **Rama activa:** `security/issue-53-neon-role-matrix-20261112`. **PR #318:** se abrirá desde esta rama tras completar la revisión del diff; revalidar HEAD y checks exact-SHA.
+
+### Trabajo persistido
+- `odd/tasks/security-issue-53-neon-role-matrix.md`
+- `docs/decisions/ADR-20261112-neon-backup-principal.md` (proposed)
+- `scripts/audit_database_roles.sql` (read-only, fail-closed, inspecciona current_user/session_user, atributos, memberships, ownership, grants y RLS)
+- `scripts/provision_neon_backup_role.sql` (operator-run, sin contraseña versionada; NO ejecutar automáticamente)
+- `scripts/tests/test_backup_role_privileges.sh` (invoca la auditoría como el LOGIN sintético y prueba atributos prohibidos)
+
+### Evidencia y bloqueos
+- PR #317: MERGED; 14/14 checks SUCCESS exact-SHA `870a35ac4a0190b80f31c0cf0590a759195f60dc`; merge/main `bd9af0cc5b92858fd5063b3d8d102dbc327469ac`.
+- PR #313: OPEN; HEAD `c0895153da60845582911271e3f8f45a21a7dd53`; 14/14 checks SUCCESS en ese HEAD, pero diverged 1 ahead / 2 behind respecto a main. No merge hasta sincronización y CI nuevo.
+- La evidencia histórica en SECURITY_ROADMAP indica que `backup_readonly` tenía CREATEROLE/CREATEDB/REPLICATION/BYPASSRLS, membresías privilegiadas y DML. No se ha probado que sea la identidad efectiva de `DATABASE_URL_BACKUP_RO`.
+- Tensión de secuencias: pg_dump completo requiere SELECT para preservar valores; USAGE/UPDATE deben permanecer denegados. ADR explica por qué “cero privilegios” literal no es compatible con el dump completo probado.
+- CI del nuevo HEAD aún no está disponible; no afirmar tests pasados hasta ejecutar CI.
+
+### Próximos pasos
+1. Revisar el diff completo, corregir SQL si hace falta y validar shell/SQL en PostgreSQL 18 desechable.
+2. Confirmar que el restore smoke ejecuta `scripts/test_backup_role_privileges.sh` (el runner `scripts/test_backup_restore.sh` lo invoca) y que CI cubre el cambio.
+3. Abrir PR #318 y comprobar todos los checks exact-HEAD.
+4. Mantener PR #313 sin merge hasta sincronizar y revalidar; majors #314–#316 en espera; #193 intacta.
+5. Solo tras autorización específica, ejecutar la auditoría de forma read-only con la conexión real; nunca mostrar ni leer el secreto desde herramientas. No ejecutar provisioning en Neon main.
+
+**PRODUCTION: NOT READY.** Issue #53 OPEN/P0. Presupuesto USD 0. Neon main sin escrituras/DDL; sin secretos, datos reales ni despliegues manuales.
+
+---
+
 ## Handoff vigente — Turno 13 / siguiente etapa: readiness de producción
 
 **main:** `dbeb21d97a5c738043f61629d3f0e3d25a4ea772` (PR #312 squash-merged). PR #312 quedó MERGED con HEAD exact-SHA `bf5919e3ec80523a0d9d2c40602c3e5749fde05e`, 14/14 check-runs SUCCESS; merge SHA `dbeb21d97a5c738043f61629d3f0e3d25a4ea772`.

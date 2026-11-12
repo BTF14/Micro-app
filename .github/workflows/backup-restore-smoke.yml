@@ -31,6 +31,8 @@ on:
       - "scripts/backup_restore_fixture_main.sql"
       - "scripts/test_backup_restore_schema_bcv.sh"
       - "scripts/backup_restore_fixture_bcv.sql"
+      - "scripts/dr_drill_simulation.sh"
+      - "apps/api/src/smoke-readiness.test.ts"
       - "scripts/db/migrate.sh"
       - "scripts/db/reapply_restore_role_grants.sh"
       - "scripts/db/restore_remote_backup_ephemeral.sh"
@@ -140,7 +142,7 @@ jobs:
           bash scripts/ci/apt-retry.sh install -y postgresql-client-18
       - name: Run full-schema and populated BCV/projection-ledger restore smoke
         shell: bash
-        run: bash scripts/test_backup_restore_schema_bcv.sh
+        run: bash scripts/dr_drill_simulation.sh
 
   restore-legacy-regression:
     name: Synthetic encrypted restore — legacy backup contract

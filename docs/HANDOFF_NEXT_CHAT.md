@@ -1,3 +1,4 @@
+- **PR #318 OPEN / Draft:** HEAD `fa5bd1710452d24974a208659209f4b0526f204e`; base `bd9af0cc5b92858fd5063b3d8d102dbc327469ac`; 5/16 check-runs SUCCESS, 11 pendientes, 0 fallos en la última consulta. Si hay commits posteriores, descartar esta evidencia y consultar el HEAD nuevo.
 ## Handoff vigente — Turno 14 / Issue #53, identidad y grants Neon
 
 **main:** `bd9af0cc5b92858fd5063b3d8d102dbc327469ac` (PR #317 MERGED). **Rama activa:** `security/issue-53-neon-role-matrix-20261112`. **PR #318:** se abrirá desde esta rama tras completar la revisión del diff; revalidar HEAD y checks exact-SHA.

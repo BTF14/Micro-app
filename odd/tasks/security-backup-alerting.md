@@ -55,8 +55,8 @@ Excluded:
 | Verify post-#323 main and repository policy | Exact base and ODD/PR constraints | GitHub API and canonical docs | completed |
 | Create ODD task and isolated branch | Durable task before source edits | Branch and ODD file commit `3fab84af655b6d9e0cfb19c9ae628724ef575fb7` | completed |
 | Implement sanitized failure notifier | Idempotent issue/comment behavior | `scripts/backup_failure_alert.sh` reviewed; uses only generic failure text and GitHub context | completed |
-| Add deterministic mocked-CLI tests | No-op/create/update coverage | `bash scripts/test_backup_failure_alert.sh` PASS (success no-op, issue create, existing issue comment) | completed |
-| Wire failure-only workflow step | Native token, least privilege | `issues: write` + `contents: read`; `if: failure()`; `continue-on-error`; contract workflow invokes mocked test | implemented; CI pending |
+| Add deterministic mocked-CLI tests | No-op/create/update coverage | `bash scripts/test_backup_failure_alert.sh` PASS (success no-op, issue create, existing issue comment); static assertions verify failure guard, `continue-on-error`, native token and `issues: write` wiring | completed |
+| Wire failure-only workflow step | Native token, least privilege | `issues: write` + `contents: read`; `if: failure()`; `continue-on-error`; contract workflow invokes mocked test and static wiring assertions | implemented; CI pending |
 | Open and validate PR #324 | Exact-HEAD required checks green | PR creation and exact-HEAD check-runs pending | pending |
 
 ## Production gate and handoff

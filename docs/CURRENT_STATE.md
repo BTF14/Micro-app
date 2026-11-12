@@ -1,3 +1,7 @@
+**Estado vigente — Turno 17 / 2026-11-12:** PR #319 MERGED por squash; nuevo main `fc1a599a4d78350d3af2f239390459e168e3ff14`. PR #320 OPEN / Draft, rama `security/issue-53-tenant-session-isolation-20261112`, HEAD `942ef584b4732848a990ea1f7d9c9b9a5584418d`; CI inicial en curso (no declarar PASS hasta exact-HEAD). ODD `odd/tasks/security-tenant-session-isolation.md` y suite `apps/api/src/tenant-isolation.test.ts` añadidas. Refuerzo: rutas protegidas limpian cookie inválida. Aislamiento usa authz server-side + SQL scoping + FKs/locks/triggers; RLS y Drizzle no existen en este repo. Issue #53 OPEN/P0; **PRODUCTION: NOT READY**; USD 0; sin Neon writes ni secrets.
+
+---
+
 **Estado vigente — 2026-11-12:** PR #318 MERGED por squash; main `3ac66a180fcf23421b546140a419a45062e633dd`. Pre-merge exact HEAD 19/19 check-runs SUCCESS; post-merge main 13/13 check-runs SUCCESS. PR #319 OPEN / Draft, runbook en revisión documental. Issue #53 OPEN/P0; principal efectivo de DATABASE_URL_BACKUP_RO aún no verificado. PRODUCTION: NOT READY; no Neon writes; USD 0.
 
 

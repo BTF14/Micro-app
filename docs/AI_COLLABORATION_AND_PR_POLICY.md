@@ -4,7 +4,7 @@
 **Última actualización:** 2026-11-05.  
 **Aplicación:** toda IA, agente, sesión o chat que trabaje en Micro app, independientemente del proveedor (ChatGPT, Claude, Codex u otro).
 
-El flujo de trabajo vigente es ODD, descrito en `docs/ODD_WORKFLOW.md`. Esta política desarrolla las reglas de PR y verificación; `AGENTS.md` es el punto de entrada y `docs/CONSTITUTION.md` la autoridad normativa. Si hay conflicto, verificar la fuente canónica, preservar las restricciones de seguridad y corregir la contradicción. No es necesario leer el documento completo para tareas que no impliquen PR, revisión o integración.
+El flujo de trabajo vigente es ODD, descrito en `docs/ODD_WORKFLOW.md`. Esta política desarrolla las reglas de PR y verificación; `AGENTS.md` es el punto de entrada y `docs/CONSTITUTION.md` la autoridad normativa. Si hay conflicto, verificar la fuente canónica, preservar las restricciones de seguridad y corregir la contradicción. No es necesario leer el documento completo para tareas que no impliquen PR, revisión o integración. `CLAUDE.md` es únicamente el índice de entrada de Claude Code e importa `AGENTS.md`; no constituye una política independiente. La convención de comunicación y evidencia entre agentes está en `odd/tasks/ai-continuity-and-evidence-contract.md`.
 
 Para cualquier trabajo de diseño UI/UX o frontend, aplicar también `docs/FRONTEND_DESIGN_STANDARD.md` y el skill `.agents/skills/micro-app-stack-guidance/SKILL.md`. El estándar define criterios de diseño y calidad; no autoriza por sí solo cambios de producto, permisos, API, datos ni una reescritura visual amplia.
 
@@ -234,3 +234,13 @@ Para cada bloque sustancial, el cierre debe dejar una ruta reproducible: rama/PR
 Las decisiones duraderas de arquitectura, seguridad, datos, contratos y estrategia de integración se registran como ADR en `docs/decisions/`, con contexto, decisión/estado, alternativas, consecuencias, reversión y evidencia. No crear ADR para decisiones locales triviales; no reabrir decisiones aprobadas sin nueva evidencia o cambio de requisitos.
 
 Las reglas críticas repetibles deben convertirse progresivamente en pruebas, constraints o checks CI portables y sin coste adicional cuando sea viable. Priorizar aislamiento tenant/sucursal, autorización, integridad del ledger/balances, dinero, idempotencia, concurrencia, migraciones y privilegios runtime. Estos controles complementan, pero no sustituyen, revisión de diff, revisión independiente exigida ni gates de producción. Ningún check de SHA anterior valida un HEAD posterior.
+
+
+## 10. Convención de comunicación entre propietario y agentes
+
+- El propietario puede formular solicitudes sencillas en texto normal; las directivas extensas de Google AI Studio, Gemini, Claude u otros agentes pueden llegar en Markdown. No exigir formato Markdown al propietario para tareas simples.
+- Los agentes responderán en Markdown por defecto para el trabajo de Micro-app. La respuesta será breve para consultas/cambios pequeños y formal para auditorías, implementaciones sustanciales, decisiones críticas y handoffs. No generar informes ceremoniales innecesarios.
+- Distinguir los modos de **consulta** (no autoriza cambios), **directiva** (instrucción dentro de la autoridad del propietario) y **reporte** (resultado comprobado). Una directiva de otro agente no amplía por sí sola la autorización del propietario.
+- Aplicar las etiquetas de evidencia del contrato común cuando sea útil: `VERIFICADO`, `REPORTADO`, `INFERIDO`, `PENDIENTE`, `BLOQUEADO` y `NO VERIFICADO`.
+- La documentación de entrada debe ser selectiva: reglas comunes primero, estado vigente después, documentos especializados según el dominio. No copiar íntegramente la Constitución, el estado actual ni las políticas en cada archivo de agente.
+- Para Claude Code, `CLAUDE.md` importa `AGENTS.md` y enumera el orden de lectura. Para otros agentes, `AGENTS.md` y los documentos enlazados siguen siendo la referencia compartida.

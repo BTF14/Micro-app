@@ -15,21 +15,58 @@ WHERE NOT EXISTS (SELECT 1 FROM pg_catalog.pg_roles WHERE rolname='microapp_back
 \gexec
 
 DO $preflight$
-DECLARE v_oid oid := (SELECT oid FROM pg_roles WHERE rolname='microapp_backup');
+DECLARE
+  v_oid oid := (SELECT oid FROM pg_catalog.pg_roles WHERE rolname='microapp_backup');
+  v_database_owner oid;
+  v_is_superuser boolean;
 BEGIN
-  IF EXISTS (SELECT 1 FROM pg_auth_members WHERE member=v_oid OR roleid=v_oid) THEN
-    RAISE EXCEPTION 'Refusing provisioning: microapp_backup has role memberships in either direction; review/revoke them explicitly first';
+  SELECT datdba INTO v_database_owner
+  FROM pg_catalog.pg_database
+  WHERE datname = current_database();
+
+  SELECT rolsuper INTO v_is_superuser
+  FROM pg_catalog.pg_roles
+  WHERE oid = v_oid;
+
+  IF v_oid IS NULL OR v_is_superuser IS NULL THEN
+    RAISE EXCEPTION 'Refusing provisioning: microapp_backup role lookup failed';
   END IF;
-  IF EXISTS (SELECT 1 FROM pg_database WHERE datdba=v_oid)
-     OR EXISTS (SELECT 1 FROM pg_namespace WHERE nspowner=v_oid)
-     OR EXISTS (SELECT 1 FROM pg_class WHERE relowner=v_oid)
-     OR EXISTS (SELECT 1 FROM pg_proc WHERE proowner=v_oid) THEN
+  IF v_is_superuser THEN
+    RAISE EXCEPTION 'Refusing provisioning: microapp_backup is SUPERUSER; a non-superuser operator cannot safely clear this attribute';
+  END IF;
+
+  -- PostgreSQL 16+ may automatically grant the creator ADMIN OPTION on a
+  -- role it creates. This is an INCOMING membership: it does not make the
+  -- backup principal a member of the database owner or inherit its privileges.
+  -- Permit only the direct owner of this database; all outgoing memberships
+  -- and every other incoming member remain forbidden.
+  IF EXISTS (
+    SELECT 1 FROM pg_catalog.pg_auth_members
+    WHERE member = v_oid
+  ) THEN
+    RAISE EXCEPTION 'Refusing provisioning: microapp_backup has outgoing role memberships';
+  END IF;
+  IF EXISTS (
+    SELECT 1 FROM pg_catalog.pg_auth_members
+    WHERE roleid = v_oid AND member <> v_database_owner
+  ) THEN
+    RAISE EXCEPTION 'Refusing provisioning: microapp_backup has an incoming member other than the current database owner';
+  END IF;
+
+  IF EXISTS (SELECT 1 FROM pg_catalog.pg_database WHERE datdba=v_oid)
+     OR EXISTS (SELECT 1 FROM pg_catalog.pg_namespace WHERE nspowner=v_oid)
+     OR EXISTS (SELECT 1 FROM pg_catalog.pg_class WHERE relowner=v_oid)
+     OR EXISTS (SELECT 1 FROM pg_catalog.pg_proc WHERE proowner=v_oid) THEN
     RAISE EXCEPTION 'Refusing provisioning: microapp_backup owns database/schema/objects; transfer ownership explicitly first';
   END IF;
 END
 $preflight$;
 
-ALTER ROLE microapp_backup NOLOGIN NOSUPERUSER NOCREATEDB NOCREATEROLE
+-- NOSUPERUSER is deliberately set only at CREATE ROLE above. PostgreSQL
+-- managed services (including Neon) reject ALTER ROLE ... NOSUPERUSER when
+-- the operator is not itself a superuser, even when the target is already
+-- non-superuser. Existing SUPERUSER roles fail closed in the preflight.
+ALTER ROLE microapp_backup NOLOGIN NOCREATEDB NOCREATEROLE
   NOINHERIT NOREPLICATION NOBYPASSRLS;
 
 REVOKE ALL PRIVILEGES ON DATABASE :"target_database" FROM microapp_backup;

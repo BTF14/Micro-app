@@ -1,3 +1,31 @@
+## Checkpoint Turno 11 — merges #310/#303 y triage de backlog (2026-11-12 UTC)
+
+**Main:** `6343761b601d3a3e7373ab00fb9b580b3ae09e0c`.
+
+### Integraciones confirmadas
+- **PR #310 MERGED** por squash: `13ce618d6c5e14a16d79a6be4ca9b6be8587d588`. HEAD exacto validado antes del merge: `917b5d97725bceba16b6e4b242274c9b3c03cf95`; 14/14 check-runs y 10/10 workflows SUCCESS.
+- **PR #303 MERGED** por squash: `6343761b601d3a3e7373ab00fb9b580b3ae09e0c`. HEAD exacto: `8535f1daa6b3616fc5ff77ef82f195b01a1f91b6`; 19/19 check-runs y 11/11 workflows SUCCESS, incluidos los tres perfiles de restore PostgreSQL 18. Tras #310, GitHub recalculó mergeability a true y aceptó el merge con expected_head_sha exacto.
+- #303 integra el runner BCV 0001–0023, principal sintético `microapp_backup`, revocación inmediata de grants temporales y `--exclude-table-data` para conservar DDL y excluir filas efímeras. Esto es evidencia sintética, no certificación de Neon ni del secreto productivo.
+
+### PR #296 — triage pendiente
+- OPEN / Draft; HEAD `62dde66355a937a4f6fa4efb8d9cfdf856d7ac0f`.
+- Compare contra main `6343761b601d3a3e7373ab00fb9b580b3ae09e0c`: **64 ahead / 12 behind**, divergente; merge base `03442951b2a2f63f5bf4dcf560f2c91be4f6cc71`.
+- Diff: 11 archivos, todos documentales. Los cambios únicos incluyen `ADR-20261109-admin-authorization-pin-recovery.md`, `BANKING_CALENDAR_VERSIONING.md`, `FX_CONTINGENCY_MANAGEMENT.md`, ADR FX y `odd/tasks/fx-contingency-management.md`.
+- Los documentos generales `CURRENT_STATE`, `HANDOFF_NEXT_CHAT`, `STATE_JOURNAL`, `WORK_CHECKPOINT`, `PROJECT_PLAN` y `SECURITY_ROADMAP` contienen snapshots de noviembre 9; no deben prevalecer sobre el estado posterior en main. Mantener #296 Draft. Reconciliar estos seis documentos desde main y preservar los artefactos únicos. No se ha hecho rebase/force-push ni se ha alterado la rama.
+
+### PR #193 — conservar intacta
+- OPEN / Ready; HEAD `ac57ab4f3415f82279b8a49c0befe09f8e3aec68`.
+- Compare contra main `6343761b601d3a3e7373ab00fb9b580b3ae09e0c`: **5 ahead / 85 behind**, único archivo propio `docs/sdd/PHASE_B_BRANCH_INVENTORY_SCOPE.md` (543 líneas). No sincronizar ni modificar en este turno.
+
+### Backlog vivo
+- #296 — OPEN / Draft — triage documental pendiente.
+- #193 — OPEN / Ready — conservar intacta.
+
+**Issue #53:** OPEN / P0. **PRODUCTION: NOT READY.** Las pruebas sintéticas de esquema completo están integradas; siguen pendientes la identidad efectiva del principal de backup en runtime/Neon, privilegios reales, restauración del artefacto remoto, RPO/RTO, alertas y evidencia de coste $0.
+**Presupuesto:** USD 0. Sin Neon main, DDL/escrituras remotas, secretos, datos reales, roles/grants remotos, backup remoto, Cron, Cloudflare manual, DNS, billing ni despliegues manuales.
+
+---
+
 # Hito — Turno 10: merge documental, limpieza de PRs y endurecimiento del dump (2026-11-11 UTC)
 
 **Cierre documental posterior:** PR #309 fue integrada con squash; nuevo main `d2761437fa624e8eed70023ded0fd7533569e96e`. El censo de backlog queda en tres PR abiertas (#303, #296, #193).

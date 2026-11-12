@@ -1,3 +1,13 @@
+## Journal — Turno 12 (2026-11-12 UTC)
+
+- PR #311 integrada por squash; commit `dae88d14b69f274b0aac6c3dbd9de960ea0feb62`.
+- PR #312 creada desde el nuevo main para conservar cinco artefactos documentales de #296; dos son archivos nuevos frente a main y tres ya existían idénticos.
+- PR #296 permanece abierta hasta verificar y cerrar formalmente la absorción por #312.
+- PR #193 permanece abierta e intacta.
+- Issue #53 continúa OPEN/P0; `PRODUCTION: NOT READY`. No se tocó Neon main, secretos ni despliegues. Presupuesto USD 0.
+
+---
+
 ## Checkpoint Turno 11 — merges #310/#303 y triage de backlog (2026-11-12 UTC)
 
 **Main:** `6343761b601d3a3e7373ab00fb9b580b3ae09e0c`.

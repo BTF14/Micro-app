@@ -3175,3 +3175,14 @@ La hipótesis anterior de que el helper de espera era la causa no era correcta. 
 - Añadido job PostgreSQL 18 separado con dos perfiles: BCV 0001–0023 + 0022 assertions; main 0001–0016 + restore_role_assertions_main. Las pruebas fail-closed se ejecutan contra el validador apropiado de cada perfil, sin alterar grants funcionales.
 - La directiva también solicita que se confirme ausencia de SHA-256 literal de 0022; el código del runner calcula checksum dinámicamente. Esta revisión debe completarse mediante búsqueda en tests/docs antes del merge.
 - Estado al registrar: rama de PR #337 creada; implementación/CI exact-SHA/merge pendientes. No Neon, Secrets ni Cloudflare. PRs #193/#314/#315/#316 e Issue #53 intactas.
+
+
+## 2026-11-12 — Turno 35: excepción ADMIN-only del database owner para backup
+
+- Main verificado en `3b0b8d0ce24ab823ff41b84cd56a48b36dedae88`; PR #337 MERGED. PR #338 creada desde ese SHA para corregir el falso positivo de `has_membership`.
+- La excepción única del contrato es la arista entrante del `pg_database.datdba` con ADMIN=true, INHERIT=false y SET=false. Se rechazan todas las aristas salientes, miembros entrantes ajenos, flags no conformes y USAGE/SET efectivos del owner no-superuser.
+- Se detectó que `scripts/audit_database_roles.sql` no verificaba las flags ni las capacidades efectivas del owner; se alineó con el workflow. Se amplió el test PostgreSQL 18 para usar un database owner no-superuser CREATEROLE y probar la excepción positiva y los negativos (outgoing, rogue incoming, SET, INHERIT, ADMIN ausente).
+- **Fase 3A y rotación de `DATABASE_URL_BACKUP_RO`** se registran como confirmación del propietario: 23 migraciones aplicadas; roles/default privileges; audit PASS; rollback assertions PASS; 11/11 filas; snapshot preservado; `backup_readonly` temporal. El secreto usa `microapp_backup` con conexión directa; `AGE_PRIVATE_KEY` y `BACKUP_REPO_TOKEN` presentes. El agente no accedió a Secrets ni ejecutó acciones Neon.
+- PR #338: rama `fix/backup-owner-admin-membership-20261112`, base exacta 3b0b8d0. Checks exact-SHA, review/diff gates y merge aún pendientes al crear este registro.
+- Próximo gate tras integración: backup natural 07:00 UTC únicamente; comprobar booleanos, artefacto cifrado/sidecar y readback checksum. No workflow_dispatch. Restore real aislado y Fase 3B siguen pendientes.
+- Sin cambios a Neon, ramas/snapshot, secretos, Cloudflare manual, PRs #193/#314/#315/#316 ni Issue #53. Issue #53 OPEN/P0; producción NOT READY.

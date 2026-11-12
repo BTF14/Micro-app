@@ -46,5 +46,5 @@ GRANT SELECT ON ALL SEQUENCES IN SCHEMA public TO microapp_backup;
 -- Default privileges are owner-specific. Configure separately for every actual
 -- table/sequence owner after inspecting ownership; do not guess the owner here.
 
-\\password microapp_backup
+\password microapp_backup
 ALTER ROLE microapp_backup LOGIN;

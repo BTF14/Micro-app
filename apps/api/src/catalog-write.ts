@@ -292,6 +292,7 @@ export function registerCatalogWriteRoutes(app: Hono<{ Bindings: Bindings }>): v
     }
     const sessionToken = getCookie(c, "microapp_session");
     if (!sessionToken || sessionToken.length > 128) {
+      clearSessionCookie(c);
       return c.json({ error: "UNAUTHENTICATED", message: "Inicia sesión para continuar." }, 401);
     }
 
@@ -399,7 +400,7 @@ export function registerCatalogWriteRoutes(app: Hono<{ Bindings: Bindings }>): v
         }),
       );
 
-      if (result.kind === "unauthenticated") return c.json({ error: "UNAUTHENTICATED", message: "Inicia sesión para continuar." }, 401);
+      if (result.kind === "unauthenticated") { clearSessionCookie(c); return c.json({ error: "UNAUTHENTICATED", message: "Inicia sesión para continuar." }, 401); }
       if (result.kind === "forbidden") return c.json({ error: "FORBIDDEN", message: "No tienes permiso para editar productos." }, 403);
       if (result.kind === "not_found") return c.json({ error: "PRODUCT_NOT_FOUND", message: "No se encontró el producto." }, 404);
       return c.json(result.product, 200);

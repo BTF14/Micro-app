@@ -13,8 +13,32 @@ BEGIN
   END IF;
   IF pg_catalog.pg_has_role('microapp_runtime','microapp_migrator','MEMBER')
     OR EXISTS (
-      SELECT 1 FROM pg_catalog.pg_auth_members
-      WHERE member=runtime_oid OR roleid=runtime_oid
+      SELECT 1
+      FROM pg_catalog.pg_auth_members m
+      WHERE m.member=runtime_oid
+    )
+    OR EXISTS (
+      SELECT 1
+      FROM pg_catalog.pg_auth_members m
+      JOIN pg_catalog.pg_database d ON d.datname=current_database()
+      WHERE m.roleid=runtime_oid
+        AND (
+          m.member <> d.datdba
+          OR NOT m.admin_option
+          OR m.inherit_option
+          OR m.set_option
+        )
+    )
+    OR EXISTS (
+      SELECT 1
+      FROM pg_catalog.pg_database d
+      JOIN pg_catalog.pg_roles database_owner ON database_owner.oid=d.datdba
+      WHERE d.datname=current_database()
+        AND NOT database_owner.rolsuper
+        AND (
+          pg_catalog.pg_has_role(d.datdba,runtime_oid,'USAGE')
+          OR pg_catalog.pg_has_role(d.datdba,runtime_oid,'SET')
+        )
     )
   THEN RAISE EXCEPTION 'RESTORE_RUNTIME_ROLE_MEMBERSHIP_FORBIDDEN'; END IF;
 

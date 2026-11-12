@@ -1,3 +1,19 @@
+# Hito — Turno 10: merge documental, limpieza de PRs y endurecimiento del dump (2026-11-11 UTC)
+
+- #308 squash-merged; nuevo main `90b0bdd9c856e92c05141b19b48ac5d1bd7f2eec`.
+- #300 cerrada como ABSORBED: la eliminación de `sales.price.override`, la prueba negativa por rol y la tarea ODD ya están en main. No se integró una segunda vez; rama preservada.
+- #298 cerrada como SUPERSEDED/ABSORBED por #306/#307/#308; rama preservada.
+- #303 sincronizada sin force-push con main; HEAD final de este bloque `97ac8e53cbd85a928f7b89f9f89f7ebeaf83e0f2`. Diff neto: runner BCV + dos tareas ODD. Fixture vigente 0001–0023; paired-intent 0001–0016 permanece en job separado.
+- El runner de restore ejecuta pg_dump como LOGIN sintético `microapp_backup`, valida ausencia de privilegios de escritura/escalada/ownership/membership y revoca los grants temporales tras el dump. PostgreSQL 18 demostró que SELECT es necesario para los ACCESS SHARE locks, incluso para tablas cuyo contenido se excluye. Las tablas auth mantienen DDL y sus filas se excluyen con `--exclude-table-data`.
+- Dos iteraciones de CI detectaron (1) falta de SELECT para locks y (2) grants temporales presentes en el manifiesto ACL. Ambos problemas se corrigieron. En HEAD final: 19/19 check-runs y 11/11 workflows pull_request SUCCESS; tres perfiles de restore SUCCESS.
+- Review #303 COMMENT `5866941549` anclado al HEAD final; no equivale a code-owner APPROVE. PR #303 queda OPEN/Ready, no mergeada.
+- Censo abierto: #303 Ready, #296 Draft, #193 Ready, #309 docs-only Ready con CI pendiente (4 en total).
+- Issue #53 continúa OPEN/P0; producción NOT READY. No acceso a Neon, secretos, datos reales, backup remoto ni infraestructura productiva.
+
+**Decisión:** mantener #303 sin merge hasta revisión formal independiente y gates de branch protection. El éxito sintético no prueba la identidad efectiva de `DATABASE_URL_BACKUP_RO` ni la restauración del artefacto remoto.
+
+---
+
 # Hito — PR #299 integrada y auditoría inicial de #303 (2026-11-11 UTC)
 
 **Checkpoint vivo — 2026-11-11 UTC**

@@ -3,6 +3,7 @@ import type { Hono } from "hono";
 import type { Bindings } from "./bindings";
 import { withDatabaseClient, withDatabaseTransaction } from "./database";
 import { authorizeTenantOperation } from "./authorization";
+import { clearSessionCookie } from "./auth";
 
 const SESSION_COOKIE = "microapp_session";
 const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -28,6 +29,7 @@ export function registerBranchRoutes(app: Hono<{ Bindings: Bindings }>): void {
 
     const token = getCookie(c, SESSION_COOKIE);
     if (!token || token.length > 128) {
+      clearSessionCookie(c);
       return c.json({ error: "UNAUTHENTICATED", message: "Inicia sesión para continuar." }, 401);
     }
 
@@ -66,6 +68,7 @@ export function registerBranchRoutes(app: Hono<{ Bindings: Bindings }>): void {
       );
 
       if (result.kind === "unauthenticated") {
+        clearSessionCookie(c);
         return c.json({ error: "UNAUTHENTICATED", message: "Inicia sesión para continuar." }, 401);
       }
       if (result.kind === "forbidden") {

@@ -20,6 +20,18 @@ Audit and prove tenant and branch isolation for commercial API paths and session
 4. Add synthetic tests in `apps/api/src/tenant-isolation.test.ts`; tests must not connect to external databases. Use deterministic fake DB/client responses to assert deny behavior and scope predicates; where real PostgreSQL behavior is required, use the repository's disposable CI database only.
 5. Preserve current role policy; do not invent multi-branch privileges or add commercial capabilities.
 
+## Route inventory at audited HEAD
+
+| Domain | Exposed HTTP routes | Server authorization / scope |
+|---|---|---|
+| Catalog | GET `/api/orgs/:organizationId/catalog`; POST/PATCH `/api/orgs/:organizationId/catalog[/:productId]` | `authorizeTenantOperation`; every catalog SQL query is organization-scoped |
+| Branch discovery | GET `/api/orgs/:organizationId/branches` | `authorizeTenantOperation`; organization + active branch membership filter |
+| Inventory | GET warehouse inventory, movements, warehouses, counts; POST count creation and confirmation | `authorizeBranchOperation`; organization + branch + warehouse; count/line SQL and ledger writes retain tenant keys |
+| Sales | POST `/api/orgs/:organizationId/branches/:branchId/checkout` | `authorizeBranchOperation`; products, sales, balances, movements, payments and audit writes use server-derived scope |
+| Cash/register shifts | GET current shift, branch discovery and registers; POST open and close | Tenant/branch authorization; active branch assignment; SQL functions bind organization + branch + user |
+
+There are no separate sales-order GET/void HTTP endpoints at this HEAD. Do not infer or test routes that are not exposed. The cash-shift domain is implemented in `register-shifts.ts`, not a `cash_shifts.ts` file.
+
 ## Required scenarios
 
 - Tenant A session requests Tenant B sales/orders/inventory by changing organization ID or resource ID: 401/403/404, with no foreign row data and no mutation.
@@ -32,16 +44,16 @@ Audit and prove tenant and branch isolation for commercial API paths and session
 
 ## Acceptance criteria
 
-- [ ] AC-1 Route inventory documents all actual exposed commercial endpoints; distinguish missing endpoints from implemented modules.
-- [ ] AC-2 Every tenant-scoped read and write is constrained by server-derived organization ID, not only request input.
-- [ ] AC-3 Every branch-scoped operation verifies active branch scope and uses server-derived branch ID in all SQL writes/reads.
-- [ ] AC-4 Joins include tenant keys where IDs are not globally unique; no cross-tenant join path.
-- [ ] AC-5 Cashier Branch 1 cannot access or mutate Branch 2 shift/cash/register records absent explicit approved scope.
-- [ ] AC-6 Invalid/expired/revoked sessions fail closed and cookie clearing/cache behavior is covered.
-- [ ] AC-7 Tenant/branch context is request-local; no shared mutable cache or state across requests.
-- [ ] AC-8 Synthetic tests run with zero external DB dependencies; PostgreSQL integration tests use disposable CI DB only.
-- [ ] AC-9 Existing permission matrix is unchanged; no new commercial endpoint/permission is introduced.
-- [ ] AC-10 Exact-HEAD CI, security review and diff review pass. Issue #53 remains OPEN/P0 until all production gates, including live evidence, are completed.
+- [x] AC-1 Route inventory documents all actual exposed commercial endpoints; distinguishes missing sales-order endpoints from implemented checkout.
+- [x] AC-2 Static review confirms tenant-scoped reads/writes use server-derived organization ID.
+- [x] AC-3 Static review confirms branch scope and server-derived branch ID in reviewed branch operations.
+- [x] AC-4 Reviewed joins retain organization keys for tenant-owned relations; composite foreign keys reinforce tenant/branch identity.
+- [x] AC-5 Authorization helper and existing disposable PostgreSQL branch/shift tests deny unassigned branch operations; no multi-branch permission added.
+- [x] AC-6 Expired/revoked sessions are covered by auth integration tests; malformed cookie clearing and no-store are covered by new unit tests.
+- [x] AC-7 Database client is request-scoped; new concurrent tenant-context test verifies independent clients.
+- [x] AC-8 New synthetic suite uses fake clients; CI PostgreSQL integration runs on disposable PostgreSQL 18.
+- [x] AC-9 Permission matrix and commercial endpoint set unchanged.
+- [ ] AC-10 Final exact-HEAD CI and independent review complete. Manual diff/security review performed; formal review and final docs-only HEAD verification remain pending.
 
 ## Initial static findings — 2026-11-12
 
@@ -94,3 +106,22 @@ Audit and prove tenant and branch isolation for commercial API paths and session
 - Existing integration suites remain the authoritative HTTP/PostgreSQL cross-tenant coverage. The new test file is an additional unit-level guard, not a substitute for the PostgreSQL 18 integration tests.
 - CI exact-HEAD: pending.
 - No Neon connection, remote DDL/DML, secrets access, Cloudflare manual operation or paid service used.
+
+
+## Exact-HEAD evidence — code HEAD before final continuity reconciliation
+
+- Code HEAD `9714b5848532d55593e552e40ffb3dfcbb873410`.
+- GitHub check-runs: 15/15 SUCCESS.
+- CI workflow run `43183806227`: SUCCESS. It executed root `pnpm test` (including the new API unit suite), typecheck/build, PostgreSQL 18 disposable migrations and all configured API integration suites.
+- Playwright E2E `43183806360`: SUCCESS.
+- ODD docs validation `43183806292`: SUCCESS.
+- Semgrep `43183806337`: SUCCESS.
+- Database migration validation `43183806298`: SUCCESS.
+- Security scan `43183806464`: SUCCESS.
+- Secret history scan `43183806156`: SUCCESS.
+- Dependency review `43183806208`: SUCCESS.
+- Project progress dashboard `43183806096`: SUCCESS.
+- Cloudflare Pages check: SUCCESS (PR preview/build check only, not production certification).
+- PostgreSQL migration runner check-run: SUCCESS. A duplicate PR workflow-run record remained pending without jobs; the same exact-SHA check context completed successfully via run `43183798677` (push event).
+- Formal GitHub reviews: 0; inline review threads: 0 at the last review census.
+- No Neon, secret, production-data, manual Cloudflare or billing operation.

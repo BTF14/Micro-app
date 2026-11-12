@@ -1,7 +1,7 @@
 - **PR #318 OPEN / Draft:** HEAD `fa5bd1710452d24974a208659209f4b0526f204e`; base `bd9af0cc5b92858fd5063b3d8d102dbc327469ac`; 5/16 check-runs SUCCESS, 11 pendientes, 0 fallos en la última consulta. Si hay commits posteriores, descartar esta evidencia y consultar el HEAD nuevo.
 ## Handoff vigente — Turno 14 / Issue #53, identidad y grants Neon
 
-**main:** `bd9af0cc5b92858fd5063b3d8d102dbc327469ac` (PR #317 MERGED). **Rama activa:** `security/issue-53-neon-role-matrix-20261112`. **PR #318:** se abrirá desde esta rama tras completar la revisión del diff; revalidar HEAD y checks exact-SHA.
+**main:** `a0d6d801128b3e3aa6543796436abf348c645e8f` (PR #317 y #313 MERGED). **Rama activa:** `security/issue-53-neon-role-matrix-20261112`. **PR #318:** OPEN / Draft. La rama parte del main previo a #313 y está 1 commit detrás; no hay conflicto reportado, pero debe reconciliarse antes del merge. Último HEAD validado `f80da3d20162a2beb9dd22e9166a924aff4b51f0`: 16/18 checks SUCCESS, 2 pendientes; la actualización documental requiere nuevo CI exact-SHA.
 
 ### Trabajo persistido
 - `odd/tasks/security-issue-53-neon-role-matrix.md`
@@ -12,7 +12,7 @@
 
 ### Evidencia y bloqueos
 - PR #317: MERGED; 14/14 checks SUCCESS exact-SHA `870a35ac4a0190b80f31c0cf0590a759195f60dc`; merge/main `bd9af0cc5b92858fd5063b3d8d102dbc327469ac`.
-- PR #313: OPEN; HEAD `c0895153da60845582911271e3f8f45a21a7dd53`; 14/14 checks SUCCESS en ese HEAD, pero diverged 1 ahead / 2 behind respecto a main. No merge hasta sincronización y CI nuevo.
+- PR #313: MERGED por squash; merge SHA `a0d6d801128b3e3aa6543796436abf348c645e8f`; 14/14 SUCCESS en HEAD `c0895153da60845582911271e3f8f45a21a7dd53`.
 - La evidencia histórica en SECURITY_ROADMAP indica que `backup_readonly` tenía CREATEROLE/CREATEDB/REPLICATION/BYPASSRLS, membresías privilegiadas y DML. No se ha probado que sea la identidad efectiva de `DATABASE_URL_BACKUP_RO`.
 - Tensión de secuencias: pg_dump completo requiere SELECT para preservar valores; USAGE/UPDATE deben permanecer denegados. ADR explica por qué “cero privilegios” literal no es compatible con el dump completo probado.
 - CI del nuevo HEAD aún no está disponible; no afirmar tests pasados hasta ejecutar CI.

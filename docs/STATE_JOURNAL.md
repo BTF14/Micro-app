@@ -7,7 +7,7 @@
 - El runbook mantiene credenciales fuera de argv mediante libpq service file/pgpass; el restore stream `age` → `pg_restore` apunta a DB PostgreSQL 18 limpia. Los tests verifican cero filas en auth efímero y relaciones sintéticas ventas/pagos/inventario.
 - No se verificó un backup remoto nuevo, no se hizo DR drill real, no se midieron RPO/RTO, no se configuraron alertas y no se probó coste total. Issue #53 OPEN/P0; **PRODUCTION: NOT READY**.
 - No Neon, secretos, roles/grants remotos, datos reales, backup dispatch manual, deploy manual, DNS o billing. USD 0.
-- CI post-merge en main `a44fe44bd72b1e72cc461c4edb92b2b9c1f20724` estaba en curso al registrar este hito; verificar resultado exact-SHA en el siguiente checkpoint.
+- CI post-merge en main `a44fe44bd72b1e72cc461c4edb92b2b9c1f20724`: 11/11 workflow runs y 13/13 check-runs SUCCESS, incluidos Pages/Workers.
 
 ---
 

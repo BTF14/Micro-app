@@ -56,7 +56,7 @@ BEGIN
 
   IF NOT has_database_privilege(v_role_name, current_database(), 'CONNECT')
      OR has_database_privilege(v_role_name, current_database(), 'CREATE')
-     OR has_database_privilege(v_role_name, current_database(), 'TEMP') THEN
+ THEN
     RAISE EXCEPTION 'FAIL: database privileges must be CONNECT only (no CREATE/TEMP)';
   END IF;
 

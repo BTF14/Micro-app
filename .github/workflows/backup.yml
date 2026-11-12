@@ -32,6 +32,7 @@ on:
 
 permissions:
   contents: read
+  issues: write
 
 concurrency:
   group: db-backup
@@ -238,6 +239,15 @@ jobs:
           fi
           bash "$GITHUB_WORKSPACE/scripts/verify_backup_git_remote.sh" "$backup_repo_dir/daily/backup-${STAMP}.dump.age" "$backup_repo_dir" "daily/backup-${STAMP}.dump.age"
           unset backup_token GH_TOKEN
+
+
+      - name: Crear o actualizar issue P0 si falla el respaldo
+        if: failure()
+        continue-on-error: true
+        env:
+          GH_TOKEN: ${{ github.token }}
+          BACKUP_JOB_STATUS: ${{ job.status }}
+        run: bash scripts/backup_failure_alert.sh
 
       - name: Publicar resumen visible si falla el respaldo
         if: failure()

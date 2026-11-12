@@ -49,12 +49,13 @@ SQL
 
 # Reproduce a managed-Postgres creator instead of relying on the local
 # PostgreSQL service superuser: the provisioner owns the database and all
-# existing public objects, has CREATEROLE, and creates microapp_backup itself.
+# existing public objects, has CREATEROLE plus the managed-owner capabilities
+# needed to alter REPLICATION/BYPASSRLS attributes, and creates microapp_backup.
 # PostgreSQL 16+ records the creator as an incoming ADMIN member of the new role.
 provisioner_url="postgresql://backup_role_provisioner:provisioner-test-only@localhost:5432/microapp_source"
 psql "$SOURCE_URL" -X -v ON_ERROR_STOP=1 <<'SQL'
-CREATE ROLE backup_role_provisioner LOGIN CREATEROLE CREATEDB
-  NOSUPERUSER NOREPLICATION NOBYPASSRLS NOINHERIT
+CREATE ROLE backup_role_provisioner LOGIN CREATEROLE CREATEDB REPLICATION BYPASSRLS
+  NOSUPERUSER NOINHERIT
   PASSWORD 'provisioner-test-only';
 ALTER DATABASE microapp_source OWNER TO backup_role_provisioner;
 

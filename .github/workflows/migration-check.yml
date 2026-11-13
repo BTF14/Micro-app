@@ -422,6 +422,15 @@ jobs:
         run: docker exec -i -e PGPASSWORD=migrator-test-only "${{ job.services.postgres.id }}" psql -h 127.0.0.1 -v ON_ERROR_STOP=1 -U microapp_migrator -d microapp_test -f /dev/stdin < apps/api/migrations/0023_register_shift_runtime_operations.sql
       - name: Verify own register-shift runtime operations privilege contract
         run: docker exec -i "${{ job.services.postgres.id }}" psql -v ON_ERROR_STOP=1 -U microapp -d microapp_test -f /dev/stdin < apps/api/migrations/0023_register_shift_runtime_operations.assertions.sql
+      - name: Verify owner-only organization structure migration rolls back atomically
+        run: |
+          sed '/^COMMIT;$/i SELECT 1/0;' apps/api/migrations/0024_organization_structure_admin_operations.sql > /tmp/0024-organization-structure-failure.sql
+          status=0
+          output="$(docker exec -i -e PGPASSWORD=migrator-test-only "${{ job.services.postgres.id }}" psql -h 127.0.0.1 -v ON_ERROR_STOP=1 -U microapp_migrator -d microapp_test -f /dev/stdin < /tmp/0024-organization-structure-failure.sql 2>&1)" || status=$?
+          if [ "$status" -eq 0 ]; then echo "Expected 0024 rollback failure injection, but psql succeeded."; exit 1; fi
+          printf '%s\\n' "$output" | grep -F "division by zero"
+          remaining="$(docker exec "${{ job.services.postgres.id }}" psql -At -U microapp -d microapp_test -c "SELECT to_regprocedure('public.create_branch(uuid,uuid,text,text)') IS NULL AND to_regprocedure('public.create_warehouse(uuid,uuid,uuid,text,text)') IS NULL AND to_regprocedure('public.create_register(uuid,uuid,uuid,text,text)') IS NULL AND to_regprocedure('public.set_branch_membership_active(uuid,uuid,uuid,uuid,boolean)') IS NULL")"
+          test "$remaining" = "t"
       - name: Apply owner-only organization structure migration 0024
         run: docker exec -i -e PGPASSWORD=migrator-test-only "${{ job.services.postgres.id }}" psql -h 127.0.0.1 -v ON_ERROR_STOP=1 -U microapp_migrator -d microapp_test -f /dev/stdin < apps/api/migrations/0024_organization_structure_admin_operations.sql
       - name: Verify owner-only organization structure migration 0024 privilege contract

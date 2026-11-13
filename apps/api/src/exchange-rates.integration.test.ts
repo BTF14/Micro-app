@@ -106,7 +106,7 @@ describe.skipIf(!isDisposableCiDatabase)("BCV effective-date persistence against
       headers: { "content-type": "text/html; charset=utf-8" },
     }));
     const scheduledApp = app as typeof app & {
-      scheduled: (controller: { cron: string }, env: { APP_ENV: "production" | "preview"; DATABASE_URL?: string; BCV_SYNC_ENABLED?: string }) => Promise<void>;
+      scheduled: (controller: { cron: string }, env: { APP_ENV: "production" | "preview"; DATABASE_URL_BCV_SYNC?: string; BCV_SYNC_ENABLED?: string }) => Promise<void>;
     };
 
     await cleanupClient.query("DELETE FROM public.exchange_rates WHERE source = $1", [source]);
@@ -117,7 +117,7 @@ describe.skipIf(!isDisposableCiDatabase)("BCV effective-date persistence against
 
       await scheduledApp.scheduled(
         { cron: "0 22 * * 1-5" },
-        { APP_ENV: "production", DATABASE_URL: producerDatabaseUrl, BCV_SYNC_ENABLED: "true" },
+        { APP_ENV: "production", DATABASE_URL_BCV_SYNC: producerDatabaseUrl, BCV_SYNC_ENABLED: "true" },
       );
       expect(fetchMock).toHaveBeenCalledTimes(1);
 
@@ -156,7 +156,7 @@ describe.skipIf(!isDisposableCiDatabase)("BCV effective-date persistence against
       })));
       await expect(scheduledApp.scheduled(
         { cron: "0 22 * * 1-5" },
-        { APP_ENV: "production", DATABASE_URL: producerDatabaseUrl, BCV_SYNC_ENABLED: "true" },
+        { APP_ENV: "production", DATABASE_URL_BCV_SYNC: producerDatabaseUrl, BCV_SYNC_ENABLED: "true" },
       )).rejects.toThrow("BCV_SYNC_FAILED");
 
       const failedState = await cleanupClient.query<{
@@ -208,20 +208,20 @@ describe.skipIf(!isDisposableCiDatabase)("BCV effective-date persistence against
         headers: { "content-type": "text/html; charset=utf-8" },
       }));
     const scheduledApp = app as typeof app & {
-      scheduled: (controller: { cron: string }, env: { APP_ENV: "production" | "preview"; DATABASE_URL?: string; BCV_SYNC_ENABLED?: string }) => Promise<void>;
+      scheduled: (controller: { cron: string }, env: { APP_ENV: "production" | "preview"; DATABASE_URL_BCV_SYNC?: string; BCV_SYNC_ENABLED?: string }) => Promise<void>;
     };
 
     vi.stubGlobal("fetch", fetchMock);
     try {
       const olderAttempt = scheduledApp.scheduled(
         { cron: "0 22 * * 1-5" },
-        { APP_ENV: "production", DATABASE_URL: producerDatabaseUrl, BCV_SYNC_ENABLED: "true" },
+        { APP_ENV: "production", DATABASE_URL_BCV_SYNC: producerDatabaseUrl, BCV_SYNC_ENABLED: "true" },
       );
       await olderFetchStarted;
 
       await scheduledApp.scheduled(
         { cron: "0 22 * * 1-5" },
-        { APP_ENV: "production", DATABASE_URL: producerDatabaseUrl, BCV_SYNC_ENABLED: "true" },
+        { APP_ENV: "production", DATABASE_URL_BCV_SYNC: producerDatabaseUrl, BCV_SYNC_ENABLED: "true" },
       );
       const newerState = await cleanupClient.query<{ attempt_id: string; last_outcome: string }>(
         "SELECT attempt_id::text, last_outcome FROM public.bcv_sync_state WHERE singleton = true",

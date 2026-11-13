@@ -279,3 +279,21 @@ No se copiaron ni registraron valores de variables de entorno. No afirmar que es
 - Activación manual posterior: proyecto Pages `micro-app` → Settings → Bindings → Add → Service binding; entorno Production; Variable name `API`; Service `micro-app-api`. No crear el binding en Preview. Cloudflare requiere un redeploy para que el binding entre en vigor.
 - Google OAuth: agregar la callback `https://micro-app-63i.pages.dev/api/auth/google/callback` sin retirar la URI antigua hasta completar la prueba real con Brave Shields ON.
 - PR #339 permanece OPEN/no mergeada durante la observación de backup natural 07:00 UTC y el gate `backup-real-restore.yml`. No se tocó Cloudflare, Google, Neon, secrets ni backup.
+
+## Addendum — 2026-11-13: runtime guard and client-IP provenance (PR #339)
+
+Cloudflare Pages exposes `CF_PAGES_BRANCH` as a build variable; do not assume it is injected into the Pages Function runtime. The Pages Function guard therefore uses the exact HTTPS hostname `micro-app-63i.pages.dev` as a mandatory discriminator, rejects a present non-`main` runtime branch, and then requires the `API` Service Binding. **The `API` binding must be configured for Production only and must not be configured for Preview.** This makes the undefined-branch production case work while preview hostnames fail before the binding is read.
+
+Runtime matrix:
+
+| Request host | Runtime `CF_PAGES_BRANCH` | Production-only `API` binding | Expected |
+|---|---|---|---|
+| exact `micro-app-63i.pages.dev` | `main` | present | proxy |
+| exact `micro-app-63i.pages.dev` | undefined | present | proxy (Pages runtime may omit build variable) |
+| exact `micro-app-63i.pages.dev` | any value other than `main` | any | 503 before reading binding |
+| any preview/hash/other host | `main` or undefined | any | 503 before reading binding |
+| exact production host | `main` or undefined | missing | 503 `API_BINDING_MISSING` |
+
+Client IP provenance: Cloudflare documents that `CF-Connecting-IP` is only sent from its edge to the origin and represents the connecting client IP. The Function explicitly re-sets that edge-provided header on the Service Binding request and drops `X-Forwarded-For` rather than trusting a client-controlled forwarding chain. The incoming `Origin` remains unchanged for API CSRF validation. This trust assumption is valid only for requests entering through Cloudflare Pages; do not expose an alternate untrusted route to this proxy. See Cloudflare's [HTTP headers documentation](https://developers.cloudflare.com/fundamentals/reference/http-headers/).
+
+The proxy streams request/response bodies, uses manual redirects, preserves non-hop-by-hop response headers and each individual `Set-Cookie`, and rewrites only the three OAuth PKCE cookie paths. The Worker direct endpoint remains configured for its existing host/origin contract.

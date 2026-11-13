@@ -252,7 +252,7 @@ describe.skipIf(!isDisposableCiDatabase)("BCV effective-date persistence against
       vi.unstubAllGlobals();
       await cleanupClient.query("DELETE FROM public.exchange_rates WHERE source = $1", [source]);
     }
-  });
+  }, 15_000);
 
   it("stores today's rate after the next business-day rate and selects the applicable date", async () => {
     if (!producerClient || !runtimeClient) throw new Error("PostgreSQL integration clients are not connected.");

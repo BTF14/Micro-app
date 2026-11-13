@@ -199,6 +199,46 @@ describe.skipIf(!adminUrl || !runtimeUrl)("owner-only organization structure API
     expect(await deactivate.json()).toMatchObject({ error: "STRUCTURE_CONFLICT" });
   });
 
+  it("keeps open-shift protection branch-scoped instead of blocking another branch", async () => {
+    const f = await seed();
+    const root = "/api/orgs/" + f.organizationId;
+    const createBranch = async (name: string, slug: string) => {
+      const response = await request(f, "owner", "POST", root + "/branches", { name, slug });
+      expect(response.status).toBe(201);
+      return (await response.json() as { branch: { id: string } }).branch.id;
+    };
+    const northBranch = await createBranch("North", "north");
+    const southBranch = await createBranch("South", "south");
+    const registerResponse = await request(f, "owner", "POST", root + "/branches/" + northBranch + "/registers", {
+      name: "North Register", code: "north-register",
+    });
+    expect(registerResponse.status).toBe(201);
+    const registerId = (await registerResponse.json() as { register: { id: string } }).register.id;
+
+    for (const branchId of [northBranch, southBranch]) {
+      expect((await request(f, "owner", "PATCH", root + "/branches/" + branchId + "/members/" + f.users.cashier.id, {
+        is_active: true,
+      })).status).toBe(200);
+    }
+    const opened = await request(f, "cashier", "POST", root + "/branches/" + northBranch + "/register-shifts", {
+      register_id: registerId, opening_cash_usd: "0.0000", opening_cash_ves: "0.00",
+    });
+    expect(opened.status).toBe(201);
+
+    const deactivateSouth = await request(f, "owner", "PATCH", root + "/branches/" + southBranch + "/members/" + f.users.cashier.id, {
+      is_active: false,
+    });
+    expect(deactivateSouth.status).toBe(200);
+    const read = await request(f, "owner", "GET", root + "/structure");
+    expect(read.status).toBe(200);
+    await expect(read.json()).resolves.toMatchObject({
+      members: expect.arrayContaining([expect.objectContaining({
+        user_id: f.users.cashier.id,
+        branch_memberships: { [northBranch]: true, [southBranch]: false },
+      })]),
+    });
+  });
+
   it("keeps runtime direct DML denied on organization structure tables", async () => {
     const privileges = await admin.query<{ allowed: boolean }>(
       `SELECT NOT EXISTS (

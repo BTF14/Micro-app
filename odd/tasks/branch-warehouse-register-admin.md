@@ -118,3 +118,5 @@ Implementar administración exclusiva de Owner para sucursales, almacenes, cajas
 - Este commit sigue al checkpoint de implementación c0b3764dcbb17d74b05e1d096767f357dd975134. Consultar la rama viva para obtener el HEAD definitivo antes de validar.
 
 - Reconciliación final del alcance BCV/restore y docs BACKUP_AND_RECOVERY: commit b727ad7ef524cde97d574213dde9c4bf4e5887dd. Se aclara que solo cambia el perfil de restore 0023→0024, no BCV sync/producer ni bcv-source-connectivity.yml.
+
+- Último HEAD de código/docs comprobado antes de esta anotación: 3bb6557a4b5c1c320a3ffd7683cf553d20d02899; comparación contra main 25c0f842: ahead 63, behind 0. GitHub no reporta status contexts ni workflow runs para ese SHA porque todavía no existe PR; por eso CI exact-HEAD sigue pendiente.

@@ -47,7 +47,7 @@ function token(c: Context<{ Bindings: Bindings }>): string | null {
 
 function dbFailure(c: Context<{ Bindings: Bindings }>, error: unknown) {
   const code = error && typeof error === "object" && "code" in error && typeof error.code === "string" ? error.code : "";
-  const messages: Record<string, { status: 400 | 404 | 409 | 503; error: string; message: string }> = {
+  const messages: Record<string, { status: 400 | 403 | 404 | 409 | 503; error: string; message: string }> = {
     "22023": { status: 400, error: "INVALID_STRUCTURE_INPUT", message: "Los datos de la estructura no son válidos." },
     "23505": { status: 409, error: "STRUCTURE_DUPLICATE", message: "Ya existe un elemento con ese código o identificador." },
     "23514": { status: 409, error: "STRUCTURE_CONFLICT", message: "No se puede cambiar la asignación mientras exista un turno abierto." },

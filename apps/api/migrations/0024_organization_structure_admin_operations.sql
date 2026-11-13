@@ -56,6 +56,10 @@ BEGIN
   INSERT INTO public.branches (organization_id, name, slug)
   VALUES (p_organization_id, pg_catalog.btrim(p_name), v_slug)
   RETURNING * INTO v_row;
+  -- The creating Owner is immediately assigned to the new branch so the
+  -- branch can be operated without a separate privileged bootstrap path.
+  INSERT INTO public.branch_memberships (organization_id, branch_id, user_id, is_active)
+  VALUES (p_organization_id, v_row.id, p_actor_user_id, true);
   INSERT INTO public.audit_logs (organization_id, actor_user_id, action, entity_type, entity_id, metadata)
   VALUES (p_organization_id, p_actor_user_id, 'branch.created', 'branch', v_row.id::text,
     pg_catalog.jsonb_build_object('name', v_row.name, 'slug', v_row.slug));
@@ -192,7 +196,9 @@ BEGIN
    WHERE bm.organization_id = p_organization_id AND bm.branch_id = p_branch_id
      AND bm.user_id = p_user_id
    FOR UPDATE;
-  IF NOT FOUND THEN RAISE EXCEPTION 'BRANCH_MEMBERSHIP_NOT_FOUND' USING ERRCODE = 'P0002'; END IF;
+  IF NOT FOUND AND NOT p_is_active THEN
+    RAISE EXCEPTION 'BRANCH_MEMBERSHIP_NOT_FOUND' USING ERRCODE = 'P0002';
+  END IF;
   PERFORM 1 FROM public.organization_members target
   JOIN public.app_users tu ON tu.id = target.user_id
    WHERE target.organization_id = p_organization_id AND target.user_id = p_user_id
@@ -209,6 +215,19 @@ BEGIN
       WHERE s.organization_id = p_organization_id AND s.branch_id = p_branch_id
         AND s.cashier_user_id = p_user_id AND s.closed_at IS NULL) THEN
       RAISE EXCEPTION 'BRANCH_MEMBERSHIP_HAS_OPEN_REGISTER_SHIFT' USING ERRCODE = '23514';
+    END IF;
+  END IF;
+
+  IF v_previous IS NULL AND p_is_active THEN
+    INSERT INTO public.branch_memberships (organization_id, branch_id, user_id, is_active)
+    VALUES (p_organization_id, p_branch_id, p_user_id, true)
+    ON CONFLICT (organization_id, branch_id, user_id) DO NOTHING;
+    IF NOT FOUND THEN
+      SELECT bm.is_active INTO v_previous FROM public.branch_memberships bm
+       WHERE bm.organization_id = p_organization_id AND bm.branch_id = p_branch_id AND bm.user_id = p_user_id
+       FOR UPDATE;
+    ELSE
+      v_previous := false;
     END IF;
   END IF;
 

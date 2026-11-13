@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useState, type FormEvent } from "react";
 import { apiRequest } from "./auth";
 
 type Warehouse = { id: string; name: string; code: string; is_active: boolean };
@@ -48,7 +48,7 @@ export default function OrganizationStructurePanel({ organizationId }: { organiz
     } finally { setSaving(false); }
   }
 
-  async function submitBranch(event: React.FormEvent<HTMLFormElement>) {
+  async function submitBranch(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (await mutate(`/api/orgs/${encodeURIComponent(organizationId)}/branches`, "POST", { name: branchName, slug: branchSlug }, "Sucursal creada.")) {
       setBranchName(""); setBranchSlug("");

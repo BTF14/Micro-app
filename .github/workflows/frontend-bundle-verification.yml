@@ -18,9 +18,6 @@ on:
   schedule:
     # Weekly, Monday 09:05 UTC (05:05 Venezuela) — alongside the CORS check.
     - cron: "5 9 * * 1"
-  pull_request:
-    paths:
-      - ".github/workflows/frontend-bundle-verification.yml"
 
 permissions:
   contents: read
@@ -31,7 +28,7 @@ concurrency:
 
 env:
   FRONTEND_URL: https://micro-app-63i.pages.dev/
-  EXPECTED_API_BASE_URL: https://micro-app-api.btfcasheb.workers.dev
+  EXPECTED_API_BASE_URL: /api
 
 jobs:
   bundle-verification:

@@ -81,6 +81,8 @@ jobs:
         run: psql -X -v ON_ERROR_STOP=1 --dbname "$ADMIN_DATABASE_URL" -f apps/api/migrations/0022_bcv_dedicated_producer_role.assertions.sql
       - name: Verify own register-shift runtime operations migration 0023 contract
         run: psql -X -v ON_ERROR_STOP=1 --dbname "$ADMIN_DATABASE_URL" -f apps/api/migrations/0023_register_shift_runtime_operations.assertions.sql
+      - name: Verify owner-only organization structure migration 0024 contract
+        run: psql -X -v ON_ERROR_STOP=1 --dbname "$ADMIN_DATABASE_URL" -f apps/api/migrations/0024_organization_structure_admin_operations.assertions.sql
       - name: Build and typecheck
         run: pnpm build
       - name: Verify Cloudflare Pages preview isolation

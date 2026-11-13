@@ -601,3 +601,8 @@ La rama aislada `feat/branch-warehouse-register-admin-20261113` añade el perfil
 ## PR 2 — compatibilidad de perfiles y restore smoke (2026-11-13)
 
 En código SHA `23581b2a1956c3433683820c7b2a2db3eb24b696`, Backup restore smoke run [43525236472](https://github.com/BTF14/Micro-app/actions/runs/43525236472) SUCCESS: main 0001–0016, BCV 0001–0024 y legacy backup contract. El paso de compatibilidad ACL valida main 16, BCV histórico 23 y BCV nuevo 24. El runner remoto detecta 23 como `bcv` y 24 como `bcv-0024`, verifica checksums del prefijo histórico y ejecuta assertions 0024 solo para el perfil nuevo. No se alteraron las migraciones 0023 o anteriores ni se ejecutó restore sobre Neon/producción.
+
+
+## PR #350 — verificación pull_request (2026-11-13)
+
+Backup restore smoke PR run [43526664677](https://github.com/BTF14/Micro-app/actions/runs/43526664677) SUCCESS en HEAD `a1539b791d6ea9d67102b159ec7fe36c5ffb48cb`: restore main 0001–0016, BCV 0001–0024 y legacy backup contract. Los perfiles ACL 16/23/24 siguen cubiertos; no se ejecutó restore sobre Neon ni producción.

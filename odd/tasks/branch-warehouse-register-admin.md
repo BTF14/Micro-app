@@ -1,6 +1,6 @@
 # Administración de estructura organizacional — PR 2
 
-**Estado:** implementación completa y revisión del diff realizadas. Código validado en `23581b2a1956c3433683820c7b2a2db3eb24b696` con 11/11 check-runs SUCCESS; PR 2 aún no abierta y no fusionada. No habilitada en producción.
+**Estado:** PR #350 OPEN / no-Draft / mergeable=true / no fusionada. HEAD validado `a1539b791d6ea9d67102b159ec7fe36c5ffb48cb`: 25/25 check-runs SUCCESS; revisión formal del Tech Lead pendiente. No habilitada en producción.
 **Rama:** `feat/branch-warehouse-register-admin-20261113`
 **Base:** `main` actualizado después de PR #349; merge SHA `25c0f842c7ecc8a7320b33d33abfb12402476e32`.
 **Fecha:** 2026-11-13 UTC
@@ -95,11 +95,11 @@ Implementar administración exclusiva de Owner para sucursales, almacenes, cajas
 
 - La inspección confirmó que el esquema real usa `organization_members`, no una tabla llamada `organization_memberships`.
 - `ROLE_OPERATIONS` no fue modificado; las rutas de lectura existentes permanecen intactas.
-- Código validado en SHA `23581b2a1956c3433683820c7b2a2db3eb24b696`: 11/11 check-runs SUCCESS y 6/6 workflow runs push SUCCESS. Runs: CI 43525236567; migration-runner 43525236428; migration-check 43525236620; backup-restore-smoke 43525236472; security scan 43525236548; secret-history 43525236628.
+- HEAD `a1539b791d6ea9d67102b159ec7fe36c5ffb48cb` en PR #350: 25/25 check-runs SUCCESS; 11/11 workflow runs pull_request y 6/6 workflow runs push SUCCESS. Runs: CI 43525236567; migration-runner 43525236428; migration-check 43525236620; backup-restore-smoke 43525236472; security scan 43525236548; secret-history 43525236628.
 - PostgreSQL 18 cubrió las cuatro operaciones con LOGIN runtime, auditoría, duplicados, cross-tenant, cross-branch, denegaciones admin/cashier/inventory, DML directo y ambas carreras concurrentes apertura/desactivación.
 - API integration, React/Vitest, build/typecheck, migración 0024, rollback atómico, restore main 0016, restore BCV 0024 y compatibilidad de perfiles 16/23/24: SUCCESS.
 - Se añadió prueba API de aislamiento entre sucursales: un turno abierto en Norte no bloquea desactivar la asignación en Sur; en la misma sucursal sí se rechaza.
-- El diff completo contra main fue revisado. Main permanece en `25c0f842c7ecc8a7320b33d33abfb12402476e32`; la rama está 0 detrás. No existe PR 2 todavía; no se ha fusionado. Tras este commit documental, comprobar de nuevo el HEAD y sus checks exactos antes de abrir la PR no-Draft.
+- El diff completo contra main fue revisado. Main permanece en `25c0f842c7ecc8a7320b33d33abfb12402476e32`; la rama está 0 detrás. PR #350 está OPEN y no-Draft, mergeable=true, sin merge. No hay reviews formales ni hilos de revisión. El resumen automático Codex no pudo completarse por límite de uso; no equivale a aprobación ni a hallazgo. Revisión del Tech Lead pendiente.
 - No se tocó Neon, secretos, BCV_SYNC_ENABLED, `bcv-source-connectivity.yml` ni el código BCV sync/producer. Solo se amplió el perfil de restore de forma compatible, manteniendo BCV 0023. PR #193/#314/#315/#316 e Issue #53 no se modificaron; Issue #53 permanece OPEN/P0 y producción sigue NOT READY.
 ### Base de integración confirmada
 

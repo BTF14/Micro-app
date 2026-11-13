@@ -3252,12 +3252,12 @@ Se integró PR #346 (`c6a9ad611111fbc32da8b13329481458c933ec21`) tras 10/10 work
 - Issue #53 permanece OPEN/P0; PRODUCTION: NOT READY. No se modificaron Neon, secretos, datos reales ni producción.
 
 
-## 2026-11-13 — PR 2 estructura organizacional Owner-only: validación exact-HEAD
+## 2026-11-13 — PR #350 abierta; checks exactos completos
 
-El código de PR 2 alcanzó SHA `23581b2a1956c3433683820c7b2a2db3eb24b696`, directamente basado en main `25c0f842c7ecc8a7320b33d33abfb12402476e32` (ahead 83, behind 0). Se corrigieron fallos encontrados por ejecuciones reales de PostgreSQL 18 y TypeScript: normalización SQL de códigos, ambigüedad PL/pgSQL en ON CONFLICT, carácter de escape inválido y unión de status HTTP 403. Se añadió prueba de aislamiento cross-branch y compatibilidad de perfiles de restore.
+PR #350 (`https://github.com/BTF14/Micro-app/pull/350`) abierta no-Draft en rama `feat/branch-warehouse-register-admin-20261113`, HEAD `a1539b791d6ea9d67102b159ec7fe36c5ffb48cb`, base main `25c0f842c7ecc8a7320b33d33abfb12402476e32` (ahead 85, behind 0). GitHub informa mergeable=true. No se fusionó.
 
-Resultado exact-HEAD: 11/11 check-runs SUCCESS; 6/6 workflow runs push SUCCESS. CI, PostgreSQL migration runner, database migration validation, backup restore smoke (main 0016, BCV 0024 y legacy), security scan, secret-history, Cloudflare Pages y Workers Builds pasaron. PostgreSQL 18 validó las cuatro funciones, ACL, auditoría, denegaciones, DML directo y ambas carreras apertura/desactivación; API integration, React/Vitest y build/typecheck también pasaron.
+El SHA exacto tiene 25/25 check-runs SUCCESS: 11/11 workflows pull_request y 6/6 workflows push. Pasaron CI, PostgreSQL migration runner, database migration validation, backup restore main 0016/BCV 0024/legacy, security, secret-history, Playwright E2E, Chromium, Semgrep, Dependency Review, ODD docs, project dashboard, Cloudflare Pages y Workers Builds. PostgreSQL 18, API integration, React/Vitest, build/typecheck y tests de concurrencia pasan.
 
-Compatibilidad restore: main 0001–0016 se conserva; BCV 0001–0023 sigue como perfil histórico `bcv`; BCV 0001–0024 se identifica como `bcv-0024`. No se modificaron migraciones 0023 o anteriores. No se cambió ROLE_OPERATIONS, rutas de lectura, BCV sync/producer, bcv-source-connectivity, Neon main ni las PR excluidas.
+El perfil BCV histórico 0001–0023 sigue soportado como `bcv`; el nuevo 0001–0024 se identifica como `bcv-0024`; main 0001–0016 permanece intacto. No se modificaron migraciones 0023 o anteriores, ROLE_OPERATIONS ni rutas de lectura. No se tocó Neon main, BCV sync/producer ni bcv-source-connectivity.
 
-No se abrió ni fusionó PR 2. El commit siguiente es documental y requiere nueva validación exact-HEAD antes de abrir PR no-Draft. Issue #53 OPEN/P0; PRODUCTION: NOT READY; coste incremental USD 0.
+No hay reviews formales ni review threads. El code review automático Codex no pudo completarse por límite de uso; esto no es aprobación ni un hallazgo. Revisión del Tech Lead pendiente. Issue #53 OPEN/P0; PRODUCTION: NOT READY; USD 0. No merge.

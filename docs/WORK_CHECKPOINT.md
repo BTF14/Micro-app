@@ -1092,13 +1092,13 @@ Siguiente paso: PR #319 para docs/NEON_LEAST_PRIVILEGE_AUDIT_RUNBOOK.md, instruc
 Post-merge CI de main SHA 3ac66a180fcf23421b546140a419a45062e633dd terminó SUCCESS: 11/11 workflows y 13/13 check-runs.
 
 
-## Checkpoint — PR 2 estructura organizacional Owner-only — validación (2026-11-13)
+## Checkpoint — PR #350 estructura organizacional Owner-only — checks completos (2026-11-13)
 
-- Código probado: `23581b2a1956c3433683820c7b2a2db3eb24b696`; main `25c0f842c7ecc8a7320b33d33abfb12402476e32`; ahead 83 / behind 0.
-- Check-runs: 11/11 SUCCESS. Workflows push: CI 43525236567, PostgreSQL migration runner 43525236428, Database migration validation 43525236620, Backup restore smoke 43525236472, Security scan 43525236548, Secret history scan 43525236628; todos SUCCESS.
-- CI `verify`: build/typecheck, unit/React-Vitest, API integration y PostgreSQL suites SUCCESS.
-- PostgreSQL 18: migración 0024, assertions, funciones runtime, duplicados, denegaciones, cross-tenant/cross-branch, DML y ambas carreras concurrentes SUCCESS.
-- Restore: main 0016, BCV histórico 0023, BCV actual 0024 SUCCESS. Perfiles ACL probados 16/23/24.
-- Diff revisado: 27 archivos, alcance organizacional + CI/restore/docs; sin ROLE_OPERATIONS, sin cambios a rutas de lectura, migraciones 0023 o anteriores, Neon main ni BCV sync/producer.
-- Rama sin PR; no merge. Tras el commit documental, volver a verificar check-runs del HEAD exacto y abrir PR no-Draft solo si todos están SUCCESS. No fusionar.
-- Issue #53 OPEN/P0; PRODUCTION: NOT READY; USD 0.
+- PR #350 OPEN / no-Draft / mergeable=true / no merge: https://github.com/BTF14/Micro-app/pull/350
+- HEAD: `a1539b791d6ea9d67102b159ec7fe36c5ffb48cb`; main `25c0f842c7ecc8a7320b33d33abfb12402476e32`; ahead 85 / behind 0.
+- 25/25 check-runs SUCCESS; 11/11 pull_request workflows y 6/6 push workflows SUCCESS.
+- CI, PostgreSQL migration runner, database migration validation, backup restore (main 0016, BCV 0024, legacy), security, secret-history, Playwright E2E, Chromium, Semgrep, dependency review, ODD docs, dashboard y Cloudflare Pages/Workers SUCCESS.
+- PostgreSQL 18 y React/Vitest cubren las cuatro funciones, ACL, auditoría, DML, roles, tenant/branch, body/origin/UUID, duplicados y concurrencia turno/desactivación.
+- Perfil histórico BCV 0023 y main 0016 preservados; BCV 0024 añadido como perfil independiente. No cambios a ROLE_OPERATIONS, rutas de lectura, migraciones 0023 o anteriores, Neon main ni BCV sync/producer.
+- No reviews formales ni threads; Codex review no completó por límite de uso. Tech Lead review pendiente.
+- Issue #53 OPEN/P0; PRODUCTION: NOT READY; USD 0. No merge.

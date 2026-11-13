@@ -3851,18 +3851,18 @@ No pedir nuevamente Build IDs, capturas, terminal, CLI, TinyFish, reconexiones n
 **No cambiar:** Issue #53 OPEN/P0; PRODUCTION: NOT READY. No tocar Neon main, secretos, datos reales, DNS, billing ni deploy productivo para esta tarea documental.
 
 
-## Continuación — PR 2 estructura organizacional Owner-only (2026-11-13)
+## Continuación — PR #350 estructura organizacional Owner-only (2026-11-13)
 
-**Estado real:** implementación de código validada; no existe PR todavía y no se ha fusionado.
+**Estado:** PR #350 OPEN / no-Draft / mergeable=true / no fusionada.
 
-- Rama: `feat/branch-warehouse-register-admin-20261113`.
-- SHA de código con 11/11 check-runs SUCCESS: `23581b2a1956c3433683820c7b2a2db3eb24b696`.
-- Base main: `25c0f842c7ecc8a7320b33d33abfb12402476e32`; ahead 83 / behind 0.
-- Evidencia exacta: CI `43525236567`; migration-runner `43525236428`; migration-check `43525236620`; backup-restore-smoke `43525236472`; security scan `43525236548`; secret-history `43525236628`. Los 11 check-runs del SHA indicado concluyeron SUCCESS.
-- PostgreSQL 18 cubrió las cuatro operaciones con LOGIN runtime, auditoría, duplicados, cross-tenant, cross-branch, roles denegados, DML directo denegado y ambas carreras apertura/desactivación.
-- React/Vitest, build/typecheck, API integration, migración 0024 y restore smoke (main 0016, BCV 0023 legacy y BCV 0024) SUCCESS.
-- Perfil histórico BCV 0023 sigue disponible como `bcv`; nuevo 0024 es `bcv-0024`; main 0016 intacto.
-- `ROLE_OPERATIONS`, rutas de lectura y migraciones 0023 o anteriores no fueron modificadas. No se tocó Neon main, BCV sync/producer, `BCV_SYNC_ENABLED` ni `bcv-source-connectivity.yml`.
-- Issue #53 sigue OPEN/P0; PRODUCTION: NOT READY; USD 0.
+- URL: https://github.com/BTF14/Micro-app/pull/350
+- HEAD exacto: `a1539b791d6ea9d67102b159ec7fe36c5ffb48cb`; base main `25c0f842c7ecc8a7320b33d33abfb12402476e32`; ahead 85 / behind 0.
+- 25/25 check-runs SUCCESS: 11/11 workflows pull_request y 6/6 workflows push SUCCESS.
+- PR checks: CI 43526664663; migration-runner 43526664836; database migration 43526664807; backup restore 43526664677; Playwright E2E 43526664613; Semgrep 43526664620; Dependency Review 43526664608; ODD docs 43526664703; project dashboard 43526664657; security 43526664628; secret-history 43526664647.
+- Push checks: CI 43526348692; migration-runner 43526348672; database migration 43526348641; backup restore 43526348677; security 43526348837; secret-history 43526348720.
+- Todos los tests PostgreSQL 18, React/Vitest, API, build/typecheck, migration/rollback, restore 16/23/24, Playwright, Chromium, Semgrep, Trivy, secret scan y Cloudflare Pages/Workers SUCCESS.
+- Sin reviews formales ni review threads. Codex no completó el code review por límite de uso; no interpretar como aprobación ni como finding. Revisión del Tech Lead pendiente.
+- El perfil BCV 0023 permanece soportado como `bcv`; nuevo perfil 0024 como `bcv-0024`; main 0016 intacto.
+- Issue #53 OPEN/P0; PRODUCTION: NOT READY; USD 0. No Neon main, no datos reales, no secretos, no BCV activation/sync changes, no cambios a PR #193/#314/#315/#316.
 
-**Siguiente paso:** este commit solo actualiza continuidad; consulta el HEAD vivo y exige 11/11 check-runs SUCCESS en ese SHA documental antes de abrir la PR no-Draft. Revisa el estado de PRs excluidas, Issue #53 y base main; luego abre PR 2 con resumen de seguridad, lista de archivos y runs exactos. No la fusiones. No pidas al propietario información ya documentada ni Build IDs/capturas/terminal/TinyFish.
+**Siguiente paso:** revisión del Tech Lead de PR #350. No fusionar desde este agente. No pedir Build IDs, capturas, terminal, CLI, TinyFish ni reconexiones; toda la evidencia exacta está en la PR y los runs enlazados.

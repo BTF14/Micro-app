@@ -49,8 +49,8 @@ describe("organization structure route guards", () => {
     expect(media.status).toBe(415);
 
     const large = await request(base, {
-      method: "POST", headers: { Cookie: "microapp_session=token", "Content-Type": "application/json", "Content-Length": "4097" },
-      body: JSON.stringify({ name: "x", slug: "x" }),
+      method: "POST", headers: { Cookie: "microapp_session=token", "Content-Type": "application/json" },
+      body: "x".repeat(4097),
     });
     expect(large.status).toBe(413);
   });

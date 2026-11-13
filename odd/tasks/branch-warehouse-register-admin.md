@@ -120,3 +120,5 @@ Implementar administración exclusiva de Owner para sucursales, almacenes, cajas
 - Reconciliación final del alcance BCV/restore y docs BACKUP_AND_RECOVERY: commit b727ad7ef524cde97d574213dde9c4bf4e5887dd. Se aclara que solo cambia el perfil de restore 0023→0024, no BCV sync/producer ni bcv-source-connectivity.yml.
 
 - Último HEAD de código/docs comprobado antes de esta anotación: 3bb6557a4b5c1c320a3ffd7683cf553d20d02899; comparación contra main 25c0f842: ahead 63, behind 0. GitHub no reporta status contexts ni workflow runs para ese SHA porque todavía no existe PR; por eso CI exact-HEAD sigue pendiente.
+
+- Para validar antes de abrir PR, se añadieron triggers push limitados a esta rama en CI, migration-runner y backup-restore-smoke; migration-check ya escucha feat/**. El wrapper disponible de workflow runs solo devuelve ejecuciones pull_request y no aporta evidencia de ejecuciones push; combined status del HEAD consultado sigue vacío. La validación continúa pendiente hasta obtener los check-runs reales.

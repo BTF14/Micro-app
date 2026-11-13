@@ -113,6 +113,29 @@ describe("Cloudflare Pages same-origin API proxy", () => {
     expect(JSON.stringify(payload)).not.toContain("synthetic internal detail");
   });
 
+  it("allows the exact production hostname when CF_PAGES_BRANCH is undefined and the production binding exists", async () => {
+    const fetch = vi.fn(async () => new Response("production"));
+    const response = await onRequest(context(
+      "https://micro-app-63i.pages.dev/api/auth/me",
+      { API: { fetch } },
+    ));
+    expect(response.status).toBe(200);
+    expect(fetch).toHaveBeenCalledTimes(1);
+  });
+
+  it("fails closed on the exact hostname when the branch is undefined and no production binding exists", async () => {
+    const env: Record<string, unknown> = {};
+    Object.defineProperty(env, "API", {
+      get() { throw new Error("missing binding path must not invoke/read API"); },
+    });
+    const response = await onRequest(context(
+      "https://micro-app-63i.pages.dev/api/auth/me",
+      env,
+    ));
+    expect(response.status).toBe(503);
+    await expect(response.json()).resolves.toMatchObject({ error: "API_BINDING_MISSING" });
+  });
+
   it("fails closed when the production Service Binding is missing", async () => {
     const response = await onRequest(context(
       "https://micro-app-63i.pages.dev/api/auth/me",

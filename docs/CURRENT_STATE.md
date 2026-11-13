@@ -1,3 +1,14 @@
+## 2026-11-13 — Ajustes técnicos finales PR #339 (host/runtime, streaming y client IP)
+
+- La revisión adicional se incorporó en la PR #339 existente; no se creó una segunda rama ni PR.
+- Proxy Pages: exige HTTPS + hostname exacto `micro-app-63i.pages.dev`; si `CF_PAGES_BRANCH` existe y no es `main`, responde 503 antes de leer `env.API`; si está ausente, el hostname exacto más el Service Binding `API` exclusivo de Production permite producción; binding ausente responde 503.
+- Previews: cualquier hostname hash/preview/alternativo falla antes de consultar el binding. No configurar `API` en Preview.
+- Respuestas OAuth: `redirect: manual`, cuerpos request/response como streams, status/Location/Cache-Control/headers de seguridad y cada `Set-Cookie` individual conservados; solo las tres cookies PKCE reciben el Path same-origin.
+- IP: se preserva Origin; el proxy captura el `CF-Connecting-IP` provisto por Cloudflare edge, lo reestablece explícitamente al upstream y elimina `X-Forwarded-For` no confiable. Cloudflare documenta que CF-Connecting-IP solo se envía en tráfico edge→origin y contiene la IP del cliente: https://developers.cloudflare.com/fundamentals/reference/http-headers/.
+- Pruebas nuevas: branch variable ausente en producción, branch variable ausente sin binding, procedencia del IP edge y eliminación de XFF. CI debe ejecutarse de nuevo en el HEAD resultante.
+- Las pruebas locales no se declaran ejecutadas: este entorno de trabajo no tiene checkout local verificable. Se espera CI GitHub en el SHA exacto.
+- PR sigue OPEN/no merge; no cambios en Neon, secrets, Cloudflare dashboard, Google Console, despliegues o backup/restore.
+
 ## 2026-11-13 — PR #339: same-origin API via Pages Functions
 
 - Base `main`: `0c90aa382633452daeab81e3937112fa1c0ae0ae`; branch `feat/pages-same-origin-api-20261113`; PR [#339](https://github.com/BTF14/Micro-app/pull/339) is OPEN, not merged.

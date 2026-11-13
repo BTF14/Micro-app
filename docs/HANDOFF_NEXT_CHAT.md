@@ -1,3 +1,17 @@
+## Turno 39 — PR #339 integrada y verificación post-merge same-origin (2026-11-13 UTC)
+
+- PR #339 `feat/pages-same-origin-api-20261113` fusionada por squash en main. Merge SHA: `f635c01aacbe148030b3fd1d7e46851ae318f951`. HEAD reconciliado exacto previo al merge: `7e9f05b4e8783fb1707b7b78b6429bf58089e885`.
+- PR #339 exact-HEAD CI: 16/16 check-runs SUCCESS, incluyendo Cloudflare Pages, Workers Builds: micro-app-api, Chromium authentication smoke, verify/CI, Semgrep, Trivy, dependency review, validate-odd-docs, PostgreSQL/migration runner y secret-history scan. Los checks de SHA anteriores no se reutilizaron.
+- Checks post-merge sobre el merge SHA: 12/12 SUCCESS; Cloudflare Pages y Workers Builds: micro-app-api completados SUCCESS, además de CI/verify, Chromium smoke, PostgreSQL/migration, Semgrep, Trivy, secret scan, ODD validation y dependency review.
+- El propietario confirmó que Google OAuth Client tiene la callback nueva `https://micro-app-63i.pages.dev/api/auth/google/callback` y que Cloudflare Pages Production tiene Service Binding `API` → `micro-app-api`; la variable heredada `VITE_API_BASE_URL` fue eliminada. La URI antigua de workers.dev se mantiene durante la transición.
+- Verificación pública read-only: `https://micro-app-63i.pages.dev/api/health` devolvió el cuerpo JSON `{"status":"ok","service":"micro-app-api","stage":"catalog-inventory-read"}`. El extractor público no expuso el status HTTP numérico, por lo que no se afirma de forma independiente el código 200. La homepage publicada ya enlaza Google login a `/api/auth/google` (same-origin); la extracción HTML no expuso los `script src`/bundles.
+- El workflow `.github/workflows/frontend-bundle-verification.yml` dispone de `workflow_dispatch` y schedule, pero la conexión GitHub de esta sesión no ofrece acción de dispatch. La verificación automatizada del bundle publicado (literal `/api`, ausencia de cualquier `*.workers.dev`) queda pendiente. El intento de browser automation no inició por saldo TinyFish negativo; no se recargó ni se incurrió en gasto.
+- No se hizo login real ni prueba con Brave Shields ACTIVADO. El propietario debe probar `https://micro-app-63i.pages.dev` con Shields activado; conservar la URI OAuth antigua hasta confirmar callback y sesión reales.
+- Issue #53 permanece OPEN/P0; pasos 1 y 2 completos, pasos 3 y 4 pendientes; **PRODUCTION: NOT READY**. No cerrar el issue ni declarar production readiness.
+- Los checks post-merge no equivalen a RPO/RTO medidos ni al smoke autenticado final de staging. El cuerpo de health confirma el proxy same-origin, pero no certifica por sí solo el flujo de login.
+
+---
+
 ## Turno 37 — cierre de Gates A/B y ejecución de Fase 3B (2026-11-13 UTC)
 
 - **Neon main:** proyecto `restless-fire-99110035`, branch default `main` (`br-summer-math-b7297a60`), database `neondb`, PostgreSQL 18.7.

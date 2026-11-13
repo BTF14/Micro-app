@@ -13,6 +13,7 @@ on:
       - "scripts/db/reapply_restore_role_grants.sh"
       - "scripts/db/restore_remote_backup_ephemeral.sh"
       - "scripts/db/test_restore_remote_backup_target_guard.sh"
+      - "scripts/db/test_restore_role_grants_profiles.sh"
       - "scripts/db/verify_backup_artifact.sh"
       - "scripts/db/test_verify_backup_artifact.sh"
       - "scripts/db/restore_role_assertions_main.sql"
@@ -37,6 +38,7 @@ on:
       - "scripts/db/migrate.sh"
       - "scripts/db/reapply_restore_role_grants.sh"
       - "scripts/db/restore_remote_backup_ephemeral.sh"
+      - "scripts/db/test_restore_role_grants_profiles.sh"
       - "scripts/db/restore_role_assertions_main.sql"
       - ".github/workflows/backup-real-restore.yml"
       - "apps/api/migrations/**"
@@ -95,6 +97,9 @@ jobs:
       - name: Prove remote restore target guard fails closed
         shell: bash
         run: bash scripts/db/test_restore_remote_backup_target_guard.sh
+      - name: Preserve historical main and BCV 0023 ACL profiles alongside 0024
+        shell: bash
+        run: bash scripts/db/test_restore_role_grants_profiles.sh
       - name: Prove backup artifact name and checksum validation
         shell: bash
         run: bash scripts/db/test_verify_backup_artifact.sh

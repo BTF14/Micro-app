@@ -122,3 +122,5 @@ Implementar administración exclusiva de Owner para sucursales, almacenes, cajas
 - Último HEAD de código/docs comprobado antes de esta anotación: 3bb6557a4b5c1c320a3ffd7683cf553d20d02899; comparación contra main 25c0f842: ahead 63, behind 0. GitHub no reporta status contexts ni workflow runs para ese SHA porque todavía no existe PR; por eso CI exact-HEAD sigue pendiente.
 
 - Para validar antes de abrir PR, se añadieron triggers push limitados a esta rama en CI, migration-runner y backup-restore-smoke; migration-check ya escucha feat/**. El wrapper disponible de workflow runs solo devuelve ejecuciones pull_request y no aporta evidencia de ejecuciones push; combined status del HEAD consultado sigue vacío. La validación continúa pendiente hasta obtener los check-runs reales.
+
+- HEAD de continuidad al cerrar esta iteración: 77d96ccf3b3fc1d77ecea3242641f6b714f5c900 (incluye triggers push exactos y documentación). Comparación contra main: ahead 70 / behind 0. Combined status vacío; el wrapper de workflow runs devuelve solo runs pull_request y no permite certificar los runs push. No se abrió PR.

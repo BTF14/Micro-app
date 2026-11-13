@@ -580,3 +580,14 @@ PR #287 now reuses the tested bounded helper `scripts/ci/apt-retry.sh` for stric
 - El diagnóstico de .github/workflows/backup.yml todavía espera el nombre histórico backup_readonly. No se ha cambiado DATABASE_URL_BACKUP_RO ni se ha demostrado su principal efectivo. No rotar el secreto hasta una actualización coordinada y revisada del workflow/diagnóstico.
 - --exclude-table-data excluye filas auth del artefacto, pero no impide leerlas en origen durante el dump single-pass.
 - PR #319 prepara el runbook del operador. No se ejecutó Neon ni se mutaron datos, roles, grants, passwords o secrets. Issue #53 OPEN/P0; **PRODUCTION: NOT READY**; USD 0.
+
+
+## Turno 41 — medición por fases y notificación humana (PR en validación, 2026-11-13)
+
+La instrumentación propuesta en `.github/workflows/backup-real-restore.yml` registra UTC + duración por fase y publica `$GITHUB_STEP_SUMMARY`: descarga/verificación SHA-256, AGE decrypt, `pg_restore --list`, y restore aislado PostgreSQL 18 con migraciones/ACL assertions/logins runtime y BCV. El T0 medido ocurre después de runner queue y `apt-get`; el T1 es cuando el restore y sus assertions terminan. Así se separa el trabajo de recuperación del overhead de preparación del runner.
+
+La duración de restore DB es una medición observada del simulacro aislado, no el RTO operacional del servicio. El nombre de backup contiene el `STAMP` que el workflow de backup genera justo antes de `pg_dump`; su diferencia con T0 se registra como edad/frescura del artefacto, no RPO. El RPO real no se puede inferir sin un cutoff/instante de fallo independiente y timestamp consistente del snapshot.
+
+`alert-canary.yml` permite un fallo manual intencional, sin permisos, secrets, checkout ni acceso a DB/Neon. El propietario debe habilitar notificaciones Actions por email/GitHub, ejecutar con confirmación, verificar recepción y dejar ACK humano con UTC + run URL en Issue #53. El workflow no crea comentarios automáticamente ni toca `backup.yml`.
+
+No declarar Paso 4 completo hasta tener CI exact-HEAD, un run de restore instrumentado, una notificación realmente entregada + ACK, RPO definido con fuente temporal correcta y aceptación del propietario.

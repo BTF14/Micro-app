@@ -68,3 +68,12 @@ Evidencia live aportada por el propietario para PR #339 (`f635c01aacbe148030b3fd
 - Smoke humano con Brave Shields ON: login Google, Resumen, Catálogo, Inventario, Caja y turnos, reload conservando sesión y logout correcto.
 
 Esto cierra la validación live de integración same-origin; no satisface el Paso 3, que exige Cashier autenticado en staging/preproducción con DB aislada y datos sintéticos, ni los subgates operativos del Paso 4. Estado permanece OPEN/P0 y PRODUCTION: NOT READY.
+
+
+## Paso 4 — instrumentación de restore y canario de notificación (PR en validación, 2026-11-13)
+
+- `.github/workflows/backup-real-restore.yml` añade marcas UTC y duraciones monotónicas por fase: descarga + SHA-256, AGE decrypt, `pg_restore --list`, y helper de restore PostgreSQL 18 que incluye `pg_restore`, ledger/migraciones, assertions 0022/0023 y logins directos runtime/BCV. Publica fases en `$GITHUB_STEP_SUMMARY`.
+- T0 de la ventana de recuperación se marca después de la cola del runner y `apt-get`; así esos costes quedan fuera de la ventana medida. T1 es el fin del restore y validaciones. La duración del helper es el intervalo observado de restauración DB aislada, no RTO de producción. El timestamp del nombre de backup (`STAMP`, creado justo antes de `pg_dump`) permite calcular antigüedad del artefacto al iniciar el simulacro, que es solo proxy de frescura y NO RPO operacional. El RPO real requiere un cutoff/instante de incidente independiente y timestamp consistente del snapshot.
+- `.github/workflows/alert-canary.yml` es manual (`workflow_dispatch`), permisos `permissions: {}`, sin checkout, secretos, credenciales, Neon ni conexiones externas. Solo produce fallo deliberado si `confirm_controlled_failure=true`; si no, termina sin simular alerta.
+- Para probar: el propietario configura GitHub Settings → Notifications → Actions → Email (o GitHub notifications), dispara el canario confirmando fallo, comprueba recepción efectiva y registra ACK con hora UTC + URL del run en Issue #53. No tocar `backup.yml`.
+- Estado: código aún requiere CI exact-HEAD SUCCESS y ejecución controlada/ACK humano. RPO/RTO operacionales no certificados. Issue #53 OPEN/P0; PRODUCTION NOT READY.

@@ -3408,3 +3408,8 @@ Post-merge CI verificado en main SHA 3ac66a180fcf23421b546140a419a45062e633dd: 1
 - La URI OAuth heredada `workers.dev` puede retirarse por el propietario tras validación del flujo nuevo; es una acción separada de consola, no realizada por el agente.
 - Se cierran los pendientes de observabilidad same-origin/bundle/Brave del Turno 39; esto no equivale al smoke Cashier en staging aislado (Paso 3).
 - Issue #53 permanece OPEN/P0; PRODUCTION: NOT READY hasta completar Pasos 3–4.
+
+
+## Paso 4 — instrumentación y canario (2026-11-13, PR en curso)
+
+Branch `ops/restore-timing-alert-canary-20261113` añade marcas de tiempo UTC por fase a `backup-real-restore.yml` y workflow manual `alert-canary.yml` con `permissions: {}`, cero secrets y cero conexiones. T0 de recuperación se fija después de queue/apt; T1 después de restore/assertions/logins; summary incluye download+SHA, AGE, pg_restore list y DB restore. La antigüedad del artefacto al T0 es proxy de frescura, no RPO; el intervalo de restore PostgreSQL aislado es RTO-like de simulacro, no RTO operacional. RPO verdadero necesita cutoff de incidente. El canario requiere ejecución manual confirmada, recepción real de notificación y ACK del propietario. Pendiente CI exact-HEAD y evidencia de ejecución/ACK.

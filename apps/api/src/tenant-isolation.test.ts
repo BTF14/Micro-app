@@ -174,7 +174,9 @@ describe("invalid session cookie handling on protected routes", () => {
     expect(cookie).toContain("microapp_session=");
     expect(cookie).toContain("Path=/");
     expect(cookie).toContain("Secure");
-    expect(cookie).toContain("SameSite=None");
+    expect(cookie).toContain("HttpOnly");
+    expect(cookie).toContain("SameSite=Lax");
+    expect(cookie).not.toContain("SameSite=None");
     expect(cookie).toMatch(/Max-Age=0|Expires=/i);
   });
 });

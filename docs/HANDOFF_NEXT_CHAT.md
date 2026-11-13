@@ -3825,3 +3825,27 @@ Branch `test/cashier-full-lifecycle-20261113`: añade `apps/api/src/cashier-full
 ## Paso 3 — smoke backend Cashier completado (2026-11-13)
 
 PR #346 integrada: `c6a9ad611111fbc32da8b13329481458c933ec21`. CI exact-HEAD `4fdd39b33d8a1c007678fd30a8cf70b460e80cbd` completó 10/10 workflow runs SUCCESS. El test PostgreSQL 18 aislado recorrió OAuth simulado, cookie y /auth/me, health/security headers, tenant/branch, inventario, open shift, checkout BCV sintético, persistencia de sale/payment/movement/balance/audit actor, cierre/conciliación, denegaciones y logout/401. Runtime `microapp_runtime`, admin setup/assertions, BCV producer login validado. Cero Neon main y cero credenciales reales. Scope: backend/API + DB efímera; no staging remoto ni UI con Google real. Paso 3 técnico completado según aprobación; Paso 4 pendiente.
+
+
+## Continuidad — Paso 4 después del restore real y ACK humano (2026-11-13 UTC)
+
+### Evidencia ya completada (no volver a pedirla)
+
+1. Restore real instrumentado: [Run #4](https://github.com/BTF14/Micro-app/actions/runs/43507963015), commit main `64bfce5a42837c8d87fcf3ff5df9a1798ad50ba7`, SUCCESS. Artefacto `backup-2026-11-13T18-41-49Z.dump.age`; download+SHA-256 375 ms; AGE decrypt 6 ms; `pg_restore --list` 9 ms; DB restore + assertions + runtime/producer login checks 1561 ms; ventana total medida 1999 ms, excluyendo queue/apt; edad del artefacto al T0 8825 s.
+2. Canario de alerta: [Run #1](https://github.com/BTF14/Micro-app/actions/runs/43508458992), mismo SHA, FAILURE intencional controlado. El propietario confirma correo recibido en <1 minuto y ACK publicado en [Issue #53 comment 6865119890](https://github.com/BTF14/Micro-app/issues/53#issuecomment-6865119890).
+3. Coste recurrente actual USD 0 confirmado por el propietario.
+4. Commit `5a93c9c5fbc9eb2064cc3d3f4df1a2d5708a9f3e` de `.github/workflows/backup.yml`: autor `BTF14` (committer `web-flow`).
+
+### Lectura correcta de las métricas
+
+- 1999 ms es ventana de recuperación del artefacto en PostgreSQL aislado; NO es RTO de servicio/producción.
+- 8825 s es edad del backup al T0; NO es RPO operacional porque no se fijó un instante de incidente/cutoff independiente.
+- La entrega de correo y ACK humano sí están confirmados. El canario FAILURE es el resultado deliberado esperado.
+
+### Único bloque de cierre humano/documental pendiente
+
+Solicitar/registrar decisión explícita del propietario sobre el RPO objetivo diario (~24 h) y el RTO que acepta a partir de la restauración aislada (sin presentar 1.999 s como RTO operacional); completar revisión legal/fiscal/contable; y mantener separada esta evidencia de backup/identidad de los módulos comerciales POS todavía pendientes. No autorizar uso comercial real hasta que dichos módulos y sus controles se implementen, prueben y acepten.
+
+No pedir nuevamente Build IDs, capturas, terminal, CLI, TinyFish, reconexiones ni evidencia ya documentada. Si falta un dato realmente nuevo, formular una sola pregunta concreta y aceptar respuesta en texto.
+
+**No cambiar:** Issue #53 OPEN/P0; PRODUCTION: NOT READY. No tocar Neon main, secretos, datos reales, DNS, billing ni deploy productivo para esta tarea documental.

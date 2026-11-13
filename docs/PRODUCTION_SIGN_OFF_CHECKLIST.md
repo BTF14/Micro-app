@@ -87,3 +87,27 @@ La suite falla de forma cerrada si las URLs no son localhost `/microapp_test` y 
 
 
 ## Paso 3 — resultado de la suite Cashier integrada (2026-11-13)
+
+
+## Paso 4 — resultado de ejecución verificado (2026-11-13 UTC)
+
+### Restore instrumentado real
+
+- [Run #4 — backup-real-restore.yml](https://github.com/BTF14/Micro-app/actions/runs/43507963015), main SHA `64bfce5a42837c8d87fcf3ff5df9a1798ad50ba7`: SUCCESS. Artefacto `backup-2026-11-13T18-41-49Z.dump.age`.
+- Fases observadas: download + SHA-256 375 ms; AGE decrypt 6 ms; `pg_restore --list` 9 ms; DB restore + assertions + runtime/producer login checks 1561 ms.
+- Ventana total instrumentada 1999 ms desde T0 posterior a queue/apt. Antigüedad del backup al T0 8825 s.
+- No llamar RTO operacional a los 1999 ms: es una ventana de restore aislado. No llamar RPO a los 8825 s: es edad del artefacto y falta un cutoff/instante de incidente independiente.
+
+### Canario de notificación y ACK
+
+- [Run #1 — alert-canary.yml](https://github.com/BTF14/Micro-app/actions/runs/43508458992), mismo SHA: FAILURE intencional controlado; no representa un fallo del backup.
+- El propietario confirmó email Actions recibido en menos de un minuto y ACK humano registrado en [Issue #53 comment 6865119890](https://github.com/BTF14/Micro-app/issues/53#issuecomment-6865119890).
+- Coste recurrente actual USD 0: confirmado por el propietario, no inferido por CI.
+
+### Gates humanos que siguen abiertos
+
+- Aceptación formal del RPO objetivo diario (~24 h) y del RTO que se acepta para recuperación aislada; no presentar la medición de 1.999 ms como RTO del servicio.
+- Revisión humana legal, fiscal y contable.
+- Confirmar alcance y pendientes de los módulos comerciales POS: el éxito del restore, el canario y la suite Cashier aislada no significa que todas las capacidades comerciales estén implementadas ni autoriza uso comercial real.
+
+**Estado:** la ejecución del restore y la entrega/ACK de alerta quedan evidenciadas. No se certifican RPO/RTO operacionales ni se completa la aceptación final. Issue #53 OPEN/P0; **PRODUCTION: NOT READY**. Solo el propietario/operador puede aceptar formalmente los riesgos y cerrar el issue cuando todos los gates aplicables estén satisfechos.

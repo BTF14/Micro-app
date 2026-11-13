@@ -77,7 +77,10 @@ export async function onRequest(context: PagesFunctionContext): Promise<Response
   }
 
   const remainder = incomingUrl.pathname.slice("/api".length) || "/";
-  const upstreamUrl = new URL(remainder, PRODUCTION_WORKER_ORIGIN);
+  const upstreamUrl = new URL(PRODUCTION_WORKER_ORIGIN);
+  // Assign pathname instead of resolving a relative URL: a path beginning with
+  // // must never be interpreted as a different authority/host.
+  upstreamUrl.pathname = remainder;
   upstreamUrl.search = incomingUrl.search;
 
   const headers = new Headers(request.headers);

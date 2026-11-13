@@ -58,6 +58,8 @@ export async function onRequest(context: PagesFunctionContext): Promise<Response
   // If Cloudflare exposes the deployment branch at runtime, require main too.
   // This check intentionally happens before reading env.API.
   if (
+    incomingUrl.protocol !== "https:" ||
+    incomingUrl.port !== "" ||
     incomingUrl.hostname.toLowerCase() !== PRODUCTION_PAGES_HOST ||
     (env.CF_PAGES_BRANCH !== undefined && env.CF_PAGES_BRANCH !== "main")
   ) {
@@ -84,7 +86,11 @@ export async function onRequest(context: PagesFunctionContext): Promise<Response
   upstreamUrl.search = incomingUrl.search;
 
   const headers = new Headers(request.headers);
-  for (const name of HOP_BY_HOP_HEADERS) headers.delete(name);
+  const connectionTokens = (headers.get("connection") ?? "")
+    .split(",")
+    .map((value) => value.trim())
+    .filter(Boolean);
+  for (const name of [...HOP_BY_HOP_HEADERS, ...connectionTokens]) headers.delete(name);
 
   const init: RequestInit & { duplex?: "half" } = {
     method: request.method,
@@ -97,11 +103,30 @@ export async function onRequest(context: PagesFunctionContext): Promise<Response
   }
 
   const upstreamRequest = new Request(upstreamUrl, init);
-  const upstreamResponse = await api.fetch(upstreamRequest, { redirect: "manual" });
+  let upstreamResponse: Response;
+  try {
+    upstreamResponse = await api.fetch(upstreamRequest, { redirect: "manual" });
+  } catch {
+    return Response.json(
+      { error: "API_UPSTREAM_UNAVAILABLE", message: "El servicio de API no está disponible temporalmente." },
+      { status: 502, headers: { "Cache-Control": "no-store" } },
+    );
+  }
 
   const responseHeaders = new Headers();
+  const responseConnectionTokens = (upstreamResponse.headers.get("connection") ?? "")
+    .split(",")
+    .map((value) => value.trim().toLowerCase())
+    .filter(Boolean);
+  const hopByHopResponseHeaders = new Set([
+    "connection", "keep-alive", "proxy-authenticate", "proxy-authorization",
+    "te", "trailer", "transfer-encoding", "upgrade", ...responseConnectionTokens,
+  ]);
   upstreamResponse.headers.forEach((value, name) => {
-    if (name.toLowerCase() !== "set-cookie") responseHeaders.append(name, value);
+    const normalizedName = name.toLowerCase();
+    if (normalizedName !== "set-cookie" && !hopByHopResponseHeaders.has(normalizedName)) {
+      responseHeaders.append(name, value);
+    }
   });
 
   // Set-Cookie is a multi-value header. Never read it through get(), which

@@ -1,3 +1,12 @@
+## 2026-11-13 — PR #339 final validation checkpoint
+
+- Final hardening HEAD: `c14b50c022758abc3744154445eef96f5ef554df`; base `main` `0c90aa382633452daeab81e3937112fa1c0ae0ae`; ahead 42 / behind 0.
+- Exact-HEAD GitHub Actions: **10/10 SUCCESS** — CI #3105, Playwright E2E #2954, DB migration validation #3882, PostgreSQL migration runner #1679, Trivy #7265, Semgrep #2953, secret history #6430, dependency review #2054, ODD validation #1264, progress dashboard #2524.
+- CI on prior SHA `25d146f...` exposed one faulty test fixture: a getter threw when the test attempted to read a missing binding. The test now models an actually absent binding (empty env) and the corrected exact-HEAD suite passes. This was a test-fixture defect, not an application regression.
+- Build/typecheck, Pages preview isolation, unit tests, PostgreSQL integration suite, and Playwright E2E all passed on exact final HEAD.
+- Local pnpm/Vitest/Playwright were not run in this environment because no local checkout/toolchain is available; don't report them as local pass.
+- PR remains OPEN, not merged. No Cloudflare/Google/Neon/secrets/deploy/backup/restore changes. Brave Shields live verification remains pending post-deploy.
+
 ## 2026-11-13 — Ajustes técnicos finales PR #339 (host/runtime, streaming y client IP)
 
 - La revisión adicional se incorporó en la PR #339 existente; no se creó una segunda rama ni PR.

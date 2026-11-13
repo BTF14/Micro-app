@@ -3871,3 +3871,6 @@ No repetir solicitudes de Build IDs, Cloudflare screenshots, terminal, CLI, Tiny
 
 
 Nota de compatibilidad de permisos para 0024: la migración 0012 ya necesita insertar la membresía inicial del Owner durante el bootstrap Google. Por eso 0024 revoca INSERT de tabla y mantiene exclusivamente INSERT column-scoped en organization_members(organization_id,user_id,role); no hay UPDATE/DELETE ni acceso de INSERT a is_active/created_at/updated_at. Las assertions validan el alcance y el test de PostgreSQL ejercita el INSERT mínimo. Esto preserva OAuth sin conceder DML general.
+
+
+Preflight sin PR: CI, migration-runner y backup-restore-smoke tienen triggers push limitados a esta rama; migration-check ya cubre feat/**. Verificar directamente los check-runs/workflow runs de push del HEAD vivo. La consulta wrapper de runs solo devuelve pull_request, por lo que un resultado vacío no demuestra que push runs no existan; el combined status vacío tampoco es CI verde. Si no hay ejecución, no abrir PR antes de resolver el mecanismo de validación.

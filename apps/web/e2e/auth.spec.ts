@@ -7,17 +7,17 @@ import { expect, test } from "@playwright/test";
 // run against the real Google provider in CI.
 
 test("shows a Google sign-in link that starts the OAuth flow", async ({ page }) => {
-  await page.route("**/auth/me", (route) => route.fulfill({ status: 401, contentType: "application/json", body: JSON.stringify({ message: "No hay sesión activa" }) }));
+  await page.route("**/api/auth/me", (route) => route.fulfill({ status: 401, contentType: "application/json", body: JSON.stringify({ message: "No hay sesión activa" }) }));
 
   await page.goto("/");
   await expect(page.getByRole("heading", { name: "Inicia sesión" })).toBeVisible();
   const googleLink = page.getByRole("link", { name: /continuar con google/i });
   await expect(googleLink).toBeVisible();
-  await expect(googleLink).toHaveAttribute("href", /\/auth\/google$/);
+  await expect(googleLink).toHaveAttribute("href", /\/api\/auth\/google$/);
 });
 
 test("shows an admin-contact message for a failed Google callback and clears it from the URL", async ({ page }) => {
-  await page.route("**/auth/me", (route) => route.fulfill({ status: 401, contentType: "application/json", body: JSON.stringify({ message: "No hay sesión activa" }) }));
+  await page.route("**/api/auth/me", (route) => route.fulfill({ status: 401, contentType: "application/json", body: JSON.stringify({ message: "No hay sesión activa" }) }));
 
   await page.goto("/?auth_error=not_allowlisted");
   await expect(page.getByRole("alert")).toContainText("Comunícate con el administrador");
@@ -25,7 +25,7 @@ test("shows an admin-contact message for a failed Google callback and clears it 
 });
 
 test("opens the FAQ help modal from the login screen", async ({ page }) => {
-  await page.route("**/auth/me", (route) => route.fulfill({ status: 401, contentType: "application/json", body: JSON.stringify({ message: "No hay sesión activa" }) }));
+  await page.route("**/api/auth/me", (route) => route.fulfill({ status: 401, contentType: "application/json", body: JSON.stringify({ message: "No hay sesión activa" }) }));
 
   await page.goto("/");
   await page.getByRole("button", { name: /preguntas frecuentes/i }).click();
@@ -37,7 +37,7 @@ test("opens the FAQ help modal from the login screen", async ({ page }) => {
 });
 
 test("displays the authenticated workspace when a session already exists", async ({ page }) => {
-  await page.route("**/auth/me", (route) =>
+  await page.route("**/api/auth/me", (route) =>
     route.fulfill({
       status: 200,
       contentType: "application/json",

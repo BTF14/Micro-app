@@ -20,7 +20,7 @@ describe("manual BCV source connectivity (no database)", () => {
     expect(contentType.toLowerCase()).toContain("text/html");
 
     const declaredLength = response.headers.get("content-length");
-    if (declaredLength && /^\\d+$/.test(declaredLength)) {
+    if (declaredLength && /^\d+$/.test(declaredLength)) {
       expect(Number(declaredLength)).toBeLessThanOrEqual(MAX_HTML_BYTES);
     }
     if (!response.body) throw new Error("BCV response body is missing");
@@ -59,7 +59,7 @@ describe("manual BCV source connectivity (no database)", () => {
       effectiveDate: parsed.effectiveDate,
       parser: "compatible",
     });
-    expect(parsed.rate).toMatch(/^\\d+\\.\\d{1,8}$/);
-    expect(parsed.effectiveDate).toMatch(/^\\d{4}-\\d{2}-\\d{2}$/);
+    expect(parsed.rate).toMatch(/^\d+\\.\d{1,8}$/);
+    expect(parsed.effectiveDate).toMatch(/^\d{4}-\d{2}-\d{2}$/);
   }, 20_000);
 });

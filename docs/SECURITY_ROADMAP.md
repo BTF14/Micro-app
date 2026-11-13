@@ -1,14 +1,13 @@
-> **Estado vigente — Fase 3B / 2026-11-13:** main `71e92b24ca48ef6f6ff1dc3cea18a51f193b579b`; Issue #53 OPEN/P0; **PRODUCTION: NOT READY**. Pasos 1 y 2 evidenciados mediante auditoría Neon `microapp_backup`, backup natural #24 y restore real #3. `backup_readonly` retirado; allowlist pasa a `microapp_backup` exclusivamente. PR de Fase 3B independiente pendiente de checks/merge. PR #339 debe permanecer OPEN hasta confirmación manual de Google Cloud Console y Cloudflare Pages.
+> **Estado vigente — post-merge Fase 3B / 2026-11-13:** main `5a93c9c5fbc9eb2064cc3d3f4df1a2d5708a9f3e`; PR #341 MERGED; Issue #53 OPEN/P0; **PRODUCTION: NOT READY**. Pasos 1 y 2 completos con evidencia Neon/backup/restore; pasos 3 y 4 pendientes.
 >
+> **PR #339:** OPEN, no fusionada; head `87369c8eca6780ccb78c0677688a27b4a26e9c4e`, base antigua `0c90aa382633452daeab81e3937112fa1c0ae0ae`, 44 ahead / 2 behind respecto al main actual; GitHub `mergeable_state=dirty`. Comparte cambios en CURRENT_STATE/HANDOFF con PR #341. No rebasear ni resolver hasta confirmación del propietario de Google Cloud Console y Cloudflare Pages.
 >
 > **Fases de seguridad — evidencia y límites:**
-> - **Roles/mínimo privilegio:** `current_user=session_user=microapp_backup`; auditoría read-only completa sin FAIL; 23 migraciones y 27 tablas en main. El rol heredado `backup_readonly` y sus grants/membresía privilegiada fueron retirados.
-> - **Auditoría/integridad:** controles append-only y assertions de actor/ledger probados en CI/fixtures; no certifican por sí solos permisos efectivos de todas las rutas comerciales.
-> - **Sesiones/aislamiento:** auth, expiración/revocación y denegación cross-branch/tenant probados con identidades y PostgreSQL sintéticos; no son smoke autenticado staging ni certificación productiva.
-> - **Backup cifrado:** Gate B, backup natural #24 SUCCESS con seis booleanos en contrato; Gate A, restore real cifrado #3 SUCCESS en PostgreSQL 18 efímero, 23 migraciones/27 tablas y assertions 0022/0023 correctas.
-> - **DR:** la duración total de 43 s del workflow de restore no equivale a RTO operacional. RPO/RTO operativos siguen sin medirse.
+> - **Roles/mínimo privilegio:** `current_user=session_user=microapp_backup`; SELECT-only audit queries y DO assertions sin FAIL; 27 filas table/view privileges todas SELECT no grantable; 0 routine grants; 2 secuencias SELECT-only; una única membresía entrante owner ADMIN-only; 29 relaciones públicas propiedad de microapp_migrator. `backup_readonly` retirado.
+> - **Backup cifrado:** Gate B backup natural #24 SUCCESS con seis booleanos en contrato; Gate A restore real cifrado #3 SUCCESS en PostgreSQL 18 efímero, 23 migraciones/27 tablas y assertions 0022/0023 correctas.
+> - **DR:** 43 s es duración total del workflow, no RTO operacional. RPO/RTO operativos siguen sin medirse.
 >
-> **Bloqueos P0:** smoke autenticado staging; RPO/RTO operativos; entrega/ack de alertas; coste total recurrente USD 0; aceptación legal/fiscal/contable y cierre formal por el propietario. No cerrar #53 ni marcar READY hasta todos los gates.
+> **Bloqueos P0:** smoke autenticado staging; RPO/RTO operativos; entrega/ack de alertas; coste total recurrente USD 0; aceptación legal/fiscal/contable y cierre formal por el propietario.
 >
 > Los snapshots inferiores son históricos, no estado vivo. Prevalecen CURRENT_STATE.md y HANDOFF_NEXT_CHAT.md contrastados con GitHub.
 

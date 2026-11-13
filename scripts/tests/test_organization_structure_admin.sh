@@ -14,6 +14,7 @@ inventory="dddddddd-dddd-4ddd-8ddd-dddddddddddd"
 race_cashier="ffffffff-ffff-4fff-8fff-ffffffffffff"
 deactivate_cashier="99999999-9999-4999-8999-999999999999"
 other_owner="eeeeeeee-eeee-4eee-8eee-eeeeeeeeeeee"
+bootstrap_user="abababab-abab-4bab-8bab-abababababab"
 
 psql "$ADMIN_DATABASE_URL" -X -v ON_ERROR_STOP=1 <<SQL
 INSERT INTO public.organizations (id,name,slug) VALUES
@@ -26,7 +27,8 @@ INSERT INTO public.app_users (id,email,display_name) VALUES
  ('$inventory','inventory-a@example.test','Inventory A'),
  ('$race_cashier','race-cashier@example.test','Race Cashier'),
  ('$deactivate_cashier','deactivate-cashier@example.test','Deactivate Cashier'),
- ('$other_owner','owner-b@example.test','Owner B');
+ ('$other_owner','owner-b@example.test','Owner B'),
+ ('$bootstrap_user','bootstrap@example.test','Bootstrap Owner');
 INSERT INTO public.organization_members (organization_id,user_id,role,is_active) VALUES
  ('$org_a','$owner','owner',true),('$org_a','$admin','admin',true),
  ('$org_a','$cashier','cashier',true),('$org_a','$inventory','inventory',true),
@@ -47,6 +49,10 @@ normalized_codes="$(psql "$RUNTIME_DATABASE_URL" -X -v ON_ERROR_STOP=1 -Atqc "SE
 [[ "$normalized_codes" == "main-warehouse:main-register" ]] || { echo "Warehouse/register code normalization failed." >&2; exit 1; }
 
 psql "$RUNTIME_DATABASE_URL" -X -v ON_ERROR_STOP=1 -c "SELECT * FROM public.set_branch_membership_active('$org_a','$branch_id','$cashier','$owner',true)" >/dev/null
+# Preserve only the legacy OAuth bootstrap's column-scoped initial membership INSERT.
+psql "$RUNTIME_DATABASE_URL" -X -v ON_ERROR_STOP=1 -c "INSERT INTO public.organization_members (organization_id,user_id,role) VALUES ('$org_a','$bootstrap_user','owner')" >/dev/null
+bootstrap_probe="$(psql "$RUNTIME_DATABASE_URL" -X -v ON_ERROR_STOP=1 -Atqc "SELECT count(*)=1 FROM public.organization_members WHERE organization_id='$org_a' AND user_id='$bootstrap_user' AND role='owner'")"
+[[ "$bootstrap_probe" == "t" ]] || { echo "Column-scoped OAuth bootstrap membership INSERT failed." >&2; exit 1; }
 read_probe="$(psql "$RUNTIME_DATABASE_URL" -X -v ON_ERROR_STOP=1 -Atqc "SELECT (SELECT count(*)=1 FROM public.branches WHERE organization_id='$org_a' AND id='$branch_id') AND (SELECT count(*)=1 FROM public.warehouses WHERE organization_id='$org_a' AND id='$warehouse_id') AND (SELECT count(*)=1 FROM public.registers WHERE organization_id='$org_a' AND branch_id='$branch_id' AND id='$register_id') AND EXISTS (SELECT 1 FROM public.branch_memberships WHERE organization_id='$org_a' AND branch_id='$branch_id' AND user_id='$owner' AND is_active)")"
 [[ "$read_probe" == "t" ]] || { echo "Runtime read probe failed." >&2; exit 1; }
 

@@ -55,9 +55,6 @@ jobs:
       - name: Verify owner-only organization structure migration 0024 contract
         run: psql -X -v ON_ERROR_STOP=1 --dbname "$ADMIN_DATABASE_URL" -f apps/api/migrations/0024_organization_structure_admin_operations.assertions.sql
       - name: Exercise organization structure operations through the direct runtime LOGIN
-        env:
-          ADMIN_DATABASE_URL: ${{ env.ADMIN_DATABASE_URL }}
-          RUNTIME_DATABASE_URL: ${{ env.RUNTIME_DATABASE_URL }}
         run: bash scripts/tests/test_organization_structure_admin.sh
       - name: Verify ledger, owner and recorded checksums
         run: |

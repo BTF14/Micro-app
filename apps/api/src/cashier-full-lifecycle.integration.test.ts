@@ -142,9 +142,6 @@ describe.skipIf(!isDisposable(runtimeUrl, "microapp_runtime") ||
     let registerId = "";
     let productId = "";
     let suffix = "";
-    let rateId = "";
-    let createdRate = false;
-    let previousRate: { rate: string; validation_status: string; fetched_at: string } | null = null;
     let previousSync: {
       attempt_id: string | null; last_attempt_at: Date | null; last_success_at: Date | null;
       last_outcome: string | null; last_error_code: string | null;
@@ -272,34 +269,20 @@ describe.skipIf(!isDisposable(runtimeUrl, "microapp_runtime") ||
         [effectiveDate],
       );
       if (existing.rows[0]) {
-        rateId = existing.rows[0].id;
-        previousRate = existing.rows[0];
-        await admin.query(
-          "UPDATE public.exchange_rates SET rate=250.12345678,validation_status='valid',fetched_at=now() WHERE id=$1",
-          [rateId],
-        );
-      } else {
-        const inserted = await admin.query<{ id: string }>(
-          `INSERT INTO public.exchange_rates(base_currency,quote_currency,rate,source,effective_date,validation_status)
-           VALUES('USD','VES',250.12345678,'BCV_OFFICIAL_HTML_V1',$1::date,'valid') RETURNING id`,
-          [effectiveDate],
-        );
-        rateId = inserted.rows[0]!.id;
-        createdRate = true;
+        throw new Error("The disposable CI database must start without a current BCV fixture; refusing to mutate a pre-existing rate referenced by immutable sales history.");
       }
+      await admin.query(
+        `INSERT INTO public.exchange_rates(base_currency,quote_currency,rate,source,effective_date,validation_status)
+         VALUES('USD','VES',250.12345678,'BCV_OFFICIAL_HTML_V1',$1::date,'valid')`,
+        [effectiveDate],
+      );
     });
 
     afterAll(async () => {
       if (!admin) return;
       // All application records live only in the per-job PostgreSQL 18 service.
-      // Restore the global BCV singleton/rate if the suite is ever reused locally.
-      if (rateId) {
-        if (createdRate) await admin.query("DELETE FROM public.exchange_rates WHERE id=$1", [rateId]);
-        else if (previousRate) await admin.query(
-          "UPDATE public.exchange_rates SET rate=$2::numeric,validation_status=$3,fetched_at=$4::timestamptz WHERE id=$1",
-          [rateId, previousRate.rate, previousRate.validation_status, previousRate.fetched_at],
-        );
-      }
+      // Keep the synthetic BCV row in this per-job database: completed sales
+      // retain a restrictive FK to their effective rate as immutable history.
       if (previousSync) await admin.query(
         `UPDATE public.bcv_sync_state SET attempt_id=$1::uuid,last_attempt_at=$2::timestamptz,
            last_success_at=$3::timestamptz,last_outcome=$4,last_error_code=$5,
@@ -400,7 +383,7 @@ describe.skipIf(!isDisposable(runtimeUrl, "microapp_runtime") ||
       );
       const otherRegister = await admin.query<{ id: string }>(
         "INSERT INTO public.registers(organization_id,branch_id,name,code) VALUES($1,$2,'Other cashier register',$3) RETURNING id",
-        [organizationId, "other-reg-" + suffix],
+        [organizationId, branchId, "other-reg-" + suffix],
       );
       const otherToken = "other-cashier-session-" + suffix;
       await admin.query(

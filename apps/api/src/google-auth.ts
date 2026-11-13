@@ -69,7 +69,7 @@ export function setShortLivedCookie(c: AppContext, name: string, value: string):
 export function clearOAuthCookies(c: AppContext): void {
   const secure = isHttps(c);
   for (const name of [STATE_COOKIE, VERIFIER_COOKIE, BOOTSTRAP_COOKIE]) {
-    deleteCookie(c, name, { path: "/auth/google", secure, sameSite: "Lax" });
+    deleteCookie(c, name, { path: "/auth/google", httpOnly: true, secure, sameSite: "Lax" });
   }
 }
 

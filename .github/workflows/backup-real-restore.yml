@@ -48,19 +48,42 @@ jobs:
           echo "deb [signed-by=/usr/share/postgresql-common/pgdg/apt.postgresql.org.asc] https://apt.postgresql.org/pub/repos/apt $(. /etc/os-release && echo "$VERSION_CODENAME")-pgdg main" | sudo tee /etc/apt/sources.list.d/pgdg.list
           sudo apt-get update
           sudo apt-get install -y postgresql-client-18
+      - name: Start isolated recovery timing window
+        run: |
+          set -euo pipefail
+          recovery_start_ns="$(date +%s%N)"
+          recovery_start_utc="$(date -u +'%Y-%m-%dT%H:%M:%SZ')"
+          echo "RECOVERY_START_NS=$recovery_start_ns" >> "$GITHUB_ENV"
+          echo "RECOVERY_START_UTC=$recovery_start_utc" >> "$GITHUB_ENV"
+          {
+            echo "### Isolated restore timing"
+            echo
+            echo "- Recovery T0 (after runner queue and apt installation): $recovery_start_utc"
+            echo "- Runner queue and package installation are excluded from measured recovery windows."
+          } >> "$GITHUB_STEP_SUMMARY"
       - name: Download and verify exact remote bytes
         id: backup
         env:
           BACKUP_REPO_TOKEN: ${{ secrets.BACKUP_REPO_TOKEN }}
         run: |
           set -euo pipefail
+          phase_start_ns="$(date +%s%N)"
+          phase_start_utc="$(date -u +'%Y-%m-%dT%H:%M:%SZ')"
           git -c 'credential.helper=!f() { echo username=x-access-token; echo password=$BACKUP_REPO_TOKEN; }; f' clone --depth 1 "https://github.com/$BACKUP_REPO.git" "$RUNNER_TEMP/backups-repo"
           mapfile -t files < <(find "$RUNNER_TEMP/backups-repo/daily" -maxdepth 1 -type f -name 'backup-*.dump.age' -printf '%f\n' | sort)
           (("${#files[@]}" > 0)) || { echo "::error::No encrypted backup found"; exit 1; }
           filename="${files[${#files[@]}-1]}"
           bash scripts/db/verify_backup_artifact.sh "$RUNNER_TEMP/backups-repo/daily" "$filename"
+          phase_end_ns="$(date +%s%N)"
+          phase_end_utc="$(date -u +'%Y-%m-%dT%H:%M:%SZ')"
+          phase_ms="$(((phase_end_ns - phase_start_ns) / 1000000))"
+          echo "DOWNLOAD_VERIFY_START_UTC=$phase_start_utc" >> "$GITHUB_OUTPUT"
+          echo "DOWNLOAD_VERIFY_END_UTC=$phase_end_utc" >> "$GITHUB_OUTPUT"
+          echo "DOWNLOAD_VERIFY_DURATION_MS=$phase_ms" >> "$GITHUB_OUTPUT"
+          echo "- Download + SHA-256 verification: $phase_start_utc → $phase_end_utc (${phase_ms} ms)" >> "$GITHUB_STEP_SUMMARY"
           printf 'filename=%s\n' "$filename" >> "$GITHUB_OUTPUT"
       - name: Decrypt and restore with application roles into ephemeral PostgreSQL
+        id: restore
         env:
           AGE_PRIVATE_KEY: ${{ secrets.AGE_PRIVATE_KEY }}
           AGE_PUBLIC_KEY: age1t04pgcguy87u99r4stlm0gcjsk9dj2s34jsmymw55vlarfteuakse8jmfk
@@ -83,18 +106,73 @@ jobs:
             echo "::error::AGE_PRIVATE_KEY does not match the repository backup public key."
             exit 1
           fi
+          phase_start_ns="$(date +%s%N)"
+          phase_start_utc="$(date -u +'%Y-%m-%dT%H:%M:%SZ')"
           age --decrypt --identity "$identity" --output "$plaintext" "$RUNNER_TEMP/backups-repo/daily/$BACKUP_FILENAME"
           test -s "$plaintext"
+          phase_end_ns="$(date +%s%N)"
+          phase_end_utc="$(date -u +'%Y-%m-%dT%H:%M:%SZ')"
+          phase_ms="$(((phase_end_ns - phase_start_ns) / 1000000))"
+          echo "AGE_DECRYPT_START_UTC=$phase_start_utc" >> "$GITHUB_OUTPUT"
+          echo "AGE_DECRYPT_END_UTC=$phase_end_utc" >> "$GITHUB_OUTPUT"
+          echo "AGE_DECRYPT_DURATION_MS=$phase_ms" >> "$GITHUB_OUTPUT"
+          echo "- AGE decryption: $phase_start_utc → $phase_end_utc (${phase_ms} ms)" >> "$GITHUB_STEP_SUMMARY"
+
+          phase_start_ns="$(date +%s%N)"
+          phase_start_utc="$(date -u +'%Y-%m-%dT%H:%M:%SZ')"
           /usr/lib/postgresql/18/bin/pg_restore --list "$plaintext" > "$RUNNER_TEMP/archive.list"
           test -s "$RUNNER_TEMP/archive.list"
+          phase_end_ns="$(date +%s%N)"
+          phase_end_utc="$(date -u +'%Y-%m-%dT%H:%M:%SZ')"
+          phase_ms="$(((phase_end_ns - phase_start_ns) / 1000000))"
+          echo "ARCHIVE_LIST_START_UTC=$phase_start_utc" >> "$GITHUB_OUTPUT"
+          echo "ARCHIVE_LIST_END_UTC=$phase_end_utc" >> "$GITHUB_OUTPUT"
+          echo "ARCHIVE_LIST_DURATION_MS=$phase_ms" >> "$GITHUB_OUTPUT"
+          echo "- pg_restore --list: $phase_start_utc → $phase_end_utc (${phase_ms} ms)" >> "$GITHUB_STEP_SUMMARY"
+
+          db_restore_start_ns="$(date +%s%N)"
+          db_restore_start_utc="$(date -u +'%Y-%m-%dT%H:%M:%SZ')"
+          echo "DB_RESTORE_START_UTC=$db_restore_start_utc" >> "$GITHUB_OUTPUT"
           BACKUP_DUMP="$plaintext" bash scripts/db/restore_remote_backup_ephemeral.sh
+          db_restore_end_ns="$(date +%s%N)"
+          db_restore_end_utc="$(date -u +'%Y-%m-%dT%H:%M:%SZ')"
+          db_restore_ms="$(((db_restore_end_ns - db_restore_start_ns) / 1000000))"
+          recovery_end_ns="$(date +%s%N)"
+          recovery_end_utc="$(date -u +'%Y-%m-%dT%H:%M:%SZ')"
+          recovery_ms="$(((recovery_end_ns - RECOVERY_START_NS) / 1000000))"
+          echo "DB_RESTORE_END_UTC=$db_restore_end_utc" >> "$GITHUB_OUTPUT"
+          echo "DB_RESTORE_DURATION_MS=$db_restore_ms" >> "$GITHUB_OUTPUT"
+          echo "RECOVERY_END_UTC=$recovery_end_utc" >> "$GITHUB_OUTPUT"
+          echo "RECOVERY_DURATION_MS=$recovery_ms" >> "$GITHUB_OUTPUT"
       - name: Publish remote restore evidence without business data
         env:
           REMOTE_BACKUP_FILENAME: ${{ steps.backup.outputs.filename }}
         run: |
           set -euo pipefail
-          echo "Remote object: ${REMOTE_BACKUP_FILENAME}" >> "$GITHUB_STEP_SUMMARY"
-          echo "Checksum verified; encrypted remote archive decrypted and restored as microapp_migrator in disposable PostgreSQL 18. The migration-ledger profile, application roles, ownership, empty ephemeral-auth tables and independent runtime/producer logins were validated. No business rows printed." >> "$GITHUB_STEP_SUMMARY"
+          snapshot_stamp="$(printf '%s' "$REMOTE_BACKUP_FILENAME" | sed -E 's/^backup-([0-9]{4}-[0-9]{2}-[0-9]{2})T([0-9]{2})-([0-9]{2})-([0-9]{2})Z\\.dump\\.age$/\\1T\\2:\\3:\\4Z/')"
+          snapshot_epoch="$(date -u -d "$snapshot_stamp" +%s)"
+          recovery_start_epoch="$(date -u -d "$RECOVERY_START_UTC" +%s)"
+          backup_age_seconds="$((recovery_start_epoch - snapshot_epoch))"
+          {
+            echo "### Restore timing summary (isolated drill; UTC)"
+            echo
+            echo "| Phase | Start UTC | End UTC | Duration |"
+            echo "|---|---|---|---:|"
+            echo "| Download + SHA-256 | ${{ steps.backup.outputs.DOWNLOAD_VERIFY_START_UTC }} | ${{ steps.backup.outputs.DOWNLOAD_VERIFY_END_UTC }} | ${{ steps.backup.outputs.DOWNLOAD_VERIFY_DURATION_MS }} ms |"
+            echo "| AGE decrypt | ${{ steps.restore.outputs.AGE_DECRYPT_START_UTC }} | ${{ steps.restore.outputs.AGE_DECRYPT_END_UTC }} | ${{ steps.restore.outputs.AGE_DECRYPT_DURATION_MS }} ms |"
+            echo "| pg_restore --list | ${{ steps.restore.outputs.ARCHIVE_LIST_START_UTC }} | ${{ steps.restore.outputs.ARCHIVE_LIST_END_UTC }} | ${{ steps.restore.outputs.ARCHIVE_LIST_DURATION_MS }} ms |"
+            echo "| DB restore + assertions + runtime/producer login checks | ${{ steps.restore.outputs.DB_RESTORE_START_UTC }} | ${{ steps.restore.outputs.DB_RESTORE_END_UTC }} | ${{ steps.restore.outputs.DB_RESTORE_DURATION_MS }} ms |"
+            echo
+            echo "- Recovery T0 (after queue + apt): ${RECOVERY_START_UTC}"
+            echo "- Recovery T1 (restore assertions and direct logins passed): ${{ steps.restore.outputs.RECOVERY_END_UTC }}"
+            echo "- Artifact recovery window excluding queue and apt: ${{ steps.restore.outputs.RECOVERY_DURATION_MS }} ms"
+            echo "- Selected backup age at drill T0: ${backup_age_seconds} seconds (freshness proxy only; not operational RPO)."
+            echo "- DB restore interval is an observed isolated-restore RTO-like measurement only; not production operational RTO (no production incident, app deploy, traffic switch, or human acceptance was simulated)."
+            echo "- True RPO remains unmeasured until a declared source cutoff/incident timestamp is compared with the consistent snapshot timestamp."
+            echo
+            echo "Remote object: ${REMOTE_BACKUP_FILENAME}"
+            echo "Checksum verified; encrypted archive decrypted and restored as microapp_migrator in disposable PostgreSQL 18. The migration-ledger profile, assertions 0022/0023, application roles, ownership, empty ephemeral-auth tables and independent runtime/producer logins were validated. No business rows printed."
+          } >> "$GITHUB_STEP_SUMMARY"
       - name: Remove decrypted files
         if: always()
         run: |

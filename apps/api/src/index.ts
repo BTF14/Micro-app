@@ -122,9 +122,14 @@ export default Object.assign(app, {
     // BCV ingestion is a separately gated Cron; it remains inert unless explicitly enabled.
     if (controller.cron === "0 22 * * 1-5") {
       if (env.APP_ENV !== "production" || env.BCV_SYNC_ENABLED !== "true") return;
+      // Fail closed: the isolated Worker must never borrow the API runtime credential.
+      if (!env.DATABASE_URL_BCV_SYNC) {
+        console.error({ event: "BCV_SYNC_FAILED", code: "BCV_SYNC_DATABASE_URL_MISSING" });
+        throw new Error("BCV_SYNC_FAILED");
+      }
       try {
         console.info({ event: "BCV_SYNC_STARTED" });
-        const outcome = await syncBcvOfficialRate(env.DATABASE_URL);
+        const outcome = await syncBcvOfficialRate(env.DATABASE_URL_BCV_SYNC);
         console.info({ event: "BCV_SYNC_COMPLETED", outcome });
       } catch (error) {
         console.error({ event: "BCV_SYNC_FAILED", code: safeBcvSyncErrorCode(error) });

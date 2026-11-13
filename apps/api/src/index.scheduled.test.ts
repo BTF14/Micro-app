@@ -16,7 +16,8 @@ import app from "./index";
 
 const productionEnv = {
   APP_ENV: "production",
-  DATABASE_URL: "postgresql://localhost/microapp",
+  DATABASE_URL: "postgresql://microapp_runtime:runtime-secret@example.invalid/db",
+  DATABASE_URL_BCV_SYNC: "postgresql://microapp_bcv_sync:secret@example.invalid/db",
   BCV_SYNC_ENABLED: "true",
 } as unknown as Bindings;
 
@@ -31,6 +32,21 @@ describe("BCV scheduled failure reporting", () => {
   afterEach(() => {
     vi.restoreAllMocks();
     mocks.syncBcvOfficialRate.mockReset();
+  });
+
+  it("uses only the dedicated BCV database credential", async () => {
+    mocks.syncBcvOfficialRate.mockResolvedValue("inserted");
+    await app.scheduled(bcvCron, productionEnv);
+    expect(mocks.syncBcvOfficialRate).toHaveBeenCalledWith(productionEnv.DATABASE_URL_BCV_SYNC);
+    expect(mocks.syncBcvOfficialRate).not.toHaveBeenCalledWith(productionEnv.DATABASE_URL);
+  });
+
+  it("fails closed when the dedicated secret is absent and never falls back to runtime DATABASE_URL", async () => {
+    const errorLog = vi.spyOn(console, "error").mockImplementation(() => undefined);
+    const withoutDedicatedSecret = { ...productionEnv, DATABASE_URL_BCV_SYNC: undefined };
+    await expect(app.scheduled(bcvCron, withoutDedicatedSecret)).rejects.toThrow("BCV_SYNC_FAILED");
+    expect(mocks.syncBcvOfficialRate).not.toHaveBeenCalled();
+    expect(errorLog).toHaveBeenCalledWith({ event: "BCV_SYNC_FAILED", code: "BCV_SYNC_DATABASE_URL_MISSING" });
   });
 
   it("logs a sanitized successful synchronization outcome", async () => {

@@ -1090,3 +1090,13 @@ Siguiente paso: PR #319 para docs/NEON_LEAST_PRIVILEGE_AUDIT_RUNBOOK.md, instruc
 
 
 Post-merge CI de main SHA 3ac66a180fcf23421b546140a419a45062e633dd terminó SUCCESS: 11/11 workflows y 13/13 check-runs.
+
+
+## Checkpoint — PR 2 estructura organizacional Owner-only — 2026-11-13
+
+- Rama: feat/branch-warehouse-register-admin-20261113; base 25c0f842c7ecc8a7320b33d33abfb12402476e32.
+- Migration 0024, assertions, API, UI, pruebas PostgreSQL 18/API/Vitest y extensión restore/migration-runner hasta 0024 añadidas. Ver odd/tasks/branch-warehouse-register-admin.md.
+- Checkpoint de continuidad del cambio: c0b3764dcbb17d74b05e1d096767f357dd975134; verificar HEAD vivo porque hubo commits adicionales posteriores.
+- Estado: implementación escrita; validación pendiente. No abrir PR hasta revisión completa y CI verde exact-HEAD. No merge.
+- PR #349 post-merge: 15/15 check-runs SUCCESS según confirmación del Tech Lead.
+- Exclusiones intactas: Neon main, BCV activation, PR #193/#314/#315/#316, Issue #53. Issue #53 OPEN/P0; PRODUCTION: NOT READY; USD 0.

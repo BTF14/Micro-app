@@ -1,18 +1,27 @@
-import { readFile, writeFile } from "node:fs/promises";
+import { readFile, readdir } from "node:fs/promises";
 import { fileURLToPath } from "node:url";
 
 const pagesBranch = process.env.CF_PAGES_BRANCH;
 const isCloudflarePagesBuild = process.env.CF_PAGES === "1" || pagesBranch !== undefined;
 const isPagesPreview = isCloudflarePagesBuild && pagesBranch !== "main";
 
-if (isPagesPreview) {
-  const headersPath = fileURLToPath(new URL("../dist/_headers", import.meta.url));
-  const headers = await readFile(headersPath, "utf8");
-  const productionConnectSrc = "connect-src 'self' https://micro-app-api.btfcasheb.workers.dev;";
+const headersPath = fileURLToPath(new URL("../dist/_headers", import.meta.url));
+const headers = await readFile(headersPath, "utf8");
 
-  if (!headers.includes(productionConnectSrc)) {
-    throw new Error("Preview isolation failed: the expected production API origin was not found in dist/_headers.");
+if (!/connect-src\s+'self';/.test(headers) || /connect-src[^;]*workers\.dev/i.test(headers)) {
+  throw new Error("Pages CSP must keep API traffic same-origin with connect-src 'self' only.");
+}
+
+const assetsPath = fileURLToPath(new URL("../dist/assets", import.meta.url));
+const assets = await readdir(assetsPath);
+for (const asset of assets) {
+  const assetPath = fileURLToPath(new URL(`../dist/assets/${asset}`, import.meta.url));
+  const content = await readFile(assetPath, "utf8");
+  if (/https:\/\/[^"'\s]+\.workers\.dev/i.test(content)) {
+    throw new Error(`Pages bundle must not contain a direct Workers API origin (asset: ${asset}).`);
   }
+}
 
-  await writeFile(headersPath, headers.replace(productionConnectSrc, "connect-src 'self';"));
+if (isPagesPreview && headers.includes("micro-app-api.btfcasheb.workers.dev")) {
+  throw new Error("Preview isolation failed: production Worker origin found in _headers.");
 }

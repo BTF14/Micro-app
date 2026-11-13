@@ -1,7 +1,7 @@
 # ODD task: same-origin API through Cloudflare Pages Functions
 
-- Status: in progress
-- Issue / PR: same-origin OAuth/session remediation; PR pending
+- Status: implementation submitted; exact-HEAD CI pending
+- PR: [#339](https://github.com/BTF14/Micro-app/pull/339) OPEN, not merged
 - Owner / reviewer: project owner / independent architecture-security-QA pass
 - Started: 2026-11-13
 - Risk: high
@@ -54,9 +54,9 @@ Excluded:
 | Task | Expected result | Validation / evidence | Status |
 |---|---|---|---|
 | Inspect main, Cloudflare Pages root/build settings, auth and workflows | verified baseline | GitHub source + deployment audit | done |
-| Add Pages proxy and cookie tests | deterministic contract | API Vitest + CI | in progress |
-| Switch frontend/CSP/Google callback config | same-origin browser URLs | build, E2E and bundle checks | pending |
-| Review diff and exact-HEAD CI | auditable PR | GitHub PR/checks | pending |
+| Add Pages proxy and cookie tests | deterministic contract | API Vitest + CI | implemented; CI pending |
+| Switch frontend/CSP/Google callback config | same-origin browser URLs | build, E2E and bundle checks | implemented; CI pending |
+| Review diff and exact-HEAD CI | auditable PR | GitHub PR/checks | in progress |
 | Preserve manual activation/merge gate | no production changes | PR remains OPEN | required |
 
 ## Technical decisions
@@ -69,10 +69,10 @@ Excluded:
 
 ## Closure and handoff
 
-- Final commit SHA: pending
-- PR: pending
-- Checks and exact outcomes: pending
+- PR HEAD at opening: `c93e466ddef0e70baaf78097edf3490ebf3fed4f` (update after any further commits)
+- PR: [#339](https://github.com/BTF14/Micro-app/pull/339), OPEN, not merged
+- Checks and exact outcomes: exact-HEAD CI running; see PR #339
 - Acceptance criteria met / unmet: pending
 - Limitations not verified: no live Pages runtime or Brave Shields test before manual post-merge activation
 - Residual risks: Pages production binding and Google callback remain owner-operated gates
-- Next step: finish implementation/tests, open PR, wait for exact-HEAD CI, stop without merge
+- Next step: resolve any CI findings, re-check exact HEAD and reviews, keep PR OPEN; do not merge

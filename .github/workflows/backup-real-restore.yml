@@ -87,7 +87,7 @@ jobs:
           test -s "$plaintext"
           /usr/lib/postgresql/18/bin/pg_restore --list "$plaintext" > "$RUNNER_TEMP/archive.list"
           test -s "$RUNNER_TEMP/archive.list"
-          BACKUP_DUMP="$plaintext" bash scripts/db/restore_remote_backup_ephemeral.sh
+          bash scripts/db/restore_remote_backup_ephemeral.sh
       - name: Publish remote restore evidence without business data
         env:
           REMOTE_BACKUP_FILENAME: ${{ steps.backup.outputs.filename }}

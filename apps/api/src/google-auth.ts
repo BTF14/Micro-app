@@ -53,7 +53,7 @@ function isHttps(c: AppContext): boolean {
   return new URL(c.req.url).protocol === "https:";
 }
 
-function setShortLivedCookie(c: AppContext, name: string, value: string): void {
+export function setShortLivedCookie(c: AppContext, name: string, value: string): void {
   const secure = isHttps(c);
   setCookie(c, name, value, {
     httpOnly: true,
@@ -66,19 +66,19 @@ function setShortLivedCookie(c: AppContext, name: string, value: string): void {
   });
 }
 
-function clearOAuthCookies(c: AppContext): void {
+export function clearOAuthCookies(c: AppContext): void {
   const secure = isHttps(c);
   for (const name of [STATE_COOKIE, VERIFIER_COOKIE, BOOTSTRAP_COOKIE]) {
-    deleteCookie(c, name, { path: "/auth/google", secure, sameSite: "Lax" });
+    deleteCookie(c, name, { path: "/auth/google", httpOnly: true, secure, sameSite: "Lax" });
   }
 }
 
-function setSessionCookie(c: AppContext, token: string): void {
+export function setSessionCookie(c: AppContext, token: string): void {
   const secure = isHttps(c);
   setCookie(c, SESSION_COOKIE, token, {
     httpOnly: true,
     secure,
-    sameSite: secure ? "None" : "Lax",
+    sameSite: "Lax",
     path: "/",
     maxAge: SESSION_TTL_SECONDS,
   });

@@ -1,3 +1,17 @@
+## Turno 38 — PR #339: prerrequisitos manuales confirmados y reconciliación post-Fase 3B (2026-11-13 UTC)
+
+- El propietario confirma que Google OAuth Client ya incluye `https://micro-app-63i.pages.dev/api/auth/google/callback`, manteniendo temporalmente la URI anterior de `workers.dev`.
+- El propietario confirma que Cloudflare Pages Production tiene Service Binding `API` → `micro-app-api`, y que eliminó la variable heredada `VITE_API_BASE_URL` que apuntaba a `workers.dev`; el build toma `VITE_API_BASE_URL=/api` desde `apps/web/.env.production`.
+- PR #341/Fase 3B ya está integrada en main: merge SHA `5a93c9c5fbc9eb2064cc3d3f4df1a2d5708a9f3e`. Se incorporan al árbol de PR #339 los registros de Gates A/B, retirada de `backup_readonly`, test de contrato y runbook actualizado. Issue #53 permanece OPEN/P0; pasos 1 y 2 completos, pasos 3 y 4 pendientes; **PRODUCTION: NOT READY**.
+- La rama de PR #339 se reconcilia con main usando un merge commit con ambos padres, sin editar el comportamiento de `functions/api/[[path]].ts`, `apps/api/src/*`, `apps/web/*` ni `postbuild.mjs`.
+- Después de actualizar la rama, todos los checks deben volver a ejecutarse en el nuevo HEAD exacto. Los checks históricos del SHA `87369c8eca6780ccb78c0677688a27b4a26e9c4e` no se reutilizan.
+- No se elimina la URI OAuth antigua hasta verificar login real. El smoke con Brave Shields ACTIVADO queda pendiente post-deploy.
+- PR #339 solo puede fusionarse tras revisar diff reconciliado, CI exact-HEAD, Pages/Workers deploy checks y verificación pública del proxy `/api/health`. No se declara resuelto el incidente de cookies hasta el smoke real.
+- Issue #53 sigue OPEN/P0 y **PRODUCTION: NOT READY** hasta completar sus pasos 3 y 4.
+- Main de partida: `5a93c9c5fbc9eb2064cc3d3f4df1a2d5708a9f3e`; PR #339 anterior: `87369c8eca6780ccb78c0677688a27b4a26e9c4e`.
+
+---
+
 ## Nota autoritativa — 2026-11-08 UTC
 
 El estado operativo vigente se centraliza en CURRENT_STATE.md y HANDOFF_NEXT_CHAT.md. Main actual: 9c6b30281ed59726e532da840568fc9e80b528f7; #280 y #282 integradas. Neon rehearsal #42507066215 aplicó 0001–0019 solo en microapp_rehearsal. #269 está OPEN/Draft en HEAD 8f05befb7ac1a46d68850b9f89f89edc8cd46283 con 16/16 check-runs y 14/14 workflows SUCCESS; #255 OPEN/Draft en HEAD 7e43d7fd1519889605174da5818190bb84685059 con 15/15 y 13/13 SUCCESS. #258 y #262 se cerraron como superseded tras preservar/evolucionar todo su contenido en #269. #233 sigue histórica abierta; #193 no se modifica. Producción NOT READY: contrato comercial checkout y gates BCV siguen abiertos. No repetir escrituras Neon ni tocar producción. El detalle, SHA y siguientes pasos están en CURRENT_STATE.md.
@@ -269,3 +283,31 @@ No se copiaron ni registraron valores de variables de entorno. No afirmar que es
 - El archivo `apps/web/public/_headers` en main define CSP, HSTS, `X-Content-Type-Options: nosniff`, `X-Frame-Options: DENY`, `Referrer-Policy` y `Permissions-Policy`. Sin embargo, la sesión de navegador no expuso las cabeceras HTTP reales y la inspección DOM no permite demostrar que Cloudflare las haya servido. Estado: **configuradas en el repositorio, efectividad HTTP pendiente de verificación**.
 - No se modificaron ajustes, variables, secretos, workflows, DNS, billing, tráfico, Neon ni producción. No se dispararon builds manuales.
 
+
+
+## Addendum — 2026-11-13: Pages Functions same-origin API (PR #339, OPEN)
+
+- Cloudflare Pages project `micro-app`: Production branch `main`; root directory vacío (raíz del repositorio); build command `corepack enable && pnpm install --frozen-lockfile && pnpm --filter @micro-app/web build`; build output `apps/web/dist`.
+- La Pages Function debe vivir en `/functions/api/[[path]].ts` en la raíz del repositorio, no dentro de `apps/web/functions/` ni dentro de `apps/web/dist`.
+- PR #339 añade proxy same-origin, CSP `connect-src 'self'`, cookies de sesión Lax y reescritura acotada de Path PKCE. El Service Binding no se configuró durante la PR.
+- Activación manual posterior: proyecto Pages `micro-app` → Settings → Bindings → Add → Service binding; entorno Production; Variable name `API`; Service `micro-app-api`. No crear el binding en Preview. Cloudflare requiere un redeploy para que el binding entre en vigor.
+- Google OAuth: agregar la callback `https://micro-app-63i.pages.dev/api/auth/google/callback` sin retirar la URI antigua hasta completar la prueba real con Brave Shields ON.
+- PR #339 permanece OPEN/no mergeada durante la observación de backup natural 07:00 UTC y el gate `backup-real-restore.yml`. No se tocó Cloudflare, Google, Neon, secrets ni backup.
+
+## Addendum — 2026-11-13: runtime guard and client-IP provenance (PR #339)
+
+Cloudflare Pages exposes `CF_PAGES_BRANCH` as a build variable; do not assume it is injected into the Pages Function runtime. The Pages Function guard therefore uses the exact HTTPS hostname `micro-app-63i.pages.dev` as a mandatory discriminator, rejects a present non-`main` runtime branch, and then requires the `API` Service Binding. **The `API` binding must be configured for Production only and must not be configured for Preview.** This makes the undefined-branch production case work while preview hostnames fail before the binding is read.
+
+Runtime matrix:
+
+| Request host | Runtime `CF_PAGES_BRANCH` | Production-only `API` binding | Expected |
+|---|---|---|---|
+| exact `micro-app-63i.pages.dev` | `main` | present | proxy |
+| exact `micro-app-63i.pages.dev` | undefined | present | proxy (Pages runtime may omit build variable) |
+| exact `micro-app-63i.pages.dev` | any value other than `main` | any | 503 before reading binding |
+| any preview/hash/other host | `main` or undefined | any | 503 before reading binding |
+| exact production host | `main` or undefined | missing | 503 `API_BINDING_MISSING` |
+
+Client IP provenance: Cloudflare documents that `CF-Connecting-IP` is only sent from its edge to the origin and represents the connecting client IP. The Function explicitly re-sets that edge-provided header on the Service Binding request and drops `X-Forwarded-For` rather than trusting a client-controlled forwarding chain. The incoming `Origin` remains unchanged for API CSRF validation. This trust assumption is valid only for requests entering through Cloudflare Pages; do not expose an alternate untrusted route to this proxy. See Cloudflare's [HTTP headers documentation](https://developers.cloudflare.com/fundamentals/reference/http-headers/).
+
+The proxy streams request/response bodies, uses manual redirects, preserves non-hop-by-hop response headers and each individual `Set-Cookie`, and rewrites only the three OAuth PKCE cookie paths. The Worker direct endpoint remains configured for its existing host/origin contract.

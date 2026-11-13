@@ -14,6 +14,39 @@
 
 ---
 
+
+## 2026-11-13 — PR #339 final validation checkpoint
+
+- Final hardening HEAD: `c14b50c022758abc3744154445eef96f5ef554df`; base `main` `0c90aa382633452daeab81e3937112fa1c0ae0ae`; ahead 42 / behind 0.
+- Exact-HEAD GitHub Actions: **10/10 SUCCESS** — CI #3105, Playwright E2E #2954, DB migration validation #3882, PostgreSQL migration runner #1679, Trivy #7265, Semgrep #2953, secret history #6430, dependency review #2054, ODD validation #1264, progress dashboard #2524.
+- CI on prior SHA `25d146f...` exposed one faulty test fixture: a getter threw when the test attempted to read a missing binding. The test now models an actually absent binding (empty env) and the corrected exact-HEAD suite passes. This was a test-fixture defect, not an application regression.
+- Build/typecheck, Pages preview isolation, unit tests, PostgreSQL integration suite, and Playwright E2E all passed on exact final HEAD.
+- Local pnpm/Vitest/Playwright were not run in this environment because no local checkout/toolchain is available; don't report them as local pass.
+- PR remains OPEN, not merged. No Cloudflare/Google/Neon/secrets/deploy/backup/restore changes. Brave Shields live verification remains pending post-deploy.
+
+## 2026-11-13 — Ajustes técnicos finales PR #339 (host/runtime, streaming y client IP)
+
+- La revisión adicional se incorporó en la PR #339 existente; no se creó una segunda rama ni PR.
+- Proxy Pages: exige HTTPS + hostname exacto `micro-app-63i.pages.dev`; si `CF_PAGES_BRANCH` existe y no es `main`, responde 503 antes de leer `env.API`; si está ausente, el hostname exacto más el Service Binding `API` exclusivo de Production permite producción; binding ausente responde 503.
+- Previews: cualquier hostname hash/preview/alternativo falla antes de consultar el binding. No configurar `API` en Preview.
+- Respuestas OAuth: `redirect: manual`, cuerpos request/response como streams, status/Location/Cache-Control/headers de seguridad y cada `Set-Cookie` individual conservados; solo las tres cookies PKCE reciben el Path same-origin.
+- IP: se preserva Origin; el proxy captura el `CF-Connecting-IP` provisto por Cloudflare edge, lo reestablece explícitamente al upstream y elimina `X-Forwarded-For` no confiable. Cloudflare documenta que CF-Connecting-IP solo se envía en tráfico edge→origin y contiene la IP del cliente: https://developers.cloudflare.com/fundamentals/reference/http-headers/.
+- Pruebas nuevas: branch variable ausente en producción, branch variable ausente sin binding, procedencia del IP edge y eliminación de XFF. CI debe ejecutarse de nuevo en el HEAD resultante.
+- Las pruebas locales no se declaran ejecutadas: este entorno de trabajo no tiene checkout local verificable. Se espera CI GitHub en el SHA exacto.
+- PR sigue OPEN/no merge; no cambios en Neon, secrets, Cloudflare dashboard, Google Console, despliegues o backup/restore.
+
+## 2026-11-13 — PR #339: same-origin API via Pages Functions
+
+- Base `main`: `0c90aa382633452daeab81e3937112fa1c0ae0ae`; branch `feat/pages-same-origin-api-20261113`; PR [#339](https://github.com/BTF14/Micro-app/pull/339) is OPEN, not merged.
+- Scope: root Pages Function `/functions/api/[[path]].ts`; proxy to Worker through Service Binding `API`; first-party Lax session; OAuth PKCE Path rewriting; frontend `/api`, CSP and E2E; ODD/ADR.
+- No Neon, GitHub Secrets, Cloudflare Dashboard, Google Cloud Console, deployment, DNS, billing, backup or restore workflow changes.
+- Do not merge. Preserve natural 07:00 UTC backup observation and `backup-real-restore.yml` restore gate.
+- Exact manual activation after the owner lifts the backup gate and before merge: add Google OAuth redirect URI `https://micro-app-63i.pages.dev/api/auth/google/callback` while retaining old URI; Cloudflare Pages `micro-app` → Settings → Bindings → Add → Service binding, Production only, Variable name `API`, Service `micro-app-api`; no Preview binding; redeploy as Cloudflare requires.
+- Runtime guard requires exact HTTPS hostname `micro-app-63i.pages.dev`; if `CF_PAGES_BRANCH` is exposed in runtime it must equal `main`. It is documented as build-system variable, so runtime availability is not assumed.
+- CI on PR HEAD is running/awaited; local toolchain was not executable because this environment could not resolve github.com to clone the checkout. Do not claim local tests passed. Incident remains unresolved until full live Google OAuth/session/logout is verified with Brave Shields ON.
+- Latest branch HEAD must be re-read from GitHub before any further action; PR must remain OPEN.
+
+
 ## Turno 32 — contrato de membresías Neon para runtime/BCV (2026-11-12 UTC)
 
 - PR #337 autorizada quirúrgicamente desde main base `908a01fd891a83bfd8c2d605a37ba91fa62e3db0`; rama `fix/neon-compatible-bcv-and-runtime-role-membership-20261112`.

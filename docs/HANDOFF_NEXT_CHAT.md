@@ -3849,3 +3849,22 @@ Solicitar/registrar decisión explícita del propietario sobre el RPO objetivo d
 No pedir nuevamente Build IDs, capturas, terminal, CLI, TinyFish, reconexiones ni evidencia ya documentada. Si falta un dato realmente nuevo, formular una sola pregunta concreta y aceptar respuesta en texto.
 
 **No cambiar:** Issue #53 OPEN/P0; PRODUCTION: NOT READY. No tocar Neon main, secretos, datos reales, DNS, billing ni deploy productivo para esta tarea documental.
+
+
+## Continuación obligatoria — PR 2 estructura Owner-only (2026-11-13)
+
+Rama: feat/branch-warehouse-register-admin-20261113
+Base main: 25c0f842c7ecc8a7320b33d33abfb12402476e32
+Checkpoint documental inicial: c0b3764dcbb17d74b05e1d096767f357dd975134
+
+La implementación y harnesses están añadidos, pero NO están validados. Antes de abrir PR:
+
+1. Leer odd/tasks/branch-warehouse-register-admin.md y revisar el diff completo contra main.
+2. Confirmar HEAD vivo, que la rama sigue sin commits detrás de main y que no se tocaron PRs excluidas ni archivos BCV.
+3. Ejecutar en CI PostgreSQL 18: migration-check, migration-runner, assertions 0024, scripts/tests/test_organization_structure_admin.sh, test_managed_role_membership.sh y restore smoke BCV 0001–0024; comprobar main 0001–0016 sigue intacto.
+4. Ejecutar pnpm test, API integration organization-structure.integration.test.ts, Vitest web, pnpm build, typecheck, Playwright/E2E, SAST, Security, Dependency Review, Secret History y todos los workflows requeridos en el SHA exacto final.
+5. Corregir cualquier fallo; repetir todos los checks afectados sobre el HEAD nuevo. No reutilizar CI de SHA anterior.
+6. Revisar seguridad/lock-order SQL, permisos API, aislamiento por rol, responsive UI, sincronización de estado y regresiones de lectura. ROLE_OPERATIONS debe permanecer sin cambios.
+7. Abrir PR no-Draft solo con diff completo revisado y CI verde exact-HEAD. No fusionar; entregar número, SHA, lista de archivos, checks/status contexts/reviews y threads al Tech Lead.
+
+No repetir solicitudes de Build IDs, Cloudflare screenshots, terminal, CLI, TinyFish ni reconexiones. No pedir datos ya documentados. No tocar Neon main, BCV_SYNC_ENABLED, PR #193/#314/#315/#316 ni Issue #53. Mantener Issue #53 OPEN/P0, producción NOT READY y coste USD 0.

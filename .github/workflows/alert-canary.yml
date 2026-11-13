@@ -1,0 +1,31 @@
+name: Controlled notification canary
+
+on:
+  workflow_dispatch:
+    inputs:
+      confirm_controlled_failure:
+        description: "Confirm that this run will intentionally fail to test GitHub Actions notifications."
+        required: true
+        type: boolean
+        default: false
+
+# This workflow intentionally has no GitHub token permissions, secrets, checkout,
+# database credentials, external services, or access to Neon.
+permissions: {}
+
+jobs:
+  notification-canary:
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    steps:
+      - name: Skip unless the owner explicitly confirms the controlled failure
+        if: ${{ inputs.confirm_controlled_failure != true }}
+        run: |
+          echo "No canary failure requested. Re-run manually with confirm_controlled_failure=true."
+          echo "This run did not test notification delivery."
+      - name: Emit a controlled failure for notification delivery testing
+        if: ${{ inputs.confirm_controlled_failure == true }}
+        run: |
+          echo "CONTROLLED_NOTIFICATION_CANARY: intentional failure requested by workflow_dispatch."
+          echo "No secrets, repository writes, database connections, deployments, or external side effects were performed."
+          exit 1

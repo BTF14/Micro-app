@@ -188,4 +188,3 @@ export function registerOrganizationStructureRoutes(app: Hono<{ Bindings: Bindin
     } catch (error) { return dbFailure(c, error); }
   });
 }
-\n

@@ -148,8 +148,6 @@ describe("Cloudflare Pages same-origin API proxy", () => {
   });
 
   it("carries the rewritten PKCE cookies into the same-origin callback request", async () => {
-    const stateCookie = "microapp_oauth_state=synthetic-state; Path=/api/auth/google; HttpOnly; Secure; SameSite=Lax";
-    const verifierCookie = "microapp_oauth_verifier=synthetic-verifier; Path=/api/auth/google; HttpOnly; Secure; SameSite=Lax";
     const fetch = vi.fn(async (request: Request) => {
       expect(request.url).toBe("https://micro-app-api.btfcasheb.workers.dev/auth/google/callback?code=synthetic&state=synthetic-state");
       expect(request.headers.get("cookie")).toBe("microapp_oauth_state=synthetic-state; microapp_oauth_verifier=synthetic-verifier");
@@ -172,8 +170,6 @@ describe("Cloudflare Pages same-origin API proxy", () => {
     expect(response.status).toBe(200);
     expect(await response.text()).toBe("callback reached");
     expect(fetch).toHaveBeenCalledTimes(1);
-    expect(stateCookie).toContain("Path=/api/auth/google");
-    expect(verifierCookie).toContain("Path=/api/auth/google");
   });
 
   it("rewrites only the three OAuth cookie names, including deletion cookies", async () => {

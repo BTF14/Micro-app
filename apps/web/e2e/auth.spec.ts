@@ -1,7 +1,7 @@
 import { expect, test } from "@playwright/test";
 
 // Password login/registration were retired (decision D4): the only sign-in
-// path left in the UI is a top-level navigation to GET /auth/google. These
+// path left in the UI is a top-level navigation to GET /api/auth/google. These
 // specs cover the UI around that flow (the link itself and the friendly
 // ?auth_error= handling) rather than the OAuth exchange, which cannot be
 // run against the real Google provider in CI.

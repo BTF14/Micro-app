@@ -63,17 +63,6 @@ function dbFailure(c: Context<{ Bindings: Bindings }>, error: unknown) {
   return c.json({ error: result.error, message: result.message }, result.status);
 }
 
-async function authorize(
-  c: Context<{ Bindings: Bindings }>, organizationId: string, session: string, operation: string,
-): Promise<{ kind: "ok"; userId: string } | { kind: Kind }> {
-  const result = await authorizeTenantOperation(
-    // This function is called inside the caller's transaction; authorization is performed there.
-    // Kept as a type-level guard only; see route-local transaction blocks below.
-    null as never, session, organizationId, operation,
-  );
-  if (!result.allowed) return result.reason === "operation_denied" ? { kind: "forbidden" } : { kind: "unauthenticated" };
-  return { kind: "ok", userId: result.context.userId };
-}
 
 export function registerOrganizationStructureRoutes(app: Hono<{ Bindings: Bindings }>): void {
   app.get("/api/orgs/:organizationId/structure", async (c) => {
@@ -183,7 +172,11 @@ export function registerOrganizationStructureRoutes(app: Hono<{ Bindings: Bindin
       const result = await withDatabaseClient(c.env.DATABASE_URL, (client) => withDatabaseTransaction(client, async (tx) => {
         const auth = await authorizeTenantOperation(tx, session, org, "members.manage");
         if (!auth.allowed) return { kind: auth.reason === "operation_denied" ? "forbidden" as const : "unauthenticated" as const };
-        if (!authorizeOwnerBranchPermission(auth.context.role)) return { kind: "forbidden" as const };
+        const branchPermission = await authorizeTenantOperation(tx, session, org, "branch_memberships.manage");
+        if (!branchPermission.allowed) return { kind: branchPermission.reason === "operation_denied" ? "forbidden" as const : "unauthenticated" as const };
+        if (auth.context.userId !== branchPermission.context.userId || auth.context.organizationId !== branchPermission.context.organizationId) {
+          return { kind: "forbidden" as const };
+        }
         const row = await tx.query(
           "SELECT * FROM public.set_branch_membership_active($1::uuid,$2::uuid,$3::uuid,$4::uuid,$5::boolean)",
           [auth.context.organizationId,branchId,userId,auth.context.userId,body.is_active],
@@ -196,7 +189,4 @@ export function registerOrganizationStructureRoutes(app: Hono<{ Bindings: Bindin
     } catch (error) { return dbFailure(c, error); }
   });
 }
-
-function authorizeOwnerBranchPermission(role: string): boolean {
-  return role === "owner";
-}
+\n

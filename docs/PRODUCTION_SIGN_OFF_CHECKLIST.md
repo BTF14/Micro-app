@@ -68,3 +68,10 @@ Evidencia live aportada por el propietario para PR #339 (`f635c01aacbe148030b3fd
 - Smoke humano con Brave Shields ON: login Google, Resumen, Catálogo, Inventario, Caja y turnos, reload conservando sesión y logout correcto.
 
 Esto cierra la validación live de integración same-origin; no satisface el Paso 3, que exige Cashier autenticado en staging/preproducción con DB aislada y datos sintéticos, ni los subgates operativos del Paso 4. Estado permanece OPEN/P0 y PRODUCTION: NOT READY.
+
+
+## Paso 3 — Suite integrada Cashier (PR en validación, 2026-11-13)
+
+Se añadió `apps/api/src/cashier-full-lifecycle.integration.test.ts` y se conectó a CI. El escenario único usa los handlers reales de Hono, OAuth Google simulado (token/userinfo interceptados, sin credenciales reales), cookie de sesión Secure/HttpOnly/SameSite=Lax, y PostgreSQL 18 efímero con `microapp_runtime` para solicitudes y `microapp` admin únicamente para setup/verificación. Comprueba health/headers, `/auth/me`, sucursal/tenant, inventario, apertura de turno, checkout USD con BCV sintético válido, persistencia de pagos/movimiento/stock/auditoría, cierre y conciliación, denegaciones de scope/turno ajeno y logout invalidando sesión.
+
+La suite falla de forma cerrada si las URLs no son localhost `/microapp_test` y no corresponden a los roles esperados. No usa Neon, Pages Preview, Workers, datos reales ni credenciales Google. Esto valida backend/API + PostgreSQL efímero de CI a coste incremental USD 0; no es staging remoto. Estado del Paso 3: PENDIENTE hasta CI exact-HEAD SUCCESS y revisión de resultados.

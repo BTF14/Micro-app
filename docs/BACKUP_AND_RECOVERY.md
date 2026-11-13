@@ -591,3 +591,8 @@ La duración de restore DB es una medición observada del simulacro aislado, no 
 `alert-canary.yml` permite un fallo manual intencional, sin permisos, secrets, checkout ni acceso a DB/Neon. El propietario debe habilitar notificaciones Actions por email/GitHub, ejecutar con confirmación, verificar recepción y dejar ACK humano con UTC + run URL en Issue #53. El workflow no crea comentarios automáticamente ni toca `backup.yml`.
 
 No declarar Paso 4 completo hasta tener CI exact-HEAD, un run de restore instrumentado, una notificación realmente entregada + ACK, RPO definido con fuente temporal correcta y aceptación del propietario.
+
+
+## Extensión de perfil en rama — PR 2 (2026-11-13)
+
+La rama aislada feat/branch-warehouse-register-admin-20261113 extiende el perfil BCV/proyección de migraciones de 0001–0023 a **0001–0024** para que runner, replay de ACL y restore sintético validen la nueva migración organizacional. El perfil histórico main/paired-intent permanece fijado en **0001–0016** y no se modifica. Esta extensión está en rama, no fusionada; no demuestra restore productivo ni implica cambios en BCV sync, producer, secretos, Cron o Neon. Las pruebas PostgreSQL 18 y backup-restore smoke de esta rama siguen pendientes de ejecución exact-HEAD.

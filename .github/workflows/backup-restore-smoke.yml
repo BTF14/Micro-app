@@ -7,6 +7,7 @@ on:
   push:
     branches:
       - "integration/bcv-checkout-rehearsal-20261109"
+      - "feat/branch-warehouse-register-admin-20261113"
     paths:
       - ".github/workflows/backup-restore-smoke.yml"
       - "scripts/db/reapply_restore_role_grants.sh"

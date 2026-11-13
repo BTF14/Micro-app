@@ -9,7 +9,7 @@ export default defineConfig({
   use: { baseURL: "http://127.0.0.1:4173", trace: "retain-on-failure", screenshot: "only-on-failure" },
   projects: [{ name: "chromium", use: { ...devices["Desktop Chrome"] } }],
   webServer: {
-    command: "pnpm --filter @micro-app/web exec vite --host 127.0.0.1 --port 4173 --strictPort",
+    command: "VITE_API_BASE_URL=/api pnpm --filter @micro-app/web exec vite --host 127.0.0.1 --port 4173 --strictPort",
     url: "http://127.0.0.1:4173",
     reuseExistingServer: !process.env.CI,
     timeout: 30_000,

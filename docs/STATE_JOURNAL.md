@@ -3239,3 +3239,14 @@ Siguiente decisión: diagnosticar Paso 3 en entorno aislado gratuito sin crear r
 ## 2026-11-13 — Paso 3 Cashier full lifecycle
 
 Se integró PR #346 (`c6a9ad611111fbc32da8b13329481458c933ec21`) tras 10/10 workflow runs SUCCESS sobre HEAD exacto `4fdd39b33d8a1c007678fd30a8cf70b460e80cbd`. La prueba integrada Cashier sobre PostgreSQL 18 efímero pasó: OAuth simulado con handlers reales, sesión, autorización tenant/sucursal, inventario, turno, checkout BCV sintético, conciliación, auditoría y logout. No se usó Neon main ni credenciales reales. El alcance es backend/API + DB aislada, no staging remoto. Paso 3 técnico completado; Paso 4 aún pendiente. Issue #53 OPEN/P0; PRODUCTION NOT READY.
+
+
+## 2026-11-13 — Paso 4: restore instrumentado y ACK humano confirmados
+
+- Restore instrumentado real [Run #4](https://github.com/BTF14/Micro-app/actions/runs/43507963015), workflow `backup-real-restore.yml`, main SHA `64bfce5a42837c8d87fcf3ff5df9a1798ad50ba7`: job `verify-and-restore` SUCCESS. Artefacto `backup-2026-11-13T18-41-49Z.dump.age`; download+SHA-256 375 ms; AGE decrypt 6 ms; `pg_restore --list` 9 ms; DB restore + assertions + runtime/producer login checks 1561 ms; ventana medida 1999 ms (T0 después de queue/apt). Antigüedad del artefacto en T0: 8825 s.
+- Canario [Run #1](https://github.com/BTF14/Micro-app/actions/runs/43508458992), workflow `alert-canary.yml`, mismo SHA: job concluyó FAILURE intencional en el step controlado. El propietario confirmó recepción de email Actions en <1 min y registró ACK en [Issue #53 comment 6865119890](https://github.com/BTF14/Micro-app/issues/53#issuecomment-6865119890).
+- El propietario confirma coste recurrente actual USD 0.
+- Verificación de autoría: commit `5a93c9c5fbc9eb2064cc3d3f4df1a2d5708a9f3e` de `.github/workflows/backup.yml`: author BTF14; committer web-flow.
+- Límites probatorios: 1999 ms es restore de DB aislada, no RTO operacional. 8825 s es proxy de frescura, no RPO operacional sin cutoff independiente. La entrega/ACK sí queda demostrada.
+- Resta aceptación humana explícita del RPO objetivo diario aproximado de 24 h y del RTO aceptado para recuperación aislada; revisión legal/fiscal/contable; y distinguir estos gates operativos de los módulos comerciales POS aún no implementados/aceptados para uso comercial real.
+- Issue #53 permanece OPEN/P0; PRODUCTION: NOT READY. No se modificaron Neon, secretos, datos reales ni producción.

@@ -116,3 +116,5 @@ Implementar administración exclusiva de Owner para sucursales, almacenes, cajas
 
 - Commit de documentación de continuidad: 54cb4cffba050e68af033de829565a7af52be1c9 (CURRENT_STATE, HANDOFF_NEXT_CHAT, STATE_JOURNAL y WORK_CHECKPOINT).
 - Este commit sigue al checkpoint de implementación c0b3764dcbb17d74b05e1d096767f357dd975134. Consultar la rama viva para obtener el HEAD definitivo antes de validar.
+
+- Reconciliación final del alcance BCV/restore y docs BACKUP_AND_RECOVERY: commit b727ad7ef524cde97d574213dde9c4bf4e5887dd. Se aclara que solo cambia el perfil de restore 0023→0024, no BCV sync/producer ni bcv-source-connectivity.yml.

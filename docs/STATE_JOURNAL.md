@@ -3226,3 +3226,10 @@ La hipótesis anterior de que el helper de espera era la causa no era correcta. 
 - PR #338: rama `fix/backup-owner-admin-membership-20261112`, base exacta 3b0b8d0. Checks exact-SHA, review/diff gates y merge aún pendientes al crear este registro.
 - Próximo gate tras integración: backup natural 07:00 UTC únicamente; comprobar booleanos, artefacto cifrado/sidecar y readback checksum. No workflow_dispatch. Restore real aislado y Fase 3B siguen pendientes.
 - Sin cambios a Neon, ramas/snapshot, secretos, Cloudflare manual, PRs #193/#314/#315/#316 ni Issue #53. Issue #53 OPEN/P0; producción NOT READY.
+
+
+## 2026-11-13 — Turno 40: evidencia final same-origin
+
+El propietario aportó evidencia HTTP y smoke humano final para PR #339: health 200; `/api/auth/me` anónimo 401; OAuth inicia 302 a Google con callback Pages same-origin; CSP self-only; bundle publicado sin `workers.dev`; preview bloqueado con 503; login Google, navegación funcional, reload y logout exitosos con Brave Shields activado. Se considera cerrado el pendiente de verificación live de same-origin, no el smoke Cashier aislado.
+
+Siguiente decisión: diagnosticar Paso 3 en entorno aislado gratuito sin crear recursos ni tocar Neon main. Paso 4 requiere RPO/RTO operacional medido, alerta recibida y ACK humano comprobado, revisión humana legal/fiscal/contable y coste total USD 0. Issue #53 sigue OPEN/P0 y PRODUCTION NOT READY.

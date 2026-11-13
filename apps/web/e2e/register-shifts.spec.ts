@@ -19,7 +19,7 @@ test("owner can open and explicitly close their own register shift from the work
   let openingPayload: Record<string, unknown> | null = null;
   let closingPayload: Record<string, unknown> | null = null;
 
-  await page.route("**/auth/me", (route) => route.fulfill({
+  await page.route("**/api/auth/me", (route) => route.fulfill({
     status: 200,
     contentType: "application/json",
     body: JSON.stringify({

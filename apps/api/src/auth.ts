@@ -137,8 +137,9 @@ export function clearSessionCookie(c: AppContext): void {
   const isHttps = new URL(c.req.url).protocol === "https:";
   deleteCookie(c, SESSION_COOKIE, {
     path: "/",
+    httpOnly: true,
     secure: isHttps,
-    sameSite: isHttps ? "None" : "Lax",
+    sameSite: "Lax",
   });
 }
 

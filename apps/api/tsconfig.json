@@ -16,7 +16,8 @@
     "noUnusedParameters": true
   },
   "include": [
-    "src"
+    "src",
+    "../../functions"
   ],
   "exclude": [
     "src/**/*.integration.test.ts"

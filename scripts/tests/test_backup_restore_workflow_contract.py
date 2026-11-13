@@ -53,6 +53,10 @@ class BackupRestoreWorkflowContractTests(unittest.TestCase):
             "test contract must stay aligned with the helper's required variables",
         )
         for variable in REQUIRED_HELPER_VARIABLES:
+            if variable == "BACKUP_DUMP":
+                # This value is created at runtime after decryption and must be
+                # passed inline to the helper, not referenced from GitHub env.
+                continue
             self.assertRegex(
                 env,
                 rf"(?m)^          {re.escape(variable)}:",

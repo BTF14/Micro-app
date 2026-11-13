@@ -56,3 +56,15 @@ Fecha/hora UTC, operador, entorno (sin credenciales), principal no secreto, SHA/
 
 ## Límites
 No compartir DATABASE_URL_BACKUP_RO, contraseñas, claves age privadas, tokens ni datos de clientes. No ejecutar DDL/DML ni cambiar roles/grants/ownership/secretos Neon main como parte del checklist. USD 0 estricto. Hasta aceptación formal: Issue #53 OPEN/P0 y PRODUCTION NOT READY.
+
+## Turno 40 — Evidencia adicional same-origin (2026-11-13)
+
+Evidencia live aportada por el propietario para PR #339 (`f635c01aacbe148030b3fd1d7e46851ae318f951`):
+- `GET /api/health`: HTTP/2 200, JSON `status=ok`.
+- `GET /api/auth/me` sin sesión: HTTP/2 401 `UNAUTHENTICATED` y expiración de cookie de sesión.
+- `GET /api/auth/google`: HTTP/2 302 a Google; `redirect_uri` Pages same-origin; cookies OAuth Secure/HttpOnly/SameSite=Lax.
+- CSP `connect-src 'self'`; bundle `index-qsP0OldD.js` (269,312 bytes) con `/api`, sin `workers.dev`.
+- Pages Preview API devuelve 503 `PREVIEW_API_DISABLED`.
+- Smoke humano con Brave Shields ON: login Google, Resumen, Catálogo, Inventario, Caja y turnos, reload conservando sesión y logout correcto.
+
+Esto cierra la validación live de integración same-origin; no satisface el Paso 3, que exige Cashier autenticado en staging/preproducción con DB aislada y datos sintéticos, ni los subgates operativos del Paso 4. Estado permanece OPEN/P0 y PRODUCTION: NOT READY.

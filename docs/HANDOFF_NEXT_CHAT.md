@@ -1,3 +1,17 @@
+## Turno 39 — PR #339 integrada y verificación post-merge same-origin (2026-11-13 UTC)
+
+- PR #339 `feat/pages-same-origin-api-20261113` fusionada por squash en main. Merge SHA: `f635c01aacbe148030b3fd1d7e46851ae318f951`. HEAD reconciliado exacto previo al merge: `7e9f05b4e8783fb1707b7b78b6429bf58089e885`.
+- PR #339 exact-HEAD CI: 16/16 check-runs SUCCESS, incluyendo Cloudflare Pages, Workers Builds: micro-app-api, Chromium authentication smoke, verify/CI, Semgrep, Trivy, dependency review, validate-odd-docs, PostgreSQL/migration runner y secret-history scan. Los checks de SHA anteriores no se reutilizaron.
+- Checks post-merge sobre el merge SHA: 12/12 SUCCESS; Cloudflare Pages y Workers Builds: micro-app-api completados SUCCESS, además de CI/verify, Chromium smoke, PostgreSQL/migration, Semgrep, Trivy, secret scan, ODD validation y dependency review.
+- El propietario confirmó que Google OAuth Client tiene la callback nueva `https://micro-app-63i.pages.dev/api/auth/google/callback` y que Cloudflare Pages Production tiene Service Binding `API` → `micro-app-api`; la variable heredada `VITE_API_BASE_URL` fue eliminada. La URI antigua de workers.dev se mantiene durante la transición.
+- Verificación pública read-only: `https://micro-app-63i.pages.dev/api/health` devolvió el cuerpo JSON `{"status":"ok","service":"micro-app-api","stage":"catalog-inventory-read"}`. El extractor público no expuso el status HTTP numérico, por lo que no se afirma de forma independiente el código 200. La homepage publicada ya enlaza Google login a `/api/auth/google` (same-origin); la extracción HTML no expuso los `script src`/bundles.
+- El workflow `.github/workflows/frontend-bundle-verification.yml` dispone de `workflow_dispatch` y schedule, pero la conexión GitHub de esta sesión no ofrece acción de dispatch. La verificación automatizada del bundle publicado (literal `/api`, ausencia de cualquier `*.workers.dev`) queda pendiente. El intento de browser automation no inició por saldo TinyFish negativo; no se recargó ni se incurrió en gasto.
+- No se hizo login real ni prueba con Brave Shields ACTIVADO. El propietario debe probar `https://micro-app-63i.pages.dev` con Shields activado; conservar la URI OAuth antigua hasta confirmar callback y sesión reales.
+- Issue #53 permanece OPEN/P0; pasos 1 y 2 completos, pasos 3 y 4 pendientes; **PRODUCTION: NOT READY**. No cerrar el issue ni declarar production readiness.
+- Los checks post-merge no equivalen a RPO/RTO medidos ni al smoke autenticado final de staging. El cuerpo de health confirma el proxy same-origin, pero no certifica por sí solo el flujo de login.
+
+---
+
 ## Turno 37 — cierre de Gates A/B y ejecución de Fase 3B (2026-11-13 UTC)
 
 - **Neon main:** proyecto `restless-fire-99110035`, branch default `main` (`br-summer-math-b7297a60`), database `neondb`, PostgreSQL 18.7.
@@ -3777,3 +3791,22 @@ Post-merge CI del SHA 3ac66a180fcf23421b546140a419a45062e633dd ya fue verificado
 - **Fase 3A / secreto:** el propietario confirma 23/23 migraciones, roles/default privileges, audit PASS, assertions rollback PASS, 11/11 filas, snapshot preservado y `backup_readonly` temporal. Confirma rotación de `DATABASE_URL_BACKUP_RO` a `microapp_backup` directo sin pooler, y presencia de `AGE_PRIVATE_KEY`/`BACKUP_REPO_TOKEN`. No volver a pedir esos datos ni inspeccionar secretos.
 - Después del merge, observar el próximo backup natural de 07:00 UTC; nunca `workflow_dispatch`. Verificar los seis booleanos esperados, artefacto `daily/*.dump.age` + sidecar `.sha256`, y readback remoto SHA-256. Después, y solo con gates, proceder al restore real cifrado aislado y Fase 3B.
 - No Neon (main, snapshot ni ramas), no Secrets, Cloudflare manual, backup dispatch, datos reales, billing, DNS ni deploy manual. PRs #193/#314/#315/#316 e Issue #53 intactas. Issue #53 OPEN/P0; **PRODUCTION: NOT READY**.
+
+
+## Turno 40 — Cierre same-origin y próximo gate (2026-11-13)
+
+- PR #339 integrada en main: `f635c01aacbe148030b3fd1d7e46851ae318f951`. Evidencia final live del propietario: `/api/health` HTTP/2 200; `/api/auth/me` anónimo HTTP/2 401 + cookie de sesión expirada; `/api/auth/google` HTTP/2 302 con callback Pages same-origin y cookies OAuth seguras; CSP `connect-src 'self'`; bundle `index-qsP0OldD.js` sin `workers.dev`; preview aislado devuelve 503 `PREVIEW_API_DISABLED`; login/navegación/recarga/logout completados con Brave Shields activado.
+- La URI OAuth antigua `workers.dev` puede ser retirada por el propietario; no se hizo desde GitHub.
+- Paso 3 sigue pendiente: no se ha demostrado un staging/DB aislado gratuito y ejecutable para el flujo Cashier completo. Antes de autorizarlo, inventariar Pages preview + Worker preview aislado y Neon branch/compute free; no crear recursos hasta verificar cuota/coste/credenciales y teardown. No usar Neon main ni mocks como sustituto.
+- Paso 4: medir RPO como diferencia entre timestamp del último backup recuperable y timestamp del punto de corte/fallo de referencia; medir RTO operacional desde declaración de recuperación hasta servicio restaurado y smoke de aceptación, separando aprovisionamiento, restore, validación y retorno. El workflow de 43 s no es RTO. Alertas: provocar evento controlado hacia Watch/All Activity, confirmar notificación entregada en canal/dispositivo y ACK humano explícito registrado; Watch no prueba recepción ni ACK.
+- Issue #53 OPEN/P0; PRODUCTION NOT READY. Sin mutaciones Neon main, gasto ni deploy manual.
+
+
+## Estado de integración documental — PR #343 (2026-11-13)
+
+- La evidencia same-origin/Brave del propietario se incorporó a CURRENT_STATE, HANDOFF, STATE_JOURNAL y PRODUCTION_SIGN_OFF_CHECKLIST en la rama `docs/postmerge-same-origin-20261113`.
+- HEAD documental resultante en esta actualización: `cda916ecbfa4429db20bc4028722db490d3156ee`; PR #343 abierta, base main `f635c01aacbe148030b3fd1d7e46851ae318f951`, 10 commits ahead / 0 behind, 7 archivos documentales, mergeable=true, sin reviews ni review threads.
+- El 15/15 comunicado previamente correspondía al HEAD anterior `d7c23e8943395f7d0a1606f2981af45745537b24`. Para el HEAD nuevo no se devolvieron workflow runs asociados ni status contexts; NO fusionar hasta tener checks exact-HEAD satisfactorios. No hay merge SHA.
+- La revisión del Paso 3 encontró que CI ya ofrece PostgreSQL 18 efímero y suites separadas de OAuth mock, autorización/turnos Cashier, checkout y Playwright. Falta una prueba integrada única que reutilice una misma sesión Cashier y tenant/sucursal sintéticos desde login hasta checkout, cierre, persistencia, conciliación y auditoría. Usar runner CI controlado; no Neon main ni Pages Preview (API preview está deshabilitada).
+- Paso 4: no confundir workflow duration ni RTO sintético con RTO operacional; definir marcas T0/Tready, snapshot timestamp y ACK humano. Watch All Activity por sí solo no acredita entrega/ack de una alerta de Actions. Consultar Notification settings > System > Actions y demostrar una notificación fallida entregada + ACK registrado.
+- Mantener PR #193 y #314–#316 abiertas sin cambios hasta triaje/compatibilidad; Issue #53 OPEN/P0; PRODUCTION NOT READY.

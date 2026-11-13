@@ -1,3 +1,17 @@
+## Turno 39 — PR #339 integrada y verificación post-merge same-origin (2026-11-13 UTC)
+
+- PR #339 `feat/pages-same-origin-api-20261113` fusionada por squash en main. Merge SHA: `f635c01aacbe148030b3fd1d7e46851ae318f951`. HEAD reconciliado exacto previo al merge: `7e9f05b4e8783fb1707b7b78b6429bf58089e885`.
+- PR #339 exact-HEAD CI: 16/16 check-runs SUCCESS, incluyendo Cloudflare Pages, Workers Builds: micro-app-api, Chromium authentication smoke, verify/CI, Semgrep, Trivy, dependency review, validate-odd-docs, PostgreSQL/migration runner y secret-history scan. Los checks de SHA anteriores no se reutilizaron.
+- Checks post-merge sobre el merge SHA: 12/12 SUCCESS; Cloudflare Pages y Workers Builds: micro-app-api completados SUCCESS, además de CI/verify, Chromium smoke, PostgreSQL/migration, Semgrep, Trivy, secret scan, ODD validation y dependency review.
+- El propietario confirmó que Google OAuth Client tiene la callback nueva `https://micro-app-63i.pages.dev/api/auth/google/callback` y que Cloudflare Pages Production tiene Service Binding `API` → `micro-app-api`; la variable heredada `VITE_API_BASE_URL` fue eliminada. La URI antigua de workers.dev se mantiene durante la transición.
+- Verificación pública read-only: `https://micro-app-63i.pages.dev/api/health` devolvió el cuerpo JSON `{"status":"ok","service":"micro-app-api","stage":"catalog-inventory-read"}`. El extractor público no expuso el status HTTP numérico, por lo que no se afirma de forma independiente el código 200. La homepage publicada ya enlaza Google login a `/api/auth/google` (same-origin); la extracción HTML no expuso los `script src`/bundles.
+- El workflow `.github/workflows/frontend-bundle-verification.yml` dispone de `workflow_dispatch` y schedule, pero la conexión GitHub de esta sesión no ofrece acción de dispatch. La verificación automatizada del bundle publicado (literal `/api`, ausencia de cualquier `*.workers.dev`) queda pendiente. El intento de browser automation no inició por saldo TinyFish negativo; no se recargó ni se incurrió en gasto.
+- No se hizo login real ni prueba con Brave Shields ACTIVADO. El propietario debe probar `https://micro-app-63i.pages.dev` con Shields activado; conservar la URI OAuth antigua hasta confirmar callback y sesión reales.
+- Issue #53 permanece OPEN/P0; pasos 1 y 2 completos, pasos 3 y 4 pendientes; **PRODUCTION: NOT READY**. No cerrar el issue ni declarar production readiness.
+- Los checks post-merge no equivalen a RPO/RTO medidos ni al smoke autenticado final de staging. El cuerpo de health confirma el proxy same-origin, pero no certifica por sí solo el flujo de login.
+
+---
+
 ## Turno 38 — PR #339: prerrequisitos manuales confirmados y reconciliación post-Fase 3B (2026-11-13 UTC)
 
 - El propietario confirma que Google OAuth Client ya incluye `https://micro-app-63i.pages.dev/api/auth/google/callback`, manteniendo temporalmente la URI anterior de `workers.dev`.
@@ -3212,3 +3226,10 @@ La hipótesis anterior de que el helper de espera era la causa no era correcta. 
 - PR #338: rama `fix/backup-owner-admin-membership-20261112`, base exacta 3b0b8d0. Checks exact-SHA, review/diff gates y merge aún pendientes al crear este registro.
 - Próximo gate tras integración: backup natural 07:00 UTC únicamente; comprobar booleanos, artefacto cifrado/sidecar y readback checksum. No workflow_dispatch. Restore real aislado y Fase 3B siguen pendientes.
 - Sin cambios a Neon, ramas/snapshot, secretos, Cloudflare manual, PRs #193/#314/#315/#316 ni Issue #53. Issue #53 OPEN/P0; producción NOT READY.
+
+
+## 2026-11-13 — Turno 40: evidencia final same-origin
+
+El propietario aportó evidencia HTTP y smoke humano final para PR #339: health 200; `/api/auth/me` anónimo 401; OAuth inicia 302 a Google con callback Pages same-origin; CSP self-only; bundle publicado sin `workers.dev`; preview bloqueado con 503; login Google, navegación funcional, reload y logout exitosos con Brave Shields activado. Se considera cerrado el pendiente de verificación live de same-origin, no el smoke Cashier aislado.
+
+Siguiente decisión: diagnosticar Paso 3 en entorno aislado gratuito sin crear recursos ni tocar Neon main. Paso 4 requiere RPO/RTO operacional medido, alerta recibida y ACK humano comprobado, revisión humana legal/fiscal/contable y coste total USD 0. Issue #53 sigue OPEN/P0 y PRODUCTION NOT READY.

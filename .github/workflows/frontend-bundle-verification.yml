@@ -1,14 +1,9 @@
 name: Frontend bundle verification (public Pages)
 
-# Read-only verification for issue #78's remaining gap: confirm that the
-# JavaScript bundle actually published to Cloudflare Pages contains the
-# canonical Worker API base URL (apps/web/.env.production ->
-# VITE_API_BASE_URL, compiled into __MICRO_APP_API_BASE_URL__ by
-# apps/web/vite.config.ts), rather than inferring it from versioned source
-# alone. Runs on a GitHub Actions runner with full internet egress, unlike
-# this project's AI sandboxes, which cannot reach micro-app-63i.pages.dev
-# or micro-app-api.btfcasheb.workers.dev at all (confirmed repeatedly in
-# issue #78's history: 403 on the outbound CONNECT tunnel).
+# Read-only post-deployment verification: confirm the published Pages bundle
+# contains the same-origin API base (/api) and no direct workers.dev API host.
+# It is intentionally schedule/manual only: PR CI validates candidate builds,
+# while this workflow checks the live production bundle after an approved merge.
 #
 # Read-only: no secrets, cookies or tokens are used, and nothing is
 # deployed, configured or changed on Cloudflare.
@@ -32,7 +27,7 @@ env:
 
 jobs:
   bundle-verification:
-    name: Confirm published bundle uses the canonical API base URL
+    name: Confirm published bundle uses the same-origin API base URL
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
@@ -67,7 +62,7 @@ jobs:
             exit 1
           fi
 
-      - name: Download referenced bundles and search for the canonical API base URL
+      - name: Download referenced bundles and search for the same-origin API base URL
         id: scan
         shell: bash
         run: |

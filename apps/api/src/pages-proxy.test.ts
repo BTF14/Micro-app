@@ -5,7 +5,7 @@ function context(url: string, env: Record<string, unknown>, init?: RequestInit) 
   return {
     request: new Request(url, init),
     env,
-  } as Parameters<typeof onRequest>[0];
+  } as unknown as Parameters<typeof onRequest>[0];
 }
 
 describe("Cloudflare Pages same-origin API proxy", () => {
@@ -37,6 +37,21 @@ describe("Cloudflare Pages same-origin API proxy", () => {
     const response = await onRequest(context(url, env));
     expect(response.status).toBe(503);
     await expect(response.json()).resolves.toMatchObject({ error: "PREVIEW_API_DISABLED" });
+  });
+
+  it("pins the upstream authority even when the incoming path begins with a double slash", async () => {
+    const fetch = vi.fn(async (request: Request) => {
+      expect(new URL(request.url).hostname).toBe("micro-app-api.btfcasheb.workers.dev");
+      expect(new URL(request.url).pathname).toBe("//attacker.example/path");
+      return new Response("ok");
+    });
+
+    const response = await onRequest(context(
+      "https://micro-app-63i.pages.dev/api//attacker.example/path",
+      { CF_PAGES_BRANCH: "main", API: { fetch } },
+    ));
+    expect(response.status).toBe(200);
+    expect(fetch).toHaveBeenCalledTimes(1);
   });
 
   it("fails closed when the production Service Binding is missing", async () => {

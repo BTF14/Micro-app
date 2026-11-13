@@ -85,12 +85,20 @@ export async function onRequest(context: PagesFunctionContext): Promise<Response
   upstreamUrl.pathname = remainder;
   upstreamUrl.search = incomingUrl.search;
 
+  // Cloudflare overwrites CF-Connecting-IP at its public edge and only
+  // sends that edge-generated value to the Pages Function. Capture it before
+  // copying headers, then explicitly replace the forwarded value. Do not trust
+  // X-Forwarded-For (which can contain client-supplied values) as an IP source.
+  const edgeClientIp = request.headers.get("CF-Connecting-IP");
   const headers = new Headers(request.headers);
   const connectionTokens = (headers.get("connection") ?? "")
     .split(",")
     .map((value) => value.trim())
     .filter(Boolean);
   for (const name of [...HOP_BY_HOP_HEADERS, ...connectionTokens]) headers.delete(name);
+  headers.delete("x-forwarded-for");
+  headers.delete("cf-connecting-ip");
+  if (edgeClientIp) headers.set("CF-Connecting-IP", edgeClientIp);
 
   const init: RequestInit & { duplex?: "half" } = {
     method: request.method,

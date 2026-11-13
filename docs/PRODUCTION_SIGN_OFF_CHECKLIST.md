@@ -83,3 +83,7 @@ Esto cierra la validación live de integración same-origin; no satisface el Pas
 Se añadió `apps/api/src/cashier-full-lifecycle.integration.test.ts` y se conectó a CI. El escenario único usa los handlers reales de Hono, OAuth Google simulado (token/userinfo interceptados, sin credenciales reales), cookie de sesión Secure/HttpOnly/SameSite=Lax, y PostgreSQL 18 efímero con `microapp_runtime` para solicitudes y `microapp` admin únicamente para setup/verificación. Comprueba health/headers, `/auth/me`, sucursal/tenant, inventario, apertura de turno, checkout USD con BCV sintético válido, persistencia de pagos/movimiento/stock/auditoría, cierre y conciliación, denegaciones de scope/turno ajeno y logout invalidando sesión.
 
 La suite falla de forma cerrada si las URLs no son localhost `/microapp_test` y no corresponden a los roles esperados. No usa Neon, Pages Preview, Workers, datos reales ni credenciales Google. Esto valida backend/API + PostgreSQL efímero de CI a coste incremental USD 0; no es staging remoto. Estado del Paso 3: PENDIENTE hasta CI exact-HEAD SUCCESS y revisión de resultados.
+
+
+
+## Paso 3 — resultado de la suite Cashier integrada (2026-11-13)

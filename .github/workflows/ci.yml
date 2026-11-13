@@ -129,6 +129,8 @@ jobs:
         run: pnpm --filter @micro-app/api exec vitest run src/inventory-read.integration.test.ts
       - name: PostgreSQL atomic sales checkout integration tests
         run: DATABASE_URL="$RUNTIME_DATABASE_URL" DATABASE_URL_ADMIN="$ADMIN_DATABASE_URL" pnpm --filter @micro-app/api exec vitest run src/sales-checkout.integration.test.ts
+      - name: PostgreSQL authenticated Cashier full lifecycle (OAuth → shift → checkout → reconciliation → logout)
+        run: DATABASE_URL="$RUNTIME_DATABASE_URL" DATABASE_URL_RUNTIME="$RUNTIME_DATABASE_URL" DATABASE_URL_ADMIN="$ADMIN_DATABASE_URL" DATABASE_URL_BCV="$BCV_DATABASE_URL" pnpm --filter @micro-app/api exec vitest run src/cashier-full-lifecycle.integration.test.ts
       - name: PostgreSQL branch list integration tests
         run: pnpm --filter @micro-app/api exec vitest run src/branches.integration.test.ts
       - name: Runtime-role API integration tests

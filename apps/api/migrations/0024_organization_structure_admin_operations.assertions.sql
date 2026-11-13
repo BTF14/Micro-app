@@ -71,7 +71,6 @@ BEGIN
     OR pg_catalog.has_column_privilege('microapp_runtime','public.organization_members','organization_id','UPDATE')
     OR pg_catalog.has_column_privilege('microapp_runtime','public.organization_members','user_id','UPDATE')
     OR pg_catalog.has_column_privilege('microapp_runtime','public.organization_members','role','UPDATE')
-    OR pg_catalog.has_column_privilege('microapp_runtime','public.organization_members','organization_id','DELETE')
   THEN RAISE EXCEPTION 'ORGANIZATION_MEMBERS_BOOTSTRAP_INSERT_SCOPE_INVALID'; END IF;
 
   IF pg_catalog.strpos(pg_catalog.pg_get_functiondef(pg_catalog.to_regprocedure(signatures[1])), 'branch.created') = 0

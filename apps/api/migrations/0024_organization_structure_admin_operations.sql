@@ -232,7 +232,7 @@ BEGIN
   IF v_missing AND p_is_active THEN
     INSERT INTO public.branch_memberships (organization_id, branch_id, user_id, is_active)
     VALUES (p_organization_id, p_branch_id, p_user_id, true)
-    ON CONFLICT (organization_id, branch_id, user_id) DO NOTHING;
+    ON CONFLICT ON CONSTRAINT branch_memberships_pkey DO NOTHING;
     IF NOT FOUND THEN
       SELECT bm.is_active INTO v_previous FROM public.branch_memberships bm
        WHERE bm.organization_id = p_organization_id AND bm.branch_id = p_branch_id AND bm.user_id = p_user_id

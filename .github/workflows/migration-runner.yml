@@ -54,6 +54,8 @@ jobs:
         run: bash scripts/db/migrate.sh
       - name: Verify owner-only organization structure migration 0024 contract
         run: psql -X -v ON_ERROR_STOP=1 --dbname "$ADMIN_DATABASE_URL" -f apps/api/migrations/0024_organization_structure_admin_operations.assertions.sql
+      - name: Validate organization structure PostgreSQL integration harness syntax
+        run: bash -n scripts/tests/test_organization_structure_admin.sh
       - name: Exercise organization structure operations through the direct runtime LOGIN
         run: bash scripts/tests/test_organization_structure_admin.sh
       - name: Verify ledger, owner and recorded checksums

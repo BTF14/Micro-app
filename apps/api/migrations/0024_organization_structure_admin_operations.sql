@@ -17,6 +17,12 @@ REVOKE INSERT, UPDATE, DELETE, TRUNCATE ON TABLE
   public.branch_memberships, public.organization_members
 FROM PUBLIC, microapp_runtime;
 
+-- Migration 0012's Google bootstrap flow still creates the initial Owner
+-- membership directly. Preserve only its three required columns; do not retain
+-- table-level INSERT or any UPDATE/DELETE privilege on organization_members.
+GRANT INSERT (organization_id, user_id, role)
+  ON TABLE public.organization_members TO microapp_runtime;
+
 CREATE FUNCTION public.create_branch(
   p_organization_id uuid, p_actor_user_id uuid, p_name text, p_slug text
 ) RETURNS TABLE(id uuid, organization_id uuid, name text, slug text, is_active boolean)

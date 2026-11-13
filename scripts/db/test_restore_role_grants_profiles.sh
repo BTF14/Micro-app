@@ -10,7 +10,7 @@ cat > "$tmpdir/bin/psql" <<'SH'
 #!/usr/bin/env bash
 set -euo pipefail
 args="$*"
-if [[ "$args" == *"current_user || session_user"* ]]; then
+if [[ "$args" == *"current_user"* && "$args" == *"session_user"* ]]; then
   printf '%s\n' "microapp_migrator:microapp_migrator"
 elif [[ "$args" == *"SELECT version, filename, checksum"* ]]; then
   cat "$FAKE_LEDGER_FILE"

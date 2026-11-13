@@ -37,10 +37,14 @@ SQL
 
 branch_id="$(psql "$RUNTIME_DATABASE_URL" -X -v ON_ERROR_STOP=1 -Atqc "SELECT id FROM public.create_branch('$org_a','$owner','North Branch','North Branch')")"
 [[ "$branch_id" =~ ^[0-9a-f-]{36}$ ]] || { echo "Owner branch creation failed." >&2; exit 1; }
+normalized_slug="$(psql "$RUNTIME_DATABASE_URL" -X -v ON_ERROR_STOP=1 -Atqc "SELECT slug FROM public.branches WHERE id='$branch_id'")"
+[[ "$normalized_slug" == "north-branch" ]] || { echo "Branch slug normalization failed." >&2; exit 1; }
 
 warehouse_id="$(psql "$RUNTIME_DATABASE_URL" -X -v ON_ERROR_STOP=1 -Atqc "SELECT id FROM public.create_warehouse('$org_a','$branch_id','$owner','Main Warehouse','Main Warehouse')")"
 register_id="$(psql "$RUNTIME_DATABASE_URL" -X -v ON_ERROR_STOP=1 -Atqc "SELECT id FROM public.create_register('$org_a','$branch_id','$owner','Main Register','Main Register')")"
 [[ "$warehouse_id" =~ ^[0-9a-f-]{36}$ && "$register_id" =~ ^[0-9a-f-]{36}$ ]] || { echo "Owner warehouse/register creation failed." >&2; exit 1; }
+normalized_codes="$(psql "$RUNTIME_DATABASE_URL" -X -v ON_ERROR_STOP=1 -Atqc "SELECT (SELECT code FROM public.warehouses WHERE id='$warehouse_id') || ':' || (SELECT code FROM public.registers WHERE id='$register_id')")"
+[[ "$normalized_codes" == "main-warehouse:main-register" ]] || { echo "Warehouse/register code normalization failed." >&2; exit 1; }
 
 psql "$RUNTIME_DATABASE_URL" -X -v ON_ERROR_STOP=1 -c "SELECT * FROM public.set_branch_membership_active('$org_a','$branch_id','$cashier','$owner',true)" >/dev/null
 read_probe="$(psql "$RUNTIME_DATABASE_URL" -X -v ON_ERROR_STOP=1 -Atqc "SELECT count(*)=1 FROM public.branches WHERE organization_id='$org_a' AND id='$branch_id'")"
@@ -64,6 +68,11 @@ expect_failure "BRANCH_SLUG_ALREADY_EXISTS" psql "$RUNTIME_DATABASE_URL" -X -v O
 expect_failure "ORGANIZATION_OWNER_REQUIRED" psql "$RUNTIME_DATABASE_URL" -X -v ON_ERROR_STOP=1 -c "SELECT * FROM public.create_branch('$org_a','$admin','Admin Attempt','admin-attempt')"
 expect_failure "ORGANIZATION_OWNER_REQUIRED" psql "$RUNTIME_DATABASE_URL" -X -v ON_ERROR_STOP=1 -c "SELECT * FROM public.create_branch('$org_a','$cashier','Cashier Attempt','cashier-attempt')"
 expect_failure "ORGANIZATION_OWNER_REQUIRED" psql "$RUNTIME_DATABASE_URL" -X -v ON_ERROR_STOP=1 -c "SELECT * FROM public.create_branch('$org_a','$inventory','Inventory Attempt','inventory-attempt')"
+for actor in "$admin" "$cashier" "$inventory"; do
+  expect_failure "ORGANIZATION_OWNER_REQUIRED" psql "$RUNTIME_DATABASE_URL" -X -v ON_ERROR_STOP=1 -c "SELECT * FROM public.create_warehouse('$org_a','$branch_id','$actor','Denied Warehouse','denied-warehouse')"
+  expect_failure "ORGANIZATION_OWNER_REQUIRED" psql "$RUNTIME_DATABASE_URL" -X -v ON_ERROR_STOP=1 -c "SELECT * FROM public.create_register('$org_a','$branch_id','$actor','Denied Register','denied-register')"
+  expect_failure "ORGANIZATION_OWNER_REQUIRED" psql "$RUNTIME_DATABASE_URL" -X -v ON_ERROR_STOP=1 -c "SELECT * FROM public.set_branch_membership_active('$org_a','$branch_id','$cashier','$actor',true)"
+done
 
 foreign_branch="$(psql "$ADMIN_DATABASE_URL" -X -v ON_ERROR_STOP=1 -Atqc "SELECT id FROM public.branches WHERE organization_id='$org_b' AND slug='foreign-branch'")"
 expect_failure "BRANCH_NOT_ACTIVE_OR_OUT_OF_SCOPE" psql "$RUNTIME_DATABASE_URL" -X -v ON_ERROR_STOP=1 -c "SELECT * FROM public.create_warehouse('$org_a','$foreign_branch','$owner','Foreign Warehouse','foreign-warehouse')"

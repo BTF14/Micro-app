@@ -1,3 +1,15 @@
+## 2026-11-13 — PR #339: same-origin API via Pages Functions
+
+- Base `main`: `0c90aa382633452daeab81e3937112fa1c0ae0ae`; branch `feat/pages-same-origin-api-20261113`; PR [#339](https://github.com/BTF14/Micro-app/pull/339) is OPEN, not merged.
+- Scope: root Pages Function `/functions/api/[[path]].ts`; proxy to Worker through Service Binding `API`; first-party Lax session; OAuth PKCE Path rewriting; frontend `/api`, CSP and E2E; ODD/ADR.
+- No Neon, GitHub Secrets, Cloudflare Dashboard, Google Cloud Console, deployment, DNS, billing, backup or restore workflow changes.
+- Do not merge. Preserve natural 07:00 UTC backup observation and `backup-real-restore.yml` restore gate.
+- Exact manual activation after the owner lifts the backup gate and before merge: add Google OAuth redirect URI `https://micro-app-63i.pages.dev/api/auth/google/callback` while retaining old URI; Cloudflare Pages `micro-app` → Settings → Bindings → Add → Service binding, Production only, Variable name `API`, Service `micro-app-api`; no Preview binding; redeploy as Cloudflare requires.
+- Runtime guard requires exact HTTPS hostname `micro-app-63i.pages.dev`; if `CF_PAGES_BRANCH` is exposed in runtime it must equal `main`. It is documented as build-system variable, so runtime availability is not assumed.
+- CI on PR HEAD is running/awaited; local toolchain was not executable because this environment could not resolve github.com to clone the checkout. Do not claim local tests passed. Incident remains unresolved until full live Google OAuth/session/logout is verified with Brave Shields ON.
+- Latest branch HEAD must be re-read from GitHub before any further action; PR must remain OPEN.
+
+
 ## Turno 26 — corrección del resumen de diagnóstico de backup (2026-11-12 UTC)
 
 - Rama quirúrgica: `fix/backup-diagnostic-backtick-escaping-20261112`, creada desde main `066aaa1ee9599e6c34d264929dafb7a0734cca71`.

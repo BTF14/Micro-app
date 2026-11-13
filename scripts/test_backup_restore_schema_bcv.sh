@@ -218,7 +218,7 @@ MIGRATIONS_DIR="$repo_root/apps/api/migrations" \
 
 pg_restore --exit-on-error --single-transaction --no-owner --no-privileges --dbname="$migration_restore_url" "$tmpdir/schema.restored.dump"
 
-MIGRATION_DATABASE_URL="$migration_restore_url" MIGRATIONS_DIR="$repo_root/apps/api/migrations" RESTORE_GRANTS_PROFILE=bcv \
+MIGRATION_DATABASE_URL="$migration_restore_url" MIGRATIONS_DIR="$repo_root/apps/api/migrations" RESTORE_GRANTS_PROFILE=bcv-0024 \
   bash scripts/db/reapply_restore_role_grants.sh
 
 manifest() {

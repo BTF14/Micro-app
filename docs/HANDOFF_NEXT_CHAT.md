@@ -3819,3 +3819,9 @@ Branch `ops/restore-timing-alert-canary-20261113`: instrumenta `.github/workflow
 ## Paso 3 — Suite Cashier integrada (2026-11-13)
 
 Branch `test/cashier-full-lifecycle-20261113`: añade `apps/api/src/cashier-full-lifecycle.integration.test.ts` y un step a `.github/workflows/ci.yml`. Escenario integrado: OAuth simulado real contra rutas Google OAuth y DB runtime, cookie Secure/HttpOnly/SameSite=Lax, /auth/me, health/headers, authorization tenant/branch, inventory read, open shift, checkout USD con tasa BCV sintética, verificación admin de sale/payment/movement/balance/audit actor, close/cash reconciliation, cross-tenant/cross-branch/foreign-shift denial, logout + 401. Test exige localhost `/microapp_test` y roles `microapp_runtime`, `microapp`, `microapp_bcv_sync`; fail-closed en CI. No Neon main, Pages Preview ni credenciales Google. Esto es validación backend/DB PostgreSQL 18 efímero, no staging remoto. Esperar CI y corregir cualquier error; no mergear antes de exact-HEAD SUCCESS.
+
+
+
+## Paso 3 — smoke backend Cashier completado (2026-11-13)
+
+PR #346 integrada: `c6a9ad611111fbc32da8b13329481458c933ec21`. CI exact-HEAD `4fdd39b33d8a1c007678fd30a8cf70b460e80cbd` completó 10/10 workflow runs SUCCESS. El test PostgreSQL 18 aislado recorrió OAuth simulado, cookie y /auth/me, health/security headers, tenant/branch, inventario, open shift, checkout BCV sintético, persistencia de sale/payment/movement/balance/audit actor, cierre/conciliación, denegaciones y logout/401. Runtime `microapp_runtime`, admin setup/assertions, BCV producer login validado. Cero Neon main y cero credenciales reales. Scope: backend/API + DB efímera; no staging remoto ni UI con Google real. Paso 3 técnico completado según aprobación; Paso 4 pendiente.

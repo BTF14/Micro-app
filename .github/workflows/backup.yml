@@ -6,8 +6,9 @@ name: Respaldo cifrado de la base de datos
 #
 # Qué hace, en orden:
 # 1. Vuelca (pg_dump) el esquema y los datos de la base usando el principal
-#    configurado en DATABASE_URL_BACKUP_RO. Su identidad efectiva y mínimo
-#    privilegio NO están certificados; ver issue #53 (P0). Excluye solo las
+#    configurado en DATABASE_URL_BACKUP_RO. El principal aprobado es
+#    microapp_backup; el contrato se audita en scripts/audit_database_roles.sql.
+#    Issue #53 sigue abierto por los pasos de staging y cierre formal. Excluye solo las
 #    filas de auth_sessions, auth_rate_limits y auth_bootstrap_attempts:
 #    conserva sus tablas, constraints, índices y triggers para restauración.
 # 2. Cifra el volcado con la llave pública age del proyecto (no es secreta,
@@ -92,7 +93,7 @@ jobs:
           fi
           if diagnostic="$(psql "$DATABASE_URL" -X -v ON_ERROR_STOP=1 -Atq -F '|' 2>/dev/null <<'SQL'
           SELECT
-            (current_user IN ('backup_readonly', 'microapp_backup') AND session_user = current_user),
+            (current_user = 'microapp_backup' AND session_user = current_user),
             EXISTS (
               SELECT 1 FROM pg_catalog.pg_roles r
               WHERE r.rolname = current_user AND r.rolcanlogin
@@ -177,7 +178,7 @@ jobs:
           {
             echo "### Diagnóstico no sensible del principal de backup"
             echo
-            echo "- Identidad efectiva esperada (\`backup_readonly o microapp_backup\`): \`${identity_ok}\`"
+            echo "- Identidad efectiva esperada (\`microapp_backup\`): \`${identity_ok}\`"
             echo "- Atributos de rol no privilegiados: \`${role_safe}\`"
             echo "- Membresías de roles: \`${has_membership}\` (esperado: \`f\`)"
             echo "- Privilegios de escritura sobre tablas: \`${table_writes}\` (esperado: \`f\`)"

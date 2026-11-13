@@ -4,6 +4,23 @@
 
 Completar cuatro pasos no permite saltarse subgates. No cerrar #53 ni declarar READY si falta evidencia, aprobación o recuperación comprobable.
 
+## Turno 37 — cierre de Gates A/B y ejecución de Fase 3B (2026-11-13 UTC)
+
+- **Neon main:** proyecto `restless-fire-99110035`, branch default `main` (`br-summer-math-b7297a60`), database `neondb`, PostgreSQL 18.7.
+- **Principal de backup efectivo:** auditoría ejecutada directamente como `microapp_backup`; `current_user = session_user = microapp_backup`. El bloque de assertions de `scripts/audit_database_roles.sql` terminó sin excepción/FAIL. El rol conserva solo atributos no administrativos y grants de lectura aprobados; la única membresía entrante observada es la del database owner `neondb_owner`, con ADMIN=true, INHERIT=false y SET=false. No tiene membresías salientes.
+- **Resultados SELECT-only del script:** `information_schema.table_privileges` devolvió 27 filas, todas `SELECT` y `is_grantable=NO`; `routine_privileges` devolvió 0 filas; las dos secuencias públicas conceden solo `SELECT`; `pg_auth_members` devolvió una sola arista entrante desde `neondb_owner` (grantor `cloud_admin`, ADMIN=true), sin aristas salientes. Las 29 relaciones públicas (27 tablas + 2 secuencias) pertenecen a `microapp_migrator`. Los default ACLs de `microapp_migrator` y `neondb_owner` conceden a `microapp_backup` solo SELECT no grantable en tablas/secuencias futuras; no se encontró un grant default de backup a `cloud_admin`.
+- **Retirada del principal heredado:** `backup_readonly` tenía CREATEROLE/CREATEDB/REPLICATION/BYPASSRLS y membresía en `neon_superuser`. Preflight confirmó cero objetos propios, cero sesiones y cero locks. Se revocaron sus ACL explícitas en database/schema/16 relaciones públicas y su default ACL de `neondb_owner`; los grants de tablas se revocaron como owner `microapp_migrator`. Neon eliminó el rol y sus membresías. Verificación posterior: rol ausente, cero ACLs explícitas y cero dependencias de objetos.
+- **Integridad main:** 23 filas de migración, última `0023` (`0023_register_shift_runtime_operations.sql`); 27 tablas públicas y 2 secuencias públicas, todas las 29 relaciones propiedad de `microapp_migrator`. No se cambió ningún dato de negocio ni se inspeccionó ningún secreto.
+- **Gate B — backup natural:** workflow `backup.yml` Run #24 / [43447849855](https://github.com/BTF14/Micro-app/actions/runs/43447849855), evento `schedule`, SHA `0c90aa38`, SUCCESS. Diagnóstico: `identity_ok=t`, `role_safe=t`, `has_membership=f`, `table_writes=f`, `sequence_writes=f`, `create_privilege=f`.
+- **Gate A — restore real cifrado:** [backup-real-restore.yml Run #3](https://github.com/BTF14/Micro-app/actions/runs/43485484181), SHA main `71e92b24ca48ef6f6ff1dc3cea18a51f193b579b`, SUCCESS (43 s de workflow). Artefacto `backup-2026-11-13T18-41-49Z.dump.age`; checksum SHA-256 verificado, AGE descifrado, `pg_restore --list` correcto, helper recibió `BACKUP_DUMP`, perfil BCV con 23 migraciones/27 tablas, assertions 0022/0023 correctas, logins runtime/BCV sync verificados y cleanup completo. Los 43 s son duración total del workflow, **no** RTO operacional medido.
+- **Snapshot temporal:** `pre-phase3-main-snapshot-20261112` (`br-nameless-poetry-b7au2w0s`) eliminado tras confirmar que era hijo sin descendientes de main y que main/backups recientes estaban sanos. El snapshot tenía un esquema anterior (15 tablas, sin `schema_migrations`); no se confundió con el estado actual.
+- **Límite sobre “11/11 filas”:** la nota de Fase 3A contiene esa cifra como confirmación previa del propietario, pero no identifica tabla, consulta o assertion que la defina. No se presenta como una comprobación independiente nueva. La verificación reproducible de este turno es el audit PASS, 23 migraciones y 27 tablas.
+- **Estado:** pasos 1 y 2 de Issue #53 documentados como completados con evidencia; pasos 3 (smoke autenticado staging) y 4 (cierre formal/aceptaciones) siguen pendientes. Issue #53 permanece OPEN/P0; **PRODUCTION: NOT READY**. RPO/RTO operativos, alert acknowledgement, smoke staging, aceptación legal/fiscal/contable y coste recurrente total USD 0 todavía no están demostrados.
+- **PR #339:** permanece OPEN y sin merge hasta confirmación del propietario de los dos cambios manuales Google Cloud Console + Cloudflare Pages. La reconciliación de su base/documentación se revisará después del merge de esta PR.
+
+---
+
+
 ## Paso 1 — Auditoría read-only del principal efectivo Neon
 
 Desde entorno seguro con DATABASE_URL_BACKUP_RO configurada, sin copiar URL/token a chat, logs ni documentación:
@@ -12,7 +29,7 @@ Desde entorno seguro con DATABASE_URL_BACKUP_RO configurada, sin copiar URL/toke
 psql "$DATABASE_URL_BACKUP_RO" -X -v ON_ERROR_STOP=1 -f scripts/audit_database_roles.sql
 ```
 
-Debe terminar sin FAIL. Confirmar session_user=current_user (sin SET ROLE), rolsuper/createdb/createrole/replication/bypassrls false, sin membresías ni ownership, y grants solo SELECT; sin DML/DDL, mutación de secuencias, CREATE, EXECUTE no permitido ni grant option. Registrar principal no secreto, fecha/hora y resultado redactado. No cambiar roles/grants/secretos. Cualquier remediación exige análisis, prueba aislada y autorización explícita específica. El nombre backup_readonly no demuestra identidad ni mínimo privilegio.
+Debe terminar sin FAIL. Confirmar `session_user=current_user` (sin SET ROLE), `rolsuper/createdb/createrole/replication/bypassrls=false`, sin ownership ni membresías salientes, y sin membresías entrantes salvo la arista directa del database owner con ADMIN=true, INHERIT=false y SET=false (PostgreSQL 16+). Exigir SELECT no grantable en tablas/secuencias, sin DML/DDL, mutación de secuencias, CREATE, EXECUTE callable no permitido ni grant option. Registrar principal no secreto, fecha/hora y resultado redactado. No cambiar roles/grants/secretos como parte del checklist.
 
 ## Paso 2 — Backup programado natural y restore
 

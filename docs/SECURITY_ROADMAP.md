@@ -1,17 +1,15 @@
-> **Estado vigente — post-merge PR #330 / Turno 21 / 2026-11-12:** main `3a955763f5d259fbedbf4d714a048b04b9a69a8a`; PR #330 MERGED. La base pre-merge `01a1b178e041128cfc1a98ab4955132368387523` tenía 11/11 check-runs SUCCESS; no atribuirlos al merge SHA. La consulta no confirmó checks post-merge. PR abiertas #193/#314/#315/#316. Issue #53 OPEN/P0; **PRODUCTION: NOT READY**. Sin mutaciones Neon, secretos ni despliegues. USD 0.
+> **Estado vigente — Fase 3B / 2026-11-13:** main `71e92b24ca48ef6f6ff1dc3cea18a51f193b579b`; Issue #53 OPEN/P0; **PRODUCTION: NOT READY**. Pasos 1 y 2 evidenciados mediante auditoría Neon `microapp_backup`, backup natural #24 y restore real #3. `backup_readonly` retirado; allowlist pasa a `microapp_backup` exclusivamente. PR de Fase 3B independiente pendiente de checks/merge. PR #339 debe permanecer OPEN hasta confirmación manual de Google Cloud Console y Cloudflare Pages.
 >
-
+>
 > **Fases de seguridad — evidencia y límites:**
-> - **Roles/mínimo privilegio:** contrato y pruebas de principal backup sin escalada/membresías y lectura limitada probados en PostgreSQL 18 desechable. Identidad efectiva DATABASE_URL_BACKUP_RO y grants/ownership reales pendientes de auditoría del operador. El rol histórico backup_readonly tuvo privilegios elevados; no está demostrado que sea el principal del secreto.
-> - **Auditoría/integridad:** controles append-only y assertions de actor/ledger probados en CI/fixtures; no certifican permisos efectivos Neon.
+> - **Roles/mínimo privilegio:** `current_user=session_user=microapp_backup`; auditoría read-only completa sin FAIL; 23 migraciones y 27 tablas en main. El rol heredado `backup_readonly` y sus grants/membresía privilegiada fueron retirados.
+> - **Auditoría/integridad:** controles append-only y assertions de actor/ledger probados en CI/fixtures; no certifican por sí solos permisos efectivos de todas las rutas comerciales.
 > - **Sesiones/aislamiento:** auth, expiración/revocación y denegación cross-branch/tenant probados con identidades y PostgreSQL sintéticos; no son smoke autenticado staging ni certificación productiva.
-> - **Backup cifrado:** workflow programado implementa pg_dump, age, SHA-256 sidecar y readback al repositorio privado BTF14/micro-app-backups. Código/CI no demuestra copia natural reciente restaurable.
-> - **DR:** PR #326, simulacro sintético PostgreSQL 18, 23 migraciones, dump cifrado/manifiestos coincidentes, RTO sintético **3.953 s**. RPO operativo, RTO real y restore de copia natural real no medidos.
+> - **Backup cifrado:** Gate B, backup natural #24 SUCCESS con seis booleanos en contrato; Gate A, restore real cifrado #3 SUCCESS en PostgreSQL 18 efímero, 23 migraciones/27 tablas y assertions 0022/0023 correctas.
+> - **DR:** la duración total de 43 s del workflow de restore no equivale a RTO operacional. RPO/RTO operativos siguen sin medirse.
 >
-
-> **Bloqueos P0:** principal/grants/ownership efectivos; backup natural y restore independiente; RPO/RTO operativos; entrega/ack de alertas; smoke staging; coste USD 0 y aceptación legal/fiscal/contable. No cerrar #53 ni marcar READY hasta todos los gates.
+> **Bloqueos P0:** smoke autenticado staging; RPO/RTO operativos; entrega/ack de alertas; coste total recurrente USD 0; aceptación legal/fiscal/contable y cierre formal por el propietario. No cerrar #53 ni marcar READY hasta todos los gates.
 >
-
 > Los snapshots inferiores son históricos, no estado vivo. Prevalecen CURRENT_STATE.md y HANDOFF_NEXT_CHAT.md contrastados con GitHub.
 
 # Estado de seguridad reconciliado — Turno 5 — 2026-11-11 UTC

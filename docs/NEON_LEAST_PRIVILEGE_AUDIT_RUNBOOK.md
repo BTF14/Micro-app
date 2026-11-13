@@ -1,11 +1,27 @@
 # Runbook operativo — auditoría y aprovisionamiento Neon least-privilege
 
-- **Estado:** operador pendiente; no ejecutado en Neon.
+- **Estado:** Fase 3B ejecutada en Neon main el 2026-11-13; ver evidencia de este turno abajo.
 - **Relacionado:** Issue #53 (OPEN/P0), PR #318 (merged), ADR-20261112-neon-backup-principal.
 - **Producción:** **NOT READY**.
 - **Presupuesto:** USD 0.
 - **Alcance:** identificar, aprovisionar y verificar un principal dedicado de backup; preservar el contrato de dump/restauración.
 - **Regla de seguridad:** este documento no es autorización para ejecutar cambios. Requiere ventana aprobada, destino confirmado y operador autorizado.
+
+## Turno 37 — cierre de Gates A/B y ejecución de Fase 3B (2026-11-13 UTC)
+
+- **Neon main:** proyecto `restless-fire-99110035`, branch default `main` (`br-summer-math-b7297a60`), database `neondb`, PostgreSQL 18.7.
+- **Principal de backup efectivo:** auditoría ejecutada directamente como `microapp_backup`; `current_user = session_user = microapp_backup`. El bloque de assertions de `scripts/audit_database_roles.sql` terminó sin excepción/FAIL. El rol conserva solo atributos no administrativos y grants de lectura aprobados; la única membresía entrante observada es la del database owner `neondb_owner`, con ADMIN=true, INHERIT=false y SET=false. No tiene membresías salientes.
+- **Resultados SELECT-only del script:** `information_schema.table_privileges` devolvió 27 filas, todas `SELECT` y `is_grantable=NO`; `routine_privileges` devolvió 0 filas; las dos secuencias públicas conceden solo `SELECT`; `pg_auth_members` devolvió una sola arista entrante desde `neondb_owner` (grantor `cloud_admin`, ADMIN=true), sin aristas salientes. Las 29 relaciones públicas (27 tablas + 2 secuencias) pertenecen a `microapp_migrator`. Los default ACLs de `microapp_migrator` y `neondb_owner` conceden a `microapp_backup` solo SELECT no grantable en tablas/secuencias futuras; no se encontró un grant default de backup a `cloud_admin`.
+- **Retirada del principal heredado:** `backup_readonly` tenía CREATEROLE/CREATEDB/REPLICATION/BYPASSRLS y membresía en `neon_superuser`. Preflight confirmó cero objetos propios, cero sesiones y cero locks. Se revocaron sus ACL explícitas en database/schema/16 relaciones públicas y su default ACL de `neondb_owner`; los grants de tablas se revocaron como owner `microapp_migrator`. Neon eliminó el rol y sus membresías. Verificación posterior: rol ausente, cero ACLs explícitas y cero dependencias de objetos.
+- **Integridad main:** 23 filas de migración, última `0023` (`0023_register_shift_runtime_operations.sql`); 27 tablas públicas y 2 secuencias públicas, todas las 29 relaciones propiedad de `microapp_migrator`. No se cambió ningún dato de negocio ni se inspeccionó ningún secreto.
+- **Gate B — backup natural:** workflow `backup.yml` Run #24 / [43447849855](https://github.com/BTF14/Micro-app/actions/runs/43447849855), evento `schedule`, SHA `0c90aa38`, SUCCESS. Diagnóstico: `identity_ok=t`, `role_safe=t`, `has_membership=f`, `table_writes=f`, `sequence_writes=f`, `create_privilege=f`.
+- **Gate A — restore real cifrado:** [backup-real-restore.yml Run #3](https://github.com/BTF14/Micro-app/actions/runs/43485484181), SHA main `71e92b24ca48ef6f6ff1dc3cea18a51f193b579b`, SUCCESS (43 s de workflow). Artefacto `backup-2026-11-13T18-41-49Z.dump.age`; checksum SHA-256 verificado, AGE descifrado, `pg_restore --list` correcto, helper recibió `BACKUP_DUMP`, perfil BCV con 23 migraciones/27 tablas, assertions 0022/0023 correctas, logins runtime/BCV sync verificados y cleanup completo. Los 43 s son duración total del workflow, **no** RTO operacional medido.
+- **Snapshot temporal:** `pre-phase3-main-snapshot-20261112` (`br-nameless-poetry-b7au2w0s`) eliminado tras confirmar que era hijo sin descendientes de main y que main/backups recientes estaban sanos. El snapshot tenía un esquema anterior (15 tablas, sin `schema_migrations`); no se confundió con el estado actual.
+- **Límite sobre “11/11 filas”:** la nota de Fase 3A contiene esa cifra como confirmación previa del propietario, pero no identifica tabla, consulta o assertion que la defina. No se presenta como una comprobación independiente nueva. La verificación reproducible de este turno es el audit PASS, 23 migraciones y 27 tablas.
+- **Estado:** pasos 1 y 2 de Issue #53 documentados como completados con evidencia; pasos 3 (smoke autenticado staging) y 4 (cierre formal/aceptaciones) siguen pendientes. Issue #53 permanece OPEN/P0; **PRODUCTION: NOT READY**. RPO/RTO operativos, alert acknowledgement, smoke staging, aceptación legal/fiscal/contable y coste recurrente total USD 0 todavía no están demostrados.
+- **PR #339:** permanece OPEN y sin merge hasta confirmación del propietario de los dos cambios manuales Google Cloud Console + Cloudflare Pages. La reconciliación de su base/documentación se revisará después del merge de esta PR.
+
+---
 
 ## 1. Contrato que debe cumplirse
 
@@ -111,13 +127,13 @@ Cuando un rol no-superuser con `CREATEROLE` crea otro rol, PostgreSQL 16+ puede 
 
 Esta es una **membresía entrante** al rol de backup. No convierte a `microapp_backup` en miembro del database owner, no le hace heredar privilegios del owner y no permite asumir las identidades runtime/migrator. Se acepta solo si el miembro es exactamente el propietario de la base conectada. Toda membresía saliente del backup y toda membresía entrante de otro rol siguen siendo FAIL.
 
-La prueba aislada de Neon del 2026-11-12 observó esta arista con `neondb_owner` como miembro y `cloud_admin` como grantor. También observó que `ALTER ROLE ... NOSUPERUSER` fue rechazado con SQLSTATE 42501 bajo `neondb_owner`. Por eso el script establece NOSUPERUSER al crear el rol, rechaza roles preexistentes con `rolsuper=true` y no incluye NOSUPERUSER en el ALTER ROLE posterior. La corrección debe volver a probarse en una rama temporal Neon después de integrarse; esta evidencia no certifica aún el principal real de backup.
+La prueba aislada de Neon del 2026-11-12 observó esta arista con `neondb_owner` como miembro y `cloud_admin` como grantor. También observó que `ALTER ROLE ... NOSUPERUSER` fue rechazado con SQLSTATE 42501 bajo `neondb_owner`. Por eso el script establece NOSUPERUSER al crear el rol, rechaza roles preexistentes con `rolsuper=true` y no incluye NOSUPERUSER en el ALTER ROLE posterior. La auditoría real de Fase 3B confirmó después la misma excepción permitida: una única membresía entrante ADMIN-only desde el owner directo, sin INHERIT/SET; el principal conectado es `microapp_backup`.
 
 ## 6. Verificación posterior con el LOGIN de backup
 
 Actualizar el gestor de secretos solo mediante el proceso autorizado de cambios de secretos. Antes de sustituir DATABASE_URL_BACKUP_RO, comprobar que el workflow de backup y su diagnóstico de identidad estén coordinados con el nombre de rol real.
 
-**Contrato de transición temporal:** la PR #335 actualiza el diagnóstico para aceptar únicamente una conexión directa cuyo current_user y session_user coincidan y cuyo nombre sea backup_readonly o microapp_backup. La allowlist dual existe solo para permitir una transición controlada; no convierte backup_readonly en un principal certificado ni corrige sus privilegios. No rotar DATABASE_URL_BACKUP_RO hasta que la PR #335 esté integrada, el provisioning de microapp_backup haya sido ejecutado y auditado en la ventana autorizada, y la nueva conexión directa haya pasado scripts/audit_database_roles.sql. Después de observar el backup natural y completar restore, una PR posterior debe retirar backup_readonly de la allowlist.
+**Contrato vigente tras Fase 3B:** el diagnóstico de `.github/workflows/backup.yml` acepta exclusivamente una sesión directa cuyo `current_user = session_user = microapp_backup`. El alias heredado `backup_readonly` fue retirado de Neon y de la allowlist. La auditoría completa como `microapp_backup` pasó; el backup natural #24 y el restore real #3 están documentados en la evidencia de Fase 3B. No leer ni modificar el secreto `DATABASE_URL_BACKUP_RO` desde este procedimiento.
 
 Cuando el secreto apunte al nuevo LOGIN, ejecutar la auditoría directamente por esa conexión (no mediante SET ROLE):
 
@@ -141,27 +157,23 @@ El resultado debe terminar en PASS. Cualquier error es NO-GO. No realizar prueba
 
 ## 8. Criterios de cierre de Issue #53
 
-Issue #53 permanece OPEN/P0 hasta que se adjunte evidencia verificable de:
+Issue #53 permanece OPEN/P0. **Pasos 1 y 2 completados** con la evidencia de Fase 3B registrada arriba: auditoría real del principal `microapp_backup`, backup natural cifrado/checksum y restauración real aislada posterior.
 
-- Identidad efectiva current_user = session_user = microapp_backup en la conexión real de backup.
-- Atributos, memberships, ownership, grants de tablas/vistas, secuencias, rutinas y default ACLs aprobados.
-- Default privileges verificados para **cada owner real** que crea objetos.
-- Workflow de backup alineado con el nuevo principal y su diagnóstico no sensible.
-- Al menos un backup natural posterior al cambio, con artefacto cifrado y checksum válido.
-- Restauración exitosa en PostgreSQL 18 desechable, con tiempos RPO/RTO medidos.
-- Custodia/recuperación de la llave privada age y continuidad/rollback documentados.
+Siguen pendientes:
+- Paso 3: smoke autenticado staging/preproducción con base aislada y datos sintéticos.
+- Paso 4: medición/aceptación operacional RPO/RTO, alerta humana y acknowledgement, revisión DR, verificación de coste recurrente USD 0, aceptación legal/fiscal/contable y decisión formal del propietario.
 
-Solo después de reunir esa evidencia se puede proponer cerrar el P0. La fusión de PR #318 valida código y pruebas sintéticas; no certifica la configuración real de Neon ni el principal efectivo del secreto.
+La duración total de 43 s del workflow de restore no es una medición RTO operacional. La cifra histórica “11/11 filas intactas” no se vuelve a certificar aquí porque la documentación disponible no identifica su tabla/consulta/assertion. No cerrar #53 ni declarar READY hasta los pasos 3 y 4.
 
 ## 9. Rollback y respuesta a fallos
 
 - Antes de rotar DATABASE_URL_BACKUP_RO, el propietario debe conservar el valor anterior en un gestor de contraseñas seguro bajo su control. GitHub no permite recuperar el valor anterior de un Secret después de sobrescribirlo. Nunca copiarlo a issues, comentarios, logs, archivos versionados o esta conversación.
-- Validar la nueva credencial/conexión de forma segura antes de modificar el Secret. La rotación solo ocurre después de que el workflow dual esté integrado y el provisioning/auditoría de microapp_backup haya pasado en la ventana autorizada.
-- Si la nueva conexión o el backup natural falla, restaurar DATABASE_URL_BACKUP_RO desde la copia segura del propietario y verificar el workflow de respaldo. No asumir que el valor anterior es least-privilege: este rollback recupera continuidad, no certifica seguridad; mantener Issue #53 OPEN/P0 y PRODUCTION: NOT READY.
-- No retirar ni borrar automáticamente backup_readonly, microapp_backup, grants ni ownership como reacción a un fallo. Cualquier revocación, DROP ROLE, transferencia de ownership o cambio de password requiere un plan de reversión específico, revisión y aprobación independiente.
+- No se necesita otra rotación para Fase 3B: el principal `microapp_backup` ya fue auditado y el backup natural #24 lo confirmó. Cualquier futura rotación del Secret requiere autorización del propietario y verificación segura; no reintroducir el alias retirado.
+- Si el backup falla, no restaurar automáticamente una credencial antigua que apunte a `backup_readonly` ni recrear ese rol. Mantener el principal `microapp_backup`, conservar el último artefacto válido y diagnosticar el fallo sin exponer el Secret; cualquier cambio de credencial requiere autorización expresa del propietario.
+- `backup_readonly` fue retirado en la Fase 3B autorizada; no recrearlo como rollback. Si el backup falla, conservar el último artefacto cifrado válido e investigar `microapp_backup`/workflow sin restaurar privilegios heredados.
 - Conservar el último artefacto cifrado válido y su checksum. No ejecutar workflow_dispatch como sustituto de un backup natural de producción.
 - Si la restauración falla, mantener PRODUCTION: NOT READY, conservar logs no sensibles y abrir seguimiento; nunca probar restauración sobre Neon main.
-- Tras un backup natural correcto y una restauración fría satisfactoria, preparar un cambio separado para retirar la identidad heredada de la allowlist; no mantener la compatibilidad dual indefinidamente.
+- La identidad heredada ya fue retirada tanto de Neon como de la allowlist en la PR de Fase 3B; mantener el contrato exclusivo `microapp_backup`.
 
 ## 10. Registro de ejecución del operador
 
@@ -179,4 +191,4 @@ Completar fuera de este repositorio o en un registro aprobado, sin DSNs, passwor
 - RPO/RTO observados:
 - Decisión final de Issue #53:
 
-**Estado final de este documento:** instrucciones preparadas; ejecución real pendiente. **PRODUCTION: NOT READY.**
+**Estado final de este documento:** Fase 3B ejecutada; pasos 1 y 2 de Issue #53 evidenciados. Pasos 3 y 4 pendientes. **PRODUCTION: NOT READY.**

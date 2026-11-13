@@ -22,7 +22,7 @@ for file in "$MIGRATIONS_DIR"/[0-9][0-9][0-9][0-9]_*.sql; do
   migration_files+=("$file")
 done
 expected=16
-[[ "$profile" == "bcv" ]] && expected=23
+[[ "$profile" == "bcv" ]] && expected=24
 [[ "${#migration_files[@]}" -eq "$expected" ]] || {
   echo "Refusing ACL replay: profile $profile requires exactly $expected numbered migrations; found ${#migration_files[@]}." >&2
   exit 2

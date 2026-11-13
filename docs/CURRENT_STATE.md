@@ -3449,3 +3449,5 @@ PR #346 fusionada en main: `c6a9ad611111fbc32da8b13329481458c933ec21`. HEAD exac
 
 
 Nota de compatibilidad de permisos para 0024: la migración 0012 ya necesita insertar la membresía inicial del Owner durante el bootstrap Google. Por eso 0024 revoca INSERT de tabla y mantiene exclusivamente INSERT column-scoped en organization_members(organization_id,user_id,role); no hay UPDATE/DELETE ni acceso de INSERT a is_active/created_at/updated_at. Las assertions validan el alcance y el test de PostgreSQL ejercita el INSERT mínimo. Esto preserva OAuth sin conceder DML general.
+
+- Se habilitaron triggers push exactos de preflight para esta rama en CI, migration-runner y backup-restore-smoke (migration-check ya incluye feat/**). No hay aún check-runs/status contexts visibles para certificar PASS; el wrapper de workflow-runs usado filtra pull_request. No abrir PR ni declarar gates verdes sin evidencia directa.

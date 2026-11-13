@@ -47,7 +47,7 @@ normalized_codes="$(psql "$RUNTIME_DATABASE_URL" -X -v ON_ERROR_STOP=1 -Atqc "SE
 [[ "$normalized_codes" == "main-warehouse:main-register" ]] || { echo "Warehouse/register code normalization failed." >&2; exit 1; }
 
 psql "$RUNTIME_DATABASE_URL" -X -v ON_ERROR_STOP=1 -c "SELECT * FROM public.set_branch_membership_active('$org_a','$branch_id','$cashier','$owner',true)" >/dev/null
-read_probe="$(psql "$RUNTIME_DATABASE_URL" -X -v ON_ERROR_STOP=1 -Atqc "SELECT count(*)=1 FROM public.branches WHERE organization_id='$org_a' AND id='$branch_id'")"
+read_probe="$(psql "$RUNTIME_DATABASE_URL" -X -v ON_ERROR_STOP=1 -Atqc "SELECT (SELECT count(*)=1 FROM public.branches WHERE organization_id='$org_a' AND id='$branch_id') AND (SELECT count(*)=1 FROM public.warehouses WHERE organization_id='$org_a' AND id='$warehouse_id') AND (SELECT count(*)=1 FROM public.registers WHERE organization_id='$org_a' AND branch_id='$branch_id' AND id='$register_id') AND EXISTS (SELECT 1 FROM public.branch_memberships WHERE organization_id='$org_a' AND branch_id='$branch_id' AND user_id='$owner' AND is_active)")"
 [[ "$read_probe" == "t" ]] || { echo "Runtime read probe failed." >&2; exit 1; }
 
 expect_failure() {

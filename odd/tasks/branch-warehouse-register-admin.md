@@ -74,7 +74,7 @@ Implementar administración exclusiva de Owner para sucursales, almacenes, cajas
 - \`apps/api/migrations/0024_organization_structure_admin_operations.sql\`:
   - Cuatro funciones \`SECURITY DEFINER\` exactas, propiedad de \`microapp_migrator\`, con \`search_path = pg_catalog, public\`.
   - \`REVOKE ALL FROM PUBLIC\` y \`GRANT EXECUTE\` únicamente a \`microapp_runtime\`.
-  - Revocación explícita de DML directo a runtime/PUBLIC sobre \`branches\`, \`warehouses\`, \`registers\`, \`branch_memberships\` y \`organization_members\`.
+  - Revocación de DML de tabla a runtime/PUBLIC sobre branches, warehouses, registers, branch_memberships y organization_members. Se conserva únicamente INSERT por columnas (organization_id, user_id, role) en organization_members, exigido por el bootstrap Google preexistente de migración 0012; no hay INSERT de tabla ni UPDATE/DELETE runtime sobre esa tabla.
   - El creador Owner queda asignado a la nueva sucursal dentro de la misma transacción. La función de asignación también crea una asignación ausente cuando se solicita \`is_active=true\`.
   - Serialización por organización/sucursal/asignación antes de comprobar turnos abiertos. No se cambia la política de turnos.
 - \`apps/api/migrations/0024_organization_structure_admin_operations.assertions.sql\` verifica propietario, \`SECURITY DEFINER\`, search_path, ACL limitado, ausencia de DML runtime y presencia de auditoría/guard de turno.

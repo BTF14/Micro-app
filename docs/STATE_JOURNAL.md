@@ -3254,10 +3254,13 @@ Se integró PR #346 (`c6a9ad611111fbc32da8b13329481458c933ec21`) tras 10/10 work
 
 ## 2026-11-13 — PR #350 abierta; checks exactos completos
 
-PR #350 (`https://github.com/BTF14/Micro-app/pull/350`) abierta no-Draft en rama `feat/branch-warehouse-register-admin-20261113`, HEAD `a1539b791d6ea9d67102b159ec7fe36c5ffb48cb`, base main `25c0f842c7ecc8a7320b33d33abfb12402476e32` (ahead 85, behind 0). GitHub informa mergeable=true. No se fusionó.
+PR #350 (`https://github.com/BTF14/Micro-app/pull/350`) abierta no-Draft en rama `feat/branch-warehouse-register-admin-20261113`, HEAD `61cd674c47cdba4595e21bd9e6b8f4ecd0f25431`, base main `25c0f842c7ecc8a7320b33d33abfb12402476e32` (ahead 85, behind 0). GitHub informa mergeable=true. No se fusionó.
 
 El SHA exacto tiene 25/25 check-runs SUCCESS: 11/11 workflows pull_request y 6/6 workflows push. Pasaron CI, PostgreSQL migration runner, database migration validation, backup restore main 0016/BCV 0024/legacy, security, secret-history, Playwright E2E, Chromium, Semgrep, Dependency Review, ODD docs, project dashboard, Cloudflare Pages y Workers Builds. PostgreSQL 18, API integration, React/Vitest, build/typecheck y tests de concurrencia pasan.
 
 El perfil BCV histórico 0001–0023 sigue soportado como `bcv`; el nuevo 0001–0024 se identifica como `bcv-0024`; main 0001–0016 permanece intacto. No se modificaron migraciones 0023 o anteriores, ROLE_OPERATIONS ni rutas de lectura. No se tocó Neon main, BCV sync/producer ni bcv-source-connectivity.
 
 No hay reviews formales ni review threads. El code review automático Codex no pudo completarse por límite de uso; esto no es aprobación ni un hallazgo. Revisión del Tech Lead pendiente. Issue #53 OPEN/P0; PRODUCTION: NOT READY; USD 0. No merge.
+
+
+Nota de continuidad: el SHA anterior indicado es el último HEAD completamente validado (25/25 check-runs SUCCESS). Este commit solo actualiza documentación; verificar el nuevo HEAD vivo y sus checks exactos antes de cualquier merge. PR #350 sigue OPEN/no-Draft y no se debe fusionar.

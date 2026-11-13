@@ -1,6 +1,6 @@
 # Administración de estructura organizacional — PR 2
 
-**Estado:** PR #350 OPEN / no-Draft / mergeable=true / no fusionada. HEAD validado `a1539b791d6ea9d67102b159ec7fe36c5ffb48cb`: 25/25 check-runs SUCCESS; revisión formal del Tech Lead pendiente. No habilitada en producción.
+**Estado:** PR #350 OPEN / no-Draft / mergeable=true / no fusionada. HEAD validado `61cd674c47cdba4595e21bd9e6b8f4ecd0f25431`: 25/25 check-runs SUCCESS; revisión formal del Tech Lead pendiente. No habilitada en producción.
 **Rama:** `feat/branch-warehouse-register-admin-20261113`
 **Base:** `main` actualizado después de PR #349; merge SHA `25c0f842c7ecc8a7320b33d33abfb12402476e32`.
 **Fecha:** 2026-11-13 UTC
@@ -95,7 +95,7 @@ Implementar administración exclusiva de Owner para sucursales, almacenes, cajas
 
 - La inspección confirmó que el esquema real usa `organization_members`, no una tabla llamada `organization_memberships`.
 - `ROLE_OPERATIONS` no fue modificado; las rutas de lectura existentes permanecen intactas.
-- HEAD `a1539b791d6ea9d67102b159ec7fe36c5ffb48cb` en PR #350: 25/25 check-runs SUCCESS; 11/11 workflow runs pull_request y 6/6 workflow runs push SUCCESS. Runs: CI 43525236567; migration-runner 43525236428; migration-check 43525236620; backup-restore-smoke 43525236472; security scan 43525236548; secret-history 43525236628.
+- HEAD `61cd674c47cdba4595e21bd9e6b8f4ecd0f25431` en PR #350: 25/25 check-runs SUCCESS; 11/11 workflow runs pull_request y 6/6 workflow runs push SUCCESS. Runs: CI 43525236567; migration-runner 43525236428; migration-check 43525236620; backup-restore-smoke 43525236472; security scan 43525236548; secret-history 43525236628.
 - PostgreSQL 18 cubrió las cuatro operaciones con LOGIN runtime, auditoría, duplicados, cross-tenant, cross-branch, denegaciones admin/cashier/inventory, DML directo y ambas carreras concurrentes apertura/desactivación.
 - API integration, React/Vitest, build/typecheck, migración 0024, rollback atómico, restore main 0016, restore BCV 0024 y compatibilidad de perfiles 16/23/24: SUCCESS.
 - Se añadió prueba API de aislamiento entre sucursales: un turno abierto en Norte no bloquea desactivar la asignación en Sur; en la misma sucursal sí se rechaza.
@@ -126,3 +126,6 @@ Implementar administración exclusiva de Owner para sucursales, almacenes, cajas
 - Para validar antes de abrir PR, se añadieron triggers push limitados a esta rama en CI, migration-runner y backup-restore-smoke; migration-check ya escucha feat/**. El wrapper disponible de workflow runs solo devuelve ejecuciones pull_request y no aporta evidencia de ejecuciones push; combined status del HEAD consultado sigue vacío. La validación continúa pendiente hasta obtener los check-runs reales.
 
 - HEAD de continuidad al cerrar esta iteración: 77d96ccf3b3fc1d77ecea3242641f6b714f5c900 (incluye triggers push exactos y documentación). Comparación contra main: ahead 70 / behind 0. Combined status vacío; el wrapper de workflow runs devuelve solo runs pull_request y no permite certificar los runs push. No se abrió PR.
+
+
+Nota de continuidad: el SHA anterior indicado es el último HEAD completamente validado (25/25 check-runs SUCCESS). Este commit solo actualiza documentación; verificar el nuevo HEAD vivo y sus checks exactos antes de cualquier merge. PR #350 sigue OPEN/no-Draft y no se debe fusionar.

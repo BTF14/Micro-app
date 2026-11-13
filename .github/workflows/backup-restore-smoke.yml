@@ -19,6 +19,7 @@ on:
       - "scripts/db/restore_role_assertions_main.sql"
       - "scripts/test_backup_restore_schema.sh"
       - "scripts/test_backup_restore_schema_bcv.sh"
+      - "docs/BACKUP_AND_RECOVERY.md"
   pull_request:
     paths:
       - ".github/workflows/backup-restore-smoke.yml"

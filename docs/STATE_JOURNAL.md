@@ -3260,4 +3260,4 @@ Se integró PR #346 (`c6a9ad611111fbc32da8b13329481458c933ec21`) tras 10/10 work
 - El Owner creador se asigna a la nueva sucursal de forma atómica. La activación de una asignación ausente se soporta mediante set_branch_membership_active(..., true).
 - La revocación y la apertura de turno se serializan por organización/sucursal/asignación. Se añadieron dos escenarios concurrentes al harness PostgreSQL 18.
 - A esta fecha no hay resultados de ejecución PostgreSQL/Vitest/build/CI para el HEAD final; los tests están escritos, no demostrados. PR 2 no se abrió ni fusionó.
-- Sin cambios a Neon, producción, BCV, ROLE_OPERATIONS ni Issue #53. Issue #53 OPEN/P0; PRODUCTION: NOT READY; USD 0.
+- Sin cambios a Neon, producción, BCV sync/producer, ROLE_OPERATIONS ni Issue #53. Solo se extendió el perfil BCV de restore/migraciones 0023→0024 como pidió el contrato de migraciones. Issue #53 OPEN/P0; PRODUCTION: NOT READY; USD 0.

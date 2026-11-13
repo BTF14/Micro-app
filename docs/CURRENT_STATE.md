@@ -3417,3 +3417,9 @@ Branch `ops/restore-timing-alert-canary-20261113` añade marcas de tiempo UTC po
 ## Paso 3 — Cashier full lifecycle (2026-11-13, PR en curso)
 
 Nueva suite `apps/api/src/cashier-full-lifecycle.integration.test.ts` ejecuta un escenario continuo con handlers reales, Google OAuth simulado y PostgreSQL 18 efímero. `ci.yml` la ejecuta usando `microapp_runtime` para operaciones y `DATABASE_URL_ADMIN` para setup/verificación; `DATABASE_URL_BCV` se valida como login efímero dedicado. Cubre sesión/cookie, headers, tenant/sucursal, inventario, apertura, checkout con BCV sintético, pagos/movimientos/stock/auditoría, cierre/conciliación, denegaciones y logout. Guardia de seguridad: solo localhost `/microapp_test` y roles esperados. No Neon main ni servicios desplegados. Aún NO está validada: esperar CI exact-HEAD y corregir cualquier fallo antes de merge.
+
+
+
+## Paso 3 — resultado integrado (2026-11-13)
+
+PR #346 fusionada en main: `c6a9ad611111fbc32da8b13329481458c933ec21`. HEAD exacto pre-merge `4fdd39b33d8a1c007678fd30a8cf70b460e80cbd`: 10/10 workflow runs SUCCESS. `CI/verify` SUCCESS; escenario PostgreSQL 18 Cashier lifecycle y runtime-role API SUCCESS. OAuth Google simulado con handlers reales; cookie de sesión, /auth/me, health/headers, tenant/sucursal, inventario, apertura, checkout con BCV sintético, pagos/movimientos/balance/auditoría, cierre/conciliación, denegaciones cross-tenant/cross-branch/turno ajeno y logout/401. Operaciones bajo microapp_runtime; admin solo fixtures/verificación; login microapp_bcv_sync separado. DB PostgreSQL 18 efímera CI, sin Neon main, despliegues ni credenciales reales; USD 0 incremental. Se considera completado el subgate técnico backend/API+DB del Paso 3 según aprobación Tech Lead. No equivale a staging remoto ni OAuth real/visual E2E. Checks post-merge no fueron devueltos por el conector; no se afirma una segunda ronda. Paso 4 sigue pendiente; Issue #53 OPEN/P0; PRODUCTION NOT READY.

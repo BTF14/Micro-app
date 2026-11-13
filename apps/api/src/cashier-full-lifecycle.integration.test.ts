@@ -155,6 +155,8 @@ describe.skipIf(!isDisposable(runtimeUrl, "microapp_runtime") ||
       admin = new Client({ connectionString: adminUrl });
       bcv = new Client({ connectionString: bcvUrl });
       await Promise.all([admin.connect(), bcv.connect()]);
+      const bcvIdentity = await bcv.query<{ current_user: string }>("SELECT current_user");
+      expect(bcvIdentity.rows[0]?.current_user).toBe("microapp_bcv_sync");
       suffix = crypto.randomUUID().replace(/-/g, "").slice(0, 12);
       const org = await admin.query<{ id: string }>(
         "INSERT INTO public.organizations(name,slug) VALUES($1,$2) RETURNING id",
@@ -380,10 +382,46 @@ describe.skipIf(!isDisposable(runtimeUrl, "microapp_runtime") ||
       expect(sale.total_usd).toBe("29.8125");
       expect(sale.bcv_rate).toBe("250.12345678");
 
+      // Create a second, real open shift owned by another cashier in the same
+      // branch. The primary cashier must not be able to close that shift.
+      const otherEmail = `other-cashier-${suffix}@example.test`;
+      const otherUser = await admin.query<{ id: string }>(
+        "INSERT INTO public.app_users(email,display_name) VALUES($1,'Other Cashier') RETURNING id",
+        [otherEmail],
+      );
+      const otherCashierId = otherUser.rows[0]!.id;
+      await admin.query(
+        "INSERT INTO public.organization_members(organization_id,user_id,role) VALUES($1,$2,'cashier')",
+        [organizationId, otherCashierId],
+      );
+      await admin.query(
+        "INSERT INTO public.branch_memberships(organization_id,branch_id,user_id) VALUES($1,$2,$3)",
+        [organizationId, branchId, otherCashierId],
+      );
+      const otherRegister = await admin.query<{ id: string }>(
+        "INSERT INTO public.registers(organization_id,branch_id,name,code) VALUES($1,$2,'Other cashier register',$3) RETURNING id",
+        [organizationId, "other-reg-" + suffix],
+      );
+      const otherToken = "other-cashier-session-" + suffix;
+      await admin.query(
+        "INSERT INTO public.auth_sessions(user_id,token_hash,expires_at) VALUES($1,$2,now()+interval '1 day')",
+        [otherCashierId, await sha256(otherToken)],
+      );
+      const otherOpen = await apiRequest(shiftPath, {
+        method: "POST",
+        headers: { Origin: frontendOrigin, "Content-Type": "application/json" },
+        body: JSON.stringify({
+          register_id: otherRegister.rows[0]!.id,
+          opening_cash_usd: "5.0000",
+          opening_cash_ves: "50.00",
+        }),
+      }, otherToken);
+      expect(otherOpen.status).toBe(201);
+      const otherShiftId = (await otherOpen.json() as { shift: { id: string } }).shift.id;
       const shiftForeignClose = await apiRequest(
-        `/api/orgs/${organizationId}/branches/${branchId}/register-shifts/${crypto.randomUUID()}/close`,
+        `/api/orgs/${organizationId}/branches/${branchId}/register-shifts/${otherShiftId}/close`,
         { method: "POST", headers: { Origin: frontendOrigin, "Content-Type": "application/json" },
-          body: JSON.stringify({ closing_cash_usd: "39.8125", closing_cash_ves: "100.00" }) },
+          body: JSON.stringify({ closing_cash_usd: "5.0000", closing_cash_ves: "50.00" }) },
         token,
       );
       expect(shiftForeignClose.status).toBe(409);

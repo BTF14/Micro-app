@@ -144,8 +144,8 @@ BEGIN
     OR p_name ~ '[[:cntrl:]]' OR p_code ~ '[[:cntrl:]]' THEN
     RAISE EXCEPTION 'ORGANIZATION_STRUCTURE_INPUT_INVALID' USING ERRCODE = '22023';
   END IF;
-  v_code := pg_catalog.trim(both '-' from pg_catalog.regexp_replace(
-    pg_catalog.lower(pg_catalog.btrim(p_code)), '[^a-z0-9]+', '-', 'g'));
+  v_code := pg_catalog.btrim(pg_catalog.regexp_replace(
+    pg_catalog.lower(pg_catalog.btrim(p_code)), '[^a-z0-9]+', '-', 'g'), '-');
   IF v_code = '' OR length(v_code) > 80 THEN
     RAISE EXCEPTION 'REGISTER_CODE_INVALID' USING ERRCODE = '22023';
   END IF;

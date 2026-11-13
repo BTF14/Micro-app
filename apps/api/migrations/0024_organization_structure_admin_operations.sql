@@ -61,6 +61,9 @@ BEGIN
   INSERT INTO public.branch_memberships (organization_id, branch_id, user_id, is_active)
   VALUES (p_organization_id, v_row.id, p_actor_user_id, true);
   INSERT INTO public.audit_logs (organization_id, actor_user_id, action, entity_type, entity_id, metadata)
+  VALUES (p_organization_id, p_actor_user_id, 'branch_membership.activated', 'branch_membership', p_actor_user_id::text,
+    pg_catalog.jsonb_build_object('branch_id', v_row.id, 'user_id', p_actor_user_id, 'created_with_branch', true));
+  INSERT INTO public.audit_logs (organization_id, actor_user_id, action, entity_type, entity_id, metadata)
   VALUES (p_organization_id, p_actor_user_id, 'branch.created', 'branch', v_row.id::text,
     pg_catalog.jsonb_build_object('name', v_row.name, 'slug', v_row.slug));
   RETURN QUERY SELECT v_row.id, v_row.organization_id, v_row.name, v_row.slug, v_row.is_active;
@@ -264,6 +267,6 @@ GRANT EXECUTE ON FUNCTION public.set_branch_membership_active(uuid, uuid, uuid, 
 COMMENT ON FUNCTION public.create_branch(uuid, uuid, text, text) IS 'Creates an organization branch for an active owner; writes and audit event are atomic.';
 COMMENT ON FUNCTION public.create_warehouse(uuid, uuid, uuid, text, text) IS 'Creates a warehouse in an active branch for an active owner; writes and audit event are atomic.';
 COMMENT ON FUNCTION public.create_register(uuid, uuid, uuid, text, text) IS 'Creates a register in an active branch for an active owner; writes and audit event are atomic.';
-COMMENT ON FUNCTION public.set_branch_membership_active(uuid, uuid, uuid, uuid, boolean) IS 'Activates/deactivates an existing branch assignment; rejects deactivation while the member owns an open shift.';
+COMMENT ON FUNCTION public.set_branch_membership_active(uuid, uuid, uuid, uuid, boolean) IS 'Creates or changes a branch assignment; rejects deactivation while the member owns an open shift.';
 
 COMMIT;

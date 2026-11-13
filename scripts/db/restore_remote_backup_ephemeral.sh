@@ -110,8 +110,8 @@ END
 FROM public.schema_migrations")"
 case "$ledger_profile" in
   main) expected=16 ;;
-  bcv) expected=23 ;;
-  *) echo "Backup migration ledger is not a complete supported 16- or 23-migration profile; refusing ACL reconstruction." >&2; exit 1 ;;
+  bcv) expected=24 ;;
+  *) echo "Backup migration ledger is not a complete supported 16- or 24-migration profile; refusing ACL reconstruction." >&2; exit 1 ;;
 esac
 
 tmpdir="$(mktemp -d)"
@@ -163,6 +163,7 @@ if [[ "$ledger_profile" == "main" ]]; then
 else
   psql "$RESTORE_MIGRATOR_URL" -X -v ON_ERROR_STOP=1 -f "$source_migrations_dir/0022_bcv_dedicated_producer_role.assertions.sql"
   psql "$RESTORE_MIGRATOR_URL" -X -v ON_ERROR_STOP=1 -f "$source_migrations_dir/0023_register_shift_runtime_operations.assertions.sql"
+  psql "$RESTORE_MIGRATOR_URL" -X -v ON_ERROR_STOP=1 -f "$source_migrations_dir/0024_organization_structure_admin_operations.assertions.sql"
 fi
 
 echo "== Validate restored application identity, ownership, least privilege and ephemeral auth state"

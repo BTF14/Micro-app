@@ -177,6 +177,7 @@ SET search_path = pg_catalog, public
 AS $set_branch_membership_active$
 DECLARE
   v_previous boolean;
+  v_missing boolean := false;
 BEGIN
   IF p_organization_id IS NULL OR p_branch_id IS NULL OR p_user_id IS NULL
     OR p_actor_user_id IS NULL OR p_is_active IS NULL THEN
@@ -196,9 +197,7 @@ BEGIN
    WHERE bm.organization_id = p_organization_id AND bm.branch_id = p_branch_id
      AND bm.user_id = p_user_id
    FOR UPDATE;
-  IF NOT FOUND AND NOT p_is_active THEN
-    RAISE EXCEPTION 'BRANCH_MEMBERSHIP_NOT_FOUND' USING ERRCODE = 'P0002';
-  END IF;
+  IF NOT FOUND THEN v_missing := true; END IF;
   PERFORM 1 FROM public.organization_members target
   JOIN public.app_users tu ON tu.id = target.user_id
    WHERE target.organization_id = p_organization_id AND target.user_id = p_user_id
@@ -209,6 +208,9 @@ BEGIN
    WHERE actor.organization_id = p_organization_id AND actor.user_id = p_actor_user_id
      AND actor.role = 'owner' AND actor.is_active AND au.is_active FOR UPDATE OF actor, au;
   IF NOT FOUND THEN RAISE EXCEPTION 'ORGANIZATION_OWNER_REQUIRED' USING ERRCODE = '42501'; END IF;
+  IF v_missing AND NOT p_is_active THEN
+    RAISE EXCEPTION 'BRANCH_MEMBERSHIP_NOT_FOUND' USING ERRCODE = 'P0002';
+  END IF;
 
   IF NOT p_is_active AND v_previous THEN
     IF EXISTS (SELECT 1 FROM public.register_shifts s
@@ -218,7 +220,7 @@ BEGIN
     END IF;
   END IF;
 
-  IF v_previous IS NULL AND p_is_active THEN
+  IF v_missing AND p_is_active THEN
     INSERT INTO public.branch_memberships (organization_id, branch_id, user_id, is_active)
     VALUES (p_organization_id, p_branch_id, p_user_id, true)
     ON CONFLICT (organization_id, branch_id, user_id) DO NOTHING;

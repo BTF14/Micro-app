@@ -3408,3 +3408,8 @@ Post-merge CI verificado en main SHA 3ac66a180fcf23421b546140a419a45062e633dd: 1
 - La URI OAuth heredada `workers.dev` puede retirarse por el propietario tras validación del flujo nuevo; es una acción separada de consola, no realizada por el agente.
 - Se cierran los pendientes de observabilidad same-origin/bundle/Brave del Turno 39; esto no equivale al smoke Cashier en staging aislado (Paso 3).
 - Issue #53 permanece OPEN/P0; PRODUCTION: NOT READY hasta completar Pasos 3–4.
+
+
+## Paso 3 — Cashier full lifecycle (2026-11-13, PR en curso)
+
+Nueva suite `apps/api/src/cashier-full-lifecycle.integration.test.ts` ejecuta un escenario continuo con handlers reales, Google OAuth simulado y PostgreSQL 18 efímero. `ci.yml` la ejecuta usando `microapp_runtime` para operaciones y `DATABASE_URL_ADMIN` para setup/verificación; `DATABASE_URL_BCV` se valida como login efímero dedicado. Cubre sesión/cookie, headers, tenant/sucursal, inventario, apertura, checkout con BCV sintético, pagos/movimientos/stock/auditoría, cierre/conciliación, denegaciones y logout. Guardia de seguridad: solo localhost `/microapp_test` y roles esperados. No Neon main ni servicios desplegados. Aún NO está validada: esperar CI exact-HEAD y corregir cualquier fallo antes de merge.

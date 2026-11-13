@@ -5,8 +5,8 @@ workers_dev = false
 
 # Isolated Cron-only Worker. No workers.dev endpoint and no route bindings.
 # Keep synchronization disabled by default; enable only after explicit operational approval.
-# Its DATABASE_URL must be provisioned as a separate encrypted secret using
-# the microapp_bcv_sync PostgreSQL LOGIN; never copy the API Worker credential.
+# Provision DATABASE_URL_BCV_SYNC as an encrypted secret using only the
+# microapp_bcv_sync PostgreSQL LOGIN. The handler never falls back to DATABASE_URL.
 [observability]
 enabled = true
 redact_query_string = true

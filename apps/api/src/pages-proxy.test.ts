@@ -39,6 +39,38 @@ describe("Cloudflare Pages same-origin API proxy", () => {
     await expect(response.json()).resolves.toMatchObject({ error: "PREVIEW_API_DISABLED" });
   });
 
+  it("forwards the Cloudflare edge IP explicitly and drops client X-Forwarded-For", async () => {
+    const fetch = vi.fn(async (request: Request) => {
+      expect(request.headers.get("cf-connecting-ip")).toBe("198.51.100.24");
+      expect(request.headers.has("x-forwarded-for")).toBe(false);
+      return new Response("ok");
+    });
+    const response = await onRequest(context(
+      "https://micro-app-63i.pages.dev/api/auth/me",
+      { CF_PAGES_BRANCH: "main", API: { fetch } },
+      { headers: {
+        "CF-Connecting-IP": "198.51.100.24",
+        "X-Forwarded-For": "127.0.0.1, 10.0.0.1",
+        Origin: "https://micro-app-63i.pages.dev",
+      } },
+    ));
+    expect(response.status).toBe(200);
+    expect(fetch).toHaveBeenCalledTimes(1);
+  });
+
+  it("does not invent a client IP when Cloudflare does not supply one", async () => {
+    const fetch = vi.fn(async (request: Request) => {
+      expect(request.headers.has("cf-connecting-ip")).toBe(false);
+      return new Response("ok");
+    });
+    const response = await onRequest(context(
+      "https://micro-app-63i.pages.dev/api/auth/me",
+      { CF_PAGES_BRANCH: "main", API: { fetch } },
+      { headers: { "X-Forwarded-For": "127.0.0.1" } },
+    ));
+    expect(response.status).toBe(200);
+  });
+
   it("pins the upstream authority even when the incoming path begins with a double slash", async () => {
     const fetch = vi.fn(async (request: Request) => {
       expect(new URL(request.url).hostname).toBe("micro-app-api.btfcasheb.workers.dev");

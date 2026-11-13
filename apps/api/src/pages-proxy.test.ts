@@ -76,8 +76,9 @@ describe("Cloudflare Pages same-origin API proxy", () => {
       { CF_PAGES_BRANCH: "main", API: { fetch } },
     ));
     expect(response.status).toBe(502);
-    await expect(response.json()).resolves.toMatchObject({ error: "API_UPSTREAM_UNAVAILABLE" });
-    expect(await response.text()).not.toContain("synthetic internal detail");
+    const payload = await response.json() as { error: string; message: string };
+    expect(payload.error).toBe("API_UPSTREAM_UNAVAILABLE");
+    expect(JSON.stringify(payload)).not.toContain("synthetic internal detail");
   });
 
   it("fails closed when the production Service Binding is missing", async () => {
@@ -144,6 +145,35 @@ describe("Cloudflare Pages same-origin API proxy", () => {
     expect(cookies[1]).toContain("microapp_oauth_verifier=verifier; Path=/api/auth/google");
     expect(cookies[2]).toContain("microapp_session=session; Path=/;");
     expect(cookies[3]).toBe("unrelated=value; Path=/auth/google; Secure");
+  });
+
+  it("carries the rewritten PKCE cookies into the same-origin callback request", async () => {
+    const stateCookie = "microapp_oauth_state=synthetic-state; Path=/api/auth/google; HttpOnly; Secure; SameSite=Lax";
+    const verifierCookie = "microapp_oauth_verifier=synthetic-verifier; Path=/api/auth/google; HttpOnly; Secure; SameSite=Lax";
+    const fetch = vi.fn(async (request: Request) => {
+      expect(request.url).toBe("https://micro-app-api.btfcasheb.workers.dev/auth/google/callback?code=synthetic&state=synthetic-state");
+      expect(request.headers.get("cookie")).toBe("microapp_oauth_state=synthetic-state; microapp_oauth_verifier=synthetic-verifier");
+      return new Response("callback reached");
+    });
+
+    const response = await onRequest(context(
+      "https://micro-app-63i.pages.dev/api/auth/google/callback?code=synthetic&state=synthetic-state",
+      {
+        CF_PAGES_BRANCH: "main",
+        API: { fetch },
+      },
+      {
+        headers: {
+          Cookie: "microapp_oauth_state=synthetic-state; microapp_oauth_verifier=synthetic-verifier",
+        },
+      },
+    ));
+
+    expect(response.status).toBe(200);
+    expect(await response.text()).toBe("callback reached");
+    expect(fetch).toHaveBeenCalledTimes(1);
+    expect(stateCookie).toContain("Path=/api/auth/google");
+    expect(verifierCookie).toContain("Path=/api/auth/google");
   });
 
   it("rewrites only the three OAuth cookie names, including deletion cookies", async () => {

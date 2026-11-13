@@ -54,6 +54,32 @@ describe("Cloudflare Pages same-origin API proxy", () => {
     expect(fetch).toHaveBeenCalledTimes(1);
   });
 
+  it("rejects insecure HTTP and non-default ports even on the production hostname", async () => {
+    for (const url of [
+      "http://micro-app-63i.pages.dev/api/auth/me",
+      "https://micro-app-63i.pages.dev:8443/api/auth/me",
+    ]) {
+      const env: Record<string, unknown> = { CF_PAGES_BRANCH: "main" };
+      Object.defineProperty(env, "API", {
+        get() { throw new Error("insecure origin must not read API binding"); },
+      });
+      const response = await onRequest(context(url, env));
+      expect(response.status).toBe(503);
+      await expect(response.json()).resolves.toMatchObject({ error: "PREVIEW_API_DISABLED" });
+    }
+  });
+
+  it("returns a generic 502 if the Service Binding invocation fails", async () => {
+    const fetch = vi.fn(async () => { throw new Error("synthetic internal detail"); });
+    const response = await onRequest(context(
+      "https://micro-app-63i.pages.dev/api/auth/me",
+      { CF_PAGES_BRANCH: "main", API: { fetch } },
+    ));
+    expect(response.status).toBe(502);
+    await expect(response.json()).resolves.toMatchObject({ error: "API_UPSTREAM_UNAVAILABLE" });
+    expect(await response.text()).not.toContain("synthetic internal detail");
+  });
+
   it("fails closed when the production Service Binding is missing", async () => {
     const response = await onRequest(context(
       "https://micro-app-63i.pages.dev/api/auth/me",

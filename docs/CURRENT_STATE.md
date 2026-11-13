@@ -3433,3 +3433,16 @@ PR #346 fusionada en main: `c6a9ad611111fbc32da8b13329481458c933ec21`. HEAD exac
 - **Interpretación:** el restore aislado de 1999 ms no es RTO operacional; la edad de 8825 s no es RPO operacional porque no hay cutoff/instante de incidente independiente. La ejecución y entrega/ACK del canario quedan demostradas; no se infiere de ello aceptación formal de RPO/RTO.
 - **Pendiente humano final:** aceptación explícita del objetivo de backup diario (RPO objetivo aproximado 24 h) y del RTO alcanzable/aceptado con restauración aislada; revisión legal, fiscal y contable; y reconocimiento de que los módulos comerciales POS que aún faltan no están cubiertos por esta evidencia y deben completarse antes del uso comercial real. No declarar que todo POS está terminado.
 - **Estado invariable:** Issue #53 OPEN/P0; **PRODUCTION: NOT READY**. Paso 4 tiene evidencia de ejecución/alerta, pero no aceptación formal completa ni certificación de RPO/RTO operacional. No se modificaron Neon, secretos, datos reales ni configuración de producción en esta actualización documental.
+
+
+## PR 2 — estructura organizacional Owner-only (2026-11-13)
+
+- Base verificada: 25c0f842c7ecc8a7320b33d33abfb12402476e32 (merge SHA PR #349). El Tech Lead confirma 15/15 check-runs post-merge SUCCESS. El workflow BCV quedó disponible en main y está expresamente fuera de PR 2.
+- Rama activa: feat/branch-warehouse-register-admin-20261113.
+- Checkpoint de implementación/documentación: c0b3764dcbb17d74b05e1d096767f357dd975134; commits posteriores de esta secuencia actualizan pruebas/continuidad. Consultar siempre el HEAD vivo.
+- Añadida migración 0024_organization_structure_admin_operations.sql y assertions. El esquema usa organization_members (no organization_memberships). Cuatro funciones SECURITY DEFINER, owner microapp_migrator, search_path fijo, PUBLIC revocado, EXECUTE solo runtime, DML directo runtime revocado en tablas organizacionales.
+- Añadidas rutas Owner-only y UI Owner-only para sucursales, almacenes, cajas y asignaciones. ROLE_OPERATIONS y las rutas de lectura existentes no fueron modificadas.
+- Extendidos migration-check, migration-runner, restore/replay ACL y backup-restore smoke para BCV 0001–0024; perfil histórico main 0001–0016 intacto.
+- Añadidos tests API unitarios/integración, React/Vitest y harness PostgreSQL 18 con runtime LOGIN, incluidos duplicados, roles, aislamiento, auditoría, DML y dos carreras de apertura/desactivación.
+- Evidencia aún pendiente: no se han ejecutado PostgreSQL 18, Vitest, build/typecheck, E2E ni workflows sobre el HEAD final. No afirmar PASS hasta consultar resultados exact-HEAD. No abrir PR 2 hasta completar revisión y gates verdes.
+- No Neon, deploy, BCV activation, secrets, PR #193/#314/#315/#316 ni Issue #53. Issue #53 OPEN/P0; PRODUCTION: NOT READY; USD 0.

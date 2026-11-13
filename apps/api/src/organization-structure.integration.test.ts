@@ -27,6 +27,7 @@ describe.skipIf(!adminUrl || !runtimeUrl)("owner-only organization structure API
   let admin: Client;
   let runtime: Client;
   const organizations: string[] = [];
+  const userIds: string[] = [];
 
   beforeAll(async () => {
     admin = new Client({ connectionString: adminUrl });
@@ -41,6 +42,7 @@ describe.skipIf(!adminUrl || !runtimeUrl)("owner-only organization structure API
         await admin.query("DELETE FROM auth_sessions WHERE user_id IN (SELECT user_id FROM organization_members WHERE organization_id=$1)", [organizationId]);
         await admin.query("DELETE FROM organizations WHERE id=$1", [organizationId]);
       }
+      if (userIds.length) await admin.query("DELETE FROM app_users WHERE id = ANY($1::uuid[])", [userIds]);
       await admin.end();
     }
   });
@@ -60,6 +62,7 @@ describe.skipIf(!adminUrl || !runtimeUrl)("owner-only organization structure API
         [role + "-" + suffix + "@example.test", role + " " + suffix],
       );
       const id = user.rows[0]!.id;
+      userIds.push(id);
       await admin.query(
         "INSERT INTO organization_members (organization_id,user_id,role,is_active) VALUES ($1,$2,$3,true)",
         [organizationId,id,role],

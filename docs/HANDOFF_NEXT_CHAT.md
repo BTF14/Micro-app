@@ -3868,3 +3868,6 @@ La implementación y harnesses están añadidos, pero NO están validados. Antes
 7. Abrir PR no-Draft solo con diff completo revisado y CI verde exact-HEAD. No fusionar; entregar número, SHA, lista de archivos, checks/status contexts/reviews y threads al Tech Lead.
 
 No repetir solicitudes de Build IDs, Cloudflare screenshots, terminal, CLI, TinyFish ni reconexiones. No pedir datos ya documentados. No tocar Neon main, BCV_SYNC_ENABLED, PR #193/#314/#315/#316 ni Issue #53. Mantener Issue #53 OPEN/P0, producción NOT READY y coste USD 0.
+
+
+Nota de compatibilidad de permisos para 0024: la migración 0012 ya necesita insertar la membresía inicial del Owner durante el bootstrap Google. Por eso 0024 revoca INSERT de tabla y mantiene exclusivamente INSERT column-scoped en organization_members(organization_id,user_id,role); no hay UPDATE/DELETE ni acceso de INSERT a is_active/created_at/updated_at. Las assertions validan el alcance y el test de PostgreSQL ejercita el INSERT mínimo. Esto preserva OAuth sin conceder DML general.

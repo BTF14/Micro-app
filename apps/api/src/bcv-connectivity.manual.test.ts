@@ -49,7 +49,7 @@ describe("manual BCV source connectivity (no database)", () => {
       bytes.set(chunk, offset);
       offset += chunk.byteLength;
     }
-    const html = new TextDecoder("utf-8", { fatal: true }).decode(bytes);
+    const html = new TextDecoder("utf-8", { fatal: true, ignoreBOM: false }).decode(bytes);
     const parsed = parseBcvOfficialRate(html);
 
     console.info({

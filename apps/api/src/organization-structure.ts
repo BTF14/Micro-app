@@ -8,7 +8,6 @@ import { withDatabaseClient, withDatabaseTransaction } from "./database";
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const MAX_BODY = 4 * 1024;
-type Kind = "unauthenticated" | "forbidden";
 
 function text(value: unknown, max: number): string | null {
   if (typeof value !== "string") return null;
@@ -73,7 +72,7 @@ export function registerOrganizationStructureRoutes(app: Hono<{ Bindings: Bindin
     if (!session) { clearSessionCookie(c); return c.json({ error: "UNAUTHENTICATED", message: "Inicia sesión para continuar." }, 401); }
     try {
       const result = await withDatabaseClient(c.env.DATABASE_URL, (client) => withDatabaseTransaction(client, async (tx) => {
-        const auth = await authorizeTenantOperation(tx, session, organizationId, "organization_policy.manage");
+        const auth = await authorizeTenantOperation(tx, session, organizationId, "organization_policy.manage", false);
         if (!auth.allowed) return { kind: auth.reason === "operation_denied" ? "forbidden" as const : "unauthenticated" as const };
         const branches = await tx.query(
           `SELECT b.id, b.name, b.slug, b.is_active,
@@ -117,7 +116,7 @@ export function registerOrganizationStructureRoutes(app: Hono<{ Bindings: Bindin
     if (!body || !name || !slug) return c.json({ error: "INVALID_BRANCH", message: "Nombre y código de sucursal son obligatorios." }, 400);
     try {
       const result = await withDatabaseClient(c.env.DATABASE_URL, (client) => withDatabaseTransaction(client, async (tx) => {
-        const auth = await authorizeTenantOperation(tx, session, org, "organization_policy.manage");
+        const auth = await authorizeTenantOperation(tx, session, org, "organization_policy.manage", false);
         if (!auth.allowed) return { kind: auth.reason === "operation_denied" ? "forbidden" as const : "unauthenticated" as const };
         const row = await tx.query("SELECT * FROM public.create_branch($1::uuid,$2::uuid,$3::text,$4::text)", [auth.context.organizationId,auth.context.userId,name,slug]);
         return { kind: "ok" as const, branch: row.rows[0] };
@@ -142,7 +141,7 @@ export function registerOrganizationStructureRoutes(app: Hono<{ Bindings: Bindin
     if (!body || !name || !code) return c.json({ error: "INVALID_STRUCTURE_ITEM", message: "Nombre y código son obligatorios." }, 400);
     try {
       const result = await withDatabaseClient(c.env.DATABASE_URL, (client) => withDatabaseTransaction(client, async (tx) => {
-        const auth = await authorizeTenantOperation(tx, session, org, "organization_policy.manage");
+        const auth = await authorizeTenantOperation(tx, session, org, "organization_policy.manage", false);
         if (!auth.allowed) return { kind: auth.reason === "operation_denied" ? "forbidden" as const : "unauthenticated" as const };
         const fn = kind === "warehouses" ? "create_warehouse" : "create_register";
         const row = await tx.query(`SELECT * FROM public.${fn}($1::uuid,$2::uuid,$3::uuid,$4::text,$5::text)`,
@@ -170,9 +169,9 @@ export function registerOrganizationStructureRoutes(app: Hono<{ Bindings: Bindin
     if (!body || typeof body.is_active !== "boolean") return c.json({ error: "INVALID_MEMBERSHIP", message: "El estado de la asignación no es válido." }, 400);
     try {
       const result = await withDatabaseClient(c.env.DATABASE_URL, (client) => withDatabaseTransaction(client, async (tx) => {
-        const auth = await authorizeTenantOperation(tx, session, org, "members.manage");
+        const auth = await authorizeTenantOperation(tx, session, org, "members.manage", false);
         if (!auth.allowed) return { kind: auth.reason === "operation_denied" ? "forbidden" as const : "unauthenticated" as const };
-        const branchPermission = await authorizeTenantOperation(tx, session, org, "branch_memberships.manage");
+        const branchPermission = await authorizeTenantOperation(tx, session, org, "branch_memberships.manage", false);
         if (!branchPermission.allowed) return { kind: branchPermission.reason === "operation_denied" ? "forbidden" as const : "unauthenticated" as const };
         if (auth.context.userId !== branchPermission.context.userId || auth.context.organizationId !== branchPermission.context.organizationId) {
           return { kind: "forbidden" as const };

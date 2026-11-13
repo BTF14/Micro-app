@@ -3435,19 +3435,24 @@ PR #346 fusionada en main: `c6a9ad611111fbc32da8b13329481458c933ec21`. HEAD exac
 - **Estado invariable:** Issue #53 OPEN/P0; **PRODUCTION: NOT READY**. Paso 4 tiene evidencia de ejecución/alerta, pero no aceptación formal completa ni certificación de RPO/RTO operacional. No se modificaron Neon, secretos, datos reales ni configuración de producción en esta actualización documental.
 
 
-## PR 2 — estructura organizacional Owner-only (2026-11-13)
+## PR 2 — estructura organizacional Owner-only: validación exact-HEAD (2026-11-13)
 
-- Base verificada: 25c0f842c7ecc8a7320b33d33abfb12402476e32 (merge SHA PR #349). El Tech Lead confirma 15/15 check-runs post-merge SUCCESS. El workflow BCV quedó disponible en main y está expresamente fuera de PR 2.
-- Rama activa: feat/branch-warehouse-register-admin-20261113.
-- Checkpoint de implementación/documentación: c0b3764dcbb17d74b05e1d096767f357dd975134; commits posteriores de esta secuencia actualizan pruebas/continuidad. Consultar siempre el HEAD vivo.
-- Añadida migración 0024_organization_structure_admin_operations.sql y assertions. El esquema usa organization_members (no organization_memberships). Cuatro funciones SECURITY DEFINER, owner microapp_migrator, search_path fijo, PUBLIC revocado, EXECUTE solo runtime, DML general/table-level runtime revocado en tablas organizacionales; se conserva solo INSERT por columnas organization_id/user_id/role en organization_members para el bootstrap Google preexistente de migración 0012, sin UPDATE/DELETE.
-- Añadidas rutas Owner-only y UI Owner-only para sucursales, almacenes, cajas y asignaciones. ROLE_OPERATIONS y las rutas de lectura existentes no fueron modificadas.
-- Extendidos migration-check, migration-runner, restore/replay ACL y backup-restore smoke para BCV 0001–0024; perfil histórico main 0001–0016 intacto.
-- Añadidos tests API unitarios/integración, React/Vitest y harness PostgreSQL 18 con runtime LOGIN, incluidos duplicados, roles, aislamiento, auditoría, DML y dos carreras de apertura/desactivación.
-- Evidencia aún pendiente: no se han ejecutado PostgreSQL 18, Vitest, build/typecheck, E2E ni workflows sobre el HEAD final. No afirmar PASS hasta consultar resultados exact-HEAD. No abrir PR 2 hasta completar revisión y gates verdes.
-- No Neon, deploy, BCV activation, secrets, PR #193/#314/#315/#316 ni Issue #53. Issue #53 OPEN/P0; PRODUCTION: NOT READY; USD 0.
+Validación de implementación exact-HEAD — 2026-11-13:
+- SHA de código validado: `23581b2a1956c3433683820c7b2a2db3eb24b696`; comparación con main `25c0f842c7ecc8a7320b33d33abfb12402476e32`: ahead 83 / behind 0.
+- 11/11 check-runs SUCCESS y 6/6 workflow runs push SUCCESS.
+- CI run [43525236567](https://github.com/BTF14/Micro-app/actions/runs/43525236567), job `verify` 132229270076 SUCCESS: build/typecheck, unit tests, API PostgreSQL integration y demás suites configuradas.
+- PostgreSQL migration runner [43525236428](https://github.com/BTF14/Micro-app/actions/runs/43525236428): jobs `migration-runner` 132229278436 y `PostgreSQL 18 managed-owner role membership contract` 132229279017 SUCCESS; incluye el harness `scripts/tests/test_organization_structure_admin.sh`, happy paths, duplicados, denegaciones, DML directo y las dos carreras apertura/desactivación.
+- Database migration validation [43525236620](https://github.com/BTF14/Micro-app/actions/runs/43525236620), job `postgres-migration` 132229284087 SUCCESS: rollback atómico y assertions de 0024.
+- Backup restore smoke [43525236472](https://github.com/BTF14/Micro-app/actions/runs/43525236472): main 0001–0016 job 132229236824, BCV 0001–0024 job 132229237025 y legacy backup contract job 132229237201, todos SUCCESS. Compatibilidad ACL 16/23/24 SUCCESS.
+- Security scan [43525236548](https://github.com/BTF14/Micro-app/actions/runs/43525236548) SUCCESS; Trivy filesystem/configuration check SUCCESS.
+- Secret history scan [43525236628](https://github.com/BTF14/Micro-app/actions/runs/43525236628) SUCCESS.
+- Cloudflare Pages y Workers Builds checks SUCCESS; sin deploy manual a producción.
+- Los 11 check-runs del SHA exacto están en SUCCESS. El nuevo commit documental de continuidad debe volver a validarse en su propio HEAD antes de abrir PR 2.
 
-
-Nota de compatibilidad de permisos para 0024: la migración 0012 ya necesita insertar la membresía inicial del Owner durante el bootstrap Google. Por eso 0024 revoca INSERT de tabla y mantiene exclusivamente INSERT column-scoped en organization_members(organization_id,user_id,role); no hay UPDATE/DELETE ni acceso de INSERT a is_active/created_at/updated_at. Las assertions validan el alcance y el test de PostgreSQL ejercita el INSERT mínimo. Esto preserva OAuth sin conceder DML general.
-
-- Se habilitaron triggers push exactos de preflight para esta rama en CI, migration-runner y backup-restore-smoke (migration-check ya incluye feat/**). No hay aún check-runs/status contexts visibles para certificar PASS; el wrapper de workflow-runs usado filtra pull_request. No abrir PR ni declarar gates verdes sin evidencia directa.
+- Rama: `feat/branch-warehouse-register-admin-20261113`; SHA de código probado `23581b2a1956c3433683820c7b2a2db3eb24b696`; main `25c0f842c7ecc8a7320b33d33abfb12402476e32`; ahead 83 / behind 0.
+- La migración 0024 implementa las cuatro funciones SECURITY DEFINER y las assertions verifican owner, search_path, ACL y ausencia de DML directo runtime. El harness PostgreSQL 18 verifica ambas carreras de turnos.
+- API owner-only, validación Trusted Origin/body/UUID/tamaño, no-store y actor desde sesión; ROLE_OPERATIONS y rutas de lectura existentes no cambiaron.
+- UI Owner-only con onboarding de primera sucursal y secuencia sucursal → almacén → caja → miembros/asignaciones. Los paneles operativos se desmontan al cambiar de vista y vuelven a consultar al montarse.
+- Restore conserva main 0016 y BCV histórico 0023, añade BCV 0024; no se tocaron migraciones 0023 o anteriores ni BCV sync/producer.
+- No hay PR 2 abierta ni merge. Después de este commit documental, verificar otra vez todos los check-runs del HEAD nuevo antes de crear PR no-Draft.
+- Issue #53 OPEN/P0; PRODUCTION: NOT READY; coste incremental USD 0. No Neon main ni despliegue manual a producción.

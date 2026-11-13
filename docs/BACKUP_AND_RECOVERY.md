@@ -596,3 +596,8 @@ No declarar Paso 4 completo hasta tener CI exact-HEAD, un run de restore instrum
 ## Extensión de perfil en rama — PR 2 (2026-11-13)
 
 La rama aislada `feat/branch-warehouse-register-admin-20261113` añade el perfil BCV/proyección **0001–0024** para validar la migración organizacional nueva, pero conserva el perfil histórico BCV **0001–0023** como `bcv` y nombra el perfil nuevo `bcv-0024`. El restore detecta el perfil desde el ledger, verifica checksums del prefijo exacto de migraciones y ejecuta solo las assertions aplicables a ese historial. `main`/paired-intent **0001–0016** sigue fijado al bundle inmutable original. No se modifican las migraciones ni assertions 0023 o anteriores. La prueba de compatibilidad de ACL cubre los perfiles 16/23/24; el smoke PostgreSQL 18 de esta rama valida el restore completo 0024. Esta extensión está en rama, no fusionada; no demuestra restore productivo ni implica cambios en BCV sync, producer, secretos, Cron o Neon.
+
+
+## PR 2 — compatibilidad de perfiles y restore smoke (2026-11-13)
+
+En código SHA `23581b2a1956c3433683820c7b2a2db3eb24b696`, Backup restore smoke run [43525236472](https://github.com/BTF14/Micro-app/actions/runs/43525236472) SUCCESS: main 0001–0016, BCV 0001–0024 y legacy backup contract. El paso de compatibilidad ACL valida main 16, BCV histórico 23 y BCV nuevo 24. El runner remoto detecta 23 como `bcv` y 24 como `bcv-0024`, verifica checksums del prefijo histórico y ejecuta assertions 0024 solo para el perfil nuevo. No se alteraron las migraciones 0023 o anteriores ni se ejecutó restore sobre Neon/producción.

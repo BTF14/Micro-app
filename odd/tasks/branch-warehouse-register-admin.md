@@ -1,6 +1,6 @@
 # Administración de estructura organizacional — PR 2
 
-**Estado:** implementación de código y harnesses añadidos; validación PostgreSQL/CI y revisión final pendientes; no habilitada en producción.
+**Estado:** implementación completa y revisión del diff realizadas. Código validado en `23581b2a1956c3433683820c7b2a2db3eb24b696` con 11/11 check-runs SUCCESS; PR 2 aún no abierta y no fusionada. No habilitada en producción.
 **Rama:** `feat/branch-warehouse-register-admin-20261113`
 **Base:** `main` actualizado después de PR #349; merge SHA `25c0f842c7ecc8a7320b33d33abfb12402476e32`.
 **Fecha:** 2026-11-13 UTC
@@ -35,7 +35,7 @@ Implementar administración exclusiva de Owner para sucursales, almacenes, cajas
 
 ## Criterios de aceptación
 
-- [ ] Las cuatro funciones SQL verifican organización activa, actor Owner activo, relaciones tenant-scoped, códigos/slugs normalizados, duplicados y auditoría atómica.
+- [x] Las cuatro funciones SQL verifican organización activa, actor Owner activo, relaciones tenant-scoped, códigos/slugs normalizados, duplicados y auditoría atómica.
 - [ ] La desactivación de membresía es serializable respecto a apertura de turnos y falla si el miembro tiene turno abierto en la sucursal.
 - [ ] No hay grants DML directos generales para `microapp_runtime`; solo EXECUTE explícito en las funciones nuevas.
 - [ ] Assertions verifican propietario, SECURITY DEFINER, search_path, ACL de PUBLIC, grants de runtime, denegación DML y auditoría.
@@ -44,7 +44,7 @@ Implementar administración exclusiva de Owner para sucursales, almacenes, cajas
 - [ ] Ninguna ruta de lectura existente pierde sus permisos actuales.
 - [ ] UI administrativa no aparece ni opera para otros roles; guía inicial clara sin sucursales; estado sincronizado tras mutaciones.
 - [ ] PostgreSQL 18 efímero cubre happy paths, duplicados, cross-tenant, roles admin/cashier/inventory, origen no confiable, concurrencia, turnos abiertos y DML general runtime denegado.
-- [ ] React/Vitest, build/typecheck, CI, migración, runner, restore smoke, seguridad, E2E y demás workflows obligatorios pasan en el HEAD exacto final.
+- [ ] React/Vitest, build/typecheck, CI, migración, runner, restore smoke, seguridad, secret-history y todos los checks aplicables de push pasan en el HEAD de código exacto `23581b2a1956c3433683820c7b2a2db3eb24b696` (11/11 check-runs SUCCESS).
 - [ ] Diff revisado completo; PR 2 no se fusiona hasta 100% SUCCESS exact-HEAD y sin riesgos materiales.
 - [ ] Issue #53 sigue OPEN/P0; `PRODUCTION: NOT READY`.
 
@@ -88,17 +88,19 @@ Implementar administración exclusiva de Owner para sucursales, almacenes, cajas
   - \`organization-structure.test.ts\` (guards de origen, UUID, JSON y tamaño).
   - \`organization-structure.integration.test.ts\` (API real con PostgreSQL y login runtime).
   - \`OrganizationStructurePanel.test.tsx\` y \`OrganizationStructureRoleIsolation.test.tsx\`.
-  - \`scripts/tests/test_organization_structure_admin.sh\` (happy paths con runtime, normalización, duplicados, cross-tenant/branch, denegaciones de roles, auditoría, DML y ambas carreras apertura-vs-desactivación).
-- Se extendió el perfil BCV de restore/migración de 0023 a 0024 en runner, restore, replay ACL, smoke y pruebas. El perfil histórico main 0001–0016 no se modificó. Se añadió rollback injection para 0024.
+  - \`scripts/tests/test_organization_structure_admin.sh\` (happy paths con runtime, normalización, duplicados, cross-tenant, cross-branch, denegaciones de roles, auditoría, DML y ambas carreras apertura-vs-desactivación).
+- Se añadió el perfil BCV 0001–0024 (`bcv-0024`) en runner, restore, replay ACL y smoke, conservando el perfil histórico BCV 0001–0023 (`bcv`) y el perfil main 0001–0016. `scripts/db/test_restore_role_grants_profiles.sh` valida los tres perfiles; se añadió rollback injection para 0024. Se añadió rollback injection para 0024.
 
-### Límites de evidencia
+### Límites de evidencia y resultados exactos
 
-- La inspección confirmó que el esquema real usa \`organization_members\`, no una tabla llamada \`organization_memberships\`.
-- \`ROLE_OPERATIONS\` no fue modificado; rutas de lectura existentes no fueron editadas.
-- No se ha ejecutado todavía PostgreSQL 18, Vitest, build/typecheck, E2E ni ningún workflow sobre el HEAD actual. La existencia de los harnesses no equivale a que hayan pasado.
-- No se ha abierto PR 2: la directiva exige CI verde exact-HEAD y revisión completa antes de abrirla. No se ha fusionado ni desplegado nada.
-- No se tocó Neon, secretos, BCV_SYNC_ENABLED, el workflow bcv-source-connectivity.yml ni el código de sincronización/producer BCV. La única modificación relacionada con BCV es la extensión del perfil de restore/migraciones 0023→0024 solicitada para compatibilidad. PR #193/#314/#315/#316 e Issue #53 no se modificaron; Issue #53 permanece OPEN/P0 y producción sigue NOT READY.
-
+- La inspección confirmó que el esquema real usa `organization_members`, no una tabla llamada `organization_memberships`.
+- `ROLE_OPERATIONS` no fue modificado; las rutas de lectura existentes permanecen intactas.
+- Código validado en SHA `23581b2a1956c3433683820c7b2a2db3eb24b696`: 11/11 check-runs SUCCESS y 6/6 workflow runs push SUCCESS. Runs: CI 43525236567; migration-runner 43525236428; migration-check 43525236620; backup-restore-smoke 43525236472; security scan 43525236548; secret-history 43525236628.
+- PostgreSQL 18 cubrió las cuatro operaciones con LOGIN runtime, auditoría, duplicados, cross-tenant, cross-branch, denegaciones admin/cashier/inventory, DML directo y ambas carreras concurrentes apertura/desactivación.
+- API integration, React/Vitest, build/typecheck, migración 0024, rollback atómico, restore main 0016, restore BCV 0024 y compatibilidad de perfiles 16/23/24: SUCCESS.
+- Se añadió prueba API de aislamiento entre sucursales: un turno abierto en Norte no bloquea desactivar la asignación en Sur; en la misma sucursal sí se rechaza.
+- El diff completo contra main fue revisado. Main permanece en `25c0f842c7ecc8a7320b33d33abfb12402476e32`; la rama está 0 detrás. No existe PR 2 todavía; no se ha fusionado. Tras este commit documental, comprobar de nuevo el HEAD y sus checks exactos antes de abrir la PR no-Draft.
+- No se tocó Neon, secretos, BCV_SYNC_ENABLED, `bcv-source-connectivity.yml` ni el código BCV sync/producer. Solo se amplió el perfil de restore de forma compatible, manteniendo BCV 0023. PR #193/#314/#315/#316 e Issue #53 no se modificaron; Issue #53 permanece OPEN/P0 y producción sigue NOT READY.
 ### Base de integración confirmada
 
 - PR #349 fusionada por squash; merge SHA \`25c0f842c7ecc8a7320b33d33abfb12402476e32\`.

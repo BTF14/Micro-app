@@ -3851,26 +3851,18 @@ No pedir nuevamente Build IDs, capturas, terminal, CLI, TinyFish, reconexiones n
 **No cambiar:** Issue #53 OPEN/P0; PRODUCTION: NOT READY. No tocar Neon main, secretos, datos reales, DNS, billing ni deploy productivo para esta tarea documental.
 
 
-## Continuación obligatoria — PR 2 estructura Owner-only (2026-11-13)
+## Continuación — PR 2 estructura organizacional Owner-only (2026-11-13)
 
-Rama: feat/branch-warehouse-register-admin-20261113
-Base main: 25c0f842c7ecc8a7320b33d33abfb12402476e32
-Checkpoint documental inicial: c0b3764dcbb17d74b05e1d096767f357dd975134
+**Estado real:** implementación de código validada; no existe PR todavía y no se ha fusionado.
 
-La implementación y harnesses están añadidos, pero NO están validados. Antes de abrir PR:
+- Rama: `feat/branch-warehouse-register-admin-20261113`.
+- SHA de código con 11/11 check-runs SUCCESS: `23581b2a1956c3433683820c7b2a2db3eb24b696`.
+- Base main: `25c0f842c7ecc8a7320b33d33abfb12402476e32`; ahead 83 / behind 0.
+- Evidencia exacta: CI `43525236567`; migration-runner `43525236428`; migration-check `43525236620`; backup-restore-smoke `43525236472`; security scan `43525236548`; secret-history `43525236628`. Los 11 check-runs del SHA indicado concluyeron SUCCESS.
+- PostgreSQL 18 cubrió las cuatro operaciones con LOGIN runtime, auditoría, duplicados, cross-tenant, cross-branch, roles denegados, DML directo denegado y ambas carreras apertura/desactivación.
+- React/Vitest, build/typecheck, API integration, migración 0024 y restore smoke (main 0016, BCV 0023 legacy y BCV 0024) SUCCESS.
+- Perfil histórico BCV 0023 sigue disponible como `bcv`; nuevo 0024 es `bcv-0024`; main 0016 intacto.
+- `ROLE_OPERATIONS`, rutas de lectura y migraciones 0023 o anteriores no fueron modificadas. No se tocó Neon main, BCV sync/producer, `BCV_SYNC_ENABLED` ni `bcv-source-connectivity.yml`.
+- Issue #53 sigue OPEN/P0; PRODUCTION: NOT READY; USD 0.
 
-1. Leer odd/tasks/branch-warehouse-register-admin.md y revisar el diff completo contra main.
-2. Confirmar HEAD vivo, que la rama sigue sin commits detrás de main y que no se tocaron PRs excluidas ni archivos BCV.
-3. Ejecutar en CI PostgreSQL 18: migration-check, migration-runner, assertions 0024, scripts/tests/test_organization_structure_admin.sh, test_managed_role_membership.sh y restore smoke BCV 0001–0024; comprobar main 0001–0016 sigue intacto.
-4. Ejecutar pnpm test, API integration organization-structure.integration.test.ts, Vitest web, pnpm build, typecheck, Playwright/E2E, SAST, Security, Dependency Review, Secret History y todos los workflows requeridos en el SHA exacto final.
-5. Corregir cualquier fallo; repetir todos los checks afectados sobre el HEAD nuevo. No reutilizar CI de SHA anterior.
-6. Revisar seguridad/lock-order SQL, permisos API, aislamiento por rol, responsive UI, sincronización de estado y regresiones de lectura. ROLE_OPERATIONS debe permanecer sin cambios.
-7. Abrir PR no-Draft solo con diff completo revisado y CI verde exact-HEAD. No fusionar; entregar número, SHA, lista de archivos, checks/status contexts/reviews y threads al Tech Lead.
-
-No repetir solicitudes de Build IDs, Cloudflare screenshots, terminal, CLI, TinyFish ni reconexiones. No pedir datos ya documentados. No tocar Neon main, BCV_SYNC_ENABLED, PR #193/#314/#315/#316 ni Issue #53. Mantener Issue #53 OPEN/P0, producción NOT READY y coste USD 0.
-
-
-Nota de compatibilidad de permisos para 0024: la migración 0012 ya necesita insertar la membresía inicial del Owner durante el bootstrap Google. Por eso 0024 revoca INSERT de tabla y mantiene exclusivamente INSERT column-scoped en organization_members(organization_id,user_id,role); no hay UPDATE/DELETE ni acceso de INSERT a is_active/created_at/updated_at. Las assertions validan el alcance y el test de PostgreSQL ejercita el INSERT mínimo. Esto preserva OAuth sin conceder DML general.
-
-
-Preflight sin PR: CI, migration-runner y backup-restore-smoke tienen triggers push limitados a esta rama; migration-check ya cubre feat/**. Verificar directamente los check-runs/workflow runs de push del HEAD vivo. La consulta wrapper de runs solo devuelve pull_request, por lo que un resultado vacío no demuestra que push runs no existan; el combined status vacío tampoco es CI verde. Si no hay ejecución, no abrir PR antes de resolver el mecanismo de validación.
+**Siguiente paso:** este commit solo actualiza continuidad; consulta el HEAD vivo y exige 11/11 check-runs SUCCESS en ese SHA documental antes de abrir la PR no-Draft. Revisa el estado de PRs excluidas, Issue #53 y base main; luego abre PR 2 con resumen de seguridad, lista de archivos y runs exactos. No la fusiones. No pidas al propietario información ya documentada ni Build IDs/capturas/terminal/TinyFish.

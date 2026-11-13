@@ -3252,14 +3252,12 @@ Se integró PR #346 (`c6a9ad611111fbc32da8b13329481458c933ec21`) tras 10/10 work
 - Issue #53 permanece OPEN/P0; PRODUCTION: NOT READY. No se modificaron Neon, secretos, datos reales ni producción.
 
 
-## 2026-11-13 — PR 2 estructura organizacional Owner-only
+## 2026-11-13 — PR 2 estructura organizacional Owner-only: validación exact-HEAD
 
-- Tras PR #349 (merge SHA 25c0f842c7ecc8a7320b33d33abfb12402476e32, 15/15 post-merge SUCCESS confirmado por Tech Lead), se continuó en rama aislada feat/branch-warehouse-register-admin-20261113.
-- Se añadieron migration 0024 + assertions, API owner-only, UI owner-only, tests de seguridad/integración y extensión de perfil BCV restore/migration hasta 0024.
-- El modelo físico existente denomina la tabla organization_members; no se inventó ni creó una tabla alternativa organization_memberships.
-- El Owner creador se asigna a la nueva sucursal de forma atómica. La activación de una asignación ausente se soporta mediante set_branch_membership_active(..., true).
-- La revocación y la apertura de turno se serializan por organización/sucursal/asignación. Se añadieron dos escenarios concurrentes al harness PostgreSQL 18.
-- A esta fecha no hay resultados de ejecución PostgreSQL/Vitest/build/CI para el HEAD final; los tests están escritos, no demostrados. PR 2 no se abrió ni fusionó.
-- Sin cambios a Neon, producción, BCV sync/producer, ROLE_OPERATIONS ni Issue #53. Solo se extendió el perfil BCV de restore/migraciones 0023→0024 como pidió el contrato de migraciones. Issue #53 OPEN/P0; PRODUCTION: NOT READY; USD 0.
+El código de PR 2 alcanzó SHA `23581b2a1956c3433683820c7b2a2db3eb24b696`, directamente basado en main `25c0f842c7ecc8a7320b33d33abfb12402476e32` (ahead 83, behind 0). Se corrigieron fallos encontrados por ejecuciones reales de PostgreSQL 18 y TypeScript: normalización SQL de códigos, ambigüedad PL/pgSQL en ON CONFLICT, carácter de escape inválido y unión de status HTTP 403. Se añadió prueba de aislamiento cross-branch y compatibilidad de perfiles de restore.
 
-- Hallazgo de compatibilidad preservado en 0024: migración 0012 ya necesita crear el primer organization_members durante OAuth bootstrap. 0024 revoca INSERT de tabla y solo conserva INSERT column-scoped para organization_id/user_id/role; UPDATE/DELETE y los demás campos siguen denegados. Assertions comprueban ese límite.
+Resultado exact-HEAD: 11/11 check-runs SUCCESS; 6/6 workflow runs push SUCCESS. CI, PostgreSQL migration runner, database migration validation, backup restore smoke (main 0016, BCV 0024 y legacy), security scan, secret-history, Cloudflare Pages y Workers Builds pasaron. PostgreSQL 18 validó las cuatro funciones, ACL, auditoría, denegaciones, DML directo y ambas carreras apertura/desactivación; API integration, React/Vitest y build/typecheck también pasaron.
+
+Compatibilidad restore: main 0001–0016 se conserva; BCV 0001–0023 sigue como perfil histórico `bcv`; BCV 0001–0024 se identifica como `bcv-0024`. No se modificaron migraciones 0023 o anteriores. No se cambió ROLE_OPERATIONS, rutas de lectura, BCV sync/producer, bcv-source-connectivity, Neon main ni las PR excluidas.
+
+No se abrió ni fusionó PR 2. El commit siguiente es documental y requiere nueva validación exact-HEAD antes de abrir PR no-Draft. Issue #53 OPEN/P0; PRODUCTION: NOT READY; coste incremental USD 0.

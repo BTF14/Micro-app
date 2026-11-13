@@ -1092,11 +1092,13 @@ Siguiente paso: PR #319 para docs/NEON_LEAST_PRIVILEGE_AUDIT_RUNBOOK.md, instruc
 Post-merge CI de main SHA 3ac66a180fcf23421b546140a419a45062e633dd terminó SUCCESS: 11/11 workflows y 13/13 check-runs.
 
 
-## Checkpoint — PR 2 estructura organizacional Owner-only — 2026-11-13
+## Checkpoint — PR 2 estructura organizacional Owner-only — validación (2026-11-13)
 
-- Rama: feat/branch-warehouse-register-admin-20261113; base 25c0f842c7ecc8a7320b33d33abfb12402476e32.
-- Migration 0024, assertions, API, UI, pruebas PostgreSQL 18/API/Vitest y extensión restore/migration-runner hasta 0024 añadidas. Ver odd/tasks/branch-warehouse-register-admin.md.
-- Checkpoint de continuidad del cambio: c0b3764dcbb17d74b05e1d096767f357dd975134; verificar HEAD vivo porque hubo commits adicionales posteriores.
-- Estado: implementación escrita; validación pendiente. No abrir PR hasta revisión completa y CI verde exact-HEAD. No merge.
-- PR #349 post-merge: 15/15 check-runs SUCCESS según confirmación del Tech Lead.
-- Exclusiones intactas: Neon main, BCV activation, PR #193/#314/#315/#316, Issue #53. Issue #53 OPEN/P0; PRODUCTION: NOT READY; USD 0.
+- Código probado: `23581b2a1956c3433683820c7b2a2db3eb24b696`; main `25c0f842c7ecc8a7320b33d33abfb12402476e32`; ahead 83 / behind 0.
+- Check-runs: 11/11 SUCCESS. Workflows push: CI 43525236567, PostgreSQL migration runner 43525236428, Database migration validation 43525236620, Backup restore smoke 43525236472, Security scan 43525236548, Secret history scan 43525236628; todos SUCCESS.
+- CI `verify`: build/typecheck, unit/React-Vitest, API integration y PostgreSQL suites SUCCESS.
+- PostgreSQL 18: migración 0024, assertions, funciones runtime, duplicados, denegaciones, cross-tenant/cross-branch, DML y ambas carreras concurrentes SUCCESS.
+- Restore: main 0016, BCV histórico 0023, BCV actual 0024 SUCCESS. Perfiles ACL probados 16/23/24.
+- Diff revisado: 27 archivos, alcance organizacional + CI/restore/docs; sin ROLE_OPERATIONS, sin cambios a rutas de lectura, migraciones 0023 o anteriores, Neon main ni BCV sync/producer.
+- Rama sin PR; no merge. Tras el commit documental, volver a verificar check-runs del HEAD exacto y abrir PR no-Draft solo si todos están SUCCESS. No fusionar.
+- Issue #53 OPEN/P0; PRODUCTION: NOT READY; USD 0.

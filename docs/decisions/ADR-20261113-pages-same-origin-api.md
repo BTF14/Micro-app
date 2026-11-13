@@ -51,7 +51,7 @@ Revertir la PR restaura el frontend a la URL Worker anterior y elimina Pages Fun
 - Repositorio: `BTF14/Micro-app`
 - Rama: `feat/pages-same-origin-api-20261113`
 - Base SHA: `0c90aa382633452daeab81e3937112fa1c0ae0ae`
-- Implementación y pruebas añadidas en PR #339; los resultados de CI exact-HEAD siguen pendientes.
+- Implementación y pruebas añadidas en PR #339; el último cambio añade casos de branch runtime ausente y procedencia de IP. CI exact-HEAD pendiente.
 - Fuentes primarias: Cloudflare Pages Functions [get started](https://developers.cloudflare.com/pages/functions/get-started/), [bindings](https://developers.cloudflare.com/pages/functions/bindings/), [build configuration](https://developers.cloudflare.com/pages/configuration/build-configuration/); revisión 2026-11-13.
 - Limitaciones: no se inspeccionó ni modificó el dashboard durante esta intervención; la raíz/build settings constan en auditoría versionada del repo y directiva del propietario. No se ejecutó localmente el toolchain porque el sandbox no pudo resolver github.com para clonar el checkout.
 

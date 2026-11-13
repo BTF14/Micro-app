@@ -37,6 +37,18 @@ BEGIN
           pg_catalog.acldefault('f', migrator_oid)
         )) a WHERE a.grantee = 0 AND a.privilege_type = 'EXECUTE'
       )
+      OR EXISTS (
+        SELECT 1 FROM pg_catalog.aclexplode(COALESCE(
+          (SELECT proacl FROM pg_catalog.pg_proc WHERE oid = fn_oid),
+          pg_catalog.acldefault('f', migrator_oid)
+        )) a WHERE a.grantee NOT IN (migrator_oid, runtime_oid)
+      )
+      OR EXISTS (
+        SELECT 1 FROM pg_catalog.aclexplode(COALESCE(
+          (SELECT proacl FROM pg_catalog.pg_proc WHERE oid = fn_oid),
+          pg_catalog.acldefault('f', migrator_oid)
+        )) a WHERE a.grantee = runtime_oid AND a.privilege_type <> 'EXECUTE'
+      )
     THEN RAISE EXCEPTION 'ORGANIZATION_STRUCTURE_FUNCTION_ACL_INVALID: %', table_name; END IF;
   END LOOP;
 
@@ -49,6 +61,7 @@ BEGIN
   END LOOP;
 
   IF pg_catalog.strpos(pg_catalog.pg_get_functiondef(pg_catalog.to_regprocedure(signatures[1])), 'branch.created') = 0
+    OR pg_catalog.strpos(pg_catalog.pg_get_functiondef(pg_catalog.to_regprocedure(signatures[1])), 'branch_memberships') = 0
     OR pg_catalog.strpos(pg_catalog.pg_get_functiondef(pg_catalog.to_regprocedure(signatures[2])), 'warehouse.created') = 0
     OR pg_catalog.strpos(pg_catalog.pg_get_functiondef(pg_catalog.to_regprocedure(signatures[3])), 'register.created') = 0
     OR pg_catalog.strpos(pg_catalog.pg_get_functiondef(pg_catalog.to_regprocedure(signatures[4])), 'branch_membership.deactivated') = 0

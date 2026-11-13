@@ -97,7 +97,7 @@ Implementar administración exclusiva de Owner para sucursales, almacenes, cajas
 - \`ROLE_OPERATIONS\` no fue modificado; rutas de lectura existentes no fueron editadas.
 - No se ha ejecutado todavía PostgreSQL 18, Vitest, build/typecheck, E2E ni ningún workflow sobre el HEAD actual. La existencia de los harnesses no equivale a que hayan pasado.
 - No se ha abierto PR 2: la directiva exige CI verde exact-HEAD y revisión completa antes de abrirla. No se ha fusionado ni desplegado nada.
-- No se tocó Neon, secretos, \`BCV_SYNC_ENABLED\`, workflows/archivos BCV ni PR #193/#314/#315/#316. Issue #53 no se modificó y permanece sujeto a OPEN/P0; producción sigue NOT READY.
+- No se tocó Neon, secretos, BCV_SYNC_ENABLED, el workflow bcv-source-connectivity.yml ni el código de sincronización/producer BCV. La única modificación relacionada con BCV es la extensión del perfil de restore/migraciones 0023→0024 solicitada para compatibilidad. PR #193/#314/#315/#316 e Issue #53 no se modificaron; Issue #53 permanece OPEN/P0 y producción sigue NOT READY.
 
 ### Base de integración confirmada
 

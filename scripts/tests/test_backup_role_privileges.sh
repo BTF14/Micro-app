@@ -272,10 +272,11 @@ assert_true "backup role has default SELECT only for future tables and sequences
         OR a.privilege_type <> 'SELECT' OR a.is_grantable)
   )
 "
-# The transition accepts only direct sessions for either explicitly allowlisted
-# LOGIN. The same predicate rejects SET ROLE and every elevated role attribute.
+# The production contract accepts only the dedicated direct backup LOGIN.
+# The synthetic legacy alias remains only as a negative fixture and must fail.
+# The same predicate rejects SET ROLE and every elevated role attribute.
 identity_contract_sql="(
-  current_user IN ('backup_readonly', 'microapp_backup')
+  current_user = 'microapp_backup'
   AND session_user = current_user
   AND EXISTS (
     SELECT 1 FROM pg_catalog.pg_roles r
@@ -298,8 +299,8 @@ assert_identity_result() {
 }
 
 legacy_url="postgresql://backup_readonly:backup-readonly-test-only@localhost:5432/microapp_source"
-assert_identity_result "legacy backup_readonly LOGIN remains temporarily accepted" "$legacy_url" "t"
-assert_identity_result "new microapp_backup LOGIN is accepted" "$backup_url" "t"
+assert_identity_result "legacy backup_readonly LOGIN is rejected" "$legacy_url" "f"
+assert_identity_result "only the microapp_backup LOGIN is accepted" "$backup_url" "t"
 set_role_result="$(psql "$SOURCE_URL" -X -v ON_ERROR_STOP=1 -Atq -c "SET ROLE backup_readonly; SELECT $identity_contract_sql")"
 if [[ "$set_role_result" != "f" ]]; then
   echo "FAIL: identity transition accepted SET ROLE (got $set_role_result)" >&2

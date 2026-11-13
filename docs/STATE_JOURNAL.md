@@ -3250,3 +3250,14 @@ Se integró PR #346 (`c6a9ad611111fbc32da8b13329481458c933ec21`) tras 10/10 work
 - Límites probatorios: 1999 ms es restore de DB aislada, no RTO operacional. 8825 s es proxy de frescura, no RPO operacional sin cutoff independiente. La entrega/ACK sí queda demostrada.
 - Resta aceptación humana explícita del RPO objetivo diario aproximado de 24 h y del RTO aceptado para recuperación aislada; revisión legal/fiscal/contable; y distinguir estos gates operativos de los módulos comerciales POS aún no implementados/aceptados para uso comercial real.
 - Issue #53 permanece OPEN/P0; PRODUCTION: NOT READY. No se modificaron Neon, secretos, datos reales ni producción.
+
+
+## 2026-11-13 — PR 2 estructura organizacional Owner-only
+
+- Tras PR #349 (merge SHA 25c0f842c7ecc8a7320b33d33abfb12402476e32, 15/15 post-merge SUCCESS confirmado por Tech Lead), se continuó en rama aislada feat/branch-warehouse-register-admin-20261113.
+- Se añadieron migration 0024 + assertions, API owner-only, UI owner-only, tests de seguridad/integración y extensión de perfil BCV restore/migration hasta 0024.
+- El modelo físico existente denomina la tabla organization_members; no se inventó ni creó una tabla alternativa organization_memberships.
+- El Owner creador se asigna a la nueva sucursal de forma atómica. La activación de una asignación ausente se soporta mediante set_branch_membership_active(..., true).
+- La revocación y la apertura de turno se serializan por organización/sucursal/asignación. Se añadieron dos escenarios concurrentes al harness PostgreSQL 18.
+- A esta fecha no hay resultados de ejecución PostgreSQL/Vitest/build/CI para el HEAD final; los tests están escritos, no demostrados. PR 2 no se abrió ni fusionó.
+- Sin cambios a Neon, producción, BCV, ROLE_OPERATIONS ni Issue #53. Issue #53 OPEN/P0; PRODUCTION: NOT READY; USD 0.

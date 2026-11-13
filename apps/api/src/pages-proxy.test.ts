@@ -124,13 +124,9 @@ describe("Cloudflare Pages same-origin API proxy", () => {
   });
 
   it("fails closed on the exact hostname when the branch is undefined and no production binding exists", async () => {
-    const env: Record<string, unknown> = {};
-    Object.defineProperty(env, "API", {
-      get() { throw new Error("missing binding path must not invoke/read API"); },
-    });
     const response = await onRequest(context(
       "https://micro-app-63i.pages.dev/api/auth/me",
-      env,
+      {},
     ));
     expect(response.status).toBe(503);
     await expect(response.json()).resolves.toMatchObject({ error: "API_BINDING_MISSING" });

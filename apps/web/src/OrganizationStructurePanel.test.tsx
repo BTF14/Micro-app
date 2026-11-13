@@ -30,7 +30,7 @@ beforeEach(() => {
   document.body.appendChild(container);
   root = createRoot(container);
   vi.mocked(apiRequest).mockReset();
-  vi.mocked(apiRequest).mockResolvedValue(structure);
+  vi.mocked(apiRequest).mockImplementation(async () => structure as never);
 });
 
 afterEach(async () => {
@@ -51,17 +51,14 @@ describe("Owner organization structure panel", () => {
   });
 
   it("guides an owner to create the first branch when none exist", async () => {
-    vi.mocked(apiRequest).mockResolvedValue({ branches: [], members: [] });
+    vi.mocked(apiRequest).mockImplementation(async () => ({ branches: [], members: [] }) as never);
     await act(async () => { root.render(<OrganizationStructurePanel organizationId="aaaaaaaa-2222-4333-8444-555555555555" />); });
     expect(container.textContent).toContain("Comienza creando tu primera sucursal");
     expect(container.textContent).toContain("Después podrás agregar sus almacenes y cajas");
   });
 
   it("sends assignment changes through the owner administration endpoint and refreshes", async () => {
-    vi.mocked(apiRequest)
-      .mockResolvedValueOnce(structure)
-      .mockResolvedValueOnce({ membership: { is_active: false } })
-      .mockResolvedValueOnce({ ...structure, members: [{ ...structure.members[0], branch_memberships: {} }] });
+    vi.mocked(apiRequest).mockImplementation(async () => structure as never);
     await act(async () => { root.render(<OrganizationStructurePanel organizationId="aaaaaaaa-2222-4333-8444-555555555555" />); });
     const button = [...container.querySelectorAll("button")].find((item) => item.textContent === "Quitar de sucursal");
     expect(button).toBeTruthy();

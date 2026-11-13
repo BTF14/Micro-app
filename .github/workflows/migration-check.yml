@@ -396,7 +396,7 @@ jobs:
           status=0
           output="$(docker exec -i -e PGPASSWORD=migrator-test-only "${{ job.services.postgres.id }}" psql -h 127.0.0.1 -v ON_ERROR_STOP=1 -U microapp_migrator -d microapp_test -f /dev/stdin < /tmp/0022-bcv-failure.sql 2>&1)" || status=$?
           if [ "$status" -eq 0 ]; then exit 1; fi
-          printf '%s\\n' "$output" | grep -F "division by zero"
+          printf '%s\n' "$output" | grep -F "division by zero"
           # PUBLIC write grants are intentionally seeded above to prove 0022 rollback atomicity.
           # After rollback they must remain; the clean 0021 state was already tested before this fixture.
           fixture_acl_preserved="$(docker exec "${{ job.services.postgres.id }}" psql -At -U microapp -d microapp_test -c "SELECT has_column_privilege('microapp_runtime','public.bcv_sync_state','last_success_at','UPDATE')")"

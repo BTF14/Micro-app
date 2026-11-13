@@ -43,7 +43,7 @@ class BackupRestoreWorkflowContractTests(unittest.TestCase):
         env = env_match.group("env")
 
         helper_required = re.findall(
-            r'^: "\$\{([A-Z][A-Z0-9_]*)\?[:}]',
+            r'^: "\$\{([A-Z][A-Z0-9_]*):\?',
             helper,
             re.MULTILINE,
         )

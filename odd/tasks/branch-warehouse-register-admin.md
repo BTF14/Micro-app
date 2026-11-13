@@ -1,6 +1,6 @@
 # Administración de estructura organizacional — PR 2
 
-**Estado:** implementación en curso; no habilitada en producción.
+**Estado:** implementación de código y harnesses añadidos; validación PostgreSQL/CI y revisión final pendientes; no habilitada en producción.
 **Rama:** `feat/branch-warehouse-register-admin-20261113`
 **Base:** `main` actualizado después de PR #349; merge SHA `25c0f842c7ecc8a7320b33d33abfb12402476e32`.
 **Fecha:** 2026-11-13 UTC
@@ -67,9 +67,47 @@ Implementar administración exclusiva de Owner para sucursales, almacenes, cajas
 - **Restore/migraciones:** no editar secuencias históricas; extender el perfil vigente 0023 a 0024 sin alterar perfiles main históricos.
 - **Evidencia:** workflow runs, check-runs/status contexts y reviews son señales distintas; ningún SHA anterior valida el HEAD final.
 
+## Progreso de implementación — 2026-11-13
+
+### Cambios añadidos en la rama
+
+- \`apps/api/migrations/0024_organization_structure_admin_operations.sql\`:
+  - Cuatro funciones \`SECURITY DEFINER\` exactas, propiedad de \`microapp_migrator\`, con \`search_path = pg_catalog, public\`.
+  - \`REVOKE ALL FROM PUBLIC\` y \`GRANT EXECUTE\` únicamente a \`microapp_runtime\`.
+  - Revocación explícita de DML directo a runtime/PUBLIC sobre \`branches\`, \`warehouses\`, \`registers\`, \`branch_memberships\` y \`organization_members\`.
+  - El creador Owner queda asignado a la nueva sucursal dentro de la misma transacción. La función de asignación también crea una asignación ausente cuando se solicita \`is_active=true\`.
+  - Serialización por organización/sucursal/asignación antes de comprobar turnos abiertos. No se cambia la política de turnos.
+- \`apps/api/migrations/0024_organization_structure_admin_operations.assertions.sql\` verifica propietario, \`SECURITY DEFINER\`, search_path, ACL limitado, ausencia de DML runtime y presencia de auditoría/guard de turno.
+- Backend nuevo \`apps/api/src/organization-structure.ts\`, registrado en \`index.ts\`:
+  - GET de estructura y POST/PATCH de administración.
+  - Autorización Owner mediante los permisos ya existentes; asignaciones requieren \`members.manage\` y \`branch_memberships.manage\`.
+  - El actor se deriva exclusivamente de la sesión. Se conserva el orden de locks SQL al autorizar sin bloquear filas previamente.
+  - Trusted Origin, UUID, JSON estricto, límite de 4 KiB, \`Cache-Control: private, no-store\` y errores sanitizados.
+- Frontend nuevo \`OrganizationStructurePanel.tsx\` y navegación Owner-only en \`App.tsx\`: sucursales, almacenes, cajas y asignaciones; onboarding para cero sucursales y refresco tras mutaciones.
+- Pruebas añadidas:
+  - \`organization-structure.test.ts\` (guards de origen, UUID, JSON y tamaño).
+  - \`organization-structure.integration.test.ts\` (API real con PostgreSQL y login runtime).
+  - \`OrganizationStructurePanel.test.tsx\` y \`OrganizationStructureRoleIsolation.test.tsx\`.
+  - \`scripts/tests/test_organization_structure_admin.sh\` (happy paths con runtime, normalización, duplicados, cross-tenant/branch, denegaciones de roles, auditoría, DML y ambas carreras apertura-vs-desactivación).
+- Se extendió el perfil BCV de restore/migración de 0023 a 0024 en runner, restore, replay ACL, smoke y pruebas. El perfil histórico main 0001–0016 no se modificó. Se añadió rollback injection para 0024.
+
+### Límites de evidencia
+
+- La inspección confirmó que el esquema real usa \`organization_members\`, no una tabla llamada \`organization_memberships\`.
+- \`ROLE_OPERATIONS\` no fue modificado; rutas de lectura existentes no fueron editadas.
+- No se ha ejecutado todavía PostgreSQL 18, Vitest, build/typecheck, E2E ni ningún workflow sobre el HEAD actual. La existencia de los harnesses no equivale a que hayan pasado.
+- No se ha abierto PR 2: la directiva exige CI verde exact-HEAD y revisión completa antes de abrirla. No se ha fusionado ni desplegado nada.
+- No se tocó Neon, secretos, \`BCV_SYNC_ENABLED\`, workflows/archivos BCV ni PR #193/#314/#315/#316. Issue #53 no se modificó y permanece sujeto a OPEN/P0; producción sigue NOT READY.
+
+### Base de integración confirmada
+
+- PR #349 fusionada por squash; merge SHA \`25c0f842c7ecc8a7320b33d33abfb12402476e32\`.
+- La rama parte directamente de ese SHA, sin commits detrás de \`main\` en la comparación consultada.
+- El Tech Lead confirma 15/15 check-runs SUCCESS post-merge para PR #349 y el workflow BCV disponible en main. Ese trabajo queda fuera de PR 2.
+
 ## Estado inicial
 
 - PR #349 fusionada por squash; merge SHA `25c0f842c7ecc8a7320b33d33abfb12402476e32`.
 - La rama de trabajo se creó desde `main` después de la fusión.
 - El workflow manual `.github/workflows/bcv-source-connectivity.yml` está disponible en main.
-- El wrapper de workflow-runs no devolvió runs post-merge para el merge SHA; el estado de checks post-merge aún no está confirmado por esa vía.
+- Confirmación posterior del Tech Lead: 15/15 check-runs post-merge SUCCESS en el merge SHA exacto.

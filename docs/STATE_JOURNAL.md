@@ -3233,3 +3233,9 @@ La hipótesis anterior de que el helper de espera era la causa no era correcta. 
 El propietario aportó evidencia HTTP y smoke humano final para PR #339: health 200; `/api/auth/me` anónimo 401; OAuth inicia 302 a Google con callback Pages same-origin; CSP self-only; bundle publicado sin `workers.dev`; preview bloqueado con 503; login Google, navegación funcional, reload y logout exitosos con Brave Shields activado. Se considera cerrado el pendiente de verificación live de same-origin, no el smoke Cashier aislado.
 
 Siguiente decisión: diagnosticar Paso 3 en entorno aislado gratuito sin crear recursos ni tocar Neon main. Paso 4 requiere RPO/RTO operacional medido, alerta recibida y ACK humano comprobado, revisión humana legal/fiscal/contable y coste total USD 0. Issue #53 sigue OPEN/P0 y PRODUCTION NOT READY.
+
+
+
+## 2026-11-13 — Paso 3 Cashier full lifecycle
+
+Se integró PR #346 (`c6a9ad611111fbc32da8b13329481458c933ec21`) tras 10/10 workflow runs SUCCESS sobre HEAD exacto `4fdd39b33d8a1c007678fd30a8cf70b460e80cbd`. La prueba integrada Cashier sobre PostgreSQL 18 efímero pasó: OAuth simulado con handlers reales, sesión, autorización tenant/sucursal, inventario, turno, checkout BCV sintético, conciliación, auditoría y logout. No se usó Neon main ni credenciales reales. El alcance es backend/API + DB aislada, no staging remoto. Paso 3 técnico completado; Paso 4 aún pendiente. Issue #53 OPEN/P0; PRODUCTION NOT READY.

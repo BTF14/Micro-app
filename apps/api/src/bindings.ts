@@ -2,6 +2,8 @@ export type Bindings = {
   APP_ENV?: "production" | "preview";
   // BCV ingestion Cron is opt-in; only the literal string "true" enables it.
   BCV_SYNC_ENABLED?: string;
+  // Dedicated microapp_bcv_sync credential; never fall back to DATABASE_URL.
+  DATABASE_URL_BCV_SYNC?: string;
   DATABASE_URL?: string;
   FRONTEND_ORIGIN?: string;
   GOOGLE_CLIENT_ID?: string;

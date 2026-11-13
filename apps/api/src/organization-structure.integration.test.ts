@@ -38,9 +38,23 @@ describe.skipIf(!adminUrl || !runtimeUrl)("owner-only organization structure API
   afterAll(async () => {
     if (runtime) await runtime.end();
     if (admin) {
-      for (const organizationId of organizations) {
-        await admin.query("DELETE FROM auth_sessions WHERE user_id IN (SELECT user_id FROM organization_members WHERE organization_id=$1)", [organizationId]);
-        await admin.query("DELETE FROM organizations WHERE id=$1", [organizationId]);
+      await admin.query("ALTER TABLE public.register_shifts DISABLE TRIGGER USER");
+      await admin.query("ALTER TABLE public.audit_logs DISABLE TRIGGER USER");
+      try {
+        for (const organizationId of organizations) {
+          await admin.query("DELETE FROM auth_sessions WHERE user_id IN (SELECT user_id FROM organization_members WHERE organization_id=$1)", [organizationId]);
+          await admin.query("DELETE FROM register_shifts WHERE organization_id=$1", [organizationId]);
+          await admin.query("DELETE FROM audit_logs WHERE organization_id=$1", [organizationId]);
+          await admin.query("DELETE FROM warehouses WHERE organization_id=$1", [organizationId]);
+          await admin.query("DELETE FROM registers WHERE organization_id=$1", [organizationId]);
+          await admin.query("DELETE FROM branch_memberships WHERE organization_id=$1", [organizationId]);
+          await admin.query("DELETE FROM branches WHERE organization_id=$1", [organizationId]);
+          await admin.query("DELETE FROM organization_members WHERE organization_id=$1", [organizationId]);
+          await admin.query("DELETE FROM organizations WHERE id=$1", [organizationId]);
+        }
+      } finally {
+        await admin.query("ALTER TABLE public.audit_logs ENABLE TRIGGER USER");
+        await admin.query("ALTER TABLE public.register_shifts ENABLE TRIGGER USER");
       }
       if (userIds.length) await admin.query("DELETE FROM app_users WHERE id = ANY($1::uuid[])", [userIds]);
       await admin.end();

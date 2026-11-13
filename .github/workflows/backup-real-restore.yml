@@ -149,7 +149,7 @@ jobs:
           REMOTE_BACKUP_FILENAME: ${{ steps.backup.outputs.filename }}
         run: |
           set -euo pipefail
-          snapshot_stamp="$(printf '%s' "$REMOTE_BACKUP_FILENAME" | sed -E 's/^backup-([0-9]{4}-[0-9]{2}-[0-9]{2})T([0-9]{2})-([0-9]{2})-([0-9]{2})Z\\.dump\\.age$/\\1T\\2:\\3:\\4Z/')"
+          snapshot_stamp="$(printf '%s' "$REMOTE_BACKUP_FILENAME" | sed -E 's/^backup-([0-9]{4}-[0-9]{2}-[0-9]{2})T([0-9]{2})-([0-9]{2})-([0-9]{2})Z\.dump\.age$/\1T\2:\3:\4Z/')"
           snapshot_epoch="$(date -u -d "$snapshot_stamp" +%s)"
           recovery_start_epoch="$(date -u -d "$RECOVERY_START_UTC" +%s)"
           backup_age_seconds="$((recovery_start_epoch - snapshot_epoch))"

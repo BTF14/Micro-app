@@ -269,3 +269,13 @@ No se copiaron ni registraron valores de variables de entorno. No afirmar que es
 - El archivo `apps/web/public/_headers` en main define CSP, HSTS, `X-Content-Type-Options: nosniff`, `X-Frame-Options: DENY`, `Referrer-Policy` y `Permissions-Policy`. Sin embargo, la sesión de navegador no expuso las cabeceras HTTP reales y la inspección DOM no permite demostrar que Cloudflare las haya servido. Estado: **configuradas en el repositorio, efectividad HTTP pendiente de verificación**.
 - No se modificaron ajustes, variables, secretos, workflows, DNS, billing, tráfico, Neon ni producción. No se dispararon builds manuales.
 
+
+
+## Addendum — 2026-11-13: Pages Functions same-origin API (PR #339, OPEN)
+
+- Cloudflare Pages project `micro-app`: Production branch `main`; root directory vacío (raíz del repositorio); build command `corepack enable && pnpm install --frozen-lockfile && pnpm --filter @micro-app/web build`; build output `apps/web/dist`.
+- La Pages Function debe vivir en `/functions/api/[[path]].ts` en la raíz del repositorio, no dentro de `apps/web/functions/` ni dentro de `apps/web/dist`.
+- PR #339 añade proxy same-origin, CSP `connect-src 'self'`, cookies de sesión Lax y reescritura acotada de Path PKCE. El Service Binding no se configuró durante la PR.
+- Activación manual posterior: proyecto Pages `micro-app` → Settings → Bindings → Add → Service binding; entorno Production; Variable name `API`; Service `micro-app-api`. No crear el binding en Preview. Cloudflare requiere un redeploy para que el binding entre en vigor.
+- Google OAuth: agregar la callback `https://micro-app-63i.pages.dev/api/auth/google/callback` sin retirar la URI antigua hasta completar la prueba real con Brave Shields ON.
+- PR #339 permanece OPEN/no mergeada durante la observación de backup natural 07:00 UTC y el gate `backup-real-restore.yml`. No se tocó Cloudflare, Google, Neon, secrets ni backup.

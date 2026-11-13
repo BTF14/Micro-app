@@ -3800,3 +3800,13 @@ Post-merge CI del SHA 3ac66a180fcf23421b546140a419a45062e633dd ya fue verificado
 - Paso 3 sigue pendiente: no se ha demostrado un staging/DB aislado gratuito y ejecutable para el flujo Cashier completo. Antes de autorizarlo, inventariar Pages preview + Worker preview aislado y Neon branch/compute free; no crear recursos hasta verificar cuota/coste/credenciales y teardown. No usar Neon main ni mocks como sustituto.
 - Paso 4: medir RPO como diferencia entre timestamp del último backup recuperable y timestamp del punto de corte/fallo de referencia; medir RTO operacional desde declaración de recuperación hasta servicio restaurado y smoke de aceptación, separando aprovisionamiento, restore, validación y retorno. El workflow de 43 s no es RTO. Alertas: provocar evento controlado hacia Watch/All Activity, confirmar notificación entregada en canal/dispositivo y ACK humano explícito registrado; Watch no prueba recepción ni ACK.
 - Issue #53 OPEN/P0; PRODUCTION NOT READY. Sin mutaciones Neon main, gasto ni deploy manual.
+
+
+## Estado de integración documental — PR #343 (2026-11-13)
+
+- La evidencia same-origin/Brave del propietario se incorporó a CURRENT_STATE, HANDOFF, STATE_JOURNAL y PRODUCTION_SIGN_OFF_CHECKLIST en la rama `docs/postmerge-same-origin-20261113`.
+- HEAD documental resultante en esta actualización: `cda916ecbfa4429db20bc4028722db490d3156ee`; PR #343 abierta, base main `f635c01aacbe148030b3fd1d7e46851ae318f951`, 10 commits ahead / 0 behind, 7 archivos documentales, mergeable=true, sin reviews ni review threads.
+- El 15/15 comunicado previamente correspondía al HEAD anterior `d7c23e8943395f7d0a1606f2981af45745537b24`. Para el HEAD nuevo no se devolvieron workflow runs asociados ni status contexts; NO fusionar hasta tener checks exact-HEAD satisfactorios. No hay merge SHA.
+- La revisión del Paso 3 encontró que CI ya ofrece PostgreSQL 18 efímero y suites separadas de OAuth mock, autorización/turnos Cashier, checkout y Playwright. Falta una prueba integrada única que reutilice una misma sesión Cashier y tenant/sucursal sintéticos desde login hasta checkout, cierre, persistencia, conciliación y auditoría. Usar runner CI controlado; no Neon main ni Pages Preview (API preview está deshabilitada).
+- Paso 4: no confundir workflow duration ni RTO sintético con RTO operacional; definir marcas T0/Tready, snapshot timestamp y ACK humano. Watch All Activity por sí solo no acredita entrega/ack de una alerta de Actions. Consultar Notification settings > System > Actions y demostrar una notificación fallida entregada + ACK registrado.
+- Mantener PR #193 y #314–#316 abiertas sin cambios hasta triaje/compatibilidad; Issue #53 OPEN/P0; PRODUCTION NOT READY.

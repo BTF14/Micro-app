@@ -90,14 +90,14 @@ BEGIN
   PERFORM 1 FROM public.organizations o
    WHERE o.id = p_organization_id AND o.is_active FOR UPDATE;
   IF NOT FOUND THEN RAISE EXCEPTION 'ORGANIZATION_NOT_ACTIVE' USING ERRCODE = '42501'; END IF;
+  PERFORM 1 FROM public.branches b
+   WHERE b.organization_id = p_organization_id AND b.id = p_branch_id AND b.is_active FOR UPDATE;
+  IF NOT FOUND THEN RAISE EXCEPTION 'BRANCH_NOT_ACTIVE_OR_OUT_OF_SCOPE' USING ERRCODE = '42501'; END IF;
   PERFORM 1 FROM public.organization_members m
   JOIN public.app_users u ON u.id = m.user_id
    WHERE m.organization_id = p_organization_id AND m.user_id = p_actor_user_id
      AND m.role = 'owner' AND m.is_active AND u.is_active FOR UPDATE OF m, u;
   IF NOT FOUND THEN RAISE EXCEPTION 'ORGANIZATION_OWNER_REQUIRED' USING ERRCODE = '42501'; END IF;
-  PERFORM 1 FROM public.branches b
-   WHERE b.organization_id = p_organization_id AND b.id = p_branch_id AND b.is_active FOR UPDATE;
-  IF NOT FOUND THEN RAISE EXCEPTION 'BRANCH_NOT_ACTIVE_OR_OUT_OF_SCOPE' USING ERRCODE = '42501'; END IF;
 
   IF EXISTS (SELECT 1 FROM public.warehouses w WHERE w.organization_id = p_organization_id
       AND w.branch_id = p_branch_id AND w.code = v_code) THEN
@@ -140,14 +140,14 @@ BEGIN
   PERFORM 1 FROM public.organizations o
    WHERE o.id = p_organization_id AND o.is_active FOR UPDATE;
   IF NOT FOUND THEN RAISE EXCEPTION 'ORGANIZATION_NOT_ACTIVE' USING ERRCODE = '42501'; END IF;
+  PERFORM 1 FROM public.branches b
+   WHERE b.organization_id = p_organization_id AND b.id = p_branch_id AND b.is_active FOR UPDATE;
+  IF NOT FOUND THEN RAISE EXCEPTION 'BRANCH_NOT_ACTIVE_OR_OUT_OF_SCOPE' USING ERRCODE = '42501'; END IF;
   PERFORM 1 FROM public.organization_members m
   JOIN public.app_users u ON u.id = m.user_id
    WHERE m.organization_id = p_organization_id AND m.user_id = p_actor_user_id
      AND m.role = 'owner' AND m.is_active AND u.is_active FOR UPDATE OF m, u;
   IF NOT FOUND THEN RAISE EXCEPTION 'ORGANIZATION_OWNER_REQUIRED' USING ERRCODE = '42501'; END IF;
-  PERFORM 1 FROM public.branches b
-   WHERE b.organization_id = p_organization_id AND b.id = p_branch_id AND b.is_active FOR UPDATE;
-  IF NOT FOUND THEN RAISE EXCEPTION 'BRANCH_NOT_ACTIVE_OR_OUT_OF_SCOPE' USING ERRCODE = '42501'; END IF;
 
   IF EXISTS (SELECT 1 FROM public.registers r WHERE r.organization_id = p_organization_id
       AND r.branch_id = p_branch_id AND r.code = v_code) THEN
@@ -184,26 +184,25 @@ BEGIN
   PERFORM 1 FROM public.organizations o
    WHERE o.id = p_organization_id AND o.is_active FOR UPDATE;
   IF NOT FOUND THEN RAISE EXCEPTION 'ORGANIZATION_NOT_ACTIVE' USING ERRCODE = '42501'; END IF;
-  PERFORM 1 FROM public.organization_members actor
-  JOIN public.app_users au ON au.id = actor.user_id
-   WHERE actor.organization_id = p_organization_id AND actor.user_id = p_actor_user_id
-     AND actor.role = 'owner' AND actor.is_active AND au.is_active FOR UPDATE OF actor, au;
-  IF NOT FOUND THEN RAISE EXCEPTION 'ORGANIZATION_OWNER_REQUIRED' USING ERRCODE = '42501'; END IF;
   PERFORM 1 FROM public.branches b
    WHERE b.organization_id = p_organization_id AND b.id = p_branch_id AND b.is_active FOR UPDATE;
   IF NOT FOUND THEN RAISE EXCEPTION 'BRANCH_NOT_ACTIVE_OR_OUT_OF_SCOPE' USING ERRCODE = '42501'; END IF;
-  PERFORM 1 FROM public.organization_members target
-  JOIN public.app_users tu ON tu.id = target.user_id
-   WHERE target.organization_id = p_organization_id AND target.user_id = p_user_id
-     AND target.is_active AND tu.is_active FOR UPDATE OF target, tu;
-  IF NOT FOUND THEN RAISE EXCEPTION 'TARGET_MEMBER_NOT_ACTIVE_OR_OUT_OF_SCOPE' USING ERRCODE = '42501'; END IF;
-
   SELECT bm.is_active INTO v_previous
     FROM public.branch_memberships bm
    WHERE bm.organization_id = p_organization_id AND bm.branch_id = p_branch_id
      AND bm.user_id = p_user_id
    FOR UPDATE;
   IF NOT FOUND THEN RAISE EXCEPTION 'BRANCH_MEMBERSHIP_NOT_FOUND' USING ERRCODE = 'P0002'; END IF;
+  PERFORM 1 FROM public.organization_members target
+  JOIN public.app_users tu ON tu.id = target.user_id
+   WHERE target.organization_id = p_organization_id AND target.user_id = p_user_id
+     AND target.is_active AND tu.is_active FOR UPDATE OF target, tu;
+  IF NOT FOUND THEN RAISE EXCEPTION 'TARGET_MEMBER_NOT_ACTIVE_OR_OUT_OF_SCOPE' USING ERRCODE = '42501'; END IF;
+  PERFORM 1 FROM public.organization_members actor
+  JOIN public.app_users au ON au.id = actor.user_id
+   WHERE actor.organization_id = p_organization_id AND actor.user_id = p_actor_user_id
+     AND actor.role = 'owner' AND actor.is_active AND au.is_active FOR UPDATE OF actor, au;
+  IF NOT FOUND THEN RAISE EXCEPTION 'ORGANIZATION_OWNER_REQUIRED' USING ERRCODE = '42501'; END IF;
 
   IF NOT p_is_active AND v_previous THEN
     IF EXISTS (SELECT 1 FROM public.register_shifts s

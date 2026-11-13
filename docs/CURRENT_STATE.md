@@ -3446,3 +3446,6 @@ PR #346 fusionada en main: `c6a9ad611111fbc32da8b13329481458c933ec21`. HEAD exac
 - Añadidos tests API unitarios/integración, React/Vitest y harness PostgreSQL 18 con runtime LOGIN, incluidos duplicados, roles, aislamiento, auditoría, DML y dos carreras de apertura/desactivación.
 - Evidencia aún pendiente: no se han ejecutado PostgreSQL 18, Vitest, build/typecheck, E2E ni workflows sobre el HEAD final. No afirmar PASS hasta consultar resultados exact-HEAD. No abrir PR 2 hasta completar revisión y gates verdes.
 - No Neon, deploy, BCV activation, secrets, PR #193/#314/#315/#316 ni Issue #53. Issue #53 OPEN/P0; PRODUCTION: NOT READY; USD 0.
+
+
+Nota de compatibilidad de permisos para 0024: la migración 0012 ya necesita insertar la membresía inicial del Owner durante el bootstrap Google. Por eso 0024 revoca INSERT de tabla y mantiene exclusivamente INSERT column-scoped en organization_members(organization_id,user_id,role); no hay UPDATE/DELETE ni acceso de INSERT a is_active/created_at/updated_at. Las assertions validan el alcance y el test de PostgreSQL ejercita el INSERT mínimo. Esto preserva OAuth sin conceder DML general.

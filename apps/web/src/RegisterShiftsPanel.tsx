@@ -12,7 +12,7 @@ function money(value: string): string {
   try {
     const formatted = formatMoneyForDisplay(value);
     const [integer = "0", fraction] = formatted.split(".");
-    const grouped = integer.replace(/\\B(?=(\\d{3})+(?!\\d))/g, ".");
+    const grouped = integer.replace(/\B(?=(\d{3})+(?!\d))/g, ".");
     return fraction ? `${grouped},${fraction}` : grouped;
   } catch { return "No disponible"; }
 }

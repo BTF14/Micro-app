@@ -77,6 +77,7 @@ export default function SalesPanel({
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
   const [receipt, setReceipt] = useState<SaleReceipt | null>(null);
+  const [lookupReset, setLookupReset] = useState(0);
   const idempotencyKey = useRef(newIdempotencyKey());
   const requestFingerprint = useRef<string | null>(null);
 
@@ -102,7 +103,7 @@ export default function SalesPanel({
   const expectedPayment = currency === "USD" ? computed.subtotalUsd : computed.totalVes;
   const paymentTotal = useMemo(() => {
     const { precision, scale } = paymentScale(currency);
-    return sumNumeric(payments.filter((p) => p.amount.trim() !== "").map((p) => p.amount), precision, scale);
+    try { return sumNumeric(payments.filter((p) => p.amount.trim() !== "").map((p) => p.amount), precision, scale); } catch { return currency === "USD" ? "0.0000" : "0.00"; }
   }, [currency, payments]);
   const paymentMatches = useMemo(() => {
     try {
@@ -111,7 +112,7 @@ export default function SalesPanel({
       const expected = currency === "USD"
         ? parseNumeric(computed.subtotalUsd, 14, 4)
         : parseNumeric(computed.totalVes, 16, 2);
-      return total === expected && expected > 0n && payments.every((p) => p.amount.trim() !== "");
+      return total === expected && expected > 0n && payments.every((p) => p.amount.trim() !== "" && p.reference.length <= 128 && !/[\u0000-\u001F\u007F]/.test(p.reference));
     } catch { return false; }
   }, [computed.subtotalUsd, computed.totalVes, currency, paymentTotal, payments]);
 
@@ -301,6 +302,7 @@ export default function SalesPanel({
   function newSale() {
     setReceipt(null);
     setCart([]);
+    setLookupReset((value) => value + 1);
     setPayments([{ id: newIdempotencyKey(), method: "cash", amount: "", reference: "" }]);
     setCurrency("USD");
     setNotice("Venta nueva lista.");
@@ -343,6 +345,7 @@ export default function SalesPanel({
                 exchangeRateStatus={exchangeRateStatus}
                 lockedBranchId={shift.branch_id}
                 lockedWarehouseId={warehouseId}
+                resetSignal={lookupReset}
                 selectLabel="+ Agregar"
                 onSelect={addProduct}
               /></div>

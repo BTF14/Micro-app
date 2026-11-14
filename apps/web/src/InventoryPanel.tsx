@@ -370,7 +370,7 @@ export default function InventoryPanel({ organizationId, canManageInventory }: {
           </div>
           {nextCursor && (
             <div className="catalog-pagination">
-              <button type="button" className="catalog-load-more" onClick={() => void fetchBalances(nextCursor, inventorySearch) disabled={loading}>
+              <button type="button" className="catalog-load-more" onClick={() => void fetchBalances(nextCursor, inventorySearch)} disabled={loading}>
                 {loading ? "Cargando…" : "Cargar más productos"}
               </button>
             </div>

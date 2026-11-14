@@ -156,7 +156,7 @@ export default function QuickProductLookup({
         setWarehouses(activeWarehouses);
         setWarehousesLoaded(true);
 
-        if (activeWarehouses.length === 1) {
+        if (lockedWarehouseId) {\n          setWarehouseId(activeWarehouses.some((warehouse) => warehouse.id === lockedWarehouseId) ? lockedWarehouseId : "");\n        } else if (activeWarehouses.length === 1) {
           setWarehouseId(activeWarehouses[0]!.id);
         } else if (activeWarehouses.length > 1) {
           try {

@@ -75,7 +75,7 @@ function readInventorySnapshot(): { onHand: string; movementCount: number; ledge
     PGPORT: connection.port || "5432",
     PGUSER: decodeURIComponent(connection.username),
     PGPASSWORD: decodeURIComponent(connection.password),
-    PGDATABASE: connection.pathname.replace(/^\\//, ""),
+    PGDATABASE: connection.pathname.substring(1),
     ...(connection.searchParams.get("sslmode") ? { PGSSLMODE: connection.searchParams.get("sslmode")! } : {}),
   };
   const output = execFileSync("psql", [

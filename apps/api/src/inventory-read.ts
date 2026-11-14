@@ -82,23 +82,30 @@ export function buildInventoryReadQuery(input: {
 }): { statement: string; values: unknown[] } {
   const values: unknown[] = [input.organizationId, input.branchId, input.warehouseId];
   const filters = ["p.organization_id = $1", input.activeOnly ? "p.is_active = true" : "(p.is_active = true OR b.balance_version IS NOT NULL)"];
-  let exact: number | null = null; let pattern: number | null = null;
+  let exact: number | null = null;
+  let partial: number | null = null;
+  let prefix: number | null = null;
   if (input.search) {
-    const escaped = input.search.replace(/[\\%_]/g, c => "\\" + c);
+    const escaped = input.search.replace(/[\\%_]/g, (character) => "\\" + character);
     values.push(input.search); exact = values.length;
-    values.push(`%${escaped}%`); pattern = values.length;
-    filters.push(`(p.barcode = ${exact} OR lower(p.sku) = lower(${exact}) OR p.barcode ILIKE ${pattern} ESCAPE '\\\\' OR p.sku ILIKE ${pattern} ESCAPE '\\\\' OR p.name ILIKE ${pattern} ESCAPE '\\\\')`);
+    values.push(`%${escaped}%`); partial = values.length;
+    values.push(`${escaped}%`); prefix = values.length;
+    filters.push(`(p.barcode = $${exact} OR lower(p.sku) = lower($${exact}) OR p.barcode ILIKE $${partial} ESCAPE '\\' OR p.sku ILIKE $${partial} ESCAPE '\\' OR p.name ILIKE $${partial} ESCAPE '\\')`);
   }
-  if (input.cursor) { values.push(input.cursor); filters.push(`p.id > ${values.length}`); }
+  if (input.cursor) { values.push(input.cursor); filters.push(`p.id > $${values.length}`); }
   values.push(input.limit + 1);
   let order = "p.id ASC";
-  if (input.sort === "relevance" && input.search && exact !== null && pattern !== null) {
-    order = `CASE WHEN p.barcode = ${exact} THEN 0 WHEN lower(p.sku) = lower(${exact}) THEN 1
-      WHEN p.barcode ILIKE ${pattern} ESCAPE '\\\\' OR p.sku ILIKE ${pattern} ESCAPE '\\\\'
-        OR p.name ILIKE ${pattern} ESCAPE '\\\\' THEN 2 ELSE 3 END, lower(p.name) ASC, p.id ASC`;
-  } else if (input.sort === "relevance") order = "lower(p.name) ASC, p.id ASC";
+  if (input.sort === "relevance" && input.search && exact !== null && partial !== null && prefix !== null) {
+    order = `CASE
+      WHEN p.barcode = $${exact} THEN 0
+      WHEN lower(p.sku) = lower($${exact}) THEN 1
+      WHEN p.barcode ILIKE $${prefix} ESCAPE '\\' OR p.sku ILIKE $${prefix} ESCAPE '\\' OR p.name ILIKE $${prefix} ESCAPE '\\' THEN 2
+      ELSE 3 END, lower(p.name) ASC, p.id ASC`;
+  } else if (input.sort === "relevance") {
+    order = "lower(p.name) ASC, p.id ASC";
+  }
   const cost = input.canReadCost ? ", p.cost_usd::text AS cost_usd" : "";
-  return { statement: `SELECT p.id AS product_id, p.is_active, p.sku, p.barcode, p.name, p.unit,
+  const statement = `SELECT p.id AS product_id, p.is_active, p.sku, p.barcode, p.name, p.unit,
       p.price_usd::text AS price_usd, p.minimum_stock::text AS minimum_stock,
       COALESCE(b.on_hand_quantity, 0)::numeric(14,3)::text AS on_hand_quantity,
       COALESCE(b.reserved_quantity, 0)::numeric(14,3)::text AS reserved_quantity,
@@ -106,7 +113,8 @@ export function buildInventoryReadQuery(input: {
       b.balance_version::text AS balance_version${cost}
     FROM products p LEFT JOIN inventory_balances b ON b.organization_id = p.organization_id
       AND b.branch_id = $2 AND b.warehouse_id = $3 AND b.product_id = p.id
-    WHERE ${filters.join(" AND ")} ORDER BY ${order} LIMIT ${values.length}`, values };
+    WHERE ${filters.join(" AND ")} ORDER BY ${order} LIMIT $${values.length}`;
+  return { statement, values };
 }
 
 export function registerInventoryReadRoutes(app: Hono<{ Bindings: Bindings }>): void {

@@ -1,82 +1,90 @@
 # ODD task: real-fullstack-commerce-e2e
 
-- Status: in progress
-- Issue / PR: Issue #53 (P0) remains open; dedicated PR against `main`
+- Status: implementation and documentation complete; final exact-HEAD merge gate pending
+- Issue / PR: Issue #53 (P0) remains OPEN; implementation and reconciliation are in PR #366
 - Owner / reviewer: BTF14 / technical agent
 - Started: 2026-11-14
 - Risk: critical
 
 ## Objective and authorization
 
-- Desired outcome: add a deterministic Chromium end-to-end commercial workflow that exercises the compiled real web application, same-origin `/api` proxy, real Hono API handlers, and disposable PostgreSQL 18 with migrations 0001–0025 and synthetic least-privilege runtime identities.
-- Authorization boundary: implementation and PR integration are authorized subject to all repository gates. No Neon `main`, production data, secrets, manual Cloudflare/Google Cloud configuration, manual deployment, billing, or production mutation.
-- Relevant original request: create real full-stack Playwright coverage for catalog create/read, inventory receipt, register shift open, USD/VES checkout through SalesPanel, persisted stock decrement, on-screen receipt, shift close and reload persistence, plus a real API-rejected negative sale. Do not use `page.route`, network/API mocks, production-runtime test endpoints, or weaken auth/CSRF/BCV.
+- Desired outcome: deterministic Chromium end-to-end commercial workflow exercising the compiled real web application, same-origin `/api` and `/auth` proxy, real Hono API handlers, and disposable PostgreSQL 18 with migrations 0001–0025.
+- Authorization boundary: implementation and PR integration are authorized subject to repository gates. No Neon `main`, production data, secrets, manual Cloudflare/Google Cloud configuration, manual deployment, billing, or production mutation.
+- Original acceptance intent: catalog create/read, inventory receipt, register shift open, USD/VES POS checkout, persisted stock decrement, on-screen receipt, shift close and reload persistence, and a real API-rejected negative sale. No `page.route`, API/network response mocks, production test endpoints, or weakening auth/CSRF/BCV.
 
 ## Scope and exclusions
 
 Included:
-- Real API + real PostgreSQL 18 ephemeral harness; migrations 0001–0025; synthetic user/session/organization/branch/warehouse/register/rate/sync-state fixtures created only by test harness.
-- Real compiled/served web frontend and same-origin `/api` proxy to the API.
-- Full-stack Playwright Chromium flow and deterministic cleanup/isolation.
-- Preserve and continue running existing Chromium authentication smoke tests.
-- Reconcile `docs/PRODUCTION_READINESS.md`, `docs/CURRENT_STATE.md`, `docs/STATE_JOURNAL.md`, and `docs/HANDOFF_NEXT_CHAT.md` with PR #365 merge SHA `5e80770e73d3ed65fa92083ea5f4478d0d9f71d9`, exact results of this PR, and correction of the Turno 45 typo `Neon `main)``.
-- Keep production readiness explicitly NOT READY while real BCV persistence, external Cloudflare alert routing, human RPO/RTO, legal/fiscal review, and Issue #53 remain open.
+- PostgreSQL 18 ephemeral service and canonical migrations 0001–0025.
+- Test-only synthetic Owner and Cashier users, persisted session hashes, allowlist, organization/branch memberships, warehouse, register, valid date-scoped BCV fixture and sync state.
+- Real Hono `app.fetch` handlers over the ephemeral database, compiled/served frontend, and same-origin proxy.
+- Full-stack Chromium flow and preservation of existing Chromium authentication smoke tests.
+- Reconciliation of `docs/PRODUCTION_READINESS.md`, `docs/CURRENT_STATE.md`, `docs/STATE_JOURNAL.md`, and `docs/HANDOFF_NEXT_CHAT.md` with PR #365 merge SHA `5e80770e73d3ed65fa92083ea5f4478d0d9f71d9`, exact E2E evidence, production gates, and Turno 45 typo correction.
 
 Excluded:
-- Any changes to Neon `main`, secrets, production data, manual provider configuration, manual deployments, billing, or DNS.
-- Any production runtime test endpoint, auth/CSRF/BCV bypass, route mocking, or weakened production security.
-- Any modification or closure of PR #193; any closure of Issue #53.
-- Claiming that ephemeral PostgreSQL E2E proves production BCV persistence, alert routing, recovery objectives, or legal/fiscal compliance.
+- Neon `main`, production data, secrets, manual provider configuration, manual deployments, billing, or DNS.
+- Production runtime test endpoints, auth/CSRF/BCV bypasses, API response mocking, or weakened security.
+- Modification or closure of PR #193; closure of Issue #53.
+- Claiming ephemeral CI proves production BCV persistence, external alert delivery, RPO/RTO, or legal/fiscal compliance.
 
 ## Acceptance criteria
 
-- [ ] AC-1 — task file is the first change on an isolated branch based on verified `main` SHA `5e80770e73d3ed65fa92083ea5f4478d0d9f71d9`.
-- [ ] AC-2 — CI provisions PostgreSQL 18 ephemeral and applies every migration 0001–0025 with assertions; creates synthetic least-privilege `microapp_runtime` and dedicated BCV producer role(s), with no real credentials.
-- [ ] AC-3 — harness seeds valid organization, memberships/allowlist, active branch, warehouse, register, real hashed session, applicable `America/Caracas` BCV rate and valid `bcv_sync_state`; all seeding is test-only.
-- [ ] AC-4 — Hono API is served with the actual production route handlers against the disposable PostgreSQL database, and compiled/served web app uses a real same-origin `/api` proxy to that API.
-- [ ] AC-5 — Chromium E2E has no `page.route`, mocked fetch/XHR, fake API responses, or API interception for `/api/*`; it creates/reads a product, receives inventory, opens a shift, checks out in USD and VES as supported by the existing UI contract, verifies persisted stock decrement and visible receipt, closes the shift, reloads, and verifies closed state.
-- [ ] AC-6 — negative sale with closed register or insufficient stock is rejected by the real API and the UI displays the rejection; database state remains unchanged.
-- [ ] AC-7 — existing Chromium authentication smoke tests remain intact and pass alongside the new full-stack suite.
-- [ ] AC-8 — complete diff, security/data review, all check-runs and workflow runs are verified on the exact final PR HEAD; squash merge only if every applicable gate passes; all post-merge `main` checks are verified.
-- [ ] AC-9 — continuity/readiness documents distinguish CI full-stack E2E from production-only pending gates, record exact evidence, preserve PR #193 OPEN and Issue #53 OPEN/P0, contain no personal emails/provider resource IDs/internal business-product names/secrets, and fix the Turno 45 typo.
+- [x] AC-1 — this task file was the first change on the isolated branch, based on verified `main` SHA `5e80770e73d3ed65fa92083ea5f4478d0d9f71d9`.
+- [x] AC-2 — CI provisions PostgreSQL 18 ephemeral, applies migrations 0001–0025, verifies the complete migration ledger, and provisions separate least-privilege `microapp_runtime` and `microapp_bcv_sync` logins.
+- [x] AC-3 — test harness seeds two persisted application identities (Owner and Cashier), sessions with the production hash contract, allowlist, organization and branch memberships, active warehouse/register, an `America/Caracas`-dated valid synthetic BCV rate and valid `bcv_sync_state`. Runtime write denial is asserted; BCV state is seeded only by the dedicated producer role.
+- [x] AC-4 — real Hono route handlers run through the test-only Node adapter against PostgreSQL 18; the compiled frontend is served with real same-origin `/api` and `/auth` proxying.
+- [x] AC-5 — Chromium performs product create/read, inventory receipt, cashier shift open, USD and VES checkout, visible receipts, backend stock decrement, shift close, real reload and persisted closed state.
+- [x] AC-6 — stale POS page attempts checkout after shift close; the real API returns HTTP 409 `OPEN_SHIFT_REQUIRED`, UI displays the rejection and stock remains unchanged.
+- [x] AC-7 — existing Chromium authentication smoke tests remain intact and pass in the same workflow.
+- [x] AC-9 — readiness and continuity docs distinguish CI full-stack evidence from production-only gates, include PR #365 merge SHA and correct the Turno 45 typo without adding personal emails, provider resource IDs, internal business/product names or secrets.
+- [ ] AC-8 — verify the complete diff, all check-runs/workflow runs, reviews and threads on the final post-documentation PR HEAD; then squash merge only if all applicable gates pass and verify all post-merge `main` checks. This is the remaining operational gate.
 
 ## Risks and guardrails
 
-| Risk | Severity | Mitigation / gate / evidence |
+| Risk | Severity | Mitigation / evidence |
 |---|---|---|
-| Harness accidentally creates a production auth or business bypass | Critical | All fixtures and seeding live in test-only code; no runtime test endpoints or production security changes; review route/auth diffs |
-| Runtime PostgreSQL role has excess privilege | Critical | Use real LOGIN role in CI; assert allowed/denied SQL privileges and use admin role only for fixture setup |
-| BCV checkout fixture becomes stale or timezone-dependent | High | Derive effective date using `America/Caracas`; seed a valid successful sync and rate for the test date; assert checkout fail-closed if invalid |
-| Frontend/API path silently uses mocks | Critical | No `page.route`; browser network assertions and database assertions; real proxy and real API process |
-| Existing authentication smoke tests regress | High | Keep current tests and execute both suites in same workflow |
-| Ephemeral database cleanup leaks or cross-tests | Medium | Isolated database/service per workflow job, unique fixture identifiers, deterministic teardown |
-| Documentation overstates production readiness | Critical | Explicitly retain BCV production persistence, external alerts, human RPO/RTO, legal/fiscal review, and Issue #53 as open |
+| Production auth or business bypass | Critical | All fixtures and seeding are test-only; no runtime test endpoints or production security changes |
+| Excess database privileges | Critical | Actual LOGIN roles; runtime cannot update `bcv_sync_state`; producer role seeds the valid fixture |
+| Stale or timezone-dependent BCV fixture | High | Date derived in `America/Caracas`; checkout validates the rate and successful sync state |
+| API network mocking | Critical | No `page.route` or API response interception; browser goes through real proxy, Hono handlers and PostgreSQL |
+| Existing browser smoke regression | High | Existing Chromium auth smoke tests run in the same workflow and pass |
+| Documentation overstates readiness | Critical | Production BCV, external alert routing, human RPO/RTO, legal/fiscal review and Issue #53 remain open |
 
 ## Tasks and evidence
 
-| Task | Expected result | Validation / evidence | Status |
+| Task | Result | Evidence | Status |
 |---|---|---|---|
-| Inspect ODD, current CI, API, frontend and migrations | Verified harness architecture and seed contract | GitHub source at base SHA | in progress |
-| Build test-only API/database harness | Real Hono handlers on PostgreSQL 18 with runtime LOGIN | CI job logs and privilege assertions | pending |
-| Add full-stack Playwright flow | Browser exercises real UI/API/DB with no API mocks | Playwright report, HTTP and DB assertions | pending |
-| Preserve existing browser smoke suite | Existing auth smoke test still executes | Same workflow run | pending |
-| Reconcile readiness and continuity docs | Exact PR #365 and new PR evidence; no false production claims | Diff and docs checks | pending |
-| Review, merge, and verify post-merge | Safe squash merge only after exact-HEAD gates | PR diff, check-runs, workflows, post-merge checks | pending |
+| Inspect ODD, CI, API, frontend and migrations | Harness contract verified | Repository source at base `5e80770e73d3ed65fa92083ea5f4478d0d9f71d9` | complete |
+| Build test-only API/database harness | Real Hono handlers and PostgreSQL 18 | Full-stack workflow; migration ledger; role assertions | complete |
+| Add full-stack Playwright flow | Real browser/API/DB flow, no API mocks | Full-stack Playwright job SUCCESS | complete |
+| Preserve existing browser smoke suite | Existing auth tests execute | Same Playwright workflow; SUCCESS | complete |
+| Reconcile readiness/continuity docs | PR #365 and E2E evidence recorded; production gates explicit | This PR diff and ODD validation | complete |
+| Review, merge and verify post-merge | Exact final PR HEAD and main checks | PR #366 check-runs/workflow runs and post-merge main | pending |
+
+## Exact implementation evidence
+
+- Implementation HEAD validated before this documentation reconciliation: `3329562d15f40ce744de67a088400935d9d3566a`.
+- That exact HEAD had 16/16 check-runs SUCCESS and 12/12 workflow runs SUCCESS.
+- CI `verify`: 52/52 steps SUCCESS.
+- Real full-stack PostgreSQL 18 job: 20/20 executed steps SUCCESS; Playwright Chromium flow SUCCESS.
+- Existing Chromium authentication smoke tests SUCCESS.
+- Cloudflare Pages and Worker builds passed as CI/preview checks only; no deployment was performed.
+- The docs commit changes the PR HEAD. All checks must be re-run and verified on that new exact SHA; do not reuse the evidence above as final-HEAD evidence.
 
 ## Technical decisions
 
-- Use the existing production Hono application and route handlers; do not add test-only HTTP endpoints to `apps/api` or `apps/web`.
-- Prefer a Node-based local harness adapter around the same Hono `app.fetch` and a test-only PostgreSQL driver binding if the Workers Neon driver cannot connect directly to local PostgreSQL. The adapter must not alter production runtime modules or route behavior.
-- Use PostgreSQL 18 and the actual complete migration chain 0001–0025. Reuse existing migration assertion and role-contract scripts where possible rather than maintaining a parallel schema.
-- Preserve all current auth, Origin/CSRF, runtime authorization, rate-limit, stock, shift and BCV checks. Seed valid test state rather than bypassing these checks.
-- Do not claim the E2E suite covers real Google OAuth provider interaction; authenticate by a real persisted synthetic session following the production session-hash contract.
+- Use the production Hono application and route handlers; do not add test-only endpoints to `apps/api` or `apps/web`.
+- A test-only adapter binds the app's Neon `Client` interface to `pg.Client` so the same Hono handlers can connect to local PostgreSQL 18. This adapts database transport only; it does not mock HTTP, API responses, SQL results, auth, CSRF, rate limits, permissions, stock or BCV logic.
+- Use two synthetic application users: Owner for catalog and inventory receipt; Cashier for opening/closing their own shift and POS checkout. The database trigger requires organization role `cashier` to open a shift, so Owner must not be reused for that step.
+- Seed valid BCV state using the dedicated producer login and the current `America/Caracas` effective date; runtime is explicitly denied BCV-state writes.
+- No real Google OAuth provider interaction is claimed. The test uses real persisted synthetic sessions following the production session-hash contract.
+- Keep rate limiting, Origin/CSRF, runtime authorization, stock, shift and BCV validation active.
 
 ## Closure and handoff
 
-- Final commit SHA:
-- PR:
-- Checks and exact outcomes:
-- Acceptance criteria met / unmet:
-- Limitations not verified:
-- Residual risks:
-- Next step:
+- Implementation HEAD: `3329562d15f40ce744de67a088400935d9d3566a`; PR #366.
+- Checks at implementation HEAD: 16/16 check-runs, 12/12 workflow runs, CI verify 52/52, full-stack job 20/20 steps SUCCESS, existing Chromium authentication smoke tests SUCCESS.
+- Acceptance criteria: AC-1 through AC-7 and AC-9 met; AC-8 remains pending exact final PR HEAD checks, merge and post-merge verification.
+- Limitations not verified: first real BCV rate persisted in Neon `main`; external Cloudflare alert delivery; human RPO/RTO; legal/fiscal approval; Issue #53.
+- Residual production status: **NOT READY**.
+- Next step: validate final documentation HEAD, inspect complete diff/reviews/threads, squash merge only if every applicable gate passes, and verify post-merge `main` checks. Keep PR #193 and Issue #53 OPEN.

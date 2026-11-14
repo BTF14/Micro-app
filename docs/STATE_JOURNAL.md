@@ -1,3 +1,31 @@
+## Turno 46 — PR #365 integrada y E2E comercial full-stack validada en CI (2026-11-14 UTC)
+
+**Base `main` verificada al iniciar PR #366:** `5e80770e73d3ed65fa92083ea5f4478d0d9f71d9` (Squash and Merge de PR #365).
+
+### PR #365 — cierre documental anterior
+- PR #365 quedó integrada en `main` mediante Squash and Merge con SHA `5e80770e73d3ed65fa92083ea5f4478d0d9f71d9`.
+- La verificación post-merge registrada para ese commit fue 13/13 check-runs SUCCESS y 9/9 workflow runs SUCCESS.
+- PR #361 (Cron BCV `MON-FRI 22:00 UTC` y TLS CI), PR #363 (rate limiting runtime) y PR #364 (watchdog BCV read-only) ya estaban integradas. No duplicar esas implementaciones.
+
+### PR #366 — evidencia de implementación full-stack
+- PR #366, rama `test/real-fullstack-commerce-e2e-20261114`; HEAD de implementación validado: `3329562d15f40ce744de67a088400935d9d3566a`.
+- En ese HEAD exacto: 16/16 check-runs SUCCESS y 12/12 workflow runs SUCCESS; CI `verify` 52/52 pasos SUCCESS.
+- Job full-stack PostgreSQL 18: 20/20 pasos ejecutados SUCCESS; job Chromium authentication smoke tests SUCCESS. La suite full-stack ejecuta el frontend compilado/servido, el proxy same-origin real `/api` y `/auth`, los handlers reales de Hono y una base PostgreSQL 18 efímera.
+- Migraciones canónicas 0001–0025 aplicadas y ledger completo verificado. Los logins PostgreSQL `microapp_runtime` y `microapp_bcv_sync` se usan con privilegios separados; se comprueba que runtime no puede escribir `bcv_sync_state`.
+- El harness crea dos identidades sintéticas persistidas: Owner para catálogo/recepción y Cashier para caja/ventas. Ambas tienen sesión con hash real, allowlist, membresía organizacional y sucursal; la sucursal tiene almacén y caja asignados. La separación respeta el trigger SQL que exige rol organizacional `cashier` para abrir turno.
+- Se prepara una tasa BCV sintética válida para la fecha local de `America/Caracas` y un `bcv_sync_state` válido mediante el rol productor dedicado; esto es fixture efímero, no una tasa real de producción.
+- Chromium completa creación/lectura de producto, recepción de inventario, apertura de turno, checkout USD y VES, recibos visibles, descuento de stock comprobado mediante API/DB, cierre de turno, recarga real y rechazo HTTP 409 `OPEN_SHIFT_REQUIRED` al intentar vender con el turno cerrado; el stock permanece intacto tras el rechazo.
+- No se usa `page.route`, interceptación de `/api/*`, ni respuestas HTTP simuladas. El único adaptador de transporte de base de datos está dentro del harness de test: vincula el cliente Neon de la aplicación al driver `pg` para conectar los mismos handlers Hono al PostgreSQL efímero. No cambia módulos de runtime ni añade endpoints de test.
+- Las pruebas Chromium de autenticación existentes permanecen y pasan. Los checks de Cloudflare Pages y Worker son validaciones CI/preview; no hubo despliegue manual.
+
+### Límites de lo demostrado
+- Esta evidencia demuestra el flujo full-stack en CI contra PostgreSQL 18 efímero. **No demuestra** persistencia de la primera tasa BCV real en Neon `main`, entrega externa de alertas, RPO/RTO humano, ni cumplimiento legal/fiscal.
+- PR #193 permanece OPEN e intacta. Issue #53 permanece OPEN/P0. **PRODUCTION: NOT READY**.
+- No se accedió ni mutó Neon `main`, datos reales o secretos; no se cambió configuración manual de Cloudflare/Google Cloud ni se ejecutaron despliegues manuales.
+- El HEAD `3329562d15f40ce744de67a088400935d9d3566a` es el HEAD de implementación antes de la reconciliación documental incluida en esta misma PR. El commit documental genera un nuevo HEAD: sus check-runs y workflow runs deben verificarse de nuevo en ese SHA exacto; no reutilizar CI de un SHA anterior.
+
+### Próximo control obligatorio
+Leer el diff completo de PR #366 y verificar todos los check-runs, workflow runs, reviews y threads sobre el HEAD final posterior a la reconciliación documental. Solo con todos los gates aplicables en verde procede Squash and Merge bajo la autorización de `AGENTS.md`; después verificar los checks del nuevo `main`. Mantener PR #193 e Issue #53 abiertas.
 ## Turno 45 — PR #364 integrada y verificación post-merge (2026-11-14 UTC)
 
 **Main verificado:** `40d39fb6437f85672e65de01ea33d54ccee14aee`.
@@ -24,7 +52,7 @@
 - PR #361 integró Cron BCV `0 22 * * MON-FRI` y validación TLS estricta.
 - PR #363 integró rate limiting runtime probado en PostgreSQL 18 efímero para OAuth, checkout y 11 endpoints de escritura; AC-1..AC-7 cerrados documentalmente.
 - Sigue pendiente verificar la primera tasa BCV real persistida en Neon `main` tras una ventana programada válida `MON-FRI 22:00 UTC`, y el enrutamiento externo de alertas. CI/build no demuestran ejecución programada ni persistencia de producción.
-- No tocar Neon `main), secretos, datos reales, configuración manual, billing ni despliegues manuales. No cerrar Issue #53 ni modificar PR #193.
+- No tocar Neon `main`, secretos, datos reales, configuración manual, billing ni despliegues manuales. No cerrar Issue #53 ni modificar PR #193.
 
 ## Turno 44 — watchdog BCV PR #364, CI exact-SHA y cierre de PR #363 (2026-11-14 UTC)
 

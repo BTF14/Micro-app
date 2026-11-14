@@ -29,6 +29,9 @@ type QuickProductLookupProps = {
   exchangeRate: string | null;
   exchangeRateStatus: ExchangeRateStatus;
   onSelect?: (product: QuickLookupProduct) => void;
+  lockedBranchId?: string;
+  lockedWarehouseId?: string;
+  selectLabel?: string;
 };
 
 function formatLocalizedDecimal(value: string): string {
@@ -70,6 +73,9 @@ export default function QuickProductLookup({
   exchangeRate,
   exchangeRateStatus,
   onSelect,
+  lockedBranchId,
+  lockedWarehouseId,
+  selectLabel = "Seleccionar",
 }: QuickProductLookupProps) {
   const [branches, setBranches] = useState<Branch[]>([]);
   const [branchId, setBranchId] = useState("");
@@ -95,7 +101,7 @@ export default function QuickProductLookup({
   useEffect(() => {
     let active = true;
     setBranches([]);
-    setBranchId("");
+    setBranchId(lockedBranchId ?? "");
     setBranchesLoaded(false);
     setWarehouses([]);
     setWarehouseId("");
@@ -115,7 +121,7 @@ export default function QuickProductLookup({
         if (!active) return;
         setBranches(result.branches);
         setBranchesLoaded(true);
-        if (result.branches.length === 1) setBranchId(result.branches[0]!.id);
+        if (lockedBranchId) setBranchId(lockedBranchId);\n        else if (result.branches.length === 1) setBranchId(result.branches[0]!.id);
       })
       .catch((reason: unknown) => {
         if (!active) return;
@@ -127,7 +133,7 @@ export default function QuickProductLookup({
       active = false;
       requestSequence.current += 1;
     };
-  }, [base, organizationId]);
+  }, [base, lockedBranchId, organizationId]);
 
   useEffect(() => {
     let active = true;
@@ -175,7 +181,7 @@ export default function QuickProductLookup({
       active = false;
       requestSequence.current += 1;
     };
-  }, [base, branchId, organizationId]);
+  }, [base, branchId, lockedWarehouseId, organizationId]);
 
   useEffect(() => {
     if (warehouseStorageKey && warehouses.length > 1 && warehouseId) {
@@ -292,7 +298,7 @@ export default function QuickProductLookup({
         </div>
       </div>
 
-      {branches.length > 1 && (
+      {!lockedBranchId && branches.length > 1 && (
         <label className="quick-lookup-scope">
           Sucursal
           <select value={branchId} onChange={(event) => selectBranch(event.target.value)}>
@@ -303,10 +309,10 @@ export default function QuickProductLookup({
           </select>
         </label>
       )}
-      {branches.length === 1 && (
+      {!lockedBranchId && branches.length === 1 && (
         <p className="quick-lookup-context">Sucursal: <strong>{branches[0]!.name}</strong></p>
       )}
-      {branchId && warehouses.length > 1 && (
+      {!lockedWarehouseId && branchId && warehouses.length > 1 && (
         <label className="quick-lookup-scope">
           Almacén
           <select value={warehouseId} onChange={(event) => selectWarehouse(event.target.value)}>
@@ -317,7 +323,7 @@ export default function QuickProductLookup({
           </select>
         </label>
       )}
-      {branchId && warehouses.length === 1 && (
+      {!lockedWarehouseId && branchId && warehouses.length === 1 && (
         <p className="quick-lookup-context">Almacén: <strong>{warehouses[0]!.name}</strong></p>
       )}
 

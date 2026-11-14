@@ -68,14 +68,24 @@ function readInventorySnapshot(): { onHand: string; movementCount: number; ledge
           AND m.warehouse_id = :'warehouse_id'::uuid), '0')
     );
   `;
+  const connection = new URL(databaseUrl);
+  const environment = {
+    ...process.env,
+    PGHOST: connection.hostname,
+    PGPORT: connection.port || "5432",
+    PGUSER: decodeURIComponent(connection.username),
+    PGPASSWORD: decodeURIComponent(connection.password),
+    PGDATABASE: connection.pathname.replace(/^\\//, ""),
+    ...(connection.searchParams.get("sslmode") ? { PGSSLMODE: connection.searchParams.get("sslmode")! } : {}),
+  };
   const output = execFileSync("psql", [
-    databaseUrl, "-X", "-v", "ON_ERROR_STOP=1",
+    "-X", "-v", "ON_ERROR_STOP=1",
     "-v", `organization_id=${fixture.organizationId}`,
     "-v", `branch_id=${fixture.branchId}`,
     "-v", `warehouse_id=${fixture.warehouseId}`,
     "-v", `product_sku=${fixture.productSku}`,
     "-At", "-c", query,
-  ], { encoding: "utf8", stdio: ["ignore", "pipe", "pipe"] }).trim();
+  ], { encoding: "utf8", stdio: ["ignore", "pipe", "pipe"], env: environment }).trim();
   const [onHand, movementCount, ledgerQuantity] = output.split("|");
   if (!onHand || movementCount === undefined || !ledgerQuantity) throw new Error("E2E_INVENTORY_SNAPSHOT_INVALID");
   return { onHand, movementCount: Number(movementCount), ledgerQuantity };

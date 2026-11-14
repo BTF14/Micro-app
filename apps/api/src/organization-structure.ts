@@ -143,7 +143,7 @@ export function registerOrganizationStructureRoutes(app: Hono<{ Bindings: Bindin
     const body = parseObject(parsed.value, ["name", "code"]);
     const name = body && text(body.name, 120), code = body && text(body.code, 80);
     if (!body || !name || !code) return c.json({ error: "INVALID_STRUCTURE_ITEM", message: "Nombre y código son obligatorios." }, 400);
-    const rateLimitError = await enforceRuntimeWriteRateLimit(c, `organization:${kind}:create`, 10);
+    const rateLimitError = await enforceRuntimeWriteRateLimit(c, `organization:${kind === "warehouses" ? "warehouse" : "register"}:create`, 10);
     if (rateLimitError) return rateLimitError;
 
     try {

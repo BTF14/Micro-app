@@ -75,6 +75,7 @@ export default function InventoryPanel({ organizationId, canManageInventory }: {
   const sequence = useRef(0);
 
   const base = `/api/orgs/${encodeURIComponent(organizationId)}`;
+  const manageableProducts = items.filter((item) => item.is_active);
 
   const fail = (reason: unknown, fallback: string) => setError(reason instanceof Error ? reason.message : fallback);
 
@@ -207,7 +208,6 @@ export default function InventoryPanel({ organizationId, canManageInventory }: {
   }
 
   const canReadCosts = items.some((item) => item.cost_usd !== undefined);
-  const manageableProducts = items.filter((item) => item.is_active);
   const noBranches = branches !== null && branches.length === 0 && !error;
   const noWarehouses = warehouses !== null && warehouses.length === 0 && !error;
 
@@ -217,7 +217,7 @@ export default function InventoryPanel({ organizationId, canManageInventory }: {
         <div>
           <p className="eyebrow">EXISTENCIAS</p>
           <h1 id="inventory-title">Inventario</h1>
-          <p className="catalog-intro">Consulta de existencias por sucursal y almacén. Es una vista de solo lectura: las cantidades provienen del libro de movimientos.</p>
+          <p className="catalog-intro">Consulta de existencias por sucursal y almacén. Las cantidades provienen del libro de movimientos.</p>
         </div>
         <div className="catalog-heading-actions">
           {branches && branches.length > 1 ? (

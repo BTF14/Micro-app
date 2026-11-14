@@ -107,6 +107,8 @@ SELECT CASE
        AND count(DISTINCT version) = 23 AND bool_and(state = 'applied') THEN 'bcv'
   WHEN count(*) = 24 AND min(version) = '0001' AND max(version) = '0024'
        AND count(DISTINCT version) = 24 AND bool_and(state = 'applied') THEN 'bcv-0024'
+  WHEN count(*) = 25 AND min(version) = '0001' AND max(version) = '0025'
+       AND count(DISTINCT version) = 25 AND bool_and(state = 'applied') THEN 'bcv-0025'
   ELSE 'unsupported'
 END
 FROM public.schema_migrations")"
@@ -122,7 +124,7 @@ tmpdir="$(mktemp -d)"
 trap 'rm -rf "$tmpdir"' EXIT
 
 # Main/paired-intent backups must use the immutable migration bundle from the
-# exact main baseline; BCV projection backups use the current checked-out 24-file
+# exact main baseline; BCV projection backups use the current checked-out 25-file
 # bundle. The helper below independently verifies every file checksum against
 # the restored schema_migrations ledger before extracting any ACL statement.
 if [[ "$ledger_profile" == "main" ]]; then

@@ -88,7 +88,7 @@ function parseReceiptBody(value: unknown): { reason: string; lines: ReceiptLine[
     const cost = decimal(line.unit_cost_usd, 4, 10, true);
     if (quantity === null || cost === null) return null;
     seen.add(line.product_id.toLowerCase());
-    lines.push({ product_id: line.product_id.toLowerCase(), quantity, unit_cost_usd: cost });
+    lines.push({ product_id: line.product_id.toLowerCase(), quantity: canonical(quantity, 3), unit_cost_usd: canonical(cost, 4) });
   }
   return { reason: body.reason.trim(), lines };
 }
@@ -185,7 +185,7 @@ export function registerInventoryReceiptRoutes(app: Hono<{ Bindings: Bindings }>
         const branch = auth.context;
         const created = await tx.query<{ receipt_id: string; replayed: boolean }>(
           "SELECT receipt_id,replayed FROM public.create_inventory_receipt($1,$2,$3,$4,$5,$6,$7,$8::jsonb)",
-          [branch.organizationId, branch.branchId, warehouseId, branch.userId, input.reason, idempotencyKey, hash, JSON.stringify(input.lines)],
+          [branch.organizationId, branch.branchId, warehouseId, branch.userId, input.reason, idempotencyKey, hash, JSON.stringify([...input.lines].sort((a, b) => a.product_id.localeCompare(b.product_id)))],
         );
         const row = created.rows[0];
         if (!row) throw new Error("INVENTORY_RECEIPT_RESULT_MISSING");

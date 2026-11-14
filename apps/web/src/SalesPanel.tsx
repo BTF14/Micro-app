@@ -209,14 +209,12 @@ export default function SalesPanel({
   function updateQuantity(productId: string, value: string) {
     try {
       const normalized = formatNumeric(parseNumeric(value, 14, 3), 14, 3);
-      if (parseNumeric(normalized, 14, 3) <= 0n) throw new Error("Cantidad inválida");
-      setCart((current) => current.map((line) => {
-        if (line.product.product_id !== productId) return line;
-        if (quantityUnits(normalized) > quantityUnits(line.product.available_quantity)) {
-          throw new Error(`La cantidad supera la existencia disponible de ${line.product.name}.`);
-        }
-        return { ...line, quantity: normalized };
-      }));
+      if (parseNumeric(normalized, 14, 3) <= 0n) throw new Error("La cantidad debe ser mayor que cero.");
+      const line = cart.find((item) => item.product.product_id === productId);
+      if (line && quantityUnits(normalized) > quantityUnits(line.product.available_quantity)) {
+        throw new Error("La cantidad supera la existencia disponible de " + line.product.name + ".");
+      }
+      setCart((current) => current.map((item) => item.product.product_id === productId ? { ...item, quantity: normalized } : item));
       resetIdempotency();
       setError("");
     } catch (reason) {

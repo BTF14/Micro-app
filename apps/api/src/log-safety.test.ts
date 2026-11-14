@@ -10,7 +10,7 @@ const approvedCalls = new Set([
   'console.info({ event: "BCV_SYNC_STARTED" })',
   'console.info({ event: "BCV_SYNC_COMPLETED", outcome })',
   'console.error({ event: "BCV_SYNC_FAILED", code: safeBcvSyncErrorCode(error) })',
-  'console.error({ event: "BCV_SYNC_STALE_RUNNING", attemptAgeSeconds: state.attempt_age_seconds, thresholdSeconds: BCV_STALE_RUNNING_THRESHOLD_SECONDS, lastAttemptAt: state.last_attempt_at })',
+  'console.error({ event: "BCV_SYNC_STALE_RUNNING", attemptAgeSeconds: state.attempt_age_seconds, thresholdSeconds: BCV_STALE_RUNNING_THRESHOLD_SECONDS, lastAttemptAt: state.last_attempt_at})',
   'console.error({ event: "BCV_SYNC_WATCHDOG_LOOKUP_FAILED" })',
   'console.error({ event: "AUTH_RETENTION_CLEANUP_FAILED" })',
   'console.error({ event: "REGISTER_SHIFT_DATABASE_FAILURE", code: code ?? "UNKNOWN" })',

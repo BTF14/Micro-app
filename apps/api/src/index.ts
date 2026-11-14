@@ -13,7 +13,13 @@ import { registerRegisterShiftRoutes } from "./register-shifts";
 import { registerOrganizationStructureRoutes } from "./organization-structure";
 import { withDatabaseClient } from "./database";
 import { cleanupExpiredAuthRecords } from "./auth-rate-limit";
-import { registerExchangeRateRoutes, safeBcvSyncErrorCode, syncBcvOfficialRate } from "./exchange-rates";
+import {
+  BCV_STALE_RUNNING_THRESHOLD_SECONDS,
+  isBcvSyncStateStaleRunning,
+  registerExchangeRateRoutes,
+  safeBcvSyncErrorCode,
+  syncBcvOfficialRate,
+} from "./exchange-rates";
 
 import type { Bindings } from "./bindings";
 
@@ -141,12 +147,50 @@ export default Object.assign(app, {
       }
       return;
     }
-    // Only the explicitly configured hourly retention Cron may run cleanup.
+    // The hourly runtime Cron observes BCV state and cleans expired auth records.
+    // These subjobs are deliberately independent: neither may suppress the other.
     if (controller.cron !== "17 * * * *") return;
     // Worker previews must never connect to the application database.
     if (env.APP_ENV !== "production") return;
-    await withDatabaseClient(env.DATABASE_URL, (client) =>
-      cleanupExpiredAuthRecords(client),
-    );
+
+    try {
+      await withDatabaseClient(env.DATABASE_URL, async (client) => {
+        const result = await client.query<{
+          last_attempt_at: string | null;
+          last_outcome: string | null;
+          attempt_age_seconds: number | null;
+        }>(
+          `SELECT
+             to_char(last_attempt_at AT TIME ZONE 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS.MS"Z"') AS last_attempt_at,
+             last_outcome,
+             CASE WHEN last_attempt_at IS NULL THEN NULL
+                  ELSE GREATEST(0, floor(extract(epoch FROM (now() - last_attempt_at))))::int
+              END AS attempt_age_seconds
+           FROM public.bcv_sync_state
+          WHERE singleton = true`,
+        );
+        const state = result.rows[0];
+        if (state && isBcvSyncStateStaleRunning(state.last_outcome, state.attempt_age_seconds)) {
+          console.error({
+            event: "BCV_SYNC_STALE_RUNNING",
+            attemptAgeSeconds: state.attempt_age_seconds,
+            thresholdSeconds: BCV_STALE_RUNNING_THRESHOLD_SECONDS,
+            lastAttemptAt: state.last_attempt_at,
+          });
+        }
+      });
+    } catch {
+      // Keep this diagnostic sanitized; retention cleanup must still run.
+      console.error({ event: "BCV_SYNC_WATCHDOG_LOOKUP_FAILED" });
+    }
+
+    try {
+      await withDatabaseClient(env.DATABASE_URL, (client) =>
+        cleanupExpiredAuthRecords(client),
+      );
+    } catch {
+      // Watchdog already ran independently; report cleanup failure without secrets.
+      console.error({ event: "AUTH_RETENTION_CLEANUP_FAILED" });
+    }
   },
 });

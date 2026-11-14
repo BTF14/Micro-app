@@ -4,12 +4,27 @@ import bcvWorkerConfig from "../wrangler.bcv.toml?raw";
 
 const mocks = vi.hoisted(() => ({
   syncBcvOfficialRate: vi.fn(),
+  withDatabaseClient: vi.fn(),
+  withDatabaseTransaction: vi.fn(),
+  consumeAuthRateLimit: vi.fn(),
+  cleanupExpiredAuthRecords: vi.fn(),
 }));
 
 vi.mock("./exchange-rates", () => ({
   registerExchangeRateRoutes: vi.fn(),
   syncBcvOfficialRate: mocks.syncBcvOfficialRate,
+  BCV_STALE_RUNNING_THRESHOLD_SECONDS: 300,
+  isBcvSyncStateStaleRunning: (outcome: string | null, age: number | null) =>
+    outcome === "running" && age !== null && age >= 300,
   safeBcvSyncErrorCode: (error: unknown) => error instanceof Error && error.message.startsWith("BCV_") ? error.message : "BCV_SYNC_UNKNOWN",
+}));
+vi.mock("./database", () => ({
+  withDatabaseClient: mocks.withDatabaseClient,
+  withDatabaseTransaction: mocks.withDatabaseTransaction,
+}));
+vi.mock("./auth-rate-limit", () => ({
+  consumeAuthRateLimit: mocks.consumeAuthRateLimit,
+  cleanupExpiredAuthRecords: mocks.cleanupExpiredAuthRecords,
 }));
 
 import app from "./index";
@@ -35,6 +50,10 @@ describe("BCV scheduled failure reporting", () => {
   afterEach(() => {
     vi.restoreAllMocks();
     mocks.syncBcvOfficialRate.mockReset();
+    mocks.withDatabaseClient.mockReset();
+    mocks.withDatabaseTransaction.mockReset();
+    mocks.consumeAuthRateLimit.mockReset();
+    mocks.cleanupExpiredAuthRecords.mockReset();
   });
 
   it("uses only the dedicated BCV database credential", async () => {
@@ -117,5 +136,111 @@ describe("BCV scheduled failure reporting", () => {
   it("ignores unrelated cron expressions", async () => {
     await app.scheduled({ cron: "0 0 * * *" } as ScheduledController, productionEnv);
     expect(mocks.syncBcvOfficialRate).not.toHaveBeenCalled();
+  });
+});
+
+
+describe("hourly BCV stale-running watchdog and auth retention isolation", () => {
+  const hourlyCron = { cron: "17 * * * *" } as ScheduledController;
+
+  function runtimeClient(state: {
+    last_attempt_at: string;
+    last_outcome: string;
+    attempt_age_seconds: number;
+  }) {
+    return { query: vi.fn().mockResolvedValue({ rows: [state] }) };
+  }
+
+  it("logs only stale running state and still executes retention cleanup", async () => {
+    const client = runtimeClient({
+      last_attempt_at: "2026-11-14T17:00:00.000Z",
+      last_outcome: "running",
+      attempt_age_seconds: 300,
+    });
+    const errorLog = vi.spyOn(console, "error").mockImplementation(() => undefined);
+    mocks.withDatabaseClient.mockImplementation(async (_url: unknown, operation: (client: unknown) => Promise<unknown>) =>
+      operation(client));
+    mocks.cleanupExpiredAuthRecords.mockResolvedValue({
+      rateLimitBucketsDeleted: 0,
+      bootstrapAttemptsDeleted: 0,
+    });
+
+    await app.scheduled(hourlyCron, productionEnv);
+
+    expect(mocks.withDatabaseClient).toHaveBeenCalledTimes(2);
+    expect(client.query).toHaveBeenCalledTimes(1);
+    const sql = String(client.query.mock.calls[0]?.[0]);
+    expect(sql).toContain("FROM public.bcv_sync_state");
+    expect(sql).toContain("WHERE singleton = true");
+    expect(sql).not.toMatch(/\b(?:UPDATE|INSERT|DELETE)\b/i);
+    expect(errorLog).toHaveBeenCalledWith({
+      event: "BCV_SYNC_STALE_RUNNING",
+      attemptAgeSeconds: 300,
+      thresholdSeconds: 300,
+      lastAttemptAt: "2026-11-14T17:00:00.000Z",
+    });
+    expect(mocks.cleanupExpiredAuthRecords).toHaveBeenCalledWith(client);
+  });
+
+  it("does not report recent running state as stale", async () => {
+    const client = runtimeClient({
+      last_attempt_at: "2026-11-14T17:00:00.000Z",
+      last_outcome: "running",
+      attempt_age_seconds: 299,
+    });
+    const errorLog = vi.spyOn(console, "error").mockImplementation(() => undefined);
+    mocks.withDatabaseClient.mockImplementation(async (_url: unknown, operation: (client: unknown) => Promise<unknown>) =>
+      operation(client));
+    mocks.cleanupExpiredAuthRecords.mockResolvedValue({
+      rateLimitBucketsDeleted: 0,
+      bootstrapAttemptsDeleted: 0,
+    });
+
+    await app.scheduled(hourlyCron, productionEnv);
+
+    expect(errorLog).not.toHaveBeenCalledWith(expect.objectContaining({ event: "BCV_SYNC_STALE_RUNNING" }));
+    expect(mocks.cleanupExpiredAuthRecords).toHaveBeenCalledTimes(1);
+  });
+
+  it("runs retention cleanup when the watchdog database lookup fails", async () => {
+    const client = runtimeClient({
+      last_attempt_at: "2026-11-14T17:00:00.000Z",
+      last_outcome: "running",
+      attempt_age_seconds: 299,
+    });
+    const errorLog = vi.spyOn(console, "error").mockImplementation(() => undefined);
+    mocks.withDatabaseClient
+      .mockRejectedValueOnce(new Error("private database detail"))
+      .mockImplementationOnce(async (_url: unknown, operation: (client: unknown) => Promise<unknown>) =>
+        operation(client));
+    mocks.cleanupExpiredAuthRecords.mockResolvedValue({
+      rateLimitBucketsDeleted: 0,
+      bootstrapAttemptsDeleted: 0,
+    });
+
+    await app.scheduled(hourlyCron, productionEnv);
+
+    expect(errorLog).toHaveBeenCalledWith({ event: "BCV_SYNC_WATCHDOG_LOOKUP_FAILED" });
+    expect(JSON.stringify(errorLog.mock.calls)).not.toContain("private database detail");
+    expect(mocks.cleanupExpiredAuthRecords).toHaveBeenCalledTimes(1);
+  });
+
+  it("keeps the watchdog operational when retention cleanup fails", async () => {
+    const client = runtimeClient({
+      last_attempt_at: "2026-11-14T17:00:00.000Z",
+      last_outcome: "running",
+      attempt_age_seconds: 300,
+    });
+    const errorLog = vi.spyOn(console, "error").mockImplementation(() => undefined);
+    mocks.withDatabaseClient
+      .mockImplementationOnce(async (_url: unknown, operation: (client: unknown) => Promise<unknown>) =>
+        operation(client))
+      .mockRejectedValueOnce(new Error("private cleanup detail"));
+
+    await app.scheduled(hourlyCron, productionEnv);
+
+    expect(errorLog).toHaveBeenCalledWith(expect.objectContaining({ event: "BCV_SYNC_STALE_RUNNING" }));
+    expect(errorLog).toHaveBeenCalledWith({ event: "AUTH_RETENTION_CLEANUP_FAILED" });
+    expect(JSON.stringify(errorLog.mock.calls)).not.toContain("private cleanup detail");
   });
 });

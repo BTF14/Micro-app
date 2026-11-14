@@ -10,6 +10,18 @@ const MAX_BCV_HTML_BYTES = 2_000_000;
 const MAX_EFFECTIVE_DATE_AGE_DAYS = 10;
 const MAX_EFFECTIVE_DATE_FUTURE_DAYS = 7;
 
+export const BCV_STALE_RUNNING_THRESHOLD_SECONDS = 300;
+
+export function isBcvSyncStateStaleRunning(
+  lastOutcome: string | null,
+  attemptAgeSeconds: number | null,
+): boolean {
+  return lastOutcome === "running" &&
+    attemptAgeSeconds !== null &&
+    Number.isFinite(attemptAgeSeconds) &&
+    attemptAgeSeconds >= BCV_STALE_RUNNING_THRESHOLD_SECONDS;
+}
+
 export type BcvOfficialRate = {
   rate: string;
   effectiveDate: string;
@@ -476,16 +488,24 @@ export function registerExchangeRateRoutes(app: Hono<{ Bindings: Bindings }>): v
         return c.json({ error: "BCV_SYNC_STATE_UNAVAILABLE", message: "El estado operativo BCV no está disponible." }, 503);
       }
       const outcome = state.state.last_outcome;
-      const health = outcome === "running"
-        ? "running"
-        : outcome === "failed"
-          ? "failed"
-          : (outcome === "inserted" || outcome === "unchanged") && state.state.last_success_at !== null
-            ? "succeeded"
-            : "attention";
+      const isStaleRunning = isBcvSyncStateStaleRunning(
+        outcome,
+        state.state.attempt_age_seconds,
+      );
+      const health = isStaleRunning
+        ? "attention"
+        : outcome === "running"
+          ? "running"
+          : outcome === "failed"
+            ? "failed"
+            : (outcome === "inserted" || outcome === "unchanged") && state.state.last_success_at !== null
+              ? "succeeded"
+              : "attention";
       return c.json({
         source: BCV_SOURCE_ID,
         health,
+        isStaleRunning,
+        staleRunningThresholdSeconds: BCV_STALE_RUNNING_THRESHOLD_SECONDS,
         lastAttemptAt: state.state.last_attempt_at,
         lastSuccessAt: state.state.last_success_at,
         lastOutcome: outcome,

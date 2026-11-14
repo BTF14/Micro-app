@@ -253,11 +253,11 @@ export default function InventoryPanel({ organizationId, canManageInventory }: {
         </div>
       </div>
 
-      <form className="catalog-search" role="search" onSubmit={(event) => { event.preventDefault(); void fetchBalances(undefined, inventorySearch); }}>
+      <form className="catalog-search" role="search" onSubmit={(event) => { event.preventDefault(); setReceiptProductId(""); setCountProductId(""); void fetchBalances(undefined, inventorySearch); }}>
         <label className="catalog-search-label" htmlFor="inventory-quick-search">Buscar en este almacén</label>
         <input id="inventory-quick-search" type="search" enterKeyHint="search" maxLength={120} placeholder="Buscar por nombre, SKU o código de barras…" value={inventorySearch} onChange={(event) => setInventorySearch(event.target.value)} />
         <button className="catalog-search-submit" type="submit" disabled={loading}>Buscar</button>
-        {inventorySearch && <button className="catalog-search-clear" type="button" onClick={() => { setInventorySearch(""); void fetchBalances(); }}>Limpiar</button>}
+        {inventorySearch && <button className="catalog-search-clear" type="button" onClick={() => { setInventorySearch(""); setReceiptProductId(""); setCountProductId(""); void fetchBalances(); }}>Limpiar</button>}
       </form>
       {error && <p className="catalog-error" role="alert">{error}</p>}
       {notice && <p className="catalog-success" role="status">{notice}</p>}

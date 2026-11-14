@@ -1,6 +1,6 @@
 # ODD task: real-fullstack-commerce-e2e
 
-- Status: implementation and documentation complete; final exact-HEAD merge gate pending
+- Status: completed
 - Issue / PR: Issue #53 (P0) remains OPEN; implementation and reconciliation are in PR #366
 - Owner / reviewer: BTF14 / technical agent
 - Started: 2026-11-14
@@ -37,7 +37,7 @@ Excluded:
 - [x] AC-6 — stale POS page attempts checkout after shift close; the real API returns HTTP 409 `OPEN_SHIFT_REQUIRED`, UI displays the rejection and stock remains unchanged.
 - [x] AC-7 — existing Chromium authentication smoke tests remain intact and pass in the same workflow.
 - [x] AC-9 — readiness and continuity docs distinguish CI full-stack evidence from production-only gates, include PR #365 merge SHA and correct the Turno 45 typo without adding personal emails, provider resource IDs, internal business/product names or secrets.
-- [ ] AC-8 — verify the complete diff, all check-runs/workflow runs, reviews and threads on the final post-documentation PR HEAD; then squash merge only if all applicable gates pass and verify all post-merge `main` checks. This is the remaining operational gate.
+- [x] AC-8 — final PR HEAD `b078a02608b807a2ecdd0b59e95d8017ecd2f553`: 16/16 check-runs SUCCESS and 12/12 workflow runs SUCCESS; Squash and Merge completed at 2026-11-14 22:45:01 UTC. Merge/post-merge `main` SHA `366334ae75c966e4fada13afed964a7f4b557954`: merge-time snapshot 14/14 check-runs SUCCESS and 9/9 workflow runs SUCCESS. A later same-SHA recheck exposed additional duplicate records: 17 check-run records (16 SUCCESS, 1 CANCELLED) and 12 workflow records (11 SUCCESS, 1 CANCELLED); the cancelled later database-validation run coexists with an earlier successful run of that workflow. This later duplicate is explicitly recorded rather than silently counted as green.
 
 ## Risks and guardrails
 
@@ -59,17 +59,19 @@ Excluded:
 | Add full-stack Playwright flow | Real browser/API/DB flow, no API mocks | Full-stack Playwright job SUCCESS | complete |
 | Preserve existing browser smoke suite | Existing auth tests execute | Same Playwright workflow; SUCCESS | complete |
 | Reconcile readiness/continuity docs | PR #365 and E2E evidence recorded; production gates explicit | This PR diff and ODD validation | complete |
-| Review, merge and verify post-merge | Exact final PR HEAD and main checks | PR #366 check-runs/workflow runs and post-merge main | pending |
+| Review, merge and verify post-merge | Exact final PR HEAD and main checks | PR #366 exact HEAD; merge SHA; merge-time snapshot and later duplicate-run recheck | complete |
 
-## Exact implementation evidence
+## Exact implementation and merge evidence
 
-- Implementation HEAD validated before this documentation reconciliation: `3329562d15f40ce744de67a088400935d9d3566a`.
-- That exact HEAD had 16/16 check-runs SUCCESS and 12/12 workflow runs SUCCESS.
+- Final PR #366 HEAD: `b078a02608b807a2ecdd0b59e95d8017ecd2f553`; exact-HEAD check-runs 16/16 SUCCESS and workflow runs 12/12 SUCCESS.
 - CI `verify`: 52/52 steps SUCCESS.
-- Real full-stack PostgreSQL 18 job: 20/20 executed steps SUCCESS; Playwright Chromium flow SUCCESS.
+- Real full-stack PostgreSQL 18 job: 20/20 executed steps SUCCESS; full-stack browser flow SUCCESS.
 - Existing Chromium authentication smoke tests SUCCESS.
-- Cloudflare Pages and Worker builds passed as CI/preview checks only; no deployment was performed.
-- The docs commit changes the PR HEAD. All checks must be re-run and verified on that new exact SHA; do not reuse the evidence above as final-HEAD evidence.
+- PR #366 state: MERGED at 2026-11-14 22:45:01 UTC.
+- Squash merge SHA and resulting `main`: `366334ae75c966e4fada13afed964a7f4b557954`.
+- Merge-time post-merge snapshot: 14/14 check-runs SUCCESS and 9/9 workflow runs SUCCESS.
+- Later live recheck of the same merge SHA returned 17 check-run records: 16 SUCCESS and 1 CANCELLED; it returned 12 workflow records: 11 SUCCESS and 1 CANCELLED. The additional cancelled database-validation run was a later duplicate while the earlier run of the same workflow was SUCCESS. This is not represented as an all-green 17/12 result.
+- Pages and Worker build checks are CI/preview evidence only; no manual deployment was performed.
 
 ## Technical decisions
 
@@ -82,9 +84,9 @@ Excluded:
 
 ## Closure and handoff
 
-- Implementation HEAD: `3329562d15f40ce744de67a088400935d9d3566a`; PR #366.
-- Checks at implementation HEAD: 16/16 check-runs, 12/12 workflow runs, CI verify 52/52, full-stack job 20/20 steps SUCCESS, existing Chromium authentication smoke tests SUCCESS.
-- Acceptance criteria: AC-1 through AC-7 and AC-9 met; AC-8 remains pending exact final PR HEAD checks, merge and post-merge verification.
-- Limitations not verified: first real BCV rate persisted in Neon `main`; external Cloudflare alert delivery; human RPO/RTO; legal/fiscal approval; Issue #53.
+- Final PR #366 HEAD: `b078a02608b807a2ecdd0b59e95d8017ecd2f553`; merge SHA / `main`: `366334ae75c966e4fada13afed964a7f4b557954`.
+- Merge-time exact-HEAD and post-merge evidence is recorded above. Later duplicate workflow/check-run cancellation is also disclosed above.
+- Acceptance criteria: AC-1 through AC-9 completed for the #366 scope.
+- Limitations not verified: first real BCV rate persisted in Neon `main`; external alert delivery; human RPO/RTO; legal/fiscal approval; Issue #53.
 - Residual production status: **NOT READY**.
-- Next step: validate final documentation HEAD, inspect complete diff/reviews/threads, squash merge only if every applicable gate passes, and verify post-merge `main` checks. Keep PR #193 and Issue #53 OPEN.
+- PR #193 and Issue #53 remain OPEN; no follow-on closure is implied.

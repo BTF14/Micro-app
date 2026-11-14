@@ -1,40 +1,42 @@
-## Turno 46 — PR #365 integrada y E2E comercial full-stack validada en CI (2026-11-14 UTC)
+## Turno 48 — P1 validado en CI; PR #367 pendiente de cierre (2026-11-14 UTC)
 
-**Base `main` verificada al iniciar PR #366:** `5e80770e73d3ed65fa92083ea5f4478d0d9f71d9` (Squash and Merge de PR #365).
+**`main` actual verificada:** `366334ae75c966e4fada13afed964a7f4b557954`.
 
-### PR #365 — cierre documental anterior
-- PR #365 quedó integrada en `main` mediante Squash and Merge con SHA `5e80770e73d3ed65fa92083ea5f4478d0d9f71d9`.
-- La verificación post-merge registrada para ese commit fue 13/13 check-runs SUCCESS y 9/9 workflow runs SUCCESS.
-- PR #361 (Cron BCV `MON-FRI 22:00 UTC` y TLS CI), PR #363 (rate limiting runtime) y PR #364 (watchdog BCV read-only) ya estaban integradas. No duplicar esas implementaciones.
+### PR #366 — cierre previo confirmado
+- PR #366 MERGED; HEAD exacto `b078a02608b807a2ecdd0b59e95d8017ecd2f553`: 16/16 check-runs SUCCESS y 12/12 workflow runs SUCCESS.
+- Merge SHA y `main`: `366334ae75c966e4fada13afed964a7f4b557954`. Snapshot al integrar: 14/14 check-runs SUCCESS y 9/9 workflow runs SUCCESS.
+- Relectura posterior del mismo SHA: 17 registros de check-run (16 SUCCESS, 1 CANCELLED) y 12 workflow runs (11 SUCCESS, 1 CANCELLED). La ejecución cancelada es una duplicación posterior de validación de base de datos; la ejecución anterior equivalente terminó SUCCESS. La lista ampliada no se presenta como totalmente verde.
+- PR #193 sigue OPEN e intacta, HEAD `ac57ab4f3415f82279b8a49c0befe09f8e3aec68`. Issue #53 sigue OPEN/P0.
 
-### PR #366 — evidencia de implementación full-stack
-- PR #366, rama `test/real-fullstack-commerce-e2e-20261114`; HEAD de implementación validado: `3329562d15f40ce744de67a088400935d9d3566a`.
-- En ese HEAD exacto: 16/16 check-runs SUCCESS y 12/12 workflow runs SUCCESS; CI `verify` 52/52 pasos SUCCESS.
-- Job full-stack PostgreSQL 18: 20/20 pasos ejecutados SUCCESS; job Chromium authentication smoke tests SUCCESS. La suite full-stack ejecuta el frontend compilado/servido, el proxy same-origin real `/api` y `/auth`, los handlers reales de Hono y una base PostgreSQL 18 efímera.
-- Migraciones canónicas 0001–0025 aplicadas y ledger completo verificado. Los logins PostgreSQL `microapp_runtime` y `microapp_bcv_sync` se usan con privilegios separados; se comprueba que runtime no puede escribir `bcv_sync_state`.
-- El harness crea dos identidades sintéticas persistidas: Owner para catálogo/recepción y Cashier para caja/ventas. Ambas tienen sesión con hash real, allowlist, membresía organizacional y sucursal; la sucursal tiene almacén y caja asignados. La separación respeta el trigger SQL que exige rol organizacional `cashier` para abrir turno.
-- Se prepara una tasa BCV sintética válida para la fecha local de `America/Caracas` y un `bcv_sync_state` válido mediante el rol productor dedicado; esto es fixture efímero, no una tasa real de producción.
-- Chromium completa creación/lectura de producto, recepción de inventario, apertura de turno, checkout USD y VES, recibos visibles, descuento de stock comprobado mediante API/DB, cierre de turno, recarga real y rechazo HTTP 409 `OPEN_SHIFT_REQUIRED` al intentar vender con el turno cerrado; el stock permanece intacto tras el rechazo.
-- No se usa `page.route`, interceptación de `/api/*`, ni respuestas HTTP simuladas. El único adaptador de transporte de base de datos está dentro del harness de test: vincula el cliente Neon de la aplicación al driver `pg` para conectar los mismos handlers Hono al PostgreSQL efímero. No cambia módulos de runtime ni añade endpoints de test.
-- Las pruebas Chromium de autenticación existentes permanecen y pasan. Los checks de Cloudflare Pages y Worker son validaciones CI/preview; no hubo despliegue manual.
+### PR #367 — implementación P1 y evidencia CI
+- PR #367 OPEN, rama `feat/p1-mobile-a11y-stock-log-safety-20261114`, contra `main` `366334ae75c966e4fada13afed964a7f4b557954`.
+- HEAD de implementación validado: `4285d183a53ba43c4f471ca242102389c8697080`. En ese SHA exacto: **17/17 check-runs SUCCESS y 13/13 workflow runs SUCCESS**. CI `verify`: 52/52 pasos SUCCESS; ODD docs, migraciones, SAST, seguridad, secretos y dependency review SUCCESS.
+- Playwright E2E: autenticación Chromium SUCCESS; el flujo full-stack real Hono + PostgreSQL 18 efímero pasó **1/1 test** en 9.6 segundos bajo el proyecto móvil 390×844.
+- El test de stock insuficiente crea una condición de stock obsoleto entre dos pestañas, exige API 409 `INSUFFICIENT_STOCK`, comprueba la alerta accesible y compara el balance y el ledger antes/después del rechazo. No usa `page.route`, mocks de API ni endpoints de test en runtime.
+- Las comprobaciones móviles verifican ausencia de overflow horizontal bloqueante en catálogo, recepción, POS y recibo; controles accesibles; navegación Tab/Enter en login/módulos/checkout; foco visible y restaurado del diálogo; regiones de error/estado.
+- La auditoría identificó diez llamadas productivas `console.*` en tres archivos de `apps/api/src`. Todas usan eventos/códigos allowlisted y metadatos acotados; no se encontraron tokens, secretos, cookies, payloads externos ni IPs crudas. La prueba estática deny-by-default pasó dentro de CI.
+- Los check-runs incluyen 17 entradas y 13 workflows, contando las ejecuciones push y pull_request del mismo SHA; todas terminaron SUCCESS. Los fallos anteriores en SHA previos a las correcciones son diagnósticos y no se reutilizan.
+- Esta reconciliación documental avanza la punta de PR #367 desde el HEAD de implementación validado. El HEAD final que incluya estos documentos debe volver a pasar todos los checks antes de merge.
 
-### Límites de lo demostrado
-- Esta evidencia demuestra el flujo full-stack en CI contra PostgreSQL 18 efímero. **No demuestra** persistencia de la primera tasa BCV real en Neon `main`, entrega externa de alertas, RPO/RTO humano, ni cumplimiento legal/fiscal.
-- PR #193 permanece OPEN e intacta. Issue #53 permanece OPEN/P0. **PRODUCTION: NOT READY**.
-- No se accedió ni mutó Neon `main`, datos reales o secretos; no se cambió configuración manual de Cloudflare/Google Cloud ni se ejecutaron despliegues manuales.
-- El HEAD `3329562d15f40ce744de67a088400935d9d3566a` es el HEAD de implementación antes de la reconciliación documental incluida en esta misma PR. El commit documental genera un nuevo HEAD: sus check-runs y workflow runs deben verificarse de nuevo en ese SHA exacto; no reutilizar CI de un SHA anterior.
+### Límites de producción
+- La parte P1 descrita arriba está validada en CI contra infraestructura efímera. No demuestra comportamiento con datos reales ni certifica producción.
+- Permanecen abiertos: primera tasa BCV real persistida en Neon `main` durante `MON-FRI 22:00 UTC`; entrega externa de alertas; aceptación humana de RPO/RTO; asesoría/aprobación legal y fiscal; cierre formal de Issue #53.
+- No se modificó Neon `main`, secretos, configuración manual de proveedores ni despliegues. No se modificó PR #193 ni se cerró Issue #53.
+
+**Estado:** PR #367 OPEN; PR #193 OPEN; Issue #53 OPEN/P0; **PRODUCTION: NOT READY**.
 
 ### Próximo control obligatorio
-Leer el diff completo de PR #366 y verificar todos los check-runs, workflow runs, reviews y threads sobre el HEAD final posterior a la reconciliación documental. Solo con todos los gates aplicables en verde procede Squash and Merge bajo la autorización de `AGENTS.md`; después verificar los checks del nuevo `main`. Mantener PR #193 e Issue #53 abiertas.
+Verificar en vivo el HEAD actual de PR #367 después de esta actualización documental. Exigir todos los check-runs y workflow runs SUCCESS en ese SHA exacto, revisar el diff completo, reviews y threads; después hacer Squash and Merge conforme a `AGENTS.md` y verificar todos los checks post-merge en el nuevo `main`. No reutilizar resultados de SHA anteriores.
 
 ### Instrucciones para la siguiente sesión
-- Antes de actuar, vuelve a leer `AGENTS.md`, `docs/CONSTITUTION.md`, `docs/ODD_WORKFLOW.md`, y las cabeceras de este handoff y `docs/CURRENT_STATE.md`.
-- Comprueba en vivo `main`, PR #366, PR #193 e Issue #53. No asumas que el SHA de implementación citado arriba sigue siendo el HEAD actual.
-- Para PR #366, revisa el diff completo y valida todos los check-runs, workflow runs, reviews y threads en el HEAD final que incluya esta reconciliación documental. No reutilices resultados de CI de `3329562d15f40ce744de67a088400935d9d3566a` si el HEAD ha cambiado.
-- Si todos los checks aplicables están SUCCESS, no hay review/thread bloqueante y el diff es seguro, ejecuta Squash and Merge conforme a `AGENTS.md`; luego comprueba todos los checks post-merge del SHA exacto de `main`.
-- No modifiques ni cierres PR #193. No cierres Issue #53; debe seguir OPEN/P0 hasta cerrar los gates reales de producción.
-- No accedas ni mutés Neon `main`, secretos, datos reales o configuración manual de Cloudflare/Google Cloud. No hagas despliegues manuales.
-- No solicites de nuevo IDs de Build, capturas, terminal, CLI, TinyFish ni reconexiones si la información ya está documentada. Si falta un dato imprescindible, pregunta una sola vez y acepta respuesta textual.
+- Leer primero `AGENTS.md`, `docs/CONSTITUTION.md`, `docs/ODD_WORKFLOW.md` y las cabeceras de este handoff y `docs/CURRENT_STATE.md`.
+- Verificar en vivo `main`, PR #367, PR #193 e Issue #53. PR #366 ya está MERGED; no duplicar PR #361, #363, #364, #365 ni #366.
+- PR #367 está OPEN. Su HEAD de implementación `4285d183a53ba43c4f471ca242102389c8697080` pasó 17/17 check-runs y 13/13 workflow runs SUCCESS; CI verify 52/52; Playwright mobile full-stack 1/1 test y auth smoke SUCCESS. Esta actualización documental cambia la punta; leer el HEAD vivo actual y exigir CI nuevo sobre él.
+- Leer `odd/tasks/p1-mobile-a11y-stock-and-log-safety.md` y revisar el diff completo de PR #367, sin volver a pedir datos ya documentados.
+- No fusionar hasta verificar todos los check-runs, workflow runs, reviews y threads en el HEAD final exacto. Después verificar todos los checks post-merge en el SHA exacto de `main`.
+- Mantener cero `page.route` y cero mocks de `/api/*` en la suite full-stack real. No imprimir credenciales de PostgreSQL.
+- No modificar ni cerrar PR #193. No cerrar Issue #53; mantener **PRODUCTION: NOT READY**.
+- No tocar Neon `main`, secretos, configuración manual de proveedores ni despliegues manuales.
 
 ## Turno 45 — PR #364 integrada y verificación post-merge (2026-11-14 UTC)
 

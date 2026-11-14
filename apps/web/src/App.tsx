@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { apiRequest, ApiError, googleLoginUrl, type AuthResponse } from "./auth";
 import "./auth.css";
 import CatalogPanel from "./CatalogPanel";
@@ -266,9 +266,54 @@ function HelpLinks({ onOpen }: { onOpen: (kind: HelpModalKind) => void }) {
 }
 
 function HelpModal({ kind, onClose }: { kind: HelpModalKind; onClose: () => void }) {
+  const dialogRef = useRef<HTMLDivElement>(null);
+  const closeButtonRef = useRef<HTMLButtonElement>(null);
+  const onCloseRef = useRef(onClose);
+  onCloseRef.current = onClose;
+
+  useEffect(() => {
+    const previouslyFocused = document.activeElement instanceof HTMLElement
+      ? document.activeElement
+      : null;
+    closeButtonRef.current?.focus();
+
+    const handleDialogKeydown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        event.preventDefault();
+        onCloseRef.current();
+        return;
+      }
+      if (event.key !== "Tab") return;
+
+      const focusable = dialogRef.current?.querySelectorAll<HTMLElement>(
+        'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), summary, [tabindex]:not([tabindex="-1"])',
+      );
+      if (!focusable?.length) {
+        event.preventDefault();
+        return;
+      }
+      const first = focusable[0]!;
+      const last = focusable[focusable.length - 1]!;
+      if (event.shiftKey && (document.activeElement === first || !dialogRef.current?.contains(document.activeElement))) {
+        event.preventDefault();
+        last.focus();
+      } else if (!event.shiftKey && (document.activeElement === last || !dialogRef.current?.contains(document.activeElement))) {
+        event.preventDefault();
+        first.focus();
+      }
+    };
+
+    document.addEventListener("keydown", handleDialogKeydown);
+    return () => {
+      document.removeEventListener("keydown", handleDialogKeydown);
+      previouslyFocused?.focus();
+    };
+  }, []);
+
   return (
     <div className="help-modal-backdrop" role="presentation" onClick={onClose}>
       <div
+        ref={dialogRef}
         className="help-modal"
         role="dialog"
         aria-modal="true"
@@ -277,7 +322,7 @@ function HelpModal({ kind, onClose }: { kind: HelpModalKind; onClose: () => void
       >
         <div className="help-modal-head">
           <h2>{kind === "faq" ? "Preguntas frecuentes" : "Privacidad"}</h2>
-          <button type="button" className="help-modal-close" onClick={onClose} aria-label="Cerrar">✕</button>
+          <button ref={closeButtonRef} type="button" className="help-modal-close" onClick={onClose} aria-label="Cerrar">✕</button>
         </div>
         <div className="help-modal-body">
           {kind === "faq"

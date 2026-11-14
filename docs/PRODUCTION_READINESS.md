@@ -148,10 +148,13 @@ No se cambiaron secretos, Neon main, datos reales, Cloudflare production, DNS ni
 
 ## Estado vivo — 2026-11-14 UTC
 
-- **Main base de esta reconciliación:** `b469e05ec9d687f8f4fc98c3bdbf945ce7982370`. Esta sección sustituye el snapshot operativo anterior de 2026-11-04; los registros históricos posteriores se conservan en CURRENT_STATE/HANDOFF/STATE_JOURNAL.
-- **Cadena funcional integrada en main:** PR #339 (Pages/API same-origin); #347 (lifecycle autenticado de cajero y pruebas aisladas); #348 (restore instrumentado y ACK humano de alerta); #349 (aislamiento de credencial BCV Cron); #350 (administración owner-only de sucursales/almacenes/cajas, 0024); #351 y #353 (workflow protegido de migraciones Neon main y corrección Bash); #352 (recepciones/ajustes, 0025); #354–#356 (búsqueda, UX y consulta rápida de precio/existencia); #355 (Worker BCV sync aislado); #357 (POS de ventas y navegación vertical móvil). Confirmar cada función por su código y pruebas, no por el título de la PR.
-- **Migraciones:** esquema versionado 0001–0025 en main. El workflow protegido `neon-main-migrations.yml`, run [#43591333198](https://github.com/BTF14/Micro-app/actions/runs/43591333198), terminó SUCCESS sobre el commit operativo registrado `c4e02c82aa790e1d32e909b806536dadcf3eb973`, con `pending = 0` y assertions rollback-safe 0019–0025. Este resultado acredita la aplicación declarada en Neon main; no autoriza nuevas escrituras ni cambios remotos.
-- **Producción:** Issue #53 sigue OPEN/P0 y `PRODUCTION: NOT READY`. Permanecen abiertos los gates de smoke autenticado live con Brave Shields + tasa BCV real en Neon main, E2E comercial sin mocks, rate limiting runtime, aceptación humana RPO/RTO, revisión legal/fiscal/contable y lanzamiento, monitorización/alertas BCV y watchdog.
+- **Main actual verificado:** `f9b23392629b89dda229353c5f02f731f964bc5a`. PR #314 y #315 están fusionadas; PR #316 está rebasada sobre este main, abierta y no fusionada (HEAD `f728c03e0b5745e4806809dc188e5f0593ff09e4`; 15/15 check-runs y 12/12 workflows SUCCESS). La decisión de merge de #316 permanece separada.
+- **Verificaciones públicas:** bundle Pages Run #5 y CORS Worker Run #7 SUCCESS; BCV source connectivity Run #2 FAILURE por `UNABLE_TO_VERIFY_LEAF_SIGNATURE`. Ver evidencia y enlaces en CURRENT_STATE/HANDOFF.
+- **Smoke live:** el propietario confirmó Brave Shields ACTIVADO en móvil/escritorio, Google OAuth same-origin, persistencia de sesión en módulos reales y logout seguro. El sub-gate de smoke autenticado queda completado; el sub-gate de tasa BCV real persistida en Neon main permanece PENDIENTE.
+- **Worker BCV:** configuración de producción, sync habilitado, secreto presente sin lectura de valor y logs activos, confirmado por el propietario. No se observó todavía intento BCV en Neon main.
+- **Cron BCV:** el código actual contiene `0 22 * * 1-5`; Cloudflare define 1=Sunday y 7=Saturday. Corrección sincronizada a `MON-FRI` pendiente de PR técnica, sin cambios en este bloque.
+- **Migraciones:** esquema versionado 0001–0025 en main. El workflow protegido `neon-main-migrations.yml`, run [#43591333198](https://github.com/BTF14/Micro-app/actions/runs/43591333198), terminó SUCCESS sobre el commit operativo registrado `c4e02c82aa790e1d32e909b806536dadcf3eb973`, con `pending = 0` y assertions rollback-safe 0019–0025. No autoriza nuevas escrituras ni cambios remotos.
+- **Producción:** Issue #53 sigue OPEN/P0 y `PRODUCTION: NOT READY`. Permanecen abiertos E2E comercial sin mocks, rate limiting runtime, aceptación humana RPO/RTO, revisión legal/fiscal/contable, monitorización/alertas BCV y watchdog, verificación de coste total USD 0 y persistencia de la primera tasa BCV real en Neon main.
 - **No extrapolar:** previews Cloudflare, CI efímero y workflows verdes no sustituyen aceptación de producción. No se cambia Neon, Cloudflare, secretos ni datos reales en esta reconciliación.
 
 Este archivo es la fuente de datos para el panel de avance. Un ítem solo puede marcarse `[x]` cuando existe evidencia revisable en código, pruebas o configuración. La documentación por sí sola no demuestra que una función opere correctamente.
@@ -207,7 +210,8 @@ Los párrafos de 2026-10-30 describían el estado previo a los vertical slices i
 - [x] Recepciones y ajustes de inventario integrados (PR #352, 0025); lectura/Kardex y conteos atómicos tienen suites de integración.
 - [x] POS y checkout atómico integrados (PR #357; 0015/0018); el alcance comercial sigue limitado por las notas del bloque de implementación.
 - [x] Migraciones 0001–0025 aplicadas en Neon main según el workflow protegido, run #43591333198; no inferir de ello que la aplicación esté aceptada para lanzamiento.
-- [ ] Smoke autenticado live en `https://micro-app-63i.pages.dev` con Brave Shields ACTIVADO, incluyendo verificación de la tasa BCV real disponible en Neon main.
+- [x] Smoke autenticado live con Brave Shields ACTIVADO en móvil y escritorio: Google OAuth same-origin, sesión persistente en navegación de módulos reales y logout seguro confirmado por el propietario. Reabrir solo si cambian proxy /api, CORS, cookies/OAuth o CSP.
+- [ ] Primera tasa BCV real persistida en Neon main y registro correspondiente en `bcv_sync_state`, tras una ejecución programada válida.
 - [ ] E2E real de los flujos comerciales completos contra API/DB de prueba, sin mocks de red.
 - [ ] Rate limiting runtime en rutas sensibles y protección contra abuso, revisados con pruebas negativas y límites operativos.
 - [ ] Aceptación formal humana del objetivo RPO aproximado de 24 h y del RTO operativo aceptable.
@@ -229,8 +233,8 @@ Los párrafos de 2026-10-30 describían el estado previo a los vertical slices i
 - El producto ya contiene catálogo de productos, inventario por almacén/ledger, recepciones, conteos atómicos, turnos por sucursal y POS/checkout; no describirlo como un frontend sin endpoints comerciales.
 - No hay módulo completo de categorías, devoluciones/reversos, reportes/exportaciones, transferencias inter-sucursal ni ciclo completo de proveedores/compras.
 - La venta liquida en una sola moneda; puede tener múltiples líneas de pago. El recibo es solo en pantalla; no hay impresión térmica ni historial de ventas.
-- Las pruebas de integración PostgreSQL efímero no son E2E comercial live sin mocks. Falta smoke autenticado con Brave Shields activado y verificación de tasa BCV real en Neon main.
-- Siguen pendientes rate limiting runtime, monitorización/alertas de BCV y watchdog de procesos `running` estancados, además de aceptación humana de RPO/RTO.
+- Las pruebas PostgreSQL efímeras no son E2E comercial live sin mocks. El smoke autenticado con Brave Shields ACTIVADO ya fue confirmado; permanece pendiente la primera tasa BCV real persistida en Neon main.
+- Siguen pendientes la corrección Cron `MON-FRI`, el arreglo TLS seguro del workflow BCV, rate limiting runtime, monitorización/alertas de BCV y watchdog de procesos `running` estancados, además de aceptación humana de RPO/RTO.
 - IVA/IGTF y recibos fiscales requieren revisión competente. No se debe inferir cumplimiento fiscal por la existencia de snapshots de precio/tasa.
 - Issue #53 permanece OPEN/P0. `PRODUCTION: NOT READY`; no promover a READY hasta cerrar todos los gates P0 y obtener aprobación humana explícita.
 

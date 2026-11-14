@@ -1,3 +1,55 @@
+## Turno 42 — cierre de higiene y verificaciones live (2026-11-14 UTC)
+
+**Corte GitHub verificado:** `main` = `f9b23392629b89dda229353c5f02f731f964bc5a`.
+
+### Tanda Dependabot #314 → #315 → #316
+
+- **VERIFICADO — PR #314:** cerrada y fusionada por squash; merge SHA `47be3aa8c88ab7aad8e68f284181317a84af97ba`.
+- **VERIFICADO — PR #315:** cerrada y fusionada por squash; merge SHA `f9b23392629b89dda229353c5f02f731f964bc5a`.
+- **VERIFICADO — PR #316:** rebase completado sobre el `main` actual. PR abierta, no fusionada, base `f9b23392629b89dda229353c5f02f731f964bc5a`, HEAD `f728c03e0b5745e4806809dc188e5f0593ff09e4`, `mergeable=true`, `mergeable_state=clean`.
+- **VERIFICADO — PR #316, SHA exacto:** 15/15 check-runs completados SUCCESS y 12/12 workflow runs completados SUCCESS.
+- **VERIFICADO — dependencias de PR #316:** `vite ^8.3.8`, `@vitejs/plugin-react ^6.3.0`, `jsdom ^31.0.0`; el lockfile resuelve plugin-react 6.3.0 con Vite 8.3.8. El peer range de plugin-react 6.3.0 exige Vite ^8.0.0.
+- **PENDIENTE:** decisión de merge de PR #316. No fusionar desde este bloque documental.
+- **VERIFICADO — PR #193:** permanece OPEN, no fusionada, HEAD `ac57ab4f3415f82279b8a49c0befe09f8e3aec68`, base registrada `705d3db3220894c7d3baca8dc7e7a6b623dfbb94`; main actual está 140 commits por delante de esa base. No tiene reviews formales ni comentarios inline en la consulta. **PENDIENTE:** decisión del propietario. No editar, sincronizar, cerrar ni fusionar PR #193 en este bloque.
+- **VERIFICADO:** Issue #53 permanece OPEN/P0. `PRODUCTION: NOT READY`.
+
+### Verificaciones automatizadas públicas
+
+- **VERIFICADO — bundle público Pages:** [frontend-bundle-verification.yml Run #5](https://github.com/BTF14/Micro-app/actions/runs/43621514925), SHA `b469e05ec9d687f8f4fc98c3bdbf945ce7982370`, SUCCESS. Respuesta HTTP/2 200; `VITE_API_BASE_URL` resuelto a `/api` same-origin; cero referencias a hosts `workers.dev` en los assets publicados.
+- **VERIFICADO — CORS real del Worker:** [cors-verification.yml Run #7](https://github.com/BTF14/Micro-app/actions/runs/43621909847), mismo SHA, SUCCESS. El origen de producción Pages autorizado recibe CORS con credenciales; un origen no autorizado queda bloqueado (fail-closed).
+- **VERIFICADO — conectividad BCV desde CI:** [bcv-source-connectivity.yml Run #2](https://github.com/BTF14/Micro-app/actions/runs/43622117742), mismo SHA, FAILURE en el paso de verificación HTTPS/parser. Error observado: `UNABLE_TO_VERIFY_LEAF_SIGNATURE`.
+- **CONFIRMADO POR EL PROPIETARIO — diagnóstico TLS:** el servidor BCV entrega una cadena incompleta; omite el intermedio Sectigo R36 mientras la raíz R46 está en el almacén del sistema. El parser `parseBcvOfficialRate` acepta el HTML actual una vez completada correctamente la cadena. No relajar TLS ni desactivar la validación de certificados.
+
+### Smoke autenticado y configuración live
+
+- **CONFIRMADO POR EL PROPIETARIO — Brave Shields ACTIVADO:** smoke autenticado completado en móvil y escritorio sobre el sitio Pages de producción. Google OAuth usa el proxy same-origin `/api`; la sesión persiste al navegar por módulos reales conectados a Neon `main` (migraciones 0001–0025); el POS falla cerrado sin turno abierto; el logout es seguro y la sesión posterior responde 401.
+- **CONFIRMADO POR EL PROPIETARIO — OAuth:** se retiró la URI redirect legacy del proveedor OAuth; queda únicamente la callback same-origin de Pages. No registrar Client IDs ni identificadores de proyecto.
+- **CONFIRMADO POR EL PROPIETARIO — Worker BCV aislado:** configuración de producción, sincronización habilitada, secreto de conexión presente (valor no leído ni expuesto) y Observability Logs activos.
+- **CONFIRMADO POR EL PROPIETARIO:** Neon `main` todavía no registra intentos BCV; PR #355 se integró el 2026-11-14 y aún no se ha observado la primera ejecución programada válida.
+- **VERIFICADO EN CÓDIGO:** el Cron configurado es `0 22 * * 1-5` en `apps/api/wrangler.bcv.toml`, y la misma cadena se compara en `apps/api/src/index.ts` y tests. Cloudflare define 1=Sunday y 7=Saturday; por tanto `1-5` representa Sunday–Thursday. Para Monday–Friday debe usarse `MON-FRI` (o `2-6`). Referencia: [Cloudflare Cron Triggers](https://developers.cloudflare.com/workers/configuration/cron-triggers/).
+
+### Pendientes BCV — no ejecutar en este bloque documental
+
+1. **PENDIENTE — Cron:** PR técnico dedicado que cambie `1-5` a `MON-FRI` de forma sincronizada en `apps/api/wrangler.bcv.toml`, `apps/api/src/index.ts`, `apps/api/src/index.scheduled.test.ts` y `apps/api/src/exchange-rates.integration.test.ts`.
+2. **PENDIENTE — TLS CI:** incorporar/validar la cadena intermedia faltante de forma segura. No desactivar TLS, ignorar errores de certificado ni usar `NODE_TLS_REJECT_UNAUTHORIZED=0`.
+3. **PENDIENTE — persistencia real:** confirmar la primera tasa BCV real persistida en Neon `main` y su fila correspondiente en `bcv_sync_state`, después de una ejecución programada válida de lunes a viernes.
+
+### No repetición para futuras sesiones
+
+Ninguna IA debe volver a solicitar al propietario repetir la verificación pública del bundle de Pages, la prueba CORS real del Worker, el smoke autenticado con Brave Shields ACTIVADO ni la comprobación/retirada de la URI redirect legacy de OAuth. Reabrir estos puntos solo si un cambio futuro modifica explícitamente el proxy `/api`, CORS, cookies/OAuth o CSP. No pedir capturas ni nuevas pruebas para evidencia ya registrada.
+
+### Restricciones y límites
+
+- Este bloque es exclusivamente documental: no modifica código, migraciones SQL, Neon, secretos, Cloudflare, Google Cloud ni datos reales; no realiza despliegues.
+- Issue #53 permanece OPEN/P0 y `PRODUCTION: NOT READY`. El smoke OAuth/sesión queda cerrado como sub-gate; la primera tasa BCV real persistida en Neon `main` continúa pendiente, junto con E2E comercial sin mocks, rate limiting runtime, RPO/RTO medidos y aceptados, revisión legal/fiscal/contable, alertas/watchdog y verificación de coste total USD 0.
+- No inferir readiness de producción a partir de checks verdes de #316, previews ni smoke autenticado.
+
+---
+
+## Nota de continuidad — #193 y alcance
+
+La PR #193 sigue abierta y sin cambios. Su base registrada quedó 140 commits detrás del main actual en la comparación consultada; cualquier decisión de retarget/rebase/cierre requiere instrucción separada del propietario y revisión del contenido de transferencias. Issue #53 no se modifica y permanece OPEN/P0.
+
 ## Turno 41 — Paso 2: higiene senior y readiness reconciliada (2026-11-14 UTC)
 
 - Base de trabajo: `b469e05ec9d687f8f4fc98c3bdbf945ce7982370`; rama documental `docs/reconcile-production-readiness-20261114`. No se cambió main.
@@ -1389,7 +1441,7 @@ No se tocaron Neon main, datos reales, secretos, Worker productivo, DNS, billing
 - Seguridad añadida: lecturas de catálogo/almacenes/conteos mantienen locks de sesión/tenant/sucursal durante la consulta; la lista de conteos bloquea el warehouse. Cantidades y costos de conteo solo aceptan strings decimales, no JSON numbers.
 - UI: catálogo y formularios consumen el paquete BigInt compartido; aviso BCV ya no afirma conversión vigente cuando no existe tasa validada. Descuentos ausentes.
 - Cloudflare Pages preview: https://feat-recover-inventory-appli.micro-app-63i.pages.dev
-- Cloudflare Worker preview: https://feat-recover-inventory-application-20261106-micro-app-api.btfcasheb.workers.dev
+- Cloudflare Worker preview: [URL WORKER REDACTADA]
 - Smoke directo del Worker preview: `/health` responde 200; endpoint de catálogo devuelve 503, bloqueado por el aislamiento de preview. Esto no es producción.
 - No hay reviews formales ni threads de revisión registrados en PR #244. main está protegido; la integración no tiene permiso para leer el endpoint de branch protection (403). No se ha intentado eludir protección.
 - Producción sigue **NOT READY**: no hay baseline/adoption de Neon ejecutado, smoke autenticado de producción, cierre completo de issue #53/P0-P1, inventory movement/read UI, BCV corregido/integrado ni checkout de ventas en la app.
@@ -1504,9 +1556,9 @@ No se tocaron Neon main, datos reales, secretos, Worker productivo, DNS, billing
   - **Dependabot:** ✅ configuración correcta (npm + github-actions). El endpoint de alertas de la API devolvió 403 con el token de esta sesión (limitación de alcance, no del repo). **El propietario revisó manualmente `https://github.com/BTF14/Micro-app/security/dependabot` el 2026-11-01: 0 alertas abiertas, 15 cerradas** — evidencia de fuente manual (captura de pantalla), no reproducible por API/CI con el token actual.
   - **Cabeceras de seguridad y CORS/bundle (issue #78):** ✅ sin cambios desde PR #183/#185; workflows de verificación siguen en verde en sus últimas ejecuciones (CORS 2026-10-31T23:52:41Z, bundle 2026-11-01T00:08:33Z).
   - **Matriz de permisos — inventario:** ✅ se revisó el punto flagueado externamente (alcance "sucursal" de Inventory vs. `products.stock_quantity` organizacional). La matriz ya documentaba correctamente, desde su aprobación original, que ese alcance se refiere a quién puede operar y no a que el stock esté particionado por sucursal. No se encontró contradicción; no requirió corrección.
-- PR #181 (merge `cf13538e5bc68af4fa544efa71dad96d8ea5412a`): añade `.github/workflows/cors-verification.yml`, un workflow de solo lectura que emite los preflight `OPTIONS` reales contra el Worker público desde un runner con salida completa a internet (este y otros sandboxes de IA del proyecto no pueden alcanzar `micro-app-api.btfcasheb.workers.dev` ni `micro-app-63i.pages.dev`: `403` en el `CONNECT` del proxy saliente, confirmado de nuevo en esta sesión para ambos hosts).
+- PR #181 (merge `cf13538e5bc68af4fa544efa71dad96d8ea5412a`): añade `.github/workflows/cors-verification.yml`, un workflow de solo lectura que emite los preflight `OPTIONS` reales contra el Worker público desde un runner con salida completa a internet (este y otros sandboxes de IA del proyecto no pueden alcanzar `[HOST WORKER REDACTADO]` ni `micro-app-63i.pages.dev`: `403` en el `CONNECT` del proxy saliente, confirmado de nuevo en esta sesión para ambos hosts).
 - PR #183 (merge `d8be0c6249a78f64645fcd2a794362c7cb794452`): refuerza ese workflow con aserciones explícitas de código HTTP/código de salida de `curl`, y un tercer preflight que solicita `Access-Control-Request-Headers: authorization,content-type` y exige que se reflejen en `Access-Control-Allow-Headers`.
-- PR #185 (merge `51194315b8cbe9138567bdbbd46a08509235de6e`): añade `.github/workflows/frontend-bundle-verification.yml` — descarga el `index.html` público y cada `<script src>` referenciado, y confirma que el bundle realmente publicado (no solo el código fuente versionado) contiene el literal `https://micro-app-api.btfcasheb.workers.dev`, fallando si aparece cualquier otro host `*.workers.dev`.
+- PR #185 (merge `51194315b8cbe9138567bdbbd46a08509235de6e`): añade `.github/workflows/frontend-bundle-verification.yml` — descarga el `index.html` público y cada `<script src>` referenciado, y confirma que el bundle realmente publicado (no solo el código fuente versionado) contiene el literal `[URL WORKER REDACTADA]`, fallando si aparece cualquier otro host `*.workers.dev`.
 - **Issue #78: CERRADA el 2026-10-31**, con evidencia reproducible real (no solo inferida):
   - CORS: runs [41186202382](https://github.com/BTF14/Micro-app/actions/runs/41186202382), [41186391247](https://github.com/BTF14/Micro-app/actions/runs/41186391247) y la versión reforzada en `main` [41254331839](https://github.com/BTF14/Micro-app/actions/runs/41254331839) (todos `success`). El origen permitido `https://micro-app-63i.pages.dev` recibe `Access-Control-Allow-Origin` correcto, `Access-Control-Allow-Credentials: true`, el listado completo de métodos y las cabeceras `Authorization`/`Content-Type` reflejadas; el origen externo `https://attacker.example` no recibe ningún header `Access-Control-Allow-Origin`.
   - Bundle publicado: run en `main` [41255425480](https://github.com/BTF14/Micro-app/actions/runs/41255425480) (`success`) confirma que el JS realmente servido por Pages contiene la URL de API canónica.
@@ -1543,7 +1595,7 @@ No se tocaron Neon main, datos reales, secretos, Worker productivo, DNS, billing
 
 ## Cloudflare — observación autenticada de solo lectura
 - **Workers / `micro-app-api`:** Active Deployment en Producción, versión `49975c43-4161-4809-9c00-8ba83e53e6a0`, Build ID `957478f6-0f43-4b5c-932a-621be067d6d9`, commit `82386c6e9300e06f8fa209aa52995b939a72442a` (`main`). El panel mostró **100% de asignación de tráfico** a esa versión. La vista de métricas mostró 0 req/sec y 0% de error en el instante observado; son métricas puntuales, no prueba de ausencia de tráfico histórico ni de CORS correcto.
-- **Pages / `micro-app`:** rama de producción `main`, SHA `82386c6e9300e06f8fa209aa52995b939a72442a`, deployment `https://cc23ff0c.micro-app-63i.pages.dev`. La lista visible de variables de entorno de Pages apareció vacía. Sin embargo, el repositorio versiona `apps/web/.env.production` con `VITE_API_BASE_URL=https://micro-app-api.btfcasheb.workers.dev`, y `apps/web/vite.config.ts` carga variables del archivo de entorno del modo mediante `loadEnv`. Por tanto, la ausencia en el panel no demuestra que el build carezca de la URL. No se reveló ni modificó ningún valor de configuración del dashboard. El bundle publicado aún debe verificarse para confirmar el valor efectivo.
+- **Pages / `micro-app`:** rama de producción `main`, SHA `82386c6e9300e06f8fa209aa52995b939a72442a`, deployment `https://cc23ff0c.micro-app-63i.pages.dev`. La lista visible de variables de entorno de Pages apareció vacía. Sin embargo, el repositorio versiona `apps/web/.env.production` con `VITE_API_BASE_URL=[URL WORKER REDACTADA]`, y `apps/web/vite.config.ts` carga variables del archivo de entorno del modo mediante `loadEnv`. Por tanto, la ausencia en el panel no demuestra que el build carezca de la URL. No se reveló ni modificó ningún valor de configuración del dashboard. El bundle publicado aún debe verificarse para confirmar el valor efectivo.
 - **Corrección de interpretación:** un comentario anterior de #78 describía 0% para `49975c43`; la observación posterior y directa de Active Deployment mostró 100% asignado. La lectura anterior no debe usarse como estado actual. No se cambió tráfico, despliegue, variables, secretos, DNS ni configuración.
 
 ## Issue #78 — CORS y configuración efectiva
@@ -1551,7 +1603,7 @@ Sigue **ABIERTA**. La versión activa del Worker y el deployment de Pages están
 1. `Origin: https://micro-app-63i.pages.dev`, `Access-Control-Request-Method: GET`, `Access-Control-Request-Headers: authorization,content-type`.
 2. Mismo preflight con `Origin: https://attacker.example`.
 
-Registrar status HTTP y headers `Access-Control-*` solamente. No compartir cookies, tokens ni secretos. El dashboard vacío no demuestra que falte la URL: `apps/web/.env.production` versionado define el Worker y `vite.config.ts` lo carga con `loadEnv`. La página pública muestra el enlace “Continuar con Google” apuntando a `https://micro-app-api.btfcasheb.workers.dev/auth/google`. La inspección no pudo leer el bundle JS ni confirmar el valor compilado para las demás llamadas API; tampoco prueba CORS.
+Registrar status HTTP y headers `Access-Control-*` solamente. No compartir cookies, tokens ni secretos. El dashboard vacío no demuestra que falte la URL: `apps/web/.env.production` versionado define el Worker y `vite.config.ts` lo carga con `loadEnv`. La página pública muestra el enlace “Continuar con Google” apuntando a `[URL WORKER REDACTADA]`. La inspección no pudo leer el bundle JS ni confirmar el valor compilado para las demás llamadas API; tampoco prueba CORS.
 
 ## Issue #53 — permisos comerciales
 Sigue **ABIERTA**. La dirección estructural acordada es **un único rol por miembro y organización**, almacenado en `organization_members.role`. `branch_memberships` solo concede/revoca acceso a sucursales; no contiene roles y no permite que una persona sea `cashier` en una sucursal e `inventory` en otra. El rol organizacional aplica uniformemente en la organización. El acceso efectivo a cada sucursal se limita por las asignaciones correspondientes.
@@ -1741,7 +1793,7 @@ Consultar siempre el ref vivo de `main`, el HEAD/base de PR #172, los check-runs
 - **PR #158:** merge commit `3fba9870b69a7e1ef05cc20db6d19f3ee18df51d`; auditoría documental de Cloudflare/workflows/continuidad.
 - **PR #159:** merge commit `dbc7b6c9cf57113a38cddb4155d2917cc3aaeafc`; fija Node.js `24.22.2` mediante `.node-version` y pnpm `10.34.9` mediante `packageManager`, con alineación en workflows.
 - **Checks del SHA exacto de main:** 9/9 completed/success, incluidos Workers Build, Cloudflare Pages, Chromium smoke, verify, secret-history scan, postgres-migration, Trivy, generate-progress y static analysis. No extrapolar estos checks a commits futuros.
-- **Producción observada tras merge:** Pages `https://micro-app-63i.pages.dev` cargó la pantalla de acceso; Worker `https://micro-app-api.btfcasheb.workers.dev/health` respondió HTTP 200 con `status=ok`, `service=micro-app-api`, `stage=scaffold`. Es una comprobación básica, no una certificación funcional/comercial.
+- **Producción observada tras merge:** Pages `https://micro-app-63i.pages.dev` cargó la pantalla de acceso; Worker `[URL WORKER REDACTADA]` respondió HTTP 200 con `status=ok`, `service=micro-app-api`, `stage=scaffold`. Es una comprobación básica, no una certificación funcional/comercial.
 - **Neon, lectura de metadatos:** proyecto `micro-app-db`, plan `free_v3`, PostgreSQL 18, región `aws-us-east-1`; periodo de consumo mostrado 2026-10-17 a 2026-11-01. Tamaño lógico de main: 32,866,304 bytes (~31.34 MiB). Consumo del periodo: 5,645,769 bytes transferencia; 5,911 segundos compute; 23,240 segundos activo; 0 bytes escritos reportados. Ramas: 3/10; main 32.87 MB, restore-test ~33.57 MB, integrity-test ~31.69 MB. Son metadatos/contadores del proveedor, no benchmark ni capacidad SaaS.
 - **Seguridad Neon:** metadatos actuales muestran `main.protected=false`, `allowed_ips.ips=[]`, `protected_branches_only=false`, `block_public_connections=false`; ramas listadas sin protección. No cambiar estos ajustes sin evaluación/plan y autorización correspondiente. No se leyó SQL, secretos, roles ni datos.
 - **Protocolo README:** PR #159 ya cambió toolchain de forma concreta y verificada; README debe reflejar Node/pnpm exactos. Este checkpoint actualiza el README y continuidad para no dejar instrucciones contradictorias.
@@ -1766,7 +1818,7 @@ Consultar siempre el ref vivo de `main`, el HEAD/base de PR #172, los check-runs
 
 - **PR #158:** abierta, draft, no fusionada; base main = 1ee1808af4aae484a71dc24750237ff4f4d934a0.
 - **HEAD actual:** 5b1b5734f3fa8024f060694e5dbc5f5f9f8ab766; cinco archivos de documentación, cinco commits, sin cambios de aplicación/workflows/migraciones.
-- **Checks del SHA exacto:** 12/12 success (GitHub Actions y Cloudflare). Cloudflare Pages preview: https://d8477e48.micro-app-63i.pages.dev. Workers preview: https://2935f95a-micro-app-api.btfcasheb.workers.dev. Son previews, no producción.
+- **Checks del SHA exacto:** 12/12 success (GitHub Actions y Cloudflare). Cloudflare Pages preview: https://d8477e48.micro-app-63i.pages.dev. Workers preview: [URL WORKER REDACTADA] Son previews, no producción.
 - **Pages Settings:** main producción; root vacío; build corepack enable && pnpm install --frozen-lockfile && pnpm --filter @micro-app/web build; output apps/web/dist; build system v3; cache off; monitoring *; preview público por defecto; sin dominio custom. Detalles completos en docs/WORKFLOW_AND_DEPLOYMENT_AUDIT.md.
 - **Preview isolation:** verificado en código main: API base vacía, llamadas API bloqueadas, login deshabilitado, CSP sin API en previews; _headers define CSP/seguridad para producción. Mantener pruebas de regresión.
 - **Pendientes:** revisar build logs para versión efectiva Node/pnpm; evaluar pin pnpm, build cache y semántica “Fail open” sin cambiar ahora; verificar headers HTTP efectivos; revisar cuota Pages; confirmar required checks/branch protection (no confirmado).
@@ -2206,7 +2258,7 @@ La entrada de continuidad más reciente prevalece sobre snapshots históricos qu
 
 - PR #114 quedó fusionada por squash en `main`: [merge commit dc3fae80c485ec52c2e68c80da316df90c68ac83](https://github.com/BTF14/Micro-app/commit/dc3fae80c485ec52c2e68c80da316df90c68ac83). El HEAD revisado fue `780e057435fea4ebd6213fd973745599e71d2088`; GitHub confirmó `merged=true`.
 - Los ocho workflows de PR y los dos checks externos de hosting del HEAD de PR fueron `success`. Esto no equivale a CI post-merge: en el merge SHA los estados hosting alternativo aparecen `pending` y el conector no devolvió workflows de Actions para ese SHA. Reconsultar antes de afirmar que pasó CI post-merge.
-- Cloudflare Workers actualizó el estado a `Deployment successful!` y expuso URLs explícitas de preview de commit y rama: `https://36b3fea5-micro-app-api.btfcasheb.workers.dev` y `https://docs-continuity-after-pr-113-2026-10-28-micro-app-api.btfcasheb.workers.dev`. No se hizo despliegue manual.
+- Cloudflare Workers actualizó el estado a `Deployment successful!` y expuso URLs explícitas de preview de commit y rama: `[URL WORKER REDACTADA]` y `[URL WORKER REDACTADA]`. No se hizo despliegue manual.
 - Esta actualización documental corrige la referencia obsoleta al estado abierto de PR #114 y al SHA anterior de `main`; conserva el historial previo sin reescribir decisiones antiguas.
 - Siguen pendientes: restaurar el backup cifrado en PostgreSQL desechable; verificar headers CORS con HTTP real contra el Worker; decisión/aprobación de la matriz de permisos; aislamiento cross-tenant para rutas comerciales futuras. No declarar la app lista para producción. No tocar Neon `main`, secretos ni datos reales.
 
@@ -2248,7 +2300,7 @@ La entrada de continuidad más reciente prevalece sobre snapshots históricos qu
 - Causa raíz: Preview heredaba la URL de `apps/web/.env.production` y CSP permitía el Worker de producción. No hay API/DB de Preview aisladas verificadas.
 - Solución en PR #106: las ramas de Pages distintas de `main` no incluyen la URL productiva, no consultan sesión ni muestran login de Google, y el postbuild cambia CSP Preview a `connect-src 'self'`. Producción conserva la configuración actual.
 - Evidencia local en sandbox con pnpm 10: build Preview pasó; el origen productivo está ausente del bundle y de `dist/_headers`; test dedicado Preview pasó (1/1); suite web normal pasó (6 tests, el test específico de Preview queda skip fuera de Preview); build de producción pasó y mantiene el origen de API requerido.
-- Evidencia HTTP real en el Preview de Cloudflare Pages: HTTP 200; CSP observada contiene `connect-src 'self'` y no permite `https://micro-app-api.btfcasheb.workers.dev`. El check Cloudflare Pages de HEAD `a8e726e811e5b44b1561982be3b064059f505722` pasó.
+- Evidencia HTTP real en el Preview de Cloudflare Pages: HTTP 200; CSP observada contiene `connect-src 'self'` y no permite `[URL WORKER REDACTADA]`. El check Cloudflare Pages de HEAD `a8e726e811e5b44b1561982be3b064059f505722` pasó.
 - Los checks consultados para ese HEAD terminaron en success. PR #106 fue fusionada por squash el 2026-10-28 en `main` (commit `d5d99b3a5184d6aad36ffd9a44ff34a62346dc94`). Cloudflare Pages confirma el despliegue automático exitoso. No se hizo despliegue manual ni se tocaron secretos, variables/bindings de Cloudflare o Neon. No se tocaron secretos, variables/bindings de Cloudflare ni Neon. La API/DB de Preview no se presenta como aislada; el frontend Preview queda fail-closed.
 
 ---
@@ -2330,7 +2382,7 @@ Si el número de WhatsApp de contacto cambia en el futuro, está hardcodeado com
 
 # Estado vivo — 2026-10-25 (noche): logout móvil + bug de variables que se autoborraban, resuelto
 
-**Login verificado funcionando en el navegador real del dueño (no solo en base de datos): pantalla "Hola, btfcasheb@gmail.com." con la organización "Abasto 7 de Oro" cargando correctamente en `https://micro-app-63i.pages.dev/`.**
+**Login verificado funcionando en el navegador real del dueño (no solo en base de datos): pantalla "Hola, [CORREO REDACTADO]." con la organización "Abasto 7 de Oro" cargando correctamente en `https://micro-app-63i.pages.dev/`.**
 
 ## Bug encontrado y resuelto: las variables de Cloudflare se autoborraban en cada deploy
 
@@ -2340,8 +2392,8 @@ Después de fusionar PR #81 (que solo tocaba el frontend), el login se rompió o
 
 Valores actuales confirmados en Cloudflare, Producción (los tres "Secreto" no se pueden volver a leer una vez guardados, solo reemplazar):
 - `FRONTEND_ORIGIN` = `https://micro-app-63i.pages.dev`
-- `GOOGLE_REDIRECT_URI` = `https://micro-app-api.btfcasheb.workers.dev/auth/google/callback`
-- `GOOGLE_CLIENT_ID` = `1030757133503-huvhkok21n1br10rtfhs4827fo3v106q.apps.googleusercontent.com` (ahora también en `wrangler.toml`, así que este valor ya no depende de memoria/documentación)
+- `GOOGLE_REDIRECT_URI` = `[URL WORKER REDACTADA]`
+- `GOOGLE_CLIENT_ID` = `[CLIENT ID REDACTADO]` (ahora también en `wrangler.toml`, así que este valor ya no depende de memoria/documentación)
 - `DATABASE_URL`, `GOOGLE_CLIENT_SECRET`, `BOOTSTRAP_TOKEN`: Secreto, valores no recuperables, confirmados presentes.
 
 ## Bug encontrado y resuelto: sin forma de cerrar sesión en móvil
@@ -2363,16 +2415,16 @@ El dueño reportó que no veía botón de "Cerrar sesión" en su teléfono. Caus
 
 ## Hechos verificados directamente en Neon `main` (proyecto `restless-fire-99110035`, branch `br-summer-math-b7297a60`)
 
-- Tabla `auth_allowlist` tiene exactamente una fila activa: `btfcasheb@gmail.com` (`is_active = true`, `added_by = 'owner-bootstrap-2026-10-25'`, creada 2026-10-25 13:37:54 UTC). Para autorizar a alguien más, insertar otra fila con el mismo patrón — ver "Cómo agregar un usuario nuevo" abajo. No hay ningún otro correo autorizado todavía.
-- Tabla `auth_bootstrap` quedó **sellada**: `consumed_at = 2026-10-25T13:40:13.565Z`, `consumed_by_email = 'btfcasheb@gmail.com'`, `created_organization_id` apunta a la organización creada. El `BOOTSTRAP_TOKEN` configurado en Cloudflare ya no sirve para nada — el endpoint rechaza cualquier intento nuevo de bootstrap aunque el token sea correcto, porque la fila sentinela solo permite un uso. Es seguro dejar la variable en Cloudflare (no hace daño) o borrarla como limpieza; no es urgente.
+- Tabla `auth_allowlist` tiene exactamente una fila activa: `[CORREO REDACTADO]` (`is_active = true`, `added_by = 'owner-bootstrap-2026-10-25'`, creada 2026-10-25 13:37:54 UTC). Para autorizar a alguien más, insertar otra fila con el mismo patrón — ver "Cómo agregar un usuario nuevo" abajo. No hay ningún otro correo autorizado todavía.
+- Tabla `auth_bootstrap` quedó **sellada**: `consumed_at = 2026-10-25T13:40:13.565Z`, `consumed_by_email = '[CORREO REDACTADO]'`, `created_organization_id` apunta a la organización creada. El `BOOTSTRAP_TOKEN` configurado en Cloudflare ya no sirve para nada — el endpoint rechaza cualquier intento nuevo de bootstrap aunque el token sea correcto, porque la fila sentinela solo permite un uso. Es seguro dejar la variable en Cloudflare (no hace daño) o borrarla como limpieza; no es urgente.
 - Organización creada: **id `3ce67e70-c245-4b64-9b93-60b06f85e0f1`, nombre "Abasto 7 de Oro", slug `abasto-7-de-oro`**.
-- Usuario creado: **id `36c0f3ec-e1b2-4ea5-9855-45a5ee2c3e92`, email `btfcasheb@gmail.com`**, `google_sub` vinculado, `is_active = true`, rol `owner` en `organization_members` para esa organización.
+- Usuario creado: **id `36c0f3ec-e1b2-4ea5-9855-45a5ee2c3e92`, email `[CORREO REDACTADO]`**, `google_sub` vinculado, `is_active = true`, rol `owner` en `organization_members` para esa organización.
 
 ## Cómo agregar un usuario nuevo a la allowlist (patrón ya probado)
 
 ```sql
 INSERT INTO auth_allowlist (email, added_by, note)
-VALUES ('correo@ejemplo.com', 'owner-bootstrap-<fecha>', 'motivo breve')
+VALUES ('[CORREO REDACTADO]', 'owner-bootstrap-<fecha>', 'motivo breve')
 ON CONFLICT DO NOTHING
 RETURNING id, email, is_active, created_at;
 ```
@@ -2388,7 +2440,7 @@ Ejecutar contra el proyecto Neon `restless-fire-99110035`, base `neondb`, con `m
 
 ## Prioridades inmediatas para el siguiente chat
 
-1. Confirmar con el usuario que `https://micro-app-63i.pages.dev/` ahora muestra el panel autenticado ("Hola, btfcasheb@gmail.com…", organización "Abasto 7 de Oro") sin pasos adicionales.
+1. Confirmar con el usuario que `https://micro-app-63i.pages.dev/` ahora muestra el panel autenticado ("Hola, [CORREO REDACTADO]…", organización "Abasto 7 de Oro") sin pasos adicionales.
 2. Si el usuario quiere agregar más personas (empleados, cajeros), seguir el patrón de "Cómo agregar un usuario nuevo" arriba — y decidir/implementar un flujo real de invitación en vez de inserciones manuales en Neon, porque hoy no escala.
 3. Empezar el módulo de negocio real (inventario, productos, tasa BCV, ventas) — sigue sin ningún código de lógica de negocio; todo lo hecho hasta ahora es identidad/infraestructura.
 4. Revisar `feat/neon-transaction-adapter` contra `main` actual antes de cualquier merge (pendiente desde hace varias sesiones, nunca bloqueante pero tampoco resuelto).

@@ -1,3 +1,57 @@
+## Turno 42 — cierre de higiene y verificaciones live (2026-11-14 UTC)
+
+**Corte GitHub verificado:** `main` = `f9b23392629b89dda229353c5f02f731f964bc5a`.
+
+### Tanda Dependabot #314 → #315 → #316
+
+- **VERIFICADO — PR #314:** cerrada y fusionada por squash; merge SHA `47be3aa8c88ab7aad8e68f284181317a84af97ba`.
+- **VERIFICADO — PR #315:** cerrada y fusionada por squash; merge SHA `f9b23392629b89dda229353c5f02f731f964bc5a`.
+- **VERIFICADO — PR #316:** rebase completado sobre el `main` actual. PR abierta, no fusionada, base `f9b23392629b89dda229353c5f02f731f964bc5a`, HEAD `f728c03e0b5745e4806809dc188e5f0593ff09e4`, `mergeable=true`, `mergeable_state=clean`.
+- **VERIFICADO — PR #316, SHA exacto:** 15/15 check-runs completados SUCCESS y 12/12 workflow runs completados SUCCESS.
+- **VERIFICADO — dependencias de PR #316:** `vite ^8.3.8`, `@vitejs/plugin-react ^6.3.0`, `jsdom ^31.0.0`; el lockfile resuelve plugin-react 6.3.0 con Vite 8.3.8. El peer range de plugin-react 6.3.0 exige Vite ^8.0.0.
+- **PENDIENTE:** decisión de merge de PR #316. No fusionar desde este bloque documental.
+- **VERIFICADO — PR #193:** permanece OPEN, no fusionada, HEAD `ac57ab4f3415f82279b8a49c0befe09f8e3aec68`, base registrada `705d3db3220894c7d3baca8dc7e7a6b623dfbb94`; main actual está 140 commits por delante de esa base. No tiene reviews formales ni comentarios inline en la consulta. **PENDIENTE:** decisión del propietario. No editar, sincronizar, cerrar ni fusionar PR #193 en este bloque.
+- **VERIFICADO:** Issue #53 permanece OPEN/P0. `PRODUCTION: NOT READY`.
+
+### Verificaciones automatizadas públicas
+
+- **VERIFICADO — bundle público Pages:** [frontend-bundle-verification.yml Run #5](https://github.com/BTF14/Micro-app/actions/runs/43621514925), SHA `b469e05ec9d687f8f4fc98c3bdbf945ce7982370`, SUCCESS. Respuesta HTTP/2 200; `VITE_API_BASE_URL` resuelto a `/api` same-origin; cero referencias a hosts `workers.dev` en los assets publicados.
+- **VERIFICADO — CORS real del Worker:** [cors-verification.yml Run #7](https://github.com/BTF14/Micro-app/actions/runs/43621909847), mismo SHA, SUCCESS. El origen de producción Pages autorizado recibe CORS con credenciales; un origen no autorizado queda bloqueado (fail-closed).
+- **VERIFICADO — conectividad BCV desde CI:** [bcv-source-connectivity.yml Run #2](https://github.com/BTF14/Micro-app/actions/runs/43622117742), mismo SHA, FAILURE en el paso de verificación HTTPS/parser. Error observado: `UNABLE_TO_VERIFY_LEAF_SIGNATURE`.
+- **CONFIRMADO POR EL PROPIETARIO — diagnóstico TLS:** el servidor BCV entrega una cadena incompleta; omite el intermedio Sectigo R36 mientras la raíz R46 está en el almacén del sistema. El parser `parseBcvOfficialRate` acepta el HTML actual una vez completada correctamente la cadena. No relajar TLS ni desactivar la validación de certificados.
+
+### Smoke autenticado y configuración live
+
+- **CONFIRMADO POR EL PROPIETARIO — Brave Shields ACTIVADO:** smoke autenticado completado en móvil y escritorio sobre el sitio Pages de producción. Google OAuth usa el proxy same-origin `/api`; la sesión persiste al navegar por módulos reales conectados a Neon `main` (migraciones 0001–0025); el POS falla cerrado sin turno abierto; el logout es seguro y la sesión posterior responde 401.
+- **CONFIRMADO POR EL PROPIETARIO — OAuth:** se retiró la URI redirect legacy del proveedor OAuth; queda únicamente la callback same-origin de Pages. No registrar Client IDs ni identificadores de proyecto.
+- **CONFIRMADO POR EL PROPIETARIO — Worker BCV aislado:** configuración de producción, sincronización habilitada, secreto de conexión presente (valor no leído ni expuesto) y Observability Logs activos.
+- **CONFIRMADO POR EL PROPIETARIO:** Neon `main` todavía no registra intentos BCV; PR #355 se integró el 2026-11-14 y aún no se ha observado la primera ejecución programada válida.
+- **VERIFICADO EN CÓDIGO:** el Cron configurado es `0 22 * * 1-5` en `apps/api/wrangler.bcv.toml`, y la misma cadena se compara en `apps/api/src/index.ts` y tests. Cloudflare define 1=Sunday y 7=Saturday; por tanto `1-5` representa Sunday–Thursday. Para Monday–Friday debe usarse `MON-FRI` (o `2-6`). Referencia: [Cloudflare Cron Triggers](https://developers.cloudflare.com/workers/configuration/cron-triggers/).
+
+### Pendientes BCV — no ejecutar en este bloque documental
+
+1. **PENDIENTE — Cron:** PR técnico dedicado que cambie `1-5` a `MON-FRI` de forma sincronizada en `apps/api/wrangler.bcv.toml`, `apps/api/src/index.ts`, `apps/api/src/index.scheduled.test.ts` y `apps/api/src/exchange-rates.integration.test.ts`.
+2. **PENDIENTE — TLS CI:** incorporar/validar la cadena intermedia faltante de forma segura. No desactivar TLS, ignorar errores de certificado ni usar `NODE_TLS_REJECT_UNAUTHORIZED=0`.
+3. **PENDIENTE — persistencia real:** confirmar la primera tasa BCV real persistida en Neon `main` y su fila correspondiente en `bcv_sync_state`, después de una ejecución programada válida de lunes a viernes.
+
+### No repetición para futuras sesiones
+
+Ninguna IA debe volver a solicitar al propietario repetir la verificación pública del bundle de Pages, la prueba CORS real del Worker, el smoke autenticado con Brave Shields ACTIVADO ni la comprobación/retirada de la URI redirect legacy de OAuth. Reabrir estos puntos solo si un cambio futuro modifica explícitamente el proxy `/api`, CORS, cookies/OAuth o CSP. No pedir capturas ni nuevas pruebas para evidencia ya registrada.
+
+### Restricciones y límites
+
+- Este bloque es exclusivamente documental: no modifica código, migraciones SQL, Neon, secretos, Cloudflare, Google Cloud ni datos reales; no realiza despliegues.
+- Issue #53 permanece OPEN/P0 y `PRODUCTION: NOT READY`. El smoke OAuth/sesión queda cerrado como sub-gate; la primera tasa BCV real persistida en Neon `main` continúa pendiente, junto con E2E comercial sin mocks, rate limiting runtime, RPO/RTO medidos y aceptados, revisión legal/fiscal/contable, alertas/watchdog y verificación de coste total USD 0.
+- No inferir readiness de producción a partir de checks verdes de #316, previews ni smoke autenticado.
+
+---
+
+## Nota de integridad del diario append-only
+
+Este registro se añade como nueva entrada sin reescribir entradas históricas. Por la regla append-only, cualquier referencia sensible heredada que ya existiera en entradas anteriores no se altera en este commit; no se replica ni se añade información personal, identificadores de cuenta/proyecto o secretos. Un saneamiento retroactivo del historial requeriría una operación documental distinta que concilie explícitamente la política append-only.
+
+---
+
 ## Turno 41 — Paso 2: higiene senior y readiness reconciliada (2026-11-14 UTC)
 
 - Base de trabajo: `b469e05ec9d687f8f4fc98c3bdbf945ce7982370`; rama documental `docs/reconcile-production-readiness-20261114`. No se cambió main.

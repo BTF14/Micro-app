@@ -49,16 +49,23 @@ function readInventorySnapshot(): { onHand: string; movementCount: number; ledge
   const databaseUrl = process.env.DATABASE_URL_ADMIN;
   if (!databaseUrl) throw new Error("DATABASE_URL_ADMIN is required for the real stock-atomicity assertion.");
   const query = `
+    WITH target_product AS (
+      SELECT id FROM public.products
+       WHERE organization_id = :'organization_id'::uuid AND sku = :'product_sku'
+    )
     SELECT concat_ws('|',
-      COALESCE((SELECT on_hand_quantity::text FROM public.inventory_balances
-        WHERE organization_id = :'organization_id'::uuid AND branch_id = :'branch_id'::uuid
-          AND warehouse_id = :'warehouse_id'::uuid AND product_id = :'product_id'::uuid), '0.000'),
-      COALESCE((SELECT count(*)::text FROM public.warehouse_inventory_movements
-        WHERE organization_id = :'organization_id'::uuid AND branch_id = :'branch_id'::uuid
-          AND warehouse_id = :'warehouse_id'::uuid AND product_id = :'product_id'::uuid), '0'),
-      COALESCE((SELECT sum(quantity_delta)::text FROM public.warehouse_inventory_movements
-        WHERE organization_id = :'organization_id'::uuid AND branch_id = :'branch_id'::uuid
-          AND warehouse_id = :'warehouse_id'::uuid AND product_id = :'product_id'::uuid), '0')
+      COALESCE((SELECT b.on_hand_quantity::text FROM public.inventory_balances b
+        JOIN target_product p ON p.id = b.product_id
+        WHERE b.organization_id = :'organization_id'::uuid AND b.branch_id = :'branch_id'::uuid
+          AND b.warehouse_id = :'warehouse_id'::uuid), '0.000'),
+      COALESCE((SELECT count(*)::text FROM public.warehouse_inventory_movements m
+        JOIN target_product p ON p.id = m.product_id
+        WHERE m.organization_id = :'organization_id'::uuid AND m.branch_id = :'branch_id'::uuid
+          AND m.warehouse_id = :'warehouse_id'::uuid), '0'),
+      COALESCE((SELECT sum(m.quantity_delta)::text FROM public.warehouse_inventory_movements m
+        JOIN target_product p ON p.id = m.product_id
+        WHERE m.organization_id = :'organization_id'::uuid AND m.branch_id = :'branch_id'::uuid
+          AND m.warehouse_id = :'warehouse_id'::uuid), '0')
     );
   `;
   const output = execFileSync("psql", [
@@ -66,7 +73,7 @@ function readInventorySnapshot(): { onHand: string; movementCount: number; ledge
     "-v", `organization_id=${fixture.organizationId}`,
     "-v", `branch_id=${fixture.branchId}`,
     "-v", `warehouse_id=${fixture.warehouseId}`,
-    "-v", `product_id=${fixture.productId}`,
+    "-v", `product_sku=${fixture.productSku}`,
     "-At", "-c", query,
   ], { encoding: "utf8", stdio: ["ignore", "pipe", "pipe"] }).trim();
   const [onHand, movementCount, ledgerQuantity] = output.split("|");

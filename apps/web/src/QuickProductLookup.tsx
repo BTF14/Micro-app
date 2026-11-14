@@ -121,7 +121,8 @@ export default function QuickProductLookup({
         if (!active) return;
         setBranches(result.branches);
         setBranchesLoaded(true);
-        if (lockedBranchId) setBranchId(lockedBranchId);\n        else if (result.branches.length === 1) setBranchId(result.branches[0]!.id);
+        if (lockedBranchId) setBranchId(lockedBranchId);
+        else if (result.branches.length === 1) setBranchId(result.branches[0]!.id);
       })
       .catch((reason: unknown) => {
         if (!active) return;
@@ -156,7 +157,9 @@ export default function QuickProductLookup({
         setWarehouses(activeWarehouses);
         setWarehousesLoaded(true);
 
-        if (lockedWarehouseId) {\n          setWarehouseId(activeWarehouses.some((warehouse) => warehouse.id === lockedWarehouseId) ? lockedWarehouseId : "");\n        } else if (activeWarehouses.length === 1) {
+        if (lockedWarehouseId) {
+          setWarehouseId(activeWarehouses.some((warehouse) => warehouse.id === lockedWarehouseId) ? lockedWarehouseId : "");
+        } else if (activeWarehouses.length === 1) {
           setWarehouseId(activeWarehouses[0]!.id);
         } else if (activeWarehouses.length > 1) {
           try {

@@ -234,6 +234,7 @@ export default function SalesPanel({
     } else if (quantityUnits(existing.quantity) + 1000n > available) {
       setNotice("No puedes superar la existencia disponible de " + product.name + ".");
     } else {
+      const nextQty = formatNumeric(quantityUnits(existing.quantity) + 1000n, 14, 3);
       commitCart(currentCart.map((line) => line.product.product_id === product.product_id
         ? { ...line, product, quantity: nextQty, quantityInput: nextQty, quantityValid: true }
         : line));

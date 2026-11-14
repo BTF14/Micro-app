@@ -14,9 +14,9 @@ import "./sales-panel.css";
 type Currency = "USD" | "VES";
 type PaymentMethod = "cash" | "card" | "transfer" | "mobile_payment" | "other";
 type ExchangeRateStatus = "current" | "stale" | "unavailable";
-type Shift = { id: string; branch_id: string; branch_name?: string; register_name?: string; opened_at?: string };
+type Shift = { shift_id?: string; id?: string; branch_id: string; branch_name?: string; register_name?: string; opened_at?: string };
 type Warehouse = { id: string; name: string; code: string; is_active: boolean };
-type CartLine = { product: QuickLookupProduct; quantity: string };
+type CartLine = { product: QuickLookupProduct; quantity: string; quantityInput: string; quantityValid: boolean };
 type PaymentLine = { id: string; method: PaymentMethod; amount: string; reference: string };
 type SaleLineReceipt = { product_name_snapshot: string; sku_snapshot: string; quantity: string; unit_price_usd: string; line_total_usd: string; line_total_ves: string };
 type SalePaymentReceipt = { method: PaymentMethod; currency: Currency; amount: string; reference: string | null };
@@ -41,10 +41,10 @@ const PAYMENT_METHODS: Array<{ value: PaymentMethod; label: string }> = [
   { value: "other", label: "Otro" },
 ];
 
-function localized(value: string, precision = 14, scale = 2): string {
+function localized(value: string, precision = 14, scale = 2, minFractionDigits = 2): string {
   try {
-    const [integer = "0", fraction] = formatDecimal(parseNumeric(value, precision, scale), scale, 0).split(".");
-    const grouped = integer.replace(/\\B(?=(\\d{3})+(?!\\d))/g, ".");
+    const [integer = "0", fraction] = formatDecimal(parseNumeric(value, precision, scale), scale, minFractionDigits).split(".");
+    const grouped = integer.replace(/\B(?=(\d{3})+(?!\d))/g, ".");
     return fraction ? `${grouped},${fraction}` : grouped;
   } catch { return "—"; }
 }
@@ -81,6 +81,9 @@ export default function SalesPanel({
   const [lookupReset, setLookupReset] = useState(0);
   const idempotencyKey = useRef(newIdempotencyKey());
   const requestFingerprint = useRef<string | null>(null);
+  const loadSequence = useRef(0);
+  const prevOrgRef = useRef(organizationId);
+  const prevBranchRef = useRef<string | null>(null);
 
   const base = `/api/orgs/${encodeURIComponent(organizationId)}`;
   const canConvert = exchangeRateStatus === "current" && exchangeRate !== null;
@@ -115,7 +118,7 @@ export default function SalesPanel({
         ? parseNumeric(computed.subtotalUsd, 14, 4)
         : parseNumeric(computed.totalVes!, 16, 2);
       return total === expected && expected > 0n && payments.every((p) => {
-        try { return parseNumeric(p.amount, precision, scale) > 0n && p.reference.length <= 128 && !/[\\u0000-\\u001F\\u007F]/.test(p.reference); }
+        try { return parseNumeric(p.amount, precision, scale) > 0n && p.reference.length <= 128 && !/[\u0000-\u001F\u007F]/.test(p.reference); }
         catch { return false; }
       });
     } catch { return false; }
@@ -129,6 +132,7 @@ export default function SalesPanel({
   };
 
   const loadShiftAndWarehouses = useCallback(async () => {
+    const requestId = ++loadSequence.current;
     setLoading(true);
     setError("");
     setNotice("");
@@ -136,6 +140,19 @@ export default function SalesPanel({
     setWarehouseLoaded(false);
     try {
       const result = await apiRequest<{ shift: Shift | null }>(`${base}/register-shifts/current`);
+      if (requestId !== loadSequence.current) return;
+      const nextBranchId = result.shift?.branch_id ?? null;
+      if (prevBranchRef.current !== null && prevBranchRef.current !== nextBranchId) {
+        const hadCart = cartRef.current.length > 0;
+        commitCart([]);
+        setReceipt(null);
+        setCurrency("USD");
+        setPayments([{ id: newIdempotencyKey(), method: "cash", amount: "", reference: "" }]);
+        setLookupReset((value) => value + 1);
+        resetIdempotency();
+        if (hadCart) setNotice("Cambió la sucursal o el turno activo. Se limpió el carrito.");
+      }
+      prevBranchRef.current = nextBranchId;
       setShift(result.shift);
       setShiftLoaded(true);
       setWarehouses([]);
@@ -147,6 +164,7 @@ export default function SalesPanel({
       const warehouseResult = await apiRequest<{ warehouses: Warehouse[] }>(
         `${base}/branches/${encodeURIComponent(result.shift.branch_id)}/warehouses`,
       );
+      if (requestId !== loadSequence.current) return;
       const active = warehouseResult.warehouses.filter((warehouse) => warehouse.is_active === true);
       setWarehouses(active);
       setWarehouseLoaded(true);
@@ -159,15 +177,27 @@ export default function SalesPanel({
         setWarehouseId(active.some((warehouse) => warehouse.id === saved) ? saved : "");
       }
     } catch (reason) {
+      if (requestId !== loadSequence.current) return;
       setShiftLoaded(true);
       setWarehouseLoaded(true);
       setError(reason instanceof Error ? reason.message : "No se pudo consultar el turno y los almacenes.");
     } finally {
-      setLoading(false);
+      if (requestId === loadSequence.current) setLoading(false);
     }
   }, [base, organizationId]);
 
-  useEffect(() => { void loadShiftAndWarehouses(); }, [loadShiftAndWarehouses]);
+  useEffect(() => {
+    if (prevOrgRef.current !== organizationId) {
+      prevOrgRef.current = organizationId;
+      prevBranchRef.current = null;
+      commitCart([]);
+      setReceipt(null);
+      setCurrency("USD");
+      setPayments([{ id: newIdempotencyKey(), method: "cash", amount: "", reference: "" }]);
+      resetIdempotency();
+    }
+    void loadShiftAndWarehouses();
+  }, [loadShiftAndWarehouses, organizationId]);
 
   useEffect(() => {
     if (shift?.branch_id && warehouses.length > 1 && warehouseId) {
@@ -189,21 +219,23 @@ export default function SalesPanel({
   }
 
   function addProduct(product: QuickLookupProduct) {
-    if (quantityUnits(product.available_quantity) <= 0n) {
+    const available = quantityUnits(product.available_quantity);
+    if (available <= 0n) {
       setNotice(product.name + " está agotado en este almacén y no se agregó.");
       return;
     }
     const currentCart = cartRef.current;
     const existing = currentCart.find((line) => line.product.product_id === product.product_id);
     if (!existing) {
-      commitCart([...currentCart, { product, quantity: "1.000" }]);
+      const initialQty = formatNumeric(available < 1000n ? available : 1000n, 14, 3);
+      commitCart([...currentCart, { product, quantity: initialQty, quantityInput: initialQty, quantityValid: true }]);
       resetIdempotency();
       setNotice(product.name + " agregado al carrito.");
-    } else if (quantityUnits(existing.quantity) + 1000n > quantityUnits(product.available_quantity)) {
+    } else if (quantityUnits(existing.quantity) + 1000n > available) {
       setNotice("No puedes superar la existencia disponible de " + product.name + ".");
     } else {
       commitCart(currentCart.map((line) => line.product.product_id === product.product_id
-        ? { ...line, product, quantity: formatNumeric(quantityUnits(line.quantity) + 1000n, 14, 3) }
+        ? { ...line, product, quantity: nextQty, quantityInput: nextQty, quantityValid: true }
         : line));
       resetIdempotency();
       setNotice("Se actualizó la cantidad de " + product.name + ".");
@@ -212,19 +244,60 @@ export default function SalesPanel({
   }
 
   function updateQuantity(productId: string, value: string) {
+    const raw = value.replace(",", ".");
+    const trimmed = raw.trim();
+    const line = cartRef.current.find((item) => item.product.product_id === productId);
+    if (!line) return;
+    const isIntermediate = trimmed === "" || /^(?:0|[1-9][0-9]*)\.$/.test(trimmed) || /^0(?:\.0*)?$/.test(trimmed);
     try {
-      const normalized = formatNumeric(parseNumeric(value, 14, 3), 14, 3);
+      const normalized = formatNumeric(parseNumeric(trimmed, 14, 3), 14, 3);
       if (parseNumeric(normalized, 14, 3) <= 0n) throw new Error("La cantidad debe ser mayor que cero.");
-      const line = cartRef.current.find((item) => item.product.product_id === productId);
-      if (line && quantityUnits(normalized) > quantityUnits(line.product.available_quantity)) {
+      if (quantityUnits(normalized) > quantityUnits(line.product.available_quantity)) {
         throw new Error("La cantidad supera la existencia disponible de " + line.product.name + ".");
       }
-      commitCart(cartRef.current.map((item) => item.product.product_id === productId ? { ...item, quantity: normalized } : item));
+      commitCart(cartRef.current.map((item) => item.product.product_id === productId
+        ? { ...item, quantity: normalized, quantityInput: raw, quantityValid: true }
+        : item));
       resetIdempotency();
       setError("");
     } catch (reason) {
-      setError(reason instanceof Error ? reason.message : "La cantidad debe ser positiva y tener hasta 3 decimales.");
+      commitCart(cartRef.current.map((item) => item.product.product_id === productId
+        ? { ...item, quantityInput: raw, quantityValid: false }
+        : item));
+      if (isIntermediate) setError("");
+      else setError(reason instanceof Error ? reason.message : "La cantidad debe ser positiva y tener hasta 3 decimales.");
     }
+  }
+
+  function commitQuantityBlur(productId: string) {
+    const line = cartRef.current.find((item) => item.product.product_id === productId);
+    if (!line) return;
+    const trimmed = line.quantityInput.replace(",", ".").trim();
+    if (/^[1-9][0-9]*\.$/.test(trimmed)) {
+      const candidate = trimmed.slice(0, -1);
+      try {
+        const normalized = formatNumeric(parseNumeric(candidate, 14, 3), 14, 3);
+        if (quantityUnits(normalized) > quantityUnits(line.product.available_quantity)) {
+          setError("La cantidad supera la existencia disponible de " + line.product.name + ".");
+          return;
+        }
+        commitCart(cartRef.current.map((item) => item.product.product_id === productId
+          ? { ...item, quantity: normalized, quantityInput: normalized, quantityValid: true }
+          : item));
+        resetIdempotency();
+        setError("");
+        return;
+      } catch { /* Fall through to standard invalid message. */ }
+    }
+    if (line.quantityValid) {
+      if (line.quantityInput !== line.quantity) {
+        commitCart(cartRef.current.map((item) => item.product.product_id === productId
+          ? { ...item, quantityInput: line.quantity }
+          : item));
+      }
+      return;
+    }
+    setError("Revisa la cantidad de " + line.product.name + ": debe ser mayor que cero y no superar el disponible.");
   }
 
   function removeLine(productId: string) {
@@ -266,7 +339,7 @@ export default function SalesPanel({
   }
 
   async function checkout() {
-    if (!shift || !warehouseId || !canConvert || !exchangeRate || computed.totalVes === null || cart.length === 0) return;
+    if (!shift || !warehouseId || !canConvert || !exchangeRate || computed.totalVes === null || !allQuantitiesValid) return;
     if (!paymentMatches) {
       setError(`Los pagos deben sumar exactamente ${expectedPayment} ${currency}.`);
       return;
@@ -314,7 +387,8 @@ export default function SalesPanel({
   }
 
   const selectedWarehouse = warehouses.find((warehouse) => warehouse.id === warehouseId);
-  const readyToCharge = Boolean(shift && warehouseId && cart.length && canConvert && paymentMatches && !checkoutBusy && !receipt);
+  const allQuantitiesValid = cart.length > 0 && cart.every((line) => line.quantityValid);
+  const readyToCharge = Boolean(shift && warehouseId && allQuantitiesValid && canConvert && paymentMatches && !checkoutBusy && !receipt);
 
   return (
     <section className="sales-panel" aria-labelledby="sales-title">
@@ -333,14 +407,14 @@ export default function SalesPanel({
           <div className="sales-context">
             <div><span>Turno activo</span><strong>{shift.register_name ?? "Caja abierta"}</strong>{shift.opened_at && <small>Desde {dateTime(shift.opened_at)}</small>}</div>
             <div><span>Sucursal de la venta</span><strong>{shift.branch_name ?? shift.branch_id}</strong></div>
-            {warehouses.length > 1 ? <label><span>Almacén</span><select value={warehouseId} onChange={(event) => changeWarehouse(event.target.value)}><option value="">Selecciona un almacén</option>{warehouses.map((warehouse) => <option key={warehouse.id} value={warehouse.id}>{warehouse.name}</option>)}</select></label> : <div><span>Almacén</span><strong>{selectedWarehouse?.name ?? (warehouseLoaded ? "Sin almacén activo" : "Consultando…")}</strong></div>}
+            {warehouses.length > 1 ? <label><span>Almacén</span><select value={warehouseId} disabled={Boolean(receipt)} onChange={(event) => changeWarehouse(event.target.value)}><option value="">Selecciona un almacén</option>{warehouses.map((warehouse) => <option key={warehouse.id} value={warehouse.id}>{warehouse.name}</option>)}</select></label> : <div><span>Almacén</span><strong>{selectedWarehouse?.name ?? (warehouseLoaded ? "Sin almacén activo" : "Consultando…")}</strong></div>}
           </div>
 
           {warehouseLoaded && warehouses.length === 0 && <p className="sales-alert warning" role="status">Esta sucursal no tiene almacenes activos. Habilita uno antes de vender.</p>}
           {warehouseLoaded && warehouses.length > 1 && !warehouseId && <p className="sales-alert warning" role="status">Selecciona el almacén que surtirá esta venta.</p>}
           {!canConvert && <p className="sales-alert warning" role="alert">No se puede completar la venta sin una tasa BCV vigente del día. El cobro permanecerá bloqueado.</p>}
 
-          {warehouseId && (
+          {warehouseId && !receipt && (
             <div className="sales-workspace">
               <div className="sales-products"><QuickProductLookup
                 organizationId={organizationId}
@@ -359,9 +433,9 @@ export default function SalesPanel({
                   <div className="sales-cart-lines">
                     {computed.lines.map((line) => <article className="sales-cart-line" key={line.product.product_id}>
                       <div className="sales-cart-product"><strong>{line.product.name}</strong><small>{line.product.sku} · {usd(line.product.price_usd)} c/u</small></div>
-                      <label className="sales-quantity"><span>Cantidad</span><input aria-label={`Cantidad de ${line.product.name}`} inputMode="decimal" value={line.quantity} onChange={(event) => updateQuantity(line.product.product_id, event.target.value)} /></label>
+                      <label className="sales-quantity"><span>Cantidad</span><input aria-label={`Cantidad de ${line.product.name}`} inputMode="decimal" value={line.quantityInput} onChange={(event) => updateQuantity(line.product.product_id, event.target.value)} onBlur={() => commitQuantityBlur(line.product.product_id)} /></label>
                       <div className="sales-line-total"><strong>{usd(line.lineUsd)}</strong><small>{line.lineVes ? ves(line.lineVes) : "Conversión no disponible"}</small></div>
-                      <div className="sales-line-actions"><button type="button" onClick={() => updateQuantity(line.product.product_id, formatNumeric(quantityUnits(line.quantity) > 1000n ? quantityUnits(line.quantity) - 1000n : 1000n, 14, 3))} aria-label={`Restar ${line.product.name}`}>−</button><button type="button" onClick={() => addProduct(line.product)} aria-label={`Sumar ${line.product.name}`}>+</button><button type="button" onClick={() => removeLine(line.product.product_id)}>Quitar</button></div>
+                      <div className="sales-line-actions"><button type="button" disabled={quantityUnits(line.quantity) <= 1000n} onClick={() => updateQuantity(line.product.product_id, formatNumeric(quantityUnits(line.quantity) - 1000n, 14, 3))} aria-label={`Restar ${line.product.name}`}>−</button><button type="button" onClick={() => addProduct(line.product)} aria-label={`Sumar ${line.product.name}`}>+</button><button type="button" onClick={() => removeLine(line.product.product_id)}>Quitar</button></div>
                     </article>)}
                   </div>
                 )}
@@ -381,6 +455,7 @@ export default function SalesPanel({
                 </section>
                 <button type="button" className="sales-primary-button sales-charge-button" onClick={() => void checkout()} disabled={!readyToCharge}>{checkoutBusy ? "Procesando venta…" : "Cobrar venta"}</button>
                 {!canConvert && <small className="sales-disabled-reason">El cobro se habilita cuando exista una tasa BCV vigente del día.</small>}
+                {canConvert && cart.length > 0 && !allQuantitiesValid && <small className="sales-disabled-reason">Corrige las cantidades del carrito antes de cobrar.</small>}
                 {canConvert && cart.length > 0 && !paymentMatches && <small className="sales-disabled-reason">Completa los pagos hasta cubrir exactamente el total en una sola moneda.</small>}
               </aside>
             </div>

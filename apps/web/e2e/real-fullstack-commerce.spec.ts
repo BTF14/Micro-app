@@ -84,8 +84,8 @@ function readInventorySnapshot(): { onHand: string; movementCount: number; ledge
     "-v", `branch_id=${fixture.branchId}`,
     "-v", `warehouse_id=${fixture.warehouseId}`,
     "-v", `product_sku=${fixture.productSku}`,
-    "-At", "-c", query,
-  ], { encoding: "utf8", stdio: ["ignore", "pipe", "pipe"], env: environment }).trim();
+    "-At",
+  ], { encoding: "utf8", env: environment, input: query }).trim();
   const [onHand, movementCount, ledgerQuantity] = output.split("|");
   if (!onHand || movementCount === undefined || !ledgerQuantity) throw new Error("E2E_INVENTORY_SNAPSHOT_INVALID");
   return { onHand, movementCount: Number(movementCount), ledgerQuantity };

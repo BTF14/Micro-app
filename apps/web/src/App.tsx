@@ -117,6 +117,8 @@ type BcvSyncStateResponse = {
   lastEffectiveDate: string | null;
   updatedAt: string;
   attemptAgeSeconds: number | null;
+  isStaleRunning: boolean;
+  staleRunningThresholdSeconds: number;
 };
 
 function formatBcvSyncTimestamp(value: string | null): string {
@@ -231,6 +233,11 @@ function BcvSyncAdminPanel({ organizationId }: { organizationId: string }) {
             <span className={`bcv-admin-status ${state.health}`}>{healthLabel}</span>
             <span className="bcv-admin-outcome">Resultado: {state.lastOutcome ?? "sin intentos"}</span>
           </div>
+          {state.isStaleRunning && (
+            <p className="bcv-admin-error" role="alert">
+              La sincronización lleva más de 5 minutos atascada en running. El checkout sigue bloqueado por seguridad hasta que se complete una sincronización válida.
+            </p>
+          )}
           <dl className="bcv-admin-grid">
             <div><dt>Último intento</dt><dd>{formatBcvSyncTimestamp(state.lastAttemptAt)}</dd></div>
             <div><dt>Último éxito</dt><dd>{formatBcvSyncTimestamp(state.lastSuccessAt)}</dd></div>

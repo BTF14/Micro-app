@@ -1,8 +1,8 @@
-> **Checkpoint 2026-11-08 UTC:** PR #280 y PR #281 están integradas. Último main verificado antes de este checkpoint: `e6f0c6021d82cfffce12f4c1d5283f657dc74c64` (merge SHA PR #281); consultar GitHub para la punta viva. PR #281 post-merge: 9/9 workflows y 11/11 check-runs SUCCESS. Neon rehearsal #42507066215 verificó 0001–0019 únicamente en `microapp_rehearsal`; Neon main no fue modificado. **Producción continúa NOT READY.** Estado operativo: [CURRENT_STATE](docs/CURRENT_STATE.md) y [HANDOFF](docs/HANDOFF_NEXT_CHAT.md).
+> **Checkpoint 2026-11-08 UTC:** PR #280 y PR #281 están integradas. Último main verificado antes de este checkpoint: `e6f0c6021d82cfffce12f4c1d5283f657dc74c64` (merge SHA PR #281); consultar GitHub para la punta viva. PR #281 post-merge: 9/9 workflows y 11/11 check-runs SUCCESS. Neon rehearsal #42507066215 verificó 0001–0019 únicamente en `microapp_rehearsal`; Neon main no fue modificado. **Producción continúa NOT READY.** Estado operativo: [CURRENT_STATE](CURRENT_STATE.md) y [HANDOFF](HANDOFF_NEXT_CHAT.md).
 
 # Registro de herramientas, repositorios y fuentes de Micro app
 
-Actualizado: 2026-11-08. Estado de Neon contrastado con run #42507066215; los recursos y planes gratuitos deben seguir revalidándose en vivo. Este registro no sustituye la verificación en vivo: planes gratuitos, documentación y estado de repositorios cambian. Añadir cada fuente consultada con fecha, uso, conclusión y limitaciones. No registrar secretos ni URLs que contengan credenciales.
+Actualizado: 2026-11-14. Estado de Neon contrastado con run #42507066215; los recursos y planes gratuitos deben seguir revalidándose en vivo. Este registro no sustituye la verificación en vivo: planes gratuitos, documentación y estado de repositorios cambian. Añadir cada fuente consultada con fecha, uso, conclusión y limitaciones. No registrar secretos ni URLs que contengan credenciales.
 
 ## Herramientas y servicios del proyecto
 
@@ -11,10 +11,10 @@ Actualizado: 2026-11-08. Estado de Neon contrastado con run #42507066215; los re
 | GitHub repository/actions | Código, PR, revisión, CI, escaneo y continuidad persistente. | https://docs.github.com/en/actions · https://docs.github.com/en/rest | Verificar SHA y workflow; no asumir que queued significa success. |
 | pnpm 10 / workspace | Gestor de paquetes para `apps/*`. | https://pnpm.io/ | `pnpm-lock.yaml` está versionado; CI debe usar instalación congelada. |
 | React + Vite + TypeScript | Frontend web responsive. | https://react.dev/ · https://vite.dev/ · https://www.typescriptlang.org/docs/ | Validar formularios y errores; la UI nunca es frontera de autorización. |
-| Cloudflare Pages | Hosting estático objetivo para frontend. | https://pages.cloudflare.com/ | Reconfirmar límites/condiciones y no desplegar producción sin aceptación. |
+| Cloudflare Pages | Hosting estático objetivo para frontend. | https://pages.cloudflare.com/ | Repositorio público; reconfirmar límites/condiciones y no desplegar producción sin aceptación. |
 | Cloudflare Workers + Hono | API separada con estándares web. | https://developers.cloudflare.com/workers/ · https://hono.dev/ | No asumir compatibilidad de middleware diseñado para Express. |
 | Neon PostgreSQL | Base de datos dedicada `micro-app-db`, plan Free según estado previo documentado. | https://neon.com/docs · https://neon.com/pricing | `main` es sensible a producción, no permanentemente de solo lectura: cambios solo tras superar el gate de `docs/CONSTITUTION.md`, con destino verificado, prueba aislada y recuperación comprobada. PostgreSQL efímero es la primera línea de pruebas; Neon branch solo cuando añada validación adicional no cubierta por CI, con datos sintéticos, expiración y limpieza. No guardar cadenas de conexión. |
-| Drizzle ORM | Esquema y migraciones versionadas. | https://orm.drizzle.team/docs/overview | Revisar migraciones y constraints en PostgreSQL temporal. |
+| @neondatabase/serverless + SQL migrations | Driver PostgreSQL serverless y migraciones SQL versionadas en Git. | https://github.com/neondatabase/serverless · https://neon.com/docs | SQL parametrizado; validar migraciones y constraints en PostgreSQL temporal. |
 | Vitest | Pruebas unitarias e integración. | https://vitest.dev/ | Registrar comando y resultado. |
 | Playwright | Pruebas E2E escritorio/móvil. | https://playwright.dev/docs/intro | Ejecutar contra entorno local/preview aislado. |
 | Trivy | Escaneo de dependencias, configuración y secretos en CI. | https://github.com/aquasecurity/trivy | Workflow actual es baseline no bloqueante; un resultado verde no significa ausencia de vulnerabilidades. |
@@ -25,8 +25,8 @@ Actualizado: 2026-11-08. Estado de Neon contrastado con run #42507066215; los re
 ## Configuración de build frontend/API
 
 - `VITE_API_BASE_URL` es una variable pública de build de Vite que define la URL base de la API. No pertenece a ningún proveedor de hosting.
-- En este repositorio, `apps/web/.env.production` define la URL canónica de Cloudflare Worker y `apps/web/vite.config.ts` la carga con `loadEnv`; Pages construye el frontend con Vite y puede usar el archivo versionado sin exigir que la variable se configure en su panel.
-- No colocar secretos en variables `VITE_*`: Vite las incorpora al bundle del navegador. Mantener la URL del Worker mientras el frontend consuma esa API.
+- En este repositorio, `apps/web/.env.production` fija `VITE_API_BASE_URL=/api` para tráfico same-origin a través de `functions/api/[[path]].ts` y el Service Binding `API` (solo producción). `apps/web/.env.example` conserva `http://localhost:8787` para desarrollo local.
+- No colocar secretos en variables `VITE_*`: Vite las incorpora al bundle del navegador. El frontend no debe llamar directamente al origen `workers.dev`.
 
 ## Repositorios de inspiración POS
 

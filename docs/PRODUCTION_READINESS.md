@@ -5,11 +5,11 @@
 - `main` verificada al inicio de PR #366: `5e80770e73d3ed65fa92083ea5f4478d0d9f71d9`, merge SHA de PR #365.
 - PR #365 quedó integrada por Squash and Merge; post-merge: 13/13 check-runs SUCCESS y 9/9 workflow runs SUCCESS.
 - PR #361, PR #363 y PR #364 ya están integradas: Cron BCV `MON-FRI 22:00 UTC` con TLS estricto, rate limiting runtime y watchdog BCV read-only.
-- PR #366 añadió E2E full-stack real en CI. En el HEAD de implementación `3329562d15f40ce744de67a088400935d9d3566a`: 16/16 check-runs SUCCESS, 12/12 workflow runs SUCCESS, CI `verify` 52/52 pasos SUCCESS, job PostgreSQL 18 full-stack 20/20 pasos SUCCESS y Chromium authentication smoke tests SUCCESS.
+- PR #366 añadió E2E full-stack real en CI. En el PR HEAD exacto validado `b078a02608b807a2ecdd0b59e95d8017ecd2f553`: 16/16 check-runs SUCCESS, 12/12 workflow runs SUCCESS, CI `verify` 52/52 pasos SUCCESS, job PostgreSQL 18 full-stack 20/20 pasos SUCCESS y Chromium authentication smoke tests SUCCESS.
 - La suite usa PostgreSQL 18 efímero, migraciones 0001–0025, logins PostgreSQL separados `microapp_runtime`/`microapp_bcv_sync`, sesiones sintéticas Owner/Cashier con allowlist y membresías reales, tasa BCV sintética válida para `America/Caracas`, Hono real y frontend compilado/servido con proxy same-origin. No hay `page.route`, mocks de API ni endpoints de test en runtime.
 - El flujo CI crea/lee producto, recibe inventario, abre turno como Cashier, completa checkout USD y VES, comprueba recibos y stock persistido, cierra turno y recarga; el intento posterior con turno cerrado recibe 409 `OPEN_SHIFT_REQUIRED` y no descuenta stock.
 - El adaptador Neon→`pg` existe únicamente en el harness de test para conectar los mismos handlers Hono a PostgreSQL local; no modifica runtime ni seguridad de producción.
-- El commit documental de esta misma PR crea un HEAD nuevo; todas las comprobaciones deberán repetirse y validarse sobre ese HEAD exacto antes de fusionar.
+- Esta actualización documental crea un HEAD nuevo; todos los check-runs y workflow runs deben volver a verificarse sobre ese SHA exacto antes de fusionar. No reutilizar CI de un SHA anterior.
 
 **Estado de producción: NOT READY.** La prueba full-stack cierra una brecha de validación CI, no los gates de producción. Issue #53 continúa OPEN/P0; PR #193 continúa OPEN e intacta. No se accedió ni mutó Neon `main`, datos reales, secretos o configuración manual de proveedores; no se realizó despliegue manual.
 

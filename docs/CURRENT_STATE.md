@@ -8,7 +8,7 @@
 - PR #361 (Cron BCV `MON-FRI 22:00 UTC` y TLS CI), PR #363 (rate limiting runtime) y PR #364 (watchdog BCV read-only) ya estaban integradas. No duplicar esas implementaciones.
 
 ### PR #366 — evidencia de implementación full-stack
-- PR #366, rama `test/real-fullstack-commerce-e2e-20261114`; HEAD de implementación validado: `3329562d15f40ce744de67a088400935d9d3566a`.
+- PR #366, rama `test/real-fullstack-commerce-e2e-20261114`; HEAD de implementación validado: `b078a02608b807a2ecdd0b59e95d8017ecd2f553`.
 - En ese HEAD exacto: 16/16 check-runs SUCCESS y 12/12 workflow runs SUCCESS; CI `verify` 52/52 pasos SUCCESS.
 - Job full-stack PostgreSQL 18: 20/20 pasos ejecutados SUCCESS; job Chromium authentication smoke tests SUCCESS. La suite full-stack ejecuta el frontend compilado/servido, el proxy same-origin real `/api` y `/auth`, los handlers reales de Hono y una base PostgreSQL 18 efímera.
 - Migraciones canónicas 0001–0025 aplicadas y ledger completo verificado. Los logins PostgreSQL `microapp_runtime` y `microapp_bcv_sync` se usan con privilegios separados; se comprueba que runtime no puede escribir `bcv_sync_state`.
@@ -22,7 +22,7 @@
 - Esta evidencia demuestra el flujo full-stack en CI contra PostgreSQL 18 efímero. **No demuestra** persistencia de la primera tasa BCV real en Neon `main`, entrega externa de alertas, RPO/RTO humano, ni cumplimiento legal/fiscal.
 - PR #193 permanece OPEN e intacta. Issue #53 permanece OPEN/P0. **PRODUCTION: NOT READY**.
 - No se accedió ni mutó Neon `main`, datos reales o secretos; no se cambió configuración manual de Cloudflare/Google Cloud ni se ejecutaron despliegues manuales.
-- El HEAD `3329562d15f40ce744de67a088400935d9d3566a` es el HEAD de implementación antes de la reconciliación documental incluida en esta misma PR. El commit documental genera un nuevo HEAD: sus check-runs y workflow runs deben verificarse de nuevo en ese SHA exacto; no reutilizar CI de un SHA anterior.
+- El HEAD `b078a02608b807a2ecdd0b59e95d8017ecd2f553` es el HEAD de implementación antes de la reconciliación documental incluida en esta misma PR. El commit documental genera un nuevo HEAD: sus check-runs y workflow runs deben verificarse de nuevo en ese SHA exacto; no reutilizar CI de un SHA anterior.
 
 ### Próximo control obligatorio
 Leer el diff completo de PR #366 y verificar todos los check-runs, workflow runs, reviews y threads sobre el HEAD final posterior a la reconciliación documental. Solo con todos los gates aplicables en verde procede Squash and Merge bajo la autorización de `AGENTS.md`; después verificar los checks del nuevo `main`. Mantener PR #193 e Issue #53 abiertas.
@@ -2703,7 +2703,7 @@ El diagnóstico de despliegue alternativo y el estado de PR #71 de esta fecha ya
 - PR #64 añadió cuatro skills de proyecto bajo `.agents/skills/`: `micro-app-auth-security`, `micro-app-postgres-testing`, `micro-app-stack-guidance` y `micro-app-skill-curation`, además de `docs/AUTOSKILLS_ADOPTION.md`. Son instrucciones locales creadas para Micro app, no bundles externos descargados.
 - AutoSkills: se inspeccionaron la web, el repositorio y entradas del registro curado. El intento de preparar un checkout temporal falló por DNS al resolver `github.com`; la CLI `npx autoskills --dry-run` no llegó a ejecutarse. No afirmar instalación externa ni crear un `skills-lock.json` ficticio. Próximo paso: repetir dry-run en un checkout con red y revisar propuesta/licencia/hash antes de instalar.
 - P0 de identidad sigue pendiente: Google sign-in + allowlist no está implementado; D1–D8 y matriz de permisos por rol siguen sin aprobación. `POST /auth/register` permanece fail-closed. La ruta de login por contraseña sigue existiendo; no afirmar que una allowlist la protege.
-- No inventar emails/dominios, configuración OAuth, bootstrap admin ni vinculación de cuentas. No tocar producción, Neon `main`, datos reales, secretos, emails, billing ni Cantina-pos. Presupuesto $0.
+- No inventar emails/dominios, configuración OAuth, bootstrap admin ni vinculación de cuentas. No tocar producción, Neon `main`, datos reales, secretos, emails, billing ni otro proyecto. Presupuesto $0.
 - La aplicación NO está lista para producción. Backups/restauración independiente, handlers comerciales, aislamiento tenant completo, permisos aprobados, E2E reales y controles de concurrencia/idempotencia siguen pendientes. Strix sigue documentado, no instalado/ejecutado.
 - PR #64 generó una vista previa de rama por la integración automática de Cloudflare; no fue despliegue productivo ni se activó manualmente.
 
@@ -2725,7 +2725,7 @@ El diagnóstico de despliegue alternativo y el estado de PR #71 de esta fecha ya
 - La rama `feat/neon-transaction-adapter` se comparó otra vez con `main`: divergida, 14 commits propios y 76 commits detrás, merge-base `2d2099245f2404b0a8d3689189235a577d5e632c`. El adaptador `database.ts` y workflow de seguridad son idénticos a main; la prueba de DB en la rama es más antigua, `apps/api/package.json` usa un script de test incompatible con la separación de integración actual, y sus documentos están desactualizados. **No fusionar la rama completa**.
 - Matriz de roles/permisos sigue sin aprobación; no crear rutas comerciales autorizadas según supuestos.
 - App **NO lista para producción**: falta Google OAuth/allowlist, permisos aprobados, handlers de POS/inventario/ventas, aislamiento tenant real, E2E real, idempotencia/concurrencia, validación fiscal y backup/restauración independiente.
-- Strix (`https://github.com/usestrix/strix.git`) sigue documentado, no instalado ni ejecutado. Coste objetivo $0. Sin secretos, emails, billing, datos reales, mutaciones de Neon `main` ni mezcla con Cantina-pos.
+- Strix (`https://github.com/usestrix/strix.git`) sigue documentado, no instalado ni ejecutado. Coste objetivo $0. Sin secretos, emails, billing, datos reales, mutaciones de Neon `main` ni mezcla con otro proyecto.
 
 ## Próximos pasos
 1. Pedir al propietario la aprobación explícita de la política de identidad D1–D8 y matriz de roles; usar las recomendaciones documentadas como propuesta, no como decisiones ya aprobadas.
@@ -2747,7 +2747,7 @@ El diagnóstico de despliegue alternativo y el estado de PR #71 de esta fecha ya
 - D1–D8 de identidad y la matriz de permisos por rol siguen sin aprobación. No inventar proveedor OAuth, allowlist, bootstrap administrativo, verificación de correo, linking/recuperación ni permisos.
 - La app NO está lista para producción: faltan handlers comerciales completos, pruebas reales API+PostgreSQL y aislamiento tenant aplicado/verificado, idempotencia/concurrencia, revisión fiscal y backup/restauración independiente.
 - Preview de la rama #55: https://HOST_PAGES_REDACTADO. Es un preview documental, no una aprobación de lanzamiento ni despliegue productivo.
-- Strix (`https://github.com/usestrix/strix.git`) continúa documentado solamente: no instalado ni ejecutado. Coste objetivo $0. Sin secretos, emails, billing, datos reales, mutaciones de Neon `main`, producción ni mezcla con Cantina-pos.
+- Strix (`https://github.com/usestrix/strix.git`) continúa documentado solamente: no instalado ni ejecutado. Coste objetivo $0. Sin secretos, emails, billing, datos reales, mutaciones de Neon `main`, producción ni mezcla con otro proyecto.
 
 ## Siguiente paso
 1. Solicitar al usuario aprobación explícita de las decisiones de identidad/roles que solo él puede fijar; facilitar opciones breves en el chat.
@@ -2768,7 +2768,7 @@ El diagnóstico de despliegue alternativo y el estado de PR #71 de esta fecha ya
 - No se ejecutaron pruebas localmente. Los workflows citados corresponden al head exacto de cada PR; no se verificaron aquí sobre los merge SHA.
 - Próximo foco: autorización server-side y aislamiento tenant. Inspeccionar handlers reales; no inventar endpoints comerciales. D1–D8 de Google OAuth/allowlist y matriz de permisos siguen pendientes de aprobación.
 - Bloqueos P0: OAuth/allowlist/verificación de correo no demostrados como implementados; faltan flujos comerciales completos, E2E contra API+PostgreSQL reales, aislamiento multiempresa completo y backup/restauración independiente probados.
-- No desplegar producción ni modificar Neon `main` sin superar los gates de `docs/CONSTITUTION.md`. Sin secretos, correos, billing, datos reales ni mezcla con Cantina-pos. Strix documentado, no instalado ni ejecutado. Coste objetivo $0.
+- No desplegar producción ni modificar Neon `main` sin superar los gates de `docs/CONSTITUTION.md`. Sin secretos, correos, billing, datos reales ni mezcla con otro proyecto. Strix documentado, no instalado ni ejecutado. Coste objetivo $0.
 
 ---
 
@@ -2782,7 +2782,7 @@ El diagnóstico de despliegue alternativo y el estado de PR #71 de esta fecha ya
 - No se ejecutaron pruebas localmente. Los workflows citados corresponden al head exacto de cada PR; no se verificaron aquí sobre los merge SHA.
 - Próximo foco: autorización server-side y aislamiento tenant. Primero revisar handlers reales; no inventar endpoints comerciales. D1–D8 de Google OAuth/allowlist y matriz de permisos siguen pendientes de aprobación.
 - Bloqueos P0: OAuth/allowlist/verificación de correo no demostrados como implementados; faltan flujos comerciales completos, E2E contra API+PostgreSQL reales, aislamiento multiempresa completo y backup/restauración independiente probados.
-- No desplegar producción ni modificar Neon `main` sin superar los gates de `docs/CONSTITUTION.md`. Sin secretos, correos, billing, datos reales ni mezcla con Cantina-pos. Strix documentado, no instalado ni ejecutado. Coste objetivo $0.
+- No desplegar producción ni modificar Neon `main` sin superar los gates de `docs/CONSTITUTION.md`. Sin secretos, correos, billing, datos reales ni mezcla con otro proyecto. Strix documentado, no instalado ni ejecutado. Coste objetivo $0.
 
 ---
 
@@ -2795,7 +2795,7 @@ El diagnóstico de despliegue alternativo y el estado de PR #71 de esta fecha ya
 - PR #44 cubre sesión revocada y organización inactiva; PR #43 cubre sesión expirada. No se ejecutaron pruebas localmente ni se verificaron aquí los workflows sobre el merge SHA.
 - Prioridad siguiente: revisar autorización server-side y aislamiento tenant antes de añadir handlers comerciales. D1–D8 de Google OAuth/allowlist y la matriz de permisos siguen pendientes; no elegir políticas por suposición.
 - Bloqueos P0: OAuth/allowlist/verificación de correo no demostrados como implementados; faltan flujos comerciales completos, E2E con API+PostgreSQL reales, aislamiento multiempresa completo y backup/restauración independiente probados.
-- No desplegar producción ni modificar Neon `main` sin superar los gates de `docs/CONSTITUTION.md`. Sin secretos, correos, billing, datos reales ni mezcla con Cantina-pos. Strix está documentado, no instalado/ejecutado. Objetivo $0.
+- No desplegar producción ni modificar Neon `main` sin superar los gates de `docs/CONSTITUTION.md`. Sin secretos, correos, billing, datos reales ni mezcla con otro proyecto. Strix está documentado, no instalado/ejecutado. Objetivo $0.
 
 ---
 
@@ -2807,7 +2807,7 @@ El diagnóstico de despliegue alternativo y el estado de PR #71 de esta fecha ya
 - Head exacto probado por GitHub Actions: `0c55c180846e6286e72d35f51e502278200ee0de`. Los seis workflows fueron `success`: CI (39244454840), Playwright E2E (39244454807), Security scan (39244454911), Semgrep SAST (39244454934), Project progress dashboard (39244454952) y Database migration validation (39244456648).
 - Merge SHA: `3313bf4276563c6cdac52aa7902fa9ea36558014`. La consulta de workflows asociada al merge SHA no devolvió runs porque el conector filtra a eventos de PR; no afirmar que los seis workflows del merge SHA estén verificados. No se ejecutaron pruebas locales.
 - Cambio acotado: solo `apps/api/src/index.test.ts`, 24 líneas añadidas. Usa una URL de base de datos sintética inválida; no contacta ni modifica una base real.
-- No se tocaron secretos, billing, datos reales, Neon `main`, producción ni Cantina-pos.
+- No se tocaron secretos, billing, datos reales, Neon `main`, producción ni otro proyecto.
 - Strix (`https://github.com/usestrix/strix.git`) continúa documentado, no instalado ni ejecutado.
 - Estado del producto: **NO listo para producción**. Persisten endpoints comerciales incompletos, decisiones de identidad D1–D8 pendientes, matriz de permisos por aprobar, aislamiento multiempresa y flujos reales API+PostgreSQL por validar, idempotencia/concurrencia, requisitos fiscales y backup/restauración independiente por verificar.
 - Rama `feat/neon-transaction-adapter`: divergida y desactualizada; no fusionar a ciegas. Recuperar solo cambios puntuales tras comparar con `main`.
@@ -2825,7 +2825,7 @@ El diagnóstico de despliegue alternativo y el estado de PR #71 de esta fecha ya
 - Los seis workflows terminaron en `success` para el head exacto de PR #39 `134c9e14a5224d83c5f280dc501ae113d374c159`: CI (run 39243670711), Project progress dashboard (39243670742), Playwright E2E (39243670784), Database migration validation (39243670921), Semgrep SAST (39243670843) y Security scan (39243670950).
 - PR #38 también está fusionada: https://github.com/BTF14/Micro-app/pull/38; merge SHA `bdf340a0e7157b6398b498fabedc3a8e2158b9c4`. Sus seis workflows fueron `success` en el head exacto `527dd7cc62bcceae891add8100875cc395dd5cfa`.
 - No se ejecutaron pruebas locales. Los resultados indicados son de GitHub Actions sobre los head SHA especificados. No se han verificado aquí workflows para el merge SHA de PR #39; no afirmar que el merge SHA esté completamente verde.
-- No se desplegó producción, no se modificó Neon `main`, no se tocaron datos reales, secretos, facturación ni Cantina-pos.
+- No se desplegó producción, no se modificó Neon `main`, no se tocaron datos reales, secretos, facturación ni otro proyecto.
 - Strix (`https://github.com/usestrix/strix.git`) sigue documentado solamente; no instalado ni ejecutado.
 - Automatización diaria de continuidad creada previamente con ID `ID_AUTOMATIZACION_REDACTADO`; verificar su estado en la plataforma si se necesita afirmar que está activa/ejecutándose. No es un bucle continuo en tiempo real.
 
@@ -2861,7 +2861,7 @@ La aplicación **NO está lista para producción**. Continúan pendientes: rutas
   - Project progress dashboard: https://github.com/BTF14/Micro-app/actions/runs/39241706068
 - Los seis jobs consultados tras PR #34 (run IDs 39241150482, 39241150423, 39241150283, 39241150291, 39241150500 y 39241150556) reportaron `success`. La consulta disponible no devolvió metadatos suficientes para vincular cada run al SHA de merge `02c7cd61ef2e94545849746885dede12b2df7767`; no afirmar que ese SHA tiene checks confirmados hasta verificarlo por otro medio.
 - No se ejecutaron pruebas locales en esta sesión. La evidencia de tests es GitHub Actions sobre el head de PR #36, no una ejecución local.
-- No se desplegó producción ni se modificó Neon `main`; no se tocaron datos reales, secretos, billing ni Cantina-pos.
+- No se desplegó producción ni se modificó Neon `main`; no se tocaron datos reales, secretos, billing ni otro proyecto.
 
 ## Bloqueos de producto
 
@@ -2905,7 +2905,7 @@ La aplicación **NO está lista para producción**. Continúan pendientes: rutas
 - La rama de Neon adapter no debe fusionarse ciegamente; la revisión anterior encontró 14 commits propios y 49 detrás de main, sin código único que justificara la fusión completa.
 - Neon `main`: no se modificó. Backups independientes y restauración real: no verificados. Protección de branch main: estaba desactivada en la última comprobación; verificar de nuevo y no modificar sin necesidad/autoridad clara.
 - Strix (`https://github.com/usestrix/strix.git`) solo está documentado; no instalado ni ejecutado.
-- Límites: coste objetivo $0; no mezclar Cantina-pos; no secretos, correos, billing, datos reales, mutaciones en Neon main ni despliegues de producción sin superar los gates de `AGENTS.md`, `docs/CONSTITUTION.md` y `docs/BACKUP_AND_RECOVERY.md`.
+- Límites: coste objetivo $0; no mezclar otro proyecto; no secretos, correos, billing, datos reales, mutaciones en Neon main ni despliegues de producción sin superar los gates de `AGENTS.md`, `docs/CONSTITUTION.md` y `docs/BACKUP_AND_RECOVERY.md`.
 
 ## Instrucciones obligatorias para la siguiente IA
 
@@ -2931,7 +2931,7 @@ La aplicación **NO está lista para producción**. Continúan pendientes: rutas
 - No había PR abiertas en la consulta posterior al merge. No se ejecutaron pruebas locales en esta sesión; la evidencia indicada es de GitHub Actions para los SHA exactos.
 - Estado del producto: **no listo para producción**. La API aún no registra handlers HTTP comerciales para productos, proveedores, ventas, pagos ni movimientos de inventario. La matriz de aislamiento es un plan de aceptación, no evidencia de controles en rutas inexistentes.
 - Bloqueos: Google OAuth + allowlist y decisiones D1–D8 siguen pendientes de aprobación; roles/permisos por operación deben definirse antes de añadir rutas de negocio; no se han verificado backups/restauración independiente; la protección de `main` estaba desactivada en la última comprobación.
-- Límites mantenidos: presupuesto $0, proyecto independiente de Cantina-pos, sin secretos ni correos, sin cambios a Neon `main`, sin despliegue de producción. Strix sigue documentado, no instalado ni ejecutado.
+- Límites mantenidos: presupuesto $0, proyecto independiente de otro proyecto, sin secretos ni correos, sin cambios a Neon `main`, sin despliegue de producción. Strix sigue documentado, no instalado ni ejecutado.
 - Próximo paso seguro: continuar la revisión del adaptador Neon sin merge ciego y preparar una matriz explícita de permisos por rol para que el primer endpoint comercial tenga pruebas positivas y negativas de aislamiento; no inventar políticas pendientes.
 
 ---
@@ -2948,7 +2948,7 @@ La aplicación **NO está lista para producción**. Continúan pendientes: rutas
 - No hay PR abiertas en la consulta actual. No se desplegó producción ni se modificó Neon `main`.
 - Estado de producto: **no listo para producción**. `apps/api/src/index.ts` todavía no registra handlers HTTP de negocio para catálogo/productos, proveedores, ventas, pagos o movimientos de inventario; la matriz de tenant define criterios futuros, no evidencia de endpoints ya protegidos.
 - Bloqueos: Google OAuth + allowlist y decisiones D1–D8 pendientes de aprobación; backups/restauración independiente no verificados; protección de rama `main` desactivada en la última verificación; faltan flujos POS/inventario reales y pruebas de autorización completas.
-- Límites: presupuesto $0, no mezclar con Cantina-pos, no secretos ni correos, no migraciones a Neon `main` sin superar el gate de `docs/CONSTITUTION.md`, no despliegue de producción sin aceptación explícita.
+- Límites: presupuesto $0, no mezclar con otro proyecto, no secretos ni correos, no migraciones a Neon `main` sin superar el gate de `docs/CONSTITUTION.md`, no despliegue de producción sin aceptación explícita.
 - Próximo trabajo seguro: abordar identidad solo tras resolver D1–D8; mientras tanto, ampliar cobertura de autorización y preparar endpoints de negocio en entorno aislado, sin inventar políticas de registro ni OAuth.
 
 ---
@@ -2996,7 +2996,7 @@ La aplicación **NO está lista para producción**. Continúan pendientes: rutas
 
 ## Límites operativos
 
-- Mantener coste objetivo $0 y separación absoluta de Cantina-pos.
+- Mantener coste objetivo $0 y separación absoluta de otro proyecto.
 - No exponer secretos ni enviar correos.
 - No hacer despliegue de producción sin aprobación explícita.
 - Para Neon `main`, seguir el gate de cambio de producción de `docs/CONSTITUTION.md`; probar primero en entorno aislado y no ejecutar cambios destructivos/ambiguos sin aprobación.

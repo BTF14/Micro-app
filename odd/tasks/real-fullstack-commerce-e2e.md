@@ -63,7 +63,7 @@ Excluded:
 
 ## Exact implementation evidence
 
-- Implementation HEAD validated before this documentation reconciliation: `3329562d15f40ce744de67a088400935d9d3566a`.
+- PR HEAD validated live before this final documentation reconciliation: `b078a02608b807a2ecdd0b59e95d8017ecd2f553`.
 - That exact HEAD had 16/16 check-runs SUCCESS and 12/12 workflow runs SUCCESS.
 - CI `verify`: 52/52 steps SUCCESS.
 - Real full-stack PostgreSQL 18 job: 20/20 executed steps SUCCESS; Playwright Chromium flow SUCCESS.
@@ -82,8 +82,8 @@ Excluded:
 
 ## Closure and handoff
 
-- Implementation HEAD: `3329562d15f40ce744de67a088400935d9d3566a`; PR #366.
-- Checks at implementation HEAD: 16/16 check-runs, 12/12 workflow runs, CI verify 52/52, full-stack job 20/20 steps SUCCESS, existing Chromium authentication smoke tests SUCCESS.
+- PR HEAD last validated before this final documentation reconciliation: `b078a02608b807a2ecdd0b59e95d8017ecd2f553`; PR #366.
+- Checks at PR HEAD `b078a02608b807a2ecdd0b59e95d8017ecd2f553`: 16/16 check-runs SUCCESS; 12/12 workflow runs SUCCESS; CI verify 52/52 steps SUCCESS; PostgreSQL 18 full-stack job 20/20 executed steps SUCCESS; Chromium authentication smoke tests SUCCESS; 0 formal reviews and 0 review threads; mergeable=true.
 - Acceptance criteria: AC-1 through AC-7 and AC-9 met; AC-8 remains pending exact final PR HEAD checks, merge and post-merge verification.
 - Limitations not verified: first real BCV rate persisted in Neon `main`; external Cloudflare alert delivery; human RPO/RTO; legal/fiscal approval; Issue #53.
 - Residual production status: **NOT READY**.

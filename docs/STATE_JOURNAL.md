@@ -8,7 +8,7 @@
 - PR #361 (Cron BCV `MON-FRI 22:00 UTC` y TLS CI), PR #363 (rate limiting runtime) y PR #364 (watchdog BCV read-only) ya estaban integradas. No duplicar esas implementaciones.
 
 ### PR #366 — evidencia de implementación full-stack
-- PR #366, rama `test/real-fullstack-commerce-e2e-20261114`; HEAD de implementación validado: `3329562d15f40ce744de67a088400935d9d3566a`.
+- PR #366, rama `test/real-fullstack-commerce-e2e-20261114`; HEAD de implementación validado: `b078a02608b807a2ecdd0b59e95d8017ecd2f553`.
 - En ese HEAD exacto: 16/16 check-runs SUCCESS y 12/12 workflow runs SUCCESS; CI `verify` 52/52 pasos SUCCESS.
 - Job full-stack PostgreSQL 18: 20/20 pasos ejecutados SUCCESS; job Chromium authentication smoke tests SUCCESS. La suite full-stack ejecuta el frontend compilado/servido, el proxy same-origin real `/api` y `/auth`, los handlers reales de Hono y una base PostgreSQL 18 efímera.
 - Migraciones canónicas 0001–0025 aplicadas y ledger completo verificado. Los logins PostgreSQL `microapp_runtime` y `microapp_bcv_sync` se usan con privilegios separados; se comprueba que runtime no puede escribir `bcv_sync_state`.
@@ -22,7 +22,7 @@
 - Esta evidencia demuestra el flujo full-stack en CI contra PostgreSQL 18 efímero. **No demuestra** persistencia de la primera tasa BCV real en Neon `main`, entrega externa de alertas, RPO/RTO humano, ni cumplimiento legal/fiscal.
 - PR #193 permanece OPEN e intacta. Issue #53 permanece OPEN/P0. **PRODUCTION: NOT READY**.
 - No se accedió ni mutó Neon `main`, datos reales o secretos; no se cambió configuración manual de Cloudflare/Google Cloud ni se ejecutaron despliegues manuales.
-- El HEAD `3329562d15f40ce744de67a088400935d9d3566a` es el HEAD de implementación antes de la reconciliación documental incluida en esta misma PR. El commit documental genera un nuevo HEAD: sus check-runs y workflow runs deben verificarse de nuevo en ese SHA exacto; no reutilizar CI de un SHA anterior.
+- El HEAD `b078a02608b807a2ecdd0b59e95d8017ecd2f553` es el HEAD de implementación antes de la reconciliación documental incluida en esta misma PR. El commit documental genera un nuevo HEAD: sus check-runs y workflow runs deben verificarse de nuevo en ese SHA exacto; no reutilizar CI de un SHA anterior.
 
 ### Próximo control obligatorio
 Leer el diff completo de PR #366 y verificar todos los check-runs, workflow runs, reviews y threads sobre el HEAD final posterior a la reconciliación documental. Solo con todos los gates aplicables en verde procede Squash and Merge bajo la autorización de `AGENTS.md`; después verificar los checks del nuevo `main`. Mantener PR #193 e Issue #53 abiertas.
@@ -1371,7 +1371,7 @@ No Neon main, secretos, datos reales, cambios de roles/grants, backup operativo,
 - No se ejecutaron pruebas localmente; los checks citados son del head de PR, no verificación independiente del merge SHA. No se desplegó producción ni se modificó Neon `main`.
 - No hay PR abiertas en la consulta actual.
 - Issue P0 #53 sigue abierto. El registro público carece de política de identidad Google + allowlist demostrada; D1–D8 y matriz de roles siguen pendientes de decisión humana.
-- Strix continúa documentado, no instalado ni ejecutado. Sin secretos, emails, billing, datos reales ni Cantina-pos.
+- Strix continúa documentado, no instalado ni ejecutado. Sin secretos, emails, billing, datos reales ni otro proyecto.
 - Próximo paso: continuar análisis seguro de auth y revisión de rama divergida; pedir al usuario decisiones concretas de identidad/roles cuando sean necesarias. La app no está lista para producción.
 
 ---
@@ -1441,7 +1441,7 @@ Este diario es append-only en cuanto a historia: no borrar hitos antiguos; añad
 - No hay evidencia en esta comprobación de que exista un sistema que lance subagentes autónomos en segundo plano. Se agregan perfiles de agentes reutilizables para entornos compatibles y un protocolo para no fingir ejecuciones.
 
 ### Decisiones y límites
-- Mantener presupuesto $0, proyecto independiente de Cantina-pos y otros proyectos.
+- Mantener presupuesto $0, proyecto independiente de otro proyecto y otros proyectos.
 - No aplicar migraciones ni SQL mutante a Neon `main`; utilizar PostgreSQL efímero o una rama de prueba aislada.
 - No desplegar producción ni hacer cambios irreversibles sin aceptación.
 - No publicar secretos ni cadenas de conexión.
@@ -1703,7 +1703,7 @@ Este diario es append-only en cuanto a historia: no borrar hitos antiguos; añad
 - No se ejecutaron pruebas localmente. No se desplegó producción ni se modificó Neon `main`.
 - El estado post-merge de PR #34 requiere confirmación de SHA exacto: los seis jobs consultados dieron `success`, pero la consulta no expuso metadatos suficientes para asociarlos inequívocamente al merge SHA.
 - Bloqueos vigentes: Google OAuth/allowlist y D1–D8 pendientes; matriz de roles pendiente; rutas comerciales completas y E2E API+PostgreSQL no verificadas; backup/restauración independiente sin probar; app no lista para producción.
-- Siguiente paso: confirmar Actions del merge SHA `c15c2364cd19e55ac10b2331300e7a9f4b89813f`; continuar pruebas de seguridad pequeñas y documentar resultados exactos. Coste objetivo $0; sin Cantina-pos, secretos, correos, billing, datos reales ni despliegue.
+- Siguiente paso: confirmar Actions del merge SHA `c15c2364cd19e55ac10b2331300e7a9f4b89813f`; continuar pruebas de seguridad pequeñas y documentar resultados exactos. Coste objetivo $0; sin otro proyecto, secretos, correos, billing, datos reales ni despliegue.
 
 
 ## 2026-10-19 — PR #38 y PR #39
@@ -1721,7 +1721,7 @@ Este diario es append-only en cuanto a historia: no borrar hitos antiguos; añad
 - PR #41: https://github.com/BTF14/Micro-app/pull/41 — prueba de regresión para conservar la cookie cuando falla la revocación de logout.
 - Seis workflows `success` en el head de PR `0c55c180846e6286e72d35f51e502278200ee0de`: CI 39244454840, Playwright 39244454807, Security scan 39244454911, Semgrep 39244454934, Project progress dashboard 39244454952, Database migration validation 39244456648.
 - No se ejecutaron tests locales. Los workflows del merge SHA no están confirmados por la consulta disponible.
-- Sin datos reales, secretos, billing, cambios a Neon `main`, despliegue de producción ni mezcla con Cantina-pos. La app sigue sin estar lista para producción.
+- Sin datos reales, secretos, billing, cambios a Neon `main`, despliegue de producción ni mezcla con otro proyecto. La app sigue sin estar lista para producción.
 
 
 ## 2026-10-19 — PR #45 fusionada; continuidad actualizada
@@ -1730,7 +1730,7 @@ Este diario es append-only en cuanto a historia: no borrar hitos antiguos; añad
 - PR #45 https://github.com/BTF14/Micro-app/pull/45 fusionada por squash. Head probado: `cdce44a9643c5134311f9603abf1248c07970df3`.
 - Seis workflows de GitHub Actions terminaron en success para ese head: CI 39252317370, Playwright E2E 39252317397, migraciones 39252317371, Security scan 39252317467, Semgrep SAST 39252317386 y dashboard 39252317373.
 - Cambio: una aserción de limpieza de cookie cuando el usuario está inactivo. No se ejecutaron tests locales y los workflows del merge SHA no están verificados aquí.
-- Se refrescaron los documentos de estado, plan y handoff. Sin cambios de producción, Neon, secretos, datos reales, billing ni Cantina-pos.
+- Se refrescaron los documentos de estado, plan y handoff. Sin cambios de producción, Neon, secretos, datos reales, billing ni otro proyecto.
 - La aplicación no está lista para producción; D1–D8, OAuth/allowlist, matriz de permisos, endpoints de negocio, aislamiento tenant, E2E real y backup/restauración independiente siguen pendientes.
 
 
@@ -1740,7 +1740,7 @@ Este diario es append-only en cuanto a historia: no borrar hitos antiguos; añad
 - PR #47 https://github.com/BTF14/Micro-app/pull/47: prueba de error de `/auth/me` cuando falla la validación de sesión por DB. Head `7939d11678cfd1a2bb8fac22664096663603c824`; seis workflows success: CI 39253558854, Playwright 39253558793, migraciones 39253558714, Security 39253558727, Semgrep 39253558761, dashboard 39253558724.
 - PR #48 https://github.com/BTF14/Micro-app/pull/48: prueba de que una cuenta inactiva no obtiene una cookie nueva. Head final `6acb78018a47eb39f74dab079b53b51b4cacf11f`; seis workflows success: CI 39254257051, Playwright 39254256939, migraciones 39254257076, Security 39254256854, Semgrep 39254256882, dashboard 39254256826.
 - En PR #48, la primera ejecución encontró que el test excedía el límite de login por email; el fixture fue corregido para limpiar únicamente el contador hash del correo sintético antes del caso de cuenta inactiva. El head final pasó los seis workflows.
-- No se ejecutaron tests localmente ni se verificaron workflows en los merge SHA. Sin cambios en producción, Neon, secretos, datos reales, billing ni Cantina-pos.
+- No se ejecutaron tests localmente ni se verificaron workflows en los merge SHA. Sin cambios en producción, Neon, secretos, datos reales, billing ni otro proyecto.
 - La app sigue sin estar lista para producción. OAuth/allowlist, D1–D8, matriz de permisos, endpoints comerciales, aislamiento tenant, E2E API+PostgreSQL real y backup/restauración independiente continúan pendientes.
 
 
@@ -1749,7 +1749,7 @@ Este diario es append-only en cuanto a historia: no borrar hitos antiguos; añad
 - `main` verificado: `e18a3ec267f4c4d0e02678a4c0522dabf200ac98`.
 - PR #50 https://github.com/BTF14/Micro-app/pull/50: aserciones para que login no emita cookie con membresía inactiva u organización desactivada. Head `dcad8d6d1caf6db3aabbc95465e5983ad0014746`; seis workflows success: CI 39255158169, Playwright 39255157709, migraciones 39255158077, Security 39255157712, Semgrep 39255157509, dashboard 39255157611.
 - PR #51 https://github.com/BTF14/Micro-app/pull/51: respuestas seguras ante fallo de DB en login/registro, sin cookie. Head `92ea991d6333bcd1b05943f679fdd36777ab6a8f`; seis workflows success: CI 39255462405, Playwright 39255462498, migraciones 39255462284, Security 39255462264, Semgrep 39255462627, dashboard 39255462281.
-- No se ejecutaron tests localmente ni se verificaron workflows sobre merge SHA. Sin cambios en producción, Neon, secretos, datos reales, billing ni Cantina-pos.
+- No se ejecutaron tests localmente ni se verificaron workflows sobre merge SHA. Sin cambios en producción, Neon, secretos, datos reales, billing ni otro proyecto.
 - La aplicación sigue sin estar lista para producción. OAuth/allowlist, D1–D8, matriz de permisos, endpoints comerciales, aislamiento tenant, E2E API+PostgreSQL real y backup/restauración independiente continúan pendientes.
 
 
@@ -1771,7 +1771,7 @@ Este diario es append-only en cuanto a historia: no borrar hitos antiguos; añad
 - Se actualizan checkpoint y handoff para reflejar el merge de PR #62 y evitar que el snapshot antiguo de PR #57 prevalezca como estado vivo.
 - PR #60 sigue abierta con conflicto; no forzar ni fusionar. Antes de sustituirla, comparar sus cambios con lo que ya quedó integrado en PR #62.
 - P0 continúa pendiente: Google sign-in, allowlist, D1–D8 y matriz de permisos requieren decisiones aprobadas. El registro sigue bloqueado; el login por contraseña aún existe y no debe asumirse que la política de acceso final ya está aplicada.
-- Coste $0; no despliegues productivos, cambios en Neon `main`, emails, billing ni Cantina-pos.
+- Coste $0; no despliegues productivos, cambios en Neon `main`, emails, billing ni otro proyecto.
 
 
 ## 2026-10-19 — Reconciliación de la política detallada de autonomía

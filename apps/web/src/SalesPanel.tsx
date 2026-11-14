@@ -70,6 +70,7 @@ export default function SalesPanel({
   const [warehouseId, setWarehouseId] = useState("");
   const [warehouseLoaded, setWarehouseLoaded] = useState(false);
   const [cart, setCart] = useState<CartLine[]>([]);
+  const cartRef = useRef<CartLine[]>([]);
   const [currency, setCurrency] = useState<Currency>("USD");
   const [payments, setPayments] = useState<PaymentLine[]>(() => [{ id: newIdempotencyKey(), method: "cash", amount: "", reference: "" }]);
   const [loading, setLoading] = useState(false);
@@ -119,6 +120,8 @@ export default function SalesPanel({
       });
     } catch { return false; }
   }, [computed.subtotalUsd, computed.totalVes, currency, paymentTotal, payments]);
+
+  const commitCart = (next: CartLine[]) => { cartRef.current = next; setCart(next); };
 
   const resetIdempotency = () => {
     idempotencyKey.current = newIdempotencyKey();
@@ -178,7 +181,7 @@ export default function SalesPanel({
     if (nextId === warehouseId) return;
     setWarehouseId(nextId);
     if (cart.length > 0) {
-      setCart([]);
+      commitCart([]);
       setPayments([{ id: newIdempotencyKey(), method: "cash", amount: "", reference: "" }]);
       setNotice("Cambiaste de almacén. Se limpió el carrito para evitar mezclar existencias.");
     }
@@ -190,15 +193,16 @@ export default function SalesPanel({
       setNotice(product.name + " está agotado en este almacén y no se agregó.");
       return;
     }
-    const existing = cart.find((line) => line.product.product_id === product.product_id);
+    const currentCart = cartRef.current;
+    const existing = currentCart.find((line) => line.product.product_id === product.product_id);
     if (!existing) {
-      setCart([...cart, { product, quantity: "1.000" }]);
+      commitCart([...currentCart, { product, quantity: "1.000" }]);
       resetIdempotency();
       setNotice(product.name + " agregado al carrito.");
     } else if (quantityUnits(existing.quantity) + 1000n > quantityUnits(product.available_quantity)) {
       setNotice("No puedes superar la existencia disponible de " + product.name + ".");
     } else {
-      setCart(cart.map((line) => line.product.product_id === product.product_id
+      commitCart(currentCart.map((line) => line.product.product_id === product.product_id
         ? { ...line, product, quantity: formatNumeric(quantityUnits(line.quantity) + 1000n, 14, 3) }
         : line));
       resetIdempotency();
@@ -211,11 +215,11 @@ export default function SalesPanel({
     try {
       const normalized = formatNumeric(parseNumeric(value, 14, 3), 14, 3);
       if (parseNumeric(normalized, 14, 3) <= 0n) throw new Error("La cantidad debe ser mayor que cero.");
-      const line = cart.find((item) => item.product.product_id === productId);
+      const line = cartRef.current.find((item) => item.product.product_id === productId);
       if (line && quantityUnits(normalized) > quantityUnits(line.product.available_quantity)) {
         throw new Error("La cantidad supera la existencia disponible de " + line.product.name + ".");
       }
-      setCart((current) => current.map((item) => item.product.product_id === productId ? { ...item, quantity: normalized } : item));
+      commitCart(cartRef.current.map((item) => item.product.product_id === productId ? { ...item, quantity: normalized } : item));
       resetIdempotency();
       setError("");
     } catch (reason) {
@@ -224,7 +228,7 @@ export default function SalesPanel({
   }
 
   function removeLine(productId: string) {
-    setCart((current) => current.filter((line) => line.product.product_id !== productId));
+    commitCart(cartRef.current.filter((line) => line.product.product_id !== productId));
     resetIdempotency();
   }
 

@@ -16,7 +16,10 @@ CREATE TABLE public.inventory_receipts(
  warehouse_id uuid NOT NULL,
  reason text NOT NULL CHECK(length(pg_catalog.btrim(reason)) BETWEEN 1 AND 500),
  idempotency_key text NOT NULL CHECK(idempotency_key ~ '^[A-Za-z0-9._:-]{1,128}$'),
- request_hash text NOT NULL CHECK(request_hash ~ '^[a-f0-9]{64} created_at timestamptz NOT NULL DEFAULT pg_catalog.now(),
+ request_hash text NOT NULL CHECK(request_hash ~ '^[a-f0-9]{64}' AND length(request_hash)=64),
+ request_payload jsonb NOT NULL CHECK(pg_catalog.jsonb_typeof(request_payload)='array'),
+ created_by uuid NOT NULL,
+ created_at timestamptz NOT NULL DEFAULT pg_catalog.now(),
  UNIQUE(organization_id,branch_id,warehouse_id,id),
  UNIQUE(organization_id,created_by,idempotency_key),
  FOREIGN KEY(organization_id,branch_id,warehouse_id)

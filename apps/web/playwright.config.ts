@@ -11,7 +11,7 @@ export default defineConfig({
     {
       name: "chromium",
       use: { ...devices["Desktop Chrome"] },
-      testIgnore: /real-fullstack-commerce\\.spec\\.ts/,
+      testIgnore: /real-fullstack-commerce\.spec\.ts/,
     },
     {
       name: "mobile-chromium",
@@ -21,7 +21,7 @@ export default defineConfig({
         isMobile: true,
         hasTouch: true,
       },
-      testMatch: /real-fullstack-commerce\\.spec\\.ts/,
+      testMatch: /real-fullstack-commerce\.spec\.ts/,
     },
   ],
   webServer: {

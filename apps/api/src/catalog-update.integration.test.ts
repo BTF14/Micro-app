@@ -10,6 +10,8 @@ vi.mock("@neondatabase/serverless", async () => {
   };
 });
 
+let syntheticIpCounter = 1;
+
 const app = (await import("./index")).default;
 const databaseUrl = (globalThis as typeof globalThis & {
   process?: { env?: Record<string, string | undefined> };
@@ -84,7 +86,7 @@ describe.skipIf(!databaseUrl)("catalog product updates against PostgreSQL", () =
           Cookie: "microapp_session=" + fixture.token,
           Origin: origin,
           "Content-Type": "application/json",
-          "CF-Connecting-IP": "198.51.100.102",
+          "CF-Connecting-IP": `198.51.100.${syntheticIpCounter++}`,
         },
         body: JSON.stringify(payload),
       }),

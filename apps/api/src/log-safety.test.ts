@@ -45,6 +45,9 @@ describe("operational log safety", () => {
         expect(approvedCalls.has(call), `Unreviewed or potentially sensitive operational log in ${file}: ${call}`).toBe(true);
       }
       expect(source).not.toMatch(/(?:globalThis\s*\.\s*console|console\s*\[\s*["'](?:log|info|warn|error|debug|trace)["']\s*\])/);
+      expect(source).not.toMatch(/\bconsole\s*\?\.\s*(?:log|info|warn|error|debug|trace)\s*\(/);
+      expect(source).not.toMatch(/\b(?:const|let|var)\s+\{[^}]*\}\s*=\s*console\b/);
+      expect(source).not.toMatch(/\b(?:const|let|var)\s+[A-Za-z_$][\w$]*\s*=\s*console\b/);
     }
     expect(calls.length).toBe(10);
   });

@@ -42,11 +42,12 @@ const routeScopes = [
 ];
 
 function context() {
+  const responseHeaders = new Headers();
   const c = {
     req: { header: (name: string) => name === "CF-Connecting-IP" ? clientIp : undefined },
     env: { DATABASE_URL: databaseUrl, GOOGLE_CLIENT_SECRET: pepper },
-    header: () => undefined,
-    json: (body: unknown, status = 200) => new Response(JSON.stringify(body), { status }),
+    header: (name: string, value: string) => responseHeaders.set(name, value),
+    json: (body: unknown, status = 200) => new Response(JSON.stringify(body), { status, headers: responseHeaders }),
   };
   return c as unknown as Context<{ Bindings: Bindings }>;
 }

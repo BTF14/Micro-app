@@ -200,10 +200,32 @@ describe.skipIf(!isDisposableRuntimeDatabase)("BCV sync-state and watchdog with 
       "SELECT last_outcome FROM public.bcv_sync_state WHERE singleton = true",
     );
     expect(state.rows[0]?.last_outcome).toBe("running");
-    const privilege = await runtime.query<{ can_update: boolean }>(
-      "SELECT has_table_privilege(current_user, 'public.bcv_sync_state', 'UPDATE') AS can_update",
+    const privilege = await runtime.query<{
+      current_user: string;
+      can_select: boolean;
+      can_insert: boolean;
+      can_update: boolean;
+      can_delete: boolean;
+      can_update_last_outcome: boolean;
+      can_insert_last_outcome: boolean;
+    }>(
+      `SELECT current_user,
+              has_table_privilege(current_user, 'public.bcv_sync_state', 'SELECT') AS can_select,
+              has_table_privilege(current_user, 'public.bcv_sync_state', 'INSERT') AS can_insert,
+              has_table_privilege(current_user, 'public.bcv_sync_state', 'UPDATE') AS can_update,
+              has_table_privilege(current_user, 'public.bcv_sync_state', 'DELETE') AS can_delete,
+              has_column_privilege(current_user, 'public.bcv_sync_state', 'last_outcome', 'UPDATE') AS can_update_last_outcome,
+              has_column_privilege(current_user, 'public.bcv_sync_state', 'last_outcome', 'INSERT') AS can_insert_last_outcome`,
     );
-    expect(privilege.rows[0]?.can_update).toBe(false);
+    expect(privilege.rows[0]).toEqual({
+      current_user: "microapp_runtime",
+      can_select: true,
+      can_insert: false,
+      can_update: false,
+      can_delete: false,
+      can_update_last_outcome: false,
+      can_insert_last_outcome: false,
+    });
     expect(errorLog).not.toHaveBeenCalledWith({ event: "BCV_SYNC_WATCHDOG_LOOKUP_FAILED" });
     expect(errorLog).not.toHaveBeenCalledWith({ event: "AUTH_RETENTION_CLEANUP_FAILED" });
     errorLog.mockRestore();

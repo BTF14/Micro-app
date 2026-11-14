@@ -8,12 +8,16 @@ on:
       - "apps/api/certs/**"
       - "apps/api/src/bcv-connectivity.manual.test.ts"
       - "apps/api/src/exchange-rates.ts"
+      - "odd/tasks/bcv-weekday-cron-and-ci-tls-chain.md"
+      - "docs/decisions/ADR-20261114-bcv-ci-intermediate-trust.md"
   pull_request:
     paths:
       - ".github/workflows/bcv-source-connectivity.yml"
       - "apps/api/certs/**"
       - "apps/api/src/bcv-connectivity.manual.test.ts"
       - "apps/api/src/exchange-rates.ts"
+      - "odd/tasks/bcv-weekday-cron-and-ci-tls-chain.md"
+      - "docs/decisions/ADR-20261114-bcv-ci-intermediate-trust.md"
 
 permissions:
   contents: read

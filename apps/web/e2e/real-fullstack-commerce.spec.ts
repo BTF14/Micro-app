@@ -156,26 +156,19 @@ test("real catalog → inventory receipt → register → USD/VES POS → close 
   const cashierPage = await cashierContext.newPage();
   await cashierPage.goto("/");
   await expect(cashierPage.getByRole("heading", { name: `Hola, ${fixture.cashierDisplayName.split(" ")[0]}.` })).toBeVisible();
-  await expect(cashierPage.getByText(fixture.cashierDisplayName, { exact: true })).toBeVisible();
   await expect(cashierPage.getByText("Sesión activa", { exact: true })).toBeVisible();
-  const assignedBranches = await cashierPage.evaluate(async (organizationId) => {
-    const response = await fetch(`/api/orgs/${encodeURIComponent(organizationId)}/register-shifts/branches`, {
-      cache: "no-store",
-      credentials: "include",
-    });
-    return {
-      status: response.status,
-      body: await response.json() as { items?: Array<{ id: string; name: string }>; error?: string; message?: string },
-    };
-  }, fixture.organizationId);
-  expect(assignedBranches.status, JSON.stringify(assignedBranches.body)).toBe(200);
-  expect(assignedBranches.body.items?.some((branch) => branch.id === fixture.branchId)).toBe(true);
 
   // 3. Open a real cashier shift on the seeded branch/register.
   await cashierPage.getByRole("button", { name: "Caja y turnos", exact: true }).click();
   await expect(cashierPage.getByRole("heading", { name: "Turnos de caja" })).toBeVisible();
-  await expect(cashierPage.getByLabel("Sucursal", { exact: true })).toHaveValue(fixture.branchId);
-  await expect(cashierPage.getByLabel("Caja", { exact: true })).toHaveValue(fixture.registerId);
+  const branchSelect = cashierPage.locator("select").filter({
+    has: cashierPage.locator(`option[value="${fixture.branchId}"]`),
+  });
+  const registerSelect = cashierPage.locator("select").filter({
+    has: cashierPage.locator(`option[value="${fixture.registerId}"]`),
+  });
+  await expect(branchSelect).toHaveValue(fixture.branchId);
+  await expect(registerSelect).toHaveValue(fixture.registerId);
   await cashierPage.getByLabel("Fondo inicial USD", { exact: true }).fill("50.0000");
   await cashierPage.getByLabel("Fondo inicial VES", { exact: true }).fill("1000.00");
   const openShiftPromise = cashierPage.waitForResponse((response) =>

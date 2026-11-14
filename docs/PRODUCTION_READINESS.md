@@ -216,14 +216,14 @@ Los párrafos de 2026-10-30 describían el estado previo a los vertical slices i
 - [x] Validación del esquema/migraciones SQL versionadas 0001–0025 y assertions en PostgreSQL efímero.
 - [x] Registro público y login por contraseña permanecen fail-closed; Google OAuth, allowlist, verificación de email y sesiones reforzadas están integrados.
 - [x] Proxy Pages/API same-origin y configuración de callback OAuth integrados en PR #339; la integración no sustituye el smoke autenticado real con Shields.
-- [x] Lifecycle autenticado de cajero probado en PostgreSQL 18 efímero (PR #347); no equivale a E2E comercial real sin mocks.
+- [x] Lifecycle autenticado de cajero (PR #347) y E2E comercial full-stack sin mocks contra API Hono real + PostgreSQL 18 efímero (PR #366) validados en CI; no equivalen a certificación de producción.
 - [x] Administración owner-only de sucursales/almacenes/cajas integrada (PR #350, 0024).
 - [x] Recepciones y ajustes de inventario integrados (PR #352, 0025); lectura/Kardex y conteos atómicos tienen suites de integración.
 - [x] POS y checkout atómico integrados (PR #357; 0015/0018); el alcance comercial sigue limitado por las notas del bloque de implementación.
 - [x] Migraciones 0001–0025 aplicadas en Neon main según el workflow protegido, run #43591333198; no inferir de ello que la aplicación esté aceptada para lanzamiento.
 - [x] Smoke autenticado live con Brave Shields ACTIVADO en móvil y escritorio: Google OAuth same-origin, sesión persistente en navegación de módulos reales y logout seguro confirmado por el propietario. Reabrir solo si cambian proxy /api, CORS, cookies/OAuth o CSP.
 - [ ] Primera tasa BCV real persistida en Neon main y registro correspondiente en `bcv_sync_state`, tras una ejecución programada válida.
-- [ ] E2E real de los flujos comerciales completos contra API/DB de prueba, sin mocks de red.
+- [x] E2E full-stack real en CI contra API Hono + PostgreSQL 18 efímero, sin mocks de `/api/*` (PR #366): catálogo, recepción, turno, checkout USD/VES, recibos, stock, cierre/recarga y rechazo de venta con caja cerrada. No valida producción real.
 - [x] Rate limiting runtime en rutas sensibles: integrado y probado en PostgreSQL 18 efímero para OAuth, checkout y 11 endpoints de escritura (PR #363; exact-HEAD y post-merge checks SUCCESS).
 - [ ] Aceptación formal humana del objetivo RPO aproximado de 24 h y del RTO operativo aceptable.
 - [ ] Revisión legal, fiscal y contable por asesoría competente y aprobación explícita del lanzamiento; Issue #53 permanece OPEN/P0.
@@ -245,7 +245,7 @@ Los párrafos de 2026-10-30 describían el estado previo a los vertical slices i
 - El producto ya contiene catálogo de productos, inventario por almacén/ledger, recepciones, conteos atómicos, turnos por sucursal y POS/checkout; no describirlo como un frontend sin endpoints comerciales.
 - No hay módulo completo de categorías, devoluciones/reversos, reportes/exportaciones, transferencias inter-sucursal ni ciclo completo de proveedores/compras.
 - La venta liquida en una sola moneda; puede tener múltiples líneas de pago. El recibo es solo en pantalla; no hay impresión térmica ni historial de ventas.
-- Las pruebas PostgreSQL efímeras no son E2E comercial live sin mocks. El smoke autenticado con Brave Shields ACTIVADO ya fue confirmado; permanece pendiente la primera tasa BCV real persistida en Neon `main`.
+- La E2E full-stack de PR #366 sí es una E2E comercial real contra API/DB efímeras sin mocks; no es una prueba live de producción. El smoke autenticado con Brave Shields ACTIVADO ya fue confirmado; permanece pendiente la primera tasa BCV real persistida en Neon `main`.
 - **Ya integrados, no son bloqueos abiertos:** Cron BCV `0 22 * * MON-FRI` y validación TLS estricta del workflow (PR #361); rate limiting runtime fail-closed para OAuth, checkout y 11 endpoints de escritura, probado en PostgreSQL 18 efímero (PR #363).
 - **Watchdog BCV integrado (PR #364):** detección read-only horaria `17 * * * *`, endpoint y aviso administrativo al superar 300 segundos en `running`, probados en PostgreSQL 18 con login real `microapp_runtime`; pre-merge 16/16 checks y 13/13 workflows SUCCESS, post-merge 14/14 checks y 10/10 workflows SUCCESS. No altera el estado del productor ni habilita checkout.
 - **Pendientes operativos BCV:** comprobar la primera tasa real persistida en Neon `main` después de la próxima ventana programada válida `MON-FRI 22:00 UTC`, y verificar el enrutamiento externo de alertas en Cloudflare.

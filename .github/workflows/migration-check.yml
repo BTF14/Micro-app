@@ -435,6 +435,14 @@ jobs:
         run: docker exec -i -e PGPASSWORD=migrator-test-only "${{ job.services.postgres.id }}" psql -h 127.0.0.1 -v ON_ERROR_STOP=1 -U microapp_migrator -d microapp_test -f /dev/stdin < apps/api/migrations/0024_organization_structure_admin_operations.sql
       - name: Verify owner-only organization structure migration 0024 privilege contract
         run: docker exec -i "${{ job.services.postgres.id }}" psql -v ON_ERROR_STOP=1 -U microapp -d microapp_test -f /dev/stdin < apps/api/migrations/0024_organization_structure_admin_operations.assertions.sql
+      - name: Verify inventory receipt migration 0025 rolls back atomically
+        run: |
+          sed '/^COMMIT;$/i SELECT 1/0;' apps/api/migrations/0025_inventory_receipts.sql > /tmp/0025-inventory-receipts-failure.sql
+          status=0
+          docker exec -i -e PGPASSWORD=migrator-test-only "${{ job.services.postgres.id }}" psql -h 127.0.0.1 -v ON_ERROR_STOP=1 -U microapp_migrator -d microapp_test -f /dev/stdin < /tmp/0025-inventory-receipts-failure.sql || status=$?
+          test "$status" -ne 0
+          remaining="$(docker exec "${{ job.services.postgres.id }}" psql -At -U microapp -d microapp_test -c "SELECT to_regclass('public.inventory_receipts') IS NULL AND to_regclass('public.inventory_receipt_lines') IS NULL")"
+          test "$remaining" = "t"
       - name: Apply inventory receipt ledger migration 0025
         run: docker exec -i -e PGPASSWORD=migrator-test-only "${{ job.services.postgres.id }}" psql -h 127.0.0.1 -v ON_ERROR_STOP=1 -U microapp_migrator -d microapp_test -f /dev/stdin < apps/api/migrations/0025_inventory_receipts.sql
       - name: Verify inventory receipt ledger migration 0025 contract

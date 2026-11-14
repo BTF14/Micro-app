@@ -1,6 +1,7 @@
 import { getCookie } from "hono/cookie";
 import type { Context, Hono } from "hono";
 import { formatNumeric, parseNumeric } from "@micro-app/money";
+import { enforceRuntimeWriteRateLimit } from "./runtime-write-rate-limit";
 import type { Bindings } from "./bindings";
 import { clearSessionCookie, isTrustedOrigin } from "./auth";
 import { authorizeBranchOperation, authorizeTenantOperation } from "./authorization";
@@ -251,6 +252,9 @@ export function registerRegisterShiftRoutes(app: Hono<{ Bindings: Bindings }>): 
     if (body.kind === "invalid") return c.json({ error: "INVALID_JSON", message: "El cuerpo JSON no es válido." }, 400);
     const input = parseShiftOpeningInput(body.value);
     if (!input || !input.registerId) return c.json({ error: "INVALID_SHIFT_INPUT", message: "La caja o los importes iniciales no son válidos." }, 400);
+    const rateLimitError = await enforceRuntimeWriteRateLimit(c, "register-shift:open", 10);
+    if (rateLimitError) return rateLimitError;
+
     try {
       const result = await withDatabaseClient(c.env.DATABASE_URL, (client) => withDatabaseTransaction(client, async (tx) => {
         const auth = await authorizeOwnShift(tx, token, organizationId, branchId, "register.shift.open_own");
@@ -283,6 +287,9 @@ export function registerRegisterShiftRoutes(app: Hono<{ Bindings: Bindings }>): 
     if (body.kind === "invalid") return c.json({ error: "INVALID_JSON", message: "El cuerpo JSON no es válido." }, 400);
     const input = parseShiftClosingInput(body.value);
     if (!input) return c.json({ error: "INVALID_SHIFT_INPUT", message: "Los importes de cierre no son válidos." }, 400);
+    const rateLimitError = await enforceRuntimeWriteRateLimit(c, "register-shift:close", 10);
+    if (rateLimitError) return rateLimitError;
+
     try {
       const result = await withDatabaseClient(c.env.DATABASE_URL, (client) => withDatabaseTransaction(client, async (tx) => {
         const auth = await authorizeOwnShift(tx, token, organizationId, branchId, "register.shift.close_own");

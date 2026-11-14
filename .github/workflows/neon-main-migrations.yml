@@ -1,0 +1,282 @@
+name: Neon main migration runner
+
+run-name: Neon main ${{ inputs.operation }} by @${{ github.actor }}
+
+on:
+  workflow_dispatch:
+    inputs:
+      operation:
+        description: "Verify the Neon main migration ledger, or apply pending repository migrations."
+        type: choice
+        options:
+          - verify
+          - migrate
+        required: true
+        default: verify
+      confirmation:
+        description: "For migrate only, type the exact target-specific confirmation token."
+        type: string
+        required: false
+
+permissions:
+  contents: read
+
+concurrency:
+  group: neon-main-migration-runner
+  cancel-in-progress: false
+
+jobs:
+  neon-main-migrations:
+    name: Verify or migrate Neon main
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    env:
+      NEON_MAIN_MIGRATOR_DATABASE_URL: ${{ secrets.NEON_MAIN_MIGRATOR_DATABASE_URL }}
+      OPERATION: ${{ inputs.operation }}
+      CONFIRMATION: ${{ inputs.confirmation }}
+    steps:
+      - name: Require an explicit dispatch from main
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [[ "${GITHUB_EVENT_NAME}" != "workflow_dispatch" || "${GITHUB_REF}" != "refs/heads/main" ]]; then
+            echo "NEON_MAIN_MIGRATION_REQUIRES_WORKFLOW_DISPATCH_FROM_MAIN" >&2
+            exit 1
+          fi
+          if [[ "${OPERATION}" != "verify" && "${OPERATION}" != "migrate" ]]; then
+            echo "NEON_MAIN_MIGRATION_OPERATION_INVALID" >&2
+            exit 1
+          fi
+          if [[ "${OPERATION}" == "migrate" && "${CONFIRMATION}" != "APPLY-MAIN-br-summer-math-b7297a60" ]]; then
+            echo "NEON_MAIN_MIGRATION_CONFIRMATION_MISMATCH" >&2
+            exit 1
+          fi
+
+      - name: Checkout the main-branch migration bundle
+        uses: actions/checkout@v7
+
+      - name: Install PostgreSQL client
+        shell: bash
+        run: |
+          set -euo pipefail
+          sudo apt-get update
+          sudo apt-get install -y postgresql-client
+          psql --version
+
+      - name: Validate exact Neon main target and inspect migration ledger
+        shell: bash
+        run: |
+          set -euo pipefail
+          set +x
+
+          if [[ -z "${NEON_MAIN_MIGRATOR_DATABASE_URL}" ]]; then
+            echo "Missing repository secret NEON_MAIN_MIGRATOR_DATABASE_URL." >&2
+            exit 1
+          fi
+
+          authority="${NEON_MAIN_MIGRATOR_DATABASE_URL#*@}"
+          connection_host="${authority%%[:/?]*}"
+          if [[ "${connection_host}" == *"-pooler"* ]]; then
+            echo "NEON_MAIN_CONNECTION_MUST_BE_DIRECT_NOT_POOLER" >&2
+            exit 1
+          fi
+
+          identity_sql="SELECT current_database() || '|' || current_user || '|' || session_user || '|' || COALESCE(current_setting('neon.branch_id', true), '') || '|' || COALESCE(current_setting('neon.project_id', true), '')"
+          identity="$(psql -X -At -v ON_ERROR_STOP=1 --dbname "${NEON_MAIN_MIGRATOR_DATABASE_URL}" -c "${identity_sql}")"
+          expected_identity="neondb|microapp_migrator|microapp_migrator|br-summer-math-b7297a60|restless-fire-99110035"
+          if [[ "${identity}" != "${expected_identity}" ]]; then
+            echo "NEON_MAIN_TARGET_IDENTITY_MISMATCH: refusing all operations." >&2
+            exit 1
+          fi
+
+          verify_state() {
+            local phase="$1"
+            local ledger_file
+            local expected=1
+            local applied=0
+            local pending=0
+            local latest_version
+            local file
+            local base
+            local version
+            local checksum
+            local state
+            local applied_at
+            local index
+
+            local migration_files=()
+            while IFS= read -r file; do
+              migration_files+=("$file")
+            done < <(find apps/api/migrations -maxdepth 1 -type f -name '[0-9][0-9][0-9][0-9]_*.sql' ! -name '*.assertions.sql' ! -name '*.deferred_failure.sql' | sort)
+
+            if [[ "${#migration_files[@]}" -eq 0 ]]; then
+              echo "NEON_MAIN_MIGRATION_BUNDLE_EMPTY" >&2
+              return 1
+            fi
+
+            for file in "${migration_files[@]}"; do
+              base="$(basename "$file")"
+              if [[ ! "$base" =~ ^([0-9]{4})_[a-z0-9_-]+\.sql$ ]]; then
+                echo "NEON_MAIN_MIGRATION_FILENAME_INVALID: $base" >&2
+                return 1
+              fi
+              version="${BASH_REMATCH[1]}"
+              if [[ "$version" != "$(printf '%04d' "$expected")" ]]; then
+                echo "NEON_MAIN_MIGRATION_BUNDLE_GAP: expected $(printf '%04d' "$expected"), found $version" >&2
+                return 1
+              fi
+              expected=$((expected + 1))
+            done
+            latest_version="$(basename "${migration_files[-1]}" | cut -c1-4)"
+
+            ledger_exists="$(psql -X -At -v ON_ERROR_STOP=1 --dbname "${NEON_MAIN_MIGRATOR_DATABASE_URL}" -c "SELECT pg_catalog.to_regclass('public.schema_migrations') IS NOT NULL")"
+            if [[ "$ledger_exists" != "t" ]]; then
+              echo "NEON_MAIN_SCHEMA_MIGRATIONS_LEDGER_MISSING" >&2
+              return 1
+            fi
+
+            ledger_owner_ok="$(psql -X -At -v ON_ERROR_STOP=1 --dbname "${NEON_MAIN_MIGRATOR_DATABASE_URL}" -c "SELECT c.relkind = 'r' AND pg_catalog.pg_get_userbyid(c.relowner) = 'microapp_migrator' FROM pg_catalog.pg_class c WHERE c.oid = 'public.schema_migrations'::regclass")"
+            if [[ "$ledger_owner_ok" != "t" ]]; then
+              echo "NEON_MAIN_MIGRATION_LEDGER_OWNER_INVALID" >&2
+              return 1
+            fi
+
+            role_checks="$(psql -X -At -F '|' -v ON_ERROR_STOP=1 --dbname "${NEON_MAIN_MIGRATOR_DATABASE_URL}" -c "
+              SELECT
+                (SELECT rolcanlogin AND NOT rolsuper AND NOT rolcreatedb AND NOT rolcreaterole AND NOT rolreplication AND NOT rolbypassrls AND NOT rolinherit FROM pg_catalog.pg_roles WHERE rolname='microapp_runtime'),
+                (SELECT rolcanlogin AND NOT rolsuper AND NOT rolcreatedb AND NOT rolcreaterole AND NOT rolreplication AND NOT rolbypassrls FROM pg_catalog.pg_roles WHERE rolname='microapp_migrator'),
+                NOT EXISTS (SELECT 1 FROM pg_catalog.pg_auth_members WHERE member IN (SELECT oid FROM pg_catalog.pg_roles WHERE rolname IN ('microapp_runtime','microapp_migrator'))),
+                pg_catalog.has_schema_privilege('microapp_runtime','public','USAGE') AND NOT pg_catalog.has_schema_privilege('microapp_runtime','public','CREATE'),
+                pg_catalog.has_schema_privilege('microapp_migrator','public','USAGE') AND pg_catalog.has_schema_privilege('microapp_migrator','public','CREATE'),
+                pg_catalog.has_database_privilege('microapp_runtime',current_database(),'CONNECT') AND pg_catalog.has_database_privilege('microapp_migrator',current_database(),'CONNECT')
+            ")"
+            if [[ "$role_checks" != "t|t|t|t|t|t" ]]; then
+              echo "NEON_MAIN_ROLE_OR_LEAST_PRIVILEGE_CHECK_FAILED" >&2
+              return 1
+            fi
+
+            ownership_ok="$(psql -X -At -v ON_ERROR_STOP=1 --dbname "${NEON_MAIN_MIGRATOR_DATABASE_URL}" -c "
+              SELECT
+                NOT EXISTS (
+                  SELECT 1 FROM pg_catalog.pg_class c
+                  WHERE c.relnamespace='public'::regnamespace
+                    AND c.relkind IN ('r','p','v','m','f','S')
+                    AND pg_catalog.pg_get_userbyid(c.relowner) <> 'microapp_migrator'
+                )
+                AND NOT EXISTS (
+                  SELECT 1 FROM pg_catalog.pg_proc p
+                  WHERE p.pronamespace='public'::regnamespace
+                    AND pg_catalog.pg_get_userbyid(p.proowner) <> 'microapp_migrator'
+                )
+                AND NOT EXISTS (
+                  SELECT 1 FROM pg_catalog.pg_type t
+                  WHERE t.typnamespace='public'::regnamespace
+                    AND t.typtype IN ('e','d')
+                    AND pg_catalog.pg_get_userbyid(t.typowner) <> 'microapp_migrator'
+                )
+            ")"
+            if [[ "$ownership_ok" != "t" ]]; then
+              echo "NEON_MAIN_PUBLIC_OBJECT_OWNERSHIP_INVALID" >&2
+              return 1
+            fi
+
+            ledger_file="$(mktemp)"
+            trap 'rm -f "$ledger_file"' RETURN
+            psql -X -At -F '|' -v ON_ERROR_STOP=1 --dbname "${NEON_MAIN_MIGRATOR_DATABASE_URL}" -c "
+              SELECT version, filename, checksum, state, COALESCE(applied_at::text, '')
+              FROM public.schema_migrations
+              ORDER BY version
+            " > "$ledger_file"
+
+            index=0
+            while IFS='|' read -r version base checksum state applied_at; do
+              [[ -z "$version" ]] && continue
+              index=$((index + 1))
+              if [[ "$version" != "$(printf '%04d' "$index")" ]]; then
+                echo "NEON_MAIN_MIGRATION_LEDGER_NOT_CONTIGUOUS: $version" >&2
+                return 1
+              fi
+              if (( index > ${#migration_files[@]} )); then
+                echo "NEON_MAIN_LEDGER_AHEAD_OF_REPOSITORY_BUNDLE: $version" >&2
+                return 1
+              fi
+              file="${migration_files[$((index - 1))]}"
+              if [[ "$base" != "$(basename "$file")" || "$state" != "applied" || -z "$applied_at" ]]; then
+                echo "NEON_MAIN_MIGRATION_LEDGER_ROW_INVALID: $version" >&2
+                return 1
+              fi
+              if [[ "$checksum" != "$(sha256sum "$file" | awk '{print $1}')" ]]; then
+                echo "NEON_MAIN_MIGRATION_CHECKSUM_MISMATCH: $version" >&2
+                return 1
+              fi
+            done < "$ledger_file"
+
+            applied="$index"
+            pending=$(("${#migration_files[@]}" - applied))
+            if (( pending < 0 )); then
+              echo "NEON_MAIN_MIGRATION_LEDGER_INVALID_COUNT" >&2
+              return 1
+            fi
+
+            {
+              echo "## Neon main migration — $phase"
+              echo "- Target identity: verified exact database, migrator login, branch and project."
+              echo "- Connection: direct (non-pooler)."
+              echo "- Ledger: $applied applied / $pending pending; contiguous from 0001 through ${version:-none}."
+              echo "- Repository migration bundle: ${#migration_files[@]} contiguous migrations through $latest_version."
+              echo "- Ownership: public relations, routines and enum/domain types are owned by microapp_migrator."
+              echo "- Roles: runtime/migrator attributes, empty role memberships, database CONNECT and schema least-privilege checks passed."
+            } >> "$GITHUB_STEP_SUMMARY"
+
+            if [[ "$phase" == "post-migrate" && "$pending" -ne 0 ]]; then
+              echo "NEON_MAIN_MIGRATIONS_REMAIN_PENDING_AFTER_RUNNER" >&2
+              return 1
+            fi
+          }
+
+          verify_state "preflight"
+
+          if [[ "${OPERATION}" == "migrate" ]]; then
+            echo "Applying pending repository migrations with the canonical runner."
+            MIGRATION_DATABASE_URL="$NEON_MAIN_MIGRATOR_DATABASE_URL" bash scripts/db/migrate.sh
+            verify_state "post-migrate"
+
+            assertion_files=()
+            for file in apps/api/migrations/[0-9][0-9][0-9][0-9]_*.assertions.sql; do
+              [[ -f "$file" ]] || continue
+              version="$(basename "$file" | cut -c1-4)"
+              if (( 10#$version >= 22 )); then
+                assertion_files+=("$file")
+              fi
+            done
+
+            for required in 0022 0023 0024; do
+              found=false
+              for file in "${assertion_files[@]}"; do
+                [[ "$(basename "$file" | cut -c1-4)" == "$required" ]] && found=true
+              done
+              if [[ "$found" != "true" ]]; then
+                echo "NEON_MAIN_REQUIRED_ROLLBACK_SAFE_ASSERTION_MISSING: $required" >&2
+                exit 1
+              fi
+            done
+
+            for file in "${assertion_files[@]}"; do
+              if ! grep -Eq '^[[:space:]]*ROLLBACK[[:space:]]*;' "$file"; then
+                echo "NEON_MAIN_ASSERTION_NOT_ROLLBACK_SAFE: $file" >&2
+                exit 1
+              fi
+              echo "Running rollback-safe assertion: $(basename "$file")"
+              psql -X -v ON_ERROR_STOP=1 --dbname "$NEON_MAIN_MIGRATOR_DATABASE_URL" --file "$file"
+            done
+
+            {
+              echo "- Assertions: all rollback-safe migration assertions from 0022 onward passed."
+              echo "- Migration runner: `scripts/db/migrate.sh` completed; no baseline adoption was invoked."
+            } >> "$GITHUB_STEP_SUMMARY"
+          else
+            {
+              echo "- Mode: verify only; no DDL/DML, ownership changes or grants were executed."
+            } >> "$GITHUB_STEP_SUMMARY"
+          }

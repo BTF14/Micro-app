@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import app from "./index";
+import { buildInventoryReadQuery } from "./inventory-read";
 
 const organizationId = "11111111-2222-4333-8444-555555555555";
 const branchId = "22222222-3333-4444-8555-666666666666";
@@ -39,5 +40,32 @@ describe("inventory read route guards", () => {
     const response = await request("/api/orgs/" + organizationId + "/branches/" + branchId + "/warehouses/" + warehouseId + "/inventory");
     expect(response.status).toBe(401);
     expect(await response.json()).toMatchObject({ error: "UNAUTHENTICATED" });
+  });
+  it.each(["active_only=TRUE", "active_only=1", "active_only=", "sort=rank", "sort=Relevance", "sort=", "sort=relevance&cursor=00000000-0000-4000-8000-000000000001"])(
+    "rejects invalid active_only/sort values before database access (%s)", async (query) => {
+      const response = await request("/api/orgs/" + organizationId + "/branches/" + branchId + "/warehouses/" + warehouseId + "/inventory?" + query, "token");
+      expect(response.status).toBe(400);
+      expect(await response.json()).toMatchObject({ error: "INVALID_INVENTORY_QUERY" });
+    },
+  );
+  it("filters strictly active products while preserving zero-balance rows", () => {
+    const query = buildInventoryReadQuery({ organizationId, branchId, warehouseId, search: "", activeOnly: true, limit: 30, sort: "id", canReadCost: false });
+    expect(query.statement).toContain("p.is_active = true");
+    expect(query.statement).not.toContain("b.balance_version IS NOT NULL");
+    expect(query.statement).toContain("COALESCE(b.on_hand_quantity, 0)");
+    expect(query.statement).toContain("ORDER BY p.id ASC");
+  });
+  it("preserves legacy filtering and id cursor pagination by default", () => {
+    const query = buildInventoryReadQuery({ organizationId, branchId, warehouseId, search: "750123", activeOnly: false, cursor: "00000000-0000-4000-8000-000000000001", limit: 30, sort: "id", canReadCost: false });
+    expect(query.statement).toContain("(p.is_active = true OR b.balance_version IS NOT NULL)");
+    expect(query.statement).toContain("p.id > $");
+    expect(query.statement).toContain("ORDER BY p.id ASC");
+  });
+  it("orders relevance by exact barcode, exact SKU, then partial match and stable name/id", () => {
+    const query = buildInventoryReadQuery({ organizationId, branchId, warehouseId, search: "750123", activeOnly: true, limit: 30, sort: "relevance", canReadCost: false });
+    expect(query.statement.indexOf("WHEN p.barcode = $4")).toBeLessThan(query.statement.indexOf("WHEN lower(p.sku) = lower($4)"));
+    expect(query.statement).toContain("lower(p.name) ASC, p.id ASC");
+    expect(query.statement).toContain("p.barcode ILIKE $5");
+    expect(query.values).toEqual([organizationId, branchId, warehouseId, "750123", "%750123%", 31]);
   });
 });

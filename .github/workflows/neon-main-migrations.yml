@@ -309,7 +309,7 @@ jobs:
 
             {
               echo "- Assertions: all rollback-safe migration assertions from 0019 onward passed."
-              echo "- Migration runner: `scripts/db/migrate.sh` completed; no baseline adoption was invoked."
+              echo '- Migration runner: `scripts/db/migrate.sh` completed; no baseline adoption was invoked.'
             } >> "$GITHUB_STEP_SUMMARY"
           else
             {

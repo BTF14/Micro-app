@@ -54,7 +54,9 @@ async function addProductToCart(page: import("@playwright/test").Page): Promise<
 }
 
 async function completeSale(page: import("@playwright/test").Page, currency: "USD" | "VES"): Promise<void> {
-  await page.getByLabel("Moneda", { exact: true }).selectOption(currency);
+  const paymentCurrency = page.locator(".sales-payments-heading select");
+  await expect(paymentCurrency).toHaveCount(1);
+  await paymentCurrency.selectOption(currency);
   await page.getByRole("button", { name: "Monto exacto", exact: true }).click();
   const charge = page.getByRole("button", { name: "Cobrar venta", exact: true });
   await expect(charge).toBeEnabled();
@@ -74,6 +76,7 @@ async function completeSale(page: import("@playwright/test").Page, currency: "US
 }
 
 test("real catalog → inventory receipt → register → USD/VES POS → close → stale checkout rejection", async ({ page, context, browser, baseURL }) => {
+  test.setTimeout(180_000);
   if (!baseURL) throw new Error("Playwright baseURL is required.");
   await context.addCookies([{
     name: "microapp_session",
@@ -265,4 +268,4 @@ test("real catalog → inventory receipt → register → USD/VES POS → close 
   expect(requestPaths).toContain("/auth/me");
   expect([...requestPaths].some((path) => path.startsWith("/api/"))).toBe(true);
   expect([...requestOrigins]).toEqual([new URL(baseURL).origin]);
-}, 180_000);
+});

@@ -1,3 +1,32 @@
+## Turno 44 — watchdog BCV PR #364, CI exact-SHA y cierre de PR #363 (2026-11-14 UTC)
+
+**Base de integración:** `main` en `b7dccd6eb6a1fd7971c403c4c833013bf0bd44fc`. PR #364 apunta a esa base y su HEAD final validado es `ac272e8cff06029c03a13f72307b41c80a132603` (5 commits ahead / 0 behind; 13 archivos). El ODD se creó antes de los cambios de código.
+
+### PR #364 — implementación y evidencia exact-SHA
+
+- Umbral único `BCV_STALE_RUNNING_THRESHOLD_SECONDS = 300`; solo se clasifica stale cuando `last_outcome = 'running'` y `attempt_age_seconds >= 300`.
+- Cron horario `17 * * * *`: usa `env.DATABASE_URL`, SELECT sobre `public.bcv_sync_state` singleton y evento sanitizado `BCV_SYNC_STALE_RUNNING`. No muta `last_outcome`; el productor conserva la propiedad de escritura conforme a migración 0022.
+- Watchdog y `cleanupExpiredAuthRecords` tienen try/catch independientes; los fallos de cada subtrabajo no impiden ejecutar el otro.
+- Endpoint agrega `isStaleRunning` y `staleRunningThresholdSeconds`; un estado estancado devuelve `health: "attention"` y conserva `Cache-Control: no-store`.
+- UI administrativa advierte que la sincronización lleva al menos cinco minutos atascada y que checkout continúa bloqueado por seguridad. El umbral mostrado proviene del campo API.
+- **CI exacto del HEAD `ac272e8cff06029c03a13f72307b41c80a132603`: 16/16 check-runs SUCCESS y 13/13 workflow runs SUCCESS.** El job CI `verify` terminó 52/52 pasos SUCCESS; incluye el test PostgreSQL 18 nuevo de estado/watchdog con login real `microapp_runtime`, asserts de privilegio read-only, casos reciente/estancado/terminales, y aislamiento de cleanup.
+- Reviews formales: 0. Review threads: 0. Se hizo revisión manual del diff completo; no se afirma aprobación formal independiente.
+
+### PR #363 — cierre documental exacto
+
+- HEAD de PR: `4a1bc3280ac974932353e9e337d0799f161d4ffa`; merge SHA: `b7dccd6eb6a1fd7971c403c4c833013bf0bd44fc`.
+- PR-head: 18/18 check-runs y 10/10 workflow runs SUCCESS; CI `verify` 51/51 pasos SUCCESS.
+- Post-merge main: 13/13 check-runs y 9/9 push workflow runs SUCCESS.
+- AC-1..AC-7 están cerrados con evidencia en `odd/tasks/runtime-write-rate-limiting.md`; 0 reviews formales y 0 review threads, explícitamente documentados.
+
+### Estado global y pendientes de producción
+
+- PR #193 permanece OPEN e intacta; HEAD `ac57ab4f3415f82279b8a49c0befe09f8e3aec68`. Issue #53 permanece OPEN/P0; `PRODUCTION: NOT READY`.
+- PR #361 integró Cron BCV `0 22 * * MON-FRI` y validación TLS estricta.
+- PR #363 integró rate limiting runtime probado en PostgreSQL 18 efímero para OAuth, checkout y 11 endpoints de escritura.
+- La primera tasa BCV real persistida en Neon `main` después de una ventana programada válida `MON-FRI 22:00 UTC` sigue pendiente. También está pendiente verificar el enrutamiento externo de alertas en Cloudflare.
+- Sin Neon `main`, secretos, datos reales, cambios de roles/grants, configuración manual ni despliegues manuales.
+
 ## Turno 44 — watchdog BCV en PR #364 y cierre documental de PR #363 (2026-11-14 UTC)
 
 **Corte verificado:** `main` = `b7dccd6eb6a1fd7971c403c4c833013bf0bd44fc`. PR #364 está OPEN, no Draft, base `main`, HEAD de trabajo `910afb2b7735164c71d3d3931378cdabe35a205b`, 2 commits ahead / 0 behind. El PR incorpora el ODD antes de los cambios de código. La validación exact-SHA de CI sigue pendiente hasta que termine la ejecución del HEAD final.

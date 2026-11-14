@@ -105,11 +105,11 @@ async function seedRealDatabase(): Promise<{ fixture: TestFixture; runtimeUrl: s
     const organizationId = organization.rows[0]!.id;
     const owner = await admin.query<{ id: string }>(
       "INSERT INTO public.app_users (email, display_name, google_sub, email_verified_at) VALUES ($1, $2, $3, now()) RETURNING id::text AS id",
-      [ownerEmail, "E2E Owner", `e2e-owner-${suffix}`],
+      [ownerEmail, "Owner E2E", `e2e-owner-${suffix}`],
     );
     const cashier = await admin.query<{ id: string }>(
       "INSERT INTO public.app_users (email, display_name, google_sub, email_verified_at) VALUES ($1, $2, $3, now()) RETURNING id::text AS id",
-      [cashierEmail, "E2E Cashier", `e2e-cashier-${suffix}`],
+      [cashierEmail, "Cashier E2E", `e2e-cashier-${suffix}`],
     );
     const ownerId = owner.rows[0]!.id;
     const cashierId = cashier.rows[0]!.id;
@@ -178,8 +178,8 @@ async function seedRealDatabase(): Promise<{ fixture: TestFixture; runtimeUrl: s
       productSku,
       bcvRate,
       effectiveDate,
-      ownerDisplayName: "E2E Owner",
-      cashierDisplayName: "E2E Cashier",
+      ownerDisplayName: "Owner E2E",
+      cashierDisplayName: "Cashier E2E",
     };
     await writeFile(fixturePath!, JSON.stringify(fixture), { encoding: "utf8", mode: 0o600 });
     return { fixture, runtimeUrl: runtimeUrl!, frontendOrigin: frontendOrigin! };

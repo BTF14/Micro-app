@@ -1,7 +1,7 @@
 # ODD task: runtime-write-rate-limiting
 
 - Status: in progress
-- Issue / PR: Issue #53 (P0); PR pending
+- Issue / PR: Issue #53 (P0); PR #363
 - Owner / reviewer: BTF14 / technical agent
 - Started: 2026-11-14
 - Risk: critical
@@ -56,7 +56,7 @@ Excluded:
 |---|---|---|---|
 | Verify main, open PRs, Issue #53 and required operating docs | Current baseline and constraints | Live GitHub reads | completed |
 | Inspect existing limiter, handlers, tests and runtime grants | Reusable contract and test inventory | Source/docs inspection; identify all callsites | in progress |
-| Implement shared helper and route coverage | All 10 write endpoints protected | Unit + handler tests; inspect mutation order | pending |
+| Implement shared helper and route coverage | All 11 write endpoints protected | Unit + handler tests; inspect mutation order | pending |
 | Extend PostgreSQL 18 runtime integration coverage | All route scopes and fail-closed outcomes proven | Disposable PostgreSQL 18, runtime LOGIN, no Neon | pending |
 | Review complete diff and exact-SHA CI | Safe, isolated PR | CI, all check-runs/workflow runs, reviews and threads | pending |
 | Merge only if every gate passes | One integrated PR | Expected-head squash merge and post-merge checks | pending |

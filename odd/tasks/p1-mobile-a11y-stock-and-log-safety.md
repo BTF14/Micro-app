@@ -1,7 +1,7 @@
 # ODD task: P1 mobile accessibility, stock rejection and log safety
 
 - Status: in progress
-- Issue / PR: PR pending; branch `feat/p1-mobile-a11y-stock-log-safety-20261114`; PR #366 is already MERGED
+- Issue / PR: PR #367 OPEN; branch `feat/p1-mobile-a11y-stock-log-safety-20261114`; PR #366 is already MERGED
 - Owner / reviewer: repository owner / technical agent
 - Started: 2026-11-14
 - Risk: high
@@ -68,10 +68,10 @@ Excluded:
 
 ## Closure and handoff
 
-- Current branch HEAD: `fda9225eac84dbc0e5051df83ed9b212299af4c3` before the pending continuity refresh.
-- PR: pending; no PR opened yet.
+- Current branch HEAD: `2197cb47ee2a1654ccd27a86d65bc90737bef3ec`; PR #367 OPEN against `main` `366334ae75c966e4fada13afed964a7f4b557954`.
+- PR: #367 OPEN; HEAD `2197cb47ee2a1654ccd27a86d65bc90737bef3ec`.
 - Checks and exact outcomes: pending CI for the new P1 code.
 - Acceptance criteria met / unmet: AC-4 source audit and AC-6 #366 closure evidence complete; AC-1–AC-3 and AC-5 await CI; AC-7 documentation updated; AC-8 merge gate pending; AC-9 live state verified.
 - Limitations not verified: first real BCV rate persisted in Neon `main`; external alert delivery; human RPO/RTO; legal/fiscal approval.
 - Residual risks: Issue #53 P0 and production gates remain open.
-- Next step: review the complete diff, create one PR, and resolve all exact-HEAD CI findings before considering merge.
+- Next step: verify all required check-runs/workflow runs on this exact PR HEAD, review the complete diff/reviews/threads, fix demonstrated failures, then verify the final exact HEAD again before any squash merge.

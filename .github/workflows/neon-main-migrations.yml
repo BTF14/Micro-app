@@ -104,6 +104,7 @@ jobs:
             local state
             local applied_at
             local index
+            local last_applied_version=""
 
             local migration_files=()
             while IFS= read -r file; do
@@ -222,6 +223,7 @@ jobs:
             index=0
             while IFS='|' read -r version base checksum state applied_at; do
               [[ -z "$version" ]] && continue
+              last_applied_version="$version"
               index=$((index + 1))
               if [[ "$version" != "$(printf '%04d' "$index")" ]]; then
                 echo "NEON_MAIN_MIGRATION_LEDGER_NOT_CONTIGUOUS: $version" >&2
@@ -259,7 +261,7 @@ jobs:
               echo "## Neon main migration — $phase"
               echo "- Target identity: verified exact database, migrator login, branch and project."
               echo "- Connection: direct (non-pooler)."
-              echo "- Ledger: $applied applied / $pending pending; contiguous from 0001 through ${version:-none}."
+              echo "- Ledger: $applied applied / $pending pending; contiguous from 0001 through ${last_applied_version:-none}."
               echo "- Repository migration bundle: ${#migration_files[@]} contiguous migrations through $latest_version."
               echo "- Ownership: public relations, routines and enum/domain types are owned by microapp_migrator."
               echo "- Roles: runtime/migrator attributes, empty role memberships, database CONNECT and schema least-privilege checks passed."
@@ -287,7 +289,7 @@ jobs:
               fi
             done
 
-            for required in 0019 0022 0023 0024; do
+            for required in 0019 0022 0023 0024 0025; do
               found=false
               for file in "${assertion_files[@]}"; do
                 [[ "$(basename "$file" | cut -c1-4)" == "$required" ]] && found=true
@@ -315,4 +317,4 @@ jobs:
             {
               echo "- Mode: verify only; no DDL/DML, ownership changes or grants were executed."
             } >> "$GITHUB_STEP_SUMMARY"
-          }
+          fi

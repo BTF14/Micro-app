@@ -298,13 +298,14 @@ describe.skipIf(!databaseUrl)("inventory balance and ledger read APIs against Po
           Origin: "https://frontend.example",
           "Content-Type": "application/json",
           "Idempotency-Key": "cashier-denied-" + crypto.randomUUID(),
+          "CF-Connecting-IP": "198.51.100.107",
         },
         body: JSON.stringify({
           reason: "Authorization regression test",
           lines: [{ product_id: firstProductId, counted_quantity: "15.000" }],
         }),
       },
-    ), { DATABASE_URL: databaseUrl, FRONTEND_ORIGIN: "https://frontend.example" });
+    ), { DATABASE_URL: databaseUrl, FRONTEND_ORIGIN: "https://frontend.example", GOOGLE_CLIENT_SECRET: "test-google-client-secret" });
     expect(countDenied.status).toBe(403);
   });
 

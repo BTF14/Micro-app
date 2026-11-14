@@ -243,6 +243,11 @@ jobs:
             done < "$ledger_file"
             rm -f "$ledger_file"
 
+            if (( index == 0 )); then
+              echo "NEON_MAIN_MIGRATION_LEDGER_EMPTY: refusing to infer a baseline." >&2
+              return 1
+            fi
+
             applied="$index"
             pending=$(( ${#migration_files[@]} - applied ))
             if (( pending < 0 )); then

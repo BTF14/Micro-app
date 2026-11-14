@@ -84,10 +84,11 @@ describe.skipIf(!databaseUrl)("catalog product updates against PostgreSQL", () =
           Cookie: "microapp_session=" + fixture.token,
           Origin: origin,
           "Content-Type": "application/json",
+          "CF-Connecting-IP": "198.51.100.102",
         },
         body: JSON.stringify(payload),
       }),
-      { DATABASE_URL: databaseUrl, FRONTEND_ORIGIN: "https://frontend.example" },
+      { DATABASE_URL: databaseUrl, FRONTEND_ORIGIN: "https://frontend.example", GOOGLE_CLIENT_SECRET: "test-google-client-secret" },
     );
   }
 

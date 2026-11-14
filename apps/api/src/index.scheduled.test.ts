@@ -24,9 +24,11 @@ const productionEnv = {
 const bcvCron = { cron: "0 22 * * 1-5" } as ScheduledController;
 
 describe("BCV scheduled failure reporting", () => {
-  it("ships the isolated BCV Worker with synchronization disabled by default", () => {
-    expect(bcvWorkerConfig).toContain('BCV_SYNC_ENABLED = "false"');
-    expect(bcvWorkerConfig).not.toContain('BCV_SYNC_ENABLED = "true"');
+  it("ships the isolated BCV Worker enabled only in production without workers.dev", () => {
+    expect(bcvWorkerConfig).toContain('BCV_SYNC_ENABLED = "true"');
+    expect(bcvWorkerConfig).toContain('APP_ENV = "production"');
+    expect(bcvWorkerConfig).toContain("workers_dev = false");
+    expect(bcvWorkerConfig).not.toContain('BCV_SYNC_ENABLED = "false"');
   });
 
   afterEach(() => {

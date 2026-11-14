@@ -101,6 +101,19 @@ async function expectNoHorizontalOverflow(page: import("@playwright/test").Page,
   expect(dimensions.body, `${surface}: body overflow ${JSON.stringify(dimensions)}`).toBeLessThanOrEqual(dimensions.viewport);
 }
 
+async function navigateByKeyboard(page: import("@playwright/test").Page, name: string): Promise<void> {
+  const toggle = page.locator(".mobile-nav-toggle");
+  await expect(toggle).toBeVisible();
+  if (await toggle.getAttribute("aria-expanded") !== "true") {
+    await toggle.focus();
+    await page.keyboard.press("Enter");
+  }
+  await expect(toggle).toHaveAttribute("aria-expanded", "true");
+  const navigation = page.getByRole("button", { name, exact: true });
+  await navigation.focus();
+  await page.keyboard.press("Enter");
+}
+
 async function addProductToCart(page: import("@playwright/test").Page): Promise<void> {
   const search = page.getByLabel("Buscar producto", { exact: true });
   await search.fill(fixture.productSku);
@@ -191,14 +204,7 @@ test("real catalog → inventory receipt → register → USD/VES POS → close 
   const productCreateResponse = page.waitForResponse((response) =>
     new URL(response.url()).pathname.endsWith("/catalog") && response.request().method() === "POST",
   );
-  const mobileMenu = page.getByRole("button", { name: "Menú", exact: true });
-  await expect(mobileMenu).toBeVisible();
-  await mobileMenu.focus();
-  await page.keyboard.press("Enter");
-  await expect(mobileMenu).toHaveAttribute("aria-expanded", "true");
-  const productsNavigation = page.getByRole("button", { name: "Productos", exact: true });
-  await productsNavigation.focus();
-  await page.keyboard.press("Enter");
+  await navigateByKeyboard(page, "Productos");
   await expect(page.getByRole("heading", { name: "Catálogo" })).toBeVisible();
   await expectNoHorizontalOverflow(page, "mobile catalog");
   await page.getByRole("button", { name: "Nuevo producto", exact: true }).click();
@@ -219,9 +225,7 @@ test("real catalog → inventory receipt → register → USD/VES POS → close 
   await expectNoHorizontalOverflow(page, "mobile catalog search");
 
   // 2. Receive inventory through the real receipt UI and database function.
-  const inventoryNavigation = page.getByRole("button", { name: "Inventario", exact: true });
-  await inventoryNavigation.focus();
-  await page.keyboard.press("Enter");
+  await navigateByKeyboard(page, "Inventario");
   const receiptForm = page.locator("form.inventory-operation-form").first();
   await expect(receiptForm.getByRole("heading", { name: "Recibir mercancía" })).toBeVisible();
   await receiptForm.getByLabel("Cantidad", { exact: true }).fill("5");
@@ -283,9 +287,7 @@ test("real catalog → inventory receipt → register → USD/VES POS → close 
   expect(currentShift.body.shift).toBeNull();
 
   // 3. Open a real cashier shift on the seeded branch/register.
-  const shiftsNavigation = cashierPage.getByRole("button", { name: "Caja y turnos", exact: true });
-  await shiftsNavigation.focus();
-  await cashierPage.keyboard.press("Enter");
+  await navigateByKeyboard(cashierPage, "Caja y turnos");
   await expect(cashierPage.getByRole("heading", { name: "Turnos de caja" })).toBeVisible();
   await expectNoHorizontalOverflow(cashierPage, "mobile register shifts");
   const branchSelect = cashierPage.locator("select").filter({
@@ -306,9 +308,7 @@ test("real catalog → inventory receipt → register → USD/VES POS → close 
   await expect(cashierPage.getByText("Turno abierto correctamente. La apertura quedó registrada en auditoría.")).toBeVisible();
 
   // 4. Two real atomic checkouts exercise both supported settlement currencies.
-  const salesNavigation = cashierPage.getByRole("button", { name: "Ventas", exact: true });
-  await salesNavigation.focus();
-  await cashierPage.keyboard.press("Enter");
+  await navigateByKeyboard(cashierPage, "Ventas");
   await expect(cashierPage.getByRole("heading", { name: "Ventas" })).toBeVisible();
   await expectNoHorizontalOverflow(cashierPage, "mobile POS");
   await addProductToCart(cashierPage);
@@ -336,8 +336,7 @@ test("real catalog → inventory receipt → register → USD/VES POS → close 
   const stockRacePage = await cashierContext.newPage();
   await stockRacePage.goto("/");
   await expect(stockRacePage.getByRole("heading", { name: `Hola, ${fixture.cashierDisplayName.split(" ")[0]}.` })).toBeVisible();
-  await stockRacePage.getByRole("button", { name: "Ventas", exact: true }).focus();
-  await stockRacePage.keyboard.press("Enter");
+  await navigateByKeyboard(stockRacePage, "Ventas");
   await addProductToCart(stockRacePage);
   await completeSale(stockRacePage, "USD");
   expect(await readStock(stockRacePage)).toMatchObject({ status: 200, onHand: "2.000", available: "2.000" });
@@ -365,7 +364,7 @@ test("real catalog → inventory receipt → register → USD/VES POS → close 
   const closer = await cashierContext.newPage();
   await closer.goto("/");
   await expect(closer.getByRole("heading", { name: `Hola, ${fixture.cashierDisplayName.split(" ")[0]}.` })).toBeVisible();
-  await closer.getByRole("button", { name: "Caja y turnos", exact: true }).click();
+  await navigateByKeyboard(closer, "Caja y turnos");
   await expect(closer.getByText("Turno abierto", { exact: true })).toBeVisible();
   await closer.getByLabel("Conteo final USD", { exact: true }).fill("60.0000");
   await closer.getByLabel("Conteo final VES", { exact: true }).fill("1401.23");
@@ -379,7 +378,7 @@ test("real catalog → inventory receipt → register → USD/VES POS → close 
   await expect(closer.getByText("Turno cerrado y registrado en auditoría.")).toBeVisible();
   await closer.reload();
   await expect(closer.getByText("Sesión activa", { exact: true })).toBeVisible();
-  await closer.getByRole("button", { name: "Caja y turnos", exact: true }).click();
+  await navigateByKeyboard(closer, "Caja y turnos");
   await expect(closer.getByText("Sin turno abierto", { exact: true })).toBeVisible();
 
   // 6. The stale cashier POS page reaches the real checkout API; the closed shift rejects it.
@@ -398,7 +397,7 @@ test("real catalog → inventory receipt → register → USD/VES POS → close 
 
   await cashierPage.reload();
   await expect(cashierPage.getByText("Sesión activa", { exact: true })).toBeVisible();
-  await cashierPage.getByRole("button", { name: "Ventas", exact: true }).click();
+  await navigateByKeyboard(cashierPage, "Ventas");
   await expect(cashierPage.getByRole("heading", { name: "Abre tu turno antes de vender" })).toBeVisible();
   await cashierContext.close();
 

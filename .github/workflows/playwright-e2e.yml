@@ -49,7 +49,11 @@ jobs:
           test -d "${PLAYWRIGHT_BROWSERS_PATH:-/ms-playwright}"
           test -n "$(find "${PLAYWRIGHT_BROWSERS_PATH:-/ms-playwright}" -maxdepth 1 -type d -name 'chromium-*' -print -quit)"
       - name: Run browser tests
-        run: /tmp/micro-app-playwright/node_modules/.bin/playwright test --config apps/web/playwright.config.ts
+        run: >-
+          /tmp/micro-app-playwright/node_modules/.bin/playwright test
+          --config apps/web/playwright.config.ts
+          apps/web/e2e/auth.spec.ts
+          apps/web/e2e/register-shifts.spec.ts
       - name: Upload Playwright report and traces on failure
         if: failure()
         uses: actions/upload-artifact@v7

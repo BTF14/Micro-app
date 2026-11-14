@@ -298,7 +298,7 @@ describe.skipIf(!databaseUrl)("inventory balance and ledger read APIs against Po
           Origin: "https://frontend.example",
           "Content-Type": "application/json",
           "Idempotency-Key": "cashier-denied-" + crypto.randomUUID(),
-          "CF-Connecting-IP": "198.51.100.107",
+          "CF-Connecting-IP": "198.51.100.222",
         },
         body: JSON.stringify({
           reason: "Authorization regression test",
@@ -306,7 +306,7 @@ describe.skipIf(!databaseUrl)("inventory balance and ledger read APIs against Po
         }),
       },
     ), { DATABASE_URL: databaseUrl, FRONTEND_ORIGIN: "https://frontend.example", GOOGLE_CLIENT_SECRET: "test-google-client-secret" });
-    expect(countDenied.status).toBe(403);
+    expect(countDenied.status, await countDenied.clone().text()).toBe(403);
   });
 
   it("paginates inventory balances with a stable product cursor", async () => {

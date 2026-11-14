@@ -44,11 +44,11 @@ function caracasDate(now = new Date()): string {
   return `${part("year")}-${part("month")}-${part("day")}`;
 }
 
-async function assertDirectLogin(client: Client, expectedRole: string): Promise<void> {
+async function assertDirectLogin(client: Client, expectedRole: string, expectedSuperuser = false): Promise<void> {
   const result = await client.query<{ role: string; is_superuser: boolean }>(
     "SELECT current_user AS role, rolsuper AS is_superuser FROM pg_catalog.pg_roles WHERE rolname = current_user",
   );
-  if (result.rows[0]?.role !== expectedRole || result.rows[0]?.is_superuser !== false) {
+  if (result.rows[0]?.role !== expectedRole || result.rows[0]?.is_superuser !== expectedSuperuser) {
     throw new Error(`E2E_DATABASE_LOGIN_CONTRACT_INVALID:${expectedRole}`);
   }
 }
@@ -67,7 +67,7 @@ async function seedRealDatabase(): Promise<{ fixture: TestFixture; runtimeUrl: s
   const bcvSync = new Client({ connectionString: bcvSyncUrl });
   try {
     await Promise.all([admin.connect(), runtime.connect(), bcvSync.connect()]);
-    await assertDirectLogin(admin, "microapp");
+    await assertDirectLogin(admin, "microapp", true);
     await assertDirectLogin(runtime, "microapp_runtime");
     await assertDirectLogin(bcvSync, "microapp_bcv_sync");
 

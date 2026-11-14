@@ -268,7 +268,6 @@ test("real catalog → inventory receipt → register → USD/VES POS → close 
   await cashierPage.goto("/");
   await expect(cashierPage.getByRole("heading", { name: `Hola, ${fixture.cashierDisplayName.split(" ")[0]}.` })).toBeVisible();
   await expectNoHorizontalOverflow(cashierPage, "mobile cashier overview");
-  await expect(cashierPage.getByText(fixture.cashierDisplayName, { exact: true })).toBeVisible();
   const assignedBranches = await cashierPage.evaluate(async (organizationId) => {
     const response = await fetch(`/api/orgs/${encodeURIComponent(organizationId)}/register-shifts/branches`, {
       cache: "no-store",

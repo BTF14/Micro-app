@@ -151,6 +151,7 @@ jobs:
           VITE_API_BASE_URL: ""
         run: pnpm --filter @micro-app/web build
       - name: Run the real Hono API and full-stack Chromium commerce flow
+        shell: bash
         env:
           E2E_FIXTURE_PATH: ${{ runner.temp }}/real-fullstack-commerce-fixture.json
           E2E_API_PID_FILE: ${{ runner.temp }}/real-fullstack-commerce-api.pid

@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState, type FormEvent } from "react";
 import { formatDecimal, parseNumeric } from "@micro-app/money";
 import { apiRequest } from "./auth";
 import "./catalog.css";
@@ -75,6 +75,7 @@ export default function InventoryPanel({ organizationId, canManageInventory }: {
   const sequence = useRef(0);
 
   const base = `/api/orgs/${encodeURIComponent(organizationId)}`;
+
   const fail = (reason: unknown, fallback: string) => setError(reason instanceof Error ? reason.message : fallback);
 
   useEffect(() => {
@@ -145,7 +146,7 @@ export default function InventoryPanel({ organizationId, canManageInventory }: {
   }, [branchId, warehouseId, organizationId]);
 
   useEffect(() => {
-    setItems([]); setNextCursor(null);
+    setItems([]); setNextCursor(null); setReceiptProductId(""); setCountProductId("");
     void fetchBalances();
   }, [fetchBalances]);
 
@@ -164,16 +165,17 @@ export default function InventoryPanel({ organizationId, canManageInventory }: {
 
   useEffect(() => { void fetchReceipts(); }, [fetchReceipts]);
 
-  async function submitReceipt(event: React.FormEvent<HTMLFormElement>) {
+  async function submitReceipt(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    if (!branchId || !warehouseId || !receiptProductId) return;
+    const selectedProductId = receiptProductId || manageableProducts[0]?.product_id || "";
+    if (!branchId || !warehouseId || !selectedProductId) return;
     setReceiptBusy(true); setError(""); setNotice("");
     try {
       const path = `${base}/branches/${encodeURIComponent(branchId)}/warehouses/${encodeURIComponent(warehouseId)}/receipts`;
       const result = await apiRequest<{ id: string; replayed: boolean }>(path, {
         method: "POST",
         headers: { "Idempotency-Key": crypto.randomUUID() },
-        body: JSON.stringify({ reason: receiptReason, lines: [{ product_id: receiptProductId, quantity: receiptQuantity, unit_cost_usd: receiptCost }] }),
+        body: JSON.stringify({ reason: receiptReason, lines: [{ product_id: selectedProductId, quantity: receiptQuantity, unit_cost_usd: receiptCost }] }),
       });
       setNotice(result.replayed ? "La recepción ya estaba registrada." : "Recepción registrada y existencias actualizadas.");
       setReceiptReason("");
@@ -183,16 +185,17 @@ export default function InventoryPanel({ organizationId, canManageInventory }: {
     } finally { setReceiptBusy(false); }
   }
 
-  async function submitPhysicalCount(event: React.FormEvent<HTMLFormElement>) {
+  async function submitPhysicalCount(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    if (!branchId || !warehouseId || !countProductId) return;
+    const selectedProductId = countProductId || manageableProducts[0]?.product_id || "";
+    if (!branchId || !warehouseId || !selectedProductId) return;
     setCountBusy(true); setError(""); setNotice("");
     try {
       const prefix = `${base}/branches/${encodeURIComponent(branchId)}/warehouses/${encodeURIComponent(warehouseId)}`;
       const created = await apiRequest<{ id: string }>(`${prefix}/counts/physical`, {
         method: "POST",
         headers: { "Idempotency-Key": crypto.randomUUID() },
-        body: JSON.stringify({ reason: countReason, lines: [{ product_id: countProductId, counted_quantity: countQuantity }] }),
+        body: JSON.stringify({ reason: countReason, lines: [{ product_id: selectedProductId, counted_quantity: countQuantity }] }),
       });
       await apiRequest(`${prefix}/counts/${encodeURIComponent(created.id)}/confirm`, { method: "POST" });
       setNotice("Conteo físico confirmado y existencias actualizadas.");

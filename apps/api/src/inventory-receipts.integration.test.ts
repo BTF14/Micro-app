@@ -11,6 +11,7 @@ vi.mock("@neondatabase/serverless", async () => {
 const app = (await import("./index")).default;
 const databaseUrl = (globalThis as typeof globalThis & { process?: { env?: Record<string,string|undefined> } }).process?.env?.DATABASE_URL;
 const databaseUrlAdmin = (globalThis as typeof globalThis & { process?: { env?: Record<string,string|undefined> } }).process?.env?.DATABASE_URL_ADMIN ?? databaseUrl;
+const runtimeUrl = (globalThis as typeof globalThis & { process?: { env?: Record<string,string|undefined> } }).process?.env?.RUNTIME_DATABASE_URL ?? databaseUrl;
 const isCi = Boolean((globalThis as typeof globalThis & { process?: { env?: Record<string,string|undefined> } }).process?.env?.CI);
 if (isCi && !databaseUrl) throw new Error("DATABASE_URL is required in CI; refusing to skip inventory receipt integration tests.");
 
@@ -54,7 +55,7 @@ describe.skipIf(!databaseUrl)("inventory receipt API against PostgreSQL 18", () 
   beforeAll(async () => {
     admin = new Client({ connectionString: databaseUrlAdmin });
     await admin.connect();
-    runtime = new Client({ connectionString: databaseUrl });
+    runtime = new Client({ connectionString: runtimeUrl });
     await runtime.connect();
     const suffix = crypto.randomUUID().replace(/-/g, "").slice(0, 12);
     const org = await admin.query<{ id: string }>("INSERT INTO organizations(name,slug) VALUES($1,$2) RETURNING id", ["Receipt " + suffix, "receipt-" + suffix]);

@@ -131,6 +131,8 @@ jobs:
         run: pnpm --filter @micro-app/api exec vitest run src/catalog-update.integration.test.ts
       - name: PostgreSQL inventory count integration tests
         run: pnpm --filter @micro-app/api exec vitest run src/inventory-counts.integration.test.ts
+      - name: PostgreSQL inventory receipt integration tests (runtime LOGIN)
+        run: DATABASE_URL="$RUNTIME_DATABASE_URL" DATABASE_URL_ADMIN="$ADMIN_DATABASE_URL" RUNTIME_DATABASE_URL="$RUNTIME_DATABASE_URL" pnpm --filter @micro-app/api exec vitest run src/inventory-receipts.integration.test.ts
       - name: PostgreSQL inventory read integration tests
         run: pnpm --filter @micro-app/api exec vitest run src/inventory-read.integration.test.ts
       - name: PostgreSQL atomic sales checkout integration tests

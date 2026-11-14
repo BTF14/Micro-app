@@ -20,8 +20,8 @@ async function flush() {
   await act(async () => { await new Promise((resolve) => setTimeout(resolve, 0)); });
 }
 
-async function renderPanel() {
-  await act(async () => { root.render(<InventoryPanel organizationId={ORG} />); });
+async function renderPanel(canManageInventory = false) {
+  await act(async () => { root.render(<InventoryPanel organizationId={ORG} canManageInventory={canManageInventory} />); });
   await flush();
   await flush();
   await flush();
@@ -82,6 +82,17 @@ describe("inventory panel", () => {
     expect(container.textContent).toContain("US$ 4,25");
     expect(container.textContent).toContain("Stock bajo");
     expect(container.textContent).toContain("Normal");
+  });
+
+  it("shows receipt and physical count operations only when inventory management is authorized", async () => {
+    vi.mocked(fetch)
+      .mockResolvedValueOnce(jsonResponse({ branches: [{ id: BRANCH_A, name: "Central", slug: "central" }] }))
+      .mockResolvedValueOnce(jsonResponse({ warehouses: [{ id: WAREHOUSE, code: "main", name: "Principal", is_active: true }] }))
+      .mockResolvedValueOnce(jsonResponse({ items: [balance()], nextCursor: null, limit: 100 }))
+      .mockResolvedValueOnce(jsonResponse({ receipts: [] }));
+    await renderPanel(true);
+    expect(container.textContent).toContain("Recibir mercancía");
+    expect(container.textContent).toContain("Conteo físico / ajuste");
   });
 
   it("explains when the member has no branch assigned without calling other endpoints", async () => {

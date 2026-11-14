@@ -170,7 +170,7 @@ test("real catalog → inventory receipt → register → USD/VES POS → close 
   await expect(closer.getByRole("heading", { name: `Hola, ${fixture.userDisplayName.split(" ")[0]}.` })).toBeVisible();
   await closer.getByRole("button", { name: "Caja y turnos", exact: true }).click();
   await expect(closer.getByText("Turno abierto", { exact: true })).toBeVisible();
-  await closer.getByLabel("Conteo final USD", { exact: true }).fill("48.0000");
+  await closer.getByLabel("Conteo final USD", { exact: true }).fill("60.0000");
   await closer.getByLabel("Conteo final VES", { exact: true }).fill("1401.23");
   await closer.getByRole("button", { name: "Revisar cierre", exact: true }).click();
   const closeShiftPromise = closer.waitForResponse((response) =>

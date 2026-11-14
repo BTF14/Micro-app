@@ -152,12 +152,11 @@ jobs:
         run: pnpm --filter @micro-app/web build
       - name: Run the real Hono API and full-stack Chromium commerce flow
         shell: bash
-        env:
-          E2E_FIXTURE_PATH: ${{ runner.temp }}/real-fullstack-commerce-fixture.json
-          E2E_API_PID_FILE: ${{ runner.temp }}/real-fullstack-commerce-api.pid
         run: |
           set -euo pipefail
-          API_LOG="$RUNNER_TEMP/real-fullstack-api.log"
+          export E2E_FIXTURE_PATH="/tmp/real-fullstack-commerce-fixture.json"
+          export E2E_API_PID_FILE="/tmp/real-fullstack-commerce-api.pid"
+          API_LOG="$GITHUB_WORKSPACE/.real-fullstack-api.log"
           pnpm --filter @micro-app/api exec vitest run --pool=forks --poolOptions.forks.singleFork src/real-fullstack-e2e-server.manual.test.ts >"$API_LOG" 2>&1 &
           VITEST_PID=$!
           cleanup() {
@@ -207,6 +206,6 @@ jobs:
           path: |
             apps/web/playwright-report/
             apps/web/test-results/
-            ${{ runner.temp }}/real-fullstack-api.log
+            .real-fullstack-api.log
           if-no-files-found: ignore
           retention-days: 7

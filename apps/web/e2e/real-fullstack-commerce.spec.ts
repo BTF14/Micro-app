@@ -71,7 +71,7 @@ async function completeSale(page: import("@playwright/test").Page, currency: "US
   }
 }
 
-test("real catalog → inventory receipt → register → USD/VES POS → close → stale checkout rejection", async ({ page, context, baseURL }) => {
+test("real catalog → inventory receipt → register → USD/VES POS → close → stale checkout rejection", async ({ page, context, browser, baseURL }) => {
   if (!baseURL) throw new Error("Playwright baseURL is required.");
   await context.addCookies([{
     name: "microapp_session",
@@ -135,7 +135,7 @@ test("real catalog → inventory receipt → register → USD/VES POS → close 
 
   // The cashier is a separate persisted identity: the database opening trigger
   // requires organization role cashier, while catalog/receipt writes require owner.
-  const cashierContext = await page.context().browser()!.newContext();
+  const cashierContext = await browser.newContext({ baseURL });
   await cashierContext.addCookies([{
     name: "microapp_session",
     value: fixture.cashierSessionToken,

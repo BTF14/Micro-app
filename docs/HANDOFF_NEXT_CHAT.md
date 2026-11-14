@@ -1,3 +1,32 @@
+## Turno 43 — PR #361 integrada y verificación post-merge BCV (2026-11-14 UTC)
+
+**Corte GitHub verificado:** `main` = `1a19e2da05dd9d25af957a2289bcd1082d8f2ca0`.
+
+### PR #361 — merge y CI exactos
+
+- PR #361 (`fix/bcv-weekday-cron-and-ci-tls-20261114`) se fusionó por **Squash and Merge** después de revalidar en vivo el HEAD exacto `179c0baba768fdf244697bb96785e6548d16649f`, base `a0907a92e98647779d50d683efa8156eba21f529`, `mergeable=true`, `mergeable_state=clean`, 17/17 check-runs SUCCESS y 14/14 workflow runs SUCCESS. No había reviews formales ni review threads.
+- **Merge SHA / main:** `1a19e2da05dd9d25af957a2289bcd1082d8f2ca0`. GitHub confirma PR #361 cerrada y `merged=true`; la referencia `main` apunta al mismo SHA.
+- **Post-merge exact-SHA:** 14/14 check-runs SUCCESS y 10/10 workflow runs SUCCESS; sin checks pendientes ni fallidos.
+- **Cloudflare automático tras merge:** `Workers Builds: micro-app-bcv-sync`, `Workers Builds: micro-app-api` y `Cloudflare Pages` completaron SUCCESS en el merge SHA. El check de `micro-app-bcv-sync` apareció y terminó SUCCESS; por tanto el build/deploy integrado se ejecutó automáticamente, sin despliegue manual del propietario ni del agente. Esto es evidencia del proveedor de build/deploy, no una prueba de ejecución programada ni de persistencia de datos.
+- Los workflows post-merge incluyeron CI, PostgreSQL/migration validation, Playwright E2E, Semgrep, Security, secret-history scan, ODD/docs y conectividad BCV strict TLS; todos SUCCESS en el SHA indicado.
+
+### Cambio integrado
+
+- Cron BCV alineado a lunes–viernes 22:00 UTC: `0 22 * * MON-FRI`, en configuración, handler y pruebas. Se conserva una regresión negativa para la expresión numérica anterior `1-5`.
+- Certificado público intermedio Sectigo DV R36 fijado por SHA-256 `8C54C334B66BA4E426772AF4A3F9136C19A1AEC729FDB28C535C07A5A4EF22E0`; validación fail-closed en CI.
+- `NODE_EXTRA_CA_CERTS` se limita al proceso Node del test manual de conectividad. No se desactiva TLS ni se modifica el trust store/configuración TLS del runtime de Cloudflare Workers.
+- La conectividad BCV strict TLS ya había pasado en los dos eventos de la PR; el workflow post-merge también terminó SUCCESS.
+
+### Límites y gates todavía abiertos
+
+- **No declarar cerrada la persistencia BCV real:** no se verificó la primera ejecución programada posterior al merge ni la fila real de `exchange_rates` y `bcv_sync_state` en Neon `main`. La próxima ejecución elegible es un día laborable a las 22:00 UTC. Neon `main` no fue consultado ni modificado en este bloque.
+- Los checks de build/deploy no demuestran por sí solos que el Cron haya ejecutado ni que la tasa se haya persistido.
+- PR #193 se verificó OPEN, no fusionada, HEAD `ac57ab4f3415f82279b8a49c0befe09f8e3aec68`; no se modificó.
+- Issue #53 se verificó OPEN con etiquetas `security` y `P0`; **`PRODUCTION: NOT READY`**. Este merge no reevalúa ni cierra los demás gates globales de producción.
+- No se tocaron Neon, secretos, configuración manual de Cloudflare/Google Cloud, datos reales, PR #193 ni Issue #53. No se hizo despliegue manual.
+
+---
+
 ## Turno 42 — cierre de higiene y verificaciones live (2026-11-14 UTC)
 
 **Corte GitHub verificado:** `main` = `f9b23392629b89dda229353c5f02f731f964bc5a`.

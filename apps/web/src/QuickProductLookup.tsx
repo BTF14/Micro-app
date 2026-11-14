@@ -81,8 +81,10 @@ export default function QuickProductLookup({
   const [items, setItems] = useState<QuickLookupProduct[]>([]);
   const [nextCursor, setNextCursor] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [hasSearched, setHasSearched] = useState(false);
   const [error, setError] = useState("");
   const requestSequence = useRef(0);
+  const searchInputRef = useRef<HTMLInputElement>(null);
   const debounceTimer = useRef<number | null>(null);
 
   const base = `/api/orgs/${encodeURIComponent(organizationId)}`;
@@ -149,11 +151,15 @@ export default function QuickProductLookup({
         if (activeWarehouses.length === 1) {
           setWarehouseId(activeWarehouses[0]!.id);
         } else if (activeWarehouses.length > 1) {
-          const savedWarehouseId = window.localStorage.getItem(
-            `micro-app:quick-lookup:warehouse:${organizationId}:${branchId}`,
-          );
-          if (savedWarehouseId && activeWarehouses.some((warehouse) => warehouse.id === savedWarehouseId)) {
-            setWarehouseId(savedWarehouseId);
+          try {
+            const savedWarehouseId = window.localStorage.getItem(
+              `micro-app:quick-lookup:warehouse:${organizationId}:${branchId}`,
+            );
+            if (savedWarehouseId && activeWarehouses.some((warehouse) => warehouse.id === savedWarehouseId)) {
+              setWarehouseId(savedWarehouseId);
+            }
+          } catch {
+            // Storage may be disabled by browser privacy settings; selection remains manual.
           }
         }
       })
@@ -171,7 +177,11 @@ export default function QuickProductLookup({
 
   useEffect(() => {
     if (warehouseStorageKey && warehouses.length > 1 && warehouseId) {
-      window.localStorage.setItem(warehouseStorageKey, warehouseId);
+      try {
+        window.localStorage.setItem(warehouseStorageKey, warehouseId);
+      } catch {
+        // The lookup remains usable when persistent storage is unavailable.
+      }
     }
   }, [warehouseId, warehouseStorageKey, warehouses.length]);
 
@@ -181,6 +191,7 @@ export default function QuickProductLookup({
 
     const requestId = ++requestSequence.current;
     setLoading(true);
+    setHasSearched(false);
     setError("");
     setItems([]);
     setNextCursor(null);
@@ -199,6 +210,7 @@ export default function QuickProductLookup({
       if (requestId !== requestSequence.current) return;
       setItems(result.items);
       setNextCursor(result.nextCursor);
+      setHasSearched(true);
     } catch (reason) {
       if (requestId === requestSequence.current) {
         setError(reason instanceof Error ? reason.message : "No se pudo consultar el precio y las existencias.");
@@ -216,6 +228,7 @@ export default function QuickProductLookup({
       requestSequence.current += 1;
       setItems([]);
       setNextCursor(null);
+      setHasSearched(false);
       setLoading(false);
       setError("");
       return;
@@ -241,6 +254,7 @@ export default function QuickProductLookup({
     setQuery("");
     setItems([]);
     setNextCursor(null);
+    setHasSearched(false);
     setError("");
     setLoading(false);
   };
@@ -257,6 +271,10 @@ export default function QuickProductLookup({
     setWarehouseId(value);
     clearSearch();
   };
+
+  useEffect(() => {
+    if (warehouseId) searchInputRef.current?.focus();
+  }, [warehouseId]);
 
   const canConvert = exchangeRateStatus === "current" && exchangeRate !== null;
 
@@ -333,6 +351,7 @@ export default function QuickProductLookup({
         <div className="quick-lookup-input-row">
           <input
             id="quick-product-search"
+            ref={searchInputRef}
             type="search"
             enterKeyHint="search"
             autoComplete="off"
@@ -340,7 +359,7 @@ export default function QuickProductLookup({
             placeholder="Escanea un código o escribe nombre / SKU"
             value={query}
             disabled={!warehouseId}
-            onChange={(event) => setQuery(event.target.value)}
+            onChange={(event) => { setHasSearched(false); setQuery(event.target.value); }}
             onKeyDown={(event) => {
               if (event.key === "Escape") clearSearch();
             }}
@@ -354,7 +373,7 @@ export default function QuickProductLookup({
       </form>
 
       {loading && <p className="quick-lookup-status" role="status">Buscando productos…</p>}
-      {!loading && !error && query.trim() && items.length === 0 && (
+      {!loading && hasSearched && !error && query.trim() && items.length === 0 && (
         <p className="quick-lookup-status" role="status">No se encontraron productos activos.</p>
       )}
 

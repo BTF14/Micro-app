@@ -108,7 +108,7 @@ jobs:
         run: bash scripts/db/test_verify_backup_artifact.sh
 
   restore-smoke:
-    name: Synthetic encrypted restore — BCV projection (0001–0024)
+    name: Synthetic encrypted restore — BCV projection (0001–0025)
     runs-on: ubuntu-latest
     timeout-minutes: 20
     env:

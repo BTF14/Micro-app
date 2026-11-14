@@ -49,9 +49,9 @@ ADOPT_BASELINE_CONFIRM=adopt-0002 bash scripts/db/adopt-baseline.sh apply | grep
 export MIGRATION_DATABASE_URL="$bcv_migrator_url"
 bash scripts/db/migrate.sh
 
-# BCV profile: all 24 migrations, automatic creator edges, and the full 0022-0024 assertion chain.
+# BCV profile: all 25 migrations, automatic creator edges, and the full 0022-0025 assertion chain.
 test "$(psql -X -At -v ON_ERROR_STOP=1 --dbname "$bcv_admin_url" -c \
-  "SELECT count(*)=24 AND bool_and(state='applied') FROM public.schema_migrations")" = "t"
+  "SELECT count(*)=25 AND bool_and(state='applied') FROM public.schema_migrations")" = "t"
 test "$(psql -X -At -v ON_ERROR_STOP=1 --dbname "$bcv_admin_url" -c \
   "SELECT count(*)=2 FROM pg_catalog.pg_auth_members m
    JOIN pg_catalog.pg_roles granted_role ON granted_role.oid=m.roleid
@@ -179,4 +179,4 @@ test "$(psql -X -At -v ON_ERROR_STOP=1 --dbname "$bcv_admin_url" -c \
   "SELECT count(*) FROM organizations WHERE slug='bcv-membership-sentinel'")" = "1"
 test "$(psql -X -At -v ON_ERROR_STOP=1 --dbname "$main_admin_url" -c \
   "SELECT count(*) FROM organizations WHERE slug='main-membership-sentinel'")" = "1"
-echo "PASS: PostgreSQL 18 managed-owner role-membership contract (BCV 0001-0024; main 0001-0016; positive and fail-closed cases)"
+echo "PASS: PostgreSQL 18 managed-owner role-membership contract (BCV 0001-0025; main 0001-0016; positive and fail-closed cases)"

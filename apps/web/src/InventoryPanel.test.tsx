@@ -129,7 +129,7 @@ describe("inventory panel", () => {
     await act(async()=>{setter?.call(input,"750123");input.dispatchEvent(new Event("input",{bubbles:true}));});
     await act(async()=>{container.querySelector<HTMLFormElement>(".catalog-search")?.dispatchEvent(new Event("submit",{bubbles:true,cancelable:true}));});
     await flush();
-    expect(String(vi.mocked(fetch).mock.calls[3]?.[0])).toContain("q=750123");
+    expect(String(vi.mocked(fetch).mock.calls[4]?.[0])).toContain("q=750123");
     expect(container.textContent).toContain("Café molido");
     expect(container.textContent).toContain("750123");
     expect([...container.querySelectorAll("option")].some((option)=>option.textContent?.includes("Café molido"))).toBe(true);

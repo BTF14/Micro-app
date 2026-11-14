@@ -1,18 +1,15 @@
 # Readiness para producción — corte vigente 2026-11-14
 
-## Estado vigente — P1 validado en CI; PR #367 pendiente de merge
+## Estado vigente — P1 integrado y verificado post-merge
 
-- `main` verificada: `366334ae75c966e4fada13afed964a7f4b557954`.
-- PR #366 MERGED. HEAD exacto `b078a02608b807a2ecdd0b59e95d8017ecd2f553`: 16/16 check-runs SUCCESS y 12/12 workflow runs SUCCESS. Snapshot al integrar `main`: 14/14 check-runs SUCCESS y 9/9 workflow runs SUCCESS.
-- Relectura posterior de ese mismo SHA: 17 check-run records (16 SUCCESS, 1 CANCELLED) y 12 workflow runs (11 SUCCESS, 1 CANCELLED). La cancelación corresponde a una ejecución posterior duplicada de validación de base de datos; existe una ejecución anterior equivalente con SUCCESS. No se describe el conjunto ampliado como totalmente verde.
-- PR #367 OPEN. HEAD de implementación validado `4285d183a53ba43c4f471ca242102389c8697080`: 17/17 check-runs SUCCESS y 13/13 workflow runs SUCCESS. CI `verify` 52/52 pasos SUCCESS; migraciones, SAST, seguridad, secretos, dependencia y validación ODD SUCCESS.
-- Playwright E2E: autenticación Chromium SUCCESS y flujo full-stack real Hono + PostgreSQL 18 efímero **1/1 test SUCCESS** en 9.6 segundos, bajo proyecto móvil 390×844.
-- La parte P1 validada en CI incluye: checkout real por encima del stock vigente con HTTP 409 y alerta accesible; balance y ledger inalterados tras el rechazo; viewport móvil sin overflow bloqueante en catálogo, recepción, POS y recibo; navegación Tab/Enter, nombres accesibles, foco visible/restaurado y regiones de error/estado; auditoría de diez llamadas productivas `console.*` y prueba estática deny-by-default que pasó CI.
-- El test full-stack no usa `page.route`, mocks de `/api/*` ni endpoints de test en runtime. Las conexiones PostgreSQL se limitan a la base efímera de CI.
-- La reconciliación documental actualiza PR #367 y avanza la punta desde el HEAD de implementación validado; los checks deben volver a verificarse sobre el HEAD vivo final antes de merge.
+- Merge de implementación PR #367 a `main`: `46a24f3d617bc07f4cf47931b0bece4cccfb5440`; PR #367 MERGED.
+- HEAD final de PR auditado: `e467c636506158b8f3be4361033e1e40473eccdd`; 17/17 check-runs SUCCESS y 13/13 workflow runs SUCCESS. CI `verify` 52/52 pasos SUCCESS; Playwright autenticación Chromium y full-stack móvil 1/1 test SUCCESS.
+- Post-merge sobre `46a24f3d617bc07f4cf47931b0bece4cccfb5440`: **14/14 check-runs SUCCESS y 9/9 workflow runs SUCCESS**. Incluye Pages/Workers, CI, full-stack E2E, migraciones, seguridad, ODD y análisis estático.
+- P1 integrado y validado en CI: checkout real con stock obsoleto devuelve HTTP 409 y muestra alerta accesible; balance y ledger permanecen idénticos; viewport 390×844 sin overflow bloqueante en catálogo, recepción, POS y recibo; navegación Tab/Enter, nombres accesibles, foco visible/restaurado y regiones de error/estado; auditoría de diez llamadas productivas `console.*` y regresión estática deny-by-default.
+- La suite full-stack usa Hono real y PostgreSQL 18 efímero; no usa `page.route`, mocks de `/api/*` ni endpoints de test en runtime. Los checks de preview/build no equivalen a pruebas con datos reales.
 - PR #193 permanece OPEN e intacta. Issue #53 permanece OPEN/P0.
 
-**Estado de producción: NOT READY.** CI y PostgreSQL efímero no certifican producción ni sustituyen los gates pendientes.
+**Estado de producción: NOT READY.** La finalización de P1 en CI y post-merge no sustituye los gates externos.
 
 ## Gates bloqueantes para producción — vigentes
 

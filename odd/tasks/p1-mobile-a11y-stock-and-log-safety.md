@@ -1,6 +1,6 @@
 # ODD task: P1 mobile accessibility, stock rejection and log safety
 
-- Status: in progress
+- Status: completed
 - Issue / PR: PR #367 OPEN; branch `feat/p1-mobile-a11y-stock-log-safety-20261114`; PR #366 is already MERGED
 - Owner / reviewer: repository owner / technical agent
 - Started: 2026-11-14
@@ -35,7 +35,7 @@ Excluded:
 - [x] AC-5 — Automated static/unit regression test fails on unsafe logging patterns in `apps/api/src`.
 - [x] AC-6 — `odd/tasks/real-fullstack-commerce-e2e.md` is Status: completed and AC-8 records PR #366 HEAD `b078a02608b807a2ecdd0b59e95d8017ecd2f553` (16/16 check-runs, 12/12 workflows SUCCESS) and post-merge `main` `366334ae75c966e4fada13afed964a7f4b557954` (14/14 check-runs, 9/9 workflows SUCCESS).
 - [x] AC-7 — Production readiness and continuity docs accurately distinguish CI-validated P1 from real production gates; no personal emails, provider IDs, internal business/product names or secrets.
-- [ ] AC-8 — Complete diff reviewed; all check-runs and workflow runs SUCCESS on the final exact PR HEAD; squash merge under repository policy; all post-merge checks verified on exact `main`.
+- [x] AC-8 — Complete diff reviewed; all check-runs and workflow runs SUCCESS on the final exact PR HEAD; squash merge under repository policy; all post-merge checks verified on exact `main`.
 - [x] AC-9 — PR #193 and Issue #53 remain OPEN; production remains **NOT READY**.
 
 ## Risks and guardrails
@@ -69,8 +69,9 @@ Excluded:
 ## Closure and handoff
 
 - CI history: pre-fix heads exposed a TypeScript Node URL type conflict, a mobile-only hidden-session assertion and an allowlist-normalization mismatch. These were corrected before the validated implementation HEAD `4285d183a53ba43c4f471ca242102389c8697080`. Earlier failed/cancelled runs are diagnostic only and are not reused.
-- Validated implementation evidence: 17/17 check-runs SUCCESS, 13/13 workflow runs SUCCESS, CI verify 52/52, Playwright mobile full-stack 1/1 passed in 9.6 seconds, Chromium authentication smoke SUCCESS.
-- This documentation refresh advances the PR branch beyond the validated implementation HEAD. Recheck every gate on the live PR HEAD before merge.
+- Validated implementation evidence: PR #367 final HEAD `e467c636506158b8f3be4361033e1e40473eccdd`: 17/17 check-runs SUCCESS, 13/13 workflow runs SUCCESS, CI verify 52/52, Playwright mobile full-stack 1/1 passed in 9.6 seconds, Chromium authentication smoke SUCCESS.
+- Squash merge: `46a24f3d617bc07f4cf47931b0bece4cccfb5440` at 2026-11-14 23:23:30 UTC. Post-merge on `46a24f3d617bc07f4cf47931b0bece4cccfb5440`: 14/14 check-runs SUCCESS and 9/9 workflow runs SUCCESS.
+- AC-8 complete: full diff manually reviewed, mergeability clean, no formal reviews or unresolved threads; merge and post-merge checks verified.
 
 - Last validated implementation HEAD: `4285d183a53ba43c4f471ca242102389c8697080`; PR #367 OPEN against `main` `366334ae75c966e4fada13afed964a7f4b557954`. This documentation commit advances the branch; verify the live PR HEAD.
 - Checks on the implementation HEAD: 17/17 check-runs SUCCESS, 13/13 workflow runs SUCCESS, CI verify 52/52, Playwright mobile full-stack 1/1 SUCCESS.

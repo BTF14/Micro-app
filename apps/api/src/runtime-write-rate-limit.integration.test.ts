@@ -41,7 +41,7 @@ const routeScopes = [
   "organization:branch-membership:update",
 ];
 
-function context(scope: string) {
+function context() {
   const c = {
     req: { header: (name: string) => name === "CF-Connecting-IP" ? clientIp : undefined },
     env: { DATABASE_URL: databaseUrl, GOOGLE_CLIENT_SECRET: pepper },
@@ -73,7 +73,7 @@ const suite = describe.skipIf(!databaseUrl)("runtime write rate limiting against
     const key = `write:${uniqueScope}:ip:${clientIp}`;
     cleanupKeys.push(key);
 
-    const allowed = await enforceRuntimeWriteRateLimit(context(uniqueScope), uniqueScope, 1);
+    const allowed = await enforceRuntimeWriteRateLimit(context(), uniqueScope, 1);
     expect(allowed).toBeNull();
 
     const limited = await enforceRuntimeWriteRateLimit(context(uniqueScope), uniqueScope, 1);
@@ -85,14 +85,14 @@ const suite = describe.skipIf(!databaseUrl)("runtime write rate limiting against
     const siblingScope = `${scope}:sibling:${crypto.randomUUID()}`;
     const siblingKey = `write:${siblingScope}:ip:${clientIp}`;
     cleanupKeys.push(siblingKey);
-    expect(await enforceRuntimeWriteRateLimit(context(siblingScope), siblingScope, 1)).toBeNull();
+    expect(await enforceRuntimeWriteRateLimit(context(), siblingScope, 1)).toBeNull();
   });
 
   it("stores only HMAC digests and saturates the counter at max+1", async () => {
     const scope = `integration:privacy:${crypto.randomUUID()}`;
     const rawKey = `write:${scope}:ip:${clientIp}`;
     cleanupKeys.push(rawKey);
-    await enforceRuntimeWriteRateLimit(context(scope), scope, 1);
+    await enforceRuntimeWriteRateLimit(context(), scope, 1);
     await enforceRuntimeWriteRateLimit(context(scope), scope, 1);
 
     const digest = await hashAuthRateLimitKey(rawKey, pepper);

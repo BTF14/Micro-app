@@ -9,6 +9,7 @@ type BalanceItem = {
   product_id: string;
   is_active: boolean;
   sku: string;
+  barcode?: string | null;
   name: string;
   unit: string;
   minimum_stock: string;
@@ -62,15 +63,16 @@ export default function InventoryPanel({ organizationId, canManageInventory }: {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
+  const [inventorySearch, setInventorySearch] = useState("");
   const [receipts, setReceipts] = useState<ReceiptItem[]>([]);
   const [receiptReason, setReceiptReason] = useState("");
   const [receiptProductId, setReceiptProductId] = useState("");
-  const [receiptQuantity, setReceiptQuantity] = useState("1.000");
-  const [receiptCost, setReceiptCost] = useState("0.0000");
+  const [receiptQuantity, setReceiptQuantity] = useState("1");
+  const [receiptCost, setReceiptCost] = useState("0.00");
   const [receiptBusy, setReceiptBusy] = useState(false);
   const [countReason, setCountReason] = useState("");
   const [countProductId, setCountProductId] = useState("");
-  const [countQuantity, setCountQuantity] = useState("0.000");
+  const [countQuantity, setCountQuantity] = useState("0");
   const [countBusy, setCountBusy] = useState(false);
   const sequence = useRef(0);
 
@@ -125,12 +127,13 @@ export default function InventoryPanel({ organizationId, canManageInventory }: {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [branchId]);
 
-  const fetchBalances = useCallback(async (cursor?: string) => {
+  const fetchBalances = useCallback(async (cursor?: string, searchTerm = "") => {
     if (!branchId || !warehouseId) return;
     const requestId = ++sequence.current;
     setLoading(true); setError("");
     const query = new URLSearchParams({ limit: "100" });
     if (cursor) query.set("cursor", cursor);
+    if (searchTerm.trim()) query.set("q", searchTerm.trim());
     try {
       const result = await apiRequest<BalancePage>(
         `${base}/branches/${encodeURIComponent(branchId)}/warehouses/${encodeURIComponent(warehouseId)}/inventory?${query.toString()}`,
@@ -244,16 +247,23 @@ export default function InventoryPanel({ organizationId, canManageInventory }: {
               Almacén: <strong>{warehouses[0]?.name}</strong>
             </span>
           ) : null}
-          <button className="catalog-refresh" type="button" onClick={() => void fetchBalances()} disabled={loading || !warehouseId}>
+          <button className="catalog-refresh" type="button" onClick={() => void fetchBalances(undefined, inventorySearch)} disabled={loading || !warehouseId}>
             {loading ? "Actualizando…" : "Actualizar"}
           </button>
         </div>
       </div>
 
+      <form className="catalog-search" role="search" onSubmit={(event) => { event.preventDefault(); setReceiptProductId(""); setCountProductId(""); void fetchBalances(undefined, inventorySearch); }}>
+        <label className="catalog-search-label" htmlFor="inventory-quick-search">Buscar en este almacén</label>
+        <input id="inventory-quick-search" type="search" enterKeyHint="search" maxLength={120} placeholder="Buscar por nombre, SKU o código de barras…" value={inventorySearch} onChange={(event) => setInventorySearch(event.target.value)} />
+        <button className="catalog-search-submit" type="submit" disabled={loading}>Buscar</button>
+        {inventorySearch && <button className="catalog-search-clear" type="button" onClick={() => { setInventorySearch(""); setReceiptProductId(""); setCountProductId(""); void fetchBalances(); }}>Limpiar</button>}
+      </form>
       {error && <p className="catalog-error" role="alert">{error}</p>}
       {notice && <p className="catalog-success" role="status">{notice}</p>}
       {canManageInventory && warehouseId && manageableProducts.length > 0 && (
         <div className="inventory-operations">
+          <p className="inventory-batch-note">El catálogo y el inventario no tienen un límite total de 1.000 productos. Cada envío o tanda admite hasta 500 líneas (MAX_LINES = 500). Si necesitas registrar más de 500 productos, hazlo en doble tanda de hasta 500 productos cada una.</p>
           <form className="inventory-operation-form" onSubmit={submitReceipt}>
             <h2>Recibir mercancía</h2>
             <label>Producto
@@ -262,10 +272,10 @@ export default function InventoryPanel({ organizationId, canManageInventory }: {
               </select>
             </label>
             <label>Cantidad
-              <input required inputMode="decimal" pattern="(?:0|[1-9][0-9]{0,10})(?:\.[0-9]{1,3})?" value={receiptQuantity} onChange={(event) => setReceiptQuantity(event.target.value)} />
+              <input required inputMode="decimal" pattern="(?:0|[1-9][0-9]{0,10})(?:\.[0-9]{1,3})?" title="Usa punto (.) y máximo 3 decimales, ej. 2.5" value={receiptQuantity} onChange={(event) => setReceiptQuantity(event.target.value)} />
             </label>
             <label>Costo unitario USD
-              <input required inputMode="decimal" pattern="(?:0|[1-9][0-9]{0,9})(?:\.[0-9]{1,4})?" value={receiptCost} onChange={(event) => setReceiptCost(event.target.value)} />
+              <input required inputMode="decimal" pattern="(?:0|[1-9][0-9]{0,9})(?:\.[0-9]{1,4})?" title="Usa punto (.) y máximo 4 decimales, ej. 1.05" value={receiptCost} onChange={(event) => setReceiptCost(event.target.value)} />
             </label>
             <label>Motivo
               <input required maxLength={500} value={receiptReason} onChange={(event) => setReceiptReason(event.target.value)} />
@@ -280,7 +290,7 @@ export default function InventoryPanel({ organizationId, canManageInventory }: {
               </select>
             </label>
             <label>Cantidad contada
-              <input required inputMode="decimal" pattern="(?:0|[1-9][0-9]{0,10})(?:\.[0-9]{1,3})?" value={countQuantity} onChange={(event) => setCountQuantity(event.target.value)} />
+              <input required inputMode="decimal" pattern="(?:0|[1-9][0-9]{0,10})(?:\.[0-9]{1,3})?" title="Usa punto (.) y máximo 3 decimales, ej. 2.5" value={countQuantity} onChange={(event) => setCountQuantity(event.target.value)} />
             </label>
             <label>Motivo
               <input required maxLength={500} value={countReason} onChange={(event) => setCountReason(event.target.value)} />
@@ -310,8 +320,8 @@ export default function InventoryPanel({ organizationId, canManageInventory }: {
         <div className="catalog-empty" role="status">Cargando inventario…</div>
       ) : !error && warehouseId && items.length === 0 ? (
         <div className="catalog-empty">
-          <strong>No hay productos con existencias registradas.</strong>
-          <span>Los conteos de apertura y físicos aparecerán aquí una vez confirmados.</span>
+          <strong>{inventorySearch ? "No se encontraron productos." : "No hay productos con existencias registradas."}</strong>
+          <span>{inventorySearch ? "Prueba con otro nombre, SKU o código de barras." : "Los conteos de apertura y físicos aparecerán aquí una vez confirmados."}</span>
         </div>
       ) : items.length > 0 ? (
         <>
@@ -320,7 +330,7 @@ export default function InventoryPanel({ organizationId, canManageInventory }: {
             <span>Máximo 100 por página</span>
           </div>
           <div className="catalog-table-wrap">
-            <table className="catalog-table">
+            <table className="catalog-table inventory-table">
               <thead>
                 <tr>
                   <th scope="col">Producto</th>
@@ -336,7 +346,7 @@ export default function InventoryPanel({ organizationId, canManageInventory }: {
                   <tr key={item.product_id}>
                     <td>
                       <strong>{item.name}</strong>
-                      <span className="catalog-product-meta">{item.sku}{item.unit ? ` · ${item.unit}` : ""}</span>
+                      <span className="catalog-product-meta">{item.sku}{item.barcode ? ` · ${item.barcode}` : ""}{item.unit ? ` · ${item.unit}` : ""}</span>
                     </td>
                     <td className="catalog-money">{formatQuantity(item.on_hand_quantity)}</td>
                     <td className="catalog-money">{formatQuantity(item.reserved_quantity)}</td>
@@ -360,7 +370,7 @@ export default function InventoryPanel({ organizationId, canManageInventory }: {
           </div>
           {nextCursor && (
             <div className="catalog-pagination">
-              <button type="button" className="catalog-load-more" onClick={() => void fetchBalances(nextCursor)} disabled={loading}>
+              <button type="button" className="catalog-load-more" onClick={() => void fetchBalances(nextCursor, inventorySearch)} disabled={loading}>
                 {loading ? "Cargando…" : "Cargar más productos"}
               </button>
             </div>

@@ -98,6 +98,44 @@ describe("inventory panel", () => {
     expect(container.textContent).toContain("Conteo físico / ajuste");
   });
 
+  it("searches inventory by barcode and shows a no-results message", async () => {
+    vi.mocked(fetch)
+      .mockResolvedValueOnce(jsonResponse({branches:[{id:BRANCH_A,name:"Central",slug:"central"}]}))
+      .mockResolvedValueOnce(jsonResponse({warehouses:[{id:WAREHOUSE,code:"main",name:"Principal",is_active:true}]}))
+      .mockResolvedValueOnce(jsonResponse({items:[],nextCursor:null,limit:100}))
+      .mockResolvedValueOnce(jsonResponse({receipts:[]}))
+      .mockResolvedValueOnce(jsonResponse({items:[],nextCursor:null,limit:100}));
+    await renderPanel();
+    const input=container.querySelector<HTMLInputElement>("#inventory-quick-search");
+    if(!input)throw new Error("Inventory search missing");
+    const setter=Object.getOwnPropertyDescriptor(HTMLInputElement.prototype,"value")?.set;
+    await act(async()=>{setter?.call(input,"750123");input.dispatchEvent(new Event("input",{bubbles:true}));});
+    await act(async()=>{container.querySelector<HTMLFormElement>(".catalog-search")?.dispatchEvent(new Event("submit",{bubbles:true,cancelable:true}));});
+    await flush();
+    expect(String(vi.mocked(fetch).mock.calls[4]?.[0])).toContain("q=750123");
+    expect(container.textContent).toContain("No se encontraron productos.");
+  });
+
+  it("returns a barcode search result for quick receipt/count product selection", async () => {
+    vi.mocked(fetch)
+      .mockResolvedValueOnce(jsonResponse({branches:[{id:BRANCH_A,name:"Central",slug:"central"}]}))
+      .mockResolvedValueOnce(jsonResponse({warehouses:[{id:WAREHOUSE,code:"main",name:"Principal",is_active:true}]}))
+      .mockResolvedValueOnce(jsonResponse({items:[],nextCursor:null,limit:100}))
+      .mockResolvedValueOnce(jsonResponse({receipts:[]}))
+      .mockResolvedValueOnce(jsonResponse({items:[balance({barcode:"750123",name:"Café molido",sku:"CAF-01"})],nextCursor:null,limit:100}));
+    await renderPanel(true);
+    const input=container.querySelector<HTMLInputElement>("#inventory-quick-search");
+    if(!input)throw new Error("Inventory search missing");
+    const setter=Object.getOwnPropertyDescriptor(HTMLInputElement.prototype,"value")?.set;
+    await act(async()=>{setter?.call(input,"750123");input.dispatchEvent(new Event("input",{bubbles:true}));});
+    await act(async()=>{container.querySelector<HTMLFormElement>(".catalog-search")?.dispatchEvent(new Event("submit",{bubbles:true,cancelable:true}));});
+    await flush();
+    expect(String(vi.mocked(fetch).mock.calls[4]?.[0])).toContain("q=750123");
+    expect(container.textContent).toContain("Café molido");
+    expect(container.textContent).toContain("750123");
+    expect([...container.querySelectorAll("option")].some((option)=>option.textContent?.includes("Café molido"))).toBe(true);
+  });
+
   it("explains when the member has no branch assigned without calling other endpoints", async () => {
     vi.mocked(fetch).mockResolvedValueOnce(jsonResponse({ branches: [] }));
     await renderPanel();

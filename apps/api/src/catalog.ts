@@ -37,6 +37,7 @@ export function buildCatalogQuery(
   organizationId: string,
   cursor: string | undefined,
   pageSize: number,
+  search?: string,
 ): CatalogQuery {
   // Keep the SQL projection tied to the same central policy used by route authorization.
   const canReadCost = authorizeCommercialOperation(role, "catalog.read_costs");
@@ -45,17 +46,20 @@ export function buildCatalogQuery(
     "id, is_active, sku, barcode, name, description, unit, price_usd::text AS price_usd" +
     (canReadCost ? ", cost_usd::text AS cost_usd" : "");
 
-  const statement = cursor
-    ? "SELECT " + columns +
-      " FROM products WHERE organization_id = $1 AND id > $2" +
-      " ORDER BY id ASC LIMIT $3"
-    : "SELECT " + columns +
-      " FROM products WHERE organization_id = $1" +
-      " ORDER BY id ASC LIMIT $2";
-
-  const values = cursor
-    ? [organizationId, cursor, pageSize + 1]
-    : [organizationId, pageSize + 1];
+  const normalizedSearch = search?.trim() ?? "";
+  const escapedSearch = normalizedSearch.replace(/[\\%_]/g, (character) => "\\" + character);
+  const values: unknown[] = [organizationId];
+  const filters: string[] = [];
+  if (normalizedSearch) {
+    values.push(normalizedSearch, `%${escapedSearch}%`);
+    filters.push("(barcode = $2 OR lower(sku) = lower($2) OR name ILIKE $3 ESCAPE '\\' OR sku ILIKE $3 ESCAPE '\\' OR barcode ILIKE $3 ESCAPE '\\')");
+  }
+  if (cursor) { values.push(cursor); filters.push(`id > $${values.length}`); }
+  values.push(pageSize + 1);
+  const statement = "SELECT " + columns + " FROM products WHERE " +
+    ["organization_id = $1", ...filters].join(" AND ") +
+    (normalizedSearch ? " ORDER BY CASE WHEN barcode = $2 OR lower(sku) = lower($2) THEN 0 ELSE 1 END, id ASC" : " ORDER BY id ASC") +
+    ` LIMIT $${values.length}`;
 
   return { statement, values, canReadCost };
 }
@@ -84,6 +88,8 @@ export function registerCatalogRoutes(app: Hono<{ Bindings: Bindings }>): void {
 
     const pageSize = parsePageSize(c.req.query("limit"));
     const cursor = c.req.query("cursor");
+    const search = c.req.query("q")?.trim() ?? "";
+    if (search.length > 120) return c.json({ error: "INVALID_CATALOG_QUERY", message: "La búsqueda no puede superar 120 caracteres." }, 400);
     if (pageSize === null || (cursor !== undefined && !UUID_PATTERN.test(cursor))) {
       return c.json(
         { error: "INVALID_CATALOG_QUERY", message: "Los parámetros de paginación no son válidos." },
@@ -115,7 +121,7 @@ export function registerCatalogRoutes(app: Hono<{ Bindings: Bindings }>): void {
 
           // Do not select cost_usd at all for Cashier. Do not select stock,
           // stock_quantity, branch or register data in this catalog-only phase.
-          const query = buildCatalogQuery(tenant.role, tenant.organizationId, cursor, pageSize);
+          const query = buildCatalogQuery(tenant.role, tenant.organizationId, cursor, pageSize, search);
           const queryResult = await transaction.query<CatalogRow>(query.statement, query.values);
           const hasMore = queryResult.rows.length > pageSize;
           const pageRows = queryResult.rows.slice(0, pageSize);

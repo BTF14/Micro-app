@@ -1,5 +1,5 @@
 import { useState, type FormEvent } from "react";
-import { parseNumeric } from "@micro-app/money";
+import { formatMoneyForDisplay, parseNumeric } from "@micro-app/money";
 import { apiRequest } from "./auth";
 
 type CatalogProduct = {
@@ -40,9 +40,9 @@ function initialDraft(product?: CatalogProduct): ProductDraft {
     name: product?.name ?? "",
     description: product?.description ?? "",
     unit: product?.unit ?? "unidad",
-    cost_usd: product?.cost_usd ?? "0.0000",
-    price_usd: product?.price_usd ?? "",
-    minimum_stock: product ? "" : "0.000",
+    cost_usd: product?.cost_usd ? formatMoneyForDisplay(product.cost_usd) : "0.00",
+    price_usd: product?.price_usd ? formatMoneyForDisplay(product.price_usd) : "",
+    minimum_stock: product ? "" : "0",
     is_active: product?.is_active ?? true,
   };
 }
@@ -148,17 +148,17 @@ export default function ProductForm({ organizationId, product, onCancel, onSaved
         </label>
         <label>
           Precio USD
-          <input value={draft.price_usd} onChange={(event) => update("price_usd", event.target.value)} inputMode="decimal" autoComplete="off" placeholder="0.0000" required />
-          <span className="product-field-hint">Hasta 4 decimales. Ejemplo: 23.8500</span>
+          <input value={draft.price_usd} onChange={(event) => update("price_usd", event.target.value)} inputMode="decimal" autoComplete="off" placeholder="0.00" required />
+          <span className="product-field-hint">Ejemplo: 23.85 (hasta 4 decimales si hace falta)</span>
         </label>
         <label>
           Costo USD
-          <input value={draft.cost_usd} onChange={(event) => update("cost_usd", event.target.value)} inputMode="decimal" autoComplete="off" placeholder="0.0000" required />
-          <span className="product-field-hint">Hasta 4 decimales.</span>
+          <input value={draft.cost_usd} onChange={(event) => update("cost_usd", event.target.value)} inputMode="decimal" autoComplete="off" placeholder="0.00" required />
+          <span className="product-field-hint">Ejemplo: 10.50 (hasta 4 decimales si hace falta).</span>
         </label>
         <label>
           Stock mínimo
-          <input value={draft.minimum_stock} onChange={(event) => update("minimum_stock", event.target.value)} inputMode="decimal" autoComplete="off" placeholder="0.000" required={!product} />
+          <input value={draft.minimum_stock} onChange={(event) => update("minimum_stock", event.target.value)} inputMode="decimal" autoComplete="off" placeholder="0" required={!product} />
           <span className="product-field-hint">{product ? "Hasta 3 decimales. Déjalo vacío para conservar el mínimo actual." : "Cantidad con hasta 3 decimales."}</span>
         </label>
         {product && (

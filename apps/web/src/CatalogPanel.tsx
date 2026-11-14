@@ -63,11 +63,13 @@ export default function CatalogPanel({
   const [nextCursor, setNextCursor] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [searchText, setSearchText] = useState("");
+  const [activeSearch, setActiveSearch] = useState("");
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [editingProduct, setEditingProduct] = useState<CatalogProduct | null>(null);
   const requestSequence = useRef(0);
 
-  const fetchPage = useCallback(async (cursor?: string, append = false) => {
+  const fetchPage = useCallback(async (cursor?: string, append = false, searchTerm = "") => {
     const requestId = ++requestSequence.current;
     if (!organizationId) {
       setItems([]);
@@ -80,6 +82,7 @@ export default function CatalogPanel({
     setError("");
     const query = new URLSearchParams({ limit: "100" });
     if (cursor) query.set("cursor", cursor);
+    if (searchTerm.trim()) query.set("q", searchTerm.trim());
 
     try {
       const result = await apiRequest<CatalogResponse>(
@@ -121,7 +124,7 @@ export default function CatalogPanel({
               Nuevo producto
             </button>
           )}
-          <button className="catalog-refresh" type="button" onClick={() => void fetchPage()} disabled={loading}>
+          <button className="catalog-refresh" type="button" onClick={() => void fetchPage(undefined, false, activeSearch)} disabled={loading}>
             {loading ? "Actualizando…" : "Actualizar"}
           </button>
         </div>
@@ -148,10 +151,17 @@ export default function CatalogPanel({
           onSaved={() => {
             setShowCreateForm(false);
             setEditingProduct(null);
-            void fetchPage();
+            void fetchPage(undefined, false, activeSearch);
           }}
         />
       )}
+
+      <form className="catalog-search" role="search" onSubmit={(event) => { event.preventDefault(); const term = searchText.trim(); setActiveSearch(term); void fetchPage(undefined, false, term); }}>
+        <label className="catalog-search-label" htmlFor="catalog-quick-search">Buscar productos</label>
+        <input id="catalog-quick-search" type="search" enterKeyHint="search" maxLength={120} placeholder="Buscar por nombre, SKU o código de barras…" value={searchText} onChange={(event) => setSearchText(event.target.value)} />
+        <button className="catalog-search-submit" type="submit" disabled={loading}>Buscar</button>
+        {activeSearch && <button className="catalog-search-clear" type="button" onClick={() => { setSearchText(""); setActiveSearch(""); void fetchPage(); }}>Limpiar</button>}
+      </form>
 
       <div className="catalog-summary">
         <span>{items.length} {items.length === 1 ? "producto cargado" : "productos cargados"}</span>
@@ -162,8 +172,8 @@ export default function CatalogPanel({
         <div className="catalog-empty" role="status">Cargando catálogo…</div>
       ) : !error && items.length === 0 ? (
         <div className="catalog-empty">
-          <strong>El catálogo todavía está vacío.</strong>
-          <span>Cuando registres productos, aparecerán aquí con sus precios exactos.</span>
+          <strong>{activeSearch ? "No se encontraron productos." : "El catálogo todavía está vacío."}</strong>
+          <span>{activeSearch ? "Prueba con otro nombre, SKU o código de barras." : "Cuando registres productos, aparecerán aquí con sus precios exactos."}</span>
         </div>
       ) : items.length > 0 ? (
         <>
@@ -184,11 +194,11 @@ export default function CatalogPanel({
                   <tr key={item.id}>
                     <td>
                       <strong>{item.name}</strong>
-                      <span className="catalog-product-meta">{item.sku}{item.unit ? ` · ${item.unit}` : ""}</span>
+                      <span className="catalog-product-meta">{item.sku}{item.barcode ? ` · ${item.barcode}` : ""}{item.unit ? ` · ${item.unit}` : ""}</span>
                     </td>
-                    <td className="catalog-money">US$ {formatUsd(item.price_usd)}</td>
+                    <td className="catalog-money"><span className="catalog-price-usd">US$ {formatUsd(item.price_usd)}</span></td>
                     <td className="catalog-money">
-                      {canConvert ? `Bs. ${formatVes(item.price_usd, exchangeRate!)}` : "—"}
+                      {canConvert ? <span className="catalog-price-ves">Bs. {formatVes(item.price_usd, exchangeRate!)}</span> : <span className="catalog-price-unavailable">Tasa BCV no validada</span>}
                     </td>
                     {canReadCosts && (
                       <td className="catalog-money">
@@ -218,7 +228,7 @@ export default function CatalogPanel({
           </div>
           {nextCursor && (
             <div className="catalog-pagination">
-              <button type="button" className="catalog-load-more" onClick={() => void fetchPage(nextCursor, true)} disabled={loading}>
+              <button type="button" className="catalog-load-more" onClick={() => void fetchPage(nextCursor, true, activeSearch)} disabled={loading}>
                 {loading ? "Cargando…" : "Cargar más productos"}
               </button>
             </div>

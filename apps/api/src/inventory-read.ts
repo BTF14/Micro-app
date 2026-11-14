@@ -45,6 +45,7 @@ type InventoryBalanceRow = {
   product_id: string;
   is_active: boolean;
   sku: string;
+  barcode: string | null;
   name: string;
   unit: string;
   price_usd: string;
@@ -83,6 +84,8 @@ export function registerInventoryReadRoutes(app: Hono<{ Bindings: Bindings }>): 
 
     const limit = parsePageSize(c.req.query("limit"));
     const cursor = c.req.query("cursor");
+    const search = c.req.query("q")?.trim() ?? "";
+    if (search.length > 120) return c.json({ error: "INVALID_INVENTORY_QUERY", message: "La búsqueda no puede superar 120 caracteres." }, 400);
     if (limit === null || (cursor !== undefined && !UUID_PATTERN.test(cursor))) {
       return c.json({ error: "INVALID_INVENTORY_QUERY", message: "Los parámetros de consulta no son válidos." }, 400);
     }
@@ -116,27 +119,26 @@ export function registerInventoryReadRoutes(app: Hono<{ Bindings: Bindings }>): 
 
           const canReadCost = authorizeCommercialOperation(branch.organizationRole, "catalog.read_costs");
           const costColumn = canReadCost ? ", p.cost_usd::text AS cost_usd" : "";
-          const values = cursor
-            ? [branch.organizationId, branch.branchId, warehouseId, cursor, limit + 1]
-            : [branch.organizationId, branch.branchId, warehouseId, limit + 1];
+          const values: unknown[] = [branch.organizationId, branch.branchId, warehouseId];
+          const filters: string[] = ["p.organization_id = $1", "(p.is_active = true OR b.balance_version IS NOT NULL)"];
+          if (search) {
+            const escaped = search.replace(/[\\%_]/g, (character) => "\\" + character);
+            values.push(search, `%${escaped}%`);
+            filters.push("(p.barcode = $4 OR lower(p.sku) = lower($4) OR p.barcode ILIKE $5 ESCAPE '\\' OR p.sku ILIKE $5 ESCAPE '\\' OR p.name ILIKE $5 ESCAPE '\\')");
+          }
+          if (cursor) { values.push(cursor); filters.push(`p.id > $${values.length}`); }
+          values.push(limit + 1);
           const rows = await tx.query<InventoryBalanceRow>(
-            `SELECT p.id AS product_id, p.is_active, p.sku, p.name, p.unit,
+            `SELECT p.id AS product_id, p.is_active, p.sku, p.barcode, p.name, p.unit,
                     p.price_usd::text AS price_usd, p.minimum_stock::text AS minimum_stock,
                     COALESCE(b.on_hand_quantity, 0)::numeric(14,3)::text AS on_hand_quantity,
                     COALESCE(b.reserved_quantity, 0)::numeric(14,3)::text AS reserved_quantity,
                     (COALESCE(b.on_hand_quantity, 0) - COALESCE(b.reserved_quantity, 0))::numeric(14,3)::text AS available_quantity,
                     b.balance_version::text AS balance_version${costColumn}
                FROM products p
-               LEFT JOIN inventory_balances b
-                 ON b.organization_id = p.organization_id
-                AND b.branch_id = $2
-                AND b.warehouse_id = $3
-                AND b.product_id = p.id
-              WHERE p.organization_id = $1
-                AND (p.is_active = true OR b.balance_version IS NOT NULL)
-                ${cursor ? "AND p.id > $4" : ""}
-              ORDER BY p.id ASC
-              LIMIT $${values.length}`,
+               LEFT JOIN inventory_balances b ON b.organization_id = p.organization_id AND b.branch_id = $2
+                AND b.warehouse_id = $3 AND b.product_id = p.id
+              WHERE ${filters.join(" AND ")} ORDER BY p.id ASC LIMIT $${values.length}`,
             values,
           );
           const hasMore = rows.rows.length > limit;
@@ -148,6 +150,7 @@ export function registerInventoryReadRoutes(app: Hono<{ Bindings: Bindings }>): 
                 product_id: row.product_id,
                 is_active: row.is_active,
                 sku: row.sku,
+                barcode: row.barcode,
                 name: row.name,
                 unit: row.unit,
                 price_usd: row.price_usd,

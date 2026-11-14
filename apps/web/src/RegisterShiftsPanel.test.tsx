@@ -63,7 +63,7 @@ describe("Register shifts workspace", () => {
     await act(async () => { openButton.click(); });
     await settle();
     expect(container.textContent).toContain("Turno abierto");
-    expect(container.textContent).toContain("$ 20,0000");
+    expect(container.textContent).toContain("$ 20,00");
 
     const closeInputs = [...container.querySelectorAll<HTMLInputElement>(".register-shift-form input")];
     const valueSetter = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, "value")?.set;
@@ -86,6 +86,57 @@ describe("Register shifts workspace", () => {
     await settle();
     expect(container.textContent).toContain("Sin turno abierto");
     expect(container.textContent).toContain("Turno cerrado y registrado en auditoría.");
+  });
+
+  it("keeps the opening form visible after an API validation error", async () => {
+    vi.mocked(fetch).mockImplementation(async (input: RequestInfo | URL, init?: RequestInit) => {
+      const url = new URL(String(input), "https://micro-app.test");
+      if (url.pathname.endsWith("/register-shifts") && init?.method === "POST") return jsonResponse({ message: "No se pudo validar la apertura." }, 400);
+      if (url.pathname.endsWith("/register-shifts/current") && url.pathname.includes("/branches/")) return jsonResponse({ shift: null });
+      if (url.pathname.endsWith("/register-shifts/current")) return jsonResponse({ shift: null });
+      if (url.pathname.endsWith("/branches")) return jsonResponse({ items: [branch] });
+      if (url.pathname.endsWith("/registers")) return jsonResponse({ items: [register] });
+      return jsonResponse({}, 200);
+    });
+    await act(async () => { root.render(<RegisterShiftsPanel organizationId={organizationId} userName="Ana Pérez" />); });
+    await settle();
+    const input = container.querySelector<HTMLInputElement>(".register-shift-form input");
+    const button = [...container.querySelectorAll("button")].find((item) => item.textContent === "Abrir turno");
+    if (!input || !button) throw new Error("Opening form not found");
+    const setter = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, "value")?.set;
+    await act(async () => { setter?.call(input, "25.50"); input.dispatchEvent(new Event("input", { bubbles: true })); button.click(); });
+    await settle();
+    expect(container.querySelector('[role="alert"]')).toBeTruthy();
+    expect(container.querySelector(".register-shift-form")).toBeTruthy();
+    expect(input.value).toBe("25.50");
+  });
+
+  it("keeps the closing form visible after a recoverable close error", async () => {
+    activeShift = openedShift;
+    vi.mocked(fetch).mockImplementation(async (input: RequestInfo | URL, init?: RequestInit) => {
+      const url = new URL(String(input), "https://micro-app.test");
+      if (url.pathname.endsWith("/close") && init?.method === "POST") return jsonResponse({ message: "No se pudo cerrar." }, 400);
+      if (url.pathname.endsWith("/register-shifts/current") && url.pathname.includes("/branches/")) return jsonResponse({ shift: { id:shiftId,organizationId,branchId,registerId,cashierUserId:openedShift.cashier_user_id,openedAt:openedShift.opened_at,openingCashUsd:"20.0000",openingCashVes:"500.00" } });
+      if (url.pathname.endsWith("/register-shifts/current")) return jsonResponse({ shift: { branch_id:branchId } });
+      if (url.pathname.endsWith("/branches")) return jsonResponse({ items: [branch] });
+      if (url.pathname.endsWith("/registers")) return jsonResponse({ items: [register] });
+      return jsonResponse({}, 200);
+    });
+    await act(async () => { root.render(<RegisterShiftsPanel organizationId={organizationId} userName="Ana Pérez" />); });
+    await settle();
+    const inputs = [...container.querySelectorAll<HTMLInputElement>(".register-shift-form input")];
+    const setter = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, "value")?.set;
+    if (inputs.length !== 2 || !setter) throw new Error("Closing inputs not found");
+    await act(async () => {
+      setter.call(inputs[0]!, "21.00"); inputs[0]!.dispatchEvent(new Event("input", { bubbles: true }));
+      setter.call(inputs[1]!, "510.00"); inputs[1]!.dispatchEvent(new Event("input", { bubbles: true }));
+      [...container.querySelectorAll("button")].find((item) => item.textContent === "Revisar cierre")?.click();
+    });
+    await act(async () => { [...container.querySelectorAll("button")].find((item) => item.textContent === "Confirmar cierre")?.click(); });
+    await settle();
+    expect(container.querySelector('[role="alert"]')).toBeTruthy();
+    expect(container.querySelector(".register-shift-form")).toBeTruthy();
+    expect(inputs[0]!.value).toBe("21.00");
   });
 
   it("shows a safe message when the API denies branch access", async () => {

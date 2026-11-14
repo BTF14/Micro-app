@@ -100,6 +100,37 @@ describe("catalog panel", () => {
     expect(container.textContent).not.toContain("Editar");
   });
 
+  it("searches by text or barcode and displays USD and VES prices", async () => {
+    vi.mocked(fetch)
+      .mockResolvedValueOnce(jsonResponse({items:[],nextCursor:null,limit:100}))
+      .mockResolvedValueOnce(jsonResponse({items:[{
+        id:"p1",is_active:true,sku:"SKU-FAST",barcode:"750123",name:"Café molido",description:null,unit:"bolsa",price_usd:"4.2500",
+      }],nextCursor:null,limit:100}));
+    await renderPanel({organizationId:"00000000-0000-4000-8000-000000000010",exchangeRate:"36.50000000",exchangeRateStatus:"current",canManage:false});
+    const input=container.querySelector<HTMLInputElement>("#catalog-quick-search");
+    if(!input)throw new Error("Catalog search missing");
+    const setter=Object.getOwnPropertyDescriptor(HTMLInputElement.prototype,"value")?.set;
+    await act(async()=>{setter?.call(input,"750123");input.dispatchEvent(new Event("input",{bubbles:true}));});
+    await act(async()=>{container.querySelector<HTMLFormElement>(".catalog-search")?.dispatchEvent(new Event("submit",{bubbles:true,cancelable:true}));});
+    await act(async()=>{await new Promise(resolve=>setTimeout(resolve,0));});
+    expect(String(vi.mocked(fetch).mock.calls[1]?.[0])).toContain("q=750123");
+    expect(container.textContent).toContain("Café molido");
+    expect(container.textContent).toContain("US$ 4,25");
+    expect(container.textContent).toContain("Bs. 155,13");
+  });
+
+  it("shows an explicit empty state when a catalog search has no results", async () => {
+    vi.mocked(fetch).mockResolvedValueOnce(jsonResponse({items:[],nextCursor:null,limit:100})).mockResolvedValueOnce(jsonResponse({items:[],nextCursor:null,limit:100}));
+    await renderPanel({organizationId:"00000000-0000-4000-8000-000000000010",exchangeRate:null,exchangeRateStatus:"unavailable",canManage:false});
+    const input=container.querySelector<HTMLInputElement>("#catalog-quick-search");
+    if(!input)throw new Error("Catalog search missing");
+    const setter=Object.getOwnPropertyDescriptor(HTMLInputElement.prototype,"value")?.set;
+    await act(async()=>{setter?.call(input,"missing");input.dispatchEvent(new Event("input",{bubbles:true}));});
+    await act(async()=>{container.querySelector<HTMLFormElement>(".catalog-search")?.dispatchEvent(new Event("submit",{bubbles:true,cancelable:true}));});
+    await act(async()=>{await new Promise(resolve=>setTimeout(resolve,0));});
+    expect(container.textContent).toContain("No se encontraron productos.");
+  });
+
   it("loads the next cursor page without replacing the products already shown", async () => {
     const cursor = "00000000-0000-4000-8000-000000000020";
     vi.mocked(fetch)

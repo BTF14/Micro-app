@@ -36,8 +36,8 @@ const routeScopes = [
   "register-shift:open",
   "register-shift:close",
   "organization:branch:create",
-  "organization:warehouses:create",
-  "organization:registers:create",
+  "organization:warehouse:create",
+  "organization:register:create",
   "organization:branch-membership:update",
 ];
 

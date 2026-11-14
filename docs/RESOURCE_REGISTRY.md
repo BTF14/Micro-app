@@ -2,7 +2,7 @@
 
 # Registro de herramientas, repositorios y fuentes de Micro app
 
-Actualizado: 2026-11-08. Estado de Neon contrastado con run #42507066215; los recursos y planes gratuitos deben seguir revalidándose en vivo. Este registro no sustituye la verificación en vivo: planes gratuitos, documentación y estado de repositorios cambian. Añadir cada fuente consultada con fecha, uso, conclusión y limitaciones. No registrar secretos ni URLs que contengan credenciales.
+Actualizado: 2026-11-14. Estado de Neon contrastado con run #42507066215; los recursos y planes gratuitos deben seguir revalidándose en vivo. Este registro no sustituye la verificación en vivo: planes gratuitos, documentación y estado de repositorios cambian. Añadir cada fuente consultada con fecha, uso, conclusión y limitaciones. No registrar secretos ni URLs que contengan credenciales.
 
 ## Herramientas y servicios del proyecto
 
@@ -11,7 +11,7 @@ Actualizado: 2026-11-08. Estado de Neon contrastado con run #42507066215; los re
 | GitHub repository/actions | Código, PR, revisión, CI, escaneo y continuidad persistente. | https://docs.github.com/en/actions · https://docs.github.com/en/rest | Verificar SHA y workflow; no asumir que queued significa success. |
 | pnpm 10 / workspace | Gestor de paquetes para `apps/*`. | https://pnpm.io/ | `pnpm-lock.yaml` está versionado; CI debe usar instalación congelada. |
 | React + Vite + TypeScript | Frontend web responsive. | https://react.dev/ · https://vite.dev/ · https://www.typescriptlang.org/docs/ | Validar formularios y errores; la UI nunca es frontera de autorización. |
-| Cloudflare Pages | Hosting estático objetivo para frontend. | https://pages.cloudflare.com/ | Reconfirmar límites/condiciones y no desplegar producción sin aceptación. |
+| Cloudflare Pages | Hosting estático objetivo para frontend. | https://pages.cloudflare.com/ | Repositorio público; reconfirmar límites/condiciones y no desplegar producción sin aceptación. |
 | Cloudflare Workers + Hono | API separada con estándares web. | https://developers.cloudflare.com/workers/ · https://hono.dev/ | No asumir compatibilidad de middleware diseñado para Express. |
 | Neon PostgreSQL | Base de datos dedicada `micro-app-db`, plan Free según estado previo documentado. | https://neon.com/docs · https://neon.com/pricing | `main` es sensible a producción, no permanentemente de solo lectura: cambios solo tras superar el gate de `docs/CONSTITUTION.md`, con destino verificado, prueba aislada y recuperación comprobada. PostgreSQL efímero es la primera línea de pruebas; Neon branch solo cuando añada validación adicional no cubierta por CI, con datos sintéticos, expiración y limpieza. No guardar cadenas de conexión. |
 | @neondatabase/serverless + SQL migrations | Driver PostgreSQL serverless y migraciones SQL versionadas en Git. | https://github.com/neondatabase/serverless · https://neon.com/docs | SQL parametrizado; validar migraciones y constraints en PostgreSQL temporal. |

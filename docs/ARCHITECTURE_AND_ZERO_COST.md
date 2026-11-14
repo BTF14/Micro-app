@@ -1,6 +1,6 @@
 # Arquitectura y política de costo cero
 
-Fecha: 2026-10-17
+Fecha: 2026-11-14
 
 ## Decisión
 
@@ -11,7 +11,7 @@ Adoptar una aplicación web separada en frontend estático y API, con PostgreSQL
 - Datos: PostgreSQL en un proyecto Neon dedicado exclusivamente a Micro app. `packages/money` comparte aritmética decimal exacta con bigint entre Web y API.
 - Acceso a datos y esquema: @neondatabase/serverless (SQL parametrizado) y migraciones SQL versionadas en Git.
 - Pruebas: Vitest para lógica y Playwright para recorridos E2E.
-- Automatización: GitHub Actions, respetando las cuotas gratuitas del repositorio privado.
+- Automatización: GitHub Actions, respetando las cuotas gratuitas disponibles para el repositorio público.
 
 ## Por qué esta opción
 

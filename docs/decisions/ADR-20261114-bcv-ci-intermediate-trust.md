@@ -1,7 +1,7 @@
 # ADR — Trust the pinned BCV issuing intermediate only in CI connectivity verification
 
 - **ID:** ADR-20261114-bcv-ci-intermediate-trust
-- **Estado:** accepted
+- **Estado:** verified
 - **Fecha:** 2026-11-14
 - **Responsables:** repository technical maintainers
 - **Relacionado:** ODD task `odd/tasks/bcv-weekday-cron-and-ci-tls-chain.md`; PR pending
@@ -48,8 +48,8 @@ Remove the CI-only `NODE_EXTRA_CA_CERTS` setting and pinned certificate file to 
 - Official Sectigo hierarchy: `https://www.sectigo.com/knowledge-base/detail/Sectigo-new-Public-Roots-and-Issuing-CAs-Hierarchy/kA0Uj0000004IrB`.
 - Node.js CA extension behavior: `https://nodejs.org/api/cli.html#node_extra_ca_certsfile`.
 - Existing failing manual workflow: Run `43622117742`, error `UNABLE_TO_VERIFY_LEAF_SIGNATURE`.
-- Implementation and tests: pending in the associated PR.
+- Implementation and tests: PR [#361](https://github.com/BTF14/Micro-app/pull/361), exact HEAD `d0e0ddf522c07bdf2e7bf0054cf7be079e3f2c90`; 17/17 check-runs and 14/14 workflow runs SUCCESS. The strict-TLS BCV connectivity test passed on both push and pull_request events, with the live production parser accepting the returned HTML.
 
 ## Historial
 
-- 2026-11-14 — accepted a pinned, CI-only trust anchor for the manual BCV connectivity test; no production trust-store change authorized.
+- 2026-11-14 — accepted and verified a pinned, CI-only trust anchor for the PR-triggered/manual BCV connectivity test; no production trust-store change authorized.

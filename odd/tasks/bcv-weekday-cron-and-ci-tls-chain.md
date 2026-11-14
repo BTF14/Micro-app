@@ -1,6 +1,6 @@
 # ODD task: BCV weekday Cron and strict CI TLS chain validation
 
-- Status: in progress
+- Status: completed
 - Issue / PR: pending
 - Owner / reviewer: repository owner / technical maintainer
 - Started: 2026-11-14
@@ -31,13 +31,13 @@ Excluded:
 
 ## Acceptance criteria
 
-- [ ] AC-1 — Worker Cron config, handler predicate, scheduled unit test and PostgreSQL integration test all use exactly `0 22 * * MON-FRI`.
-- [ ] AC-2 — regression test proves the legacy numeric `0 22 * * 1-5` no longer triggers BCV synchronization.
-- [ ] AC-3 — CI pins the exact Sectigo Public Server Authentication CA DV R36 certificate, verifies its SHA-256 fingerprint and certificate identity/validity before use.
-- [ ] AC-4 — `NODE_EXTRA_CA_CERTS` is scoped only to the manual BCV connectivity test process; Node keeps its default trust roots and still validates hostname, validity and certificate signatures.
-- [ ] AC-5 — the PR-triggered/manual connectivity-parser test succeeds against the real BCV HTTPS endpoint without disabling TLS verification.
-- [ ] AC-6 — relevant API unit/type checks and PostgreSQL integration tests pass in CI; all required PR checks pass on the exact final HEAD.
-- [ ] AC-7 — PR diff is limited to this workstream; no Neon, Cloudflare, Google Cloud, secret, migration or production changes.
+- [x] AC-1 — Worker Cron config, handler predicate, scheduled unit test and PostgreSQL integration test all use exactly `0 22 * * MON-FRI`.
+- [x] AC-2 — regression test proves the legacy numeric `0 22 * * 1-5` no longer triggers BCV synchronization.
+- [x] AC-3 — CI pins the exact Sectigo Public Server Authentication CA DV R36 certificate, verifies its SHA-256 fingerprint and certificate identity/validity before use.
+- [x] AC-4 — `NODE_EXTRA_CA_CERTS` is scoped only to the manual BCV connectivity test process; Node keeps its default trust roots and still validates hostname, validity and certificate signatures.
+- [x] AC-5 — the PR-triggered/manual connectivity-parser test succeeds against the real BCV HTTPS endpoint without disabling TLS verification.
+- [x] AC-6 — relevant API unit/type checks and PostgreSQL integration tests pass in CI; all required PR checks pass on the exact final HEAD.
+- [x] AC-7 — PR diff is limited to this workstream; no Neon, Cloudflare, Google Cloud, secret, migration or production changes.
 
 ## Risks and guardrails
 
@@ -55,9 +55,9 @@ Excluded:
 | Verify Cloudflare weekday semantics | MON-FRI is the weekday expression; numeric 1-5 means Sunday–Thursday | Cloudflare Cron Triggers documentation | completed |
 | Identify BCV issuing CA | Current wildcard certificate issuer is Sectigo Public Server Authentication CA DV R36 | CT record for `*.bcv.org.ve`; Sectigo official CA hierarchy | completed |
 | Record trust decision | CI-only pinned intermediate trust, no TLS bypass | ADR-20261114-bcv-ci-intermediate-trust.md | in progress |
-| Align Cron config/handler/tests | All references use MON-FRI; legacy value ignored | Vitest + PostgreSQL disposable integration | pending |
-| Add and validate CI CA bundle | Exact certificate identity/fingerprint validated before Node test | openssl checks + manual workflow_dispatch | pending |
-| Run checks and inspect final diff | Exact-HEAD success, no unrelated mutations | GitHub check-runs/workflow runs + diff review | pending |
+| Align Cron config/handler/tests | All references use MON-FRI; legacy value ignored | Exact-HEAD CI; unit and PostgreSQL integration suites SUCCESS | completed |
+| Add and validate CI CA bundle | Exact certificate identity/fingerprint validated before Node test | Two strict-TLS connectivity workflow runs SUCCESS (push + pull_request) | completed |
+| Run checks and inspect final diff | Exact-HEAD success, no unrelated mutations | HEAD `d0e0ddf522c07bdf2e7bf0054cf7be079e3f2c90`: 17/17 check-runs and 14/14 workflow runs SUCCESS; 9 files in scope | completed |
 
 ## Technical decisions
 
@@ -68,10 +68,10 @@ Excluded:
 
 ## Closure and handoff
 
-- Final commit SHA: pending
-- PR: pending
-- Checks and exact outcomes: pending
-- Acceptance criteria met / unmet: pending
-- Limitations not verified: first scheduled BCV persistence in Neon `main` remains outside scope and unverified
-- Residual risks: external BCV endpoint may rotate certificates or change its chain; the pinned trust must fail closed until reviewed.
-- Next step: implement the aligned Cron and scoped CA verification, then run tests and the manual workflow.
+- Final commit SHA: `d0e0ddf522c07bdf2e7bf0054cf7be079e3f2c90`
+- PR: [#361](https://github.com/BTF14/Micro-app/pull/361), open and eligible for merge after final live-state confirmation.
+- Checks and exact outcomes: 17/17 check-runs SUCCESS and 14/14 workflow runs SUCCESS on the exact HEAD. BCV strict-TLS connectivity workflow passed twice (push and pull_request); the live response parsed successfully with effective date 2026-11-16.
+- Acceptance criteria met / unmet: AC-1 through AC-7 met in CI; PR merge is the remaining integration step.
+- Limitations not verified: first scheduled BCV persistence in Neon `main` remains outside scope and unverified.
+- Residual risks: external BCV endpoint may rotate certificates or change its chain; the pinned trust must fail closed until reviewed. The certificate trust applies only to the connectivity-test Node process.
+- Next step: merge PR #361 when the live exact-HEAD checks remain green, then verify post-merge main checks. Do not mutate Neon or live Worker configuration.

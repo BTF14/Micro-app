@@ -37,12 +37,13 @@ describe.skipIf(!databaseUrl)("inventory receipt API against PostgreSQL 18", () 
       method: "POST",
       headers: {
         Cookie: "microapp_session=" + token,
+        "CF-Connecting-IP": "198.51.100.104",
         Origin: origin,
         "Content-Type": "application/json",
         "Idempotency-Key": key,
       },
       body: JSON.stringify(body),
-    }), { DATABASE_URL: databaseUrl, FRONTEND_ORIGIN: "https://frontend.example" });
+    }), { DATABASE_URL: databaseUrl, FRONTEND_ORIGIN: "https://frontend.example", GOOGLE_CLIENT_SECRET: "test-google-client-secret" });
   }
 
   async function get(path: string) {

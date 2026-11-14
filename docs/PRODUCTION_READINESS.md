@@ -1,15 +1,17 @@
 # Readiness para producción — corte vigente 2026-11-14
 
-## Estado vigente — 2026-11-14 — PR #364 integrada
+## Estado vigente — 2026-11-14 — PR #365 integrada / E2E full-stack PR #366 validada
 
-- `main`: `40d39fb6437f85672e65de01ea33d54ccee14aee`.
-- PR #364 fusionada por squash. HEAD final `11b666b7d1963d573bce86248cb446de6d9f2cb2`; pre-merge 16/16 check-runs y 13/13 workflows SUCCESS; merge SHA `40d39fb6437f85672e65de01ea33d54ccee14aee`.
-- Post-merge main: 14/14 check-runs y 10/10 workflows SUCCESS; CI `verify` 52/52 pasos SUCCESS. Builds de Pages y API SUCCESS.
-- PR #363 integrada: rate limiting runtime probado en PostgreSQL 18 efímero para OAuth, checkout y 11 rutas de escritura.
-- PR #361 integrada: Cron BCV `0 22 * * MON-FRI` y validación TLS estricta.
-- Watchdog BCV read-only `17 * * * *`, endpoint y UI probados en PostgreSQL 18 con login real `microapp_runtime`; sin privilegios de escritura sobre `bcv_sync_state`.
-- Pendiente comprobar la primera tasa BCV real persistida en Neon `main` tras una ventana válida `MON-FRI 22:00 UTC`, y verificar el enrutamiento externo de alertas en Cloudflare.
-- Issue #53 sigue OPEN/P0. **PRODUCTION: NOT READY**. No se accedió ni mutó Neon, secretos, datos reales o configuración manual.
+- `main` verificada al inicio de PR #366: `5e80770e73d3ed65fa92083ea5f4478d0d9f71d9`, merge SHA de PR #365.
+- PR #365 quedó integrada por Squash and Merge; post-merge: 13/13 check-runs SUCCESS y 9/9 workflow runs SUCCESS.
+- PR #361, PR #363 y PR #364 ya están integradas: Cron BCV `MON-FRI 22:00 UTC` con TLS estricto, rate limiting runtime y watchdog BCV read-only.
+- PR #366 añadió E2E full-stack real en CI. En el HEAD de implementación `3329562d15f40ce744de67a088400935d9d3566a`: 16/16 check-runs SUCCESS, 12/12 workflow runs SUCCESS, CI `verify` 52/52 pasos SUCCESS, job PostgreSQL 18 full-stack 20/20 pasos SUCCESS y Chromium authentication smoke tests SUCCESS.
+- La suite usa PostgreSQL 18 efímero, migraciones 0001–0025, logins PostgreSQL separados `microapp_runtime`/`microapp_bcv_sync`, sesiones sintéticas Owner/Cashier con allowlist y membresías reales, tasa BCV sintética válida para `America/Caracas`, Hono real y frontend compilado/servido con proxy same-origin. No hay `page.route`, mocks de API ni endpoints de test en runtime.
+- El flujo CI crea/lee producto, recibe inventario, abre turno como Cashier, completa checkout USD y VES, comprueba recibos y stock persistido, cierra turno y recarga; el intento posterior con turno cerrado recibe 409 `OPEN_SHIFT_REQUIRED` y no descuenta stock.
+- El adaptador Neon→`pg` existe únicamente en el harness de test para conectar los mismos handlers Hono a PostgreSQL local; no modifica runtime ni seguridad de producción.
+- El commit documental de esta misma PR crea un HEAD nuevo; todas las comprobaciones deberán repetirse y validarse sobre ese HEAD exacto antes de fusionar.
+
+**Estado de producción: NOT READY.** La prueba full-stack cierra una brecha de validación CI, no los gates de producción. Issue #53 continúa OPEN/P0; PR #193 continúa OPEN e intacta. No se accedió ni mutó Neon `main`, datos reales, secretos o configuración manual de proveedores; no se realizó despliegue manual.
 
 ## Snapshot histórico — 2026-11-11 — PR #287
 
@@ -23,20 +25,16 @@
 - Neon main SELECT-only: `backup_readonly` es privilegiado y tiene write privileges; no se leyó `DATABASE_URL_BACKUP_RO`; identidad efectiva desconocida. `microapp_runtime` y `microapp_migrator` ausentes del catálogo observado. Identidad del Worker `DATABASE_URL` también desconocida.
 - Issue #53 OPEN/P0. Producción **NOT READY**. No se modificaron Neon, roles, grants, contraseñas, secretos, datos reales, Cron, DNS, billing ni producción.
 
-## Gates bloqueantes para producción
+## Gates bloqueantes para producción — vigentes
 
-1. Revisión independiente completa de los 123 archivos de PR #287 y aprobación formal; checks verdes no son review.
-2. Verificar principal efectivo de backup y Worker sin revelar secretos; diseñar y probar transición de roles/grants con continuidad, rollback y backup/restore.
-3. Provisionar y validar roles de runtime/migrator/BCV producer en entorno autorizado, no inferir que CI los ha desplegado.
-4. Confirmar CORS/headers efectivos, observabilidad, alertas externas y watchdog BCV.
-5. Ejecutar backup natural posterior a una integración autorizada y medir RPO/RTO; restauración sintética no equivale a restore real.
-6. Completar jornada funcional desde UI. La E2E de turnos usa mocks de red; no prueba backend real. Checkout API tiene pruebas PostgreSQL, pero no hay aceptación completa de caja/ventas/pagos/recibos.
-7. Aprobar reglas comerciales y legales de pagos parciales, cambio/sobrepago, recibos, anulaciones y devoluciones antes de ampliar la lógica financiera.
-8. Demostrar coste total USD 0, revisión final y aceptación del propietario.
+1. **Primera tasa BCV real en Neon `main`:** esperar la siguiente ventana válida del Cron `MON-FRI 22:00 UTC` y comprobar, de forma read-only/autorizada, la fila real, su fecha efectiva en `America/Caracas`, `bcv_sync_state` y el resultado expuesto por la API. La tasa sintética de PostgreSQL 18 CI no satisface este gate.
+2. **Enrutamiento externo de alertas en Cloudflare:** demostrar entrega efectiva al destino operativo configurado; que el build o el watchdog detecte una condición no demuestra entrega externa.
+3. **RPO/RTO humano:** definir responsables y objetivos, ejecutar backup/restore autorizado y registrar tiempos y evidencia. Los tests sintéticos de CI no equivalen a una recuperación real.
+4. **Revisión legal/fiscal:** validar recibos, impuestos, reglas comerciales de pagos y monedas, anulaciones, devoluciones y obligaciones aplicables antes de declarar producción.
+5. **Issue #53 P0 y aceptación del propietario:** mantener el issue OPEN hasta que sus gates de producción estén demostrados y aprobados.
 
-**Decisión:** no promover PR #287 a Ready ni fusionar hasta cerrar los gates anteriores. Issue #53 permanece OPEN/P0. MVP objetivo 2026-12-01; GO/NO-GO 2026-11-30.
+**Decisión vigente:** **PRODUCTION: NOT READY**. La E2E full-stack contra API real y PostgreSQL 18 efímero queda validada en CI, pero no sustituye ninguno de los gates anteriores. No promover ni declarar GO mientras permanezcan abiertos.
 
----
 
 ## Revalidación de readiness — 2026-11-11 — resiliencia backup / PR #287
 
@@ -218,14 +216,14 @@ Los párrafos de 2026-10-30 describían el estado previo a los vertical slices i
 - [x] Validación del esquema/migraciones SQL versionadas 0001–0025 y assertions en PostgreSQL efímero.
 - [x] Registro público y login por contraseña permanecen fail-closed; Google OAuth, allowlist, verificación de email y sesiones reforzadas están integrados.
 - [x] Proxy Pages/API same-origin y configuración de callback OAuth integrados en PR #339; la integración no sustituye el smoke autenticado real con Shields.
-- [x] Lifecycle autenticado de cajero probado en PostgreSQL 18 efímero (PR #347); no equivale a E2E comercial real sin mocks.
+- [x] Lifecycle autenticado de cajero (PR #347) y E2E comercial full-stack sin mocks contra API Hono real + PostgreSQL 18 efímero (PR #366) validados en CI; no equivalen a certificación de producción.
 - [x] Administración owner-only de sucursales/almacenes/cajas integrada (PR #350, 0024).
 - [x] Recepciones y ajustes de inventario integrados (PR #352, 0025); lectura/Kardex y conteos atómicos tienen suites de integración.
 - [x] POS y checkout atómico integrados (PR #357; 0015/0018); el alcance comercial sigue limitado por las notas del bloque de implementación.
 - [x] Migraciones 0001–0025 aplicadas en Neon main según el workflow protegido, run #43591333198; no inferir de ello que la aplicación esté aceptada para lanzamiento.
 - [x] Smoke autenticado live con Brave Shields ACTIVADO en móvil y escritorio: Google OAuth same-origin, sesión persistente en navegación de módulos reales y logout seguro confirmado por el propietario. Reabrir solo si cambian proxy /api, CORS, cookies/OAuth o CSP.
 - [ ] Primera tasa BCV real persistida en Neon main y registro correspondiente en `bcv_sync_state`, tras una ejecución programada válida.
-- [ ] E2E real de los flujos comerciales completos contra API/DB de prueba, sin mocks de red.
+- [x] E2E full-stack real en CI contra API Hono + PostgreSQL 18 efímero, sin mocks de `/api/*` (PR #366): catálogo, recepción, turno, checkout USD/VES, recibos, stock, cierre/recarga y rechazo de venta con caja cerrada. No valida producción real.
 - [x] Rate limiting runtime en rutas sensibles: integrado y probado en PostgreSQL 18 efímero para OAuth, checkout y 11 endpoints de escritura (PR #363; exact-HEAD y post-merge checks SUCCESS).
 - [ ] Aceptación formal humana del objetivo RPO aproximado de 24 h y del RTO operativo aceptable.
 - [ ] Revisión legal, fiscal y contable por asesoría competente y aprobación explícita del lanzamiento; Issue #53 permanece OPEN/P0.
@@ -247,7 +245,7 @@ Los párrafos de 2026-10-30 describían el estado previo a los vertical slices i
 - El producto ya contiene catálogo de productos, inventario por almacén/ledger, recepciones, conteos atómicos, turnos por sucursal y POS/checkout; no describirlo como un frontend sin endpoints comerciales.
 - No hay módulo completo de categorías, devoluciones/reversos, reportes/exportaciones, transferencias inter-sucursal ni ciclo completo de proveedores/compras.
 - La venta liquida en una sola moneda; puede tener múltiples líneas de pago. El recibo es solo en pantalla; no hay impresión térmica ni historial de ventas.
-- Las pruebas PostgreSQL efímeras no son E2E comercial live sin mocks. El smoke autenticado con Brave Shields ACTIVADO ya fue confirmado; permanece pendiente la primera tasa BCV real persistida en Neon `main`.
+- La E2E full-stack de PR #366 sí es una E2E comercial real contra API/DB efímeras sin mocks; no es una prueba live de producción. El smoke autenticado con Brave Shields ACTIVADO ya fue confirmado; permanece pendiente la primera tasa BCV real persistida en Neon `main`.
 - **Ya integrados, no son bloqueos abiertos:** Cron BCV `0 22 * * MON-FRI` y validación TLS estricta del workflow (PR #361); rate limiting runtime fail-closed para OAuth, checkout y 11 endpoints de escritura, probado en PostgreSQL 18 efímero (PR #363).
 - **Watchdog BCV integrado (PR #364):** detección read-only horaria `17 * * * *`, endpoint y aviso administrativo al superar 300 segundos en `running`, probados en PostgreSQL 18 con login real `microapp_runtime`; pre-merge 16/16 checks y 13/13 workflows SUCCESS, post-merge 14/14 checks y 10/10 workflows SUCCESS. No altera el estado del productor ni habilita checkout.
 - **Pendientes operativos BCV:** comprobar la primera tasa real persistida en Neon `main` después de la próxima ventana programada válida `MON-FRI 22:00 UTC`, y verificar el enrutamiento externo de alertas en Cloudflare.

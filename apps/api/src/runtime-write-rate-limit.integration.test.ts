@@ -41,7 +41,7 @@ const routeScopes = [
   "organization:branch-membership:update",
 ];
 
-function context() {
+function context(_scope?: string) {
   const responseHeaders = new Headers();
   const c = {
     req: { header: (name: string) => name === "CF-Connecting-IP" ? clientIp : undefined },

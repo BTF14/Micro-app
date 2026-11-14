@@ -16,14 +16,14 @@
 - Umbral único 300 segundos y Cron watchdog read-only `17 * * * *`.
 - Endpoint de estado agrega `isStaleRunning` y `staleRunningThresholdSeconds`; el estado stale responde `health: "attention"` y `Cache-Control: no-store`.
 - Panel admin comunica que el intento lleva al menos cinco minutos atascado y que checkout sigue bloqueado por seguridad.
-- No se mutó `public.bcv_sync_state`, `last_outcome), roles, grants, schema ni migraciones. No se accedió a Neon `main), secretos o datos reales.
+- No se mutó `public.bcv_sync_state` ni `last_outcome`, ni roles, grants, schema o migraciones. No se accedió a Neon `main`, secretos o datos reales.
 
 ### Continuidad y gates abiertos
 
 - PR #193 permanece OPEN e intacta; HEAD `ac57ab4f3415f82279b8a49c0befe09f8e3aec68`. Issue #53 permanece OPEN/P0; `PRODUCTION: NOT READY`.
 - PR #361 integró Cron BCV `0 22 * * MON-FRI` y validación TLS estricta.
 - PR #363 integró rate limiting runtime probado en PostgreSQL 18 efímero para OAuth, checkout y 11 endpoints de escritura; AC-1..AC-7 cerrados documentalmente.
-- Sigue pendiente verificar la primera tasa BCV real persistida en Neon `main` tras una ventana programada válida `MON-FRI 22:00 UTC), y el enrutamiento externo de alertas. CI/build no demuestran ejecución programada ni persistencia de producción.
+- Sigue pendiente verificar la primera tasa BCV real persistida en Neon `main` tras una ventana programada válida `MON-FRI 22:00 UTC`, y el enrutamiento externo de alertas. CI/build no demuestran ejecución programada ni persistencia de producción.
 - No tocar Neon `main), secretos, datos reales, configuración manual, billing ni despliegues manuales. No cerrar Issue #53 ni modificar PR #193.
 
 ## Turno 44 — watchdog BCV PR #364, CI exact-SHA y cierre de PR #363 (2026-11-14 UTC)

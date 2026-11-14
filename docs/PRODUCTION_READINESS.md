@@ -8,7 +8,7 @@
 - PR #363 integrada: rate limiting runtime probado en PostgreSQL 18 efímero para OAuth, checkout y 11 rutas de escritura.
 - PR #361 integrada: Cron BCV `0 22 * * MON-FRI` y validación TLS estricta.
 - Watchdog BCV read-only `17 * * * *`, endpoint y UI probados en PostgreSQL 18 con login real `microapp_runtime`; sin privilegios de escritura sobre `bcv_sync_state`.
-- Pendiente comprobar la primera tasa BCV real persistida en Neon `main` tras una ventana válida `MON-FRI 22:00 UTC), y verificar el enrutamiento externo de alertas en Cloudflare.
+- Pendiente comprobar la primera tasa BCV real persistida en Neon `main` tras una ventana válida `MON-FRI 22:00 UTC`, y verificar el enrutamiento externo de alertas en Cloudflare.
 - Issue #53 sigue OPEN/P0. **PRODUCTION: NOT READY**. No se accedió ni mutó Neon, secretos, datos reales o configuración manual.
 
 ## Snapshot histórico — 2026-11-11 — PR #287

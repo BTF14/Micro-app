@@ -15,6 +15,11 @@ BEGIN
   OR pg_catalog.has_table_privilege('microapp_runtime','public.inventory_balances','UPDATE')
   OR pg_catalog.has_table_privilege('microapp_runtime','public.inventory_balances','DELETE')
  THEN RAISE EXCEPTION 'RUNTIME_MUST_NOT_MUTATE_INVENTORY_BALANCES'; END IF;
+ IF EXISTS(SELECT 1 FROM pg_catalog.pg_attribute a CROSS JOIN LATERAL pg_catalog.aclexplode(a.attacl) acl
+   WHERE a.attrelid='public.inventory_balances'::regclass AND a.attnum>0 AND NOT a.attisdropped
+    AND acl.grantee=(SELECT oid FROM pg_catalog.pg_roles WHERE rolname='microapp_runtime')
+    AND acl.privilege_type IN('INSERT','UPDATE','DELETE'))
+ THEN RAISE EXCEPTION 'RUNTIME_COLUMN_LEVEL_BALANCE_WRITE_PRIVILEGE_INVALID'; END IF;
  SELECT p.oid INTO fn_oid FROM pg_catalog.pg_proc p
   WHERE p.oid='public.create_inventory_receipt(uuid,uuid,uuid,uuid,text,text,text,jsonb)'::regprocedure
    AND p.prosecdef AND p.proowner=(SELECT oid FROM pg_catalog.pg_roles WHERE rolname='microapp_migrator')

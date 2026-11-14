@@ -182,7 +182,6 @@ jobs:
             fi
 
             ledger_file="$(mktemp)"
-            trap 'rm -f "$ledger_file"' RETURN
             psql -X -At -F '|' -v ON_ERROR_STOP=1 --dbname "${NEON_MAIN_MIGRATOR_DATABASE_URL}" -c "
               SELECT version, filename, checksum, state, COALESCE(applied_at::text, '')
               FROM public.schema_migrations
@@ -211,9 +210,10 @@ jobs:
                 return 1
               fi
             done < "$ledger_file"
+            rm -f "$ledger_file"
 
             applied="$index"
-            pending=$(("${#migration_files[@]}" - applied))
+            pending=$(( ${#migration_files[@]} - applied ))
             if (( pending < 0 )); then
               echo "NEON_MAIN_MIGRATION_LEDGER_INVALID_COUNT" >&2
               return 1

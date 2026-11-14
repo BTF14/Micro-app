@@ -90,6 +90,9 @@ describe("inventory panel", () => {
       .mockResolvedValueOnce(jsonResponse({ warehouses: [{ id: WAREHOUSE, code: "main", name: "Principal", is_active: true }] }))
       .mockResolvedValueOnce(jsonResponse({ items: [balance()], nextCursor: null, limit: 100 }))
       .mockResolvedValueOnce(jsonResponse({ receipts: [] }));
+    await renderPanel(false);
+    expect(container.textContent).not.toContain("Recibir mercancía");
+    expect(container.textContent).not.toContain("Conteo físico / ajuste");
     await renderPanel(true);
     expect(container.textContent).toContain("Recibir mercancía");
     expect(container.textContent).toContain("Conteo físico / ajuste");

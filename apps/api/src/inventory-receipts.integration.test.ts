@@ -102,6 +102,7 @@ describe.skipIf(!databaseUrl)("inventory receipt API against PostgreSQL 18", () 
   it("records a receipt, appends the ledger, projects balance, and audits atomically", async () => {
     const response = await post(root(), body());
     expect(response.status).toBe(201);
+    expect(response.headers.get("Cache-Control")).toBe("private, no-store");
     const created = await response.json() as { id:string; replayed:boolean };
     expect(created.id).toMatch(/^[0-9a-f-]{36}$/i);
     expect(created.replayed).toBe(false);
@@ -117,6 +118,7 @@ describe.skipIf(!databaseUrl)("inventory receipt API against PostgreSQL 18", () 
     expect(persisted.rows[0]).toEqual({reason:"Recepción de proveedor",lines:"1",movements:"1",balance:"3.125",audits:"1"});
     const listed = await get(root());
     expect(listed.status).toBe(200);
+    expect(listed.headers.get("Cache-Control")).toBe("private, no-store");
     expect((await listed.json() as {receipts:Array<{id:string}>}).receipts[0]?.id).toBe(created.id);
   });
 
@@ -130,6 +132,25 @@ describe.skipIf(!databaseUrl)("inventory receipt API against PostgreSQL 18", () 
     expect(await replay.json()).toMatchObject({replayed:true});
     expect(conflict.status).toBe(409);
     expect(await admin.query("SELECT count(*)::text AS n FROM inventory_receipts WHERE organization_id=$1 AND created_by=$2 AND idempotency_key=$3",[organizationId,userId,key])).toMatchObject({rows:[{n:"1"}]});
+  });
+
+  it("enforces idempotency header, content type, body limit, and decimal precision", async () => {
+    const validBody = body();
+    const missingKey = await app.fetch(new Request("https://api.example" + root(), {
+      method: "POST", headers: { Cookie: "microapp_session=" + token, Origin: "https://frontend.example", "Content-Type": "application/json" }, body: JSON.stringify(validBody),
+    }), { DATABASE_URL: databaseUrl, FRONTEND_ORIGIN: "https://frontend.example" });
+    expect(missingKey.status).toBe(400);
+    const unsupported = await app.fetch(new Request("https://api.example" + root(), {
+      method: "POST", headers: { Cookie: "microapp_session=" + token, Origin: "https://frontend.example", "Content-Type": "text/plain", "Idempotency-Key": "bad-content-type" }, body: "{}",
+    }), { DATABASE_URL: databaseUrl, FRONTEND_ORIGIN: "https://frontend.example" });
+    expect(unsupported.status).toBe(415);
+    expect((await post(root(), { reason: "precision", lines: [{ product_id: productId, quantity: "1.0001", unit_cost_usd: "1.0000" }] })).status).toBe(400);
+    expect((await post(root(), { reason: "negative cost", lines: [{ product_id: productId, quantity: "1.000", unit_cost_usd: "-0.0001" }] })).status).toBe(400);
+    expect((await post(root(), { reason: "too many", lines: Array.from({ length: 501 }, () => ({ product_id: productId, quantity: "1.000", unit_cost_usd: "0.0000" })) })).status).toBe(400);
+    const oversized = await app.fetch(new Request("https://api.example" + root(), {
+      method: "POST", headers: { Cookie: "microapp_session=" + token, Origin: "https://frontend.example", "Content-Type": "application/json", "Idempotency-Key": "oversized-body", "Content-Length": String(128 * 1024 + 1) }, body: "{}",
+    }), { DATABASE_URL: databaseUrl, FRONTEND_ORIGIN: "https://frontend.example" });
+    expect(oversized.status).toBe(413);
   });
 
   it("serializes concurrent receipts for the same product without losing stock", async () => {

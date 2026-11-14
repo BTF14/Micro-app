@@ -25,12 +25,14 @@ type TestFixture = {
   branchId: string;
   warehouseId: string;
   registerId: string;
-  sessionToken: string;
+  ownerSessionToken: string;
+  cashierSessionToken: string;
   productName: string;
   productSku: string;
   bcvRate: string;
   effectiveDate: string;
-  userDisplayName: string;
+  ownerDisplayName: string;
+  cashierDisplayName: string;
 };
 
 function caracasDate(now = new Date()): string {
@@ -72,8 +74,8 @@ async function seedRealDatabase(): Promise<{ fixture: TestFixture; runtimeUrl: s
     await assertDirectLogin(bcvSync, "microapp_bcv_sync");
 
     const suffix = randomUUID().replace(/-/g, "").slice(0, 12);
-    const email = `owner-${suffix}@example.invalid`;
-    const googleSub = `e2e-${suffix}`;
+    const ownerEmail = `owner-${suffix}@example.invalid`;
+    const cashierEmail = `cashier-${suffix}@example.invalid`;
     const productName = `E2E Product ${suffix}`;
     const productSku = `E2E-${suffix.toUpperCase()}`;
 
@@ -82,19 +84,24 @@ async function seedRealDatabase(): Promise<{ fixture: TestFixture; runtimeUrl: s
       ["E2E Test Organization", `e2e-${suffix}`],
     );
     const organizationId = organization.rows[0]!.id;
-    const user = await admin.query<{ id: string }>(
+    const owner = await admin.query<{ id: string }>(
       "INSERT INTO public.app_users (email, display_name, google_sub, email_verified_at) VALUES ($1, $2, $3, now()) RETURNING id::text AS id",
-      [email, "E2E Owner", googleSub],
+      [ownerEmail, "E2E Owner", `e2e-owner-${suffix}`],
     );
-    const userId = user.rows[0]!.id;
+    const cashier = await admin.query<{ id: string }>(
+      "INSERT INTO public.app_users (email, display_name, google_sub, email_verified_at) VALUES ($1, $2, $3, now()) RETURNING id::text AS id",
+      [cashierEmail, "E2E Cashier", `e2e-cashier-${suffix}`],
+    );
+    const ownerId = owner.rows[0]!.id;
+    const cashierId = cashier.rows[0]!.id;
 
     await admin.query(
-      "INSERT INTO public.auth_allowlist (email, added_by, note) VALUES ($1, 'e2e-test-harness', 'Synthetic identity for disposable full-stack CI')",
-      [email],
+      "INSERT INTO public.auth_allowlist (email, added_by, note) VALUES ($1, 'e2e-test-harness', 'Synthetic owner identity for disposable full-stack CI'), ($2, 'e2e-test-harness', 'Synthetic cashier identity for disposable full-stack CI')",
+      [ownerEmail, cashierEmail],
     );
     await admin.query(
-      "INSERT INTO public.organization_members (organization_id, user_id, role) VALUES ($1, $2, 'owner')",
-      [organizationId, userId],
+      "INSERT INTO public.organization_members (organization_id, user_id, role) VALUES ($1, $2, 'owner'), ($1, $3, 'cashier')",
+      [organizationId, ownerId, cashierId],
     );
 
     const branch = await admin.query<{ id: string }>(
@@ -103,8 +110,8 @@ async function seedRealDatabase(): Promise<{ fixture: TestFixture; runtimeUrl: s
     );
     const branchId = branch.rows[0]!.id;
     await admin.query(
-      "INSERT INTO public.branch_memberships (organization_id, branch_id, user_id) VALUES ($1, $2, $3)",
-      [organizationId, branchId, userId],
+      "INSERT INTO public.branch_memberships (organization_id, branch_id, user_id) VALUES ($1, $2, $3), ($1, $2, $4)",
+      [organizationId, branchId, ownerId, cashierId],
     );
 
     const warehouse = await admin.query<{ id: string }>(
@@ -118,11 +125,13 @@ async function seedRealDatabase(): Promise<{ fixture: TestFixture; runtimeUrl: s
     );
     const registerId = register.rows[0]!.id;
 
-    const sessionToken = randomBytes(32).toString("base64url");
-    const tokenHash = createHash("sha256").update(sessionToken).digest("hex");
+    const ownerSessionToken = randomBytes(32).toString("base64url");
+    const cashierSessionToken = randomBytes(32).toString("base64url");
+    const ownerTokenHash = createHash("sha256").update(ownerSessionToken).digest("hex");
+    const cashierTokenHash = createHash("sha256").update(cashierSessionToken).digest("hex");
     await admin.query(
-      "INSERT INTO public.auth_sessions (user_id, token_hash, expires_at) VALUES ($1, $2, now() + interval '2 hours')",
-      [userId, tokenHash],
+      "INSERT INTO public.auth_sessions (user_id, token_hash, expires_at) VALUES ($1, $2, now() + interval '2 hours'), ($3, $4, now() + interval '2 hours')",
+      [ownerId, ownerTokenHash, cashierId, cashierTokenHash],
     );
 
     // Seed BCV through the same dedicated, non-superuser LOGIN used by the
@@ -144,12 +153,14 @@ async function seedRealDatabase(): Promise<{ fixture: TestFixture; runtimeUrl: s
       branchId,
       warehouseId,
       registerId,
-      sessionToken,
+      ownerSessionToken,
+      cashierSessionToken,
       productName,
       productSku,
       bcvRate,
       effectiveDate,
-      userDisplayName: "E2E Owner",
+      ownerDisplayName: "E2E Owner",
+      cashierDisplayName: "E2E Cashier",
     };
     await writeFile(fixturePath!, JSON.stringify(fixture), { encoding: "utf8", mode: 0o600 });
     return { fixture, runtimeUrl: runtimeUrl!, frontendOrigin: frontendOrigin! };

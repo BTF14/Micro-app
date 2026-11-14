@@ -6,12 +6,14 @@ type Fixture = {
   branchId: string;
   warehouseId: string;
   registerId: string;
-  sessionToken: string;
+  ownerSessionToken: string;
+  cashierSessionToken: string;
   productName: string;
   productSku: string;
   bcvRate: string;
   effectiveDate: string;
-  userDisplayName: string;
+  ownerDisplayName: string;
+  cashierDisplayName: string;
 };
 
 const fixturePath = process.env.E2E_FIXTURE_PATH;
@@ -73,7 +75,7 @@ test("real catalog → inventory receipt → register → USD/VES POS → close 
   if (!baseURL) throw new Error("Playwright baseURL is required.");
   await context.addCookies([{
     name: "microapp_session",
-    value: fixture.sessionToken,
+    value: fixture.ownerSessionToken,
     url: baseURL,
     httpOnly: true,
     secure: false,
@@ -91,7 +93,7 @@ test("real catalog → inventory receipt → register → USD/VES POS → close 
   });
 
   await page.goto("/");
-  await expect(page.getByRole("heading", { name: `Hola, ${fixture.userDisplayName.split(" ")[0]}.` })).toBeVisible();
+  await expect(page.getByRole("heading", { name: `Hola, ${fixture.ownerDisplayName.split(" ")[0]}.` })).toBeVisible();
   await expect(page.getByText("Sesión activa", { exact: true })).toBeVisible();
 
   // 1. Create and read a real catalog product through the UI and Hono API.
@@ -131,43 +133,66 @@ test("real catalog → inventory receipt → register → USD/VES POS → close 
   await expect(page.getByRole("status").filter({ hasText: "Recepción registrada y existencias actualizadas." })).toBeVisible();
   expect(await readStock(page)).toMatchObject({ status: 200, onHand: "5.000", available: "5.000" });
 
+  // The cashier is a separate persisted identity: the database opening trigger
+  // requires organization role cashier, while catalog/receipt writes require owner.
+  const cashierContext = await page.context().browser()!.newContext();
+  await cashierContext.addCookies([{
+    name: "microapp_session",
+    value: fixture.cashierSessionToken,
+    url: baseURL,
+    httpOnly: true,
+    secure: false,
+    sameSite: "Lax",
+  }]);
+  cashierContext.on("request", (request) => {
+    const url = new URL(request.url());
+    if (url.pathname.startsWith("/api/") || url.pathname.startsWith("/auth/")) {
+      requestOrigins.add(url.origin);
+      requestPaths.add(url.pathname);
+    }
+  });
+  const cashierPage = await cashierContext.newPage();
+  await cashierPage.goto("/");
+  await expect(cashierPage.getByRole("heading", { name: `Hola, ${fixture.cashierDisplayName.split(" ")[0]}.` })).toBeVisible();
+  await expect(cashierPage.getByText("Sesión activa", { exact: true })).toBeVisible();
+
   // 3. Open a real cashier shift on the seeded branch/register.
-  await page.getByRole("button", { name: "Caja y turnos", exact: true }).click();
-  await expect(page.getByRole("heading", { name: "Turnos de caja" })).toBeVisible();
-  await expect(page.getByLabel("Sucursal", { exact: true })).toHaveValue(fixture.branchId);
-  await expect(page.getByLabel("Caja", { exact: true })).toHaveValue(fixture.registerId);
-  await page.getByLabel("Fondo inicial USD", { exact: true }).fill("50.0000");
-  await page.getByLabel("Fondo inicial VES", { exact: true }).fill("1000.00");
-  const openShiftPromise = page.waitForResponse((response) =>
+  await cashierPage.getByRole("button", { name: "Caja y turnos", exact: true }).click();
+  await expect(cashierPage.getByRole("heading", { name: "Turnos de caja" })).toBeVisible();
+  await expect(cashierPage.getByLabel("Sucursal", { exact: true })).toHaveValue(fixture.branchId);
+  await expect(cashierPage.getByLabel("Caja", { exact: true })).toHaveValue(fixture.registerId);
+  await cashierPage.getByLabel("Fondo inicial USD", { exact: true }).fill("50.0000");
+  await cashierPage.getByLabel("Fondo inicial VES", { exact: true }).fill("1000.00");
+  const openShiftPromise = cashierPage.waitForResponse((response) =>
     new URL(response.url()).pathname.endsWith("/register-shifts") && response.request().method() === "POST",
   );
-  await page.getByRole("button", { name: "Abrir turno", exact: true }).click();
+  await cashierPage.getByRole("button", { name: "Abrir turno", exact: true }).click();
   expect((await openShiftPromise).status()).toBe(201);
-  await expect(page.getByText("Turno abierto correctamente. La apertura quedó registrada en auditoría.")).toBeVisible();
+  await expect(cashierPage.getByText("Turno abierto correctamente. La apertura quedó registrada en auditoría.")).toBeVisible();
 
   // 4. Two real atomic checkouts exercise both supported settlement currencies.
-  await page.getByRole("button", { name: "Ventas", exact: true }).click();
-  await expect(page.getByRole("heading", { name: "Ventas" })).toBeVisible();
-  await addProductToCart(page);
-  await completeSale(page, "USD");
-  expect(await readStock(page)).toMatchObject({ status: 200, onHand: "4.000", available: "4.000" });
+  await cashierPage.getByRole("button", { name: "Ventas", exact: true }).click();
+  await expect(cashierPage.getByRole("heading", { name: "Ventas" })).toBeVisible();
+  await addProductToCart(cashierPage);
+  await completeSale(cashierPage, "USD");
+  expect(await readStock(cashierPage)).toMatchObject({ status: 200, onHand: "4.000", available: "4.000" });
 
-  await page.getByRole("button", { name: "Nueva venta", exact: true }).click();
-  await addProductToCart(page);
-  await completeSale(page, "VES");
-  expect(await readStock(page)).toMatchObject({ status: 200, onHand: "3.000", available: "3.000" });
+  await cashierPage.getByRole("button", { name: "Nueva venta", exact: true }).click();
+  await addProductToCart(cashierPage);
+  await completeSale(cashierPage, "VES");
+  expect(await readStock(cashierPage)).toMatchObject({ status: 200, onHand: "3.000", available: "3.000" });
 
   // Prepare one more sale in a still-open UI. A second page will close the shift,
   // making this page's cached shift deliberately stale without altering the API.
-  await page.getByRole("button", { name: "Nueva venta", exact: true }).click();
-  await addProductToCart(page);
-  await page.getByRole("button", { name: "Monto exacto", exact: true }).click();
-  await expect(page.getByRole("button", { name: "Cobrar venta", exact: true })).toBeEnabled();
+  await cashierPage.getByRole("button", { name: "Nueva venta", exact: true }).click();
+  await addProductToCart(cashierPage);
+  await cashierPage.getByRole("button", { name: "Monto exacto", exact: true }).click();
+  await expect(cashierPage.getByRole("button", { name: "Cobrar venta", exact: true })).toBeEnabled();
 
-  // 5. Close the shift in a second authenticated page and verify persistence after reload.
-  const closer = await context.newPage();
+  // 5. Close the shift in a second cashier page and verify persistence after reload.
+  const closer = await cashierContext.newPage();
   await closer.goto("/");
-  await expect(closer.getByRole("heading", { name: `Hola, ${fixture.userDisplayName.split(" ")[0]}.` })).toBeVisible();
+  await expect(closer.getByRole("heading", { name: `Hola, ${fixture.cashierDisplayName.split(" ")[0]}.` })).toBeVisible();
   await closer.getByRole("button", { name: "Caja y turnos", exact: true }).click();
   await expect(closer.getByText("Turno abierto", { exact: true })).toBeVisible();
   await closer.getByLabel("Conteo final USD", { exact: true }).fill("60.0000");
@@ -185,24 +210,25 @@ test("real catalog → inventory receipt → register → USD/VES POS → close 
   await closer.getByRole("button", { name: "Caja y turnos", exact: true }).click();
   await expect(closer.getByText("Sin turno abierto", { exact: true })).toBeVisible();
 
-  // 6. The stale POS page reaches the real checkout API; the closed shift rejects it.
-  const rejectedCheckoutPromise = page.waitForResponse((response) =>
+  // 6. The stale cashier POS page reaches the real checkout API; the closed shift rejects it.
+  const rejectedCheckoutPromise = cashierPage.waitForResponse((response) =>
     new URL(response.url()).pathname.endsWith("/checkout") && response.request().method() === "POST",
   );
-  await page.getByRole("button", { name: "Cobrar venta", exact: true }).click();
+  await cashierPage.getByRole("button", { name: "Cobrar venta", exact: true }).click();
   const rejectedCheckout = await rejectedCheckoutPromise;
   expect(rejectedCheckout.status()).toBe(409);
   const rejectedBody = await rejectedCheckout.json() as { error?: string };
   expect(rejectedBody.error).toBe("OPEN_SHIFT_REQUIRED");
-  await expect(page.getByRole("alert").filter({
+  await expect(cashierPage.getByRole("alert").filter({
     hasText: "Debes tener tu propio turno abierto para registrar la venta.",
   })).toBeVisible();
-  expect(await readStock(page)).toMatchObject({ status: 200, onHand: "3.000", available: "3.000" });
+  expect(await readStock(cashierPage)).toMatchObject({ status: 200, onHand: "3.000", available: "3.000" });
 
-  await page.reload();
-  await expect(page.getByText("Sesión activa", { exact: true })).toBeVisible();
-  await page.getByRole("button", { name: "Ventas", exact: true }).click();
-  await expect(page.getByRole("heading", { name: "Abre tu turno antes de vender" })).toBeVisible();
+  await cashierPage.reload();
+  await expect(cashierPage.getByText("Sesión activa", { exact: true })).toBeVisible();
+  await cashierPage.getByRole("button", { name: "Ventas", exact: true }).click();
+  await expect(cashierPage.getByRole("heading", { name: "Abre tu turno antes de vender" })).toBeVisible();
+  await cashierContext.close();
 
   // Every application API request used the real same-origin proxy; no page.route
   // or network response interception is installed in this spec.

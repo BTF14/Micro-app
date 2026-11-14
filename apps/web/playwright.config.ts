@@ -7,7 +7,15 @@ export default defineConfig({
   retries: process.env.CI ? 1 : 0,
   reporter: process.env.CI ? [["list"], ["html", { open: "never", outputFolder: "playwright-report" }]] : "list",
   use: { baseURL: "http://127.0.0.1:4173", trace: "retain-on-failure", screenshot: "only-on-failure" },
-  projects: [{ name: "chromium", use: { ...devices["Desktop Chrome"] } }],
+  projects: [{
+    name: "mobile-chromium",
+    use: {
+      ...devices["Desktop Chrome"],
+      viewport: { width: 390, height: 844 },
+      isMobile: true,
+      hasTouch: true,
+    },
+  }],
   webServer: {
     command: process.env.E2E_API_PROXY_TARGET
       ? "pnpm --filter @micro-app/web exec vite preview --host 127.0.0.1 --port 4173 --strictPort"

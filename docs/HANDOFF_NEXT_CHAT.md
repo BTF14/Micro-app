@@ -1,40 +1,41 @@
-## Turno 47 — PR #366 integrada; cierre P1 verificable en preparación (2026-11-14 UTC)
+## Turno 48 — P1 validado en CI; PR #367 pendiente de cierre (2026-11-14 UTC)
 
 **`main` actual verificada:** `366334ae75c966e4fada13afed964a7f4b557954`.
 
-### PR #366 — cierre confirmado
-- PR #366 está MERGED desde 2026-11-14 22:45:01 UTC.
-- HEAD exacto de PR: `b078a02608b807a2ecdd0b59e95d8017ecd2f553`; 16/16 check-runs SUCCESS y 12/12 workflow runs SUCCESS. CI `verify`: 52/52 pasos SUCCESS; job PostgreSQL 18 full-stack: 20/20 pasos ejecutados SUCCESS; pruebas de autenticación del navegador SUCCESS.
-- Merge SHA y `main`: `366334ae75c966e4fada13afed964a7f4b557954`. Snapshot registrado inmediatamente después de integrar: 14/14 check-runs SUCCESS y 9/9 workflow runs SUCCESS.
-- Relectura posterior del mismo SHA mediante GitHub REST: 17 registros de check-run (16 SUCCESS, 1 CANCELLED) y 12 workflow runs (11 SUCCESS, 1 CANCELLED). El registro cancelado corresponde a una ejecución posterior duplicada de validación de base de datos; existe una ejecución anterior del mismo workflow con SUCCESS. No se contabiliza la lista ampliada como totalmente verde.
-- PR #193 sigue OPEN, sin cambios: HEAD `ac57ab4f3415f82279b8a49c0befe09f8e3aec68`. Issue #53 sigue OPEN con prioridad P0.
+### PR #366 — cierre previo confirmado
+- PR #366 MERGED; HEAD exacto `b078a02608b807a2ecdd0b59e95d8017ecd2f553`: 16/16 check-runs SUCCESS y 12/12 workflow runs SUCCESS.
+- Merge SHA y `main`: `366334ae75c966e4fada13afed964a7f4b557954`. Snapshot al integrar: 14/14 check-runs SUCCESS y 9/9 workflow runs SUCCESS.
+- Relectura posterior del mismo SHA: 17 registros de check-run (16 SUCCESS, 1 CANCELLED) y 12 workflow runs (11 SUCCESS, 1 CANCELLED). La ejecución cancelada es una duplicación posterior de validación de base de datos; la ejecución anterior equivalente terminó SUCCESS. La lista ampliada no se presenta como totalmente verde.
+- PR #193 sigue OPEN e intacta, HEAD `ac57ab4f3415f82279b8a49c0befe09f8e3aec68`. Issue #53 sigue OPEN/P0.
 
-### Nueva rama P1 — alcance y estado
-- Rama aislada: `feat/p1-mobile-a11y-stock-log-safety-20261114`. El documento ODD de la tarea P1 se creó como primer cambio antes de tocar código.
-- Se amplió la suite full-stack para probar el rechazo real por stock insuficiente con dos sesiones de navegador, respuesta API 409, alerta accesible y comparación antes/después del balance y ledger en PostgreSQL efímero.
-- Se añadió el proyecto Playwright móvil de 390×844, comprobaciones de desbordamiento horizontal, navegación por teclado en login/módulos/checkout y manejo de foco del diálogo.
-- La búsqueda de código identificó diez llamadas `console.*` en tres archivos productivos de `apps/api/src`; sus argumentos actuales son códigos/eventos allowlisted y metadatos acotados, no tokens, secretos, cookies, payloads externos ni IPs crudas. Se añadió una prueba estática deny-by-default. La ejecución CI de esta nueva cobertura está pendiente; no se declara validada todavía.
-- El último commit de código verificado antes de esta reconciliación documental fue `b156f79b407cdcefa157e5e512c79a46eefbbfec`. Los commits de continuidad posteriores cambian la punta de PR #367; consultar su HEAD vivo y ejecutar/verificar CI en ese SHA exacto antes de cualquier decisión.
+### PR #367 — implementación P1 y evidencia CI
+- PR #367 OPEN, rama `feat/p1-mobile-a11y-stock-log-safety-20261114`, contra `main` `366334ae75c966e4fada13afed964a7f4b557954`.
+- HEAD de implementación validado: `4285d183a53ba43c4f471ca242102389c8697080`. En ese SHA exacto: **17/17 check-runs SUCCESS y 13/13 workflow runs SUCCESS**. CI `verify`: 52/52 pasos SUCCESS; ODD docs, migraciones, SAST, seguridad, secretos y dependency review SUCCESS.
+- Playwright E2E: autenticación Chromium SUCCESS; el flujo full-stack real Hono + PostgreSQL 18 efímero pasó **1/1 test** en 9.6 segundos bajo el proyecto móvil 390×844.
+- El test de stock insuficiente crea una condición de stock obsoleto entre dos pestañas, exige API 409 `INSUFFICIENT_STOCK`, comprueba la alerta accesible y compara el balance y el ledger antes/después del rechazo. No usa `page.route`, mocks de API ni endpoints de test en runtime.
+- Las comprobaciones móviles verifican ausencia de overflow horizontal bloqueante en catálogo, recepción, POS y recibo; controles accesibles; navegación Tab/Enter en login/módulos/checkout; foco visible y restaurado del diálogo; regiones de error/estado.
+- La auditoría identificó diez llamadas productivas `console.*` en tres archivos de `apps/api/src`. Todas usan eventos/códigos allowlisted y metadatos acotados; no se encontraron tokens, secretos, cookies, payloads externos ni IPs crudas. La prueba estática deny-by-default pasó dentro de CI.
+- Los check-runs incluyen 17 entradas y 13 workflows, contando las ejecuciones push y pull_request del mismo SHA; todas terminaron SUCCESS. Los fallos anteriores en SHA previos a las correcciones son diagnósticos y no se reutilizan.
+- Esta reconciliación documental avanza la punta de PR #367 desde el HEAD de implementación validado. El HEAD final que incluya estos documentos debe volver a pasar todos los checks antes de merge.
 
 ### Límites de producción
-- La E2E ya integrada valida en CI el flujo comercial real sobre Hono y PostgreSQL 18 efímero: alta/lectura, recepción, ventas USD/VES, recibos, balance persistido, cierre de turno y rechazo por turno cerrado. No demuestra producción real.
-- Los nuevos casos P1 de stock insuficiente, viewport móvil, teclado/foco y regresión de logs permanecen pendientes de CI.
-- Los gates de producción que continúan abiertos: primera tasa BCV real persistida en Neon `main` durante la ventana `MON-FRI 22:00 UTC`; entrega externa de alertas; aceptación humana de RPO/RTO; asesoría y aprobación legal/fiscal; cierre formal de Issue #53.
+- La parte P1 descrita arriba está validada en CI contra infraestructura efímera. No demuestra comportamiento con datos reales ni certifica producción.
+- Permanecen abiertos: primera tasa BCV real persistida en Neon `main` durante `MON-FRI 22:00 UTC`; entrega externa de alertas; aceptación humana de RPO/RTO; asesoría/aprobación legal y fiscal; cierre formal de Issue #53.
 - No se modificó Neon `main`, secretos, configuración manual de proveedores ni despliegues. No se modificó PR #193 ni se cerró Issue #53.
 
-**Estado:** Issue #53 OPEN/P0; PR #193 OPEN; **PRODUCTION: NOT READY**.
+**Estado:** PR #367 OPEN; PR #193 OPEN; Issue #53 OPEN/P0; **PRODUCTION: NOT READY**.
 
 ### Próximo control obligatorio
-Completar validación local/CI de la rama P1, corregir solo fallos demostrados, actualizar continuidad con resultados exactos, abrir una sola PR y revisar su diff completo, check-runs, workflow runs, reviews y threads sobre el HEAD final. No fusionar con checks pendientes/cancelados ni reutilizar resultados de un SHA anterior. Mantener los límites de producción anteriores.
+Verificar en vivo el HEAD actual de PR #367 después de esta actualización documental. Exigir todos los check-runs y workflow runs SUCCESS en ese SHA exacto, revisar el diff completo, reviews y threads; después hacer Squash and Merge conforme a `AGENTS.md` y verificar todos los checks post-merge en el nuevo `main`. No reutilizar resultados de SHA anteriores.
 
 ### Instrucciones para la siguiente sesión
 - Leer primero `AGENTS.md`, `docs/CONSTITUTION.md`, `docs/ODD_WORKFLOW.md` y las cabeceras de este handoff y `docs/CURRENT_STATE.md`.
-- Verificar en vivo `main`, PR #366 (ya MERGED), PR #193 (OPEN) e Issue #53 (OPEN/P0). No duplicar PR #361, #363, #364, #365 ni #366.
-- Continuar en `feat/p1-mobile-a11y-stock-log-safety-20261114`; leer `odd/tasks/p1-mobile-a11y-stock-and-log-safety.md` y revisar el diff completo de los commits actuales antes de añadir cambios.
-- Ejecutar y corregir los checks de la suite real full-stack, Playwright móvil y prueba estática de logs. La rama todavía no tiene PR; crear una sola cuando el diff esté listo y el estado de main siga siendo el SHA documentado.
-- En el E2E, mantener cero `page.route` y cero mocks de `/api/*`; el test de stock debe demostrar 4xx real y balance/ledger idénticos antes/después. No registrar ni imprimir credenciales del entorno de PostgreSQL.
-- Antes de cualquier merge, comprobar en el HEAD final exacto todos los check-runs, workflow runs, reviews y threads. Después comprobar cada check post-merge del SHA exacto de `main`.
-- No modificar ni cerrar PR #193. No cerrar Issue #53; mantener **PRODUCTION: NOT READY** hasta demostrar los gates reales de producción.
+- Verificar en vivo `main`, PR #367, PR #193 e Issue #53. PR #366 ya está MERGED; no duplicar PR #361, #363, #364, #365 ni #366.
+- PR #367 está OPEN. Su HEAD de implementación `4285d183a53ba43c4f471ca242102389c8697080` pasó 17/17 check-runs y 13/13 workflow runs SUCCESS; CI verify 52/52; Playwright mobile full-stack 1/1 test y auth smoke SUCCESS. Esta actualización documental cambia la punta; leer el HEAD vivo actual y exigir CI nuevo sobre él.
+- Leer `odd/tasks/p1-mobile-a11y-stock-and-log-safety.md` y revisar el diff completo de PR #367, sin volver a pedir datos ya documentados.
+- No fusionar hasta verificar todos los check-runs, workflow runs, reviews y threads en el HEAD final exacto. Después verificar todos los checks post-merge en el SHA exacto de `main`.
+- Mantener cero `page.route` y cero mocks de `/api/*` en la suite full-stack real. No imprimir credenciales de PostgreSQL.
+- No modificar ni cerrar PR #193. No cerrar Issue #53; mantener **PRODUCTION: NOT READY**.
 - No tocar Neon `main`, secretos, configuración manual de proveedores ni despliegues manuales.
 
 ## Turno 45 — PR #364 integrada y verificación post-merge (2026-11-14 UTC)

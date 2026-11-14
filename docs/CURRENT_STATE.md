@@ -1,3 +1,33 @@
+## Turno 48 — P1 validado en CI; PR #367 pendiente de cierre (2026-11-14 UTC)
+
+**`main` actual verificada:** `366334ae75c966e4fada13afed964a7f4b557954`.
+
+### PR #366 — cierre previo confirmado
+- PR #366 MERGED; HEAD exacto `b078a02608b807a2ecdd0b59e95d8017ecd2f553`: 16/16 check-runs SUCCESS y 12/12 workflow runs SUCCESS.
+- Merge SHA y `main`: `366334ae75c966e4fada13afed964a7f4b557954`. Snapshot al integrar: 14/14 check-runs SUCCESS y 9/9 workflow runs SUCCESS.
+- Relectura posterior del mismo SHA: 17 registros de check-run (16 SUCCESS, 1 CANCELLED) y 12 workflow runs (11 SUCCESS, 1 CANCELLED). La ejecución cancelada es una duplicación posterior de validación de base de datos; la ejecución anterior equivalente terminó SUCCESS. La lista ampliada no se presenta como totalmente verde.
+- PR #193 sigue OPEN e intacta, HEAD `ac57ab4f3415f82279b8a49c0befe09f8e3aec68`. Issue #53 sigue OPEN/P0.
+
+### PR #367 — implementación P1 y evidencia CI
+- PR #367 OPEN, rama `feat/p1-mobile-a11y-stock-log-safety-20261114`, contra `main` `366334ae75c966e4fada13afed964a7f4b557954`.
+- HEAD de implementación validado: `4285d183a53ba43c4f471ca242102389c8697080`. En ese SHA exacto: **17/17 check-runs SUCCESS y 13/13 workflow runs SUCCESS**. CI `verify`: 52/52 pasos SUCCESS; ODD docs, migraciones, SAST, seguridad, secretos y dependency review SUCCESS.
+- Playwright E2E: autenticación Chromium SUCCESS; el flujo full-stack real Hono + PostgreSQL 18 efímero pasó **1/1 test** en 9.6 segundos bajo el proyecto móvil 390×844.
+- El test de stock insuficiente crea una condición de stock obsoleto entre dos pestañas, exige API 409 `INSUFFICIENT_STOCK`, comprueba la alerta accesible y compara el balance y el ledger antes/después del rechazo. No usa `page.route`, mocks de API ni endpoints de test en runtime.
+- Las comprobaciones móviles verifican ausencia de overflow horizontal bloqueante en catálogo, recepción, POS y recibo; controles accesibles; navegación Tab/Enter en login/módulos/checkout; foco visible y restaurado del diálogo; regiones de error/estado.
+- La auditoría identificó diez llamadas productivas `console.*` en tres archivos de `apps/api/src`. Todas usan eventos/códigos allowlisted y metadatos acotados; no se encontraron tokens, secretos, cookies, payloads externos ni IPs crudas. La prueba estática deny-by-default pasó dentro de CI.
+- Los check-runs incluyen 17 entradas y 13 workflows, contando las ejecuciones push y pull_request del mismo SHA; todas terminaron SUCCESS. Los fallos anteriores en SHA previos a las correcciones son diagnósticos y no se reutilizan.
+- Esta reconciliación documental avanza la punta de PR #367 desde el HEAD de implementación validado. El HEAD final que incluya estos documentos debe volver a pasar todos los checks antes de merge.
+
+### Límites de producción
+- La parte P1 descrita arriba está validada en CI contra infraestructura efímera. No demuestra comportamiento con datos reales ni certifica producción.
+- Permanecen abiertos: primera tasa BCV real persistida en Neon `main` durante `MON-FRI 22:00 UTC`; entrega externa de alertas; aceptación humana de RPO/RTO; asesoría/aprobación legal y fiscal; cierre formal de Issue #53.
+- No se modificó Neon `main`, secretos, configuración manual de proveedores ni despliegues. No se modificó PR #193 ni se cerró Issue #53.
+
+**Estado:** PR #367 OPEN; PR #193 OPEN; Issue #53 OPEN/P0; **PRODUCTION: NOT READY**.
+
+### Próximo control obligatorio
+Verificar en vivo el HEAD actual de PR #367 después de esta actualización documental. Exigir todos los check-runs y workflow runs SUCCESS en ese SHA exacto, revisar el diff completo, reviews y threads; después hacer Squash and Merge conforme a `AGENTS.md` y verificar todos los checks post-merge en el nuevo `main`. No reutilizar resultados de SHA anteriores.
+
 ## Turno 47 — PR #366 integrada; cierre P1 verificable en preparación (2026-11-14 UTC)
 
 **`main` actual verificada:** `366334ae75c966e4fada13afed964a7f4b557954`.

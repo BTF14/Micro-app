@@ -28,11 +28,11 @@ Excluded:
 
 ## Acceptance criteria
 
-- [ ] AC-1 — Real insufficient-stock checkout returns an actual API 4xx; UI exposes a clear accessible error; PostgreSQL balance and immutable movement ledger remain unchanged.
-- [ ] AC-2 — Full commercial flow passes at 390x844 with no blocking horizontal overflow and usable, visible catalog, POS and receipt controls.
-- [ ] AC-3 — Real browser keyboard checks exercise Tab/Enter across login, modules and checkout; critical controls have accessible names/labels, focus is visible, and live error/status regions are announced.
+- [x] AC-1 — Real insufficient-stock checkout returns an actual API 4xx; UI exposes a clear accessible error; PostgreSQL balance and immutable movement ledger remain unchanged.
+- [x] AC-2 — Full commercial flow passes at 390x844 with no blocking horizontal overflow and usable, visible catalog, POS and receipt controls.
+- [x] AC-3 — Real browser keyboard checks exercise Tab/Enter across login, modules and checkout; critical controls have accessible names/labels, focus is visible, and live error/status regions are announced.
 - [x] AC-4 — Every production `console.*` callsite in `apps/api/src` is audited; no session tokens, secrets, cookies, raw external payloads or raw IPs are emitted.
-- [ ] AC-5 — Automated static/unit regression test fails on unsafe logging patterns in `apps/api/src`.
+- [x] AC-5 — Automated static/unit regression test fails on unsafe logging patterns in `apps/api/src`.
 - [x] AC-6 — `odd/tasks/real-fullstack-commerce-e2e.md` is Status: completed and AC-8 records PR #366 HEAD `b078a02608b807a2ecdd0b59e95d8017ecd2f553` (16/16 check-runs, 12/12 workflows SUCCESS) and post-merge `main` `366334ae75c966e4fada13afed964a7f4b557954` (14/14 check-runs, 9/9 workflows SUCCESS).
 - [x] AC-7 — Production readiness and continuity docs accurately distinguish CI-validated P1 from real production gates; no personal emails, provider IDs, internal business/product names or secrets.
 - [ ] AC-8 — Complete diff reviewed; all check-runs and workflow runs SUCCESS on the final exact PR HEAD; squash merge under repository policy; all post-merge checks verified on exact `main`.
@@ -53,8 +53,8 @@ Excluded:
 |---|---|---|---|
 | Reconcile live repository and PR #366 closure | Correct base and no duplicate work | GitHub reads; #366 closed/merged; #193 and #53 open | complete |
 | Add this ODD task before source changes | Durable scope and acceptance criteria | First branch commit `cb96d544f3d8df1505dc5acde9b264c7226e3917` | complete |
-| Extend real commerce E2E | Stock failure, mobile and keyboard assertions | Real Hono/PostgreSQL harness and mobile Playwright project; CI pending | in progress |
-| Audit API operational logs | Safe structured output only | 10 reviewed production calls across 3 source files; static regression test added, CI pending | in progress |
+| Extend real commerce E2E | Stock failure, mobile and keyboard assertions | PR #367 HEAD `4285d183a53ba43c4f471ca242102389c8697080`: 17/17 checks, 13/13 workflows SUCCESS; mobile full-stack 1/1 passed | complete |
+| Audit API operational logs | Safe structured output only | 10 reviewed production calls across 3 source files; deny-by-default static test passed in CI | complete |
 | Reconcile readiness and continuity | Exact evidence, honest production gates | #366 task, readiness, current state, journal and handoff updated | complete |
 | Final exact-HEAD CI, review and merge | Safe integrated PR | All check-runs/workflows and post-merge main | pending |
 
@@ -68,12 +68,13 @@ Excluded:
 
 ## Closure and handoff
 
-- CI history: the first PR attempt on pre-fix HEADs exposed a TypeScript Node URL type conflict and a mobile-only hidden-session assertion. Both were corrected in code commit `b156f79b407cdcefa157e5e512c79a46eefbbfec`. Failed/cancelled runs on earlier SHAs are diagnostic only; they do not count as final validation. Require fresh successful checks on the current exact PR HEAD.
+- CI history: pre-fix heads exposed a TypeScript Node URL type conflict, a mobile-only hidden-session assertion and an allowlist-normalization mismatch. These were corrected before the validated implementation HEAD `4285d183a53ba43c4f471ca242102389c8697080`. Earlier failed/cancelled runs are diagnostic only and are not reused.
+- Validated implementation evidence: 17/17 check-runs SUCCESS, 13/13 workflow runs SUCCESS, CI verify 52/52, Playwright mobile full-stack 1/1 passed in 9.6 seconds, Chromium authentication smoke SUCCESS.
+- This documentation refresh advances the PR branch beyond the validated implementation HEAD. Recheck every gate on the live PR HEAD before merge.
 
-- Current branch HEAD: `b156f79b407cdcefa157e5e512c79a46eefbbfec`; PR #367 OPEN against `main` `366334ae75c966e4fada13afed964a7f4b557954`.
-- PR: #367 OPEN; HEAD `b156f79b407cdcefa157e5e512c79a46eefbbfec`.
-- Checks and exact outcomes: pending CI for the new P1 code.
-- Acceptance criteria met / unmet: AC-4 source audit and AC-6 #366 closure evidence complete; AC-1–AC-3 and AC-5 await CI; AC-7 documentation updated; AC-8 merge gate pending; AC-9 live state verified.
+- Last validated implementation HEAD: `4285d183a53ba43c4f471ca242102389c8697080`; PR #367 OPEN against `main` `366334ae75c966e4fada13afed964a7f4b557954`. This documentation commit advances the branch; verify the live PR HEAD.
+- Checks on the implementation HEAD: 17/17 check-runs SUCCESS, 13/13 workflow runs SUCCESS, CI verify 52/52, Playwright mobile full-stack 1/1 SUCCESS.
+- Acceptance criteria met / unmet: AC-1–AC-7 and AC-9 validated; AC-8 awaits final exact-HEAD CI, diff/review/thread audit, squash merge and post-merge verification.
 - Limitations not verified: first real BCV rate persisted in Neon `main`; external alert delivery; human RPO/RTO; legal/fiscal approval.
 - Residual risks: Issue #53 P0 and production gates remain open.
 - Next step: verify all required check-runs/workflow runs on this exact PR HEAD, review the complete diff/reviews/threads, fix demonstrated failures, then verify the final exact HEAD again before any squash merge.

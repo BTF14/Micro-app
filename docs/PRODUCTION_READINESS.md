@@ -1,17 +1,18 @@
 # Readiness para producción — corte vigente 2026-11-14
 
-## Estado vigente — PR #366 integrada; validación P1 adicional pendiente
+## Estado vigente — P1 validado en CI; PR #367 pendiente de merge
 
 - `main` verificada: `366334ae75c966e4fada13afed964a7f4b557954`.
-- PR #366 MERGED a las 22:45:01 UTC. HEAD exacto `b078a02608b807a2ecdd0b59e95d8017ecd2f553`: 16/16 check-runs SUCCESS y 12/12 workflow runs SUCCESS; CI `verify` 52/52 pasos SUCCESS; job PostgreSQL 18 full-stack 20/20 pasos ejecutados SUCCESS; smoke tests de autenticación SUCCESS.
-- Snapshot post-merge registrado al integrar `main`: 14/14 check-runs SUCCESS y 9/9 workflow runs SUCCESS.
-- Relectura posterior del mismo SHA: 17 registros de check-run (16 SUCCESS, 1 CANCELLED) y 12 workflow runs (11 SUCCESS, 1 CANCELLED). El cancelado es una ejecución posterior duplicada de validación de base de datos; otra ejecución anterior del mismo workflow terminó SUCCESS. Se conserva esta distinción y no se afirma que las 17/12 entradas estén todas en SUCCESS.
-- La parte de P1 ya validada en CI por PR #366 es el flujo full-stack real sobre Hono y PostgreSQL 18 efímero: alta/lectura de producto, recepción, apertura de turno, ventas USD/VES, recibos, persistencia del descuento de stock, cierre/recarga y rechazo real 409 al intentar vender con turno cerrado. Sin `page.route`, mocks de API ni endpoints de test en runtime.
-- El siguiente bloque P1 está en PR #367, rama `feat/p1-mobile-a11y-stock-log-safety-20261114`, último commit de código verificado `b156f79b407cdcefa157e5e512c79a46eefbbfec` (la reconciliación documental posterior avanza la punta de la PR): rechazo por stock insuficiente con balance/ledger sin mutación, viewport móvil 390×844, teclado/foco/ARIA y prueba estática de logs. CI del HEAD vivo de PR #367 está pendiente; **no se cuenta como validado**.
-- La auditoría de código identificó diez llamadas productivas `console.*` en tres archivos de `apps/api/src`; todas usan eventos/códigos allowlisted y metadatos acotados. La prueba de regresión añadida debe pasar CI antes de cerrar ese control.
+- PR #366 MERGED. HEAD exacto `b078a02608b807a2ecdd0b59e95d8017ecd2f553`: 16/16 check-runs SUCCESS y 12/12 workflow runs SUCCESS. Snapshot al integrar `main`: 14/14 check-runs SUCCESS y 9/9 workflow runs SUCCESS.
+- Relectura posterior de ese mismo SHA: 17 check-run records (16 SUCCESS, 1 CANCELLED) y 12 workflow runs (11 SUCCESS, 1 CANCELLED). La cancelación corresponde a una ejecución posterior duplicada de validación de base de datos; existe una ejecución anterior equivalente con SUCCESS. No se describe el conjunto ampliado como totalmente verde.
+- PR #367 OPEN. HEAD de implementación validado `4285d183a53ba43c4f471ca242102389c8697080`: 17/17 check-runs SUCCESS y 13/13 workflow runs SUCCESS. CI `verify` 52/52 pasos SUCCESS; migraciones, SAST, seguridad, secretos, dependencia y validación ODD SUCCESS.
+- Playwright E2E: autenticación Chromium SUCCESS y flujo full-stack real Hono + PostgreSQL 18 efímero **1/1 test SUCCESS** en 9.6 segundos, bajo proyecto móvil 390×844.
+- La parte P1 validada en CI incluye: checkout real por encima del stock vigente con HTTP 409 y alerta accesible; balance y ledger inalterados tras el rechazo; viewport móvil sin overflow bloqueante en catálogo, recepción, POS y recibo; navegación Tab/Enter, nombres accesibles, foco visible/restaurado y regiones de error/estado; auditoría de diez llamadas productivas `console.*` y prueba estática deny-by-default que pasó CI.
+- El test full-stack no usa `page.route`, mocks de `/api/*` ni endpoints de test en runtime. Las conexiones PostgreSQL se limitan a la base efímera de CI.
+- La reconciliación documental actualiza PR #367 y avanza la punta desde el HEAD de implementación validado; los checks deben volver a verificarse sobre el HEAD vivo final antes de merge.
 - PR #193 permanece OPEN e intacta. Issue #53 permanece OPEN/P0.
 
-**Estado de producción: NOT READY.** Los checks de CI y las pruebas sobre PostgreSQL efímero no certifican producción ni sustituyen los gates pendientes.
+**Estado de producción: NOT READY.** CI y PostgreSQL efímero no certifican producción ni sustituyen los gates pendientes.
 
 ## Gates bloqueantes para producción — vigentes
 
@@ -22,7 +23,6 @@
 5. **Issue #53 P0 y aceptación del propietario:** mantener el issue OPEN hasta que sus gates de producción estén demostrados y aprobados.
 
 **Decisión vigente:** **PRODUCTION: NOT READY**. No promover ni declarar GO mientras permanezcan abiertos estos gates.
-
 
 ## Snapshot histórico — 2026-11-11 — PR #287
 

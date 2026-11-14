@@ -1,1 +1,73 @@
-<svg xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="title desc" viewBox="0 0 1000 330"><title id="title">Micro app project progress</title><desc id="desc">Evidence-based completion by checklist group.</desc><rect width="1000" height="330" fill="#0d1117"/><style>text{font-family:system-ui,sans-serif;fill:#f0f6fc}.muted{fill:#9da7b3;font-size:12px}.label{font-size:14px}.pct{font-size:16px;font-weight:650}</style><text x="24" y="34" font-size="24" font-weight="700">Micro app · progreso verificable</text><text x="24" y="58" class="muted">Implementación: 21.7% (5/23)</text><text x="520" y="58" class="muted">Preparación producción: 25.0% (5/20)</text><text x="24" y="107" class="label">Implementación funcional</text><text x="976" y="107" text-anchor="end" class="pct">21.7% · 5/23</text><rect x="24" y="117" width="952" height="16" rx="3" fill="#21262d"/><rect x="24" y="117" width="206.58" height="16" rx="3" fill="#6e7681"/><text x="24" y="171" class="label">Preparación para producción (gates)</text><text x="976" y="171" text-anchor="end" class="pct">25.0% · 5/20</text><rect x="24" y="181" width="952" height="16" rx="3" fill="#21262d"/><rect x="24" y="181" width="238" height="16" rx="3" fill="#6e7681"/><text x="24" y="235" class="label">Bloqueos conocidos</text><text x="976" y="235" text-anchor="end" class="pct">0% · 0/0</text><rect x="24" y="245" width="952" height="16" rx="3" fill="#21262d"/><text x="24" y="295" class="muted">Conteo del checklist de preparación · actualizar con python3 tools/project-progress.py</text></svg>
+<svg xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="title desc" viewBox="0 0 1000 1146">
+<title id="title">Micro app project progress</title>
+<desc id="desc">Evidence-based completion by checklist group.</desc>
+<rect width="1000" height="1146" fill="#0d1117"/>
+<style>text{font-family:system-ui,sans-serif;fill:#f0f6fc}.muted{fill:#9da7b3;font-size:12px}.label{font-size:14px}.pct{font-size:16px;font-weight:650}</style>
+<text x="24" y="34" font-size="24" font-weight="700">Micro app · progreso verificable</text>
+<text x="24" y="58" class="muted">Implementación: 55.6% (10/18)</text>
+<text x="520" y="58" class="muted">Preparación producción: 52.4% (11/21)</text>
+<text x="24" y="107" class="label">Gates bloqueantes para producción</text>
+<text x="976" y="107" text-anchor="end" class="pct">0.0% · 0/0</text>
+<rect x="24" y="117" width="952" height="16" rx="3" fill="#21262d"/>
+<rect x="24" y="117" width="0.00" height="16" rx="3" fill="#6e7681"/>
+<text x="24" y="171" class="label">Revalidación de readiness — 2026-11-11 — resiliencia backup / PR #287</text>
+<text x="976" y="171" text-anchor="end" class="pct">0.0% · 0/0</text>
+<rect x="24" y="181" width="952" height="16" rx="3" fill="#21262d"/>
+<rect x="24" y="181" width="0.00" height="16" rx="3" fill="#6e7681"/>
+<text x="24" y="235" class="label">Revalidación — 2026-11-11 — PR #287 / backup principal</text>
+<text x="976" y="235" text-anchor="end" class="pct">0.0% · 0/0</text>
+<rect x="24" y="245" width="952" height="16" rx="3" fill="#21262d"/>
+<rect x="24" y="245" width="0.00" height="16" rx="3" fill="#6e7681"/>
+<text x="24" y="299" class="label">Revalidación de evidencia — integración BCV/checkout PR #287 — 2026-11-09 UTC</text>
+<text x="976" y="299" text-anchor="end" class="pct">0.0% · 0/0</text>
+<rect x="24" y="309" width="952" height="16" rx="3" fill="#21262d"/>
+<rect x="24" y="309" width="0.00" height="16" rx="3" fill="#6e7681"/>
+<text x="24" y="363" class="label">Nota autoritativa — 2026-11-08 UTC</text>
+<text x="976" y="363" text-anchor="end" class="pct">0.0% · 0/0</text>
+<rect x="24" y="373" width="952" height="16" rx="3" fill="#21262d"/>
+<rect x="24" y="373" width="0.00" height="16" rx="3" fill="#6e7681"/>
+<text x="24" y="427" class="label">Readiness de producción — 2026-11-08 UTC</text>
+<text x="976" y="427" text-anchor="end" class="pct">0.0% · 0/0</text>
+<rect x="24" y="437" width="952" height="16" rx="3" fill="#21262d"/>
+<rect x="24" y="437" width="0.00" height="16" rx="3" fill="#6e7681"/>
+<text x="24" y="491" class="label">Estado operativo autoritativo — 2026-11-08 UTC</text>
+<text x="976" y="491" text-anchor="end" class="pct">0.0% · 0/0</text>
+<rect x="24" y="501" width="952" height="16" rx="3" fill="#21262d"/>
+<rect x="24" y="501" width="0.00" height="16" rx="3" fill="#6e7681"/>
+<text x="24" y="555" class="label">Revisión de readiness — 2026-11-08 UTC</text>
+<text x="976" y="555" text-anchor="end" class="pct">0.0% · 0/0</text>
+<rect x="24" y="565" width="952" height="16" rx="3" fill="#21262d"/>
+<rect x="24" y="565" width="0.00" height="16" rx="3" fill="#6e7681"/>
+<text x="24" y="619" class="label">Estado vivo — 2026-11-08 UTC</text>
+<text x="976" y="619" text-anchor="end" class="pct">0.0% · 0/0</text>
+<rect x="24" y="629" width="952" height="16" rx="3" fill="#21262d"/>
+<rect x="24" y="629" width="0.00" height="16" rx="3" fill="#6e7681"/>
+<text x="24" y="683" class="label">Estado vivo — 2026-11-14 UTC</text>
+<text x="976" y="683" text-anchor="end" class="pct">0.0% · 0/0</text>
+<rect x="24" y="693" width="952" height="16" rx="3" fill="#21262d"/>
+<rect x="24" y="693" width="0.00" height="16" rx="3" fill="#6e7681"/>
+<text x="24" y="747" class="label">Cómo se calcula</text>
+<text x="976" y="747" text-anchor="end" class="pct">0.0% · 0/0</text>
+<rect x="24" y="757" width="952" height="16" rx="3" fill="#21262d"/>
+<rect x="24" y="757" width="0.00" height="16" rx="3" fill="#6e7681"/>
+<text x="24" y="811" class="label">Estado arquitectónico — histórico reconciliado al 2026-11-14</text>
+<text x="976" y="811" text-anchor="end" class="pct">0.0% · 0/0</text>
+<rect x="24" y="821" width="952" height="16" rx="3" fill="#21262d"/>
+<rect x="24" y="821" width="0.00" height="16" rx="3" fill="#6e7681"/>
+<text x="24" y="875" class="label">Implementación funcional</text>
+<text x="976" y="875" text-anchor="end" class="pct">55.6% · 10/18</text>
+<rect x="24" y="885" width="952" height="16" rx="3" fill="#21262d"/>
+<rect x="24" y="885" width="529.31" height="16" rx="3" fill="#9e6a03"/>
+<text x="24" y="939" class="label">Preparación para producción (gates)</text>
+<text x="976" y="939" text-anchor="end" class="pct">52.4% · 11/21</text>
+<rect x="24" y="949" width="952" height="16" rx="3" fill="#21262d"/>
+<rect x="24" y="949" width="498.85" height="16" rx="3" fill="#9e6a03"/>
+<text x="24" y="1003" class="label">Bloqueos conocidos — corte 2026-11-14</text>
+<text x="976" y="1003" text-anchor="end" class="pct">0.0% · 0/0</text>
+<rect x="24" y="1013" width="952" height="16" rx="3" fill="#21262d"/>
+<rect x="24" y="1013" width="0.00" height="16" rx="3" fill="#6e7681"/>
+<text x="24" y="1067" class="label">Respaldo y recuperación</text>
+<text x="976" y="1067" text-anchor="end" class="pct">0.0% · 0/0</text>
+<rect x="24" y="1077" width="952" height="16" rx="3" fill="#21262d"/>
+<rect x="24" y="1077" width="0.00" height="16" rx="3" fill="#6e7681"/>
+</svg>

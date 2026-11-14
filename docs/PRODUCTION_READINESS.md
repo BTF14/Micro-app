@@ -146,14 +146,13 @@ No se cambiaron secretos, Neon main, datos reales, Cloudflare production, DNS ni
 
 # Micro app — checklist de preparación para producción
 
-## Estado vivo — 2026-11-04 UTC
+## Estado vivo — 2026-11-14 UTC
 
-- `main` = `2e0f4083ba577de2f301daf8c866bfbdffb5e23f`. PR #198 está fusionada; PR #197 cerrada sin merge como supersedida.
-- PR #196 sigue abierta/Draft, HEAD `c332e740aff279fb8b22a8879581d4b8a3c7de21`, base registrada `705d3db3220894c7d3baca8dc7e7a6b623dfbb94`. Quedó detrás de main y requiere actualización/reconciliación antes de evaluar integración.
-- La rama #196 contiene catálogo, almacenes y conteos físicos/apertura, con migración 0005 y ledger. Nada de ese vertical slice está en main mientras la PR no se fusione.
-- Los 11 workflows asociados al HEAD exacto de #196 terminaron success; no equivalen a aprobación de producción ni sustituyen revalidación después de actualizar la base.
-- La matriz de roles está aprobada desde 2026-10-31. La implementación de permisos/operaciones sigue parcial; Issue #53 permanece abierta.
-- Producción sigue bloqueada: faltan rutas comerciales completas, rate limiting runtime, pruebas E2E comerciales, coordinación entre todos los escritores de inventario, RPO/RTO medidos, alertas y confirmación de coste total $0.
+- **Main base de esta reconciliación:** `b469e05ec9d687f8f4fc98c3bdbf945ce7982370`. Esta sección sustituye el snapshot operativo anterior de 2026-11-04; los registros históricos posteriores se conservan en CURRENT_STATE/HANDOFF/STATE_JOURNAL.
+- **Cadena funcional integrada en main:** PR #339 (Pages/API same-origin); #347 (lifecycle autenticado de cajero y pruebas aisladas); #348 (restore instrumentado y ACK humano de alerta); #349 (aislamiento de credencial BCV Cron); #350 (administración owner-only de sucursales/almacenes/cajas, 0024); #351 y #353 (workflow protegido de migraciones Neon main y corrección Bash); #352 (recepciones/ajustes, 0025); #354–#356 (búsqueda, UX y consulta rápida de precio/existencia); #355 (Worker BCV sync aislado); #357 (POS de ventas y navegación vertical móvil). Confirmar cada función por su código y pruebas, no por el título de la PR.
+- **Migraciones:** esquema versionado 0001–0025 en main. El workflow protegido `neon-main-migrations.yml`, run [#43591333198](https://github.com/BTF14/Micro-app/actions/runs/43591333198), terminó SUCCESS sobre el commit operativo registrado `c4e02c82aa790e1d32e909b806536dadcf3eb973`, con `pending = 0` y assertions rollback-safe 0019–0025. Este resultado acredita la aplicación declarada en Neon main; no autoriza nuevas escrituras ni cambios remotos.
+- **Producción:** Issue #53 sigue OPEN/P0 y `PRODUCTION: NOT READY`. Permanecen abiertos los gates de smoke autenticado live con Brave Shields + tasa BCV real en Neon main, E2E comercial sin mocks, rate limiting runtime, aceptación humana RPO/RTO, revisión legal/fiscal/contable y lanzamiento, monitorización/alertas BCV y watchdog.
+- **No extrapolar:** previews Cloudflare, CI efímero y workflows verdes no sustituyen aceptación de producción. No se cambia Neon, Cloudflare, secretos ni datos reales en esta reconciliación.
 
 Este archivo es la fuente de datos para el panel de avance. Un ítem solo puede marcarse `[x]` cuando existe evidencia revisable en código, pruebas o configuración. La documentación por sí sola no demuestra que una función opere correctamente.
 
@@ -166,99 +165,76 @@ Este archivo es la fuente de datos para el panel de avance. Un ítem solo puede 
 - Los criterios bloqueantes P0 se muestran aparte. No se puede declarar listo para producción mientras quede alguno pendiente.
 - No marcar una tarea completa basándose solo en un workflow de mocks.
 
-## Estado arquitectónico al 2026-10-30
+## Estado arquitectónico — histórico reconciliado al 2026-11-14
 
-- Main contiene 0001–0004: tenant/identidad, sucursales/asignaciones y cajas/turnos; `resolveBranchContext` existe pero no está conectado a rutas.
-- 0004 (`registers`/`register_shifts`) está fusionada en main y validada en PostgreSQL 18 desechable; no está aplicada a Neon main.
-- No existen endpoints comerciales. La matriz de permisos por rol fue **aprobada el 2026-10-31** (`docs/sdd/role-permission-decision-matrix.md`), pero la aprobación no equivale a implementación: sigue sin existir ningún endpoint ni middleware de autorización, y sigue sin existir ninguna prueba cross-tenant porque las rutas comerciales no existen aún. Este trabajo de esquema no marca como completados los flujos POS, ventas, inventario o caja de extremo a extremo.
+Los párrafos de 2026-10-30 describían el estado previo a los vertical slices integrados y quedan supersedidos por la evidencia de main `b469e05ec9d687f8f4fc98c3bdbf945ce7982370`. No deben reutilizarse para afirmar que no existen endpoints comerciales, almacenes, recepciones, conteos o checkout. El checklist siguiente distingue las funciones verificadas e integradas de los límites de producto que continúan abiertos.
 
 ## Implementación funcional
 
-### Base de producto
-- [x] Repositorio independiente y alcance documentados.
-- [x] Esqueleto React/Vite/TypeScript para frontend.
-- [x] Esqueleto Hono/Workers/TypeScript para API.
-- [ ] Flujos completos de catálogo y categorías.
-- [ ] Flujos completos de inventario y movimientos auditables.
-- [ ] Flujo de caja/POS de extremo a extremo.
-- [ ] Pagos mixtos, cambio, recibos y cierre de caja.
-- [ ] Devoluciones y reversos auditables.
+### Catálogo, inventario, caja y ventas
+- [x] Catálogo de productos: lectura, búsqueda, creación y edición, con pruebas PostgreSQL de integración. **Límite:** no existe todavía un módulo completo de categorías; no se incluye esa capacidad en este ítem.
+- [x] Inventario por almacén: ledger de movimientos como fuente de verdad, lectura Kardex/saldos, recepciones y conteos físicos atómicos con diferencias calculadas por el servidor.
+- [x] Apertura/cierre de caja y turnos asociados a sucursal, incluidos los controles de runtime de migraciones 0004 y 0023 y el lifecycle autenticado de cajero integrado.
+- [x] POS de ventas USD/VES en `SalesPanel` con checkout atómico (migraciones 0015 y 0018) y asignación de pagos. **Límites:** cada venta se liquida en una sola moneda, aunque puede contener varias líneas de pago; el recibo se presenta en pantalla, sin impresión térmica ni historial de ventas.
+- [ ] Devoluciones y reversos auditables, con reglas de negocio/fiscales aprobadas.
 - [ ] Reportes y exportaciones autorizadas.
-- [ ] UX responsive final y accesibilidad validada.
+- [ ] Transferencias entre almacenes/sucursales y ciclo completo de proveedores/compras.
+- [ ] UX responsive final y accesibilidad verificada por teclado y lector de pantalla.
 
-### Datos e integridad
-- [x] Esquema SQL versionado 0001–0004 en main y validación en PostgreSQL 18 desechable; las migraciones 0003/0004 aún no se han aplicado a Neon.
-- [ ] Adaptador PostgreSQL conectado y probado en todos los flujos de negocio.
-- [ ] Migraciones automatizadas y operativamente documentadas.
-- [ ] Aislamiento multiempresa validado para todas las operaciones.
-- [ ] Idempotencia de ventas y pagos verificada con pruebas.
-- [ ] Stock concurrente protegido contra sobreventa.
-- [ ] Instantáneas inmutables de precios, tasa y datos de venta.
-- [ ] Ciclo completo de backup/restore: la restauración técnica del backup remoto exacto pasó en PostgreSQL 18 desechable (run 40955935124) y el smoke sintético cifrado PG18 pasó en run 41020548699. El gate completo sigue pendiente de validación de datos comerciales/conteos/relaciones, RPO/RTO, alerta y evidencia del coste total; ver [BACKUP_AND_RECOVERY.md](BACKUP_AND_RECOVERY.md).
+### Datos, integridad y operaciones
+- [x] Esquema SQL versionado 0001–0025 integrado en main y aplicado en Neon main según workflow protegido [run #43591333198](https://github.com/BTF14/Micro-app/actions/runs/43591333198); el resultado reportado fue `pending = 0`.
+- [x] Roles mínimos separados `migrator`, `runtime`, `bcv_sync` y `backup`; locks determinísticos para operaciones concurrentes e idempotencia de checkout.
+- [x] Ledger autoritativo con proyección de balances protegida por triggers (0019), más snapshots inmutables de precio y tasa asociados a la venta.
+- [x] Sincronización BCV aislada en Worker Cron, configuración dedicada `apps/api/wrangler.bcv.toml`, rol `microapp_bcv_sync` y migraciones 0021–0022.
+- [ ] Fixture oficial reproducible del cuerpo HTTP raw del BCV (status, headers y bytes originales) y calendario oficial SUDEBAN.
+- [ ] Contingencia manual de tasa BCV con PIN, reautenticación, permisos, recuperación y auditoría.
+- [ ] Tratamiento fiscal de IVA/IGTF y recibos fiscales revisados por asesoría competente.
 
-### Identidad y moneda
-- [x] Registro público y login con contraseña bloqueados fail-closed; Google OAuth + allowlist + verificación de email implementados (PR #102), sesión reforzada y origen HTTPS/canónico (PR #155).
-- [x] Sesiones persistidas y revocables; pruebas de identidad y límites de sesión ampliadas en PR #111 (mismatch, expiración/revocación, membresía/organización inactiva).
-- [x] Matriz completa de roles/permisos **aprobada** (2026-10-31; `docs/sdd/role-permission-decision-matrix.md`). Pruebas negativas de aislamiento siguen pendientes porque no existen rutas comerciales que probar.
-- [ ] Integración de tasa BCV validada con fuente, vigencia y fallos.
-- [ ] Tratamiento de IVA/IGTF/documentos fiscales validado por fuentes oficiales y asesoría competente.
-
-### Vertical slice BCV/checkout — evidencia en PR #287 (no equivale a POS completo)
-- [x] Productor BCV implementado: fetch HTTPS acotado, validación de host/content-type/redirect, parser decimal/fecha efectiva y persistencia idempotente; pruebas sintéticas y regresión con DOM oficial sanitizado.
-- [x] Estado persistente de sincronización BCV y checkout fail-closed por último éxito, outcome y fecha efectiva; migration 0021 incluye defensa SQL diferida para nuevas ventas.
-- [x] Ciclo de sincronización en tres fases, claim/attempt_id, bloqueo transaccional y protección frente a intentos supersedidos.
-- [x] Vertical slice de checkout atómico + ledger de inventario integrado en la rama, con migraciones 0017–0021 y pruebas PostgreSQL.
-- [x] Endpoint BCV de solo lectura y panel administrativo owner/admin para consultar el estado operativo; no permite editar tasa ni ejecutar sincronización.
-- [ ] Fixture reproducible del cuerpo HTTP raw del BCV con status, headers y bytes originales; el DOM serializado no satisface este criterio.
-- [ ] Contingencia manual de tasa con PIN, reautenticación, recuperación, permisos y auditoría implementada; por ahora solo está especificada documentalmente.
+### Identidad, tenant y sucursal
+- [x] Autenticación y sesiones integradas con contexto tenant/sucursal; controles de acceso por rol y lifecycle de cajero cubiertos por suites de integración aisladas.
+- [x] Estructura organizacional owner-only para sucursales, almacenes y cajas integrada en migración 0024.
+- [ ] Aceptación end-to-end de aislamiento y operación real en staging/producción; CI PostgreSQL efímero no sustituye el smoke live ni la aprobación humana.
 
 ## Preparación para producción (gates)
 
-### P0 — bloqueantes
-- [x] CI compila y ejecuta pruebas automatizadas en PostgreSQL desechable para un SHA verificado.
-- [x] Validación de migración en base efímera en el SHA verificado.
-- [x] El registro público está bloqueado fail-closed y probado sin escrituras ni cookie (PR #57; SHA merge `cb4b9b09ad3ff0f1bacd34f23ee653a5477cddfe`).
-- [x] Google sign-in + allowlist + verificación de email implementados; las pruebas core de identidad/sesión pasaron en PR #111 (14 tests de integración PostgreSQL en HEAD 233844be10bb102fdac34ad41776d4d14420b243).
-- [ ] Pruebas de rutas de error de base de datos y autorización cross-tenant de futuras rutas comerciales; issue #53 sigue abierto hasta que existan endpoints comerciales con esas pruebas pasando, aunque la matriz de permisos que los gobernará ya está aprobada.
-- [ ] Autorización multiempresa y aislamiento comprobados en toda la API.
-- [ ] Flujos reales de venta/inventario con transacciones, idempotencia y concurrencia.
-- [ ] Gestión de errores, rate limiting y protección contra abuso revisadas.
-- [ ] Configuración de secretos/orígenes/cookies validada en entorno de preview.
-- [ ] Requisitos fiscales locales revisados y recibos correctamente clasificados.
-- [ ] Recuperación independiente completa: restauración técnica de la copia remota verificada en run 40955935124; falta demostrar integridad de datos comerciales/conteos/relaciones y medir RPO/RTO/alertas/coste. Neon PITR por sí solo no satisface el requisito.
-- [ ] Prueba E2E de flujos reales contra API y DB de prueba (no solo mocks).
-- [ ] Checklist de lanzamiento revisado y aprobación explícita del usuario.
+### P0 — bloqueantes para declarar producción READY
+- [x] CI, build/typecheck y pruebas automatizadas reproducibles en PostgreSQL efímero para los SHAs integrados; los checks de cada PR son evidencia de integración, no certificación live.
+- [x] Validación del esquema/migraciones SQL versionadas 0001–0025 y assertions en PostgreSQL efímero.
+- [x] Registro público y login por contraseña permanecen fail-closed; Google OAuth, allowlist, verificación de email y sesiones reforzadas están integrados.
+- [x] Proxy Pages/API same-origin y configuración de callback OAuth integrados en PR #339; la integración no sustituye el smoke autenticado real con Shields.
+- [x] Lifecycle autenticado de cajero probado en PostgreSQL 18 efímero (PR #347); no equivale a E2E comercial real sin mocks.
+- [x] Administración owner-only de sucursales/almacenes/cajas integrada (PR #350, 0024).
+- [x] Recepciones y ajustes de inventario integrados (PR #352, 0025); lectura/Kardex y conteos atómicos tienen suites de integración.
+- [x] POS y checkout atómico integrados (PR #357; 0015/0018); el alcance comercial sigue limitado por las notas del bloque de implementación.
+- [x] Migraciones 0001–0025 aplicadas en Neon main según el workflow protegido, run #43591333198; no inferir de ello que la aplicación esté aceptada para lanzamiento.
+- [ ] Smoke autenticado live en `https://micro-app-63i.pages.dev` con Brave Shields ACTIVADO, incluyendo verificación de la tasa BCV real disponible en Neon main.
+- [ ] E2E real de los flujos comerciales completos contra API/DB de prueba, sin mocks de red.
+- [ ] Rate limiting runtime en rutas sensibles y protección contra abuso, revisados con pruebas negativas y límites operativos.
+- [ ] Aceptación formal humana del objetivo RPO aproximado de 24 h y del RTO operativo aceptable.
+- [ ] Revisión legal, fiscal y contable por asesoría competente y aprobación explícita del lanzamiento; Issue #53 permanece OPEN/P0.
+- [ ] Monitorización y alertas activas de `BCV_SYNC_FAILED`, más watchdog probado para estados `running` estancados.
 
-### P1 — operación y UX
-- [x] Análisis Semgrep configurado en CI.
-- [x] Escaneo Trivy configurado en CI.
-- [x] Smoke E2E de navegador con API simulada configurado.
-- [ ] Pruebas E2E de ventas, inventario, caja y devoluciones en móvil/escritorio.
-- [ ] Accesibilidad y uso por teclado verificados.
-- [ ] Logs operativos sin secretos/datos sensibles y estrategia de retención.
-- [ ] Monitorización de fallos y procedimiento de soporte documentados.
-- [ ] Límites gratuitos/capacidad y ausencia de cargos automáticos revalidados.
-- [ ] Preview aislada desplegada y verificada, sin datos de producción.
+### P1 — operación, resiliencia y UX
+- [x] Análisis Semgrep, Trivy, escaneo de historia de secretos y Dependency Review configurados en CI.
+- [x] Backup cifrado, restauración instrumentada aislada y canal de alerta/ACK humano tienen evidencia registrada; la medición sintética no equivale a RPO/RTO operativos aceptados.
+- [ ] Pruebas E2E de ventas, inventario, caja y devoluciones en móvil/escritorio con API/DB reales de prueba.
+- [ ] Accesibilidad por teclado/lector y UX responsive final verificadas.
+- [ ] Logs operativos, retención y soporte revisados sin exponer secretos ni datos sensibles.
+- [ ] Límites gratuitos/capacidad y ausencia de cargos automáticos revalidados antes del GO/NO-GO.
 
-### Controles BCV/checkout — evidencia en PR #287
-- [x] Checkout valida el último éxito BCV con fecha efectiva de hoy y falla cerrado cuando el intento más reciente está running/failed; cobertura de aplicación y trigger diferido con rol runtime.
-- [x] Concurrencia BCV probada: un intento supersedido no puede insertar/inutilizar tasas ni cambiar el estado del intento nuevo.
-- [x] Fallos de sincronización cubiertos por tests: fetch fallido, DB no disponible al registrar fallo, cleanup posterior al commit, respuesta COMMIT ambigua y fetch fallido de intento supersedido.
-- [ ] Fixture HTTP raw oficial del BCV capturado y reproducible con status/headers.
-- [ ] Presupuesto de timeout medido por fase (conexión, statement, lock, transacción y cleanup) y watchdog con umbral basado en datos.
-- [ ] Monitor de fallos y destino de alerta probados de extremo a extremo; no basta con configurar logs estructurados.
-- [ ] Identidad efectiva del Worker y recuperación operativa validadas en entorno aislado con permisos mínimos.
+**Decisión vigente:** `PRODUCTION: NOT READY`. Los gates P0 pendientes son bloqueantes y no se pueden compensar con porcentajes, CI verde, previews ni migraciones aplicadas. Issue #53 permanece OPEN/P0.
 
-## Bloqueos conocidos al último análisis documental
+## Bloqueos conocidos — corte 2026-11-14
 
-- El registro público y el login con contraseña permanecen bloqueados fail-closed; Google OAuth + allowlist + verificación de email y HTTPS/canonical origin están implementados y probados. Issue #53 sigue abierto por aislamiento real de futuras rutas comerciales; la matriz de permisos que las gobernará ya fue aprobada el 2026-10-31 (`docs/sdd/role-permission-decision-matrix.md`), pero no se ha implementado ningún endpoint ni prueba cross-tenant todavía.
-- Main incluye sucursales/asignaciones (0003) y cajas/turnos (0004). No hay endpoints ni flujos comerciales; almacenes y stock por almacén siguen pendientes.
-- Las pruebas Playwright actuales son smoke tests con API simulada; no prueban el backend real.
-- La aplicación no tiene aún los flujos completos de POS/ventas/inventario.
-- Los cambios en Neon main deben superar el gate de `docs/CONSTITUTION.md`; producción sigue bloqueada hasta completar los gates y obtener aceptación explícita.
-- La obligación fiscal no debe declararse resuelta sin fuentes oficiales y revisión competente.
+- El producto ya contiene catálogo de productos, inventario por almacén/ledger, recepciones, conteos atómicos, turnos por sucursal y POS/checkout; no describirlo como un frontend sin endpoints comerciales.
+- No hay módulo completo de categorías, devoluciones/reversos, reportes/exportaciones, transferencias inter-sucursal ni ciclo completo de proveedores/compras.
+- La venta liquida en una sola moneda; puede tener múltiples líneas de pago. El recibo es solo en pantalla; no hay impresión térmica ni historial de ventas.
+- Las pruebas de integración PostgreSQL efímero no son E2E comercial live sin mocks. Falta smoke autenticado con Brave Shields activado y verificación de tasa BCV real en Neon main.
+- Siguen pendientes rate limiting runtime, monitorización/alertas de BCV y watchdog de procesos `running` estancados, además de aceptación humana de RPO/RTO.
+- IVA/IGTF y recibos fiscales requieren revisión competente. No se debe inferir cumplimiento fiscal por la existencia de snapshots de precio/tasa.
+- Issue #53 permanece OPEN/P0. `PRODUCTION: NOT READY`; no promover a READY hasta cerrar todos los gates P0 y obtener aprobación humana explícita.
 
-Actualiza este checklist solo junto con evidencia y una entrada en `docs/STATE_JOURNAL.md`.
+Actualiza este checklist solo junto con evidencia verificable en main y una entrada en `docs/STATE_JOURNAL.md`.
 
 ## Respaldo y recuperación
 

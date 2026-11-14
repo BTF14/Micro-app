@@ -453,3 +453,20 @@ h1 { margin: 0; font-size: clamp(2.2rem, 4.2vw, 3.6rem); font-weight: 550; lette
  .structure-form input,.structure-branch-select select,.inventory-operation-form input,.inventory-operation-form select,
  .product-form input:not([type="checkbox"]),.product-form textarea { min-height:2.75rem; }
 }
+
+
+/* Mobile navigation: one vertical menu, opened on demand instead of a sideways scrolling strip. */
+.mobile-nav-toggle{display:none}
+@media(max-width:760px){
+ .sidebar{padding:1rem 1rem .8rem}
+ .sidebar>.brand{padding:0;min-height:2.75rem}
+ .mobile-nav-toggle{display:inline-flex;min-height:2.55rem;align-items:center;justify-content:center;gap:.55rem;margin:.8rem 0 0;padding:.55rem .8rem;border:1px solid #426158;border-radius:.65rem;color:#edf4ee;background:#21463d;font:inherit;font-size:.76rem;font-weight:650;cursor:pointer}
+ .mobile-nav-toggle span{font-size:1rem;line-height:1}
+ .side-nav{display:none;overflow:visible;flex-direction:column;gap:.25rem;margin:.65rem 0 0;padding:.5rem 0 .1rem;border-top:1px solid #36564f}
+ .side-nav.open{display:grid}
+ .side-nav .nav-item{width:100%;min-height:2.85rem;flex:initial;gap:.75rem;padding:.65rem .8rem;border-radius:.65rem;font-size:.8rem}
+ .side-nav .nav-symbol{width:1.2rem;font-size:1rem}
+ .side-nav .nav-lock{display:inline;margin-left:auto}
+ .topbar{min-height:56px}
+}
+@media(min-width:761px){.mobile-nav-toggle{display:none}}

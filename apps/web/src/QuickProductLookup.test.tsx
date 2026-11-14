@@ -26,4 +26,26 @@ describe("QuickProductLookup",()=>{
   vi.mocked(fetch).mockResolvedValueOnce(json({branches:[{id:BRANCH,name:"Central",slug:"central"}]})).mockResolvedValueOnce(json({warehouses:[{id:WAREHOUSE,code:"main",name:"Principal",is_active:true},{id:"44444444-5555-4666-8777-888888888888",code:"closed",name:"Cerrado",is_active:false},{id:"55555555-6666-4777-8888-999999999999",code:"second",name:"Secundario",is_active:true}]}));
   await render("unavailable",null);const select=container.querySelector<HTMLSelectElement>(".quick-lookup-scope select");expect(select).not.toBeNull();expect([...select!.options].map(o=>o.textContent)).toEqual(["Selecciona un almacén","Principal","Secundario"]);
  });
+
+ it("does not show an empty-result message during the debounce window",async()=>{
+  vi.useFakeTimers();
+  vi.mocked(fetch).mockResolvedValueOnce(json({branches:[{id:BRANCH,name:"Central",slug:"central"}]})).mockResolvedValueOnce(json({warehouses:[{id:WAREHOUSE,code:"main",name:"Principal",is_active:true}]})).mockResolvedValueOnce(json({items:[],nextCursor:null,limit:30}));
+  await render("unavailable",null);
+  const input=container.querySelector<HTMLInputElement>("#quick-product-search")!;
+  const setter=Object.getOwnPropertyDescriptor(HTMLInputElement.prototype,"value")?.set;
+  await act(async()=>{setter?.call(input,"sin-coincidencia");input.dispatchEvent(new Event("input",{bubbles:true}));});
+  expect(container.textContent).not.toContain("No se encontraron productos activos.");
+  await act(async()=>{await vi.advanceTimersByTimeAsync(199);});
+  expect(container.textContent).not.toContain("No se encontraron productos activos.");
+  await act(async()=>{await vi.advanceTimersByTimeAsync(1);});
+  expect(container.textContent).toContain("No se encontraron productos activos.");
+  vi.useRealTimers();
+ });
+ it("remains usable when localStorage access throws",async()=>{
+  vi.spyOn(Storage.prototype,"getItem").mockImplementation(()=>{throw new Error("storage blocked");});
+  vi.mocked(fetch).mockResolvedValueOnce(json({branches:[{id:BRANCH,name:"Central",slug:"central"}]})).mockResolvedValueOnce(json({warehouses:[{id:WAREHOUSE,code:"main",name:"Principal",is_active:true},{id:"55555555-6666-4777-8888-999999999999",code:"second",name:"Secundario",is_active:true}]}));
+  await render("unavailable",null);
+  expect(container.querySelector(".quick-lookup-scope select")).not.toBeNull();
+  expect(container.textContent).not.toContain("storage blocked");
+ });
 });

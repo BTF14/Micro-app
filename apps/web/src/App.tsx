@@ -66,7 +66,7 @@ const PRIVACY_SECTIONS: { heading: string; body: string }[] = [
 ];
 
 const modules = [
-  { number: "01", title: "Caja y ventas", description: "Turnos de caja disponibles; ventas y cobros en preparación.", status: "Disponible · apertura y cierre de turnos" },
+  { number: "01", title: "Caja y ventas", description: "Abre tu turno, registra ventas y cobra con la tasa BCV vigente.", status: "Disponible · caja y punto de venta" },
   { number: "02", title: "Inventario", description: "Consulta, recepción de mercancía y conteos físicos por sucursal y almacén.", status: "Disponible · operaciones según permisos" },
   { number: "03", title: "Productos", description: "Catálogo y precios exactos en USD.", status: "Disponible · catálogo en USD" },
   { number: "04", title: "Tasa BCV", description: "Conversión a VES con fuente y fecha verificables.", status: "Disponible · fuente oficial" },
@@ -504,8 +504,8 @@ export default function App() {
           )}
           {activeView === "overview" ? (
           <>
-          <section className="welcome"><div><p className="eyebrow">TU NEGOCIO, EN UN SOLO LUGAR</p><h1>Hola, {user.display_name.split(" ")[0]}.</h1><p className="welcome-copy">Tu espacio de trabajo ya está listo. El catálogo y la consulta de existencias por sucursal están disponibles; seguimos preparando las operaciones de venta y los movimientos de inventario.</p></div><div className="welcome-art" aria-hidden="true"><div className="art-ring ring-one" /><div className="art-ring ring-two" /><div className="art-card"><span className="art-card-label">MICRO APP</span><span className="art-card-line" /><span className="art-card-line short" /><span className="art-card-foot">GESTIÓN · CONTROL · CLARIDAD</span></div></div></section>
-          <section className="setup-banner"><div className="setup-icon" aria-hidden="true">↗</div><div className="setup-text"><h2>Cuenta conectada</h2><p>Tu sesión está activa. Ya puedes consultar existencias por sucursal y almacén; las operaciones de venta y los movimientos de inventario siguen en preparación.</p></div><span className="setup-status">Acceso seguro</span></section>
+          <section className="welcome"><div><p className="eyebrow">TU NEGOCIO, EN UN SOLO LUGAR</p><h1>Hola, {user.display_name.split(" ")[0]}.</h1><p className="welcome-copy">Tu espacio de trabajo ya está listo. El catálogo y la consulta de existencias por sucursal están disponibles; ya puedes registrar ventas desde tu turno de caja y consultar los movimientos de inventario disponibles.</p></div><div className="welcome-art" aria-hidden="true"><div className="art-ring ring-one" /><div className="art-ring ring-two" /><div className="art-card"><span className="art-card-label">MICRO APP</span><span className="art-card-line" /><span className="art-card-line short" /><span className="art-card-foot">GESTIÓN · CONTROL · CLARIDAD</span></div></div></section>
+          <section className="setup-banner"><div className="setup-icon" aria-hidden="true">↗</div><div className="setup-text"><h2>Cuenta conectada</h2><p>Tu sesión está activa. Ya puedes consultar existencias por sucursal y almacén; las ventas se registran desde el módulo Ventas cuando tu turno está abierto y existe una tasa BCV vigente.</p></div><span className="setup-status">Acceso seguro</span></section>
           <section className="exchange-rate-panel" aria-live="polite" aria-label="Tasa oficial del Banco Central de Venezuela">
             <div className="exchange-rate-main">
               <p className="eyebrow">TIPO DE CAMBIO OFICIAL</p>

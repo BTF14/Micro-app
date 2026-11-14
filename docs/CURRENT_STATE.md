@@ -1,3 +1,31 @@
+## Turno 44 — watchdog BCV en PR #364 y cierre documental de PR #363 (2026-11-14 UTC)
+
+**Corte verificado:** `main` = `b7dccd6eb6a1fd7971c403c4c833013bf0bd44fc`. PR #364 está OPEN, no Draft, base `main`, HEAD de trabajo `910afb2b7735164c71d3d3931378cdabe35a205b`, 2 commits ahead / 0 behind. El PR incorpora el ODD antes de los cambios de código. La validación exact-SHA de CI sigue pendiente hasta que termine la ejecución del HEAD final.
+
+### PR #364 — alcance implementado en la rama
+
+- Umbral único `BCV_STALE_RUNNING_THRESHOLD_SECONDS = 300` segundos; la función compartida clasifica como stale solo `last_outcome = 'running'` y edad >= 300.
+- Cron horario `17 * * * *` consulta `public.bcv_sync_state` con `env.DATABASE_URL` y solo SELECT. El watchdog y `cleanupExpiredAuthRecords` tienen try/catch independientes y eventos de error sanitizados.
+- Endpoint de estado BCV añade `isStaleRunning` y `staleRunningThresholdSeconds`; un `running` estancado pasa a `health: "attention"`. Se conserva `Cache-Control: no-store`.
+- Panel administrativo muestra que la sincronización lleva más de cinco minutos atascada y que el checkout permanece bloqueado por seguridad.
+- Añadidas pruebas unitarias de umbral, pruebas de Cron para detección/ausencia de falsos positivos/aislamiento de cleanup y suite PostgreSQL 18 con login real `microapp_runtime` para endpoint, watchdog y privilegios read-only.
+- Ninguna mutación de `bcv_sync_state`, cambio de `last_outcome`, migración SQL, cambio de roles/grants o conexión a Neon. No se accedió a secretos ni se modificó configuración manual.
+
+### PR #363 — cierre documental exacto
+
+- PR #363 HEAD `4a1bc3280ac974932353e9e337d0799f161d4ffa`; merge SHA `b7dccd6eb6a1fd7971c403c4c833013bf0bd44fc`.
+- PR-head: 18/18 check-runs y 10/10 workflow runs SUCCESS. CI `verify`: 51 pasos SUCCESS, incluidas las suites PostgreSQL 18 y los tests de rutas.
+- Post-merge main: 13/13 check-runs y 9/9 push workflow runs SUCCESS.
+- AC-1..AC-7 quedan cerrados en `odd/tasks/runtime-write-rate-limiting.md`. Hubo 0 reviews formales y 0 review threads; se registra explícitamente que la revisión del diff fue manual y que no hubo aprobación formal independiente.
+
+### Estado global y siguiente gate
+
+- PR #193 permanece OPEN e intacta; HEAD `ac57ab4f3415f82279b8a49c0befe09f8e3aec68`. Issue #53 permanece OPEN/P0; `PRODUCTION: NOT READY`.
+- PR #361 integró Cron BCV `0 22 * * MON-FRI` y la validación TLS estricta del workflow.
+- PR #363 integró rate limiting runtime y quedó probado en PostgreSQL 18 efímero para OAuth, checkout y 11 endpoints de escritura.
+- La primera tasa BCV real persistida en Neon `main` tras una ventana programada válida sigue pendiente; también está pendiente verificar el enrutamiento externo de alertas en Cloudflare. El watchdog en esta PR no repara ni muta el estado del productor.
+- No tocar Neon `main`, secretos, datos reales, configuración manual ni despliegues manuales. No cerrar Issue #53 ni modificar PR #193.
+
 ## Turno 43 — PR #361 integrada y verificación post-merge BCV (2026-11-14 UTC)
 
 **Corte GitHub verificado:** `main` = `1a19e2da05dd9d25af957a2289bcd1082d8f2ca0`.

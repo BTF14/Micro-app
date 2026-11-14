@@ -323,7 +323,8 @@ CREATE FUNCTION public.create_inventory_receipt(
 LANGUAGE plpgsql SECURITY DEFINER SET search_path=pg_catalog,public
 AS $create_inventory_receipt$
 DECLARE
- v_role text; v_receipt_id uuid; v_existing_hash text; v_existing_payload jsonb; v_line jsonb;
+ v_role text; v_receipt_id uuid; v_existing_hash text; v_existing_payload jsonb;
+ v_existing_branch_id uuid; v_existing_warehouse_id uuid; v_existing_reason text; v_line jsonb;
  v_product_id uuid; v_quantity numeric(14,3); v_unit_cost numeric(14,4);
 BEGIN
  IF p_organization_id IS NULL OR p_branch_id IS NULL OR p_warehouse_id IS NULL OR p_actor_user_id IS NULL
@@ -374,9 +375,12 @@ BEGIN
  VALUES(p_organization_id,p_branch_id,p_warehouse_id,pg_catalog.btrim(p_reason),p_idempotency_key,p_request_hash,p_lines,p_actor_user_id)
  ON CONFLICT(organization_id,created_by,idempotency_key) DO NOTHING RETURNING id INTO v_receipt_id;
  IF v_receipt_id IS NULL THEN
-  SELECT id,request_hash,request_payload INTO v_receipt_id,v_existing_hash,v_existing_payload FROM public.inventory_receipts
+  SELECT id,request_hash,request_payload,branch_id,warehouse_id,reason
+   INTO v_receipt_id,v_existing_hash,v_existing_payload,v_existing_branch_id,v_existing_warehouse_id,v_existing_reason FROM public.inventory_receipts
    WHERE organization_id=p_organization_id AND created_by=p_actor_user_id AND idempotency_key=p_idempotency_key FOR UPDATE;
-  IF v_existing_hash IS DISTINCT FROM p_request_hash OR v_existing_payload IS DISTINCT FROM p_lines THEN
+  IF v_existing_hash IS DISTINCT FROM p_request_hash OR v_existing_payload IS DISTINCT FROM p_lines
+    OR v_existing_branch_id IS DISTINCT FROM p_branch_id OR v_existing_warehouse_id IS DISTINCT FROM p_warehouse_id
+    OR v_existing_reason IS DISTINCT FROM pg_catalog.btrim(p_reason) THEN
    RAISE EXCEPTION 'INVENTORY_RECEIPT_IDEMPOTENCY_CONFLICT' USING ERRCODE='23505';
   END IF;
   RETURN QUERY SELECT v_receipt_id,true; RETURN;

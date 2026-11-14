@@ -32,6 +32,7 @@ BEGIN
  SELECT pg_catalog.pg_get_functiondef(fn_oid) INTO fn_def;
  IF pg_catalog.strpos(fn_def,'FOR UPDATE')=0 OR pg_catalog.strpos(fn_def,'INVENTORY_RECEIPT_IDEMPOTENCY_CONFLICT')=0
   OR pg_catalog.strpos(fn_def,'request_payload')=0
+  OR pg_catalog.strpos(fn_def,'v_existing_branch_id')=0
   OR pg_catalog.strpos(fn_def,'inventory.receipt.created')=0 OR pg_catalog.strpos(fn_def,'purchase_receipt')=0
   OR pg_catalog.strpos(fn_def,'branch_memberships')=0 THEN
   RAISE EXCEPTION 'INVENTORY_RECEIPT_FUNCTION_DEFINITION_INVALID'; END IF;

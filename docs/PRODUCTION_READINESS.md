@@ -1,17 +1,28 @@
 # Readiness para producción — corte vigente 2026-11-14
 
-## Estado vigente — 2026-11-14 — PR #365 integrada / E2E full-stack PR #366 validada
+## Estado vigente — PR #366 integrada; validación P1 adicional pendiente
 
-- `main` verificada al inicio de PR #366: `5e80770e73d3ed65fa92083ea5f4478d0d9f71d9`, merge SHA de PR #365.
-- PR #365 quedó integrada por Squash and Merge; post-merge: 13/13 check-runs SUCCESS y 9/9 workflow runs SUCCESS.
-- PR #361, PR #363 y PR #364 ya están integradas: Cron BCV `MON-FRI 22:00 UTC` con TLS estricto, rate limiting runtime y watchdog BCV read-only.
-- PR #366 añadió E2E full-stack real en CI. En el HEAD de implementación `3329562d15f40ce744de67a088400935d9d3566a`: 16/16 check-runs SUCCESS, 12/12 workflow runs SUCCESS, CI `verify` 52/52 pasos SUCCESS, job PostgreSQL 18 full-stack 20/20 pasos SUCCESS y Chromium authentication smoke tests SUCCESS.
-- La suite usa PostgreSQL 18 efímero, migraciones 0001–0025, logins PostgreSQL separados `microapp_runtime`/`microapp_bcv_sync`, sesiones sintéticas Owner/Cashier con allowlist y membresías reales, tasa BCV sintética válida para `America/Caracas`, Hono real y frontend compilado/servido con proxy same-origin. No hay `page.route`, mocks de API ni endpoints de test en runtime.
-- El flujo CI crea/lee producto, recibe inventario, abre turno como Cashier, completa checkout USD y VES, comprueba recibos y stock persistido, cierra turno y recarga; el intento posterior con turno cerrado recibe 409 `OPEN_SHIFT_REQUIRED` y no descuenta stock.
-- El adaptador Neon→`pg` existe únicamente en el harness de test para conectar los mismos handlers Hono a PostgreSQL local; no modifica runtime ni seguridad de producción.
-- El commit documental de esta misma PR crea un HEAD nuevo; todas las comprobaciones deberán repetirse y validarse sobre ese HEAD exacto antes de fusionar.
+- `main` verificada: `366334ae75c966e4fada13afed964a7f4b557954`.
+- PR #366 MERGED a las 22:45:01 UTC. HEAD exacto `b078a02608b807a2ecdd0b59e95d8017ecd2f553`: 16/16 check-runs SUCCESS y 12/12 workflow runs SUCCESS; CI `verify` 52/52 pasos SUCCESS; job PostgreSQL 18 full-stack 20/20 pasos ejecutados SUCCESS; smoke tests de autenticación SUCCESS.
+- Snapshot post-merge registrado al integrar `main`: 14/14 check-runs SUCCESS y 9/9 workflow runs SUCCESS.
+- Relectura posterior del mismo SHA: 17 registros de check-run (16 SUCCESS, 1 CANCELLED) y 12 workflow runs (11 SUCCESS, 1 CANCELLED). El cancelado es una ejecución posterior duplicada de validación de base de datos; otra ejecución anterior del mismo workflow terminó SUCCESS. Se conserva esta distinción y no se afirma que las 17/12 entradas estén todas en SUCCESS.
+- La parte de P1 ya validada en CI por PR #366 es el flujo full-stack real sobre Hono y PostgreSQL 18 efímero: alta/lectura de producto, recepción, apertura de turno, ventas USD/VES, recibos, persistencia del descuento de stock, cierre/recarga y rechazo real 409 al intentar vender con turno cerrado. Sin `page.route`, mocks de API ni endpoints de test en runtime.
+- El siguiente bloque P1 está en la rama `feat/p1-mobile-a11y-stock-log-safety-20261114`: rechazo por stock insuficiente con balance/ledger sin mutación, viewport móvil 390×844, teclado/foco/ARIA y prueba estática de logs. Está implementado en la rama, pero aún no tiene ejecución CI; **no se cuenta como validado**.
+- La auditoría de código identificó diez llamadas productivas `console.*` en tres archivos de `apps/api/src`; todas usan eventos/códigos allowlisted y metadatos acotados. La prueba de regresión añadida debe pasar CI antes de cerrar ese control.
+- PR #193 permanece OPEN e intacta. Issue #53 permanece OPEN/P0.
 
-**Estado de producción: NOT READY.** La prueba full-stack cierra una brecha de validación CI, no los gates de producción. Issue #53 continúa OPEN/P0; PR #193 continúa OPEN e intacta. No se accedió ni mutó Neon `main`, datos reales, secretos o configuración manual de proveedores; no se realizó despliegue manual.
+**Estado de producción: NOT READY.** Los checks de CI y las pruebas sobre PostgreSQL efímero no certifican producción ni sustituyen los gates pendientes.
+
+## Gates bloqueantes para producción — vigentes
+
+1. **Primera tasa BCV real en Neon `main`:** esperar la siguiente ventana válida del Cron `MON-FRI 22:00 UTC` y comprobar, de forma read-only/autorizada, la fila real, su fecha efectiva en `America/Caracas`, `bcv_sync_state` y el resultado expuesto por la API. La tasa sintética de PostgreSQL 18 CI no satisface este gate.
+2. **Enrutamiento externo de alertas:** demostrar entrega efectiva al destino operativo configurado; que el build o el watchdog detecte una condición no demuestra entrega externa.
+3. **RPO/RTO humano:** definir responsables y objetivos, ejecutar backup/restore autorizado y registrar tiempos y evidencia. Los tests sintéticos de CI no equivalen a una recuperación real.
+4. **Revisión legal/fiscal:** validar recibos, impuestos, reglas comerciales de pagos y monedas, anulaciones, devoluciones y obligaciones aplicables antes de declarar producción.
+5. **Issue #53 P0 y aceptación del propietario:** mantener el issue OPEN hasta que sus gates de producción estén demostrados y aprobados.
+
+**Decisión vigente:** **PRODUCTION: NOT READY**. No promover ni declarar GO mientras permanezcan abiertos estos gates.
+
 
 ## Snapshot histórico — 2026-11-11 — PR #287
 

@@ -67,6 +67,7 @@ psql -X -v ON_ERROR_STOP=1 --dbname "$bcv_admin_url" \
   --file "apps/api/migrations/0022_bcv_dedicated_producer_role.assertions.sql"
 psql -X -v ON_ERROR_STOP=1 --dbname "$bcv_admin_url" --file "apps/api/migrations/0023_register_shift_runtime_operations.assertions.sql"
 psql -X -v ON_ERROR_STOP=1 --dbname "$bcv_admin_url" --file "apps/api/migrations/0024_organization_structure_admin_operations.assertions.sql"
+psql -X -v ON_ERROR_STOP=1 --dbname "$bcv_admin_url" --file "apps/api/migrations/0025_inventory_receipts.assertions.sql"
 
 expect_failure() {
   local label="$1" marker="$2"

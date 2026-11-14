@@ -403,7 +403,7 @@ BEGIN
   -- Global lock order: tenant/member -> branch/branch-member -> warehouse -> document/idempotency -> ledger projection.
   PERFORM 1 FROM public.organizations
    WHERE id = p_organization_id AND is_active = true
-   FOR UPDATE;
+   FOR SHARE;
   IF NOT FOUND THEN
     RAISE EXCEPTION 'ORGANIZATION_NOT_ACTIVE' USING ERRCODE = '42501';
   END IF;

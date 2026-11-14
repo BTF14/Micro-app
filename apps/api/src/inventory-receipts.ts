@@ -176,7 +176,7 @@ export function registerInventoryReceiptRoutes(app: Hono<{ Bindings: Bindings }>
     const hash = await requestHash(organizationId, branchId, warehouseId, input.reason, input.lines);
     try {
       const result = await withDatabaseClient(c.env.DATABASE_URL, (db) => withDatabaseTransaction(db, async (tx) => {
-        const auth = await authorizeBranchOperation(tx, token, organizationId, branchId, "inventory.receive");
+        const auth = await authorizeBranchOperation(tx, token, organizationId, branchId, "inventory.receive", false);
         if (!auth.allowed) {
           if (auth.reason === "unauthenticated_or_out_of_scope") return { kind: "unauthenticated" as const };
           if (auth.reason === "branch_out_of_scope") return { kind: "branch_denied" as const };

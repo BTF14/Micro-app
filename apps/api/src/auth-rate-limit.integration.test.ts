@@ -92,6 +92,37 @@ const suite = describe.skipIf(!databaseUrl)("authentication rate limiting agains
     expect(stored.rows[0]!.key_hash).not.toContain("integration:concurrent");
   });
 
+  it("keeps every commercial and administrative write scope independent for one client IP", async () => {
+    const ip = "198.51.100.88";
+    const scopes = [
+      "catalog:create", "catalog:update",
+      "inventory:count:create", "inventory:count:confirm", "inventory:receipt:create",
+      "register-shift:open", "register-shift:close",
+      "organization:branch:create", "organization:warehouse:create",
+      "organization:register:create", "organization:branch-membership:update",
+    ];
+    const keys = scopes.map((scope) => `write:${scope}:ip:${ip}`);
+    cleanupKeys.push(...keys);
+
+    for (const key of keys) {
+      const allowed = await withDatabaseClient(databaseUrl, (client) =>
+        consumeAuthRateLimit(client, key, 1, 60, testPepper),
+      );
+      const limited = await withDatabaseClient(databaseUrl, (client) =>
+        consumeAuthRateLimit(client, key, 1, 60, testPepper),
+      );
+      expect(allowed.allowed).toBe(true);
+      expect(limited.allowed).toBe(false);
+      expect(limited.retryAfterSeconds).toBeGreaterThan(0);
+    }
+
+    const independent = await withDatabaseClient(databaseUrl, (client) =>
+      consumeAuthRateLimit(client, `write:catalog:create:ip:198.51.100.89`, 1, 60, testPepper),
+    );
+    cleanupKeys.push("write:catalog:create:ip:198.51.100.89");
+    expect(independent.allowed).toBe(true);
+  });
+
   it("resets an expired window atomically", async () => {
     const key = `integration:reset:${crypto.randomUUID()}`;
     cleanupKeys.push(key);

@@ -108,11 +108,15 @@ export default function SalesPanel({
   const paymentMatches = useMemo(() => {
     try {
       const { precision, scale } = paymentScale(currency);
+      if (currency === "VES" && computed.totalVes === null) return false;
       const total = parseNumeric(paymentTotal, precision, scale);
       const expected = currency === "USD"
         ? parseNumeric(computed.subtotalUsd, 14, 4)
-        : parseNumeric(computed.totalVes, 16, 2);
-      return total === expected && expected > 0n && payments.every((p) => { try { return parseNumeric(p.amount, precision, scale) > 0n && p.reference.length <= 128 && !/[\u0000-\u001F\u007F]/.test(p.reference); } catch { return false; } });
+        : parseNumeric(computed.totalVes!, 16, 2);
+      return total === expected && expected > 0n && payments.every((p) => {
+        try { return parseNumeric(p.amount, precision, scale) > 0n && p.reference.length <= 128 && !/[\\u0000-\\u001F\\u007F]/.test(p.reference); }
+        catch { return false; }
+      });
     } catch { return false; }
   }, [computed.subtotalUsd, computed.totalVes, currency, paymentTotal, payments]);
 

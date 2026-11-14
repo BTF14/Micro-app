@@ -132,6 +132,13 @@ async function seedRealDatabase(): Promise<{ fixture: TestFixture; runtimeUrl: s
       "INSERT INTO public.branch_memberships (organization_id, branch_id, user_id) VALUES ($1, $2, $3), ($1, $2, $4)",
       [organizationId, branchId, ownerId, cashierId],
     );
+    const cashierBranchAssignment = await admin.query<{ active: boolean }>(
+      "SELECT EXISTS (SELECT 1 FROM public.branch_memberships WHERE organization_id = $1 AND branch_id = $2 AND user_id = $3 AND is_active) AS active",
+      [organizationId, branchId, cashierId],
+    );
+    if (!cashierBranchAssignment.rows[0]?.active) {
+      throw new Error("E2E_CASHIER_BRANCH_MEMBERSHIP_SEED_FAILED");
+    }
 
     const warehouse = await admin.query<{ id: string }>(
       "INSERT INTO public.warehouses (organization_id, branch_id, code, name) VALUES ($1, $2, $3, 'E2E Test Warehouse') RETURNING id::text AS id",

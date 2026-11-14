@@ -21,13 +21,14 @@ const productionEnv = {
   BCV_SYNC_ENABLED: "true",
 } as unknown as Bindings;
 
-const bcvCron = { cron: "0 22 * * 1-5" } as ScheduledController;
+const bcvCron = { cron: "0 22 * * MON-FRI" } as ScheduledController;
 
 describe("BCV scheduled failure reporting", () => {
   it("ships the isolated BCV Worker enabled only in production without workers.dev", () => {
     expect(bcvWorkerConfig).toContain('BCV_SYNC_ENABLED = "true"');
     expect(bcvWorkerConfig).toContain('APP_ENV = "production"');
     expect(bcvWorkerConfig).toContain("workers_dev = false");
+    expect(bcvWorkerConfig).toContain('crons = ["0 22 * * MON-FRI"]');
     expect(bcvWorkerConfig).not.toContain('BCV_SYNC_ENABLED = "false"');
   });
 
@@ -105,6 +106,11 @@ describe("BCV scheduled failure reporting", () => {
       ...productionEnv,
       APP_ENV: "preview",
     });
+    expect(mocks.syncBcvOfficialRate).not.toHaveBeenCalled();
+  });
+
+  it("ignores the legacy Sunday-through-Thursday numeric Cron expression", async () => {
+    await app.scheduled({ cron: "0 22 * * 1-5" } as ScheduledController, productionEnv);
     expect(mocks.syncBcvOfficialRate).not.toHaveBeenCalled();
   });
 

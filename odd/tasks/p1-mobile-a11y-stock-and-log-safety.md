@@ -31,12 +31,12 @@ Excluded:
 - [ ] AC-1 — Real insufficient-stock checkout returns an actual API 4xx; UI exposes a clear accessible error; PostgreSQL balance and immutable movement ledger remain unchanged.
 - [ ] AC-2 — Full commercial flow passes at 390x844 with no blocking horizontal overflow and usable, visible catalog, POS and receipt controls.
 - [ ] AC-3 — Real browser keyboard checks exercise Tab/Enter across login, modules and checkout; critical controls have accessible names/labels, focus is visible, and live error/status regions are announced.
-- [ ] AC-4 — Every production `console.*` callsite in `apps/api/src` is audited; no session tokens, secrets, cookies, raw external payloads or raw IPs are emitted.
+- [x] AC-4 — Every production `console.*` callsite in `apps/api/src` is audited; no session tokens, secrets, cookies, raw external payloads or raw IPs are emitted.
 - [ ] AC-5 — Automated static/unit regression test fails on unsafe logging patterns in `apps/api/src`.
-- [ ] AC-6 — `odd/tasks/real-fullstack-commerce-e2e.md` is Status: completed and AC-8 records PR #366 HEAD `b078a02608b807a2ecdd0b59e95d8017ecd2f553` (16/16 check-runs, 12/12 workflows SUCCESS) and post-merge `main` `366334ae75c966e4fada13afed964a7f4b557954` (14/14 check-runs, 9/9 workflows SUCCESS).
-- [ ] AC-7 — Production readiness and continuity docs accurately distinguish CI-validated P1 from real production gates; no personal emails, provider IDs, internal business/product names or secrets.
+- [x] AC-6 — `odd/tasks/real-fullstack-commerce-e2e.md` is Status: completed and AC-8 records PR #366 HEAD `b078a02608b807a2ecdd0b59e95d8017ecd2f553` (16/16 check-runs, 12/12 workflows SUCCESS) and post-merge `main` `366334ae75c966e4fada13afed964a7f4b557954` (14/14 check-runs, 9/9 workflows SUCCESS).
+- [x] AC-7 — Production readiness and continuity docs accurately distinguish CI-validated P1 from real production gates; no personal emails, provider IDs, internal business/product names or secrets.
 - [ ] AC-8 — Complete diff reviewed; all check-runs and workflow runs SUCCESS on the final exact PR HEAD; squash merge under repository policy; all post-merge checks verified on exact `main`.
-- [ ] AC-9 — PR #193 and Issue #53 remain OPEN; production remains **NOT READY**.
+- [x] AC-9 — PR #193 and Issue #53 remain OPEN; production remains **NOT READY**.
 
 ## Risks and guardrails
 

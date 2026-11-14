@@ -14,7 +14,7 @@
 - Se amplió la suite full-stack para probar el rechazo real por stock insuficiente con dos sesiones de navegador, respuesta API 409, alerta accesible y comparación antes/después del balance y ledger en PostgreSQL efímero.
 - Se añadió el proyecto Playwright móvil de 390×844, comprobaciones de desbordamiento horizontal, navegación por teclado en login/módulos/checkout y manejo de foco del diálogo.
 - La búsqueda de código identificó diez llamadas `console.*` en tres archivos productivos de `apps/api/src`; sus argumentos actuales son códigos/eventos allowlisted y metadatos acotados, no tokens, secretos, cookies, payloads externos ni IPs crudas. Se añadió una prueba estática deny-by-default. La ejecución CI de esta nueva cobertura está pendiente; no se declara validada todavía.
-- El HEAD actual de esta rama es `2197cb47ee2a1654ccd27a86d65bc90737bef3ec`. PR #367 está OPEN; la validación CI del nuevo HEAD está pendiente.
+- El último commit de código verificado antes de esta reconciliación documental fue `2197cb47ee2a1654ccd27a86d65bc90737bef3ec`. Los commits de continuidad posteriores cambian la punta de PR #367; consultar su HEAD vivo y ejecutar/verificar CI en ese SHA exacto antes de cualquier decisión.
 
 ### Límites de producción
 - La E2E ya integrada valida en CI el flujo comercial real sobre Hono y PostgreSQL 18 efímero: alta/lectura, recepción, ventas USD/VES, recibos, balance persistido, cierre de turno y rechazo por turno cerrado. No demuestra producción real.
@@ -26,6 +26,36 @@
 
 ### Próximo control obligatorio
 Completar validación local/CI de la rama P1, corregir solo fallos demostrados, actualizar continuidad con resultados exactos, abrir una sola PR y revisar su diff completo, check-runs, workflow runs, reviews y threads sobre el HEAD final. No fusionar con checks pendientes/cancelados ni reutilizar resultados de un SHA anterior. Mantener los límites de producción anteriores.
+
+## Turno 46 — PR #365 integrada y E2E comercial full-stack validada en CI (2026-11-14 UTC)
+
+**Base `main` verificada al iniciar PR #366:** `5e80770e73d3ed65fa92083ea5f4478d0d9f71d9` (Squash and Merge de PR #365).
+
+### PR #365 — cierre documental anterior
+- PR #365 quedó integrada en `main` mediante Squash and Merge con SHA `5e80770e73d3ed65fa92083ea5f4478d0d9f71d9`.
+- La verificación post-merge registrada para ese commit fue 13/13 check-runs SUCCESS y 9/9 workflow runs SUCCESS.
+- PR #361 (Cron BCV `MON-FRI 22:00 UTC` y TLS CI), PR #363 (rate limiting runtime) y PR #364 (watchdog BCV read-only) ya estaban integradas. No duplicar esas implementaciones.
+
+### PR #366 — evidencia de implementación full-stack
+- PR #366, rama `test/real-fullstack-commerce-e2e-20261114`; HEAD de implementación validado: `3329562d15f40ce744de67a088400935d9d3566a`.
+- En ese HEAD exacto: 16/16 check-runs SUCCESS y 12/12 workflow runs SUCCESS; CI `verify` 52/52 pasos SUCCESS.
+- Job full-stack PostgreSQL 18: 20/20 pasos ejecutados SUCCESS; job Chromium authentication smoke tests SUCCESS. La suite full-stack ejecuta el frontend compilado/servido, el proxy same-origin real `/api` y `/auth`, los handlers reales de Hono y una base PostgreSQL 18 efímera.
+- Migraciones canónicas 0001–0025 aplicadas y ledger completo verificado. Los logins PostgreSQL `microapp_runtime` y `microapp_bcv_sync` se usan con privilegios separados; se comprueba que runtime no puede escribir `bcv_sync_state`.
+- El harness crea dos identidades sintéticas persistidas: Owner para catálogo/recepción y Cashier para caja/ventas. Ambas tienen sesión con hash real, allowlist, membresía organizacional y sucursal; la sucursal tiene almacén y caja asignados. La separación respeta el trigger SQL que exige rol organizacional `cashier` para abrir turno.
+- Se prepara una tasa BCV sintética válida para la fecha local de `America/Caracas` y un `bcv_sync_state` válido mediante el rol productor dedicado; esto es fixture efímero, no una tasa real de producción.
+- Chromium completa creación/lectura de producto, recepción de inventario, apertura de turno, checkout USD y VES, recibos visibles, descuento de stock comprobado mediante API/DB, cierre de turno, recarga real y rechazo HTTP 409 `OPEN_SHIFT_REQUIRED` al intentar vender con el turno cerrado; el stock permanece intacto tras el rechazo.
+- No se usa `page.route`, interceptación de `/api/*`, ni respuestas HTTP simuladas. El único adaptador de transporte de base de datos está dentro del harness de test: vincula el cliente Neon de la aplicación al driver `pg` para conectar los mismos handlers Hono al PostgreSQL efímero. No cambia módulos de runtime ni añade endpoints de test.
+- Las pruebas Chromium de autenticación existentes permanecen y pasan. Los checks de Cloudflare Pages y Worker son validaciones CI/preview; no hubo despliegue manual.
+
+### Límites de lo demostrado
+- Esta evidencia demuestra el flujo full-stack en CI contra PostgreSQL 18 efímero. **No demuestra** persistencia de la primera tasa BCV real en Neon `main`, entrega externa de alertas, RPO/RTO humano, ni cumplimiento legal/fiscal.
+- PR #193 permanece OPEN e intacta. Issue #53 permanece OPEN/P0. **PRODUCTION: NOT READY**.
+- No se accedió ni mutó Neon `main`, datos reales o secretos; no se cambió configuración manual de Cloudflare/Google Cloud ni se ejecutaron despliegues manuales.
+- El HEAD `3329562d15f40ce744de67a088400935d9d3566a` es el HEAD de implementación antes de la reconciliación documental incluida en esta misma PR. El commit documental genera un nuevo HEAD: sus check-runs y workflow runs deben verificarse de nuevo en ese SHA exacto; no reutilizar CI de un SHA anterior.
+
+### Próximo control obligatorio
+Leer el diff completo de PR #366 y verificar todos los check-runs, workflow runs, reviews y threads sobre el HEAD final posterior a la reconciliación documental. Solo con todos los gates aplicables en verde procede Squash and Merge bajo la autorización de `AGENTS.md`; después verificar los checks del nuevo `main`. Mantener PR #193 e Issue #53 abiertas.
+
 
 ## Turno 45 — PR #364 integrada y verificación post-merge (2026-11-14 UTC)
 

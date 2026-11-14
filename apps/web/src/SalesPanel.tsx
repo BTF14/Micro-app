@@ -187,26 +187,23 @@ export default function SalesPanel({
 
   function addProduct(product: QuickLookupProduct) {
     if (quantityUnits(product.available_quantity) <= 0n) {
-      setNotice(`${product.name} está agotado en este almacén y no se agregó.`);
+      setNotice(product.name + " está agotado en este almacén y no se agregó.");
       return;
     }
-    setCart((current) => {
-      const existing = current.find((line) => line.product.product_id === product.product_id);
-      if (!existing) {
-        resetIdempotency();
-        setNotice(`${product.name} agregado al carrito.`);
-        return [...current, { product, quantity: "1.000" }];
-      }
-      if (quantityUnits(existing.quantity) + 1000n > quantityUnits(product.available_quantity)) {
-        setNotice(`No puedes superar la existencia disponible de ${product.name}.`);
-        return current;
-      }
+    const existing = cart.find((line) => line.product.product_id === product.product_id);
+    if (!existing) {
+      setCart([...cart, { product, quantity: "1.000" }]);
       resetIdempotency();
-      setNotice(`Se actualizó la cantidad de ${product.name}.`);
-      return current.map((line) => line.product.product_id === product.product_id
+      setNotice(product.name + " agregado al carrito.");
+    } else if (quantityUnits(existing.quantity) + 1000n > quantityUnits(product.available_quantity)) {
+      setNotice("No puedes superar la existencia disponible de " + product.name + ".");
+    } else {
+      setCart(cart.map((line) => line.product.product_id === product.product_id
         ? { ...line, product, quantity: formatNumeric(quantityUnits(line.quantity) + 1000n, 14, 3) }
-        : line);
-    });
+        : line));
+      resetIdempotency();
+      setNotice("Se actualizó la cantidad de " + product.name + ".");
+    }
     setError("");
   }
 

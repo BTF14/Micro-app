@@ -6,6 +6,16 @@ const organizationId = "11111111-2222-4333-8444-555555555555";
 const branchId = "22222222-3333-4444-8555-666666666666";
 const warehouseId = "33333333-4444-4555-8666-777777777777";
 
+function expectSequentialSqlParameters(statement: string, values: unknown[]) {
+  const placeholders = [...statement.matchAll(/\$(\d+)/g)].map((match) => Number(match[1]));
+  const maxPlaceholder = Math.max(0, ...placeholders);
+  expect(maxPlaceholder).toBe(values.length);
+  expect(new Set(placeholders).size).toBe(values.length);
+  for (let index = 1; index <= values.length; index += 1) {
+    expect(placeholders).toContain(index);
+  }
+}
+
 async function request(path: string, cookie?: string): Promise<Response> {
   return app.fetch(new Request("https://api.example" + path, {
     headers: cookie ? { Cookie: "microapp_session=" + cookie } : {},
@@ -60,6 +70,8 @@ describe("inventory read route guards", () => {
     expect(query.statement).toContain("(p.is_active = true OR b.balance_version IS NOT NULL)");
     expect(query.statement).toContain("p.id > $");
     expect(query.statement).toContain("ORDER BY p.id ASC");
+    expect(query.values).toEqual([organizationId, branchId, warehouseId, "750123", "%750123%", "00000000-0000-4000-8000-000000000001", 31]);
+    expectSequentialSqlParameters(query.statement, query.values);
   });
   it("orders relevance by exact barcode, exact SKU, then partial match and stable name/id", () => {
     const query = buildInventoryReadQuery({ organizationId, branchId, warehouseId, search: "750123", activeOnly: true, limit: 30, sort: "relevance", canReadCost: false });
@@ -69,5 +81,6 @@ describe("inventory read route guards", () => {
     expect(query.statement).toContain("p.barcode ILIKE $6");
     expect(query.statement).toContain("LIMIT $7");
     expect(query.values).toEqual([organizationId, branchId, warehouseId, "750123", "%750123%", "750123%", 31]);
+    expectSequentialSqlParameters(query.statement, query.values);
   });
 });

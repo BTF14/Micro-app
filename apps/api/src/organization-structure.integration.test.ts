@@ -96,10 +96,11 @@ describe.skipIf(!adminUrl || !runtimeUrl)("owner-only organization structure API
       method,
       headers: {
         Cookie: "microapp_session=" + f.users[role].token,
+        "CF-Connecting-IP": "198.51.100.106",
         ...(method === "GET" ? {} : { Origin: origin, "Content-Type": "application/json" }),
       },
       ...(body === undefined ? {} : { body: JSON.stringify(body) }),
-    }), { DATABASE_URL: runtimeUrl, FRONTEND_ORIGIN: frontendOrigin });
+    }), { DATABASE_URL: runtimeUrl, FRONTEND_ORIGIN: frontendOrigin, GOOGLE_CLIENT_SECRET: "test-google-client-secret" });
   }
 
   it("completes branch → warehouse → register → member assignment and exposes immediate reads", async () => {

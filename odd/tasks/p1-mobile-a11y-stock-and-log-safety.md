@@ -68,8 +68,8 @@ Excluded:
 
 ## Closure and handoff
 
-- Current branch HEAD: `2197cb47ee2a1654ccd27a86d65bc90737bef3ec`; PR #367 OPEN against `main` `366334ae75c966e4fada13afed964a7f4b557954`.
-- PR: #367 OPEN; HEAD `2197cb47ee2a1654ccd27a86d65bc90737bef3ec`.
+- Current branch HEAD: `b156f79b407cdcefa157e5e512c79a46eefbbfec`; PR #367 OPEN against `main` `366334ae75c966e4fada13afed964a7f4b557954`.
+- PR: #367 OPEN; HEAD `b156f79b407cdcefa157e5e512c79a46eefbbfec`.
 - Checks and exact outcomes: pending CI for the new P1 code.
 - Acceptance criteria met / unmet: AC-4 source audit and AC-6 #366 closure evidence complete; AC-1–AC-3 and AC-5 await CI; AC-7 documentation updated; AC-8 merge gate pending; AC-9 live state verified.
 - Limitations not verified: first real BCV rate persisted in Neon `main`; external alert delivery; human RPO/RTO; legal/fiscal approval.

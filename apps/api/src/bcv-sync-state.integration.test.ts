@@ -176,12 +176,16 @@ describe.skipIf(!isDisposableRuntimeDatabase)("BCV sync-state and watchdog with 
       APP_ENV: "production",
       DATABASE_URL: runtimeDatabaseUrl,
     });
-    expect(errorLog).toHaveBeenCalledWith({
+    const staleEvent = errorLog.mock.calls.find(([entry]) =>
+      (entry as { event?: string }).event === "BCV_SYNC_STALE_RUNNING",
+    )?.[0] as { attemptAgeSeconds: number } | undefined;
+    expect(staleEvent).toEqual({
       event: "BCV_SYNC_STALE_RUNNING",
       attemptAgeSeconds: expect.any(Number),
       thresholdSeconds: 300,
       lastAttemptAt: attempt.rows[0]!.last_attempt_at,
     });
+    expect(staleEvent?.attemptAgeSeconds).toBeGreaterThanOrEqual(300);
     const response = await getSyncState();
     const body = await response.json() as Record<string, unknown>;
     expect(response.status).toBe(200);

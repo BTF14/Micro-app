@@ -172,7 +172,7 @@ describe("hourly BCV stale-running watchdog and auth retention isolation", () =>
     const sql = String(client.query.mock.calls[0]?.[0]);
     expect(sql).toContain("FROM public.bcv_sync_state");
     expect(sql).toContain("WHERE singleton = true");
-    expect(sql).not.toMatch(/\\b(?:UPDATE|INSERT|DELETE)\\b/i);
+    expect(sql).not.toMatch(/\b(?:UPDATE|INSERT|DELETE)\b/i);
     expect(errorLog).toHaveBeenCalledWith({
       event: "BCV_SYNC_STALE_RUNNING",
       attemptAgeSeconds: 300,

@@ -10,6 +10,8 @@ vi.mock("@neondatabase/serverless", async () => {
   };
 });
 
+let syntheticIpCounter = 1;
+
 const app = (await import("./index")).default;
 const databaseUrl = (globalThis as typeof globalThis & {
   process?: { env?: Record<string, string | undefined> };
@@ -80,10 +82,11 @@ describe.skipIf(!databaseUrl)("catalog product creation against PostgreSQL", () 
           Cookie: "microapp_session=" + fixture.token,
           Origin: origin,
           "Content-Type": "application/json",
+          "CF-Connecting-IP": `198.51.100.${syntheticIpCounter++}`,
         },
         body: JSON.stringify(payload),
       }),
-      { DATABASE_URL: databaseUrl, FRONTEND_ORIGIN: "https://frontend.example" },
+      { DATABASE_URL: databaseUrl, FRONTEND_ORIGIN: "https://frontend.example", GOOGLE_CLIENT_SECRET: "test-google-client-secret" },
     );
   }
 

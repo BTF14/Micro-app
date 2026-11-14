@@ -1,5 +1,6 @@
 import { getCookie } from "hono/cookie";
 import type { Hono } from "hono";
+import { enforceRuntimeWriteRateLimit } from "./runtime-write-rate-limit";
 import type { Bindings } from "./bindings";
 import { clearSessionCookie, isTrustedOrigin } from "./auth";
 import { authorizeBranchOperation } from "./authorization";
@@ -143,6 +144,9 @@ export function registerInventoryCountRoutes(app: Hono<{ Bindings: Bindings }>):
       return c.json({ error: "INVALID_IDEMPOTENCY_KEY", message: "La clave de idempotencia no tiene un formato válido." }, 400);
     }
 
+    const rateLimitError = await enforceRuntimeWriteRateLimit(c, "inventory:count:create", 10);
+    if (rateLimitError) return rateLimitError;
+
     try {
       const result = await withDatabaseClient(c.env.DATABASE_URL, (client) =>
         withDatabaseTransaction(client, async (tx) => {
@@ -251,6 +255,9 @@ export function registerInventoryCountRoutes(app: Hono<{ Bindings: Bindings }>):
     if (!isTrustedOrigin(c.req.header("Origin"), c.env.FRONTEND_ORIGIN)) return c.json({ error: "ORIGIN_NOT_ALLOWED", message: "Origen no autorizado." }, 403);
     const token = getCookie(c, "microapp_session");
     if (!token || token.length > 128) { clearSessionCookie(c); return c.json({ error: "UNAUTHENTICATED", message: "Inicia sesión para continuar." }, 401); }
+
+    const rateLimitError = await enforceRuntimeWriteRateLimit(c, "inventory:count:confirm", 10);
+    if (rateLimitError) return rateLimitError;
 
     try {
       const result = await withDatabaseClient(c.env.DATABASE_URL, (client) =>

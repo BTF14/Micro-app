@@ -1,5 +1,6 @@
 import { getCookie } from "hono/cookie";
 import type { Hono } from "hono";
+import { enforceRuntimeWriteRateLimit } from "./runtime-write-rate-limit";
 import type { Bindings } from "./bindings";
 import { clearSessionCookie, isTrustedOrigin } from "./auth";
 import { authorizeBranchOperation } from "./authorization";
@@ -174,6 +175,9 @@ export function registerInventoryReceiptRoutes(app: Hono<{ Bindings: Bindings }>
     const input = parseReceiptBody(parsed);
     if (!input) return c.json({ error: "INVALID_RECEIPT", message: "El motivo o las líneas de recepción no son válidos." }, 400);
     const hash = await requestHash(organizationId, branchId, warehouseId, input.reason, input.lines);
+    const rateLimitError = await enforceRuntimeWriteRateLimit(c, "inventory:receipt:create", 10);
+    if (rateLimitError) return rateLimitError;
+
     try {
       const result = await withDatabaseClient(c.env.DATABASE_URL, (db) => withDatabaseTransaction(db, async (tx) => {
         const auth = await authorizeBranchOperation(tx, token, organizationId, branchId, "inventory.receive", false);

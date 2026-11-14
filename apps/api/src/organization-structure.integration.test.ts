@@ -13,6 +13,8 @@ const runtimeUrl = env?.DATABASE_URL_RUNTIME ?? env?.DATABASE_URL;
 const isCi = Boolean(env?.CI);
 if (isCi && (!adminUrl || !runtimeUrl)) throw new Error("CI requires direct admin and runtime PostgreSQL logins for organization structure integration tests.");
 
+let syntheticIpCounter = 1;
+
 type Role = "owner" | "admin" | "cashier" | "inventory";
 type UserFixture = { id: string; token: string };
 type Fixture = { organizationId: string; users: Record<Role, UserFixture>; branchId?: string; registerId?: string };
@@ -96,10 +98,11 @@ describe.skipIf(!adminUrl || !runtimeUrl)("owner-only organization structure API
       method,
       headers: {
         Cookie: "microapp_session=" + f.users[role].token,
+        "CF-Connecting-IP": `198.51.100.${syntheticIpCounter++}`,
         ...(method === "GET" ? {} : { Origin: origin, "Content-Type": "application/json" }),
       },
       ...(body === undefined ? {} : { body: JSON.stringify(body) }),
-    }), { DATABASE_URL: runtimeUrl, FRONTEND_ORIGIN: frontendOrigin });
+    }), { DATABASE_URL: runtimeUrl, FRONTEND_ORIGIN: frontendOrigin, GOOGLE_CLIENT_SECRET: "test-google-client-secret" });
   }
 
   it("completes branch → warehouse → register → member assignment and exposes immediate reads", async () => {

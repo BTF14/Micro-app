@@ -1,6 +1,7 @@
 import { parseNumeric } from "@micro-app/money";
 import type { Hono } from "hono";
 import { getCookie } from "hono/cookie";
+import { enforceRuntimeWriteRateLimit } from "./runtime-write-rate-limit";
 import type { Bindings } from "./bindings";
 import { clearSessionCookie, isTrustedOrigin } from "./auth";
 import { withDatabaseClient, withDatabaseTransaction } from "./database";
@@ -212,6 +213,9 @@ export function registerCatalogWriteRoutes(app: Hono<{ Bindings: Bindings }>): v
       return c.json({ error: "INVALID_PRODUCT", message: "Los datos del producto no son válidos." }, 400);
     }
 
+    const rateLimitError = await enforceRuntimeWriteRateLimit(c, "catalog:create", 30);
+    if (rateLimitError) return rateLimitError;
+
     try {
       const result = await withDatabaseClient(c.env.DATABASE_URL, async (client) =>
         withDatabaseTransaction(client, async (transaction) => {
@@ -313,6 +317,9 @@ export function registerCatalogWriteRoutes(app: Hono<{ Bindings: Bindings }>): v
     if (!patch) {
       return c.json({ error: "INVALID_PRODUCT_PATCH", message: "Los cambios del producto no son válidos." }, 400);
     }
+
+    const rateLimitError = await enforceRuntimeWriteRateLimit(c, "catalog:update", 30);
+    if (rateLimitError) return rateLimitError;
 
     try {
       const result = await withDatabaseClient(c.env.DATABASE_URL, async (client) =>

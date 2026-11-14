@@ -1,5 +1,6 @@
 import { getCookie } from "hono/cookie";
 import type { Context, Hono } from "hono";
+import { enforceRuntimeWriteRateLimit } from "./runtime-write-rate-limit";
 import type { Bindings } from "./bindings";
 import { clearSessionCookie, isTrustedOrigin } from "./auth";
 import { authorizeTenantOperation } from "./authorization";
@@ -114,6 +115,9 @@ export function registerOrganizationStructureRoutes(app: Hono<{ Bindings: Bindin
     const body = parseObject(parsed.value, ["name", "slug"]);
     const name = body && text(body.name, 120), slug = body && text(body.slug, 80);
     if (!body || !name || !slug) return c.json({ error: "INVALID_BRANCH", message: "Nombre y código de sucursal son obligatorios." }, 400);
+    const rateLimitError = await enforceRuntimeWriteRateLimit(c, "organization:branch:create", 10);
+    if (rateLimitError) return rateLimitError;
+
     try {
       const result = await withDatabaseClient(c.env.DATABASE_URL, (client) => withDatabaseTransaction(client, async (tx) => {
         const auth = await authorizeTenantOperation(tx, session, org, "organization_policy.manage", false);
@@ -139,6 +143,9 @@ export function registerOrganizationStructureRoutes(app: Hono<{ Bindings: Bindin
     const body = parseObject(parsed.value, ["name", "code"]);
     const name = body && text(body.name, 120), code = body && text(body.code, 80);
     if (!body || !name || !code) return c.json({ error: "INVALID_STRUCTURE_ITEM", message: "Nombre y código son obligatorios." }, 400);
+    const rateLimitError = await enforceRuntimeWriteRateLimit(c, `organization:${kind === "warehouses" ? "warehouse" : "register"}:create`, 10);
+    if (rateLimitError) return rateLimitError;
+
     try {
       const result = await withDatabaseClient(c.env.DATABASE_URL, (client) => withDatabaseTransaction(client, async (tx) => {
         const auth = await authorizeTenantOperation(tx, session, org, "organization_policy.manage", false);
@@ -167,6 +174,9 @@ export function registerOrganizationStructureRoutes(app: Hono<{ Bindings: Bindin
     if (parsed.kind === "invalid") return c.json({ error: "INVALID_JSON", message: "El cuerpo JSON no es válido." }, 400);
     const body = parseObject(parsed.value, ["is_active"]);
     if (!body || typeof body.is_active !== "boolean") return c.json({ error: "INVALID_MEMBERSHIP", message: "El estado de la asignación no es válido." }, 400);
+    const rateLimitError = await enforceRuntimeWriteRateLimit(c, "organization:branch-membership:update", 10);
+    if (rateLimitError) return rateLimitError;
+
     try {
       const result = await withDatabaseClient(c.env.DATABASE_URL, (client) => withDatabaseTransaction(client, async (tx) => {
         const auth = await authorizeTenantOperation(tx, session, org, "members.manage", false);

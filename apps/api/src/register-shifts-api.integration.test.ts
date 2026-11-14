@@ -13,6 +13,8 @@ const runtimeUrl = env?.DATABASE_URL_RUNTIME;
 const isCi = Boolean(env?.CI);
 if (isCi && (!adminUrl || !runtimeUrl)) throw new Error("CI requires direct admin and runtime PostgreSQL logins for register-shift API integration tests.");
 
+let syntheticIpCounter = 1;
+
 type Role = "owner" | "admin" | "cashier" | "inventory";
 type Fixture = { organizationId: string; branchId: string; userId: string; token: string; registerId: string };
 
@@ -54,9 +56,9 @@ describe.skipIf(!adminUrl || !runtimeUrl)("own register-shift API against Postgr
   async function request(f: Fixture, method: string, path: string, body?: unknown): Promise<Response> {
     return app.fetch(new Request("https://api.example" + path, {
       method,
-      headers: { Cookie: "microapp_session=" + f.token, ...(method === "POST" ? { Origin: "https://frontend.example", "Content-Type": "application/json" } : {}) },
+      headers: { Cookie: "microapp_session=" + f.token, "CF-Connecting-IP": `198.51.100.${syntheticIpCounter++}`, ...(method === "POST" ? { Origin: "https://frontend.example", "Content-Type": "application/json" } : {}) },
       ...(body === undefined ? {} : { body: JSON.stringify(body) }),
-    }), { DATABASE_URL: runtimeUrl, FRONTEND_ORIGIN: "https://frontend.example" });
+    }), { DATABASE_URL: runtimeUrl, FRONTEND_ORIGIN: "https://frontend.example", GOOGLE_CLIENT_SECRET: "test-google-client-secret" });
   }
   async function open(f: Fixture, cashUsd = "10.0000", cashVes = "100.00") {
     return request(f, "POST", root(f) + "/register-shifts", { register_id: f.registerId, opening_cash_usd: cashUsd, opening_cash_ves: cashVes });

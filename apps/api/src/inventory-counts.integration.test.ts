@@ -10,6 +10,8 @@ vi.mock("@neondatabase/serverless", async () => {
   } };
 });
 
+let syntheticIpCounter = 1;
+
 const app = (await import("./index")).default;
 const databaseUrl = (globalThis as typeof globalThis & {
   process?: { env?: Record<string, string | undefined> };
@@ -48,6 +50,7 @@ describe.skipIf(!databaseUrl)("warehouse inventory count transactions against Po
       method: "POST",
       headers: {
         Cookie: "microapp_session=" + token,
+        "CF-Connecting-IP": `198.51.100.${syntheticIpCounter++}`,
         Origin: "https://frontend.example",
         "Content-Type": "application/json",
         ...(includeDefaultIdempotencyKey && /\/counts\/(opening|physical)$/.test(path)
@@ -56,7 +59,7 @@ describe.skipIf(!databaseUrl)("warehouse inventory count transactions against Po
         ...extraHeaders,
       },
       ...(body === undefined ? {} : { body: JSON.stringify(body) }),
-    }), { DATABASE_URL: databaseUrl, FRONTEND_ORIGIN: "https://frontend.example" });
+    }), { DATABASE_URL: databaseUrl, FRONTEND_ORIGIN: "https://frontend.example", GOOGLE_CLIENT_SECRET: "test-google-client-secret" });
   }
 
   async function get(path: string): Promise<Response> {

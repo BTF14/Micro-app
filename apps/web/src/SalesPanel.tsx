@@ -85,22 +85,22 @@ export default function SalesPanel({
   const canConvert = exchangeRateStatus === "current" && exchangeRate !== null;
 
   const computed = useMemo(() => {
-    if (!canConvert || !exchangeRate || cart.length === 0) {
-      return { lines: [] as Array<CartLine & { lineUsd: string; lineVes: string }>, subtotalUsd: "0.0000", totalVes: "0.00" };
+    if (cart.length === 0) {
+      return { lines: [] as Array<CartLine & { lineUsd: string; lineVes: string }>, subtotalUsd: "0.0000", totalVes: canConvert ? "0.00" : null as string | null };
     }
     const lines = cart.map((line) => {
       const lineUsd = calculateLineUsd(line.quantity, line.product.price_usd);
-      const lineVes = convertUsdToVes(lineUsd, exchangeRate);
+      const lineVes = canConvert && exchangeRate ? convertUsdToVes(lineUsd, exchangeRate) : "";
       return { ...line, lineUsd, lineVes };
     });
     return {
       lines,
       subtotalUsd: sumNumeric(lines.map((line) => line.lineUsd), 14, 4),
-      totalVes: sumNumeric(lines.map((line) => line.lineVes), 16, 2),
+      totalVes: canConvert && exchangeRate ? sumNumeric(lines.map((line) => line.lineVes), 16, 2) : null,
     };
   }, [cart, canConvert, exchangeRate]);
 
-  const expectedPayment = currency === "USD" ? computed.subtotalUsd : computed.totalVes;
+  const expectedPayment = currency === "USD" ? computed.subtotalUsd : computed.totalVes ?? "0.00";
   const paymentTotal = useMemo(() => {
     const { precision, scale } = paymentScale(currency);
     try { return sumNumeric(payments.filter((p) => p.amount.trim() !== "").map((p) => p.amount), precision, scale); } catch { return currency === "USD" ? "0.0000" : "0.00"; }
@@ -261,7 +261,7 @@ export default function SalesPanel({
   }
 
   async function checkout() {
-    if (!shift || !warehouseId || !canConvert || !exchangeRate || cart.length === 0) return;
+    if (!shift || !warehouseId || !canConvert || !exchangeRate || computed.totalVes === null || cart.length === 0) return;
     if (!paymentMatches) {
       setError(`Los pagos deben sumar exactamente ${expectedPayment} ${currency}.`);
       return;
@@ -355,13 +355,13 @@ export default function SalesPanel({
                     {computed.lines.map((line) => <article className="sales-cart-line" key={line.product.product_id}>
                       <div className="sales-cart-product"><strong>{line.product.name}</strong><small>{line.product.sku} · {usd(line.product.price_usd)} c/u</small></div>
                       <label className="sales-quantity"><span>Cantidad</span><input aria-label={`Cantidad de ${line.product.name}`} inputMode="decimal" value={line.quantity} onChange={(event) => updateQuantity(line.product.product_id, event.target.value)} /></label>
-                      <div className="sales-line-total"><strong>{usd(line.lineUsd)}</strong><small>{ves(line.lineVes)}</small></div>
+                      <div className="sales-line-total"><strong>{usd(line.lineUsd)}</strong><small>{line.lineVes ? ves(line.lineVes) : "Conversión no disponible"}</small></div>
                       <div className="sales-line-actions"><button type="button" onClick={() => updateQuantity(line.product.product_id, formatNumeric(quantityUnits(line.quantity) > 1000n ? quantityUnits(line.quantity) - 1000n : 1000n, 14, 3))} aria-label={`Restar ${line.product.name}`}>−</button><button type="button" onClick={() => addProduct(line.product)} aria-label={`Sumar ${line.product.name}`}>+</button><button type="button" onClick={() => removeLine(line.product.product_id)}>Quitar</button></div>
                     </article>)}
                   </div>
                 )}
 
-                <div className="sales-totals"><div><span>Subtotal USD</span><strong>{usd(computed.subtotalUsd)}</strong></div><div><span>Total VES · BCV</span><strong>{ves(computed.totalVes)}</strong></div><small>{canConvert ? `Tasa BCV aplicada: ${localized(exchangeRate!, 18, 8)} Bs./USD` : "Conversión no disponible"}</small></div>
+                <div className="sales-totals"><div><span>Subtotal USD</span><strong>{usd(computed.subtotalUsd)}</strong></div><div><span>Total VES · BCV</span><strong>{computed.totalVes === null ? "No disponible" : ves(computed.totalVes)}</strong></div><small>{canConvert ? `Tasa BCV aplicada: ${localized(exchangeRate!, 18, 8)} Bs./USD` : "Conversión no disponible"}</small></div>
 
                 <section className="sales-payments" aria-labelledby="sales-payments-title">
                   <div className="sales-payments-heading"><h3 id="sales-payments-title">Forma de pago</h3><label>Moneda<select value={currency} onChange={(event) => setPaymentCurrency(event.target.value as Currency)}><option value="USD">USD</option><option value="VES">VES</option></select></label></div>

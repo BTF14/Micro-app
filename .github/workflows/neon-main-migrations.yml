@@ -182,7 +182,7 @@ jobs:
                 AND NOT pg_catalog.has_table_privilege('microapp_runtime','public.audit_logs','TRUNCATE')
                 AND NOT pg_catalog.has_table_privilege('microapp_runtime','public.audit_logs','TRIGGER')
             ")"
-            if [[ "$role_checks" != "t|t|t|t|t|t" ]]; then
+            if [[ "$role_checks" != "t" ]]; then
               echo "NEON_MAIN_ROLE_OR_LEAST_PRIVILEGE_CHECK_FAILED" >&2
               return 1
             fi

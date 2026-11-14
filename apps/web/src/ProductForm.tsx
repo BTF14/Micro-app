@@ -153,7 +153,7 @@ export default function ProductForm({ organizationId, product, onCancel, onSaved
         </label>
         <label>
           Costo USD
-          <input value={draft.cost_usd} onChange={(event) => update("cost_usd", event.target.value)} inputMode="decimal" autoComplete="off" placeholder="0.0000" required />
+          <input value={draft.cost_usd} onChange={(event) => update("cost_usd", event.target.value)} inputMode="decimal" autoComplete="off" placeholder="0.00" required />
           <span className="product-field-hint">Ejemplo: 10.50 (hasta 4 decimales si hace falta).</span>
         </label>
         <label>

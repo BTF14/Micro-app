@@ -103,6 +103,7 @@ describe("inventory panel", () => {
       .mockResolvedValueOnce(jsonResponse({branches:[{id:BRANCH_A,name:"Central",slug:"central"}]}))
       .mockResolvedValueOnce(jsonResponse({warehouses:[{id:WAREHOUSE,code:"main",name:"Principal",is_active:true}]}))
       .mockResolvedValueOnce(jsonResponse({items:[],nextCursor:null,limit:100}))
+      .mockResolvedValueOnce(jsonResponse({receipts:[]}))
       .mockResolvedValueOnce(jsonResponse({items:[],nextCursor:null,limit:100}));
     await renderPanel();
     const input=container.querySelector<HTMLInputElement>("#inventory-quick-search");

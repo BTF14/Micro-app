@@ -9,7 +9,12 @@ type Shift = { id: string; organizationId: string; branchId: string; registerId:
 type RegisterShiftsPanelProps = { organizationId: string; userName: string };
 
 function money(value: string): string {
-  try { return formatMoneyForDisplay(value); } catch { return "No disponible"; }
+  try {
+    const formatted = formatMoneyForDisplay(value);
+    const [integer = "0", fraction] = formatted.split(".");
+    const grouped = integer.replace(/\\B(?=(\\d{3})+(?!\\d))/g, ".");
+    return fraction ? `${grouped},${fraction}` : grouped;
+  } catch { return "No disponible"; }
 }
 function dateTime(value: string): string {
   return new Intl.DateTimeFormat("es-VE", { dateStyle: "medium", timeStyle: "short", timeZone: "America/Caracas" }).format(new Date(value));

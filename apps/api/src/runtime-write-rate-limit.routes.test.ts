@@ -122,6 +122,35 @@ describe("runtime write rate-limit route coverage", () => {
     );
   });
 
+  it.each(cases)("fails closed for $name when the trusted client identity is unavailable", async (route) => {
+    limiter.enforce.mockImplementation(async (context: Context<{ Bindings: Bindings }>) =>
+      context.json({
+        error: "RATE_LIMIT_UNAVAILABLE",
+        message: "No se pudo verificar el límite de solicitudes. Inténtalo de nuevo más tarde.",
+      }, 503),
+    );
+    const headers = new Headers({
+      Cookie: "microapp_session=synthetic-runtime-write-session",
+      Origin: "https://frontend.example",
+      "Content-Type": "application/json",
+    });
+    for (const [name, value] of Object.entries(route.headers ?? {})) headers.set(name, value);
+
+    const response = await app.fetch(new Request("https://api.example" + route.path, {
+      method: route.method,
+      headers,
+      ...(route.body === undefined ? {} : { body: JSON.stringify(route.body) }),
+    }), {
+      FRONTEND_ORIGIN: "https://frontend.example",
+      GOOGLE_CLIENT_SECRET: "unit-test-google-client-secret",
+    });
+
+    expect(response.status).toBe(503);
+    await expect(response.json()).resolves.toMatchObject({ error: "RATE_LIMIT_UNAVAILABLE" });
+    expect(limiter.enforce).toHaveBeenCalledTimes(1);
+    expect(limiter.enforce).toHaveBeenCalledWith(expect.anything(), route.scope, route.limit);
+  });
+
   it.each(cases)("stops $name at the limiter before opening a business transaction", async (route) => {
     const headers = new Headers({
       Cookie: "microapp_session=synthetic-runtime-write-session",

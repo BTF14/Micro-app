@@ -74,6 +74,51 @@ type InventoryMovementRow = {
   unit_cost_usd?: string | null;
 };
 
+
+export type InventoryReadSort = "id" | "relevance";
+export function buildInventoryReadQuery(input: {
+  organizationId: string; branchId: string; warehouseId: string; search: string;
+  activeOnly: boolean; cursor?: string; limit: number; sort: InventoryReadSort; canReadCost: boolean;
+}): { statement: string; values: unknown[] } {
+  const values: unknown[] = [input.organizationId, input.branchId, input.warehouseId];
+  const filters = ["p.organization_id = $1", input.activeOnly ? "p.is_active = true" : "(p.is_active = true OR b.balance_version IS NOT NULL)"];
+  let exact: number | null = null;
+  let partial: number | null = null;
+  let prefix: number | null = null;
+  if (input.search) {
+    const escaped = input.search.replace(/[\\%_]/g, (character) => "\\" + character);
+    values.push(input.search); exact = values.length;
+    values.push(`%${escaped}%`); partial = values.length;
+    if (input.sort === "relevance") {
+      values.push(`${escaped}%`); prefix = values.length;
+    }
+    filters.push(`(p.barcode = $${exact} OR lower(p.sku) = lower($${exact}) OR p.barcode ILIKE $${partial} ESCAPE '\\' OR p.sku ILIKE $${partial} ESCAPE '\\' OR p.name ILIKE $${partial} ESCAPE '\\')`);
+  }
+  if (input.cursor) { values.push(input.cursor); filters.push(`p.id > $${values.length}`); }
+  values.push(input.limit + 1);
+  let order = "p.id ASC";
+  if (input.sort === "relevance" && input.search && exact !== null && partial !== null && prefix !== null) {
+    order = `CASE
+      WHEN p.barcode = $${exact} THEN 0
+      WHEN lower(p.sku) = lower($${exact}) THEN 1
+      WHEN p.barcode ILIKE $${prefix} ESCAPE '\\' OR p.sku ILIKE $${prefix} ESCAPE '\\' OR p.name ILIKE $${prefix} ESCAPE '\\' THEN 2
+      ELSE 3 END, lower(p.name) ASC, p.id ASC`;
+  } else if (input.sort === "relevance") {
+    order = "lower(p.name) ASC, p.id ASC";
+  }
+  const cost = input.canReadCost ? ", p.cost_usd::text AS cost_usd" : "";
+  const statement = `SELECT p.id AS product_id, p.is_active, p.sku, p.barcode, p.name, p.unit,
+      p.price_usd::text AS price_usd, p.minimum_stock::text AS minimum_stock,
+      COALESCE(b.on_hand_quantity, 0)::numeric(14,3)::text AS on_hand_quantity,
+      COALESCE(b.reserved_quantity, 0)::numeric(14,3)::text AS reserved_quantity,
+      (COALESCE(b.on_hand_quantity, 0) - COALESCE(b.reserved_quantity, 0))::numeric(14,3)::text AS available_quantity,
+      b.balance_version::text AS balance_version${cost}
+    FROM products p LEFT JOIN inventory_balances b ON b.organization_id = p.organization_id
+      AND b.branch_id = $2 AND b.warehouse_id = $3 AND b.product_id = p.id
+    WHERE ${filters.join(" AND ")} ORDER BY ${order} LIMIT $${values.length}`;
+  return { statement, values };
+}
+
 export function registerInventoryReadRoutes(app: Hono<{ Bindings: Bindings }>): void {
   app.get("/api/orgs/:organizationId/branches/:branchId/warehouses/:warehouseId/inventory", async (c) => {
     c.header("Cache-Control", "private, no-store");
@@ -85,8 +130,15 @@ export function registerInventoryReadRoutes(app: Hono<{ Bindings: Bindings }>): 
     const limit = parsePageSize(c.req.query("limit"));
     const cursor = c.req.query("cursor");
     const search = c.req.query("q")?.trim() ?? "";
+    const activeOnlyValue = c.req.query("active_only");
+    const sortValue = c.req.query("sort");
+    const activeOnly = activeOnlyValue === "true";
+    const sort: InventoryReadSort = sortValue === undefined ? "id" : sortValue as InventoryReadSort;
     if (search.length > 120) return c.json({ error: "INVALID_INVENTORY_QUERY", message: "La búsqueda no puede superar 120 caracteres." }, 400);
-    if (limit === null || (cursor !== undefined && !UUID_PATTERN.test(cursor))) {
+    if (limit === null || (cursor !== undefined && !UUID_PATTERN.test(cursor)) ||
+        (activeOnlyValue !== undefined && activeOnlyValue !== "true" && activeOnlyValue !== "false") ||
+        (sortValue !== undefined && sortValue !== "id" && sortValue !== "relevance") ||
+        (sort === "relevance" && cursor !== undefined)) {
       return c.json({ error: "INVALID_INVENTORY_QUERY", message: "Los parámetros de consulta no son válidos." }, 400);
     }
 
@@ -118,29 +170,11 @@ export function registerInventoryReadRoutes(app: Hono<{ Bindings: Bindings }>): 
           }
 
           const canReadCost = authorizeCommercialOperation(branch.organizationRole, "catalog.read_costs");
-          const costColumn = canReadCost ? ", p.cost_usd::text AS cost_usd" : "";
-          const values: unknown[] = [branch.organizationId, branch.branchId, warehouseId];
-          const filters: string[] = ["p.organization_id = $1", "(p.is_active = true OR b.balance_version IS NOT NULL)"];
-          if (search) {
-            const escaped = search.replace(/[\\%_]/g, (character) => "\\" + character);
-            values.push(search, `%${escaped}%`);
-            filters.push("(p.barcode = $4 OR lower(p.sku) = lower($4) OR p.barcode ILIKE $5 ESCAPE '\\' OR p.sku ILIKE $5 ESCAPE '\\' OR p.name ILIKE $5 ESCAPE '\\')");
-          }
-          if (cursor) { values.push(cursor); filters.push(`p.id > $${values.length}`); }
-          values.push(limit + 1);
-          const rows = await tx.query<InventoryBalanceRow>(
-            `SELECT p.id AS product_id, p.is_active, p.sku, p.barcode, p.name, p.unit,
-                    p.price_usd::text AS price_usd, p.minimum_stock::text AS minimum_stock,
-                    COALESCE(b.on_hand_quantity, 0)::numeric(14,3)::text AS on_hand_quantity,
-                    COALESCE(b.reserved_quantity, 0)::numeric(14,3)::text AS reserved_quantity,
-                    (COALESCE(b.on_hand_quantity, 0) - COALESCE(b.reserved_quantity, 0))::numeric(14,3)::text AS available_quantity,
-                    b.balance_version::text AS balance_version${costColumn}
-               FROM products p
-               LEFT JOIN inventory_balances b ON b.organization_id = p.organization_id AND b.branch_id = $2
-                AND b.warehouse_id = $3 AND b.product_id = p.id
-              WHERE ${filters.join(" AND ")} ORDER BY p.id ASC LIMIT $${values.length}`,
-            values,
-          );
+          const query = buildInventoryReadQuery({
+            organizationId: branch.organizationId, branchId: branch.branchId, warehouseId,
+            search, activeOnly, cursor, limit, sort, canReadCost,
+          });
+          const rows = await tx.query<InventoryBalanceRow>(query.statement, query.values);
           const hasMore = rows.rows.length > limit;
           const items = rows.rows.slice(0, limit);
           return {

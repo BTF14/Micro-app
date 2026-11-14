@@ -3,6 +3,7 @@ import { apiRequest, ApiError, googleLoginUrl, type AuthResponse } from "./auth"
 import "./auth.css";
 import CatalogPanel from "./CatalogPanel";
 import InventoryPanel from "./InventoryPanel";
+import QuickProductLookup from "./QuickProductLookup";
 import RegisterShiftsPanel from "./RegisterShiftsPanel";
 import OrganizationStructurePanel from "./OrganizationStructurePanel";
 
@@ -300,7 +301,7 @@ export default function App() {
   const [error, setError] = useState(() => readAuthErrorFromUrl());
   const [notice, setNotice] = useState("");
   const [helpModal, setHelpModal] = useState<HelpModalKind | null>(null);
-  const [activeView, setActiveView] = useState<"overview" | "catalog" | "inventory" | "register-shifts" | "organization-structure">("overview");
+  const [activeView, setActiveView] = useState<"overview" | "catalog" | "inventory" | "quick-lookup" | "register-shifts" | "organization-structure">("overview");
   const [bcvRate, setBcvRate] = useState<BcvRateResponse | null>(null);
   const [bcvLoading, setBcvLoading] = useState(false);
   const [bcvError, setBcvError] = useState("");
@@ -469,6 +470,7 @@ export default function App() {
           <a className={`nav-item ${activeView === "overview" ? "active" : ""}`} href="#inicio" onClick={() => setActiveView("overview")} aria-current={activeView === "overview" ? "page" : undefined}><span className="nav-symbol" aria-hidden="true">⌂</span> Resumen</a>
           <button className={`nav-item nav-item-button ${activeView === "catalog" ? "active" : ""}`} type="button" onClick={() => setActiveView("catalog")} aria-current={activeView === "catalog" ? "page" : undefined}><span className="nav-symbol" aria-hidden="true">▦</span>Productos</button>
           <button className={`nav-item nav-item-button ${activeView === "inventory" ? "active" : ""}`} type="button" onClick={() => setActiveView("inventory")} aria-current={activeView === "inventory" ? "page" : undefined}><span className="nav-symbol" aria-hidden="true">▤</span>Inventario</button>
+          {(organization?.role === "owner" || organization?.role === "admin" || organization?.role === "inventory" || organization?.role === "cashier") && <button className={`nav-item nav-item-button ${activeView === "quick-lookup" ? "active" : ""}`} type="button" onClick={() => setActiveView("quick-lookup")} aria-current={activeView === "quick-lookup" ? "page" : undefined}><span className="nav-symbol" aria-hidden="true">⌕</span>Consultar precio</button>}
           {(organization?.role === "owner" || organization?.role === "admin" || organization?.role === "cashier") ? (<button className={`nav-item nav-item-button ${activeView === "register-shifts" ? "active" : ""}`} type="button" onClick={() => setActiveView("register-shifts")} aria-current={activeView === "register-shifts" ? "page" : undefined}><span className="nav-symbol" aria-hidden="true">▣</span>Caja y turnos</button>) : (<span className="nav-item disabled" aria-disabled="true"><span className="nav-symbol" aria-hidden="true">▣</span>Caja y turnos<span className="nav-lock">Sin acceso</span></span>)}
           {organization?.role === "owner" && <button className={`nav-item nav-item-button ${activeView === "organization-structure" ? "active" : ""}`} type="button" onClick={() => setActiveView("organization-structure")} aria-current={activeView === "organization-structure" ? "page" : undefined}><span className="nav-symbol" aria-hidden="true">⚙</span> Estructura</button>}
           {["Reportes"].map((label) => <span className="nav-item disabled" aria-disabled="true" key={label}><span className="nav-symbol" aria-hidden="true">▦</span>{label}<span className="nav-lock">Pronto</span></span>)}
@@ -481,7 +483,7 @@ export default function App() {
       </aside>
       <section className="main-panel" id="inicio">
         <header className="topbar">
-          <div className="breadcrumb">{organization?.name ?? "Mi negocio"} <span>/</span> {activeView === "catalog" ? "Productos" : activeView === "inventory" ? "Inventario" : activeView === "register-shifts" ? "Caja y turnos" : activeView === "organization-structure" ? "Estructura organizacional" : "Resumen"}</div>
+          <div className="breadcrumb">{organization?.name ?? "Mi negocio"} <span>/</span> {activeView === "catalog" ? "Productos" : activeView === "inventory" ? "Inventario" : activeView === "quick-lookup" ? "Consultar precio" : activeView === "register-shifts" ? "Caja y turnos" : activeView === "organization-structure" ? "Estructura organizacional" : "Resumen"}</div>
           <div className="topbar-end">
             <div className="account-chip"><span>{user.display_name.slice(0, 1).toUpperCase()}</span><div><strong>{user.display_name}</strong><small>{user.email}</small></div></div>
             {/* The sidebar's own logout button (.sidebar-bottom) is hidden on narrow screens
@@ -528,6 +530,9 @@ export default function App() {
           </>
           ) : activeView === "inventory" ? (
             <InventoryPanel organizationId={organization?.id ?? ""} canManageInventory={organization?.role === "owner" || organization?.role === "admin" || organization?.role === "inventory"} />
+          ) : activeView === "quick-lookup" ? (
+            <QuickProductLookup organizationId={organization?.id ?? ""} exchangeRate={bcvRate?.rate ?? null}
+              exchangeRateStatus={bcvRate ? (bcvError ? "stale" : bcvRate.status) : "unavailable"} />
           ) : activeView === "catalog" ? (
             <CatalogPanel
               organizationId={organization?.id ?? ""}

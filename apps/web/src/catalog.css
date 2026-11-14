@@ -109,3 +109,23 @@
  .inventory-operations { grid-template-columns:minmax(0,1fr); }
  .inventory-operation-form { min-width:0; }
 }
+
+.quick-lookup-scope{display:grid;gap:.35rem;max-width:24rem;margin:0 0 .85rem;color:var(--petrol-dark);font-size:.75rem;font-weight:650}
+.quick-lookup-scope select{width:100%;min-height:2.75rem;padding:.6rem .7rem;border:1px solid var(--line);border-radius:.6rem;background:#fff;color:var(--ink);font:inherit}
+.quick-lookup-context{margin:.15rem 0 .7rem;color:var(--muted);font-size:.75rem}
+.quick-lookup-search{display:grid;gap:.45rem;margin:1rem 0;padding:0}
+.quick-lookup-search>label{color:var(--petrol-dark);font-size:.75rem;font-weight:650}
+.quick-lookup-input-row{display:flex;gap:.5rem}
+.quick-lookup-input-row input{width:100%;min-width:0;min-height:3.2rem;padding:.7rem .9rem;border:1px solid #cbd8cf;border-radius:.7rem;background:#fff;color:var(--ink);font:inherit;font-size:1rem}
+.quick-lookup-input-row input:disabled{background:var(--paper);cursor:not-allowed}
+.quick-lookup-status,.quick-lookup-more{margin:.6rem 0;color:var(--muted);font-size:.72rem}
+.quick-lookup-results{display:grid;gap:.55rem}
+.quick-lookup-result{display:grid;grid-template-columns:minmax(0,1.5fr) minmax(0,1fr) minmax(0,.8fr);align-items:center;gap:.8rem;padding:.9rem 1rem;border:1px solid var(--line);border-radius:.8rem;background:#fff}
+.quick-lookup-product,.quick-lookup-prices,.quick-lookup-stock{display:grid;gap:.25rem;min-width:0}
+.quick-lookup-product strong{color:var(--petrol-dark);font-size:.86rem}
+.quick-lookup-product span,.quick-lookup-prices span,.quick-lookup-stock span{color:var(--muted);font-size:.68rem;overflow-wrap:anywhere}
+.quick-lookup-prices strong,.quick-lookup-stock strong{font-size:.82rem;font-variant-numeric:tabular-nums}
+.quick-lookup-prices>span:not(.catalog-price-unavailable){color:var(--petrol);font-weight:650}
+.quick-lookup-stock strong.out{color:#8d3028}
+.quick-lookup-result .catalog-edit{grid-column:1/-1;justify-self:start}
+@media(max-width:760px){.quick-lookup-result{grid-template-columns:1fr 1fr;gap:.65rem}.quick-lookup-product{grid-column:1/-1}.quick-lookup-prices,.quick-lookup-stock{align-self:start}.quick-lookup-result .catalog-edit{grid-column:1/-1}}

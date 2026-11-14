@@ -111,6 +111,8 @@ jobs:
         run: pnpm --filter @micro-app/api exec vitest run src/auth-rate-limit.integration.test.ts
       - name: Runtime write rate-limit unit tests
         run: pnpm --filter @micro-app/api exec vitest run src/runtime-write-rate-limit.test.ts
+      - name: Runtime write rate-limit route coverage tests
+        run: pnpm --filter @micro-app/api exec vitest run src/runtime-write-rate-limit.routes.test.ts
       - name: PostgreSQL 18 runtime write rate-limit integration tests (runtime LOGIN)
         run: DATABASE_URL="$RUNTIME_DATABASE_URL" pnpm --filter @micro-app/api exec vitest run src/runtime-write-rate-limit.integration.test.ts
       - name: PostgreSQL BCV effective-date integration tests (dedicated producer LOGIN)

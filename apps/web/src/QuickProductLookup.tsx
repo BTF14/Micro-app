@@ -102,6 +102,7 @@ export default function QuickProductLookup({
     setWarehousesLoaded(false);
     setItems([]);
     setNextCursor(null);
+    setHasSearched(false);
     setError("");
 
     if (!organizationId) {
@@ -135,6 +136,7 @@ export default function QuickProductLookup({
     setWarehousesLoaded(false);
     setItems([]);
     setNextCursor(null);
+    setHasSearched(false);
     setQuery("");
 
     if (!branchId) return;

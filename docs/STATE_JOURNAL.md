@@ -1,3 +1,31 @@
+## Turno 45 — PR #364 integrada y verificación post-merge (2026-11-14 UTC)
+
+**Main verificado:** `40d39fb6437f85672e65de01ea33d54ccee14aee`.
+
+### PR #364 — cierre de implementación y CI
+
+- PR #364 (`feat(bcv): detect stale running sync attempts`) quedó cerrada y fusionada por Squash and Merge.
+- HEAD final de PR: `11b666b7d1963d573bce86248cb446de6d9f2cb2`; merge SHA / `main`: `40d39fb6437f85672e65de01ea33d54ccee14aee`.
+- Pre-merge exact-HEAD: 16/16 check-runs SUCCESS y 13/13 workflow runs SUCCESS; CI `verify` 52/52 pasos SUCCESS.
+- Post-merge exact-main: 14/14 check-runs SUCCESS y 10/10 workflow runs SUCCESS; CI `verify` 52/52 pasos SUCCESS. Builds de Pages y API SUCCESS; no se ejecutó despliegue manual.
+- La integración PostgreSQL 18 nueva se ejecutó con el login real `microapp_runtime`: SELECT permitido; INSERT/UPDATE/DELETE y privilegios de escritura por columna sobre `last_outcome` denegados. Se verificaron estados `running` reciente y estancado, `inserted`, `unchanged`, `failed`, respuesta `attention`, logs y aislamiento del cleanup.
+- Reviews formales: 0; review threads: 0. Se completó revisión manual del diff; no se afirma aprobación formal independiente.
+
+### Resultado técnico
+
+- Umbral único 300 segundos y Cron watchdog read-only `17 * * * *`.
+- Endpoint de estado agrega `isStaleRunning` y `staleRunningThresholdSeconds`; el estado stale responde `health: "attention"` y `Cache-Control: no-store`.
+- Panel admin comunica que el intento lleva al menos cinco minutos atascado y que checkout sigue bloqueado por seguridad.
+- No se mutó `public.bcv_sync_state`, `last_outcome), roles, grants, schema ni migraciones. No se accedió a Neon `main), secretos o datos reales.
+
+### Continuidad y gates abiertos
+
+- PR #193 permanece OPEN e intacta; HEAD `ac57ab4f3415f82279b8a49c0befe09f8e3aec68`. Issue #53 permanece OPEN/P0; `PRODUCTION: NOT READY`.
+- PR #361 integró Cron BCV `0 22 * * MON-FRI` y validación TLS estricta.
+- PR #363 integró rate limiting runtime probado en PostgreSQL 18 efímero para OAuth, checkout y 11 endpoints de escritura; AC-1..AC-7 cerrados documentalmente.
+- Sigue pendiente verificar la primera tasa BCV real persistida en Neon `main` tras una ventana programada válida `MON-FRI 22:00 UTC), y el enrutamiento externo de alertas. CI/build no demuestran ejecución programada ni persistencia de producción.
+- No tocar Neon `main), secretos, datos reales, configuración manual, billing ni despliegues manuales. No cerrar Issue #53 ni modificar PR #193.
+
 ## Turno 44 — watchdog BCV PR #364, CI exact-SHA y cierre de PR #363 (2026-11-14 UTC)
 
 **Base de integración:** `main` en `b7dccd6eb6a1fd7971c403c4c833013bf0bd44fc`. PR #364 apunta a esa base y su HEAD final validado es `ac272e8cff06029c03a13f72307b41c80a132603` (5 commits ahead / 0 behind; 13 archivos). El ODD se creó antes de los cambios de código.

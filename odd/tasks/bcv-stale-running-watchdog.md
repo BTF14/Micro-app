@@ -1,6 +1,6 @@
 # ODD task: bcv-stale-running-watchdog
 
-- Status: in progress (implementation and exact-HEAD CI verified; merge/post-merge closeout pending)
+- Status: completed
 - Issue / PR: Issue #53 (P0); dedicated PR against `main`
 - Owner / reviewer: BTF14 / technical agent
 - Started: 2026-11-14
@@ -39,7 +39,7 @@ Excluded:
 - [x] AC-6 — admin UI explicitly explains the five-minute stale-running condition and that checkout remains blocked for safety.
 - [x] AC-7 — unit and PostgreSQL 18 disposable integration tests run with real `microapp_runtime` LOGIN and cover recent/stale states, non-running outcomes, read-only privileges, and cleanup isolation.
 - [x] AC-8 — PR #363 AC-1..AC-7 are closed with exact evidence from HEAD `4a1bc3280ac974932353e9e337d0799f161d4ffa` and merge `b7dccd6eb6a1fd7971c403c4c833013bf0bd44fc`; production readiness and continuity docs are reconciled without personal/contact identifiers, provider resource IDs, internal business/product names, or secrets.
-- [ ] AC-9 — complete diff reviewed; every check-run and workflow run passes on the exact final PR HEAD before squash merge; post-merge main checks are verified. PR #193 remains OPEN and untouched; Issue #53 remains OPEN/P0.
+- [x] AC-9 — complete diff reviewed; every check-run and workflow run passes on the exact final PR HEAD before squash merge; post-merge main checks are verified. PR #193 remains OPEN and untouched; Issue #53 remains OPEN/P0.
 
 ## Risks and guardrails
 
@@ -62,7 +62,7 @@ Excluded:
 | Implement administrator warning | Clear stale state and checkout fail-closed explanation | Frontend build/typecheck SUCCESS; UI consumes the API threshold field | completed |
 | Add PostgreSQL 18 runtime-login integration | Real runtime read, correct age/outcome and no mutation | CI `verify` step 31 `PostgreSQL BCV sync-state and watchdog integration tests (runtime LOGIN)` SUCCESS | completed |
 | Close PR #363 task and reconcile readiness/continuity | Exact merged evidence and current handoff | PR #363 exact HEAD/merge evidence recorded in task and readiness/continuity docs | completed |
-| Review and integrate | Safe isolated squash merge | Complete diff reviewed; 16/16 check-runs and 13/13 workflows SUCCESS on exact HEAD; 0 formal reviews/threads. Merge and post-merge verification pending | in progress |
+| Review and integrate | Safe isolated squash merge | PR #364 merged by squash; exact PR HEAD 16/16 checks and 13/13 workflows SUCCESS; post-merge main 14/14 checks and 10/10 workflows SUCCESS; CI verify 52/52 steps both sides | completed |
 
 ## Technical decisions
 
@@ -75,11 +75,13 @@ Excluded:
 
 ## Closure and handoff
 
-- Final PR HEAD verified: `ac272e8cff06029c03a13f72307b41c80a132603`; base `main`: `b7dccd6eb6a1fd7971c403c4c833013bf0bd44fc`.
-- PR: [#364](https://github.com/BTF14/Micro-app/pull/364). GitHub PR metadata is authoritative for its merge state.
-- Exact-HEAD checks: 16/16 check-runs SUCCESS and 13/13 workflow runs SUCCESS. CI `verify` completed 52/52 steps, including the new PostgreSQL 18 BCV sync-state/watchdog integration under real `microapp_runtime` LOGIN.
-- Acceptance criteria AC-1..AC-8 met. AC-9 remains pending until authorized squash merge and post-merge `main` verification.
-- Review transparency: 0 formal reviews and 0 inline review threads. Complete diff reviewed manually; no independent formal approval is claimed.
+- Final PR HEAD: `11b666b7d1963d573bce86248cb446de6d9f2cb2`; base `main` at review time: `b7dccd6eb6a1fd7971c403c4c833013bf0bd44fc`.
+- PR: [#364](https://github.com/BTF14/Micro-app/pull/364), squash-merged on 2026-11-14.
+- Merge commit / current `main`: `40d39fb6437f85672e65de01ea33d54ccee14aee`.
+- Pre-merge exact-HEAD evidence: 16/16 check-runs SUCCESS and 13/13 workflow runs SUCCESS. CI `verify` completed 52/52 steps, including PostgreSQL 18 sync-state/watchdog integration under real `microapp_runtime` LOGIN and assertions that runtime can SELECT but cannot INSERT/UPDATE/DELETE or write `last_outcome`.
+- Post-merge exact-main evidence: 14/14 check-runs SUCCESS and 10/10 workflow runs SUCCESS. CI `verify` completed 52/52 steps; Pages and API build checks completed successfully.
+- Acceptance criteria AC-1..AC-9 met. Watchdog remains read-only; producer retains exclusive write ownership of `last_outcome`.
+- Review transparency: 0 formal reviews and 0 inline review threads. Complete diff manually reviewed; no independent formal approval is claimed.
 - Limitations not verified: no live production Cron invocation, Neon `main` query, production persistence, or external alert-routing verification was performed.
 - Residual risks: first BCV rate persistence after a valid `MON-FRI 22:00 UTC` window and external alert routing remain pending. Issue #53 remains OPEN/P0; production remains NOT READY.
-- Next step: recheck PR #193 and Issue #53, squash-merge only if final metadata/checks remain unchanged, then verify all post-merge `main` checks.
+- Next step: operationally verify the first scheduled BCV persistence and external alert routing when the relevant production gates and authorization allow.

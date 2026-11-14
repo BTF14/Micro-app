@@ -102,7 +102,7 @@ Leer el diff completo de PR #366 y verificar todos los check-runs, workflow runs
 - PR #361 (`fix/bcv-weekday-cron-and-ci-tls-20261114`) se fusionó por **Squash and Merge** después de revalidar en vivo el HEAD exacto `179c0baba768fdf244697bb96785e6548d16649f`, base `a0907a92e98647779d50d683efa8156eba21f529`, `mergeable=true`, `mergeable_state=clean`, 17/17 check-runs SUCCESS y 14/14 workflow runs SUCCESS. No había reviews formales ni review threads.
 - **Merge SHA / main:** `1a19e2da05dd9d25af957a2289bcd1082d8f2ca0`. GitHub confirma PR #361 cerrada y `merged=true`; la referencia `main` apunta al mismo SHA.
 - **Post-merge exact-SHA:** 14/14 check-runs SUCCESS y 10/10 workflow runs SUCCESS; sin checks pendientes ni fallidos.
-- **Cloudflare automático tras merge:** `Workers Builds: micro-app-bcv-sync`, `Workers Builds: micro-app-api` y `Cloudflare Pages` completaron SUCCESS en el merge SHA. El check de `micro-app-bcv-sync` apareció y terminó SUCCESS; por tanto el build/deploy integrado se ejecutó automáticamente, sin despliegue manual del propietario ni del agente. Esto es evidencia del proveedor de build/deploy, no una prueba de ejecución programada ni de persistencia de datos.
+- **Cloudflare automático tras merge:** `Workers Builds: BCV_WORKER_REDACTADO`, `Workers Builds: API_WORKER_REDACTADO` y `Cloudflare Pages` completaron SUCCESS en el merge SHA. El check de `BCV_WORKER_REDACTADO` apareció y terminó SUCCESS; por tanto el build/deploy integrado se ejecutó automáticamente, sin despliegue manual del propietario ni del agente. Esto es evidencia del proveedor de build/deploy, no una prueba de ejecución programada ni de persistencia de datos.
 - Los workflows post-merge incluyeron CI, PostgreSQL/migration validation, Playwright E2E, Semgrep, Security, secret-history scan, ODD/docs y conectividad BCV strict TLS; todos SUCCESS en el SHA indicado.
 
 ### Cambio integrado
@@ -191,7 +191,7 @@ Primero releer este bloque, verificar GitHub en vivo y mantener separados los pe
 
 ## Turno 40 — Reconciliación pos-Bloque 3 y actualización de README/documentación (2026-11-14 UTC)
 
-- **Main verificado:** `8c329cb314a75689b3b84538a7489ef174fe5b48`, merge squash de PR #357 (Bloque 3: Ventas POS y navegación vertical móvil). En el SHA exacto, GitHub devuelve **14/14 registros de check-runs SUCCESS**, correspondientes a **12/12 nombres de contexto únicos SUCCESS**. Los workflows de push tienen **10/10 ejecuciones SUCCESS**, correspondientes a **8/8 workflows distintos SUCCESS**: CI, Playwright E2E, Database migration validation, PostgreSQL migration runner validation, Semgrep SAST, Security scan, Secret history scan y Project progress dashboard. Entre los check-runs constan Cloudflare Pages, Workers Builds `micro-app-api` y `micro-app-bcv-sync`, `verify`, `migration-runner`, `postgres-migration`, Chromium authentication smoke, análisis estático, Trivy y escaneo de historia de secretos. El job `verify` terminó con sus **48/48 pasos SUCCESS**. No se reutilizaron checks de SHAs anteriores.
+- **Main verificado:** `8c329cb314a75689b3b84538a7489ef174fe5b48`, merge squash de PR #357 (Bloque 3: Ventas POS y navegación vertical móvil). En el SHA exacto, GitHub devuelve **14/14 registros de check-runs SUCCESS**, correspondientes a **12/12 nombres de contexto únicos SUCCESS**. Los workflows de push tienen **10/10 ejecuciones SUCCESS**, correspondientes a **8/8 workflows distintos SUCCESS**: CI, Playwright E2E, Database migration validation, PostgreSQL migration runner validation, Semgrep SAST, Security scan, Secret history scan y Project progress dashboard. Entre los check-runs constan Cloudflare Pages, Workers Builds `API_WORKER_REDACTADO` y `BCV_WORKER_REDACTADO`, `verify`, `migration-runner`, `postgres-migration`, Chromium authentication smoke, análisis estático, Trivy y escaneo de historia de secretos. El job `verify` terminó con sus **48/48 pasos SUCCESS**. No se reutilizaron checks de SHAs anteriores.
 - **Cadena integrada desde Turno 39 (`f635c01aacbe148030b3fd1d7e46851ae318f951`):** lifecycle autenticado de cajero (#347); aislamiento de credencial BCV Cron (#349); administración `owner-only` de sucursales/almacenes/cajas (#350, migración `0024`); workflow protegido de migraciones Neon `main` (#351 y corrección #353); recepciones/ajustes de inventario (#352, migración `0025`); búsqueda rápida y UX de inventario/turnos (#354); activación aislada del Worker BCV sync (#355); consulta rápida de precio/existencia de mostrador (#356); y POS de ventas (#357). Los PR indicados constan cerrados y merged en GitHub.
 - **Neon main:** workflow [`neon-main-migrations.yml`](../.github/workflows/neon-main-migrations.yml), run [#43591333198](https://github.com/BTF14/Micro-app/actions/runs/43591333198), operación migrate sobre el commit `c4e02c82aa790e1d32e909b806536dadcf3eb973`, terminó `SUCCESS`. El resumen operativo registrado reporta `pending = 0` después de aplicar hasta `0025` y ejecutar assertions rollback-safe `0019..0025`.
 - **Producción sin cambio de estado:** Issue #53 sigue `OPEN/P0`; **`PRODUCTION: NOT READY`**. Siguen pendientes smoke autenticado en staging con Brave Shields activado, RPO/RTO operativos medidos y aceptados, verificación end-to-end de entrega/ACK de alertas, validación legal/fiscal/contable y verificación del coste recurrente total `$0`.
@@ -203,12 +203,12 @@ Primero releer este bloque, verificar GitHub en vivo y mantener separados los pe
 ## Turno 39 — PR #339 integrada y verificación post-merge same-origin (2026-11-13 UTC)
 
 - PR #339 `feat/pages-same-origin-api-20261113` fusionada por squash en main. Merge SHA: `f635c01aacbe148030b3fd1d7e46851ae318f951`. HEAD reconciliado exacto previo al merge: `7e9f05b4e8783fb1707b7b78b6429bf58089e885`.
-- PR #339 exact-HEAD CI: 16/16 check-runs SUCCESS, incluyendo Cloudflare Pages, Workers Builds: micro-app-api, Chromium authentication smoke, verify/CI, Semgrep, Trivy, dependency review, validate-odd-docs, PostgreSQL/migration runner y secret-history scan. Los checks de SHA anteriores no se reutilizaron.
-- Checks post-merge sobre el merge SHA: 12/12 SUCCESS; Cloudflare Pages y Workers Builds: micro-app-api completados SUCCESS, además de CI/verify, Chromium smoke, PostgreSQL/migration, Semgrep, Trivy, secret scan, ODD validation y dependency review.
-- El propietario confirmó que Google OAuth Client tiene la callback nueva `https://micro-app-63i.pages.dev/api/auth/google/callback` y que Cloudflare Pages Production tiene Service Binding `API` → `micro-app-api`; la variable heredada `VITE_API_BASE_URL` fue eliminada. La URI antigua de workers.dev se mantiene durante la transición.
-- Verificación pública read-only: `https://micro-app-63i.pages.dev/api/health` devolvió el cuerpo JSON `{"status":"ok","service":"micro-app-api","stage":"catalog-inventory-read"}`. El extractor público no expuso el status HTTP numérico, por lo que no se afirma de forma independiente el código 200. La homepage publicada ya enlaza Google login a `/api/auth/google` (same-origin); la extracción HTML no expuso los `script src`/bundles.
+- PR #339 exact-HEAD CI: 16/16 check-runs SUCCESS, incluyendo Cloudflare Pages, Workers Builds: API_WORKER_REDACTADO, Chromium authentication smoke, verify/CI, Semgrep, Trivy, dependency review, validate-odd-docs, PostgreSQL/migration runner y secret-history scan. Los checks de SHA anteriores no se reutilizaron.
+- Checks post-merge sobre el merge SHA: 12/12 SUCCESS; Cloudflare Pages y Workers Builds: API_WORKER_REDACTADO completados SUCCESS, además de CI/verify, Chromium smoke, PostgreSQL/migration, Semgrep, Trivy, secret scan, ODD validation y dependency review.
+- El propietario confirmó que Google OAuth Client tiene la callback nueva `https://HOST_PAGES_REDACTADO/api/auth/google/callback` y que Cloudflare Pages Production tiene Service Binding `API` → `API_WORKER_REDACTADO`; la variable heredada `VITE_API_BASE_URL` fue eliminada. La URI antigua de workers.dev se mantiene durante la transición.
+- Verificación pública read-only: `https://HOST_PAGES_REDACTADO/api/health` devolvió el cuerpo JSON `{"status":"ok","service":"API_WORKER_REDACTADO","stage":"catalog-inventory-read"}`. El extractor público no expuso el status HTTP numérico, por lo que no se afirma de forma independiente el código 200. La homepage publicada ya enlaza Google login a `/api/auth/google` (same-origin); la extracción HTML no expuso los `script src`/bundles.
 - El workflow `.github/workflows/frontend-bundle-verification.yml` dispone de `workflow_dispatch` y schedule, pero la conexión GitHub de esta sesión no ofrece acción de dispatch. La verificación automatizada del bundle publicado (literal `/api`, ausencia de cualquier `*.workers.dev`) queda pendiente. El intento de browser automation no inició por saldo TinyFish negativo; no se recargó ni se incurrió en gasto.
-- No se hizo login real ni prueba con Brave Shields ACTIVADO. El propietario debe probar `https://micro-app-63i.pages.dev` con Shields activado; conservar la URI OAuth antigua hasta confirmar callback y sesión reales.
+- No se hizo login real ni prueba con Brave Shields ACTIVADO. El propietario debe probar `https://HOST_PAGES_REDACTADO` con Shields activado; conservar la URI OAuth antigua hasta confirmar callback y sesión reales.
 - Issue #53 permanece OPEN/P0; pasos 1 y 2 completos, pasos 3 y 4 pendientes; **PRODUCTION: NOT READY**. No cerrar el issue ni declarar production readiness.
 - Los checks post-merge no equivalen a RPO/RTO medidos ni al smoke autenticado final de staging. El cuerpo de health confirma el proxy same-origin, pero no certifica por sí solo el flujo de login.
 
@@ -216,7 +216,7 @@ Primero releer este bloque, verificar GitHub en vivo y mantener separados los pe
 
 ## Turno 37 — cierre de Gates A/B y ejecución de Fase 3B (2026-11-13 UTC)
 
-- **Neon main:** proyecto `restless-fire-99110035`, branch default `main` (`br-summer-math-b7297a60`), database `neondb`, PostgreSQL 18.7.
+- **Neon main:** proyecto `ID_PROYECTO_NEON_REDACTADO`, branch default `main` (`br-summer-math-b7297a60`), database `neondb`, PostgreSQL 18.7.
 - **Principal de backup efectivo:** auditoría ejecutada directamente como `microapp_backup`; `current_user = session_user = microapp_backup`. El bloque de assertions de `scripts/audit_database_roles.sql` terminó sin excepción/FAIL. El rol conserva solo atributos no administrativos y grants de lectura aprobados; la única membresía entrante observada es la del database owner `neondb_owner`, con ADMIN=true, INHERIT=false y SET=false. No tiene membresías salientes.
 - **Resultados SELECT-only del script:** `information_schema.table_privileges` devolvió 27 filas, todas `SELECT` y `is_grantable=NO`; `routine_privileges` devolvió 0 filas; las dos secuencias públicas conceden solo `SELECT`; `pg_auth_members` devolvió una sola arista entrante desde `neondb_owner` (grantor `cloud_admin`, ADMIN=true), sin aristas salientes. Las 29 relaciones públicas (27 tablas + 2 secuencias) pertenecen a `microapp_migrator`. Los default ACLs de `microapp_migrator` y `neondb_owner` conceden a `microapp_backup` solo SELECT no grantable en tablas/secuencias futuras; no se encontró un grant default de backup a `cloud_admin`.
 - **Retirada del principal heredado:** `backup_readonly` tenía CREATEROLE/CREATEDB/REPLICATION/BYPASSRLS y membresía en `neon_superuser`. Preflight confirmó cero objetos propios, cero sesiones y cero locks. Se revocaron sus ACL explícitas en database/schema/16 relaciones públicas y su default ACL de `neondb_owner`; los grants de tablas se revocaron como owner `microapp_migrator`. Neon eliminó el rol y sus membresías. Verificación posterior: rol ausente, cero ACLs explícitas y cero dependencias de objetos.
@@ -243,7 +243,7 @@ Primero releer este bloque, verificar GitHub en vivo y mantener separados los pe
 ## 2026-11-13 — Ajustes técnicos finales PR #339 (host/runtime, streaming y client IP)
 
 - La revisión adicional se incorporó en la PR #339 existente; no se creó una segunda rama ni PR.
-- Proxy Pages: exige HTTPS + hostname exacto `micro-app-63i.pages.dev`; si `CF_PAGES_BRANCH` existe y no es `main`, responde 503 antes de leer `env.API`; si está ausente, el hostname exacto más el Service Binding `API` exclusivo de Production permite producción; binding ausente responde 503.
+- Proxy Pages: exige HTTPS + hostname exacto `HOST_PAGES_REDACTADO`; si `CF_PAGES_BRANCH` existe y no es `main`, responde 503 antes de leer `env.API`; si está ausente, el hostname exacto más el Service Binding `API` exclusivo de Production permite producción; binding ausente responde 503.
 - Previews: cualquier hostname hash/preview/alternativo falla antes de consultar el binding. No configurar `API` en Preview.
 - Respuestas OAuth: `redirect: manual`, cuerpos request/response como streams, status/Location/Cache-Control/headers de seguridad y cada `Set-Cookie` individual conservados; solo las tres cookies PKCE reciben el Path same-origin.
 - IP: se preserva Origin; el proxy captura el `CF-Connecting-IP` provisto por Cloudflare edge, lo reestablece explícitamente al upstream y elimina `X-Forwarded-For` no confiable. Cloudflare documenta que CF-Connecting-IP solo se envía en tráfico edge→origin y contiene la IP del cliente: https://developers.cloudflare.com/fundamentals/reference/http-headers/.
@@ -257,8 +257,8 @@ Primero releer este bloque, verificar GitHub en vivo y mantener separados los pe
 - Scope: root Pages Function `/functions/api/[[path]].ts`; proxy to Worker through Service Binding `API`; first-party Lax session; OAuth PKCE Path rewriting; frontend `/api`, CSP and E2E; ODD/ADR.
 - No Neon, GitHub Secrets, Cloudflare Dashboard, Google Cloud Console, deployment, DNS, billing, backup or restore workflow changes.
 - Do not merge. Preserve natural 07:00 UTC backup observation and `backup-real-restore.yml` restore gate.
-- Exact manual activation after the owner lifts the backup gate and before merge: add Google OAuth redirect URI `https://micro-app-63i.pages.dev/api/auth/google/callback` while retaining old URI; Cloudflare Pages `micro-app` → Settings → Bindings → Add → Service binding, Production only, Variable name `API`, Service `micro-app-api`; no Preview binding; redeploy as Cloudflare requires.
-- Runtime guard requires exact HTTPS hostname `micro-app-63i.pages.dev`; if `CF_PAGES_BRANCH` is exposed in runtime it must equal `main`. It is documented as build-system variable, so runtime availability is not assumed.
+- Exact manual activation after the owner lifts the backup gate and before merge: add Google OAuth redirect URI `https://HOST_PAGES_REDACTADO/api/auth/google/callback` while retaining old URI; Cloudflare Pages project → Settings → Bindings → Add → Service binding, Production only, Variable name `API`, Service `API_WORKER_REDACTADO`; no Preview binding; redeploy as Cloudflare requires.
+- Runtime guard requires exact HTTPS hostname `HOST_PAGES_REDACTADO`; if `CF_PAGES_BRANCH` is exposed in runtime it must equal `main`. It is documented as build-system variable, so runtime availability is not assumed.
 - CI on PR HEAD is running/awaited; local toolchain was not executable because this environment could not resolve github.com to clone the checkout. Do not claim local tests passed. Incident remains unresolved until full live Google OAuth/session/logout is verified with Brave Shields ON.
 - Latest branch HEAD must be re-read from GitHub before any further action; PR must remain OPEN.
 
@@ -598,7 +598,7 @@ No Neon main, secretos, datos reales, cambios de roles/grants, backup operativo,
 
 ## Hallazgo P0 Neon main — solo lectura
 
-- Proyecto `micro-app-db` (`restless-fire-99110035`), branch primary/default `main` (`br-summer-math-b7297a60`), DB `neondb`.
+- Proyecto `micro-app-db` (`ID_PROYECTO_NEON_REDACTADO`), branch primary/default `main` (`br-summer-math-b7297a60`), DB `neondb`.
 - Rol LOGIN `backup_readonly`: `rolcreaterole=true`, `rolcreatedb=true`, `rolreplication=true`, `rolbypassrls=true`, INHERIT true, SUPERUSER false.
 - Membresía directa `backup_readonly -> neon_superuser`; membresía efectiva `pg_write_all_data` y `pg_read_all_data`; INSERT/UPDATE/DELETE efectivos en `public.products`. El rol llamado backup_readonly no es read-only.
 - Las 15 tablas base públicas y 2 secuencias observadas pertenecen a `neondb_owner`. No RLS en las 15 tablas. Default ACL de `neondb_owner`: SELECT para futuras tablas, ningún default ACL para secuencias; secuencias existentes dan SELECT+UPDATE a `backup_readonly`.
@@ -710,7 +710,7 @@ No Neon main, secretos, datos reales, cambios de roles/grants, backup operativo,
 
 > Este hallazgo prevalece sobre notas históricas que describan `backup_readonly` como una identidad de solo lectura.
 
-- Neon project `micro-app-db` / `restless-fire-99110035`; primary/default branch `main` / `br-summer-math-b7297a60`; DB `neondb`.
+- Neon project `micro-app-db` / `ID_PROYECTO_NEON_REDACTADO`; primary/default branch `main` / `br-summer-math-b7297a60`; DB `neondb`.
 - SELECT-only sobre catálogos confirmó que `backup_readonly` tiene CREATEROLE, CREATEDB, REPLICATION y BYPASSRLS; es miembro directo de `neon_superuser` y miembro efectivo de `pg_write_all_data`; tiene INSERT/UPDATE/DELETE en `public.products`.
 - Por tanto, **el rol llamado backup_readonly no es read-only**. Si el secreto `DATABASE_URL_BACKUP_RO` utiliza ese usuario, el principal es excesivamente privilegiado.
 - No se leyó el secreto y no se conoce su usuario efectivo. No inferirlo por el nombre. La prueba definitiva requiere el diagnóstico de seis booleanos en un backup natural de main tras integrar el workflow; no ejecutar dispatch manual.
@@ -1212,7 +1212,7 @@ El ensayo verifica el bundle SQL y roles en la base aislada; no prueba el compor
 - PR abiertas actuales: #269, #262, #258, #255, #233 y #193 (6).
 
 ### Neon rehearsal
-- Proyecto `restless-fire-99110035`; branch rehearsal `br-curly-poetry-b7dxsddm`; database segura objetivo `microapp_rehearsal`; rol `microapp_migrator`.
+- Proyecto `ID_PROYECTO_NEON_REDACTADO`; branch rehearsal `br-curly-poetry-b7dxsddm`; database segura objetivo `microapp_rehearsal`; rol `microapp_migrator`.
 - El run anterior #42479603848 del workflow antiguo `neon-rehearsal-migrations.yml`, tras la rotación del secreto, finalizó SUCCESS: conexión directa, secreto enmascarado/no vacío, identidad esperada y baseline 0002 verificado; pasos de escritura SKIPPED.
 - SELECT independiente posterior confirmó en `microapp_rehearsal`: current_database/rol/branch/project exactos; schemas solo pg_catalog, information_schema, pg_toast y public; 0 relaciones públicas, 0 funciones públicas y sin ledger. No se modificó la DB.
 - El workflow fijado ya se ejecutó manualmente desde `main` en `verify-empty`: el log confirmó descarga exacta del SHA, migraciones 0001–0019, conexión a `microapp_rehearsal`, identidad/roles esperados y target vacío. No se aplicaron migraciones ni escrituras.
@@ -1236,7 +1236,7 @@ El ensayo verifica el bundle SQL y roles en la base aislada; no prueba el compor
 - PR #275 (branch fix/neon-pinned-rehearsal-clean-history-20261108) reemplaza el intento #274, cuyo secret-history scan detectó un falso positivo por una frase `GitHub API:` seguida de un SHA de commit en STATE_JOURNAL; el contenido se preservó desde main sin ese contexto. El HEAD/checks exactos deben leerse en GitHub vivo. Workflow manual main-only; default verify-empty read-only; no dispatch ni migración ejecutados aún.
 
 ### Neon: distinción entre copia de main y base vacía
-- Proyecto restless-fire-99110035; branch rehearsal-baseline-20261107, ID br-curly-poetry-b7dxsddm.
+- Proyecto ID_PROYECTO_NEON_REDACTADO; branch rehearsal-baseline-20261107, ID br-curly-poetry-b7dxsddm.
 - Esta rama tiene como padre la rama primaria/default main (br-summer-math-b7297a60) y init_source=parent-data. La DB original neondb contiene filas heredadas: app_users 1, auth_allowlist 1, auth_bootstrap 1, auth_sessions 6, organization_members 1, organizations 1; demás tablas 0. No se inspeccionó contenido. Tratar esos registros como potencialmente reales. **No ejecutar migraciones ni DDL/DML sobre esa DB.**
 - Se creó una base nueva y vacía microapp_rehearsal (database ID 1333740), owner microapp_migrator, dentro de la misma branch no-primary. get_database_tables devolvió cero tablas; SELECT confirmó current_database/user/session_user y branch/project exactos.
 - En microapp_rehearsal, migrator tiene CONNECT, public USAGE/CREATE; runtime tiene CONNECT y public USAGE, sin CREATE. Los atributos globales de ambos roles son restrictivos y las membresías cumplen el preflight.
@@ -1244,7 +1244,7 @@ El ensayo verifica el bundle SQL y roles en la base aislada; no prueba el compor
 
 ### GitHub Actions — secreto y verify
 - El propietario confirmó que actualizó NEON_REHEARSAL_DATABASE_URL.
-- Se reintentó el run #42479603848 en operación verify. SUCCESS: secreto presente y enmascarado; conexión directa; identidad exacta neondb|microapp_migrator|microapp_migrator|br-curly-poetry-b7dxsddm|restless-fire-99110035; BASELINE_VERIFIED 294 facts. Pasos de adopción/migración quedaron SKIPPED. Run: https://github.com/BTF14/Micro-app/actions/runs/42479603848.
+- Se reintentó el run #42479603848 en operación verify. SUCCESS: secreto presente y enmascarado; conexión directa; identidad exacta neondb|microapp_migrator|microapp_migrator|br-curly-poetry-b7dxsddm|ID_PROYECTO_NEON_REDACTADO; BASELINE_VERIFIED 294 facts. Pasos de adopción/migración quedaron SKIPPED. Run: https://github.com/BTF14/Micro-app/actions/runs/42479603848.
 - Ese rerun conservó SHA/ref originales y ejecutó el resumen antiguo, que emitió tres command not found inocuos; #270 corrigió el resumen en main. No se afirma que el rerun probara el summary nuevo.
 - La comparación de fingerprint 294/294 se realizó sobre la DB original neondb, que es copia de main; fue estrictamente SELECT y no cambió datos.
 
@@ -1315,7 +1315,7 @@ Los checks indicados pertenecen a los SHA históricos señalados; cada commit nu
 
 ### Neon rehearsal y runner
 
-- Rama: `rehearsal-baseline-20261107` / `br-curly-poetry-b7dxsddm`, proyecto `restless-fire-99110035`.
+- Rama: `rehearsal-baseline-20261107` / `br-curly-poetry-b7dxsddm`, proyecto `ID_PROYECTO_NEON_REDACTADO`.
 - Huella de esquema: 294/294 hechos coinciden exactamente con baseline canónico 0002.
 - 15 tablas y 2 secuencias existentes pertenecen a `microapp_migrator`; roles directos existen; no hay ledger de migraciones.
 - `microapp_runtime` aún no tiene los grants de tabla posteriores a 0002; no se han aplicado migraciones 0003–0016.
@@ -1715,7 +1715,7 @@ Prioridad próxima: 1) auditar diferencias únicas de #200 frente a main y recon
 - Correcciones de test harness: aserciones históricas se ejecutan junto a su migración, no después de aplicar toda la cadena; las fixtures usan conexión admin y las peticiones/helper checks usan runtime. Se añadió test que prueba que cashier open-shift ejecuta realmente con login runtime.
 - Seguridad añadida: lecturas de catálogo/almacenes/conteos mantienen locks de sesión/tenant/sucursal durante la consulta; la lista de conteos bloquea el warehouse. Cantidades y costos de conteo solo aceptan strings decimales, no JSON numbers.
 - UI: catálogo y formularios consumen el paquete BigInt compartido; aviso BCV ya no afirma conversión vigente cuando no existe tasa validada. Descuentos ausentes.
-- Cloudflare Pages preview: https://feat-recover-inventory-appli.micro-app-63i.pages.dev
+- Cloudflare Pages preview: https://HOST_PAGES_REDACTADO
 - Cloudflare Worker preview: [URL WORKER REDACTADA]
 - Smoke directo del Worker preview: `/health` responde 200; endpoint de catálogo devuelve 503, bloqueado por el aislamiento de preview. Esto no es producción.
 - No hay reviews formales ni threads de revisión registrados en PR #244. main está protegido; la integración no tiene permiso para leer el endpoint de branch protection (403). No se ha intentado eludir protección.
@@ -1889,7 +1889,7 @@ Continúa BTF14/Micro-app como responsable técnico senior. Lee `AGENTS.md`, est
 
 ## Handoff anterior (histórico; supersedido por el checkpoint y prompt superiores)
 
-**Checkpoint verificado — 2026-10-30 UTC:** `main` = `82386c6e9300e06f8fa209aa52995b939a72442a`, merge SHA de PR #177. PR #177 fusionada; no había PR abiertas al verificar. Cloudflare autenticado, solo lectura: Worker `micro-app-api` versión `49975c43` en Producción con 100% de tráfico asignado; Pages `micro-app` producción `main` en el mismo SHA. El dashboard de Pages muestra una lista vacía, pero `apps/web/.env.production` versionado define `VITE_API_BASE_URL` hacia el Worker y `vite.config.ts` la carga con `loadEnv`. La página pública contiene el enlace OAuth al Worker; no se pudo inspeccionar el bundle JS ni confirmar todas las llamadas API. CORS real sigue sin probarse. La matriz comercial continúa **NO APROBADA**.
+**Checkpoint verificado — 2026-10-30 UTC:** `main` = `82386c6e9300e06f8fa209aa52995b939a72442a`, merge SHA de PR #177. PR #177 fusionada; no había PR abiertas al verificar. Cloudflare autenticado, solo lectura: Worker `API_WORKER_REDACTADO` versión `49975c43` en Producción con 100% de tráfico asignado; Pages project producción `main` en el mismo SHA. El dashboard de Pages muestra una lista vacía, pero `apps/web/.env.production` versionado define `VITE_API_BASE_URL` hacia el Worker y `vite.config.ts` la carga con `loadEnv`. La página pública contiene el enlace OAuth al Worker; no se pudo inspeccionar el bundle JS ni confirmar todas las llamadas API. CORS real sigue sin probarse. La matriz comercial continúa **NO APROBADA**.
 
 **PR activa:** [#178](https://github.com/BTF14/Micro-app/pull/178) está abierta como draft en `docs/reconcile-role-model-and-cloudflare-20261030`. Continuar y revisar esa PR; no crear otra para el mismo alcance. Revalidar su HEAD y checks en vivo después de cada actualización.
 
@@ -1916,7 +1916,7 @@ Continúa el proyecto existente **BTF14/Micro-app** como responsable técnico se
 
 **Arquitectura y gates:** Cloudflare Pages, Cloudflare Workers + Hono, Neon PostgreSQL. Un único `organization_members.role` por miembro/organización; `branch_memberships` solo concede/revoca acceso a sucursales. Issue #53 sigue abierta y la matriz comercial **NO APROBADA**: no crear endpoints comerciales, middleware ni mapeos rol→operación antes de aprobación explícita. Inventario sigue organizacional; inventario por sucursal/almacén no está implementado. Caja conserva turnos y apertura/cierre ordinario; no introducir cierres de supervisor incompatibles.
 
-**Issue #78 / CORS:** sigue **NO VERIFICADO**. Ambos OPTIONS reales contra `[URL WORKER REDACTADA]`, con origins `https://micro-app-63i.pages.dev` y `https://attacker.example`, fallaron en este entorno con curl exit 6 (`Could not resolve host`); no se obtuvo status ni headers `Access-Control-*`. Repetir solo desde un entorno con conectividad real. Inspeccionar también el bundle JS publicado para confirmar el valor compilado de `VITE_API_BASE_URL`. No modificar configuración, variables, secretos ni despliegues.
+**Issue #78 / CORS:** sigue **NO VERIFICADO**. Ambos OPTIONS reales contra `[URL WORKER REDACTADA]`, con origins `https://HOST_PAGES_REDACTADO` y `https://attacker.example`, fallaron en este entorno con curl exit 6 (`Could not resolve host`); no se obtuvo status ni headers `Access-Control-*`. Repetir solo desde un entorno con conectividad real. Inspeccionar también el bundle JS publicado para confirmar el valor compilado de `VITE_API_BASE_URL`. No modificar configuración, variables, secretos ni despliegues.
 
 **Restricciones permanentes:** no modificar Cloudflare, tráfico, deployments, variables, secretos, DNS, billing ni producción; no tocar Neon main ni datos reales; PostgreSQL desechable primero; presupuesto USD 0. No reescribir historial Git ni `STATE_JOURNAL.md`. No afirmar pruebas, reviews, aprobaciones o verificaciones sin evidencia. Cada commit requiere revisar los checks del SHA nuevo.
 
@@ -2102,7 +2102,7 @@ Seguir AGENTS.md y volver a leer: README, CURRENT_STATE, HANDOFF_NEXT_CHAT, WORK
 - **PR #158:** merge commit `3fba9870b69a7e1ef05cc20db6d19f3ee18df51d`; auditoría documental de Cloudflare/workflows/continuidad.
 - **PR #159:** merge commit `dbc7b6c9cf57113a38cddb4155d2917cc3aaeafc`; fija Node.js `24.22.2` mediante `.node-version` y pnpm `10.34.9` mediante `packageManager`, con alineación en workflows.
 - **Checks del SHA exacto de main:** 9/9 completed/success, incluidos Workers Build, Cloudflare Pages, Chromium smoke, verify, secret-history scan, postgres-migration, Trivy, generate-progress y static analysis. No extrapolar estos checks a commits futuros.
-- **Producción observada tras merge:** Pages `https://micro-app-63i.pages.dev` cargó la pantalla de acceso; Worker `[URL WORKER REDACTADA]` respondió HTTP 200 con `status=ok`, `service=micro-app-api`, `stage=scaffold`. Es una comprobación básica, no una certificación funcional/comercial.
+- **Producción observada tras merge:** Pages `https://HOST_PAGES_REDACTADO` cargó la pantalla de acceso; Worker `[URL WORKER REDACTADA]` respondió HTTP 200 con `status=ok`, `service=API_WORKER_REDACTADO`, `stage=scaffold`. Es una comprobación básica, no una certificación funcional/comercial.
 - **Neon, lectura de metadatos:** proyecto `micro-app-db`, plan `free_v3`, PostgreSQL 18, región `aws-us-east-1`; periodo de consumo mostrado 2026-10-17 a 2026-11-01. Tamaño lógico de main: 32,866,304 bytes (~31.34 MiB). Consumo del periodo: 5,645,769 bytes transferencia; 5,911 segundos compute; 23,240 segundos activo; 0 bytes escritos reportados. Ramas: 3/10; main 32.87 MB, restore-test ~33.57 MB, integrity-test ~31.69 MB. Son metadatos/contadores del proveedor, no benchmark ni capacidad SaaS.
 - **Seguridad Neon:** metadatos actuales muestran `main.protected=false`, `allowed_ips.ips=[]`, `protected_branches_only=false`, `block_public_connections=false`; ramas listadas sin protección. No cambiar estos ajustes sin evaluación/plan y autorización correspondiente. No se leyó SQL, secretos, roles ni datos.
 - **Protocolo README:** PR #159 ya cambió toolchain de forma concreta y verificada; README debe reflejar Node/pnpm exactos. Este checkpoint actualiza el README y continuidad para no dejar instrucciones contradictorias.
@@ -2123,7 +2123,7 @@ Continúa Micro app desde el estado vivo de este documento, no desde los snapsho
 - **PR #158** (documentación Cloudflare/CI): https://github.com/BTF14/Micro-app/pull/158. Rama docs/workflow-deployment-audit-20261030; abierta, draft, no mergeada. HEAD conocido antes de este checkpoint: 162765fac25bf3aa623a41676d56e570afabd7fd; 12/12 checks success.
 - **PR #159** (pinning de toolchain): https://github.com/BTF14/Micro-app/pull/159. Rama fix/cloudflare-node-pnpm-pinning-20261030; abierta, draft, no mergeada. HEAD 57de704c03fffebfd9aee2ae91c05a0e3af7515a; 13/13 checks success.
 - PR #159 añade .node-version = 24.22.2, packageManager = pnpm@10.34.9 y alinea node-version-file/pnpm exactos en CI, Playwright, AutoSkills preview, Daily Dependency Watch y Regenerate Lockfile.
-- Cloudflare Pages build log del SHA 57de704 confirmó Node 24.22.2 + pnpm 10.34.9, build exitoso, sin Unsupported Engine warning; preview https://70046713.micro-app-63i.pages.dev. No se fusionó ni se desplegó producción.
+- Cloudflare Pages build log del SHA 57de704 confirmó Node 24.22.2 + pnpm 10.34.9, build exitoso, sin Unsupported Engine warning; preview https://HOST_PAGES_REDACTADO. No se fusionó ni se desplegó producción.
 - Mantener PRs separadas: #158 solo docs; #159 solo toolchain/workflows. No fusionar ninguna sin autorización explícita porque push/merge a main activa despliegues externos.
 - No cambiar Cloudflare settings, Neon main, secretos, DNS, billing, datos reales ni producción. Objetivo USD 0. Sin Codex.
 
@@ -2133,7 +2133,7 @@ Continúa Micro app desde el estado vivo de este documento, no desde los snapsho
 
 - **PR #158:** abierta, draft, no fusionada; base main = 1ee1808af4aae484a71dc24750237ff4f4d934a0.
 - **HEAD actual:** 5b1b5734f3fa8024f060694e5dbc5f5f9f8ab766; cinco archivos de documentación, cinco commits, sin cambios de aplicación/workflows/migraciones.
-- **Checks del SHA exacto:** 12/12 success (GitHub Actions y Cloudflare). Cloudflare Pages preview: https://d8477e48.micro-app-63i.pages.dev. Workers preview: [URL WORKER REDACTADA] Son previews, no producción.
+- **Checks del SHA exacto:** 12/12 success (GitHub Actions y Cloudflare). Cloudflare Pages preview: https://HOST_PAGES_REDACTADO. Workers preview: [URL WORKER REDACTADA] Son previews, no producción.
 - **Pages Settings:** main producción; root vacío; build corepack enable && pnpm install --frozen-lockfile && pnpm --filter @micro-app/web build; output apps/web/dist; build system v3; cache off; monitoring *; preview público por defecto; sin dominio custom. Detalles completos en docs/WORKFLOW_AND_DEPLOYMENT_AUDIT.md.
 - **Preview isolation:** verificado en código main: API base vacía, llamadas API bloqueadas, login deshabilitado, CSP sin API en previews; _headers define CSP/seguridad para producción. Mantener pruebas de regresión.
 - **Pendientes:** revisar build logs para versión efectiva Node/pnpm; evaluar pin pnpm, build cache y semántica “Fail open” sin cambiar ahora; verificar headers HTTP efectivos; revisar cuota Pages; confirmar required checks/branch protection (no confirmado).
@@ -2143,7 +2143,7 @@ Continúa Micro app desde el estado vivo de este documento, no desde los snapsho
 
 ## Checkpoint Pages Settings — 2026-10-30 UTC
 
-- TinyFish accedió a Settings de Pages `micro-app`, solo lectura. Production branch `main`; root directory vacío; build command `corepack enable && pnpm install --frozen-lockfile && pnpm --filter @micro-app/web build`; output `apps/web/dist`; build system v3; cache off; monitoring routes `*`; automatic deploys on; no deploy hooks; build comments on; preview access public by default; no custom domains; vars names only: `CLOUDFLARE_INCLUDE_PROCESS_ENV`, `VITE_API_BASE_URL`.
+- TinyFish accedió a Settings de Pages project, solo lectura. Production branch `main`; root directory vacío; build command `corepack enable && pnpm install --frozen-lockfile && pnpm --filter @micro-app/web build`; output `apps/web/dist`; build system v3; cache off; monitoring routes `*`; automatic deploys on; no deploy hooks; build comments on; preview access public by default; no custom domains; vars names only: `CLOUDFLARE_INCLUDE_PROCESS_ENV`, `VITE_API_BASE_URL`.
 - Compatibility date `2026-10-17`; flags panel mostró True; Functions setting mostró `Fail open` (no interpretar/cambiar sin confirmar).
 - Repo main confirma monorepo pnpm `apps/*`; root package requiere Node `>=24.22.2 <25` pero no fija `packageManager`. Pendiente verificar Node/pnpm efectivos en build logs; evaluar pinning en PR separada.
 - Build command compila web vía `apps/web/package.json` script `tsc -b && vite build && node scripts/postbuild.mjs`; API se valida en workflows separados.
@@ -2156,8 +2156,8 @@ Continúa Micro app desde el estado vivo de este documento, no desde los snapsho
 
 - Repo `BTF14/Micro-app`; PR #158 abierta/draft: https://github.com/BTF14/Micro-app/pull/158. Rama `docs/workflow-deployment-audit-20261030`. No mergear.
 - Corregir auditoría CI: duplicación general potencial solo `secret-history-scan.yml` (push ** todas las ramas) y `security-scan.yml` (push sin filtro). Los demás workflows restringen ramas/paths o son manuales/programados. Ver `docs/WORKFLOW_AND_DEPLOYMENT_AUDIT.md`.
-- Cloudflare Workers Free $0: 100k req/día, 10ms CPU/req, 3.000 build minutes/mes, 100 Workers, 5 Cron triggers. Worker `micro-app-api`: main producción; docs branches previews. PR #158 preview Worker successful.
-- Cloudflare Pages `micro-app`: producción branch `main`, auto deploy push main. Último deploy prod observado activo: commit `1ee1808af4aae484a71dc24750237ff4f4d934a0`, URL `https://06553c7b.micro-app-63i.pages.dev`; primary `https://micro-app-63i.pages.dev`. PR #158 commit `79be208` preview successful `https://945ae93c.micro-app-63i.pages.dev`; `d3f056b` preview `https://70fea194.micro-app-63i.pages.dev`. No confundir previews con producción.
+- Cloudflare Workers Free $0: 100k req/día, 10ms CPU/req, 3.000 build minutes/mes, 100 Workers, 5 Cron triggers. Worker `API_WORKER_REDACTADO`: main producción; docs branches previews. PR #158 preview Worker successful.
+- Cloudflare Pages project: producción branch `main`, auto deploy push main. Último deploy prod observado activo: commit `1ee1808af4aae484a71dc24750237ff4f4d934a0`, URL `https://HOST_PAGES_REDACTADO`; primary `https://HOST_PAGES_REDACTADO`. PR #158 commit `79be208` preview successful `https://HOST_PAGES_REDACTADO`; `d3f056b` preview `https://HOST_PAGES_REDACTADO`. No confundir previews con producción.
 - Pages mostró 15 deployments recientes (1 prod + 14 previews), 1.100 total en historial; todos los 15 visibles success. No implica historial completo sin fallos.
 - Settings de Pages no cargó: build command, output dir, root dir, framework, env, Functions, redirects, headers y uso/cuotas no disponibles. No inventar.
 - No custom domain visible. Push/merge a main despliega producción. Merge y deploy separados; no autorizar deploy por inferencia.
@@ -2181,8 +2181,8 @@ Continúa Micro app desde el estado vivo de este documento, no desde los snapsho
 - **Rama PR:** `docs/workflow-deployment-audit-20261030`. HEAD observado antes de actualizar: `d3f056b780ddad62deb5c1e1c0f1679bba19bb50`; base `main` = `1ee1808af4aae484a71dc24750237ff4f4d934a0`.
 - **Corrección CI:** no son siete workflows sin filtros. Solo `secret-history-scan.yml` (push todas las ramas) y `security-scan.yml` (push sin filtro) tienen potencial duplicación general con PR. CI/Playwright/Semgrep restringen push a main; migration-check y project-progress usan ramas explícitas; otros workflows tienen filtros paths/branch. Leer siempre `docs/WORKFLOW_AND_DEPLOYMENT_AUDIT.md`.
 - **Cloudflare Workers Free:** $0/mes; cuotas observadas: 100k requests/día, 10 ms CPU/request, 3.000 build minutes/mes, 100 Workers, 5 cron triggers. Snapshot: 183 requests, 0 errores, 106,68 build minutes últimas 24 h; Worker view también 85 invocaciones y P90 CPU 10 ms. No usar esto como benchmark.
-- **Worker:** `micro-app-api` en workers.dev. `main` es producción observada; ramas docs son previews. PR #158 obtuvo previews exitosos de Worker y Pages confirmados por comentarios automáticos de Cloudflare; no producción.
-- **Pages:** proyecto `micro-app`, URL `https://micro-app-63i.pages.dev/`; conectado a BTF14/Micro-app. Preview de PR #158 successful. Historial de versiones productivas, build settings y consumo Pages todavía no extraídos.
+- **Worker:** `API_WORKER_REDACTADO` en workers.dev. `main` es producción observada; ramas docs son previews. PR #158 obtuvo previews exitosos de Worker y Pages confirmados por comentarios automáticos de Cloudflare; no producción.
+- **Pages:** proyecto `micro-app`, URL `https://HOST_PAGES_REDACTADO/`; conectado a BTF14/Micro-app. Preview de PR #158 successful. Historial de versiones productivas, build settings y consumo Pages todavía no extraídos.
 - **Logs/Traces:** aparecían desactivados; evaluar seguridad/coste antes de activarlos.
 - **No confirmados:** usage restante, billing detallado, Pages deployment history/production branch, branch protection y contexts requeridos (rulesets vacío; legacy endpoint 403).
 - **No Codex. No Neon main ni SQL remoto. No secretos ni datos reales. No pagos. No tocar Cloudflare/DNS/tráfico. No merge ni deploy sin permiso explícito. Producción no lista y capacidad SaaS no medida.**
@@ -2503,7 +2503,7 @@ Repositorio: https://github.com/BTF14/Micro-app. Última referencia de `main` ve
 ### Secretos y rama Neon de prueba
 - El propietario confirma que eliminó `RESTORE_TEST_AGE_KEY` y que `RESTORE_TEST_DB_URL` ya no aparece en la lista actual de Repository secrets; no se conoce la fecha exacta de eliminación. Nunca pedir valores ni imprimirlos.
 - Los únicos secretos que el propietario reporta actualmente son `BACKUP_REPO_TOKEN` y `DATABASE_URL_BACKUP_RO`; conservarlos para el backup permanente.
-- Neon todavía muestra la rama `restore-test-20261028`, ID `br-broad-dust-b7cvgjtv`, en el proyecto `restless-fire-99110035`. El borrado vía herramienta fue bloqueado por controles de seguridad; no eludir el bloqueo. Si se necesita limpiar, indicar los pasos para borrarla manualmente desde la consola Neon y confirmar el ID para evitar `main`.
+- Neon todavía muestra la rama `restore-test-20261028`, ID `br-broad-dust-b7cvgjtv`, en el proyecto `ID_PROYECTO_NEON_REDACTADO`. El borrado vía herramienta fue bloqueado por controles de seguridad; no eludir el bloqueo. Si se necesita limpiar, indicar los pasos para borrarla manualmente desde la consola Neon y confirmar el ID para evitar `main`.
 
 ### Política de retención obligatoria para cualquier IA o chat
 - Mantener la retención actual de **15 días**; el backup permanente se genera a diario y el workflow elimina solo los archivos cuyo timestamp UTC validado del nombre supera los 15 días, junto con su checksum.
@@ -2669,7 +2669,7 @@ No presentar pruebas unitarias como prueba de producción. No hacer despliegues,
 ## Handoff vigente — 2026-10-26: todo lo de identidad/acceso/ayuda cerrado — arrancar negocio de cero
 
 1. Leer primero el checkpoint superior de `docs/CURRENT_STATE.md`.
-2. **Estado confirmado end-to-end por el dueño en su teléfono real:** login con Google, organización "Abasto 7 de Oro", botón de logout alcanzable en móvil, enlace de WhatsApp en cualquier error de la app, y un centro de ayuda básico (FAQ + Privacidad) en el pie de página. PRs #80–#84, todas fusionadas y desplegadas. **No hay ningún pendiente conocido de identidad, acceso o UI básica.**
+2. **Estado confirmado end-to-end por el dueño en su teléfono real:** login con Google, organización "organización real del propietario", botón de logout alcanzable en móvil, enlace de WhatsApp en cualquier error de la app, y un centro de ayuda básico (FAQ + Privacidad) en el pie de página. PRs #80–#84, todas fusionadas y desplegadas. **No hay ningún pendiente conocido de identidad, acceso o UI básica.**
 3. Recordatorio del bug ya resuelto que no debe repetirse: cualquier variable de entorno nueva no-secreta del Worker debe declararse también en `apps/api/wrangler.toml`, o `wrangler deploy` la borra en el siguiente despliegue (pasó dos veces el 2026-10-25).
 4. **La prioridad total del siguiente chat es construir el negocio real**: inventario, productos con precio en USD, tasa BCV con conversión a VES, ventas/caja. No existe código de nada de esto todavía — todo lo hecho hasta ahora (varias sesiones) ha sido identidad e infraestructura.
 5. Para agregar un usuario nuevo (más allá del primero), seguir el patrón SQL documentado en `docs/CURRENT_STATE.md` (inserciones manuales en Neon por ahora).
@@ -2682,7 +2682,7 @@ No presentar pruebas unitarias como prueba de producción. No hacer despliegues,
 
 1. Leer primero el checkpoint superior de `docs/CURRENT_STATE.md` (bloque "Estado vivo — 2026-10-25 (noche)"). Contiene el bug más importante a recordar para no repetirlo.
 2. **Bug ya resuelto pero crítico de no repetir:** `wrangler deploy` borra en silencio cualquier variable del Worker que esté puesta a mano en el dashboard de Cloudflare pero no declarada en `apps/api/wrangler.toml` (solo afecta a las que NO son "Secreto"). Ya pasó dos veces en esta sesión y rompió producción ambas veces sin que el cambio desplegado tuviera nada que ver con `apps/api`. Si se agrega una variable nueva no-secreta al Worker, agregarla también a `[vars]` en `wrangler.toml` en el mismo cambio.
-3. Login con Google verificado funcionando de extremo a extremo, confirmado visualmente por el usuario en su teléfono real: organización "Abasto 7 de Oro", owner `[CORREO REDACTADO]`. Botón de "Cerrar sesión" ahora también es alcanzable en móvil (PR #82, merge `f274d32a359dbba8e401897a41294fda1f33cbf8`).
+3. Login con Google verificado funcionando de extremo a extremo, confirmado visualmente por el usuario en su teléfono real: organización "organización real del propietario", owner `[CORREO REDACTADO]`. Botón de "Cerrar sesión" ahora también es alcanzable en móvil (PR #82, merge `f274d32a359dbba8e401897a41294fda1f33cbf8`).
 4. **No queda ningún pendiente conocido de identidad/infraestructura/UI básica.** La prioridad pasa por completo a construir el negocio: inventario, productos con precio en USD, tasa BCV y conversión a VES, ventas. No existe código de esto todavía.
 5. Para agregar un usuario nuevo (más allá del primero), seguir el patrón SQL documentado en `docs/CURRENT_STATE.md` — hoy requiere inserciones manuales en Neon; considerar diseñar un flujo de invitación real antes de que se necesite de verdad.
 6. Pendiente sin resolver, no bloqueante: revisar `feat/neon-transaction-adapter` contra `main` antes de cualquier merge.
@@ -2693,10 +2693,10 @@ No presentar pruebas unitarias como prueba de producción. No hacer despliegues,
 ## Handoff vigente — 2026-10-25 (tarde): login real funcionando, siguiente fase es negocio
 
 1. Leer primero el checkpoint superior de `docs/CURRENT_STATE.md` (el bloque que empieza "Estado vivo — 2026-10-25 (tarde)"). Contiene los IDs exactos de la organización/usuario creados, el estado sellado de `auth_bootstrap`, y el patrón SQL exacto para agregar más correos a `auth_allowlist`.
-2. El login con Google ya funciona en producción de extremo a extremo. Primera organización real: "Abasto 7 de Oro" (`abasto-7-de-oro`), owner `[CORREO REDACTADO]`. El bootstrap de un solo uso ya se consumió y no se puede volver a usar — es por diseño, no un bug.
+2. El login con Google ya funciona en producción de extremo a extremo. Primera organización real: "organización real del propietario" (`SLUG_ORGANIZACION_REDACTADO`), owner `[CORREO REDACTADO]`. El bootstrap de un solo uso ya se consumió y no se puede volver a usar — es por diseño, no un bug.
 3. PR #81 fusionada (`441bdc463954aba1069cfeae9227bf75a562a53a`): se reemplazó el formulario de contraseña muerto por un botón real "Continuar con Google" y mensajes de error claros (`?auth_error=...`). Todos los checks pasaron en el head exacto `117cb1c` antes de fusionar, incluido Playwright, que hubo que reescribir porque probaba el formulario eliminado.
 4. **No asumir que agregar un correo a `auth_allowlist` alcanza para que esa persona entre.** Solo el primer login (vía bootstrap, ya sellado) puede crear `app_users`/`organization_members`. Para un segundo usuario real hace falta, hoy, una inserción manual adicional en esas tablas o — mejor — diseñar e implementar un flujo de invitación antes de que haga falta de verdad.
-5. Confirmar primero con el usuario que `https://micro-app-63i.pages.dev/` carga el panel autenticado tras el redeploy de Cloudflare Pages (se disparó automáticamente al fusionar PR #81, pero no se verificó visualmente en esta sesión más allá de los checks de CI).
+5. Confirmar primero con el usuario que `https://HOST_PAGES_REDACTADO/` carga el panel autenticado tras el redeploy de Cloudflare Pages (se disparó automáticamente al fusionar PR #81, pero no se verificó visualmente en esta sesión más allá de los checks de CI).
 6. Con identidad resuelta, la prioridad del proyecto pasa a construir la lógica de negocio: inventario, productos en USD, tasa BCV/conversión a VES, ventas. No existe código de esto todavía.
 7. Pendiente sin resolver, no bloqueante: revisar `feat/neon-transaction-adapter` contra `main` antes de cualquier merge (arrastrado desde hace varias sesiones).
 8. Nota de entorno: en el sandbox de esta sesión, `pnpm install`/`npm` no pudieron resolver `registry.npmjs.org` por DNS pese a estar en `no_proxy`; si vuelve a pasar, verificar cambios de frontend exclusivamente vía los checks de GitHub Actions en el SHA exacto antes de fusionar, como se hizo aquí.
@@ -2847,7 +2847,7 @@ Revalidar GitHub antes de actuar; este bloque prevalece sobre snapshots históri
 - `main`: `cb4b9b09ad3ff0f1bacd34f23ee653a5477cddfe`.
 - PR #57 fusionada: el registro público devuelve `503 REGISTRATION_DISABLED` después de validar Origin, antes de procesar credenciales o acceder a la base de datos. Tests unitarios e integración PostgreSQL verifican que no hay escrituras ni cookie y preservan login/sesión con fixtures sintéticos.
 - Checks del head exacto de PR #57 `71d3e6d3ffe625b12807e9942ddd261e222cf093` en success, y checks consultados del merge SHA también en success. No se ejecutaron pruebas localmente.
-- Preview reportada por Cloudflare: https://1d3d60bf.micro-app-63i.pages.dev; el check no acredita despliegue productivo.
+- Preview reportada por Cloudflare: https://HOST_PAGES_REDACTADO; el check no acredita despliegue productivo.
 - Issue P0 #53 sigue abierto hasta implementar Google sign-in + allowlist y resolver D1–D8. No reactivar el registro ni inventar identidad.
 - `feat/neon-transaction-adapter`: divergida, 14 commits ahead / 76 behind; no fusionar a ciegas. Los únicos cambios aparentes son tests antiguos/script de test y documentación obsoleta; `database.ts` y security workflow ya son idénticos a main.
 - Matriz de roles sigue pendiente; no crear endpoints comerciales que dependan de permisos no aprobados.
@@ -2936,7 +2936,7 @@ Usa este bloque antes que snapshots históricos inferiores y revalida GitHub ant
 - No se ejecutaron pruebas locales. Los resultados indicados son de GitHub Actions sobre los head SHA especificados. No se han verificado aquí workflows para el merge SHA de PR #39; no afirmar que el merge SHA esté completamente verde.
 - No se desplegó producción, no se modificó Neon `main`, no se tocaron datos reales, secretos, facturación ni Cantina-pos.
 - Strix (`https://github.com/usestrix/strix.git`) sigue documentado solamente; no instalado ni ejecutado.
-- Automatización diaria de continuidad creada previamente con ID `6ad4c8ce247881919e0c4e83e7358dcb`; verificar su estado en la plataforma si se necesita afirmar que está activa/ejecutándose. No es un bucle continuo en tiempo real.
+- Automatización diaria de continuidad creada previamente con ID `ID_AUTOMATIZACION_REDACTADO`; verificar su estado en la plataforma si se necesita afirmar que está activa/ejecutándose. No es un bucle continuo en tiempo real.
 
 ## Estado funcional y bloqueos
 
@@ -3402,7 +3402,7 @@ Este bloque es más reciente que los snapshots históricos anteriores; si contra
 ## 2026-11-08 17:51 UTC — Neon pinned rehearsal #4: bootstrap-and-migrate SUCCESS
 
 - Ejecución verificada directamente en GitHub Actions: [run #42507066215](https://github.com/BTF14/Micro-app/actions/runs/42507066215), workflow `.github/workflows/neon-pinned-migration-rehearsal.yml`, event `workflow_dispatch`, branch `main`, checkout/head SHA `37bf673895a035c84c4c18f837c12694f182a96b`, run #4, conclusión `success`; job único `rehearsal` y todos sus pasos completados SUCCESS.
-- Operación registrada en el job: `bootstrap-and-migrate`. SOURCE_SHA inmutable validado: `6227a3a8497f6be94d675b64da5da61530c200fc`. Destino verificado por el workflow: proyecto `restless-fire-99110035`, branch `br-curly-poetry-b7dxsddm`, database `microapp_rehearsal`, login `microapp_migrator`. No se usó `neondb`, la rama primaria ni producción.
+- Operación registrada en el job: `bootstrap-and-migrate`. SOURCE_SHA inmutable validado: `6227a3a8497f6be94d675b64da5da61530c200fc`. Destino verificado por el workflow: proyecto `ID_PROYECTO_NEON_REDACTADO`, branch `br-curly-poetry-b7dxsddm`, database `microapp_rehearsal`, login `microapp_migrator`. No se usó `neondb`, la rama primaria ni producción.
 - Preflight confirmó target vacío antes de bootstrap y validó la confirmación exacta de escritura. Baseline 0001–0002 aplicado por el runner; fingerprint canónico 0002 comparado y verificado (`BASELINE_0002_FINGERPRINT_VERIFIED`). Luego el runner aplicó el conjunto fijado 0001–0019; 0001–0002 se reconocieron como ya aplicadas al iniciar el segundo tramo.
 - Assertions SQL post-migración 0017, 0018 y 0019 ejecutadas explícitamente; cada una terminó con `MIGRATION_ASSERTIONS_PASSED`. Verificación final comprobó 19 filas únicas en `public.schema_migrations`, versión máxima 0019, todos los estados `applied`, y ownership de tablas/relaciones y funciones públicas por `microapp_migrator`. Resultado final: `PINNED_REHEARSAL_MIGRATIONS_0001_0019_VERIFIED`.
 - Preflight de roles validó atributos restrictivos de `microapp_migrator` y `microapp_runtime`, grants de conexión/schema esperados y que runtime no es miembro de migrator. No se imprimieron ni se copiaron secretos/URLs.

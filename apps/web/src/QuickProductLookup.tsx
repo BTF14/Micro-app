@@ -13,25 +13,25 @@ function usd(value: string) { try { return localDecimal(formatDecimal(parseNumer
 function ves(value: string, rate: string) { try { return localDecimal(convertUsdToVes(value, rate)); } catch { return "No disponible"; } }
 function zero(value: string) { try { return parseNumeric(value, 14, 3) <= 0n; } catch { return true; } }
 export default function QuickProductLookup({ organizationId, exchangeRate, exchangeRateStatus, onSelect }: Props) {
-  const [branches,setBranches]=useState<Branch[]>([]),[branchId,setBranchId]=useState("");
-  const [warehouses,setWarehouses]=useState<Warehouse[]>([]),[warehouseId,setWarehouseId]=useState("");
+  const [branches,setBranches]=useState<Branch[]>([]),[branchId,setBranchId]=useState(""),[branchesLoaded,setBranchesLoaded]=useState(false);
+  const [warehouses,setWarehouses]=useState<Warehouse[]>([]),[warehouseId,setWarehouseId]=useState(""),[warehousesLoaded,setWarehousesLoaded]=useState(false);
   const [query,setQuery]=useState(""),[items,setItems]=useState<QuickLookupProduct[]>([]),[nextCursor,setNextCursor]=useState<string|null>(null);
   const [loading,setLoading]=useState(false),[error,setError]=useState("");
   const sequence=useRef(0),debounceTimer=useRef<number|null>(null),base=`/api/orgs/${encodeURIComponent(organizationId)}`;
   const storageKey=branchId?`micro-app:quick-lookup:warehouse:${organizationId}:${branchId}`:"";
-  useEffect(()=>{let live=true;setBranches([]);setBranchId("");setWarehouses([]);setWarehouseId("");setItems([]);setNextCursor(null);setError("");
+  useEffect(()=>{let live=true;setBranches([]);setBranchId("");setBranchesLoaded(false);setWarehouses([]);setWarehouseId("");setWarehousesLoaded(false);setItems([]);setNextCursor(null);setError("");
     if(!organizationId)return;
-    apiRequest<{branches:Branch[]}>(`${base}/branches`).then(r=>{if(live){setBranches(r.branches);if(r.branches.length===1)setBranchId(r.branches[0]!.id);}})
-      .catch(e=>{if(live)setError(e instanceof Error?e.message:"No se pudieron consultar las sucursales.");});
+    apiRequest<{branches:Branch[]}>(`${base}/branches`).then(r=>{if(live){setBranches(r.branches);setBranchesLoaded(true);if(r.branches.length===1)setBranchId(r.branches[0]!.id);}})
+      .catch(e=>{if(live){setBranchesLoaded(true);setError(e instanceof Error?e.message:"No se pudieron consultar las sucursales.");}});
     return()=>{live=false;sequence.current++;};
   },[organizationId,base]);
-  useEffect(()=>{let live=true;setWarehouses([]);setWarehouseId("");setItems([]);setNextCursor(null);setQuery("");
+  useEffect(()=>{let live=true;setWarehouses([]);setWarehouseId("");setWarehousesLoaded(false);setItems([]);setNextCursor(null);setQuery("");
     if(!branchId)return;
     apiRequest<{warehouses:Warehouse[]}>(`${base}/branches/${encodeURIComponent(branchId)}/warehouses`).then(r=>{if(!live)return;
-      const active=r.warehouses.filter(w=>w.is_active);setWarehouses(active);
+      const active=r.warehouses.filter(w=>w.is_active);setWarehouses(active);setWarehousesLoaded(true);
       if(active.length===1)setWarehouseId(active[0]!.id);
       else if(active.length>1){const saved=window.localStorage.getItem(`micro-app:quick-lookup:warehouse:${organizationId}:${branchId}`);if(saved&&active.some(w=>w.id===saved))setWarehouseId(saved);}
-    }).catch(e=>{if(live)setError(e instanceof Error?e.message:"No se pudieron consultar los almacenes.");});
+    }).catch(e=>{if(live){setWarehousesLoaded(true);setError(e instanceof Error?e.message:"No se pudieron consultar los almacenes.");}});
     return()=>{live=false;sequence.current++;};
   },[base,branchId,organizationId]);
   useEffect(()=>{if(storageKey&&warehouses.length>1&&warehouseId)window.localStorage.setItem(storageKey,warehouseId);},[storageKey,warehouses.length,warehouseId]);
@@ -56,10 +56,10 @@ export default function QuickProductLookup({ organizationId, exchangeRate, excha
     {branchId&&warehouses.length>1&&<label className="quick-lookup-scope">Almacén<select value={warehouseId} onChange={e=>chooseWarehouse(e.target.value)}><option value="">Selecciona un almacén</option>{warehouses.map(w=><option key={w.id} value={w.id}>{w.name}</option>)}</select></label>}
     {branchId&&warehouses.length===1&&<p className="quick-lookup-context">Almacén: <strong>{warehouses[0]!.name}</strong></p>}
     {error&&<p className="catalog-error" role="alert">{error}</p>}
-    {branches.length===0&&!error&&<p className="quick-lookup-status" role="status">Cargando sucursales…</p>}
-    {branches.length===0&&error=== ""?null:branches.length===0?<div className="catalog-empty"><strong>No tienes sucursales asignadas.</strong><span>Solicita acceso a una sucursal para consultar productos.</span></div>:null}
-    {branchId&&warehouses.length===0&&!error&&<p className="quick-lookup-status" role="status">Cargando almacenes activos…</p>}
-    {branchId&&warehouses.length===0&&error===""?null:branchId&&warehouses.length===0?<div className="catalog-empty"><strong>Esta sucursal no tiene almacenes activos.</strong><span>Solicita que habiliten un almacén.</span></div>:null}
+    {!branchesLoaded&&<p className="quick-lookup-status" role="status">Cargando sucursales…</p>}
+    {branchesLoaded&&branches.length===0&&!error&&<div className="catalog-empty"><strong>No tienes sucursales asignadas.</strong><span>Solicita acceso a una sucursal para consultar productos.</span></div>}
+    {branchId&&!warehousesLoaded&&<p className="quick-lookup-status" role="status">Cargando almacenes activos…</p>}
+    {branchId&&warehousesLoaded&&warehouses.length===0&&!error&&<div className="catalog-empty"><strong>Esta sucursal no tiene almacenes activos.</strong><span>Solicita que habiliten un almacén.</span></div>}
     <form className="quick-lookup-search" role="search" onSubmit={e=>{e.preventDefault();if(debounceTimer.current!==null)window.clearTimeout(debounceTimer.current);debounceTimer.current=null;void search(query);}}>
       <label htmlFor="quick-product-search">Buscar producto</label><div className="quick-lookup-input-row">
         <input id="quick-product-search" type="search" enterKeyHint="search" autoComplete="off" maxLength={120} placeholder="Escanea un código o escribe nombre / SKU" value={query} disabled={!warehouseId} onChange={e=>setQuery(e.target.value)} onKeyDown={e=>{if(e.key==="Escape")clear();}}/>
@@ -71,7 +71,7 @@ export default function QuickProductLookup({ organizationId, exchangeRate, excha
     {items.length>0&&<div className="quick-lookup-results" aria-live="polite">{items.map(item=>{const out=zero(item.available_quantity);return <article className="quick-lookup-result" key={item.product_id}>
       <div className="quick-lookup-product"><strong>{item.name}</strong><span>{item.sku}{item.barcode?` · ${item.barcode}`:""}</span></div>
       <div className="quick-lookup-prices"><strong>US$ {usd(item.price_usd)}</strong>{canConvert?<span>Bs. {ves(item.price_usd,exchangeRate!)}</span>:<span className="catalog-price-unavailable">{exchangeRateStatus==="stale"?"Tasa BCV desactualizada; conversión suspendida":"Tasa BCV no disponible; conversión suspendida"}</span>}</div>
-      <div className="quick-lookup-stock"><strong className={out?"out":""}>{out?"Agotado":`${localDecimal(formatDecimal(parseNumeric(item.available_quantity,14,3),3,0))} ${item.unit}`}</strong>{!out&&<span>Disponible</span>}</div>
+      <div className="quick-lookup-stock"><strong className={out?"out":""}>{out?`Agotado · ${localDecimal(formatDecimal(parseNumeric(item.available_quantity,14,3),3,0))} ${item.unit}`:`${localDecimal(formatDecimal(parseNumeric(item.available_quantity,14,3),3,0))} ${item.unit}`}</strong>{!out&&<span>Disponible</span>}</div>
       {onSelect&&<button type="button" className="catalog-edit" onClick={()=>onSelect(item)}>Seleccionar</button>}
     </article>;})}</div>}
     {nextCursor!==null&&<p className="quick-lookup-more">Hay más coincidencias. Afina la búsqueda para encontrar el producto.</p>}

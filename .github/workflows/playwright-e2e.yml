@@ -197,6 +197,7 @@ jobs:
           E2E_API_PROXY_TARGET=http://127.0.0.1:4174 \
             /tmp/micro-app-playwright/node_modules/.bin/playwright test \
             --config apps/web/playwright.config.ts \
+            --retries=0 \
             apps/web/e2e/real-fullstack-commerce.spec.ts
       - name: Upload full-stack Playwright report and API harness log on failure
         if: failure()

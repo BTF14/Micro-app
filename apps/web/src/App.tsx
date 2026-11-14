@@ -4,6 +4,7 @@ import "./auth.css";
 import CatalogPanel from "./CatalogPanel";
 import InventoryPanel from "./InventoryPanel";
 import RegisterShiftsPanel from "./RegisterShiftsPanel";
+import OrganizationStructurePanel from "./OrganizationStructurePanel";
 
 // WhatsApp number format (no "+", no spaces) per https://faq.whatsapp.com/general/chats/how-to-use-click-to-chat.
 function whatsappUrl(message: string): string {
@@ -299,7 +300,7 @@ export default function App() {
   const [error, setError] = useState(() => readAuthErrorFromUrl());
   const [notice, setNotice] = useState("");
   const [helpModal, setHelpModal] = useState<HelpModalKind | null>(null);
-  const [activeView, setActiveView] = useState<"overview" | "catalog" | "inventory" | "register-shifts">("overview");
+  const [activeView, setActiveView] = useState<"overview" | "catalog" | "inventory" | "register-shifts" | "organization-structure">("overview");
   const [bcvRate, setBcvRate] = useState<BcvRateResponse | null>(null);
   const [bcvLoading, setBcvLoading] = useState(false);
   const [bcvError, setBcvError] = useState("");
@@ -469,6 +470,7 @@ export default function App() {
           <button className={`nav-item nav-item-button ${activeView === "catalog" ? "active" : ""}`} type="button" onClick={() => setActiveView("catalog")} aria-current={activeView === "catalog" ? "page" : undefined}><span className="nav-symbol" aria-hidden="true">▦</span>Productos</button>
           <button className={`nav-item nav-item-button ${activeView === "inventory" ? "active" : ""}`} type="button" onClick={() => setActiveView("inventory")} aria-current={activeView === "inventory" ? "page" : undefined}><span className="nav-symbol" aria-hidden="true">▤</span>Inventario</button>
           {(organization?.role === "owner" || organization?.role === "admin" || organization?.role === "cashier") ? (<button className={`nav-item nav-item-button ${activeView === "register-shifts" ? "active" : ""}`} type="button" onClick={() => setActiveView("register-shifts")} aria-current={activeView === "register-shifts" ? "page" : undefined}><span className="nav-symbol" aria-hidden="true">▣</span>Caja y turnos</button>) : (<span className="nav-item disabled" aria-disabled="true"><span className="nav-symbol" aria-hidden="true">▣</span>Caja y turnos<span className="nav-lock">Sin acceso</span></span>)}
+          {organization?.role === "owner" && <button className={`nav-item nav-item-button ${activeView === "organization-structure" ? "active" : ""}`} type="button" onClick={() => setActiveView("organization-structure")} aria-current={activeView === "organization-structure" ? "page" : undefined}><span className="nav-symbol" aria-hidden="true">⚙</span> Estructura</button>}
           {["Reportes"].map((label) => <span className="nav-item disabled" aria-disabled="true" key={label}><span className="nav-symbol" aria-hidden="true">▦</span>{label}<span className="nav-lock">Pronto</span></span>)}
         </nav>
         <div className="sidebar-bottom">
@@ -479,7 +481,7 @@ export default function App() {
       </aside>
       <section className="main-panel" id="inicio">
         <header className="topbar">
-          <div className="breadcrumb">{organization?.name ?? "Mi negocio"} <span>/</span> {activeView === "catalog" ? "Productos" : activeView === "inventory" ? "Inventario" : activeView === "register-shifts" ? "Caja y turnos" : "Resumen"}</div>
+          <div className="breadcrumb">{organization?.name ?? "Mi negocio"} <span>/</span> {activeView === "catalog" ? "Productos" : activeView === "inventory" ? "Inventario" : activeView === "register-shifts" ? "Caja y turnos" : activeView === "organization-structure" ? "Estructura organizacional" : "Resumen"}</div>
           <div className="topbar-end">
             <div className="account-chip"><span>{user.display_name.slice(0, 1).toUpperCase()}</span><div><strong>{user.display_name}</strong><small>{user.email}</small></div></div>
             {/* The sidebar's own logout button (.sidebar-bottom) is hidden on narrow screens
@@ -533,6 +535,8 @@ export default function App() {
               exchangeRateStatus={bcvRate ? (bcvError ? "stale" : bcvRate.status) : "unavailable"}
               canManage={organization?.role === "owner" || organization?.role === "admin"}
             />
+          ) : activeView === "organization-structure" && organization?.role === "owner" ? (
+            <OrganizationStructurePanel organizationId={organization.id} />
           ) : (
             <RegisterShiftsPanel organizationId={organization?.id ?? ""} userName={user.display_name} />
           )}

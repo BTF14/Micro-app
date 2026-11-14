@@ -9,6 +9,7 @@ import { registerInventoryReadRoutes } from "./inventory-read";
 import { registerCatalogWriteRoutes } from "./catalog-write";
 import { registerSalesCheckoutRoutes } from "./sales-checkout";
 import { registerRegisterShiftRoutes } from "./register-shifts";
+import { registerOrganizationStructureRoutes } from "./organization-structure";
 import { withDatabaseClient } from "./database";
 import { cleanupExpiredAuthRecords } from "./auth-rate-limit";
 import { registerExchangeRateRoutes, safeBcvSyncErrorCode, syncBcvOfficialRate } from "./exchange-rates";
@@ -93,6 +94,7 @@ registerInventoryReadRoutes(app);
 registerCatalogWriteRoutes(app);
 registerSalesCheckoutRoutes(app);
 registerRegisterShiftRoutes(app);
+registerOrganizationStructureRoutes(app);
 registerExchangeRateRoutes(app);
 
 app.get("/health", (c) =>

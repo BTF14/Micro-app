@@ -7,16 +7,19 @@ on:
   push:
     branches:
       - "integration/bcv-checkout-rehearsal-20261109"
+      - "feat/branch-warehouse-register-admin-20261113"
     paths:
       - ".github/workflows/backup-restore-smoke.yml"
       - "scripts/db/reapply_restore_role_grants.sh"
       - "scripts/db/restore_remote_backup_ephemeral.sh"
       - "scripts/db/test_restore_remote_backup_target_guard.sh"
+      - "scripts/db/test_restore_role_grants_profiles.sh"
       - "scripts/db/verify_backup_artifact.sh"
       - "scripts/db/test_verify_backup_artifact.sh"
       - "scripts/db/restore_role_assertions_main.sql"
       - "scripts/test_backup_restore_schema.sh"
       - "scripts/test_backup_restore_schema_bcv.sh"
+      - "docs/BACKUP_AND_RECOVERY.md"
   pull_request:
     paths:
       - ".github/workflows/backup-restore-smoke.yml"
@@ -36,6 +39,7 @@ on:
       - "scripts/db/migrate.sh"
       - "scripts/db/reapply_restore_role_grants.sh"
       - "scripts/db/restore_remote_backup_ephemeral.sh"
+      - "scripts/db/test_restore_role_grants_profiles.sh"
       - "scripts/db/restore_role_assertions_main.sql"
       - ".github/workflows/backup-real-restore.yml"
       - "apps/api/migrations/**"
@@ -94,12 +98,15 @@ jobs:
       - name: Prove remote restore target guard fails closed
         shell: bash
         run: bash scripts/db/test_restore_remote_backup_target_guard.sh
+      - name: Preserve historical main and BCV 0023 ACL profiles alongside 0024
+        shell: bash
+        run: bash scripts/db/test_restore_role_grants_profiles.sh
       - name: Prove backup artifact name and checksum validation
         shell: bash
         run: bash scripts/db/test_verify_backup_artifact.sh
 
   restore-smoke:
-    name: Synthetic encrypted restore — BCV projection (0001–0023)
+    name: Synthetic encrypted restore — BCV projection (0001–0024)
     runs-on: ubuntu-latest
     timeout-minutes: 20
     env:

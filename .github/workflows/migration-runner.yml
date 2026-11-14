@@ -2,7 +2,7 @@ name: PostgreSQL migration runner validation
 
 on:
   push:
-    branches: [main, "security/**"]
+    branches: [main, "security/**", "feat/branch-warehouse-register-admin-20261113"]
   pull_request:
     branches: [main, "security/**", "feat/**", "fix/**"]
 
@@ -52,6 +52,12 @@ jobs:
         run: bash -n scripts/db/migrate.sh
       - name: Apply clean schema through the migration runner
         run: bash scripts/db/migrate.sh
+      - name: Verify owner-only organization structure migration 0024 contract
+        run: psql -X -v ON_ERROR_STOP=1 --dbname "$ADMIN_DATABASE_URL" -f apps/api/migrations/0024_organization_structure_admin_operations.assertions.sql
+      - name: Validate organization structure PostgreSQL integration harness syntax
+        run: bash -n scripts/tests/test_organization_structure_admin.sh
+      - name: Exercise organization structure operations through the direct runtime LOGIN
+        run: bash scripts/tests/test_organization_structure_admin.sh
       - name: Verify ledger, owner and recorded checksums
         run: |
           expected="$(find apps/api/migrations -maxdepth 1 -type f -name '[0-9][0-9][0-9][0-9]_*.sql' ! -name '*.assertions.sql' ! -name '*.deferred_failure.sql' | wc -l | awk '{print $1}')"

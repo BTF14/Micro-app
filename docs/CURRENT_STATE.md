@@ -3433,3 +3433,19 @@ PR #346 fusionada en main: `c6a9ad611111fbc32da8b13329481458c933ec21`. HEAD exac
 - **Interpretación:** el restore aislado de 1999 ms no es RTO operacional; la edad de 8825 s no es RPO operacional porque no hay cutoff/instante de incidente independiente. La ejecución y entrega/ACK del canario quedan demostradas; no se infiere de ello aceptación formal de RPO/RTO.
 - **Pendiente humano final:** aceptación explícita del objetivo de backup diario (RPO objetivo aproximado 24 h) y del RTO alcanzable/aceptado con restauración aislada; revisión legal, fiscal y contable; y reconocimiento de que los módulos comerciales POS que aún faltan no están cubiertos por esta evidencia y deben completarse antes del uso comercial real. No declarar que todo POS está terminado.
 - **Estado invariable:** Issue #53 OPEN/P0; **PRODUCTION: NOT READY**. Paso 4 tiene evidencia de ejecución/alerta, pero no aceptación formal completa ni certificación de RPO/RTO operacional. No se modificaron Neon, secretos, datos reales ni configuración de producción en esta actualización documental.
+
+
+## PR 2 — estructura organizacional Owner-only: PR #350 abierta y checks completos (2026-11-13)
+
+- PR [#350](https://github.com/BTF14/Micro-app/pull/350) OPEN, no-Draft, mergeable=true, no fusionada.
+- HEAD exacto: `61cd674c47cdba4595e21bd9e6b8f4ecd0f25431`; main/base `25c0f842c7ecc8a7320b33d33abfb12402476e32`; ahead 85 / behind 0; 27 archivos.
+- 25/25 check-runs SUCCESS; 11/11 workflows pull_request y 6/6 workflows push SUCCESS.
+- Push runs: CI 43526348692; PostgreSQL migration runner 43526348672; database migration validation 43526348641; backup restore smoke 43526348677; security scan 43526348837; secret-history 43526348720.
+- PR runs: CI 43526664663; migration runner 43526664836; database migration validation 43526664807; backup restore smoke 43526664677; Playwright E2E 43526664613; Semgrep SAST 43526664620; Dependency Review 43526664608; ODD docs 43526664703; project dashboard 43526664657; security 43526664628; secret-history 43526664647.
+- PostgreSQL 18, migration 0024/rollback, API integration, React/Vitest, build/typecheck, Chromium, Playwright, Semgrep, Trivy, secret scan, backup restore main 0016 / BCV 0024 / legacy, Cloudflare Pages y Workers Builds: SUCCESS.
+- Perfil BCV histórico 0023 (`bcv`) conservado; nuevo BCV 0024 (`bcv-0024`); main 0016 sin cambios. Migraciones 0023 o anteriores intactas.
+- No hay reviews formales ni review threads. El intento automático de Codex no pudo completarse por límite de uso; no se interpreta como aprobación ni como finding. Revisión del Tech Lead pendiente.
+- No merge. Issue #53 OPEN/P0; PRODUCTION: NOT READY; USD 0. No Neon main, datos reales, secretos, activación BCV ni cambios a PR #193/#314/#315/#316.
+
+
+Nota de continuidad: el SHA anterior indicado es el último HEAD completamente validado (25/25 check-runs SUCCESS). Este commit solo actualiza documentación; verificar el nuevo HEAD vivo y sus checks exactos antes de cualquier merge. PR #350 sigue OPEN/no-Draft y no se debe fusionar.

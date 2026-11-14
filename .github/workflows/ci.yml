@@ -2,7 +2,7 @@ name: CI
 
 on:
   push:
-    branches: [main]
+    branches: [main, "feat/branch-warehouse-register-admin-20261113"]
   pull_request:
     branches: [main, "fix/**"]
 
@@ -81,6 +81,8 @@ jobs:
         run: psql -X -v ON_ERROR_STOP=1 --dbname "$ADMIN_DATABASE_URL" -f apps/api/migrations/0022_bcv_dedicated_producer_role.assertions.sql
       - name: Verify own register-shift runtime operations migration 0023 contract
         run: psql -X -v ON_ERROR_STOP=1 --dbname "$ADMIN_DATABASE_URL" -f apps/api/migrations/0023_register_shift_runtime_operations.assertions.sql
+      - name: Verify owner-only organization structure migration 0024 contract
+        run: psql -X -v ON_ERROR_STOP=1 --dbname "$ADMIN_DATABASE_URL" -f apps/api/migrations/0024_organization_structure_admin_operations.assertions.sql
       - name: Build and typecheck
         run: pnpm build
       - name: Verify Cloudflare Pages preview isolation
@@ -115,6 +117,8 @@ jobs:
         run: DATABASE_URL_RUNTIME="$RUNTIME_DATABASE_URL" pnpm --filter @micro-app/api exec vitest run src/cashier-open-shift.integration.test.ts
       - name: PostgreSQL own register-shift API integration tests (runtime LOGIN)
         run: DATABASE_URL_RUNTIME="$RUNTIME_DATABASE_URL" DATABASE_URL_ADMIN="$ADMIN_DATABASE_URL" pnpm --filter @micro-app/api exec vitest run src/register-shifts-api.integration.test.ts
+      - name: PostgreSQL owner-only organization structure API integration tests (runtime LOGIN)
+        run: DATABASE_URL_RUNTIME="$RUNTIME_DATABASE_URL" DATABASE_URL_ADMIN="$ADMIN_DATABASE_URL" pnpm --filter @micro-app/api exec vitest run src/organization-structure.integration.test.ts
       - name: PostgreSQL register-shift member role integration tests
         run: pnpm --filter @micro-app/api exec vitest run src/register-shift-member-roles.integration.test.ts
       - name: PostgreSQL catalog integration tests

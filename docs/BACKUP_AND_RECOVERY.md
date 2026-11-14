@@ -591,3 +591,21 @@ La duración de restore DB es una medición observada del simulacro aislado, no 
 `alert-canary.yml` permite un fallo manual intencional, sin permisos, secrets, checkout ni acceso a DB/Neon. El propietario debe habilitar notificaciones Actions por email/GitHub, ejecutar con confirmación, verificar recepción y dejar ACK humano con UTC + run URL en Issue #53. El workflow no crea comentarios automáticamente ni toca `backup.yml`.
 
 No declarar Paso 4 completo hasta tener CI exact-HEAD, un run de restore instrumentado, una notificación realmente entregada + ACK, RPO definido con fuente temporal correcta y aceptación del propietario.
+
+
+## Extensión de perfil en rama — PR 2 (2026-11-13)
+
+La rama aislada `feat/branch-warehouse-register-admin-20261113` añade el perfil BCV/proyección **0001–0024** para validar la migración organizacional nueva, pero conserva el perfil histórico BCV **0001–0023** como `bcv` y nombra el perfil nuevo `bcv-0024`. El restore detecta el perfil desde el ledger, verifica checksums del prefijo exacto de migraciones y ejecuta solo las assertions aplicables a ese historial. `main`/paired-intent **0001–0016** sigue fijado al bundle inmutable original. No se modifican las migraciones ni assertions 0023 o anteriores. La prueba de compatibilidad de ACL cubre los perfiles 16/23/24; el smoke PostgreSQL 18 de esta rama valida el restore completo 0024. Esta extensión está en rama, no fusionada; no demuestra restore productivo ni implica cambios en BCV sync, producer, secretos, Cron o Neon.
+
+
+## PR 2 — compatibilidad de perfiles y restore smoke (2026-11-13)
+
+En código SHA `23581b2a1956c3433683820c7b2a2db3eb24b696`, Backup restore smoke run [43525236472](https://github.com/BTF14/Micro-app/actions/runs/43525236472) SUCCESS: main 0001–0016, BCV 0001–0024 y legacy backup contract. El paso de compatibilidad ACL valida main 16, BCV histórico 23 y BCV nuevo 24. El runner remoto detecta 23 como `bcv` y 24 como `bcv-0024`, verifica checksums del prefijo histórico y ejecuta assertions 0024 solo para el perfil nuevo. No se alteraron las migraciones 0023 o anteriores ni se ejecutó restore sobre Neon/producción.
+
+
+## PR #350 — verificación pull_request (2026-11-13)
+
+Backup restore smoke PR run [43526664677](https://github.com/BTF14/Micro-app/actions/runs/43526664677) SUCCESS en HEAD `61cd674c47cdba4595e21bd9e6b8f4ecd0f25431`: restore main 0001–0016, BCV 0001–0024 y legacy backup contract. Los perfiles ACL 16/23/24 siguen cubiertos; no se ejecutó restore sobre Neon ni producción.
+
+
+Nota de continuidad PR #350: el último HEAD de código validado es `61cd674c47cdba4595e21bd9e6b8f4ecd0f25431`; el commit documental posterior no cambia migraciones ni lógica de restore y debe superar de nuevo los checks exactos del PR.

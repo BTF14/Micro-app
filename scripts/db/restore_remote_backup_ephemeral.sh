@@ -103,22 +103,25 @@ ledger_profile="$(psql "$RESTORE_MIGRATOR_URL" -X -v ON_ERROR_STOP=1 -Atqc "
 SELECT CASE
   WHEN count(*) = 16 AND min(version) = '0001' AND max(version) = '0016'
        AND count(DISTINCT version) = 16 AND bool_and(state = 'applied') THEN 'main'
-  WHEN count(*) = 23 AND min(version) = '0001' AND max(version) = '0023'
+  WHEN count(*) = 24 AND min(version) = '0001' AND max(version) = '0024'
        AND count(DISTINCT version) = 23 AND bool_and(state = 'applied') THEN 'bcv'
+  WHEN count(*) = 24 AND min(version) = '0001' AND max(version) = '0024'
+       AND count(DISTINCT version) = 24 AND bool_and(state = 'applied') THEN 'bcv-0024'
   ELSE 'unsupported'
 END
 FROM public.schema_migrations")"
 case "$ledger_profile" in
   main) expected=16 ;;
   bcv) expected=23 ;;
-  *) echo "Backup migration ledger is not a complete supported 16- or 23-migration profile; refusing ACL reconstruction." >&2; exit 1 ;;
+  bcv-0024) expected=24 ;;
+  *) echo "Backup migration ledger is not a complete supported 16-, 23- or 24-migration profile; refusing ACL reconstruction." >&2; exit 1 ;;
 esac
 
 tmpdir="$(mktemp -d)"
 trap 'rm -rf "$tmpdir"' EXIT
 
 # Main/paired-intent backups must use the immutable migration bundle from the
-# exact main baseline; BCV projection backups use the current checked-out 23-file
+# exact main baseline; BCV projection backups use the current checked-out 24-file
 # bundle. The helper below independently verifies every file checksum against
 # the restored schema_migrations ledger before extracting any ACL statement.
 if [[ "$ledger_profile" == "main" ]]; then
@@ -134,8 +137,8 @@ else
 fi
 
 mapfile -t available_migrations < <(find "$source_migrations_dir" -maxdepth 1 -type f -name '[0-9][0-9][0-9][0-9]_*.sql' ! -name '*.assertions.sql' ! -name '*.deferred_failure.sql' | sort)
-if (( ${#available_migrations[@]} != expected )); then
-  echo "Pinned migration bundle does not contain exactly $expected migrations for profile $ledger_profile." >&2
+if (( ${#available_migrations[@]} < expected )) || { [[ "$ledger_profile" == "main" ]] && (( ${#available_migrations[@]} != expected )); }; then
+  echo "Pinned migration bundle does not contain the required $expected migrations for profile $ledger_profile." >&2
   exit 1
 fi
 
@@ -163,6 +166,9 @@ if [[ "$ledger_profile" == "main" ]]; then
 else
   psql "$RESTORE_MIGRATOR_URL" -X -v ON_ERROR_STOP=1 -f "$source_migrations_dir/0022_bcv_dedicated_producer_role.assertions.sql"
   psql "$RESTORE_MIGRATOR_URL" -X -v ON_ERROR_STOP=1 -f "$source_migrations_dir/0023_register_shift_runtime_operations.assertions.sql"
+  if [[ "$ledger_profile" == "bcv-0024" ]]; then
+    psql "$RESTORE_MIGRATOR_URL" -X -v ON_ERROR_STOP=1 -f "$source_migrations_dir/0024_organization_structure_admin_operations.assertions.sql"
+  fi
 fi
 
 echo "== Validate restored application identity, ownership, least privilege and ephemeral auth state"
@@ -219,7 +225,7 @@ runtime_acl_probe="$(psql "$RESTORE_MIGRATOR_URL" -X -v ON_ERROR_STOP=1 -Atqc "S
 producer_identity="$(psql "$RESTORE_PRODUCER_URL" -X -v ON_ERROR_STOP=1 -Atqc "SELECT current_user || ':' || session_user")"
 [[ "$producer_identity" == "microapp_bcv_sync:microapp_bcv_sync" ]] || { echo "BCV producer LOGIN verification failed." >&2; exit 1; }
 
-if [[ "$ledger_profile" == "bcv" ]]; then
+if [[ "$ledger_profile" != "main" ]]; then
   # Exercise the dedicated producer's real column-level write contract only
   # inside a transaction that is always rolled back. The unique source prevents
   # collisions with fixture/production-shaped synthetic rows in this disposable DB.

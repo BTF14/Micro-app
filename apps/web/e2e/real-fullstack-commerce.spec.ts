@@ -91,7 +91,7 @@ test("real catalog → inventory receipt → register → USD/VES POS → close 
   });
 
   await page.goto("/");
-  await expect(page.getByRole("heading", { name: "Hola, E2E." })).toBeVisible();
+  await expect(page.getByRole("heading", { name: `Hola, ${fixture.userDisplayName.split(" ")[0]}.` })).toBeVisible();
   await expect(page.getByText("Sesión activa", { exact: true })).toBeVisible();
 
   // 1. Create and read a real catalog product through the UI and Hono API.
@@ -134,6 +134,8 @@ test("real catalog → inventory receipt → register → USD/VES POS → close 
   // 3. Open a real cashier shift on the seeded branch/register.
   await page.getByRole("button", { name: "Caja y turnos", exact: true }).click();
   await expect(page.getByRole("heading", { name: "Turnos de caja" })).toBeVisible();
+  await expect(page.getByLabel("Sucursal", { exact: true })).toHaveValue(fixture.branchId);
+  await expect(page.getByLabel("Caja", { exact: true })).toHaveValue(fixture.registerId);
   await page.getByLabel("Fondo inicial USD", { exact: true }).fill("50.0000");
   await page.getByLabel("Fondo inicial VES", { exact: true }).fill("1000.00");
   const openShiftPromise = page.waitForResponse((response) =>
@@ -165,7 +167,7 @@ test("real catalog → inventory receipt → register → USD/VES POS → close 
   // 5. Close the shift in a second authenticated page and verify persistence after reload.
   const closer = await context.newPage();
   await closer.goto("/");
-  await expect(closer.getByRole("heading", { name: "Hola, E2E." })).toBeVisible();
+  await expect(closer.getByRole("heading", { name: `Hola, ${fixture.userDisplayName.split(" ")[0]}.` })).toBeVisible();
   await closer.getByRole("button", { name: "Caja y turnos", exact: true }).click();
   await expect(closer.getByText("Turno abierto", { exact: true })).toBeVisible();
   await closer.getByLabel("Conteo final USD", { exact: true }).fill("48.0000");

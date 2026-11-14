@@ -52,7 +52,7 @@ export function buildCatalogQuery(
   const filters: string[] = [];
   if (normalizedSearch) {
     values.push(normalizedSearch, `%${escapedSearch}%`);
-    filters.push("(barcode = $2 OR lower(sku) = lower($2) OR name ILIKE $3 ESCAPE '\\\\' OR sku ILIKE $3 ESCAPE '\\\\' OR barcode ILIKE $3 ESCAPE '\\\\')");
+    filters.push("(barcode = $2 OR lower(sku) = lower($2) OR name ILIKE $3 ESCAPE '\\' OR sku ILIKE $3 ESCAPE '\\' OR barcode ILIKE $3 ESCAPE '\\')");
   }
   if (cursor) { values.push(cursor); filters.push(`id > $${values.length}`); }
   values.push(pageSize + 1);

@@ -124,7 +124,7 @@ export function registerInventoryReadRoutes(app: Hono<{ Bindings: Bindings }>): 
           if (search) {
             const escaped = search.replace(/[\\%_]/g, (character) => "\\" + character);
             values.push(search, `%${escaped}%`);
-            filters.push("(p.barcode = $4 OR lower(p.sku) = lower($4) OR p.barcode ILIKE $5 ESCAPE '\\\\' OR p.sku ILIKE $5 ESCAPE '\\\\' OR p.name ILIKE $5 ESCAPE '\\\\')");
+            filters.push("(p.barcode = $4 OR lower(p.sku) = lower($4) OR p.barcode ILIKE $5 ESCAPE '\\' OR p.sku ILIKE $5 ESCAPE '\\' OR p.name ILIKE $5 ESCAPE '\\')");
           }
           if (cursor) { values.push(cursor); filters.push(`p.id > $${values.length}`); }
           values.push(limit + 1);

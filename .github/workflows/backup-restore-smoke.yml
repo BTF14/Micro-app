@@ -8,12 +8,14 @@ on:
     branches:
       - "integration/bcv-checkout-rehearsal-20261109"
       - "feat/branch-warehouse-register-admin-20261113"
+      - "feat/inventory-receive-and-adjust-20261113"
     paths:
       - ".github/workflows/backup-restore-smoke.yml"
       - "scripts/db/reapply_restore_role_grants.sh"
       - "scripts/db/restore_remote_backup_ephemeral.sh"
       - "scripts/db/test_restore_remote_backup_target_guard.sh"
       - "scripts/db/test_restore_role_grants_profiles.sh"
+      - "apps/api/migrations/**"
       - "scripts/db/verify_backup_artifact.sh"
       - "scripts/db/test_verify_backup_artifact.sh"
       - "scripts/db/restore_role_assertions_main.sql"

@@ -435,6 +435,10 @@ jobs:
         run: docker exec -i -e PGPASSWORD=migrator-test-only "${{ job.services.postgres.id }}" psql -h 127.0.0.1 -v ON_ERROR_STOP=1 -U microapp_migrator -d microapp_test -f /dev/stdin < apps/api/migrations/0024_organization_structure_admin_operations.sql
       - name: Verify owner-only organization structure migration 0024 privilege contract
         run: docker exec -i "${{ job.services.postgres.id }}" psql -v ON_ERROR_STOP=1 -U microapp -d microapp_test -f /dev/stdin < apps/api/migrations/0024_organization_structure_admin_operations.assertions.sql
+      - name: Apply inventory receipt ledger migration 0025
+        run: docker exec -i -e PGPASSWORD=migrator-test-only "${{ job.services.postgres.id }}" psql -h 127.0.0.1 -v ON_ERROR_STOP=1 -U microapp_migrator -d microapp_test -f /dev/stdin < apps/api/migrations/0025_inventory_receipts.sql
+      - name: Verify inventory receipt ledger migration 0025 contract
+        run: docker exec -i "${{ job.services.postgres.id }}" psql -v ON_ERROR_STOP=1 -U microapp -d microapp_test -f /dev/stdin < apps/api/migrations/0025_inventory_receipts.assertions.sql
       - name: Verify application objects are owned by the non-superuser migrator
         run: |
           ownership="$(docker exec "${{ job.services.postgres.id }}" psql -At -U microapp -d microapp_test -c "SELECT NOT EXISTS (SELECT 1 FROM pg_class WHERE relnamespace='public'::regnamespace AND relkind IN ('r','p','S','v','m') AND relowner <> (SELECT oid FROM pg_roles WHERE rolname='microapp_migrator')) AND NOT EXISTS (SELECT 1 FROM pg_proc WHERE pronamespace='public'::regnamespace AND proowner <> (SELECT oid FROM pg_roles WHERE rolname='microapp_migrator'))")"

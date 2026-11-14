@@ -235,7 +235,7 @@ function BcvSyncAdminPanel({ organizationId }: { organizationId: string }) {
           </div>
           {state.isStaleRunning && (
             <p className="bcv-admin-error" role="alert">
-              La sincronización lleva al menos 5 minutos atascada en running. El checkout sigue bloqueado por seguridad hasta que se complete una sincronización válida.
+              La sincronización lleva al menos {Math.ceil(state.staleRunningThresholdSeconds / 60)} minutos atascada en running. El checkout sigue bloqueado por seguridad hasta que se complete una sincronización válida.
             </p>
           )}
           <dl className="bcv-admin-grid">

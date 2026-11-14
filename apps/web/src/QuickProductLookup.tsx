@@ -32,6 +32,7 @@ type QuickProductLookupProps = {
   lockedBranchId?: string;
   lockedWarehouseId?: string;
   selectLabel?: string;
+  resetSignal?: number;
 };
 
 function formatLocalizedDecimal(value: string): string {
@@ -76,6 +77,7 @@ export default function QuickProductLookup({
   lockedBranchId,
   lockedWarehouseId,
   selectLabel = "Seleccionar",
+  resetSignal = 0,
 }: QuickProductLookupProps) {
   const [branches, setBranches] = useState<Branch[]>([]);
   const [branchId, setBranchId] = useState("");
@@ -92,6 +94,7 @@ export default function QuickProductLookup({
   const requestSequence = useRef(0);
   const searchInputRef = useRef<HTMLInputElement>(null);
   const debounceTimer = useRef<number | null>(null);
+  const previousResetSignal = useRef(resetSignal);
 
   const base = `/api/orgs/${encodeURIComponent(organizationId)}`;
   const warehouseStorageKey = branchId
@@ -270,6 +273,12 @@ export default function QuickProductLookup({
     setLoading(false);
   };
 
+  useEffect(() => {
+    if (previousResetSignal.current !== resetSignal) {
+      previousResetSignal.current = resetSignal;
+      clearSearch();
+    }
+  }, [resetSignal]);
   const selectBranch = (value: string) => {
     requestSequence.current += 1;
     setBranchId(value);

@@ -157,7 +157,7 @@ jobs:
           export E2E_FIXTURE_PATH="/tmp/real-fullstack-commerce-fixture.json"
           export E2E_API_PID_FILE="/tmp/real-fullstack-commerce-api.pid"
           API_LOG="$GITHUB_WORKSPACE/.real-fullstack-api.log"
-          pnpm --filter @micro-app/api exec vitest run --pool=forks --poolOptions.forks.singleFork src/real-fullstack-e2e-server.manual.test.ts >"$API_LOG" 2>&1 &
+          pnpm --filter @micro-app/api exec vitest run --pool=forks src/real-fullstack-e2e-server.manual.test.ts >"$API_LOG" 2>&1 &
           VITEST_PID=$!
           cleanup() {
             local original_status=$?

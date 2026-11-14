@@ -272,10 +272,10 @@ export default function InventoryPanel({ organizationId, canManageInventory }: {
               </select>
             </label>
             <label>Cantidad
-              <input required inputMode="decimal" pattern="(?:0|[1-9][0-9]{0,10})(?:\.[0-9]{1,3})?" value={receiptQuantity} onChange={(event) => setReceiptQuantity(event.target.value)} />
+              <input required inputMode="decimal" pattern="(?:0|[1-9][0-9]{0,10})(?:\.[0-9]{1,3})?" title="Usa punto (.) y máximo 3 decimales, ej. 2.5" value={receiptQuantity} onChange={(event) => setReceiptQuantity(event.target.value)} />
             </label>
             <label>Costo unitario USD
-              <input required inputMode="decimal" pattern="(?:0|[1-9][0-9]{0,9})(?:\.[0-9]{1,4})?" value={receiptCost} onChange={(event) => setReceiptCost(event.target.value)} />
+              <input required inputMode="decimal" pattern="(?:0|[1-9][0-9]{0,9})(?:\.[0-9]{1,4})?" title="Usa punto (.) y máximo 4 decimales, ej. 1.05" value={receiptCost} onChange={(event) => setReceiptCost(event.target.value)} />
             </label>
             <label>Motivo
               <input required maxLength={500} value={receiptReason} onChange={(event) => setReceiptReason(event.target.value)} />
@@ -290,7 +290,7 @@ export default function InventoryPanel({ organizationId, canManageInventory }: {
               </select>
             </label>
             <label>Cantidad contada
-              <input required inputMode="decimal" pattern="(?:0|[1-9][0-9]{0,10})(?:\.[0-9]{1,3})?" value={countQuantity} onChange={(event) => setCountQuantity(event.target.value)} />
+              <input required inputMode="decimal" pattern="(?:0|[1-9][0-9]{0,10})(?:\.[0-9]{1,3})?" title="Usa punto (.) y máximo 3 decimales, ej. 2.5" value={countQuantity} onChange={(event) => setCountQuantity(event.target.value)} />
             </label>
             <label>Motivo
               <input required maxLength={500} value={countReason} onChange={(event) => setCountReason(event.target.value)} />

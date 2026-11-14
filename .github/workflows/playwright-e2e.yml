@@ -103,6 +103,12 @@ jobs:
           version: 10.34.9
       - name: Install locked workspace dependencies
         run: pnpm install --frozen-lockfile
+      - name: Install ephemeral PostgreSQL test driver
+        run: |
+          npm install --prefix /tmp/micro-app-test-deps --no-save --no-package-lock pg @types/pg
+          mkdir -p node_modules/@types
+          ln -s /tmp/micro-app-test-deps/node_modules/pg node_modules/pg
+          ln -s /tmp/micro-app-test-deps/node_modules/@types/pg node_modules/@types/pg
       - name: Install PostgreSQL client
         run: |
           if ! command -v psql >/dev/null 2>&1; then

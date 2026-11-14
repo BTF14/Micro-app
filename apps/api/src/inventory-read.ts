@@ -89,7 +89,9 @@ export function buildInventoryReadQuery(input: {
     const escaped = input.search.replace(/[\\%_]/g, (character) => "\\" + character);
     values.push(input.search); exact = values.length;
     values.push(`%${escaped}%`); partial = values.length;
-    values.push(`${escaped}%`); prefix = values.length;
+    if (input.sort === "relevance") {
+      values.push(`${escaped}%`); prefix = values.length;
+    }
     filters.push(`(p.barcode = $${exact} OR lower(p.sku) = lower($${exact}) OR p.barcode ILIKE $${partial} ESCAPE '\\' OR p.sku ILIKE $${partial} ESCAPE '\\' OR p.name ILIKE $${partial} ESCAPE '\\')`);
   }
   if (input.cursor) { values.push(input.cursor); filters.push(`p.id > $${values.length}`); }

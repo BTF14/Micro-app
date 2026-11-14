@@ -65,7 +65,7 @@ const PRIVACY_SECTIONS: { heading: string; body: string }[] = [
 
 const modules = [
   { number: "01", title: "Caja y ventas", description: "Turnos de caja disponibles; ventas y cobros en preparación.", status: "Disponible · apertura y cierre de turnos" },
-  { number: "02", title: "Inventario", description: "Consulta de existencias por sucursal y almacén.", status: "Disponible · solo lectura" },
+  { number: "02", title: "Inventario", description: "Consulta, recepción de mercancía y conteos físicos por sucursal y almacén.", status: "Disponible · operaciones según permisos" },
   { number: "03", title: "Productos", description: "Catálogo y precios exactos en USD.", status: "Disponible · catálogo en USD" },
   { number: "04", title: "Tasa BCV", description: "Conversión a VES con fuente y fecha verificables.", status: "Disponible · fuente oficial" },
 ];
@@ -527,7 +527,7 @@ export default function App() {
           </footer>
           </>
           ) : activeView === "inventory" ? (
-            <InventoryPanel organizationId={organization?.id ?? ""} />
+            <InventoryPanel organizationId={organization?.id ?? ""} canManageInventory={organization?.role === "owner" || organization?.role === "admin" || organization?.role === "inventory"} />
           ) : activeView === "catalog" ? (
             <CatalogPanel
               organizationId={organization?.id ?? ""}

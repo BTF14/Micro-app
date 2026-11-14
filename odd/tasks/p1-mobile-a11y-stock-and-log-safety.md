@@ -1,7 +1,7 @@
 # ODD task: P1 mobile accessibility, stock rejection and log safety
 
 - Status: completed
-- Issue / PR: PR #367 OPEN; branch `feat/p1-mobile-a11y-stock-log-safety-20261114`; PR #366 is already MERGED
+- Issue / PR: PR #367 MERGED; implementation merge SHA `46a24f3d617bc07f4cf47931b0bece4cccfb5440`; PR #366 also MERGED
 - Owner / reviewer: repository owner / technical agent
 - Started: 2026-11-14
 - Risk: high
@@ -56,7 +56,7 @@ Excluded:
 | Extend real commerce E2E | Stock failure, mobile and keyboard assertions | PR #367 HEAD `4285d183a53ba43c4f471ca242102389c8697080`: 17/17 checks, 13/13 workflows SUCCESS; mobile full-stack 1/1 passed | complete |
 | Audit API operational logs | Safe structured output only | 10 reviewed production calls across 3 source files; deny-by-default static test passed in CI | complete |
 | Reconcile readiness and continuity | Exact evidence, honest production gates | #366 task, readiness, current state, journal and handoff updated | complete |
-| Final exact-HEAD CI, review and merge | Safe integrated PR | All check-runs/workflows and post-merge main | pending |
+| Final exact-HEAD CI, review and merge | Safe integrated PR | PR #367 HEAD `e467c636506158b8f3be4361033e1e40473eccdd`: 17/17 checks, 13/13 workflows; merge `46a24f3d617bc07f4cf47931b0bece4cccfb5440`; post-merge 14/14 checks, 9/9 workflows | complete |
 
 ## Technical decisions
 
@@ -73,9 +73,9 @@ Excluded:
 - Squash merge: `46a24f3d617bc07f4cf47931b0bece4cccfb5440` at 2026-11-14 23:23:30 UTC. Post-merge on `46a24f3d617bc07f4cf47931b0bece4cccfb5440`: 14/14 check-runs SUCCESS and 9/9 workflow runs SUCCESS.
 - AC-8 complete: full diff manually reviewed, mergeability clean, no formal reviews or unresolved threads; merge and post-merge checks verified.
 
-- Last validated implementation HEAD: `4285d183a53ba43c4f471ca242102389c8697080`; PR #367 OPEN against `main` `366334ae75c966e4fada13afed964a7f4b557954`. This documentation commit advances the branch; verify the live PR HEAD.
-- Checks on the implementation HEAD: 17/17 check-runs SUCCESS, 13/13 workflow runs SUCCESS, CI verify 52/52, Playwright mobile full-stack 1/1 SUCCESS.
-- Acceptance criteria met / unmet: AC-1–AC-7 and AC-9 validated; AC-8 awaits final exact-HEAD CI, diff/review/thread audit, squash merge and post-merge verification.
-- Limitations not verified: first real BCV rate persisted in Neon `main`; external alert delivery; human RPO/RTO; legal/fiscal approval.
-- Residual risks: Issue #53 P0 and production gates remain open.
-- Next step: verify all required check-runs/workflow runs on this exact PR HEAD, review the complete diff/reviews/threads, fix demonstrated failures, then verify the final exact HEAD again before any squash merge.
+- PR #367 MERGED. Implementation HEAD `e467c636506158b8f3be4361033e1e40473eccdd`; squash merge `46a24f3d617bc07f4cf47931b0bece4cccfb5440`.
+- Pre-merge exact-HEAD evidence: 17/17 check-runs SUCCESS, 13/13 workflow runs SUCCESS, CI verify 52/52, Playwright mobile full-stack 1/1 SUCCESS, Chromium authentication smoke SUCCESS.
+- Post-merge evidence on `46a24f3d617bc07f4cf47931b0bece4cccfb5440`: 14/14 check-runs SUCCESS and 9/9 workflow runs SUCCESS.
+- AC-1–AC-9 COMPLETED. The only remaining blockers are the external production gates documented above.
+- Residual risks: Issue #53 remains P0/OPEN; production is NOT READY.
+- Next step: keep the external production gates open; no further P1 implementation work is pending.

@@ -46,6 +46,7 @@ Excluded:
 | Spoofed client identity | High | Trust only Cloudflare-overwritten CF-Connecting-IP; strict IPv4/IPv6 parser; ignore XFF |
 | Shared bucket causes collateral blocking | High | Explicit unique scope per method/route |
 | Runtime role cannot use auth_rate_limits | Critical | PostgreSQL 18 tests under the actual synthetic runtime LOGIN and verify INSERT/UPDATE rights; no Neon access |
+| Existing integration fixtures reuse one IP and exceed the new per-IP quota | Medium | Use unique synthetic CF-Connecting-IP values in general endpoint integration helpers; keep quota behavior isolated in dedicated limiter tests |
 | Existing OAuth/checkout behavior regresses | High | Preserve current scope strings, policy numbers, response body and headers; regression tests |
 | Arbitrary limits harm POS/admin workflows | Medium | Start with per-route policy: catalog 30/min; inventory count create 10/min; count confirm 10/min; receipt create 10/min; shift open/close 10/min each; structure create/update 10/min. Reassess against retry/idempotency semantics and document rationale. |
 | Rate-limit database unavailable | Critical | Fail closed with sanitized 503; do not log raw IP, key or pepper |

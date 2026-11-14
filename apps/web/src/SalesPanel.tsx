@@ -304,7 +304,7 @@ export default function SalesPanel({
 
   function newSale() {
     setReceipt(null);
-    setCart([]);
+    commitCart([]);
     setLookupReset((value) => value + 1);
     setPayments([{ id: newIdempotencyKey(), method: "cash", amount: "", reference: "" }]);
     setCurrency("USD");

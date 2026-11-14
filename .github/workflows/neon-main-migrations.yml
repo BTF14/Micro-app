@@ -142,14 +142,45 @@ jobs:
               return 1
             fi
 
-            role_checks="$(psql -X -At -F '|' -v ON_ERROR_STOP=1 --dbname "${NEON_MAIN_MIGRATOR_DATABASE_URL}" -c "
+            role_checks="$(psql -X -At -v ON_ERROR_STOP=1 --dbname "${NEON_MAIN_MIGRATOR_DATABASE_URL}" -c "
               SELECT
-                (SELECT rolcanlogin AND NOT rolsuper AND NOT rolcreatedb AND NOT rolcreaterole AND NOT rolreplication AND NOT rolbypassrls AND NOT rolinherit FROM pg_catalog.pg_roles WHERE rolname='microapp_runtime'),
-                (SELECT rolcanlogin AND NOT rolsuper AND NOT rolcreatedb AND NOT rolcreaterole AND NOT rolreplication AND NOT rolbypassrls FROM pg_catalog.pg_roles WHERE rolname='microapp_migrator'),
-                NOT EXISTS (SELECT 1 FROM pg_catalog.pg_auth_members WHERE member IN (SELECT oid FROM pg_catalog.pg_roles WHERE rolname IN ('microapp_runtime','microapp_migrator'))),
-                pg_catalog.has_schema_privilege('microapp_runtime','public','USAGE') AND NOT pg_catalog.has_schema_privilege('microapp_runtime','public','CREATE'),
-                pg_catalog.has_schema_privilege('microapp_migrator','public','USAGE') AND pg_catalog.has_schema_privilege('microapp_migrator','public','CREATE'),
-                pg_catalog.has_database_privilege('microapp_runtime',current_database(),'CONNECT') AND pg_catalog.has_database_privilege('microapp_migrator',current_database(),'CONNECT')
+                (SELECT rolcanlogin AND NOT rolsuper AND NOT rolcreatedb AND NOT rolcreaterole AND NOT rolreplication AND NOT rolbypassrls AND NOT rolinherit FROM pg_catalog.pg_roles WHERE rolname='microapp_runtime')
+                AND (SELECT rolcanlogin AND NOT rolsuper AND NOT rolcreatedb AND NOT rolcreaterole AND NOT rolreplication AND NOT rolbypassrls FROM pg_catalog.pg_roles WHERE rolname='microapp_migrator')
+                AND NOT EXISTS (SELECT 1 FROM pg_catalog.pg_auth_members WHERE member IN (SELECT oid FROM pg_catalog.pg_roles WHERE rolname IN ('microapp_runtime','microapp_migrator')))
+                AND pg_catalog.has_schema_privilege('microapp_runtime','public','USAGE') AND NOT pg_catalog.has_schema_privilege('microapp_runtime','public','CREATE')
+                AND pg_catalog.has_schema_privilege('microapp_migrator','public','USAGE') AND pg_catalog.has_schema_privilege('microapp_migrator','public','CREATE')
+                AND pg_catalog.has_database_privilege('microapp_runtime',current_database(),'CONNECT') AND pg_catalog.has_database_privilege('microapp_migrator',current_database(),'CONNECT')
+                AND pg_catalog.has_table_privilege('microapp_runtime','public.products','SELECT')
+                AND pg_catalog.has_table_privilege('microapp_runtime','public.warehouses','SELECT')
+                AND pg_catalog.has_table_privilege('microapp_runtime','public.inventory_balances','SELECT')
+                AND NOT pg_catalog.has_table_privilege('microapp_runtime','public.inventory_balances','INSERT')
+                AND NOT pg_catalog.has_table_privilege('microapp_runtime','public.inventory_balances','UPDATE')
+                AND NOT pg_catalog.has_table_privilege('microapp_runtime','public.inventory_balances','DELETE')
+                AND NOT pg_catalog.has_table_privilege('microapp_runtime','public.inventory_balances','TRUNCATE')
+                AND pg_catalog.has_table_privilege('microapp_runtime','public.warehouse_inventory_movements','SELECT')
+                AND pg_catalog.has_table_privilege('microapp_runtime','public.warehouse_inventory_movements','INSERT')
+                AND NOT pg_catalog.has_table_privilege('microapp_runtime','public.warehouse_inventory_movements','UPDATE')
+                AND NOT pg_catalog.has_table_privilege('microapp_runtime','public.warehouse_inventory_movements','DELETE')
+                AND NOT pg_catalog.has_table_privilege('microapp_runtime','public.warehouse_inventory_movements','TRUNCATE')
+                AND NOT pg_catalog.has_table_privilege('microapp_runtime','public.warehouse_inventory_movements','TRIGGER')
+                AND pg_catalog.has_table_privilege('microapp_runtime','public.inventory_counts','SELECT')
+                AND pg_catalog.has_table_privilege('microapp_runtime','public.inventory_counts','INSERT')
+                AND NOT pg_catalog.has_table_privilege('microapp_runtime','public.inventory_counts','UPDATE')
+                AND pg_catalog.has_column_privilege('microapp_runtime','public.inventory_counts','status','UPDATE')
+                AND pg_catalog.has_column_privilege('microapp_runtime','public.inventory_counts','confirmed_by','UPDATE')
+                AND pg_catalog.has_column_privilege('microapp_runtime','public.inventory_counts','confirmed_at','UPDATE')
+                AND NOT pg_catalog.has_column_privilege('microapp_runtime','public.inventory_counts','reason','UPDATE')
+                AND pg_catalog.has_table_privilege('microapp_runtime','public.inventory_count_lines','SELECT')
+                AND pg_catalog.has_table_privilege('microapp_runtime','public.inventory_count_lines','INSERT')
+                AND NOT pg_catalog.has_table_privilege('microapp_runtime','public.inventory_count_lines','UPDATE')
+                AND NOT pg_catalog.has_table_privilege('microapp_runtime','public.inventory_count_lines','DELETE')
+                AND NOT pg_catalog.has_table_privilege('microapp_runtime','public.inventory_count_lines','TRUNCATE')
+                AND pg_catalog.has_table_privilege('microapp_runtime','public.audit_logs','INSERT')
+                AND NOT pg_catalog.has_table_privilege('microapp_runtime','public.audit_logs','SELECT')
+                AND NOT pg_catalog.has_table_privilege('microapp_runtime','public.audit_logs','UPDATE')
+                AND NOT pg_catalog.has_table_privilege('microapp_runtime','public.audit_logs','DELETE')
+                AND NOT pg_catalog.has_table_privilege('microapp_runtime','public.audit_logs','TRUNCATE')
+                AND NOT pg_catalog.has_table_privilege('microapp_runtime','public.audit_logs','TRIGGER')
             ")"
             if [[ "$role_checks" != "t|t|t|t|t|t" ]]; then
               echo "NEON_MAIN_ROLE_OR_LEAST_PRIVILEGE_CHECK_FAILED" >&2
@@ -246,12 +277,12 @@ jobs:
             for file in apps/api/migrations/[0-9][0-9][0-9][0-9]_*.assertions.sql; do
               [[ -f "$file" ]] || continue
               version="$(basename "$file" | cut -c1-4)"
-              if (( 10#$version >= 22 )); then
+              if (( 10#$version >= 19 )); then
                 assertion_files+=("$file")
               fi
             done
 
-            for required in 0022 0023 0024; do
+            for required in 0019 0022 0023 0024; do
               found=false
               for file in "${assertion_files[@]}"; do
                 [[ "$(basename "$file" | cut -c1-4)" == "$required" ]] && found=true
@@ -272,7 +303,7 @@ jobs:
             done
 
             {
-              echo "- Assertions: all rollback-safe migration assertions from 0022 onward passed."
+              echo "- Assertions: all rollback-safe migration assertions from 0019 onward passed."
               echo "- Migration runner: `scripts/db/migrate.sh` completed; no baseline adoption was invoked."
             } >> "$GITHUB_STEP_SUMMARY"
           else

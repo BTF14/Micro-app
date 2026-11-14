@@ -66,6 +66,8 @@ describe("inventory read route guards", () => {
     expect(query.statement.indexOf("WHEN p.barcode = $4")).toBeLessThan(query.statement.indexOf("WHEN lower(p.sku) = lower($4)"));
     expect(query.statement).toContain("lower(p.name) ASC, p.id ASC");
     expect(query.statement).toContain("p.barcode ILIKE $5");
-    expect(query.values).toEqual([organizationId, branchId, warehouseId, "750123", "%750123%", 31]);
+    expect(query.statement).toContain("p.barcode ILIKE $6");
+    expect(query.statement).toContain("LIMIT $7");
+    expect(query.values).toEqual([organizationId, branchId, warehouseId, "750123", "%750123%", "750123%", 31]);
   });
 });

@@ -109,8 +109,13 @@ async function navigateByKeyboard(page: import("@playwright/test").Page, name: s
     await page.keyboard.press("Enter");
   }
   await expect(toggle).toHaveAttribute("aria-expanded", "true");
+  const tabStops = page.locator("#primary-navigation a[href], #primary-navigation button:not([disabled])");
+  const targetIndex = await tabStops.evaluateAll((elements, target) =>
+    elements.findIndex((element) => (element.textContent ?? "").includes(target as string)), name);
+  expect(targetIndex, `Keyboard navigation target not found: ${name}`).toBeGreaterThanOrEqual(0);
+  for (let index = 0; index <= targetIndex; index += 1) await page.keyboard.press("Tab");
   const navigation = page.getByRole("button", { name, exact: true });
-  await navigation.focus();
+  await expect(navigation).toBeFocused();
   await page.keyboard.press("Enter");
 }
 
@@ -159,8 +164,10 @@ test("real catalog → inventory receipt → register → USD/VES POS → close 
   const googleLink = loginPage.getByRole("link", { name: "Continuar con Google" });
   await expect(googleLink).toBeVisible();
   await expect(googleLink).toHaveAttribute("href", /\/auth\/google$/);
-  await googleLink.focus();
+  await loginPage.keyboard.press("Tab");
   await expect(googleLink).toBeFocused();
+  const focusOutline = await googleLink.evaluate((element) => getComputedStyle(element).outlineStyle);
+  expect(focusOutline).not.toBe("none");
   const faqTrigger = loginPage.getByRole("button", { name: "Preguntas frecuentes" });
   await faqTrigger.focus();
   await loginPage.keyboard.press("Enter");

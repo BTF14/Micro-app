@@ -14,7 +14,7 @@
 - Se amplió la suite full-stack para probar el rechazo real por stock insuficiente con dos sesiones de navegador, respuesta API 409, alerta accesible y comparación antes/después del balance y ledger en PostgreSQL efímero.
 - Se añadió el proyecto Playwright móvil de 390×844, comprobaciones de desbordamiento horizontal, navegación por teclado en login/módulos/checkout y manejo de foco del diálogo.
 - La búsqueda de código identificó diez llamadas `console.*` en tres archivos productivos de `apps/api/src`; sus argumentos actuales son códigos/eventos allowlisted y metadatos acotados, no tokens, secretos, cookies, payloads externos ni IPs crudas. Se añadió una prueba estática deny-by-default. La ejecución CI de esta nueva cobertura está pendiente; no se declara validada todavía.
-- El HEAD actual de esta rama es `6cab2434b49a849c2cafb76fdf6ffc983b4c78d4`. No se ha creado ni fusionado una PR para esta rama todavía.
+- El HEAD actual de esta rama es `2197cb47ee2a1654ccd27a86d65bc90737bef3ec`. PR #367 está OPEN; la validación CI del nuevo HEAD está pendiente.
 
 ### Límites de producción
 - La E2E ya integrada valida en CI el flujo comercial real sobre Hono y PostgreSQL 18 efímero: alta/lectura, recepción, ventas USD/VES, recibos, balance persistido, cierre de turno y rechazo por turno cerrado. No demuestra producción real.

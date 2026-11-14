@@ -71,6 +71,7 @@ function integrationIp(): string {
 async function apiRequest(path: string, init: RequestInit = {}, token?: string): Promise<Response> {
   const headers = new Headers(init.headers);
   if (token) headers.set("Cookie", `microapp_session=${token}`);
+  if (!headers.has("CF-Connecting-IP")) headers.set("CF-Connecting-IP", integrationIp());
   return app.fetch(new Request("https://api.example" + path, { ...init, headers }), {
     ...oauthEnv,
     DATABASE_URL: runtimeUrl,

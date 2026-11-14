@@ -115,7 +115,7 @@ describe("product form", () => {
     expect(field("Precio USD").getAttribute("placeholder")).toBe("0.00");
     expect(field("Costo USD").getAttribute("placeholder")).toBe("0.00");
     expect(field("Stock mínimo").getAttribute("placeholder")).toBe("0");
-    await act(async () => { root.render(<ProductForm organizationId="org-1" product={{
+    await act(async () => { root.render(<ProductForm key="editing" organizationId="org-1" product={{
       id:"p1",sku:"SKU",barcode:null,name:"Producto",description:null,unit:"unidad",cost_usd:"10.0000",price_usd:"23.8500",is_active:true,
     }} onCancel={vi.fn()} onSaved={vi.fn()} />); });
     expect(field("Precio USD").value).toBe("23.85");

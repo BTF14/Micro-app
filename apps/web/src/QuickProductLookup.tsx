@@ -341,7 +341,7 @@ export default function QuickProductLookup({
 
       {error && <p className="catalog-error" role="alert">{error}</p>}
       {!branchesLoaded && <p className="quick-lookup-status" role="status">Cargando sucursales…</p>}
-      {branchesLoaded && branches.length === 0 && !error && (
+      {!lockedBranchId && branchesLoaded && branches.length === 0 && !error && (
         <div className="catalog-empty">
           <strong>No tienes sucursales asignadas.</strong>
           <span>Solicita acceso a una sucursal para consultar productos.</span>
@@ -427,7 +427,7 @@ export default function QuickProductLookup({
                 </div>
                 {onSelect && (
                   <button type="button" className="catalog-edit" onClick={() => onSelect(item)}>
-                    Seleccionar
+                    {selectLabel}
                   </button>
                 )}
               </article>

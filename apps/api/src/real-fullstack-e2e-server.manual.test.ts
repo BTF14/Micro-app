@@ -72,6 +72,25 @@ async function seedRealDatabase(): Promise<{ fixture: TestFixture; runtimeUrl: s
     await assertDirectLogin(admin, "microapp", true);
     await assertDirectLogin(runtime, "microapp_runtime");
     await assertDirectLogin(bcvSync, "microapp_bcv_sync");
+    const serverVersion = await admin.query<{ version: string }>(
+      "SELECT current_setting('server_version_num') AS version",
+    );
+    if (!serverVersion.rows[0]?.version.startsWith("18")) {
+      throw new Error("E2E_REQUIRES_POSTGRESQL_18");
+    }
+
+    let runtimeBcvWriteDenied = false;
+    await runtime.query("BEGIN");
+    try {
+      await runtime.query(
+        "UPDATE public.bcv_sync_state SET last_error_code = 'runtime-role-must-not-write' WHERE singleton = true",
+      );
+    } catch (error) {
+      runtimeBcvWriteDenied = (error as { code?: string }).code === "42501";
+    } finally {
+      await runtime.query("ROLLBACK");
+    }
+    if (!runtimeBcvWriteDenied) throw new Error("E2E_RUNTIME_ROLE_HAS_BCV_WRITE_PRIVILEGE");
 
     const suffix = randomUUID().replace(/-/g, "").slice(0, 12);
     const ownerEmail = `owner-${suffix}@example.invalid`;

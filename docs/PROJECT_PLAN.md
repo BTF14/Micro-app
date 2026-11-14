@@ -1114,7 +1114,7 @@ El panel distingue el avance de implementación del porcentaje de preparación p
 
 ### Código, pruebas y automatización
 - [CI](../.github/workflows/ci.yml)
-- [Validación de migraciones](../.github/workflows/database-migration-validation.yml)
+- [Validación de migraciones](../.github/workflows/migration-check.yml)
 - [Escaneo de seguridad](../.github/workflows/security-scan.yml)
 - [Semgrep](../.github/workflows/semgrep.yml)
 - [Playwright E2E](../.github/workflows/playwright-e2e.yml)
@@ -1455,7 +1455,7 @@ PR [#9](https://github.com/BTF14/Micro-app/pull/9) está fusionado en `main` med
 
 **Gate:** no cambiar el contrato bootstrap ni secretos. Esta corrección de configuración no certifica el flujo OAuth completo ni la preparación comercial.
 
-**Siguiente fase de producto (bloqueada por diseño/aprobación):** cerrar ownership de catálogo/precios, inventario por sucursal, compras/recepciones, caja/turnos, devoluciones y matriz de permisos organización/sucursal. Mantener stack React/Vite/TypeScript + Workers/Hono + Neon/Drizzle; no reescribir ni introducir microservicios sin medición. Capacidad por organización/sucursal: no determinada hasta pruebas sintéticas y auditoría de cuotas Neon/Cloudflare.
+**Siguiente fase de producto (bloqueada por diseño/aprobación):** cerrar ownership de catálogo/precios, inventario por sucursal, compras/recepciones, caja/turnos, devoluciones y matriz de permisos organización/sucursal. Mantener stack React/Vite/TypeScript + Workers/Hono + @neondatabase/serverless y migraciones SQL versionadas; no reescribir ni introducir microservicios sin medición. Capacidad por organización/sucursal: no determinada hasta pruebas sintéticas y auditoría de cuotas Neon/Cloudflare.
 
 
 ## Actualización del plan — reconciliación posterior a PR #155 (2026-10-29)
@@ -1474,7 +1474,7 @@ PR [#9](https://github.com/BTF14/Micro-app/pull/9) está fusionado en `main` med
 6. [ ] Medir límites de Neon y Cloudflare con cuotas/consumo actual y pruebas sintéticas; no prometer número de empresas/locales sin datos.
 7. [ ] Solo después de los gates anteriores implementar productos/proveedores, inventario y luego POS/ventas/caja en PRs coherentes y acotadas.
 
-**Arquitectura elegida:** conservar React/Vite/TypeScript, Cloudflare Pages, Workers/Hono, Neon PostgreSQL y Drizzle. No reescritura, microservicios, Redis ni servicios de pago anticipados sin evidencia medible. Presupuesto objetivo $0.
+**Arquitectura elegida:** conservar React/Vite/TypeScript, Cloudflare Pages, Workers/Hono, Neon PostgreSQL, @neondatabase/serverless y migraciones SQL versionadas. No reescritura, microservicios, Redis ni servicios de pago anticipados sin evidencia medible. Presupuesto objetivo $0.
 
 **Estado de salida:** producción NO lista. No tocar Neon main, secretos, datos reales ni producción; no aplicar migraciones sin diseño y autorización.
 

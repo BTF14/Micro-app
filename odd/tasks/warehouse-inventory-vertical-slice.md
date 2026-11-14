@@ -64,7 +64,7 @@ Excluded:
 
 ## Technical decisions
 
-- Inventory mutations must lock tenant identity, branch scopes, warehouses, document, then balances in deterministic order. See [Inventory transaction locking contract](../architecture/INVENTORY_TRANSACTION_LOCKING.md).
+- Inventory mutations must lock tenant identity, branch scopes, warehouses, document, then balances in deterministic order. See [Inventory transaction locking contract](../../docs/architecture/INVENTORY_TRANSACTION_LOCKING.md).
 - The warehouse row is the mutex that also serializes creation of missing balance rows; balance row locks alone cannot lock a row that does not exist.
 - Count confirmation is the only inventory writer currently exposed. Future sales, reservations, receipts, returns and transfers must adopt the same contract and prove cross-writer concurrency before implementation is approved.
 - `docs/sdd/PURCHASE_RECEIPT_MODEL.md` from the source branch remains a proposal with unresolved commercial decisions; it is not included as approved implementation scope.

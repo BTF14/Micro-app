@@ -1,155 +1,139 @@
-> **Checkpoint 2026-11-08 UTC:** PR #280 y PR #281 están integradas. Último main verificado antes de este checkpoint: `e6f0c6021d82cfffce12f4c1d5283f657dc74c64` (merge SHA PR #281); consultar GitHub para la punta viva. PR #281 post-merge: 9/9 workflows y 11/11 check-runs SUCCESS. Neon rehearsal #42507066215 verificó 0001–0019 únicamente en `microapp_rehearsal`; Neon main no fue modificado. **Producción continúa NOT READY.** Estado operativo: [CURRENT_STATE](docs/CURRENT_STATE.md) y [HANDOFF](docs/HANDOFF_NEXT_CHAT.md).
-
 # Micro app
 
-**Micro app** es un proyecto independiente de punto de venta (POS) e inventario para comercios, pensado para PC, tablet y móvil. Su objetivo es ofrecer un flujo fiable para catálogo, existencias, ventas, pagos, caja y trazabilidad, con precios base en USD y equivalentes en VES calculados a partir de una tasa BCV validada.
+Sistema **POS e inventario multi-sucursal** independiente para comercios en Venezuela, con precios base en **USD** y liquidación trazable en **VES** mediante la tasa oficial del BCV. Diseñado para escritorio, tablet y móvil bajo una arquitectura de **monolito modular** en el borde (Cloudflare) y consistencia transaccional en PostgreSQL (Neon).
 
-> **Estado al 8 de noviembre de 2026:** main incluye autenticación, catálogo, contexto tenant/sucursal, autorización por operación e inventario por almacén/ledger hasta las migraciones 0001–0016. El checkout/ledger consolidado (migraciones 0017–0019) permanece en PR #269 Draft; BCV, checkout y ledger tienen PRs abiertas aún no integradas. El ensayo aislado de Neon #42507066215 aplicó 0001–0019 correctamente en `microapp_rehearsal`; **Neon main no se modificó**. El producto continúa **NOT READY** para operación comercial o datos reales.
+> **Estado técnico:** el núcleo funcional está integrado en `main`: autenticación Google OAuth same-origin, administración de sucursales/almacenes/cajas, catálogo, inventario con ledger y conteos/recepciones, turnos de caja, sincronización BCV aislada y checkout POS en USD o VES.
+>
+> **Estado comercial:** **`PRODUCTION: NOT READY`**. No habilitar operación comercial ni datos reales. El lanzamiento permanece bloqueado hasta cerrar los gates del Issue `#53`: smoke autenticado en staging con Brave Shields activado, RPO/RTO operativos medidos y aceptados, entrega y ACK de alertas de extremo a extremo, validación legal/fiscal/contable y verificación continua del coste total `$0`. Consulta [CURRENT_STATE.md](docs/CURRENT_STATE.md) y [PRODUCTION_READINESS.md](docs/PRODUCTION_READINESS.md).
 
-- **Estado técnico vigente:** [CURRENT_STATE.md](docs/CURRENT_STATE.md) y [handoff de continuidad](docs/HANDOFF_NEXT_CHAT.md).
-- **Plan maestro y prioridades:** [PROJECT_PLAN.md](docs/PROJECT_PLAN.md).
-- **Criterios de preparación para producción:** [PRODUCTION_READINESS.md](docs/PRODUCTION_READINESS.md).
-- **Hoja de ruta de seguridad:** [SECURITY_ROADMAP.md](docs/SECURITY_ROADMAP.md).
-- **Respaldo y recuperación:** [BACKUP_AND_RECOVERY.md](docs/BACKUP_AND_RECOVERY.md).
-- **Diario de verificaciones y decisiones:** [STATE_JOURNAL.md](docs/STATE_JOURNAL.md).
+---
 
-La documentación de estado puede contener notas históricas. Para tomar decisiones, contrasta el checkpoint más reciente con el código, el SHA actual de `main`, las PR y los resultados de GitHub Actions. Un test de CI no demuestra por sí solo que el producto esté desplegado ni preparado para producción.
+## Arquitectura del monorepo
 
-## Qué se está construyendo
-
-El alcance del producto incluye:
-
-- Catálogo de productos, SKU y códigos de barras.
-- Proveedores, compras, entradas y ajustes de inventario.
-- Ventas, líneas de venta, pagos, cambio, recibos y devoluciones.
-- Apertura/cierre de caja, reportes y auditoría.
-- Usuarios, roles y separación segura de datos por comercio u organización.
-- Precios base en USD y equivalentes en VES mediante una tasa validada, con trazabilidad de la tasa y de los importes aplicados a cada operación.
-- Interfaz responsive y accesible para uso diario en comercios.
-
-**Este listado describe el alcance previsto, no afirma que todos los módulos estén terminados.** Consulta los documentos de estado y los criterios de aceptación para distinguir lo implementado, lo probado y lo pendiente.
-
-La dirección de producto aprobada es una plataforma SaaS multi-organización, multi-sucursal y multiusuario. Main incluye migraciones 0001–0016: branches/branch_memberships, registers/register_shifts, warehouses, inventory_balances, movimientos/Kardex, conteos, locks y grants runtime. `resolveBranchContext` está conectado mediante `authorizeBranchOperation` a las rutas de lectura y conteo de inventario; catálogo usa contexto tenant y permisos por operación. La matriz de roles fue aprobada el 2026-10-31. No están integrados todavía checkout/pagos, transferencias de inventario en dos etapas ni rutas operativas de caja/turnos. **Neon main no ha recibido las migraciones 0003–0016** y sigue en el esquema heredado; la rama `microapp_rehearsal` sí recibió 0001–0019 mediante el runner protegido y no debe confundirse con main.
-
-## Estado actual: qué significa en la práctica
-
-### Base técnica y mantenimiento
-
-- Frontend con React, Vite y TypeScript.
-- API con Hono y Cloudflare Workers.
-- PostgreSQL como base de datos objetivo, con Drizzle ORM y migraciones SQL versionadas.
-- Pruebas con Vitest y automatización de navegador con Playwright/Chromium en CI.
-- GitHub Actions para validaciones, análisis estático y controles de seguridad.
-- Workflow sintético de backup cifrado/restauración ejecutado en PostgreSQL 18; demuestra una ruta técnica aislada, no backup productivo independiente ni recuperación integral con datos comerciales poblados. RPO/RTO, alertas y coste siguen pendientes.
-- Dependency Review, Secret History, Semgrep y Trivy se ejecutan en CI/PR; PR #141 integró mantenimiento de dependencias. Estos controles no equivalen a monitorización runtime ni a readiness productiva.
-
-La existencia de archivos de configuración, workflows o migraciones no equivale a que toda la funcionalidad de negocio esté completa.
-
-### Bloqueos importantes antes de uso comercial
-
-1. **Identidad y acceso:** Google OAuth, allowlist, state/PKCE, sesión revocable y validación de `email_verified` están implementados en la API según el estado documentado tras PR #153 y #155. Siguen pendientes recuperación de cuenta, MFA y gestión/limpieza completa de sesiones; además, la autenticación no sustituye la autorización por operación.
-2. **Aislamiento multiempresa:** probar autorización en el servidor y acceso cruzado entre organizaciones en todas las rutas y recursos pertinentes.
-3. **Operaciones de negocio:** demostrar con PostgreSQL de prueba los flujos completos de inventario y venta, incluyendo transacciones, idempotencia y concurrencia.
-4. **Tasa BCV y dinero:** validar origen, vigencia y errores de la tasa; preservar snapshots históricos y usar cálculos decimales seguros.
-5. **Recuperación:** probar la restauración con datos sintéticos poblados y relaciones entre ventas, productos, pagos, movimientos y auditoría; definir y verificar objetivos de recuperación.
-6. **Salida a producción:** completar pruebas E2E contra API y base de datos reales de prueba, revisar errores/limitación de abuso, requisitos fiscales venezolanos y hardware de punto de venta.
-
-No habilitar operación comercial ni datos reales hasta cerrar los bloqueos aplicables con evidencia verificable. La lista completa y su estado viven en [preparación para producción](docs/PRODUCTION_READINESS.md) y [hoja de ruta de seguridad](docs/SECURITY_ROADMAP.md).
-
-## Arquitectura
-
-La dirección arquitectónica actual es un **monolito modular**, no una colección de microservicios:
+El sistema separa interfaz estática, proxy same-origin, API de negocio, Cron de tasa BCV y librería monetaria compartida, sin introducir microservicios ni dependencias de ORM:
 
 ```text
-apps/
-  web/   React + Vite + TypeScript
-  api/   Hono + Cloudflare Workers
-                 |
-                 v
-          PostgreSQL (Neon)
-          Drizzle ORM + SQL migrations
+Navegador (React 19 + Vite 7 + TypeScript)
+   │ same-origin (/api/*; cookies first-party; OAuth PKCE)
+   ▼
+Cloudflare Pages + Pages Functions (functions/api/[[path]].ts)
+   │ Service Binding API: solo producción; previews aisladas → 503
+   ▼
+Cloudflare Worker API (apps/api — Hono + TypeScript)
+   │ @neondatabase/serverless (SQL parametrizado + transacciones explícitas)
+   ├─────────────────────────────────────────────┐
+   ▼                                             ▼
+PostgreSQL 18 (Neon)                    Worker Cron BCV aislado
+Migraciones SQL 0001–0025               (apps/api/wrangler.bcv.toml)
+Roles: migrator / runtime /             Rol dedicado microapp_bcv_sync
+       bcv_sync / backup                L–V, 22:00 UTC (solo producción)
+
+packages/money → aritmética decimal exacta con bigint, compartida entre Web y API
 ```
 
-- **Frontend:** aplicación web estática con React/Vite/TypeScript.
-- **API:** Hono sobre Cloudflare Workers; main registra auth/Google, catálogo read/write, lectura de inventario y conteos. No registra todavía checkout/pagos ni transferencias. BCV latest/history está en #255, aún Draft.
-- **Persistencia:** PostgreSQL/Neon como destino arquitectónico y Drizzle/SQL versionados. No se debe asumir que las migraciones del repositorio ya estén aplicadas a Neon `main`.
-- **Automatización:** GitHub Actions para build, pruebas y análisis.
-- **Tasa y precios:** la base de datos debe conservar la tasa y los importes aplicados a una venta; cualquier caché es una optimización, no la fuente de verdad de una transacción.
+### Estructura del repositorio
 
-La arquitectura objetivo contempla Cloudflare Pages, Cloudflare Workers y Neon PostgreSQL. Main incluye modelo multi-sucursal y stock por almacén/Kardex; el código de lectura y conteo aplica contexto tenant/sucursal y roles aprobados. La cobertura comercial sigue parcial: no hay checkout/pagos ni transferencias en dos etapas; los helpers de turnos no están montados como rutas. Neon main no tiene aplicadas las migraciones 0003–0016 y no puede considerarse listo para el código actual. La base aislada `microapp_rehearsal` ya tiene 0001–0019 aplicadas en el rehearsal exitoso; esto no autoriza producción. El coste objetivo es **$0**: no activar planes pagos, facturación, tarjetas ni cargos automáticos sin autorización explícita. Los niveles gratuitos pueden cambiar y no garantizan capacidad ilimitada ni disponibilidad comercial.
+| Ruta | Responsabilidad |
+|---|---|
+| `apps/web/` | SPA en React 19, Vite 7 y TypeScript. Vistas de Resumen, Productos, Inventario, Consultar precio, Caja y turnos, Ventas POS y Estructura organizacional. |
+| `functions/api/[[path]].ts` | Proxy same-origin de Cloudflare Pages Functions hacia el Worker mediante Service Binding `API`; conserva `CF-Connecting-IP`, reescribe el `Path` de cookies PKCE y bloquea previews con `503`. |
+| `apps/api/` | API HTTP en Hono sobre Cloudflare Workers; migraciones SQL `0001–0025` y aserciones rollback-safe. Incluye `wrangler.toml` (API + limpieza horaria de metadatos de autenticación) y `wrangler.bcv.toml` (Worker Cron BCV aislado). |
+| `packages/money/` | Librería compartida `@micro-app/money` con aritmética decimal fija sobre `bigint`; evita punto flotante binario para dinero y cantidades. |
+| `scripts/` | Runner fail-closed de migraciones (`scripts/db/migrate.sh`), adopción de baseline, verificación/restauración cifrada con `age`, auditoría de privilegios PostgreSQL y pruebas de contrato. |
+| `docs/` y `odd/` | Constitución operativa, ADRs (`docs/decisions/`), especificaciones de dominio (`docs/sdd/`), continuidad, runbooks de DR/Neon y tareas ODD. |
 
-## Reglas de ingeniería que no se deben romper
+---
 
-- **Proyecto independiente:** no mezclar código, bases de datos, secretos, despliegues ni datos con `Cantina-pos` u otros proyectos.
-- **USD como moneda base:** los equivalentes en VES deben vincularse a una tasa validada y registrada.
-- **PostgreSQL como fuente de verdad:** la interfaz, la memoria del navegador y los mocks no sustituyen la persistencia autoritativa.
-- **Integridad de ventas e inventario:** las operaciones críticas deben ser transaccionales, idempotentes y seguras ante concurrencia; no permitir stock negativo por carreras.
-- **Trazabilidad:** conservar movimientos de inventario, usuario responsable, auditoría y snapshots de precios, moneda, tasa e importes de cada venta.
-- **Tasa segura:** registrar fuente, fecha efectiva, hora de consulta y estado; ante fallo, conservar la última tasa válida y marcarla como desactualizada. Nunca aceptar datos inválidos como tasa vigente.
-- **Seguridad por servidor:** la autenticación no sustituye autorización; cada operación debe verificar permisos y pertenencia al tenant.
-- **Dependencias:** actualizar con revisión de compatibilidad, lockfile y pruebas; no confundir la última versión publicada con una actualización validada para este proyecto.
-- **Evidencia antes de declarar terminado:** diferenciar entre código escrito, pruebas automatizadas, integración real y comportamiento desplegado.
+## Capacidades integradas y matriz de acceso
 
-Las reglas completas están en [AGENTS.md](AGENTS.md), [Constitución del proyecto](docs/CONSTITUTION.md) y [política de colaboración y PR](docs/AI_COLLABORATION_AND_PR_POLICY.md).
+La autorización es **server-side**: cada operación valida tenant, sucursal, permiso y pertenencia aplicable. La visibilidad de la interfaz no sustituye las comprobaciones de API y PostgreSQL.
+
+| Módulo | Capacidades implementadas en `main` | Acceso en UI |
+|---|---|---|
+| **Identidad y sesión** | Google OAuth con PKCE/state, allowlist, `email_verified` y sesiones revocables same-origin (`HttpOnly`, `SameSite=Lax`). Registro y login por contraseña bloqueados fail-closed. | Según `auth_allowlist` y membresía activa. |
+| **Resumen y BCV** | Tasa, fuente/fecha y estado de sincronización (`inserted` / `unchanged` / `failed`); refresco de lectura. Sin edición manual de tasa. | Resumen: todos. Panel operativo BCV: `owner` y `admin`. |
+| **Productos (catálogo)** | Listado y búsqueda por nombre/SKU/código de barras; precios base USD y equivalente VES; creación y edición. | Lectura: todos. Escritura: `owner`, `admin`. |
+| **Inventario** | Existencias y movimientos Kardex por sucursal/almacén, recepción de mercancía y conteos físicos con confirmación atómica sobre el ledger. | Lectura: todos. Recepciones/conteos: `owner`, `admin`, `inventory`. |
+| **Consultar precio** | Búsqueda rápida de mostrador con precio USD/VES y disponibilidad por sucursal/almacén. | `owner`, `admin`, `inventory`, `cashier`. |
+| **Caja y turnos** | Selección de sucursal/caja, apertura y cierre del turno propio, saldos inicial/esperado/contado y validación de pertenencia. | `owner`, `admin`, `cashier`; operaciones limitadas al turno propio. |
+| **Ventas (POS)** | Carrito con cantidades fraccionarias (`scale 3`), validación de existencias por almacén, total USD y equivalente VES según BCV vigente, clave de idempotencia y recibo. Admite hasta 10 líneas de pago en **una sola moneda de liquidación** (USD o VES). | `owner`, `admin`, `cashier`; requiere turno propio abierto. |
+| **Estructura organizacional** | Administración de sucursales, almacenes, cajas registradoras y asignaciones de miembros a sucursales. | Exclusivo `owner`. |
+
+**Importante sobre pagos:** una venta puede dividirse entre varios medios de pago, pero todas las líneas deben usar la misma moneda de liquidación (USD o VES). No se admite mezclar líneas USD y VES dentro de una misma venta.
+
+---
+
+## Garantías de ingeniería, datos y seguridad
+
+- **USD como moneda base y aritmética exacta:** importes/cantidades usan `bigint` en `@micro-app/money` y `NUMERIC` en PostgreSQL; no se usa `number` IEEE-754 para cálculos financieros.
+- **Tasa BCV fail-closed:** la sincronización corre en un Worker aislado (`micro-app-bcv-sync`) con rol `microapp_bcv_sync` y credencial `DATABASE_URL_BCV_SYNC`. El checkout valida el último intento exitoso (`inserted`/`unchanged`) y la fecha efectiva vigente en zona horaria Caracas; usa `FOR SHARE` y defensa SQL diferida en la migración `0021`. Un fallo de fuente no reemplaza una tasa válida.
+- **Integridad de ventas e inventario:** `POST /api/orgs/:organizationId/branches/:branchId/checkout` ejecuta locks determinísticos por organización/sucursal/almacén/producto, exige turno abierto, aplica `Idempotency-Key` y proyecta saldos desde el ledger mediante triggers SQL protegidos (`0019`).
+- **Mínimo privilegio en PostgreSQL:** separación de roles `microapp_migrator`, `microapp_runtime`, `microapp_bcv_sync` y `microapp_backup`; sin `SUPERUSER`, sin membresías salientes y con contratos SQL automatizados en CI.
+- **Aislamiento de previews:** Pages Preview y los entornos `workers.dev` de preview no tienen acceso a la API operativa ni a datos de aplicación; responden `503` fail-closed. El post-build bloquea referencias directas a `*.workers.dev` en el bundle.
+- **Presupuesto objetivo `$0`:** no activar planes de pago, add-ons ni cargos automáticos sin autorización explícita. La verificación del coste recurrente total y de las cuotas vigentes sigue siendo un gate de producción; los planes gratuitos no garantizan capacidad ilimitada.
+
+---
 
 ## Empezar a trabajar en local
 
 ### Requisitos
 
-- Node.js `24.22.2`, fijado en `.node-version` y compatible con el rango `>=24.22.2 <25` de `package.json`.
-- pnpm `10.34.9`, fijado mediante `packageManager` en el `package.json` raíz; Corepack debe respetar esa versión.
-- Acceso y configuración de variables de entorno para los servicios que se quieran ejecutar. No copies secretos al repositorio ni uses la base de datos principal para pruebas.
+- **Node.js `24.22.2`** (fijado en `.node-version`; rango `>=24.22.2 <25` en `package.json`).
+- **pnpm `10.34.9`** (fijado mediante `packageManager`; habilitar con `corepack enable`).
+- **PostgreSQL 18** local/desechable solo para runner de migraciones y pruebas de integración SQL.
+- Git.
+
+**Nunca apuntar el entorno local a Neon `main` ni usar datos reales.**
 
 ### Instalación y comandos
 
-Desde la raíz del repositorio:
-
 ```bash
+corepack enable
 pnpm install --frozen-lockfile
 ```
 
-Scripts disponibles en el `package.json` raíz:
+Configura `apps/web/.env.local` tomando como base `apps/web/.env.example` (`VITE_API_BASE_URL=http://localhost:8787`) y las variables locales de Wrangler en `apps/api/.dev.vars` (no versionadas).
 
 ```bash
-pnpm dev:web   # servidor de desarrollo del frontend
-pnpm dev:api   # servidor de desarrollo de la API
-pnpm build     # build del frontend y typecheck de la API
-pnpm test      # pruebas del frontend y API, más typecheck de la API
+pnpm dev:web   # Vite en http://localhost:5173
+pnpm dev:api   # Wrangler dev en http://localhost:8787
+pnpm build     # Build frontend, validación CSP/bundle y typecheck API
+pnpm test      # Tests unitarios web/API y typecheck API
 ```
 
-Los comandos requieren las variables y servicios que cada aplicación necesite. Consulta la configuración de `apps/web` y `apps/api` y los documentos de integración antes de conectar servicios externos. Las pruebas locales no deben apuntar a producción ni a datos reales.
+Para variables, pruebas PostgreSQL y Playwright E2E, consulta [Desarrollo local](docs/LOCAL_DEVELOPMENT.md).
 
-## Calidad, seguridad y operación
+---
 
-- [Workflow de vigilancia diaria de dependencias](.github/workflows/daily-dependency-watch.yml): informe de dependencias y auditoría; es de solo lectura y no actualiza paquetes automáticamente.
-- [Workflow de backup](.github/workflows/backup.yml): respaldo cifrado y política de retención descritos en [BACKUP_AND_RECOVERY.md](docs/BACKUP_AND_RECOVERY.md).
-- [Checklist OWASP ASVS](docs/OWASP_ASVS_CHECKLIST.md).
-- [Matriz de requisitos POS](docs/POS_REFERENCE_MATRIX.md).
-- [Flujo Organic Driven Development (ODD)](docs/ODD_WORKFLOW.md) y [modelo operativo de agentes](docs/AGENT_OPERATING_MODEL.md).
+## CI, seguridad y recuperación ante desastres
 
-Los workflows y sus resultados deben revisarse en GitHub para el SHA exacto que se evalúa. Un workflow configurado no prueba que se haya ejecutado correctamente, y los tests con mocks no demuestran integración real con la base de datos.
+Los cambios se verifican mediante workflows dedicados en `.github/workflows/`. Entre los principales:
 
-## Desarrollo asistido por IA y continuidad
+| Área | Workflows | Propósito |
+|---|---|---|
+| **Calidad e integración** | [CI](.github/workflows/ci.yml), [Playwright E2E](.github/workflows/playwright-e2e.yml) | Build, post-build, unit tests, suites PostgreSQL 18 con roles mínimos, lifecycle de cajero y smoke E2E Chromium. |
+| **Base de datos y Neon** | [Migration check](.github/workflows/migration-check.yml), [Migration runner](.github/workflows/migration-runner.yml), [Neon main migrations](.github/workflows/neon-main-migrations.yml) | Validación limpia `0001–0025`, aserciones de permisos/ownership, runner idempotente con checksums SHA-256 y despacho protegido para Neon `main`. |
+| **Backup y DR** | [Backup](.github/workflows/backup.yml), [Restore real](.github/workflows/backup-real-restore.yml), [Restore smoke](.github/workflows/backup-restore-smoke.yml) | Respaldo cifrado con `age` + sidecar SHA-256, verificación de restauración aislada en PostgreSQL 18 y pruebas de contrato. |
+| **Seguridad y dependencias** | [Semgrep](.github/workflows/semgrep.yml), [Security scan](.github/workflows/security-scan.yml), [Secret history](.github/workflows/secret-history-scan.yml), [Dependency review](.github/workflows/dependency-review.yml), [Daily dependency watch](.github/workflows/daily-dependency-watch.yml) | SAST, Trivy, detección de secretos en historia Git y vigilancia diaria de solo lectura. |
 
-Este repositorio usa documentación explícita para reducir errores y preservar decisiones entre sesiones. Antes de hacer cambios, sigue la secuencia de arranque de [AGENTS.md](AGENTS.md), revisa el [handoff vigente](docs/HANDOFF_NEXT_CHAT.md) y confirma el estado real de GitHub.
+Los resultados deben revisarse en GitHub para el SHA exacto. Un workflow configurado no prueba que se haya ejecutado correctamente; CI tampoco demuestra por sí solo despliegue, readiness comercial o recuperación operativa.
 
-- [Constitución](docs/CONSTITUTION.md)
-- [Plan maestro](docs/PROJECT_PLAN.md)
-- [Diario de estado](docs/STATE_JOURNAL.md)
-- [Registro de herramientas y fuentes](docs/RESOURCE_REGISTRY.md)
-- [Protocolo de continuidad IA/chat](docs/AI_CONTINUITY_PROTOCOL.md)
-- [Plantillas SDD](templates/sdd/)
-- [Skill SDD para funcionalidades](skills/feature-sdd/SKILL.md)
+---
 
-Los archivos de perfiles y skills son instrucciones reutilizables; su presencia no significa que haya agentes autónomos o herramientas externas instaladas y activas.
+## Gobernanza, continuidad y documentación
+
+El repositorio sigue **Organic Driven Development (ODD)** con evidencia exacta por SHA para trabajo humano y asistido por IA.
+
+- **Normativa y flujo:** [AGENTS.md](AGENTS.md) · [CLAUDE.md](CLAUDE.md) · [Constitución](docs/CONSTITUTION.md) · [Flujo ODD](docs/ODD_WORKFLOW.md) · [Política de PRs](docs/AI_COLLABORATION_AND_PR_POLICY.md).
+- **Estado y continuidad:** [Estado actual](docs/CURRENT_STATE.md) · [Handoff vigente](docs/HANDOFF_NEXT_CHAT.md) · [Diario de estado](docs/STATE_JOURNAL.md) · [Plan maestro](docs/PROJECT_PLAN.md).
+- **Arquitectura y datos:** [Arquitectura y costo cero](docs/ARCHITECTURE_AND_ZERO_COST.md) · [Esquema de base de datos](docs/DATABASE_SCHEMA.md) · [Integración API](docs/API_INTEGRATION.md) · [Especificaciones de dominio](docs/sdd/) · [ADRs](docs/decisions/).
+- **Seguridad y operación:** [Guardrails de seguridad](docs/SECURITY.md) · [Hoja de ruta de seguridad](docs/SECURITY_ROADMAP.md) · [Preparación para producción](docs/PRODUCTION_READINESS.md) · [Checklist OWASP ASVS](docs/OWASP_ASVS_CHECKLIST.md) · [Backup y recuperación](docs/BACKUP_AND_RECOVERY.md) · [Runbook DR](docs/DISASTER_RECOVERY_RUNBOOK.md).
+- **Perfiles y skills versionados:** [Skills](.agents/skills/) · [Perfiles](.github/agents/). Son instrucciones reutilizables; su presencia no implica agentes autónomos activos.
+
+---
 
 ## Licencia y estado del producto
 
-El repositorio es privado. Revisa la configuración y los avisos de licencia de las dependencias antes de redistribuir cualquier componente.
+El repositorio está **público en GitHub**. Revisa los avisos de licencia de las dependencias antes de redistribuir cualquier componente.
 
-**No es una versión de producción ni una promesa de disponibilidad comercial.** El estado cambia con cada PR: usa los documentos de continuidad y las evidencias de GitHub como referencia, no solo la fecha de este README.
-
-
-## Arquitectura SaaS y capacidad
-
-No se promete un número máximo de empresas, sucursales, cajas o usuarios hasta completar pruebas de carga sintéticas y revisar conjuntamente cuotas de Neon, Cloudflare Workers, Pages, KV y transferencia. Las cuotas de un plan gratuito no equivalen a capacidad sostenible del producto. No fijar límites comerciales ni activar servicios de pago sin evidencia y autorización.
+**No es una versión aprobada para operación comercial ni una promesa de capacidad SaaS.** No se fijan límites comerciales de organizaciones, sucursales o cajas hasta completar pruebas de carga y auditar las cuotas gratuitas vigentes.

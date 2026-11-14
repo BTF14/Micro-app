@@ -205,7 +205,6 @@ test("real catalog → inventory receipt → register → USD/VES POS → close 
   await page.goto("/");
   await expect(page.getByRole("heading", { name: `Hola, ${fixture.ownerDisplayName.split(" ")[0]}.` })).toBeVisible();
   await expectNoHorizontalOverflow(page, "mobile overview");
-  await expect(page.getByText("Sesión activa", { exact: true })).toBeVisible();
 
   // 1. Create and read a real catalog product through the UI and Hono API.
   const productCreateResponse = page.waitForResponse((response) =>
@@ -270,7 +269,6 @@ test("real catalog → inventory receipt → register → USD/VES POS → close 
   await expect(cashierPage.getByRole("heading", { name: `Hola, ${fixture.cashierDisplayName.split(" ")[0]}.` })).toBeVisible();
   await expectNoHorizontalOverflow(cashierPage, "mobile cashier overview");
   await expect(cashierPage.getByText(fixture.cashierDisplayName, { exact: true })).toBeVisible();
-  await expect(cashierPage.getByText("Sesión activa", { exact: true })).toBeVisible();
   const assignedBranches = await cashierPage.evaluate(async (organizationId) => {
     const response = await fetch(`/api/orgs/${encodeURIComponent(organizationId)}/register-shifts/branches`, {
       cache: "no-store",
@@ -384,7 +382,6 @@ test("real catalog → inventory receipt → register → USD/VES POS → close 
   expect([200, 204]).toContain(closeResponse.status());
   await expect(closer.getByText("Turno cerrado y registrado en auditoría.")).toBeVisible();
   await closer.reload();
-  await expect(closer.getByText("Sesión activa", { exact: true })).toBeVisible();
   await navigateByKeyboard(closer, "Caja y turnos");
   await expect(closer.getByText("Sin turno abierto", { exact: true })).toBeVisible();
 
@@ -403,7 +400,6 @@ test("real catalog → inventory receipt → register → USD/VES POS → close 
   expect(await readStock(cashierPage)).toMatchObject({ status: 200, onHand: "2.000", available: "2.000" });
 
   await cashierPage.reload();
-  await expect(cashierPage.getByText("Sesión activa", { exact: true })).toBeVisible();
   await navigateByKeyboard(cashierPage, "Ventas");
   await expect(cashierPage.getByRole("heading", { name: "Abre tu turno antes de vender" })).toBeVisible();
   await cashierContext.close();

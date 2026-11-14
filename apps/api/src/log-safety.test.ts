@@ -1,9 +1,9 @@
 import { readFileSync, readdirSync, statSync } from "node:fs";
-import { join } from "node:path";
+import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 
-const sourceRoot = fileURLToPath(new URL(".", import.meta.url));
+const sourceRoot = dirname(fileURLToPath(import.meta.url));
 const approvedCalls = new Set([
   'console.error("Unhandled API error")',
   'console.error({ event: "BCV_SYNC_FAILED", code: "BCV_SYNC_DATABASE_URL_MISSING" })',

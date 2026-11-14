@@ -156,7 +156,29 @@ test("real catalog → inventory receipt → register → USD/VES POS → close 
   const cashierPage = await cashierContext.newPage();
   await cashierPage.goto("/");
   await expect(cashierPage.getByRole("heading", { name: `Hola, ${fixture.cashierDisplayName.split(" ")[0]}.` })).toBeVisible();
+  await expect(cashierPage.getByText(fixture.cashierDisplayName, { exact: true })).toBeVisible();
   await expect(cashierPage.getByText("Sesión activa", { exact: true })).toBeVisible();
+  const assignedBranches = await cashierPage.evaluate(async (organizationId) => {
+    const response = await fetch(`/api/orgs/${encodeURIComponent(organizationId)}/register-shifts/branches`, {
+      cache: "no-store",
+      credentials: "include",
+    });
+    return {
+      status: response.status,
+      body: await response.json() as { items?: Array<{ id: string; name: string }>; error?: string; message?: string },
+    };
+  }, fixture.organizationId);
+  expect(assignedBranches.status, JSON.stringify(assignedBranches.body)).toBe(200);
+  expect(assignedBranches.body.items?.some((branch) => branch.id === fixture.branchId)).toBe(true);
+  const currentShift = await cashierPage.evaluate(async (organizationId) => {
+    const response = await fetch(`/api/orgs/${encodeURIComponent(organizationId)}/register-shifts/current`, {
+      cache: "no-store",
+      credentials: "include",
+    });
+    return { status: response.status, body: await response.json() as { shift?: unknown; error?: string; message?: string } };
+  }, fixture.organizationId);
+  expect(currentShift.status, JSON.stringify(currentShift.body)).toBe(200);
+  expect(currentShift.body.shift).toBeNull();
 
   // 3. Open a real cashier shift on the seeded branch/register.
   await cashierPage.getByRole("button", { name: "Caja y turnos", exact: true }).click();

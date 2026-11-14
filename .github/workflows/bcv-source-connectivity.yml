@@ -27,5 +27,22 @@ jobs:
           version: 10.34.9
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
-      - name: Verify BCV HTTPS response and production parser (no Neon, no secrets)
+      - name: Verify pinned Sectigo DV R36 intermediate
+        shell: bash
+        run: |
+          set -euo pipefail
+          cert="apps/api/certs/sectigo-public-server-authentication-ca-dv-r36.crt"
+          test -s "$cert"
+          openssl x509 -in "$cert" -noout -checkend 0
+          fingerprint="$(openssl x509 -in "$cert" -noout -fingerprint -sha256 | sed 's/.*=//' | tr -d ':' | tr '[:lower:]' '[:upper:]')"
+          test "$fingerprint" = "8C54C334B66BA4E426772AF4A3F9136C19A1AEC729FDB28C535C07A5A4EF22E0"
+          subject="$(openssl x509 -in "$cert" -noout -subject -nameopt RFC2253 | sed 's/^subject=//')"
+          issuer="$(openssl x509 -in "$cert" -noout -issuer -nameopt RFC2253 | sed 's/^issuer=//')"
+          test "$subject" = "CN=Sectigo Public Server Authentication CA DV R36,O=Sectigo Limited,C=GB"
+          test "$issuer" = "CN=Sectigo Public Server Authentication Root R46,O=Sectigo Limited,C=GB"
+          openssl x509 -in "$cert" -noout -ext basicConstraints | grep -Fq "CA:TRUE, pathlen:0"
+          openssl x509 -in "$cert" -noout -ext extendedKeyUsage | grep -Fq "TLS Web Server Authentication"
+      - name: Verify BCV HTTPS response and production parser (no Neon, no secrets; strict TLS)
+        env:
+          NODE_EXTRA_CA_CERTS: ${{ github.workspace }}/apps/api/certs/sectigo-public-server-authentication-ca-dv-r36.crt
         run: pnpm --filter @micro-app/api exec vitest run src/bcv-connectivity.manual.test.ts

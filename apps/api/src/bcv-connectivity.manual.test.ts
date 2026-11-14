@@ -3,9 +3,13 @@ import { parseBcvOfficialRate } from "./exchange-rates";
 
 const SOURCE = "https://www.bcv.org.ve/";
 const MAX_HTML_BYTES = 2_000_000;
+const processEnv = (globalThis as typeof globalThis & {
+  process?: { env?: Record<string, string | undefined> };
+}).process?.env;
 
 describe("manual BCV source connectivity (no database)", () => {
   it("checks HTTPS status, HTML content type, and compatibility with the production parser", async () => {
+    expect(processEnv?.NODE_TLS_REJECT_UNAUTHORIZED).not.toBe("0");
     const response = await fetch(SOURCE, {
       method: "GET",
       headers: { Accept: "text/html,application/xhtml+xml" },

@@ -112,11 +112,11 @@ describe.skipIf(!isDisposableCiDatabase)("BCV effective-date persistence against
     await cleanupClient.query("DELETE FROM public.exchange_rates WHERE source = $1", [source]);
     vi.stubGlobal("fetch", fetchMock);
     try {
-      await scheduledApp.scheduled({ cron: "0 22 * * 1-5" }, { APP_ENV: "preview" });
+      await scheduledApp.scheduled({ cron: "0 22 * * MON-FRI" }, { APP_ENV: "preview" });
       expect(fetchMock).not.toHaveBeenCalled();
 
       await scheduledApp.scheduled(
-        { cron: "0 22 * * 1-5" },
+        { cron: "0 22 * * MON-FRI" },
         { APP_ENV: "production", DATABASE_URL_BCV_SYNC: producerDatabaseUrl, BCV_SYNC_ENABLED: "true" },
       );
       expect(fetchMock).toHaveBeenCalledTimes(1);
@@ -155,7 +155,7 @@ describe.skipIf(!isDisposableCiDatabase)("BCV effective-date persistence against
         headers: { "content-type": "text/html" },
       })));
       await expect(scheduledApp.scheduled(
-        { cron: "0 22 * * 1-5" },
+        { cron: "0 22 * * MON-FRI" },
         { APP_ENV: "production", DATABASE_URL_BCV_SYNC: producerDatabaseUrl, BCV_SYNC_ENABLED: "true" },
       )).rejects.toThrow("BCV_SYNC_FAILED");
 
@@ -214,13 +214,13 @@ describe.skipIf(!isDisposableCiDatabase)("BCV effective-date persistence against
     vi.stubGlobal("fetch", fetchMock);
     try {
       const olderAttempt = scheduledApp.scheduled(
-        { cron: "0 22 * * 1-5" },
+        { cron: "0 22 * * MON-FRI" },
         { APP_ENV: "production", DATABASE_URL_BCV_SYNC: producerDatabaseUrl, BCV_SYNC_ENABLED: "true" },
       );
       await olderFetchStarted;
 
       await scheduledApp.scheduled(
-        { cron: "0 22 * * 1-5" },
+        { cron: "0 22 * * MON-FRI" },
         { APP_ENV: "production", DATABASE_URL_BCV_SYNC: producerDatabaseUrl, BCV_SYNC_ENABLED: "true" },
       );
       const newerState = await cleanupClient.query<{ attempt_id: string; last_outcome: string }>(

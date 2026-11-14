@@ -111,7 +111,7 @@ describe("inventory panel", () => {
     await act(async()=>{setter?.call(input,"750123");input.dispatchEvent(new Event("input",{bubbles:true}));});
     await act(async()=>{container.querySelector<HTMLFormElement>(".catalog-search")?.dispatchEvent(new Event("submit",{bubbles:true,cancelable:true}));});
     await flush();
-    expect(String(vi.mocked(fetch).mock.calls[3]?.[0])).toContain("q=750123");
+    expect(String(vi.mocked(fetch).mock.calls[4]?.[0])).toContain("q=750123");
     expect(container.textContent).toContain("No se encontraron productos.");
   });
 
@@ -120,6 +120,7 @@ describe("inventory panel", () => {
       .mockResolvedValueOnce(jsonResponse({branches:[{id:BRANCH_A,name:"Central",slug:"central"}]}))
       .mockResolvedValueOnce(jsonResponse({warehouses:[{id:WAREHOUSE,code:"main",name:"Principal",is_active:true}]}))
       .mockResolvedValueOnce(jsonResponse({items:[],nextCursor:null,limit:100}))
+      .mockResolvedValueOnce(jsonResponse({receipts:[]}))
       .mockResolvedValueOnce(jsonResponse({items:[balance({barcode:"750123",name:"Café molido",sku:"CAF-01"})],nextCursor:null,limit:100}));
     await renderPanel(true);
     const input=container.querySelector<HTMLInputElement>("#inventory-quick-search");

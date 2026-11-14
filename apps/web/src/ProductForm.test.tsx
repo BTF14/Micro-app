@@ -73,7 +73,7 @@ describe("product form", () => {
     const payload = JSON.parse(String(init?.body)) as Record<string, unknown>;
     expect(payload.price_usd).toBe("23.8500");
     expect(payload.cost_usd).toBe("10.0000");
-    expect(payload.minimum_stock).toBe("0.000");
+    expect(payload.minimum_stock).toBe("0");
     expect(payload).not.toHaveProperty("discount");
     expect(payload).not.toHaveProperty("discount_usd");
     expect(onSaved).toHaveBeenCalledOnce();
@@ -108,6 +108,18 @@ describe("product form", () => {
     expect(payload).not.toHaveProperty("minimum_stock");
     expect(payload.is_active).toBe(true);
     expect(onSaved).toHaveBeenCalledOnce();
+  });
+
+  it("uses concise defaults and formats existing prices without trailing zeroes", async () => {
+    await act(async () => { root.render(<ProductForm organizationId="org-1" onCancel={vi.fn()} onSaved={vi.fn()} />); });
+    expect(field("Precio USD").getAttribute("placeholder")).toBe("0.00");
+    expect(field("Costo USD").getAttribute("placeholder")).toBe("0.00");
+    expect(field("Stock mínimo").getAttribute("placeholder")).toBe("0");
+    await act(async () => { root.render(<ProductForm organizationId="org-1" product={{
+      id:"p1",sku:"SKU",barcode:null,name:"Producto",description:null,unit:"unidad",cost_usd:"10.0000",price_usd:"23.8500",is_active:true,
+    }} onCancel={vi.fn()} onSaved={vi.fn()} />); });
+    expect(field("Precio USD").value).toBe("23.85");
+    expect(field("Costo USD").value).toBe("10.00");
   });
 
   it("rejects negative monetary values before sending a request", async () => {

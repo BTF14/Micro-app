@@ -76,3 +76,9 @@
 .inventory-receipt-history li{display:flex;justify-content:space-between;gap:1rem;padding:.65rem 0;border-top:1px solid var(--border,#eee)}
 .inventory-receipt-history li span{color:var(--muted,#666);font-size:.85rem}
 @media(max-width:560px){.inventory-receipt-history li{flex-direction:column;gap:.2rem}}
+
+@media(max-width:760px) {
+ .inventory-table td:nth-child(2)::before { content:"En existencia"; color:var(--muted); font-size:.68rem; font-weight:500; }
+ .inventory-table td:nth-child(3)::before { content:"Reservado"; color:var(--muted); font-size:.68rem; font-weight:500; }
+ .inventory-table td:nth-child(4)::before { content:"Disponible"; color:var(--muted); font-size:.68rem; font-weight:500; }
+}

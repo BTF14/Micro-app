@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState, type FormEvent } from "react";
+import { formatMoneyForDisplay } from "@micro-app/money";
 import { apiRequest, ApiError } from "./auth";
 import "./register-shifts.css";
 
@@ -8,9 +9,7 @@ type Shift = { id: string; organizationId: string; branchId: string; registerId:
 type RegisterShiftsPanelProps = { organizationId: string; userName: string };
 
 function money(value: string): string {
-  const [integer = "0", fraction] = value.split(".");
-  const grouped = integer.replace(/\B(?=(\d{3})+(?!\d))/g, ".");
-  return fraction ? grouped + "," + fraction : grouped;
+  try { return formatMoneyForDisplay(value); } catch { return "No disponible"; }
 }
 function dateTime(value: string): string {
   return new Intl.DateTimeFormat("es-VE", { dateStyle: "medium", timeStyle: "short", timeZone: "America/Caracas" }).format(new Date(value));
@@ -31,7 +30,7 @@ export default function RegisterShiftsPanel({ organizationId, userName }: Regist
   const [registers, setRegisters] = useState<Register[]>([]);
   const [registerId, setRegisterId] = useState("");
   const [shift, setShift] = useState<Shift | null>(null);
-  const [openingUsd, setOpeningUsd] = useState("0.0000");
+  const [openingUsd, setOpeningUsd] = useState("0.00");
   const [openingVes, setOpeningVes] = useState("0.00");
   const [closingUsd, setClosingUsd] = useState("");
   const [closingVes, setClosingVes] = useState("");
@@ -39,6 +38,7 @@ export default function RegisterShiftsPanel({ organizationId, userName }: Regist
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
+  const [loadError, setLoadError] = useState("");
   const [notice, setNotice] = useState("");
 
   const loadBranchState = useCallback(async (selectedBranchId: string) => {
@@ -56,7 +56,7 @@ export default function RegisterShiftsPanel({ organizationId, userName }: Regist
   }, [organizationId]);
 
   const load = useCallback(async () => {
-    setLoading(true); setError("");
+    setLoading(true); setError(""); setLoadError("");
     try {
       const [branchResult, currentResult] = await Promise.all([
         apiRequest<{ items: Branch[] }>(`/api/orgs/${encodeURIComponent(organizationId)}/register-shifts/branches`),
@@ -68,7 +68,7 @@ export default function RegisterShiftsPanel({ organizationId, userName }: Regist
       if (preferred) await loadBranchState(preferred);
       else { setRegisters([]); setShift(null); }
     } catch (reason) {
-      setError(reason instanceof ApiError && reason.status === 403
+      setLoadError(reason instanceof ApiError && reason.status === 403
         ? "Tu cuenta no tiene una sucursal habilitada para gestionar turnos de caja."
         : reason instanceof Error ? reason.message : "No se pudo cargar el estado de caja.");
     } finally { setLoading(false); }
@@ -77,9 +77,10 @@ export default function RegisterShiftsPanel({ organizationId, userName }: Regist
   useEffect(() => { void load(); }, [load]);
 
   async function changeBranch(nextBranchId: string) {
-    setBranchId(nextBranchId); setShift(null); setRegisters([]); setError(""); setNotice(""); setLoading(true);
+    const previousBranchId = branchId;
+    setBranchId(nextBranchId); setError(""); setNotice(""); setLoading(true);
     try { await loadBranchState(nextBranchId); }
-    catch (reason) { setError(reason instanceof Error ? reason.message : "No se pudo consultar la sucursal."); }
+    catch (reason) { setBranchId(previousBranchId); setError(reason instanceof Error ? reason.message : "No se pudo consultar la sucursal."); }
     finally { setLoading(false); }
   }
 
@@ -121,13 +122,14 @@ export default function RegisterShiftsPanel({ organizationId, userName }: Regist
         <div><p className="eyebrow">OPERACIÓN DE CAJA</p><h1 id="register-shifts-title">Turnos de caja</h1><p>Abre tu turno con el fondo inicial y registra el conteo final al cerrar. Cada acción queda auditada.</p></div>
         <button type="button" className="register-shifts-refresh" onClick={() => void load()} disabled={loading || saving}>{loading ? "Consultando…" : "Actualizar"}</button>
       </div>
+      {loadError && <p className="register-shifts-alert error" role="alert">{loadError}</p>}
       {error && <p className="register-shifts-alert error" role="alert">{error}</p>}
       {notice && <p className="register-shifts-alert success" role="status">{notice}</p>}
       {loading ? <p className="register-shifts-loading">Consultando sucursales y estado del turno…</p> : (
         <>
           {branches.length > 0 && <label className="register-shifts-field"><span>Sucursal</span><select value={branchId} onChange={(event) => void changeBranch(event.target.value)} disabled={saving || Boolean(shift)}>{branches.map((branch) => <option value={branch.id} key={branch.id}>{branch.name}</option>)}</select></label>}
-          {branches.length === 0 && !error && <p className="register-shifts-empty">No hay sucursales activas asignadas a tu usuario.</p>}
-          {branchId && !error && (shift ? (
+          {branches.length === 0 && !loadError && <p className="register-shifts-empty">No hay sucursales activas asignadas a tu usuario.</p>}
+          {branchId && !loadError && (shift ? (
             <div className="register-shift-card">
               <div className="register-shift-card-head"><div><span className="register-shift-state open">Turno abierto</span><h2>Tu caja está en operación</h2></div><span className="register-shift-time">Desde {dateTime(shift.openedAt)}</span></div>
               <dl className="register-shift-values"><div><dt>Fondo inicial USD</dt><dd>$ {money(shift.openingCashUsd)}</dd></div><div><dt>Fondo inicial VES</dt><dd>Bs. {money(shift.openingCashVes)}</dd></div></dl>

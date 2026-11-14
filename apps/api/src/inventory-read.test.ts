@@ -28,6 +28,13 @@ describe("inventory read route guards", () => {
     expect(await invalidProduct.json()).toMatchObject({ error: "INVALID_MOVEMENT_QUERY" });
   });
 
+  it("rejects inventory searches longer than 120 characters", async () => {
+    const response = await request("/api/orgs/" + organizationId + "/branches/" + branchId + "/warehouses/" + warehouseId + "/inventory?q=" + "x".repeat(121), "token");
+    expect(response.status).toBe(400);
+    expect(await response.json()).toMatchObject({ error: "INVALID_INVENTORY_QUERY" });
+    expect(response.headers.get("cache-control")).toBe("private, no-store");
+  });
+
   it("requires a session before accessing inventory reads", async () => {
     const response = await request("/api/orgs/" + organizationId + "/branches/" + branchId + "/warehouses/" + warehouseId + "/inventory");
     expect(response.status).toBe(401);

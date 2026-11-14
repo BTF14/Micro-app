@@ -31,6 +31,16 @@ describe("catalog SQL projection", () => {
     ]);
   });
 
+  it("prioritizes exact barcode/SKU and escapes wildcard search characters", () => {
+    const query = buildCatalogQuery("cashier", organizationId, undefined, 20, "  CODE_%  ");
+    expect(query.statement).toContain("barcode = $2");
+    expect(query.statement).toContain("lower(sku) = lower($2)");
+    expect(query.statement).toContain("name ILIKE $3 ESCAPE");
+    expect(query.statement).toContain("ORDER BY CASE WHEN barcode = $2 OR lower(sku) = lower($2)");
+    expect(query.statement).not.toContain("cost_usd");
+    expect(query.values).toEqual([organizationId, "CODE_%", "%CODE\\_\\%%", 21]);
+  });
+
   it.each(["owner", "admin", "inventory"] as const)(
     "%s may select cost but never stock",
     (role) => {
@@ -56,6 +66,12 @@ describe("GET /api/orgs/:organizationId/catalog", () => {
       error: "INVALID_ORGANIZATION_ID",
     });
     expect(response.headers.get("cache-control")).toBe("private, no-store");
+  });
+
+  it("rejects catalog searches longer than 120 characters", async () => {
+    const response = await app.request("/api/orgs/" + organizationId + "/catalog?q=" + "x".repeat(121), { headers: { Cookie: sessionCookie } });
+    expect(response.status).toBe(400);
+    await expect(response.json()).resolves.toMatchObject({ error: "INVALID_CATALOG_QUERY" });
   });
 
   it("requires a session before opening a database connection", async () => {

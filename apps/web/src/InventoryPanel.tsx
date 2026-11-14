@@ -320,7 +320,7 @@ export default function InventoryPanel({ organizationId, canManageInventory }: {
             <span>Máximo 100 por página</span>
           </div>
           <div className="catalog-table-wrap">
-            <table className="catalog-table">
+            <table className="catalog-table inventory-table">
               <thead>
                 <tr>
                   <th scope="col">Producto</th>

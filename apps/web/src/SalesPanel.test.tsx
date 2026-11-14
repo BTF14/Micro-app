@@ -184,12 +184,12 @@ describe("SalesPanel", () => {
     await act(async () => { setInputValue(qtyInput, "0,5"); });
     expect(qtyInput.value).toBe("0.5");
     expect(container.textContent).toContain("US$ 500,00");
-    await act(async () => { qtyInput.dispatchEvent(new FocusEvent("blur", { bubbles: true })); });
+    await act(async () => { qtyInput.dispatchEvent(new FocusEvent("focusout", { bubbles: true })); });
     expect(qtyInput.value).toBe("0.500");
     expect(container.querySelector<HTMLButtonElement>('[aria-label="Restar Producto C"]')?.disabled).toBe(true);
     await act(async () => { setInputValue(qtyInput, "1."); });
     expect(container.querySelector<HTMLButtonElement>(".sales-charge-button")?.disabled).toBe(true);
-    await act(async () => { qtyInput.dispatchEvent(new FocusEvent("blur", { bubbles: true })); });
+    await act(async () => { qtyInput.dispatchEvent(new FocusEvent("focusout", { bubbles: true })); });
     expect(qtyInput.value).toBe("1.000");
     expect(container.querySelector<HTMLButtonElement>(".sales-charge-button")?.disabled).toBe(false);
   });

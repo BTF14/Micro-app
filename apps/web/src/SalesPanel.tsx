@@ -60,6 +60,8 @@ function paymentScale(currency: Currency): { precision: number; scale: number } 
   return currency === "USD" ? { precision: 14, scale: 4 } : { precision: 14, scale: 2 };
 }
 function newIdempotencyKey(): string { return crypto.randomUUID(); }
+let paymentLineSequence = 0;
+function nextPaymentLineId(): string { paymentLineSequence += 1; return `payment-${paymentLineSequence}`; }
 
 export default function SalesPanel({
   organizationId, exchangeRate, exchangeRateStatus, onGoToRegister, onRefreshRate,
@@ -72,7 +74,7 @@ export default function SalesPanel({
   const [cart, setCart] = useState<CartLine[]>([]);
   const cartRef = useRef<CartLine[]>([]);
   const [currency, setCurrency] = useState<Currency>("USD");
-  const [payments, setPayments] = useState<PaymentLine[]>(() => [{ id: newIdempotencyKey(), method: "cash", amount: "", reference: "" }]);
+  const [payments, setPayments] = useState<PaymentLine[]>(() => [{ id: nextPaymentLineId(), method: "cash", amount: "", reference: "" }]);
   const [loading, setLoading] = useState(false);
   const [checkoutBusy, setCheckoutBusy] = useState(false);
   const [error, setError] = useState("");
@@ -147,7 +149,7 @@ export default function SalesPanel({
         commitCart([]);
         setReceipt(null);
         setCurrency("USD");
-        setPayments([{ id: newIdempotencyKey(), method: "cash", amount: "", reference: "" }]);
+        setPayments([{ id: nextPaymentLineId(), method: "cash", amount: "", reference: "" }]);
         setLookupReset((value) => value + 1);
         resetIdempotency();
         if (hadCart) setNotice("Cambió la sucursal o el turno activo. Se limpió el carrito.");
@@ -193,7 +195,7 @@ export default function SalesPanel({
       commitCart([]);
       setReceipt(null);
       setCurrency("USD");
-      setPayments([{ id: newIdempotencyKey(), method: "cash", amount: "", reference: "" }]);
+      setPayments([{ id: nextPaymentLineId(), method: "cash", amount: "", reference: "" }]);
       resetIdempotency();
     }
     void loadShiftAndWarehouses();
@@ -212,7 +214,7 @@ export default function SalesPanel({
     setWarehouseId(nextId);
     if (cart.length > 0) {
       commitCart([]);
-      setPayments([{ id: newIdempotencyKey(), method: "cash", amount: "", reference: "" }]);
+      setPayments([{ id: nextPaymentLineId(), method: "cash", amount: "", reference: "" }]);
       setNotice("Cambiaste de almacén. Se limpió el carrito para evitar mezclar existencias.");
     }
     resetIdempotency();
@@ -312,7 +314,7 @@ export default function SalesPanel({
   }
   function addPayment() {
     if (payments.length >= 10) return;
-    setPayments((current) => [...current, { id: newIdempotencyKey(), method: "cash", amount: "", reference: "" }]);
+    setPayments((current) => [...current, { id: nextPaymentLineId(), method: "cash", amount: "", reference: "" }]);
     resetIdempotency();
   }
   function removePayment(id: string) {
@@ -380,7 +382,7 @@ export default function SalesPanel({
     setReceipt(null);
     commitCart([]);
     setLookupReset((value) => value + 1);
-    setPayments([{ id: newIdempotencyKey(), method: "cash", amount: "", reference: "" }]);
+    setPayments([{ id: nextPaymentLineId(), method: "cash", amount: "", reference: "" }]);
     setCurrency("USD");
     setNotice("Venta nueva lista.");
     setError("");

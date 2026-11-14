@@ -1,3 +1,4 @@
+import { execFileSync } from "node:child_process";
 import { readFileSync } from "node:fs";
 import { expect, test } from "@playwright/test";
 
@@ -44,6 +45,45 @@ async function readStock(page: import("@playwright/test").Page): Promise<{ statu
   return result;
 }
 
+function readInventorySnapshot(): { onHand: string; movementCount: number; ledgerQuantity: string } {
+  const databaseUrl = process.env.DATABASE_URL_ADMIN;
+  if (!databaseUrl) throw new Error("DATABASE_URL_ADMIN is required for the real stock-atomicity assertion.");
+  const query = `
+    SELECT concat_ws('|',
+      COALESCE((SELECT on_hand_quantity::text FROM public.inventory_balances
+        WHERE organization_id = :'organization_id'::uuid AND branch_id = :'branch_id'::uuid
+          AND warehouse_id = :'warehouse_id'::uuid AND product_id = :'product_id'::uuid), '0.000'),
+      COALESCE((SELECT count(*)::text FROM public.warehouse_inventory_movements
+        WHERE organization_id = :'organization_id'::uuid AND branch_id = :'branch_id'::uuid
+          AND warehouse_id = :'warehouse_id'::uuid AND product_id = :'product_id'::uuid), '0'),
+      COALESCE((SELECT sum(quantity_delta)::text FROM public.warehouse_inventory_movements
+        WHERE organization_id = :'organization_id'::uuid AND branch_id = :'branch_id'::uuid
+          AND warehouse_id = :'warehouse_id'::uuid AND product_id = :'product_id'::uuid), '0')
+    );
+  `;
+  const output = execFileSync("psql", [
+    databaseUrl, "-X", "-v", "ON_ERROR_STOP=1",
+    "-v", `organization_id=${fixture.organizationId}`,
+    "-v", `branch_id=${fixture.branchId}`,
+    "-v", `warehouse_id=${fixture.warehouseId}`,
+    "-v", `product_id=${fixture.productId}`,
+    "-At", "-c", query,
+  ], { encoding: "utf8", stdio: ["ignore", "pipe", "pipe"] }).trim();
+  const [onHand, movementCount, ledgerQuantity] = output.split("|");
+  if (!onHand || movementCount === undefined || !ledgerQuantity) throw new Error("E2E_INVENTORY_SNAPSHOT_INVALID");
+  return { onHand, movementCount: Number(movementCount), ledgerQuantity };
+}
+
+async function expectNoHorizontalOverflow(page: import("@playwright/test").Page, surface: string): Promise<void> {
+  const dimensions = await page.evaluate(() => ({
+    viewport: document.documentElement.clientWidth,
+    document: document.documentElement.scrollWidth,
+    body: document.body.scrollWidth,
+  }));
+  expect(dimensions.document, `${surface}: document overflow ${JSON.stringify(dimensions)}`).toBeLessThanOrEqual(dimensions.viewport);
+  expect(dimensions.body, `${surface}: body overflow ${JSON.stringify(dimensions)}`).toBeLessThanOrEqual(dimensions.viewport);
+}
+
 async function addProductToCart(page: import("@playwright/test").Page): Promise<void> {
   const search = page.getByLabel("Buscar producto", { exact: true });
   await search.fill(fixture.productSku);
@@ -63,7 +103,8 @@ async function completeSale(page: import("@playwright/test").Page, currency: "US
   const responsePromise = page.waitForResponse((response) =>
     new URL(response.url()).pathname.endsWith("/checkout") && response.request().method() === "POST",
   );
-  await charge.click();
+  await charge.focus();
+  await page.keyboard.press("Enter");
   const response = await responsePromise;
   expect(response.status()).toBe(201);
   await expect(page.getByRole("heading", { name: "Comprobante de venta" })).toBeVisible();
@@ -78,6 +119,33 @@ async function completeSale(page: import("@playwright/test").Page, currency: "US
 test("real catalog → inventory receipt → register → USD/VES POS → close → stale checkout rejection", async ({ page, context, browser, baseURL }) => {
   test.setTimeout(180_000);
   if (!baseURL) throw new Error("Playwright baseURL is required.");
+  await page.setViewportSize({ width: 390, height: 844 });
+
+  // Unauthenticated login is served by the real Hono API; no route or API mocks.
+  const loginContext = await browser.newContext({ baseURL, viewport: { width: 390, height: 844 } });
+  const loginPage = await loginContext.newPage();
+  await loginPage.goto("/");
+  await expect(loginPage.getByRole("heading", { name: "Inicia sesión" })).toBeVisible();
+  const googleLink = loginPage.getByRole("link", { name: "Continuar con Google" });
+  await expect(googleLink).toBeVisible();
+  await expect(googleLink).toHaveAttribute("href", /\/auth\/google$/);
+  await googleLink.focus();
+  await expect(googleLink).toBeFocused();
+  const faqTrigger = loginPage.getByRole("button", { name: "Preguntas frecuentes" });
+  await faqTrigger.focus();
+  await loginPage.keyboard.press("Enter");
+  const loginDialog = loginPage.getByRole("dialog", { name: "Preguntas frecuentes" });
+  await expect(loginDialog).toBeVisible();
+  const closeDialog = loginDialog.getByRole("button", { name: "Cerrar" });
+  await expect(closeDialog).toBeFocused();
+  await loginDialog.locator('a[href], button:not([disabled]), summary').last().focus();
+  await loginPage.keyboard.press("Tab");
+  await expect(closeDialog).toBeFocused();
+  await loginPage.keyboard.press("Enter");
+  await expect(loginDialog).toBeHidden();
+  await expect(faqTrigger).toBeFocused();
+  await loginContext.close();
+
   await context.addCookies([{
     name: "microapp_session",
     value: fixture.ownerSessionToken,
@@ -99,14 +167,23 @@ test("real catalog → inventory receipt → register → USD/VES POS → close 
 
   await page.goto("/");
   await expect(page.getByRole("heading", { name: `Hola, ${fixture.ownerDisplayName.split(" ")[0]}.` })).toBeVisible();
+  await expectNoHorizontalOverflow(page, "mobile overview");
   await expect(page.getByText("Sesión activa", { exact: true })).toBeVisible();
 
   // 1. Create and read a real catalog product through the UI and Hono API.
   const productCreateResponse = page.waitForResponse((response) =>
     new URL(response.url()).pathname.endsWith("/catalog") && response.request().method() === "POST",
   );
-  await page.getByRole("button", { name: "Productos", exact: true }).click();
+  const mobileMenu = page.getByRole("button", { name: "Menú", exact: true });
+  await expect(mobileMenu).toBeVisible();
+  await mobileMenu.focus();
+  await page.keyboard.press("Enter");
+  await expect(mobileMenu).toHaveAttribute("aria-expanded", "true");
+  const productsNavigation = page.getByRole("button", { name: "Productos", exact: true });
+  await productsNavigation.focus();
+  await page.keyboard.press("Enter");
   await expect(page.getByRole("heading", { name: "Catálogo" })).toBeVisible();
+  await expectNoHorizontalOverflow(page, "mobile catalog");
   await page.getByRole("button", { name: "Nuevo producto", exact: true }).click();
   await page.getByLabel("SKU", { exact: true }).fill(fixture.productSku);
   await page.getByLabel("Nombre", { exact: true }).fill(fixture.productName);
@@ -122,9 +199,12 @@ test("real catalog → inventory receipt → register → USD/VES POS → close 
   await page.getByLabel("Buscar productos", { exact: true }).fill(fixture.productSku);
   await page.getByRole("button", { name: "Buscar", exact: true }).click();
   await expect(page.getByText(fixture.productName, { exact: true })).toBeVisible();
+  await expectNoHorizontalOverflow(page, "mobile catalog search");
 
   // 2. Receive inventory through the real receipt UI and database function.
-  await page.getByRole("button", { name: "Inventario", exact: true }).click();
+  const inventoryNavigation = page.getByRole("button", { name: "Inventario", exact: true });
+  await inventoryNavigation.focus();
+  await page.keyboard.press("Enter");
   const receiptForm = page.locator("form.inventory-operation-form").first();
   await expect(receiptForm.getByRole("heading", { name: "Recibir mercancía" })).toBeVisible();
   await receiptForm.getByLabel("Cantidad", { exact: true }).fill("5");
@@ -137,10 +217,11 @@ test("real catalog → inventory receipt → register → USD/VES POS → close 
   expect((await receiptResponsePromise).status()).toBe(201);
   await expect(page.getByRole("status").filter({ hasText: "Recepción registrada y existencias actualizadas." })).toBeVisible();
   expect(await readStock(page)).toMatchObject({ status: 200, onHand: "5.000", available: "5.000" });
+  await expectNoHorizontalOverflow(page, "mobile inventory receipt");
 
   // The cashier is a separate persisted identity: the database opening trigger
   // requires organization role cashier, while catalog/receipt writes require owner.
-  const cashierContext = await browser.newContext({ baseURL });
+  const cashierContext = await browser.newContext({ baseURL, viewport: { width: 390, height: 844 } });
   await cashierContext.addCookies([{
     name: "microapp_session",
     value: fixture.cashierSessionToken,
@@ -159,6 +240,7 @@ test("real catalog → inventory receipt → register → USD/VES POS → close 
   const cashierPage = await cashierContext.newPage();
   await cashierPage.goto("/");
   await expect(cashierPage.getByRole("heading", { name: `Hola, ${fixture.cashierDisplayName.split(" ")[0]}.` })).toBeVisible();
+  await expectNoHorizontalOverflow(cashierPage, "mobile cashier overview");
   await expect(cashierPage.getByText(fixture.cashierDisplayName, { exact: true })).toBeVisible();
   await expect(cashierPage.getByText("Sesión activa", { exact: true })).toBeVisible();
   const assignedBranches = await cashierPage.evaluate(async (organizationId) => {
@@ -184,8 +266,11 @@ test("real catalog → inventory receipt → register → USD/VES POS → close 
   expect(currentShift.body.shift).toBeNull();
 
   // 3. Open a real cashier shift on the seeded branch/register.
-  await cashierPage.getByRole("button", { name: "Caja y turnos", exact: true }).click();
+  const shiftsNavigation = cashierPage.getByRole("button", { name: "Caja y turnos", exact: true });
+  await shiftsNavigation.focus();
+  await cashierPage.keyboard.press("Enter");
   await expect(cashierPage.getByRole("heading", { name: "Turnos de caja" })).toBeVisible();
+  await expectNoHorizontalOverflow(cashierPage, "mobile register shifts");
   const branchSelect = cashierPage.locator("select").filter({
     has: cashierPage.locator(`option[value="${fixture.branchId}"]`),
   });
@@ -204,8 +289,11 @@ test("real catalog → inventory receipt → register → USD/VES POS → close 
   await expect(cashierPage.getByText("Turno abierto correctamente. La apertura quedó registrada en auditoría.")).toBeVisible();
 
   // 4. Two real atomic checkouts exercise both supported settlement currencies.
-  await cashierPage.getByRole("button", { name: "Ventas", exact: true }).click();
+  const salesNavigation = cashierPage.getByRole("button", { name: "Ventas", exact: true });
+  await salesNavigation.focus();
+  await cashierPage.keyboard.press("Enter");
   await expect(cashierPage.getByRole("heading", { name: "Ventas" })).toBeVisible();
+  await expectNoHorizontalOverflow(cashierPage, "mobile POS");
   await addProductToCart(cashierPage);
   await completeSale(cashierPage, "USD");
   expect(await readStock(cashierPage)).toMatchObject({ status: 200, onHand: "4.000", available: "4.000" });
@@ -219,8 +307,42 @@ test("real catalog → inventory receipt → register → USD/VES POS → close 
   // making this page's cached shift deliberately stale without altering the API.
   await cashierPage.getByRole("button", { name: "Nueva venta", exact: true }).click();
   await addProductToCart(cashierPage);
-  await cashierPage.getByRole("button", { name: "Monto exacto", exact: true }).click();
+  const staleQuantity = cashierPage.getByLabel(`Cantidad de ${fixture.productName}`, { exact: true });
+  await staleQuantity.fill("3.000");
+  await staleQuantity.press("Tab");
+  const exactAmount = cashierPage.getByRole("button", { name: "Monto exacto", exact: true });
+  await exactAmount.focus();
+  await cashierPage.keyboard.press("Enter");
   await expect(cashierPage.getByRole("button", { name: "Cobrar venta", exact: true })).toBeEnabled();
+
+  // A second real browser tab sells one unit after the first tab cached 3 units.
+  const stockRacePage = await cashierContext.newPage();
+  await stockRacePage.goto("/");
+  await expect(stockRacePage.getByRole("heading", { name: `Hola, ${fixture.cashierDisplayName.split(" ")[0]}.` })).toBeVisible();
+  await stockRacePage.getByRole("button", { name: "Ventas", exact: true }).focus();
+  await stockRacePage.keyboard.press("Enter");
+  await addProductToCart(stockRacePage);
+  await completeSale(stockRacePage, "USD");
+  expect(await readStock(stockRacePage)).toMatchObject({ status: 200, onHand: "2.000", available: "2.000" });
+  await expectNoHorizontalOverflow(stockRacePage, "mobile POS receipt");
+
+  const beforeInsufficientCheckout = readInventorySnapshot();
+  const insufficientCheckoutPromise = cashierPage.waitForResponse((response) =>
+    new URL(response.url()).pathname.endsWith("/checkout") && response.request().method() === "POST",
+  );
+  const staleCharge = cashierPage.getByRole("button", { name: "Cobrar venta", exact: true });
+  await staleCharge.focus();
+  await cashierPage.keyboard.press("Enter");
+  const insufficientCheckout = await insufficientCheckoutPromise;
+  expect(insufficientCheckout.status()).toBe(409);
+  const insufficientBody = await insufficientCheckout.json() as { error?: string };
+  expect(insufficientBody.error).toBe("INSUFFICIENT_STOCK");
+  await expect(cashierPage.getByRole("alert")).toContainText("La existencia disponible del almacén es insuficiente.");
+  const afterInsufficientCheckout = readInventorySnapshot();
+  expect(afterInsufficientCheckout).toEqual(beforeInsufficientCheckout);
+  expect(await readStock(cashierPage)).toMatchObject({ status: 200, onHand: "2.000", available: "2.000" });
+  await expectNoHorizontalOverflow(cashierPage, "mobile insufficient-stock alert");
+  await stockRacePage.close();
 
   // 5. Close the shift in a second cashier page and verify persistence after reload.
   const closer = await cashierContext.newPage();
@@ -255,7 +377,7 @@ test("real catalog → inventory receipt → register → USD/VES POS → close 
   await expect(cashierPage.getByRole("alert").filter({
     hasText: "Debes tener tu propio turno abierto para registrar la venta.",
   })).toBeVisible();
-  expect(await readStock(cashierPage)).toMatchObject({ status: 200, onHand: "3.000", available: "3.000" });
+  expect(await readStock(cashierPage)).toMatchObject({ status: 200, onHand: "2.000", available: "2.000" });
 
   await cashierPage.reload();
   await expect(cashierPage.getByText("Sesión activa", { exact: true })).toBeVisible();

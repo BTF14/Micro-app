@@ -24,6 +24,10 @@ describe.skipIf(!databaseUrl)("inventory receipt API against PostgreSQL 18", () 
   let warehouseId = "";
   let productId = "";
   let foreignProductId = "";
+  let foreignOrganizationId = "";
+  let foreignBranchId = "";
+  let foreignWarehouseId = "";
+  let otherWarehouseId = "";
   let token = "";
 
   const root = () => `/api/orgs/${organizationId}/branches/${branchId}/warehouses/${warehouseId}/receipts`;
@@ -69,7 +73,15 @@ describe.skipIf(!databaseUrl)("inventory receipt API against PostgreSQL 18", () 
     await admin.query("INSERT INTO auth_sessions(user_id,token_hash,expires_at) VALUES($1,$2,now()+interval '1 day')", [userId,tokenHash]);
     const branch = await admin.query<{id:string}>("INSERT INTO branches(organization_id,name,slug) VALUES($1,'Receipt Branch',$2) RETURNING id",[organizationId,"receipt-branch-"+suffix]);
     branchId = branch.rows[0]!.id;
+    const otherBranch = await admin.query<{id:string}>("INSERT INTO branches(organization_id,name,slug) VALUES($1,$2,$3) RETURNING id",[organizationId,"Other Receipt Branch","receipt-other-branch-"+suffix]);
+    const otherWarehouse = await admin.query<{id:string}>("INSERT INTO warehouses(organization_id,branch_id,code,name) VALUES($1,$2,$3,$4) RETURNING id",[organizationId,otherBranch.rows[0]!.id,"other","Other Receipt Warehouse"]);
+    otherWarehouseId = otherWarehouse.rows[0]!.id;
     const foreignOrg = await admin.query<{id:string}>("INSERT INTO organizations(name,slug) VALUES($1,$2) RETURNING id",["Receipt Foreign "+suffix,"receipt-foreign-"+suffix]);
+    foreignOrganizationId = foreignOrg.rows[0]!.id;
+    const foreignBranch = await admin.query<{id:string}>("INSERT INTO branches(organization_id,name,slug) VALUES($1,$2,$3) RETURNING id",[foreignOrganizationId,"Foreign Receipt Branch","receipt-foreign-branch-"+suffix]);
+    foreignBranchId = foreignBranch.rows[0]!.id;
+    const foreignWarehouse = await admin.query<{id:string}>("INSERT INTO warehouses(organization_id,branch_id,code,name) VALUES($1,$2,$3,$4) RETURNING id",[foreignOrganizationId,foreignBranchId,"foreign","Foreign Receipt Warehouse"]);
+    foreignWarehouseId = foreignWarehouse.rows[0]!.id;
     const foreignProduct = await admin.query<{id:string}>("INSERT INTO products(organization_id,sku,name,price_usd) VALUES($1,$2,'Foreign product',1) RETURNING id",[foreignOrg.rows[0]!.id,"RECEIPT-FOREIGN-"+suffix]);
     foreignProductId = foreignProduct.rows[0]!.id;
   });
@@ -162,6 +174,15 @@ describe.skipIf(!databaseUrl)("inventory receipt API against PostgreSQL 18", () 
       await admin.query("DROP TRIGGER IF EXISTS fail_receipt_audit_test ON public.audit_logs");
       await admin.query("DROP FUNCTION IF EXISTS public.fail_receipt_audit_test()");
     }
+  });
+
+  it("rejects cross-tenant resources and a warehouse outside the requested branch", async () => {
+    const foreignPath = "/api/orgs/" + foreignOrganizationId + "/branches/" + foreignBranchId + "/warehouses/" + foreignWarehouseId + "/receipts";
+    expect((await get(foreignPath)).status).toBe(401);
+    expect((await post(foreignPath, { reason: "foreign", lines: [{ product_id: foreignProductId, quantity: "1", unit_cost_usd: "0" }] })).status).toBe(401);
+    const wrongBranchPath = "/api/orgs/" + organizationId + "/branches/" + branchId + "/warehouses/" + otherWarehouseId + "/receipts";
+    expect((await get(wrongBranchPath)).status).toBe(404);
+    expect((await post(wrongBranchPath, body())).status).toBe(403);
   });
 
   it("does not grant direct balance writes to the runtime login", async () => {

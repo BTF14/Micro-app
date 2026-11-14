@@ -4,7 +4,7 @@ on:
   push:
     branches: [main, "feat/branch-warehouse-register-admin-20261113"]
   pull_request:
-    branches: [main, "fix/**"]
+    branches: [main, "feat/**", "fix/**", "integration/**"]
 
 permissions:
   contents: read
@@ -83,6 +83,8 @@ jobs:
         run: psql -X -v ON_ERROR_STOP=1 --dbname "$ADMIN_DATABASE_URL" -f apps/api/migrations/0023_register_shift_runtime_operations.assertions.sql
       - name: Verify owner-only organization structure migration 0024 contract
         run: psql -X -v ON_ERROR_STOP=1 --dbname "$ADMIN_DATABASE_URL" -f apps/api/migrations/0024_organization_structure_admin_operations.assertions.sql
+      - name: Verify inventory receipt migration 0025 contract
+        run: psql -X -v ON_ERROR_STOP=1 --dbname "$ADMIN_DATABASE_URL" -f apps/api/migrations/0025_inventory_receipts.assertions.sql
       - name: Build and typecheck
         run: pnpm build
       - name: Verify Cloudflare Pages preview isolation
@@ -129,6 +131,8 @@ jobs:
         run: pnpm --filter @micro-app/api exec vitest run src/catalog-update.integration.test.ts
       - name: PostgreSQL inventory count integration tests
         run: pnpm --filter @micro-app/api exec vitest run src/inventory-counts.integration.test.ts
+      - name: PostgreSQL inventory receipt integration tests (runtime LOGIN)
+        run: DATABASE_URL="$RUNTIME_DATABASE_URL" DATABASE_URL_ADMIN="$ADMIN_DATABASE_URL" RUNTIME_DATABASE_URL="$RUNTIME_DATABASE_URL" pnpm --filter @micro-app/api exec vitest run src/inventory-receipts.integration.test.ts
       - name: PostgreSQL inventory read integration tests
         run: pnpm --filter @micro-app/api exec vitest run src/inventory-read.integration.test.ts
       - name: PostgreSQL atomic sales checkout integration tests

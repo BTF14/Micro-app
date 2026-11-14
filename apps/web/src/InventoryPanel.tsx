@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState, type FormEvent } from "react";
 import { formatDecimal, parseNumeric } from "@micro-app/money";
 import { apiRequest } from "./auth";
 import "./catalog.css";
@@ -18,6 +18,7 @@ type BalanceItem = {
   cost_usd?: string;
 };
 type BalancePage = { items: BalanceItem[]; nextCursor: string | null; limit: number };
+type ReceiptItem = { id: string; reason: string; created_at: string; line_count: string };
 
 function groupThousands(value: string): string {
   const [integerPart, fractionPart] = value.split(".");
@@ -51,7 +52,7 @@ function isLowStock(item: BalanceItem): boolean {
   }
 }
 
-export default function InventoryPanel({ organizationId }: { organizationId: string }) {
+export default function InventoryPanel({ organizationId, canManageInventory }: { organizationId: string; canManageInventory: boolean }) {
   const [branches, setBranches] = useState<Branch[] | null>(null);
   const [branchId, setBranchId] = useState("");
   const [warehouses, setWarehouses] = useState<Warehouse[] | null>(null);
@@ -60,9 +61,22 @@ export default function InventoryPanel({ organizationId }: { organizationId: str
   const [nextCursor, setNextCursor] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [notice, setNotice] = useState("");
+  const [receipts, setReceipts] = useState<ReceiptItem[]>([]);
+  const [receiptReason, setReceiptReason] = useState("");
+  const [receiptProductId, setReceiptProductId] = useState("");
+  const [receiptQuantity, setReceiptQuantity] = useState("1.000");
+  const [receiptCost, setReceiptCost] = useState("0.0000");
+  const [receiptBusy, setReceiptBusy] = useState(false);
+  const [countReason, setCountReason] = useState("");
+  const [countProductId, setCountProductId] = useState("");
+  const [countQuantity, setCountQuantity] = useState("0.000");
+  const [countBusy, setCountBusy] = useState(false);
   const sequence = useRef(0);
 
   const base = `/api/orgs/${encodeURIComponent(organizationId)}`;
+  const manageableProducts = items.filter((item) => item.is_active);
+
   const fail = (reason: unknown, fallback: string) => setError(reason instanceof Error ? reason.message : fallback);
 
   useEffect(() => {
@@ -133,9 +147,65 @@ export default function InventoryPanel({ organizationId }: { organizationId: str
   }, [branchId, warehouseId, organizationId]);
 
   useEffect(() => {
-    setItems([]); setNextCursor(null);
+    setItems([]); setNextCursor(null); setReceiptProductId(""); setCountProductId("");
     void fetchBalances();
   }, [fetchBalances]);
+
+  const fetchReceipts = useCallback(async () => {
+    if (!branchId || !warehouseId) { setReceipts([]); return; }
+    try {
+      const result = await apiRequest<{ receipts: ReceiptItem[] }>(
+        `${base}/branches/${encodeURIComponent(branchId)}/warehouses/${encodeURIComponent(warehouseId)}/receipts`,
+      );
+      setReceipts(result.receipts);
+    } catch (reason) {
+      fail(reason, "No se pudieron consultar las recepciones.");
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [branchId, warehouseId, organizationId]);
+
+  useEffect(() => { void fetchReceipts(); }, [fetchReceipts]);
+
+  async function submitReceipt(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const selectedProductId = receiptProductId || manageableProducts[0]?.product_id || "";
+    if (!branchId || !warehouseId || !selectedProductId) return;
+    setReceiptBusy(true); setError(""); setNotice("");
+    try {
+      const path = `${base}/branches/${encodeURIComponent(branchId)}/warehouses/${encodeURIComponent(warehouseId)}/receipts`;
+      const result = await apiRequest<{ id: string; replayed: boolean }>(path, {
+        method: "POST",
+        headers: { "Idempotency-Key": crypto.randomUUID() },
+        body: JSON.stringify({ reason: receiptReason, lines: [{ product_id: selectedProductId, quantity: receiptQuantity, unit_cost_usd: receiptCost }] }),
+      });
+      setNotice(result.replayed ? "La recepción ya estaba registrada." : "Recepción registrada y existencias actualizadas.");
+      setReceiptReason("");
+      await Promise.all([fetchBalances(), fetchReceipts()]);
+    } catch (reason) {
+      fail(reason, "No se pudo registrar la recepción.");
+    } finally { setReceiptBusy(false); }
+  }
+
+  async function submitPhysicalCount(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const selectedProductId = countProductId || manageableProducts[0]?.product_id || "";
+    if (!branchId || !warehouseId || !selectedProductId) return;
+    setCountBusy(true); setError(""); setNotice("");
+    try {
+      const prefix = `${base}/branches/${encodeURIComponent(branchId)}/warehouses/${encodeURIComponent(warehouseId)}`;
+      const created = await apiRequest<{ id: string }>(`${prefix}/counts/physical`, {
+        method: "POST",
+        headers: { "Idempotency-Key": crypto.randomUUID() },
+        body: JSON.stringify({ reason: countReason, lines: [{ product_id: selectedProductId, counted_quantity: countQuantity }] }),
+      });
+      await apiRequest(`${prefix}/counts/${encodeURIComponent(created.id)}/confirm`, { method: "POST" });
+      setNotice("Conteo físico confirmado y existencias actualizadas.");
+      setCountReason("");
+      await Promise.all([fetchBalances(), fetchReceipts()]);
+    } catch (reason) {
+      fail(reason, "No se pudo confirmar el conteo físico.");
+    } finally { setCountBusy(false); }
+  }
 
   const canReadCosts = items.some((item) => item.cost_usd !== undefined);
   const noBranches = branches !== null && branches.length === 0 && !error;
@@ -147,7 +217,7 @@ export default function InventoryPanel({ organizationId }: { organizationId: str
         <div>
           <p className="eyebrow">EXISTENCIAS</p>
           <h1 id="inventory-title">Inventario</h1>
-          <p className="catalog-intro">Consulta de existencias por sucursal y almacén. Es una vista de solo lectura: las cantidades provienen del libro de movimientos.</p>
+          <p className="catalog-intro">Consulta de existencias por sucursal y almacén. Las cantidades provienen del libro de movimientos.</p>
         </div>
         <div className="catalog-heading-actions">
           {branches && branches.length > 1 ? (
@@ -181,6 +251,50 @@ export default function InventoryPanel({ organizationId }: { organizationId: str
       </div>
 
       {error && <p className="catalog-error" role="alert">{error}</p>}
+      {notice && <p className="catalog-success" role="status">{notice}</p>}
+      {canManageInventory && warehouseId && manageableProducts.length > 0 && (
+        <div className="inventory-operations">
+          <form className="inventory-operation-form" onSubmit={submitReceipt}>
+            <h2>Recibir mercancía</h2>
+            <label>Producto
+              <select value={receiptProductId || manageableProducts[0]!.product_id} onChange={(event) => setReceiptProductId(event.target.value)}>
+                {manageableProducts.map((item) => <option key={item.product_id} value={item.product_id}>{item.name} · {item.sku}</option>)}
+              </select>
+            </label>
+            <label>Cantidad
+              <input required inputMode="decimal" pattern="(?:0|[1-9][0-9]{0,10})(?:\.[0-9]{1,3})?" value={receiptQuantity} onChange={(event) => setReceiptQuantity(event.target.value)} />
+            </label>
+            <label>Costo unitario USD
+              <input required inputMode="decimal" pattern="(?:0|[1-9][0-9]{0,9})(?:\.[0-9]{1,4})?" value={receiptCost} onChange={(event) => setReceiptCost(event.target.value)} />
+            </label>
+            <label>Motivo
+              <input required maxLength={500} value={receiptReason} onChange={(event) => setReceiptReason(event.target.value)} />
+            </label>
+            <button type="submit" disabled={receiptBusy || !receiptReason.trim()}>{receiptBusy ? "Registrando…" : "Registrar recepción"}</button>
+          </form>
+          <form className="inventory-operation-form" onSubmit={submitPhysicalCount}>
+            <h2>Conteo físico / ajuste</h2>
+            <label>Producto
+              <select value={countProductId || manageableProducts[0]!.product_id} onChange={(event) => setCountProductId(event.target.value)}>
+                {manageableProducts.map((item) => <option key={item.product_id} value={item.product_id}>{item.name} · {item.sku}</option>)}
+              </select>
+            </label>
+            <label>Cantidad contada
+              <input required inputMode="decimal" pattern="(?:0|[1-9][0-9]{0,10})(?:\.[0-9]{1,3})?" value={countQuantity} onChange={(event) => setCountQuantity(event.target.value)} />
+            </label>
+            <label>Motivo
+              <input required maxLength={500} value={countReason} onChange={(event) => setCountReason(event.target.value)} />
+            </label>
+            <button type="submit" disabled={countBusy || !countReason.trim()}>{countBusy ? "Confirmando…" : "Crear y confirmar conteo"}</button>
+          </form>
+        </div>
+      )}
+      {canManageInventory && receipts.length > 0 && (
+        <section className="inventory-receipt-history" aria-label="Recepciones recientes">
+          <h2>Recepciones recientes</h2>
+          <ul>{receipts.map((receipt) => <li key={receipt.id}><strong>{receipt.reason}</strong><span>{receipt.line_count} líneas · {new Date(receipt.created_at).toLocaleString()}</span></li>)}</ul>
+        </section>
+      )}
 
       {noBranches ? (
         <div className="catalog-empty">

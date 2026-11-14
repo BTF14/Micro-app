@@ -61,3 +61,18 @@
   .catalog-summary { font-size: 0.63rem; }
   .catalog-table th, .catalog-table td { padding: 0.8rem 0.75rem; }
 }
+
+
+.inventory-operations{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,280px),1fr));gap:1rem;margin:1.25rem 0}
+.inventory-operation-form{display:grid;gap:.7rem;padding:1rem;border:1px solid var(--border,#dedbd5);border-radius:12px;background:var(--surface,#fff)}
+.inventory-operation-form h2,.inventory-receipt-history h2{margin:0 0 .25rem;font-size:1rem}
+.inventory-operation-form label{display:grid;gap:.3rem;font-size:.875rem}
+.inventory-operation-form input,.inventory-operation-form select{min-width:0;width:100%;padding:.65rem;border:1px solid var(--border,#ccc);border-radius:8px;background:var(--surface,#fff);color:inherit}
+.inventory-operation-form button{justify-self:start;padding:.65rem 1rem;border:0;border-radius:8px;background:var(--accent,#315c4c);color:white;font-weight:600}
+.inventory-operation-form button:disabled{opacity:.55;cursor:not-allowed}
+.catalog-success{padding:.7rem 1rem;border-radius:8px;background:#e9f4ec;color:#245b36}
+.inventory-receipt-history{margin:1rem 0;padding:1rem;border:1px solid var(--border,#dedbd5);border-radius:12px}
+.inventory-receipt-history ul{list-style:none;padding:0;margin:.5rem 0 0}
+.inventory-receipt-history li{display:flex;justify-content:space-between;gap:1rem;padding:.65rem 0;border-top:1px solid var(--border,#eee)}
+.inventory-receipt-history li span{color:var(--muted,#666);font-size:.85rem}
+@media(max-width:560px){.inventory-receipt-history li{flex-direction:column;gap:.2rem}}

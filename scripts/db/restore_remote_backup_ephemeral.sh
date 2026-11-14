@@ -107,6 +107,8 @@ SELECT CASE
        AND count(DISTINCT version) = 23 AND bool_and(state = 'applied') THEN 'bcv'
   WHEN count(*) = 24 AND min(version) = '0001' AND max(version) = '0024'
        AND count(DISTINCT version) = 24 AND bool_and(state = 'applied') THEN 'bcv-0024'
+  WHEN count(*) = 25 AND min(version) = '0001' AND max(version) = '0025'
+       AND count(DISTINCT version) = 25 AND bool_and(state = 'applied') THEN 'bcv-0025'
   ELSE 'unsupported'
 END
 FROM public.schema_migrations")"
@@ -114,14 +116,15 @@ case "$ledger_profile" in
   main) expected=16 ;;
   bcv) expected=23 ;;
   bcv-0024) expected=24 ;;
-  *) echo "Backup migration ledger is not a complete supported 16-, 23- or 24-migration profile; refusing ACL reconstruction." >&2; exit 1 ;;
+  bcv-0025) expected=25 ;;
+  *) echo "Backup migration ledger is not a complete supported 16-, 23-, 24- or 25-migration profile; refusing ACL reconstruction." >&2; exit 1 ;;
 esac
 
 tmpdir="$(mktemp -d)"
 trap 'rm -rf "$tmpdir"' EXIT
 
 # Main/paired-intent backups must use the immutable migration bundle from the
-# exact main baseline; BCV projection backups use the current checked-out 24-file
+# exact main baseline; BCV projection backups use the current checked-out 25-file
 # bundle. The helper below independently verifies every file checksum against
 # the restored schema_migrations ledger before extracting any ACL statement.
 if [[ "$ledger_profile" == "main" ]]; then
@@ -166,8 +169,11 @@ if [[ "$ledger_profile" == "main" ]]; then
 else
   psql "$RESTORE_MIGRATOR_URL" -X -v ON_ERROR_STOP=1 -f "$source_migrations_dir/0022_bcv_dedicated_producer_role.assertions.sql"
   psql "$RESTORE_MIGRATOR_URL" -X -v ON_ERROR_STOP=1 -f "$source_migrations_dir/0023_register_shift_runtime_operations.assertions.sql"
-  if [[ "$ledger_profile" == "bcv-0024" ]]; then
+  if [[ "$ledger_profile" == "bcv-0024" || "$ledger_profile" == "bcv-0025" ]]; then
     psql "$RESTORE_MIGRATOR_URL" -X -v ON_ERROR_STOP=1 -f "$source_migrations_dir/0024_organization_structure_admin_operations.assertions.sql"
+  fi
+  if [[ "$ledger_profile" == "bcv-0025" ]]; then
+    psql "$RESTORE_MIGRATOR_URL" -X -v ON_ERROR_STOP=1 -f "$source_migrations_dir/0025_inventory_receipts.assertions.sql"
   fi
 fi
 

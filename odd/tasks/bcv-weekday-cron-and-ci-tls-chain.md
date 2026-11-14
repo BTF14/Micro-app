@@ -35,7 +35,7 @@ Excluded:
 - [ ] AC-2 — regression test proves the legacy numeric `0 22 * * 1-5` no longer triggers BCV synchronization.
 - [ ] AC-3 — CI pins the exact Sectigo Public Server Authentication CA DV R36 certificate, verifies its SHA-256 fingerprint and certificate identity/validity before use.
 - [ ] AC-4 — `NODE_EXTRA_CA_CERTS` is scoped only to the manual BCV connectivity test process; Node keeps its default trust roots and still validates hostname, validity and certificate signatures.
-- [ ] AC-5 — the manual connectivity/parser test succeeds against the real BCV HTTPS endpoint without disabling TLS verification.
+- [ ] AC-5 — the PR-triggered/manual connectivity-parser test succeeds against the real BCV HTTPS endpoint without disabling TLS verification.
 - [ ] AC-6 — relevant API unit/type checks and PostgreSQL integration tests pass in CI; all required PR checks pass on the exact final HEAD.
 - [ ] AC-7 — PR diff is limited to this workstream; no Neon, Cloudflare, Google Cloud, secret, migration or production changes.
 
@@ -63,7 +63,8 @@ Excluded:
 
 - Cloudflare weekday names are used instead of weekday numbers to avoid the Sunday=1 convention trap.
 - The current CT record for `*.bcv.org.ve` identifies the issuing CA as Sectigo Public Server Authentication CA DV R36. The Sectigo public certificate has SHA-256 fingerprint `8C54C334B66BA4E426772AF4A3F9136C19A1AEC729FDB28C535C07A5A4EF22E0`.
-- The intermediate is a CI-only trust anchor because the BCV server omits it. This trust is isolated to the manual connectivity test process, not Worker production runtime.
+- The intermediate is a CI-only trust anchor because the BCV server omits it. This trust is isolated to the PR-triggered/manual connectivity test process, not Worker production runtime.
+- The connectivity workflow retains manual dispatch and also runs on PRs that change its TLS trust input, test, or parser, so this fix is exercised by CI without making unrelated PRs depend on BCV uptime.
 
 ## Closure and handoff
 

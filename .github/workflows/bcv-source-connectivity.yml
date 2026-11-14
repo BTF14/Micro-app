@@ -1,7 +1,13 @@
-name: Manual BCV source connectivity
+name: BCV source connectivity (strict TLS)
 
 on:
   workflow_dispatch:
+  pull_request:
+    paths:
+      - ".github/workflows/bcv-source-connectivity.yml"
+      - "apps/api/certs/**"
+      - "apps/api/src/bcv-connectivity.manual.test.ts"
+      - "apps/api/src/exchange-rates.ts"
 
 permissions:
   contents: read

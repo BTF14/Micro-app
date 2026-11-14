@@ -12,7 +12,7 @@ The manual BCV connectivity test runs under Node.js and correctly fails with `UN
 
 ## Decisión
 
-Add the exact public Sectigo Public Server Authentication CA DV R36 certificate to the repository as a pinned PEM trust certificate for the manual CI connectivity check only. Before Node starts, the workflow must verify:
+Add the exact public Sectigo Public Server Authentication CA DV R36 certificate to the repository as a pinned PEM trust certificate for the PR-triggered/manual CI connectivity check only. Before Node starts, the workflow must verify:
 - SHA-256 certificate fingerprint: `8C54C334B66BA4E426772AF4A3F9136C19A1AEC729FDB28C535C07A5A4EF22E0`;
 - subject: `CN=Sectigo Public Server Authentication CA DV R36,O=Sectigo Limited,C=GB`;
 - issuer: `CN=Sectigo Public Server Authentication Root R46,O=Sectigo Limited,C=GB`;

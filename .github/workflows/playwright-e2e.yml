@@ -87,8 +87,6 @@ jobs:
       DATABASE_URL_RUNTIME: postgresql://microapp_runtime:runtime-test-only@postgres:5432/microapp_test
       DATABASE_URL_BCV_SYNC: postgresql://microapp_bcv_sync:bcv-sync-test-only@postgres:5432/microapp_test
       MIGRATION_DATABASE_URL: postgresql://microapp_migrator:migrator-test-only@postgres:5432/microapp_test
-      E2E_FIXTURE_PATH: ${{ runner.temp }}/real-fullstack-commerce-fixture.json
-      E2E_API_PID_FILE: ${{ runner.temp }}/real-fullstack-commerce-api.pid
       E2E_API_PORT: "4174"
       E2E_FRONTEND_ORIGIN: http://127.0.0.1:4173
       E2E_RATE_LIMIT_PEPPER: disposable-fullstack-e2e-rate-limit-pepper
@@ -143,6 +141,9 @@ jobs:
           VITE_API_BASE_URL: ""
         run: pnpm --filter @micro-app/web build
       - name: Run the real Hono API and full-stack Chromium commerce flow
+        env:
+          E2E_FIXTURE_PATH: ${{ runner.temp }}/real-fullstack-commerce-fixture.json
+          E2E_API_PID_FILE: ${{ runner.temp }}/real-fullstack-commerce-api.pid
         run: |
           set -euo pipefail
           API_LOG="$RUNNER_TEMP/real-fullstack-api.log"

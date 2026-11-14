@@ -8,6 +8,8 @@ vi.mock("@neondatabase/serverless", async () => {
   } };
 });
 
+let syntheticIpCounter = 1;
+
 const app = (await import("./index")).default;
 const databaseUrl = (globalThis as typeof globalThis & { process?: { env?: Record<string,string|undefined> } }).process?.env?.DATABASE_URL;
 const databaseUrlAdmin = (globalThis as typeof globalThis & { process?: { env?: Record<string,string|undefined> } }).process?.env?.DATABASE_URL_ADMIN ?? databaseUrl;
@@ -37,7 +39,7 @@ describe.skipIf(!databaseUrl)("inventory receipt API against PostgreSQL 18", () 
       method: "POST",
       headers: {
         Cookie: "microapp_session=" + token,
-        "CF-Connecting-IP": "198.51.100.104",
+        "CF-Connecting-IP": `198.51.100.${syntheticIpCounter++}`,
         Origin: origin,
         "Content-Type": "application/json",
         "Idempotency-Key": key,

@@ -14,7 +14,15 @@ const productId = "44444444-4444-4444-8444-444444444444";
 const shiftId = "55555555-5555-4555-8555-555555555555";
 const userId = "66666666-6666-4666-8666-666666666666";
 
-const cases = [
+const cases: Array<{
+  name: string;
+  method: "POST" | "PATCH";
+  path: string;
+  scope: string;
+  limit: number;
+  headers?: Record<string, string>;
+  body?: unknown;
+}> = [
   {
     name: "catalog create",
     method: "POST",
@@ -104,7 +112,7 @@ const cases = [
     limit: 10,
     body: { is_active: false },
   },
-] as const;
+ ];
 
 describe("runtime write rate-limit route coverage", () => {
   beforeEach(() => {

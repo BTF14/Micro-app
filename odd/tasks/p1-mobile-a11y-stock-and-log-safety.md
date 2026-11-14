@@ -1,7 +1,7 @@
 # ODD task: P1 mobile accessibility, stock rejection and log safety
 
 - Status: in progress
-- Issue / PR: new focused PR; PR #366 is already MERGED
+- Issue / PR: PR pending; branch `feat/p1-mobile-a11y-stock-log-safety-20261114`; PR #366 is already MERGED
 - Owner / reviewer: repository owner / technical agent
 - Started: 2026-11-14
 - Risk: high
@@ -52,26 +52,26 @@ Excluded:
 | Task | Expected result | Validation / evidence | Status |
 |---|---|---|---|
 | Reconcile live repository and PR #366 closure | Correct base and no duplicate work | GitHub reads; #366 closed/merged; #193 and #53 open | complete |
-| Add this ODD task before source changes | Durable scope and acceptance criteria | Commit on isolated branch | in progress |
-| Extend real commerce E2E | Stock failure, mobile and keyboard assertions | PostgreSQL 18 + real Hono + Playwright | pending |
-| Audit API operational logs | Safe structured output only | Full callsite inventory + regression test | pending |
-| Reconcile readiness and continuity | Exact evidence, honest production gates | ODD docs validation and diff review | pending |
+| Add this ODD task before source changes | Durable scope and acceptance criteria | First branch commit `cb96d544f3d8df1505dc5acde9b264c7226e3917` | complete |
+| Extend real commerce E2E | Stock failure, mobile and keyboard assertions | Real Hono/PostgreSQL harness and mobile Playwright project; CI pending | in progress |
+| Audit API operational logs | Safe structured output only | 10 reviewed production calls across 3 source files; static regression test added, CI pending | in progress |
+| Reconcile readiness and continuity | Exact evidence, honest production gates | #366 task, readiness, current state, journal and handoff updated | complete |
 | Final exact-HEAD CI, review and merge | Safe integrated PR | All check-runs/workflows and post-merge main | pending |
 
 ## Technical decisions
 
 - Reuse the existing real Hono/PostgreSQL 18 ephemeral harness and real browser proxy. No `page.route`, HTTP mocks or fake API responses.
 - Assert failed checkout atomicity against both stock balance and ledger rows, not only the browser response.
-- Use the existing mobile project if present; otherwise add a dedicated Playwright mobile device project without weakening desktop coverage.
+- Added a dedicated Playwright `mobile-chromium` project at 390×844; the real full-stack spec and auxiliary browser contexts use mobile emulation.
 - Prefer structured, allowlisted log metadata. Never serialize arbitrary request/response objects or external payloads.
 - CI/preview checks are not production deployment evidence.
 
 ## Closure and handoff
 
-- Final commit SHA: pending
-- PR: pending
-- Checks and exact outcomes: pending
-- Acceptance criteria met / unmet: pending
+- Current branch HEAD: `fda9225eac84dbc0e5051df83ed9b212299af4c3` before the pending continuity refresh.
+- PR: pending; no PR opened yet.
+- Checks and exact outcomes: pending CI for the new P1 code.
+- Acceptance criteria met / unmet: AC-4 source audit and AC-6 #366 closure evidence complete; AC-1–AC-3 and AC-5 await CI; AC-7 documentation updated; AC-8 merge gate pending; AC-9 live state verified.
 - Limitations not verified: first real BCV rate persisted in Neon `main`; external alert delivery; human RPO/RTO; legal/fiscal approval.
 - Residual risks: Issue #53 P0 and production gates remain open.
-- Next step: implement the real stock-negative, mobile and keyboard E2E assertions, then audit API logs.
+- Next step: review the complete diff, create one PR, and resolve all exact-HEAD CI findings before considering merge.

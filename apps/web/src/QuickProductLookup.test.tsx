@@ -11,7 +11,7 @@ const settle=()=>act(async()=>{await new Promise(r=>setTimeout(r,0));});
 async function render(status:"current"|"stale"|"unavailable",rate:string|null){await act(async()=>{root.render(<QuickProductLookup organizationId={ORG} exchangeRate={rate} exchangeRateStatus={status}/>);});await settle();await settle();}
 async function search(){const input=container.querySelector<HTMLInputElement>("#quick-product-search");if(!input)throw Error("lookup input missing");const setter=Object.getOwnPropertyDescriptor(HTMLInputElement.prototype,"value")?.set;await act(async()=>{setter?.call(input,"750123");input.dispatchEvent(new Event("input",{bubbles:true}));});await act(async()=>{await new Promise(r=>setTimeout(r,220));});await settle();}
 beforeEach(()=>{container=document.createElement("div");document.body.appendChild(container);root=createRoot(container);window.localStorage.clear();vi.stubGlobal("fetch",vi.fn());});
-afterEach(async()=>{await act(async()=>root.unmount());container.remove();vi.unstubAllGlobals();window.localStorage.clear();});
+afterEach(async()=>{vi.useRealTimers();await act(async()=>root.unmount());container.remove();vi.unstubAllGlobals();window.localStorage.clear();});
 describe("QuickProductLookup",()=>{
  it("renders Agotado and a current BCV conversion without exposing cost_usd",async()=>{
   vi.mocked(fetch).mockResolvedValueOnce(json({branches:[{id:BRANCH,name:"Central",slug:"central"}]})).mockResolvedValueOnce(json({warehouses:[{id:WAREHOUSE,code:"main",name:"Principal",is_active:true}]})).mockResolvedValueOnce(json({items:[product],nextCursor:null,limit:30}));
@@ -28,9 +28,9 @@ describe("QuickProductLookup",()=>{
  });
 
  it("does not show an empty-result message during the debounce window",async()=>{
-  vi.useFakeTimers();
   vi.mocked(fetch).mockResolvedValueOnce(json({branches:[{id:BRANCH,name:"Central",slug:"central"}]})).mockResolvedValueOnce(json({warehouses:[{id:WAREHOUSE,code:"main",name:"Principal",is_active:true}]})).mockResolvedValueOnce(json({items:[],nextCursor:null,limit:30}));
   await render("unavailable",null);
+  vi.useFakeTimers();
   const input=container.querySelector<HTMLInputElement>("#quick-product-search")!;
   const setter=Object.getOwnPropertyDescriptor(HTMLInputElement.prototype,"value")?.set;
   await act(async()=>{setter?.call(input,"sin-coincidencia");input.dispatchEvent(new Event("input",{bubbles:true}));});

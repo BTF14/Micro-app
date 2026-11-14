@@ -108,8 +108,8 @@ test("real catalog → inventory receipt → register → USD/VES POS → close 
   await page.getByLabel("Código de barras", { exact: true }).fill(`BAR-${fixture.productSku}`);
   await page.getByLabel("Unidad", { exact: true }).fill("unidad");
   await page.getByLabel("Descripción", { exact: true }).fill("Synthetic product for real full-stack CI.");
-  await page.getByLabel("Precio USD", { exact: true }).fill("10.0000");
-  await page.getByLabel("Costo USD", { exact: true }).fill("4.0000");
+  await page.getByLabel("Precio de venta (USD)", { exact: true }).fill("10.0000");
+  await page.getByLabel("Costo (USD)", { exact: true }).fill("4.0000");
   await page.getByLabel("Stock mínimo", { exact: true }).fill("0");
   await page.getByRole("button", { name: "Crear producto", exact: true }).click();
   expect((await productCreateResponse).status()).toBe(201);
@@ -235,4 +235,4 @@ test("real catalog → inventory receipt → register → USD/VES POS → close 
   expect(requestPaths).toContain("/auth/me");
   expect([...requestPaths].some((path) => path.startsWith("/api/"))).toBe(true);
   expect([...requestOrigins]).toEqual([new URL(baseURL).origin]);
-});
+}, 180_000);

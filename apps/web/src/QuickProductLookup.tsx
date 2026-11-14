@@ -17,7 +17,7 @@ export default function QuickProductLookup({ organizationId, exchangeRate, excha
   const [warehouses,setWarehouses]=useState<Warehouse[]>([]),[warehouseId,setWarehouseId]=useState("");
   const [query,setQuery]=useState(""),[items,setItems]=useState<QuickLookupProduct[]>([]),[nextCursor,setNextCursor]=useState<string|null>(null);
   const [loading,setLoading]=useState(false),[error,setError]=useState("");
-  const sequence=useRef(0),base=`/api/orgs/${encodeURIComponent(organizationId)}`;
+  const sequence=useRef(0),debounceTimer=useRef<number|null>(null),base=`/api/orgs/${encodeURIComponent(organizationId)}`;
   const storageKey=branchId?`micro-app:quick-lookup:warehouse:${organizationId}:${branchId}`:"";
   useEffect(()=>{let live=true;setBranches([]);setBranchId("");setWarehouses([]);setWarehouseId("");setItems([]);setNextCursor(null);setError("");
     if(!organizationId)return;
@@ -43,9 +43,9 @@ export default function QuickProductLookup({ organizationId, exchangeRate, excha
     finally{if(id===sequence.current)setLoading(false);}
   },[base,branchId,warehouseId]);
   useEffect(()=>{if(!warehouseId)return;const term=query.trim();if(!term){sequence.current++;setItems([]);setNextCursor(null);setLoading(false);setError("");return;}
-    const timer=window.setTimeout(()=>void search(term),200);return()=>{window.clearTimeout(timer);sequence.current++;};
+    const timer=window.setTimeout(()=>{debounceTimer.current=null;void search(term);},200);debounceTimer.current=timer;return()=>{window.clearTimeout(timer);if(debounceTimer.current===timer)debounceTimer.current=null;sequence.current++;};
   },[query,search,warehouseId]);
-  const clear=()=>{sequence.current++;setQuery("");setItems([]);setNextCursor(null);setError("");setLoading(false);};
+  const clear=()=>{if(debounceTimer.current!==null)window.clearTimeout(debounceTimer.current);debounceTimer.current=null;sequence.current++;setQuery("");setItems([]);setNextCursor(null);setError("");setLoading(false);};
   const chooseBranch=(id:string)=>{sequence.current++;setBranchId(id);setWarehouseId("");clear();};
   const chooseWarehouse=(id:string)=>{sequence.current++;setWarehouseId(id);clear();};
   const canConvert=exchangeRateStatus==="current"&&exchangeRate!==null;
@@ -60,7 +60,7 @@ export default function QuickProductLookup({ organizationId, exchangeRate, excha
     {branches.length===0&&error=== ""?null:branches.length===0?<div className="catalog-empty"><strong>No tienes sucursales asignadas.</strong><span>Solicita acceso a una sucursal para consultar productos.</span></div>:null}
     {branchId&&warehouses.length===0&&!error&&<p className="quick-lookup-status" role="status">Cargando almacenes activos…</p>}
     {branchId&&warehouses.length===0&&error===""?null:branchId&&warehouses.length===0?<div className="catalog-empty"><strong>Esta sucursal no tiene almacenes activos.</strong><span>Solicita que habiliten un almacén.</span></div>:null}
-    <form className="quick-lookup-search" role="search" onSubmit={e=>{e.preventDefault();void search(query);}}>
+    <form className="quick-lookup-search" role="search" onSubmit={e=>{e.preventDefault();if(debounceTimer.current!==null)window.clearTimeout(debounceTimer.current);debounceTimer.current=null;void search(query);}}>
       <label htmlFor="quick-product-search">Buscar producto</label><div className="quick-lookup-input-row">
         <input id="quick-product-search" type="search" enterKeyHint="search" autoComplete="off" maxLength={120} placeholder="Escanea un código o escribe nombre / SKU" value={query} disabled={!warehouseId} onChange={e=>setQuery(e.target.value)} onKeyDown={e=>{if(e.key==="Escape")clear();}}/>
         {query&&<button type="button" className="catalog-search-clear" onClick={clear}>Limpiar</button>}

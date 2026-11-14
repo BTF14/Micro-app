@@ -15,7 +15,7 @@ afterEach(async()=>{await act(async()=>root.unmount());container.remove();vi.uns
 describe("QuickProductLookup",()=>{
  it("renders Agotado and a current BCV conversion without exposing cost_usd",async()=>{
   vi.mocked(fetch).mockResolvedValueOnce(json({branches:[{id:BRANCH,name:"Central",slug:"central"}]})).mockResolvedValueOnce(json({warehouses:[{id:WAREHOUSE,code:"main",name:"Principal",is_active:true}]})).mockResolvedValueOnce(json({items:[product],nextCursor:null,limit:30}));
-  await render("current","36.50000000");await search();expect(container.textContent).toContain("Café molido");expect(container.textContent).toContain("US$ 4,25");expect(container.textContent).toContain("Bs. 155,13");expect(container.textContent).toContain("Agotado");expect(container.textContent).not.toContain("0,75");expect(container.textContent).not.toContain("cost_usd");
+  await render("current","36.50000000");expect(document.activeElement).toBe(container.querySelector("#quick-product-search"));await search();expect(container.textContent).toContain("Café molido");expect(container.textContent).toContain("US$ 4,25");expect(container.textContent).toContain("Bs. 155,13");expect(container.textContent).toContain("Agotado");expect(container.textContent).not.toContain("0,75");expect(container.textContent).not.toContain("cost_usd");
   const url=String(vi.mocked(fetch).mock.calls[2]?.[0]);expect(url).toContain("limit=30");expect(url).toContain("active_only=true");expect(url).toContain("sort=relevance");
  });
  it.each(["stale","unavailable"] as const)("does not convert with %s BCV status",async status=>{

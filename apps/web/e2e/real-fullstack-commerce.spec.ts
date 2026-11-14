@@ -152,7 +152,7 @@ test("real catalog → inventory receipt → register → USD/VES POS → close 
   await page.setViewportSize({ width: 390, height: 844 });
 
   // Unauthenticated login is served by the real Hono API; no route or API mocks.
-  const loginContext = await browser.newContext({ baseURL, viewport: { width: 390, height: 844 } });
+  const loginContext = await browser.newContext({ baseURL, viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true });
   const loginPage = await loginContext.newPage();
   await loginPage.goto("/");
   await expect(loginPage.getByRole("heading", { name: "Inicia sesión" })).toBeVisible();
@@ -242,7 +242,7 @@ test("real catalog → inventory receipt → register → USD/VES POS → close 
 
   // The cashier is a separate persisted identity: the database opening trigger
   // requires organization role cashier, while catalog/receipt writes require owner.
-  const cashierContext = await browser.newContext({ baseURL, viewport: { width: 390, height: 844 } });
+  const cashierContext = await browser.newContext({ baseURL, viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true });
   await cashierContext.addCookies([{
     name: "microapp_session",
     value: fixture.cashierSessionToken,

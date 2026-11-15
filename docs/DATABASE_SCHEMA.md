@@ -1,4 +1,14 @@
-# Estado del repositorio — 2026-11-08 UTC
+# Estado vigente del esquema — 2026-11-14 UTC
+
+**GitHub main:** fac1e87d4cd9569b92cfc5fbaa41706f99b72430. El repositorio versiona las migraciones 0001–0025; el ledger de Neon main registró 25 migraciones aplicadas en la verificación read-only previa. Esta tarea no ejecuta SQL ni modifica Neon.
+
+El esquema vigente incluye, entre otras, las tablas sales, payments, sale_items, register_shifts, bcv_sync_state y audit_logs con protección append-only. También incluye catálogo, sucursales, almacenes, balances, movimientos, conteos/recepciones y estado de sincronización BCV. Los roles microapp_migrator, microapp_runtime, microapp_bcv_sync y microapp_backup son roles separados.
+
+> Los bloques fechados 2026-11-08 y 2026-10-30 que siguen son snapshots históricos y no describen el estado vigente de main ni de Neon main. No reutilizar sus SHAs, inventarios de migraciones o conclusiones de aplicación remota. Revalidar en vivo antes de cualquier operación futura.
+
+---
+
+## Snapshot histórico — 2026-11-08 UTC
 
 El estado vivo de main, PRs, SHA, checks y próximos pasos está centralizado en [CURRENT_STATE.md](CURRENT_STATE.md) y [HANDOFF_NEXT_CHAT.md](HANDOFF_NEXT_CHAT.md). Los snapshots históricos que siguen en este documento son evidencia temporal: no reutilizar SHA ni resultados CI sin comprobar el HEAD exacto.
 
@@ -37,7 +47,7 @@ Proyecto `restless-fire-99110035`, base `neondb`.
 - El branch rehearsal conserva un baseline útil, pero no tiene aplicadas las migraciones 0003–0016 ni el ledger de migraciones. El login probado con el conector Neon no demuestra que Cloudflare Worker use ese mismo login.
 - `.github/workflows/migration-runner.yml` prueba el runner en PostgreSQL 18 desechable; no ejecuta contra Neon. No aplicar SQL manual desde el conector: usar el procedimiento protegido `adopt-baseline.sh`/ `migrate.sh` cuando exista secreto y autorización específica.
 
-# Estado actual del esquema — 2026-10-30 UTC (main post PR #169)
+## Snapshot histórico — Estado del esquema 2026-10-30 UTC (main post PR #169)
 
 **Último SHA con cambios de esquema/runtime:** PR #169, `be35a0fde3886271b6ed98b7ccc29cc1255d50e5`. PR #170 (`af08cd913a4e0e155b1b74183a71efc51e5d4646`) fue solo documental y no cambió esquema. Consultar el ref vivo de `main` antes de cualquier cambio. Main versiona `0001_initial.sql`, `0002_google_identity.sql`, `0003_branch_scope.sql` y `0004_register_shifts.sql`; las migraciones 0003/0004 no se han aplicado a Neon main.
 

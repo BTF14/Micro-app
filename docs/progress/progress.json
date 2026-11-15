@@ -7,8 +7,8 @@
   },
   "production_readiness": {
     "done": 18,
-    "total": 25,
-    "percent": 72
+    "total": 27,
+    "percent": 66.7
   },
   "groups": [
     {
@@ -40,7 +40,7 @@
       "percent": 0
     },
     {
-      "name": "Gates bloqueantes para producción — vigentes",
+      "name": "Snapshot histórico — gates bloqueantes para producción (supersedido al 2026-11-15)",
       "done": 0,
       "total": 0,
       "items": [],
@@ -206,7 +206,7 @@
     {
       "name": "Preparación para producción (gates)",
       "done": 18,
-      "total": 25,
+      "total": 27,
       "items": [
         {
           "title": "CI, build/typecheck y pruebas automatizadas reproducibles en PostgreSQL efímero para los SHAs integrados; los checks de cada PR son evidencia de integración, no certificación live.",
@@ -245,7 +245,7 @@
           "done": true
         },
         {
-          "title": "Smoke autenticado live con Brave Shields ACTIVADO en móvil y escritorio: Google OAuth same-origin, sesión persistente en navegación de módulos reales y logout seguro confirmado por el propietario. Reabrir solo si cambian proxy /api, CORS, cookies/OAuth o CSP.",
+          "title": "Smoke autenticado live con Brave Shields ACTIVADO en móvil y escritorio: Google OAuth same-origin, sesión persistente en navegación de módulos reales y logout seguro confirmado por el propietario. La verificación de tasa BCV real persistida se mantiene como gate separado.",
           "done": true
         },
         {
@@ -285,6 +285,14 @@
           "done": false
         },
         {
+          "title": "Issue #53 P0: mantener abierto hasta demostrar todos sus criterios y obtener aceptación explícita de cierre.",
+          "done": false
+        },
+        {
+          "title": "Revisión final GO/NO-GO del propietario después de cerrar todos los gates de producción.",
+          "done": false
+        },
+        {
           "title": "Análisis Semgrep, Trivy, escaneo de historia de secretos y Dependency Review configurados en CI.",
           "done": true
         },
@@ -309,7 +317,7 @@
           "done": true
         }
       ],
-      "percent": 72
+      "percent": 66.7
     },
     {
       "name": "Bloqueos conocidos — corte 2026-11-14",
@@ -331,6 +339,8 @@
     "Medición y aceptación formal del RTO si se ejecuta una restauración formal.",
     "Revisión legal/fiscal/contable si cambia el alcance FISC-01 interno o se incorpora facturación fiscal SENIAT.",
     "Estabilidad posterior de BCV tras las ventanas programadas de 11:00 y 22:00 UTC, incluida la persistencia de tasas válidas.",
+    "Issue #53 P0: mantener abierto hasta demostrar todos sus criterios y obtener aceptación explícita de cierre.",
+    "Revisión final GO/NO-GO del propietario después de cerrar todos los gates de producción.",
     "Pruebas E2E de ventas, inventario, caja y devoluciones en móvil/escritorio con API/DB reales de prueba.",
     "Accesibilidad por teclado/lector y UX responsive final verificadas.",
     "Logs operativos, retención y soporte revisados sin exponer secretos ni datos sensibles."

@@ -266,3 +266,34 @@ Pruebas requeridas antes de implementación:
 ## Historial de cambios
 
 - 2026-11-09 — primera especificación basada en la conversación con el propietario. Propuesta aprobada para documentación; implementación, matriz de permisos, límites legales y habilitación siguen pendientes.
+
+
+## 16. Resolución confirmada por el propietario — 2026-11-15
+
+La capacidad sigue **no implementada ni habilitada** y sujeta a AC-6/AC-7.
+
+### 16.1 Actores y delegación (AC-5 resuelto)
+
+- Pueden autorizar una tasa manual el **Owner** y un **Admin únicamente con delegación explícita** del permiso `fx.contingency.authorize`.
+- Para Admin, la delegación cubre exclusivamente sucursales asignadas activamente. No se concede por defecto, no se hereda por el rol y no permite ampliar alcance.
+- Verificar server-side en cada operación membresía, rol efectivo, delegación y sucursal. Cualquier ambigüedad o revocación produce denegación fail-closed.
+
+### 16.2 Controles de seguridad obligatorios
+
+- PIN individual de mínimo **8 dígitos**, KDF fuerte con sal única; nunca texto plano ni hash rápido.
+- Rate limiting atómico por cuenta e IP, backoff/bloqueo temporal y respuestas que no revelen existencia de usuario/PIN.
+- Banda razonable de desviación respecto de la última tasa BCV válida: desviaciones elevadas requieren confirmación reforzada y motivo; fuera de límites duros, denegar. Los umbrales requieren calibración y revisión, no se inventan ahora.
+- Auditoría inmutable generada en servidor y protegida contra UPDATE/DELETE: `actor_user_id`, rol efectivo, sucursal, timestamp UTC del servidor, motivo, origen `manual`, tasa autorizada e inicio/expiración. El cliente no define atribución.
+
+### 16.3 Vigencia y retorno a BCV
+
+- Máximo **24 horas por autorización**, independiente del horario comercial o cierre de turno.
+- Expiración automática evaluada en servidor; no depende de Cron ni de actividad del usuario.
+- Renovación solo explícita, con nueva comprobación de permiso y PIN, y evento auditable separado. Sin extensión silenciosa.
+- Al existir una tasa oficial BCV válida y aplicable, retorno automático al modo BCV. No presentar tasa manual como oficial ni recalcular operaciones previas.
+
+### 16.4 Multi-tenant
+
+Autorizaciones, renovaciones, consultas y consumos se acotan a `organization_id` y sucursal. Admin delegado no opera fuera de sucursales asignadas. Snapshots conservan fuente/tasa/vigencia; auditoría append-only.
+
+**Gates:** AC-5 resuelto como decisión de negocio/arquitectura; AC-6 revisión legal/contable y AC-7 revisión independiente de seguridad previa a implementar siguen pendientes. No autoriza código, migraciones, endpoints ni activación.

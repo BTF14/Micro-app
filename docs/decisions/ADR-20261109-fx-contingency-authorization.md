@@ -1,7 +1,7 @@
 # ADR — Autorización temporal de contingencia cambiaria
 
 - **ID:** ADR-20261109-fx-contingency-authorization
-- **Estado:** proposed
+- **Estado:** accepted (política/arquitectura; implementación condicionada a AC-6/AC-7)
 - **Fecha:** 2026-11-09
 - **Responsables:** producto, arquitectura, seguridad y asesoría contable/legal
 - **Relacionado:** `odd/tasks/fx-contingency-management.md`, `docs/sdd/FX_CONTINGENCY_MANAGEMENT.md`, PR #255, #269 y #287 (contexto BCV/checkout; no se modifican); PR documental #288.
@@ -76,3 +76,14 @@ Riesgos/obligaciones:
 ## Historial
 
 - 2026-11-09 — creación como propuesta; decisión de producto documentada para evaluación y diseño, no implementada.
+
+
+## Addendum — resolución del propietario (2026-11-15)
+
+1. **Owner** puede autorizar una tasa manual dentro de su organización y alcance permitido.
+2. **Admin** solo puede autorizar con delegación explícita `fx.contingency.authorize`, limitada a sus sucursales asignadas activamente; no es permiso por defecto ni implícito en el rol.
+3. PIN individual >=8 dígitos, KDF fuerte con sal única, rate limiting por cuenta/IP y fail-closed. Banda razonable frente a última tasa BCV válida; confirmación reforzada ante desviaciones altas y denegación fuera de límites duros.
+4. Auditoría inmutable server-side: `actor_user_id`, rol efectivo, sucursal, timestamp UTC del servidor, motivo, origen manual, tasa y vigencia. El cliente no controla la atribución.
+5. Vigencia máxima **24 h**, independiente del horario del comercio; expiración automática server-side; renovación explícita con PIN y evento separado; retorno automático a BCV cuando exista tasa oficial válida aplicable.
+
+**AC-5 resuelto. AC-6 legal/contable y AC-7 revisión independiente de seguridad previa a implementación siguen pendientes.** Esta aceptación no levanta freeze ni autoriza implementación.

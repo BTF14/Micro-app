@@ -6,9 +6,9 @@
     "percent": 55.6
   },
   "production_readiness": {
-    "done": 18,
+    "done": 19,
     "total": 27,
-    "percent": 66.7
+    "percent": 70.4
   },
   "groups": [
     {
@@ -205,7 +205,7 @@
     },
     {
       "name": "Preparación para producción (gates)",
-      "done": 18,
+      "done": 19,
       "total": 27,
       "items": [
         {
@@ -249,7 +249,7 @@
           "done": true
         },
         {
-          "title": "Primera tasa BCV real persistida en Neon main y registro correspondiente en `bcv_sync_state`, tras la primera ventana elegible del lunes 2026-11-16; observar después de 11:05 UTC (07:05 VET).",
+          "title": "Primera tasa BCV real persistida en Neon main y registro correspondiente en `bcv_sync_state`, tras la primera ventana elegible del lunes 2026-11-16; observar después de 11:05 UTC (07:05 VET). La prueba de conectividad #19 (HTTP 200, parser compatible) no satisface este gate ni demuestra persistencia en workerd.",
           "done": false
         },
         {
@@ -261,12 +261,12 @@
           "done": true
         },
         {
-          "title": "RPO diario aproximado de 24 h aceptado por el propietario.",
+          "title": "RPO diario aproximado de 24 h aceptado por el propietario; evaluar post-estabilización una segunda corrida gratuita diaria después de 06:00 VET (p. ej. 11:00/12:00 UTC) para acercar el RPO a ~12 h sin modificar workflows durante el freeze.",
           "done": true
         },
         {
-          "title": "Medición y aceptación formal del RTO si se ejecuta una restauración formal.",
-          "done": false
+          "title": "**RTO de plataforma aceptado por el propietario: <= 4 horas desde detección del incidente (Tier $0, best-effort, independiente del horario de cada tenant).** Evidencia: restore técnico aislado #5 en 1.753 s + ~15–30 min de cutover según `docs/DISASTER_RECOVERY_RUNBOOK.md`; no es un simulacro cronometrado de caída total del proveedor.",
+          "done": true
         },
         {
           "title": "Revisión legal/fiscal/contable si cambia el alcance FISC-01 interno o se incorpora facturación fiscal SENIAT.",
@@ -317,7 +317,7 @@
           "done": true
         }
       ],
-      "percent": 66.7
+      "percent": 70.4
     },
     {
       "name": "Bloqueos conocidos — corte 2026-11-14",
@@ -332,11 +332,17 @@
       "total": 0,
       "items": [],
       "percent": 0
+    },
+    {
+      "name": "Reconciliación de evidencia operativa — 2026-11-15 (posterior a PR #372)",
+      "done": 0,
+      "total": 0,
+      "items": [],
+      "percent": 0
     }
   ],
   "production_blockers": [
-    "Primera tasa BCV real persistida en Neon main y registro correspondiente en `bcv_sync_state`, tras la primera ventana elegible del lunes 2026-11-16; observar después de 11:05 UTC (07:05 VET).",
-    "Medición y aceptación formal del RTO si se ejecuta una restauración formal.",
+    "Primera tasa BCV real persistida en Neon main y registro correspondiente en `bcv_sync_state`, tras la primera ventana elegible del lunes 2026-11-16; observar después de 11:05 UTC (07:05 VET). La prueba de conectividad #19 (HTTP 200, parser compatible) no satisface este gate ni demuestra persistencia en workerd.",
     "Revisión legal/fiscal/contable si cambia el alcance FISC-01 interno o se incorpora facturación fiscal SENIAT.",
     "Estabilidad posterior de BCV tras las ventanas programadas de 11:00 y 22:00 UTC, incluida la persistencia de tasas válidas.",
     "Issue #53 P0: mantener abierto hasta demostrar todos sus criterios y obtener aceptación explícita de cierre.",

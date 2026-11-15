@@ -609,3 +609,14 @@ Backup restore smoke PR run [43526664677](https://github.com/BTF14/Micro-app/act
 
 
 Nota de continuidad PR #350: el último HEAD de código validado es `61cd674c47cdba4595e21bd9e6b8f4ecd0f25431`; el commit documental posterior no cambia migraciones ni lógica de restore y debe superar de nuevo los checks exactos del PR.
+
+
+## Turno 53 — restore cifrado #5 y decisión RTO de plataforma (2026-11-15 UTC)
+
+- **Verify and restore latest encrypted backup #5** — `backup-real-restore.yml`; 2026-11-15T22:10:14Z–22:11:10Z; Success; 1m 1s total / 55s job.
+- Artefacto `backup-2026-11-15T14-25-22Z.dump.age`; antigüedad T0 27.945 s. Descarga + SHA-256 687 ms; age 3 ms; `pg_restore --list` 6 ms; restore + ACL `bcv-0025` + assertions `0022/0023` + logins independientes `microapp_runtime` y productor BCV 1.021 ms.
+- **Ventana técnica total 1.753 ms**, 29 tablas `public`, PostgreSQL 18.7. Restauración aislada; no tocó Neon main ni representa caída total cronometrada de proveedor.
+- **RTO aceptado:** plataforma <=4 h desde detección, Tier $0 best-effort, independiente del horario del tenant. La referencia técnica 1.753 ms + ~15–30 min de cutover según `docs/DISASTER_RECOVERY_RUNBOOK.md` sustenta el objetivo, pero no mide diagnóstico/coord./indisponibilidad total; no es SLA contractual.
+- **Mejora futura:** evaluar segunda corrida diaria gratuita post-06:00 VET (p. ej. 11:00/12:00 UTC) para RPO ~12 h. No cambiar workflows durante el freeze.
+
+Este addendum es documental; no modifica workflows, Neon, roles, secretos, Cron, Cloudflare, datos reales, billing ni deploys.

@@ -1,3 +1,21 @@
+# Estado actual — reconciliación documental 2026-11-15
+
+- **main verificado:** `d8ec2808a22d696a291c3454679381e5364e225a` (merge PR #372). Rama documental creada desde ese SHA exacto.
+- **Alcance:** solo documentación, SDD/ADR, ODD, tablero, cierre de PR #193 y comentario Issue #53. Sin cambios de apps, workflows, SQL/migraciones, Neon, Cloudflare, secretos, datos reales, billing o deploy manual.
+- **Backup:** restore cifrado #5 SUCCESS; ventana técnica aislada 1.753 ms sobre 29 tablas PostgreSQL 18.7. RTO de plataforma <=4 h (Tier $0 best-effort) aceptado; no es simulacro cronometrado de caída total. RPO diario ~24 h aceptado; segunda corrida diaria ~11:00/12:00 UTC queda como mejora futura, no tocar workflows durante freeze.
+- **BCV:** connectivity strict TLS #19 SUCCESS con Node/OpenSSL, HTTP 200 y parser compatible; no prueba workerd ni persistencia. Cron 11:00 y 22:00 UTC, lunes-viernes; watchdog read-only minuto 17 de cada hora.
+- **Contingencia:** AC-5 resuelto; AC-6 legal/contable y AC-7 seguridad siguen pendientes. Si BCV funciona: PR1 CSV → PR2 contingencia → PR3 escáner → PR4 reportes; si falla el lunes, contingencia prioridad #1 inmediata. Freeze no se levanta automáticamente.
+- **PR #193:** Fase C preservada en `docs/sdd/PHASE_C_INTERBRANCH_TRANSFERS.md`; cierre sin merge. **Issue #53 OPEN/P0. PRODUCTION: NOT READY.**
+
+## Próximo paso exacto — lunes 2026-11-16 (read-only)
+
+1. Después de **11:05 UTC (07:05 VET)**: observar ejecución real del Cron BCV matutino, outcome, effective date, fila persistida y estado de sincronización; no escribir en Neon.
+2. Seguir a las **22:00 UTC (18:00 VET)**: observar segundo ciclo, estabilidad y persistencia; distinguir invocation/build/HTTP connectivity de persistencia real en workerd.
+3. Mantener freeze v1.1 hasta evidencia de persistencia y estabilidad real y decisión GO/NO-GO del propietario. No abrir PR comercial antes del gate.
+4. Mantener Issue #53 OPEN/P0 y PRODUCTION NOT READY hasta cerrar criterios y obtener aceptación explícita.
+
+---
+
 ## Turno 52 — Reconciliación de readiness y evidencia BCV visible (2026-11-15 UTC)
 
 - Base exacta de esta rama documental: `main` = `f4461ea689c7283c19788724e51385537f23d217`.

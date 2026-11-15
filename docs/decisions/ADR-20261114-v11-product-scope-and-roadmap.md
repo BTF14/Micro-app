@@ -4,7 +4,7 @@
 - **Estado:** accepted
 - **Fecha:** 2026-11-14
 - **Responsables:** propietario del producto y mantenimiento técnico
-- **Relacionado:** odd/tasks/adr-v11-roadmap-and-owner-confirmations.md; PR #369 (esta documentación); PR #193 (OPEN, fuera de alcance); Issue #53 (OPEN/P0)
+- **Relacionado:** odd/tasks/adr-v11-roadmap-and-owner-confirmations.md; PR #369 (esta documentación); PR #193 (CLOSED sin merge; Fase C preservada en SDD); Issue #53 (OPEN/P0)
 
 ## Contexto y problema
 
@@ -25,11 +25,11 @@ Micro-app genera comprobantes de control interno identificados como FISC-01; no 
 
 ### Congelación de nuevas funciones
 
-Se congela la implementación de nuevas funcionalidades comerciales hasta observar la primera tasa BCV real persistida en Neon main en la ventana del lunes **2026-11-16 22:00 UTC (18:00 VET)** y comprobar estabilidad posterior del ciclo de sincronización. Una ejecución sintética, un build o un estado de CI no satisface el gate. La documentación y la preparación de decisiones no levantan el freeze.
+Se mantiene el freeze de implementación comercial hasta verificar la primera tasa BCV real persistida en Neon main tras la ventana del lunes **2026-11-16 11:00 UTC** (observación read-only después de **11:05 UTC / 07:05 VET**) y revisar estabilidad, incluida la ventana de **22:00 UTC / 18:00 VET**. Una ejecución sintética, conectividad Node/OpenSSL, un build o CI no satisface el gate. Si el Cron/Worker falla en producción el lunes, Contingencia Manual BCV pasa a prioridad de producto **#1 inmediata**; esto no levanta automáticamente el freeze ni autoriza PR de código antes de completar la observación y el gate de estabilidad.
 
 ### Roadmap v1.1 aprobado y ordenado
 
-Las tres PR siguientes son unidades separadas. El orden no se altera ni se paraleliza antes de levantar el freeze. Este ADR aprueba el alcance de diseño; cada PR futura deberá cumplir sus propios gates, pruebas y revisión.
+Las cuatro PR siguientes son unidades separadas. El orden no se altera ni se paraleliza antes de levantar el freeze. Este ADR aprueba el alcance de diseño; cada PR futura deberá cumplir sus propios gates, pruebas y revisión.
 
 #### PR 1 — Importador CSV de catálogo
 
@@ -42,7 +42,15 @@ Las tres PR siguientes son unidades separadas. El orden no se altera ni se paral
 - Crear catalog_import_batches para idempotencia persistente: ámbito de organización/sucursal, clave de idempotencia y hash canónico del request. Repetir la misma clave y hash devuelve el resultado previo; la misma clave con hash distinto responde HTTP 409.
 - El importador solo modifica catálogo. No escribe stock directamente ni acepta cantidades iniciales como sustituto del proceso de conteo/recepción. La inicialización de existencias sigue siendo una operación separada, trazable y autorizada.
 
-#### PR 2 — Escáner móvil de códigos de barras
+#### PR 2 — Contingencia Manual BCV
+
+- Owner o Admin con delegación explícita `fx.contingency.authorize`, acotada a sucursales asignadas al Admin y no concedida por defecto.
+- PIN individual mínimo 8 dígitos, KDF fuerte, rate limiting por cuenta/IP, banda de desviación frente a última tasa BCV válida y confirmación reforzada ante desvíos altos.
+- Auditoría inmutable server-side con actor, rol efectivo, sucursal, timestamp UTC, motivo, origen manual, tasa y vigencia.
+- Vigencia máxima 24 h, expiración automática, renovación explícita auditable con PIN y retorno automático a BCV cuando exista tasa oficial válida aplicable.
+- AC-6 revisión legal/contable y AC-7 revisión independiente de seguridad son gates previos a implementación.
+
+#### PR 3 — Escáner móvil de códigos de barras
 
 - Usar BarcodeDetector cuando el navegador lo soporte y cámara mediante getUserMedia.
 - Mantener fallback manual obligatorio para navegadores/dispositivos sin soporte, permisos denegados o cámara no disponible.
@@ -50,9 +58,11 @@ Las tres PR siguientes son unidades separadas. El orden no se altera ni se paral
 - No incorporar inicialmente una dependencia pesada. Detener la cámara al salir/cambiar de flujo y evitar detecciones repetidas.
 - Conectar el resultado al verificador rápido de precios USD/VES, no a un nuevo flujo de venta autónomo.
 
-#### PR 3 — Cierre de caja, reportes y exportación CSV
+#### PR 4 — Cierre de caja, reportes y exportación CSV
 
 - Incluir resumen del cierre de caja y reportes Diario, Semanal, Mensual y por rango personalizado, con exportación CSV útil para el contador.
+- Los turnos `register_shifts` son sesiones delimitadas por `opened_at` → `closed_at`; no se cortan ni cierran automáticamente a medianoche. PR 4 debe ofrecer reporte por turno cerrado y rango fecha+hora personalizado, además del corte calendario contable `00:00–24:00`.
+- Dejar previsto en el diseño por organización un futuro parámetro configurable `business_day_cutoff_hour` para comercios nocturnos; no introducirlo en runtime durante este freeze.
 - Definir intervalos semiabiertos [inicio, fin) en America/Caracas; la semana comienza el lunes. Convertir los límites locales a instantes correctos antes de consultar PostgreSQL.
 - Contabilizar ventas con sales.status = 'completed' usando completed_at, no created_at; contabilizar cierres de turno mediante register_shifts.closed_at.
 - Consultar el modelo existente sales, payments (incluido el método other), sale_items y register_shifts. Mantener filtros de organización/sucursal/permiso en servidor.
@@ -65,7 +75,7 @@ Las tres PR siguientes son unidades separadas. El orden no se altera ni se paral
 
 ### Confirmaciones operativas del propietario
 
-Se registran en docs/PRODUCTION_READINESS.md con la marca **CONFIRMADO POR EL PROPIETARIO — NO VOLVER A PEDIR**: presupuesto $0 / Workers Free sin método de pago; canal de alertas por correo de GitHub Workflows verificado por el propietario más panel BCV y logs gratuitos; RPO diario aproximado de 24 horas aceptado; y alcance FISC-01 exclusivamente interno. La aceptación del RPO no equivale a medición/aceptación de RTO.
+Se registran en docs/PRODUCTION_READINESS.md con la marca **CONFIRMADO POR EL PROPIETARIO — NO VOLVER A PEDIR**: presupuesto $0 / Workers Free sin método de pago; canal de alertas por correo de GitHub Workflows verificado por el propietario más panel BCV y logs gratuitos; RPO diario aproximado de 24 horas aceptado; y alcance FISC-01 exclusivamente interno. El RTO operativo de plataforma Tier $0 best-effort ≤4 h desde detección fue aceptado por el propietario el 2026-11-15; la evidencia y sus límites están en `docs/PRODUCTION_READINESS.md`.
 
 ## Alternativas consideradas
 
@@ -101,4 +111,17 @@ El roadmap puede cambiarse mediante un ADR sucesor que identifique expresamente 
 
 ## Historial
 
-- 2026-11-14 — ADR aceptado para fijar alcance v1.1, secuencia de implementación y confirmaciones del propietario; no implica que las tres PR futuras estén implementadas.
+- 2026-11-14 — ADR aceptado para fijar alcance v1.1, secuencia de implementación y confirmaciones del propietario; no implica que las cuatro PR futuras estén implementadas.
+
+
+## Addendum — decisiones confirmadas por el propietario (2026-11-15)
+
+- Si el Cron/Worker BCV falla en producción el lunes 2026-11-16, **Contingencia Manual BCV pasa a prioridad #1 inmediata**.
+- Si BCV funciona con éxito y la tasa queda persistida con estabilidad confirmada, el orden es: **PR 1 Importador CSV → PR 2 Contingencia Manual BCV → PR 3 Escáner móvil → PR 4 Cierre de caja, reportes y exportación CSV**.
+- La prioridad no elimina gates legales/contables y de seguridad ni levanta por sí sola el freeze. No implementar ni abrir PR comercial antes de observación real y confirmación de estabilidad BCV.
+
+### PR 4 — jornadas que cruzan medianoche
+
+`register_shifts` opera por sesión `opened_at` → `closed_at`, sin corte automático a medianoche. PR 4 ofrecerá reporte por turno cerrado y por rango fecha+hora personalizado, además del corte calendario contable 00:00–24:00. Se prevé para futuro un `business_day_cutoff_hour` configurable por organización; no está implementado ni se modifica runtime.
+
+**Freeze v1.1 vigente al 2026-11-15.** Próxima observación read-only: 2026-11-16 después de 11:05 UTC y seguimiento a 22:00 UTC.

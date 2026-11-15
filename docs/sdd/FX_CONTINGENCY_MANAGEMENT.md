@@ -46,7 +46,7 @@ No llamar a la función «activar/desactivar el dólar». La moneda USD puede se
 
 ## 3. Actores y permisos
 
-Roles existentes del dominio: `owner`, `admin`, `cashier`, `inventory`. La matriz aprobada reserva al Owner la configuración de políticas de organización y limita al Admin a operar el negocio. La petición de producto solicita que la contingencia solo pueda autorizarla un administrador; se necesita reconciliar formalmente esa intención con la matriz vigente antes de crear permisos/endpoints.
+Roles existentes del dominio: `owner`, `admin`, `cashier`, `inventory`. La decisión confirmada el 2026-11-15 permite autorización por Owner y por Admin únicamente con delegación explícita `fx.contingency.authorize`, limitada a las sucursales asignadas. La delegación no se concede por defecto; la autorización se valida server-side en cada operación.
 
 Propuesta de autorización mínima:
 - **Owner:** configura la política organizacional, define quién puede ser delegado, límites de duración, uso de doble autorización y alcance permitido.
@@ -55,7 +55,7 @@ Propuesta de autorización mínima:
 - **Cashier:** puede consultar el estado, realizar ventas permitidas y confirmar que comunicó la tasa mostrada; no puede crear, editar, renovar ni revocar autorizaciones.
 - **Inventory:** sin permiso cambiario salvo acceso de lectura expresamente definido.
 
-El permiso específico no existe todavía. No implementarlo ni asumir que `admin` lo incluye hasta reconciliar y aprobar la matriz de permisos. Si el propietario decide que solo Owner puede autorizar, usar esa política sin introducir delegación.
+El permiso `fx.contingency.authorize` es una delegación explícita que deberá incorporarse a la matriz antes de implementar; no forma parte del rol Admin por defecto. La decisión de negocio ya está confirmada; AC-6 legal/contable y AC-7 seguridad siguen pendientes.
 
 ### Pequeño negocio
 - Una persona puede tener rol Owner/Admin y operar caja con la misma cuenta individual.
@@ -73,7 +73,7 @@ El permiso específico no existe todavía. No implementarlo ni asumir que `admin
 ## 4. Autenticación y PIN
 
 - PIN es una verificación adicional ligada a una cuenta ya autenticada; no reemplaza el inicio de sesión ni la autorización.
-- Para pequeños negocios: PIN administrativo individual de 8 dígitos como mínimo recomendado.
+- Para toda autorización de contingencia: PIN individual obligatorio de al menos 8 dígitos, KDF fuerte con sal única y rate limit por cuenta/IP; verificación server-side.
 - El PIN se solicita al confirmar la activación, renovación o cambio material de la autorización, no al entrar en Configuración.
 - La verificación debe ocurrir en servidor y vincularse a la solicitud exacta (organización, sucursal/alcance, tasa, motivo, inicio, vencimiento y nonce/idempotency key).
 - Nunca guardar PIN en texto plano, logs, analytics ni eventos de auditoría. Usar KDF de contraseñas resistente a fuerza bruta compatible con el runtime (selección pendiente de revisión técnica), sal única y parámetros revisables; un pepper solo si puede almacenarse y rotarse de forma segura fuera de la base de datos.
@@ -100,8 +100,7 @@ La reautenticación autoriza exclusivamente esa solicitud. No crea una sesión a
 
 ## 6. Vigencia, alcance y estados
 
-- Propuesta inicial para pequeño negocio: máximo 24 horas por autorización.
-- Para empresa: límite máximo definido por Owner en política organizacional; la primera versión debe usar un límite conservador y documentado, no duración ilimitada.
+- Decisión confirmada el 2026-11-15: máximo **24 horas por autorización para todos los tenants**, independiente del horario comercial y de la zona horaria del local. Expiración automática en servidor; renovación explícita, nueva verificación PIN y evento auditable separado.
 - La renovación crea una nueva autorización; nunca modifica la anterior.
 - Vencimiento se evalúa en servidor usando reloj confiable y zona `America/Caracas`; no depende de que un Cron se ejecute ni de que el usuario abra la aplicación.
 - Alcance predeterminado: una sucursal. «Todas las sucursales» requiere permiso y política explícitos, confirmación separada y auditoría de alcance.
@@ -266,3 +265,34 @@ Pruebas requeridas antes de implementación:
 ## Historial de cambios
 
 - 2026-11-09 — primera especificación basada en la conversación con el propietario. Propuesta aprobada para documentación; implementación, matriz de permisos, límites legales y habilitación siguen pendientes.
+
+
+## 16. Resolución confirmada por el propietario — 2026-11-15
+
+La capacidad sigue **no implementada ni habilitada** y sujeta a AC-6/AC-7.
+
+### 16.1 Actores y delegación (AC-5 resuelto)
+
+- Pueden autorizar una tasa manual el **Owner** y un **Admin únicamente con delegación explícita** del permiso `fx.contingency.authorize`.
+- Para Admin, la delegación cubre exclusivamente sucursales asignadas activamente. No se concede por defecto, no se hereda por el rol y no permite ampliar alcance.
+- Verificar server-side en cada operación membresía, rol efectivo, delegación y sucursal. Cualquier ambigüedad o revocación produce denegación fail-closed.
+
+### 16.2 Controles de seguridad obligatorios
+
+- PIN individual de mínimo **8 dígitos**, KDF fuerte con sal única; nunca texto plano ni hash rápido.
+- Rate limiting atómico por cuenta e IP, backoff/bloqueo temporal y respuestas que no revelen existencia de usuario/PIN.
+- Banda razonable de desviación respecto de la última tasa BCV válida: desviaciones elevadas requieren confirmación reforzada y motivo; fuera de límites duros, denegar. Los umbrales requieren calibración y revisión, no se inventan ahora.
+- Auditoría inmutable generada en servidor y protegida contra UPDATE/DELETE: `actor_user_id`, rol efectivo, sucursal, timestamp UTC del servidor, motivo, origen `manual`, tasa autorizada e inicio/expiración. El cliente no define atribución.
+
+### 16.3 Vigencia y retorno a BCV
+
+- Máximo **24 horas por autorización**, independiente del horario comercial o cierre de turno.
+- Expiración automática evaluada en servidor; no depende de Cron ni de actividad del usuario.
+- Renovación solo explícita, con nueva comprobación de permiso y PIN, y evento auditable separado. Sin extensión silenciosa.
+- Al existir una tasa oficial BCV válida y aplicable, retorno automático al modo BCV. No presentar tasa manual como oficial ni recalcular operaciones previas.
+
+### 16.4 Multi-tenant
+
+Autorizaciones, renovaciones, consultas y consumos se acotan a `organization_id` y sucursal. Admin delegado no opera fuera de sucursales asignadas. Snapshots conservan fuente/tasa/vigencia; auditoría append-only.
+
+**Gates:** AC-5 resuelto como decisión de negocio/arquitectura; AC-6 revisión legal/contable y AC-7 revisión independiente de seguridad previa a implementar siguen pendientes. No autoriza código, migraciones, endpoints ni activación.

@@ -6,7 +6,7 @@ Estas decisiones se registran como confirmaciones del propietario, no como una n
 
 - **Presupuesto $0:** Workers Free y sin método de pago registrado. No activar planes, billing ni servicios pagados.
 - **Seguimiento y alertas:** correo de GitHub Workflows verificado por el propietario; seguimiento BCV mediante el panel de la app y logs gratuitos de Cloudflare. No se requieren alertas pagas de Cloudflare.
-- **RPO:** respaldo diario aproximado cada 24 horas aceptado. No volver a pedir aceptación del RPO. Solo queda pendiente medir y aceptar el RTO si se ejecuta una restauración formal.
+- **RPO:** respaldo diario aproximado cada 24 horas aceptado. No volver a pedir aceptación del RPO. El RTO operativo de plataforma Tier $0 best-effort ≤4 h desde detección ya fue aceptado el 2026-11-15; no equivale a un simulacro de caída total.
 - **FISC-01:** alcance actual exclusivamente interno (inventario y verificación de precios); no es facturación fiscal SENIAT. La revisión legal/fiscal/contable será gate si cambia el alcance o se incorpora facturación fiscal.
 
 ## Estado verificado — main `f4461ea689c7283c19788724e51385537f23d217`
@@ -21,7 +21,7 @@ Estas decisiones se registran como confirmaciones del propietario, no como una n
 - El propietario confirmó smoke autenticado live con Brave Shields ACTIVADO: Google OAuth same-origin bajo `/api`, sesión persistente en móvil/escritorio, lectura de Neon `main` y logout con 401. También confirmó retiro de la URI legacy `workers.dev`.
 - El build y la configuración Cron visibles no demuestran una invocación real ni persistencia en Neon. La primera observación elegible es el lunes 2026-11-16 **después de 11:05 UTC (07:05 VET)**, mediante lectura solamente.
 
-**PR #193 permanece OPEN e intacta**, HEAD `ac57ab4f3415f82279b8a49c0befe09f8e3aec68`. **Issue #53 permanece OPEN/P0.**
+**PR #193 está CLOSED sin merge**; Fase C fue preservada en `docs/sdd/PHASE_C_INTERBRANCH_TRANSFERS.md`. **Issue #53 permanece OPEN/P0.**
 
 **PRODUCTION: NOT READY.** Mantener freeze y roadmap v1.1 hasta cerrar los gates pendientes.
 
@@ -29,7 +29,7 @@ Estas decisiones se registran como confirmaciones del propietario, no como una n
 
 1. **Primera tasa BCV real persistida en Neon main:** después de las 11:05 UTC del lunes 2026-11-16, observar read-only la invocación, resultado (`inserted`, `unchanged` o `failed`), fecha efectiva y fila persistida. Si la ventana matutina no produce una tasa válida, revisar también la ventana de 22:00 UTC / 18:00 VET.
 2. **Estabilidad BCV posterior:** confirmar ejecuciones válidas posteriores, incluida la ventana de 22:00 UTC, sin estados atascados, pérdida de frescura, datos inválidos ni regresiones. No levantar el freeze v1.1 antes de esta evidencia.
-3. **RTO:** medir y aceptar formalmente solo si se ejecuta una restauración formal. El RPO aproximado de 24 horas ya está aceptado.
+3. **RTO de plataforma:** objetivo **<= 4 horas desde detección**, Tier $0 best-effort, aceptado por el propietario el 2026-11-15. Restore técnico aislado #5: 1.753 ms + ~15–30 min de cutover; no se ha ejecutado un simulacro cronometrado de caída total del proveedor. RPO diario aproximado de 24 horas aceptado.
 4. **Devoluciones y reversos:** permanecen en P1, pendientes de reglas de negocio/fiscales aprobadas e implementación verificable.
 5. **Accesibilidad completa:** lector de pantalla y revisión final de GO/NO-GO permanecen abiertos.
 6. **Alcance fiscal/legal:** revisión legal/fiscal/contable si cambia el alcance FISC-01 interno o se incorpora facturación fiscal SENIAT.
@@ -244,11 +244,11 @@ Los párrafos de 2026-10-30 describían el estado previo a los vertical slices i
 - [x] POS y checkout atómico integrados (PR #357; 0015/0018); el alcance comercial sigue limitado por las notas del bloque de implementación.
 - [x] Migraciones 0001–0025 aplicadas en Neon main según el workflow protegido, run #43591333198; no inferir de ello que la aplicación esté aceptada para lanzamiento.
 - [x] Smoke autenticado live con Brave Shields ACTIVADO en móvil y escritorio: Google OAuth same-origin, sesión persistente en navegación de módulos reales y logout seguro confirmado por el propietario. La verificación de tasa BCV real persistida se mantiene como gate separado.
-- [ ] Primera tasa BCV real persistida en Neon main y registro correspondiente en `bcv_sync_state`, tras la primera ventana elegible del lunes 2026-11-16; observar después de 11:05 UTC (07:05 VET).
+- [ ] Primera tasa BCV real persistida en Neon main y registro correspondiente en `bcv_sync_state`, tras la primera ventana elegible del lunes 2026-11-16; observar después de 11:05 UTC (07:05 VET). La prueba de conectividad #19 (HTTP 200, parser compatible) no satisface este gate ni demuestra persistencia en workerd.
 - [x] E2E full-stack real en CI contra API Hono + PostgreSQL 18 efímero, sin mocks de `/api/*` (PR #366): catálogo, recepción, turno, checkout USD/VES, recibos, stock, cierre/recarga y rechazo de venta con caja cerrada. No valida producción real.
 - [x] Rate limiting runtime en rutas sensibles: integrado y probado en PostgreSQL 18 efímero para OAuth, checkout y 11 endpoints de escritura (PR #363; exact-HEAD y post-merge checks SUCCESS).
-- [x] RPO diario aproximado de 24 h aceptado por el propietario.
-- [ ] Medición y aceptación formal del RTO si se ejecuta una restauración formal.
+- [x] RPO diario aproximado de 24 h aceptado por el propietario; evaluar post-estabilización una segunda corrida gratuita diaria después de 06:00 VET (p. ej. 11:00/12:00 UTC) para acercar el RPO a ~12 h sin modificar workflows durante el freeze.
+- [x] **RTO de plataforma aceptado por el propietario: <= 4 horas desde detección del incidente (Tier $0, best-effort, independiente del horario de cada tenant).** Evidencia: restore técnico aislado #5 en 1753 ms + ~15–30 min de cutover según `docs/DISASTER_RECOVERY_RUNBOOK.md`; no es un simulacro cronometrado de caída total del proveedor.
 - [ ] Revisión legal/fiscal/contable si cambia el alcance FISC-01 interno o se incorpora facturación fiscal SENIAT.
 - [x] Watchdog BCV read-only `17 * * * *`, endpoint y UI integrados en PR #364; pre-merge 16/16 check-runs y 13/13 workflows SUCCESS, post-merge 14/14 check-runs y 10/10 workflows SUCCESS. La suite PostgreSQL 18 usa login real `microapp_runtime` y comprueba privilegios de solo lectura.
 - [x] Seguimiento BCV mediante panel de la app y logs gratuitos de Cloudflare; correo de GitHub Workflows verificado por el propietario. No se usan alertas pagas de Cloudflare.
@@ -258,7 +258,7 @@ Los párrafos de 2026-10-30 describían el estado previo a los vertical slices i
 
 ### P1 — operación, resiliencia y UX
 - [x] Análisis Semgrep, Trivy, escaneo de historia de secretos y Dependency Review configurados en CI.
-- [x] Backup cifrado, restauración instrumentada aislada y canal de alerta/ACK humano tienen evidencia registrada; la medición sintética no equivale a RPO/RTO operativos aceptados.
+- [x] Backup cifrado, restauración instrumentada aislada y canal de alerta/ACK humano tienen evidencia registrada; el restore técnico aislado no equivale a un simulacro de caída total. El RTO de plataforma Tier $0 best-effort ≤4 h fue aceptado por el propietario.
 - [ ] Pruebas E2E de ventas, inventario, caja y devoluciones en móvil/escritorio con API/DB reales de prueba.
 - [ ] Accesibilidad por teclado/lector y UX responsive final verificadas.
 - [ ] Logs operativos, retención y soporte revisados sin exponer secretos ni datos sensibles.
@@ -283,3 +283,29 @@ Actualiza este checklist solo junto con evidencia verificable en main y una entr
 ## Respaldo y recuperación
 
 La política está documentada en `docs/BACKUP_AND_RECOVERY.md`. La subida cifrada está verificada y la copia remota exacta se restauró técnicamente en PostgreSQL 18 desechable (run 40955935124). El control compuesto permanece incompleto hasta validar datos comerciales/conteos/relaciones, medir RPO/RTO y comprobar alertas y coste total.
+
+
+## Reconciliación de evidencia operativa — 2026-11-15 (posterior a PR #372)
+
+- Evidencia de readiness ejecutada sobre `main` `f4461ea689c7283c19788724e51385537f23d217`; estado post-merge PR #372: `d8ec2808a22d696a291c3454679381e5364e225a`, 9/9 workflow runs y 14/14 check-runs SUCCESS.
+
+### Restore real cifrado #5 — evidencia técnica aislada
+
+- `backup-real-restore.yml`, **Verify and restore latest encrypted backup #5**, 2026-11-15T22:10:14Z–22:11:10Z; Success; 1m 1s total / 55s job.
+- Artefacto `backup-2026-11-15T14-25-22Z.dump.age`; antigüedad T0: 27945 s.
+- Tiempos T0→T1, excluyendo cola/apt: descarga + SHA-256 687 ms; descifrado age 3 ms; `pg_restore --list` 6 ms; restore + replay ACL `bcv-0025` + assertions `0022/0023` + logins independientes `microapp_runtime` y productor BCV 1.021 ms.
+- **Ventana técnica total: 1.753 ms**, 29 tablas `public`, PostgreSQL 18.7. Restore aislado; no restauró sobre Neon main ni equivale a caída total cronometrada del proveedor.
+
+### Conectividad BCV estricta TLS #19
+
+- `bcv-source-connectivity.yml`, **BCV source connectivity (strict TLS) #19**, 2026-11-15T22:16:54Z–22:17:05Z; Success; 17 s total / 13 s job.
+- Pinning SHA-256 del intermedio Sectigo DV R36 validado. Test `src/bcv-connectivity.manual.test.ts` con `NODE_EXTRA_CA_CERTS`: 1/1, 1.188 ms; `status: 200`, `contentType: text/html`, `effectiveDate: 2026-11-16`, `parser: compatible`.
+- **Límite:** prueba Node/OpenSSL; no sustituye primera invocación real en Cloudflare Workers (`workerd`) el lunes 2026-11-16 11:00 UTC ni demuestra persistencia de tasa en Neon main.
+
+### RTO aceptado por el propietario
+
+- **RTO operativo de plataforma <= 4 horas desde detección del incidente**, Tier $0 best-effort, agnóstico de horarios de tenants (incluye jornadas 10:00–22:00 y fines de semana 10:00–06:00 cruzando medianoche).
+- Base: restore aislado 1.753 ms + ~15–30 min de cutover siguiendo `docs/DISASTER_RECOVERY_RUNBOOK.md`. El margen cubre diagnóstico, coordinación y variabilidad; no es SLA contractual ni simulacro cronometrado de caída total del proveedor.
+- Gate de aceptación formal del objetivo cerrado como decisión del propietario. Persistencia BCV real, estabilidad posterior, Issue #53 y GO/NO-GO siguen abiertos.
+
+**Estado global:** **PRODUCTION: NOT READY**; **Issue #53 OPEN/P0**; freeze v1.1 vigente.

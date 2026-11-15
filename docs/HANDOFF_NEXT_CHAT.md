@@ -1,3 +1,29 @@
+# Handoff operativo — 2026-11-15 (continuación desde main #372)
+
+## Punto de partida verificado
+
+- `main` = `d8ec2808a22d696a291c3454679381e5364e225a`; rama documental aislada creada desde ese SHA exacto.
+- No reabrir verificaciones ya documentadas ni pedir capturas/Build IDs/terminal/CLI/reconexiones. La siguiente acción requiere observación read-only y registro textual de evidencia sin revelar secretos.
+- Alcance: docs/SDD/ADR/ODD/tablero, cierre PR #193 y comentario Issue #53. No modificar código, workflows, SQL/migraciones, infraestructura, secretos, datos reales, billing ni deploys.
+
+## Próxima acción exacta — lunes 2026-11-16
+
+1. **Después de 11:05 UTC (07:05 VET):** inspección read-only del primer Cron BCV real: run/invocation, estado, outcome, effective date, tasa válida persistida y `bcv_sync_state`. Connectivity test #19 Node/OpenSSL no sustituye workerd.
+2. **22:00 UTC (18:00 VET):** observar segundo ciclo y confirmar estabilidad posterior, persistencia y ausencia de estado atascado/regresiones.
+3. No cambiar Neon, re-ejecutar jobs de producción, modificar Cron ni secrets. Diferenciar fallo de origen, parser, TLS, runtime y persistencia.
+4. Freeze v1.1 sigue vigente hasta persistencia real y estabilidad. Fallo el lunes eleva contingencia manual a prioridad #1 inmediata, pero no habilita por sí solo una PR de código.
+5. Mantener PRODUCTION: NOT READY e Issue #53 OPEN/P0 hasta todos los gates y aceptación explícita.
+
+## Decisiones confirmadas — no volver a preguntar
+
+- RTO plataforma <=4 h best-effort, independiente del horario de cada tenant; restore aislado #5 1.753 ms + cutover estimado 15–30 min, no simulacro de caída total.
+- RPO actual ~24 h aceptado; segunda corrida diaria gratuita posterior a 06:00 VET (~11:00/12:00 UTC) solo post-estabilización.
+- Contingencia: Owner o Admin con delegación explícita `fx.contingency.authorize` limitada a sucursales asignadas; PIN individual >=8 dígitos, KDF fuerte, rate limit cuenta/IP, desviación con confirmación reforzada, auditoría inmutable server-side; vigencia <=24 h, renovación explícita auditable con PIN y retorno automático a BCV.
+- AC-5 resuelto; AC-6 legal/contable y AC-7 seguridad pendientes.
+- Roadmap si BCV funciona: PR1 CSV, PR2 contingencia, PR3 escáner, PR4 cierre/reportes. Turnos son sesiones `opened_at → closed_at`; reportes por turno/rango fecha-hora y calendario 00:00–24:00; futuro `business_day_cutoff_hour` por organización.
+
+---
+
 ## Turno 52 — Estado actual y siguiente control BCV (2026-11-15 UTC)
 
 ### Base y evidencia exacta

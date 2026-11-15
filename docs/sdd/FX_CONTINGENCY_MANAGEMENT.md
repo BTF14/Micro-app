@@ -46,7 +46,7 @@ No llamar a la función «activar/desactivar el dólar». La moneda USD puede se
 
 ## 3. Actores y permisos
 
-Roles existentes del dominio: `owner`, `admin`, `cashier`, `inventory`. La matriz aprobada reserva al Owner la configuración de políticas de organización y limita al Admin a operar el negocio. La petición de producto solicita que la contingencia solo pueda autorizarla un administrador; se necesita reconciliar formalmente esa intención con la matriz vigente antes de crear permisos/endpoints.
+Roles existentes del dominio: `owner`, `admin`, `cashier`, `inventory`. La decisión confirmada el 2026-11-15 permite autorización por Owner y por Admin únicamente con delegación explícita `fx.contingency.authorize`, limitada a las sucursales asignadas. La delegación no se concede por defecto; la autorización se valida server-side en cada operación.
 
 Propuesta de autorización mínima:
 - **Owner:** configura la política organizacional, define quién puede ser delegado, límites de duración, uso de doble autorización y alcance permitido.
@@ -55,7 +55,7 @@ Propuesta de autorización mínima:
 - **Cashier:** puede consultar el estado, realizar ventas permitidas y confirmar que comunicó la tasa mostrada; no puede crear, editar, renovar ni revocar autorizaciones.
 - **Inventory:** sin permiso cambiario salvo acceso de lectura expresamente definido.
 
-El permiso específico no existe todavía. No implementarlo ni asumir que `admin` lo incluye hasta reconciliar y aprobar la matriz de permisos. Si el propietario decide que solo Owner puede autorizar, usar esa política sin introducir delegación.
+El permiso `fx.contingency.authorize` es una delegación explícita que deberá incorporarse a la matriz antes de implementar; no forma parte del rol Admin por defecto. La decisión de negocio ya está confirmada; AC-6 legal/contable y AC-7 seguridad siguen pendientes.
 
 ### Pequeño negocio
 - Una persona puede tener rol Owner/Admin y operar caja con la misma cuenta individual.
@@ -73,7 +73,7 @@ El permiso específico no existe todavía. No implementarlo ni asumir que `admin
 ## 4. Autenticación y PIN
 
 - PIN es una verificación adicional ligada a una cuenta ya autenticada; no reemplaza el inicio de sesión ni la autorización.
-- Para pequeños negocios: PIN administrativo individual de 8 dígitos como mínimo recomendado.
+- Para toda autorización de contingencia: PIN individual obligatorio de al menos 8 dígitos, KDF fuerte con sal única y rate limit por cuenta/IP; verificación server-side.
 - El PIN se solicita al confirmar la activación, renovación o cambio material de la autorización, no al entrar en Configuración.
 - La verificación debe ocurrir en servidor y vincularse a la solicitud exacta (organización, sucursal/alcance, tasa, motivo, inicio, vencimiento y nonce/idempotency key).
 - Nunca guardar PIN en texto plano, logs, analytics ni eventos de auditoría. Usar KDF de contraseñas resistente a fuerza bruta compatible con el runtime (selección pendiente de revisión técnica), sal única y parámetros revisables; un pepper solo si puede almacenarse y rotarse de forma segura fuera de la base de datos.
@@ -100,8 +100,7 @@ La reautenticación autoriza exclusivamente esa solicitud. No crea una sesión a
 
 ## 6. Vigencia, alcance y estados
 
-- Propuesta inicial para pequeño negocio: máximo 24 horas por autorización.
-- Para empresa: límite máximo definido por Owner en política organizacional; la primera versión debe usar un límite conservador y documentado, no duración ilimitada.
+- Decisión confirmada el 2026-11-15: máximo **24 horas por autorización para todos los tenants**, independiente del horario comercial y de la zona horaria del local. Expiración automática en servidor; renovación explícita, nueva verificación PIN y evento auditable separado.
 - La renovación crea una nueva autorización; nunca modifica la anterior.
 - Vencimiento se evalúa en servidor usando reloj confiable y zona `America/Caracas`; no depende de que un Cron se ejecute ni de que el usuario abra la aplicación.
 - Alcance predeterminado: una sucursal. «Todas las sucursales» requiere permiso y política explícitos, confirmación separada y auditoría de alcance.

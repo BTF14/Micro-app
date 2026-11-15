@@ -80,7 +80,11 @@ Las fuentes secundarias pueden ayudar a localizar normas, pero no deben ser la �
 7. Ejecutar pruebas funcionales, de seguridad, concurrencia y accesibilidad.
 8. Publicar términos y privacidad, y habilitar producción solo después de validar requisitos legales y técnicos.
 
-## Estado técnico conocido al documentar
+## Estado técnico vigente — reconciliación 2026-11-14
+
+El texto del 30 de octubre quedó superado por el código actualmente integrado en main (HEAD de referencia al iniciar esta revisión: fac1e87d4cd9569b92cfc5fbaa41706f99b72430). Main contiene migraciones 0001–0025 y ya integra catálogo, inventario por sucursal y recepciones, cajas/turnos, POS/checkout, sincronización BCV con Worker/Watchdog, rate limiting runtime y E2E full-stack con Hono real y PostgreSQL 18 efímero. Esta actualización corrige el estado técnico, no certifica producción ni cumplimiento legal/fiscal; PRODUCTION permanece NOT READY y los gates operativos siguen en docs/PRODUCTION_READINESS.md.
+
+## Snapshot histórico — Estado técnico conocido al documentar (2026-10-30)
 
 - La interfaz es un shell provisional y no está conectada a datos comerciales.
 - La API Hono tiene Google OAuth/allowlist, sesiones revocables y helpers de contexto tenant/sucursal; no hay endpoints comerciales ni autorización por operación. Registro público y password login siguen fail-closed.

@@ -1,7 +1,7 @@
 # ODD task: BCV morning Cron window at 11:00 UTC
 
-- Status: in progress
-- Issue / PR: none yet
+- Status: completed
+- Issue / PR: PR #370 — https://github.com/BTF14/Micro-app/pull/370
 - Owner / reviewer: repository owner / implementation agent
 - Started: 2026-11-15 UTC
 - Risk: medium
@@ -27,12 +27,12 @@ Excluded:
 
 ## Acceptance criteria
 
-- [ ] AC-1 — isolated Worker has exactly weekday 11:00 and 22:00 UTC BCV schedules (no optional 23:00 retry unless a concrete reason emerges); weekday names remain MON-FRI.
-- [ ] AC-2 — scheduled handler recognizes only the exact configured BCV cron expressions and preserves APP_ENV production, BCV_SYNC_ENABLED true, mandatory DATABASE_URL_BCV_SYNC, no DATABASE_URL fallback.
-- [ ] AC-3 — tests cover both schedules and reject numeric weekday forms 0 11 * * 1-5 and 0 22 * * 1-5; unrelated cron remains inert.
-- [ ] AC-4 — relevant unit and integration tests plus all required CI/check-runs pass on exact PR HEAD.
-- [ ] AC-5 — diff is limited to authorized files; PR #193 and Issue #53 remain untouched; Squash and Merge and post-merge checks verified on exact main SHA.
-- [ ] AC-6 — continuity docs updated and this task closed; v1.1 roadmap and PRODUCTION: NOT READY remain unchanged.
+- [x] AC-1 — isolated Worker has exactly weekday 11:00 and 22:00 UTC BCV schedules (no optional 23:00 retry unless a concrete reason emerges); weekday names remain MON-FRI.
+- [x] AC-2 — scheduled handler recognizes only the exact configured BCV cron expressions and preserves APP_ENV production, BCV_SYNC_ENABLED true, mandatory DATABASE_URL_BCV_SYNC, no DATABASE_URL fallback.
+- [x] AC-3 — tests cover both schedules and reject numeric weekday forms 0 11 * * 1-5 and 0 22 * * 1-5; unrelated cron remains inert.
+- [x] AC-4 — relevant unit and integration tests plus all required CI/check-runs pass on exact PR HEAD.
+- [x] AC-5 — diff is limited to authorized files; PR #193 and Issue #53 remain untouched; Squash and Merge and post-merge checks verified on exact main SHA.
+- [x] AC-6 — continuity docs updated and this task closed; v1.1 roadmap and PRODUCTION: NOT READY remain unchanged.
 
 ## Risks and guardrails
 
@@ -49,10 +49,10 @@ Excluded:
 |---|---|---|---|
 | Verify live base, instructions, protected PR/issue and GitHub write access | main is expected SHA; PR #193 OPEN/intact; Issue #53 OPEN/P0; isolated branch created | GitHub live reads and branch creation | complete |
 | Create this task before source changes | ODD work record exists first | First branch commit | complete |
-| Update schedule and exact cron allowlist | 11:00 + 22:00 MON-FRI only | Diff and unit tests | pending |
-| Expand schedule and fail-closed tests | both valid crons sync; numeric variants inert | Vitest + integration tests | pending |
-| Update continuity and close task | docs current; task completed | exact file diff | pending |
-| Validate, review, merge and verify | exact-HEAD checks pass; squash merge; post-merge checks including Workers Builds | GitHub check-runs/workflows and merge SHA | pending |
+| Update schedule and exact cron allowlist | 11:00 + 22:00 MON-FRI only | PR #370 diff; exact cron config assertion and scheduled unit tests passed | complete |
+| Expand schedule and fail-closed tests | both valid crons sync; numeric variants inert | PR #370 CI verify: Unit tests and PostgreSQL BCV effective-date integration tests SUCCESS | complete |
+| Update continuity and close task | docs current; task completed | CURRENT_STATE, STATE_JOURNAL, HANDOFF_NEXT_CHAT and this task closed in follow-up docs PR | complete |
+| Validate, review, merge and verify | exact-HEAD checks pass; squash merge; post-merge checks including Workers Builds | PR #370 exact-HEAD checks; 9/9 post-merge workflows; Cloudflare Pages + Workers Builds micro-app-api + micro-app-bcv-sync SUCCESS | complete |
 
 ## Technical decisions
 
@@ -62,10 +62,10 @@ Excluded:
 
 ## Closure and handoff
 
-- Final commit SHA:
-- PR:
-- Checks and exact outcomes:
-- Acceptance criteria met / unmet:
-- Limitations not verified:
-- Residual risks:
-- Next step:
+- Final commit SHA: `6a7a5d8ecd3ff6dfc4bb462e6ff389ad05e062ac` (main after Squash and Merge).
+- PR: #370 — https://github.com/BTF14/Micro-app/pull/370 (MERGED).
+- Checks and exact outcomes: PR HEAD `56bb61906a7db941286370ef7e9b08998a9f3cca`: 10/10 workflow runs SUCCESS; CI verify 52 steps SUCCESS including Unit tests and PostgreSQL BCV effective-date integration tests; Playwright full-stack PostgreSQL 18 + Chromium auth SUCCESS; migration runner, migrations, Semgrep, Trivy/security, secret scan, Dependency Review, ODD validation and progress dashboard SUCCESS. Post-merge main SHA `6a7a5d8ecd3ff6dfc4bb462e6ff389ad05e062ac`: 9/9 workflows SUCCESS; Cloudflare Pages, Workers Builds: micro-app-api and Workers Builds: micro-app-bcv-sync all SUCCESS.
+- Acceptance criteria met / unmet: AC-1 through AC-6 met.
+- Limitations not verified: the real scheduled invocation at 11:00 UTC and actual BCV persistence in Neon main are not yet observed; a successful Worker build is not proof of a Cron execution.
+- Residual risks: observe Monday 2026-11-16 at 11:00 UTC (07:00 VET), then verify the BCV outcome/persistence read-only and subsequent stability. Keep PRODUCTION: NOT READY and the v1.1 freeze until its separate gates are met.
+- Next step: observe the first morning Cron and verify persisted official rate without writing to Neon main.

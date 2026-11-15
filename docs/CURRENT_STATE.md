@@ -1,13 +1,16 @@
-## Turno 51 — Ventana matutina BCV 11:00 UTC (2026-11-15 UTC)
+## Turno 51 — Ventana matutina BCV integrada (2026-11-15 UTC)
 
-- Base verificada al inicio: `main` = `73fdb54fdccc3ce1c19a92e7907a3d0840341814`.
-- Rama aislada: `fix/bcv-morning-cron-window-20261115`; ODD task creada primero: `odd/tasks/bcv-morning-cron-window.md`.
-- Cambio en curso: Worker aislado `micro-app-bcv-sync` conserva `0 22 * * MON-FRI` y agrega `0 11 * * MON-FRI` (07:00 VET). No se agrega reintento opcional 23:00 UTC. El watchdog runtime `17 * * * *` no cambia.
-- Handler reconoce solo las dos expresiones BCV exactas mediante allowlist cerrada. Se preservan `APP_ENV === "production"`, `BCV_SYNC_ENABLED === "true"`, `DATABASE_URL_BCV_SYNC` obligatorio y ausencia de fallback a `DATABASE_URL`.
-- Tests unitarios actualizados para ambas ventanas, credencial aislada y fail-closed; variantes numéricas `0 11 * * 1-5` y `0 22 * * 1-5` permanecen negativas. La integración PostgreSQL existente cubre el mismo handler por la ventana vespertina; no referencia el array `crons` de Wrangler.
-- Estado: implementación y tests preparados en rama; pendiente ejecutar pruebas locales/CI, revisar diff final, abrir PR, validar exact-HEAD y post-merge. No atribuir éxito de ejecución real BCV a CI.
-- Restricciones intactas: no Neon `main`, SQL/migraciones, secretos, configuración manual Cloudflare, Issue #53 ni PR #193. PR #193 continúa OPEN/intacta; Issue #53 OPEN/P0.
-- `PRODUCTION: NOT READY`; roadmap v1.1/freeze no se modifica. La ejecución matutina programada aún debe observarse en el Worker real después de integrar el cambio.
+- Base al iniciar: `main` = `73fdb54fdccc3ce1c19a92e7907a3d0840341814`.
+- PR #370 (`feat(bcv): add weekday 07:00 VET sync window`) MERGED por Squash and Merge. Merge SHA y HEAD de `main`: `6a7a5d8ecd3ff6dfc4bb462e6ff389ad05e062ac`.
+- Worker aislado `micro-app-bcv-sync`: Cron `0 11 * * MON-FRI` (07:00 VET) añadido y `0 22 * * MON-FRI` (18:00 VET) conservado. No se añade reintento opcional 23:00 UTC.
+- Handler reconoce solo ambas expresiones exactas mediante allowlist cerrada. Se preservan `APP_ENV === "production"`, `BCV_SYNC_ENABLED === "true"`, `DATABASE_URL_BCV_SYNC` obligatorio y ningún fallback a `DATABASE_URL`. El watchdog runtime `17 * * * *` permanece intacto.
+- Tests unitarios cubren ambos horarios, ambos gates fail-closed, credencial dedicada y negativos numéricos `0 11 * * 1-5` y `0 22 * * 1-5`. La integración PostgreSQL existente cubre el handler por 22:00; no lee el array de crons Wrangler y no necesitó modificación.
+- Pre-merge HEAD `56bb61906a7db941286370ef7e9b08998a9f3cca`: 10/10 workflow runs SUCCESS; CI verify 52 pasos SUCCESS incluyendo Unit tests y PostgreSQL BCV effective-date integration tests; Playwright full-stack PostgreSQL 18 y Chromium auth SUCCESS; migraciones, migration runner, Semgrep, Trivy/security, secret scan, Dependency Review, ODD validation y progress dashboard SUCCESS.
+- Post-merge main SHA `6a7a5d8ecd3ff6dfc4bb462e6ff389ad05e062ac`: 9/9 workflow runs SUCCESS. Cloudflare check-runs `Cloudflare Pages`, `Workers Builds: micro-app-api` y **`Workers Builds: micro-app-bcv-sync`** terminaron SUCCESS.
+- ODD task `odd/tasks/bcv-morning-cron-window.md` cerrada en la PR documental de continuidad #371.
+- PR #193 sigue OPEN e intacta, HEAD `ac57ab4f3415f82279b8a49c0befe09f8e3aec68`; Issue #53 sigue OPEN/P0.
+- Límites preservados: no Neon `main`, SQL/migraciones, secretos, configuración manual Cloudflare, Issue #53 ni PR #193. No hubo deploy manual.
+- `PRODUCTION: NOT READY`; roadmap v1.1 y freeze permanecen. La build exitosa no demuestra que el Cron se haya ejecutado: falta observar la primera invocación real a las 11:00 UTC del lunes 2026-11-16 y verificar persistencia/estabilidad BCV read-only.
 
 ---
 

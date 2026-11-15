@@ -1,3 +1,30 @@
+## Turno 51 — Continuidad BCV Cron matutino (2026-11-15 UTC)
+
+### Estado vivo que debes verificar primero
+- Base al comenzar: `main` = `73fdb54fdccc3ce1c19a92e7907a3d0840341814`.
+- Rama de trabajo: `fix/bcv-morning-cron-window-20261115`.
+- PR #193 sigue OPEN/intacta, HEAD `ac57ab4f3415f82279b8a49c0befe09f8e3aec68`; no modificar.
+- Issue #53 sigue OPEN/P0; no cerrar.
+- Mantener `PRODUCTION: NOT READY` y no modificar el freeze/roadmap v1.1.
+
+### Alcance implementado en la rama (validación aún pendiente)
+- ODD task se creó primero: `odd/tasks/bcv-morning-cron-window.md`.
+- `apps/api/wrangler.bcv.toml`: objetivo exacto `0 11 * * MON-FRI` + `0 22 * * MON-FRI`; no se añadió 23:00 UTC.
+- `apps/api/src/index.ts`: allowlist exacta de las dos expresiones BCV. Preservar gates production, enabled, secreto dedicado obligatorio y sin fallback a `DATABASE_URL`.
+- `apps/api/src/index.scheduled.test.ts`: pruebas de ambos horarios, credencial dedicada y negativos `0 11 * * 1-5` / `0 22 * * 1-5`; watchdog horario sin cambios.
+- `apps/api/src/exchange-rates.integration.test.ts` no requiere edición: usa explícitamente 22:00 y no lee el array `crons` de Wrangler.
+- Docs de continuidad se han iniciado; revisar su estado en el HEAD de rama.
+
+### Próximos pasos obligatorios
+1. Ejecutar tests relevantes y suite del API en el entorno soportado; no afirmar pruebas locales si solo corrieron en CI.
+2. Inspeccionar diff completo y lista de archivos: solo task ODD, los tres archivos de código/test autorizados y tres docs de continuidad.
+3. Abrir una única PR contra main. Verificar todos los check-runs y workflows en el HEAD exacto, reviews/threads, branch protection y cualquier build de Workers.
+4. Hacer Squash and Merge solo si todos los gates pasan; después verificar SHA exacto de main y checks post-merge, especialmente `Workers Builds: micro-app-bcv-sync`.
+5. No hacer deploy manual, no cambiar configuración Cloudflare, secretos, Neon `main`, SQL/migraciones, Issue #53 ni PR #193.
+6. La ejecución real de 11:00 UTC y la persistencia BCV deben observarse por separado después del merge; CI/Workers Build no demuestran una invocación programada real.
+
+---
+
 ## Turno 50 — Continuidad: ADR v1.1 y PR documental #369 (2026-11-14 UTC)
 
 ### Estado que debes verificar primero

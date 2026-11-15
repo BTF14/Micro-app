@@ -1,3 +1,15 @@
+## Turno 51 — BCV Cron matutino 11:00 UTC (2026-11-15 UTC)
+
+- Se verificó acceso GitHub de lectura/escritura. `main` al inicio: `73fdb54fdccc3ce1c19a92e7907a3d0840341814`; PR #193 OPEN e intacta (HEAD `ac57ab4f3415f82279b8a49c0befe09f8e3aec68`); Issue #53 OPEN/P0.
+- Se creó la rama `fix/bcv-morning-cron-window-20261115` desde ese SHA y como primer commit se creó `odd/tasks/bcv-morning-cron-window.md`, antes de cualquier modificación de código.
+- Se decidió añadir solo `0 11 * * MON-FRI` junto a `0 22 * * MON-FRI`; se omite el reintento opcional `0 23 * * MON-FRI` porque no es necesario para el requisito y añadiría otra ejecución.
+- Cambios de implementación en curso: Wrangler schedule, allowlist exacta en handler, tests de ambas expresiones y negativos numéricos de ambos horarios. Mantener strict gates production/enabled/dedicated credential y no fallback a runtime `DATABASE_URL`.
+- El Cron runtime watchdog `17 * * * *` se preserva. La prueba de integración existente invoca 22:00 y no consume el array de crons de Wrangler, por lo que no requiere cambio para la ampliación.
+- Continuidad se actualizará antes de cerrar. No se tocaron Neon `main`, SQL/migraciones, secretos, configuración manual de Cloudflare, Issue #53 ni PR #193. `PRODUCTION: NOT READY` y el freeze v1.1 permanecen.
+- Pendiente: ejecutar tests/CI, revisar diff completo, abrir una sola PR, verificar check-runs/workflows del HEAD exacto, Squash and Merge solo con gates completos y comprobar post-merge incluido `Workers Builds: micro-app-bcv-sync`.
+
+---
+
 ## Turno 50 — PR #369: ADR v1.1, confirmaciones owner y reconciliación documental (2026-11-14 UTC)
 
 - Se verificó GitHub con permisos admin/push. Base main al inicio: fac1e87d4cd9569b92cfc5fbaa41706f99b72430.

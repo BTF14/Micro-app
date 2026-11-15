@@ -1,3 +1,16 @@
+## Turno 51 — Ventana matutina BCV 11:00 UTC (2026-11-15 UTC)
+
+- Base verificada al inicio: `main` = `73fdb54fdccc3ce1c19a92e7907a3d0840341814`.
+- Rama aislada: `fix/bcv-morning-cron-window-20261115`; ODD task creada primero: `odd/tasks/bcv-morning-cron-window.md`.
+- Cambio en curso: Worker aislado `micro-app-bcv-sync` conserva `0 22 * * MON-FRI` y agrega `0 11 * * MON-FRI` (07:00 VET). No se agrega reintento opcional 23:00 UTC. El watchdog runtime `17 * * * *` no cambia.
+- Handler reconoce solo las dos expresiones BCV exactas mediante allowlist cerrada. Se preservan `APP_ENV === "production"`, `BCV_SYNC_ENABLED === "true"`, `DATABASE_URL_BCV_SYNC` obligatorio y ausencia de fallback a `DATABASE_URL`.
+- Tests unitarios actualizados para ambas ventanas, credencial aislada y fail-closed; variantes numéricas `0 11 * * 1-5` y `0 22 * * 1-5` permanecen negativas. La integración PostgreSQL existente cubre el mismo handler por la ventana vespertina; no referencia el array `crons` de Wrangler.
+- Estado: implementación y tests preparados en rama; pendiente ejecutar pruebas locales/CI, revisar diff final, abrir PR, validar exact-HEAD y post-merge. No atribuir éxito de ejecución real BCV a CI.
+- Restricciones intactas: no Neon `main`, SQL/migraciones, secretos, configuración manual Cloudflare, Issue #53 ni PR #193. PR #193 continúa OPEN/intacta; Issue #53 OPEN/P0.
+- `PRODUCTION: NOT READY`; roadmap v1.1/freeze no se modifica. La ejecución matutina programada aún debe observarse en el Worker real después de integrar el cambio.
+
+---
+
 ## Turno 50 — ADR v1.1 y roadmap aprobado (2026-11-14 UTC)
 
 - Base main verificada al iniciar: fac1e87d4cd9569b92cfc5fbaa41706f99b72430.

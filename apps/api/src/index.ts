@@ -23,6 +23,8 @@ import {
 
 import type { Bindings } from "./bindings";
 
+const BCV_SYNC_CRONS = new Set(["0 11 * * MON-FRI", "0 22 * * MON-FRI"]);
+
 const app = new Hono<{ Bindings: Bindings }>();
 
 function getConfiguredFrontendOrigin(value: string | undefined): string | undefined {
@@ -130,7 +132,7 @@ app.onError((_error, c) => {
 export default Object.assign(app, {
   async scheduled(controller: ScheduledController, env: Bindings): Promise<void> {
     // BCV ingestion is a separately gated Cron; it remains inert unless explicitly enabled.
-    if (controller.cron === "0 22 * * MON-FRI") {
+    if (BCV_SYNC_CRONS.has(controller.cron)) {
       if (env.APP_ENV !== "production" || env.BCV_SYNC_ENABLED !== "true") return;
       // Fail closed: the isolated Worker must never borrow the API runtime credential.
       if (!env.DATABASE_URL_BCV_SYNC) {

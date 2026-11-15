@@ -36,6 +36,7 @@ const productionEnv = {
   BCV_SYNC_ENABLED: "true",
 } as unknown as Bindings;
 
+const morningBcvCron = { cron: "0 11 * * MON-FRI" } as ScheduledController;
 const bcvCron = { cron: "0 22 * * MON-FRI" } as ScheduledController;
 
 describe("BCV scheduled failure reporting", () => {
@@ -43,7 +44,7 @@ describe("BCV scheduled failure reporting", () => {
     expect(bcvWorkerConfig).toContain('BCV_SYNC_ENABLED = "true"');
     expect(bcvWorkerConfig).toContain('APP_ENV = "production"');
     expect(bcvWorkerConfig).toContain("workers_dev = false");
-    expect(bcvWorkerConfig).toContain('crons = ["0 22 * * MON-FRI"]');
+    expect(bcvWorkerConfig).toContain('crons = ["0 11 * * MON-FRI", "0 22 * * MON-FRI"]');
     expect(bcvWorkerConfig).not.toContain('BCV_SYNC_ENABLED = "false"');
   });
 
@@ -56,16 +57,19 @@ describe("BCV scheduled failure reporting", () => {
     mocks.cleanupExpiredAuthRecords.mockReset();
   });
 
-  it("uses only the dedicated BCV database credential", async () => {
+  it("uses only the dedicated BCV database credential for both weekday windows", async () => {
     mocks.syncBcvOfficialRate.mockResolvedValue("inserted");
+    await app.scheduled(morningBcvCron, productionEnv);
     await app.scheduled(bcvCron, productionEnv);
-    expect(mocks.syncBcvOfficialRate).toHaveBeenCalledWith(productionEnv.DATABASE_URL_BCV_SYNC);
+    expect(mocks.syncBcvOfficialRate).toHaveBeenNthCalledWith(1, productionEnv.DATABASE_URL_BCV_SYNC);
+    expect(mocks.syncBcvOfficialRate).toHaveBeenNthCalledWith(2, productionEnv.DATABASE_URL_BCV_SYNC);
     expect(mocks.syncBcvOfficialRate).not.toHaveBeenCalledWith(productionEnv.DATABASE_URL);
   });
 
   it("fails closed when the dedicated secret is absent and never falls back to runtime DATABASE_URL", async () => {
     const errorLog = vi.spyOn(console, "error").mockImplementation(() => undefined);
     const withoutDedicatedSecret = { ...productionEnv, DATABASE_URL_BCV_SYNC: undefined };
+    await expect(app.scheduled(morningBcvCron, withoutDedicatedSecret)).rejects.toThrow("BCV_SYNC_FAILED");
     await expect(app.scheduled(bcvCron, withoutDedicatedSecret)).rejects.toThrow("BCV_SYNC_FAILED");
     expect(mocks.syncBcvOfficialRate).not.toHaveBeenCalled();
     expect(errorLog).toHaveBeenCalledWith({ event: "BCV_SYNC_FAILED", code: "BCV_SYNC_DATABASE_URL_MISSING" });
@@ -115,12 +119,18 @@ describe("BCV scheduled failure reporting", () => {
   });
 
   it("keeps the production BCV Cron disabled unless explicitly enabled", async () => {
+    await app.scheduled(morningBcvCron, { ...productionEnv, BCV_SYNC_ENABLED: "false" });
     await app.scheduled(bcvCron, { ...productionEnv, BCV_SYNC_ENABLED: "false" });
+    await app.scheduled(morningBcvCron, { ...productionEnv, BCV_SYNC_ENABLED: undefined });
     await app.scheduled(bcvCron, { ...productionEnv, BCV_SYNC_ENABLED: undefined });
     expect(mocks.syncBcvOfficialRate).not.toHaveBeenCalled();
   });
 
   it("does not invoke BCV synchronization outside production", async () => {
+    await app.scheduled(morningBcvCron, {
+      ...productionEnv,
+      APP_ENV: "preview",
+    });
     await app.scheduled(bcvCron, {
       ...productionEnv,
       APP_ENV: "preview",
@@ -128,7 +138,8 @@ describe("BCV scheduled failure reporting", () => {
     expect(mocks.syncBcvOfficialRate).not.toHaveBeenCalled();
   });
 
-  it("ignores the legacy Sunday-through-Thursday numeric Cron expression", async () => {
+  it("ignores numeric weekday Cron expressions for both BCV windows", async () => {
+    await app.scheduled({ cron: "0 11 * * 1-5" } as ScheduledController, productionEnv);
     await app.scheduled({ cron: "0 22 * * 1-5" } as ScheduledController, productionEnv);
     expect(mocks.syncBcvOfficialRate).not.toHaveBeenCalled();
   });

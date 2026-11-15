@@ -29,7 +29,7 @@ Estas decisiones se registran como confirmaciones del propietario, no como una n
 
 1. **Primera tasa BCV real persistida en Neon main:** después de las 11:05 UTC del lunes 2026-11-16, observar read-only la invocación, resultado (`inserted`, `unchanged` o `failed`), fecha efectiva y fila persistida. Si la ventana matutina no produce una tasa válida, revisar también la ventana de 22:00 UTC / 18:00 VET.
 2. **Estabilidad BCV posterior:** confirmar ejecuciones válidas posteriores, incluida la ventana de 22:00 UTC, sin estados atascados, pérdida de frescura, datos inválidos ni regresiones. No levantar el freeze v1.1 antes de esta evidencia.
-3. **RTO:** medir y aceptar formalmente solo si se ejecuta una restauración formal. El RPO aproximado de 24 horas ya está aceptado.
+3. **RTO de plataforma:** objetivo **<= 4 horas desde detección**, Tier $0 best-effort, aceptado por el propietario el 2026-11-15. Restore técnico aislado #5: 1.753 ms + ~15–30 min de cutover; no se ha ejecutado un simulacro cronometrado de caída total del proveedor. RPO diario aproximado de 24 horas aceptado.
 4. **Devoluciones y reversos:** permanecen en P1, pendientes de reglas de negocio/fiscales aprobadas e implementación verificable.
 5. **Accesibilidad completa:** lector de pantalla y revisión final de GO/NO-GO permanecen abiertos.
 6. **Alcance fiscal/legal:** revisión legal/fiscal/contable si cambia el alcance FISC-01 interno o se incorpora facturación fiscal SENIAT.

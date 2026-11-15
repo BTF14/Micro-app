@@ -57,14 +57,14 @@ Excluded:
 | Inspeccionar normas y contratos existentes | Reconciliar BCV, roles y compliance | Lectura de AGENTS, Constitución, matriz de permisos, ODD y compliance | completed |
 | Escribir especificación | Contrato funcional y técnico versionado | `docs/sdd/FX_CONTINGENCY_MANAGEMENT.md` | completed |
 | Registrar decisión | ADR propuesto y límites | `docs/decisions/ADR-20261109-fx-contingency-authorization.md` | completed |
-| Resolver permiso | Owner vs Admin delegado según matriz | Aprobación explícita del propietario/matriz | pending |
+| Resolver permiso | Owner vs Admin delegado según matriz | Confirmación del propietario 2026-11-15: Owner o Admin con delegación explícita y alcance de sucursales asignadas | completed |
 | Validar legal/contable | Política admisible y evidencia de cliente | Fuentes primarias + asesoría profesional | pending |
 | Auditar auth/auditoría existente | Reusar modelo, seleccionar KDF/MFA y schema | Revisión de código y tests | pending |
 | Implementar en rama aislada | API, DB, checkout, UI | Unit + PostgreSQL + concurrencia + E2E + seguridad + CI exact-SHA | blocked |
 
 ## Technical decisions
 
-- ADR: `docs/decisions/ADR-20261109-fx-contingency-authorization.md` (proposed).
+- ADR: `docs/decisions/ADR-20261109-fx-contingency-authorization.md` (accepted para política/arquitectura; implementación gated).
 - Spec: `docs/sdd/FX_CONTINGENCY_MANAGEMENT.md`.
 - AC-5 está resuelto como decisión. No crear endpoints hasta cerrar AC-6/AC-7 y levantar el freeze v1.1.
 - La especificación no cambia la política BCV actual; describe una excepción futura sujeta a aprobación legal y de producto.
@@ -74,7 +74,7 @@ Excluded:
 - Final commit SHA: consultar HEAD vivo de PR #288; el propio asiento de cierre cambia la punta.
 - PR: #288 OPEN/Draft.
 - Último HEAD validado antes de este asiento documental: `d6c580dcc63e5bba3147a6660bce2820aa8ca455`; 14/14 check-runs SUCCESS y 10/10 workflow runs SUCCESS (CI, Playwright E2E, migration validation/runner, Security scan, Semgrep, Secret history, Dependency review, ODD docs y dashboard). Este nuevo commit del task log cambia el HEAD y exige revalidación exact-SHA.
-- Acceptance criteria met / unmet: AC-1–AC-4 cubiertos; AC-5–AC-7 pendientes. CI documental pasó en el HEAD anterior; este asiento requiere nueva validación.
+- Acceptance criteria met / unmet: AC-1–AC-5 cubiertos como especificación/decisión; AC-6 revisión legal/contable y AC-7 revisión independiente de seguridad siguen pendientes. No hay implementación; validar CI sobre el HEAD final de la PR documental.
 - Limitations not verified: estado exacto de autenticación MFA/PIN y esquema de auditoría; legalidad de tasa manual; capacidad de aceptación digital.
 - Residual risks: la excepción manual no puede habilitarse hasta cerrar gates críticos.
 - Next step: revisar los documentos en la rama, ejecutar validadores documentales/CI y abrir PR Draft docs-only.

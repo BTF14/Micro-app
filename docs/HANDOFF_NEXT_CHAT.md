@@ -1,47 +1,34 @@
-## Turno 50 — ADR v1.1 y confirmaciones del propietario (2026-11-14 UTC)
+## Turno 50 — Continuidad: ADR v1.1 y PR documental #369 (2026-11-14 UTC)
 
-- **Base main verificada al iniciar:** fac1e87d4cd9569b92cfc5fbaa41706f99b72430. La rama de esta tarea es docs/adr-v11-roadmap-owner-confirmations-20261114.
-- **ADR aceptado:** docs/decisions/ADR-20261114-v11-product-scope-and-roadmap.md. Fija uso PC/teléfono, terminal bancario Android independiente, comprobante interno FISC-01 y roadmap v1.1: PR1 importador CSV, PR2 escáner móvil, PR3 cierre/reportes/exportación CSV.
-- **Freeze comercial:** no iniciar esas PR hasta observar la primera tasa BCV real persistida en Neon main el lunes 2026-11-16 a las 22:00 UTC (18:00 VET) y estabilidad posterior.
-- **Confirmaciones owner-confirmed:** presupuesto $0 / Workers Free sin método de pago; correo de GitHub Workflows verificado por el propietario y seguimiento BCV por panel/logs gratuitos; RPO diario ~24 h aceptado; FISC-01 exclusivamente interno. RTO queda pendiente de medición/aceptación si se hace restauración formal. No volver a pedir estas confirmaciones.
-- **Correcciones documentales:** compliance, esquema de base de datos, §4 de Constitución y cabecera de decisiones SaaS reconciliados con main. Los snapshots de 2026-10-30/11-08 quedan marcados como históricos.
-- **Estado externo al inicio:** PR #193 OPEN, HEAD ac57ab4f3415f82279b8a49c0befe09f8e3aec68, sin cambios por esta tarea. Issue #53 OPEN/P0, sin cambios. PRODUCTION: NOT READY.
-- **Alcance de esta rama:** solo docs/** y odd/**. No código, scripts, workflows, migraciones, Neon, secretos, datos reales, configuración de Cloudflare, billing ni despliegues manuales.
-- **Verificación pendiente:** ejecutar validate-odd-docs y todos los checks requeridos en el HEAD final de la PR documental; revisar el diff completo y los efectos de merge; solo entonces Squash and Merge y verificar el SHA de main y checks post-merge. El estado/HEAD final se consulta en vivo en GitHub.
+### Estado que debes verificar primero
+- PR #369: https://github.com/BTF14/Micro-app/pull/369, rama docs/adr-v11-roadmap-owner-confirmations-20261114, base main. El HEAD inicial al abrir fue 3831981721fb874c96442b747e32dba57b9585a; consulta siempre el HEAD vivo porque los commits de continuidad pueden moverlo.
+- Base main observada al comenzar: fac1e87d4cd9569b92cfc5fbaa41706f99b72430.
+- PR #193 sigue OPEN e intacta, HEAD ac57ab4f3415f82279b8a49c0befe09f8e3aec68. No modificarla.
+- Issue #53 sigue OPEN/P0. No cerrarla.
+- Producción permanece PRODUCTION: NOT READY.
 
----
+### Decisión v1.1 y freeze
+- ADR accepted: docs/decisions/ADR-20261114-v11-product-scope-and-roadmap.md.
+- Uso confirmado: PC + teléfono para inventario, verificador rápido USD/Bs. BCV y control interno de caja/ventas. Terminal bancario físico Android independiente, sin Bluetooth/Wi-Fi/browser; conciliación card + payments.reference. FISC-01 es comprobante interno, no factura fiscal SENIAT.
+- Freeze de nuevas funciones comerciales hasta observar la primera tasa BCV real persistida en Neon main el lunes 2026-11-16 22:00 UTC (18:00 VET) y estabilidad posterior.
+- Roadmap: PR1 importador CSV catálogo; PR2 escáner móvil BarcodeDetector/getUserMedia con fallback manual; PR3 resumen cierre caja, reportes y CSV con snapshots históricos, NUMERIC exacto, permisos Owner-only para valoración y neutralización de CSV Formula Injection.
 
-## Turno 49 — PR #367 integrada; cierre P1 confirmado (2026-11-14 UTC)
+### Confirmaciones que no debes volver a pedir
+- Presupuesto $0, Workers Free y sin método de pago en Cloudflare.
+- Correo de GitHub Workflows verificado por el propietario; panel BCV y logs gratuitos; no alertas pagas de Cloudflare.
+- RPO diario aproximado de 24 horas aceptado. Solo queda pendiente medir/aceptar RTO si se ejecuta una restauración formal.
+- FISC-01 es interno. Asesoría legal/fiscal solo será gate específico si en el futuro se habilita facturación fiscal.
 
-**Merge de implementación a `main`:** `46a24f3d617bc07f4cf47931b0bece4cccfb5440`.
+### Trabajo documental de PR #369
+- Correcciones: docs/COMPLIANCE_REQUIREMENTS.md, docs/DATABASE_SCHEMA.md, §4 de docs/CONSTITUTION.md y cabecera de docs/SAAS_ARCHITECTURE_DECISIONS.md.
+- Continuidad: docs/CURRENT_STATE.md, docs/STATE_JOURNAL.md, este handoff y la task ODD.
+- Solo docs/** y odd/**. No tocar código, scripts, workflows, migraciones, Neon, secretos, datos reales, Cloudflare, billing, DNS ni despliegues manuales.
 
-### Cierre PR #367
-- PR #367 quedó MERGED mediante Squash and Merge a las 23:23:30 UTC.
-- HEAD final auditado antes del merge: `e467c636506158b8f3be4361033e1e40473eccdd`; 17/17 check-runs SUCCESS y 13/13 workflow runs SUCCESS.
-- CI `verify`: 52/52 pasos SUCCESS. Playwright: autenticación Chromium SUCCESS y suite real full-stack móvil 1/1 test SUCCESS (9.6 segundos).
-- Post-merge sobre el SHA exacto `46a24f3d617bc07f4cf47931b0bece4cccfb5440`: **14/14 check-runs SUCCESS y 9/9 workflow runs SUCCESS**. Incluye Pages/Workers, CI, full-stack E2E, migraciones, seguridad, ODD y análisis estático.
-- El merge y sus builds/preview automáticos no implicaron cambios manuales de configuración ni despliegues manuales.
-- El test de stock insuficiente comprobó rechazo API 409, alerta accesible y balance/ledger idénticos antes/después. La suite móvil comprobó 390×844, ausencia de overflow bloqueante, navegación Tab/Enter y foco. La prueba estática de logs pasó CI tras revisar diez llamadas productivas en tres archivos.
-- La revisión automatizada de Codex no pudo completarse en el SHA inicial por límite de uso; no dejó hilos inline. El diff completo final se revisó manualmente; la PR no tenía reviews formales ni threads abiertos.
-- PR #193 sigue OPEN e intacta, HEAD `ac57ab4f3415f82279b8a49c0befe09f8e3aec68`. Issue #53 sigue OPEN/P0.
-
-### Estado de producción
-- **PRODUCTION: NOT READY**.
-- Permanecen abiertos los gates externos: primera tasa BCV real persistida en Neon `main` en ventana `MON-FRI 22:00 UTC`; entrega externa de alertas; aceptación humana RPO/RTO; revisión legal/fiscal; cierre formal de Issue #53.
-- No se modificó Neon `main`, secretos, datos reales ni configuración manual de proveedores. No se cerró PR #193 ni Issue #53.
-
-### Continuidad
-- La tarea P1 queda COMPLETED en código, CI, merge y post-merge.
-- El SHA `46a24f3d617bc07f4cf47931b0bece4cccfb5440` es el merge de código. Este cierre documental puede avanzar `main` con un commit solo de documentación; consultar siempre el SHA vivo antes de continuar.
-
-### Instrucciones para la siguiente sesión
-- Leer primero `AGENTS.md`, `docs/CONSTITUTION.md`, `docs/ODD_WORKFLOW.md` y las cabeceras de este handoff y `docs/CURRENT_STATE.md`.
-- Verificar en vivo `main`, PR #367, PR #193 e Issue #53. PR #367 está MERGED; no duplicar PR #361, #363, #364, #365 ni #366.
-- La implementación P1 quedó integrada en merge SHA `46a24f3d617bc07f4cf47931b0bece4cccfb5440`. En su HEAD final `e467c636506158b8f3be4361033e1e40473eccdd`: 17/17 checks y 13/13 workflows SUCCESS; post-merge `46a24f3d617bc07f4cf47931b0bece4cccfb5440`: 14/14 checks y 9/9 workflows SUCCESS.
-- La tarea `odd/tasks/p1-mobile-a11y-stock-and-log-safety.md` está COMPLETED. No reabrir ni duplicar el alcance sin un fallo nuevo demostrado.
-- Mantener **PRODUCTION: NOT READY** hasta verificar los gates externos documentados en `docs/PRODUCTION_READINESS.md`.
-- No modificar ni cerrar PR #193. No cerrar Issue #53.
-- No tocar Neon `main`, secretos, datos reales, configuración manual de proveedores ni despliegues manuales. No volver a pedir información ya documentada.
+### Siguiente acción
+1. Verificar diff completo y lista exacta de archivos de PR #369; confirmar que PR #193 e Issue #53 siguen intactas.
+2. Exigir validate-odd-docs y todos los checks requeridos SUCCESS en el HEAD final exacto; no reutilizar checks de SHAs anteriores.
+3. Si mergeable, branch protection y checks cumplen AGENTS.md, hacer Squash and Merge de PR #369.
+4. Verificar el SHA resultante de main y todos los checks post-merge sobre ese SHA exacto. Mantener PRODUCTION: NOT READY y no levantar el freeze hasta la evidencia BCV/estabilidad.
 
 ## Turno 45 — PR #364 integrada y verificación post-merge (2026-11-14 UTC)
 

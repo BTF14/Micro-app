@@ -4,7 +4,7 @@
 - **Estado:** accepted
 - **Fecha:** 2026-11-14
 - **Responsables:** propietario del producto y mantenimiento técnico
-- **Relacionado:** odd/tasks/adr-v11-roadmap-and-owner-confirmations.md; PR #369 (esta documentación); PR #193 (OPEN, fuera de alcance); Issue #53 (OPEN/P0)
+- **Relacionado:** odd/tasks/adr-v11-roadmap-and-owner-confirmations.md; PR #369 (esta documentación); PR #193 (CLOSED sin merge; Fase C preservada en SDD); Issue #53 (OPEN/P0)
 
 ## Contexto y problema
 
@@ -29,7 +29,7 @@ Se mantiene el freeze de implementación comercial hasta verificar la primera ta
 
 ### Roadmap v1.1 aprobado y ordenado
 
-Las tres PR siguientes son unidades separadas. El orden no se altera ni se paraleliza antes de levantar el freeze. Este ADR aprueba el alcance de diseño; cada PR futura deberá cumplir sus propios gates, pruebas y revisión.
+Las cuatro PR siguientes son unidades separadas. El orden no se altera ni se paraleliza antes de levantar el freeze. Este ADR aprueba el alcance de diseño; cada PR futura deberá cumplir sus propios gates, pruebas y revisión.
 
 #### PR 1 — Importador CSV de catálogo
 
@@ -111,7 +111,7 @@ El roadmap puede cambiarse mediante un ADR sucesor que identifique expresamente 
 
 ## Historial
 
-- 2026-11-14 — ADR aceptado para fijar alcance v1.1, secuencia de implementación y confirmaciones del propietario; no implica que las tres PR futuras estén implementadas.
+- 2026-11-14 — ADR aceptado para fijar alcance v1.1, secuencia de implementación y confirmaciones del propietario; no implica que las cuatro PR futuras estén implementadas.
 
 
 ## Addendum — decisiones confirmadas por el propietario (2026-11-15)

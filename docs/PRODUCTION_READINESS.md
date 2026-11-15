@@ -6,7 +6,7 @@ Estas decisiones se registran como confirmaciones del propietario, no como una n
 
 - **Presupuesto $0:** Workers Free y sin método de pago registrado. No activar planes, billing ni servicios pagados.
 - **Seguimiento y alertas:** correo de GitHub Workflows verificado por el propietario; seguimiento BCV mediante el panel de la app y logs gratuitos de Cloudflare. No se requieren alertas pagas de Cloudflare.
-- **RPO:** respaldo diario aproximado cada 24 horas aceptado. No volver a pedir aceptación del RPO. Solo queda pendiente medir y aceptar el RTO si se ejecuta una restauración formal.
+- **RPO:** respaldo diario aproximado cada 24 horas aceptado. No volver a pedir aceptación del RPO. El RTO operativo de plataforma Tier $0 best-effort ≤4 h desde detección ya fue aceptado el 2026-11-15; no equivale a un simulacro de caída total.
 - **FISC-01:** alcance actual exclusivamente interno (inventario y verificación de precios); no es facturación fiscal SENIAT. La revisión legal/fiscal/contable será gate si cambia el alcance o se incorpora facturación fiscal.
 
 ## Estado verificado — main `f4461ea689c7283c19788724e51385537f23d217`
@@ -248,7 +248,7 @@ Los párrafos de 2026-10-30 describían el estado previo a los vertical slices i
 - [x] E2E full-stack real en CI contra API Hono + PostgreSQL 18 efímero, sin mocks de `/api/*` (PR #366): catálogo, recepción, turno, checkout USD/VES, recibos, stock, cierre/recarga y rechazo de venta con caja cerrada. No valida producción real.
 - [x] Rate limiting runtime en rutas sensibles: integrado y probado en PostgreSQL 18 efímero para OAuth, checkout y 11 endpoints de escritura (PR #363; exact-HEAD y post-merge checks SUCCESS).
 - [x] RPO diario aproximado de 24 h aceptado por el propietario; evaluar post-estabilización una segunda corrida gratuita diaria después de 06:00 VET (p. ej. 11:00/12:00 UTC) para acercar el RPO a ~12 h sin modificar workflows durante el freeze.
-- [x] **RTO de plataforma aceptado por el propietario: <= 4 horas desde detección del incidente (Tier $0, best-effort, independiente del horario de cada tenant).** Evidencia: restore técnico aislado #5 en 1.753 s + ~15–30 min de cutover según `docs/DISASTER_RECOVERY_RUNBOOK.md`; no es un simulacro cronometrado de caída total del proveedor.
+- [x] **RTO de plataforma aceptado por el propietario: <= 4 horas desde detección del incidente (Tier $0, best-effort, independiente del horario de cada tenant).** Evidencia: restore técnico aislado #5 en 1753 ms + ~15–30 min de cutover según `docs/DISASTER_RECOVERY_RUNBOOK.md`; no es un simulacro cronometrado de caída total del proveedor.
 - [ ] Revisión legal/fiscal/contable si cambia el alcance FISC-01 interno o se incorpora facturación fiscal SENIAT.
 - [x] Watchdog BCV read-only `17 * * * *`, endpoint y UI integrados en PR #364; pre-merge 16/16 check-runs y 13/13 workflows SUCCESS, post-merge 14/14 check-runs y 10/10 workflows SUCCESS. La suite PostgreSQL 18 usa login real `microapp_runtime` y comprueba privilegios de solo lectura.
 - [x] Seguimiento BCV mediante panel de la app y logs gratuitos de Cloudflare; correo de GitHub Workflows verificado por el propietario. No se usan alertas pagas de Cloudflare.
@@ -292,7 +292,7 @@ La política está documentada en `docs/BACKUP_AND_RECOVERY.md`. La subida cifra
 ### Restore real cifrado #5 — evidencia técnica aislada
 
 - `backup-real-restore.yml`, **Verify and restore latest encrypted backup #5**, 2026-11-15T22:10:14Z–22:11:10Z; Success; 1m 1s total / 55s job.
-- Artefacto `backup-2026-11-15T14-25-22Z.dump.age`; antigüedad T0: 27.945 s.
+- Artefacto `backup-2026-11-15T14-25-22Z.dump.age`; antigüedad T0: 27945 s.
 - Tiempos T0→T1, excluyendo cola/apt: descarga + SHA-256 687 ms; descifrado age 3 ms; `pg_restore --list` 6 ms; restore + replay ACL `bcv-0025` + assertions `0022/0023` + logins independientes `microapp_runtime` y productor BCV 1.021 ms.
 - **Ventana técnica total: 1.753 ms**, 29 tablas `public`, PostgreSQL 18.7. Restore aislado; no restauró sobre Neon main ni equivale a caída total cronometrada del proveedor.
 

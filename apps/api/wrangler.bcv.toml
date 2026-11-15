@@ -21,4 +21,4 @@ APP_ENV = "production"
 BCV_SYNC_ENABLED = "true"
 
 [triggers]
-crons = ["0 22 * * MON-FRI"]
+crons = ["0 11 * * MON-FRI", "0 22 * * MON-FRI"]

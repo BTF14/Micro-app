@@ -1,7 +1,7 @@
 # ODD task: ADR v1.1 roadmap and owner confirmations
 
 - Status: in progress
-- Issue / PR: none yet; single documentation-only PR planned
+- Issue / PR: PR #369 (documentation-only), https://github.com/BTF14/Micro-app/pull/369
 - Owner / reviewer: repository owner
 - Started: 2026-11-14
 - Risk: medium (documentation governs future product scope, operational readiness and permissions)
@@ -51,11 +51,11 @@ Excluded:
 | Task | Expected result | Validation / evidence | Status |
 |---|---|---|---|
 | Verify repository access and baseline | Read + push permission; current main/PR #193/Issue #53 recorded | GitHub repo metadata, main commit, PR and issue reads | complete |
-| Create task record first | This single ODD task file exists on isolated branch | GitHub contents API create result | complete |
-| Write accepted ADR and readiness confirmations | Product decision and owner confirmations recorded | Diff review against owner request and ADR template | pending |
-| Reconcile four stale documentation locations | Four surgical dated corrections only | Exact file diff and current-main code/workflow evidence | pending |
-| Update continuity and close task | Three continuity docs consistent; task completed | Cross-reference and consistency review | pending |
-| Validate and integrate | Exact-HEAD required checks pass; one squash merge | GitHub check-runs/workflows, PR diff/reviews/threads, merge SHA and post-merge checks | pending |
+| Create task record first | This single ODD task file exists on isolated branch | First branch commit dd9d6b6991ab615e87ee641898a7709ec265d565 | complete |
+| Write accepted ADR and readiness confirmations | Product decision and owner confirmations recorded | ADR and PRODUCTION_READINESS in PR #369 | complete |
+| Reconcile four stale documentation locations | Four surgical dated corrections only | COMPLIANCE_REQUIREMENTS, DATABASE_SCHEMA, CONSTITUTION §4 and SAAS_ARCHITECTURE_DECISIONS in PR #369 | complete |
+| Update continuity and close task | Three continuity docs consistent; task completed | CURRENT_STATE, STATE_JOURNAL, HANDOFF_NEXT_CHAT and this task file | in progress |
+| Validate and integrate | Exact-HEAD required checks pass; one squash merge | PR #369 exact-HEAD checks, diff/reviews/threads, merge SHA and post-merge checks | pending |
 
 ## Technical decisions
 

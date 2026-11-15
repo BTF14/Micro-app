@@ -1,3 +1,26 @@
+## Turno 52 — Estado actual y siguiente control BCV (2026-11-15 UTC)
+
+### Base y evidencia exacta
+- Base de esta rama documental: `main` SHA `f4461ea689c7283c19788724e51385537f23d217`.
+- Sobre ese SHA: 16/16 check-runs SUCCESS y 11/11 workflows SUCCESS; incluye Cloudflare Pages, Workers Builds `micro-app-api` y `micro-app-bcv-sync`.
+- La captura read-only de 2026-11-15 muestra en producción ambos Cron del Worker aislado, lunes-viernes: `0 11 * * MON-FRI` (11:00 UTC / 07:00 VET; próximo 2026-11-16 11:00 UTC) y `0 22 * * MON-FRI` (22:00 UTC / 18:00 VET; próximo 2026-11-16 22:00 UTC). Variables/gates visibles: APP_ENV production, BCV_SYNC_ENABLED true, DATABASE_URL_BCV_SYNC configurado sin revelar valor y Observability Logs activos.
+- GET `/api/api/exchange-rates/latest` devolvió 503 el domingo 2026-11-15; es previo a la primera ventana hábil, no prueba de fallo de Cron ni persistencia.
+- Confirmado por el propietario y no volver a pedir: smoke OAuth same-origin /api con Brave Shields activado, sesión persistente en móvil/escritorio, lectura Neon main y logout 401; retiro de URI legacy workers.dev; presupuesto $0 / Workers Free sin método de pago; email GitHub Workflows verificado; panel + logs gratuitos para BCV; RPO diario ~24 h aceptado; FISC-01 interno.
+
+### Siguiente control obligatorio — solo lectura
+1. Ejecutar la observación el lunes 2026-11-16 después de 11:05 UTC (07:05 VET).
+2. Revisar logs/outcome (`inserted`, `unchanged`, `failed`), fecha efectiva y persistencia de la tasa BCV en Neon main, sin escribir.
+3. Si no hubo resultado válido en la ventana de 11:00 UTC, observar la ventana de 22:00 UTC / 18:00 VET.
+4. Confirmar estabilidad posterior, sin estados atascados ni pérdida de frescura.
+5. No cambiar Neon, Cloudflare, secrets, código ni datos reales. No hacer deploy manual.
+
+### Gates que permanecen abiertos
+- Primera tasa real persistida y estabilidad BCV posterior; no levantar freeze v1.1 antes de ambas.
+- Medición/aceptación de RTO solo si se ejecuta restauración formal.
+- Devoluciones/reversos P1; accesibilidad completa con lector de pantalla y revisión final GO/NO-GO.
+- Revisión legal/fiscal solo si cambia FISC-01 interno a facturación fiscal.
+- Issue #53 permanece OPEN/P0. Mantener **PRODUCTION: NOT READY**.
+
 ## Turno 51 — Continuidad BCV Cron matutino integrado (2026-11-15 UTC)
 
 ### Estado verificado

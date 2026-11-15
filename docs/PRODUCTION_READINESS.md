@@ -1,33 +1,39 @@
-# Readiness para producción — corte vigente 2026-11-14
+# Readiness para producción — corte vigente 2026-11-15
 
-## Confirmaciones del propietario — CONFIRMADO POR EL PROPIETARIO — NO VOLVER A PEDIR
+## Confirmaciones del propietario — CONFIRMADO — NO VOLVER A PEDIR
 
-Las siguientes decisiones operativas se consideran confirmadas por el propietario. Se registran como declaraciones del propietario, no como una nueva verificación independiente de cuentas o proveedores:
+Estas decisiones se registran como confirmaciones del propietario, no como una nueva lectura independiente de cuentas o proveedores:
 
-- **Presupuesto $0:** Workers Free activo y ningún método de pago registrado en Cloudflare. No activar planes, billing ni servicios pagados.
-- **Canal de alertas:** entrega por correo de GitHub Workflows verificada por el propietario; seguimiento BCV mediante el panel de sincronización de la app y logs gratuitos de Cloudflare. Se descartan alertas pagas de Cloudflare.
-- **RPO:** respaldo diario aproximado cada 24 horas aceptado para esta etapa. No volver a pedir aceptación del RPO. Permanece pendiente únicamente medir y aceptar el RTO operativo si se realiza una prueba formal de restauración.
-- **FISC-01:** el propietario opera esta etapa como control interno, inventario y verificador de precios; Micro-app no es facturador fiscal SENIAT. Si en el futuro se habilita facturación fiscal, será obligatoria una revisión legal/fiscal y técnica específica antes de implementarla.
+- **Presupuesto $0:** Workers Free y sin método de pago registrado. No activar planes, billing ni servicios pagados.
+- **Seguimiento y alertas:** correo de GitHub Workflows verificado por el propietario; seguimiento BCV mediante el panel de la app y logs gratuitos de Cloudflare. No se requieren alertas pagas de Cloudflare.
+- **RPO:** respaldo diario aproximado cada 24 horas aceptado. No volver a pedir aceptación del RPO. Solo queda pendiente medir y aceptar el RTO si se ejecuta una restauración formal.
+- **FISC-01:** alcance actual exclusivamente interno (inventario y verificación de precios); no es facturación fiscal SENIAT. La revisión legal/fiscal/contable será gate si cambia el alcance o se incorpora facturación fiscal.
 
-## Estado vigente — P1 integrado y verificado post-merge
+## Estado verificado — main `f4461ea689c7283c19788724e51385537f23d217`
 
-- Merge de implementación PR #367 a main: 46a24f3d617bc07f4cf47931b0bece4cccfb5440; PR #367 MERGED.
-- HEAD final auditado antes del merge: e467c636506158b8f3be4361033e1e40473eccdd; 17/17 check-runs SUCCESS y 13/13 workflow runs SUCCESS. CI verify 52/52 pasos SUCCESS; Playwright autenticación Chromium y full-stack móvil 1/1 test SUCCESS.
-- Post-merge sobre 46a24f3d617bc07f4cf47931b0bece4cccfb5440: 14/14 check-runs SUCCESS y 9/9 workflow runs SUCCESS. Incluye Pages/Workers, CI, full-stack E2E, migraciones, seguridad, ODD y análisis estático.
-- P1 integrado y validado en CI: checkout real con stock obsoleto devuelve HTTP 409 y muestra alerta accesible; balance y ledger permanecen idénticos; viewport 390×844 sin overflow bloqueante; navegación por teclado, nombres accesibles, foco visible/restaurado y regiones de error/estado; auditoría de llamadas productivas console.* y regresión estática deny-by-default.
-- La suite full-stack usa Hono real y PostgreSQL 18 efímero; no usa page.route, mocks de /api/* ni endpoints de test en runtime. Los checks de preview/build no equivalen a pruebas con datos reales.
-- PR #193 permanece OPEN e intacta, HEAD ac57ab4f3415f82279b8a49c0befe09f8e3aec68. Issue #53 permanece OPEN/P0.
+- Post-merge de `main`: **16/16 check-runs SUCCESS** y **11/11 workflow runs SUCCESS** sobre este SHA exacto. Incluye `Cloudflare Pages`, `Workers Builds: micro-app-api` y `Workers Builds: micro-app-bcv-sync`.
+- PR #370 integró las dos ventanas de Cron del Worker aislado `micro-app-bcv-sync`; PR #371 cerró la reconciliación documental anterior. Ambas están integradas.
+- Corte visual read-only de Cloudflare, 2026-11-15: aparecen ambos Cron Triggers activos, lunes a viernes:
+  - `0 11 * * MON-FRI` — 11:00 UTC / 07:00 VET; próximo disparo lunes 2026-11-16 11:00 UTC.
+  - `0 22 * * MON-FRI` — 22:00 UTC / 18:00 VET; próximo disparo lunes 2026-11-16 22:00 UTC.
+- En la misma vista se confirmó `APP_ENV=production`, `BCV_SYNC_ENABLED=true`, el secret `DATABASE_URL_BCV_SYNC` configurado (sin leer ni registrar su valor) y Observability Logs activos.
+- `GET /api/api/exchange-rates/latest` respondió HTTP 503 el domingo 2026-11-15. Es consistente con que todavía no haya ocurrido la primera ventana hábil; no demuestra por sí solo un fallo ni una tasa persistida.
+- El propietario confirmó smoke autenticado live con Brave Shields ACTIVADO: Google OAuth same-origin bajo `/api`, sesión persistente en móvil/escritorio, lectura de Neon `main` y logout con 401. También confirmó retiro de la URI legacy `workers.dev`.
+- El build y la configuración Cron visibles no demuestran una invocación real ni persistencia en Neon. La primera observación elegible es el lunes 2026-11-16 **después de 11:05 UTC (07:05 VET)**, mediante lectura solamente.
 
-**Estado de producción: NOT READY.** La finalización de P1 en CI y post-merge no sustituye los gates pendientes.
+**PR #193 permanece OPEN e intacta**, HEAD `ac57ab4f3415f82279b8a49c0befe09f8e3aec68`. **Issue #53 permanece OPEN/P0.**
+
+**PRODUCTION: NOT READY.** Mantener freeze y roadmap v1.1 hasta cerrar los gates pendientes.
 
 ## Gates abiertos para el lanzamiento
 
-1. **Primera tasa BCV real persistida en Neon main:** observar la ejecución programada del lunes 2026-11-16 a las 22:00 UTC (18:00 VET) y comprobar de forma read-only la fila real, fecha efectiva en America/Caracas, estado de sincronización y resultado expuesto por la API. Una tasa sintética de CI no satisface este gate.
-2. **Estabilidad posterior de BCV:** observar ejecuciones válidas posteriores y confirmar que no hay estados atascados, pérdida de frescura, datos inválidos ni regresiones del flujo.
-3. **Issue #53 P0:** mantenerlo OPEN hasta que sus criterios de seguridad/operación estén demostrados y el propietario acepte el cierre.
-4. **Decisión/aprobación final de lanzamiento:** no declarar GO ni promover producción antes de cerrar los gates anteriores y registrar la aceptación final.
-
-El RTO operativo sigue pendiente de medición/aceptación si se ejecuta una prueba formal de restauración. El RPO diario aproximado ya está aceptado. La revisión legal/fiscal no bloquea el alcance FISC-01 interno descrito aquí; sí será obligatoria si el producto evoluciona a facturación fiscal SENIAT.
+1. **Primera tasa BCV real persistida en Neon main:** después de las 11:05 UTC del lunes 2026-11-16, observar read-only la invocación, resultado (`inserted`, `unchanged` o `failed`), fecha efectiva y fila persistida. Si la ventana matutina no produce una tasa válida, revisar también la ventana de 22:00 UTC / 18:00 VET.
+2. **Estabilidad BCV posterior:** confirmar ejecuciones válidas posteriores, incluida la ventana de 22:00 UTC, sin estados atascados, pérdida de frescura, datos inválidos ni regresiones. No levantar el freeze v1.1 antes de esta evidencia.
+3. **RTO:** medir y aceptar formalmente solo si se ejecuta una restauración formal. El RPO aproximado de 24 horas ya está aceptado.
+4. **Devoluciones y reversos:** permanecen en P1, pendientes de reglas de negocio/fiscales aprobadas e implementación verificable.
+5. **Accesibilidad completa:** lector de pantalla y revisión final de GO/NO-GO permanecen abiertos.
+6. **Alcance fiscal/legal:** revisión legal/fiscal/contable si cambia el alcance FISC-01 interno o se incorpora facturación fiscal SENIAT.
+7. **Issue #53 P0:** mantener OPEN hasta demostrar sus criterios y registrar aceptación explícita del propietario.
 
 ## Snapshot histórico — 2026-11-11 — PR #287
 
@@ -41,7 +47,7 @@ El RTO operativo sigue pendiente de medición/aceptación si se ejecuta una prue
 - Neon main SELECT-only: `backup_readonly` es privilegiado y tiene write privileges; no se leyó `DATABASE_URL_BACKUP_RO`; identidad efectiva desconocida. `microapp_runtime` y `microapp_migrator` ausentes del catálogo observado. Identidad del Worker `DATABASE_URL` también desconocida.
 - Issue #53 OPEN/P0. Producción **NOT READY**. No se modificaron Neon, roles, grants, contraseñas, secretos, datos reales, Cron, DNS, billing ni producción.
 
-## Gates bloqueantes para producción — vigentes
+## Snapshot histórico — gates bloqueantes para producción (supersedido al 2026-11-15)
 
 1. **Primera tasa BCV real en Neon `main`:** esperar la siguiente ventana válida del Cron `MON-FRI 22:00 UTC` y comprobar, de forma read-only/autorizada, la fila real, su fecha efectiva en `America/Caracas`, `bcv_sync_state` y el resultado expuesto por la API. La tasa sintética de PostgreSQL 18 CI no satisface este gate.
 2. **Enrutamiento externo de alertas en Cloudflare:** demostrar entrega efectiva al destino operativo configurado; que el build o el watchdog detecte una condición no demuestra entrega externa.
@@ -173,7 +179,7 @@ No se cambiaron secretos, Neon main, datos reales, Cloudflare production, DNS ni
 
 # Micro app — checklist de preparación para producción
 
-## Estado vivo — 2026-11-14 UTC
+## Snapshot histórico — estado vivo 2026-11-14 UTC (supersedido por la reconciliación 2026-11-15)
 
 - **Main actual verificado:** `40d39fb6437f85672e65de01ea33d54ccee14aee`.
 - **PR #364:** fusionada; HEAD `11b666b7d1963d573bce86248cb446de6d9f2cb2`; merge SHA igual al main actual.
@@ -237,14 +243,18 @@ Los párrafos de 2026-10-30 describían el estado previo a los vertical slices i
 - [x] Recepciones y ajustes de inventario integrados (PR #352, 0025); lectura/Kardex y conteos atómicos tienen suites de integración.
 - [x] POS y checkout atómico integrados (PR #357; 0015/0018); el alcance comercial sigue limitado por las notas del bloque de implementación.
 - [x] Migraciones 0001–0025 aplicadas en Neon main según el workflow protegido, run #43591333198; no inferir de ello que la aplicación esté aceptada para lanzamiento.
-- [x] Smoke autenticado live con Brave Shields ACTIVADO en móvil y escritorio: Google OAuth same-origin, sesión persistente en navegación de módulos reales y logout seguro confirmado por el propietario. Reabrir solo si cambian proxy /api, CORS, cookies/OAuth o CSP.
-- [ ] Primera tasa BCV real persistida en Neon main y registro correspondiente en `bcv_sync_state`, tras una ejecución programada válida.
+- [x] Smoke autenticado live con Brave Shields ACTIVADO en móvil y escritorio: Google OAuth same-origin, sesión persistente en navegación de módulos reales y logout seguro confirmado por el propietario. La verificación de tasa BCV real persistida se mantiene como gate separado.
+- [ ] Primera tasa BCV real persistida en Neon main y registro correspondiente en `bcv_sync_state`, tras la primera ventana elegible del lunes 2026-11-16; observar después de 11:05 UTC (07:05 VET).
 - [x] E2E full-stack real en CI contra API Hono + PostgreSQL 18 efímero, sin mocks de `/api/*` (PR #366): catálogo, recepción, turno, checkout USD/VES, recibos, stock, cierre/recarga y rechazo de venta con caja cerrada. No valida producción real.
 - [x] Rate limiting runtime en rutas sensibles: integrado y probado en PostgreSQL 18 efímero para OAuth, checkout y 11 endpoints de escritura (PR #363; exact-HEAD y post-merge checks SUCCESS).
-- [ ] Aceptación formal humana del objetivo RPO aproximado de 24 h y del RTO operativo aceptable.
-- [ ] Revisión legal, fiscal y contable por asesoría competente y aprobación explícita del lanzamiento; Issue #53 permanece OPEN/P0.
+- [x] RPO diario aproximado de 24 h aceptado por el propietario.
+- [ ] Medición y aceptación formal del RTO si se ejecuta una restauración formal.
+- [ ] Revisión legal/fiscal/contable si cambia el alcance FISC-01 interno o se incorpora facturación fiscal SENIAT.
 - [x] Watchdog BCV read-only `17 * * * *`, endpoint y UI integrados en PR #364; pre-merge 16/16 check-runs y 13/13 workflows SUCCESS, post-merge 14/14 check-runs y 10/10 workflows SUCCESS. La suite PostgreSQL 18 usa login real `microapp_runtime` y comprueba privilegios de solo lectura.
-- [ ] Enrutamiento externo de alertas BCV verificado en Cloudflare y primera tasa real persistida en Neon `main` tras la ventana programada `MON-FRI 22:00 UTC`.
+- [x] Seguimiento BCV mediante panel de la app y logs gratuitos de Cloudflare; correo de GitHub Workflows verificado por el propietario. No se usan alertas pagas de Cloudflare.
+- [ ] Estabilidad posterior de BCV tras las ventanas programadas de 11:00 y 22:00 UTC, incluida la persistencia de tasas válidas.
+- [ ] Issue #53 P0: mantener abierto hasta demostrar todos sus criterios y obtener aceptación explícita de cierre.
+- [ ] Revisión final GO/NO-GO del propietario después de cerrar todos los gates de producción.
 
 ### P1 — operación, resiliencia y UX
 - [x] Análisis Semgrep, Trivy, escaneo de historia de secretos y Dependency Review configurados en CI.
@@ -252,7 +262,7 @@ Los párrafos de 2026-10-30 describían el estado previo a los vertical slices i
 - [ ] Pruebas E2E de ventas, inventario, caja y devoluciones en móvil/escritorio con API/DB reales de prueba.
 - [ ] Accesibilidad por teclado/lector y UX responsive final verificadas.
 - [ ] Logs operativos, retención y soporte revisados sin exponer secretos ni datos sensibles.
-- [ ] Límites gratuitos/capacidad y ausencia de cargos automáticos revalidados antes del GO/NO-GO.
+- [x] Presupuesto $0 y Workers Free sin método de pago, según confirmación del propietario; revalidar límites gratuitos antes del GO/NO-GO.
 
 **Decisión vigente:** `PRODUCTION: NOT READY`. Los gates P0 pendientes son bloqueantes y no se pueden compensar con porcentajes, CI verde, previews ni migraciones aplicadas. Issue #53 permanece OPEN/P0.
 

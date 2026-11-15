@@ -265,7 +265,7 @@
           "done": true
         },
         {
-          "title": "**RTO de plataforma aceptado por el propietario: <= 4 horas desde detección del incidente (Tier $0, best-effort, independiente del horario de cada tenant).** Evidencia: restore técnico aislado #5 en 1.753 s + ~15–30 min de cutover según `docs/DISASTER_RECOVERY_RUNBOOK.md`; no es un simulacro cronometrado de caída total del proveedor.",
+          "title": "**RTO de plataforma aceptado por el propietario: <= 4 horas desde detección del incidente (Tier $0, best-effort, independiente del horario de cada tenant).** Evidencia: restore técnico aislado #5 en 1753 ms + ~15–30 min de cutover según `docs/DISASTER_RECOVERY_RUNBOOK.md`; no es un simulacro cronometrado de caída total del proveedor.",
           "done": true
         },
         {
@@ -297,7 +297,7 @@
           "done": true
         },
         {
-          "title": "Backup cifrado, restauración instrumentada aislada y canal de alerta/ACK humano tienen evidencia registrada; la medición sintética no equivale a RPO/RTO operativos aceptados.",
+          "title": "Backup cifrado, restauración instrumentada aislada y canal de alerta/ACK humano tienen evidencia registrada; el restore técnico aislado no equivale a un simulacro de caída total. El RTO de plataforma Tier $0 best-effort ≤4 h fue aceptado por el propietario.",
           "done": true
         },
         {

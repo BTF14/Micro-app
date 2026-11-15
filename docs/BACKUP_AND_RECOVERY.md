@@ -234,15 +234,15 @@ Un sistema de backup no se considera listo hasta que:
 - [x] El workflow publica un resumen visible en GitHub Actions si falla un paso. Esto no es una notificación externa; confirmar si las notificaciones nativas de GitHub cubren la necesidad operativa.
 - [x] Se verificó que la copia cifrada no está vacía, se descifra y su checksum coincide (run [40804665192](https://github.com/BTF14/Micro-app/actions/runs/40804665192)).
 - [x] Una copia anterior pudo restaurarse en la rama desechable `restore-test-20261028` (run [40804665192](https://github.com/BTF14/Micro-app/actions/runs/40804665192)); **esto no valida la copia remota del 2026-10-29**.
-- [ ] Descargar la copia exacta, verificar independientemente SHA-256 y restaurarla en PostgreSQL efímero mediante `.github/workflows/backup-real-restore.yml`.
+- [x] Descargar la copia cifrada exacta, verificar SHA-256 y restaurarla en PostgreSQL 18 efímero mediante `backup-real-restore.yml` — **run #5 SUCCESS, 2026-11-15**; artefacto `backup-2026-11-15T14-25-22Z.dump.age`, 29 tablas `public`, ACL/assertions y logins independientes verificados.
 - [x] La prueba sintética aplica las migraciones antes del dump y verifica que el recuento de constraints se conserva tras restaurar ([run 40849167225](https://github.com/BTF14/Micro-app/actions/runs/40849167225)); no afirma que ejecutar migraciones sobre una base ya restaurada sea necesario ni probado.
 - [x] Conteos/valores y relaciones sintéticas de productos, movimientos, ventas, pagos y auditoría coinciden entre origen y restauración ([run 40849167225](https://github.com/BTF14/Micro-app/actions/runs/40849167225)); no se usaron datos personales.
-- [ ] Se mide el tiempo de recuperación y la pérdida máxima de datos esperable.
+- [x] Restore técnico aislado #5 medido (1.753 ms); RPO diario aproximado de 24 h y RTO de plataforma <=4 h best-effort aceptados por el propietario. No equivale a simulacro cronometrado de caída total del proveedor.
 - [ ] La retención elimina copias vencidas sin eliminar la última copia válida.
 - [ ] Se demuestra que no hay costes ni cargos automáticos fuera del presupuesto.
 - [ ] El procedimiento de recuperación está documentado y una segunda IA puede ejecutarlo siguiendo pasos comprobables.
 
-Definir objetivos iniciales para aprobar antes de producción: RPO (máxima pérdida de datos tolerable) de 24 horas como techo provisional para backups diarios y RTO (tiempo objetivo de recuperación) por medir en pruebas. Para inventario/ventas en uso real, evaluar si un RPO de 24 horas es aceptable; si no lo es, el diseño diario no basta y debe resolverse antes de lanzar.
+Decisión vigente del propietario (2026-11-15): RPO diario aproximado de 24 horas aceptado y RTO operativo de plataforma <=4 horas desde detección, Tier $0 best-effort, aceptado. El restore #5 mide la fase técnica aislada, no un simulacro de caída total del proveedor. Evaluar una segunda corrida diaria gratuita post-estabilización para acercar el RPO a ~12 horas; no cambiar workflows durante el freeze v1.1.
 
 ## 7. Procedimiento ante pérdida o corrupción
 

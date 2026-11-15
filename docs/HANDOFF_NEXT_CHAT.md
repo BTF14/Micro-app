@@ -1,7 +1,7 @@
 ## Turno 50 — Continuidad: ADR v1.1 y PR documental #369 (2026-11-14 UTC)
 
 ### Estado que debes verificar primero
-- PR #369: https://github.com/BTF14/Micro-app/pull/369, rama docs/adr-v11-roadmap-owner-confirmations-20261114, base main. El HEAD inicial al abrir fue 3831981721fb874c96442b747e32dba57b9585a; consulta siempre el HEAD vivo porque los commits de continuidad pueden moverlo.
+- PR #369: https://github.com/BTF14/Micro-app/pull/369, rama docs/adr-v11-roadmap-owner-confirmations-20261114, base main. El HEAD inicial al abrir fue 3831981721fb874c96442b747e32dba57b9585a3; consulta siempre el HEAD vivo porque los commits de continuidad pueden moverlo.
 - Base main observada al comenzar: fac1e87d4cd9569b92cfc5fbaa41706f99b72430.
 - PR #193 sigue OPEN e intacta, HEAD ac57ab4f3415f82279b8a49c0befe09f8e3aec68. No modificarla.
 - Issue #53 sigue OPEN/P0. No cerrarla.
@@ -29,6 +29,38 @@
 2. Exigir validate-odd-docs y todos los checks requeridos SUCCESS en el HEAD final exacto; no reutilizar checks de SHAs anteriores.
 3. Si mergeable, branch protection y checks cumplen AGENTS.md, hacer Squash and Merge de PR #369.
 4. Verificar el SHA resultante de main y todos los checks post-merge sobre ese SHA exacto. Mantener PRODUCTION: NOT READY y no levantar el freeze hasta la evidencia BCV/estabilidad.
+
+## Turno 49 — PR #367 integrada; cierre P1 confirmado (2026-11-14 UTC)
+
+**Merge de implementación a `main`:** `46a24f3d617bc07f4cf47931b0bece4cccfb5440`.
+
+### Cierre PR #367
+- PR #367 quedó MERGED mediante Squash and Merge a las 23:23:30 UTC.
+- HEAD final auditado antes del merge: `e467c636506158b8f3be4361033e1e40473eccdd`; 17/17 check-runs SUCCESS y 13/13 workflow runs SUCCESS.
+- CI `verify`: 52/52 pasos SUCCESS. Playwright: autenticación Chromium SUCCESS y suite real full-stack móvil 1/1 test SUCCESS (9.6 segundos).
+- Post-merge sobre el SHA exacto `46a24f3d617bc07f4cf47931b0bece4cccfb5440`: **14/14 check-runs SUCCESS y 9/9 workflow runs SUCCESS**. Incluye Pages/Workers, CI, full-stack E2E, migraciones, seguridad, ODD y análisis estático.
+- El merge y sus builds/preview automáticos no implicaron cambios manuales de configuración ni despliegues manuales.
+- El test de stock insuficiente comprobó rechazo API 409, alerta accesible y balance/ledger idénticos antes/después. La suite móvil comprobó 390×844, ausencia de overflow bloqueante, navegación Tab/Enter y foco. La prueba estática de logs pasó CI tras revisar diez llamadas productivas en tres archivos.
+- La revisión automatizada de Codex no pudo completarse en el SHA inicial por límite de uso; no dejó hilos inline. El diff completo final se revisó manualmente; la PR no tenía reviews formales ni threads abiertos.
+- PR #193 sigue OPEN e intacta, HEAD `ac57ab4f3415f82279b8a49c0befe09f8e3aec68`. Issue #53 sigue OPEN/P0.
+
+### Estado de producción
+- **PRODUCTION: NOT READY**.
+- Permanecen abiertos los gates externos: primera tasa BCV real persistida en Neon `main` en ventana `MON-FRI 22:00 UTC`; entrega externa de alertas; aceptación humana RPO/RTO; revisión legal/fiscal; cierre formal de Issue #53.
+- No se modificó Neon `main`, secretos, datos reales ni configuración manual de proveedores. No se cerró PR #193 ni Issue #53.
+
+### Continuidad
+- La tarea P1 queda COMPLETED en código, CI, merge y post-merge.
+- El SHA `46a24f3d617bc07f4cf47931b0bece4cccfb5440` es el merge de código. Este cierre documental puede avanzar `main` con un commit solo de documentación; consultar siempre el SHA vivo antes de continuar.
+
+### Instrucciones para la siguiente sesión
+- Leer primero `AGENTS.md`, `docs/CONSTITUTION.md`, `docs/ODD_WORKFLOW.md` y las cabeceras de este handoff y `docs/CURRENT_STATE.md`.
+- Verificar en vivo `main`, PR #367, PR #193 e Issue #53. PR #367 está MERGED; no duplicar PR #361, #363, #364, #365 ni #366.
+- La implementación P1 quedó integrada en merge SHA `46a24f3d617bc07f4cf47931b0bece4cccfb5440`. En su HEAD final `e467c636506158b8f3be4361033e1e40473eccdd`: 17/17 checks y 13/13 workflows SUCCESS; post-merge `46a24f3d617bc07f4cf47931b0bece4cccfb5440`: 14/14 checks y 9/9 workflows SUCCESS.
+- La tarea `odd/tasks/p1-mobile-a11y-stock-and-log-safety.md` está COMPLETED. No reabrir ni duplicar el alcance sin un fallo nuevo demostrado.
+- Mantener **PRODUCTION: NOT READY** hasta verificar los gates externos documentados en `docs/PRODUCTION_READINESS.md`.
+- No modificar ni cerrar PR #193. No cerrar Issue #53.
+- No tocar Neon `main`, secretos, datos reales, configuración manual de proveedores ni despliegues manuales. No volver a pedir información ya documentada.
 
 ## Turno 45 — PR #364 integrada y verificación post-merge (2026-11-14 UTC)
 

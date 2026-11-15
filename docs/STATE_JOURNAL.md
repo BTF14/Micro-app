@@ -1,12 +1,15 @@
-## Turno 51 — BCV Cron matutino 11:00 UTC (2026-11-15 UTC)
+## Turno 51 — BCV Cron matutino integrado y verificado (2026-11-15 UTC)
 
-- Se verificó acceso GitHub de lectura/escritura. `main` al inicio: `73fdb54fdccc3ce1c19a92e7907a3d0840341814`; PR #193 OPEN e intacta (HEAD `ac57ab4f3415f82279b8a49c0befe09f8e3aec68`); Issue #53 OPEN/P0.
-- Se creó la rama `fix/bcv-morning-cron-window-20261115` desde ese SHA y como primer commit se creó `odd/tasks/bcv-morning-cron-window.md`, antes de cualquier modificación de código.
-- Se decidió añadir solo `0 11 * * MON-FRI` junto a `0 22 * * MON-FRI`; se omite el reintento opcional `0 23 * * MON-FRI` porque no es necesario para el requisito y añadiría otra ejecución.
-- Cambios de implementación en curso: Wrangler schedule, allowlist exacta en handler, tests de ambas expresiones y negativos numéricos de ambos horarios. Mantener strict gates production/enabled/dedicated credential y no fallback a runtime `DATABASE_URL`.
-- El Cron runtime watchdog `17 * * * *` se preserva. La prueba de integración existente invoca 22:00 y no consume el array de crons de Wrangler, por lo que no requiere cambio para la ampliación.
-- Continuidad se actualizará antes de cerrar. No se tocaron Neon `main`, SQL/migraciones, secretos, configuración manual de Cloudflare, Issue #53 ni PR #193. `PRODUCTION: NOT READY` y el freeze v1.1 permanecen.
-- Pendiente: ejecutar tests/CI, revisar diff completo, abrir una sola PR, verificar check-runs/workflows del HEAD exacto, Squash and Merge solo con gates completos y comprobar post-merge incluido `Workers Builds: micro-app-bcv-sync`.
+- Se creó rama `fix/bcv-morning-cron-window-20261115` desde main `73fdb54fdccc3ce1c19a92e7907a3d0840341814`; el primer commit fue `odd/tasks/bcv-morning-cron-window.md`, antes de cambios de código.
+- PR #370 se fusionó por Squash and Merge. HEAD final de main: `6a7a5d8ecd3ff6dfc4bb462e6ff389ad05e062ac`.
+- Cron BCV aislado: `0 11 * * MON-FRI` + `0 22 * * MON-FRI`; sin 23:00 UTC. Allowlist exacta; producción/enabled/credencial dedicada fail-closed; no fallback a runtime `DATABASE_URL`. Watchdog `17 * * * *` preservado.
+- Tests cubren ambos schedules, credencial dedicada, gates fail-closed y expresiones numéricas weekday negativas. Integración existente 22:00 conserva cobertura del mismo handler; no depende del array Wrangler.
+- Pre-merge PR HEAD `56bb61906a7db941286370ef7e9b08998a9f3cca`: 10/10 workflows SUCCESS, CI verify 52 pasos SUCCESS, Unit tests y PostgreSQL BCV effective-date integration SUCCESS, Playwright full-stack PostgreSQL 18 + Chromium auth SUCCESS, migraciones, runner, Semgrep, Trivy/security, secret scan, Dependency Review, ODD y dashboard SUCCESS.
+- Post-merge main `6a7a5d8ecd3ff6dfc4bb462e6ff389ad05e062ac`: 9/9 workflows SUCCESS; Cloudflare Pages, Workers Builds `micro-app-api` y Workers Builds `micro-app-bcv-sync` SUCCESS.
+- El cierre de la task ODD y reconciliación de evidencia final se integran por PR documental #371. La build BCV no equivale a una invocación programada ni confirma persistencia en Neon.
+- PR #193 OPEN/intacta (HEAD `ac57ab4f3415f82279b8a49c0befe09f8e3aec68`); Issue #53 OPEN/P0. No se modificaron.
+- No se tocó Neon main, SQL/migraciones, secretos, configuración manual Cloudflare ni deploy manual. `PRODUCTION: NOT READY` y freeze v1.1 siguen vigentes.
+- Siguiente control: observar lunes 2026-11-16 a 11:00 UTC (07:00 VET), verificar outcome/tasa persistida y estabilidad mediante lectura; no mutar Neon main.
 
 ---
 

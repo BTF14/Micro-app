@@ -21,7 +21,7 @@ Estas decisiones se registran como confirmaciones del propietario, no como una n
 - El propietario confirmó smoke autenticado live con Brave Shields ACTIVADO: Google OAuth same-origin bajo `/api`, sesión persistente en móvil/escritorio, lectura de Neon `main` y logout con 401. También confirmó retiro de la URI legacy `workers.dev`.
 - El build y la configuración Cron visibles no demuestran una invocación real ni persistencia en Neon. La primera observación elegible es el lunes 2026-11-16 **después de 11:05 UTC (07:05 VET)**, mediante lectura solamente.
 
-**PR #193 permanece OPEN e intacta**, HEAD `ac57ab4f3415f82279b8a49c0befe09f8e3aec68`. **Issue #53 permanece OPEN/P0.**
+**PR #193 está CLOSED sin merge**; Fase C fue preservada en `docs/sdd/PHASE_C_INTERBRANCH_TRANSFERS.md`. **Issue #53 permanece OPEN/P0.**
 
 **PRODUCTION: NOT READY.** Mantener freeze y roadmap v1.1 hasta cerrar los gates pendientes.
 

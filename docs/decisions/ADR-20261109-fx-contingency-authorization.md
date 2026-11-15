@@ -6,6 +6,15 @@
 - **Responsables:** producto, arquitectura, seguridad y asesoría contable/legal
 - **Relacionado:** `odd/tasks/fx-contingency-management.md`, `docs/sdd/FX_CONTINGENCY_MANAGEMENT.md`, PR #255, #269 y #287 (contexto BCV/checkout; no se modifican); PR documental #288.
 
+## Resolución confirmada por el propietario — 2026-11-15
+
+- **Actores:** Owner o Admin con delegación explícita `fx.contingency.authorize`, acotada a sucursales asignadas al Admin y no concedida por defecto.
+- **PIN:** individual, mínimo 8 dígitos, KDF fuerte con sal única; rate limit por cuenta/IP y fail-closed.
+- **Desviación:** banda razonable respecto de la última tasa BCV válida; desvíos altos requieren confirmación reforzada y auditada.
+- **Auditoría:** inmutable y generada en servidor con `actor_user_id`, rol efectivo, sucursal, timestamp UTC del servidor, motivo, origen manual, tasa y vigencia.
+- **Vigencia:** máximo 24 horas, expiración automática, renovación explícita con PIN y nuevo evento auditable; retorno automático a BCV cuando exista tasa oficial válida aplicable.
+- **Gates:** AC-5 resuelto; AC-6 legal/contable y AC-7 revisión independiente de seguridad previa a implementación permanecen pendientes. No se autoriza código ni activación.
+
 ## Contexto y problema
 
 La política de checkout exige una tasa BCV aplicable y válida, incluso en ventas liquidadas en USD. La tasa prepublicada solo se usa desde su `effective_date`; no se permite usarla anticipadamente ni recurrir silenciosamente a una tasa antigua. Un feriado, retraso de publicación o fallo de la fuente puede bloquear conversiones y continuidad de ventas.
@@ -23,7 +32,7 @@ Proponer un módulo **Gestión de contingencia cambiaria** separado del modo BCV
 3. La tasa manual es explícitamente no oficial y solo puede usarse bajo autorización temporal, motivo, alcance, vigencia y autenticación reforzada.
 4. En pequeño negocio, PIN individual de 8 dígitos como factor de reautenticación de una cuenta ya autenticada; no sustituye login ni autorización.
 5. En empresa, identidad individual + contraseña reciente + MFA; doble aprobación opcional por dos personas distintas.
-6. El permiso será explícito y de mínimo privilegio. La propuesta de permitir a un Admin delegado requiere reconciliarse con la matriz aprobada; hasta entonces no se implementa ni se asume que todos los Admin pueden cambiar configuración.
+6. El permiso será explícito y de mínimo privilegio: Owner puede autorizar; Admin solo con delegación `fx.contingency.authorize`, limitada a sucursales asignadas y nunca concedida por defecto.
 7. Por defecto, el alcance es una sucursal. Las autorizaciones vencen automáticamente en servidor y no dependen de Cron.
 8. Toda autorización y transición se conserva append-only; las ventas guardan snapshot inmutable de fuente, valor y autorización.
 9. Si no se puede validar la autorización en servidor/DB, el checkout falla cerrado.
@@ -31,7 +40,7 @@ Proponer un módulo **Gestión de contingencia cambiaria** separado del modo BCV
 11. La confirmación del cajero y la aceptación del cliente son evidencias distintas.
 12. La habilitación comercial queda condicionada a revisión legal/contable y pruebas de seguridad.
 
-El máximo inicial de 24 horas para pequeños comercios es una propuesta de política conservadora, no un límite legal ni un requisito ya aprobado para todas las empresas. Debe configurarse y validarse antes de implementar.
+El propietario confirmó el 2026-11-15 un máximo de **24 horas por autorización para todos los tenants**, independiente del horario comercial. Expiración automática; renovación explícita con PIN y auditoría separada. Es una decisión operativa de producto, no un dictamen legal/contable.
 
 ## Alternativas consideradas
 

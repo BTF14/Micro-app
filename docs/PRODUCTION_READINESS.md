@@ -1,25 +1,33 @@
 # Readiness para producción — corte vigente 2026-11-14
 
+## Confirmaciones del propietario — CONFIRMADO POR EL PROPIETARIO — NO VOLVER A PEDIR
+
+Las siguientes decisiones operativas se consideran confirmadas por el propietario. Se registran como declaraciones del propietario, no como una nueva verificación independiente de cuentas o proveedores:
+
+- **Presupuesto $0:** Workers Free activo y ningún método de pago registrado en Cloudflare. No activar planes, billing ni servicios pagados.
+- **Canal de alertas:** entrega por correo de GitHub Workflows verificada por el propietario; seguimiento BCV mediante el panel de sincronización de la app y logs gratuitos de Cloudflare. Se descartan alertas pagas de Cloudflare.
+- **RPO:** respaldo diario aproximado cada 24 horas aceptado para esta etapa. No volver a pedir aceptación del RPO. Permanece pendiente únicamente medir y aceptar el RTO operativo si se realiza una prueba formal de restauración.
+- **FISC-01:** el propietario opera esta etapa como control interno, inventario y verificador de precios; Micro-app no es facturador fiscal SENIAT. Si en el futuro se habilita facturación fiscal, será obligatoria una revisión legal/fiscal y técnica específica antes de implementarla.
+
 ## Estado vigente — P1 integrado y verificado post-merge
 
-- Merge de implementación PR #367 a `main`: `46a24f3d617bc07f4cf47931b0bece4cccfb5440`; PR #367 MERGED.
-- HEAD final de PR auditado: `e467c636506158b8f3be4361033e1e40473eccdd`; 17/17 check-runs SUCCESS y 13/13 workflow runs SUCCESS. CI `verify` 52/52 pasos SUCCESS; Playwright autenticación Chromium y full-stack móvil 1/1 test SUCCESS.
-- Post-merge sobre `46a24f3d617bc07f4cf47931b0bece4cccfb5440`: **14/14 check-runs SUCCESS y 9/9 workflow runs SUCCESS**. Incluye Pages/Workers, CI, full-stack E2E, migraciones, seguridad, ODD y análisis estático.
-- P1 integrado y validado en CI: checkout real con stock obsoleto devuelve HTTP 409 y muestra alerta accesible; balance y ledger permanecen idénticos; viewport 390×844 sin overflow bloqueante en catálogo, recepción, POS y recibo; navegación Tab/Enter, nombres accesibles, foco visible/restaurado y regiones de error/estado; auditoría de diez llamadas productivas `console.*` y regresión estática deny-by-default.
-- La suite full-stack usa Hono real y PostgreSQL 18 efímero; no usa `page.route`, mocks de `/api/*` ni endpoints de test en runtime. Los checks de preview/build no equivalen a pruebas con datos reales.
-- PR #193 permanece OPEN e intacta. Issue #53 permanece OPEN/P0.
+- Merge de implementación PR #367 a main: 46a24f3d617bc07f4cf47931b0bece4cccfb5440; PR #367 MERGED.
+- HEAD final auditado antes del merge: e467c636506158b8f3be4361033e1e40473eccdd; 17/17 check-runs SUCCESS y 13/13 workflow runs SUCCESS. CI verify 52/52 pasos SUCCESS; Playwright autenticación Chromium y full-stack móvil 1/1 test SUCCESS.
+- Post-merge sobre 46a24f3d617bc07f4cf47931b0bece4cccfb5440: 14/14 check-runs SUCCESS y 9/9 workflow runs SUCCESS. Incluye Pages/Workers, CI, full-stack E2E, migraciones, seguridad, ODD y análisis estático.
+- P1 integrado y validado en CI: checkout real con stock obsoleto devuelve HTTP 409 y muestra alerta accesible; balance y ledger permanecen idénticos; viewport 390×844 sin overflow bloqueante; navegación por teclado, nombres accesibles, foco visible/restaurado y regiones de error/estado; auditoría de llamadas productivas console.* y regresión estática deny-by-default.
+- La suite full-stack usa Hono real y PostgreSQL 18 efímero; no usa page.route, mocks de /api/* ni endpoints de test en runtime. Los checks de preview/build no equivalen a pruebas con datos reales.
+- PR #193 permanece OPEN e intacta, HEAD ac57ab4f3415f82279b8a49c0befe09f8e3aec68. Issue #53 permanece OPEN/P0.
 
-**Estado de producción: NOT READY.** La finalización de P1 en CI y post-merge no sustituye los gates externos.
+**Estado de producción: NOT READY.** La finalización de P1 en CI y post-merge no sustituye los gates pendientes.
 
-## Gates bloqueantes para producción — vigentes
+## Gates abiertos para el lanzamiento
 
-1. **Primera tasa BCV real en Neon `main`:** esperar la siguiente ventana válida del Cron `MON-FRI 22:00 UTC` y comprobar, de forma read-only/autorizada, la fila real, su fecha efectiva en `America/Caracas`, `bcv_sync_state` y el resultado expuesto por la API. La tasa sintética de PostgreSQL 18 CI no satisface este gate.
-2. **Enrutamiento externo de alertas:** demostrar entrega efectiva al destino operativo configurado; que el build o el watchdog detecte una condición no demuestra entrega externa.
-3. **RPO/RTO humano:** definir responsables y objetivos, ejecutar backup/restore autorizado y registrar tiempos y evidencia. Los tests sintéticos de CI no equivalen a una recuperación real.
-4. **Revisión legal/fiscal:** validar recibos, impuestos, reglas comerciales de pagos y monedas, anulaciones, devoluciones y obligaciones aplicables antes de declarar producción.
-5. **Issue #53 P0 y aceptación del propietario:** mantener el issue OPEN hasta que sus gates de producción estén demostrados y aprobados.
+1. **Primera tasa BCV real persistida en Neon main:** observar la ejecución programada del lunes 2026-11-16 a las 22:00 UTC (18:00 VET) y comprobar de forma read-only la fila real, fecha efectiva en America/Caracas, estado de sincronización y resultado expuesto por la API. Una tasa sintética de CI no satisface este gate.
+2. **Estabilidad posterior de BCV:** observar ejecuciones válidas posteriores y confirmar que no hay estados atascados, pérdida de frescura, datos inválidos ni regresiones del flujo.
+3. **Issue #53 P0:** mantenerlo OPEN hasta que sus criterios de seguridad/operación estén demostrados y el propietario acepte el cierre.
+4. **Decisión/aprobación final de lanzamiento:** no declarar GO ni promover producción antes de cerrar los gates anteriores y registrar la aceptación final.
 
-**Decisión vigente:** **PRODUCTION: NOT READY**. No promover ni declarar GO mientras permanezcan abiertos estos gates.
+El RTO operativo sigue pendiente de medición/aceptación si se ejecuta una prueba formal de restauración. El RPO diario aproximado ya está aceptado. La revisión legal/fiscal no bloquea el alcance FISC-01 interno descrito aquí; sí será obligatoria si el producto evoluciona a facturación fiscal SENIAT.
 
 ## Snapshot histórico — 2026-11-11 — PR #287
 

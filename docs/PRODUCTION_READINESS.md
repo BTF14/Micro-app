@@ -47,7 +47,7 @@ Estas decisiones se registran como confirmaciones del propietario, no como una n
 - Neon main SELECT-only: `backup_readonly` es privilegiado y tiene write privileges; no se leyó `DATABASE_URL_BACKUP_RO`; identidad efectiva desconocida. `microapp_runtime` y `microapp_migrator` ausentes del catálogo observado. Identidad del Worker `DATABASE_URL` también desconocida.
 - Issue #53 OPEN/P0. Producción **NOT READY**. No se modificaron Neon, roles, grants, contraseñas, secretos, datos reales, Cron, DNS, billing ni producción.
 
-## Gates bloqueantes para producción — vigentes
+## Snapshot histórico — gates bloqueantes para producción (supersedido al 2026-11-15)
 
 1. **Primera tasa BCV real en Neon `main`:** esperar la siguiente ventana válida del Cron `MON-FRI 22:00 UTC` y comprobar, de forma read-only/autorizada, la fila real, su fecha efectiva en `America/Caracas`, `bcv_sync_state` y el resultado expuesto por la API. La tasa sintética de PostgreSQL 18 CI no satisface este gate.
 2. **Enrutamiento externo de alertas en Cloudflare:** demostrar entrega efectiva al destino operativo configurado; que el build o el watchdog detecte una condición no demuestra entrega externa.
@@ -243,7 +243,7 @@ Los párrafos de 2026-10-30 describían el estado previo a los vertical slices i
 - [x] Recepciones y ajustes de inventario integrados (PR #352, 0025); lectura/Kardex y conteos atómicos tienen suites de integración.
 - [x] POS y checkout atómico integrados (PR #357; 0015/0018); el alcance comercial sigue limitado por las notas del bloque de implementación.
 - [x] Migraciones 0001–0025 aplicadas en Neon main según el workflow protegido, run #43591333198; no inferir de ello que la aplicación esté aceptada para lanzamiento.
-- [x] Smoke autenticado live con Brave Shields ACTIVADO en móvil y escritorio: Google OAuth same-origin, sesión persistente en navegación de módulos reales y logout seguro confirmado por el propietario. Reabrir solo si cambian proxy /api, CORS, cookies/OAuth o CSP.
+- [x] Smoke autenticado live con Brave Shields ACTIVADO en móvil y escritorio: Google OAuth same-origin, sesión persistente en navegación de módulos reales y logout seguro confirmado por el propietario. La verificación de tasa BCV real persistida se mantiene como gate separado.
 - [ ] Primera tasa BCV real persistida en Neon main y registro correspondiente en `bcv_sync_state`, tras la primera ventana elegible del lunes 2026-11-16; observar después de 11:05 UTC (07:05 VET).
 - [x] E2E full-stack real en CI contra API Hono + PostgreSQL 18 efímero, sin mocks de `/api/*` (PR #366): catálogo, recepción, turno, checkout USD/VES, recibos, stock, cierre/recarga y rechazo de venta con caja cerrada. No valida producción real.
 - [x] Rate limiting runtime en rutas sensibles: integrado y probado en PostgreSQL 18 efímero para OAuth, checkout y 11 endpoints de escritura (PR #363; exact-HEAD y post-merge checks SUCCESS).
@@ -253,6 +253,8 @@ Los párrafos de 2026-10-30 describían el estado previo a los vertical slices i
 - [x] Watchdog BCV read-only `17 * * * *`, endpoint y UI integrados en PR #364; pre-merge 16/16 check-runs y 13/13 workflows SUCCESS, post-merge 14/14 check-runs y 10/10 workflows SUCCESS. La suite PostgreSQL 18 usa login real `microapp_runtime` y comprueba privilegios de solo lectura.
 - [x] Seguimiento BCV mediante panel de la app y logs gratuitos de Cloudflare; correo de GitHub Workflows verificado por el propietario. No se usan alertas pagas de Cloudflare.
 - [ ] Estabilidad posterior de BCV tras las ventanas programadas de 11:00 y 22:00 UTC, incluida la persistencia de tasas válidas.
+- [ ] Issue #53 P0: mantener abierto hasta demostrar todos sus criterios y obtener aceptación explícita de cierre.
+- [ ] Revisión final GO/NO-GO del propietario después de cerrar todos los gates de producción.
 
 ### P1 — operación, resiliencia y UX
 - [x] Análisis Semgrep, Trivy, escaneo de historia de secretos y Dependency Review configurados en CI.

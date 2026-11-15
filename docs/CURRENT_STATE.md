@@ -12,7 +12,6 @@
 
 ---
 
-
 ## Turno 49 — PR #367 integrada; cierre P1 confirmado (2026-11-14 UTC)
 
 **Merge de implementación a `main`:** `46a24f3d617bc07f4cf47931b0bece4cccfb5440`.

@@ -1,3 +1,35 @@
+## Turno 50 — Continuidad: ADR v1.1 y PR documental #369 (2026-11-14 UTC)
+
+### Estado que debes verificar primero
+- PR #369: https://github.com/BTF14/Micro-app/pull/369, rama docs/adr-v11-roadmap-owner-confirmations-20261114, base main. El HEAD inicial al abrir fue 3831981721fb874c96442b747e32dba57b9585a3; consulta siempre el HEAD vivo porque los commits de continuidad pueden moverlo.
+- Base main observada al comenzar: fac1e87d4cd9569b92cfc5fbaa41706f99b72430.
+- PR #193 sigue OPEN e intacta, HEAD ac57ab4f3415f82279b8a49c0befe09f8e3aec68. No modificarla.
+- Issue #53 sigue OPEN/P0. No cerrarla.
+- Producción permanece PRODUCTION: NOT READY.
+
+### Decisión v1.1 y freeze
+- ADR accepted: docs/decisions/ADR-20261114-v11-product-scope-and-roadmap.md.
+- Uso confirmado: PC + teléfono para inventario, verificador rápido USD/Bs. BCV y control interno de caja/ventas. Terminal bancario físico Android independiente, sin Bluetooth/Wi-Fi/browser; conciliación card + payments.reference. FISC-01 es comprobante interno, no factura fiscal SENIAT.
+- Freeze de nuevas funciones comerciales hasta observar la primera tasa BCV real persistida en Neon main el lunes 2026-11-16 22:00 UTC (18:00 VET) y estabilidad posterior.
+- Roadmap: PR1 importador CSV catálogo; PR2 escáner móvil BarcodeDetector/getUserMedia con fallback manual; PR3 resumen cierre caja, reportes y CSV con snapshots históricos, NUMERIC exacto, permisos Owner-only para valoración y neutralización de CSV Formula Injection.
+
+### Confirmaciones que no debes volver a pedir
+- Presupuesto $0, Workers Free y sin método de pago en Cloudflare.
+- Correo de GitHub Workflows verificado por el propietario; panel BCV y logs gratuitos; no alertas pagas de Cloudflare.
+- RPO diario aproximado de 24 horas aceptado. Solo queda pendiente medir/aceptar RTO si se ejecuta una restauración formal.
+- FISC-01 es interno. Asesoría legal/fiscal solo será gate específico si en el futuro se habilita facturación fiscal.
+
+### Trabajo documental de PR #369
+- Correcciones: docs/COMPLIANCE_REQUIREMENTS.md, docs/DATABASE_SCHEMA.md, §4 de docs/CONSTITUTION.md y cabecera de docs/SAAS_ARCHITECTURE_DECISIONS.md.
+- Continuidad: docs/CURRENT_STATE.md, docs/STATE_JOURNAL.md, este handoff y la task ODD.
+- Solo docs/** y odd/**. No tocar código, scripts, workflows, migraciones, Neon, secretos, datos reales, Cloudflare, billing, DNS ni despliegues manuales.
+
+### Siguiente acción
+1. Verificar diff completo y lista exacta de archivos de PR #369; confirmar que PR #193 e Issue #53 siguen intactas.
+2. Exigir validate-odd-docs y todos los checks requeridos SUCCESS en el HEAD final exacto; no reutilizar checks de SHAs anteriores.
+3. Si mergeable, branch protection y checks cumplen AGENTS.md, hacer Squash and Merge de PR #369.
+4. Verificar el SHA resultante de main y todos los checks post-merge sobre ese SHA exacto. Mantener PRODUCTION: NOT READY y no levantar el freeze hasta la evidencia BCV/estabilidad.
+
 ## Turno 49 — PR #367 integrada; cierre P1 confirmado (2026-11-14 UTC)
 
 **Merge de implementación a `main`:** `46a24f3d617bc07f4cf47931b0bece4cccfb5440`.

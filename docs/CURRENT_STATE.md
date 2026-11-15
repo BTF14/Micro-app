@@ -1,3 +1,17 @@
+## Turno 50 — ADR v1.1 y roadmap aprobado (2026-11-14 UTC)
+
+- Base main verificada al iniciar: fac1e87d4cd9569b92cfc5fbaa41706f99b72430.
+- PR documental única: #369, rama docs/adr-v11-roadmap-owner-confirmations-20261114, base main. HEAD inicial al abrir: 3831981721fb874c96442b747e32dba57b9585a3; volver a leer el HEAD vivo y validar todos los checks en ese SHA final antes de integrar.
+- ADR aceptado: docs/decisions/ADR-20261114-v11-product-scope-and-roadmap.md. Fija uso PC/teléfono, terminal bancario Android independiente, comprobante interno FISC-01 y roadmap v1.1: PR1 importador CSV, PR2 escáner móvil, PR3 cierre/reportes/exportación CSV.
+- Freeze comercial: no iniciar esas PR hasta observar la primera tasa BCV real persistida en Neon main el lunes 2026-11-16 a las 22:00 UTC (18:00 VET) y estabilidad posterior.
+- Confirmaciones owner-confirmed: presupuesto $0 / Workers Free sin método de pago; correo de GitHub Workflows verificado por el propietario y seguimiento BCV por panel/logs gratuitos; RPO diario ~24 h aceptado; FISC-01 exclusivamente interno. RTO queda pendiente de medición/aceptación si se hace restauración formal. No volver a pedir estas confirmaciones.
+- Correcciones documentales aplicadas: COMPLIANCE_REQUIREMENTS, DATABASE_SCHEMA, CONSTITUTION §4 y SAAS_ARCHITECTURE_DECISIONS. Los snapshots de 2026-10-30/11-08 quedan marcados como históricos.
+- PR #193 permanece OPEN, HEAD ac57ab4f3415f82279b8a49c0befe09f8e3aec68, sin cambios por esta tarea. Issue #53 permanece OPEN/P0, sin cambios.
+- PRODUCTION: NOT READY. Gates abiertos: primera tasa BCV real, estabilidad posterior, Issue #53 y aprobación final de lanzamiento.
+- Alcance de PR #369: solo docs/** y odd/**. Sin código, scripts, workflows, migraciones, Neon, secretos, datos reales, configuración de Cloudflare, billing ni despliegues manuales.
+
+---
+
 ## Turno 49 — PR #367 integrada; cierre P1 confirmado (2026-11-14 UTC)
 
 **Merge de implementación a `main`:** `46a24f3d617bc07f4cf47931b0bece4cccfb5440`.

@@ -43,6 +43,8 @@ Micro app es un POS e inventario web para PC, tablet y móvil: catálogo/código
 
 ## 4. Identidad, roles y aislamiento
 
+> **Estado vigente — 2026-11-14:** main ya integra autorización server-side por operación mediante authorization.ts, aislamiento de tenant y sucursal mediante tenant-context.ts / branch-context.ts, rate limiting runtime y pruebas de integración/full-stack sobre PostgreSQL 18. Las afirmaciones históricas de este apartado que dicen que no hay rutas comerciales HTTP, que la autorización por operación no está conectada o que la implementación no demuestra autorización comercial/aislamiento completo quedaron supersedidas por el código vigente. Esta nota no reduce las reglas de autorización, aislamiento, denegación por defecto, revisión de permisos ni gates de seguridad establecidos en esta Constitución.
+
 - **Estado verificado tras PR #153 y #155:** la API implementa Google OAuth, allowlist/bootstrap de un solo uso, state y PKCE, cookies de sesión HttpOnly, sesión revocable y validación del claim `email_verified` de Google. La verificación de correo se realiza mediante la identidad verificada del proveedor; no confundirla con un sistema propio de confirmación por correo.
 - El bootstrap ya no acepta el token en query string: usa POST con cuerpo validado, Origin exacto y límites de tamaño/campos. La configuración `FRONTEND_ORIGIN` exige HTTPS salvo loopback HTTP y rechaza componentes no canónicos.
 - El login/registro por contraseña permanece desactivado/fail-closed. Recuperación de cuenta, MFA, recuperación administrativa y limpieza automática completa de sesiones siguen pendientes. La autenticación implementada no demuestra autorización comercial ni aislamiento completo.

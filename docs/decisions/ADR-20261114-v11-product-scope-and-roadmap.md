@@ -4,7 +4,7 @@
 - **Estado:** accepted
 - **Fecha:** 2026-11-14
 - **Responsables:** propietario del producto y mantenimiento técnico
-- **Relacionado:** odd/tasks/adr-v11-roadmap-and-owner-confirmations.md; Issue #53 (OPEN/P0); PR #193 (OPEN, fuera de alcance)
+- **Relacionado:** odd/tasks/adr-v11-roadmap-and-owner-confirmations.md; PR #369 (esta documentación); PR #193 (OPEN, fuera de alcance); Issue #53 (OPEN/P0)
 
 ## Contexto y problema
 
@@ -93,7 +93,7 @@ El roadmap puede cambiarse mediante un ADR sucesor que identifique expresamente 
 
 ## Evidencia
 
-- **Repositorio/rama/PR:** BTF14/Micro-app; base main; rama documental docs/adr-v11-roadmap-owner-confirmations-20261114; PR documental única por crear.
+- **Repositorio/rama/PR:** BTF14/Micro-app; base main; rama documental docs/adr-v11-roadmap-owner-confirmations-20261114; PR documental única #369: https://github.com/BTF14/Micro-app/pull/369.
 - **SHA exacto de base:** fac1e87d4cd9569b92cfc5fbaa41706f99b72430.
 - **Archivos y evidencia de código:** apps/api/src/authorization.ts, tenant-context.ts, branch-context.ts, runtime-write-rate-limit.ts, catalog.ts, sales-checkout.ts, register-shifts.ts, inventory-receipts.ts, exchange-rates.ts y apps/api/src/index.ts; workflow .github/workflows/playwright-e2e.yml; validación documental .github/workflows/odd-docs-validation.yml.
 - **Esquema:** main versiona migraciones 0001–0025; el ledger de Neon main registró 25 migraciones aplicadas en la verificación read-only previa. Las tablas de operación incluyen sales, payments, sale_items, register_shifts, bcv_sync_state y audit_logs; los roles de migración, runtime, sincronización BCV y backup son separados.

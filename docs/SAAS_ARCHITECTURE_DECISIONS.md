@@ -5,6 +5,8 @@
 **Repositorio:** https://github.com/BTF14/Micro-app  
 **PR documental de continuidad:** https://github.com/BTF14/Micro-app/pull/156
 
+> **Reconciliación de estado — 2026-11-14:** las entradas iniciales de este documento que describían ausencia de endpoints comerciales corresponden al estado histórico de 2026-10-30 y quedaron supersedidas por el código integrado en main. Actualmente main incluye rutas de catálogo, inventario/recepciones, POS/checkout, cajas/turnos, autorización server-side, rate limiting y sincronización BCV. Las propuestas y decisiones de arquitectura de este documento conservan su alcance; esta nota no convierte propuestas futuras en funciones implementadas ni declara producción lista.
+
 ## 1. Propósito y reglas de interpretación
 
 Este documento conserva decisiones y criterios para que cualquier chat, agente o desarrollador pueda continuar sin reconstruir conversaciones. El repositorio es la fuente de continuidad. Distinguir siempre:

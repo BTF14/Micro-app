@@ -258,7 +258,7 @@ Los párrafos de 2026-10-30 describían el estado previo a los vertical slices i
 
 ### P1 — operación, resiliencia y UX
 - [x] Análisis Semgrep, Trivy, escaneo de historia de secretos y Dependency Review configurados en CI.
-- [x] Backup cifrado, restauración instrumentada aislada y canal de alerta/ACK humano tienen evidencia registrada; la medición sintética no equivale a RPO/RTO operativos aceptados.
+- [x] Backup cifrado, restauración instrumentada aislada y canal de alerta/ACK humano tienen evidencia registrada; el restore técnico aislado no equivale a un simulacro de caída total. El RTO de plataforma Tier $0 best-effort ≤4 h fue aceptado por el propietario.
 - [ ] Pruebas E2E de ventas, inventario, caja y devoluciones en móvil/escritorio con API/DB reales de prueba.
 - [ ] Accesibilidad por teclado/lector y UX responsive final verificadas.
 - [ ] Logs operativos, retención y soporte revisados sin exponer secretos ni datos sensibles.

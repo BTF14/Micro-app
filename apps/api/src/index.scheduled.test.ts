@@ -119,12 +119,18 @@ describe("BCV scheduled failure reporting", () => {
   });
 
   it("keeps the production BCV Cron disabled unless explicitly enabled", async () => {
+    await app.scheduled(morningBcvCron, { ...productionEnv, BCV_SYNC_ENABLED: "false" });
     await app.scheduled(bcvCron, { ...productionEnv, BCV_SYNC_ENABLED: "false" });
+    await app.scheduled(morningBcvCron, { ...productionEnv, BCV_SYNC_ENABLED: undefined });
     await app.scheduled(bcvCron, { ...productionEnv, BCV_SYNC_ENABLED: undefined });
     expect(mocks.syncBcvOfficialRate).not.toHaveBeenCalled();
   });
 
   it("does not invoke BCV synchronization outside production", async () => {
+    await app.scheduled(morningBcvCron, {
+      ...productionEnv,
+      APP_ENV: "preview",
+    });
     await app.scheduled(bcvCron, {
       ...productionEnv,
       APP_ENV: "preview",

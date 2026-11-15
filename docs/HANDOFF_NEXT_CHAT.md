@@ -1,27 +1,26 @@
-## Turno 51 — Continuidad BCV Cron matutino (2026-11-15 UTC)
+## Turno 51 — Continuidad BCV Cron matutino integrado (2026-11-15 UTC)
 
-### Estado vivo que debes verificar primero
-- Base al comenzar: `main` = `73fdb54fdccc3ce1c19a92e7907a3d0840341814`.
-- Rama de trabajo: `fix/bcv-morning-cron-window-20261115`.
-- PR #193 sigue OPEN/intacta, HEAD `ac57ab4f3415f82279b8a49c0befe09f8e3aec68`; no modificar.
-- Issue #53 sigue OPEN/P0; no cerrar.
-- Mantener `PRODUCTION: NOT READY` y no modificar el freeze/roadmap v1.1.
+### Estado verificado
+- `main` = `6a7a5d8ecd3ff6dfc4bb462e6ff389ad05e062ac`, merge SHA de PR #370.
+- PR #370 MERGED por Squash and Merge: https://github.com/BTF14/Micro-app/pull/370.
+- PR #193 permanece OPEN/intacta, HEAD `ac57ab4f3415f82279b8a49c0befe09f8e3aec68`; no modificar.
+- Issue #53 permanece OPEN/P0; no cerrar.
+- Mantener `PRODUCTION: NOT READY` y freeze/roadmap v1.1.
 
-### Alcance implementado en la rama (validación aún pendiente)
-- ODD task se creó primero: `odd/tasks/bcv-morning-cron-window.md`.
-- `apps/api/wrangler.bcv.toml`: objetivo exacto `0 11 * * MON-FRI` + `0 22 * * MON-FRI`; no se añadió 23:00 UTC.
-- `apps/api/src/index.ts`: allowlist exacta de las dos expresiones BCV. Preservar gates production, enabled, secreto dedicado obligatorio y sin fallback a `DATABASE_URL`.
-- `apps/api/src/index.scheduled.test.ts`: pruebas de ambos horarios, credencial dedicada y negativos `0 11 * * 1-5` / `0 22 * * 1-5`; watchdog horario sin cambios.
-- `apps/api/src/exchange-rates.integration.test.ts` no requiere edición: usa explícitamente 22:00 y no lee el array `crons` de Wrangler.
-- Docs de continuidad se han iniciado; revisar su estado en el HEAD de rama.
+### Resultado BCV Cron
+- Worker aislado `micro-app-bcv-sync`: `0 11 * * MON-FRI` (07:00 VET) y `0 22 * * MON-FRI` (18:00 VET). No se agregó 23:00 UTC.
+- Handler usa allowlist exacta, conserva `APP_ENV === "production"`, `BCV_SYNC_ENABLED === "true"`, requiere `DATABASE_URL_BCV_SYNC` y no hace fallback a `DATABASE_URL`.
+- El watchdog runtime `17 * * * *` no cambió.
+- Tests unitarios cubren ambos horarios, gates fail-closed, credencial dedicada y negativos `0 11 * * 1-5` / `0 22 * * 1-5`. Integración PostgreSQL existente invoca 22:00 y cubre el mismo handler; no necesita cambios.
+- Pre-merge PR HEAD `56bb61906a7db941286370ef7e9b08998a9f3cca`: 10/10 workflows SUCCESS, CI 52 pasos SUCCESS, Unit tests + PostgreSQL BCV integration SUCCESS, Playwright full-stack PostgreSQL 18 + Chromium auth SUCCESS y gates de migración/seguridad/ODD/dependencies SUCCESS.
+- Post-merge main SHA `6a7a5d8ecd3ff6dfc4bb462e6ff389ad05e062ac`: 9/9 workflows SUCCESS; Cloudflare Pages + Workers Builds `micro-app-api` + Workers Builds `micro-app-bcv-sync` SUCCESS.
+- Task ODD `odd/tasks/bcv-morning-cron-window.md` cerrada mediante PR documental #371.
 
-### Próximos pasos obligatorios
-1. Ejecutar tests relevantes y suite del API en el entorno soportado; no afirmar pruebas locales si solo corrieron en CI.
-2. Inspeccionar diff completo y lista de archivos: solo task ODD, los tres archivos de código/test autorizados y tres docs de continuidad.
-3. Abrir una única PR contra main. Verificar todos los check-runs y workflows en el HEAD exacto, reviews/threads, branch protection y cualquier build de Workers.
-4. Hacer Squash and Merge solo si todos los gates pasan; después verificar SHA exacto de main y checks post-merge, especialmente `Workers Builds: micro-app-bcv-sync`.
-5. No hacer deploy manual, no cambiar configuración Cloudflare, secretos, Neon `main`, SQL/migraciones, Issue #53 ni PR #193.
-6. La ejecución real de 11:00 UTC y la persistencia BCV deben observarse por separado después del merge; CI/Workers Build no demuestran una invocación programada real.
+### Próximo control operativo (no equivale a CI)
+1. Observar la primera invocación real del Cron matutino el lunes 2026-11-16 a las 11:00 UTC (07:00 VET).
+2. Verificar read-only el resultado y que la tasa oficial quedó persistida en Neon main; distinguir `inserted` / `unchanged` / `failed`.
+3. Seguir estabilidad posterior; no mutar Neon main ni cambiar secretos/configuración manual Cloudflare.
+4. No levantar el freeze v1.1 ni cambiar `PRODUCTION: NOT READY` hasta superar los gates externos documentados.
 
 ---
 

@@ -75,7 +75,7 @@ Las cuatro PR siguientes son unidades separadas. El orden no se altera ni se par
 
 ### Confirmaciones operativas del propietario
 
-Se registran en docs/PRODUCTION_READINESS.md con la marca **CONFIRMADO POR EL PROPIETARIO — NO VOLVER A PEDIR**: presupuesto $0 / Workers Free sin método de pago; canal de alertas por correo de GitHub Workflows verificado por el propietario más panel BCV y logs gratuitos; RPO diario aproximado de 24 horas aceptado; y alcance FISC-01 exclusivamente interno. La aceptación del RPO no equivale a medición/aceptación de RTO.
+Se registran en docs/PRODUCTION_READINESS.md con la marca **CONFIRMADO POR EL PROPIETARIO — NO VOLVER A PEDIR**: presupuesto $0 / Workers Free sin método de pago; canal de alertas por correo de GitHub Workflows verificado por el propietario más panel BCV y logs gratuitos; RPO diario aproximado de 24 horas aceptado; y alcance FISC-01 exclusivamente interno. El RTO operativo de plataforma Tier $0 best-effort ≤4 h desde detección fue aceptado por el propietario el 2026-11-15; la evidencia y sus límites están en `docs/PRODUCTION_READINESS.md`.
 
 ## Alternativas consideradas
 

@@ -6,13 +6,41 @@
     "percent": 55.6
   },
   "production_readiness": {
-    "done": 11,
-    "total": 21,
-    "percent": 52.4
+    "done": 18,
+    "total": 25,
+    "percent": 72
   },
   "groups": [
     {
-      "name": "Gates bloqueantes para producción",
+      "name": "Confirmaciones del propietario — CONFIRMADO — NO VOLVER A PEDIR",
+      "done": 0,
+      "total": 0,
+      "items": [],
+      "percent": 0
+    },
+    {
+      "name": "Estado verificado — main `f4461ea689c7283c19788724e51385537f23d217`",
+      "done": 0,
+      "total": 0,
+      "items": [],
+      "percent": 0
+    },
+    {
+      "name": "Gates abiertos para el lanzamiento",
+      "done": 0,
+      "total": 0,
+      "items": [],
+      "percent": 0
+    },
+    {
+      "name": "Snapshot histórico — 2026-11-11 — PR #287",
+      "done": 0,
+      "total": 0,
+      "items": [],
+      "percent": 0
+    },
+    {
+      "name": "Gates bloqueantes para producción — vigentes",
       "done": 0,
       "total": 0,
       "items": [],
@@ -75,7 +103,7 @@
       "percent": 0
     },
     {
-      "name": "Estado vivo — 2026-11-14 UTC",
+      "name": "Snapshot histórico — estado vivo 2026-11-14 UTC (supersedido por la reconciliación 2026-11-15)",
       "done": 0,
       "total": 0,
       "items": [],
@@ -177,8 +205,8 @@
     },
     {
       "name": "Preparación para producción (gates)",
-      "done": 11,
-      "total": 21,
+      "done": 18,
+      "total": 25,
       "items": [
         {
           "title": "CI, build/typecheck y pruebas automatizadas reproducibles en PostgreSQL efímero para los SHAs integrados; los checks de cada PR son evidencia de integración, no certificación live.",
@@ -197,7 +225,7 @@
           "done": true
         },
         {
-          "title": "Lifecycle autenticado de cajero probado en PostgreSQL 18 efímero (PR #347); no equivale a E2E comercial real sin mocks.",
+          "title": "Lifecycle autenticado de cajero (PR #347) y E2E comercial full-stack sin mocks contra API Hono real + PostgreSQL 18 efímero (PR #366) validados en CI; no equivalen a certificación de producción.",
           "done": true
         },
         {
@@ -217,27 +245,43 @@
           "done": true
         },
         {
-          "title": "Smoke autenticado live en `https://micro-app-63i.pages.dev` con Brave Shields ACTIVADO, incluyendo verificación de la tasa BCV real disponible en Neon main.",
+          "title": "Smoke autenticado live con Brave Shields ACTIVADO en móvil y escritorio: Google OAuth same-origin, sesión persistente en navegación de módulos reales y logout seguro confirmado por el propietario. Reabrir solo si cambian proxy /api, CORS, cookies/OAuth o CSP.",
+          "done": true
+        },
+        {
+          "title": "Primera tasa BCV real persistida en Neon main y registro correspondiente en `bcv_sync_state`, tras la primera ventana elegible del lunes 2026-11-16; observar después de 11:05 UTC (07:05 VET).",
           "done": false
         },
         {
-          "title": "E2E real de los flujos comerciales completos contra API/DB de prueba, sin mocks de red.",
+          "title": "E2E full-stack real en CI contra API Hono + PostgreSQL 18 efímero, sin mocks de `/api/*` (PR #366): catálogo, recepción, turno, checkout USD/VES, recibos, stock, cierre/recarga y rechazo de venta con caja cerrada. No valida producción real.",
+          "done": true
+        },
+        {
+          "title": "Rate limiting runtime en rutas sensibles: integrado y probado en PostgreSQL 18 efímero para OAuth, checkout y 11 endpoints de escritura (PR #363; exact-HEAD y post-merge checks SUCCESS).",
+          "done": true
+        },
+        {
+          "title": "RPO diario aproximado de 24 h aceptado por el propietario.",
+          "done": true
+        },
+        {
+          "title": "Medición y aceptación formal del RTO si se ejecuta una restauración formal.",
           "done": false
         },
         {
-          "title": "Rate limiting runtime en rutas sensibles y protección contra abuso, revisados con pruebas negativas y límites operativos.",
+          "title": "Revisión legal/fiscal/contable si cambia el alcance FISC-01 interno o se incorpora facturación fiscal SENIAT.",
           "done": false
         },
         {
-          "title": "Aceptación formal humana del objetivo RPO aproximado de 24 h y del RTO operativo aceptable.",
-          "done": false
+          "title": "Watchdog BCV read-only `17 * * * *`, endpoint y UI integrados en PR #364; pre-merge 16/16 check-runs y 13/13 workflows SUCCESS, post-merge 14/14 check-runs y 10/10 workflows SUCCESS. La suite PostgreSQL 18 usa login real `microapp_runtime` y comprueba privilegios de solo lectura.",
+          "done": true
         },
         {
-          "title": "Revisión legal, fiscal y contable por asesoría competente y aprobación explícita del lanzamiento; Issue #53 permanece OPEN/P0.",
-          "done": false
+          "title": "Seguimiento BCV mediante panel de la app y logs gratuitos de Cloudflare; correo de GitHub Workflows verificado por el propietario. No se usan alertas pagas de Cloudflare.",
+          "done": true
         },
         {
-          "title": "Monitorización y alertas activas de `BCV_SYNC_FAILED`, más watchdog probado para estados `running` estancados.",
+          "title": "Estabilidad posterior de BCV tras las ventanas programadas de 11:00 y 22:00 UTC, incluida la persistencia de tasas válidas.",
           "done": false
         },
         {
@@ -261,11 +305,11 @@
           "done": false
         },
         {
-          "title": "Límites gratuitos/capacidad y ausencia de cargos automáticos revalidados antes del GO/NO-GO.",
-          "done": false
+          "title": "Presupuesto $0 y Workers Free sin método de pago, según confirmación del propietario; revalidar límites gratuitos antes del GO/NO-GO.",
+          "done": true
         }
       ],
-      "percent": 52.4
+      "percent": 72
     },
     {
       "name": "Bloqueos conocidos — corte 2026-11-14",
@@ -283,16 +327,13 @@
     }
   ],
   "production_blockers": [
-    "Smoke autenticado live en `https://micro-app-63i.pages.dev` con Brave Shields ACTIVADO, incluyendo verificación de la tasa BCV real disponible en Neon main.",
-    "E2E real de los flujos comerciales completos contra API/DB de prueba, sin mocks de red.",
-    "Rate limiting runtime en rutas sensibles y protección contra abuso, revisados con pruebas negativas y límites operativos.",
-    "Aceptación formal humana del objetivo RPO aproximado de 24 h y del RTO operativo aceptable.",
-    "Revisión legal, fiscal y contable por asesoría competente y aprobación explícita del lanzamiento; Issue #53 permanece OPEN/P0.",
-    "Monitorización y alertas activas de `BCV_SYNC_FAILED`, más watchdog probado para estados `running` estancados.",
+    "Primera tasa BCV real persistida en Neon main y registro correspondiente en `bcv_sync_state`, tras la primera ventana elegible del lunes 2026-11-16; observar después de 11:05 UTC (07:05 VET).",
+    "Medición y aceptación formal del RTO si se ejecuta una restauración formal.",
+    "Revisión legal/fiscal/contable si cambia el alcance FISC-01 interno o se incorpora facturación fiscal SENIAT.",
+    "Estabilidad posterior de BCV tras las ventanas programadas de 11:00 y 22:00 UTC, incluida la persistencia de tasas válidas.",
     "Pruebas E2E de ventas, inventario, caja y devoluciones en móvil/escritorio con API/DB reales de prueba.",
     "Accesibilidad por teclado/lector y UX responsive final verificadas.",
-    "Logs operativos, retención y soporte revisados sin exponer secretos ni datos sensibles.",
-    "Límites gratuitos/capacidad y ausencia de cargos automáticos revalidados antes del GO/NO-GO."
+    "Logs operativos, retención y soporte revisados sin exponer secretos ni datos sensibles."
   ],
   "note": "Porcentaje de criterios inventariados con evidencia; no es una certificación ni una garantía de producción."
 }

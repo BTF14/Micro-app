@@ -1,4 +1,4 @@
-# Addendum de cumplimiento vivo — 2026-11-08 UTC
+## Snapshot histórico — Addendum de cumplimiento 2026-11-08 UTC
 
 La documentación sigue siendo un borrador de requisitos y **no constituye asesoría legal, certificación fiscal ni conformidad demostrada**.
 
@@ -82,7 +82,7 @@ Las fuentes secundarias pueden ayudar a localizar normas, pero no deben ser la �
 
 ## Estado técnico vigente — reconciliación 2026-11-14
 
-El texto del 30 de octubre quedó superado por el código actualmente integrado en main (HEAD de referencia al iniciar esta revisión: fac1e87d4cd9569b92cfc5fbaa41706f99b72430). Main contiene migraciones 0001–0025 y ya integra catálogo, inventario por sucursal y recepciones, cajas/turnos, POS/checkout, sincronización BCV con Worker/Watchdog, rate limiting runtime y E2E full-stack con Hono real y PostgreSQL 18 efímero. Esta actualización corrige el estado técnico, no certifica producción ni cumplimiento legal/fiscal; PRODUCTION permanece NOT READY y los gates operativos siguen en docs/PRODUCTION_READINESS.md.
+El addendum fechado 2026-11-08 y el texto del 30 de octubre que se conserva más abajo son snapshots históricos; ambos quedaron superados por el código actualmente integrado en main (HEAD de referencia al iniciar esta revisión: fac1e87d4cd9569b92cfc5fbaa41706f99b72430). Main contiene migraciones 0001–0025 y ya integra catálogo, inventario por sucursal y recepciones, cajas/turnos, POS/checkout, sincronización BCV con Worker/Watchdog, rate limiting runtime y E2E full-stack con Hono real y PostgreSQL 18 efímero. Esta actualización corrige el estado técnico, no certifica producción ni cumplimiento legal/fiscal; PRODUCTION permanece NOT READY y los gates operativos siguen en docs/PRODUCTION_READINESS.md.
 
 ## Snapshot histórico — Estado técnico conocido al documentar (2026-10-30)
 

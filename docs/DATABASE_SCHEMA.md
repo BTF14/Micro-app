@@ -17,7 +17,7 @@ El estado vivo de main, PRs, SHA, checks y próximos pasos está centralizado en
 - Producción: **NOT READY**; no extrapolar el ensayo ni los builds automáticos a certificación productiva.
 
 ---
-# Addendum esquema vivo — 2026-11-08 UTC
+## Snapshot histórico — Addendum esquema 2026-11-08 UTC
 
 **Código fuente:** main `96e2e2d9f76bc8fcc3bab2fa9503e480545c8869`. La carpeta versionada contiene migraciones 0001–0016:
 

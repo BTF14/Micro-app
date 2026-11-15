@@ -1,3 +1,16 @@
+## Turno 52 — Reconciliación de readiness y evidencia BCV visible (2026-11-15 UTC)
+
+- Base exacta de esta rama documental: `main` = `f4461ea689c7283c19788724e51385537f23d217`.
+- Post-merge de ese SHA: 16/16 check-runs SUCCESS y 11/11 workflow runs SUCCESS, incluyendo Cloudflare Pages, Workers Builds `micro-app-api` y `micro-app-bcv-sync`.
+- Evidencia visual read-only (2026-11-15): `micro-app-bcv-sync` muestra activos `0 11 * * MON-FRI` (11:00 UTC / 07:00 VET) y `0 22 * * MON-FRI` (22:00 UTC / 18:00 VET), próximos disparos lunes 2026-11-16 a 11:00 y 22:00 UTC. Se ven APP_ENV production, BCV_SYNC_ENABLED true, secret DATABASE_URL_BCV_SYNC configurado sin leer su valor y Observability Logs activos.
+- GET `/api/api/exchange-rates/latest` devolvió 503 el domingo 2026-11-15, antes de la primera ventana hábil; no prueba una ejecución ni persistencia.
+- Confirmaciones owner-confirmed no volver a pedir: smoke autenticado con Brave Shields ACTIVADO, OAuth same-origin /api, sesión persistente móvil/escritorio, lectura de Neon main y logout 401; URI legacy workers.dev retirada; presupuesto $0 / Workers Free sin método de pago; alertas de GitHub Workflows por correo y seguimiento BCV por panel + logs gratuitos; RPO diario ~24 h aceptado; FISC-01 interno.
+- Primera comprobación BCV read-only: lunes 2026-11-16 después de 11:05 UTC (07:05 VET). Verificar outcome y persistencia; si la ventana matutina no resuelve, observar también 22:00 UTC. Seguir estabilidad posterior. No mutar Neon main ni cambiar Cloudflare, secrets o código.
+- PR #193 sigue OPEN/intacta, HEAD `ac57ab4f3415f82279b8a49c0befe09f8e3aec68`; Issue #53 OPEN/P0. **PRODUCTION: NOT READY**; freeze/roadmap v1.1 siguen.
+- Alcance de esta PR: solo los siete artefactos docs autorizados. Sin cambios de código, workflows, SQL/migraciones, ODD cerrados, Neon, Cloudflare manual, secretos, datos reales, billing ni deploy manual.
+
+---
+
 ## Turno 51 — Ventana matutina BCV integrada (2026-11-15 UTC)
 
 - Base al iniciar: `main` = `73fdb54fdccc3ce1c19a92e7907a3d0840341814`.

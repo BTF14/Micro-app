@@ -1,3 +1,16 @@
+## Turno 50 — ADR v1.1 y confirmaciones del propietario (2026-11-14 UTC)
+
+- **Base main verificada al iniciar:** fac1e87d4cd9569b92cfc5fbaa41706f99b72430. La rama de esta tarea es docs/adr-v11-roadmap-owner-confirmations-20261114.
+- **ADR aceptado:** docs/decisions/ADR-20261114-v11-product-scope-and-roadmap.md. Fija uso PC/teléfono, terminal bancario Android independiente, comprobante interno FISC-01 y roadmap v1.1: PR1 importador CSV, PR2 escáner móvil, PR3 cierre/reportes/exportación CSV.
+- **Freeze comercial:** no iniciar esas PR hasta observar la primera tasa BCV real persistida en Neon main el lunes 2026-11-16 a las 22:00 UTC (18:00 VET) y estabilidad posterior.
+- **Confirmaciones owner-confirmed:** presupuesto $0 / Workers Free sin método de pago; correo de GitHub Workflows verificado por el propietario y seguimiento BCV por panel/logs gratuitos; RPO diario ~24 h aceptado; FISC-01 exclusivamente interno. RTO queda pendiente de medición/aceptación si se hace restauración formal. No volver a pedir estas confirmaciones.
+- **Correcciones documentales:** compliance, esquema de base de datos, §4 de Constitución y cabecera de decisiones SaaS reconciliados con main. Los snapshots de 2026-10-30/11-08 quedan marcados como históricos.
+- **Estado externo al inicio:** PR #193 OPEN, HEAD ac57ab4f3415f82279b8a49c0befe09f8e3aec68, sin cambios por esta tarea. Issue #53 OPEN/P0, sin cambios. PRODUCTION: NOT READY.
+- **Alcance de esta rama:** solo docs/** y odd/**. No código, scripts, workflows, migraciones, Neon, secretos, datos reales, configuración de Cloudflare, billing ni despliegues manuales.
+- **Verificación pendiente:** ejecutar validate-odd-docs y todos los checks requeridos en el HEAD final de la PR documental; revisar el diff completo y los efectos de merge; solo entonces Squash and Merge y verificar el SHA de main y checks post-merge. El estado/HEAD final se consulta en vivo en GitHub.
+
+---
+
 ## Turno 49 — PR #367 integrada; cierre P1 confirmado (2026-11-14 UTC)
 
 **Merge de implementación a `main`:** `46a24f3d617bc07f4cf47931b0bece4cccfb5440`.

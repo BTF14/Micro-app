@@ -1,4 +1,29 @@
-# Handoff operativo — 2026-11-15 (continuación desde main #372)
+# Handoff — Fase 1 BCV Node TLS — 2026-11-16
+
+## Punto de partida y alcance
+- Base verificada de main: `e375e2d4bffb2f6cb083c0d37f0d47a4c87bab0f`.
+- Rama autorizada: `fix/bcv-github-actions-node-tls-20261116`. PR única, sin auto-merge.
+- Se permite implementar y abrir PR; no se permite modificar migraciones 0021/0022, Neon main, Secrets, datos reales ni hacer despliegues manuales.
+- Worker `micro-app-bcv-sync` queda pausado mediante `BCV_SYNC_ENABLED=false`, conservando triggers. Verificar Workers Builds post-merge antes de considerar pausado el Worker.
+
+## Contrato técnico
+- Runner `.github/workflows/bcv-sync.yml`: cron `17 11 * * MON-FRI`, dispatch con `force_sync`, Node 24.22.2, permisos contents:read, concurrency sin cancelación, ejecución productiva solo en refs/heads/main, timeout 5 minutos.
+- Certificado Sectigo DV R36 validado por fingerprint `8C54C334B66BA4E426772AF4A3F9136C19A1AEC729FDB28C535C07A5A4EF22E0`, subject/issuer, CA/EKU y vigencia. `NODE_EXTRA_CA_CERTS` solo en el paso Node runner; TLS estricto.
+- Preflight identidad current_user/session_user = microapp_bcv_sync; solo lee columnas permitidas por 0022. Source real `BCV_OFFICIAL_HTML_V1`.
+- Si estado inserted/unchanged + tasa válida de hoy + no force, omite sin tocar bcv_sync_state. Si failed/running/NULL o fila inválida/ausente, ejecuta sync. No reintento vespertino.
+- CI PostgreSQL 18 usa pg inyectado. Primera ejecución real workflow_dispatch prueba Neon Client/WebSocket y requiere secreto GitHub existente/verificado por el propietario.
+
+## Gates post-PR
+1. Revisar diff completo y todos los checks exactos del HEAD final; no merge automático.
+2. Tras merge, comprobar Workers Builds y que el Worker haya desplegado BCV_SYNC_ENABLED=false.
+3. El propietario verifica/crea DATABASE_URL_BCV_SYNC en GitHub Actions Secrets sin compartir su valor y lanza workflow_dispatch en main con force_sync=false (o true solo si requiere confirmación explícita).
+4. Verificar outcome, fecha efectiva y fila real persistida en Neon main. Esta acción queda del lado del propietario; no se ejecuta desde esta PR.
+5. Iniciar Fase 2 inmediatamente tras primera tasa real: AC-6 legal/contable + AC-7 seguridad y Contingencia Manual BCV Prioridad #1.
+
+**PRODUCTION: NOT READY. Issue #53 OPEN/P0. Freeze comercial permanece.**
+
+---
+
 
 ## Punto de partida verificado
 

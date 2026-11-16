@@ -1,3 +1,14 @@
+# Actualización de readiness — 2026-11-16 — Fase 1 BCV
+
+- Main: `e375e2d4bffb2f6cb083c0d37f0d47a4c87bab0f`; PR de infraestructura autorizada `fix/bcv-github-actions-node-tls-20261116`, sin auto-merge.
+- La ingestión BCV se traslada temporalmente al runner Node 24.22.2 con TLS estricto y CA intermedia Sectigo DV R36 pineada. Worker Cloudflare queda con `BCV_SYNC_ENABLED=false`; triggers conservados. Requiere confirmar Workers Builds después del merge.
+- El runner no accede a Neon main desde esta PR ni consulta/crea/lee GitHub Secrets. El propietario debe verificar o crear `DATABASE_URL_BCV_SYNC` y ejecutar el primer dispatch desde main.
+- CI PostgreSQL 18 valida el adaptador `pg` y los permisos de `microapp_bcv_sync`; no acredita Neon WebSocket. La primera ejecución real del runner es gate separado.
+- No se relaja checkout ni migración 0021. El preflight evita sobrescribir un éxito con otro intento: si la tasa de hoy está validada y last_outcome es inserted/unchanged, omite sin mutar.
+- **PRODUCTION: NOT READY. Issue #53 OPEN/P0. Freeze comercial vigente.** Tras comprobar la primera tasa real persistida en Neon main, iniciar Fase 2: cerrar AC-6 y AC-7 y priorizar Contingencia Manual BCV.
+
+---
+
 # Readiness para producción — corte vigente 2026-11-15
 
 ## Confirmaciones del propietario — CONFIRMADO — NO VOLVER A PEDIR

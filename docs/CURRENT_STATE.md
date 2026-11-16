@@ -1,4 +1,15 @@
-# Estado actual — reconciliación documental 2026-11-15
+# Actualización BCV — 2026-11-16 — PR de remediación TLS
+
+- `main` verificado al inicio: `e375e2d4bffb2f6cb083c0d37f0d47a4c87bab0f`. Rama de trabajo: `fix/bcv-github-actions-node-tls-20261116`.
+- Fase 1 traslada temporalmente la ingestión desde Cloudflare Worker a `.github/workflows/bcv-sync.yml` en Node 24.22.2, con certificado Sectigo DV R36 pineado, `NODE_EXTRA_CA_CERTS` limitado al paso runner y validación TLS normal.
+- `apps/api/wrangler.bcv.toml`: `BCV_SYNC_ENABLED=false`; se conservan los triggers por reversibilidad. Workers Builds debe demostrar despliegue de esta configuración; el merge por sí solo no acredita el despliegue.
+- El preflight utiliza exclusivamente los grants de 0022: `bcv_sync_state(singleton,last_outcome)` y `exchange_rates(id,validation_status)`; source exacto `BCV_OFFICIAL_HTML_V1`. No consulta columnas revocadas ni cambia 0021/0022.
+- GitHub Actions schedule `17 11 * * MON-FRI` es best-effort; no se presupone puntualidad. `workflow_dispatch` admite `force_sync`. Tras éxito + fila válida de hoy, la ejecución normal omite sin mutar `bcv_sync_state`.
+- PostgreSQL 18 con `pg` inyectado prueba la lógica/ACL; no prueba Neon WebSocket. El primer dispatch real desde main tras merge y verificación del secreto por el propietario será la prueba de transporte Neon.
+- Sin cambios en Neon main, Secrets, migraciones 0021/0022 ni activación comercial. `PRODUCTION: NOT READY`; Issue #53 `OPEN/P0`. Tras la primera tasa real en Neon main, iniciar Fase 2: AC-6 + AC-7 y Contingencia Manual BCV Prioridad #1.
+
+---
+
 
 - **main verificado:** `d8ec2808a22d696a291c3454679381e5364e225a` (merge PR #372). Rama documental creada desde ese SHA exacto.
 - **Alcance:** solo documentación, SDD/ADR, ODD, tablero, cierre de PR #193 y comentario Issue #53. Sin cambios de apps, workflows, SQL/migraciones, Neon, Cloudflare, secretos, datos reales, billing o deploy manual.

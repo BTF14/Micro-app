@@ -4,6 +4,18 @@
 - **Estado:** verified
 - **Fecha:** 2026-11-14
 - **Responsables:** repository technical maintainers
+
+## Decisión sucesora — runner Node dedicado (2026-11-16)
+
+La decisión CI-only anterior se amplía de forma explícita y limitada: el mismo certificado intermedio público, pineado por SHA-256, puede ser confiado mediante `NODE_EXTRA_CA_CERTS` únicamente dentro del job aislado `.github/workflows/bcv-sync.yml` que ejecuta la ingestión BCV con Node.js 24.22.2. No se extiende la confianza al Worker Cloudflare, a la API, a otros workflows ni a procesos generales del repositorio.
+
+El job valida antes de iniciar Node el fingerprint, subject, issuer, `CA:TRUE`, EKU de servidor TLS y vigencia temporal del certificado. Node conserva la validación normal de cadena, hostname y fechas; queda prohibido `NODE_TLS_REJECT_UNAUTHORIZED=0`, `rejectUnauthorized: false` y cualquier bypass equivalente. `NODE_EXTRA_CA_CERTS` amplía el conjunto de confianza del proceso Node del job y no limita criptográficamente la confianza a un hostname; por ello su exposición se restringe al único paso de sincronización que consulta `https://www.bcv.org.ve/`.
+
+El Worker `micro-app-bcv-sync` conserva sus triggers, pero `BCV_SYNC_ENABLED=false` impide que escriba en `bcv_sync_state`. El productor temporal es el runner Node, con `DATABASE_URL_BCV_SYNC` aislado y rol PostgreSQL `microapp_bcv_sync`. El preflight solo lee las columnas autorizadas por migración 0022: `singleton,last_outcome` y `id,validation_status`; el identificador real de fuente es `BCV_OFFICIAL_HTML_V1` (no el alias genérico `bcv`). Si estado y tasa válida de hoy están confirmados, omite la ejecución sin tocar el estado, salvo `force_sync=true`.
+
+La CI usa PostgreSQL 18 y un adaptador `pg` inyectado para validar el contrato; eso no demuestra el transporte WebSocket del cliente Neon. La primera ejecución real `workflow_dispatch` desde `main`, posterior al merge y a la verificación del secreto por el propietario, es el gate explícito para demostrar `@neondatabase/serverless` sobre Node 24.22.2. No se consultan ni modifican Neon `main`, Secrets ni Cloudflare desde esta PR.
+
+**Estado de producto:** `PRODUCTION: NOT READY`; Issue #53 permanece `OPEN/P0`. La Fase 2 — cierre de AC-6 legal/contable y AC-7 seguridad, seguida de Contingencia Manual BCV como Prioridad #1 — comienza inmediatamente después de verificar la primera tasa real persistida en Neon `main`.
 - **Relacionado:** ODD task `odd/tasks/bcv-weekday-cron-and-ci-tls-chain.md`; PR pending
 
 ## Contexto y problema

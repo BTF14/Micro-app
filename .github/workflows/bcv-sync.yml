@@ -23,9 +23,6 @@ jobs:
     if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     timeout-minutes: 5
-    env:
-      DATABASE_URL_BCV_SYNC: ${{ secrets.DATABASE_URL_BCV_SYNC }}
-      BCV_FORCE_SYNC: ${{ github.event_name == 'workflow_dispatch' && inputs.force_sync || false }}
     steps:
       - name: Checkout
         uses: actions/checkout@v7
@@ -61,6 +58,8 @@ jobs:
           echo "Pinned Sectigo DV R36 certificate identity, CA/EKU and validity verified."
       - name: Run isolated BCV sync with strict Node TLS
         env:
+          DATABASE_URL_BCV_SYNC: ${{ secrets.DATABASE_URL_BCV_SYNC }}
+          BCV_FORCE_SYNC: ${{ github.event_name == 'workflow_dispatch' && inputs.force_sync || false }}
           NODE_EXTRA_CA_CERTS: ${{ github.workspace }}/apps/api/certs/sectigo-public-server-authentication-ca-dv-r36.crt
         run: |
           set -euo pipefail

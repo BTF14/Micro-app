@@ -1,6 +1,6 @@
 # ODD task: BCV dedicated Node TLS producer
 
-- Status: in progress
+- Status: in progress — PR #374 open; exact-HEAD validation pending
 - Issue / PR: [PR #374](https://github.com/BTF14/Micro-app/pull/374) — OPEN, sin auto-merge
 - Owner / reviewer: repository owner / technical maintainer
 - Started: 2026-11-16

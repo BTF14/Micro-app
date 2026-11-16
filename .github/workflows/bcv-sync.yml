@@ -49,7 +49,7 @@ jobs:
           test "$subject" = "CN=Sectigo Public Server Authentication CA DV R36,O=Sectigo Limited,C=GB"
           test "$issuer" = "CN=Sectigo Public Server Authentication Root R46,O=Sectigo Limited,C=GB"
           basic="$(openssl x509 -in "$cert" -noout -ext basicConstraints)"
-          printf '%s' "$basic" | grep -Fq "CA:TRUE"
+          printf '%s' "$basic" | grep -Fq "CA:TRUE, pathlen:0"
           eku="$(openssl x509 -in "$cert" -noout -ext extendedKeyUsage)"
           printf '%s' "$eku" | grep -Fq "TLS Web Server Authentication"
           openssl x509 -in "$cert" -checkend 0 -noout

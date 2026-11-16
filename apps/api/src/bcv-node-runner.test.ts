@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 import type { DatabaseClientFactory } from "./database";
-import { runBcvNodeSync } from "./bcv-node-runner";
+import { runBcvNodeSync, shouldSkipBcvNodeSync } from "./bcv-node-runner";
 import { safeBcvSyncErrorCode } from "./exchange-rates";
 
 describe("BCV Node runner safety contract", () => {
@@ -9,6 +9,13 @@ describe("BCV Node runner safety contract", () => {
     await expect(runBcvNodeSync(undefined, false, createClient)).rejects.toThrow(
       "BCV_SYNC_DATABASE_URL_MISSING",
     );
+    expect(createClient).not.toHaveBeenCalled();
+  });
+
+  it("force_sync bypasses the skip preflight without opening a database connection", async () => {
+    const createClient = vi.fn() as unknown as DatabaseClientFactory;
+    await expect(shouldSkipBcvNodeSync("postgres://unused", true, new Date(), createClient))
+      .resolves.toBe(false);
     expect(createClient).not.toHaveBeenCalled();
   });
 

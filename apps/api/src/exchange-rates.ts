@@ -195,6 +195,8 @@ export async function fetchBcvOfficialRate(now = new Date()): Promise<BcvOfficia
       signal: AbortSignal.timeout(10_000),
     });
   } catch (error) {
+    // Preserve an existing safe application code; wrap only raw transport errors.
+    if (error instanceof Error && SAFE_BCV_SYNC_ERROR_CODES.has(error.message)) throw error;
     // Keep transport details as a cause for safe classification only; never log them.
     throw new Error("BCV_SOURCE_FETCH_FAILED", { cause: error });
   }

@@ -67,4 +67,4 @@ jobs:
             echo "::error::DATABASE_URL_BCV_SYNC is not configured."
             exit 1
           fi
-          pnpm dlx tsx@4.20.6 apps/api/scripts/bcv-sync.ts
+          pnpm --filter @micro-app/api exec vitest run src/bcv-node-runner.manual.test.ts

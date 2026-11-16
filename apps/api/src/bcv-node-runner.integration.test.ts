@@ -14,9 +14,9 @@ const disposable = (() => {
   if (!producerUrl || !adminUrl || !runtimeUrl) return false;
   try {
     const urls = [producerUrl, adminUrl, runtimeUrl].map((value) => new URL(value));
-    return (!isCi || urls.every((url) =>
+    return urls.every((url) =>
       (url.hostname === "localhost" || url.hostname === "127.0.0.1") &&
-      url.pathname === "/microapp_test")) &&
+      url.pathname === "/microapp_test") &&
       urls[0]!.username === "microapp_bcv_sync" &&
       urls[2]!.username === "microapp_runtime";
   } catch {

@@ -5,7 +5,7 @@ import { withDatabaseClient, withDatabaseTransaction, type DatabaseClient, type 
 import type { Bindings } from "./bindings";
 
 const BCV_SOURCE_URL = "https://www.bcv.org.ve/";
-const BCV_SOURCE_ID = "BCV_OFFICIAL_HTML_V1";
+export const BCV_SOURCE_ID = "BCV_OFFICIAL_HTML_V1";
 const MAX_BCV_HTML_BYTES = 2_000_000;
 const MAX_EFFECTIVE_DATE_AGE_DAYS = 10;
 const MAX_EFFECTIVE_DATE_FUTURE_DAYS = 7;
@@ -185,13 +185,21 @@ export function parseBcvOfficialRate(html: string, now = new Date()): BcvOfficia
 }
 
 export async function fetchBcvOfficialRate(now = new Date()): Promise<BcvOfficialRate> {
-  const response = await fetch(BCV_SOURCE_URL, {
-    method: "GET",
-    headers: { Accept: "text/html,application/xhtml+xml" },
-    redirect: "error",
-    cache: "no-store",
-    signal: AbortSignal.timeout(10_000),
-  });
+  let response: Response;
+  try {
+    response = await fetch(BCV_SOURCE_URL, {
+      method: "GET",
+      headers: { Accept: "text/html,application/xhtml+xml" },
+      redirect: "error",
+      cache: "no-store",
+      signal: AbortSignal.timeout(10_000),
+    });
+  } catch (error) {
+    // Preserve an existing safe application code; wrap only raw transport errors.
+    if (error instanceof Error && SAFE_BCV_SYNC_ERROR_CODES.has(error.message)) throw error;
+    // Keep transport details as a cause for safe classification only; never log them.
+    throw new Error("BCV_SOURCE_FETCH_FAILED", { cause: error });
+  }
   if (!response.ok) throw new Error("BCV_SOURCE_HTTP_ERROR");
   const finalUrl = new URL(response.url || BCV_SOURCE_URL);
   if (finalUrl.protocol !== "https:" || finalUrl.hostname !== "www.bcv.org.ve") {
@@ -268,6 +276,10 @@ const SAFE_BCV_SYNC_ERROR_CODES = new Set([
   "BCV_EFFECTIVE_DATE_INVALID",
   "BCV_EFFECTIVE_DATE_OUT_OF_RANGE",
   "BCV_SOURCE_HTTP_ERROR",
+  "BCV_SOURCE_TIMEOUT",
+  "BCV_SOURCE_TLS_OR_NETWORK_ERROR",
+  "BCV_SYNC_DATABASE_URL_MISSING",
+  "BCV_SYNC_DATABASE_ROLE_INVALID",
   "BCV_SOURCE_REDIRECT_REJECTED",
   "BCV_SOURCE_CONTENT_TYPE_INVALID",
   "BCV_USD_RATE_MISSING",
@@ -277,7 +289,31 @@ const SAFE_BCV_SYNC_ERROR_CODES = new Set([
 
 export function safeBcvSyncErrorCode(error: unknown): string {
   if (!(error instanceof Error)) return "BCV_SYNC_UNKNOWN";
-  return SAFE_BCV_SYNC_ERROR_CODES.has(error.message) ? error.message : "BCV_SYNC_UNKNOWN";
+  if (SAFE_BCV_SYNC_ERROR_CODES.has(error.message)) return error.message;
+  if (error.message !== "BCV_SOURCE_FETCH_FAILED") return "BCV_SYNC_UNKNOWN";
+
+  const timeoutCodes = new Set(["ETIMEDOUT", "UND_ERR_CONNECT_TIMEOUT", "UND_ERR_HEADERS_TIMEOUT", "UND_ERR_BODY_TIMEOUT"]);
+  const transportCodes = new Set([
+    "UNABLE_TO_VERIFY_LEAF_SIGNATURE", "CERT_HAS_EXPIRED", "CERT_NOT_YET_VALID",
+    "ERR_TLS_CERT_ALTNAME_INVALID", "ERR_SSL_WRONG_VERSION_NUMBER", "ECONNRESET",
+    "ECONNREFUSED", "ECONNREFUSED", "ENOTFOUND", "EAI_AGAIN", "EHOSTUNREACH",
+    "ENETUNREACH", "UND_ERR_CONNECT", "UND_ERR_SOCKET", "ECONNABORTED",
+  ]);
+  let current: unknown = error.cause;
+  for (let depth = 0; depth < 5 && current; depth += 1) {
+    if (typeof current !== "object") break;
+    const candidate = current as { name?: unknown; code?: unknown; cause?: unknown };
+    if (candidate.name === "TimeoutError" || candidate.name === "AbortError" ||
+        (typeof candidate.code === "string" && timeoutCodes.has(candidate.code))) {
+      return "BCV_SOURCE_TIMEOUT";
+    }
+    if (typeof candidate.code === "string" && transportCodes.has(candidate.code)) {
+      return "BCV_SOURCE_TLS_OR_NETWORK_ERROR";
+    }
+    current = candidate.cause;
+  }
+  // Node fetch reports DNS/TLS/socket failures as TypeError with a nested cause.
+  return "BCV_SOURCE_TLS_OR_NETWORK_ERROR";
 }
 
 /**

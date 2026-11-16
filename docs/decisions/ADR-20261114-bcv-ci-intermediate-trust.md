@@ -7,16 +7,22 @@
 
 ## Decisión sucesora — runner Node dedicado (2026-11-16)
 
-La decisión CI-only anterior se amplía de forma explícita y limitada: el mismo certificado intermedio público, pineado por SHA-256, puede ser confiado mediante `NODE_EXTRA_CA_CERTS` únicamente dentro del job aislado `.github/workflows/bcv-sync.yml` que ejecuta la ingestión BCV con Node.js 24.22.2. No se extiende la confianza al Worker Cloudflare, a la API, a otros workflows ni a procesos generales del repositorio.
+**Estado de implementación:** merged and production transport verified.
 
-El job valida antes de iniciar Node el fingerprint, subject, issuer, `CA:TRUE`, EKU de servidor TLS y vigencia temporal del certificado. Node conserva la validación normal de cadena, hostname y fechas; queda prohibido `NODE_TLS_REJECT_UNAUTHORIZED=0`, `rejectUnauthorized: false` y cualquier bypass equivalente. `NODE_EXTRA_CA_CERTS` amplía el conjunto de confianza del proceso Node del job y no limita criptográficamente la confianza a un hostname; por ello su exposición se restringe al único paso de sincronización que consulta `https://www.bcv.org.ve/`.
+La decisión CI-only anterior se amplió de forma explícita y limitada: el certificado intermedio público Sectigo DV R36, pineado por SHA-256, se confía mediante `NODE_EXTRA_CA_CERTS` únicamente dentro del job aislado `.github/workflows/bcv-sync.yml` que ejecuta la ingestión BCV con Node.js 24.22.2. El job valida fingerprint, subject, issuer, `CA:TRUE`, EKU de servidor TLS y vigencia antes de iniciar Node. Node conserva la validación normal de cadena, hostname y fechas; siguen prohibidos `NODE_TLS_REJECT_UNAUTHORIZED=0`, `rejectUnauthorized: false` y cualquier bypass equivalente.
 
-El Worker `micro-app-bcv-sync` conserva sus triggers, pero `BCV_SYNC_ENABLED=false` impide que escriba en `bcv_sync_state`. El productor temporal es el runner Node, con `DATABASE_URL_BCV_SYNC` aislado y rol PostgreSQL `microapp_bcv_sync`. El preflight solo lee las columnas autorizadas por migración 0022: `singleton,last_outcome` y `id,validation_status`; el identificador real de fuente es `BCV_OFFICIAL_HTML_V1` (no el alias genérico `bcv`). Si estado y tasa válida de hoy están confirmados, omite la ejecución sin tocar el estado, salvo `force_sync=true`.
+El Worker `micro-app-bcv-sync` conserva sus triggers, pero `BCV_SYNC_ENABLED=false` impide que escriba. El check-run post-merge [Workers Builds: micro-app-bcv-sync](https://github.com/BTF14/Micro-app/runs/133682202852) terminó `completed / success` en el merge SHA `98e249778a52e9306a193e838edea4503e0343e6`.
 
-La CI usa PostgreSQL 18 y un adaptador `pg` inyectado para validar el contrato; eso no demuestra el transporte WebSocket del cliente Neon. La primera ejecución real `workflow_dispatch` desde `main`, posterior al merge y a la verificación del secreto por el propietario, es el gate explícito para demostrar `@neondatabase/serverless` sobre Node 24.22.2. No se consultan ni modifican Neon `main`, Secrets ni Cloudflare desde esta PR.
+El preflight usa exclusivamente las columnas autorizadas por migración 0022 y el identificador de fuente `BCV_OFFICIAL_HTML_V1`. La CI usa PostgreSQL 18 con adaptador `pg`; adicionalmente, la primera ejecución productiva real validó Node 24.22.2 y `@neondatabase/serverless` contra el entorno Neon mediante `workflow_dispatch`, `force_sync=false`.
 
-**Estado de producto:** `PRODUCTION: NOT READY`; Issue #53 permanece `OPEN/P0`. La Fase 2 — cierre de AC-6 legal/contable y AC-7 seguridad, seguida de Contingencia Manual BCV como Prioridad #1 — comienza inmediatamente después de verificar la primera tasa real persistida en Neon `main`.
-- **Relacionado:** ODD task `odd/tasks/bcv-weekday-cron-and-ci-tls-chain.md`; PR pending
+**Evidencia de producción:** [BCV Node TLS sync #1](https://github.com/BTF14/Micro-app/actions/runs/43977544849), run #1, main SHA `98e249778a52e9306a193e838edea4503e0343e6`, completed / success. El job validó el certificado y ejecutó el runner; su salida registró `BCV_NODE_SYNC_COMPLETED`, `outcome: 'inserted'`. La observación API/panel del propietario a las 23:17:15Z informó una tasa `BCV_OFFICIAL_HTML_V1` con `effectiveDate: 2026-11-17`, estado `scheduled`, y `fetchedAt: 2026-11-16T23:14:50.014Z`. La ruta latest devolvió `503 BCV_RATE_UNAVAILABLE` antes de la vigencia local de medianoche VET; esto es el fail-closed esperado. La observación API/panel se atribuye expresamente al propietario, no a la respuesta de GitHub.
+
+**Validación post-merge:** GitHub reporta 16 check-runs (no 15), todos `completed / success`, todos sobre `98e249778a52e9306a193e838edea4503e0343e6`; incluye `Workers Builds: micro-app-bcv-sync`, `generate-progress` y `validate-odd-docs`.
+
+**Estado de producto:** `PRODUCTION: NOT READY`; Issue #53 permanece `OPEN/P0`; freeze comercial vigente. La Fase 1 de implementación y transporte queda cerrada. La estabilidad posterior sigue abierta hasta observar la transición a `current` el 2026-11-17 desde 00:00 VET, la próxima corrida automática de Node en `main` y la inactividad inocua continuada del Worker pausado.
+
+**Fase 2:** iniciar el cierre de AC-6 legal/contable y AC-7 seguridad para Contingencia Manual BCV como Prioridad #1, según `ADR-20261114-v11-product-scope-and-roadmap.md`. Esto no levanta el freeze ni el estado NOT READY.
+- **Relacionado:** [PR #374](https://github.com/BTF14/Micro-app/pull/374); ODD task `odd/tasks/bcv-node-tls-producer-migration-20261116.md`.
 
 ## Contexto y problema
 

@@ -1,83 +1,111 @@
 # ODD task: BCV dedicated Node TLS producer
 
-- Status: in progress — PR #374 open; exact-HEAD validation pending
-- Issue / PR: [PR #374](https://github.com/BTF14/Micro-app/pull/374) — OPEN, sin auto-merge
-- Owner / reviewer: repository owner / technical maintainer
-- Started: 2026-11-16
-- Risk: critical
+- Status: **completed / closed** — implementation merged and first production dispatch verified
+- Issue / PR: [PR #374](https://github.com/BTF14/Micro-app/pull/374) — MERGED, no auto-merge
+- Main merge SHA: `98e249778a52e9306a193e838edea4503e0343e6`
+- Implementation PR HEAD: `c38a77b9aef4a390f45417cb660c5e8cf44b448c`
+- Production workflow: [BCV Node TLS sync #1](https://github.com/BTF14/Micro-app/actions/runs/43977544849) — `workflow_dispatch`, `force_sync=false`, completed / success
+- Closed: 2026-11-16
+- Risk: critical (operational monitoring remains open)
 
 ## Objective and authorization
 
-- Desired outcome: move BCV ingestion from the Cloudflare Worker runtime to a dedicated GitHub Actions Node 24.22.2 runner that can use the pinned Sectigo DV R36 intermediate without disabling TLS verification, while preserving the checkout fail-closed contract.
-- Authorization boundary: one implementation branch and one PR from main `e375e2d4bffb2f6cb083c0d37f0d47a4c87bab0f`. No auto-merge, Neon main access/writes, Secrets inspection or mutation, migrations 0021/0022, real data, manual Cloudflare changes, billing or commercial activation.
-- Relevant original request: final architecture agreement and authorization dated 2026-11-16.
+Move BCV ingestion from the Cloudflare Worker runtime to a dedicated GitHub Actions Node 24.22.2 runner using the pinned Sectigo DV R36 intermediate without disabling TLS verification, preserving the checkout fail-closed contract.
+
+Authorization was limited to one implementation branch and PR from main `e375e2d4bffb2f6cb083c0d37f0d47a4c87bab0f`. No migrations 0021/0022, Neon schema changes, secret values, Cloudflare manual changes, billing or commercial activation were authorized. This closure records evidence; it does not expand implementation scope.
 
 ## Scope and exclusions
 
-Included:
-- `.github/workflows/bcv-sync.yml`
-- Node runner entrypoint and shared database/preflight module
-- Safe TLS/network/timeout classification
-- Worker pause through `BCV_SYNC_ENABLED=false`, preserving triggers
-- Unit and PostgreSQL 18 integration tests with injected `pg`
-- CI integration step and documentation/ADR/current-state/handoff/readiness updates
+Included and merged in PR #374:
+- `.github/workflows/bcv-sync.yml` and isolated Node runner.
+- Pinned Sectigo DV R36 validation and strict TLS.
+- Dedicated producer identity and least-privilege preflight.
+- Worker pause via `BCV_SYNC_ENABLED=false`, triggers retained.
+- Unit and PostgreSQL 18 integration coverage using injected `pg`.
+- Sanitized error classification and operational documentation.
 
 Excluded:
-- Neon main and production data; GitHub Secrets values or mutation
-- SQL/migrations 0021 and 0022; checkout semantics
-- Cloudflare dashboard/manual deploy; production activation or auto-merge
-- TLS verification bypasses
+- SQL/migrations 0021 and 0022; checkout semantics.
+- Neon schema/role/secret mutation; secret values are not recorded here.
+- Manual Cloudflare dashboard changes, manual deployments, billing and commercial activation.
+- TLS verification bypasses.
 
 ## Acceptance criteria
 
-- [ ] AC-1 — Node workflow runs at `17 11 * * MON-FRI`, has guarded dispatch with `force_sync`, least privilege, concurrency protection, main-only production execution and 5-minute timeout.
-- [ ] AC-2 — Before Node starts, validate pinned certificate fingerprint, subject, issuer, CA basic constraint, server EKU and validity; strict TLS remains enabled.
-- [ ] AC-3 — Runner fails closed before DB connection if dedicated URL is missing and verifies both current_user/session_user as `microapp_bcv_sync`.
-- [ ] AC-4 — Preflight reads only the 0022-authorized columns and uses source `BCV_OFFICIAL_HTML_V1`; skips only on successful state + today's valid rate + force=false, without mutating sync state.
-- [ ] AC-5 — failed/running/NULL or missing/invalid rate runs the shared sync; force=true bypasses skip.
-- [ ] AC-6 — A normal second run after today's successful sync cannot overwrite state with failed because it skips; no afternoon retry is scheduled.
-- [ ] AC-7 — PostgreSQL 18 integration tests use injected pg and verify role identity, preflight skip, failed-state recovery and runtime-role rejection.
-- [ ] AC-8 — TLS/network/timeout errors map to safe allowlisted codes without raw cause/message logging.
-- [ ] AC-9 — Worker is configured false with triggers preserved; scheduled unit test asserts the disabled config.
-- [ ] AC-10 — All exact-HEAD required workflows/check-runs pass; PR remains open and unmerged.
-- [ ] AC-11 — Docs state PRODUCTION NOT READY, Issue #53 OPEN/P0, and Phase 2 gates/priority accurately.
+- [x] AC-1 — Node workflow schedule `17 11 * * MON-FRI`, guarded dispatch with `force_sync`, least privilege, concurrency protection, main-only production execution and 5-minute timeout. Workflow definition merged and the first dispatch completed.
+- [x] AC-2 — Pinned certificate fingerprint, subject, issuer, CA basic constraint, server EKU and validity validated before Node; strict TLS remains enabled. The certificate-validation step succeeded in the production run.
+- [x] AC-3 — Missing dedicated URL fails closed; both `current_user` and `session_user` are checked as `microapp_bcv_sync`. The production run reached the successful DB-backed sync path; no credential value is recorded.
+- [x] AC-4 — Preflight reads only the migration-0022-authorized columns and uses `BCV_OFFICIAL_HTML_V1`; skip condition is successful state + today's valid rate + `force_sync=false`, without mutating sync state.
+- [x] AC-5 — Failed/running/NULL state or missing/invalid rate executes shared sync; `force_sync=true` bypasses skip. Covered by unit and PostgreSQL 18 integration tests.
+- [x] AC-6 — A normal second run after today's successful sync skips rather than overwriting success with failure; no afternoon retry is scheduled. Verified by the preflight tests and workflow schedule contract.
+- [x] AC-7 — PostgreSQL 18 integration tests with injected `pg` verify role identity, preflight skip, failed-state recovery and runtime-role rejection.
+- [x] AC-8 — TLS/network/timeout failures map to safe allowlisted codes; raw causes/messages are not logged.
+- [x] AC-9 — Worker config sets `BCV_SYNC_ENABLED=false`, retains triggers, and scheduled unit tests assert disabled behavior. Post-merge check `Workers Builds: micro-app-bcv-sync` is completed / success on the exact merge SHA.
+- [x] AC-10 — PR #374 merged only after its implementation validation; post-merge merge-SHA check-runs are 16/16 completed / success. The dedicated production dispatch also completed / success.
+- [x] AC-11 — Documentation preserves `PRODUCTION: NOT READY`, Issue #53 `OPEN/P0`, commercial freeze, and the Phase 2 gates and priority.
 
 ## Risks and guardrails
 
-| Risk | Severity | Mitigation / gate / evidence |
+| Risk | Severity | Mitigation / evidence |
 |---|---|---|
-| NODE_EXTRA_CA_CERTS broadens process trust | High | Scope only to runner invocation; validate pin and identity; document added trust is process-wide, not hostname-scoped. |
-| Producer permissions differ from assumed preflight | High | Use only 0022 grants: bcv_sync_state(singleton,last_outcome), exchange_rates(id,validation_status). |
-| A failed duplicate attempt blocks checkout | Critical | Idempotent preflight; one schedule only; no afternoon retry. |
-| GitHub schedule jitter | Medium | Best-effort only; dispatch recovery and explicit event timestamps. |
-| Neon WebSocket transport differs from pg | High | First real dispatch is separate owner-operated gate; CI does not claim Neon transport proven. |
-| Secret exposure or wrong principal | Critical | Missing secret fail-closed; identity check on every client connection; sanitized logs. |
+| `NODE_EXTRA_CA_CERTS` broadens process trust | High | Scope only to the isolated runner invocation; certificate identity and pin are validated; Node's normal hostname/chain/date validation remains enabled. |
+| Producer permissions differ from assumed preflight | High | Use only migration-0022 grants: `bcv_sync_state(singleton,last_outcome)`, `exchange_rates(id,validation_status)`. |
+| Failed duplicate attempt blocks checkout | Critical | Idempotent preflight; one schedule only; no afternoon retry; checkout remains fail-closed. |
+| GitHub schedule jitter | Medium | Schedule is best-effort; workflow_dispatch is the explicit recovery path. |
+| Neon WebSocket transport differs from `pg` | High | Closed by the successful real Node 24.22.2 production dispatch using `@neondatabase/serverless`. |
+| Secret exposure or wrong principal | Critical | Missing secret fails closed; role identity is checked; no secret value or connection string is included in docs/log excerpts. |
 
 ## Tasks and evidence
 
-| Task | Expected result | Validation / evidence | Status |
-|---|---|---|---|
-| Inspect base, grants and shared sync API | Source ID and least-privilege reads align with migration 0022 | Main SHA and migration 0022 reviewed | completed |
-| Implement shared Node runner/preflight | Neon default, injectable pg, strict identity | Unit + PostgreSQL 18 tests | in progress |
-| Add strict TLS workflow | Pinned certificate checked before Node | Exact fingerprint/subject/issuer/CA/EKU/validity checks | in progress |
-| Pause Cloudflare producer | Config false, triggers retained | Scheduled unit test + Workers Builds after merge | in progress |
-| Update operational docs | Handoff, current state, readiness and ADR aligned | PR diff review | in progress |
-| Verify final PR | All checks on exact HEAD; no auto-merge | GitHub check-runs and workflow runs | pending |
+| Task | Evidence | Status |
+|---|---|---|
+| Inspect base, grants and shared sync API | Implementation PR #374; migration 0022 grants and source ID reviewed | completed |
+| Implement shared Node runner/preflight | PR #374 merged; unit + PostgreSQL 18 integration tests passed | completed |
+| Add strict TLS workflow | Run #1 step “Validate pinned Sectigo DV R36 certificate” completed / success; Node runner step completed / success | completed |
+| Pause Cloudflare producer | Merge-SHA check [Workers Builds: micro-app-bcv-sync](https://github.com/BTF14/Micro-app/runs/133682202852) completed / success | completed |
+| Update operational docs | This ODD closure, ADR, readiness, current state and handoff updated in this documentation PR | completed |
+| Verify exact merge SHA | [16/16 check-runs](https://github.com/BTF14/Micro-app/commit/98e249778a52e9306a193e838edea4503e0343e6/checks), all completed / success; includes `Workers Builds: micro-app-bcv-sync` | completed |
+| Verify first production dispatch | [Run #1](https://github.com/BTF14/Micro-app/actions/runs/43977544849), workflow_dispatch, `force_sync=false`, conclusion success; job output `BCV_NODE_SYNC_COMPLETED`, outcome `inserted` | completed |
+| Verify live API behavior | Owner-provided live API observation at 2026-11-16T23:17:15Z: history returned the scheduled BCV record for effective date 2026-11-17; latest returned 503 before the VET effective-time boundary | completed (evidence supplied by owner; not independently fetched in this GitHub-only pass) |
 
-## Technical decisions
+### Exact merge-SHA check-runs
 
-- `BCV_SOURCE_ID` is `BCV_OFFICIAL_HTML_V1`; do not substitute a generic `bcv` alias.
-- The preflight deliberately avoids `last_attempt_at`, `last_success_at`, `last_error_code`, `last_effective_date` and `updated_at`, which are not granted to the producer by 0022.
-- Neon `Client` is the production default; the shared factory contract allows `pg` in disposable PostgreSQL 18 CI.
-- A successful preflight is read-only. Only an actual source fetch and shared sync path may establish success.
-- The first real `workflow_dispatch` on main is required to validate Node 24 Neon WebSocket transport.
+All 16 check-runs reference `98e249778a52e9306a193e838edea4503e0343e6` and are `completed / success`:
+1. `sync`
+2. `Workers Builds: micro-app-bcv-sync`
+3. `Cloudflare Pages`
+4. `Workers Builds: micro-app-api`
+5. `postgres-migration`
+6. `verify`
+7. `Chromium authentication smoke tests`
+8. `PostgreSQL 18 managed-owner role membership contract`
+9. `Scan tracked files and reachable Git history`
+10. `JavaScript and TypeScript static analysis`
+11. `generate-progress`
+12. `migration-runner`
+13. `Real full-stack commerce E2E (PostgreSQL 18)`
+14. `Trivy filesystem and configuration scan`
+15. `verify-bcv-source`
+16. `validate-odd-docs`
+
+The GitHub API returns 16 check-runs (not 15); all 16 were checked against the exact merge SHA.
+
+### First production execution
+
+- Workflow: `BCV Node TLS sync`, run number #1, event `workflow_dispatch`, main SHA `98e249778a52e9306a193e838edea4503e0343e6`.
+- Run URL: https://github.com/BTF14/Micro-app/actions/runs/43977544849
+- GitHub run created at `2026-11-16T23:14:33Z`; job completed at `23:14:53Z`. The runner log emitted `BCV_NODE_SYNC_COMPLETED` with `outcome: 'inserted'` at `23:14:50Z`.
+- Certificate-validation and strict Node runner steps completed successfully; runtime is Node 24.22.2 and the production client is `@neondatabase/serverless`.
+- The real transport/producer path was therefore exercised successfully. No connection string, secret value, account identifier or project identifier is retained in this record.
+- Owner-provided API observation at `2026-11-16T23:17:15Z`: history endpoint returned HTTP 200, source `BCV_OFFICIAL_HTML_V1`, effective date `2026-11-17`, fetchedAt `2026-11-16T23:14:50.014Z`, status `scheduled`; panel showed successful synchronization / inserted. Latest endpoint returned `503 BCV_RATE_UNAVAILABLE`, expected before `2026-11-17 00:00 VET` (`04:00 UTC`). The API observation is recorded as owner-supplied evidence, not as a GitHub API result.
 
 ## Closure and handoff
 
-- Final commit SHA: pending
-- PR: pending
-- Checks and exact outcomes: pending
-- Acceptance criteria met / unmet: pending
-- Limitations not verified: production Neon transport and Cloudflare deployment until post-merge owner checks
-- Residual risks: GitHub schedule is best-effort; NODE_EXTRA_CA_CERTS extends trust for the isolated Node process
-- Next step: verify Workers Builds, owner confirms the dedicated GitHub secret, then first manual dispatch from main; start Phase 2 after first real rate is confirmed in Neon main.
+- Implementation PR: [#374](https://github.com/BTF14/Micro-app/pull/374), merged.
+- Implementation PR HEAD: `c38a77b9aef4a390f45417cb660c5e8cf44b448c`.
+- Merge commit / base for this documentation PR: `98e249778a52e9306a193e838edea4503e0343e6`.
+- Exact merge-SHA checks: 16/16 success; no failures or pending check-runs.
+- Acceptance criteria: AC-1 through AC-11 verified and closed for the Fase 1 implementation.
+- Residual operational gate: observe effective-date transition to `current` after midnight VET on 2026-11-17, the next scheduled Node sync on main, and continued harmless inactivity of the paused Cloudflare producer. This is post-closure stability monitoring, not an unclosed implementation AC.
+- Residual risk: GitHub schedule is best-effort; `NODE_EXTRA_CA_CERTS` extends trust for the isolated Node process.
+- Next: Fase 2 starts with closure of AC-6 (legal/accounting) and AC-7 (independent security) for Contingencia Manual BCV, Priority #1, per `ADR-20261114-v11-product-scope-and-roadmap.md`. Keep production NOT READY and commercial freeze until all launch gates pass.

@@ -1,3 +1,18 @@
+# Corte vigente — cierre de Fase 1 BCV (2026-11-16)
+
+- **Main:** `98e249778a52e9306a193e838edea4503e0343e6` (merge de PR #374).
+- **PR #374:** MERGED; HEAD de implementación `c38a77b9aef4a390f45417cb660c5e8cf44b448c`.
+- **Check-runs post-merge:** 16/16 SUCCESS sobre el SHA exacto `98e249778a52e9306a193e838edea4503e0343e6`; incluye Workers Builds `micro-app-bcv-sync`, Cloudflare Pages, `micro-app-api`, validación ODD y regeneración del progreso.
+- **Primera ejecución real:** [BCV Node TLS sync #1](https://github.com/BTF14/Micro-app/actions/runs/43977544849), run #1, `workflow_dispatch`, `force_sync=false`, completed / success. Certificado Sectigo DV R36 validado; Node 24.22.2 + `@neondatabase/serverless`; salida `BCV_NODE_SYNC_COMPLETED`, `outcome: inserted`.
+- **Persistencia/API:** el propietario observó en vivo a 2026-11-16T23:17:15Z history HTTP 200, fuente `BCV_OFFICIAL_HTML_V1`, `effectiveDate: 2026-11-17`, `fetchedAt: 2026-11-16T23:14:50.014Z`, `status: scheduled`, y panel de sync exitoso. Latest HTTP 503 `BCV_RATE_UNAVAILABLE` antes de medianoche VET es fail-closed esperado. La respuesta API/panel es evidencia aportada por el propietario; GitHub run/log evidencia la ejecución y outcome.
+- **Fase 1:** implementación, despliegue de configuración pausada y primer transporte Neon productivo completados. ODD `bcv-node-tls-producer-migration-20261116.md` cerrado AC-1..AC-11.
+- **Pendiente operativo:** observar transición a `current` desde 2026-11-17 00:00 VET, la próxima ejecución programada automática en `main` y la inactividad inocua continuada del Worker Cloudflare pausado.
+- **Fase 2:** comenzar AC-6 legal/contable y AC-7 seguridad para Contingencia Manual BCV, Prioridad #1, conforme al ADR v1.1. No comenzar implementación hasta cerrar esos gates.
+- **Issue #53:** permanece `OPEN/P0`. **PRODUCTION: NOT READY**. Freeze comercial no se levanta por este cierre.
+- **Límites:** no se modificaron `apps/**`, `.github/**`, SQL/migraciones, Neon, Cloudflare, secretos ni datos reales en esta tarea documental.
+
+---
+
 # Actualización BCV — 2026-11-16 — PR de remediación TLS
 
 - `main` verificado al inicio: `e375e2d4bffb2f6cb083c0d37f0d47a4c87bab0f`. Rama de trabajo: `fix/bcv-github-actions-node-tls-20261116`.

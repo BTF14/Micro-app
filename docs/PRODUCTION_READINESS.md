@@ -1,11 +1,15 @@
-# Actualización de readiness — 2026-11-16 — Fase 1 BCV
+# Actualización de readiness — 2026-11-16 — cierre de Fase 1 BCV y preparación de Fase 2
 
-- Main: `e375e2d4bffb2f6cb083c0d37f0d47a4c87bab0f`; PR de infraestructura autorizada `fix/bcv-github-actions-node-tls-20261116`, sin auto-merge.
-- La ingestión BCV se traslada temporalmente al runner Node 24.22.2 con TLS estricto y CA intermedia Sectigo DV R36 pineada. Worker Cloudflare queda con `BCV_SYNC_ENABLED=false`; triggers conservados. Requiere confirmar Workers Builds después del merge.
-- El runner no accede a Neon main desde esta PR ni consulta/crea/lee GitHub Secrets. El propietario debe verificar o crear `DATABASE_URL_BCV_SYNC` y ejecutar el primer dispatch desde main.
-- CI PostgreSQL 18 valida el adaptador `pg` y los permisos de `microapp_bcv_sync`; no acredita Neon WebSocket. La primera ejecución real del runner es gate separado.
-- No se relaja checkout ni migración 0021. El preflight evita sobrescribir un éxito con otro intento: si la tasa de hoy está validada y last_outcome es inserted/unchanged, omite sin mutar.
-- **PRODUCTION: NOT READY. Issue #53 OPEN/P0. Freeze comercial vigente.** Tras comprobar la primera tasa real persistida en Neon main, iniciar Fase 2: cerrar AC-6 y AC-7 y priorizar Contingencia Manual BCV.
+- **Main / base exacta:** `98e249778a52e9306a193e838edea4503e0343e6`, merge de PR #374.
+- **PR #374:** [fix(bcv): move sync to strict-TLS Node runner](https://github.com/BTF14/Micro-app/pull/374), MERGED; implementation HEAD `c38a77b9aef4a390f45417cb660c5e8cf44b448c`.
+- **Post-merge:** 16/16 check-runs `completed / success` en el SHA exacto; incluye `Workers Builds: micro-app-bcv-sync` (deployment build successful, with `BCV_SYNC_ENABLED=false` in the merged config). El total real es 16, no 15.
+- **Primera ejecución productiva:** [BCV Node TLS sync #1](https://github.com/BTF14/Micro-app/actions/runs/43977544849), `workflow_dispatch`, `force_sync=false`, conclusion success. El log registró `BCV_NODE_SYNC_COMPLETED` y `outcome: 'inserted'`; certificado pineado validado y runner Node 24.22.2 con `@neondatabase/serverless` ejecutado.
+- **API/panel productivo (observación aportada por el propietario, 2026-11-16T23:17:15Z):** history HTTP 200, `BCV_OFFICIAL_HTML_V1`, `effectiveDate=2026-11-17`, `fetchedAt=2026-11-16T23:14:50.014Z`, `status=scheduled`; panel informó sincronización exitosa / inserted. Latest HTTP 503 `BCV_RATE_UNAVAILABLE` antes de las 00:00 VET del 2026-11-17 es el comportamiento fail-closed esperado. No se registran credenciales ni identificadores de proveedor.
+- **Gate cerrado:** primera tasa BCV real persistida en Neon main y registro asociado en `bcv_sync_state`, correspondiente a `effectiveDate: 2026-11-17`, estado `scheduled` hasta medianoche Caracas.
+- **Gate todavía abierto:** estabilidad posterior de BCV; observar la transición a `current` el 2026-11-17 desde 00:00 VET, la siguiente corrida automática de Node en `main` y la inactividad inocua continuada de `micro-app-bcv-sync` en Cloudflare.
+- **Fase 2 — Prioridad #1:** cerrar AC-6 legal/contable y AC-7 seguridad para Contingencia Manual BCV, según `ADR-20261114-v11-product-scope-and-roadmap.md`.
+- **Issue #53 permanece OPEN/P0. PRODUCTION: NOT READY. Freeze comercial vigente.** El cierre de Fase 1 no constituye GO/NO-GO ni habilita el roadmap comercial.
+
 
 ---
 
@@ -255,7 +259,7 @@ Los párrafos de 2026-10-30 describían el estado previo a los vertical slices i
 - [x] POS y checkout atómico integrados (PR #357; 0015/0018); el alcance comercial sigue limitado por las notas del bloque de implementación.
 - [x] Migraciones 0001–0025 aplicadas en Neon main según el workflow protegido, run #43591333198; no inferir de ello que la aplicación esté aceptada para lanzamiento.
 - [x] Smoke autenticado live con Brave Shields ACTIVADO en móvil y escritorio: Google OAuth same-origin, sesión persistente en navegación de módulos reales y logout seguro confirmado por el propietario. La verificación de tasa BCV real persistida se mantiene como gate separado.
-- [ ] Primera tasa BCV real persistida en Neon main y registro correspondiente en `bcv_sync_state`, tras la primera ventana elegible del lunes 2026-11-16; observar después de 11:05 UTC (07:05 VET). La prueba de conectividad #19 (HTTP 200, parser compatible) no satisface este gate ni demuestra persistencia en workerd.
+- [x] Primera tasa BCV real persistida en Neon main y registro correspondiente en `bcv_sync_state`: PR #374 merge SHA `98e249778a52e9306a193e838edea4503e0343e6`; [BCV Node TLS sync #1](https://github.com/BTF14/Micro-app/actions/runs/43977544849) completó con `BCV_NODE_SYNC_COMPLETED` / `inserted`; observación API/panel del propietario a 2026-11-16T23:17:15Z confirmó `BCV_OFFICIAL_HTML_V1`, `effectiveDate: 2026-11-17`, `status: scheduled`. La tasa queda programada hasta 00:00 VET del 2026-11-17.
 - [x] E2E full-stack real en CI contra API Hono + PostgreSQL 18 efímero, sin mocks de `/api/*` (PR #366): catálogo, recepción, turno, checkout USD/VES, recibos, stock, cierre/recarga y rechazo de venta con caja cerrada. No valida producción real.
 - [x] Rate limiting runtime en rutas sensibles: integrado y probado en PostgreSQL 18 efímero para OAuth, checkout y 11 endpoints de escritura (PR #363; exact-HEAD y post-merge checks SUCCESS).
 - [x] RPO diario aproximado de 24 h aceptado por el propietario; evaluar post-estabilización una segunda corrida gratuita diaria después de 06:00 VET (p. ej. 11:00/12:00 UTC) para acercar el RPO a ~12 h sin modificar workflows durante el freeze.
@@ -263,7 +267,7 @@ Los párrafos de 2026-10-30 describían el estado previo a los vertical slices i
 - [ ] Revisión legal/fiscal/contable si cambia el alcance FISC-01 interno o se incorpora facturación fiscal SENIAT.
 - [x] Watchdog BCV read-only `17 * * * *`, endpoint y UI integrados en PR #364; pre-merge 16/16 check-runs y 13/13 workflows SUCCESS, post-merge 14/14 check-runs y 10/10 workflows SUCCESS. La suite PostgreSQL 18 usa login real `microapp_runtime` y comprueba privilegios de solo lectura.
 - [x] Seguimiento BCV mediante panel de la app y logs gratuitos de Cloudflare; correo de GitHub Workflows verificado por el propietario. No se usan alertas pagas de Cloudflare.
-- [ ] Estabilidad posterior de BCV tras las ventanas programadas de 11:00 y 22:00 UTC, incluida la persistencia de tasas válidas.
+- [ ] Estabilidad posterior de BCV: observar transición de la tasa `2026-11-17` a `current` desde 00:00 VET, siguiente corrida automática del runner Node en `main` y la inactividad inocua de `micro-app-bcv-sync` en Cloudflare.
 - [ ] Issue #53 P0: mantener abierto hasta demostrar todos sus criterios y obtener aceptación explícita de cierre.
 - [ ] Revisión final GO/NO-GO del propietario después de cerrar todos los gates de producción.
 

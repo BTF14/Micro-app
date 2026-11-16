@@ -1,6 +1,7 @@
 # Handoff — Fase 1 BCV Node TLS — 2026-11-16
 
 ## Punto de partida y alcance
+- PR #374: https://github.com/BTF14/Micro-app/pull/374 (OPEN, no auto-merge); rama `fix/bcv-github-actions-node-tls-20261116`.
 - Base verificada de main: `e375e2d4bffb2f6cb083c0d37f0d47a4c87bab0f`.
 - Rama autorizada: `fix/bcv-github-actions-node-tls-20261116`. PR única, sin auto-merge.
 - Se permite implementar y abrir PR; no se permite modificar migraciones 0021/0022, Neon main, Secrets, datos reales ni hacer despliegues manuales.

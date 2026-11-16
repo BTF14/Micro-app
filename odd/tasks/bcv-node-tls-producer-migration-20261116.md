@@ -1,7 +1,7 @@
 # ODD task: BCV dedicated Node TLS producer
 
 - Status: in progress
-- Issue / PR: PR pending
+- Issue / PR: [PR #374](https://github.com/BTF14/Micro-app/pull/374) — OPEN, sin auto-merge
 - Owner / reviewer: repository owner / technical maintainer
 - Started: 2026-11-16
 - Risk: critical

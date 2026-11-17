@@ -58,6 +58,7 @@ CREATE TABLE public.fx_contingency_authorizations (
   rate numeric(18,8) NOT NULL CHECK (rate > 0),
   reference_rate_value numeric(18,8) NOT NULL CHECK (reference_rate_value > 0),
   reference_exchange_rate_id uuid NOT NULL REFERENCES public.exchange_rates(id) ON DELETE RESTRICT,
+  reference_effective_date date NOT NULL,
   deviation_bps integer NOT NULL CHECK (deviation_bps BETWEEN 0 AND 2000),
   reason text NOT NULL CHECK (pg_catalog.length(pg_catalog.btrim(reason)) BETWEEN 1 AND 1000),
   starts_at timestamptz NOT NULL DEFAULT pg_catalog.clock_timestamp(),
@@ -319,7 +320,7 @@ DECLARE
   sync_last_success_at timestamptz;
   sync_last_outcome text;
   sync_last_effective_date date;
-  operation_date date := (pg_catalog.clock_timestamp() AT TIME ZONE 'America/Caracas')::date;
+  operation_date date;
 BEGIN
   IF NEW.status <> 'completed'
     OR (TG_OP = 'UPDATE' AND OLD.status = 'completed')
@@ -334,6 +335,7 @@ BEGIN
    WHERE singleton = true
    FOR SHARE;
 
+  operation_date := (pg_catalog.clock_timestamp() AT TIME ZONE 'America/Caracas')::date;
   IF NOT FOUND
     OR sync_last_success_at IS NULL
     OR sync_last_outcome IS NULL
@@ -468,8 +470,8 @@ DECLARE
   payment_usd numeric(14,4);
   movement_count bigint;
   auth_row public.fx_contingency_authorizations%ROWTYPE;
-  operation_time timestamptz := pg_catalog.clock_timestamp();
-  operation_date date := (pg_catalog.clock_timestamp() AT TIME ZONE 'America/Caracas')::date;
+  operation_time timestamptz;
+  operation_date date;
 BEGIN
   target_org := NEW.organization_id;
   IF TG_TABLE_NAME = 'sales' THEN target_sale := NEW.id;
@@ -513,6 +515,9 @@ BEGIN
   END IF;
 
   IF sale_row.fx_source = 'bcv_official' THEN
+    PERFORM 1 FROM public.bcv_sync_state WHERE singleton = true FOR SHARE;
+    operation_time := pg_catalog.clock_timestamp();
+    operation_date := (operation_time AT TIME ZONE 'America/Caracas')::date;
     IF sale_row.fx_authorization_id IS NOT NULL
       OR sale_row.manual_fx_acknowledged_at IS NOT NULL
       OR sale_row.manual_fx_acknowledged_by_user_id IS NOT NULL THEN
@@ -529,6 +534,7 @@ BEGIN
       RAISE EXCEPTION 'SALE_REQUIRES_CURRENT_BCV_RATE' USING ERRCODE = '23514';
     END IF;
   ELSIF sale_row.fx_source = 'manual_contingency' THEN
+    PERFORM 1 FROM public.bcv_sync_state WHERE singleton = true FOR SHARE;
     IF sale_row.exchange_rate_id IS NOT NULL
       OR sale_row.fx_authorization_id IS NULL
       OR sale_row.manual_fx_acknowledged_at IS NULL
@@ -542,6 +548,8 @@ BEGIN
        AND auth.branch_id = sale_row.branch_id
        AND auth.id = sale_row.fx_authorization_id
      FOR SHARE;
+    operation_time := pg_catalog.clock_timestamp();
+    operation_date := (operation_time AT TIME ZONE 'America/Caracas')::date;
     IF NOT FOUND OR auth_row.status <> 'active'
       OR auth_row.starts_at > operation_time OR auth_row.expires_at <= operation_time
       OR auth_row.rate IS DISTINCT FROM sale_row.exchange_rate_snapshot
@@ -769,9 +777,11 @@ SET search_path = pg_catalog
 AS $create_fx_contingency_authorization$
 DECLARE
   authorization_id uuid;
-  starts_time timestamptz := pg_catalog.clock_timestamp();
+  starts_time timestamptz;
   calculated_bps integer;
-  operation_date date := (pg_catalog.clock_timestamp() AT TIME ZONE 'America/Caracas')::date;
+  operation_date date;
+  reference_effective_date date;
+  reference_fetched_at timestamptz;
 BEGIN
   IF p_rate IS NULL OR p_rate <= 0 OR p_reference_rate_value IS NULL OR p_reference_rate_value <= 0
      OR p_reason IS NULL OR pg_catalog.length(pg_catalog.btrim(p_reason)) NOT BETWEEN 1 AND 1000
@@ -819,17 +829,29 @@ BEGIN
     WHERE bm.organization_id = p_organization_id AND bm.branch_id = p_branch_id
       AND bm.user_id = p_actor_user_id AND bm.is_active
   ) THEN RAISE EXCEPTION 'FX_ADMIN_DELEGATION_REQUIRED' USING ERRCODE = '23514'; END IF;
-  IF NOT EXISTS (
-    SELECT 1 FROM public.exchange_rates er
-     WHERE er.id = p_reference_exchange_rate_id
-       AND er.rate = p_reference_rate_value
-       AND er.validation_status = 'valid'
-       AND er.effective_date <= operation_date
-  ) THEN RAISE EXCEPTION 'FX_REFERENCE_RATE_NOT_APPLICABLE' USING ERRCODE = '23514'; END IF;
+  SELECT er.effective_date, er.fetched_at
+    INTO reference_effective_date, reference_fetched_at
+    FROM public.exchange_rates er
+   WHERE er.id = p_reference_exchange_rate_id
+     AND er.source = 'BCV_OFFICIAL_HTML_V1'
+     AND er.rate = p_reference_rate_value
+     AND er.validation_status = 'valid'
+     AND er.effective_date <= operation_date
+     AND NOT EXISTS (
+       SELECT 1 FROM public.exchange_rates newer
+        WHERE newer.source = 'BCV_OFFICIAL_HTML_V1'
+          AND newer.validation_status = 'valid'
+          AND newer.effective_date <= operation_date
+          AND (newer.effective_date > er.effective_date
+            OR (newer.effective_date = er.effective_date AND newer.fetched_at > er.fetched_at))
+     );
+  IF NOT FOUND THEN RAISE EXCEPTION 'FX_REFERENCE_RATE_NOT_APPLICABLE_OR_NOT_LATEST' USING ERRCODE = '23514'; END IF;
 
   PERFORM 1 FROM public.bcv_sync_state state
    WHERE state.singleton = true
    FOR SHARE;
+  starts_time := pg_catalog.clock_timestamp();
+  operation_date := (starts_time AT TIME ZONE 'America/Caracas')::date;
   IF EXISTS (
     SELECT 1 FROM public.exchange_rates er
      WHERE er.source='BCV_OFFICIAL_HTML_V1'
@@ -841,12 +863,12 @@ BEGIN
 
   INSERT INTO public.fx_contingency_authorizations (
     organization_id, branch_id, rate, reference_rate_value,
-    reference_exchange_rate_id, deviation_bps, reason, starts_at,
+    reference_exchange_rate_id, reference_effective_date, deviation_bps, reason, starts_at,
     expires_at, authorized_by_user_id, authorized_by_role, elevated_confirmation_at,
     elevated_confirmation_reason, status
   ) VALUES (
     p_organization_id, p_branch_id, p_rate, p_reference_rate_value,
-    p_reference_exchange_rate_id, calculated_bps, p_reason, starts_time,
+    p_reference_exchange_rate_id, reference_effective_date, calculated_bps, p_reason, starts_time,
     p_expires_at, p_actor_user_id, p_actor_role,
     CASE WHEN calculated_bps > 500 THEN starts_time ELSE NULL END,
     p_elevated_confirmation_reason, 'active'
@@ -857,6 +879,8 @@ BEGIN
     p_actor_user_id, p_actor_role,
     pg_catalog.jsonb_build_object(
       'rate', p_rate, 'reference_rate_value', p_reference_rate_value,
+      'reference_exchange_rate_id', p_reference_exchange_rate_id,
+      'reference_effective_date', reference_effective_date,
       'deviation_bps', calculated_bps, 'reason', p_reason,
       'starts_at', starts_time, 'expires_at', p_expires_at
     )

@@ -1,3 +1,23 @@
+## Curación aprobada — 2026-11-17 (catalogar; no instalar paquetes globales)
+
+| Recurso | Licencia / versión | Alcance permitido | Exclusiones y controles | Momento |
+|---|---|---|---|---|
+| [GoogleChrome/modern-web-guidance](https://github.com/GoogleChrome/modern-web-guidance) | 1.0.1; código Apache-2.0, guías CC-BY 4.0 | React + Vite + CSS estándar; Baseline Widely Available, tablas móviles, formularios, accesibilidad y patrones web directamente aplicables. | Fijar versión/commit; desactivar telemetría con DISABLE_TELEMETRY=1; no ejecutar legacy-scan masivo; excluir extensions, WebMCP, WASM, built-in AI, custom elements, Tailwind y SSR. No convertirlo en dependencia del runtime. | Adoptar selectivamente para Carril A; catalogado en Paso 1. |
+| [cloudflare/security-audit-skill](https://github.com/cloudflare/security-audit-skill) | MIT | Web/client/auth/cloud/data/DoS/supply-chain; adaptar controles a Workers/Hono/React/Postgres. | Excluir binario, IPC y LLM fuera de stack. Guidance mode por defecto desde B1/Hardening. Auditoría formal pre-prod con aislamiento, permisos mínimos, datos sintéticos y sin red externa según el procedimiento upstream. Validadores de artefactos no certifican seguridad. | Catalogar ahora; usar en revisiones pertinentes desde B1/Hardening y auditoría integral pre-prod. |
+| FastMCP | — | No adoptar. | Introduce superficie/servicio no necesario para stack actual. | Descartado por ahora. |
+| 500-AI-Agents-Projects | — | No adoptar. | Demos genéricos, dependencias/modelos y patrones CrewAI no justificados por stack ni presupuesto $0. | Descartado por ahora. |
+
+### Agentes propios especializados (agenda, no creados en Paso 1)
+
+- **inventory-accounting-review**: crear justo antes de Carril B1. Especialidad: ledger/Kardex append-only ↔ balances; precisión contextual NUMERIC (14,3)/(14,4)/(14,2)/(18,8); ausencia de float; snapshots históricos; conciliación líneas = totales = pagos = cierre de turno; conteos/transferencias. QA anti-puntos ciegos: invariantes independientes, baterías extremas con herramientas gratuitas, mutaciones deliberadas selectivas en dinero, stock y tenant/sucursal y evidencia de que tests detectan cada mutación crítica. No sustituye backend-data-review ni security-review; añade la capa contable-operativa.
+- **ve-fx-compliance-review**: crear al abordar AC-6. Especialidad: fuentes primarias BCV/SENIAT/SUDEBAN y normas IVA, Convenio Cambiario, Precios Justos/SUNDDE e IGTF; distinguir norma vigente, publicada-no-vigente e interpretación; registrar fecha, fuente, conclusión y limitación. Incluir Providencia SNAT/2026/00093 y entrada en vigor prevista abril 2027. Nunca emitir dictamen de contador/abogado ni declarar cumplimiento certificado.
+
+### Decisión BCV 0027 — 2026-11-17
+
+El propietario aprobó abandonar la idea de calendario SUDEBAN anual manual y preparar spec aditiva 0027: tasa válida de hoy con prioridad absoluta; sábado/domingo permiten la menor fecha efectiva BCV futura dentro de 5 días con sync sano; lunes-viernes sin tasa de hoy solo permiten fecha futura si sync exitoso del propio día Caracas; de otro modo 409 BCV_RATE_NOT_CURRENT. Mantener separados operation_date y effective_date, snapshots, selector, panel/latest, recuperación 0026 y guards SQL. No implementar en esta PR. Ver ADR docs/decisions/ADR-20261117-bcv-nonbusiness-day-effective-date.md.
+
+---
+
 > **Checkpoint 2026-11-08 UTC:** PR #280 y PR #281 están integradas. Último main verificado antes de este checkpoint: `e6f0c6021d82cfffce12f4c1d5283f657dc74c64` (merge SHA PR #281); consultar GitHub para la punta viva. PR #281 post-merge: 9/9 workflows y 11/11 check-runs SUCCESS. Neon rehearsal #42507066215 verificó 0001–0019 únicamente en `microapp_rehearsal`; Neon main no fue modificado. **Producción continúa NOT READY.** Estado operativo: [CURRENT_STATE](CURRENT_STATE.md) y [HANDOFF](HANDOFF_NEXT_CHAT.md).
 
 # Registro de herramientas, repositorios y fuentes de Micro app

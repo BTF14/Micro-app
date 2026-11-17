@@ -304,6 +304,7 @@ ALTER TABLE public.sales
       )
     )
   ) NOT VALID;
+ALTER TABLE public.sales VALIDATE CONSTRAINT sales_completed_fx_snapshot_ck;
 
 -- Preserve 0021's trigger-only SECURITY DEFINER contract, including owner and
 -- lack of PUBLIC/runtime EXECUTE. The manual branch is enforced by the

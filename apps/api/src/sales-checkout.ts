@@ -99,12 +99,7 @@ async function findActiveManualFxAuthorization(
 ): Promise<ManualFxAuthorizationRow | null> {
   const result = await tx.query<ManualFxAuthorizationRow>(
     `SELECT id,rate::text,starts_at::text,expires_at::text
-       FROM public.fx_contingency_authorizations
-      WHERE organization_id=$1 AND branch_id=$2 AND status='active'
-        AND starts_at <= pg_catalog.clock_timestamp()
-        AND expires_at > pg_catalog.clock_timestamp()
-      ORDER BY starts_at DESC LIMIT 1
-      FOR SHARE`,
+       FROM public.lock_active_fx_contingency_authorization($1::uuid,$2::uuid)`,
     [organizationId, branchId],
   );
   return result.rows[0] ?? null;

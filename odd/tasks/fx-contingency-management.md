@@ -135,3 +135,7 @@ Excluded:
 - Exact-SHA run on `67353389d73a1084d3028fde3f5b3b5d2604361e`: migration runner failed while compiling `assert_completed_sale_reconciled()`; PostgreSQL reported a syntax error at the inline `CASE` expression in the payment reconciliation `IF`.
 - Corrected by parenthesizing the `CASE` expression. Fix commit: `c5130b6510063227b4502f9054e71323352c619b`.
 - The failure was a migration syntax defect, not an environment/permissions failure. The new HEAD requires a fresh migration-runner and full-CI result; no PASS is inferred from the correction.
+
+
+- Segundo exact-SHA intento `9847d0bdc63d60928fdb864970623a52ac18fb19`: migración avanzó más allá del parser, pero el GRANT conservaba por error la firma anterior de seis argumentos del helper PIN, mientras la función ya tenía siete (actor explícito). Se corrigió el GRANT a `set_fx_user_pin_credential(uuid,uuid,uuid,text,integer,bytea,bytea)`.
+- Fix commit: `ba27538b4105c297e8429426a346eee06fe553f8`. Se requiere otra ejecución exact-SHA; no se afirma aún que el migration runner esté verde.

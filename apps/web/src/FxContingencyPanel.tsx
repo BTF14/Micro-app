@@ -162,11 +162,12 @@ export default function FxContingencyPanel({ organizationId, role }: { organizat
           <strong>Autorización activa</strong>
           <p>{state.authorization.rate} Bs./USD · vence {new Date(state.authorization.expires_at).toLocaleString()}</p>
           <p>Motivo: {state.authorization.reason}</p>
+          <label>Motivo de renovación<textarea value={reason} onChange={(event) => setReason(event.target.value)} maxLength={1000} /></label>
           <label>Nuevo vencimiento para renovar (hora local)<input type="datetime-local" value={expiresAt} onChange={(event) => setExpiresAt(event.target.value)} /></label>
           <label><input type="checkbox" checked={elevatedConfirmed} onChange={(event) => setElevatedConfirmed(event.target.checked)} /> Confirmo expresamente la desviación superior al 5% (si aplica).</label>
           {elevatedConfirmed && <label>Motivo específico de confirmación reforzada<textarea value={elevatedReason} onChange={(event) => setElevatedReason(event.target.value)} maxLength={500} /></label>}
           <label>PIN de autorización<input type="password" inputMode="numeric" autoComplete="off" value={pin} onChange={(event) => setPin(event.target.value)} /></label>
-          <button type="button" disabled={saving || pin.length < 8 || !expiresAt} onClick={() => void renew()}>Renovar contingencia</button>
+          <button type="button" disabled={saving || pin.length < 8 || !expiresAt || !reason.trim()} onClick={() => void renew()}>Renovar contingencia</button>
           <button type="button" disabled={saving || pin.length < 8} onClick={() => void revoke()}>Revocar contingencia</button>
         </div> : <div className="fx-create-authorization">
           <h3>Autorizar tasa manual</h3>

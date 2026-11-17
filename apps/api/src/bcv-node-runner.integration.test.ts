@@ -43,7 +43,7 @@ describe.skipIf(!disposable)("BCV Node runner PostgreSQL 18 least-privilege pref
       await admin.query("ALTER TABLE public.bcv_sync_success_observations ENABLE ALWAYS TRIGGER bcv_sync_success_observations_10_append_only_rows");
       await admin.query("ALTER TABLE public.bcv_sync_success_observations ENABLE ALWAYS TRIGGER bcv_sync_success_observations_20_append_only_truncate");
     }
-    await clearBcvFixtures();
+    await admin.query("DELETE FROM public.exchange_rates WHERE source = $1", [source]);
   }
 
   beforeAll(async () => {

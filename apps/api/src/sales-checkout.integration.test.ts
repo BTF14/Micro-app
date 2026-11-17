@@ -73,6 +73,10 @@ describe.skipIf(!isDisposableCheckoutDatabase || !isDisposableBcvProducerDatabas
   } | null = null;
   let createdRate = false;
   let suffix = "";
+  let fxOwnerId = "";
+  let fxReferenceRateId = "";
+  let fxReferenceRateCreated = false;
+  let previousFxReferenceRate: { rate: string; validation_status: string; fetched_at: Date } | null = null;
 
   async function request(
     body: unknown,
@@ -98,6 +102,7 @@ describe.skipIf(!isDisposableCheckoutDatabase || !isDisposableBcvProducerDatabas
       DATABASE_URL: databaseUrl,
       FRONTEND_ORIGIN,
       GOOGLE_CLIENT_SECRET: "checkout-integration-test-hmac-pepper-2026",
+      FX_CONTINGENCY_ENABLED: "true",
     });
   }
 
@@ -361,11 +366,13 @@ describe.skipIf(!isDisposableCheckoutDatabase || !isDisposableBcvProducerDatabas
         for (const table of [
           "public.sales", "public.sale_items", "public.payments",
           "public.warehouse_inventory_movements", "public.inventory_balances", "public.audit_logs",
-          "public.inventory_count_lines", "public.inventory_counts",
+          "public.inventory_count_lines", "public.inventory_counts", "public.fx_contingency_events",
         ]) {
           await client.query("ALTER TABLE " + table + " DISABLE TRIGGER USER");
         }
         await client.query("DELETE FROM public.audit_logs WHERE organization_id=$1", [organizationId]);
+        await client.query("DELETE FROM public.fx_contingency_events WHERE organization_id=$1", [organizationId]);
+        await client.query("DELETE FROM public.fx_contingency_authorizations WHERE organization_id=$1", [organizationId]);
         await client.query("DELETE FROM public.payments WHERE organization_id=$1", [organizationId]);
         await client.query("DELETE FROM public.sale_items WHERE organization_id=$1", [organizationId]);
         await client.query("DELETE FROM public.sales WHERE organization_id=$1", [organizationId]);
@@ -380,6 +387,8 @@ describe.skipIf(!isDisposableCheckoutDatabase || !isDisposableBcvProducerDatabas
         ]) {
           if (table !== "public.audit_logs") await client.query("ALTER TABLE " + table + " ENABLE TRIGGER USER");
         }
+        await client.query("ALTER TABLE public.fx_contingency_events ENABLE ALWAYS TRIGGER fx_contingency_events_10_append_only_rows");
+        await client.query("ALTER TABLE public.fx_contingency_events ENABLE ALWAYS TRIGGER fx_contingency_events_20_append_only_truncate");
         await client.query("ALTER TABLE public.audit_logs ENABLE ALWAYS TRIGGER audit_logs_10_append_only_rows");
         await client.query("ALTER TABLE public.audit_logs ENABLE ALWAYS TRIGGER audit_logs_20_append_only_truncate");
         await client.query("COMMIT");
@@ -389,6 +398,14 @@ describe.skipIf(!isDisposableCheckoutDatabase || !isDisposableBcvProducerDatabas
       }
       // Register shifts are append-only by design. This test database is ephemeral,
       // so retain the closed shift and its scope rows rather than bypass lifecycle guards.
+      if (fxOwnerId) {
+        await client.query("DELETE FROM public.organization_members WHERE organization_id=$1 AND user_id=$2", [organizationId, fxOwnerId]);
+        await client.query("DELETE FROM public.app_users WHERE id=$1", [fxOwnerId]);
+      }
+      if (fxReferenceRateId) {
+        if (fxReferenceRateCreated) await client.query("DELETE FROM public.exchange_rates WHERE id=$1", [fxReferenceRateId]);
+        else if (previousFxReferenceRate) await client.query("UPDATE public.exchange_rates SET rate=$2::numeric,validation_status=$3,fetched_at=$4 WHERE id=$1", [fxReferenceRateId, previousFxReferenceRate.rate, previousFxReferenceRate.validation_status, previousFxReferenceRate.fetched_at]);
+      }
       await client.query("DELETE FROM public.warehouses WHERE organization_id=$1", [organizationId]);
       await client.query("DELETE FROM public.products WHERE organization_id=$1", [organizationId]);
     }
@@ -1091,4 +1108,99 @@ describe.skipIf(!isDisposableCheckoutDatabase || !isDisposableBcvProducerDatabas
     expect((await response.json() as { error: string }).error).toBe("OPEN_SHIFT_REQUIRED");
     expect((await readBalance()).on_hand_quantity).toBe("2.000");
   });
+
+  it("uses a scoped manual authorization only with rate-bound cashier ACK and preserves idempotent replay", async () => {
+    await seedBalance("5.000");
+    const owner = await client.query<{ id: string }>(
+      "INSERT INTO public.app_users(email,display_name) VALUES($1,'FX Checkout Owner') RETURNING id",
+      ["fx-checkout-owner-" + crypto.randomUUID() + "@example.test"],
+    );
+    fxOwnerId = owner.rows[0]!.id;
+    await client.query(
+      "INSERT INTO public.organization_members(organization_id,user_id,role) VALUES($1,$2,'owner')",
+      [organizationId, fxOwnerId],
+    );
+
+    const yesterdayResult = await client.query<{ effective_date: string }>(
+      "SELECT ((pg_catalog.clock_timestamp() AT TIME ZONE 'America/Caracas')::date - 1)::text AS effective_date",
+    );
+    const yesterday = yesterdayResult.rows[0]!.effective_date;
+    const previousReference = await client.query<{ id: string; rate: string; validation_status: string; fetched_at: Date }>(
+      "SELECT id,rate::text,validation_status,fetched_at FROM public.exchange_rates WHERE source=$1 AND effective_date=$2::date",
+      [BCV_SOURCE, yesterday],
+    );
+    if (previousReference.rows[0]) {
+      fxReferenceRateId = previousReference.rows[0].id;
+      previousFxReferenceRate = previousReference.rows[0];
+      await client.query("UPDATE public.exchange_rates SET rate=100.00000000,validation_status='valid' WHERE id=$1", [fxReferenceRateId]);
+    } else {
+      const reference = await client.query<{ id: string }>(
+        "INSERT INTO public.exchange_rates(base_currency,quote_currency,rate,source,effective_date,validation_status) VALUES('USD','VES',100.00000000,$1,$2::date,'valid') RETURNING id",
+        [BCV_SOURCE, yesterday],
+      );
+      fxReferenceRateId = reference.rows[0]!.id;
+      fxReferenceRateCreated = true;
+    }
+
+    await client.query("UPDATE public.exchange_rates SET validation_status='stale' WHERE id=$1", [rateId]);
+    await setBcvSyncState("failed", rateDate, true);
+    const expiryParts = new Intl.DateTimeFormat("en-US", { timeZone: "America/Caracas", year: "numeric", month: "2-digit", day: "2-digit" }).formatToParts(new Date());
+    const part = (key: string) => Number(expiryParts.find((item) => item.type === key)?.value ?? 0);
+    const nextMidnightUtc = Date.UTC(part("year"), part("month") - 1, part("day") + 1, 4, 0, 0);
+    const expiresAt = new Date(Math.min(Date.now() + 20 * 60_000, nextMidnightUtc - 2_000)).toISOString();
+    const authorization = await client.query<{ id: string }>(
+      "SELECT public.create_fx_contingency_authorization($1::uuid,$2::uuid,104.00000000,100.00000000,$3::uuid,'Manual contingency integration fixture',$4::timestamptz,$5::uuid,'owner',NULL,'authorized') AS id",
+      [organizationId, branchId, fxReferenceRateId, expiresAt, fxOwnerId],
+    );
+    const authorizationId = authorization.rows[0]!.id;
+
+    const key = "manual-fx-" + crypto.randomUUID();
+    const base = checkoutBody("1.000", "23.8500");
+    const missingAck = await request({ ...base, manual_fx_acknowledged: false }, key);
+    expect(missingAck.status).toBe(409);
+    expect((await missingAck.json() as { error: string }).error).toBe("MANUAL_FX_ACK_REQUIRED");
+    expect((await readBalance()).on_hand_quantity).toBe("5.000");
+
+    const mismatchedAck = await request({
+      ...base, manual_fx_acknowledged: true, manual_fx_acknowledged_rate: "104.00000001",
+    }, key + "-mismatch");
+    expect(mismatchedAck.status).toBe(409);
+    expect((await mismatchedAck.json() as { error: string }).error).toBe("MANUAL_FX_ACK_REQUIRED");
+
+    const acknowledgedBody = {
+      ...base, manual_fx_acknowledged: true, manual_fx_acknowledged_rate: "104.00000000",
+    };
+    const response = await request(acknowledgedBody, key);
+    expect(response.status).toBe(201);
+    const sale = await response.json() as {
+      id: string; fx_source: string; fx_rate: string; bcv_rate: string | null;
+      fx_receipt_label: string; fx_authorization_id: string;
+      manual_fx_acknowledged_at: string | null;
+    };
+    expect(sale.fx_source).toBe("manual_contingency");
+    expect(sale.fx_rate).toBe("104.00000000");
+    expect(sale.bcv_rate).toBeNull();
+    expect(sale.fx_authorization_id).toBe(authorizationId);
+    expect(sale.manual_fx_acknowledged_at).toBeTruthy();
+    expect(sale.fx_receipt_label).toBe("Tasa manual de contingencia (no oficial BCV)");
+
+    const stored = await client.query(
+      "SELECT fx_source,fx_authorization_id,manual_fx_acknowledged_at,manual_fx_acknowledged_by_user_id,created_by FROM public.sales WHERE id=$1",
+      [sale.id],
+    );
+    expect(stored.rows[0]).toMatchObject({
+      fx_source: "manual_contingency", fx_authorization_id: authorizationId,
+      manual_fx_acknowledged_by_user_id: userId, created_by: userId,
+    });
+
+    await client.query(
+      "SELECT public.transition_fx_contingency_authorization($1::uuid,$2::uuid,$3::uuid,'revoked',$4::uuid,'owner','integration replay after revocation')",
+      [organizationId, branchId, authorizationId, fxOwnerId],
+    );
+    const replay = await request(acknowledgedBody, key);
+    expect(replay.status).toBe(200);
+    expect((await replay.json() as { id: string }).id).toBe(sale.id);
+    expect((await readBalance()).on_hand_quantity).toBe("4.000");
+  });
+
 });

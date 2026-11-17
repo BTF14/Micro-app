@@ -213,6 +213,7 @@ describe.skipIf(!isDisposableCheckoutDatabase || !isDisposableBcvProducerDatabas
     producerClient = new Client({ connectionString: databaseUrlBcv });
     await client.connect();
     await producerClient.connect();
+    await client.query('SELECT pg_advisory_lock(20261117, 260026)');
     suffix = crypto.randomUUID().replace(/-/g, "").slice(0, 12);
 
     const org = await client.query<{ id: string }>(
@@ -377,8 +378,10 @@ describe.skipIf(!isDisposableCheckoutDatabase || !isDisposableBcvProducerDatabas
           "public.warehouse_inventory_movements", "public.inventory_balances", "public.audit_logs",
           "public.inventory_count_lines", "public.inventory_counts", "public.register_shifts",
         ]) {
-          await client.query("ALTER TABLE " + table + " ENABLE TRIGGER USER");
+          if (table !== "public.audit_logs") await client.query("ALTER TABLE " + table + " ENABLE TRIGGER USER");
         }
+        await client.query("ALTER TABLE public.audit_logs ENABLE ALWAYS TRIGGER audit_logs_10_append_only_rows");
+        await client.query("ALTER TABLE public.audit_logs ENABLE ALWAYS TRIGGER audit_logs_20_append_only_truncate");
         await client.query("COMMIT");
       } catch (error) {
         await client.query("ROLLBACK");
@@ -418,6 +421,7 @@ describe.skipIf(!isDisposableCheckoutDatabase || !isDisposableBcvProducerDatabas
         ],
       );
     }
+    await client.query('SELECT pg_advisory_unlock(20261117, 260026)').catch(() => undefined);
     await producerClient.end();
     await client.end();
   });

@@ -213,6 +213,23 @@ BEGIN
     RAISE EXCEPTION 'FX_PIN_CREDENTIAL_LEAST_PRIVILEGE_INVALID';
   END IF;
 
+  SELECT p.oid INTO function_oid
+    FROM pg_catalog.pg_proc p
+   WHERE p.oid='public.lock_fx_user_pin_credential(uuid,uuid)'::regprocedure
+     AND p.prosecdef
+     AND p.proowner=(SELECT oid FROM pg_catalog.pg_roles WHERE rolname='microapp_migrator');
+  IF function_oid IS NULL
+    OR NOT pg_catalog.has_function_privilege('microapp_runtime',function_oid,'EXECUTE')
+    OR pg_catalog.has_function_privilege('microapp_bcv_sync',function_oid,'EXECUTE')
+    OR EXISTS (
+      SELECT 1 FROM pg_catalog.aclexplode(
+        COALESCE((SELECT proacl FROM pg_catalog.pg_proc WHERE oid=function_oid),
+          pg_catalog.acldefault('f',(SELECT proowner FROM pg_catalog.pg_proc WHERE oid=function_oid)))
+      ) acl WHERE acl.grantee=0 AND acl.privilege_type='EXECUTE'
+    ) THEN
+    RAISE EXCEPTION 'FX_PIN_LOCK_HELPER_SECURITY_CONTRACT_INVALID';
+  END IF;
+
   SELECT pg_catalog.pg_get_functiondef(
     'public.create_fx_contingency_authorization(uuid,uuid,numeric,numeric,uuid,text,timestamptz,uuid,text,text,text)'::regprocedure
   ) INTO function_definition;

@@ -325,6 +325,7 @@ DECLARE
   sync_last_success_at timestamptz;
   sync_last_outcome text;
   sync_last_effective_date date;
+  sync_last_error_code text;
   operation_date date;
 BEGIN
   IF NEW.status <> 'completed'
@@ -334,8 +335,8 @@ BEGIN
     RETURN NULL;
   END IF;
 
-  SELECT last_success_at, last_outcome, last_effective_date
-    INTO sync_last_success_at, sync_last_outcome, sync_last_effective_date
+  SELECT last_success_at, last_outcome, last_effective_date, last_error_code
+    INTO sync_last_success_at, sync_last_outcome, sync_last_effective_date, sync_last_error_code
     FROM public.bcv_sync_state
    WHERE singleton = true
    FOR SHARE;
@@ -345,6 +346,7 @@ BEGIN
     OR sync_last_success_at IS NULL
     OR sync_last_outcome IS NULL
     OR sync_last_outcome NOT IN ('inserted', 'unchanged')
+    OR sync_last_error_code IS NOT NULL
     OR sync_last_effective_date IS NULL
     OR sync_last_effective_date < operation_date
   THEN

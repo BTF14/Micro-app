@@ -19,7 +19,7 @@ CREATE TABLE public.fx_user_pin_credentials (
   organization_id uuid NOT NULL,
   user_id uuid NOT NULL,
   kdf_version text NOT NULL CHECK (kdf_version IN ('pbkdf2-sha256-v1')),
-  iterations integer NOT NULL CHECK (iterations BETWEEN 100000 AND 1000000),
+  iterations integer NOT NULL CHECK (iterations = 100000),
   salt bytea NOT NULL CHECK (pg_catalog.octet_length(salt) BETWEEN 16 AND 64),
   pin_hash bytea NOT NULL CHECK (pg_catalog.octet_length(pin_hash) = 32),
   created_at timestamptz NOT NULL DEFAULT pg_catalog.clock_timestamp(),
@@ -79,6 +79,7 @@ CREATE TABLE public.fx_contingency_authorizations (
   CHECK (expires_at > starts_at
     AND expires_at <= starts_at + interval '24 hours'
     AND expires_at <= (((starts_at AT TIME ZONE 'America/Caracas')::date + 1)::timestamp AT TIME ZONE 'America/Caracas')),
+  CHECK (reference_effective_date <= (starts_at AT TIME ZONE 'America/Caracas')::date),
   CHECK (
     deviation_bps = pg_catalog.round(
       pg_catalog.abs(rate - reference_rate_value) / reference_rate_value * 10000
@@ -795,10 +796,6 @@ BEGIN
   IF calculated_bps > 2000 THEN
     RAISE EXCEPTION 'FX_AUTHORIZATION_DEVIATION_LIMIT_EXCEEDED' USING ERRCODE = '23514';
   END IF;
-  IF p_expires_at <= starts_time OR p_expires_at > starts_time + interval '24 hours'
-     OR p_expires_at > (((starts_time AT TIME ZONE 'America/Caracas')::date + 1)::timestamp AT TIME ZONE 'America/Caracas') THEN
-    RAISE EXCEPTION 'FX_AUTHORIZATION_EXPIRY_INVALID' USING ERRCODE = '23514';
-  END IF;
   IF calculated_bps > 500 AND (
     p_elevated_confirmation_reason IS NULL
     OR pg_catalog.length(pg_catalog.btrim(p_elevated_confirmation_reason)) NOT BETWEEN 1 AND 500
@@ -829,6 +826,15 @@ BEGIN
     WHERE bm.organization_id = p_organization_id AND bm.branch_id = p_branch_id
       AND bm.user_id = p_actor_user_id AND bm.is_active
   ) THEN RAISE EXCEPTION 'FX_ADMIN_DELEGATION_REQUIRED' USING ERRCODE = '23514'; END IF;
+  PERFORM 1 FROM public.bcv_sync_state state
+   WHERE state.singleton = true
+   FOR SHARE;
+  starts_time := pg_catalog.clock_timestamp();
+  operation_date := (starts_time AT TIME ZONE 'America/Caracas')::date;
+  IF p_expires_at <= starts_time OR p_expires_at > starts_time + interval '24 hours'
+     OR p_expires_at > (((starts_time AT TIME ZONE 'America/Caracas')::date + 1)::timestamp AT TIME ZONE 'America/Caracas') THEN
+    RAISE EXCEPTION 'FX_AUTHORIZATION_EXPIRY_INVALID' USING ERRCODE = '23514';
+  END IF;
   SELECT er.effective_date, er.fetched_at
     INTO reference_effective_date, reference_fetched_at
     FROM public.exchange_rates er
@@ -847,11 +853,6 @@ BEGIN
      );
   IF NOT FOUND THEN RAISE EXCEPTION 'FX_REFERENCE_RATE_NOT_APPLICABLE_OR_NOT_LATEST' USING ERRCODE = '23514'; END IF;
 
-  PERFORM 1 FROM public.bcv_sync_state state
-   WHERE state.singleton = true
-   FOR SHARE;
-  starts_time := pg_catalog.clock_timestamp();
-  operation_date := (starts_time AT TIME ZONE 'America/Caracas')::date;
   IF EXISTS (
     SELECT 1 FROM public.exchange_rates er
      WHERE er.source='BCV_OFFICIAL_HTML_V1'
@@ -910,7 +911,7 @@ BEGIN
     RAISE EXCEPTION 'FX_PIN_SELF_SERVICE_ONLY' USING ERRCODE = '23514';
   END IF;
   IF p_kdf_version <> 'pbkdf2-sha256-v1'
-     OR p_iterations NOT BETWEEN 100000 AND 1000000
+     OR p_iterations <> 100000
      OR pg_catalog.octet_length(p_salt) NOT BETWEEN 16 AND 64
      OR pg_catalog.octet_length(p_pin_hash) <> 32 THEN
     RAISE EXCEPTION 'FX_PIN_CREDENTIAL_FORMAT_INVALID' USING ERRCODE = '23514';

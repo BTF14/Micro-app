@@ -411,7 +411,11 @@ BEGIN
       OR NEW.branch_id IS NULL OR NEW.register_shift_id IS NULL
       OR NEW.warehouse_id IS NULL OR NEW.settlement_currency IS NULL
       OR NEW.settlement_currency NOT IN ('USD', 'VES')
-      OR NEW.request_hash IS NULL OR NEW.request_hash !~ '^[0-9a-f]{64}
+      OR NEW.request_hash IS NULL OR pg_catalog.length(NEW.request_hash) <> 64
+      OR NEW.request_hash ~ '[^0-9a-f]'
+      OR pg_catalog.length(NEW.idempotency_key) NOT BETWEEN 1 AND 128
+      OR NEW.idempotency_key ~ '[^A-Za-z0-9._:-]'
+    THEN
       RAISE EXCEPTION 'SALE_MUST_START_AS_VALID_DRAFT' USING ERRCODE = '23514';
     END IF;
     RETURN NEW;

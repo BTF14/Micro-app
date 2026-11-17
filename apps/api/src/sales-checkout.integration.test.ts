@@ -234,6 +234,8 @@ describe.skipIf(!isDisposableCheckoutDatabase || !isDisposableBcvProducerDatabas
     effectiveDate = rateDate,
     successfulAtPresent = true,
   ): Promise<void> {
+    const attemptId = crypto.randomUUID();
+    fxAttemptIds.push(attemptId);
     await client.query(
       `UPDATE public.bcv_sync_state
           SET attempt_id=$4::uuid,
@@ -243,7 +245,7 @@ describe.skipIf(!isDisposableCheckoutDatabase || !isDisposableBcvProducerDatabas
               last_error_code=CASE WHEN $1='failed' THEN 'BCV_SYNC_UNKNOWN' ELSE NULL END,
               updated_at=now()
         WHERE singleton=true`,
-      [outcome, effectiveDate, successfulAtPresent, crypto.randomUUID()],
+      [outcome, effectiveDate, successfulAtPresent, attemptId],
     );
   }
 

@@ -115,6 +115,28 @@ export default function FxContingencyPanel({ organizationId, role }: { organizat
     finally { setSaving(false); }
   }
 
+  async function renew() {
+    if (!branchId || !state?.authorization || !pin || !expiresAt || !reason.trim()) return;
+    setSaving(true); setError(""); setNotice("");
+    try {
+      await apiRequest(`${base}/branches/${encodeURIComponent(branchId)}/fx-contingency/authorizations/${encodeURIComponent(state.authorization.id)}/renew`, {
+        method: "POST",
+        body: JSON.stringify({
+          rate: state.authorization.rate,
+          reason: reason.trim(),
+          expires_at: new Date(expiresAt).toISOString(),
+          pin,
+          elevated_confirmation: elevatedConfirmed,
+          ...(elevatedConfirmed ? { elevated_confirmation_reason: elevatedReason.trim() } : {}),
+        }),
+      });
+      setPin(""); setElevatedConfirmed(false); setElevatedReason("");
+      setNotice("Autorización renovada; se creó un nuevo registro auditable.");
+      await refresh();
+    } catch (cause) { setError(cause instanceof Error ? cause.message : "No se pudo renovar la autorización."); }
+    finally { setSaving(false); }
+  }
+
   async function revoke() {
     if (!branchId || !state?.authorization) return;
     setSaving(true); setError(""); setNotice("");

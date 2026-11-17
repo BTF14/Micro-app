@@ -978,6 +978,27 @@ REVOKE ALL ON FUNCTION public.set_fx_user_pin_credential(uuid,uuid,uuid,text,int
 GRANT EXECUTE ON FUNCTION public.set_fx_user_pin_credential(uuid,uuid,uuid,text,integer,bytea,bytea) TO microapp_runtime;
 
 
+CREATE FUNCTION public.lock_fx_user_pin_credential(
+  p_organization_id uuid, p_user_id uuid
+)
+RETURNS TABLE(kdf_version text,iterations integer,salt_base64 text,hash_base64 text)
+LANGUAGE sql
+SECURITY DEFINER
+SET search_path = pg_catalog
+AS $lock_fx_user_pin_credential$
+  SELECT credential.kdf_version,credential.iterations,
+         pg_catalog.encode(credential.salt,'base64'),
+         pg_catalog.encode(credential.pin_hash,'base64')
+    FROM public.fx_user_pin_credentials credential
+   WHERE credential.organization_id=p_organization_id
+     AND credential.user_id=p_user_id
+   FOR SHARE
+$lock_fx_user_pin_credential$;
+ALTER FUNCTION public.lock_fx_user_pin_credential(uuid,uuid) OWNER TO microapp_migrator;
+REVOKE ALL ON FUNCTION public.lock_fx_user_pin_credential(uuid,uuid) FROM PUBLIC;
+GRANT EXECUTE ON FUNCTION public.lock_fx_user_pin_credential(uuid,uuid) TO microapp_runtime;
+
+
 CREATE FUNCTION public.lock_active_fx_contingency_authorization(
   p_organization_id uuid, p_branch_id uuid
 )

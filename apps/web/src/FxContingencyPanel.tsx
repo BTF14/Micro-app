@@ -3,7 +3,8 @@ import { apiRequest } from "./auth";
 
 type Branch = { id: string; name: string; slug: string };
 type Authorization = {
-  id: string; rate: string; reference_rate_value: string; deviation_bps: number;
+  id: string; rate: string; reference_rate_value: string; reference_exchange_rate_id: string;
+  reference_effective_date: string; deviation_bps: number;
   reason: string; starts_at: string; expires_at: string; status: string;
   authorized_by_user_id: string; elevated_confirmation_at: string | null;
 };
@@ -189,6 +190,8 @@ export default function FxContingencyPanel({ organizationId, role }: { organizat
         {state.authorization ? <div className="fx-active-authorization">
           <strong>Autorización activa</strong>
           <p>{state.authorization.rate} Bs./USD · vence {new Date(state.authorization.expires_at).toLocaleString()}</p>
+          <p>Referencia BCV: {state.authorization.reference_rate_value} Bs./USD · fecha efectiva {state.authorization.reference_effective_date}</p>
+          <p>Identificador de referencia: {state.authorization.reference_exchange_rate_id} · desviación: {state.authorization.deviation_bps} bps</p>
           <p>Motivo: {state.authorization.reason}</p>
           <label>Motivo de renovación<textarea value={reason} onChange={(event) => setReason(event.target.value)} maxLength={1000} /></label>
           <label>Nuevo vencimiento para renovar (hora local)<input type="datetime-local" value={expiresAt} onChange={(event) => setExpiresAt(event.target.value)} /></label>

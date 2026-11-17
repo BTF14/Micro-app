@@ -415,6 +415,24 @@ describe.skipIf(!safeDb)("FX contingency PostgreSQL integration — PG-01..PG-30
     await expect(runtime.query("UPDATE public.fx_user_pin_credentials SET iterations=200000 WHERE organization_id=$1 AND user_id=$2", [organizationId, ownerId])).rejects.toMatchObject({ code: "42501" });
   });
 
+  it("audits PIN enrollment without recording verifier material", async () => {
+    await runtime.query(
+      "SELECT public.set_fx_user_pin_credential($1::uuid,$2::uuid,$2::uuid,'pbkdf2-sha256-v1',100000,decode(repeat('11',16),'hex'),decode(repeat('22',32),'hex'))",
+      [organizationId, ownerId],
+    );
+    const audit = await admin.query(
+      "SELECT action,entity_type,entity_id,metadata FROM public.audit_logs WHERE organization_id=$1 AND action='fx.pin.updated' ORDER BY created_at DESC LIMIT 1",
+      [organizationId],
+    );
+    expect(audit.rows[0]).toMatchObject({
+      action: "fx.pin.updated",
+      entity_type: "fx_user_pin_credential",
+      entity_id: ownerId,
+      metadata: { kdf_version: "pbkdf2-sha256-v1", iterations: 100000 },
+    });
+    expect(JSON.stringify(audit.rows[0].metadata)).not.toContain("pin_hash");
+  });
+
   it("PG-20 BCV producer cannot read, write or truncate durable success observations", async () => {
     await expect(producer.query("SELECT * FROM public.bcv_sync_success_observations")).rejects.toMatchObject({ code: "42501" });
     await expect(producer.query("INSERT INTO public.bcv_sync_success_observations(observed_at,last_success_at,last_outcome,last_effective_date) VALUES(now(),now(),'inserted',current_date)")).rejects.toMatchObject({ code: "42501" });

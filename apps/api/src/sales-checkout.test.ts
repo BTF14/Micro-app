@@ -29,6 +29,7 @@ describe("sales checkout request contract", () => {
       warehouseId,
       currency: "USD",
       manualFxAcknowledged: false,
+      manualFxAcknowledgedRate: null,
       lines: [
         { productId: productA, quantity: "1.250" },
         { productId: productB, quantity: "2.000" },
@@ -47,12 +48,14 @@ describe("sales checkout request contract", () => {
       payments: [{ method: "cash", currency: "USD", amount: "1.0000" }],
     };
     const withoutAck = parseCheckoutInput(base)!;
-    const withAck = parseCheckoutInput({ ...base, manual_fx_acknowledged: true })!;
+    const withAck = parseCheckoutInput({ ...base, manual_fx_acknowledged: true, manual_fx_acknowledged_rate: "500.00000000" })!;
     expect(withoutAck.manualFxAcknowledged).toBe(false);
     expect(withAck.manualFxAcknowledged).toBe(true);
+    expect(withAck.manualFxAcknowledgedRate).toBe("500.00000000");
     await expect(canonicalRequestHash(organizationId, branchId, userId, withoutAck))
       .resolves.not.toBe(await canonicalRequestHash(organizationId, branchId, userId, withAck));
     expect(parseCheckoutInput({ ...base, manual_fx_acknowledged: "yes" })).toBeNull();
+    expect(parseCheckoutInput({ ...base, manual_fx_acknowledged: true })).toBeNull();
   });
 
   it("rejects client-calculated prices, discounts, totals and unknown fields", () => {

@@ -155,3 +155,13 @@ The owner explicitly superseded the earlier pre-implementation AC-7 hold:
 - Implementation on `feat/fx-contingency-pr1-20261117` is authorized immediately. This does not waive AC-7 or authorize merge.
 - AC-6 remains an independent commercial activation gate: `FX_CONTINGENCY_ENABLED` stays absent/false and no production secret/configuration is changed until written accounting/legal approval of the receipt.
 - `CURRENT_STATE.md` and `HANDOFF_NEXT_CHAT.md` are intentionally deferred to the final documentation-close step of this same PR.
+
+
+## Hito de implementación y validación — 2026-11-17
+
+- PR #377 permanece OPEN / Draft sobre main `04d3679189edaab17221f1e8cd425cc68fa53155`; rama `feat/fx-contingency-pr1-20261117`.
+- Implementación y suite completadas en código SHA `7afa4ddb9f4c6fee5ba1bd1bb5629b02c3c0239d`. CI run `44187952802` SUCCESS; 12/12 workflow runs SUCCESS, incluyendo migración/assertions PostgreSQL 18, Wrangler Workers KDF, PG-01..PG-30, checkout, backup/restore y Playwright.
+- La prueba de revocación vs checkout se serializa por locks actor/branch/delegation → BCV → FX. El camino BCV normal no lee ni bloquea tablas FX.
+- AC-7: revisión independiente de diseño previa aceptada como baseline; auditoría independiente completa del artefacto final sigue obligatoria antes del merge. No marcar como cerrada.
+- AC-6: aprobación escrita contable/legal del comprobante no recibida; `FX_CONTINGENCY_ENABLED` permanece ausente/false. No encender ni desplegar.
+- Se actualizaron `CURRENT_STATE.md`, `HANDOFF_NEXT_CHAT.md`, `PROJECT_PLAN.md` y `STATE_JOURNAL.md` en el cierre documental. No se tocó `main`, Neon, Cloudflare ni secretos.

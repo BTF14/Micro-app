@@ -52,6 +52,9 @@ type SaleHeader = {
   total_usd: string;
   total_ves_snapshot: string;
   exchange_rate_snapshot: string;
+  fx_source: 'bcv_official' | 'manual_contingency';
+  fx_authorization_id: string | null;
+  manual_fx_acknowledged_at: string | null;
   created_at: string;
   completed_at: string | null;
 };

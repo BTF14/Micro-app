@@ -869,7 +869,7 @@ REVOKE INSERT, UPDATE, DELETE, TRUNCATE, TRIGGER ON TABLE public.fx_contingency_
 
 
 CREATE FUNCTION public.set_fx_user_pin_credential(
-  p_organization_id uuid, p_user_id uuid, p_kdf_version text,
+  p_organization_id uuid, p_user_id uuid, p_actor_user_id uuid, p_kdf_version text,
   p_iterations integer, p_salt bytea, p_pin_hash bytea
 )
 RETURNS void
@@ -878,6 +878,9 @@ SECURITY DEFINER
 SET search_path = pg_catalog
 AS $set_fx_user_pin_credential$
 BEGIN
+  IF p_actor_user_id IS DISTINCT FROM p_user_id THEN
+    RAISE EXCEPTION 'FX_PIN_SELF_SERVICE_ONLY' USING ERRCODE = '23514';
+  END IF;
   IF p_kdf_version <> 'pbkdf2-sha256-v1'
      OR p_iterations NOT BETWEEN 100000 AND 1000000
      OR pg_catalog.octet_length(p_salt) NOT BETWEEN 16 AND 64
@@ -903,8 +906,8 @@ BEGIN
         updated_at=pg_catalog.clock_timestamp();
 END;
 $set_fx_user_pin_credential$;
-ALTER FUNCTION public.set_fx_user_pin_credential(uuid,uuid,text,integer,bytea,bytea) OWNER TO microapp_migrator;
-REVOKE ALL ON FUNCTION public.set_fx_user_pin_credential(uuid,uuid,text,integer,bytea,bytea) FROM PUBLIC;
+ALTER FUNCTION public.set_fx_user_pin_credential(uuid,uuid,uuid,text,integer,bytea,bytea) OWNER TO microapp_migrator;
+REVOKE ALL ON FUNCTION public.set_fx_user_pin_credential(uuid,uuid,uuid,text,integer,bytea,bytea) FROM PUBLIC;
 GRANT EXECUTE ON FUNCTION public.set_fx_user_pin_credential(uuid,uuid,text,integer,bytea,bytea) TO microapp_runtime;
 
 COMMIT;

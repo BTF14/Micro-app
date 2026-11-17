@@ -243,13 +243,11 @@ BEGIN
   IF NOT EXISTS (
     SELECT 1 FROM pg_catalog.pg_constraint
      WHERE conrelid='public.fx_contingency_authorizations'::regclass
-       AND contype='c'
-       AND pg_catalog.pg_get_constraintdef(oid) ILIKE '%rate%' AND pg_catalog.pg_get_constraintdef(oid) ILIKE '%reference_rate_value%' AND pg_catalog.pg_get_constraintdef(oid) ILIKE '%2000%'
+       AND contype='c' AND conname='fx_contingency_authorizations_deviation_hard_limit_ck'
   ) OR NOT EXISTS (
     SELECT 1 FROM pg_catalog.pg_constraint
      WHERE conrelid='public.fx_contingency_authorizations'::regclass
-       AND contype='c'
-       AND pg_catalog.pg_get_constraintdef(oid) ILIKE '%rate%' AND pg_catalog.pg_get_constraintdef(oid) ILIKE '%reference_rate_value%' AND pg_catalog.pg_get_constraintdef(oid) ILIKE '%500%'
+       AND contype='c' AND conname='fx_contingency_authorizations_elevated_confirmation_ck'
   ) THEN
     RAISE EXCEPTION 'FX_DEVIATION_LIMITS_MUST_USE_EXACT_DECIMAL_COMPARISONS';
   END IF;

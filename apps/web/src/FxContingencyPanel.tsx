@@ -36,6 +36,7 @@ export default function FxContingencyPanel({ organizationId, role }: { organizat
   const [reason, setReason] = useState("");
   const [expiresAt, setExpiresAt] = useState(localExpiry);
   const [elevatedReason, setElevatedReason] = useState("");
+  const [elevatedConfirmed, setElevatedConfirmed] = useState(false);
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
@@ -103,10 +104,11 @@ export default function FxContingencyPanel({ organizationId, role }: { organizat
         method: "POST",
         body: JSON.stringify({
           rate, reason, expires_at: new Date(expiresAt).toISOString(), pin,
-          ...(elevatedReason.trim() ? { elevated_confirmation_reason: elevatedReason.trim() } : {}),
+          elevated_confirmation: elevatedConfirmed,
+          ...(elevatedConfirmed ? { elevated_confirmation_reason: elevatedReason.trim() } : {}),
         }),
       });
-      setPin(""); setRate(""); setReason(""); setElevatedReason("");
+      setPin(""); setRate(""); setReason(""); setElevatedReason(""); setElevatedConfirmed(false);
       setNotice("Autorización creada y registrada."); await refresh();
     } catch (cause) { setError(cause instanceof Error ? cause.message : "No se pudo autorizar la contingencia."); }
     finally { setSaving(false); }
@@ -166,7 +168,8 @@ export default function FxContingencyPanel({ organizationId, role }: { organizat
           <label>Tasa VES por USD<input inputMode="decimal" value={rate} onChange={(event) => setRate(event.target.value)} placeholder="Ej. 450,00000000" /></label>
           <label>Motivo obligatorio<textarea value={reason} onChange={(event) => setReason(event.target.value)} maxLength={1000} /></label>
           <label>Vencimiento (hora local)<input type="datetime-local" value={expiresAt} onChange={(event) => setExpiresAt(event.target.value)} /></label>
-          <label>Confirmación reforzada (>5%, motivo específico)<textarea value={elevatedReason} onChange={(event) => setElevatedReason(event.target.value)} maxLength={500} /></label>
+          <label><input type="checkbox" checked={elevatedConfirmed} onChange={(event) => setElevatedConfirmed(event.target.checked)} /> Confirmo expresamente la desviación superior al 5% (si aplica).</label>
+          {elevatedConfirmed && <label>Motivo específico de confirmación reforzada<textarea value={elevatedReason} onChange={(event) => setElevatedReason(event.target.value)} maxLength={500} /></label>}
           <label>PIN individual<input type="password" inputMode="numeric" autoComplete="off" value={pin} onChange={(event) => setPin(event.target.value)} /></label>
           <button type="button" disabled={saving || !rate || !reason.trim() || pin.length < 8} onClick={() => void authorize()}>Autorizar contingencia</button>
         </div>}

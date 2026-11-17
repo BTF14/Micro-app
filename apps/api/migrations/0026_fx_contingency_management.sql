@@ -821,4 +821,5 @@ GRANT EXECUTE ON FUNCTION public.create_fx_contingency_authorization(uuid,uuid,n
 REVOKE INSERT, UPDATE, DELETE, TRUNCATE, TRIGGER ON TABLE public.fx_contingency_authorizations FROM microapp_runtime;
 REVOKE INSERT, UPDATE, DELETE, TRUNCATE, TRIGGER ON TABLE public.fx_contingency_delegations FROM microapp_runtime;
 
-\nCOMMIT;
+
+COMMIT;

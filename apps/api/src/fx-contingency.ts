@@ -348,10 +348,14 @@ export function registerFxContingencyRoutes(app: Hono<{ Bindings: Bindings }>): 
     if (!UUID.test(org) || !UUID.test(branchId) || (renewalId && !UUID.test(renewalId))) return c.json({ error: "INVALID_RESOURCE" }, 400);
     const guard = mutationGuard(c); if (guard) return guard;
     const token = session(c); if (!token) { clearSessionCookie(c); return c.json({ error: "UNAUTHENTICATED" }, 401); }
-    const body = object(await readJson(c.req.raw), ["rate", "reason", "expires_at", "pin", "elevated_confirmation_reason"]);
+    const body = object(await readJson(c.req.raw), ["rate", "reason", "expires_at", "pin", "elevated_confirmation", "elevated_confirmation_reason"]);
     const rate = body && normalizeRate(body.rate);
     const reason = body && cleanText(body.reason, 1000);
     const expiry = body && typeof body.expires_at === "string" ? new Date(body.expires_at) : null;
+    const elevatedReason = body && body.elevated_confirmation === true ? cleanText(body.elevated_confirmation_reason, 500) : null;
+    if (body && body.elevated_confirmation !== undefined && typeof body.elevated_confirmation !== "boolean") return c.json({ error: "INVALID_ELEVATED_CONFIRMATION" }, 400);
+    if (body && body.elevated_confirmation === true && !elevatedReason) return c.json({ error: "ELEVATED_CONFIRMATION_REASON_REQUIRED" }, 400);
+    if (body && body.elevated_confirmation !== true && body.elevated_confirmation_reason !== undefined) return c.json({ error: "ELEVATED_CONFIRMATION_FLAG_REQUIRED" }, 400);
     if (!body || !rate || !reason || !expiry || !Number.isFinite(expiry.getTime()) ||
         typeof body.pin !== "string" || !/^[0-9]{8,32}$/.test(body.pin)) {
       return c.json({ error: "INVALID_FX_AUTHORIZATION", message: "Revisa tasa, motivo, vencimiento y PIN." }, 400);
@@ -439,7 +443,7 @@ export function registerFxContingencyRoutes(app: Hono<{ Bindings: Bindings }>): 
            ) AS id`,
           [actor.tenant.organizationId, branchId, rate, reference.rows[0].rate,
             reference.rows[0].id, reason, expiry.toISOString(), actor.tenant.userId,
-            actor.tenant.role, body.elevated_confirmation_reason ?? null,
+            actor.tenant.role, elevatedReason,
             renewalId ? "renewed" : "authorized"],
         );
         return { kind: "ok" as const, id: created.rows[0]!.id };

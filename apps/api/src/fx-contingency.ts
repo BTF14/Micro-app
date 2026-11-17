@@ -455,8 +455,11 @@ export function registerFxContingencyRoutes(app: Hono<{ Bindings: Bindings }>): 
             );
             return { kind: "bcv_restored" as const };
           }
-          const expiryTime = new Date(active.rows[0].expires_at).getTime();
-          if (expiryTime <= Date.now()) {
+          const expiryCheck = await tx.query<{ expired: boolean }>(
+            "SELECT pg_catalog.clock_timestamp() >= $1::timestamptz AS expired",
+            [active.rows[0].expires_at],
+          );
+          if (expiryCheck.rows[0]?.expired === true) {
             await tx.query(
               `SELECT public.transition_fx_contingency_authorization(
                  $1::uuid,$2::uuid,$3::uuid,'expired',$4::uuid,$5::text,'authorization expired before renewal'
@@ -474,7 +477,13 @@ export function registerFxContingencyRoutes(app: Hono<{ Bindings: Bindings }>): 
             ORDER BY effective_date DESC,fetched_at DESC LIMIT 1`,
         );
         if (!reference.rows[0]) return { kind: "reference_unavailable" as const };
-        if (renewalId && active.rows[0] && new Date(active.rows[0].expires_at).getTime() > Date.now()) {
+        const activeExpiryCheck = active.rows[0]
+          ? await tx.query<{ expired: boolean }>(
+              "SELECT pg_catalog.clock_timestamp() >= $1::timestamptz AS expired",
+              [active.rows[0].expires_at],
+            )
+          : null;
+        if (renewalId && active.rows[0] && activeExpiryCheck?.rows[0]?.expired === false) {
           await tx.query(
             `SELECT public.transition_fx_contingency_authorization(
                $1::uuid,$2::uuid,$3::uuid,'revoked',$4::uuid,$5::text,'renewed by replacement authorization'

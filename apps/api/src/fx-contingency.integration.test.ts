@@ -227,11 +227,13 @@ describe.skipIf(!safeDb)("FX contingency PostgreSQL integration — PG-01..PG-30
         await admin.query("DELETE FROM public.organizations WHERE id=$1", [organizationId]);
         await admin.query("DELETE FROM public.app_users WHERE id=ANY($1::uuid[])", [[ownerId, adminId, cashierId]]);
       }
+      await admin.query("ALTER TABLE public.fx_contingency_events ENABLE TRIGGER ALL");
       await admin.query("ALTER TABLE public.fx_contingency_events ENABLE ALWAYS TRIGGER fx_contingency_events_10_append_only_rows");
       await admin.query("ALTER TABLE public.fx_contingency_events ENABLE ALWAYS TRIGGER fx_contingency_events_20_append_only_truncate");
       await admin.query("ALTER TABLE public.bcv_sync_success_observations ENABLE TRIGGER ALL");
         await admin.query("ALTER TABLE public.bcv_sync_success_observations ENABLE ALWAYS TRIGGER bcv_sync_success_observations_10_append_only_rows");
       await admin.query("ALTER TABLE public.bcv_sync_success_observations ENABLE ALWAYS TRIGGER bcv_sync_success_observations_20_append_only_truncate");
+      await admin.query("ALTER TABLE public.audit_logs ENABLE TRIGGER ALL");
       await admin.query("ALTER TABLE public.audit_logs ENABLE ALWAYS TRIGGER audit_logs_10_append_only_rows");
       await admin.query("ALTER TABLE public.audit_logs ENABLE ALWAYS TRIGGER audit_logs_20_append_only_truncate");
       if (futureRateIds.length && futureRateCreated) await admin.query("DELETE FROM public.exchange_rates WHERE id=ANY($1::uuid[])", [futureRateIds]);

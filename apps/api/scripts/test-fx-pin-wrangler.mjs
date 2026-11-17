@@ -2,15 +2,18 @@ import { spawn } from "node:child_process";
 
 const port = 8791;
 const origin = `http://127.0.0.1:${port}`;
-const child = spawn("pnpm", ["exec", "wrangler", "dev", "--local", "--ip", "127.0.0.1", "--port", String(port), "--config", "wrangler.fx-pin-test.toml"], {
-  stdio: "ignore",
+const child = spawn("pnpm", ["exec", "wrangler", "dev", "--ip", "127.0.0.1", "--port", String(port), "--config", "wrangler.fx-pin-test.toml"], {
+  stdio: ["ignore", "pipe", "pipe"],
   env: process.env,
 });
+const childOutput = [];
+child.stdout?.on("data", (chunk) => childOutput.push(String(chunk)));
+child.stderr?.on("data", (chunk) => childOutput.push(String(chunk)));
 const timeout = Date.now() + 45_000;
 let ready = false;
 try {
   while (Date.now() < timeout) {
-    if (child.exitCode !== null) throw new Error("Wrangler exited before becoming ready.");
+    if (child.exitCode !== null || child.signalCode !== null) throw new Error(`Wrangler exited before becoming ready (${child.exitCode ?? child.signalCode}).\\n${childOutput.join("")}`);
     try {
       const response = await fetch(origin, { signal: AbortSignal.timeout(500) });
       if (response.status === 404) { ready = true; break; }

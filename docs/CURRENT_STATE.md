@@ -1,7 +1,7 @@
 # Corte vigente — post-merge PR #377 y roadmap BCV no hábil (2026-11-17)
 
 - **Main exacto verificado:** 25e37dc5dcfb18349a6b7f384d109e493a581c3d; PR #377 MERGED en este SHA.
-- **PR #377 / Contingencia Manual BCV:** mergeada técnicamente. **AC-7 CERRADO** para su alcance. **AC-6 ABIERTO**; contingencia manual apagada/no configurada y sin autorización de activación comercial. El merge no equivale a validación fiscal ni a GO de producción.
+- **PR #377 / Contingencia Manual BCV:** mergeada técnicamente; 16/16 check-runs y 11/11 workflow runs SUCCESS en el merge SHA. **AC-7 CERRADO** para su alcance. **AC-6 ABIERTO**; contingencia manual apagada/no configurada y sin autorización de activación comercial. El merge no equivale a validación fiscal ni a GO de producción.
 - **Freeze v1.1:** vigente. Issue #53 OPEN/P0; **PRODUCTION: NOT READY**.
 - **Decisión nueva del propietario (2026-11-17):** preparar spec aditiva 0027 para permitir ventas en fines de semana/feriados usando la fecha efectiva futura publicada por BCV, sin calendario SUDEBAN anual manual. Prioridad: tasa válida de hoy; si no existe, futura más próxima dentro de 5 días solo bajo condiciones diferenciadas de sábado/domingo y feriado entre semana, con sync saludable / sync exitoso del día respectivamente. Si no se demuestra, 409 BCV_RATE_NOT_CURRENT. Conservar operation_date y effective_date por separado. Detalle vinculante: ADR docs/decisions/ADR-20261117-bcv-nonbusiness-day-effective-date.md.
 - **Paso 1 actual:** [PR #378](https://github.com/BTF14/Micro-app/pull/378) OPEN/Draft, rama docs/reconcile-state-and-skill-registry; consultar GitHub para su HEAD exacto y checks. Sin cambios de app ni SQL.

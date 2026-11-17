@@ -139,3 +139,8 @@ Excluded:
 
 - Segundo exact-SHA intento `9847d0bdc63d60928fdb864970623a52ac18fb19`: migración avanzó más allá del parser, pero el GRANT conservaba por error la firma anterior de seis argumentos del helper PIN, mientras la función ya tenía siete (actor explícito). Se corrigió el GRANT a `set_fx_user_pin_credential(uuid,uuid,uuid,text,integer,bytea,bytea)`.
 - Fix commit: `ba27538b4105c297e8429426a346eee06fe553f8`. Se requiere otra ejecución exact-SHA; no se afirma aún que el migration runner esté verde.
+
+
+- Tercer exact-SHA run `ce0a01d664738247ac4588e4cb220f0ddf524ef1`: **migration-runner validation pasó**, incluida la aplicación de 0026. El job de contrato managed-owner falló porque `scripts/tests/test_managed_role_membership.sh` aún esperaba 25 migraciones y solo ejecutaba assertions hasta 0025.
+- Actualizado el contrato CI a 26 migraciones y añadido `0026_fx_contingency_management.assertions.sql` tanto en la pasada principal como en la verificación positiva final.
+- Fix commit: `f7b886b28813fd3befc56d078559c69cc6c0338d`. Requiere nuevo CI exact-SHA.

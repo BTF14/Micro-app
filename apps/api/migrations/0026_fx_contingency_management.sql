@@ -63,6 +63,7 @@ CREATE TABLE public.fx_contingency_authorizations (
   starts_at timestamptz NOT NULL DEFAULT pg_catalog.clock_timestamp(),
   expires_at timestamptz NOT NULL,
   authorized_by_user_id uuid NOT NULL,
+  authorized_by_role text NOT NULL CHECK (authorized_by_role IN ('owner','admin')),
   elevated_confirmation_at timestamptz,
   elevated_confirmation_reason text,
   status text NOT NULL DEFAULT 'active'
@@ -640,21 +641,43 @@ BEGIN
   IF NOT FOUND OR auth_row.status <> 'active' THEN
     RAISE EXCEPTION 'FX_AUTHORIZATION_NOT_ACTIVE' USING ERRCODE = '23514';
   END IF;
-  IF NOT EXISTS (
-    SELECT 1 FROM public.organization_members member
-    JOIN public.app_users actor ON actor.id = member.user_id AND actor.is_active
-    JOIN public.organizations org ON org.id = member.organization_id AND org.is_active
-    WHERE member.organization_id = p_organization_id AND member.user_id = p_actor_user_id
-      AND member.is_active AND member.role = p_actor_role
-  ) THEN RAISE EXCEPTION 'FX_TRANSITION_ACTOR_INVALID' USING ERRCODE = '23514'; END IF;
-  IF p_actor_role = 'admin' AND NOT EXISTS (
-    SELECT 1 FROM public.branch_memberships bm
-    JOIN public.fx_contingency_delegations d
-      ON d.organization_id = bm.organization_id AND d.branch_id = bm.branch_id
-     AND d.user_id = bm.user_id AND d.status = 'active'
-    WHERE bm.organization_id = p_organization_id AND bm.branch_id = p_branch_id
-      AND bm.user_id = p_actor_user_id AND bm.is_active
-  ) THEN RAISE EXCEPTION 'FX_ADMIN_DELEGATION_REQUIRED' USING ERRCODE = '23514'; END IF;
+  IF p_new_status IN ('expired','bcv_restored') THEN
+    IF p_actor_user_id IS DISTINCT FROM auth_row.authorized_by_user_id
+      OR p_actor_role IS DISTINCT FROM auth_row.authorized_by_role THEN
+      RAISE EXCEPTION 'FX_SYSTEM_TRANSITION_ACTOR_INVALID' USING ERRCODE = '23514';
+    END IF;
+    IF p_new_status = 'expired' AND pg_catalog.clock_timestamp() < auth_row.expires_at THEN
+      RAISE EXCEPTION 'FX_AUTHORIZATION_NOT_EXPIRED' USING ERRCODE = '23514';
+    END IF;
+    IF p_new_status = 'bcv_restored' AND NOT EXISTS (
+      SELECT 1 FROM public.bcv_sync_success_observations obs
+       WHERE obs.observed_at > auth_row.starts_at
+         AND obs.last_outcome IN ('inserted','unchanged')
+         AND obs.last_error_code IS NULL
+         AND obs.last_effective_date = (pg_catalog.clock_timestamp() AT TIME ZONE 'America/Caracas')::date
+         AND obs.validation_status = 'valid'
+         AND ((obs.last_outcome = 'inserted' AND obs.rate_fetched_at > auth_row.starts_at)
+           OR obs.last_outcome = 'unchanged')
+    ) THEN
+      RAISE EXCEPTION 'FX_BCV_RECOVERY_EVIDENCE_MISSING' USING ERRCODE = '23514';
+    END IF;
+  ELSE
+    IF NOT EXISTS (
+      SELECT 1 FROM public.organization_members member
+      JOIN public.app_users actor ON actor.id = member.user_id AND actor.is_active
+      JOIN public.organizations org ON org.id = member.organization_id AND org.is_active
+      WHERE member.organization_id = p_organization_id AND member.user_id = p_actor_user_id
+        AND member.is_active AND member.role = p_actor_role
+    ) THEN RAISE EXCEPTION 'FX_TRANSITION_ACTOR_INVALID' USING ERRCODE = '23514'; END IF;
+    IF p_actor_role = 'admin' AND NOT EXISTS (
+      SELECT 1 FROM public.branch_memberships bm
+      JOIN public.fx_contingency_delegations d
+        ON d.organization_id = bm.organization_id AND d.branch_id = bm.branch_id
+       AND d.user_id = bm.user_id AND d.status = 'active'
+      WHERE bm.organization_id = p_organization_id AND bm.branch_id = p_branch_id
+        AND bm.user_id = p_actor_user_id AND bm.is_active
+    ) THEN RAISE EXCEPTION 'FX_ADMIN_DELEGATION_REQUIRED' USING ERRCODE = '23514'; END IF;
+  END IF;
   UPDATE public.fx_contingency_authorizations
      SET status = p_new_status,
          revoked_at = CASE WHEN p_new_status = 'revoked' THEN pg_catalog.clock_timestamp() ELSE NULL END
@@ -819,12 +842,12 @@ BEGIN
   INSERT INTO public.fx_contingency_authorizations (
     organization_id, branch_id, rate, reference_rate_value,
     reference_exchange_rate_id, deviation_bps, reason, starts_at,
-    expires_at, authorized_by_user_id, elevated_confirmation_at,
+    expires_at, authorized_by_user_id, authorized_by_role, elevated_confirmation_at,
     elevated_confirmation_reason, status
   ) VALUES (
     p_organization_id, p_branch_id, p_rate, p_reference_rate_value,
     p_reference_exchange_rate_id, calculated_bps, p_reason, starts_time,
-    p_expires_at, p_actor_user_id,
+    p_expires_at, p_actor_user_id, p_actor_role,
     CASE WHEN calculated_bps > 500 THEN starts_time ELSE NULL END,
     p_elevated_confirmation_reason, 'active'
   ) RETURNING id INTO authorization_id;

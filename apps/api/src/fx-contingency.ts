@@ -370,8 +370,8 @@ export function registerFxContingencyRoutes(app: Hono<{ Bindings: Bindings }>): 
                   AND a.starts_at <= pg_catalog.clock_timestamp()
                   AND a.expires_at > pg_catalog.clock_timestamp()
                 ORDER BY a.starts_at DESC LIMIT 1`
-            : `SELECT a.id,a.rate::text,a.reference_rate_value::text,a.reference_effective_date,
-                      a.deviation_bps,a.reason,a.starts_at,a.expires_at,a.status,
+            : `SELECT a.id,a.rate::text,a.reference_rate_value::text,a.reference_exchange_rate_id,
+                      a.reference_effective_date,a.deviation_bps,a.reason,a.starts_at,a.expires_at,a.status,
                       a.authorized_by_user_id,a.elevated_confirmation_at
                  FROM public.fx_contingency_authorizations a
                 WHERE a.organization_id=$1 AND a.branch_id=$2 AND a.status='active'

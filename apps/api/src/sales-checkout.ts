@@ -32,7 +32,7 @@ type PaymentMethod = (typeof PAYMENT_METHODS)[number];
 
 type CheckoutLine = { productId: string; quantity: string };
 type CheckoutPayment = { method: PaymentMethod; currency: Currency; amount: string; reference: string | null };
-type CheckoutInput = { warehouseId: string; lines: CheckoutLine[]; payments: CheckoutPayment[]; currency: Currency };
+type CheckoutInput = { warehouseId: string; lines: CheckoutLine[]; payments: CheckoutPayment[]; currency: Currency; manualFxAcknowledged: boolean };
 
 type ProductRow = {
   id: string;
@@ -143,7 +143,8 @@ function boundedText(value: unknown, maxLength: number): string | null {
 export function parseCheckoutInput(value: unknown): CheckoutInput | null {
   if (!value || typeof value !== "object" || Array.isArray(value)) return null;
   const body = value as Record<string, unknown>;
-  if (Object.keys(body).some((key) => !["warehouse_id", "lines", "payments"].includes(key))) return null;
+  if (Object.keys(body).some((key) => !["warehouse_id", "lines", "payments", "manual_fx_acknowledged"].includes(key))) return null;
+  if (body.manual_fx_acknowledged !== undefined && typeof body.manual_fx_acknowledged !== "boolean") return null;
   if (typeof body.warehouse_id !== "string" || !UUID_PATTERN.test(body.warehouse_id)) return null;
   if (!Array.isArray(body.lines) || body.lines.length < 1 || body.lines.length > MAX_LINES) return null;
   if (!Array.isArray(body.payments) || body.payments.length < 1 || body.payments.length > MAX_PAYMENTS) return null;
@@ -212,7 +213,7 @@ export function parseCheckoutInput(value: unknown): CheckoutInput | null {
     return null;
   }
 
-  return { warehouseId: body.warehouse_id.toLowerCase(), lines, payments, currency };
+  return { warehouseId: body.warehouse_id.toLowerCase(), lines, payments, currency, manualFxAcknowledged: body.manual_fx_acknowledged === true };
 }
 
 async function sha256Hex(value: string): Promise<string> {
@@ -234,6 +235,7 @@ export async function canonicalRequestHash(
     currency: input.currency,
     lines: input.lines,
     payments: input.payments,
+    manualFxAcknowledged: input.manualFxAcknowledged,
   }));
 }
 
@@ -291,7 +293,7 @@ async function loadSaleResponse(
   const header = await tx.query<SaleHeader>(
     `SELECT id, sale_number::text, status, settlement_currency,
             subtotal_usd::text, total_usd::text, total_ves_snapshot::text,
-            exchange_rate_snapshot::text, created_at::text, completed_at::text
+            exchange_rate_snapshot::text, fx_source, fx_authorization_id,\n            manual_fx_acknowledged_at::text, created_at::text, completed_at::text
        FROM public.sales
       WHERE organization_id = $1 AND id = $2`,
     [organizationId, saleId],
@@ -322,7 +324,12 @@ async function loadSaleResponse(
     subtotal_usd: sale.subtotal_usd,
     total_usd: sale.total_usd,
     total_ves: sale.total_ves_snapshot,
-    bcv_rate: sale.exchange_rate_snapshot,
+    bcv_rate: sale.fx_source === 'bcv_official' ? sale.exchange_rate_snapshot : null,
+    fx_rate: sale.exchange_rate_snapshot,
+    fx_source: sale.fx_source,
+    fx_authorization_id: sale.fx_authorization_id,
+    manual_fx_acknowledged_at: sale.manual_fx_acknowledged_at,
+    fx_receipt_label: sale.fx_source === 'manual_contingency' ? 'Tasa manual de contingencia (no oficial BCV)' : 'Tasa BCV',
     created_at: sale.created_at,
     completed_at: sale.completed_at,
     lines: lines.rows,

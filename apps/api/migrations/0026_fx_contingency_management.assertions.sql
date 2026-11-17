@@ -87,6 +87,32 @@ BEGIN
     )
   THEN RAISE EXCEPTION 'BCV_SALE_GUARD_MUST_BE_TRIGGER_ONLY'; END IF;
 
+  IF pg_catalog.strpos(function_definition, 'FROM public.bcv_sync_state') = 0
+    OR pg_catalog.strpos(function_definition, 'FROM public.fx_contingency_authorizations auth') = 0
+    OR pg_catalog.strpos(function_definition, 'operation_time := pg_catalog.clock_timestamp()') = 0
+    OR pg_catalog.strpos(function_definition, 'FROM public.bcv_sync_state')
+       > pg_catalog.strpos(function_definition, 'FROM public.fx_contingency_authorizations auth')
+    OR pg_catalog.strpos(function_definition, 'FROM public.fx_contingency_authorizations auth')
+       > pg_catalog.strpos(function_definition, 'operation_time := pg_catalog.clock_timestamp()')
+  THEN RAISE EXCEPTION 'MANUAL_FX_CLOCK_MUST_BE_CAPTURED_AFTER_BCV_AND_FX_LOCKS'; END IF;
+
+  IF pg_catalog.strpos(function_definition, 'reference_effective_date')
+     = 0 THEN RAISE EXCEPTION 'FX_REFERENCE_EFFECTIVE_DATE_SNAPSHOT_MISSING'; END IF;
+
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_catalog.pg_constraint
+     WHERE conrelid='public.fx_contingency_authorizations'::regclass
+       AND contype='c'
+       AND pg_catalog.pg_get_constraintdef(oid) ILIKE '%* 2000%'
+  ) OR NOT EXISTS (
+    SELECT 1 FROM pg_catalog.pg_constraint
+     WHERE conrelid='public.fx_contingency_authorizations'::regclass
+       AND contype='c'
+       AND pg_catalog.pg_get_constraintdef(oid) ILIKE '%* 500%'
+  ) THEN
+    RAISE EXCEPTION 'FX_DEVIATION_LIMITS_MUST_USE_EXACT_DECIMAL_COMPARISONS';
+  END IF;
+
   SELECT p.oid INTO function_oid
     FROM pg_catalog.pg_proc p
    WHERE p.oid = 'public.capture_bcv_sync_success_observation()'::regprocedure

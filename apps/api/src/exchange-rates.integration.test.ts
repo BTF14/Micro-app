@@ -123,7 +123,7 @@ const source = "BCV_OFFICIAL_HTML_V1";
       scheduled: (controller: { cron: string }, env: { APP_ENV: "production" | "preview"; DATABASE_URL_BCV_SYNC?: string; BCV_SYNC_ENABLED?: string }) => Promise<void>;
     };
 
-    await cleanupClient.query("DELETE FROM public.exchange_rates WHERE source = $1", [source]);
+    await clearExchangeRateFixture(cleanupClient, source);
     vi.stubGlobal("fetch", fetchMock);
     try {
       await scheduledApp.scheduled({ cron: "0 22 * * MON-FRI" }, { APP_ENV: "preview" });
@@ -188,7 +188,7 @@ const source = "BCV_OFFICIAL_HTML_V1";
       });
     } finally {
       vi.unstubAllGlobals();
-      await cleanupClient.query("DELETE FROM public.exchange_rates WHERE source = $1", [source]);
+      await clearExchangeRateFixture(cleanupClient, source);
     }
   });
 
@@ -264,7 +264,7 @@ const source = "BCV_OFFICIAL_HTML_V1";
       });
     } finally {
       vi.unstubAllGlobals();
-      await cleanupClient.query("DELETE FROM public.exchange_rates WHERE source = $1", [source]);
+      await clearExchangeRateFixture(cleanupClient, source);
     }
   }, 15_000);
 
@@ -354,7 +354,7 @@ const source = "BCV_OFFICIAL_HTML_V1";
     const today = dates.rows[0]!.today;
     const rate = "894.88760000";
 
-    await cleanupClient.query("DELETE FROM public.exchange_rates WHERE source = $1", [source]);
+    await clearExchangeRateFixture(cleanupClient, source);
     await expect(persistBcvOfficialRate(databaseClient, {
       rate,
       effectiveDate: today,
@@ -390,7 +390,7 @@ const source = "BCV_OFFICIAL_HTML_V1";
     const today = await cleanupClient!.query<{ today: string }>(
       "SELECT (now() AT TIME ZONE 'America/Caracas')::date::text AS today",
     );
-    await cleanupClient!.query("DELETE FROM public.exchange_rates WHERE source = $1", [source]);
+    await clearExchangeRateFixture(cleanupClient!, source);
     await expect(persistBcvOfficialRate(runtimeClient as unknown as DatabaseClient, {
       rate: "897.00000000",
       effectiveDate: today.rows[0]!.today,

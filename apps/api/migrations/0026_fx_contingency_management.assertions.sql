@@ -156,7 +156,8 @@ BEGIN
   FOREACH function_oid IN ARRAY ARRAY[
     'public.lock_active_fx_contingency_authorization(uuid,uuid)'::regprocedure::oid,
     'public.lock_branch_fx_contingency_authorization(uuid,uuid)'::regprocedure::oid,
-    'public.lock_active_fx_contingency_authorization_for_transition(uuid,uuid)'::regprocedure::oid
+    'public.lock_active_fx_contingency_authorization_for_transition(uuid,uuid)'::regprocedure::oid,
+    'public.transition_fx_contingency_authorization(uuid,uuid,uuid,text,uuid,text,text)'::regprocedure::oid
   ] LOOP
     SELECT pg_catalog.pg_get_userbyid(p.proowner),p.prosecdef
       INTO function_owner,function_security_definer

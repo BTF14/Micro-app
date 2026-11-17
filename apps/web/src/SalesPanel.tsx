@@ -97,8 +97,8 @@ export default function SalesPanel({
   const activeManualFx = fxState?.commercial_enabled === true && fxState.authorization &&
     new Date(fxState.authorization.expires_at).getTime() > Date.now() ? fxState.authorization : null;
   const usingManualFx = !bcvAvailable && activeManualFx !== null;
-  const manualFxAcknowledged = usingManualFx && manualFxAcknowledgedRate === activeManualFx.rate;
-  const effectiveRate = bcvAvailable ? exchangeRate : usingManualFx ? activeManualFx.rate : null;
+  const manualFxAcknowledged = activeManualFx !== null && usingManualFx && manualFxAcknowledgedRate === activeManualFx.rate;
+  const effectiveRate = bcvAvailable ? exchangeRate : activeManualFx !== null && usingManualFx ? activeManualFx.rate : null;
   const canConvert = effectiveRate !== null;
 
   const computed = useMemo(() => {

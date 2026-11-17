@@ -809,27 +809,31 @@ BEGIN
      AND p_elevated_confirmation_reason IS NOT NULL THEN
     RAISE EXCEPTION 'FX_ELEVATED_CONFIRMATION_NOT_APPLICABLE' USING ERRCODE = '23514';
   END IF;
-  IF NOT EXISTS (
-    SELECT 1 FROM public.organizations org
+  PERFORM 1
+    FROM public.organizations org
     JOIN public.organization_members member
-      ON member.organization_id = org.id AND member.is_active
-    JOIN public.app_users actor ON actor.id = member.user_id AND actor.is_active
-    WHERE org.id = p_organization_id AND org.is_active
-      AND member.user_id = p_actor_user_id AND member.role = p_actor_role
-  ) THEN RAISE EXCEPTION 'FX_AUTHORIZATION_ACTOR_INVALID' USING ERRCODE = '23514'; END IF;
-  IF NOT EXISTS (
-    SELECT 1 FROM public.branches branch
-     WHERE branch.organization_id = p_organization_id AND branch.id = p_branch_id
-       AND branch.is_active
-  ) THEN RAISE EXCEPTION 'FX_AUTHORIZATION_BRANCH_INACTIVE' USING ERRCODE = '23514'; END IF;
-  IF p_actor_role = 'admin' AND NOT EXISTS (
-    SELECT 1 FROM public.branch_memberships bm
-    JOIN public.fx_contingency_delegations d
-      ON d.organization_id = bm.organization_id AND d.branch_id = bm.branch_id
-     AND d.user_id = bm.user_id AND d.status = 'active'
-    WHERE bm.organization_id = p_organization_id AND bm.branch_id = p_branch_id
-      AND bm.user_id = p_actor_user_id AND bm.is_active
-  ) THEN RAISE EXCEPTION 'FX_ADMIN_DELEGATION_REQUIRED' USING ERRCODE = '23514'; END IF;
+      ON member.organization_id = org.id AND member.user_id = p_actor_user_id
+    JOIN public.app_users actor ON actor.id = member.user_id
+   WHERE org.id = p_organization_id AND org.is_active
+     AND member.is_active AND member.role = p_actor_role AND actor.is_active
+   FOR SHARE OF org, member, actor;
+  IF NOT FOUND THEN RAISE EXCEPTION 'FX_AUTHORIZATION_ACTOR_INVALID' USING ERRCODE = '23514'; END IF;
+  PERFORM 1 FROM public.branches branch
+   WHERE branch.organization_id = p_organization_id AND branch.id = p_branch_id
+     AND branch.is_active
+   FOR SHARE;
+  IF NOT FOUND THEN RAISE EXCEPTION 'FX_AUTHORIZATION_BRANCH_INACTIVE' USING ERRCODE = '23514'; END IF;
+  IF p_actor_role = 'admin' THEN
+    PERFORM 1
+      FROM public.branch_memberships bm
+      JOIN public.fx_contingency_delegations d
+        ON d.organization_id = bm.organization_id AND d.branch_id = bm.branch_id
+       AND d.user_id = bm.user_id AND d.status = 'active'
+     WHERE bm.organization_id = p_organization_id AND bm.branch_id = p_branch_id
+       AND bm.user_id = p_actor_user_id AND bm.is_active
+     FOR SHARE OF bm, d;
+    IF NOT FOUND THEN RAISE EXCEPTION 'FX_ADMIN_DELEGATION_REQUIRED' USING ERRCODE = '23514'; END IF;
+  END IF;
   PERFORM 1 FROM public.bcv_sync_state state
    WHERE state.singleton = true
    FOR SHARE;

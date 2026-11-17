@@ -378,7 +378,6 @@ BEGIN
     SELECT 1 FROM public.organization_members member
      WHERE member.organization_id = p_organization_id
        AND member.user_id = p_actor_user_id
-       AND member.role = p_actor_role
   ) THEN
     RAISE EXCEPTION 'FX_EVENT_ACTOR_SCOPE_INVALID' USING ERRCODE = '23514';
   END IF;

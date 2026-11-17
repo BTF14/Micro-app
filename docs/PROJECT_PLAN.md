@@ -1,3 +1,36 @@
+# Plan vigente — reconciliación post-PR #377 y decisión BCV no hábil (2026-11-17)
+
+- **Main verificado:** 25e37dc5dcfb18349a6b7f384d109e493a581c3d; PR #377 MERGED en este SHA. La verificación post-merge reportada para el merge SHA es 14/14 checks SUCCESS; revalidar cualquier HEAD nuevo de PR/commit, no heredar checks.
+- **PR #377:** implementación de contingencia manual integrada. **AC-7 cerrado** para el alcance de PR1. **AC-6 abierto**: la contingencia manual continúa apagada/no configurada y no se habilita comercialmente sin validación profesional escrita. No confundir merge técnico con autorización comercial.
+- **Freeze v1.1:** vigente. Issue #53 permanece OPEN/P0; **PRODUCTION: NOT READY**. No declarar GO/READY por CI verde.
+- **Paso 1 (esta PR):** reconciliación documental + registro curado de recursos/skills. Sin cambios en apps/**, workflows, SQL/migraciones, infraestructura, Neon, Cloudflare, secretos, datos reales ni billing.
+- **Decisión BCV 2026-11-17:** el propietario aprobó preparar spec aditiva 0027 para ventas en fines de semana/feriados usando la menor fecha efectiva BCV futura publicada, bajo reglas fail-closed y sin calendario SUDEBAN anual manual. Ver ADR decisions/ADR-20261117-bcv-nonbusiness-day-effective-date.md. Todavía no hay implementación.
+- **Estado de gates Nivel 1:** obligatorio reconciliar y cerrar con evidencia antes de reanudar nueva lógica comercial B1. La documentación histórica de seguridad conserva controles parcialmente verificados; siguen sin poder darse por cerrados RPO/RTO operativos, entrega/ACK de alertas, coste recurrente total USD 0 y GO/NO-GO formal sin evidencia específica. Consultar el bloque vigente de SECURITY_ROADMAP.md.
+- **No se autorizó** merge automático de esta PR ni despliegue manual. Issue #53 no se cierra.
+
+## Orden de trabajo aprobado
+
+1. **Paso 1 — Docs/Tooling:** reconciliar estado, roadmap, handoff y registro curado de recursos. Crear perfiles propios solo cuando se acerque el carril que los necesita.
+2. **Carril A (0 SQL) + spec 0027 BCV:** UX móvil POS, helpers decimales y errores/cursors; en paralelo, especificar la política BCV de días no hábiles sin calendario manual. Carril A no introduce SQL ni lógica comercial nueva.
+3. **Cierre/reconciliación de Nivel 1 + implementación 0027:** resolver los gates Nivel 1 con evidencia y completar la especificación, implementación aditiva y baterías de 0027 antes de B1. No alterar migraciones históricas 0022/0026.
+4. **inventory-accounting-review antes de Carril B1:** crear agente/skill con QA anti-puntos ciegos e invariantes contables-operativas.
+5. **Carril B1 (0028+):** quantity_mode, snapshots de sale_items y modelo de inventario aprobado, con pruebas de reconciliación.
+6. **Hardening PR:** revisión integrada de seguridad, permisos, concurrencia, aislamiento y regresiones sobre B1 + 0027; controles críticos no se posponen a preproducción.
+7. **PR 2 CSV:** después de estabilizar el modelo de inventario y sus invariantes.
+8. **PR 3 Mobile Scanner / Carril B2:** secuenciar según dependencias reales del alcance B2; no congelar contratos de scanner antes de estabilizar los de inventario.
+9. **PR 4 Cierres/Reportes/Exportación:** después de ventas, pagos, stock y turnos reconciliados.
+10. **AC-6 + ve-fx-compliance-review + preproducción:** revisión de fuentes primarias, vigencia de SNAT/2026/00093 (entrada en vigor prevista abril 2027), comprobante y obligaciones fiscales. Sin dictamen profesional, AC-6 no se cierra ni se activa contingencia manual. Auditoría integral pre-prod y resolución de Issue #53 son gates globales.
+
+## Regla de QA monetario y de inventario
+
+Carril A debe extraer helpers decimales puros con tests de límites y redondeo explícito; nada de float para importes/tasas/cantidades. Antes de B1 se crea inventory-accounting-review, que prueba invariantes independientemente del código productivo y usa pruebas extremas + mutaciones deliberadas en dinero, stock y tenant/sucursal, con herramientas gratuitas y PostgreSQL efímero. El criterio de éxito es que las pruebas detecten las mutaciones críticas, no solo que el suite pase.
+
+---
+
+> **HISTORIAL ANTERIOR:** el contenido que sigue se conserva como registro de decisiones y estados previos; cualquier orden/estado contradictorio queda supersedido por este bloque y por el estado vivo de GitHub.
+
+---
+
 # Plan vigente — PR 1 implementada en Draft, gates pendientes (2026-11-17)
 
 - **Main base:** `04d3679189edaab17221f1e8cd425cc68fa53155`.

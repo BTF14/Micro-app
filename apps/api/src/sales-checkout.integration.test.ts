@@ -89,7 +89,7 @@ describe.skipIf(!isDisposableCheckoutDatabase || !isDisposableBcvProducerDatabas
     pathOrganizationId = organizationId,
     pathBranchId = branchId,
     clientIp = "203.0.113.10",
-    fxEnabled = true,
+    fxEnabled = false,
   ): Promise<Response> {
     return app.fetch(new Request(
       "https://api.example/api/orgs/" + pathOrganizationId + "/branches/" + pathBranchId + "/checkout",
@@ -1218,21 +1218,21 @@ describe.skipIf(!isDisposableCheckoutDatabase || !isDisposableBcvProducerDatabas
     }, key + "-ac6-off", organizationId, branchId, "203.0.113.10", false);
     expect(disabledCommercial.status).toBe(409);
     expect((await disabledCommercial.json() as { error: string }).error).toBe("FX_RATE_NOT_AVAILABLE");
-    const missingAck = await request({ ...base, manual_fx_acknowledged: false }, key);
+    const missingAck = await request({ ...base, manual_fx_acknowledged: false }, key, organizationId, branchId, "203.0.113.10", true);
     expect(missingAck.status).toBe(409);
     expect((await missingAck.json() as { error: string }).error).toBe("MANUAL_FX_ACK_REQUIRED");
     expect((await readBalance()).on_hand_quantity).toBe("5.000");
 
     const mismatchedAck = await request({
       ...base, manual_fx_acknowledged: true, manual_fx_acknowledged_rate: "104.00000001",
-    }, key + "-mismatch");
+    }, key + "-mismatch", organizationId, branchId, "203.0.113.10", true);
     expect(mismatchedAck.status).toBe(409);
     expect((await mismatchedAck.json() as { error: string }).error).toBe("MANUAL_FX_ACK_REQUIRED");
 
     const acknowledgedBody = {
       ...base, manual_fx_acknowledged: true, manual_fx_acknowledged_rate: "104.00000000",
     };
-    const response = await request(acknowledgedBody, key);
+    const response = await request(acknowledgedBody, key, organizationId, branchId, "203.0.113.10", true);
     expect(response.status).toBe(201);
     const sale = await response.json() as {
       id: string; fx_source: string; fx_rate: string; bcv_rate: string | null;
@@ -1259,7 +1259,7 @@ describe.skipIf(!isDisposableCheckoutDatabase || !isDisposableBcvProducerDatabas
       "SELECT public.transition_fx_contingency_authorization($1::uuid,$2::uuid,$3::uuid,'revoked',$4::uuid,'owner','integration replay after revocation')",
       [organizationId, branchId, authorizationId, fxOwnerId],
     );
-    const replay = await request(acknowledgedBody, key);
+    const replay = await request(acknowledgedBody, key, organizationId, branchId, "203.0.113.10", true);
     expect(replay.status).toBe(200);
     expect((await replay.json() as { id: string }).id).toBe(sale.id);
     expect((await readBalance()).on_hand_quantity).toBe("4.000");
@@ -1280,7 +1280,7 @@ describe.skipIf(!isDisposableCheckoutDatabase || !isDisposableBcvProducerDatabas
         ...checkoutBody("1.000", "23.8500"),
         manual_fx_acknowledged: true,
         manual_fx_acknowledged_rate: "104.00000000",
-      }, "fx-revocation-race-" + crypto.randomUUID());
+      }, "fx-revocation-race-" + crypto.randomUUID(), organizationId, branchId, "203.0.113.10", true);
       await new Promise((resolve) => setTimeout(resolve, 100));
       await client.query("COMMIT");
       const response = await responsePromise;
@@ -1304,7 +1304,7 @@ describe.skipIf(!isDisposableCheckoutDatabase || !isDisposableBcvProducerDatabas
       ...checkoutBody("1.000", "23.8500"),
       manual_fx_acknowledged: true,
       manual_fx_acknowledged_rate: "104.00000000",
-    }, "bcv-restored-inserted-" + crypto.randomUUID());
+    }, "bcv-restored-inserted-" + crypto.randomUUID(), organizationId, branchId, "203.0.113.10", true);
     expect(response.status).toBe(409);
     expect((await response.json() as { error: string }).error).toBe("BCV_RATE_RESTORED");
     const status = await client.query("SELECT status FROM public.fx_contingency_authorizations WHERE id=$1", [authorizationId]);
@@ -1336,7 +1336,7 @@ describe.skipIf(!isDisposableCheckoutDatabase || !isDisposableBcvProducerDatabas
       ...checkoutBody("1.000", "23.8500"),
       manual_fx_acknowledged: true,
       manual_fx_acknowledged_rate: "104.00000000",
-    }, "bcv-restored-unchanged-" + crypto.randomUUID());
+    }, "bcv-restored-unchanged-" + crypto.randomUUID(), organizationId, branchId, "203.0.113.10", true);
     expect(response.status).toBe(409);
     expect((await response.json() as { error: string }).error).toBe("BCV_RATE_RESTORED");
     const status = await client.query("SELECT status FROM public.fx_contingency_authorizations WHERE id=$1", [authorizationId]);
@@ -1376,7 +1376,7 @@ describe.skipIf(!isDisposableCheckoutDatabase || !isDisposableBcvProducerDatabas
       ...checkoutBody("1.000", "23.8500"),
       manual_fx_acknowledged: true,
       manual_fx_acknowledged_rate: "104.00000000",
-    }, "future-bcv-" + crypto.randomUUID());
+    }, "future-bcv-" + crypto.randomUUID(), organizationId, branchId, "203.0.113.10", true);
     expect(response.status).toBe(201);
     const sale = await response.json() as { fx_source: string; fx_authorization_id: string };
     expect(sale.fx_source).toBe("manual_contingency");

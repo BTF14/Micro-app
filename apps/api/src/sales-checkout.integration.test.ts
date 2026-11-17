@@ -1266,6 +1266,33 @@ describe.skipIf(!isDisposableCheckoutDatabase || !isDisposableBcvProducerDatabas
   });
 
 
+  it("serializes a revocation that wins the FX lock before a manual checkout", async () => {
+    const before = await readBalance();
+    const authorizationId = await createFxAuthorization();
+    await client.query("BEGIN");
+    let responsePromise: Promise<Response> | null = null;
+    try {
+      await client.query(
+        "SELECT public.transition_fx_contingency_authorization($1::uuid,$2::uuid,$3::uuid,'revoked',$4::uuid,'owner','revoke wins checkout lock race')",
+        [organizationId, branchId, authorizationId, fxOwnerId],
+      );
+      responsePromise = request({
+        ...checkoutBody("1.000", "23.8500"),
+        manual_fx_acknowledged: true,
+        manual_fx_acknowledged_rate: "104.00000000",
+      }, "fx-revocation-race-" + crypto.randomUUID());
+      await new Promise((resolve) => setTimeout(resolve, 100));
+      await client.query("COMMIT");
+      const response = await responsePromise;
+      expect(response.status).toBe(409);
+      expect((await response.json() as { error: string }).error).toBe("FX_RATE_NOT_AVAILABLE");
+      expect(await readBalance()).toEqual(before);
+    } catch (error) {
+      await client.query("ROLLBACK").catch(() => undefined);
+      throw error;
+    }
+  });
+
   it("commits bcv_restored in a separate transaction after the checkout rollback for inserted recovery", async () => {
     await seedBalance("5.000");
     const authorizationId = await createFxAuthorization();

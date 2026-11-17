@@ -1,15 +1,17 @@
-# Corte vigente — PR 1 Contingencia Manual BCV implementada (2026-11-17)
+# Corte vigente — PR 1 Contingencia Manual BCV — AC-7 cerrado (2026-11-17)
 
-- **Main exacto:** `04d3679189edaab17221f1e8cd425cc68fa53155` (verificado en vivo; base de PR #377).
-- **PR 1:** [#377](https://github.com/BTF14/Micro-app/pull/377), OPEN / Draft deliberado; rama `feat/fx-contingency-pr1-20261117`; SHA de implementación de código `7afa4ddb9f4c6fee5ba1bd1bb5629b02c3c0239d`; los commits posteriores son de cierre documental. Consultar el HEAD vivo del PR #377 para el SHA documental más reciente.
-- **Implementación:** migración aditiva `0026_fx_contingency_management.sql` + assertions; PIN/KDF, rate limits, delegaciones, autorizaciones/eventos append-only, observaciones BCV inmutables, triggers de checkout, API Hono y UI mínima. Se preservó `0022_bcv_dedicated_producer_role.sql`.
-- **Detalles críticos:** `clock_timestamp()` después de los locks BCV/FX; `observed_at > starts_at` sin exigir que `last_success_at` avance; referencia BCV congelada por ID/valor/fecha; límites decimales exactos 5%/20%; ACK de caja vinculado a `sales.created_by`; respuesta manual nunca etiqueta tasa como BCV.
-- **Verificación exact-HEAD:** CI run [#44187952802](https://github.com/BTF14/Micro-app/actions/runs/44187952802) SUCCESS; 12/12 workflow runs SUCCESS en el SHA `7afa4ddb9f4c6fee5ba1bd1bb5629b02c3c0239d`. Incluye migración/assertions PostgreSQL 18, Wrangler Workers KDF, PG-01..PG-30, checkout PostgreSQL, backup/restore, Playwright E2E, Semgrep, Security scan y secret-history scan.
-- **AC-7:** la revisión independiente de diseño ya realizada permanece como base. La auditoría independiente completa del artefacto real (0026, triggers/ACL, Wrangler, PG-01..PG-30 y diff completo) sigue siendo **gate obligatorio previo al merge**; no está declarada completa.
-- **AC-6:** gate comercial intacto. No hay aprobación escrita contable/legal del comprobante; `FX_CONTINGENCY_ENABLED` permanece ausente/false y no se modificaron secretos ni configuración productiva.
-- **Estado:** PR #377 sigue Draft, sin merge ni deploy. Carril A, Carril B1 y Hardening transversal no se mezclaron. Issue #53 y `PRODUCTION: NOT READY` no se cierran ni cambian por esta implementación.
-- **Siguiente paso:** revisión independiente AC-7 sobre el HEAD final; cualquier cambio requiere repetir CI exact-HEAD. No habilitar comercialmente hasta AC-6 escrito.
+- **Main/base exacta:** `04d3679189edaab17221f1e8cd425cc68fa53155` (base de PR #377).
+- **PR 1:** [#377](https://github.com/BTF14/Micro-app/pull/377), OPEN / Draft deliberado; rama `feat/fx-contingency-pr1-20261117`; HEAD final `08bb9353fad340cc26ada74b82d34dc0f789bffd`.
+- **Hardening final AC-7:** sin SELECT directo runtime sobre `fx_user_pin_credentials`; lectura solo mediante `lock_fx_user_pin_credential()` SECURITY DEFINER; validación IP estricta compartida; auditoría PIN sin evento duplicado.
+- **Verificación exact-HEAD:** **21/21 check-runs SUCCESS** en `08bb9353fad340cc26ada74b82d34dc0f789bffd`, sin pendientes ni fallidos. CI [#44190827905](https://github.com/BTF14/Micro-app/actions/runs/44190827905), migration runner [#44190827919](https://github.com/BTF14/Micro-app/actions/runs/44190827919), migration validation [#44190827775](https://github.com/BTF14/Micro-app/actions/runs/44190827775), Playwright E2E [#44190827978](https://github.com/BTF14/Micro-app/actions/runs/44190827978), backup/restore [#44190827917](https://github.com/BTF14/Micro-app/actions/runs/44190827917).
+- **AC-7: CERRADO** para el alcance técnico de PR 1: revisión independiente completada sobre el HEAD previo, correcciones de endurecimiento aplicadas y revalidación integral exact-SHA satisfactoria. Evidencia y detalle en `odd/tasks/fx-contingency-management.md`.
+- **AC-6: ABIERTO e intacto:** pendiente validación escrita del asesor contable/legal sobre el comprobante. `FX_CONTINGENCY_ENABLED` permanece ausente/false; contingencia comercial apagada. No añadir secretos ni configuración productiva.
+- **Estado de entrega:** PR #377 permanece OPEN / Draft; no merge ni auto-merge. A la espera de autorización final del propietario para sacar Draft y fusionar. No se tocó `main`, Neon, Cloudflare manual, datos reales ni secretos.
+- Se conserva el alcance exclusivo PR 1; Carril A, Carril B1 y Hardening transversal no se mezclaron. Issue #53 permanece OPEN y `PRODUCTION: NOT READY`.
 
+---
+
+> **SNAPSHOT HISTÓRICO SUPERSEDIDO:** los cortes inferiores describen estados anteriores de main, PRs y BCV. Prevalece este encabezado y la referencia viva de GitHub.
 ---
 
 > **SNAPSHOT HISTÓRICO SUPERSEDIDO:** los cortes inferiores describen estados anteriores de main, PRs y BCV. Prevalece este encabezado y la referencia viva de GitHub.

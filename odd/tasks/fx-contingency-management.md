@@ -123,11 +123,11 @@ Excluded:
 - Checkout/frontend: fuente BCV/manual, snapshot manual sin `exchange_rate_id`, ACK del cajero vinculado a la tasa exacta mostrada, recibo con literal requerido.
 - KDF: PBKDF2-SHA256 versionado y salt único; Wrangler runtime test agregado a CI.
 - Pruebas añadidas: PG-01..PG-30, casos integrados de checkout manual, recuperación `inserted`/`unchanged`, tasa futura, replay idempotente y UI de AC-6/ACK.
-- CI: agregado paso de assertions 0026, suite PostgreSQL FX y Wrangler KDF. **Ejecución CI sobre HEAD final aún pendiente de evidencia; no marcar pruebas como PASS hasta leer sus resultados exact-SHA.**
-- **ACL PIN:** el runtime requiere SELECT de los verificadores (versión/iteraciones/salt/hash) para ejecutar PBKDF2 y verificar PIN; se deniega INSERT/UPDATE/DELETE directo y la escritura pasa por función SECURITY DEFINER estrecha. `microapp_bcv_sync` no accede a credenciales. Este es un ajuste explícito del requisito de “no lectura runtime” incompatible con verificación KDF en el Worker, manteniendo la mínima capacidad necesaria.
+- CI: se añadieron assertions 0026, suite PostgreSQL FX y Wrangler KDF. El estado inicial pendiente quedó resuelto; ver el cierre exact-SHA AC-7 al final de este documento.
+- **ACL PIN (nota histórica supersedida):** el primer diseño concedía SELECT de verificadores al runtime. La remediación AC-7 final eliminó ese grant: runtime no tiene SELECT directo y lee el verificador únicamente mediante `lock_fx_user_pin_credential()` SECURITY DEFINER.
 - **AC-6:** `FX_CONTINGENCY_ENABLED` es opt-in y queda sin configurar/false fuera de pruebas; no habilitar operación comercial hasta la aprobación escrita contable/legal.
 - Sin cambios en `main`, Neon, Cloudflare, secretos o despliegues. Sin Carril A, Carril B1 ni Hardening ajeno.
-- `CURRENT_STATE.md` y `HANDOFF_NEXT_CHAT.md` se reconciliarán únicamente en el cierre documental final (paso 9), según instrucción del propietario.
+- `CURRENT_STATE.md` y `HANDOFF_NEXT_CHAT.md` fueron reconciliados en el cierre documental final de esta rama, tras completar la revalidación exact-SHA.
 
 
 ### CI correction log — 2026-11-17
@@ -160,8 +160,24 @@ The owner explicitly superseded the earlier pre-implementation AC-7 hold:
 ## Hito de implementación y validación — 2026-11-17
 
 - PR #377 permanece OPEN / Draft sobre main `04d3679189edaab17221f1e8cd425cc68fa53155`; rama `feat/fx-contingency-pr1-20261117`.
-- Implementación y suite completadas en código SHA `7afa4ddb9f4c6fee5ba1bd1bb5629b02c3c0239d`. CI run `44187952802` SUCCESS; 12/12 workflow runs SUCCESS, incluyendo migración/assertions PostgreSQL 18, Wrangler Workers KDF, PG-01..PG-30, checkout, backup/restore y Playwright.
+- Corte inicial de código validado en SHA `7afa4ddb9f4c6fee5ba1bd1bb5629b02c3c0239d` (histórico); el hardening AC-7 posterior y su verificación final constan al final de este documento.
 - La prueba de revocación vs checkout se serializa por locks actor/branch/delegation → BCV → FX. El camino BCV normal no lee ni bloquea tablas FX.
-- AC-7: revisión independiente de diseño previa aceptada como baseline; auditoría independiente completa del artefacto final sigue obligatoria antes del merge. No marcar como cerrada.
+- AC-7: CERRADO tras revisión independiente, aplicación de las correcciones solicitadas y revalidación de todas las suites y 21/21 checks en el SHA final indicado al final de este documento.
 - AC-6: aprobación escrita contable/legal del comprobante no recibida; `FX_CONTINGENCY_ENABLED` permanece ausente/false. No encender ni desplegar.
-- Se actualizaron `CURRENT_STATE.md`, `HANDOFF_NEXT_CHAT.md`, `PROJECT_PLAN.md` y `STATE_JOURNAL.md` en el cierre documental. No se tocó `main`, Neon, Cloudflare ni secretos.
+- Cierre documental final de `CURRENT_STATE.md` y `HANDOFF_NEXT_CHAT.md` registrado en esta misma rama. Sin merge, mutaciones de Neon, cambios manuales de Cloudflare ni cambios de secretos.
+
+
+## Cierre técnico AC-7 y revalidación final — 2026-11-17
+
+- Revisión independiente AC-7 completada por el revisor sobre PR #377 en SHA `1eaee2846378c21b0f0bbb74162d3bfe7c82fd50`; arquitectura SQL 0026, observaciones BCV, locks/tiempos, aislamiento 0022, rollback/recuperación, KDF Workers, doble bucket, seguridad de logs y AC-6 fueron aceptados sin fallos críticos (resultado comunicado por el propietario).
+- Remediación final aplicada en commit `08bb9353fad340cc26ada74b82d34dc0f789bffd`:
+  - `microapp_runtime` ya no tiene SELECT directo sobre `fx_user_pin_credentials`; la migración revoca todos los privilegios de tabla y runtime accede al verificador solo por `lock_fx_user_pin_credential(uuid,uuid)` SECURITY DEFINER y actualiza por `set_fx_user_pin_credential(...)`.
+  - Assertions exigen ausencia de SELECT/INSERT/UPDATE/DELETE/TRUNCATE/TRIGGER de runtime, ausencia de SELECT del productor BCV y EXECUTE restringido de los helpers/setter para runtime.
+  - `PUT /fx-pin` utiliza el helper de lock, sin SELECT directo; PG-19 prueba lectura por helper y rechazo SQLSTATE 42501 a SELECT/UPDATE directo.
+  - `CF-Connecting-IP` se valida con la misma `isValidClientIp` estricta compartida por runtime-write-rate-limit; tests cubren IPv4/IPv6 válidas e inválidas, listas, zone IDs y whitespace.
+  - Se eliminó el INSERT duplicado `fx.pin.configured`; el único evento de configuración es `fx.pin.updated` emitido por la función SQL.
+- Revalidación exacta de SHA `08bb9353fad340cc26ada74b82d34dc0f789bffd`: **21/21 check-runs SUCCESS**, sin checks pendientes ni fallidos. Incluye migración 0026/assertions, migration runner, unit tests, Wrangler KDF, runtime write-rate-limit PostgreSQL, checkout, PG-01..PG-30, E2E Chromium, restore sintético, Semgrep, Trivy, dependency review, secret-history scan y validación ODD.
+- Workflows principales: CI [#44190827905](https://github.com/BTF14/Micro-app/actions/runs/44190827905), migration runner [#44190827919](https://github.com/BTF14/Micro-app/actions/runs/44190827919), migration validation [#44190827775](https://github.com/BTF14/Micro-app/actions/runs/44190827775), Playwright E2E [#44190827978](https://github.com/BTF14/Micro-app/actions/runs/44190827978), backup/restore [#44190827917](https://github.com/BTF14/Micro-app/actions/runs/44190827917).
+- **AC-7: CERRADO** para el alcance técnico de PR 1 sobre el SHA final indicado. El propietario conserva la decisión final de sacar Draft y autorizar merge; no se hizo merge ni auto-merge.
+- **AC-6: ABIERTO e intacto.** No hay validación escrita contable/legal del comprobante; `FX_CONTINGENCY_ENABLED` permanece ausente/false. No habilitar comercialmente, añadir secretos ni desplegar por este cierre técnico.
+- PR #377 permanece OPEN / Draft sobre base `04d3679189edaab17221f1e8cd425cc68fa53155`. No se tocó `main`, Neon, datos reales, secretos ni configuración productiva.

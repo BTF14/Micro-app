@@ -1,23 +1,21 @@
-# Handoff vigente — PR 1 Contingencia Manual BCV implementada (2026-11-17)
+# Handoff vigente — PR 1 Contingencia Manual BCV — AC-7 cerrado (2026-11-17)
 
 ## Punto exacto de partida
-- `main` = `04d3679189edaab17221f1e8cd425cc68fa53155`, verificado en vivo y usado como base de PR #377.
-- PR #377: https://github.com/BTF14/Micro-app/pull/377 — OPEN / Draft, no merge.
-- Rama: `feat/fx-contingency-pr1-20261117`. Implementación de código validada en SHA `7afa4ddb9f4c6fee5ba1bd1bb5629b02c3c0239d`; los commits posteriores son de cierre documental y no cambian el código. Consultar el HEAD vivo del PR #377 para el SHA documental más reciente.
-- PR 1 incluye migración 0026 + assertions, KDF PIN Workers, rate limits por usuario/IP, delegaciones, autorizaciones, eventos append-only, observaciones BCV inmutables, triggers, checkout manual/BCV, rutas Hono, panel administrativo, ACK de cajero y recibo con referencia de autorización.
-- Se mantuvo `0022_bcv_dedicated_producer_role.sql` sin cambios. No mezclar Carril A, Carril B1 ni Hardening transversal.
+- `main` / base de PR #377 = `04d3679189edaab17221f1e8cd425cc68fa53155`.
+- PR #377: https://github.com/BTF14/Micro-app/pull/377 — OPEN / Draft deliberado; no merge ni auto-merge.
+- Rama: `feat/fx-contingency-pr1-20261117`; HEAD final `08bb9353fad340cc26ada74b82d34dc0f789bffd`.
+- PR 1 incluye migración 0026 + assertions, PIN/KDF Workers, rate limits por usuario/IP, delegaciones/autorizaciones, eventos append-only, observaciones BCV inmutables, checkout manual/BCV, rutas Hono, UI mínima, ACK de cajero y recibo con referencia de autorización.
+- Hardening AC-7 final: runtime no tiene SELECT directo sobre `fx_user_pin_credentials`; lectura del verificador solo por `lock_fx_user_pin_credential()` SECURITY DEFINER; setter estrecho; IP con validación estricta compartida; sin doble evento de auditoría PIN.
 
 ## Verificación y gates
-- CI exacto del SHA de implementación `7afa4ddb9f4c6fee5ba1bd1bb5629b02c3c0239d`: run #44187952802 SUCCESS; 12/12 workflows SUCCESS, incluyendo PostgreSQL 18, assertions 0026, Wrangler Workers KDF, PG-01..PG-30, checkout, backup/restore, Playwright, Semgrep y security scans.
-- **AC-7:** la revisión independiente de diseño existente es la base. La auditoría independiente completa del artefacto final (0026 real, triggers, ACL/grants, Wrangler KDF, PG-01..PG-30 y diff completo) es gate obligatorio antes de merge. No marcar AC-7 completo hasta recibir esa revisión.
-- **AC-6:** sigue pendiente. La habilitación comercial permanece apagada; no configurar `FX_CONTINGENCY_ENABLED=true`, no añadir secretos y no desplegar hasta obtener aprobación escrita del asesor contable/legal sobre el comprobante.
-- PR sigue Draft. No hacer merge ni auto-merge. Issue #53 permanece OPEN/P0 y PRODUCTION NOT READY.
+- **21/21 check-runs SUCCESS** en el HEAD exacto `08bb9353fad340cc26ada74b82d34dc0f789bffd`, sin pendientes ni fallidos. CI [#44190827905](https://github.com/BTF14/Micro-app/actions/runs/44190827905); migration runner [#44190827919](https://github.com/BTF14/Micro-app/actions/runs/44190827919); migration validation [#44190827775](https://github.com/BTF14/Micro-app/actions/runs/44190827775); Playwright E2E [#44190827978](https://github.com/BTF14/Micro-app/actions/runs/44190827978); backup/restore [#44190827917](https://github.com/BTF14/Micro-app/actions/runs/44190827917).
+- **AC-7 CERRADO** para PR 1: revisión independiente completada en el HEAD previo; las tres correcciones finales solicitadas se aplicaron y pasaron revalidación integral exact-SHA. Evidencia en `odd/tasks/fx-contingency-management.md`.
+- **AC-6 ABIERTO:** no habilitar comercialmente hasta recibir validación escrita del asesor contable/legal sobre el comprobante. `FX_CONTINGENCY_ENABLED` permanece ausente/false; no añadir secretos ni configurar producción.
+- Mantener PR #377 Draft hasta que el propietario dé autorización final para salir de Draft y fusionar. La instrucción actual prohíbe merge automático y no autoriza despliegue manual, cambios en Neon, Cloudflare, secretos o datos reales.
+- Issue #53 sigue OPEN/P0; `PRODUCTION: NOT READY`. No mezclar Carril A, Carril B1 ni Hardening ajeno.
 
-## Próximos pasos
-1. Ejecutar revisión independiente AC-7 sobre el diff completo del PR y la migración 0026; registrar hallazgos y repetir pruebas si hay correcciones.
-2. Confirmar que CI y todos los checks estén verdes sobre el HEAD final posterior a cualquier cambio.
-3. Mantener AC-6 como gate separado de habilitación comercial.
-4. Solo después de AC-7 y autorización explícita, considerar merge. La habilitación comercial requiere además AC-6 escrito.
+## Próximo paso
+Esperar la autorización final del propietario para sacar PR #377 de Draft y ejecutar el merge. AC-6 seguirá bloqueando la habilitación comercial incluso después del merge.
 
 ---
 

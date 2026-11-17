@@ -235,13 +235,14 @@ describe.skipIf(!isDisposableCheckoutDatabase || !isDisposableBcvProducerDatabas
   ): Promise<void> {
     await client.query(
       `UPDATE public.bcv_sync_state
-          SET last_outcome=$1,
+          SET attempt_id=$4::uuid,
+              last_outcome=$1,
               last_success_at=CASE WHEN $3 THEN COALESCE(last_success_at, now()) ELSE NULL END,
               last_effective_date=$2::date,
               last_error_code=CASE WHEN $1='failed' THEN 'BCV_SYNC_UNKNOWN' ELSE NULL END,
               updated_at=now()
         WHERE singleton=true`,
-      [outcome, effectiveDate, successfulAtPresent],
+      [outcome, effectiveDate, successfulAtPresent, crypto.randomUUID()],
     );
   }
 

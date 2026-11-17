@@ -501,6 +501,9 @@ export default function SalesPanel({
         <div className="sales-receipt-head"><div><p className="eyebrow">OPERACIÓN CONFIRMADA</p><h2 id="sales-receipt-title">Comprobante de venta</h2></div><span className="sales-state success">Completada</span></div>
         <div className="sales-receipt-number"><span>Número de venta</span><strong>{receipt.sale_number}</strong></div>
         <p className="sales-receipt-date">{dateTime(receipt.created_at)} · {receipt.fx_receipt_label}: {localized(receipt.fx_rate, 18, 8)} Bs./USD</p>
+        {receipt.fx_source === 'manual_contingency' && receipt.fx_authorization_id && (
+          <p className="sales-receipt-date">Referencia de autorización: {receipt.fx_authorization_id}</p>
+        )}
         <div className="sales-receipt-lines">{receipt.lines.map((line, index) => <div key={`${line.sku_snapshot}-${index}`}><div><strong>{line.product_name_snapshot}</strong><small>{line.sku_snapshot} · {line.quantity} × {usd(line.unit_price_usd)}</small></div><span>{usd(line.line_total_usd)}<small>{ves(line.line_total_ves)}</small></span></div>)}</div>
         <div className="sales-receipt-payments"><h3>Pagos recibidos</h3>{receipt.payments.map((payment, index) => <div key={index}><span>{PAYMENT_METHODS.find((method) => method.value === payment.method)?.label ?? payment.method}{payment.reference ? ` · Ref. ${payment.reference}` : ""}</span><strong>{payment.currency === "USD" ? usd(payment.amount) : ves(payment.amount)}</strong></div>)}</div>
         <div className="sales-receipt-totals"><div><span>Total USD</span><strong>{usd(receipt.total_usd)}</strong></div><div><span>Total VES</span><strong>{ves(receipt.total_ves)}</strong></div></div>

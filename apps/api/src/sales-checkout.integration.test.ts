@@ -422,10 +422,10 @@ describe.skipIf(!isDisposableCheckoutDatabase || !isDisposableBcvProducerDatabas
           "public.warehouse_inventory_movements", "public.inventory_balances", "public.audit_logs",
           "public.inventory_count_lines", "public.inventory_counts", "public.register_shifts",
         ]) {
-          if (table !== "public.audit_logs") await client.query("ALTER TABLE " + table + " ENABLE TRIGGER USER");
+          await client.query("ALTER TABLE " + table + " ENABLE TRIGGER ALL");
         }
         await client.query("ALTER TABLE public.bcv_sync_success_observations ENABLE TRIGGER ALL");
-        await admin.query("ALTER TABLE public.bcv_sync_success_observations ENABLE ALWAYS TRIGGER bcv_sync_success_observations_10_append_only_rows");
+        await client.query("ALTER TABLE public.bcv_sync_success_observations ENABLE ALWAYS TRIGGER bcv_sync_success_observations_10_append_only_rows");
         await client.query("ALTER TABLE public.bcv_sync_success_observations ENABLE ALWAYS TRIGGER bcv_sync_success_observations_20_append_only_truncate");
         await client.query("ALTER TABLE public.fx_contingency_events ENABLE ALWAYS TRIGGER fx_contingency_events_10_append_only_rows");
         await client.query("ALTER TABLE public.fx_contingency_events ENABLE ALWAYS TRIGGER fx_contingency_events_20_append_only_truncate");

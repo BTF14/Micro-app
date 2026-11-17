@@ -135,7 +135,7 @@ BEGIN
     OR pg_catalog.has_table_privilege('microapp_bcv_sync','public.fx_user_pin_credentials','SELECT')
     OR NOT pg_catalog.has_function_privilege(
       'microapp_runtime',
-      'public.set_fx_user_pin_credential(uuid,uuid,text,integer,bytea,bytea)',
+      'public.set_fx_user_pin_credential(uuid,uuid,uuid,text,integer,bytea,bytea)',
       'EXECUTE'
     ) THEN
     RAISE EXCEPTION 'FX_PIN_CREDENTIAL_LEAST_PRIVILEGE_INVALID';

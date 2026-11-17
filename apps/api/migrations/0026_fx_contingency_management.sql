@@ -213,14 +213,14 @@ FOR EACH ROW EXECUTE FUNCTION public.capture_bcv_sync_success_observation();
 -- The sync producer cannot read, write, truncate, or administer the evidence
 -- table. Runtime receives SELECT only; insertion is performed by the definer
 -- trigger above.
-REVOKE ALL ON TABLE public.bcv_sync_success_observations FROM PUBLIC, microapp_bcv_sync;
-REVOKE ALL ON TABLE public.fx_contingency_events FROM PUBLIC;
+REVOKE ALL ON TABLE public.bcv_sync_success_observations FROM PUBLIC, microapp_bcv_sync, microapp_runtime;
+REVOKE ALL ON TABLE public.fx_contingency_events FROM PUBLIC, microapp_runtime, microapp_bcv_sync;
 GRANT SELECT ON TABLE public.bcv_sync_success_observations TO microapp_runtime;
 GRANT SELECT, INSERT ON TABLE public.fx_contingency_events TO microapp_runtime;
 
 -- Keep the producer's existing narrow 0022 contract unchanged.
 REVOKE ALL ON TABLE public.fx_user_pin_credentials, public.fx_contingency_delegations,
-  public.fx_contingency_authorizations FROM PUBLIC;
+  public.fx_contingency_authorizations FROM PUBLIC, microapp_runtime, microapp_bcv_sync;
 GRANT SELECT, INSERT, UPDATE ON TABLE public.fx_user_pin_credentials TO microapp_runtime;
 GRANT SELECT ON TABLE public.fx_contingency_delegations, public.fx_contingency_authorizations TO microapp_runtime;
 REVOKE UPDATE, DELETE, TRUNCATE, TRIGGER ON TABLE public.fx_contingency_delegations, public.fx_contingency_authorizations FROM microapp_runtime;

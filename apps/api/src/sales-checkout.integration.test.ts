@@ -196,6 +196,33 @@ describe.skipIf(!isDisposableCheckoutDatabase || !isDisposableBcvProducerDatabas
     return result.rows[0];
   }
 
+
+  async function createFxAuthorization(rate = "104.00000000"): Promise<string> {
+    const expiryParts = new Intl.DateTimeFormat("en-US", { timeZone: "America/Caracas", year: "numeric", month: "2-digit", day: "2-digit" }).formatToParts(new Date());
+    const part = (key: string) => Number(expiryParts.find((item) => item.type === key)?.value ?? 0);
+    const nextMidnightUtc = Date.UTC(part("year"), part("month") - 1, part("day") + 1, 4, 0, 0);
+    const expiresAt = new Date(Math.min(Date.now() + 20 * 60_000, nextMidnightUtc - 2_000)).toISOString();
+    const result = await client.query<{ id: string }>(
+      "SELECT public.create_fx_contingency_authorization($1::uuid,$2::uuid,$3::numeric,100.00000000,$4::uuid,'Manual contingency recovery integration',$5::timestamptz,$6::uuid,'owner',NULL,'authorized') AS id",
+      [organizationId, branchId, rate, fxReferenceRateId, expiresAt, fxOwnerId],
+    );
+    return result.rows[0]!.id;
+  }
+
+  async function recordFxBcvSuccess(
+    outcome: "inserted" | "unchanged", effectiveDate: string, lastSuccessAt: Date,
+  ): Promise<string> {
+    const attemptId = crypto.randomUUID();
+    await producerClient.query(
+      "UPDATE public.bcv_sync_state SET attempt_id=$1::uuid,last_attempt_at=pg_catalog.clock_timestamp(),last_success_at=$2::timestamptz,last_outcome=$3,last_error_code=NULL,last_effective_date=$4::date,updated_at=pg_catalog.clock_timestamp() WHERE singleton=true",
+      [attemptId, lastSuccessAt, outcome, effectiveDate],
+    );
+    await producerClient.query(
+      "UPDATE public.bcv_sync_state SET last_outcome='failed',last_error_code='BCV_SYNC_UNKNOWN',updated_at=pg_catalog.clock_timestamp() WHERE singleton=true",
+    );
+    return attemptId;
+  }
+
   async function setBcvSyncState(
     outcome: "running" | "inserted" | "unchanged" | "older" | "failed",
     effectiveDate = rateDate,
@@ -1201,6 +1228,88 @@ describe.skipIf(!isDisposableCheckoutDatabase || !isDisposableBcvProducerDatabas
     expect(replay.status).toBe(200);
     expect((await replay.json() as { id: string }).id).toBe(sale.id);
     expect((await readBalance()).on_hand_quantity).toBe("4.000");
+  });
+
+
+  it("commits bcv_restored in a separate transaction after the checkout rollback for inserted recovery", async () => {
+    await seedBalance("5.000");
+    const authorizationId = await createFxAuthorization();
+    const auth = await client.query<{ starts_at: Date }>("SELECT starts_at FROM public.fx_contingency_authorizations WHERE id=$1", [authorizationId]);
+    await client.query("UPDATE public.exchange_rates SET validation_status='valid',fetched_at=pg_catalog.clock_timestamp() WHERE id=$1", [rateId]);
+    await recordFxBcvSuccess("inserted", rateDate, new Date(auth.rows[0]!.starts_at.getTime() - 1000));
+
+    const response = await request({
+      ...checkoutBody("1.000", "23.8500"),
+      manual_fx_acknowledged: true,
+      manual_fx_acknowledged_rate: "104.00000000",
+    }, "bcv-restored-inserted-" + crypto.randomUUID());
+    expect(response.status).toBe(409);
+    expect((await response.json() as { error: string }).error).toBe("BCV_RATE_RESTORED");
+    const status = await client.query("SELECT status FROM public.fx_contingency_authorizations WHERE id=$1", [authorizationId]);
+    expect(status.rows[0].status).toBe("bcv_restored");
+    const event = await client.query("SELECT count(*)::int AS count FROM public.fx_contingency_events WHERE authorization_id=$1 AND event_type='bcv_restored'", [authorizationId]);
+    expect(event.rows[0].count).toBe(1);
+    expect((await readBalance()).on_hand_quantity).toBe("5.000");
+  });
+
+  it("recognizes unchanged recovery after authorization start without requiring fetched_at or last_success_at to advance", async () => {
+    await client.query("UPDATE public.exchange_rates SET validation_status='stale' WHERE id=$1", [rateId]);
+    await setBcvSyncState("failed", rateDate, true);
+    await seedBalance("5.000");
+    const authorizationId = await createFxAuthorization();
+    const auth = await client.query<{ starts_at: Date }>("SELECT starts_at FROM public.fx_contingency_authorizations WHERE id=$1", [authorizationId]);
+    const fetchedBefore = await client.query<{ fetched_at: Date }>("SELECT fetched_at FROM public.exchange_rates WHERE id=$1", [rateId]);
+    await client.query("UPDATE public.exchange_rates SET validation_status='valid' WHERE id=$1", [rateId]);
+    const oldSuccess = new Date(auth.rows[0]!.starts_at.getTime() - 1000);
+    const attemptId = await recordFxBcvSuccess("unchanged", rateDate, oldSuccess);
+    const observation = await client.query(
+      "SELECT observed_at,last_success_at,rate_fetched_at FROM public.bcv_sync_success_observations WHERE attempt_id=$1",
+      [attemptId],
+    );
+    expect(observation.rows[0].observed_at.getTime()).toBeGreaterThan(auth.rows[0]!.starts_at.getTime());
+    expect(observation.rows[0].last_success_at.getTime()).toBeLessThan(auth.rows[0]!.starts_at.getTime());
+    expect(observation.rows[0].rate_fetched_at.getTime()).toBe(fetchedBefore.rows[0]!.fetched_at.getTime());
+
+    const response = await request({
+      ...checkoutBody("1.000", "23.8500"),
+      manual_fx_acknowledged: true,
+      manual_fx_acknowledged_rate: "104.00000000",
+    }, "bcv-restored-unchanged-" + crypto.randomUUID());
+    expect(response.status).toBe(409);
+    expect((await response.json() as { error: string }).error).toBe("BCV_RATE_RESTORED");
+    const status = await client.query("SELECT status FROM public.fx_contingency_authorizations WHERE id=$1", [authorizationId]);
+    expect(status.rows[0].status).toBe("bcv_restored");
+    expect((await readBalance()).on_hand_quantity).toBe("5.000");
+  });
+
+  it("does not restore today's contingency for a future-effective BCV rate", async () => {
+    await client.query("UPDATE public.exchange_rates SET validation_status='stale' WHERE id=$1", [rateId]);
+    await setBcvSyncState("failed", rateDate, true);
+    await seedBalance("5.000");
+    const authorizationId = await createFxAuthorization();
+    const tomorrowResult = await client.query<{ tomorrow: string }>(
+      "SELECT (($1::date + 1)::date)::text AS tomorrow", [rateDate],
+    );
+    const tomorrow = tomorrowResult.rows[0]!.tomorrow;
+    const future = await client.query<{ id: string }>(
+      "INSERT INTO public.exchange_rates(base_currency,quote_currency,rate,source,effective_date,validation_status) VALUES('USD','VES',300.00000000,$1,$2::date,'valid') RETURNING id",
+      [BCV_SOURCE, tomorrow],
+    );
+    fxFutureRateId = future.rows[0]!.id;
+    const auth = await client.query<{ starts_at: Date }>("SELECT starts_at FROM public.fx_contingency_authorizations WHERE id=$1", [authorizationId]);
+    await recordFxBcvSuccess("inserted", tomorrow, new Date(auth.rows[0]!.starts_at.getTime() - 1000));
+
+    const response = await request({
+      ...checkoutBody("1.000", "23.8500"),
+      manual_fx_acknowledged: true,
+      manual_fx_acknowledged_rate: "104.00000000",
+    }, "future-bcv-" + crypto.randomUUID());
+    expect(response.status).toBe(201);
+    const sale = await response.json() as { fx_source: string; fx_authorization_id: string };
+    expect(sale.fx_source).toBe("manual_contingency");
+    expect(sale.fx_authorization_id).toBe(authorizationId);
+    const status = await client.query("SELECT status FROM public.fx_contingency_authorizations WHERE id=$1", [authorizationId]);
+    expect(status.rows[0].status).toBe("active");
   });
 
 });

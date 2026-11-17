@@ -57,7 +57,7 @@ CREATE TABLE public.fx_contingency_authorizations (
   branch_id uuid NOT NULL,
   rate numeric(18,8) NOT NULL CHECK (rate > 0),
   reference_rate_value numeric(18,8) NOT NULL CHECK (reference_rate_value > 0),
-  reference_exchange_rate_id uuid REFERENCES public.exchange_rates(id) ON DELETE RESTRICT,
+  reference_exchange_rate_id uuid NOT NULL REFERENCES public.exchange_rates(id) ON DELETE RESTRICT,
   deviation_bps integer NOT NULL CHECK (deviation_bps BETWEEN 0 AND 2000),
   reason text NOT NULL CHECK (pg_catalog.length(pg_catalog.btrim(reason)) BETWEEN 1 AND 1000),
   starts_at timestamptz NOT NULL DEFAULT pg_catalog.clock_timestamp(),
@@ -545,7 +545,9 @@ BEGIN
      FOR SHARE;
     IF NOT FOUND OR auth_row.status <> 'active'
       OR auth_row.starts_at > operation_time OR auth_row.expires_at <= operation_time
-      OR auth_row.rate IS DISTINCT FROM sale_row.exchange_rate_snapshot THEN
+      OR auth_row.rate IS DISTINCT FROM sale_row.exchange_rate_snapshot
+      OR sale_row.manual_fx_acknowledged_at < auth_row.starts_at
+      OR sale_row.manual_fx_acknowledged_at > operation_time THEN
       RAISE EXCEPTION 'MANUAL_FX_AUTHORIZATION_NOT_ACTIVE' USING ERRCODE = '23514';
     END IF;
 
@@ -710,6 +712,13 @@ BEGIN
     ) VALUES (p_organization_id, p_branch_id, p_user_id, p_actor_user_id)
     RETURNING id INTO delegation_id;
   END IF;
+  INSERT INTO public.audit_logs (organization_id,actor_user_id,action,entity_type,entity_id,metadata)
+  VALUES (
+    p_organization_id,p_actor_user_id,
+    CASE WHEN p_revoke THEN 'fx.delegation.revoked' ELSE 'fx.delegation.granted' END,
+    'fx_contingency_delegation',delegation_id::text,
+    pg_catalog.jsonb_build_object('branch_id',p_branch_id,'delegate_user_id',p_user_id)
+  );
   RETURN delegation_id;
 END;
 $set_fx_contingency_delegation$;

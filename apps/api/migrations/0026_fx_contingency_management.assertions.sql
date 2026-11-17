@@ -121,8 +121,8 @@ BEGIN
      AND p.proowner=(SELECT oid FROM pg_catalog.pg_roles WHERE rolname='microapp_migrator');
   IF function_oid IS NULL THEN RAISE EXCEPTION 'COMPLETED_SALE_GUARD_SECURITY_CONTRACT_INVALID'; END IF;
   SELECT pg_catalog.pg_get_functiondef(function_oid) INTO function_definition;
-  manual_definition := pg_catalog.substring(
-    function_definition FROM pg_catalog.strpos(function_definition, 'ELSIF sale_row.fx_source = ''manual_contingency'' THEN')
+  manual_definition := pg_catalog.substr(
+    function_definition, pg_catalog.strpos(function_definition, 'ELSIF sale_row.fx_source = ''manual_contingency'' THEN')
   );
   IF pg_catalog.strpos(manual_definition, 'FROM public.bcv_sync_state') = 0
     OR pg_catalog.strpos(manual_definition, 'FROM public.fx_contingency_authorizations auth') = 0

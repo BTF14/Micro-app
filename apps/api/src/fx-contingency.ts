@@ -426,7 +426,7 @@ export function registerFxContingencyRoutes(app: Hono<{ Bindings: Bindings }>): 
           `SELECT id,rate::text FROM public.exchange_rates
             WHERE source='BCV_OFFICIAL_HTML_V1' AND validation_status='valid'
               AND effective_date <= (pg_catalog.clock_timestamp() AT TIME ZONE 'America/Caracas')::date
-            ORDER BY effective_date DESC,fetched_at DESC LIMIT 1 FOR SHARE`,
+            ORDER BY effective_date DESC,fetched_at DESC LIMIT 1`,
         );
         if (!reference.rows[0]) return { kind: "reference_unavailable" as const };
         if (renewalId && active.rows[0] && new Date(active.rows[0].expires_at).getTime() > Date.now()) {

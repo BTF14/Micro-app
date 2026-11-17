@@ -345,7 +345,8 @@ BEGIN
     OR sync_last_success_at IS NULL
     OR sync_last_outcome IS NULL
     OR sync_last_outcome NOT IN ('inserted', 'unchanged')
-    OR sync_last_effective_date IS DISTINCT FROM operation_date
+    OR sync_last_effective_date IS NULL
+    OR sync_last_effective_date < operation_date
   THEN
     RAISE EXCEPTION 'SALE_REQUIRES_LATEST_SUCCESSFUL_BCV_SYNC'
       USING ERRCODE = '23514';

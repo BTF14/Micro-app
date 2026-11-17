@@ -34,6 +34,18 @@ describe.skipIf(!disposable)("BCV Node runner PostgreSQL 18 least-privilege pref
   let admin: Client;
   const source = "BCV_OFFICIAL_HTML_V1";
 
+  async function clearBcvFixtures(): Promise<void> {
+    await admin.query("ALTER TABLE public.bcv_sync_success_observations DISABLE TRIGGER ALL");
+    try {
+      await admin.query("DELETE FROM public.bcv_sync_success_observations");
+    } finally {
+      await admin.query("ALTER TABLE public.bcv_sync_success_observations ENABLE TRIGGER ALL");
+      await admin.query("ALTER TABLE public.bcv_sync_success_observations ENABLE ALWAYS TRIGGER bcv_sync_success_observations_10_append_only_rows");
+      await admin.query("ALTER TABLE public.bcv_sync_success_observations ENABLE ALWAYS TRIGGER bcv_sync_success_observations_20_append_only_truncate");
+    }
+    await clearBcvFixtures();
+  }
+
   beforeAll(async () => {
     if (!adminUrl) throw new Error("Disposable admin URL is missing.");
     admin = new Client({ connectionString: adminUrl });

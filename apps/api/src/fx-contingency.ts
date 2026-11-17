@@ -351,6 +351,14 @@ export function registerFxContingencyRoutes(app: Hono<{ Bindings: Bindings }>): 
             ORDER BY effective_date DESC,fetched_at DESC LIMIT 1 FOR SHARE`,
         );
         if (!reference.rows[0]) return { kind: "reference_unavailable" as const };
+        if (renewalId && active.rows[0] && new Date(active.rows[0].expires_at).getTime() > Date.now()) {
+          await tx.query(
+            `SELECT public.transition_fx_contingency_authorization(
+               $1::uuid,$2::uuid,$3::uuid,'revoked',$4::uuid,$5::text,'renewed by replacement authorization'
+             )`,
+            [actor.tenant.organizationId, branchId, renewalId, actor.tenant.userId, actor.tenant.role],
+          );
+        }
         const created = await tx.query<{ id: string }>(
           `SELECT public.create_fx_contingency_authorization(
              $1::uuid,$2::uuid,$3::numeric,$4::numeric,$5::uuid,$6::text,$7::timestamptz,
@@ -361,14 +369,6 @@ export function registerFxContingencyRoutes(app: Hono<{ Bindings: Bindings }>): 
             actor.tenant.role, body.elevated_confirmation_reason ?? null,
             renewalId ? "renewed" : "authorized"],
         );
-        if (renewalId) {
-          await tx.query(
-            `SELECT public.transition_fx_contingency_authorization(
-               $1::uuid,$2::uuid,$3::uuid,'revoked',$4::uuid,$5::text,'renewed by replacement authorization'
-             )`,
-            [actor.tenant.organizationId, branchId, renewalId, actor.tenant.userId, actor.tenant.role],
-          );
-        }
         return { kind: "ok" as const, id: created.rows[0]!.id };
       }));
       if (result.kind !== "ok") {

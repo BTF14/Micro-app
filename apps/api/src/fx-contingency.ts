@@ -93,21 +93,23 @@ async function resolveActor(tx: import("./database").DatabaseClient, token: stri
 async function authorizeBranch(
   tx: import("./database").DatabaseClient, tenant: Tenant, branchId: string,
 ): Promise<"ok" | "unauthenticated" | "branch_denied" | "delegation_required"> {
-  const branch = await resolveBranchContext(tx, tenant, branchId, false);
+  // Lock branch scope and, for admins, the delegation before acquiring
+  // BCV/FX locks. This preserves the global actor -> branch -> BCV -> FX order.
+  const branch = await resolveBranchContext(tx, tenant, branchId, true);
   if (!branch) return "branch_denied";
   if (tenant.role === "admin") {
-    const assignment = await tx.query<{ allowed: boolean }>(
-      `SELECT EXISTS (
-         SELECT 1 FROM public.branch_memberships bm
+    const assignment = await tx.query<{ branch_id: string }>(
+      `SELECT bm.branch_id
+         FROM public.branch_memberships bm
          JOIN public.fx_contingency_delegations d
            ON d.organization_id=bm.organization_id AND d.branch_id=bm.branch_id
           AND d.user_id=bm.user_id AND d.status='active'
         WHERE bm.organization_id=$1 AND bm.branch_id=$2
           AND bm.user_id=$3 AND bm.is_active
-       ) AS allowed`,
+        FOR SHARE OF bm, d`,
       [tenant.organizationId, branchId, tenant.userId],
     );
-    if (!assignment.rows[0]?.allowed) return "delegation_required";
+    if (!assignment.rows[0]) return "delegation_required";
   }
   return "ok";
 }

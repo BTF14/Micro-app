@@ -243,10 +243,12 @@ describe.skipIf(!safeDb)("FX contingency PostgreSQL integration — PG-01..PG-30
         await admin.query("DELETE FROM public.exchange_rates WHERE id=$1", [referenceRateId]);
       }
       if (previousSync) {
+        await admin.query("ALTER TABLE public.bcv_sync_state DISABLE TRIGGER bcv_sync_success_observation_capture");
         await admin.query(
           "UPDATE public.bcv_sync_state SET attempt_id=$1,last_attempt_at=$2,last_success_at=$3,last_outcome=$4,last_error_code=$5,last_effective_date=$6,updated_at=$7 WHERE singleton=true",
           [previousSync.attempt_id, previousSync.last_attempt_at, previousSync.last_success_at, previousSync.last_outcome, previousSync.last_error_code, previousSync.last_effective_date, previousSync.updated_at],
         );
+        await admin.query("ALTER TABLE public.bcv_sync_state ENABLE TRIGGER bcv_sync_success_observation_capture");
       }
       await admin.query("COMMIT");
     } catch {

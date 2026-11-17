@@ -88,6 +88,7 @@ describe.skipIf(!isDisposableCheckoutDatabase || !isDisposableBcvProducerDatabas
     pathOrganizationId = organizationId,
     pathBranchId = branchId,
     clientIp = "203.0.113.10",
+    fxEnabled = true,
   ): Promise<Response> {
     return app.fetch(new Request(
       "https://api.example/api/orgs/" + pathOrganizationId + "/branches/" + pathBranchId + "/checkout",
@@ -106,7 +107,7 @@ describe.skipIf(!isDisposableCheckoutDatabase || !isDisposableBcvProducerDatabas
       DATABASE_URL: databaseUrl,
       FRONTEND_ORIGIN,
       GOOGLE_CLIENT_SECRET: "checkout-integration-test-hmac-pepper-2026",
-      FX_CONTINGENCY_ENABLED: "true",
+      FX_CONTINGENCY_ENABLED: fxEnabled ? "true" : "false",
     });
   }
 
@@ -1198,6 +1199,11 @@ describe.skipIf(!isDisposableCheckoutDatabase || !isDisposableBcvProducerDatabas
 
     const key = "manual-fx-" + crypto.randomUUID();
     const base = checkoutBody("1.000", "23.8500");
+    const disabledCommercial = await request({
+      ...base, manual_fx_acknowledged: true, manual_fx_acknowledged_rate: "104.00000000",
+    }, key + "-ac6-off", organizationId, branchId, "203.0.113.10", false);
+    expect(disabledCommercial.status).toBe(409);
+    expect((await disabledCommercial.json() as { error: string }).error).toBe("FX_RATE_NOT_AVAILABLE");
     const missingAck = await request({ ...base, manual_fx_acknowledged: false }, key);
     expect(missingAck.status).toBe(409);
     expect((await missingAck.json() as { error: string }).error).toBe("MANUAL_FX_ACK_REQUIRED");

@@ -84,7 +84,7 @@ export default function SalesPanel({
   const [notice, setNotice] = useState("");
   const [receipt, setReceipt] = useState<SaleReceipt | null>(null);
   const [fxState, setFxState] = useState<FxPanelState | null>(null);
-  const [manualFxAcknowledged, setManualFxAcknowledged] = useState(false);
+  const [manualFxAcknowledgedRate, setManualFxAcknowledgedRate] = useState<string | null>(null);
   const [lookupReset, setLookupReset] = useState(0);
   const idempotencyKey = useRef(newIdempotencyKey());
   const requestFingerprint = useRef<string | null>(null);
@@ -94,9 +94,10 @@ export default function SalesPanel({
 
   const base = `/api/orgs/${encodeURIComponent(organizationId)}`;
   const bcvAvailable = exchangeRateStatus === "current" && exchangeRate !== null;
-  const activeManualFx = fxState?.commercial_enabled && fxState.authorization &&
+  const activeManualFx = fxState?.commercial_enabled === true && fxState.authorization &&
     new Date(fxState.authorization.expires_at).getTime() > Date.now() ? fxState.authorization : null;
   const usingManualFx = !bcvAvailable && activeManualFx !== null;
+  const manualFxAcknowledged = usingManualFx && manualFxAcknowledgedRate === activeManualFx.rate;
   const effectiveRate = bcvAvailable ? exchangeRate : usingManualFx ? activeManualFx.rate : null;
   const canConvert = effectiveRate !== null;
 
@@ -159,7 +160,7 @@ export default function SalesPanel({
         commitCart([]);
         setReceipt(null);
         setFxState(null);
-        setManualFxAcknowledged(false);
+        setManualFxAcknowledgedRate(null);
         setCurrency("USD");
         setPayments([{ id: nextPaymentLineId(), method: "cash", amount: "", reference: "" }]);
         setLookupReset((value) => value + 1);
@@ -373,6 +374,7 @@ export default function SalesPanel({
       warehouse_id: warehouseId,
       lines: cart.map((line) => ({ product_id: line.product.product_id, quantity: line.quantity })),
       manual_fx_acknowledged: usingManualFx && manualFxAcknowledged,
+      manual_fx_acknowledged_rate: usingManualFx && manualFxAcknowledged ? effectiveRate : null,
       payments: payments.map((payment) => ({
         method: payment.method,
         currency,
@@ -407,6 +409,7 @@ export default function SalesPanel({
     setLookupReset((value) => value + 1);
     setPayments([{ id: nextPaymentLineId(), method: "cash", amount: "", reference: "" }]);
     setCurrency("USD");
+    setManualFxAcknowledgedRate(null);
     setNotice("Venta nueva lista.");
     setError("");
     resetIdempotency();
@@ -479,7 +482,7 @@ export default function SalesPanel({
                   <div className="sales-payment-actions"><button type="button" className="sales-secondary-button" onClick={addPayment} disabled={payments.length >= 10}>Agregar pago</button><button type="button" className="sales-secondary-button" onClick={fillExactAmount}>Monto exacto</button></div>
                   <p className={paymentMatches ? "sales-payment-match" : "sales-payment-pending"} role="status">Pagos: {currency === "USD" ? usd(paymentTotal) : ves(paymentTotal)} · Total requerido: {currency === "USD" ? usd(expectedPayment) : ves(expectedPayment)}</p>
                 </section>
-                {usingManualFx && <label className="sales-manual-fx-ack"><input type="checkbox" checked={manualFxAcknowledged} onChange={(event) => setManualFxAcknowledged(event.target.checked)} /> Confirmo que comuniqué al cliente la tasa manual de contingencia (no oficial BCV) antes de cobrar.</label>}
+                {usingManualFx && <label className="sales-manual-fx-ack"><input type="checkbox" checked={manualFxAcknowledged} onChange={(event) => setManualFxAcknowledgedRate(event.target.checked ? effectiveRate : null)} /> Confirmo que comuniqué al cliente la tasa manual de contingencia (no oficial BCV) antes de cobrar.</label>}
                 <button type="button" className="sales-primary-button sales-charge-button" onClick={() => void checkout()} disabled={!readyToCharge}>{checkoutBusy ? "Procesando venta…" : "Cobrar venta"}</button>
                 {!canConvert && <small className="sales-disabled-reason">El cobro se habilita cuando exista una tasa BCV vigente o una contingencia autorizada y habilitada.</small>}
                 {canConvert && cart.length > 0 && !allQuantitiesValid && <small className="sales-disabled-reason">Corrige las cantidades del carrito antes de cobrar.</small>}

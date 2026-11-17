@@ -128,6 +128,19 @@ BEGIN
     RAISE EXCEPTION 'LEGACY_SALES_COMPLETION_CHECK_WAS_NOT_REPLACED';
   END IF;
 
+  IF NOT pg_catalog.has_table_privilege('microapp_runtime','public.fx_user_pin_credentials','SELECT')
+    OR pg_catalog.has_table_privilege('microapp_runtime','public.fx_user_pin_credentials','INSERT')
+    OR pg_catalog.has_table_privilege('microapp_runtime','public.fx_user_pin_credentials','UPDATE')
+    OR pg_catalog.has_table_privilege('microapp_runtime','public.fx_user_pin_credentials','DELETE')
+    OR pg_catalog.has_table_privilege('microapp_bcv_sync','public.fx_user_pin_credentials','SELECT')
+    OR NOT pg_catalog.has_function_privilege(
+      'microapp_runtime',
+      'public.set_fx_user_pin_credential(uuid,uuid,text,integer,bytea,bytea)',
+      'EXECUTE'
+    ) THEN
+    RAISE EXCEPTION 'FX_PIN_CREDENTIAL_LEAST_PRIVILEGE_INVALID';
+  END IF;
+
   IF pg_catalog.has_table_privilege('microapp_runtime','public.fx_contingency_authorizations','INSERT')
     OR pg_catalog.has_table_privilege('microapp_runtime','public.fx_contingency_authorizations','UPDATE')
     OR pg_catalog.has_table_privilege('microapp_runtime','public.fx_contingency_delegations','INSERT')

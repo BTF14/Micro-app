@@ -130,6 +130,24 @@ BEGIN
     RAISE EXCEPTION 'LEGACY_SALES_COMPLETION_CHECK_WAS_NOT_REPLACED';
   END IF;
 
+  FOREACH function_oid IN ARRAY ARRAY[
+    'public.lock_active_fx_contingency_authorization(uuid,uuid)'::regprocedure::oid,
+    'public.lock_branch_fx_contingency_authorization(uuid,uuid)'::regprocedure::oid
+  ] LOOP
+    SELECT pg_catalog.pg_get_userbyid(p.proowner),p.prosecdef
+      INTO function_owner,function_security_definer
+      FROM pg_catalog.pg_proc p WHERE p.oid=function_oid;
+    IF function_owner <> 'microapp_migrator' OR NOT function_security_definer
+      OR NOT pg_catalog.has_function_privilege('microapp_runtime',function_oid,'EXECUTE')
+      OR EXISTS (
+        SELECT 1 FROM pg_catalog.pg_proc proc,
+          LATERAL pg_catalog.aclexplode(COALESCE(proc.proacl,pg_catalog.acldefault('f',proc.proowner))) acl
+         WHERE proc.oid=function_oid AND acl.grantee=0 AND acl.privilege_type='EXECUTE'
+      ) THEN
+      RAISE EXCEPTION 'FX_AUTHORIZATION_LOCK_HELPER_CONTRACT_INVALID';
+    END IF;
+  END LOOP;
+
   IF NOT pg_catalog.has_table_privilege('microapp_runtime','public.fx_user_pin_credentials','SELECT')
     OR pg_catalog.has_table_privilege('microapp_runtime','public.fx_user_pin_credentials','INSERT')
     OR pg_catalog.has_table_privilege('microapp_runtime','public.fx_user_pin_credentials','UPDATE')

@@ -5,7 +5,7 @@
 # ODD task: BCV weekday Cron and strict CI TLS chain validation
 
 - Status: completed
-- Issue / PR: pending
+- Issue / PR: PR #361 (MERGED; superseded operationally by PR #374)
 - Owner / reviewer: repository owner / technical maintainer
 - Started: 2026-11-14
 - Risk: high

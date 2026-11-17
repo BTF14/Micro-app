@@ -98,6 +98,29 @@ BEGIN
     RAISE EXCEPTION 'FX_AUTHORIZATION_STARTS_AT_MUST_USE_CLOCK_TIMESTAMP';
   END IF;
 
+  SELECT p.oid INTO function_oid
+    FROM pg_catalog.pg_proc p
+   WHERE p.oid='public.assert_completed_sale_reconciled()'::regprocedure
+     AND p.prosecdef
+     AND p.proowner=(SELECT oid FROM pg_catalog.pg_roles WHERE rolname='microapp_migrator');
+  IF function_oid IS NULL THEN RAISE EXCEPTION 'COMPLETED_SALE_GUARD_SECURITY_CONTRACT_INVALID'; END IF;
+  SELECT pg_catalog.pg_get_functiondef(function_oid) INTO function_definition;
+  IF pg_catalog.strpos(function_definition,'obs.observed_at > auth_row.starts_at')=0
+    OR pg_catalog.strpos(function_definition,'obs.last_success_at > auth_row.starts_at')>0
+    OR pg_catalog.strpos(function_definition,'obs.rate_fetched_at > auth_row.starts_at')=0
+    OR pg_catalog.strpos(function_definition,'obs.last_outcome = ''unchanged''')=0
+  THEN RAISE EXCEPTION 'BCV_RECOVERY_OBSERVATION_CONTRACT_INVALID'; END IF;
+
+  IF pg_catalog.pg_get_constraintdef((
+      SELECT oid FROM pg_catalog.pg_constraint
+       WHERE conrelid='public.sales'::regclass AND conname='sales_fx_ack_contract_ck'
+    )) NOT ILIKE '%manual_fx_acknowledged_by_user_id = created_by%'
+    OR pg_catalog.pg_get_constraintdef((
+      SELECT oid FROM pg_catalog.pg_constraint
+       WHERE conrelid='public.sales'::regclass AND conname='sales_fx_ack_contract_ck'
+    )) NOT ILIKE '%fx_source%'
+  THEN RAISE EXCEPTION 'SALES_MANUAL_ACK_ACTOR_CONTRACT_INVALID'; END IF;
+
   SELECT count(*) INTO trigger_count
     FROM pg_catalog.pg_trigger t
    WHERE t.tgrelid='public.bcv_sync_state'::regclass

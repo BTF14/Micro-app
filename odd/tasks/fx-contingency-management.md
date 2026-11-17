@@ -98,7 +98,7 @@ Excluded:
 - **ACK en sales:** `manual_contingency` exige `manual_fx_acknowledged_at IS NOT NULL` y `manual_fx_acknowledged_by_user_id = created_by`; `bcv_official` exige ambos campos `NULL`.
 - **Gate comercial:** la capacidad no se habilita para operación comercial hasta recibir visto bueno escrito del asesor contable/legal sobre el comprobante (AC-6). El freeze comercial permanece.
 - **Pruebas exigidas:** runtime KDF real con Wrangler; `0026_fx_contingency_management.assertions.sql`; PG-01..PG-30, incluidas carreras de concurrencia y límites de medianoche con `clock_timestamp()`; CI completo sobre el SHA final.
-- **Límite de ejecución:** el ADR y este task log mantienen AC-7 (revisión independiente de seguridad previa a implementación) como gate pendiente. La autorización de rama no se interpreta como cierre ni waiver de AC-7. Hasta documentar esa revisión, no se introducen endpoints/permisos comerciales ni cambios de checkout/migración; se permite preparar la rama y el registro de trabajo.
+- **Estado de autorización actualizado (2026-11-17):** el propietario confirmó que la revisión independiente de diseño ya realizada es la base de entrada y autorizó iniciar la implementación. AC-7 completo se exige antes del merge, auditando los artefactos reales. La restricción anterior de no introducir código antes de AC-7 queda supersedida por esta autorización posterior.
 
 
 ## Addendum de autorización y ejecución PR 1 — 2026-11-17
@@ -113,3 +113,18 @@ Excluded:
   - `bcv_sync_success_observations`: append-only, triggers `ENABLE ALWAYS`, `REVOKE ALL` a PUBLIC y `microapp_bcv_sync`; `GRANT SELECT` solo a `microapp_runtime`.
   - ACK: fuente manual exige timestamp y actor igual a `sales.created_by`; fuente BCV exige ambos campos NULL.
 - Excluido explícitamente: Carril A, Carril B1 y Hardening ajeno a PR 1. Sin mutaciones remotas en Neon ni operaciones de Cloudflare/secretos.
+
+
+## Ejecución PR 1 — corte de implementación (2026-11-17)
+
+- PR: [#377 Draft](https://github.com/BTF14/Micro-app/pull/377), base `main`; rama `feat/fx-contingency-pr1-20261117`.
+- Migración `0026_fx_contingency_management.sql` y assertions creadas: tablas PIN/delegaciones/autorizaciones/eventos/evidencia de sync; snapshots de venta; CHECK ACK; locks SECURITY DEFINER; triggers append-only ENABLE ALWAYS; ACL mínimo; redefinición de guards.
+- Servicios/API: rutas de PIN, delegaciones, estado, autorización/renovación/revocación; lock order BCV→FX; transición `bcv_restored` en transacción separada tras rollback del checkout.
+- Checkout/frontend: fuente BCV/manual, snapshot manual sin `exchange_rate_id`, ACK del cajero vinculado a la tasa exacta mostrada, recibo con literal requerido.
+- KDF: PBKDF2-SHA256 versionado y salt único; Wrangler runtime test agregado a CI.
+- Pruebas añadidas: PG-01..PG-30, casos integrados de checkout manual, recuperación `inserted`/`unchanged`, tasa futura, replay idempotente y UI de AC-6/ACK.
+- CI: agregado paso de assertions 0026, suite PostgreSQL FX y Wrangler KDF. **Ejecución CI sobre HEAD final aún pendiente de evidencia; no marcar pruebas como PASS hasta leer sus resultados exact-SHA.**
+- **ACL PIN:** el runtime requiere SELECT de los verificadores (versión/iteraciones/salt/hash) para ejecutar PBKDF2 y verificar PIN; se deniega INSERT/UPDATE/DELETE directo y la escritura pasa por función SECURITY DEFINER estrecha. `microapp_bcv_sync` no accede a credenciales. Este es un ajuste explícito del requisito de “no lectura runtime” incompatible con verificación KDF en el Worker, manteniendo la mínima capacidad necesaria.
+- **AC-6:** `FX_CONTINGENCY_ENABLED` es opt-in y queda sin configurar/false fuera de pruebas; no habilitar operación comercial hasta la aprobación escrita contable/legal.
+- Sin cambios en `main`, Neon, Cloudflare, secretos o despliegues. Sin Carril A, Carril B1 ni Hardening ajeno.
+- `CURRENT_STATE.md` y `HANDOFF_NEXT_CHAT.md` se reconciliarán únicamente en el cierre documental final (paso 9), según instrucción del propietario.

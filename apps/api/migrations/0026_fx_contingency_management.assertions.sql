@@ -77,6 +77,9 @@ BEGIN
     OR pg_catalog.strpos(function_definition, 'fx_source') = 0
     OR pg_catalog.strpos(function_definition, 'America/Caracas') = 0
   THEN RAISE EXCEPTION 'BCV_SALE_GUARD_DEFINITION_INVALID'; END IF;
+  IF pg_catalog.strpos(function_definition, 'FOR SHARE')
+       > pg_catalog.strpos(function_definition, 'operation_date := (pg_catalog.clock_timestamp() AT TIME ZONE')
+  THEN RAISE EXCEPTION 'BCV_OPERATION_DATE_MUST_BE_CAPTURED_AFTER_SYNC_LOCK'; END IF;
   IF pg_catalog.has_function_privilege('microapp_runtime',function_oid,'EXECUTE')
     OR pg_catalog.has_function_privilege('microapp_bcv_sync',function_oid,'EXECUTE')
     OR EXISTS (
@@ -86,18 +89,6 @@ BEGIN
       ) acl WHERE acl.grantee = 0 AND acl.privilege_type = 'EXECUTE'
     )
   THEN RAISE EXCEPTION 'BCV_SALE_GUARD_MUST_BE_TRIGGER_ONLY'; END IF;
-
-  IF pg_catalog.strpos(function_definition, 'FROM public.bcv_sync_state') = 0
-    OR pg_catalog.strpos(function_definition, 'FROM public.fx_contingency_authorizations auth') = 0
-    OR pg_catalog.strpos(function_definition, 'operation_time := pg_catalog.clock_timestamp()') = 0
-    OR pg_catalog.strpos(function_definition, 'FROM public.bcv_sync_state')
-       > pg_catalog.strpos(function_definition, 'FROM public.fx_contingency_authorizations auth')
-    OR pg_catalog.strpos(function_definition, 'FROM public.fx_contingency_authorizations auth')
-       > pg_catalog.strpos(function_definition, 'operation_time := pg_catalog.clock_timestamp()')
-  THEN RAISE EXCEPTION 'MANUAL_FX_CLOCK_MUST_BE_CAPTURED_AFTER_BCV_AND_FX_LOCKS'; END IF;
-
-  IF pg_catalog.strpos(function_definition, 'reference_effective_date')
-     = 0 THEN RAISE EXCEPTION 'FX_REFERENCE_EFFECTIVE_DATE_SNAPSHOT_MISSING'; END IF;
 
   IF NOT EXISTS (
     SELECT 1 FROM pg_catalog.pg_constraint
@@ -143,6 +134,14 @@ BEGIN
      AND p.proowner=(SELECT oid FROM pg_catalog.pg_roles WHERE rolname='microapp_migrator');
   IF function_oid IS NULL THEN RAISE EXCEPTION 'COMPLETED_SALE_GUARD_SECURITY_CONTRACT_INVALID'; END IF;
   SELECT pg_catalog.pg_get_functiondef(function_oid) INTO function_definition;
+  IF pg_catalog.strpos(function_definition, 'FROM public.bcv_sync_state') = 0
+    OR pg_catalog.strpos(function_definition, 'FROM public.fx_contingency_authorizations auth') = 0
+    OR pg_catalog.strpos(function_definition, 'operation_time := pg_catalog.clock_timestamp()') = 0
+    OR pg_catalog.strpos(function_definition, 'FROM public.bcv_sync_state')
+       > pg_catalog.strpos(function_definition, 'FROM public.fx_contingency_authorizations auth')
+    OR pg_catalog.strpos(function_definition, 'FROM public.fx_contingency_authorizations auth')
+       > pg_catalog.strpos(function_definition, 'operation_time := pg_catalog.clock_timestamp()')
+  THEN RAISE EXCEPTION 'MANUAL_FX_CLOCK_MUST_BE_CAPTURED_AFTER_BCV_AND_FX_LOCKS'; END IF;
   IF pg_catalog.strpos(function_definition,'obs.observed_at > auth_row.starts_at')=0
     OR pg_catalog.strpos(function_definition,'obs.last_success_at > auth_row.starts_at')>0
     OR pg_catalog.strpos(function_definition,'obs.rate_fetched_at > auth_row.starts_at')=0
@@ -222,6 +221,30 @@ BEGIN
       'EXECUTE'
     ) THEN
     RAISE EXCEPTION 'FX_PIN_CREDENTIAL_LEAST_PRIVILEGE_INVALID';
+  END IF;
+
+  SELECT pg_catalog.pg_get_functiondef(
+    'public.create_fx_contingency_authorization(uuid,uuid,numeric,numeric,uuid,text,timestamptz,uuid,text,text,text)'::regprocedure
+  ) INTO function_definition;
+  IF pg_catalog.strpos(function_definition, 'FOR SHARE')
+       > pg_catalog.strpos(function_definition, 'starts_time := pg_catalog.clock_timestamp()')
+    OR pg_catalog.strpos(function_definition, 'starts_time := pg_catalog.clock_timestamp()')
+       > pg_catalog.strpos(function_definition, 'SELECT er.effective_date, er.fetched_at')
+    OR pg_catalog.strpos(function_definition, 'reference_effective_date') = 0
+  THEN RAISE EXCEPTION 'FX_STARTS_AT_AND_REFERENCE_MUST_FOLLOW_BCV_LOCK'; END IF;
+
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_catalog.pg_constraint
+     WHERE conrelid='public.fx_contingency_authorizations'::regclass
+       AND contype='c'
+       AND pg_catalog.pg_get_constraintdef(oid) ILIKE '%* 2000%'
+  ) OR NOT EXISTS (
+    SELECT 1 FROM pg_catalog.pg_constraint
+     WHERE conrelid='public.fx_contingency_authorizations'::regclass
+       AND contype='c'
+       AND pg_catalog.pg_get_constraintdef(oid) ILIKE '%* 500%'
+  ) THEN
+    RAISE EXCEPTION 'FX_DEVIATION_LIMITS_MUST_USE_EXACT_DECIMAL_COMPARISONS';
   END IF;
 
   IF pg_catalog.has_table_privilege('microapp_runtime','public.fx_contingency_authorizations','INSERT')

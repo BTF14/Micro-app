@@ -634,6 +634,11 @@ BEGIN
      OR p_reason IS NULL OR pg_catalog.length(pg_catalog.btrim(p_reason)) NOT BETWEEN 1 AND 500 THEN
     RAISE EXCEPTION 'FX_AUTHORIZATION_TRANSITION_INVALID' USING ERRCODE = '23514';
   END IF;
+  IF p_new_status = 'bcv_restored' THEN
+    PERFORM 1 FROM public.bcv_sync_state state
+     WHERE state.singleton = true
+     FOR SHARE;
+  END IF;
   SELECT * INTO auth_row FROM public.fx_contingency_authorizations
    WHERE organization_id = p_organization_id AND branch_id = p_branch_id
      AND id = p_authorization_id FOR UPDATE;

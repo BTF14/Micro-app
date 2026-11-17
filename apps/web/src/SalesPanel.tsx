@@ -179,11 +179,15 @@ export default function SalesPanel({
       const warehouseResult = await apiRequest<{ warehouses: Warehouse[] }>(
         `${base}/branches/${encodeURIComponent(result.shift.branch_id)}/warehouses`,
       );
-      const fxResult = await apiRequest<FxPanelState>(
-        `${base}/branches/${encodeURIComponent(result.shift.branch_id)}/fx-contingency`,
-      );
-      if (requestId !== loadSequence.current) return;
-      setFxState(fxResult);
+      if (exchangeRateStatus !== "current" || !exchangeRate) {
+        const fxResult = await apiRequest<FxPanelState>(
+          `${base}/branches/${encodeURIComponent(result.shift.branch_id)}/fx-contingency`,
+        );
+        if (requestId !== loadSequence.current) return;
+        setFxState(fxResult ?? null);
+      } else {
+        setFxState(null);
+      }
       setManualFxAcknowledgedRate(null);
       if (requestId !== loadSequence.current) return;
       const active = warehouseResult.warehouses.filter((warehouse) => warehouse.is_active === true);

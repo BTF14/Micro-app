@@ -78,15 +78,16 @@ describe("FxContingencyPanel", () => {
     const rate = inputs.find((input) => input.type === "text" || input.inputMode === "decimal")!;
     const expiry = inputs.find((input) => input.type === "datetime-local")!;
     const pin = inputs.find((input) => input.type === "password")!;
-    const textareas = [...container.querySelectorAll("textarea")];
+    const reasonField = container.querySelector("textarea")!;
     await act(async () => {
       setInput(rate, "105.01000000");
-      setInput(textareas[0]!, "Contingencia de prueba con motivo específico.");
+      setInput(reasonField, "Contingencia de prueba con motivo específico.");
       setInput(expiry, "2026-11-17T20:00");
       const elevated = container.querySelector<HTMLInputElement>('input[type="checkbox"]')!;
       elevated.click();
     });
-    await act(async () => { setInput(textareas[1]!, "Confirmo expresamente la desviación superior al cinco por ciento."); });
+    const elevatedReasonField = container.querySelectorAll("textarea")[1]!;
+    await act(async () => { setInput(elevatedReasonField, "Confirmo expresamente la desviación superior al cinco por ciento."); });
     await act(async () => { setInput(pin, "12345678"); });
     await act(async () => { click("Autorizar contingencia"); });
     const call = vi.mocked(apiRequest).mock.calls.find(([path]) => String(path).includes("/fx-contingency/authorizations"));

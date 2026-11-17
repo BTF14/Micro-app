@@ -121,6 +121,7 @@ BEGIN
   SELECT count(*) INTO old_completion_checks
     FROM pg_catalog.pg_constraint
    WHERE conrelid='public.sales'::regclass AND contype='c'
+     AND conname <> 'sales_completed_fx_snapshot_ck'
      AND pg_catalog.pg_get_constraintdef(oid) ILIKE '%exchange_rate_id IS NOT NULL%'
      AND pg_catalog.pg_get_constraintdef(oid) ILIKE '%status%completed%';
   IF old_completion_checks <> 0 THEN

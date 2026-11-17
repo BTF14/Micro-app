@@ -234,7 +234,6 @@ ALTER TABLE public.sales
   ADD COLUMN fx_authorization_id uuid,
   ADD COLUMN manual_fx_acknowledged_at timestamptz,
   ADD COLUMN manual_fx_acknowledged_by_user_id uuid;
-ALTER TABLE public.sales ALTER COLUMN fx_source DROP DEFAULT;
 
 ALTER TABLE public.sales
   ADD CONSTRAINT sales_fx_source_ck

@@ -366,6 +366,38 @@ export function registerFxContingencyRoutes(app: Hono<{ Bindings: Bindings }>): 
         );
         if (renewalId && active.rows[0]?.id !== renewalId) return { kind: "authorization_not_active" as const };
         if (active.rows[0]) {
+          const recovery = await tx.query<{ restored: boolean }>(
+            `SELECT EXISTS (
+               SELECT 1 FROM public.bcv_sync_success_observations obs
+                WHERE obs.observed_at > $1::timestamptz
+                  AND obs.last_outcome IN ('inserted','unchanged')
+                  AND obs.last_error_code IS NULL
+                  AND obs.last_effective_date=(pg_catalog.clock_timestamp() AT TIME ZONE 'America/Caracas')::date
+                  AND obs.validation_status='valid'
+                  AND ((obs.last_outcome='inserted' AND obs.rate_fetched_at > $1::timestamptz)
+                    OR obs.last_outcome='unchanged')
+             ) AS restored`,
+            [active.rows[0].starts_at],
+          );
+          if (recovery.rows[0]?.restored) {
+            await tx.query(
+              `SELECT public.transition_fx_contingency_authorization(
+                 $1::uuid,$2::uuid,$3::uuid,'bcv_restored',$4::uuid,$5::text,
+                 'official BCV rate recovered before authorization renewal'
+               )`,
+              [actor.tenant.organizationId, branchId, active.rows[0].id,
+                (await tx.query<{ user_id: string; role: string }>(
+                  `SELECT authorized_by_user_id AS user_id,authorized_by_role AS role
+                     FROM public.fx_contingency_authorizations WHERE id=$1`,
+                  [active.rows[0].id],
+                )).rows[0]!.user_id,
+                (await tx.query<{ role: string }>(
+                  `SELECT authorized_by_role AS role FROM public.fx_contingency_authorizations WHERE id=$1`,
+                  [active.rows[0].id],
+                )).rows[0]!.role],
+            );
+            return { kind: "bcv_restored" as const };
+          }
           const expiryTime = new Date(active.rows[0].expires_at).getTime();
           if (expiryTime <= Date.now()) {
             await tx.query(
@@ -412,6 +444,7 @@ export function registerFxContingencyRoutes(app: Hono<{ Bindings: Bindings }>): 
         if (result.kind === "reference_unavailable") return c.json({ error: "BCV_REFERENCE_UNAVAILABLE" }, 409);
         if (result.kind === "authorization_not_active") return c.json({ error: "FX_AUTHORIZATION_NOT_ACTIVE" }, 409);
         if (result.kind === "authorization_already_active") return c.json({ error: "FX_AUTHORIZATION_ALREADY_ACTIVE" }, 409);
+        if (result.kind === "bcv_restored") return c.json({ error: "BCV_RATE_RESTORED", message: "La tasa oficial BCV se recuperó; la contingencia fue cerrada." }, 409);
         return authFailure(c, result.kind);
       }
       return c.json({ authorization_id: result.id }, 201);

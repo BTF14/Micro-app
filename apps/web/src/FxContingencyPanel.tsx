@@ -31,6 +31,7 @@ export default function FxContingencyPanel({ organizationId, role }: { organizat
   const [members, setMembers] = useState<Member[]>([]);
   const [delegateUserId, setDelegateUserId] = useState("");
   const [pin, setPin] = useState("");
+  const [newPin, setNewPin] = useState("");
   const [currentPin, setCurrentPin] = useState("");
   const [rate, setRate] = useState("");
   const [reason, setReason] = useState("");
@@ -89,9 +90,9 @@ export default function FxContingencyPanel({ organizationId, role }: { organizat
     setSaving(true); setError(""); setNotice("");
     try {
       await apiRequest(`${base}/fx-pin`, {
-        method: "PUT", body: JSON.stringify({ pin, ...(currentPin ? { current_pin: currentPin } : {}) }),
+        method: "PUT", body: JSON.stringify({ pin: newPin, ...(currentPin ? { current_pin: currentPin } : {}) }),
       });
-      setPin(""); setCurrentPin(""); setNotice("PIN cambiando/configurado correctamente.");
+      setNewPin(""); setCurrentPin(""); setNotice("PIN configurado correctamente.");
     } catch (cause) { setError(cause instanceof Error ? cause.message : "No se pudo guardar el PIN."); }
     finally { setSaving(false); }
   }
@@ -177,9 +178,9 @@ export default function FxContingencyPanel({ organizationId, role }: { organizat
       </>}
       <div className="fx-pin-settings">
         <h3>PIN individual</h3>
-        <label>PIN nuevo (8–32 dígitos)<input type="password" inputMode="numeric" autoComplete="new-password" value={pin} onChange={(event) => setPin(event.target.value)} /></label>
+        <label>PIN nuevo (8–32 dígitos)<input type="password" inputMode="numeric" autoComplete="new-password" value={newPin} onChange={(event) => setNewPin(event.target.value)} /></label>
         <label>PIN actual (solo si ya estaba configurado)<input type="password" inputMode="numeric" autoComplete="current-password" value={currentPin} onChange={(event) => setCurrentPin(event.target.value)} /></label>
-        <button type="button" disabled={saving || pin.length < 8} onClick={() => void savePin()}>Guardar PIN</button>
+        <button type="button" disabled={saving || newPin.length < 8} onClick={() => void savePin()}>Guardar PIN</button>
       </div>
       {role === "owner" && <div className="fx-delegations">
         <h3>Delegación de administradores</h3>

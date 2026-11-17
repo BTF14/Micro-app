@@ -122,7 +122,7 @@ export async function findApplicableCheckoutRate(tx: import("./database").Databa
             last_outcome,
             last_effective_date::text AS last_effective_date,
             last_error_code
-       FROM public.lock_bcv_sync_state()`,
+       FROM public.lock_bcv_sync_state_with_error()`,
   );
   const state = syncState.rows[0];
   if (

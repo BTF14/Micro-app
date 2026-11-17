@@ -308,20 +308,30 @@ export function registerFxContingencyRoutes(app: Hono<{ Bindings: Bindings }>): 
     const token = session(c); if (!token) { clearSessionCookie(c); return c.json({ error: "UNAUTHENTICATED" }, 401); }
     try {
       const result = await withDatabaseClient(c.env.DATABASE_URL, (client) => withDatabaseTransaction(client, async (tx) => {
-        const actor = await resolveActor(tx, token, org);
-        if (actor.kind !== "ok") return actor;
-        const scope = await authorizeBranch(tx, actor.tenant, branchId);
+        const tenant = await resolveTenantContext(tx, token, org, false);
+        if (!tenant) return { kind: "unauthenticated" as const };
+        if (!["owner", "admin", "cashier"].includes(tenant.role)) return { kind: "forbidden" as const };
+        const scope = tenant.role === "cashier"
+          ? (await resolveBranchContext(tx, tenant, branchId, false) ? "ok" : "branch_denied")
+          : await authorizeBranch(tx, tenant, branchId);
         if (scope !== "ok") return { kind: scope };
         const rows = await tx.query(
-          `SELECT a.id,a.rate::text,a.reference_rate_value::text,a.deviation_bps,a.reason,
-                  a.starts_at,a.expires_at,a.status,a.authorized_by_user_id,
-                  a.elevated_confirmation_at
-             FROM public.fx_contingency_authorizations a
-            WHERE a.organization_id=$1 AND a.branch_id=$2 AND a.status='active'
-              AND a.starts_at <= pg_catalog.clock_timestamp()
-              AND a.expires_at > pg_catalog.clock_timestamp()
-            ORDER BY a.starts_at DESC LIMIT 1`,
-          [actor.tenant.organizationId, branchId],
+          tenant.role === "cashier"
+            ? `SELECT a.id,a.rate::text,a.expires_at
+                 FROM public.fx_contingency_authorizations a
+                WHERE a.organization_id=$1 AND a.branch_id=$2 AND a.status='active'
+                  AND a.starts_at <= pg_catalog.clock_timestamp()
+                  AND a.expires_at > pg_catalog.clock_timestamp()
+                ORDER BY a.starts_at DESC LIMIT 1`
+            : `SELECT a.id,a.rate::text,a.reference_rate_value::text,a.deviation_bps,a.reason,
+                      a.starts_at,a.expires_at,a.status,a.authorized_by_user_id,
+                      a.elevated_confirmation_at
+                 FROM public.fx_contingency_authorizations a
+                WHERE a.organization_id=$1 AND a.branch_id=$2 AND a.status='active'
+                  AND a.starts_at <= pg_catalog.clock_timestamp()
+                  AND a.expires_at > pg_catalog.clock_timestamp()
+                ORDER BY a.starts_at DESC LIMIT 1`,
+          [tenant.organizationId, branchId],
         );
         const bcv = await tx.query(
           `SELECT state.last_success_at,state.last_outcome,state.last_effective_date,

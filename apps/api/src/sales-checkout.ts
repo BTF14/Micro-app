@@ -32,7 +32,7 @@ type PaymentMethod = (typeof PAYMENT_METHODS)[number];
 
 type CheckoutLine = { productId: string; quantity: string };
 type CheckoutPayment = { method: PaymentMethod; currency: Currency; amount: string; reference: string | null };
-type CheckoutInput = { warehouseId: string; lines: CheckoutLine[]; payments: CheckoutPayment[]; currency: Currency; manualFxAcknowledged: boolean };
+type CheckoutInput = { warehouseId: string; lines: CheckoutLine[]; payments: CheckoutPayment[]; currency: Currency; manualFxAcknowledged: boolean; manualFxAcknowledgedRate: string | null };
 
 type ProductRow = {
   id: string;
@@ -163,8 +163,14 @@ function boundedText(value: unknown, maxLength: number): string | null {
 export function parseCheckoutInput(value: unknown): CheckoutInput | null {
   if (!value || typeof value !== "object" || Array.isArray(value)) return null;
   const body = value as Record<string, unknown>;
-  if (Object.keys(body).some((key) => !["warehouse_id", "lines", "payments", "manual_fx_acknowledged"].includes(key))) return null;
+  if (Object.keys(body).some((key) => !["warehouse_id", "lines", "payments", "manual_fx_acknowledged", "manual_fx_acknowledged_rate"].includes(key))) return null;
   if (body.manual_fx_acknowledged !== undefined && typeof body.manual_fx_acknowledged !== "boolean") return null;
+  const manualFxAcknowledged = body.manual_fx_acknowledged === true;
+  const manualFxAcknowledgedRate = manualFxAcknowledged
+    ? normalizeDecimal(body.manual_fx_acknowledged_rate, 18, 8, true)
+    : null;
+  if (manualFxAcknowledged && manualFxAcknowledgedRate === null) return null;
+  if (!manualFxAcknowledged && body.manual_fx_acknowledged_rate !== undefined && body.manual_fx_acknowledged_rate !== null) return null;
   if (typeof body.warehouse_id !== "string" || !UUID_PATTERN.test(body.warehouse_id)) return null;
   if (!Array.isArray(body.lines) || body.lines.length < 1 || body.lines.length > MAX_LINES) return null;
   if (!Array.isArray(body.payments) || body.payments.length < 1 || body.payments.length > MAX_PAYMENTS) return null;
@@ -233,7 +239,7 @@ export function parseCheckoutInput(value: unknown): CheckoutInput | null {
     return null;
   }
 
-  return { warehouseId: body.warehouse_id.toLowerCase(), lines, payments, currency, manualFxAcknowledged: body.manual_fx_acknowledged === true };
+  return { warehouseId: body.warehouse_id.toLowerCase(), lines, payments, currency, manualFxAcknowledged, manualFxAcknowledgedRate };
 }
 
 async function sha256Hex(value: string): Promise<string> {
@@ -256,6 +262,7 @@ export async function canonicalRequestHash(
     lines: input.lines,
     payments: input.payments,
     manualFxAcknowledged: input.manualFxAcknowledged,
+    manualFxAcknowledgedRate: input.manualFxAcknowledgedRate,
   }));
 }
 
@@ -507,7 +514,7 @@ export function registerSalesCheckoutRoutes(app: Hono<{ Bindings: Bindings }>): 
             // AC-6 remains a commercial gate: this flag is absent/false by
             // default and must not be enabled until written legal/accounting approval.
             if (c.env.FX_CONTINGENCY_ENABLED !== "true") return { kind: "rate_unavailable" };
-            if (!input.manualFxAcknowledged) return { kind: "manual_ack_required" };
+            if (!input.manualFxAcknowledged || input.manualFxAcknowledgedRate !== manual.rate) return { kind: "manual_ack_required" };
             const manual = await findActiveManualFxAuthorization(tx, branch.organizationId, branch.branchId);
             if (!manual) return { kind: "rate_unavailable" };
             rate = { id: null, rate: manual.rate, effective_date: caracasDate(new Date()), validation_status: "valid" };

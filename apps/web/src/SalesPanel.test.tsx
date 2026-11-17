@@ -291,6 +291,7 @@ describe("SalesPanel", () => {
       manual_fx_acknowledged_rate: "104.00000000",
     });
     expect(container.textContent).toContain("Tasa manual de contingencia (no oficial BCV)");
+    expect(container.textContent).toContain("Referencia de autorización: auth-1");
   });
 
   it("keeps manual contingency unavailable while the commercial AC-6 gate is off", async () => {

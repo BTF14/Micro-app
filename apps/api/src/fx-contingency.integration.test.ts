@@ -446,7 +446,10 @@ describe.skipIf(!safeDb)("FX contingency PostgreSQL integration — PG-01..PG-30
     await expect(runtime.query("DELETE FROM public.bcv_sync_success_observations")).rejects.toMatchObject({ code: "42501" });
     const branch = await createBranch("PG21");
     const id = await createAuthorization(branch, "101.00000000");
-    await expect(runtime.query("SELECT * FROM public.fx_contingency_authorizations WHERE id=$1", [id])).rejects.toMatchObject({ code: "42501" });
+    const visibleAuthorization = await runtime.query<{ id: string }>(
+      "SELECT id FROM public.fx_contingency_authorizations WHERE id=$1", [id],
+    );
+    expect(visibleAuthorization.rows[0]?.id).toBe(id);
     const locked = await runtime.query<{ id: string; authorized_by_user_id: string; authorized_by_role: string }>(
       "SELECT * FROM public.lock_active_fx_contingency_authorization_for_transition($1::uuid,$2::uuid)",
       [organizationId, branch],

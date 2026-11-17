@@ -31,7 +31,7 @@ BEGIN
     OR pg_catalog.has_table_privilege('microapp_bcv_sync','public.bcv_sync_success_observations','UPDATE')
     OR pg_catalog.has_table_privilege('microapp_bcv_sync','public.bcv_sync_success_observations','DELETE')
     OR pg_catalog.has_table_privilege('microapp_bcv_sync','public.bcv_sync_success_observations','TRUNCATE')
-    OR pg_catalog.has_table_privilege('public','public.bcv_sync_success_observations','SELECT')
+    OR EXISTS (SELECT 1 FROM pg_catalog.pg_class rel CROSS JOIN LATERAL pg_catalog.aclexplode(COALESCE(rel.relacl,pg_catalog.acldefault('r',rel.relowner))) acl WHERE rel.oid='public.bcv_sync_success_observations'::regclass AND acl.grantee=0)
   THEN RAISE EXCEPTION 'BCV_OBSERVATION_ACL_INVALID'; END IF;
 
   SELECT count(*) INTO trigger_count
@@ -126,11 +126,11 @@ BEGIN
     OR pg_catalog.has_table_privilege('microapp_runtime','public.fx_contingency_events','DELETE')
     OR pg_catalog.has_table_privilege('microapp_runtime','public.fx_contingency_events','TRUNCATE')
   THEN RAISE EXCEPTION 'FX_EVENTS_RUNTIME_MUST_USE_NARROW_APPEND_FUNCTION'; END IF;
-  IF NOT pg_catalog.has_function_privilege(
+  IF pg_catalog.has_function_privilege(
     'microapp_runtime',
     'public.append_fx_contingency_event(uuid,uuid,uuid,text,uuid,text,jsonb)',
     'EXECUTE'
-  ) IS FALSE THEN
+  ) THEN
     RAISE EXCEPTION 'FX_EVENT_APPEND_HELPER_MUST_NOT_BE_RUNTIME_CALLABLE';
   END IF;
 END;

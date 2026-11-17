@@ -198,7 +198,7 @@ export function registerFxContingencyRoutes(app: Hono<{ Bindings: Bindings }>): 
         const existing = await tx.query<{ kdf_version: string; iterations: number; salt_base64: string; hash_base64: string }>(
           `SELECT kdf_version,iterations,pg_catalog.encode(salt,'base64') AS salt_base64,
                   pg_catalog.encode(pin_hash,'base64') AS hash_base64
-             FROM public.fx_user_pin_credentials WHERE organization_id=$1 AND user_id=$2 FOR UPDATE`,
+             FROM public.fx_user_pin_credentials WHERE organization_id=$1 AND user_id=$2`,
           [actor.tenant.organizationId, actor.tenant.userId],
         );
         if (existing.rows[0]) {

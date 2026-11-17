@@ -133,7 +133,8 @@ async function verifyAndRateLimitPin(
     `SELECT kdf_version, iterations, pg_catalog.encode(salt,'base64') AS salt_base64,
             pg_catalog.encode(pin_hash,'base64') AS hash_base64
        FROM public.fx_user_pin_credentials
-      WHERE organization_id=$1 AND user_id=$2`,
+      WHERE organization_id=$1 AND user_id=$2
+      FOR SHARE`,
     [tenant.organizationId, tenant.userId],
   );
   return await verifyFxPin(pin, result.rows[0] ?? null, tenant.organizationId, tenant.userId, pepper) ? "ok" : "invalid";

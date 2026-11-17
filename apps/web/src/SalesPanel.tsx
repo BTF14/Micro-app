@@ -445,7 +445,7 @@ export default function SalesPanel({
 
           {warehouseLoaded && warehouses.length === 0 && <p className="sales-alert warning" role="status">Esta sucursal no tiene almacenes activos. Habilita uno antes de vender.</p>}
           {warehouseLoaded && warehouses.length > 1 && !warehouseId && <p className="sales-alert warning" role="status">Selecciona el almacén que surtirá esta venta.</p>}
-          {!canConvert && <p className="sales-alert warning" role="alert">No se puede completar la venta sin una tasa BCV vigente del día. El cobro permanecerá bloqueado.</p>}
+          {!canConvert && <p className="sales-alert warning" role="alert">El cobro se habilita cuando exista una tasa BCV vigente o una contingencia autorizada y habilitada.</p>}
 
           {warehouseId && !receipt && (
             <div className="sales-workspace">

@@ -240,7 +240,7 @@ describe.skipIf(!isDisposableCheckoutDatabase || !isDisposableBcvProducerDatabas
       `UPDATE public.bcv_sync_state
           SET attempt_id=$4::uuid,
               last_outcome=$1,
-              last_success_at=CASE WHEN $3 THEN COALESCE(last_success_at, now()) ELSE NULL END,
+              last_success_at=CASE WHEN $3 THEN now() ELSE NULL END,
               last_effective_date=$2::date,
               last_error_code=CASE WHEN $1='failed' THEN 'BCV_SYNC_UNKNOWN' ELSE NULL END,
               updated_at=now()
@@ -392,6 +392,20 @@ describe.skipIf(!isDisposableCheckoutDatabase || !isDisposableBcvProducerDatabas
       [productId],
     );
     legacyStockBefore = legacyStock.rows[0]!.stock_quantity;
+  });
+
+  afterEach(async () => {
+    if (!client || !organizationId || !branchId || !fxOwnerId) return;
+    const active = await client.query<{ id: string }>(
+      "SELECT id FROM public.fx_contingency_authorizations WHERE organization_id=$1 AND branch_id=$2 AND status='active'",
+      [organizationId, branchId],
+    );
+    for (const authorization of active.rows) {
+      await client.query(
+        "SELECT public.transition_fx_contingency_authorization($1,$2,$3,'revoked',$4,'owner','integration test cleanup')",
+        [organizationId, branchId, authorization.id, fxOwnerId],
+      );
+    }
   });
 
   afterAll(async () => {

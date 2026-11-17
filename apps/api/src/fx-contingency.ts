@@ -207,12 +207,10 @@ export function registerFxContingencyRoutes(app: Hono<{ Bindings: Bindings }>): 
         }
         const hash = await hashFxPin(body.pin, actor.tenant.organizationId, actor.tenant.userId, c.env.FX_PIN_PEPPER!);
         await tx.query(
-          `INSERT INTO public.fx_user_pin_credentials
-             (organization_id,user_id,kdf_version,iterations,salt,pin_hash)
-           VALUES ($1,$2,$3,$4,pg_catalog.decode($5,'base64'),pg_catalog.decode($6,'base64'))
-           ON CONFLICT (organization_id,user_id) DO UPDATE
-             SET kdf_version=EXCLUDED.kdf_version,iterations=EXCLUDED.iterations,
-                 salt=EXCLUDED.salt,pin_hash=EXCLUDED.pin_hash,updated_at=pg_catalog.clock_timestamp()`,
+          `SELECT public.set_fx_user_pin_credential(
+             $1::uuid,$2::uuid,$3::text,$4::integer,
+             pg_catalog.decode($5,'base64'),pg_catalog.decode($6,'base64')
+           )`,
           [actor.tenant.organizationId, actor.tenant.userId, hash.kdfVersion, hash.iterations, hash.saltBase64, hash.hashBase64],
         );
         await tx.query(

@@ -219,7 +219,7 @@ describe.skipIf(!safeDb)("FX contingency PostgreSQL integration — PG-01..PG-30
         await admin.query("DELETE FROM public.fx_contingency_delegations WHERE organization_id=$1", [organizationId]);
         await admin.query("DELETE FROM public.fx_user_pin_credentials WHERE organization_id=$1", [organizationId]);
         await admin.query("DELETE FROM public.audit_logs WHERE organization_id=$1", [organizationId]);
-        if (fxRateLimitHashes.length) await admin.query("DELETE FROM public.auth_rate_limits WHERE key_hash=ANY($1::text[])", [fxRateLimitHashes]);
+        if (fxRateLimitHashes.length) await admin.query("DELETE FROM public.auth_rate_limits WHERE key_hash::text=ANY($1::text[])", [fxRateLimitHashes]);
         if (attemptIds.length) await admin.query("DELETE FROM public.bcv_sync_success_observations WHERE attempt_id=ANY($1::uuid[])", [attemptIds]);
         await admin.query("DELETE FROM public.branch_memberships WHERE organization_id=$1", [organizationId]);
         await admin.query("DELETE FROM public.branches WHERE organization_id=$1", [organizationId]);
@@ -298,6 +298,9 @@ describe.skipIf(!safeDb)("FX contingency PostgreSQL integration — PG-01..PG-30
     const branch = await createBranch("PG07");
     const result = await runtime.query<{ id: string }>("SELECT public.set_fx_contingency_delegation($1::uuid,$2::uuid,$3::uuid,$4::uuid,'owner',false) AS id", [organizationId, branch, adminId, ownerId]);
     expect(result.rows[0]!.id).toBeTruthy();
+    const inactiveBranch = await createBranch("PG07-inactive");
+    await admin.query("UPDATE public.branch_memberships SET is_active=false WHERE organization_id=$1 AND branch_id=$2 AND user_id=$3", [organizationId, inactiveBranch, adminId]);
+    await expect(runtime.query("SELECT public.set_fx_contingency_delegation($1::uuid,$2::uuid,$3::uuid,$4::uuid,'owner',false)", [organizationId, inactiveBranch, adminId, ownerId])).rejects.toMatchObject({ code: "23514" });
   });
 
   it("PG-08 admin cannot authorize without explicit active delegation", async () => {

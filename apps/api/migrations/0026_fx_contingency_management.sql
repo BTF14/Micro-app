@@ -997,6 +997,22 @@ REVOKE ALL ON FUNCTION public.set_fx_user_pin_credential(uuid,uuid,uuid,text,int
 GRANT EXECUTE ON FUNCTION public.set_fx_user_pin_credential(uuid,uuid,uuid,text,integer,bytea,bytea) TO microapp_runtime;
 
 
+CREATE FUNCTION public.lock_bcv_sync_state_with_error()
+RETURNS TABLE(last_success_at timestamptz,last_outcome text,last_effective_date date,last_error_code text)
+LANGUAGE sql
+SECURITY DEFINER
+SET search_path = pg_catalog
+AS $lock_bcv_sync_state_with_error$
+  SELECT state.last_success_at,state.last_outcome,state.last_effective_date,state.last_error_code
+    FROM public.bcv_sync_state state
+   WHERE state.singleton=true
+   FOR SHARE
+$lock_bcv_sync_state_with_error$;
+ALTER FUNCTION public.lock_bcv_sync_state_with_error() OWNER TO microapp_migrator;
+REVOKE ALL ON FUNCTION public.lock_bcv_sync_state_with_error() FROM PUBLIC;
+GRANT EXECUTE ON FUNCTION public.lock_bcv_sync_state_with_error() TO microapp_runtime;
+
+
 CREATE FUNCTION public.lock_fx_user_pin_credential(
   p_organization_id uuid, p_user_id uuid
 )

@@ -46,6 +46,18 @@ BEGIN
      );
   IF trigger_count <> 2 THEN RAISE EXCEPTION 'BCV_OBSERVATION_ENABLE_ALWAYS_TRIGGERS_MISSING'; END IF;
 
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_catalog.pg_constraint
+     WHERE conrelid='public.fx_user_pin_credentials'::regclass
+       AND contype='c' AND pg_catalog.pg_get_constraintdef(oid) ILIKE '%iterations = 100000%'
+  ) THEN RAISE EXCEPTION 'FX_PIN_V1_ITERATIONS_MUST_MATCH_WORKERS_RUNTIME'; END IF;
+
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_catalog.pg_attribute
+     WHERE attrelid='public.fx_contingency_authorizations'::regclass
+       AND attname='reference_effective_date' AND NOT attisdropped
+  ) THEN RAISE EXCEPTION 'FX_REFERENCE_EFFECTIVE_DATE_SNAPSHOT_MISSING'; END IF;
+
   SELECT count(*) INTO trigger_count
     FROM pg_catalog.pg_trigger t
    WHERE t.tgrelid = 'public.fx_contingency_events'::regclass

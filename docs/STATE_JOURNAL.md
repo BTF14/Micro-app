@@ -1,3 +1,17 @@
+## Turno 55 — implementación PR 1 Contingencia Manual BCV en Draft (2026-11-17)
+
+- Base verificada en vivo: `main` = `04d3679189edaab17221f1e8cd425cc68fa53155`. PR #377 OPEN / Draft; rama `feat/fx-contingency-pr1-20261117`.
+- Implementación de código validada en SHA `7afa4ddb9f4c6fee5ba1bd1bb5629b02c3c0239d`: migración 0026 + assertions; servicios PIN/KDF/rate-limit, delegación, autorización, observaciones BCV append-only, triggers de ventas, API Hono y frontend mínimo.
+- Correcciones incorporadas durante validación: referencia BCV congela ID/valor/effective_date; thresholds exactos con comparación decimal y bps conservador (ceil); `starts_at` y `observed_at` usan `clock_timestamp()` tras locks; recuperación usa `observed_at > starts_at` sin exigir que `last_success_at` avance; fecha BCV futura no invalida la tasa aplicable de hoy; ACK manual exige actor igual a `sales.created_by`; recibo imprime referencia de autorización.
+- Se preservó `0022_bcv_dedicated_producer_role.sql`; nueva función de lock BCV expone `last_error_code` a runtime sin alterar 0022; KDF v1 fija PBKDF2-SHA256 100.000 iteraciones probadas en Workers runtime.
+- CI exacto de implementación: run #44187952802 SUCCESS; 12/12 workflows SUCCESS en SHA `7afa4ddb9f4c6fee5ba1bd1bb5629b02c3c0239d`, incluyendo 0026 assertions, Wrangler KDF, PG-01..PG-30, PostgreSQL checkout, backup/restore y Playwright.
+- AC-7 completo queda gate pre-merge, no cerrado: auditoría independiente final del SQL real, triggers, ACL/grants, KDF runtime, PG suite y diff completo pendiente.
+- AC-6 continúa como gate comercial: sin aprobación escrita contable/legal, contingencia comercial deshabilitada. No se configuraron secretos, Cloudflare, Neon ni producción.
+- No se mezclaron Carril A, Carril B1 ni Hardening. No merge ni deploy. Issue #53 OPEN/P0; PRODUCTION NOT READY.
+- Los SHA y el estado de PR se actualizan en `CURRENT_STATE.md`, `HANDOFF_NEXT_CHAT.md` y `PROJECT_PLAN.md` en el cierre documental de esta rama.
+
+---
+
 ## Turno 54 — PR #374/#375, primer insert BCV y prioridad v1.1 (2026-11-17)
 
 - Base vigente: `main` = `d6760bf3da0e0c080c2f4ead3d518ce4e30bc589`; PR #374 y #375 MERGED.

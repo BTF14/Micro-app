@@ -138,8 +138,8 @@ jobs:
         run: bash scripts/db/migrate.sh
       - name: Assert the complete migration ledger
         run: |
-          test "$(psql "$DATABASE_URL_ADMIN" -X -v ON_ERROR_STOP=1 -Atc "SELECT count(*) FROM public.schema_migrations WHERE state = 'applied'")" = "25"
-          test "$(psql "$DATABASE_URL_ADMIN" -X -v ON_ERROR_STOP=1 -Atc "SELECT min(version) || ':' || max(version) FROM public.schema_migrations")" = "0001:0025"
+          test "$(psql "$DATABASE_URL_ADMIN" -X -v ON_ERROR_STOP=1 -Atc "SELECT count(*) FROM public.schema_migrations WHERE state = 'applied'")" = "26"
+          test "$(psql "$DATABASE_URL_ADMIN" -X -v ON_ERROR_STOP=1 -Atc "SELECT min(version) || ':' || max(version) FROM public.schema_migrations")" = "0001:0026"
       - name: Install pinned Playwright runner in an isolated temporary directory
         run: npm install --prefix /tmp/micro-app-playwright --no-save --package-lock=false @playwright/test@1.55.0
       - name: Expose runner to the app without touching pnpm-managed packages

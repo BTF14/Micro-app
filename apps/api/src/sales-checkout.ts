@@ -80,7 +80,7 @@ type SalePaymentRow = {
 type CheckoutResult =
   | { kind: "created" | "replayed"; sale: Record<string, unknown> }
   | { kind: "unauthenticated" | "forbidden" | "branch_denied" | "warehouse_not_found" |
-      "shift_required" | "rate_unavailable" | "invalid_products" | "insufficient_stock" |
+      "shift_required" | "rate_unavailable" | "manual_ack_required" | "invalid_products" | "insufficient_stock" |
       "idempotency_conflict" | "invalid_payment" };
 
 function caracasDate(now: Date): string {

@@ -328,8 +328,12 @@ export function registerFxContingencyRoutes(app: Hono<{ Bindings: Bindings }>): 
         );
         const activeRow = active.rows[0];
         if (activeRow) {
-          const expired = new Date(activeRow.expires_at).getTime() <= Date.now();
-          const recovery = !expired && await tx.query<{ id: string }>(
+          const expiryCheck = await tx.query<{ expired: boolean }>(
+            "SELECT pg_catalog.clock_timestamp() >= $1::timestamptz AS expired",
+            [activeRow.expires_at],
+          );
+          const expired = expiryCheck.rows[0]?.expired === true;
+          const recovery = expired ? null : await tx.query<{ id: string }>(
             `SELECT obs.id
                FROM public.bcv_sync_success_observations obs
                JOIN public.exchange_rates rate ON rate.id=obs.exchange_rate_id

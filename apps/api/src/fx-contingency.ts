@@ -215,6 +215,13 @@ export function registerFxContingencyRoutes(app: Hono<{ Bindings: Bindings }>): 
                  salt=EXCLUDED.salt,pin_hash=EXCLUDED.pin_hash,updated_at=pg_catalog.clock_timestamp()`,
           [actor.tenant.organizationId, actor.tenant.userId, hash.kdfVersion, hash.iterations, hash.saltBase64, hash.hashBase64],
         );
+        await tx.query(
+          `INSERT INTO public.audit_logs
+             (organization_id,actor_user_id,action,entity_type,entity_id,metadata)
+           VALUES ($1,$2,'fx.pin.configured','fx_pin_credential',$3,$4::jsonb)`,
+          [actor.tenant.organizationId, actor.tenant.userId, actor.tenant.userId,
+            JSON.stringify({ kdf_version: hash.kdfVersion, iterations: hash.iterations })],
+        );
         return { kind: "ok" as const };
       }));
       if (result.kind === "unauthenticated" || result.kind === "forbidden") return authFailure(c, result.kind);

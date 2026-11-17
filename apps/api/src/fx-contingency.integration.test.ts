@@ -209,7 +209,7 @@ describe.skipIf(!safeDb)("FX contingency PostgreSQL integration — PG-01..PG-30
       await admin.query("BEGIN");
       await admin.query("ALTER TABLE public.fx_contingency_events DISABLE TRIGGER ALL");
       await admin.query("ALTER TABLE public.bcv_sync_success_observations DISABLE TRIGGER ALL");
-      await admin.query("ALTER TABLE public.audit_logs DISABLE TRIGGER USER");
+      await admin.query("ALTER TABLE public.audit_logs DISABLE TRIGGER ALL");
       if (organizationId) {
         await admin.query("DELETE FROM public.fx_contingency_events WHERE organization_id=$1", [organizationId]);
         await admin.query("DELETE FROM public.fx_contingency_authorizations WHERE organization_id=$1", [organizationId]);
@@ -227,7 +227,9 @@ describe.skipIf(!safeDb)("FX contingency PostgreSQL integration — PG-01..PG-30
       await admin.query("ALTER TABLE public.fx_contingency_events ENABLE ALWAYS TRIGGER fx_contingency_events_20_append_only_truncate");
       await admin.query("ALTER TABLE public.bcv_sync_success_observations ENABLE ALWAYS TRIGGER bcv_sync_success_observations_10_append_only_rows");
       await admin.query("ALTER TABLE public.bcv_sync_success_observations ENABLE ALWAYS TRIGGER bcv_sync_success_observations_20_append_only_truncate");
-      await admin.query("ALTER TABLE public.audit_logs ENABLE TRIGGER USER");
+      await admin.query("ALTER TABLE public.audit_logs ENABLE ALWAYS TRIGGER audit_logs_10_append_only_rows");
+      await admin.query("ALTER TABLE public.audit_logs ENABLE ALWAYS TRIGGER audit_logs_20_append_only_truncate");
+      if (futureRateIds.length) await admin.query("DELETE FROM public.exchange_rates WHERE id=ANY($1::uuid[])", [futureRateIds]);
       if (previousCurrentRate) {
         await admin.query("UPDATE public.exchange_rates SET rate=$2::numeric,validation_status=$3,fetched_at=$4 WHERE id=$1", [previousCurrentRate.id, previousCurrentRate.rate, previousCurrentRate.validation_status, previousCurrentRate.fetched_at]);
       } else if (currentRateCreated && currentRateId) {

@@ -8,6 +8,10 @@ export type Bindings = {
   FRONTEND_ORIGIN?: string;
   GOOGLE_CLIENT_ID?: string;
   GOOGLE_CLIENT_SECRET?: string;
+  // Dedicated secret for FX PIN pre-hashing; never store in wrangler [vars].
+  FX_PIN_PEPPER?: string;
+  // Independent HMAC pepper for FX PIN account/IP rate-limit buckets.
+  FX_PIN_RATE_LIMIT_PEPPER?: string;
   // Exact, pre-registered redirect URI (e.g. https://api.example.com/auth/google/callback).
   // Must match a URI registered in the Google OAuth client exactly; never derived from the request.
   GOOGLE_REDIRECT_URI?: string;

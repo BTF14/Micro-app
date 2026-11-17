@@ -67,8 +67,7 @@ export async function verifyFxPin(
   pepper: string,
 ): Promise<boolean> {
   if (!validPin(pin) || !stored || stored.kdf_version !== KDF_VERSION ||
-      !Number.isInteger(stored.iterations) || stored.iterations < 100_000 ||
-      stored.iterations > 1_000_000) {
+      !Number.isInteger(stored.iterations) || stored.iterations !== FX_PIN_ITERATIONS) {
     // Keep malformed/missing credentials on a fixed-cost derivation path.
     if (validPin(pin) && pepper.length >= 32) {
       const dummy = await prehashPin(pin, organizationId, userId, pepper);

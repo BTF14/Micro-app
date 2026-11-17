@@ -82,7 +82,7 @@ describe("FxContingencyPanel", () => {
       setInput(rate, "105.01000000");
       setInput(textareas[0]!, "Contingencia de prueba con motivo específico.");
       setInput(expiry, "2026-11-17T20:00");
-      const elevated = [...container.querySelectorAll('input[type="checkbox"]')][0]!;
+      const elevated = container.querySelector<HTMLInputElement>('input[type="checkbox"]')!;
       elevated.click();
     });
     await act(async () => { setInput(textareas[1]!, "Confirmo expresamente la desviación superior al cinco por ciento."); });

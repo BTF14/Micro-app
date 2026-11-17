@@ -1,15 +1,15 @@
 # ODD task: Gestión de contingencia cambiaria
 
-- Status: proposed
+- Status: in_progress
 - Issue / PR: [PR #288](https://github.com/BTF14/Micro-app/pull/288) — MERGED; documentación integrada en `main`
-- Owner / reviewer: propietario del producto; revisión técnica/seguridad y contable/legal pendientes
+- Owner / reviewer: propietario del producto; implementación autorizada; AC-7 independiente obligatorio antes del merge; AC-6 contable/legal obligatorio antes de habilitación comercial
 - Started: 2026-11-09
 - Risk: critical
 
 ## Objective and authorization
 
 - Desired outcome: especificar una contingencia cambiaria temporal, autorizada y auditable para permitir operación controlada ante feriados, retrasos de publicación o indisponibilidad del BCV, sin fallback automático ni pérdida de trazabilidad.
-- Authorization boundary: autorizado documentar la propuesta y su diseño. No autorizado por este trabajo crear endpoints, permisos, migraciones, cambiar checkout, modificar PR #255/#269/#287, habilitar feature flags, escribir en Neon, activar Cron, desplegar o alterar Cloudflare/secretos.
+- Authorization boundary: implementación de PR 1 autorizada únicamente en `feat/fx-contingency-pr1-20261117`, base `04d3679189edaab17221f1e8cd425cc68fa53155`. Incluye migración 0026 + assertions, servicios/API, frontend mínimo y pruebas PR-1. Excluye Carril A, Carril B1 y Hardening no relacionado; no modificar PR #255/#269/#287, Neon, Cloudflare, secretos ni producción. AC-7 independiente es gate obligatorio previo al merge; AC-6 legal/contable es gate de habilitación comercial.
 - Relevant original request: el propietario quiere una opción en Configuración para gestionar una fuente manual de conversión durante contingencias, restringida a actores autorizados, con PIN individual al autorizar en pequeños comercios, control empresarial, confirmación explícita y registro completo.
 
 ## Scope and exclusions
@@ -35,8 +35,8 @@ Excluded:
 - [x] AC-3 — Se documentan vigencia, alcance, permisos, snapshots, auditoría, recuperación BCV y fail-closed.
 - [x] AC-4 — Se documenta que aceptación del cajero y aceptación del cliente son distintas.
 - [x] AC-5 — Resuelto 2026-11-15: Owner o Admin con delegación explícita `fx.contingency.authorize`, limitada a sucursales asignadas al Admin y no concedida por defecto; vigencia máxima 24 h, expiración automática y renovación explícita auditable con PIN.
-- [ ] AC-6 — Revisión legal/contable venezolana y evidencia de aceptación del precio, pendiente antes de implementar.
-- [ ] AC-7 — Revisión independiente de seguridad y datos antes de implementación, pendiente.
+- [ ] AC-6 — Revisión legal/contable venezolana y evidencia de aceptación del precio; gate obligatorio previo a habilitación comercial (no bloquea implementación ni merge).
+- [ ] AC-7 — Revisión independiente de seguridad y datos; revisión de diseño ya realizada se conserva como base de entrada; cierre independiente de migración 0026 real, triggers, privilegios, KDF Wrangler, PG-01..PG-30 y diff completo es gate obligatorio previo al merge.
 
 ## Risks and guardrails
 
@@ -60,7 +60,7 @@ Excluded:
 | Resolver permiso | Owner vs Admin delegado según matriz | Confirmación del propietario 2026-11-15: Owner o Admin con delegación explícita y alcance de sucursales asignadas | completed |
 | Validar legal/contable | Política admisible y evidencia de cliente | Fuentes primarias + asesoría profesional | pending |
 | Auditar auth/auditoría existente | Reusar modelo, seleccionar KDF/MFA y schema | Revisión de código y tests | pending |
-| Implementar en rama aislada | API, DB, checkout, UI | Unit + PostgreSQL + concurrencia + E2E + seguridad + CI exact-SHA | blocked |
+| Implementar en rama aislada | API, DB, checkout, UI | Unit + PostgreSQL + concurrencia + E2E + seguridad + CI exact-SHA | in progress |
 
 ## Technical decisions
 
@@ -99,3 +99,17 @@ Excluded:
 - **Gate comercial:** la capacidad no se habilita para operación comercial hasta recibir visto bueno escrito del asesor contable/legal sobre el comprobante (AC-6). El freeze comercial permanece.
 - **Pruebas exigidas:** runtime KDF real con Wrangler; `0026_fx_contingency_management.assertions.sql`; PG-01..PG-30, incluidas carreras de concurrencia y límites de medianoche con `clock_timestamp()`; CI completo sobre el SHA final.
 - **Límite de ejecución:** el ADR y este task log mantienen AC-7 (revisión independiente de seguridad previa a implementación) como gate pendiente. La autorización de rama no se interpreta como cierre ni waiver de AC-7. Hasta documentar esa revisión, no se introducen endpoints/permisos comerciales ni cambios de checkout/migración; se permite preparar la rama y el registro de trabajo.
+
+
+## Addendum de autorización y ejecución PR 1 — 2026-11-17
+
+- El propietario autorizó la implementación escalonada en `feat/fx-contingency-pr1-20261117`, creada desde el SHA exacto `04d3679189edaab17221f1e8cd425cc68fa53155`.
+- AC-7: la revisión independiente de diseño ya realizada es la base de entrada. El cierre independiente contra la implementación real (migración 0026, assertions/triggers/ACL, KDF en runtime Wrangler, PG-01..PG-30 y diff completo del PR) es gate obligatorio **antes del merge a main**. No presentar la revisión propia de implementación como revisión independiente.
+- AC-6: no bloquea implementación/merge por sí solo, pero la contingencia permanecerá deshabilitada comercialmente hasta recibir validación escrita del asesor contable/legal sobre el comprobante y su evidencia de aceptación.
+- Secuencia autorizada: (1) 0026 + assertions; (2) servicios/API; (3) frontend mínimo; (4) PG-01..PG-30 + Wrangler KDF + CI; (5) revisión independiente AC-7; (6) cierre documental, incluida reconciliación SHA/estado en CURRENT_STATE y HANDOFF_NEXT_CHAT.
+- Contratos SQL obligatorios:
+  - `observed_at` y `starts_at` se asignan con `clock_timestamp()`; recuperación compara `obs.observed_at > auth.starts_at`, sin exigir `obs.last_success_at > auth.starts_at`.
+  - Redefinición de `assert_sale_latest_bcv_sync_success()` conserva `SECURITY DEFINER`, owner `microapp_migrator`, `search_path` restringido y revocaciones exactas de 0021.
+  - `bcv_sync_success_observations`: append-only, triggers `ENABLE ALWAYS`, `REVOKE ALL` a PUBLIC y `microapp_bcv_sync`; `GRANT SELECT` solo a `microapp_runtime`.
+  - ACK: fuente manual exige timestamp y actor igual a `sales.created_by`; fuente BCV exige ambos campos NULL.
+- Excluido explícitamente: Carril A, Carril B1 y Hardening ajeno a PR 1. Sin mutaciones remotas en Neon ni operaciones de Cloudflare/secretos.

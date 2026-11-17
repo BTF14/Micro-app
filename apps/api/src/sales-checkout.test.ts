@@ -217,7 +217,7 @@ describe("checkout BCV effective-date and last-success selection", () => {
     const { client, statements } = mockClient(validState("2026-11-09"), validRate("2026-11-09"));
     await expect(findApplicableCheckoutRate(client, new Date("2026-11-06T18:00:00-04:00"))).resolves.toBeNull();
     expect(statements).toHaveLength(2);
-    expect(statements[0]).toContain("public.lock_bcv_sync_state()");
+    expect(statements[0]).toContain("public.lock_bcv_sync_state_with_error()");
     expect(statements[1]).toContain("effective_date = $2::date");
   });
 
@@ -246,7 +246,7 @@ describe("checkout BCV effective-date and last-success selection", () => {
       validation_status: "valid",
     });
     expect(statements).toHaveLength(2);
-    expect(statements[0]).toContain("public.lock_bcv_sync_state()");
+    expect(statements[0]).toContain("public.lock_bcv_sync_state_with_error()");
     expect(statements[1]).toContain("effective_date = $2::date");
   });
 

@@ -25,9 +25,10 @@ async function settle() {
   await act(async () => { await new Promise((resolve) => setTimeout(resolve, 0)); });
 }
 function setInput(input: HTMLInputElement | HTMLTextAreaElement, value: string) {
-  const prototype = input instanceof HTMLTextAreaElement ? HTMLTextAreaElement.prototype : HTMLInputElement.prototype;
+  const prototype = Object.getPrototypeOf(input) as object;
   Object.getOwnPropertyDescriptor(prototype, "value")?.set?.call(input, value);
-  input.dispatchEvent(new Event("input", { bubbles: true }));
+  const EventConstructor = input.ownerDocument.defaultView?.Event ?? Event;
+  input.dispatchEvent(new EventConstructor("input", { bubbles: true }));
 }
 function click(label: string) {
   const button = [...container.querySelectorAll("button")].find((item) => item.textContent?.trim() === label);

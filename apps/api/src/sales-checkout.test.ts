@@ -28,6 +28,7 @@ describe("sales checkout request contract", () => {
     expect(parsed).toEqual({
       warehouseId,
       currency: "USD",
+      manualFxAcknowledged: false,
       lines: [
         { productId: productA, quantity: "1.250" },
         { productId: productB, quantity: "2.000" },
@@ -36,6 +37,22 @@ describe("sales checkout request contract", () => {
         { method: "cash", currency: "USD", amount: "29.8125", reference: null },
       ],
     });
+  });
+
+
+  it("binds the cashier disclosure acknowledgement into the canonical request", async () => {
+    const base = {
+      warehouse_id: warehouseId,
+      lines: [{ product_id: productA, quantity: "1.000" }],
+      payments: [{ method: "cash", currency: "USD", amount: "1.0000" }],
+    };
+    const withoutAck = parseCheckoutInput(base)!;
+    const withAck = parseCheckoutInput({ ...base, manual_fx_acknowledged: true })!;
+    expect(withoutAck.manualFxAcknowledged).toBe(false);
+    expect(withAck.manualFxAcknowledged).toBe(true);
+    await expect(canonicalRequestHash(organizationId, branchId, userId, withoutAck))
+      .resolves.not.toBe(await canonicalRequestHash(organizationId, branchId, userId, withAck));
+    expect(parseCheckoutInput({ ...base, manual_fx_acknowledged: "yes" })).toBeNull();
   });
 
   it("rejects client-calculated prices, discounts, totals and unknown fields", () => {

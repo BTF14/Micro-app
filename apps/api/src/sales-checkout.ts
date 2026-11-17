@@ -509,14 +509,14 @@ export function registerSalesCheckoutRoutes(app: Hono<{ Bindings: Bindings }>): 
           let fxSource: "bcv_official" | "manual_contingency" = "bcv_official";
           let fxAuthorizationId: string | null = null;
           if (bcvRate) {
-            rate = bcvRate;
+            rate = { id: bcvRate.id, rate: bcvRate.rate, effective_date: bcvRate.effective_date, validation_status: "valid" };
           } else {
             // AC-6 remains a commercial gate: this flag is absent/false by
             // default and must not be enabled until written legal/accounting approval.
             if (c.env.FX_CONTINGENCY_ENABLED !== "true") return { kind: "rate_unavailable" };
-            if (!input.manualFxAcknowledged || input.manualFxAcknowledgedRate !== manual.rate) return { kind: "manual_ack_required" };
             const manual = await findActiveManualFxAuthorization(tx, branch.organizationId, branch.branchId);
             if (!manual) return { kind: "rate_unavailable" };
+            if (!input.manualFxAcknowledged || input.manualFxAcknowledgedRate !== manual.rate) return { kind: "manual_ack_required" };
             rate = { id: null, rate: manual.rate, effective_date: caracasDate(new Date()), validation_status: "valid" };
             fxSource = "manual_contingency";
             fxAuthorizationId = manual.id;

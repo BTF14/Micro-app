@@ -56,13 +56,14 @@ describe.skipIf(!isDisposableCiDatabase)("BCV effective-date persistence against
   let runtimeClient: Client | undefined;
   let cleanupClient: Client | undefined;
   async function clearExchangeRateFixture(client: Client, source: string): Promise<void> {
-  await client.query("ALTER TABLE public.bcv_sync_success_observations DISABLE TRIGGER USER");
+  await client.query("ALTER TABLE public.bcv_sync_success_observations DISABLE TRIGGER ALL");
   try {
     await client.query(
       "DELETE FROM public.bcv_sync_success_observations",
     );
   } finally {
-    await client.query("ALTER TABLE public.bcv_sync_success_observations ENABLE ALWAYS TRIGGER bcv_sync_success_observations_10_append_only_rows");
+    await client.query("ALTER TABLE public.bcv_sync_success_observations ENABLE TRIGGER ALL");
+        await admin.query("ALTER TABLE public.bcv_sync_success_observations ENABLE ALWAYS TRIGGER bcv_sync_success_observations_10_append_only_rows");
     await client.query("ALTER TABLE public.bcv_sync_success_observations ENABLE ALWAYS TRIGGER bcv_sync_success_observations_20_append_only_truncate");
   }
   await client.query("DELETE FROM public.exchange_rates WHERE source=$1", [source]);

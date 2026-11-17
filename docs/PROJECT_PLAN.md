@@ -1,6 +1,6 @@
 # Plan vigente — reconciliación post-PR #377 y decisión BCV no hábil (2026-11-17)
 
-- **Main verificado:** 25e37dc5dcfb18349a6b7f384d109e493a581c3d; PR #377 MERGED en este SHA. La verificación post-merge reportada para el merge SHA es 14/14 checks SUCCESS; revalidar cualquier HEAD nuevo de PR/commit, no heredar checks.
+- **Main verificado:** 25e37dc5dcfb18349a6b7f384d109e493a581c3d; PR #377 MERGED en este SHA. La verificación viva del merge SHA devolvió 16/16 check-runs SUCCESS y 11/11 workflow runs SUCCESS; revalidar cualquier HEAD nuevo de PR/commit, no heredar checks.
 - **PR #377:** implementación de contingencia manual integrada. **AC-7 cerrado** para el alcance de PR1. **AC-6 abierto**: la contingencia manual continúa apagada/no configurada y no se habilita comercialmente sin validación profesional escrita. No confundir merge técnico con autorización comercial.
 - **Freeze v1.1:** vigente. Issue #53 permanece OPEN/P0; **PRODUCTION: NOT READY**. No declarar GO/READY por CI verde.
 - **Paso 1 (PR #378 OPEN/Draft):** reconciliación documental + registro curado de recursos/skills. Sin cambios en apps/**, workflows, SQL/migraciones, infraestructura, Neon, Cloudflare, secretos, datos reales ni billing.

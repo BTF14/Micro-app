@@ -59,8 +59,7 @@ describe.skipIf(!isDisposableCiDatabase)("BCV effective-date persistence against
   await client.query("ALTER TABLE public.bcv_sync_success_observations DISABLE TRIGGER USER");
   try {
     await client.query(
-      "DELETE FROM public.bcv_sync_success_observations WHERE exchange_rate_id IN (SELECT id FROM public.exchange_rates WHERE source=$1)",
-      [source],
+      "DELETE FROM public.bcv_sync_success_observations",
     );
   } finally {
     await client.query("ALTER TABLE public.bcv_sync_success_observations ENABLE ALWAYS TRIGGER bcv_sync_success_observations_10_append_only_rows");

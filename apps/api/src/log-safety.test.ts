@@ -15,6 +15,7 @@ const approvedCalls = new Set([
   'console.error({ event: "AUTH_RETENTION_CLEANUP_FAILED" })',
   'console.error({ event: "REGISTER_SHIFT_DATABASE_FAILURE", code: code ?? "UNKNOWN" })',
   'console.error({ event: "ORGANIZATION_STRUCTURE_FAILED", code: code || "UNKNOWN" })',
+  'console.error({ event: "FX_CONTINGENCY_FAILURE", code: code ?? "UNKNOWN" })',
 ]);
 
 function productionSourceFiles(directory: string): string[] {
@@ -49,6 +50,6 @@ describe("operational log safety", () => {
       expect(source).not.toMatch(/\b(?:const|let|var)\s+\{[^}]*\}\s*=\s*console\b/);
       expect(source).not.toMatch(/\b(?:const|let|var)\s+[A-Za-z_$][\w$]*\s*=\s*console\b/);
     }
-    expect(calls.length).toBe(10);
+    expect(calls.length).toBe(11);
   });
 });

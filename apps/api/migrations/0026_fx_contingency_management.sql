@@ -980,6 +980,12 @@ BEGIN
     SET kdf_version=EXCLUDED.kdf_version,iterations=EXCLUDED.iterations,
         salt=EXCLUDED.salt,pin_hash=EXCLUDED.pin_hash,
         updated_at=pg_catalog.clock_timestamp();
+  INSERT INTO public.audit_logs (
+    organization_id,actor_user_id,action,entity_type,entity_id,metadata
+  ) VALUES (
+    p_organization_id,p_actor_user_id,'fx.pin.updated','fx_user_pin_credential',
+    p_user_id::text,pg_catalog.jsonb_build_object('kdf_version',p_kdf_version,'iterations',p_iterations)
+  );
 END;
 $set_fx_user_pin_credential$;
 ALTER FUNCTION public.set_fx_user_pin_credential(uuid,uuid,uuid,text,integer,bytea,bytea) OWNER TO microapp_migrator;

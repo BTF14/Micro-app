@@ -143,7 +143,7 @@ export default function FxContingencyPanel({ organizationId, role }: { organizat
     if (!branchId) return;
     setSaving(true); setError(""); setNotice("");
     try {
-      await apiRequest(`${base}/branches/${encodeURIComponent(branchId)}/fx-delegations/${encodeURIComponent(userId)}`, { method: "DELETE" });
+      await apiRequest(`${base}/branches/${encodeURIComponent(branchId)}/fx-delegations/${encodeURIComponent(userId)}`, { method: "DELETE", body: JSON.stringify({}) });
       setNotice("Delegación revocada."); await refresh();
     } catch (cause) { setError(cause instanceof Error ? cause.message : "No se pudo revocar la delegación."); }
     finally { setSaving(false); }

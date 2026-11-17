@@ -128,3 +128,10 @@ Excluded:
 - **AC-6:** `FX_CONTINGENCY_ENABLED` es opt-in y queda sin configurar/false fuera de pruebas; no habilitar operación comercial hasta la aprobación escrita contable/legal.
 - Sin cambios en `main`, Neon, Cloudflare, secretos o despliegues. Sin Carril A, Carril B1 ni Hardening ajeno.
 - `CURRENT_STATE.md` y `HANDOFF_NEXT_CHAT.md` se reconciliarán únicamente en el cierre documental final (paso 9), según instrucción del propietario.
+
+
+### CI correction log — 2026-11-17
+
+- Exact-SHA run on `67353389d73a1084d3028fde3f5b3b5d2604361e`: migration runner failed while compiling `assert_completed_sale_reconciled()`; PostgreSQL reported a syntax error at the inline `CASE` expression in the payment reconciliation `IF`.
+- Corrected by parenthesizing the `CASE` expression. Fix commit: `c5130b6510063227b4502f9054e71323352c619b`.
+- The failure was a migration syntax defect, not an environment/permissions failure. The new HEAD requires a fresh migration-runner and full-CI result; no PASS is inferred from the correction.

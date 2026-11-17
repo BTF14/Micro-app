@@ -8,7 +8,7 @@ type Authorization = {
   authorized_by_user_id: string; elevated_confirmation_at: string | null;
 };
 type Member = {
-  user_id: string; display_name: string; role: string; is_active: boolean;
+  user_id: string; display_name: string; role: string; organization_active: boolean;
   branch_memberships: Record<string, boolean>;
 };
 type Delegation = { id: string; user_id: string; display_name: string; granted_by_user_id: string; created_at: string };
@@ -65,7 +65,7 @@ export default function FxContingencyPanel({ organizationId, role }: { organizat
     let active = true;
     void (async () => {
       try {
-        const result = await apiRequest<{ branches: Branch[] }>(`${base}/branches`);
+        const result = await apiRequest<{ branches: Branch[] }>(`${base}/fx-delegated-branches`);
         if (!active) return;
         setBranches(result.branches);
         setBranchId(result.branches[0]?.id ?? "");
@@ -75,7 +75,7 @@ export default function FxContingencyPanel({ organizationId, role }: { organizat
       if (role === "owner") {
         try {
           const structure = await apiRequest<{ members: Member[] }>(`${base}/structure`);
-          if (active) setMembers(structure.members.filter((member) => member.role === "admin" && member.is_active));
+          if (active) setMembers(structure.members.filter((member) => member.role === "admin" && member.organization_active));
         } catch { /* Delegation remains unavailable if owner structure data cannot be read. */ }
       }
     })();

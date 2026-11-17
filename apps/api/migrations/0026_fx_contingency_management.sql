@@ -613,7 +613,8 @@ $assert_completed_sale_reconciled$;
 ALTER FUNCTION public.assert_completed_sale_reconciled() OWNER TO microapp_migrator;
 REVOKE ALL ON FUNCTION public.assert_completed_sale_reconciled() FROM PUBLIC;
 
-\n
+
+
 CREATE FUNCTION public.transition_fx_contingency_authorization(
   p_organization_id uuid, p_branch_id uuid, p_authorization_id uuid,
   p_new_status text, p_actor_user_id uuid, p_actor_role text, p_reason text
@@ -746,7 +747,8 @@ ALTER FUNCTION public.set_fx_contingency_delegation(uuid,uuid,uuid,uuid,text,boo
 REVOKE ALL ON FUNCTION public.set_fx_contingency_delegation(uuid,uuid,uuid,uuid,text,boolean) FROM PUBLIC;
 GRANT EXECUTE ON FUNCTION public.set_fx_contingency_delegation(uuid,uuid,uuid,uuid,text,boolean) TO microapp_runtime;
 
-\n
+
+
 CREATE FUNCTION public.create_fx_contingency_authorization(
   p_organization_id uuid, p_branch_id uuid, p_rate numeric,
   p_reference_rate_value numeric, p_reference_exchange_rate_id uuid,

@@ -374,7 +374,7 @@ describe.skipIf(!safeDb)("FX contingency PostgreSQL integration — PG-01..PG-30
   it("PG-19 runtime can read PIN verifier fields but cannot write credential rows directly", async () => {
     const salt = Buffer.alloc(16, 7);
     const hash = Buffer.alloc(32, 9);
-    await runtime.query("SELECT public.set_fx_user_pin_credential($1::uuid,$2::uuid,'pbkdf2-sha256-v1',100000,$3::bytea,$4::bytea)", [organizationId, ownerId, salt, hash]);
+    await runtime.query("SELECT public.set_fx_user_pin_credential($1::uuid,$2::uuid,$2::uuid,'pbkdf2-sha256-v1',100000,$3::bytea,$4::bytea)", [organizationId, ownerId, salt, hash]);
     const row = await runtime.query("SELECT kdf_version,iterations FROM public.fx_user_pin_credentials WHERE organization_id=$1 AND user_id=$2", [organizationId, ownerId]);
     expect(row.rows[0]).toEqual({ kdf_version: "pbkdf2-sha256-v1", iterations: 100000 });
     await expect(runtime.query("UPDATE public.fx_user_pin_credentials SET iterations=200000 WHERE organization_id=$1 AND user_id=$2", [organizationId, ownerId])).rejects.toMatchObject({ code: "42501" });

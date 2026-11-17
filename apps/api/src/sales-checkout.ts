@@ -32,7 +32,7 @@ type PaymentMethod = (typeof PAYMENT_METHODS)[number];
 
 type CheckoutLine = { productId: string; quantity: string };
 type CheckoutPayment = { method: PaymentMethod; currency: Currency; amount: string; reference: string | null };
-type CheckoutInput = { warehouseId: string; lines: CheckoutLine[]; payments: CheckoutPayment[]; currency: Currency };
+type CheckoutInput = { warehouseId: string; lines: CheckoutLine[]; payments: CheckoutPayment[]; currency: Currency; manualFxAcknowledged: boolean; manualFxAcknowledgedRate: string | null };
 
 type ProductRow = {
   id: string;
@@ -42,6 +42,7 @@ type ProductRow = {
   cost_usd: string;
 };
 type RateRow = { id: string; rate: string; effective_date: string; validation_status: "valid" | "stale" };
+type ManualFxAuthorizationRow = { id: string; rate: string; starts_at: string; expires_at: string };
 type ExistingSale = { id: string; status: string; request_hash: string | null };
 type SaleHeader = {
   id: string;
@@ -52,6 +53,9 @@ type SaleHeader = {
   total_usd: string;
   total_ves_snapshot: string;
   exchange_rate_snapshot: string;
+  fx_source: 'bcv_official' | 'manual_contingency';
+  fx_authorization_id: string | null;
+  manual_fx_acknowledged_at: string | null;
   created_at: string;
   completed_at: string | null;
 };
@@ -76,7 +80,7 @@ type SalePaymentRow = {
 type CheckoutResult =
   | { kind: "created" | "replayed"; sale: Record<string, unknown> }
   | { kind: "unauthenticated" | "forbidden" | "branch_denied" | "warehouse_not_found" |
-      "shift_required" | "rate_unavailable" | "invalid_products" | "insufficient_stock" |
+      "shift_required" | "rate_unavailable" | "bcv_rate_unavailable" | "manual_ack_required" | "invalid_products" | "insufficient_stock" |
       "idempotency_conflict" | "invalid_payment" };
 
 function caracasDate(now: Date): string {
@@ -85,10 +89,26 @@ function caracasDate(now: Date): string {
   return `${value("year")}-${value("month")}-${value("day")}`;
 }
 /**
- * A new sale requires both today's valid BCV row and a successful latest sync.
- * FOR SHARE linearizes this decision against the sync worker's UPDATE to the
- * singleton state row and remains held until the enclosing checkout transaction
- * commits or rolls back. The lock is not held while BCV HTTP is fetched.
+ * The BCV sync-state lock is acquired first by findApplicableCheckoutRate.
+ * This migrator-owned helper then takes a share lock on the active FX row;
+ * runtime deliberately has SELECT-only table access.
+ */
+async function findActiveManualFxAuthorization(
+  tx: import("./database").DatabaseClient, organizationId: string, branchId: string,
+): Promise<ManualFxAuthorizationRow | null> {
+  const result = await tx.query<ManualFxAuthorizationRow>(
+    `SELECT id,rate::text,starts_at::text,expires_at::text
+       FROM public.lock_active_fx_contingency_authorization($1::uuid,$2::uuid)`,
+    [organizationId, branchId],
+  );
+  return result.rows[0] ?? null;
+}
+
+/**
+ * A new sale requires today's valid BCV row and a successful latest sync.
+ * lock_bcv_sync_state() takes FOR SHARE against the producer's UPDATE and holds
+ * it until the checkout transaction commits or rolls back; it is not held
+ * while the BCV HTTP fetch runs.
  */
 export async function findApplicableCheckoutRate(tx: import("./database").DatabaseClient, now = new Date()): Promise<RateRow | null> {
   const today = caracasDate(now);
@@ -96,16 +116,19 @@ export async function findApplicableCheckoutRate(tx: import("./database").Databa
     last_success_at: string | null;
     last_outcome: string | null;
     last_effective_date: string | null;
+    last_error_code: string | null;
   }>(
     `SELECT last_success_at,
             last_outcome,
-            last_effective_date::text AS last_effective_date
-       FROM public.lock_bcv_sync_state()`,
+            last_effective_date::text AS last_effective_date,
+            last_error_code
+       FROM public.lock_bcv_sync_state_with_error()`,
   );
   const state = syncState.rows[0];
   if (
     !state ||
     !state.last_success_at ||
+    state.last_error_code != null ||
     (state.last_outcome !== "inserted" && state.last_outcome !== "unchanged") ||
     (state.last_effective_date === null || state.last_effective_date < today)
   ) return null;
@@ -143,7 +166,14 @@ function boundedText(value: unknown, maxLength: number): string | null {
 export function parseCheckoutInput(value: unknown): CheckoutInput | null {
   if (!value || typeof value !== "object" || Array.isArray(value)) return null;
   const body = value as Record<string, unknown>;
-  if (Object.keys(body).some((key) => !["warehouse_id", "lines", "payments"].includes(key))) return null;
+  if (Object.keys(body).some((key) => !["warehouse_id", "lines", "payments", "manual_fx_acknowledged", "manual_fx_acknowledged_rate"].includes(key))) return null;
+  if (body.manual_fx_acknowledged !== undefined && typeof body.manual_fx_acknowledged !== "boolean") return null;
+  const manualFxAcknowledged = body.manual_fx_acknowledged === true;
+  const manualFxAcknowledgedRate = manualFxAcknowledged
+    ? normalizeDecimal(body.manual_fx_acknowledged_rate, 18, 8, true)
+    : null;
+  if (manualFxAcknowledged && manualFxAcknowledgedRate === null) return null;
+  if (!manualFxAcknowledged && body.manual_fx_acknowledged_rate !== undefined && body.manual_fx_acknowledged_rate !== null) return null;
   if (typeof body.warehouse_id !== "string" || !UUID_PATTERN.test(body.warehouse_id)) return null;
   if (!Array.isArray(body.lines) || body.lines.length < 1 || body.lines.length > MAX_LINES) return null;
   if (!Array.isArray(body.payments) || body.payments.length < 1 || body.payments.length > MAX_PAYMENTS) return null;
@@ -212,7 +242,7 @@ export function parseCheckoutInput(value: unknown): CheckoutInput | null {
     return null;
   }
 
-  return { warehouseId: body.warehouse_id.toLowerCase(), lines, payments, currency };
+  return { warehouseId: body.warehouse_id.toLowerCase(), lines, payments, currency, manualFxAcknowledged, manualFxAcknowledgedRate };
 }
 
 async function sha256Hex(value: string): Promise<string> {
@@ -234,6 +264,8 @@ export async function canonicalRequestHash(
     currency: input.currency,
     lines: input.lines,
     payments: input.payments,
+    manualFxAcknowledged: input.manualFxAcknowledged,
+    manualFxAcknowledgedRate: input.manualFxAcknowledgedRate,
   }));
 }
 
@@ -283,6 +315,11 @@ function postgresCode(error: unknown): string | undefined {
   return typeof error.code === "string" ? error.code : undefined;
 }
 
+function postgresMessage(error: unknown): string {
+  return error && typeof error === "object" && "message" in error && typeof error.message === "string"
+    ? error.message : "";
+}
+
 async function loadSaleResponse(
   tx: import("./database").DatabaseClient,
   organizationId: string,
@@ -291,7 +328,7 @@ async function loadSaleResponse(
   const header = await tx.query<SaleHeader>(
     `SELECT id, sale_number::text, status, settlement_currency,
             subtotal_usd::text, total_usd::text, total_ves_snapshot::text,
-            exchange_rate_snapshot::text, created_at::text, completed_at::text
+            exchange_rate_snapshot::text, fx_source, fx_authorization_id,\n            manual_fx_acknowledged_at::text, created_at::text, completed_at::text
        FROM public.sales
       WHERE organization_id = $1 AND id = $2`,
     [organizationId, saleId],
@@ -322,7 +359,12 @@ async function loadSaleResponse(
     subtotal_usd: sale.subtotal_usd,
     total_usd: sale.total_usd,
     total_ves: sale.total_ves_snapshot,
-    bcv_rate: sale.exchange_rate_snapshot,
+    bcv_rate: sale.fx_source === 'bcv_official' ? sale.exchange_rate_snapshot : null,
+    fx_rate: sale.exchange_rate_snapshot,
+    fx_source: sale.fx_source,
+    fx_authorization_id: sale.fx_authorization_id,
+    manual_fx_acknowledged_at: sale.manual_fx_acknowledged_at,
+    fx_receipt_label: sale.fx_source === 'manual_contingency' ? 'Tasa manual de contingencia (no oficial BCV)' : 'Tasa BCV',
     created_at: sale.created_at,
     completed_at: sale.completed_at,
     lines: lines.rows,
@@ -465,8 +507,25 @@ export function registerSalesCheckoutRoutes(app: Hono<{ Bindings: Bindings }>): 
           const shift = await resolveOpenCashierRegisterShift(tx, branch);
           if (!shift) return { kind: "shift_required" };
 
-          const rate = await findApplicableCheckoutRate(tx);
-          if (!rate) return { kind: "rate_unavailable" };
+          const bcvRate = await findApplicableCheckoutRate(tx);
+          let rate: { id: string | null; rate: string; effective_date: string; validation_status: "valid" };
+          let fxSource: "bcv_official" | "manual_contingency" = "bcv_official";
+          let fxAuthorizationId: string | null = null;
+          if (bcvRate) {
+            rate = { id: bcvRate.id, rate: bcvRate.rate, effective_date: bcvRate.effective_date, validation_status: "valid" };
+          } else {
+            // AC-6 remains a commercial gate: this flag is absent/false by
+            // default and must not be enabled until written legal/accounting approval.
+            if (c.env.FX_CONTINGENCY_ENABLED !== "true") {
+              return { kind: input.manualFxAcknowledged ? "rate_unavailable" : "bcv_rate_unavailable" };
+            }
+            const manual = await findActiveManualFxAuthorization(tx, branch.organizationId, branch.branchId);
+            if (!manual) return { kind: "rate_unavailable" };
+            if (!input.manualFxAcknowledged || input.manualFxAcknowledgedRate !== manual.rate) return { kind: "manual_ack_required" };
+            rate = { id: null, rate: manual.rate, effective_date: caracasDate(new Date()), validation_status: "valid" };
+            fxSource = "manual_contingency";
+            fxAuthorizationId = manual.id;
+          }
 
           const productIds = input.lines.map((line) => line.productId);
           const productsResult = await tx.query<ProductRow>(
@@ -542,16 +601,20 @@ export function registerSalesCheckoutRoutes(app: Hono<{ Bindings: Bindings }>): 
             `INSERT INTO public.sales (
                organization_id, idempotency_key, status, subtotal_usd, total_usd,
                exchange_rate_id, exchange_rate_snapshot, total_ves_snapshot, created_by,
-               branch_id, register_shift_id, warehouse_id, settlement_currency, request_hash
+               branch_id, register_shift_id, warehouse_id, settlement_currency, request_hash,
+               fx_source, fx_authorization_id, manual_fx_acknowledged_at, manual_fx_acknowledged_by_user_id
              ) VALUES (
                $1, $2, 'draft', $3::numeric, $3::numeric,
-               $4, $5::numeric, $6::numeric, $7, $8, $9, $10, $11, $12
+               $4, $5::numeric, $6::numeric, $7, $8, $9, $10, $11, $12,
+               $13, $14, CASE WHEN $13='manual_contingency' THEN pg_catalog.clock_timestamp() ELSE NULL END,
+               CASE WHEN $13='manual_contingency' THEN $7::uuid ELSE NULL END
              )
              ON CONFLICT (organization_id, idempotency_key) DO NOTHING
              RETURNING id`,
             [
               branch.organizationId, idempotencyKey, subtotalUsd, rate.id, rate.rate, totalVes,
               branch.userId, branch.branchId, shift.id, input.warehouseId, input.currency, hash,
+              fxSource, fxAuthorizationId,
             ],
           );
           const saleId = insertedSale.rows[0]?.id;
@@ -669,7 +732,9 @@ export function registerSalesCheckoutRoutes(app: Hono<{ Bindings: Bindings }>): 
         case "branch_denied": return c.json({ error: "BRANCH_FORBIDDEN", message: "No tienes acceso a esta sucursal." }, 403);
         case "warehouse_not_found": return c.json({ error: "WAREHOUSE_NOT_FOUND", message: "El almacén no existe o no pertenece a esta sucursal." }, 404);
         case "shift_required": return c.json({ error: "OPEN_SHIFT_REQUIRED", message: "Debes tener tu propio turno abierto para registrar la venta." }, 409);
-        case "rate_unavailable": return c.json({ error: "BCV_RATE_NOT_CURRENT", message: "No se puede completar la venta sin una tasa BCV vigente." }, 409);
+        case "bcv_rate_unavailable": return c.json({ error: "BCV_RATE_NOT_CURRENT", message: "No existe una tasa BCV vigente para la fecha operativa." }, 409);
+        case "rate_unavailable": return c.json({ error: "FX_RATE_NOT_AVAILABLE", message: "No existe una tasa BCV vigente ni una autorización de contingencia activa." }, 409);
+        case "manual_ack_required": return c.json({ error: "MANUAL_FX_ACK_REQUIRED", message: "Confirma que comunicaste al cliente la tasa manual de contingencia antes de continuar." }, 409);
         case "invalid_products": return c.json({ error: "PRODUCT_NOT_AVAILABLE", message: "Uno o más productos no existen o están inactivos." }, 409);
         case "insufficient_stock": return c.json({ error: "INSUFFICIENT_STOCK", message: "La existencia disponible del almacén es insuficiente." }, 409);
         case "invalid_payment": return c.json({ error: "PAYMENT_TOTAL_INVALID", message: "Los pagos deben cubrir exactamente el total en una sola moneda." }, 400);
@@ -679,6 +744,58 @@ export function registerSalesCheckoutRoutes(app: Hono<{ Bindings: Bindings }>): 
       }
     } catch (error) {
       const code = postgresCode(error);
+      if (code === "23514" && postgresMessage(error).includes("MANUAL_FX_CONTINGENCY_BCV_RESTORED")) {
+        // The checkout transaction has rolled back. Recheck in a separate
+        // transaction using the required BCV -> FX lock order and durable
+        // observation evidence before committing the bcv_restored event.
+        let transitioned = false;
+        try {
+          transitioned = await withDatabaseClient(c.env.DATABASE_URL, (client) =>
+            withDatabaseTransaction(client, async (tx) => {
+              await tx.query("SELECT * FROM public.lock_bcv_sync_state()");
+              const active = await tx.query<{
+                id: string; starts_at: Date | string;
+                authorized_by_user_id: string; authorized_by_role: "owner" | "admin";
+              }>(
+                "SELECT * FROM public.lock_active_fx_contingency_authorization_for_transition($1::uuid,$2::uuid)",
+                [organizationId, branchId],
+              );
+              const auth = active.rows[0];
+              if (!auth) return false;
+              const recovery = await tx.query<{ id: string }>(
+                `SELECT obs.id
+                   FROM public.bcv_sync_success_observations obs
+                   JOIN public.exchange_rates rate ON rate.id=obs.exchange_rate_id
+                  WHERE obs.observed_at > $1::timestamptz
+                    AND obs.last_outcome IN ('inserted','unchanged')
+                    AND obs.last_error_code IS NULL
+                    AND obs.validation_status='valid'
+                    AND obs.last_effective_date=(pg_catalog.clock_timestamp() AT TIME ZONE 'America/Caracas')::date
+                    AND rate.effective_date=(pg_catalog.clock_timestamp() AT TIME ZONE 'America/Caracas')::date
+                    AND rate.source=$2
+                    AND (obs.last_outcome <> 'inserted' OR obs.rate_fetched_at > $1::timestamptz)
+                  LIMIT 1`,
+                [auth.starts_at, BCV_SOURCE],
+              );
+              if (!recovery.rows[0]) return false;
+              await tx.query(
+                `SELECT public.transition_fx_contingency_authorization(
+                   $1::uuid,$2::uuid,$3::uuid,'bcv_restored',$4::uuid,$5::text,
+                   'official BCV rate recovered after authorization start'
+                 )`,
+                [organizationId, branchId, auth.id, auth.authorized_by_user_id, auth.authorized_by_role],
+              );
+              return true;
+            }),
+          );
+        } catch {
+          console.error({ event: "FX_BCV_RESTORATION_TRANSITION_FAILED" });
+        }
+        if (transitioned) {
+          return c.json({ error: "BCV_RATE_RESTORED", message: "BCV recuperó una tasa oficial aplicable. La contingencia fue cerrada; vuelve a intentar la venta." }, 409);
+        }
+        return c.json({ error: "FX_RATE_NOT_AVAILABLE", message: "No existe una tasa oficial aplicable ni una autorización manual vigente." }, 409);
+      }
       if (code === "23505") return c.json({ error: "IDEMPOTENCY_CONFLICT", message: "La clave de idempotencia ya fue utilizada." }, 409);
       if (code === "23503" || code === "23514" || code === "22P02") {
         return c.json({ error: "CHECKOUT_REJECTED", message: "La operación no cumple las reglas de integridad." }, 409);

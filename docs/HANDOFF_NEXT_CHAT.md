@@ -1,3 +1,28 @@
+# Handoff vigente — PR 1 Contingencia Manual BCV — AC-7 cerrado (2026-11-17)
+
+## Punto exacto de partida
+- `main` / base de PR #377 = `04d3679189edaab17221f1e8cd425cc68fa53155`.
+- PR #377: https://github.com/BTF14/Micro-app/pull/377 — OPEN / Draft deliberado; no merge ni auto-merge.
+- Rama: `feat/fx-contingency-pr1-20261117`; hardening de código en SHA `08bb9353fad340cc26ada74b82d34dc0f789bffd`; consultar GitHub para el HEAD documental vivo.
+- PR 1 incluye migración 0026 + assertions, PIN/KDF Workers, rate limits por usuario/IP, delegaciones/autorizaciones, eventos append-only, observaciones BCV inmutables, checkout manual/BCV, rutas Hono, UI mínima, ACK de cajero y recibo con referencia de autorización.
+- Hardening AC-7 final: runtime no tiene SELECT directo sobre `fx_user_pin_credentials`; lectura del verificador solo por `lock_fx_user_pin_credential()` SECURITY DEFINER; setter estrecho; IP con validación estricta compartida; sin doble evento de auditoría PIN.
+
+## Verificación y gates
+- **21/21 check-runs SUCCESS** sobre el SHA de código `08bb9353fad340cc26ada74b82d34dc0f789bffd`, sin pendientes ni fallidos. El cierre documental posterior debe verificarse también en su HEAD exacto; no se heredan checks entre SHAs. CI [#44190827905](https://github.com/BTF14/Micro-app/actions/runs/44190827905); migration runner [#44190827919](https://github.com/BTF14/Micro-app/actions/runs/44190827919); migration validation [#44190827775](https://github.com/BTF14/Micro-app/actions/runs/44190827775); Playwright E2E [#44190827978](https://github.com/BTF14/Micro-app/actions/runs/44190827978); backup/restore [#44190827917](https://github.com/BTF14/Micro-app/actions/runs/44190827917).
+- **AC-7 CERRADO** para PR 1: revisión independiente completada en el HEAD previo; las tres correcciones finales solicitadas se aplicaron y pasaron revalidación integral exact-SHA. Evidencia en `odd/tasks/fx-contingency-management.md`.
+- **AC-6 ABIERTO:** no habilitar comercialmente hasta recibir validación escrita del asesor contable/legal sobre el comprobante. `FX_CONTINGENCY_ENABLED` permanece ausente/false; no añadir secretos ni configurar producción.
+- Mantener PR #377 Draft hasta que el propietario dé autorización final para salir de Draft y fusionar. La instrucción actual prohíbe merge automático y no autoriza despliegue manual, cambios en Neon, Cloudflare, secretos o datos reales.
+- Issue #53 sigue OPEN/P0; `PRODUCTION: NOT READY`. No mezclar Carril A, Carril B1 ni Hardening ajeno.
+
+## Próximo paso
+Esperar la autorización final del propietario para sacar PR #377 de Draft y ejecutar el merge. AC-6 seguirá bloqueando la habilitación comercial incluso después del merge.
+
+---
+
+> **SNAPSHOT HISTÓRICO SUPERSEDIDO:** los handoffs inferiores describen estados anteriores a PR #377. Prevalece este encabezado y el estado vivo del PR.
+
+---
+
 # Handoff vigente — continuidad posterior a PR #375 (2026-11-17)
 
 ## Punto exacto de partida

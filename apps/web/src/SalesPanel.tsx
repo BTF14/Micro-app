@@ -16,13 +16,16 @@ type PaymentMethod = "cash" | "card" | "transfer" | "mobile_payment" | "other";
 type ExchangeRateStatus = "current" | "stale" | "unavailable";
 type Shift = { shift_id?: string; id?: string; branch_id: string; branch_name?: string; register_name?: string; opened_at?: string };
 type Warehouse = { id: string; name: string; code: string; is_active: boolean };
+type FxPanelState = { commercial_enabled: boolean; authorization: { id: string; rate: string; expires_at: string } | null };
 type CartLine = { product: QuickLookupProduct; quantity: string; quantityInput: string; quantityValid: boolean };
 type PaymentLine = { id: string; method: PaymentMethod; amount: string; reference: string };
 type SaleLineReceipt = { product_name_snapshot: string; sku_snapshot: string; quantity: string; unit_price_usd: string; line_total_usd: string; line_total_ves: string };
 type SalePaymentReceipt = { method: PaymentMethod; currency: Currency; amount: string; reference: string | null };
 type SaleReceipt = {
   sale_number: string; created_at: string; currency: Currency; subtotal_usd: string;
-  total_usd: string; total_ves: string; bcv_rate: string; lines: SaleLineReceipt[]; payments: SalePaymentReceipt[];
+  total_usd: string; total_ves: string; bcv_rate: string | null; fx_rate: string;
+  fx_source: 'bcv_official' | 'manual_contingency'; fx_receipt_label: string;
+  fx_authorization_id: string | null; lines: SaleLineReceipt[]; payments: SalePaymentReceipt[];
 };
 
 type SalesPanelProps = {
@@ -80,6 +83,8 @@ export default function SalesPanel({
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
   const [receipt, setReceipt] = useState<SaleReceipt | null>(null);
+  const [fxState, setFxState] = useState<FxPanelState | null>(null);
+  const [manualFxAcknowledgedRate, setManualFxAcknowledgedRate] = useState<string | null>(null);
   const [lookupReset, setLookupReset] = useState(0);
   const idempotencyKey = useRef(newIdempotencyKey());
   const requestFingerprint = useRef<string | null>(null);
@@ -88,7 +93,13 @@ export default function SalesPanel({
   const prevBranchRef = useRef<string | null>(null);
 
   const base = `/api/orgs/${encodeURIComponent(organizationId)}`;
-  const canConvert = exchangeRateStatus === "current" && exchangeRate !== null;
+  const bcvAvailable = exchangeRateStatus === "current" && exchangeRate !== null;
+  const activeManualFx = fxState?.commercial_enabled === true && fxState.authorization &&
+    new Date(fxState.authorization.expires_at).getTime() > Date.now() ? fxState.authorization : null;
+  const usingManualFx = !bcvAvailable && activeManualFx !== null;
+  const manualFxAcknowledged = activeManualFx !== null && usingManualFx && manualFxAcknowledgedRate === activeManualFx.rate;
+  const effectiveRate = bcvAvailable ? exchangeRate : activeManualFx !== null && usingManualFx ? activeManualFx.rate : null;
+  const canConvert = effectiveRate !== null;
 
   const computed = useMemo(() => {
     if (cart.length === 0) {
@@ -96,15 +107,15 @@ export default function SalesPanel({
     }
     const lines = cart.map((line) => {
       const lineUsd = calculateLineUsd(line.quantity, line.product.price_usd);
-      const lineVes = canConvert && exchangeRate ? convertUsdToVes(lineUsd, exchangeRate) : "";
+      const lineVes = canConvert && effectiveRate ? convertUsdToVes(lineUsd, effectiveRate) : "";
       return { ...line, lineUsd, lineVes };
     });
     return {
       lines,
       subtotalUsd: sumNumeric(lines.map((line) => line.lineUsd), 14, 4),
-      totalVes: canConvert && exchangeRate ? sumNumeric(lines.map((line) => line.lineVes), 16, 2) : null,
+      totalVes: canConvert && effectiveRate ? sumNumeric(lines.map((line) => line.lineVes), 16, 2) : null,
     };
-  }, [cart, canConvert, exchangeRate]);
+  }, [cart, canConvert, effectiveRate]);
 
   const expectedPayment = currency === "USD" ? computed.subtotalUsd : computed.totalVes ?? "0.00";
   const paymentTotal = useMemo(() => {
@@ -148,6 +159,8 @@ export default function SalesPanel({
         const hadCart = cartRef.current.length > 0;
         commitCart([]);
         setReceipt(null);
+        setFxState(null);
+        setManualFxAcknowledgedRate(null);
         setCurrency("USD");
         setPayments([{ id: nextPaymentLineId(), method: "cash", amount: "", reference: "" }]);
         setLookupReset((value) => value + 1);
@@ -166,6 +179,16 @@ export default function SalesPanel({
       const warehouseResult = await apiRequest<{ warehouses: Warehouse[] }>(
         `${base}/branches/${encodeURIComponent(result.shift.branch_id)}/warehouses`,
       );
+      if (exchangeRateStatus !== "current" || !exchangeRate) {
+        const fxResult = await apiRequest<FxPanelState>(
+          `${base}/branches/${encodeURIComponent(result.shift.branch_id)}/fx-contingency`,
+        );
+        if (requestId !== loadSequence.current) return;
+        setFxState(fxResult ?? null);
+      } else {
+        setFxState(null);
+      }
+      setManualFxAcknowledgedRate(null);
       if (requestId !== loadSequence.current) return;
       const active = warehouseResult.warehouses.filter((warehouse) => warehouse.is_active === true);
       setWarehouses(active);
@@ -186,7 +209,7 @@ export default function SalesPanel({
     } finally {
       if (requestId === loadSequence.current) setLoading(false);
     }
-  }, [base, organizationId]);
+  }, [base, organizationId, exchangeRateStatus, exchangeRate]);
 
   useEffect(() => {
     if (prevOrgRef.current !== organizationId) {
@@ -342,7 +365,11 @@ export default function SalesPanel({
   }
 
   async function checkout() {
-    if (!shift || !warehouseId || !canConvert || !exchangeRate || computed.totalVes === null || !allQuantitiesValid) return;
+    if (!shift || !warehouseId || !canConvert || !effectiveRate || computed.totalVes === null || !allQuantitiesValid) return;
+    if (usingManualFx && !manualFxAcknowledged) {
+      setError("Confirma que comunicaste al cliente la tasa manual de contingencia antes de cobrar.");
+      return;
+    }
     if (!paymentMatches) {
       setError(`Los pagos deben sumar exactamente ${expectedPayment} ${currency}.`);
       return;
@@ -350,6 +377,8 @@ export default function SalesPanel({
     const body = {
       warehouse_id: warehouseId,
       lines: cart.map((line) => ({ product_id: line.product.product_id, quantity: line.quantity })),
+      manual_fx_acknowledged: usingManualFx && manualFxAcknowledged,
+      manual_fx_acknowledged_rate: usingManualFx && manualFxAcknowledged ? effectiveRate : null,
       payments: payments.map((payment) => ({
         method: payment.method,
         currency,
@@ -384,6 +413,7 @@ export default function SalesPanel({
     setLookupReset((value) => value + 1);
     setPayments([{ id: nextPaymentLineId(), method: "cash", amount: "", reference: "" }]);
     setCurrency("USD");
+    setManualFxAcknowledgedRate(null);
     setNotice("Venta nueva lista.");
     setError("");
     resetIdempotency();
@@ -391,7 +421,7 @@ export default function SalesPanel({
 
   const selectedWarehouse = warehouses.find((warehouse) => warehouse.id === warehouseId);
   const allQuantitiesValid = cart.length > 0 && cart.every((line) => line.quantityValid);
-  const readyToCharge = Boolean(shift && warehouseId && allQuantitiesValid && canConvert && paymentMatches && !checkoutBusy && !receipt);
+  const readyToCharge = Boolean(shift && warehouseId && allQuantitiesValid && canConvert && paymentMatches && (!usingManualFx || manualFxAcknowledged) && !checkoutBusy && !receipt);
 
   return (
     <section className="sales-panel" aria-labelledby="sales-title">
@@ -415,7 +445,7 @@ export default function SalesPanel({
 
           {warehouseLoaded && warehouses.length === 0 && <p className="sales-alert warning" role="status">Esta sucursal no tiene almacenes activos. Habilita uno antes de vender.</p>}
           {warehouseLoaded && warehouses.length > 1 && !warehouseId && <p className="sales-alert warning" role="status">Selecciona el almacén que surtirá esta venta.</p>}
-          {!canConvert && <p className="sales-alert warning" role="alert">No se puede completar la venta sin una tasa BCV vigente del día. El cobro permanecerá bloqueado.</p>}
+          {!canConvert && <p className="sales-alert warning" role="alert">El cobro se habilita cuando exista una tasa BCV vigente o una contingencia autorizada y habilitada.</p>}
 
           {warehouseId && !receipt && (
             <div className="sales-workspace">
@@ -443,7 +473,7 @@ export default function SalesPanel({
                   </div>
                 )}
 
-                <div className="sales-totals"><div><span>Subtotal USD</span><strong>{usd(computed.subtotalUsd)}</strong></div><div><span>Total VES · BCV</span><strong>{computed.totalVes === null ? "No disponible" : ves(computed.totalVes)}</strong></div><small>{canConvert ? `Tasa BCV aplicada: ${localized(exchangeRate!, 18, 8)} Bs./USD` : "Conversión no disponible"}</small></div>
+                <div className="sales-totals"><div><span>Subtotal USD</span><strong>{usd(computed.subtotalUsd)}</strong></div><div><span>Total VES</span><strong>{computed.totalVes === null ? "No disponible" : ves(computed.totalVes)}</strong></div><small>{usingManualFx ? `Tasa manual de contingencia (no oficial BCV): ${localized(effectiveRate!, 18, 8)} Bs./USD` : canConvert ? `Tasa BCV aplicada: ${localized(effectiveRate!, 18, 8)} Bs./USD` : "Conversión no disponible"}</small></div>
 
                 <section className="sales-payments" aria-labelledby="sales-payments-title">
                   <div className="sales-payments-heading"><h3 id="sales-payments-title">Forma de pago</h3><label>Moneda<select value={currency} onChange={(event) => setPaymentCurrency(event.target.value as Currency)}><option value="USD">USD</option><option value="VES">VES</option></select></label></div>
@@ -456,8 +486,9 @@ export default function SalesPanel({
                   <div className="sales-payment-actions"><button type="button" className="sales-secondary-button" onClick={addPayment} disabled={payments.length >= 10}>Agregar pago</button><button type="button" className="sales-secondary-button" onClick={fillExactAmount}>Monto exacto</button></div>
                   <p className={paymentMatches ? "sales-payment-match" : "sales-payment-pending"} role="status">Pagos: {currency === "USD" ? usd(paymentTotal) : ves(paymentTotal)} · Total requerido: {currency === "USD" ? usd(expectedPayment) : ves(expectedPayment)}</p>
                 </section>
+                {usingManualFx && <label className="sales-manual-fx-ack"><input type="checkbox" checked={manualFxAcknowledged} onChange={(event) => setManualFxAcknowledgedRate(event.target.checked ? effectiveRate : null)} /> Confirmo que comuniqué al cliente la tasa manual de contingencia (no oficial BCV) antes de cobrar.</label>}
                 <button type="button" className="sales-primary-button sales-charge-button" onClick={() => void checkout()} disabled={!readyToCharge}>{checkoutBusy ? "Procesando venta…" : "Cobrar venta"}</button>
-                {!canConvert && <small className="sales-disabled-reason">El cobro se habilita cuando exista una tasa BCV vigente del día.</small>}
+                {!canConvert && <small className="sales-disabled-reason">El cobro se habilita cuando exista una tasa BCV vigente o una contingencia autorizada y habilitada.</small>}
                 {canConvert && cart.length > 0 && !allQuantitiesValid && <small className="sales-disabled-reason">Corrige las cantidades del carrito antes de cobrar.</small>}
                 {canConvert && cart.length > 0 && !paymentMatches && <small className="sales-disabled-reason">Completa los pagos hasta cubrir exactamente el total en una sola moneda.</small>}
               </aside>
@@ -469,7 +500,10 @@ export default function SalesPanel({
       {receipt && <section className="sales-receipt" aria-labelledby="sales-receipt-title">
         <div className="sales-receipt-head"><div><p className="eyebrow">OPERACIÓN CONFIRMADA</p><h2 id="sales-receipt-title">Comprobante de venta</h2></div><span className="sales-state success">Completada</span></div>
         <div className="sales-receipt-number"><span>Número de venta</span><strong>{receipt.sale_number}</strong></div>
-        <p className="sales-receipt-date">{dateTime(receipt.created_at)} · Tasa BCV: {localized(receipt.bcv_rate, 18, 8)} Bs./USD</p>
+        <p className="sales-receipt-date">{dateTime(receipt.created_at)} · {receipt.fx_receipt_label}: {localized(receipt.fx_rate, 18, 8)} Bs./USD</p>
+        {receipt.fx_source === 'manual_contingency' && receipt.fx_authorization_id && (
+          <p className="sales-receipt-date">Referencia de autorización: {receipt.fx_authorization_id}</p>
+        )}
         <div className="sales-receipt-lines">{receipt.lines.map((line, index) => <div key={`${line.sku_snapshot}-${index}`}><div><strong>{line.product_name_snapshot}</strong><small>{line.sku_snapshot} · {line.quantity} × {usd(line.unit_price_usd)}</small></div><span>{usd(line.line_total_usd)}<small>{ves(line.line_total_ves)}</small></span></div>)}</div>
         <div className="sales-receipt-payments"><h3>Pagos recibidos</h3>{receipt.payments.map((payment, index) => <div key={index}><span>{PAYMENT_METHODS.find((method) => method.value === payment.method)?.label ?? payment.method}{payment.reference ? ` · Ref. ${payment.reference}` : ""}</span><strong>{payment.currency === "USD" ? usd(payment.amount) : ves(payment.amount)}</strong></div>)}</div>
         <div className="sales-receipt-totals"><div><span>Total USD</span><strong>{usd(receipt.total_usd)}</strong></div><div><span>Total VES</span><strong>{ves(receipt.total_ves)}</strong></div></div>

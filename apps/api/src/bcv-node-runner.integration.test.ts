@@ -34,6 +34,18 @@ describe.skipIf(!disposable)("BCV Node runner PostgreSQL 18 least-privilege pref
   let admin: Client;
   const source = "BCV_OFFICIAL_HTML_V1";
 
+  async function clearBcvFixtures(): Promise<void> {
+    await admin.query("ALTER TABLE public.bcv_sync_success_observations DISABLE TRIGGER ALL");
+    try {
+      await admin.query("DELETE FROM public.bcv_sync_success_observations");
+    } finally {
+      await admin.query("ALTER TABLE public.bcv_sync_success_observations ENABLE TRIGGER ALL");
+      await admin.query("ALTER TABLE public.bcv_sync_success_observations ENABLE ALWAYS TRIGGER bcv_sync_success_observations_10_append_only_rows");
+      await admin.query("ALTER TABLE public.bcv_sync_success_observations ENABLE ALWAYS TRIGGER bcv_sync_success_observations_20_append_only_truncate");
+    }
+    await admin.query("DELETE FROM public.exchange_rates WHERE source = $1", [source]);
+  }
+
   beforeAll(async () => {
     if (!adminUrl) throw new Error("Disposable admin URL is missing.");
     admin = new Client({ connectionString: adminUrl });
@@ -42,7 +54,7 @@ describe.skipIf(!disposable)("BCV Node runner PostgreSQL 18 least-privilege pref
 
   afterAll(async () => {
     try {
-      await admin.query("DELETE FROM public.exchange_rates WHERE source = $1", [source]);
+      await clearBcvFixtures();
       await admin.query(
         `UPDATE public.bcv_sync_state
             SET attempt_id = NULL, last_attempt_at = NULL, last_success_at = NULL,
@@ -60,7 +72,7 @@ describe.skipIf(!disposable)("BCV Node runner PostgreSQL 18 least-privilege pref
       "SELECT (now() AT TIME ZONE 'America/Caracas')::date::text AS today",
     );
     const today = dateResult.rows[0]!.today;
-    await admin.query("DELETE FROM public.exchange_rates WHERE source = $1", [source]);
+    await clearBcvFixtures();
     await admin.query(
       `INSERT INTO public.exchange_rates
          (base_currency, quote_currency, rate, source, effective_date, fetched_at, validation_status)
@@ -100,7 +112,7 @@ describe.skipIf(!disposable)("BCV Node runner PostgreSQL 18 least-privilege pref
       weekday: "long", day: "2-digit", month: "long", year: "numeric",
       timeZone: "America/Caracas",
     }).format(new Date(`${today}T16:00:00.000Z`));
-    await admin.query("DELETE FROM public.exchange_rates WHERE source = $1", [source]);
+    await clearBcvFixtures();
     await admin.query(
       `INSERT INTO public.exchange_rates
          (base_currency, quote_currency, rate, source, effective_date, fetched_at, validation_status)

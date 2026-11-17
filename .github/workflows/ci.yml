@@ -85,6 +85,8 @@ jobs:
         run: psql -X -v ON_ERROR_STOP=1 --dbname "$ADMIN_DATABASE_URL" -f apps/api/migrations/0024_organization_structure_admin_operations.assertions.sql
       - name: Verify inventory receipt migration 0025 contract
         run: psql -X -v ON_ERROR_STOP=1 --dbname "$ADMIN_DATABASE_URL" -f apps/api/migrations/0025_inventory_receipts.assertions.sql
+      - name: Verify FX contingency migration 0026 contract
+        run: psql -X -v ON_ERROR_STOP=1 --dbname "$ADMIN_DATABASE_URL" -f apps/api/migrations/0026_fx_contingency_management.assertions.sql
       - name: Build and typecheck
         run: pnpm build
       - name: Verify Cloudflare Pages preview isolation
@@ -103,6 +105,8 @@ jobs:
         run: python3 -m unittest discover -s scripts/tests -p 'test_*.py'
       - name: Unit tests
         run: pnpm test
+      - name: Wrangler FX PIN KDF runtime test
+        run: pnpm --filter @micro-app/api test:fx-pin-worker
       - name: Pre-go-live API smoke readiness contract
         run: pnpm --filter @micro-app/api exec vitest run src/smoke-readiness.test.ts
       - name: PostgreSQL auth integration tests
@@ -147,6 +151,8 @@ jobs:
         run: pnpm --filter @micro-app/api exec vitest run src/inventory-read.integration.test.ts
       - name: PostgreSQL atomic sales checkout integration tests
         run: DATABASE_URL="$RUNTIME_DATABASE_URL" DATABASE_URL_ADMIN="$ADMIN_DATABASE_URL" pnpm --filter @micro-app/api exec vitest run src/sales-checkout.integration.test.ts
+      - name: PostgreSQL FX contingency PG-01..PG-30 integration tests
+        run: DATABASE_URL_ADMIN="$ADMIN_DATABASE_URL" RUNTIME_DATABASE_URL="$RUNTIME_DATABASE_URL" BCV_DATABASE_URL="$BCV_DATABASE_URL" pnpm --filter @micro-app/api exec vitest run src/fx-contingency.integration.test.ts
       - name: PostgreSQL 18 isolated Cashier lifecycle (simulated OAuth → shift → checkout → reconciliation → logout)
         run: DATABASE_URL="$RUNTIME_DATABASE_URL" DATABASE_URL_RUNTIME="$RUNTIME_DATABASE_URL" DATABASE_URL_ADMIN="$ADMIN_DATABASE_URL" DATABASE_URL_BCV="$BCV_DATABASE_URL" pnpm --filter @micro-app/api exec vitest run src/cashier-full-lifecycle.integration.test.ts
       - name: PostgreSQL branch list integration tests

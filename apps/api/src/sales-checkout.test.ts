@@ -28,6 +28,8 @@ describe("sales checkout request contract", () => {
     expect(parsed).toEqual({
       warehouseId,
       currency: "USD",
+      manualFxAcknowledged: false,
+      manualFxAcknowledgedRate: null,
       lines: [
         { productId: productA, quantity: "1.250" },
         { productId: productB, quantity: "2.000" },
@@ -36,6 +38,24 @@ describe("sales checkout request contract", () => {
         { method: "cash", currency: "USD", amount: "29.8125", reference: null },
       ],
     });
+  });
+
+
+  it("binds the cashier disclosure acknowledgement into the canonical request", async () => {
+    const base = {
+      warehouse_id: warehouseId,
+      lines: [{ product_id: productA, quantity: "1.000" }],
+      payments: [{ method: "cash", currency: "USD", amount: "1.0000" }],
+    };
+    const withoutAck = parseCheckoutInput(base)!;
+    const withAck = parseCheckoutInput({ ...base, manual_fx_acknowledged: true, manual_fx_acknowledged_rate: "500.00000000" })!;
+    expect(withoutAck.manualFxAcknowledged).toBe(false);
+    expect(withAck.manualFxAcknowledged).toBe(true);
+    expect(withAck.manualFxAcknowledgedRate).toBe("500.00000000");
+    await expect(canonicalRequestHash(organizationId, branchId, userId, withoutAck))
+      .resolves.not.toBe(await canonicalRequestHash(organizationId, branchId, userId, withAck));
+    expect(parseCheckoutInput({ ...base, manual_fx_acknowledged: "yes" })).toBeNull();
+    expect(parseCheckoutInput({ ...base, manual_fx_acknowledged: true })).toBeNull();
   });
 
   it("rejects client-calculated prices, discounts, totals and unknown fields", () => {
@@ -197,7 +217,7 @@ describe("checkout BCV effective-date and last-success selection", () => {
     const { client, statements } = mockClient(validState("2026-11-09"), validRate("2026-11-09"));
     await expect(findApplicableCheckoutRate(client, new Date("2026-11-06T18:00:00-04:00"))).resolves.toBeNull();
     expect(statements).toHaveLength(2);
-    expect(statements[0]).toContain("public.lock_bcv_sync_state()");
+    expect(statements[0]).toContain("public.lock_bcv_sync_state_with_error()");
     expect(statements[1]).toContain("effective_date = $2::date");
   });
 
@@ -226,7 +246,7 @@ describe("checkout BCV effective-date and last-success selection", () => {
       validation_status: "valid",
     });
     expect(statements).toHaveLength(2);
-    expect(statements[0]).toContain("public.lock_bcv_sync_state()");
+    expect(statements[0]).toContain("public.lock_bcv_sync_state_with_error()");
     expect(statements[1]).toContain("effective_date = $2::date");
   });
 

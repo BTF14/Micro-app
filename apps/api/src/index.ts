@@ -11,6 +11,7 @@ import { registerCatalogWriteRoutes } from "./catalog-write";
 import { registerSalesCheckoutRoutes } from "./sales-checkout";
 import { registerRegisterShiftRoutes } from "./register-shifts";
 import { registerOrganizationStructureRoutes } from "./organization-structure";
+import { registerFxContingencyRoutes } from "./fx-contingency";
 import { withDatabaseClient } from "./database";
 import { cleanupExpiredAuthRecords } from "./auth-rate-limit";
 import {
@@ -105,6 +106,7 @@ registerCatalogWriteRoutes(app);
 registerSalesCheckoutRoutes(app);
 registerRegisterShiftRoutes(app);
 registerOrganizationStructureRoutes(app);
+registerFxContingencyRoutes(app);
 registerExchangeRateRoutes(app);
 
 app.get("/health", (c) =>

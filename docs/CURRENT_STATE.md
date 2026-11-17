@@ -1,3 +1,20 @@
+# Corte vigente — PR 1 Contingencia Manual BCV — AC-7 cerrado (2026-11-17)
+
+- **Main/base exacta:** `04d3679189edaab17221f1e8cd425cc68fa53155` (base de PR #377).
+- **PR 1:** [#377](https://github.com/BTF14/Micro-app/pull/377), OPEN / Draft deliberado; rama `feat/fx-contingency-pr1-20261117`; hardening de código en SHA `08bb9353fad340cc26ada74b82d34dc0f789bffd`; consultar GitHub para el HEAD documental vivo.
+- **Hardening final AC-7:** sin SELECT directo runtime sobre `fx_user_pin_credentials`; lectura solo mediante `lock_fx_user_pin_credential()` SECURITY DEFINER; validación IP estricta compartida; auditoría PIN sin evento duplicado.
+- **Verificación exacta del código:** **21/21 check-runs SUCCESS** en `08bb9353fad340cc26ada74b82d34dc0f789bffd`, sin pendientes ni fallidos. El cierre documental posterior requiere y recibe su propia verificación exact-HEAD; no se heredan checks entre SHAs. CI [#44190827905](https://github.com/BTF14/Micro-app/actions/runs/44190827905), migration runner [#44190827919](https://github.com/BTF14/Micro-app/actions/runs/44190827919), migration validation [#44190827775](https://github.com/BTF14/Micro-app/actions/runs/44190827775), Playwright E2E [#44190827978](https://github.com/BTF14/Micro-app/actions/runs/44190827978), backup/restore [#44190827917](https://github.com/BTF14/Micro-app/actions/runs/44190827917).
+- **AC-7: CERRADO** para el alcance técnico de PR 1: revisión independiente completada sobre el HEAD previo, correcciones de endurecimiento aplicadas y revalidación integral exact-SHA satisfactoria. Evidencia y detalle en `odd/tasks/fx-contingency-management.md`.
+- **AC-6: ABIERTO e intacto:** pendiente validación escrita del asesor contable/legal sobre el comprobante. `FX_CONTINGENCY_ENABLED` permanece ausente/false; contingencia comercial apagada. No añadir secretos ni configuración productiva.
+- **Estado de entrega:** PR #377 permanece OPEN / Draft; no merge ni auto-merge. A la espera de autorización final del propietario para sacar Draft y fusionar. No se tocó `main`, Neon, Cloudflare manual, datos reales ni secretos.
+- Se conserva el alcance exclusivo PR 1; Carril A, Carril B1 y Hardening transversal no se mezclaron. Issue #53 permanece OPEN y `PRODUCTION: NOT READY`.
+
+---
+
+> **SNAPSHOT HISTÓRICO SUPERSEDIDO:** los cortes inferiores describen estados anteriores de main, PRs y BCV. Prevalece este encabezado y la referencia viva de GitHub.
+
+---
+
 # Corte vigente — reconciliación posterior a PR #375 (2026-11-17)
 
 - **Main exacto:** `d6760bf3da0e0c080c2f4ead3d518ce4e30bc589`; PR #374 y #375 MERGED.

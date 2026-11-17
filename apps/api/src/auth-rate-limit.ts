@@ -9,7 +9,7 @@ export type AuthRateLimitDecision = {
 /**
  * HMAC a namespaced rate-limit key before it reaches PostgreSQL.
  * Callers must include the route scope and trusted client IP in the value;
- * the existing Google OAuth client secret is the per-environment HMAC pepper.
+ * each caller supplies a dedicated per-environment HMAC pepper, independent of OAuth and KDF secrets.
  */
 export async function hashAuthRateLimitKey(value: string, pepper: string): Promise<string> {
   if (!value || value.length > 512 || !pepper || pepper.length < 16) {

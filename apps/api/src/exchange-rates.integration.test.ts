@@ -55,7 +55,21 @@ describe.skipIf(!isDisposableCiDatabase)("BCV effective-date persistence against
   let producerClient: Client | undefined;
   let runtimeClient: Client | undefined;
   let cleanupClient: Client | undefined;
-  const source = "BCV_OFFICIAL_HTML_V1";
+  async function clearExchangeRateFixture(client: Client, source: string): Promise<void> {
+  await client.query("ALTER TABLE public.bcv_sync_success_observations DISABLE TRIGGER ALL");
+  try {
+    await client.query(
+      "DELETE FROM public.bcv_sync_success_observations",
+    );
+  } finally {
+    await client.query("ALTER TABLE public.bcv_sync_success_observations ENABLE TRIGGER ALL");
+    await client.query("ALTER TABLE public.bcv_sync_success_observations ENABLE ALWAYS TRIGGER bcv_sync_success_observations_10_append_only_rows");
+    await client.query("ALTER TABLE public.bcv_sync_success_observations ENABLE ALWAYS TRIGGER bcv_sync_success_observations_20_append_only_truncate");
+  }
+  await client.query("DELETE FROM public.exchange_rates WHERE source=$1", [source]);
+}
+
+const source = "BCV_OFFICIAL_HTML_V1";
 
   beforeAll(async () => {
     if (!producerDatabaseUrl) throw new Error("BCV producer PostgreSQL integration database is not configured.");
@@ -68,12 +82,12 @@ describe.skipIf(!isDisposableCiDatabase)("BCV effective-date persistence against
     await runtimeClient.connect();
     await cleanupClient.connect();
     // This suite runs only against the disposable PostgreSQL service in CI.
-    await cleanupClient.query("DELETE FROM public.exchange_rates WHERE source = $1", [source]);
+    await clearExchangeRateFixture(cleanupClient, source);
   });
 
   afterAll(async () => {
     try {
-      if (cleanupClient) await cleanupClient.query("DELETE FROM public.exchange_rates WHERE source = $1", [source]);
+      if (cleanupClient) await clearExchangeRateFixture(cleanupClient, source);
     } finally {
       await Promise.all([producerClient?.end(), runtimeClient?.end()]);
       await cleanupClient?.end();
@@ -109,7 +123,7 @@ describe.skipIf(!isDisposableCiDatabase)("BCV effective-date persistence against
       scheduled: (controller: { cron: string }, env: { APP_ENV: "production" | "preview"; DATABASE_URL_BCV_SYNC?: string; BCV_SYNC_ENABLED?: string }) => Promise<void>;
     };
 
-    await cleanupClient.query("DELETE FROM public.exchange_rates WHERE source = $1", [source]);
+    await clearExchangeRateFixture(cleanupClient, source);
     vi.stubGlobal("fetch", fetchMock);
     try {
       await scheduledApp.scheduled({ cron: "0 22 * * MON-FRI" }, { APP_ENV: "preview" });
@@ -174,7 +188,7 @@ describe.skipIf(!isDisposableCiDatabase)("BCV effective-date persistence against
       });
     } finally {
       vi.unstubAllGlobals();
-      await cleanupClient.query("DELETE FROM public.exchange_rates WHERE source = $1", [source]);
+      await clearExchangeRateFixture(cleanupClient, source);
     }
   });
 
@@ -250,7 +264,7 @@ describe.skipIf(!isDisposableCiDatabase)("BCV effective-date persistence against
       });
     } finally {
       vi.unstubAllGlobals();
-      await cleanupClient.query("DELETE FROM public.exchange_rates WHERE source = $1", [source]);
+      await clearExchangeRateFixture(cleanupClient, source);
     }
   }, 15_000);
 
@@ -340,7 +354,7 @@ describe.skipIf(!isDisposableCiDatabase)("BCV effective-date persistence against
     const today = dates.rows[0]!.today;
     const rate = "894.88760000";
 
-    await cleanupClient.query("DELETE FROM public.exchange_rates WHERE source = $1", [source]);
+    await clearExchangeRateFixture(cleanupClient, source);
     await expect(persistBcvOfficialRate(databaseClient, {
       rate,
       effectiveDate: today,
@@ -376,7 +390,7 @@ describe.skipIf(!isDisposableCiDatabase)("BCV effective-date persistence against
     const today = await cleanupClient!.query<{ today: string }>(
       "SELECT (now() AT TIME ZONE 'America/Caracas')::date::text AS today",
     );
-    await cleanupClient!.query("DELETE FROM public.exchange_rates WHERE source = $1", [source]);
+    await clearExchangeRateFixture(cleanupClient!, source);
     await expect(persistBcvOfficialRate(runtimeClient as unknown as DatabaseClient, {
       rate: "897.00000000",
       effectiveDate: today.rows[0]!.today,

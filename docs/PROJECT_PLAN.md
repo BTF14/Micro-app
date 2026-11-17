@@ -1,3 +1,19 @@
+# Plan vigente — PR 1 implementada en Draft, gates pendientes (2026-11-17)
+
+- **Main base:** `04d3679189edaab17221f1e8cd425cc68fa53155`.
+- **Prioridad:** PR 1 Contingencia Manual BCV permanece prioridad #1; su implementación está en PR #377 (OPEN / Draft), rama `feat/fx-contingency-pr1-20261117`.
+- **Implementación:** migración 0026 y assertions, servicios/API Hono, KDF PIN con prueba Wrangler, delegaciones/autorizaciones por sucursal, observaciones BCV inmutables, checkout source-aware, ACK de caja, recibo diferenciado y PG-01..PG-30. CI del SHA de implementación `7afa4ddb9f4c6fee5ba1bd1bb5629b02c3c0239d`: 12/12 workflows SUCCESS.
+- **AC-7:** la revisión independiente de diseño previa es baseline; la auditoría completa de la migración/triggers/privilegios/KDF/PG-01..PG-30/diff final sigue obligatoria antes del merge. La autorización para implementar no la da por cerrada.
+- **AC-6:** aprobación escrita contable/legal del comprobante sigue obligatoria antes de encender la función. Flag comercial permanece apagado; no secretos ni configuración productiva cambiados.
+- **Orden oficial no cambia:** PR 1 Contingencia Manual BCV → PR 2 Importador CSV → PR 3 Escáner móvil → PR 4 Cierre/reportes/exportación CSV. No comenzar PR 2 antes de cerrar PR 1 según los gates aprobados.
+- **Freeze comercial:** activo; Issue #53 OPEN/P0; PRODUCTION NOT READY. Sin merge, deploy ni datos reales.
+
+---
+
+> **SNAPSHOT HISTÓRICO SUPERSEDIDO:** el plan detallado inferior conserva decisiones previas. Prevalece este encabezado.
+
+---
+
 # Corte vigente de continuidad — 2026-11-17
 
 - **Base exacta:** `main` = `d6760bf3da0e0c080c2f4ead3d518ce4e30bc589`; PR #374 (productor BCV Node TLS) y PR #375 (cierre documental de Fase 1) están MERGED.

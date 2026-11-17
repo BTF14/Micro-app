@@ -218,9 +218,10 @@ MIGRATIONS_DIR="$repo_root/apps/api/migrations" \
 
 pg_restore --exit-on-error --single-transaction --no-owner --no-privileges --dbname="$migration_restore_url" "$tmpdir/schema.restored.dump"
 
-MIGRATION_DATABASE_URL="$migration_restore_url" MIGRATIONS_DIR="$repo_root/apps/api/migrations" RESTORE_GRANTS_PROFILE=bcv-0025 \
+MIGRATION_DATABASE_URL="$migration_restore_url" MIGRATIONS_DIR="$repo_root/apps/api/migrations" RESTORE_GRANTS_PROFILE=bcv-0026 \
   bash scripts/db/reapply_restore_role_grants.sh
 psql "$migration_restore_url" -X -v ON_ERROR_STOP=1 -f apps/api/migrations/0025_inventory_receipts.assertions.sql
+psql "$migration_restore_url" -X -v ON_ERROR_STOP=1 -f apps/api/migrations/0026_fx_contingency_management.assertions.sql
 
 manifest() {
   psql "$1" -X -v ON_ERROR_STOP=1 -Atq <<'SQL'
@@ -301,6 +302,8 @@ SELECT 'required_core_objects|' || count(*)::text
     ('branch_memberships'), ('registers'), ('register_shifts'),
     ('warehouses'), ('inventory_counts'), ('inventory_count_lines'),
     ('inventory_balances'), ('warehouse_inventory_movements'), ('inventory_receipts'), ('inventory_receipt_lines'), ('bcv_sync_state'),
+    ('fx_user_pin_credentials'), ('fx_contingency_delegations'), ('fx_contingency_authorizations'),
+    ('fx_contingency_events'), ('bcv_sync_success_observations'),
     ('schema_migrations')
   ) AS required(table_name)
  WHERE pg_catalog.to_regclass('public.' || required.table_name) IS NOT NULL;
@@ -729,8 +732,8 @@ if [[ "$source_fixture_ok" != "t" || "$restored_fixture_ok" != "t" ]]; then
 fi
 
 
-required_tables="$(psql "$schema_restore_url" -X -v ON_ERROR_STOP=1 -Atqc "SELECT count(*) FROM (VALUES ('organizations'),('app_users'),('organization_members'),('auth_allowlist'),('auth_bootstrap'),('suppliers'),('products'),('exchange_rates'),('sales'),('sale_items'),('payments'),('inventory_movements'),('audit_logs'),('branches'),('branch_memberships'),('registers'),('register_shifts'),('warehouses'),('inventory_counts'),('inventory_count_lines'),('inventory_balances'),('warehouse_inventory_movements'),('inventory_receipts'),('inventory_receipt_lines'),('bcv_sync_state'),('auth_sessions'),('auth_rate_limits'),('auth_bootstrap_attempts'),('schema_migrations')) AS required(table_name) WHERE pg_catalog.to_regclass('public.' || required.table_name) IS NOT NULL")"
-[[ "$required_tables" == "29" ]] || { echo "Expected 25 stable application tables, 3 empty ephemeral auth tables and schema_migrations (29 required objects), got $required_tables." >&2; exit 1; }
+required_tables="$(psql "$schema_restore_url" -X -v ON_ERROR_STOP=1 -Atqc "SELECT count(*) FROM (VALUES ('organizations'),('app_users'),('organization_members'),('auth_allowlist'),('auth_bootstrap'),('suppliers'),('products'),('exchange_rates'),('sales'),('sale_items'),('payments'),('inventory_movements'),('audit_logs'),('branches'),('branch_memberships'),('registers'),('register_shifts'),('warehouses'),('inventory_counts'),('inventory_count_lines'),('inventory_balances'),('warehouse_inventory_movements'),('inventory_receipts'),('inventory_receipt_lines'),('bcv_sync_state'),('fx_user_pin_credentials'),('fx_contingency_delegations'),('fx_contingency_authorizations'),('fx_contingency_events'),('bcv_sync_success_observations'),('auth_sessions'),('auth_rate_limits'),('auth_bootstrap_attempts'),('schema_migrations')) AS required(table_name) WHERE pg_catalog.to_regclass('public.' || required.table_name) IS NOT NULL")"
+[[ "$required_tables" == "34" ]] || { echo "Expected 30 stable application tables, 3 empty ephemeral auth tables and schema_migrations (34 required objects), got $required_tables." >&2; exit 1; }
 
 ephemeral="$(psql "$schema_restore_url" -X -v ON_ERROR_STOP=1 -Atqc "SELECT (pg_catalog.to_regclass('public.auth_sessions') IS NOT NULL AND pg_catalog.to_regclass('public.auth_rate_limits') IS NOT NULL AND pg_catalog.to_regclass('public.auth_bootstrap_attempts') IS NOT NULL AND (SELECT count(*) = 0 FROM public.auth_sessions) AND (SELECT count(*) = 0 FROM public.auth_rate_limits) AND (SELECT count(*) = 0 FROM public.auth_bootstrap_attempts))")"
 [[ "$ephemeral" == "t" ]] || { echo "Ephemeral auth table schema missing or ephemeral rows were restored." >&2; exit 1; }

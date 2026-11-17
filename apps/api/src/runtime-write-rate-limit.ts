@@ -3,7 +3,7 @@ import type { Bindings } from "./bindings";
 import { withDatabaseClient } from "./database";
 import { consumeAuthRateLimit } from "./auth-rate-limit";
 
-function isValidClientIp(value: string): boolean {
+export function isValidClientIp(value: string): boolean {
   if (!value || value.length > 45 || value !== value.trim() || value.includes(",") || value.includes("%")) return false;
   if (/^(?:\d{1,3}\.){3}\d{1,3}$/.test(value)) {
     return value.split(".").every((part) => {

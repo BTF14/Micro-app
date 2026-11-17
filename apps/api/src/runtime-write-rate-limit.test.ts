@@ -10,7 +10,7 @@ const mocks = vi.hoisted(() => ({
 vi.mock("./auth-rate-limit", () => ({ consumeAuthRateLimit: mocks.consume }));
 vi.mock("./database", () => ({ withDatabaseClient: mocks.withDatabaseClient }));
 
-import { enforceRuntimeWriteRateLimit } from "./runtime-write-rate-limit";
+import { enforceRuntimeWriteRateLimit, isValidClientIp } from "./runtime-write-rate-limit";
 
 function context(headers: Record<string, string> = {}, env: Partial<Bindings> = {}) {
   const response = {
@@ -23,6 +23,18 @@ function context(headers: Record<string, string> = {}, env: Partial<Bindings> = 
 }
 
 describe("runtime write rate limiting", () => {
+  it.each([
+    ["valid IPv4", "198.51.100.10", true],
+    ["valid IPv6", "2001:db8::1", true],
+    ["invalid IPv4", "999.1.1.1", false],
+    ["invalid IPv6", "2001:::1", false],
+    ["forwarded list", "198.51.100.1, 203.0.113.2", false],
+    ["zone identifier", "fe80::1%eth0", false],
+    ["whitespace", " 198.51.100.1", false],
+  ])("validates client IP syntax (%s)", (_label, value, expected) => {
+    expect(isValidClientIp(value)).toBe(expected);
+  });
+
   beforeEach(() => {
     vi.clearAllMocks();
     mocks.withDatabaseClient.mockImplementation(async (_url: string, callback: (client: unknown) => unknown) =>

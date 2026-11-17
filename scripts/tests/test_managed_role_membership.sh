@@ -49,9 +49,9 @@ ADOPT_BASELINE_CONFIRM=adopt-0002 bash scripts/db/adopt-baseline.sh apply | grep
 export MIGRATION_DATABASE_URL="$bcv_migrator_url"
 bash scripts/db/migrate.sh
 
-# BCV profile: all 25 migrations, automatic creator edges, and the full 0022-0025 assertion chain.
+# BCV profile: all 25 migrations, automatic creator edges, and the full 0022-0026 assertion chain.
 test "$(psql -X -At -v ON_ERROR_STOP=1 --dbname "$bcv_admin_url" -c \
-  "SELECT count(*)=25 AND bool_and(state='applied') FROM public.schema_migrations")" = "t"
+  "SELECT count(*)=26 AND bool_and(state='applied') FROM public.schema_migrations")" = "t"
 test "$(psql -X -At -v ON_ERROR_STOP=1 --dbname "$bcv_admin_url" -c \
   "SELECT count(*)=2 FROM pg_catalog.pg_auth_members m
    JOIN pg_catalog.pg_roles granted_role ON granted_role.oid=m.roleid
@@ -68,6 +68,7 @@ psql -X -v ON_ERROR_STOP=1 --dbname "$bcv_admin_url" \
 psql -X -v ON_ERROR_STOP=1 --dbname "$bcv_admin_url" --file "apps/api/migrations/0023_register_shift_runtime_operations.assertions.sql"
 psql -X -v ON_ERROR_STOP=1 --dbname "$bcv_admin_url" --file "apps/api/migrations/0024_organization_structure_admin_operations.assertions.sql"
 psql -X -v ON_ERROR_STOP=1 --dbname "$bcv_admin_url" --file "apps/api/migrations/0025_inventory_receipts.assertions.sql"
+psql -X -v ON_ERROR_STOP=1 --dbname "$bcv_admin_url" --file "apps/api/migrations/0026_fx_contingency_management.assertions.sql"
 
 expect_failure() {
   local label="$1" marker="$2"
@@ -174,10 +175,12 @@ main_admin_sql "GRANT microapp_runtime TO legacy_owner WITH ADMIN OPTION, SET FA
 # Final positive reruns prove all negative fixtures were cleaned up.
 psql -X -v ON_ERROR_STOP=1 --dbname "$bcv_admin_url" \
   --file "apps/api/migrations/0022_bcv_dedicated_producer_role.assertions.sql"
+psql -X -v ON_ERROR_STOP=1 --dbname "$bcv_admin_url" \
+  --file "apps/api/migrations/0026_fx_contingency_management.assertions.sql"
 psql -X -v ON_ERROR_STOP=1 --dbname "$main_admin_url" \
   --file "scripts/db/restore_role_assertions_main.sql"
 test "$(psql -X -At -v ON_ERROR_STOP=1 --dbname "$bcv_admin_url" -c \
   "SELECT count(*) FROM organizations WHERE slug='bcv-membership-sentinel'")" = "1"
 test "$(psql -X -At -v ON_ERROR_STOP=1 --dbname "$main_admin_url" -c \
   "SELECT count(*) FROM organizations WHERE slug='main-membership-sentinel'")" = "1"
-echo "PASS: PostgreSQL 18 managed-owner role-membership contract (BCV 0001-0025; main 0001-0016; positive and fail-closed cases)"
+echo "PASS: PostgreSQL 18 managed-owner role-membership contract (BCV 0001-0026; main 0001-0016; positive and fail-closed cases)"

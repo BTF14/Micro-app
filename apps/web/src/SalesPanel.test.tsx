@@ -72,7 +72,7 @@ describe("SalesPanel", () => {
   it("blocks checkout when the BCV rate is stale or unavailable", async () => {
     vi.mocked(apiRequest).mockResolvedValueOnce({ shift } as never).mockResolvedValueOnce({ warehouses } as never);
     await render("stale", "36.50000000");
-    expect(container.textContent).toContain("No se puede completar la venta sin una tasa BCV vigente del día");
+    expect(container.textContent).toContain("El cobro se habilita cuando exista una tasa BCV vigente o una contingencia autorizada y habilitada");
     expect(container.querySelector<HTMLButtonElement>(".sales-charge-button")?.disabled).toBe(true);
   });
 
@@ -96,7 +96,7 @@ describe("SalesPanel", () => {
   it("posts the exact checkout contract with Idempotency-Key and renders a safe receipt", async () => {
     const receipt = {
       sale_number: "V-000042", created_at: "2026-11-14T15:00:00Z", currency: "USD",
-      subtotal_usd: "0.0004", total_usd: "0.0004", total_ves: "0.02", bcv_rate: "36.50000000",
+      subtotal_usd: "0.0004", total_usd: "0.0004", total_ves: "0.02", bcv_rate: "36.50000000", fx_rate: "36.50000000", fx_source: "bcv_official", fx_receipt_label: "Tasa BCV", fx_authorization_id: null,
       lines: [
         { product_name_snapshot: "Producto A", sku_snapshot: "A-1", quantity: "1.000", unit_price_usd: "0.0002", line_total_usd: "0.0002", line_total_ves: "0.01" },
         { product_name_snapshot: "Producto B", sku_snapshot: "B-1", quantity: "1.000", unit_price_usd: "0.0002", line_total_usd: "0.0002", line_total_ves: "0.01" },
@@ -123,6 +123,8 @@ describe("SalesPanel", () => {
         { product_id: "00000000-0000-4000-8000-000000000002", quantity: "1.000" },
       ],
       payments: [{ method: "cash", currency: "USD", amount: "0.0004", reference: null }],
+      manual_fx_acknowledged: false,
+      manual_fx_acknowledged_rate: null,
     });
     expect(container.textContent).toContain("V-000042");
     expect(container.textContent).toContain("Comprobante de venta");
@@ -138,7 +140,7 @@ describe("SalesPanel", () => {
   it("formats thousands separators and accepts alphanumeric payment references and split VES payments", async () => {
     const receipt = {
       sale_number: "V-000043", created_at: "2026-11-14T15:05:00Z", currency: "VES",
-      subtotal_usd: "1000.0000", total_usd: "1000.0000", total_ves: "36500.00", bcv_rate: "36.50000000",
+      subtotal_usd: "1000.0000", total_usd: "1000.0000", total_ves: "36500.00", bcv_rate: "36.50000000", fx_rate: "36.50000000", fx_source: "bcv_official", fx_receipt_label: "Tasa BCV", fx_authorization_id: null,
       lines: [{ product_name_snapshot: "Producto C", sku_snapshot: "C-1", quantity: "1.000", unit_price_usd: "1000.0000", line_total_usd: "1000.0000", line_total_ves: "36500.00" }],
       payments: [
         { method: "mobile_payment", currency: "VES", amount: "20000.00", reference: "REF-12345" },
@@ -221,7 +223,7 @@ describe("SalesPanel", () => {
     vi.stubGlobal("crypto", { ...crypto, randomUUID: vi.fn(() => `00000000-0000-4000-8000-${String(++seq).padStart(12, "0")}`) });
     vi.mocked(apiRequest).mockResolvedValueOnce({ shift } as never).mockResolvedValueOnce({ warehouses } as never)
       .mockRejectedValueOnce(new Error("Error temporal"))
-      .mockResolvedValueOnce({ sale_number: "V-000044", created_at: "2026-11-14T15:10:00Z", currency: "USD", subtotal_usd: "0.0002", total_usd: "0.0002", total_ves: "0.01", bcv_rate: "36.50000000", lines: [], payments: [] } as never);
+      .mockResolvedValueOnce({ sale_number: "V-000044", created_at: "2026-11-14T15:10:00Z", currency: "USD", subtotal_usd: "0.0002", total_usd: "0.0002", total_ves: "0.01", bcv_rate: "36.50000000", fx_rate: "36.50000000", fx_source: "bcv_official", fx_receipt_label: "Tasa BCV", fx_authorization_id: null, lines: [], payments: [] } as never);
     await render();
     await act(async () => { click("Agregar producto A"); });
     await act(async () => { click("Monto exacto"); });
@@ -254,4 +256,55 @@ describe("SalesPanel", () => {
     expect(container.textContent).toContain("Tu carrito está vacío");
     expect(container.textContent).toContain("Cambiaste de almacén");
   });
+
+  it("requires cashier disclosure and binds the acknowledgement to the displayed manual rate", async () => {
+    const receipt = {
+      id: "sale-manual-1", sale_number: "V-MAN-001", created_at: "2026-11-17T15:00:00Z",
+      currency: "USD", subtotal_usd: "0.0002", total_usd: "0.0002", total_ves: "0.02",
+      bcv_rate: null, fx_rate: "104.00000000", fx_source: "manual_contingency",
+      fx_receipt_label: "Tasa manual de contingencia (no oficial BCV)",
+      fx_authorization_id: "auth-1", manual_fx_acknowledged_at: "2026-11-17T15:00:00Z",
+      lines: [{ product_name_snapshot: "Producto A", sku_snapshot: "A-1", quantity: "1.000", unit_price_usd: "0.0002", line_total_usd: "0.0002", line_total_ves: "0.02" }],
+      payments: [{ method: "cash", currency: "USD", amount: "0.0002", reference: null }],
+    };
+    vi.mocked(apiRequest)
+      .mockResolvedValueOnce({ shift } as never)
+      .mockResolvedValueOnce({ warehouses } as never)
+      .mockResolvedValueOnce({
+        commercial_enabled: true,
+        authorization: { id: "auth-1", rate: "104.00000000", expires_at: "2026-11-17T23:00:00Z" },
+      } as never)
+      .mockResolvedValueOnce(receipt as never);
+    await render("stale", null);
+    expect(container.textContent).toContain("Tasa manual de contingencia (no oficial BCV)");
+    await act(async () => { click("Agregar producto A"); });
+    await act(async () => { click("Monto exacto"); });
+    const charge = container.querySelector<HTMLButtonElement>(".sales-charge-button")!;
+    expect(charge.disabled).toBe(true);
+    const acknowledgement = container.querySelector<HTMLInputElement>(".sales-manual-fx-ack input")!;
+    await act(async () => { acknowledgement.click(); });
+    expect(charge.disabled).toBe(false);
+    await act(async () => { charge.click(); await new Promise((resolve) => setTimeout(resolve, 0)); });
+    const [, init] = vi.mocked(apiRequest).mock.calls[3] as unknown as [string, RequestInit];
+    expect(JSON.parse(String(init.body))).toMatchObject({
+      manual_fx_acknowledged: true,
+      manual_fx_acknowledged_rate: "104.00000000",
+    });
+    expect(container.textContent).toContain("Tasa manual de contingencia (no oficial BCV)");
+    expect(container.textContent).toContain("Referencia de autorización: auth-1");
+  });
+
+  it("keeps manual contingency unavailable while the commercial AC-6 gate is off", async () => {
+    vi.mocked(apiRequest)
+      .mockResolvedValueOnce({ shift } as never)
+      .mockResolvedValueOnce({ warehouses } as never)
+      .mockResolvedValueOnce({
+        commercial_enabled: false,
+        authorization: { id: "auth-1", rate: "104.00000000", expires_at: "2026-11-17T23:00:00Z" },
+      } as never);
+    await render("stale", null);
+    expect(container.textContent).not.toContain("Tasa manual de contingencia (no oficial BCV)");
+    expect(container.querySelector<HTMLButtonElement>(".sales-charge-button")?.disabled).toBe(true);
+  });
+
 });

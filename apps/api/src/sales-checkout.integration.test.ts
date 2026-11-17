@@ -76,6 +76,8 @@ describe.skipIf(!isDisposableCheckoutDatabase || !isDisposableBcvProducerDatabas
   let fxOwnerId = "";
   let fxReferenceRateId = "";
   let fxReferenceRateCreated = false;
+  let fxFutureRateId = "";
+  const fxAttemptIds: string[] = [];
   let previousFxReferenceRate: { rate: string; validation_status: string; fetched_at: Date } | null = null;
 
   async function request(
@@ -213,6 +215,7 @@ describe.skipIf(!isDisposableCheckoutDatabase || !isDisposableBcvProducerDatabas
     outcome: "inserted" | "unchanged", effectiveDate: string, lastSuccessAt: Date,
   ): Promise<string> {
     const attemptId = crypto.randomUUID();
+    fxAttemptIds.push(attemptId);
     await producerClient.query(
       "UPDATE public.bcv_sync_state SET attempt_id=$1::uuid,last_attempt_at=pg_catalog.clock_timestamp(),last_success_at=$2::timestamptz,last_outcome=$3,last_error_code=NULL,last_effective_date=$4::date,updated_at=pg_catalog.clock_timestamp() WHERE singleton=true",
       [attemptId, lastSuccessAt, outcome, effectiveDate],
@@ -393,12 +396,13 @@ describe.skipIf(!isDisposableCheckoutDatabase || !isDisposableBcvProducerDatabas
         for (const table of [
           "public.sales", "public.sale_items", "public.payments",
           "public.warehouse_inventory_movements", "public.inventory_balances", "public.audit_logs",
-          "public.inventory_count_lines", "public.inventory_counts", "public.fx_contingency_events",
+          "public.inventory_count_lines", "public.inventory_counts", "public.fx_contingency_events", "public.bcv_sync_success_observations",
         ]) {
           await client.query("ALTER TABLE " + table + " DISABLE TRIGGER USER");
         }
         await client.query("DELETE FROM public.audit_logs WHERE organization_id=$1", [organizationId]);
         await client.query("DELETE FROM public.fx_contingency_events WHERE organization_id=$1", [organizationId]);
+        if (fxAttemptIds.length) await client.query("DELETE FROM public.bcv_sync_success_observations WHERE attempt_id=ANY($1::uuid[])", [fxAttemptIds]);
         await client.query("DELETE FROM public.payments WHERE organization_id=$1", [organizationId]);
         await client.query("DELETE FROM public.sale_items WHERE organization_id=$1", [organizationId]);
         await client.query("DELETE FROM public.sales WHERE organization_id=$1", [organizationId]);
@@ -414,6 +418,8 @@ describe.skipIf(!isDisposableCheckoutDatabase || !isDisposableBcvProducerDatabas
         ]) {
           if (table !== "public.audit_logs") await client.query("ALTER TABLE " + table + " ENABLE TRIGGER USER");
         }
+        await client.query("ALTER TABLE public.bcv_sync_success_observations ENABLE ALWAYS TRIGGER bcv_sync_success_observations_10_append_only_rows");
+        await client.query("ALTER TABLE public.bcv_sync_success_observations ENABLE ALWAYS TRIGGER bcv_sync_success_observations_20_append_only_truncate");
         await client.query("ALTER TABLE public.fx_contingency_events ENABLE ALWAYS TRIGGER fx_contingency_events_10_append_only_rows");
         await client.query("ALTER TABLE public.fx_contingency_events ENABLE ALWAYS TRIGGER fx_contingency_events_20_append_only_truncate");
         await client.query("ALTER TABLE public.audit_logs ENABLE ALWAYS TRIGGER audit_logs_10_append_only_rows");
@@ -429,6 +435,7 @@ describe.skipIf(!isDisposableCheckoutDatabase || !isDisposableBcvProducerDatabas
         await client.query("DELETE FROM public.organization_members WHERE organization_id=$1 AND user_id=$2", [organizationId, fxOwnerId]);
         await client.query("DELETE FROM public.app_users WHERE id=$1", [fxOwnerId]);
       }
+      if (fxFutureRateId) await client.query("DELETE FROM public.exchange_rates WHERE id=$1", [fxFutureRateId]);
       if (fxReferenceRateId) {
         if (fxReferenceRateCreated) await client.query("DELETE FROM public.exchange_rates WHERE id=$1", [fxReferenceRateId]);
         else if (previousFxReferenceRate) await client.query("UPDATE public.exchange_rates SET rate=$2::numeric,validation_status=$3,fetched_at=$4 WHERE id=$1", [fxReferenceRateId, previousFxReferenceRate.rate, previousFxReferenceRate.validation_status, previousFxReferenceRate.fetched_at]);

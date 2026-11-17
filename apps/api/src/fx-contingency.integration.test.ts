@@ -412,10 +412,18 @@ describe.skipIf(!safeDb)("FX contingency PostgreSQL integration — PG-01..PG-30
     await expect(producer.query("INSERT INTO public.bcv_sync_success_observations(observed_at,last_success_at,last_outcome,last_effective_date) VALUES(now(),now(),'inserted',current_date)")).rejects.toMatchObject({ code: "42501" });
   });
 
-  it("PG-21 runtime has SELECT-only access to durable BCV success observations", async () => {
+  it("PG-21 runtime reads durable BCV observations and uses a narrow definer lock for auth transition", async () => {
     await runtime.query("SELECT count(*) FROM public.bcv_sync_success_observations");
     await expect(runtime.query("INSERT INTO public.bcv_sync_success_observations(observed_at,last_success_at,last_outcome,last_effective_date) VALUES(now(),now(),'inserted',current_date)")).rejects.toMatchObject({ code: "42501" });
     await expect(runtime.query("DELETE FROM public.bcv_sync_success_observations")).rejects.toMatchObject({ code: "42501" });
+    const branch = await createBranch("PG21");
+    const id = await createAuthorization(branch, "101.00000000");
+    await expect(runtime.query("SELECT * FROM public.fx_contingency_authorizations WHERE id=$1", [id])).rejects.toMatchObject({ code: "42501" });
+    const locked = await runtime.query<{ id: string; authorized_by_user_id: string; authorized_by_role: string }>(
+      "SELECT * FROM public.lock_active_fx_contingency_authorization_for_transition($1::uuid,$2::uuid)",
+      [organizationId, branch],
+    );
+    expect(locked.rows[0]).toMatchObject({ id, authorized_by_user_id: ownerId, authorized_by_role: "owner" });
   });
 
   it("PG-22 runtime cannot mutate append-only events or call the internal append function", async () => {

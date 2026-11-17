@@ -530,13 +530,22 @@ BEGIN
        AND er.source = 'BCV_OFFICIAL_HTML_V1'
        AND er.validation_status = 'valid'
        AND er.rate = sale_row.exchange_rate_snapshot
-       AND er.effective_date = (pg_catalog.clock_timestamp() AT TIME ZONE 'America/Caracas')::date
      FOR SHARE;
     IF NOT FOUND THEN
       RAISE EXCEPTION 'SALE_REQUIRES_CURRENT_BCV_RATE' USING ERRCODE = '23514';
     END IF;
     operation_time := pg_catalog.clock_timestamp();
     operation_date := (operation_time AT TIME ZONE 'America/Caracas')::date;
+    IF NOT EXISTS (
+      SELECT 1 FROM public.exchange_rates er
+       WHERE er.id = sale_row.exchange_rate_id
+         AND er.source = 'BCV_OFFICIAL_HTML_V1'
+         AND er.validation_status = 'valid'
+         AND er.rate = sale_row.exchange_rate_snapshot
+         AND er.effective_date = operation_date
+    ) THEN
+      RAISE EXCEPTION 'SALE_REQUIRES_CURRENT_BCV_RATE' USING ERRCODE = '23514';
+    END IF;
   ELSIF sale_row.fx_source = 'manual_contingency' THEN
     PERFORM 1 FROM public.bcv_sync_state WHERE singleton = true FOR SHARE;
     IF sale_row.exchange_rate_id IS NOT NULL

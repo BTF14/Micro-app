@@ -219,8 +219,9 @@ GRANT SELECT, INSERT ON TABLE public.fx_contingency_events TO microapp_runtime;
 -- Keep the producer's existing narrow 0022 contract unchanged.
 REVOKE ALL ON TABLE public.fx_user_pin_credentials, public.fx_contingency_delegations,
   public.fx_contingency_authorizations FROM PUBLIC;
-GRANT SELECT, INSERT, UPDATE ON TABLE public.fx_user_pin_credentials,
-  public.fx_contingency_delegations, public.fx_contingency_authorizations TO microapp_runtime;
+GRANT SELECT, INSERT, UPDATE ON TABLE public.fx_user_pin_credentials TO microapp_runtime;
+GRANT SELECT, INSERT ON TABLE public.fx_contingency_delegations, public.fx_contingency_authorizations TO microapp_runtime;
+REVOKE UPDATE, DELETE, TRUNCATE, TRIGGER ON TABLE public.fx_contingency_delegations, public.fx_contingency_authorizations FROM microapp_runtime;
 GRANT USAGE, SELECT ON SEQUENCE public.bcv_sync_success_observations_id_seq TO microapp_runtime;
 
 -- Add source-aware sale snapshots. Existing rows are explicitly classified as
@@ -611,5 +612,108 @@ END;
 $assert_completed_sale_reconciled$;
 ALTER FUNCTION public.assert_completed_sale_reconciled() OWNER TO microapp_migrator;
 REVOKE ALL ON FUNCTION public.assert_completed_sale_reconciled() FROM PUBLIC;
+
+\n
+CREATE FUNCTION public.transition_fx_contingency_authorization(
+  p_organization_id uuid, p_branch_id uuid, p_authorization_id uuid,
+  p_new_status text, p_actor_user_id uuid, p_actor_role text, p_reason text
+)
+RETURNS void
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = pg_catalog
+AS $transition_fx_contingency_authorization$
+DECLARE auth_row public.fx_contingency_authorizations%ROWTYPE;
+DECLARE event_kind text;
+BEGIN
+  IF p_new_status NOT IN ('revoked', 'expired', 'bcv_restored')
+     OR p_actor_role NOT IN ('owner', 'admin')
+     OR p_reason IS NULL OR pg_catalog.length(pg_catalog.btrim(p_reason)) NOT BETWEEN 1 AND 500 THEN
+    RAISE EXCEPTION 'FX_AUTHORIZATION_TRANSITION_INVALID' USING ERRCODE = '23514';
+  END IF;
+  SELECT * INTO auth_row FROM public.fx_contingency_authorizations
+   WHERE organization_id = p_organization_id AND branch_id = p_branch_id
+     AND id = p_authorization_id FOR UPDATE;
+  IF NOT FOUND OR auth_row.status <> 'active' THEN
+    RAISE EXCEPTION 'FX_AUTHORIZATION_NOT_ACTIVE' USING ERRCODE = '23514';
+  END IF;
+  IF NOT EXISTS (
+    SELECT 1 FROM public.organization_members member
+    JOIN public.app_users actor ON actor.id = member.user_id AND actor.is_active
+    JOIN public.organizations org ON org.id = member.organization_id AND org.is_active
+    WHERE member.organization_id = p_organization_id AND member.user_id = p_actor_user_id
+      AND member.is_active AND member.role = p_actor_role
+  ) THEN RAISE EXCEPTION 'FX_TRANSITION_ACTOR_INVALID' USING ERRCODE = '23514'; END IF;
+  IF p_actor_role = 'admin' AND NOT EXISTS (
+    SELECT 1 FROM public.branch_memberships bm
+    JOIN public.fx_contingency_delegations d
+      ON d.organization_id = bm.organization_id AND d.branch_id = bm.branch_id
+     AND d.user_id = bm.user_id AND d.status = 'active'
+    WHERE bm.organization_id = p_organization_id AND bm.branch_id = p_branch_id
+      AND bm.user_id = p_actor_user_id AND bm.is_active
+  ) THEN RAISE EXCEPTION 'FX_ADMIN_DELEGATION_REQUIRED' USING ERRCODE = '23514'; END IF;
+  UPDATE public.fx_contingency_authorizations
+     SET status = p_new_status,
+         revoked_at = CASE WHEN p_new_status = 'revoked' THEN pg_catalog.clock_timestamp() ELSE NULL END
+   WHERE organization_id = p_organization_id AND branch_id = p_branch_id AND id = p_authorization_id;
+  event_kind := CASE p_new_status WHEN 'bcv_restored' THEN 'bcv_restored' ELSE p_new_status END;
+  PERFORM public.append_fx_contingency_event(
+    p_organization_id, p_branch_id, p_authorization_id, event_kind,
+    p_actor_user_id, p_actor_role, pg_catalog.jsonb_build_object('reason', p_reason)
+  );
+END;
+$transition_fx_contingency_authorization$;
+ALTER FUNCTION public.transition_fx_contingency_authorization(uuid,uuid,uuid,text,uuid,text,text) OWNER TO microapp_migrator;
+REVOKE ALL ON FUNCTION public.transition_fx_contingency_authorization(uuid,uuid,uuid,text,uuid,text,text) FROM PUBLIC;
+GRANT EXECUTE ON FUNCTION public.transition_fx_contingency_authorization(uuid,uuid,uuid,text,uuid,text,text) TO microapp_runtime;
+
+CREATE FUNCTION public.set_fx_contingency_delegation(
+  p_organization_id uuid, p_branch_id uuid, p_user_id uuid,
+  p_actor_user_id uuid, p_actor_role text, p_revoke boolean DEFAULT false
+)
+RETURNS uuid
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = pg_catalog
+AS $set_fx_contingency_delegation$
+DECLARE delegation_id uuid;
+BEGIN
+  IF p_actor_role <> 'owner' THEN
+    RAISE EXCEPTION 'FX_DELEGATION_OWNER_REQUIRED' USING ERRCODE = '23514';
+  END IF;
+  IF NOT EXISTS (
+    SELECT 1 FROM public.organization_members member
+    JOIN public.app_users actor ON actor.id = member.user_id AND actor.is_active
+    WHERE member.organization_id = p_organization_id AND member.user_id = p_actor_user_id
+      AND member.is_active AND member.role = 'owner'
+  ) THEN RAISE EXCEPTION 'FX_DELEGATION_ACTOR_INVALID' USING ERRCODE = '23514'; END IF;
+  IF NOT EXISTS (
+    SELECT 1 FROM public.branch_memberships bm
+    JOIN public.organization_members member
+      ON member.organization_id = bm.organization_id AND member.user_id = bm.user_id
+     AND member.is_active AND member.role = 'admin'
+    WHERE bm.organization_id = p_organization_id AND bm.branch_id = p_branch_id
+      AND bm.user_id = p_user_id AND bm.is_active
+  ) THEN RAISE EXCEPTION 'FX_DELEGATE_MUST_BE_ACTIVE_BRANCH_ADMIN' USING ERRCODE = '23514'; END IF;
+
+  IF p_revoke THEN
+    UPDATE public.fx_contingency_delegations
+       SET status = 'revoked', revoked_at = pg_catalog.clock_timestamp()
+     WHERE organization_id = p_organization_id AND branch_id = p_branch_id
+       AND user_id = p_user_id AND status = 'active'
+     RETURNING id INTO delegation_id;
+    IF delegation_id IS NULL THEN RAISE EXCEPTION 'FX_DELEGATION_NOT_ACTIVE' USING ERRCODE = '23514'; END IF;
+  ELSE
+    INSERT INTO public.fx_contingency_delegations (
+      organization_id, branch_id, user_id, granted_by_user_id
+    ) VALUES (p_organization_id, p_branch_id, p_user_id, p_actor_user_id)
+    RETURNING id INTO delegation_id;
+  END IF;
+  RETURN delegation_id;
+END;
+$set_fx_contingency_delegation$;
+ALTER FUNCTION public.set_fx_contingency_delegation(uuid,uuid,uuid,uuid,text,boolean) OWNER TO microapp_migrator;
+REVOKE ALL ON FUNCTION public.set_fx_contingency_delegation(uuid,uuid,uuid,uuid,text,boolean) FROM PUBLIC;
+GRANT EXECUTE ON FUNCTION public.set_fx_contingency_delegation(uuid,uuid,uuid,uuid,text,boolean) TO microapp_runtime;
 
 \nCOMMIT;

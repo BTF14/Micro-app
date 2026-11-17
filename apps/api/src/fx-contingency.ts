@@ -84,7 +84,7 @@ function failure(c: RequestContext, error: unknown) {
 async function resolveActor(tx: import("./database").DatabaseClient, token: string, orgId: string): Promise<
   { kind: "ok"; tenant: Tenant } | { kind: "unauthenticated" | "forbidden" }
 > {
-  const tenant = await resolveTenantContext(tx, token, orgId, false);
+  const tenant = await resolveTenantContext(tx, token, orgId, true);
   if (!tenant) return { kind: "unauthenticated" };
   if (tenant.role !== "owner" && tenant.role !== "admin") return { kind: "forbidden" };
   return { kind: "ok", tenant };
@@ -324,6 +324,26 @@ export function registerFxContingencyRoutes(app: Hono<{ Bindings: Bindings }>): 
         if (scope !== "ok") return { kind: scope };
         const pin = await verifyAndRateLimitPin(tx, c, actor.tenant, body.pin);
         if (pin !== "ok") return { kind: pin === "limited" ? "limited" as const : pin === "unavailable" ? "unavailable" as const : "invalid_pin" as const };
+        const active = await tx.query<{ id: string; expires_at: string | Date; starts_at: string | Date }>(
+          `SELECT id,starts_at,expires_at FROM public.fx_contingency_authorizations
+            WHERE organization_id=$1 AND branch_id=$2 AND status='active'
+            ORDER BY starts_at DESC LIMIT 1 FOR UPDATE`,
+          [actor.tenant.organizationId, branchId],
+        );
+        if (renewalId && active.rows[0]?.id !== renewalId) return { kind: "authorization_not_active" as const };
+        if (active.rows[0]) {
+          const expiryTime = new Date(active.rows[0].expires_at).getTime();
+          if (expiryTime <= Date.now()) {
+            await tx.query(
+              `SELECT public.transition_fx_contingency_authorization(
+                 $1::uuid,$2::uuid,$3::uuid,'expired',$4::uuid,$5::text,'authorization expired before renewal'
+               )`,
+              [actor.tenant.organizationId, branchId, active.rows[0].id, actor.tenant.userId, actor.tenant.role],
+            );
+          } else if (!renewalId) {
+            return { kind: "authorization_already_active" as const };
+          }
+        }
         const reference = await tx.query<{ id: string; rate: string }>(
           `SELECT id,rate::text FROM public.exchange_rates
             WHERE source='BCV_OFFICIAL_HTML_V1' AND validation_status='valid'
@@ -356,6 +376,8 @@ export function registerFxContingencyRoutes(app: Hono<{ Bindings: Bindings }>): 
         if (result.kind === "invalid_pin") return c.json({ error: "FX_PIN_INVALID" }, 403);
         if (result.kind === "unavailable") return c.json({ error: "FX_PIN_NOT_CONFIGURED" }, 503);
         if (result.kind === "reference_unavailable") return c.json({ error: "BCV_REFERENCE_UNAVAILABLE" }, 409);
+        if (result.kind === "authorization_not_active") return c.json({ error: "FX_AUTHORIZATION_NOT_ACTIVE" }, 409);
+        if (result.kind === "authorization_already_active") return c.json({ error: "FX_AUTHORIZATION_ALREADY_ACTIVE" }, 409);
         return authFailure(c, result.kind);
       }
       return c.json({ authorization_id: result.id }, 201);

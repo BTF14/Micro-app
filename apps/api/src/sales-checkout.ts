@@ -128,7 +128,7 @@ export async function findApplicableCheckoutRate(tx: import("./database").Databa
   if (
     !state ||
     !state.last_success_at ||
-    state.last_error_code !== null ||
+    state.last_error_code != null ||
     (state.last_outcome !== "inserted" && state.last_outcome !== "unchanged") ||
     (state.last_effective_date === null || state.last_effective_date < today)
   ) return null;

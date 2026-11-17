@@ -209,7 +209,7 @@ export default function SalesPanel({
     } finally {
       if (requestId === loadSequence.current) setLoading(false);
     }
-  }, [base, organizationId]);
+  }, [base, organizationId, exchangeRateStatus, exchangeRate]);
 
   useEffect(() => {
     if (prevOrgRef.current !== organizationId) {

@@ -49,6 +49,7 @@ describe.skipIf(!safeDb)("FX contingency PostgreSQL integration — PG-01..PG-30
   const attemptIds: string[] = [];
   const futureRateIds: string[] = [];
   let futureRateCreated = false;
+  let previousFutureRate: { id: string; rate: string; validation_status: string; fetched_at: Date } | null = null;
 
   function caracasDate(offsetDays = 0): string {
     const parts = new Intl.DateTimeFormat("en-US", {
@@ -229,7 +230,8 @@ describe.skipIf(!safeDb)("FX contingency PostgreSQL integration — PG-01..PG-30
       await admin.query("ALTER TABLE public.bcv_sync_success_observations ENABLE ALWAYS TRIGGER bcv_sync_success_observations_20_append_only_truncate");
       await admin.query("ALTER TABLE public.audit_logs ENABLE ALWAYS TRIGGER audit_logs_10_append_only_rows");
       await admin.query("ALTER TABLE public.audit_logs ENABLE ALWAYS TRIGGER audit_logs_20_append_only_truncate");
-      if (futureRateIds.length) await admin.query("DELETE FROM public.exchange_rates WHERE id=ANY($1::uuid[])", [futureRateIds]);
+      if (futureRateIds.length && futureRateCreated) await admin.query("DELETE FROM public.exchange_rates WHERE id=ANY($1::uuid[])", [futureRateIds]);
+      if (previousFutureRate) await admin.query("UPDATE public.exchange_rates SET rate=$2::numeric,validation_status=$3,fetched_at=$4 WHERE id=$1", [previousFutureRate.id, previousFutureRate.rate, previousFutureRate.validation_status, previousFutureRate.fetched_at]);
       if (previousCurrentRate) {
         await admin.query("UPDATE public.exchange_rates SET rate=$2::numeric,validation_status=$3,fetched_at=$4 WHERE id=$1", [previousCurrentRate.id, previousCurrentRate.rate, previousCurrentRate.validation_status, previousCurrentRate.fetched_at]);
       } else if (currentRateCreated && currentRateId) {
@@ -465,11 +467,21 @@ describe.skipIf(!safeDb)("FX contingency PostgreSQL integration — PG-01..PG-30
     await setCurrentRateStale();
     const branch = await createBranch("PG28");
     const authId = await createAuthorization(branch, "101.00000000");
-    const future = await admin.query<{ id: string }>(
-      "INSERT INTO public.exchange_rates(base_currency,quote_currency,rate,source,effective_date,validation_status) VALUES('USD','VES',300.00000000,$1,$2::date,'valid') RETURNING id",
+    const existingFuture = await admin.query<{ id: string; rate: string; validation_status: string; fetched_at: Date }>(
+      "SELECT id,rate::text,validation_status,fetched_at FROM public.exchange_rates WHERE source=$1 AND effective_date=$2::date",
       [SOURCE, tomorrow],
     );
-    futureRateIds.push(future.rows[0]!.id); futureRateCreated = true;
+    if (existingFuture.rows[0]) {
+      previousFutureRate = existingFuture.rows[0];
+      futureRateIds.push(existingFuture.rows[0].id);
+      await admin.query("UPDATE public.exchange_rates SET rate=300.00000000,validation_status='valid',fetched_at=pg_catalog.clock_timestamp() WHERE id=$1", [existingFuture.rows[0].id]);
+    } else {
+      const future = await admin.query<{ id: string }>(
+        "INSERT INTO public.exchange_rates(base_currency,quote_currency,rate,source,effective_date,validation_status) VALUES('USD','VES',300.00000000,$1,$2::date,'valid') RETURNING id",
+        [SOURCE, tomorrow],
+      );
+      futureRateIds.push(future.rows[0]!.id); futureRateCreated = true;
+    }
     const attemptId = await updateSync("inserted", tomorrow, new Date(Date.now() - 1000));
     const observation = await admin.query("SELECT observed_at,last_effective_date,validation_status FROM public.bcv_sync_success_observations WHERE attempt_id=$1", [attemptId]);
     expect(observation.rows[0].last_effective_date.toISOString?.() ?? String(observation.rows[0].last_effective_date)).toContain(tomorrow);

@@ -912,7 +912,7 @@ END;
 $set_fx_user_pin_credential$;
 ALTER FUNCTION public.set_fx_user_pin_credential(uuid,uuid,uuid,text,integer,bytea,bytea) OWNER TO microapp_migrator;
 REVOKE ALL ON FUNCTION public.set_fx_user_pin_credential(uuid,uuid,uuid,text,integer,bytea,bytea) FROM PUBLIC;
-GRANT EXECUTE ON FUNCTION public.set_fx_user_pin_credential(uuid,uuid,text,integer,bytea,bytea) TO microapp_runtime;
+GRANT EXECUTE ON FUNCTION public.set_fx_user_pin_credential(uuid,uuid,uuid,text,integer,bytea,bytea) TO microapp_runtime;
 
 
 CREATE FUNCTION public.lock_active_fx_contingency_authorization(

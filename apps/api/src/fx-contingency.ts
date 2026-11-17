@@ -208,7 +208,7 @@ export function registerFxContingencyRoutes(app: Hono<{ Bindings: Bindings }>): 
         const hash = await hashFxPin(body.pin, actor.tenant.organizationId, actor.tenant.userId, c.env.FX_PIN_PEPPER!);
         await tx.query(
           `SELECT public.set_fx_user_pin_credential(
-             $1::uuid,$2::uuid,$3::text,$4::integer,
+             $1::uuid,$2::uuid,$2::uuid,$3::text,$4::integer,
              pg_catalog.decode($5,'base64'),pg_catalog.decode($6,'base64')
            )`,
           [actor.tenant.organizationId, actor.tenant.userId, hash.kdfVersion, hash.iterations, hash.saltBase64, hash.hashBase64],

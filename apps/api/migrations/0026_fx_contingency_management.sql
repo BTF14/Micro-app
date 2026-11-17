@@ -914,4 +914,50 @@ ALTER FUNCTION public.set_fx_user_pin_credential(uuid,uuid,uuid,text,integer,byt
 REVOKE ALL ON FUNCTION public.set_fx_user_pin_credential(uuid,uuid,uuid,text,integer,bytea,bytea) FROM PUBLIC;
 GRANT EXECUTE ON FUNCTION public.set_fx_user_pin_credential(uuid,uuid,text,integer,bytea,bytea) TO microapp_runtime;
 
+
+CREATE FUNCTION public.lock_active_fx_contingency_authorization(
+  p_organization_id uuid, p_branch_id uuid
+)
+RETURNS TABLE(id uuid,rate numeric(18,8),starts_at timestamptz,expires_at timestamptz)
+LANGUAGE sql
+SECURITY DEFINER
+SET search_path = pg_catalog
+AS $lock_active_fx_contingency_authorization$
+  SELECT a.id,a.rate,a.starts_at,a.expires_at
+    FROM public.fx_contingency_authorizations a
+   WHERE a.organization_id=p_organization_id AND a.branch_id=p_branch_id
+     AND a.status='active'
+     AND a.starts_at <= pg_catalog.clock_timestamp()
+     AND a.expires_at > pg_catalog.clock_timestamp()
+   ORDER BY a.starts_at DESC
+   LIMIT 1
+   FOR SHARE
+$lock_active_fx_contingency_authorization$;
+ALTER FUNCTION public.lock_active_fx_contingency_authorization(uuid,uuid) OWNER TO microapp_migrator;
+REVOKE ALL ON FUNCTION public.lock_active_fx_contingency_authorization(uuid,uuid) FROM PUBLIC;
+GRANT EXECUTE ON FUNCTION public.lock_active_fx_contingency_authorization(uuid,uuid) TO microapp_runtime;
+
+CREATE FUNCTION public.lock_branch_fx_contingency_authorization(
+  p_organization_id uuid, p_branch_id uuid
+)
+RETURNS TABLE(
+  id uuid,starts_at timestamptz,expires_at timestamptz,
+  authorized_by_user_id uuid,authorized_by_role text
+)
+LANGUAGE sql
+SECURITY DEFINER
+SET search_path = pg_catalog
+AS $lock_branch_fx_contingency_authorization$
+  SELECT a.id,a.starts_at,a.expires_at,a.authorized_by_user_id,a.authorized_by_role
+    FROM public.fx_contingency_authorizations a
+   WHERE a.organization_id=p_organization_id AND a.branch_id=p_branch_id
+     AND a.status='active'
+   ORDER BY a.starts_at DESC
+   LIMIT 1
+   FOR UPDATE
+$lock_branch_fx_contingency_authorization$;
+ALTER FUNCTION public.lock_branch_fx_contingency_authorization(uuid,uuid) OWNER TO microapp_migrator;
+REVOKE ALL ON FUNCTION public.lock_branch_fx_contingency_authorization(uuid,uuid) FROM PUBLIC;
+GRANT EXECUTE ON FUNCTION public.lock_branch_fx_contingency_authorization(uuid,uuid) TO microapp_runtime;
+
 COMMIT;

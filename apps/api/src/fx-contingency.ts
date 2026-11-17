@@ -294,7 +294,7 @@ export function registerFxContingencyRoutes(app: Hono<{ Bindings: Bindings }>): 
             WHERE state.singleton=true
             LIMIT 1`,
         );
-        return { kind: "ok" as const, authorization: rows.rows[0] ?? null, bcv: bcv.rows[0] ?? null };
+        return { kind: "ok" as const, authorization: rows.rows[0] ?? null, bcv: bcv.rows[0] ?? null, commercial_enabled: c.env.FX_CONTINGENCY_ENABLED === "true" };
       }));
       if (result.kind !== "ok") return authFailure(c, result.kind);
       return c.json(result);

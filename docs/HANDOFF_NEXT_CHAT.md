@@ -1,3 +1,30 @@
+# Handoff vigente — PR 1 Contingencia Manual BCV implementada (2026-11-17)
+
+## Punto exacto de partida
+- `main` = `04d3679189edaab17221f1e8cd425cc68fa53155`, verificado en vivo y usado como base de PR #377.
+- PR #377: https://github.com/BTF14/Micro-app/pull/377 — OPEN / Draft, no merge.
+- Rama: `feat/fx-contingency-pr1-20261117`. Implementación de código validada en SHA `7afa4ddb9f4c6fee5ba1bd1bb5629b02c3c0239d`; los commits posteriores de cierre documental no cambian el código.
+- PR 1 incluye migración 0026 + assertions, KDF PIN Workers, rate limits por usuario/IP, delegaciones, autorizaciones, eventos append-only, observaciones BCV inmutables, triggers, checkout manual/BCV, rutas Hono, panel administrativo, ACK de cajero y recibo con referencia de autorización.
+- Se mantuvo `0022_bcv_dedicated_producer_role.sql` sin cambios. No mezclar Carril A, Carril B1 ni Hardening transversal.
+
+## Verificación y gates
+- CI exacto del SHA de implementación `7afa4ddb9f4c6fee5ba1bd1bb5629b02c3c0239d`: run #44187952802 SUCCESS; 12/12 workflows SUCCESS, incluyendo PostgreSQL 18, assertions 0026, Wrangler Workers KDF, PG-01..PG-30, checkout, backup/restore, Playwright, Semgrep y security scans.
+- **AC-7:** la revisión independiente de diseño existente es la base. La auditoría independiente completa del artefacto final (0026 real, triggers, ACL/grants, Wrangler KDF, PG-01..PG-30 y diff completo) es gate obligatorio antes de merge. No marcar AC-7 completo hasta recibir esa revisión.
+- **AC-6:** sigue pendiente. La habilitación comercial permanece apagada; no configurar `FX_CONTINGENCY_ENABLED=true`, no añadir secretos y no desplegar hasta obtener aprobación escrita del asesor contable/legal sobre el comprobante.
+- PR sigue Draft. No hacer merge ni auto-merge. Issue #53 permanece OPEN/P0 y PRODUCTION NOT READY.
+
+## Próximos pasos
+1. Ejecutar revisión independiente AC-7 sobre el diff completo del PR y la migración 0026; registrar hallazgos y repetir pruebas si hay correcciones.
+2. Confirmar que CI y todos los checks estén verdes sobre el HEAD final posterior a cualquier cambio.
+3. Mantener AC-6 como gate separado de habilitación comercial.
+4. Solo después de AC-7 y autorización explícita, considerar merge. La habilitación comercial requiere además AC-6 escrito.
+
+---
+
+> **SNAPSHOT HISTÓRICO SUPERSEDIDO:** los handoffs inferiores describen estados anteriores a PR #377. Prevalece este encabezado y el estado vivo del PR.
+
+---
+
 # Handoff vigente — continuidad posterior a PR #375 (2026-11-17)
 
 ## Punto exacto de partida

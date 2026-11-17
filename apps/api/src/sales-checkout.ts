@@ -739,37 +739,56 @@ export function registerSalesCheckoutRoutes(app: Hono<{ Bindings: Bindings }>): 
     } catch (error) {
       const code = postgresCode(error);
       if (code === "23514" && postgresMessage(error).includes("MANUAL_FX_CONTINGENCY_BCV_RESTORED")) {
-        // The checkout transaction has rolled back before this independent
-        // transition. Recheck the durable observation and commit bcv_restored
-        // separately so a later checkout failure cannot erase the event.
+        // The checkout transaction has rolled back. Recheck in a separate
+        // transaction using the required BCV -> FX lock order and durable
+        // observation evidence before committing the bcv_restored event.
+        let transitioned = false;
         try {
-          await withDatabaseClient(c.env.DATABASE_URL, (client) =>
+          transitioned = await withDatabaseClient(c.env.DATABASE_URL, (client) =>
             withDatabaseTransaction(client, async (tx) => {
+              await tx.query("SELECT * FROM public.lock_bcv_sync_state()");
               const active = await tx.query<{
-                id: string; authorized_by_user_id: string; authorized_by_role: "owner" | "admin";
+                id: string; starts_at: Date | string;
+                authorized_by_user_id: string; authorized_by_role: "owner" | "admin";
               }>(
-                `SELECT id,authorized_by_user_id,authorized_by_role
-                   FROM public.fx_contingency_authorizations
-                  WHERE organization_id=$1 AND branch_id=$2 AND status='active'
-                  ORDER BY starts_at DESC LIMIT 1 FOR UPDATE`,
+                "SELECT * FROM public.lock_active_fx_contingency_authorization_for_transition($1::uuid,$2::uuid)",
                 [organizationId, branchId],
               );
               const auth = active.rows[0];
-              if (auth) {
-                await tx.query(
-                  `SELECT public.transition_fx_contingency_authorization(
-                     $1::uuid,$2::uuid,$3::uuid,'bcv_restored',$4::uuid,$5::text,
-                     'official BCV rate recovered after authorization start'
-                   )`,
-                  [organizationId, branchId, auth.id, auth.authorized_by_user_id, auth.authorized_by_role],
-                );
-              }
+              if (!auth) return false;
+              const recovery = await tx.query<{ id: string }>(
+                `SELECT obs.id
+                   FROM public.bcv_sync_success_observations obs
+                   JOIN public.exchange_rates rate ON rate.id=obs.exchange_rate_id
+                  WHERE obs.observed_at > $1::timestamptz
+                    AND obs.last_outcome IN ('inserted','unchanged')
+                    AND obs.last_error_code IS NULL
+                    AND obs.validation_status='valid'
+                    AND obs.last_effective_date=(pg_catalog.clock_timestamp() AT TIME ZONE 'America/Caracas')::date
+                    AND rate.effective_date=(pg_catalog.clock_timestamp() AT TIME ZONE 'America/Caracas')::date
+                    AND rate.source=$2
+                    AND (obs.last_outcome <> 'inserted' OR obs.rate_fetched_at > $1::timestamptz)
+                  LIMIT 1`,
+                [auth.starts_at, BCV_SOURCE],
+              );
+              if (!recovery.rows[0]) return false;
+              await tx.query(
+                `SELECT public.transition_fx_contingency_authorization(
+                   $1::uuid,$2::uuid,$3::uuid,'bcv_restored',$4::uuid,$5::text,
+                   'official BCV rate recovered after authorization start'
+                 )`,
+                [organizationId, branchId, auth.id, auth.authorized_by_user_id, auth.authorized_by_role],
+              );
+              return true;
             }),
           );
         } catch {
           console.error({ event: "FX_BCV_RESTORATION_TRANSITION_FAILED" });
         }
-        return c.json({ error: "BCV_RATE_RESTORED", message: "BCV recuperó una tasa oficial aplicable. La contingencia fue cerrada; vuelve a intentar la venta." }, 409);
+        if (transitioned) {
+          return c.json({ error: "BCV_RATE_RESTORED", message: "BCV recuperó una tasa oficial aplicable. La contingencia fue cerrada; vuelve a intentar la venta." }, 409);
+        }
+        return c.json({ error: "FX_RATE_NOT_AVAILABLE", message: "No existe una tasa oficial aplicable ni una autorización manual vigente." }, 409);
       }
       if (code === "23505") return c.json({ error: "IDEMPOTENCY_CONFLICT", message: "La clave de idempotencia ya fue utilizada." }, 409);
       if (code === "23503" || code === "23514" || code === "22P02") {

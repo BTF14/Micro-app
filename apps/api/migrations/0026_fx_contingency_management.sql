@@ -221,7 +221,6 @@ REVOKE ALL ON TABLE public.fx_user_pin_credentials, public.fx_contingency_delega
   public.fx_contingency_authorizations FROM PUBLIC;
 GRANT SELECT, INSERT, UPDATE ON TABLE public.fx_user_pin_credentials,
   public.fx_contingency_delegations, public.fx_contingency_authorizations TO microapp_runtime;
-GRANT USAGE, SELECT ON SEQUENCE public.fx_contingency_events_id_seq TO microapp_runtime;
 GRANT USAGE, SELECT ON SEQUENCE public.bcv_sync_success_observations_id_seq TO microapp_runtime;
 
 -- Add source-aware sale snapshots. Existing rows are explicitly classified as
@@ -348,4 +347,269 @@ REVOKE ALL ON FUNCTION public.assert_sale_latest_bcv_sync_success() FROM PUBLIC;
 REVOKE ALL ON FUNCTION public.assert_sale_latest_bcv_sync_success() FROM microapp_runtime;
 REVOKE ALL ON FUNCTION public.assert_sale_latest_bcv_sync_success() FROM microapp_bcv_sync;
 
-COMMIT;
+
+-- Audit events are inserted through one narrow SECURITY DEFINER entry point.
+-- The runtime role receives no direct INSERT privilege on the append-only table.
+CREATE FUNCTION public.append_fx_contingency_event(
+  p_organization_id uuid,
+  p_branch_id uuid,
+  p_authorization_id uuid,
+  p_event_type text,
+  p_actor_user_id uuid,
+  p_actor_role text,
+  p_details jsonb DEFAULT '{}'::jsonb
+)
+RETURNS uuid
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = pg_catalog
+AS $append_fx_contingency_event$
+DECLARE event_id uuid;
+BEGIN
+  IF p_event_type NOT IN ('authorized', 'renewed', 'revoked', 'expired', 'bcv_restored')
+     OR p_actor_role NOT IN ('owner', 'admin')
+     OR p_details IS NULL OR pg_catalog.jsonb_typeof(p_details) <> 'object' THEN
+    RAISE EXCEPTION 'FX_EVENT_ARGUMENTS_INVALID' USING ERRCODE = '23514';
+  END IF;
+  IF NOT EXISTS (
+    SELECT 1 FROM public.organization_members member
+    JOIN public.app_users actor ON actor.id = member.user_id AND actor.is_active
+    JOIN public.organizations org ON org.id = member.organization_id AND org.is_active
+    WHERE member.organization_id = p_organization_id
+      AND member.user_id = p_actor_user_id
+      AND member.is_active
+      AND member.role = p_actor_role
+  ) THEN
+    RAISE EXCEPTION 'FX_EVENT_ACTOR_SCOPE_INVALID' USING ERRCODE = '23514';
+  END IF;
+  INSERT INTO public.fx_contingency_events (
+    organization_id, branch_id, authorization_id, event_type, actor_user_id, actor_role, details
+  ) VALUES (
+    p_organization_id, p_branch_id, p_authorization_id, p_event_type,
+    p_actor_user_id, p_actor_role, p_details
+  ) RETURNING id INTO event_id;
+  RETURN event_id;
+END;
+$append_fx_contingency_event$;
+ALTER FUNCTION public.append_fx_contingency_event(uuid,uuid,uuid,text,uuid,text,jsonb) OWNER TO microapp_migrator;
+REVOKE ALL ON FUNCTION public.append_fx_contingency_event(uuid,uuid,uuid,text,uuid,text,jsonb) FROM PUBLIC;
+GRANT EXECUTE ON FUNCTION public.append_fx_contingency_event(uuid,uuid,uuid,text,uuid,text,jsonb) TO microapp_runtime;
+REVOKE INSERT, UPDATE, DELETE, TRUNCATE, TRIGGER ON TABLE public.fx_contingency_events FROM microapp_runtime;
+
+-- The checkout lifecycle guard must treat FX source, authorization and cashier
+-- acknowledgement as immutable snapshots once a draft is finalized.
+CREATE OR REPLACE FUNCTION public.guard_sales_checkout_lifecycle()
+RETURNS trigger
+LANGUAGE plpgsql
+SET search_path = pg_catalog
+AS $guard_sales_checkout_lifecycle$
+BEGIN
+  IF TG_OP = 'DELETE' THEN
+    RAISE EXCEPTION 'SALES_DELETE_FORBIDDEN' USING ERRCODE = '23514';
+  END IF;
+  IF TG_OP = 'INSERT' THEN
+    IF NEW.status <> 'draft' OR NEW.completed_at IS NOT NULL
+      OR NEW.branch_id IS NULL OR NEW.register_shift_id IS NULL
+      OR NEW.warehouse_id IS NULL OR NEW.settlement_currency IS NULL
+      OR NEW.settlement_currency NOT IN ('USD', 'VES')
+      OR NEW.request_hash IS NULL OR NEW.request_hash !~ '^[0-9a-f]{64}
+
+      OR NEW.idempotency_key !~ '^[-A-Za-z0-9._:]{1,128}
+ THEN
+      RAISE EXCEPTION 'SALE_MUST_START_AS_VALID_DRAFT' USING ERRCODE = '23514';
+    END IF;
+    RETURN NEW;
+  END IF;
+  IF OLD.status <> 'draft' OR NEW.status <> 'completed' OR NEW.completed_at IS NULL THEN
+    RAISE EXCEPTION 'SALE_ONLY_ALLOWS_DRAFT_TO_COMPLETED_TRANSITION' USING ERRCODE = '23514';
+  END IF;
+  IF ROW(
+    NEW.id, NEW.organization_id, NEW.sale_number, NEW.idempotency_key,
+    NEW.subtotal_usd, NEW.total_usd, NEW.exchange_rate_id,
+    NEW.exchange_rate_snapshot, NEW.total_ves_snapshot, NEW.created_by,
+    NEW.created_at, NEW.branch_id, NEW.register_shift_id, NEW.warehouse_id,
+    NEW.settlement_currency, NEW.request_hash, NEW.fx_source,
+    NEW.fx_authorization_id, NEW.manual_fx_acknowledged_at,
+    NEW.manual_fx_acknowledged_by_user_id
+  ) IS DISTINCT FROM ROW(
+    OLD.id, OLD.organization_id, OLD.sale_number, OLD.idempotency_key,
+    OLD.subtotal_usd, OLD.total_usd, OLD.exchange_rate_id,
+    OLD.exchange_rate_snapshot, OLD.total_ves_snapshot, OLD.created_by,
+    OLD.created_at, OLD.branch_id, OLD.register_shift_id, OLD.warehouse_id,
+    OLD.settlement_currency, OLD.request_hash, OLD.fx_source,
+    OLD.fx_authorization_id, OLD.manual_fx_acknowledged_at,
+    OLD.manual_fx_acknowledged_by_user_id
+  ) THEN
+    RAISE EXCEPTION 'SALE_SNAPSHOT_FIELDS_ARE_IMMUTABLE' USING ERRCODE = '23514';
+  END IF;
+  RETURN NEW;
+END;
+$guard_sales_checkout_lifecycle$;
+
+-- Reconciliation retains every pre-existing line/payment/inventory/audit
+-- invariant and branches only the source-specific FX validation.
+CREATE OR REPLACE FUNCTION public.assert_completed_sale_reconciled()
+RETURNS trigger
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = pg_catalog
+AS $assert_completed_sale_reconciled$
+DECLARE
+  target_org uuid;
+  target_sale uuid;
+  sale_row public.sales%ROWTYPE;
+  line_count bigint;
+  null_product_count bigint;
+  line_usd numeric(14,4);
+  line_ves numeric(16,2);
+  payment_count bigint;
+  wrong_currency_count bigint;
+  payment_amount numeric(14,4);
+  payment_usd numeric(14,4);
+  movement_count bigint;
+  auth_row public.fx_contingency_authorizations%ROWTYPE;
+  operation_time timestamptz := pg_catalog.clock_timestamp();
+  operation_date date := (pg_catalog.clock_timestamp() AT TIME ZONE 'America/Caracas')::date;
+BEGIN
+  target_org := NEW.organization_id;
+  IF TG_TABLE_NAME = 'sales' THEN target_sale := NEW.id;
+  ELSE target_sale := NEW.sale_id; END IF;
+
+  SELECT * INTO sale_row FROM public.sales
+   WHERE organization_id = target_org AND id = target_sale;
+  IF NOT FOUND THEN RETURN NULL; END IF;
+  IF sale_row.status = 'draft' THEN
+    RAISE EXCEPTION 'SALE_DRAFT_MUST_NOT_COMMIT' USING ERRCODE = '23514';
+  END IF;
+  IF sale_row.status <> 'completed' THEN RETURN NULL; END IF;
+
+  SELECT count(*), count(*) FILTER (WHERE product_id IS NULL),
+         COALESCE(sum(line_total_usd), 0), COALESCE(sum(line_total_ves), 0)
+    INTO line_count, null_product_count, line_usd, line_ves
+    FROM public.sale_items WHERE organization_id = target_org AND sale_id = target_sale;
+  IF line_count = 0 OR null_product_count <> 0 OR line_usd <> sale_row.subtotal_usd
+    OR sale_row.total_usd <> sale_row.subtotal_usd OR line_ves <> sale_row.total_ves_snapshot THEN
+    RAISE EXCEPTION 'COMPLETED_SALE_LINES_DO_NOT_RECONCILE' USING ERRCODE = '23514';
+  END IF;
+
+  SELECT count(*), count(*) FILTER (WHERE currency <> sale_row.settlement_currency),
+         COALESCE(sum(amount), 0), COALESCE(sum(usd_equivalent_snapshot), 0)
+    INTO payment_count, wrong_currency_count, payment_amount, payment_usd
+    FROM public.payments WHERE organization_id = target_org AND sale_id = target_sale;
+  IF payment_count = 0 OR wrong_currency_count <> 0
+    OR payment_amount <> CASE sale_row.settlement_currency WHEN 'USD' THEN sale_row.total_usd ELSE sale_row.total_ves_snapshot END
+    OR payment_usd <> sale_row.total_usd THEN
+    RAISE EXCEPTION 'COMPLETED_SALE_PAYMENTS_DO_NOT_RECONCILE' USING ERRCODE = '23514';
+  END IF;
+
+  IF EXISTS (
+    SELECT 1 FROM public.payments p
+     WHERE p.organization_id = target_org AND p.sale_id = target_sale
+       AND (p.received_by <> sale_row.created_by
+         OR (p.currency = 'USD' AND p.usd_equivalent_snapshot <> p.amount)
+         OR (p.currency = 'VES' AND p.exchange_rate_snapshot IS DISTINCT FROM sale_row.exchange_rate_snapshot))
+  ) THEN
+    RAISE EXCEPTION 'SALE_PAYMENT_SNAPSHOT_OR_ACTOR_MISMATCH' USING ERRCODE = '23514';
+  END IF;
+
+  IF sale_row.fx_source = 'bcv_official' THEN
+    IF sale_row.fx_authorization_id IS NOT NULL
+      OR sale_row.manual_fx_acknowledged_at IS NOT NULL
+      OR sale_row.manual_fx_acknowledged_by_user_id IS NOT NULL THEN
+      RAISE EXCEPTION 'BCV_SALE_MUST_NOT_HAVE_MANUAL_FX_ACK' USING ERRCODE = '23514';
+    END IF;
+    PERFORM 1 FROM public.exchange_rates er
+     WHERE er.id = sale_row.exchange_rate_id
+       AND er.source = 'BCV_OFFICIAL_HTML_V1'
+       AND er.validation_status = 'valid'
+       AND er.rate = sale_row.exchange_rate_snapshot
+       AND er.effective_date = operation_date
+     FOR SHARE;
+    IF NOT FOUND THEN
+      RAISE EXCEPTION 'SALE_REQUIRES_CURRENT_BCV_RATE' USING ERRCODE = '23514';
+    END IF;
+  ELSIF sale_row.fx_source = 'manual_contingency' THEN
+    IF sale_row.exchange_rate_id IS NOT NULL
+      OR sale_row.fx_authorization_id IS NULL
+      OR sale_row.manual_fx_acknowledged_at IS NULL
+      OR sale_row.manual_fx_acknowledged_by_user_id IS DISTINCT FROM sale_row.created_by THEN
+      RAISE EXCEPTION 'MANUAL_FX_SALE_ACK_OR_SOURCE_INVALID' USING ERRCODE = '23514';
+    END IF;
+
+    SELECT * INTO auth_row
+      FROM public.fx_contingency_authorizations auth
+     WHERE auth.organization_id = sale_row.organization_id
+       AND auth.branch_id = sale_row.branch_id
+       AND auth.id = sale_row.fx_authorization_id
+     FOR SHARE;
+    IF NOT FOUND OR auth_row.status <> 'active'
+      OR auth_row.starts_at > operation_time OR auth_row.expires_at <= operation_time
+      OR auth_row.rate IS DISTINCT FROM sale_row.exchange_rate_snapshot THEN
+      RAISE EXCEPTION 'MANUAL_FX_AUTHORIZATION_NOT_ACTIVE' USING ERRCODE = '23514';
+    END IF;
+
+    -- A recovery is proven by the durable observation time, not by
+    -- last_success_at (which the producer may set with transaction-start NOW()).
+    IF EXISTS (
+      SELECT 1 FROM public.bcv_sync_success_observations obs
+       WHERE obs.observed_at > auth_row.starts_at
+         AND obs.last_outcome IN ('inserted', 'unchanged')
+         AND obs.last_error_code IS NULL
+         AND obs.last_effective_date = operation_date
+         AND obs.validation_status = 'valid'
+         AND (
+           (obs.last_outcome = 'inserted' AND obs.rate_fetched_at > auth_row.starts_at)
+           OR obs.last_outcome = 'unchanged'
+         )
+    ) THEN
+      RAISE EXCEPTION 'MANUAL_FX_CONTINGENCY_BCV_RESTORED' USING ERRCODE = '23514';
+    END IF;
+  ELSE
+    RAISE EXCEPTION 'SALE_FX_SOURCE_INVALID' USING ERRCODE = '23514';
+  END IF;
+
+  IF NOT EXISTS (
+    SELECT 1 FROM public.lock_open_register_shift(target_org, sale_row.branch_id, sale_row.created_by) active_shift
+     WHERE active_shift.shift_id = sale_row.register_shift_id
+  ) THEN
+    RAISE EXCEPTION 'SALE_REQUIRES_OWN_OPEN_SHIFT_AND_ACTIVE_WAREHOUSE' USING ERRCODE = '23514';
+  END IF;
+  PERFORM 1 FROM public.warehouses w
+   WHERE w.organization_id = target_org AND w.branch_id = sale_row.branch_id
+     AND w.id = sale_row.warehouse_id AND w.is_active = true FOR SHARE;
+  IF NOT FOUND THEN
+    RAISE EXCEPTION 'SALE_REQUIRES_OWN_OPEN_SHIFT_AND_ACTIVE_WAREHOUSE' USING ERRCODE = '23514';
+  END IF;
+
+  IF EXISTS (
+    SELECT 1 FROM public.sale_items si
+     WHERE si.organization_id = target_org AND si.sale_id = target_sale
+       AND NOT EXISTS (
+         SELECT 1 FROM public.warehouse_inventory_movements m
+          WHERE m.organization_id = target_org AND m.branch_id = sale_row.branch_id
+            AND m.warehouse_id = sale_row.warehouse_id AND m.product_id = si.product_id
+            AND m.movement_type = 'sale' AND m.reference_type = 'sale'
+            AND m.reference_id = target_sale AND m.quantity_delta = -si.quantity
+            AND m.actor_user_id = sale_row.created_by
+       )
+  ) THEN RAISE EXCEPTION 'COMPLETED_SALE_MISSING_INVENTORY_LEDGER_MOVEMENT' USING ERRCODE = '23514'; END IF;
+
+  SELECT count(*) INTO movement_count FROM public.warehouse_inventory_movements
+   WHERE organization_id = target_org AND branch_id = sale_row.branch_id
+     AND warehouse_id = sale_row.warehouse_id AND movement_type = 'sale'
+     AND reference_type = 'sale' AND reference_id = target_sale;
+  IF movement_count <> line_count THEN
+    RAISE EXCEPTION 'COMPLETED_SALE_LEDGER_MOVEMENT_COUNT_MISMATCH' USING ERRCODE = '23514';
+  END IF;
+  IF NOT EXISTS (
+    SELECT 1 FROM public.audit_logs a WHERE a.organization_id = target_org
+      AND a.actor_user_id = sale_row.created_by AND a.action = 'sale.completed'
+      AND a.entity_type = 'sale' AND a.entity_id = target_sale::text
+  ) THEN RAISE EXCEPTION 'COMPLETED_SALE_AUDIT_EVENT_REQUIRED' USING ERRCODE = '23514'; END IF;
+  RETURN NULL;
+END;
+$assert_completed_sale_reconciled$;
+ALTER FUNCTION public.assert_completed_sale_reconciled() OWNER TO microapp_migrator;
+REVOKE ALL ON FUNCTION public.assert_completed_sale_reconciled() FROM PUBLIC;
+
+\nCOMMIT;

@@ -74,7 +74,9 @@ CREATE TABLE public.fx_contingency_authorizations (
     REFERENCES public.branches (organization_id, id) ON DELETE RESTRICT,
   FOREIGN KEY (organization_id, authorized_by_user_id)
     REFERENCES public.organization_members (organization_id, user_id) ON DELETE RESTRICT,
-  CHECK (expires_at > starts_at AND expires_at <= starts_at + interval '24 hours'),
+  CHECK (expires_at > starts_at
+    AND expires_at <= starts_at + interval '24 hours'
+    AND expires_at <= (((starts_at AT TIME ZONE 'America/Caracas')::date + 1)::timestamp AT TIME ZONE 'America/Caracas')),
   CHECK (
     deviation_bps = pg_catalog.round(
       pg_catalog.abs(rate - reference_rate_value) / reference_rate_value * 10000
@@ -220,9 +222,8 @@ GRANT SELECT, INSERT ON TABLE public.fx_contingency_events TO microapp_runtime;
 REVOKE ALL ON TABLE public.fx_user_pin_credentials, public.fx_contingency_delegations,
   public.fx_contingency_authorizations FROM PUBLIC;
 GRANT SELECT, INSERT, UPDATE ON TABLE public.fx_user_pin_credentials TO microapp_runtime;
-GRANT SELECT, INSERT ON TABLE public.fx_contingency_delegations, public.fx_contingency_authorizations TO microapp_runtime;
+GRANT SELECT ON TABLE public.fx_contingency_delegations, public.fx_contingency_authorizations TO microapp_runtime;
 REVOKE UPDATE, DELETE, TRUNCATE, TRIGGER ON TABLE public.fx_contingency_delegations, public.fx_contingency_authorizations FROM microapp_runtime;
-GRANT USAGE, SELECT ON SEQUENCE public.bcv_sync_success_observations_id_seq TO microapp_runtime;
 
 -- Add source-aware sale snapshots. Existing rows are explicitly classified as
 -- BCV; no historical sale is rewritten or revalued.
@@ -623,8 +624,9 @@ LANGUAGE plpgsql
 SECURITY DEFINER
 SET search_path = pg_catalog
 AS $transition_fx_contingency_authorization$
-DECLARE auth_row public.fx_contingency_authorizations%ROWTYPE;
-DECLARE event_kind text;
+DECLARE
+  auth_row public.fx_contingency_authorizations%ROWTYPE;
+  event_kind text;
 BEGIN
   IF p_new_status NOT IN ('revoked', 'expired', 'bcv_restored')
      OR p_actor_role NOT IN ('owner', 'admin')
@@ -715,5 +717,109 @@ $set_fx_contingency_delegation$;
 ALTER FUNCTION public.set_fx_contingency_delegation(uuid,uuid,uuid,uuid,text,boolean) OWNER TO microapp_migrator;
 REVOKE ALL ON FUNCTION public.set_fx_contingency_delegation(uuid,uuid,uuid,uuid,text,boolean) FROM PUBLIC;
 GRANT EXECUTE ON FUNCTION public.set_fx_contingency_delegation(uuid,uuid,uuid,uuid,text,boolean) TO microapp_runtime;
+
+\n
+CREATE FUNCTION public.create_fx_contingency_authorization(
+  p_organization_id uuid, p_branch_id uuid, p_rate numeric,
+  p_reference_rate_value numeric, p_reference_exchange_rate_id uuid,
+  p_reason text, p_expires_at timestamptz, p_actor_user_id uuid,
+  p_actor_role text, p_elevated_confirmation_reason text DEFAULT NULL,
+  p_event_type text DEFAULT 'authorized'
+)
+RETURNS uuid
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = pg_catalog
+AS $create_fx_contingency_authorization$
+DECLARE
+  authorization_id uuid;
+  starts_time timestamptz := pg_catalog.clock_timestamp();
+  calculated_bps integer;
+  operation_date date := (pg_catalog.clock_timestamp() AT TIME ZONE 'America/Caracas')::date;
+BEGIN
+  IF p_rate IS NULL OR p_rate <= 0 OR p_reference_rate_value IS NULL OR p_reference_rate_value <= 0
+     OR p_reason IS NULL OR pg_catalog.length(pg_catalog.btrim(p_reason)) NOT BETWEEN 1 AND 1000
+     OR p_event_type NOT IN ('authorized', 'renewed')
+     OR p_actor_role NOT IN ('owner', 'admin') THEN
+    RAISE EXCEPTION 'FX_AUTHORIZATION_INPUT_INVALID' USING ERRCODE = '23514';
+  END IF;
+  calculated_bps := pg_catalog.round(
+    pg_catalog.abs(p_rate - p_reference_rate_value) / p_reference_rate_value * 10000
+  )::integer;
+  IF calculated_bps > 2000 THEN
+    RAISE EXCEPTION 'FX_AUTHORIZATION_DEVIATION_LIMIT_EXCEEDED' USING ERRCODE = '23514';
+  END IF;
+  IF p_expires_at <= starts_time OR p_expires_at > starts_time + interval '24 hours'
+     OR p_expires_at > (((starts_time AT TIME ZONE 'America/Caracas')::date + 1)::timestamp AT TIME ZONE 'America/Caracas') THEN
+    RAISE EXCEPTION 'FX_AUTHORIZATION_EXPIRY_INVALID' USING ERRCODE = '23514';
+  END IF;
+  IF calculated_bps > 500 AND (
+    p_elevated_confirmation_reason IS NULL
+    OR pg_catalog.length(pg_catalog.btrim(p_elevated_confirmation_reason)) NOT BETWEEN 1 AND 500
+  ) THEN
+    RAISE EXCEPTION 'FX_ELEVATED_CONFIRMATION_REQUIRED' USING ERRCODE = '23514';
+  END IF;
+  IF calculated_bps <= 500 AND p_elevated_confirmation_reason IS NOT NULL THEN
+    RAISE EXCEPTION 'FX_ELEVATED_CONFIRMATION_NOT_APPLICABLE' USING ERRCODE = '23514';
+  END IF;
+  IF NOT EXISTS (
+    SELECT 1 FROM public.organizations org
+    JOIN public.organization_members member
+      ON member.organization_id = org.id AND member.is_active
+    JOIN public.app_users actor ON actor.id = member.user_id AND actor.is_active
+    WHERE org.id = p_organization_id AND org.is_active
+      AND member.user_id = p_actor_user_id AND member.role = p_actor_role
+  ) THEN RAISE EXCEPTION 'FX_AUTHORIZATION_ACTOR_INVALID' USING ERRCODE = '23514'; END IF;
+  IF NOT EXISTS (
+    SELECT 1 FROM public.branches branch
+     WHERE branch.organization_id = p_organization_id AND branch.id = p_branch_id
+       AND branch.is_active
+  ) THEN RAISE EXCEPTION 'FX_AUTHORIZATION_BRANCH_INACTIVE' USING ERRCODE = '23514'; END IF;
+  IF p_actor_role = 'admin' AND NOT EXISTS (
+    SELECT 1 FROM public.branch_memberships bm
+    JOIN public.fx_contingency_delegations d
+      ON d.organization_id = bm.organization_id AND d.branch_id = bm.branch_id
+     AND d.user_id = bm.user_id AND d.status = 'active'
+    WHERE bm.organization_id = p_organization_id AND bm.branch_id = p_branch_id
+      AND bm.user_id = p_actor_user_id AND bm.is_active
+  ) THEN RAISE EXCEPTION 'FX_ADMIN_DELEGATION_REQUIRED' USING ERRCODE = '23514'; END IF;
+  IF NOT EXISTS (
+    SELECT 1 FROM public.exchange_rates er
+     WHERE er.id = p_reference_exchange_rate_id
+       AND er.rate = p_reference_rate_value
+       AND er.validation_status = 'valid'
+       AND er.effective_date <= operation_date
+  ) THEN RAISE EXCEPTION 'FX_REFERENCE_RATE_NOT_APPLICABLE' USING ERRCODE = '23514'; END IF;
+
+  INSERT INTO public.fx_contingency_authorizations (
+    organization_id, branch_id, rate, reference_rate_value,
+    reference_exchange_rate_id, deviation_bps, reason, starts_at,
+    expires_at, authorized_by_user_id, elevated_confirmation_at,
+    elevated_confirmation_reason, status
+  ) VALUES (
+    p_organization_id, p_branch_id, p_rate, p_reference_rate_value,
+    p_reference_exchange_rate_id, calculated_bps, p_reason, starts_time,
+    p_expires_at, p_actor_user_id,
+    CASE WHEN calculated_bps > 500 THEN starts_time ELSE NULL END,
+    p_elevated_confirmation_reason, 'active'
+  ) RETURNING id INTO authorization_id;
+
+  PERFORM public.append_fx_contingency_event(
+    p_organization_id, p_branch_id, authorization_id, p_event_type,
+    p_actor_user_id, p_actor_role,
+    pg_catalog.jsonb_build_object(
+      'rate', p_rate, 'reference_rate_value', p_reference_rate_value,
+      'deviation_bps', calculated_bps, 'reason', p_reason,
+      'starts_at', starts_time, 'expires_at', p_expires_at
+    )
+  );
+  RETURN authorization_id;
+END;
+$create_fx_contingency_authorization$;
+ALTER FUNCTION public.create_fx_contingency_authorization(uuid,uuid,numeric,numeric,uuid,text,timestamptz,uuid,text,text,text) OWNER TO microapp_migrator;
+REVOKE ALL ON FUNCTION public.create_fx_contingency_authorization(uuid,uuid,numeric,numeric,uuid,text,timestamptz,uuid,text,text,text) FROM PUBLIC;
+GRANT EXECUTE ON FUNCTION public.create_fx_contingency_authorization(uuid,uuid,numeric,numeric,uuid,text,timestamptz,uuid,text,text,text) TO microapp_runtime;
+REVOKE INSERT, UPDATE, DELETE, TRUNCATE, TRIGGER ON TABLE public.fx_contingency_authorizations FROM microapp_runtime;
+REVOKE INSERT, UPDATE, DELETE, TRUNCATE, TRIGGER ON TABLE public.fx_contingency_delegations FROM microapp_runtime;
 
 \nCOMMIT;

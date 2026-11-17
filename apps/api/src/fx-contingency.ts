@@ -380,9 +380,8 @@ export function registerFxContingencyRoutes(app: Hono<{ Bindings: Bindings }>): 
         // Global lock order: BCV sync state before branch FX authorization.
         await tx.query("SELECT last_success_at FROM public.lock_bcv_sync_state()");
         const active = await tx.query<{ id: string; expires_at: string | Date; starts_at: string | Date; authorized_by_user_id: string; authorized_by_role: 'owner' | 'admin' }>(
-          `SELECT id,starts_at,expires_at,authorized_by_user_id,authorized_by_role FROM public.fx_contingency_authorizations
-            WHERE organization_id=$1 AND branch_id=$2 AND status='active'
-            ORDER BY starts_at DESC LIMIT 1 FOR UPDATE`,
+          `SELECT id,starts_at,expires_at,authorized_by_user_id,authorized_by_role
+             FROM public.lock_branch_fx_contingency_authorization($1::uuid,$2::uuid)`,
           [actor.tenant.organizationId, branchId],
         );
         if (renewalId && active.rows[0]?.id !== renewalId) return { kind: "authorization_not_active" as const };

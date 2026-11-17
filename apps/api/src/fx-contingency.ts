@@ -369,8 +369,8 @@ export function registerFxContingencyRoutes(app: Hono<{ Bindings: Bindings }>): 
         if (scope !== "ok") return { kind: scope };
         const pin = await verifyAndRateLimitPin(tx, c, actor.tenant, body.pin);
         if (pin !== "ok") return { kind: pin === "limited" ? "limited" as const : pin === "unavailable" ? "unavailable" as const : "invalid_pin" as const };
-        const active = await tx.query<{ id: string; expires_at: string | Date; starts_at: string | Date }>(
-          `SELECT id,starts_at,expires_at FROM public.fx_contingency_authorizations
+        const active = await tx.query<{ id: string; expires_at: string | Date; starts_at: string | Date; authorized_by_user_id: string; authorized_by_role: 'owner' | 'admin' }>(
+          `SELECT id,starts_at,expires_at,authorized_by_user_id,authorized_by_role FROM public.fx_contingency_authorizations
             WHERE organization_id=$1 AND branch_id=$2 AND status='active'
             ORDER BY starts_at DESC LIMIT 1 FOR UPDATE`,
           [actor.tenant.organizationId, branchId],
@@ -397,15 +397,7 @@ export function registerFxContingencyRoutes(app: Hono<{ Bindings: Bindings }>): 
                  'official BCV rate recovered before authorization renewal'
                )`,
               [actor.tenant.organizationId, branchId, active.rows[0].id,
-                (await tx.query<{ user_id: string; role: string }>(
-                  `SELECT authorized_by_user_id AS user_id,authorized_by_role AS role
-                     FROM public.fx_contingency_authorizations WHERE id=$1`,
-                  [active.rows[0].id],
-                )).rows[0]!.user_id,
-                (await tx.query<{ role: string }>(
-                  `SELECT authorized_by_role AS role FROM public.fx_contingency_authorizations WHERE id=$1`,
-                  [active.rows[0].id],
-                )).rows[0]!.role],
+                active.rows[0].authorized_by_user_id, active.rows[0].authorized_by_role],
             );
             return { kind: "bcv_restored" as const };
           }
@@ -415,7 +407,7 @@ export function registerFxContingencyRoutes(app: Hono<{ Bindings: Bindings }>): 
               `SELECT public.transition_fx_contingency_authorization(
                  $1::uuid,$2::uuid,$3::uuid,'expired',$4::uuid,$5::text,'authorization expired before renewal'
                )`,
-              [actor.tenant.organizationId, branchId, active.rows[0].id, actor.tenant.userId, actor.tenant.role],
+              [actor.tenant.organizationId, branchId, active.rows[0].id, active.rows[0].authorized_by_user_id, active.rows[0].authorized_by_role],
             );
           } else if (!renewalId) {
             return { kind: "authorization_already_active" as const };

@@ -223,7 +223,7 @@ describe("SalesPanel", () => {
     vi.stubGlobal("crypto", { ...crypto, randomUUID: vi.fn(() => `00000000-0000-4000-8000-${String(++seq).padStart(12, "0")}`) });
     vi.mocked(apiRequest).mockResolvedValueOnce({ shift } as never).mockResolvedValueOnce({ warehouses } as never)
       .mockRejectedValueOnce(new Error("Error temporal"))
-      .mockResolvedValueOnce({ sale_number: "V-000044", created_at: "2026-11-14T15:10:00Z", currency: "USD", subtotal_usd: "0.0002", total_usd: "0.0002", total_ves: "0.01", bcv_rate: "36.50000000", lines: [], payments: [] } as never);
+      .mockResolvedValueOnce({ sale_number: "V-000044", created_at: "2026-11-14T15:10:00Z", currency: "USD", subtotal_usd: "0.0002", total_usd: "0.0002", total_ves: "0.01", bcv_rate: "36.50000000", fx_rate: "36.50000000", fx_source: "bcv_official", fx_receipt_label: "Tasa BCV", fx_authorization_id: null, lines: [], payments: [] } as never);
     await render();
     await act(async () => { click("Agregar producto A"); });
     await act(async () => { click("Monto exacto"); });

@@ -316,6 +316,46 @@ export function registerFxContingencyRoutes(app: Hono<{ Bindings: Bindings }>): 
           ? (await resolveBranchContext(tx, tenant, branchId, false) ? "ok" : "branch_denied")
           : await authorizeBranch(tx, tenant, branchId);
         if (scope !== "ok") return { kind: scope };
+        // Administrative reads are also a server-side expiry/recovery
+        // boundary. Serialize BCV -> FX, then commit a durable transition.
+        await tx.query("SELECT * FROM public.lock_bcv_sync_state()");
+        const active = await tx.query<{
+          id: string; starts_at: Date | string; expires_at: Date | string;
+          authorized_by_user_id: string; authorized_by_role: "owner" | "admin";
+        }>(
+          "SELECT * FROM public.lock_branch_fx_contingency_authorization($1::uuid,$2::uuid)",
+          [tenant.organizationId, branchId],
+        );
+        const activeRow = active.rows[0];
+        if (activeRow) {
+          const expired = new Date(activeRow.expires_at).getTime() <= Date.now();
+          const recovery = !expired && await tx.query<{ id: string }>(
+            `SELECT obs.id
+               FROM public.bcv_sync_success_observations obs
+               JOIN public.exchange_rates rate ON rate.id=obs.exchange_rate_id
+              WHERE obs.observed_at > $1::timestamptz
+                AND obs.last_outcome IN ('inserted','unchanged')
+                AND obs.last_error_code IS NULL
+                AND obs.validation_status='valid'
+                AND obs.last_effective_date=(pg_catalog.clock_timestamp() AT TIME ZONE 'America/Caracas')::date
+                AND rate.effective_date=(pg_catalog.clock_timestamp() AT TIME ZONE 'America/Caracas')::date
+                AND rate.source='BCV_OFFICIAL_HTML_V1'
+                AND (obs.last_outcome <> 'inserted' OR obs.rate_fetched_at > $1::timestamptz)
+              LIMIT 1`,
+            [activeRow.starts_at],
+          );
+          if (expired || recovery?.rows[0]) {
+            await tx.query(
+              `SELECT public.transition_fx_contingency_authorization(
+                 $1::uuid,$2::uuid,$3::uuid,$4::text,$5::uuid,$6::text,$7::text
+               )`,
+              [tenant.organizationId, branchId, activeRow.id,
+                expired ? "expired" : "bcv_restored",
+                activeRow.authorized_by_user_id, activeRow.authorized_by_role,
+                expired ? "authorization expired during administrative read" : "official BCV rate recovered after authorization start"],
+            );
+          }
+        }
         const rows = await tx.query(
           tenant.role === "cashier"
             ? `SELECT a.id,a.rate::text,a.expires_at
@@ -324,9 +364,9 @@ export function registerFxContingencyRoutes(app: Hono<{ Bindings: Bindings }>): 
                   AND a.starts_at <= pg_catalog.clock_timestamp()
                   AND a.expires_at > pg_catalog.clock_timestamp()
                 ORDER BY a.starts_at DESC LIMIT 1`
-            : `SELECT a.id,a.rate::text,a.reference_rate_value::text,a.deviation_bps,a.reason,
-                      a.starts_at,a.expires_at,a.status,a.authorized_by_user_id,
-                      a.elevated_confirmation_at
+            : `SELECT a.id,a.rate::text,a.reference_rate_value::text,a.reference_effective_date,
+                      a.deviation_bps,a.reason,a.starts_at,a.expires_at,a.status,
+                      a.authorized_by_user_id,a.elevated_confirmation_at
                  FROM public.fx_contingency_authorizations a
                 WHERE a.organization_id=$1 AND a.branch_id=$2 AND a.status='active'
                   AND a.starts_at <= pg_catalog.clock_timestamp()

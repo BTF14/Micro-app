@@ -1,4 +1,4 @@
-import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
+import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 import { Client } from "pg";
 import { convertUsdToVes, formatNumeric, parseNumeric } from "@micro-app/money";
 import { persistBcvOfficialRate } from "./exchange-rates";

@@ -1,3 +1,7 @@
+> **Revisión de evidencia posterior — 2026-11-17:** AC-5 y AC-6 de esta tarea ODD sí quedan demostrados por evidencia exacta de PR #374, no por la primera inserción Node. El test `src/exchange-rates.integration.test.ts` usa conexiones separadas `microapp_bcv_sync` y `microapp_runtime`, y contiene `it.skipIf(!isDedicatedProducerRoleTest)("denies direct BCV persistence from the runtime LOGIN", ...)` con aserción `rejects.toMatchObject({ code: "42501" })` (líneas 374–383 del archivo en el merge de PR #374). En el CI `verify` del HEAD `c38a77b9aef4a390f45417cb660c5e8cf44b448c`, run [43869147778](https://github.com/BTF14/Micro-app/actions/runs/43869147778), el paso `PostgreSQL BCV effective-date integration tests (dedicated producer LOGIN)` terminó SUCCESS. AC-6 de esta task queda respaldado por 18/18 check-runs SUCCESS y 11/11 workflows SUCCESS en ese HEAD, incluidos `Database migration validation`, `PostgreSQL migration runner validation` y `CI`. **Esto no cierra el AC-6 legal/contable del roadmap de producto**, que sigue pendiente. La ejecución productiva `inserted` no certifica por sí sola privilegios mínimos.
+
+---
+
 # ODD task — aislar la identidad productora de BCV
 
 - Date: 2026-11-10
@@ -96,8 +100,8 @@ That intermediate state is incompatible with the approved isolated-producer arch
 - [x] AC-2 — 0021 assertions pass immediately after 0021, before migration 0022.
 - [x] AC-3 — Injected 0022 transaction failure preserves the deliberately seeded PUBLIC ACL fixture but adds no direct runtime UPDATE ACL; the clean 0021 state is separately proven read-only before the fixture.
 - [x] AC-4 — 0022 still grants the exact producer column allowlist and the runtime lock helper remains callable.
-- [ ] AC-5 — BCV integration tests continue to use the isolated producer LOGIN; runtime direct writes fail with SQLSTATE 42501.
-- [ ] AC-6 — Full migration-check, migration-runner, CI and exact-HEAD check-runs pass.
+- [x] AC-5 — BCV integration tests use the isolated producer LOGIN; runtime direct writes fail with SQLSTATE 42501. Evidence: PR #374 exact HEAD `c38a77b9aef4a390f45417cb660c5e8cf44b448c`, CI verify run `43869147778`, dedicated producer LOGIN test SUCCESS; source assertion checks error code `42501`.
+- [x] AC-6 — Full migration-check, migration-runner, CI and exact-HEAD check-runs pass. Evidence on PR #374 exact HEAD `c38a77b9aef4a390f45417cb660c5e8cf44b448c`: 18/18 check-runs SUCCESS and 11/11 workflow runs SUCCESS, including database migration validation, PostgreSQL migration runner validation and CI.
 - [x] AC-7 — No Neon/main role/grant changes, secrets, Cron activation, Worker deploy or real data are used.
 
 ### Scope and safety

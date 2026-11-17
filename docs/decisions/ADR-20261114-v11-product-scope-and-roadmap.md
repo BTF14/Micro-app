@@ -6,6 +6,21 @@
 - **Responsables:** propietario del producto y mantenimiento técnico
 - **Relacionado:** odd/tasks/adr-v11-roadmap-and-owner-confirmations.md; PR #369 (esta documentación); PR #193 (CLOSED sin merge; Fase C preservada en SDD); Issue #53 (OPEN/P0)
 
+## Addendum vinculante — resolución oficial de prioridad del propietario (2026-11-16)
+
+Aunque PR #374 y la primera ejecución [BCV Node TLS sync #1](https://github.com/BTF14/Micro-app/actions/runs/43977544849) persistieron la primera tasa real (`outcome=inserted`, `effectiveDate=2026-11-17`, inicialmente `scheduled`), el propietario confirma que el fallo productivo real del Worker BCV de Cloudflare del 2026-11-16 y el jitter observado de 7–9 horas en los cron gratuitos de GitHub Actions justifican priorizar la contingencia manual. Esta decisión supersede las secuencias previas de este ADR:
+
+1. **PR 1 — Contingencia Manual BCV**.
+2. **PR 2 — Importador CSV**.
+3. **PR 3 — Escáner móvil**.
+4. **PR 4 — Cierre de caja, reportes y exportación CSV**.
+
+La ingestión automática BCV temporal corre mediante `.github/workflows/bcv-sync.yml` (Node 24.22.2, TLS estricto, CA Sectigo DV R36 pineada y credencial dedicada `DATABASE_URL_BCV_SYNC`). El Worker `micro-app-bcv-sync` conserva triggers, pero está pausado (`BCV_SYNC_ENABLED=false`); no es el productor activo.
+
+**Gates y estado:** AC-6 legal/contable y AC-7 seguridad independiente deben cerrarse antes de implementar PR 1. Freeze comercial activo; Issue #53 OPEN/P0; PRODUCTION: NOT READY. Las verificaciones del 2026-11-17 (transición a `current`, siguiente schedule automático e inactividad continuada del Worker pausado) siguen pendientes.
+
+### Roadmap original — SNAPSHOT HISTÓRICO SUPERSEDIDO
+
 ## Contexto y problema
 
 Micro-app ya dispone en main de una base de catálogo, inventario por sucursal, recepciones, POS/checkout, cajas/turnos, tasa BCV, controles de autorización y pruebas full-stack. La siguiente evolución debe mantenerse pequeña, secuenciada y sin reabrir decisiones de hardware, coste o alcance fiscal ya confirmadas por el propietario.

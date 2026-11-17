@@ -1,3 +1,21 @@
+# Readiness vigente — post-PR #375 (2026-11-17)
+
+- **Main:** `d6760bf3da0e0c080c2f4ead3d518ce4e30bc589`; PR #374/#375 MERGED.
+- **BCV:** productor temporal Node 24.22.2 en `.github/workflows/bcv-sync.yml`, TLS estricto y Sectigo DV R36 pineada. Worker `micro-app-bcv-sync` pausado (`BCV_SYNC_ENABLED=false`), triggers conservados.
+- **Primera persistencia:** run #43977544849 SUCCESS / `inserted`; observación propietaria 23:17:15Z: `effectiveDate=2026-11-17`, `status=scheduled`. Estabilidad posterior y transición a `current` pendientes.
+- **Confirmado [x]:** smoke autenticado staging con Brave Shields; aceptación del propietario de RPO diario aproximado 24 h y objetivo RTO plataforma best-effort ≤4 h. Estas aceptaciones no son mediciones operativas formales ni un simulacro total.
+- **Pendiente [ ]:** estabilidad BCV; transición `scheduled`→`current`; próxima ejecución schedule automática; inactividad inocua continuada del Worker pausado; medición/validación operativa RPO/RTO; revisión legal/fiscal/contable AC-6; revisión independiente de seguridad AC-7; Issue #53 OPEN/P0; aprobación GO/NO-GO.
+- **Orden comercial v1.1:** PR1 Contingencia Manual BCV → PR2 Importador CSV → PR3 Escáner móvil → PR4 Cierre/reportes/exportación CSV, sujeto al cierre previo de AC-6 y AC-7.
+- **FREEZE comercial activo. PRODUCTION: NOT READY.** No declarar GO ni cerrar Issue #53.
+
+
+
+---
+
+> **SNAPSHOT HISTÓRICO SUPERSEDIDO — 2026-11-17.** Prevalece el corte vigente de este encabezado; las menciones inferiores a Worker Cloudflare activo, primera tasa BCV pendiente, Neon WebSocket pendiente o PR #287 pendiente son archivo histórico.
+
+---
+
 # Actualización de readiness — 2026-11-16 — cierre de Fase 1 BCV y preparación de Fase 2
 
 - **Main / base exacta:** `98e249778a52e9306a193e838edea4503e0343e6`, merge de PR #374.

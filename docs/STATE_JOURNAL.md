@@ -1,3 +1,16 @@
+## Turno 54 — PR #374/#375, primer insert BCV y prioridad v1.1 (2026-11-17)
+
+- Base vigente: `main` = `d6760bf3da0e0c080c2f4ead3d518ce4e30bc589`; PR #374 y #375 MERGED.
+- PR #374 trasladó temporalmente la ingestión BCV al runner Node TLS de `.github/workflows/bcv-sync.yml` (Node 24.22.2; CA Sectigo DV R36 pineada; TLS estricto). El Worker `micro-app-bcv-sync` conserva triggers, pero está pausado mediante `BCV_SYNC_ENABLED=false`.
+- [BCV Node TLS sync #1](https://github.com/BTF14/Micro-app/actions/runs/43977544849): dispatch manual, `force_sync=false`, SUCCESS, `BCV_NODE_SYNC_COMPLETED`, `outcome=inserted`. Observación API/panel del propietario a 23:17:15Z: `effectiveDate=2026-11-17`, `status=scheduled`. Transición a `current` y estabilidad posterior pendientes.
+- PR #375 fusionó el cierre documental de Fase 1; Issue #53 OPEN/P0; PRODUCTION NOT READY.
+- Resolución expresa del propietario (2026-11-16): Contingencia Manual BCV PR1 por fallo productivo reportado del Worker y jitter de 7–9 h de Actions; PR2 Importador CSV; PR3 Escáner móvil; PR4 Cierre/reportes/exportación CSV.
+- AC-6 legal/contable y AC-7 seguridad permanecen como gates previos. Freeze comercial activo.
+- Próximas observaciones read-only: transición a `current` desde 00:00 VET del 2026-11-17; siguiente ejecución schedule Node; inactividad inocua continuada del Worker pausado.
+- Esta entrada no declara cierre de readiness ni cambia código, infraestructura, Issue #53 o datos productivos.
+
+---
+
 ## Turno 53 — cierre documental SDD, RTO y contingencia (2026-11-15 UTC)
 
 - Verificado en vivo que `main` apunta al merge PR #372: `d8ec2808a22d696a291c3454679381e5364e225a`; rama documental aislada creada desde ese SHA exacto.

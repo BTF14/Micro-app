@@ -4,7 +4,18 @@ Sistema **POS e inventario multi-sucursal** independiente para comercios en Vene
 
 > **Estado técnico:** el núcleo funcional está integrado en `main`: autenticación Google OAuth same-origin, administración de sucursales/almacenes/cajas, catálogo, inventario con ledger y conteos/recepciones, turnos de caja, sincronización BCV aislada y checkout POS en USD o VES.
 >
-> **Estado comercial:** **`PRODUCTION: NOT READY`**. No habilitar operación comercial ni datos reales. El lanzamiento permanece bloqueado hasta cerrar los gates del Issue `#53`: smoke autenticado en staging con Brave Shields activado, RPO/RTO operativos medidos y aceptados, entrega y ACK de alertas de extremo a extremo, validación legal/fiscal/contable y verificación continua del coste total `$0`. Consulta [CURRENT_STATE.md](docs/CURRENT_STATE.md) y [PRODUCTION_READINESS.md](docs/PRODUCTION_READINESS.md).
+> **Estado comercial:** **`PRODUCTION: NOT READY`**. No habilitar operación comercial ni datos reales. El lanzamiento permanece bloqueado hasta cerrar los gates del Issue `#53`: estabilidad BCV posterior, alertas/ACK de extremo a extremo, revisión legal/fiscal/contable (AC-6), revisión independiente de seguridad (AC-7), medición operativa RPO/RTO, cierre del Issue `#53`, aprobación GO/NO-GO y verificación continua del coste total `$0`. [x] Smoke autenticado con Brave Shields y [x] aceptación propietaria de objetivos RPO/RTO confirmados; no equivalen a medición operativa formal. Consulta [CURRENT_STATE.md](docs/CURRENT_STATE.md) y [PRODUCTION_READINESS.md](docs/PRODUCTION_READINESS.md).
+
+---
+
+## Decisión comercial v1.1 vigente (2026-11-17)
+
+1. PR 1: Contingencia Manual BCV (solo tras cerrar AC-6 legal/contable y AC-7 seguridad).
+2. PR 2: Importador CSV.
+3. PR 3: Escáner móvil.
+4. PR 4: Cierre de caja, reportes y exportación CSV.
+
+El freeze comercial sigue activo; Issue #53 OPEN/P0; PRODUCTION: NOT READY.
 
 ---
 
@@ -23,10 +34,15 @@ Cloudflare Worker API (apps/api — Hono + TypeScript)
    │ @neondatabase/serverless (SQL parametrizado + transacciones explícitas)
    ├─────────────────────────────────────────────┐
    ▼                                             ▼
-PostgreSQL 18 (Neon)                    Worker Cron BCV aislado
+PostgreSQL 18 (Neon)                    Worker BCV aislado (pausado)
 Migraciones SQL 0001–0025               (apps/api/wrangler.bcv.toml)
-Roles: migrator / runtime /             Rol dedicado microapp_bcv_sync
-       bcv_sync / backup                L–V, 22:00 UTC (solo producción)
+Roles: migrator / runtime /             Triggers conservados; BCV_SYNC_ENABLED=false
+       bcv_sync / backup
+
+Productor BCV temporal activo:
+GitHub Actions .github/workflows/bcv-sync.yml
+Node 24.22.2 · TLS estricto · Sectigo DV R36 pineada
+Credencial dedicada: DATABASE_URL_BCV_SYNC
 
 packages/money → aritmética decimal exacta con bigint, compartida entre Web y API
 ```
@@ -66,7 +82,7 @@ La autorización es **server-side**: cada operación valida tenant, sucursal, pe
 ## Garantías de ingeniería, datos y seguridad
 
 - **USD como moneda base y aritmética exacta:** importes/cantidades usan `bigint` en `@micro-app/money` y `NUMERIC` en PostgreSQL; no se usa `number` IEEE-754 para cálculos financieros.
-- **Tasa BCV fail-closed:** la sincronización corre en un Worker aislado (`micro-app-bcv-sync`) con rol `microapp_bcv_sync` y credencial `DATABASE_URL_BCV_SYNC`. El checkout valida el último intento exitoso (`inserted`/`unchanged`) y la fecha efectiva vigente en zona horaria Caracas; usa `FOR SHARE` y defensa SQL diferida en la migración `0021`. Un fallo de fuente no reemplaza una tasa válida.
+- **Tasa BCV fail-closed:** la ingestión automática temporal corre en `.github/workflows/bcv-sync.yml` con Node 24.22.2, TLS estricto y CA intermedia Sectigo DV R36 pineada; usa la credencial dedicada `DATABASE_URL_BCV_SYNC`. El Worker aislado `micro-app-bcv-sync` conserva sus triggers, pero está pausado (`BCV_SYNC_ENABLED=false`). El checkout valida el último intento exitoso (`inserted`/`unchanged`) y la fecha efectiva vigente en zona horaria Caracas; usa `FOR SHARE` y defensa SQL diferida en la migración `0021`. Un fallo de fuente no reemplaza una tasa válida.
 - **Integridad de ventas e inventario:** `POST /api/orgs/:organizationId/branches/:branchId/checkout` ejecuta locks determinísticos por organización/sucursal/almacén/producto, exige turno abierto, aplica `Idempotency-Key` y proyecta saldos desde el ledger mediante triggers SQL protegidos (`0019`).
 - **Mínimo privilegio en PostgreSQL:** separación de roles `microapp_migrator`, `microapp_runtime`, `microapp_bcv_sync` y `microapp_backup`; sin `SUPERUSER`, sin membresías salientes y con contratos SQL automatizados en CI.
 - **Aislamiento de previews:** Pages Preview y los entornos `workers.dev` de preview no tienen acceso a la API operativa ni a datos de aplicación; responden `503` fail-closed. El post-build bloquea referencias directas a `*.workers.dev` en el bundle.

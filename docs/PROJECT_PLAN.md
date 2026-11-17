@@ -1,3 +1,18 @@
+# Corte vigente de continuidad — 2026-11-17
+
+- **Base exacta:** `main` = `d6760bf3da0e0c080c2f4ead3d518ce4e30bc589`; PR #374 (productor BCV Node TLS) y PR #375 (cierre documental de Fase 1) están MERGED.
+- **Productor BCV temporal:** `.github/workflows/bcv-sync.yml`, Node 24.22.2, TLS estricto con Sectigo DV R36 pineada y secreto dedicado `DATABASE_URL_BCV_SYNC`. El Worker `micro-app-bcv-sync` conserva triggers, pero está pausado con `BCV_SYNC_ENABLED=false`.
+- **Evidencia:** [BCV Node TLS sync #1](https://github.com/BTF14/Micro-app/actions/runs/43977544849), dispatch manual, `force_sync=false`, SUCCESS, `outcome: inserted`; observación del propietario 23:17:15Z: `effectiveDate=2026-11-17`, estado `scheduled`. No prueba transición a `current`, estabilidad sostenida ni puntualidad del schedule.
+- **Orden v1.1 confirmado:** PR1 Contingencia Manual BCV; PR2 Importador CSV; PR3 Escáner móvil; PR4 Cierre de caja, reportes y exportación CSV. AC-6 legal/contable y AC-7 seguridad son gates previos. Freeze comercial activo; Issue #53 OPEN/P0; PRODUCTION: NOT READY.
+- **Pendiente 2026-11-17:** transición a `current` desde 00:00 VET, siguiente corrida automática programada e inactividad inocua continuada del Worker pausado.
+- Sin correos personales, IDs de recursos, ramas internas de proveedor, connection strings ni valores secretos en este corte.
+
+---
+
+# SNAPSHOT HISTÓRICO SUPERSEDIDO
+
+El plan detallado inferior se conserva como archivo de decisiones y evidencias previas. Prevalece este corte y el ADR v1.1 actualizado; no reutilizar HEADs, estado PR #287, horarios del Worker ni secuencias antiguas como estado actual.
+
 # Actualización de continuidad — 9 de noviembre de 2026
 
 > Esta actualización prevalece sobre snapshots históricos que indiquen otro HEAD o describan como pendientes capacidades ya implementadas. Verificar siempre el SHA vivo en GitHub antes de nuevas acciones.

@@ -1,3 +1,7 @@
+> **Reconciliación de continuidad — 2026-11-17:** distinguir (1) productor BCV temporal en `.github/workflows/bcv-sync.yml` (Node 24.22.2, TLS estricto); (2) Worker `micro-app-bcv-sync`, con triggers conservados pero pausado (`BCV_SYNC_ENABLED=false`); (3) watchdog horario read-only de intentos `running` stale integrado en `apps/api/src/index.ts`, independiente del productor. El watchdog detecta estado stale; no equivale a alertas externas BCV. La configuración/entrega/ACK de alertas externas sigue pendiente hasta prueba end-to-end.
+
+---
+
 # Actualización de continuidad — 9 de noviembre de 2026
 
 > Esta actualización prevalece sobre snapshots históricos que indiquen otro HEAD o describan como pendientes capacidades ya implementadas. Verificar siempre el SHA vivo en GitHub antes de nuevas acciones.

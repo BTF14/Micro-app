@@ -1,3 +1,14 @@
+# Addendum vigente de firma — 2026-11-17
+
+- **Base:** `main` = `d6760bf3da0e0c080c2f4ead3d518ce4e30bc589`; PR #374 y #375 MERGED.
+- **Primera persistencia BCV:** run [BCV Node TLS sync #1](https://github.com/BTF14/Micro-app/actions/runs/43977544849), SUCCESS, `outcome=inserted`; observación API/panel del propietario a `2026-11-16T23:17:15Z`: `effectiveDate=2026-11-17`, `status=scheduled`. Cierra únicamente la primera inserción real, no estabilidad posterior.
+- **Confirmaciones registradas:** smoke autenticado en staging con Brave Shields [x]; aceptación propietaria del objetivo RPO diario ~24 h y RTO plataforma best-effort ≤4 h [x]. No sustituyen mediciones operativas formales, simulacro de recuperación ni evidencia de cumplimiento sostenido.
+- **Gates abiertos:** estabilidad BCV; transición a `current` desde 00:00 VET del 2026-11-17; próxima corrida automática schedule; inactividad inocua continuada del Worker pausado; RPO/RTO operativos medidos y evidencia de recuperación; revisión legal/contable AC-6; revisión independiente de seguridad AC-7; alertas/ACK según Issue #53; Issue #53 OPEN/P0; aprobación GO/NO-GO.
+- **Orden v1.1:** Contingencia Manual BCV PR1 → Importador CSV PR2 → Escáner móvil PR3 → Cierre/reportes/exportación CSV PR4, sujeto al cierre previo de AC-6 y AC-7.
+- **Estado:** freeze comercial activo; **PRODUCTION: NOT READY**. No cerrar Issue #53 ni declarar READY.
+
+---
+
 # Checklist de firma de producción — Issue #53
 
 **Estado:** PRODUCTION: NOT READY. **Issue:** #53 OPEN/P0.

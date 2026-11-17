@@ -377,6 +377,8 @@ export function registerFxContingencyRoutes(app: Hono<{ Bindings: Bindings }>): 
         if (scope !== "ok") return { kind: scope };
         const pin = await verifyAndRateLimitPin(tx, c, actor.tenant, body.pin);
         if (pin !== "ok") return { kind: pin === "limited" ? "limited" as const : pin === "unavailable" ? "unavailable" as const : "invalid_pin" as const };
+        // Global lock order: BCV sync state before branch FX authorization.
+        await tx.query("SELECT last_success_at FROM public.lock_bcv_sync_state()");
         const active = await tx.query<{ id: string; expires_at: string | Date; starts_at: string | Date; authorized_by_user_id: string; authorized_by_role: 'owner' | 'admin' }>(
           `SELECT id,starts_at,expires_at,authorized_by_user_id,authorized_by_role FROM public.fx_contingency_authorizations
             WHERE organization_id=$1 AND branch_id=$2 AND status='active'

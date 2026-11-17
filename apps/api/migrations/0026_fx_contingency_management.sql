@@ -646,6 +646,30 @@ BEGIN
      OR p_reason IS NULL OR pg_catalog.length(pg_catalog.btrim(p_reason)) NOT BETWEEN 1 AND 500 THEN
     RAISE EXCEPTION 'FX_AUTHORIZATION_TRANSITION_INVALID' USING ERRCODE = '23514';
   END IF;
+  -- User-initiated revocation locks actor and delegated branch scope before
+  -- taking the FX authorization row lock. System transitions use BCV -> FX.
+  IF p_new_status = 'revoked' THEN
+    PERFORM 1
+      FROM public.organizations org
+      JOIN public.organization_members member
+        ON member.organization_id = org.id AND member.user_id = p_actor_user_id
+      JOIN public.app_users actor ON actor.id = member.user_id
+     WHERE org.id = p_organization_id AND org.is_active
+       AND member.is_active AND member.role = p_actor_role AND actor.is_active
+     FOR SHARE OF org, member, actor;
+    IF NOT FOUND THEN RAISE EXCEPTION 'FX_TRANSITION_ACTOR_INVALID' USING ERRCODE = '23514'; END IF;
+    IF p_actor_role = 'admin' THEN
+      PERFORM 1
+        FROM public.branch_memberships bm
+        JOIN public.fx_contingency_delegations d
+          ON d.organization_id = bm.organization_id AND d.branch_id = bm.branch_id
+         AND d.user_id = bm.user_id AND d.status = 'active'
+       WHERE bm.organization_id = p_organization_id AND bm.branch_id = p_branch_id
+         AND bm.user_id = p_actor_user_id AND bm.is_active
+       FOR SHARE OF bm, d;
+      IF NOT FOUND THEN RAISE EXCEPTION 'FX_ADMIN_DELEGATION_REQUIRED' USING ERRCODE = '23514'; END IF;
+    END IF;
+  END IF;
   IF p_new_status = 'bcv_restored' THEN
     PERFORM 1 FROM public.bcv_sync_state state
      WHERE state.singleton = true
@@ -723,20 +747,26 @@ BEGIN
   IF p_actor_role <> 'owner' THEN
     RAISE EXCEPTION 'FX_DELEGATION_OWNER_REQUIRED' USING ERRCODE = '23514';
   END IF;
-  IF NOT EXISTS (
-    SELECT 1 FROM public.organization_members member
-    JOIN public.app_users actor ON actor.id = member.user_id AND actor.is_active
-    WHERE member.organization_id = p_organization_id AND member.user_id = p_actor_user_id
-      AND member.is_active AND member.role = 'owner'
-  ) THEN RAISE EXCEPTION 'FX_DELEGATION_ACTOR_INVALID' USING ERRCODE = '23514'; END IF;
-  IF NOT EXISTS (
-    SELECT 1 FROM public.branch_memberships bm
+  PERFORM 1
+    FROM public.organization_members member
+    JOIN public.app_users actor ON actor.id = member.user_id
+   WHERE member.organization_id = p_organization_id AND member.user_id = p_actor_user_id
+     AND member.is_active AND member.role = 'owner' AND actor.is_active
+   FOR SHARE OF member, actor;
+  IF NOT FOUND THEN RAISE EXCEPTION 'FX_DELEGATION_ACTOR_INVALID' USING ERRCODE = '23514'; END IF;
+  PERFORM 1 FROM public.branches branch
+   WHERE branch.organization_id = p_organization_id AND branch.id = p_branch_id AND branch.is_active
+   FOR SHARE;
+  IF NOT FOUND THEN RAISE EXCEPTION 'FX_DELEGATION_BRANCH_INVALID' USING ERRCODE = '23514'; END IF;
+  PERFORM 1
+    FROM public.branch_memberships bm
     JOIN public.organization_members member
       ON member.organization_id = bm.organization_id AND member.user_id = bm.user_id
+   WHERE bm.organization_id = p_organization_id AND bm.branch_id = p_branch_id
+     AND bm.user_id = p_user_id AND bm.is_active
      AND member.is_active AND member.role = 'admin'
-    WHERE bm.organization_id = p_organization_id AND bm.branch_id = p_branch_id
-      AND bm.user_id = p_user_id AND bm.is_active
-  ) THEN RAISE EXCEPTION 'FX_DELEGATE_MUST_BE_ACTIVE_BRANCH_ADMIN' USING ERRCODE = '23514'; END IF;
+   FOR SHARE OF bm, member;
+  IF NOT FOUND THEN RAISE EXCEPTION 'FX_DELEGATE_MUST_BE_ACTIVE_BRANCH_ADMIN' USING ERRCODE = '23514'; END IF;
 
   IF p_revoke THEN
     UPDATE public.fx_contingency_delegations

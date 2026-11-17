@@ -80,7 +80,7 @@ type SalePaymentRow = {
 type CheckoutResult =
   | { kind: "created" | "replayed"; sale: Record<string, unknown> }
   | { kind: "unauthenticated" | "forbidden" | "branch_denied" | "warehouse_not_found" |
-      "shift_required" | "rate_unavailable" | "manual_ack_required" | "invalid_products" | "insufficient_stock" |
+      "shift_required" | "rate_unavailable" | "bcv_rate_unavailable" | "manual_ack_required" | "invalid_products" | "insufficient_stock" |
       "idempotency_conflict" | "invalid_payment" };
 
 function caracasDate(now: Date): string {
@@ -513,7 +513,7 @@ export function registerSalesCheckoutRoutes(app: Hono<{ Bindings: Bindings }>): 
           } else {
             // AC-6 remains a commercial gate: this flag is absent/false by
             // default and must not be enabled until written legal/accounting approval.
-            if (c.env.FX_CONTINGENCY_ENABLED !== "true") return { kind: "rate_unavailable" };
+            if (c.env.FX_CONTINGENCY_ENABLED !== "true") return { kind: "bcv_rate_unavailable" };
             const manual = await findActiveManualFxAuthorization(tx, branch.organizationId, branch.branchId);
             if (!manual) return { kind: "rate_unavailable" };
             if (!input.manualFxAcknowledged || input.manualFxAcknowledgedRate !== manual.rate) return { kind: "manual_ack_required" };
@@ -727,6 +727,7 @@ export function registerSalesCheckoutRoutes(app: Hono<{ Bindings: Bindings }>): 
         case "branch_denied": return c.json({ error: "BRANCH_FORBIDDEN", message: "No tienes acceso a esta sucursal." }, 403);
         case "warehouse_not_found": return c.json({ error: "WAREHOUSE_NOT_FOUND", message: "El almacén no existe o no pertenece a esta sucursal." }, 404);
         case "shift_required": return c.json({ error: "OPEN_SHIFT_REQUIRED", message: "Debes tener tu propio turno abierto para registrar la venta." }, 409);
+        case "bcv_rate_unavailable": return c.json({ error: "BCV_RATE_NOT_CURRENT", message: "No existe una tasa BCV vigente para la fecha operativa." }, 409);
         case "rate_unavailable": return c.json({ error: "FX_RATE_NOT_AVAILABLE", message: "No existe una tasa BCV vigente ni una autorización de contingencia activa." }, 409);
         case "manual_ack_required": return c.json({ error: "MANUAL_FX_ACK_REQUIRED", message: "Confirma que comunicaste al cliente la tasa manual de contingencia antes de continuar." }, 409);
         case "invalid_products": return c.json({ error: "PRODUCT_NOT_AVAILABLE", message: "Uno o más productos no existen o están inactivos." }, 409);

@@ -4,7 +4,7 @@ Sistema **POS e inventario multi-sucursal** independiente para comercios en Vene
 
 > **Estado técnico:** el núcleo funcional está integrado en `main`: autenticación Google OAuth same-origin, administración de sucursales/almacenes/cajas, catálogo, inventario con ledger y conteos/recepciones, turnos de caja, sincronización BCV aislada y checkout POS en USD o VES.
 >
-> **Estado comercial:** **`PRODUCTION: NOT READY`**. No habilitar operación comercial ni datos reales. El lanzamiento permanece bloqueado hasta cerrar los gates del Issue `#53`: estabilidad BCV posterior, alertas/ACK de extremo a extremo, revisión legal/fiscal/contable (AC-6), revisión independiente de seguridad (AC-7), medición operativa RPO/RTO, cierre del Issue `#53`, aprobación GO/NO-GO y verificación continua del coste total `$0`. El smoke autenticado con Brave Shields y la aceptación propietaria de objetivos RPO/RTO ya están confirmados; no equivalen a medición operativa formal. Consulta [CURRENT_STATE.md](docs/CURRENT_STATE.md) y [PRODUCTION_READINESS.md](docs/PRODUCTION_READINESS.md).
+> **Estado comercial:** **`PRODUCTION: NOT READY`**. No habilitar operación comercial ni datos reales. El lanzamiento permanece bloqueado hasta cerrar los gates del Issue `#53`: estabilidad BCV posterior, alertas/ACK de extremo a extremo, revisión legal/fiscal/contable (AC-6), revisión independiente de seguridad (AC-7), medición operativa RPO/RTO, cierre del Issue `#53`, aprobación GO/NO-GO y verificación continua del coste total `$0`. [x] Smoke autenticado con Brave Shields y [x] aceptación propietaria de objetivos RPO/RTO confirmados; no equivalen a medición operativa formal. Consulta [CURRENT_STATE.md](docs/CURRENT_STATE.md) y [PRODUCTION_READINESS.md](docs/PRODUCTION_READINESS.md).
 
 ---
 

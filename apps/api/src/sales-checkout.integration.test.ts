@@ -50,6 +50,7 @@ const FRONTEND_ORIGIN = "https://frontend.example";
 
 describe.skipIf(!isDisposableCheckoutDatabase || !isDisposableBcvProducerDatabase)("atomic sales checkout PostgreSQL integration", () => {
   let client: Client;
+  let runtimeClient: Client;
   let producerClient: Client;
   let organizationId = "";
   let userId = "";
@@ -251,9 +252,9 @@ describe.skipIf(!isDisposableCheckoutDatabase || !isDisposableBcvProducerDatabas
 
   beforeAll(async () => {
     client = new Client({ connectionString: databaseUrlAdmin });
+    runtimeClient = new Client({ connectionString: databaseUrl });
     producerClient = new Client({ connectionString: databaseUrlBcv });
-    await client.connect();
-    await producerClient.connect();
+    await Promise.all([client.connect(), runtimeClient.connect(), producerClient.connect()]);
     await client.query('SELECT pg_advisory_lock(20261117, 260026)');
     suffix = crypto.randomUUID().replace(/-/g, "").slice(0, 12);
 
@@ -510,8 +511,7 @@ describe.skipIf(!isDisposableCheckoutDatabase || !isDisposableBcvProducerDatabas
       await client.query("ALTER TABLE public.bcv_sync_state ENABLE TRIGGER bcv_sync_success_observation_capture");
     }
     await client.query('SELECT pg_advisory_unlock(20261117, 260026)').catch(() => undefined);
-    await producerClient.end();
-    await client.end();
+    await Promise.all([producerClient.end(), runtimeClient.end(), client.end()]);
   });
 
   it("prevents a draft sale from committing without completed reconciliation", async () => {

@@ -284,9 +284,17 @@ describe.skipIf(!safeDb)("FX contingency PostgreSQL integration — PG-01..PG-30
     expect(result.rows[0]).toEqual({ pin: true, auth: true, events: true, obs: true });
   });
 
-  it("PG-02 rate and reference snapshots use NUMERIC(18,8)", async () => {
+  it("PG-02 rate and reference snapshots use NUMERIC(18,8) and freeze the effective date", async () => {
     const result = await admin.query("SELECT pg_catalog.format_type(a.atttypid,a.atttypmod) AS type FROM pg_catalog.pg_attribute a WHERE a.attrelid='public.fx_contingency_authorizations'::regclass AND a.attname IN ('rate','reference_rate_value') ORDER BY a.attname");
     expect(result.rows.map((row) => row.type)).toEqual(["numeric(18,8)", "numeric(18,8)"]);
+    const branch = await createBranch("PG02");
+    const id = await createAuthorization(branch, "101.00000000");
+    const snapshot = await admin.query("SELECT reference_exchange_rate_id,reference_rate_value::text,reference_effective_date::text FROM public.fx_contingency_authorizations WHERE id=$1", [id]);
+    expect(snapshot.rows[0]).toMatchObject({
+      reference_exchange_rate_id: referenceRateId,
+      reference_rate_value: referenceRate,
+      reference_effective_date: today,
+    });
   });
 
   it("PG-03 authorization starts_at has a server clock default", async () => {
@@ -346,14 +354,14 @@ describe.skipIf(!safeDb)("FX contingency PostgreSQL integration — PG-01..PG-30
     expect(row.rows[0]).toEqual({ deviation_bps: 500, elevated_confirmation_at: null });
   });
 
-  it("PG-12 501 bps fails closed without elevated reason", async () => {
+  it("PG-12 any deviation strictly above 500 bps fails closed without elevated reason", async () => {
     const branch = await createBranch("PG12");
-    await expect(createAuthorization(branch, "105.01000000")).rejects.toMatchObject({ code: "23514" });
+    await expect(createAuthorization(branch, "105.00500000")).rejects.toMatchObject({ code: "23514" });
   });
 
-  it("PG-13 501 bps requires and stores elevated confirmation", async () => {
+  it("PG-13 deviation just above 500 bps requires and stores elevated confirmation", async () => {
     const branch = await createBranch("PG13");
-    const id = await createAuthorization(branch, "105.01000000", ownerId, OWNER, safeExpiry(), "Owner confirms deviation above five percent.");
+    const id = await createAuthorization(branch, "105.00500000", ownerId, OWNER, safeExpiry(), "Owner confirms deviation above five percent.");
     const row = await admin.query("SELECT deviation_bps,elevated_confirmation_at,elevated_confirmation_reason FROM public.fx_contingency_authorizations WHERE id=$1", [id]);
     expect(row.rows[0].deviation_bps).toBe(501);
     expect(row.rows[0].elevated_confirmation_at).toBeTruthy();
@@ -367,9 +375,9 @@ describe.skipIf(!safeDb)("FX contingency PostgreSQL integration — PG-01..PG-30
     expect(row.rows[0].deviation_bps).toBe(2000);
   });
 
-  it("PG-15 2001 bps is rejected", async () => {
+  it("PG-15 deviations above the exact 2000 bps ceiling are rejected even when rounded bps is 2000", async () => {
     const branch = await createBranch("PG15");
-    await expect(createAuthorization(branch, "120.01000000", ownerId, OWNER, safeExpiry(), "Outside the permitted range.")).rejects.toMatchObject({ code: "23514" });
+    await expect(createAuthorization(branch, "120.00400000", ownerId, OWNER, safeExpiry(), "Outside the permitted range.")).rejects.toMatchObject({ code: "23514" });
   });
 
   it("PG-16 expiration above 24 hours is rejected", async () => {

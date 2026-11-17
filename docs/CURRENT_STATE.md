@@ -1,3 +1,20 @@
+# Corte vigente — reconciliación posterior a PR #375 (2026-11-17)
+
+- **Main exacto:** `d6760bf3da0e0c080c2f4ead3d518ce4e30bc589`; PR #374 y #375 MERGED.
+- **Productor BCV temporal:** `.github/workflows/bcv-sync.yml`, Node 24.22.2, TLS estricto, Sectigo DV R36 pineada y credencial dedicada `DATABASE_URL_BCV_SYNC`. Worker `micro-app-bcv-sync`: triggers conservados, pausado con `BCV_SYNC_ENABLED=false`.
+- **Primera ejecución:** [BCV Node TLS sync #1](https://github.com/BTF14/Micro-app/actions/runs/43977544849), SUCCESS, `outcome=inserted`; observación propietaria 23:17:15Z: `effectiveDate=2026-11-17`, `status=scheduled`. No consta aún transición a `current`, estabilidad posterior ni ejecución automática puntual.
+- **Roadmap oficial v1.1:** PR1 Contingencia Manual BCV; PR2 Importador CSV; PR3 Escáner móvil; PR4 Cierre/reportes/exportación CSV. AC-6 legal/contable y AC-7 seguridad son gates previos. Freeze comercial activo.
+- **Estado:** Issue #53 OPEN/P0; PRODUCTION: NOT READY; no GO/NO-GO.
+- **Siguiente control read-only:** transición a `current` desde 00:00 VET 2026-11-17; próxima ejecución schedule Node; inactividad inocua continuada del Worker pausado.
+
+
+
+---
+
+> **SNAPSHOT HISTÓRICO SUPERSEDIDO — 2026-11-17.** Prevalece el corte vigente de este encabezado; las menciones inferiores a Worker Cloudflare activo, primera tasa BCV pendiente, Neon WebSocket pendiente o PR #287 pendiente son archivo histórico.
+
+---
+
 # Corte vigente — cierre de Fase 1 BCV (2026-11-16)
 
 - **Main:** `98e249778a52e9306a193e838edea4503e0343e6` (merge de PR #374).

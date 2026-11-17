@@ -1,3 +1,7 @@
+> **Reconciliación operativa — 2026-11-17:** los Cron Triggers de Cloudflare `0 11 * * MON-FRI` y `0 22 * * MON-FRI` se conservan por reversibilidad, pero el Worker `micro-app-bcv-sync` está pausado mediante `BCV_SYNC_ENABLED=false`. No es el productor activo. La ingestión temporal corre en `.github/workflows/bcv-sync.yml` con Node 24.22.2 y TLS estricto. El cierre de PR #370 no prueba invocaciones ni escrituras actuales del Worker.
+
+---
+
 # ODD task: BCV morning Cron window at 11:00 UTC
 
 - Status: completed

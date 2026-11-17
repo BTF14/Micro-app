@@ -1,3 +1,7 @@
+> **Reconciliación posterior — 2026-11-17:** la tarea original evolucionó mediante PR #361 y PR #374. PR #374 está MERGED; el productor operativo temporal es `.github/workflows/bcv-sync.yml` (Node 24.22.2, TLS estricto, Sectigo DV R36 pineada). El Worker `micro-app-bcv-sync` conserva triggers pero está pausado (`BCV_SYNC_ENABLED=false`). Primera ejecución Node #1: SUCCESS / `inserted`; transición a `current`, estabilidad y schedule automático aún pendientes. El campo `Issue / PR: pending` es histórico, no estado vivo.
+
+---
+
 # ODD task: BCV weekday Cron and strict CI TLS chain validation
 
 - Status: completed

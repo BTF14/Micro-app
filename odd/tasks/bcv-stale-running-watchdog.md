@@ -1,3 +1,7 @@
+> **Reconciliación operativa — 2026-11-17:** el watchdog horario `17 * * * *` de `apps/api/src/index.ts` permanece activo e independiente del productor BCV. Detecta intentos `running` stale en modo read-only; no ejecuta ingestión ni demuestra alertas externas. El productor temporal actual es `.github/workflows/bcv-sync.yml` (Node 24.22.2, TLS estricto); el Worker `micro-app-bcv-sync` conserva triggers, pero está pausado (`BCV_SYNC_ENABLED=false`). No confundir el Cron del watchdog con los triggers pausados del productor.
+
+---
+
 # ODD task: bcv-stale-running-watchdog
 
 - Status: completed

@@ -1,3 +1,18 @@
+# Checkpoint vigente — post-PR #375 y resolución v1.1 (2026-11-17)
+
+- `main`: `d6760bf3da0e0c080c2f4ead3d518ce4e30bc589`; PR #374 y #375 MERGED.
+- Productor BCV activo temporal: GitHub Actions `.github/workflows/bcv-sync.yml`, Node 24.22.2 + TLS estricto; Worker `micro-app-bcv-sync` pausado con `BCV_SYNC_ENABLED=false`, triggers conservados.
+- Primera ejecución real: run [43977544849](https://github.com/BTF14/Micro-app/actions/runs/43977544849), SUCCESS, `outcome=inserted`; observación del propietario 23:17:15Z confirma `effectiveDate=2026-11-17`, `status=scheduled`. No afirmar aún `current`, estabilidad posterior ni schedule automático puntual.
+- Orden v1.1: PR1 Contingencia Manual BCV → PR2 Importador CSV → PR3 Escáner móvil → PR4 Cierre/reportes/exportación CSV. AC-6 legal/contable y AC-7 seguridad son gates previos; freeze comercial activo.
+- Issue #53 OPEN/P0; PRODUCTION NOT READY. Sin GO/NO-GO.
+- Alcance de esta reconciliación: solo documentación. Sin apps, workflows, packages, scripts, tools, SQL/migraciones, Neon, Cloudflare manual, Secrets, datos reales o billing. Sin auto-merge ni cambios en Issue #53.
+
+---
+
+# SNAPSHOT HISTÓRICO SUPERSEDIDO
+
+Los checkpoints inferiores se conservan para trazabilidad; no representan el HEAD ni el productor BCV vigente.
+
 ## Turno 37 — cierre de Gates A/B y ejecución de Fase 3B (2026-11-13 UTC)
 
 - **Neon main:** proyecto `restless-fire-99110035`, branch default `main` (`br-summer-math-b7297a60`), database `neondb`, PostgreSQL 18.7.

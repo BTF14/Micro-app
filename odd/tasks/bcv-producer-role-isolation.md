@@ -1,3 +1,7 @@
+> **Revisión de evidencia posterior — 2026-11-17:** PR #374 y su CI verifican el runner Node TLS y su primera ejecución productiva con la credencial dedicada; eso no cierra automáticamente criterios de aislamiento SQL que requieran assertions específicas sobre ACL, LOGIN efectivo, membresías o grants. Se conservan sin cambios las marcas AC existentes. No marcar AC-5/AC-6 por inferencia a partir de la ejecución Node: exigir la prueba exacta de CI que cubra el criterio y vincular SHA/run/step. Si no existe evidencia directa, mantener abierto. La primera inserción BCV no certifica privilegios mínimos.
+
+---
+
 # ODD task — aislar la identidad productora de BCV
 
 - Date: 2026-11-10

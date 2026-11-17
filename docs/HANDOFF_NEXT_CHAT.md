@@ -1,3 +1,24 @@
+# Handoff vigente — continuidad posterior a PR #375 (2026-11-17)
+
+## Punto exacto de partida
+- `main` = `d6760bf3da0e0c080c2f4ead3d518ce4e30bc589`; PR #374/#375 MERGED.
+- Productor BCV temporal: `.github/workflows/bcv-sync.yml`, Node 24.22.2, TLS estricto y CA Sectigo DV R36 pineada. Worker `micro-app-bcv-sync` conserva triggers pero está pausado (`BCV_SYNC_ENABLED=false`).
+- Primera ejecución Node #1: SUCCESS, `outcome=inserted`; observación del propietario 23:17:15Z: `effectiveDate=2026-11-17`, `status=scheduled`. La transición a `current`, la siguiente corrida automática y estabilidad posterior siguen pendientes.
+- Roadmap v1.1 confirmado: PR1 Contingencia Manual BCV → PR2 Importador CSV → PR3 Escáner móvil → PR4 Cierre/reportes/exportación CSV. AC-6 legal/contable + AC-7 seguridad deben cerrarse antes de implementar PR1.
+- Freeze comercial activo; Issue #53 OPEN/P0; PRODUCTION NOT READY.
+
+## Próximas acciones read-only
+1. Verificar transición a `current` desde 00:00 VET del 2026-11-17.
+2. Observar la próxima ejecución automática schedule de `.github/workflows/bcv-sync.yml`, separando cron invocation, outcome y persistencia.
+3. Verificar inactividad inocua continuada del Worker pausado, sin cambiar Cloudflare.
+4. Mantener AC-6/AC-7, Issue #53 y GO/NO-GO abiertos hasta evidencia y aprobación.
+
+---
+
+> **SNAPSHOT HISTÓRICO SUPERSEDIDO — 2026-11-17.** Prevalece este handoff; los handoffs inferiores conservan la historia previa, incluidas referencias a Worker activo, primera tasa pendiente, Neon WebSocket pendiente y PR #287 pendiente.
+
+---
+
 # Handoff vigente — Fase 1 BCV cerrada / Fase 2 preparada (2026-11-16)
 
 ## Punto exacto de partida

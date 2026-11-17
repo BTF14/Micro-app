@@ -1,3 +1,11 @@
+> **Estado vigente — 2026-11-17:** main `d6760bf3da0e0c080c2f4ead3d518ce4e30bc589`; PR #374/#375 MERGED. Productor BCV temporal en GitHub Actions Node 24.22.2 con TLS estricto y CA Sectigo DV R36 pineada; Worker `micro-app-bcv-sync` pausado (`BCV_SYNC_ENABLED=false`). Primera ejecución real `inserted` (run #43977544849); observación propietaria reportó `effectiveDate=2026-11-17` en estado `scheduled`. Transición a `current`, siguiente schedule y estabilidad posterior siguen pendientes.
+>
+> **Gates:** AC-6 legal/contable y AC-7 revisión independiente de seguridad son previos a Contingencia Manual BCV (PR1). Smoke autenticado con Brave Shields y aceptación propietaria de objetivos RPO/RTO constan confirmados; no equivalen a mediciones operativas formales RPO/RTO ni a simulacro completo. Alert delivery/ACK, estabilidad BCV, Issue #53 OPEN/P0 y aprobación GO/NO-GO siguen abiertos.
+>
+> **PRODUCTION: NOT READY.** Freeze comercial activo. Los bloques inferiores son snapshots históricos; prevalece este encabezado.
+
+---
+
 > **Estado vigente — Fase 3B / 2026-11-13:** main `71e92b24ca48ef6f6ff1dc3cea18a51f193b579b`; Issue #53 OPEN/P0; **PRODUCTION: NOT READY**. Pasos 1 y 2 evidenciados mediante auditoría Neon `microapp_backup`, backup natural #24 y restore real #3. `backup_readonly` retirado; allowlist pasa a `microapp_backup` exclusivamente. PR de Fase 3B independiente pendiente de checks/merge. PR #339 debe permanecer OPEN hasta confirmación manual de Google Cloud Console y Cloudflare Pages.
 >
 >

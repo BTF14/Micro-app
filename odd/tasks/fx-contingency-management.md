@@ -144,3 +144,14 @@ Excluded:
 - Tercer exact-SHA run `ce0a01d664738247ac4588e4cb220f0ddf524ef1`: **migration-runner validation pasó**, incluida la aplicación de 0026. El job de contrato managed-owner falló porque `scripts/tests/test_managed_role_membership.sh` aún esperaba 25 migraciones y solo ejecutaba assertions hasta 0025.
 - Actualizado el contrato CI a 26 migraciones y añadido `0026_fx_contingency_management.assertions.sql` tanto en la pasada principal como en la verificación positiva final.
 - Fix commit: `f7b886b28813fd3befc56d078559c69cc6c0338d`. Requiere nuevo CI exact-SHA.
+
+
+## Superseding authorization — AC-7 / AC-6 gate order (2026-11-17)
+
+The owner explicitly superseded the earlier pre-implementation AC-7 hold:
+
+- The independent design/security review already completed remains the baseline input.
+- Full AC-7 is now a mandatory **pre-merge-to-main** gate, auditing the final `0026` migration, triggers, grants/privileges, actual Wrangler Workers KDF test, PG-01..PG-30 (including concurrency and Caracas midnight behavior), and the complete PR diff.
+- Implementation on `feat/fx-contingency-pr1-20261117` is authorized immediately. This does not waive AC-7 or authorize merge.
+- AC-6 remains an independent commercial activation gate: `FX_CONTINGENCY_ENABLED` stays absent/false and no production secret/configuration is changed until written accounting/legal approval of the receipt.
+- `CURRENT_STATE.md` and `HANDOFF_NEXT_CHAT.md` are intentionally deferred to the final documentation-close step of this same PR.

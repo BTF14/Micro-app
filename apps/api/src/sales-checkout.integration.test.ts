@@ -378,6 +378,17 @@ describe.skipIf(!isDisposableCheckoutDatabase || !isDisposableBcvProducerDatabas
       createdRate = true;
     }
     await setBcvSyncState("inserted", rateDate, true);
+    const syncState = await runtimeClient.query<{ last_outcome: string; last_effective_date: string; last_success_at: Date | string }>(
+      "SELECT * FROM public.lock_bcv_sync_state()",
+    );
+    const applicableRate = await runtimeClient.query<{ effective_date: string; validation_status: string; fetched_at: Date | string }>(
+      "SELECT effective_date::text AS effective_date,validation_status,fetched_at FROM public.exchange_rates WHERE id=$1",
+      [rateId],
+    );
+    expect(syncState.rows[0]).toMatchObject({ last_outcome: "inserted", last_effective_date: rateDate });
+    expect(syncState.rows[0]?.last_success_at).toBeTruthy();
+    expect(applicableRate.rows[0]).toMatchObject({ effective_date: rateDate, validation_status: "valid" });
+    expect(applicableRate.rows[0]?.fetched_at).toBeTruthy();
   });
 
   beforeEach(async () => {

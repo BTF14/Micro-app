@@ -244,12 +244,12 @@ BEGIN
     SELECT 1 FROM pg_catalog.pg_constraint
      WHERE conrelid='public.fx_contingency_authorizations'::regclass
        AND contype='c'
-       AND pg_catalog.pg_get_constraintdef(oid) ILIKE '%* 2000%'
+       AND pg_catalog.pg_get_constraintdef(oid) ILIKE '%rate%' AND pg_catalog.pg_get_constraintdef(oid) ILIKE '%reference_rate_value%' AND pg_catalog.pg_get_constraintdef(oid) ILIKE '%2000%'
   ) OR NOT EXISTS (
     SELECT 1 FROM pg_catalog.pg_constraint
      WHERE conrelid='public.fx_contingency_authorizations'::regclass
        AND contype='c'
-       AND pg_catalog.pg_get_constraintdef(oid) ILIKE '%* 500%'
+       AND pg_catalog.pg_get_constraintdef(oid) ILIKE '%rate%' AND pg_catalog.pg_get_constraintdef(oid) ILIKE '%reference_rate_value%' AND pg_catalog.pg_get_constraintdef(oid) ILIKE '%500%'
   ) THEN
     RAISE EXCEPTION 'FX_DEVIATION_LIMITS_MUST_USE_EXACT_DECIMAL_COMPARISONS';
   END IF;

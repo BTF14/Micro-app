@@ -1,3 +1,33 @@
+# Handoff vigente — Paso 1 docs/tooling y spec BCV 0027 pendiente (2026-11-17)
+
+## Punto exacto de partida
+- main = 25e37dc5dcfb18349a6b7f384d109e493a581c3d; PR #377 MERGED. AC-7 cerrado para PR1; AC-6 abierto; contingencia manual apagada/no configurada.
+- Freeze v1.1 activo; Issue #53 OPEN/P0; PRODUCTION NOT READY.
+- Rama de este bloque: docs/reconcile-state-and-skill-registry, creada desde el SHA exacto anterior. PR Draft y HEAD final deben consultarse en GitHub; no inferir checks de SHA previo.
+- Alcance de Paso 1: solo documentos/registro/ADR. No app code, SQL/migraciones, workflows, infraestructura, Neon, Cloudflare manual, secretos, datos reales, billing ni deploy.
+
+## Decisión de producto BCV aprobada — preparar 0027, no implementar aún
+1. Si hay tasa BCV oficial valid con effective_date = today Caracas, usarla exclusivamente (viernes conserva su tasa aunque se prepublique lunes).
+2. Si no existe tasa de hoy y es sábado/domingo Caracas: usar la menor fecha efectiva futura > today y <= today + 5 días, solo con sync sano (last_error_code IS NULL, last_outcome IN ('inserted','unchanged')).
+3. Si no existe tasa de hoy y es lunes–viernes: usar la menor fecha futura en esa ventana solo si un sync BCV exitoso ocurrió ese mismo día Caracas (last_success_at >= inicio del día Caracas, last_error_code IS NULL). Si no, 409 BCV_RATE_NOT_CURRENT.
+4. Nunca usar tasa anterior ni saltarse la ventana. No calendario SUDEBAN anual manual; la fecha valor publicada por BCV es la autoridad para identificar el siguiente día hábil.
+5. Snapshot inmutable separa fecha real de operación y fecha efectiva BCV. La spec debe adaptar selector, latest/panel, recuperación 0026 y triggers mediante migración aditiva, preservando 0022/0026.
+6. Especificación debe resolver cobertura de last_effective_date, semantics de unchanged, fallos posteriores, locks/carreras, y guards SQL para escritura directa. No cambiar 0022/0026.
+
+## QA anti-puntos ciegos
+- Carril A (0 SQL): helpers decimales puros, sin float para dinero/cantidad/tasa, pruebas de escala, precisión, límites, redondeo y parsing.
+- Antes de B1 crear inventory-accounting-review: invariantes independientes (Kardex↔balances, líneas↔totales↔pagos↔cierre), pruebas extremas $0 y mutación selectiva de dinero/stock/tenant-sucursal; los tests deben matar mutantes críticos.
+- Crear ve-fx-compliance-review al abordar AC-6; revisar fuentes primarias, vigencia de SNAT/2026/00093 (abril 2027) y límites profesionales. No simular dictamen humano.
+
+## Orden de ejecución
+Paso 1 Docs/Tooling → Carril A (0 SQL) + spec 0027 → cierre/reconciliación Nivel 1 + implementación/validación 0027 antes de B1 (0028+) → inventory-accounting-review → B1 → Hardening → CSV → PR3 Scanner/B2 → PR4 cierres/reportes → AC-6 + ve-fx-compliance-review + pre-prod.
+
+## Siguientes acciones reproducibles
+1. Confirmar que esta PR Draft tiene todos los checks requeridos en su HEAD exacto y revisar diff completo.
+2. No fusionar automáticamente; esperar revisión/decisión del propietario.
+3. Tras integrar Paso 1, elaborar la especificación formal 0027 (sin migrar ni tocar producción).
+4. Mantener AC-6, Issue #53 y freeze v1.1 abiertos hasta evidencia y autorizaciones correspondientes.
+
 # Handoff vigente — PR 1 Contingencia Manual BCV — AC-7 cerrado (2026-11-17)
 
 ## Punto exacto de partida

@@ -1,7 +1,7 @@
 # Handoff vigente — Paso 1 docs/tooling y spec BCV 0027 pendiente (2026-11-17)
 
 ## Punto exacto de partida
-- main = 25e37dc5dcfb18349a6b7f384d109e493a581c3d; PR #377 MERGED. AC-7 cerrado para PR1; AC-6 abierto; contingencia manual apagada/no configurada.
+- main = 25e37dc5dcfb18349a6b7f384d109e493a581c3d; PR #377 MERGED, con 16/16 check-runs y 11/11 workflow runs SUCCESS en el merge SHA. AC-7 cerrado para PR1; AC-6 abierto; contingencia manual apagada/no configurada.
 - Freeze v1.1 activo; Issue #53 OPEN/P0; PRODUCTION NOT READY.
 - Rama de este bloque: docs/reconcile-state-and-skill-registry, creada desde el SHA exacto anterior. PR #378 OPEN/Draft; consultar GitHub para su HEAD exacto y checks; no inferir checks de SHA previo.
 - Alcance de Paso 1: solo documentos/registro/ADR. No app code, SQL/migraciones, workflows, infraestructura, Neon, Cloudflare manual, secretos, datos reales, billing ni deploy.

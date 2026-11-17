@@ -85,3 +85,17 @@ Excluded:
 **AC-5: DONE (decisión del propietario; no implementación).** Owner o Admin con delegación explícita `fx.contingency.authorize`, solo en sucursales asignadas; no concedido por defecto. PIN individual >=8 dígitos, KDF fuerte, rate limit por cuenta/IP, banda de desviación razonable y confirmación reforzada ante desvíos altos. Auditoría inmutable server-side con actor_user_id, rol efectivo, sucursal, timestamp UTC del servidor, motivo, origen manual, tasa y vigencia. Autorización máxima 24 h; expiración automática; renovación explícita con PIN y auditoría separada; retorno automático a BCV al existir tasa oficial válida aplicable. Revalidación tenant/sucursal/permiso server-side y fail-closed.
 
 **AC-6 y AC-7 permanecen OPEN:** revisión legal/contable y revisión independiente de seguridad antes de cualquier implementación. Freeze v1.1 vigente.
+
+
+## Addendum vinculante — autorización de rama PR 1 (2026-11-17)
+
+- Base solicitada por el propietario: `04d3679189edaab17221f1e8cd425cc68fa53155`.
+- Rama creada: `feat/fx-contingency-pr1-20261117`, directamente desde ese SHA exacto. No se creó PR ni se modificó `main`.
+- Autorización recibida: implementar PR 1 conforme al plan de implementabilidad aprobado, sin mezclar Carril A, Carril B1 ni Hardening ajeno.
+- **Verificación temporal obligatoria:** `bcv_sync_success_observations.observed_at` y `fx_contingency_authorizations.starts_at` se asignan con `clock_timestamp()`. La recuperación compara `obs.observed_at > auth.starts_at`; no exige `obs.last_success_at > auth.starts_at`, porque el productor puede haber escrito `last_success_at = now()` al inicio de la transacción.
+- **Contrato 0021:** la redefinición de `assert_sale_latest_bcv_sync_success()` conserva `SECURITY DEFINER`, propietario `microapp_migrator`, `search_path` restringido y las revocaciones de EXECUTE verificadas por `0021_bcv_sync_state.assertions.sql`.
+- **Observaciones BCV:** tabla append-only con triggers `ENABLE ALWAYS`; `REVOKE ALL` de `PUBLIC` y `microapp_bcv_sync`; `GRANT SELECT` únicamente a `microapp_runtime`. El trigger de captura no amplía grants del productor.
+- **ACK en sales:** `manual_contingency` exige `manual_fx_acknowledged_at IS NOT NULL` y `manual_fx_acknowledged_by_user_id = created_by`; `bcv_official` exige ambos campos `NULL`.
+- **Gate comercial:** la capacidad no se habilita para operación comercial hasta recibir visto bueno escrito del asesor contable/legal sobre el comprobante (AC-6). El freeze comercial permanece.
+- **Pruebas exigidas:** runtime KDF real con Wrangler; `0026_fx_contingency_management.assertions.sql`; PG-01..PG-30, incluidas carreras de concurrencia y límites de medianoche con `clock_timestamp()`; CI completo sobre el SHA final.
+- **Límite de ejecución:** el ADR y este task log mantienen AC-7 (revisión independiente de seguridad previa a implementación) como gate pendiente. La autorización de rama no se interpreta como cierre ni waiver de AC-7. Hasta documentar esa revisión, no se introducen endpoints/permisos comerciales ni cambios de checkout/migración; se permite preparar la rama y el registro de trabajo.

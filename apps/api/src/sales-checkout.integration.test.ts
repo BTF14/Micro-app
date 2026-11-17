@@ -77,6 +77,8 @@ describe.skipIf(!isDisposableCheckoutDatabase || !isDisposableBcvProducerDatabas
   let fxReferenceRateId = "";
   let fxReferenceRateCreated = false;
   let fxFutureRateId = "";
+  let fxFutureRateCreated = false;
+  let previousFxFutureRate: { rate: string; validation_status: string; fetched_at: Date } | null = null;
   const fxAttemptIds: string[] = [];
   let previousFxReferenceRate: { rate: string; validation_status: string; fetched_at: Date } | null = null;
 
@@ -435,7 +437,10 @@ describe.skipIf(!isDisposableCheckoutDatabase || !isDisposableBcvProducerDatabas
         await client.query("DELETE FROM public.organization_members WHERE organization_id=$1 AND user_id=$2", [organizationId, fxOwnerId]);
         await client.query("DELETE FROM public.app_users WHERE id=$1", [fxOwnerId]);
       }
-      if (fxFutureRateId) await client.query("DELETE FROM public.exchange_rates WHERE id=$1", [fxFutureRateId]);
+      if (fxFutureRateId) {
+        if (fxFutureRateCreated) await client.query("DELETE FROM public.exchange_rates WHERE id=$1", [fxFutureRateId]);
+        else if (previousFxFutureRate) await client.query("UPDATE public.exchange_rates SET rate=$2::numeric,validation_status=$3,fetched_at=$4 WHERE id=$1", [fxFutureRateId, previousFxFutureRate.rate, previousFxFutureRate.validation_status, previousFxFutureRate.fetched_at]);
+      }
       if (fxReferenceRateId) {
         if (fxReferenceRateCreated) await client.query("DELETE FROM public.exchange_rates WHERE id=$1", [fxReferenceRateId]);
         else if (previousFxReferenceRate) await client.query("UPDATE public.exchange_rates SET rate=$2::numeric,validation_status=$3,fetched_at=$4 WHERE id=$1", [fxReferenceRateId, previousFxReferenceRate.rate, previousFxReferenceRate.validation_status, previousFxReferenceRate.fetched_at]);
@@ -1298,11 +1303,22 @@ describe.skipIf(!isDisposableCheckoutDatabase || !isDisposableBcvProducerDatabas
       "SELECT (($1::date + 1)::date)::text AS tomorrow", [rateDate],
     );
     const tomorrow = tomorrowResult.rows[0]!.tomorrow;
-    const future = await client.query<{ id: string }>(
-      "INSERT INTO public.exchange_rates(base_currency,quote_currency,rate,source,effective_date,validation_status) VALUES('USD','VES',300.00000000,$1,$2::date,'valid') RETURNING id",
+    const existingFuture = await client.query<{ id: string; rate: string; validation_status: string; fetched_at: Date }>(
+      "SELECT id,rate::text,validation_status,fetched_at FROM public.exchange_rates WHERE source=$1 AND effective_date=$2::date",
       [BCV_SOURCE, tomorrow],
     );
-    fxFutureRateId = future.rows[0]!.id;
+    if (existingFuture.rows[0]) {
+      fxFutureRateId = existingFuture.rows[0].id;
+      previousFxFutureRate = existingFuture.rows[0];
+      await client.query("UPDATE public.exchange_rates SET rate=300.00000000,validation_status='valid',fetched_at=pg_catalog.clock_timestamp() WHERE id=$1", [fxFutureRateId]);
+    } else {
+      const future = await client.query<{ id: string }>(
+        "INSERT INTO public.exchange_rates(base_currency,quote_currency,rate,source,effective_date,validation_status) VALUES('USD','VES',300.00000000,$1,$2::date,'valid') RETURNING id",
+        [BCV_SOURCE, tomorrow],
+      );
+      fxFutureRateId = future.rows[0]!.id;
+      fxFutureRateCreated = true;
+    }
     const auth = await client.query<{ starts_at: Date }>("SELECT starts_at FROM public.fx_contingency_authorizations WHERE id=$1", [authorizationId]);
     await recordFxBcvSuccess("inserted", tomorrow, new Date(auth.rows[0]!.starts_at.getTime() - 1000));
 

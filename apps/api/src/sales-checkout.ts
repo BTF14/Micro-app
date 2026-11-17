@@ -89,10 +89,9 @@ function caracasDate(now: Date): string {
   return `${value("year")}-${value("month")}-${value("day")}`;
 }
 /**
- * A new sale requires both today's valid BCV row and a successful latest sync.
- * FOR SHARE linearizes this decision against the sync worker's UPDATE to the
- * singleton state row and remains held until the enclosing checkout transaction
- * commits or rolls back. The lock is not held while BCV HTTP is fetched.
+ * The BCV sync-state lock is acquired first by findApplicableCheckoutRate.
+ * This migrator-owned helper then takes a share lock on the active FX row;
+ * runtime deliberately has SELECT-only table access.
  */
 async function findActiveManualFxAuthorization(
   tx: import("./database").DatabaseClient, organizationId: string, branchId: string,
@@ -105,6 +104,12 @@ async function findActiveManualFxAuthorization(
   return result.rows[0] ?? null;
 }
 
+/**
+ * A new sale requires today's valid BCV row and a successful latest sync.
+ * lock_bcv_sync_state() takes FOR SHARE against the producer's UPDATE and holds
+ * it until the checkout transaction commits or rolls back; it is not held
+ * while the BCV HTTP fetch runs.
+ */
 export async function findApplicableCheckoutRate(tx: import("./database").DatabaseClient, now = new Date()): Promise<RateRow | null> {
   const today = caracasDate(now);
   const syncState = await tx.query<{

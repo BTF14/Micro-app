@@ -222,7 +222,8 @@ GRANT SELECT, INSERT ON TABLE public.fx_contingency_events TO microapp_runtime;
 -- Keep the producer's existing narrow 0022 contract unchanged.
 REVOKE ALL ON TABLE public.fx_user_pin_credentials, public.fx_contingency_delegations,
   public.fx_contingency_authorizations FROM PUBLIC, microapp_runtime, microapp_bcv_sync;
-GRANT SELECT, INSERT, UPDATE ON TABLE public.fx_user_pin_credentials TO microapp_runtime;
+GRANT SELECT ON TABLE public.fx_user_pin_credentials TO microapp_runtime;
+REVOKE INSERT, UPDATE, DELETE, TRUNCATE, TRIGGER ON TABLE public.fx_user_pin_credentials FROM microapp_runtime;
 GRANT SELECT ON TABLE public.fx_contingency_delegations, public.fx_contingency_authorizations TO microapp_runtime;
 REVOKE UPDATE, DELETE, TRUNCATE, TRIGGER ON TABLE public.fx_contingency_delegations, public.fx_contingency_authorizations FROM microapp_runtime;
 
@@ -865,5 +866,45 @@ GRANT EXECUTE ON FUNCTION public.create_fx_contingency_authorization(uuid,uuid,n
 REVOKE INSERT, UPDATE, DELETE, TRUNCATE, TRIGGER ON TABLE public.fx_contingency_authorizations FROM microapp_runtime;
 REVOKE INSERT, UPDATE, DELETE, TRUNCATE, TRIGGER ON TABLE public.fx_contingency_delegations FROM microapp_runtime;
 
+
+
+CREATE FUNCTION public.set_fx_user_pin_credential(
+  p_organization_id uuid, p_user_id uuid, p_kdf_version text,
+  p_iterations integer, p_salt bytea, p_pin_hash bytea
+)
+RETURNS void
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = pg_catalog
+AS $set_fx_user_pin_credential$
+BEGIN
+  IF p_kdf_version <> 'pbkdf2-sha256-v1'
+     OR p_iterations NOT BETWEEN 100000 AND 1000000
+     OR pg_catalog.octet_length(p_salt) NOT BETWEEN 16 AND 64
+     OR pg_catalog.octet_length(p_pin_hash) <> 32 THEN
+    RAISE EXCEPTION 'FX_PIN_CREDENTIAL_FORMAT_INVALID' USING ERRCODE = '23514';
+  END IF;
+  IF NOT EXISTS (
+    SELECT 1 FROM public.organization_members member
+    JOIN public.app_users actor ON actor.id=member.user_id
+    JOIN public.organizations org ON org.id=member.organization_id
+    WHERE member.organization_id=p_organization_id AND member.user_id=p_user_id
+      AND member.is_active AND actor.is_active AND org.is_active
+      AND member.role IN ('owner','admin')
+  ) THEN RAISE EXCEPTION 'FX_PIN_ACTOR_SCOPE_INVALID' USING ERRCODE = '23514'; END IF;
+  INSERT INTO public.fx_user_pin_credentials (
+    organization_id,user_id,kdf_version,iterations,salt,pin_hash
+  ) VALUES (
+    p_organization_id,p_user_id,p_kdf_version,p_iterations,p_salt,p_pin_hash
+  )
+  ON CONFLICT (organization_id,user_id) DO UPDATE
+    SET kdf_version=EXCLUDED.kdf_version,iterations=EXCLUDED.iterations,
+        salt=EXCLUDED.salt,pin_hash=EXCLUDED.pin_hash,
+        updated_at=pg_catalog.clock_timestamp();
+END;
+$set_fx_user_pin_credential$;
+ALTER FUNCTION public.set_fx_user_pin_credential(uuid,uuid,text,integer,bytea,bytea) OWNER TO microapp_migrator;
+REVOKE ALL ON FUNCTION public.set_fx_user_pin_credential(uuid,uuid,text,integer,bytea,bytea) FROM PUBLIC;
+GRANT EXECUTE ON FUNCTION public.set_fx_user_pin_credential(uuid,uuid,text,integer,bytea,bytea) TO microapp_runtime;
 
 COMMIT;

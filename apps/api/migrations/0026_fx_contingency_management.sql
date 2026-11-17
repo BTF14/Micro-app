@@ -744,6 +744,7 @@ DECLARE
   starts_time timestamptz := pg_catalog.clock_timestamp();
   calculated_bps integer;
   operation_date date := (pg_catalog.clock_timestamp() AT TIME ZONE 'America/Caracas')::date;
+  latest_sync_ok boolean := false;
 BEGIN
   IF p_rate IS NULL OR p_rate <= 0 OR p_reference_rate_value IS NULL OR p_reference_rate_value <= 0
      OR p_reason IS NULL OR pg_catalog.length(pg_catalog.btrim(p_reason)) NOT BETWEEN 1 AND 1000
@@ -798,6 +799,22 @@ BEGIN
        AND er.validation_status = 'valid'
        AND er.effective_date <= operation_date
   ) THEN RAISE EXCEPTION 'FX_REFERENCE_RATE_NOT_APPLICABLE' USING ERRCODE = '23514'; END IF;
+
+  SELECT (state.last_success_at IS NOT NULL
+          AND state.last_outcome IN ('inserted','unchanged')
+          AND state.last_effective_date = operation_date)
+    INTO latest_sync_ok
+    FROM public.bcv_sync_state state
+   WHERE state.singleton = true
+   FOR SHARE;
+  IF COALESCE(latest_sync_ok,false) AND EXISTS (
+    SELECT 1 FROM public.exchange_rates er
+     WHERE er.source='BCV_OFFICIAL_HTML_V1'
+       AND er.effective_date=operation_date
+       AND er.validation_status='valid'
+  ) THEN
+    RAISE EXCEPTION 'BCV_RATE_ALREADY_AVAILABLE' USING ERRCODE = '23514';
+  END IF;
 
   INSERT INTO public.fx_contingency_authorizations (
     organization_id, branch_id, rate, reference_rate_value,

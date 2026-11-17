@@ -464,6 +464,7 @@ describe.skipIf(!isDisposableCheckoutDatabase || !isDisposableBcvProducerDatabas
       }
     }
     if (previousBcvSyncState) {
+      await client.query("ALTER TABLE public.bcv_sync_state DISABLE TRIGGER bcv_sync_success_observation_capture");
       await client.query(
         `UPDATE public.bcv_sync_state
             SET attempt_id=$1::uuid,last_attempt_at=$2::timestamptz,last_success_at=$3::timestamptz,
@@ -476,6 +477,7 @@ describe.skipIf(!isDisposableCheckoutDatabase || !isDisposableBcvProducerDatabas
           previousBcvSyncState.updated_at,
         ],
       );
+      await client.query("ALTER TABLE public.bcv_sync_state ENABLE TRIGGER bcv_sync_success_observation_capture");
     }
     await client.query('SELECT pg_advisory_unlock(20261117, 260026)').catch(() => undefined);
     await producerClient.end();

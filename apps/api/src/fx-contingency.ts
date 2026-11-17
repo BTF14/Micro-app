@@ -118,7 +118,10 @@ async function verifyAndRateLimitPin(
   const pepper = c.env.FX_PIN_PEPPER;
   const ratePepper = c.env.FX_PIN_RATE_LIMIT_PEPPER;
   if (!pepper || pepper.length < 32 || !ratePepper || ratePepper.length < 32) return "unavailable";
-  const ip = c.req.header("CF-Connecting-IP") ?? c.req.header("X-Real-IP") ?? "unknown";
+  // Cloudflare Workers supplies CF-Connecting-IP. Do not trust caller-
+  // controlled X-Real-IP or collapse missing addresses into a shared bucket.
+  const ip = c.req.header("CF-Connecting-IP");
+  if (!ip || ip.length > 128) return "unavailable";
   const account = await consumeAuthRateLimit(tx, `fx-pin:user:${tenant.organizationId}:${tenant.userId}`, PIN_LIMIT, PIN_WINDOW_SECONDS, ratePepper);
   const address = await consumeAuthRateLimit(tx, `fx-pin:ip:${ip}`, PIN_LIMIT * 3, PIN_WINDOW_SECONDS, ratePepper);
   if (!account.allowed || !address.allowed) return "limited";

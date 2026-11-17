@@ -9,20 +9,6 @@ vi.mock("@neondatabase/serverless", async () => {
   return { Client: class extends postgres.Client {
     constructor(connectionString: string) { super({ connectionString }); }
   } };
-  it("rejects a closed operator shift", async () => {
-    await seedBalance("2.000");
-    await client.query(
-      `UPDATE public.register_shifts
-          SET closed_at=now(),closing_cash_usd=0,closing_cash_ves=0,closed_by_user_id=$2
-        WHERE organization_id=$1 AND id=$3`,
-      [organizationId, userId, shiftId],
-    );
-    const response = await request(checkoutBody("1.000", "23.8500"), "closed-shift-" + crypto.randomUUID());
-    expect(response.status).toBe(409);
-    expect((await response.json() as { error: string }).error).toBe("OPEN_SHIFT_REQUIRED");
-    expect((await readBalance()).on_hand_quantity).toBe("2.000");
-  });
-
 });
 
 const app = (await import("./index")).default;
@@ -1360,5 +1346,20 @@ describe.skipIf(!isDisposableCheckoutDatabase || !isDisposableBcvProducerDatabas
     const status = await client.query("SELECT status FROM public.fx_contingency_authorizations WHERE id=$1", [authorizationId]);
     expect(status.rows[0].status).toBe("active");
   });
+
+  it("rejects a closed operator shift", async () => {
+    await seedBalance("2.000");
+    await client.query(
+      `UPDATE public.register_shifts
+          SET closed_at=now(),closing_cash_usd=0,closing_cash_ves=0,closed_by_user_id=$2
+        WHERE organization_id=$1 AND id=$3`,
+      [organizationId, userId, shiftId],
+    );
+    const response = await request(checkoutBody("1.000", "23.8500"), "closed-shift-" + crypto.randomUUID());
+    expect(response.status).toBe(409);
+    expect((await response.json() as { error: string }).error).toBe("OPEN_SHIFT_REQUIRED");
+    expect((await readBalance()).on_hand_quantity).toBe("2.000");
+  });
+
 
 });

@@ -207,16 +207,18 @@ describe.skipIf(!safeDb)("FX contingency PostgreSQL integration — PG-01..PG-30
   });
 
   afterEach(async () => {
-    if (!admin || !organizationId || !branchId || !ownerId) return;
-    const active = await admin.query<{ id: string }>(
-      "SELECT id FROM public.fx_contingency_authorizations WHERE organization_id=$1 AND branch_id=$2 AND status='active'",
-      [organizationId, branchId],
-    );
-    for (const authorization of active.rows) {
-      await admin.query(
-        "SELECT public.transition_fx_contingency_authorization($1,$2,$3,'revoked',$4,'owner','PG fixture cleanup')",
-        [organizationId, branchId, authorization.id, ownerId],
+    if (!admin || !organizationId || !ownerId) return;
+    for (const cleanupBranchId of branches) {
+      const active = await admin.query<{ id: string }>(
+        "SELECT id FROM public.fx_contingency_authorizations WHERE organization_id=$1 AND branch_id=$2 AND status='active'",
+        [organizationId, cleanupBranchId],
       );
+      for (const authorization of active.rows) {
+        await admin.query(
+          "SELECT public.transition_fx_contingency_authorization($1,$2,$3,'revoked',$4,'owner','PG fixture cleanup')",
+          [organizationId, cleanupBranchId, authorization.id, ownerId],
+        );
+      }
     }
   });
 

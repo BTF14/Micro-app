@@ -305,6 +305,11 @@ function postgresCode(error: unknown): string | undefined {
   return typeof error.code === "string" ? error.code : undefined;
 }
 
+function postgresMessage(error: unknown): string {
+  return error && typeof error === "object" && "message" in error && typeof error.message === "string"
+    ? error.message : "";
+}
+
 async function loadSaleResponse(
   tx: import("./database").DatabaseClient,
   organizationId: string,
@@ -726,6 +731,39 @@ export function registerSalesCheckoutRoutes(app: Hono<{ Bindings: Bindings }>): 
       }
     } catch (error) {
       const code = postgresCode(error);
+      if (code === "23514" && postgresMessage(error).includes("MANUAL_FX_CONTINGENCY_BCV_RESTORED")) {
+        // The checkout transaction has rolled back before this independent
+        // transition. Recheck the durable observation and commit bcv_restored
+        // separately so a later checkout failure cannot erase the event.
+        try {
+          await withDatabaseClient(c.env.DATABASE_URL, (client) =>
+            withDatabaseTransaction(client, async (tx) => {
+              const active = await tx.query<{
+                id: string; authorized_by_user_id: string; authorized_by_role: "owner" | "admin";
+              }>(
+                `SELECT id,authorized_by_user_id,authorized_by_role
+                   FROM public.fx_contingency_authorizations
+                  WHERE organization_id=$1 AND branch_id=$2 AND status='active'
+                  ORDER BY starts_at DESC LIMIT 1 FOR UPDATE`,
+                [organizationId, branchId],
+              );
+              const auth = active.rows[0];
+              if (auth) {
+                await tx.query(
+                  `SELECT public.transition_fx_contingency_authorization(
+                     $1::uuid,$2::uuid,$3::uuid,'bcv_restored',$4::uuid,$5::text,
+                     'official BCV rate recovered after authorization start'
+                   )`,
+                  [organizationId, branchId, auth.id, auth.authorized_by_user_id, auth.authorized_by_role],
+                );
+              }
+            }),
+          );
+        } catch {
+          console.error({ event: "FX_BCV_RESTORATION_TRANSITION_FAILED" });
+        }
+        return c.json({ error: "BCV_RATE_RESTORED", message: "BCV recuperó una tasa oficial aplicable. La contingencia fue cerrada; vuelve a intentar la venta." }, 409);
+      }
       if (code === "23505") return c.json({ error: "IDEMPOTENCY_CONFLICT", message: "La clave de idempotencia ya fue utilizada." }, 409);
       if (code === "23503" || code === "23514" || code === "22P02") {
         return c.json({ error: "CHECKOUT_REJECTED", message: "La operación no cumple las reglas de integridad." }, 409);

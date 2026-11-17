@@ -1,7 +1,7 @@
 # Corte vigente — PR 1 Contingencia Manual BCV implementada (2026-11-17)
 
 - **Main exacto:** `04d3679189edaab17221f1e8cd425cc68fa53155` (verificado en vivo; base de PR #377).
-- **PR 1:** [#377](https://github.com/BTF14/Micro-app/pull/377), OPEN / Draft deliberado; rama `feat/fx-contingency-pr1-20261117`; HEAD `7afa4ddb9f4c6fee5ba1bd1bb5629b02c3c0239d`.
+- **PR 1:** [#377](https://github.com/BTF14/Micro-app/pull/377), OPEN / Draft deliberado; rama `feat/fx-contingency-pr1-20261117`; SHA de implementación de código `7afa4ddb9f4c6fee5ba1bd1bb5629b02c3c0239d`; los commits posteriores son de cierre documental. Consultar el HEAD vivo del PR #377 para el SHA documental más reciente.
 - **Implementación:** migración aditiva `0026_fx_contingency_management.sql` + assertions; PIN/KDF, rate limits, delegaciones, autorizaciones/eventos append-only, observaciones BCV inmutables, triggers de checkout, API Hono y UI mínima. Se preservó `0022_bcv_dedicated_producer_role.sql`.
 - **Detalles críticos:** `clock_timestamp()` después de los locks BCV/FX; `observed_at > starts_at` sin exigir que `last_success_at` avance; referencia BCV congelada por ID/valor/fecha; límites decimales exactos 5%/20%; ACK de caja vinculado a `sales.created_by`; respuesta manual nunca etiqueta tasa como BCV.
 - **Verificación exact-HEAD:** CI run [#44187952802](https://github.com/BTF14/Micro-app/actions/runs/44187952802) SUCCESS; 12/12 workflow runs SUCCESS en el SHA `7afa4ddb9f4c6fee5ba1bd1bb5629b02c3c0239d`. Incluye migración/assertions PostgreSQL 18, Wrangler Workers KDF, PG-01..PG-30, checkout PostgreSQL, backup/restore, Playwright E2E, Semgrep, Security scan y secret-history scan.

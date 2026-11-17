@@ -1,3 +1,20 @@
+# Corte vigente — post-merge PR #377 y roadmap BCV no hábil (2026-11-17)
+
+- **Main exacto verificado:** 25e37dc5dcfb18349a6b7f384d109e493a581c3d; PR #377 MERGED en este SHA.
+- **PR #377 / Contingencia Manual BCV:** mergeada técnicamente. **AC-7 CERRADO** para su alcance. **AC-6 ABIERTO**; contingencia manual apagada/no configurada y sin autorización de activación comercial. El merge no equivale a validación fiscal ni a GO de producción.
+- **Freeze v1.1:** vigente. Issue #53 OPEN/P0; **PRODUCTION: NOT READY**.
+- **Decisión nueva del propietario (2026-11-17):** preparar spec aditiva 0027 para permitir ventas en fines de semana/feriados usando la fecha efectiva futura publicada por BCV, sin calendario SUDEBAN anual manual. Prioridad: tasa válida de hoy; si no existe, futura más próxima dentro de 5 días solo bajo condiciones diferenciadas de sábado/domingo y feriado entre semana, con sync saludable / sync exitoso del día respectivamente. Si no se demuestra, 409 BCV_RATE_NOT_CURRENT. Conservar operation_date y effective_date por separado. Detalle vinculante: ADR docs/decisions/ADR-20261117-bcv-nonbusiness-day-effective-date.md.
+- **Paso 1 actual:** PR Draft de documentación/tooling en rama docs/reconcile-state-and-skill-registry; registrar PR/HEAD final al abrirla. Sin cambios de app ni SQL.
+- **Orden vigente:** Paso 1 Docs/Tooling → Carril A (0 SQL) + spec 0027 → cierre/reconciliación Nivel 1 + 0027 antes de Carril B1 (0028+) → inventory-accounting-review → B1 → Hardening → PR2 CSV → PR3 Scanner/B2 → PR4 cierres/reportes → AC-6/ve-fx-compliance-review + pre-prod.
+- **Nivel 1:** sigue siendo gate obligatorio. No dar por cerrados RPO/RTO medidos, entrega/ACK de alertas, coste total USD 0 ni restore poblado/GO-NO-GO sin evidencia específica. Ver SECURITY_ROADMAP.md.
+- No se modificaron apps/**, workflows, SQL/migraciones, Neon, Cloudflare, secretos, datos reales, billing ni producción.
+
+---
+
+> **HISTORIAL SUPERSEDIDO:** los snapshots anteriores se conservan como evidencia histórica. Prevalece este corte y el estado vivo de GitHub.
+
+---
+
 # Corte vigente — PR 1 Contingencia Manual BCV — AC-7 cerrado (2026-11-17)
 
 - **Main/base exacta:** `04d3679189edaab17221f1e8cd425cc68fa53155` (base de PR #377).

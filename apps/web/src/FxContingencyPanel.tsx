@@ -18,9 +18,15 @@ type FxState = {
 };
 
 function localExpiry(): string {
-  const date = new Date(Date.now() + 4 * 60 * 60 * 1000);
-  date.setMinutes(date.getMinutes() - date.getTimezoneOffset());
-  return date.toISOString().slice(0, 16);
+  const now = new Date();
+  const parts = new Intl.DateTimeFormat("en-US", {
+    timeZone: "America/Caracas", year: "numeric", month: "2-digit", day: "2-digit",
+  }).formatToParts(now);
+  const part = (key: string) => Number(parts.find((item) => item.type === key)?.value ?? 0);
+  const caracasMidnightUtc = Date.UTC(part("year"), part("month") - 1, part("day") + 1, 4, 0, 0);
+  const expiry = new Date(Math.min(now.getTime() + 4 * 60 * 60 * 1000, caracasMidnightUtc - 120_000));
+  expiry.setMinutes(expiry.getMinutes() - expiry.getTimezoneOffset());
+  return expiry.toISOString().slice(0, 16);
 }
 
 export default function FxContingencyPanel({ organizationId, role }: { organizationId: string; role: "owner" | "admin" }) {

@@ -116,16 +116,19 @@ export async function findApplicableCheckoutRate(tx: import("./database").Databa
     last_success_at: string | null;
     last_outcome: string | null;
     last_effective_date: string | null;
+    last_error_code: string | null;
   }>(
     `SELECT last_success_at,
             last_outcome,
-            last_effective_date::text AS last_effective_date
+            last_effective_date::text AS last_effective_date,
+            last_error_code
        FROM public.lock_bcv_sync_state()`,
   );
   const state = syncState.rows[0];
   if (
     !state ||
     !state.last_success_at ||
+    state.last_error_code !== null ||
     (state.last_outcome !== "inserted" && state.last_outcome !== "unchanged") ||
     (state.last_effective_date === null || state.last_effective_date < today)
   ) return null;

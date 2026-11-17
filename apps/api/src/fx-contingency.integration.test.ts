@@ -1,5 +1,6 @@
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { Client } from "pg";
+import { consumeAuthRateLimit, hashAuthRateLimitKey } from "./auth-rate-limit";
 
 const env = (globalThis as typeof globalThis & { process?: { env?: Record<string, string | undefined> } }).process?.env;
 const adminUrl = env?.DATABASE_URL_ADMIN;
@@ -48,6 +49,7 @@ describe.skipIf(!safeDb)("FX contingency PostgreSQL integration — PG-01..PG-30
   const authIds: string[] = [];
   const attemptIds: string[] = [];
   const futureRateIds: string[] = [];
+  const fxRateLimitHashes: string[] = [];
   let futureRateCreated = false;
   let previousFutureRate: { id: string; rate: string; validation_status: string; fetched_at: Date } | null = null;
 
@@ -217,6 +219,7 @@ describe.skipIf(!safeDb)("FX contingency PostgreSQL integration — PG-01..PG-30
         await admin.query("DELETE FROM public.fx_contingency_delegations WHERE organization_id=$1", [organizationId]);
         await admin.query("DELETE FROM public.fx_user_pin_credentials WHERE organization_id=$1", [organizationId]);
         await admin.query("DELETE FROM public.audit_logs WHERE organization_id=$1", [organizationId]);
+        if (fxRateLimitHashes.length) await admin.query("DELETE FROM public.auth_rate_limits WHERE key_hash=ANY($1::text[])", [fxRateLimitHashes]);
         if (attemptIds.length) await admin.query("DELETE FROM public.bcv_sync_success_observations WHERE attempt_id=ANY($1::uuid[])", [attemptIds]);
         await admin.query("DELETE FROM public.branch_memberships WHERE organization_id=$1", [organizationId]);
         await admin.query("DELETE FROM public.branches WHERE organization_id=$1", [organizationId]);
@@ -518,4 +521,24 @@ describe.skipIf(!safeDb)("FX contingency PostgreSQL integration — PG-01..PG-30
     const nextMidnight = Date.UTC(get("year"), get("month") - 1, get("day") + 1, 4, 0, 0);
     await expect(createAuthorization(branch, "101.00000000", ownerId, OWNER, new Date(nextMidnight + 5000).toISOString())).rejects.toMatchObject({ code: "23514" });
   });
+
+  it("consumes independent account and IP rate-limit buckets for PIN verification", async () => {
+    const suffix = crypto.randomUUID();
+    const accountKey = `fx-pin:user:${organizationId}:${ownerId}:${suffix}`;
+    const ipKey = `fx-pin:ip:203.0.113.99:${suffix}`;
+    const pepper = "fx-pin-rate-limit-test-pepper-32-characters";
+    fxRateLimitHashes.push(
+      await hashAuthRateLimitKey(accountKey, pepper),
+      await hashAuthRateLimitKey(ipKey, pepper),
+    );
+    for (let i = 0; i < 5; i++) {
+      expect((await consumeAuthRateLimit(runtime, accountKey, 5, 900, pepper)).allowed).toBe(true);
+    }
+    expect((await consumeAuthRateLimit(runtime, accountKey, 5, 900, pepper)).allowed).toBe(false);
+    for (let i = 0; i < 5; i++) {
+      expect((await consumeAuthRateLimit(runtime, ipKey, 5, 900, pepper)).allowed).toBe(true);
+    }
+    expect((await consumeAuthRateLimit(runtime, ipKey, 5, 900, pepper)).allowed).toBe(false);
+  });
+
 });

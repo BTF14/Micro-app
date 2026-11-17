@@ -225,11 +225,11 @@ REVOKE ALL ON TABLE public.fx_contingency_events FROM PUBLIC, microapp_runtime, 
 GRANT SELECT ON TABLE public.bcv_sync_success_observations TO microapp_runtime;
 GRANT SELECT, INSERT ON TABLE public.fx_contingency_events TO microapp_runtime;
 
+-- PIN verifier material is never directly readable by runtime or the producer.
+-- Runtime uses only the narrow SECURITY DEFINER lock helper and setter.
 -- Keep the producer's existing narrow 0022 contract unchanged.
 REVOKE ALL ON TABLE public.fx_user_pin_credentials, public.fx_contingency_delegations,
   public.fx_contingency_authorizations FROM PUBLIC, microapp_runtime, microapp_bcv_sync;
-GRANT SELECT ON TABLE public.fx_user_pin_credentials TO microapp_runtime;
-REVOKE INSERT, UPDATE, DELETE, TRUNCATE, TRIGGER ON TABLE public.fx_user_pin_credentials FROM microapp_runtime;
 GRANT SELECT ON TABLE public.fx_contingency_delegations, public.fx_contingency_authorizations TO microapp_runtime;
 REVOKE UPDATE, DELETE, TRUNCATE, TRIGGER ON TABLE public.fx_contingency_delegations, public.fx_contingency_authorizations FROM microapp_runtime;
 

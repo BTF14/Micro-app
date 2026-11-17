@@ -200,15 +200,28 @@ BEGIN
     END IF;
   END LOOP;
 
-  IF NOT pg_catalog.has_table_privilege('microapp_runtime','public.fx_user_pin_credentials','SELECT')
+  IF pg_catalog.has_table_privilege('microapp_runtime','public.fx_user_pin_credentials','SELECT')
     OR pg_catalog.has_table_privilege('microapp_runtime','public.fx_user_pin_credentials','INSERT')
     OR pg_catalog.has_table_privilege('microapp_runtime','public.fx_user_pin_credentials','UPDATE')
     OR pg_catalog.has_table_privilege('microapp_runtime','public.fx_user_pin_credentials','DELETE')
+    OR pg_catalog.has_table_privilege('microapp_runtime','public.fx_user_pin_credentials','TRUNCATE')
+    OR pg_catalog.has_table_privilege('microapp_runtime','public.fx_user_pin_credentials','TRIGGER')
     OR pg_catalog.has_table_privilege('microapp_bcv_sync','public.fx_user_pin_credentials','SELECT')
     OR NOT pg_catalog.has_function_privilege(
       'microapp_runtime',
       'public.set_fx_user_pin_credential(uuid,uuid,uuid,text,integer,bytea,bytea)',
       'EXECUTE'
+    )
+    OR pg_catalog.has_function_privilege(
+      'microapp_bcv_sync',
+      'public.set_fx_user_pin_credential(uuid,uuid,uuid,text,integer,bytea,bytea)',
+      'EXECUTE'
+    )
+    OR EXISTS (
+      SELECT 1 FROM pg_catalog.pg_proc proc,
+        LATERAL pg_catalog.aclexplode(COALESCE(proc.proacl,pg_catalog.acldefault('f',proc.proowner))) acl
+       WHERE proc.oid='public.set_fx_user_pin_credential(uuid,uuid,uuid,text,integer,bytea,bytea)'::regprocedure
+         AND acl.grantee=0 AND acl.privilege_type='EXECUTE'
     ) THEN
     RAISE EXCEPTION 'FX_PIN_CREDENTIAL_LEAST_PRIVILEGE_INVALID';
   END IF;

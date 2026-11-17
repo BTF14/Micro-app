@@ -9,6 +9,7 @@ import { resolveBranchContext } from "./branch-context";
 import { withDatabaseClient, withDatabaseTransaction } from "./database";
 import { hashFxPin, verifyFxPin } from "./fx-pin";
 import { resolveTenantContext } from "./tenant-context";
+import { isValidClientIp } from "./runtime-write-rate-limit";
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const MAX_BODY = 8 * 1024;
@@ -123,7 +124,7 @@ async function verifyAndRateLimitPin(
   // Cloudflare Workers supplies CF-Connecting-IP. Do not trust caller-
   // controlled X-Real-IP or collapse missing addresses into a shared bucket.
   const ip = c.req.header("CF-Connecting-IP");
-  if (!ip || ip.length > 128) return "unavailable";
+  if (!ip || !isValidClientIp(ip)) return "unavailable";
   const account = await consumeAuthRateLimit(tx, `fx-pin:user:${tenant.organizationId}:${tenant.userId}`, PIN_LIMIT, PIN_WINDOW_SECONDS, ratePepper);
   const address = await consumeAuthRateLimit(tx, `fx-pin:ip:${ip}`, PIN_LIMIT * 3, PIN_WINDOW_SECONDS, ratePepper);
   if (!account.allowed || !address.allowed) return "limited";
@@ -198,9 +199,7 @@ export function registerFxContingencyRoutes(app: Hono<{ Bindings: Bindings }>): 
         const actor = await resolveActor(tx, token, org);
         if (actor.kind !== "ok") return actor;
         const existing = await tx.query<{ kdf_version: string; iterations: number; salt_base64: string; hash_base64: string }>(
-          `SELECT kdf_version,iterations,pg_catalog.encode(salt,'base64') AS salt_base64,
-                  pg_catalog.encode(pin_hash,'base64') AS hash_base64
-             FROM public.fx_user_pin_credentials WHERE organization_id=$1 AND user_id=$2`,
+          `SELECT * FROM public.lock_fx_user_pin_credential($1::uuid,$2::uuid)`,
           [actor.tenant.organizationId, actor.tenant.userId],
         );
         if (existing.rows[0]) {
@@ -215,13 +214,6 @@ export function registerFxContingencyRoutes(app: Hono<{ Bindings: Bindings }>): 
              pg_catalog.decode($5,'base64'),pg_catalog.decode($6,'base64')
            )`,
           [actor.tenant.organizationId, actor.tenant.userId, hash.kdfVersion, hash.iterations, hash.saltBase64, hash.hashBase64],
-        );
-        await tx.query(
-          `INSERT INTO public.audit_logs
-             (organization_id,actor_user_id,action,entity_type,entity_id,metadata)
-           VALUES ($1,$2,'fx.pin.configured','fx_pin_credential',$3,$4::jsonb)`,
-          [actor.tenant.organizationId, actor.tenant.userId, actor.tenant.userId,
-            JSON.stringify({ kdf_version: hash.kdfVersion, iterations: hash.iterations })],
         );
         return { kind: "ok" as const };
       }));

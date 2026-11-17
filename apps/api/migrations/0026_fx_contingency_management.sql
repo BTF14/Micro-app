@@ -85,10 +85,13 @@ CREATE TABLE public.fx_contingency_authorizations (
       pg_catalog.abs(rate - reference_rate_value) / reference_rate_value * 10000
     )::integer
   ),
+  CHECK (pg_catalog.abs(rate - reference_rate_value) * 10000 <= reference_rate_value * 2000),
   CHECK (
-    (deviation_bps <= 500 AND elevated_confirmation_at IS NULL AND elevated_confirmation_reason IS NULL)
+    (pg_catalog.abs(rate - reference_rate_value) * 10000 <= reference_rate_value * 500
+      AND elevated_confirmation_at IS NULL AND elevated_confirmation_reason IS NULL)
     OR
-    (deviation_bps > 500 AND elevated_confirmation_at IS NOT NULL
+    (pg_catalog.abs(rate - reference_rate_value) * 10000 > reference_rate_value * 500
+      AND elevated_confirmation_at IS NOT NULL
       AND elevated_confirmation_reason IS NOT NULL
       AND pg_catalog.length(pg_catalog.btrim(elevated_confirmation_reason)) BETWEEN 1 AND 500)
   ),
@@ -793,16 +796,17 @@ BEGIN
   calculated_bps := pg_catalog.round(
     pg_catalog.abs(p_rate - p_reference_rate_value) / p_reference_rate_value * 10000
   )::integer;
-  IF calculated_bps > 2000 THEN
+  IF pg_catalog.abs(p_rate - p_reference_rate_value) * 10000 > p_reference_rate_value * 2000 THEN
     RAISE EXCEPTION 'FX_AUTHORIZATION_DEVIATION_LIMIT_EXCEEDED' USING ERRCODE = '23514';
   END IF;
-  IF calculated_bps > 500 AND (
+  IF pg_catalog.abs(p_rate - p_reference_rate_value) * 10000 > p_reference_rate_value * 500 AND (
     p_elevated_confirmation_reason IS NULL
     OR pg_catalog.length(pg_catalog.btrim(p_elevated_confirmation_reason)) NOT BETWEEN 1 AND 500
   ) THEN
     RAISE EXCEPTION 'FX_ELEVATED_CONFIRMATION_REQUIRED' USING ERRCODE = '23514';
   END IF;
-  IF calculated_bps <= 500 AND p_elevated_confirmation_reason IS NOT NULL THEN
+  IF pg_catalog.abs(p_rate - p_reference_rate_value) * 10000 <= p_reference_rate_value * 500
+     AND p_elevated_confirmation_reason IS NOT NULL THEN
     RAISE EXCEPTION 'FX_ELEVATED_CONFIRMATION_NOT_APPLICABLE' USING ERRCODE = '23514';
   END IF;
   IF NOT EXISTS (

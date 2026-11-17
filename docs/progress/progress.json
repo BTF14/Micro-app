@@ -6,9 +6,9 @@
     "percent": 55.6
   },
   "production_readiness": {
-    "done": 19,
+    "done": 20,
     "total": 27,
-    "percent": 70.4
+    "percent": 74.1
   },
   "groups": [
     {
@@ -205,7 +205,7 @@
     },
     {
       "name": "Preparación para producción (gates)",
-      "done": 19,
+      "done": 20,
       "total": 27,
       "items": [
         {
@@ -249,8 +249,8 @@
           "done": true
         },
         {
-          "title": "Primera tasa BCV real persistida en Neon main y registro correspondiente en `bcv_sync_state`, tras la primera ventana elegible del lunes 2026-11-16; observar después de 11:05 UTC (07:05 VET). La prueba de conectividad #19 (HTTP 200, parser compatible) no satisface este gate ni demuestra persistencia en workerd.",
-          "done": false
+          "title": "Primera tasa BCV real persistida en Neon main y registro correspondiente en `bcv_sync_state`: PR #374 merge SHA `98e249778a52e9306a193e838edea4503e0343e6`; [BCV Node TLS sync #1](https://github.com/BTF14/Micro-app/actions/runs/43977544849) completó con `BCV_NODE_SYNC_COMPLETED` / `inserted`; observación API/panel del propietario a 2026-11-16T23:17:15Z confirmó `BCV_OFFICIAL_HTML_V1`, `effectiveDate: 2026-11-17`, `status: scheduled`. La tasa queda programada hasta 00:00 VET del 2026-11-17.",
+          "done": true
         },
         {
           "title": "E2E full-stack real en CI contra API Hono + PostgreSQL 18 efímero, sin mocks de `/api/*` (PR #366): catálogo, recepción, turno, checkout USD/VES, recibos, stock, cierre/recarga y rechazo de venta con caja cerrada. No valida producción real.",
@@ -281,7 +281,7 @@
           "done": true
         },
         {
-          "title": "Estabilidad posterior de BCV tras las ventanas programadas de 11:00 y 22:00 UTC, incluida la persistencia de tasas válidas.",
+          "title": "Estabilidad posterior de BCV: observar transición de la tasa `2026-11-17` a `current` desde 00:00 VET, siguiente corrida automática del runner Node en `main` y la inactividad inocua de `micro-app-bcv-sync` en Cloudflare.",
           "done": false
         },
         {
@@ -317,7 +317,7 @@
           "done": true
         }
       ],
-      "percent": 70.4
+      "percent": 74.1
     },
     {
       "name": "Bloqueos conocidos — corte 2026-11-14",
@@ -342,9 +342,8 @@
     }
   ],
   "production_blockers": [
-    "Primera tasa BCV real persistida en Neon main y registro correspondiente en `bcv_sync_state`, tras la primera ventana elegible del lunes 2026-11-16; observar después de 11:05 UTC (07:05 VET). La prueba de conectividad #19 (HTTP 200, parser compatible) no satisface este gate ni demuestra persistencia en workerd.",
     "Revisión legal/fiscal/contable si cambia el alcance FISC-01 interno o se incorpora facturación fiscal SENIAT.",
-    "Estabilidad posterior de BCV tras las ventanas programadas de 11:00 y 22:00 UTC, incluida la persistencia de tasas válidas.",
+    "Estabilidad posterior de BCV: observar transición de la tasa `2026-11-17` a `current` desde 00:00 VET, siguiente corrida automática del runner Node en `main` y la inactividad inocua de `micro-app-bcv-sync` en Cloudflare.",
     "Issue #53 P0: mantener abierto hasta demostrar todos sus criterios y obtener aceptación explícita de cierre.",
     "Revisión final GO/NO-GO del propietario después de cerrar todos los gates de producción.",
     "Pruebas E2E de ventas, inventario, caja y devoluciones en móvil/escritorio con API/DB reales de prueba.",

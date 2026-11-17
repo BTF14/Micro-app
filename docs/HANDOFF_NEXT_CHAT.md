@@ -1,3 +1,27 @@
+# Handoff vigente — Fase 1 BCV cerrada / Fase 2 preparada (2026-11-16)
+
+## Punto exacto de partida
+- `main` = `98e249778a52e9306a193e838edea4503e0343e6` (merge PR #374).
+- PR #374 MERGED; implementación HEAD `c38a77b9aef4a390f45417cb660c5e8cf44b448c`.
+- Check-runs exact-merge-SHA: 16/16 completed / success; GitHub API total 16 (no 15).
+- Run productivo: [BCV Node TLS sync #1](https://github.com/BTF14/Micro-app/actions/runs/43977544849), run #1, `workflow_dispatch`, `force_sync=false`, success. Log: `BCV_NODE_SYNC_COMPLETED`, outcome `inserted`; TLS pin validado; Node 24.22.2 y `@neondatabase/serverless`.
+- El propietario reportó API history 200 / `BCV_OFFICIAL_HTML_V1` / `effectiveDate: 2026-11-17` / `status: scheduled`, y panel inserted. Latest 503 antes de medianoche VET es esperado. La evidencia API/panel es owner-supplied; no inferir que la consulta se realizó desde GitHub.
+- ODD Fase 1 cerrado, AC-1..AC-11 verificados. No reabrir el trabajo ya completado.
+
+## Próximos pasos
+1. **2026-11-17 desde 00:00 VET:** comprobar que la tasa con effectiveDate 2026-11-17 pasa de `scheduled` a `current` y que `/latest` responde con tasa vigente.
+2. Observar la siguiente ejecución automática de `.github/workflows/bcv-sync.yml` en `main`; distinguir cron invocation, resultado y persistencia. No lanzar `force_sync=true` sin necesidad y autorización.
+3. Confirmar que `micro-app-bcv-sync` continúa inocuo/deshabilitado (`BCV_SYNC_ENABLED=false`) y que no genera escrituras duplicadas.
+4. Iniciar Fase 2: cerrar AC-6 (legal/contable) y AC-7 (seguridad independiente) para Contingencia Manual BCV, **Prioridad #1**, según `docs/decisions/ADR-20261114-v11-product-scope-and-roadmap.md`. No implementar hasta cerrar ambos gates.
+5. Mantener Issue #53 OPEN/P0, PRODUCTION NOT READY y freeze comercial. No hacer merge automático ni declarar GO.
+
+## Límites de la siguiente sesión
+- Esta tarea fue documental; no tocar `apps/**`, `.github/**`, SQL/migraciones, Neon, Cloudflare, Secrets, datos reales o billing.
+- No publicar identificadores de cuenta/proyecto/branch, connection strings, secretos ni datos personales.
+- Los 16 check-runs de merge SHA #374 están completos; la PR documental nueva requiere sus propios checks sobre su HEAD exacto.
+
+---
+
 # Handoff — Fase 1 BCV Node TLS — 2026-11-16
 
 ## Punto de partida y alcance

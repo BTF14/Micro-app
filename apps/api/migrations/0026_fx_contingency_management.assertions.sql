@@ -7,6 +7,8 @@ DECLARE
   owner_name text;
   function_oid oid;
   function_definition text;
+  function_owner text;
+  function_security_definer boolean;
   default_expression text;
   trigger_count integer;
   old_completion_checks integer;

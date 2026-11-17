@@ -466,7 +466,7 @@ export default function SalesPanel({
                   </div>
                 )}
 
-                <div className="sales-totals"><div><span>Subtotal USD</span><strong>{usd(computed.subtotalUsd)}</strong></div><div><span>Total VES · BCV</span><strong>{computed.totalVes === null ? "No disponible" : ves(computed.totalVes)}</strong></div><small>{usingManualFx ? `Tasa manual de contingencia (no oficial BCV): ${localized(effectiveRate!, 18, 8)} Bs./USD` : canConvert ? `Tasa BCV aplicada: ${localized(effectiveRate!, 18, 8)} Bs./USD` : "Conversión no disponible"}</small></div>
+                <div className="sales-totals"><div><span>Subtotal USD</span><strong>{usd(computed.subtotalUsd)}</strong></div><div><span>Total VES</span><strong>{computed.totalVes === null ? "No disponible" : ves(computed.totalVes)}</strong></div><small>{usingManualFx ? `Tasa manual de contingencia (no oficial BCV): ${localized(effectiveRate!, 18, 8)} Bs./USD` : canConvert ? `Tasa BCV aplicada: ${localized(effectiveRate!, 18, 8)} Bs./USD` : "Conversión no disponible"}</small></div>
 
                 <section className="sales-payments" aria-labelledby="sales-payments-title">
                   <div className="sales-payments-heading"><h3 id="sales-payments-title">Forma de pago</h3><label>Moneda<select value={currency} onChange={(event) => setPaymentCurrency(event.target.value as Currency)}><option value="USD">USD</option><option value="VES">VES</option></select></label></div>
@@ -479,8 +479,8 @@ export default function SalesPanel({
                   <div className="sales-payment-actions"><button type="button" className="sales-secondary-button" onClick={addPayment} disabled={payments.length >= 10}>Agregar pago</button><button type="button" className="sales-secondary-button" onClick={fillExactAmount}>Monto exacto</button></div>
                   <p className={paymentMatches ? "sales-payment-match" : "sales-payment-pending"} role="status">Pagos: {currency === "USD" ? usd(paymentTotal) : ves(paymentTotal)} · Total requerido: {currency === "USD" ? usd(expectedPayment) : ves(expectedPayment)}</p>
                 </section>
-                <button type="button" className="sales-primary-button sales-charge-button" onClick={() => void checkout()} disabled={!readyToCharge}>{checkoutBusy ? "Procesando venta…" : "Cobrar venta"}</button>
                 {usingManualFx && <label className="sales-manual-fx-ack"><input type="checkbox" checked={manualFxAcknowledged} onChange={(event) => setManualFxAcknowledged(event.target.checked)} /> Confirmo que comuniqué al cliente la tasa manual de contingencia (no oficial BCV) antes de cobrar.</label>}
+                <button type="button" className="sales-primary-button sales-charge-button" onClick={() => void checkout()} disabled={!readyToCharge}>{checkoutBusy ? "Procesando venta…" : "Cobrar venta"}</button>
                 {!canConvert && <small className="sales-disabled-reason">El cobro se habilita cuando exista una tasa BCV vigente o una contingencia autorizada y habilitada.</small>}
                 {canConvert && cart.length > 0 && !allQuantitiesValid && <small className="sales-disabled-reason">Corrige las cantidades del carrito antes de cobrar.</small>}
                 {canConvert && cart.length > 0 && !paymentMatches && <small className="sales-disabled-reason">Completa los pagos hasta cubrir exactamente el total en una sola moneda.</small>}

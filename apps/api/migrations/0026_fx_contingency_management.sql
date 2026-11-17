@@ -85,8 +85,9 @@ CREATE TABLE public.fx_contingency_authorizations (
       pg_catalog.abs(rate - reference_rate_value) / reference_rate_value * 10000
     )::integer
   ),
-  CHECK (pg_catalog.abs(rate - reference_rate_value) * 10000 <= reference_rate_value * 2000),
-  CHECK (
+  CONSTRAINT fx_contingency_authorizations_deviation_hard_limit_ck
+    CHECK (pg_catalog.abs(rate - reference_rate_value) * 10000 <= reference_rate_value * 2000),
+  CONSTRAINT fx_contingency_authorizations_elevated_confirmation_ck CHECK (
     (pg_catalog.abs(rate - reference_rate_value) * 10000 <= reference_rate_value * 500
       AND elevated_confirmation_at IS NULL AND elevated_confirmation_reason IS NULL)
     OR

@@ -142,6 +142,40 @@ function authFailure(c: RequestContext, kind: string) {
 }
 
 export function registerFxContingencyRoutes(app: Hono<{ Bindings: Bindings }>): void {
+  app.get("/api/orgs/:organizationId/fx-delegated-branches", async (c) => {
+    c.header("Cache-Control", "private, no-store");
+    const org = c.req.param("organizationId");
+    if (!UUID.test(org)) return c.json({ error: "INVALID_ORGANIZATION_ID" }, 400);
+    const token = session(c); if (!token) { clearSessionCookie(c); return c.json({ error: "UNAUTHENTICATED" }, 401); }
+    try {
+      const result = await withDatabaseClient(c.env.DATABASE_URL, (client) => withDatabaseTransaction(client, async (tx) => {
+        const actor = await resolveActor(tx, token, org);
+        if (actor.kind !== "ok") return actor;
+        const rows = await tx.query(
+          `SELECT branch.id,branch.name,branch.slug
+             FROM public.branches branch
+            WHERE branch.organization_id=$1 AND branch.is_active
+              AND (
+                $2::text='owner'
+                OR EXISTS (
+                  SELECT 1 FROM public.branch_memberships bm
+                  JOIN public.fx_contingency_delegations d
+                    ON d.organization_id=bm.organization_id AND d.branch_id=bm.branch_id
+                   AND d.user_id=bm.user_id AND d.status='active'
+                  WHERE bm.organization_id=branch.organization_id
+                    AND bm.branch_id=branch.id AND bm.user_id=$3 AND bm.is_active
+                )
+              )
+            ORDER BY lower(branch.name),branch.id`,
+          [actor.tenant.organizationId, actor.tenant.role, actor.tenant.userId],
+        );
+        return { kind: "ok" as const, branches: rows.rows };
+      }));
+      if (result.kind !== "ok") return authFailure(c, result.kind);
+      return c.json({ branches: result.branches });
+    } catch (error) { return failure(c, error); }
+  });
+
   app.put("/api/orgs/:organizationId/fx-pin", async (c) => {
     c.header("Cache-Control", "private, no-store");
     const org = c.req.param("organizationId");

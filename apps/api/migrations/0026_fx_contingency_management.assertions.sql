@@ -58,7 +58,8 @@ BEGIN
      AND p.proowner = (SELECT oid FROM pg_catalog.pg_roles WHERE rolname = 'microapp_migrator');
   IF function_oid IS NULL THEN RAISE EXCEPTION 'BCV_SALE_GUARD_SECURITY_CONTRACT_INVALID'; END IF;
   SELECT pg_catalog.pg_get_functiondef(function_oid) INTO function_definition;
-  IF pg_catalog.strpos(function_definition, 'FOR SHARE') = 0
+  IF pg_catalog.strpos(function_definition, 'clock_timestamp') = 0
+    OR pg_catalog.strpos(function_definition, 'FOR SHARE') = 0
     OR pg_catalog.strpos(function_definition, 'fx_source') = 0
     OR pg_catalog.strpos(function_definition, 'America/Caracas') = 0
   THEN RAISE EXCEPTION 'BCV_SALE_GUARD_DEFINITION_INVALID'; END IF;
@@ -78,6 +79,10 @@ BEGIN
      AND p.prosecdef
      AND p.proowner = (SELECT oid FROM pg_catalog.pg_roles WHERE rolname = 'microapp_migrator');
   IF function_oid IS NULL THEN RAISE EXCEPTION 'BCV_OBSERVATION_CAPTURE_FUNCTION_SECURITY_INVALID'; END IF;
+  SELECT pg_catalog.pg_get_functiondef(function_oid) INTO function_definition;
+  IF pg_catalog.strpos(function_definition, 'clock_timestamp') = 0 THEN
+    RAISE EXCEPTION 'BCV_OBSERVATION_TIME_MUST_USE_CLOCK_TIMESTAMP';
+  END IF;
   IF pg_catalog.has_function_privilege('microapp_runtime',function_oid,'EXECUTE')
     OR pg_catalog.has_function_privilege('microapp_bcv_sync',function_oid,'EXECUTE') THEN
     RAISE EXCEPTION 'BCV_OBSERVATION_CAPTURE_MUST_BE_TRIGGER_ONLY';
@@ -95,7 +100,8 @@ BEGIN
     FROM pg_catalog.pg_trigger t
    WHERE t.tgrelid='public.bcv_sync_state'::regclass
      AND t.tgname='bcv_sync_success_observation_capture'
-     AND NOT t.tgisinternal AND t.tgtype::integer IS NOT NULL;
+     AND NOT t.tgisinternal
+     AND (t.tgtype & 16) = 16 AND (t.tgtype & 2) = 0 AND (t.tgtype & 1) = 1;
   IF trigger_count <> 1 THEN RAISE EXCEPTION 'BCV_SUCCESS_OBSERVATION_CAPTURE_TRIGGER_MISSING'; END IF;
 
   IF NOT EXISTS (
@@ -121,7 +127,11 @@ BEGIN
     RAISE EXCEPTION 'LEGACY_SALES_COMPLETION_CHECK_WAS_NOT_REPLACED';
   END IF;
 
-  IF pg_catalog.has_table_privilege('microapp_runtime','public.fx_contingency_events','INSERT')
+  IF pg_catalog.has_table_privilege('microapp_runtime','public.fx_contingency_authorizations','INSERT')
+    OR pg_catalog.has_table_privilege('microapp_runtime','public.fx_contingency_authorizations','UPDATE')
+    OR pg_catalog.has_table_privilege('microapp_runtime','public.fx_contingency_delegations','INSERT')
+    OR pg_catalog.has_table_privilege('microapp_runtime','public.fx_contingency_delegations','UPDATE')
+    OR pg_catalog.has_table_privilege('microapp_runtime','public.fx_contingency_events','INSERT')
     OR pg_catalog.has_table_privilege('microapp_runtime','public.fx_contingency_events','UPDATE')
     OR pg_catalog.has_table_privilege('microapp_runtime','public.fx_contingency_events','DELETE')
     OR pg_catalog.has_table_privilege('microapp_runtime','public.fx_contingency_events','TRUNCATE')

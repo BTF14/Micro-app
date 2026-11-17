@@ -379,7 +379,7 @@ describe.skipIf(!isDisposableCheckoutDatabase || !isDisposableBcvProducerDatabas
     }
     await setBcvSyncState("inserted", rateDate, true);
     const syncState = await runtimeClient.query<{ last_outcome: string; last_effective_date: string; last_success_at: Date | string }>(
-      "SELECT * FROM public.lock_bcv_sync_state()",
+      "SELECT last_outcome,last_effective_date::text AS last_effective_date,last_success_at FROM public.lock_bcv_sync_state()",
     );
     const applicableRate = await runtimeClient.query<{ effective_date: string; validation_status: string; fetched_at: Date | string }>(
       "SELECT effective_date::text AS effective_date,validation_status,fetched_at FROM public.exchange_rates WHERE id=$1",

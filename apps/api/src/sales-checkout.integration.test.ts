@@ -372,10 +372,10 @@ describe.skipIf(!isDisposableCheckoutDatabase || !isDisposableBcvProducerDatabas
         }
         await client.query("DELETE FROM public.audit_logs WHERE organization_id=$1", [organizationId]);
         await client.query("DELETE FROM public.fx_contingency_events WHERE organization_id=$1", [organizationId]);
-        await client.query("DELETE FROM public.fx_contingency_authorizations WHERE organization_id=$1", [organizationId]);
         await client.query("DELETE FROM public.payments WHERE organization_id=$1", [organizationId]);
         await client.query("DELETE FROM public.sale_items WHERE organization_id=$1", [organizationId]);
         await client.query("DELETE FROM public.sales WHERE organization_id=$1", [organizationId]);
+        await client.query("DELETE FROM public.fx_contingency_authorizations WHERE organization_id=$1", [organizationId]);
         await client.query("DELETE FROM public.warehouse_inventory_movements WHERE organization_id=$1", [organizationId]);
         await client.query("DELETE FROM public.inventory_count_lines WHERE organization_id=$1", [organizationId]);
         await client.query("DELETE FROM public.inventory_counts WHERE organization_id=$1", [organizationId]);

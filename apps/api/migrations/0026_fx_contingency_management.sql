@@ -395,7 +395,6 @@ END;
 $append_fx_contingency_event$;
 ALTER FUNCTION public.append_fx_contingency_event(uuid,uuid,uuid,text,uuid,text,jsonb) OWNER TO microapp_migrator;
 REVOKE ALL ON FUNCTION public.append_fx_contingency_event(uuid,uuid,uuid,text,uuid,text,jsonb) FROM PUBLIC;
-GRANT EXECUTE ON FUNCTION public.append_fx_contingency_event(uuid,uuid,uuid,text,uuid,text,jsonb) TO microapp_runtime;
 REVOKE INSERT, UPDATE, DELETE, TRUNCATE, TRIGGER ON TABLE public.fx_contingency_events FROM microapp_runtime;
 
 -- The checkout lifecycle guard must treat FX source, authorization and cashier

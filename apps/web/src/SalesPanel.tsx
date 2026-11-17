@@ -184,7 +184,7 @@ export default function SalesPanel({
       );
       if (requestId !== loadSequence.current) return;
       setFxState(fxResult);
-      setManualFxAcknowledged(false);
+      setManualFxAcknowledgedRate(null);
       if (requestId !== loadSequence.current) return;
       const active = warehouseResult.warehouses.filter((warehouse) => warehouse.is_active === true);
       setWarehouses(active);

@@ -347,7 +347,7 @@ describe.skipIf(!isDisposableCheckoutDatabase || !isDisposableBcvProducerDatabas
     // Integration fixtures represent an official row effective on the operation date.
     // A prepublished next-business-day row must not be used early on weekends.
     rateDate = today;
-    const syncState = await client.query<{
+    const initialSyncState = await client.query<{
       attempt_id: string | null; last_attempt_at: Date | null; last_success_at: Date | null;
       last_outcome: string | null; last_error_code: string | null;
       last_effective_date: string | null; updated_at: Date;
@@ -356,7 +356,7 @@ describe.skipIf(!isDisposableCheckoutDatabase || !isDisposableBcvProducerDatabas
               last_error_code,last_effective_date::text AS last_effective_date,updated_at
          FROM public.bcv_sync_state WHERE singleton=true`,
     );
-    previousBcvSyncState = syncState.rows[0]!;
+    previousBcvSyncState = initialSyncState.rows[0]!;
     const existingRate = await client.query<{ id: string; rate: string; validation_status: string; fetched_at: string }>(
       "SELECT id,rate::text,validation_status,fetched_at::text FROM public.exchange_rates WHERE source=$1 AND effective_date=$2::date",
       [BCV_SOURCE, rateDate],

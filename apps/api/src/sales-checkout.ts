@@ -42,6 +42,7 @@ type ProductRow = {
   cost_usd: string;
 };
 type RateRow = { id: string; rate: string; effective_date: string; validation_status: "valid" | "stale" };
+type ManualFxAuthorizationRow = { id: string; rate: string; starts_at: string; expires_at: string };
 type ExistingSale = { id: string; status: string; request_hash: string | null };
 type SaleHeader = {
   id: string;
@@ -93,6 +94,22 @@ function caracasDate(now: Date): string {
  * singleton state row and remains held until the enclosing checkout transaction
  * commits or rolls back. The lock is not held while BCV HTTP is fetched.
  */
+async function findActiveManualFxAuthorization(
+  tx: import("./database").DatabaseClient, organizationId: string, branchId: string,
+): Promise<ManualFxAuthorizationRow | null> {
+  const result = await tx.query<ManualFxAuthorizationRow>(
+    `SELECT id,rate::text,starts_at::text,expires_at::text
+       FROM public.fx_contingency_authorizations
+      WHERE organization_id=$1 AND branch_id=$2 AND status='active'
+        AND starts_at <= pg_catalog.clock_timestamp()
+        AND expires_at > pg_catalog.clock_timestamp()
+      ORDER BY starts_at DESC LIMIT 1
+      FOR SHARE`,
+    [organizationId, branchId],
+  );
+  return result.rows[0] ?? null;
+}
+
 export async function findApplicableCheckoutRate(tx: import("./database").DatabaseClient, now = new Date()): Promise<RateRow | null> {
   const today = caracasDate(now);
   const syncState = await tx.query<{
@@ -475,8 +492,23 @@ export function registerSalesCheckoutRoutes(app: Hono<{ Bindings: Bindings }>): 
           const shift = await resolveOpenCashierRegisterShift(tx, branch);
           if (!shift) return { kind: "shift_required" };
 
-          const rate = await findApplicableCheckoutRate(tx);
-          if (!rate) return { kind: "rate_unavailable" };
+          const bcvRate = await findApplicableCheckoutRate(tx);
+          let rate: { id: string | null; rate: string; effective_date: string; validation_status: "valid" };
+          let fxSource: "bcv_official" | "manual_contingency" = "bcv_official";
+          let fxAuthorizationId: string | null = null;
+          if (bcvRate) {
+            rate = bcvRate;
+          } else {
+            // AC-6 remains a commercial gate: this flag is absent/false by
+            // default and must not be enabled until written legal/accounting approval.
+            if (c.env.FX_CONTINGENCY_ENABLED !== "true") return { kind: "rate_unavailable" };
+            if (!input.manualFxAcknowledged) return { kind: "manual_ack_required" };
+            const manual = await findActiveManualFxAuthorization(tx, branch.organizationId, branch.branchId);
+            if (!manual) return { kind: "rate_unavailable" };
+            rate = { id: null, rate: manual.rate, effective_date: caracasDate(new Date()), validation_status: "valid" };
+            fxSource = "manual_contingency";
+            fxAuthorizationId = manual.id;
+          }
 
           const productIds = input.lines.map((line) => line.productId);
           const productsResult = await tx.query<ProductRow>(
@@ -552,16 +584,20 @@ export function registerSalesCheckoutRoutes(app: Hono<{ Bindings: Bindings }>): 
             `INSERT INTO public.sales (
                organization_id, idempotency_key, status, subtotal_usd, total_usd,
                exchange_rate_id, exchange_rate_snapshot, total_ves_snapshot, created_by,
-               branch_id, register_shift_id, warehouse_id, settlement_currency, request_hash
+               branch_id, register_shift_id, warehouse_id, settlement_currency, request_hash,
+               fx_source, fx_authorization_id, manual_fx_acknowledged_at, manual_fx_acknowledged_by_user_id
              ) VALUES (
                $1, $2, 'draft', $3::numeric, $3::numeric,
-               $4, $5::numeric, $6::numeric, $7, $8, $9, $10, $11, $12
+               $4, $5::numeric, $6::numeric, $7, $8, $9, $10, $11, $12,
+               $13, $14, CASE WHEN $13='manual_contingency' THEN pg_catalog.clock_timestamp() ELSE NULL END,
+               CASE WHEN $13='manual_contingency' THEN $7::uuid ELSE NULL END
              )
              ON CONFLICT (organization_id, idempotency_key) DO NOTHING
              RETURNING id`,
             [
               branch.organizationId, idempotencyKey, subtotalUsd, rate.id, rate.rate, totalVes,
               branch.userId, branch.branchId, shift.id, input.warehouseId, input.currency, hash,
+              fxSource, fxAuthorizationId,
             ],
           );
           const saleId = insertedSale.rows[0]?.id;
@@ -679,7 +715,8 @@ export function registerSalesCheckoutRoutes(app: Hono<{ Bindings: Bindings }>): 
         case "branch_denied": return c.json({ error: "BRANCH_FORBIDDEN", message: "No tienes acceso a esta sucursal." }, 403);
         case "warehouse_not_found": return c.json({ error: "WAREHOUSE_NOT_FOUND", message: "El almacén no existe o no pertenece a esta sucursal." }, 404);
         case "shift_required": return c.json({ error: "OPEN_SHIFT_REQUIRED", message: "Debes tener tu propio turno abierto para registrar la venta." }, 409);
-        case "rate_unavailable": return c.json({ error: "BCV_RATE_NOT_CURRENT", message: "No se puede completar la venta sin una tasa BCV vigente." }, 409);
+        case "rate_unavailable": return c.json({ error: "FX_RATE_NOT_AVAILABLE", message: "No existe una tasa BCV vigente ni una autorización de contingencia activa." }, 409);
+        case "manual_ack_required": return c.json({ error: "MANUAL_FX_ACK_REQUIRED", message: "Confirma que comunicaste al cliente la tasa manual de contingencia antes de continuar." }, 409);
         case "invalid_products": return c.json({ error: "PRODUCT_NOT_AVAILABLE", message: "Uno o más productos no existen o están inactivos." }, 409);
         case "insufficient_stock": return c.json({ error: "INSUFFICIENT_STOCK", message: "La existencia disponible del almacén es insuficiente." }, 409);
         case "invalid_payment": return c.json({ error: "PAYMENT_TOTAL_INVALID", message: "Los pagos deben cubrir exactamente el total en una sola moneda." }, 400);

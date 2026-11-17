@@ -226,7 +226,7 @@ BEGIN
   SELECT pg_catalog.pg_get_functiondef(
     'public.create_fx_contingency_authorization(uuid,uuid,numeric,numeric,uuid,text,timestamptz,uuid,text,text,text)'::regprocedure
   ) INTO function_definition;
-  IF pg_catalog.strpos(function_definition, 'FOR SHARE')
+  IF pg_catalog.strpos(function_definition, 'FROM public.bcv_sync_state')
        > pg_catalog.strpos(function_definition, 'starts_time := pg_catalog.clock_timestamp()')
     OR pg_catalog.strpos(function_definition, 'starts_time := pg_catalog.clock_timestamp()')
        > pg_catalog.strpos(function_definition, 'SELECT er.effective_date, er.fetched_at')

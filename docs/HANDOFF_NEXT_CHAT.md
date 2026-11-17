@@ -3,7 +3,7 @@
 ## Punto exacto de partida
 - `main` = `04d3679189edaab17221f1e8cd425cc68fa53155`, verificado en vivo y usado como base de PR #377.
 - PR #377: https://github.com/BTF14/Micro-app/pull/377 — OPEN / Draft, no merge.
-- Rama: `feat/fx-contingency-pr1-20261117`. Implementación de código validada en SHA `7afa4ddb9f4c6fee5ba1bd1bb5629b02c3c0239d`; los commits posteriores de cierre documental no cambian el código.
+- Rama: `feat/fx-contingency-pr1-20261117`. Implementación de código validada en SHA `7afa4ddb9f4c6fee5ba1bd1bb5629b02c3c0239d`; los commits posteriores son de cierre documental y no cambian el código. Consultar el HEAD vivo del PR #377 para el SHA documental más reciente.
 - PR 1 incluye migración 0026 + assertions, KDF PIN Workers, rate limits por usuario/IP, delegaciones, autorizaciones, eventos append-only, observaciones BCV inmutables, triggers, checkout manual/BCV, rutas Hono, panel administrativo, ACK de cajero y recibo con referencia de autorización.
 - Se mantuvo `0022_bcv_dedicated_producer_role.sql` sin cambios. No mezclar Carril A, Carril B1 ni Hardening transversal.
 

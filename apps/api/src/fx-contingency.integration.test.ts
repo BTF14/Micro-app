@@ -293,7 +293,7 @@ describe.skipIf(!safeDb)("FX contingency PostgreSQL integration — PG-01..PG-30
     expect(snapshot.rows[0]).toMatchObject({
       reference_exchange_rate_id: referenceRateId,
       reference_rate_value: referenceRate,
-      reference_effective_date: today,
+      reference_effective_date: yesterday,
     });
   });
 

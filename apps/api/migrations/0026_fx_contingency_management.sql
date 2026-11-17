@@ -81,7 +81,7 @@ CREATE TABLE public.fx_contingency_authorizations (
     AND expires_at <= (((starts_at AT TIME ZONE 'America/Caracas')::date + 1)::timestamp AT TIME ZONE 'America/Caracas')),
   CHECK (reference_effective_date <= (starts_at AT TIME ZONE 'America/Caracas')::date),
   CHECK (
-    deviation_bps = pg_catalog.round(
+    deviation_bps = pg_catalog.ceil(
       pg_catalog.abs(rate - reference_rate_value) / reference_rate_value * 10000
     )::integer
   ),
@@ -836,7 +836,7 @@ BEGIN
      OR p_actor_role NOT IN ('owner', 'admin') THEN
     RAISE EXCEPTION 'FX_AUTHORIZATION_INPUT_INVALID' USING ERRCODE = '23514';
   END IF;
-  calculated_bps := pg_catalog.round(
+  calculated_bps := pg_catalog.ceil(
     pg_catalog.abs(p_rate - p_reference_rate_value) / p_reference_rate_value * 10000
   )::integer;
   IF pg_catalog.abs(p_rate - p_reference_rate_value) * 10000 > p_reference_rate_value * 2000 THEN

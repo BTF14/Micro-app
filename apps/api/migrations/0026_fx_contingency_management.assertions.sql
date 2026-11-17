@@ -1,0 +1,139 @@
+-- Run after 0026_fx_contingency_management.sql on disposable PostgreSQL 18.
+-- This script is intentionally transactional and leaves no test mutations.
+BEGIN;
+
+DO $fx_contingency_assertions$
+DECLARE
+  owner_name text;
+  function_oid oid;
+  function_definition text;
+  default_expression text;
+  trigger_count integer;
+  old_completion_checks integer;
+BEGIN
+  -- Core table ownership remains with the isolated migrator.
+  SELECT r.rolname INTO owner_name
+    FROM pg_catalog.pg_class c JOIN pg_catalog.pg_roles r ON r.oid = c.relowner
+   WHERE c.oid = 'public.bcv_sync_success_observations'::regclass;
+  IF owner_name <> 'microapp_migrator' THEN
+    RAISE EXCEPTION 'BCV_OBSERVATION_TABLE_OWNER_INVALID';
+  END IF;
+
+  -- Observation ACL is SELECT-only for runtime and completely absent for producer/PUBLIC.
+  IF NOT pg_catalog.has_table_privilege('microapp_runtime','public.bcv_sync_success_observations','SELECT')
+    OR pg_catalog.has_table_privilege('microapp_runtime','public.bcv_sync_success_observations','INSERT')
+    OR pg_catalog.has_table_privilege('microapp_runtime','public.bcv_sync_success_observations','UPDATE')
+    OR pg_catalog.has_table_privilege('microapp_runtime','public.bcv_sync_success_observations','DELETE')
+    OR pg_catalog.has_table_privilege('microapp_runtime','public.bcv_sync_success_observations','TRUNCATE')
+    OR pg_catalog.has_table_privilege('microapp_runtime','public.bcv_sync_success_observations','TRIGGER')
+    OR pg_catalog.has_table_privilege('microapp_bcv_sync','public.bcv_sync_success_observations','SELECT')
+    OR pg_catalog.has_table_privilege('microapp_bcv_sync','public.bcv_sync_success_observations','INSERT')
+    OR pg_catalog.has_table_privilege('microapp_bcv_sync','public.bcv_sync_success_observations','UPDATE')
+    OR pg_catalog.has_table_privilege('microapp_bcv_sync','public.bcv_sync_success_observations','DELETE')
+    OR pg_catalog.has_table_privilege('microapp_bcv_sync','public.bcv_sync_success_observations','TRUNCATE')
+    OR pg_catalog.has_table_privilege('public','public.bcv_sync_success_observations','SELECT')
+  THEN RAISE EXCEPTION 'BCV_OBSERVATION_ACL_INVALID'; END IF;
+
+  SELECT count(*) INTO trigger_count
+    FROM pg_catalog.pg_trigger t
+   WHERE t.tgrelid = 'public.bcv_sync_success_observations'::regclass
+     AND NOT t.tgisinternal AND t.tgenabled = 'A'
+     AND t.tgname IN (
+       'bcv_sync_success_observations_10_append_only_rows',
+       'bcv_sync_success_observations_20_append_only_truncate'
+     );
+  IF trigger_count <> 2 THEN RAISE EXCEPTION 'BCV_OBSERVATION_ENABLE_ALWAYS_TRIGGERS_MISSING'; END IF;
+
+  SELECT count(*) INTO trigger_count
+    FROM pg_catalog.pg_trigger t
+   WHERE t.tgrelid = 'public.fx_contingency_events'::regclass
+     AND NOT t.tgisinternal AND t.tgenabled = 'A'
+     AND t.tgname IN ('fx_contingency_events_10_append_only_rows','fx_contingency_events_20_append_only_truncate');
+  IF trigger_count <> 2 THEN RAISE EXCEPTION 'FX_EVENTS_ENABLE_ALWAYS_TRIGGERS_MISSING'; END IF;
+
+  SELECT p.oid INTO function_oid
+    FROM pg_catalog.pg_proc p
+   WHERE p.oid = 'public.assert_sale_latest_bcv_sync_success()'::regprocedure
+     AND p.prosecdef
+     AND p.proowner = (SELECT oid FROM pg_catalog.pg_roles WHERE rolname = 'microapp_migrator');
+  IF function_oid IS NULL THEN RAISE EXCEPTION 'BCV_SALE_GUARD_SECURITY_CONTRACT_INVALID'; END IF;
+  SELECT pg_catalog.pg_get_functiondef(function_oid) INTO function_definition;
+  IF pg_catalog.strpos(function_definition, 'FOR SHARE') = 0
+    OR pg_catalog.strpos(function_definition, 'fx_source') = 0
+    OR pg_catalog.strpos(function_definition, 'America/Caracas') = 0
+  THEN RAISE EXCEPTION 'BCV_SALE_GUARD_DEFINITION_INVALID'; END IF;
+  IF pg_catalog.has_function_privilege('microapp_runtime',function_oid,'EXECUTE')
+    OR pg_catalog.has_function_privilege('microapp_bcv_sync',function_oid,'EXECUTE')
+    OR EXISTS (
+      SELECT 1 FROM pg_catalog.aclexplode(
+        COALESCE((SELECT proacl FROM pg_catalog.pg_proc WHERE oid=function_oid),
+          pg_catalog.acldefault('f',(SELECT proowner FROM pg_catalog.pg_proc WHERE oid=function_oid)))
+      ) acl WHERE acl.grantee = 0 AND acl.privilege_type = 'EXECUTE'
+    )
+  THEN RAISE EXCEPTION 'BCV_SALE_GUARD_MUST_BE_TRIGGER_ONLY'; END IF;
+
+  SELECT p.oid INTO function_oid
+    FROM pg_catalog.pg_proc p
+   WHERE p.oid = 'public.capture_bcv_sync_success_observation()'::regprocedure
+     AND p.prosecdef
+     AND p.proowner = (SELECT oid FROM pg_catalog.pg_roles WHERE rolname = 'microapp_migrator');
+  IF function_oid IS NULL THEN RAISE EXCEPTION 'BCV_OBSERVATION_CAPTURE_FUNCTION_SECURITY_INVALID'; END IF;
+  IF pg_catalog.has_function_privilege('microapp_runtime',function_oid,'EXECUTE')
+    OR pg_catalog.has_function_privilege('microapp_bcv_sync',function_oid,'EXECUTE') THEN
+    RAISE EXCEPTION 'BCV_OBSERVATION_CAPTURE_MUST_BE_TRIGGER_ONLY';
+  END IF;
+
+  SELECT pg_catalog.pg_get_expr(d.adbin,d.adrelid) INTO default_expression
+    FROM pg_catalog.pg_attrdef d
+    JOIN pg_catalog.pg_attribute a ON a.attrelid=d.adrelid AND a.attnum=d.adnum
+   WHERE d.adrelid='public.fx_contingency_authorizations'::regclass AND a.attname='starts_at';
+  IF default_expression IS NULL OR default_expression NOT ILIKE '%clock_timestamp%' THEN
+    RAISE EXCEPTION 'FX_AUTHORIZATION_STARTS_AT_MUST_USE_CLOCK_TIMESTAMP';
+  END IF;
+
+  SELECT count(*) INTO trigger_count
+    FROM pg_catalog.pg_trigger t
+   WHERE t.tgrelid='public.bcv_sync_state'::regclass
+     AND t.tgname='bcv_sync_success_observation_capture'
+     AND NOT t.tgisinternal AND t.tgtype::integer IS NOT NULL;
+  IF trigger_count <> 1 THEN RAISE EXCEPTION 'BCV_SUCCESS_OBSERVATION_CAPTURE_TRIGGER_MISSING'; END IF;
+
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_catalog.pg_indexes
+     WHERE schemaname='public' AND indexname='fx_contingency_authorizations_one_active_per_branch'
+       AND indexdef ILIKE '%WHERE (status = ''active''::text)%'
+  ) THEN RAISE EXCEPTION 'FX_AUTHORIZATION_ACTIVE_UNIQUE_INDEX_MISSING'; END IF;
+
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_catalog.pg_constraint
+     WHERE conrelid='public.sales'::regclass AND conname='sales_fx_ack_contract_ck'
+  ) OR NOT EXISTS (
+    SELECT 1 FROM pg_catalog.pg_constraint
+     WHERE conrelid='public.sales'::regclass AND conname='sales_completed_fx_snapshot_ck'
+  ) THEN RAISE EXCEPTION 'SALES_FX_SOURCE_OR_ACK_CONSTRAINT_MISSING'; END IF;
+
+  SELECT count(*) INTO old_completion_checks
+    FROM pg_catalog.pg_constraint
+   WHERE conrelid='public.sales'::regclass AND contype='c'
+     AND pg_catalog.pg_get_constraintdef(oid) ILIKE '%exchange_rate_id IS NOT NULL%'
+     AND pg_catalog.pg_get_constraintdef(oid) ILIKE '%status%completed%';
+  IF old_completion_checks <> 0 THEN
+    RAISE EXCEPTION 'LEGACY_SALES_COMPLETION_CHECK_WAS_NOT_REPLACED';
+  END IF;
+
+  IF pg_catalog.has_table_privilege('microapp_runtime','public.fx_contingency_events','INSERT')
+    OR pg_catalog.has_table_privilege('microapp_runtime','public.fx_contingency_events','UPDATE')
+    OR pg_catalog.has_table_privilege('microapp_runtime','public.fx_contingency_events','DELETE')
+    OR pg_catalog.has_table_privilege('microapp_runtime','public.fx_contingency_events','TRUNCATE')
+  THEN RAISE EXCEPTION 'FX_EVENTS_RUNTIME_MUST_USE_NARROW_APPEND_FUNCTION'; END IF;
+  IF NOT pg_catalog.has_function_privilege(
+    'microapp_runtime',
+    'public.append_fx_contingency_event(uuid,uuid,uuid,text,uuid,text,jsonb)',
+    'EXECUTE'
+  ) IS FALSE THEN
+    RAISE EXCEPTION 'FX_EVENT_APPEND_HELPER_MUST_NOT_BE_RUNTIME_CALLABLE';
+  END IF;
+END;
+$fx_contingency_assertions$;
+
+ROLLBACK;

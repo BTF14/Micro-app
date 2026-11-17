@@ -205,6 +205,7 @@ export function registerFxContingencyRoutes(app: Hono<{ Bindings: Bindings }>): 
           const checked = await verifyAndRateLimitPin(tx, c, actor.tenant, body.current_pin);
           if (checked !== "ok") return { kind: checked === "limited" ? "limited" as const : checked === "unavailable" ? "unavailable" as const : "invalid" as const };
         }
+        if (typeof body.pin !== "string") return { kind: "invalid" as const };
         const hash = await hashFxPin(body.pin, actor.tenant.organizationId, actor.tenant.userId, c.env.FX_PIN_PEPPER!);
         await tx.query(
           `SELECT public.set_fx_user_pin_credential(

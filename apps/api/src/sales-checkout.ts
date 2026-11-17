@@ -516,7 +516,9 @@ export function registerSalesCheckoutRoutes(app: Hono<{ Bindings: Bindings }>): 
           } else {
             // AC-6 remains a commercial gate: this flag is absent/false by
             // default and must not be enabled until written legal/accounting approval.
-            if (c.env.FX_CONTINGENCY_ENABLED !== "true") return { kind: "bcv_rate_unavailable" };
+            if (c.env.FX_CONTINGENCY_ENABLED !== "true") {
+              return { kind: input.manualFxAcknowledged ? "rate_unavailable" : "bcv_rate_unavailable" };
+            }
             const manual = await findActiveManualFxAuthorization(tx, branch.organizationId, branch.branchId);
             if (!manual) return { kind: "rate_unavailable" };
             if (!input.manualFxAcknowledged || input.manualFxAcknowledgedRate !== manual.rate) return { kind: "manual_ack_required" };

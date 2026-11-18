@@ -815,6 +815,8 @@ restored_ledger_ok="$(psql "$schema_restore_url" -X -v ON_ERROR_STOP=1 -Atqc "SE
 
 echo "PASS: all $expected_migrations numbered migrations applied through scripts/db/migrate.sh."
 echo "PASS: encrypted restore preserved schema, ownership, ACLs, RLS/policies, role contract and effective search_path."
-echo "PASS: populated PR #287 BCV/checkout and projection-ledger graph and cross-table relationships survived restore.\necho "PASS: populated 0025 inventory receipts/lines/purchase movements survived restore with quantity, cost and ledger projection assertions."\necho "PASS: populated 0026 PIN verifier, revoked delegation/authorization, append-only event and BCV success observation survived restore; no active authorization or manual-contingency sale exists.""
+echo "PASS: populated PR #287 BCV/checkout and projection-ledger graph and cross-table relationships survived restore."
+echo "PASS: populated 0025 inventory receipts/lines/purchase movements survived restore with quantity, cost and ledger projection assertions."
+echo "PASS: populated 0026 PIN verifier, revoked delegation/authorization, append-only event and BCV success observation survived restore; no active authorization or manual-contingency sale exists."
 echo "PASS: auth_sessions, auth_rate_limits and auth_bootstrap_attempts preserved their schema while all synthetic source rows were excluded from restore."
 echo "Schema/data round-trip elapsed seconds: $((SECONDS - started_at))."

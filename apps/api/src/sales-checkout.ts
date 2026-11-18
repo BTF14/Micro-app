@@ -112,14 +112,16 @@ async function findActiveManualFxAuthorization(
  * while the BCV HTTP fetch runs.
  */
 export async function findApplicableCheckoutRate(tx: import("./database").DatabaseClient, now = new Date()): Promise<RateRow | null> {
-  const today = bcvCaracasDate(now);
+  const fallbackToday = bcvCaracasDate(now);
   const syncState = await tx.query<{
+    operation_date: string;
     last_success_at: string | Date | null;
     last_outcome: string | null;
     last_effective_date: string | null;
     last_error_code: string | null;
   }>(
-    `SELECT last_success_at,
+    `SELECT (pg_catalog.clock_timestamp() AT TIME ZONE 'America/Caracas')::date::text AS operation_date,
+            last_success_at,
             last_outcome,
             last_effective_date::text AS last_effective_date,
             last_error_code
@@ -127,6 +129,7 @@ export async function findApplicableCheckoutRate(tx: import("./database").Databa
   );
   const state = syncState.rows[0];
   if (!state) return null;
+  const today = state.operation_date ?? fallbackToday;
   const result = await tx.query<RateRow>(
     `SELECT id, rate::text AS rate, effective_date::text AS effective_date, validation_status
        FROM public.exchange_rates

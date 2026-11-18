@@ -447,6 +447,7 @@ AS $transition_fx_contingency_authorization$
 DECLARE
   auth_row public.fx_contingency_authorizations%ROWTYPE;
   event_kind text;
+  operation_date date;
 BEGIN
   IF p_new_status NOT IN ('revoked', 'expired', 'bcv_restored')
      OR p_actor_role NOT IN ('owner', 'admin')
@@ -488,6 +489,9 @@ BEGIN
   IF NOT FOUND OR auth_row.status <> 'active' THEN
     RAISE EXCEPTION 'FX_AUTHORIZATION_NOT_ACTIVE' USING ERRCODE = '23514';
   END IF;
+  IF p_new_status='bcv_restored' THEN
+    operation_date := (pg_catalog.clock_timestamp() AT TIME ZONE 'America/Caracas')::date;
+  END IF;
   IF p_new_status IN ('expired','bcv_restored') THEN
     IF p_actor_user_id IS DISTINCT FROM auth_row.authorized_by_user_id
       OR p_actor_role IS DISTINCT FROM auth_row.authorized_by_role THEN
@@ -504,7 +508,7 @@ BEGIN
          AND obs.validation_status = 'valid'
          AND obs.exchange_rate_id = (
            SELECT selected.exchange_rate_id
-             FROM public.select_bcv_rate_for_operation((pg_catalog.clock_timestamp() AT TIME ZONE 'America/Caracas')::date) selected
+             FROM public.select_bcv_rate_for_operation(operation_date) selected
          )
          AND obs.last_effective_date = (
            SELECT selected.effective_date

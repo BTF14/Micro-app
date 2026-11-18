@@ -346,7 +346,7 @@ describe.skipIf(!isDisposableCheckoutDatabase || !isDisposableBcvProducerDatabas
     );
     const today = rateDateResult.rows[0]!.effective_date;
     // Integration fixtures represent an official row effective on the operation date.
-    // A prepublished next-business-day row must not be used early on weekends.
+    // A prepublished next-business-day row is usable on weekends only under the 0027 healthy-sync contract.
     rateDate = today;
     const initialSyncState = await client.query<{
       attempt_id: string | null; last_attempt_at: Date | null; last_success_at: Date | null;

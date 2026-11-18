@@ -476,16 +476,18 @@ export async function findApplicableBcvRate(
 async function findLatestBcvRate(
   client: DatabaseClient,
   now = new Date(),
-): Promise<(StoredRateRow & { fetched_at: string; status: "current" | "scheduled" | "stale"; priority: string | null }) | null> {
+): Promise<(StoredRateRow & { fetched_at: string; status: "current" | "scheduled" | "stale"; priority: string | null; operation_date: string }) | null> {
   const today = bcvCaracasDate(now);
   const stateResult = await client.query<{
-    last_success_at: string | Date | null; last_outcome: string | null;
+    operation_date: string; last_success_at: string | Date | null; last_outcome: string | null;
     last_effective_date: string | null; last_error_code: string | null;
   }>(
-    `SELECT last_success_at,last_outcome,last_effective_date::text AS last_effective_date,last_error_code
+    `SELECT (pg_catalog.clock_timestamp() AT TIME ZONE 'America/Caracas')::date::text AS operation_date,
+            last_success_at,last_outcome,last_effective_date::text AS last_effective_date,last_error_code
        FROM public.bcv_sync_state WHERE singleton = true`,
   );
   const state = stateResult.rows[0] ?? null;
+  const operationDate = state?.operation_date ?? bcvCaracasDate(now);
   const rowsResult = await client.query<StoredRateRow & { id: string; fetched_at: string }>(
     `SELECT id,rate::text AS rate,effective_date::text AS effective_date,
             to_char(fetched_at AT TIME ZONE 'UTC','YYYY-MM-DD"T"HH24:MI:SS.MS"Z"') AS fetched_at,
@@ -493,22 +495,22 @@ async function findLatestBcvRate(
        FROM public.exchange_rates
       WHERE source=$1 AND effective_date >= ($2::date - 10) AND effective_date <= ($2::date + 5)
       ORDER BY effective_date DESC,fetched_at DESC`,
-    [BCV_SOURCE_ID,today],
+    [BCV_SOURCE_ID,operationDate],
   );
   const rows = rowsResult.rows;
   if (!rows.length) return null;
-  const selected = selectApplicableBcvRate(today,state,rows);
-  if (selected) return { ...selected.row, fetched_at: selected.row.fetched_at ?? "", status: "current", priority: selected.priority };
-  const future = rows.filter((row) => row.validation_status === "valid" && row.effective_date > today && row.effective_date <= new Date(Date.parse(`${today}T00:00:00.000Z`) + 5*86_400_000).toISOString().slice(0,10))
+  const selected = selectApplicableBcvRate(operationDate,state,rows);
+  if (selected) return { ...selected.row, fetched_at: selected.row.fetched_at ?? "", status: "current", priority: selected.priority, operation_date: operationDate };
+  const future = rows.filter((row) => row.validation_status === "valid" && row.effective_date > operationDate && row.effective_date <= new Date(Date.parse(`${operationDate}T00:00:00.000Z`) + 5*86_400_000).toISOString().slice(0,10))
     .sort((a,b) => a.effective_date.localeCompare(b.effective_date))[0];
   if (future && state && state.last_success_at !== null &&
       (state.last_outcome === "inserted" || state.last_outcome === "unchanged") &&
       state.last_error_code === null && state.last_effective_date !== null &&
       state.last_effective_date >= future.effective_date) {
-    return { ...future, status: "scheduled", priority: null };
+    return { ...future, status: "scheduled", priority: null, operation_date: operationDate };
   }
   const fallback = rows[0]!;
-  return { ...fallback, status: "stale", priority: null };
+  return { ...fallback, status: "stale", priority: null, operation_date: operationDate };
 }
 
 export function registerExchangeRateRoutes(app: Hono<{ Bindings: Bindings }>): void {
@@ -649,7 +651,7 @@ export function registerExchangeRateRoutes(app: Hono<{ Bindings: Bindings }>): v
         quoteCurrency: "VES",
         rate: row.rate,
         effectiveDate: row.effective_date,
-        operationDate: bcvCaracasDate(new Date()),
+        operationDate: row.operation_date,
         fetchedAt: row.fetched_at,
         source: BCV_SOURCE_ID,
         status: row.status,

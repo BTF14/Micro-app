@@ -83,6 +83,7 @@ describe("Micro app authentication flow", () => {
       window.dispatchEvent(new CustomEvent("micro-app:unauthorized"));
     });
     expect(container.textContent).toContain("Inicia sesión");
+    expect(container.querySelector('[role="alert"]')?.textContent).toContain("Tu sesión expiró. Inicia sesión nuevamente.");
     expect(container.textContent).not.toContain("Hola, Ana.");
   });
 

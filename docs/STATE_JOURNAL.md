@@ -3,7 +3,7 @@
 - Base exacta consultada: `main` = `25dbf6e40a99e011c951ab55338de6d4b98332ad`, post-merge PR #381. Rama documental `chore/level1-gate-evidence-20261118`.
 - GitHub informa `protected=true` y seis checks requeridos. El endpoint detallado de branch protection devolvió 403; no se arrastran los parámetros históricos de enforcement/reviews/force-push.
 - Backup natural #44342447079 SUCCESS (18 nov); artefacto `backup-2026-11-18T16-03-47Z.dump.age`. El anterior #44127105127 generó `backup-2026-11-17T16-33-55Z.dump.age`. Último intervalo 23h29m52s; máximo entre snapshots exitosos observados 50h08m33s (15→17 nov) por run del 16 nov cancelado #43909110314.
-- Restore remoto #43767762632 SUCCESS, perfil `bcv-0025` (25 migraciones/29 tablas), 61s workflow; recovery window técnico 1.753ms, DB restore/assertions 1.021ms. No alcanza 0026.
+- Restore remoto #43767762632 SUCCESS, perfil `bcv-0025` (25 migraciones/29 tablas), 61s workflow; recovery window técnico 1.753s, DB restore/assertions 1.021s. No alcanza 0026.
 - Smoke #44191419753 SUCCESS en PR branch `feat/fx-contingency-pr1-20261117`, perfil `bcv-0026` (26 migraciones/34 objetos), DR sintético 3.479s y workflow 129s. La fixture poblada no inserta filas en recibos 0025 ni las cinco tablas 0026; el esquema/assertions pasan, pero no hay round-trip de datos sintéticos de esas tablas.
 - Daily dependency watch #44355990636 FAILURE: instalación frozen OK; `pnpm audit --audit-level high` encontró GHSA-fc5q-39xc-vjpf HIGH en `picomatch@4.0.7` vía Vitest. No se tocaron dependencias/lockfile.
 - CORS #43938901337 y bundle #43938418766 SUCCESS el 16 nov, SHA anterior al HEAD actual. Código de cabeceras existe, pero no se verificó HTTP live de cada header ni run exacto-current-SHA.

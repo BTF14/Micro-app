@@ -1,13 +1,30 @@
-# Handoff vigente — Paso 2B especificación BCV 0027 (2026-11-18)
+# Handoff vigente — Paso 3A auditoría Nivel 1 (2026-11-18)
 
-- Rama de trabajo: `docs/spec-0027-bcv-nonbusiness-days`; base exacta: `7eebc7fc8d155c275c43859fb66fdeb0f8bd46fe` (merge PR #380).
-- Documento principal: `docs/sdd/0027_BCV_NONBUSINESS_DAY_EFFECTIVE_DATE.md`. Revisar prioridades 1–3, sincronización `bcv_sync_state`, snapshot `operation_date` + `exchange_rate_effective_date`, guard SQL aditivo y matriz PostgreSQL.
-- Documentos reconciliados: `docs/sdd/BANKING_CALENDAR_VERSIONING.md`, `docs/sdd/SALES_CHECKOUT_MODEL.md`, `docs/PROJECT_PLAN.md`, `docs/CURRENT_STATE.md`, `docs/STATE_JOURNAL.md`.
-- Este trabajo especifica; no implementa 0027. No modificar apps, SQL, workflows ni dependencias. No tocar Neon/Cloudflare/secretos/datos reales.
-- AC-6 abierto, `FX_CONTINGENCY_ENABLED` apagado/no configurado; freeze v1.1; Issue #53 OPEN/P0; PRODUCTION NOT READY.
-- Antes de cualquier siguiente acción, verificar el HEAD vivo de esta rama/PR y checks del HEAD exacto. PR debe permanecer Draft; no merge/auto-merge.
+- **Base auditada:** `main` = `25dbf6e40a99e011c951ab55338de6d4b98332ad` (post-merge PR #381).
+- **Rama de reconciliación:** `chore/level1-gate-evidence-20261118`; PR Draft pendiente de crear/verificar en GitHub.
+- **Resultado:** Nivel 1 sigue ABIERTO. No iniciar Paso 3B ni implementar 0027.
+- **Protección:** `protected=true` y seis checks obligatorios visibles; endpoint de protección detallada devolvió 403, por lo que no afirmar que enforce-admins/reviews/force-push/conversation resolution estén revalidados.
+- **Backup/DR:** último backup natural SUCCESS #44342447079 (18 nov); RPO proxy último 23h29m52s, máximo observado 50h08m33s por backup cancelado el 16 nov. Restore remoto real #43767762632 SUCCESS con perfil 0025/25 migraciones/29 tablas; recovery window técnico 1.753ms. Smoke #44191419753 SUCCESS en PR #377 con perfil 0026/26 migraciones/34 objetos y DR sintético 3.479s; fixture no contiene filas sintéticas en tablas de recibos 0025 ni las cinco tablas 0026. Ver el bloque vigente en `docs/SECURITY_ROADMAP.md` y `docs/BACKUP_AND_RECOVERY.md`.
+- **Dependencias:** run #44355990636 detectó GHSA-fc5q-39xc-vjpf HIGH (`picomatch@4.0.7`, ruta Vitest). No modificar lockfile ni actualizar a ciegas.
+- **CORS/bundle:** últimos runs SUCCESS #43938901337 y #43938418766 son del 16 nov, SHA anterior al HEAD actual; no se confirmó prueba exacta-current-SHA ni verificación HTTP específica de cabeceras.
+- **Alertas:** canary #43508458992 generó fallo controlado el 13 nov; no hay ACK del propietario. **Acción manual pendiente:** abrir [alert-canary.yml](https://github.com/BTF14/Micro-app/actions/workflows/alert-canary.yml) → Run workflow → rama `main` → `confirm_controlled_failure=true` → Run workflow → confirmar recepción GitHub/email y devolver ACK.
+- **Coste:** runners estándar del repo público son free según GitHub; no se verificaron planes/uso/billing reales de Cloudflare, Neon ni almacenamiento del repo privado. USD 0 total no certificado.
+- **Invariantes:** AC-6 ABIERTO; `FX_CONTINGENCY_ENABLED` apagado/no configurado; freeze v1.1; Issue #53 OPEN/P0; PRODUCTION NOT READY.
+- **AGENTS.md:** revisado; gate Nivel 1 correcto, sin cambio requerido. No repetir solicitudes de información ya documentada.
+
+## Siguiente secuencia segura
+1. Esperar el canary y ACK manual del propietario; no marcar alerta cerrada antes del ACK.
+2. Reconciliar smoke fixture sintético: recibos 0025 y datos ficticios válidos en las cinco tablas 0026; comparar conteos/manifiestos y assertions post-restore en PostgreSQL desechable.
+3. Ejecutar el restore real aislado posterior a 0026 solo cuando exista backup que incluya esa migración; no Neon main.
+4. Revalidar CORS, bundle y cabeceras contra el despliegue vigente/HEAD actual mediante workflows read-only disponibles.
+5. Obtener confirmación del propietario de planes/consumo/billing USD 0.
+6. Cerrar cada control con evidencia exacta; solo después evaluar Paso 3B.
+
+## Límites no negociables de este checkpoint
+No tocar Neon main, secretos, Cloudflare manual, datos reales, billing, despliegues, migración 0027 ni lógica comercial. No cambiar AC-6, freeze v1.1 ni Issue #53. No merge ni auto-merge de esta PR Draft.
 
 ---
+
 
 # Handoff vigente — Paso 1 docs/tooling y spec BCV 0027 pendiente (2026-11-17)
 

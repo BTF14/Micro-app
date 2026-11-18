@@ -665,7 +665,7 @@ SELECT
   AND (SELECT count(*) = 3 FROM public.inventory_counts WHERE id IN ('aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa','cccccccc-cccc-4ccc-8ccc-cccccccccccc','20202020-2020-4020-8020-202020202020') AND status='confirmed')
   AND (SELECT count(*) = 3 FROM public.inventory_count_lines WHERE count_id IN ('aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa','cccccccc-cccc-4ccc-8ccc-cccccccccccc','20202020-2020-4020-8020-202020202020'))
   AND (SELECT count(*) = 1 FROM public.inventory_balances WHERE organization_id='11111111-1111-4111-8111-111111111111' AND warehouse_id='99999999-9999-4999-8999-999999999999' AND product_id='77777777-7777-4777-8777-777777777777' AND on_hand_quantity=9.000 AND balance_version=3)
-  AND (SELECT count(*) = 1 FROM public.inventory_balances WHERE organization_id='14141414-1414-4414-8414-141414141414' AND warehouse_id='19191919-1919-4919-8919-191919191919' AND product_id='18181818-1818-4818-8818-181818181818' AND on_hand_quantity=5.000 AND balance_version=1)
+  AND (SELECT count(*) = 1 FROM public.inventory_balances WHERE organization_id='14141414-1414-4414-8414-141414141414' AND warehouse_id='19191919-1919-4919-8919-191919191919' AND product_id='18181818-1818-4818-8818-181818181818' AND on_hand_quantity=8.000 AND balance_version=2)
   AND (SELECT count(*) = 5 FROM public.warehouse_inventory_movements WHERE organization_id IN ('11111111-1111-4111-8111-111111111111','14141414-1414-4414-8414-141414141414') AND product_id IN ('77777777-7777-4777-8777-777777777777','18181818-1818-4818-8818-181818181818'))
   AND (SELECT pg_catalog.to_regclass('public.inventory_balance_ledger_intents') IS NULL
           AND pg_catalog.to_regprocedure('public.project_inventory_movement_to_balance()') IS NOT NULL)

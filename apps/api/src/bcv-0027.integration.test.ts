@@ -1,4 +1,4 @@
-import {afterAll,beforeAll,describe,expect,it} from "vitest";
+import {afterAll,afterEach,beforeAll,beforeEach,describe,expect,it} from "vitest";
 import {Client} from "pg";
 const env=(globalThis as typeof globalThis & {process?:{env?:Record<string,string|undefined>}}).process?.env;
 const adminUrl=env?.DATABASE_URL_ADMIN,ci=Boolean(env?.CI);
@@ -10,6 +10,8 @@ function previousWeekday(day:number):string{const d=new Date();d.setUTCHours(12,
 describe.skipIf(!enabled)("BCV 0027 PostgreSQL 18 effective-date matrix",()=>{
  let db:Client;let syncSequence=0;const friday=previousWeekday(5),saturday=addDays(friday,1),sunday=addDays(friday,2),monday=addDays(friday,3),tuesday=addDays(friday,4);
  beforeAll(async()=>{db=new Client({connectionString:adminUrl});await db.connect();await db.query("BEGIN")});
+ beforeEach(async()=>{await db.query("SAVEPOINT bcv_0027_case")});
+ afterEach(async()=>{await db.query("ROLLBACK TO SAVEPOINT bcv_0027_case")});
  afterAll(async()=>{if(db){await db.query("ROLLBACK");await db.end()}});
  async function prepare(rows:string[],syncDate:string,successAt:string,outcome="inserted",error:string|null=null,validationStatus="valid"){
   for(const date of rows){
@@ -30,7 +32,7 @@ describe.skipIf(!enabled)("BCV 0027 PostgreSQL 18 effective-date matrix",()=>{
   expect(await select(saturday)).toBeNull();
  });
  it("rejects failed, running, errored, uncovered, stale and beyond-five-day candidates",async()=>{
-  await prepare([monday],monday,friday+"T16:00:00Z","failed","SOURCE_ERROR");expect(await select(saturday)).toBeNull();
+  await prepare([monday],monday,friday+"T16:00:00Z","failed");expect(await select(saturday)).toBeNull();
   await prepare([monday],monday,friday+"T16:00:00Z","running");expect(await select(saturday)).toBeNull();
   await prepare([monday],friday,friday+"T16:00:00Z");expect(await select(saturday)).toBeNull();
   const boundary=addDays(saturday,5);await prepare([boundary],boundary,friday+"T16:00:00Z");expect(await select(saturday)).toMatchObject({effective_date:boundary,priority:"weekend_prepublished"});

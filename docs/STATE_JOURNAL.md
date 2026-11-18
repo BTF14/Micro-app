@@ -3644,3 +3644,12 @@ No hay reviews formales ni review threads. El code review automático Codex no p
 
 
 Nota de continuidad: el SHA anterior indicado es el último HEAD completamente validado (25/25 check-runs SUCCESS). Este commit solo actualiza documentación; verificar el nuevo HEAD vivo y sus checks exactos antes de cualquier merge. PR #350 sigue OPEN/no-Draft y no se debe fusionar.
+
+
+## Turno 58 — Paso 2B: especificación documental BCV 0027 (2026-11-18)
+
+- Base verificada: PR #380 MERGED; merge SHA y main observado al inicio `7eebc7fc8d155c275c43859fb66fdeb0f8bd46fe`. La rama `docs/spec-0027-bcv-nonbusiness-days` se creó desde ese SHA exacto.
+- Se redacta `docs/sdd/0027_BCV_NONBUSINESS_DAY_EFFECTIVE_DATE.md` como contrato de selección por prioridad, sync-state/last_effective_date, snapshot dual, guard SQL futuro, impacto por capa y matriz PostgreSQL efímera.
+- Se reconcilian `BANKING_CALENDAR_VERSIONING.md`, `SALES_CHECKOUT_MODEL.md`, `PROJECT_PLAN.md` y `CURRENT_STATE.md`; no se borra historia del calendario ni reglas históricas. El ADR-20261117 prevalece para elegibilidad checkout.
+- Límites: documentación únicamente; sin migración 0027, `apps/**`, `.sql`, workflows, dependencias, Neon, Cloudflare manual, secretos, datos reales, billing o deploy. AC-6 sigue abierto/flag apagado; freeze v1.1; Issue #53 OPEN/P0; PRODUCTION NOT READY.
+- PR Draft y checks exact-SHA pendientes al registrar esta entrada; no merge/auto-merge.

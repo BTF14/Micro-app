@@ -1,3 +1,14 @@
+# Reconciliación vigente — PR #380 integrada y Paso 2B BCV 0027 (2026-11-18)
+
+- **Main vivo verificado:** `7eebc7fc8d155c275c43859fb66fdeb0f8bd46fe`, merge SHA de PR #380. PR #380 está MERGED; su HEAD de rama fue `28fb579c98078db158d5c011039b7d985d8b0cc0`. Los checks de PR #380 pertenecen a ese HEAD de rama, no se heredan como checks del merge SHA.
+- **Paso 2B:** especificación documental `docs/sdd/0027_BCV_NONBUSINESS_DAY_EFFECTIVE_DATE.md` en preparación/revisión sobre una rama desde el main indicado. No se implementa migración ni lógica 0027 en este paso.
+- **Carril A:** PR #380 integrada. No reabrir ni replicar su código en este frente.
+- **AC-6:** sigue ABIERTO; `FX_CONTINGENCY_ENABLED` apagado/no configurado. **Freeze v1.1** vigente. **Issue #53 OPEN/P0**. **PRODUCTION: NOT READY**.
+- El ADR-20261117 autoriza solo esta especificación. No autoriza migración 0027, implementación API, Neon, despliegue, activación de contingencia ni cierre de gates.
+- La antigua regla manual de calendario SUDEBAN queda supersedida para elegibilidad de checkout; el historial del documento de calendario se conserva.
+
+---
+
 # Plan vigente — reconciliación post-PR #377 y decisión BCV no hábil (2026-11-17)
 
 - **Main vigente:** `89a478c0315fa9d3b51062858198d357b0738084` (merge de PR #379). PR #377 fue mergeada en `25e37dc5dcfb18349a6b7f384d109e493a581c3d`; PR #379 (`fix/sales-panel-test-deterministic-clock`) fue mergeada en `89a478c0315fa9d3b51062858198d357b0738084`. Revalidar cada HEAD final exacto; no heredar checks entre SHAs.

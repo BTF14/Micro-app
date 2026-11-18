@@ -1,3 +1,14 @@
+# Handoff vigente — Paso 2B especificación BCV 0027 (2026-11-18)
+
+- Rama de trabajo: `docs/spec-0027-bcv-nonbusiness-days`; base exacta: `7eebc7fc8d155c275c43859fb66fdeb0f8bd46fe` (merge PR #380).
+- Documento principal: `docs/sdd/0027_BCV_NONBUSINESS_DAY_EFFECTIVE_DATE.md`. Revisar prioridades 1–3, sincronización `bcv_sync_state`, snapshot `operation_date` + `exchange_rate_effective_date`, guard SQL aditivo y matriz PostgreSQL.
+- Documentos reconciliados: `docs/sdd/BANKING_CALENDAR_VERSIONING.md`, `docs/sdd/SALES_CHECKOUT_MODEL.md`, `docs/PROJECT_PLAN.md`, `docs/CURRENT_STATE.md`, `docs/STATE_JOURNAL.md`.
+- Este trabajo especifica; no implementa 0027. No modificar apps, SQL, workflows ni dependencias. No tocar Neon/Cloudflare/secretos/datos reales.
+- AC-6 abierto, `FX_CONTINGENCY_ENABLED` apagado/no configurado; freeze v1.1; Issue #53 OPEN/P0; PRODUCTION NOT READY.
+- Antes de cualquier siguiente acción, verificar el HEAD vivo de esta rama/PR y checks del HEAD exacto. PR debe permanecer Draft; no merge/auto-merge.
+
+---
+
 # Handoff vigente — Paso 1 docs/tooling y spec BCV 0027 pendiente (2026-11-17)
 
 ## Punto exacto de partida

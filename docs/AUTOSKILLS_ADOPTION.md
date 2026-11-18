@@ -1,3 +1,36 @@
+## Curación de fuentes externas y agentes especializados — 2026-11-17
+
+Esta sección añade referencias curadas; **no declara instalación, ejecución de CLI ni incorporación de bundles**. Mantener los cuatro skills locales actuales y el flujo de revisión de micro-app-skill-curation.
+
+### GoogleChrome/modern-web-guidance@1.0.1
+
+- Fuente: https://github.com/GoogleChrome/modern-web-guidance
+- Versión objetivo de referencia: 1.0.1; fijar tag/commit y volver a inspeccionar antes de ejecutar/actualizar.
+- Licencias separadas: código Apache-2.0; guías CC-BY 4.0 (conservar atribución al reutilizar texto).
+- Aplicación acotada: React + Vite + CSS estándar; Baseline Widely Available; tablas móviles, formularios y accesibilidad. Adaptar al frontend real y a docs/FRONTEND_DESIGN_STANDARD.md.
+- Excluir extensiones Chrome, built-in AI, WebMCP, WASM, custom elements, legacy-scan masivo, Tailwind y SSR.
+- Si se ejecuta su CLI, establecer DISABLE_TELEMETRY=1; no enviar prompts/código del repo a telemetría. No añadir dependencia de runtime ni hooks.
+- Adoptar selectivamente para Carril A; no instalar globalmente en Paso 1.
+
+### cloudflare/security-audit-skill
+
+- Fuente: https://github.com/cloudflare/security-audit-skill
+- Licencia declarada: MIT; verificar release/commit y conservar avisos si se reutiliza contenido.
+- Filtrar a web/client/auth/cloud/data/DoS/supply-chain; excluir binario, IPC nativo y LLM ajeno al stack.
+- Guidance mode por defecto para revisiones de B1/Hardening. Full audit solo pre-prod, con aislamiento real, target read-only, secretos ficticios, datos sintéticos, límites de recursos y red externa deshabilitada cuando el procedimiento upstream lo exija.
+- validate-findings.cjs y validate-coverage-ledger.cjs validan estructura/cobertura de artefactos; no demuestran ausencia de vulnerabilidades ni sustituyen juicio/revisión independiente.
+- No declarar la skill instalada o ejecutada por estar catalogada.
+
+### Agenda de perfiles locales
+
+- Crear inventory-accounting-review (perfil + skill local) inmediatamente antes de Carril B1. Debe hacer revisión contable-operativa independiente, exactitud decimal, Kardex, snapshots, pagos/cierre y QA anti-puntos ciegos. Requerir pruebas extremas $0 y mutaciones selectivas en dinero/stock/tenant-sucursal; tests deben detectar mutantes críticos. No duplicar los agentes backend-data-review/security-review.
+- Crear ve-fx-compliance-review (perfil + skill local) al iniciar AC-6. Fuentes primarias y vigencia normativa, incluir SNAT/2026/00093 y su entrada en vigor prevista abril 2027; no emitir dictamen profesional ni certificar cumplimiento.
+
+### Regla de adopción
+
+Paso 1 solo registra y fija la curación. No instala herramientas, no crea agentes todavía, no agrega dependencias, no ejecuta escaneos y no modifica workflows. Revisar versión, licencia, scripts, permisos, telemetría, datos transmitidos, coste $0, solapamiento y rollback antes de cualquier instalación futura.
+---
+
 # AutoSkills and project agent skills
 
 Updated: 2026-10-19. Re-check upstream sources before installing or updating anything.

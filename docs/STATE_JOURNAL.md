@@ -1,3 +1,24 @@
+## Turno 57 — sincronización documental de PR #378 tras merge de PR #379 (2026-11-18)
+
+- `main` verificado en `89a478c0315fa9d3b51062858198d357b0738084`, merge commit de PR #379 (`fix/sales-panel-test-deterministic-clock`). PR #377 permanece MERGED en `25e37dc5dcfb18349a6b7f384d109e493a581c3d`; PR #379 MERGED en `89a478c0315fa9d3b51062858198d357b0738084`.
+- PR #378 (`docs/reconcile-state-and-skill-registry`) se actualiza incorporando el nuevo `main` y reconciliando CURRENT_STATE, HANDOFF_NEXT_CHAT, PROJECT_PLAN, SECURITY_ROADMAP y STATE_JOURNAL. El fix de #379 queda integrado desde main; no se replica ni altera en esta PR.
+- Alcance preservado: documentación/registro/ADR solamente en la rama #378; sin cambios adicionales de `apps/**`, SQL/migraciones, workflows, Neon, Cloudflare manual, secretos, datos reales, billing o deploy.
+- Gates intactos: AC-6 abierto y contingencia manual apagada/no configurada; freeze v1.1 vigente; Issue #53 OPEN/P0; ADR-20261117 aceptado solo para especificación 0027; PRODUCTION NOT READY. No se autoriza implementación 0027 ni salida de Draft/merge por esta actualización.
+- Checks del nuevo HEAD de PR #378 deben verificarse en GitHub por SHA exacto; CI verde no sustituye revisión ni autorización del propietario.
+
+---
+
+## Turno 56 — reconciliación post-PR #377, tooling curado y decisión BCV 0027 (2026-11-17)
+
+- Verificado en vivo: main = 25e37dc5dcfb18349a6b7f384d109e493a581c3d; PR #377 MERGED con merge SHA 25e37dc5dcfb18349a6b7f384d109e493a581c3d. AC-7 cerrado para PR1; AC-6 permanece abierto y contingencia manual apagada/no configurada. Freeze v1.1, Issue #53 OPEN/P0 y PRODUCTION NOT READY siguen vigentes.
+- Decisión nueva del propietario: preparar spec 0027 para tasa BCV de fecha valor futura en sábado/domingo y feriados entre semana sin calendario SUDEBAN anual manual. Prioridad tasa valid de hoy; fin de semana con sync sano; feriado laborable solo con sync exitoso del propio día; ventana máxima +5 días; caso no demostrado => 409 BCV_RATE_NOT_CURRENT. Preservar operation_date y effective_date por separado y actualizar guards mediante migración aditiva sin alterar 0022/0026. Detalle en ADR.
+- Paso 1: reconciliación de estado/roadmap/handoff y registro curado de Modern Web Guidance 1.0.1 + Cloudflare Security Audit Skill; no instalación ni código/SQL.
+- Orden aprobado: Paso 1 → Carril A (0 SQL) + spec 0027 → cierre/reconciliación Nivel 1 y 0027 antes B1 (0028+) → inventory-accounting-review → B1 → Hardening → CSV → Scanner/B2 → cierres/reportes → AC-6/ve-fx-compliance-review + pre-prod.
+- QA: Carril A helpers decimales puros y pruebas de límites; inventory-accounting-review exige invariantes independientes y mutación selectiva dinero/stock/tenant-sucursal con herramientas gratuitas.
+- Alcance: documentación/tooling solamente; no Neon, Cloudflare manual, secretos, datos reales, billing, deploy ni app code. No merge automático.
+
+---
+
 ## Turno 55 — implementación PR 1 Contingencia Manual BCV en Draft (2026-11-17)
 
 - Base verificada en vivo: `main` = `04d3679189edaab17221f1e8cd425cc68fa53155`. PR #377 OPEN / Draft; rama `feat/fx-contingency-pr1-20261117`.

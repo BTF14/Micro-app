@@ -108,8 +108,9 @@ async function findActiveManualFxAuthorization(
 }
 
 /**
- * A new sale requires today's valid BCV row and a successful latest sync.
- * lock_bcv_sync_state() takes FOR SHARE against the producer's UPDATE and holds
+ * A new sale requires the BCV row selected by the 0027 Caracas-date priority
+ * policy and a healthy sync state. lock_bcv_sync_state_with_error() takes FOR SHARE
+ * against the producer's UPDATE and holds
  * it until the checkout transaction commits or rolls back; it is not held
  * while the BCV HTTP fetch runs.
  */

@@ -436,6 +436,7 @@ export default function App() {
       if (document.visibilityState === "visible") refreshBcvRate();
     };
     document.addEventListener("visibilitychange", refreshOnVisibility);
+    window.addEventListener("focus", refreshBcvRate);
     // Keep a periodic refresh for an open dashboard while also handling midnight exactly.
     const interval = window.setInterval(refreshBcvRate, 60 * 60 * 1000);
     return () => {
@@ -444,6 +445,7 @@ export default function App() {
       window.clearInterval(dateInterval);
       window.clearInterval(interval);
       document.removeEventListener("visibilitychange", refreshOnVisibility);
+      window.removeEventListener("focus", refreshBcvRate);
     };
   }, [session]);
 

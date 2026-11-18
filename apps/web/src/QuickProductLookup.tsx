@@ -4,7 +4,7 @@ import { formatLocalizedDecimal } from "./decimal";
 import { apiRequest } from "./auth";
 import "./catalog.css";
 
-type ExchangeRateStatus = "current" | "stale" | "unavailable";
+type ExchangeRateStatus = "current" | "scheduled" | "stale" | "unavailable";
 type Branch = { id: string; name: string; slug: string };
 type Warehouse = { id: string; code: string; name: string; is_active: boolean };
 

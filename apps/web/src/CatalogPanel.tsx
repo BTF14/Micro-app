@@ -5,7 +5,7 @@ import { apiRequest } from "./auth";
 import ProductForm from "./ProductForm";
 import "./catalog.css";
 
-type ExchangeRateStatus = "current" | "stale" | "unavailable";
+type ExchangeRateStatus = "current" | "scheduled" | "stale" | "unavailable";
 
 type CatalogProduct = {
   id: string;

@@ -13,7 +13,7 @@ import "./sales-panel.css";
 
 type Currency = "USD" | "VES";
 type PaymentMethod = "cash" | "card" | "transfer" | "mobile_payment" | "other";
-type ExchangeRateStatus = "current" | "stale" | "unavailable";
+type ExchangeRateStatus = "current" | "scheduled" | "stale" | "unavailable";
 type Shift = { shift_id?: string; id?: string; branch_id: string; branch_name?: string; register_name?: string; opened_at?: string };
 type Warehouse = { id: string; name: string; code: string; is_active: boolean };
 type FxPanelState = { commercial_enabled: boolean; authorization: { id: string; rate: string; expires_at: string } | null };

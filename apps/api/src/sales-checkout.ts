@@ -16,6 +16,7 @@ import { withDatabaseClient, withDatabaseTransaction } from "./database";
 import { lockBranchScopes } from "./branch-context";
 import { resolveOpenCashierRegisterShift } from "./cashier-open-shift";
 import { lockInventoryBalances, lockInventoryWarehouses } from "./inventory-locks";
+import { bcvCaracasDate, selectApplicableBcvRate } from "./bcv-0027";
 
 const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const IDEMPOTENCY_KEY_PATTERN = /^[A-Za-z0-9._:-]{1,128}$/;
@@ -111,9 +112,9 @@ async function findActiveManualFxAuthorization(
  * while the BCV HTTP fetch runs.
  */
 export async function findApplicableCheckoutRate(tx: import("./database").DatabaseClient, now = new Date()): Promise<RateRow | null> {
-  const today = caracasDate(now);
+  const today = bcvCaracasDate(now);
   const syncState = await tx.query<{
-    last_success_at: string | null;
+    last_success_at: string | Date | null;
     last_outcome: string | null;
     last_effective_date: string | null;
     last_error_code: string | null;
@@ -125,26 +126,19 @@ export async function findApplicableCheckoutRate(tx: import("./database").Databa
        FROM public.lock_bcv_sync_state_with_error()`,
   );
   const state = syncState.rows[0];
-  if (
-    !state ||
-    !state.last_success_at ||
-    state.last_error_code != null ||
-    (state.last_outcome !== "inserted" && state.last_outcome !== "unchanged") ||
-    (state.last_effective_date === null || state.last_effective_date < today)
-  ) return null;
-
+  if (!state) return null;
   const result = await tx.query<RateRow>(
     `SELECT id, rate::text AS rate, effective_date::text AS effective_date, validation_status
        FROM public.exchange_rates
-      WHERE source = $1 AND effective_date = $2::date
-      ORDER BY fetched_at DESC LIMIT 1`,
+      WHERE source = $1
+        AND effective_date >= $2::date
+        AND effective_date <= ($2::date + 5)
+      ORDER BY effective_date ASC, fetched_at DESC`,
     [BCV_SOURCE, today],
   );
-  const row = result.rows[0];
-  if (!row || row.validation_status !== "valid" || row.effective_date !== today) return null;
-  return row;
+  const selection = selectApplicableBcvRate(today, state, result.rows);
+  return selection ? selection.row as RateRow : null;
 }
-
 function normalizeDecimal(value: unknown, precision: number, scale: number, positive: boolean): string | null {
   if (typeof value !== "string") return null;
   try {

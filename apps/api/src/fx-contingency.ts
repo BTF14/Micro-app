@@ -431,8 +431,34 @@ export function registerFxContingencyRoutes(app: Hono<{ Bindings: Bindings }>): 
                 WHERE obs.observed_at > $1::timestamptz
                   AND obs.last_outcome IN ('inserted','unchanged')
                   AND obs.last_error_code IS NULL
-                  AND obs.last_effective_date=(pg_catalog.clock_timestamp() AT TIME ZONE 'America/Caracas')::date
                   AND obs.validation_status='valid'
+                  AND obs.exchange_rate_id IS NOT NULL
+                  AND EXISTS (
+                    SELECT 1 FROM public.exchange_rates er
+                     WHERE er.id=obs.exchange_rate_id
+                       AND er.source='BCV_OFFICIAL_HTML_V1'
+                       AND er.validation_status='valid'
+                       AND er.effective_date=obs.last_effective_date
+                       AND er.effective_date <= (pg_catalog.clock_timestamp() AT TIME ZONE 'America/Caracas')::date + 5
+                       AND (
+                         er.effective_date=(pg_catalog.clock_timestamp() AT TIME ZONE 'America/Caracas')::date
+                         OR (
+                           er.effective_date > (pg_catalog.clock_timestamp() AT TIME ZONE 'America/Caracas')::date
+                           AND (
+                             EXTRACT(ISODOW FROM (pg_catalog.clock_timestamp() AT TIME ZONE 'America/Caracas')::date) IN (6,7)
+                             OR obs.last_success_at >= ((pg_catalog.clock_timestamp() AT TIME ZONE 'America/Caracas')::date::timestamp AT TIME ZONE 'America/Caracas')
+                           )
+                         )
+                       )
+                       AND NOT EXISTS (
+                         SELECT 1 FROM public.exchange_rates earlier
+                          WHERE earlier.source='BCV_OFFICIAL_HTML_V1'
+                            AND earlier.validation_status='valid'
+                            AND earlier.effective_date > (pg_catalog.clock_timestamp() AT TIME ZONE 'America/Caracas')::date
+                            AND earlier.effective_date < er.effective_date
+                            AND earlier.effective_date <= (pg_catalog.clock_timestamp() AT TIME ZONE 'America/Caracas')::date + 5
+                       )
+                  )
                   AND ((obs.last_outcome='inserted' AND obs.rate_fetched_at > $1::timestamptz)
                     OR obs.last_outcome='unchanged')
              ) AS restored`,

@@ -1,3 +1,14 @@
+# Corte vigente — post-merge PR #380 / especificación 0027 (2026-11-18)
+
+- **Main verificado:** `7eebc7fc8d155c275c43859fb66fdeb0f8bd46fe`, merge commit de PR #380. PR #380 MERGED; HEAD de su rama `28fb579c98078db158d5c011039b7d985d8b0cc0`.
+- **Paso 2B:** especificación técnica aditiva 0027 documentada en `docs/sdd/0027_BCV_NONBUSINESS_DAY_EFFECTIVE_DATE.md`; no implica que exista migración 0027 ni implementación en API/UI. Rama documental `docs/spec-0027-bcv-nonbusiness-days` parte del SHA de main anterior.
+- **Selección aprobada:** prioridad fila oficial válida exacta de hoy; sin ella, sábado/domingo menor fecha futura oficial válida en `(today,today+5]` con sync sano; lunes-viernes menor fecha futura dentro de la misma ventana solo con sync exitoso del día Caracas. Cualquier falta de evidencia => 409 `BCV_RATE_NOT_CURRENT`. No calendario manual.
+- **AC-6 ABIERTO**; `FX_CONTINGENCY_ENABLED` apagado/no configurado. **Freeze v1.1** vigente. **Issue #53 OPEN/P0**. **PRODUCTION: NOT READY**.
+- **0022/0026 intactas:** no ampliar grants de `microapp_runtime` ni `microapp_bcv_sync`; preservar integridad de ventas/contingencia y guards append-only. La futura 0027 debe ser aditiva.
+- **Límites de este paso:** docs/** únicamente; 0 apps/**, 0 SQL, 0 workflows, 0 dependencias; no Neon, Cloudflare manual, secretos, datos reales, billing, despliegue, merge ni auto-merge.
+
+---
+
 # Corte vigente — post-merge PR #377 y roadmap BCV no hábil (2026-11-17)
 
 - **Main exacto vigente:** `89a478c0315fa9d3b51062858198d357b0738084` (merge de PR #379). PR #377 fue mergeada en `25e37dc5dcfb18349a6b7f384d109e493a581c3d`; PR #379 (`fix/sales-panel-test-deterministic-clock`) fue mergeada en `89a478c0315fa9d3b51062858198d357b0738084`.

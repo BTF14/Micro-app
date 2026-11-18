@@ -189,11 +189,12 @@ describe("sales checkout request contract", () => {
 
 describe("checkout BCV effective-date and last-success selection", () => {
   const validState = (date: string, outcome: "inserted" | "unchanged" = "inserted"): {
-    last_success_at: string | null; last_outcome: string | null; last_effective_date: string | null;
+    last_success_at: string | null; last_outcome: string | null; last_effective_date: string | null; last_error_code: string | null;
   } => ({
     last_success_at: "2026-11-06T12:00:00.000Z",
     last_outcome: outcome,
     last_effective_date: date,
+    last_error_code: null,
   });
   const validRate = (date: string, status: "valid" | "stale" = "valid") => ({
     id: "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
@@ -218,7 +219,7 @@ describe("checkout BCV effective-date and last-success selection", () => {
     await expect(findApplicableCheckoutRate(client, new Date("2026-11-06T18:00:00-04:00"))).resolves.toBeNull();
     expect(statements).toHaveLength(2);
     expect(statements[0]).toContain("public.lock_bcv_sync_state_with_error()");
-    expect(statements[1]).toContain("effective_date = $2::date");
+    expect(statements[1]).toContain("effective_date >= $2::date");
   });
 
   it("accepts Friday's current rate when the latest successful BCV publication is prepublished for Monday", async () => {
@@ -229,25 +230,26 @@ describe("checkout BCV effective-date and last-success selection", () => {
     expect(statements).toHaveLength(2);
   });
 
-  it("rejects a Monday-prepublished rate on Saturday before its effective date", async () => {
-    const { client } = mockClient(validState("2026-11-09"), validRate("2026-11-09"));
-    await expect(findApplicableCheckoutRate(client, new Date("2026-11-07T12:00:00-04:00"))).resolves.toBeNull();
-  });
-
-  it("rejects a Monday-prepublished rate on Sunday before its effective date", async () => {
-    const { client } = mockClient(validState("2026-11-09"), validRate("2026-11-09"));
-    await expect(findApplicableCheckoutRate(client, new Date("2026-11-08T12:00:00-04:00"))).resolves.toBeNull();
-  });
-
-  it("accepts a Monday-prepublished rate on Monday after Friday's successful sync without an arbitrary TTL", async () => {
-    const { client, statements } = mockClient(validState("2026-11-09", "unchanged"), validRate("2026-11-09"));
-    await expect(findApplicableCheckoutRate(client, new Date("2026-11-09T09:00:00-04:00"))).resolves.toMatchObject({
-      effective_date: "2026-11-09",
-      validation_status: "valid",
+  it("accepts a Monday-prepublished rate on Saturday and Sunday with healthy sync evidence", async () => {
+    const saturday = mockClient(validState("2026-11-09"), validRate("2026-11-09"));
+    await expect(findApplicableCheckoutRate(saturday.client, new Date("2026-11-07T12:00:00-04:00"))).resolves.toMatchObject({
+      effective_date: "2026-11-09", validation_status: "valid",
     });
-    expect(statements).toHaveLength(2);
-    expect(statements[0]).toContain("public.lock_bcv_sync_state_with_error()");
-    expect(statements[1]).toContain("effective_date = $2::date");
+    const sunday = mockClient(validState("2026-11-09", "unchanged"), validRate("2026-11-09"));
+    await expect(findApplicableCheckoutRate(sunday.client, new Date("2026-11-08T12:00:00-04:00"))).resolves.toMatchObject({
+      effective_date: "2026-11-09", validation_status: "valid",
+    });
+  });
+
+  it("requires a same-Caracas-day sync for a weekday future rate", async () => {
+    const state = { ...validState("2026-11-10", "unchanged"), last_success_at: "2026-11-09T09:00:00-04:00", last_error_code: null };
+    const { client, statements } = mockClient(state, validRate("2026-11-10"));
+    await expect(findApplicableCheckoutRate(client, new Date("2026-11-09T09:00:00-04:00"))).resolves.toMatchObject({
+      effective_date: "2026-11-10", validation_status: "valid",
+    });
+    expect(statements[1]).toContain("effective_date >= $2::date");
+    const staleDay = mockClient({ ...state, last_success_at: "2026-11-08T23:59:00-04:00" }, validRate("2026-11-10"));
+    await expect(findApplicableCheckoutRate(staleDay.client, new Date("2026-11-09T09:00:00-04:00"))).resolves.toBeNull();
   });
 
   it("blocks a valid same-day rate when the latest sync attempt failed", async () => {

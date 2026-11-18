@@ -74,7 +74,7 @@ BEGIN
      LIMIT 1;
     IF NOT FOUND THEN RETURN; END IF;
 
-    IF pg_catalog.extract(isodow FROM p_operation_date) IN (6,7) THEN
+    IF EXTRACT(ISODOW FROM p_operation_date) IN (6,7) THEN
       selected_priority := 'weekend_prepublished';
     ELSE
       IF sync_success_at < (p_operation_date::timestamp AT TIME ZONE 'America/Caracas') THEN
@@ -415,6 +415,7 @@ BEGIN
     RETURN NULL;
   END IF;
   PERFORM 1 FROM public.bcv_sync_state WHERE singleton=true FOR SHARE;
+  -- operation_date := (pg_catalog.clock_timestamp() AT TIME ZONE 'America/Caracas')::date is captured by the BEFORE trigger after this FOR SHARE lock.
   SELECT * INTO selected FROM public.select_bcv_rate_for_operation(NEW.operation_date);
   IF NEW.operation_date IS NULL OR NOT FOUND
     OR NEW.exchange_rate_id IS DISTINCT FROM selected.exchange_rate_id

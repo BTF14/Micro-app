@@ -1,27 +1,25 @@
-# Handoff vigente — Paso 3A auditoría Nivel 1 (2026-11-18)
+# Handoff vigente — Nivel 1 cerrado; Paso 3B (0027) desbloqueado — 2026-11-18
 
-- **Base auditada:** `main` = `25dbf6e40a99e011c951ab55338de6d4b98332ad` (post-merge PR #381).
-- **Rama de reconciliación:** `chore/level1-gate-evidence-20261118`; PR [#382](https://github.com/BTF14/Micro-app/pull/382) OPEN / Draft; mantener Draft, sin merge ni auto-merge.
-- **Resultado:** Nivel 1 sigue ABIERTO. No iniciar Paso 3B ni implementar 0027.
-- **Protección:** `protected=true` y seis checks obligatorios visibles; endpoint de protección detallada devolvió 403, por lo que no afirmar que enforce-admins/reviews/force-push/conversation resolution estén revalidados.
-- **Backup/DR:** último backup natural SUCCESS #44342447079 (18 nov); RPO proxy último 23h29m52s, máximo observado 50h08m33s por backup cancelado el 16 nov. Restore remoto real #43767762632 SUCCESS con perfil 0025/25 migraciones/29 tablas; recovery window técnico 1.753s. Smoke #44191419753 SUCCESS en PR #377 con perfil 0026/26 migraciones/34 objetos y DR sintético 3.479s; fixture no contiene filas sintéticas en tablas de recibos 0025 ni las cinco tablas 0026. Ver el bloque vigente en `docs/SECURITY_ROADMAP.md` y `docs/BACKUP_AND_RECOVERY.md`.
-- **Dependencias:** run #44355990636 detectó GHSA-fc5q-39xc-vjpf HIGH (`picomatch@4.0.7`, ruta Vitest). No modificar lockfile ni actualizar a ciegas.
-- **CORS/bundle:** últimos runs SUCCESS #43938901337 y #43938418766 son del 16 nov, SHA anterior al HEAD actual; no se confirmó prueba exacta-current-SHA ni verificación HTTP específica de cabeceras.
-- **Alertas:** canary #43508458992 generó fallo controlado el 13 nov; no hay ACK del propietario. **Acción manual pendiente:** abrir [alert-canary.yml](https://github.com/BTF14/Micro-app/actions/workflows/alert-canary.yml) → Run workflow → rama `main` → `confirm_controlled_failure=true` → Run workflow → confirmar recepción GitHub/email y devolver ACK.
-- **Coste:** runners estándar del repo público son free según GitHub; no se verificaron planes/uso/billing reales de Cloudflare, Neon ni almacenamiento del repo privado. USD 0 total no certificado.
-- **Invariantes:** AC-6 ABIERTO; `FX_CONTINGENCY_ENABLED` apagado/no configurado; freeze v1.1; Issue #53 OPEN/P0; PRODUCTION NOT READY.
-- **AGENTS.md:** revisado; gate Nivel 1 correcto, sin cambio requerido. No repetir solicitudes de información ya documentada.
+- **Base auditada:** main = 25dbf6e40a99e011c951ab55338de6d4b98332ad (post-merge PR #381).
+- **PR documental:** [#382](https://github.com/BTF14/Micro-app/pull/382), rama chore/level1-gate-evidence-20261118, OPEN / Draft; no merge ni auto-merge.
+- **Estado de Nivel 1:** CERRADO / RECONCILIADO para desbloquear Paso 3B (0027), según docs/SECURITY_ROADMAP.md y las evidencias enlazadas.
+- **Protección main:** protected=true, seis checks obligatorios confirmados. El endpoint detallado devolvió 403 Resource not accessible by integration por permisos del token; no es ausencia de protección.
+- **Backup/restore:** backup cifrado [#44342447079](https://github.com/BTF14/Micro-app/actions/runs/44342447079) SUCCESS. Restore real cifrado hoy [#44366607906](https://github.com/BTF14/Micro-app/actions/runs/44366607906) SUCCESS en PostgreSQL 18 efímero, perfil 0025/25 migraciones/29 tablas; 1.996ms ventana técnica, freshness proxy 7.706s. Smoke [#44370849960](https://github.com/BTF14/Micro-app/actions/runs/44370849960) SUCCESS en HEAD dbd4444312795d4c2160a5da2fbf784c70b53870, perfil 0026/26 migraciones/34 objetos; datos sintéticos poblados 0025/0026 con manifiestos idénticos; round-trip 5s y DR 4.796s.
+- **Alertas:** canary [#44366308621](https://github.com/BTF14/Micro-app/actions/runs/44366308621) fallo controlado deliberado; el propietario confirma correo recibido con captura y ACK explícito.
+- **CORS/bundle:** bundle [#44367872780](https://github.com/BTF14/Micro-app/actions/runs/44367872780) SUCCESS; CORS [#44367813536](https://github.com/BTF14/Micro-app/actions/runs/44367813536) intento #2 SUCCESS; permitido https://micro-app-63i.pages.dev, atacante sin ACAO.
+- **Coste:** propietario confirma GitHub/Cloudflare/Neon Free ($0), sin tarjeta, R2 ni billing activo. La IA no inspeccionó paneles privados de billing/consumo vía API.
+- **GHSA:** GHSA-fc5q-39xc-vjpf HIGH en picomatch@4.0.7, tooling dev/build únicamente; pnpm audit informa <0.0.0 (sin parche disponible). No entra en runtime Worker ni bundle Pages; monitorear daily-dependency-watch.yml, no bloquea 0027, remediar al existir versión compatible.
+- **Restore real 0026:** Neon main permanece intencionalmente en 0025 por AGENTS.md. Restore real post-0026 solo después de autorización explícita para migrar 0026+0027 a Neon.
+- **Invariantes:** AC-6 ABIERTO; FX_CONTINGENCY_ENABLED apagado/no configurado; freeze v1.1; Issue #53 OPEN/P0; RPO/RTO operativos completos sin certificar; PRODUCTION NOT READY.
+- **AGENTS.md:** auditado y sin modificación. Paso 3B desbloqueado; esta PR solo reconcilia y fortalece fixture de pruebas. No se cambió apps/**, SQL/migraciones, Neon, secretos, Cloudflare manual, datos reales, billing o despliegues.
 
-## Siguiente secuencia segura
-1. Esperar el canary y ACK manual del propietario; no marcar alerta cerrada antes del ACK.
-2. Reconciliar smoke fixture sintético: recibos 0025 y datos ficticios válidos en las cinco tablas 0026; comparar conteos/manifiestos y assertions post-restore en PostgreSQL desechable.
-3. Ejecutar el restore real aislado posterior a 0026 solo cuando exista backup que incluya esa migración; no Neon main.
-4. Revalidar CORS, bundle y cabeceras contra el despliegue vigente/HEAD actual mediante workflows read-only disponibles.
-5. Obtener confirmación del propietario de planes/consumo/billing USD 0.
-6. Cerrar cada control con evidencia exacta; solo después evaluar Paso 3B.
+## Siguiente paso autorizado
+Iniciar Paso 3B para implementar la migración aditiva 0027 en una rama nueva desde el main exacto y seguir ADR-20261117, sin modificar Neon main hasta autorización explícita. Mantener todos los gates globales de producción y no tocar Issue #53 ni AC-6.
 
-## Límites no negociables de este checkpoint
-No tocar Neon main, secretos, Cloudflare manual, datos reales, billing, despliegues, migración 0027 ni lógica comercial. No cambiar AC-6, freeze v1.1 ni Issue #53. No merge ni auto-merge de esta PR Draft.
+## Límites preservados
+PR #382 sigue Draft y sin merge/auto-merge. No cambiar AC-6, freeze v1.1, Issue #53, Neon main, secretos, Cloudflare manual, datos reales, billing ni despliegues.
+
+---
 
 ---
 

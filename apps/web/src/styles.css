@@ -475,3 +475,9 @@ h1 { margin: 0; font-size: clamp(2.2rem, 4.2vw, 3.6rem); font-weight: 550; lette
  .topbar{min-height:56px}
 }
 @media(min-width:761px){.mobile-nav-toggle{display:none}}
+
+@media (max-width: 600px) {
+  button, input:not([type="checkbox"]), select, textarea {
+    min-height: 44px;
+  }
+}

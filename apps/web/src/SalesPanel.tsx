@@ -52,6 +52,11 @@ function localized(value: string, precision = 14, scale = 2, minFractionDigits =
 }
 function usd(value: string): string { return `US$ ${localized(value, 14, 4)}`; }
 function ves(value: string): string { return `Bs. ${localized(value, 16, 2)}`; }
+function formatEffectiveDate(value?: string | null): string {
+  if (!value) return "una fecha futura";
+  const [year, month, day] = value.split("-");
+  return `${day}/${month}/${year}`;
+}
 function dateTime(value: string): string {
   return new Intl.DateTimeFormat("es-VE", { dateStyle: "medium", timeStyle: "short", timeZone: "America/Caracas" }).format(new Date(value));
 }
@@ -444,7 +449,7 @@ export default function SalesPanel({
 
           {warehouseLoaded && warehouses.length === 0 && <p className="sales-alert warning" role="status">Esta sucursal no tiene almacenes activos. Habilita uno antes de vender.</p>}
           {warehouseLoaded && warehouses.length > 1 && !warehouseId && <p className="sales-alert warning" role="status">Selecciona el almacén que surtirá esta venta.</p>}
-          {exchangeRateStatus === "scheduled" ? <p className="sales-alert warning" role="status">La tasa BCV fue publicada para {exchangeRateEffectiveDate ?? "una fecha futura"}, pero aún no es aplicable a la operación de hoy. No se habilita el cobro con esa tasa.</p> : !canConvert && <p className="sales-alert warning" role="alert">El cobro se habilita cuando exista una tasa BCV vigente o una contingencia autorizada y habilitada.</p>}
+          {exchangeRateStatus === "scheduled" ? <p className="sales-alert warning" role="status">La tasa BCV fue publicada para {formatEffectiveDate(exchangeRateEffectiveDate)}, pero aún no es aplicable a la operación de hoy. No se habilita el cobro con esa tasa.</p> : !canConvert && <p className="sales-alert warning" role="alert">El cobro se habilita cuando exista una tasa BCV vigente o una contingencia autorizada y habilitada.</p>}
 
           {warehouseId && !receipt && (
             <div className="sales-workspace">

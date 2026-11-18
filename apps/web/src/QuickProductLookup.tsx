@@ -29,12 +29,19 @@ type QuickProductLookupProps = {
   organizationId: string;
   exchangeRate: string | null;
   exchangeRateStatus: ExchangeRateStatus;
+  exchangeRateEffectiveDate?: string | null;
   onSelect?: (product: QuickLookupProduct) => void;
   lockedBranchId?: string;
   lockedWarehouseId?: string;
   selectLabel?: string;
   resetSignal?: number;
 };
+
+function formatEffectiveDate(value?: string | null): string {
+  if (!value) return "una fecha futura";
+  const [year, month, day] = value.split("-");
+  return `${day}/${month}/${year}`;
+}
 
 function formatUsd(value: string): string {
   try {
@@ -68,6 +75,7 @@ export default function QuickProductLookup({
   organizationId,
   exchangeRate,
   exchangeRateStatus,
+  exchangeRateEffectiveDate,
   onSelect,
   lockedBranchId,
   lockedWarehouseId,
@@ -410,7 +418,9 @@ export default function QuickProductLookup({
                     <span className="catalog-price-unavailable">
                       {exchangeRateStatus === "stale"
                         ? "Tasa BCV desactualizada; conversión suspendida"
-                        : "Tasa BCV no disponible; conversión suspendida"}
+                        : exchangeRateStatus === "scheduled"
+                          ? `Tasa BCV publicada para ${formatEffectiveDate(exchangeRateEffectiveDate)}; aún no aplica`
+                          : "Tasa BCV no disponible; conversión suspendida"}
                     </span>
                   )}
                 </div>

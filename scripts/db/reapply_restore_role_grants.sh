@@ -4,7 +4,7 @@ set -euo pipefail
 : "${MIGRATION_DATABASE_URL:?Set MIGRATION_DATABASE_URL to a direct microapp_migrator connection string}"
 : "${MIGRATIONS_DIR:?Set MIGRATIONS_DIR to the exact migration bundle used for this restore}"
 profile="${RESTORE_GRANTS_PROFILE:-}"
-case "$profile" in main|bcv|bcv-0024|bcv-0025|bcv-0026) ;; *) echo "RESTORE_GRANTS_PROFILE must be main, bcv (0023), bcv-0024, bcv-0025, or bcv-0026." >&2; exit 2;; esac
+case "$profile" in main|bcv|bcv-0024|bcv-0025|bcv-0026|bcv-0027) ;; *) echo "RESTORE_GRANTS_PROFILE must be main, bcv (0023), bcv-0024, bcv-0025, bcv-0026, or bcv-0027." >&2; exit 2;; esac
 command -v psql >/dev/null 2>&1 || { echo "psql is required." >&2; exit 2; }
 command -v awk >/dev/null 2>&1 || { echo "awk is required." >&2; exit 2; }
 command -v sha256sum >/dev/null 2>&1 || { echo "sha256sum is required." >&2; exit 2; }
@@ -26,6 +26,7 @@ expected=16
 [[ "$profile" == "bcv-0024" ]] && expected=24
 [[ "$profile" == "bcv-0025" ]] && expected=25
 [[ "$profile" == "bcv-0026" ]] && expected=26
+[[ "$profile" == "bcv-0027" ]] && expected=27
 [[ "${#migration_files[@]}" -eq "$expected" ]] || {
   echo "Refusing ACL replay: profile $profile requires exactly $expected numbered migrations; found ${#migration_files[@]}." >&2
   exit 2

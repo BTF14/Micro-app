@@ -787,6 +787,10 @@ export function registerSalesCheckoutRoutes(app: Hono<{ Bindings: Bindings }>): 
                    JOIN public.bcv_sync_state current_state ON current_state.singleton=true
                    JOIN public.exchange_rates rate ON rate.id=obs.exchange_rate_id
                   WHERE current_state.last_success_at IS NOT NULL
+                    AND current_state.last_success_at = obs.last_success_at
+                    AND current_state.last_outcome = obs.last_outcome
+                    AND current_state.last_effective_date = obs.last_effective_date
+                    AND obs.observed_at >= obs.last_success_at
                     AND current_state.last_outcome IN ('inserted','unchanged')
                     AND current_state.last_error_code IS NULL
                     AND current_state.last_effective_date >= rate.effective_date

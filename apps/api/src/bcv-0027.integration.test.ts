@@ -2,7 +2,7 @@ import {afterAll,beforeAll,describe,expect,it} from "vitest";
 import {Client} from "pg";
 const env=(globalThis as typeof globalThis & {process?:{env?:Record<string,string|undefined>}}).process?.env;
 const adminUrl=env?.DATABASE_URL_ADMIN,ci=Boolean(env?.CI);
-function safe(url:string|undefined):boolean{if(!url)return false;try{const u=new URL(url);return ["localhost","127.0.0.1","[::1]"].includes(u.hostname)&&u.pathname==="/microapp_test"&&u.username==="microapp"&&["postgres:","postgresql:"].includes(u.protocol)}catch{return false}}
+function safe(url:string|undefined):boolean{if(!url)return false;try{const u=new URL(url);return (["localhost","127.0.0.1","[::1]"].includes(u.hostname)||(ci&&u.hostname==="postgres"))&&u.port==="5432"&&u.pathname==="/microapp_test"&&u.username==="microapp"&&["postgres:","postgresql:"].includes(u.protocol)}catch{return false}}
 if(ci&&!safe(adminUrl))throw new Error("BCV 0027 integration matrix requires disposable localhost PostgreSQL 18 admin connection.");
 const enabled=safe(adminUrl);
 function addDays(date:string,n:number):string{return new Date(Date.parse(date+"T12:00:00.000Z")+n*86400000).toISOString().slice(0,10)}

@@ -1,15 +1,18 @@
-# Corte vigente — Paso 3A: auditoría viva de controles Nivel 1 (2026-11-18)
+# Corte vigente — Nivel 1 cerrado/reconciliado; Paso 3B desbloqueado (2026-11-18)
 
-- **Main exacto:** `25dbf6e40a99e011c951ab55338de6d4b98332ad` (post-merge PR #381). Rama de reconciliación: `chore/level1-gate-evidence-20261118`; PR [#382](https://github.com/BTF14/Micro-app/pull/382) OPEN / Draft.
-- **Resultado:** Nivel 1 continúa **ABIERTO**. GitHub informa `protected=true` y seis checks obligatorios; el endpoint de protección detallada devolvió 403. No se revalidaron enforce-admins/reviews/force-push/conversation resolution.
-- **Backup:** último backup natural SUCCESS [44342447079](https://github.com/BTF14/Micro-app/actions/runs/44342447079), 18 nov; snapshots 17→18 nov separados 23h29m52s; máximo observado 10→18 nov 50h08m33s por backup cancelado el 16 nov. Restore real más reciente [43767762632](https://github.com/BTF14/Micro-app/actions/runs/43767762632) usa 25 migraciones/29 tablas; smoke sintético [44191419753](https://github.com/BTF14/Micro-app/actions/runs/44191419753) probó 26 migraciones, pero su fixture no popula las tablas 0025/0026. RPO/RTO operativos completos siguen abiertos.
-- **Alertas:** canal $0 de GitHub Actions + Issue P0 en fallo de backup; canary [43508458992](https://github.com/BTF14/Micro-app/actions/runs/43508458992) falló intencionalmente el 13 nov, pero no hay ACK del propietario. Acción pendiente: ejecutar canary con `confirm_controlled_failure=true` y confirmar recepción.
-- **Dependencias:** [daily watch 44355990636](https://github.com/BTF14/Micro-app/actions/runs/44355990636) detectó GHSA-fc5q-39xc-vjpf HIGH en `picomatch@4.0.7` vía Vitest; no se modificó lockfile.
-- **CORS/bundle:** runs [43938901337](https://github.com/BTF14/Micro-app/actions/runs/43938901337) y [43938418766](https://github.com/BTF14/Micro-app/actions/runs/43938418766) SUCCESS del 16 nov, pero SHA `e375e2d` anterior al main actual. Cabeceras presentes en código; falta prueba HTTP viva específica.
-- **Coste:** runners estándar del repo público no cuestan; planes/uso reales de Cloudflare, Neon y almacenamiento del repo privado no se pudieron comprobar. USD 0 global no certificado.
-- **AC-6 ABIERTO**, `FX_CONTINGENCY_ENABLED` apagado/no configurado; freeze v1.1; Issue #53 OPEN/P0; **PRODUCTION: NOT READY**.
-- **Paso 3B (0027) BLOQUEADO** hasta resolver todos los controles Nivel 1 y el ACK/certificación de coste. No implementar lógica comercial ni migración 0027 en este paso.
-- **Límites:** no se tocó Neon main, secretos, Cloudflare manual, billing, datos reales, dependencias, workflows ni despliegue. `AGENTS.md` fue revisado y conserva correctamente el gate Nivel 1.
+- **Main exacto auditado:** 25dbf6e40a99e011c951ab55338de6d4b98332ad (post-merge PR #381). PR documental [#382](https://github.com/BTF14/Micro-app/pull/382) permanece OPEN/Draft, sin merge ni auto-merge.
+- **Nivel 1: CERRADO / RECONCILIADO para desbloquear Paso 3B (0027).** Main protegido (protected=true) con seis checks requeridos; 403 del endpoint detallado es permiso insuficiente del token de integración, no ausencia de protección.
+- **Backup/DR:** backup diario cifrado [#44342447079](https://github.com/BTF14/Micro-app/actions/runs/44342447079) SUCCESS; restore real cifrado de hoy [#44366607906](https://github.com/BTF14/Micro-app/actions/runs/44366607906) SUCCESS, perfil 0025/25 migraciones/29 tablas, 1.996ms ventana técnica y freshness proxy 7.706s. Smoke sintético [#44370849960](https://github.com/BTF14/Micro-app/actions/runs/44370849960) SUCCESS, perfil 0026/26 migraciones/34 objetos, fixture poblada 0025/0026, manifiestos source/restored iguales, round-trip 5s y DR drill 4.796s.
+- **Alertas:** canary [#44366308621](https://github.com/BTF14/Micro-app/actions/runs/44366308621) falló de forma controlada; propietario confirma correo recibido con captura y ACK explícito.
+- **CORS/bundle:** [bundle #44367872780](https://github.com/BTF14/Micro-app/actions/runs/44367872780) y [CORS #44367813536](https://github.com/BTF14/Micro-app/actions/runs/44367813536) SUCCESS hoy sobre main exacto; Pages usa /api, CORS permite origen Pages y no emite ACAO para attacker.example.
+- **Coste:** propietario confirma cuentas GitHub, Cloudflare y Neon Free ($0), sin tarjeta, R2 ni billing activo. La IA no inspeccionó paneles privados de billing/consumo vía API.
+- **GHSA-fc5q-39xc-vjpf:** picomatch@4.0.7 HIGH en tooling dev/build (vite/tinyglobby/fdir/vitest), patched versions <0.0.0; no forma parte del runtime Worker ni bundle Pages. Monitoreado por daily dependency watch; no bloquea 0027. Remediar al existir versión compatible.
+- **Neon:** main sigue intencionalmente en 0025. Restore real post-0026 se hará cuando el propietario autorice migrar 0026+0027 a Neon.
+- **Paso 3B:** DESBLOQUEADO para implementación aditiva 0027, en rama separada desde main; esta actualización no implementa 0027 ni modifica SQL.
+- **Gates globales intactos:** AC-6 ABIERTO y FX_CONTINGENCY_ENABLED apagado/no configurado; freeze v1.1; Issue #53 OPEN/P0; RPO/RTO operativos completos no certificados; **PRODUCTION: NOT READY**.
+- **Límites:** no se tocó apps/**, migraciones SQL, Neon, secretos, Cloudflare manual, datos reales, billing ni despliegue. AGENTS.md sigue intacto.
+
+---
 
 ---
 

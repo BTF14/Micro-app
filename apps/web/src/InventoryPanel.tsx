@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState, type FormEvent } from "react";
 import { formatDecimal, parseNumeric } from "@micro-app/money";
 import { apiRequest } from "./auth";
+import { formatLocalizedDecimal, normalizeDecimalInput } from "./decimal";
 import "./catalog.css";
 
 type Branch = { id: string; name: string; slug: string };
@@ -21,27 +22,15 @@ type BalanceItem = {
 type BalancePage = { items: BalanceItem[]; nextCursor: string | null; limit: number };
 type ReceiptItem = { id: string; reason: string; created_at: string; line_count: string };
 
-function groupThousands(value: string): string {
-  const [integerPart, fractionPart] = value.split(".");
-  const grouped = (integerPart ?? "0").replace(/\B(?=(\d{3})+(?!\d))/g, ".");
-  return fractionPart ? `${grouped},${fractionPart}` : grouped;
-}
-
-// Quantities are numeric(14,3) strings from the API; never use floats.
+// Quantities and costs remain exact NUMERIC strings; formatting is centralized.
 function formatQuantity(value: string): string {
-  try {
-    return groupThousands(formatDecimal(parseNumeric(value, 14, 3), 3, 0));
-  } catch {
-    return "No disponible";
-  }
+  try { return formatLocalizedDecimal(value, 14, 3, 0); }
+  catch { return "No disponible"; }
 }
 
 function formatUsd(value: string): string {
-  try {
-    return groupThousands(formatDecimal(parseNumeric(value, 14, 4), 4, 2));
-  } catch {
-    return "No disponible";
-  }
+  try { return formatLocalizedDecimal(value, 14, 4, 2); }
+  catch { return "No disponible"; }
 }
 
 function isLowStock(item: BalanceItem): boolean {
@@ -272,10 +261,10 @@ export default function InventoryPanel({ organizationId, canManageInventory }: {
               </select>
             </label>
             <label>Cantidad
-              <input required inputMode="decimal" pattern="(?:0|[1-9][0-9]{0,10})(?:\.[0-9]{1,3})?" title="Usa punto (.) y máximo 3 decimales, ej. 2.5" value={receiptQuantity} onChange={(event) => setReceiptQuantity(event.target.value)} />
+              <input required inputMode="decimal" pattern="(?:0|[1-9][0-9]{0,10})(?:\.[0-9]{1,3})?" title="Usa punto (.) y máximo 3 decimales, ej. 2.5" value={receiptQuantity} onChange={(event) => setReceiptQuantity(normalizeDecimalInput(event.target.value))} />
             </label>
             <label>Costo unitario USD
-              <input required inputMode="decimal" pattern="(?:0|[1-9][0-9]{0,9})(?:\.[0-9]{1,4})?" title="Usa punto (.) y máximo 4 decimales, ej. 1.05" value={receiptCost} onChange={(event) => setReceiptCost(event.target.value)} />
+              <input required inputMode="decimal" pattern="(?:0|[1-9][0-9]{0,9})(?:\.[0-9]{1,4})?" title="Usa punto (.) y máximo 4 decimales, ej. 1.05" value={receiptCost} onChange={(event) => setReceiptCost(normalizeDecimalInput(event.target.value))} />
             </label>
             <label>Motivo
               <input required maxLength={500} value={receiptReason} onChange={(event) => setReceiptReason(event.target.value)} />
@@ -290,7 +279,7 @@ export default function InventoryPanel({ organizationId, canManageInventory }: {
               </select>
             </label>
             <label>Cantidad contada
-              <input required inputMode="decimal" pattern="(?:0|[1-9][0-9]{0,10})(?:\.[0-9]{1,3})?" title="Usa punto (.) y máximo 3 decimales, ej. 2.5" value={countQuantity} onChange={(event) => setCountQuantity(event.target.value)} />
+              <input required inputMode="decimal" pattern="(?:0|[1-9][0-9]{0,10})(?:\.[0-9]{1,3})?" title="Usa punto (.) y máximo 3 decimales, ej. 2.5" value={countQuantity} onChange={(event) => setCountQuantity(normalizeDecimalInput(event.target.value))} />
             </label>
             <label>Motivo
               <input required maxLength={500} value={countReason} onChange={(event) => setCountReason(event.target.value)} />
@@ -348,11 +337,11 @@ export default function InventoryPanel({ organizationId, canManageInventory }: {
                       <strong>{item.name}</strong>
                       <span className="catalog-product-meta">{item.sku}{item.barcode ? ` · ${item.barcode}` : ""}{item.unit ? ` · ${item.unit}` : ""}</span>
                     </td>
-                    <td className="catalog-money">{formatQuantity(item.on_hand_quantity)}</td>
-                    <td className="catalog-money">{formatQuantity(item.reserved_quantity)}</td>
-                    <td className="catalog-money">{formatQuantity(item.available_quantity)}</td>
+                    <td className="catalog-money" data-label="En existencia">{formatQuantity(item.on_hand_quantity)}</td>
+                    <td className="catalog-money" data-label="Reservado">{formatQuantity(item.reserved_quantity)}</td>
+                    <td className="catalog-money" data-label="Disponible">{formatQuantity(item.available_quantity)}</td>
                     {canReadCosts && (
-                      <td className="catalog-money">{item.cost_usd === undefined ? "—" : `US$ ${formatUsd(item.cost_usd)}`}</td>
+                      <td className="catalog-money" data-label="Costo USD">{item.cost_usd === undefined ? "—" : `US$ ${formatUsd(item.cost_usd)}`}</td>
                     )}
                     <td>
                       {!item.is_active ? (

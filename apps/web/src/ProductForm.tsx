@@ -66,11 +66,15 @@ export default function ProductForm({ organizationId, product, onCancel, onSaved
       return;
     }
 
+    const costUsd = normalizeDecimalInput(draft.cost_usd);
+    const priceUsd = normalizeDecimalInput(draft.price_usd);
+    const minimumStockInput = normalizeDecimalInput(draft.minimum_stock);
+
     try {
-      const cost = parseNumeric(draft.cost_usd, 14, 4);
-      const price = parseNumeric(draft.price_usd, 14, 4);
-      const minimumStock = draft.minimum_stock.trim()
-        ? parseNumeric(draft.minimum_stock, 14, 3)
+      const cost = parseNumeric(costUsd, 14, 4);
+      const price = parseNumeric(priceUsd, 14, 4);
+      const minimumStock = minimumStockInput
+        ? parseNumeric(minimumStockInput, 14, 3)
         : null;
       if (cost < 0n || price < 0n || minimumStock !== null && minimumStock < 0n) {
         setError("Los costos, precios y mínimos de inventario no pueden ser negativos.");
@@ -87,14 +91,14 @@ export default function ProductForm({ organizationId, product, onCancel, onSaved
       name: draft.name.trim(),
       description: draft.description.trim() || null,
       unit: draft.unit.trim(),
-      cost_usd: draft.cost_usd,
-      price_usd: draft.price_usd,
+      cost_usd: costUsd,
+      price_usd: priceUsd,
       ...(product
         ? {
             is_active: draft.is_active,
-            ...(draft.minimum_stock.trim() ? { minimum_stock: draft.minimum_stock } : {}),
+            ...(minimumStockInput ? { minimum_stock: minimumStockInput } : {}),
           }
-        : { minimum_stock: draft.minimum_stock }),
+        : { minimum_stock: minimumStockInput }),
     };
 
     setSaving(true);

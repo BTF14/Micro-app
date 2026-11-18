@@ -25,13 +25,15 @@ type SaleReceipt = {
   sale_number: string; created_at: string; currency: Currency; subtotal_usd: string;
   total_usd: string; total_ves: string; bcv_rate: string | null; fx_rate: string;
   fx_source: 'bcv_official' | 'manual_contingency'; fx_receipt_label: string;
-  fx_authorization_id: string | null; lines: SaleLineReceipt[]; payments: SalePaymentReceipt[];
+  fx_authorization_id: string | null; operation_date: string | null; exchange_rate_effective_date: string | null;
+  lines: SaleLineReceipt[]; payments: SalePaymentReceipt[];
 };
 
 type SalesPanelProps = {
   organizationId: string;
   exchangeRate: string | null;
   exchangeRateStatus: ExchangeRateStatus;
+  exchangeRateEffectiveDate?: string | null;
   onGoToRegister: () => void;
   onRefreshRate?: () => Promise<void> | void;
 };
@@ -442,7 +444,7 @@ export default function SalesPanel({
 
           {warehouseLoaded && warehouses.length === 0 && <p className="sales-alert warning" role="status">Esta sucursal no tiene almacenes activos. Habilita uno antes de vender.</p>}
           {warehouseLoaded && warehouses.length > 1 && !warehouseId && <p className="sales-alert warning" role="status">Selecciona el almacén que surtirá esta venta.</p>}
-          {!canConvert && <p className="sales-alert warning" role="alert">El cobro se habilita cuando exista una tasa BCV vigente o una contingencia autorizada y habilitada.</p>}
+          {exchangeRateStatus === "scheduled" ? <p className="sales-alert warning" role="status">La tasa BCV fue publicada para {exchangeRateEffectiveDate ?? "una fecha futura"}, pero aún no es aplicable a la operación de hoy. No se habilita el cobro con esa tasa.</p> : !canConvert && <p className="sales-alert warning" role="alert">El cobro se habilita cuando exista una tasa BCV vigente o una contingencia autorizada y habilitada.</p>}
 
           {warehouseId && !receipt && (
             <div className="sales-workspace">

@@ -28,6 +28,10 @@ describe("BCV 0027 effective-date policy",()=>{
   expect(selectApplicableBcvRate("2026-11-09",null,[row("2026-11-09")])).toBeNull();
   expect(selectApplicableBcvRate("2026-11-09",state("2026-11-09"),[row("2026-11-09","stale")])).toBeNull();
  });
+ it("rejects zero or malformed official rates",()=>{
+  expect(selectApplicableBcvRate("2026-11-09",state("2026-11-09"),[{...row("2026-11-09"),rate:"0"}])).toBeNull();
+  expect(selectApplicableBcvRate("2026-11-09",state("2026-11-09"),[{...row("2026-11-09"),rate:"NaN"}])).toBeNull();
+ });
  it("rejects ambiguous nearest future candidates",()=>{
   expect(selectApplicableBcvRate("2026-11-07",state("2026-11-09"),[row("2026-11-09"),row("2026-11-09")])).toBeNull();
  });

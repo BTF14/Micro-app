@@ -640,6 +640,7 @@ BEGIN
     FROM public.exchange_rates er
    WHERE er.id = p_reference_exchange_rate_id
      AND er.source = 'BCV_OFFICIAL_HTML_V1'
+     AND er.base_currency='USD' AND er.quote_currency='VES' AND er.rate > 0
      AND er.rate = p_reference_rate_value
      AND er.validation_status = 'valid'
      AND er.effective_date <= operation_date

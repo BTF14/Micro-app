@@ -508,7 +508,7 @@ export function registerFxContingencyRoutes(app: Hono<{ Bindings: Bindings }>): 
         }
         const reference = await tx.query<{ id: string; rate: string }>(
           `SELECT id,rate::text FROM public.exchange_rates
-            WHERE source='BCV_OFFICIAL_HTML_V1' AND validation_status='valid'
+            WHERE source='BCV_OFFICIAL_HTML_V1' AND base_currency='USD' AND quote_currency='VES' AND rate > 0 AND validation_status='valid'
               AND effective_date <= (pg_catalog.clock_timestamp() AT TIME ZONE 'America/Caracas')::date
             ORDER BY effective_date DESC,fetched_at DESC LIMIT 1`,
         );

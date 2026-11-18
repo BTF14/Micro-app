@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { apiRequest, ApiError, googleLoginUrl, type AuthResponse } from "./auth";
+import { formatLocalizedDecimal } from "./decimal";
 import "./auth.css";
 import CatalogPanel from "./CatalogPanel";
 import InventoryPanel from "./InventoryPanel";
@@ -139,13 +140,10 @@ function formatBcvAttemptAge(value: number | null): string {
   return `${hours} h ${minutes % 60} min`;
 }
 
-// Keep the official decimal string intact; never convert exchange rates to JS floats.
+// Keep the official rate exact and apply the shared es-VE decimal formatter.
 function formatBcvRate(value: string): string {
-  const [integerPart = "0", fractionalPart] = value.split(".");
-  const grouped = integerPart.replace(/\B(?=(\d{3})+(?!\d))/g, ".");
-  return fractionalPart ? `${grouped},${fractionalPart}` : grouped;
+  return formatLocalizedDecimal(value, 18, 8, 2);
 }
-
 function formatBcvEffectiveDate(value: string): string {
   return new Intl.DateTimeFormat("es-VE", {
     day: "numeric", month: "long", year: "numeric", timeZone: "America/Caracas",

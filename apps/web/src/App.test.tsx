@@ -297,4 +297,52 @@ describe("Micro app authentication flow", () => {
     expect(container.textContent).toContain("Inicia sesión");
     expect(container.textContent).toContain("Has cerrado la sesión de forma segura.");
   });
+
+  it("labels a future BCV publication as scheduled and keeps operation date separate from BCV value date", async () => {
+    vi.mocked(fetch)
+      .mockResolvedValueOnce(jsonResponse(authResponse))
+      .mockResolvedValueOnce(jsonResponse(bcvSyncStateResponse))
+      .mockResolvedValueOnce(jsonResponse({
+        ...bcvRateResponse,
+        effectiveDate: "2026-11-09",
+        operationDate: "2026-11-07",
+        status: "scheduled",
+      }));
+    await renderApp();
+    await settle();
+
+    const panel = container.querySelector(".exchange-rate-panel");
+    expect(panel?.textContent).toContain("Publicada; aún no aplicable");
+    expect(panel?.textContent).toContain("Fecha de operación: 7 de noviembre de 2026");
+    expect(panel?.textContent).toContain("Fecha valor BCV: 9 de noviembre de 2026");
+  });
+
+  it("revalidates the BCV rate when the document becomes visible again", async () => {
+    Object.defineProperty(document, "visibilityState", { configurable: true, value: "visible" });
+    vi.mocked(fetch)
+      .mockResolvedValueOnce(jsonResponse(authResponse))
+      .mockResolvedValueOnce(jsonResponse(bcvSyncStateResponse))
+      .mockResolvedValueOnce(jsonResponse(bcvRateResponse))
+      .mockResolvedValueOnce(jsonResponse({
+        ...bcvRateResponse,
+        effectiveDate: "2026-11-09",
+        operationDate: "2026-11-07",
+        status: "scheduled",
+      }));
+    await renderApp();
+    await settle();
+    expect(vi.mocked(fetch)).toHaveBeenCalledTimes(3);
+
+    await act(async () => {
+      document.dispatchEvent(new Event("visibilitychange"));
+      await Promise.resolve();
+      await Promise.resolve();
+    });
+    await settle();
+
+    expect(vi.mocked(fetch)).toHaveBeenCalledTimes(4);
+    expect(container.querySelector(".exchange-rate-panel")?.textContent).toContain("Publicada; aún no aplicable");
+    expect(container.querySelector(".exchange-rate-panel")?.textContent).toContain("9 de noviembre de 2026");
+  });
+
 });

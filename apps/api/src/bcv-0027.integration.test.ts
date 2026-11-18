@@ -10,7 +10,7 @@ function previousWeekday(day:number):string{const d=new Date();d.setUTCHours(12,
 describe.skipIf(!enabled)("BCV 0027 PostgreSQL 18 effective-date matrix",()=>{
  let db:Client;let syncSequence=0;const friday=previousWeekday(5),saturday=addDays(friday,1),sunday=addDays(friday,2),monday=addDays(friday,3),tuesday=addDays(friday,4);
  beforeAll(async()=>{db=new Client({connectionString:adminUrl});await db.connect();await db.query("BEGIN")});
- beforeEach(async()=>{await db.query("SAVEPOINT bcv_0027_case")});
+ beforeEach(async()=>{await db.query("SAVEPOINT bcv_0027_case");await db.query("DELETE FROM public.exchange_rates WHERE source='BCV_OFFICIAL_HTML_V1' AND effective_date BETWEEN $1::date AND $2::date",[friday,addDays(saturday,6)])});
  afterEach(async()=>{await db.query("ROLLBACK TO SAVEPOINT bcv_0027_case")});
  afterAll(async()=>{if(db){await db.query("ROLLBACK");await db.end()}});
  async function prepare(rows:string[],syncDate:string,successAt:string,outcome="inserted",error:string|null=null,validationStatus="valid"){

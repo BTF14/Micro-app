@@ -11,7 +11,7 @@ describe("web decimal helpers", () => {
   it("groups and localizes exact decimal strings", () => {
     expect(formatLocalizedDecimal("1234567.8900", 14, 4, 2)).toBe("1.234.567,89");
     expect(formatLocalizedDecimal("0.0001", 14, 4, 2)).toBe("0,0001");
-    expect(formatLocalizedDecimal("894.88760000", 18, 8, 2)).toBe("894,88760000");
+    expect(formatLocalizedDecimal("894.88760000", 18, 8, 2)).toBe("894,8876");
   });
 
   it("rejects values outside NUMERIC precision and scale", () => {

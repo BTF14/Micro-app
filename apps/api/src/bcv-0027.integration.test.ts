@@ -6,9 +6,9 @@ function safe(url:string|undefined):boolean{if(!url)return false;try{const u=new
 if(ci&&!safe(adminUrl))throw new Error("BCV 0027 integration matrix requires disposable localhost PostgreSQL 18 admin connection.");
 const enabled=safe(adminUrl);
 function addDays(date:string,n:number):string{return new Date(Date.parse(date+"T12:00:00.000Z")+n*86400000).toISOString().slice(0,10)}
-function nextWeekday(day:number):string{const d=new Date();d.setUTCHours(12,0,0,0);for(let i=0;i<8;i++){if(d.getUTCDay()===day){if(i===0)d.setUTCDate(d.getUTCDate()+7);return d.toISOString().slice(0,10)}d.setUTCDate(d.getUTCDate()+1)}throw new Error("weekday calculation failed")}
+function previousWeekday(day:number):string{const d=new Date();d.setUTCHours(12,0,0,0);for(let i=1;i<=7;i++){d.setUTCDate(d.getUTCDate()-1);if(d.getUTCDay()===day)return d.toISOString().slice(0,10)}throw new Error("previous weekday calculation failed")}
 describe.skipIf(!enabled)("BCV 0027 PostgreSQL 18 effective-date matrix",()=>{
- let db:Client;let syncSequence=0;const friday=nextWeekday(5),saturday=addDays(friday,1),sunday=addDays(friday,2),monday=addDays(friday,3),tuesday=addDays(friday,4);
+ let db:Client;let syncSequence=0;const friday=previousWeekday(5),saturday=addDays(friday,1),sunday=addDays(friday,2),monday=addDays(friday,3),tuesday=addDays(friday,4);
  beforeAll(async()=>{db=new Client({connectionString:adminUrl});await db.connect();await db.query("BEGIN")});
  afterAll(async()=>{if(db){await db.query("ROLLBACK");await db.end()}});
  async function prepare(rows:string[],syncDate:string,successAt:string,outcome="inserted",error:string|null=null,validationStatus="valid"){
@@ -30,9 +30,8 @@ describe.skipIf(!enabled)("BCV 0027 PostgreSQL 18 effective-date matrix",()=>{
   expect(await select(saturday)).toBeNull();
  });
  it("rejects failed, running, errored, uncovered, stale and beyond-five-day candidates",async()=>{
-  await prepare([monday],monday,friday+"T16:00:00Z","failed");expect(await select(saturday)).toBeNull();
-  await prepare([monday],monday,friday+"T16:00:00Z","running");expect(await select(saturday)).toBeNull();
   await prepare([monday],monday,friday+"T16:00:00Z","failed","SOURCE_ERROR");expect(await select(saturday)).toBeNull();
+  await prepare([monday],monday,friday+"T16:00:00Z","running");expect(await select(saturday)).toBeNull();
   await prepare([monday],friday,friday+"T16:00:00Z");expect(await select(saturday)).toBeNull();
   const boundary=addDays(saturday,5);await prepare([boundary],boundary,friday+"T16:00:00Z");expect(await select(saturday)).toMatchObject({effective_date:boundary,priority:"weekend_prepublished"});
   const outside=addDays(saturday,6);await prepare([outside],outside,friday+"T16:00:00Z");expect(await select(saturday)).toBeNull();

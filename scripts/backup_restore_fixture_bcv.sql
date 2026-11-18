@@ -169,6 +169,76 @@ UPDATE public.bcv_sync_state
        updated_at = now()
  WHERE singleton = true;
 
+-- 0025: use the production SECURITY DEFINER receipt path so the immutable
+-- purchase_receipt movement and inventory balance projection are exercised.
+SELECT * FROM public.create_inventory_receipt(
+  '14141414-1414-4414-8414-141414141414',
+  '16161616-1616-4616-8616-161616161616',
+  '19191919-1919-4919-8919-191919191919',
+  '15151515-1515-4515-8515-151515151515',
+  'Synthetic restore receipt 0025',
+  'synthetic-restore-receipt-0025',
+  repeat('f', 64),
+  jsonb_build_array(jsonb_build_object(
+    'product_id', '18181818-1818-4818-8818-181818181818',
+    'quantity', 3.000,
+    'unit_cost_usd', 2.0000
+  ))
+);
+
+-- 0026: entirely synthetic, non-secret verifier bytes. No plaintext PIN,
+-- active authorization, or manual-contingency sale is created.
+SELECT public.set_fx_user_pin_credential(
+  '11111111-1111-4111-8111-111111111111',
+  '22222222-2222-4222-8222-222222222222',
+  '22222222-2222-4222-8222-222222222222',
+  'pbkdf2-sha256-v1', 100000,
+  decode(repeat('5a', 16), 'hex'),
+  decode(repeat('a5', 32), 'hex')
+);
+
+INSERT INTO public.fx_contingency_delegations (
+  id, organization_id, branch_id, user_id, granted_by_user_id,
+  permission, status, created_at, revoked_at
+) VALUES (
+  '24242424-2424-4424-8424-242424242424',
+  '11111111-1111-4111-8111-111111111111',
+  '33333333-3333-4333-8333-333333333333',
+  '22222222-2222-4222-8222-222222222222',
+  '22222222-2222-4222-8222-222222222222',
+  'fx.contingency.authorize', 'revoked', now(), now()
+);
+
+INSERT INTO public.fx_contingency_authorizations (
+  id, organization_id, branch_id, rate, reference_rate_value,
+  reference_exchange_rate_id, reference_effective_date, deviation_bps,
+  reason, starts_at, expires_at, authorized_by_user_id, authorized_by_role,
+  elevated_confirmation_at, elevated_confirmation_reason, status, revoked_at
+) VALUES (
+  '25252525-2525-4525-8525-252525252525',
+  '11111111-1111-4111-8111-111111111111',
+  '33333333-3333-4333-8333-333333333333',
+  250.12345600, 250.12345600,
+  '88888888-8888-4888-8888-888888888888',
+  (now() AT TIME ZONE 'America/Caracas')::date, 0,
+  'Synthetic revoked authorization for backup/restore verification',
+  (((now() AT TIME ZONE 'America/Caracas')::date::timestamp) AT TIME ZONE 'America/Caracas') + interval '1 hour',
+  (((now() AT TIME ZONE 'America/Caracas')::date::timestamp) AT TIME ZONE 'America/Caracas') + interval '3 hours',
+  '22222222-2222-4222-8222-222222222222', 'owner',
+  NULL, NULL, 'revoked', now()
+);
+
+SELECT public.append_fx_contingency_event(
+  '11111111-1111-4111-8111-111111111111',
+  '33333333-3333-4333-8333-333333333333',
+  '25252525-2525-4525-8525-252525252525',
+  'revoked',
+  '22222222-2222-4222-8222-222222222222',
+  'owner',
+  jsonb_build_object('fixture', 'synthetic-backup-restore', 'commercial_enabled', false)
+);
+
+
 INSERT INTO public.warehouses (id, organization_id, branch_id, code, name)
 VALUES ('99999999-9999-4999-8999-999999999999',
         '11111111-1111-4111-8111-111111111111',

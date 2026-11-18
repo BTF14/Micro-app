@@ -1,6 +1,7 @@
 import { useState, type FormEvent } from "react";
 import { formatMoneyForDisplay, parseNumeric } from "@micro-app/money";
 import { apiRequest } from "./auth";
+import { normalizeDecimalInput } from "./decimal";
 
 type CatalogProduct = {
   id: string;
@@ -148,17 +149,17 @@ export default function ProductForm({ organizationId, product, onCancel, onSaved
         </label>
         <label>
           Precio USD
-          <input value={draft.price_usd} onChange={(event) => update("price_usd", event.target.value)} inputMode="decimal" autoComplete="off" placeholder="0.00" required />
+          <input value={draft.price_usd} onChange={(event) => update("price_usd", normalizeDecimalInput(event.target.value))} inputMode="decimal" autoComplete="off" placeholder="0.00" required />
           <span className="product-field-hint">Ejemplo: 23.85 (hasta 4 decimales si hace falta)</span>
         </label>
         <label>
           Costo USD
-          <input value={draft.cost_usd} onChange={(event) => update("cost_usd", event.target.value)} inputMode="decimal" autoComplete="off" placeholder="0.00" required />
+          <input value={draft.cost_usd} onChange={(event) => update("cost_usd", normalizeDecimalInput(event.target.value))} inputMode="decimal" autoComplete="off" placeholder="0.00" required />
           <span className="product-field-hint">Ejemplo: 10.50 (hasta 4 decimales si hace falta).</span>
         </label>
         <label>
           Stock mínimo
-          <input value={draft.minimum_stock} onChange={(event) => update("minimum_stock", event.target.value)} inputMode="decimal" autoComplete="off" placeholder="0" required={!product} />
+          <input value={draft.minimum_stock} onChange={(event) => update("minimum_stock", normalizeDecimalInput(event.target.value))} inputMode="decimal" autoComplete="off" placeholder="0" required={!product} />
           <span className="product-field-hint">{product ? "Hasta 3 decimales. Déjalo vacío para conservar el mínimo actual." : "Cantidad con hasta 3 decimales."}</span>
         </label>
         {product && (

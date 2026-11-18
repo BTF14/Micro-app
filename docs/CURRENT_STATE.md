@@ -1,13 +1,18 @@
-# Corte vigente — post-merge PR #380 / especificación 0027 (2026-11-18)
+# Corte vigente — Paso 3A: auditoría viva de controles Nivel 1 (2026-11-18)
 
-- **Main verificado:** `7eebc7fc8d155c275c43859fb66fdeb0f8bd46fe`, merge commit de PR #380. PR #380 MERGED; HEAD de su rama `28fb579c98078db158d5c011039b7d985d8b0cc0`.
-- **Paso 2B:** especificación técnica aditiva 0027 documentada en `docs/sdd/0027_BCV_NONBUSINESS_DAY_EFFECTIVE_DATE.md`; no implica que exista migración 0027 ni implementación en API/UI. Rama documental `docs/spec-0027-bcv-nonbusiness-days` parte del SHA de main anterior.
-- **Selección aprobada:** prioridad fila oficial válida exacta de hoy; sin ella, sábado/domingo menor fecha futura oficial válida en `(today,today+5]` con sync sano; lunes-viernes menor fecha futura dentro de la misma ventana solo con sync exitoso del día Caracas. Cualquier falta de evidencia => 409 `BCV_RATE_NOT_CURRENT`. No calendario manual.
-- **AC-6 ABIERTO**; `FX_CONTINGENCY_ENABLED` apagado/no configurado. **Freeze v1.1** vigente. **Issue #53 OPEN/P0**. **PRODUCTION: NOT READY**.
-- **0022/0026 intactas:** no ampliar grants de `microapp_runtime` ni `microapp_bcv_sync`; preservar integridad de ventas/contingencia y guards append-only. La futura 0027 debe ser aditiva.
-- **Límites de este paso:** docs/** únicamente; 0 apps/**, 0 SQL, 0 workflows, 0 dependencias; no Neon, Cloudflare manual, secretos, datos reales, billing, despliegue, merge ni auto-merge.
+- **Main exacto:** `25dbf6e40a99e011c951ab55338de6d4b98332ad` (post-merge PR #381). Rama de reconciliación: `chore/level1-gate-evidence-20261118`.
+- **Resultado:** Nivel 1 continúa **ABIERTO**. GitHub informa `protected=true` y seis checks obligatorios; el endpoint de protección detallada devolvió 403. No se revalidaron enforce-admins/reviews/force-push/conversation resolution.
+- **Backup:** último backup natural SUCCESS [44342447079](https://github.com/BTF14/Micro-app/actions/runs/44342447079), 18 nov; snapshots 17→18 nov separados 23h29m52s; máximo observado 10→18 nov 50h08m33s por backup cancelado el 16 nov. Restore real más reciente [43767762632](https://github.com/BTF14/Micro-app/actions/runs/43767762632) usa 25 migraciones/29 tablas; smoke sintético [44191419753](https://github.com/BTF14/Micro-app/actions/runs/44191419753) probó 26 migraciones, pero su fixture no popula las tablas 0025/0026. RPO/RTO operativos completos siguen abiertos.
+- **Alertas:** canal $0 de GitHub Actions + Issue P0 en fallo de backup; canary [43508458992](https://github.com/BTF14/Micro-app/actions/runs/43508458992) falló intencionalmente el 13 nov, pero no hay ACK del propietario. Acción pendiente: ejecutar canary con `confirm_controlled_failure=true` y confirmar recepción.
+- **Dependencias:** [daily watch 44355990636](https://github.com/BTF14/Micro-app/actions/runs/44355990636) detectó GHSA-fc5q-39xc-vjpf HIGH en `picomatch@4.0.7` vía Vitest; no se modificó lockfile.
+- **CORS/bundle:** runs [43938901337](https://github.com/BTF14/Micro-app/actions/runs/43938901337) y [43938418766](https://github.com/BTF14/Micro-app/actions/runs/43938418766) SUCCESS del 16 nov, pero SHA `e375e2d` anterior al main actual. Cabeceras presentes en código; falta prueba HTTP viva específica.
+- **Coste:** runners estándar del repo público no cuestan; planes/uso reales de Cloudflare, Neon y almacenamiento del repo privado no se pudieron comprobar. USD 0 global no certificado.
+- **AC-6 ABIERTO**, `FX_CONTINGENCY_ENABLED` apagado/no configurado; freeze v1.1; Issue #53 OPEN/P0; **PRODUCTION: NOT READY**.
+- **Paso 3B (0027) BLOQUEADO** hasta resolver todos los controles Nivel 1 y el ACK/certificación de coste. No implementar lógica comercial ni migración 0027 en este paso.
+- **Límites:** no se tocó Neon main, secretos, Cloudflare manual, billing, datos reales, dependencias, workflows ni despliegue. `AGENTS.md` fue revisado y conserva correctamente el gate Nivel 1.
 
 ---
+
 
 # Corte vigente — post-merge PR #377 y roadmap BCV no hábil (2026-11-17)
 

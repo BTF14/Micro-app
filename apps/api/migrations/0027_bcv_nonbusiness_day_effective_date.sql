@@ -555,4 +555,138 @@ ALTER FUNCTION public.transition_fx_contingency_authorization(uuid,uuid,uuid,tex
 REVOKE ALL ON FUNCTION public.transition_fx_contingency_authorization(uuid,uuid,uuid,text,uuid,text,text) FROM PUBLIC;
 GRANT EXECUTE ON FUNCTION public.transition_fx_contingency_authorization(uuid,uuid,uuid,text,uuid,text,text) TO microapp_runtime;
 
+-- Manual contingency is unavailable whenever 0027 finds any applicable official row,
+-- including an eligible prepublication on weekends or bank holidays.
+CREATE OR REPLACE FUNCTION public.create_fx_contingency_authorization(
+  p_organization_id uuid, p_branch_id uuid, p_rate numeric,
+  p_reference_rate_value numeric, p_reference_exchange_rate_id uuid,
+  p_reason text, p_expires_at timestamptz, p_actor_user_id uuid,
+  p_actor_role text, p_elevated_confirmation_reason text DEFAULT NULL,
+  p_event_type text DEFAULT 'authorized'
+)
+RETURNS uuid
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = pg_catalog
+AS $create_fx_contingency_authorization$
+DECLARE
+  authorization_id uuid;
+  starts_time timestamptz;
+  calculated_bps integer;
+  operation_date date;
+  reference_effective_date date;
+  reference_fetched_at timestamptz;
+  selected_bcv record;
+BEGIN
+  IF p_rate IS NULL OR p_rate <= 0 OR p_reference_rate_value IS NULL OR p_reference_rate_value <= 0
+     OR p_reason IS NULL OR pg_catalog.length(pg_catalog.btrim(p_reason)) NOT BETWEEN 1 AND 1000
+     OR p_event_type NOT IN ('authorized', 'renewed')
+     OR p_actor_role NOT IN ('owner', 'admin') THEN
+    RAISE EXCEPTION 'FX_AUTHORIZATION_INPUT_INVALID' USING ERRCODE = '23514';
+  END IF;
+  calculated_bps := pg_catalog.ceil(
+    pg_catalog.abs(p_rate - p_reference_rate_value) / p_reference_rate_value * 10000
+  )::integer;
+  IF pg_catalog.abs(p_rate - p_reference_rate_value) * 10000 > p_reference_rate_value * 2000 THEN
+    RAISE EXCEPTION 'FX_AUTHORIZATION_DEVIATION_LIMIT_EXCEEDED' USING ERRCODE = '23514';
+  END IF;
+  IF pg_catalog.abs(p_rate - p_reference_rate_value) * 10000 > p_reference_rate_value * 500 AND (
+    p_elevated_confirmation_reason IS NULL
+    OR pg_catalog.length(pg_catalog.btrim(p_elevated_confirmation_reason)) NOT BETWEEN 1 AND 500
+  ) THEN
+    RAISE EXCEPTION 'FX_ELEVATED_CONFIRMATION_REQUIRED' USING ERRCODE = '23514';
+  END IF;
+  IF pg_catalog.abs(p_rate - p_reference_rate_value) * 10000 <= p_reference_rate_value * 500
+     AND p_elevated_confirmation_reason IS NOT NULL THEN
+    RAISE EXCEPTION 'FX_ELEVATED_CONFIRMATION_NOT_APPLICABLE' USING ERRCODE = '23514';
+  END IF;
+  PERFORM 1
+    FROM public.organizations org
+    JOIN public.organization_members member
+      ON member.organization_id = org.id AND member.user_id = p_actor_user_id
+    JOIN public.app_users actor ON actor.id = member.user_id
+   WHERE org.id = p_organization_id AND org.is_active
+     AND member.is_active AND member.role = p_actor_role AND actor.is_active
+   FOR SHARE OF org, member, actor;
+  IF NOT FOUND THEN RAISE EXCEPTION 'FX_AUTHORIZATION_ACTOR_INVALID' USING ERRCODE = '23514'; END IF;
+  PERFORM 1 FROM public.branches branch
+   WHERE branch.organization_id = p_organization_id AND branch.id = p_branch_id
+     AND branch.is_active
+   FOR SHARE;
+  IF NOT FOUND THEN RAISE EXCEPTION 'FX_AUTHORIZATION_BRANCH_INACTIVE' USING ERRCODE = '23514'; END IF;
+  IF p_actor_role = 'admin' THEN
+    PERFORM 1
+      FROM public.branch_memberships bm
+      JOIN public.fx_contingency_delegations d
+        ON d.organization_id = bm.organization_id AND d.branch_id = bm.branch_id
+       AND d.user_id = bm.user_id AND d.status = 'active'
+     WHERE bm.organization_id = p_organization_id AND bm.branch_id = p_branch_id
+       AND bm.user_id = p_actor_user_id AND bm.is_active
+     FOR SHARE OF bm, d;
+    IF NOT FOUND THEN RAISE EXCEPTION 'FX_ADMIN_DELEGATION_REQUIRED' USING ERRCODE = '23514'; END IF;
+  END IF;
+  PERFORM 1 FROM public.bcv_sync_state state
+   WHERE state.singleton = true
+   FOR SHARE;
+  starts_time := pg_catalog.clock_timestamp();
+  operation_date := (starts_time AT TIME ZONE 'America/Caracas')::date;
+  IF p_expires_at <= starts_time OR p_expires_at > starts_time + interval '24 hours'
+     OR p_expires_at > (((starts_time AT TIME ZONE 'America/Caracas')::date + 1)::timestamp AT TIME ZONE 'America/Caracas') THEN
+    RAISE EXCEPTION 'FX_AUTHORIZATION_EXPIRY_INVALID' USING ERRCODE = '23514';
+  END IF;
+  SELECT er.effective_date, er.fetched_at
+    INTO reference_effective_date, reference_fetched_at
+    FROM public.exchange_rates er
+   WHERE er.id = p_reference_exchange_rate_id
+     AND er.source = 'BCV_OFFICIAL_HTML_V1'
+     AND er.rate = p_reference_rate_value
+     AND er.validation_status = 'valid'
+     AND er.effective_date <= operation_date
+     AND NOT EXISTS (
+       SELECT 1 FROM public.exchange_rates newer
+        WHERE newer.source = 'BCV_OFFICIAL_HTML_V1'
+          AND newer.validation_status = 'valid'
+          AND newer.effective_date <= operation_date
+          AND (newer.effective_date > er.effective_date
+            OR (newer.effective_date = er.effective_date AND newer.fetched_at > er.fetched_at))
+     );
+  IF NOT FOUND THEN RAISE EXCEPTION 'FX_REFERENCE_RATE_NOT_APPLICABLE_OR_NOT_LATEST' USING ERRCODE = '23514'; END IF;
+
+  SELECT * INTO selected_bcv
+    FROM public.select_bcv_rate_for_operation(operation_date);
+  IF FOUND THEN
+    RAISE EXCEPTION 'BCV_RATE_ALREADY_AVAILABLE' USING ERRCODE = '23514';
+  END IF;
+
+  INSERT INTO public.fx_contingency_authorizations (
+    organization_id, branch_id, rate, reference_rate_value,
+    reference_exchange_rate_id, reference_effective_date, deviation_bps, reason, starts_at,
+    expires_at, authorized_by_user_id, authorized_by_role, elevated_confirmation_at,
+    elevated_confirmation_reason, status
+  ) VALUES (
+    p_organization_id, p_branch_id, p_rate, p_reference_rate_value,
+    p_reference_exchange_rate_id, reference_effective_date, calculated_bps, p_reason, starts_time,
+    p_expires_at, p_actor_user_id, p_actor_role,
+    CASE WHEN calculated_bps > 500 THEN starts_time ELSE NULL END,
+    p_elevated_confirmation_reason, 'active'
+  ) RETURNING id INTO authorization_id;
+
+  PERFORM public.append_fx_contingency_event(
+    p_organization_id, p_branch_id, authorization_id, p_event_type,
+    p_actor_user_id, p_actor_role,
+    pg_catalog.jsonb_build_object(
+      'rate', p_rate, 'reference_rate_value', p_reference_rate_value,
+      'reference_exchange_rate_id', p_reference_exchange_rate_id,
+      'reference_effective_date', reference_effective_date,
+      'deviation_bps', calculated_bps, 'reason', p_reason,
+      'starts_at', starts_time, 'expires_at', p_expires_at
+    )
+  );
+  RETURN authorization_id;
+END;
+$create_fx_contingency_authorization$;
+ALTER FUNCTION public.create_fx_contingency_authorization(uuid,uuid,numeric,numeric,uuid,text,timestamptz,uuid,text,text,text) OWNER TO microapp_migrator;
+REVOKE ALL ON FUNCTION public.create_fx_contingency_authorization(uuid,uuid,numeric,numeric,uuid,text,timestamptz,uuid,text,text,text) FROM PUBLIC;
+GRANT EXECUTE ON FUNCTION public.create_fx_contingency_authorization(uuid,uuid,numeric,numeric,uuid,text,timestamptz,uuid,text,text,text) TO microapp_runtime;
+
 COMMIT;

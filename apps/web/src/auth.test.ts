@@ -12,8 +12,9 @@ describe("apiRequest resilience", () => {
       init?.signal?.addEventListener("abort", () => reject(new DOMException("Aborted", "AbortError")));
     }));
     const pending = apiRequest("/api/slow");
+    const rejection = expect(pending).rejects.toThrow("La solicitud tardó demasiado");
     await vi.advanceTimersByTimeAsync(15_000);
-    await expect(pending).rejects.toThrow("La solicitud tardó demasiado");
+    await rejection;
   });
 
   it("preserves caller cancellation", async () => {

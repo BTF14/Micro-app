@@ -1,3 +1,17 @@
+## Turno 59 — restore real cifrado de hoy y smoke poblado 0025/0026 (2026-11-18)
+
+- Base de referencia: main = 25dbf6e40a99e011c951ab55338de6d4b98332ad; Neon main permanece en 0025. No se ejecutó DDL/DML remoto ni se conectó a Neon en este turno.
+- Backup natural [run 44342447079](https://github.com/BTF14/Micro-app/actions/runs/44342447079) SUCCESS; artefacto cifrado backup-2026-11-18T16-03-47Z.dump.age.
+- Restore real cifrado [run 44366607906](https://github.com/BTF14/Micro-app/actions/runs/44366607906) SUCCESS sobre el artefacto anterior, perfil bcv-0025, 25 migraciones/29 tablas públicas. Ventana técnica 1.996ms; descarga+SHA-256 844ms; AGE 4ms; pg_restore --list 6ms; restore+assertions+logins 1102ms. Freshness proxy 7706s. El run no restaura 0026 porque Neon main sigue en 0025.
+- Smoke [run 44370849960](https://github.com/BTF14/Micro-app/actions/runs/44370849960) SUCCESS en PostgreSQL 18 efímero, HEAD dbd4444312795d4c2160a5da2fbf784c70b53870, perfil bcv-0026, 26 migraciones, 34 objetos/tablas requeridos. Manifiestos source/restored idénticos; restore round-trip 5s; DR drill 4.796s. Los tres jobs del workflow SUCCESS.
+- Fixture 0025: recibo sintético creado por create_inventory_receipt(), línea de cantidad 3/coste 2, movimiento purchase_receipt asociado y proyección de balance Tenant B 8.000/version 2. Assertions comprueban receipt header, line, movement, quantity, cost, FK scope y ledger balance.
+- Fixture 0026: PIN credential sintética (salt/hash bytes inventados, nunca PIN); delegación revocada; autorización revocada; evento append-only con commercial_enabled=false; observación BCV generada por trigger de bcv_sync_state. Assertions post-restore validan valores, relaciones, KDF params, event type/actor, observation/effective date y ausencia de auth activa o venta manual contingency.
+- Las tres tablas ephemeral auth siguen vacías en destino; roles/ACL/ownership/RLS/search_path y logins runtime/producer se validan.
+- RPO real de incidente no medido. 7706s es solo freshness proxy del artefacto al inicio del restore. RTO operacional completo (aprovisionamiento, aplicación, traffic switch y aceptación humana) no medido; 4.796s es DR drill sintético, no servicio productivo.
+- Restore remoto real post-0026 se ejecutará cuando el propietario autorice explícitamente migrar 0026+0027 a Neon. Nunca usar Neon main como entorno de prueba.
+
+---
+
 ## Turno 58 — evidencia viva de backup/restore y límites (2026-11-18)
 
 - Base de revisión: `main` = `25dbf6e40a99e011c951ab55338de6d4b98332ad`. No se conectó Neon ni se leyeron secretos.

@@ -723,8 +723,6 @@ SELECT
          AND s.total_usd=(SELECT sum(si.line_total_usd) FROM public.sale_items si WHERE si.sale_id=s.id)
          AND s.total_usd=(SELECT sum(pay.usd_equivalent_snapshot) FROM public.payments pay WHERE pay.sale_id=s.id))
   AND (SELECT count(*) = 1 FROM public.inventory_receipts
-       WHERE id='26262626-2626-4626-8626-262626262626'::uuid) = 0
-  AND (SELECT count(*) = 1 FROM public.inventory_receipts
        WHERE organization_id='14141414-1414-4414-8414-141414141414'
          AND branch_id='16161616-1616-4616-8616-161616161616'
          AND warehouse_id='19191919-1919-4919-8919-191919191919'

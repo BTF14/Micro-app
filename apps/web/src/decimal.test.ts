@@ -38,7 +38,7 @@ describe("web decimal helpers", () => {
   });
 
   it("rounds line calculations and USD-to-VES conversion half away from zero", () => {
-    expect(calculateLineUsd("0.001", "0.0005")).toBe("0.0001");
+    expect(calculateLineUsd("0.001", "0.0500")).toBe("0.0001");
     expect(calculateLineUsd("0.001", "0.5000")).toBe("0.0005");
     expect(convertUsdToVes("0.0001", "50.00000000")).toBe("0.01");
     expect(convertUsdToVes("23.8500", "36.50000000")).toBe("870.53");

@@ -100,12 +100,12 @@
  .catalog-table tbody { display:grid; gap:.7rem; }
  .catalog-table tr { padding:.85rem; border:1px solid var(--line); border-radius:.8rem; background:#fff; }
  .catalog-table td { display:flex; align-items:center; justify-content:space-between; gap:.7rem; padding:.42rem 0; border:0; white-space:normal; text-align:right; }
- .catalog-table td:first-child { min-width:0; display:block; text-align:left; }
- .catalog-table:not(.inventory-table) td:nth-child(2)::before { content:"Precio USD"; color:var(--muted); font-size:.68rem; font-weight:500; }
- .catalog-table:not(.inventory-table) td:nth-child(3)::before { content:"Precio VES"; color:var(--muted); font-size:.68rem; font-weight:500; }
- .inventory-table td:nth-child(2)::before { content:"En existencia"; color:var(--muted); font-size:.68rem; font-weight:500; }
- .inventory-table td:nth-child(3)::before { content:"Reservado"; color:var(--muted); font-size:.68rem; font-weight:500; }
- .inventory-table td:nth-child(4)::before { content:"Disponible"; color:var(--muted); font-size:.68rem; font-weight:500; }
+ .catalog-table td[data-label="Producto"] { min-width:0; display:block; text-align:left; }
+ .catalog-table td[data-label]:not([data-label="Producto"])::before { content:attr(data-label); color:var(--muted); font-size:.68rem; font-weight:500; }
+ .inventory-table { width:100%; border-collapse:separate; border-spacing:0 .75rem; }
+ .inventory-table tbody tr { padding:.75rem; border:1px solid var(--line); border-radius:.75rem; background:#fff; }
+ .inventory-table td { display:grid; grid-template-columns:minmax(7rem,42%) minmax(0,1fr); gap:.5rem; padding:.45rem 0; text-align:right; overflow-wrap:anywhere; }
+ .inventory-table td[data-label="Producto"] { display:block; text-align:left; border-bottom:1px solid var(--line); padding-bottom:.65rem; margin-bottom:.25rem; }
  .inventory-operations { grid-template-columns:minmax(0,1fr); }
  .inventory-operation-form { min-width:0; }
 }
@@ -129,22 +129,3 @@
 .quick-lookup-stock strong.out{color:#8d3028}
 .quick-lookup-result .catalog-edit{grid-column:1/-1;justify-self:start}
 @media(max-width:760px){.quick-lookup-result{grid-template-columns:1fr 1fr;gap:.65rem}.quick-lookup-product{grid-column:1/-1}.quick-lookup-prices,.quick-lookup-stock{align-self:start}.quick-lookup-result .catalog-edit{grid-column:1/-1}}
-
-/* Mobile inventory table cards; labels come from semantic data attributes. */
-@media (max-width: 600px) {
-  .catalog-table-wrap { overflow: visible; }
-  .inventory-table { width: 100%; border-collapse: separate; border-spacing: 0 0.75rem; }
-  .inventory-table thead { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
-  .inventory-table tbody, .inventory-table tr { display: block; width: 100%; }
-  .inventory-table tbody tr { padding: 0.75rem; border: 1px solid var(--border, #d9dee7); border-radius: 0.75rem; background: var(--surface, #fff); }
-  .inventory-table td { display: grid; grid-template-columns: minmax(7rem, 42%) minmax(0, 1fr); gap: 0.5rem; padding: 0.45rem 0; text-align: right; overflow-wrap: anywhere; }
-  .inventory-table td::before { content: attr(data-label); text-align: left; font-weight: 600; color: var(--text-secondary, #5b6472); }
-  .inventory-table td[data-label="Producto"] { display: block; text-align: left; border-bottom: 1px solid var(--border, #d9dee7); padding-bottom: 0.65rem; margin-bottom: 0.25rem; }
-  .inventory-table td[data-label="Producto"]::before { content: attr(data-label); display: block; margin-bottom: 0.25rem; }
-}
-.app-error-boundary { min-height: 100vh; display: grid; place-items: center; padding: 1.5rem; }
-.app-error-boundary section { width: min(100%, 34rem); }
-.app-error-boundary button { min-height: 44px; padding: 0.65rem 1rem; }
-@media (max-width: 390px) {
-  .inventory-table td { grid-template-columns: minmax(6rem, 40%) minmax(0, 1fr); }
-}

@@ -11,9 +11,11 @@ describe.skipIf(!enabled)("BCV 0027 PostgreSQL 18 effective-date matrix",()=>{
  let db:Client;let syncSequence=0;const friday=nextWeekday(5),saturday=addDays(friday,1),sunday=addDays(friday,2),monday=addDays(friday,3),tuesday=addDays(friday,4);
  beforeAll(async()=>{db=new Client({connectionString:adminUrl});await db.connect();await db.query("BEGIN")});
  afterAll(async()=>{if(db){await db.query("ROLLBACK");await db.end()}});
- async function prepare(rows:string[],syncDate:string,successAt:string,outcome="inserted",error:string|null=null){
-  await db.query("DELETE FROM public.exchange_rates WHERE source='BCV_OFFICIAL_HTML_V1' AND effective_date=ANY($1::date[])",[rows]);
-  for(const date of rows)await db.query("INSERT INTO public.exchange_rates(base_currency,quote_currency,rate,source,effective_date,validation_status) VALUES('USD','VES','500.12345678','BCV_OFFICIAL_HTML_V1',$1::date,'valid')",[date]);
+ async function prepare(rows:string[],syncDate:string,successAt:string,outcome="inserted",error:string|null=null,validationStatus="valid"){
+  for(const date of rows){
+   const existing=await db.query("SELECT id FROM public.exchange_rates WHERE source='BCV_OFFICIAL_HTML_V1' AND effective_date=$1::date",[date]);
+   if(!existing.rows.length)await db.query("INSERT INTO public.exchange_rates(base_currency,quote_currency,rate,source,effective_date,validation_status) VALUES('USD','VES','500.12345678','BCV_OFFICIAL_HTML_V1',$1::date,$2)",[date,validationStatus]);
+  }
   const previous=await db.query<{last_success_at:string|null}>("SELECT last_success_at::text FROM public.bcv_sync_state WHERE singleton=true");
   const nextSuccessAt=(outcome === "inserted" || outcome === "unchanged") ? new Date(Date.parse(successAt)+(++syncSequence)*1000).toISOString() : previous.rows[0]?.last_success_at ?? null;
   await db.query("UPDATE public.bcv_sync_state SET last_success_at=$1::timestamptz,last_outcome=$2,last_error_code=$3,last_effective_date=$4::date,updated_at=clock_timestamp() WHERE singleton=true",[nextSuccessAt,outcome,error,syncDate]);
@@ -28,6 +30,6 @@ describe.skipIf(!enabled)("BCV 0027 PostgreSQL 18 effective-date matrix",()=>{
   await prepare([monday],monday,friday+"T16:00:00Z","failed","SOURCE_ERROR");expect(await select(saturday)).toBeNull();
   await prepare([monday],friday,friday+"T16:00:00Z");expect(await select(saturday)).toBeNull();
   const outside=addDays(saturday,6);await prepare([outside],outside,friday+"T16:00:00Z");expect(await select(saturday)).toBeNull();
-  await prepare([monday],monday,friday+"T16:00:00Z");await db.query("UPDATE public.exchange_rates SET validation_status='stale' WHERE source='BCV_OFFICIAL_HTML_V1' AND effective_date=$1::date",[monday]);expect(await select(saturday)).toBeNull();
+  const staleDate=addDays(saturday,4);await prepare([staleDate],staleDate,friday+"T16:00:00Z","inserted",null,"stale");expect(await select(saturday)).toBeNull();
  });
 });

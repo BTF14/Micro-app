@@ -104,11 +104,16 @@ describe("Register shifts workspace", () => {
     const button = [...container.querySelectorAll("button")].find((item) => item.textContent === "Abrir turno");
     if (!input || !button) throw new Error("Opening form not found");
     const setter = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, "value")?.set;
-    await act(async () => { setter?.call(input, "25.50"); input.dispatchEvent(new Event("input", { bubbles: true })); button.click(); });
+    await act(async () => { setter?.call(input, " 25,50 "); input.dispatchEvent(new Event("input", { bubbles: true })); button.click(); });
     await settle();
     expect(container.querySelector('[role="alert"]')).toBeTruthy();
     expect(container.querySelector(".register-shift-form")).toBeTruthy();
     expect(input.value).toBe("25.50");
+    const openingRequest = vi.mocked(fetch).mock.calls.find(([, init]) => init?.method === "POST");
+    expect(JSON.parse(String(openingRequest?.[1]?.body))).toMatchObject({
+      opening_cash_usd: "25.50",
+      opening_cash_ves: "0.00",
+    });
   });
 
   it("keeps the closing form visible after a recoverable close error", async () => {

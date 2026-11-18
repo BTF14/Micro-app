@@ -815,8 +815,6 @@ export function registerSalesCheckoutRoutes(app: Hono<{ Bindings: Bindings }>): 
                     AND (obs.last_outcome <> 'inserted' OR obs.rate_fetched_at > $1::timestamptz)
                   LIMIT 1`,
                 [auth.starts_at, BCV_SOURCE],
-              );,
-                [auth.starts_at, BCV_SOURCE],
               );
               if (!recovery.rows[0]) return false;
               await tx.query(
@@ -838,6 +836,12 @@ export function registerSalesCheckoutRoutes(app: Hono<{ Bindings: Bindings }>): 
         return c.json({ error: "FX_RATE_NOT_AVAILABLE", message: "No existe una tasa oficial aplicable ni una autorización manual vigente." }, 409);
       }
       if (code === "23505") return c.json({ error: "IDEMPOTENCY_CONFLICT", message: "La clave de idempotencia ya fue utilizada." }, 409);
+      const databaseMessage = error instanceof Error ? error.message : String(error);
+      if (databaseMessage.includes("SALE_REQUIRES_CURRENT_BCV_RATE") ||
+          databaseMessage.includes("SALE_REQUIRES_LATEST_SUCCESSFUL_BCV_SYNC") ||
+          databaseMessage.includes("SALE_BCV_DATE_SNAPSHOT_INVALID")) {
+        return c.json({ error: "BCV_RATE_NOT_CURRENT", message: "La tasa BCV dejó de ser aplicable a la fecha operativa; vuelve a consultar la tasa." }, 409);
+      }
       if (code === "23503" || code === "23514" || code === "22P02") {
         return c.json({ error: "CHECKOUT_REJECTED", message: "La operación no cumple las reglas de integridad." }, 409);
       }

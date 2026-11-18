@@ -11,7 +11,7 @@ export function normalizeDecimalInput(value: string): string {
   if (commaCount > 1 || dotCount > 1 || (commaCount > 0 && dotCount > 0)) return trimmed;
 
   const normalized = commaCount === 1 ? trimmed.replace(",", ".") : trimmed;
-  return normalized.replace(/^(-?)\./, "$10.");
+  return normalized.replace(/^(-?)\./, (_match, sign: string) => sign + "0.");
 }
 
 /** Format PostgreSQL NUMERIC values for es-VE without binary floating-point conversion. */

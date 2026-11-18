@@ -1,13 +1,14 @@
-# Reconciliación vigente — PR #380 integrada y Paso 2B BCV 0027 (2026-11-18)
+# Plan vigente — Paso 3A auditado; Nivel 1 aún abierto (2026-11-18)
 
-- **Main vivo verificado:** `7eebc7fc8d155c275c43859fb66fdeb0f8bd46fe`, merge SHA de PR #380. PR #380 está MERGED; su HEAD de rama fue `28fb579c98078db158d5c011039b7d985d8b0cc0`. Los checks de PR #380 pertenecen a ese HEAD de rama, no se heredan como checks del merge SHA.
-- **Paso 2B:** especificación documental `docs/sdd/0027_BCV_NONBUSINESS_DAY_EFFECTIVE_DATE.md` en preparación/revisión sobre una rama desde el main indicado. No se implementa migración ni lógica 0027 en este paso.
-- **Carril A:** PR #380 integrada. No reabrir ni replicar su código en este frente.
-- **AC-6:** sigue ABIERTO; `FX_CONTINGENCY_ENABLED` apagado/no configurado. **Freeze v1.1** vigente. **Issue #53 OPEN/P0**. **PRODUCTION: NOT READY**.
-- El ADR-20261117 autoriza solo esta especificación. No autoriza migración 0027, implementación API, Neon, despliegue, activación de contingencia ni cierre de gates.
-- La antigua regla manual de calendario SUDEBAN queda supersedida para elegibilidad de checkout; el historial del documento de calendario se conserva.
+- **Base exacta:** `main` = `25dbf6e40a99e011c951ab55338de6d4b98332ad`, post-merge PR #381.
+- **Estado del gate:** no cerrar Nivel 1 ni iniciar Paso 3B por inferencia. Protección detallada incompleta por 403; restore real sigue en perfil 0025; fixture sintético 0026 no popula las nuevas tablas 0025/0026; RPO/RTO operativo, ACK de alertas, verificación live de cabeceras/CORS/bundle en HEAD actual y coste total USD 0 siguen abiertos.
+- **Hallazgo adicional:** daily dependency watch [44355990636](https://github.com/BTF14/Micro-app/actions/runs/44355990636) detectó GHSA-fc5q-39xc-vjpf HIGH en `picomatch@4.0.7` vía Vitest. No actualizar a ciegas ni editar lockfile sin versión corregida y pruebas.
+- **Acción manual bloqueante:** ejecutar [alert-canary.yml](https://github.com/BTF14/Micro-app/actions/workflows/alert-canary.yml) con `confirm_controlled_failure=true` en `main` y confirmar recepción/ACK. El coste USD 0 requiere confirmar planes y consumo reales en GitHub Billing, Cloudflare y Neon; no inspeccionados.
+- **Secuencia:** completar evidencia restante Nivel 1 → revisar/actualizar smoke fixture sintético para recibos 0025 y cinco tablas 0026 → restauración real aislada posterior a 0026 cuando el backup contenga esa migración → revalidar workflows live en HEAD vigente → cierre formal del propietario → recién entonces autorizar Paso 3B.
+- **Invariantes:** AC-6 ABIERTO y `FX_CONTINGENCY_ENABLED` apagado/no configurado; freeze v1.1; Issue #53 OPEN/P0; PRODUCTION NOT READY. 0027 permanece solo especificación; sin lógica nueva ni SQL en Paso 3A.
 
 ---
+
 
 # Plan vigente — reconciliación post-PR #377 y decisión BCV no hábil (2026-11-17)
 

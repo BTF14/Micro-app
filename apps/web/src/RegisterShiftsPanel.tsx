@@ -92,7 +92,7 @@ export default function RegisterShiftsPanel({ organizationId, userName }: Regist
     try {
       const response = await apiRequest<{ shift: Record<string, unknown> }>(
         `/api/orgs/${encodeURIComponent(organizationId)}/branches/${encodeURIComponent(branchId)}/register-shifts`,
-        { method: "POST", body: JSON.stringify({ register_id: registerId, opening_cash_usd: openingUsd, opening_cash_ves: openingVes }) },
+        { method: "POST", body: JSON.stringify({ register_id: registerId, opening_cash_usd: normalizeDecimalInput(openingUsd), opening_cash_ves: normalizeDecimalInput(openingVes) }) },
       );
       const openedShift = normalizeOpenedShift(response.shift);
       setShift(openedShift); setClosingUsd(""); setClosingVes("");
@@ -109,7 +109,7 @@ export default function RegisterShiftsPanel({ organizationId, userName }: Regist
     try {
       await apiRequest(
         `/api/orgs/${encodeURIComponent(organizationId)}/branches/${encodeURIComponent(branchId)}/register-shifts/${encodeURIComponent(shift.id)}/close`,
-        { method: "POST", body: JSON.stringify({ closing_cash_usd: closingUsd, closing_cash_ves: closingVes }) },
+        { method: "POST", body: JSON.stringify({ closing_cash_usd: normalizeDecimalInput(closingUsd), closing_cash_ves: normalizeDecimalInput(closingVes) }) },
       );
       setShift(null); setConfirmClose(false); setNotice("Turno cerrado y registrado en auditoría.");
       await loadBranchState(branchId);

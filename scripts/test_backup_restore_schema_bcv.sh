@@ -781,6 +781,24 @@ SELECT
 source_fixture_ok="$(fixture_assertions "$schema_source_url")"
 restored_fixture_ok="$(fixture_assertions "$schema_restore_url")"
 if [[ "$source_fixture_ok" != "t" || "$restored_fixture_ok" != "t" ]]; then
+  for target in "$schema_source_url" "$schema_restore_url"; do
+    echo "== Diagnostic populated 0025/0026 fixture assertions for $target"
+    psql "$target" -X -v ON_ERROR_STOP=1 -Atqc "
+      SELECT 'receipt|' || (SELECT count(*) FROM public.inventory_receipts WHERE idempotency_key='synthetic-restore-receipt-0025')
+        || '|receipt_lines|' || (SELECT count(*) FROM public.inventory_receipt_lines WHERE receipt_id=(SELECT id FROM public.inventory_receipts WHERE idempotency_key='synthetic-restore-receipt-0025'))
+        || '|receipt_movement|' || (SELECT count(*) FROM public.warehouse_inventory_movements WHERE movement_type='purchase_receipt' AND reference_type='inventory_receipt')
+        || '|tenant_b_balance|' || COALESCE((SELECT on_hand_quantity::text || ':' || balance_version::text FROM public.inventory_balances WHERE organization_id='14141414-1414-4414-8414-141414141414' AND warehouse_id='19191919-1919-4919-8919-191919191919' AND product_id='18181818-1818-4818-8818-181818181818'),'missing')
+        || '|pin|' || (SELECT count(*) FROM public.fx_user_pin_credentials WHERE user_id='22222222-2222-4222-8222-222222222222')
+        || '|delegation|' || (SELECT count(*) FROM public.fx_contingency_delegations WHERE id='24242424-2424-4424-8424-242424242424')
+        || '|authorization|' || (SELECT count(*) FROM public.fx_contingency_authorizations WHERE id='25252525-2525-4525-8525-252525252525')
+        || '|event|' || (SELECT count(*) FROM public.fx_contingency_events WHERE authorization_id='25252525-2525-4525-8525-252525252525')
+        || '|observation|' || (SELECT count(*) FROM public.bcv_sync_success_observations WHERE attempt_id='88888888-8888-4888-8888-888888888887')
+        || '|active_authorizations|' || (SELECT count(*) FROM public.fx_contingency_authorizations WHERE status='active')
+        || '|manual_sales|' || (SELECT count(*) FROM public.sales WHERE fx_source='manual_contingency');
+    "
+  done
+fi
+if [[ "$source_fixture_ok" != "t" || "$restored_fixture_ok" != "t" ]]; then
   echo "Synthetic business graph assertions failed before or after restore." >&2
   exit 1
 fi

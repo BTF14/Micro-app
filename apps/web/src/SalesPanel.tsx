@@ -500,6 +500,7 @@ export default function SalesPanel({
         <div className="sales-receipt-head"><div><p className="eyebrow">OPERACIÓN CONFIRMADA</p><h2 id="sales-receipt-title">Comprobante de venta</h2></div><span className="sales-state success">Completada</span></div>
         <div className="sales-receipt-number"><span>Número de venta</span><strong>{receipt.sale_number}</strong></div>
         <p className="sales-receipt-date">{dateTime(receipt.created_at)} · {receipt.fx_receipt_label}: {localized(receipt.fx_rate, 18, 8)} Bs./USD</p>
+        <p className="sales-receipt-date">Fecha de operación Caracas: {receipt.operation_date ?? "—"} · Fecha valor BCV: {receipt.exchange_rate_effective_date ?? "No aplica a tasa manual"}</p>
         {receipt.fx_source === 'manual_contingency' && receipt.fx_authorization_id && (
           <p className="sales-receipt-date">Referencia de autorización: {receipt.fx_authorization_id}</p>
         )}

@@ -647,6 +647,7 @@ BEGIN
      AND NOT EXISTS (
        SELECT 1 FROM public.exchange_rates newer
         WHERE newer.source = 'BCV_OFFICIAL_HTML_V1'
+          AND newer.base_currency='USD' AND newer.quote_currency='VES' AND newer.rate > 0
           AND newer.validation_status = 'valid'
           AND newer.effective_date <= operation_date
           AND (newer.effective_date > er.effective_date

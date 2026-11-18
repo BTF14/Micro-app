@@ -500,9 +500,10 @@ async function findLatestBcvRate(
   if (!rows.length) return null;
   const selected = selectApplicableBcvRate(operationDate,state,rows);
   if (selected) return { ...selected.row, fetched_at: selected.row.fetched_at ?? "", status: "current", priority: selected.priority, operation_date: operationDate };
+  const hasValidExact = rows.some((row) => row.validation_status === "valid" && row.effective_date === operationDate);
   const future = rows.filter((row) => row.validation_status === "valid" && row.effective_date > operationDate && row.effective_date <= new Date(Date.parse(`${operationDate}T00:00:00.000Z`) + 5*86_400_000).toISOString().slice(0,10))
     .sort((a,b) => a.effective_date.localeCompare(b.effective_date))[0];
-  if (future && state && state.last_success_at !== null &&
+  if (!hasValidExact && future && state && state.last_success_at !== null &&
       (state.last_outcome === "inserted" || state.last_outcome === "unchanged") &&
       state.last_error_code === null && state.last_effective_date !== null &&
       state.last_effective_date >= future.effective_date) {

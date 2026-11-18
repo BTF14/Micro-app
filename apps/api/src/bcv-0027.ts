@@ -45,7 +45,7 @@ export function selectApplicableBcvRate(
   state: BcvSyncSnapshot | null,
   candidates: readonly BcvCandidate[],
 ): BcvSelection | null {
-  if (!state || !healthy(state)) return null;
+  if (!state || !healthy(state) || !state.last_success_at) return null;
   const valid = candidates.filter((row) => row.validation_status === "valid" && /^[0-9]+(?:\.[0-9]+)?$/.test(row.rate) && /[1-9]/.test(row.rate));
   const exact = valid.filter((row) => row.effective_date === today);
   if (exact.length > 1) return null;

@@ -607,6 +607,7 @@ export default function App() {
           ) : activeView === "sales" && (organization?.role === "owner" || organization?.role === "admin" || organization?.role === "cashier") ? (
             <SalesPanel organizationId={organization.id} exchangeRate={bcvRate?.rate ?? null}
               exchangeRateStatus={bcvRate ? (bcvError ? "stale" : bcvRate.status) : "unavailable"}
+              exchangeRateEffectiveDate={bcvRate?.effectiveDate ?? null}
               onGoToRegister={() => setActiveView("register-shifts")}
               onRefreshRate={async () => {
                 try { const result = await apiRequest<BcvRateResponse>("/api/exchange-rates/latest"); setBcvRate(result); setBcvError(""); }

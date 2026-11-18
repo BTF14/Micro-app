@@ -1,6 +1,7 @@
 import { useState, type FormEvent } from "react";
 import { formatMoneyForDisplay, parseNumeric } from "@micro-app/money";
 import { apiRequest } from "./auth";
+import { normalizeDecimalInput } from "./decimal";
 
 type CatalogProduct = {
   id: string;
@@ -65,11 +66,15 @@ export default function ProductForm({ organizationId, product, onCancel, onSaved
       return;
     }
 
+    const costUsd = normalizeDecimalInput(draft.cost_usd);
+    const priceUsd = normalizeDecimalInput(draft.price_usd);
+    const minimumStockInput = normalizeDecimalInput(draft.minimum_stock);
+
     try {
-      const cost = parseNumeric(draft.cost_usd, 14, 4);
-      const price = parseNumeric(draft.price_usd, 14, 4);
-      const minimumStock = draft.minimum_stock.trim()
-        ? parseNumeric(draft.minimum_stock, 14, 3)
+      const cost = parseNumeric(costUsd, 14, 4);
+      const price = parseNumeric(priceUsd, 14, 4);
+      const minimumStock = minimumStockInput
+        ? parseNumeric(minimumStockInput, 14, 3)
         : null;
       if (cost < 0n || price < 0n || minimumStock !== null && minimumStock < 0n) {
         setError("Los costos, precios y mínimos de inventario no pueden ser negativos.");
@@ -86,14 +91,14 @@ export default function ProductForm({ organizationId, product, onCancel, onSaved
       name: draft.name.trim(),
       description: draft.description.trim() || null,
       unit: draft.unit.trim(),
-      cost_usd: draft.cost_usd,
-      price_usd: draft.price_usd,
+      cost_usd: costUsd,
+      price_usd: priceUsd,
       ...(product
         ? {
             is_active: draft.is_active,
-            ...(draft.minimum_stock.trim() ? { minimum_stock: draft.minimum_stock } : {}),
+            ...(minimumStockInput ? { minimum_stock: minimumStockInput } : {}),
           }
-        : { minimum_stock: draft.minimum_stock }),
+        : { minimum_stock: minimumStockInput }),
     };
 
     setSaving(true);
@@ -148,17 +153,17 @@ export default function ProductForm({ organizationId, product, onCancel, onSaved
         </label>
         <label>
           Precio USD
-          <input value={draft.price_usd} onChange={(event) => update("price_usd", event.target.value)} inputMode="decimal" autoComplete="off" placeholder="0.00" required />
+          <input value={draft.price_usd} onChange={(event) => update("price_usd", normalizeDecimalInput(event.target.value))} inputMode="decimal" autoComplete="off" placeholder="0.00" required />
           <span className="product-field-hint">Ejemplo: 23.85 (hasta 4 decimales si hace falta)</span>
         </label>
         <label>
           Costo USD
-          <input value={draft.cost_usd} onChange={(event) => update("cost_usd", event.target.value)} inputMode="decimal" autoComplete="off" placeholder="0.00" required />
+          <input value={draft.cost_usd} onChange={(event) => update("cost_usd", normalizeDecimalInput(event.target.value))} inputMode="decimal" autoComplete="off" placeholder="0.00" required />
           <span className="product-field-hint">Ejemplo: 10.50 (hasta 4 decimales si hace falta).</span>
         </label>
         <label>
           Stock mínimo
-          <input value={draft.minimum_stock} onChange={(event) => update("minimum_stock", event.target.value)} inputMode="decimal" autoComplete="off" placeholder="0" required={!product} />
+          <input value={draft.minimum_stock} onChange={(event) => update("minimum_stock", normalizeDecimalInput(event.target.value))} inputMode="decimal" autoComplete="off" placeholder="0" required={!product} />
           <span className="product-field-hint">{product ? "Hasta 3 decimales. Déjalo vacío para conservar el mínimo actual." : "Cantidad con hasta 3 decimales."}</span>
         </label>
         {product && (

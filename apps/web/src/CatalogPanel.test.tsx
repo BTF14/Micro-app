@@ -64,6 +64,9 @@ describe("catalog panel", () => {
     expect(container.textContent).toContain("Costo USD");
     expect(container.textContent).toContain("Nuevo producto");
     expect(container.textContent).toContain("Editar");
+    expect([...container.querySelectorAll("tbody tr td")].map((cell) => cell.getAttribute("data-label"))).toEqual([
+      "Producto", "Precio USD", "Equivalente VES", "Costo USD", "Estado", "Acciones",
+    ]);
     expect(vi.mocked(fetch).mock.calls[0][0]).toBe(
       "/api/orgs/00000000-0000-4000-8000-000000000010/catalog?limit=100",
     );
@@ -98,6 +101,9 @@ describe("catalog panel", () => {
     expect(container.textContent).not.toContain("Costo USD");
     expect(container.textContent).not.toContain("Nuevo producto");
     expect(container.textContent).not.toContain("Editar");
+    expect([...container.querySelectorAll("tbody tr td")].map((cell) => cell.getAttribute("data-label"))).toEqual([
+      "Producto", "Precio USD", "Equivalente VES", "Estado",
+    ]);
   });
 
   it("searches by text or barcode and displays USD and VES prices", async () => {

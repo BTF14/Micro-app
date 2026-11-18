@@ -2,12 +2,12 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   calculateLineUsd,
   convertUsdToVes,
-  formatDecimal,
   formatNumeric,
   parseNumeric,
   sumNumeric,
 } from "@micro-app/money";
 import { apiRequest } from "./auth";
+import { formatLocalizedDecimal, normalizeDecimalInput } from "./decimal";
 import QuickProductLookup, { type QuickLookupProduct } from "./QuickProductLookup";
 import "./sales-panel.css";
 
@@ -45,11 +45,8 @@ const PAYMENT_METHODS: Array<{ value: PaymentMethod; label: string }> = [
 ];
 
 function localized(value: string, precision = 14, scale = 2, minFractionDigits = 2): string {
-  try {
-    const [integer = "0", fraction] = formatDecimal(parseNumeric(value, precision, scale), scale, minFractionDigits).split(".");
-    const grouped = integer.replace(/\B(?=(\d{3})+(?!\d))/g, ".");
-    return fraction ? `${grouped},${fraction}` : grouped;
-  } catch { return "—"; }
+  try { return formatLocalizedDecimal(value, precision, scale, minFractionDigits); }
+  catch { return "—"; }
 }
 function usd(value: string): string { return `US$ ${localized(value, 14, 4)}`; }
 function ves(value: string): string { return `Bs. ${localized(value, 16, 2)}`; }
@@ -270,7 +267,7 @@ export default function SalesPanel({
   }
 
   function updateQuantity(productId: string, value: string) {
-    const raw = value.replace(",", ".");
+    const raw = normalizeDecimalInput(value);
     const trimmed = raw.trim();
     const line = cartRef.current.find((item) => item.product.product_id === productId);
     if (!line) return;
@@ -382,7 +379,7 @@ export default function SalesPanel({
       payments: payments.map((payment) => ({
         method: payment.method,
         currency,
-        amount: payment.amount,
+        amount: normalizeDecimalInput(payment.amount),
         reference: payment.reference.trim() ? payment.reference.trim() : null,
       })),
     };
@@ -479,7 +476,7 @@ export default function SalesPanel({
                   <div className="sales-payments-heading"><h3 id="sales-payments-title">Forma de pago</h3><label>Moneda<select value={currency} onChange={(event) => setPaymentCurrency(event.target.value as Currency)}><option value="USD">USD</option><option value="VES">VES</option></select></label></div>
                   {payments.map((payment, index) => <div className="sales-payment-row" key={payment.id}>
                     <label><span>Método</span><select value={payment.method} onChange={(event) => updatePayment(payment.id, { method: event.target.value as PaymentMethod })}>{PAYMENT_METHODS.map((method) => <option key={method.value} value={method.value}>{method.label}</option>)}</select></label>
-                    <label><span>Monto ({currency})</span><input inputMode="decimal" value={payment.amount} placeholder={currency === "USD" ? "0,0000" : "0,00"} onChange={(event) => updatePayment(payment.id, { amount: event.target.value.replace(",", ".") })} /></label>
+                    <label><span>Monto ({currency})</span><input inputMode="decimal" value={payment.amount} placeholder={currency === "USD" ? "0,0000" : "0,00"} onChange={(event) => updatePayment(payment.id, { amount: normalizeDecimalInput(event.target.value) })} /></label>
                     <label className="sales-payment-reference"><span>Referencia (opcional)</span><input maxLength={128} value={payment.reference} onChange={(event) => updatePayment(payment.id, { reference: event.target.value })} /></label>
                     {payments.length > 1 && <button type="button" className="sales-remove-payment" onClick={() => removePayment(payment.id)} aria-label={`Quitar pago ${index + 1}`}>Quitar</button>}
                   </div>)}

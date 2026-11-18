@@ -465,7 +465,7 @@ h1 { margin: 0; font-size: clamp(2.2rem, 4.2vw, 3.6rem); font-weight: 550; lette
 @media(max-width:760px){
  .sidebar{padding:1rem 1rem .8rem}
  .sidebar>.brand{padding:0;min-height:2.75rem}
- .mobile-nav-toggle{display:inline-flex;min-height:2.55rem;align-items:center;justify-content:center;gap:.55rem;margin:.8rem 0 0;padding:.55rem .8rem;border:1px solid #426158;border-radius:.65rem;color:#edf4ee;background:#21463d;font:inherit;font-size:.76rem;font-weight:650;cursor:pointer}
+ .mobile-nav-toggle{display:inline-flex;min-height:44px;align-items:center;justify-content:center;gap:.55rem;margin:.8rem 0 0;padding:.55rem .8rem;border:1px solid #426158;border-radius:.65rem;color:#edf4ee;background:#21463d;font:inherit;font-size:.76rem;font-weight:650;cursor:pointer}
  .mobile-nav-toggle span{font-size:1rem;line-height:1}
  .side-nav{display:none;overflow:visible;flex-direction:column;gap:.25rem;margin:.65rem 0 0;padding:.5rem 0 .1rem;border-top:1px solid #36564f}
  .side-nav.open{display:grid}
@@ -473,5 +473,10 @@ h1 { margin: 0; font-size: clamp(2.2rem, 4.2vw, 3.6rem); font-weight: 550; lette
  .side-nav .nav-symbol{width:1.2rem;font-size:1rem}
  .side-nav .nav-lock{display:inline;margin-left:auto}
  .topbar{min-height:56px}
+ button, input:not([type="checkbox"]), select, textarea, .nav-item { min-height:44px; }
 }
 @media(min-width:761px){.mobile-nav-toggle{display:none}}
+
+.app-error-boundary { min-height: 100vh; display: grid; place-items: center; padding: 1.5rem; }
+.app-error-boundary section { width: min(100%, 34rem); }
+.app-error-boundary button { min-height: 44px; padding: 0.65rem 1rem; }

@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { convertUsdToVes, formatDecimal, parseNumeric } from "@micro-app/money";
+import { convertUsdToVes, parseNumeric } from "@micro-app/money";
+import { formatLocalizedDecimal } from "./decimal";
 import { apiRequest } from "./auth";
 import "./catalog.css";
 
@@ -35,15 +36,9 @@ type QuickProductLookupProps = {
   resetSignal?: number;
 };
 
-function formatLocalizedDecimal(value: string): string {
-  const [integerPart = "0", fractionalPart] = value.split(".");
-  const grouped = integerPart.replace(/\B(?=(\d{3})+(?!\d))/g, ".");
-  return fractionalPart ? `${grouped},${fractionalPart}` : grouped;
-}
-
 function formatUsd(value: string): string {
   try {
-    return formatLocalizedDecimal(formatDecimal(parseNumeric(value, 14, 4), 4, 2));
+    return formatLocalizedDecimal(value, 14, 4, 2);
   } catch {
     return "No disponible";
   }
@@ -51,7 +46,7 @@ function formatUsd(value: string): string {
 
 function formatVes(value: string, rate: string): string {
   try {
-    return formatLocalizedDecimal(convertUsdToVes(value, rate));
+    return formatLocalizedDecimal(convertUsdToVes(value, rate), 16, 2, 2);
   } catch {
     return "No disponible";
   }
@@ -66,7 +61,7 @@ function isOutOfStock(value: string): boolean {
 }
 
 function formatAvailableQuantity(value: string, unit: string): string {
-  return `${formatLocalizedDecimal(formatDecimal(parseNumeric(value, 14, 3), 3, 0))} ${unit}`;
+  return `${formatLocalizedDecimal(value, 14, 3, 0)} ${unit}`;
 }
 
 export default function QuickProductLookup({

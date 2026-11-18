@@ -20,37 +20,55 @@ export function googleLoginUrl(): string {
   return `${API_BASE_URL}/auth/google`;
 }
 
-export async function apiRequest<T>(path: string, init: RequestInit = {}): Promise<T> {
+export type ApiRequestOptions = RequestInit & { skipAuth401Handling?: boolean };
+
+export async function apiRequest<T>(path: string, options: ApiRequestOptions = {}): Promise<T> {
   if (IS_PAGES_PREVIEW) {
     throw new Error("La API está deshabilitada en esta vista previa para proteger los datos de producción.");
   }
+  const { skipAuth401Handling = false, signal: callerSignal, ...init } = options;
+  const controller = new AbortController();
+  const timeoutId = window.setTimeout(() => controller.abort(), 15_000);
+  const abortFromCaller = () => controller.abort();
+  if (callerSignal?.aborted) abortFromCaller();
+  else callerSignal?.addEventListener("abort", abortFromCaller, { once: true });
   const headers = new Headers(init.headers);
   if (init.body !== undefined && !headers.has("Content-Type")) headers.set("Content-Type", "application/json");
 
-  let response: Response;
   try {
-    response = await fetch(`${API_BASE_URL}${path}`, {
+    const response = await fetch(`${API_BASE_URL}${path}`, {
       ...init,
+      signal: controller.signal,
       cache: "no-store",
       headers,
       credentials: "include",
       redirect: "error",
     });
-  } catch {
-    throw new Error("No se pudo conectar con la API. Comprueba VITE_API_BASE_URL y que el servicio esté disponible.");
-  }
 
-  if (!response.ok) {
-    let message = "No se pudo completar la solicitud. Inténtalo de nuevo.";
-    try {
-      const payload = await response.json() as ApiErrorPayload;
-      if (typeof payload.message === "string" && payload.message.trim()) message = payload.message;
-    } catch {
-      // Keep a generic message if the API response is not JSON.
+    if (response.status === 401 && !skipAuth401Handling && path.split("?")[0] !== "/auth/me") {
+      window.dispatchEvent(new CustomEvent("micro-app:unauthorized"));
     }
-    throw new ApiError(message, response.status);
-  }
 
-  if (response.status === 204) return undefined as T;
-  return await response.json() as T;
+    if (!response.ok) {
+      let message = "No se pudo completar la solicitud. Inténtalo de nuevo.";
+      try {
+        const payload = await response.json() as ApiErrorPayload;
+        if (typeof payload.message === "string" && payload.message.trim()) message = payload.message;
+      } catch {
+        // Keep a generic message if the API response is not JSON.
+      }
+      throw new ApiError(message, response.status);
+    }
+
+    if (response.status === 204) return undefined as T;
+    return await response.json() as T;
+  } catch (reason) {
+    if (reason instanceof ApiError) throw reason;
+    if (callerSignal?.aborted) throw new Error("La solicitud fue cancelada.");
+    if (controller.signal.aborted) throw new Error("La solicitud tardó demasiado. Comprueba tu conexión e inténtalo de nuevo.");
+    throw new Error("No se pudo conectar con la API. Comprueba VITE_API_BASE_URL y que el servicio esté disponible.");
+  } finally {
+    window.clearTimeout(timeoutId);
+    callerSignal?.removeEventListener("abort", abortFromCaller);
+  }
 }

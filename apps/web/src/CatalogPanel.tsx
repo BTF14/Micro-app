@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { convertUsdToVes, formatDecimal, parseNumeric } from "@micro-app/money";
+import { convertUsdToVes } from "@micro-app/money";
+import { formatLocalizedDecimal } from "./decimal";
 import { apiRequest } from "./auth";
 import ProductForm from "./ProductForm";
 import "./catalog.css";
@@ -31,15 +32,9 @@ type CatalogPanelProps = {
   canManage: boolean;
 };
 
-function formatLocalizedDecimal(value: string): string {
-  const [integerPart, fractionPart] = value.split(".");
-  const grouped = (integerPart ?? "0").replace(/\B(?=(\d{3})+(?!\d))/g, ".");
-  return fractionPart ? `${grouped},${fractionPart}` : grouped;
-}
-
 function formatUsd(value: string): string {
   try {
-    return formatLocalizedDecimal(formatDecimal(parseNumeric(value, 14, 4), 4, 2));
+    return formatLocalizedDecimal(value, 14, 4, 2);
   } catch {
     return "No disponible";
   }
@@ -47,7 +42,7 @@ function formatUsd(value: string): string {
 
 function formatVes(valueUsd: string, rate: string): string {
   try {
-    return formatLocalizedDecimal(convertUsdToVes(valueUsd, rate));
+    return formatLocalizedDecimal(convertUsdToVes(valueUsd, rate), 16, 2, 2);
   } catch {
     return "—";
   }
@@ -192,26 +187,26 @@ export default function CatalogPanel({
               <tbody>
                 {items.map((item) => (
                   <tr key={item.id}>
-                    <td>
+                    <td data-label="Producto">
                       <strong>{item.name}</strong>
                       <span className="catalog-product-meta">{item.sku}{item.barcode ? ` · ${item.barcode}` : ""}{item.unit ? ` · ${item.unit}` : ""}</span>
                     </td>
-                    <td className="catalog-money"><span className="catalog-price-usd">US$ {formatUsd(item.price_usd)}</span></td>
-                    <td className="catalog-money">
+                    <td data-label="Precio USD" className="catalog-money"><span className="catalog-price-usd">US$ {formatUsd(item.price_usd)}</span></td>
+                    <td data-label="Equivalente VES" className="catalog-money">
                       {canConvert ? <span className="catalog-price-ves">Bs. {formatVes(item.price_usd, exchangeRate!)}</span> : <span className="catalog-price-unavailable">Tasa BCV no validada</span>}
                     </td>
                     {canReadCosts && (
-                      <td className="catalog-money">
+                      <td data-label="Costo USD" className="catalog-money">
                         {item.cost_usd === undefined ? "—" : `US$ ${formatUsd(item.cost_usd)}`}
                       </td>
                     )}
-                    <td>
+                    <td data-label="Estado">
                       <span className={`catalog-product-status ${item.is_active ? "active" : "inactive"}`}>
                         {item.is_active ? "Activo" : "Inactivo"}
                       </span>
                     </td>
                     {canManage && (
-                      <td>
+                      <td data-label="Acciones">
                         <button
                           className="catalog-edit"
                           type="button"

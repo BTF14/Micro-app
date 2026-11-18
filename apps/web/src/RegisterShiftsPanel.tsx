@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState, type FormEvent } from "react";
-import { formatMoneyForDisplay } from "@micro-app/money";
+import { formatLocalizedDecimal, normalizeDecimalInput } from "./decimal";
 import { apiRequest, ApiError } from "./auth";
 import "./register-shifts.css";
 
@@ -9,12 +9,8 @@ type Shift = { id: string; organizationId: string; branchId: string; registerId:
 type RegisterShiftsPanelProps = { organizationId: string; userName: string };
 
 function money(value: string): string {
-  try {
-    const formatted = formatMoneyForDisplay(value);
-    const [integer = "0", fraction] = formatted.split(".");
-    const grouped = integer.replace(/\B(?=(\d{3})+(?!\d))/g, ".");
-    return fraction ? `${grouped},${fraction}` : grouped;
-  } catch { return "No disponible"; }
+  try { return formatLocalizedDecimal(value, 18, 4, 2); }
+  catch { return "No disponible"; }
 }
 function dateTime(value: string): string {
   return new Intl.DateTimeFormat("es-VE", { dateStyle: "medium", timeStyle: "short", timeZone: "America/Caracas" }).format(new Date(value));
@@ -96,7 +92,7 @@ export default function RegisterShiftsPanel({ organizationId, userName }: Regist
     try {
       const response = await apiRequest<{ shift: Record<string, unknown> }>(
         `/api/orgs/${encodeURIComponent(organizationId)}/branches/${encodeURIComponent(branchId)}/register-shifts`,
-        { method: "POST", body: JSON.stringify({ register_id: registerId, opening_cash_usd: openingUsd, opening_cash_ves: openingVes }) },
+        { method: "POST", body: JSON.stringify({ register_id: registerId, opening_cash_usd: normalizeDecimalInput(openingUsd), opening_cash_ves: normalizeDecimalInput(openingVes) }) },
       );
       const openedShift = normalizeOpenedShift(response.shift);
       setShift(openedShift); setClosingUsd(""); setClosingVes("");
@@ -113,7 +109,7 @@ export default function RegisterShiftsPanel({ organizationId, userName }: Regist
     try {
       await apiRequest(
         `/api/orgs/${encodeURIComponent(organizationId)}/branches/${encodeURIComponent(branchId)}/register-shifts/${encodeURIComponent(shift.id)}/close`,
-        { method: "POST", body: JSON.stringify({ closing_cash_usd: closingUsd, closing_cash_ves: closingVes }) },
+        { method: "POST", body: JSON.stringify({ closing_cash_usd: normalizeDecimalInput(closingUsd), closing_cash_ves: normalizeDecimalInput(closingVes) }) },
       );
       setShift(null); setConfirmClose(false); setNotice("Turno cerrado y registrado en auditoría.");
       await loadBranchState(branchId);
@@ -140,8 +136,8 @@ export default function RegisterShiftsPanel({ organizationId, userName }: Regist
               <dl className="register-shift-values"><div><dt>Fondo inicial USD</dt><dd>$ {money(shift.openingCashUsd)}</dd></div><div><dt>Fondo inicial VES</dt><dd>Bs. {money(shift.openingCashVes)}</dd></div></dl>
               <form className="register-shift-form" onSubmit={closeShift}>
                 <h3>Cierre de turno</h3><p>Introduce el efectivo contado al cierre en cada moneda. Este registro no calcula diferencias ni efectivo esperado.</p>
-                <label className="register-shifts-field"><span>Conteo final USD</span><input inputMode="decimal" required value={closingUsd} onChange={(event) => { setClosingUsd(event.target.value); setConfirmClose(false); }} /></label>
-                <label className="register-shifts-field"><span>Conteo final VES</span><input inputMode="decimal" required value={closingVes} onChange={(event) => { setClosingVes(event.target.value); setConfirmClose(false); }} /></label>
+                <label className="register-shifts-field"><span>Conteo final USD</span><input inputMode="decimal" required value={closingUsd} onChange={(event) => { setClosingUsd(normalizeDecimalInput(event.target.value)); setConfirmClose(false); }} /></label>
+                <label className="register-shifts-field"><span>Conteo final VES</span><input inputMode="decimal" required value={closingVes} onChange={(event) => { setClosingVes(normalizeDecimalInput(event.target.value)); setConfirmClose(false); }} /></label>
                 {confirmClose && <p className="register-shifts-confirm" role="status">Confirma que ambos importes corresponden al conteo físico final. El cierre no se puede editar después.</p>}
                 <button className="register-shifts-primary" type="submit" disabled={saving}>{saving ? "Guardando…" : confirmClose ? "Confirmar cierre" : "Revisar cierre"}</button>
               </form>
@@ -152,8 +148,8 @@ export default function RegisterShiftsPanel({ organizationId, userName }: Regist
                 <form className="register-shift-form" onSubmit={openShift}>
                   <label className="register-shifts-field"><span>Caja</span><select required value={registerId} onChange={(event) => setRegisterId(event.target.value)}>{registers.map((register) => <option value={register.id} key={register.id}>{register.name} · {register.code}</option>)}</select></label>
                   <div className="register-shift-form-grid">
-                    <label className="register-shifts-field"><span>Fondo inicial USD</span><input inputMode="decimal" required value={openingUsd} onChange={(event) => setOpeningUsd(event.target.value)} /></label>
-                    <label className="register-shifts-field"><span>Fondo inicial VES</span><input inputMode="decimal" required value={openingVes} onChange={(event) => setOpeningVes(event.target.value)} /></label>
+                    <label className="register-shifts-field"><span>Fondo inicial USD</span><input inputMode="decimal" required value={openingUsd} onChange={(event) => setOpeningUsd(normalizeDecimalInput(event.target.value))} /></label>
+                    <label className="register-shifts-field"><span>Fondo inicial VES</span><input inputMode="decimal" required value={openingVes} onChange={(event) => setOpeningVes(normalizeDecimalInput(event.target.value))} /></label>
                   </div>
                   <button className="register-shifts-primary" type="submit" disabled={saving || !registerId}>{saving ? "Abriendo…" : "Abrir turno"}</button>
                 </form>

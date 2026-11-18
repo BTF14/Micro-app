@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState, type FormEvent } from "react";
-import { formatDecimal, parseNumeric } from "@micro-app/money";
+import { parseNumeric } from "@micro-app/money";
 import { apiRequest } from "./auth";
+import { formatLocalizedDecimal, normalizeDecimalInput } from "./decimal";
 import "./catalog.css";
 
 type Branch = { id: string; name: string; slug: string };
@@ -21,27 +22,15 @@ type BalanceItem = {
 type BalancePage = { items: BalanceItem[]; nextCursor: string | null; limit: number };
 type ReceiptItem = { id: string; reason: string; created_at: string; line_count: string };
 
-function groupThousands(value: string): string {
-  const [integerPart, fractionPart] = value.split(".");
-  const grouped = (integerPart ?? "0").replace(/\B(?=(\d{3})+(?!\d))/g, ".");
-  return fractionPart ? `${grouped},${fractionPart}` : grouped;
-}
-
-// Quantities are numeric(14,3) strings from the API; never use floats.
+// Quantities and costs remain exact NUMERIC strings; formatting is centralized.
 function formatQuantity(value: string): string {
-  try {
-    return groupThousands(formatDecimal(parseNumeric(value, 14, 3), 3, 0));
-  } catch {
-    return "No disponible";
-  }
+  try { return formatLocalizedDecimal(value, 14, 3, 0); }
+  catch { return "No disponible"; }
 }
 
 function formatUsd(value: string): string {
-  try {
-    return groupThousands(formatDecimal(parseNumeric(value, 14, 4), 4, 2));
-  } catch {
-    return "No disponible";
-  }
+  try { return formatLocalizedDecimal(value, 14, 4, 2); }
+  catch { return "No disponible"; }
 }
 
 function isLowStock(item: BalanceItem): boolean {
@@ -173,13 +162,21 @@ export default function InventoryPanel({ organizationId, canManageInventory }: {
     event.preventDefault();
     const selectedProductId = receiptProductId || manageableProducts[0]?.product_id || "";
     if (!branchId || !warehouseId || !selectedProductId) return;
+    const quantity = normalizeDecimalInput(receiptQuantity);
+    const unitCost = normalizeDecimalInput(receiptCost);
+    try {
+      if (parseNumeric(quantity, 14, 3) <= 0n || parseNumeric(unitCost, 14, 4) < 0n) throw new Error("La cantidad debe ser mayor que cero y el costo no puede ser negativo.");
+    } catch {
+      setError("Usa una cantidad válida (hasta 3 decimales) y un costo USD válido (hasta 4 decimales).");
+      return;
+    }
     setReceiptBusy(true); setError(""); setNotice("");
     try {
       const path = `${base}/branches/${encodeURIComponent(branchId)}/warehouses/${encodeURIComponent(warehouseId)}/receipts`;
       const result = await apiRequest<{ id: string; replayed: boolean }>(path, {
         method: "POST",
         headers: { "Idempotency-Key": crypto.randomUUID() },
-        body: JSON.stringify({ reason: receiptReason, lines: [{ product_id: selectedProductId, quantity: receiptQuantity, unit_cost_usd: receiptCost }] }),
+        body: JSON.stringify({ reason: receiptReason, lines: [{ product_id: selectedProductId, quantity, unit_cost_usd: unitCost }] }),
       });
       setNotice(result.replayed ? "La recepción ya estaba registrada." : "Recepción registrada y existencias actualizadas.");
       setReceiptReason("");
@@ -193,13 +190,20 @@ export default function InventoryPanel({ organizationId, canManageInventory }: {
     event.preventDefault();
     const selectedProductId = countProductId || manageableProducts[0]?.product_id || "";
     if (!branchId || !warehouseId || !selectedProductId) return;
+    const countedQuantity = normalizeDecimalInput(countQuantity);
+    try {
+      if (parseNumeric(countedQuantity, 14, 3) < 0n) throw new Error("El conteo no puede ser negativo.");
+    } catch {
+      setError("Usa una cantidad válida de hasta 3 decimales, sin valores negativos.");
+      return;
+    }
     setCountBusy(true); setError(""); setNotice("");
     try {
       const prefix = `${base}/branches/${encodeURIComponent(branchId)}/warehouses/${encodeURIComponent(warehouseId)}`;
       const created = await apiRequest<{ id: string }>(`${prefix}/counts/physical`, {
         method: "POST",
         headers: { "Idempotency-Key": crypto.randomUUID() },
-        body: JSON.stringify({ reason: countReason, lines: [{ product_id: selectedProductId, counted_quantity: countQuantity }] }),
+        body: JSON.stringify({ reason: countReason, lines: [{ product_id: selectedProductId, counted_quantity: countedQuantity }] }),
       });
       await apiRequest(`${prefix}/counts/${encodeURIComponent(created.id)}/confirm`, { method: "POST" });
       setNotice("Conteo físico confirmado y existencias actualizadas.");
@@ -272,10 +276,10 @@ export default function InventoryPanel({ organizationId, canManageInventory }: {
               </select>
             </label>
             <label>Cantidad
-              <input required inputMode="decimal" pattern="(?:0|[1-9][0-9]{0,10})(?:\.[0-9]{1,3})?" title="Usa punto (.) y máximo 3 decimales, ej. 2.5" value={receiptQuantity} onChange={(event) => setReceiptQuantity(event.target.value)} />
+              <input required inputMode="decimal" value={receiptQuantity} onChange={(event) => setReceiptQuantity(normalizeDecimalInput(event.target.value))} />
             </label>
             <label>Costo unitario USD
-              <input required inputMode="decimal" pattern="(?:0|[1-9][0-9]{0,9})(?:\.[0-9]{1,4})?" title="Usa punto (.) y máximo 4 decimales, ej. 1.05" value={receiptCost} onChange={(event) => setReceiptCost(event.target.value)} />
+              <input required inputMode="decimal" value={receiptCost} onChange={(event) => setReceiptCost(normalizeDecimalInput(event.target.value))} />
             </label>
             <label>Motivo
               <input required maxLength={500} value={receiptReason} onChange={(event) => setReceiptReason(event.target.value)} />
@@ -290,7 +294,7 @@ export default function InventoryPanel({ organizationId, canManageInventory }: {
               </select>
             </label>
             <label>Cantidad contada
-              <input required inputMode="decimal" pattern="(?:0|[1-9][0-9]{0,10})(?:\.[0-9]{1,3})?" title="Usa punto (.) y máximo 3 decimales, ej. 2.5" value={countQuantity} onChange={(event) => setCountQuantity(event.target.value)} />
+              <input required inputMode="decimal" value={countQuantity} onChange={(event) => setCountQuantity(normalizeDecimalInput(event.target.value))} />
             </label>
             <label>Motivo
               <input required maxLength={500} value={countReason} onChange={(event) => setCountReason(event.target.value)} />
@@ -344,17 +348,17 @@ export default function InventoryPanel({ organizationId, canManageInventory }: {
               <tbody>
                 {items.map((item) => (
                   <tr key={item.product_id}>
-                    <td>
+                    <td data-label="Producto">
                       <strong>{item.name}</strong>
                       <span className="catalog-product-meta">{item.sku}{item.barcode ? ` · ${item.barcode}` : ""}{item.unit ? ` · ${item.unit}` : ""}</span>
                     </td>
-                    <td className="catalog-money">{formatQuantity(item.on_hand_quantity)}</td>
-                    <td className="catalog-money">{formatQuantity(item.reserved_quantity)}</td>
-                    <td className="catalog-money">{formatQuantity(item.available_quantity)}</td>
+                    <td className="catalog-money" data-label="En existencia">{formatQuantity(item.on_hand_quantity)}</td>
+                    <td className="catalog-money" data-label="Reservado">{formatQuantity(item.reserved_quantity)}</td>
+                    <td className="catalog-money" data-label="Disponible">{formatQuantity(item.available_quantity)}</td>
                     {canReadCosts && (
-                      <td className="catalog-money">{item.cost_usd === undefined ? "—" : `US$ ${formatUsd(item.cost_usd)}`}</td>
+                      <td className="catalog-money" data-label="Costo USD">{item.cost_usd === undefined ? "—" : `US$ ${formatUsd(item.cost_usd)}`}</td>
                     )}
-                    <td>
+                    <td data-label="Estado">
                       {!item.is_active ? (
                         <span className="catalog-product-status inactive">Inactivo</span>
                       ) : isLowStock(item) ? (

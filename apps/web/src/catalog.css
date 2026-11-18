@@ -100,12 +100,12 @@
  .catalog-table tbody { display:grid; gap:.7rem; }
  .catalog-table tr { padding:.85rem; border:1px solid var(--line); border-radius:.8rem; background:#fff; }
  .catalog-table td { display:flex; align-items:center; justify-content:space-between; gap:.7rem; padding:.42rem 0; border:0; white-space:normal; text-align:right; }
- .catalog-table td:first-child { min-width:0; display:block; text-align:left; }
- .catalog-table:not(.inventory-table) td:nth-child(2)::before { content:"Precio USD"; color:var(--muted); font-size:.68rem; font-weight:500; }
- .catalog-table:not(.inventory-table) td:nth-child(3)::before { content:"Precio VES"; color:var(--muted); font-size:.68rem; font-weight:500; }
- .inventory-table td:nth-child(2)::before { content:"En existencia"; color:var(--muted); font-size:.68rem; font-weight:500; }
- .inventory-table td:nth-child(3)::before { content:"Reservado"; color:var(--muted); font-size:.68rem; font-weight:500; }
- .inventory-table td:nth-child(4)::before { content:"Disponible"; color:var(--muted); font-size:.68rem; font-weight:500; }
+ .catalog-table td[data-label="Producto"] { min-width:0; display:block; text-align:left; }
+ .catalog-table td[data-label]:not([data-label="Producto"])::before { content:attr(data-label); color:var(--muted); font-size:.68rem; font-weight:500; }
+ .inventory-table { width:100%; border-collapse:separate; border-spacing:0 .75rem; }
+ .inventory-table tbody tr { padding:.75rem; border:1px solid var(--line); border-radius:.75rem; background:#fff; }
+ .inventory-table td { display:grid; grid-template-columns:minmax(7rem,42%) minmax(0,1fr); gap:.5rem; padding:.45rem 0; text-align:right; overflow-wrap:anywhere; }
+ .inventory-table td[data-label="Producto"] { display:block; text-align:left; border-bottom:1px solid var(--line); padding-bottom:.65rem; margin-bottom:.25rem; }
  .inventory-operations { grid-template-columns:minmax(0,1fr); }
  .inventory-operation-form { min-width:0; }
 }

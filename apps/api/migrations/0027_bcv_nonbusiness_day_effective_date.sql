@@ -47,8 +47,8 @@ BEGIN
     FROM public.bcv_sync_state
    WHERE singleton = true
    FOR SHARE;
-  IF NOT FOUND OR sync_success_at IS NULL OR sync_outcome IS NULL
-    OR sync_outcome NOT IN ('inserted','unchanged')
+  IF NOT FOUND OR sync_success_at IS NULL OR sync_success_at > pg_catalog.clock_timestamp()
+    OR sync_outcome IS NULL OR sync_outcome NOT IN ('inserted','unchanged')
     OR sync_error_code IS NOT NULL THEN
     RETURN;
   END IF;

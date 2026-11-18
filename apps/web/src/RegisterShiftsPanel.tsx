@@ -9,7 +9,7 @@ type Shift = { id: string; organizationId: string; branchId: string; registerId:
 type RegisterShiftsPanelProps = { organizationId: string; userName: string };
 
 function money(value: string): string {
-  try { return formatLocalizedDecimal(value, 14, 4, 2); }
+  try { return formatLocalizedDecimal(value, 16, 4, 2); }
   catch { return "No disponible"; }
 }
 function dateTime(value: string): string {

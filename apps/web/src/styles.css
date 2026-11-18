@@ -473,18 +473,10 @@ h1 { margin: 0; font-size: clamp(2.2rem, 4.2vw, 3.6rem); font-weight: 550; lette
  .side-nav .nav-symbol{width:1.2rem;font-size:1rem}
  .side-nav .nav-lock{display:inline;margin-left:auto}
  .topbar{min-height:56px}
+ button, input:not([type="checkbox"]), select, textarea, .nav-item { min-height:44px; }
 }
 @media(min-width:761px){.mobile-nav-toggle{display:none}}
-
-@media (max-width: 600px) {
-  button, input:not([type="checkbox"]), select, textarea {
-    min-height: 44px;
-  }
-}
 
 .app-error-boundary { min-height: 100vh; display: grid; place-items: center; padding: 1.5rem; }
 .app-error-boundary section { width: min(100%, 34rem); }
 .app-error-boundary button { min-height: 44px; padding: 0.65rem 1rem; }
-@media (max-width: 600px) {
-  button, input:not([type="checkbox"]), select, textarea { min-height: 44px; }
-}

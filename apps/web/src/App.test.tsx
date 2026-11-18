@@ -71,6 +71,21 @@ describe("Micro app authentication flow", () => {
     expect(container.textContent).not.toContain("Hola, Ana");
   });
 
+  it("returns to login and clears the BCV snapshot when an authenticated request expires", async () => {
+    vi.mocked(fetch)
+      .mockResolvedValueOnce(jsonResponse(authResponse))
+      .mockResolvedValueOnce(jsonResponse(bcvSyncStateResponse))
+      .mockResolvedValueOnce(jsonResponse(bcvRateResponse));
+    await renderApp();
+    await settle();
+    expect(container.textContent).toContain("Hola, Ana.");
+    await act(async () => {
+      window.dispatchEvent(new CustomEvent("micro-app:unauthorized"));
+    });
+    expect(container.textContent).toContain("Inicia sesión");
+    expect(container.textContent).not.toContain("Hola, Ana.");
+  });
+
   it("links the Google sign-in button straight to the OAuth start endpoint", async () => {
     vi.mocked(fetch).mockResolvedValueOnce(jsonResponse({ message: "No hay sesión activa" }, 401));
     await renderApp();

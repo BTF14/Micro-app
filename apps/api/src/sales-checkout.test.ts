@@ -215,7 +215,8 @@ describe("checkout BCV effective-date and last-success selection", () => {
   }
 
   it("rejects a Monday-prepublished rate as Friday's rate before its effective date", async () => {
-    const { client, statements } = mockClient(validState("2026-11-09"), validRate("2026-11-09"));
+    const state = { ...validState("2026-11-09"), last_success_at: "2026-11-05T12:00:00.000Z" };
+    const { client, statements } = mockClient(state, validRate("2026-11-09"));
     await expect(findApplicableCheckoutRate(client, new Date("2026-11-06T18:00:00-04:00"))).resolves.toBeNull();
     expect(statements).toHaveLength(2);
     expect(statements[0]).toContain("public.lock_bcv_sync_state_with_error()");

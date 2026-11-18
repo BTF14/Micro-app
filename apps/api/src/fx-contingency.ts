@@ -440,6 +440,8 @@ export function registerFxContingencyRoutes(app: Hono<{ Bindings: Bindings }>): 
                        AND er.validation_status='valid'
                        AND er.effective_date=obs.last_effective_date
                        AND er.effective_date <= (pg_catalog.clock_timestamp() AT TIME ZONE 'America/Caracas')::date + 5
+                       AND (er.effective_date=(pg_catalog.clock_timestamp() AT TIME ZONE 'America/Caracas')::date OR NOT EXISTS (SELECT 1 FROM public.exchange_rates exact WHERE exact.source='BCV_OFFICIAL_HTML_V1' AND exact.validation_status='valid' AND exact.effective_date=(pg_catalog.clock_timestamp() AT TIME ZONE 'America/Caracas')::date))
+                       AND obs.rate_snapshot=er.rate
                        AND (
                          er.effective_date=(pg_catalog.clock_timestamp() AT TIME ZONE 'America/Caracas')::date
                          OR (

@@ -31,7 +31,7 @@ export type BcvOfficialRate = {
 type StoredRateRow = {
   rate: string;
   effective_date: string;
-  validation_status?: "valid" | "stale";
+  validation_status: "valid" | "stale";
 };
 
 function caracasDate(now: Date): string {

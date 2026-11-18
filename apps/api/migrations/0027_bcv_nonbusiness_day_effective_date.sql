@@ -38,6 +38,7 @@ DECLARE
   selected_rate numeric;
   selected_date date;
   selected_priority text;
+  candidate_count bigint;
 BEGIN
   IF p_operation_date IS NULL THEN RETURN; END IF;
 
@@ -52,6 +53,9 @@ BEGIN
     RETURN;
   END IF;
 
+  SELECT count(*) INTO candidate_count FROM public.exchange_rates er
+   WHERE er.source='BCV_OFFICIAL_HTML_V1' AND er.validation_status='valid' AND er.effective_date=p_operation_date;
+  IF candidate_count > 1 THEN RETURN; END IF;
   SELECT er.id,er.rate,er.effective_date
     INTO selected_id,selected_rate,selected_date
     FROM public.exchange_rates er
@@ -63,16 +67,17 @@ BEGIN
   IF FOUND THEN
     selected_priority := 'today_exact';
   ELSE
-    SELECT er.id,er.rate,er.effective_date
-      INTO selected_id,selected_rate,selected_date
+    SELECT min(er.effective_date) INTO selected_date
       FROM public.exchange_rates er
-     WHERE er.source='BCV_OFFICIAL_HTML_V1'
-       AND er.validation_status='valid'
-       AND er.effective_date > p_operation_date
-       AND er.effective_date <= p_operation_date + 5
-     ORDER BY er.effective_date ASC,er.fetched_at DESC
-     LIMIT 1;
-    IF NOT FOUND THEN RETURN; END IF;
+     WHERE er.source='BCV_OFFICIAL_HTML_V1' AND er.validation_status='valid'
+       AND er.effective_date > p_operation_date AND er.effective_date <= p_operation_date + 5;
+    IF selected_date IS NULL THEN RETURN; END IF;
+    SELECT count(*) INTO candidate_count FROM public.exchange_rates er
+     WHERE er.source='BCV_OFFICIAL_HTML_V1' AND er.validation_status='valid' AND er.effective_date=selected_date;
+    IF candidate_count <> 1 THEN RETURN; END IF;
+    SELECT er.id,er.rate,er.effective_date INTO selected_id,selected_rate,selected_date
+      FROM public.exchange_rates er
+     WHERE er.source='BCV_OFFICIAL_HTML_V1' AND er.validation_status='valid' AND er.effective_date=selected_date;
 
     IF EXTRACT(ISODOW FROM p_operation_date) IN (6,7) THEN
       selected_priority := 'weekend_prepublished';

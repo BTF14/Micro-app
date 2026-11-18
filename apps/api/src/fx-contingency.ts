@@ -432,7 +432,12 @@ export function registerFxContingencyRoutes(app: Hono<{ Bindings: Bindings }>): 
              SELECT EXISTS (
                SELECT 1 FROM public.bcv_sync_success_observations obs
                CROSS JOIN operation op
-                WHERE obs.observed_at > $1::timestamptz
+               JOIN public.bcv_sync_state current_state ON current_state.singleton=true
+                WHERE current_state.last_success_at IS NOT NULL
+                  AND current_state.last_outcome IN ('inserted','unchanged')
+                  AND current_state.last_error_code IS NULL
+                  AND current_state.last_effective_date >= obs.last_effective_date
+                  AND obs.observed_at > $1::timestamptz
                   AND obs.last_outcome IN ('inserted','unchanged')
                   AND obs.last_error_code IS NULL
                   AND obs.validation_status='valid'
@@ -457,7 +462,7 @@ export function registerFxContingencyRoutes(app: Hono<{ Bindings: Bindings }>): 
                            er.effective_date > op.operation_date
                            AND (
                              EXTRACT(ISODOW FROM op.operation_date) IN (6,7)
-                             OR obs.last_success_at >= (op.operation_date::timestamp AT TIME ZONE 'America/Caracas')
+                             OR current_state.last_success_at >= (op.operation_date::timestamp AT TIME ZONE 'America/Caracas')
                            )
                          )
                        )

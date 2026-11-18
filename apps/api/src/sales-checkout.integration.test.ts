@@ -543,9 +543,16 @@ describe.skipIf(!isDisposableCheckoutDatabase || !isDisposableBcvProducerDatabas
     expect(response.status).toBe(201);
     const sale = await response.json() as {
       id: string; status: string; subtotal_usd: string; total_usd: string; total_ves: string;
-      bcv_rate: string; lines: Array<{ quantity: string; line_total_usd: string; line_total_ves: string }>;
+      bcv_rate: string; operation_date: string; exchange_rate_effective_date: string;
+      lines: Array<{ quantity: string; line_total_usd: string; line_total_ves: string }>;
     };
     expect(sale.status).toBe("completed");
+    expect(sale.operation_date).toBe(rateDate);
+    expect(sale.exchange_rate_effective_date).toBe(rateDate);
+    await expect(runtimeClient.query(
+      "UPDATE public.sales SET operation_date=operation_date + 1 WHERE id=$1",
+      [sale.id],
+    )).rejects.toThrow(/SALE_BCV_DATE_SNAPSHOT_IMMUTABLE/);
     const operator = await client.query(
       "SELECT created_by,register_shift_id FROM public.sales WHERE id=$1",
       [sale.id],

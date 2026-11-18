@@ -512,11 +512,11 @@ BEGIN
          )
          AND obs.last_effective_date = (
            SELECT selected.effective_date
-             FROM public.select_bcv_rate_for_operation(operation_date)
+             FROM public.select_bcv_rate_for_operation(operation_date) selected
          )
          AND obs.rate_snapshot = (
            SELECT selected.rate
-             FROM public.select_bcv_rate_for_operation(operation_date)
+             FROM public.select_bcv_rate_for_operation(operation_date) selected
          )
          AND ((obs.last_outcome = 'inserted' AND obs.rate_fetched_at > auth_row.starts_at)
            OR obs.last_outcome = 'unchanged')

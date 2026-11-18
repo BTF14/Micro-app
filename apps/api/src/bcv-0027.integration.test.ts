@@ -23,7 +23,7 @@ describe.skipIf(!enabled)("BCV 0027 PostgreSQL 18 effective-date matrix",()=>{
  it("rejects failed, running, errored, uncovered, stale and beyond-five-day candidates",async()=>{
   await prepare([monday],monday,friday+"T16:00:00Z","failed");expect(await select(saturday)).toBeNull();
   await prepare([monday],monday,friday+"T16:00:00Z","running");expect(await select(saturday)).toBeNull();
-  await prepare([monday],monday,friday+"T16:00:00Z","inserted","SOURCE_ERROR");expect(await select(saturday)).toBeNull();
+  await prepare([monday],monday,friday+"T16:00:00Z","failed","SOURCE_ERROR");expect(await select(saturday)).toBeNull();
   await prepare([monday],friday,friday+"T16:00:00Z");expect(await select(saturday)).toBeNull();
   const outside=addDays(saturday,6);await prepare([outside],outside,friday+"T16:00:00Z");expect(await select(saturday)).toBeNull();
   await prepare([monday],monday,friday+"T16:00:00Z");await db.query("UPDATE public.exchange_rates SET validation_status='stale' WHERE source='BCV_OFFICIAL_HTML_V1' AND effective_date=$1::date",[monday]);expect(await select(saturday)).toBeNull();

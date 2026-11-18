@@ -365,6 +365,8 @@ export default function App() {
       setBcvRate(null);
       setBcvError("");
       setActiveView("overview");
+      setNotice("");
+      setError("Tu sesión expiró. Inicia sesión nuevamente.");
     };
     window.addEventListener("micro-app:unauthorized", handleUnauthorized);
     return () => window.removeEventListener("micro-app:unauthorized", handleUnauthorized);

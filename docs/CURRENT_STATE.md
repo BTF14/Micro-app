@@ -1,6 +1,6 @@
 # Corte vigente — Paso 3A: auditoría viva de controles Nivel 1 (2026-11-18)
 
-- **Main exacto:** `25dbf6e40a99e011c951ab55338de6d4b98332ad` (post-merge PR #381). Rama de reconciliación: `chore/level1-gate-evidence-20261118`.
+- **Main exacto:** `25dbf6e40a99e011c951ab55338de6d4b98332ad` (post-merge PR #381). Rama de reconciliación: `chore/level1-gate-evidence-20261118`; PR [#382](https://github.com/BTF14/Micro-app/pull/382) OPEN / Draft.
 - **Resultado:** Nivel 1 continúa **ABIERTO**. GitHub informa `protected=true` y seis checks obligatorios; el endpoint de protección detallada devolvió 403. No se revalidaron enforce-admins/reviews/force-push/conversation resolution.
 - **Backup:** último backup natural SUCCESS [44342447079](https://github.com/BTF14/Micro-app/actions/runs/44342447079), 18 nov; snapshots 17→18 nov separados 23h29m52s; máximo observado 10→18 nov 50h08m33s por backup cancelado el 16 nov. Restore real más reciente [43767762632](https://github.com/BTF14/Micro-app/actions/runs/43767762632) usa 25 migraciones/29 tablas; smoke sintético [44191419753](https://github.com/BTF14/Micro-app/actions/runs/44191419753) probó 26 migraciones, pero su fixture no popula las tablas 0025/0026. RPO/RTO operativos completos siguen abiertos.
 - **Alertas:** canal $0 de GitHub Actions + Issue P0 en fallo de backup; canary [43508458992](https://github.com/BTF14/Micro-app/actions/runs/43508458992) falló intencionalmente el 13 nov, pero no hay ACK del propietario. Acción pendiente: ejecutar canary con `confirm_controlled_failure=true` y confirmar recepción.

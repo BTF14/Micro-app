@@ -1,7 +1,7 @@
 # Handoff vigente — Paso 3A auditoría Nivel 1 (2026-11-18)
 
 - **Base auditada:** `main` = `25dbf6e40a99e011c951ab55338de6d4b98332ad` (post-merge PR #381).
-- **Rama de reconciliación:** `chore/level1-gate-evidence-20261118`; PR Draft pendiente de crear/verificar en GitHub.
+- **Rama de reconciliación:** `chore/level1-gate-evidence-20261118`; PR [#382](https://github.com/BTF14/Micro-app/pull/382) OPEN / Draft; mantener Draft, sin merge ni auto-merge.
 - **Resultado:** Nivel 1 sigue ABIERTO. No iniciar Paso 3B ni implementar 0027.
 - **Protección:** `protected=true` y seis checks obligatorios visibles; endpoint de protección detallada devolvió 403, por lo que no afirmar que enforce-admins/reviews/force-push/conversation resolution estén revalidados.
 - **Backup/DR:** último backup natural SUCCESS #44342447079 (18 nov); RPO proxy último 23h29m52s, máximo observado 50h08m33s por backup cancelado el 16 nov. Restore remoto real #43767762632 SUCCESS con perfil 0025/25 migraciones/29 tablas; recovery window técnico 1.753ms. Smoke #44191419753 SUCCESS en PR #377 con perfil 0026/26 migraciones/34 objetos y DR sintético 3.479s; fixture no contiene filas sintéticas en tablas de recibos 0025 ni las cinco tablas 0026. Ver el bloque vigente en `docs/SECURITY_ROADMAP.md` y `docs/BACKUP_AND_RECOVERY.md`.

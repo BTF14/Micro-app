@@ -52,6 +52,10 @@ jobs:
         run: bash -n scripts/db/migrate.sh
       - name: Apply clean schema through the migration runner
         run: bash scripts/db/migrate.sh
+      - name: Verify 0026 and 0027 BCV contracts after runner upgrade
+        run: |
+          psql -X -v ON_ERROR_STOP=1 --dbname "$ADMIN_DATABASE_URL" -f apps/api/migrations/0026_fx_contingency_management.assertions.sql
+          psql -X -v ON_ERROR_STOP=1 --dbname "$ADMIN_DATABASE_URL" -f apps/api/migrations/0027_bcv_nonbusiness_day_effective_date.assertions.sql
       - name: Verify owner-only organization structure migration 0024 contract
         run: psql -X -v ON_ERROR_STOP=1 --dbname "$ADMIN_DATABASE_URL" -f apps/api/migrations/0024_organization_structure_admin_operations.assertions.sql
       - name: Verify inventory receipt migration 0025 contract

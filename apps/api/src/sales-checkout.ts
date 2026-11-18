@@ -322,7 +322,8 @@ async function loadSaleResponse(
   const header = await tx.query<SaleHeader>(
     `SELECT id, sale_number::text, status, settlement_currency,
             subtotal_usd::text, total_usd::text, total_ves_snapshot::text,
-            exchange_rate_snapshot::text, fx_source, fx_authorization_id,\n            manual_fx_acknowledged_at::text, created_at::text, completed_at::text
+            exchange_rate_snapshot::text, fx_source, fx_authorization_id,\n            operation_date::text, exchange_rate_effective_date::text,
+            manual_fx_acknowledged_at::text, created_at::text, completed_at::text
        FROM public.sales
       WHERE organization_id = $1 AND id = $2`,
     [organizationId, saleId],
@@ -358,6 +359,8 @@ async function loadSaleResponse(
     fx_source: sale.fx_source,
     fx_authorization_id: sale.fx_authorization_id,
     manual_fx_acknowledged_at: sale.manual_fx_acknowledged_at,
+    operation_date: sale.operation_date,
+    exchange_rate_effective_date: sale.exchange_rate_effective_date,
     fx_receipt_label: sale.fx_source === 'manual_contingency' ? 'Tasa manual de contingencia (no oficial BCV)' : 'Tasa BCV',
     created_at: sale.created_at,
     completed_at: sale.completed_at,

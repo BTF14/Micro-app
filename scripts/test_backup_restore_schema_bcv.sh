@@ -222,6 +222,7 @@ MIGRATION_DATABASE_URL="$migration_restore_url" MIGRATIONS_DIR="$repo_root/apps/
   bash scripts/db/reapply_restore_role_grants.sh
 psql "$migration_restore_url" -X -v ON_ERROR_STOP=1 -f apps/api/migrations/0025_inventory_receipts.assertions.sql
 psql "$migration_restore_url" -X -v ON_ERROR_STOP=1 -f apps/api/migrations/0026_fx_contingency_management.assertions.sql
+psql "$migration_restore_url" -X -v ON_ERROR_STOP=1 -f apps/api/migrations/0027_bcv_nonbusiness_day_effective_date.assertions.sql
 
 manifest() {
   psql "$1" -X -v ON_ERROR_STOP=1 -Atq <<'SQL'

@@ -93,6 +93,23 @@ BEGIN
     RETURN;
   END IF;
 
+  -- The append-only 0026 observation must certify this exact successful sync
+  -- snapshot and cover the selected effective date; state alone is insufficient.
+  IF NOT EXISTS (
+    SELECT 1 FROM public.bcv_sync_success_observations obs
+     WHERE obs.last_success_at = sync_success_at
+       AND obs.last_outcome = sync_outcome
+       AND obs.last_error_code IS NULL
+       AND obs.last_effective_date = sync_effective_date
+       AND obs.last_effective_date >= selected_date
+       AND obs.validation_status = 'valid'
+       AND obs.exchange_rate_id IS NOT NULL
+       AND obs.rate_snapshot > 0
+       AND obs.observed_at >= obs.last_success_at
+  ) THEN
+    RETURN;
+  END IF;
+
   RETURN QUERY SELECT selected_id,selected_rate,selected_date,selected_priority;
 END;
 $select_bcv_rate_for_operation$;
@@ -218,7 +235,7 @@ ALTER TABLE public.sales ENABLE ALWAYS TRIGGER sales_00_capture_bcv_0027_snapsho
 ALTER TABLE public.sales ENABLE ALWAYS TRIGGER sales_01_guard_bcv_0027_snapshot_immutable;
 
 CREATE CONSTRAINT TRIGGER sales_99_assert_bcv_0027_snapshot
-AFTER UPDATE ON public.sales
+AFTER INSERT OR UPDATE ON public.sales
 DEFERRABLE INITIALLY DEFERRED
 FOR EACH ROW WHEN (NEW.status='completed')
 EXECUTE FUNCTION public.assert_sales_bcv_0027_snapshot();

@@ -479,11 +479,16 @@ async function findLatestBcvRate(
 ): Promise<(StoredRateRow & { fetched_at: string; status: "current" | "scheduled" | "stale"; priority: string | null; operation_date: string }) | null> {
   const stateResult = await client.query<{
     operation_date: string; last_success_at: string | Date | null; last_outcome: string | null;
-    last_effective_date: string | null; last_error_code: string | null;
+    last_effective_date: string | null; last_error_code: string | null; has_success_observation: boolean;
   }>(
     `SELECT (pg_catalog.clock_timestamp() AT TIME ZONE 'America/Caracas')::date::text AS operation_date,
-            last_success_at,last_outcome,last_effective_date::text AS last_effective_date,last_error_code
-       FROM public.bcv_sync_state WHERE singleton = true`,
+            last_success_at,last_outcome,last_effective_date::text AS last_effective_date,last_error_code,
+            EXISTS (SELECT 1 FROM public.bcv_sync_success_observations obs
+              WHERE obs.last_success_at=state.last_success_at AND obs.last_outcome=state.last_outcome
+                AND obs.last_error_code IS NULL AND obs.last_effective_date=state.last_effective_date
+                AND obs.validation_status='valid' AND obs.exchange_rate_id IS NOT NULL
+                AND obs.rate_snapshot > 0 AND obs.observed_at >= obs.last_success_at) AS has_success_observation
+       FROM public.bcv_sync_state state WHERE singleton = true`,
   );
   const state = stateResult.rows[0] ?? null;
   const operationDate = state?.operation_date ?? bcvCaracasDate(now);
@@ -498,7 +503,8 @@ async function findLatestBcvRate(
   );
   const rows = rowsResult.rows;
   if (!rows.length) return null;
-  const selected = selectApplicableBcvRate(operationDate,state,rows);
+  const policyState = state?.has_success_observation ? state : null;
+  const selected = selectApplicableBcvRate(operationDate,policyState,rows);
   if (selected) return { ...selected.row, fetched_at: selected.row.fetched_at ?? "", status: "current", priority: selected.priority, operation_date: operationDate };
   const hasValidExact = rows.some((row) => row.validation_status === "valid" && row.effective_date === operationDate);
   const futureCandidates = rows.filter((row) => row.validation_status === "valid" && row.effective_date > operationDate && row.effective_date <= new Date(Date.parse(`${operationDate}T00:00:00.000Z`) + 5*86_400_000).toISOString().slice(0,10))
@@ -506,7 +512,7 @@ async function findLatestBcvRate(
   const nearestFutureDate = futureCandidates[0]?.effective_date;
   const nearestFutureRows = nearestFutureDate ? futureCandidates.filter((row) => row.effective_date === nearestFutureDate) : [];
   const future = nearestFutureRows.length === 1 ? nearestFutureRows[0] : undefined;
-  if (!hasValidExact && future && state && state.last_success_at !== null &&
+  if (!hasValidExact && future && state?.has_success_observation && state.last_success_at !== null &&
       (state.last_outcome === "inserted" || state.last_outcome === "unchanged") &&
       state.last_error_code === null && state.last_effective_date !== null &&
       state.last_effective_date >= future.effective_date) {

@@ -128,7 +128,18 @@ export async function findApplicableCheckoutRate(tx: import("./database").Databa
             last_outcome,
             last_effective_date::text AS last_effective_date,
             last_error_code
-       FROM public.lock_bcv_sync_state_with_error()`,
+       FROM public.lock_bcv_sync_state_with_error() sync_state
+      WHERE EXISTS (
+        SELECT 1 FROM public.bcv_sync_success_observations obs
+         WHERE obs.last_success_at=sync_state.last_success_at
+           AND obs.last_outcome=sync_state.last_outcome
+           AND obs.last_error_code IS NULL
+           AND obs.last_effective_date=sync_state.last_effective_date
+           AND obs.validation_status='valid'
+           AND obs.exchange_rate_id IS NOT NULL
+           AND obs.rate_snapshot > 0
+           AND obs.observed_at >= obs.last_success_at
+      )`,
   );
   const state = syncState.rows[0];
   if (!state) return null;

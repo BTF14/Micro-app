@@ -1,3 +1,17 @@
+> **Estado vigente — 2026-11-18 post-PR #379:** main = `89a478c0315fa9d3b51062858198d357b0738084`; PR #377 MERGED en `25e37dc5dcfb18349a6b7f384d109e493a581c3d` y PR #379 (`fix/sales-panel-test-deterministic-clock`) MERGED en `89a478c0315fa9d3b51062858198d357b0738084`. AC-7 cerrado para el alcance técnico de PR1; AC-6 abierto y contingencia manual apagada/no configurada. Freeze v1.1 activo, Issue #53 OPEN/P0, **PRODUCTION: NOT READY**.
+>
+> **Gate Nivel 1 — no relajado:** AGENTS.md exige completar/reconciliar los controles Nivel 1 antes de reanudar nueva lógica comercial. La protección de main fue verificada como activa (protected=true) y el endpoint reportó seis contexts requeridos: Chromium authentication smoke tests, JavaScript/TypeScript static analysis, tracked-files/reachable-history scan, Trivy filesystem/config scan, postgres-migration y verify. Esto no cierra por sí solo Nivel 1.
+>
+> **Pendientes que siguen abiertos/no demostrados por la evidencia disponible:** mediciones operativas RPO/RTO (aceptación del objetivo no equivale a medición); entrega y ACK de alertas; demostración del coste recurrente total USD 0; restore con datos comerciales sintéticos poblados y recuperación end-to-end; GO/NO-GO formal del propietario. El smoke autenticado owner-confirmed no equivale a una certificación completa de producción. Mantener la lista y estados por control de las secciones inferiores; no marcarlos cerrados por inferencia.
+>
+> **Orden:** Paso 1 docs/tooling → Carril A (0 SQL) + spec BCV 0027 → cierre/reconciliación Nivel 1 + 0027 antes de B1 (0028+) → inventory-accounting-review → B1 → Hardening → CSV → Scanner/B2 → cierres/reportes → AC-6/ve-fx-compliance-review y auditoría preproducción.
+>
+> La decisión del propietario de 2026-11-17 permite diseñar la tasa futura publicada por BCV para sábado/domingo/feriado según reglas fail-closed, sin calendario SUDEBAN anual manual. Ver ADR docs/decisions/ADR-20261117-bcv-nonbusiness-day-effective-date.md. No es una excepción para aceptar tasas viejas ni un bypass de los guards.
+>
+> **Límite:** este encabezado reconcilia el estado; no cierra Nivel 1, AC-6, Issue #53 ni autoriza producción. Los controles históricos inferiores conservan evidencia y deben revalidarse uno por uno antes de declarar cierre.
+
+---
+
 > **Estado vigente — 2026-11-17:** main `d6760bf3da0e0c080c2f4ead3d518ce4e30bc589`; PR #374/#375 MERGED. Productor BCV temporal en GitHub Actions Node 24.22.2 con TLS estricto y CA Sectigo DV R36 pineada; Worker `micro-app-bcv-sync` pausado (`BCV_SYNC_ENABLED=false`). Primera ejecución real `inserted` (run #43977544849); observación propietaria reportó `effectiveDate=2026-11-17` en estado `scheduled`. Transición a `current`, siguiente schedule y estabilidad posterior siguen pendientes.
 >
 > **Gates:** AC-6 legal/contable y AC-7 revisión independiente de seguridad son previos a Contingencia Manual BCV (PR1). Smoke autenticado con Brave Shields y aceptación propietaria de objetivos RPO/RTO constan confirmados; no equivalen a mediciones operativas formales RPO/RTO ni a simulacro completo. Alert delivery/ACK, estabilidad BCV, Issue #53 OPEN/P0 y aprobación GO/NO-GO siguen abiertos.

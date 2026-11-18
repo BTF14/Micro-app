@@ -446,7 +446,7 @@ export function registerFxContingencyRoutes(app: Hono<{ Bindings: Bindings }>): 
                     SELECT 1 FROM public.exchange_rates er
                      WHERE er.id=obs.exchange_rate_id
                        AND er.source='BCV_OFFICIAL_HTML_V1'
-                       AND er.validation_status='valid'
+                       AND er.validation_status='valid' AND er.base_currency='USD' AND er.quote_currency='VES' AND er.rate > 0
                        AND er.effective_date=obs.last_effective_date
                        AND obs.rate_snapshot=er.rate
                        AND er.effective_date <= op.operation_date + 5

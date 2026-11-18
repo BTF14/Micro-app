@@ -28,7 +28,7 @@ BEGIN
  THEN RAISE EXCEPTION 'BCV_0027_TRIGGER_ONLY_FUNCTION_ACL_INVALID_%',fn::regprocedure; END IF;
  END LOOP;
  SELECT pg_get_functiondef('public.select_bcv_rate_for_operation(date)'::regprocedure) INTO fn_def;
- IF strpos(fn_def,'weekend_prepublished')=0 OR strpos(fn_def,'weekday_same_day_sync')=0 OR strpos(fn_def,'p_operation_date + 5')=0 OR strpos(fn_def,'America/Caracas')=0 OR strpos(fn_def,'FOR SHARE')=0
+ IF strpos(fn_def,'weekend_prepublished')=0 OR strpos(fn_def,'weekday_same_day_sync')=0 OR strpos(fn_def,'p_operation_date + 5')=0 OR strpos(fn_def,'America/Caracas')=0 OR strpos(fn_def,'FOR SHARE')=0 OR strpos(fn_def,'base_currency')=0 OR strpos(fn_def,'rate > 0')=0
  THEN RAISE EXCEPTION 'BCV_0027_SELECTION_POLICY_DEFINITION_INVALID'; END IF;
  SELECT pg_get_functiondef('public.assert_completed_sale_reconciled()'::regprocedure) INTO fn_def;
  IF strpos(fn_def,'public.select_bcv_rate_for_operation')=0 OR strpos(fn_def,'operation_date')=0 OR strpos(fn_def,'exchange_rate_effective_date')=0

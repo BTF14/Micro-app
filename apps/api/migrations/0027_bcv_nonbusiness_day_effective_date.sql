@@ -54,13 +54,13 @@ BEGIN
   END IF;
 
   SELECT count(*) INTO candidate_count FROM public.exchange_rates er
-   WHERE er.source='BCV_OFFICIAL_HTML_V1' AND er.validation_status='valid' AND er.effective_date=p_operation_date;
+   WHERE er.source='BCV_OFFICIAL_HTML_V1' AND er.validation_status='valid' AND er.base_currency='USD' AND er.quote_currency='VES' AND er.rate > 0 AND er.effective_date=p_operation_date;
   IF candidate_count > 1 THEN RETURN; END IF;
   SELECT er.id,er.rate,er.effective_date
     INTO selected_id,selected_rate,selected_date
     FROM public.exchange_rates er
    WHERE er.source='BCV_OFFICIAL_HTML_V1'
-     AND er.validation_status='valid'
+     AND er.validation_status='valid' AND er.base_currency='USD' AND er.quote_currency='VES' AND er.rate > 0
      AND er.effective_date=p_operation_date
    ORDER BY er.fetched_at DESC
    LIMIT 1;
@@ -69,15 +69,15 @@ BEGIN
   ELSE
     SELECT min(er.effective_date) INTO selected_date
       FROM public.exchange_rates er
-     WHERE er.source='BCV_OFFICIAL_HTML_V1' AND er.validation_status='valid'
+     WHERE er.source='BCV_OFFICIAL_HTML_V1' AND er.validation_status='valid' AND er.base_currency='USD' AND er.quote_currency='VES' AND er.rate > 0
        AND er.effective_date > p_operation_date AND er.effective_date <= p_operation_date + 5;
     IF selected_date IS NULL THEN RETURN; END IF;
     SELECT count(*) INTO candidate_count FROM public.exchange_rates er
-     WHERE er.source='BCV_OFFICIAL_HTML_V1' AND er.validation_status='valid' AND er.effective_date=selected_date;
+     WHERE er.source='BCV_OFFICIAL_HTML_V1' AND er.validation_status='valid' AND er.base_currency='USD' AND er.quote_currency='VES' AND er.rate > 0 AND er.effective_date=selected_date;
     IF candidate_count <> 1 THEN RETURN; END IF;
     SELECT er.id,er.rate,er.effective_date INTO selected_id,selected_rate,selected_date
       FROM public.exchange_rates er
-     WHERE er.source='BCV_OFFICIAL_HTML_V1' AND er.validation_status='valid' AND er.effective_date=selected_date;
+     WHERE er.source='BCV_OFFICIAL_HTML_V1' AND er.validation_status='valid' AND er.base_currency='USD' AND er.quote_currency='VES' AND er.rate > 0 AND er.effective_date=selected_date;
 
     IF EXTRACT(ISODOW FROM p_operation_date) IN (6,7) THEN
       selected_priority := 'weekend_prepublished';
@@ -420,6 +420,7 @@ BEGIN
     RETURN NULL;
   END IF;
   PERFORM 1 FROM public.bcv_sync_state WHERE singleton=true FOR SHARE;
+  -- The shared lock serializes last_success_at, last_outcome, last_effective_date and last_error_code with producer updates.
   -- operation_date := (pg_catalog.clock_timestamp() AT TIME ZONE 'America/Caracas')::date is captured by the BEFORE trigger after this FOR SHARE lock.
   SELECT * INTO selected FROM public.select_bcv_rate_for_operation(NEW.operation_date);
   IF NEW.operation_date IS NULL OR NOT FOUND

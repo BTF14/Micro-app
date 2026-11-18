@@ -463,7 +463,7 @@ export async function findApplicableBcvRate(
     `SELECT rate::text AS rate, effective_date::text AS effective_date,
             to_char(fetched_at AT TIME ZONE 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS.MS"Z"') AS fetched_at, validation_status
        FROM public.exchange_rates
-      WHERE source = $1
+      WHERE source = $1 AND base_currency='USD' AND quote_currency='VES' AND rate > 0
         AND effective_date = $2::date
       ORDER BY fetched_at DESC
       LIMIT 1`,
@@ -492,7 +492,7 @@ async function findLatestBcvRate(
             to_char(fetched_at AT TIME ZONE 'UTC','YYYY-MM-DD"T"HH24:MI:SS.MS"Z"') AS fetched_at,
             validation_status
        FROM public.exchange_rates
-      WHERE source=$1 AND effective_date >= ($2::date - 10) AND effective_date <= ($2::date + 5)
+      WHERE source=$1 AND base_currency='USD' AND quote_currency='VES' AND rate > 0 AND effective_date >= ($2::date - 10) AND effective_date <= ($2::date + 5)
       ORDER BY effective_date DESC,fetched_at DESC`,
     [BCV_SOURCE_ID,operationDate],
   );

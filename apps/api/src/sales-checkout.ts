@@ -134,6 +134,7 @@ export async function findApplicableCheckoutRate(tx: import("./database").Databa
     `SELECT id, rate::text AS rate, effective_date::text AS effective_date, validation_status
        FROM public.exchange_rates
       WHERE source = $1
+        AND base_currency = 'USD' AND quote_currency = 'VES' AND rate > 0
         AND effective_date >= $2::date
         AND effective_date <= ($2::date + 5)
       ORDER BY effective_date ASC, fetched_at DESC`,

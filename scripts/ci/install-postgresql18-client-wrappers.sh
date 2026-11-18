@@ -10,7 +10,7 @@ for tool in psql pg_dump pg_restore; do
 #!/usr/bin/env bash
 set -euo pipefail
 tool="${0##*/}"
-exec docker run --rm -i --network host --user "$(id -u):$(id -g)" -e HOME=/tmp \
+exec docker run --rm -i --network host --user "$(id -u):$(id -g)" -e HOME=/tmp -e BACKUP_ROLE_TEST_PASSWORD \
   -v "$GITHUB_WORKSPACE:$GITHUB_WORKSPACE:ro" -v /tmp:/tmp \
   -w "$GITHUB_WORKSPACE" postgres:18 "$tool" "$@"
 SH

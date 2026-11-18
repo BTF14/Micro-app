@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { apiRequest } from "./auth";
+import { normalizeDecimalInput } from "./decimal";
 
 type Branch = { id: string; name: string; slug: string };
 type Authorization = {
@@ -202,7 +203,7 @@ export default function FxContingencyPanel({ organizationId, role }: { organizat
           <button type="button" disabled={saving || pin.length < 8} onClick={() => void revoke()}>Revocar contingencia</button>
         </div> : <div className="fx-create-authorization">
           <h3>Autorizar tasa manual</h3>
-          <label>Tasa VES por USD<input inputMode="decimal" value={rate} onChange={(event) => setRate(event.target.value)} placeholder="Ej. 450,00000000" /></label>
+          <label>Tasa VES por USD<input inputMode="decimal" value={rate} onChange={(event) => setRate(normalizeDecimalInput(event.target.value))} placeholder="Ej. 450,00000000" /></label>
           <label>Motivo obligatorio<textarea value={reason} onChange={(event) => setReason(event.target.value)} maxLength={1000} /></label>
           <label>Vencimiento (hora local)<input type="datetime-local" value={expiresAt} onChange={(event) => setExpiresAt(event.target.value)} /></label>
           <label><input type="checkbox" checked={elevatedConfirmed} onChange={(event) => setElevatedConfirmed(event.target.checked)} /> Confirmo expresamente la desviación superior al 5% (si aplica).</label>

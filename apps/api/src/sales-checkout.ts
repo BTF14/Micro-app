@@ -57,6 +57,8 @@ type SaleHeader = {
   fx_source: 'bcv_official' | 'manual_contingency';
   fx_authorization_id: string | null;
   manual_fx_acknowledged_at: string | null;
+  operation_date: string | null;
+  exchange_rate_effective_date: string | null;
   created_at: string;
   completed_at: string | null;
 };
@@ -764,18 +766,56 @@ export function registerSalesCheckoutRoutes(app: Hono<{ Bindings: Bindings }>): 
               const auth = active.rows[0];
               if (!auth) return false;
               const recovery = await tx.query<{ id: string }>(
-                `SELECT obs.id
+                `WITH operation AS (
+                   SELECT (pg_catalog.clock_timestamp() AT TIME ZONE 'America/Caracas')::date AS operation_date
+                 )
+                 SELECT obs.id
                    FROM public.bcv_sync_success_observations obs
+                   CROSS JOIN operation op
+                   JOIN public.bcv_sync_state current_state ON current_state.singleton=true
                    JOIN public.exchange_rates rate ON rate.id=obs.exchange_rate_id
-                  WHERE obs.observed_at > $1::timestamptz
+                  WHERE current_state.last_success_at IS NOT NULL
+                    AND current_state.last_outcome IN ('inserted','unchanged')
+                    AND current_state.last_error_code IS NULL
+                    AND current_state.last_effective_date >= rate.effective_date
+                    AND obs.observed_at > $1::timestamptz
                     AND obs.last_outcome IN ('inserted','unchanged')
                     AND obs.last_error_code IS NULL
                     AND obs.validation_status='valid'
-                    AND obs.last_effective_date=(pg_catalog.clock_timestamp() AT TIME ZONE 'America/Caracas')::date
-                    AND rate.effective_date=(pg_catalog.clock_timestamp() AT TIME ZONE 'America/Caracas')::date
                     AND rate.source=$2
+                    AND rate.base_currency='USD' AND rate.quote_currency='VES' AND rate.rate > 0
+                    AND rate.validation_status='valid'
+                    AND rate.effective_date=obs.last_effective_date
+                    AND obs.rate_snapshot=rate.rate
+                    AND rate.effective_date <= op.operation_date + 5
+                    AND (rate.effective_date=op.operation_date OR NOT EXISTS (
+                      SELECT 1 FROM public.exchange_rates exact
+                       WHERE exact.source=$2 AND exact.validation_status='valid'
+                         AND exact.base_currency='USD' AND exact.quote_currency='VES' AND exact.rate > 0
+                         AND exact.effective_date=op.operation_date
+                    ))
+                    AND (
+                      rate.effective_date=op.operation_date
+                      OR (
+                        rate.effective_date > op.operation_date
+                        AND (
+                          EXTRACT(ISODOW FROM op.operation_date) IN (6,7)
+                          OR current_state.last_success_at >= (op.operation_date::timestamp AT TIME ZONE 'America/Caracas')
+                        )
+                      )
+                    )
+                    AND NOT EXISTS (
+                      SELECT 1 FROM public.exchange_rates earlier
+                       WHERE earlier.source=$2 AND earlier.validation_status='valid'
+                         AND earlier.base_currency='USD' AND earlier.quote_currency='VES' AND earlier.rate > 0
+                         AND earlier.effective_date > op.operation_date
+                         AND earlier.effective_date < rate.effective_date
+                         AND earlier.effective_date <= op.operation_date + 5
+                    )
                     AND (obs.last_outcome <> 'inserted' OR obs.rate_fetched_at > $1::timestamptz)
                   LIMIT 1`,
+                [auth.starts_at, BCV_SOURCE],
+              );,
                 [auth.starts_at, BCV_SOURCE],
               );
               if (!recovery.rows[0]) return false;

@@ -549,7 +549,7 @@ describe.skipIf(!isDisposableCheckoutDatabase || !isDisposableBcvProducerDatabas
     expect(sale.status).toBe("completed");
     expect(sale.operation_date).toBe(rateDate);
     expect(sale.exchange_rate_effective_date).toBe(rateDate);
-    await expect(runtimeClient.query(
+    await expect(client.query(
       "UPDATE public.sales SET operation_date=operation_date + 1 WHERE id=$1",
       [sale.id],
     )).rejects.toThrow(/SALE_BCV_DATE_SNAPSHOT_IMMUTABLE/);
